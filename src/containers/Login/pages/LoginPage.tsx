@@ -14,7 +14,7 @@ const LoginPage = () => {
   return (
     <AuthLayout>
       {/* Logo */}
-      <div className="logos flex justify-center mb-8">
+      <div className="logos flex justify-center items-center mb-8">
         <img
           src="/th-brand-logo.png"
           alt="logo"
