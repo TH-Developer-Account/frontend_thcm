@@ -1,11 +1,11 @@
 import { AuthLayout } from "../../../layout/AuthLayout";
 import { useState } from "react";
-import { EmailLoginForm } from "../components/authforms/EmailLoginForm";
-import { MobileLoginForm } from "../components/authforms/MobileLoginForm";
+import { EmailLoginForm } from "../authforms/EmailLoginForm";
+import { MobileLoginForm } from "../authforms/MobileLoginForm";
 
 type Tab = "email" | "mobile";
 
-export const LoginPage = () => {
+const LoginPage = () => {
   const [activeTab, setActiveTab] = useState<Tab>("email");
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
@@ -62,3 +62,5 @@ export const LoginPage = () => {
     </AuthLayout>
   );
 };
+
+export default LoginPage;

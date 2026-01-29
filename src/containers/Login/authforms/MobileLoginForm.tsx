@@ -1,27 +1,27 @@
-import { Button } from "../common/formElements/Button";
+import { Button } from "../../../components/common/Button";
 import { useState } from "react";
-import FormInput from "../common/formElements/FormInput";
-import OtpInput from "../common/formElements/OtpInput";
+import FormInput from "../../../components/FormElements/FormInput";
+import OtpInput from "../../../components/FormElements/OtpInput";
 
 type MobileStep = "enterMobile" | "verifyOtp";
 
 export const MobileLoginForm = () => {
-    const [mobileStep, setMobileStep] = useState<MobileStep>("enterMobile");
-    const [mobile, setMobile] = useState("");
-    const [otp, setOtp] = useState("");
-    const [mobileError, setMobileError] = useState("");
-    const handleOtpChange = (value: string) => {
-        setOtp(value);
-      };
-      const isValidMobile = (mobile: string) => {
-        return /^[6-9]\d{9}$/.test(mobile);
-      };
-      
+  const [mobileStep, setMobileStep] = useState<MobileStep>("enterMobile");
+  const [mobile, setMobile] = useState("");
+  const [otp, setOtp] = useState("");
+  const [mobileError, setMobileError] = useState("");
+  const handleOtpChange = (value: string) => {
+    setOtp(value);
+  };
+  const isValidMobile = (mobile: string) => {
+    return /^[6-9]\d{9}$/.test(mobile);
+  };
+
   return (
-        <>
-        {mobileStep === "enterMobile" && (
+    <>
+      {mobileStep === "enterMobile" && (
         <form className="space-y-4">
-            <FormInput
+          <FormInput
             name="mobile"
             label="Mobile Number"
             placeholder="Enter your mobile number"
@@ -29,45 +29,44 @@ export const MobileLoginForm = () => {
             onChange={(e) => setMobile(e.target.value)}
           />
           <Button
-          text="Continue"
-          disabled={!isValidMobile(mobile)}
-          onClick={(e) => {
-            e.preventDefault();
-            setMobile("")
-            if (!isValidMobile(mobile)) {
-              setMobileError("Enter a valid 10-digit mobile number");
-              return;
-            }
-            setMobileError("");
-            setMobileStep("verifyOtp");
-          }}
-        />
+            text="Continue"
+            disabled={!isValidMobile(mobile)}
+            onClick={(e) => {
+              e.preventDefault();
+              setMobile("");
+              if (!isValidMobile(mobile)) {
+                setMobileError("Enter a valid 10-digit mobile number");
+                return;
+              }
+              setMobileError("");
+              setMobileStep("verifyOtp");
+            }}
+          />
         </form>
-        )}  
-        {mobileStep === "verifyOtp" && (
+      )}
+      {mobileStep === "verifyOtp" && (
         <form className="space-y-4">
-        <div className="text-sm text-gray-600">
-          Enter the OTP sent to{" "}
-          <span className="font-semibold">{mobile}</span>
-        </div>
-        <OtpInput length={6} onChange={handleOtpChange} />
-        <Button
-          text="Verify OTP"
-          onClick={(e) => {
-            e.preventDefault();
-            // 🔥 call verifyOtp API here
-          }}
-        />
-        <button
-          type="button"
-          className="text-sm text-blue-600 hover:underline text-center"
-          onClick={() => setMobileStep("enterMobile")}
-        >
-          Change mobile number
-        </button>
-    </form>
-    )}
-  
+          <div className="text-sm text-gray-600">
+            Enter the OTP sent to{" "}
+            <span className="font-semibold">{mobile}</span>
+          </div>
+          <OtpInput length={6} onChange={handleOtpChange} />
+          <Button
+            text="Verify OTP"
+            onClick={(e) => {
+              e.preventDefault();
+              // 🔥 call verifyOtp API here
+            }}
+          />
+          <button
+            type="button"
+            className="text-sm text-blue-600 hover:underline text-center"
+            onClick={() => setMobileStep("enterMobile")}
+          >
+            Change mobile number
+          </button>
+        </form>
+      )}
     </>
   );
 };

@@ -1,7 +1,7 @@
 // src/pages/Dashboard.jsx
-import Navbar from "../components/layout/Navbar";
-import Card from "../components/ui/Card";
-import { Megaphone, Box } from "lucide-react";
+import Navbar from "./Navbar";
+import Card from "./components/Card";
+// import { Megaphone, Box } from "lucide-react";
 
 export default function Dashboard() {
   return (
