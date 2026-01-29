@@ -1,4 +1,4 @@
-import { AuthLayout } from "../layout/AuthLayout";
+import { AuthLayout } from "../../../layout/AuthLayout";
 import { useState } from "react";
 import { EmailLoginForm } from "../components/authforms/EmailLoginForm";
 import { MobileLoginForm } from "../components/authforms/MobileLoginForm";
@@ -9,14 +9,17 @@ export const LoginPage = () => {
   const [activeTab, setActiveTab] = useState<Tab>("email");
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
-  };  
-  
+  };
+
   return (
     <AuthLayout>
-
       {/* Logo */}
       <div className="logos flex justify-center mb-8">
-        <img src="/th-brand-logo.png" alt="logo" className="text-center w-[120px]"/>
+        <img
+          src="/th-brand-logo.png"
+          alt="logo"
+          className="text-center w-[120px]"
+        />
       </div>
 
       {/* Tabs */}
@@ -44,14 +47,10 @@ export const LoginPage = () => {
       </div>
 
       {/* Email Login Form */}
-      {activeTab === "email" && (
-        <EmailLoginForm />
-      )}
+      {activeTab === "email" && <EmailLoginForm />}
 
       {/* Mobile Login Form */}
-      {activeTab === "mobile" && (
-        <MobileLoginForm />
-      )}
+      {activeTab === "mobile" && <MobileLoginForm />}
 
       {/* Sign Up Link */}
       <p className="text-sm text-gray-500 text-center mt-6">
