@@ -8,7 +8,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-100">
       <Navbar />
 
-      <div className="flex justify-center gap-8 p-10">
+      {/* <div className="flex justify-center gap-8 p-10">
         <Card
           icon={<Megaphone size={40} />}
           title="Marketing Activity Planner"
@@ -20,7 +20,7 @@ export default function Dashboard() {
           title="Product Selector"
           description="Discover the perfect products for your needs. Browse and compare features to make informed decisions."
         />
-      </div>
+      </div> */}
     </div>
   );
 }
