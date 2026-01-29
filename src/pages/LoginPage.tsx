@@ -4,22 +4,17 @@ import { EmailLoginForm } from "../components/authforms/EmailLoginForm";
 import { MobileLoginForm } from "../components/authforms/MobileLoginForm";
 
 type Tab = "email" | "mobile";
-type MobileStep = "enterMobile" | "verifyOtp";
 
-export const LoginLayout = () => {
+export const LoginPage = () => {
   const [activeTab, setActiveTab] = useState<Tab>("email");
-  const [mobileStep, setMobileStep] = useState<MobileStep>("enterMobile");
-
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
-    if (tab === "mobile") {
-      setMobileStep("enterMobile");
-    }
-  };
-  
+  };  
   
   return (
     <AuthLayout>
+
+      {/* Logo */}
       <div className="logos flex justify-center mb-8">
         <img src="/th-brand-logo.png" alt="logo" className="text-center w-[120px]"/>
       </div>
@@ -34,7 +29,7 @@ export const LoginLayout = () => {
           }`}
           onClick={() => handleTabChange("email")}
         >
-          Email Login
+          Email
         </button>
         <button
           className={`flex-1 py-2 font-bold text-sm transition-colors duration-200 ease-in-out cursor-pointer ${
@@ -44,18 +39,18 @@ export const LoginLayout = () => {
           }`}
           onClick={() => handleTabChange("mobile")}
         >
-          Mobile Login
+          Mobile
         </button>
       </div>
 
       {/* Email Login Form */}
       {activeTab === "email" && (
-       <EmailLoginForm />
+        <EmailLoginForm />
       )}
 
       {/* Mobile Login Form */}
       {activeTab === "mobile" && (
-       <MobileLoginForm />
+        <MobileLoginForm />
       )}
 
       {/* Sign Up Link */}
@@ -65,9 +60,6 @@ export const LoginLayout = () => {
           Sign up
         </a>
       </p>
-      {/* <div className="errorMessage">
-        {mobileError && <p className="text-red-500 text-sm mt-2">{mobileError}</p>}
-      </div> */}
     </AuthLayout>
   );
 };
