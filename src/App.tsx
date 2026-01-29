@@ -1,13 +1,13 @@
 
 import './App.css'
-import { Login } from './app/Login'
+import { LoginPage } from './pages/LoginPage'
 
 function App() {
 
   return (
     <>
       <div>
-        <Login />
+        <LoginPage />
       </div>
     </>
   )
