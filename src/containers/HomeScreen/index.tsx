@@ -1,12 +1,12 @@
 // src/pages/Dashboard.jsx
-import Navbar from "./Navbar";
+import Header from "./Header";
 import Card from "./components/Card";
 // import { Megaphone, Box } from "lucide-react";
 
 export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-100">
-      <Navbar />
+      <Header />
 
       {/* <div className="flex justify-center gap-8 p-10">
         <Card
