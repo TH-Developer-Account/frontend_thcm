@@ -1,51 +1,97 @@
 import { useState } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 import { Button } from "../../../components/common/Button";
 import FormInput from "../../../components/FormElements/FormInput";
+import { EMAIL_REGEX } from "../../Login/constant";
+
+type Errors = {
+  email?: string;
+  password?: string;
+};
 
 export const EmailLoginForm = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (name === "email") {
-      setEmail(value);
-    } else if (name === "password") {
-      setPassword(value);
-    }
-    console.log(name, value);
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    setErrors((prev) => {
+      if (!prev[name as keyof Errors]) return prev; // nothing to clear
+
+      const newErrors = { ...prev };
+      delete newErrors[name as keyof Errors];
+      return newErrors;
+    });
   };
 
   const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    const loginData = { email, password };
-    await fetch("/api/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(loginData),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Success:", data);
-        // Handle successful login
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        // Handle login error
-      });
-    setEmail("");
-    setPassword("");
+    setLoading(true);
+    try {
+      const response = await axios.post("/api/login", formData);
+
+      console.log("Success:", response.data);
+      // TODO: save token + navigate
+      login(response.data.user, response.data.accessToken);
+      navigate("/");
+    } catch (error: unknown) {
+      console.error("Login error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+
+      if (name === "email") {
+        if (!value) {
+          newErrors.email = "Please fill in the email field";
+        } else if (!EMAIL_REGEX.test(value)) {
+          newErrors.email = "Invalid email format";
+        } else {
+          delete newErrors.email;
+        }
+      }
+
+      if (name === "password") {
+        if (!value) {
+          newErrors.password = "Please fill in the password field";
+        } else {
+          delete newErrors.password;
+        }
+      }
+
+      return newErrors;
+    });
+  };
+
   return (
     <form className="space-y-4">
       <FormInput
         name="email"
         label="Email"
         placeholder="john@mail.com"
-        value={email}
+        value={formData.email}
         onChange={handleChange}
+        onBlur={handleBlur}
+        error={errors?.email}
       />
 
       <FormInput
@@ -53,8 +99,10 @@ export const EmailLoginForm = () => {
         label="Password"
         placeholder="Enter your password"
         type="password"
-        value={password}
+        value={formData.password}
         onChange={handleChange}
+        onBlur={handleBlur}
+        error={errors?.password}
       />
 
       <div className="flex justify-end">
@@ -63,7 +111,7 @@ export const EmailLoginForm = () => {
         </a>
       </div>
 
-      <Button text="Sign In" onClick={handleSubmit} />
+      <Button text="Sign In" onClick={handleSubmit} disabled={loading} />
     </form>
   );
 };
