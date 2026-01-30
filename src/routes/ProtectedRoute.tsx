@@ -1,8 +1,18 @@
-// src/routes/ProtectedRoute.jsx
+import React from "react";
 import { Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-export default function ProtectedRoute({ children }) {
-  const isAuthenticated = false; // replace later
+type ProtectedRouteProps = {
+  children: React.JSX.Element;
+};
 
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { token } = useAuth();
+
+  // if no token => redirect to login
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
 }

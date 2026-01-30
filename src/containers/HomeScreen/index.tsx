@@ -1,14 +1,14 @@
 // src/pages/Dashboard.jsx
-import Navbar from "./Navbar";
+import Header from "./Header";
 import Card from "./components/Card";
 // import { Megaphone, Box } from "lucide-react";
 
 export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-100">
-      <Navbar />
+      <Header />
 
-      <div className="flex justify-center gap-8 p-10">
+      {/* <div className="flex justify-center gap-8 p-10">
         <Card
           icon={<Megaphone size={40} />}
           title="Marketing Activity Planner"
@@ -20,7 +20,7 @@ export default function Dashboard() {
           title="Product Selector"
           description="Discover the perfect products for your needs. Browse and compare features to make informed decisions."
         />
-      </div>
+      </div> */}
     </div>
   );
 }

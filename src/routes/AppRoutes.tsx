@@ -6,8 +6,6 @@ import LoginPage from "../containers/Login/pages/LoginPage";
 import { ResetPasswordPage } from "../containers/Login/pages/ResestPasswordPage";
 
 export default function AppRoutes() {
-  const isAuthenticated = true; // later replace with real auth
-
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />

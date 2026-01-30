@@ -2,6 +2,10 @@ import React, {
   type ForwardRefRenderFunction,
   type InputHTMLAttributes,
 } from "react";
+import React, {
+  type ForwardRefRenderFunction,
+  type InputHTMLAttributes,
+} from "react";
 
 // Define the props for the Input component
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -84,3 +88,4 @@ const Input: ForwardRefRenderFunction<HTMLInputElement, InputProps> = (
 const FormInput = React.forwardRef(Input);
 
 export default FormInput;
+
