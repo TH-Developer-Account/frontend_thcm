@@ -1,83 +1,178 @@
-import { useState } from "react";
-import { Button } from "../common/formElements/Button";
-import FormInput from "../common/formElements/FormInput";
+import { useState,useMemo } from "react";
+import { Button } from "../../../components/common/Button";
+import { PasswordPolicy } from "../../../components/FormElements/PasswordPolicy";
+import PasswordInput from "../../../components/FormElements/PasswordInput";
 
+interface Errors {
+  password?: string;
+  confirmPassword?: string;
+  general?: string;
+}
+
+type ChangePasswordPayload = {
+  oldPassword: string;
+  newPassword: string;
+};
 
 export const ResetPasswordForm = () => {
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    if (name === "oldPassword") {
-      setOldPassword(value);
-    } else if (name === "newPassword") {
-      setNewPassword(value);
-    } else if (name === "confirmPassword") {
-      setConfirmPassword(value);
+  const [state, setState] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+    errors: {} as Errors,
+    loading: false,
+    showFocus : false
+  });
+
+  const { oldPassword, newPassword, confirmPassword, errors, loading,  showFocus } = state;
+  // ✅ Password policy validation
+  const isValid = useMemo(
+    () => PasswordPolicy.every((rule) => rule.test(newPassword)),
+    [newPassword]
+  );
+
+  const validate = (): boolean => {
+    const newErrors: Errors = {};
+
+    if (!newPassword) {
+      newErrors.password = "Password is required";
+    } else if (!isValid) {
+      newErrors.password = "Password does not meet policy requirements";
     }
-    console.log(name, value);
+
+    if (!confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (confirmPassword !== newPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+
+    setState((prev) => ({ ...prev, errors: newErrors }));
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    const resetPasswordData = { oldPassword, newPassword, confirmPassword };
-       await fetch("/api/reset-password", {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const { name, value } = e.target;
+
+      setState((prev) => ({
+        ...prev,
+        [name]: value,
+        errors: { ...prev.errors, [name]: undefined },
+      }));
+    };
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+  
+      if (!validate()) return;
+  
+      setState((prev) => ({ ...prev, loading: true }));
+  
+      try {
+        const payload: ChangePasswordPayload = {
+          oldPassword,
+          newPassword,
+        };
+  
+        const response = await fetch("/api/reset-password", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(resetPasswordData),
-        })
-          .then((response) => response.json())
-          .then((data) => {
-            console.log("Success:", data);
-            // Handle successful login 
-          })
-          .catch((error) => {
-            console.error("Error:", error);
-            // Handle login error
-          }); 
-    setOldPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-  }
-  return (
-        <form className="space-y-4">
-          <FormInput
-            name="oldPassword"
-            label="Old Password"
-            placeholder="Enter your old password"
-            type="password"
-            value={oldPassword}
-            onChange={handleChange}
-          />
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+  
+        if (!response.ok) {
+          throw new Error("Failed to change password");
+        }
+        console.log("Password updated successfully");
+        setState({
+          oldPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+          errors: {},
+          loading: false,
+          showFocus: false});
+      } catch (err) {
+        setState((prev) => ({
+          ...prev,
+          loading: false,
+          errors: { general: "Something went wrong. Please try again." },
+        }));
+      }
+    };
+    
+  return  (
+    <form className="space-y-4" onSubmit={handleSubmit}>
+    {/* Old Password */}
+    <div className="relative">
+      <PasswordInput
+        name="oldPassword"
+        label="Old Password"
+        placeholder="Enter your old password"
+        value={oldPassword}
+        onChange={handleChange}
+        error={errors.password}
+        required
+        className={
+          isValid
+            ? "border-green-500 focus:ring-green-500 pr-10"
+            : ""
+        }
+      />
+      </div>
+      {/* New Password */}
+      <div className="relative">
+        <PasswordInput
+          label="New Password"
+          name="newPassword"
+          placeholder="Enter your new password"
+          value={newPassword}
+          onChange={handleChange}
+          error={errors.password}
+          onFocus={showFocus ? undefined : () => setState((prev) => ({...prev, showFocus: true}))}
+          required
+          className={
+            isValid
+              ? "border-green-500 focus:ring-green-500 pr-10"
+              : ""
+          }
+      />
+      </div>
+      {showFocus && !isValid &&
+        <>
+          {/* Password rules */}
+          <ul className="mt-2 space-y-1 text-xs grid grid-cols-1 md:grid-cols-2 transition-colors duration-200 ease-in-out">
+            {PasswordPolicy.map((rule, index) => (
+              <li
+                key={index}
+            className={`flex items-center gap-2 ${
+              rule.test(newPassword) ? "text-green-600" : "text-gray-500"
+            }`}
+          >
+            <span>{rule.test(newPassword) ? "✔" : "•"}</span>
+            {rule.label}
+          </li>
+        ))}
+      </ul>
+      </>
+      }
 
-          <FormInput
-            name="newPassword"
-            label="New Password"
-            placeholder="Enter your new password"
-            type="password"
-            value={newPassword}
-            onChange={handleChange}
-          />
-
-          <FormInput
-            name="confirmPassword"
-            label="Confirm New Password"
-            placeholder="Confirm your new password"
-            type="password"
-            value={confirmPassword}
-            onChange={handleChange}
-          />
-          <div className="flex justify-end">
-            <a href="#" className="text-sm text-blue-600 hover:underline">
-              Forgot password?
-            </a>
-          </div>
-
-          <Button text="Sign In" onClick={handleSubmit} />
-        </form>
+      <PasswordInput
+        name="confirmPassword"
+        label="Confirm New Password"
+        placeholder="Confirm your new password"
+        value={confirmPassword}
+        onChange={handleChange}
+        error={errors.confirmPassword}
+        required
+      />
+      {errors.general && (
+        <p className="text-sm text-red-600 text-left">{errors.general}</p>
+      )}
+      <Button
+        text={loading ? "Saving..." : "Change Password"}
+        className="mt-4"
+        type="submit"
+        disabled={loading || !isValid}
+      />
+    </form>
   );
 };
