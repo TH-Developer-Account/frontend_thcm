@@ -18,32 +18,60 @@ const Avatar: React.FC<AvatarProps> = ({
   size = "md",
 }) => {
   const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+  const fullName = `${firstName} ${lastName}`.trim();
 
   return (
-    <div
-      className={`
-        ${sizeClasses[size]}
-        rounded-full
-        bg-white
-        text-orange-500
-        flex items-center justify-center
-        font-semibold
-        overflow-hidden
-        select-none
-      `}
-    >
-      {imageUrl ? (
-        <img
-          src={imageUrl}
-          alt={`${firstName} ${lastName}`}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.display = "none";
-          }}
-        />
-      ) : (
-        <span>{initials}</span>
-      )}
+    <div className="relative inline-flex group">
+      {/* Avatar */}
+      <div
+        tabIndex={0}
+        className={`
+          ${sizeClasses[size]}
+          rounded-full
+          bg-white
+          text-orange-500
+          flex items-center justify-center
+          font-semibold
+          overflow-hidden
+          select-none
+          border border-orange-200
+          cursor-default
+        `}
+        aria-label={fullName}
+      >
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={fullName}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+            }}
+          />
+        ) : (
+          <span>{initials}</span>
+        )}
+      </div>
+
+      {/* Tooltip */}
+      <div
+        className="
+          absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+          whitespace-nowrap
+          rounded-md bg-gray-900 text-white text-xs
+          px-2 py-1 shadow-lg
+          opacity-0 scale-95
+          pointer-events-none
+          transition-all duration-150
+          group-hover:opacity-100
+          group-hover:scale-100
+          group-focus-within:opacity-100
+          group-focus-within:scale-100
+          z-50
+        "
+      >
+        {fullName}
+      </div>
     </div>
   );
 };
