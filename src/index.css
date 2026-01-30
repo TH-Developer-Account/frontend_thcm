@@ -75,7 +75,7 @@ button:focus-visible {
  color: #f35a00;
   }
 }
-input{
-  border-color: #F3F4F6;
+input[::placeholder]{
+  font-size: 1em;
 }
 
