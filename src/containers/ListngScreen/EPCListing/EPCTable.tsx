@@ -8,7 +8,7 @@ import {
 } from "@tanstack/react-table";
 import React, { useState } from "react";
 import { columns } from "./columns";
-import { useEPC } from "../context/EPCcontext";
+import { useEPC } from "../context/useEPC";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import type { EPCRow } from "../types";
 

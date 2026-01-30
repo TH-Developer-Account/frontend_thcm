@@ -1,6 +1,6 @@
 import AppLayout from "../layouts/Applayout";
 import EPCTable from "./EPCTable";
-import { EPFProvider } from "../context/EPCcontext";
+import { EPFProvider } from "../context/EPCprovider";
 
 export default function EPCList() {
   return (

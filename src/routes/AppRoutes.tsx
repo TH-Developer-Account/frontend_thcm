@@ -1,7 +1,7 @@
 // src/routes/AppRoutes.jsx
 import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
-import Dashboard from "../containers/HomeScreen/index";
+import HomeScreen from "../containers/HomeScreen/index";
 import EPCList from "../containers/ListngScreen/EPCListing/index";
 import LoginPage from "../containers/Login/pages/LoginPage";
 import { ResetPasswordPage } from "../containers/Login/pages/ResestPasswordPage";
@@ -15,11 +15,18 @@ export default function AppRoutes() {
         path="/"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <HomeScreen />
           </ProtectedRoute>
         }
       />
-      <Route path="/listing" element={<EPCList />} />
+      <Route
+        path="/listing"
+        element={
+          <ProtectedRoute>
+            <EPCList />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 }

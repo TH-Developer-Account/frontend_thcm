@@ -1,7 +1,7 @@
 import { useState } from "react";
-import axios from "axios";
+import ServerAxios from "../../../services/ServerAxios";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../../context/useAuth";
 import { Button } from "../../../components/common/Button";
 import FormInput from "../../../components/FormElements/FormInput";
 import { EMAIL_REGEX } from "../../Login/constant";
@@ -41,7 +41,7 @@ export const EmailLoginForm = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post("/api/login", formData);
+      const response = await ServerAxios.post("/auth/login", formData);
 
       console.log("Success:", response.data);
       // TODO: save token + navigate
