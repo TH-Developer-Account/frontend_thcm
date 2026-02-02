@@ -1,5 +1,5 @@
 import React, { useState, useMemo, type FC } from "react";
-import { PasswordPolicy } from "./PasswordPolicy";
+import { PasswordPolicy } from "../../containers/Login/constant";
 import { CiCircleCheck } from "react-icons/ci";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
@@ -35,7 +35,7 @@ const PasswordInput: FC<PasswordInputProps> = ({
   );
 
   return (
-    <div className="mb-4">
+    <div className="mb-2">
     <label
         htmlFor={name}
         className="block text-left text-sm font-medium text-black"
@@ -57,9 +57,9 @@ const PasswordInput: FC<PasswordInputProps> = ({
         required={required}
         aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}
-        className={`  placeholder-gray-400 placeholder:text-sm"
-            w-full px-4 py-2 rounded-lg font-light text-black
-            bg-[#F3F4F6] focus:outline-none focus:ring-1
+        className={`placeholder-gray-400 placeholder:text-sm py-2 mt-1 font-light text-black
+          w-full rounded-lg border px-3 py-2 text-sm outline-none transition
+          bg-[#F3F4F6] focus:outline-none focus:ring-1
             ${error
             ? "border border-red-500 focus:ring-red-500"
             : "border border-[#dad6d6] focus:ring-[#f35a00]"}

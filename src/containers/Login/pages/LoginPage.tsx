@@ -1,7 +1,7 @@
 import { AuthLayout } from "../../../layout/AuthLayout";
 import { useState } from "react";
-import { EmailLoginForm } from "../authforms/EmailLoginForm";
-import { MobileLoginForm } from "../authforms/MobileLoginForm";
+import  EmailLoginForm  from "../authforms/EmailLoginForm";
+import MobileLoginForm from "../authforms/MobileLoginForm";
 
 type Tab = "email" | "mobile";
 
@@ -53,7 +53,7 @@ const LoginPage = () => {
       {activeTab === "mobile" && <MobileLoginForm />}
 
       {/* Sign Up Link */}
-      <p className="text-sm text-gray-500 text-center mt-6">
+      <p className="text-sm text-gray-500 text-center mt-2">
         Don’t have an account?{" "}
         <a href="#" className="text-blue-600 hover:underline">
           Sign up

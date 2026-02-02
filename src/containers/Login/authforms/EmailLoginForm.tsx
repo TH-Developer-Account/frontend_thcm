@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
-import { Button } from "../../../components/common/Button";
+import Button from "../../../components/common/Button";
 import FormInput from "../../../components/FormElements/FormInput";
 import { EMAIL_REGEX } from "../../Login/constant";
 
@@ -11,7 +11,7 @@ type Errors = {
   password?: string;
 };
 
-export const EmailLoginForm = () => {
+ const EmailLoginForm = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -106,7 +106,7 @@ export const EmailLoginForm = () => {
       />
 
       <div className="flex justify-end">
-        <a href="#" className="text-sm text-blue-600 hover:underline">
+        <a href="/forgot-password" className="text-sm text-blue-600 hover:underline">
           Forgot password?
         </a>
       </div>
@@ -115,3 +115,4 @@ export const EmailLoginForm = () => {
     </form>
   );
 };
+export default EmailLoginForm;

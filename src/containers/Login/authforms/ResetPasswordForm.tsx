@@ -1,6 +1,6 @@
 import { useState,useMemo } from "react";
-import { Button } from "../../../components/common/Button";
-import { PasswordPolicy } from "../../../components/FormElements/PasswordPolicy";
+import Button from "../../../components/common/Button";
+import { PasswordPolicy } from "../constant";
 import PasswordInput from "../../../components/FormElements/PasswordInput";
 
 interface Errors {
@@ -14,7 +14,7 @@ type ChangePasswordPayload = {
   newPassword: string;
 };
 
-export const ResetPasswordForm = () => {
+ const ResetPasswordForm = () => {
   const [state, setState] = useState({
     oldPassword: "",
     newPassword: "",
@@ -101,6 +101,19 @@ export const ResetPasswordForm = () => {
     
   return  (
     <form className="space-y-4" onSubmit={handleSubmit}>
+      
+        <div className="form-head mb-4">
+        {/* Logo */}
+        <div className="logos flex justify-center items-center mb-4">
+          <img
+            src="src\assets\resetpwd.png"
+            alt="logo"
+            className="text-center w-[100px]"
+          />
+        </div>
+        <h2 className=" text-xl md:text-xl font-semibold tracking-tight text-gray-900">Reset your Password?</h2>
+        <p className="">Please enter your password</p>
+        </div>
     {/* Old Password */}
     <div className="relative">
       <PasswordInput
@@ -176,3 +189,4 @@ export const ResetPasswordForm = () => {
     </form>
   );
 };
+export default ResetPasswordForm;

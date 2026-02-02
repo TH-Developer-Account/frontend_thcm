@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
-import ServerAxios from "../../../services/Serveraxios";
-import { Button } from "../../../components/common/Button";
+import ServerAxios from "../../../services/ServerAxios";
+import Button from "../../../components/common/Button";
 import FormInput from "../../../components/FormElements/FormInput";
 import OtpInput from "../../../components/FormElements/OtpInput";
 import { MOBILE_REGEX } from "../../Login/constant";
 
 type MobileStep = "enterMobile" | "verifyOtp";
 
-export const MobileLoginForm = () => {
+ const MobileLoginForm = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [mobileStep, setMobileStep] = useState<MobileStep>("enterMobile");
@@ -131,3 +131,4 @@ export const MobileLoginForm = () => {
     </>
   );
 };
+export default MobileLoginForm;

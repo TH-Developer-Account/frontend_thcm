@@ -58,6 +58,23 @@ h1 {
   line-height: 1.1;
 }
 
+.form-head{
+
+  h2{
+    font-size: 1.5rem;
+  }
+  p{
+    font-size: 0.8rem;
+    color: lightgray;
+    margin: 0;
+    font-family: sans-serif;
+  }
+} 
+h1,h2,h3{
+  font-family: sans-serif !important;
+}
+
+
 button:hover {
   border-color: #f35a00;
 }
