@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-body{
-  background-color:#F3F4F6;
+body {
+  background-color: #f3f4f6;
   font-family: "Quicksand";
   margin: 0;
   padding: 0;
@@ -31,7 +31,7 @@ body{
 #root {
   max-width: 1300px;
   margin: 0 auto;
-  padding: 2rem;
+  /* padding: 2rem; */
   text-align: center;
   width: 100%;
 }
@@ -51,7 +51,6 @@ a {
 a:hover {
   color: #f35a00;
 }
-
 
 h1 {
   font-size: 3.2em;
@@ -89,10 +88,13 @@ button:focus-visible {
     background-color: #ffffff;
   }
   a:hover {
- color: #f35a00;
+    color: #f35a00;
   }
 }
-input[::placeholder]{
-  font-size: 1em;
+input {
+  border-color: #f3f4f6;
 }
 
+/* input[::placeholder] {
+  font-size: 1em;
+} */
