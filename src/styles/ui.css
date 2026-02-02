@@ -143,3 +143,10 @@ body {
   padding: 0 var(--space-4);
   margin: 0 auto;
 }
+
+h1,h2,h3{
+  font-family: sans-serif !important;
+}
+form h2{
+  font-size: 1.5rem;
+}
