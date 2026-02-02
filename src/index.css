@@ -64,7 +64,7 @@ h1 {
   }
   p{
     font-size: 0.8rem;
-    color: lightgray;
+    color: #6b7280;
     margin: 0;
     font-family: sans-serif;
   }
@@ -72,7 +72,6 @@ h1 {
 h1,h2,h3{
   font-family: sans-serif !important;
 }
-
 
 button:hover {
   border-color: #f35a00;
@@ -92,9 +91,40 @@ button:focus-visible {
   }
 }
 input {
-  border-color: #f3f4f6;
+  border-color:#d1d5db;
 }
 
-/* input[::placeholder] {
-  font-size: 1em;
-} */
+
+/* Mobile (default styles apply here) */
+@media (max-width: 480px) {
+  /* styles for small mobile devices */
+  .authStyles{
+    background-color: #ffffff;
+    transition: 1s;
+  }
+  .authformStyles{
+    border: none;
+    box-shadow: none;
+
+  }
+}
+
+/* Mobile */
+@media (min-width: 427px) and (max-width: 640px) {
+  /* styles for tablets */
+}
+
+/* Tablets */
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* styles for tablets */
+}
+
+/* Small laptops */
+@media (min-width: 1025px) and (max-width: 1280px) {
+  /* styles for small laptops */
+}
+
+/* Desktops */
+@media (min-width: 1281px) and (max-width: 1536px) {
+  /* styles for desktops */
+}

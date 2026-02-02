@@ -7,7 +7,8 @@ export const api_routes = {
     "forgot_password_api_route": "/api/forgot-password",
     "reset_password_api_route": "/api/reset-password",
     "register_api_route": "/api/register",
-    "verify_email_api_route": "/api/verify-email"
+    "verify_email_api_route": "/api/verify-email",
+    "verify_otp_api_route" : "/api/verify-otp"
 }
 
 // passwordPolicy.ts
