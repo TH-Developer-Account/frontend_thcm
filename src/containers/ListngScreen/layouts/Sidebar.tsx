@@ -1,4 +1,5 @@
-import { LayoutDashboard, Calendar, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { LayoutDashboard, Calendar, X, ArrowLeft } from "lucide-react";
 import type { ComponentType } from "react";
 
 type NavItem = {
@@ -19,6 +20,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, active }) => {
+  const navigate = useNavigate();
   return (
     <>
       {/* Mobile overlay */}
@@ -38,18 +40,22 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, active }) => {
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        <div className="p-4 font-bold text-lg border-b border-orange-400 flex items-center justify-between">
-          TATA HITACHI
-          {/* Close button only on mobile */}
-          <button
-            className="md:hidden"
-            onClick={onClose}
-            aria-label="Close menu"
-          >
-            <X size={20} />
+        <div className="p-4 font-bold text-lg flex items-center gap-3">
+          <button onClick={() => navigate("/")}>
+            <ArrowLeft size={20} />
           </button>
+          <div className="p-4 font-bold text-lg flex items-center justify-between">
+            TATA HITACHI
+            {/* Close button only on mobile */}
+            <button
+              className="md:hidden"
+              onClick={onClose}
+              aria-label="Close menu"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
-
         <nav className="flex-1 p-3 space-y-2">
           {nav.map(({ label, icon: Icon, path }) => {
             const isActive = active === path;

@@ -1,7 +1,6 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../context/AuthContext";
+import { useAuth } from "../../../context/useAuth";
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/FormElements/FormInput";
 import { EMAIL_REGEX } from "../../Login/constant";
@@ -11,7 +10,7 @@ type Errors = {
   password?: string;
 };
 
- const EmailLoginForm = () => {
+const EmailLoginForm = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -41,11 +40,7 @@ type Errors = {
     e.preventDefault();
     setLoading(true);
     try {
-      const response = await axios.post("/api/login", formData);
-
-      console.log("Success:", response.data);
-      // TODO: save token + navigate
-      login(response.data.user, response.data.accessToken);
+      login(formData.email, formData.password);
       navigate("/");
     } catch (error: unknown) {
       console.error("Login error:", error);
@@ -106,7 +101,10 @@ type Errors = {
       />
 
       <div className="flex justify-end">
-        <a href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+        <a
+          href="/forgot-password"
+          className="text-sm text-blue-600 hover:underline"
+        >
           Forgot password?
         </a>
       </div>
