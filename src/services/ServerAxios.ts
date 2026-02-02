@@ -61,7 +61,7 @@ ServerAxios.interceptors.response.use(
         );
 
         const newAccessToken = data.accessToken;
-        localStorage.setItem("accessToken", newAccessToken);
+        localStorage.setItem("authToken", newAccessToken);
 
         isRefreshing = false;
         onRefreshed(newAccessToken);
@@ -75,7 +75,7 @@ ServerAxios.interceptors.response.use(
         refreshSubscribers = [];
 
         // Clear tokens and redirect to login
-        localStorage.removeItem("accessToken");
+        localStorage.removeItem("authToken");
         window.location.href = "/login";
 
         return Promise.reject(refreshError);
@@ -84,7 +84,7 @@ ServerAxios.interceptors.response.use(
 
     // Handle 403 (revoked/stolen token) - logout immediately
     if (error.response?.status === 403) {
-      localStorage.removeItem("accessToken");
+      localStorage.removeItem("authToken");
       window.location.href = "/login";
     }
 

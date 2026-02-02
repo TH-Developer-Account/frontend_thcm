@@ -10,6 +10,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
   if (isLoading) return <div>Loading...</div>;
   // if no user => redirect to login
+  console.log({ user });
   if (!user) {
     return <Navigate to="/login" replace />;
   }

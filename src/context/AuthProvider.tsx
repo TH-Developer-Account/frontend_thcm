@@ -15,15 +15,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Check if user is logged in on mount
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem("accessToken");
+      const token = localStorage.getItem("authToken");
       if (token) {
         try {
           // Try to fetch current user with existing token
-          const { data } = await ServerAxios.get("/auth/me"); // You'll need this endpoint
+          const { data } = await ServerAxios.get("/users/me"); // You'll need this endpoint
           setUser(data.user);
         } catch (error) {
           // Token invalid, will trigger refresh or logout
-          localStorage.removeItem("accessToken");
+          localStorage.removeItem("authToken");
           console.log("ERROR====>", error);
         }
       }
@@ -35,7 +35,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async (email: string, password: string) => {
     const { data } = await ServerAxios.post("/auth/login", { email, password });
-    localStorage.setItem("accessToken", data.accessToken);
+    console.log({ data });
+    localStorage.setItem("authToken", data.accessToken);
     setUser(data.user);
   };
 
@@ -45,7 +46,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.error("Logout error", error);
     } finally {
-      localStorage.removeItem("accessToken");
+      localStorage.removeItem("authToken");
       setUser(null);
       window.location.href = "/login";
     }
