@@ -7,11 +7,10 @@ type ProtectedRouteProps = {
 };
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { token } = useAuth();
-  console.log({ token });
-
-  // if no token => redirect to login
-  if (!token) {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <div>Loading...</div>;
+  // if no user => redirect to login
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
