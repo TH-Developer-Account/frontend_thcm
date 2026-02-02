@@ -4,7 +4,7 @@ import Avatar from "../../components/common/Avatar";
 
 function Header() {
   return (
-    <header className="bg-orange-500 px-4 sm:px-8 py-3 flex items-center justify-between text-white">
+    <header className="header px-4 sm:px-8 py-3 flex items-center justify-between text-white">
       <span className="text-base sm:text-xl font-bold tracking-wide">
         TATA HITACHI
       </span>
