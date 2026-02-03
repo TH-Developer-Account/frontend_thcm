@@ -4,7 +4,7 @@ export const MOBILE_REGEX = /^[6-9]\d{9}$/;
 export const api_routes = {
   login_api_route: "/api/login",
   forgot_password_api_route: "/auth/forgot-password",
-  reset_password_api_route: "/api/reset-password",
+  reset_password_api_route: "/auth/reset-password",
   register_api_route: "/api/register",
   verify_email_api_route: "/api/verify-email",
 };
