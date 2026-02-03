@@ -124,11 +124,6 @@ type ChangePasswordPayload = {
         onChange={handleChange}
         error={errors.password}
         required
-        className={
-          isValid
-            ? "border-green-500 focus:ring-green-500 pr-10"
-            : ""
-        }
       />
       </div>
       {/* New Password */}
@@ -142,11 +137,6 @@ type ChangePasswordPayload = {
           error={errors.password}
           onFocus={showFocus ? undefined : () => setState((prev) => ({...prev, showFocus: true}))}
           required
-          className={
-            isValid
-              ? "border-green-500 focus:ring-green-500 pr-10"
-              : ""
-          }
       />
       </div>
       {showFocus && !isValid &&
@@ -182,7 +172,7 @@ type ChangePasswordPayload = {
       )}
       <Button
         text={loading ? "Saving..." : "Change Password"}
-        className="mt-4"
+        className=""
         type="submit"
         disabled={loading || !isValid}
       />

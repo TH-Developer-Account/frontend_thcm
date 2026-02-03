@@ -32,15 +32,15 @@ const Input: ForwardRefRenderFunction<HTMLInputElement, InputProps> = (
   ref,
 ) => {
   return (
-    <div className="mb-4 relative">
+    <div className="relative sm:col-span-3 mb-4">
       <label
         htmlFor={name}
-        className="block text-left text-sm font-medium text-black"
+        className="text-left block text-sm/6 font-medium text-gray-900"
       >
         {label}
         {required && <span className="text-red-500"> *</span>}
       </label>
-
+      <div className="mt-2">
       <input
         id={name}
         ref={ref}
@@ -50,21 +50,20 @@ const Input: ForwardRefRenderFunction<HTMLInputElement, InputProps> = (
         disabled={disabled}
         aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}
-        className={`  placeholder-gray-400 placeholder:text-sm py-2 mt-2 font-light text-black
-          w-full rounded-lg border px-3 py-2 text-sm outline-none transition
-          bg-[#F3F4F6] focus:outline-none focus:ring-1
+        className={`block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 sm:text-sm/6
            ${
              error
-               ? "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500"
-               : "border-[#F3F4F6] focus:ring-[#f35a00] focus:ring-2"
+               ? "focus:outline-red-500 outline-red-500 focus:ring-red-500"
+               : "focus:outline-gray-400"
            }
           ${disabled ? "opacity-60 cursor-not-allowed" : ""}
           ${className}
         `}
         {...otherProps}
       />
+      </div>
       {error && (
-        <ExclamationCircleIcon className="absolute right-3 top-9 h-5 w-5 text-red-500" />
+        <ExclamationCircleIcon className="absolute right-3 top-10 h-5 w-5 text-red-500" />
       )}
       {/* Error message */}
       {error && (
