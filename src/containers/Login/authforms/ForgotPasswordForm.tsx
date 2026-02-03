@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import ServerAxios from "../../../services/ServerAxios";
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/FormElements/FormInput";
 import { EMAIL_REGEX } from "../constant";
@@ -9,12 +9,12 @@ type Errors = {
   email?: string;
 };
 
- const ForgotPasswordForm = () => {
+const ForgotPasswordForm = () => {
   const [state, setState] = useState({
     email: "",
     loading: false,
     errors: {} as Errors,
-    showSendMailStatus: false
+    showSendMailStatus: false,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,11 +33,15 @@ type Errors = {
     e.preventDefault();
     setState((prev) => ({ ...prev, loading: true }));
     try {
-        // API Route is defined in constant.ts
-      const response = await axios.post(api_routes.forgot_password_api_route, { email: state.email });
-      setState(prev => ({...prev,showSendMailStatus: true}));
+      // API Route is defined in constant.ts
+      const response = await ServerAxios.post(
+        api_routes.forgot_password_api_route,
+        {
+          email: state.email,
+        },
+      );
+      setState((prev) => ({ ...prev, showSendMailStatus: true }));
       console.log("Success:", response.data);
-      // TODO: save token + navigate
     } catch (error: unknown) {
       console.error(" error:", error);
     } finally {
@@ -47,10 +51,10 @@ type Errors = {
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-  
+
     setState((prev) => {
       const newErrors = { ...prev.errors };
-  
+
       if (name === "email") {
         if (!value) {
           newErrors.email = "Please fill in the email field";
@@ -60,62 +64,71 @@ type Errors = {
           delete newErrors.email;
         }
       }
-  
+
       return {
         ...prev,
         errors: newErrors,
       };
     });
   };
-  
 
   return (
     <>
-    {!state.showSendMailStatus ?
-      <form className="space-y-4">
-        <div className="form-head mb-4">
-        {/* Logo */}
-        <div className="logos flex justify-center items-center mb-4">
-          <img
-            src="src\assets\sendlink.png"
-            alt="logo"
-            className="text-center w-[100px]"
+      {!state.showSendMailStatus ? (
+        <form className="space-y-4">
+          <div className="form-head mb-4">
+            {/* Logo */}
+            <div className="logos flex justify-center items-center mb-4">
+              <img
+                src="src\assets\sendlink.png"
+                alt="logo"
+                className="text-center w-[100px]"
+              />
+            </div>
+            <h2 className=" text-xl md:text-xl font-semibold tracking-tight text-gray-900">
+              Forgot your Password?
+            </h2>
+            <p className="">Please enter your email</p>
+          </div>
+          <FormInput
+            name="email"
+            label="Email"
+            placeholder="john@mail.com"
+            value={state.email}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            error={state.errors?.email}
           />
-        </div>
-        <h2 className=" text-xl md:text-xl font-semibold tracking-tight text-gray-900">Forgot your Password?</h2>
-        <p className="">Please enter your email</p>
-        </div>
-        <FormInput
-          name="email"
-          label="Email"
-          placeholder="john@mail.com"
-          value={state.email}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          error={state.errors?.email}
-        />
-        
-        <Button text="Send Reset Link" onClick={handleSubmit} disabled={state.loading} />
-      </form>
-      :   
-      <form className="space-y-4">
-        <div className="form-head mb-4">
-        {/* Logo */}
-        <div className="logos flex justify-center items-center mb-4">
-          <img
-            src="src\assets\mailsent.png"
-            alt="logo"
-            className="text-center w-[120px]"
+
+          <Button
+            text="Send Reset Link"
+            onClick={handleSubmit}
+            disabled={state.loading}
           />
-        </div>
-        <h2 className=" text-xl md:text-xl font-semibold tracking-tight text-gray-900">Check your Email</h2>
-        <p className="">A link has been sent to your email, please check.</p>
-        <a href="/login">
-          <Button text="Back to login" className="mt-6" />
-        </a>
-        </div>
-      </form>
-  }
+        </form>
+      ) : (
+        <form className="space-y-4">
+          <div className="form-head mb-4">
+            {/* Logo */}
+            <div className="logos flex justify-center items-center mb-4">
+              <img
+                src="src\assets\mailsent.png"
+                alt="logo"
+                className="text-center w-[120px]"
+              />
+            </div>
+            <h2 className=" text-xl md:text-xl font-semibold tracking-tight text-gray-900">
+              Check your Email
+            </h2>
+            <p className="">
+              A link has been sent to your email, please check.
+            </p>
+            <a href="/login">
+              <Button text="Back to login" className="mt-6" />
+            </a>
+          </div>
+        </form>
+      )}
     </>
   );
 };

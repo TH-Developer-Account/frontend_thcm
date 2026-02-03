@@ -36,8 +36,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const login = async (email: string, password: string) => {
     const { data } = await ServerAxios.post("/auth/login", { email, password });
     console.log({ data });
+    // ✅ Check if password reset is required
+    if (data.requiresPasswordReset) {
+      setUser(data.user);
+      return { requiresPasswordReset: true };
+    }
     localStorage.setItem("authToken", data.accessToken);
     setUser(data.user);
+    return { requiresPasswordReset: false };
+  };
+
+  const resetPassword = async (
+    currentPassword: string,
+    newPassword: string,
+  ) => {
+    try {
+      await ServerAxios.post("/auth/reset-password", {
+        email: user?.email,
+        currentPassword,
+        newPassword,
+      });
+    } catch (err) {
+      console.log("Error while resetting password=====>", err);
+    }
   };
 
   const logout = async () => {
@@ -53,7 +74,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, isLoading, resetPassword }}
+    >
       {children}
     </AuthContext.Provider>
   );
