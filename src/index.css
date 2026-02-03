@@ -1,21 +1,9 @@
 @import "tailwindcss";
 
-body {
-  background-color: #f3f4f6;
-  font-family: "Quicksand";
-  margin: 0;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-  max-width: 1300px;
-  width: 100%;
-  height: 100%;
-}
 :root {
+  /* Primary Brand */
+  --color-brand-primary: #f35a00;
+
   font-family: "Quicksand";
   line-height: 1.5;
   font-weight: 400;
@@ -28,73 +16,57 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-#root {
-  max-width: 1300px;
-  margin: 0 auto;
-  /* padding: 2rem; */
-  text-align: center;
+
+body {
+  background-color: #f3f4f6;
+  font-family: "Quicksand";
+  margin: 0;
+  padding: 0;
+}
+.container{
+  min-height: 100vh;
   width: 100%;
+  height: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  text-align: center;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-
-a {
-  font-weight: 600;
-  color: #f35a00;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #f35a00;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-.form-head{
-
-  h2{
-    font-size: 1.5rem;
-  }
-  p{
-    font-size: 0.8rem;
-    color: lightgray;
-    margin: 0;
-    font-family: sans-serif;
-  }
-} 
-h1,h2,h3{
-  font-family: sans-serif !important;
-}
-
-
-button:hover {
-  border-color: #f35a00;
-}
-button:focus,
-button:focus-visible {
-  outline: none;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
+/* Mobile (default styles apply here) */
+@media (max-width: 480px) {
+  /* styles for small mobile devices */
+  .authStyles{
     background-color: #ffffff;
+    transition: 1s;
   }
-  a:hover {
-    color: #f35a00;
+  .authformStyles{
+    border: none;
+    box-shadow: none;
+
   }
-}
-input {
-  border-color: #f3f4f6;
 }
 
-/* input[::placeholder] {
-  font-size: 1em;
-} */
+/* Mobile */
+@media (min-width: 427px) and (max-width: 640px) {
+  /* styles for tablets */
+}
+
+/* Tablets */
+@media (min-width: 641px) and (max-width: 1024px) {
+  /* styles for tablets */
+}
+
+/* Small laptops */
+@media (min-width: 1025px) and (max-width: 1280px) {
+  /* styles for small laptops */
+}
+
+/* Desktops */
+@media (min-width: 1281px) and (max-width: 1536px) {
+  /* styles for desktops */
+}
+
+.header{
+  background-color: var(--color-brand-primary);
+
+}
