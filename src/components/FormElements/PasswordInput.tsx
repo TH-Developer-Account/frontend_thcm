@@ -1,6 +1,5 @@
 import React, { useState, useMemo, type FC } from "react";
 import { PasswordPolicy } from "../../containers/Login/constant";
-import { CiCircleCheck } from "react-icons/ci";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
 interface PasswordInputProps {
@@ -35,10 +34,10 @@ const PasswordInput: FC<PasswordInputProps> = ({
   );
 
   return (
-    <div className="mb-2">
+    <div className="mb-2 sm:col-span-3 mb-4">
     <label
         htmlFor={name}
-        className="block text-left text-sm font-medium text-black"
+        className="text-left block text-sm/6 font-medium text-gray-900"
     >
         {label}
         {required && <span className="text-red-500"> *</span>}
@@ -57,26 +56,25 @@ const PasswordInput: FC<PasswordInputProps> = ({
         required={required}
         aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}
-        className={`placeholder-gray-400 placeholder:text-sm py-2 mt-1 font-light text-black
-          w-full rounded-lg border px-3 py-2 text-sm outline-none transition
-          bg-[#F3F4F6] focus:outline-none focus:ring-1
-            ${error
-            ? "border border-red-500 focus:ring-red-500"
-            : "border border-[#dad6d6] focus:ring-[#f35a00]"}
-            ${isValid ? "border-green-500 focus:ring-green-500" : ""}
+        className={`block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
+          outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 
+          focus:-outline-offset-2 sm:text-sm/6
+          ${
+            error
+              ? "focus:outline-red-500 outline-red-500 focus:ring-red-500"
+              : "focus:outline-gray-400"
+          }
+          ${isValid && !error && (
+            "outline-green-300" 
+          )}
             ${className}
         `}
         />
-
-        {/* Green tick */}
-        {isValid && !error && (
-        <CiCircleCheck className="w-5 h-5 text-green-500 absolute right-10 top-1/2 -translate-y-1/2" />
-        )}
         {/* Show/Hide toggle */}
         <button
         type="button"
         onClick={() => setShowPassword((prev) => !prev)}
-        className="ml-2 flex-shrink-0 text-gray-500 hover:text-gray-700"
+        className=" absolute ml-2 flex-shrink-0 text-gray-500 hover:text-gray-700 top-1.5 right-3"
         >
         {showPassword ? (
             <AiOutlineEyeInvisible size={24} />
@@ -84,12 +82,11 @@ const PasswordInput: FC<PasswordInputProps> = ({
             <AiOutlineEye size={24} />
         )}
         </button>
-
     </div>
 
     {/* Error message */}
     {error && (
-        <p id={`${name}-error`} className="text-left mt-1 text-xs text-red-600 text-left">
+        <p id={`${name}-error`} className="text-left mt-0 mb-0 text-xs text-red-600 text-left">
         {error}
         </p>
     )}
