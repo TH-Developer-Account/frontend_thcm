@@ -28,7 +28,7 @@ const EmailLoginForm = () => {
     }));
 
     setErrors((prev) => {
-      if (!prev[name as keyof Errors]) return prev; // nothing to clear
+      if (!prev[name as keyof Errors]) return prev;
 
       const newErrors = { ...prev };
       delete newErrors[name as keyof Errors];
