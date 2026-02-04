@@ -6,7 +6,6 @@ import EPCList from "../containers/ListngScreen/EPCListing/index";
 import LoginPage from "../containers/Login/pages/LoginPage";
 import { ResetPasswordPage } from "../containers/Login/pages/ResestPasswordPage";
 import { ForgotPasswordPage } from "../containers/Login/pages/ForgotPasswordPage";
-import { VerifyOTPPage } from "../containers/Login/pages/VerifyOTPPage";
 
 export default function AppRoutes() {
   return (
@@ -15,7 +14,6 @@ export default function AppRoutes() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-      <Route path="/verify-otp" element={<VerifyOTPPage />} />
       <Route
         path="/"
         element={
