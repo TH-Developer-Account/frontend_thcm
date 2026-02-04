@@ -3,7 +3,12 @@
 :root {
   /* Primary Brand */
   --color-brand-primary: #f35a00;
-
+  
+  /* Semantic */
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-error:   #dc2626;
+  --color-info:    #0ea5e9;
   font-family: "Quicksand";
   line-height: 1.5;
   font-weight: 400;
@@ -43,6 +48,9 @@ body {
     border: none;
     box-shadow: none;
 
+  }
+  form{
+    font-size: 0.8rem;
   }
 }
 
