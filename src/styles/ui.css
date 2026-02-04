@@ -1,0 +1,152 @@
+/* =========================================================
+   common.css
+   Global Branding & Design Variables
+   ========================================================= */
+
+/* ---------- Brand Colors ---------- */
+:root {
+  /* Primary Brand */
+  --color-primary-50:  #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-500: #6366f1;
+  --color-primary-600: #4f46e5;
+  --color-brand-primary: #f35a00;
+
+  /* Secondary Brand */
+  --color-black: #000000;
+  --color-white: #ffffff
+
+  /* Neutral / Grays */
+  --color-gray-50:  #FFFFFF;
+  --color-gray-100: #f3f4f6;
+  --color-gray-300: #d1d5db;
+  --color-gray-500: #6b7280;
+  --color-gray-700: #374151;
+  --color-gray-900: #111827;
+
+  /* Semantic */
+  --color-success: #16a34a;
+  --color-warning: #f59e0b;
+  --color-error:   #dc2626;
+  --color-info:    #0ea5e9;
+
+  /* Backgrounds */
+  --color-bg-page:   var(--color-gray-50);
+  --color-bg-surface:#ffffff;
+
+  /* Text */
+  --color-text-primary:   var(--color-gray-900);
+  --color-text-secondary: var(--color-gray-500);
+  --color-text-inverse:   #ffffff;
+}
+
+/* ---------- Typography ---------- */
+:root {
+  --font-sans: "Quicksand", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+}
+
+/* ---------- Spacing Scale ---------- */
+:root {
+  --space-0: 0;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+}
+
+/* ---------- Borders & Radius ---------- */
+:root {
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  --border-width: 1px;
+  --border-color: var(--color-gray-300);
+}
+
+/* ---------- Shadows ---------- */
+:root {
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* ---------- Base Styles ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-page);
+}
+
+body {
+  margin: 0;
+  line-height: var(--line-height-normal);
+}
+
+:root {
+    font-family: "Quicksand";
+    line-height: 1.5;
+    font-weight: 400;
+  
+    color-scheme: light dark;
+    color: rgba(255, 255, 255, 0.87);
+  
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+/* ---------- Utility Examples ---------- */
+.text-primary {
+  color: var(--color-primary-600);
+}
+
+.bg-primary {
+  background-color: var(--color-primary-600);
+  color: var(--color-text-inverse);
+}
+
+.container {
+  max-width: 1200px;
+  padding: 0 var(--space-4);
+  margin: 0 auto;
+}
+
+h1,h2,h3{
+  font-family: sans-serif !important;
+}
+form h2{
+  font-size: 1.5rem;
+}
