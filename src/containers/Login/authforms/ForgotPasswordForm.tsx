@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { ServerAxios } from "../../../services/ServerAxios";
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/FormElements/FormInput";
@@ -73,7 +73,7 @@ const ForgotPasswordForm = () => {
   };
 
   return (
-    <>
+    <React.Fragment>
       {!state.showSendMailStatus ? (
         <form className="space-y-4">
           <div className="form-head mb-4">
@@ -129,7 +129,7 @@ const ForgotPasswordForm = () => {
           </div>
         </form>
       )}
-    </>
+    </React.Fragment>
   );
 };
 export default ForgotPasswordForm;

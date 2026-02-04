@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/useAuth";
@@ -93,7 +93,7 @@ const MobileLoginForm = () => {
   };
 
   return (
-    <>
+    <React.Fragment>
       {mobileStep === "enterMobile" && (
         <form className="space-y-4">
           <FormInput
@@ -132,7 +132,7 @@ const MobileLoginForm = () => {
           </button>
         </form>
       )}
-    </>
+    </React.Fragment>
   );
 };
 export default MobileLoginForm;
