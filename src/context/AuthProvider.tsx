@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import axios from "axios";
 import { AuthContext } from "./AuthContext";
 import type { ReactNode } from "react";
 import type { User } from "./AuthContext";
-import ServerAxios from "../services/ServerAxios";
+import { ServerAxios, API_BASE_URL } from "../services/ServerAxios";
+import { api_routes } from "../containers/Login/constant";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -34,16 +36,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const { data } = await ServerAxios.post("/auth/login", { email, password });
-    console.log({ data });
-    // ✅ Check if password reset is required
-    if (data.requiresPasswordReset) {
+    try {
+      const { data } = await axios.post(
+        `${API_BASE_URL}${api_routes.login_api_route}`,
+        {
+          email,
+          password,
+        },
+      );
+      console.log({ data });
+      // ✅ Check if password reset is required
+      if (data.requiresPasswordReset) {
+        setUser(data.user);
+        return { requiresPasswordReset: true };
+      }
+      localStorage.setItem("authToken", data.accessToken);
       setUser(data.user);
-      return { requiresPasswordReset: true };
+      return { requiresPasswordReset: false };
+    } catch (error) {
+      console.log("Login error=======>", error);
+      return { requiresPasswordReset: false };
     }
-    localStorage.setItem("authToken", data.accessToken);
-    setUser(data.user);
-    return { requiresPasswordReset: false };
   };
 
   const resetPassword = async (
@@ -51,11 +64,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     newPassword: string,
   ) => {
     try {
-      await ServerAxios.post("/auth/reset-password", {
-        email: user?.email,
-        currentPassword,
-        newPassword,
-      });
+      await axios.post(
+        `${API_BASE_URL}${api_routes.reset_password_api_route}`,
+        {
+          email: user?.email,
+          currentPassword,
+          newPassword,
+        },
+      );
+      setUser(null);
     } catch (err) {
       console.log("Error while resetting password=====>", err);
     }
@@ -75,7 +92,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   return (
     <AuthContext.Provider
-      value={{ user, login, logout, isLoading, resetPassword }}
+      value={{ user, login, logout, isLoading, resetPassword, setUser }}
     >
       {children}
     </AuthContext.Provider>

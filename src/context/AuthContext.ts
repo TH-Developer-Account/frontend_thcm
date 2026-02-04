@@ -1,5 +1,6 @@
 // src/context/AuthContext.tsx
 import { createContext } from "react";
+import type { Dispatch, SetStateAction } from "react";
 
 export interface User {
   id: string;
@@ -18,6 +19,7 @@ export interface AuthContextType {
   logout: () => void;
   resetPassword: (currentPassword: string, newPassword: string) => void;
   isLoading: boolean;
+  setUser: Dispatch<SetStateAction<User | null>>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(

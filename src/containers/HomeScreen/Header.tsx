@@ -1,8 +1,11 @@
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import Avatar from "../../components/common/Avatar";
+import { useAuth } from "../../context/useAuth";
 
 function Header() {
+  const { logout } = useAuth();
+
   return (
     <header className="header px-4 sm:px-8 py-3 flex items-center justify-between text-white">
       <span className="text-base sm:text-xl font-bold tracking-wide">
@@ -40,12 +43,12 @@ function Header() {
                   </a>
                 </MenuItem>
                 <MenuItem>
-                  <a
-                    href="#"
+                  <button
+                    onClick={logout}
                     className="block px-4 py-2 text-sm text-gray-300 data-focus:bg-white/5 data-focus:text-white data-focus:outline-hidden"
                   >
                     Sign Out
-                  </a>
+                  </button>
                 </MenuItem>
               </div>
             </MenuItems>

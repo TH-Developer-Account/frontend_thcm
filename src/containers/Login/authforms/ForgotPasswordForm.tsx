@@ -1,5 +1,5 @@
 import { useState } from "react";
-import ServerAxios from "../../../services/ServerAxios";
+import { ServerAxios } from "../../../services/ServerAxios";
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/FormElements/FormInput";
 import { EMAIL_REGEX } from "../constant";

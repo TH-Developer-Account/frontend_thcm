@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import ServerAxios from "../../../services/ServerAxios";
+import { ServerAxios } from "../../../services/ServerAxios";
 import { useAuth } from "../../../context/useAuth";
 import Button from "../../../components/common/Button";
 import { PasswordPolicy } from "../constant";

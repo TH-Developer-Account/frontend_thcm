@@ -2,11 +2,13 @@ export const EMAIL_REGEX = /\S+@\S+\.\S+/;
 export const MOBILE_REGEX = /^[6-9]\d{9}$/;
 
 export const api_routes = {
-  login_api_route: "/api/login",
+  login_api_route: "/auth/login",
   forgot_password_api_route: "/auth/forgot-password",
   reset_password_api_route: "/auth/reset-password",
-  register_api_route: "/api/register",
-  verify_email_api_route: "/api/verify-email",
+  register_api_route: "/auth/register",
+  verify_email_api_route: "/auth/verify-email",
+  verify_otp: "/auth/verify-otp",
+  send_otp: "/auth/send-otp",
 };
 
 // passwordPolicy.ts
