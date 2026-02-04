@@ -1,6 +1,6 @@
 import { AuthLayout } from "../../../layout/AuthLayout";
 import { useState } from "react";
-import  EmailLoginForm  from "../authforms/EmailLoginForm";
+import EmailLoginForm from "../authforms/EmailLoginForm";
 import MobileLoginForm from "../authforms/MobileLoginForm";
 
 type Tab = "email" | "mobile";

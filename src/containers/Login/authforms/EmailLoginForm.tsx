@@ -40,8 +40,13 @@ const EmailLoginForm = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      login(formData.email, formData.password);
-      navigate("/");
+      const result = await login(formData.email, formData.password);
+      // ✅ Check if password reset is required
+      if (result.requiresPasswordReset) {
+        navigate("/reset-password");
+      } else {
+        navigate("/");
+      }
     } catch (error: unknown) {
       console.error("Login error:", error);
     } finally {

@@ -1,9 +1,9 @@
 // src/api/axios.ts
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:8000/api/v1";
+export const API_BASE_URL = "http://localhost:8000/api/v1";
 
-const ServerAxios = axios.create({
+export const ServerAxios = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // Critical for httpOnly cookies
 });
@@ -91,5 +91,3 @@ ServerAxios.interceptors.response.use(
     return Promise.reject(error);
   },
 );
-
-export default ServerAxios;
