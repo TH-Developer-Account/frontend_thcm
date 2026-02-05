@@ -5,11 +5,9 @@ interface ModalProps {
 	title?: string;
 	onClose: () => void;
 	children: React.ReactNode;
-	type: string;
 }
 
-export function Modal({ open, children, type }: ModalProps) {
-	console.log(type);
+export function Modal({ open, children }: ModalProps) {
 	if (!open) return null;
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25">
