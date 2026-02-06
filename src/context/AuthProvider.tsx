@@ -8,7 +8,6 @@ import { api_routes } from "../containers/Login/constant";
 import {
 	type ApiErrorResponse,
 	type LoginSuccessResponse,
-	// type ResetPwdSuccessResponse,
 } from "./context.types";
 
 interface AuthProviderProps {
@@ -132,11 +131,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 				description: data.message || "Successfully Logged out", // ✅ FROM API
 			});
 		} catch (error) {
-			// showToast({
-			// 	type: "error",
-			// 	title: "Error",
-			// 	description: error || "", // ✅ FROM API
-			// });
+			showToast({
+				type: "error",
+				title: "Error",
+				description: "Could not log out", // ✅ FROM API
+			});
 			console.error("Logout error", error);
 		} finally {
 			localStorage.removeItem("authToken");

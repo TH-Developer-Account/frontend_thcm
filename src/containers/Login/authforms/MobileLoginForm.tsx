@@ -126,7 +126,7 @@ const MobileLoginForm = () => {
 
 					<button
 						type="button"
-						className="text-sm text-blue-600 hover:underline text-center"
+						className="text-sm  hover:underline text-center cursor-pointer brand"
 						onClick={() => setMobileStep("enterMobile")}
 					>
 						Change mobile number

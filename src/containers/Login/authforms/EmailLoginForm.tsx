@@ -116,21 +116,6 @@ const EmailLoginForm = () => {
 				required
 				error={errors?.email}
 			/>
-
-			{/* <FormInput
-				name="password"
-				label="Password"
-				type="password"
-				value={formData.password}
-				onChange={handleChange}
-				onBlur={handleBlur}
-				error={errors?.password}
-				placeholder={
-					!formData.email && errors.password
-						? errors.password
-						: "Enter your password"
-				}
-			/> */}
 			<PasswordInput
 				name="password"
 				label="Password"
