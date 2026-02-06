@@ -1,9 +1,9 @@
 import { useState, useCallback, useRef } from "react";
-import { ToastContext } from "./ToastContext";
+import { ToastContext } from "../../context/AuthContext";
 import { Toast, type ToastProps } from "../../components/common/Toast";
 import type { ToastInput } from "./toast.types";
 
-const AUTO_CLOSE_MS = 4000;
+const AUTO_CLOSE_MS = 10000;
 
 export default function ToastProvider({
 	children,
@@ -28,8 +28,8 @@ export default function ToastProvider({
 				{
 					id,
 					type: toast.type ?? "info",
-					title: toast.title,
-					description: toast.description,
+					title: toast.title ?? "",
+					description: toast.description ?? "",
 					actionText: toast.actionText,
 					onAction: toast.onAction,
 				},
@@ -47,7 +47,14 @@ export default function ToastProvider({
 			{children}
 
 			{/* Global Toast Mount Point */}
-			<div className="fixed top-4 right-4 z-50 space-y-3">
+			<div
+				className="fixed z-50
+				top-3 right-3
+				sm:top-4 sm:right-4
+				w-[92vw] sm:w-auto
+				max-w-md
+				space-y-2 sm:space-y-3"
+			>
 				{toasts.map((toast) => (
 					<Toast
 						key={toast.id}

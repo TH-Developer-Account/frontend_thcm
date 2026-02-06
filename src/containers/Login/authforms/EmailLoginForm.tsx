@@ -4,7 +4,7 @@ import { useAuth } from "../../../context/useAuth";
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/FormElements/FormInput";
 import { EMAIL_REGEX } from "../../Login/constant";
-// import { useToast } from "../../Toast/ToastContext";
+import PasswordInput from "../../../components/FormElements/PasswordInput";
 
 type Errors = {
 	email?: string;
@@ -20,6 +20,25 @@ const EmailLoginForm = () => {
 	const [errors, setErrors] = useState<Errors>({});
 	const { login } = useAuth();
 	const navigate = useNavigate();
+
+	const validateForm = () => {
+		const newErrors: Errors = {};
+
+		if (!formData.email) {
+			newErrors.email = "Please fill in the email field";
+		} else if (!EMAIL_REGEX.test(formData.email)) {
+			newErrors.email = "Invalid email format";
+		}
+
+		if (!formData.password) {
+			newErrors.password = "Please fill in the password field";
+		}
+
+		setErrors(newErrors);
+
+		// ✅ if no errors, form is valid
+		return Object.keys(newErrors).length === 0;
+	};
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target;
@@ -39,6 +58,8 @@ const EmailLoginForm = () => {
 
 	const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault();
+		// 🚫 Stop here if validation fails
+		if (!validateForm()) return;
 		setLoading(true);
 		try {
 			const result = await login(formData.email, formData.password);
@@ -92,18 +113,32 @@ const EmailLoginForm = () => {
 				value={formData.email}
 				onChange={handleChange}
 				onBlur={handleBlur}
+				required
 				error={errors?.email}
 			/>
 
-			<FormInput
+			{/* <FormInput
 				name="password"
 				label="Password"
-				placeholder="Enter your password"
 				type="password"
 				value={formData.password}
 				onChange={handleChange}
 				onBlur={handleBlur}
 				error={errors?.password}
+				placeholder={
+					!formData.email && errors.password
+						? errors.password
+						: "Enter your password"
+				}
+			/> */}
+			<PasswordInput
+				name="password"
+				label="Password"
+				value={formData.password}
+				onChange={handleChange}
+				error={errors.password}
+				required
+				placeholder="Enter your password"
 			/>
 
 			<div className="flex justify-end">

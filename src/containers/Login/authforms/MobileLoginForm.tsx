@@ -11,128 +11,129 @@ import { MOBILE_REGEX, api_routes } from "../../Login/constant";
 type MobileStep = "enterMobile" | "verifyOtp";
 
 const MobileLoginForm = () => {
-  const { setUser } = useAuth();
-  const navigate = useNavigate();
-  const [mobileStep, setMobileStep] = useState<MobileStep>("enterMobile");
-  const [state, setState] = useState({
-    loading: false,
-    mobile: "",
-    otp: "",
-    error: "",
-  });
+	const { setUser } = useAuth();
+	const navigate = useNavigate();
+	const [mobileStep, setMobileStep] = useState<MobileStep>("enterMobile");
+	const [state, setState] = useState({
+		loading: false,
+		mobile: "",
+		otp: "",
+		error: "",
+	});
 
-  const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setState((prev) => ({
-      ...prev,
-      mobile: e.target.value,
-      error: "", // clear error when user types
-    }));
-  };
+	const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setState((prev) => ({
+			...prev,
+			mobile: e.target.value,
+			error: "", // clear error when user types
+		}));
+	};
 
-  const handleOtpChange = (value: string) => {
-    setState((prev) => ({ ...prev, otp: value }));
-  };
+	const handleOtpChange = (value: string) => {
+		setState((prev) => ({ ...prev, otp: value }));
+	};
 
-  const handleContinue = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    if (!MOBILE_REGEX.test(state.mobile)) {
-      setState((prev) => ({
-        ...prev,
-        error: "Enter a valid 10-digit mobile number",
-      }));
-      return;
-    }
-    try {
-      setState((prev) => ({ ...prev, loading: true }));
-      await axios.post(`${API_BASE_URL}${api_routes.send_otp}`, {
-        phone_number: state.mobile,
-      });
-      setMobileStep("verifyOtp");
-    } catch (err) {
-      console.error("Send OTP error:", err);
-      setState((prev) => ({
-        ...prev,
-        error: "Failed to send OTP",
-      }));
-    } finally {
-      setState((prev) => ({ ...prev, loading: false }));
-    }
-  };
+	const handleContinue = async (e: React.MouseEvent<HTMLButtonElement>) => {
+		e.preventDefault();
+		if (!MOBILE_REGEX.test(state.mobile)) {
+			setState((prev) => ({
+				...prev,
+				error: "Enter a valid 10-digit mobile number",
+			}));
+			return;
+		}
+		try {
+			setState((prev) => ({ ...prev, loading: true }));
+			await axios.post(`${API_BASE_URL}${api_routes.send_otp}`, {
+				phone_number: state.mobile,
+			});
+			setMobileStep("verifyOtp");
+		} catch (err) {
+			console.error("Send OTP error:", err);
+			setState((prev) => ({
+				...prev,
+				error: "Failed to send OTP",
+			}));
+		} finally {
+			setState((prev) => ({ ...prev, loading: false }));
+		}
+	};
 
-  const handleVerifyOtp = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
+	const handleVerifyOtp = async (e: React.MouseEvent<HTMLButtonElement>) => {
+		e.preventDefault();
 
-    if (state.otp.length !== 6) {
-      setState((prev) => ({ ...prev, error: "Enter valid OTP" }));
-      return;
-    }
+		if (state.otp.length !== 6) {
+			setState((prev) => ({ ...prev, error: "Enter valid OTP" }));
+			return;
+		}
 
-    try {
-      setState((prev) => ({ ...prev, loading: true }));
-      const response = await axios.post(
-        `${API_BASE_URL}${api_routes.verify_otp}`,
-        {
-          phone_number: state.mobile,
-          otp: state.otp,
-        },
-      );
+		try {
+			setState((prev) => ({ ...prev, loading: true }));
+			const response = await axios.post(
+				`${API_BASE_URL}${api_routes.verify_otp}`,
+				{
+					phone_number: state.mobile,
+					otp: state.otp,
+				},
+			);
 
-      const { user, accessToken } = response.data;
-      localStorage.setItem("authToken", accessToken);
-      setUser(user);
-      navigate("/");
-    } catch (err: unknown) {
-      console.error("OTP verification error:", err);
-      setState((prev) => ({
-        ...prev,
-        error: "Invalid OTP",
-      }));
-    } finally {
-      setState((prev) => ({ ...prev, loading: false }));
-    }
-  };
+			const { user, accessToken } = response.data;
+			localStorage.setItem("authToken", accessToken);
+			setUser(user);
+			navigate("/");
+		} catch (err: unknown) {
+			console.error("OTP verification error:", err);
+			setState((prev) => ({
+				...prev,
+				error: "Invalid OTP",
+			}));
+		} finally {
+			setState((prev) => ({ ...prev, loading: false }));
+		}
+	};
 
-  return (
-    <React.Fragment>
-      {mobileStep === "enterMobile" && (
-        <form className="space-y-4">
-          <FormInput
-            name="mobile"
-            label="Mobile Number"
-            placeholder="Enter your mobile number"
-            value={state.mobile}
-            onChange={handleMobileChange}
-            error={state.error}
-          />
-          <Button
-            text="Continue"
-            disabled={!MOBILE_REGEX.test(state.mobile)}
-            onClick={handleContinue}
-          />
-        </form>
-      )}
+	return (
+		<React.Fragment>
+			{mobileStep === "enterMobile" && (
+				<form className="space-y-4">
+					<FormInput
+						name="mobile"
+						label="Mobile Number"
+						placeholder="Enter your mobile number"
+						value={state.mobile}
+						onChange={handleMobileChange}
+						error={state.error}
+						required
+					/>
+					<Button
+						text="Continue"
+						disabled={!MOBILE_REGEX.test(state.mobile)}
+						onClick={handleContinue}
+					/>
+				</form>
+			)}
 
-      {mobileStep === "verifyOtp" && (
-        <form className="space-y-4">
-          <div className="text-sm text-gray-600">
-            Enter the OTP sent to{" "}
-            <span className="font-semibold">{state.mobile}</span>
-          </div>
+			{mobileStep === "verifyOtp" && (
+				<form className="space-y-4">
+					<div className="text-sm text-gray-600">
+						Enter the OTP sent to{" "}
+						<span className="font-semibold">{state.mobile}</span>
+					</div>
 
-          <OtpInput length={6} onChange={handleOtpChange} />
+					<OtpInput length={6} onChange={handleOtpChange} />
 
-          <Button text="Verify OTP" onClick={handleVerifyOtp} />
+					<Button text="Verify OTP" onClick={handleVerifyOtp} />
 
-          <button
-            type="button"
-            className="text-sm text-blue-600 hover:underline text-center"
-            onClick={() => setMobileStep("enterMobile")}
-          >
-            Change mobile number
-          </button>
-        </form>
-      )}
-    </React.Fragment>
-  );
+					<button
+						type="button"
+						className="text-sm text-blue-600 hover:underline text-center"
+						onClick={() => setMobileStep("enterMobile")}
+					>
+						Change mobile number
+					</button>
+				</form>
+			)}
+		</React.Fragment>
+	);
 };
 export default MobileLoginForm;

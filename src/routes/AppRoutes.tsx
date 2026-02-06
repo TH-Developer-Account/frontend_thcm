@@ -1,17 +1,15 @@
 // src/routes/AppRoutes.jsx
 import { Routes, Route } from "react-router-dom";
-import ProtectedRoute from "./ProtectedRoute";
+// import ProtectedRoute from "./ProtectedRoute";
 import HomeScreen from "../containers/HomeScreen/index";
 import EPCList from "../containers/ListngScreen/EPCListing/index";
 import LoginPage from "../containers/Login/pages/LoginPage";
 import { ResetPasswordPage } from "../containers/Login/pages/ResestPasswordPage";
 import { ForgotPasswordPage } from "../containers/Login/pages/ForgotPasswordPage";
 import { TestPage } from "../containers/Login/pages/TestPage";
-// import ToastProvider from "../containers/Toast/ToastProvider";
 
 export default function AppRoutes() {
 	return (
-		// <ToastProvider>
 		<Routes>
 			<Route path="/login" element={<LoginPage />} />
 			<Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -21,9 +19,9 @@ export default function AppRoutes() {
 			<Route
 				path="/"
 				element={
-					<ProtectedRoute>
-						<HomeScreen />
-					</ProtectedRoute>
+					// <ProtectedRoute>
+					<HomeScreen />
+					// </ProtectedRoute>
 				}
 			/>
 			<Route
@@ -35,6 +33,5 @@ export default function AppRoutes() {
 				}
 			/>
 		</Routes>
-		// </ToastProvider>
 	);
 }

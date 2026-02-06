@@ -31,14 +31,16 @@ export const TestPage = () => {
 					}}
 				/>
 			</Modal>
-			{/* <Toast
-				id="1"
-				type="success"
-				title="Congratulations!"
-				description="Your OS has been updated to the latest version."
-				onClose={() => setOpen(false)}
-				className="mt-4"
-			/>
+			<div className="fixed top-4 right-4 z-50 space-y-3">
+				<Toast
+					id="1"
+					type="success"
+					title="Congratulations!"
+					description="Your OS has been updated to the latest version."
+					onClose={() => setOpen(false)}
+					className="mt-4"
+				/>
+			</div>
 			<Toast
 				id="2"
 				type="info"
@@ -64,7 +66,7 @@ export const TestPage = () => {
 				description="Your OS has been updated to the latest version."
 				onClose={() => setOpen(false)}
 				className="mt-4"
-			/> */}
+			/>
 		</AuthLayout>
 	);
 };
