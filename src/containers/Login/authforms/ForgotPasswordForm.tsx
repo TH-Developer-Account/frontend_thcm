@@ -59,7 +59,6 @@ const ForgotPasswordForm = () => {
 				},
 			);
 			setState((prev) => ({ ...prev, showSendMailStatus: true }));
-			console.log("Success:", response.data);
 			showToast({
 				type: "success",
 				title: "Success",
@@ -67,13 +66,18 @@ const ForgotPasswordForm = () => {
 					response.data.message ||
 					"If the email exists, a password reset link has been sent.", // ✅ FROM API
 			});
-		} catch (error: unknown) {
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error
+					? err.message
+					: typeof err === "string"
+						? err
+						: "Invalid OTP";
 			showToast({
 				type: "error",
 				title: "Error",
-				description: "User not found", // ✅ FROM API
+				description: message,
 			});
-			console.error(" error:", error);
 		} finally {
 			setState((prev) => ({ ...prev, loading: false }));
 		}

@@ -7,6 +7,7 @@ import Button from "../../../components/common/Button";
 import FormInput from "../../../components/FormElements/FormInput";
 import OtpInput from "../../../components/FormElements/OtpInput";
 import { MOBILE_REGEX, api_routes } from "../../Login/constant";
+import { useToast } from "../../../context/AuthContext";
 
 type MobileStep = "enterMobile" | "verifyOtp";
 
@@ -14,13 +15,14 @@ const MobileLoginForm = () => {
 	const { setUser } = useAuth();
 	const navigate = useNavigate();
 	const [mobileStep, setMobileStep] = useState<MobileStep>("enterMobile");
+	const [isResendOtp, setIsResendOtp] = useState(false);
 	const [state, setState] = useState({
 		loading: false,
 		mobile: "",
 		otp: "",
 		error: "",
 	});
-
+	const { showToast } = useToast();
 	const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setState((prev) => ({
 			...prev,
@@ -48,17 +50,27 @@ const MobileLoginForm = () => {
 				phone_number: state.mobile,
 			});
 			setMobileStep("verifyOtp");
-		} catch (err) {
-			console.error("Send OTP error:", err);
-			setState((prev) => ({
-				...prev,
-				error: "Failed to send OTP",
-			}));
+			showToast({
+				type: "success",
+				title: "Success",
+				description: "OTP sent successfully",
+			});
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error
+					? err.message
+					: typeof err === "string"
+						? err
+						: "Invalid OTP";
+			showToast({
+				type: "error",
+				title: "Error",
+				description: message,
+			});
 		} finally {
 			setState((prev) => ({ ...prev, loading: false }));
 		}
 	};
-
 	const handleVerifyOtp = async (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault();
 
@@ -81,12 +93,106 @@ const MobileLoginForm = () => {
 			localStorage.setItem("authToken", accessToken);
 			setUser(user);
 			navigate("/");
+			showToast({
+				type: "success",
+				title: "Success",
+				description: "Logged in successfully",
+			});
 		} catch (err: unknown) {
-			console.error("OTP verification error:", err);
+			const message =
+				err instanceof Error
+					? err.message
+					: typeof err === "string"
+						? err
+						: "Invalid OTP";
+			showToast({
+				type: "error",
+				title: "Error",
+				description: message,
+			});
+		} finally {
+			setState((prev) => ({ ...prev, loading: false }));
+		}
+	};
+	// Resend OTP FUnctionality
+	const handleResendOTP = async (e: React.MouseEvent<HTMLButtonElement>) => {
+		e.preventDefault();
+		setIsResendOtp(true);
+		if (!MOBILE_REGEX.test(state.mobile)) {
 			setState((prev) => ({
 				...prev,
-				error: "Invalid OTP",
+				error: "Enter a valid 10-digit mobile number",
 			}));
+			return;
+		}
+		try {
+			setState((prev) => ({ ...prev, loading: true }));
+			await axios.post(`${API_BASE_URL}${api_routes.send_otp}`, {
+				phone_number: state.mobile,
+			});
+			setMobileStep("verifyOtp");
+			showToast({
+				type: "success",
+				title: "Success",
+				description: "OTP sent successfully",
+			});
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error
+					? err.message
+					: typeof err === "string"
+						? err
+						: "Invalid OTP";
+			showToast({
+				type: "error",
+				title: "Error",
+				description: message,
+			});
+		} finally {
+			setState((prev) => ({ ...prev, loading: false }));
+		}
+	};
+
+	const handleVerifyResendOtp = async (
+		e: React.MouseEvent<HTMLButtonElement>,
+	) => {
+		e.preventDefault();
+		if (state.otp.length !== 6) {
+			setState((prev) => ({ ...prev, error: "Enter valid OTP" }));
+			return;
+		}
+
+		try {
+			setState((prev) => ({ ...prev, loading: true }));
+			const response = await axios.post(
+				`${API_BASE_URL}${api_routes.verify_otp}`,
+				{
+					phone_number: state.mobile,
+					otp: state.otp,
+				},
+			);
+
+			const { user, accessToken } = response.data;
+			localStorage.setItem("authToken", accessToken);
+			setUser(user);
+			navigate("/");
+			showToast({
+				type: "success",
+				title: "Success",
+				description: "Logged in successfully",
+			});
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error
+					? err.message
+					: typeof err === "string"
+						? err
+						: "Invalid OTP";
+			showToast({
+				type: "error",
+				title: "Error",
+				description: message,
+			});
 		} finally {
 			setState((prev) => ({ ...prev, loading: false }));
 		}
@@ -122,15 +228,32 @@ const MobileLoginForm = () => {
 
 					<OtpInput length={6} onChange={handleOtpChange} />
 
-					<Button text="Verify OTP" onClick={handleVerifyOtp} />
+					{isResendOtp ? (
+						<Button text="Verify OTP" onClick={handleVerifyResendOtp} />
+					) : (
+						<Button text="Verify OTP" onClick={handleVerifyOtp} />
+					)}
+					<div className="">
+						<span className="text-xs">
+							Didn't recieve a code?{" "}
+							<button
+								type="button"
+								className="text-xs  hover:underline text-center cursor-pointer mb-1 brand"
+								onClick={handleResendOTP}
+							>
+								Resend OTP
+							</button>
+						</span>
 
-					<button
-						type="button"
-						className="text-sm  hover:underline text-center cursor-pointer brand"
-						onClick={() => setMobileStep("enterMobile")}
-					>
-						Change mobile number
-					</button>
+						<br />
+						<button
+							type="button"
+							className="text-sm  hover:underline text-center cursor-pointer mt-0 brand"
+							onClick={() => setMobileStep("enterMobile")}
+						>
+							Change mobile number
+						</button>
+					</div>
 				</form>
 			)}
 		</React.Fragment>

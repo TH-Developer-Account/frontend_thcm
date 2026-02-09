@@ -5,6 +5,7 @@ import { useAuth } from "../../../context/useAuth";
 import Button from "../../../components/common/Button";
 import { PasswordPolicy } from "../constant";
 import PasswordInput from "../../../components/FormElements/PasswordInput";
+import { useToast } from "../../../context/AuthContext";
 
 interface Errors {
 	password?: string;
@@ -16,6 +17,7 @@ const ResetPasswordForm = () => {
 	const navigate = useNavigate();
 	const { token } = useParams<{ token: string }>();
 	const { resetPassword } = useAuth();
+	const { showToast } = useToast();
 	const [state, setState] = useState({
 		oldPassword: "",
 		newPassword: "",
@@ -92,13 +94,18 @@ const ResetPasswordForm = () => {
 				showFocus: false,
 			});
 			navigate("/login");
-		} catch (err) {
-			console.log("Error====>", err);
-			setState((prev) => ({
-				...prev,
-				loading: false,
-				errors: { general: "Something went wrong. Please try again." },
-			}));
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error
+					? err.message
+					: typeof err === "string"
+						? err
+						: "Invalid OTP";
+			showToast({
+				type: "error",
+				title: "Error",
+				description: message,
+			});
 		}
 	};
 

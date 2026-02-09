@@ -5,6 +5,7 @@ import Button from "../../../components/common/Button";
 import FormInput from "../../../components/FormElements/FormInput";
 import { EMAIL_REGEX } from "../../Login/constant";
 import PasswordInput from "../../../components/FormElements/PasswordInput";
+import { useToast } from "../../../context/AuthContext";
 
 type Errors = {
 	email?: string;
@@ -20,7 +21,7 @@ const EmailLoginForm = () => {
 	const [errors, setErrors] = useState<Errors>({});
 	const { login } = useAuth();
 	const navigate = useNavigate();
-
+	const { showToast } = useToast();
 	const validateForm = () => {
 		const newErrors: Errors = {};
 
@@ -69,8 +70,18 @@ const EmailLoginForm = () => {
 			} else {
 				navigate("/");
 			}
-		} catch (error: unknown) {
-			console.log(error);
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error
+					? err.message
+					: typeof err === "string"
+						? err
+						: "Invalid OTP";
+			showToast({
+				type: "error",
+				title: "Error",
+				description: message,
+			});
 		} finally {
 			setLoading(false);
 		}
