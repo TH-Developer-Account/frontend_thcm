@@ -22,11 +22,11 @@ export const TestPage = () => {
 					title="Success!"
 					description="Your changes have been saved successfully."
 					primaryAction={{
-						label: "Continue",
+						label: "Stay",
 						onClick: () => setOpen(true),
 					}}
 					secondaryAction={{
-						label: "Continue",
+						label: "Leave",
 						onClick: () => setOpen(false),
 					}}
 				/>
