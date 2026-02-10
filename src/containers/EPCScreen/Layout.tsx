@@ -1,12 +1,11 @@
-import EPCTable from "./EPCTable";
-import { EPFProvider } from "../context/EPCprovider";
-import { DashboardLayout } from "../../../layout/DashboardLayout";
+import React, { useState } from "react";
+import { DashboardLayout } from "../../layout/DashboardLayout";
+import type { SidebarItem } from "../../layout/sidebar.types";
 import { Home, Settings, BarChart } from "lucide-react";
-import type { SidebarItem } from "../../../layout/sidebar.types";
-import { useState } from "react";
 
-export default function EPCList() {
+export const Layout = () => {
 	const [sidebarOpen, setSidebarOpen] = useState(true);
+
 	const sidebarItems: SidebarItem[] = [
 		{
 			id: "home",
@@ -25,7 +24,7 @@ export default function EPCList() {
 		},
 	];
 	return (
-		<EPFProvider>
+		<React.Fragment>
 			<DashboardLayout
 				isSidebarOpen={sidebarOpen}
 				onToggleSidebar={() => setSidebarOpen((p) => !p)}
@@ -39,10 +38,8 @@ export default function EPCList() {
 					</>
 				}
 			>
-				<div className="bg-white p-6 rounded-xl shadow">
-					<EPCTable />
-				</div>
+				<div className="bg-white p-6 rounded-xl shadow">Main content</div>
 			</DashboardLayout>
-		</EPFProvider>
+		</React.Fragment>
 	);
-}
+};

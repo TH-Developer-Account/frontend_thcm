@@ -13,7 +13,7 @@ a,
 	text-decoration: inherit;
 }
 a:hover {
-	color: #f35a00;
+	/* color: #f35a00; */
 }
 
 h1 {
@@ -52,9 +52,17 @@ button:focus-visible {
 		background-color: #ffffff;
 	}
 	a:hover {
-		color: #f35a00;
+		/* color: #f35a00; */
 	}
 }
 input {
 	border-color: #d1d5db;
+}
+
+.user-profile-button {
+	border-radius: 5px;
+	/* color: #f35a00; */
+}
+.logo-font {
+	font-family: "Nunito Sans";
 }

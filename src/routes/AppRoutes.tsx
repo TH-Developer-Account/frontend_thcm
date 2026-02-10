@@ -8,6 +8,7 @@ import { ResetPasswordPage } from "../containers/Login/pages/ResestPasswordPage"
 import { ForgotPasswordPage } from "../containers/Login/pages/ForgotPasswordPage";
 import { TestPage } from "../containers/Login/pages/TestPage";
 import { SessionTimeoutProvider } from "../context/SessionTimeoutProvider";
+import { Layout } from "../containers/EPCScreen/Layout";
 
 export default function AppRoutes() {
 	return (
@@ -18,6 +19,7 @@ export default function AppRoutes() {
 				<Route path="/forgot-password" element={<ForgotPasswordPage />} />
 				<Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 				<Route path="/test" element={<TestPage />} />
+				<Route path="/epc" element={<Layout />} />
 				<Route
 					path="/"
 					element={

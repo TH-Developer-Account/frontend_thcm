@@ -26,6 +26,7 @@ const MobileLoginForm = () => {
 		otpTimer: "",
 	});
 	const { showToast } = useToast();
+
 	const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setState((prev) => ({
 			...prev,
@@ -129,7 +130,8 @@ const MobileLoginForm = () => {
 			setState((prev) => ({ ...prev, loading: false }));
 		}
 	};
-	// Resend OTP FUnctionality
+
+	// Resend OTP Functionality
 	const handleResendOTP = async (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault();
 		setIsResendOtp(true);

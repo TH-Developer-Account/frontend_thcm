@@ -5,8 +5,8 @@ import { Modal } from "../components/common/Modal";
 import { Alert } from "../components/common/Alert";
 import { useAuth } from "./useAuth";
 
-const IDLE_TIMEOUT = 1 * 60 * 1000; // 1 minute
-// const IDLE_TIMEOUT = 15 * 60 * 1000; // 15 minutes
+// const IDLE_TIMEOUT = 1 * 60 * 1000; // 1 minute
+const IDLE_TIMEOUT = 15 * 60 * 1000; // 15 minutes
 
 // Add all the matching EXEMPTED PATHS
 const EXEMPTED_PATHS = ["/login", "/reset", "/forgot-password"];
