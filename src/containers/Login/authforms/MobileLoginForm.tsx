@@ -16,11 +16,14 @@ const MobileLoginForm = () => {
 	const navigate = useNavigate();
 	const [mobileStep, setMobileStep] = useState<MobileStep>("enterMobile");
 	const [isResendOtp, setIsResendOtp] = useState(false);
+	const [otpTimerActive, setOtpTimerActive] = useState(true);
+	const [secondsLeft, setSecondsLeft] = useState(30);
 	const [state, setState] = useState({
 		loading: false,
 		mobile: "",
 		otp: "",
 		error: "",
+		otpTimer: "",
 	});
 	const { showToast } = useToast();
 	const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,12 +59,18 @@ const MobileLoginForm = () => {
 				description: "OTP sent successfully",
 			});
 		} catch (err: unknown) {
-			const message =
-				err instanceof Error
-					? err.message
-					: typeof err === "string"
-						? err
-						: "Invalid OTP";
+			console.error("OTP verification error:", err);
+
+			let message = "User not found";
+
+			if (axios.isAxiosError(err)) {
+				// API responded with an error message
+				message =
+					err.response?.data?.message || err.message || "Something went wrong";
+			} else if (err instanceof Error) {
+				message = err.message;
+			}
+
 			showToast({
 				type: "error",
 				title: "Error",
@@ -99,12 +108,18 @@ const MobileLoginForm = () => {
 				description: "Logged in successfully",
 			});
 		} catch (err: unknown) {
-			const message =
-				err instanceof Error
-					? err.message
-					: typeof err === "string"
-						? err
-						: "Invalid OTP";
+			console.error("OTP verification error:", err);
+
+			let message = "Invalid OTP";
+
+			if (axios.isAxiosError(err)) {
+				// API responded with an error message
+				message =
+					err.response?.data?.message || err.message || "Something went wrong";
+			} else if (err instanceof Error) {
+				message = err.message;
+			}
+
 			showToast({
 				type: "error",
 				title: "Error",
@@ -137,12 +152,18 @@ const MobileLoginForm = () => {
 				description: "OTP sent successfully",
 			});
 		} catch (err: unknown) {
-			const message =
-				err instanceof Error
-					? err.message
-					: typeof err === "string"
-						? err
-						: "Invalid OTP";
+			console.error("OTP verification error:", err);
+
+			let message = "User not found";
+
+			if (axios.isAxiosError(err)) {
+				// API responded with an error message
+				message =
+					err.response?.data?.message || err.message || "Something went wrong";
+			} else if (err instanceof Error) {
+				message = err.message;
+			}
+
 			showToast({
 				type: "error",
 				title: "Error",
@@ -182,12 +203,18 @@ const MobileLoginForm = () => {
 				description: "Logged in successfully",
 			});
 		} catch (err: unknown) {
-			const message =
-				err instanceof Error
-					? err.message
-					: typeof err === "string"
-						? err
-						: "Invalid OTP";
+			console.error("OTP verification error:", err);
+
+			let message = "Invalid OTP";
+
+			if (axios.isAxiosError(err)) {
+				// API responded with an error message
+				message =
+					err.response?.data?.message || err.message || "Something went wrong";
+			} else if (err instanceof Error) {
+				message = err.message;
+			}
+
 			showToast({
 				type: "error",
 				title: "Error",
@@ -226,7 +253,14 @@ const MobileLoginForm = () => {
 						<span className="font-semibold">{state.mobile}</span>
 					</div>
 
-					<OtpInput length={6} onChange={handleOtpChange} />
+					<OtpInput
+						length={6}
+						onChange={handleOtpChange}
+						onTimerChange={(seconds, active) => {
+							setSecondsLeft(seconds);
+							setOtpTimerActive(active);
+						}}
+					/>
 
 					{isResendOtp ? (
 						<Button text="Verify OTP" onClick={handleVerifyResendOtp} />
@@ -240,8 +274,9 @@ const MobileLoginForm = () => {
 								type="button"
 								className="text-xs  hover:underline text-center cursor-pointer mb-1 brand"
 								onClick={handleResendOTP}
+								disabled={otpTimerActive}
 							>
-								Resend OTP
+								{otpTimerActive ? `Resend in ${secondsLeft}s` : "Resend OTP"}
 							</button>
 						</span>
 
@@ -249,7 +284,16 @@ const MobileLoginForm = () => {
 						<button
 							type="button"
 							className="text-sm  hover:underline text-center cursor-pointer mt-0 brand"
-							onClick={() => setMobileStep("enterMobile")}
+							onClick={() => {
+								setMobileStep("enterMobile");
+								setState((prev) => ({
+									...prev,
+									mobile: "",
+									otp: "",
+									error: "",
+									otpTimer: "",
+								}));
+							}}
 						>
 							Change mobile number
 						</button>
