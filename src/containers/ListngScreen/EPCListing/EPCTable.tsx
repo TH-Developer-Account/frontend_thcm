@@ -41,7 +41,7 @@ const EPCTable: React.FC = () => {
 								{headerGroup.headers.map((header) => (
 									<th
 										key={header.id}
-										className="p-3 text-left font-medium select-none cursor-pointer"
+										className="p-3 text-left font-medium select-none cursor-pointer bg-[#f35a00] border-[#f35a00] text-white"
 										onClick={header.column.getToggleSortingHandler()}
 									>
 										<div className="flex items-center gap-1">
