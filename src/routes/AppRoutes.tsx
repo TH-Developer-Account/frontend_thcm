@@ -1,35 +1,38 @@
 // src/routes/AppRoutes.jsx
 import { Routes, Route } from "react-router-dom";
-import ProtectedRoute from "./ProtectedRoute";
+// import ProtectedRoute from "./ProtectedRoute";
 import HomeScreen from "../containers/HomeScreen/index";
 import EPCList from "../containers/ListngScreen/EPCListing/index";
 import LoginPage from "../containers/Login/pages/LoginPage";
 import { ResetPasswordPage } from "../containers/Login/pages/ResestPasswordPage";
 import { ForgotPasswordPage } from "../containers/Login/pages/ForgotPasswordPage";
+import { TestPage } from "../containers/Login/pages/TestPage";
+import { SessionTimeoutProvider } from "../context/SessionTimeoutProvider";
+import MainContentWrapper from "../layout/MainContentWrapper";
+import EpcForm from "../containers/EPCScreen/EpcForm";
 
 export default function AppRoutes() {
-  return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <HomeScreen />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/listing"
-        element={
-          <ProtectedRoute>
-            <EPCList />
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
-  );
+	return (
+		<SessionTimeoutProvider>
+			<Routes>
+				<Route path="/login" element={<LoginPage />} />
+				<Route path="/reset-password" element={<ResetPasswordPage />} />
+				<Route path="/forgot-password" element={<ForgotPasswordPage />} />
+				<Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+				<Route path="/test" element={<TestPage />} />
+				<Route
+					path="/"
+					element={
+						// <ProtectedRoute>
+						<HomeScreen />
+						// </ProtectedRoute>
+					}
+				/>
+				<Route element={<MainContentWrapper />}>
+					<Route path="/listing" element={<EPCList />} />
+					<Route path="/epc" element={<EpcForm />} />
+				</Route>
+			</Routes>
+		</SessionTimeoutProvider>
+	);
 }

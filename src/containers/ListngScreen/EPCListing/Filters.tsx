@@ -5,7 +5,7 @@ const filters = ["Event Date", "Assigned To", "EPF No", "Region", "Status"];
 export default function Filters() {
   return (
     <React.Fragment>
-      <div className="grid grid-cols-5 content-around gap-2">
+      <div className="grid grid-cols-5 content-around gap-2 mb-4 text-black">
         {filters.map((f) => (
           <select
             key={f}

@@ -1,32 +1,56 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import StatusBadge from "./StatusBadge";
-import type { EPCRow, Status } from "../types";
+import type { EPCRow } from "../types";
+import { Badge, type Status } from "../../../components/common/Badge";
 
 export const columns: ColumnDef<EPCRow>[] = [
   {
-    accessorKey: "company",
-    header: "Company",
+    accessorKey: "proposal_number",
+    header: "EPF No",
     cell: ({ row }) => (
       <div>
-        <div className="font-medium">{row.original.company}</div>
-        <div className="text-xs text-gray-500">{row.original.domain}</div>
+        <div className="font-medium">{row.original.proposal_number}</div>
       </div>
     ),
   },
   {
-    accessorKey: "email",
-    header: "Email address",
+    accessorKey: "event_name",
+    header: "Event Name",
+    cell: ({ row }) => (
+      <div>
+        <div className="font-medium">{row.original.event_name.description}</div>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "event_description",
+    header: "Event Description",
+    cell: ({ row }) => (
+      <div>
+        <div className="font-medium">{row.original.event_description}</div>
+      </div>
+    ),
+  },
+  {
+    accessorKey: "created_by",
+    header: "Created By",
+    cell: ({ row }) => (
+      <div>
+        <div className="font-medium">{row.original.created_by}</div>
+      </div>
+    ),
   },
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ getValue }) => <StatusBadge status={getValue<Status>()} />,
+    cell: ({ row }) => <Badge status={row.original.status as Status} />,
   },
   {
-    accessorKey: "about",
-    header: "About",
-    cell: ({ getValue }) => (
-      <p className="text-gray-600 line-clamp-2">{getValue<Status>()}</p>
+    accessorKey: "location",
+    header: "Location",
+    cell: ({ row }) => (
+      <div>
+        <div className="font-medium">{row.original.location}</div>
+      </div>
     ),
   },
 ];

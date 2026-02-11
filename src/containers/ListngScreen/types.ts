@@ -1,10 +1,17 @@
 // types.ts (or same file)
 export interface EPCRow {
-  company: string;
-  domain: string;
-  email: string;
+  proposal_number: string;
+  event_description: string;
+  created_by: string;
   status: string;
-  about: string;
+  location: string;
+  event_name: Record<string, string>;
 }
 
-export type Status = "Done" | "In process" | "Pending";
+export interface PaginationProps {
+  pageIndex: number; // 0-based
+  pageSize: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+}
