@@ -1,10 +1,11 @@
 // types.ts (or same file)
 export interface EPCRow {
-  company: string;
-  domain: string;
-  email: string;
+  proposal_number: string;
+  event_description: string;
+  created_by: string;
   status: string;
-  about: string;
+  location: string;
+  event_name: Record<string, string>;
 }
 
 export interface PaginationProps {

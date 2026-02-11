@@ -24,6 +24,8 @@ const EPCTable = () => {
     loading,
   } = useEPC();
 
+  console.log({ data });
+
   const table = useReactTable<EPCRow>({
     data,
     columns,

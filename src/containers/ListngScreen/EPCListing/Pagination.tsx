@@ -45,8 +45,6 @@ const Pagination: React.FC<PaginationProps> = ({
 
   const pages = generatePages();
 
-  console.log({ pages });
-
   return (
     <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-4">
       {/* Page Info */}
