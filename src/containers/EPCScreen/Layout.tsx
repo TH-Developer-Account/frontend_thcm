@@ -31,7 +31,7 @@ export const Layout = () => {
 				sidebarItems={sidebarItems}
 				header={
 					<>
-						<h3 className="font-semibold">Dashboard</h3>
+						<h3 className="font-semibold">EPC</h3>
 						<span className="text-base sm:text-xl font-bold tracking-wide logo-font">
 							TATA HITACHI
 						</span>

@@ -25,7 +25,7 @@ export const SidebarLayout = ({
 			<aside
 				className={`
 					fixed inset-y-0 left-0 z-50
-					bg-gray-50 border-r
+					bg-gray-50 border-r border-orange-600
 					transition-transform duration-300 ease-in-out
 					w-64
 					${isOpen ? "translate-x-0" : "-translate-x-full"}
@@ -51,7 +51,7 @@ export const SidebarLayout = ({
 							key={item.id}
 							onClick={item.onClick}
 							className="w-full flex items-center gap-3 p-2 rounded-lg
-						hover:bg-gray-200 transition text-left"
+						hover:bg-gray-200 transition text-left sidebar-icons"
 						>
 							<span className="text-lg shrink-0">{item.icon}</span>
 

@@ -26,17 +26,18 @@ const Avatar: React.FC<AvatarProps> = ({
 			<div
 				tabIndex={0}
 				className={`
-          ${sizeClasses[size]}
-          rounded-full
-          bg-transparent
-          flex items-center justify-center
-          font-semibold
-          overflow-hidden
-          select-none
-          cursor-default
-          text-white
-          text-md
-        `}
+					${sizeClasses[size]}
+					rounded-full
+					bg-orange-600
+					flex items-center justify-center
+					font-semibold
+					overflow-hidden
+					select-none
+					cursor-pointer
+					text-white
+					text-md
+					
+					`}
 				aria-label={fullName}
 			>
 				{imageUrl ? (
@@ -49,26 +50,25 @@ const Avatar: React.FC<AvatarProps> = ({
 						}}
 					/>
 				) : (
-					<span>{initials}</span>
+					<span>{initials} </span>
 				)}
 			</div>
 
 			{/* Tooltip */}
 			<div
 				className="
-          absolute bottom-full left-1/2 -translate-x-1/2 mb-2
-          whitespace-nowrap
-          rounded-md bg-gray-900 text-white text-xs
-          px-2 py-1 shadow-lg
-          opacity-0 scale-95
-          pointer-events-none
-          transition-all duration-150
-          group-hover:opacity-100
-          group-hover:scale-100
-          group-focus-within:opacity-100
-          group-focus-within:scale-100
-          z-50
-        "
+				absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+				whitespace-nowrap
+				rounded-md bg-gray-900 text-white text-xs
+				px-2 py-1 shadow-lg
+				opacity-0 scale-95
+				pointer-events-none
+				transition-all duration-150
+				group-hover:opacity-100
+				group-hover:scale-100
+				group-focus-within:opacity-100
+				group-focus-within:scale-100
+				z-50"
 			>
 				{fullName}
 			</div>
