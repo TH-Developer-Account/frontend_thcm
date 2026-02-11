@@ -5,9 +5,11 @@ import { Home, Settings, BarChart } from "lucide-react";
 import type { SidebarItem } from "../../../layout/sidebar.types";
 import { useState } from "react";
 import UserProfile from "../../../components/common/UserProfile";
+import Topbar from "../layouts/Topbar";
 
 export default function EPCList() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
   const sidebarItems: SidebarItem[] = [
     {
       id: "home",
@@ -33,7 +35,7 @@ export default function EPCList() {
         sidebarItems={sidebarItems}
         header={
           <>
-            <h3 className="font-semibold">Event Planning Calender</h3>
+            {/* <h3 className="font-semibold"></h3> */}
             <span className="text-base sm:text-xl font-bold tracking-wide logo-font">
               TATA HITACHI
             </span>
@@ -41,7 +43,12 @@ export default function EPCList() {
           </>
         }
       >
-        <div className="bg-white p-6 rounded-xl shadow overflow-auto">
+        <div className="bg-white p-6  rounded-xl shadow overflow-auto">
+          <Topbar
+            onOpen={() => setSidebarOpen(true)}
+            setIsFilterOpen={setIsFilterOpen}
+            isFilterOpen={isFilterOpen}
+          />
           <EPCTable />
         </div>
       </DashboardLayout>
