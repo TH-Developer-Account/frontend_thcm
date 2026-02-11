@@ -4,4 +4,5 @@ export type SidebarItem = {
 	label: string;
 	icon: React.ReactNode;
 	onClick?: () => void;
+	link?: string;
 };

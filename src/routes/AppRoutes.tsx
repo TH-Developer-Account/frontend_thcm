@@ -8,7 +8,8 @@ import { ResetPasswordPage } from "../containers/Login/pages/ResestPasswordPage"
 import { ForgotPasswordPage } from "../containers/Login/pages/ForgotPasswordPage";
 import { TestPage } from "../containers/Login/pages/TestPage";
 import { SessionTimeoutProvider } from "../context/SessionTimeoutProvider";
-import { Layout } from "../containers/EPCScreen/Layout";
+import MainContentWrapper from "../layout/MainContentWrapper";
+import EpcForm from "../containers/EPCScreen/EpcForm";
 
 export default function AppRoutes() {
 	return (
@@ -19,7 +20,6 @@ export default function AppRoutes() {
 				<Route path="/forgot-password" element={<ForgotPasswordPage />} />
 				<Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 				<Route path="/test" element={<TestPage />} />
-				<Route path="/epc" element={<Layout />} />
 				<Route
 					path="/"
 					element={
@@ -28,14 +28,10 @@ export default function AppRoutes() {
 						// </ProtectedRoute>
 					}
 				/>
-				<Route
-					path="/listing"
-					element={
-						// <ProtectedRoute>
-						<EPCList />
-						// </ProtectedRoute>
-					}
-				/>
+				<Route element={<MainContentWrapper />}>
+					<Route path="/listing" element={<EPCList />} />
+					<Route path="/epc" element={<EpcForm />} />
+				</Route>
 			</Routes>
 		</SessionTimeoutProvider>
 	);

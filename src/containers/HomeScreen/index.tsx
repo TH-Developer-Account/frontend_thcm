@@ -6,14 +6,15 @@ import {
 	Pickaxe,
 	Truck,
 } from "lucide-react";
-import Header from "./Header";
+import Header from "../../components/ui/Header";
 import ActionCard from "./components/Card";
 
 export default function HomeScreen() {
 	return (
 		<div className="min-h-screen bg-gray-100">
-			<Header />
-
+			<header className="header px-4 sm:px-6 py-2 flex items-center justify-between text-white">
+				<Header />
+			</header>
 			<main className="flex items-center justify-center px-4 py-12 sm:py-20">
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-6 w-full max-w-4xl">
 					<ActionCard

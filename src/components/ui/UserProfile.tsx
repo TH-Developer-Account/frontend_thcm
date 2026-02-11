@@ -21,13 +21,13 @@ const UserProfile = () => {
 
 					<MenuItems
 						transition
-						className="absolute shadow-[0px_3px_12px_0px_rgba(0,0,0,0.2)] top-9 right-0 z-10 mt-2 w-35 text-black origin-top-right divide-y divide-white/10 rounded-md bg-white outline-1 -outline-offset-1 outline-white/10 transition data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
+						className="brand absolute shadow-[0px_3px_12px_0px_rgba(0,0,0,0.2)] top-9 right-0 z-10 mt-2 w-35 text-black origin-top-right divide-y divide-white/10 rounded-md bg-white outline-1 -outline-offset-1 outline-white/10 transition data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
 					>
 						<div className="py-1 text-left">
 							<MenuItem>
 								<a
 									href="#"
-									className="block px-4 py-2 text-sm text-gray-900 data-focus:outline-hidden"
+									className="brand block px-4 py-2 text-sm text-gray-900 data-focus:outline-hidden"
 								>
 									User Profile
 								</a>

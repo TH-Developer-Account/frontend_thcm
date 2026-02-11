@@ -1,18 +1,13 @@
 import React from "react";
-import { Search, Filter, Plus, Menu } from "lucide-react";
+import { Search, Filter, Plus } from "lucide-react";
 import Filters from "../EPCListing/Filters";
 
 interface TopbarProps {
-	onOpen: () => void;
 	isFilterOpen: boolean;
 	setIsFilterOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const Topbar: React.FC<TopbarProps> = ({
-	onOpen,
-	isFilterOpen,
-	setIsFilterOpen,
-}) => {
+const Topbar: React.FC<TopbarProps> = ({ isFilterOpen, setIsFilterOpen }) => {
 	return (
 		<>
 			<header className="bg-white md:px-6 py-3 pt-0">
@@ -50,7 +45,9 @@ const Topbar: React.FC<TopbarProps> = ({
 						{/* Add EPC */}
 						<button className="flex items-center gap-1 bg-orange-500 text-white px-4 py-2 rounded-lg text-sm">
 							<Plus size={16} />
-							<span className="hidden sm:inline">Create EPC</span>
+							<a href="/epc" rel="epc" className="text-white">
+								<span className="hidden sm:inline">Create EPC</span>
+							</a>
 						</button>
 					</div>
 				</div>
