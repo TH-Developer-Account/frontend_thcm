@@ -32,7 +32,7 @@ export const SidebarLayout = ({
 
 					md:static md:translate-x-0
 					md:transition-none
-					${isOpen ? "md:w-64" : "md:w-16"}
+					${isOpen ? "md:w-58" : "md:w-16"}
 				`}
 			>
 				{/* Mobile close button */}
@@ -50,16 +50,25 @@ export const SidebarLayout = ({
 						<button
 							key={item.id}
 							onClick={item.onClick}
-							className="w-full flex items-center gap-3 p-2 rounded-lg
-						hover:bg-gray-200 transition text-left sidebar-icons"
+							className="w-full  rounded-lg
+								hover:bg-gray-200 transition text-left sidebar-icons"
 						>
-							<span className="text-lg shrink-0">{item.icon}</span>
-
-							{isOpen && (
-								<span className="text-sm font-medium whitespace-nowrap">
-									{item.label}
-								</span>
-							)}
+							<a
+								href={item.link}
+								rel={item.label}
+								className="flex items-center gap-1 p-2"
+							>
+								{!isOpen ? (
+									<span className="text-sm">{item.icon}</span>
+								) : (
+									<span className="text-sm shrink-0 w-auto">{item.icon}</span>
+								)}
+								{isOpen && (
+									<span className="text-sm font-medium whitespace-nowrap ml-2">
+										{item.label}
+									</span>
+								)}
+							</a>
 						</button>
 					))}
 				</nav>
