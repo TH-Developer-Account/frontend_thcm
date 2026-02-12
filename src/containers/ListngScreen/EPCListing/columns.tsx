@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import type { EPCRow } from "../types";
-import { Badge, type Status } from "../../../components/common/Badge";
+import { Badge } from "../../../components/common/Badge";
+import { status } from "../constant";
 
 export const columns: ColumnDef<EPCRow>[] = [
   {
@@ -35,7 +36,7 @@ export const columns: ColumnDef<EPCRow>[] = [
     header: "Created By",
     cell: ({ row }) => (
       <div>
-        <div className="font-medium">{row.original.created_by}</div>
+        <div className="font-medium">{`${row.original.first_name} ${row.original.last_name}`}</div>
       </div>
     ),
   },
@@ -45,9 +46,7 @@ export const columns: ColumnDef<EPCRow>[] = [
     cell: ({ row }) => (
       <Badge
         status={
-          (row.original.status
-            ?.toLowerCase()
-            .replace(/\b\w/g, (c) => c.toUpperCase()) as Status) || "Completed"
+          status[(row.original.status as keyof typeof status) || "Pending"]
         }
       />
     ),
