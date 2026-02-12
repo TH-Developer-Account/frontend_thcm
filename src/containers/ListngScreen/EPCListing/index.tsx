@@ -10,7 +10,11 @@ export default function EPCList() {
 		<EPFProvider>
 			<div className="bg-white p-6  rounded-xl shadow">
 				<Topbar setIsFilterOpen={setIsFilterOpen} isFilterOpen={isFilterOpen} />
-				<EPCTable />
+				<div className="h-screen flex flex-col">
+					<div className="flex-1 p-1 min-h-0">
+						<EPCTable />
+					</div>
+				</div>
 			</div>
 		</EPFProvider>
 	);

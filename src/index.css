@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 :root {
+	/* Brand */
+	--color-brand: #f35a00;
+	--color-black: #000000;
+	--color-white: #ffffff;
 	/* Primary Brand */
 	--color-brand-primary: #f35a00;
 
