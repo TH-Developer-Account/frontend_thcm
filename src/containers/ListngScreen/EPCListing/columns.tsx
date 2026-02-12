@@ -17,7 +17,7 @@ export const columns: ColumnDef<EPCRow>[] = [
     header: "Event Name",
     cell: ({ row }) => (
       <div>
-        <div className="font-medium">{row.original.event_name.description}</div>
+        <div className="font-medium">{row.original.event_name}</div>
       </div>
     ),
   },
