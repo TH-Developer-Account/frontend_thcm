@@ -5,7 +5,7 @@ export interface EPCRow {
   created_by: string;
   status: string;
   location: string;
-  event_name: Record<string, string>;
+  event_name: string;
 }
 
 export interface PaginationProps {

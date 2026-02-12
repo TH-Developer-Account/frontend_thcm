@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import type { ReactNode } from "react";
+import { useDebounce } from "../../../hooks/useDebounce";
 import { EPFContext } from "./EPCcontext";
-import type { EPCRow } from "../types";
 import { ServerAxios } from "../../../services/ServerAxios";
 import { epc_api_routes } from "../constant";
+import type { ReactNode } from "react";
+import type { EPCRow } from "../types";
 import type { SortingState } from "@tanstack/react-table";
 
 interface EPFProviderProps {
@@ -21,6 +22,7 @@ export function EPFProvider({ children }: EPFProviderProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
   const [totalPages, setTotalPages] = useState(0);
+  const debouncedSearch = useDebounce(search, 500); // 500ms delay
 
   const fetchEPC = useCallback(async () => {
     try {
@@ -32,7 +34,7 @@ export function EPFProvider({ children }: EPFProviderProps) {
         params: {
           page: pageIndex + 1,
           pageSize,
-          search,
+          search: debouncedSearch,
           sortBy: sort?.id,
           sortOrder: sort?.desc ? "desc" : "asc",
         },
@@ -45,7 +47,7 @@ export function EPFProvider({ children }: EPFProviderProps) {
     } finally {
       setLoading(false);
     }
-  }, [pageIndex, pageSize, search, sorting]);
+  }, [pageIndex, pageSize, debouncedSearch, sorting]);
 
   useEffect(() => {
     fetchEPC();
