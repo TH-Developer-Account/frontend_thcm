@@ -19,7 +19,7 @@ export default function SelectInput({
 	...props
 }: SelectInputProps) {
 	return (
-		<div className="mb-2 w-full">
+		<div className="mb-4 w-full">
 			{label && (
 				<label className="text-left block text-sm/6 font-medium text-gray-900">
 					{label}
