@@ -21,15 +21,15 @@ export const columns: ColumnDef<EPCRow>[] = [
       </div>
     ),
   },
-  {
-    accessorKey: "event_description",
-    header: "Event Description",
-    cell: ({ row }) => (
-      <div>
-        <div className="font-medium">{row.original.event_description}</div>
-      </div>
-    ),
-  },
+  //   {
+  //     accessorKey: "event_description",
+  //     header: "Event Description",
+  //     cell: ({ row }) => (
+  //       <div>
+  //         <div className="font-medium">{row.original.event_description}</div>
+  //       </div>
+  //     ),
+  //   },
   {
     accessorKey: "created_by",
     header: "Created By",
@@ -42,7 +42,15 @@ export const columns: ColumnDef<EPCRow>[] = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => <Badge status={row.original.status as Status} />,
+    cell: ({ row }) => (
+      <Badge
+        status={
+          (row.original.status
+            ?.toLowerCase()
+            .replace(/\b\w/g, (c) => c.toUpperCase()) as Status) || "Completed"
+        }
+      />
+    ),
   },
   {
     accessorKey: "location",

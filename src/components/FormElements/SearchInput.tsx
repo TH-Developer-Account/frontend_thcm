@@ -44,7 +44,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchBoxProps>(
             disabled={disabled}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
-            className={`flex-1 bg-transparent text-sm focus:outline-none ${className}`}
+            className={`flex-1 bg-transparent text-xs focus:outline-none ${className}`}
           />
 
           {/* Clear Button */}

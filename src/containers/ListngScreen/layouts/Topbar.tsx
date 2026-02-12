@@ -3,6 +3,7 @@ import { Filter, Plus } from "lucide-react";
 import { useEPC } from "../context/useEPC";
 import Filters from "../EPCListing/Filters";
 import { SearchInput } from "../../../components/FormElements/SearchInput";
+import { NavLink } from "react-router-dom";
 
 interface TopbarProps {
   isFilterOpen: boolean;
@@ -41,9 +42,9 @@ const Topbar: React.FC<TopbarProps> = ({ isFilterOpen, setIsFilterOpen }) => {
             {/* Add EPC */}
             <button className="flex items-center gap-1 bg-orange-500 text-white px-4 py-2 rounded-lg text-sm">
               <Plus size={16} />
-              <a href="/epc" rel="epc" className="text-white">
+              <NavLink to="/epc" rel="epc" className="text-white">
                 <span className="hidden sm:inline">Create EPC</span>
-              </a>
+              </NavLink>
             </button>
           </div>
         </div>
