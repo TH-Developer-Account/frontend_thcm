@@ -8,8 +8,9 @@ import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	name: string; // Required
 	label: string; // Required
-	placeholder: string; // Required
+	placeholder?: string;
 	value?: string | number;
+	type?: string;
 
 	error?: string; // NEW: error message
 	helperText?: string; // NEW: helper text
@@ -24,6 +25,7 @@ const Input: ForwardRefRenderFunction<HTMLInputElement, InputProps> = (
 		placeholder,
 		value,
 		error,
+		type,
 		className = "",
 		required,
 		disabled,
@@ -32,7 +34,7 @@ const Input: ForwardRefRenderFunction<HTMLInputElement, InputProps> = (
 	ref,
 ) => {
 	return (
-		<div className="relative sm:col-span-3 mb-4">
+		<div className="mb-4">
 			<label
 				htmlFor={name}
 				className="text-left block text-sm/6 font-medium text-gray-900"
@@ -43,6 +45,10 @@ const Input: ForwardRefRenderFunction<HTMLInputElement, InputProps> = (
 			<div className="mt-2">
 				<input
 					id={name}
+					type={type}
+					{...(type === "date" && {
+						min: new Date().toISOString().split("T")[0],
+					})}
 					ref={ref}
 					name={name}
 					placeholder={placeholder}

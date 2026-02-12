@@ -80,7 +80,7 @@ function DataTable<T extends object>({
 			{/* Scrollable Table Area */}
 			<div className="flex-1 min-h-0 overflow-auto">
 				<table
-					className="min-w-[900px] w-full text-sm text-black"
+					className="min-w-[900px] w-full text-sm text-black  text-left "
 					id={scrollTargetId}
 				>
 					{/* Header */}
@@ -137,9 +137,9 @@ function DataTable<T extends object>({
 							<tr>
 								<td
 									colSpan={columns.length}
-									className="px-6 py-12 text-center text-gray-500"
+									className="px-6 py-12 text-gray-500"
 								>
-									<div className="flex flex-col items-center gap-2">
+									<div className="flex flex-col items-centergap-2">
 										<div className="text-sm font-medium">{emptyTitle}</div>
 										<div className="text-xs text-gray-400">
 											{emptyDescription}

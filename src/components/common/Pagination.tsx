@@ -142,7 +142,7 @@ const Pagination: React.FC<PaginationProps> = ({
 			</div>
 
 			{!compact && (
-				<div className="w-28">
+				<div className="w-25 flex items-center ">
 					<SelectInput
 						options={PAGE_SIZE_OPTIONS}
 						value={PAGE_SIZE_OPTIONS.find(
