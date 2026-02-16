@@ -10,25 +10,27 @@ import { TestPage } from "../containers/Login/pages/TestPage";
 import { SessionTimeoutProvider } from "../context/SessionTimeoutProvider";
 import MainContentWrapper from "../layout/MainContentWrapper";
 import EpcForm from "../containers/EPCScreen/EpcForm";
+import EpfForm from "../containers/EPFScreen/EpfForm";
 
 export default function AppRoutes() {
-  return (
-    <SessionTimeoutProvider>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-        <Route path="/test" element={<TestPage />} />
-        <Route path="/" element={<HomeScreen />} />
+	return (
+		<SessionTimeoutProvider>
+			<Routes>
+				{/* Public Routes */}
+				<Route path="/login" element={<LoginPage />} />
+				<Route path="/reset-password" element={<ResetPasswordPage />} />
+				<Route path="/forgot-password" element={<ForgotPasswordPage />} />
+				<Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+				<Route path="/test" element={<TestPage />} />
+				<Route path="/" element={<HomeScreen />} />
 
-        {/* Dashboard Layout Route */}
-        <Route element={<MainContentWrapper />}>
-          <Route path="listing" index element={<EPCList />} />
-          <Route path="epc" element={<EpcForm />} />
-        </Route>
-      </Routes>
-    </SessionTimeoutProvider>
-  );
+				{/* Dashboard Layout Route */}
+				<Route element={<MainContentWrapper />}>
+					<Route path="listing" index element={<EPCList />} />
+					<Route path="epc" element={<EpcForm />} />
+					<Route path="/epf" element={<EpfForm />} />
+				</Route>
+			</Routes>
+		</SessionTimeoutProvider>
+	);
 }

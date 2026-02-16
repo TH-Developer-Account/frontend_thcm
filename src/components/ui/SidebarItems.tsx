@@ -32,6 +32,12 @@ export const sidebarItems: SidebarItem[] = [
 		icon: <CalendarDays />,
 		link: "/epc",
 	},
+	{
+		id: "epf",
+		label: "EPF",
+		icon: <CalendarDays />,
+		link: "/epf",
+	},
 	// {
 	// 	id: "settings",
 	// 	label: "Settings",

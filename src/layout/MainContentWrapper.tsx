@@ -5,7 +5,7 @@ import Header from "../components/ui/Header";
 import { sidebarItems } from "../components/ui/SidebarItems";
 
 export default function MainContentWrapper() {
-	const [sidebarOpen, setSidebarOpen] = useState(true);
+	const [sidebarOpen, setSidebarOpen] = useState(false);
 
 	return (
 		<DashboardLayout
