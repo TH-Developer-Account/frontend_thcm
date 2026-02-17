@@ -1,17 +1,17 @@
 import {
 	Megaphone,
-	Box,
-	ShoppingBag,
-	Construction,
-	Pickaxe,
-	Truck,
+	PackageSearch,
+	UserCheck,
+	Database,
+	Warehouse,
+	FileText,
 } from "lucide-react";
 import Header from "../../components/ui/Header";
 import ActionCard from "./components/Card";
 
 export default function HomeScreen() {
 	return (
-		<div className="min-h-screen bg-gray-100">
+		<div className="min-h-screen bg-gray-100 overflow-hidden">
 			<header className="header px-4 sm:px-6 py-2 flex items-center justify-between text-white">
 				<Header />
 			</header>
@@ -26,36 +26,36 @@ export default function HomeScreen() {
 					/>
 
 					<ActionCard
-						icon={<Box size={40} className="text-orange-500" />}
+						icon={<PackageSearch size={40} className="text-orange-500" />}
 						title="Product Selector"
 						description=""
 						subText=""
 						path="/listing"
 					/>
 					<ActionCard
-						icon={<ShoppingBag size={40} className="text-orange-500" />}
-						title="Sales"
+						icon={<UserCheck size={40} className="text-orange-500" />}
+						title="Key Account"
 						description=""
 						subText=""
 						path="/listing"
 					/>
 					<ActionCard
-						icon={<Pickaxe size={40} className="text-orange-500" />}
-						title="Mining"
+						icon={<Database size={40} className="text-orange-500" />}
+						title="Customer Master Data"
 						description=""
 						subText=""
 						path="/listing"
 					/>
 					<ActionCard
-						icon={<Construction size={40} className="text-orange-500" />}
-						title="Construction"
+						icon={<FileText size={40} className="text-orange-500" />}
+						title="Dealer Claims"
 						description=""
 						subText=""
 						path="/listing"
 					/>
 					<ActionCard
-						icon={<Truck size={40} className="text-orange-500" />}
-						title="Machinery"
+						icon={<Warehouse size={40} className="text-orange-500" />}
+						title="Asset Master"
 						description=""
 						subText=""
 						path="/listing"

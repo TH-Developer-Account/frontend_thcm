@@ -22,15 +22,15 @@ export const columns: ColumnDef<EPCRow>[] = [
 			</div>
 		),
 	},
-	//   {
-	//     accessorKey: "event_description",
-	//     header: "Event Description",
-	//     cell: ({ row }) => (
-	//       <div>
-	//         <div className="font-medium">{row.original.event_description}</div>
-	//       </div>
-	//     ),
-	//   },
+	// {
+	// 	accessorKey: "event_description",
+	// 	header: "Event Description",
+	// 	cell: ({ row }) => (
+	// 		<div>
+	// 			<div className="font-medium">{row.original.event_description}</div>
+	// 		</div>
+	// 	),
+	// },
 	{
 		accessorKey: "created_by",
 		header: "Created By",

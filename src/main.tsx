@@ -13,7 +13,10 @@ createRoot(document.getElementById("root")!).render(
 		<BrowserRouter>
 			<ToastProvider>
 				<AuthProvider>
-					<div className="container">
+					<div
+						className="container 
+						overflow-hidden"
+					>
 						<App />
 					</div>
 				</AuthProvider>

@@ -1,9 +1,4 @@
-import React from "react";
-
-type MainLayoutProps = {
-	children: React.ReactNode;
-	className?: string;
-};
+import { type MainLayoutProps } from "./layout.types";
 
 export const MainLayout = ({ children, className }: MainLayoutProps) => {
 	return (

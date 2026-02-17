@@ -1,12 +1,5 @@
 import { NavLink } from "react-router-dom";
-import type { SidebarItem } from "./sidebar.types";
-import React from "react";
-
-type SidebarLayoutProps = {
-	isOpen: boolean;
-	items: SidebarItem[];
-	onClose?: () => void;
-};
+import type { SidebarLayoutProps } from "./layout.types";
 
 export const SidebarLayout = ({
 	isOpen,
