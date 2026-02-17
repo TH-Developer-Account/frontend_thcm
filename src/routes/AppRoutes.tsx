@@ -11,6 +11,7 @@ import { SessionTimeoutProvider } from "../context/SessionTimeoutProvider";
 import MainContentWrapper from "../layout/MainContentWrapper";
 import EpcForm from "../containers/EPCScreen/EpcForm";
 import EpfForm from "../containers/EPFScreen/EpfForm";
+import CrfForm from "../containers/CRFScreen/CrfForm";
 
 export default function AppRoutes() {
 	return (
@@ -27,8 +28,9 @@ export default function AppRoutes() {
 				{/* Dashboard Layout Route */}
 				<Route element={<MainContentWrapper />}>
 					<Route path="listing" index element={<EPCList />} />
-					<Route path="epc" element={<EpcForm />} />
+					<Route path="epc" element={<EpcForm userRole="ADMIN" />} />
 					<Route path="/epf" element={<EpfForm />} />
+					<Route path="/crf" element={<CrfForm />} />
 				</Route>
 			</Routes>
 		</SessionTimeoutProvider>

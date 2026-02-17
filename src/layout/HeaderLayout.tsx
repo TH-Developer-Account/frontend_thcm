@@ -1,9 +1,4 @@
-import React from "react";
-
-type HeaderLayoutProps = {
-	onToggleSidebar: () => void;
-	children?: React.ReactNode;
-};
+import { type HeaderLayoutProps } from "./layout.types";
 
 export const HeaderLayout = ({
 	onToggleSidebar,

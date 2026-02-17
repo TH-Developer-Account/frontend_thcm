@@ -1,11 +1,12 @@
 // sidebar.config.ts
-import type { SidebarItem } from "../../layout/sidebar.types";
+import type { SidebarItem } from "./layout.types";
 import {
 	// Home,
 	// Settings,
 	// BarChart,
 	ClipboardList,
 	CalendarDays,
+	Package,
 } from "lucide-react";
 
 export const sidebarItems: SidebarItem[] = [
@@ -37,6 +38,12 @@ export const sidebarItems: SidebarItem[] = [
 		label: "EPF",
 		icon: <CalendarDays />,
 		link: "/epf",
+	},
+	{
+		id: "crf",
+		label: "CRF",
+		icon: <Package />,
+		link: "/crf",
 	},
 	// {
 	// 	id: "settings",

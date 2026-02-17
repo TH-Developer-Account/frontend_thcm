@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import LineItemTable from "../../components/ui/LineItemTable";
+import EpfForm2 from "./EpfForm2";
 
 export interface CostItem {
 	id: string;
@@ -45,11 +46,14 @@ export default function EpfForm() {
 
 	return (
 		<>
-			<EventCostOverheads
-				items={costItems}
-				onChange={setCostItems}
-				isViewer={false}
-			/>
+			<div className=" bg-white rounded-xl shadow-sm p-6 max-w-6xl mx-auto p-3">
+				<EventCostOverheads
+					items={costItems}
+					onChange={setCostItems}
+					isViewer={false}
+				/>
+				<EpfForm2 userRole="ADMIN" />
+			</div>
 		</>
 	);
 }
