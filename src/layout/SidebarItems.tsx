@@ -1,54 +1,61 @@
 // sidebar.config.ts
 import type { SidebarItem } from "./layout.types";
 import {
-	// Home,
-	// Settings,
-	// BarChart,
-	ClipboardList,
+	Home,
+	Settings,
+	Table,
+	// UserPen,
 	CalendarDays,
 	Package,
+	// File,
+	FilePen,
+	LayoutDashboard,
 } from "lucide-react";
 
 export const sidebarItems: SidebarItem[] = [
-	// {
-	// 	id: "home",
-	// 	label: "Home",
-	// 	icon: <Home />,
-	// 	link: "#",
-	// },
 	{
-		id: "epc-listing",
-		label: "EPC Listing",
-		icon: <ClipboardList />,
-		link: "/listing",
+		id: "home",
+		label: "Home",
+		icon: <Home />,
+		link: "/",
 	},
-	// {
-	// 	id: "analytics",
-	// 	label: "Analytics",
-	// 	icon: <BarChart />,
-	// },
+	{
+		id: "dashboard",
+		label: "Dashboard",
+		icon: <LayoutDashboard />,
+		link: "/dashboard",
+	},
 	{
 		id: "epc",
 		label: "EPC",
 		icon: <CalendarDays />,
 		link: "/epc",
+		children: [
+			{
+				id: "epc-create",
+				label: "Create EPC",
+				link: "/epc",
+				icon: <FilePen size={18} />,
+			},
+			{
+				id: "epc-list",
+				label: "EPC Listing",
+				link: "/listing",
+				icon: <Table size={18} />,
+			},
+		],
 	},
-	{
-		id: "epf",
-		label: "EPF",
-		icon: <CalendarDays />,
-		link: "/epf",
-	},
+
 	{
 		id: "crf",
 		label: "CRF",
 		icon: <Package />,
 		link: "/crf",
 	},
-	// {
-	// 	id: "settings",
-	// 	label: "Settings",
-	// 	icon: <Settings />,
-	// 	link: "#",
-	// },
+	{
+		id: "settings",
+		label: "Settings",
+		icon: <Settings />,
+		link: "/profile",
+	},
 ];

@@ -32,7 +32,7 @@ export function Badge({ children, status, variant = "primary" }: BadgeProps) {
 				return "bg-blue-100 text-blue-800";
 
 			case "Submitted":
-				return "bg-sky-100 text-sky-800";
+				return "bg-purple-100 text-purple-800";
 
 			case "Report Submitted":
 				return "bg-orange-100 text-orange-800";

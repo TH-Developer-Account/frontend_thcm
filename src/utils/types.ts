@@ -25,6 +25,8 @@ export interface EPCRow {
 	event_name: string;
 	first_name: string;
 	last_name: string;
+	is_crf_form: boolean;
+	is_epf_form: boolean;
 }
 
 export interface PaginationProps {
@@ -34,3 +36,11 @@ export interface PaginationProps {
 	onPageChange: (page: number) => void;
 	onPageSizeChange: (size: number) => void;
 }
+
+export type EventRow = {
+	id: string;
+	type: "EPC" | "EPF" | "CRF";
+	status: "Pending" | "Approved" | "Rejected";
+	budget: number;
+	participants: number;
+};

@@ -1,14 +1,21 @@
 import { NavLink } from "react-router-dom";
 import type { SidebarLayoutProps } from "./layout.types";
+import React, { useState } from "react";
+import { ChevronDown } from "lucide-react";
 
 export const SidebarLayout = ({
 	isOpen,
 	items,
 	onClose,
 }: SidebarLayoutProps) => {
+	const [openItem, setOpenItem] = useState<string | null>(null);
+
+	const toggleItem = (id: string) => {
+		setOpenItem(openItem === id ? null : id);
+	};
+
 	return (
 		<>
-			{/* Backdrop (mobile only) */}
 			{isOpen && (
 				<div
 					className="fixed inset-0 bg-black/40 z-40 md:hidden"
@@ -23,41 +30,84 @@ export const SidebarLayout = ({
           transition-all duration-300 ease-in-out
           ${isOpen ? "w-64" : "w-16"}
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
-
           md:static md:translate-x-0
         `}
 			>
-				{/* Mobile close button */}
-				<div className="flex items-center justify-end p-3 border-b md:hidden">
-					<button
-						onClick={onClose}
-						className="p-2 rounded-md hover:bg-gray-200"
-					>
-						Close ✕
-					</button>
-				</div>
+				<nav className="h-full px-2 py-4 space-y-1 overflow-y-auto">
+					{items.map((item) => {
+						const hasChildren = !!item.children?.length;
 
-				<nav className="h-full px-2 py-4 space-y-1">
-					{items.map((item) => (
-						<NavLink
-							key={item.id}
-							to={item.link ?? "#"}
-							// onClick={onClose}
-							className={({ isActive }) =>
-								`flex items-center gap-2 p-2 rounded-lg
-								transition
-								${isActive ? "bg-orange-100 text-orange-600" : "hover:bg-gray-200"}`
-							}
-						>
-							<span className="text-sm shrink-0">{item.icon}</span>
+						return (
+							<div key={item.id}>
+								{/* Parent Item */}
+								{hasChildren ? (
+									<button
+										onClick={() => toggleItem(item.id)}
+										className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-200 "
+									>
+										<div className="flex items-center gap-2">
+											<span className="text-sm shrink-0">{item.icon}</span>
+											{isOpen && (
+												<span className="text-sm font-medium">
+													{item.label}
+												</span>
+											)}
+										</div>
 
-							{isOpen && (
-								<span className="text-sm font-medium whitespace-nowrap">
-									{item.label}
-								</span>
-							)}
-						</NavLink>
-					))}
+										{isOpen && (
+											<ChevronDown
+												size={16}
+												className={`transition-transform ${
+													openItem === item.id ? "rotate-180" : ""
+												}`}
+											/>
+										)}
+									</button>
+								) : (
+									<NavLink
+										to={item.link ?? "#"}
+										className={({ isActive }) =>
+											`flex items-center gap-2 p-2 cursor-pointer rounded-lg transition
+                       ${
+													isActive
+														? "bg-orange-100 text-orange-600"
+														: "hover:bg-gray-200"
+												}`
+										}
+									>
+										<span className="text-sm shrink-0">{item.icon}</span>
+										{isOpen && (
+											<span className="text-sm font-medium">{item.label}</span>
+										)}
+									</NavLink>
+								)}
+
+								{/* Children */}
+								{hasChildren && openItem === item.id && isOpen && (
+									<div className="ml-6 mt-1 space-y-1 text-left text-xs">
+										{item.children!.map((child) => (
+											<NavLink
+												key={child.id}
+												to={child.link ?? "#"}
+												className={({ isActive }) =>
+													`block text-sm p-2 rounded-md transition
+                          ${
+														isActive
+															? "bg-orange-100 text-orange-600"
+															: "hover:bg-gray-200"
+													}`
+												}
+											>
+												<span className=" shrink-0 inline-flex">
+													{child.icon}&nbsp; {child.label}
+												</span>
+											</NavLink>
+										))}
+									</div>
+								)}
+							</div>
+						);
+					})}
 				</nav>
 			</aside>
 		</>

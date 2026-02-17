@@ -3,10 +3,11 @@ import Button from "../common/Button";
 import { Modal } from "../common/Modal";
 import FormInput from "../FormElements/FormInput";
 import { Pencil } from "lucide-react";
+import { useAuth } from "../../context/useAuth";
 
 export default function UserMetaCard() {
 	const [open, setOpen] = useState(false);
-
+	const { user } = useAuth();
 	const handleSave = () => {
 		console.log("Saving changes...");
 		setOpen(false);
@@ -28,7 +29,7 @@ export default function UserMetaCard() {
 
 						<div>
 							<h4 className="mb-2 text-lg font-semibold text-gray-800">
-								Musharof Chowdhury
+								{user?.first_name} {user?.last_name}
 							</h4>
 							<p className="text-sm text-gray-500">
 								Team Manager • Arizona, United States

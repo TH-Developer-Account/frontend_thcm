@@ -13,6 +13,7 @@ export interface PaginationProps {
 }
 
 const PAGE_SIZE_OPTIONS: Option[] = [
+	{ label: "15", value: "15" },
 	{ label: "25", value: "25" },
 	{ label: "50", value: "50" },
 	{ label: "100", value: "100" },
@@ -142,7 +143,7 @@ const Pagination: React.FC<PaginationProps> = ({
 			</div>
 
 			{!compact && (
-				<div className="w-25 flex items-center ">
+				<div className="w-25 text-xs flex items-center mb-0">
 					<SelectInput
 						options={PAGE_SIZE_OPTIONS}
 						value={PAGE_SIZE_OPTIONS.find(

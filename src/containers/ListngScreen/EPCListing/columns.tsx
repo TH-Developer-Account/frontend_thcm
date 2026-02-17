@@ -2,6 +2,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import type { EPCRow } from "../../../utils/types";
 import { Badge } from "../../../components/common/Badge";
 import { status } from "../constant";
+import Button from "../../../components/common/Button";
+import { Edit } from "lucide-react";
 
 export const columns: ColumnDef<EPCRow>[] = [
 	{
@@ -57,6 +59,40 @@ export const columns: ColumnDef<EPCRow>[] = [
 		cell: ({ row }) => (
 			<div>
 				<div className="font-medium">{row.original.location}</div>
+			</div>
+		),
+	},
+	{
+		accessorKey: "epf",
+		header: "EPF",
+		cell: ({ row }) => (
+			<div>
+				<div className="font-medium">
+					<Button
+						text=""
+						className="bg-gray-400 text-orange-900"
+						type="submit"
+						Icon={Edit}
+						iconPosition="right"
+					/>
+				</div>
+			</div>
+		),
+	},
+	{
+		accessorKey: "crf",
+		header: "CRF",
+		cell: ({ row }) => (
+			<div>
+				<div className="font-medium">
+					<Button
+						text=""
+						type="submit"
+						className="bg-gray-400 text-orange-900"
+						Icon={Edit}
+						iconPosition="right"
+					/>
+				</div>
 			</div>
 		),
 	},

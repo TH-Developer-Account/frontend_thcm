@@ -80,7 +80,7 @@ function DataTable<T extends object>({
 			{/* Scrollable Table Area */}
 			<div className="flex-1 min-h-0 overflow-auto">
 				<table
-					className="min-w-[900px] w-full text-sm text-black  text-left "
+					className="min-w-[800px] w-full text-sm text-black  text-left "
 					id={scrollTargetId}
 				>
 					{/* Header */}
@@ -128,7 +128,7 @@ function DataTable<T extends object>({
 						{loading ? (
 							Array.from({ length: pageSize }).map((_, i) => (
 								<tr key={i} className="border-b border-gray-100">
-									<td colSpan={columns.length} className="px-4 py-4">
+									<td colSpan={columns.length} className="px-2 py-2">
 										<div className="h-4 w-full animate-pulse rounded bg-gray-200" />
 									</td>
 								</tr>
@@ -137,7 +137,7 @@ function DataTable<T extends object>({
 							<tr>
 								<td
 									colSpan={columns.length}
-									className="px-6 py-12 text-gray-500"
+									className="px-3 py-4 text-gray-500"
 								>
 									<div className="flex flex-col items-centergap-2">
 										<div className="text-sm font-medium">{emptyTitle}</div>
@@ -155,7 +155,7 @@ function DataTable<T extends object>({
 									${index % 2 === 0 ? "bg-white" : "bg-gray-50/40"}`}
 								>
 									{row.getVisibleCells().map((cell) => (
-										<td key={cell.id} className="px-4 py-3 text-gray-700">
+										<td key={cell.id} className="px-2 py-3 text-gray-700">
 											{flexRender(
 												cell.column.columnDef.cell,
 												cell.getContext(),
@@ -174,8 +174,8 @@ function DataTable<T extends object>({
 				pageCount >= 1 &&
 				onPageChange &&
 				onPageSizeChange && (
-					<div className="flex-shrink-0 border-t border-gray-100 bg-gray-100 px-3 py-2 ">
-						<div className="flex justify-center">
+					<div className="flex-shrink-0 border-t border-gray-100 bg-gray-100 ">
+						<div className="flex justify-center items-center">
 							<Pagination
 								pageIndex={pageIndex}
 								pageSize={pageSize}

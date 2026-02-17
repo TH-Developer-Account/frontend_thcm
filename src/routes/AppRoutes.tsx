@@ -13,6 +13,7 @@ import EpfForm from "../containers/EPFScreen/EpfForm";
 import CrfForm from "../containers/CRFScreen/CrfForm";
 import UserProfile from "../containers/UserProfile/UserProfile";
 import UsersPage from "../admin/UserPage";
+import { DashboardPage } from "../containers/Dashboard/DashboardPage";
 
 export default function AppRoutes() {
 	return (
@@ -23,15 +24,17 @@ export default function AppRoutes() {
 				<Route path="/reset-password" element={<ResetPasswordPage />} />
 				<Route path="/forgot-password" element={<ForgotPasswordPage />} />
 				<Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-				<Route path="/test" element={<TestPage />} />
 				<Route path="/" element={<HomeScreen />} />
 
 				{/* Dashboard Layout Route */}
 				<Route element={<MainContentWrapper />}>
 					<Route path="listing" index element={<EPCList />} />
+					<Route path="dashboard" index element={<DashboardPage />} />
 					<Route path="epc" element={<EpcForm userRole="ADMIN" />} />
 					<Route path="/epf" element={<EpfForm />} />
 					<Route path="/crf" element={<CrfForm />} />
+					<Route path="/profile" element={<UserProfile />} />
+					<Route path="/admin" element={<UsersPage />} />
 				</Route>
 			</Routes>
 		</SessionTimeoutProvider>
