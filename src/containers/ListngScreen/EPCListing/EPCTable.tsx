@@ -1,6 +1,6 @@
 import { columns } from "./columns";
 import { useEPC } from "../context/useEPC";
-import type { EPCRow } from "../types";
+import type { EPCRow } from "../../../utils/types";
 import DataTable from "../../../components/ui/DataTable";
 
 const EPCTable = () => {
