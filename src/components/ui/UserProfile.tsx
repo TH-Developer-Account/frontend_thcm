@@ -9,7 +9,7 @@ const UserProfile = () => {
 		<div className="relative">
 			<div className="flex items-center gap-1 sm:gap-1 ">
 				<Menu as="div" className="relative inline-block">
-					<MenuButton className="inline-flex w-full justify-center gap-x-1 rounded-md items-center text-sm font-semibold text-white ">
+					<MenuButton className="inline-flex w-full justify-center gap-x-1 rounded-md items-center text-sm font-semibold ">
 						{user?.first_name + `, ` + user?.last_name}
 						<Avatar
 							firstName={user?.first_name || "User"}

@@ -79,5 +79,10 @@ body {
 
 .header {
 	/* background-color: var(--color-brand-primary); */
-	background-color: #000;
+	background-color: #fff;
+	color: #000;
+	border-bottom: 2px solid #f35a00;
+}
+aside {
+	border-right: 2px solid #f35a00;
 }

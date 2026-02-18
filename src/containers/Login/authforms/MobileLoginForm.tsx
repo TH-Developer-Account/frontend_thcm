@@ -244,6 +244,7 @@ const MobileLoginForm = () => {
 						text="Continue"
 						disabled={!MOBILE_REGEX.test(state.mobile)}
 						onClick={handleContinue}
+						fullWidth
 					/>
 				</form>
 			)}
@@ -265,9 +266,13 @@ const MobileLoginForm = () => {
 					/>
 
 					{isResendOtp ? (
-						<Button text="Verify OTP" onClick={handleVerifyResendOtp} />
+						<Button
+							text="Verify OTP"
+							onClick={handleVerifyResendOtp}
+							fullWidth
+						/>
 					) : (
-						<Button text="Verify OTP" onClick={handleVerifyOtp} />
+						<Button text="Verify OTP" onClick={handleVerifyOtp} fullWidth />
 					)}
 					<div className="">
 						<span className="text-xs">

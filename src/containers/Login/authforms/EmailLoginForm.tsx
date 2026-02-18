@@ -146,7 +146,12 @@ const EmailLoginForm = () => {
 				</a>
 			</div>
 
-			<Button text="Sign In" onClick={handleSubmit} disabled={loading} />
+			<Button
+				text="Sign In"
+				onClick={handleSubmit}
+				disabled={loading}
+				fullWidth
+			/>
 		</form>
 	);
 };
