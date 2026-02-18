@@ -23,35 +23,42 @@ export const sidebarItems: SidebarItem[] = [
 		id: "dashboard",
 		label: "Dashboard",
 		icon: <LayoutDashboard />,
-		link: "/dashboard",
+		link: "/marketing/dashboard",
 	},
 	{
 		id: "epc",
 		label: "EPC",
 		icon: <CalendarDays />,
-		link: "/epc",
+		link: "/marketing/epc",
 		children: [
-			{
-				id: "epc-create",
-				label: "Create EPC",
-				link: "/epc",
-				icon: <FilePen size={18} />,
-			},
 			{
 				id: "epc-list",
 				label: "EPC Listing",
-				link: "/listing",
+				link: "/marketing/listing",
 				icon: <Table size={18} />,
+			},
+			{
+				id: "epc-create",
+				label: "Create EPC",
+				link: "/marketing/epc",
+				icon: <FilePen size={18} />,
+			},
+
+			{
+				id: "epf-create",
+				label: "Create EPF",
+				link: "/marketing/epf",
+				icon: <FilePen size={18} />,
+			},
+			{
+				id: "crf",
+				label: "Create CRF",
+				icon: <Package />,
+				link: "/marketing/crf",
 			},
 		],
 	},
 
-	{
-		id: "crf",
-		label: "CRF",
-		icon: <Package />,
-		link: "/crf",
-	},
 	{
 		id: "settings",
 		label: "Settings",

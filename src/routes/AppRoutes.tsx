@@ -2,18 +2,14 @@
 import { Routes, Route } from "react-router-dom";
 // import ProtectedRoute from "./ProtectedRoute";
 import HomeScreen from "../containers/HomeScreen/index";
-import EPCList from "../containers/ListngScreen/EPCListing/index";
 import LoginPage from "../containers/Login/pages/LoginPage";
 import { ResetPasswordPage } from "../containers/Login/pages/ResestPasswordPage";
 import { ForgotPasswordPage } from "../containers/Login/pages/ForgotPasswordPage";
 import { SessionTimeoutProvider } from "../context/SessionTimeoutProvider";
 import MainContentWrapper from "../layout/MainContentWrapper";
-import EpcForm from "../containers/EPCScreen/EpcForm";
-import EpfForm from "../containers/EPFScreen/EpfForm";
-import CrfForm from "../containers/CRFScreen/CrfForm";
-import UserProfile from "../containers/UserProfile/UserProfile";
-import UsersPage from "../admin/UserPage";
-import { DashboardPage } from "../containers/Dashboard/DashboardPage";
+import UserProfile from "../components/ui/UserProfile/UserProfile";
+import UsersPage from "../modules/admin/pages/UserPage";
+import MarketingRoutes from "../modules/marketing/routes";
 
 export default function AppRoutes() {
 	return (
@@ -28,11 +24,8 @@ export default function AppRoutes() {
 
 				{/* Dashboard Layout Route */}
 				<Route element={<MainContentWrapper />}>
-					<Route path="listing" index element={<EPCList />} />
-					<Route path="dashboard" index element={<DashboardPage />} />
-					<Route path="epc" element={<EpcForm userRole="ADMIN" />} />
-					<Route path="/epf" element={<EpfForm />} />
-					<Route path="/crf" element={<CrfForm />} />
+					<Route path="/marketing/*" element={<MarketingRoutes />} />
+					<Route path="/admin/*" element={<MarketingRoutes />} />
 					<Route path="/profile" element={<UserProfile />} />
 					<Route path="/admin" element={<UsersPage />} />
 				</Route>

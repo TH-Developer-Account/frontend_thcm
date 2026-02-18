@@ -1,5 +1,5 @@
 import type { TableUserStatus } from "../components/common/Badge";
-import { status } from "../containers/ListngScreen/constant";
+import { status } from "../modules/marketing/pages/EPCTable/constant";
 
 export interface TableUser {
 	id: number;

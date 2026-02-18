@@ -22,7 +22,7 @@ export default function HomeScreen() {
 						title="Marketing Activity Planner"
 						description=""
 						subText=""
-						path="/listing"
+						path="/marketing/listing"
 					/>
 
 					<ActionCard
@@ -30,35 +30,35 @@ export default function HomeScreen() {
 						title="Product Selector"
 						description=""
 						subText=""
-						path="/listing"
+						path="/marketing/listing"
 					/>
 					<ActionCard
 						icon={<UserCheck size={40} className="text-orange-500" />}
 						title="Key Account"
 						description=""
 						subText=""
-						path="/listing"
+						path="/marketing/listing"
 					/>
 					<ActionCard
 						icon={<Database size={40} className="text-orange-500" />}
 						title="Customer Master Data"
 						description=""
 						subText=""
-						path="/listing"
+						path="/marketing/listing"
 					/>
 					<ActionCard
 						icon={<FileText size={40} className="text-orange-500" />}
 						title="Dealer Claims"
 						description=""
 						subText=""
-						path="/listing"
+						path="/marketing/listing"
 					/>
 					<ActionCard
 						icon={<Warehouse size={40} className="text-orange-500" />}
 						title="Asset Master"
 						description=""
 						subText=""
-						path="/listing"
+						path="/marketing/listing"
 					/>
 				</div>
 			</main>
