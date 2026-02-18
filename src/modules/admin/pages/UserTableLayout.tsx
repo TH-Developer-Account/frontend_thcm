@@ -1,11 +1,11 @@
 // UserTableLayout.tsx
-import { type User } from "../../../utils/types";
+import { type TableUser } from "../../../utils/types";
 import { UserTableTabs } from "./UserTableTabs";
 import { UserTableHeader } from "./UserTableHeader";
 import { UserTable } from "./UserTable";
 
 interface Props {
-	users: User[];
+	users: TableUser[];
 	activeTab: string;
 	counts: Record<string, number>;
 	search: string;
@@ -22,7 +22,7 @@ export function UserTableLayout({
 	onSearch,
 }: Props) {
 	return (
-		<div className="bg-gray-50 min-h-screen">
+		<div className="bg-white rounded-t-2xl border border-gray-200 border-b-0 min-h-screen">
 			<UserTableTabs
 				activeTab={activeTab}
 				counts={counts}

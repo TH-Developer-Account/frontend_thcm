@@ -1,16 +1,16 @@
 // UserTable.tsx
-import { type User } from "../../../utils/types";
+import { type TableUser } from "../../../utils/types";
 import { statusStyles } from "../../../utils/types";
 import { Pencil, MoreVertical } from "lucide-react";
 
 interface Props {
-	users: User[];
+	users: TableUser[];
 }
 
 export function UserTable({ users }: Props) {
 	return (
-		<div className="px-6 pb-6">
-			<div className="bg-white rounded-2xl overflow-hidden border">
+		<div className="">
+			<div className="bg-white overflow-hidden ">
 				<table className="w-full text-sm">
 					<thead className="bg-gray-100 text-gray-600">
 						<tr>
@@ -30,7 +30,7 @@ export function UserTable({ users }: Props) {
 						{users.map((user) => (
 							<tr
 								key={user.id}
-								className="border-t hover:bg-gray-50 transition"
+								className="border-t border-gray-200 hover:bg-gray-50 transition"
 							>
 								<td className="px-6 py-4">
 									<input type="checkbox" />

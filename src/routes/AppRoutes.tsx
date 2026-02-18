@@ -7,9 +7,8 @@ import { ResetPasswordPage } from "../containers/Login/pages/ResestPasswordPage"
 import { ForgotPasswordPage } from "../containers/Login/pages/ForgotPasswordPage";
 import { SessionTimeoutProvider } from "../context/SessionTimeoutProvider";
 import MainContentWrapper from "../layout/MainContentWrapper";
-import UserProfile from "../components/ui/UserProfile/UserProfile";
-import UsersPage from "../modules/admin/pages/UserPage";
 import MarketingRoutes from "../modules/marketing/routes";
+import AdminRoutes from "../modules/admin/routes";
 
 export default function AppRoutes() {
 	return (
@@ -25,9 +24,7 @@ export default function AppRoutes() {
 				{/* Dashboard Layout Route */}
 				<Route element={<MainContentWrapper />}>
 					<Route path="/marketing/*" element={<MarketingRoutes />} />
-					<Route path="/admin/*" element={<MarketingRoutes />} />
-					<Route path="/profile" element={<UserProfile />} />
-					<Route path="/admin" element={<UsersPage />} />
+					<Route path="/admin/*" element={<AdminRoutes />} />
 				</Route>
 			</Routes>
 		</SessionTimeoutProvider>

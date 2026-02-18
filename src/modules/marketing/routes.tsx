@@ -4,6 +4,7 @@ import { DashboardPage } from "./pages/Dashboard/DashboardPage";
 import EpcForm from "./pages/EPCScreen/EpcForm";
 import EpfForm from "./pages/EPFScreen/EpfForm";
 import CrfForm from "./pages/CRFScreen/CrfForm";
+import UserProfile from "../../components/ui/UserProfile/UserProfile";
 
 export default function MarketingRoutes() {
 	return (
@@ -13,6 +14,7 @@ export default function MarketingRoutes() {
 			<Route path="epf" element={<EpfForm />} />
 			<Route path="crf" element={<CrfForm />} />
 			<Route path="listing" element={<EPCList />} />
+			<Route path="/profile" element={<UserProfile />} />
 		</Routes>
 	);
 }

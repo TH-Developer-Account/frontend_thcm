@@ -11,7 +11,11 @@ export interface TableUser {
 	status: TableUserStatus;
 	avatar: string;
 }
-
+export const statusStyles: Record<TableUserStatus, string> = {
+	Active: "bg-green-100 text-green-700",
+	Inactive: "bg-amber-100 text-amber-700",
+	Blocked: "bg-red-100 text-red-600",
+};
 // types.ts (or same file)
 type StatusKey = keyof typeof status;
 

@@ -5,6 +5,7 @@ import {
 	Database,
 	Warehouse,
 	FileText,
+	MonitorCog,
 } from "lucide-react";
 import Header from "../../components/ui/Header";
 import ActionCard from "./components/Card";
@@ -23,6 +24,13 @@ export default function HomeScreen() {
 						description=""
 						subText=""
 						path="/marketing/listing"
+					/>
+					<ActionCard
+						icon={<MonitorCog size={40} className="text-orange-500" />}
+						title="Administrator"
+						description=""
+						subText=""
+						path="/admin/users"
 					/>
 
 					<ActionCard
@@ -44,7 +52,7 @@ export default function HomeScreen() {
 						title="Customer Master Data"
 						description=""
 						subText=""
-						path="/marketing/listing"
+						path="/admin/users"
 					/>
 					<ActionCard
 						icon={<FileText size={40} className="text-orange-500" />}

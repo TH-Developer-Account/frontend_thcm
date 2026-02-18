@@ -1,8 +1,8 @@
 // useUserTable.ts
 import { useMemo, useState } from "react";
-import { type User } from "../../../utils/types";
+import { type TableUser } from "../../../utils/types";
 
-export function useUserTable(data: User[]) {
+export function useUserTable(data: TableUser[]) {
 	const [activeTab, setActiveTab] = useState("All");
 	const [search, setSearch] = useState("");
 
@@ -16,9 +16,8 @@ export function useUserTable(data: User[]) {
 		return {
 			All: data.length,
 			Active: data.filter((u) => u.status === "Active").length,
-			Pending: data.filter((u) => u.status === "Pending").length,
-			Banned: data.filter((u) => u.status === "Banned").length,
-			Rejected: data.filter((u) => u.status === "Rejected").length,
+			Inactive: data.filter((u) => u.status === "Inactive").length,
+			Blocked: data.filter((u) => u.status === "Blocked").length,
 		};
 	}, [data]);
 
