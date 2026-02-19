@@ -1,3 +1,4 @@
+import { NavLink } from "react-router-dom";
 import UserProfile from "../../components/ui/UserProfile";
 
 function Header() {
@@ -7,7 +8,9 @@ function Header() {
 				TATA HITACHI
 			</span> */}
 			<div className="logo md:w-[150px] w-[120px]">
-				<img src="/r.png" alt="logo" />
+				<NavLink to={"/"}>
+					<img src="/lo.jpg" alt="logo" />
+				</NavLink>
 			</div>
 			<UserProfile />
 		</>

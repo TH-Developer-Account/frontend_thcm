@@ -6,14 +6,17 @@ import "./index.css";
 import "./App.css";
 import App from "./App.tsx";
 import { AuthProvider } from "./context/AuthProvider.tsx";
-import ToastProvider from "./containers/Toast/ToastProvider.tsx";
+import ToastProvider from "./components/common/Toast/ToastProvider.tsx";
 
 createRoot(document.getElementById("root")!).render(
 	<StrictMode>
 		<BrowserRouter>
 			<ToastProvider>
 				<AuthProvider>
-					<div className="container">
+					<div
+						className="container 
+						overflow-hidden"
+					>
 						<App />
 					</div>
 				</AuthProvider>
