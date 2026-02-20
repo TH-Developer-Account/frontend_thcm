@@ -1,6 +1,6 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../context/useAuth";
+import { useAuth } from "../context/Auth/useAuth";
 
 type ProtectedRouteProps = {
   children: React.JSX.Element;
