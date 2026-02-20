@@ -1,5 +1,5 @@
 import DataTable from "../../../../components/ui/DataTable";
-import { useEPC } from "../../../marketing/pages/EPCTable/context/useEPC";
+import { useEPC } from "../../../marketing/context/useEPC";
 import type { DepartmentRow } from "../types";
 import { deptTableColumn } from "../utils/adminTableColumn";
 
