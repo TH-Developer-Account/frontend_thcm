@@ -6,7 +6,7 @@ import { UserTable } from "./UserTable";
 
 interface Props {
 	users: TableUser[];
-	activeTab: string;
+	activeTab: any;
 	counts: Record<string, number>;
 	search: string;
 	onTabChange: (tab: string) => void;

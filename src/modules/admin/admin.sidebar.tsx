@@ -1,18 +1,12 @@
-// sidebar.config.ts
 import type { SidebarItem } from "../../layout/layout.types";
 import {
 	Home,
 	Settings,
 	Table,
-	// UserPen,
 	Database,
-	// CalendarDays,
 	MapPinHouse,
-	// Package,
-	// File,
-	FilePen,
-	LayoutDashboard,
 	Users,
+	User,
 } from "lucide-react";
 
 export const adminSidebar: SidebarItem[] = [
@@ -20,52 +14,49 @@ export const adminSidebar: SidebarItem[] = [
 		id: "home",
 		label: "Home",
 		icon: <Home />,
-		link: "/",
-	},
-	{
-		id: "dashboard",
-		label: "Dashboard",
-		icon: <LayoutDashboard />,
 		link: "/admin/dashboard",
+		roles: ["ADMIN", "DEALER", "EMPLOYEE"],
 	},
 	{
-		id: "masters",
-		label: "Masters",
+		id: "user_management",
+		label: "User Management",
 		icon: <Database />,
 		link: "/admin/masters",
-		children: [
-			{
-				id: "users",
-				label: "Users",
-				link: "/admin/users",
-				icon: <Users size={18} />,
-			},
-			{
-				id: "department",
-				label: "Department",
-				link: "/admin/department",
-				icon: <Table size={18} />,
-			},
-
-			{
-				id: "roles",
-				label: "Roles",
-				link: "/admin/roles",
-				icon: <FilePen size={18} />,
-			},
-			{
-				id: "branche",
-				label: "Branches",
-				icon: <MapPinHouse />,
-				link: "/admin/branches",
-			},
-		],
+		roles: ["ADMIN"],
 	},
-
+	{
+		id: "users",
+		label: "Business Users",
+		icon: <Users />,
+		link: "/admin/users",
+		roles: ["ADMIN"],
+	},
+	{
+		id: "department",
+		label: "Department",
+		icon: <Table />,
+		link: "/admin/department",
+		roles: ["ADMIN", "DEALER"],
+	},
+	{
+		id: "profiles",
+		label: "User Profiles",
+		icon: <User />,
+		link: "/admin/user_profiles",
+		roles: ["ADMIN"],
+	},
+	{
+		id: "branche",
+		label: "Branches",
+		icon: <MapPinHouse />,
+		link: "/admin/branches",
+		roles: ["ADMIN", "DEALER"],
+	},
 	{
 		id: "settings",
 		label: "Settings",
 		icon: <Settings />,
 		link: "/admin/profile",
+		roles: ["ADMIN", "DEALER", "EMPLOYEE"],
 	},
 ];

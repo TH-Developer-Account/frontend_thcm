@@ -1,5 +1,5 @@
-import { Badge, type TableUserStatus } from "../../../components/common/Badge";
-type UserTab = "All" | TableUserStatus;
+import { Badge, type GeneralStatus } from "../../../components/common/Badge";
+type UserTab = "All" | GeneralStatus;
 
 const tabs: UserTab[] = ["All", "Active", "Blocked", "Inactive"];
 
@@ -8,7 +8,6 @@ interface Props {
 	counts: Record<UserTab, number>;
 	onChange: (tab: UserTab) => void;
 }
-// UserTableTabs.tsx
 
 export function UserTableTabs({ activeTab, counts, onChange }: Props) {
 	return (
@@ -22,7 +21,9 @@ export function UserTableTabs({ activeTab, counts, onChange }: Props) {
 						onClick={() => onChange(tab)}
 						className="relative pb-4 text-sm font-medium transition cursor-pointer text-center"
 					>
-						<span className={isActive ? "text-gray-900" : "text-gray-500"}>
+						<span
+							className={isActive ? "text-gray-900 mr-1" : "mr-1 text-gray-500"}
+						>
 							{tab}
 						</span>
 
