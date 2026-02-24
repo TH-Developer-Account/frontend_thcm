@@ -102,3 +102,11 @@ export const mockUsers: TableUser[] = [
 		avatar: "https://i.pravatar.cc/150?img=10",
 	},
 ];
+
+export const mockDepartments = [
+	{ id: 1, name: "Sales & Marketing", status: "Active" },
+	{ id: 2, name: "Spare Parts", status: "Active" },
+	{ id: 3, name: "Mining & Construction", status: "Inactive" },
+	{ id: 4, name: "Service", status: "Active" },
+	{ id: 5, name: "Others", status: "Inactive" },
+];

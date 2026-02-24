@@ -1,4 +1,4 @@
-import type { TableUserStatus } from "../../components/common/Badge";
+import type { TableUserStatus } from "../../components/common/common.types";
 
 export interface UserProfileTableRow {
 	id: number;

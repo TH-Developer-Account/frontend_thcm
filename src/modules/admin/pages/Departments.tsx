@@ -3,7 +3,7 @@ import { mockUsers } from "../mockUsers";
 import { UserTableLayout } from "./UserTableLayout";
 import { PageHeader } from "../../../components/ui/PageHeader";
 
-export default function UsersPage() {
+export default function Departments() {
 	const [activeTab, setActiveTab] = useState("All");
 	const [search, setSearch] = useState("");
 

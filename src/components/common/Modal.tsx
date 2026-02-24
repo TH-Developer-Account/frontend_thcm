@@ -3,6 +3,7 @@ import React from "react";
 interface ModalProps {
 	open: boolean;
 	title?: string;
+	message?: string;
 	onClose: () => void;
 	children: React.ReactNode;
 }
