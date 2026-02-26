@@ -138,7 +138,8 @@ const ForgotPasswordForm = () => {
 						text="Send Reset Link"
 						onClick={handleSubmit}
 						disabled={state.loading}
-						variant="brand"
+						fullWidth
+						status="brand"
 					/>
 				</form>
 			) : (
@@ -159,7 +160,12 @@ const ForgotPasswordForm = () => {
 							A link has been sent to your email, please check.
 						</p>
 						<a href="/login">
-							<Button text="Back to login" className="mt-6" variant="brand" />
+							<Button
+								text="Back to login"
+								className="mt-6"
+								status="brand"
+								fullWidth
+							/>
 						</a>
 					</div>
 				</form>

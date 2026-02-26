@@ -151,7 +151,7 @@ const EmailLoginForm = () => {
 				onClick={handleSubmit}
 				disabled={loading}
 				fullWidth
-				status="brand-color"
+				status="brand"
 			/>
 		</form>
 	);

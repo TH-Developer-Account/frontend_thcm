@@ -193,10 +193,17 @@ const EpfForm2 = ({ epcId, userRole }: EpcFormProps) => {
 			{/* Buttons */}
 			{!isViewer && (
 				<div className="mt-6 flex justify-end gap-3">
-					<Button text="Save as Draft" onClick={() => handleSave("DRAFT")} />
+					<Button
+						text="Save as Draft"
+						onClick={() => handleSave("DRAFT")}
+						status="brand"
+						fullWidth
+					/>
 					<Button
 						onClick={() => handleSave("SUBMITTED")}
 						text={isEditMode ? "Update & Submit" : "Submit"}
+						status="brand"
+						fullWidth
 					/>
 				</div>
 			)}

@@ -15,7 +15,7 @@ const STATUS_STYLE_MAP: Record<string, string> = {
 	"Sent Back": "bg-gray-300 text-gray-800",
 	Inactive: "bg-gray-300 text-gray-800",
 	inactive: "bg-gray-300 text-gray-800",
-	Brand: "bg-[#f35a00] text-white",
+	brand: "bg-[#f35a00] text-white",
 	Completed: "bg-emerald-100 text-emerald-800",
 };
 

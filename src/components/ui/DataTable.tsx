@@ -86,10 +86,7 @@ function DataTable<T extends object>({
 					{/* Header */}
 					<thead className="bg-gray-50 sticky top-0 z-10 border-b border-gray-200">
 						{table.getHeaderGroups().map((group) => (
-							<tr
-								key={group.id}
-								className="bg-[var(--color-brand)] text-[var(--color-white)] text-sm"
-							>
+							<tr key={group.id} className="bg-gray-200 text-gray-600 text-sm">
 								{group.headers.map((header) => {
 									const isSorted = header.column.getIsSorted();
 
