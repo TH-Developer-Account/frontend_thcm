@@ -66,9 +66,11 @@ const ProfileList: React.FC<ProfileListProps> = ({
 									<tr>
 										<th className="px-6 py-4 text-left">Profile Name</th>
 										<th className="px-6 py-4 text-left">Profile Description</th>
-										<th className="px-6 py-4 text-left">Role</th>
-										<th className="px-6 py-4 text-left">Status</th>
-										<th className="px-6 py-4 text-left">Users</th>
+										{/* <th className="px-6 py-4 text-left">Role</th>
+										<th className="px-6 py-4 text-left">Status</th> */}
+										<th className="px-6 py-4 text-left" colSpan={2}>
+											Users
+										</th>
 										<th className="px-6 py-4 text-center">Actions</th>
 									</tr>
 								</thead>
@@ -86,24 +88,54 @@ const ProfileList: React.FC<ProfileListProps> = ({
 											<td className="px-6 py-4 items-center">
 												<p>{profile.description}</p>
 											</td>
-											<td className="px-6 py-4 items-center">
-												{profile.role
-													? formatRole(profile.role)
-													: "General User"}
-											</td>
-											<td className="px-6 py-4 items-center">
-												<Badge status={profile.status}>
-													{profile.status ? capitalize(profile.status) : "None"}
-												</Badge>
-											</td>
-
-											<td className="px-6 py-4 items-center">
-												<div className="col-span-1 flex gap-2 justify-start">
-													{profile.assignedUsers?.map((user) => (
-														<div key={user} className=" text-left">
-															<Avatar size="xs" firstName={user} />
+											<td
+												className="px-6 py-4 col-span-2 items-center"
+												colSpan={2}
+											>
+												<div className="flex gap-2 justify-start">
+													{profile.assignedUsers ? (
+														profile.assignedUsers?.map((user) => (
+															<div key={user} className=" text-left">
+																<Avatar size="xs" firstName={user} />
+															</div>
+														))
+													) : (
+														<div className="flex flex-col sm:flex-row sm:items-end">
+															<div className="flex -space-x-1">
+																<Avatar
+																	size="xs"
+																	firstName="John"
+																	lastName="Doe"
+																	className="outline-ring-1 outline outline-white "
+																/>
+																<Avatar
+																	size="xs"
+																	firstName="John"
+																	lastName="Doe"
+																/>
+																<Avatar
+																	size="xs"
+																	firstName="John"
+																	lastName="Doe"
+																/>
+																<Avatar
+																	size="xs"
+																	firstName="John"
+																	lastName="Doe"
+																/>
+																<Avatar
+																	size="xs"
+																	firstName="John"
+																	lastName="Doe"
+																/>
+																<Avatar
+																	size="xs"
+																	firstName="John"
+																	lastName="Doe"
+																/>
+															</div>
 														</div>
-													))}
+													)}
 												</div>
 											</td>
 

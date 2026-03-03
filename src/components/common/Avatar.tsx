@@ -3,6 +3,7 @@ interface AvatarProps {
 	lastName?: string;
 	imageUrl?: string;
 	size?: "sm" | "md" | "lg" | "xs";
+	className?: string;
 }
 
 const sizeClasses = {
@@ -17,6 +18,7 @@ const Avatar: React.FC<AvatarProps> = ({
 	lastName = "",
 	imageUrl,
 	size = "md",
+	className,
 }) => {
 	const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 	const fullName = `${firstName} ${lastName}`.trim();
@@ -37,7 +39,7 @@ const Avatar: React.FC<AvatarProps> = ({
 					cursor-pointer
 					text-white
 					text-md
-					
+					${className}
 					`}
 				aria-label={fullName}
 			>
