@@ -3,6 +3,7 @@ import { Routes, Route } from "react-router-dom";
 // import ProtectedRoute from "./ProtectedRoute";
 import HomeScreen from "../containers/HomeScreen/index";
 import LoginPage from "../containers/Login/pages/LoginPage";
+import ForbiddenPage from "../Forbidden";
 import { ResetPasswordPage } from "../containers/Login/pages/ResestPasswordPage";
 import { ForgotPasswordPage } from "../containers/Login/pages/ForgotPasswordPage";
 import { SessionTimeoutProvider } from "../context/SessionTimeOut/SessionTimeoutProvider";
@@ -20,6 +21,7 @@ export default function AppRoutes() {
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
         <Route path="/" element={<HomeScreen />} />
+        <Route path="/forbidden" element={<ForbiddenPage />} />
 
         {/* Dashboard Layout Route */}
         <Route element={<MainContentWrapper />}>
