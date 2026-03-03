@@ -54,7 +54,10 @@ export const UserProfilePage = () => {
 	};
 
 	return (
-		<div className="background-color 0.3s ease" data-theme={theme}>
+		<div
+			className="bg-white 0.3s ease max-w-full mx-auto h-full min-h-screen"
+			data-theme={theme}
+		>
 			{view === "list" && (
 				<ProfileList
 					profiles={profiles}

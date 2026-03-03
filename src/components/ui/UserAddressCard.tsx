@@ -46,7 +46,7 @@ const UserAddressCard = ({ userRole }: UserAddressFormProps) => {
 							onClick={() => setOpen(true)}
 							Icon={Pencil}
 							iconPosition="right"
-							className=""
+							status="brand"
 						/>
 					)}
 				</div>

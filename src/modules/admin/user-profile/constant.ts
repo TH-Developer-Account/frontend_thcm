@@ -2,21 +2,43 @@
 //  CONSTANTS & DATA
 // ─────────────────────────────────────────────
 
-import type { Profile } from "./profile.types";
+import type { ProfileDTO, WorkspacePayload } from "./profile.types";
 
-export const MODULES = [
-	{ id: "crm", name: "CRM", icon: "👥", category: "Sales" },
-	{ id: "analytics", name: "Analytics", icon: "📊", category: "Insights" },
-	{ id: "finance", name: "Finance", icon: "💰", category: "Operations" },
-	{ id: "hr", name: "HR Management", icon: "🏢", category: "People" },
-	{ id: "projects", name: "Project Mgmt", icon: "📁", category: "Work" },
-	{ id: "inventory", name: "Inventory", icon: "📦", category: "Operations" },
-	{ id: "reports", name: "Reports", icon: "📄", category: "Insights" },
-	{ id: "settings", name: "Settings", icon: "⚙️", category: "System" },
-	{ id: "marketing", name: "Marketing", icon: "📣", category: "Sales" },
-	{ id: "support", name: "Support", icon: "🎧", category: "People" },
+export const WORKSPACE_APPS = [
+	{
+		key: "MAP",
+		name: "Marketing Activity Planner",
+		enabled: true,
+		modules: [
+			{ key: "EPC", name: "Event Planning Calendar" },
+			{ key: "EPF", name: "Event Proposal Form" },
+			{ key: "CRF", name: "Collateral Requisition Form" },
+			{ key: "LEADS", name: "Leads Aquisition Form" },
+			{ key: "OPP", name: "Customer Opportunities" },
+		],
+	},
+	{
+		key: "PS",
+		name: "Product Selector",
+		enabled: true,
+		modules: [
+			{ key: "LEADS", name: "Leads Management" },
+			{ key: "OPP", name: "Opportunities" },
+		],
+	},
 ];
 
+export const DEFAULT_PERMISSIONS = () => {
+	const permissions: Record<string, { read: boolean; write: boolean }> = {};
+
+	WORKSPACE_APPS.forEach((app) => {
+		app.modules.forEach((module) => {
+			permissions[module.key] = { read: false, write: false };
+		});
+	});
+
+	return permissions;
+};
 export const ALL_USERS = [
 	{
 		id: "u1",
@@ -76,89 +98,30 @@ export const ALL_USERS = [
 	},
 ];
 
-export const DEFAULT_PERMISSIONS = () =>
-	Object.fromEntries(MODULES.map((m) => [m.id, { read: false, write: false }]));
-
-export const INITIAL_PROFILES: Profile[] = [
+export const INITIAL_PROFILES: ProfileDTO[] = [
 	{
-		id: "p1",
 		name: "Super Administrator",
-		description: "Full access to all modules and system settings",
-		role: "admin",
-		status: "active",
-		color: "#f59e0b",
-		assignedUsers: ["u1", "u3"],
-		permissions: Object.fromEntries(
-			MODULES.map((m) => [m.id, { read: true, write: true }]),
-		),
-		createdAt: "2024-01-10",
-		updatedAt: "2025-01-15",
+		description: "Full access to everything",
+		permissions: [
+			{ action: "read", scopeType: "WORKSPACE" },
+			{ action: "write", scopeType: "WORKSPACE" },
+		],
 	},
 	{
-		id: "p2",
 		name: "Sales Manager",
-		description: "Access to CRM, Marketing, and Reports modules",
-		role: "manager",
-		status: "active",
-		color: "#10b981",
-		assignedUsers: ["u4", "u7"],
-		permissions: {
-			...DEFAULT_PERMISSIONS(),
-			crm: { read: true, write: true },
-			marketing: { read: true, write: true },
-			reports: { read: true, write: false },
-			analytics: { read: true, write: false },
-		},
-		createdAt: "2024-02-20",
-		updatedAt: "2025-02-01",
+		description: "Write access to MAP, read everywhere else",
+		permissions: [
+			{ action: "read", scopeType: "WORKSPACE" },
+			{ action: "write", scopeType: "APP", appKey: "MAP" },
+		],
 	},
 	{
-		id: "p3",
 		name: "Finance Analyst",
-		description: "Read/Write access to Finance and Reports",
-		role: "analyst",
-		status: "active",
-		color: "#6366f1",
-		assignedUsers: ["u5"],
-		permissions: {
-			...DEFAULT_PERMISSIONS(),
-			finance: { read: true, write: true },
-			reports: { read: true, write: true },
-			analytics: { read: true, write: false },
-		},
-		createdAt: "2024-03-05",
-		updatedAt: "2025-01-28",
-	},
-	{
-		id: "p4",
-		name: "HR Executive",
-		description: "Manage HR and partial access to Reports",
-		role: "executive",
-		status: "inactive",
-		color: "#ec4899",
-		assignedUsers: ["u6"],
-		permissions: {
-			...DEFAULT_PERMISSIONS(),
-			hr: { read: true, write: true },
-			reports: { read: true, write: false },
-		},
-		createdAt: "2024-04-12",
-		updatedAt: "2024-12-10",
-	},
-	{
-		id: "p5",
-		name: "Support Agent",
-		description: "Access to Support ticketing system only",
-		role: "agent",
-		status: "active",
-		color: "#0ea5e9",
-		assignedUsers: ["u2", "u8"],
-		permissions: {
-			...DEFAULT_PERMISSIONS(),
-			support: { read: true, write: true },
-		},
-		createdAt: "2024-05-18",
-		updatedAt: "2025-02-10",
+		description: "Read/write access to CRM only",
+		permissions: [
+			{ action: "read", scopeType: "APP", appKey: "CRM" },
+			{ action: "write", scopeType: "APP", appKey: "CRM" },
+		],
 	},
 ];
 
@@ -170,6 +133,12 @@ export const ROLE_OPTIONS = [
 	{ value: "agent", label: "Agent" },
 	{ value: "viewer", label: "Viewer" },
 ];
+
+export const WORKSPACE_PAYLOAD: WorkspacePayload = {
+	workSpaceName: "Tata Hitachi Workspace",
+	apps: WORKSPACE_APPS,
+	profiles: INITIAL_PROFILES,
+};
 
 export const ACCENT_COLORS = [
 	"#f59e0b",
@@ -210,6 +179,6 @@ export const PROFILE_PERMISSION_TEXT = {
 
 export const sections = [
 	{ id: "general", label: "General", icon: "📋" },
-	{ id: "users", label: "Assign Users", icon: "👥" },
+	// { id: "users", label: "Assign Users", icon: "👥" },
 	{ id: "permissions", label: "Permissions", icon: "🔐" },
 ];

@@ -8,6 +8,7 @@ import { ThemeProvider } from "../providers/ThemeContext";
 import Departments from "../modules/admin/pages/Departments";
 import ByDesignPage from "../modules/admin/pages/FetchUsers/ByDesign";
 import C4CPage from "../modules/admin/pages/FetchUsers/C4C";
+import DealerListPage from "../modules/admin/pages/DealerMaster/DealerListPage";
 // import BusinessProfileList from "../modules/admin/pages/BusinessProfileList";
 
 export default function AdminRoutes() {
@@ -25,6 +26,14 @@ export default function AdminRoutes() {
         element={
           <ThemeProvider>
             <UserProfilePage />
+          </ThemeProvider>
+        }
+      />
+      <Route
+        path="dealers"
+        element={
+          <ThemeProvider>
+            <DealerListPage />
           </ThemeProvider>
         }
       />

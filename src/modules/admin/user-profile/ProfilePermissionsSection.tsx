@@ -2,7 +2,6 @@ import React from "react";
 import { Card } from "../../../components/common/Card";
 import Button from "../../../components/common/Button";
 import PermissionToggleRow from "./PermissionToggleRow";
-import { MODULES } from "./constant";
 import { PROFILE_PERMISSION_TEXT } from "./constant";
 import { ArrowLeft, EditIcon, PlusIcon } from "lucide-react";
 import type { Profile } from "./profile.types";
@@ -10,7 +9,14 @@ import type { Profile } from "./profile.types";
 interface Props {
 	form: Profile;
 	setForm: React.Dispatch<React.SetStateAction<Profile>>;
-	modulesByCategory: Record<string, (typeof MODULES)[number][]>;
+	modulesByApp: Record<
+		string,
+		{
+			appKey: string;
+			appName: string;
+			modules: { key: string; name: string }[];
+		}
+	>;
 	readCount: number;
 	writeCount: number;
 	isEditing: boolean;
@@ -20,7 +26,7 @@ interface Props {
 }
 
 const Divider = ({ label }: { label: string }) => (
-	<div className="flex items-center gap-3 my-1">
+	<div className="flex items-center gap-3 my-2">
 		<div className="flex-1 h-px bg-zinc-800" />
 		<span className="text-xs text-zinc-600 font-medium uppercase tracking-widest whitespace-nowrap">
 			{label}
@@ -32,7 +38,7 @@ const Divider = ({ label }: { label: string }) => (
 const ProfilePermissionsSection: React.FC<Props> = ({
 	form,
 	setForm,
-	modulesByCategory,
+	modulesByApp,
 	readCount,
 	writeCount,
 	isEditing,
@@ -40,47 +46,28 @@ const ProfilePermissionsSection: React.FC<Props> = ({
 	onSubmit,
 	onBack,
 }) => {
-	const handleSubmitToggle = () => {
-		const now = new Date().toISOString().split("T")[0];
-		console.log("Toggled all permissions on", now);
-	};
+	const totalModules = Object.values(modulesByApp).reduce(
+		(acc, app) => acc + app.modules.length,
+		0,
+	);
+
 	return (
 		<Card className="p-6">
 			{/* Header */}
-			<div className="flex items-center justify-between mb-2">
+			<div className="flex items-center justify-between mb-4">
 				<h2 className="text-base font-bold text-zinc-100 flex items-center gap-2">
 					<span>🔐</span> {PROFILE_PERMISSION_TEXT.title}
 				</h2>
-
-				<div className="flex gap-1.5 p-1 bg-gray-100 rounded-lg border border-zinc-700">
-					<span className="text-xs text-zinc-500 self-center ml-1">
-						{PROFILE_PERMISSION_TEXT.quickLabel}
-					</span>
-
-					{/* Quick Buttons — wire later if needed */}
-					{Object.entries(PROFILE_PERMISSION_TEXT.quickActions).map(
-						([key, label]) => (
-							<button
-								key={key}
-								type="button"
-								onClick={handleSubmitToggle}
-								className="text-xs cursor-pointer px-2 py-1 rounded transition-colors font-medium"
-							>
-								{label}
-							</button>
-						),
-					)}
-				</div>
 			</div>
 
 			{/* Counters */}
-			<div className="flex items-center gap-4 mb-5 p-3 bg-gray-100/40 rounded-lg border border-zinc-800">
+			<div className="flex items-center gap-6 mb-6 p-3 bg-gray-100/40 rounded-lg border border-zinc-800">
 				<div className="flex items-center gap-2">
 					<div className="w-2 h-2 rounded-full bg-sky-400" />
 					<span className="text-xs text-zinc-400">
-						{PROFILE_PERMISSION_TEXT.counters.read}:{" "}
-						<span className="text-sky-400 font-semibold font-['DM_Mono',monospace]">
-							{readCount}/{MODULES.length}
+						Read:{" "}
+						<span className="text-sky-400 font-semibold">
+							{readCount}/{totalModules}
 						</span>
 					</span>
 				</div>
@@ -88,29 +75,28 @@ const ProfilePermissionsSection: React.FC<Props> = ({
 				<div className="flex items-center gap-2">
 					<div className="w-2 h-2 rounded-full bg-amber-400" />
 					<span className="text-xs text-zinc-400">
-						{PROFILE_PERMISSION_TEXT.counters.write}:{" "}
-						<span className="text-amber-400 font-semibold font-['DM_Mono',monospace]">
-							{writeCount}/{MODULES.length}
+						Write:{" "}
+						<span className="text-amber-400 font-semibold">
+							{writeCount}/{totalModules}
 						</span>
 					</span>
 				</div>
 			</div>
 
 			{/* Permission Rows */}
-			<div className="space-y-5 max-h-[420px] overflow-y-auto pr-1">
-				{Object.entries(modulesByCategory).map(([cat, mods]) => (
-					<div key={cat}>
-						<Divider label={cat} />
+			<div className="space-y-6 max-h-[420px] overflow-y-auto pr-1">
+				{Object.values(modulesByApp).map((app) => (
+					<div key={app.appKey}>
+						<Divider label={app.appName} />
 
-						<div className="space-y-1 mt-2">
-							{mods.map((mod) => (
+						<div className="space-y-1 mt-3">
+							{app.modules.map((mod) => (
 								<PermissionToggleRow
-									key={mod.id}
-									moduleId={mod.id}
+									key={mod.key}
+									moduleId={mod.key}
 									moduleName={mod.name}
-									category={mod.category}
-									read={form.permissions[mod.id]?.read || false}
-									write={form.permissions[mod.id]?.write || false}
+									read={form.permissions[mod.key]?.read || false}
+									write={form.permissions[mod.key]?.write || false}
 									onToggle={(moduleId, type, value) => {
 										setForm((prev) => {
 											const updated = {
@@ -143,7 +129,7 @@ const ProfilePermissionsSection: React.FC<Props> = ({
 			</div>
 
 			{/* Footer */}
-			<div className="flex justify-between mt-6">
+			<div className="flex justify-between mt-8">
 				<Button
 					variant="disable"
 					size="sm"

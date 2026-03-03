@@ -22,7 +22,7 @@ export function UserTableLayout({
 	onSearch,
 }: Props) {
 	return (
-		<div className="bg-white rounded-t-2xl border border-gray-200 border-b-0 min-h-screen">
+		<div className="bg-white rounded-t-2xl mt-4 border border-gray-200 border-b-0 min-h-screen">
 			<UserTableTabs
 				activeTab={activeTab}
 				counts={counts}

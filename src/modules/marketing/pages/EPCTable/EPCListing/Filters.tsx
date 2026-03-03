@@ -1,20 +1,20 @@
 import React from "react";
+import SelectInput from "../../../../../components/FormElements/SelectInput";
 
 const filters = ["Event Date", "Assigned To", "EPF No", "Region", "Status"];
 
 export default function Filters() {
-  return (
-    <React.Fragment>
-      <div className="grid grid-cols-5 content-around gap-2 mb-4 text-black">
-        {filters.map((f) => (
-          <select
-            key={f}
-            className="border rounded-full px-3 py-2 text-sm w-full sm:w-auto"
-          >
-            <option>{f}</option>
-          </select>
-        ))}
-      </div>
-    </React.Fragment>
-  );
+	return (
+		<React.Fragment>
+			<div className="grid grid-cols-5 content-around gap-2 mb-4 text-black">
+				{filters.map((f) => (
+					<SelectInput
+						options={[{ label: f, value: f }]}
+						key={f}
+						className="text-left text-sm"
+					/>
+				))}
+			</div>
+		</React.Fragment>
+	);
 }

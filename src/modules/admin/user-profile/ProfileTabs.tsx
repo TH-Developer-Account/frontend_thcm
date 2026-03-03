@@ -3,15 +3,15 @@ import type { GeneralStatus } from "../../../components/common/common.types";
 
 type UserTab = "All" | GeneralStatus;
 
-const tabs: UserTab[] = ["All", "Active", "Blocked", "Inactive"];
+const tabs: UserTab[] = ["All", "Active", "Inactive"];
 
 interface Props {
-	activeTab: UserTab;
+	activeTab?: string;
 	counts: Record<UserTab, number>;
 	onChange: (tab: UserTab) => void;
 }
 
-export function UserTableTabs({ activeTab, counts, onChange }: Props) {
+export default function ProfileTabs({ activeTab, counts, onChange }: Props) {
 	return (
 		<div className="flex items-center gap-8 px-6 pt-5">
 			{tabs.map((tab) => {
