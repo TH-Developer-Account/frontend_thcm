@@ -6,6 +6,7 @@ import UsersPage from "../modules/admin/pages/UserPage";
 import { UserProfilePage } from "../modules/admin/user-profile/UserProfilePage";
 import { ThemeProvider } from "../providers/ThemeContext";
 import Departments from "../modules/admin/pages/Departments";
+import DealerListPage from "../modules/admin/pages/DealerMaster/DealerListPage";
 // import BusinessProfileList from "../modules/admin/pages/BusinessProfileList";
 
 export default function AdminRoutes() {
@@ -22,6 +23,14 @@ export default function AdminRoutes() {
 				element={
 					<ThemeProvider>
 						<UserProfilePage />
+					</ThemeProvider>
+				}
+			/>
+			<Route
+				path="dealers"
+				element={
+					<ThemeProvider>
+						<DealerListPage />
 					</ThemeProvider>
 				}
 			/>

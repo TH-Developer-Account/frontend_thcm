@@ -19,7 +19,7 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 	const isViewer = userRole === "VIEWER";
 
 	return (
-		<div className="p-6 bg-white rounded-xl shadow-sm text-left text-sm/4 lg:text-sm text-xs">
+		<div className="p-6 mt-4 bg-white rounded-xl shadow-sm text-left text-sm/4 lg:text-sm text-xs">
 			<h2 className="text-left font-semibold mb-4 text-gray-900 text-lg lg:text-xl">
 				Event Planning Calendar
 			</h2>

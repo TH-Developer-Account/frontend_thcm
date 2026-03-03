@@ -3,10 +3,11 @@ import Toggle from "../../../components/common/Toggle";
 interface PermissionToggleRowProps {
 	moduleId: string;
 	moduleName: string;
-	category: string;
+	category?: string;
 	read: boolean;
 	write: boolean;
 	onToggle: (moduleId: string, type: "read" | "write", value: boolean) => void;
+	isParent?: boolean;
 }
 
 const PermissionToggleRow: React.FC<PermissionToggleRowProps> = ({

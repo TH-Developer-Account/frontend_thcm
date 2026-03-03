@@ -2,10 +2,11 @@ interface AvatarProps {
 	firstName: string;
 	lastName?: string;
 	imageUrl?: string;
-	size?: "sm" | "md" | "lg";
+	size?: "sm" | "md" | "lg" | "xs";
 }
 
 const sizeClasses = {
+	xs: "w-6 h-6 text-xs",
 	sm: "w-8 h-8 text-xs",
 	md: "w-10 h-10 text-sm",
 	lg: "w-14 h-14 text-lg",
@@ -28,7 +29,7 @@ const Avatar: React.FC<AvatarProps> = ({
 				className={`
 					${sizeClasses[size]}
 					rounded-full
-					bg-orange-600
+					bg-[#f35a00]
 					flex items-center justify-center
 					font-semibold
 					overflow-hidden

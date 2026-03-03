@@ -13,6 +13,7 @@ type ButtonProps = {
 	size?: "sm" | "md" | "lg";
 	Icon?: LucideIcon;
 	iconPosition?: "left" | "right";
+	iconColor?: string;
 	fullWidth?: boolean; // 👈 add this
 	children?: React.ReactNode;
 };
@@ -30,6 +31,7 @@ const Button: React.FC<ButtonProps> = ({
 	iconPosition = "left",
 	fullWidth = false,
 	children,
+	iconColor,
 }) => {
 	const base =
 		"bg-[#f35a00] text-white px-4 py-2 rounded-md font-semibold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer";
@@ -51,9 +53,9 @@ const Button: React.FC<ButtonProps> = ({
 				
 				${base} ${[variant]} ${S[size]} ${className}${styleClass}`}
 		>
-			{Icon && iconPosition === "left" && <Icon size={16} />}
+			{Icon && iconPosition === "left" && <Icon size={16} color={iconColor} />}
 			{text}
-			{Icon && iconPosition === "right" && <Icon size={16} />}
+			{Icon && iconPosition === "right" && <Icon size={16} color={iconColor} />}
 			{children ? children : null}
 		</button>
 	);
