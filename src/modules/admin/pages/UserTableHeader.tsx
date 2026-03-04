@@ -1,5 +1,6 @@
 // UserTableHeader.tsx
 import { Search, MoreVertical } from "lucide-react";
+import SelectInput from "../../../components/FormElements/SelectInput";
 
 interface Props {
 	search: string;
@@ -8,11 +9,16 @@ interface Props {
 
 export function UserTableHeader({ search, onSearch }: Props) {
 	return (
-		<div className="flex items-center gap-4 px-6 py-4">
+		<div className="flex items-center gap-4 justify-between px-6 py-4">
 			{/* Role Dropdown */}
-			<select className="border rounded-xl px-4 py-2 text-sm bg-white">
-				<option>Role</option>
-			</select>
+			<div className="text-sm items-center m-0">
+				<SelectInput
+					options={[
+						{ label: "Admin", value: "admin" },
+						{ label: "Super Admin", value: "super_admin" },
+					]}
+				/>
+			</div>
 
 			{/* Search */}
 			<div className="flex-1 relative">

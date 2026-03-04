@@ -7,7 +7,7 @@ import { Alert } from "../../../components/common/Alert";
 import type { Profile, WorkspaceAccess } from "./profile.types";
 import { Badge } from "../../../components/common/Badge";
 import Avatar from "../../../components/common/Avatar";
-import { capitalize, formatRole } from "../../../utils/format";
+// import { capitalize, formatRole } from "../../../utils/format";
 
 type ProfileListProps = {
   profiles: Profile[];
@@ -25,7 +25,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
   onCreateNew,
   onEdit,
   onDelete,
-  onEditModal,
+  // onEditModal,
 }) => {
   const [deleteModal, setDeleteModal] = useState<Profile | null>(null);
   const [editModal, setEditModal] = useState<Profile | null>(null);
@@ -67,17 +67,19 @@ const ProfileList: React.FC<ProfileListProps> = ({
                   <tr>
                     <th className="px-6 py-4 text-left">Profile Name</th>
                     <th className="px-6 py-4 text-left">Profile Description</th>
-                    <th className="px-6 py-4 text-left">Role</th>
-                    <th className="px-6 py-4 text-left">Status</th>
-                    <th className="px-6 py-4 text-left">Users</th>
+                    {/* <th className="px-6 py-4 text-left">Role</th>
+										<th className="px-6 py-4 text-left">Status</th> */}
+                    <th className="px-6 py-4 text-left" colSpan={2}>
+                      Users
+                    </th>
                     <th className="px-6 py-4 text-center">Actions</th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {profiles.map((profile) => (
+                  {profiles.map((profile, idx) => (
                     <tr
-                      key={profile.id}
+                      key={profile.id || idx}
                       className="border-t border-b border-gray-200 hover:bg-gray-50 transition text-left "
                     >
                       <td className="px-6 py-4  items-center gap-3">
@@ -87,24 +89,54 @@ const ProfileList: React.FC<ProfileListProps> = ({
                       <td className="px-6 py-4 items-center">
                         <p>{profile.description}</p>
                       </td>
-                      <td className="px-6 py-4 items-center">
-                        {profile.role
-                          ? formatRole(profile.role)
-                          : "General User"}
-                      </td>
-                      <td className="px-6 py-4 items-center">
-                        <Badge status={profile.status}>
-                          {profile.status ? capitalize(profile.status) : "None"}
-                        </Badge>
-                      </td>
-
-                      <td className="px-6 py-4 items-center">
-                        <div className="col-span-1 flex gap-2 justify-start">
-                          {profile.assignedUsers?.map((user) => (
-                            <div key={user} className=" text-left">
-                              <Avatar size="xs" firstName={user} />
+                      <td
+                        className="px-6 py-4 col-span-2 items-center"
+                        colSpan={2}
+                      >
+                        <div className="flex gap-2 justify-start">
+                          {profile.assignedUsers ? (
+                            profile.assignedUsers?.map((user) => (
+                              <div key={user} className=" text-left">
+                                <Avatar size="xs" firstName={user} />
+                              </div>
+                            ))
+                          ) : (
+                            <div className="flex flex-col sm:flex-row sm:items-end">
+                              <div className="flex gap-2">
+                                <Avatar
+                                  size="xs"
+                                  firstName="John"
+                                  lastName="Doe"
+                                  className="outline-ring-1 outline outline-white "
+                                />
+                                <Avatar
+                                  size="xs"
+                                  firstName="John"
+                                  lastName="Doe"
+                                />
+                                <Avatar
+                                  size="xs"
+                                  firstName="John"
+                                  lastName="Doe"
+                                />
+                                <Avatar
+                                  size="xs"
+                                  firstName="John"
+                                  lastName="Doe"
+                                />
+                                <Avatar
+                                  size="xs"
+                                  firstName="John"
+                                  lastName="Doe"
+                                />
+                                <Avatar
+                                  size="xs"
+                                  firstName="John"
+                                  lastName="Doe"
+                                />
+                              </div>
                             </div>
-                          ))}
+                          )}
                         </div>
                       </td>
 
@@ -142,7 +174,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
             label: "Delete",
             onClick: () => {
               if (deleteModal) {
-                onEditModal(editModal.id);
+                // onEditModal(editModal.id);
                 setEditModal(null);
               }
             },
