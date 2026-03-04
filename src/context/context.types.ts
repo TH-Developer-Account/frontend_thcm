@@ -5,11 +5,35 @@ export type ApiErrorResponse = {
   statusCode: number;
   message: string;
 };
+
+export type PermissionAction = "read" | "write";
+export type ScopeType = "WORKSPACE" | "APP" | "MODULE";
+
+export interface Permission {
+  action: PermissionAction;
+  scopeType: ScopeType;
+  appKey: string;
+  moduleKey: string;
+}
+
 export type LoginSuccessResponse = {
   message: string;
   requiresPasswordReset: boolean;
   user: User;
   accessToken?: string; // may be absent in reset flow
+  permissions?: {
+    isSuperAdmin: boolean;
+    permissions: Array<{
+      scopeType: ScopeType;
+      appKey: string;
+      moduleKey: string;
+      action: PermissionAction;
+    }>;
+  };
+  workspace: {
+    id: string;
+    isSuperAdmin: boolean;
+  };
 };
 
 export type ResetPwdSuccessResponse = {

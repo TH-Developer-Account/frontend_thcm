@@ -1,0 +1,68 @@
+import {
+  Megaphone,
+  MonitorCog,
+  PackageSearch,
+  UserCheck,
+  Database,
+  FileText,
+  Warehouse,
+} from "lucide-react";
+
+export const actions = [
+  {
+    icon: Megaphone,
+    title: "Marketing Activity Planner",
+    description: "",
+    subText: "",
+    path: "/marketing/listing",
+    appKey: "MAP",
+  },
+  {
+    icon: MonitorCog,
+    title: "Administrator",
+    description: "",
+    subText: "",
+    path: "/admin/users",
+    appKey: "ADMIN",
+  },
+  {
+    icon: PackageSearch,
+    title: "Product Selector",
+    description: "",
+    subText: "",
+    path: "/",
+    appKey: "PRODUCT_SELECTOR",
+  },
+  {
+    icon: UserCheck,
+    title: "Key Account",
+    description: "",
+    subText: "",
+    path: "/",
+    appKey: "KEY_ACCOUNT",
+  },
+  {
+    icon: Database,
+    title: "Customer Master Data",
+    description: "",
+    subText: "",
+    path: "/",
+    appKey: "CUSTOMER_MASTER_DATA",
+  },
+  {
+    icon: FileText,
+    title: "Dealer Claims",
+    description: "",
+    subText: "",
+    path: "/",
+    appKey: "DEALER_CLAIMS",
+  },
+  {
+    icon: Warehouse,
+    title: "Asset Master",
+    description: "",
+    subText: "",
+    path: "/",
+    appKey: "ASSET_MASTER",
+  },
+];
