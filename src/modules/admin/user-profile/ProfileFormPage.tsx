@@ -1,12 +1,12 @@
-import { useMemo, useState } from "react";
-import { WORKSPACE_APPS } from "./constant";
+import { useState } from "react";
+// import { WORKSPACE_APPS } from "./constant";
 import type { Profile } from "./profile.types";
 import type { WorkspacePayload } from "./profile.types";
-import { transformProfileToDTO } from "./permission.transform";
+// import { transformProfileToDTO } from "./permission.transform";
 import { ArrowLeft } from "lucide-react";
 import { DEFAULT_PERMISSIONS } from "./constant";
 import ProfileGeneralSection from "./ProfileGeneralSection";
-import ProfilePermissionsSection from "./ProfilePermissionsSection";
+import PermissionMatrix from "./PermissionMatrix";
 
 interface Props {
 	existingProfile: Profile | null;
@@ -16,11 +16,12 @@ interface Props {
 
 export const ProfileFormPage: React.FC<Props> = ({
 	existingProfile,
-	onSave,
+	// onSave,
 	onCancel,
 }) => {
 	const isEditing = !!existingProfile;
 	const [activeSection, setActiveSection] = useState("general");
+	const [onSavePerm, setOnSavePerm] = useState();
 
 	const [form, setForm] = useState<Profile>(
 		existingProfile || {
@@ -45,46 +46,163 @@ export const ProfileFormPage: React.FC<Props> = ({
 	};
 
 	// 🔥 FINAL SUBMIT → BUILD WORKSPACE PAYLOAD
-	const handleSubmit = async () => {
-		const profileDTO = transformProfileToDTO(form);
+	// const handleSubmit = async () => {
+	// 	const profileDTO = transformProfileToDTO(form);
 
-		const payload: WorkspacePayload = {
-			workSpaceName: "Tata Hitachi Workspace",
-			apps: WORKSPACE_APPS,
-			profiles: [profileDTO],
-		};
+	// 	const payload: WorkspacePayload = {
+	// 		workSpaceName: "Tata Hitachi Workspace",
+	// 		apps: WORKSPACE_APPS,
+	// 		profiles: [profileDTO],
+	// 	};
 
-		await onSave(payload);
+	// 	await onSave(payload);
+	// };
+	type Action = "read" | "write";
+
+	interface Module {
+		key: string;
+		name: string;
+	}
+
+	interface AppItem {
+		key: string;
+		name: string;
+		modules: Module[];
+	}
+
+	type Permission = {
+		read: boolean;
+		write: boolean;
 	};
 
-	const readCount = Object.values(form.permissions).filter(
-		(p) => p.read,
-	).length;
+	type PermState = Record<string, Record<string, Permission>>;
 
-	const writeCount = Object.values(form.permissions).filter(
-		(p) => p.write,
-	).length;
+	const apps: AppItem[] = [
+		{
+			key: "MAP",
+			name: "Marketing Activity Planner",
+			modules: [
+				{ key: "EPC", name: "Event Planning" },
+				{ key: "CAM", name: "Campaign Manager" },
+			],
+		},
+		{
+			key: "CRM",
+			name: "Customer Management",
+			modules: [
+				{ key: "LEAD", name: "Lead Management" },
+				{ key: "CUST", name: "Customers" },
+			],
+		},
+	];
 
-	const modulesByApp = useMemo(() => {
-		const grouped: Record<
-			string,
-			{
-				appKey: string;
-				appName: string;
-				modules: { key: string; name: string }[];
-			}
-		> = {};
+	const [search, setSearch] = useState("");
+	const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
-		WORKSPACE_APPS.forEach((app) => {
-			grouped[app.key] = {
-				appKey: app.key,
-				appName: app.name,
-				modules: app.modules,
+	const [permState, setPermState] = useState<PermState>({
+		MAP: {
+			EPC: { read: false, write: false },
+			CAM: { read: false, write: false },
+		},
+		CRM: {
+			LEAD: { read: false, write: false },
+			CUST: { read: false, write: false },
+		},
+	});
+
+	const filteredApps = apps.map((app) => ({
+		...app,
+		modules: app.modules.filter((m) =>
+			m.name.toLowerCase().includes(search.toLowerCase()),
+		),
+	}));
+
+	const togglePerm = (app: string, mod: string, action: Action) => {
+		setPermState((prev) => ({
+			...prev,
+			[app]: {
+				...prev[app],
+				[mod]: {
+					...prev[app][mod],
+					[action]: !prev[app][mod][action],
+				},
+			},
+		}));
+	};
+
+	const toggleModule = (app: string, mod: string) => {
+		const current = permState[app][mod];
+		const next = !(current.read && current.write);
+
+		setPermState((prev) => ({
+			...prev,
+			[app]: {
+				...prev[app],
+				[mod]: {
+					read: next,
+					write: next,
+				},
+			},
+		}));
+	};
+
+	const toggleAppAll = (app: string) => {
+		const modules = permState[app];
+		const next = !Object.values(modules).every((p) => p.read && p.write);
+
+		const updated: any = {};
+		Object.keys(modules).forEach((m) => {
+			updated[m] = { read: next, write: next };
+		});
+
+		setPermState((prev) => ({
+			...prev,
+			[app]: updated,
+		}));
+	};
+
+	const toggleAppAction = (app: string, action: Action) => {
+		const modules = permState[app];
+
+		const next = !Object.values(modules).every((p) => p[action]);
+
+		const updated: any = {};
+		Object.keys(modules).forEach((m) => {
+			updated[m] = {
+				...modules[m],
+				[action]: next,
 			};
 		});
 
-		return grouped;
-	}, []);
+		setPermState((prev) => ({
+			...prev,
+			[app]: updated,
+		}));
+	};
+
+	const colState = () => ({ all: false, some: false });
+	const appState = (app: string) => {
+		const modules = permState[app];
+		const all = Object.values(modules).every((p) => p.read && p.write);
+		const some = Object.values(modules).some((p) => p.read || p.write);
+		return { all, some };
+	};
+
+	const appActionState = (app: string, action: Action) => {
+		const modules = permState[app];
+		const all = Object.values(modules).every((p) => p[action]);
+		const some = Object.values(modules).some((p) => p[action]);
+		return { all, some };
+	};
+
+	const modState = (app: string, mod: string) => {
+		const p = permState[app][mod];
+		const all = p.read && p.write;
+		const some = p.read || p.write;
+		return { all, some };
+	};
+
+	const toggleColumnAll = () => {};
 
 	return (
 		<div className="max-w-full mx-auto h-full p-4">
@@ -121,16 +239,29 @@ export const ProfileFormPage: React.FC<Props> = ({
 				)}
 
 				{activeSection === "permissions" && (
-					<ProfilePermissionsSection
-						form={form}
-						setForm={setForm}
-						modulesByApp={modulesByApp}
-						readCount={readCount}
-						writeCount={writeCount}
-						isEditing={isEditing}
-						onCancel={onCancel}
-						onSubmit={handleSubmit}
-						onBack={() => setActiveSection("general")}
+					<PermissionMatrix
+						filteredApps={filteredApps}
+						collapsed={collapsed}
+						permState={permState}
+						search={search}
+						setSearch={setSearch}
+						setCollapsed={setCollapsed}
+						colState={colState}
+						appState={appState}
+						appActionState={appActionState}
+						modState={modState}
+						toggleColumnAll={toggleColumnAll}
+						toggleAppAll={toggleAppAll}
+						toggleAppAction={toggleAppAction}
+						toggleModule={toggleModule}
+						togglePerm={togglePerm}
+						onSavePermissions={(data) => {
+							console.log("Permissions:", data);
+
+							// call API
+							// saveProfilePermissions(data)
+							setOnSavePerm(data);
+						}}
 					/>
 				)}
 			</div>

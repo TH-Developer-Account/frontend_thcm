@@ -36,7 +36,9 @@ export const resolveVariantStyle = (variant: string): string => {
 			return "bg-red-100 text-red-800";
 		case "disable":
 			return "bg-gray-100 text-gray-800";
-		default:
+		case "primary":
 			return "bg-blue-100 text-blue-800";
+		default:
+			return "bg-zinc-500 text-zinc-800";
 	}
 };
