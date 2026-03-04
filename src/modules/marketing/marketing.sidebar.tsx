@@ -4,12 +4,13 @@ import {
 	Home,
 	Settings,
 	Table,
-	// UserPen,
 	CalendarDays,
 	Package,
-	// File,
 	FilePen,
 	LayoutDashboard,
+	// Database,
+	// MapPinHouse,
+	Users,
 } from "lucide-react";
 
 export const marketingSidebar: SidebarItem[] = [
@@ -27,7 +28,7 @@ export const marketingSidebar: SidebarItem[] = [
 	},
 	{
 		id: "epc",
-		label: "EPC",
+		label: "Activity Planner",
 		icon: <CalendarDays />,
 		link: "/marketing/epc",
 		children: [
@@ -58,6 +59,45 @@ export const marketingSidebar: SidebarItem[] = [
 			},
 		],
 	},
+	{
+		id: "users",
+		label: "User Management",
+		link: "/marketing/admin/users",
+		icon: <Users size={18} />,
+	},
+	// {
+	// 	id: "masters",
+	// 	label: "Masters",
+	// 	icon: <Database />,
+	// 	link: "/admin/masters",
+	// 	children: [
+	// 		{
+	// 			id: "users",
+	// 			label: "Users",
+	// 			link: "/marketing/admin/users",
+	// 			icon: <Users size={18} />,
+	// 		},
+	// 		{
+	// 			id: "department",
+	// 			label: "Department",
+	// 			link: "/marketing/admin/department",
+	// 			icon: <Table size={18} />,
+	// 		},
+
+	// 		{
+	// 			id: "roles",
+	// 			label: "Roles",
+	// 			link: "/marketing/admin/roles",
+	// 			icon: <FilePen size={18} />,
+	// 		},
+	// 		{
+	// 			id: "branche",
+	// 			label: "Branches",
+	// 			icon: <MapPinHouse />,
+	// 			link: "/marketing/admin/branches",
+	// 		},
+	// 	],
+	// },
 
 	{
 		id: "settings",

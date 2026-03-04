@@ -1,11 +1,16 @@
+export type Role = "ADMIN" | "DEALER" | "EMPLOYEE";
+
 export type SidebarItem = {
 	id: string;
 	label: string;
 	icon: React.ReactNode;
-	onClick?: () => void;
 	link?: string;
-	children?: SidebarItem[]; // 👈 add this
+	roles?: string[];
+	permissions?: string[];
+	children?: SidebarItem[];
+	onClick?: () => void;
 };
+
 export type HeaderLayoutProps = {
 	onToggleSidebar: () => void;
 	children?: React.ReactNode;

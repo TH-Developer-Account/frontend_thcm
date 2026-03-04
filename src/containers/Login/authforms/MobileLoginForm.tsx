@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/Auth/useAuth";
-import { API_BASE_URL } from "../../../services/ServerAxios";
+import { API_BASE_URL, ServerAxios } from "../../../services/ServerAxios";
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/FormElements/FormInput";
 import OtpInput from "../../../components/FormElements/OtpInput";
@@ -50,7 +50,7 @@ const MobileLoginForm = () => {
     }
     try {
       setState((prev) => ({ ...prev, loading: true }));
-      await axios.post(`${API_BASE_URL}${api_routes.send_otp}`, {
+      await ServerAxios.post(`${API_BASE_URL}${api_routes.send_otp}`, {
         phone_number: state.mobile,
       });
       setMobileStep("verifyOtp");
@@ -91,7 +91,7 @@ const MobileLoginForm = () => {
 
     try {
       setState((prev) => ({ ...prev, loading: true }));
-      const response = await axios.post(
+      const response = await ServerAxios.post(
         `${API_BASE_URL}${api_routes.verify_otp}`,
         {
           phone_number: state.mobile,
@@ -144,7 +144,7 @@ const MobileLoginForm = () => {
     }
     try {
       setState((prev) => ({ ...prev, loading: true }));
-      await axios.post(`${API_BASE_URL}${api_routes.send_otp}`, {
+      await ServerAxios.post(`${API_BASE_URL}${api_routes.send_otp}`, {
         phone_number: state.mobile,
       });
       setMobileStep("verifyOtp");
@@ -187,7 +187,7 @@ const MobileLoginForm = () => {
 
     try {
       setState((prev) => ({ ...prev, loading: true }));
-      const response = await axios.post(
+      const response = await ServerAxios.post(
         `${API_BASE_URL}${api_routes.verify_otp}`,
         {
           phone_number: state.mobile,
@@ -245,6 +245,7 @@ const MobileLoginForm = () => {
             disabled={!MOBILE_REGEX.test(state.mobile)}
             onClick={handleContinue}
             fullWidth
+            variant="brand"
           />
         </form>
       )}
@@ -270,9 +271,15 @@ const MobileLoginForm = () => {
               text="Verify OTP"
               onClick={handleVerifyResendOtp}
               fullWidth
+              variant="brand"
             />
           ) : (
-            <Button text="Verify OTP" onClick={handleVerifyOtp} fullWidth />
+            <Button
+              text="Verify OTP"
+              onClick={handleVerifyOtp}
+              fullWidth
+              variant="brand"
+            />
           )}
           <div className="">
             <span className="text-xs">

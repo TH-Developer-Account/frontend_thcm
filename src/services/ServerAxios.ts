@@ -54,7 +54,7 @@ ServerAxios.interceptors.response.use(
 
       try {
         // Call refresh endpoint (sends httpOnly cookie automatically)
-        const { data } = await axios.post(
+        const { data } = await ServerAxios.post(
           `${API_BASE_URL}/auth/refresh`,
           {},
           { withCredentials: true },

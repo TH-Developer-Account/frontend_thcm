@@ -4,30 +4,30 @@ import EpfForm2 from "./EpfForm2";
 import type { CostItem } from "../../types";
 
 interface EventCostOverheadsProps {
-  items: CostItem[];
-  onChange: (items: CostItem[]) => void;
-  isViewer?: boolean;
+	items: CostItem[];
+	onChange: (items: CostItem[]) => void;
+	isViewer?: boolean;
 }
 
 const particularOptions = [
-  { label: "Snacks / Beverage", value: "snacks" },
-  { label: "Miscellaneous Expenses", value: "misc" },
+	{ label: "Snacks / Beverage", value: "snacks" },
+	{ label: "Miscellaneous Expenses", value: "misc" },
 ];
 
 export function EventCostOverheads({
-  items,
-  onChange,
-  isViewer,
+	items,
+	onChange,
+	isViewer,
 }: EventCostOverheadsProps) {
-  return (
-    <LineItemTable
-      title="Event Cost Overheads"
-      items={items}
-      onChange={onChange}
-      particularOptions={particularOptions}
-      isViewer={isViewer}
-    />
-  );
+	return (
+		<LineItemTable
+			title="Event Cost Overheads"
+			items={items}
+			onChange={onChange}
+			particularOptions={particularOptions}
+			isViewer={isViewer}
+		/>
+	);
 }
 
 /* ------------------------------------------------------------------ */
@@ -35,18 +35,18 @@ export function EventCostOverheads({
 /* ------------------------------------------------------------------ */
 
 export default function EpfForm() {
-  const [costItems, setCostItems] = useState<CostItem[]>([]);
+	const [costItems, setCostItems] = useState<CostItem[]>([]);
 
-  return (
-    <>
-      <div className=" bg-white rounded-xl shadow-sm p-6 max-w-6xl mx-auto p-3">
-        <EventCostOverheads
-          items={costItems}
-          onChange={setCostItems}
-          isViewer={false}
-        />
-        <EpfForm2 userRole="ADMIN" />
-      </div>
-    </>
-  );
+	return (
+		<>
+			<div className=" bg-white rounded-xl shadow-sm p-6 max-w-6xl mx-auto p-3">
+				<EventCostOverheads
+					items={costItems}
+					onChange={setCostItems}
+					isViewer={false}
+				/>
+				<EpfForm2 userRole="ADMIN" />
+			</div>
+		</>
+	);
 }

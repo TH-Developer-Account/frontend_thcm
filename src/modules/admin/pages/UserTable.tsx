@@ -14,9 +14,6 @@ export function UserTable({ users }: Props) {
 				<table className="w-full text-sm">
 					<thead className="bg-gray-100 text-gray-600">
 						<tr>
-							<th className="px-6 py-4 text-left w-10">
-								<input type="checkbox" />
-							</th>
 							<th className="px-6 py-4 text-left">Name ↑</th>
 							<th className="px-6 py-4 text-left">Phone number</th>
 							<th className="px-6 py-4 text-left">Company</th>
@@ -32,10 +29,6 @@ export function UserTable({ users }: Props) {
 								key={user.id}
 								className="border-t border-gray-200 hover:bg-gray-50 transition"
 							>
-								<td className="px-6 py-4">
-									<input type="checkbox" />
-								</td>
-
 								<td className="px-6 py-4 flex items-center gap-3">
 									<img src={user.avatar} className="w-10 h-10 rounded-full" />
 									<div>

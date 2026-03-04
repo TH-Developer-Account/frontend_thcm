@@ -63,10 +63,10 @@ export default function LineItemTable({
 	const total = draft.rate * draft.quantity;
 
 	return (
-		<div className="mt-10 border rounded-xl bg-white shadow-sm overflow-hidden">
+		<div className="mt-10 border border-gray-300 rounded-xl bg-white shadow-sm overflow-hidden">
 			{/* Header */}
-			<div className="bg-gray-100 px-6 py-3 border-b">
-				<h3 className="font-semibold text-gray-800 text-lg">{title}</h3>
+			<div className="bg-gray-100 px-6 py-3 border-b border-gray-300">
+				<h3 className="font-semibold text-gray-600 text-lg">{title}</h3>
 			</div>
 
 			<div className="p-6">
