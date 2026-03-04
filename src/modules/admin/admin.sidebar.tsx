@@ -7,6 +7,7 @@ import {
 	MapPinHouse,
 	Users,
 	User,
+	BriefcaseBusinessIcon,
 } from "lucide-react";
 
 export const adminSidebar: SidebarItem[] = [
@@ -50,6 +51,13 @@ export const adminSidebar: SidebarItem[] = [
 		label: "Branches",
 		icon: <MapPinHouse />,
 		link: "/admin/branches",
+		roles: ["ADMIN", "DEALER"],
+	},
+	{
+		id: "branche",
+		label: "Dealers",
+		icon: <BriefcaseBusinessIcon />,
+		link: "/admin/dealers",
 		roles: ["ADMIN", "DEALER"],
 	},
 	{

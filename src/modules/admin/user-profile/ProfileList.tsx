@@ -6,7 +6,7 @@ import type { Profile } from "./profile.types";
 import { useState } from "react";
 import { Badge } from "../../../components/common/Badge";
 import Avatar from "../../../components/common/Avatar";
-import { capitalize, formatRole } from "../../../utils/format";
+// import { capitalize, formatRole } from "../../../utils/format";
 
 type ProfileListProps = {
 	profiles: Profile[];
@@ -24,7 +24,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
 	onCreateNew,
 	onEdit,
 	onDelete,
-	onEditModal,
+	// onEditModal,
 }) => {
 	const [deleteModal, setDeleteModal] = useState<Profile | null>(null);
 	const [editModal, setEditModal] = useState<Profile | null>(null);
@@ -76,9 +76,9 @@ const ProfileList: React.FC<ProfileListProps> = ({
 								</thead>
 
 								<tbody>
-									{profiles.map((profile) => (
+									{profiles.map((profile, idx) => (
 										<tr
-											key={profile.id}
+											key={profile.id || idx}
 											className="border-t border-b border-gray-200 hover:bg-gray-50 transition text-left "
 										>
 											<td className="px-6 py-4  items-center gap-3">
@@ -101,7 +101,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
 														))
 													) : (
 														<div className="flex flex-col sm:flex-row sm:items-end">
-															<div className="flex -space-x-1">
+															<div className="flex gap-2">
 																<Avatar
 																	size="xs"
 																	firstName="John"
@@ -173,7 +173,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
 						label: "Delete",
 						onClick: () => {
 							if (deleteModal) {
-								onEditModal(editModal.id);
+								// onEditModal(editModal.id);
 								setEditModal(null);
 							}
 						},
