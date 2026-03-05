@@ -5,7 +5,7 @@ import EpfForm from "../modules/marketing/pages/EPFScreen/EpfForm";
 import CrfForm from "../modules/marketing/pages/CRFScreen/CrfForm";
 import EPCList from "../modules/marketing/pages/EPCTable/EPCListing";
 import UserProfile from "../components/ui/UserProfile/UserProfile";
-import UsersPage from "../modules/admin/pages/UserPage";
+import UsersPage from "../modules/admin/pages/BusinessUsersMaster/UserPage";
 
 export default function MarketingRoutes() {
 	return (

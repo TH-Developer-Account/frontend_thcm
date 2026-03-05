@@ -1,6 +1,6 @@
 // UserTable.tsx
-import { type TableUser } from "../../../utils/types";
-import { statusStyles } from "../../../utils/types";
+import { type TableUser } from "../../../../utils/types";
+import { statusStyles } from "../../../../utils/types";
 import { Pencil, MoreVertical } from "lucide-react";
 
 interface Props {

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { mockUsers } from "../mockUsers";
+import { mockUsers } from "../../mockUsers";
 import { UserTableLayout } from "./UserTableLayout";
-import { PageHeader } from "../../../components/ui/PageHeader";
+import { PageHeader } from "../../../../components/ui/PageHeader";
 
 export default function Departments() {
 	const [activeTab, setActiveTab] = useState("All");

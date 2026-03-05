@@ -1,6 +1,6 @@
 // useUserTable.ts
 import { useMemo, useState } from "react";
-import { type TableUser } from "../../../utils/types";
+import { type TableUser } from "../../../../utils/types";
 
 export function useUserTable(data: TableUser[]) {
 	const [activeTab, setActiveTab] = useState("All");
