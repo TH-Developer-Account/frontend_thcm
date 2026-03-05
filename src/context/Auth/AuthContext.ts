@@ -55,6 +55,7 @@ export interface AuthContextType {
   // canReadApp / canWriteApp → used in sidebar to show/hide app tabs
   canReadApp: (appKey: string) => boolean;
   canWriteApp: (appKey: string) => boolean;
+  workspaceId: string | null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
