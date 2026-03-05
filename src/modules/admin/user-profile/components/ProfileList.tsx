@@ -1,13 +1,11 @@
-import React, { useState, useEffect, startTransition } from "react";
+import React, { useState } from "react";
 import { PlusIcon } from "lucide-react";
-import { ServerAxios } from "../../../services/ServerAxios";
-import Button from "../../../components/common/Button";
-import { Modal } from "../../../components/common/Modal";
-import { Alert } from "../../../components/common/Alert";
-import type { Profile, WorkspaceAccess } from "./profile.types";
-import { Badge } from "../../../components/common/Badge";
-import Avatar from "../../../components/common/Avatar";
-// import { capitalize, formatRole } from "../../../utils/format";
+import Button from "../../../../components/common/Button";
+import { Modal } from "../../../../components/common/Modal";
+import { Alert } from "../../../../components/common/Alert";
+import type { Profile } from "../types/profile.types";
+import { Badge } from "../../../../components/common/Badge";
+import Avatar from "../../../../components/common/Avatar";
 
 type ProfileListProps = {
   profiles: Profile[];
@@ -94,47 +92,19 @@ const ProfileList: React.FC<ProfileListProps> = ({
                         colSpan={2}
                       >
                         <div className="flex gap-2 justify-start">
-                          {profile.assignedUsers ? (
-                            profile.assignedUsers?.map((user) => (
-                              <div key={user} className=" text-left">
-                                <Avatar size="xs" firstName={user} />
+                          {profile.users ? (
+                            profile.users?.map((user) => (
+                              <div key={user.id} className=" text-left">
+                                <Avatar
+                                  size="xs"
+                                  firstName={user.firstName}
+                                  lastName={user.lastName}
+                                />
                               </div>
                             ))
                           ) : (
                             <div className="flex flex-col sm:flex-row sm:items-end">
-                              <div className="flex gap-2">
-                                <Avatar
-                                  size="xs"
-                                  firstName="John"
-                                  lastName="Doe"
-                                  className="outline-ring-1 outline outline-white "
-                                />
-                                <Avatar
-                                  size="xs"
-                                  firstName="John"
-                                  lastName="Doe"
-                                />
-                                <Avatar
-                                  size="xs"
-                                  firstName="John"
-                                  lastName="Doe"
-                                />
-                                <Avatar
-                                  size="xs"
-                                  firstName="John"
-                                  lastName="Doe"
-                                />
-                                <Avatar
-                                  size="xs"
-                                  firstName="John"
-                                  lastName="Doe"
-                                />
-                                <Avatar
-                                  size="xs"
-                                  firstName="John"
-                                  lastName="Doe"
-                                />
-                              </div>
+                              No Users Assigned.
                             </div>
                           )}
                         </div>

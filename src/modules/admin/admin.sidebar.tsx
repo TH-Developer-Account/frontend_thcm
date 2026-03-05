@@ -54,7 +54,7 @@ export const adminSidebar: SidebarItem[] = [
     roles: ["ADMIN", "DEALER"],
   },
   {
-    id: "branche",
+    id: "dealers",
     label: "Dealers",
     icon: <BriefcaseBusinessIcon />,
     link: "/admin/dealers",

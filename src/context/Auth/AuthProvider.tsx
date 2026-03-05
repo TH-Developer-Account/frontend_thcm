@@ -39,6 +39,7 @@ function resolvePermission(
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // ── NEW state ─────────────────────────────────────────────────────────────
@@ -56,8 +57,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (token) {
         try {
           const { data } = await ServerAxios.get("/users/me");
-          console.log("User data fetched on auth check====>", data);
           setUser(data.user);
+          setWorkspaceId(data.workspaceId);
 
           // ── NEW: apply permissions from /users/me response ──────────────
           // Your /users/me endpoint should return the same permissions shape
@@ -112,6 +113,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       setUser(data.user);
+      setWorkspaceId(data.workspaceId);
 
       // ── NEW: store permissions from login response ──────────────────────
       setSuperAdmin(data.permissions?.isSuperAdmin ?? false);
@@ -158,6 +160,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         description: "Password reset successfully",
       });
       setUser(null);
+      setWorkspaceId(null);
+      setPermissions([]);
     } catch (err) {
       console.log("Error while resetting password=====>", err);
       showToast({
@@ -245,6 +249,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         can,
         canReadApp,
         canWriteApp,
+        workspaceId,
       }}
     >
       {children}

@@ -30,10 +30,7 @@ export type LoginSuccessResponse = {
       action: PermissionAction;
     }>;
   };
-  workspace: {
-    id: string;
-    isSuperAdmin: boolean;
-  };
+  workspaceId: string;
 };
 
 export type ResetPwdSuccessResponse = {
