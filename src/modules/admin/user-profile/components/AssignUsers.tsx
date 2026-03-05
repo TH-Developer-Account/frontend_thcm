@@ -33,7 +33,6 @@ export const AssignUsers: React.FC<AssignProps> = ({
       try {
         setLoading(true);
         const { data } = await ServerAxios.get("/users");
-        console.log({ data });
         const mappedUsers: User[] = data.map(mapUser);
         setUsers(mappedUsers);
       } catch (err) {
