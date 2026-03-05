@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { useTheme } from "../../../providers/ThemeContext";
 import { ServerAxios } from "../../../services/ServerAxios";
@@ -8,90 +8,100 @@ import type { Profile, WorkspacePayload } from "./types/profile.types";
 import { useToast } from "../../../context/Auth/AuthContext";
 
 export const UserProfilePage = () => {
-  const { theme } = useTheme();
-  const { showToast } = useToast();
-  const { workspaceId } = useAuth();
+	const { theme } = useTheme();
+	const { showToast } = useToast();
+	const { workspaceId } = useAuth();
 
-  const [view, setView] = useState<"list" | "create" | "edit">("list");
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+	const [view, setView] = useState<"list" | "create" | "edit">("list");
+	const [profiles, setProfiles] = useState<Profile[]>([]);
+	const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
+	const [search, setSearch] = useState<string>("");
 
-  useEffect(() => {
-    const loadProfiles = async () => {
-      try {
-        const {
-          data: { data },
-        } = await ServerAxios.get(`/profile?workspaceId=${workspaceId}`);
-        setProfiles(data);
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          console.error("Failed to load profiles:", error?.message);
-        } else {
-          console.error("Failed to load profiles:", error);
-        }
-      }
-    };
+	useEffect(() => {
+		const loadProfiles = async () => {
+			try {
+				const {
+					data: { data },
+				} = await ServerAxios.get(`/profile?workspaceId=${workspaceId}`);
+				setProfiles(data);
+			} catch (error: unknown) {
+				if (error instanceof Error) {
+					console.error("Failed to load profiles:", error?.message);
+				} else {
+					console.error("Failed to load profiles:", error);
+				}
+			}
+		};
 
-    loadProfiles();
-  }, [workspaceId]); // 👈 add workspaceId here
+		loadProfiles();
+	}, [workspaceId]); // 👈 add workspaceId here
 
-  const handleCreate = () => {
-    setEditingProfile(null);
-    setView("create");
-  };
+	// Filter users
+	const filteredUsers = useMemo(() => {
+		return profiles.filter((profile) =>
+			profile.name?.toLowerCase().includes(search.toLowerCase()),
+		);
+	}, [profiles, search]);
 
-  const handleEdit = (profile: Profile) => {
-    setEditingProfile(profile);
-    setView("edit");
-  };
+	const handleCreate = () => {
+		setEditingProfile(null);
+		setView("create");
+	};
 
-  const handleDelete = (id: string) => {
-    const profile = profiles.find((p) => p.id === id);
-    setProfiles((prev) => prev.filter((p) => p.id !== id));
+	const handleEdit = (profile: Profile) => {
+		setEditingProfile(profile);
+		setView("edit");
+	};
 
-    showToast({
-      type: "info",
-      title: "Profile Deleted",
-      description: `"${profile?.name}" deleted successfully`,
-    });
-  };
+	const handleDelete = (id: string) => {
+		const profile = profiles.find((p) => p.id === id);
+		setProfiles((prev) => prev.filter((p) => p.id !== id));
 
-  const handleSave = (data: WorkspacePayload) => {
-    console.log("=======================>", data);
-    // const isEditing = profiles.some((p) => p.id === data.id);
-    // setProfiles((prev) =>
-    //   isEditing
-    //     ? prev.map((p) => (p.id === data.id ? data : p))
-    //     : [data, ...prev],
-    // );
-    // showToast({
-    //   type: "success",
-    //   title: isEditing ? "Profile Updated" : "Profile Created",
-    // });
-    // setView("list");
-  };
+		showToast({
+			type: "info",
+			title: "Profile Deleted",
+			description: `"${profile?.name}" deleted successfully`,
+		});
+	};
 
-  return (
-    <div
-      className="bg-white 0.3s ease max-w-full mx-auto h-full min-h-screen"
-      data-theme={theme}
-    >
-      {view === "list" && (
-        <ProfileList
-          profiles={profiles}
-          onCreateNew={handleCreate}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-      )}
+	const handleSave = (data: WorkspacePayload) => {
+		console.log("=======================>", data);
+		// const isEditing = profiles.some((p) => p.id === data.id);
+		// setProfiles((prev) =>
+		//   isEditing
+		//     ? prev.map((p) => (p.id === data.id ? data : p))
+		//     : [data, ...prev],
+		// );
+		// showToast({
+		//   type: "success",
+		//   title: isEditing ? "Profile Updated" : "Profile Created",
+		// });
+		// setView("list");
+	};
 
-      {(view === "create" || view === "edit") && (
-        <ProfileFormPage
-          existingProfile={editingProfile}
-          onSave={handleSave}
-          onCancel={() => setView("list")}
-        />
-      )}
-    </div>
-  );
+	return (
+		<div
+			className="bg-white 0.3s ease max-w-full mx-auto h-full min-h-screen"
+			data-theme={theme}
+		>
+			{view === "list" && (
+				<ProfileList
+					profiles={filteredUsers}
+					search={search}
+					onSearchChange={setSearch}
+					onCreateNew={handleCreate}
+					onEdit={handleEdit}
+					onDelete={handleDelete}
+				/>
+			)}
+
+			{(view === "create" || view === "edit") && (
+				<ProfileFormPage
+					existingProfile={editingProfile}
+					onSave={handleSave}
+					onCancel={() => setView("list")}
+				/>
+			)}
+		</div>
+	);
 };
