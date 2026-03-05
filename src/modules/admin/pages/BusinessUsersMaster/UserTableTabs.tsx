@@ -1,5 +1,5 @@
-import { Badge } from "../../../components/common/Badge";
-import type { GeneralStatus } from "../../../components/common/common.types";
+import { Badge } from "../../../../components/common/Badge";
+import type { GeneralStatus } from "../../../../components/common/common.types";
 
 type UserTab = "All" | GeneralStatus;
 

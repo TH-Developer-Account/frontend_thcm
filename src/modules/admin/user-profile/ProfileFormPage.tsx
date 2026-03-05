@@ -1,7 +1,7 @@
 import { useState } from "react";
 // import { WORKSPACE_APPS } from "./constant";
 import type { Profile } from "./profile.types";
-import type { WorkspacePayload } from "./profile.types";
+// import type { WorkspacePayload } from "./profile.types";
 // import { transformProfileToDTO } from "./permission.transform";
 import { ArrowLeft } from "lucide-react";
 import { DEFAULT_PERMISSIONS } from "./constant";
@@ -10,7 +10,7 @@ import PermissionMatrix from "./PermissionMatrix";
 
 interface Props {
 	existingProfile: Profile | null;
-	onSave: (payload: WorkspacePayload) => void;
+	// onSave: (payload: WorkspacePayload) => void;
 	onCancel: () => void;
 }
 
@@ -46,17 +46,14 @@ export const ProfileFormPage: React.FC<Props> = ({
 	};
 
 	// 🔥 FINAL SUBMIT → BUILD WORKSPACE PAYLOAD
-	// const handleSubmit = async () => {
-	// 	const profileDTO = transformProfileToDTO(form);
+	const handleSubmit = async (e) => {
+		const data = e.target.value;
+		console.log("Permissions:", e.target.value);
 
-	// 	const payload: WorkspacePayload = {
-	// 		workSpaceName: "Tata Hitachi Workspace",
-	// 		apps: WORKSPACE_APPS,
-	// 		profiles: [profileDTO],
-	// 	};
-
-	// 	await onSave(payload);
-	// };
+		// call API
+		// saveProfilePermissions(data)
+		setOnSavePerm(data);
+	};
 	type Action = "read" | "write";
 
 	interface Module {
@@ -255,13 +252,7 @@ export const ProfileFormPage: React.FC<Props> = ({
 						toggleAppAction={toggleAppAction}
 						toggleModule={toggleModule}
 						togglePerm={togglePerm}
-						onSavePermissions={(data) => {
-							console.log("Permissions:", data);
-
-							// call API
-							// saveProfilePermissions(data)
-							setOnSavePerm(data);
-						}}
+						onSavePermissions={handleSubmit}
 					/>
 				)}
 			</div>

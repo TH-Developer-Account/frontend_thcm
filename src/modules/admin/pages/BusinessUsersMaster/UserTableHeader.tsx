@@ -1,6 +1,6 @@
 // UserTableHeader.tsx
 import { Search, MoreVertical } from "lucide-react";
-import SelectInput from "../../../components/FormElements/SelectInput";
+import SelectInput from "../../../../components/FormElements/SelectInput";
 
 interface Props {
 	search: string;

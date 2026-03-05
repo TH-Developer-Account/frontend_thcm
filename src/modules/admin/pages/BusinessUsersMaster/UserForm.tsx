@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { type TableUser } from "../../../utils/types";
-import Button from "../../../components/common/Button";
+import { type TableUser } from "../../../../utils/types";
+import Button from "../../../../components/common/Button";
 
 interface Props {
 	initial?: Partial<TableUser>;

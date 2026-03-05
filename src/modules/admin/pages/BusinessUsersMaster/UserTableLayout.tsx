@@ -1,5 +1,5 @@
 // UserTableLayout.tsx
-import { type TableUser } from "../../../utils/types";
+import { type TableUser } from "../../../../utils/types";
 import { UserTableTabs } from "./UserTableTabs";
 import { UserTableHeader } from "./UserTableHeader";
 import { UserTable } from "./UserTable";
