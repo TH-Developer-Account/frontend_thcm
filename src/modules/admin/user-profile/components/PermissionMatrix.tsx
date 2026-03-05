@@ -45,6 +45,7 @@ interface Props {
   // toggleModule: (app: string, mod: string) => void;
   togglePerm: (app: string, mod: string, action: Action) => void;
   onSavePermissions: (data: WorkspacePayload) => void;
+  isLoading: boolean;
 }
 
 export default function PermissionMatrix({
@@ -52,6 +53,7 @@ export default function PermissionMatrix({
   collapsed,
   permState,
   search,
+  isLoading,
   setSearch,
   setCollapsed,
   appActionState,
@@ -102,6 +104,7 @@ export default function PermissionMatrix({
             value={search}
             onChange={(value) => setSearch(value)}
             placeholder="Search modules..."
+            onClear={() => setSearch("")}
           />
         </div>
       </div>
@@ -256,6 +259,7 @@ export default function PermissionMatrix({
       </div>
       <div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-white">
         <button
+          disabled={isLoading}
           onClick={collectPermissions}
           className="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition"
         >

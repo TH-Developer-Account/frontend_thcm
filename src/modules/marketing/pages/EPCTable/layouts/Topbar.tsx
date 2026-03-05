@@ -1,9 +1,10 @@
 import React from "react";
+import { NavLink } from "react-router-dom";
 import { Filter, Plus } from "lucide-react";
 import { useEPC } from "../../../context/useEPC";
 import Filters from "../EPCListing/Filters";
 import { SearchInput } from "../../../../../components/FormElements/SearchInput";
-import { NavLink } from "react-router-dom";
+import { Can } from "../../../../../context/permissionHelpers";
 
 interface TopbarProps {
   isFilterOpen: boolean;
@@ -40,12 +41,14 @@ const Topbar: React.FC<TopbarProps> = ({ isFilterOpen, setIsFilterOpen }) => {
               <Filter size={16} />
             </button>
             {/* Add EPC */}
-            <button className="flex items-center gap-1 bg-orange-500 text-white px-4 py-2 rounded-lg text-sm">
-              <Plus size={16} />
-              <NavLink to="/marketing/epc" rel="epc" className="text-white">
-                <span className="hidden sm:inline">Create EPC</span>
-              </NavLink>
-            </button>
+            <Can action="write" app="MAP" module="EPC">
+              <button className="flex items-center gap-1 bg-orange-500 text-white px-4 py-2 rounded-lg text-sm">
+                <Plus size={16} />
+                <NavLink to="/marketing/epc" rel="epc" className="text-white">
+                  <span className="hidden sm:inline">Create EPC</span>
+                </NavLink>
+              </button>
+            </Can>
           </div>
         </div>
       </header>

@@ -2,9 +2,10 @@
 // -----------------------------------------------------------------
 // Custom hook that manages ALL permission state logic.
 // Keeps component clean and reusable.
+// Syncs permissions when editing an existing profile.
 // -----------------------------------------------------------------
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { apps } from "../constant";
 import { buildPermStateFromApi } from "../utils/permissions";
 import {
@@ -13,14 +14,17 @@ import {
 	areAllActionEnabled,
 	areSomeActionEnabled,
 } from "../utils/permission.utils";
+
 import type {
-	Profile,
 	Permission,
 	PermissionFlag,
+	PermState,
+	WorkspacePermission,
 } from "../types/profile.types";
-import type { PermState } from "../types/profile.types";
 
-/** Build base permission matrix from app config */
+/** --------------------------------------------------------
+ * Build base permission matrix from app configuration
+ * -------------------------------------------------------- */
 const buildBasePermState = (): PermState =>
 	Object.fromEntries(
 		apps.map((app) => [
@@ -31,19 +35,24 @@ const buildBasePermState = (): PermState =>
 		]),
 	);
 
-/** Merge API permissions into base matrix */
-const initializePermState = (existingProfile: Profile | null): PermState => {
+/** --------------------------------------------------------
+ * Merge API permissions into base matrix
+ * -------------------------------------------------------- */
+const initializePermState = (
+	existingPermissions: WorkspacePermission[],
+): PermState => {
 	const base = buildBasePermState();
 
-	if (!existingProfile?.permissions?.length) return base;
+	if (!existingPermissions?.length) return base;
 
-	const fromApi = buildPermStateFromApi(existingProfile.permissions);
+	const fromApi = buildPermStateFromApi(existingPermissions);
 
 	for (const appKey in fromApi) {
 		if (!base[appKey]) continue;
 
 		for (const modKey in fromApi[appKey]) {
 			if (!base[appKey][modKey]) continue;
+
 			base[appKey][modKey] = fromApi[appKey][modKey];
 		}
 	}
@@ -51,14 +60,31 @@ const initializePermState = (existingProfile: Profile | null): PermState => {
 	return base;
 };
 
-export const usePermissionMatrix = (existingProfile: Profile | null) => {
+/** =========================================================
+ * MAIN HOOK
+ * ========================================================= */
+export const usePermissionMatrix = (permissions: WorkspacePermission[]) => {
+	/** --------------------------------------------------------
+	 * Permission Matrix State
+	 * -------------------------------------------------------- */
 	const [permState, setPermState] = useState<PermState>(() =>
-		initializePermState(existingProfile),
+		initializePermState(permissions),
 	);
 
-	// -----------------------------------------------------
-	// Toggle Single Permission (read/write)
-	// -----------------------------------------------------
+	/** --------------------------------------------------------
+	 * 🔥 Sync permissions when editing profile
+	 * -------------------------------------------------------- */
+	useEffect(() => {
+		if (!permissions) return;
+
+		const updated = initializePermState(permissions);
+		// eslint-disable-next-line react-hooks/set-state-in-effect
+		setPermState(updated);
+	}, [permissions]);
+
+	/** --------------------------------------------------------
+	 * Toggle Single Permission (read / write)
+	 * -------------------------------------------------------- */
 	const togglePerm = (app: string, mod: string, action: Permission) => {
 		if (!permState?.[app]?.[mod]) return;
 
@@ -67,6 +93,7 @@ export const usePermissionMatrix = (existingProfile: Profile | null) => {
 
 			let updated = { ...current };
 
+			/** Write requires read */
 			if (action === "write") {
 				const nextWrite = !current.write;
 
@@ -76,6 +103,7 @@ export const usePermissionMatrix = (existingProfile: Profile | null) => {
 				};
 			}
 
+			/** Removing read removes write */
 			if (action === "read") {
 				const nextRead = !current.read;
 
@@ -95,18 +123,15 @@ export const usePermissionMatrix = (existingProfile: Profile | null) => {
 		});
 	};
 
-	// -----------------------------------------------------
-	// Toggle Entire App (all modules)
-	// -----------------------------------------------------
+	/** --------------------------------------------------------
+	 * Toggle Entire App (all modules)
+	 * -------------------------------------------------------- */
 	const toggleAppAll = (app: string) => {
 		setPermState((prev) => {
-			console.log({ prev, app });
 			const modules = prev[app];
 			if (!modules) return prev;
 
 			const next = !areAllEnabled(modules);
-
-			console.log({ next });
 
 			const updated = Object.fromEntries(
 				Object.keys(modules).map((m) => [m, { read: next, write: next }]),
@@ -116,11 +141,12 @@ export const usePermissionMatrix = (existingProfile: Profile | null) => {
 		});
 	};
 
-	// -----------------------------------------------------
-	// Toggle App by Specific Permission (all read OR all write)
-	// -----------------------------------------------------
+	/** --------------------------------------------------------
+	 * Toggle App by Permission Column (all read / all write)
+	 * -------------------------------------------------------- */
 	const toggleAppAction = (app: string, action: Permission) => {
 		const modules = permState[app];
+		if (!modules) return;
 
 		const next = !Object.values(modules).every((p) => p[action]);
 
@@ -146,10 +172,9 @@ export const usePermissionMatrix = (existingProfile: Profile | null) => {
 		}));
 	};
 
-	// -----------------------------------------------------
-	// Derived UI State Helpers
-	// -----------------------------------------------------
-
+	/** --------------------------------------------------------
+	 * Derived UI State (Checkbox states)
+	 * -------------------------------------------------------- */
 	const appActionState = (app: string, action: Permission) => {
 		const modules = permState?.[app];
 		if (!modules) return { all: false, some: false };
@@ -160,6 +185,9 @@ export const usePermissionMatrix = (existingProfile: Profile | null) => {
 		};
 	};
 
+	/** --------------------------------------------------------
+	 * Expose Hook API
+	 * -------------------------------------------------------- */
 	return {
 		permState,
 		togglePerm,
