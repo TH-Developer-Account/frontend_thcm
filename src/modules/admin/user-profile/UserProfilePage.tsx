@@ -1,20 +1,18 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { useTheme } from "../../../providers/ThemeContext";
 import { ServerAxios } from "../../../services/ServerAxios";
 import ProfileList from "./components/ProfileList";
-import { ProfileFormPage } from "./components/ProfileFormPage";
-import type { Profile, WorkspacePayload } from "./types/profile.types";
+import type { Profile } from "./types/profile.types";
 import { useToast } from "../../../context/Auth/AuthContext";
 
 export const UserProfilePage = () => {
   const { theme } = useTheme();
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const { workspaceId } = useAuth();
-
-  const [view, setView] = useState<"list" | "create" | "edit">("list");
   const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
     const loadProfiles = async () => {
@@ -35,16 +33,6 @@ export const UserProfilePage = () => {
     loadProfiles();
   }, [workspaceId]); // 👈 add workspaceId here
 
-  const handleCreate = () => {
-    setEditingProfile(null);
-    setView("create");
-  };
-
-  const handleEdit = (profile: Profile) => {
-    setEditingProfile(profile);
-    setView("edit");
-  };
-
   const handleDelete = (id: string) => {
     const profile = profiles.find((p) => p.id === id);
     setProfiles((prev) => prev.filter((p) => p.id !== id));
@@ -56,42 +44,17 @@ export const UserProfilePage = () => {
     });
   };
 
-  const handleSave = (data: WorkspacePayload) => {
-    console.log("=======================>", data);
-    // const isEditing = profiles.some((p) => p.id === data.id);
-    // setProfiles((prev) =>
-    //   isEditing
-    //     ? prev.map((p) => (p.id === data.id ? data : p))
-    //     : [data, ...prev],
-    // );
-    // showToast({
-    //   type: "success",
-    //   title: isEditing ? "Profile Updated" : "Profile Created",
-    // });
-    // setView("list");
-  };
-
   return (
     <div
       className="bg-white 0.3s ease max-w-full mx-auto h-full min-h-screen"
       data-theme={theme}
     >
-      {view === "list" && (
-        <ProfileList
-          profiles={profiles}
-          onCreateNew={handleCreate}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-      )}
-
-      {(view === "create" || view === "edit") && (
-        <ProfileFormPage
-          existingProfile={editingProfile}
-          onSave={handleSave}
-          onCancel={() => setView("list")}
-        />
-      )}
+      <ProfileList
+        profiles={profiles}
+        onCreateNew={() => navigate("/admin/profiles/create")}
+        onEdit={(profile) => navigate(`/admin/profiles/${profile.id}/edit`)}
+        onDelete={handleDelete}
+      />
     </div>
   );
 };
