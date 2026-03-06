@@ -16,6 +16,8 @@ type ButtonProps = {
 	iconColor?: string;
 	fullWidth?: boolean; // 👈 add this
 	children?: React.ReactNode;
+	isTooltip?: string;
+	iconSize?: string;
 };
 
 const Button: React.FC<ButtonProps> = ({
@@ -32,6 +34,8 @@ const Button: React.FC<ButtonProps> = ({
 	fullWidth = false,
 	children,
 	iconColor,
+	isTooltip,
+	iconSize,
 }) => {
 	const base =
 		"bg-[#f35a00] text-white px-4 py-2 rounded-md font-semibold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer";
@@ -44,20 +48,46 @@ const Button: React.FC<ButtonProps> = ({
 	};
 	const styleClass = resolveStatusStyle({ status: status || "" });
 	return (
-		<button
-			type={type}
-			onClick={onClick}
-			disabled={disabled}
-			className={`
+		<div className="relative inline-flex group">
+			<button
+				type={type}
+				onClick={onClick}
+				disabled={disabled}
+				className={`
 				${fullWidth ? "w-full" : "w-auto"}
 				
 				${base} ${[variant]} ${S[size]} ${className}${styleClass}`}
-		>
-			{Icon && iconPosition === "left" && <Icon size={16} color={iconColor} />}
-			{text}
-			{Icon && iconPosition === "right" && <Icon size={16} color={iconColor} />}
-			{children ? children : null}
-		</button>
+			>
+				{Icon && iconPosition === "left" && (
+					<Icon size={iconSize ? iconSize : 16} color={iconColor} />
+				)}
+				{text}
+				{Icon && iconPosition === "right" && (
+					<Icon size={iconSize ? iconSize : 16} color={iconColor} />
+				)}
+				{children ? children : null}
+			</button>
+			{/* Tooltip */}
+			{isTooltip ? (
+				<div
+					className="
+						absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+						whitespace-nowrap
+						rounded-md bg-gray-900 text-white text-xs
+						px-2 py-1 shadow-lg
+						opacity-0 scale-95
+						pointer-events-none
+						transition-all duration-150
+						group-hover:opacity-100
+						group-hover:scale-100
+						group-focus-within:opacity-100
+						group-focus-within:scale-100
+						z-50"
+				>
+					{isTooltip}
+				</div>
+			) : null}
+		</div>
 	);
 };
 

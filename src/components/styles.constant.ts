@@ -20,8 +20,8 @@ const STATUS_STYLE_MAP: Record<string, string> = {
 };
 
 export const resolveStatusStyle = ({ status }: { status?: string }): string => {
-	if (!status) return "bg-zinc-100 text-zinc-800";
-	return STATUS_STYLE_MAP[status] ?? "bg-zinc-100 text-zinc-800";
+	if (!status) return "bg-zinc-100 text-zinc-900";
+	return STATUS_STYLE_MAP[status] ?? "bg-zinc-100 text-zinc-900";
 };
 
 export const resolveVariantStyle = (variant: string): string => {
