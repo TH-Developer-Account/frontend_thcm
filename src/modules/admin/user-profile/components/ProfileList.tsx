@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { PlusIcon } from "lucide-react";
+import type { Dispatch, SetStateAction } from "react";
 import { useAuth } from "../../../../context/Auth/useAuth";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import Button from "../../../../components/common/Button";
@@ -22,6 +23,7 @@ type ProfileListProps = {
   onTabChange?: (tab: string) => void;
   search: string;
   onSearchChange: (value: string) => void;
+  setProfiles: Dispatch<SetStateAction<Profile[]>>;
 };
 
 const ProfileList: React.FC<ProfileListProps> = ({
@@ -31,6 +33,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
   onSearchChange,
   onEdit,
   onDelete,
+  setProfiles,
 }) => {
   const { workspaceId } = useAuth();
   const { showToast } = useToast();
@@ -43,7 +46,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
   ): Promise<void> => {
     try {
       const {
-        data: { message },
+        data: { message, profile },
       } = await ServerAxios.post("/users/assign-profile", {
         userIds,
         profileId,
@@ -54,6 +57,28 @@ const ProfileList: React.FC<ProfileListProps> = ({
         title: "Success",
         description: message,
       });
+      // 🔹 Update the profile in state
+      if (profile) {
+        setProfiles((prev) =>
+          prev.map((p) => {
+            // Remove users from other profiles
+            const filteredUsers = p.users.filter(
+              (u) => !userIds.includes(u.id),
+            );
+
+            // If this is the assigned profile → add users
+            if (profile && p.id === profile.id) {
+              return profile; // backend already returns correct users
+            }
+
+            return {
+              ...p,
+              users: filteredUsers,
+              assignedUserCount: filteredUsers.length,
+            };
+          }),
+        );
+      }
     } catch (error) {
       console.error("Failed to assign users:", error);
     } finally {

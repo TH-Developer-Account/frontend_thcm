@@ -40,7 +40,7 @@ function resolvePermission(
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [workspaceId, setWorkspaceId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // ── NEW state ─────────────────────────────────────────────────────────────
   const [permissions, setPermissions] = useState<Permission[]>([]);
@@ -70,9 +70,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } catch (error) {
           localStorage.removeItem("authToken");
           console.log("ERROR====>", error);
+        } finally {
+          setIsLoading(false);
         }
       }
-      setIsLoading(false);
     };
 
     checkAuth();
@@ -89,6 +90,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     password: string,
   ): Promise<LoginResult> => {
     try {
+      setIsLoading(true);
       const { data } = await ServerAxios.post<LoginSuccessResponse>(
         `${API_BASE_URL}${api_routes.login_api_route}`,
         { email, password },
@@ -136,6 +138,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       }
 
       throw err;
+    } finally {
+      setIsLoading(false);
     }
   };
 
