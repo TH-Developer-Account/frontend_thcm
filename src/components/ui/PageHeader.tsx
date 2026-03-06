@@ -1,4 +1,3 @@
-// PageHeader.tsx
 import { Link } from "react-router-dom";
 
 interface BreadcrumbItem {
@@ -13,23 +12,23 @@ interface Props {
 
 export function PageHeader({ title, breadcrumbs }: Props) {
 	return (
-		<div className=" px-3 py-3 text-left">
+		<div className="page-header">
 			{/* Title */}
-			<h2 className="text-xl font-semibold text-gray-900 mb-4">{title}</h2>
+			<h2 className="page-title">{title}</h2>
 
 			{/* Breadcrumb */}
-			<div className="flex items-center text-sm text-gray-500 space-x-3">
+			<div className="breadcrumb">
 				{breadcrumbs.map((item, index) => {
 					const isLast = index === breadcrumbs.length - 1;
 
 					return (
-						<div key={index} className="flex items-center space-x-3">
+						<div key={index} className="breadcrumb-item">
 							{item.href && !isLast ? (
-								<Link to={item.href} className="hover:text-gray-700 transition">
+								<Link to={item.href} className="breadcrumb-link">
 									{item.label}
 								</Link>
 							) : (
-								<span className={isLast ? "text-gray-400" : ""}>
+								<span className={isLast ? "breadcrumb-current" : ""}>
 									{item.label}
 								</span>
 							)}

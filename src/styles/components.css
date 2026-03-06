@@ -424,7 +424,7 @@
 
 	.checkbox {
 		@apply flex items-center justify-center
-      flex-shrink-0
+      shrink-0
       transition-all duration-150;
 	}
 
@@ -446,5 +446,89 @@
 
 	.checkbox-icon {
 		@apply font-bold leading-none;
+	}
+}
+
+/* Profile Card Styles */
+@layer components {
+	/* =========================================
+       PROFILE CARD
+    ========================================= */
+
+	.profile-card {
+		@apply p-5 lg:p-6 bg-white border border-gray-200 rounded-2xl shadow-sm text-left;
+	}
+
+	.profile-card-layout {
+		@apply flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between;
+	}
+
+	.profile-section-title {
+		@apply text-lg font-semibold text-gray-800 lg:mb-6;
+	}
+
+	/* =========================================
+       PROFILE GRID
+    ========================================= */
+
+	.profile-grid {
+		@apply grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7;
+	}
+
+	.profile-grid-span-2 {
+		@apply lg:col-span-2;
+	}
+
+	/* =========================================
+       PROFILE FIELD
+    ========================================= */
+
+	.profile-field-label {
+		@apply mb-2 text-xs text-gray-500;
+	}
+
+	.profile-field-value {
+		@apply text-sm font-medium text-gray-800;
+	}
+	/* META HEADER */
+
+	.profile-meta-header {
+		@apply flex items-center gap-6 mb-6;
+	}
+
+	.profile-meta-avatar {
+		@apply w-20 h-20 rounded-full overflow-hidden border border-gray-200;
+	}
+
+	.profile-meta-avatar img {
+		@apply w-full h-full object-cover;
+	}
+
+	.profile-meta-name {
+		@apply text-lg font-semibold text-gray-800 mb-1;
+	}
+
+	.profile-meta-subtitle {
+		@apply text-sm text-gray-500;
+	}
+}
+
+/* Profile Page Styles */
+
+@layer components {
+	/* =====================================
+       PROFILE PAGE
+    ===================================== */
+
+	.profile-page {
+		@apply bg-white p-5 lg:p-6;
+	}
+
+	.profile-page-title {
+		@apply mb-4 text-lg font-semibold text-gray-800 text-left lg:mb-7;
+	}
+
+	.profile-page-sections {
+		@apply space-y-6;
 	}
 }

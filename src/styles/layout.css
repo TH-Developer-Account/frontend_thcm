@@ -1,0 +1,48 @@
+@layer components {
+	/* ========================
+       PAGE HEADER
+    ======================== */
+
+	.page-header {
+		@apply px-3 py-3 text-left;
+	}
+
+	/* ========================
+       PAGE TITLE
+    ======================== */
+
+	.page-title {
+		@apply text-xl font-semibold text-gray-900 mb-4;
+	}
+
+	/* ========================
+       BREADCRUMB CONTAINER
+    ======================== */
+
+	.breadcrumb {
+		@apply flex items-center text-sm text-gray-500 space-x-3;
+	}
+
+	.breadcrumb-item {
+		@apply flex items-center space-x-3;
+	}
+
+	/* ========================
+       BREADCRUMB LINK
+    ======================== */
+
+	.breadcrumb-link {
+		@apply hover:text-gray-700 transition;
+	}
+
+	.breadcrumb-current {
+		@apply text-gray-400;
+	}
+	/* ========================
+     HEADER LOGO
+  ======================== */
+
+	.header-logo {
+		@apply w-[100px] md:w-[100px];
+	}
+}

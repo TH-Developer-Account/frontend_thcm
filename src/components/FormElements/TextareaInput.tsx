@@ -1,16 +1,5 @@
-import React, {
-	type ForwardRefRenderFunction,
-	type TextareaHTMLAttributes,
-} from "react";
-
-interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
-	name: string;
-	label: string;
-	placeholder?: string;
-	value?: string;
-	error?: string;
-	className?: string;
-}
+import React, { type ForwardRefRenderFunction } from "react";
+import type { TextareaProps } from "./input.types";
 
 const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 	{
@@ -27,7 +16,7 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 	ref,
 ) => {
 	return (
-		<div className="mb-4 relative mb-4">
+		<div className="mb-4 relative ">
 			<label
 				htmlFor={name}
 				className="text-left block text-sm/6 font-medium text-gray-900"

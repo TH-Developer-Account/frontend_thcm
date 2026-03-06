@@ -1,0 +1,95 @@
+@reference "tailwindcss";
+
+/* Form Input Styles */
+
+@layer components {
+	/* ========================
+     FORM FIELD
+  ======================== */
+
+	.form-field {
+		@apply mb-4 flex flex-col gap-1;
+	}
+
+	/* ========================
+     LABEL
+  ======================== */
+
+	.form-label {
+		@apply text-left block text-sm font-medium text-gray-900;
+	}
+
+	.form-required {
+		@apply text-red-500;
+	}
+
+	/* ========================
+     INPUT WRAPPER
+  ======================== */
+
+	.form-input-wrapper {
+		@apply relative mt-2;
+	}
+
+	/* ========================
+     INPUT BASE
+  ======================== */
+
+	.form-input {
+		@apply block w-full
+      rounded-md
+      bg-white
+      px-3 py-1.5 pr-10
+      text-base sm:text-sm
+      text-gray-900
+      placeholder:text-gray-400
+      outline-1 -outline-offset-1
+      outline-gray-300
+      focus:outline-2 focus:-outline-offset-2
+      focus:outline-gray-400;
+	}
+
+	/* ========================
+     INPUT STATES
+  ======================== */
+
+	.form-input-error {
+		@apply outline-red-500 focus:outline-red-500 placeholder:text-red-500;
+	}
+
+	.form-input-valid {
+		@apply outline-green-400;
+	}
+
+	.form-input-disabled {
+		@apply opacity-60 cursor-not-allowed;
+	}
+
+	/* ========================
+     PASSWORD / ICON SLOT
+  ======================== */
+
+	.form-icon-right {
+		@apply absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700;
+	}
+
+	/* ========================
+     ERROR ICON
+  ======================== */
+
+	.form-error-icon {
+		@apply absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500;
+	}
+
+	/* ========================
+     ERROR TEXT
+  ======================== */
+
+	.form-error-text {
+		@apply mt-1 text-xs text-red-600 text-left;
+	}
+
+	.form-helper-text {
+		@apply mt-1 text-xs text-gray-500;
+	}
+}

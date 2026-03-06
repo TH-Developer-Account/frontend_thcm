@@ -1,10 +1,6 @@
 import Select from "react-select";
 import type { Props, GroupBase } from "react-select";
-
-export interface Option {
-	label: string;
-	value: string;
-}
+import type { Option } from "./input.types";
 
 interface SelectInputProps extends Props<Option, false, GroupBase<Option>> {
 	label?: string;

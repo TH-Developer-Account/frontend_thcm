@@ -8,6 +8,7 @@
 @import "./styles/color.css";
 @import "./styles/form.css";
 @import "./styles/components.css";
+@import "./components/FormElements/input.css";
 
 :root {
 	/* Brand */

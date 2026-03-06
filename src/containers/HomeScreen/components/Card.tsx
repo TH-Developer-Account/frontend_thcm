@@ -33,7 +33,7 @@ function ActionCard({
 				${
 					isPrimary
 						? "bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200 shadow-md"
-						: "bg-gray-50 border-gray-100 shadow-sm p-6 hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02]"
+						: "bg-gray-50 border-gray-100 shadow-sm  hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02]"
 				}
 			`}
 		>
@@ -42,7 +42,7 @@ function ActionCard({
 					className={`
 						
 						rounded-xl p-3
-						transition-colors duration-200
+						transition-colors duration-200 p-6
 						${
 							isPrimary
 								? "bg-orange-200 text-orange-700"
@@ -52,10 +52,14 @@ function ActionCard({
 				>
 					<div className="flex items-center justify-center">{icon}</div>
 
-					<h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+					<h3 className="text-lg font-semibold text-gray-800 group-hover:text-orange-600">
+						{title}
+					</h3>
 
 					{description && (
-						<p className="text-sm text-gray-600 mt-1">{description}</p>
+						<p className="text-sm text-gray-600 mt-1 group-hover:text-orange-600">
+							{description}
+						</p>
 					)}
 
 					{subText && (

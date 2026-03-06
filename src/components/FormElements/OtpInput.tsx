@@ -1,15 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-
-interface OtpInputProps {
-	name?: string;
-	length?: number;
-	value?: string;
-	error?: string;
-	className?: string;
-	timerSeconds?: number;
-	onTimerChange?: (secondsLeft: number, isActive: boolean) => void;
-	onChange: (otp: string) => void;
-}
+import type { OtpInputProps } from "./input.types";
 
 const OtpInput: React.FC<OtpInputProps> = ({
 	name = "otp",

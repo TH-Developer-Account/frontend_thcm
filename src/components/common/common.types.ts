@@ -107,3 +107,23 @@ export interface AccordionProps {
 	allowMultiple?: boolean;
 	defaultOpen?: string[];
 }
+
+export interface FieldConfig {
+	label: string;
+	value?: React.ReactNode;
+	span?: number;
+}
+
+export interface ProfileHeader {
+	avatar?: string;
+	title?: string;
+	subtitle?: string;
+}
+
+export interface ProfileCardRendererProps {
+	title?: string;
+	fields: FieldConfig[];
+	header?: ProfileHeader;
+	onEdit?: () => void;
+	editable?: boolean;
+}

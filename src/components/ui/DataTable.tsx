@@ -171,7 +171,7 @@ function DataTable<T extends object>({
 				pageCount >= 1 &&
 				onPageChange &&
 				onPageSizeChange && (
-					<div className="flex-shrink-0 border-t border-gray-100 bg-gray-100 ">
+					<div className="shrink-0 border-t border-gray-100 bg-gray-100 ">
 						<div className="flex justify-center items-center">
 							<Pagination
 								pageIndex={pageIndex}
