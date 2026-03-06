@@ -4,20 +4,17 @@ import React, {
 } from "react";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 
-// Define the props for the Input component
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-	name: string; // Required
-	label: string; // Required
+	name: string;
+	label: string;
 	placeholder?: string;
 	value?: string | number;
 	type?: string;
-
-	error?: string; // NEW: error message
-	helperText?: string; // NEW: helper text
+	error?: string;
+	helperText?: string;
 	className?: string;
 }
 
-// Create the Input component using ForwardRefRenderFunction
 const Input: ForwardRefRenderFunction<HTMLInputElement, InputProps> = (
 	{
 		name,
@@ -34,15 +31,13 @@ const Input: ForwardRefRenderFunction<HTMLInputElement, InputProps> = (
 	ref,
 ) => {
 	return (
-		<div className="mb-4">
-			<label
-				htmlFor={name}
-				className="text-left block text-sm/6 font-medium text-gray-900"
-			>
+		<div className="form-field">
+			<label htmlFor={name} className="form-label">
 				{label}
-				{required && <span className="text-red-500"> *</span>}
+				{required && <span className="form-required"> *</span>}
 			</label>
-			<div className="mt-2">
+
+			<div className="mt-2 relative">
 				<input
 					id={name}
 					type={type}
@@ -57,24 +52,19 @@ const Input: ForwardRefRenderFunction<HTMLInputElement, InputProps> = (
 					disabled={disabled}
 					aria-invalid={!!error}
 					aria-describedby={error ? `${name}-error` : undefined}
-					className={`block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 sm:text-sm/6
-           ${
-							error
-								? "error-place focus:outline-red-500 outline-red-500 focus:ring-red-500 focus-ring-1 outline-1 placeholder-red-500"
-								: "focus:outline-gray-400"
-						}
-          ${disabled ? "opacity-60 cursor-not-allowed" : ""}
-          ${className}
-        `}
+					className={`
+						form-input
+						${error ? "form-input-error" : "form-input-focus"}
+						${disabled ? "form-input-disabled" : ""}
+						${className}
+					`}
 					{...otherProps}
 				/>
+				{error && <ExclamationCircleIcon className="form-error-icon" />}
 			</div>
+
 			{error && (
-				<ExclamationCircleIcon className="absolute right-3 top-10 h-5 w-5 text-red-500" />
-			)}
-			{/* Error message */}
-			{error && (
-				<p id={`${name}-error`} className="mt-1 text-xs text-red-600 text-left">
+				<p id={`${name}-error`} className="form-error-text">
 					{error}
 				</p>
 			)}
@@ -82,7 +72,6 @@ const Input: ForwardRefRenderFunction<HTMLInputElement, InputProps> = (
 	);
 };
 
-// Wrap the Input component with React.forwardRef
 const FormInput = React.forwardRef(Input);
 
 export default FormInput;

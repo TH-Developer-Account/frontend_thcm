@@ -1,3 +1,5 @@
+import type { ToastStyle, ToastVariant } from "./common/Toast/toast.types";
+
 const STATUS_STYLE_MAP: Record<string, string> = {
 	Active: "bg-green-100 text-green-800",
 	active: "bg-green-100 text-green-800",
@@ -41,4 +43,53 @@ export const resolveVariantStyle = (variant: string): string => {
 		default:
 			return "bg-zinc-500 text-zinc-800";
 	}
+};
+export const toastStyles: Record<ToastVariant, ToastStyle> = {
+	success: {
+		wrapper: "bg-green-50 border-green-200",
+		iconBg: "bg-green-500",
+		icon: "✓",
+		title: "text-green-900",
+		desc: "text-green-700",
+	},
+	info: {
+		wrapper: "bg-blue-50 border-blue-200",
+		iconBg: "bg-blue-500",
+		icon: "i",
+		title: "text-blue-900",
+		desc: "text-blue-700",
+	},
+	warning: {
+		wrapper: "bg-yellow-50 border-yellow-200",
+		iconBg: "bg-yellow-500",
+		icon: "!",
+		title: "text-yellow-900",
+		desc: "text-yellow-700",
+	},
+	error: {
+		wrapper: "bg-red-50 border-red-200",
+		iconBg: "bg-red-500",
+		icon: "✕",
+		title: "text-red-900",
+		desc: "text-red-700",
+	},
+};
+
+export const styles = {
+	warning: {
+		icon: "⚠️",
+		iconBg: "bg-yellow-100 text-yellow-600",
+	},
+	info: {
+		icon: "ℹ️",
+		iconBg: "bg-blue-100 text-blue-600",
+	},
+	error: {
+		icon: "⛔",
+		iconBg: "bg-red-100 text-red-600",
+	},
+	success: {
+		icon: "✅",
+		iconBg: "bg-green-100 text-green-600",
+	},
 };

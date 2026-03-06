@@ -1,16 +1,5 @@
 import React from "react";
-
-interface AccordionItem {
-	id: string;
-	title: React.ReactNode;
-	content: React.ReactNode;
-}
-
-interface AccordionProps {
-	items: AccordionItem[];
-	allowMultiple?: boolean;
-	defaultOpen?: string[];
-}
+import type { AccordionProps } from "./common.types";
 
 export function Accordion({
 	items,
@@ -41,7 +30,7 @@ export function Accordion({
 						<button
 							type="button"
 							onClick={() => toggleItem(item.id)}
-							className="w-full px-4 py-3 text-left  font-bold flex justify-between transition transition-all duration-300 "
+							className="w-full px-4 py-3 text-left  font-bold flex justify-between transition  duration-300 "
 						>
 							{item.title}
 							<span>{isOpen ? "−" : "+"}</span>

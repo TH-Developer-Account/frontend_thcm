@@ -4,7 +4,7 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 
 interface PasswordInputProps {
-	label: string;
+	label?: string;
 	name: string;
 	value: string;
 	onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; // ✅ Add onChange
@@ -79,7 +79,7 @@ const PasswordInput: FC<PasswordInputProps> = ({
 					<button
 						type="button"
 						onClick={() => setShowPassword((prev) => !prev)}
-						className=" absolute ml-2 flex-shrink-0 text-gray-500 hover:text-gray-700 top-1.5 right-3"
+						className=" absolute ml-2 shrink-0 text-gray-500 hover:text-gray-700 top-1.5 right-3"
 					>
 						{showPassword ? (
 							<AiOutlineEyeInvisible size={24} />

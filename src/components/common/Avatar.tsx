@@ -1,10 +1,4 @@
-interface AvatarProps {
-	firstName: string;
-	lastName?: string;
-	imageUrl?: string;
-	size?: "sm" | "md" | "lg" | "xs";
-	className?: string;
-}
+import type { AvatarProps } from "./common.types";
 
 const sizeClasses = {
 	xs: "w-6 h-6 text-xs",

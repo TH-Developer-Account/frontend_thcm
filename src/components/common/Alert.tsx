@@ -1,37 +1,5 @@
-export type AlertVariant = "warning" | "info" | "error" | "success";
-
-interface AlertCardProps {
-	variant: AlertVariant;
-	title: string;
-	description: string;
-	primaryAction: {
-		label: string;
-		onClick: () => void;
-	};
-	secondaryAction?: {
-		label: string;
-		onClick: () => void;
-	};
-}
-
-const styles = {
-	warning: {
-		icon: "⚠️",
-		iconBg: "bg-yellow-100 text-yellow-600",
-	},
-	info: {
-		icon: "ℹ️",
-		iconBg: "bg-blue-100 text-blue-600",
-	},
-	error: {
-		icon: "⛔",
-		iconBg: "bg-red-100 text-red-600",
-	},
-	success: {
-		icon: "✅",
-		iconBg: "bg-green-100 text-green-600",
-	},
-};
+import { styles } from "../styles.constant";
+import type { AlertCardProps } from "./common.types";
 
 export function Alert({
 	variant,
@@ -44,7 +12,7 @@ export function Alert({
 
 	return (
 		<div
-			className="mx-auto mt-4 w-full max-w-[380px] sm-w-[300px]
+			className="mx-auto mt-4 w-full max-w-95 sm-w-[300px]
                         rounded-2xl bg-white p-4 sm:p-6
                         shadow-lg"
 		>

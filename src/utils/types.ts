@@ -1,5 +1,24 @@
-import type { TableUserStatus } from "../components/common/common.types";
 import { status } from "../modules/marketing/constant";
+
+// badge and button types
+export type TableUserStatus =
+	| "Active"
+	| "Blocked"
+	| "Inactive"
+	| "active"
+	| "inactive"
+	| "blocked";
+export type EPCStatus =
+	| "Approved"
+	| "Recommended"
+	| "Pending"
+	| "Completed"
+	| "Submitted"
+	| "Sent Back"
+	| "Report Submitted"
+	| "Cancelled";
+
+export type GeneralStatus = EPCStatus | TableUserStatus;
 
 export interface TableUser {
 	id: number;

@@ -1,0 +1,450 @@
+@reference "tailwindcss";
+/* Button Styles */
+
+@layer components {
+	/* ========================
+       BUTTON BASE
+    ======================== */
+
+	.btn {
+		@apply text-white rounded-md font-semibold
+      flex items-center justify-center gap-2
+      hover:opacity-90
+      disabled:opacity-50
+      cursor-pointer;
+	}
+
+	/* ========================
+       BUTTON SIZES
+    ======================== */
+
+	.btn-sm {
+		@apply px-3 py-1.5 text-xs;
+	}
+
+	.btn-md {
+		@apply px-4 py-2 text-sm;
+	}
+
+	.btn-lg {
+		@apply px-6 py-2.5 text-sm;
+	}
+
+	.btn-xl {
+		@apply px-8 py-3 text-base;
+	}
+
+	/* ========================
+       BUTTON VARIANTS
+    ======================== */
+
+	.btn-brand {
+		@apply bg-[#f35a00] text-white;
+	}
+
+	.btn-primary {
+		@apply bg-blue-100 text-blue-800;
+	}
+
+	.btn-success {
+		@apply bg-green-100 text-green-800;
+	}
+
+	.btn-warning {
+		@apply bg-yellow-100 text-yellow-800;
+	}
+
+	.btn-danger {
+		@apply bg-red-100 text-red-800;
+	}
+
+	.btn-disable {
+		@apply bg-gray-100 text-gray-800;
+	}
+
+	/* ========================
+       TOOLTIP
+    ======================== */
+
+	.btn-tooltip {
+		@apply absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+      whitespace-nowrap rounded-md
+      bg-gray-900 text-white text-xs
+      px-2 py-1 shadow-lg
+      opacity-0 scale-95
+      pointer-events-none
+      transition-all duration-150
+      group-hover:opacity-100
+      group-hover:scale-100
+      group-focus-within:opacity-100
+      group-focus-within:scale-100
+      z-50;
+	}
+}
+
+/* Badge Styles */
+
+@layer components {
+	/* ========================
+       BADGE BASE
+    ======================== */
+
+	.badge {
+		@apply inline-flex items-center
+      rounded-full
+      px-2 py-0.5
+      text-xs font-medium;
+	}
+}
+
+/* Card Styles */
+
+@layer components {
+	/* ========================
+       CARD BASE
+    ======================== */
+
+	.card {
+		@apply bg-zinc-900
+      border border-zinc-800
+      rounded-xl;
+	}
+
+	/* ========================
+       CARD HOVER
+    ======================== */
+
+	.card-hover {
+		@apply hover:border-zinc-600
+      hover:bg-zinc-800/60
+      cursor-pointer
+      transition-all
+      duration-200;
+	}
+}
+
+/* Full Screen Loader Styles */
+
+@layer components {
+	/* ========================
+       FULLSCREEN LOADER
+    ======================== */
+
+	.loader-fullscreen {
+		@apply fixed inset-0 z-50
+      flex flex-col items-center justify-center
+      bg-white;
+	}
+
+	.loader-gif-wrapper {
+		@apply flex items-center justify-center;
+	}
+
+	.loader-gif {
+		@apply w-28 h-28 object-contain;
+	}
+
+	.loader-text {
+		@apply mt-4 text-sm font-semibold text-slate-600 animate-pulse;
+	}
+}
+
+/* Modal Styles */
+
+@layer components {
+	/* ========================
+       MODAL OVERLAY
+    ======================== */
+
+	.modal-overlay {
+		@apply fixed inset-0 z-50
+      flex items-center justify-center
+      bg-black/25;
+	}
+
+	/* ========================
+       MODAL CONTAINER
+    ======================== */
+
+	.modal-container {
+		@apply w-full rounded-2xl;
+	}
+}
+
+/* Pagination Styles */
+
+@layer components {
+	/* ========================
+       PAGINATION CONTAINER
+    ======================== */
+
+	.pagination {
+		@apply flex items-center justify-between gap-4 outline-none;
+	}
+
+	.pagination-default {
+		@apply text-sm;
+	}
+
+	.pagination-compact {
+		@apply text-xs;
+	}
+
+	/* ========================
+       PAGE INFO
+    ======================== */
+
+	.pagination-info {
+		@apply text-gray-600;
+	}
+
+	.pagination-info-number {
+		@apply font-semibold text-black;
+	}
+
+	/* ========================
+       BUTTON BASE
+    ======================== */
+
+	.pagination-btn {
+		@apply rounded-lg border transition border-gray-200 bg-white;
+	}
+
+	.pagination-btn-default {
+		@apply px-3 py-1.5;
+	}
+
+	.pagination-btn-compact {
+		@apply px-2 py-1;
+	}
+
+	.pagination-btn-hover {
+		@apply hover:border-[#f35a00] hover:text-[#f35a00];
+	}
+
+	.pagination-btn-active {
+		@apply bg-[#f35a00] text-white border-[#f35a00];
+	}
+
+	.pagination-btn-disabled {
+		@apply disabled:opacity-40;
+	}
+
+	/* ========================
+       PAGE GROUP
+    ======================== */
+
+	.pagination-pages {
+		@apply flex items-center gap-1;
+	}
+
+	/* ========================
+       ELLIPSIS
+    ======================== */
+
+	.pagination-ellipsis {
+		@apply px-2 text-gray-400;
+	}
+
+	/* ========================
+       PAGE SIZE SELECT
+    ======================== */
+
+	.pagination-page-size {
+		@apply w-25 text-xs flex items-center mb-0;
+	}
+}
+
+/* Tabs Styles */
+
+@layer components {
+	/* ========================
+       TABS CONTAINER
+    ======================== */
+
+	.tabs-bar {
+		@apply flex items-center gap-8 px-6 pt-5;
+	}
+
+	/* ========================
+       TAB BUTTON
+    ======================== */
+
+	.tab-item {
+		@apply relative pb-4 text-sm font-medium
+      transition cursor-pointer text-center;
+	}
+
+	/* ========================
+       TAB LABEL
+    ======================== */
+
+	.tab-label {
+		@apply mr-1 text-gray-500;
+	}
+
+	.tab-label-active {
+		@apply text-gray-900 mr-1;
+	}
+
+	/* ========================
+       ACTIVE INDICATOR
+    ======================== */
+
+	.tab-indicator {
+		@apply absolute left-0 -bottom-[1px] w-full h-[2px]
+      bg-gray-900 rounded-full;
+	}
+}
+
+/* Toast Styles */
+
+@layer components {
+	/* ========================
+       TOAST WRAPPER
+    ======================== */
+
+	.toast {
+		@apply flex items-start gap-2 sm:gap-4
+      p-2 sm:p-4
+      border
+      rounded-lg sm:rounded-xl;
+	}
+
+	/* ========================
+       TOAST ICON
+    ======================== */
+
+	.toast-icon {
+		@apply flex items-center justify-center
+      w-8 h-8 sm:w-10 sm:h-10
+      rounded-full
+      text-white
+      text-sm sm:text-base
+      font-bold;
+	}
+
+	/* ========================
+       TOAST CONTENT
+    ======================== */
+
+	.toast-content {
+		@apply flex-1;
+	}
+
+	.toast-title {
+		@apply font-semibold text-xs sm:text-sm;
+	}
+
+	.toast-desc {
+		@apply mt-0.5 sm:mt-1
+      text-xs sm:text-sm
+      leading-snug sm:leading-normal;
+	}
+
+	/* ========================
+       TOAST ACTION
+    ======================== */
+
+	.toast-action {
+		@apply underline font-medium hover:opacity-80;
+	}
+
+	/* ========================
+       TOAST CLOSE
+    ======================== */
+
+	.toast-close {
+		@apply text-gray-400 hover:text-gray-600
+      text-sm sm:text-base
+      leading-none;
+	}
+}
+
+/* Toggle Styles */
+
+@layer components {
+	/* ========================
+       TOGGLE WRAPPER
+    ======================== */
+
+	.toggle {
+		@apply relative inline-flex items-center gap-2;
+	}
+
+	.toggle-disabled {
+		@apply opacity-40 cursor-not-allowed;
+	}
+
+	.toggle-enabled {
+		@apply cursor-pointer;
+	}
+
+	/* ========================
+       TOGGLE LABEL
+    ======================== */
+
+	.toggle-label {
+		@apply text-sm text-zinc-400 select-none;
+	}
+
+	/* ========================
+       TOGGLE TRACK
+    ======================== */
+
+	.toggle-track {
+		@apply rounded-full transition-colors duration-200;
+	}
+
+	.toggle-track-on {
+		@apply bg-amber-500;
+	}
+
+	.toggle-track-off {
+		@apply bg-zinc-700;
+	}
+
+	/* ========================
+       TOGGLE THUMB
+    ======================== */
+
+	.toggle-thumb {
+		@apply absolute top-0.5
+      rounded-full bg-white shadow
+      transition-transform duration-200;
+	}
+}
+
+/* Checkbox Styles */
+
+@layer components {
+	/* ========================
+       CHECKBOX BASE
+    ======================== */
+
+	.checkbox {
+		@apply flex items-center justify-center
+      flex-shrink-0
+      transition-all duration-150;
+	}
+
+	/* ========================
+       CHECKBOX STATES
+    ======================== */
+
+	.checkbox-disabled {
+		@apply opacity-60 cursor-not-allowed;
+	}
+
+	.checkbox-enabled {
+		@apply cursor-pointer;
+	}
+
+	/* ========================
+       CHECK ICON
+    ======================== */
+
+	.checkbox-icon {
+		@apply font-bold leading-none;
+	}
+}

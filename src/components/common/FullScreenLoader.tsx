@@ -12,25 +12,19 @@ const FullScreenLoader: React.FC = () => {
 	useEffect(() => {
 		const interval = setInterval(() => {
 			setCurrentGifIndex((prev) => (prev + 1) % gifs.length);
-		}, 1500); // change gif every 1.5 seconds
+		}, 1500);
 
 		return () => clearInterval(interval);
 	}, []);
 
 	return (
-		<div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white">
+		<div className="loader-fullscreen">
 			{/* GIF container */}
-			<div className="flex items-center justify-center">
-				<img
-					src={gifs[currentGifIndex]}
-					alt="loader"
-					className="w-28 h-28 object-contain"
-				/>
+			<div className="loader-gif-wrapper">
+				<img src={gifs[currentGifIndex]} alt="loader" className="loader-gif" />
 			</div>
 
-			<p className="mt-4 text-sm font-semibold text-slate-600 animate-pulse">
-				Loading ...
-			</p>
+			<p className="loader-text">Loading ...</p>
 		</div>
 	);
 };
