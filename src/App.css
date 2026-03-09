@@ -5,12 +5,6 @@
 	color: #f35a00;
 	text-decoration: inherit;
 }
-.brand button {
-	/* color: white !important; */
-}
-a:hover {
-	/* color: #f35a00; */
-}
 
 h1 {
 	font-size: 3.2em;
@@ -43,9 +37,8 @@ button:focus-visible {
 }
 
 @media (prefers-color-scheme: light) {
-	:root {
-		color: #213547;
-		background-color: #ffffff;
+	body {
+		color: #000;
 	}
 	a:hover {
 		/* color: #f35a00; */
@@ -65,172 +58,6 @@ input {
 
 .sidebar-icons {
 	color: #f35a00;
-}
-/* // ─────────────────────────────────────────────
-//  GLOBAL STYLES
-// ───────────────────────────────────────────── */
-
-@keyframes fade-in {
-	from {
-		opacity: 0;
-		transform: translateY(8px);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-@keyframes slide-up {
-	from {
-		opacity: 0;
-		transform: translateY(20px);
-	}
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-@keyframes thumb-pop {
-	from {
-		transform: scale(0.7);
-	}
-	to {
-		transform: scale(1);
-	}
-}
-
-.animate-fade-in {
-	animation: fade-in 0.25s ease forwards;
-}
-.animate-slide-up {
-	animation: slide-up 0.35s ease forwards;
-}
-
-.stagger-1 {
-	animation-delay: 0.05s;
-	opacity: 0;
-}
-.stagger-2 {
-	animation-delay: 0.1s;
-	opacity: 0;
-}
-.stagger-3 {
-	animation-delay: 0.15s;
-	opacity: 0;
-}
-.stagger-4 {
-	animation-delay: 0.2s;
-	opacity: 0;
-}
-
-[data-theme="dark"] ::-webkit-scrollbar {
-	width: 6px;
-}
-/* [data-theme="dark"] ::-webkit-scrollbar-track {
-	background: #18181b;
-}
-[data-theme="dark"] ::-webkit-scrollbar-thumb {
-	background: #3f3f46;
-	border-radius: 3px;
-} */
-[data-theme="light"] ::-webkit-scrollbar {
-	width: 6px;
-}
-[data-theme="light"] ::-webkit-scrollbar-track {
-	background: #f5f5f4;
-}
-[data-theme="light"] ::-webkit-scrollbar-thumb {
-	background: #d6d3d1;
-	border-radius: 3px;
-}
-
-/* ── LIGHT THEME overrides ──
-     Warm stone palette that pairs with amber accents */
-[data-theme="light"] .bg-zinc-950 {
-	background-color: #f2f0ed !important;
-}
-[data-theme="light"] .bg-zinc-900 {
-	background-color: #ffffff !important;
-}
-[data-theme="light"] .bg-zinc-800 {
-	background-color: #f0ede9 !important;
-}
-[data-theme="light"] .bg-zinc-700 {
-	background-color: #e2ddd7 !important;
-}
-
-[data-theme="light"] .border-zinc-800 {
-	border-color: #e7e2db !important;
-}
-[data-theme="light"] .border-zinc-700 {
-	border-color: #d4cec6 !important;
-}
-[data-theme="light"] .border-zinc-600 {
-	border-color: #b8b0a5 !important;
-}
-[data-theme="light"] .border-zinc-900 {
-	border-color: #f2f0ed !important;
-}
-
-[data-theme="light"] .hover\\:bg-zinc-800:hover {
-	background-color: #f0ede9 !important;
-}
-[data-theme="light"] .hover\\:bg-zinc-700:hover {
-	background-color: #e2ddd7 !important;
-}
-[data-theme="light"] .hover\\:border-zinc-700:hover {
-	border-color: #d4cec6 !important;
-}
-[data-theme="light"] .hover\\:border-zinc-600:hover {
-	border-color: #b8b0a5 !important;
-}
-
-/* [data-theme="light"] .bg-zinc-800\\/40 {
-	background-color: rgba(214, 209, 202, 0.35) !important;
-}
-[data-theme="light"] .bg-zinc-800\\/50 {
-	background-color: rgba(214, 209, 202, 0.45) !important;
-}
-[data-theme="light"] .bg-zinc-800\\/60 {
-	background-color: rgba(214, 209, 202, 0.55) !important;
-} */
-
-[data-theme="light"] .text-zinc-50 {
-	color: #1c1917 !important;
-}
-[data-theme="light"] .text-zinc-100 {
-	color: #1c1917 !important;
-}
-[data-theme="light"] .text-zinc-200 {
-	color: #292524 !important;
-}
-[data-theme="light"] .text-zinc-300 {
-	color: #44403c !important;
-}
-[data-theme="light"] .text-zinc-400 {
-	color: #57534e !important;
-}
-[data-theme="light"] .text-zinc-500 {
-	color: #78716c !important;
-}
-[data-theme="light"] .text-zinc-600 {
-	color: #a8a29e !important;
-}
-
-[data-theme="light"] .hover\\:text-zinc-200:hover {
-	color: #1c1917 !important;
-}
-[data-theme="light"] .hover\\:text-zinc-100:hover {
-	color: #1c1917 !important;
-}
-
-[data-theme="light"] .focus\\:ring-offset-zinc-900:focus {
-	--tw-ring-offset-color: #ffffff !important;
-}
-
-[data-theme="light"] select option {
-	background-color: #ffffff;
-	color: #1c1917;
 }
 
 /* ── Theme Toggle ── */

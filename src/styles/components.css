@@ -1,139 +1,121 @@
 @reference "tailwindcss";
-/* Button Styles */
+
+/* =====================================================
+   BUTTON
+===================================================== */
 
 @layer components {
-	/* ========================
-       BUTTON BASE
-    ======================== */
-
 	.btn {
-		@apply text-white rounded-md font-semibold
-      flex items-center justify-center gap-2
-      hover:opacity-90
-      disabled:opacity-50
-      cursor-pointer;
+		@apply rounded-md font-semibold
+    flex items-center justify-center gap-2
+    disabled:opacity-50
+    cursor-pointer;
 	}
-
-	/* ========================
-       BUTTON SIZES
-    ======================== */
 
 	.btn-sm {
 		@apply px-3 py-1.5 text-xs;
 	}
-
 	.btn-md {
 		@apply px-4 py-2 text-sm;
 	}
-
 	.btn-lg {
 		@apply px-6 py-2.5 text-sm;
 	}
-
 	.btn-xl {
 		@apply px-8 py-3 text-base;
 	}
 
-	/* ========================
-       BUTTON VARIANTS
-    ======================== */
-
 	.btn-brand {
-		@apply bg-[#f35a00] text-white;
+		color: white;
+		background: rgb(var(--color-primary));
+	}
+
+	.btn-brand:hover {
+		background: rgb(var(--color-primary-600));
 	}
 
 	.btn-primary {
-		@apply bg-blue-100 text-blue-800;
+		background: rgb(var(--color-primary) / 0.1);
+		color: rgb(var(--color-primary));
 	}
 
 	.btn-success {
-		@apply bg-green-100 text-green-800;
+		background: rgb(var(--color-success) / 0.15);
+		color: rgb(var(--color-success));
 	}
 
 	.btn-warning {
-		@apply bg-yellow-100 text-yellow-800;
+		background: rgb(var(--color-warning) / 0.15);
+		color: rgb(var(--color-warning));
 	}
 
 	.btn-danger {
-		@apply bg-red-100 text-red-800;
+		background: rgb(var(--color-danger) / 0.15);
+		color: rgb(var(--color-danger));
 	}
 
 	.btn-disable {
-		@apply bg-gray-100 text-gray-800;
+		background: rgb(var(--color-border));
+		color: rgb(var(--color-muted));
 	}
-
-	/* ========================
-       TOOLTIP
-    ======================== */
 
 	.btn-tooltip {
 		@apply absolute bottom-full left-1/2 -translate-x-1/2 mb-2
-      whitespace-nowrap rounded-md
-      bg-gray-900 text-white text-xs
-      px-2 py-1 shadow-lg
-      opacity-0 scale-95
-      pointer-events-none
-      transition-all duration-150
-      group-hover:opacity-100
-      group-hover:scale-100
-      group-focus-within:opacity-100
-      group-focus-within:scale-100
-      z-50;
+    whitespace-nowrap rounded-md text-xs
+    px-2 py-1 shadow-lg
+    opacity-0 scale-95
+    pointer-events-none
+    transition-all duration-150 z-50;
+
+		background: rgb(var(--color-text));
+		color: white;
+	}
+
+	.btn:hover .btn-tooltip,
+	.btn:focus-within .btn-tooltip {
+		@apply opacity-100 scale-100;
 	}
 }
 
-/* Badge Styles */
+/* =====================================================
+   BADGE
+===================================================== */
 
 @layer components {
-	/* ========================
-       BADGE BASE
-    ======================== */
-
 	.badge {
-		@apply inline-flex items-center
-      rounded-full
-      px-2 py-0.5
-      text-xs font-medium;
+		@apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
 	}
 }
 
-/* Card Styles */
+/* =====================================================
+   CARD
+===================================================== */
 
 @layer components {
-	/* ========================
-       CARD BASE
-    ======================== */
-
 	.card {
-		@apply bg-zinc-900
-      border border-zinc-800
-      rounded-xl;
+		@apply rounded-xl;
+		background: rgb(var(--color-surface));
+		border: 1px solid rgb(var(--color-border));
 	}
-
-	/* ========================
-       CARD HOVER
-    ======================== */
 
 	.card-hover {
-		@apply hover:border-zinc-600
-      hover:bg-zinc-800/60
-      cursor-pointer
-      transition-all
-      duration-200;
+		@apply cursor-pointer transition-all duration-200;
+	}
+
+	.card-hover:hover {
+		border-color: rgb(var(--color-primary) / 0.5);
+		background: rgb(var(--color-primary) / 0.04);
 	}
 }
 
-/* Full Screen Loader Styles */
+/* =====================================================
+   FULLSCREEN LOADER
+===================================================== */
 
 @layer components {
-	/* ========================
-       FULLSCREEN LOADER
-    ======================== */
-
 	.loader-fullscreen {
-		@apply fixed inset-0 z-50
-      flex flex-col items-center justify-center
-      bg-white;
+		@apply fixed inset-0 z-50 flex flex-col items-center justify-center;
+		background: rgb(var(--color-surface));
 	}
 
 	.loader-gif-wrapper {
@@ -145,39 +127,32 @@
 	}
 
 	.loader-text {
-		@apply mt-4 text-sm font-semibold text-slate-600 animate-pulse;
+		@apply mt-4 text-sm font-semibold animate-pulse;
+		color: rgb(var(--color-muted));
 	}
 }
 
-/* Modal Styles */
+/* =====================================================
+   MODAL
+===================================================== */
 
 @layer components {
-	/* ========================
-       MODAL OVERLAY
-    ======================== */
-
 	.modal-overlay {
-		@apply fixed inset-0 z-50
-      flex items-center justify-center
-      bg-black/25;
+		@apply fixed inset-0 z-50 flex items-center justify-center;
+		background: rgb(0 0 0 / 0.25);
 	}
-
-	/* ========================
-       MODAL CONTAINER
-    ======================== */
 
 	.modal-container {
 		@apply w-full rounded-2xl;
+		background: transparent;
 	}
 }
 
-/* Pagination Styles */
+/* =====================================================
+   PAGINATION
+===================================================== */
 
 @layer components {
-	/* ========================
-       PAGINATION CONTAINER
-    ======================== */
-
 	.pagination {
 		@apply flex items-center justify-between gap-4 outline-none;
 	}
@@ -185,29 +160,8 @@
 	.pagination-default {
 		@apply text-sm;
 	}
-
 	.pagination-compact {
 		@apply text-xs;
-	}
-
-	/* ========================
-       PAGE INFO
-    ======================== */
-
-	.pagination-info {
-		@apply text-gray-600;
-	}
-
-	.pagination-info-number {
-		@apply font-semibold text-black;
-	}
-
-	/* ========================
-       BUTTON BASE
-    ======================== */
-
-	.pagination-btn {
-		@apply rounded-lg border transition border-gray-200 bg-white;
 	}
 
 	.pagination-btn-default {
@@ -218,156 +172,120 @@
 		@apply px-2 py-1;
 	}
 
-	.pagination-btn-hover {
-		@apply hover:border-[#f35a00] hover:text-[#f35a00];
+	.pagination-info {
+		color: rgb(var(--color-muted));
+	}
+
+	.pagination-info-number {
+		color: rgb(var(--color-text));
+		@apply font-semibold;
+	}
+
+	.pagination-btn {
+		@apply rounded-lg border transition;
+		background: rgb(var(--color-surface));
+		border-color: rgb(var(--color-border));
+	}
+
+	.pagination-btn-hover:hover {
+		border-color: rgb(var(--color-primary));
+		color: rgb(var(--color-primary));
 	}
 
 	.pagination-btn-active {
-		@apply bg-[#f35a00] text-white border-[#f35a00];
+		background: rgb(var(--color-primary));
+		border-color: rgb(var(--color-primary));
+		color: white;
 	}
 
 	.pagination-btn-disabled {
 		@apply disabled:opacity-40;
 	}
 
-	/* ========================
-       PAGE GROUP
-    ======================== */
-
 	.pagination-pages {
 		@apply flex items-center gap-1;
 	}
 
-	/* ========================
-       ELLIPSIS
-    ======================== */
-
 	.pagination-ellipsis {
-		@apply px-2 text-gray-400;
+		@apply px-2;
+		color: rgb(var(--color-muted));
 	}
-
-	/* ========================
-       PAGE SIZE SELECT
-    ======================== */
 
 	.pagination-page-size {
 		@apply w-25 text-xs flex items-center mb-0;
 	}
 }
 
-/* Tabs Styles */
+/* =====================================================
+   TABS
+===================================================== */
 
 @layer components {
-	/* ========================
-       TABS CONTAINER
-    ======================== */
-
 	.tabs-bar {
 		@apply flex items-center gap-8 px-6 pt-5;
 	}
 
-	/* ========================
-       TAB BUTTON
-    ======================== */
-
 	.tab-item {
-		@apply relative pb-4 text-sm font-medium
-      transition cursor-pointer text-center;
+		@apply relative pb-4 text-sm font-medium transition cursor-pointer text-center;
 	}
 
-	/* ========================
-       TAB LABEL
-    ======================== */
-
 	.tab-label {
-		@apply mr-1 text-gray-500;
+		color: rgb(var(--color-muted));
 	}
 
 	.tab-label-active {
-		@apply text-gray-900 mr-1;
+		color: rgb(var(--color-text));
 	}
 
-	/* ========================
-       ACTIVE INDICATOR
-    ======================== */
-
 	.tab-indicator {
-		@apply absolute left-0 -bottom-[1px] w-full h-[2px]
-      bg-gray-900 rounded-full;
+		@apply absolute left-0 -bottom-[1px] w-full h-[2px] rounded-full;
+		background: rgb(var(--color-text));
 	}
 }
 
-/* Toast Styles */
+/* =====================================================
+   TOAST
+===================================================== */
 
 @layer components {
-	/* ========================
-       TOAST WRAPPER
-    ======================== */
-
 	.toast {
-		@apply flex items-start gap-2 sm:gap-4
-      p-2 sm:p-4
-      border
-      rounded-lg sm:rounded-xl;
+		@apply flex items-start gap-2 sm:gap-4 p-2 sm:p-4 border rounded-lg sm:rounded-xl;
+		border-color: rgb(var(--color-border));
+		background: rgb(var(--color-surface));
 	}
-
-	/* ========================
-       TOAST ICON
-    ======================== */
 
 	.toast-icon {
 		@apply flex items-center justify-center
-      w-8 h-8 sm:w-10 sm:h-10
-      rounded-full
-      text-white
-      text-sm sm:text-base
-      font-bold;
+    w-8 h-8 sm:w-10 sm:h-10
+    rounded-full text-white text-sm sm:text-base font-bold;
 	}
-
-	/* ========================
-       TOAST CONTENT
-    ======================== */
-
 	.toast-content {
 		@apply flex-1;
 	}
-
-	.toast-title {
-		@apply font-semibold text-xs sm:text-sm;
-	}
-
-	.toast-desc {
-		@apply mt-0.5 sm:mt-1
-      text-xs sm:text-sm
-      leading-snug sm:leading-normal;
-	}
-
-	/* ========================
-       TOAST ACTION
-    ======================== */
-
 	.toast-action {
 		@apply underline font-medium hover:opacity-80;
 	}
+	.toast-title {
+		@apply font-semibold text-xs sm:text-sm;
+		color: rgb(var(--color-text));
+	}
 
-	/* ========================
-       TOAST CLOSE
-    ======================== */
+	.toast-desc {
+		@apply mt-1 text-xs sm:text-sm;
+		color: rgb(var(--color-muted));
+	}
 
 	.toast-close {
-		@apply text-gray-400 hover:text-gray-600
-      text-sm sm:text-base
-      leading-none;
+		@apply text-sm sm:text-base leading-none;
+		color: rgb(var(--color-muted));
 	}
 }
 
-/* Toggle Styles */
+/* =====================================================
+   TOGGLE
+===================================================== */
 
 @layer components {
-	/* ========================
-       TOGGLE WRAPPER
-    ======================== */
-
 	.toggle {
 		@apply relative inline-flex items-center gap-2;
 	}
@@ -375,102 +293,44 @@
 	.toggle-disabled {
 		@apply opacity-40 cursor-not-allowed;
 	}
-
 	.toggle-enabled {
 		@apply cursor-pointer;
 	}
 
-	/* ========================
-       TOGGLE LABEL
-    ======================== */
-
 	.toggle-label {
-		@apply text-sm text-zinc-400 select-none;
+		color: rgb(var(--color-muted));
 	}
-
-	/* ========================
-       TOGGLE TRACK
-    ======================== */
 
 	.toggle-track {
 		@apply rounded-full transition-colors duration-200;
 	}
 
 	.toggle-track-on {
-		@apply bg-amber-500;
+		background: rgb(var(--color-primary));
 	}
 
 	.toggle-track-off {
-		@apply bg-zinc-700;
+		background: rgb(var(--color-border));
 	}
-
-	/* ========================
-       TOGGLE THUMB
-    ======================== */
 
 	.toggle-thumb {
-		@apply absolute top-0.5
-      rounded-full bg-white shadow
-      transition-transform duration-200;
+		@apply absolute top-0.5 rounded-full bg-white shadow transition-transform duration-200;
 	}
 }
 
-/* Checkbox Styles */
+/* =====================================================
+   PROFILE CARD
+===================================================== */
 
 @layer components {
-	/* ========================
-       CHECKBOX BASE
-    ======================== */
-
-	.checkbox {
-		@apply flex items-center justify-center
-      shrink-0
-      transition-all duration-150;
-	}
-
-	/* ========================
-       CHECKBOX STATES
-    ======================== */
-
-	.checkbox-disabled {
-		@apply opacity-60 cursor-not-allowed;
-	}
-
-	.checkbox-enabled {
-		@apply cursor-pointer;
-	}
-
-	/* ========================
-       CHECK ICON
-    ======================== */
-
-	.checkbox-icon {
-		@apply font-bold leading-none;
-	}
-}
-
-/* Profile Card Styles */
-@layer components {
-	/* =========================================
-       PROFILE CARD
-    ========================================= */
-
 	.profile-card {
-		@apply p-5 lg:p-6 bg-white border border-gray-200 rounded-2xl shadow-sm text-left;
+		@apply p-5 lg:p-6 rounded-2xl shadow-sm text-left;
+		background: rgb(var(--color-surface));
+		border: 1px solid rgb(var(--color-border));
 	}
-
 	.profile-card-layout {
 		@apply flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between;
 	}
-
-	.profile-section-title {
-		@apply text-lg font-semibold text-gray-800 lg:mb-6;
-	}
-
-	/* =========================================
-       PROFILE GRID
-    ========================================= */
-
 	.profile-grid {
 		@apply grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7;
 	}
@@ -478,17 +338,16 @@
 	.profile-grid-span-2 {
 		@apply lg:col-span-2;
 	}
-
-	/* =========================================
-       PROFILE FIELD
-    ========================================= */
+	.profile-section-title {
+		color: rgb(var(--color-text));
+	}
 
 	.profile-field-label {
-		@apply mb-2 text-xs text-gray-500;
+		color: rgb(var(--color-muted));
 	}
 
 	.profile-field-value {
-		@apply text-sm font-medium text-gray-800;
+		color: rgb(var(--color-text));
 	}
 	/* META HEADER */
 
@@ -511,14 +370,9 @@
 	.profile-meta-subtitle {
 		@apply text-sm text-gray-500;
 	}
-}
-
-/* Profile Page Styles */
-
-@layer components {
 	/* =====================================
-       PROFILE PAGE
-    ===================================== */
+	PROFILE PAGE
+ ===================================== */
 
 	.profile-page {
 		@apply bg-white p-5 lg:p-6;
@@ -530,5 +384,212 @@
 
 	.profile-page-sections {
 		@apply space-y-6;
+	}
+}
+
+/* =====================================================
+   AVATAR
+===================================================== */
+
+@layer components {
+	.avatar-wrapper {
+		@apply relative inline-flex;
+	}
+
+	.avatar {
+		@apply rounded-full flex items-center justify-center
+    font-semibold overflow-hidden select-none cursor-pointer text-white;
+
+		background: rgb(var(--color-primary));
+	}
+
+	.avatar-tooltip {
+		@apply absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+    whitespace-nowrap rounded-md text-xs px-2 py-1 shadow-lg
+    opacity-0 scale-95 pointer-events-none transition-all duration-150 z-50;
+
+		background: rgb(var(--color-text));
+		color: white;
+	}
+
+	.avatar-wrapper:hover .avatar-tooltip,
+	.avatar-wrapper:focus-within .avatar-tooltip {
+		@apply opacity-100 scale-100;
+	}
+}
+
+/* =========================================
+   ACTION CARD
+========================================= */
+
+@layer components {
+	.action-card {
+		@apply cursor-pointer
+		rounded-2xl
+		transition-all
+		duration-200
+		ease-in-out
+		border;
+	}
+
+	/* Default card */
+
+	.action-card-default {
+		@apply bg-gray-50 border-gray-100 shadow-sm
+		hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02];
+	}
+
+	/* Primary card */
+
+	.action-card-primary {
+		@apply bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200 shadow-md;
+	}
+
+	/* =========================================
+		 CARD BODY
+	  ========================================= */
+
+	.action-card-body {
+		@apply rounded-xl p-6 flex flex-col items-center justify-center text-center transition-colors duration-200;
+	}
+
+	/* Default body */
+
+	.action-card-body-default {
+		@apply text-orange-500;
+	}
+
+	.action-card:hover .action-card-body-default {
+		@apply bg-orange-100 text-orange-600;
+	}
+
+	/* Primary body */
+
+	.action-card-body-primary {
+		@apply bg-orange-200 text-orange-700;
+	}
+
+	/* =========================================
+		 ICON
+	  ========================================= */
+
+	.action-card-icon {
+		@apply flex items-center justify-center mb-3 text-4xl;
+	}
+
+	/* =========================================
+		 TITLE
+	  ========================================= */
+
+	.action-card-title {
+		@apply text-lg font-semibold text-gray-800;
+	}
+
+	.action-card:hover .action-card-title {
+		@apply text-orange-600;
+	}
+
+	/* =========================================
+		 DESCRIPTION
+	  ========================================= */
+
+	.action-card-description {
+		@apply text-sm text-gray-600 mt-1;
+	}
+
+	.action-card:hover .action-card-description {
+		@apply text-orange-600;
+	}
+
+	/* =========================================
+		 SUBTEXT
+	  ========================================= */
+
+	.action-card-subtext {
+		@apply text-xs text-orange-600 mt-2 font-medium;
+	}
+}
+
+/* =========================================
+   ALERT CARD
+========================================= */
+@layer components {
+	/* =========================================
+	   ALERT CARD
+	========================================= */
+
+	.alert-card {
+		@apply mx-auto mt-4 w-full max-w-[380px]
+	  rounded-2xl bg-white
+	  p-4 sm:p-6 shadow-lg;
+	}
+
+	/* =========================================
+	   ICON WRAPPER
+	========================================= */
+
+	.alert-icon-wrapper {
+		@apply mx-auto mb-3 sm:mb-4
+	  flex items-center justify-center
+	  rounded-full
+	  h-10 w-10 sm:h-12 sm:w-12;
+	}
+
+	.alert-icon {
+		@apply text-base sm:text-lg;
+	}
+
+	/* =========================================
+	   TITLE
+	========================================= */
+
+	.alert-title {
+		@apply mb-2 text-center
+	  text-base sm:text-lg
+	  font-semibold;
+	}
+
+	/* =========================================
+	   DESCRIPTION
+	========================================= */
+
+	.alert-description {
+		@apply mb-5 sm:mb-6
+	  text-center
+	  text-xs sm:text-sm
+	  text-gray-500;
+	}
+
+	/* =========================================
+	   ACTION CONTAINER
+	========================================= */
+
+	.alert-actions {
+		@apply flex flex-col gap-2
+	  sm:flex-row sm:gap-3;
+	}
+
+	/* =========================================
+	   PRIMARY BUTTON
+	========================================= */
+
+	.alert-btn-primary {
+		@apply flex-1 rounded-lg
+	  bg-black px-4 py-2
+	  text-xs sm:text-sm
+	  font-medium text-white
+	  hover:bg-black/90;
+	}
+
+	/* =========================================
+	   SECONDARY BUTTON
+	========================================= */
+
+	.alert-btn-secondary {
+		@apply flex-1 rounded-lg border
+	  px-4 py-2
+	  text-xs sm:text-sm
+	  font-medium
+	  hover:bg-gray-50;
 	}
 }

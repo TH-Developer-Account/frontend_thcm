@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-
+import "../../../styles/components.css";
 interface ActionCardProps {
 	icon: ReactNode;
 	title: string;
@@ -19,55 +19,28 @@ function ActionCard({
 	isPrimary = false,
 }: ActionCardProps) {
 	const navigate = useNavigate();
+
 	return (
 		<div
 			onClick={() => navigate(path)}
-			className={`
-				group
-				cursor-pointer
-				rounded-2xl
-				transition-all
-				duration-200
-				ease-in-out
-				border
-				${
-					isPrimary
-						? "bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200 shadow-md"
-						: "bg-gray-50 border-gray-100 shadow-sm  hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02]"
-				}
-			`}
+			className={`action-card ${
+				isPrimary ? "action-card-primary" : "action-card-default"
+			}`}
 		>
-			<div>
-				<div
-					className={`
-						
-						rounded-xl p-3
-						transition-colors duration-200 p-6
-						${
-							isPrimary
-								? "bg-orange-200 text-orange-700"
-								: " text-orange-500 group-hover:bg-orange-100 group-hover:text-orange-600"
-						}
-					`}
-				>
-					<div className="flex items-center justify-center">{icon}</div>
+			<div
+				className={`action-card-body ${
+					isPrimary ? "action-card-body-primary" : "action-card-body-default"
+				}`}
+			>
+				<div className="action-card-icon">{icon}</div>
 
-					<h3 className="text-lg font-semibold text-gray-800 group-hover:text-orange-600">
-						{title}
-					</h3>
+				<h3 className="action-card-title">{title}</h3>
 
-					{description && (
-						<p className="text-sm text-gray-600 mt-1 group-hover:text-orange-600">
-							{description}
-						</p>
-					)}
+				{description && (
+					<p className="action-card-description">{description}</p>
+				)}
 
-					{subText && (
-						<p className="text-xs text-orange-600 mt-2 font-medium">
-							{subText}
-						</p>
-					)}
-				</div>
+				{subText && <p className="action-card-subtext">{subText}</p>}
 			</div>
 		</div>
 	);

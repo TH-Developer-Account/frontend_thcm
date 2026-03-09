@@ -93,3 +93,55 @@
 		@apply mt-1 text-xs text-gray-500;
 	}
 }
+
+/* OTP Input Styles */
+
+@layer components {
+	/* =========================================
+	   OTP INPUT
+	========================================= */
+
+	.otp-wrapper {
+		@apply mb-4;
+	}
+
+	.otp-container {
+		@apply mt-2 flex flex-wrap justify-center gap-2;
+	}
+
+	.otp-input {
+		@apply text-center font-semibold rounded-lg border outline-none transition;
+		@apply bg-gray-100;
+	}
+
+	/* OTP Sizes */
+
+	.otp-size {
+		@apply w-8 h-8 text-base;
+		@apply sm:w-10 sm:h-10 sm:text-lg;
+		@apply md:w-12 md:h-12 md:text-xl;
+	}
+
+	/* States */
+
+	.otp-normal {
+		@apply border-gray-200 focus:ring-2;
+		--tw-ring-color: var(--color-brand);
+	}
+
+	.otp-error {
+		@apply border-red-500 focus:ring-2 focus:ring-red-500;
+	}
+
+	/* Error message */
+
+	.otp-error-text {
+		@apply mt-1 text-xs text-red-600 text-left;
+	}
+
+	/* Timer */
+
+	.otp-timer {
+		@apply mt-2 text-xs text-gray-500 text-center;
+	}
+}

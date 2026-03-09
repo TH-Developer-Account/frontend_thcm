@@ -18,7 +18,7 @@ const Avatar: React.FC<AvatarProps> = ({
 	const fullName = `${firstName} ${lastName}`.trim();
 
 	return (
-		<div className="relative inline-flex group">
+		<div className="relative inline-flex group ">
 			{/* Avatar */}
 			<div
 				tabIndex={0}
