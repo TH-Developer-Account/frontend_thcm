@@ -4,7 +4,7 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 
 interface PasswordInputProps {
-	label: string;
+	label?: string;
 	name: string;
 	value: string;
 	onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; // ✅ Add onChange
@@ -60,16 +60,16 @@ const PasswordInput: FC<PasswordInputProps> = ({
 					aria-invalid={!!error}
 					aria-describedby={error ? `${name}-error` : undefined}
 					className={`block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 
-          outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 
-          focus:-outline-offset-2 sm:text-sm/6
-          ${
-						error
-							? "focus:outline-red-500 outline-red-500 focus:ring-red-500 focus-ring-1 outline-1 placeholder-red-500"
-							: "focus:outline-gray-400"
-					}
-          ${isValid && !error && "outline-green-300"}
-            ${className}
-        `}
+						outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 
+						focus:-outline-offset-2 sm:text-sm/6
+						${
+							error
+								? "focus:outline-red-500 outline-red-500 focus:ring-red-500 focus-ring-1 outline-1 placeholder-red-500"
+								: "focus:outline-gray-400"
+						}
+						${isValid && !error && "outline-green-300"}
+							${className}
+						`}
 					{...otherProps}
 				/>
 
@@ -79,7 +79,7 @@ const PasswordInput: FC<PasswordInputProps> = ({
 					<button
 						type="button"
 						onClick={() => setShowPassword((prev) => !prev)}
-						className=" absolute ml-2 flex-shrink-0 text-gray-500 hover:text-gray-700 top-1.5 right-3"
+						className=" absolute ml-2 shrink-0 text-gray-500 hover:text-gray-700 top-1.5 right-3"
 					>
 						{showPassword ? (
 							<AiOutlineEyeInvisible size={24} />

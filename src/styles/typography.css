@@ -1,0 +1,41 @@
+/* =========================================================
+   common.css
+   Global Branding & Design Variables
+   ========================================================= */
+
+/* ---------- Typography ---------- */
+:root {
+	--font-sans:
+		"Quicksand", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+	--font-mono: "JetBrains Mono", monospace;
+
+	--font-size-xs: 0.75rem;
+	--font-size-sm: 0.875rem;
+	--font-size-md: 1rem;
+	--font-size-lg: 1.125rem;
+	--font-size-xl: 1.25rem;
+	--font-size-2xl: 1.5rem;
+	--font-size-3xl: 1.875rem;
+
+	--font-weight-regular: 400;
+	--font-weight-medium: 500;
+	--font-weight-semibold: 600;
+	--font-weight-bold: 700;
+
+	--line-height-tight: 1.25;
+	--line-height-normal: 1.5;
+	--line-height-relaxed: 1.75;
+}
+
+h1,
+h2,
+h3 {
+	font-family: sans-serif !important;
+}
+form h2 {
+	font-size: 1.5rem;
+}
+
+.text-primary {
+	color: var(--color-primary-600);
+}

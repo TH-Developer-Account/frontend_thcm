@@ -4,7 +4,6 @@ import { useAuth } from "../../../context/Auth/useAuth";
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/FormElements/FormInput";
 import { EMAIL_REGEX } from "../../Login/constant";
-import PasswordInput from "../../../components/FormElements/PasswordInput";
 import { useToast } from "../../../context/Auth/AuthContext";
 
 type Errors = {
@@ -120,6 +119,7 @@ const EmailLoginForm = () => {
 			<FormInput
 				name="email"
 				label="Email"
+				type="email"
 				placeholder="john@mail.com"
 				value={formData.email}
 				onChange={handleChange}
@@ -127,7 +127,8 @@ const EmailLoginForm = () => {
 				required
 				error={errors?.email}
 			/>
-			<PasswordInput
+			<FormInput
+				type="password"
 				name="password"
 				label="Password"
 				value={formData.password}

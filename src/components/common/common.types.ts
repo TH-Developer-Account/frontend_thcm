@@ -1,71 +1,130 @@
-// badge and button types
-export type TableUserStatus =
-	| "Active"
-	| "Blocked"
-	| "Inactive"
-	| "active"
-	| "inactive"
-	| "blocked";
-export type EPCStatus =
-	| "Approved"
-	| "Recommended"
-	| "Pending"
-	| "Completed"
-	| "Submitted"
-	| "Sent Back"
-	| "Report Submitted"
-	| "Cancelled";
+import type { LucideIcon } from "lucide-react";
+import type { GeneralStatus } from "../../utils/types";
 
-export type GeneralStatus = EPCStatus | TableUserStatus;
-
-// toast types
-
-export type ToastVariant = "success" | "error" | "warning" | "info";
-
-export interface ToastProps {
-	id: string;
-	type?: ToastVariant;
-	title?: string;
-	description: string;
-	onClose?: () => void;
-	actionText?: string;
-	onAction?: () => void;
+export interface ToggleProps {
+	checked: boolean;
+	onChange: (checked: boolean) => void;
+	disabled?: boolean;
+	label?: string;
+	size?: "sm" | "md" | "lg";
 	className?: string;
 }
-export type ToastStyle = {
-	wrapper: string;
-	iconBg: string;
-	icon: string;
+export interface TabItem<T extends string> {
+	label: string;
+	value: T;
+	badge?: React.ReactNode;
+}
+
+export interface TabsBarProps<T extends string> {
+	items: TabItem<T>[];
+	active: T;
+	onChange: (value: T) => void;
+	className?: string;
+}
+
+export interface PaginationProps {
+	pageIndex: number;
+	pageSize: number;
+	totalPages: number;
+	onPageChange: (pageIndex: number) => void;
+	onPageSizeChange: (pageSize: number) => void;
+	variant?: "default" | "compact";
+	scrollTargetId?: string; // optional container id to scroll
+}
+
+export interface ModalProps {
+	open: boolean;
+	title?: string;
+	message?: string;
+	onClose: () => void;
+	children: React.ReactNode;
+}
+
+export type CardProps = {
+	children: React.ReactNode;
+	className?: string;
+	onClick?: () => void;
+	hoverable?: boolean;
+	style?: React.CSSProperties;
+};
+
+export type ButtonProps = {
+	text?: string;
+	onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
+	type?: "button" | "submit";
+	disabled?: boolean;
+	status?: string;
+	className?: string;
+	variant?: "brand" | "primary" | "success" | "warning" | "danger" | "disable";
+	size?: "sm" | "md" | "lg" | "xl";
+	Icon?: LucideIcon;
+	iconPosition?: "left" | "right";
+	iconColor?: string;
+	fullWidth?: boolean;
+	children?: React.ReactNode;
+	isTooltip?: string;
+	iconSize?: string;
+};
+
+export interface BadgeProps {
+	children?: React.ReactNode;
+	status?: GeneralStatus;
+	variant?: "primary" | "success" | "warning" | "danger" | "disable";
+}
+
+export interface AvatarProps {
+	firstName: string;
+	lastName?: string;
+	imageUrl?: string;
+	size?: "sm" | "md" | "lg" | "xs";
+	className?: string;
+	isTooltip?: boolean;
+}
+
+export type AlertVariant = "warning" | "info" | "error" | "success";
+
+export interface AlertCardProps {
+	variant: AlertVariant;
 	title: string;
-	desc: string;
-};
-export const toastStyles: Record<ToastVariant, ToastStyle> = {
-	success: {
-		wrapper: "bg-green-50 border-green-200",
-		iconBg: "bg-green-500",
-		icon: "✓",
-		title: "text-green-900",
-		desc: "text-green-700",
-	},
-	info: {
-		wrapper: "bg-blue-50 border-blue-200",
-		iconBg: "bg-blue-500",
-		icon: "i",
-		title: "text-blue-900",
-		desc: "text-blue-700",
-	},
-	warning: {
-		wrapper: "bg-yellow-50 border-yellow-200",
-		iconBg: "bg-yellow-500",
-		icon: "!",
-		title: "text-yellow-900",
-		desc: "text-yellow-700",
-	},
-	error: {
-		wrapper: "bg-red-50 border-red-200",
-		iconBg: "bg-red-500",
-		icon: "✕",
-		title: "text-red-900",
-		desc: "text-red-700",
-	},
-};
+	description: string;
+	primaryAction: {
+		label: string;
+		onClick: () => void;
+	};
+	secondaryAction?: {
+		label: string;
+		onClick: () => void;
+	};
+}
+
+export interface AccordionItem {
+	id: string;
+	title: React.ReactNode;
+	content: React.ReactNode;
+}
+
+export interface AccordionProps {
+	items: AccordionItem[];
+	allowMultiple?: boolean;
+	defaultOpen?: string[];
+}
+
+export interface FieldConfig {
+	label: string;
+	value?: React.ReactNode;
+	span?: number;
+}
+
+export interface ProfileHeader {
+	avatar?: string;
+	title?: string;
+	subtitle?: string;
+}
+
+export interface ProfileCardRendererProps {
+	title?: string;
+	fields: FieldConfig[];
+	header?: ProfileHeader;
+	onEdit?: () => void;
+	editable?: boolean;
+}

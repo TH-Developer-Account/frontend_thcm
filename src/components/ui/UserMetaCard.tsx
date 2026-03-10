@@ -2,53 +2,41 @@ import { useState } from "react";
 import Button from "../common/Button";
 import { Modal } from "../common/Modal";
 import FormInput from "../FormElements/FormInput";
-import { Pencil } from "lucide-react";
 import { useAuth } from "../../context/Auth/useAuth";
+import ProfileCardRenderer from "../common/ProfileCardRenderer";
 
-export default function UserMetaCard() {
+interface UserMetaFormProps {
+	userRole: "ADMIN" | "MANAGER" | "VIEWER";
+}
+const UserMetaCard = ({ userRole }: UserMetaFormProps) => {
 	const [open, setOpen] = useState(false);
-	const { user } = useAuth();
 	const handleSave = () => {
 		console.log("Saving changes...");
 		setOpen(false);
 	};
 
+	const isViewer = userRole === "VIEWER";
+	const { user } = useAuth();
+
+	const fields = [
+		{ label: "Facebook", value: "https://www.facebook.com/PimjoHQ" },
+		{ label: "X.com", value: "https://x.com/PimjoHQ" },
+		{ label: "LinkedIn", value: "https://www.linkedin.com/company/pimjo" },
+		{ label: "Instagram", value: "https://instagram.com/PimjoHQ" },
+	];
 	return (
 		<>
-			{/* Card */}
-			<div className="p-5 border border-gray-200 rounded-2xl lg:p-6">
-				<div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-					<div className="flex flex-col text-left items-center w-full gap-6 lg:flex-row">
-						<div className="w-20 h-20 overflow-hidden border border-gray-200 rounded-full">
-							<img
-								src="/user.png"
-								alt="user"
-								className="object-cover w-full h-full"
-							/>
-						</div>
+			<ProfileCardRenderer
+				header={{
+					avatar: "/user.png",
+					title: `${user?.first_name} ${user?.last_name}`,
+					subtitle: "Team Manager • Arizona, United States",
+				}}
+				fields={fields}
+				editable={!isViewer}
+				onEdit={() => setOpen(true)}
+			/>
 
-						<div>
-							<h4 className="mb-2 text-lg font-semibold text-gray-800">
-								{user?.first_name} {user?.last_name}
-							</h4>
-							<p className="text-sm text-gray-500">
-								Team Manager • Arizona, United States
-							</p>
-						</div>
-					</div>
-
-					<Button
-						text="Edit"
-						onClick={() => setOpen(true)}
-						Icon={Pencil}
-						iconPosition="right"
-						className="lg:w-auto"
-						status="brand"
-					/>
-				</div>
-			</div>
-
-			{/* Modal */}
 			{/* Modal */}
 			<Modal open={open} onClose={() => setOpen(false)}>
 				<div className="max-w-[600px] mx-auto p-6 bg-white rounded-xl text-sm">
@@ -103,4 +91,5 @@ export default function UserMetaCard() {
 			</Modal>
 		</>
 	);
-}
+};
+export default UserMetaCard;

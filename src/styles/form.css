@@ -1,0 +1,33 @@
+@reference "tailwindcss";
+/* Form Input Styles */
+@layer components {
+	/* ========================
+       CHECKBOX BASE
+    ======================== */
+
+	.checkbox {
+		@apply flex items-center justify-center
+      shrink-0
+      transition-all duration-150;
+	}
+
+	/* ========================
+       CHECKBOX STATES
+    ======================== */
+
+	.checkbox-disabled {
+		@apply opacity-60 cursor-not-allowed;
+	}
+
+	.checkbox-enabled {
+		@apply cursor-pointer;
+	}
+
+	/* ========================
+       CHECK ICON
+    ======================== */
+
+	.checkbox-icon {
+		@apply font-bold leading-none;
+	}
+}

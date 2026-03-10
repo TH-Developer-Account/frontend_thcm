@@ -1,8 +1,9 @@
 import React from "react";
-import { toastStyles, type ToastProps } from "./common.types";
+import { type ToastProps } from "./Toast/toast.types";
+import { toastStyles } from "../styles.constant";
 
 export const Toast: React.FC<ToastProps> = ({
-	type = "info", // ✅ default
+	type = "info",
 	title,
 	description,
 	onClose,
@@ -11,56 +12,47 @@ export const Toast: React.FC<ToastProps> = ({
 	className,
 }: ToastProps) => {
 	if (!type) return null;
+
 	const styles = toastStyles[type];
+
 	return (
 		<div
 			className={`
-		flex items-start gap-2 sm:gap-4
-		p-2 sm:p-4
-		border rounded-lg sm:rounded-xl
-		${styles.wrapper}
-		${className}
-	`}
+				toast
+				${styles.wrapper}
+				${className}
+			`}
 		>
 			{/* Icon */}
 			<div
 				className={`
-			flex items-center justify-center
-			w-8 h-8 sm:w-10 sm:h-10
-			rounded-full
-			text-white text-sm sm:text-base font-bold
-			${styles.iconBg}
-		`}
+					toast-icon
+					${styles.iconBg}
+				`}
 			>
 				{styles.icon}
 			</div>
 
 			{/* Content */}
-			<div className="flex-1">
+			<div className="toast-content">
 				<h4
 					className={`
-				font-semibold
-				text-xs sm:text-sm
-				${styles.title}
-			`}
+						toast-title
+						${styles.title}
+					`}
 				>
 					{title}
 				</h4>
 
 				<p
 					className={`
-				mt-0.5 sm:mt-1
-				text-xs sm:text-sm
-				leading-snug sm:leading-normal
-				${styles.desc}
-			`}
+						toast-desc
+						${styles.desc}
+					`}
 				>
 					{description}{" "}
 					{actionText && (
-						<button
-							onClick={onAction}
-							className="underline font-medium hover:opacity-80"
-						>
+						<button onClick={onAction} className="toast-action">
 							{actionText}
 						</button>
 					)}
@@ -69,14 +61,7 @@ export const Toast: React.FC<ToastProps> = ({
 
 			{/* Close */}
 			{onClose && (
-				<button
-					onClick={onClose}
-					className="
-				text-gray-400 hover:text-gray-600
-				text-sm sm:text-base
-				leading-none
-			"
-				>
+				<button onClick={onClose} className="toast-close">
 					✕
 				</button>
 			)}
