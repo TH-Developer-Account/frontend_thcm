@@ -4,8 +4,9 @@ import Button from "../../../../components/common/Button";
 import { mapUser, type User } from "../types/profile.types";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import Avatar from "../../../../components/common/Avatar";
-import { Badge } from "../../../../components/common/Badge";
+// import { Badge } from "../../../../components/common/Badge";
 import { SearchInput } from "../../../../components/FormElements/SearchInput";
+import { CircleX } from "lucide-react";
 
 type AssignProps = {
 	profileId: string | null;
@@ -26,9 +27,20 @@ export const AssignUsers: React.FC<AssignProps> = ({
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState<string>("");
 
+	// Filter users
+	const filteredUsers = useMemo(() => {
+		return users.filter((user) =>
+			user.firstName?.toLowerCase().includes(search.toLowerCase()),
+		);
+	}, [users, search]);
+
+	const toggleUser = (id: string) => {
+		setSelectedUsers((prev) =>
+			prev.includes(id) ? prev.filter((u) => u !== id) : [...prev, id],
+		);
+	};
 	useEffect(() => {
 		if (!profileId) return;
-
 		const loadUsers = async () => {
 			try {
 				setLoading(true);
@@ -45,29 +57,21 @@ export const AssignUsers: React.FC<AssignProps> = ({
 
 		loadUsers();
 	}, [profileId]);
-
-	// Filter users
-	const filteredUsers = useMemo(() => {
-		return users.filter((user) =>
-			user.firstName?.toLowerCase().includes(search.toLowerCase()),
-		);
-	}, [users, search]);
-
-	const toggleUser = (id: string) => {
-		setSelectedUsers((prev) =>
-			prev.includes(id) ? prev.filter((u) => u !== id) : [...prev, id],
-		);
-	};
-
 	return (
 		<Modal open={!!profileId} onClose={onClose}>
 			<div className="w-[1000px] max-h-[520px] flex flex-col mx-auto bg-white p-4 rounded-xl">
 				{/* Header */}
 				<div className="flex items-center justify-between mb-6">
-					<h2 className="text-base font-bold text-zinc-900 flex items-center gap-2">
-						<span>👥</span> Assign Users
+					<h2 className="font-bold text-xl text-zinc-900 flex items-center gap-2">
+						<span className="font-bold text-xl">👥</span> Assign Users
 					</h2>
-					<Badge variant="primary">Users</Badge>
+					<Button
+						variant="primary"
+						className="text-xs p-0 rounded-full bg-transparent"
+						onClick={onClose}
+						Icon={CircleX}
+						iconSize="20"
+					/>
 				</div>
 				{/* Search */}
 				<div className="relative mb-4">
@@ -81,12 +85,11 @@ export const AssignUsers: React.FC<AssignProps> = ({
 					) : (
 						filteredUsers.map((user) => {
 							const selected = selectedUsers.includes(user.id);
-
 							return (
 								<div
 									key={user.id}
 									onClick={() => toggleUser(user.id)}
-									className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-150 ${
+									className={`flex items-center text-left justify-between gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-150 ${
 										selected
 											? "bg-amber-500/5 border-amber-500/30"
 											: "bg-gray-100/40 border-gray-200 hover:border-gray-300 hover:bg-gray-100"
@@ -99,7 +102,7 @@ export const AssignUsers: React.FC<AssignProps> = ({
 										/>
 									</div>
 
-									<div className=" min-w-0">
+									<div className=" min-w-0 flex-1">
 										<p className="text-sm font-semibold truncate">
 											{user.firstName} {user.lastName}
 										</p>
@@ -110,10 +113,10 @@ export const AssignUsers: React.FC<AssignProps> = ({
 										</p>
 									</div>
 									{/* <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-500 truncate">
-                      {user.jobRole ?? "User"}
-                    </p>
-                  </div> */}
+										<p className="text-xs text-gray-500 truncate">
+											{user. ?? "User"}
+										</p>
+									</div> */}
 									<div className="flex-1 min-w-0">
 										<p className="text-xs text-gray-500 truncate">
 											{user.phone ?? "914******7"}

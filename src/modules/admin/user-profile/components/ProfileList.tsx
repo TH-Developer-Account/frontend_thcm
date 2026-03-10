@@ -132,6 +132,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
 																			firstName={user.firstName}
 																			lastName={user.lastName}
 																			className="border-2 border-white rounded-full shadow-sm"
+																			isTooltip={true}
 																		/>
 																	</div>
 																))}

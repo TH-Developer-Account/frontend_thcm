@@ -78,6 +78,7 @@ export interface AvatarProps {
 	imageUrl?: string;
 	size?: "sm" | "md" | "lg" | "xs";
 	className?: string;
+	isTooltip?: boolean;
 }
 
 export type AlertVariant = "warning" | "info" | "error" | "success";
