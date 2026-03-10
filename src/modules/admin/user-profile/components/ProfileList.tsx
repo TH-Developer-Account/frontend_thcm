@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Edit, PlusIcon, Trash, UserPlus } from "lucide-react";
+import { PlusIcon } from "lucide-react";
+import type { Dispatch, SetStateAction } from "react";
 import { useAuth } from "../../../../context/Auth/useAuth";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import Button from "../../../../components/common/Button";
@@ -12,54 +13,78 @@ import { AssignUsers } from "./AssignUsers";
 import { useToast } from "../../../../context/Auth/AuthContext";
 
 type ProfileListProps = {
-	profiles: Profile[];
-	onCreateNew: () => void;
-	onEdit: (profile: Profile) => void;
-	onDelete: (id: string) => void;
-	onEditModal?: (id: string) => void;
-	activeTab?: string;
-	counts?: Record<string, number>;
-	onTabChange?: (tab: string) => void;
-	search: string;
-	onSearchChange: (value: string) => void;
+  profiles: Profile[];
+  onCreateNew: () => void;
+  onEdit: (profile: Profile) => void;
+  onDelete: (id: string) => void;
+  onEditModal?: (id: string) => void;
+  activeTab?: string;
+  counts?: Record<string, number>;
+  onTabChange?: (tab: string) => void;
+  search: string;
+  onSearchChange: (value: string) => void;
+  setProfiles: Dispatch<SetStateAction<Profile[]>>;
 };
 
 const ProfileList: React.FC<ProfileListProps> = ({
-	profiles,
-	onCreateNew,
-	search,
-	onSearchChange,
-	onEdit,
-	onDelete,
+  profiles,
+  onCreateNew,
+  search,
+  onSearchChange,
+  onEdit,
+  onDelete,
+  setProfiles,
 }) => {
 	const { workspaceId } = useAuth();
 	const { showToast } = useToast();
 	const [deleteModal, setDeleteModal] = useState<Profile | null>(null);
 	const [assignModalOpen, setAssignModalOpen] = useState<string | null>(null);
 
-	const handleAssignUser = async (
-		userIds: string[],
-		profileId: string | null,
-	): Promise<void> => {
-		try {
-			const {
-				data: { message },
-			} = await ServerAxios.post("/users/assign-profile", {
-				userIds,
-				profileId,
-				workspaceId,
-			});
-			showToast({
-				type: "success",
-				title: "Success",
-				description: message,
-			});
-		} catch (error) {
-			console.error("Failed to assign users:", error);
-		} finally {
-			setAssignModalOpen(null);
-		}
-	};
+  const handleAssignUser = async (
+    userIds: string[],
+    profileId: string | null,
+  ): Promise<void> => {
+    try {
+      const {
+        data: { message, profile },
+      } = await ServerAxios.post("/users/assign-profile", {
+        userIds,
+        profileId,
+        workspaceId,
+      });
+      showToast({
+        type: "success",
+        title: "Success",
+        description: message,
+      });
+      // 🔹 Update the profile in state
+      if (profile) {
+        setProfiles((prev) =>
+          prev.map((p) => {
+            // Remove users from other profiles
+            const filteredUsers = p.users.filter(
+              (u) => !userIds.includes(u.id),
+            );
+
+            // If this is the assigned profile → add users
+            if (profile && p.id === profile.id) {
+              return profile; // backend already returns correct users
+            }
+
+            return {
+              ...p,
+              users: filteredUsers,
+              assignedUserCount: filteredUsers.length,
+            };
+          }),
+        );
+      }
+    } catch (error) {
+      console.error("Failed to assign users:", error);
+    } finally {
+      setAssignModalOpen(null);
+    }
+  };
 
 	return (
 		<>
