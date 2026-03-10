@@ -85,11 +85,11 @@ const ProfileList: React.FC<ProfileListProps> = ({
 						/>
 					</div>
 				</div>
-				<div className="bg-white rounded-t-2xl mt-2 border border-gray-200 border-b-0 h-full">
+				<div className="bg-white rounded-t-2xl mt-2 border border-gray-200 border-b-0 h-full text-gray-600">
 					<div className="grid grid-cols-1  gap-4 mt-4">
 						<div className="bg-white overflow-y-auto ">
 							<table className="w-full text-sm">
-								<thead className="bg-gray-100 text-gray-600">
+								<thead className="bg-gray-100 ">
 									<tr>
 										<th className="px-6 py-4 text-left">Profile Name</th>
 										<th className="px-6 py-4 text-left">Profile Description</th>

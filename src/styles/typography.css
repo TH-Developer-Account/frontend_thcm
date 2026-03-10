@@ -39,3 +39,8 @@ form h2 {
 .text-primary {
 	color: var(--color-primary-600);
 }
+body,
+p,
+span {
+	color: black !important;
+}
