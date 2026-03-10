@@ -47,13 +47,4 @@
 		--color-warning: 245 158 11; /* #F59E0B */
 		--color-danger: 239 68 68; /* #EF4444 */
 	}
-	.dark {
-		--color-background: 24 24 27; /* #18181B */
-		--color-surface: 39 39 42; /* #27272A */
-
-		--color-text: 244 244 245; /* #F4F4F5 */
-		--color-muted: 161 161 170; /* #A1A1AA */
-
-		--color-border: 63 63 70; /* #3F3F46 */
-	}
 }
