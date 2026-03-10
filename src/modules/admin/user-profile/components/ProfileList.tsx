@@ -10,6 +10,7 @@ import Avatar from "../../../../components/common/Avatar";
 import { SearchInput } from "../../../../components/FormElements/SearchInput";
 import { AssignUsers } from "./AssignUsers";
 import { useToast } from "../../../../context/Auth/AuthContext";
+import Popover from "../../../../components/common/Popover";
 
 type ProfileListProps = {
 	profiles: Profile[];
@@ -137,10 +138,30 @@ const ProfileList: React.FC<ProfileListProps> = ({
 																	</div>
 																))}
 															</div>
-
 															{profile.users.length > 3 && (
 																<div className="ml-1 text-xs font-medium text-gray-500">
-																	+{profile.users.length - 3}
+																	<Popover
+																		placement="bottom-start"
+																		trigger={
+																			<Button
+																				size="sm"
+																				className="text-xs p-0 justify-center bg-transparent"
+																			>
+																				+ {profile.users.length - 3}
+																			</Button>
+																		}
+																	>
+																		<div className="flex flex-col gap-1 bg-white p-2 h-[100px] rounded-md overflow-auto ">
+																			{profile.users.map((user) => (
+																				<ul>
+																					<li className="text-xs cursor-pointer hover:bg-zinc-100 px-1.5 py-1.5 rounded-md">
+																						{user.firstName}, {""}
+																						{user.lastName}
+																					</li>
+																				</ul>
+																			))}
+																		</div>
+																	</Popover>
 																</div>
 															)}
 														</>
