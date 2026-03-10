@@ -1,25 +1,20 @@
 import React from "react";
+import type { SingleValue } from "react-select";
 import { useMasterData } from "../../../../hooks/useMasterData";
 import Button from "../../../../components/common/Button";
 import FormInput from "../../../../components/FormElements/FormInput";
 import SelectInput from "../../../../components/FormElements/SelectInput";
 import TextareaInput from "../../../../components/FormElements/TextareaInput";
 import { useEpcForm } from "./useEPCForm";
-import type { EpcFormProps } from "../../types";
+import type { EpcFormProps, Option } from "../../types";
 
 const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
-  const {
-    values,
-    // options,
-    // regions,
-    branches,
-    isEditMode,
-    handleChange,
-    handleSave,
-  } = useEpcForm({ epcId });
+  const { values, isEditMode, handleChange, handleSave } = useEpcForm({
+    epcId,
+  });
   const { data } = useMasterData();
 
-  console.log({ data });
+  // console.log({ data });
 
   const isViewer = userRole === "VIEWER";
 
@@ -30,51 +25,53 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
           Event Planning Calendar
         </h2>
 
-        {/* EPF Section */}
-        <div className="grid md:grid-cols-4 grid-cols-1 flex gap-4 items-end ">
+        <div className="grid md:grid-cols-3 grid-cols-1 flex gap-4 items-end ">
           <FormInput
             name="epfNo"
             label="EPF No"
             value={values.epfNo}
-            disabled={isEditMode}
-            onChange={(e) => handleChange("epfNo", e.target.value)}
+            disabled
           />
-
-          <FormInput
-            name="poDocumentRefNo"
-            label="PO/Document Ref No."
-            value={values.poDocumentRefNo}
-            // disabled
-            onChange={(e) => handleChange("poDocumentRefNo", e.target.value)}
-          />
-
           <SelectInput
             name="department"
             label="Department"
-            // value={values.department}
+            value={
+              data?.departments?.find(
+                (opt: SingleValue<Option>) => opt?.label === values.department,
+              ) || null
+            }
             options={data?.departments || []}
-            // disabled={isViewer}
-            // onChange={(v: string) => handleChange("department", v)}
+            onChange={(v: SingleValue<Option>) =>
+              handleChange("department", v?.label as string)
+            }
           />
-
           <SelectInput
             name="zone"
             label="Zone"
-            // value={values.region}
+            value={
+              data?.regions?.find(
+                (opt: SingleValue<Option>) => opt?.label === values.zone,
+              ) || null
+            }
             options={data?.regions || []}
-            // disabled={isViewer}
-            // onChange={(v: string) => handleChange("region", v)}
+            onChange={(v: SingleValue<Option>) =>
+              handleChange("zone", v?.label as string)
+            }
           />
         </div>
-
-        {/* Dropdowns */}
         <div className="grid md:grid-cols-4 grid-cols-1 flex gap-4 items-end">
           <SelectInput
             name="branch"
             label="Branch"
             options={data?.branches}
-            value={branches.find((opt) => opt.value === values.branch) || null}
-            onChange={(option) => handleChange("branch", option?.value || "")}
+            value={
+              data?.branches?.find(
+                (opt: SingleValue<Option>) => opt?.label === values.branch,
+              ) || null
+            }
+            onChange={(option: SingleValue<Option>) =>
+              handleChange("branch", option?.label || "")
+            }
           />
 
           <SelectInput
@@ -82,47 +79,58 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
             label="Vertical"
             // value={values.vertical}
             // options={options.verticals || []}
-            // disabled={isViewer}
             // onChange={(v: string) => handleChange("vertical", v)}
           />
           <SelectInput
             name="budgetCode"
             label="Budget Code"
-            // value={values.scale}
+            value={
+              data?.budgetMasters?.find(
+                (opt: SingleValue<Option>) => opt?.label === values.budgetCode,
+              ) || null
+            }
             options={data?.budgetMasters || []}
-            // disabled={isViewer}
-            // onChange={(v: string) => handleChange("scale", v)}
+            onChange={(v: SingleValue<Option>) =>
+              handleChange("budgetCode", v?.label || "")
+            }
           />
           <SelectInput
             name="scale"
             label="Scale"
-            // value={values.scale}
+            value={
+              data?.eventScales?.find(
+                (opt: SingleValue<Option>) => opt?.label === values.scale,
+              ) || null
+            }
             options={data?.eventScales || []}
-            // disabled={isViewer}
-            // onChange={(v: string) => handleChange("scale", v)}
+            onChange={(v: SingleValue<Option>) =>
+              handleChange("scale", v?.label || "")
+            }
           />
         </div>
 
-        {/* Event Name & Description */}
         <div className="grid md:grid-cols-2 grid-cols-1 flex gap-4 items-end">
           <SelectInput
             name="eventName"
             label="Event Name"
-            // value={values.scale}
+            value={
+              data?.eventNames?.find(
+                (opt: SingleValue<Option>) => opt?.label === values.eventName,
+              ) || null
+            }
             options={data?.eventNames || []}
-            // disabled={isViewer}
-            // onChange={(v: string) => handleChange("scale", v)}
+            onChange={(v: SingleValue<Option>) =>
+              handleChange("eventName", v?.label || "")
+            }
           />
           <FormInput
             name="eventDescription"
             label="Event Description"
             value={values.eventDescription}
-            disabled={isViewer}
             onChange={(e) => handleChange("eventDescription", e.target.value)}
           />
         </div>
 
-        {/* Date & Location */}
         <div className="grid md:grid-cols-2 grid-cols-1 flex gap-4 items-end">
           <div className="grid grid-cols-2 gap-2 flex items-center justify-center">
             <FormInput
@@ -130,7 +138,6 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
               name="eventFrom"
               label="Date From"
               value={values.eventFrom}
-              disabled={isViewer}
               onChange={(e) => handleChange("eventFrom", e.target.value)}
             />
 
@@ -139,7 +146,6 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
               name="eventTo"
               label="Date To"
               value={values.eventTo}
-              disabled={isViewer}
               onChange={(e) => handleChange("eventTo", e.target.value)}
             />
           </div>
@@ -148,7 +154,6 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
             name="location"
             label="Location"
             value={values.location}
-            disabled={isViewer}
             onChange={(e) => handleChange("location", e.target.value)}
           />
         </div>
@@ -159,7 +164,6 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
             name="objective"
             label="Objective"
             value={values.objective}
-            disabled={isViewer}
             onChange={(e) => handleChange("objective", e.target.value)}
           />
         </div>

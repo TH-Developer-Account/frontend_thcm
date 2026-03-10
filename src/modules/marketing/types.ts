@@ -26,6 +26,7 @@ export interface EpcFormValues {
   department: string;
   zone: string;
   branch: string;
+  budgetCode: string;
   vertical: string;
   scale: string;
   eventName: string;
