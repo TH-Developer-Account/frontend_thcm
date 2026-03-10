@@ -1,10 +1,4 @@
-interface AvatarProps {
-	firstName: string;
-	lastName?: string;
-	imageUrl?: string;
-	size?: "sm" | "md" | "lg" | "xs";
-	className?: string;
-}
+import type { AvatarProps } from "./common.types";
 
 const sizeClasses = {
 	xs: "w-6 h-6 text-xs",
@@ -19,12 +13,13 @@ const Avatar: React.FC<AvatarProps> = ({
 	imageUrl,
 	size = "md",
 	className,
+	isTooltip,
 }) => {
 	const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 	const fullName = `${firstName} ${lastName}`.trim();
 
 	return (
-		<div className="relative inline-flex group">
+		<div className="relative inline-flex group ">
 			{/* Avatar */}
 			<div
 				tabIndex={0}
@@ -56,10 +51,10 @@ const Avatar: React.FC<AvatarProps> = ({
 					<span>{initials} </span>
 				)}
 			</div>
-
 			{/* Tooltip */}
-			<div
-				className="
+			{isTooltip && (
+				<div
+					className="
 				absolute bottom-full left-1/2 -translate-x-1/2 mb-2
 				whitespace-nowrap
 				rounded-md bg-gray-900 text-white text-xs
@@ -72,9 +67,10 @@ const Avatar: React.FC<AvatarProps> = ({
 				group-focus-within:opacity-100
 				group-focus-within:scale-100
 				z-50"
-			>
-				{fullName}
-			</div>
+				>
+					{fullName}
+				</div>
+			)}
 		</div>
 	);
 };

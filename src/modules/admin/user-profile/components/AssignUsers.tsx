@@ -4,16 +4,17 @@ import Button from "../../../../components/common/Button";
 import { mapUser, type User } from "../types/profile.types";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import Avatar from "../../../../components/common/Avatar";
-import { Badge } from "../../../../components/common/Badge";
+// import { Badge } from "../../../../components/common/Badge";
 import { SearchInput } from "../../../../components/FormElements/SearchInput";
+import { CircleX } from "lucide-react";
 
 type AssignProps = {
-  profileId: string | null;
-  onClose: () => void;
-  handleAssignUser: (
-    userIds: string[],
-    profileId: string | null,
-  ) => Promise<void>;
+	profileId: string | null;
+	onClose: () => void;
+	handleAssignUser: (
+		userIds: string[],
+		profileId: string | null,
+	) => Promise<void>;
 };
 
 type UserRowProps = {
@@ -64,17 +65,21 @@ const UserRow = React.memo(({ user, selected, toggleUser }: UserRowProps) => {
 });
 
 export const AssignUsers: React.FC<AssignProps> = ({
-  profileId,
-  onClose,
-  handleAssignUser,
+	profileId,
+	onClose,
+	handleAssignUser,
 }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    if (!profileId) return;
+	// Filter users
+	const filteredUsers = useMemo(() => {
+		return users.filter((user) =>
+			user.firstName?.toLowerCase().includes(search.toLowerCase()),
+		);
+	}, [users, search]);
 
     const controller = new AbortController();
 

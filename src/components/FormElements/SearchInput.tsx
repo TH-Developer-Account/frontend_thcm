@@ -2,17 +2,7 @@
 
 import React, { forwardRef } from "react";
 import { Search, X } from "lucide-react";
-
-type SearchBoxProps = {
-	value: string;
-	onChange: (value: string) => void;
-	onClear?: () => void;
-	placeholder?: string;
-	disabled?: boolean;
-	className?: string;
-	containerClassName?: string;
-	// rightElement?: React.ReactNode; // for filters / buttons
-};
+import type { SearchBoxProps } from "./input.types";
 
 export const SearchInput = forwardRef<HTMLInputElement, SearchBoxProps>(
 	(

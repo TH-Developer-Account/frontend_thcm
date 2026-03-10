@@ -1,18 +1,4 @@
-// components/common/TabsBar.tsx
-import React from "react";
-
-export interface TabItem<T extends string> {
-	label: string;
-	value: T;
-	badge?: React.ReactNode;
-}
-
-interface TabsBarProps<T extends string> {
-	items: TabItem<T>[];
-	active: T;
-	onChange: (value: T) => void;
-	className?: string;
-}
+import type { TabsBarProps } from "./common.types";
 
 export function TabsBar<T extends string>({
 	items,
@@ -21,7 +7,7 @@ export function TabsBar<T extends string>({
 	className,
 }: TabsBarProps<T>) {
 	return (
-		<div className={`flex items-center gap-8 px-6 pt-5 ${className ?? ""}`}>
+		<div className={`tabs-bar ${className ?? ""}`}>
 			{items.map((item) => {
 				const isActive = item.value === active;
 
@@ -29,19 +15,15 @@ export function TabsBar<T extends string>({
 					<button
 						key={item.value}
 						onClick={() => onChange(item.value)}
-						className="relative pb-4 text-sm font-medium transition cursor-pointer text-center"
+						className="tab-item"
 					>
-						<span
-							className={isActive ? "text-gray-900 mr-1" : "mr-1 text-gray-500"}
-						>
+						<span className={isActive ? "tab-label-active" : "tab-label"}>
 							{item.label}
 						</span>
 
 						{item.badge}
 
-						{isActive && (
-							<div className="absolute left-0 -bottom-[1px] w-full h-[2px] bg-gray-900 rounded-full" />
-						)}
+						{isActive && <div className="tab-indicator" />}
 					</button>
 				);
 			})}

@@ -1,16 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import type { SingleValue } from "react-select";
 import SelectInput, { type Option } from "../FormElements/SelectInput";
-
-export interface PaginationProps {
-	pageIndex: number;
-	pageSize: number;
-	totalPages: number;
-	onPageChange: (pageIndex: number) => void;
-	onPageSizeChange: (pageSize: number) => void;
-	variant?: "default" | "compact";
-	scrollTargetId?: string; // optional container id to scroll
-}
+import type { PaginationProps } from "./common.types";
 
 const PAGE_SIZE_OPTIONS: Option[] = [
 	{ label: "15", value: "15" },
@@ -87,44 +78,46 @@ const Pagination: React.FC<PaginationProps> = ({
 			ref={containerRef}
 			tabIndex={0}
 			onKeyDown={handleKeyDown}
-			className={`flex items-center justify-between gap-4 outline-none  ${
-				compact ? "text-xs" : "text-sm"
-			}`}
+			className={`
+				pagination
+				${compact ? "pagination-compact" : "pagination-default"}
+			`}
 		>
 			{!compact && (
-				<div className="text-gray-600">
-					Page <span className="font-semibold text-black">{currentPage}</span>{" "}
-					of <span className="font-semibold text-black">{totalPages}</span>
+				<div className="pagination-info">
+					Page <span className="pagination-info-number">{currentPage}</span> of{" "}
+					<span className="pagination-info-number">{totalPages}</span>
 				</div>
 			)}
 
-			<div className="flex items-center gap-1">
+			<div className="pagination-pages">
 				<button
 					disabled={pageIndex === 0}
 					onClick={() => onPageChange(pageIndex - 1)}
-					className={`rounded-lg border transition ${
-						compact ? "px-2 py-1" : "px-3 py-1.5"
-					} border-gray-200 bg-white hover:border-[#f35a00] hover:text-[#f35a00] disabled:opacity-40`}
+					className={`
+						pagination-btn
+						${compact ? "pagination-btn-compact" : "pagination-btn-default"}
+						pagination-btn-hover
+						pagination-btn-disabled
+					`}
 				>
 					{"<"}
 				</button>
 
 				{pages.map((page, index) =>
 					page === "ellipsis" ? (
-						<span key={index} className="px-2 text-gray-400">
+						<span key={index} className="pagination-ellipsis">
 							...
 						</span>
 					) : (
 						<button
 							key={index}
 							onClick={() => onPageChange(page - 1)}
-							className={`rounded-lg border transition ${
-								compact ? "px-2 py-1" : "px-3 py-1.5"
-							} ${
-								currentPage === page
-									? "bg-[#f35a00] text-white border-[#f35a00]"
-									: "border-gray-200 bg-white hover:border-[#f35a00] hover:text-[#f35a00]"
-							}`}
+							className={`
+								pagination-btn
+								${compact ? "pagination-btn-compact" : "pagination-btn-default"}
+								${currentPage === page ? "pagination-btn-active" : "pagination-btn-hover"}
+							`}
 						>
 							{page}
 						</button>
@@ -134,16 +127,19 @@ const Pagination: React.FC<PaginationProps> = ({
 				<button
 					disabled={pageIndex + 1 >= totalPages}
 					onClick={() => onPageChange(pageIndex + 1)}
-					className={`rounded-lg border transition ${
-						compact ? "px-2 py-1" : "px-3 py-1.5"
-					} border-gray-200 bg-white hover:border-[#f35a00] hover:text-[#f35a00] disabled:opacity-40`}
+					className={`
+						pagination-btn
+						${compact ? "pagination-btn-compact" : "pagination-btn-default"}
+						pagination-btn-hover
+						pagination-btn-disabled
+					`}
 				>
 					{">"}
 				</button>
 			</div>
 
 			{!compact && (
-				<div className="w-25 text-xs flex items-center mb-0">
+				<div className="pagination-page-size">
 					<SelectInput
 						options={PAGE_SIZE_OPTIONS}
 						value={PAGE_SIZE_OPTIONS.find(

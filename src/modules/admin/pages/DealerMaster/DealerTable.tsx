@@ -6,9 +6,9 @@ interface Props {
 
 export function DealerTable({ dealer }: Props) {
 	return (
-		<div className="p-6 bg-gray-50 min-h-screen">
+		<div className="p-6 bg-zinc-50 rounded-2xl min-h-screen mt-6">
 			<div className="">
-				<h3>Dealer List</h3>
+				<h2>Dealer List</h2>
 				<div className="bg-white overflow-hidden ">
 					<table className="w-full text-sm text-left">
 						<thead className="bg-gray-100 text-gray-600 text-left">

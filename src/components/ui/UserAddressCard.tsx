@@ -2,7 +2,7 @@ import { useState } from "react";
 import Button from "../../components/common/Button";
 import FormInput from "../../components/FormElements/FormInput";
 import { Modal } from "../../components/common/Modal";
-import { Pencil } from "lucide-react";
+import ProfileCardRenderer from "../common/ProfileCardRenderer";
 
 interface UserAddressFormProps {
 	userRole: "ADMIN" | "MANAGER" | "VIEWER";
@@ -19,6 +19,12 @@ const UserAddressCard = ({ userRole }: UserAddressFormProps) => {
 		taxId: "AS4568384",
 	});
 
+	const fields = [
+		{ label: "Country", value: values.country },
+		{ label: "City / State", value: values.cityState },
+		{ label: "Postal Code", value: values.postalCode },
+		{ label: "TAX ID", value: values.taxId },
+	];
 	const handleChange = (field: string, value: string) => {
 		setValues((prev) => ({
 			...prev,
@@ -33,46 +39,12 @@ const UserAddressCard = ({ userRole }: UserAddressFormProps) => {
 
 	return (
 		<>
-			{/* Address Card */}
-			<div className="p-6 bg-white rounded-xl shadow-sm text-left text-sm lg:text-sm text-xs">
-				<div className="flex justify-between items-start mb-4">
-					<h2 className="font-semibold text-gray-900 text-lg lg:text-xl">
-						Address
-					</h2>
-
-					{!isViewer && (
-						<Button
-							text="Edit"
-							onClick={() => setOpen(true)}
-							Icon={Pencil}
-							iconPosition="right"
-							status="brand"
-						/>
-					)}
-				</div>
-
-				<div className="grid md:grid-cols-2 grid-cols-1 gap-4">
-					<div>
-						<p className="text-gray-500 text-xs">Country</p>
-						<p className="font-medium text-gray-800">{values.country}</p>
-					</div>
-
-					<div>
-						<p className="text-gray-500 text-xs">City / State</p>
-						<p className="font-medium text-gray-800">{values.cityState}</p>
-					</div>
-
-					<div>
-						<p className="text-gray-500 text-xs">Postal Code</p>
-						<p className="font-medium text-gray-800">{values.postalCode}</p>
-					</div>
-
-					<div>
-						<p className="text-gray-500 text-xs">TAX ID</p>
-						<p className="font-medium text-gray-800">{values.taxId}</p>
-					</div>
-				</div>
-			</div>
+			<ProfileCardRenderer
+				title="Address"
+				fields={fields}
+				editable={!isViewer}
+				onEdit={() => setOpen(true)}
+			/>
 
 			{/* Modal */}
 			<Modal open={open} title="Confirm Action" onClose={() => setOpen(false)}>

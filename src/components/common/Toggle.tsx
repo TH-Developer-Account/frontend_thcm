@@ -1,13 +1,5 @@
 import React from "react";
-
-export interface ToggleProps {
-	checked: boolean;
-	onChange: (checked: boolean) => void;
-	disabled?: boolean;
-	label?: string;
-	size?: "sm" | "md" | "lg";
-	className?: string;
-}
+import type { ToggleProps } from "./common.types";
 
 const sizeStyles = {
 	sm: {
@@ -36,13 +28,13 @@ const Toggle: React.FC<ToggleProps> = ({
 
 	return (
 		<label
-			className={`relative inline-flex items-center gap-2 ${
-				disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"
-			} ${className}`}
+			className={`
+				toggle
+				${disabled ? "toggle-disabled" : "toggle-enabled"}
+				${className}
+			`}
 		>
-			{label && (
-				<span className="text-sm text-zinc-400 select-none">{label}</span>
-			)}
+			{label && <span className="toggle-label">{label}</span>}
 
 			<div className="relative">
 				<input
@@ -55,18 +47,20 @@ const Toggle: React.FC<ToggleProps> = ({
 
 				{/* Track */}
 				<div
-					className={`${styles.track} rounded-full transition-colors duration-200 ${
-						checked ? "bg-amber-500" : "bg-zinc-700"
-					}`}
+					className={`
+						toggle-track
+						${styles.track}
+						${checked ? "toggle-track-on" : "toggle-track-off"}
+					`}
 				/>
 
 				{/* Thumb */}
 				<div
-					className={`absolute top-0.5 right-6.5 ${
-						size === "lg" ? "top-0.5" : "top-0.5"
-					} rounded-full bg-white shadow transition-transform duration-200 ${
-						styles.thumb
-					} ${checked ? "translate-x-6" : "translate-x-0"}`}
+					className={`
+						toggle-thumb
+						${styles.thumb}
+						${checked ? "translate-x-6" : "translate-x-0"}
+					`}
 				/>
 			</div>
 		</label>

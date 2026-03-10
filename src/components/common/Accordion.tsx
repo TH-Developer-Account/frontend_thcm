@@ -1,16 +1,5 @@
 import React from "react";
-
-interface AccordionItem {
-	id: string;
-	title: React.ReactNode;
-	content: React.ReactNode;
-}
-
-interface AccordionProps {
-	items: AccordionItem[];
-	allowMultiple?: boolean;
-	defaultOpen?: string[];
-}
+import type { AccordionProps } from "./common.types";
 
 export function Accordion({
 	items,
@@ -32,25 +21,22 @@ export function Accordion({
 	};
 
 	return (
-		<div className="space-y-2">
+		<div className="accordion">
 			{items.map((item) => {
 				const isOpen = openItems.includes(item.id);
 
 				return (
-					<div key={item.id} className="rounded-md text-left bg-gray-100">
+					<div key={item.id} className="accordion-item">
 						<button
 							type="button"
 							onClick={() => toggleItem(item.id)}
-							className="w-full px-4 py-3 text-left  font-bold flex justify-between transition transition-all duration-300 "
+							className="accordion-trigger"
 						>
 							{item.title}
-							<span>{isOpen ? "−" : "+"}</span>
+							<span className="accordion-icon">{isOpen ? "−" : "+"}</span>
 						</button>
-						{isOpen && (
-							<div className="px-4 pb-4 text-sm text-gray-600">
-								{item.content}
-							</div>
-						)}
+
+						{isOpen && <div className="accordion-content">{item.content}</div>}
 					</div>
 				);
 			})}

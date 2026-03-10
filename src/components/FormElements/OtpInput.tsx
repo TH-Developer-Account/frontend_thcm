@@ -1,15 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-
-interface OtpInputProps {
-	name?: string;
-	length?: number;
-	value?: string;
-	error?: string;
-	className?: string;
-	timerSeconds?: number;
-	onTimerChange?: (secondsLeft: number, isActive: boolean) => void;
-	onChange: (otp: string) => void;
-}
+import type { OtpInputProps } from "./input.types";
 
 const OtpInput: React.FC<OtpInputProps> = ({
 	name = "otp",
@@ -23,13 +13,11 @@ const OtpInput: React.FC<OtpInputProps> = ({
 }) => {
 	const inputsRef = useRef<HTMLInputElement[]>([]);
 
-	// Initialize once from value
 	const [otp, setOtp] = useState<string[]>(() => {
 		const chars = value?.split("").slice(0, length) ?? [];
 		return [...chars, ...Array(length - chars.length).fill("")];
 	});
 
-	/* ---------------- Timer ---------------- */
 	const [secondsLeft, setSecondsLeft] = useState(timerSeconds);
 
 	useEffect(() => {
@@ -70,8 +58,8 @@ const OtpInput: React.FC<OtpInputProps> = ({
 	};
 
 	return (
-		<div className="mb-4">
-			<div className="mt-2 flex flex-wrap justify-center gap-2 ">
+		<div className="otp-wrapper">
+			<div className="otp-container">
 				{otp.map((digit, index) => (
 					<input
 						key={index}
@@ -88,31 +76,22 @@ const OtpInput: React.FC<OtpInputProps> = ({
 						onChange={(e) => handleChange(e.target.value, index)}
 						onKeyDown={(e) => handleKeyDown(e, index)}
 						className={`
-              text-center font-semibold rounded-lg border
-              bg-[#F3F4F6] outline-none transition
-              w-8 h-8 text-base
-              sm:w-10 sm:h-10 sm:text-lg
-              md:w-12 md:h-12 md:text-xl
-              ${
-								error
-									? "border-red-500 focus:ring-2 focus:ring-red-500"
-									: "border-[#F3F4F6] focus:ring-2 focus:ring-[#f35a00]"
-							}
-              ${className}
-            `}
+							otp-input
+							otp-size
+							${error ? "otp-error" : "otp-normal"}
+							${className}
+						`}
 					/>
 				))}
 			</div>
 
 			{error && (
-				<p id={`${name}-error`} className="mt-1 text-xs text-red-600 text-left">
+				<p id={`${name}-error`} className="otp-error-text">
 					{error}
 				</p>
 			)}
-			{/* Timer display (optional) */}
-			<p className="mt-2 text-xs text-gray-500 text-center">
-				Resend OTP in {secondsLeft}s
-			</p>
+
+			<p className="otp-timer">Resend OTP in {secondsLeft}s</p>
 		</div>
 	);
 };

@@ -126,6 +126,7 @@ const ForgotPasswordForm = () => {
 					</div>
 					<FormInput
 						name="email"
+						type="email"
 						label="Email"
 						placeholder="john@mail.com"
 						value={state.email}
