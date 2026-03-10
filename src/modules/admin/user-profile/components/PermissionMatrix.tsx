@@ -3,6 +3,7 @@ import Checkbox from "../../../../components/FormElements/Checkbox";
 import { SearchInput } from "../../../../components/FormElements/SearchInput";
 import { Badge } from "../../../../components/common/Badge";
 import type { WorkspacePayload } from "../types/profile.types";
+import Button from "../../../../components/common/Button";
 
 type Permission = {
 	read: boolean;
@@ -110,15 +111,15 @@ export default function PermissionMatrix({
 
 			{/* COLUMN HEADER */}
 			<div className="grid grid-cols-[1fr_88px_88px] border-b border-slate-200 bg-slate-50">
-				<div className="px-6 py-2.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+				<div className="px-6 py-2.5 text-[10px] font-bold text-slate-600 uppercase tracking-wider">
 					App / Module
 				</div>
 
-				<div className="flex items-center justify-center text-[10px] font-semibold text-blue-600 tracking-wide border-l border-slate-200">
+				<div className="flex items-center justify-center text-[10px]  text-black font-bold  tracking-wide border-l border-slate-200">
 					Read
 				</div>
 
-				<div className="flex items-center justify-center text-[10px] font-semibold text-emerald-600 tracking-wide border-l border-slate-200">
+				<div className="flex items-center justify-center text-[10px]  text-black font-bold tracking-wide border-l border-slate-200">
 					Write
 				</div>
 			</div>
@@ -257,13 +258,12 @@ export default function PermissionMatrix({
 				)}
 			</div>
 			<div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-white">
-				<button
+				<Button
 					disabled={isLoading}
 					onClick={collectPermissions}
-					className="px-5 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition"
-				>
-					Save Permissions
-				</button>
+					text="Save Permissions"
+					status="brand"
+				/>
 			</div>
 		</div>
 	);

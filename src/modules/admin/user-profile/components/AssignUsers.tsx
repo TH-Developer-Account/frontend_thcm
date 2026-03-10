@@ -62,8 +62,8 @@ export const AssignUsers: React.FC<AssignProps> = ({
 			<div className="w-[1000px] max-h-[520px] flex flex-col mx-auto bg-white p-4 rounded-xl">
 				{/* Header */}
 				<div className="flex items-center justify-between mb-6">
-					<h2 className="font-bold text-xl text-zinc-900 flex items-center gap-2">
-						<span className="font-bold text-xl">👥</span> Assign Users
+					<h2 className="font-bold text-xl text-zinc-900 flex items-center gap-2 ml-4">
+						Assign Users
 					</h2>
 					<Button
 						variant="primary"
@@ -79,7 +79,7 @@ export const AssignUsers: React.FC<AssignProps> = ({
 				</div>
 
 				{/* Content */}
-				<div className="space-y-2 overflow-y-auto p-6 flex-1">
+				<div className="space-y-2 overflow-y-auto scrollbar-sleek p-6 flex-1">
 					{loading ? (
 						<p className="text-sm text-gray-400">Loading users...</p>
 					) : (
@@ -141,10 +141,10 @@ export const AssignUsers: React.FC<AssignProps> = ({
 
 				{/* Footer */}
 				<div className="p-4 border-t flex justify-end gap-3">
-					<Button text="Cancel" variant="primary" onClick={onClose} />
+					<Button text="Cancel" onClick={onClose} status="brand" />
 					<Button
 						text="Assign Users"
-						status="Brand"
+						status="brand"
 						onClick={() => handleAssignUser(selectedUsers, profileId)}
 					/>
 				</div>

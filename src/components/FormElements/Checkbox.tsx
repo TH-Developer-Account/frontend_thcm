@@ -6,7 +6,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
 	indeterminate = false,
 	disabled = false,
 	size = 18,
-	color = "#2563eb",
+	color = "#f35a00",
 	className = "",
 	style = {},
 	onChange,

@@ -45,7 +45,7 @@ const UserInfoCard = ({ userRole }: PersonalInfoProps) => {
 
 			{/* Modal */}
 			<Modal open={open} onClose={() => setOpen(false)}>
-				<div className="relative w-full max-w-[600px] rounded-3xl bg-white p-6 mx-auto h-full overflow-y-auto">
+				<div className="relative w-full max-w-[600px] rounded-3xl bg-white p-6 mx-auto h-full overflow-y-auto scrollbar-sleek">
 					<div className="mb-6">
 						<h4 className="text-2xl font-semibold text-gray-800">
 							Edit Personal Information

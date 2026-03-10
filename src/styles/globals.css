@@ -65,3 +65,36 @@ body {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
+
+@layer utilities {
+	/* =========================================
+	   SLEEK SCROLLBAR
+	========================================= */
+
+	.scrollbar-sleek {
+		scrollbar-width: thin; /* Firefox */
+		scrollbar-color: #818184 #f4f4f5; /* thumb / track */
+	}
+
+	.scrollbar-sleek::-webkit-scrollbar {
+		width: 6px;
+		height: 6px;
+	}
+
+	.scrollbar-sleek::-webkit-scrollbar-track {
+		background: #fafafa; /* zinc-50 */
+	}
+
+	.scrollbar-sleek::-webkit-scrollbar-thumb {
+		background: #18181b; /* zinc-900 */
+		border-radius: 999px;
+	}
+
+	.scrollbar-sleek::-webkit-scrollbar-thumb:hover {
+		background: #27272a; /* zinc-800 */
+	}
+
+	.scrollbar-sleek::-webkit-scrollbar-corner {
+		background: transparent;
+	}
+}

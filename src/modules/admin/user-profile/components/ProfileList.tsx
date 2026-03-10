@@ -78,7 +78,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
 							</div>
 						</div>
 						<Button
-							status="Brand"
+							status="brand"
 							size="lg"
 							text="New Profile"
 							onClick={onCreateNew}
@@ -88,7 +88,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
 				</div>
 				<div className="bg-white rounded-t-2xl mt-2 border border-gray-200 border-b-0 h-full text-gray-600">
 					<div className="grid grid-cols-1  gap-4 mt-4">
-						<div className="bg-white overflow-y-auto ">
+						<div className="bg-white overflow-y-auto scrollbar-sleek ">
 							<table className="w-full text-sm">
 								<thead className="bg-gray-100 ">
 									<tr>

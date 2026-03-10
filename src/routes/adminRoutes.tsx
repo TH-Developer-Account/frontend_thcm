@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import { DashboardPage } from "../modules/marketing/pages/Dashboard/DashboardPage";
+// import { DashboardPage } from "../modules/marketing/pages/Dashboard/DashboardPage";
 import CrfForm from "../modules/marketing/pages/CRFScreen/CrfForm";
 import UsersPage from "../modules/admin/pages/BusinessUsersMaster/UserPage";
 import { UserProfilePage } from "../modules/admin/user-profile/UserProfilePage";
@@ -15,7 +15,7 @@ import ComingSoon from "../components/ui/ComingSoon";
 export default function AdminRoutes() {
 	return (
 		<Routes>
-			<Route path="dashboard" element={<DashboardPage />} />
+			<Route path="dashboard" element={<ComingSoon />} />
 			<Route path="users" element={<UsersPage />} />
 			<Route path="department" element={<ComingSoon />} />
 			<Route path="roles" element={<CrfForm />} />
