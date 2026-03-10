@@ -29,6 +29,8 @@ export default function SelectInput({
       <div className="mt-2">
         <Select
           {...props}
+          value={props.value}
+          onChange={props.onChange}
           isDisabled={isDisabled}
           classNamePrefix="react-select "
           menuPortalTarget={

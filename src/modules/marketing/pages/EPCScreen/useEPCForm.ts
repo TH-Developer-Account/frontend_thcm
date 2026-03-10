@@ -1,13 +1,8 @@
-import { useEffect, useState } from "react";
-import {
-  fetchDropdownOptions,
-  fetchBranchesByZone,
-  generateEpfNumber,
-  fetchEpcById,
-  saveEpcForm,
-} from "./api";
+import { useState } from "react";
 import { validateEpcForm } from "./validation";
-import type { EpcFormValues, UseEpcFormProps, Option } from "../../types";
+import { useToast } from "../../../../context/Auth/AuthContext";
+import type { EpcFormValues, UseEpcFormProps } from "../../types";
+import { ServerAxios } from "../../../../services/ServerAxios";
 
 const initialValues: EpcFormValues = {
   epfNo: "",
@@ -15,6 +10,7 @@ const initialValues: EpcFormValues = {
   department: "",
   zone: "",
   branch: "",
+  budgetCode: "",
   vertical: "",
   scale: "",
   eventName: "",
@@ -27,72 +23,19 @@ const initialValues: EpcFormValues = {
 };
 
 export const useEpcForm = ({ epcId }: UseEpcFormProps) => {
+  const { showToast } = useToast();
   const [values, setValues] = useState<EpcFormValues>(initialValues);
   const [errors, setErrors] = useState<
     Partial<Record<keyof EpcFormValues, string>>
   >({});
   const [loading, setLoading] = useState(false);
 
-  const [options, setOptions] = useState<Option[]>([]);
-  const [zone, setZone] = useState<Option[]>([]);
-  const [branches, setBranches] = useState<Option[]>([]);
-
   const isEditMode = Boolean(epcId);
-
-  // Initial Load
-
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const dropdowns = await fetchDropdownOptions();
-        setOptions(dropdowns);
-        setZone(dropdowns.zones || []);
-
-        if (!isEditMode) {
-          const { epfNo } = await generateEpfNumber();
-          setValues((prev) => ({ ...prev, epfNo }));
-        }
-
-        if (epcId) {
-          const data = await fetchEpcById(epcId);
-          setValues(data);
-
-          if (data.zone) {
-            const branchData = await fetchBranchesByZone(data.zone);
-            setBranches(branchData);
-          }
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    init();
-  }, [epcId, isEditMode]);
-
-  // Zone → Branch Dependency
-
-  useEffect(() => {
-    const loadBranches = async () => {
-      if (!values.zone) {
-        setBranches([]);
-        return;
-      }
-
-      try {
-        const data = await fetchBranchesByZone(values.zone);
-        setBranches(data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
-    loadBranches();
-  }, [values.zone]);
 
   // Field Change
 
   const handleChange = (name: keyof EpcFormValues, value: string) => {
+    console.log({ name, value });
     setValues((prev) => ({
       ...prev,
       [name]: value,
@@ -119,7 +62,6 @@ export const useEpcForm = ({ epcId }: UseEpcFormProps) => {
 
   const handleSave = async (status: "DRAFT" | "SUBMITTED") => {
     const formData = { ...values, status };
-    console.log("Submitting Form Data:");
     console.log(formData);
     if (status === "SUBMITTED") {
       const validationErrors = validateEpcForm(formData);
@@ -132,13 +74,16 @@ export const useEpcForm = ({ epcId }: UseEpcFormProps) => {
 
     try {
       setLoading(true);
-      await saveEpcForm(formData);
+      const {
+        data: { message },
+      } = await ServerAxios.post("/epc", formData);
 
-      alert(
-        status === "DRAFT"
-          ? "Draft Saved Successfully"
-          : "Submitted Successfully",
-      );
+      showToast({
+        type: "error",
+        title: "Error",
+        description: message,
+      });
+
       // ✅ RESET FORM
       setValues(initialValues);
       setErrors({});
@@ -157,9 +102,6 @@ export const useEpcForm = ({ epcId }: UseEpcFormProps) => {
     values,
     errors,
     loading,
-    options,
-    zone,
-    branches,
     isEditMode,
     handleChange,
     handleSave,
