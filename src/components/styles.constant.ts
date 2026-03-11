@@ -113,3 +113,14 @@ export const APPROVAL_DOT_STATUS: Record<string, string> = {
 
 	"sent back": "bg-orange-200 text-orange-900 ring-orange-100",
 };
+
+export const APPROVAL_LINE_COLOR: Record<string, string> = {
+	approved: "bg-indigo-500",
+	recommended: "bg-pink-500",
+	submitted: "bg-violet-500",
+	"report submitted": "bg-sky-500",
+	pending: "bg-amber-500",
+	cancelled: "bg-red-500",
+	"sent back": "bg-orange-500",
+	completed: "bg-emerald-500",
+};

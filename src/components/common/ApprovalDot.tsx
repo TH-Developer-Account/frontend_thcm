@@ -1,6 +1,6 @@
 import React from "react";
 import type { ApprovalDotProps } from "./common.types";
-import { APPROVAL_DOT_STATUS } from "../styles.constant";
+import { APPROVAL_DOT_STATUS, APPROVAL_LINE_COLOR } from "../styles.constant";
 import {
 	Check,
 	// CheckCircle2,
@@ -48,8 +48,11 @@ const ApprovalDot = ({
 	status,
 	className,
 	size = "md",
-}: ApprovalDotProps) => {
+	isLast = false,
+}: ApprovalDotProps & { isLast?: boolean }) => {
 	const normalized = normalizeStatus(status);
+
+	const isApproved = normalized === "approved" || normalized === "completed";
 
 	const styleClass =
 		APPROVAL_DOT_STATUS[normalized] ??
@@ -58,22 +61,47 @@ const ApprovalDot = ({
 	const icon =
 		APPROVAL_STATUS_ICON[normalized] ?? (label ? label : <Check size={16} />);
 
+	const lineColor = APPROVAL_LINE_COLOR[normalized] ?? "bg-slate-300";
 	return (
-		<span
-			className={`
-        rounded-full
-        flex items-center justify-center
-        font-bold
-        shadow-sm
-        ring-4
-        ${sizeClasses[size]}
-        ${styleClass}
-        ${className ?? ""}
-      `}
-		>
-			{icon}
-		</span>
+		<div className="relative flex flex-col items-center">
+			{/* DOT */}
+			<div
+				className={`
+			rounded-full
+			flex items-center justify-center
+			font-bold
+			shadow-sm
+			ring-4
+			${sizeClasses[size]}
+			${styleClass}
+			${className ?? ""}
+		  `}
+			>
+				{icon}
+			</div>
+
+			{/* CONNECTOR LINE */}
+			{!isLast && (
+				<div
+					className={`
+						absolute
+						bottom-0
+						top-15
+						left-1/2
+						-translate-x-1/2
+						w-[2px]
+						h-10
+						
+			  ${lineColor}
+			`}
+				/>
+			)}
+		</div>
 	);
 };
+// Shows only is approved
+// ${isApproved ? lineColor : "bg-slate-300"}
 
+// Shows all
+// ${lineColor}
 export default ApprovalDot;

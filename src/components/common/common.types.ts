@@ -135,4 +135,5 @@ export type ApprovalDotProps = {
 	className?: string;
 	size?: "xs" | "sm" | "md" | "lg";
 	children?: React.ReactNode;
+	isLast?: boolean;
 };
