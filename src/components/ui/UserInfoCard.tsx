@@ -97,8 +97,12 @@ const UserInfoCard = ({ userRole }: PersonalInfoProps) => {
 					{/* Footer Buttons */}
 					{!isViewer && (
 						<div className="flex items-center gap-3 mt-8 lg:justify-end">
-							<Button text="Cancel" onClick={() => setOpen(false)} />
-							<Button text="Save Changes" onClick={handleSave} />
+							<Button
+								text="Cancel"
+								onClick={() => setOpen(false)}
+								status="brand"
+							/>
+							<Button text="Save Changes" onClick={handleSave} status="brand" />
 						</div>
 					)}
 				</div>

@@ -178,6 +178,7 @@ export default function PermissionMatrix({
                       indeterminate={as.some}
                       onChange={() => toggleAppAll(app.key)}
                     /> */}
+										<p className="text-xs">Select All</p>
 									</div>
 								</div>
 
@@ -188,7 +189,7 @@ export default function PermissionMatrix({
 									return (
 										<div
 											key={action}
-											className="flex items-center justify-center border-l border-slate-200 cursor-pointer hover:bg-white transition"
+											className="flex items-center justify-center  border-l border-slate-200 cursor-pointer hover:bg-white transition"
 											onClick={() => toggleAppAction(app.key, action)}
 										>
 											<Checkbox
