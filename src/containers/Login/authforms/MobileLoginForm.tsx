@@ -246,7 +246,7 @@ const MobileLoginForm = () => {
 						disabled={!MOBILE_REGEX.test(state.mobile)}
 						onClick={handleContinue}
 						fullWidth
-						variant="brand"
+						status="brand"
 					/>
 				</form>
 			)}
@@ -272,14 +272,14 @@ const MobileLoginForm = () => {
 							text="Verify OTP"
 							onClick={handleVerifyResendOtp}
 							fullWidth
-							variant="brand"
+							status="brand"
 						/>
 					) : (
 						<Button
 							text="Verify OTP"
 							onClick={handleVerifyOtp}
 							fullWidth
-							variant="brand"
+							status="brand"
 						/>
 					)}
 					<div className="">

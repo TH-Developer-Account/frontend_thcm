@@ -44,6 +44,14 @@ button:focus-visible {
 		/* color: #f35a00; */
 	}
 }
+@media (prefers-color-scheme: dark) {
+	body {
+		color: #000;
+	}
+	a:hover {
+		/* color: #f35a00; */
+	}
+}
 input {
 	border-color: #d1d5db;
 }

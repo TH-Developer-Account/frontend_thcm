@@ -202,6 +202,7 @@ const ResetPasswordForm = () => {
 				className=""
 				type="submit"
 				disabled={loading || !isValid}
+				status="brand"
 			/>
 		</form>
 	);

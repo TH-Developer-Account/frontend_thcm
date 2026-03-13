@@ -43,3 +43,8 @@ form h2 {
 body {
   color: black !important;
 }
+body,
+p,
+span {
+	/* color: black !important; */
+}

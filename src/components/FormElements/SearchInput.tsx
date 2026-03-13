@@ -1,7 +1,7 @@
 // components/common/SearchBox.tsx
 
 import React, { forwardRef } from "react";
-import { Search, X } from "lucide-react";
+import { Search } from "lucide-react";
 import type { SearchBoxProps } from "./input.types";
 
 export const SearchInput = forwardRef<HTMLInputElement, SearchBoxProps>(
@@ -9,7 +9,6 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchBoxProps>(
 		{
 			value,
 			onChange,
-			onClear,
 			placeholder = "Search...",
 			disabled,
 			className,
@@ -29,7 +28,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchBoxProps>(
 					{/* Input */}
 					<input
 						ref={ref}
-						type="text"
+						type="search"
 						value={value}
 						disabled={disabled}
 						onChange={(e) => onChange(e.target.value)}
@@ -38,7 +37,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchBoxProps>(
 					/>
 
 					{/* Clear Button */}
-					{value && (
+					{/* {value && (
 						<button
 							onClick={onClear}
 							className="ml-2 text-gray-400 hover:text-gray-600"
@@ -46,7 +45,7 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchBoxProps>(
 						>
 							<X size={16} />
 						</button>
-					)}
+					)} */}
 
 					{/* Optional Right Element */}
 					{/* {rightElement && <div className="ml-2">{rightElement}</div>} */}

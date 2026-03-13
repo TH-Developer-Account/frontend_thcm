@@ -40,7 +40,7 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
             ${
 							error
 								? "focus:outline-red-500 outline-red-500 focus:ring-red-500"
-								: "focus:outline-gray-400"
+								: "focus:outline-[#f97316]"
 						}
             ${disabled ? "opacity-60 cursor-not-allowed" : ""}
             ${className}

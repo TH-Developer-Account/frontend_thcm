@@ -88,9 +88,27 @@ export const columns: ColumnDef<EPCRow>[] = [
 					<Button
 						type="submit"
 						className="bg-transparent  text-orange-900"
+						Icon={Edit}
+						iconPosition="right"
+						iconColor="#f35a00"
+					/>
+				</div>
+			</div>
+		),
+	},
+	{
+		accessorKey: "epc",
+		header: "EPC",
+		cell: ({ row }) => (
+			<div>
+				<div className="font-medium">
+					<Button
+						type="submit"
+						className="bg-transparent  text-orange-900"
 						Icon={Play}
 						iconPosition="right"
 						iconColor="#f35a00"
+						// onClick={row}
 					/>
 				</div>
 			</div>

@@ -84,8 +84,12 @@ const UserMetaCard = ({ userRole }: UserMetaFormProps) => {
 
 					{/* FOOTER (Sticky) */}
 					<div className="flex items-center justify-end gap-3 px-8 py-4 border-t border-gray-100 bg-white">
-						<Button text="Cancel" onClick={() => setOpen(false)} />
-						<Button text="Save Changes" onClick={handleSave} />
+						<Button
+							text="Cancel"
+							onClick={() => setOpen(false)}
+							status="brand"
+						/>
+						<Button text="Save Changes" onClick={handleSave} status="brand" />
 					</div>
 				</div>
 			</Modal>

@@ -78,7 +78,7 @@ function DataTable<T extends object>({
 			className={`w-full h-full rounded-md border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col ${className}`}
 		>
 			{/* Scrollable Table Area */}
-			<div className="flex-1 min-h-0 overflow-auto">
+			<div className="flex-1 min-h-0 overflow-auto overflow-y-auto scrollbar-sleek h-[400px]">
 				<table
 					className="min-w-[800px] w-full text-sm text-black  text-left "
 					id={scrollTargetId}

@@ -89,8 +89,12 @@ const UserAddressCard = ({ userRole }: UserAddressFormProps) => {
 
 					{!isViewer && (
 						<div className="mt-6 flex justify-end gap-3">
-							<Button text="Cancel" onClick={() => setOpen(false)} />
-							<Button text="Save Changes" onClick={handleSave} />
+							<Button
+								text="Cancel"
+								onClick={() => setOpen(false)}
+								status="brand"
+							/>
+							<Button text="Save Changes" onClick={handleSave} status="brand" />
 						</div>
 					)}
 				</div>

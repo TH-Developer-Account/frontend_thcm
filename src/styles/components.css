@@ -428,8 +428,7 @@
 		rounded-2xl
 		transition-all
 		duration-200
-		ease-in-out
-		border;
+		ease-in-out;
 	}
 
 	/* Default card */
@@ -594,221 +593,76 @@
 	}
 }
 
+/* =========================================
+	POPOVER 
+========================================= */
+
 @layer components {
 	/* =========================================
-         COMING SOON PAGE
-      ========================================= */
+	   POPOVER WRAPPER
+	========================================= */
 
-	.coming-soon-page {
-		@apply min-h-screen
-        flex flex-col
-        items-center
-        justify-center
-        text-center
-        gap-6
-        px-6;
+	.popover {
+		@apply relative inline-block;
 	}
 
 	/* =========================================
-         IMAGE
-      ========================================= */
+	   TRIGGER
+	========================================= */
 
-	.coming-soon-img {
-		@apply w-48 md:w-64
-        animate-bounce
-        select-none;
+	.popover-trigger {
+		@apply cursor-pointer inline-flex items-center;
 	}
 
 	/* =========================================
-         TITLE
-      ========================================= */
+	   PANEL
+	========================================= */
 
-	.coming-soon-title {
-		@apply text-2xl md:text-3xl font-semibold;
+	.popover-panel {
+		@apply absolute z-50 mt-2 min-w-[150px] rounded-lg shadow-lg border p-1;
 
-		color: rgb(var(--color-text));
+		background: rgb(var(--color-surface));
+		border-color: rgb(var(--color-border));
 	}
 
 	/* =========================================
-         DESCRIPTION
-      ========================================= */
+	   POSITIONING
+	========================================= */
 
-	.coming-soon-text {
-		@apply text-sm md:text-base max-w-md;
-
-		color: rgb(var(--color-muted));
-	}
-	@layer components {
-		/* =========================================
-         COMING SOON PAGE
-      ========================================= */
-
-		.coming-soon-page {
-			@apply min-h-screen
-        flex flex-col
-        items-center
-        justify-center
-        text-center
-        gap-6
-        px-6;
-		}
-
-		/* =========================================
-         IMAGE
-      ========================================= */
-
-		.coming-soon-img {
-			@apply w-48 md:w-64
-        /* animate-bounce */
-        select-none;
-		}
-
-		/* =========================================
-         TITLE
-      ========================================= */
-
-		.coming-soon-title {
-			@apply text-2xl md:text-3xl font-semibold;
-
-			color: rgb(var(--color-text));
-		}
-
-		/* =========================================
-         DESCRIPTION
-      ========================================= */
-
-		.coming-soon-text {
-			@apply text-sm md:text-base max-w-md;
-
-			color: rgb(var(--color-muted));
-		}
-	}
-	@layer components {
-		/* container */
-		.coming-soon-wrapper {
-			@apply flex flex-col items-center justify-center  relative overflow-hidden bg-zinc-50;
-		}
-
-		/* top hazard bar */
-		.coming-soon-hazard-top {
-			@apply absolute top-0 left-0 right-0 h-[7px];
-
-			background: repeating-linear-gradient(
-				90deg,
-				#fbbf24 0px,
-				#fbbf24 28px,
-				#1c1917 28px,
-				#1c1917 56px
-			);
-		}
-
-		/* brand chip */
-		.coming-soon-brand {
-			@apply flex items-center gap-2 px-5 py-2 rounded-full mb-8 text-[11px] font-extrabold uppercase;
-			@apply tracking-[0.18em];
-
-			background: #1c1917;
-			color: #fbbf24;
-		}
-
-		/* heading */
-		.coming-soon-title {
-			@apply leading-[0.9] tracking-wide;
-			font-size: clamp(72px, 10vw, 128px);
-			color: #292524;
-		}
-
-		/* subtitle text */
-		.coming-soon-text {
-			@apply text-sm md:text-base max-w-md text-center mb-10 leading-relaxed;
-
-			color: rgb(var(--color-muted));
-		}
-
-		/* scene container */
-		.coming-soon-scene {
-			@apply relative w-full max-w-full h-[238px] mt-2;
-		}
-
-		/* excavator */
-		.coming-soon-excavator {
-			@apply absolute left-1/2 -translate-x-1/2 bg-transparent bottom-4 w-[100px] drop-shadow-lg;
-			/* animation: excavator-idle 3s ease-in-out infinite; */
-		}
-		.coming-soon-backhoe {
-			@apply absolute left-1/6 -translate-x-1/2 bottom-6 bg-transparent w-[100px] drop-shadow-lg;
-		}
-		.coming-soon-wheel {
-			@apply absolute right-1/8 -translate-x-1/2 bottom-6  bg-transparent w-[100px] drop-shadow-lg;
-		}
-		/* road line */
-		.coming-soon-road {
-			@apply absolute left-0 right-0 h-[3px];
-			bottom: 18px;
-
-			background: repeating-linear-gradient(
-				90deg,
-				#fbbf24 0px,
-				#fbbf24 40px,
-				transparent 40px,
-				transparent 70px
-			);
-
-			background-size: 70px 3px; /* 🔑 this is the fix */
-
-			animation: road-scroll 1.4s linear infinite;
-			/* animation: road-scroll 0.8s linear infinite; */
-		}
-
-		/* tape */
-		.coming-soon-tape {
-			@apply absolute bottom-0 left-0 right-0 h-2;
-
-			background: repeating-linear-gradient(
-				90deg,
-				#fbbf24 0px,
-				#fbbf24 18px,
-				#1c1917 18px,
-				#1c1917 36px
-			);
-
-			animation: tape-scroll 1s linear infinite;
-		}
-
-		/* ground */
-		.coming-soon-ground {
-			@apply absolute bottom-0 left-0 right-0 h-10 border-t border-stone-300;
-			background: linear-gradient(180deg, #f5f5f4, #e7e5e4);
-		}
+	.popover-bottom {
+		@apply top-full left-1/2 -translate-x-1/2;
 	}
 
-	/* animations */
-
-	@keyframes road-scroll {
-		from {
-			background-position: 0 0;
-		}
-		to {
-			background-position: 70px 0;
-		}
+	.popover-top {
+		@apply bottom-full left-1/2 -translate-x-1/2 mb-2;
 	}
 
-	@keyframes tape-scroll {
-		from {
-			background-position: 0 0;
-		}
-		to {
-			background-position: 36px 0;
-		}
+	.popover-left {
+		@apply right-full top-1/2 -translate-y-1/2 mr-2;
 	}
 
-	@keyframes excavator-idle {
-		0%,
-		100% {
-			transform: translate(-50%, 0);
-		}
-		50% {
-			transform: translate(-50%, -4px);
-		}
+	.popover-right {
+		@apply left-full top-1/2 -translate-y-1/2 ml-2;
+	}
+
+	/* =========================================
+	   ANIMATION
+	========================================= */
+}
+
+@keyframes popover-in {
+	from {
+		opacity: 0;
+		transform: scale(0.95) translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+@layer utilities {
+	.animate-popover {
+		animation: popover-in 0.16s ease-out;
 	}
 }

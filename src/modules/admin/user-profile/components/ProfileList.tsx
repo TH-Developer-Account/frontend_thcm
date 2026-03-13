@@ -10,6 +10,7 @@ import Avatar from "../../../../components/common/Avatar";
 import { SearchInput } from "../../../../components/FormElements/SearchInput";
 import { AssignUsers } from "./AssignUsers";
 import { useToast } from "../../../../context/Auth/AuthContext";
+import Popover from "../../../../components/common/Popover";
 
 type ProfileListProps = {
 	profiles: Profile[];
@@ -77,7 +78,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
 							</div>
 						</div>
 						<Button
-							status="Brand"
+							status="brand"
 							size="lg"
 							text="New Profile"
 							onClick={onCreateNew}
@@ -85,11 +86,11 @@ const ProfileList: React.FC<ProfileListProps> = ({
 						/>
 					</div>
 				</div>
-				<div className="bg-white rounded-t-2xl mt-2 border border-gray-200 border-b-0 h-full">
+				<div className="bg-white rounded-t-2xl mt-2 border border-gray-200 border-b-0 h-full text-gray-600">
 					<div className="grid grid-cols-1  gap-4 mt-4">
-						<div className="bg-white overflow-y-auto ">
+						<div className="bg-white overflow-y-auto scrollbar-sleek ">
 							<table className="w-full text-sm">
-								<thead className="bg-gray-100 text-gray-600">
+								<thead className="bg-gray-100 ">
 									<tr>
 										<th className="px-6 py-4 text-left">Profile Name</th>
 										<th className="px-6 py-4 text-left">Profile Description</th>
@@ -137,10 +138,30 @@ const ProfileList: React.FC<ProfileListProps> = ({
 																	</div>
 																))}
 															</div>
-
 															{profile.users.length > 3 && (
 																<div className="ml-1 text-xs font-medium text-gray-500">
-																	+{profile.users.length - 3}
+																	<Popover
+																		placement="bottom-start"
+																		trigger={
+																			<Button
+																				size="sm"
+																				className="text-xs p-0 justify-center bg-transparent"
+																			>
+																				+ {profile.users.length - 3}
+																			</Button>
+																		}
+																	>
+																		<div className="flex flex-col gap-1 bg-white p-2 h-[100px] rounded-md overflow-auto ">
+																			{profile.users.map((user) => (
+																				<ul>
+																					<li className="text-xs cursor-pointer hover:bg-zinc-100 px-1.5 py-1.5 rounded-md">
+																						{user.firstName}, {""}
+																						{user.lastName}
+																					</li>
+																				</ul>
+																			))}
+																		</div>
+																	</Popover>
 																</div>
 															)}
 														</>

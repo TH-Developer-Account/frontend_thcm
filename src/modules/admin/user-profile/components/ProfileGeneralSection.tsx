@@ -43,15 +43,15 @@ const ProfileGeneralSection: React.FC<Props> = ({
 			/>
 
 			<div className="flex justify-end gap-3 mt-6">
-				<Button text="Cancel" variant="disable" onClick={onCancel} />
+				<Button text="Cancel" status="brand" onClick={onCancel} />
 
 				<Button
-					variant="primary"
 					onClick={onPermission}
 					Icon={ArrowRight}
 					iconPosition="right"
 					text="Continue to Permissions"
 					disabled={!form.name.trim()}
+					status="brand"
 				/>
 			</div>
 		</div>

@@ -33,7 +33,7 @@ export const SidebarLayout = ({
           md:static md:translate-x-0
         `}
 			>
-				<nav className="h-full px-2 py-4 space-y-1 overflow-y-auto">
+				<nav className="h-full px-2 py-4 space-y-1 overflow-y-auto scrollbar-sleek min-h-screen">
 					{items.map((item) => {
 						const hasChildren = !!item.children?.length;
 

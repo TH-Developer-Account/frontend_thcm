@@ -45,7 +45,7 @@ const UserInfoCard = ({ userRole }: PersonalInfoProps) => {
 
 			{/* Modal */}
 			<Modal open={open} onClose={() => setOpen(false)}>
-				<div className="relative w-full max-w-[600px] rounded-3xl bg-white p-6 mx-auto h-full overflow-y-auto">
+				<div className="relative w-full max-w-[600px] rounded-3xl bg-white p-6 mx-auto h-full overflow-y-auto scrollbar-sleek">
 					<div className="mb-6">
 						<h4 className="text-2xl font-semibold text-gray-800">
 							Edit Personal Information
@@ -97,8 +97,12 @@ const UserInfoCard = ({ userRole }: PersonalInfoProps) => {
 					{/* Footer Buttons */}
 					{!isViewer && (
 						<div className="flex items-center gap-3 mt-8 lg:justify-end">
-							<Button text="Cancel" onClick={() => setOpen(false)} />
-							<Button text="Save Changes" onClick={handleSave} />
+							<Button
+								text="Cancel"
+								onClick={() => setOpen(false)}
+								status="brand"
+							/>
+							<Button text="Save Changes" onClick={handleSave} status="brand" />
 						</div>
 					)}
 				</div>
