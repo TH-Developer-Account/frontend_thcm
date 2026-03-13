@@ -6,7 +6,7 @@ import CrfForm from "../modules/marketing/pages/CRFScreen/CrfForm";
 import EPCList from "../modules/marketing/pages/EPCTable/EPCListing";
 import UserProfile from "../components/ui/UserProfile/UserProfile";
 import UsersPage from "../modules/admin/pages/BusinessUsersMaster/UserPage";
-import ApprovalStatus from "../modules/marketing/pages/ActivityPlannerView/components/ApprovalStatus";
+import ActivityPlannerPage from "../modules/marketing/pages/ActivityPlannerView/pages/ActivityPlannerPage";
 
 export default function MarketingRoutes() {
 	return (
@@ -17,7 +17,7 @@ export default function MarketingRoutes() {
 			<Route path="crf" element={<CrfForm />} />
 			<Route path="listing" element={<EPCList />} />
 			<Route path="/profile" element={<UserProfile />} />
-			<Route path="/view" element={<ApprovalStatus />} />
+			<Route path="epf/:id" element={<ActivityPlannerPage />} />
 			<Route path="/admin/users" element={<UsersPage />} />
 		</Routes>
 	);

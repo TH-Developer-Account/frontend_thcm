@@ -4,16 +4,25 @@ import { Badge } from "../../../../../components/common/Badge";
 import { status } from "../../../constant";
 import Button from "../../../../../components/common/Button";
 import { Edit, Play } from "lucide-react";
+import { NavLink } from "react-router-dom";
 
 export const columns: ColumnDef<EPCRow>[] = [
 	{
 		accessorKey: "proposal_number",
 		header: "EPF No",
-		cell: ({ row }) => (
-			<div>
-				<div className="font-medium">{row.original.proposal_number}</div>
-			</div>
-		),
+		cell: ({ row }) => {
+			const epc = row.original;
+			return (
+				<div>
+					<NavLink
+						to={`/marketing/epf/${epc.proposal_number}`}
+						className="text-blue-600 underline"
+					>
+						<div className="font-medium">{row.original.proposal_number}</div>
+					</NavLink>
+				</div>
+			);
+		},
 	},
 	{
 		accessorKey: "event_name",
@@ -65,7 +74,7 @@ export const columns: ColumnDef<EPCRow>[] = [
 	{
 		accessorKey: "epf",
 		header: "EPF",
-		cell: ({ row }) => (
+		cell: () => (
 			<div>
 				<div className="font-medium">
 					<Button
@@ -82,7 +91,7 @@ export const columns: ColumnDef<EPCRow>[] = [
 	{
 		accessorKey: "crf",
 		header: "CRF",
-		cell: ({ row }) => (
+		cell: () => (
 			<div>
 				<div className="font-medium">
 					<Button
@@ -99,17 +108,18 @@ export const columns: ColumnDef<EPCRow>[] = [
 	{
 		accessorKey: "epc",
 		header: "EPC",
-		cell: ({ row }) => (
+		cell: () => (
 			<div>
 				<div className="font-medium">
-					<Button
-						type="submit"
-						className="bg-transparent  text-orange-900"
-						Icon={Play}
-						iconPosition="right"
-						iconColor="#f35a00"
-						// onClick={row}
-					/>
+					<NavLink to={"view"}>
+						<Button
+							type="submit"
+							className="bg-transparent  text-orange-900"
+							Icon={Play}
+							iconPosition="right"
+							iconColor="#f35a00"
+						/>
+					</NavLink>
 				</div>
 			</div>
 		),

@@ -16,7 +16,7 @@ const approval: EPCStatus[] = [
 const ApprovalStatus = () => {
 	return (
 		<React.Fragment>
-			<div className=" bg-white  rounded-xl h-full grid min-h-screen">
+			<div className=" bg-white  rounded-xl h-auto grid col-span-1/2">
 				<div className="approval-dot-section max-w-[260px] w-full h-auto p-4 border shadow-sm border-zinc-300 mt-6 rounded-lg">
 					{approval.map((status, index) => {
 						return (
