@@ -9,7 +9,7 @@ const ActivityPlannerPage = () => {
 	return (
 		<div className="grid grid-cols-[280px_1fr] gap-4 items-start">
 			<EPFProvider>
-				<ApprovalStatus />
+				<ApprovalStatus epcId={id} />
 				<ActivityFormView epcId={id} />
 			</EPFProvider>
 		</div>

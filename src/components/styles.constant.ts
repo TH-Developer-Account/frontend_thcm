@@ -113,14 +113,33 @@ export const APPROVAL_DOT_STATUS: Record<string, string> = {
 
 	"sent back": "bg-orange-200 text-orange-900 ring-orange-100",
 };
+export const APPROVAL_DOT_STATUS_COMPLETED: Record<string, string> = {
+	approved: "bg-indigo-200 text-indigo-900  ring-indigo-300",
+
+	recommended: "bg-pink-200 text-pink-900  ring-pink-300",
+
+	submitted: "bg-violet-200 text-violet-900  ring-violet-300",
+
+	"report submitted": "bg-sky-200 text-sky-900  ring-sky-300",
+
+	pending: "bg-amber-200 text-amber-900  ring-amber-300",
+
+	completed: "bg-emerald-200 text-emerald-900  ring-emerald-300",
+
+	cancelled: "bg-red-200 text-red-900  ring-red-300",
+
+	blocked: "bg-rose-200 text-rose-900  ring-rose-300",
+
+	"sent back": " bg-orange-200 text-orange-900  ring-orange-300",
+};
 
 export const APPROVAL_LINE_COLOR: Record<string, string> = {
-	approved: "bg-indigo-500",
-	recommended: "bg-pink-500",
-	submitted: "bg-violet-500",
-	"report submitted": "bg-sky-500",
-	pending: "bg-amber-500",
-	cancelled: "bg-red-500",
-	"sent back": "bg-orange-500",
-	completed: "bg-emerald-500",
+	approved: "bg-indigo-400",
+	recommended: "bg-pink-400",
+	submitted: "bg-violet-400",
+	"report submitted": "bg-sky-400",
+	pending: "bg-amber-400",
+	cancelled: "bg-red-400",
+	"sent back": "bg-orange-400",
+	completed: "bg-emerald-400",
 };

@@ -1,21 +1,22 @@
 import React from "react";
 import type { ApprovalDotProps } from "./common.types";
-import { APPROVAL_DOT_STATUS, APPROVAL_LINE_COLOR } from "../styles.constant";
+import {
+	APPROVAL_DOT_STATUS,
+	APPROVAL_DOT_STATUS_COMPLETED,
+	APPROVAL_LINE_COLOR,
+} from "../styles.constant";
 import {
 	Check,
-	// CheckCircle2,
 	ThumbsUp,
 	Send,
 	FileCheck,
 	Clock,
 	X,
-	// Ban,
 	Undo2,
-	// Pause,
 	CheckCheck,
-	// Sparkles,
 } from "lucide-react";
 
+/* ----------------------------- Helpers ----------------------------- */
 const normalizeStatus = (status?: string) => status?.toLowerCase().trim() ?? "";
 
 /* -------------------------------- Icons -------------------------------- */
@@ -26,9 +27,7 @@ const APPROVAL_STATUS_ICON: Record<string, React.ReactNode> = {
 	"report submitted": <FileCheck />,
 	pending: <Clock />,
 	cancelled: <X />,
-	// blocked: <Ban />,
 	"sent back": <Undo2 />,
-	// inactive: <Pause />,
 	completed: <CheckCheck />,
 };
 
@@ -49,19 +48,28 @@ const ApprovalDot = ({
 	className,
 	size = "md",
 	isLast = false,
+	isFuture,
+	isCompleted,
 }: ApprovalDotProps & { isLast?: boolean }) => {
 	const normalized = normalizeStatus(status);
 
-	const isApproved = normalized === "approved" || normalized === "completed";
-
-	const styleClass =
+	const baseStyle =
 		APPROVAL_DOT_STATUS[normalized] ??
 		"bg-slate-200 text-slate-600 ring-slate-200";
+
+	const dotStyle = isFuture
+		? "bg-gray-300 text-gray-500 ring-gray-200"
+		: isCompleted
+			? APPROVAL_DOT_STATUS_COMPLETED[normalized]
+			: baseStyle;
+
+	const lineStyle = isFuture
+		? "bg-slate-300"
+		: (APPROVAL_LINE_COLOR[normalized] ?? "bg-slate-300");
 
 	const icon =
 		APPROVAL_STATUS_ICON[normalized] ?? (label ? label : <Check size={16} />);
 
-	const lineColor = APPROVAL_LINE_COLOR[normalized] ?? "bg-slate-300";
 	return (
 		<div className="relative flex flex-col items-center">
 			{/* DOT */}
@@ -72,8 +80,9 @@ const ApprovalDot = ({
 			font-bold
 			shadow-sm
 			ring-4
+			transition-all duration-300
 			${sizeClasses[size]}
-			${styleClass}
+			${dotStyle}
 			${className ?? ""}
 		  `}
 			>
@@ -91,17 +100,12 @@ const ApprovalDot = ({
 						-translate-x-1/2
 						w-[2px]
 						h-10
-						
-			  ${lineColor}
+			  ${lineStyle}
 			`}
 				/>
 			)}
 		</div>
 	);
 };
-// Shows only is approved
-// ${isApproved ? lineColor : "bg-slate-300"}
 
-// Shows all
-// ${lineColor}
 export default ApprovalDot;
