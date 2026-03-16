@@ -12,6 +12,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	label?: string;
 	error?: string;
 	helperText?: string;
+	placeholder?: string;
 }
 
 const FormInput = forwardRef<HTMLInputElement, InputProps>(
@@ -26,6 +27,7 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 			className = "",
 			disabled,
 			helperText,
+			placeholder,
 			...props
 		},
 		ref,
@@ -72,6 +74,7 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 						${isValid && !error ? "form-input-valid" : ""}
 						${className}
 						`}
+						placeholder={placeholder}
 						{...props}
 					/>
 
