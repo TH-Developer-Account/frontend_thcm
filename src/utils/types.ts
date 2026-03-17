@@ -19,15 +19,16 @@ export type EPCStatus =
 	| "Cancelled";
 
 export type GeneralStatus = EPCStatus | TableUserStatus;
-export const statusMap: Record<string, GeneralStatus> = {
-	RECOMMENDED: "Recommended",
+
+export const statusMap: Record<string, EPCStatus> = {
 	PENDING: "Pending",
-	SENT_BACK: "Sent Back",
-	REPORT_SUBMITTED: "Report Submitted",
-	APPROVED: "Approved",
+	RECOMMENDED: "Recommended",
 	SUBMITTED: "Submitted",
+	SENT_BACK: "Sent Back",
+	APPROVED: "Approved",
 	CANCELLED: "Cancelled",
 	COMPLETED: "Completed",
+	REPORT_SUBMITTED: "Report Submitted",
 };
 export interface TableUser {
 	id: number;

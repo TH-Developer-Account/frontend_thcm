@@ -28,9 +28,11 @@ export function MasterDetailPanel({
 		setDirty(true);
 	};
 
+	// Add New
 	const handleSave = () => {
 		if (!form || !form.label.trim()) return;
 		onSave(form);
+		console.log(form, "form");
 		setDirty(false);
 	};
 

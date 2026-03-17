@@ -1,6 +1,7 @@
 import { Badge } from "../../../../../components/common/Badge";
 import { statusMap } from "../../../../../utils/types";
 import { useEPC } from "../../../context/useEPC";
+import BudgetShare from "./BudgetShare";
 
 interface Props {
 	epcId?: string;
@@ -157,21 +158,7 @@ const ActivityFormView = ({ epcId }: Props) => {
 							<span className="font-light">1,00,000.00</span>
 						</p>
 					</div>
-					<div className="row-7 justify-between flex items-center mb-8">
-						<p className="font-bold ">
-							Dealer % : <span className="font-light">75%</span>
-						</p>
-						<p className="font-bold ">
-							Dealer Share : <span className="font-light">62,250.00</span>
-						</p>
-						<p className="font-bold ">
-							Tata Hitachi's % : <span className="font-light">25%</span>
-						</p>
-						<p className="font-bold ">
-							Tata Hitachi's Share :{" "}
-							<span className="font-light">20,750.00</span>
-						</p>
-					</div>
+					<BudgetShare />
 					<div className="row-7 justify-between flex items-center mb-8">
 						<div>
 							<p className="font-bold mb-2">

@@ -1,21 +1,21 @@
 import React from "react";
 import type { ApprovalDotProps } from "./common.types";
-import { APPROVAL_DOT_STATUS, APPROVAL_LINE_COLOR } from "../styles.constant";
+import {
+	APPROVAL_DOT_STATUS_ACTIVE,
+	APPROVAL_DOT_STATUS_COMPLETED,
+} from "../styles.constant";
 import {
 	Check,
-	// CheckCircle2,
 	ThumbsUp,
 	Send,
 	FileCheck,
 	Clock,
 	X,
-	// Ban,
 	Undo2,
-	// Pause,
 	CheckCheck,
-	// Sparkles,
 } from "lucide-react";
 
+/* ----------------------------- Helpers ----------------------------- */
 const normalizeStatus = (status?: string) => status?.toLowerCase().trim() ?? "";
 
 /* -------------------------------- Icons -------------------------------- */
@@ -26,9 +26,7 @@ const APPROVAL_STATUS_ICON: Record<string, React.ReactNode> = {
 	"report submitted": <FileCheck />,
 	pending: <Clock />,
 	cancelled: <X />,
-	// blocked: <Ban />,
 	"sent back": <Undo2 />,
-	// inactive: <Pause />,
 	completed: <CheckCheck />,
 };
 
@@ -49,19 +47,31 @@ const ApprovalDot = ({
 	className,
 	size = "md",
 	isLast = false,
+	isFuture,
+	isCompleted,
+	isCurrent,
 }: ApprovalDotProps & { isLast?: boolean }) => {
 	const normalized = normalizeStatus(status);
 
-	const isApproved = normalized === "approved" || normalized === "completed";
+	const dotStyle = isFuture
+		? "bg-gray-100 text-gray-500 ring-gray-200"
+		: isCompleted
+			? APPROVAL_DOT_STATUS_COMPLETED[normalized]
+			: isCurrent
+				? APPROVAL_DOT_STATUS_ACTIVE[normalized]
+				: "bg-slate-200 text-slate-600 ring-slate-200";
 
-	const styleClass =
-		APPROVAL_DOT_STATUS[normalized] ??
-		"bg-slate-200 text-slate-600 ring-slate-200";
+	// const lineStyle = isFuture
+	// 	? "bg-slate-300"
+	// 	: (APPROVAL_LINE_COLOR[normalized] ?? "bg-slate-300");
 
-	const icon =
-		APPROVAL_STATUS_ICON[normalized] ?? (label ? label : <Check size={16} />);
+	const lineStyle = "bg-zinc-200";
+	const icon = isCompleted ? (
+		<Check size={16} />
+	) : (
+		(APPROVAL_STATUS_ICON[normalized] ?? (label ? label : <Check size={16} />))
+	);
 
-	const lineColor = APPROVAL_LINE_COLOR[normalized] ?? "bg-slate-300";
 	return (
 		<div className="relative flex flex-col items-center">
 			{/* DOT */}
@@ -72,8 +82,9 @@ const ApprovalDot = ({
 			font-bold
 			shadow-sm
 			ring-4
+			transition-all duration-300 ease-out
 			${sizeClasses[size]}
-			${styleClass}
+			${dotStyle}
 			${className ?? ""}
 		  `}
 			>
@@ -86,22 +97,18 @@ const ApprovalDot = ({
 					className={`
 						absolute
 						bottom-0
-						top-15
+						top-13
 						left-1/2
 						-translate-x-1/2
 						w-[2px]
+						mb-1
 						h-10
-						
-			  ${lineColor}
+			  ${lineStyle}
 			`}
 				/>
 			)}
 		</div>
 	);
 };
-// Shows only is approved
-// ${isApproved ? lineColor : "bg-slate-300"}
 
-// Shows all
-// ${lineColor}
 export default ApprovalDot;
