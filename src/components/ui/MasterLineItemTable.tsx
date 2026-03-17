@@ -4,9 +4,10 @@ import { Edit, Trash } from "lucide-react";
 import FormInput from "../FormElements/FormInput";
 
 export interface MasterItem {
-	id: string;
+	id?: string;
 	code?: string;
 	label: string;
+	description?: string;
 }
 
 interface MasterLineItemTableProps {
@@ -34,6 +35,7 @@ export function MasterLineItemTable({
 		if (!draft.label.trim()) return;
 		onChange([...items, { ...draft, id: crypto.randomUUID() }]);
 		setDraft({ id: "", label: "" });
+		console.log(draft, "draft");
 	};
 
 	const handleDelete = (id: string) => {
@@ -147,8 +149,8 @@ export function MasterLineItemTable({
 					<div className="flex-1">
 						<FormInput
 							name="code"
-							// value={draft.code ?? ""}
-							// onChange={(e) => setDraft({ ...draft, code: e.target.value })}
+							value={draft.label ?? ""}
+							onChange={(e) => setDraft({ ...draft, label: e.target.value })}
 							placeholder={"Code"}
 						/>
 					</div>

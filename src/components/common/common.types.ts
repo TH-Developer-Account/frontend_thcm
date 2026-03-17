@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import type { GeneralStatus } from "../../utils/types";
+import type { ApprovalApiStatus } from "../../modules/marketing/types";
 
 export interface ToggleProps {
 	checked: boolean;
@@ -139,26 +140,5 @@ export type ApprovalDotProps = {
 	isLast?: boolean;
 	isFuture?: boolean;
 	isCompleted?: boolean;
+	isCurrent?: boolean;
 };
-export type ApprovalStepState =
-	| "completed"
-	| "current"
-	| "upcoming"
-	| "cancelled"
-	| "sent_back";
-
-export const approvalSteps = [
-	{ api: "PENDING", label: "Pending" },
-	{ api: "RECOMMENDED", label: "Recommended" },
-	{ api: "SUBMITTED", label: "Submitted" },
-	{ api: "SENT_BACK", label: "Sent Back" },
-	{ api: "APPROVED", label: "Approved" },
-	{ api: "CANCELLED", label: "Cancelled" },
-	{ api: "COMPLETED", label: "Completed" },
-	{ api: "REPORT_SUBMITTED", label: "Report Submitted" },
-] as const;
-export const InterruptSteps = [
-	{ api: "SENT_BACK", label: "Sent Back" },
-	{ api: "CANCELLED", label: "Cancelled" },
-] as const;
-export type ApprovalApiStatus = (typeof approvalSteps)[number]["api"];

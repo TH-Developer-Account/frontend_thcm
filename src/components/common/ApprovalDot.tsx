@@ -1,9 +1,8 @@
 import React from "react";
 import type { ApprovalDotProps } from "./common.types";
 import {
-	APPROVAL_DOT_STATUS,
+	APPROVAL_DOT_STATUS_ACTIVE,
 	APPROVAL_DOT_STATUS_COMPLETED,
-	APPROVAL_LINE_COLOR,
 } from "../styles.constant";
 import {
 	Check,
@@ -50,25 +49,28 @@ const ApprovalDot = ({
 	isLast = false,
 	isFuture,
 	isCompleted,
+	isCurrent,
 }: ApprovalDotProps & { isLast?: boolean }) => {
 	const normalized = normalizeStatus(status);
 
-	const baseStyle =
-		APPROVAL_DOT_STATUS[normalized] ??
-		"bg-slate-200 text-slate-600 ring-slate-200";
-
 	const dotStyle = isFuture
-		? "bg-gray-300 text-gray-500 ring-gray-200"
+		? "bg-gray-100 text-gray-500 ring-gray-200"
 		: isCompleted
 			? APPROVAL_DOT_STATUS_COMPLETED[normalized]
-			: baseStyle;
+			: isCurrent
+				? APPROVAL_DOT_STATUS_ACTIVE[normalized]
+				: "bg-slate-200 text-slate-600 ring-slate-200";
 
-	const lineStyle = isFuture
-		? "bg-slate-300"
-		: (APPROVAL_LINE_COLOR[normalized] ?? "bg-slate-300");
+	// const lineStyle = isFuture
+	// 	? "bg-slate-300"
+	// 	: (APPROVAL_LINE_COLOR[normalized] ?? "bg-slate-300");
 
-	const icon =
-		APPROVAL_STATUS_ICON[normalized] ?? (label ? label : <Check size={16} />);
+	const lineStyle = "bg-zinc-200";
+	const icon = isCompleted ? (
+		<Check size={16} />
+	) : (
+		(APPROVAL_STATUS_ICON[normalized] ?? (label ? label : <Check size={16} />))
+	);
 
 	return (
 		<div className="relative flex flex-col items-center">
@@ -80,7 +82,7 @@ const ApprovalDot = ({
 			font-bold
 			shadow-sm
 			ring-4
-			transition-all duration-300
+			transition-all duration-300 ease-out
 			${sizeClasses[size]}
 			${dotStyle}
 			${className ?? ""}
@@ -95,10 +97,11 @@ const ApprovalDot = ({
 					className={`
 						absolute
 						bottom-0
-						top-15
+						top-13
 						left-1/2
 						-translate-x-1/2
 						w-[2px]
+						mb-1
 						h-10
 			  ${lineStyle}
 			`}
