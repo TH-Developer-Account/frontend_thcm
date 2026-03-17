@@ -1,6 +1,7 @@
 import { Badge } from "../../../../../components/common/Badge";
 import { statusMap } from "../../../../../utils/types";
 import { useEPC } from "../../../context/useEPC";
+import ApprovalCardsView from "./ApprovalCardsView";
 import BudgetShare from "./BudgetShare";
 
 interface Props {
@@ -159,72 +160,11 @@ const ActivityFormView = ({ epcId }: Props) => {
 						</p>
 					</div>
 					<BudgetShare />
-					<div className="row-7 justify-between flex items-center mb-8">
-						<div>
-							<p className="font-bold mb-2">
-								Proposer :{" "}
-								<span className="font-light">
-									{epc.first_name + ", " + epc.last_name}
-								</span>
-							</p>
-							<p className="font-bold ">
-								Status :{" "}
-								<span className="font-medium">
-									<Badge status={statusMap[epc.status]}>
-										{statusMap[epc.status]}
-									</Badge>
-								</span>
-							</p>
-						</div>
-						<div>
-							<p className="font-bold mb-2">
-								Checker :{" "}
-								<span className="font-light">
-									{epc.first_name + ", " + epc.last_name}
-								</span>
-							</p>
-							<p className="font-bold ">
-								Status :{" "}
-								<span className="font-medium">
-									<Badge status={statusMap[epc.status]}>
-										{statusMap[epc.status]}
-									</Badge>
-								</span>
-							</p>
-						</div>
-						<div>
-							<p className="font-bold mb-2">
-								Approver :{" "}
-								<span className="font-light">
-									{epc.first_name + ", " + epc.last_name}
-								</span>
-							</p>
-							<p className="font-bold ">
-								Status :{" "}
-								<span className="font-medium">
-									<Badge status={statusMap[epc.status]}>
-										{statusMap[epc.status]}
-									</Badge>
-								</span>
-							</p>
-						</div>
-						<div>
-							<p className="font-bold mb-2">
-								Validater :{" "}
-								<span className="font-light">
-									{epc.first_name + ", " + epc.last_name}
-								</span>
-							</p>
-							<p className="font-bold ">
-								Status :{" "}
-								<span className="font-medium">
-									<Badge status={statusMap[epc.status]}>
-										{statusMap[epc.status]}
-									</Badge>
-								</span>
-							</p>
-						</div>
-					</div>
+					<ApprovalCardsView
+						epcId={epcId}
+						firstName={epc.first_name}
+						lastName={epc.last_name}
+					/>
 				</div>
 			</div>
 		</div>

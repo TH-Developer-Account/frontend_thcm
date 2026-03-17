@@ -38,7 +38,7 @@ export function MasterLineItemTable({
 		console.log(draft, "draft");
 	};
 
-	const handleDelete = (id: string) => {
+	const handleDelete = (id: any) => {
 		onChange(items.filter((item) => item.id !== id));
 	};
 

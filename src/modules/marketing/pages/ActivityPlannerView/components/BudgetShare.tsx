@@ -60,7 +60,7 @@ const BudgetShare = () => {
 				</div>
 			</Section>
 
-			<hr className="epf-divider" />
+			<hr className="epf-divider mb-8" />
 		</React.Fragment>
 	);
 };
