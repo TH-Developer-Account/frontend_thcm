@@ -1,5 +1,5 @@
 import React from "react";
-import { resolveStatusStyle } from "../styles.constant";
+import { resolveStatusStyle, resolveVariantStyle } from "../styles.constant";
 import type { ButtonProps } from "./common.types";
 
 const Button: React.FC<ButtonProps> = ({
@@ -26,10 +26,13 @@ const Button: React.FC<ButtonProps> = ({
 		xl: "btn-xl",
 	};
 
-	const styleClass = resolveStatusStyle({ status: status || "" });
+	const styleClass =
+		resolveStatusStyle({ status: status || "" }) || resolveVariantStyle;
 
 	return (
-		<div className="relative inline-flex group">
+		<div
+			className={` ${fullWidth ? "w-full" : "w-auto"} relative inline-flex group`}
+		>
 			<button
 				type={type}
 				onClick={onClick}
