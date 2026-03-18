@@ -1,9 +1,9 @@
 import type { ToastStyle, ToastVariant } from "./common/Toast/toast.types";
 
 const STATUS_STYLE_MAP: Record<string, string> = {
-	approved: "bg-green-100 text-green-800 ring-green-200",
+	approved: "bg-teal-100 text-teal-800 ring-teal-200",
 
-	completed: "bg-emerald-100 text-emerald-800 ring-emerald-200",
+	completed: "bg-green-100 text-green-800 ring-green-200  ",
 
 	cancelled: "bg-red-100 text-red-800 ring-red-200",
 
@@ -18,6 +18,7 @@ const STATUS_STYLE_MAP: Record<string, string> = {
 	recommended: "bg-violet-100 text-violet-800 ring-violet-200",
 
 	blocked: "bg-rose-100 text-rose-800 ring-rose-200",
+	brand: "bg-[#f35a00] text-white",
 };
 
 export const resolveStatusStyle = ({ status }: { status?: string }): string => {
@@ -94,9 +95,9 @@ export const styles = {
 };
 
 export const APPROVAL_DOT_STATUS_COMPLETED: Record<string, string> = {
-	approved: "bg-green-100 text-green-600 ring-green-200",
+	approved: "bg-teal-100 text-teal-600 ring-teal-200",
 
-	completed: "bg-emerald-100 text-emerald-600 ring-emerald-200",
+	completed: "bg-green-100 text-green-600 ring-green-200",
 
 	cancelled: "bg-red-100 text-red-600 ring-red-200",
 
@@ -114,21 +115,29 @@ export const APPROVAL_DOT_STATUS_COMPLETED: Record<string, string> = {
 };
 
 export const APPROVAL_DOT_STATUS_ACTIVE: Record<string, string> = {
-	approved: "bg-emerald-200 text-emerald-600 ring-emerald-300  shadow-lg",
+	approved:
+		"bg-teal-200 text-teal-600 ring-teal-300  shadow-lg border border-white",
 
-	completed: "bg-emerald-200 text-emerald-300 ring-emerald-400  shadow-lg",
+	completed:
+		"bg-green-200 text-green-600 ring-green-400  shadow-lg border border-white",
 
-	cancelled: "bg-red-200 text-red-600 ring-red-300  shadow-lg",
+	cancelled:
+		"bg-red-200 text-red-600 ring-red-300  shadow-lg border border-white",
 
-	"sent back": "bg-orange-200 text-orange-600 ring-orange-300  shadow-lg",
+	"sent back":
+		"bg-orange-200 text-orange-600 ring-orange-300  shadow-lg border border-white",
 
-	pending: "bg-amber-200 text-amber-600 ring-amber-300  shadow-lg",
+	pending: "bg-amber-200 text-amber-600 ring-amber-300  shadow-lg border-white",
 
-	submitted: "bg-blue-200 text-blue-600 ring-blue-300  shadow-lg",
+	submitted:
+		"bg-blue-200 text-blue-600 ring-blue-300  shadow-lg border border-white",
 
-	"report submitted": "bg-sky-200 text-sky-600 ring-sky-300  shadow-lg",
+	"report submitted":
+		"bg-sky-200 text-sky-600 ring-sky-300  shadow-lg border border-white",
 
-	recommended: "bg-violet-200 text-violet-600 ring-violet-300  shadow-lg",
+	recommended:
+		"bg-violet-200 text-violet-600 ring-violet-300  shadow-lg border border-white",
 
-	blocked: "bg-rose-200 text-rose-600 ring-rose-300  shadow-lg",
+	blocked:
+		"bg-rose-200 text-rose-600 ring-rose-300  shadow-lg border border-white",
 };

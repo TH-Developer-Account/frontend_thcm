@@ -1,14 +1,6 @@
 import React from "react";
+import Section from "./Section";
 
-/* ─── section wrapper ─────────────────────────────────────────────────────── */
-const Section = ({ title, children }: any) => (
-	<div className="mb-8">
-		<div className="epf-section-header">
-			<span className="epf-section-label">{title}</span>
-		</div>
-		{children}
-	</div>
-);
 const BudgetShare = () => {
 	return (
 		<React.Fragment>

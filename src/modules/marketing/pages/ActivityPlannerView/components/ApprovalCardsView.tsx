@@ -1,5 +1,6 @@
 import React from "react";
 import { Card } from "../../../../../components/common/Card";
+import Section from "./Section";
 
 type ApprovalRole = {
 	id: number;
@@ -26,30 +27,32 @@ const ApprovalCardsView = ({
 }: ApprovalCardsView) => {
 	return (
 		<React.Fragment>
-			<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2 mb-8">
-				{/* ── Section 6: Dealer / PO Share ─────────────────────────── */}
-				{approvalList.map((card) => (
-					<Card>
-						<div
-							className="row-7 justify-between flex items-center p-4"
-							key={card.id}
-						>
-							<div>
-								<p className="font-bold mb-2">{card.label}</p>
-								<p className="font-light">{firstName + ", " + lastName}</p>
-								{/* <p className="font-bold ">
+			<Section title="Approval Workflow">
+				<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2 mb-8">
+					{/* ── Section 6: Dealer / PO Share ─────────────────────────── */}
+					{approvalList.map((card) => (
+						<Card>
+							<div
+								className="row-7 justify-between flex items-center p-4"
+								key={card.id}
+							>
+								<div>
+									<p className="font-bold mb-2">{card.label}</p>
+									<p className="font-light">{firstName + ", " + lastName}</p>
+									{/* <p className="font-bold ">
 									Status :{" "}
 									<span className="font-medium">
 										<Badge status={"Active"}>{epcId}</Badge>
 									</span>
 								</p> */}
+								</div>
 							</div>
-						</div>
-					</Card>
-				))}
-			</div>
+						</Card>
+					))}
+				</div>
 
-			<hr className="epf-divider mb-8" />
+				<hr className="epf-divider mb-8" />
+			</Section>
 		</React.Fragment>
 	);
 };

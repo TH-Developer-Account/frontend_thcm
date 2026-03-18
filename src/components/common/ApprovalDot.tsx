@@ -12,7 +12,7 @@ import {
 	Clock,
 	X,
 	Undo2,
-	CheckCheck,
+	CheckLine,
 } from "lucide-react";
 
 /* ----------------------------- Helpers ----------------------------- */
@@ -27,7 +27,7 @@ const APPROVAL_STATUS_ICON: Record<string, React.ReactNode> = {
 	pending: <Clock />,
 	cancelled: <X />,
 	"sent back": <Undo2 />,
-	completed: <CheckCheck />,
+	completed: <CheckLine />,
 };
 
 /* -------------------------------- Sizes -------------------------------- */

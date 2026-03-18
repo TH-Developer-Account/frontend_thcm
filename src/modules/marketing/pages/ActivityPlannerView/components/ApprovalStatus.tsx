@@ -8,6 +8,7 @@ import { getApprovalSteps } from "./helper";
 interface Props {
 	epcId?: string;
 }
+
 const ApprovalStatus = ({ epcId }: Props) => {
 	const { data, loading } = useEPC();
 	if (loading) return <p>Loading...</p>;
