@@ -11,6 +11,7 @@ const initialValues: EpcFormValues = {
 	zone: "",
 	branch: "",
 	budgetCode: "",
+	budgetDescription: "",
 	vertical: "",
 	scale: "",
 	eventName: "",

@@ -100,8 +100,8 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 						name="budgetDescription"
 						label="Budget Description"
 						placeholder="Budget Description"
-						value={values.eventDescription}
-						onChange={(e) => handleChange("eventDescription", e.target.value)}
+						value={values.budgetDescription}
+						onChange={(e) => handleChange("budgetDescription", e.target.value)}
 						className="p-2"
 					/>
 					<FormInput
