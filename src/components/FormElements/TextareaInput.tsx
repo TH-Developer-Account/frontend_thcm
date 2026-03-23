@@ -32,7 +32,6 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 					placeholder={placeholder}
 					value={value}
 					disabled={disabled}
-					rows={4}
 					maxLength={500}
 					aria-invalid={!!error}
 					aria-describedby={error ? `${name}-error` : undefined}

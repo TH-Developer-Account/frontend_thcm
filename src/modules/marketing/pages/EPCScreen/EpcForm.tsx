@@ -9,23 +9,24 @@ import { useEpcForm } from "./useEPCForm";
 import type { EpcFormProps, Option } from "../../types";
 
 const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
-	const { values, isEditMode, handleChange, handleSave } = useEpcForm({
-		epcId,
-	});
+	const { values, isEditMode, handleChange, handleSave, handleReset } =
+		useEpcForm({
+			epcId,
+		});
 	const { data } = useMasterData();
 
-	// console.log({ data });
+	console.log({ data });
 
 	const isViewer = userRole === "VIEWER";
 
 	return (
 		<React.Fragment>
-			<div className="p-6 mt-4 bg-white rounded-xl shadow-sm text-left text-sm/4 lg:text-sm text-xs">
+			<div className="p-6 mt-4 bg-white rounded-xl shadow-sm text-left lg:text-sm text-xs">
 				<h2 className="text-left font-semibold mb-4 text-gray-900 text-lg lg:text-xl">
 					Event Planning Calendar
 				</h2>
 
-				<div className="grid md:grid-cols-4 grid-cols-1 flex gap-4 items-end ">
+				<div className="grid md:grid-cols-4 grid-cols-1  gap-4 items-end ">
 					<FormInput
 						name="epfNo"
 						label="EPF No"
@@ -74,7 +75,7 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 						}
 					/>
 				</div>
-				<div className="grid md:grid-cols-4 grid-cols-1 flex gap-4 items-end">
+				<div className="grid md:grid-cols-4 grid-cols-1  gap-4 items-end">
 					<SelectInput
 						name="vertical"
 						label="Vertical"
@@ -98,26 +99,22 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 					<FormInput
 						name="budgetDescription"
 						label="Budget Description"
-						// value={values.eventDescription}
-						// onChange={(e) => handleChange("eventDescription", e.target.value)}
+						placeholder="Budget Description"
+						value={values.eventDescription}
+						onChange={(e) => handleChange("eventDescription", e.target.value)}
 						className="p-2"
 					/>
-					<SelectInput
+					<FormInput
 						name="scale"
 						label="Scale"
-						value={
-							data?.eventScales?.find(
-								(opt: SingleValue<Option>) => opt?.label === values.scale,
-							) || null
-						}
-						options={data?.eventScales || []}
-						onChange={(v: SingleValue<Option>) =>
-							handleChange("scale", v?.label || "")
-						}
+						placeholder="PAX SIZE <50"
+						value={values.scale}
+						onChange={(e) => handleChange("scale", e.target.value)}
+						className="p-2"
 					/>
 				</div>
 
-				<div className="grid md:grid-cols-2 grid-cols-1 flex gap-4 items-end">
+				<div className="grid md:grid-cols-2 grid-cols-1  gap-4 items-end">
 					<SelectInput
 						name="eventName"
 						label="Event Name"
@@ -131,21 +128,12 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 							handleChange("eventName", v?.label || "")
 						}
 					/>
-					<FormInput
-						name="eventDescription"
-						label="Event Description"
-						value={values.eventDescription}
-						onChange={(e) => handleChange("eventDescription", e.target.value)}
-						className="p-2"
-					/>
-				</div>
 
-				<div className="grid md:grid-cols-2 grid-cols-1 flex gap-4 items-end">
-					<div className="grid grid-cols-2 gap-2 flex items-center justify-center">
+					<div className="grid grid-cols-2 gap-2  items-center justify-center">
 						<FormInput
 							type="date"
 							name="eventFrom"
-							label="Date From"
+							label="From"
 							value={values.eventFrom}
 							onChange={(e) => handleChange("eventFrom", e.target.value)}
 							className="p-2"
@@ -154,19 +142,32 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 						<FormInput
 							type="date"
 							name="eventTo"
-							label="Date To"
+							label="To"
 							value={values.eventTo}
 							onChange={(e) => handleChange("eventTo", e.target.value)}
 							className="p-2"
 						/>
 					</div>
+				</div>
 
-					<FormInput
+				<div className="grid md:grid-cols-2 grid-cols-1  gap-4 items-end">
+					<TextareaInput
+						name="eventDescription"
+						label="Event Description"
+						value={values.eventDescription}
+						onChange={(e) => handleChange("eventDescription", e.target.value)}
+						className="p-2"
+						minLength={100}
+						rows={2}
+					/>
+					<TextareaInput
 						name="location"
 						label="Location"
 						value={values.location}
 						onChange={(e) => handleChange("location", e.target.value)}
 						className="p-2"
+						minLength={100}
+						rows={2}
 					/>
 				</div>
 
@@ -177,12 +178,20 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 						label="Objective"
 						value={values.objective}
 						onChange={(e) => handleChange("objective", e.target.value)}
+						minLength={100}
+						rows={4}
 					/>
 				</div>
 
 				{/* Buttons */}
 				{!isViewer && (
 					<div className="mt-6 flex justify-end gap-3">
+						<Button
+							text="Reset"
+							onClick={() => handleReset()}
+							status="brand"
+							fullWidth
+						/>
 						<Button
 							text="Save as Draft"
 							onClick={() => handleSave("DRAFT")}

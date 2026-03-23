@@ -9,7 +9,6 @@ import DateRange from "./DateRange";
 import Section from "./Section";
 import LineTableView from "./LineTableView";
 import Loader from "../../../../../components/ui/Loader";
-
 interface Props {
 	epcId?: string;
 }
@@ -35,7 +34,6 @@ const tableData = [
 
 const ActivityFormView = ({ epcId }: Props) => {
 	const { data, loading } = useEPC();
-
 	if (loading) return <Loader />;
 	if (!epcId) return <p>No EPC selected</p>;
 

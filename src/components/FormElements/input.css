@@ -62,7 +62,7 @@
 	}
 
 	.form-input-disabled {
-		@apply opacity-60 cursor-not-allowed;
+		@apply cursor-not-allowed;
 	}
 
 	/* ========================

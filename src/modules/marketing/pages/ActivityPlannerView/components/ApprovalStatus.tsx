@@ -26,8 +26,8 @@ const ApprovalStatus = ({ epcId }: Props) => {
 
 	return (
 		<React.Fragment>
-			<div className=" bg-white  rounded-xl h-auto grid col-span-1/2">
-				<div className="approval-dot-section max-w-[220px] w-full h-auto p-2 border shadow-sm border-zinc-300 mt-6 rounded-lg">
+			<div className=" bg-white  rounded-xl h-auto grid  relative">
+				<div className="approval-dot-section sticky  top-0 max-w-[220px] w-full h-auto p-2 border shadow-sm border-zinc-300 mt-6 rounded-lg">
 					{steps.map((status, index) => {
 						const isFuture = index > currentIndex;
 						const isCurrent = index === currentIndex;
