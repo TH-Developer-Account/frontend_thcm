@@ -10,25 +10,35 @@ import { SessionTimeoutProvider } from "../context/SessionTimeOut/SessionTimeout
 import MainContentWrapper from "../layout/MainContentWrapper";
 import MarketingRoutes from "./marketingRoutes";
 import AdminRoutes from "./adminRoutes";
+import ProtectedRoute from "./ProtectedRoute";
 
 export default function AppRoutes() {
-  return (
-    <SessionTimeoutProvider>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-        <Route path="/" element={<HomeScreen />} />
-        <Route path="/forbidden" element={<ForbiddenPage />} />
+	return (
+		<SessionTimeoutProvider>
+			<Routes>
+				{/* Public Routes */}
+				<Route path="/login" element={<LoginPage />} />
+				<Route path="/reset-password" element={<ResetPasswordPage />} />
+				<Route path="/forgot-password" element={<ForgotPasswordPage />} />
+				<Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-        {/* Dashboard Layout Route */}
-        <Route element={<MainContentWrapper />}>
-          <Route path="/marketing/*" element={<MarketingRoutes />} />
-          <Route path="/admin/*" element={<AdminRoutes />} />
-        </Route>
-      </Routes>
-    </SessionTimeoutProvider>
-  );
+				<Route
+					path="/"
+					element={
+						<ProtectedRoute>
+							<HomeScreen />
+						</ProtectedRoute>
+					}
+				/>
+
+				<Route path="/forbidden" element={<ForbiddenPage />} />
+
+				{/* Dashboard Layout Route */}
+				<Route element={<MainContentWrapper />}>
+					<Route path="/marketing/*" element={<MarketingRoutes />} />
+					<Route path="/admin/*" element={<AdminRoutes />} />
+				</Route>
+			</Routes>
+		</SessionTimeoutProvider>
+	);
 }

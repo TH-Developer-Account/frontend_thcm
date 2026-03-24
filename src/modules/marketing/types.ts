@@ -86,3 +86,53 @@ export const EPC_TO_API_STATUS: Record<EPCStatus, ApprovalApiStatus> = {
 	"Report Submitted": "REPORT_SUBMITTED",
 	Cancelled: "CANCELLED",
 };
+
+export interface EpfFormValues {
+	// Participants
+	externalParticipants: string;
+	internalParticipants: string;
+	totalParticipants: string;
+	crfTotal: string;
+
+	// Budget
+	eventBudget: string;
+	annualBudget: string;
+	availableBudget: string;
+
+	// Dealer
+	dealerName: string;
+	dealerPercent: string;
+	dealerShare: string;
+
+	// Tata Hitachi
+	tataHitachiPercent: string;
+	tataHitachiShare: string;
+	tataHitachiPoAmount: string;
+
+	// Approval Flow
+	proposedBy: string;
+	checkedBy: string;
+	approvedBy: string;
+
+	reportValidatedBy: string;
+
+	proposedByStatus: string;
+	checkedByStatus: string;
+	approvedByStatus: string;
+	reportValidatedByStatus: string;
+	overheads: LineItem[];
+}
+
+export interface LineItem {
+	id: string;
+	particular: string;
+	description: string;
+	rate: number;
+	quantity: number;
+}
+
+export interface ValidationCheck {
+	key: keyof EpfFormValues | string;
+	label: string;
+	ok: boolean;
+}

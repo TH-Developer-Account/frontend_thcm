@@ -1,77 +1,43 @@
 import { Trash2, Pencil } from "lucide-react";
-import SelectInput from "../FormElements/SelectInput";
-import FormInput from "../FormElements/FormInput";
-import { useState } from "react";
+import FormInput from "../../../../components/FormElements/FormInput";
+import SelectInput from "../../../../components/FormElements/SelectInput";
+import type { LineItem } from "../../types";
 
-export interface LineItem {
-	id: string;
-	particular: string;
-	description: string;
-	rate: number;
-	quantity: number;
-}
-
-interface LineItemTableProps {
+interface Props {
 	title: string;
 	items: LineItem[];
-	onChange: (items: LineItem[]) => void;
+	draft: LineItem;
 	particularOptions: { label: string; value: string }[];
 	isViewer?: boolean;
+
+	onDraftChange: (name: keyof LineItem, value: string | number) => void;
+	onAdd: () => void;
+	onDelete: (id: string) => void;
 }
 
-export default function LineItemTable({
+const EventCostOverheads = ({
 	title,
 	items,
-	onChange,
+	draft,
 	particularOptions,
+	onDraftChange,
+	onAdd,
+	onDelete,
 	isViewer = false,
-}: LineItemTableProps) {
-	const [draft, setDraft] = useState<LineItem>({
-		id: "",
-		particular: "",
-		description: "",
-		rate: 0,
-		quantity: 0,
-	});
-
-	const handleAdd = () => {
-		if (!draft.particular) return;
-
-		const updated = [
-			...items,
-			{
-				...draft,
-				id: crypto.randomUUID(),
-			},
-		];
-
-		onChange(updated);
-
-		setDraft({
-			id: "",
-			particular: "",
-			description: "",
-			rate: 0,
-			quantity: 0,
-		});
-	};
-
-	const handleDelete = (id: string) => {
-		onChange(items.filter((item) => item.id !== id));
-	};
-
+}: Props) => {
 	const total = draft.rate * draft.quantity;
 
 	return (
-		<div className="mt-6 border border-gray-300 rounded-xl bg-white shadow-sm overflow-hidden">
-			{/* Header */}
-			<div className="bg-gray-100 px-6 py-3 border-b border-gray-300">
-				<h3 className="font-semibold text-gray-600 text-lg">{title}</h3>
+		<div className="mt-4 border border-gray-300 rounded-xs bg-white shadow-sm overflow-hidden">
+			<div className="bg-gray-200 px-3 py-2 border-b border-gray-300 flex gap-2 items-center">
+				<Pencil size={20} color="gray" />
+				<h3 className="font-semibold text-gray-600 md:text-sm text-xs text-left">
+					{title}
+				</h3>
 			</div>
-
-			<div className="p-6">
-				{/* Table Header */}
-				<div className="grid grid-cols-12 text-sm font-medium text-gray-600 mb-3">
+			<div className="py-4 px-2">
+				{/* Header */}
+				<div className="grid grid-cols-12 text-sm font-medium text-gray-800 mb-3 items-center">
 					<div className="col-span-1">SNo</div>
 					<div className="col-span-3">Particulars</div>
 					<div className="col-span-3">Description</div>
@@ -83,8 +49,8 @@ export default function LineItemTable({
 
 				{/* Draft Row */}
 				{!isViewer && (
-					<div className="grid grid-cols-12 gap-3 mb-6 items-center">
-						<div className="col-span-1 text-gray-500">{items.length + 1}</div>
+					<div className="grid grid-cols-12 gap-3 mb-3 items-center">
+						<div className="col-span-1">{items.length + 1}</div>
 
 						<div className="col-span-3">
 							<SelectInput
@@ -96,10 +62,7 @@ export default function LineItemTable({
 									null
 								}
 								onChange={(opt) =>
-									setDraft({
-										...draft,
-										particular: opt?.value || "",
-									})
+									onDraftChange("particular", opt?.value || "")
 								}
 							/>
 						</div>
@@ -109,12 +72,7 @@ export default function LineItemTable({
 								name="description"
 								label=""
 								value={draft.description}
-								onChange={(e) =>
-									setDraft({
-										...draft,
-										description: e.target.value,
-									})
-								}
+								onChange={(e) => onDraftChange("description", e.target.value)}
 							/>
 						</div>
 
@@ -124,12 +82,7 @@ export default function LineItemTable({
 								name="rate"
 								label=""
 								value={draft.rate}
-								onChange={(e) =>
-									setDraft({
-										...draft,
-										rate: Number(e.target.value),
-									})
-								}
+								onChange={(e) => onDraftChange("rate", Number(e.target.value))}
 							/>
 						</div>
 
@@ -140,10 +93,7 @@ export default function LineItemTable({
 								label=""
 								value={draft.quantity}
 								onChange={(e) =>
-									setDraft({
-										...draft,
-										quantity: Number(e.target.value),
-									})
+									onDraftChange("quantity", Number(e.target.value))
 								}
 							/>
 						</div>
@@ -155,8 +105,8 @@ export default function LineItemTable({
 						<div className="col-span-2 flex justify-center">
 							<button
 								type="button"
-								onClick={handleAdd}
-								className="px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
+								onClick={onAdd}
+								className="px-3 py-2 bg-orange-500 text-white rounded-lg"
 							>
 								Add
 							</button>
@@ -164,12 +114,12 @@ export default function LineItemTable({
 					</div>
 				)}
 
-				{/* Existing Items */}
+				{/* Items */}
 				<div className="space-y-2">
 					{items.map((item, index) => (
 						<div
 							key={item.id}
-							className="grid grid-cols-12 py-3 px-2 bg-gray-50 rounded-lg text-sm items-center"
+							className="grid grid-cols-12 py-3 px-2 bg-gray-50 rounded-lg"
 						>
 							<div className="col-span-1">{index + 1}</div>
 							<div className="col-span-3">
@@ -188,16 +138,9 @@ export default function LineItemTable({
 							<div className="col-span-1 text-right font-medium">
 								{(item.rate * item.quantity).toFixed(2)}
 							</div>
-							<div className="col-span-2 flex justify-center gap-3 text-gray-500">
-								<Pencil
-									size={16}
-									className="cursor-pointer hover:text-orange-500"
-								/>
-								<Trash2
-									size={16}
-									className="cursor-pointer hover:text-red-500"
-									onClick={() => handleDelete(item.id)}
-								/>
+							<div className="col-span-2 flex justify-center gap-3">
+								<Pencil size={16} />
+								<Trash2 size={16} onClick={() => onDelete(item.id)} />
 							</div>
 						</div>
 					))}
@@ -205,4 +148,6 @@ export default function LineItemTable({
 			</div>
 		</div>
 	);
-}
+};
+
+export default EventCostOverheads;

@@ -14,7 +14,7 @@
 @import "./components/FormElements/input.css";
 
 body {
-	background-color: #f3f4f6;
+	background-color: transparent;
 	font-family: var(--font-sans);
 	margin: 0;
 	padding: 0;
