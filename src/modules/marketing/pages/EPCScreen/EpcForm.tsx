@@ -21,7 +21,7 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 
 	return (
 		<React.Fragment>
-			<div className="p-6 mt-4 bg-white rounded-xl shadow-sm text-left lg:text-sm text-xs">
+			<div className="p-6 mt-4  text-left lg:text-sm text-xs">
 				<h2 className="text-left font-semibold mb-4 text-gray-900 text-lg lg:text-xl">
 					Event Planning Calendar
 				</h2>
@@ -74,8 +74,6 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 								handleChange("branch", option?.label || "")
 							}
 						/>
-					</div>
-					<div className="grid md:grid-cols-4 grid-cols-1  gap-4 items-end">
 						<SelectInput
 							name="department"
 							label="Department"
@@ -104,6 +102,45 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 								handleChange("department", v?.label as string)
 							}
 						/>
+						<FormInput
+							type="date"
+							name="eventFrom"
+							label="From"
+							value={values.eventFrom}
+							onChange={(e) => handleChange("eventFrom", e.target.value)}
+							className="p-2"
+						/>
+
+						<FormInput
+							type="date"
+							name="eventTo"
+							label="To"
+							value={values.eventTo}
+							onChange={(e) => handleChange("eventTo", e.target.value)}
+							className="p-2"
+						/>
+
+						<SelectInput
+							name="eventName"
+							label="Event Name"
+							value={
+								data?.eventNames?.find(
+									(opt: SingleValue<Option>) => opt?.label === values.eventName,
+								) || null
+							}
+							options={data?.eventNames || []}
+							onChange={(v: SingleValue<Option>) =>
+								handleChange("eventName", v?.label || "")
+							}
+						/>
+						<FormInput
+							name="scale"
+							label="Scale"
+							placeholder="PAX SIZE <50"
+							value={values.scale}
+							onChange={(e) => handleChange("scale", e.target.value)}
+							className="p-2"
+						/>
 						<SelectInput
 							name="budgetCode"
 							label="Budget Code"
@@ -127,48 +164,6 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 								handleChange("budgetDescription", e.target.value)
 							}
 							className="p-2"
-						/>
-						<FormInput
-							name="scale"
-							label="Scale"
-							placeholder="PAX SIZE <50"
-							value={values.scale}
-							onChange={(e) => handleChange("scale", e.target.value)}
-							className="p-2"
-						/>
-					</div>
-					<div className="grid md:grid-cols-2 grid-cols-1  gap-4 items-end">
-						<div className="grid grid-cols-2 gap-2  items-center justify-center">
-							<FormInput
-								type="date"
-								name="eventFrom"
-								label="From"
-								value={values.eventFrom}
-								onChange={(e) => handleChange("eventFrom", e.target.value)}
-								className="p-2"
-							/>
-
-							<FormInput
-								type="date"
-								name="eventTo"
-								label="To"
-								value={values.eventTo}
-								onChange={(e) => handleChange("eventTo", e.target.value)}
-								className="p-2"
-							/>
-						</div>
-						<SelectInput
-							name="eventName"
-							label="Event Name"
-							value={
-								data?.eventNames?.find(
-									(opt: SingleValue<Option>) => opt?.label === values.eventName,
-								) || null
-							}
-							options={data?.eventNames || []}
-							onChange={(v: SingleValue<Option>) =>
-								handleChange("eventName", v?.label || "")
-							}
 						/>
 					</div>
 					{/*Event Description & Objective */}
@@ -200,18 +195,15 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 								text="Reset"
 								onClick={() => handleReset()}
 								status="brand"
-								fullWidth
 							/>
 							<Button
 								text="Save as Draft"
 								onClick={() => handleSave("DRAFT")}
 								status="brand"
-								fullWidth
 							/>
 							<Button
 								onClick={() => handleSave("SUBMITTED")}
 								text={isEditMode ? "Update & Submit" : "Submit"}
-								fullWidth
 								status="brand"
 							/>
 						</div>
