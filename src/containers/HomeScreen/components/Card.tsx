@@ -23,7 +23,7 @@ function ActionCard({
 	return (
 		<div
 			onClick={() => navigate(path)}
-			className={`action-card ${
+			className={`action-card bg-white ${
 				isPrimary ? "action-card-primary" : "action-card-default"
 			}`}
 		>

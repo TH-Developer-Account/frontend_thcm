@@ -10,7 +10,7 @@ export default function HomeScreen() {
 			<header className="wrapper header px-4 sm:px-6 py-2 flex items-center justify-between text-white">
 				<Header />
 			</header>
-			<main className="flex items-center justify-center px-4 py-12 sm:py-20">
+			<main className="flex items-center justify-center px-4 py-4 sm:py-4 sm:pt-6">
 				<div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-6 w-full max-w-4xl">
 					{actions.map((action) => {
 						const Icon = action.icon;
