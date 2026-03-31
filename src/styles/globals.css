@@ -3,6 +3,8 @@
    Global Branding & Design Variables
    ========================================================= */
 
+@tailwind utilities;
+
 /* ---------- Spacing Scale ---------- */
 :root {
 	--space-0: 0;

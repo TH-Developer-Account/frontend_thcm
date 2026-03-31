@@ -46,7 +46,8 @@
       outline-1 -outline-offset-1
       outline-gray-300
       focus:outline-2 focus:-outline-offset-2
-      focus:outline-[#f97316];
+      focus:outline-[#f97316]
+      hover:outline-[#f97316];
 	}
 
 	/* ========================

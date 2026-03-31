@@ -17,19 +17,19 @@ export const marketingSidebar: SidebarItem[] = [
 	{
 		id: "home",
 		label: "Home",
-		icon: <Home />,
+		icon: <Home size={20} />,
 		link: "/",
 	},
 	{
 		id: "dashboard",
 		label: "Dashboard",
-		icon: <LayoutDashboard />,
+		icon: <LayoutDashboard size={20} />,
 		link: "/marketing/dashboard",
 	},
 	{
 		id: "epc",
 		label: "Activity Planner",
-		icon: <CalendarDays />,
+		icon: <CalendarDays size={20} />,
 		link: "/marketing/epc",
 		permission: {
 			app: "MAP",
@@ -88,7 +88,7 @@ export const marketingSidebar: SidebarItem[] = [
 		id: "users",
 		label: "User Management",
 		link: "/marketing/admin/users",
-		icon: <Users />,
+		icon: <Users size={20} />,
 	},
 	// {
 	// 	id: "masters",
@@ -127,7 +127,7 @@ export const marketingSidebar: SidebarItem[] = [
 	{
 		id: "settings",
 		label: "Settings",
-		icon: <Settings />,
+		icon: <Settings size={20} />,
 		link: "/marketing/profile",
 	},
 ];
