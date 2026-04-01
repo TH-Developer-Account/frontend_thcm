@@ -21,18 +21,28 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 
 	return (
 		<React.Fragment>
-			<div className="p-6 mt-4  text-left lg:text-sm text-xs">
-				<h2 className="text-left font-semibold mb-4 text-gray-900 text-lg lg:text-xl">
+			<div className="py-4 px-1 mt-2 text-left lg:text-sm text-xs ">
+				<h2 className="text-left font-normal mb-2 text-gray-900 text-lg lg:text-xl ">
 					Event Planning Calendar
 				</h2>
-				<form>
-					<div className="grid md:grid-cols-4 grid-cols-1  gap-4 items-end ">
+				{/* <div className="ember-header">
+					{" "}
+					<div>
+						<h2>Event Request Form</h2>
+						<p>Complete all fields to submit your event request</p>{" "}
+					</div>{" "}
+					<span className="ember-badge">
+						{isEditMode ? "Edit Request" : "New Request"}{" "}
+					</span>{" "}
+				</div> */}
+				<form className="">
+					<div className="grid md:grid-cols-5 grid-cols-1 gap-2 items-end">
 						<FormInput
 							name="epfNo"
 							label="EPF No"
 							value={values.epfNo}
 							disabled
-							className="p-2 text-black"
+							className=" text-black p-2"
 						/>
 						<SelectInput
 							name="zone"
@@ -73,6 +83,14 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 							onChange={(option: SingleValue<Option>) =>
 								handleChange("branch", option?.label || "")
 							}
+						/>
+						<FormInput
+							name="scale"
+							label="Scale"
+							placeholder="PAX SIZE <50"
+							value={values.scale}
+							onChange={(e) => handleChange("scale", e.target.value)}
+							className="p-2"
 						/>
 						<SelectInput
 							name="department"
@@ -121,27 +139,6 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 						/>
 
 						<SelectInput
-							name="eventName"
-							label="Event Name"
-							value={
-								data?.eventNames?.find(
-									(opt: SingleValue<Option>) => opt?.label === values.eventName,
-								) || null
-							}
-							options={data?.eventNames || []}
-							onChange={(v: SingleValue<Option>) =>
-								handleChange("eventName", v?.label || "")
-							}
-						/>
-						<FormInput
-							name="scale"
-							label="Scale"
-							placeholder="PAX SIZE <50"
-							value={values.scale}
-							onChange={(e) => handleChange("scale", e.target.value)}
-							className="p-2"
-						/>
-						<SelectInput
 							name="budgetCode"
 							label="Budget Code"
 							value={
@@ -165,18 +162,38 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 							}
 							className="p-2"
 						/>
+						<div className="col-span-2">
+							<SelectInput
+								name="eventName"
+								label="Event Name"
+								value={
+									data?.eventNames?.find(
+										(opt: SingleValue<Option>) =>
+											opt?.label === values.eventName,
+									) || null
+								}
+								options={data?.eventNames || []}
+								onChange={(v: SingleValue<Option>) =>
+									handleChange("eventName", v?.label || "")
+								}
+							/>
+						</div>
+						<div className="col-span-2">
+							<TextareaInput
+								name="eventDescription"
+								label="Event Description"
+								value={values.eventDescription}
+								onChange={(e) =>
+									handleChange("eventDescription", e.target.value)
+								}
+								className="p-2 col-span-2"
+								minLength={100}
+								rows={1}
+							/>
+						</div>
 					</div>
 					{/*Event Description & Objective */}
-					<div className="grid md:grid-cols-2 grid-cols-1  gap-4 items-end">
-						<TextareaInput
-							name="eventDescription"
-							label="Event Description"
-							value={values.eventDescription}
-							onChange={(e) => handleChange("eventDescription", e.target.value)}
-							className="p-2"
-							minLength={100}
-							rows={4}
-						/>
+					<div className="grid  grid-cols-1  gap-4 items-end">
 						<TextareaInput
 							name="objective"
 							label="Objective"
@@ -184,13 +201,13 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 							value={values.objective}
 							onChange={(e) => handleChange("objective", e.target.value)}
 							minLength={100}
-							rows={4}
+							rows={3}
 						/>
 					</div>
 
 					{/* Buttons */}
 					{!isViewer && (
-						<div className="mt-6 flex justify-end gap-3">
+						<div className="mt-2 flex justify-end gap-3">
 							<Button
 								text="Reset"
 								onClick={() => handleReset()}

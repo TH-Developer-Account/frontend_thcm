@@ -21,6 +21,10 @@
 		--color-primary-700: 184 66 0; /* #B84200 */
 		--color-primary-800: 146 53 0; /* #923500 */
 		--color-primary-900: 107 39 0; /* #6B2700 */
+		--color-brand-gray-dark: #737373; /* #737373 */
+		--color-brand-gray-light: #eeeeee; /* #EEEEEE */
+		--color-brand-gray-hover-dark: #575757; /* #575757 */
+		background-image: radial-gradient(#fff, #d9d9d9);
 
 		/* ===============================
          BACKGROUNDS

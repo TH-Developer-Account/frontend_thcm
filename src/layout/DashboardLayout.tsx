@@ -22,7 +22,7 @@ export const DashboardLayout = ({
 				/>
 
 				{/* Main content NEVER resizes on mobile */}
-				<div className="flex-1 md:ml-0 overflow-y-auto scrollbar-sleek">
+				<div className="flex-1 md:ml-0 overflow-y-auto bg-zinc-50 scrollbar-sleek">
 					<MainLayout>{children}</MainLayout>
 				</div>
 			</div>

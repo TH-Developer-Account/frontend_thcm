@@ -7,8 +7,11 @@
      FORM FIELD
   ======================== */
 
+	.form-container {
+		@apply p-2 bg-white rounded-lg shadow-sm;
+	}
 	.form-field {
-		@apply mb-4 flex flex-col gap-1;
+		@apply flex flex-col gap-1;
 	}
 
 	/* ========================

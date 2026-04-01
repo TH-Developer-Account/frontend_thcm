@@ -9,24 +9,27 @@ export interface Option {
 interface SelectInputProps extends Props<Option, false, GroupBase<Option>> {
 	label?: string;
 	error?: string;
+	required?: boolean;
 }
 
 export default function SelectInput({
 	label,
 	error,
+	required,
 	className,
 	isDisabled,
 	...props
 }: SelectInputProps) {
 	return (
-		<div className="mb-4 w-full">
+		<div className="form-field">
 			{label && (
-				<label className="text-left block text-sm/6 font-medium text-gray-900">
+				<label className="form-label">
 					{label}
+					{required && <span className="form-required"> *</span>}
 				</label>
 			)}
 
-			<div className="mt-2">
+			<div className="form-input-wrapper relative">
 				<Select
 					{...props}
 					value={props.value}
@@ -41,7 +44,7 @@ export default function SelectInput({
 					styles={{
 						control: (base, state) => ({
 							...base,
-							minHeight: "31px",
+							minHeight: "25px",
 							borderRadius: "0.375rem", // rounded-md
 							paddingLeft: "0.25rem",
 							paddingRight: "0.25rem",
@@ -98,9 +101,12 @@ export default function SelectInput({
 							zIndex: 9999,
 						}),
 					}}
-					className={`${className ?? ""} ${
-						isDisabled ? "opacity-60 cursor-not-allowed" : ""
-					}`}
+					className={`
+						
+						${error ? "form-input-error" : ""}
+						${isDisabled ? "opacity-60 cursor-not-allowed form-input-disabled" : ""}
+						${className}
+						`}
 				/>
 			</div>
 

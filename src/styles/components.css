@@ -375,7 +375,7 @@
  ===================================== */
 
 	.profile-page {
-		@apply bg-white p-5 lg:p-6;
+		@apply py-2 lg:py-4;
 	}
 
 	.profile-page-title {
@@ -428,7 +428,7 @@
 		rounded-2xl
 		transition-all
 		duration-200
-		ease-in-out;
+		ease-in-out bg-white;
 	}
 
 	/* Default card */
