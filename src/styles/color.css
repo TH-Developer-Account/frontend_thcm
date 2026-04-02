@@ -5,55 +5,44 @@
 
 @layer base {
 	:root {
-		/* ===============================
-         BRAND
-      =============================== */
+		--form-radius: 6px;
 
-		--color-primary: 243 90 0; /* #F35A00 */
+		/* =========================
+		   BRAND COLORS
+		========================= */
+		--color-brand: #f35a00;
+		--color-brand-hover: #f35a00;
+		--color-brand-soft: #ffedd5;
+		--color-brand-softest: #fff7ed;
 
-		--color-primary-50: 255 243 235; /* #FFF3EB */
-		--color-primary-100: 255 228 214; /* #FFE4D6 */
-		--color-primary-200: 255 199 173; /* #FFC7AD */
-		--color-primary-300: 255 163 122; /* #FFA37A */
-		--color-primary-400: 255 122 69; /* #FF7A45 */
-		--color-primary-500: 243 90 0; /* #F35A00 */
-		--color-primary-600: 217 79 0; /* #D94F00 */
-		--color-primary-700: 184 66 0; /* #B84200 */
-		--color-primary-800: 146 53 0; /* #923500 */
-		--color-primary-900: 107 39 0; /* #6B2700 */
-		--color-brand-gray-dark: #737373; /* #737373 */
-		--color-brand-gray-light: #eeeeee; /* #EEEEEE */
-		--color-brand-gray-hover-dark: #575757; /* #575757 */
-		background-image: radial-gradient(#fff, #d9d9d9);
+		--color-brand-gray: #575757;
+		--color-white: #fff;
+		--color-black: #000;
 
-		/* ===============================
-         BACKGROUNDS
-      =============================== */
+		/* =========================
+		   UI COLORS
+		========================= */
+		--color-text-primary: #575757;
+		--color-text-strong: #000;
+		--color-text-muted: #9ca3af;
 
-		--color-background: 244 244 245; /* #F4F4F5 */
-		--color-surface: 255 255 255; /* #FFFFFF */
-		--color-card: 255 255 255; /* #FFFFFF */
+		--color-border: #d1d5db;
+		--color-border-light: #e5e7eb;
+		--color-border-disabled: #9ca3af;
 
-		/* ===============================
-         TEXT
-      =============================== */
+		--color-bg: #fff;
+		--color-bg-soft: #f9fafb;
+		--color-bg-disabled: #e5e7eb;
 
-		--color-text: 24 24 27; /* #18181B */
-		--color-muted: 113 113 122; /* #71717A */
+		--color-error: #ef4444;
+		--color-error-soft: #f87171;
+		--color-success: #22c55e;
 
-		/* ===============================
-         BORDERS
-      =============================== */
+		--shadow-focus-brand: 0 0 0 1px var(--color-brand);
+		--shadow-focus-error: 0 0 0 1px var(--color-error);
+		--shadow-focus-success: 0 0 0 1px var(--color-success);
 
-		--color-border: 228 228 231; /* #E4E4E7 */
-		--color-input: 228 228 231; /* #E4E4E7 */
-
-		/* ===============================
-         STATUS
-      =============================== */
-
-		--color-success: 34 197 94; /* #22C55E */
-		--color-warning: 245 158 11; /* #F59E0B */
-		--color-danger: 239 68 68; /* #EF4444 */
+		/* lighter yellow variants */
+		--color-yellow-warm: #fdba74;
 	}
 }

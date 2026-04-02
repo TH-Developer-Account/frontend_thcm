@@ -46,11 +46,11 @@ body {
 .header {
 	background-color: rgb(var(--color-surface));
 	color: rgb(var(--color-text));
-	border-bottom: 2px solid rgb(var(--color-primary));
+	border-bottom: 2px solid #f35a00;
 }
 
 aside {
-	border-right: 2px solid rgb(var(--color-primary));
+	border-right: 2px solid #f35a00;
 }
 /* accent stripe on section headers */
 .epf-section-header {

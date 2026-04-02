@@ -11,18 +11,17 @@ export const DashboardLayout = ({
 	children,
 }: DashboardLayoutProps) => {
 	return (
-		<div className="h-screen flex flex-col overflow-hidden">
+		<div className="app-layout">
 			<HeaderLayout onToggleSidebar={onToggleSidebar}>{header}</HeaderLayout>
 
-			<div className="relative flex flex-1 overflow-hidden transition-transform duration-300 ease-in-out">
+			<div className="app-body">
 				<SidebarLayout
 					isOpen={isSidebarOpen}
 					items={sidebarItems}
 					onClose={onToggleSidebar}
 				/>
 
-				{/* Main content NEVER resizes on mobile */}
-				<div className="flex-1 md:ml-0 overflow-y-auto bg-zinc-50 scrollbar-sleek">
+				<div className="app-main scrollbar-sleek">
 					<MainLayout>{children}</MainLayout>
 				</div>
 			</div>
