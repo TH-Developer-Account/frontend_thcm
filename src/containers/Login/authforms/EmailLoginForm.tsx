@@ -141,7 +141,7 @@ const EmailLoginForm = () => {
 			<div className="flex justify-end">
 				<a
 					href="/forgot-password"
-					className="text-sm text-blue-600 hover:underline brand-color"
+					className="text-sm text-black hover:underline "
 				>
 					Forgot password?
 				</a>

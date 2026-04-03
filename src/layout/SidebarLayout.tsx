@@ -84,21 +84,21 @@ export const SidebarLayout = ({
 
 								{/* Children */}
 								{hasChildren && openItem === item.id && isOpen && (
-									<div className="ml-6 mt-1 space-y-1 text-left text-xs">
+									<div className="ml-3 mt-1 space-y-1 text-left text-xs">
 										{item.children!.map((child) => (
 											<NavLink
 												key={child.id}
 												to={child.link ?? "#"}
 												className={({ isActive }) =>
-													`block text-xs p-2 rounded-md transition text-black
-                          ${
-														isActive
-															? "bg-orange-100 text-orange-600"
-															: "hover:bg-gray-200"
-													}`
+													`block text-xs px-2 py-1.5 rounded-md transition text-black text-left
+                         							 ${
+																					isActive
+																						? "bg-orange-100 text-orange-600"
+																						: "hover:bg-gray-200"
+																				}`
 												}
 											>
-												<span className=" shrink-0 inline-flex">
+												<span className=" shrink-0 inline-flex items-center justify-center">
 													{child.icon}&nbsp; {child.label}
 												</span>
 											</NavLink>

@@ -65,7 +65,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
 	return (
 		<>
 			<div className="max-w-full mx-auto py-3 h-full  min-h-screen">
-				<div className="flex justify-between my-6 px-3">
+				<div className="flex justify-between my-3 px-3">
 					<h2 className="text-2xl">User Profiles</h2>
 					<div className="flex gap-2 items-center">
 						<div className="">

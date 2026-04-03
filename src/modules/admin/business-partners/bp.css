@@ -1,0 +1,133 @@
+@reference "tailwindcss";
+@import "../../../styles/color.css";
+
+/* Common styles for Business Partners module */
+
+.content-box {
+	@apply bg-white rounded-sm border border-gray-300 p-2 w-full h-full;
+}
+
+/* BP Listing Page */
+
+@layer components {
+	.business-partners {
+		@apply pt-2 px-2 mt-2 max-w-full h-full;
+	}
+
+	.bp-header {
+		@apply flex items-center justify-between mb-4 px-1.5;
+
+		h2 {
+			@apply text-2xl font-semibold;
+		}
+	}
+
+	.bp-container {
+		.bp-box .bottom-box {
+			@apply mt-4;
+		}
+	}
+
+	.top-box {
+		@apply grid grid-cols-8 gap-2 w-full text-left;
+		input {
+			@apply sm:text-sm text-xs;
+		}
+	}
+}
+/* BP Table  */
+
+@layer components {
+	.bp-table-container {
+		@apply bg-white rounded-sm mt-3 border border-gray-300 text-gray-600 text-sm overflow-auto;
+		height: 350px;
+	}
+
+	.bp-table-container table {
+		@apply w-full border-collapse;
+	}
+
+	.bp-table-container thead {
+		@apply bg-gray-100;
+	}
+
+	.bp-table-container thead th {
+		@apply px-2 py-2.5 text-left bg-gray-300;
+		position: sticky;
+		top: 0;
+		z-index: 10;
+	}
+
+	.bp-table-container tbody td {
+		@apply px-2 py-2.5 text-left;
+	}
+
+	.bp-table-container tbody tr {
+		@apply border-t border-b border-gray-200 hover:bg-gray-50 transition text-left;
+	}
+}
+
+/* BP View Section Header */
+
+@layer components {
+	.bp-view-container {
+		@apply flex justify-center items-start flex-col gap-2 w-full h-full;
+	}
+	.bp-gen-header {
+		@apply text-xl font-normal px-4 py-2;
+	}
+	.bp-gen-content {
+		@apply mt-2 p-2 text-sm;
+	}
+}
+
+/* BP Tabs */
+
+@layer components {
+	.bp-tabs {
+		@apply flex flex-row gap-2 overflow-x-auto  p-2 mb-2 border-b border-gray-300;
+	}
+
+	.bp-tab-item {
+		@apply flex items-center gap-2 whitespace-nowrap cursor-pointer rounded-lg px-3 py-2 transition-colors border;
+	}
+
+	.bp-tab-item-active {
+		@apply border-orange-200 bg-orange-50 text-orange-600;
+	}
+
+	.bp-tab-item-inactive {
+		@apply border-transparent text-gray-600 hover:bg-gray-100;
+	}
+
+	.bp-tab-label {
+		@apply text-left;
+	}
+
+	.bp-tab-content {
+		@apply mt-3;
+	}
+}
+
+/* Bp Tab View */
+
+@layer components {
+	.tab-view div {
+		@apply p-6;
+	}
+	.bp-general-info {
+		@apply grid grid-cols-[2fr_2fr_1fr] gap-4;
+		.gen-info-title {
+			@apply font-semibold;
+		}
+		.gen-info-value {
+			@apply text-gray-700;
+		}
+		.general-box {
+			@apply flex flex-row gap-6;
+			p {
+				@apply p-0.5;
+			}
+		}
+	}
+}

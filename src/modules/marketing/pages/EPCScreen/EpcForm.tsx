@@ -36,7 +36,7 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 					</span>{" "}
 				</div> */}
 				<form className="">
-					<div className="grid md:grid-cols-5 grid-cols-1 gap-2 items-end">
+					<div className="grid md:grid-cols-5 grid-cols-1 gap-3 mb-4 items-end">
 						<FormInput
 							name="epfNo"
 							label="EPF No"
@@ -193,7 +193,7 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 						</div>
 					</div>
 					{/*Event Description & Objective */}
-					<div className="grid  grid-cols-1  gap-4 items-end">
+					<div className="grid objective grid-cols-1  gap-4 items-end">
 						<TextareaInput
 							name="objective"
 							label="Objective"
@@ -201,7 +201,7 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
 							value={values.objective}
 							onChange={(e) => handleChange("objective", e.target.value)}
 							minLength={100}
-							rows={3}
+							rows={4}
 						/>
 					</div>
 
