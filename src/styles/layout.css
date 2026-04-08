@@ -44,7 +44,7 @@
   ======================== */
 
 	.header-logo {
-		@apply w-[100px] md:w-[100px];
+		@apply md:w-[150px] w-[120px];
 	}
 }
 

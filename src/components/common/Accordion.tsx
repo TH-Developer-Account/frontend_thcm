@@ -26,13 +26,16 @@ export function Accordion({
 				const isOpen = openItems.includes(item.id);
 
 				return (
-					<div key={item.id} className="accordion-item">
+					<div
+						key={item.id}
+						className={`accordion-item ${isOpen ? "accordion-item-open" : ""}`}
+					>
 						<button
 							type="button"
 							onClick={() => toggleItem(item.id)}
 							className="accordion-trigger"
 						>
-							{item.title}
+							<span className="accordion-title">{item.title}</span>
 							<span className="accordion-icon">{isOpen ? "−" : "+"}</span>
 						</button>
 

@@ -678,3 +678,45 @@
 		animation: popover-in 0.16s ease-out;
 	}
 }
+
+/* =========================================
+	ACCORDION 
+========================================= */
+
+@layer components {
+	.accordion {
+		@apply w-full space-y-3;
+	}
+
+	.accordion-item {
+		@apply overflow-hidden rounded-sm border border-gray-300 bg-white transition-all duration-200;
+	}
+
+	.accordion-item-open {
+		@apply border-[var(--color-brand-soft)] shadow-sm;
+	}
+
+	.accordion-trigger {
+		@apply flex w-full items-center justify-between gap-3 px-2 py-2 text-left transition-colors duration-200;
+	}
+
+	.accordion-trigger:hover {
+		@apply bg-[var(--color-brand-softest)];
+	}
+
+	.accordion-title {
+		@apply min-w-0 flex-1 text-sm font-semibold text-gray-800;
+	}
+
+	.accordion-icon {
+		@apply flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-200 text-base font-semibold text-[var(--color-brand)];
+	}
+
+	.accordion-item-open .accordion-icon {
+		@apply border-[var(--color-brand-soft)] bg-[var(--color-brand-softest)];
+	}
+
+	.accordion-content {
+		@apply border-t border-gray-200 px-4 py-4 text-sm text-gray-700;
+	}
+}

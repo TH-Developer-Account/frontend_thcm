@@ -10,9 +10,11 @@ const BusinessPartners = () => {
 				<div className="bp-header">
 					<h3>Business Partners</h3>
 				</div>
+
 				<div className="bp-container">
 					<div className="bp-box">
 						<BPFilters />
+
 						<div className="middle-box">
 							<BPTable />
 						</div>
