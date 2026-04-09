@@ -137,6 +137,22 @@
 	}
 
 	/* =========================
+	   Radio Button
+	========================= */
+
+	.form-radio-field {
+		@apply inline-flex items-center gap-2 cursor-pointer;
+	}
+
+	.form-radio-input {
+		@apply h-3.5 w-3.5 shrink-0;
+		accent-color: var(--color-brand);
+	}
+
+	.form-radio-label {
+		@apply text-xs font-medium text-gray-700;
+	}
+	/* =========================
 	   DATE
 	========================= */
 

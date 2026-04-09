@@ -24,6 +24,7 @@ const BPAddressFormCard = ({
 		<div className="bp-address-card">
 			<div className="bp-address-card-header">
 				<h5>{isEditing ? "Edit Address" : "Add Address"}</h5>
+
 				<button type="button" className="bp-address-add-btn" onClick={onAdd}>
 					{isEditing ? "Update" : "Add"}
 				</button>
@@ -31,12 +32,45 @@ const BPAddressFormCard = ({
 
 			<div className="bp-address-form">
 				<div className="bp-address-field">
-					<FormInput
-						label="Label"
-						value={form.label}
-						onChange={(e) => onChange("label", e.target.value)}
-						placeholder="Label"
-					/>
+					<p className="bp-info-label">Address Type</p>
+
+					<div className="bp-radio-group">
+						<FormInput
+							type="radio"
+							label="Head Office"
+							name="addressType"
+							value="Head Office"
+							checked={form.label === "Head Office"}
+							onChange={() => onChange("label", "Head Office")}
+						/>
+
+						<FormInput
+							type="radio"
+							label="Branch Office"
+							name="addressType"
+							value="Branch Office"
+							checked={form.label === "Branch Office"}
+							onChange={() => onChange("label", "Branch Office")}
+						/>
+
+						<FormInput
+							type="radio"
+							label="Billing Address"
+							name="addressType"
+							value="Billing Address"
+							checked={form.label === "Billing Address"}
+							onChange={() => onChange("label", "Billing Address")}
+						/>
+
+						<FormInput
+							type="radio"
+							label="Warehouse"
+							name="addressType"
+							value="Warehouse"
+							checked={form.label === "Warehouse"}
+							onChange={() => onChange("label", "Warehouse")}
+						/>
+					</div>
 				</div>
 
 				<div className="bp-address-field">
@@ -45,7 +79,7 @@ const BPAddressFormCard = ({
 						label="Address"
 						value={form.address}
 						onChange={(e) => onChange("address", e.target.value)}
-						placeholder="Enter address"
+						placeholder="Flat / Building / Street / Area"
 						rows={4}
 						maxLength={100}
 						className="px-1.5 py-1 bigtextArea"

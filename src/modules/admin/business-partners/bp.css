@@ -123,7 +123,7 @@ button {
 	}
 
 	.bp-gen-content {
-		@apply p-4 sm:p-5;
+		@apply p-3 sm:p-4;
 	}
 
 	.bp-general-info-cards {
@@ -153,10 +153,6 @@ button {
 	.input-b {
 		border-bottom: 1px solid black;
 		outline: none;
-	}
-
-	.bp-address-list-container {
-		/* @apply; */
 	}
 }
 
@@ -192,23 +188,32 @@ button {
 /* BP Contact / Info Sections */
 @layer components {
 	.bp-general-info {
-		@apply grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 text-sm;
+		@apply text-sm;
 	}
 
-	.general-box {
-		@apply flex w-full min-w-0 flex-col gap-3;
+	.bp-info-grid {
+		@apply grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2 2xl:grid-cols-3;
 	}
 
-	.info-row {
-		@apply grid grid-cols-1 items-start gap-1 md:grid-cols-[110px_1fr] md:gap-3 lg:grid-cols-[160px_1fr] lg:gap-4;
+	.bp-info-row {
+		@apply grid grid-cols-1 items-start gap-1 sm:grid-cols-[140px_1fr] sm:gap-3;
 	}
 
-	.info-label {
-		@apply wrap-break-word font-semibold text-gray-900;
+	.bp-info-label {
+		@apply text-xs font-semibold text-gray-900;
+		word-break: break-word;
 	}
 
-	.info-value {
-		@apply wrap-break-word text-gray-700;
+	.bp-info-value {
+		@apply text-xs text-gray-700;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+	}
+
+	.bp-info-link {
+		@apply cursor-pointer text-xs font-semibold text-[var(--color-brand)] hover:underline;
+		word-break: break-word;
+		overflow-wrap: anywhere;
 	}
 }
 
@@ -298,6 +303,7 @@ button {
 
 /* Address Section */
 
+/* Address Section */
 @layer components {
 	.bp-section-title {
 		@apply mb-4 text-base font-semibold text-gray-900 sm:text-lg;
@@ -308,55 +314,100 @@ button {
 	}
 
 	.bp-address-bottom {
-		@apply mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3 md:grid-cols-2 sm:grid-cols-1;
+		@apply mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3;
 	}
 
-	.bp-address-card {
-		@apply w-full rounded-sm border border-gray-300 bg-white p-3 sm:p-4;
-	}
-	.bp-address-card-header {
-		@apply mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between;
-	}
-
-	.bp-address-card-header-right {
-		@apply flex flex-col gap-2 sm:items-end;
-	}
-
-	.bp-address-header-actions {
-		@apply flex flex-wrap gap-2;
-	}
-
-	.bp-address-footer-actions {
-		@apply mt-3 flex justify-end border-t border-gray-200 pt-2;
-	}
-	.bp-address-card-header h5 {
-		@apply text-sm font-semibold text-gray-900 sm:text-base;
-	}
-
-	.bp-address-add-btn {
-		@apply rounded-md border border-[var(--color-brand-soft)] bg-[var(--color-brand-softest)] px-3 py-1.5 text-xs font-medium text-[var(--color-brand)] transition hover:opacity-90;
-	}
-
-	.bp-address-default-badge {
-		@apply rounded-full bg-[var(--color-brand-softest)] px-2 py-0.5 text-xs font-medium text-[var(--color-brand)];
-	}
-
-	.bp-address-form,
-	.bp-address-list-container {
-		@apply flex flex-col gap-2 h-full w-full;
+	.bp-address-grid-wrap {
+		@apply grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3;
 	}
 
 	.bp-address-grid {
 		@apply grid grid-cols-1 gap-3 sm:grid-cols-2;
 	}
 
+	.bp-address-card {
+		@apply w-full rounded-sm border border-gray-300 bg-white px-3 py-2.5;
+	}
+
+	.bp-address-card-header {
+		@apply mb-2 flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between;
+	}
+
+	.bp-address-card-header h5 {
+		@apply text-xs font-semibold text-gray-900;
+	}
+
+	.bp-address-card-header-right {
+		@apply flex flex-col gap-2 sm:items-end;
+	}
+
+	.bp-address-header-actions,
 	.bp-address-actions {
 		@apply flex flex-wrap gap-2;
 	}
-	.bigtextArea {
-		min-height: 80px;
+
+	.bp-address-default-badge {
+		@apply rounded-full bg-[var(--color-brand-softest)] px-2 py-0.5 text-xs font-medium text-[var(--color-brand)];
 	}
-	.bp-address-grid-wrap {
-		@apply grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 text-sm;
+
+	.bp-address-add-btn {
+		@apply rounded-md border border-[var(--color-brand-soft)] bg-[var(--color-brand-softest)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-brand)] transition hover:opacity-90;
+	}
+
+	.bp-address-form,
+	.bp-address-list-container {
+		@apply flex h-full w-full flex-col gap-1.5;
+	}
+
+	.bp-address-field {
+		@apply text-xs;
+	}
+
+	.bp-address-info-list {
+		@apply flex flex-col gap-2;
+	}
+
+	.bp-address-info-item {
+		@apply grid grid-cols-1 gap-1 sm:grid-cols-[72px_1fr] sm:gap-3;
+	}
+
+	.bp-address-info-label {
+		@apply text-sm font-semibold text-gray-900;
+	}
+
+	.bp-address-info-value {
+		@apply text-xs text-gray-700 wrap-break-word;
+		overflow-wrap: anywhere;
+		word-break: break-word;
+	}
+
+	.bp-address-empty {
+		@apply text-xs text-gray-500;
+	}
+
+	.bp-address-footer-actions {
+		@apply mt-2 flex justify-end border-t border-gray-200 pt-1.5;
+	}
+
+	.bigtextArea {
+		min-height: 70px;
+	}
+	.bp-radio-group {
+		@apply flex flex-wrap items-center gap-4;
+	}
+
+	/* override FormInput layout for radio only */
+	.bp-radio-input {
+		@apply flex items-center gap-1.5 text-sm text-gray-700;
+	}
+
+	/* target input inside FormInput */
+	.bp-radio-input input {
+		@apply h-3.5 w-3.5 accent-[var(--color-brand)];
+	}
+
+	/* remove default vertical spacing if FormInput adds it */
+	.bp-radio-input label {
+		@apply m-0 p-0;
 	}
 }

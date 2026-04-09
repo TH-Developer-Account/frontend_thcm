@@ -35,14 +35,37 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 		const [showPassword, setShowPassword] = useState(false);
 
 		const isPassword = type === "password";
+		const isRadio = type === "radio";
 
 		const inputType = isPassword && showPassword ? "text" : type;
 
-		// password policy validation
 		const isValid = useMemo(() => {
 			if (!isPassword || typeof value !== "string") return false;
 			return PasswordPolicy.every((rule) => rule.test(value));
 		}, [value, isPassword]);
+
+		if (isRadio) {
+			return (
+				<label className={`form-radio-field ${disabled ? "opacity-70" : ""}`}>
+					<input
+						ref={ref}
+						id={name}
+						name={name}
+						type="radio"
+						disabled={disabled}
+						className={`form-radio-input ${className}`}
+						{...props}
+					/>
+
+					{label && (
+						<span className="form-radio-label">
+							{label}
+							{required && <span className="form-required"> *</span>}
+						</span>
+					)}
+				</label>
+			);
+		}
 
 		return (
 			<div className="form-field">
@@ -68,25 +91,23 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 							min: new Date().toISOString().split("T")[0],
 						})}
 						className={`
-						form-input
-						${error ? "form-input-error" : ""}
-						${disabled ? "form-input-disabled" : ""}
-						${isValid && !error ? "form-input-valid" : ""}
-						${className}
+							form-input
+							${error ? "form-input-error" : ""}
+							${disabled ? "form-input-disabled" : ""}
+							${isValid && !error ? "form-input-valid" : ""}
+							${className}
 						`}
 						placeholder={placeholder}
 						{...props}
 					/>
 
-					{/* Error Icon */}
 					{error && <ExclamationCircleIcon className="form-error-icon" />}
 
-					{/* Password Toggle */}
 					{isPassword && !error && (
 						<button
 							type="button"
 							onClick={() => setShowPassword((prev) => !prev)}
-							className="form-icon-right "
+							className="form-icon-right"
 						>
 							{showPassword ? (
 								<AiOutlineEyeInvisible size={20} />
@@ -97,7 +118,6 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 					)}
 				</div>
 
-				{/* Error message */}
 				{error && (
 					<p id={`${name}-error`} className="form-error-text">
 						{error}

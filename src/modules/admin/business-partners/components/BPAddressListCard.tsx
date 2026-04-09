@@ -57,19 +57,24 @@ const BPAddressListCard = ({
 
 			{address ? (
 				<div className="bp-address-list-container">
-					<div className="general-box">
-						<div className="info-row">
-							<p className="info-label">Label :</p>
-							<p className="info-value">{address.label || fallbackValue}</p>
+					<div className="bp-address-info-list">
+						<div className="bp-address-info-item">
+							<p className="bp-address-info-label">Label</p>
+							<p className="bp-address-info-value">
+								{address.label || fallbackValue}
+							</p>
 						</div>
-						<div className="info-row">
-							<p className="info-label">Address :</p>
-							<p className="info-value">{address.address}</p>
+
+						<div className="bp-address-info-item">
+							<p className="bp-address-info-label">Address</p>
+							<p className="bp-address-info-value">
+								{address.address || fallbackValue}
+							</p>
 						</div>
 					</div>
 				</div>
 			) : (
-				<p className="info-value">No address added yet.</p>
+				<p className="bp-address-empty">No address added yet.</p>
 			)}
 
 			{showActions && address && (

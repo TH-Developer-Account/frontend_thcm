@@ -28,15 +28,13 @@ type BPContactProps = {
 const fallbackValue = "--";
 
 const BPContact = ({ data, onNavigateTab }: BPContactProps) => {
-	const contactFields: InfoField[] = [
+	const fields: InfoField[] = [
 		{ label: "Name", value: data?.name, isLink: true, tab: "Organization" },
 		{ label: "Email", value: data?.email },
 		{ label: "Fax", value: data?.fax },
 		{ label: "Mobile Number", value: data?.mobile_number },
 		{ label: "Phone", value: data?.phone },
-	];
 
-	const mainContactFields: InfoField[] = [
 		{
 			label: "Main Contact Person",
 			value: data?.mainContactPerson,
@@ -51,50 +49,26 @@ const BPContact = ({ data, onNavigateTab }: BPContactProps) => {
 
 	return (
 		<div className="bp-gen-content">
-			<div className="bp-general-info">
-				<div className="general-box">
-					{contactFields.map((field) => (
-						<div key={field.label} className="info-row">
-							<p className="info-label">{field.label} :</p>
+			<div className="bp-info-grid">
+				{fields.map((field) => (
+					<div key={field.label} className="bp-info-row">
+						<p className="bp-info-label">{field.label}</p>
 
-							<p className="info-value">
-								{field.isLink && field.value ? (
-									<button
-										type="button"
-										onClick={() => onNavigateTab?.(field.tab!)}
-										className="text-(--color-brand) font-semibold hover:underline cursor-pointer"
-									>
-										{field.value}
-									</button>
-								) : (
-									field.value || fallbackValue
-								)}
-							</p>
-						</div>
-					))}
-				</div>
-
-				<div className="general-box">
-					{mainContactFields.map((field) => (
-						<div key={field.label} className="info-row">
-							<p className="info-label">{field.label} :</p>
-
-							<p className="info-value">
-								{field.isLink && field.value ? (
-									<button
-										type="button"
-										onClick={() => onNavigateTab?.(field.tab!)}
-										className="text-(--color-brand) font-semibold hover:underline cursor-pointer"
-									>
-										{field.value}
-									</button>
-								) : (
-									field.value || fallbackValue
-								)}
-							</p>
-						</div>
-					))}
-				</div>
+						<p className="bp-info-value">
+							{field.isLink && field.value ? (
+								<button
+									type="button"
+									onClick={() => onNavigateTab?.(field.tab!)}
+									className="bp-info-link"
+								>
+									{field.value}
+								</button>
+							) : (
+								field.value || fallbackValue
+							)}
+						</p>
+					</div>
+				))}
 			</div>
 		</div>
 	);

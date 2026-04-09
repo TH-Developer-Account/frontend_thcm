@@ -23,7 +23,7 @@ const BPAddress = () => {
 			id: "1",
 			label: "Head Office",
 			address:
-				"342, Bandra West Near Linking Road, Mumbai, Maharashtra, India 400050",
+				"342, 2nd Floor, Bandra West Near Linking Road, Mumbai, Maharashtra, India 400050",
 			isDefault: true,
 		},
 	]);
