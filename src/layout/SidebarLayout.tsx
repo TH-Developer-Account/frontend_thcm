@@ -26,9 +26,9 @@ export const SidebarLayout = ({
 			<aside
 				className={`
           fixed inset-y-0 left-0 z-50
-          bg-gray-50 border-r border-orange-600
+          bg-gray-50 border-r-2 border-orange-600 
           transition-all duration-300 ease-in-out
-          ${isOpen ? "w-64" : "w-16"}
+          ${isOpen ? "w-46" : "w-14"}
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           md:static md:translate-x-0
         `}
@@ -46,9 +46,9 @@ export const SidebarLayout = ({
 										className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-200 "
 									>
 										<div className="flex items-center gap-2 text-black">
-											<span className="text-sm shrink-0">{item.icon}</span>
+											<span className="text-xs shrink-0">{item.icon}</span>
 											{isOpen && (
-												<span className="text-sm font-medium">
+												<span className="text-xs font-medium">
 													{item.label}
 												</span>
 											)}
@@ -56,7 +56,7 @@ export const SidebarLayout = ({
 
 										{isOpen && (
 											<ChevronDown
-												size={16}
+												size={14}
 												className={`transition-transform text-black ${
 													openItem === item.id ? "rotate-180" : ""
 												}`}
@@ -75,30 +75,30 @@ export const SidebarLayout = ({
 												}`
 										}
 									>
-										<span className="text-sm shrink-0">{item.icon}</span>
+										<span className="text-xs shrink-0">{item.icon}</span>
 										{isOpen && (
-											<span className="text-sm font-medium">{item.label}</span>
+											<span className="text-xs font-medium">{item.label}</span>
 										)}
 									</NavLink>
 								)}
 
 								{/* Children */}
 								{hasChildren && openItem === item.id && isOpen && (
-									<div className="ml-6 mt-1 space-y-1 text-left text-xs">
+									<div className="ml-3 mt-1 space-y-1 text-left text-xs">
 										{item.children!.map((child) => (
 											<NavLink
 												key={child.id}
 												to={child.link ?? "#"}
 												className={({ isActive }) =>
-													`block text-sm p-2 rounded-md transition text-black
-                          ${
-														isActive
-															? "bg-orange-100 text-orange-600"
-															: "hover:bg-gray-200"
-													}`
+													`block text-xs px-2 py-1.5 rounded-md transition text-black text-left
+                         							 ${
+																					isActive
+																						? "bg-orange-100 text-orange-600"
+																						: "hover:bg-gray-200"
+																				}`
 												}
 											>
-												<span className=" shrink-0 inline-flex">
+												<span className=" shrink-0 inline-flex items-center justify-center">
 													{child.icon}&nbsp; {child.label}
 												</span>
 											</NavLink>

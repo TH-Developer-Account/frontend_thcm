@@ -44,10 +44,98 @@
   ======================== */
 
 	.header-logo {
-		@apply w-[100px] md:w-[100px];
+		@apply md:w-[150px] w-[120px];
 	}
 }
 
+@layer components {
+	/* =========================
+	   APP LAYOUT
+	========================= */
+
+	.app-layout {
+		@apply h-screen flex flex-col overflow-hidden;
+	}
+
+	.app-body {
+		@apply relative flex flex-1 overflow-hidden transition-transform duration-300 ease-in-out;
+	}
+
+	/* =========================
+	   MAIN CONTENT AREA
+	========================= */
+
+	.app-main {
+		@apply flex-1 md:ml-0 overflow-y-auto bg-zinc-50 scroll-smooth;
+	}
+
+	/* Optional: smoother scrolling feel */
+	.app-main-smooth {
+		@apply scroll-smooth;
+	}
+	.main-content {
+		@apply px-4 pt-6;
+	}
+}
+
+@layer components {
+	/* =========================
+	   AUTH LAYOUT
+	========================= */
+
+	.auth-layout {
+		@apply min-h-screen flex items-center justify-center bg-transparent;
+	}
+
+	/* =========================
+	   AUTH CARD / FORM
+	========================= */
+
+	.auth-card {
+		@apply w-full max-w-[400px] bg-white shadow-lg rounded-xl p-6 pt-4;
+	}
+
+	/* Optional variants */
+
+	.auth-card-compact {
+		@apply p-4;
+	}
+
+	.auth-card-wide {
+		@apply max-w-[480px];
+	}
+}
+@layer components {
+	/* =========================
+	   HEADER BAR
+	========================= */
+
+	.app-header {
+		@apply h-14 flex items-center gap-3 px-3 py-2 sm:px-3 text-white;
+		@apply shadow-[0px_3px_12px_0px_rgba(0,0,0,0.2)];
+	}
+
+	/* =========================
+	   HEADER INNER WRAPPER
+	========================= */
+
+	.app-header-content {
+		@apply flex items-center justify-between w-full;
+	}
+
+	/* =========================
+	   HEADER MENU BUTTON
+	========================= */
+
+	.app-header-btn {
+		@apply p-2 rounded-md bg-transparent text-black font-bold text-xl cursor-pointer;
+		@apply transition-all duration-300 ease-in-out;
+	}
+
+	.app-header-btn:hover {
+		@apply bg-gray-50 text-orange-600;
+	}
+}
 /* ---------- Utility Examples ---------- */
 
 /* Mobile */

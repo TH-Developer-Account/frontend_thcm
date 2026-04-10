@@ -1,147 +1,450 @@
 @reference "tailwindcss";
-
-/* Form Input Styles */
+@import "../../styles//color.css";
 
 @layer components {
-	/* ========================
-     FORM FIELD
-  ======================== */
-
-	.form-field {
-		@apply mb-4 flex flex-col gap-1;
+	.form-input,
+	.form-textarea,
+	.form-date,
+	.form-native-select {
+		border-radius: var(--form-radius);
 	}
 
-	/* ========================
-     LABEL
-  ======================== */
+	/* =========================
+	   FORM LAYOUT
+	========================= */
+
+	.form-container {
+		@apply rounded-xl p-3 shadow-sm;
+		background-color: var(--color-bg);
+	}
+
+	.form-grid {
+		@apply grid grid-cols-1 gap-4 md:grid-cols-2;
+	}
+
+	.form-field {
+		@apply flex flex-col gap-1;
+	}
+
+	.form-field-full {
+		@apply md:col-span-2;
+	}
+
+	/* =========================
+	   LABELS + HELPERS
+	========================= */
 
 	.form-label {
-		@apply text-left block text-sm font-medium text-gray-900;
+		@apply block text-left text-sm font-medium;
+		color: var(--color-text-strong);
 	}
 
 	.form-required {
-		@apply text-red-500;
-	}
-
-	/* ========================
-     INPUT WRAPPER
-  ======================== */
-
-	.form-input-wrapper {
-		@apply relative mt-2;
-	}
-
-	/* ========================
-     INPUT BASE
-  ======================== */
-
-	.form-input {
-		@apply block w-full
-      rounded-md
-      bg-white
-      px-3 py-1.5 pr-10
-      text-base sm:text-sm
-      text-gray-900
-      placeholder:text-gray-400
-      outline-1 -outline-offset-1
-      outline-gray-300
-      focus:outline-2 focus:-outline-offset-2
-      focus:outline-[#f97316];
-	}
-
-	/* ========================
-     INPUT STATES
-  ======================== */
-
-	.form-input-error {
-		@apply outline-red-500 focus:outline-red-500 placeholder:text-red-500;
-	}
-
-	.form-input-valid {
-		@apply outline-green-400;
-	}
-
-	.form-input-disabled {
-		@apply opacity-60 cursor-not-allowed;
-	}
-
-	/* ========================
-     PASSWORD / ICON SLOT
-  ======================== */
-
-	.form-icon-right {
-		@apply absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700;
-	}
-
-	/* ========================
-     ERROR ICON
-  ======================== */
-
-	.form-error-icon {
-		@apply absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-red-500;
-	}
-
-	/* ========================
-     ERROR TEXT
-  ======================== */
-
-	.form-error-text {
-		@apply mt-1 text-xs text-red-600 text-left;
+		color: var(--color-error);
 	}
 
 	.form-helper-text {
-		@apply mt-1 text-xs text-gray-500;
+		@apply mt-1 text-xs;
+		color: var(--color-brand-gray);
+	}
+
+	.form-error-text {
+		@apply mt-1 text-left text-xs;
+		color: var(--color-error);
+	}
+
+	/* =========================
+	   INPUT WRAPPER
+	========================= */
+
+	.form-input-wrapper {
+		@apply relative mt-1.5;
+	}
+
+	/* =========================
+	   BASE FIELD LOOK
+	========================= */
+
+	.form-input,
+	.form-textarea,
+	.form-date,
+	.form-native-select {
+		@apply block w-full rounded-md border text-sm;
+		@apply transition-[border-color,box-shadow,background-color] duration-150 ease-out;
+		@apply focus:outline-none;
+		background-color: var(--color-bg);
+		border-color: var(--color-border);
+		color: var(--color-text-primary);
+		box-shadow: none;
+	}
+
+	.form-input::placeholder,
+	.form-textarea::placeholder,
+	.form-date::placeholder,
+	.form-native-select::placeholder {
+		color: var(--color-text-muted);
+	}
+
+	.form-input:hover,
+	.form-textarea:hover,
+	.form-date:hover,
+	.form-native-select:hover,
+	.form-input:focus,
+	.form-textarea:focus,
+	.form-date:focus,
+	.form-native-select:focus {
+		border-color: var(--color-brand);
+	}
+
+	.form-input:focus,
+	.form-textarea:focus,
+	.form-date:focus,
+	.form-native-select:focus {
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	/* =========================
+	   INPUTS
+	========================= */
+
+	.form-input,
+	.form-date,
+	.form-native-select {
+		@apply px-3;
+		height: 35px;
+	}
+
+	.form-input.has-right-icon,
+	.form-input.has-error-icon,
+	.form-date.has-right-icon,
+	.form-date.has-error-icon {
+		@apply pr-9;
+	}
+
+	/* =========================
+	   TEXTAREA
+	========================= */
+
+	.form-textarea {
+		@apply px-3 py-2;
+		min-height: 96px !important;
+		resize: vertical;
+		line-height: 1.5;
+		overflow: hidden;
+	}
+	.objective textarea {
+		min-height: 96px;
+	}
+
+	/* =========================
+	   Radio Button
+	========================= */
+
+	.form-radio-field {
+		@apply inline-flex items-center gap-2 cursor-pointer;
+	}
+
+	.form-radio-input {
+		@apply h-3.5 w-3.5 shrink-0;
+		accent-color: var(--color-brand);
+	}
+
+	.form-radio-label {
+		@apply text-xs font-medium text-gray-700;
+	}
+	/* =========================
+	   DATE
+	========================= */
+
+	.form-date {
+		appearance: none;
+		-webkit-appearance: none;
+	}
+
+	.form-date::-webkit-calendar-picker-indicator {
+		opacity: 0.7;
+		cursor: pointer;
+	}
+
+	/* =========================
+	   NATIVE SELECT
+	========================= */
+
+	.form-native-select {
+		@apply pr-10;
+		appearance: none;
+		-webkit-appearance: none;
+		background-image: none;
+	}
+
+	.form-select-chevron {
+		@apply pointer-events-none absolute right-3 top-1/2 -translate-y-1/2;
+		color: var(--color-brand-gray);
+	}
+
+	/* =========================
+	   FIELD STATES
+	========================= */
+
+	.form-input-error {
+		border-color: var(--color-error);
+		box-shadow: none;
+	}
+
+	.form-input-error::placeholder {
+		color: var(--color-error-soft);
+	}
+
+	.form-input-error:focus {
+		border-color: var(--color-error);
+		box-shadow: var(--shadow-focus-error);
+	}
+
+	.form-input-valid {
+		border-color: var(--color-success);
+	}
+
+	.form-input-valid:focus {
+		border-color: var(--color-success);
+		box-shadow: var(--shadow-focus-success);
+	}
+
+	.form-input-disabled,
+	.form-input-disabled:hover {
+		@apply cursor-not-allowed opacity-80;
+		border-color: var(--color-border-disabled);
+		background-color: var(--color-bg-disabled);
+		color: var(--color-brand-gray);
+	}
+
+	/* =========================
+	   ICONS
+	========================= */
+
+	.form-icon-right {
+		@apply absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer;
+		color: var(--color-brand-gray);
+	}
+
+	.form-icon-right:hover {
+		color: var(--color-text-strong);
+	}
+
+	.form-error-icon {
+		@apply absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2;
+		color: var(--color-error);
+	}
+
+	/* =========================
+	   PREMIUM SURFACE VARIANT
+	========================= */
+
+	.form-field-soft .form-input,
+	.form-field-soft .form-textarea,
+	.form-field-soft .form-date,
+	.form-field-soft .form-native-select {
+		background-color: var(--color-bg-soft);
+		border-color: var(--color-border);
+	}
+
+	.form-field-soft .form-input:hover,
+	.form-field-soft .form-textarea:hover,
+	.form-field-soft .form-date:hover,
+	.form-field-soft .form-native-select:hover {
+		border-color: var(--color-brand);
+		background-color: var(--color-bg);
+	}
+
+	/* =========================
+	   COMPACT VARIANT
+	========================= */
+
+	.form-input-compact,
+	.form-date-compact,
+	.form-native-select-compact {
+		height: 34px;
+		@apply px-2.5 text-sm;
+	}
+
+	.form-textarea-compact {
+		@apply px-2.5 py-2 text-sm;
+		min-height: 80px;
 	}
 }
 
-/* OTP Input Styles */
+/* =========================
+   REACT SELECT
+========================= */
 
-@layer components {
-	/* =========================================
-	   OTP INPUT
-	========================================= */
+.react-select__control {
+	border-radius: var(--form-radius) !important;
+}
 
-	.otp-wrapper {
-		@apply mb-4;
-	}
+.react-select__menu {
+	border-radius: var(--form-radius) !important;
+	overflow: hidden;
+}
 
-	.otp-container {
-		@apply mt-2 flex flex-wrap justify-center gap-2;
-	}
+.react-select__control {
+	@apply rounded-md border text-sm transition-[border-color,box-shadow,background-color] duration-150 ease-out;
+	background-color: var(--color-bg);
+	border-color: var(--color-border);
+	color: var(--color-text-primary);
+	height: 35px !important;
+	min-height: 35px !important;
+	box-shadow: none !important;
+}
 
-	.otp-input {
-		@apply text-center font-semibold rounded-lg border outline-none transition;
-		@apply bg-gray-100;
-	}
+.react-select__control:focus,
+.react-select__control:hover,
+.react-select__control:active {
+	border-color: var(--color-brand) !important;
+	outline: none;
+}
 
-	/* OTP Sizes */
+.css-t3ipsp-control:hover,
+.css-t3ipsp-control:focus,
+.css-t3ipsp-control:active {
+	border: none !important;
+}
 
-	.otp-size {
-		@apply w-8 h-8 text-base;
-		@apply sm:w-10 sm:h-10 sm:text-lg;
-		@apply md:w-12 md:h-12 md:text-xl;
-	}
+.css-13cymwt-control:hover {
+	border-color: var(--color-brand);
+}
 
-	/* States */
+.react-select__control:hover {
+	border-color: var(--color-brand) !important;
+}
 
-	.otp-normal {
-		@apply border-gray-200 focus:ring-2;
-		--tw-ring-color: var(--color-brand);
-	}
+.react-select__control--is-focused {
+	border-color: var(--color-brand) !important;
+	box-shadow: var(--shadow-focus-brand) !important;
+}
 
-	.otp-error {
-		@apply border-red-500 focus:ring-2 focus:ring-red-500;
-	}
+.react-select__control--menu-is-open {
+	border-color: var(--color-brand) !important;
+}
 
-	/* Error message */
+.react-select__value-container {
+	@apply px-3;
+	height: 35px;
+	padding-top: 0 !important;
+	padding-bottom: 0 !important;
+	display: flex;
+	align-items: center;
+}
 
-	.otp-error-text {
-		@apply mt-1 text-xs text-red-600 text-left;
-	}
+.react-select__input-container {
+	@apply m-0 p-0 text-sm;
+	color: var(--color-text-primary);
+}
 
-	/* Timer */
+.react-select__placeholder {
+	@apply text-sm;
+	color: var(--color-text-muted);
+}
 
-	.otp-timer {
-		@apply mt-2 text-xs text-gray-500 text-center;
-	}
+.react-select__single-value {
+	@apply text-sm;
+	color: var(--color-text-primary);
+}
+
+.react-select__indicators {
+	height: 35px;
+}
+
+.react-select__dropdown-indicator {
+	@apply transition-colors;
+	color: var(--color-brand-gray);
+	padding: 4px !important;
+}
+
+.react-select__dropdown-indicator:hover {
+	color: var(--color-text-strong);
+}
+
+.react-select__dropdown-indicator svg {
+	width: 14px;
+	height: 14px;
+}
+
+.react-select__indicator-separator {
+	display: none;
+}
+
+.react-select__menu {
+	@apply overflow-hidden rounded-md border shadow-lg;
+	background-color: var(--color-bg);
+	border-color: var(--color-border-light);
+	z-index: 9999 !important;
+	margin-top: 4px !important;
+}
+
+.react-select__menu-list {
+	padding-top: 2px;
+	padding-bottom: 2px;
+}
+
+.react-select__option {
+	@apply cursor-pointer text-sm;
+	font-size: 14px !important;
+	color: var(--color-text-primary);
+	padding: 6px 10px !important;
+	background-color: var(--color-bg);
+}
+
+.react-select__option--is-focused {
+	background-color: var(--color-brand-softest) !important;
+	color: var(--color-brand) !important;
+}
+
+.react-select__option--is-selected {
+	background-color: var(--color-brand-soft) !important;
+	color: var(--color-brand) !important;
+	font-weight: 500;
+}
+
+.react-select__control--is-disabled {
+	@apply cursor-not-allowed opacity-80;
+	border-color: var(--color-border-disabled);
+	background-color: var(--color-bg-disabled);
+}
+
+.form-input-error .react-select__control {
+	border-color: var(--color-error) !important;
+}
+
+.form-input-error .react-select__control--is-focused {
+	border-color: var(--color-error) !important;
+	box-shadow: var(--shadow-focus-error) !important;
+}
+
+/* ========================
+CHECKBOX BASE
+======================== */
+
+.checkbox {
+	@apply flex items-center justify-center
+shrink-0
+transition-all duration-150;
+}
+
+/* ========================
+CHECKBOX STATES
+======================== */
+
+.checkbox-disabled {
+	@apply opacity-60 cursor-not-allowed;
+}
+
+.checkbox-enabled {
+	@apply cursor-pointer;
+}
+
+/* ========================
+CHECK ICON
+======================== */
+
+.checkbox-icon {
+	@apply font-bold leading-none;
 }

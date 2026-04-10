@@ -1,24 +1,24 @@
 import type { ToastStyle, ToastVariant } from "./common/Toast/toast.types";
 
 const STATUS_STYLE_MAP: Record<string, string> = {
-	Active: "bg-green-100 text-green-800",
-	active: "bg-green-100 text-green-800",
-	Approved: "bg-green-100 text-green-800",
+	approved: "bg-teal-100 text-teal-800 ring-teal-200",
 
-	Recommended: "bg-blue-100 text-blue-800",
-	Submitted: "bg-purple-100 text-purple-800",
-	"Report Submitted": "bg-orange-100 text-orange-800",
+	completed: "bg-green-100 text-green-800 ring-green-200  ",
 
-	Pending: "bg-yellow-100 text-yellow-800",
+	cancelled: "bg-red-100 text-red-800 ring-red-200",
 
-	Cancelled: "bg-red-100 text-red-800",
-	Blocked: "bg-red-100 text-red-800",
-	blocked: "bg-red-100 text-red-800",
-	"Sent Back": "bg-gray-300 text-gray-800",
-	Inactive: "bg-gray-300 text-gray-800",
-	inactive: "bg-gray-300 text-gray-800",
+	"sent back": "bg-orange-100 text-orange-800 ring-orange-200",
+
+	pending: "bg-amber-100 text-amber-800 ring-amber-200 ",
+
+	submitted: "bg-blue-100 text-blue-800 ring-blue-200",
+
+	"report submitted": "bg-sky-100 text-sky-800 ring-sky-200",
+
+	recommended: "bg-violet-100 text-violet-800 ring-violet-200",
+
+	blocked: "bg-rose-100 text-rose-800 ring-rose-200",
 	brand: "bg-[#f35a00] text-white",
-	Completed: "bg-emerald-100 text-emerald-800",
 };
 
 export const resolveStatusStyle = ({ status }: { status?: string }): string => {
@@ -92,4 +92,52 @@ export const styles = {
 		icon: "✅",
 		iconBg: "bg-green-100 text-green-600",
 	},
+};
+
+export const APPROVAL_DOT_STATUS_COMPLETED: Record<string, string> = {
+	approved: "bg-teal-100 text-teal-600 ring-teal-200",
+
+	completed: "bg-green-100 text-green-600 ring-green-200",
+
+	cancelled: "bg-red-100 text-red-600 ring-red-200",
+
+	"sent back": "bg-orange-100 text-orange-600 ring-orange-200",
+
+	pending: "bg-amber-100 text-amber-600 ring-amber-200 ",
+
+	submitted: "bg-blue-100 text-blue-600 ring-blue-200",
+
+	"report submitted": "bg-sky-100 text-sky-600 ring-sky-200",
+
+	recommended: "bg-violet-100 text-violet-600 ring-violet-200",
+
+	blocked: "bg-rose-100 text-rose-600 ring-rose-200",
+};
+
+export const APPROVAL_DOT_STATUS_ACTIVE: Record<string, string> = {
+	approved:
+		"bg-teal-200 text-teal-600 ring-teal-300  shadow-lg border border-white",
+
+	completed:
+		"bg-green-200 text-green-600 ring-green-400  shadow-lg border border-white",
+
+	cancelled:
+		"bg-red-200 text-red-600 ring-red-300  shadow-lg border border-white",
+
+	"sent back":
+		"bg-orange-200 text-orange-600 ring-orange-300  shadow-lg border border-white",
+
+	pending: "bg-amber-200 text-amber-600 ring-amber-300  shadow-lg border-white",
+
+	submitted:
+		"bg-blue-200 text-blue-600 ring-blue-300  shadow-lg border border-white",
+
+	"report submitted":
+		"bg-sky-200 text-sky-600 ring-sky-300  shadow-lg border border-white",
+
+	recommended:
+		"bg-violet-200 text-violet-600 ring-violet-300  shadow-lg border border-white",
+
+	blocked:
+		"bg-rose-200 text-rose-600 ring-rose-300  shadow-lg border border-white",
 };

@@ -11,6 +11,10 @@ import C4CPage from "../modules/admin/pages/FetchUsers/C4C";
 // import DealerListPage from "../modules/admin/pages/DealerMaster/DealerListPage";
 import UserProfile from "../components/ui/UserProfile/UserProfile";
 import ComingSoon from "../components/ui/ComingSoon";
+// import BranchesList from "../modules/admin/pages/Masters/BranchesList";
+import MastersPage from "../modules/admin/pages/Masters/MastersPage";
+import BusinessPartners from "../modules/admin/business-partners/BusinessPartners";
+import BusinessPartnerView from "../modules/admin/business-partners/BusinessPartnerView";
 
 export default function AdminRoutes() {
 	return (
@@ -19,7 +23,9 @@ export default function AdminRoutes() {
 			<Route path="users" element={<UsersPage />} />
 			<Route path="department" element={<ComingSoon />} />
 			<Route path="roles" element={<CrfForm />} />
-			<Route path="branches" element={<ComingSoon />} />
+			<Route path="masters" element={<MastersPage />} />
+			<Route path="business-partners" element={<BusinessPartners />} />
+			<Route path="business-partners-view" element={<BusinessPartnerView />} />
 			<Route path="bydesign" element={<ByDesignPage />} />
 			<Route path="c4c" element={<C4CPage />} />
 			<Route path="/profile" element={<UserProfile />} />
@@ -55,7 +61,6 @@ export default function AdminRoutes() {
 					</ThemeProvider>
 				}
 			/>
-
 			{/* <Route path="create_user_profile" element={<BusinessProfileList />} /> */}
 		</Routes>
 	);

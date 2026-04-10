@@ -1,0 +1,413 @@
+@reference "tailwindcss";
+@import "../../../styles/color.css";
+
+/* Common styles for Business Partners module */
+.content-box {
+	@apply w-full h-full rounded-sm border border-gray-300 bg-white p-2;
+}
+
+button {
+	cursor: pointer;
+}
+.brand-text h3 {
+	@apply text-[var(--color-brand)] text-lg font-semibold sm:text-xl md:text-2xl;
+}
+
+.no-padding {
+	@apply px-0 pb-0;
+}
+
+/* BP Listing Page */
+@layer components {
+	.business-partners {
+		@apply mt-2 w-full max-w-full px-2 py-1.5 sm:px-3 md:px-4;
+	}
+
+	.bp-header {
+		@apply mb-3 flex flex-col gap-2 px-1 sm:mb-4 sm:flex-row sm:items-center sm:justify-between;
+	}
+
+	.bp-header h3 {
+		@apply text-lg font-semibold leading-tight sm:text-xl md:text-2xl;
+	}
+
+	.bp-container,
+	.bp-box,
+	.middle-box {
+		@apply w-full max-w-full min-w-0;
+	}
+
+	.top-box {
+		@apply grid w-full grid-cols-1 gap-2 text-left sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8;
+	}
+
+	.top-box input,
+	.top-box select,
+	.top-box button {
+		@apply w-full text-xs sm:text-sm;
+	}
+}
+
+/* BP Table */
+@layer components {
+	.bp-table-container {
+		@apply mt-3 h-[350px] w-full max-w-full min-w-0 overflow-x-auto overflow-y-auto rounded-sm border border-gray-300 bg-white text-xs text-gray-600 sm:text-sm;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.bp-table-container table {
+		@apply w-full min-w-[800px] border-collapse lg:min-w-full;
+	}
+
+	.bp-table-container thead {
+		@apply bg-gray-100;
+	}
+
+	.bp-table-container thead th {
+		@apply sticky top-0 z-10 whitespace-nowrap bg-gray-300 px-2 py-2.5 text-left text-xs sm:px-3 sm:text-sm;
+	}
+
+	.bp-table-container tbody td {
+		@apply whitespace-nowrap px-2 py-2.5 text-left text-xs sm:px-3 sm:text-sm;
+	}
+
+	.bp-table-container tbody tr {
+		@apply border-y border-gray-200 transition hover:bg-gray-50;
+	}
+}
+
+/* BP View Page */
+@layer components {
+	.bp-view-container {
+		@apply flex h-full w-full min-w-0 flex-col items-start justify-center gap-2;
+	}
+
+	.bp-gen-info {
+		@apply overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm;
+	}
+
+	.bp-gen-header-clean {
+		@apply flex w-full min-w-0 flex-col gap-3 border-b border-zinc-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5;
+	}
+
+	.bp-gen-header-left {
+		@apply min-w-0;
+	}
+
+	.bp-gen-title-row {
+		@apply flex items-center gap-3;
+	}
+
+	.bp-gen-title-icon {
+		@apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-[#f35a00];
+	}
+
+	.bp-gen-title-wrap {
+		@apply min-w-0;
+	}
+
+	.bp-gen-title {
+		@apply min-w-0 break-words text-lg font-semibold leading-tight text-zinc-900 sm:text-xl md:text-2xl;
+	}
+
+	.bp-gen-subtext {
+		@apply mt-1 text-xs text-zinc-500 sm:text-sm;
+	}
+
+	.bp-header-status {
+		@apply flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end;
+	}
+
+	.bp-status-label {
+		@apply text-xs font-medium text-zinc-500 sm:text-sm;
+	}
+
+	.bp-gen-content {
+		@apply p-3 sm:p-4;
+	}
+
+	.bp-general-info-cards {
+		@apply grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5;
+	}
+
+	.bp-info-mini-card {
+		@apply flex items-start gap-3 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-3.5;
+	}
+
+	.bp-info-mini-icon {
+		@apply flex h-9 w-9 shrink-0 items-center justify-center rounded-xl;
+	}
+
+	.bp-info-mini-content {
+		@apply min-w-0;
+	}
+
+	.bp-info-mini-label {
+		@apply text-[11px] font-medium uppercase tracking-wide text-zinc-500;
+	}
+
+	.bp-info-mini-value {
+		@apply mt-1 break-words text-sm font-semibold leading-5 text-zinc-900;
+	}
+
+	.input-b {
+		border-bottom: 1px solid black;
+		outline: none;
+	}
+}
+
+/* BP Tabs */
+@layer components {
+	.bp-tabs {
+		@apply mb-2 flex w-full min-w-0 flex-nowrap gap-2 overflow-x-auto border-b p-2 font-semibold;
+		border-color: var(--color-brand);
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.bp-tab-item {
+		@apply shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg border px-3 py-2 text-sm transition-colors;
+	}
+
+	.bp-tab-item-active {
+		@apply border-[var(--color-brand-soft)] bg-[var(--color-brand-softest)] text-[var(--color-brand)];
+	}
+
+	.bp-tab-item-inactive {
+		@apply border-transparent text-gray-600 hover:bg-gray-100;
+	}
+
+	.bp-tab-label {
+		@apply text-left text-xs sm:text-sm;
+	}
+
+	.bp-tab-content {
+		@apply mt-2 w-full min-w-0;
+	}
+}
+
+/* BP Contact / Info Sections */
+@layer components {
+	.bp-general-info {
+		@apply text-sm;
+	}
+
+	.bp-info-grid {
+		@apply grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2 2xl:grid-cols-3;
+	}
+
+	.bp-info-row {
+		@apply grid grid-cols-1 items-start gap-1 sm:grid-cols-[140px_1fr] sm:gap-3;
+	}
+
+	.bp-info-label {
+		@apply text-xs font-semibold text-gray-900;
+		word-break: break-word;
+	}
+
+	.bp-info-value {
+		@apply text-xs text-gray-700;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+	}
+
+	.bp-info-link {
+		@apply cursor-pointer text-xs font-semibold text-[var(--color-brand)] hover:underline;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+	}
+}
+
+/* BP Main Contact Section */
+
+@layer components {
+	.main-contact-card {
+		@apply mb-4 w-full;
+	}
+
+	.main-contact-card-header {
+		@apply mb-3 flex items-center justify-between;
+	}
+
+	.main-contact-card-header h4 {
+		@apply text-sm font-semibold text-gray-900 sm:text-base;
+	}
+
+	.main-contact-manage {
+		@apply w-full;
+	}
+
+	.main-contact-search {
+		@apply mb-3 w-full;
+	}
+
+	.main-contact-table {
+		@apply w-full overflow-x-auto rounded-sm border border-gray-200;
+	}
+
+	.main-contact-table table {
+		@apply w-full min-w-[720px] border-collapse;
+	}
+
+	.main-contact-table thead th {
+		@apply bg-gray-100 px-3 py-2 text-left text-xs font-semibold text-gray-700 sm:text-sm;
+	}
+
+	.main-contact-table tbody td {
+		@apply border-t border-gray-200 px-3 py-2 text-xs text-gray-700 sm:text-sm;
+	}
+
+	.main-contact-empty {
+		@apply py-4 text-center text-sm text-gray-500;
+	}
+
+	.main-contact-action-btn {
+		@apply rounded-md border border-[var(--color-brand-soft)] bg-[var(--color-brand-softest)] px-3 py-1.5 text-xs font-medium text-[var(--color-brand)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
+	}
+
+	.main-contact-list {
+		@apply mt-4 grid md:grid-cols-2 sm:grid-cols-1 gap-4;
+	}
+
+	.main-contact-list-item {
+		@apply flex flex-col gap-3 rounded-sm border border-gray-200 p-3 sm:flex-row sm:items-start sm:justify-between;
+	}
+
+	.main-contact-list-info {
+		@apply min-w-0;
+	}
+
+	.main-contact-list-name {
+		@apply flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-900;
+	}
+
+	.main-contact-default-badge {
+		@apply rounded-full bg-[var(--color-brand-softest)] px-2 py-0.5 text-xs font-medium text-[var(--color-brand)];
+	}
+
+	.main-contact-list-meta {
+		@apply mt-1 break-words text-xs text-gray-600 sm:text-sm;
+	}
+
+	.main-contact-list-actions {
+		@apply flex flex-wrap gap-2;
+	}
+
+	.main-contact-secondary-btn {
+		@apply rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50;
+	}
+
+	.main-contact-danger-btn {
+		@apply rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-100;
+	}
+}
+
+/* Address Section */
+
+/* Address Section */
+@layer components {
+	.bp-section-title {
+		@apply mb-4 text-base font-semibold text-gray-900 sm:text-lg;
+	}
+
+	.bp-address-top {
+		@apply grid grid-cols-1 gap-4 xl:grid-cols-3;
+	}
+
+	.bp-address-bottom {
+		@apply mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3;
+	}
+
+	.bp-address-grid-wrap {
+		@apply grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3;
+	}
+
+	.bp-address-grid {
+		@apply grid grid-cols-1 gap-3 sm:grid-cols-2;
+	}
+
+	.bp-address-card {
+		@apply w-full rounded-sm border border-gray-300 bg-white px-3 py-2.5;
+	}
+
+	.bp-address-card-header {
+		@apply mb-2 flex flex-col gap-1.5 sm:flex-row sm:items-start sm:justify-between;
+	}
+
+	.bp-address-card-header h5 {
+		@apply text-xs font-semibold text-gray-900;
+	}
+
+	.bp-address-card-header-right {
+		@apply flex flex-col gap-2 sm:items-end;
+	}
+
+	.bp-address-header-actions,
+	.bp-address-actions {
+		@apply flex flex-wrap gap-2;
+	}
+
+	.bp-address-default-badge {
+		@apply rounded-full bg-[var(--color-brand-softest)] px-2 py-0.5 text-xs font-medium text-[var(--color-brand)];
+	}
+
+	.bp-address-add-btn {
+		@apply rounded-md border border-[var(--color-brand-soft)] bg-[var(--color-brand-softest)] px-2.5 py-1 text-[11px] font-medium text-[var(--color-brand)] transition hover:opacity-90;
+	}
+
+	.bp-address-form,
+	.bp-address-list-container {
+		@apply flex h-full w-full flex-col gap-1.5;
+	}
+
+	.bp-address-field {
+		@apply text-xs;
+	}
+
+	.bp-address-info-list {
+		@apply flex flex-col gap-2;
+	}
+
+	.bp-address-info-item {
+		@apply grid grid-cols-1 gap-1 sm:grid-cols-[72px_1fr] sm:gap-3;
+	}
+
+	.bp-address-info-label {
+		@apply text-sm font-semibold text-gray-900;
+	}
+
+	.bp-address-info-value {
+		@apply text-xs text-gray-700 wrap-break-word;
+		overflow-wrap: anywhere;
+		word-break: break-word;
+	}
+
+	.bp-address-empty {
+		@apply text-xs text-gray-500;
+	}
+
+	.bp-address-footer-actions {
+		@apply mt-2 flex justify-end border-t border-gray-200 pt-1.5;
+	}
+
+	.bigtextArea {
+		min-height: 70px;
+	}
+	.bp-radio-group {
+		@apply flex flex-wrap items-center gap-4;
+	}
+
+	/* override FormInput layout for radio only */
+	.bp-radio-input {
+		@apply flex items-center gap-1.5 text-sm text-gray-700;
+	}
+
+	/* target input inside FormInput */
+	.bp-radio-input input {
+		@apply h-3.5 w-3.5 accent-[var(--color-brand)];
+	}
+
+	/* remove default vertical spacing if FormInput adds it */
+	.bp-radio-input label {
+		@apply m-0 p-0;
+	}
+}

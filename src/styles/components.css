@@ -1,3 +1,4 @@
+@import "./color.css";
 @reference "tailwindcss";
 
 /* =====================================================
@@ -26,7 +27,7 @@
 	}
 
 	.btn-brand {
-		color: white;
+		color: var(--color-white);
 		background: rgb(var(--color-primary));
 	}
 
@@ -68,7 +69,7 @@
     transition-all duration-150 z-50;
 
 		background: rgb(var(--color-text));
-		color: white;
+		color: var(--color-white);
 	}
 
 	.btn:hover .btn-tooltip,
@@ -195,7 +196,7 @@
 	.pagination-btn-active {
 		background: rgb(var(--color-primary));
 		border-color: rgb(var(--color-primary));
-		color: white;
+		color: var(--color-white);
 	}
 
 	.pagination-btn-disabled {
@@ -375,7 +376,7 @@
  ===================================== */
 
 	.profile-page {
-		@apply bg-white p-5 lg:p-6;
+		@apply py-2 lg:py-4;
 	}
 
 	.profile-page-title {
@@ -409,7 +410,7 @@
     opacity-0 scale-95 pointer-events-none transition-all duration-150 z-50;
 
 		background: rgb(var(--color-text));
-		color: white;
+		color: var(--color-white);
 	}
 
 	.avatar-wrapper:hover .avatar-tooltip,
@@ -428,7 +429,7 @@
 		rounded-2xl
 		transition-all
 		duration-200
-		ease-in-out;
+		ease-in-out bg-white;
 	}
 
 	/* Default card */
@@ -441,7 +442,13 @@
 	/* Primary card */
 
 	.action-card-primary {
-		@apply bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200 shadow-md;
+		background: linear-gradient(
+			to right,
+			var(--color-brand-softest),
+			var(--color-brand-soft)
+		);
+		border-color: var(--color-brand-soft);
+		@apply shadow-md;
 	}
 
 	/* =========================================
@@ -455,17 +462,19 @@
 	/* Default body */
 
 	.action-card-body-default {
-		@apply text-orange-500;
+		color: var(--color-brand);
 	}
 
 	.action-card:hover .action-card-body-default {
-		@apply bg-orange-100 text-orange-600;
+		background-color: var(--color-brand-soft);
+		color: var(--color-brand);
 	}
 
 	/* Primary body */
 
 	.action-card-body-primary {
-		@apply bg-orange-200 text-orange-700;
+		background-color: var(--color-brand-soft);
+		color: var(--color-brand);
 	}
 
 	/* =========================================
@@ -485,7 +494,7 @@
 	}
 
 	.action-card:hover .action-card-title {
-		@apply text-orange-600;
+		color: var(--color-brand);
 	}
 
 	/* =========================================
@@ -497,7 +506,7 @@
 	}
 
 	.action-card:hover .action-card-description {
-		@apply text-orange-600;
+		color: var(--color-brand);
 	}
 
 	/* =========================================
@@ -505,7 +514,8 @@
 	  ========================================= */
 
 	.action-card-subtext {
-		@apply text-xs text-orange-600 mt-2 font-medium;
+		@apply text-xs mt-2 font-medium;
+		color: var(--color-brand);
 	}
 }
 
@@ -574,10 +584,12 @@
 
 	.alert-btn-primary {
 		@apply flex-1 rounded-lg
-	  bg-black px-4 py-2
+	  px-4 py-2
 	  text-xs sm:text-sm
-	  font-medium text-white
-	  hover:bg-black/90;
+	  font-medium
+	  hover:opacity-90;
+		background-color: var(--color-black);
+		color: var(--color-white);
 	}
 
 	/* =========================================
@@ -664,5 +676,47 @@
 @layer utilities {
 	.animate-popover {
 		animation: popover-in 0.16s ease-out;
+	}
+}
+
+/* =========================================
+	ACCORDION 
+========================================= */
+
+@layer components {
+	.accordion {
+		@apply w-full space-y-3;
+	}
+
+	.accordion-item {
+		@apply overflow-hidden rounded-sm border border-gray-300 bg-white transition-all duration-200;
+	}
+
+	.accordion-item-open {
+		@apply border-[var(--color-brand-soft)] shadow-sm;
+	}
+
+	.accordion-trigger {
+		@apply flex w-full items-center justify-between gap-3 px-2 py-2 text-left transition-colors duration-200;
+	}
+
+	.accordion-trigger:hover {
+		@apply bg-[var(--color-brand-softest)];
+	}
+
+	.accordion-title {
+		@apply min-w-0 flex-1 text-sm font-semibold text-gray-800;
+	}
+
+	.accordion-icon {
+		@apply flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-200 text-base font-semibold text-[var(--color-brand)];
+	}
+
+	.accordion-item-open .accordion-icon {
+		@apply border-[var(--color-brand-soft)] bg-[var(--color-brand-softest)];
+	}
+
+	.accordion-content {
+		@apply border-t border-gray-200 px-4 py-4 text-sm text-gray-700;
 	}
 }

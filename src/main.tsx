@@ -24,7 +24,7 @@ createRoot(document.getElementById("root")!).render(
 			<ToastProvider>
 				<AuthProvider>
 					<div
-						className="container 
+						className=" 
 						overflow-hidden"
 					>
 						<App />

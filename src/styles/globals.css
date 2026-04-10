@@ -2,6 +2,8 @@
    common.css
    Global Branding & Design Variables
    ========================================================= */
+@import "./color.css";
+@tailwind utilities;
 
 /* ---------- Spacing Scale ---------- */
 :root {
@@ -65,7 +67,9 @@ body {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
-
+main {
+	/* background: var(--color-background-body); */
+}
 @layer utilities {
 	/* =========================================
 	   SLEEK SCROLLBAR

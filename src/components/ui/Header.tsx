@@ -4,7 +4,7 @@ import UserProfile from "../../components/ui/UserProfile";
 function Header() {
 	return (
 		<>
-			<div className="logo header-logo md:w-[150px] w-[120px]">
+			<div className="header-logo">
 				<NavLink to={"/"}>
 					<img src="/lo.jpg" alt="logo" />
 				</NavLink>

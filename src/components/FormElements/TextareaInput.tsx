@@ -16,15 +16,12 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 	ref,
 ) => {
 	return (
-		<div className="mb-4 relative ">
-			<label
-				htmlFor={name}
-				className="text-left block text-sm/6 font-medium text-gray-900"
-			>
+		<div className="form-field">
+			<label htmlFor={name} className="form-label">
 				{label}
-				{required && <span className="text-red-500"> *</span>}
+				{required && <span className="form-required"> *</span>}
 			</label>
-			<div className="mt-2">
+			<div className="form-input-wrapper relative">
 				<textarea
 					id={name}
 					ref={ref}
@@ -32,25 +29,20 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 					placeholder={placeholder}
 					value={value}
 					disabled={disabled}
-					rows={4}
 					maxLength={500}
 					aria-invalid={!!error}
 					aria-describedby={error ? `${name}-error` : undefined}
-					className={`block resize-none w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 sm:text-sm/6
-            ${
-							error
-								? "focus:outline-red-500 outline-red-500 focus:ring-red-500"
-								: "focus:outline-[#f97316]"
-						}
-            ${disabled ? "opacity-60 cursor-not-allowed" : ""}
-            ${className}
+					className={`form-input
+						${error ? "form-input-error" : ""}
+						${disabled ? "form-input-disabled" : ""}
+						${className}
           `}
 					{...otherProps}
 				/>
 			</div>
 
 			{error && (
-				<p id={`${name}-error`} className="mt-1 text-xs text-red-600 text-left">
+				<p id={`${name}-error`} className="form-error-text">
 					{error}
 				</p>
 			)}

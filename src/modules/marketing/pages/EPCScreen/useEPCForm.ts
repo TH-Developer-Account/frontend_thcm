@@ -11,6 +11,7 @@ const initialValues: EpcFormValues = {
 	zone: "",
 	branch: "",
 	budgetCode: "",
+	budgetDescription: "",
 	vertical: "",
 	scale: "",
 	eventName: "",
@@ -106,6 +107,11 @@ export const useEpcForm = ({ epcId }: UseEpcFormProps) => {
 		}
 	};
 
+	const handleReset = () => {
+		setValues(initialValues);
+		setErrors({});
+	};
+
 	return {
 		values,
 		errors,
@@ -113,6 +119,7 @@ export const useEpcForm = ({ epcId }: UseEpcFormProps) => {
 		isEditMode,
 		handleChange,
 		handleSave,
+		handleReset,
 	};
 };
 
@@ -128,8 +135,11 @@ const generateEpfNo = (dept: string, branch: string, zone: string) => {
 	const yyyy = now.getFullYear();
 	const mm = String(now.getMonth() + 1).padStart(2, "0");
 	const dd = String(now.getDate()).padStart(2, "0");
+	const time = new Date()
+		.toLocaleTimeString("en-GB", { hour12: false })
+		.replace(/:/g, "");
+	console.log(time); // hh:mm:ss
+	// const timestamp = Date.now();
 
-	const timestamp = Date.now();
-
-	return `${deptCode}/${branchCode}/${zoneCode}/${yyyy}/${mm}/${dd}/${timestamp}`;
+	return `${deptCode}/${branchCode}/${zoneCode}/${yyyy}${mm}${dd}/${time}`;
 };
