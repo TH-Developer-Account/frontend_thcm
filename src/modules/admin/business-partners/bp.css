@@ -3,14 +3,14 @@
 
 /* Common styles for Business Partners module */
 .content-box {
-	@apply w-full h-full rounded-sm border border-gray-300 bg-white p-2;
+	@apply w-full h-full rounded-sm border border-gray-300 bg-white;
 }
 
 button {
 	cursor: pointer;
 }
 .brand-text h3 {
-	@apply text-[var(--color-brand)] text-lg font-semibold sm:text-xl md:text-2xl;
+	@apply text-(--color-brand) text-lg font-semibold sm:text-xl md:text-2xl;
 }
 
 .no-padding {

@@ -1,0 +1,72 @@
+import type { WorkflowItem, WorkflowStatus } from "./workflow.types";
+
+export const workflows: WorkflowItem[] = [
+	{
+		id: "WF-1001",
+		name: "Vendor Onboarding Approval",
+		module: "Procurement",
+		owner: "You",
+		ownerType: "mine",
+		stages: 4,
+		lastUpdated: "2 hours ago",
+		status: "Active",
+	},
+	{
+		id: "WF-1002",
+		name: "Marketing Budget Approval",
+		module: "Marketing",
+		owner: "You",
+		ownerType: "mine",
+		stages: 3,
+		lastUpdated: "Yesterday",
+		status: "Draft",
+	},
+	{
+		id: "WF-1003",
+		name: "Travel Reimbursement Workflow",
+		module: "Finance",
+		owner: "Akhil Sharma",
+		ownerType: "team",
+		stages: 5,
+		lastUpdated: "3 days ago",
+		status: "Pending Approval",
+	},
+	{
+		id: "WF-1004",
+		name: "Contract Review Workflow",
+		module: "Legal",
+		owner: "Neha Kapoor",
+		ownerType: "team",
+		stages: 4,
+		lastUpdated: "5 hours ago",
+		status: "Active",
+	},
+	{
+		id: "WF-1005",
+		name: "Employee Exit Clearance",
+		module: "HR",
+		owner: "You",
+		ownerType: "mine",
+		stages: 6,
+		lastUpdated: "1 week ago",
+		status: "Draft",
+	},
+	{
+		id: "WF-1006",
+		name: "Project Capex Approval",
+		module: "Operations",
+		owner: "Rahul Menon",
+		ownerType: "team",
+		stages: 5,
+		lastUpdated: "Today",
+		status: "Active",
+	},
+];
+
+export const statusClassMap: Record<WorkflowStatus, string> = {
+	Draft: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+	Active: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+	Paused: "bg-zinc-100 text-zinc-700 ring-1 ring-zinc-200",
+	Archived: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
+	"Pending Approval": "bg-violet-50 text-violet-700 ring-1 ring-violet-200",
+};

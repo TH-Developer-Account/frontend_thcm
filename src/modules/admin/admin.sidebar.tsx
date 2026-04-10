@@ -47,6 +47,18 @@ export const adminSidebar: SidebarItem[] = [
 		link: "/admin/business-partners-view",
 	},
 	{
+		id: "workflows",
+		label: "Workflows",
+		icon: <BriefcaseBusinessIcon size={18} />,
+		link: "/admin/workflows",
+	},
+	{
+		id: "create-workflows",
+		label: "Create Workflow",
+		icon: <BriefcaseBusinessIcon size={18} />,
+		link: "/admin/create-workflows",
+	},
+	{
 		id: "dealers",
 		label: "Dealers",
 		icon: <BriefcaseBusinessIcon size={18} />,

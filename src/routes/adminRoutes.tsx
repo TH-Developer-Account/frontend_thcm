@@ -15,6 +15,8 @@ import ComingSoon from "../components/ui/ComingSoon";
 import MastersPage from "../modules/admin/pages/Masters/MastersPage";
 import BusinessPartners from "../modules/admin/business-partners/BusinessPartners";
 import BusinessPartnerView from "../modules/admin/business-partners/BusinessPartnerView";
+import WorkflowPage from "../modules/admin/workflow/WorkflowPage";
+import WorkflowCreatePage from "../modules/admin/workflow/WorkflowCreatePage";
 
 export default function AdminRoutes() {
 	return (
@@ -58,6 +60,22 @@ export default function AdminRoutes() {
 				element={
 					<ThemeProvider>
 						<ComingSoon />
+					</ThemeProvider>
+				}
+			/>
+			<Route
+				path="workflows"
+				element={
+					<ThemeProvider>
+						<WorkflowPage />
+					</ThemeProvider>
+				}
+			/>
+			<Route
+				path="create-workflows"
+				element={
+					<ThemeProvider>
+						<WorkflowCreatePage />
 					</ThemeProvider>
 				}
 			/>
