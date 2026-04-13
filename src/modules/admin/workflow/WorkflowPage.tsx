@@ -2,7 +2,7 @@
 import React, { useMemo, useState } from "react";
 import WorkflowTopSection from "./components/WorkflowTopSection";
 import WorkflowBottomSection from "./components/WorkflowBottomSection";
-import type { WorkflowFilterKey, WorkflowItem } from "./utils/workflow.types";
+import type { WorkflowFilterKey, WorkflowItem } from "./types/workflow.types";
 import { workflows } from "./utils/workflow.data";
 import PageSectionLayout, {
 	PageSection,

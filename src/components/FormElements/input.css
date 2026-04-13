@@ -35,8 +35,7 @@
 	========================= */
 
 	.form-label {
-		@apply block text-left text-sm font-medium;
-		color: var(--color-text-strong);
+		@apply text-xs font-medium text-zinc-600;
 	}
 
 	.form-required {
@@ -44,8 +43,7 @@
 	}
 
 	.form-helper-text {
-		@apply mt-1 text-xs;
-		color: var(--color-brand-gray);
+		@apply text-[11px] leading-relaxed text-zinc-400;
 	}
 
 	.form-error-text {
@@ -58,7 +56,7 @@
 	========================= */
 
 	.form-input-wrapper {
-		@apply relative mt-1.5;
+		@apply relative;
 	}
 
 	/* =========================
@@ -70,12 +68,11 @@
 	.form-date,
 	.form-native-select {
 		@apply block w-full rounded-md border text-sm;
-		@apply transition-[border-color,box-shadow,background-color] duration-150 ease-out;
 		@apply focus:outline-none;
-		background-color: var(--color-bg);
 		border-color: var(--color-border);
 		color: var(--color-text-primary);
 		box-shadow: none;
+		@apply w-full rounded-md border border-zinc-200 bg-[#fafaf8] px-3 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-[#e85d25] focus:bg-white;
 	}
 
 	.form-input::placeholder,
@@ -83,6 +80,7 @@
 	.form-date::placeholder,
 	.form-native-select::placeholder {
 		color: var(--color-text-muted);
+		@apply text-sm text-zinc-400;
 	}
 
 	.form-input:hover,
@@ -93,15 +91,16 @@
 	.form-textarea:focus,
 	.form-date:focus,
 	.form-native-select:focus {
-		border-color: var(--color-brand);
+		/* border-color: var(--color-brand); */
+		outline: none;
 	}
 
-	.form-input:focus,
+	/* .form-input:focus,
 	.form-textarea:focus,
 	.form-date:focus,
 	.form-native-select:focus {
-		box-shadow: var(--shadow-focus-brand);
-	}
+		 box-shadow: var(--shadow-focus-brand); 
+	} */
 
 	/* =========================
 	   INPUTS
@@ -126,11 +125,12 @@
 	========================= */
 
 	.form-textarea {
-		@apply px-3 py-2;
+		@apply rounded-xl p-3 shadow-sm;
 		min-height: 96px !important;
 		resize: vertical;
 		line-height: 1.5;
 		overflow: hidden;
+		background-color: var(--color-bg);
 	}
 	.objective textarea {
 		min-height: 96px;
@@ -145,12 +145,58 @@
 	}
 
 	.form-radio-input {
-		@apply h-3.5 w-3.5 shrink-0;
+		@apply h-3.5 w-3.5 shrink-0 cursor-pointer text-xs;
 		accent-color: var(--color-brand);
+		color: var(--color-text-primary);
 	}
 
 	.form-radio-label {
 		@apply text-xs font-medium text-gray-700;
+	}
+
+	/* =========================
+		RADIO
+ ========================= */
+	/* Wrapper */
+	.radio-group {
+		@apply flex flex-col gap-2;
+	}
+
+	/* Label */
+	.radio-group-label {
+		@apply text-sm text-zinc-900;
+	}
+
+	/* Options Row */
+	.radio-group-options {
+		@apply flex flex-row gap-4;
+	}
+
+	/* Each Option */
+	.radio-option {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		cursor: pointer;
+	}
+
+	.radio-option-disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	/* Native Radio Input */
+	.radio-input {
+		width: 16px;
+		height: 16px;
+		cursor: pointer;
+		accent-color: #f35a00; /* 🔥 brand color */
+	}
+
+	/* Label Text */
+	.radio-text {
+		font-size: 14px;
+		color: #3f3f46;
 	}
 	/* =========================
 	   DATE
@@ -286,7 +332,7 @@
 }
 
 .react-select__control {
-	@apply rounded-md border text-sm transition-[border-color,box-shadow,background-color] duration-150 ease-out;
+	@apply rounded-xl  shadow-sm border text-sm transition-[border-color,box-shadow,background-color] duration-150 ease-out;
 	background-color: var(--color-bg);
 	border-color: var(--color-border);
 	color: var(--color-text-primary);

@@ -1,6 +1,6 @@
 import React from "react";
 import { ChevronRight } from "lucide-react";
-import type { WorkflowFilterKey, WorkflowItem } from "../utils/workflow.types";
+import type { WorkflowFilterKey, WorkflowItem } from "../types/workflow.types";
 import { statusClassMap } from "../utils/workflow.data";
 
 type WorkflowBottomSectionProps = {

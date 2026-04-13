@@ -278,7 +278,7 @@
 
 	.workflow-create-card,
 	.workflow-sidebar-card {
-		@apply mb-4 rounded-xl border border-zinc-200 bg-white px-5 py-5;
+		@apply rounded-sm border border-zinc-200 bg-white px-5 py-5;
 	}
 
 	.workflow-create-card-title {
@@ -330,7 +330,7 @@
 	}
 
 	.workflow-create-textarea {
-		@apply min-h-[92px] resize-none;
+		@apply min-h-[75px] resize-none;
 	}
 
 	.workflow-create-hint {
@@ -342,7 +342,7 @@
 	}
 
 	.workflow-stage-card {
-		@apply overflow-hidden rounded-xl border border-zinc-200 bg-[#fafaf8] transition;
+		@apply overflow-hidden rounded-sm border border-zinc-200 bg-[#fafaf8] transition;
 	}
 
 	.workflow-stage-card-expanded {
@@ -434,11 +434,11 @@
 	}
 
 	.workflow-add-approver-btn {
-		@apply flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-zinc-300 px-3 py-2 text-xs text-zinc-500 transition hover:border-[#e85d25] hover:text-[#e85d25];
+		@apply flex w-full items-center justify-center gap-2 rounded-sm border border-dashed border-zinc-300 px-3 py-2 text-xs text-zinc-500 transition hover:border-[#e85d25] hover:text-[#e85d25];
 	}
 
 	.workflow-add-stage-btn {
-		@apply mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-orange-200 bg-white px-4 py-3 text-sm text-orange-700 transition hover:bg-orange-50;
+		@apply mt-3 flex w-full items-center justify-center gap-2 rounded-sm border border-dashed border-orange-200 bg-white px-4 py-3 text-sm text-orange-700 transition hover:bg-orange-50;
 	}
 
 	.workflow-sidebar-title {

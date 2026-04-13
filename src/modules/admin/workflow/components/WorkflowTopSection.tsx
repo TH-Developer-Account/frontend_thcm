@@ -9,7 +9,7 @@ import {
 	ShieldCheck,
 	Clock3,
 } from "lucide-react";
-import type { WorkflowFilterKey } from "../utils/workflow.types";
+import type { WorkflowFilterKey } from "../types/workflow.types";
 
 type WorkflowTopSectionProps = {
 	activeFilter: WorkflowFilterKey;

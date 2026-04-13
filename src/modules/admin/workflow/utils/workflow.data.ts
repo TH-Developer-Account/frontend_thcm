@@ -1,4 +1,4 @@
-import type { WorkflowItem, WorkflowStatus } from "./workflow.types";
+import type { WorkflowItem, WorkflowStatus } from "../types/workflow.types";
 
 export const workflows: WorkflowItem[] = [
 	{
