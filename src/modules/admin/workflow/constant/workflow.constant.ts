@@ -155,4 +155,5 @@ export const createInitialStages = (currentUser: Approver): WorkflowStage[] => [
 export const api_routes = {
 	// other routes...
 	create_workflow_api_route: "/work-flow",
+	get_all_workflow_api_route: "/work-flow",
 };

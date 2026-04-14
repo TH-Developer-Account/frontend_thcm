@@ -20,6 +20,7 @@ const WorkflowCreateMain = ({
 	onSubmit,
 	availableUsers,
 	currentUserId,
+	onAddStage,
 	loading,
 }: WorkFlowProps) => {
 	const [values, setValues] = useState<FormValues>({
@@ -107,6 +108,7 @@ const WorkflowCreateMain = ({
 						onAddApprover={onAddApprover}
 						onBack={goBack}
 						onSubmit={goNext}
+						onAddStage={onAddStage}
 					/>
 				)}
 

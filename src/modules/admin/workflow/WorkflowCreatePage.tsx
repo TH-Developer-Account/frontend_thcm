@@ -7,8 +7,6 @@ import WorkflowCreateMain from "./components/WorkflowCreateMain";
 import WorkflowCreateSidebar from "./components/WorkflowCreateSidebar";
 import {
 	availableUsers,
-	createInitialStages,
-	getCurrentUserApprover,
 	initialBasics,
 	regionOptions,
 } from "./constant/workflow.constant";
@@ -19,39 +17,31 @@ import {
 	toggleStageExpanded,
 	updateStageField,
 } from "./utils/workflow.helpers";
-import type { WorkflowBasics, WorkflowStage } from "./types/workflow.types";
+import type {
+	WorkflowBasics,
+	WorkflowStage,
+	Approver,
+} from "./types/workflow.types";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 
 const WorkflowCreatePage = () => {
-	// 🔥 AUTH FIRST
 	const { user, workspaceId, isLoading } = useAuth();
 	const { showToast } = useToast();
 
-	if (isLoading || !user || !workspaceId) return null;
-
-	// 🔥 derive user
-	const currentUserApprover = getCurrentUserApprover(user);
-
-	// 🔥 STATE
 	const [currentStep, setCurrentStep] = useState(1);
 	const [basics, setBasics] = useState<WorkflowBasics>(initialBasics);
-	const [stages, setStages] = useState<WorkflowStage[]>(
-		createInitialStages(currentUserApprover),
-	);
+	const [stages, setStages] = useState<WorkflowStage[]>([]);
 	const [loading, setLoading] = useState(false);
 
-	// 🔥 DERIVED
 	const totalApprovers = useMemo(
 		() => stages.reduce((sum, stage) => sum + stage.approvers.length, 0),
 		[stages],
 	);
 
-	// 🔥 NAV
 	const goNext = () => setCurrentStep((prev) => Math.min(prev + 1, 3));
 	const goBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
-	// 🔥 HANDLERS
 	const handleBasicChange = <K extends keyof WorkflowBasics>(
 		key: K,
 		value: WorkflowBasics[K],
@@ -75,12 +65,37 @@ const WorkflowCreatePage = () => {
 		setStages((prev) => removeStageApprover(prev, stageId, approverId));
 	};
 
-	const addApprover = (stageId: string, approver: any) => {
+	const addApprover = (stageId: string, approver: Approver) => {
 		setStages((prev) => addStageApprover(prev, stageId, approver));
 	};
 
-	// 🔥 SUBMIT
+	const addStage = () => {
+		setStages((prev) => [
+			...prev,
+			{
+				id: `stage-${prev.length + 1}`,
+				stageOrder: prev.length + 1,
+				name: `Stage ${prev.length + 1}`,
+				strategy: "ANY",
+				minApprovals: 1,
+				slaDays: "1",
+				rejectionAction: "RETURN",
+				approvers: [],
+				isExpanded: true,
+			},
+		]);
+	};
+
 	const handleSubmit = async () => {
+		if (!workspaceId) {
+			showToast({
+				type: "error",
+				title: "Error",
+				description: "Workspace ID is missing",
+			});
+			return;
+		}
+
 		setLoading(true);
 
 		try {
@@ -113,9 +128,10 @@ const WorkflowCreatePage = () => {
 		}
 	};
 
-	// 🔥 UI HELPERS
 	const selectedRegionLabel =
 		regionOptions.find((item) => item.value === basics.regionId)?.label ?? "--";
+
+	if (isLoading) return null;
 
 	return (
 		<PageSectionLayout>
@@ -141,12 +157,13 @@ const WorkflowCreatePage = () => {
 							basics={basics}
 							stages={stages}
 							availableUsers={availableUsers}
-							currentUserId={user.id}
+							currentUserId={user?.id || ""}
 							onBasicChange={handleBasicChange}
 							onStageChange={handleStageChange}
 							onToggleStage={toggleStage}
 							onRemoveApprover={removeApprover}
 							onAddApprover={addApprover}
+							onAddStage={addStage}
 							onSubmit={handleSubmit}
 							loading={loading}
 						/>

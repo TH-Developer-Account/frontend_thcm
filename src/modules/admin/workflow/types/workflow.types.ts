@@ -64,6 +64,7 @@ export type WorkFlowProps = {
 	onAddApprover: (stageId: string, approver: Approver) => void;
 	onSubmit: () => void;
 	loading?: boolean;
+	onAddStage: () => void;
 };
 
 export type FormValues = {
@@ -139,3 +140,12 @@ export type WorkflowMainProps = {
 	onAddApprover: (stageId: string, approver: Approver) => void;
 	onSubmit: () => void;
 };
+
+export interface WorkflowRow {
+	name: string;
+	app_name: string;
+	created_by: string;
+	isActive: boolean;
+	last_updated: string;
+	updated_by: string;
+}

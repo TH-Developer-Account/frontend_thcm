@@ -1,7 +1,6 @@
 import React from "react";
 import {
 	GitBranch,
-	Search,
 	Plus,
 	BriefcaseBusiness,
 	FileStack,
@@ -10,11 +9,11 @@ import {
 	Clock3,
 } from "lucide-react";
 import type { WorkflowFilterKey } from "../types/workflow.types";
+import { useWorkflow } from "../context/useWorkflows";
+import { SearchInput } from "../../../../components/FormElements/SearchInput";
 
 type WorkflowTopSectionProps = {
 	activeFilter: WorkflowFilterKey;
-	search: string;
-	onSearchChange: (value: string) => void;
 	onFilterChange: (filter: WorkflowFilterKey) => void;
 	onCreateWorkflow?: () => void;
 	cardCounts: Record<WorkflowFilterKey, number>;
@@ -63,12 +62,11 @@ const filterMeta: Record<
 
 const WorkflowTopSection = ({
 	activeFilter,
-	search,
-	onSearchChange,
 	onFilterChange,
 	onCreateWorkflow,
 	cardCounts,
 }: WorkflowTopSectionProps) => {
+	const { search, setSearch } = useWorkflow();
 	return (
 		<section className="workflow-section">
 			<div className="workflow-section-header">
@@ -86,13 +84,10 @@ const WorkflowTopSection = ({
 
 				<div className="workflow-section-header-actions">
 					<div className="workflow-search">
-						<Search size={16} className="workflow-search-icon" />
-						<input
-							type="text"
+						<SearchInput
 							value={search}
-							onChange={(e) => onSearchChange(e.target.value)}
+							onChange={setSearch}
 							placeholder="Search workflows..."
-							className="workflow-search-input"
 						/>
 					</div>
 
