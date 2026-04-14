@@ -129,7 +129,7 @@ const WorkflowStagesForm = ({
 											<select
 												className="workflow-create-input workflow-create-input-sm"
 												value={stage.strategy}
-												disabled={isProposer}
+												// disabled={isProposer}
 												onChange={(e) =>
 													onStageChange(
 														stage.id,
@@ -144,8 +144,8 @@ const WorkflowStagesForm = ({
 											</select>
 										</div>
 									</div>
-
-									{stage.strategy === "QUORUM" && !isProposer && (
+									{/* !isProposer && */}
+									{stage.strategy === "QUORUM" && (
 										<div className="workflow-create-field-row workflow-create-field-row-2">
 											<div className="workflow-create-field-group">
 												<label className="workflow-create-label">
@@ -167,11 +167,9 @@ const WorkflowStagesForm = ({
 											</div>
 										</div>
 									)}
-
 									<label className="workflow-create-label">
 										{isProposer ? "Assigned user" : "Approvers"}
 									</label>
-
 									<div className="workflow-approver-list">
 										{stage.approvers.map((approver) => (
 											<div key={approver.id} className="workflow-approver-row">
@@ -194,74 +192,73 @@ const WorkflowStagesForm = ({
 													</div>
 												</div>
 
-												{!isProposer && (
-													<button
-														type="button"
-														className="workflow-remove-btn"
-														onClick={() =>
-															onRemoveApprover(stage.id, approver.id)
-														}
-													>
-														×
-													</button>
-												)}
+												{/* {!isProposer && ( */}
+												<button
+													type="button"
+													className="workflow-remove-btn"
+													onClick={() =>
+														onRemoveApprover(stage.id, approver.id)
+													}
+												>
+													×
+												</button>
+												{/* // )} */}
 											</div>
 										))}
 									</div>
+									{/* {!isProposer && ( */}
+									<>
+										<div className="workflow-search">
+											<Search size={14} className="workflow-search-icon" />
+											<input
+												type="text"
+												value={searchValue}
+												onChange={(e) =>
+													handleSearchChange(stage.id, e.target.value)
+												}
+												placeholder="Search users by name or role"
+												className="workflow-search-input"
+											/>
+										</div>
 
-									{!isProposer && (
-										<>
-											<div className="workflow-search">
-												<Search size={14} className="workflow-search-icon" />
-												<input
-													type="text"
-													value={searchValue}
-													onChange={(e) =>
-														handleSearchChange(stage.id, e.target.value)
-													}
-													placeholder="Search users by name or role"
-													className="workflow-search-input"
-												/>
+										{searchValue && filteredUsers.length > 0 && (
+											<div className="workflow-approver-list mt-2">
+												{filteredUsers.slice(0, 5).map((user) => (
+													<button
+														key={user.id}
+														type="button"
+														className="workflow-approver-row w-full text-left"
+														onClick={() => {
+															onAddApprover(stage.id, user);
+															handleSearchChange(stage.id, "");
+														}}
+													>
+														<div className="workflow-approver-avatar workflow-approver-avatar-blue">
+															{user.initials ||
+																user.name
+																	.split(" ")
+																	.map((word) => word[0])
+																	.join("")
+																	.slice(0, 2)
+																	.toUpperCase()}
+														</div>
+
+														<div className="workflow-approver-content">
+															<div className="workflow-approver-name">
+																{user.name}
+															</div>
+															<div className="workflow-approver-role">
+																{user.role || user.id}
+															</div>
+														</div>
+
+														<UserPlus size={14} />
+													</button>
+												))}
 											</div>
-
-											{searchValue && filteredUsers.length > 0 && (
-												<div className="workflow-approver-list mt-2">
-													{filteredUsers.slice(0, 5).map((user) => (
-														<button
-															key={user.id}
-															type="button"
-															className="workflow-approver-row w-full text-left"
-															onClick={() => {
-																onAddApprover(stage.id, user);
-																handleSearchChange(stage.id, "");
-															}}
-														>
-															<div className="workflow-approver-avatar workflow-approver-avatar-blue">
-																{user.initials ||
-																	user.name
-																		.split(" ")
-																		.map((word) => word[0])
-																		.join("")
-																		.slice(0, 2)
-																		.toUpperCase()}
-															</div>
-
-															<div className="workflow-approver-content">
-																<div className="workflow-approver-name">
-																	{user.name}
-																</div>
-																<div className="workflow-approver-role">
-																	{user.role || user.id}
-																</div>
-															</div>
-
-															<UserPlus size={14} />
-														</button>
-													))}
-												</div>
-											)}
-										</>
-									)}
+										)}
+									</>
+									{/* )} */}
 								</div>
 							)}
 						</div>

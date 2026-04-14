@@ -5,6 +5,7 @@ import SelectInput from "../../../../components/FormElements/SelectInput";
 import Radio from "../../../../components/FormElements/Radio";
 import type { Option } from "../../../../components/FormElements/input.types";
 import type { WorkflowBasics } from "../types/workflow.types";
+import { appOptionsS } from "../constant/workflow.constant";
 
 type StepValues = {
 	zone?: string;
@@ -12,7 +13,7 @@ type StepValues = {
 	status: string;
 };
 
-type Props = {
+export type WorkflowGenProps = {
 	basics: WorkflowBasics;
 	values: StepValues;
 	regionOptions: Option[];
@@ -29,11 +30,11 @@ const WorkFlowGenForm = ({
 	basics,
 	values,
 	regionOptions,
-	appOptions,
+	// appOptions,
 	onBasicChange,
 	onFieldChange,
 	onNext,
-}: Props) => {
+}: WorkflowGenProps) => {
 	return (
 		<>
 			<div className="workflow-create-field-row workflow-create-field-row-2">
@@ -49,10 +50,14 @@ const WorkFlowGenForm = ({
 				<SelectInput
 					name="app"
 					label="App"
+					// value={
+					// 	appOptions.find((opt: Option) => opt.label === values?.app) || null
+					// }
+					// options={appOptions}
 					value={
-						appOptions.find((opt: Option) => opt.label === values?.app) || null
+						appOptionsS.find((opt: Option) => opt.label === values?.app) || null
 					}
-					options={appOptions}
+					options={appOptionsS}
 					onChange={(v: SingleValue<Option>) =>
 						onFieldChange("app", v?.label || "")
 					}

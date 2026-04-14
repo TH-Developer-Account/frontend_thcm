@@ -10,56 +10,48 @@ import {
 	createInitialStages,
 	getCurrentUserApprover,
 	initialBasics,
-	initialSettings,
 	regionOptions,
 } from "./constant/workflow.constant";
-import { createWorkflowApi } from "./api/workflow.api";
+import { submitWorkflow } from "./api/workflow.api";
 import {
 	addStageApprover,
-	buildWorkflowPayload,
 	removeStageApprover,
 	toggleStageExpanded,
 	updateStageField,
-	validateWorkflow,
 } from "./utils/workflow.helpers";
-import type {
-	FlowType,
-	WorkflowBasics,
-	WorkflowSettings,
-	WorkflowStage,
-} from "./types/workflow.types";
+import type { WorkflowBasics, WorkflowStage } from "./types/workflow.types";
+import { useToast } from "../../../context/Auth/AuthContext";
+import { useAuth } from "../../../context/Auth/useAuth";
 
 const WorkflowCreatePage = () => {
+	// 🔥 AUTH FIRST
+	const { user, workspaceId, isLoading } = useAuth();
+	const { showToast } = useToast();
+
+	if (isLoading || !user || !workspaceId) return null;
+
+	// 🔥 derive user
+	const currentUserApprover = getCurrentUserApprover(user);
+
+	// 🔥 STATE
 	const [currentStep, setCurrentStep] = useState(1);
-
-	const goNext = () => setCurrentStep((prev) => Math.min(prev + 1, 3));
-	const goBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
-
-	const auth = {
-		user: {
-			id: "e96499be-11e5-4a32-88c5-7dec0d336fd1",
-			first_name: "Angel",
-			last_name: "Toy",
-			email: "billie.feil11@hotmail.com",
-		},
-		workspaceId: "8ede9c16-117a-46a1-8175-b2e3d16d2e6a",
-	};
-
-	const workspaceId = auth?.workspaceId ?? "";
-	const currentUserApprover = getCurrentUserApprover(auth.user);
-
 	const [basics, setBasics] = useState<WorkflowBasics>(initialBasics);
 	const [stages, setStages] = useState<WorkflowStage[]>(
 		createInitialStages(currentUserApprover),
 	);
-	const [settings, setSettings] = useState<WorkflowSettings>(initialSettings);
-	const [flowType, setFlowType] = useState<FlowType>("SEQUENTIAL");
+	const [loading, setLoading] = useState(false);
 
+	// 🔥 DERIVED
 	const totalApprovers = useMemo(
 		() => stages.reduce((sum, stage) => sum + stage.approvers.length, 0),
 		[stages],
 	);
 
+	// 🔥 NAV
+	const goNext = () => setCurrentStep((prev) => Math.min(prev + 1, 3));
+	const goBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
+
+	// 🔥 HANDLERS
 	const handleBasicChange = <K extends keyof WorkflowBasics>(
 		key: K,
 		value: WorkflowBasics[K],
@@ -87,20 +79,41 @@ const WorkflowCreatePage = () => {
 		setStages((prev) => addStageApprover(prev, stageId, approver));
 	};
 
-	const handleSubmit = () => {
-		const error = validateWorkflow(basics, stages, workspaceId);
+	// 🔥 SUBMIT
+	const handleSubmit = async () => {
+		setLoading(true);
 
-		if (error) {
-			console.error("Validation Error:", error);
-			return;
+		try {
+			const response = await submitWorkflow({
+				basics,
+				stages,
+				workspaceId,
+			});
+
+			showToast({
+				type: "success",
+				title: "Success",
+				description: response.message,
+			});
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error
+					? err.message
+					: typeof err === "string"
+						? err
+						: "Failed to create workflow";
+
+			showToast({
+				type: "error",
+				title: "Error",
+				description: message,
+			});
+		} finally {
+			setLoading(false);
 		}
-
-		const payload = buildWorkflowPayload(basics, stages, workspaceId);
-
-		console.log("FINAL PAYLOAD:", payload);
-		console.log("FINAL PAYLOAD JSON:", JSON.stringify(payload, null, 2));
 	};
 
+	// 🔥 UI HELPERS
 	const selectedRegionLabel =
 		regionOptions.find((item) => item.value === basics.regionId)?.label ?? "--";
 
@@ -128,13 +141,14 @@ const WorkflowCreatePage = () => {
 							basics={basics}
 							stages={stages}
 							availableUsers={availableUsers}
-							currentUserId={auth.user.id}
+							currentUserId={user.id}
 							onBasicChange={handleBasicChange}
 							onStageChange={handleStageChange}
 							onToggleStage={toggleStage}
 							onRemoveApprover={removeApprover}
 							onAddApprover={addApprover}
 							onSubmit={handleSubmit}
+							loading={loading}
 						/>
 
 						<WorkflowCreateSidebar
@@ -143,10 +157,6 @@ const WorkflowCreatePage = () => {
 							zone={selectedRegionLabel}
 							stageCount={stages.length}
 							approverCount={totalApprovers}
-							flowType={flowType}
-							onFlowTypeChange={setFlowType}
-							settings={settings}
-							onSettingsChange={setSettings}
 						/>
 					</div>
 				</div>

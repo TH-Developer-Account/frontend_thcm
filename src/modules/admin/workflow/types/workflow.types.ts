@@ -63,6 +63,7 @@ export type WorkFlowProps = {
 	onRemoveApprover: (stageId: string, approverId: string) => void;
 	onAddApprover: (stageId: string, approver: Approver) => void;
 	onSubmit: () => void;
+	loading?: boolean;
 };
 
 export type FormValues = {

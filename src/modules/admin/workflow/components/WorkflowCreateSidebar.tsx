@@ -1,29 +1,9 @@
-import React from "react";
-
 type Props = {
 	module: string;
 	budgetCode: string;
 	zone: string;
 	stageCount: number;
 	approverCount: number;
-	flowType: "SEQUENTIAL" | "PARALLEL" | "CONDITIONAL";
-	onFlowTypeChange: (value: "SEQUENTIAL" | "PARALLEL" | "CONDITIONAL") => void;
-	settings: {
-		allowSubmitterEdit: boolean;
-		emailNotifications: boolean;
-		remindOnSlaBreach: boolean;
-		requireCommentOnReject: boolean;
-		autoApproveOnTimeout: boolean;
-	};
-	onSettingsChange: React.Dispatch<
-		React.SetStateAction<{
-			allowSubmitterEdit: boolean;
-			emailNotifications: boolean;
-			remindOnSlaBreach: boolean;
-			requireCommentOnReject: boolean;
-			autoApproveOnTimeout: boolean;
-		}>
-	>;
 };
 
 const WorkflowCreateSidebar = ({
@@ -32,18 +12,7 @@ const WorkflowCreateSidebar = ({
 	zone,
 	stageCount,
 	approverCount,
-	flowType,
-	onFlowTypeChange,
-	settings,
-	onSettingsChange,
 }: Props) => {
-	const setToggle = (key: keyof typeof settings) => {
-		onSettingsChange((prev) => ({
-			...prev,
-			[key]: !prev[key],
-		}));
-	};
-
 	return (
 		<div className="workflow-create-sidebar">
 			<div className="workflow-sidebar-card">
@@ -72,72 +41,6 @@ const WorkflowCreateSidebar = ({
 					</div>
 				</div>
 			</div>
-
-			{/* <div className="workflow-sidebar-card">
-				<h3 className="workflow-sidebar-title">Approval flow type</h3>
-
-				<div className="workflow-radio-group">
-					<button
-						type="button"
-						className={`workflow-radio-option ${
-							flowType === "SEQUENTIAL" ? "workflow-radio-option-active" : ""
-						}`}
-						onClick={() => onFlowTypeChange("SEQUENTIAL")}
-					>
-						<div
-							className={`workflow-radio-dot ${
-								flowType === "SEQUENTIAL" ? "workflow-radio-dot-active" : ""
-							}`}
-						/>
-						<div>
-							<div className="workflow-radio-label">Sequential</div>
-							<div className="workflow-radio-sub">
-								Each stage must complete before the next
-							</div>
-						</div>
-					</button>
-
-					<button
-						type="button"
-						className={`workflow-radio-option ${
-							flowType === "PARALLEL" ? "workflow-radio-option-active" : ""
-						}`}
-						onClick={() => onFlowTypeChange("PARALLEL")}
-					>
-						<div
-							className={`workflow-radio-dot ${
-								flowType === "PARALLEL" ? "workflow-radio-dot-active" : ""
-							}`}
-						/>
-						<div>
-							<div className="workflow-radio-label">Parallel</div>
-							<div className="workflow-radio-sub">
-								All stages run simultaneously
-							</div>
-						</div>
-					</button>
-
-					<button
-						type="button"
-						className={`workflow-radio-option ${
-							flowType === "CONDITIONAL" ? "workflow-radio-option-active" : ""
-						}`}
-						onClick={() => onFlowTypeChange("CONDITIONAL")}
-					>
-						<div
-							className={`workflow-radio-dot ${
-								flowType === "CONDITIONAL" ? "workflow-radio-dot-active" : ""
-							}`}
-						/>
-						<div>
-							<div className="workflow-radio-label">Conditional</div>
-							<div className="workflow-radio-sub">
-								Stages triggered by rules and fields
-							</div>
-						</div>
-					</button>
-				</div>
-			</div> */}
 
 			{/* <div className="workflow-sidebar-card">
 				<h3 className="workflow-sidebar-title">Settings</h3>
@@ -225,21 +128,6 @@ const WorkflowCreateSidebar = ({
 						/>
 					</div>
 				</div>
-			</div> */}
-
-			{/* <div className="workflow-sidebar-footer-actions">
-				<button
-					type="button"
-					className="workflow-create-secondary-btn workflow-sidebar-save-btn"
-				>
-					Save draft
-				</button>
-				<button
-					type="button"
-					className="workflow-create-primary-btn workflow-sidebar-publish-btn"
-				>
-					Publish workflow
-				</button>
 			</div> */}
 		</div>
 	);

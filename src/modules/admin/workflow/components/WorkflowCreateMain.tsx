@@ -4,6 +4,7 @@ import { useMasterData } from "../../../../hooks/useMasterData";
 import WorkFlowGenForm from "./WorkFlowGenForm";
 import WorkflowStagesForm from "./WorkflowStagesForm";
 import type { FormValues, WorkFlowProps } from "../types/workflow.types";
+import WorkflowViewForm from "./WorkflowViewForm";
 
 const WorkflowCreateMain = ({
 	currentStep,
@@ -19,6 +20,7 @@ const WorkflowCreateMain = ({
 	onSubmit,
 	availableUsers,
 	currentUserId,
+	loading,
 }: WorkFlowProps) => {
 	const [values, setValues] = useState<FormValues>({
 		isActive: true,
@@ -110,55 +112,7 @@ const WorkflowCreateMain = ({
 
 				{currentStep === 3 && (
 					<>
-						<div className="workflow-create-field-row">
-							<div className="workflow-create-field-group">
-								<label className="workflow-create-label">Workflow name</label>
-								<div className="workflow-create-input">
-									{basics.name || "--"}
-								</div>
-							</div>
-						</div>
-
-						<div className="workflow-create-field-row workflow-create-field-row-2">
-							<div className="workflow-create-field-group">
-								<label className="workflow-create-label">Minimum budget</label>
-								<div className="workflow-create-input">
-									{basics.minBudget || "0"}
-								</div>
-							</div>
-
-							<div className="workflow-create-field-group">
-								<label className="workflow-create-label">Maximum budget</label>
-								<div className="workflow-create-input">
-									{basics.maxBudget || "0"}
-								</div>
-							</div>
-						</div>
-
-						<div className="workflow-create-field-row workflow-create-field-row-2">
-							<div className="workflow-create-field-group">
-								<label className="workflow-create-label">Priority</label>
-								<div className="workflow-create-input">
-									{basics.priority || "1"}
-								</div>
-							</div>
-
-							<div className="workflow-create-field-group">
-								<label className="workflow-create-label">Status</label>
-								<div className="workflow-create-input">
-									{values.status === "active" ? "Active" : "Inactive"}
-								</div>
-							</div>
-						</div>
-
-						<div className="workflow-create-field-row">
-							<div className="workflow-create-field-group">
-								<label className="workflow-create-label">Description</label>
-								<div className="workflow-create-input">
-									{basics.description || "--"}
-								</div>
-							</div>
-						</div>
+						<WorkflowViewForm basics={basics} values={values} stages={stages} />
 
 						<div className="mt-4 flex justify-between">
 							<button
@@ -173,8 +127,9 @@ const WorkflowCreateMain = ({
 								type="button"
 								className="workflow-create-primary-btn"
 								onClick={onSubmit}
+								disabled={loading}
 							>
-								Save workflow
+								{loading ? "Saving..." : "Save workflow"}
 							</button>
 						</div>
 					</>

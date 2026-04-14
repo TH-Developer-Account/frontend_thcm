@@ -1,3 +1,4 @@
+import type { Option } from "../../../../components/FormElements/input.types";
 import type {
 	Approver,
 	CurrentAuthUser,
@@ -57,6 +58,20 @@ export const availableUsers: Approver[] = [
 	},
 ];
 
+export const appOptionsS: Option[] = [
+	{
+		label: "Marketing Activity Planner",
+		value: "Marketing Activity Planner",
+	},
+	{
+		label: "Customer Master Data",
+		value: "Customer Master Data",
+	},
+	{
+		label: "Dealer Claims",
+		value: "Dealer Claims",
+	},
+];
 export const initialBasics: WorkflowBasics = {
 	name: "Standard EPC Approval",
 	regionId: "region-uuid-1",
@@ -136,3 +151,8 @@ export const createInitialStages = (currentUser: Approver): WorkflowStage[] => [
 		approvers: [],
 	},
 ];
+
+export const api_routes = {
+	// other routes...
+	create_workflow_api_route: "/work-flow",
+};
