@@ -24,7 +24,7 @@ export function WorkflowProvider({ children }: WFProviderProps) {
 	const [totalPages, setTotalPages] = useState(0);
 	const debouncedSearch = useDebounce(search, 500); // 500ms delay
 
-	const fetchEPC = useCallback(async () => {
+	const fetchWorkflowList = useCallback(async () => {
 		try {
 			setLoading(true);
 
@@ -52,8 +52,8 @@ export function WorkflowProvider({ children }: WFProviderProps) {
 	}, [pageIndex, pageSize, debouncedSearch, sorting]);
 
 	useEffect(() => {
-		fetchEPC();
-	}, [fetchEPC]);
+		fetchWorkflowList();
+	}, [fetchWorkflowList]);
 
 	return (
 		<WorkflowContext.Provider
@@ -69,7 +69,7 @@ export function WorkflowProvider({ children }: WFProviderProps) {
 				setSorting,
 				setPageIndex,
 				setPageSize,
-				refetch: fetchEPC,
+				refetch: fetchWorkflowList,
 			}}
 		>
 			{children}

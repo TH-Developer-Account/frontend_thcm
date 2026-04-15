@@ -1,10 +1,20 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Edit, Trash } from "lucide-react";
+import { Edit, Trash, UserPlus } from "lucide-react";
 import type { WorkflowRow } from "../types/workflow.types";
 import { Badge } from "../../../../components/common/Badge";
 import Button from "../../../../components/common/Button";
 
-export const columns: ColumnDef<WorkflowRow>[] = [
+type WorkflowColumnActions = {
+	onAssign: (row: WorkflowRow) => void;
+	onEdit: (row: WorkflowRow) => void;
+	onDelete: (row: WorkflowRow) => void;
+};
+
+export const getWorkflowColumns = ({
+	onAssign,
+	onEdit,
+	onDelete,
+}: WorkflowColumnActions): ColumnDef<WorkflowRow>[] => [
 	{
 		accessorKey: "name",
 		header: "Workflow Name",
@@ -30,7 +40,7 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 		header: "Created By",
 		cell: ({ row }) => (
 			<div>
-				<div className="font-medium">${row.original.created_by}</div>
+				<div className="font-medium">{row.original.created_by}</div>
 			</div>
 		),
 	},
@@ -62,29 +72,43 @@ export const columns: ColumnDef<WorkflowRow>[] = [
 		),
 	},
 	{
-		accessorKey: "actions",
+		id: "actions",
 		header: "Actions",
-		cell: () => (
-			<div className="flex flex-row justify-start">
-				<div className="font-medium">
+		cell: ({ row }) => {
+			const workflow = row.original;
+
+			return (
+				<div className="flex flex-row justify-start gap-2">
 					<Button
-						type="submit"
-						className="bg-transparent  text-orange-900"
+						size="sm"
+						status="primary"
+						onClick={() => onAssign(workflow)}
+						Icon={UserPlus}
+						isTooltip="Assign Users"
+						iconColor="#f35a00"
+					/>
+
+					<Button
+						type="button"
+						className="bg-transparent text-orange-900"
+						onClick={() => onEdit(workflow)}
 						Icon={Edit}
 						iconPosition="right"
 						iconColor="#f35a00"
+						isTooltip="Edit"
 					/>
-				</div>
-				<div className="font-medium">
+
 					<Button
-						type="submit"
-						className="bg-transparent  text-orange-900"
+						type="button"
+						className="bg-transparent text-orange-900"
+						onClick={() => onDelete(workflow)}
 						Icon={Trash}
 						iconPosition="right"
 						iconColor="#f35a00"
+						isTooltip="Delete"
 					/>
 				</div>
-			</div>
-		),
+			);
+		},
 	},
 ];
