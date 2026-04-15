@@ -76,14 +76,6 @@ export type FormValues = {
 	app: string;
 };
 
-export type Approver = {
-	id: string;
-	name: string;
-	email?: string;
-	role?: string;
-	initials?: string;
-	avatarVariant?: "orange" | "blue" | "teal" | "purple";
-};
 export type ApprovalRule = "ANY" | "ALL" | "QUORUM";
 export type RejectionAction = "RETURN" | "CANCEL" | "ESCALATE";
 
@@ -153,3 +145,66 @@ export interface WorkflowRow {
 	updated_by: string;
 	users: User[];
 }
+
+export type WorkflowCard = {
+	name: string;
+	app_name: string;
+	created_by: string;
+	isActive: boolean;
+	last_updated: string;
+	updated_by: string;
+};
+
+type User = {
+	id: string;
+	first_name: string;
+	last_name: string;
+	email: string;
+};
+
+type Approver = {
+	id: string;
+	stageId: string;
+	userId: string;
+	user: User;
+};
+
+type StageStrategy = "ANY" | "ALL" | "SOME";
+
+type Stage = {
+	id: string;
+	name: string;
+	templateId: string;
+	stageOrder: number;
+	strategy: StageStrategy;
+	minApprovals: number | null;
+	approvers: Approver[];
+};
+
+type App = {
+	id: string;
+	key: string;
+	name: string;
+};
+
+type CreatedUpdatedBy = {
+	first_name: string;
+	last_name: string;
+};
+
+export type WorkFlowTemplate = {
+	id: string;
+	name: string;
+	description: string;
+	isActive: boolean;
+	appId: string;
+	metaData_1: string;
+	metaData_2: string;
+	metaData_3: string;
+	created_at: string; // ISO date
+	updated_at: string; // ISO date
+	stages: Stage[];
+	app: App;
+	created_by: CreatedUpdatedBy;
+	updated_by: CreatedUpdatedBy;
+};

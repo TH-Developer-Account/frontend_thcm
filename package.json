@@ -19,6 +19,7 @@
 		"axios": "^1.13.4",
 		"file-saver": "^2.0.5",
 		"lucide-react": "^0.563.0",
+		"moment-timezone": "^0.6.1",
 		"react": "^19.2.0",
 		"react-dom": "^19.2.0",
 		"react-export-table-to-excel-xlsx": "^1.0.1",
