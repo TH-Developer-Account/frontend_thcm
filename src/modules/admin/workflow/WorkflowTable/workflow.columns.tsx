@@ -76,7 +76,6 @@ export const getWorkflowColumns = ({
 		header: "Actions",
 		cell: ({ row }) => {
 			const workflow = row.original;
-
 			return (
 				<div className="flex flex-row justify-start gap-2">
 					<Button

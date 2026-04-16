@@ -156,4 +156,5 @@ export const api_routes = {
 	// other routes...
 	create_workflow_api_route: "/work-flow",
 	get_all_workflow_api_route: "/work-flow",
+	create_assign_users_workflow_template: "work-flow/assign-profile",
 };

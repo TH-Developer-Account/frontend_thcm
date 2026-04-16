@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getWorkflowColumns } from "./workflow.columns";
 import DataTable from "../../../../components/ui/DataTable";
 import type { WorkflowRow } from "../types/workflow.types";
@@ -6,6 +6,7 @@ import { useWorkflow } from "../context/useWorkflows";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import { WorkflowUserAssignment } from "../components/WorkflowUserAssignment"; // or your common modal wrapper
 import { useToast } from "../../../../context/Auth/AuthContext";
+import { api_routes } from "../constant/workflow.constant";
 
 const WorkflowTable = () => {
 	const {
@@ -24,25 +25,26 @@ const WorkflowTable = () => {
 	const [assignModalOpen, setAssignModalOpen] = useState<WorkflowRow | null>(
 		null,
 	);
+	useEffect(() => {}, [assignModalOpen]);
 	const [deleteModal, setDeleteModal] = useState<WorkflowRow | null>(null);
-
 	const { showToast } = useToast(); // use your actual toast hook
 
 	const handleAssignUser = async (
 		userIds: string[],
-		workflowId: string | undefined,
+		workflow: WorkflowRow | null,
 	): Promise<void> => {
+		console.log("User IDs:", userIds);
+		console.log("Workflow:", workflow);
 		try {
-			console.log("Submitting assignment...");
-			console.log("User IDs:", userIds);
-			console.log("Workflow ID:", workflowId);
-
 			const {
 				data: { message },
-			} = await ServerAxios.post("/users/assign-workflow", {
-				userIds,
-				workflowId,
-			});
+			} = await ServerAxios.post(
+				api_routes.create_assign_users_workflow_template,
+				{
+					userIds,
+					templateId: workflow,
+				},
+			);
 
 			console.log("API Success:", message);
 
@@ -64,6 +66,7 @@ const WorkflowTable = () => {
 	};
 
 	const handleDelete = (workflow: WorkflowRow) => {
+		console.log("Delete workflow", workflow);
 		setDeleteModal(workflow);
 	};
 

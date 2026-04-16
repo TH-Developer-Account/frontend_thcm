@@ -1,5 +1,3 @@
-import type { User } from "../../user-profile/types/profile.types";
-
 export type WorkflowStage = {
 	id: string;
 	stageOrder: number;
@@ -143,10 +141,11 @@ export interface WorkflowRow {
 	isActive: boolean;
 	last_updated: string;
 	updated_by: string;
-	users: User[];
+	users?: User[];
 }
 
 export type WorkflowCard = {
+	id: string;
 	name: string;
 	app_name: string;
 	created_by: string;
@@ -162,7 +161,7 @@ type User = {
 	email: string;
 };
 
-type Approver = {
+export type Approver = {
 	id: string;
 	stageId: string;
 	userId: string;
