@@ -78,6 +78,8 @@ export type WorkspacePermission = {
   appKey: string;
   moduleKey: string;
   action: Permission;
+  appName?: string;
+  appId?: string;
 };
 
 export type WorkspacePayload = WorkspacePermission[];

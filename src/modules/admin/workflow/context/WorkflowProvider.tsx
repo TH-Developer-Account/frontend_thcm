@@ -7,74 +7,86 @@ import { ServerAxios } from "../../../../services/ServerAxios";
 import { WorkflowContext } from "./useWorkflowContextValue";
 import { useDebounce } from "../../../../hooks/useDebounce";
 import { mapWorkflows } from "../utils/workflow.helpers";
+import type { Option } from "../../../../components/FormElements/input.types";
 
 interface WFProviderProps {
-	children: ReactNode;
+  children: ReactNode;
 }
 
 export function WorkflowProvider({ children }: WFProviderProps) {
-	const [data, setData] = useState<WorkflowCard[]>([]);
-	const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<WorkflowCard[]>([]);
+  const [loading, setLoading] = useState(false);
 
-	/* ---------- SERVER STATE ---------- */
-	const [search, setSearch] = useState("");
-	const [pageIndex, setPageIndex] = useState(0);
-	const [pageSize, setPageSize] = useState(25);
-	const [sorting, setSorting] = useState<SortingState>([]);
+  /* ---------- SERVER STATE ---------- */
+  const [search, setSearch] = useState("");
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [filters, setFilters] = useState<Record<string, Option[]>>({});
 
-	const [totalPages, setTotalPages] = useState(0);
-	const debouncedSearch = useDebounce(search, 500); // 500ms delay
+  const [totalPages, setTotalPages] = useState(0);
+  const debouncedSearch = useDebounce(search, 500); // 500ms delay
 
-	const fetchWorkflowList = useCallback(async () => {
-		try {
-			setLoading(true);
+  const transformFilters = (filters: Record<string, Option[]>) => {
+    return {
+      createdBy: (filters["createdBy"] || []).map((o) => o.value),
+      apps: (filters["apps"] || []).map((o) => o.value),
+    };
+  };
 
-			const sort = sorting[0];
+  const fetchWorkflowList = useCallback(async () => {
+    try {
+      setLoading(true);
 
-			const {
-				data: { data, meta },
-			} = await ServerAxios.get(api_routes.get_all_workflow_api_route, {
-				params: {
-					page: pageIndex + 1,
-					pageSize,
-					search: debouncedSearch,
-					sortBy: sort?.id,
-					sortOrder: sort?.desc ? "desc" : "asc",
-				},
-			});
+      const sort = sorting[0];
 
-			const formatted = mapWorkflows(data);
-			setData(formatted);
-			setTotalPages(meta.totalPages);
-		} catch (error) {
-			console.error("Failed to fetch Workflow data", error);
-		} finally {
-			setLoading(false);
-		}
-	}, [pageIndex, pageSize, debouncedSearch, sorting]);
+      const {
+        data: { data, meta },
+      } = await ServerAxios.get(api_routes.get_all_workflow_api_route, {
+        params: {
+          page: pageIndex + 1,
+          pageSize,
+          search: debouncedSearch,
+          sortBy: sort?.id,
+          sortOrder: sort?.desc ? "desc" : "asc",
+          filters: JSON.stringify(transformFilters(filters)),
+        },
+      });
 
-	useEffect(() => {
-		fetchWorkflowList();
-	}, [fetchWorkflowList]);
+      const formatted = mapWorkflows(data);
+      setData(formatted);
+      setTotalPages(meta.totalPages);
+    } catch (error) {
+      console.error("Failed to fetch Workflow data", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [pageIndex, pageSize, debouncedSearch, sorting, filters]);
 
-	return (
-		<WorkflowContext.Provider
-			value={{
-				data,
-				loading,
-				search,
-				pageIndex,
-				pageSize,
-				totalPages,
-				sorting,
-				setSearch,
-				setSorting,
-				setPageIndex,
-				setPageSize,
-				refetch: fetchWorkflowList,
-			}}
-		>
-			{children}
-		</WorkflowContext.Provider>
-	);
+  useEffect(() => {
+    fetchWorkflowList();
+  }, [fetchWorkflowList]);
+
+  return (
+    <WorkflowContext.Provider
+      value={{
+        data,
+        loading,
+        search,
+        pageIndex,
+        pageSize,
+        totalPages,
+        sorting,
+        setSearch,
+        setSorting,
+        setPageIndex,
+        setPageSize,
+        filters,
+        setFilters,
+        refetch: fetchWorkflowList,
+      }}
+    >
+      {children}
+    </WorkflowContext.Provider>
+  );
 }
