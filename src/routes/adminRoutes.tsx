@@ -19,67 +19,75 @@ import WorkflowPage from "../modules/admin/workflow/WorkflowPage";
 import WorkflowCreatePage from "../modules/admin/workflow/WorkflowCreatePage";
 
 export default function AdminRoutes() {
-	return (
-		<Routes>
-			<Route path="dashboard" element={<ComingSoon />} />
-			<Route path="users" element={<UsersPage />} />
-			<Route path="department" element={<ComingSoon />} />
-			<Route path="roles" element={<CrfForm />} />
-			<Route path="masters" element={<MastersPage />} />
-			<Route path="business-partners" element={<BusinessPartners />} />
-			<Route path="business-partners-view" element={<BusinessPartnerView />} />
-			<Route path="bydesign" element={<ByDesignPage />} />
-			<Route path="c4c" element={<C4CPage />} />
-			<Route path="/profile" element={<UserProfile />} />
-			<Route
-				path="/profiles/create"
-				element={
-					<ThemeProvider>
-						<ProfileFormPage />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="/profiles/:id/edit"
-				element={
-					<ThemeProvider>
-						<ProfileFormPage />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="user_profiles"
-				element={
-					<ThemeProvider>
-						<UserProfilePage />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="dealers"
-				element={
-					<ThemeProvider>
-						<ComingSoon />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="workflows"
-				element={
-					<ThemeProvider>
-						<WorkflowPage />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="create-workflows"
-				element={
-					<ThemeProvider>
-						<WorkflowCreatePage />
-					</ThemeProvider>
-				}
-			/>
-			{/* <Route path="create_user_profile" element={<BusinessProfileList />} /> */}
-		</Routes>
-	);
+  return (
+    <Routes>
+      <Route path="dashboard" element={<ComingSoon />} />
+      <Route path="users" element={<UsersPage />} />
+      <Route path="department" element={<ComingSoon />} />
+      <Route path="roles" element={<CrfForm />} />
+      <Route path="masters" element={<MastersPage />} />
+      <Route path="business-partners" element={<BusinessPartners />} />
+      <Route path="business-partners-view" element={<BusinessPartnerView />} />
+      <Route path="bydesign" element={<ByDesignPage />} />
+      <Route path="c4c" element={<C4CPage />} />
+      <Route path="/profile" element={<UserProfile />} />
+      <Route
+        path="/profiles/create"
+        element={
+          <ThemeProvider>
+            <ProfileFormPage />
+          </ThemeProvider>
+        }
+      />
+      <Route
+        path="/profiles/:id/edit"
+        element={
+          <ThemeProvider>
+            <ProfileFormPage />
+          </ThemeProvider>
+        }
+      />
+      <Route
+        path="user_profiles"
+        element={
+          <ThemeProvider>
+            <UserProfilePage />
+          </ThemeProvider>
+        }
+      />
+      <Route
+        path="dealers"
+        element={
+          <ThemeProvider>
+            <ComingSoon />
+          </ThemeProvider>
+        }
+      />
+      <Route
+        path="workflows"
+        element={
+          <ThemeProvider>
+            <WorkflowPage />
+          </ThemeProvider>
+        }
+      />
+      <Route
+        path="create-workflows"
+        element={
+          <ThemeProvider>
+            <WorkflowCreatePage />
+          </ThemeProvider>
+        }
+      />
+      <Route
+        path="edit-workflows/:id"
+        element={
+          <ThemeProvider>
+            <WorkflowCreatePage />
+          </ThemeProvider>
+        }
+      />
+      {/* <Route path="create_user_profile" element={<BusinessProfileList />} /> */}
+    </Routes>
+  );
 }
