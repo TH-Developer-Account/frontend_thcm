@@ -5,6 +5,7 @@ import type { Option } from "../../../../components/FormElements/input.types";
 
 export interface WorkflowContextValue {
   data: WorkflowCard[];
+  setData: React.Dispatch<React.SetStateAction<WorkflowCard[]>>;
   loading: boolean;
   search: string;
   pageIndex: number;

@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import PageSectionLayout, {
   PageSection,
@@ -35,6 +35,7 @@ const WorkflowCreatePage = () => {
   const { user, workspaceId, isLoading } = useAuth();
   const { showToast } = useToast();
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [currentStep, setCurrentStep] = React.useState(1);
   const [basics, setBasics] = React.useState<WorkflowBasics>({
@@ -132,7 +133,6 @@ const WorkflowCreatePage = () => {
     console.log("FINAL PAYLOAD JSON:", JSON.stringify(payload, null, 2));
 
     try {
-      console.log({ path });
       const response = await ServerAxios.post(path, payload);
 
       return {
@@ -183,6 +183,7 @@ const WorkflowCreatePage = () => {
         title: "Success",
         description: response.message,
       });
+      navigate(`/admin/workflows`);
     } catch (err: unknown) {
       const message =
         err instanceof Error
