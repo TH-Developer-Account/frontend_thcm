@@ -10,6 +10,7 @@ interface SelectInputProps extends Props<Option, false, GroupBase<Option>> {
 	label?: string;
 	error?: string;
 	required?: boolean;
+	helperText?: string;
 }
 
 export default function SelectInput({
@@ -17,6 +18,7 @@ export default function SelectInput({
 	error,
 	required,
 	className,
+	helperText,
 	isDisabled,
 	...props
 }: SelectInputProps) {
@@ -52,6 +54,7 @@ export default function SelectInput({
 			</div>
 
 			{error && <p className="mt-1 text-xs text-red-600 text-left">{error}</p>}
+			{!error && helperText && <p className="form-helper-text">{helperText}</p>}
 		</div>
 	);
 }

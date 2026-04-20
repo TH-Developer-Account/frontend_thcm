@@ -12,6 +12,8 @@
 @import "./styles/layout.css";
 @import "./styles/components.css";
 @import "./components/FormElements/input.css";
+@import "./modules/admin/workflow/utils/workflow.css";
+@import "./modules/admin/business-partners/bp.css";
 
 body {
 	background-color: transparent;
