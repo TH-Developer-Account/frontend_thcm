@@ -1,9 +1,12 @@
-import { columns } from "./columns";
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { getEPCColumns } from "./columns";
 import { useEPC } from "../../../context/useEPC";
 import type { EPCRow } from "../../../../../utils/types";
 import DataTable from "../../../../../components/ui/DataTable";
 
 const EPCTable = () => {
+  const navigate = useNavigate();
   const {
     data,
     sorting,
@@ -15,6 +18,19 @@ const EPCTable = () => {
     totalPages,
     loading,
   } = useEPC();
+
+  const columns = React.useMemo(
+    () =>
+      getEPCColumns({
+        onEPFCreate: () => {
+          navigate(`/marketing/epf`);
+        },
+        onCRFCreate: () => {
+          navigate(`/marketing/crf`);
+        },
+      }),
+    [navigate],
+  );
 
   return (
     <DataTable<EPCRow>
