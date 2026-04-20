@@ -1,330 +1,216 @@
-import React, { useState } from "react";
-import { Search, UserPlus, Plus } from "lucide-react";
-import type {
-	ApprovalRule,
-	WorkflowStage,
-	Approver,
-} from "../types/workflow.types";
+import React from "react";
+import { Plus } from "lucide-react";
+import UserAsyncSelect from "../../../../components/FormElements/AsyncSelect";
+import Avatar from "../../../../components/common/Avatar";
+import type { WorkflowStage, Approver } from "../types/workflow.types";
 
 type Props = {
-	stages: WorkflowStage[];
-	currentUserId: string;
-	availableUsers: Approver[];
-	onStageChange: <K extends keyof WorkflowStage>(
-		stageId: string,
-		key: K,
-		value: WorkflowStage[K],
-	) => void;
-	onToggleStage: (stageId: string) => void;
-	onRemoveApprover: (stageId: string, approverId: string) => void;
-	onAddApprover: (stageId: string, approver: Approver) => void;
-	onBack: () => void;
-	onSubmit: () => void;
-	onAddStage: () => void;
+  stages: WorkflowStage[];
+  currentUserId: string;
+  availableUsers: Approver[];
+  onStageChange: <K extends keyof WorkflowStage>(
+    stageId: string,
+    key: K,
+    value: WorkflowStage[K],
+  ) => void;
+  onToggleStage: (stageId: string) => void;
+  onRemoveApprover: (stageId: string, approverId: string) => void;
+  onAddApprover: (stageId: string, approver: Approver) => void;
+  onBack: () => void;
+  onSubmit: () => void;
+  onAddStage: () => void;
 };
 
 const WorkflowStagesForm = ({
-	stages,
-	availableUsers,
-	onStageChange,
-	onToggleStage,
-	onRemoveApprover,
-	onAddApprover,
-	onBack,
-	onAddStage,
-	onSubmit,
+  stages,
+  onStageChange,
+  onToggleStage,
+  onRemoveApprover,
+  onAddApprover,
+  onBack,
+  onAddStage,
+  onSubmit,
 }: Props) => {
-	const [searchMap, setSearchMap] = useState<Record<string, string>>({});
+  return (
+    <div>
+      <div className="workflow-stage-list">
+        {stages.length === 0 ? (
+          <div className="workflow-empty-state">
+            No stages added yet. Click <strong>Add another stage</strong> to
+            start configuring your workflow.
+          </div>
+        ) : (
+          stages.map((stage) => {
+            return (
+              <React.Fragment key={stage.id}>
+                <div
+                  className={`workflow-stage-card ${
+                    stage.isExpanded ? "workflow-stage-card-expanded" : ""
+                  }`}
+                >
+                  <button
+                    type="button"
+                    className="workflow-stage-header"
+                    onClick={() => onToggleStage(stage.id)}
+                  >
+                    <div
+                      className={`workflow-stage-number ${
+                        stage.isExpanded ? "workflow-stage-number-active" : ""
+                      }`}
+                    >
+                      {stage.stageOrder}
+                    </div>
 
-	const handleSearchChange = (stageId: string, value: string) => {
-		setSearchMap((prev) => ({
-			...prev,
-			[stageId]: value,
-		}));
-	};
+                    <div className="workflow-stage-header-content">
+                      <div className="workflow-stage-title">{stage.name}</div>
+                      <div className="workflow-stage-meta">
+                        {stage.approvers.length} approver
+                        {stage.approvers.length === 1 ? "" : "s"}
+                      </div>
+                    </div>
 
-	const getFilteredUsers = (stage: WorkflowStage) => {
-		const query = (searchMap[stage.id] || "").trim().toLowerCase();
+                    <span className="workflow-stage-step-pill">
+                      Step {stage.stageOrder}
+                    </span>
 
-		return availableUsers.filter((user) => {
-			const alreadyAdded = stage.approvers.some((a) => a.id === user.id);
-			if (alreadyAdded) return false;
+                    <span
+                      className={`workflow-stage-chevron ${
+                        stage.isExpanded ? "workflow-stage-chevron-open" : ""
+                      }`}
+                    >
+                      ›
+                    </span>
+                  </button>
 
-			if (!query) return true;
+                  {stage.isExpanded && (
+                    <div className="workflow-stage-body">
+                      <div className="workflow-create-field-row workflow-create-field-row-3">
+                        <div className="workflow-create-field-group">
+                          <label className="workflow-create-label">
+                            Stage name
+                          </label>
+                          <input
+                            className="workflow-create-input workflow-create-input-sm"
+                            value={stage.name}
+                            onChange={(e) =>
+                              onStageChange(stage.id, "name", e.target.value)
+                            }
+                          />
+                        </div>
 
-			return (
-				user.name.toLowerCase().includes(query) ||
-				user.role?.toLowerCase().includes(query) ||
-				user.email?.toLowerCase().includes(query)
-			);
-		});
-	};
+                        <div className="workflow-create-field-group">
+                          <label className="workflow-create-label">
+                            Minimum approvals
+                          </label>
+                          <input
+                            type="number"
+                            min={1}
+                            className="workflow-create-input workflow-create-input-sm"
+                            value={stage.minApprovals ?? stage.approvers.length}
+                            onChange={(e) =>
+                              onStageChange(
+                                stage.id,
+                                "minApprovals",
+                                Number(e.target.value),
+                              )
+                            }
+                          />
+                        </div>
+                        <div className="workflow-create-field-group">
+                          <p>/{stage.approvers.length}</p>
+                        </div>
+                      </div>
+                      <div className="workflow-approver-list">
+                        {stage.approvers.map((approver) => {
+                          return (
+                            <div
+                              key={approver.id}
+                              className="workflow-approver-row"
+                            >
+                              <div className="workflow-approver-avatar workflow-approver-avatar-orange">
+                                <Avatar
+                                  firstName={approver.firstName || ""}
+                                  lastName={approver.lastName}
+                                  imageUrl={""}
+                                  size="md"
+                                  isTooltip={false}
+                                />
+                              </div>
 
-	return (
-		<div>
-			<div className="workflow-stage-list">
-				{stages.length === 0 ? (
-					<div className="workflow-empty-state">
-						No stages added yet. Click <strong>Add another stage</strong> to
-						start configuring your workflow.
-					</div>
-				) : (
-					stages.map((stage) => {
-						const filteredUsers = getFilteredUsers(stage);
-						const searchValue = searchMap[stage.id] || "";
+                              <div className="workflow-approver-content">
+                                <div className="workflow-approver-name">
+                                  {approver.name}
+                                </div>
+                                <div className="workflow-approver-role">
+                                  {approver.email}
+                                </div>
+                              </div>
 
-						return (
-							<div
-								key={stage.id}
-								className={`workflow-stage-card ${
-									stage.isExpanded ? "workflow-stage-card-expanded" : ""
-								}`}
-							>
-								<button
-									type="button"
-									className="workflow-stage-header"
-									onClick={() => onToggleStage(stage.id)}
-								>
-									<div
-										className={`workflow-stage-number ${
-											stage.isExpanded ? "workflow-stage-number-active" : ""
-										}`}
-									>
-										{stage.stageOrder}
-									</div>
+                              <button
+                                type="button"
+                                className="workflow-remove-btn"
+                                onClick={() =>
+                                  onRemoveApprover(stage.id, approver.id)
+                                }
+                              >
+                                ×
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <UserAsyncSelect
+                  label="Approvers"
+                  excludedUserIds={stage.approvers.map((a) => a.id)}
+                  onChange={(selected) => {
+                    if (!selected) return;
 
-									<div className="workflow-stage-header-content">
-										<div className="workflow-stage-title">{stage.name}</div>
-										<div className="workflow-stage-meta">
-											{stage.approvers.length} approver
-											{stage.approvers.length === 1 ? "" : "s"}
-										</div>
-									</div>
+                    onAddApprover(stage.id, {
+                      id: selected.value,
+                      name: selected.label,
+                      email: selected.email,
+                      firstName: selected.firstName,
+                      lastName: selected.lastName,
+                    });
+                  }}
+                />
+              </React.Fragment>
+            );
+          })
+        )}
+      </div>
 
-									<span className="workflow-stage-step-pill">
-										Step {stage.stageOrder}
-									</span>
+      <button
+        type="button"
+        className="workflow-add-stage-btn"
+        onClick={onAddStage}
+      >
+        <Plus size={14} />
+        Add another stage
+      </button>
 
-									<span
-										className={`workflow-stage-chevron ${
-											stage.isExpanded ? "workflow-stage-chevron-open" : ""
-										}`}
-									>
-										›
-									</span>
-								</button>
+      <div className="mt-4 flex justify-between">
+        <button
+          type="button"
+          className="workflow-create-secondary-btn"
+          onClick={onBack}
+        >
+          Back
+        </button>
 
-								{stage.isExpanded && (
-									<div className="workflow-stage-body">
-										<div className="workflow-create-field-row workflow-create-field-row-2">
-											<div className="workflow-create-field-group">
-												<label className="workflow-create-label">
-													Stage name
-												</label>
-												<input
-													className="workflow-create-input workflow-create-input-sm"
-													value={stage.name}
-													onChange={(e) =>
-														onStageChange(stage.id, "name", e.target.value)
-													}
-												/>
-											</div>
-
-											<div className="workflow-create-field-group">
-												<label className="workflow-create-label">
-													Approval rule
-												</label>
-												<select
-													className="workflow-create-input workflow-create-input-sm"
-													value={stage.strategy}
-													onChange={(e) =>
-														onStageChange(
-															stage.id,
-															"strategy",
-															e.target.value as ApprovalRule,
-														)
-													}
-												>
-													<option value="ANY">Any one approves</option>
-													<option value="ALL">All must approve</option>
-													<option value="QUORUM">Quorum approves</option>
-												</select>
-											</div>
-										</div>
-
-										<div className="workflow-create-field-row workflow-create-field-row-2">
-											<div className="workflow-create-field-group">
-												<label className="workflow-create-label">SLA</label>
-												<input
-													type="number"
-													min={1}
-													className="workflow-create-input workflow-create-input-sm"
-													value={stage.slaDays}
-													onChange={(e) =>
-														onStageChange(stage.id, "slaDays", e.target.value)
-													}
-												/>
-											</div>
-
-											{stage.strategy === "QUORUM" ? (
-												<div className="workflow-create-field-group">
-													<label className="workflow-create-label">
-														Minimum approvals
-													</label>
-													<input
-														type="number"
-														min={1}
-														className="workflow-create-input workflow-create-input-sm"
-														value={stage.minApprovals ?? 1}
-														onChange={(e) =>
-															onStageChange(
-																stage.id,
-																"minApprovals",
-																Number(e.target.value),
-															)
-														}
-													/>
-												</div>
-											) : (
-												<div className="workflow-create-field-group">
-													<label className="workflow-create-label">
-														Strategy
-													</label>
-													<input
-														className="workflow-create-input workflow-create-input-sm"
-														value={stage.strategy}
-														disabled
-														readOnly
-													/>
-												</div>
-											)}
-										</div>
-
-										<label className="workflow-create-label">Approvers</label>
-
-										<div className="workflow-approver-list">
-											{stage.approvers.map((approver) => (
-												<div
-													key={approver.id}
-													className="workflow-approver-row"
-												>
-													<div className="workflow-approver-avatar workflow-approver-avatar-orange">
-														{approver.initials ||
-															approver.name
-																.split(" ")
-																.map((word) => word[0])
-																.join("")
-																.slice(0, 2)
-																.toUpperCase()}
-													</div>
-
-													<div className="workflow-approver-content">
-														<div className="workflow-approver-name">
-															{approver.name}
-														</div>
-														<div className="workflow-approver-role">
-															{approver.role || approver.id}
-														</div>
-													</div>
-
-													<button
-														type="button"
-														className="workflow-remove-btn"
-														onClick={() =>
-															onRemoveApprover(stage.id, approver.id)
-														}
-													>
-														×
-													</button>
-												</div>
-											))}
-										</div>
-
-										<div className="workflow-search">
-											<Search size={14} className="workflow-search-icon" />
-											<input
-												type="text"
-												value={searchValue}
-												onChange={(e) =>
-													handleSearchChange(stage.id, e.target.value)
-												}
-												placeholder="Search users by name or role"
-												className="workflow-search-input"
-											/>
-										</div>
-
-										{searchValue && filteredUsers.length > 0 && (
-											<div className="workflow-approver-list mt-2">
-												{filteredUsers.slice(0, 5).map((user) => (
-													<button
-														key={user.id}
-														type="button"
-														className="workflow-approver-row w-full text-left"
-														onClick={() => {
-															onAddApprover(stage.id, user);
-															handleSearchChange(stage.id, "");
-														}}
-													>
-														<div className="workflow-approver-avatar workflow-approver-avatar-blue">
-															{user.initials ||
-																user.name
-																	.split(" ")
-																	.map((word) => word[0])
-																	.join("")
-																	.slice(0, 2)
-																	.toUpperCase()}
-														</div>
-
-														<div className="workflow-approver-content">
-															<div className="workflow-approver-name">
-																{user.name}
-															</div>
-															<div className="workflow-approver-role">
-																{user.role || user.id}
-															</div>
-														</div>
-
-														<UserPlus size={14} />
-													</button>
-												))}
-											</div>
-										)}
-									</div>
-								)}
-							</div>
-						);
-					})
-				)}
-			</div>
-
-			<button
-				type="button"
-				className="workflow-add-stage-btn"
-				onClick={onAddStage}
-			>
-				<Plus size={14} />
-				Add another stage
-			</button>
-
-			<div className="mt-4 flex justify-between">
-				<button
-					type="button"
-					className="workflow-create-secondary-btn"
-					onClick={onBack}
-				>
-					Back
-				</button>
-
-				<button
-					type="button"
-					className="workflow-create-primary-btn"
-					onClick={onSubmit}
-				>
-					Next
-				</button>
-			</div>
-		</div>
-	);
+        <button
+          type="button"
+          className="workflow-create-primary-btn"
+          onClick={onSubmit}
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export default WorkflowStagesForm;

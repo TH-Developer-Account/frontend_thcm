@@ -1,27 +1,19 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { GitBranch, Plus } from "lucide-react";
 import { useAuth } from "../../../../context/Auth/useAuth";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import MultiSelectInput from "../../../../components/FormElements/MultiSelectInput";
-import type { WorkflowFilterKey } from "../types/workflow.types";
 import { useWorkflow } from "../context/useWorkflows";
 import { SearchInput } from "../../../../components/FormElements/SearchInput";
+import { formatApps } from "../constant/workflow.constant";
 import type { Option } from "../../../../components/FormElements/input.types";
-import type {
-  WorkspacePayload,
-  UserResponse,
-} from "../../user-profile/types/profile.types";
+import type { UserResponse } from "../../user-profile/types/profile.types";
 
-type WorkflowTopSectionProps = {
-  activeFilter: WorkflowFilterKey;
-  onFilterChange: (filter: WorkflowFilterKey) => void;
-  onCreateWorkflow?: () => void;
-  cardCounts: Record<WorkflowFilterKey, number>;
-};
-
-const WorkflowTopSection = ({ onCreateWorkflow }: WorkflowTopSectionProps) => {
+const WorkflowTopSection = () => {
   const { search, setSearch, filters, setFilters } = useWorkflow();
   const { permissions } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = React.useState<Option[]>([]);
 
   React.useEffect(() => {
@@ -47,23 +39,6 @@ const WorkflowTopSection = ({ onCreateWorkflow }: WorkflowTopSectionProps) => {
 
     fetchUsers();
   }, []);
-
-  const formatApps = (data: WorkspacePayload) => {
-    const uniqueMap = new Map();
-
-    data.forEach((item) => {
-      if (item.action === "read") {
-        if (!uniqueMap.has(item.appId)) {
-          uniqueMap.set(item.appId, {
-            value: item.appId,
-            label: item.appName,
-          });
-        }
-      }
-    });
-
-    return Array.from(uniqueMap.values());
-  };
 
   const apps = formatApps(permissions);
 
@@ -110,7 +85,7 @@ const WorkflowTopSection = ({ onCreateWorkflow }: WorkflowTopSectionProps) => {
             <button
               type="button"
               className="workflow-primary-btn"
-              onClick={onCreateWorkflow}
+              onClick={() => navigate("/admin/create-workflows")}
             >
               <Plus size={16} />
               Create Workflow

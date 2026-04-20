@@ -1,185 +1,209 @@
-import React, { useMemo, useState } from "react";
+import React from "react";
+import { useParams } from "react-router-dom";
+import { ServerAxios } from "../../../services/ServerAxios";
 import PageSectionLayout, {
-	PageSection,
+  PageSection,
 } from "../../../layout/PageSectionLayout";
 import WorkflowCreateHeader from "./components/WorkflowCreateHeader";
 import WorkflowCreateMain from "./components/WorkflowCreateMain";
 import WorkflowCreateSidebar from "./components/WorkflowCreateSidebar";
 import {
-	availableUsers,
-	initialBasics,
-	regionOptions,
+  availableUsers,
+  mapBasics,
+  mapStages,
+  api_routes,
 } from "./constant/workflow.constant";
 import { submitWorkflow } from "./api/workflow.api";
 import {
-	addStageApprover,
-	removeStageApprover,
-	toggleStageExpanded,
-	updateStageField,
+  addStageApprover,
+  removeStageApprover,
+  toggleStageExpanded,
+  updateStageField,
 } from "./utils/workflow.helpers";
 import type {
-	WorkflowBasics,
-	WorkflowStage,
-	Approver,
+  WorkflowBasics,
+  WorkflowStage,
+  Approver,
 } from "./types/workflow.types";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 
 const WorkflowCreatePage = () => {
-	const { user, workspaceId, isLoading } = useAuth();
-	const { showToast } = useToast();
+  const { user, workspaceId, isLoading } = useAuth();
+  const { showToast } = useToast();
+  const { id } = useParams();
 
-	const [currentStep, setCurrentStep] = useState(1);
-	const [basics, setBasics] = useState<WorkflowBasics>(initialBasics);
-	const [stages, setStages] = useState<WorkflowStage[]>([]);
-	const [loading, setLoading] = useState(false);
+  const [currentStep, setCurrentStep] = React.useState(1);
+  const [basics, setBasics] = React.useState<WorkflowBasics>({
+    name: "",
+    app: "",
+    isActive: true,
+    description: "",
+  });
+  const [stages, setStages] = React.useState<WorkflowStage[]>([]);
+  const [loading, setLoading] = React.useState(false);
 
-	const totalApprovers = useMemo(
-		() => stages.reduce((sum, stage) => sum + stage.approvers.length, 0),
-		[stages],
-	);
+  React.useEffect(() => {
+    if (id) {
+      fetchData(id);
+    }
+  }, [id]);
 
-	const goNext = () => setCurrentStep((prev) => Math.min(prev + 1, 3));
-	const goBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
+  const fetchData = async (id: string) => {
+    try {
+      setLoading(true);
+      const { data } = await ServerAxios.get(`/work-flow/${id}`);
+      setBasics(mapBasics(data));
+      setStages(mapStages(data.stages));
+    } catch (error) {
+      console.error("Error failed to fetch the work flow:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-	const handleBasicChange = <K extends keyof WorkflowBasics>(
-		key: K,
-		value: WorkflowBasics[K],
-	) => {
-		setBasics((prev) => ({ ...prev, [key]: value }));
-	};
+  const totalApprovers = React.useMemo(
+    () => stages.reduce((sum, stage) => sum + stage.approvers.length, 0),
+    [stages],
+  );
 
-	const handleStageChange = <K extends keyof WorkflowStage>(
-		stageId: string,
-		key: K,
-		value: WorkflowStage[K],
-	) => {
-		setStages((prev) => updateStageField(prev, stageId, key, value));
-	};
+  const goNext = () => setCurrentStep((prev) => Math.min(prev + 1, 3));
+  const goBack = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
-	const toggleStage = (stageId: string) => {
-		setStages((prev) => toggleStageExpanded(prev, stageId));
-	};
+  const handleBasicChange = <K extends keyof WorkflowBasics>(
+    key: K,
+    value: WorkflowBasics[K],
+  ) => {
+    setBasics((prev) => ({ ...prev, [key]: value }));
+  };
 
-	const removeApprover = (stageId: string, approverId: string) => {
-		setStages((prev) => removeStageApprover(prev, stageId, approverId));
-	};
+  const handleStageChange = <K extends keyof WorkflowStage>(
+    stageId: string,
+    key: K,
+    value: WorkflowStage[K],
+  ) => {
+    console.log("called", key, value);
+    setStages((prev) => updateStageField(prev, stageId, key, value));
+  };
 
-	const addApprover = (stageId: string, approver: Approver) => {
-		setStages((prev) => addStageApprover(prev, stageId, approver));
-	};
+  const toggleStage = (stageId: string) => {
+    setStages((prev) => toggleStageExpanded(prev, stageId));
+  };
 
-	const addStage = () => {
-		setStages((prev) => [
-			...prev,
-			{
-				id: `stage-${prev.length + 1}`,
-				stageOrder: prev.length + 1,
-				name: `Stage ${prev.length + 1}`,
-				strategy: "ANY",
-				minApprovals: 1,
-				slaDays: "1",
-				rejectionAction: "RETURN",
-				approvers: [],
-				isExpanded: true,
-			},
-		]);
-	};
+  const removeApprover = (stageId: string, approverId: string) => {
+    setStages((prev) => removeStageApprover(prev, stageId, approverId));
+  };
 
-	const handleSubmit = async () => {
-		if (!workspaceId) {
-			showToast({
-				type: "error",
-				title: "Error",
-				description: "Workspace ID is missing",
-			});
-			return;
-		}
+  const addApprover = (stageId: string, approver: Approver) => {
+    setStages((prev) => addStageApprover(prev, stageId, approver));
+  };
 
-		setLoading(true);
+  const addStage = () => {
+    setStages((prev) => [
+      ...prev,
+      {
+        id: `stage-${prev.length + 1}`,
+        stageOrder: prev.length + 1,
+        name: `Stage ${prev.length + 1}`,
+        strategy: "ANY",
+        approvers: [],
+        isExpanded: true,
+      },
+    ]);
+  };
 
-		try {
-			const response = await submitWorkflow({
-				basics,
-				stages,
-				workspaceId,
-			});
+  const handleSubmit = async () => {
+    if (!workspaceId) {
+      showToast({
+        type: "error",
+        title: "Error",
+        description: "Workspace ID is missing",
+      });
+      return;
+    }
 
-			showToast({
-				type: "success",
-				title: "Success",
-				description: response.message,
-			});
-		} catch (err: unknown) {
-			const message =
-				err instanceof Error
-					? err.message
-					: typeof err === "string"
-						? err
-						: "Failed to create workflow";
+    setLoading(true);
 
-			showToast({
-				type: "error",
-				title: "Error",
-				description: message,
-			});
-		} finally {
-			setLoading(false);
-		}
-	};
+    try {
+      const response = await submitWorkflow({
+        basics,
+        stages,
+        workspaceId,
+        path: id
+          ? `/work-flow/update/${id}`
+          : api_routes.create_workflow_api_route,
+      });
 
-	const selectedRegionLabel =
-		regionOptions.find((item) => item.value === basics.regionId)?.label ?? "--";
+      showToast({
+        type: "success",
+        title: "Success",
+        description: response.message,
+      });
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "string"
+            ? err
+            : "Failed to create workflow";
 
-	if (isLoading) return null;
+      showToast({
+        type: "error",
+        title: "Error",
+        description: message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-	return (
-		<PageSectionLayout>
-			<PageSection className="workflow-create-page-box">
-				<div className="workflow-create-page">
-					<WorkflowCreateHeader currentStep={currentStep} />
+  if (isLoading) return null;
 
-					<div className="workflow-create-page-header">
-						<h2 className="workflow-create-page-title">
-							Create approval workflow
-						</h2>
-						<p className="workflow-create-page-subtitle">
-							Define who approves what, in which order, and under what
-							conditions.
-						</p>
-					</div>
+  return (
+    <PageSectionLayout>
+      <PageSection className="workflow-create-page-box">
+        <div className="workflow-create-page">
+          <WorkflowCreateHeader currentStep={currentStep} />
 
-					<div className="workflow-create-grid">
-						<WorkflowCreateMain
-							currentStep={currentStep}
-							goNext={goNext}
-							goBack={goBack}
-							basics={basics}
-							stages={stages}
-							availableUsers={availableUsers}
-							currentUserId={user?.id || ""}
-							onBasicChange={handleBasicChange}
-							onStageChange={handleStageChange}
-							onToggleStage={toggleStage}
-							onRemoveApprover={removeApprover}
-							onAddApprover={addApprover}
-							onAddStage={addStage}
-							onSubmit={handleSubmit}
-							loading={loading}
-						/>
+          <div className="workflow-create-page-header">
+            <h2 className="workflow-create-page-title">
+              {id ? "Update Workflow" : "Create Workflow"}
+            </h2>
+            <p className="workflow-create-page-subtitle">
+              Define who approves what, in which order, and under what
+              conditions.
+            </p>
+          </div>
 
-						<WorkflowCreateSidebar
-							module={basics.name || "--"}
-							budgetCode={`${basics.minBudget || 0} - ${basics.maxBudget || 0}`}
-							zone={selectedRegionLabel}
-							stageCount={stages.length}
-							approverCount={totalApprovers}
-						/>
-					</div>
-				</div>
-			</PageSection>
-		</PageSectionLayout>
-	);
+          <div className="workflow-create-grid">
+            <WorkflowCreateMain
+              currentStep={currentStep}
+              goNext={goNext}
+              goBack={goBack}
+              basics={basics}
+              stages={stages}
+              availableUsers={availableUsers}
+              currentUserId={user?.id || ""}
+              onBasicChange={handleBasicChange}
+              onStageChange={handleStageChange}
+              onToggleStage={toggleStage}
+              onRemoveApprover={removeApprover}
+              onAddApprover={addApprover}
+              onAddStage={addStage}
+              onSubmit={handleSubmit}
+              loading={loading}
+            />
+
+            <WorkflowCreateSidebar
+              module={basics.name || "--"}
+              stageCount={stages.length}
+              approverCount={totalApprovers}
+            />
+          </div>
+        </div>
+      </PageSection>
+    </PageSectionLayout>
+  );
 };
 
 export default WorkflowCreatePage;
