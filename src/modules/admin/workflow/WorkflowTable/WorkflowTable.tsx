@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getWorkflowColumns } from "./workflow.columns";
 import DataTable from "../../../../components/ui/DataTable";
+import { Modal } from "../../../../components/common/Modal";
+import { Alert } from "../../../../components/common/Alert";
 import type { WorkflowRow } from "../types/workflow.types";
 import { useWorkflow } from "../context/useWorkflows";
 import { ServerAxios } from "../../../../services/ServerAxios";
@@ -12,6 +14,7 @@ import { api_routes } from "../constant/workflow.constant";
 const WorkflowTable = () => {
   const {
     data,
+    setData,
     sorting,
     setSorting,
     pageIndex,
@@ -20,7 +23,6 @@ const WorkflowTable = () => {
     setPageSize,
     totalPages,
     loading,
-    // refetch,
   } = useWorkflow();
   const navigate = useNavigate();
 
@@ -62,9 +64,30 @@ const WorkflowTable = () => {
     navigate(`/admin/edit-workflows/${workflow.id}`);
   };
 
-  const handleDelete = (workflow: WorkflowRow) => {
+  const setDelete = (workflow: WorkflowRow) => {
     console.log("Delete workflow", workflow);
     setDeleteModal(workflow);
+  };
+
+  const handleDelete = async (workflowId: string) => {
+    try {
+      const {
+        data: { message },
+      } = await ServerAxios.delete(`/work-flow/delete/${workflowId}`);
+
+      showToast({
+        type: "success",
+        title: "Success",
+        description: message,
+      });
+
+      const filteredTemplates = data.filter((each) => each.id !== workflowId);
+      setData(filteredTemplates);
+    } catch (error) {
+      console.error("Failed to fetch Workflow data", error);
+    } finally {
+      setDeleteModal(null);
+    }
   };
 
   const columns = useMemo(
@@ -72,7 +95,7 @@ const WorkflowTable = () => {
       getWorkflowColumns({
         onAssign: setAssignModalOpen,
         onEdit: handleEdit,
-        onDelete: handleDelete,
+        onDelete: setDelete,
       }),
     [],
   );
@@ -104,10 +127,26 @@ const WorkflowTable = () => {
       />
 
       {/* delete modal here later */}
-      {/* <DeleteWorkflowModal
-        workflow={deleteModal}
-        onClose={() => setDeleteModal(null)}
-      /> */}
+      <Modal open={!!deleteModal} onClose={() => setDeleteModal(null)}>
+        <Alert
+          variant="warning"
+          title="Delete Profile"
+          description={`Are you sure you want to delete "${deleteModal?.name}"?`}
+          primaryAction={{
+            label: "Delete",
+            onClick: () => {
+              if (deleteModal) {
+                handleDelete(deleteModal.id as string);
+                setDeleteModal(null);
+              }
+            },
+          }}
+          secondaryAction={{
+            label: "Cancel",
+            onClick: () => setDeleteModal(null),
+          }}
+        />
+      </Modal>
     </>
   );
 };
