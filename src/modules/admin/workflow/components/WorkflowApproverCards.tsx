@@ -1,5 +1,3 @@
-import React from "react";
-import { Card } from "../../../../components/common/Card";
 import type { WorkflowStage } from "../types/workflow.types";
 
 type Props = {
@@ -7,78 +5,45 @@ type Props = {
 	title?: string;
 };
 
-const WorkflowApproverCards = ({
-	stages,
-	// title = "Approval stages",
-}: Props) => {
+const WorkflowApproverCards = ({ stages }: Props) => {
 	return (
 		<>
-			{/* <div className="workflow-approval-cards-header">
-				<h4 className="workflow-approval-cards-title">{title}</h4>
-				<p className="workflow-create-card-title-meta">
-					{stages.length} stages
-				</p>
-			</div> */}
+			<div className="workflow-approval-table">
+				<table className="workflow-approval-table-inner">
+					<thead>
+						<tr>
+							<th className="workflow-approval-th">Stage Name</th>
+							<th className="workflow-approval-th">Strategy</th>
+							<th className="workflow-approval-th">Approvers</th>
+						</tr>
+					</thead>
 
-			<div className="workflow-approval-cards-grid">
-				{stages.map((stage) => {
-					const approverNames =
-						stage.approvers?.length > 0
-							? stage.approvers.map((user) => user.name).join(", ")
-							: "--";
+					<tbody>
+						{stages.map((stage) => {
+							const approverNames =
+								stage.approvers?.length > 0
+									? stage.approvers.map((user) => user.name).join(", ")
+									: "--";
+							return (
+								<tr className="workflow-approval-row" key={stage.id}>
+									<td className="workflow-approval-td workflow-approval-name">
+										{stage.name}
+									</td>
 
-					return (
-						<Card key={stage.id} className="workflow-approval-card">
-							<div className="workflow-approval-card-inner">
-								<div className="workflow-approval-card-top">
-									<div className="workflow-approval-card-heading">
-										<p className="workflow-approval-card-title">{stage.name}</p>
-										{/* <p className="workflow-approval-card-step">
-											Step {stage.stageOrder}
-										</p> */}
-									</div>
+									<td className="workflow-approval-td">
+										<span className="workflow-approval-badge">
+											{stage.approvers.length > 1 ? "Parallel" : "Sequential"}
+										</span>
+									</td>
 
-									<span className="workflow-approval-card-badge">
-										{stage.strategy}
-									</span>
-								</div>
-
-								<div className="workflow-approval-card-section">
-									<p className="workflow-create-label">Approvers</p>
-									<p className="workflow-approval-card-value">
+									<td className="workflow-approval-td workflow-approval-approvers">
 										{approverNames}
-									</p>
-								</div>
-
-								{/* <div className="workflow-approval-card-meta">
-									<div className="workflow-approval-card-meta-item">
-										<p className="workflow-create-label">SLA</p>
-										<p className="workflow-approval-card-meta-value">
-											{stage.slaDays || "--"} day
-											{stage.slaDays === "1" ? "" : "s"}
-										</p>
-									</div>
-
-									<div className="workflow-approval-card-meta-item workflow-approval-card-meta-item-right">
-										<p className="workflow-create-label">Rejection</p>
-										<p className="workflow-approval-card-meta-value">
-											{stage.rejectionAction || "--"}
-										</p>
-									</div>
-								</div>
-
-								{stage.strategy === "QUORUM" && stage.minApprovals && (
-									<div className="workflow-approval-card-footer">
-										<p className="workflow-create-label">Minimum approvals</p>
-										<p className="workflow-approval-card-footer-value">
-											{stage.minApprovals}
-										</p>
-									</div>
-								)} */}
-							</div>
-						</Card>
-					);
-				})}
+									</td>
+								</tr>
+							);
+						})}
+					</tbody>
+				</table>
 			</div>
 
 			<hr className="epf-divider mb-8 mt-6" />

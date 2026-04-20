@@ -2,633 +2,712 @@
 @import "../../../../styles/color.css";
 
 @layer components {
-  .workflow-page {
-    /* @apply space-y-5; */
-  }
+	.workflow-page {
+		/* @apply space-y-5; */
+	}
 
-  .workflow-section {
-    /* @apply rounded-sm border border-zinc-200 bg-white shadow-sm; */
-  }
+	.workflow-section {
+		/* @apply rounded-sm border border-zinc-200 bg-white shadow-sm; */
+	}
 
-  .workflow-section-header {
-    @apply flex flex-col gap-4 border-b border-zinc-200 px-5 py-4 lg:flex-row lg:items-center lg:justify-between;
-  }
+	.workflow-section-header {
+		@apply flex flex-col gap-4 border-b border-zinc-200 px-5 py-4 lg:flex-row lg:items-center lg:justify-between;
+	}
 
-  .workflow-section-header-content {
-    @apply min-w-0;
-  }
+	.workflow-section-header-content {
+		@apply min-w-0;
+	}
 
-  .workflow-badge {
-    @apply inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700;
-  }
+	.workflow-badge {
+		@apply inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700;
+	}
 
-  .workflow-page-title {
-    @apply mt-3 text-xl font-semibold tracking-tight text-zinc-900;
-  }
+	.workflow-page-title {
+		@apply mt-3 text-xl font-semibold tracking-tight text-zinc-900;
+	}
 
-  .workflow-page-subtitle {
-    @apply mt-1 text-sm text-zinc-500;
-  }
+	.workflow-page-subtitle {
+		@apply mt-1 text-sm text-zinc-500;
+	}
 
-  .workflow-section-header-actions {
-    @apply flex flex-col gap-3 sm:flex-row;
-  }
+	.workflow-section-header-actions {
+		@apply flex flex-col gap-3 sm:flex-row;
+	}
 
-  .workflow-search {
-    @apply relative;
-  }
+	.workflow-search {
+		@apply relative;
+	}
 
-  .workflow-search-icon {
-    @apply absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400;
-  }
+	.workflow-search-icon {
+		@apply absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400;
+	}
 
-  .workflow-search-input {
-    @apply h-10 w-full min-w-[240px] rounded-xl border border-zinc-200 bg-zinc-50 pl-9 pr-3 text-sm text-zinc-700 outline-none transition focus:border-orange-300 focus:bg-white;
-  }
+	.workflow-search-input {
+		@apply h-10 w-full min-w-[240px] rounded-xl border border-zinc-200 bg-zinc-50 pl-9 pr-3 text-sm text-zinc-700 outline-none transition focus:border-orange-300 focus:bg-white;
+	}
 
-  .workflow-primary-btn {
-    @apply inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#f35a00] px-4 text-sm font-medium text-white transition hover:opacity-95;
-  }
+	.workflow-primary-btn {
+		@apply inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#f35a00] px-4 text-sm font-medium text-white transition hover:opacity-95;
+	}
 
-  .workflow-cards-grid {
-    @apply grid gap-3 border-b border-zinc-200 bg-zinc-50/70 px-4 py-4 sm:grid-cols-2 xl:grid-cols-5;
-  }
+	.workflow-cards-grid {
+		@apply grid gap-3 border-b border-zinc-200 bg-zinc-50/70 px-4 py-4 sm:grid-cols-2 xl:grid-cols-5;
+	}
 
-  .workflow-summary-card {
-    @apply rounded-xl border bg-white px-3 py-2.5 text-left transition;
-  }
+	.workflow-summary-card {
+		@apply rounded-xl border bg-white px-3 py-2.5 text-left transition;
+	}
 
-  .workflow-summary-card-active {
-    @apply border-orange-300 ring-2 ring-orange-100;
-  }
+	.workflow-summary-card-active {
+		@apply border-orange-300 ring-2 ring-orange-100;
+	}
 
-  .workflow-summary-card-inactive {
-    @apply border-zinc-200 hover:border-zinc-300;
-  }
+	.workflow-summary-card-inactive {
+		@apply border-zinc-200 hover:border-zinc-300;
+	}
 
-  .workflow-summary-card-inner {
-    @apply flex items-center justify-between gap-3;
-  }
+	.workflow-summary-card-inner {
+		@apply flex items-center justify-between gap-3;
+	}
 
-  .workflow-summary-card-content {
-    @apply min-w-0;
-  }
+	.workflow-summary-card-content {
+		@apply min-w-0;
+	}
 
-  .workflow-summary-card-label {
-    @apply text-[10px] font-medium uppercase tracking-wide text-zinc-400;
-  }
+	.workflow-summary-card-label {
+		@apply text-[10px] font-medium uppercase tracking-wide text-zinc-400;
+	}
 
-  .workflow-summary-card-value {
-    @apply mt-0.5 text-sm font-medium text-zinc-800;
-  }
+	.workflow-summary-card-value {
+		@apply mt-0.5 text-sm font-medium text-zinc-800;
+	}
 
-  .workflow-summary-card-description {
-    @apply mt-1 line-clamp-1 text-[11px] text-zinc-500;
-  }
+	.workflow-summary-card-description {
+		@apply mt-1 line-clamp-1 text-[11px] text-zinc-500;
+	}
 
-  .workflow-card-icon {
-    @apply rounded-md p-1.5;
-  }
+	.workflow-card-icon {
+		@apply rounded-md p-1.5;
+	}
 
-  .workflow-card-icon-orange {
-    @apply bg-orange-50 text-orange-600;
-  }
+	.workflow-card-icon-orange {
+		@apply bg-orange-50 text-orange-600;
+	}
 
-  .workflow-card-icon-sky {
-    @apply bg-sky-50 text-sky-600;
-  }
+	.workflow-card-icon-sky {
+		@apply bg-sky-50 text-sky-600;
+	}
 
-  .workflow-card-icon-amber {
-    @apply bg-amber-50 text-amber-600;
-  }
+	.workflow-card-icon-amber {
+		@apply bg-amber-50 text-amber-600;
+	}
 
-  .workflow-card-icon-emerald {
-    @apply bg-emerald-50 text-emerald-600;
-  }
+	.workflow-card-icon-emerald {
+		@apply bg-emerald-50 text-emerald-600;
+	}
 
-  .workflow-card-icon-violet {
-    @apply bg-violet-50 text-violet-600;
-  }
+	.workflow-card-icon-violet {
+		@apply bg-violet-50 text-violet-600;
+	}
 
-  .workflow-list-header {
-    @apply flex flex-col gap-2 border-b border-zinc-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between;
-  }
+	.workflow-list-header {
+		@apply flex flex-col gap-2 border-b border-zinc-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between;
+	}
 
-  .workflow-list-title {
-    @apply text-base font-semibold text-zinc-900;
-  }
+	.workflow-list-title {
+		@apply text-base font-semibold text-zinc-900;
+	}
 
-  .workflow-list-subtitle {
-    @apply mt-1 text-sm text-zinc-500;
-  }
+	.workflow-list-subtitle {
+		@apply mt-1 text-sm text-zinc-500;
+	}
 
-  .workflow-list-note {
-    @apply text-xs text-zinc-500;
-  }
+	.workflow-list-note {
+		@apply text-xs text-zinc-500;
+	}
 
-  .workflow-table-wrap {
-    @apply overflow-x-auto;
-  }
+	.workflow-table-wrap {
+		@apply overflow-x-auto;
+	}
 
-  .workflow-table {
-    @apply w-full min-w-[900px] border-collapse;
-  }
+	.workflow-table {
+		@apply w-full min-w-[900px] border-collapse;
+	}
 
-  .workflow-table-head {
-    @apply bg-zinc-100;
-  }
+	.workflow-table-head {
+		@apply bg-zinc-100;
+	}
 
-  .workflow-table-head th {
-    @apply px-4 py-3 text-left text-xs font-semibold text-zinc-600;
-  }
+	.workflow-table-head th {
+		@apply px-4 py-3 text-left text-xs font-semibold text-zinc-600;
+	}
 
-  .workflow-table-row {
-    @apply border-t border-zinc-200 transition hover:bg-zinc-50;
-  }
+	.workflow-table-row {
+		@apply border-t border-zinc-200 transition hover:bg-zinc-50;
+	}
 
-  .workflow-table-cell {
-    @apply px-4 py-3;
-  }
+	.workflow-table-cell {
+		@apply px-4 py-3;
+	}
 
-  .workflow-table-cell-text {
-    @apply px-4 py-3 text-sm text-zinc-700;
-  }
+	.workflow-table-cell-text {
+		@apply px-4 py-3 text-sm text-zinc-700;
+	}
 
-  .workflow-table-cell-action {
-    @apply px-4 py-3 text-right;
-  }
+	.workflow-table-cell-action {
+		@apply px-4 py-3 text-right;
+	}
 
-  .workflow-table-action-head {
-    @apply text-right;
-  }
+	.workflow-table-action-head {
+		@apply text-right;
+	}
 
-  .workflow-name {
-    @apply text-sm font-medium text-zinc-900;
-  }
+	.workflow-name {
+		@apply text-sm font-medium text-zinc-900;
+	}
 
-  .workflow-id {
-    @apply mt-0.5 text-xs text-zinc-500;
-  }
+	.workflow-id {
+		@apply mt-0.5 text-xs text-zinc-500;
+	}
 
-  .workflow-status-badge {
-    @apply inline-flex rounded-full px-2.5 py-1 text-xs font-medium;
-  }
+	.workflow-status-badge {
+		@apply inline-flex rounded-full px-2.5 py-1 text-xs font-medium;
+	}
 
-  .workflow-view-btn {
-    @apply inline-flex items-center gap-1 text-sm font-medium text-[#f35a00] hover:underline;
-  }
+	.workflow-view-btn {
+		@apply inline-flex items-center gap-1 text-sm font-medium text-[#f35a00] hover:underline;
+	}
 
-  .workflow-empty-state {
-    @apply px-2 py-2 text-center text-sm text-zinc-500;
-  }
+	.workflow-empty-state {
+		@apply px-1 py-1 text-center text-sm text-zinc-500;
+	}
 }
 
 @layer components {
-  .workflow-create-page-box {
-    @apply p-4 sm:p-5;
-  }
-
-  .workflow-create-page {
-    @apply w-full;
-  }
-
-  .workflow-create-topbar {
-    @apply mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between;
-  }
-
-  .workflow-create-badge {
-    @apply inline-flex items-center gap-2 self-start rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700;
-  }
-
-  .workflow-create-topbar-actions {
-    @apply flex flex-wrap items-center gap-2;
-  }
-
-  .workflow-create-secondary-btn {
-    @apply rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50;
-  }
-
-  .workflow-create-primary-btn {
-    @apply rounded-lg border border-[#e85d25] bg-[#e85d25] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#c94d1a];
-  }
-
-  .workflow-progress {
-    @apply mb-5 flex items-center gap-0 overflow-x-auto;
-  }
-
-  .workflow-progress-step {
-    @apply flex items-center gap-2 shrink-0;
-  }
-
-  .workflow-progress-dot {
-    @apply flex h-[22px] w-[22px] items-center justify-center rounded-full border text-[10px] font-semibold;
-  }
-
-  .workflow-progress-dot-done {
-    @apply border-[#e85d25] bg-[#e85d25] text-white;
-  }
-
-  .workflow-progress-dot-active {
-    @apply border-[#e85d25] bg-white text-[#e85d25];
-  }
-
-  .workflow-progress-dot-wait {
-    @apply border-zinc-300 bg-white text-zinc-400;
-  }
-
-  .workflow-progress-line {
-    @apply mx-2 h-px min-w-[18px] flex-1 bg-zinc-200;
-  }
-
-  .workflow-progress-label {
-    @apply text-[11px];
-  }
-
-  .workflow-progress-label-done {
-    @apply text-[#e85d25];
-  }
-
-  .workflow-progress-label-active {
-    @apply font-medium text-zinc-900;
-  }
-
-  .workflow-progress-label-wait {
-    @apply text-zinc-400;
-  }
-
-  .workflow-create-page-header {
-    @apply mb-5;
-  }
-
-  .workflow-create-page-title {
-    @apply text-[22px] font-bold text-zinc-900;
-  }
-
-  .workflow-create-page-subtitle {
-    @apply mt-1 text-sm text-zinc-500;
-  }
-
-  .workflow-create-grid {
-    @apply grid grid-cols-1 gap-5 lg:grid-cols-[2fr_1fr];
-  }
-  .workflow-create-main,
-  .workflow-create-sidebar {
-    @apply min-w-0;
-  }
-
-  .workflow-create-card,
-  .workflow-sidebar-card {
-    @apply rounded-sm border border-zinc-200 bg-white px-5 py-5;
-  }
-
-  .workflow-create-card-title {
-    @apply mb-4 flex items-center gap-2 text-sm font-semibold text-zinc-900;
-  }
-
-  .workflow-create-card-title-meta {
-    @apply ml-auto text-[11px] font-normal text-zinc-400;
-  }
+	.workflow-create-page-box {
+		@apply p-4 sm:p-5;
+	}
+
+	.workflow-create-page {
+		@apply w-full;
+	}
+
+	.workflow-create-topbar {
+		@apply mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between;
+	}
+
+	.workflow-create-badge {
+		@apply inline-flex items-center gap-2 self-start rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700;
+	}
+
+	.workflow-create-topbar-actions {
+		@apply flex flex-wrap items-center gap-2;
+	}
+
+	.workflow-create-secondary-btn {
+		@apply rounded-lg border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-600 transition hover:bg-zinc-50;
+	}
+
+	.workflow-create-primary-btn {
+		@apply rounded-lg border border-[#e85d25] bg-[#e85d25] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#c94d1a];
+	}
+
+	.workflow-progress {
+		@apply mb-5 flex items-center gap-0 overflow-x-auto;
+	}
+
+	.workflow-progress-step {
+		@apply flex items-center gap-2 shrink-0;
+	}
+
+	.workflow-progress-dot {
+		@apply flex h-[22px] w-[22px] items-center justify-center rounded-full border text-[10px] font-semibold;
+	}
+
+	.workflow-progress-dot-done {
+		@apply border-[#e85d25] bg-[#e85d25] text-white;
+	}
+
+	.workflow-progress-dot-active {
+		@apply border-[#e85d25] bg-white text-[#e85d25];
+	}
+
+	.workflow-progress-dot-wait {
+		@apply border-zinc-300 bg-white text-zinc-400;
+	}
+
+	.workflow-progress-line {
+		@apply mx-2 h-px min-w-[18px] flex-1 bg-zinc-200;
+	}
+
+	.workflow-progress-label {
+		@apply text-[11px];
+	}
+
+	.workflow-progress-label-done {
+		@apply text-[#e85d25];
+	}
+
+	.workflow-progress-label-active {
+		@apply font-medium text-zinc-900;
+	}
+
+	.workflow-progress-label-wait {
+		@apply text-zinc-400;
+	}
+
+	.workflow-create-page-header {
+		@apply mb-5;
+	}
+
+	.workflow-create-page-title {
+		@apply text-[22px] font-bold text-zinc-900;
+	}
+
+	.workflow-create-page-subtitle {
+		@apply mt-1 text-sm text-zinc-500;
+	}
+
+	.workflow-create-grid {
+		@apply grid grid-cols-1 gap-5 lg:grid-cols-[2fr_1fr];
+	}
+	.workflow-create-main,
+	.workflow-create-sidebar {
+		@apply min-w-0;
+	}
+
+	.workflow-create-card,
+	.workflow-sidebar-card {
+		@apply rounded-sm border border-zinc-200 bg-white px-5 py-5;
+	}
+
+	.workflow-create-card-title {
+		@apply mb-4 flex items-center gap-2 text-sm font-semibold text-zinc-900;
+	}
+
+	.workflow-create-card-title-meta {
+		@apply ml-auto text-[11px] font-normal text-zinc-400;
+	}
 
-  .workflow-create-card-icon {
-    @apply flex h-7 w-7 items-center justify-center rounded-md;
-  }
+	.workflow-create-card-icon {
+		@apply flex h-7 w-7 items-center justify-center rounded-md;
+	}
 
-  .workflow-create-card-icon-orange {
-    @apply bg-orange-50 text-[#e85d25];
-  }
+	.workflow-create-card-icon-orange {
+		@apply bg-orange-50 text-[#e85d25];
+	}
 
-  .workflow-create-card-icon-violet {
-    @apply bg-violet-100 text-violet-700;
-  }
+	.workflow-create-card-icon-violet {
+		@apply bg-violet-100 text-violet-700;
+	}
 
-  .workflow-create-field-row {
-    @apply mb-3 grid gap-3;
-  }
+	.workflow-create-field-row {
+		@apply mb-3 grid gap-3;
+	}
 
-  .workflow-create-field-row-2 {
-    @apply md:grid-cols-2;
-  }
-  .workflow-create-field-row-3 {
-    @apply md:grid-cols-3;
-  }
-
-  .workflow-create-field-group {
-    @apply flex flex-col gap-1.5;
-  }
-
-  .workflow-create-label {
-    @apply text-xs font-semibold text-zinc-600;
-  }
-
-  .workflow-create-req {
-    @apply text-[#e85d25];
-  }
-
-  .workflow-create-input {
-    @apply w-full rounded-lg border border-zinc-200 bg-[#fafaf8] px-3 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-[#e85d25] focus:bg-white;
-  }
-
-  .workflow-create-input-sm {
-    @apply text-xs;
-  }
-
-  .workflow-create-textarea {
-    @apply min-h-[75px] resize-none;
-  }
-
-  .workflow-create-hint {
-    @apply text-[11px] text-zinc-400;
-  }
-
-  .workflow-stage-list {
-    @apply flex flex-col gap-2;
-  }
-
-  .workflow-stage-card {
-    @apply overflow-hidden rounded-sm border border-zinc-200 bg-[#fafaf8] transition;
-  }
-
-  .workflow-stage-card-expanded {
-    @apply border-orange-200 bg-white;
-  }
-
-  .workflow-stage-header {
-    @apply flex w-full items-center gap-3 px-4 py-3 text-left;
-  }
-
-  .workflow-stage-number {
-    @apply flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border border-orange-200 bg-orange-50 text-[11px] font-semibold text-orange-700;
-  }
-
-  .workflow-stage-number-active {
-    @apply border-[#e85d25] bg-[#e85d25] text-white;
-  }
-
-  .workflow-stage-header-content {
-    @apply min-w-0 flex-1;
-  }
-
-  .workflow-stage-title {
-    @apply text-sm font-medium text-zinc-900;
-  }
-
-  .workflow-stage-meta {
-    @apply text-[11px] text-zinc-400;
-  }
-
-  .workflow-stage-step-pill {
-    @apply rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-medium text-orange-700;
-  }
-
-  .workflow-stage-chevron {
-    @apply text-lg leading-none text-zinc-400 transition;
-  }
-
-  .workflow-stage-chevron-open {
-    @apply rotate-90;
-  }
-
-  .workflow-stage-body {
-    @apply px-4 pb-4;
-  }
-
-  .workflow-approver-list {
-    @apply mb-2 mt-2 flex flex-col gap-1.5;
-  }
-
-  .workflow-approver-row {
-    @apply flex items-center gap-2 rounded-lg bg-[#f5f5f0] px-3 py-2;
-  }
-
-  .workflow-approver-avatar {
-    @apply flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold;
-  }
-
-  .workflow-approver-avatar-orange {
-    @apply bg-orange-100 text-orange-700;
-  }
-
-  .workflow-approver-avatar-blue {
-    @apply bg-sky-100 text-sky-700;
-  }
-
-  .workflow-approver-avatar-teal {
-    @apply bg-emerald-100 text-emerald-700;
-  }
-
-  .workflow-approver-avatar-purple {
-    @apply bg-violet-100 text-violet-700;
-  }
-
-  .workflow-approver-content {
-    @apply min-w-0 flex-1;
-  }
-
-  .workflow-approver-name {
-    @apply text-xs font-medium text-zinc-800;
-  }
-
-  .workflow-approver-role {
-    @apply text-[11px] text-zinc-400;
-  }
-
-  .workflow-remove-btn {
-    @apply px-1 text-base leading-none text-zinc-300 transition hover:text-[#e85d25];
-  }
-
-  .workflow-add-approver-btn {
-    @apply flex w-full items-center justify-center gap-2 rounded-sm border border-dashed border-zinc-300 px-3 py-2 text-xs text-zinc-500 transition hover:border-[#e85d25] hover:text-[#e85d25];
-  }
-
-  .workflow-add-stage-btn {
-    @apply mt-3 flex w-full items-center justify-center gap-2 rounded-sm border border-dashed border-orange-200 bg-white px-4 py-3 text-sm text-orange-700 transition hover:bg-orange-50;
-  }
-
-  .workflow-sidebar-title {
-    @apply mb-3 text-sm font-semibold text-zinc-900;
-  }
-
-  .workflow-summary-list {
-    @apply flex flex-col;
-  }
-
-  .workflow-summary-item {
-    @apply flex items-center justify-between border-b border-zinc-100 py-2;
-  }
-
-  .workflow-summary-item-last {
-    @apply border-b-0;
-  }
-
-  .workflow-summary-key {
-    @apply text-xs text-zinc-500;
-  }
-
-  .workflow-summary-value {
-    @apply text-xs font-medium text-zinc-900;
-  }
-
-  .workflow-radio-group {
-    @apply flex flex-col gap-2;
-  }
-
-  .workflow-radio-option {
-    @apply flex items-start gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-left transition;
-  }
-
-  .workflow-radio-option-active {
-    @apply border-[#e85d25] bg-orange-50;
-  }
-
-  .workflow-radio-dot {
-    @apply mt-0.5 h-[14px] w-[14px] shrink-0 rounded-full border border-zinc-300;
-  }
-
-  .workflow-radio-dot-active {
-    @apply border-[#e85d25] bg-[#e85d25] shadow-[inset_0_0_0_4px_white];
-  }
-
-  .workflow-radio-label {
-    @apply text-xs text-zinc-800;
-  }
-
-  .workflow-radio-sub {
-    @apply text-[11px] text-zinc-400;
-  }
-
-  .workflow-settings-list {
-    @apply flex flex-col;
-  }
-
-  .workflow-setting-item {
-    @apply flex items-center justify-between border-b border-zinc-100 py-2;
-  }
-
-  .workflow-setting-item-last {
-    @apply border-b-0;
-  }
-
-  .workflow-setting-label {
-    @apply text-xs text-zinc-700;
-  }
-
-  .workflow-setting-sub {
-    @apply text-[11px] text-zinc-400;
-  }
-
-  .workflow-toggle {
-    @apply relative h-5 w-9 rounded-full bg-zinc-200 transition;
-  }
-
-  .workflow-toggle::after {
-    content: "";
-    @apply absolute left-[3px] top-[3px] h-3.5 w-3.5 rounded-full bg-white transition;
-  }
-
-  .workflow-toggle-on {
-    @apply bg-[#e85d25];
-  }
-
-  .workflow-toggle-on::after {
-    transform: translateX(16px);
-  }
-
-  .workflow-sidebar-footer-actions {
-    @apply mt-1 flex gap-2;
-  }
-
-  .workflow-sidebar-save-btn {
-    @apply flex-1;
-  }
-
-  .workflow-sidebar-publish-btn {
-    @apply flex-[2];
-  }
-  .workflow-approval-cards-header {
-    @apply mb-4 flex items-center justify-between gap-3;
-  }
-
-  .workflow-approval-cards-title {
-    @apply text-sm font-semibold text-zinc-900;
-  }
-
-  .workflow-approval-cards-grid {
-    @apply grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5;
-  }
-
-  .workflow-approval-card {
-    @apply h-full rounded-xl border border-zinc-200 shadow-sm transition-all duration-200;
-  }
-
-  .workflow-approval-card:hover {
-    /* remove brand tint */
-    background: #ffffff;
-
-    /* keep it clean */
-    border-color: #e5e7eb;
-
-    /* elevate */
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
-    transform: translateY(-2px);
-  }
-
-  .workflow-approval-card-inner {
-    @apply flex h-full flex-col gap-3 p-4;
-  }
-
-  .workflow-approval-card-top {
-    @apply flex items-start justify-between gap-3;
-  }
-
-  .workflow-approval-card-heading {
-    @apply min-w-0;
-  }
-
-  .workflow-approval-card-title {
-    @apply text-sm font-semibold text-zinc-900;
-  }
-
-  .workflow-approval-card-step {
-    @apply mt-1 text-[11px] text-zinc-500;
-  }
-
-  .workflow-approval-card-badge {
-    @apply shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-medium text-orange-700;
-  }
-
-  .workflow-approval-card-section {
-    @apply space-y-1;
-  }
-
-  .workflow-approval-card-value {
-    @apply text-xs break-words text-zinc-700;
-  }
-
-  .workflow-approval-card-meta {
-    @apply flex items-center justify-between gap-3;
-  }
-
-  .workflow-approval-card-meta-item {
-    @apply min-w-0;
-  }
-
-  .workflow-approval-card-meta-item-right {
-    @apply text-right;
-  }
-
-  .workflow-approval-card-meta-value {
-    @apply mt-1 text-xs text-zinc-700;
-  }
-
-  .workflow-approval-card-footer {
-    @apply rounded-lg border border-orange-100 bg-orange-50/60 p-2.5;
-  }
-
-  .workflow-approval-card-footer-value {
-    @apply mt-1 text-xs font-medium text-orange-700;
-  }
-
-  .workflow-filter-section {
-    @apply flex flex-row-reverse justify-evenly;
-  }
+	.workflow-create-field-row-2 {
+		@apply md:grid-cols-2;
+	}
+	.workflow-create-field-row-3 {
+		@apply md:grid-cols-3;
+	}
+
+	.workflow-create-field-group {
+		@apply flex flex-col gap-1.5;
+	}
+
+	.workflow-create-label {
+		@apply text-xs font-semibold text-zinc-600;
+	}
+
+	.workflow-create-req {
+		@apply text-[#e85d25];
+	}
+
+	.workflow-create-input {
+		@apply w-full rounded-lg border border-zinc-200 bg-[#fafaf8] px-3 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-[#e85d25] focus:bg-white;
+	}
+
+	.workflow-create-input-sm {
+		@apply text-xs;
+	}
+
+	.workflow-create-textarea {
+		@apply min-h-[75px] resize-none;
+	}
+
+	.workflow-create-hint {
+		@apply text-[11px] text-zinc-400;
+	}
+
+	.workflow-stage-list {
+		@apply flex flex-col gap-1;
+	}
+
+	.workflow-stage-card {
+		@apply rounded-sm border border-zinc-200 bg-[#fafaf8] transition;
+	}
+
+	.workflow-stage-card-expanded {
+		@apply border-orange-200 bg-white;
+	}
+
+	.workflow-stage-header {
+		@apply flex w-full items-center gap-3 px-4 py-3 text-left;
+	}
+
+	.workflow-stage-number {
+		@apply flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border border-orange-200 bg-orange-50 text-[11px] font-semibold text-orange-700;
+	}
+
+	.workflow-stage-number-active {
+		@apply border-[#e85d25] bg-[#e85d25] text-white;
+	}
+
+	.workflow-stage-header-content {
+		@apply min-w-0 flex-1;
+	}
+
+	.workflow-stage-title {
+		@apply text-sm font-medium text-zinc-900;
+	}
+
+	.workflow-stage-meta {
+		@apply text-[11px] text-zinc-400;
+	}
+
+	.workflow-stage-step-pill {
+		@apply rounded-full bg-orange-50 px-2 py-0.5 text-[11px] font-medium text-orange-700;
+	}
+
+	.workflow-stage-chevron {
+		@apply text-lg leading-none text-zinc-400 transition;
+	}
+
+	.workflow-stage-chevron-open {
+		@apply rotate-90;
+	}
+
+	.workflow-stage-body {
+		@apply px-4 pb-4;
+	}
+
+	.workflow-approver-list {
+		@apply mb-2 mt-2 flex flex-col gap-1.5;
+	}
+
+	.workflow-approver-row {
+		@apply flex items-center gap-2 rounded-lg bg-[#f5f5f0] px-3 py-2;
+	}
+
+	.workflow-approver-avatar {
+		@apply flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold;
+	}
+
+	.workflow-approver-avatar-orange {
+		@apply bg-orange-100 text-orange-700;
+	}
+
+	.workflow-approver-avatar-blue {
+		@apply bg-sky-100 text-sky-700;
+	}
+
+	.workflow-approver-avatar-teal {
+		@apply bg-emerald-100 text-emerald-700;
+	}
+
+	.workflow-approver-avatar-purple {
+		@apply bg-violet-100 text-violet-700;
+	}
+
+	.workflow-approver-content {
+		@apply min-w-0 flex-1;
+	}
+
+	.workflow-approver-name {
+		@apply text-xs font-medium text-zinc-800;
+	}
+
+	.workflow-approver-role {
+		@apply text-[11px] text-zinc-400;
+	}
+
+	.workflow-remove-btn {
+		@apply px-1 text-base leading-none text-zinc-300 transition hover:text-[#e85d25];
+	}
+
+	.workflow-add-approver-btn {
+		@apply flex w-full items-center justify-center gap-2 rounded-sm border border-dashed border-zinc-300 px-3 py-2 text-xs text-zinc-500 transition hover:border-[#e85d25] hover:text-[#e85d25];
+	}
+
+	.workflow-add-stage-btn {
+		@apply mt-3 flex w-full items-center justify-center gap-2 rounded-sm border border-dashed border-orange-200 bg-white px-4 py-3 text-sm text-orange-700 transition hover:bg-orange-50;
+	}
+
+	.workflow-sidebar-title {
+		@apply mb-3 text-sm font-semibold text-zinc-900;
+	}
+
+	.workflow-summary-list {
+		@apply flex flex-col;
+	}
+
+	.workflow-summary-list-row {
+		@apply flex flex-row justify-between gap-4 items-center;
+	}
+	.workflow-summary-item {
+		@apply flex items-center justify-between border-b border-zinc-100 py-2;
+	}
+
+	.workflow-summary-item-last {
+		@apply border-b-0;
+	}
+
+	.workflow-summary-key {
+		@apply text-xs text-zinc-500;
+	}
+
+	.workflow-summary-value {
+		@apply text-xs font-medium text-zinc-900;
+	}
+
+	.workflow-radio-group {
+		@apply flex flex-col gap-2;
+	}
+
+	.workflow-radio-option {
+		@apply flex items-start gap-2 rounded-lg border border-zinc-200 px-3 py-2 text-left transition;
+	}
+
+	.workflow-radio-option-active {
+		@apply border-[#e85d25] bg-orange-50;
+	}
+
+	.workflow-radio-dot {
+		@apply mt-0.5 h-[14px] w-[14px] shrink-0 rounded-full border border-zinc-300;
+	}
+
+	.workflow-radio-dot-active {
+		@apply border-[#e85d25] bg-[#e85d25] shadow-[inset_0_0_0_4px_white];
+	}
+
+	.workflow-radio-label {
+		@apply text-xs text-zinc-800;
+	}
+
+	.workflow-radio-sub {
+		@apply text-[11px] text-zinc-400;
+	}
+
+	.workflow-settings-list {
+		@apply flex flex-col;
+	}
+
+	.workflow-setting-item {
+		@apply flex items-center justify-between border-b border-zinc-100 py-2;
+	}
+
+	.workflow-setting-item-last {
+		@apply border-b-0;
+	}
+
+	.workflow-setting-label {
+		@apply text-xs text-zinc-700;
+	}
+
+	.workflow-setting-sub {
+		@apply text-[11px] text-zinc-400;
+	}
+
+	.workflow-toggle {
+		@apply relative h-5 w-9 rounded-full bg-zinc-200 transition;
+	}
+
+	.workflow-toggle::after {
+		content: "";
+		@apply absolute left-[3px] top-[3px] h-3.5 w-3.5 rounded-full bg-white transition;
+	}
+
+	.workflow-toggle-on {
+		@apply bg-[#e85d25];
+	}
+
+	.workflow-toggle-on::after {
+		transform: translateX(16px);
+	}
+
+	.workflow-sidebar-footer-actions {
+		@apply mt-1 flex gap-2;
+	}
+
+	.workflow-sidebar-save-btn {
+		@apply flex-1;
+	}
+
+	.workflow-sidebar-publish-btn {
+		@apply flex-[2];
+	}
+	.workflow-approval-cards-header {
+		@apply mb-4 flex items-center justify-between gap-3;
+	}
+
+	.workflow-approval-cards-title {
+		@apply text-sm font-semibold text-zinc-900;
+	}
+
+	.workflow-approval-cards-grid {
+		@apply grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5;
+	}
+
+	.workflow-approval-card {
+		@apply h-full rounded-xl border border-zinc-200 shadow-sm transition-all duration-200;
+	}
+
+	.workflow-approval-card:hover {
+		/* remove brand tint */
+		background: #ffffff;
+
+		/* keep it clean */
+		border-color: #e5e7eb;
+
+		/* elevate */
+		box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+		transform: translateY(-2px);
+	}
+
+	.workflow-approval-card-inner {
+		@apply flex h-full flex-col gap-3 p-4;
+	}
+
+	.workflow-approval-card-top {
+		@apply flex items-start justify-between gap-3;
+	}
+
+	.workflow-approval-card-heading {
+		@apply min-w-0;
+	}
+
+	.workflow-approval-card-title {
+		@apply text-sm font-semibold text-zinc-900;
+	}
+
+	.workflow-approval-card-step {
+		@apply mt-1 text-[11px] text-zinc-500;
+	}
+
+	.workflow-approval-card-badge {
+		@apply shrink-0 rounded-full bg-orange-50 px-2 py-0.5 text-[10px] font-medium text-orange-700;
+	}
+
+	.workflow-approval-card-section {
+		@apply space-y-1;
+	}
+
+	.workflow-approval-card-value {
+		@apply text-xs break-words text-zinc-700;
+	}
+
+	.workflow-approval-card-meta {
+		@apply flex items-center justify-between gap-3;
+	}
+
+	.workflow-approval-card-meta-item {
+		@apply min-w-0;
+	}
+
+	.workflow-approval-card-meta-item-right {
+		@apply text-right;
+	}
+
+	.workflow-approval-card-meta-value {
+		@apply mt-1 text-xs text-zinc-700;
+	}
+
+	.workflow-approval-card-footer {
+		@apply rounded-lg border border-orange-100 bg-orange-50/60 p-2.5;
+	}
+
+	.workflow-approval-card-footer-value {
+		@apply mt-1 text-xs font-medium text-orange-700;
+	}
+
+	.workflow-filter-section {
+		@apply flex flex-row-reverse justify-evenly;
+	}
+	.workflow-approvers-length-text {
+		font-size: 1rem;
+		position: absolute;
+		top: 46%;
+		left: 30%;
+	}
+	.workflow-approval-table {
+		@apply rounded-sm mb-4 overflow-hidden bg-white;
+		border: 1px solid #f1f1f1;
+	}
+
+	/* table base */
+	.workflow-approval-table-inner {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 12px; /* 👈 smaller overall */
+	}
+
+	/* header */
+	.workflow-approval-th {
+		@apply text-gray-800 font-semibold;
+		text-align: left;
+		padding: 8px 12px;
+		font-size: 11px;
+		background: #fafafa;
+		border-bottom: 1px solid #f0f0f0;
+		letter-spacing: 0.3px;
+	}
+
+	/* rows */
+	.workflow-approval-row {
+		transition: background 0.2s ease;
+	}
+
+	.workflow-approval-row:hover {
+		background: #fafafa;
+	}
+
+	/* cells */
+	.workflow-approval-td {
+		padding: 10px 12px;
+		font-size: 12px;
+		color: #444;
+		border-bottom: 1px solid #f5f5f5;
+		vertical-align: middle;
+	}
+
+	/* last row no border */
+	.workflow-approval-row:last-child .workflow-approval-td {
+		border-bottom: none;
+	}
+
+	/* name */
+	.workflow-approval-name {
+		font-weight: 500;
+		color: #222;
+		width: 30%;
+	}
+
+	/* approvers */
+	.workflow-approval-approvers {
+		color: #666;
+		width: 50%;
+		font-size: 12px;
+	}
+
+	/* badge */
+	.workflow-approval-badge {
+		background: #f3f4f6;
+		color: #555;
+		font-size: 10px; /* 👈 smaller badge */
+		padding: 3px 8px;
+		border-radius: 999px;
+		font-weight: 500;
+		display: inline-block;
+	}
 }
