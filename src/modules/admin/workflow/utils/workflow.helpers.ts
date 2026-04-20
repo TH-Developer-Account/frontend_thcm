@@ -3,8 +3,9 @@ import type {
   WorkflowBasics,
   WorkflowStage,
   WorkflowCard,
-  WorkflowRow,
   WorkFlowTemplate,
+  ApprovalRule,
+  StrategyType,
 } from "../types/workflow.types";
 
 export const buildWorkflowPayload = (
@@ -14,20 +15,22 @@ export const buildWorkflowPayload = (
 ): CreateWorkflowPayload => {
   return {
     name: basics.name.trim(),
+    appId: basics.app,
     workspaceId,
-    regionId: basics.regionId,
-    minBudget: Number(basics.minBudget) || 0,
-    maxBudget: Number(basics.maxBudget) || 0,
-    priority: Number(basics.priority) || 1,
     isActive: basics.isActive,
+    description: basics.description,
+    metaData_1: "",
+    metaData_2: "",
+    metaData_3: "",
     stages: stages.map((stage) => {
       const baseStage = {
+        name: stage.name,
         stageOrder: stage.stageOrder,
         strategy: stage.strategy,
         approverIds: stage.approvers.map((approver) => approver.id),
       };
 
-      if (stage.strategy === "QUORUM") {
+      if (stage.strategy === "SOME") {
         return {
           ...baseStage,
           minApprovals: Number(stage.minApprovals) || 1,
@@ -46,21 +49,16 @@ export const validateWorkflow = (
 ): string | null => {
   if (!basics.name.trim()) return "Workflow name is required";
   if (!workspaceId) return "Workspace ID is missing";
-  if (!basics.regionId) return "Region is required";
-
-  if (Number(basics.minBudget) > Number(basics.maxBudget)) {
-    return "Minimum budget cannot be greater than maximum budget";
-  }
 
   for (const stage of stages) {
     if (!stage.approvers.length) {
       return `Stage ${stage.stageOrder} must have at least one approver`;
     }
 
-    if (stage.strategy === "QUORUM") {
+    if (stage.strategy === "SOME") {
       const quorum = Number(stage.minApprovals || 0);
       if (quorum < 1) {
-        return `Stage ${stage.stageOrder} quorum must be at least 1`;
+        return `Stage ${stage.stageOrder} must have at least 1 approver!`;
       }
       if (quorum > stage.approvers.length) {
         return `Stage ${stage.stageOrder} quorum cannot exceed approver count`;
@@ -71,15 +69,29 @@ export const validateWorkflow = (
   return null;
 };
 
+function deriveStrategy(
+  minApprovals: unknown,
+  totalApprovers: number,
+): StrategyType {
+  if (minApprovals === 1) return "ANY";
+  if (minApprovals === totalApprovers) return "ALL";
+  return "SOME";
+}
+
 export const updateStageField = <K extends keyof WorkflowStage>(
   stages: WorkflowStage[],
   stageId: string,
   key: K,
   value: WorkflowStage[K],
 ): WorkflowStage[] => {
-  return stages.map((stage) =>
-    stage.id === stageId ? { ...stage, [key]: value } : stage,
-  );
+  let strategy = "All" as ApprovalRule;
+
+  return stages.map((stage) => {
+    if (key === "minApprovals") {
+      strategy = deriveStrategy(value, stage.approvers.length) as ApprovalRule;
+    }
+    return stage.id === stageId ? { ...stage, [key]: value, strategy } : stage;
+  });
 };
 
 export const toggleStageExpanded = (

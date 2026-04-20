@@ -4,18 +4,13 @@ export type WorkflowStage = {
   name: string;
   strategy: ApprovalRule;
   minApprovals?: number;
-  slaDays: string;
-  rejectionAction: RejectionAction;
   approvers: Approver[];
   isExpanded?: boolean;
 };
 
 export type WorkflowBasics = {
   name: string;
-  regionId: string;
-  minBudget: string;
-  maxBudget: string;
-  priority: string;
+  app: string;
   isActive: boolean;
   description: string;
 };
@@ -28,6 +23,8 @@ export type WorkflowStatus =
   | "Pending Approval";
 
 export type WorkflowOwnerType = "mine" | "team";
+
+export type StrategyType = "ANY" | "ALL" | "SOME";
 
 export type WorkflowItem = {
   id: string;
@@ -74,18 +71,20 @@ export type FormValues = {
   app: string;
 };
 
-export type ApprovalRule = "ANY" | "ALL" | "QUORUM";
+export type ApprovalRule = "ANY" | "ALL" | "SOME";
 export type RejectionAction = "RETURN" | "CANCEL" | "ESCALATE";
 
 export type CreateWorkflowPayload = {
   name: string;
   workspaceId: string;
-  regionId: string;
-  minBudget: number;
-  maxBudget: number;
-  priority: number;
   isActive: boolean;
+  appId: string;
+  description: string;
+  metaData_1: string;
+  metaData_2: string;
+  metaData_3: string;
   stages: {
+    name: string;
     stageOrder: number;
     strategy: ApprovalRule;
     approverIds: string[];

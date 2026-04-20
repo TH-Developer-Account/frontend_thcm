@@ -5,8 +5,6 @@ import type { SidebarItem } from "../layout/layout.types";
 export function useSidebarPermissions(items: SidebarItem[]) {
   const { can, isSuperAdmin } = useAuth();
 
-  console.log({ items });
-
   return useMemo(() => {
     const filterItems = (items: SidebarItem[]): SidebarItem[] => {
       return items
