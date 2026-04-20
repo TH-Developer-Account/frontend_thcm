@@ -1,14 +1,14 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { GitBranch, Plus } from "lucide-react";
-import { useAuth } from "../../../../context/Auth/useAuth";
-import { ServerAxios } from "../../../../services/ServerAxios";
-import MultiSelectInput from "../../../../components/FormElements/MultiSelectInput";
-import { useWorkflow } from "../context/useWorkflows";
-import { SearchInput } from "../../../../components/FormElements/SearchInput";
-import { formatApps } from "../constant/workflow.constant";
-import type { Option } from "../../../../components/FormElements/input.types";
-import type { UserResponse } from "../../user-profile/types/profile.types";
+import { useAuth } from "../../../../../context/Auth/useAuth";
+import { ServerAxios } from "../../../../../services/ServerAxios";
+import MultiSelectInput from "../../../../../components/FormElements/MultiSelectInput";
+import { useWorkflow } from "../../context/useWorkflows";
+import { SearchInput } from "../../../../../components/FormElements/SearchInput";
+import { formatApps } from "../../constant/workflow.constant";
+import type { Option } from "../../../../../components/FormElements/input.types";
+import type { UserResponse } from "../../../user-profile/types/profile.types";
 
 const WorkflowTopSection = () => {
   const { search, setSearch, filters, setFilters } = useWorkflow();
@@ -64,7 +64,7 @@ const WorkflowTopSection = () => {
           <div className="workflow-section-header-content">
             <div className="workflow-badge">
               <GitBranch size={14} />
-              Approval Workflow Studio
+              Approval Workflow
             </div>
 
             <h2 className="workflow-page-title">Workflow Management</h2>

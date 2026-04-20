@@ -1,32 +1,35 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import { ServerAxios } from "../../../services/ServerAxios";
+import { ServerAxios } from "../../../../services/ServerAxios";
 import PageSectionLayout, {
   PageSection,
-} from "../../../layout/PageSectionLayout";
+} from "../../../../layout/PageSectionLayout";
 import WorkflowCreateHeader from "./components/WorkflowCreateHeader";
-import WorkflowCreateMain from "./components/WorkflowCreateMain";
+import WorkflowCreateMain from "./WorkflowCreateMain";
 import WorkflowCreateSidebar from "./components/WorkflowCreateSidebar";
 import {
   availableUsers,
   mapBasics,
   mapStages,
   api_routes,
-} from "./constant/workflow.constant";
-import { submitWorkflow } from "./api/workflow.api";
+} from "../constant/workflow.constant";
 import {
   addStageApprover,
   removeStageApprover,
   toggleStageExpanded,
   updateStageField,
-} from "./utils/workflow.helpers";
+  validateWorkflow,
+  buildWorkflowPayload,
+} from "../utils/workflow.helpers";
 import type {
   WorkflowBasics,
   WorkflowStage,
   Approver,
-} from "./types/workflow.types";
-import { useToast } from "../../../context/Auth/AuthContext";
-import { useAuth } from "../../../context/Auth/useAuth";
+  SubmitWorkflowParams,
+  SubmitWorkflowResult,
+} from "../types/workflow.types";
+import { useToast } from "../../../../context/Auth/AuthContext";
+import { useAuth } from "../../../../context/Auth/useAuth";
 
 const WorkflowCreatePage = () => {
   const { user, workspaceId, isLoading } = useAuth();
@@ -110,6 +113,47 @@ const WorkflowCreatePage = () => {
         isExpanded: true,
       },
     ]);
+  };
+
+  const submitWorkflow = async ({
+    basics,
+    stages,
+    workspaceId,
+    path,
+  }: SubmitWorkflowParams): Promise<SubmitWorkflowResult> => {
+    const validationError = validateWorkflow(basics, stages, workspaceId);
+
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
+    const payload = buildWorkflowPayload(basics, stages, workspaceId);
+
+    console.log("FINAL PAYLOAD JSON:", JSON.stringify(payload, null, 2));
+
+    try {
+      console.log({ path });
+      const response = await ServerAxios.post(path, payload);
+
+      return {
+        data: response.data,
+        message: response.data?.message || "Workflow created successfully.",
+        payload,
+      };
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "string"
+            ? err
+            : "Invalid OTP";
+      showToast({
+        type: "error",
+        title: "Error",
+        description: message,
+      });
+      throw new Error(message);
+    }
   };
 
   const handleSubmit = async () => {

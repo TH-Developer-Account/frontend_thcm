@@ -5,7 +5,7 @@ import DataTable from "../../../../components/ui/DataTable";
 import type { WorkflowRow } from "../types/workflow.types";
 import { useWorkflow } from "../context/useWorkflows";
 import { ServerAxios } from "../../../../services/ServerAxios";
-import { WorkflowUserAssignment } from "../components/WorkflowUserAssignment"; // or your common modal wrapper
+import { WorkflowUserAssignment } from "./WorkflowUserAssignment"; // or your common modal wrapper
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { api_routes } from "../constant/workflow.constant";
 

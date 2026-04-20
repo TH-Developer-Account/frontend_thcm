@@ -16,7 +16,7 @@ import MastersPage from "../modules/admin/pages/Masters/MastersPage";
 import BusinessPartners from "../modules/admin/business-partners/BusinessPartners";
 import BusinessPartnerView from "../modules/admin/business-partners/BusinessPartnerView";
 import WorkflowPage from "../modules/admin/workflow/WorkflowPage";
-import WorkflowCreatePage from "../modules/admin/workflow/WorkflowCreatePage";
+import WorkflowCreatePage from "../modules/admin/workflow/WorkFlowCreation/WorkflowCreatePage";
 
 export default function AdminRoutes() {
   return (

@@ -1,5 +1,5 @@
 // WorkflowPage.tsx
-import WorkflowTopSection from "./components/WorkflowTopSection";
+import WorkflowTopSection from "./WorkFlowCreation/components/WorkflowTopSection";
 import PageSectionLayout, {
   PageSection,
 } from "../../../layout/PageSectionLayout";
@@ -19,7 +19,7 @@ const WorkflowPage = () => {
             <WorkflowTable />
           </section>
         </PageSection>
-      </PageSectionLayout>{" "}
+      </PageSectionLayout>
     </WorkflowProvider>
   );
 };
