@@ -5,7 +5,6 @@ export const useMasterData = () => {
   return useQuery({
     queryKey: ["master-data"],
     queryFn: async () => {
-      console.log("Fetching master data...");
       const res = await ServerAxios.get("/master-data");
       return res.data;
     },

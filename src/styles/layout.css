@@ -136,6 +136,18 @@
 		@apply bg-gray-50 text-orange-600;
 	}
 }
+
+/* page-section-layout.css */
+@layer components {
+	.page-stack-layout {
+		@apply flex h-full w-full min-w-0 flex-col items-start justify-center gap-2;
+	}
+
+	.page-stack-section {
+		@apply w-full;
+	}
+}
+
 /* ---------- Utility Examples ---------- */
 
 /* Mobile */

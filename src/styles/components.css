@@ -720,3 +720,86 @@
 		@apply border-t border-gray-200 px-4 py-4 text-sm text-gray-700;
 	}
 }
+
+.workflow-table-shell {
+	@apply flex min-h-0 flex-col overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm;
+	height: calc(100vh - 330px);
+}
+
+.workflow-table-scroll {
+	@apply min-h-0 flex-1 overflow-auto;
+}
+
+.workflow-table {
+	@apply w-full min-w-[1100px] border-collapse;
+}
+
+.workflow-table-head {
+	@apply sticky top-0 z-10 bg-zinc-200;
+}
+
+.workflow-table-head-cell {
+	@apply border-b border-zinc-200 px-4 py-3 text-left text-xs font-semibold text-zinc-600;
+}
+
+.workflow-table-head-cell-sortable {
+	@apply cursor-pointer select-none;
+}
+
+.workflow-table-head-content {
+	@apply flex items-center gap-1;
+}
+
+.workflow-table-row {
+	@apply border-t border-zinc-200 transition hover:bg-zinc-50;
+}
+
+.workflow-table-cell {
+	@apply px-4 py-3;
+}
+
+.workflow-table-cell-text {
+	@apply px-4 py-3 text-sm text-zinc-700 align-top;
+}
+
+.workflow-table-cell-action {
+	@apply px-4 py-3 text-right align-top;
+}
+
+.workflow-table-cell-inner {
+	@apply min-w-0 overflow-hidden;
+	/* word-break: break-word;
+	overflow-wrap: anywhere; */
+}
+
+.workflow-table-skeleton {
+	@apply h-4 w-full animate-pulse rounded bg-zinc-200;
+}
+
+.workflow-empty-state {
+	@apply px-4 py-10 text-center text-sm text-zinc-500;
+}
+
+.workflow-empty-state-inner {
+	@apply flex flex-col items-center gap-1;
+}
+
+.workflow-empty-title {
+	@apply text-sm font-medium text-zinc-700;
+}
+
+.workflow-empty-description {
+	@apply text-xs text-zinc-400;
+}
+
+.workflow-table-head {
+	@apply sticky top-0 z-10 bg-zinc-100;
+}
+
+.workflow-table-pagination {
+	@apply shrink-0 border-t border-zinc-200 bg-zinc-50;
+}
+
+.workflow-table-pagination-inner {
+	@apply flex items-center justify-between px-4 py-3;
+}
