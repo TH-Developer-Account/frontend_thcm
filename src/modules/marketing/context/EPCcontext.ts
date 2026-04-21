@@ -2,7 +2,7 @@ import { createContext } from "react";
 import type { SortingState } from "@tanstack/react-table";
 import type { EPCRow } from "../../../utils/types";
 
-export interface EPFContextValue {
+export interface EPCContextValue {
   data: EPCRow[];
   loading: boolean;
   search: string;
@@ -17,4 +17,4 @@ export interface EPFContextValue {
   refetch: () => Promise<void>;
 }
 
-export const EPFContext = createContext<EPFContextValue | undefined>(undefined);
+export const EPCContext = createContext<EPCContextValue | undefined>(undefined);

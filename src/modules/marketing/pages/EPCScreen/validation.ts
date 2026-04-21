@@ -5,17 +5,17 @@ export const validateEpcForm = (values: EpcFormValues) => {
 
   if (!values.department) errors.department = "Department is required";
   if (!values.branch) errors.branch = "Branch is required";
-  if (!values.zone) errors.zone = "Zone is required";
-  if (!values.eventName) errors.eventName = "Event name is required";
-  if (!values.eventFrom) errors.eventFrom = "Start date required";
-  if (!values.eventTo) errors.eventTo = "End date required";
+  if (!values.region) errors.region = "Zone is required";
+  if (!values.event_name) errors.event_name = "Event name is required";
+  if (!values.event_from_date) errors.event_from_date = "Start date required";
+  if (!values.event_to_date) errors.event_to_date = "End date required";
 
   if (
-    values.eventFrom &&
-    values.eventTo &&
-    new Date(values.eventFrom) > new Date(values.eventTo)
+    values.event_from_date &&
+    values.event_to_date &&
+    new Date(values.event_from_date) > new Date(values.event_to_date)
   ) {
-    errors.eventTo = "End date must be after start date";
+    errors.event_to_date = "End date must be after start date";
   }
 
   return errors;

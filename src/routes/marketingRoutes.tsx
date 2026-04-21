@@ -9,16 +9,16 @@ import UsersPage from "../modules/admin/pages/BusinessUsersMaster/UserPage";
 import ActivityPlannerPage from "../modules/marketing/pages/ActivityPlannerView/pages/ActivityPlannerPage";
 
 export default function MarketingRoutes() {
-	return (
-		<Routes>
-			<Route path="dashboard" element={<DashboardPage />} />
-			<Route path="epc" element={<EpcForm userRole="ADMIN" />} />
-			<Route path="epf" element={<EpfForm />} />
-			<Route path="crf" element={<CrfForm />} />
-			<Route path="listing" element={<EPCList />} />
-			<Route path="/profile" element={<UserProfile />} />
-			<Route path="epf/:id" element={<ActivityPlannerPage />} />
-			<Route path="/admin/users" element={<UsersPage />} />
-		</Routes>
-	);
+  return (
+    <Routes>
+      <Route path="dashboard" element={<DashboardPage />} />
+      <Route path="epc" element={<EpcForm userRole="ADMIN" />} />
+      <Route path="epf" element={<EpfForm />} />
+      <Route path="crf" element={<CrfForm />} />
+      <Route path="listing" element={<EPCList />} />
+      <Route path="/profile" element={<UserProfile />} />
+      <Route path="epf/:id" element={<ActivityPlannerPage />} />
+      <Route path="/admin/users" element={<UsersPage />} />
+    </Routes>
+  );
 }
