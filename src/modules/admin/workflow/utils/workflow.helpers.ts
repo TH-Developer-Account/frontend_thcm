@@ -26,14 +26,16 @@ export const buildWorkflowPayload = (
 		metaData_2: "",
 		metaData_3: "",
 		stages: stages.map((stage) => {
+			const isQuorum = stage.strategy === "SOME";
+
 			const baseStage = {
 				name: stage.name,
 				stageOrder: stage.stageOrder,
 				strategy: stage.strategy,
-				approverIds: stage.approvers.map((approver) => approver.id),
+				approverIds: stage.approvers.map((approver) => approver.userId),
 			};
 
-			if (stage.strategy === "SOME") {
+			if (isQuorum) {
 				return {
 					...baseStage,
 					minApprovals: Number(stage.minApprovals) || 1,

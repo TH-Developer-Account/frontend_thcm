@@ -16,29 +16,7 @@ export type WorkflowBasics = {
 	description: string;
 };
 
-export type WorkflowStatus =
-	| "Draft"
-	| "Active"
-	| "Paused"
-	| "Archived"
-	| "Pending Approval";
-
-export type WorkflowOwnerType = "mine" | "team";
-
 export type StrategyType = "ANY" | "ALL" | "SOME";
-
-export type WorkflowItem = {
-	id: string;
-	name: string;
-	module: string;
-	owner: string;
-	ownerType: WorkflowOwnerType;
-	stages: number;
-	lastUpdated: string;
-	status: WorkflowStatus;
-};
-
-export type WorkflowFilterKey = "all" | "mine" | "draft" | "active" | "pending";
 
 export type WorkFlowProps = {
 	currentStep: number;
@@ -46,7 +24,6 @@ export type WorkFlowProps = {
 	goBack: () => void;
 	basics: WorkflowBasics;
 	stages: WorkflowStage[];
-	availableUsers: Approver[];
 	currentUserId: string;
 	onBasicChange: <K extends keyof WorkflowBasics>(
 		key: K,
@@ -63,13 +40,6 @@ export type WorkFlowProps = {
 	onSubmit: () => void;
 	loading?: boolean;
 	onAddStage: () => void;
-};
-
-export type FormValues = {
-	isActive: boolean;
-	status: "active" | "inactive";
-	zone: string;
-	app: string;
 };
 
 export type ApprovalRule = "ANY" | "ALL" | "SOME";
@@ -91,46 +61,6 @@ export type CreateWorkflowPayload = {
 		approverIds: string[];
 		minApprovals?: number;
 	}[];
-};
-
-export type WorkflowSettings = {
-	allowSubmitterEdit: boolean;
-	emailNotifications: boolean;
-	remindOnSlaBreach: boolean;
-	requireCommentOnReject: boolean;
-	autoApproveOnTimeout: boolean;
-};
-
-export type FlowType = "SEQUENTIAL" | "PARALLEL" | "CONDITIONAL";
-
-export type CurrentAuthUser = {
-	id: string;
-	first_name: string;
-	last_name: string;
-	email: string;
-};
-
-export type WorkflowMainProps = {
-	currentStep: number;
-	goNext: () => void;
-	goBack: () => void;
-	basics: WorkflowBasics;
-	stages: WorkflowStage[];
-	availableUsers: Approver[];
-	currentUserId: string;
-	onBasicChange: <K extends keyof WorkflowBasics>(
-		key: K,
-		value: WorkflowBasics[K],
-	) => void;
-	onStageChange: <K extends keyof WorkflowStage>(
-		stageId: string,
-		key: K,
-		value: WorkflowStage[K],
-	) => void;
-	onToggleStage: (stageId: string) => void;
-	onRemoveApprover: (stageId: string, approverId: string) => void;
-	onAddApprover: (stageId: string, approver: Approver) => void;
-	onSubmit: () => void;
 };
 
 export interface WorkflowRow {
@@ -166,7 +96,12 @@ export type Approver = {
 	id: string;
 	stageId: string;
 	userId: string;
-	user: User;
+	user: {
+		id: string;
+		first_name: string;
+		last_name: string;
+		email: string;
+	};
 };
 
 type StageStrategy = "ANY" | "ALL" | "SOME";

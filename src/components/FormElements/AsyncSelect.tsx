@@ -11,7 +11,6 @@ export type UserOption = {
 	email?: string;
 	firstName?: string;
 	lastName?: string;
-	error?: string;
 };
 
 type Props = {
@@ -20,6 +19,7 @@ type Props = {
 	excludedUserIds?: string[];
 	placeholder?: string;
 	isClearable?: boolean;
+	error?: string;
 	label?: string;
 };
 

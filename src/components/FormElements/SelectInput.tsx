@@ -31,7 +31,13 @@ export default function SelectInput({
 			borderRadius: "12px",
 			borderWidth: "1px",
 			paddingRight: error ? "36px" : "8px",
-			backgroundColor: isDisabled ? "#f3f4f6" : "#fff",
+			// 👇 MATCH YOUR FORM INPUT
+			backgroundColor: isDisabled
+				? "#f3f4f6"
+				: state.isFocused
+					? "#ffffff"
+					: "#fafaf8",
+			// backgroundColor: isDisabled ? "#f3f4f6" : "#fff",
 			borderColor: error ? "#dc2626" : state.isFocused ? "#f35a00" : "#d1d5db",
 			boxShadow: error
 				? "0 0 0 1px #dc2626"

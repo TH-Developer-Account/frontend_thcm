@@ -27,7 +27,6 @@ const WorkflowCreateMain = ({
 	onRemoveApprover,
 	onAddApprover,
 	onSubmit,
-	availableUsers,
 	currentUserId,
 	onAddStage,
 	loading,
@@ -81,7 +80,6 @@ const WorkflowCreateMain = ({
 						errors={stageErrors}
 						formError={stageFormError}
 						currentUserId={currentUserId}
-						availableUsers={availableUsers}
 						onStageChange={onStageChange}
 						onToggleStage={onToggleStage}
 						onRemoveApprover={onRemoveApprover}

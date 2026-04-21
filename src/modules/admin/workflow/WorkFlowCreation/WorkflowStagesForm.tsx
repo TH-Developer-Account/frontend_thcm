@@ -14,7 +14,6 @@ type Props = {
 	errors: WorkflowStageErrors[];
 	formError: string | null;
 	currentUserId: string;
-	availableUsers: Approver[];
 	onStageChange: <K extends keyof WorkflowStage>(
 		stageId: string,
 		key: K,
@@ -145,6 +144,7 @@ const WorkflowStagesForm = ({
 												{stage.approvers.map((approver) => {
 													const firstName = approver.user?.first_name ?? "";
 													const lastName = approver.user?.last_name ?? "";
+													console.log("Rendering approver:", stage);
 													const fullName =
 														`${firstName} ${lastName}`.trim() || "Unnamed User";
 

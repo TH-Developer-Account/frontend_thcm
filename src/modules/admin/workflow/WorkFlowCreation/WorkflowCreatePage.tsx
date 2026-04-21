@@ -8,7 +8,6 @@ import WorkflowCreateHeader from "./components/WorkflowCreateHeader";
 import WorkflowCreateMain from "./WorkflowCreateMain";
 import WorkflowCreateSidebar from "./components/WorkflowCreateSidebar";
 import {
-	availableUsers,
 	mapBasics,
 	mapStages,
 	api_routes,
@@ -228,7 +227,6 @@ const WorkflowCreatePage = () => {
 	};
 
 	if (isLoading) return null;
-
 	return (
 		<PageSectionLayout>
 			<PageSection className="workflow-create-page-box">
@@ -252,7 +250,6 @@ const WorkflowCreatePage = () => {
 							goBack={handleBack}
 							basics={basics}
 							stages={stages}
-							availableUsers={availableUsers}
 							currentUserId={user?.id || ""}
 							onBasicChange={handleBasicChange}
 							onStageChange={handleStageChange}
