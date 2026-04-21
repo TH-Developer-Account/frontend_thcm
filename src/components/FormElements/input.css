@@ -494,3 +494,21 @@ CHECK ICON
 .checkbox-icon {
 	@apply font-bold leading-none;
 }
+
+.form-input-wrapper {
+	position: relative;
+}
+
+.form-error-text {
+	margin-top: 0.25rem;
+	font-size: 0.75rem;
+	line-height: 1rem;
+	color: #dc2626;
+}
+
+.form-helper-text {
+	margin-top: 0.25rem;
+	font-size: 0.75rem;
+	line-height: 1rem;
+	color: #6b7280;
+}

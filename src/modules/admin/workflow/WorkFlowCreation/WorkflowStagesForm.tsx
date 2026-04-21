@@ -2,11 +2,17 @@ import React from "react";
 import { Plus } from "lucide-react";
 import UserAsyncSelect from "../../../../components/FormElements/AsyncSelect";
 import Avatar from "../../../../components/common/Avatar";
-import type { WorkflowStage, Approver } from "../types/workflow.types";
+import type {
+	WorkflowStage,
+	Approver,
+	WorkflowStageErrors,
+} from "../types/workflow.types";
 import FormInput from "../../../../components/FormElements/FormInput";
 
 type Props = {
 	stages: WorkflowStage[];
+	errors: WorkflowStageErrors[];
+	formError: string | null;
 	currentUserId: string;
 	availableUsers: Approver[];
 	onStageChange: <K extends keyof WorkflowStage>(
@@ -24,6 +30,8 @@ type Props = {
 
 const WorkflowStagesForm = ({
 	stages,
+	errors,
+	formError,
 	onStageChange,
 	onToggleStage,
 	onRemoveApprover,
@@ -32,16 +40,27 @@ const WorkflowStagesForm = ({
 	onAddStage,
 	onSubmit,
 }: Props) => {
+	console.log("Rendering WorkflowStagesForm with stages:", stages);
+	console.log("Stage errors:", errors);
 	return (
 		<div>
 			<div className="workflow-stage-list">
 				{stages.length === 0 ? (
 					<div className="workflow-empty-state">
-						No stages added yet. Click <strong>Add another stage</strong> to
-						start configuring your workflow.
+						{formError ? (
+							<p className="form-error-text text-md text-center">{formError}</p>
+						) : (
+							<>
+								No stages added yet. Click <strong>Add another stage</strong> to
+								start configuring your workflow.
+							</>
+						)}
 					</div>
 				) : (
-					stages.map((stage) => {
+					stages.map((stage, index) => {
+						const stageError = errors[index] || {};
+						const minApprovals = stage.minApprovals ?? 0;
+
 						return (
 							<React.Fragment key={stage.id}>
 								<div
@@ -87,27 +106,35 @@ const WorkflowStagesForm = ({
 										<div className="workflow-stage-body">
 											<div className="workflow-create-field-row workflow-create-field-row-3">
 												<FormInput
+													name={`stage-name-${stage.id}`}
 													label="Stage name"
 													value={stage.name}
 													onChange={(e) =>
 														onStageChange(stage.id, "name", e.target.value)
 													}
+													error={stageError.name}
 												/>
 
 												<div className="relative">
 													<FormInput
+														name={`stage-minApprovals-${stage.id}`}
 														label="Minimum approvals"
 														type="number"
 														min={1}
 														className="w-[25%]"
-														value={stage.minApprovals ?? stage.approvers.length}
+														max={stage.approvers.length}
+														value={stage.minApprovals ?? 0}
 														onChange={(e) =>
 															onStageChange(
 																stage.id,
 																"minApprovals",
-																Number(e.target.value),
+																Math.min(
+																	stage.approvers.length || 1,
+																	Math.max(1, Number(e.target.value)),
+																),
 															)
 														}
+														error={stageError.minApprovals}
 													/>
 													<p className="workflow-approvers-length-text">
 														/{stage.approvers.length}
@@ -116,6 +143,11 @@ const WorkflowStagesForm = ({
 											</div>
 											<div className="workflow-approver-list">
 												{stage.approvers.map((approver) => {
+													const firstName = approver.user?.first_name ?? "";
+													const lastName = approver.user?.last_name ?? "";
+													const fullName =
+														`${firstName} ${lastName}`.trim() || "Unnamed User";
+
 													return (
 														<div
 															key={approver.id}
@@ -123,9 +155,9 @@ const WorkflowStagesForm = ({
 														>
 															<div className="workflow-approver-avatar workflow-approver-avatar-orange">
 																<Avatar
-																	firstName={approver.firstName || ""}
-																	lastName={approver.lastName}
-																	imageUrl={""}
+																	firstName={firstName}
+																	lastName={lastName}
+																	imageUrl=""
 																	size="md"
 																	isTooltip={false}
 																/>
@@ -133,10 +165,10 @@ const WorkflowStagesForm = ({
 
 															<div className="workflow-approver-content">
 																<div className="workflow-approver-name">
-																	{approver.name}
+																	{fullName}
 																</div>
 																<div className="workflow-approver-role">
-																	{approver.email}
+																	{approver.user?.email ?? "--"}
 																</div>
 															</div>
 
@@ -155,19 +187,32 @@ const WorkflowStagesForm = ({
 											</div>
 											<UserAsyncSelect
 												label="Approvers"
-												excludedUserIds={stage.approvers.map((a) => a.id)}
+												excludedUserIds={stage.approvers.map((a) => a.userId)}
 												onChange={(selected) => {
 													if (!selected) return;
 
 													onAddApprover(stage.id, {
 														id: selected.value,
-														name: selected.label,
-														email: selected.email,
-														firstName: selected.firstName,
-														lastName: selected.lastName,
+														stageId: stage.id,
+														userId: selected.value,
+														user: {
+															id: selected.value,
+															first_name: selected.firstName ?? "",
+															last_name: selected.lastName ?? "",
+															email: selected.email ?? "",
+														},
 													});
 												}}
 											/>
+											{(stageError.approvers || stageError.minApprovals) && (
+												<p className="form-error-text text-md text-left mt-2">
+													{stageError.minApprovals
+														? `Please ensure you have at least ${minApprovals} approver${
+																minApprovals > 1 ? "s" : ""
+															} for this stage.`
+														: stageError.approvers}
+												</p>
+											)}
 										</div>
 									)}
 								</div>

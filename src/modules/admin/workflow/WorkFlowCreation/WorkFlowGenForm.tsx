@@ -6,93 +6,115 @@ import TextareaInput from "../../../../components/FormElements/TextareaInput";
 import SelectInput from "../../../../components/FormElements/SelectInput";
 import Radio from "../../../../components/FormElements/Radio";
 import type { Option } from "../../../../components/FormElements/input.types";
-import type { WorkflowBasics } from "../types/workflow.types";
+import type {
+	WorkflowBasics,
+	WorkflowGenErrors,
+} from "../types/workflow.types";
 import { formatApps } from "../constant/workflow.constant";
 
 export type WorkflowGenProps = {
-  basics: WorkflowBasics;
-  onBasicChange: <K extends keyof WorkflowBasics>(
-    key: K,
-    value: WorkflowBasics[K],
-  ) => void;
-  onNext: () => void;
+	basics: WorkflowBasics;
+	errors: WorkflowGenErrors;
+	onBasicChange: <K extends keyof WorkflowBasics>(
+		key: K,
+		value: WorkflowBasics[K],
+	) => void;
+	onClearError: (key: keyof WorkflowGenErrors) => void;
+	onNext: () => void;
 };
 
 const WorkFlowGenForm = ({
-  basics,
-  onBasicChange,
-  onNext,
+	basics,
+	errors,
+	onBasicChange,
+	onClearError,
+	onNext,
 }: WorkflowGenProps) => {
-  const { permissions } = useAuth();
-  const navigate = useNavigate();
-  const apps = formatApps(permissions);
-  return (
-    <>
-      <div className="workflow-create-field-row workflow-create-field-row-2">
-        <FormInput
-          label="Workflow name"
-          value={basics.name}
-          onChange={(e) => onBasicChange("name", e.target.value)}
-          placeholder="e.g. Standard EPC Approval"
-          helperText="Used to identify this workflow across modules"
-          required
-        />
+	const { permissions } = useAuth();
+	const navigate = useNavigate();
+	const apps = formatApps(permissions);
 
-        <SelectInput
-          name="app"
-          label="App"
-          value={apps.find((opt: Option) => opt.value === basics?.app) || null}
-          options={apps}
-          onChange={(v: SingleValue<Option>) =>
-            onBasicChange("app", v?.value || "")
-          }
-          helperText="For which App this workflow is being created"
-        />
-      </div>
+	return (
+		<>
+			<div className="workflow-create-field-row workflow-create-field-row-2">
+				<FormInput
+					name="name"
+					label="Workflow name"
+					value={basics.name}
+					onChange={(e) => {
+						onBasicChange("name", e.target.value);
+						onClearError("name");
+					}}
+					error={errors.name}
+					placeholder="e.g. Standard EPC Approval"
+					helperText="Used to identify this workflow across modules"
+					required
+				/>
 
-      <div className="workflow-create-field-row workflow-create-field-row-2">
-        <Radio
-          name="status"
-          groupLabel="Status"
-          label1="Active"
-          label2="Inactive"
-          value1="true"
-          value2="false"
-          selectedValue={String(basics.isActive)}
-          onChange={(value) => onBasicChange("isActive", value === "true")}
-        />
-      </div>
+				<SelectInput
+					name="app"
+					label="App"
+					value={apps.find((opt: Option) => opt.value === basics.app) || null}
+					options={apps}
+					onChange={(v: SingleValue<Option>) => {
+						onBasicChange("app", v?.value || "");
+						onBasicChange("appDesc", v?.label || "");
+						onClearError("app");
+					}}
+					error={errors.app}
+					helperText="For which App this workflow is being created"
+					required
+				/>
+			</div>
 
-      <div className="workflow-create-field-row">
-        <TextareaInput
-          name="description"
-          label="Description"
-          className="workflow-create-textarea"
-          rows={2}
-          draggable="false"
-          value={basics.description}
-          onChange={(e) => onBasicChange("description", e.target.value)}
-        />
-      </div>
+			<div className="workflow-create-field-row workflow-create-field-row-2">
+				<Radio
+					name="status"
+					groupLabel="Status"
+					label1="Active"
+					label2="Inactive"
+					value1="true"
+					value2="false"
+					selectedValue={String(basics.isActive)}
+					onChange={(value) => onBasicChange("isActive", value === "true")}
+				/>
+			</div>
 
-      <div className="mt-4 flex justify-between">
-        <button
-          type="button"
-          className="workflow-create-secondary-btn"
-          onClick={() => navigate("/admin/workflows")}
-        >
-          Back
-        </button>
-        <button
-          type="button"
-          className="workflow-create-primary-btn"
-          onClick={onNext}
-        >
-          Next
-        </button>
-      </div>
-    </>
-  );
+			<div className="workflow-create-field-row">
+				<TextareaInput
+					name="description"
+					label="Description"
+					className="workflow-create-textarea"
+					rows={2}
+					draggable="false"
+					value={basics.description}
+					onChange={(e) => {
+						onBasicChange("description", e.target.value);
+						onClearError("description");
+					}}
+					error={errors.description}
+				/>
+			</div>
+
+			<div className="mt-4 flex justify-between">
+				<button
+					type="button"
+					className="workflow-create-secondary-btn"
+					onClick={() => navigate("/admin/workflows")}
+				>
+					Back
+				</button>
+
+				<button
+					type="button"
+					className="workflow-create-primary-btn"
+					onClick={onNext}
+				>
+					Next
+				</button>
+			</div>
+		</>
+	);
 };
 
 export default WorkFlowGenForm;
