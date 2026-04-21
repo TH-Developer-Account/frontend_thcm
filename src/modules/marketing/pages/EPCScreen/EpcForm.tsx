@@ -21,24 +21,22 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
     null,
   );
 
-  console.log({ data, values });
-
   const isViewer = userRole === "VIEWER";
 
   const handleDepartmentChange = (option: Option) => {
     setSelectedDepartment(option.value || null);
-    handleChange("department", option?.label as string);
+    handleChange("department", option?.value as string);
     setSelectedVertical(null);
   };
 
   const handleVerticalChange = (option: Option) => {
     setSelectedVertical(option.value || null);
-    handleChange("vertical", option?.label as string);
+    handleChange("vertical", option?.value as string);
   };
 
   const handleBudgetChange = (option: Option) => {
     console.log({ option });
-    handleChange("budgetCode", option?.label as string);
+    handleChange("budget_master_id", option?.value as string);
     handleChange("budgetDescription", option?.description as string);
   };
 
@@ -49,8 +47,6 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
       (v: Option) => v.department === selectedDepartment,
     );
   }, [selectedDepartment, data?.vertical]);
-
-  console.log({ data });
 
   return (
     <React.Fragment>
@@ -78,19 +74,19 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
               className=" text-black p-2"
             />
             <SelectInput
-              name="zone"
+              name="region"
               label="Zone"
               value={
                 data?.regions?.find(
-                  (opt: SingleValue<Option>) => opt?.label === values.zone,
+                  (opt: SingleValue<Option>) => opt?.value === values.region,
                 ) || null
               }
               options={data?.regions || []}
               onChange={(v: SingleValue<Option>) =>
-                handleChange("zone", v?.label as string)
+                handleChange("region", v?.value as string)
               }
             />
-            <SelectInput
+            {/* <SelectInput
               name="state"
               label="State"
               value={
@@ -102,7 +98,7 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
               onChange={(v: SingleValue<Option>) =>
                 handleChange("zone", v?.label as string)
               }
-            />
+            /> */}
 
             <SelectInput
               name="branch"
@@ -110,19 +106,20 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
               options={data?.branches}
               value={
                 data?.branches?.find(
-                  (opt: SingleValue<Option>) => opt?.label === values.branch,
+                  (opt: SingleValue<Option>) => opt?.value === values.branch,
                 ) || null
               }
               onChange={(option: SingleValue<Option>) =>
-                handleChange("branch", option?.label || "")
+                handleChange("branch", option?.value || "")
               }
             />
             <FormInput
-              name="scale"
+              name="event_scale"
               label="Scale"
+              type="number"
               placeholder="PAX SIZE <50"
-              value={values.scale}
-              onChange={(e) => handleChange("scale", e.target.value)}
+              value={values.event_scale}
+              onChange={(e) => handleChange("event_scale", e.target.value)}
               className="p-2"
             />
             <SelectInput
@@ -131,7 +128,7 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
               value={
                 data?.departments?.find(
                   (opt: SingleValue<Option>) =>
-                    opt?.label === values.department,
+                    opt?.value === values.department,
                 ) || null
               }
               options={data?.departments || []}
@@ -155,29 +152,29 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
             />
             <FormInput
               type="date"
-              name="eventFrom"
+              name="event_from_date"
               label="From"
-              value={values.eventFrom}
-              onChange={(e) => handleChange("eventFrom", e.target.value)}
+              value={values.event_from_date}
+              onChange={(e) => handleChange("event_from_date", e.target.value)}
               className="p-2"
             />
 
             <FormInput
               type="date"
-              name="eventTo"
+              name="event_to_date"
               label="To"
-              value={values.eventTo}
-              onChange={(e) => handleChange("eventTo", e.target.value)}
+              value={values.event_to_date}
+              onChange={(e) => handleChange("event_to_date", e.target.value)}
               className="p-2"
             />
 
             <SelectInput
-              name="budgetCode"
+              name="budget_master_id"
               label="Budget Code"
               value={
                 data?.budgetMasters?.find(
                   (opt: SingleValue<Option>) =>
-                    opt?.label === values.budgetCode,
+                    opt?.value === values.budget_master_id,
                 ) || null
               }
               options={data?.budgetMasters || []}
@@ -195,27 +192,27 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
             />
             <div className="col-span-2">
               <SelectInput
-                name="eventName"
+                name="event_name"
                 label="Event Name"
                 value={
                   data?.eventNames?.find(
                     (opt: SingleValue<Option>) =>
-                      opt?.label === values.eventName,
+                      opt?.value === values.event_name,
                   ) || null
                 }
                 options={data?.eventNames || []}
                 onChange={(v: SingleValue<Option>) =>
-                  handleChange("eventName", v?.label || "")
+                  handleChange("event_name", v?.value || "")
                 }
               />
             </div>
             <div className="col-span-2">
               <TextareaInput
-                name="eventDescription"
+                name="event_description"
                 label="Event Description"
-                value={values.eventDescription}
+                value={values.event_description}
                 onChange={(e) =>
-                  handleChange("eventDescription", e.target.value)
+                  handleChange("event_description", e.target.value)
                 }
                 className="p-2 col-span-2"
                 minLength={100}
@@ -226,11 +223,11 @@ const EpcForm = ({ epcId, userRole }: EpcFormProps) => {
           {/*Event Description & Objective */}
           <div className="grid objective grid-cols-1  gap-4 items-end">
             <TextareaInput
-              name="objective"
+              name="event_objective"
               label="Objective"
               placeholder=""
-              value={values.objective}
-              onChange={(e) => handleChange("objective", e.target.value)}
+              value={values.event_objective}
+              onChange={(e) => handleChange("event_objective", e.target.value)}
               minLength={100}
               rows={4}
             />

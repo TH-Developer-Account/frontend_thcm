@@ -17,13 +17,13 @@ export const getEPCColumns = ({
 }: epcColumnActions): ColumnDef<EPCRow>[] => [
   {
     accessorKey: "proposal_number",
-    header: "EPF No",
+    header: "EPC No",
     cell: ({ row }) => {
-      const epc = row.original;
+      const epcId = row.original.id;
       return (
         <div>
           <NavLink
-            to={`/marketing/epf/${epc.proposal_number}`}
+            to={`/marketing/epf/${epcId}`}
             className="text-blue-600 underline"
           >
             <div className="font-medium">{row.original.proposal_number}</div>
@@ -82,7 +82,7 @@ export const getEPCColumns = ({
   {
     accessorKey: "epf",
     header: "EPF",
-    cell: () => (
+    cell: ({ row }) => (
       <div>
         <div className="font-medium">
           <Button
@@ -90,7 +90,10 @@ export const getEPCColumns = ({
             Icon={Edit}
             iconPosition="right"
             iconColor="#f35a00"
-            onClick={onEPFCreate}
+            onClick={() => {
+              localStorage.setItem("epcId", row.original.id);
+              onEPFCreate();
+            }}
           />
         </div>
       </div>
@@ -99,7 +102,7 @@ export const getEPCColumns = ({
   {
     accessorKey: "crf",
     header: "CRF",
-    cell: () => (
+    cell: ({ row }) => (
       <div>
         <div className="font-medium">
           <Button
@@ -107,7 +110,10 @@ export const getEPCColumns = ({
             Icon={Edit}
             iconPosition="right"
             iconColor="#f35a00"
-            onClick={onCRFCreate}
+            onClick={() => {
+              localStorage.setItem("epcId", row.original.id);
+              onCRFCreate();
+            }}
           />
         </div>
       </div>

@@ -8,18 +8,18 @@ const initialValues: EpcFormValues = {
   epfNo: "",
   poDocumentRefNo: "",
   department: "",
-  zone: "",
+  region: "",
   branch: "",
-  budgetCode: "",
+  budget_master_id: "",
   budgetDescription: "",
   vertical: "",
-  scale: "",
-  eventName: "",
-  eventDescription: "",
-  eventFrom: "",
-  eventTo: "",
+  event_scale: "",
+  event_name: "",
+  event_description: "",
+  event_from_date: "",
+  event_to_date: "",
   location: "",
-  objective: "",
+  event_objective: "",
   status: "DRAFT",
 };
 
@@ -45,20 +45,20 @@ export const useEpcForm = ({ epcId }: UseEpcFormProps) => {
       console.log({ value });
 
       // reset branch when zone changes
-      if (name === "zone") {
+      if (name === "region") {
         updated.branch = "";
       }
 
       // generate EPF when dept/branch/zone available
-      if (updated.department && updated.branch && updated.zone) {
+      if (updated.department && updated.branch && updated.region) {
         updated.epfNo = generateEpfNo(
           updated.department,
           updated.branch,
-          updated.zone,
+          updated.region,
         );
       }
 
-      if (name === "budgetCode") {
+      if (name === "budget_master_id") {
         updated.budgetDescription = "";
       }
 
@@ -75,11 +75,21 @@ export const useEpcForm = ({ epcId }: UseEpcFormProps) => {
 
   // Save
 
+  function generate4DigitNumber() {
+    return Math.floor(1000 + Math.random() * 9000);
+  }
+
   const handleSave = async (status: "DRAFT" | "SUBMITTED") => {
-    const formData = { ...values, status };
-    console.log(formData);
+    const formData = {
+      ...values,
+      proposal_number: `EPF-${generate4DigitNumber()}`,
+    };
+    console.log({ formData, status });
+
     if (status === "SUBMITTED") {
       const validationErrors = validateEpcForm(formData);
+
+      console.log({ validationErrors });
 
       if (Object.keys(validationErrors).length > 0) {
         setErrors(validationErrors);

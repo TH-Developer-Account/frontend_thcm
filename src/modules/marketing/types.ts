@@ -9,9 +9,10 @@ export interface CostItem {
 }
 
 export interface CrfProps {
-  items: CostItem[];
-  onChange: (items: CostItem[]) => void;
+  items: LineItemOption[];
+  onChange: React.Dispatch<React.SetStateAction<LineItemOption[]>>;
   isViewer?: boolean;
+  options: GroupedOption[];
 }
 
 export interface EpcFormProps {
@@ -26,18 +27,18 @@ export interface EpcFormValues {
   epfNo: string;
   poDocumentRefNo: string;
   department: string;
-  zone: string;
+  region: string;
   branch: string;
-  budgetCode: string;
+  budget_master_id: string;
   budgetDescription: string;
   vertical: string;
-  scale: string;
-  eventName: string;
-  eventDescription: string;
-  eventFrom: string;
-  eventTo: string;
+  event_scale: string;
+  event_name: string;
+  event_description: string;
+  event_from_date: string;
+  event_to_date: string;
   location: string;
-  objective: string;
+  event_objective: string;
   status: EpcStatus;
 }
 
@@ -138,3 +139,31 @@ export interface ValidationCheck {
   label: string;
   ok: boolean;
 }
+
+export type Product = {
+  id: string;
+  productType: "EPF" | "CRF";
+  category: string; // you can tighten this if you have enum
+  partNumber: string;
+  name: string;
+  description: string | null;
+  unitRate: string; // ⚠️ comes as string from Prisma Decimal
+  isActive: boolean;
+  created_at: string; // ISO date string
+  updated_at: string; // ISO date string
+};
+
+export type LineItemOption = {
+  value: string;
+  label: string;
+  particular: string;
+  description: string | null;
+  rate: number;
+  quantity: number;
+  category?: string;
+};
+
+export type GroupedOption = {
+  label: string; // category
+  options: LineItemOption[];
+};
