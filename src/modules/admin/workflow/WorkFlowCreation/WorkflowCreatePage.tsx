@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import PageSectionLayout, {
 	PageSection,
@@ -36,6 +36,7 @@ const WorkflowCreatePage = () => {
 	const { user, workspaceId, isLoading } = useAuth();
 	const { showToast } = useToast();
 	const { id } = useParams();
+	const navigate = useNavigate();
 
 	const [currentStep, setCurrentStep] = useState(1);
 	const [loading, setLoading] = useState(false);
@@ -211,6 +212,7 @@ const WorkflowCreatePage = () => {
 				title: "Success",
 				description: data?.message || "Workflow saved successfully",
 			});
+			navigate(`/admin/workflows`);
 		} catch (error: unknown) {
 			const message =
 				error instanceof Error ? error.message : "Failed to save workflow";

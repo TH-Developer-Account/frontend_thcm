@@ -71,6 +71,7 @@ export function WorkflowProvider({ children }: WFProviderProps) {
     <WorkflowContext.Provider
       value={{
         data,
+        setData,
         loading,
         search,
         pageIndex,

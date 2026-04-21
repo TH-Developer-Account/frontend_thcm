@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import type { SingleValue } from "react-select";
 import { useAuth } from "../../../../context/Auth/useAuth";
 import FormInput from "../../../../components/FormElements/FormInput";
@@ -32,8 +32,8 @@ const WorkFlowGenForm = ({
 }: WorkflowGenProps) => {
 	const { permissions } = useAuth();
 	const navigate = useNavigate();
+	const { id } = useParams();
 	const apps = formatApps(permissions);
-
 	return (
 		<>
 			<div className="workflow-create-field-row workflow-create-field-row-2">
@@ -66,19 +66,20 @@ const WorkFlowGenForm = ({
 					required
 				/>
 			</div>
-
-			<div className="workflow-create-field-row workflow-create-field-row-2">
-				<Radio
-					name="status"
-					groupLabel="Status"
-					label1="Active"
-					label2="Inactive"
-					value1="true"
-					value2="false"
-					selectedValue={String(basics.isActive)}
-					onChange={(value) => onBasicChange("isActive", value === "true")}
-				/>
-			</div>
+			{id && (
+				<div className="workflow-create-field-row workflow-create-field-row-2">
+					<Radio
+						name="status"
+						groupLabel="Status"
+						label1="Active"
+						label2="Inactive"
+						value1="true"
+						value2="false"
+						selectedValue={String(basics.isActive)}
+						onChange={(value) => onBasicChange("isActive", value === "true")}
+					/>
+				</div>
+			)}
 
 			<div className="workflow-create-field-row">
 				<TextareaInput
