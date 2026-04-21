@@ -3,24 +3,11 @@ import { useParams } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import ApprovalStatus from "../components/ApprovalStatus";
 import ActivityFormView from "../components/ActivityFormView";
-import { EPFProvider } from "../../../context/EPCprovider";
+import { EPCProvider } from "../../../context/EPCprovider";
 import { useNavigate } from "react-router-dom";
-import { ServerAxios } from "../../../../../services/ServerAxios";
 
 const ActivityPlannerPage = () => {
   const { id } = useParams();
-
-  React.useEffect(() => {
-    const load = async () => {
-      try {
-        await ServerAxios.get(`/epc/${"0025493b-6ea0-4f52-94fd-468b481d105a"}`);
-      } catch (err) {
-        console.log({ err });
-      }
-    };
-
-    load();
-  }, []);
 
   const navigate = useNavigate();
   return (
@@ -37,10 +24,10 @@ const ActivityPlannerPage = () => {
       </div>
 
       <div className="grid grid-cols-[220px_1fr] gap-4 items-start">
-        <EPFProvider>
+        <EPCProvider>
           <ApprovalStatus epcId={id} />
           <ActivityFormView epcId={id} />
-        </EPFProvider>
+        </EPCProvider>
       </div>
     </div>
   );

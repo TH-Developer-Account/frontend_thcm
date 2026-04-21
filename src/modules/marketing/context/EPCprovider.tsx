@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "../../../hooks/useDebounce";
-import { EPFContext } from "./EPCcontext";
+import { EPCContext } from "./EPCcontext";
 import { ServerAxios } from "../../../services/ServerAxios";
 import { epc_api_routes } from "../constant";
 import type { ReactNode } from "react";
 import type { EPCRow } from "../../../utils/types";
 import type { SortingState } from "@tanstack/react-table";
 
-interface EPFProviderProps {
+interface EPCProviderProps {
   children: ReactNode;
 }
 
-export function EPFProvider({ children }: EPFProviderProps) {
+export function EPCProvider({ children }: EPCProviderProps) {
   const [data, setData] = useState<EPCRow[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -54,7 +54,7 @@ export function EPFProvider({ children }: EPFProviderProps) {
   }, [fetchEPC]);
 
   return (
-    <EPFContext.Provider
+    <EPCContext.Provider
       value={{
         data,
         loading,
@@ -71,6 +71,6 @@ export function EPFProvider({ children }: EPFProviderProps) {
       }}
     >
       {children}
-    </EPFContext.Provider>
+    </EPCContext.Provider>
   );
 }

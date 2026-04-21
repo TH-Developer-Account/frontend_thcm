@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { buildLineItemPayload } from "../../constant";
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import LineItemTable from "../../../../components/ui/LineItemTable";
@@ -10,16 +11,6 @@ import type {
   GroupedOption,
 } from "../../types";
 import Button from "../../../../components/common/Button";
-
-const buildPayload = (items: LineItemOption[], epcId: string) => {
-  return {
-    epcId,
-    lineItems: items.map((item) => ({
-      productId: item.value, // 👈 map value → productId
-      quantity: item.quantity,
-    })),
-  };
-};
 
 export function CrfProps({ items, onChange, isViewer, options }: CrfProps) {
   const getOptionsByCategory = (category: string): LineItemOption[] => {
@@ -120,7 +111,7 @@ export default function CrfForm() {
         console.error("EPC ID not found in localStorage");
         return;
       }
-      const payload = buildPayload(costItems, epcId);
+      const payload = buildLineItemPayload(costItems, { epcId });
 
       console.log("FINAL PAYLOAD:", payload);
 

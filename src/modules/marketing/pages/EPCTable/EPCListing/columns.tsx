@@ -85,16 +85,29 @@ export const getEPCColumns = ({
     cell: ({ row }) => (
       <div>
         <div className="font-medium">
-          <Button
-            className="bg-transparent text-orange-900"
-            Icon={Edit}
-            iconPosition="right"
-            iconColor="#f35a00"
-            onClick={() => {
-              localStorage.setItem("epcId", row.original.id);
-              onEPFCreate();
-            }}
-          />
+          {row.original.epf ? (
+            <Button
+              className="bg-transparent text-orange-900"
+              Icon={Edit}
+              iconPosition="right"
+              iconColor="#f35a00"
+              onClick={() => {
+                localStorage.setItem("epcId", row.original.id);
+                onEPFCreate();
+              }}
+            />
+          ) : (
+            <Button
+              className="bg-transparent text-orange-900"
+              Icon={Edit}
+              iconPosition="right"
+              iconColor="#f35a00"
+              onClick={() => {
+                localStorage.setItem("epcId", row.original.id);
+                onEPFCreate();
+              }}
+            />
+          )}
         </div>
       </div>
     ),

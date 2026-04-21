@@ -44,9 +44,6 @@ export interface EpcFormValues {
 
 export type UserRole = "ADMIN" | "EMPLOYEE" | "DEALER";
 
-export interface UseEpcFormProps {
-  epcId?: string;
-}
 export interface Option {
   label: string;
   value: string;

@@ -1,12 +1,12 @@
 import { useContext } from "react";
-import { EPFContext } from "./EPCcontext";
-import type { EPFContextValue } from "./EPCcontext";
+import { EPCContext } from "./EPCcontext";
+import type { EPCContextValue } from "./EPCcontext";
 
-export function useEPC(): EPFContextValue {
-  const context = useContext(EPFContext);
+export function useEPC(): EPCContextValue {
+  const context = useContext(EPCContext);
 
   if (!context) {
-    throw new Error("useEPC must be used inside EPFProvider");
+    throw new Error("useEPC must be used inside EPCProvider");
   }
 
   return context;

@@ -64,6 +64,8 @@ export interface EPCRow {
   last_name: string;
   is_crf_form: boolean;
   is_epf_form: boolean;
+  epf?: string;
+  crf?: string;
 }
 
 export interface PaginationProps {

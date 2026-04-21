@@ -16,7 +16,7 @@ interface EpfFormProps {
 	isEditMode?: boolean;
 }
 
-const EpfForm2 = ({
+const EpfFormInfo = ({
 	values,
 	handleChange,
 	handleSave,
@@ -349,4 +349,4 @@ const EpfForm2 = ({
 	);
 };
 
-export default EpfForm2;
+export default EpfFormInfo;

@@ -1,210 +1,213 @@
-import { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { buildLineItemPayload } from "../../constant";
 import { useToast } from "../../../../context/Auth/AuthContext";
-import type { EpfFormValues, LineItem, UseEpcFormProps } from "../../types";
 import { ServerAxios } from "../../../../services/ServerAxios";
+import type {
+  EpfFormValues,
+  LineItem,
+  LineItemOption,
+  Product,
+} from "../../types";
 
 const initialValues: EpfFormValues = {
-	externalParticipants: "",
-	internalParticipants: "",
-	totalParticipants: "",
-	crfTotal: "",
+  externalParticipants: "",
+  internalParticipants: "",
+  totalParticipants: "",
+  crfTotal: "",
+  eventBudget: "",
+  annualBudget: "",
+  availableBudget: "",
+  dealerName: "",
+  dealerPercent: "",
+  dealerShare: "",
+  tataHitachiPercent: "",
+  tataHitachiShare: "",
+  tataHitachiPoAmount: "",
+  proposedBy: "",
+  checkedBy: "",
+  approvedBy: "",
+  reportValidatedBy: "",
+  proposedByStatus: "",
+  checkedByStatus: "",
+  approvedByStatus: "",
+  reportValidatedByStatus: "",
 
-	eventBudget: "",
-	annualBudget: "",
-	availableBudget: "",
-
-	dealerName: "",
-	dealerPercent: "",
-	dealerShare: "",
-
-	tataHitachiPercent: "",
-	tataHitachiShare: "",
-	tataHitachiPoAmount: "",
-
-	proposedBy: "",
-	checkedBy: "",
-	approvedBy: "",
-
-	reportValidatedBy: "",
-
-	proposedByStatus: "",
-	checkedByStatus: "",
-	approvedByStatus: "",
-	reportValidatedByStatus: "",
-
-	overheads: [], // ✅ SINGLE SOURCE
+  overheads: [], // ✅ SINGLE SOURCE
 };
 
-export const useEpfForm = ({ epcId }: UseEpcFormProps) => {
-	const { showToast } = useToast();
+export const useEpfForm = () => {
+  const { showToast } = useToast();
+  const navigate = useNavigate();
 
-	const [values, setValues] = useState<EpfFormValues>(initialValues);
-	const [errors, setErrors] = useState<
-		Partial<Record<keyof EpfFormValues, string>>
-	>({});
-	const [loading, setLoading] = useState(false);
+  const [values, setValues] = useState<EpfFormValues>(initialValues);
+  const [options, setOptions] = React.useState<LineItemOption[]>([]);
+  const [costItems, setCostItems] = React.useState<LineItemOption[]>([]);
 
-	// ✅ TABLE STATE (merged here)
-	const [draft, setDraft] = useState<LineItem>({
-		id: "",
-		particular: "",
-		description: "",
-		rate: 0,
-		quantity: 0,
-	});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof EpfFormValues, string>>
+  >({});
+  const [loading, setLoading] = useState(false);
 
-	const isEditMode = Boolean(epcId);
+  // ✅ TABLE STATE (merged here)
+  const [draft, setDraft] = useState<LineItem>({
+    id: "",
+    particular: "",
+    description: "",
+    rate: 0,
+    quantity: 0,
+  });
 
-	// =============================
-	// FIELD CHANGE
-	// =============================
-	const handleChange = (name: keyof EpfFormValues, value: string) => {
-		setValues((prev) => {
-			const updated = { ...prev, [name]: value };
+  React.useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await ServerAxios.get(
+          `/master-data/products?productType=EPF`,
+        );
 
-			// ✅ Participants auto total
-			const external = Number(updated.externalParticipants) || 0;
-			const internal = Number(updated.internalParticipants) || 0;
-			updated.totalParticipants = String(external + internal);
+        const data = response.data.data;
+        setOptions(
+          data.map((item: Product) => ({
+            value: item.id,
+            label: item.name,
+            particular: item.name,
+            description: item.description,
+            rate: parseFloat(item.unitRate),
+            quantity: 1,
+          })),
+        );
 
-			// ✅ Budget calculations
-			const budget = Number(updated.eventBudget) || 0;
-			const dealerPercent = Number(updated.dealerPercent) || 0;
-			const tataPercent = Number(updated.tataHitachiPercent) || 0;
+        console.log("Fetched products for EPF:", data);
+      } catch (err) {
+        console.error("Product search failed:", err);
+      }
+    };
 
-			if (budget > 0) {
-				updated.dealerShare = ((budget * dealerPercent) / 100).toFixed(2);
+    fetchProducts();
+  }, []);
 
-				updated.tataHitachiShare = ((budget * tataPercent) / 100).toFixed(2);
-			}
+  const handleChange = (name: keyof EpfFormValues, value: string) => {
+    setValues((prev) => {
+      const updated = { ...prev, [name]: value };
 
-			return updated;
-		});
+      // ✅ Participants auto total
+      const external = Number(updated.externalParticipants) || 0;
+      const internal = Number(updated.internalParticipants) || 0;
+      updated.totalParticipants = String(external + internal);
 
-		if (errors[name]) {
-			setErrors((prev) => ({
-				...prev,
-				[name]: undefined,
-			}));
-		}
-	};
+      // ✅ Budget calculations
+      const budget = Number(updated.eventBudget) || 0;
+      const dealerPercent = Number(updated.dealerPercent) || 0;
+      const tataPercent = Number(updated.tataHitachiPercent) || 0;
 
-	// =============================
-	// TABLE LOGIC
-	// =============================
-	const handleDraftChange = (name: keyof LineItem, value: string | number) => {
-		setDraft((prev) => ({
-			...prev,
-			[name]: value,
-		}));
-	};
+      if (budget > 0) {
+        updated.dealerShare = ((budget * dealerPercent) / 100).toFixed(2);
 
-	const handleAdd = () => {
-		if (!draft.particular) return;
+        updated.tataHitachiShare = ((budget * tataPercent) / 100).toFixed(2);
+      }
 
-		setValues((prev) => ({
-			...prev,
-			overheads: [
-				...prev.overheads,
-				{
-					...draft,
-					id: crypto.randomUUID(),
-					qty: draft.quantity,
-					total: draft.rate * draft.quantity,
-				},
-			],
-		}));
+      return updated;
+    });
 
-		setDraft({
-			id: "",
-			particular: "",
-			description: "",
-			rate: 0,
-			quantity: 0,
-		});
-	};
+    if (errors[name]) {
+      setErrors((prev) => ({
+        ...prev,
+        [name]: undefined,
+      }));
+    }
+  };
 
-	const handleDelete = (id: string) => {
-		setValues((prev) => {
-			const updated = {
-				...prev,
-				overheads: prev.overheads.filter((i) => i.id !== id),
-			};
+  const handleSave = async (status: "DRAFT" | "SUBMITTED") => {
+    const formData = { ...values, status };
 
-			console.log("🗑️ OVERHEAD DELETED:", updated.overheads);
-			return updated;
-		});
-	};
+    console.log("🚀 FINAL SUBMIT:", formData);
 
-	// =============================
-	// SAVE
-	// =============================
-	const handleSave = async (status: "DRAFT" | "SUBMITTED") => {
-		const formData = { ...values, status };
+    try {
+      setLoading(true);
 
-		console.log("🚀 FINAL SUBMIT:", formData);
+      const {
+        data: { message },
+      } = await ServerAxios.post("/epf", formData);
 
-		try {
-			setLoading(true);
+      showToast({
+        type: "success",
+        title: "Success",
+        description: message,
+      });
 
-			const {
-				data: { message },
-			} = await ServerAxios.post("/epf", formData);
+      setValues(initialValues);
+      setErrors({});
+    } catch (err) {
+      console.error("❌ API ERROR:", err);
 
-			showToast({
-				type: "success",
-				title: "Success",
-				description: message,
-			});
+      showToast({
+        type: "error",
+        title: "Error",
+        description: "Something went wrong",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-			setValues(initialValues);
-			setErrors({});
-		} catch (err) {
-			console.error("❌ API ERROR:", err);
+  const handleReset = () => {
+    setValues(initialValues);
+    setDraft({
+      id: "",
+      particular: "",
+      description: "",
+      rate: 0,
+      quantity: 0,
+    });
+    setErrors({});
+  };
 
-			showToast({
-				type: "error",
-				title: "Error",
-				description: "Something went wrong",
-			});
-		} finally {
-			setLoading(false);
-		}
-	};
+  const handleSubmit = async () => {
+    try {
+      const epcId = localStorage.getItem("epcId");
 
-	// =============================
-	// RESET
-	// =============================
-	const handleReset = () => {
-		setValues(initialValues);
-		setDraft({
-			id: "",
-			particular: "",
-			description: "",
-			rate: 0,
-			quantity: 0,
-		});
-		setErrors({});
-	};
+      if (!epcId) {
+        console.error("EPC ID not found in localStorage");
+        return;
+      }
 
-	// =============================
-	// DEBUG WATCH
-	// =============================
-	useEffect(() => {}, [values]);
+      const extraPayload = {
+        epcId,
+        total_budget: 300000,
+        expected_revenue: 50000,
+      };
+      const payload = buildLineItemPayload(costItems, extraPayload);
 
-	return {
-		values,
-		draft,
-		errors,
-		loading,
-		isEditMode,
+      console.log("FINAL PAYLOAD:", payload);
 
-		handleChange,
-		handleDraftChange,
-		handleAdd,
-		handleDelete,
+      const {
+        data: { message },
+      } = await ServerAxios.post("/epf", payload);
 
-		handleSave,
-		handleReset,
-	};
+      showToast({
+        type: "success",
+        title: "Success",
+        description: message,
+      });
+
+      navigate("/marketing/listing");
+    } catch (error) {
+      console.error("CRF creation failed:", error);
+    }
+  };
+
+  return {
+    values,
+    draft,
+    errors,
+    loading,
+    options,
+    costItems,
+    setCostItems,
+    setOptions,
+    handleChange,
+    handleSave,
+    handleReset,
+    handleSubmit,
+  };
 };
