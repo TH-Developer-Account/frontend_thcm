@@ -1,5 +1,6 @@
 import Select from "react-select";
-import type { Props, GroupBase } from "react-select";
+import type { Props, GroupBase, StylesConfig } from "react-select";
+import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 
 export interface BaseOption {
   label: string;
@@ -17,29 +18,71 @@ interface SelectInputProps<T extends BaseOption> extends Props<
   helperText?: string;
 }
 
-export default function SelectInput<T extends BaseOption>({
+export default function SelectInput({
   label,
   error,
   required,
-  className,
+  className = "",
   helperText,
   isDisabled,
+  name,
   ...props
-}: SelectInputProps<T>) {
+}: SelectInputProps) {
+  const customStyles: StylesConfig<Option, false> = {
+    control: (base, state) => ({
+      ...base,
+      minHeight: "44px",
+      borderRadius: "12px",
+      borderWidth: "1px",
+      paddingRight: error ? "36px" : "8px",
+      // 👇 MATCH YOUR FORM INPUT
+      backgroundColor: isDisabled
+        ? "#f3f4f6"
+        : state.isFocused
+          ? "#ffffff"
+          : "#fafaf8",
+      // backgroundColor: isDisabled ? "#f3f4f6" : "#fff",
+      borderColor: error ? "#dc2626" : state.isFocused ? "#f35a00" : "#d1d5db",
+      boxShadow: error
+        ? "0 0 0 1px #dc2626"
+        : state.isFocused
+          ? "0 0 0 1px #f35a00"
+          : "none",
+      "&:hover": {
+        borderColor: error ? "#dc2626" : "#f35a00",
+      },
+    }),
+    valueContainer: (base) => ({
+      ...base,
+      padding: "0 8px",
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: "#9ca3af",
+    }),
+    indicatorSeparator: () => ({
+      display: "none",
+    }),
+    menuPortal: (base) => ({
+      ...base,
+      zIndex: 9999,
+    }),
+  };
+
   return (
     <div className="form-field">
       {label && (
-        <label className="form-label">
+        <label htmlFor={name} className="form-label">
           {label}
           {required && <span className="form-required"> *</span>}
         </label>
       )}
 
       <div className="form-input-wrapper relative">
-        <Select<T, false, GroupBase<T>>
+        <Select
           {...props}
-          value={props.value}
-          onChange={props.onChange}
+          inputId={name}
+          name={name}
           isDisabled={isDisabled}
           classNamePrefix="react-select"
           menuPortalTarget={
@@ -47,19 +90,21 @@ export default function SelectInput<T extends BaseOption>({
           }
           menuPosition="fixed"
           menuPlacement="auto"
-          styles={{
-            menuPortal: (base) => ({
-              ...base,
-              zIndex: 9999,
-            }),
-          }}
-          className={`form-select-wrap ${className} ${
-            error ? "form-input-error" : ""
-          }`}
+          styles={customStyles}
+          aria-invalid={!!error}
+          aria-describedby={error ? `${name}-error` : undefined}
+          className={className}
         />
+
+        {error && <ExclamationCircleIcon className="form-error-icon" />}
       </div>
 
-      {error && <p className="mt-1 text-xs text-red-600 text-left">{error}</p>}
+      {error && (
+        <p id={`${name}-error`} className="form-error-text">
+          {error}
+        </p>
+      )}
+
       {!error && helperText && <p className="form-helper-text">{helperText}</p>}
     </div>
   );

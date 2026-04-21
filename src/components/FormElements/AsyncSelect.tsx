@@ -19,12 +19,14 @@ type Props = {
 	excludedUserIds?: string[];
 	placeholder?: string;
 	isClearable?: boolean;
+	error?: string;
 	label?: string;
 };
 
 const UserAsyncSelect: React.FC<Props> = ({
 	onChange,
 	excludedUserIds = [],
+	error,
 	placeholder = "Search users...",
 	isClearable = true,
 	...props
@@ -95,7 +97,10 @@ const UserAsyncSelect: React.FC<Props> = ({
 				isClearable={isClearable}
 				placeholder={placeholder}
 				filterOption={null}
-				className="userAsyncSelect"
+				className={`
+					 userAsyncSelect
+					${error ? "form-input-error" : ""}
+				`}
 				menuPortalTarget={document.body}
 				styles={{
 					menuPortal: (base) => ({ ...base, zIndex: 9999 }),

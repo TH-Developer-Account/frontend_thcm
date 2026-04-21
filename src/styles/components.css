@@ -184,7 +184,7 @@
 
 	.pagination-btn {
 		@apply rounded-lg border transition;
-		background: rgb(var(--color-surface));
+		background: rgb(var(--color-yellow-warm));
 		border-color: rgb(var(--color-border));
 	}
 
@@ -723,7 +723,7 @@
 
 .workflow-table-shell {
 	@apply flex min-h-0 flex-col overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm;
-	height: calc(100vh - 330px);
+	height: calc(52vh);
 }
 
 .workflow-table-scroll {
