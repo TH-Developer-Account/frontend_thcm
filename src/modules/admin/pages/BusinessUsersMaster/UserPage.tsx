@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { mockUsers } from "../../mockUsers";
 import { UserTableLayout } from "./UserTableLayout";
-// import { PageHeader } from "../../../../components/ui/PageHeader";
+// import { PageLocationStepper } from "../../../../components/ui/PageLocationStepper";
 
 export default function UsersPage() {
 	const [activeTab, setActiveTab] = useState("All");
@@ -28,7 +28,7 @@ export default function UsersPage() {
 
 	return (
 		<>
-			{/* <PageHeader
+			{/* <PageLocationStepper
 				title="List"
 				breadcrumbs={[
 					{ label: "Dashboard", href: "/admin/dashboard" },

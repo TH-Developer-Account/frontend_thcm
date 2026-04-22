@@ -148,6 +148,23 @@
 	}
 }
 
+/* Used for 2 row layout sections */
+@layer components {
+	.page-header-section {
+		@apply p-2 sm:p-4;
+	}
+	.page-title-section {
+		@apply text-xl font-semibold tracking-tight text-zinc-900;
+		@apply text-[22px] text-zinc-900 mt-3;
+	}
+
+	.page-subtitle {
+		@apply mt-1 text-sm text-zinc-500;
+	}
+	.page-header-badge {
+		@apply inline-flex items-center gap-2 self-start rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700;
+	}
+}
 /* ---------- Utility Examples ---------- */
 
 /* Mobile */

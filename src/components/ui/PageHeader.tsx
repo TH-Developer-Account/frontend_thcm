@@ -1,43 +1,31 @@
-import { Link } from "react-router-dom";
+import type { LucideIcon } from "lucide-react";
 
-interface BreadcrumbItem {
-	label: string;
-	href?: string;
-}
+type PageHeaderSectionProps = {
+	headerText: string;
+	subtitleText?: string;
+	className?: string;
+	iconSize?: string;
+	Icon?: LucideIcon;
+	badgeText?: string;
+};
 
-interface Props {
-	title: string;
-	breadcrumbs: BreadcrumbItem[];
-}
-
-export function PageHeader({ title, breadcrumbs }: Props) {
+export const PageHeader = ({
+	headerText,
+	subtitleText,
+	className,
+	iconSize,
+	badgeText,
+	Icon,
+}: PageHeaderSectionProps) => {
 	return (
-		<div className="page-header">
-			{/* Title */}
-			<h2 className="page-title">{title}</h2>
-
-			{/* Breadcrumb */}
-			<div className="breadcrumb">
-				{breadcrumbs.map((item, index) => {
-					const isLast = index === breadcrumbs.length - 1;
-
-					return (
-						<div key={index} className="breadcrumb-item">
-							{item.href && !isLast ? (
-								<Link to={item.href} className="breadcrumb-link">
-									{item.label}
-								</Link>
-							) : (
-								<span className={isLast ? "breadcrumb-current" : ""}>
-									{item.label}
-								</span>
-							)}
-
-							{!isLast && <span>•</span>}
-						</div>
-					);
-				})}
+		<div className={className}>
+			<div className="page-header-section">
+				<div className="page-header-badge">
+					{Icon && <Icon size={iconSize ? iconSize : 16} />} {badgeText}
+				</div>
+				<h2 className="page-title-section ">{headerText}</h2>
+				<p className="page-subtitle">{subtitleText}</p>
 			</div>
 		</div>
 	);
-}
+};
