@@ -3,6 +3,7 @@
    Global Branding & Design Variables
    ========================================================= */
 @import "./color.css";
+@import "./typography.css";
 @tailwind utilities;
 
 /* ---------- Spacing Scale ---------- */

@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 // import { useUsers } from "./DealerHooks";
 import { dealers } from "../../mockUsers";
 import { DealerTable } from "./DealerTable";
-import { PageHeader } from "../../../../components/ui/PageHeader";
+import { PageLocationStepper } from "../../../../components/ui/PageLocationStepper";
 
 export default function DealerListPage() {
 	// const { data, loading, error } = useUsers();
@@ -23,7 +23,7 @@ export default function DealerListPage() {
 
 	return (
 		<React.Fragment>
-			<PageHeader
+			<PageLocationStepper
 				title="List"
 				breadcrumbs={[
 					{ label: "Dashboard", href: "/admin/dashboard" },
