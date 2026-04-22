@@ -22,7 +22,7 @@ export const buildWorkflowPayload = (
 		workspaceId,
 		isActive: basics.isActive,
 		description: basics.description,
-		metaData_1: "",
+		metaData_1: basics.category || "",
 		metaData_2: "",
 		metaData_3: "",
 		stages: stages.map((stage) => {

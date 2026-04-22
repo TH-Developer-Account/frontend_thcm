@@ -1,15 +1,17 @@
+import type { WorkflowBasics } from "../../types/workflow.types";
+
 type Props = {
-	module: string;
 	stageCount: number;
 	approverCount: number;
 	minApprovers: number;
+	basics: WorkflowBasics;
 };
 
 const WorkflowCreateSidebar = ({
-	module,
 	stageCount,
 	approverCount,
 	minApprovers,
+	basics,
 }: Props) => {
 	return (
 		<div className="workflow-create-sidebar">
@@ -18,8 +20,16 @@ const WorkflowCreateSidebar = ({
 
 				<div className="workflow-summary-list">
 					<div className="workflow-summary-item">
+						<span className="workflow-summary-key">Workflow Name</span>
+						<span className="workflow-summary-value">{basics.name}</span>
+					</div>
+					<div className="workflow-summary-item">
 						<span className="workflow-summary-key">App Name</span>
-						<span className="workflow-summary-value">{module}</span>
+						<span className="workflow-summary-value">{basics.appDesc}</span>
+					</div>
+					<div className="workflow-summary-item">
+						<span className="workflow-summary-key">Category</span>
+						<span className="workflow-summary-value">{basics.category}</span>
 					</div>
 					<div className="workflow-summary-item">
 						<span className="workflow-summary-key">Stages</span>

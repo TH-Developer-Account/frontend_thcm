@@ -7,11 +7,17 @@ export type WorkflowStage = {
 	approvers: Approver[];
 	isExpanded?: boolean;
 };
-
+export type BudgetCategory = {
+	value: string;
+	label: string;
+	min: number | null;
+	max: number | null;
+};
 export type WorkflowBasics = {
 	name: string;
 	app: string;
 	appDesc?: string;
+	category?: string;
 	isActive: boolean;
 	description: string;
 };

@@ -1,4 +1,5 @@
 import type { WorkspacePayload } from "../../user-profile/types/profile.types";
+import type { BudgetCategory } from "../types/workflow.types";
 
 export const api_routes = {
 	// other routes...
@@ -31,8 +32,7 @@ export const mapBasics = (data: any) => ({
 	workspaceId: data.workspaceId,
 	app: data.appId,
 	isActive: data.isActive,
-
-	metaData_1: data.metaData_1,
+	category: data.metaData_1,
 	metaData_2: data.metaData_2,
 	metaData_3: data.metaData_3,
 });
@@ -60,3 +60,36 @@ export const mapStages = (stages: any[] = []) => {
 			})),
 		}));
 };
+
+export const budgetCategories: BudgetCategory[] = [
+	{
+		value: "below_20k",
+		label: "Below ₹20K",
+		min: 0,
+		max: 20000,
+	},
+	{
+		value: "20k_3l",
+		label: "₹20K – ₹3L",
+		min: 20000,
+		max: 300000,
+	},
+	{
+		value: "3l_6l",
+		label: "₹3L – ₹6L",
+		min: 300000,
+		max: 600000,
+	},
+	{
+		value: "6l_10l",
+		label: "₹6L – ₹10L",
+		min: 600000,
+		max: 1000000,
+	},
+	{
+		value: "above_10l",
+		label: "Above ₹10L",
+		min: 1000000,
+		max: null,
+	},
+];

@@ -46,6 +46,7 @@ const WorkflowCreatePage = () => {
 		appDesc: "",
 		isActive: true,
 		description: "",
+		category: "",
 	});
 
 	const [stages, setStages] = useState<WorkflowStage[]>([]);
@@ -266,7 +267,7 @@ const WorkflowCreatePage = () => {
 						/>
 
 						<WorkflowCreateSidebar
-							module={basics.name || "--"}
+							basics={basics}
 							stageCount={stages.length}
 							approverCount={totalApprovers}
 							minApprovers={2}

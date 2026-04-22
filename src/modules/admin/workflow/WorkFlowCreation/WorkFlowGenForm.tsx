@@ -10,7 +10,7 @@ import type {
 	WorkflowBasics,
 	WorkflowGenErrors,
 } from "../types/workflow.types";
-import { formatApps } from "../constant/workflow.constant";
+import { budgetCategories, formatApps } from "../constant/workflow.constant";
 
 export type WorkflowGenProps = {
 	basics: WorkflowBasics;
@@ -36,7 +36,7 @@ const WorkFlowGenForm = ({
 	const apps = formatApps(permissions);
 	return (
 		<>
-			<div className="workflow-create-field-row workflow-create-field-row-2">
+			<div className="workflow-create-field-row workflow-create-field-row-3">
 				<FormInput
 					name="name"
 					label="Workflow name"
@@ -65,7 +65,26 @@ const WorkFlowGenForm = ({
 					helperText="For which App this workflow is being created"
 					required
 				/>
+
+				<SelectInput
+					name="category"
+					label="Category"
+					value={
+						budgetCategories.find(
+							(opt: Option) => opt.value === basics.category,
+						) || null
+					}
+					options={budgetCategories}
+					onChange={(v: SingleValue<Option>) => {
+						onBasicChange("category", v?.value || "");
+						onClearError("category");
+					}}
+					error={errors.category}
+					helperText="For which Category this workflow is being created"
+					required
+				/>
 			</div>
+
 			{id && (
 				<div className="workflow-create-field-row workflow-create-field-row-2">
 					<Radio
