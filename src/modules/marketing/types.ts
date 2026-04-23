@@ -88,38 +88,22 @@ export const EPC_TO_API_STATUS: Record<EPCStatus, ApprovalApiStatus> = {
 
 export interface EpfFormValues {
 	// Participants
-	externalParticipants: string;
-	internalParticipants: string;
-	totalParticipants: string;
+	externalParticipants: number;
+	internalParticipants: number;
+	totalParticipants: number;
 	crfTotal: string;
-
 	// Budget
-	eventBudget: string;
-	annualBudget: string;
-	availableBudget: string;
-
+	eventBudget: number;
+	annualBudget: number;
+	availableBudget: number;
 	// Dealer
 	dealerName: string;
-	dealerPercent: string;
-	dealerShare: string;
-
+	dealerPercent: number;
+	dealerShare: number;
 	// Tata Hitachi
-	tataHitachiPercent: string;
-	tataHitachiShare: string;
-	tataHitachiPoAmount: string;
-
-	// Approval Flow
-	proposedBy: string;
-	checkedBy: string;
-	approvedBy: string;
-
-	reportValidatedBy: string;
-
-	proposedByStatus: string;
-	checkedByStatus: string;
-	approvedByStatus: string;
-	reportValidatedByStatus: string;
-	overheads: LineItem[];
+	tataHitachiPercent: number;
+	tataHitachiShare: number;
+	tataHitachiPoAmount: number;
 }
 
 export interface LineItem {
@@ -165,3 +149,6 @@ export type GroupedOption = {
 };
 
 export type EPCFormErrors = Partial<Record<keyof EpcFormValues, string>>;
+export type UseEpcFormProps = {
+	epcId?: string | number;
+};

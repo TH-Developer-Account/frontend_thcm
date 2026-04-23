@@ -28,7 +28,12 @@ export function EPCProvider({ children }: EPCProviderProps) {
     try {
       setLoading(true);
 
-      const sort = sorting[0];
+      let sort = {
+        id: "created_at",
+        desc: true,
+      };
+
+      if (sorting.length) sort = sorting[0];
 
       const response = await ServerAxios.get(epc_api_routes.epc_listing_route, {
         params: {
