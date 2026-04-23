@@ -64,28 +64,19 @@ export default function CrfForm() {
 	const [costItems, setCostItems] = React.useState<LineItemOption[]>([]);
 	const [options, setOptions] = React.useState<GroupedOption[]>([]);
 
-<<<<<<< HEAD
+	const stored = localStorage.getItem("epcInfo");
+	let epcId: string | null = null;
+	if (stored) {
+		const parsed = JSON.parse(stored);
+		epcId = parsed.epcId || null;
+	}
+
 	React.useEffect(() => {
 		const fetchProducts = async () => {
 			try {
 				const response = await ServerAxios.get(
 					`/master-data/products?productType=CRF`,
 				);
-=======
-  const stored = localStorage.getItem("epcInfo");
-  let epcId: string | null = null;
-  if (stored) {
-    const parsed = JSON.parse(stored);
-    epcId = parsed.epcId || null;
-  }
-
-  React.useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await ServerAxios.get(
-          `/master-data/products?productType=CRF`,
-        );
->>>>>>> 161392ce2b3c73300dee9f3e14fbddba59910cb4
 
 				const data = response.data.data as Product[];
 
@@ -123,13 +114,13 @@ export default function CrfForm() {
 		fetchProducts();
 	}, []);
 
-  const handleSubmit = async () => {
-    try {
-      if (!epcId) {
-        console.error("EPC ID not found in localStorage");
-        return;
-      }
-      const payload = buildLineItemPayload(costItems, { epcId });
+	const handleSubmit = async () => {
+		try {
+			if (!epcId) {
+				console.error("EPC ID not found in localStorage");
+				return;
+			}
+			const payload = buildLineItemPayload(costItems, { epcId });
 
 			console.log("FINAL PAYLOAD:", payload);
 
@@ -148,7 +139,6 @@ export default function CrfForm() {
 			console.error("CRF creation failed:", error);
 		}
 	};
-	const epcId = localStorage.getItem("epcId");
 	return (
 		<React.Fragment>
 			<PageRowSectionLayout
