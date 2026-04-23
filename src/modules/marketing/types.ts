@@ -17,7 +17,6 @@ export interface CrfProps {
 
 export interface EpcFormProps {
   epcId?: string;
-  userRole: "ADMIN" | "MANAGER" | "VIEWER";
 }
 
 export type EpcStatus = "DRAFT" | "SUBMITTED";
@@ -150,6 +149,7 @@ export type GroupedOption = {
   options: LineItemOption[];
 };
 
+export type EPCFormErrors = Partial<Record<keyof EpcFormValues, string>>;
 export type UseEpcFormProps = {
   epcId?: string | number;
 };

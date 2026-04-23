@@ -18,7 +18,7 @@ export default function HomeScreen() {
 							return (
 								<ActionCard
 									key={action.title}
-									icon={<Icon size={40} className="text-orange-500" />}
+									icon={<Icon size={40} />}
 									title={action.title}
 									description={action.description}
 									subText={action.subText}

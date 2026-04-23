@@ -50,7 +50,7 @@ export type CardProps = {
 };
 
 export type ButtonProps = {
-	text?: string;
+	text?: string | number;
 	onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
 	type?: "button" | "submit";
 	disabled?: boolean;
@@ -65,6 +65,7 @@ export type ButtonProps = {
 	children?: React.ReactNode;
 	isTooltip?: string;
 	iconSize?: string;
+	path?: string;
 };
 
 export interface BadgeProps {

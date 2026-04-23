@@ -151,7 +151,7 @@ const ProfileList: React.FC<ProfileListProps> = ({
 																			</Button>
 																		}
 																	>
-																		<div className="flex flex-col gap-1 bg-white p-2 h-[100px] rounded-md overflow-auto ">
+																		<div className="flex flex-col gap-1 bg-white p-2 h-[100px] rounded-md overflow-auto scrollbar-sleek">
 																			{profile.users.map((user) => (
 																				<ul>
 																					<li className="text-xs cursor-pointer hover:bg-zinc-100 px-1.5 py-1.5 rounded-md">

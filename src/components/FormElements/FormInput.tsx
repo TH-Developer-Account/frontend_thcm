@@ -13,6 +13,7 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	error?: string;
 	helperText?: string;
 	placeholder?: string;
+	isTooltip?: boolean;
 }
 
 const FormInput = forwardRef<HTMLInputElement, InputProps>(
@@ -28,6 +29,7 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 			disabled,
 			helperText,
 			placeholder,
+			isTooltip,
 			...props
 		},
 		ref,
@@ -68,7 +70,7 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 		}
 
 		return (
-			<div className="form-field">
+			<div className="form-field relative inline-flex group">
 				{label && (
 					<label htmlFor={name} className="form-label">
 						{label}
@@ -126,6 +128,26 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 
 				{!error && helperText && (
 					<p className="form-helper-text">{helperText}</p>
+				)}
+				{/* Tooltip */}
+				{isTooltip && (
+					<div
+						className="
+				absolute top-15 left-1/5 -translate-x-1/2 mb-2
+				whitespace-nowrap
+				rounded-md bg-gray-900 text-white text-xs
+				px-2 py-1 shadow-lg
+				opacity-0 scale-95
+				pointer-events-none
+				transition-all duration-150
+				group-hover:opacity-100
+				group-hover:scale-100
+				group-focus-within:opacity-100
+				group-focus-within:scale-100
+				z-50"
+					>
+						{helperText}
+					</div>
 				)}
 			</div>
 		);

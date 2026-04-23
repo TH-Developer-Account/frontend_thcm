@@ -35,7 +35,7 @@
 	========================= */
 
 	.form-label {
-		@apply text-xs font-medium text-zinc-600;
+		@apply text-xs font-medium text-zinc-800;
 	}
 
 	.form-required {
@@ -43,11 +43,16 @@
 	}
 
 	.form-helper-text {
-		@apply text-[11px] leading-relaxed text-zinc-400;
+		@apply text-[10px] leading-relaxed text-zinc-400;
 	}
 
+	.form-helper-text {
+		margin-top: 0.25rem;
+		line-height: 1rem;
+		color: #6b7280;
+	}
 	.form-error-text {
-		@apply mt-1 text-left text-xs;
+		@apply mt-1 text-left text-[10px] leading-relaxed;
 		color: var(--color-error);
 	}
 
@@ -501,14 +506,6 @@ CHECK ICON
 
 .form-error-text {
 	margin-top: 0.25rem;
-	font-size: 0.75rem;
 	line-height: 1rem;
 	color: #dc2626;
-}
-
-.form-helper-text {
-	margin-top: 0.25rem;
-	font-size: 0.75rem;
-	line-height: 1rem;
-	color: #6b7280;
 }

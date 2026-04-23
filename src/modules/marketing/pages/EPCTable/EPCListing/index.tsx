@@ -2,20 +2,34 @@ import EPCTable from "./EPCTable";
 import { EPCProvider } from "../../../context/EPCprovider";
 import { useState } from "react";
 import Topbar from "../layouts/Topbar";
+import PageRowSectionLayout from "../../../../../layout/PageRowSectionLayout";
+import { PageHeader } from "../../../../../components/ui/PageHeader";
+import { ArrowLeft } from "lucide-react";
 
 export default function EPCList() {
-  const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
+	const [isFilterOpen, setIsFilterOpen] = useState<boolean>(false);
 
-  return (
-    <EPCProvider>
-      <div className="bg-white p-4 mt-4 rounded-xl shadow">
-        <Topbar setIsFilterOpen={setIsFilterOpen} isFilterOpen={isFilterOpen} />
-        <div className="h-screen flex flex-col">
-          <div className="flex-1 p-1 min-h-0">
-            <EPCTable />
-          </div>
-        </div>
-      </div>
-    </EPCProvider>
-  );
+	return (
+		<EPCProvider>
+			<PageRowSectionLayout
+				header_children={
+					<PageHeader
+						headerText="Event Planning Calendar (EPC) Listing"
+						subtitleText="Manage your Event Planning Calendar (EPC) details here"
+						Icon={ArrowLeft}
+						badgeText="Home Screen"
+						className="flex flex-row justify-between items-start"
+						path="/"
+					>
+						<Topbar
+							setIsFilterOpen={setIsFilterOpen}
+							isFilterOpen={isFilterOpen}
+						/>
+					</PageHeader>
+				}
+			>
+				<EPCTable />
+			</PageRowSectionLayout>
+		</EPCProvider>
+	);
 }

@@ -1,6 +1,7 @@
 import React from "react";
 import { resolveStatusStyle, resolveVariantStyle } from "../styles.constant";
 import type { ButtonProps } from "./common.types";
+import { useNavigate } from "react-router-dom";
 
 const Button: React.FC<ButtonProps> = ({
 	text,
@@ -18,7 +19,9 @@ const Button: React.FC<ButtonProps> = ({
 	iconColor,
 	isTooltip,
 	iconSize,
+	path,
 }) => {
+	const navigate = useNavigate();
 	const S = {
 		sm: "btn-sm",
 		md: "btn-md",
@@ -28,14 +31,16 @@ const Button: React.FC<ButtonProps> = ({
 
 	const styleClass =
 		resolveStatusStyle({ status: status || "" }) || resolveVariantStyle;
-
+	const handlePathClick = () => {
+		if (path) navigate(path);
+	};
 	return (
 		<div
 			className={` ${fullWidth ? "w-full" : "w-auto"} relative inline-flex group`}
 		>
 			<button
 				type={type}
-				onClick={onClick}
+				onClick={onClick || handlePathClick}
 				disabled={disabled}
 				className={`
 					${fullWidth ? "w-full" : "w-auto"}
