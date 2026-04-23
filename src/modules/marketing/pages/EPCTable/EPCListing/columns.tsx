@@ -3,7 +3,7 @@ import type { EPCRow } from "../../../../../utils/types";
 import { Badge } from "../../../../../components/common/Badge";
 import { status } from "../../../constant";
 import Button from "../../../../../components/common/Button";
-import { Edit, Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 type epcColumnActions = {
@@ -83,7 +83,7 @@ export const getEPCColumns = ({
 					<div className="font-medium">
 						<Button
 							className="rounded-full p-1.5"
-							Icon={crf ? Edit : Plus}
+							Icon={crf ? Pencil : Plus}
 							status="brand"
 							iconColor="#fff"
 							onClick={() => {
@@ -108,7 +108,7 @@ export const getEPCColumns = ({
 						{row.original.epf_id ? (
 							<Button
 								className="rounded-full p-1.5"
-								Icon={epf ? Edit : Plus}
+								Icon={epf ? Pencil : Plus}
 								status="brand"
 								onClick={() => {
 									localStorage.setItem(
@@ -125,7 +125,7 @@ export const getEPCColumns = ({
 						) : (
 							<Button
 								className="rounded-full p-1.5"
-								Icon={epf ? Edit : Plus}
+								Icon={epf ? Pencil : Plus}
 								status="brand"
 								onClick={() => {
 									localStorage.setItem(
