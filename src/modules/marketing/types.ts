@@ -97,6 +97,7 @@ export interface EpfFormValues {
   eventBudget: number;
   annualBudget: number;
   availableBudget: number;
+  allotedBudget: number;
   // Dealer
   dealerName: string;
   dealerPercent: number;

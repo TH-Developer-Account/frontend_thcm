@@ -332,8 +332,8 @@ const EpfFormInfo = ({
               <div className="alotted  bg-gray-100 px-1.5 py-2 rounded-sm flex justify-between items-center">
                 <p>Allotted Budget:</p>{" "}
                 <span className="text-lg font-semibold">
-                  {values.availableBudget
-                    ? values.availableBudget + " rs"
+                  {values.allotedBudget
+                    ? values.allotedBudget + " rs"
                     : "0:00 rs"}
                 </span>
               </div>
