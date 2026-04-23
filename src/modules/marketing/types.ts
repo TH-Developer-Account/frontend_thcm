@@ -148,3 +148,7 @@ export type GroupedOption = {
   label: string; // category
   options: LineItemOption[];
 };
+
+export type UseEpcFormProps = {
+  epcId?: string | number;
+};
