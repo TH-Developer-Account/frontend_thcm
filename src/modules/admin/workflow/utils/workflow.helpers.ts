@@ -161,7 +161,7 @@ export const updateStageField = <K extends keyof WorkflowStage>(
 	key: K,
 	value: WorkflowStage[K],
 ): WorkflowStage[] => {
-	let strategy = "All" as ApprovalRule;
+	let strategy = "ALL" as ApprovalRule;
 
 	return stages.map((stage) => {
 		if (key === "minApprovals") {

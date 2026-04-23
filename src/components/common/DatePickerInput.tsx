@@ -136,17 +136,14 @@ export default function DatePickerInput({
 				);
 
 	return (
-		<div
-			ref={wrapperRef}
-			className={`relative w-full form-field  ${className}`}
-		>
+		<div ref={wrapperRef} className={`relative form-field  ${className}`}>
 			{label ? <label className=" form-label">{label}</label> : null}
 			<div className="form-input-wrapper relative">
 				<button
 					type="button"
 					disabled={disabled}
 					onClick={() => (open ? handleCancel() : handleOpen())}
-					className={` form-input flex h-9 w-full items-center justify-between rounded-sm border px-3 text-left text-sm transition ${
+					className={` form-input flex w-full items-center justify-between rounded-sm border px-3 text-left text-sm transition ${
 						error
 							? "border-red-500 focus:ring-red-200"
 							: "border-gray-300 hover:border-gray-400"
@@ -262,7 +259,7 @@ export default function DatePickerInput({
 			{error ? (
 				<p className="mt-1 text-xs text-red-600">{error}</p>
 			) : helperText ? (
-				<p className="mt-1 text-xs text-gray-500">{helperText}</p>
+				<p className="form-helper-text">{helperText}</p>
 			) : null}
 		</div>
 	);

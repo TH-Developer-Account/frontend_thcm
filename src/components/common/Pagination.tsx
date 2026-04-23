@@ -1,7 +1,9 @@
 import React, { useEffect, useRef } from "react";
 import type { SingleValue } from "react-select";
-import SelectInput, { type Option } from "../FormElements/SelectInput";
+import SelectInput from "../FormElements/SelectInput";
 import type { PaginationProps } from "./common.types";
+import Button from "./Button";
+import type { Option } from "../../modules/marketing/types";
 
 const PAGE_SIZE_OPTIONS: Option[] = [
 	{ label: "15", value: "15" },
@@ -91,18 +93,12 @@ const Pagination: React.FC<PaginationProps> = ({
 			)}
 
 			<div className="pagination-pages">
-				<button
+				<Button
 					disabled={pageIndex === 0}
 					onClick={() => onPageChange(pageIndex - 1)}
-					className={`
-						pagination-btn
-						${compact ? "pagination-btn-compact" : "pagination-btn-default"}
-						pagination-btn-hover
-						pagination-btn-disabled
-					`}
-				>
-					{"<"}
-				</button>
+					text={"<"}
+					status="brand"
+				/>
 
 				{pages.map((page, index) =>
 					page === "ellipsis" ? (
@@ -110,32 +106,21 @@ const Pagination: React.FC<PaginationProps> = ({
 							...
 						</span>
 					) : (
-						<button
+						<Button
 							key={index}
 							onClick={() => onPageChange(page - 1)}
-							className={`
-								pagination-btn
-								${compact ? "pagination-btn-compact" : "pagination-btn-default"}
-								${currentPage === page ? "pagination-btn-active" : "pagination-btn-hover"}
-							`}
-						>
-							{page}
-						</button>
+							text={page}
+							status="brand"
+						/>
 					),
 				)}
 
-				<button
+				<Button
 					disabled={pageIndex + 1 >= totalPages}
 					onClick={() => onPageChange(pageIndex + 1)}
-					className={`
-						pagination-btn
-						${compact ? "pagination-btn-compact" : "pagination-btn-default"}
-						pagination-btn-hover
-						pagination-btn-disabled
-					`}
-				>
-					{">"}
-				</button>
+					text={">"}
+					status="brand"
+				/>
 			</div>
 
 			{!compact && (

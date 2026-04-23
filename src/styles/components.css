@@ -174,18 +174,19 @@
 	}
 
 	.pagination-info {
-		color: rgb(var(--color-muted));
+		color: rgb(var(--color-brand));
 	}
 
 	.pagination-info-number {
-		color: rgb(var(--color-text));
+		color: rgb(var(--color-brand));
 		@apply font-semibold;
 	}
 
 	.pagination-btn {
 		@apply rounded-lg border transition;
 		background: rgb(var(--color-yellow-warm));
-		border-color: rgb(var(--color-border));
+		border-color: rgb(var(--color-primary));
+		color: rgb(var(--color-text));
 	}
 
 	.pagination-btn-hover:hover {
@@ -196,11 +197,11 @@
 	.pagination-btn-active {
 		background: rgb(var(--color-primary));
 		border-color: rgb(var(--color-primary));
-		color: var(--color-white);
+		color: var(--color-black);
 	}
 
 	.pagination-btn-disabled {
-		@apply disabled:opacity-40;
+		@apply disabled:opacity-60;
 	}
 
 	.pagination-pages {
@@ -430,6 +431,7 @@
 		transition-all
 		duration-200
 		ease-in-out bg-white;
+		/* @apply ring-2  ring-orange-50 text-white; */
 	}
 
 	/* Default card */
@@ -493,7 +495,8 @@
 		@apply text-lg font-semibold text-gray-800;
 	}
 
-	.action-card:hover .action-card-title {
+	.action-card:hover .action-card-title,
+	.action-card:hover .action-card-icon {
 		color: var(--color-brand);
 	}
 
@@ -723,7 +726,7 @@
 
 .workflow-table-shell {
 	@apply flex min-h-0 flex-col overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm;
-	height: calc(52vh);
+	height: calc(70vh);
 }
 
 .workflow-table-scroll {

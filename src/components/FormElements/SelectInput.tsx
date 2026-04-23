@@ -94,7 +94,7 @@ export default function SelectInput({
 					styles={customStyles}
 					aria-invalid={!!error}
 					aria-describedby={error ? `${name}-error` : undefined}
-					className={className}
+					className={`${className} scrollbar-sleek`}
 				/>
 
 				{error && <ExclamationCircleIcon className="form-error-icon" />}

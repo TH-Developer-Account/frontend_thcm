@@ -9,10 +9,9 @@ import { useEpcForm } from "./useEPCForm";
 import type { EpcFormProps, Option } from "../../types";
 import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
 import { PageHeader } from "../../../../components/ui/PageHeader";
-import { GitBranch } from "lucide-react";
+import { ArrowBigLeft, ArrowLeft, GitBranch } from "lucide-react";
 import DatePickerInput from "../../../../components/common/DatePickerInput";
 import { toDateRange } from "./api";
-import { validateEpcForm } from "./validation";
 // import UserAsyncSelect from "../../../../components/FormElements/AsyncSelect";
 
 const formatDateOnly = (date?: Date) => {
@@ -24,14 +23,13 @@ const formatDateOnly = (date?: Date) => {
 };
 
 const EpcForm = ({ epcId }: EpcFormProps) => {
-	const { values, isEditMode, handleChange, handleSave, handleReset } =
+	const { values, errors, isEditMode, handleChange, handleSave, handleReset } =
 		useEpcForm({
 			epcId,
 		});
 
 	const { data } = useMasterData();
 
-	const errors = validateEpcForm(values);
 	const [selectedDepartment, setSelectedDepartment] = React.useState<
 		string | null
 	>(null);
@@ -71,20 +69,21 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 					<PageHeader
 						headerText="Event Planning Calender"
 						subtitleText="Manager your Event Planning Calendar (EPC) details here"
-						Icon={GitBranch}
-						badgeText="EPC Form"
+						Icon={ArrowLeft}
+						badgeText="EPC Listing"
+						path="/marketing/listing"
 					/>
 				}
 			>
 				<div className="mt-2 px-4 py-4 text-left text-xs lg:text-sm">
 					<form>
-						<div className="mb-4 grid grid-cols-1 items-end gap-3 md:grid-cols-5">
+						<div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
 							<FormInput
 								name="epfNo"
 								label="EPF No"
 								value={values.epfNo}
 								disabled
-								className="p-2 text-black"
+								className="w-full p-2 text-black"
 								helperText="EPF No. auto generated"
 							/>
 
@@ -103,6 +102,7 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								required
 								helperText="Select zone to auto populate branches"
 								error={errors.region}
+								className="w-full"
 							/>
 
 							<SelectInput
@@ -120,6 +120,7 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								required
 								helperText="Branches are filtered based on selected zone"
 								error={errors.branch}
+								className="w-full"
 							/>
 
 							<FormInput
@@ -129,32 +130,24 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								placeholder="PAX SIZE <50"
 								value={values.event_scale}
 								onChange={(e) => handleChange("event_scale", e.target.value)}
-								className="p-2"
+								className="w-full p-2"
 								error={errors?.event_scale}
 								helperText="Select scale"
+								isTooltip={true}
 							/>
 
-							{/* <UserAsyncSelect
-								label="Location"
-								value={
-									data?.eventNames?.find(
-										(opt: Option) => opt.value === values.event_name,
-									) || null
-								}
-								onChange={(v: SingleValue<Option>) =>
-									handleChange("location", v?.value || "")
-								}
-							/> */}
 							<FormInput
 								name="location"
 								label="Location"
 								placeholder="Location"
 								value={values.location}
-								className="p-2"
+								onChange={(e) => handleChange("location", e.target.value)}
+								className="w-full p-2"
 								required
 								helperText="Location of the event"
 								error={errors.location}
 							/>
+
 							<SelectInput
 								name="department"
 								label="Department"
@@ -169,6 +162,7 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								}
 								helperText="Select department to auto populate verticals"
 								error={errors.department}
+								className="w-full"
 							/>
 
 							<SelectInput
@@ -186,10 +180,10 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								isDisabled={!selectedDepartment}
 								helperText="Verticals are filtered based on selected department"
 								error={errors.vertical}
+								className="w-full"
 							/>
-
 							<DatePickerInput
-								label="Event date"
+								label="Event [From - To]"
 								mode="range"
 								value={toDateRange(
 									values.event_from_date,
@@ -206,7 +200,10 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								}}
 								numberOfMonths={1}
 								helperText="Date Range"
+								className="w-full"
+								error={errors.event_from_date || errors.event_to_date}
 							/>
+
 							<SelectInput
 								name="budget_master_id"
 								label="Budget Code"
@@ -221,6 +218,7 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								}
 								helperText="Select budget code to auto populate description"
 								error={errors.budget_master_id}
+								className="w-full"
 							/>
 
 							<FormInput
@@ -228,15 +226,15 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								label="Budget Description"
 								placeholder="Budget Description"
 								value={values.budgetDescription}
-								className="p-2"
+								className="w-full p-2"
 								disabled
 								helperText="Budget Description auto populated based on selected budget code"
 								error={errors.budgetDescription}
 							/>
 						</div>
 
-						<div className="flex w-full flex-col gap-4 md:flex-row md:items-stretch">
-							<div className="flex w-full flex-col gap-2">
+						<div className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+							<div className="flex min-w-0 flex-col gap-4">
 								<SelectInput
 									name="event_name"
 									label="Event Name"
@@ -251,6 +249,7 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 									}
 									helperText="Select from past events or create new by typing and pressing enter"
 									error={errors.event_name}
+									className="w-full"
 								/>
 
 								<TextareaInput
@@ -260,39 +259,35 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 									onChange={(e) =>
 										handleChange("event_description", e.target.value)
 									}
-									className="h-full overflow-hidden p-2"
+									className="w-full p-2 h-full"
 									minLength={100}
-									rows={3}
-									// helperText="Provide a brief description of the event, including key highlights and unique aspects that set it apart from other events."
+									rows={4}
 									error={errors.event_description}
 								/>
 							</div>
 
-							<div className="w-full">
+							<div className="min-w-0">
 								<TextareaInput
 									name="event_objective"
 									label="Objective"
-									placeholder=""
 									value={values.event_objective}
 									onChange={(e) =>
 										handleChange("event_objective", e.target.value)
 									}
 									minLength={100}
-									rows={6}
-									className="h-full"
+									rows={9}
+									className="w-full p-2 h-full"
 									error={errors.event_objective}
-									// helperText="Clearly outline the primary goals and objectives of the event, such as brand awareness, lead generation, customer engagement, or product launch."
 								/>
 							</div>
 						</div>
 
-						<div className="mt-2 flex justify-end gap-3">
+						<div className="mt-4 flex flex-wrap justify-end gap-3">
 							<Button
 								text="Reset"
 								onClick={() => handleReset()}
 								status="brand"
 							/>
-
 							<Button
 								onClick={() => handleSave("SUBMITTED")}
 								text={isEditMode ? "Update & Submit" : "Submit"}

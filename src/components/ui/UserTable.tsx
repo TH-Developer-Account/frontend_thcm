@@ -64,7 +64,7 @@ function UserTable<T extends object>({
 		<div
 			className={`w-full rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden flex flex-col ${className}`}
 		>
-			<div className="flex-1 overflow-auto">
+			<div className="flex-1 overflow-auto scrollbar-sleek">
 				<table className="w-full text-sm text-gray-800">
 					<thead className="bg-gray-50 border-b border-gray-200">
 						{table.getHeaderGroups().map((group) => (

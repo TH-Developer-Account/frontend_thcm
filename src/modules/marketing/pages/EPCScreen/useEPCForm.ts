@@ -93,7 +93,6 @@ export const useEpcForm = ({ epcId }: EpcFormProps) => {
 				setErrors(validationErrors);
 				return;
 			}
-			return validationErrors;
 		}
 
 		try {
@@ -156,5 +155,6 @@ const generateEpfNo = (dept: string, branch: string, zone: string) => {
 	console.log(time); // hh:mm:ss
 	// const timestamp = Date.now();
 
-	return `${deptCode}/${branchCode}/${zoneCode}/${yyyy}${mm}${dd}/${time}`;
+	return `${deptCode}/${branchCode}/${zoneCode}/${yyyy}${mm}${dd}${time}`;
+	//department/zone/branch/vertical/datetimestamp
 };
