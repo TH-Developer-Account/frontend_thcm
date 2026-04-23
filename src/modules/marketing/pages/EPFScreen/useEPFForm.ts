@@ -11,29 +11,73 @@ import type {
 } from "../../types";
 
 const initialValues: EpfFormValues = {
-  externalParticipants: "",
-  internalParticipants: "",
-  totalParticipants: "",
+  externalParticipants: 0,
+  internalParticipants: 0,
+  totalParticipants: 0,
   crfTotal: "",
-  eventBudget: "",
-  annualBudget: "",
-  availableBudget: "",
+  eventBudget: 0,
+  annualBudget: 0,
+  availableBudget: 0,
   dealerName: "",
-  dealerPercent: "",
-  dealerShare: "",
-  tataHitachiPercent: "",
-  tataHitachiShare: "",
-  tataHitachiPoAmount: "",
-  proposedBy: "",
-  checkedBy: "",
-  approvedBy: "",
-  reportValidatedBy: "",
-  proposedByStatus: "",
-  checkedByStatus: "",
-  approvedByStatus: "",
-  reportValidatedByStatus: "",
+  dealerPercent: 0,
+  dealerShare: 0,
+  tataHitachiPercent: 0,
+  tataHitachiShare: 0,
+  tataHitachiPoAmount: 0,
+};
 
-  overheads: [], // ✅ SINGLE SOURCE
+const numberFields: (keyof EpfFormValues)[] = [
+  "externalParticipants",
+  "internalParticipants",
+  "totalParticipants",
+  "eventBudget",
+  "annualBudget",
+  "availableBudget",
+  "dealerPercent",
+  "dealerShare",
+  "tataHitachiPercent",
+  "tataHitachiShare",
+  "tataHitachiPoAmount",
+];
+
+const parseValue = (name: keyof EpfFormValues, value: string) => {
+  if (numberFields.includes(name)) {
+    return value === "" ? "" : Number(value); // keep "" for controlled inputs
+  }
+  return value;
+};
+
+const toNumberOrNull = (val: number | string) => {
+  if (val === "" || val === null || val === undefined) return null;
+  return Number(val);
+};
+
+const prepareEpfPayload = (
+  values: EpfFormValues,
+  status: "DRAFT" | "SUBMITTED",
+  epcId: string,
+) => {
+  return {
+    epcId,
+    status,
+
+    externalParticipants: toNumberOrNull(values.externalParticipants),
+    internalParticipants: toNumberOrNull(values.internalParticipants),
+    eventBudget: toNumberOrNull(values.eventBudget),
+    annualBudget: toNumberOrNull(values.annualBudget),
+    availableBudget: toNumberOrNull(values.availableBudget),
+    dealerName: values.dealerName || "",
+    dealerPercent: toNumberOrNull(values.dealerPercent),
+    dealerShare: toNumberOrNull(values.dealerShare),
+    tataHitachiPoAmount: toNumberOrNull(values.tataHitachiPoAmount),
+  };
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getTotalCrfAmount = (crfData: any) => {
+  return crfData.lineItems.reduce((total: number, item: LineItem) => {
+    return total + Number(item.rate || 0);
+  }, 0);
 };
 
 export const useEpfForm = () => {
@@ -43,6 +87,7 @@ export const useEpfForm = () => {
   const [values, setValues] = useState<EpfFormValues>(initialValues);
   const [options, setOptions] = React.useState<LineItemOption[]>([]);
   const [costItems, setCostItems] = React.useState<LineItemOption[]>([]);
+  const [crfTotal, setCrfTotal] = React.useState("");
 
   const [errors, setErrors] = useState<
     Partial<Record<keyof EpfFormValues, string>>
@@ -58,14 +103,28 @@ export const useEpfForm = () => {
     quantity: 0,
   });
 
+  const stored = localStorage.getItem("epcInfo");
+  let epcId: string | null = null;
+  let crfId: string | null = null;
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    epcId = parsed.epcId || null;
+    crfId = parsed.crfId || null;
+  }
+
   React.useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await ServerAxios.get(
-          `/master-data/products?productType=EPF`,
-        );
+        const [productsRes, crfRes] = await Promise.all([
+          ServerAxios.get(`/master-data/products?productType=EPF`),
+          crfId ? ServerAxios.get(`/crf/${crfId}`) : Promise.resolve(null),
+        ]);
 
-        const data = response.data.data;
+        const crfData = crfRes?.data;
+        const totalCrfAmount = getTotalCrfAmount(crfData);
+        setCrfTotal(totalCrfAmount);
+
+        const data = productsRes.data.data;
         setOptions(
           data.map((item: Product) => ({
             value: item.id,
@@ -87,13 +146,20 @@ export const useEpfForm = () => {
   }, []);
 
   const handleChange = (name: keyof EpfFormValues, value: string) => {
+    console.log({ name, value });
     setValues((prev) => {
-      const updated = { ...prev, [name]: value };
+      const parsedValue = parseValue(name, value);
+      const updated = {
+        ...prev,
+        [name]: parsedValue,
+      };
 
       // ✅ Participants auto total
-      const external = Number(updated.externalParticipants) || 0;
-      const internal = Number(updated.internalParticipants) || 0;
-      updated.totalParticipants = String(external + internal);
+      const external = Number(updated.externalParticipants);
+      const internal = Number(updated.internalParticipants);
+      updated.externalParticipants = external;
+      updated.internalParticipants = internal;
+      updated.totalParticipants = Number(external + internal);
 
       // ✅ Budget calculations
       const budget = Number(updated.eventBudget) || 0;
@@ -101,9 +167,13 @@ export const useEpfForm = () => {
       const tataPercent = Number(updated.tataHitachiPercent) || 0;
 
       if (budget > 0) {
-        updated.dealerShare = ((budget * dealerPercent) / 100).toFixed(2);
+        updated.dealerShare = Number(
+          ((budget * dealerPercent) / 100).toFixed(2),
+        );
 
-        updated.tataHitachiShare = ((budget * tataPercent) / 100).toFixed(2);
+        updated.tataHitachiShare = Number(
+          ((budget * tataPercent) / 100).toFixed(2),
+        );
       }
 
       return updated;
@@ -162,21 +232,16 @@ export const useEpfForm = () => {
     setErrors({});
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (status: "DRAFT" | "SUBMITTED") => {
     try {
-      const epcId = localStorage.getItem("epcId");
-
       if (!epcId) {
         console.error("EPC ID not found in localStorage");
         return;
       }
 
-      const extraPayload = {
-        epcId,
-        total_budget: 300000,
-        expected_revenue: 50000,
-      };
-      const payload = buildLineItemPayload(costItems, extraPayload);
+      const cleanedData = prepareEpfPayload(values, status, epcId);
+
+      const payload = buildLineItemPayload(costItems, cleanedData);
 
       console.log("FINAL PAYLOAD:", payload);
 
@@ -190,6 +255,7 @@ export const useEpfForm = () => {
         description: message,
       });
 
+      localStorage.removeItem("epcInfo");
       navigate("/marketing/listing");
     } catch (error) {
       console.error("CRF creation failed:", error);
@@ -203,6 +269,7 @@ export const useEpfForm = () => {
     loading,
     options,
     costItems,
+    crfTotal,
     setCostItems,
     setOptions,
     handleChange,

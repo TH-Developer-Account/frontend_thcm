@@ -61,6 +61,13 @@ export default function CrfForm() {
   const [costItems, setCostItems] = React.useState<LineItemOption[]>([]);
   const [options, setOptions] = React.useState<GroupedOption[]>([]);
 
+  const stored = localStorage.getItem("epcInfo");
+  let epcId: string | null = null;
+  if (stored) {
+    const parsed = JSON.parse(stored);
+    epcId = parsed.epcId || null;
+  }
+
   React.useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -106,7 +113,6 @@ export default function CrfForm() {
 
   const handleSubmit = async () => {
     try {
-      const epcId = localStorage.getItem("epcId");
       if (!epcId) {
         console.error("EPC ID not found in localStorage");
         return;
@@ -125,13 +131,12 @@ export default function CrfForm() {
         description: message,
       });
 
+      localStorage.removeItem("epcInfo");
       navigate("/marketing/listing");
     } catch (error) {
       console.error("CRF creation failed:", error);
     }
   };
-
-  console.log("CRF options:", options);
 
   return (
     <React.Fragment>

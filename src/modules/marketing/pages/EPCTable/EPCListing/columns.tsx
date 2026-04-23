@@ -85,14 +85,21 @@ export const getEPCColumns = ({
     cell: ({ row }) => (
       <div>
         <div className="font-medium">
-          {row.original.epf ? (
+          {row.original.epf_id ? (
             <Button
               className="bg-transparent text-orange-900"
               Icon={Edit}
               iconPosition="right"
               iconColor="#f35a00"
               onClick={() => {
-                localStorage.setItem("epcId", row.original.id);
+                localStorage.setItem(
+                  "epcInfo",
+                  JSON.stringify({
+                    epcId: row.original.id,
+                    crfId: row.original.crf_id,
+                    epfId: row.original.epf_id,
+                  }),
+                );
                 onEPFCreate();
               }}
             />
@@ -103,7 +110,14 @@ export const getEPCColumns = ({
               iconPosition="right"
               iconColor="#f35a00"
               onClick={() => {
-                localStorage.setItem("epcId", row.original.id);
+                localStorage.setItem(
+                  "epcInfo",
+                  JSON.stringify({
+                    epcId: row.original.id,
+                    crfId: row.original.crf_id,
+                    epfId: row.original.epf_id,
+                  }),
+                );
                 onEPFCreate();
               }}
             />
