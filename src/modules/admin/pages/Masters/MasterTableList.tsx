@@ -3,6 +3,7 @@ import BranchesList from "./BranchesList";
 import DepartmentsList from "./DepartmentsList";
 import RegionsList from "./RegionsList";
 import EventNamesList from "./EventNamesList";
+import BudgetMasterList from "./BudgetMasterList";
 
 type MasterTableListProps = {
 	master?: string;
@@ -13,6 +14,7 @@ const MasterTableList = ({ master }: MasterTableListProps) => {
 		Branches: <BranchesList />,
 		Departments: <DepartmentsList />,
 		Regions: <RegionsList />,
+		Budget: <BudgetMasterList />,
 		"Event Names": <EventNamesList />,
 	};
 

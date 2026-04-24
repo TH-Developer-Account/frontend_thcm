@@ -87,7 +87,7 @@ export function MasterDetailPanel({
 				<FormInput
 					name="label"
 					label={`${masterName.replace(/s$/, "")} Code`}
-					value={form.label}
+					value={form.code}
 					onChange={(e) => handleChange("label", e.target.value)}
 					onKeyDown={(e: React.KeyboardEvent) =>
 						e.key === "Enter" && handleSave()

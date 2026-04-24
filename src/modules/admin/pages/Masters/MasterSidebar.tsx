@@ -1,7 +1,14 @@
 import Button from "../../../../components/common/Button";
 import { Database } from "lucide-react";
 
-const masters = ["Branches", "Departments", "Regions", "Event Names"];
+const masters = [
+	"Branches",
+	"Departments",
+	"Regions",
+	"Event Names",
+	"Budget",
+	"Vertical",
+];
 
 type MasterSidebarProps = {
 	activeMaster: string;

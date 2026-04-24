@@ -56,7 +56,7 @@ export function MasterLineItemTable({
 						<tr>
 							<th className="px-4 py-2.5 w-10">SNo.</th>
 							<th className="px-4 py-2.5 text-left">{nameLabel}</th>
-							<th className="px-4 py-2.5 text-left">{nameLabel}</th>
+							<th className="px-4 py-2.5 text-left">Code</th>
 							{!isViewer && (
 								<th className="px-4 py-2.5 w-10 text-right">Edit</th>
 							)}

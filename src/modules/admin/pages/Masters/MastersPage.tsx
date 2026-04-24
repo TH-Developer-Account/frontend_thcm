@@ -13,6 +13,8 @@ const MASTER_KEYS: Record<string, string> = {
 	Departments: "departments",
 	Regions: "regions",
 	"Event Names": "eventNames",
+	Budget: "budgetMasters",
+	Vertical: "vertical",
 };
 
 const MastersPage = () => {
@@ -46,6 +48,7 @@ const MastersPage = () => {
 		const apiItems: MasterItem[] = (data?.[key] ?? []).map((b: any) => ({
 			id: b.value ?? b.id ?? crypto.randomUUID(),
 			label: b.label ?? b.name ?? "",
+			code: b.code ?? b.code ?? "",
 		}));
 		return localData[masterName] ?? apiItems;
 	};
@@ -60,6 +63,7 @@ const MastersPage = () => {
 
 	const handleSave = (updated: MasterItem) => {
 		const items = getItems(activeMaster);
+
 		setItems(
 			activeMaster,
 			items.map((i) => (i.id === updated.id ? updated : i)),
@@ -78,7 +82,7 @@ const MastersPage = () => {
 	const counts = Object.fromEntries(
 		Object.keys(MASTER_KEYS).map((k) => [k, getItems(k).length]),
 	);
-
+	console.log("Items", items);
 	return (
 		<div
 			ref={containerRef}
