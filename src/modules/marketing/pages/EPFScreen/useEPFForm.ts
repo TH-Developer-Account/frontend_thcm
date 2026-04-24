@@ -18,6 +18,7 @@ const initialValues: EpfFormValues = {
   eventBudget: 0,
   annualBudget: 0,
   availableBudget: 0,
+  allotedBudget: 0,
   dealerName: "",
   dealerPercent: 0,
   dealerShare: 0,
@@ -115,14 +116,27 @@ export const useEpfForm = () => {
   React.useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const [productsRes, crfRes] = await Promise.all([
+        const [productsRes, crfRes, budgetInfo] = await Promise.all([
           ServerAxios.get(`/master-data/products?productType=EPF`),
           crfId ? ServerAxios.get(`/crf/${crfId}`) : Promise.resolve(null),
+          ServerAxios.get(`/master-data/budget`),
         ]);
+
+        console.log({ budgetInfo });
+
+        const budgetInformation = budgetInfo.data.d.results[0];
+        setValues((prev) => ({
+          ...prev,
+          availableBudget: Number(budgetInformation.Available),
+          annualBudget: Number(budgetInformation.Budget),
+          allotedBudget: Number(budgetInformation.Allocated),
+        }));
 
         const crfData = crfRes?.data;
         const totalCrfAmount = getTotalCrfAmount(crfData);
         setCrfTotal(totalCrfAmount);
+
+        console.log({ budgetInformation });
 
         const data = productsRes.data.data;
         setOptions(

@@ -20,7 +20,6 @@ export const getEPCColumns = ({
 		header: "EPC No",
 		cell: ({ row }) => {
 			const epcId = row.original.id;
-			console.log("row", row.original);
 			return (
 				<div>
 					<NavLink
