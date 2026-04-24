@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../../context/Auth/useAuth";
 import { buildLineItemPayload } from "../../constant";
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { ServerAxios } from "../../../../services/ServerAxios";
@@ -85,6 +86,7 @@ const getTotalEventLineitemAmount = (items: LineItemOption[]) => {
 export const useEpfForm = () => {
 	const { showToast } = useToast();
 	const navigate = useNavigate();
+	const { workspaceId } = useAuth();
 
 	const [values, setValues] = useState<EpfFormValues>(initialValues);
 	const [options, setOptions] = React.useState<LineItemOption[]>([]);
@@ -111,6 +113,7 @@ export const useEpfForm = () => {
 	}, [costItems, values.crfTotal]);
 
 	const stored = localStorage.getItem("epcInfo");
+	const appId = localStorage.getItem("appId");
 	let epcId: string | null = null;
 	let crfId: string | null = null;
 	if (stored) {
@@ -132,14 +135,6 @@ export const useEpfForm = () => {
 				const crfData = crfRes?.data;
 				const totalCrfAmount = getTotalEventLineitemAmount(
 					crfData?.lineItems || [],
-				);
-				localStorage.setItem(
-					"budgetInfo",
-					JSON.stringify({
-						annualBudget: Number(budgetInformation.Budget),
-						availableBudget: Number(budgetInformation.Available),
-						allotedBudget: Number(budgetInformation.Allocated),
-					}),
 				);
 				setValues((prev) => ({
 					...prev,
@@ -219,39 +214,6 @@ export const useEpfForm = () => {
 		}
 	};
 
-	const handleSave = async (status: "DRAFT" | "SUBMITTED") => {
-		const formData = { ...values, status };
-
-		console.log("🚀 FINAL SUBMIT:", formData);
-
-		try {
-			setLoading(true);
-
-			const {
-				data: { message },
-			} = await ServerAxios.post("/epf", formData);
-
-			showToast({
-				type: "success",
-				title: "Success",
-				description: message || "Created EPF Successfully",
-			});
-
-			setValues(initialValues);
-			setErrors({});
-		} catch (err) {
-			console.error("❌ API ERROR:", err);
-
-			showToast({
-				type: "error",
-				title: "Error",
-				description: "Something went wrong",
-			});
-		} finally {
-			setLoading(false);
-		}
-	};
-
 	const handleReset = () => {
 		setValues(initialValues);
 		setDraft({
@@ -262,6 +224,24 @@ export const useEpfForm = () => {
 			quantity: 0,
 		});
 		setErrors({});
+	};
+
+	const assignWorkflow = async () => {
+		try {
+			return ServerAxios.post("/soa/assign-workflow", {
+				eventProposalId: epcId,
+				workspaceId,
+				appId,
+				budget: eventCost,
+			});
+		} catch (error) {
+			console.log("error while assigning workflow", error);
+			showToast({
+				type: "error",
+				title: "Workflow Error",
+				description: "Saved but workflow assignment failed",
+			});
+		}
 	};
 
 	const handleSubmit = async (status: "DRAFT" | "SUBMITTED") => {
@@ -284,13 +264,18 @@ export const useEpfForm = () => {
 			showToast({
 				type: "success",
 				title: "Success",
-				description: message,
+				description: message || "Created EPF Successfully",
 			});
+
+			// ✅ 2. Assign workflow ONLY if submitted
+			await assignWorkflow();
 
 			localStorage.removeItem("epcInfo");
 			navigate("/marketing/listing");
 		} catch (error) {
 			console.error("CRF creation failed:", error);
+		} finally {
+			setLoading(false);
 		}
 	};
 
@@ -305,7 +290,6 @@ export const useEpfForm = () => {
 		setCostItems,
 		setOptions,
 		handleChange,
-		handleSave,
 		handleReset,
 		handleSubmit,
 	};
