@@ -6,16 +6,13 @@ import { type ApprovalApiStatus } from "../../../types";
 import { getApprovalSteps } from "./helper";
 
 interface Props {
-	epcId?: string;
+	epcData?: [];
 }
-
-const ApprovalStatus = ({ epcId }: Props) => {
+const ApprovalStatus = ({ epcData }: Props) => {
 	const { data, loading } = useEPC();
 	if (loading) return <p>Loading...</p>;
-	if (!epcId) return <p>No EPC selected</p>;
-	const epc = data.find(
-		(item) => String(item.proposal_number) === String(epcId),
-	);
+	if (!epcData) return <p>No EPC selected</p>;
+	const epc = data.find((item) => String(item.id) === String(epcData));
 	if (!epc) return <p>EPC not found</p>;
 
 	const currentStatus = epc.status as ApprovalApiStatus;
@@ -50,9 +47,6 @@ const ApprovalStatus = ({ epcId }: Props) => {
 
 								<div className="info text-sm italic">
 									<p className=" font-semibold">{status.label}</p>
-									{/* <span className="italic text-xs font-serif font-light ">
-										{status.label}
-									</span> */}
 								</div>
 							</div>
 						);
