@@ -91,9 +91,9 @@ export interface EpfFormValues {
   externalParticipants: number;
   internalParticipants: number;
   totalParticipants: number;
-  crfTotal: string;
+  crfTotal: number;
   // Budget
-  eventBudget: number;
+  // eventBudget: number;
   annualBudget: number;
   availableBudget: number;
   allotedBudget: number;

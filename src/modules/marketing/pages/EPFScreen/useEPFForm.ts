@@ -14,8 +14,8 @@ const initialValues: EpfFormValues = {
   externalParticipants: 0,
   internalParticipants: 0,
   totalParticipants: 0,
-  crfTotal: "",
-  eventBudget: 0,
+  crfTotal: 0,
+  // eventBudget: 0,
   annualBudget: 0,
   availableBudget: 0,
   allotedBudget: 0,
@@ -31,7 +31,7 @@ const numberFields: (keyof EpfFormValues)[] = [
   "externalParticipants",
   "internalParticipants",
   "totalParticipants",
-  "eventBudget",
+  // "eventBudget",
   "annualBudget",
   "availableBudget",
   "dealerPercent",
@@ -57,6 +57,7 @@ const prepareEpfPayload = (
   values: EpfFormValues,
   status: "DRAFT" | "SUBMITTED",
   epcId: string,
+  eventCost: number,
 ) => {
   return {
     epcId,
@@ -64,7 +65,7 @@ const prepareEpfPayload = (
 
     externalParticipants: toNumberOrNull(values.externalParticipants),
     internalParticipants: toNumberOrNull(values.internalParticipants),
-    eventBudget: toNumberOrNull(values.eventBudget),
+    eventBudget: toNumberOrNull(eventCost),
     annualBudget: toNumberOrNull(values.annualBudget),
     availableBudget: toNumberOrNull(values.availableBudget),
     dealerName: values.dealerName || "",
@@ -75,9 +76,9 @@ const prepareEpfPayload = (
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getTotalCrfAmount = (crfData: any) => {
-  return crfData.lineItems.reduce((total: number, item: LineItem) => {
-    return total + Number(item.rate || 0);
+const getTotalEventLineitemAmount = (items: LineItemOption[]) => {
+  return items.reduce((total, item) => {
+    return total + Number(item.rate || 0) * Number(item.quantity || 0);
   }, 0);
 };
 
@@ -88,7 +89,6 @@ export const useEpfForm = () => {
   const [values, setValues] = useState<EpfFormValues>(initialValues);
   const [options, setOptions] = React.useState<LineItemOption[]>([]);
   const [costItems, setCostItems] = React.useState<LineItemOption[]>([]);
-  const [crfTotal, setCrfTotal] = React.useState("");
 
   const [errors, setErrors] = useState<
     Partial<Record<keyof EpfFormValues, string>>
@@ -103,6 +103,12 @@ export const useEpfForm = () => {
     rate: 0,
     quantity: 0,
   });
+
+  const eventCost = React.useMemo(() => {
+    console.log("called");
+    const total = getTotalEventLineitemAmount(costItems);
+    return total + Number(values.crfTotal || 0);
+  }, [costItems, values.crfTotal]);
 
   const stored = localStorage.getItem("epcInfo");
   let epcId: string | null = null;
@@ -123,16 +129,17 @@ export const useEpfForm = () => {
         ]);
 
         const budgetInformation = budgetInfo.data.d.results[0];
+        const crfData = crfRes?.data;
+        const totalCrfAmount = getTotalEventLineitemAmount(
+          crfData?.lineItems || [],
+        );
         setValues((prev) => ({
           ...prev,
+          crfTotal: totalCrfAmount,
           availableBudget: Number(budgetInformation.Available),
           annualBudget: Number(budgetInformation.Budget),
           allotedBudget: Number(budgetInformation.Allocated),
         }));
-
-        const crfData = crfRes?.data;
-        const totalCrfAmount = getTotalCrfAmount(crfData);
-        setCrfTotal(totalCrfAmount);
 
         const data = productsRes.data.data;
         setOptions(
@@ -157,7 +164,6 @@ export const useEpfForm = () => {
   }, []);
 
   const handleChange = (name: keyof EpfFormValues, value: string) => {
-    console.log({ name, value });
     setValues((prev) => {
       const parsedValue = parseValue(name, value);
       const updated = {
@@ -173,7 +179,7 @@ export const useEpfForm = () => {
       updated.totalParticipants = Number(external + internal);
 
       // ✅ Budget calculations
-      const budget = Number(updated.eventBudget) || 0;
+      const budget = Number(eventCost) || 0;
       const dealerPercent = Number(updated.dealerPercent) || 0;
       const tataPercent = Number(updated.tataHitachiPercent) || 0;
 
@@ -250,7 +256,7 @@ export const useEpfForm = () => {
         return;
       }
 
-      const cleanedData = prepareEpfPayload(values, status, epcId);
+      const cleanedData = prepareEpfPayload(values, status, epcId, eventCost);
 
       const payload = buildLineItemPayload(costItems, cleanedData);
 
@@ -275,12 +281,12 @@ export const useEpfForm = () => {
 
   return {
     values,
+    eventCost,
     draft,
     errors,
     loading,
     options,
     costItems,
-    crfTotal,
     setCostItems,
     setOptions,
     handleChange,

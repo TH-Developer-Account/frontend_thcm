@@ -40,7 +40,7 @@ export default function LineItemTable({
       category,
     };
 
-    onChange((prev) => [...prev, newItem]); // ✅ FIXED
+    onChange((prev) => [...prev, newItem]);
 
     setDraft({
       value: "",
