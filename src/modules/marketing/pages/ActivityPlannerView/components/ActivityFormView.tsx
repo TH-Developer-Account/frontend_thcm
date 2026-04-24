@@ -10,8 +10,6 @@ import DateRange from "./DateRange";
 import Section from "./Section";
 import LineTableView from "./LineTableView";
 import Loader from "../../../../../components/ui/Loader";
-import ApprovalTable from "../../../../../components/ui/ApprovalTable";
-import { ApproversData } from "../../../constant";
 
 interface Props {
 	epcId?: string;
@@ -35,17 +33,32 @@ const mapLineItems = (items: any[] = []) => {
 		return {
 			id: item.id,
 			sno: index + 1,
-			particulars: item.particulars || item.item_name || item.name || "--",
-			description: item.description || "--",
+			particulars:
+				item.particulars ||
+				item.item_name ||
+				item.name ||
+				item.product?.name || // ✅ FIX HERE
+				"--",
+			description:
+				item.description ||
+				item.product?.description || // ✅ FIX HERE
+				"--",
 			rate,
 			qty,
 			total: Number(item.total || rate * qty || 0),
 		};
 	});
 };
+
 const ActivityFormView = ({ epcId }: Props) => {
 	const { data, loading } = useEPC();
 	const [epcData, setEPCData] = React.useState<any>(null);
+
+	const budget = JSON.parse(localStorage.getItem("budgetInfo") || "{}");
+
+	const annualBudget = budget.annualBudget || 0;
+	const availableBudget = budget.availableBudget || 0;
+	const allotedBudget = budget.allotedBudget || 0;
 
 	React.useEffect(() => {
 		if (!epcId) return;
@@ -212,29 +225,30 @@ const ActivityFormView = ({ epcId }: Props) => {
 						</div>
 					</div>
 
-					{viewData?.event_cost_overheads ? (
-						<div className="tables  mb-4">
-							{viewData?.event_cost_overheads ? (
-								<LineTableView
-									title="Event Cost Overheads"
-									data={mapLineItems(viewData?.event_cost_overheads)}
-								/>
-							) : null}
+					{viewData?.epf?.lineItems?.length > 0 && (
+						<LineTableView
+							title="EPF Line Items"
+							data={mapLineItems(viewData?.epf?.lineItems)}
+						/>
+					)}
 
-							{viewData?.collateral_requisition ? (
-								<LineTableView
-									title="Collateral Requisition"
-									data={mapLineItems(viewData?.collateral_requisition)}
-								/>
-							) : null}
-						</div>
-					) : null}
+					{viewData?.crf?.lineItems?.length > 0 && (
+						<LineTableView
+							title="Collateral Requisition"
+							data={mapLineItems(viewData?.crf?.lineItems)}
+						/>
+					)}
 
-					<Participants internal={"10"} external={"20"} total={"30"} />
-					<BudgetInfo />
+					<Participants
+						internal={viewData?.epf?.internalParticipants}
+						external={viewData?.epf?.externalParticipants}
+					/>
+					<BudgetInfo
+						annualBudget={annualBudget}
+						availableBudget={availableBudget}
+						// eventBudget={viewData?.event}
+					/>
 					<BudgetShare />
-
-					<ApprovalTable data={ApproversData} />
 				</div>
 			</div>
 		</div>

@@ -4,10 +4,10 @@ import Section from "./Section";
 type ParticipantsProps = {
 	internal?: string;
 	external?: string;
-	total?: number | string;
 };
 
-const Participants = ({ internal, external, total }: ParticipantsProps) => {
+const Participants = ({ internal, external }: ParticipantsProps) => {
+	const total = (Number(internal) || 0) + (Number(external) || 0);
 	return (
 		<React.Fragment>
 			<Section title="Participants">

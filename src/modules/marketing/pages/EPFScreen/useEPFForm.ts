@@ -133,6 +133,14 @@ export const useEpfForm = () => {
 				const totalCrfAmount = getTotalEventLineitemAmount(
 					crfData?.lineItems || [],
 				);
+				localStorage.setItem(
+					"budgetInfo",
+					JSON.stringify({
+						annualBudget: Number(budgetInformation.Budget),
+						availableBudget: Number(budgetInformation.Available),
+						allotedBudget: Number(budgetInformation.Allocated),
+					}),
+				);
 				setValues((prev) => ({
 					...prev,
 					crfTotal: totalCrfAmount,
