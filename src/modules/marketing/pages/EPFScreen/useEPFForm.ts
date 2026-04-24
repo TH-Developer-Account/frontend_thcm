@@ -257,6 +257,16 @@ export const useEpfForm = () => {
 
       console.log("FINAL PAYLOAD:", payload);
 
+      const {
+        data: { message },
+      } = await ServerAxios.post("/epf", payload);
+
+      showToast({
+        type: "success",
+        title: "Success",
+        description: message || "Created EPF Successfully",
+      });
+
       // ✅ 2. Assign workflow ONLY if submitted
       await assignWorkflow();
 
