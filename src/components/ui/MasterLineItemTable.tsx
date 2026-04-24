@@ -5,9 +5,10 @@ import FormInput from "../FormElements/FormInput";
 
 export interface MasterItem {
 	id?: string;
-	code?: string;
 	label: string;
+	code?: string;
 	description?: string;
+	budgetAmount?: number;
 }
 
 interface MasterLineItemTableProps {
@@ -41,7 +42,7 @@ export function MasterLineItemTable({
 	const handleDelete = (id: any) => {
 		onChange(items.filter((item) => item.id !== id));
 	};
-
+	console.log("Datttttaaa", items);
 	return (
 		<div className="flex flex-col h-full overflow-hidden bg-white border border-gray-200 rounded-lg">
 			{/* Header */}
@@ -86,11 +87,11 @@ export function MasterLineItemTable({
 									</td>
 
 									<td className="px-4 py-3 text-sm font-medium text-gray-700">
-										{item.label}
+										{item.description}
 									</td>
 
 									<td className="px-4 py-3 text-sm font-medium text-gray-700">
-										{item.code ?? "EXM"}
+										{item.label ?? "EXM"}
 									</td>
 
 									{!isViewer && (

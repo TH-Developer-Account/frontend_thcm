@@ -1,160 +1,175 @@
 import { useState } from "react";
 import { validateEpcForm } from "./validation";
 import { useToast } from "../../../../context/Auth/AuthContext";
-import type { EpcFormValues, EpcFormProps } from "../../types";
+import type { EpcFormValues, EpcFormProps, Option } from "../../types";
 import { ServerAxios } from "../../../../services/ServerAxios";
+import { useMasterData } from "../../../../hooks/useMasterData";
 
 const initialValues: EpcFormValues = {
-  epfNo: "",
-  poDocumentRefNo: "",
-  department: "",
-  region: "",
-  branch: "",
-  budget_master_id: "",
-  budgetDescription: "",
-  vertical: "",
-  event_scale: "",
-  event_name: "",
-  event_description: "",
-  event_from_date: "",
-  event_to_date: "",
-  location: "",
-  event_objective: "",
-  status: "DRAFT",
+	epfNo: "",
+	poDocumentRefNo: "",
+	proposal_number: "",
+	department: "",
+	region: "",
+	branch: "",
+	budget_master_id: "",
+	budgetDescription: "",
+	vertical: "",
+	event_scale: "",
+	event_name: "",
+	event_description: "",
+	event_from_date: "",
+	event_to_date: "",
+	location: "",
+	event_objective: "",
+	status: "DRAFT",
 };
 
 export const useEpcForm = ({ epcId }: EpcFormProps) => {
-  const { showToast } = useToast();
-  const [values, setValues] = useState<EpcFormValues>(initialValues);
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof EpcFormValues, string>>
-  >({});
-  const [loading, setLoading] = useState(false);
+	const { showToast } = useToast();
 
-  const isEditMode = Boolean(epcId);
+	// ✅ FIX: your hook returns data, so alias it as masters
+	const { data: masters } = useMasterData();
 
-  // Field Change
+	const [values, setValues] = useState<EpcFormValues>(initialValues);
+	const [errors, setErrors] = useState<
+		Partial<Record<keyof EpcFormValues, string>>
+	>({});
+	const [loading, setLoading] = useState(false);
 
-  const handleChange = (name: keyof EpcFormValues, value: string) => {
-    setValues((prev) => {
-      const updated = {
-        ...prev,
-        [name]: value,
-      };
+	const isEditMode = Boolean(epcId);
 
-      console.log({ value });
+	const getOptionCode = (options: Option[] = [], value?: string) => {
+		return options.find((opt) => opt.value === value)?.code || "";
+	};
 
-      // reset branch when zone changes
-      if (name === "region") {
-        updated.branch = "";
-      }
+	const handleChange = (name: keyof EpcFormValues, value: string) => {
+		setValues((prev) => {
+			const updated = {
+				...prev,
+				[name]: value,
+			};
 
-      // generate EPF when dept/branch/zone available
-      if (updated.department && updated.branch && updated.region) {
-        updated.epfNo = generateEpfNo(
-          updated.department,
-          updated.branch,
-          updated.region,
-        );
-      }
+			if (name === "region") {
+				updated.branch = "";
+			}
 
-      if (name === "budget_master_id") {
-        updated.budgetDescription = "";
-      }
+			const departmentCode = getOptionCode(
+				masters?.departments,
+				updated.department,
+			);
 
-      return updated;
-    });
+			const branchCode = getOptionCode(masters?.branches, updated.branch);
 
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: undefined,
-      }));
-    }
-  };
+			const regionCode = getOptionCode(masters?.regions, updated.region);
 
-  // Save
+			const verticalCode = getOptionCode(masters?.vertical, updated.vertical);
 
-  function generate4DigitNumber() {
-    return Math.floor(1000 + Math.random() * 9000);
-  }
+			if (departmentCode && branchCode && regionCode && verticalCode) {
+				updated.epfNo = generateEpfNo(
+					departmentCode,
+					branchCode,
+					regionCode,
+					verticalCode,
+				);
+			} else {
+				updated.epfNo = "";
+			}
 
-  const handleSave = async (status: "SUBMITTED") => {
-    const formData = {
-      ...values,
-      proposal_number: `EPF-${generate4DigitNumber()}`,
-    };
-    console.log({ formData, status });
+			if (name === "budget_master_id") {
+				updated.budgetDescription = "";
+			}
 
-    if (status === "SUBMITTED") {
-      const validationErrors = validateEpcForm(formData);
+			return updated;
+		});
 
-      if (Object.keys(validationErrors).length > 0) {
-        setErrors(validationErrors);
-        return;
-      }
-    }
+		if (errors[name]) {
+			setErrors((prev) => ({
+				...prev,
+				[name]: undefined,
+			}));
+		}
+	};
 
-    try {
-      setLoading(true);
-      const {
-        data: { message },
-      } = await ServerAxios.post("/epc", formData);
+	const handleSave = async (status: "SUBMITTED") => {
+		const formData = {
+			...values,
+			proposal_number: values.epfNo,
+		};
+		if (!values.epfNo) {
+			showToast({
+				type: "error",
+				title: "Error",
+				description: "EPF number not generated yet",
+			});
+			return;
+		}
+		if (status === "SUBMITTED") {
+			const validationErrors = validateEpcForm(formData);
 
-      showToast({
-        type: "success",
-        title: "Success",
-        description: message,
-      });
+			if (Object.keys(validationErrors).length > 0) {
+				setErrors(validationErrors);
+				return;
+			}
+		}
 
-      // ✅ RESET FORM
-      setValues(initialValues);
-      setErrors({});
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        console.error(err.message); // Safely access .message
-      } else {
-        console.error("An unexpected error occurred", err);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+		try {
+			setLoading(true);
 
-  const handleReset = () => {
-    setValues(initialValues);
-    setErrors({});
-  };
+			const {
+				data: { message },
+			} = await ServerAxios.post("/epc", formData);
 
-  return {
-    values,
-    errors,
-    loading,
-    isEditMode,
-    handleChange,
-    handleSave,
-    handleReset,
-  };
+			showToast({
+				type: "success",
+				title: "Success",
+				description: message || "Created EPC Successfully",
+			});
+
+			setValues(initialValues);
+			setErrors({});
+		} catch (err: unknown) {
+			if (err instanceof Error) {
+				console.error(err.message);
+			} else {
+				console.error("An unexpected error occurred", err);
+			}
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	const handleReset = () => {
+		setValues(initialValues);
+		setErrors({});
+	};
+
+	return {
+		values,
+		errors,
+		loading,
+		isEditMode,
+		handleChange,
+		handleSave,
+		handleReset,
+	};
 };
 
-const generateEpfNo = (dept: string, branch: string, zone: string) => {
-  if (!dept || !branch || !zone) return "";
+const generateEpfNo = (
+	deptCode: string,
+	branchCode: string,
+	zoneCode: string,
+	verticalCode: string,
+) => {
+	const now = new Date();
 
-  const deptCode = dept.slice(0, 3).toUpperCase();
-  const branchCode = branch.slice(0, 3).toUpperCase();
-  const zoneCode = zone.slice(0, 3).toUpperCase();
+	const yyyy = now.getFullYear();
+	const mm = String(now.getMonth() + 1).padStart(2, "0");
+	const dd = String(now.getDate()).padStart(2, "0");
 
-  const now = new Date();
+	const time = now
+		.toLocaleTimeString("en-GB", { hour12: false })
+		.replace(/:/g, "");
 
-  const yyyy = now.getFullYear();
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const dd = String(now.getDate()).padStart(2, "0");
-  const time = new Date()
-    .toLocaleTimeString("en-GB", { hour12: false })
-    .replace(/:/g, "");
-  console.log(time); // hh:mm:ss
-  // const timestamp = Date.now();
-
-  return `${deptCode}/${branchCode}/${zoneCode}/${yyyy}${mm}${dd}${time}`;
-  //department/zone/branch/vertical/datetimestamp
+	return `${deptCode}/${zoneCode}/${branchCode}/${verticalCode}/${yyyy}${mm}${dd}${time}`;
 };

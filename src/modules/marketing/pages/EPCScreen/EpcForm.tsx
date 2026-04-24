@@ -9,7 +9,7 @@ import { useEpcForm } from "./useEPCForm";
 import type { EpcFormProps, Option } from "../../types";
 import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
 import { PageHeader } from "../../../../components/ui/PageHeader";
-import { ArrowBigLeft, ArrowLeft, GitBranch } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import DatePickerInput from "../../../../components/common/DatePickerInput";
 import { toDateRange } from "./api";
 // import UserAsyncSelect from "../../../../components/FormElements/AsyncSelect";
@@ -26,6 +26,7 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 	const { values, errors, isEditMode, handleChange, handleSave, handleReset } =
 		useEpcForm({
 			epcId,
+			// masters: data,
 		});
 
 	const { data } = useMasterData();
@@ -81,7 +82,7 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 							<FormInput
 								name="epfNo"
 								label="EPF No"
-								value={values.epfNo}
+								value={values.proposal_number}
 								disabled
 								className="w-full p-2 text-black"
 								helperText="EPF No. auto generated"

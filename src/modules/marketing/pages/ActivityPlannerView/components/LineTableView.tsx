@@ -9,18 +9,18 @@ type TableRow = {
 	qty: number;
 	total: number;
 };
+
 type LineTableViewProps = {
 	title?: string;
-	data: TableRow[];
+	data?: TableRow[];
 };
 
-const LineTableView = ({ title, data }: LineTableViewProps) => {
+const LineTableView = ({ title, data = [] }: LineTableViewProps) => {
 	return (
 		<div className="row-6 text-center mb-6 ">
 			<p className="font-semibold text-md">{title}</p>
 
 			<div className="mt-4 w-full text-left px-3 py-1.5 ">
-				{/* Header */}
 				<div className="grid grid-cols-12 text-sm font-medium items-center text-gray-600 mb-3 bg-zinc-100 py-1.5 px-2 rounded-sm">
 					<div className="col-span-1">SNo</div>
 					<div className="col-span-2">Particulars</div>
@@ -30,20 +30,29 @@ const LineTableView = ({ title, data }: LineTableViewProps) => {
 					<div className="col-span-2 text-right">Total</div>
 				</div>
 
-				{/* Rows */}
-				{data.map((row, index) => (
-					<div
-						key={row.id ?? index}
-						className="grid grid-cols-12 gap-3 mb-2 py-1.5 px-2 "
-					>
-						<div className="col-span-1 text-gray-500">{row.sno}.</div>
-						<div className="col-span-2">{row.particulars}</div>
-						<div className="col-span-5">{row.description}</div>
-						<div className="col-span-1 text-right">{row.rate.toFixed(2)}</div>
-						<div className="col-span-1 text-right">{row.qty}</div>
-						<div className="col-span-2 text-right">{row.total.toFixed(2)}</div>
+				{data.length === 0 ? (
+					<div className="text-center text-gray-400 text-sm py-3">
+						No data available
 					</div>
-				))}
+				) : (
+					data.map((row, index) => (
+						<div
+							key={row.id ?? index}
+							className="grid grid-cols-12 gap-3 mb-2 py-1.5 px-2 "
+						>
+							<div className="col-span-1 text-gray-500">{row.sno}.</div>
+							<div className="col-span-2">{row.particulars}</div>
+							<div className="col-span-5">{row.description}</div>
+							<div className="col-span-1 text-right">
+								{Number(row.rate || 0).toFixed(2)}
+							</div>
+							<div className="col-span-1 text-right">{row.qty}</div>
+							<div className="col-span-2 text-right">
+								{Number(row.total || 0).toFixed(2)}
+							</div>
+						</div>
+					))
+				)}
 			</div>
 		</div>
 	);

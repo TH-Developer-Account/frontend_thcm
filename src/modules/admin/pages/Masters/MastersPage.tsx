@@ -49,6 +49,9 @@ const MastersPage = () => {
 			id: b.value ?? b.id ?? crypto.randomUUID(),
 			label: b.label ?? b.name ?? "",
 			code: b.code ?? b.code ?? "",
+			// ✅ extra fields (only used when present)
+			description: b.description ?? "",
+			budgetAmount: b.budgetAmount ? Number(b.budgetAmount) : undefined,
 		}));
 		return localData[masterName] ?? apiItems;
 	};
@@ -82,7 +85,6 @@ const MastersPage = () => {
 	const counts = Object.fromEntries(
 		Object.keys(MASTER_KEYS).map((k) => [k, getItems(k).length]),
 	);
-	console.log("Items", items);
 	return (
 		<div
 			ref={containerRef}

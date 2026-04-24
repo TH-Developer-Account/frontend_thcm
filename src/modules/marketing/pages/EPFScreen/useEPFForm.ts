@@ -183,8 +183,15 @@ export const useEpfForm = () => {
 
       // ✅ Budget calculations
       const budget = Number(eventCost) || 0;
-      const dealerPercent = Number(updated.dealerPercent) || 0;
-      const tataPercent = Number(updated.tataHitachiPercent) || 0;
+
+      const dealerPercent = Math.min(
+        100,
+        Math.max(0, Number(updated.dealerPercent) || 0),
+      );
+
+      // auto-calculate tata percent
+      const tataPercent = 100 - dealerPercent;
+      updated.tataHitachiPercent = tataPercent;
 
       if (budget > 0) {
         updated.dealerShare = Number(
@@ -239,7 +246,6 @@ export const useEpfForm = () => {
 
   const handleSubmit = async (status: "DRAFT" | "SUBMITTED") => {
     try {
-      setLoading(true);
       if (!epcId) {
         console.error("EPC ID not found in localStorage");
         return;
@@ -250,16 +256,6 @@ export const useEpfForm = () => {
       const payload = buildLineItemPayload(costItems, cleanedData);
 
       console.log("FINAL PAYLOAD:", payload);
-
-      const {
-        data: { message },
-      } = await ServerAxios.post("/epf", payload);
-
-      showToast({
-        type: "success",
-        title: "Success",
-        description: message,
-      });
 
       // ✅ 2. Assign workflow ONLY if submitted
       await assignWorkflow();
