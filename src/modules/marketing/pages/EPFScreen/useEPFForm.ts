@@ -122,8 +122,6 @@ export const useEpfForm = () => {
           ServerAxios.get(`/master-data/budget`),
         ]);
 
-        console.log({ budgetInfo });
-
         const budgetInformation = budgetInfo.data.d.results[0];
         setValues((prev) => ({
           ...prev,
@@ -136,11 +134,10 @@ export const useEpfForm = () => {
         const totalCrfAmount = getTotalCrfAmount(crfData);
         setCrfTotal(totalCrfAmount);
 
-        console.log({ budgetInformation });
-
         const data = productsRes.data.data;
         setOptions(
           data.map((item: Product) => ({
+            partNumber: item.partNumber,
             value: item.id,
             label: item.name,
             particular: item.name,
