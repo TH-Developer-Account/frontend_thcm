@@ -142,6 +142,7 @@ export type LineItemOption = {
   rate: number;
   quantity: number;
   category?: string;
+  partNumber?: string;
 };
 
 export type GroupedOption = {
