@@ -4,9 +4,11 @@ import Button from "../../../../components/common/Button";
 import FormInput from "../../../../components/FormElements/FormInput";
 import type { EpfFormValues } from "../../types";
 import FormHeader from "./components/FormHeader";
-import { Card } from "../../../../components/common/Card";
-import { Badge } from "../../../../components/common/Badge";
+// import { Card } from "../../../../components/common/Card";
+// import { Badge } from "../../../../components/common/Badge";
 import { useState } from "react";
+import ApprovalTable from "../../../../components/ui/ApprovalTable";
+import { useAuth } from "../../../../context/Auth/useAuth";
 // import { Accordion } from "../../../../components/common/Accordion";
 
 interface EpfFormProps {
@@ -28,110 +30,39 @@ const EpfFormInfo = ({
 	isEditMode,
 }: EpfFormProps) => {
 	const { crfTotal } = useEpfForm();
+	const authData = useAuth();
 	const isViewer = userRole === "VIEWER";
 	const [isapproval, setIsApproval] = useState(false);
-
+	const [approvalData, setApprovalData] = useState({
+		appId: "",
+		workspaceId: authData.workspaceId,
+		epcId: "",
+		budget: "",
+	});
+	//const { eventProposalId, workspaceId, appId, budget } = req.body;
 	const handleIsApproval = () => {
 		setIsApproval((prevState) => !prevState);
 	};
-	// const items = [
-	// 	{
-	// 		id: "assign-main-contact",
-	// 		title: "Approval Workflow",
-	// 		content: (
-	// <div className="grid md:grid-cols-4 grid-cols-1 gap-4 px-3 mt-4">
-	// 	{/* CARD 1 */}
-	// 	<Card className="p-4 rounded-xl border border-zinc-200 bg-white shadow-sm hover:shadow-md transition">
-	// 		<div className="flex flex-col gap-3">
-	// 			<p className="text-xs font-medium text-zinc-500 uppercase tracking-wide text-center">
-	// 				Proposed By
-	// 			</p>
-
-	// 			<div>
-	// 				<Badge status="Submitted">.</Badge>
-	// 			</div>
-	// 			<div className="flex items-center justify-between">
-	// 				<span className="text-sm font-semibold text-zinc-900">
-	// 					John Doe
-	// 				</span>
-	// 			</div>
-	// 			<div className="flex items-center justify-between">
-	// 				<span className="text-sm fontnormal text-zinc-900">
-	// 					Sales Officer
-	// 				</span>
-	// 			</div>
-	// 		</div>
-	// 	</Card>
-
-	// 	{/* CARD 2 */}
-	// 	<Card className="p-4 rounded-xl border border-zinc-200 bg-white shadow-sm hover:shadow-md transition">
-	// 		<div className="flex flex-col gap-3">
-	// 			<p className="text-xs font-medium text-zinc-500 uppercase tracking-wide text-center">
-	// 				Checked By
-	// 			</p>
-	// 			<div>
-	// 				<Badge status="Approved">.</Badge>
-	// 			</div>
-	// 			<div className="flex items-center justify-between">
-	// 				<span className="text-sm font-semibold text-zinc-900">
-	// 					John Doe
-	// 				</span>
-	// 			</div>
-	// 			<div className="flex items-center justify-between">
-	// 				<span className="text-sm fontnormal text-zinc-900">
-	// 					Branch Head
-	// 				</span>
-	// 			</div>
-	// 		</div>
-	// 	</Card>
-
-	// 	{/* CARD 3 */}
-	// 	<Card className="p-4 rounded-xl border border-zinc-200 bg-white shadow-sm hover:shadow-md transition">
-	// 		<div className="flex flex-col gap-3">
-	// 			<p className="text-xs font-medium text-zinc-500 uppercase tracking-wide  text-center">
-	// 				Approved By
-	// 			</p>
-	// 			<div>
-	// 				<Badge status="Pending">.</Badge>
-	// 			</div>
-	// 			<div className="flex items-center justify-between">
-	// 				<span className="text-sm font-semibold text-zinc-900">
-	// 					John Doe
-	// 				</span>
-	// 			</div>
-	// 			<div className="flex items-center justify-between">
-	// 				<span className="text-sm fontnormal text-zinc-900">
-	// 					Marketing Head
-	// 				</span>
-	// 			</div>
-	// 		</div>
-	// 	</Card>
-
-	// 	{/* CARD 4 */}
-	// 	<Card className="p-4 rounded-xl border border-zinc-200 bg-white shadow-sm hover:shadow-md transition">
-	// 		<div className="flex flex-col gap-3">
-	// 			<p className="text-xs font-medium text-zinc-500 uppercase tracking-wide  text-center">
-	// 				Report Validated By
-	// 			</p>
-	// 			<div>
-	// 				<Badge status="Cancelled">.</Badge>
-	// 			</div>
-	// 			<div className="flex items-center justify-between">
-	// 				<span className="text-sm font-semibold text-zinc-900">
-	// 					John Doe
-	// 				</span>
-	// 			</div>
-	// 			<div className="flex items-center justify-between">
-	// 				<span className="text-sm fontnormal text-zinc-900">
-	// 					Managing Director
-	// 				</span>
-	// 			</div>
-	// 		</div>
-	// 	</Card>
-	// </div>
-	// 		),
-	// 	},
-	// ];
+	const data = [
+		{
+			id: 1,
+			name: "Shashank Shekhar",
+			email: "shashank@tatahitachi.co.in",
+			designation: "Head Finance",
+			type: "Proposer",
+			status: "Submitted",
+			timestamp: "3/28/2020 10:44 AM",
+		},
+		{
+			id: 2,
+			name: "Mc. Srinivas",
+			email: "srinivas@tatahitachi.co.in",
+			designation: "Planning",
+			type: "Checker",
+			status: "Approved",
+			timestamp: "3/29/2020 01:32 PM",
+		},
+	];
 	return (
 		<div>
 			<div className="grid grid-cols-1 lg:grid-cols-[9fr_3fr] gap-4 items-start mx-auto">
@@ -281,98 +212,7 @@ const EpfFormInfo = ({
 							onClick={handleIsApproval}
 						/>
 						{/* <Accordion items={items}  /> */}
-						{isapproval ? (
-							<div className="grid md:grid-cols-4 grid-cols-1 gap-4 px-3 mt-4 text-left">
-								{/* CARD 1 */}
-								<Card className="p-4 rounded-xl border border-zinc-200 bg-white shadow-sm hover:shadow-md transition">
-									<div className="flex flex-col gap-3">
-										<p className="text-xs font-medium text-zinc-500 uppercase tracking-wide text-center">
-											Proposed By
-										</p>
-
-										<div>
-											<Badge status="Submitted">Submitted</Badge>
-										</div>
-										<div className="flex items-center justify-between">
-											<span className="text-sm font-semibold text-zinc-900">
-												John Doe
-											</span>
-										</div>
-										<div className="flex items-center justify-between">
-											<span className="text-sm fontnormal text-zinc-900">
-												Sales Officer
-											</span>
-										</div>
-									</div>
-								</Card>
-
-								{/* CARD 2 */}
-								<Card className="p-4 rounded-xl border border-zinc-200 bg-white shadow-sm hover:shadow-md transition">
-									<div className="flex flex-col gap-3">
-										<p className="text-xs font-medium text-zinc-500 uppercase tracking-wide text-center">
-											Checked By
-										</p>
-										<div>
-											<Badge status="Approved">Approved</Badge>
-										</div>
-										<div className="flex items-center justify-between">
-											<span className="text-sm font-semibold text-zinc-900">
-												John Doe
-											</span>
-										</div>
-										<div className="flex items-center justify-between">
-											<span className="text-sm fontnormal text-zinc-900">
-												Branch Head
-											</span>
-										</div>
-									</div>
-								</Card>
-
-								{/* CARD 3 */}
-								<Card className="p-4 rounded-xl border border-zinc-200 bg-white shadow-sm hover:shadow-md transition">
-									<div className="flex flex-col gap-3">
-										<p className="text-xs font-medium text-zinc-500 uppercase tracking-wide  text-center">
-											Approved By
-										</p>
-										<div>
-											<Badge status="Pending">Pending</Badge>
-										</div>
-										<div className="flex items-center justify-between">
-											<span className="text-sm font-semibold text-zinc-900">
-												John Doe
-											</span>
-										</div>
-										<div className="flex items-center justify-between">
-											<span className="text-sm fontnormal text-zinc-900">
-												Marketing Head
-											</span>
-										</div>
-									</div>
-								</Card>
-
-								{/* CARD 4 */}
-								<Card className="p-4 rounded-xl border border-zinc-200 bg-white shadow-sm hover:shadow-md transition">
-									<div className="flex flex-col gap-3">
-										<p className="text-xs font-medium text-zinc-500 uppercase tracking-wide  text-center">
-											Report Validated By
-										</p>
-										<div>
-											<Badge status="Cancelled">Cancelled</Badge>
-										</div>
-										<div className="flex items-center justify-between">
-											<span className="text-sm font-semibold text-zinc-900">
-												John Doe
-											</span>
-										</div>
-										<div className="flex items-center justify-between">
-											<span className="text-sm fontnormal text-zinc-900">
-												Managing Director
-											</span>
-										</div>
-									</div>
-								</Card>
-							</div>
-						) : null}
+						{isapproval ? <ApprovalTable data={data} /> : null}
 						{/* Buttons */}
 						{!isViewer && (
 							<div className="flex items-center justify-between gap-2 px-2 mt-6 bg-white">

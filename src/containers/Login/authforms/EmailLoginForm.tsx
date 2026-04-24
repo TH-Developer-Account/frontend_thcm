@@ -139,10 +139,7 @@ const EmailLoginForm = () => {
 			/>
 
 			<div className="flex justify-end">
-				<a
-					href="/forgot-password"
-					className="text-sm text-black hover:underline "
-				>
+				<a href="/forgot-password" className="text-sm hover:underline ">
 					Forgot password?
 				</a>
 			</div>
