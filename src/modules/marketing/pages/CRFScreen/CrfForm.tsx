@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { buildLineItemPayload } from "../../constant";
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { ServerAxios } from "../../../../services/ServerAxios";
@@ -69,16 +69,17 @@ export function CrfItemsSection({
 export default function CrfForm() {
 	const { showToast } = useToast();
 	const navigate = useNavigate();
-	const { crfId } = useParams<{ crfId?: string }>(); // present when editing
-	const isEditMode = Boolean(crfId);
 
 	const [costItems, setCostItems] = React.useState<LineItemOption[]>([]);
 	const [options, setOptions] = React.useState<GroupedOption[]>([]);
-	const [loading, setLoading] = React.useState(isEditMode);
+	const [loading, setLoading] = React.useState(false);
 
 	const stored = localStorage.getItem("epcInfo");
 	const epcId: string | null = stored
 		? (JSON.parse(stored)?.epcId ?? null)
+		: null;
+	const crfId: string | null = stored
+		? (JSON.parse(stored)?.crfId ?? null)
 		: null;
 
 	React.useEffect(() => {
@@ -86,7 +87,7 @@ export default function CrfForm() {
 			try {
 				const [productsRes, crfRes] = await Promise.all([
 					ServerAxios.get(`/master-data/products?productType=CRF`),
-					isEditMode ? ServerAxios.get(`/crf/${crfId}`) : Promise.resolve(null),
+					crfId ? ServerAxios.get(`/crf/${crfId}`) : Promise.resolve(null),
 				]);
 
 				// Build grouped options from products
@@ -109,11 +110,12 @@ export default function CrfForm() {
 				);
 				setOptions(grouped);
 
-				if (isEditMode && crfRes) {
+				console.log({ crfRes });
+
+				if (crfId && crfRes) {
 					const allProducts = grouped.flatMap((g) => g.options);
-					const lineItems: LineItemOption[] = (
-						crfRes.data.data.lineItems ?? []
-					).map(
+					console.log({ allProducts });
+					const lineItems: LineItemOption[] = (crfRes.data.lineItems ?? []).map(
 						(item: {
 							productId: string;
 							productName: string;
@@ -124,18 +126,23 @@ export default function CrfForm() {
 							category?: string;
 						}) => {
 							const matched = allProducts.find(
-								(p) => p.value === item.productId,
+								(p) => p.particular === item.productId,
 							);
-							return {
-								value: item.productId,
-								label: item.productName,
-								particular: item.productId,
-								description: item.description ?? "",
-								rate: item.rate,
-								quantity: item.quantity,
-								category: item.category ?? matched?.category ?? "",
-								partNumber: item.partNumber,
-							};
+
+							console.log({ matched, item });
+							if (matched) {
+								return {
+									value: matched.value,
+									label: matched.label,
+									particular: matched.particular,
+									description: matched.description ?? "",
+									rate: matched.rate,
+									quantity: matched.quantity,
+									partNumber: matched.partNumber,
+									category: item?.product.category,
+								};
+							}
+							return null;
 						},
 					);
 					setCostItems(lineItems);
@@ -153,7 +160,7 @@ export default function CrfForm() {
 		};
 
 		fetchAll();
-	}, [crfId, isEditMode]);
+	}, [crfId]);
 
 	const handleSubmit = async () => {
 		try {
@@ -163,7 +170,7 @@ export default function CrfForm() {
 			}
 			const payload = buildLineItemPayload(costItems, { epcId });
 
-			if (isEditMode) {
+			if (crfId) {
 				const {
 					data: { message },
 				} = await ServerAxios.put(`/crf/${crfId}`, payload);
@@ -194,10 +201,11 @@ export default function CrfForm() {
 			</div>
 		);
 	}
-
+	console.log({ costItems });
 	return (
 		<React.Fragment>
 			<PageRowSectionLayout
+				className=" scrollbar-sleek overflow-auto"
 				stickyHeader
 				header_children={
 					<div className="flex flex-col sm:flex-row sm:justify-between items-end sm:items-center">
@@ -222,7 +230,7 @@ export default function CrfForm() {
 								<Button
 									status="brand"
 									onClick={handleSubmit}
-									text={isEditMode ? "Update" : "Save"}
+									text={crfId ? "Update" : "Save"}
 									className="ml-2"
 								/>
 							</div>

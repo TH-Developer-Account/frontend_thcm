@@ -4,16 +4,19 @@ import { ArrowLeft } from "lucide-react";
 import ApprovalStatus from "../components/ApprovalStatus";
 import ActivityFormView from "../components/ActivityFormView";
 import { EPCProvider } from "../../../context/EPCprovider";
-import { useNavigate } from "react-router-dom";
 import { ServerAxios } from "../../../../../services/ServerAxios";
+import { PageHeader } from "../../../../../components/ui/PageHeader";
+import PageStickyLayout from "../../../../../layout/PageStickyLayout";
+import type { EpcDetailResponse } from "../types/ActivityView.types";
+import { statusMap } from "../../../../../utils/types";
+import { Badge } from "../../../../../components/common/Badge";
 
 const ActivityPlannerPage = () => {
 	const { id } = useParams();
-
-	const navigate = useNavigate();
-	const [epcData, setEPCData] = React.useState();
+	const [epcData, setEPCData] = React.useState<EpcDetailResponse>();
 
 	React.useEffect(() => {
+		if (!id) return;
 		const load = async () => {
 			try {
 				const {
@@ -26,27 +29,64 @@ const ActivityPlannerPage = () => {
 		};
 
 		load();
-	}, []);
+	}, [id]);
+	// ✅ correct title
+	const title = epcData?.event_name?.title || "--";
+
+	// ✅ proposal number
+	const proposalNo = epcData?.proposal_number || "--";
+
+	// ✅ workflow reference
+	const workflow = epcData?.activeWorkflow;
+
+	// get current stage
+	// const currentStage = epcData?.stages?.find(
+	// 	(s) => s.stageOrder === epcData?.currentStage,
+	// );
+
+	// get approvers
+	// const approvers =
+	// 	currentStage?.approvals
+	// 		?.map((a) =>
+	// 			`${a.approver?.first_name || ""} ${a.approver?.last_name || ""}`.trim(),
+	// 		)
+	// 		.filter(Boolean)
+	// 		.join(", ") || "--";
+
+	// optional: status map (recommended)
+	const badgeStatus = epcData?.status ? statusMap[epcData.status] : undefined;
+	// };
 	return (
-		<div>
-			<div className="flex items-center gap-4  mt-2">
-				<button
-					onClick={() => navigate(-1)}
-					className="w-8 h-8 rounded-lg bg-gray-50 border border-zinc-800 flex items-center justify-center"
+		<>
+			<EPCProvider>
+				<PageStickyLayout
+					header={
+						<div className="flex flex-row gap-4 justify-between">
+							<PageHeader
+								headerText="Activity Planner View"
+								subtitleText="View your activity details"
+								Icon={ArrowLeft}
+								badgeText="EPC Listing"
+								path="/marketing/listing"
+							/>
+							<div className="flex justify-between items-center page-header-section text-right">
+								<div>
+									<h2 className="approval-details-title">{title}</h2>
+									<p className="page-subtitle">{proposalNo}</p>
+									<span className="page-subtitle">
+										Status: <Badge status={badgeStatus} />
+									</span>
+								</div>
+							</div>
+						</div>
+					}
+					sidebar={<ApprovalStatus epcData={epcData} />}
+					contentClassName="pb-6"
 				>
-					<ArrowLeft />
-				</button>
-
-				<h2 className="text-xl font-normal text-left">Form View</h2>
-			</div>
-
-			<div className="grid grid-cols-[220px_1fr] gap-4 items-start">
-				<EPCProvider>
-					<ApprovalStatus epcData={epcData} />
-					<ActivityFormView epcId={id} />
-				</EPCProvider>
-			</div>
-		</div>
+					<ActivityFormView epcId={id} epcData={epcData} />
+				</PageStickyLayout>
+			</EPCProvider>
+		</>
 	);
 };
 

@@ -1,2 +1,19 @@
 @reference "tailwindcss";
 @import "../../styles/color.css";
+
+.approval-details .epc-status-label {
+	@apply text-gray-700  text-xs italic text-[11px] tracking-[0.18em] uppercase  font-semibold;
+	word-break: break-word;
+	overflow-wrap: anywhere;
+}
+.approval-details .epc-status-approver {
+	@apply text-gray-700 font-normal italic text-[10px];
+	font-style: italic;
+}
+
+.approval-details-title {
+	@apply text-lg font-semibold tracking-tight text-zinc-900 mt-3;
+}
+.approval-details-heading {
+	@apply text-lg font-normal tracking-tight text-zinc-900;
+}

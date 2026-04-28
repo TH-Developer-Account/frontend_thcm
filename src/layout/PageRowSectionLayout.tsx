@@ -21,23 +21,29 @@ const PageRowSectionLayout = ({
 	stickyTop = "top-0",
 }: PageRowSectionLayoutProps) => {
 	return (
-		<PageSectionLayout>
-			<PageSection>
-				<div
-					className={`${className} ${headerClassName} ${
-						stickyHeader
-							? `sticky ${stickyTop} z-30 bg-white border-b border-zinc-200`
-							: ""
-					}`}
-				>
-					{header_children}
-				</div>
-			</PageSection>
+		<div className="h-full max-h-screen flex flex-col overflow-hidden gap-2">
+			{/* Fixed top section */}
+			<div
+				className={`${className} ${headerClassName} ${
+					stickyHeader
+						? `sticky ${stickyTop} z-30 bg-white border-b border-zinc-200 shrink-0`
+						: "shrink-0"
+				}`}
+			>
+				<PageSectionLayout>
+					<PageSection>{header_children}</PageSection>
+				</PageSectionLayout>
+			</div>
 
-			<PageSection>
-				<div className={`${className} ${contentClassName}`}>{children}</div>
-			</PageSection>
-		</PageSectionLayout>
+			{/* Scrollable bottom section */}
+			<div className="flex-1 min-h-0 overflow-y-auto scrollbar-sleek">
+				<PageSectionLayout>
+					<PageSection>
+						<div className={`${className} ${contentClassName}`}>{children}</div>
+					</PageSection>
+				</PageSectionLayout>
+			</div>
+		</div>
 	);
 };
 

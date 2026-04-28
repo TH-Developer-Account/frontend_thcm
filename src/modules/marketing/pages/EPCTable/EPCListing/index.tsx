@@ -12,6 +12,8 @@ export default function EPCList() {
 	return (
 		<EPCProvider>
 			<PageRowSectionLayout
+				stickyHeader
+				contentClassName="pb-6"
 				header_children={
 					<PageHeader
 						headerText="Event Planning Calendar (EPC) Listing"

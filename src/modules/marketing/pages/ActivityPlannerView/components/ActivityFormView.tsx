@@ -10,9 +10,11 @@ import DateRange from "./DateRange";
 import Section from "./Section";
 import LineTableView from "./LineTableView";
 import Loader from "../../../../../components/ui/Loader";
+import { AccordionItem } from "../../../../../components/common/AccordionItem";
 
 interface Props {
 	epcId?: string;
+	epcData?: [];
 }
 
 const formatDate = (date?: string) => {
@@ -118,36 +120,13 @@ const ActivityFormView = ({ epcId }: Props) => {
 			: viewData?.budget_master;
 
 	return (
-		<div className=" h-full min-h-screen max-w-4xl">
-			<div className="w-full h-auto border shadow-sm border-zinc-300 mt-0 bg-white rounded-smounded-lg px-6 py-4">
-				{/* Header */}
-				<div className="flex justify-between items-center border-b pb-4">
-					<div>
-						<h2 className="text-xl font-normal text-left">
-							{eventName || "--"}
-						</h2>
-
-						<p className="text-sm text-gray-500 text-left">
-							{viewData?.proposal_number || "--"} •{" "}
-							{`${epc?.first_name || ""} ${epc?.last_name || ""}`.trim() ||
-								"--"}{" "}
-							• {viewData?.location || "--"}
-						</p>
-					</div>
-
-					<div>
-						<Badge status={statusMap[viewData?.status]}>
-							{statusMap[viewData?.status] || viewData?.status}
-						</Badge>
-					</div>
-				</div>
-
-				<hr className="mb-4" />
-
+		<div className=" h-full min-h-screen max-w-5xl">
+			<div className="w-full h-auto  mt-0 rounded-smounded-lg px-6 py-4">
+				<Section title="EPC Details"></Section>
 				<div className="form text-left mb-3 text-sm ">
 					{/* Info Grid */}
 					{/* <Accordion childrenTitle="EPC Details">
-          <APCBasicInfo formData={viewData} /> */}
+          			<APCBasicInfo formData={viewData} /> */}
 					<div className="grid grid-cols-2 gap-6 mt-6 text-sm mb-6">
 						<div>
 							<span className="text-gray-500">Location</span>
@@ -227,31 +206,37 @@ const ActivityFormView = ({ epcId }: Props) => {
 						</div>
 					</div>
 
-					{viewData?.epf?.lineItems?.length > 0 && (
-						<LineTableView
-							title="EPF Line Items"
-							data={mapLineItems(viewData?.epf?.lineItems)}
-						/>
-					)}
+					<AccordionItem>
+						<AccordionItem.Item id="1" title="EPF Line Items">
+							{viewData?.epf?.lineItems?.length > 0 && (
+								<LineTableView data={mapLineItems(viewData?.epf?.lineItems)} />
+							)}
+						</AccordionItem.Item>
 
-					{viewData?.crf?.lineItems?.length > 0 && (
-						<LineTableView
-							title="Collateral Requisition"
-							data={mapLineItems(viewData?.crf?.lineItems)}
-						/>
-					)}
-
-					<Participants
-						internal={viewData?.epf?.internalParticipants}
-						external={viewData?.epf?.externalParticipants}
-					/>
-					<BudgetInfo
-						annualBudget={annualBudget}
-						availableBudget={availableBudget}
-						eventBudget={viewData?.event}
-						allotedBudget={allotedBudget}
-					/>
-					<BudgetShare />
+						<AccordionItem.Item id="2" title="Collateral Requisition">
+							{viewData?.crf?.lineItems?.length > 0 && (
+								<LineTableView data={mapLineItems(viewData?.crf?.lineItems)} />
+							)}
+						</AccordionItem.Item>
+						<AccordionItem.Item id="3" title="Participants">
+							<Participants
+								internal={viewData?.epf?.internalParticipants}
+								external={viewData?.epf?.externalParticipants}
+							/>
+						</AccordionItem.Item>
+						<AccordionItem.Item id="4" title="Budget Information">
+							<BudgetInfo
+								annualBudget={annualBudget}
+								availableBudget={availableBudget}
+								eventBudget={viewData?.event}
+								allotedBudget={allotedBudget}
+							/>
+						</AccordionItem.Item>
+						<AccordionItem.Item id="5" title="Budget Share">
+							<BudgetShare />
+						</AccordionItem.Item>
+					</AccordionItem>
+					<hr className="epf-divider mb-10 pb-12 mt-4 " />
 				</div>
 			</div>
 		</div>

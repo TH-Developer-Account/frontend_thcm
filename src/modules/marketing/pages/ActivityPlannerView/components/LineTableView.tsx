@@ -20,7 +20,7 @@ const LineTableView = ({ title, data = [] }: LineTableViewProps) => {
 		<div className="row-6 text-center mb-6 ">
 			<p className="font-semibold text-md">{title}</p>
 
-			<div className="mt-4 w-full text-left px-3 py-1.5 ">
+			<div className="w-full text-left px-3 py-1.5 ">
 				<div className="grid grid-cols-12 text-sm font-medium items-center text-gray-600 mb-3 bg-zinc-100 py-1.5 px-2 rounded-sm">
 					<div className="col-span-1">SNo</div>
 					<div className="col-span-2">Particulars</div>

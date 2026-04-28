@@ -20,14 +20,15 @@ const normalizeStatus = (status?: string) => status?.toLowerCase().trim() ?? "";
 
 /* -------------------------------- Icons -------------------------------- */
 const APPROVAL_STATUS_ICON: Record<string, React.ReactNode> = {
-	approved: <Check />,
-	recommended: <ThumbsUp />,
-	submitted: <Send />,
-	"report submitted": <FileCheck />,
-	pending: <Clock />,
-	cancelled: <X />,
-	"sent back": <Undo2 />,
-	completed: <CheckLine />,
+	approved: <Check size={16} />,
+	recommended: <ThumbsUp size={16} />,
+	submitted: <Send size={16} />,
+	"report submitted": <FileCheck size={16} />,
+	pending: <Clock size={16} />,
+	cancelled: <X size={16} />,
+	"sent back": <Undo2 size={16} />,
+	completed: <CheckLine size={16} />,
+	checked: <ThumbsUp size={16} />,
 };
 
 /* -------------------------------- Sizes -------------------------------- */
@@ -67,9 +68,9 @@ const ApprovalDot = ({
 
 	const lineStyle = "bg-zinc-200";
 	const icon = isCompleted ? (
-		<Check size={16} />
+		<Check size={14} />
 	) : (
-		(APPROVAL_STATUS_ICON[normalized] ?? (label ? label : <Check size={16} />))
+		(APPROVAL_STATUS_ICON[normalized] ?? (label ? label : <Check size={14} />))
 	);
 
 	return (
@@ -81,7 +82,8 @@ const ApprovalDot = ({
 			flex items-center justify-center
 			font-bold
 			shadow-sm
-			ring-4
+			ring-3
+			text-sm
 			transition-all duration-300 ease-out
 			${sizeClasses[size]}
 			${dotStyle}
@@ -97,12 +99,12 @@ const ApprovalDot = ({
 					className={`
 						absolute
 						bottom-0
-						top-13
+						top-11
 						left-1/2
 						-translate-x-1/2
 						w-[2px]
 						mb-1
-						h-10
+						h-15
 			  ${lineStyle}
 			`}
 				/>

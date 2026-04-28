@@ -692,7 +692,7 @@
 	}
 
 	.accordion-item {
-		@apply overflow-hidden rounded-sm border border-gray-300 bg-white transition-all duration-200;
+		@apply w-full overflow-hidden rounded-sm border border-gray-300 bg-white transition-all duration-200;
 	}
 
 	.accordion-item-open {
@@ -720,13 +720,27 @@
 	}
 
 	.accordion-content {
-		@apply border-t border-gray-200 px-4 py-4 text-sm text-gray-700;
+		@apply border-t border-gray-200 px-2 text-sm text-gray-700 overflow-y-auto py-1 max-h-[30vh];
+	}
+	.accordion-item-title {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+	.accordion-item-title::before {
+		content: "";
+		display: block;
+		width: 3px;
+		height: 16px;
+		border-radius: 99px;
+		background: #1e40af;
+		flex-shrink: 0;
 	}
 }
 
 .workflow-table-shell {
 	@apply flex min-h-0 flex-col overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm;
-	height: calc(70vh);
+	height: calc(62vh);
 }
 
 .workflow-table-scroll {
