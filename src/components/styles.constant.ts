@@ -19,6 +19,7 @@ const STATUS_STYLE_MAP: Record<string, string> = {
 
 	blocked: "bg-rose-100 text-rose-800 ring-rose-200",
 	brand: "bg-[#f35a00] text-white",
+	outline: "bg-orange-10 ring-orange-400 ring-1 text-orange-500",
 };
 
 export const resolveStatusStyle = ({ status }: { status?: string }): string => {
@@ -28,23 +29,30 @@ export const resolveStatusStyle = ({ status }: { status?: string }): string => {
 	);
 };
 
-export const resolveVariantStyle = (variant: string): string => {
-	switch (variant) {
-		case "brand":
-			return "bg-[#f35a00] text-white";
-		case "success":
-			return "bg-green-100 text-green-800";
-		case "warning":
-			return "bg-yellow-100 text-yellow-800";
-		case "danger":
-			return "bg-red-100 text-red-800";
-		case "disable":
-			return "bg-gray-100 text-gray-800";
-		case "primary":
-			return "bg-blue-100 text-blue-800";
-		default:
-			return "bg-zinc-500 text-zinc-800";
-	}
+const VARIANT_STYLE_MAP: Record<string, string> = {
+	brand: "bg-[#f35a00] text-white",
+
+	success: "bg-green-100 text-green-800 ",
+
+	danger: "bg-red-100 text-red-800 ",
+
+	warning: "bg-yellow-100 text-yellow-800",
+
+	disable: "bg-gray-100 text-gray-80",
+
+	primary: "bg-blue-100 text-blue-800 ",
+
+	outline: "bg-orange-50 ring-orange-200 text-orange-300",
+};
+export const resolveVariantStyle = ({
+	variant,
+}: {
+	variant?: string;
+}): string => {
+	if (!variant) return "bg-orange-50 ring-orange-200 text-orange-300";
+	return (
+		VARIANT_STYLE_MAP[variant] ?? "bg-orange-50 ring-orange-200 text-orange-300"
+	);
 };
 export const toastStyles: Record<ToastVariant, ToastStyle> = {
 	success: {

@@ -7,7 +7,7 @@
 
 @layer components {
 	.btn {
-		@apply rounded-md font-semibold
+		@apply rounded-sm font-semibold
     flex items-center justify-center gap-2
     disabled:opacity-50
     cursor-pointer;

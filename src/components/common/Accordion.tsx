@@ -5,6 +5,8 @@ export function Accordion({
 	items,
 	allowMultiple = false,
 	defaultOpen = [],
+	children,
+	childrenTitle,
 }: AccordionProps) {
 	const [openItems, setOpenItems] = React.useState<string[]>(defaultOpen);
 
@@ -22,27 +24,35 @@ export function Accordion({
 
 	return (
 		<div className="accordion">
-			{items.map((item) => {
-				const isOpen = openItems.includes(item.id);
+			{items
+				? items.map((item) => {
+						const isOpen = openItems.includes(item.id);
 
-				return (
-					<div
-						key={item.id}
-						className={`accordion-item ${isOpen ? "accordion-item-open" : ""}`}
-					>
-						<button
-							type="button"
-							onClick={() => toggleItem(item.id)}
-							className="accordion-trigger"
-						>
-							<span className="accordion-title">{item.title}</span>
-							<span className="accordion-icon">{isOpen ? "−" : "+"}</span>
-						</button>
+						return (
+							<div
+								key={item.id}
+								className={`accordion-item ${isOpen ? "accordion-item-open" : ""}`}
+							>
+								<button
+									type="button"
+									onClick={() => toggleItem(item.id)}
+									className="accordion-trigger"
+								>
+									<span className="accordion-title">
+										{item.title || childrenTitle}
+									</span>
+									<span className="accordion-icon">{isOpen ? "−" : "+"}</span>
+								</button>
 
-						{isOpen && <div className="accordion-content">{item.content}</div>}
-					</div>
-				);
-			})}
+								{isOpen && (
+									<div className="accordion-content">
+										{item.content || children}
+									</div>
+								)}
+							</div>
+						);
+					})
+				: null}
 		</div>
 	);
 }

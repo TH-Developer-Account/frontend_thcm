@@ -2,10 +2,10 @@ import React from "react";
 import { ArrowLeft } from "lucide-react";
 import EpfFormInfo from "./EpfFormInfo";
 import LineItemTable from "../../../../components/ui/LineItemTable";
-
 import { useEpfForm } from "./useEPFForm";
 import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
 import { PageHeader } from "../../../../components/ui/PageHeader";
+import Button from "../../../../components/common/Button";
 
 export default function EpfForm() {
 	const {
@@ -30,7 +30,7 @@ export default function EpfForm() {
 		<React.Fragment>
 			<PageRowSectionLayout
 				header_children={
-					<div className="flex flex-col sm:flex-row sm:justify-between items-end sm:items-start ">
+					<div className="flex flex-col sm:flex-row sm:justify-between items-end sm:items-start">
 						<PageHeader
 							headerText="Activity Proposition Form (APF)"
 							subtitleText="Manager your Activity Proposition Form (APF) details here"
@@ -41,17 +41,24 @@ export default function EpfForm() {
 						<div className="mx-2 my-4 sm:mx-4 flex flex-col gap-4 items-start overflow-y-auto">
 							<p className="page-subtitle">
 								<strong>EPC No: </strong>
-								<span> {epcId}</span>
+								<span>{epcId}</span>
 							</p>
-							{/* <div className="w-[80%]">
+							{/* ✅ All save/reset actions live here */}
+							<div className="flex flex-row gap-4 items-end w-full">
+								<Button
+									text="Reset"
+									onClick={handleReset}
+									status="brand"
+									fullWidth
+								/>
 								<Button
 									status="brand"
-									// onClick={handleSubmit("SUBMITTED")}
-									text={"Save"}
+									onClick={() => handleSubmit("SUBMITTED")}
+									text="Save"
 									className="ml-2"
 									fullWidth
 								/>
-							</div> */}
+							</div>
 						</div>
 					</div>
 				}
@@ -65,13 +72,10 @@ export default function EpfForm() {
 					category="EVENT_OVERHEAD"
 				/>
 				<div className="m-2 sm:m-4">
+					{/* ✅ Only passes what EpfFormInfo still needs */}
 					<EpfFormInfo
 						values={values}
 						handleChange={handleChange}
-						handleSave={handleSubmit}
-						handleReset={handleReset}
-						userRole="ADMIN"
-						isEditMode={false}
 						eventCost={eventCost}
 					/>
 				</div>

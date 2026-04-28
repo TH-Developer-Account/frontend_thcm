@@ -145,6 +145,9 @@ export type LineItemOption = {
 	quantity: number;
 	category?: string;
 	partNumber?: string;
+	// height?: string;
+	// width?: string;
+	// artworkSize?: string;
 };
 
 export type GroupedOption = {

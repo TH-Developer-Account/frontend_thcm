@@ -29,8 +29,8 @@ const Button: React.FC<ButtonProps> = ({
 		xl: "btn-xl",
 	};
 
-	const styleClass =
-		resolveStatusStyle({ status: status || "" }) || resolveVariantStyle;
+	const styleClass = resolveStatusStyle({ status: status || "" });
+	const variantClass = resolveVariantStyle({ variant: variant || "" });
 	const handlePathClick = () => {
 		if (path) navigate(path);
 	};
@@ -44,10 +44,10 @@ const Button: React.FC<ButtonProps> = ({
 				disabled={disabled}
 				className={`
 					${fullWidth ? "w-full" : "w-auto"}
-					btn btn-${variant}
+					btn
 					${S[size]}
 					${className}
-					${styleClass}
+					${styleClass || variantClass}
 				`}
 			>
 				{Icon && iconPosition === "left" && (

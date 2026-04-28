@@ -62,18 +62,33 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 			(v: Option) => v.department === selectedDepartment,
 		);
 	}, [selectedDepartment, data?.vertical]);
-	console.log("Values", values);
 	return (
 		<React.Fragment>
 			<PageRowSectionLayout
 				header_children={
-					<PageHeader
-						headerText="Event Planning Calender"
-						subtitleText="Manager your Event Planning Calendar (EPC) details here"
-						Icon={ArrowLeft}
-						badgeText="EPC Listing"
-						path="/marketing/listing"
-					/>
+					<div className="flex flex-col sm:flex-row sm:justify-between items-end sm:items-center">
+						<PageHeader
+							headerText="Event Planning Calender"
+							subtitleText="Manager your Event Planning Calendar (EPC) details here"
+							Icon={ArrowLeft}
+							badgeText="EPC Listing"
+							path="/marketing/listing"
+						/>
+						<div className="mx-2 my-4 sm:mx-4 flex flex-row gap-4 items-end">
+							<Button
+								text="Reset"
+								onClick={() => handleReset()}
+								status="brand"
+								fullWidth
+							/>
+							<Button
+								onClick={() => handleSave("SUBMITTED")}
+								text={isEditMode ? "Update & Submit" : "Submit"}
+								status="brand"
+								fullWidth
+							/>
+						</div>
+					</div>
 				}
 			>
 				<div className="mt-2 px-4 py-4 text-left text-xs lg:text-sm">
@@ -82,12 +97,11 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 							<FormInput
 								name="epfNo"
 								label="EPF No"
-								value={values.proposal_number}
+								value={values.epfNo}
 								disabled
 								className="w-full p-2 text-black"
 								helperText="EPF No. auto generated"
 							/>
-
 							<SelectInput
 								name="region"
 								label="Zone"
@@ -105,7 +119,6 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								error={errors.region}
 								className="w-full"
 							/>
-
 							<SelectInput
 								name="branch"
 								label="Branch"
@@ -123,8 +136,7 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								error={errors.branch}
 								className="w-full"
 							/>
-
-							<FormInput
+							{/* <FormInput
 								name="event_scale"
 								label="Scale"
 								type="number"
@@ -135,8 +147,7 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								error={errors?.event_scale}
 								helperText="Select scale"
 								isTooltip={true}
-							/>
-
+							/> */}
 							<FormInput
 								name="location"
 								label="Location"
@@ -148,7 +159,6 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								helperText="Location of the event"
 								error={errors.location}
 							/>
-
 							<SelectInput
 								name="department"
 								label="Department"
@@ -165,7 +175,6 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								error={errors.department}
 								className="w-full"
 							/>
-
 							<SelectInput
 								name="vertical"
 								label="Vertical"
@@ -204,7 +213,6 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								className="w-full"
 								error={errors.event_from_date || errors.event_to_date}
 							/>
-
 							<SelectInput
 								name="budget_master_id"
 								label="Budget Code"
@@ -221,7 +229,6 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								error={errors.budget_master_id}
 								className="w-full"
 							/>
-
 							<FormInput
 								name="budgetDescription"
 								label="Budget Description"
@@ -231,28 +238,27 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								disabled
 								helperText="Budget Description auto populated based on selected budget code"
 								error={errors.budgetDescription}
+							/>{" "}
+							<SelectInput
+								name="event_name"
+								label="Event Name"
+								value={
+									data?.eventNames?.find(
+										(opt: Option) => opt.value === values.event_name,
+									) || null
+								}
+								options={data?.eventNames || []}
+								onChange={(v: SingleValue<Option>) =>
+									handleChange("event_name", v?.value || "")
+								}
+								helperText="Select from past events or create new by typing and pressing enter"
+								error={errors.event_name}
+								className="w-full"
 							/>
 						</div>
 
 						<div className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
 							<div className="flex min-w-0 flex-col gap-4">
-								<SelectInput
-									name="event_name"
-									label="Event Name"
-									value={
-										data?.eventNames?.find(
-											(opt: Option) => opt.value === values.event_name,
-										) || null
-									}
-									options={data?.eventNames || []}
-									onChange={(v: SingleValue<Option>) =>
-										handleChange("event_name", v?.value || "")
-									}
-									helperText="Select from past events or create new by typing and pressing enter"
-									error={errors.event_name}
-									className="w-full"
-								/>
-
 								<TextareaInput
 									name="event_description"
 									label="Event Description"
@@ -276,24 +282,11 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 										handleChange("event_objective", e.target.value)
 									}
 									minLength={100}
-									rows={9}
+									rows={4}
 									className="w-full p-2 h-full"
 									error={errors.event_objective}
 								/>
 							</div>
-						</div>
-
-						<div className="mt-4 flex flex-wrap justify-end gap-3">
-							<Button
-								text="Reset"
-								onClick={() => handleReset()}
-								status="brand"
-							/>
-							<Button
-								onClick={() => handleSave("SUBMITTED")}
-								text={isEditMode ? "Update & Submit" : "Submit"}
-								status="brand"
-							/>
 						</div>
 					</form>
 				</div>

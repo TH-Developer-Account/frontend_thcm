@@ -9,12 +9,7 @@ import { ServerAxios } from "../../../../../services/ServerAxios";
 
 const ActivityPlannerPage = () => {
 	const { id } = useParams();
-	const stored = localStorage.getItem("epcInfo");
-	let epcId: string | null = null;
-	if (stored) {
-		const parsed = JSON.parse(stored);
-		epcId = parsed.epcId || null;
-	}
+
 	const navigate = useNavigate();
 	const [epcData, setEPCData] = React.useState();
 
@@ -23,7 +18,7 @@ const ActivityPlannerPage = () => {
 			try {
 				const {
 					data: { data },
-				} = await ServerAxios.get(`/epc/${epcId}`);
+				} = await ServerAxios.get(`/epc/${id}`);
 				setEPCData(data);
 			} catch (err) {
 				console.log({ err });

@@ -146,6 +146,8 @@ const ActivityFormView = ({ epcId }: Props) => {
 
 				<div className="form text-left mb-3 text-sm ">
 					{/* Info Grid */}
+					{/* <Accordion childrenTitle="EPC Details">
+          <APCBasicInfo formData={viewData} /> */}
 					<div className="grid grid-cols-2 gap-6 mt-6 text-sm mb-6">
 						<div>
 							<span className="text-gray-500">Location</span>
@@ -246,7 +248,8 @@ const ActivityFormView = ({ epcId }: Props) => {
 					<BudgetInfo
 						annualBudget={annualBudget}
 						availableBudget={availableBudget}
-						// eventBudget={viewData?.event}
+						eventBudget={viewData?.event}
+						allotedBudget={allotedBudget}
 					/>
 					<BudgetShare />
 				</div>
