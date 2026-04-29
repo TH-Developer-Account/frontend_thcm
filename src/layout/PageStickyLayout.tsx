@@ -33,11 +33,7 @@ const PageStickyLayout = ({
 			{/* Body */}
 			<div className="grid grid-cols-[200px_1fr] gap-2 min-h-0  h-[calc(100%-90px)]">
 				{/* Sidebar - fixed inside parent */}
-				<aside
-					className={`overflow-y-auto scrollbar-sleek ${sidebarClassName}`}
-				>
-					{sidebar}
-				</aside>
+				<aside className={`items-start ${sidebarClassName}`}>{sidebar}</aside>
 
 				{/* Only this scrolls */}
 				<main
