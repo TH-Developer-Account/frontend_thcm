@@ -130,7 +130,6 @@ export default function CrfForm() {
         const crfRes = await ServerAxios.get(`/crf/${crfId}`);
 
         if (crfId) {
-          //   const allProducts = options.flatMap((g) => g.options);
           const lineItems: LineItemOption[] = (crfRes.data.lineItems ?? []).map(
             (item: {
               productId: string;
