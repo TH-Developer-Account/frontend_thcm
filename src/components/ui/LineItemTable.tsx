@@ -197,7 +197,7 @@ export default function LineItemTable({
 								type="number"
 								name="rate"
 								value={draft.rate}
-								disabled
+								disabled={category === "EVENT_OVERHEAD" ? false : true}
 							/>
 						</div>
 
@@ -216,13 +216,8 @@ export default function LineItemTable({
 							/>
 						</div>
 
-						<div className="col-span-1 text-right font-medium">
-							<FormInput
-								type="number"
-								name="total"
-								value={total.toFixed(2)}
-								disabled
-							/>
+						<div className="col-span-1  font-medium">
+							<FormInput type="number" name="total" value={total} disabled />
 						</div>
 
 						<div className="col-span-1 flex justify-center gap-2">
@@ -266,17 +261,13 @@ export default function LineItemTable({
 								{particularOptions.find((p) => p.value === item.particular)
 									?.label ?? item.label}
 							</div>
-							<div className="col-span-2">{item.description}</div>
-							<div className="col-span-1 text-right">
-								{item.rate.toFixed(2)}
-							</div>
-							<div className="col-span-1 text-right">
-								{item.quantity.toFixed(2)}
-							</div>
+							<div className="col-span-3">{item.description}</div>
+							<div className="col-span-1 text-right">{item.rate}</div>
+							<div className="col-span-1 text-right">{item.quantity}</div>
 							<div className="col-span-1 text-right font-medium">
-								{(item.rate * item.quantity).toFixed(2)}
+								{item.rate * item.quantity}
 							</div>
-							<div className="col-span-2 flex justify-center gap-3 text-gray-500">
+							<div className="col-span-1 flex justify-center gap-3 text-gray-500">
 								<Pencil
 									size={16}
 									className={`cursor-pointer hover:text-orange-500 ${editingId === item._id ? "text-orange-500" : ""}`}

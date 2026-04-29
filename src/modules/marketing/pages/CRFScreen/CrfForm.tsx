@@ -205,7 +205,7 @@ export default function CrfForm() {
 	return (
 		<React.Fragment>
 			<PageRowSectionLayout
-				className=" scrollbar-sleek overflow-auto"
+				contentClassName="p-4 pb-10 mb-10"
 				stickyHeader
 				header_children={
 					<div className="flex flex-col sm:flex-row sm:justify-between items-end sm:items-center">
