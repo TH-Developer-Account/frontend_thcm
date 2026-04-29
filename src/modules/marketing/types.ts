@@ -54,8 +54,9 @@ export interface Option {
 
 export const ALL_STATUSES = [
 	{ api: "PENDING", label: "Pending" },
-	{ api: "RECOMMENDED", label: "Recommended" },
 	{ api: "SUBMITTED", label: "Submitted" },
+	{ api: "RECOMMENDED", label: "Recommended" },
+	{ api: "CHECKED", label: "Checked" },
 	{ api: "SENT_BACK", label: "Sent Back" },
 	{ api: "APPROVED", label: "Approved" },
 	{ api: "CANCELLED", label: "Cancelled" },
@@ -66,11 +67,17 @@ export const ALL_STATUSES = [
 export type ApprovalApiStatus = (typeof ALL_STATUSES)[number]["api"];
 
 export const BASE_STEPS = ALL_STATUSES.filter((s) =>
-	["PENDING", "RECOMMENDED", "SUBMITTED"].includes(s.api),
+	["PENDING", "SUBMITTED"].includes(s.api),
 );
 
 export const SUCCESS_STEPS = ALL_STATUSES.filter((s) =>
-	["APPROVED", "COMPLETED", "REPORT_SUBMITTED"].includes(s.api),
+	[
+		"RECOMMENDED",
+		"CHECKED",
+		"APPROVED",
+		"COMPLETED",
+		"REPORT_SUBMITTED",
+	].includes(s.api),
 );
 
 export const INTERRUPT_STEPS = ALL_STATUSES.filter((s) =>
@@ -80,6 +87,7 @@ export const INTERRUPT_STEPS = ALL_STATUSES.filter((s) =>
 export const EPC_TO_API_STATUS: Record<EPCStatus, ApprovalApiStatus> = {
 	Approved: "APPROVED",
 	Recommended: "RECOMMENDED",
+	Checked: "CHECKED",
 	Pending: "PENDING",
 	Completed: "COMPLETED",
 	Submitted: "SUBMITTED",
@@ -145,6 +153,9 @@ export type LineItemOption = {
 	quantity: number;
 	category?: string;
 	partNumber?: string;
+	// height?: string;
+	// width?: string;
+	// artworkSize?: string;
 };
 
 export type GroupedOption = {

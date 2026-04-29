@@ -8,6 +8,8 @@ import FormInput from "../../../components/FormElements/FormInput";
 import OtpInput from "../../../components/FormElements/OtpInput";
 import { MOBILE_REGEX, api_routes } from "../../Login/constant";
 import { useToast } from "../../../context/Auth/AuthContext";
+// import { PhoneInput } from "react-international-phone";
+import "react-international-phone/style.css";
 
 type MobileStep = "enterMobile" | "verifyOtp";
 
@@ -226,7 +228,7 @@ const MobileLoginForm = () => {
 			setState((prev) => ({ ...prev, loading: false }));
 		}
 	};
-
+	console.log("state", state);
 	return (
 		<React.Fragment>
 			{mobileStep === "enterMobile" && (
@@ -241,6 +243,11 @@ const MobileLoginForm = () => {
 						required
 						type="mobile"
 					/>
+					{/* <PhoneInput
+						defaultCountry="ua"
+						value={state.mobile}
+						onChange={(e) => console.log("eeeeee",e)}
+					/> */}
 					<Button
 						text="Continue"
 						disabled={!MOBILE_REGEX.test(state.mobile)}

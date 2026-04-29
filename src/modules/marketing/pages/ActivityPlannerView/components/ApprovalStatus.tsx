@@ -1,30 +1,28 @@
 import React from "react";
 import ApprovalDot from "../../../../../components/common/ApprovalDot";
-import { useEPC } from "../../../context/useEPC";
 
 import { type ApprovalApiStatus } from "../../../types";
 import { getApprovalSteps } from "./helper";
 
+type EpcData = {
+	id: string;
+	status: ApprovalApiStatus;
+};
+
 interface Props {
-	epcData?: [];
+	epcData?: EpcData | null;
 }
 const ApprovalStatus = ({ epcData }: Props) => {
-	const { data, loading } = useEPC();
-	if (loading) return <p>Loading...</p>;
 	if (!epcData) return <p>No EPC selected</p>;
-	const epc = data.find((item) => String(item.id) === String(epcData));
-	if (!epc) return <p>EPC not found</p>;
 
-	const currentStatus = epc.status as ApprovalApiStatus;
-
+	const currentStatus = epcData.status;
 	const steps = getApprovalSteps(currentStatus);
-
 	const currentIndex = steps.findIndex((step) => step.api === currentStatus);
 
 	return (
 		<React.Fragment>
-			<div className=" bg-white  rounded-xl h-auto grid  relative">
-				<div className="approval-dot-section sticky  top-0 max-w-[220px] w-full h-auto p-2 border shadow-sm border-zinc-300 mt-6 rounded-lg">
+			<div className=" grid relative bg-white">
+				<div className="approval-dot-section top-0 max-w-[200px] w-full   min-h-0  h-[calc(100%-100px)] overflow-y-auto scrollbar-sleek p-2 border shadow-sm border-zinc-300 rounded-sm">
 					{steps.map((status, index) => {
 						const isFuture = index > currentIndex;
 						const isCurrent = index === currentIndex;
@@ -33,11 +31,11 @@ const ApprovalStatus = ({ epcData }: Props) => {
 						return (
 							<div
 								key={status.api}
-								className="approval-details flex items-center justify-start gap-2 mb-4"
+								className="approval-details flex items-center justify-start gap-2 mb-2.5"
 							>
 								<ApprovalDot
-									status={status.label ? status.label : "Pending"}
-									className="m-4"
+									status={status.label}
+									className="m-2.5"
 									isLast={isLast}
 									isFuture={isFuture}
 									isCompleted={isCompleted}
@@ -45,8 +43,9 @@ const ApprovalStatus = ({ epcData }: Props) => {
 									size="sm"
 								/>
 
-								<div className="info text-sm italic">
-									<p className=" font-semibold">{status.label}</p>
+								<div>
+									<p className="uppercase-label-text">{status.label}</p>
+									<p className="epc-status-approver">John, Doe</p>
 								</div>
 							</div>
 						);

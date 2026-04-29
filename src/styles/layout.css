@@ -66,7 +66,7 @@
 	========================= */
 
 	.app-main {
-		@apply flex-1 md:ml-0 overflow-y-auto bg-zinc-50 scroll-smooth;
+		@apply flex-1 md:ml-0 bg-zinc-50 scroll-smooth;
 	}
 
 	/* Optional: smoother scrolling feel */
@@ -84,7 +84,7 @@
 	========================= */
 
 	.auth-layout {
-		@apply min-h-screen flex items-center justify-center bg-transparent;
+		@apply min-h-screen flex items-center justify-center bg-transparent shadow-lg;
 	}
 
 	/* =========================
@@ -92,7 +92,7 @@
 	========================= */
 
 	.auth-card {
-		@apply w-full max-w-[400px] bg-white shadow-lg rounded-xl p-6 pt-4;
+		@apply w-full max-w-[400px] bg-white shadow-lg rounded-xl p-6 pt-4 border-b border-gray-200;
 	}
 
 	/* Optional variants */
@@ -157,7 +157,6 @@
 		@apply text-xl font-semibold tracking-tight text-zinc-900;
 		@apply text-[22px] text-zinc-900 mt-3;
 	}
-
 	.page-subtitle {
 		@apply mt-1 text-sm text-zinc-500;
 	}

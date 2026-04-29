@@ -56,7 +56,7 @@ export type ButtonProps = {
 	disabled?: boolean;
 	status?: string;
 	className?: string;
-	variant?: "brand" | "primary" | "success" | "warning" | "danger" | "disable";
+	variant?: string;
 	size?: "sm" | "md" | "lg" | "xl";
 	Icon?: LucideIcon;
 	iconPosition?: "left" | "right";
@@ -106,9 +106,11 @@ export interface AccordionItem {
 }
 
 export interface AccordionProps {
-	items: AccordionItem[];
+	items?: AccordionItem[];
 	allowMultiple?: boolean;
 	defaultOpen?: string[];
+	children?: React.ReactNode;
+	childrenTitle?: string;
 }
 
 export interface FieldConfig {

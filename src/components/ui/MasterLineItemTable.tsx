@@ -87,11 +87,11 @@ export function MasterLineItemTable({
 									</td>
 
 									<td className="px-4 py-3 text-sm font-medium text-gray-700">
-										{item.description}
+										{item.label ? item.label : item.description}
 									</td>
 
 									<td className="px-4 py-3 text-sm font-medium text-gray-700">
-										{item.label ?? "EXM"}
+										{item.code ? item.code : (item.label ?? "EXM")}
 									</td>
 
 									{!isViewer && (

@@ -1,7 +1,5 @@
 import React from "react";
 import { ServerAxios } from "../../../../../services/ServerAxios";
-import { Badge } from "../../../../../components/common/Badge";
-import { statusMap } from "../../../../../utils/types";
 import { useEPC } from "../../../context/useEPC";
 import BudgetInfo from "./BudgetInfo";
 import BudgetShare from "./BudgetShare";
@@ -10,9 +8,13 @@ import DateRange from "./DateRange";
 import Section from "./Section";
 import LineTableView from "./LineTableView";
 import Loader from "../../../../../components/ui/Loader";
+import type { EpcDetailResponse } from "../types/ActivityView.types";
+import CommentsSection, { type CommentUser } from "./CommentsSection";
+import { dummyComments } from "../constant/activityFormView.constant";
 
 interface Props {
 	epcId?: string;
+	epcData?: EpcDetailResponse;
 }
 
 const formatDate = (date?: string) => {
@@ -77,7 +79,85 @@ const ActivityFormView = ({ epcId }: Props) => {
 
 		load();
 	}, [epcId]);
+	// const [comments, setComments] = React.useState<CommentItem[]>([]);
+	// const [commentsLoading, setCommentsLoading] = React.useState(false);
+	// const [commentsError, setCommentsError] = React.useState("");
 
+	const currentUser: CommentUser = {
+		id: "1",
+		name: "Mon Mon",
+		role: "Requester",
+	};
+
+	// const loadComments = async () => {
+	// 	try {
+	// 		setCommentsLoading(true);
+	// 		setCommentsError("");
+
+	// 		const { data } = await ServerAxios.get(
+	// 			`/comments?module=CRF&referenceId=${crfId}`,
+	// 		);
+
+	// 		setComments(data.data);
+	// 	} catch {
+	// 		setCommentsError("Failed to load comments.");
+	// 	} finally {
+	// 		setCommentsLoading(false);
+	// 	}
+	// };
+
+	// const handleCreateComment = async (comment: string) => {
+	// 	await ServerAxios.post("/comments", {
+	// 		module: "CRF",
+	// 		referenceId: crfId,
+	// 		parentCommentId: null,
+	// 		comment,
+	// 	});
+
+	// 	await loadComments();
+	// };
+
+	// const handleReplyComment = async (
+	// 	parentCommentId: string,
+	// 	comment: string,
+	// ) => {
+	// 	await ServerAxios.post("/comments", {
+	// 		module: "CRF",
+	// 		referenceId: crfId,
+	// 		parentCommentId,
+	// 		comment,
+	// 	});
+
+	// 	await loadComments();
+	// };
+
+	// const handleUpdateComment = async (commentId: string, comment: string) => {
+	// 	await ServerAxios.patch(`/comments/${commentId}`, {
+	// 		comment,
+	// 	});
+
+	// 	await loadComments();
+	// };
+
+	// const handleDeleteComment = async (commentId: string) => {
+	// 	await ServerAxios.delete(`/comments/${commentId}`);
+	// 	await loadComments();
+	// };
+	const handleCreate = async (text: string) => {
+		console.log("CREATE:", text);
+	};
+
+	const handleReply = async (parentId: string, text: string) => {
+		console.log("REPLY:", parentId, text);
+	};
+
+	const handleUpdate = async (id: string, text: string) => {
+		console.log("UPDATE:", id, text);
+	};
+
+	const handleDelete = async (id: string) => {
+		console.log("DELETE:", id);
+	};
 	if (loading) return <Loader />;
 	if (!epcId) return <p>No EPC selected</p>;
 
@@ -86,11 +166,6 @@ const ActivityFormView = ({ epcId }: Props) => {
 	if (!epc && !epcData) return <p>EPC not found</p>;
 
 	const viewData = epcData || epc;
-
-	const eventName =
-		typeof viewData?.event_name === "object"
-			? viewData?.event_name?.title
-			: viewData?.event_name;
 
 	const branchName =
 		typeof viewData?.branch === "object"
@@ -118,137 +193,123 @@ const ActivityFormView = ({ epcId }: Props) => {
 			: viewData?.budget_master;
 
 	return (
-		<div className=" h-full min-h-screen max-w-4xl">
-			<div className="w-full h-auto border shadow-sm border-zinc-300 mt-0 bg-white rounded-smounded-lg px-6 py-4">
-				{/* Header */}
-				<div className="flex justify-between items-center border-b pb-4">
-					<div>
-						<h2 className="text-xl font-normal text-left">
-							{eventName || "--"}
-						</h2>
+		<div className=" h-full min-h-screen max-w-5xl">
+			<div className="w-full h-auto  mt-0 rounded-smounded-lg px-6 py-4">
+				{/* Dates */}
+				<DateRange
+					fromDate={viewData?.event_from_date}
+					toDate={viewData?.event_to_date}
+				/>
+				<div className="form text-left my-3 text-sm ">
+					<Section title="Activity Planner Details">
+						<div className="grid grid-cols-4 gap-6 text-sm  p-3">
+							<div>
+								<span className="uppercase-label-text">Location</span>
+								<br />
+								{viewData?.location || "--"}
+							</div>
 
-						<p className="text-sm text-gray-500 text-left">
-							{viewData?.proposal_number || "--"} •{" "}
-							{`${epc?.first_name || ""} ${epc?.last_name || ""}`.trim() ||
-								"--"}{" "}
-							• {viewData?.location || "--"}
-						</p>
-					</div>
+							<div>
+								<span className="uppercase-label-text">Branch</span>
+								<br />
+								{branchName || "--"}
+							</div>
 
-					<div>
-						<Badge status={statusMap[viewData?.status]}>
-							{statusMap[viewData?.status] || viewData?.status}
-						</Badge>
-					</div>
-				</div>
+							<div>
+								<span className="uppercase-label-text">Department</span>
+								<br />
+								{departmentName || "--"}
+							</div>
 
-				<hr className="mb-4" />
+							<div>
+								<span className="uppercase-label-text">Vertical</span>
+								<br />
+								{verticalName || "--"}
+							</div>
 
-				<div className="form text-left mb-3 text-sm ">
-					{/* Info Grid */}
-					<div className="grid grid-cols-2 gap-6 mt-6 text-sm mb-6">
-						<div>
-							<span className="text-gray-500">Location</span>
-							<br />
-							{viewData?.location || "--"}
+							<div>
+								<span className="uppercase-label-text">Zone</span>
+								<br />
+								{regionName || "--"}
+							</div>
+
+							<div>
+								<span className="uppercase-label-text">Created</span>
+								<br />
+								{formatDate(viewData?.created_at)}
+							</div>
+
+							<div>
+								<span className="uppercase-label-text">Event Scale</span>
+								<br />
+								{viewData?.event_scale || "--"}
+							</div>
+
+							<div>
+								<span className="uppercase-label-text">Budget</span>
+								<br />
+								{budgetValue || "--"}
+							</div>
 						</div>
-
-						<div>
-							<span className="text-gray-500">Branch</span>
-							<br />
-							{branchName || "--"}
-						</div>
-
-						<div>
-							<span className="text-gray-500">Department</span>
-							<br />
-							{departmentName || "--"}
-						</div>
-
-						<div>
-							<span className="text-gray-500">Vertical</span>
-							<br />
-							{verticalName || "--"}
-						</div>
-
-						<div>
-							<span className="text-gray-500">Zone</span>
-							<br />
-							{regionName || "--"}
-						</div>
-
-						<div>
-							<span className="text-gray-500">Created</span>
-							<br />
-							{formatDate(viewData?.created_at)}
-						</div>
-
-						<div>
-							<span className="text-gray-500">Event Scale</span>
-							<br />
-							{viewData?.event_scale || "--"}
-						</div>
-
-						<div>
-							<span className="text-gray-500">Budget</span>
-							<br />
-							{budgetValue || "--"}
-						</div>
-					</div>
-
-					<div className="mb-6 border-b">
-						{/* Dates */}
-						<div className=" mt-6">
-							<DateRange
-								fromDate={viewData?.event_from_date}
-								toDate={viewData?.event_to_date}
-							/>
-						</div>
-
-						<div className="flex flex-row justify-between">
-							{/* Description */}
-							<div className="mt-4 mb-4">
-								<Section title="Description">
+					</Section>
+					<Section title="Activity Planner Description">
+						<div className="mb-6 border-b">
+							<div className="flex flex-row justify-between">
+								{/* Description */}
+								<div className="mt-4 mb-4">
 									<p className="text-gray-700 leading-relaxed pl-3">
 										{viewData?.event_description || "--"}
 									</p>
-								</Section>
-							</div>
+								</div>
 
-							<div className="mt-4 mb-4">
-								<Section title="Objective">
+								<div className="mt-4 mb-4">
 									<p className="text-gray-700 leading-relaxed pl-3">
 										{viewData?.event_objective || "--"}
 									</p>
-								</Section>
+								</div>
 							</div>
 						</div>
-					</div>
-
-					{viewData?.epf?.lineItems?.length > 0 && (
-						<LineTableView
-							title="EPF Line Items"
-							data={mapLineItems(viewData?.epf?.lineItems)}
+					</Section>
+					<Section title="Activity Proposition Form Line Items">
+						{viewData?.epf?.lineItems?.length > 0 && (
+							<LineTableView data={mapLineItems(viewData?.epf?.lineItems)} />
+						)}
+					</Section>
+					<Section title="Collateral Requisition Form Line Items">
+						{viewData?.crf?.lineItems?.length > 0 && (
+							<LineTableView data={mapLineItems(viewData?.crf?.lineItems)} />
+						)}
+					</Section>
+					<Section title="Activity Proposition Form Participants">
+						<Participants
+							internal={viewData?.epf?.internalParticipants}
+							external={viewData?.epf?.externalParticipants}
 						/>
-					)}
-
-					{viewData?.crf?.lineItems?.length > 0 && (
-						<LineTableView
-							title="Collateral Requisition"
-							data={mapLineItems(viewData?.crf?.lineItems)}
+					</Section>
+					<Section title="Activity Proposition Form Budget Information">
+						<BudgetInfo
+							annualBudget={annualBudget}
+							availableBudget={availableBudget}
+							eventBudget={viewData?.event}
+							allotedBudget={allotedBudget}
 						/>
-					)}
-
-					<Participants
-						internal={viewData?.epf?.internalParticipants}
-						external={viewData?.epf?.externalParticipants}
-					/>
-					<BudgetInfo
-						annualBudget={annualBudget}
-						availableBudget={availableBudget}
-						// eventBudget={viewData?.event}
-					/>
-					<BudgetShare />
+					</Section>
+					<Section title="Activity Proposition Form Budget Share">
+						<BudgetShare />
+					</Section>
+					<Section title="Comments">
+						<CommentsSection
+							comments={dummyComments}
+							currentUser={currentUser}
+							// loading={commentsLoading}
+							// error={commentsError}
+							onCreate={handleCreate}
+							onReply={handleReply}
+							onUpdate={handleUpdate}
+							onDelete={handleDelete}
+						/>
+					</Section>
+					<hr className="epf-divider mb-10 pb-12 mt-4 " />
 				</div>
 			</div>
 		</div>

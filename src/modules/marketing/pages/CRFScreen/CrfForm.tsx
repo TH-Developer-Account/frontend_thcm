@@ -5,179 +5,246 @@ import { useToast } from "../../../../context/Auth/AuthContext";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import LineItemTable from "../../../../components/ui/LineItemTable";
 import type {
-  CrfProps,
-  Product,
-  LineItemOption,
-  GroupedOption,
+	CrfProps,
+	Product,
+	LineItemOption,
+	GroupedOption,
 } from "../../types";
 import Button from "../../../../components/common/Button";
 import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
 import { PageHeader } from "../../../../components/ui/PageHeader";
 import { ArrowLeft } from "lucide-react";
 
-export function CrfProps({ items, onChange, isViewer, options }: CrfProps) {
-  const getOptionsByCategory = (category: string): LineItemOption[] => {
-    return options.find((group) => group.label === category)?.options ?? [];
-  };
+const CRF_CATEGORIES = [
+	{ title: "Printed Materials", value: "PRINTED_MATERIAL" },
+	{ title: "Souvenirs", value: "SOUVENIR" },
+	{ title: "Artworks", value: "ARTWORK" },
+];
 
-  const getItemsByCategory = (category: string) => {
-    return items.filter((item) => item.category === category);
-  };
+export function CrfItemsSection({
+	items,
+	onChange,
+	isViewer,
+	options,
+}: CrfProps) {
+	const getOptionsByCategory = (category: string): LineItemOption[] =>
+		options.find((group) => group.label === category)?.options ?? [];
 
-  return (
-    <React.Fragment>
-      <LineItemTable
-        title="Printed Materials"
-        items={getItemsByCategory("PRINTED_MATERIAL")}
-        onChange={onChange}
-        particularOptions={getOptionsByCategory("PRINTED_MATERIAL")}
-        isViewer={isViewer}
-        category="PRINTED_MATERIAL"
-      />
-      <LineItemTable
-        title="Souveniers"
-        items={getItemsByCategory("SOUVENIR")}
-        onChange={onChange}
-        particularOptions={getOptionsByCategory("SOUVENIR")}
-        isViewer={isViewer}
-        category="SOUVENIR"
-      />
-      <LineItemTable
-        title="Artworks"
-        items={getItemsByCategory("ARTWORK")}
-        onChange={onChange}
-        particularOptions={getOptionsByCategory("ARTWORK")}
-        isViewer={isViewer}
-        category="ARTWORK"
-      />
-    </React.Fragment>
-  );
+	const getItemsByCategory = (category: string) =>
+		items.filter((item) => item.category === category);
+
+	// ✅ Merge category-level changes back into the full flat array
+	const handleCategoryChange = (
+		category: string,
+		updater: React.SetStateAction<LineItemOption[]>,
+	) => {
+		onChange((prev) => {
+			const otherItems = prev.filter((item) => item.category !== category);
+			const categoryItems = prev.filter((item) => item.category === category);
+			const updated =
+				typeof updater === "function" ? updater(categoryItems) : updater;
+			return [...otherItems, ...updated];
+		});
+	};
+
+	return (
+		<React.Fragment>
+			{CRF_CATEGORIES.map((category) => (
+				<LineItemTable
+					key={category.value}
+					title={category.title}
+					items={getItemsByCategory(category.value)}
+					onChange={(updater) => handleCategoryChange(category.value, updater)} // ✅
+					particularOptions={getOptionsByCategory(category.value)}
+					isViewer={isViewer}
+					category={category.value}
+				/>
+			))}
+		</React.Fragment>
+	);
 }
 
 /* ------------------------------------------------------------------ */
 
-/* ------------------------------------------------------------------ */
-
 export default function CrfForm() {
-  const { showToast } = useToast();
-  const navigate = useNavigate();
-  const [costItems, setCostItems] = React.useState<LineItemOption[]>([]);
-  const [options, setOptions] = React.useState<GroupedOption[]>([]);
+	const { showToast } = useToast();
+	const navigate = useNavigate();
 
-  const stored = localStorage.getItem("epcInfo");
-  let epcId: string | null = null;
-  if (stored) {
-    const parsed = JSON.parse(stored);
-    epcId = parsed.epcId || null;
-  }
+	const [costItems, setCostItems] = React.useState<LineItemOption[]>([]);
+	const [options, setOptions] = React.useState<GroupedOption[]>([]);
+	const [loading, setLoading] = React.useState(false);
 
-  React.useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await ServerAxios.get(
-          `/master-data/products?productType=CRF`,
-        );
+	const stored = localStorage.getItem("epcInfo");
+	const epcId: string | null = stored
+		? (JSON.parse(stored)?.epcId ?? null)
+		: null;
+	const crfId: string | null = stored
+		? (JSON.parse(stored)?.crfId ?? null)
+		: null;
 
-        const data = response.data.data as Product[];
+	React.useEffect(() => {
+		const fetchAll = async () => {
+			try {
+				const [productsRes, crfRes] = await Promise.all([
+					ServerAxios.get(`/master-data/products?productType=CRF`),
+					crfId ? ServerAxios.get(`/crf/${crfId}`) : Promise.resolve(null),
+				]);
 
-        const groupedOptions: GroupedOption[] = Object.values(
-          data.reduce<Record<string, GroupedOption>>((acc, item: Product) => {
-            const category = item.category;
+				// Build grouped options from products
+				const products = productsRes.data.data as Product[];
+				const grouped: GroupedOption[] = Object.values(
+					products.reduce<Record<string, GroupedOption>>((acc, item) => {
+						if (!acc[item.category])
+							acc[item.category] = { label: item.category, options: [] };
+						acc[item.category].options.push({
+							value: item.id,
+							label: item.name,
+							particular: item.id,
+							description: item.description,
+							rate: parseFloat(item.unitRate),
+							quantity: 1,
+							partNumber: item.partNumber,
+						});
+						return acc;
+					}, {}),
+				);
+				setOptions(grouped);
 
-            if (!acc[category]) {
-              acc[category] = {
-                label: category,
-                options: [],
-              };
-            }
+				console.log({ crfRes });
 
-            acc[category].options.push({
-              value: item.id,
-              label: item.name,
-              particular: item.name,
-              description: item.description,
-              rate: parseFloat(item.unitRate),
-              quantity: 1,
-              partNumber: item.partNumber,
-            });
+				if (crfId && crfRes) {
+					const allProducts = grouped.flatMap((g) => g.options);
+					console.log({ allProducts });
+					const lineItems: LineItemOption[] = (crfRes.data.lineItems ?? []).map(
+						(item: {
+							productId: string;
+							productName: string;
+							partNumber: string;
+							description: string | null;
+							rate: number;
+							quantity: number;
+							category?: string;
+						}) => {
+							const matched = allProducts.find(
+								(p) => p.particular === item.productId,
+							);
 
-            return acc;
-          }, {}),
-        );
+							console.log({ matched, item });
+							if (matched) {
+								return {
+									value: matched.value,
+									label: matched.label,
+									particular: matched.particular,
+									description: matched.description ?? "",
+									rate: matched.rate,
+									quantity: matched.quantity,
+									partNumber: matched.partNumber,
+									category: item?.product.category,
+								};
+							}
+							return null;
+						},
+					);
+					setCostItems(lineItems);
+				}
+			} catch (err) {
+				console.error("Fetch failed:", err);
+				showToast({
+					type: "error",
+					title: "Error",
+					description: "Failed to load data.",
+				});
+			} finally {
+				setLoading(false);
+			}
+		};
 
-        setOptions(groupedOptions);
-      } catch (err) {
-        console.error("Product search failed:", err);
-        setOptions([]);
-      }
-    };
+		fetchAll();
+	}, [crfId]);
 
-    fetchProducts();
-  }, []);
+	const handleSubmit = async () => {
+		try {
+			if (!epcId) {
+				console.error("EPC ID not found in localStorage");
+				return;
+			}
+			const payload = buildLineItemPayload(costItems, { epcId });
 
-  const handleSubmit = async () => {
-    try {
-      console.log({ epcId });
-      if (!epcId) {
-        console.error("EPC ID not found in localStorage");
-        return;
-      }
-      const payload = buildLineItemPayload(costItems, { epcId });
+			if (crfId) {
+				const {
+					data: { message },
+				} = await ServerAxios.put(`/crf/${crfId}`, payload);
+				showToast({ type: "success", title: "Success", description: message });
+			} else {
+				const {
+					data: { message },
+				} = await ServerAxios.post("/crf", payload);
+				showToast({ type: "success", title: "Success", description: message });
+				localStorage.removeItem("epcInfo");
+			}
 
-      console.log("FINAL PAYLOAD:", payload);
+			navigate("/marketing/listing");
+		} catch (error) {
+			console.error("CRF save failed:", error);
+			showToast({
+				type: "error",
+				title: "Error",
+				description: "Failed to save CRF.",
+			});
+		}
+	};
 
-      const {
-        data: { message },
-      } = await ServerAxios.post("/crf", payload);
-
-      showToast({
-        type: "success",
-        title: "Success",
-        description: message,
-      });
-      localStorage.removeItem("epcInfo");
-      navigate("/marketing/listing");
-    } catch (error) {
-      console.error("CRF creation failed:", error);
-    }
-  };
-  return (
-    <React.Fragment>
-      <PageRowSectionLayout
-        stickyHeader={true}
-        header_children={
-          <div className="flex flex-col sm:flex-row sm:justify-between items-end sm:items-center ">
-            <PageHeader
-              headerText="Collateral Requisition Form (CRF)"
-              subtitleText="Manager your Collateral Requisition Form (CRF) details here"
-              Icon={ArrowLeft}
-              badgeText="EPC Listing"
-              path="/marketing/listing"
-            />
-            <div className="mx-2 my-4 sm:mx-4 flex flex-col gap-4 items-end overflow-y-auto">
-              <p className="page-subtitle">
-                <strong>EPC No: </strong>
-                <span> {epcId}</span>
-              </p>
-              <div className="">
-                <Button
-                  status="brand"
-                  onClick={handleSubmit}
-                  text={"Save"}
-                  className="ml-2"
-                />
-              </div>
-            </div>
-          </div>
-        }
-      >
-        <CrfProps
-          items={costItems}
-          onChange={setCostItems}
-          isViewer={false}
-          options={options}
-        />
-      </PageRowSectionLayout>
-    </React.Fragment>
-  );
+	if (loading) {
+		return (
+			<div className="flex items-center justify-center h-64 text-gray-500">
+				Loading CRF details...
+			</div>
+		);
+	}
+	console.log({ costItems });
+	return (
+		<React.Fragment>
+			<PageRowSectionLayout
+				className=" scrollbar-sleek overflow-auto"
+				stickyHeader
+				header_children={
+					<div className="flex flex-col sm:flex-row sm:justify-between items-end sm:items-center">
+						<PageHeader
+							headerText="Collateral Requisition Form (CRF)"
+							subtitleText="Manage your Collateral Requisition Form (CRF) details here"
+							Icon={ArrowLeft}
+							badgeText="EPC Listing"
+							path="/marketing/listing"
+						/>
+						<div className="mx-2 my-4 sm:mx-4 flex flex-col gap-4 items-end">
+							<p className="page-subtitle">
+								<strong>EPC No: </strong>
+								<span>{epcId}</span>
+							</p>
+							<div className="flex flex-row gap-4 items-end">
+								<Button
+									text="Reset"
+									// onClick={() => handleReset()}
+									status="brand"
+								/>
+								<Button
+									status="brand"
+									onClick={handleSubmit}
+									text={crfId ? "Update" : "Save"}
+									className="ml-2"
+								/>
+							</div>
+						</div>
+					</div>
+				}
+			>
+				<CrfItemsSection
+					items={costItems}
+					onChange={setCostItems}
+					isViewer={false}
+					options={options}
+				/>
+			</PageRowSectionLayout>
+		</React.Fragment>
+	);
 }

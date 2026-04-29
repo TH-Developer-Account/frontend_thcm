@@ -4,26 +4,29 @@ import { ArrowLeft } from "lucide-react";
 import ApprovalStatus from "../components/ApprovalStatus";
 import ActivityFormView from "../components/ActivityFormView";
 import { EPCProvider } from "../../../context/EPCprovider";
-import { useNavigate } from "react-router-dom";
 import { ServerAxios } from "../../../../../services/ServerAxios";
+import { PageHeader } from "../../../../../components/ui/PageHeader";
+import PageStickyLayout from "../../../../../layout/PageStickyLayout";
+import type { EpcDetailResponse } from "../types/ActivityView.types";
+import { statusMap } from "../../../../../utils/types";
+import { Badge } from "../../../../../components/common/Badge";
+import { useEPC } from "../../../context/useEPC";
 
-const ActivityPlannerPage = () => {
+const ActivityPlannerPageContent = () => {
 	const { id } = useParams();
-	const stored = localStorage.getItem("epcInfo");
-	let epcId: string | null = null;
-	if (stored) {
-		const parsed = JSON.parse(stored);
-		epcId = parsed.epcId || null;
-	}
-	const navigate = useNavigate();
-	const [epcData, setEPCData] = React.useState();
+	const { data } = useEPC();
+
+	const [epcData, setEPCData] = React.useState<EpcDetailResponse>();
 
 	React.useEffect(() => {
+		if (!id) return;
+
 		const load = async () => {
 			try {
 				const {
 					data: { data },
-				} = await ServerAxios.get(`/epc/${epcId}`);
+				} = await ServerAxios.get(`/epc/${id}`);
+
 				setEPCData(data);
 			} catch (err) {
 				console.log({ err });
@@ -31,27 +34,63 @@ const ActivityPlannerPage = () => {
 		};
 
 		load();
-	}, []);
+	}, [id]);
+
+	const epcFromList = data?.find((item) => item.id === epcData?.id);
+
+	const title = epcData?.event_name?.title || "--";
+	const proposalNo = epcData?.proposal_number || "--";
+
+	const createdBy = epcFromList
+		? `${epcFromList.first_name || ""} ${epcFromList.last_name || ""}`.trim()
+		: "--";
+
+	const badgeStatus = epcData?.status ? statusMap[epcData.status] : undefined;
+
 	return (
-		<div>
-			<div className="flex items-center gap-4  mt-2">
-				<button
-					onClick={() => navigate(-1)}
-					className="w-8 h-8 rounded-lg bg-gray-50 border border-zinc-800 flex items-center justify-center"
-				>
-					<ArrowLeft />
-				</button>
+		<PageStickyLayout
+			header={
+				<div className="flex flex-row gap-4 justify-between">
+					<PageHeader
+						headerText="Activity Planner View"
+						subtitleText="View your activity details"
+						Icon={ArrowLeft}
+						badgeText="EPC Listing"
+						path="/marketing/listing"
+					/>
 
-				<h2 className="text-xl font-normal text-left">Form View</h2>
-			</div>
+					<div className="flex justify-between items-center page-header-section text-right">
+						<div>
+							<p>
+								<span className="form-view-label uppercase-label-text ">
+									Status:{" "}
+								</span>
+								<Badge status={badgeStatus} />
+							</p>
+							<h2 className="approval-details-title">{proposalNo}</h2>
+							<p className="page-subtitle approval-details-subtitle">
+								<span className="form-view-label uppercase-label-text ">
+									Created By:{" "}
+								</span>
+								{createdBy}
+							</p>
+						</div>
+					</div>
+				</div>
+			}
+			sidebar={<ApprovalStatus epcData={epcData} />}
+			contentClassName="pb-6"
+		>
+			<ActivityFormView epcId={id} epcData={epcData} />
+		</PageStickyLayout>
+	);
+};
 
-			<div className="grid grid-cols-[220px_1fr] gap-4 items-start">
-				<EPCProvider>
-					<ApprovalStatus epcData={epcData} />
-					<ActivityFormView epcId={id} />
-				</EPCProvider>
-			</div>
-		</div>
+const ActivityPlannerPage = () => {
+	return (
+		<EPCProvider>
+			<ActivityPlannerPageContent />
+		</EPCProvider>
 	);
 };
 
