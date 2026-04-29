@@ -720,7 +720,7 @@
 	}
 
 	.accordion-content {
-		@apply border-t border-gray-200 px-2 text-sm text-gray-700 overflow-y-auto py-1 max-h-[30vh];
+		@apply border-t border-gray-200 px-2 text-sm text-gray-700 overflow-y-auto py-1 max-h-[45vh];
 	}
 	.accordion-item-title {
 		display: flex;

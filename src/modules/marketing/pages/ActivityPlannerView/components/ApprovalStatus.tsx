@@ -21,8 +21,8 @@ const ApprovalStatus = ({ epcData }: Props) => {
 
 	return (
 		<React.Fragment>
-			<div className="h-auto grid relative bg-white">
-				<div className="approval-dot-section   top-0 max-w-[200px] w-full h-auto p-2 border shadow-sm border-zinc-300 rounded-sm">
+			<div className=" grid relative bg-white">
+				<div className="approval-dot-section top-0 max-w-[200px] w-full   min-h-0  h-[calc(100%-100px)] overflow-y-auto scrollbar-sleek p-2 border shadow-sm border-zinc-300 rounded-sm">
 					{steps.map((status, index) => {
 						const isFuture = index > currentIndex;
 						const isCurrent = index === currentIndex;
@@ -44,7 +44,7 @@ const ApprovalStatus = ({ epcData }: Props) => {
 								/>
 
 								<div>
-									<p className="epc-status-label">{status.label}</p>
+									<p className="uppercase-label-text">{status.label}</p>
 									<p className="epc-status-approver">John, Doe</p>
 								</div>
 							</div>
