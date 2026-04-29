@@ -21,9 +21,9 @@ const initialValues: EpfFormValues = {
 	availableBudget: 0,
 	allotedBudget: 0,
 	dealerName: "",
-	dealerPercent: 0,
+	dealerPercent: 50,
 	dealerShare: 0,
-	tataHitachiPercent: 0,
+	tataHitachiPercent: 50,
 	tataHitachiShare: 0,
 	tataHitachiPoAmount: 0,
 };

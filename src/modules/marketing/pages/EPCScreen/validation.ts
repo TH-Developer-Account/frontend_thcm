@@ -9,7 +9,6 @@ export const validateEpcForm = (values: EpcFormValues) => {
 	if (!values.branch) errors.branch = "Branch is required";
 	if (!values.region) errors.region = "Zone is required";
 	if (!values.location) errors.location = "Location is required";
-	if (!values.event_scale) errors.event_scale = "Event scale is required";
 	if (!values.event_name) errors.event_name = "Event name is required";
 	if (!values.event_from_date) errors.event_from_date = "Start date required";
 	if (!values.event_to_date) errors.event_to_date = "End date required";
