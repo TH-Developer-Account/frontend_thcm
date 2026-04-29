@@ -136,18 +136,6 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								error={errors.branch}
 								className="w-full"
 							/>
-							{/* <FormInput
-								name="event_scale"
-								label="Scale"
-								type="number"
-								placeholder="PAX SIZE <50"
-								value={values.event_scale}
-								onChange={(e) => handleChange("event_scale", e.target.value)}
-								className="w-full p-2"
-								error={errors?.event_scale}
-								helperText="Select scale"
-								isTooltip={true}
-							/> */}
 							<FormInput
 								name="location"
 								label="Location"

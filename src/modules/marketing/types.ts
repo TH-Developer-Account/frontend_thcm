@@ -31,7 +31,7 @@ export interface EpcFormValues {
 	budget_master_id: string;
 	budgetDescription: string;
 	vertical: string;
-	event_scale: string;
+	event_scale?: string;
 	event_name: string;
 	event_description: string;
 	event_from_date: string;
