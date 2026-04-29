@@ -8,9 +8,15 @@ import DateRange from "./DateRange";
 import Section from "./Section";
 import LineTableView from "./LineTableView";
 import Loader from "../../../../../components/ui/Loader";
-import type { EpcDetailResponse } from "../types/ActivityView.types";
+import type {
+	EpcActiveWorkflow,
+	EpcDetailResponse,
+} from "../types/ActivityView.types";
 import CommentsSection, { type CommentUser } from "./CommentsSection";
 import { dummyComments } from "../constant/activityFormView.constant";
+import ApprovalTable, {
+	type ApprovalRow,
+} from "../../../../../components/ui/ApprovalTable";
 
 interface Props {
 	epcId?: string;
@@ -52,9 +58,27 @@ const mapLineItems = (items: any[] = []) => {
 	});
 };
 
+const mapEpcWorkflowToApprovalRows = (
+	workflow?: EpcActiveWorkflow | null,
+): ApprovalRow[] => {
+	if (!workflow) return [];
+
+	return workflow.stages.flatMap((stage) =>
+		stage.approvals.map((approval) => ({
+			id: stage.stageOrder,
+			name: `${approval.approver.first_name} ${approval.approver.last_name}`,
+			email: approval.approver.email ?? "-",
+			stageName: `Stage ${stage.stageOrder}`,
+			strategy: stage.strategy,
+			status: approval.status,
+		})),
+	);
+};
+
 const ActivityFormView = ({ epcId }: Props) => {
 	const { data, loading } = useEPC();
 	const [epcData, setEPCData] = React.useState<any>(null);
+	// const [previewWFData, setPreviewWFData] = useState([]);
 
 	const budget = JSON.parse(localStorage.getItem("budgetInfo") || "{}");
 
@@ -191,7 +215,7 @@ const ActivityFormView = ({ epcId }: Props) => {
 		typeof viewData?.budget_master === "object"
 			? viewData?.budget_master?.value
 			: viewData?.budget_master;
-
+	const approvalRows = mapEpcWorkflowToApprovalRows(epcData?.activeWorkflow);
 	return (
 		<div className=" h-full min-h-screen max-w-5xl">
 			<div className="w-full h-auto  mt-0 rounded-smounded-lg px-6 py-4">
@@ -308,6 +332,9 @@ const ActivityFormView = ({ epcId }: Props) => {
 							onUpdate={handleUpdate}
 							onDelete={handleDelete}
 						/>
+					</Section>
+					<Section title="Approval Flow">
+						<ApprovalTable data={approvalRows} />
 					</Section>
 					<hr className="epf-divider mb-10 pb-12 mt-4 " />
 				</div>
