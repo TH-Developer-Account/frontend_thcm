@@ -29,6 +29,7 @@ export default function EpfForm() {
 	return (
 		<React.Fragment>
 			<PageRowSectionLayout
+				contentClassName="p-4"
 				header_children={
 					<div className="flex flex-col sm:flex-row sm:justify-between items-end sm:items-start">
 						<PageHeader
@@ -38,7 +39,7 @@ export default function EpfForm() {
 							badgeText="EPC Listing"
 							path="/marketing/listing"
 						/>
-						<div className="mx-2 my-4 sm:mx-4 flex flex-col gap-4 items-start overflow-y-auto">
+						<div className="mx-2 my-4 sm:mx-4 flex flex-col gap-4 items-start">
 							<p className="page-subtitle">
 								<strong>EPC No: </strong>
 								<span>{epcId}</span>
@@ -71,7 +72,7 @@ export default function EpfForm() {
 					isViewer={false}
 					category="EVENT_OVERHEAD"
 				/>
-				<div className="m-2 sm:m-4">
+				<div className="mb-14">
 					{/* ✅ Only passes what EpfFormInfo still needs */}
 					<EpfFormInfo
 						values={values}

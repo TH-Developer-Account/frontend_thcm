@@ -192,14 +192,14 @@ export default function LineItemTable({
               />
             </div>
 
-            <div className="col-span-1">
-              <FormInput
-                type="number"
-                name="rate"
-                value={draft.rate}
-                disabled
-              />
-            </div>
+						<div className="col-span-1">
+							<FormInput
+								type="number"
+								name="rate"
+								value={draft.rate}
+								disabled={category === "EVENT_OVERHEAD" ? false : true}
+							/>
+						</div>
 
             <div className="col-span-1">
               <FormInput
@@ -216,14 +216,9 @@ export default function LineItemTable({
               />
             </div>
 
-            <div className="col-span-1 text-right font-medium">
-              <FormInput
-                type="number"
-                name="total"
-                value={total.toFixed(2)}
-                disabled
-              />
-            </div>
+						<div className="col-span-1  font-medium">
+							<FormInput type="number" name="total" value={total} disabled />
+						</div>
 
             <div className="col-span-1 flex justify-center gap-2">
               <Button
@@ -246,52 +241,48 @@ export default function LineItemTable({
           </div>
         )}
 
-        {/* Existing Items */}
-        <div className="space-y-2 overflow-y-auto py-1 max-h-[30vh] scrollbar-sleek">
-          {lineItems.map((item, index) => (
-            <div
-              key={item._id}
-              className={`grid grid-cols-12 py-3 px-2 rounded-lg text-sm items-center transition-colors ${
-                editingId === item._id
-                  ? "bg-orange-50 border border-orange-300"
-                  : "bg-gray-50"
-              }`}
-            >
-              <div className="col-span-1">{index + 1}</div>
-              <div className="col-span-2">
-                {partNumbers.find((o) => o.label === item.partNumber)?.label ??
-                  item.partNumber}
-              </div>
-              <div className="col-span-2">
-                {particularOptions.find((p) => p.value === item.particular)
-                  ?.label ?? item.label}
-              </div>
-              <div className="col-span-2">{item.description}</div>
-              <div className="col-span-1 text-right">
-                {Number(item.rate).toFixed(2)}
-              </div>
-              <div className="col-span-1 text-right">
-                {Number(item.quantity).toFixed(2)}
-              </div>
-              <div className="col-span-1 text-right font-medium">
-                {(item.rate * item.quantity).toFixed(2)}
-              </div>
-              <div className="col-span-2 flex justify-center gap-3 text-gray-500">
-                <Pencil
-                  size={16}
-                  className={`cursor-pointer hover:text-orange-500 ${editingId === item._id ? "text-orange-500" : ""}`}
-                  onClick={() => handleEdit(item._id)}
-                />
-                <Trash2
-                  size={16}
-                  className="cursor-pointer hover:text-red-500"
-                  onClick={() => handleDelete(item._id)}
-                />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+				{/* Existing Items */}
+				<div className="space-y-2 overflow-y-auto py-1 max-h-[30vh] scrollbar-sleek">
+					{lineItems.map((item, index) => (
+						<div
+							key={item._id}
+							className={`grid grid-cols-12 py-3 px-2 rounded-lg text-sm items-center transition-colors ${
+								editingId === item._id
+									? "bg-orange-50 border border-orange-300"
+									: "bg-gray-50"
+							}`}
+						>
+							<div className="col-span-1">{index + 1}</div>
+							<div className="col-span-2">
+								{partNumbers.find((o) => o.label === item.partNumber)?.label ??
+									item.partNumber}
+							</div>
+							<div className="col-span-2">
+								{particularOptions.find((p) => p.value === item.particular)
+									?.label ?? item.label}
+							</div>
+							<div className="col-span-3">{item.description}</div>
+							<div className="col-span-1 text-right">{item.rate}</div>
+							<div className="col-span-1 text-right">{item.quantity}</div>
+							<div className="col-span-1 text-right font-medium">
+								{item.rate * item.quantity}
+							</div>
+							<div className="col-span-1 flex justify-center gap-3 text-gray-500">
+								<Pencil
+									size={16}
+									className={`cursor-pointer hover:text-orange-500 ${editingId === item._id ? "text-orange-500" : ""}`}
+									onClick={() => handleEdit(item._id)}
+								/>
+								<Trash2
+									size={16}
+									className="cursor-pointer hover:text-red-500"
+									onClick={() => handleDelete(item._id)}
+								/>
+							</div>
+						</div>
+					))}
+				</div>
+			</div>
+		</div>
+	);
 }

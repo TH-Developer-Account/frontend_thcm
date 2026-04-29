@@ -66,7 +66,7 @@ const EpfFormInfo = ({ values, handleChange, eventCost }: EpfFormProps) => {
 
 	return (
 		<div>
-			<div className="grid grid-cols-1 lg:grid-cols-[9fr_3fr] gap-4 items-start mx-auto">
+			<div className="grid grid-cols-1 lg:grid-cols-[9fr_3fr] gap-4 items-start mx-auto h-full">
 				<div className="text-left lg:text-sm text-xs w-full">
 					{/* Event Participants Section */}
 					<div className="shadow-xs">

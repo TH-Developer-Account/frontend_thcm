@@ -140,11 +140,11 @@
 /* page-section-layout.css */
 @layer components {
 	.page-stack-layout {
-		@apply flex h-full w-full min-w-0 flex-col items-start justify-center gap-2;
+		@apply flex w-full min-w-0 flex-col items-stretch gap-2;
 	}
 
 	.page-stack-section {
-		@apply w-full;
+		@apply w-full min-w-0;
 	}
 }
 

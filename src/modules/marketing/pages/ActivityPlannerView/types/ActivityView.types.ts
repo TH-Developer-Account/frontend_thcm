@@ -70,3 +70,88 @@ export type EpcBudgetMaster = {
 	id: string;
 	value: string;
 };
+
+export type EpcDetailEpf = {
+	id: string;
+	externalParticipants: number;
+	internalParticipants: number;
+	eventBudget: string;
+	annualBudget: string;
+	availableBudget: string;
+	dealerName: string;
+	dealerPercent: number;
+	dealerShare: number;
+	tataHitachiPoAmount: number;
+	status: ApprovalApiStatus;
+	lineItems: EpcLineItem[];
+};
+
+export type EpcDetailCrf = {
+	id: string;
+	lineItems: EpcLineItem[];
+};
+
+export type EpcLineItem = {
+	id: string;
+	quantity: string;
+	amount: string;
+	product: {
+		id: string;
+		partNumber: string;
+		name: string;
+		description: string;
+	};
+};
+
+export type EpcActiveWorkflow = {
+	id: string;
+	templateId: string;
+	workspaceId: string;
+	eventProposalId: string;
+	iteration: number;
+	isActive: boolean;
+	workflowType: "STANDARD";
+	status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+	currentStage: number;
+	created_at: ApiDateString;
+	updated_at: ApiDateString;
+	template: EpcWorkflowTemplate;
+	stages: EpcWorkflowStage[];
+};
+
+export type EpcWorkflowTemplate = {
+	id: string;
+	name: string;
+	description: string;
+};
+
+export type EpcWorkflowStage = {
+	id: string;
+	workflowId: string;
+	stageOrder: number;
+	iteration: number;
+	isCurrentIteration: boolean;
+	strategy: "ALL" | "ANY" | "QUORUM";
+	minApprovals: number | null;
+	startedAt: ApiDateString | null;
+	dueAt: ApiDateString | null;
+	escalatedTo: string | null;
+	status: "PENDING" | "IN_PROGRESS" | "APPROVED" | "REJECTED";
+	approvals: EpcWorkflowApproval[];
+};
+
+export type EpcWorkflowApproval = {
+	id: string;
+	stageId: string;
+	approverId: string;
+	status: "PENDING" | "APPROVED" | "REJECTED";
+	actedAt: ApiDateString | null;
+	reason: string | null;
+	approver: {
+		id: string;
+		first_name: string;
+		last_name: string;
+		email?: string;
+	};
+	comments: unknown[];
+};
