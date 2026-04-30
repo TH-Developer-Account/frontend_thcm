@@ -26,7 +26,7 @@ const BudgetShare = ({ items, shareInfo }: BudgetProps) => {
 						className="epf-budget-card"
 						style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}
 					>
-						<p className="epf-field-label">{item.label}</p>
+						<p className="uppercase-label-text">{item.label}</p>
 						<p className="epf-field-value">{item.value}</p>
 					</div>
 				))}
@@ -37,7 +37,7 @@ const BudgetShare = ({ items, shareInfo }: BudgetProps) => {
 					className="epf-budget-card"
 					style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}
 				>
-					<p className="epf-field-label">Dealer Name</p>
+					<p className="uppercase-label-text">Dealer Name</p>
 					<p className="epf-field-value">{dealerName || "-"}</p>
 				</div>
 
@@ -45,7 +45,7 @@ const BudgetShare = ({ items, shareInfo }: BudgetProps) => {
 					className="epf-budget-card"
 					style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}
 				>
-					<p className="epf-field-label">Tata Hitachi PO Amount</p>
+					<p className="uppercase-label-text">Tata Hitachi PO Amount</p>
 					<p className="epf-field-value">
 						{formatCurrency(tataHitachiPoAmount)}
 					</p>
@@ -58,14 +58,14 @@ const BudgetShare = ({ items, shareInfo }: BudgetProps) => {
 			>
 				<div className="flex justify-between text-sm mb-3">
 					<div>
-						<span className="epf-field-label">Dealer Share</span>
+						<span className="uppercase-label-text">Dealer Share</span>
 						<p className="text-slate-800 font-semibold mt-1">
 							{dealerPercent}% — {formatCurrency(dealerShare)}
 						</p>
 					</div>
 
 					<div className="text-right">
-						<span className="epf-field-label">Tata Hitachi Share</span>
+						<span className="uppercase-label-text">Tata Hitachi Share</span>
 						<p className="text-slate-800 font-semibold mt-1">
 							{tataHitachiPercent}% — {formatCurrency(tataHitachiShare)}
 						</p>
