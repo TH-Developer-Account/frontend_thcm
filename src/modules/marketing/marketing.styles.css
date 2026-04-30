@@ -1,14 +1,22 @@
 @reference "tailwindcss";
 @import "../../styles/color.css";
 
+.text-darkBlue {
+	color: var(--color-blue);
+}
 .uppercase-label-text {
-	@apply text-gray-700  text-xs italic text-[10px] tracking-[0.18em] uppercase  font-semibold;
+	@apply text-gray-800  text-xs italic text-[10px] tracking-[0.18em] uppercase  font-bold;
 	word-break: break-word;
 	overflow-wrap: anywhere;
 }
 .approval-details .epc-status-approver {
 	@apply text-gray-700 font-normal italic text-[10px];
 	font-style: italic;
+}
+
+.epf-section-header,
+.light-blue-bg-header {
+	@apply bg-blue-50 p-1 rounded-sm;
 }
 
 .approval-details-title {

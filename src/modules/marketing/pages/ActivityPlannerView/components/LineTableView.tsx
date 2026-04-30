@@ -17,7 +17,7 @@ type LineTableViewProps = {
 
 const LineTableView = ({ title, data = [] }: LineTableViewProps) => {
 	return (
-		<div className="row-6 text-center mb-6 ">
+		<div className="row-6 text-center mb-4 ">
 			<p className="font-semibold text-md">{title}</p>
 
 			<div className="w-full text-left px-3 py-1.5 ">

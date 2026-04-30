@@ -9,7 +9,7 @@ const Participants = ({ internal, external }: ParticipantsProps) => {
 	const total = (Number(internal) || 0) + (Number(external) || 0);
 	return (
 		<React.Fragment>
-			<div className="row-7 justify-between flex items-center p-2">
+			<div className="row-7 gap-20 w-auto flex items-center p-2 mb-4 light-blue-bg-header">
 				<p className="font-bold ">
 					Internal : <span className="font-light">{internal}</span>
 				</p>
