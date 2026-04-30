@@ -103,7 +103,7 @@ export interface EpfFormValues {
 	totalParticipants: number;
 	crfTotal: number;
 	// Budget
-	// eventBudget: number;
+	eventBudget: number;
 	annualBudget: number;
 	availableBudget: number;
 	allotedBudget: number;

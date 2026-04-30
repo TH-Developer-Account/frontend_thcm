@@ -5,346 +5,391 @@ import { buildLineItemPayload } from "../../constant";
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import type {
-  EpfFormValues,
-  LineItem,
-  LineItemOption,
-  Product,
+	EpfFormValues,
+	LineItem,
+	LineItemOption,
+	Product,
 } from "../../types";
 
 const initialValues: EpfFormValues = {
-  externalParticipants: 0,
-  internalParticipants: 0,
-  totalParticipants: 0,
-  crfTotal: 0,
-  // eventBudget: 0,
-  annualBudget: 0,
-  availableBudget: 0,
-  allotedBudget: 0,
-  dealerName: "",
-  dealerPercent: 50,
-  dealerShare: 0,
-  tataHitachiPercent: 50,
-  tataHitachiShare: 0,
-  tataHitachiPoAmount: 0,
+	externalParticipants: 0,
+	internalParticipants: 0,
+	totalParticipants: 0,
+	crfTotal: 0,
+	eventBudget: 0,
+	annualBudget: 0,
+	availableBudget: 0,
+	allotedBudget: 0,
+	dealerName: "",
+	dealerPercent: 50,
+	dealerShare: 0,
+	tataHitachiPercent: 50,
+	tataHitachiShare: 0,
+	tataHitachiPoAmount: 0,
 };
 
 const numberFields: (keyof EpfFormValues)[] = [
-  "externalParticipants",
-  "internalParticipants",
-  "totalParticipants",
-  // "eventBudget",
-  "annualBudget",
-  "availableBudget",
-  "dealerPercent",
-  "dealerShare",
-  "tataHitachiPercent",
-  "tataHitachiShare",
-  "tataHitachiPoAmount",
+	"externalParticipants",
+	"internalParticipants",
+	"totalParticipants",
+	"crfTotal",
+	"eventBudget",
+	"annualBudget",
+	"availableBudget",
+	"dealerPercent",
+	"dealerShare",
+	"tataHitachiPercent",
+	"tataHitachiShare",
+	"tataHitachiPoAmount",
 ];
 
 const parseValue = (name: keyof EpfFormValues, value: string) => {
-  if (numberFields.includes(name)) {
-    return value === "" ? "" : Number(value); // keep "" for controlled inputs
-  }
-  return value;
+	if (numberFields.includes(name)) {
+		return value === "" ? "" : Number(value);
+	}
+
+	return value;
 };
 
 const toNumberOrNull = (val: number | string) => {
-  if (val === "" || val === null || val === undefined) return null;
-  return Number(val);
+	if (val === "" || val === null || val === undefined) return null;
+	return Number(val);
+};
+
+const getTotalEventLineitemAmount = (items: LineItemOption[]) => {
+	return items.reduce((total, item) => {
+		return total + Number(item.rate || 0) * Number(item.quantity || 0);
+	}, 0);
+};
+
+const calculateBudgetShares = (values: EpfFormValues, eventCost: number) => {
+	const budget = Number(eventCost) || 0;
+
+	const dealerPercent = Math.min(
+		100,
+		Math.max(0, Number(values.dealerPercent) || 0),
+	);
+
+	const tataHitachiPercent = 100 - dealerPercent;
+
+	return {
+		eventBudget: budget,
+		dealerPercent,
+		tataHitachiPercent,
+		dealerShare: Number(((budget * dealerPercent) / 100).toFixed(2)),
+		tataHitachiShare: Number(((budget * tataHitachiPercent) / 100).toFixed(2)),
+	};
 };
 
 const prepareEpfPayload = (
-  values: EpfFormValues,
-  status: "DRAFT" | "SUBMITTED",
-  epcId: string,
-  eventCost: number,
+	values: EpfFormValues,
+	status: "DRAFT" | "SUBMITTED",
+	epcId: string,
+	eventCost: number,
 ) => {
-  return {
-    epcId,
-    status,
-    externalParticipants: toNumberOrNull(values.externalParticipants),
-    internalParticipants: toNumberOrNull(values.internalParticipants),
-    eventBudget: toNumberOrNull(eventCost),
-    annualBudget: toNumberOrNull(values.annualBudget),
-    availableBudget: toNumberOrNull(values.availableBudget),
-    dealerName: values.dealerName || "",
-    dealerPercent: toNumberOrNull(values.dealerPercent),
-    dealerShare: toNumberOrNull(values.dealerShare),
-    tataHitachiPoAmount: toNumberOrNull(values.tataHitachiPoAmount),
-  };
-};
+	const budgetValues = calculateBudgetShares(values, eventCost);
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getTotalEventLineitemAmount = (items: LineItemOption[]) => {
-  return items.reduce((total, item) => {
-    return total + Number(item.rate || 0) * Number(item.quantity || 0);
-  }, 0);
+	return {
+		epcId,
+		status,
+		externalParticipants: toNumberOrNull(values.externalParticipants),
+		internalParticipants: toNumberOrNull(values.internalParticipants),
+		eventBudget: toNumberOrNull(budgetValues.eventBudget),
+		annualBudget: toNumberOrNull(values.annualBudget),
+		availableBudget: toNumberOrNull(values.availableBudget),
+		dealerName: values.dealerName || "",
+		dealerPercent: toNumberOrNull(budgetValues.dealerPercent),
+		dealerShare: toNumberOrNull(budgetValues.dealerShare),
+		// tataHitachiPercent: toNumberOrNull(budgetValues.tataHitachiPercent),
+		// tataHitachiShare: toNumberOrNull(budgetValues.tataHitachiShare),
+		// tataHitachiPoAmount: toNumberOrNull(values.tataHitachiPoAmount),
+	};
 };
 
 export const useEpfForm = () => {
-  const { showToast } = useToast();
-  const navigate = useNavigate();
-  const { workspaceId } = useAuth();
+	const { showToast } = useToast();
+	const navigate = useNavigate();
+	const { workspaceId } = useAuth();
 
-  const [values, setValues] = useState<EpfFormValues>(initialValues);
-  const [options, setOptions] = React.useState<LineItemOption[]>([]);
-  const [costItems, setCostItems] = React.useState<LineItemOption[]>([]);
+	const [values, setValues] = useState<EpfFormValues>(initialValues);
+	const [options, setOptions] = React.useState<LineItemOption[]>([]);
+	const [costItems, setCostItems] = React.useState<LineItemOption[]>([]);
+	const [errors, setErrors] = useState<
+		Partial<Record<keyof EpfFormValues, string>>
+	>({});
+	const [loading, setLoading] = useState(false);
 
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof EpfFormValues, string>>
-  >({});
-  const [loading, setLoading] = useState(false);
+	const [draft, setDraft] = useState<LineItem>({
+		id: "",
+		particular: "",
+		description: "",
+		rate: 0,
+		quantity: 0,
+	});
 
-  // ✅ TABLE STATE (merged here)
-  const [draft, setDraft] = useState<LineItem>({
-    id: "",
-    particular: "",
-    description: "",
-    rate: 0,
-    quantity: 0,
-  });
+	const stored = localStorage.getItem("epcInfo");
+	const appId = localStorage.getItem("appId");
 
-  const eventCost = React.useMemo(() => {
-    const total = getTotalEventLineitemAmount(costItems);
-    return total + Number(values.crfTotal || 0);
-  }, [costItems, values.crfTotal]);
+	let epcId: string | null = null;
+	let crfId: string | null = null;
+	let epfId: string | null = null;
 
-  const stored = localStorage.getItem("epcInfo");
-  const appId = localStorage.getItem("appId");
-  let epcId: string | null = null;
-  let crfId: string | null = null;
-  let epfId: string | null = null;
-  if (stored) {
-    const parsed = JSON.parse(stored);
-    epcId = parsed.epcId || null;
-    crfId = parsed.crfId || null;
-    epfId = parsed.epfId || null;
-  }
+	if (stored) {
+		const parsed = JSON.parse(stored);
+		epcId = parsed.epcId || null;
+		crfId = parsed.crfId || null;
+		epfId = parsed.epfId || null;
+	}
 
-  React.useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const [productsRes, budgetInfo] = await Promise.all([
-          ServerAxios.get(`/master-data/products?productType=EPF`),
-          ServerAxios.get(`/master-data/budget`),
-        ]);
+	const eventCost = React.useMemo(() => {
+		const total = getTotalEventLineitemAmount(costItems);
+		return total + Number(values.crfTotal || 0);
+	}, [costItems, values.crfTotal]);
 
-        const budgetInformation = budgetInfo.data.d.results[0];
+	const calculatedBudgetValues = React.useMemo(() => {
+		return calculateBudgetShares(values, eventCost);
+	}, [values.dealerPercent, eventCost]);
 
-        setValues((prev) => ({
-          ...prev,
-          availableBudget: Number(budgetInformation.Available),
-          annualBudget: Number(budgetInformation.Budget),
-          allotedBudget: Number(budgetInformation.Allocated),
-        }));
+	const displayValues: EpfFormValues = React.useMemo(() => {
+		return {
+			...values,
+			...calculatedBudgetValues,
+		};
+	}, [values, calculatedBudgetValues]);
 
-        const data = productsRes.data.data;
-        setOptions(
-          data.map((item: Product) => ({
-            partNumber: item.partNumber,
-            value: item.id,
-            label: item.name,
-            particular: item.name,
-            description: item.description,
-            rate: parseFloat(item.unitRate),
-            quantity: 1,
-          })),
-        );
+	React.useEffect(() => {
+		const fetchProducts = async () => {
+			try {
+				setLoading(true);
 
-        console.log("Fetched products for EPF:", data);
-      } catch (err) {
-        console.error("Product search failed:", err);
-      }
-    };
+				const [productsRes, budgetInfo] = await Promise.all([
+					ServerAxios.get(`/master-data/products?productType=EPF`),
+					ServerAxios.get(`/master-data/budget`),
+				]);
 
-    fetchProducts();
-  }, []);
+				const budgetInformation = budgetInfo.data.d.results[0];
 
-  React.useEffect(() => {
-    const fetchEPF = async () => {
-      try {
-        const [epfRes, crfRes] = await Promise.all([
-          ServerAxios.get(`/epf/${epfId}`),
-          crfId ? ServerAxios.get(`/crf/${crfId}`) : Promise.resolve(null),
-        ]);
+				setValues((prev) => ({
+					...prev,
+					availableBudget: Number(budgetInformation.Available),
+					annualBudget: Number(budgetInformation.Budget),
+					allotedBudget: Number(budgetInformation.Allocated),
+				}));
 
-        const crfData = crfRes?.data;
-        const epfData = epfRes?.data;
-        const totalCrfAmount = getTotalEventLineitemAmount(
-          crfData?.lineItems || [],
-        );
+				const data = productsRes.data.data;
 
-        const lineItems: LineItemOption[] = (epfData.lineItems ?? []).map(
-          (item: {
-            productId: string;
-            productName: string;
-            partNumber: string;
-            description: string | null;
-            rate: number;
-            quantity: number;
-            category: string;
-            product: Product;
-          }) => {
-            return {
-              value: item.product.id,
-              label: item.product.name,
-              description: item.product.description,
-              rate: item.rate,
-              quantity: item.quantity,
-              partNumber: item.product.partNumber,
-              category: item.product.category,
-            };
-          },
-        );
-        setCostItems(lineItems);
-        setValues((prev) => ({
-          ...prev,
-          crfTotal: totalCrfAmount,
-          externalParticipants: epfData.externalParticipants,
-          internalParticipants: epfData.internalParticipants,
-          annualBudget: epfData.annualBudget,
-          availableBudget: epfData.availableBudget,
-          dealerName: epfData.dealerName,
-          dealerPercent: epfData.dealerPercent,
-          dealerShare: epfData.dealerShare,
-          tataHitachiPoAmount: epfData.tataHitachiPoAmount,
-        }));
+				setOptions(
+					data.map((item: Product) => ({
+						partNumber: item.partNumber,
+						value: item.id,
+						label: item.name,
+						particular: item.name,
+						description: item.description,
+						rate: parseFloat(item.unitRate),
+						quantity: 1,
+					})),
+				);
+			} catch (err) {
+				console.error("Product search failed:", err);
+			} finally {
+				setLoading(false);
+			}
+		};
 
-        console.log("Fetched products for EPF:", epfRes.data);
-      } catch (err) {
-        console.error("Product search failed:", err);
-      }
-    };
+		fetchProducts();
+	}, []);
 
-    if (epfId) fetchEPF();
-  }, [epfId]);
+	React.useEffect(() => {
+		const fetchEPF = async () => {
+			try {
+				setLoading(true);
 
-  const handleChange = (name: keyof EpfFormValues, value: string) => {
-    setValues((prev) => {
-      const parsedValue = parseValue(name, value);
-      const updated = {
-        ...prev,
-        [name]: parsedValue,
-      };
+				const [epfRes, crfRes] = await Promise.all([
+					ServerAxios.get(`/epf/${epfId}`),
+					crfId ? ServerAxios.get(`/crf/${crfId}`) : Promise.resolve(null),
+				]);
 
-      // ✅ Participants auto total
-      const external = Number(updated.externalParticipants);
-      const internal = Number(updated.internalParticipants);
-      updated.externalParticipants = external;
-      updated.internalParticipants = internal;
-      updated.totalParticipants = Number(external + internal);
+				const crfData = crfRes?.data;
+				const epfData = epfRes?.data;
 
-      // ✅ Budget calculations
-      const budget = Number(eventCost) || 0;
+				const totalCrfAmount = getTotalEventLineitemAmount(
+					crfData?.lineItems || [],
+				);
 
-      const dealerPercent = Math.min(
-        100,
-        Math.max(0, Number(updated.dealerPercent) || 0),
-      );
+				const lineItems: LineItemOption[] = (epfData.lineItems ?? []).map(
+					(item: {
+						productId: string;
+						productName: string;
+						partNumber: string;
+						description: string | null;
+						rate: number;
+						quantity: number;
+						category: string;
+						product: Product;
+					}) => ({
+						value: item.product.id,
+						label: item.product.name,
+						description: item.product.description,
+						rate: item.rate,
+						quantity: item.quantity,
+						partNumber: item.product.partNumber,
+						category: item.product.category,
+					}),
+				);
 
-      // auto-calculate tata percent
-      const tataPercent = 100 - dealerPercent;
-      updated.tataHitachiPercent = tataPercent;
+				setCostItems(lineItems);
 
-      if (budget > 0) {
-        updated.dealerShare = Number(
-          ((budget * dealerPercent) / 100).toFixed(2),
-        );
+				setValues((prev) => ({
+					...prev,
+					crfTotal: totalCrfAmount,
+					externalParticipants: epfData.externalParticipants,
+					internalParticipants: epfData.internalParticipants,
+					totalParticipants:
+						Number(epfData.externalParticipants || 0) +
+						Number(epfData.internalParticipants || 0),
+					annualBudget: epfData.annualBudget,
+					availableBudget: epfData.availableBudget,
+					dealerName: epfData.dealerName,
+					dealerPercent: epfData.dealerPercent ?? 50,
+					tataHitachiPoAmount: epfData.tataHitachiPoAmount,
+				}));
+			} catch (err) {
+				console.error("EPF fetch failed:", err);
+			} finally {
+				setLoading(false);
+			}
+		};
 
-        updated.tataHitachiShare = Number(
-          ((budget * tataPercent) / 100).toFixed(2),
-        );
-      }
+		if (epfId) fetchEPF();
+	}, [epfId, crfId]);
 
-      return updated;
-    });
+	const handleChange = (name: keyof EpfFormValues, value: string) => {
+		setValues((prev) => {
+			const parsedValue = parseValue(name, value);
 
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: undefined,
-      }));
-    }
-  };
+			const updated = {
+				...prev,
+				[name]: parsedValue,
+			};
 
-  const handleReset = () => {
-    setValues(initialValues);
-    setDraft({
-      id: "",
-      particular: "",
-      description: "",
-      rate: 0,
-      quantity: 0,
-    });
-    setErrors({});
-  };
+			const external = Number(updated.externalParticipants || 0);
+			const internal = Number(updated.internalParticipants || 0);
 
-  const assignWorkflow = async () => {
-    try {
-      return ServerAxios.post("/soa/assign-workflow", {
-        eventProposalId: epcId,
-        workspaceId,
-        appId,
-        budget: eventCost,
-      });
-    } catch (error) {
-      console.log("error while assigning workflow", error);
-      showToast({
-        type: "error",
-        title: "Workflow Error",
-        description: "Saved but workflow assignment failed",
-      });
-    }
-  };
+			return {
+				...updated,
+				externalParticipants: external,
+				internalParticipants: internal,
+				totalParticipants: external + internal,
+			};
+		});
 
-  const handleSubmit = async (status: "DRAFT" | "SUBMITTED") => {
-    try {
-      if (!epcId) {
-        console.error("EPC ID not found in localStorage");
-        return;
-      }
+		if (errors[name]) {
+			setErrors((prev) => ({
+				...prev,
+				[name]: undefined,
+			}));
+		}
+	};
 
-      const cleanedData = prepareEpfPayload(values, status, epcId, eventCost);
+	const handleReset = () => {
+		setValues(initialValues);
+		setDraft({
+			id: "",
+			particular: "",
+			description: "",
+			rate: 0,
+			quantity: 0,
+		});
+		setErrors({});
+	};
 
-      const payload = buildLineItemPayload(costItems, cleanedData);
+	const assignWorkflow = async () => {
+		try {
+			return ServerAxios.post("/soa/assign-workflow", {
+				eventProposalId: epcId,
+				workspaceId,
+				appId,
+				budget: eventCost,
+			});
+		} catch (error) {
+			console.log("error while assigning workflow", error);
+			showToast({
+				type: "error",
+				title: "Workflow Error",
+				description: "Saved but workflow assignment failed",
+			});
+		}
+	};
 
-      console.log("FINAL PAYLOAD:", payload);
+	const handleSubmit = async (status: "DRAFT" | "SUBMITTED") => {
+		try {
+			if (!epcId) {
+				console.error("EPC ID not found in localStorage");
+				return;
+			}
 
-      const {
-        data: { message },
-      } = await ServerAxios.post("/epf", payload);
+			const epfPayload = prepareEpfPayload(values, status, epcId, eventCost);
+			const lineItemPayload = buildLineItemPayload(costItems, { epcId });
 
-      showToast({
-        type: "success",
-        title: "Success",
-        description: message || "Created EPF Successfully",
-      });
+			const payload = {
+				...epfPayload,
+				lineItems: lineItemPayload.lineItems,
+			};
 
-      // ✅ 2. Assign workflow ONLY if submitted
-      await assignWorkflow();
+			console.log("FINAL PAYLOAD:", payload);
 
-      localStorage.removeItem("epcInfo");
-      navigate("/marketing/listing");
-    } catch (error) {
-      console.error("CRF creation failed:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+			if (epfId) {
+				const { epcId: _epcId, ...updatePayload } = payload;
+				const {
+					data: { message },
+				} = await ServerAxios.put(`/epf/${epfId}`, updatePayload);
 
-  return {
-    values,
-    eventCost,
-    draft,
-    errors,
-    loading,
-    options,
-    costItems,
-    setCostItems,
-    setOptions,
-    handleChange,
-    handleReset,
-    handleSubmit,
-  };
+				showToast({
+					type: "success",
+					title: "Success",
+					description: message || "EPF modified successfully",
+				});
+			} else {
+				const {
+					data: { message },
+				} = await ServerAxios.post("/epf", payload);
+
+				if (status === "SUBMITTED") {
+					await assignWorkflow();
+				}
+
+				showToast({
+					type: "success",
+					title: "Success",
+					description: message || "EPF created successfully",
+				});
+			}
+
+			localStorage.removeItem("epcInfo");
+			navigate("/marketing/listing");
+		} catch (error) {
+			console.error("EPF save failed:", error);
+
+			showToast({
+				type: "error",
+				title: "Error",
+				description: "Failed to save EPF.",
+			});
+		}
+	};
+
+	return {
+		values: displayValues,
+		eventCost,
+		draft,
+		errors,
+		loading,
+		options,
+		costItems,
+		setCostItems,
+		setOptions,
+		handleChange,
+		handleReset,
+		handleSubmit,
+	};
 };

@@ -22,6 +22,7 @@ const Button: React.FC<ButtonProps> = ({
 	path,
 }) => {
 	const navigate = useNavigate();
+
 	const S = {
 		sm: "btn-sm",
 		md: "btn-md",
@@ -31,16 +32,37 @@ const Button: React.FC<ButtonProps> = ({
 
 	const styleClass = resolveStatusStyle({ status: status || "" });
 	const variantClass = resolveVariantStyle({ variant: variant || "" });
-	const handlePathClick = () => {
-		if (path) navigate(path);
+
+	const handleAction = (e: React.MouseEvent<HTMLButtonElement>) => {
+		if (disabled) return;
+
+		if (onClick) {
+			onClick(e);
+			return;
+		}
+
+		if (path) {
+			navigate(path);
+		}
 	};
+
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+		if (disabled) return;
+
+		if (e.key === "Enter" || e.key === " ") {
+			e.preventDefault();
+			e.currentTarget.click();
+		}
+	};
+
 	return (
 		<div
-			className={` ${fullWidth ? "w-full" : "w-auto"} relative inline-flex group`}
+			className={`${fullWidth ? "w-full" : "w-auto"} relative inline-flex group`}
 		>
 			<button
 				type={type}
-				onClick={onClick || handlePathClick}
+				onClick={handleAction}
+				onKeyDown={handleKeyDown}
 				disabled={disabled}
 				className={`
 					${fullWidth ? "w-full" : "w-auto"}
@@ -51,19 +73,18 @@ const Button: React.FC<ButtonProps> = ({
 				`}
 			>
 				{Icon && iconPosition === "left" && (
-					<Icon size={iconSize ? iconSize : 16} color={iconColor} />
+					<Icon size={iconSize ?? 16} color={iconColor} />
 				)}
 
 				{text}
 
 				{Icon && iconPosition === "right" && (
-					<Icon size={iconSize ? iconSize : 16} color={iconColor} />
+					<Icon size={iconSize ?? 16} color={iconColor} />
 				)}
 
-				{children ? children : null}
+				{children ?? null}
 			</button>
 
-			{/* Tooltip */}
 			{isTooltip ? <div className="btn-tooltip">{isTooltip}</div> : null}
 		</div>
 	);

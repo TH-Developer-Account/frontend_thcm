@@ -224,7 +224,7 @@ const EpfFormInfo = ({ values, handleChange, eventCost }: EpfFormProps) => {
 						<div className="px-2 grid">
 							<FormInput
 								name="crfTotal"
-								placeholder="0.00"
+								placeholder="--"
 								className="bg-gray-100 text-black font-semibold cursor-not-allowed"
 								readOnly
 								disabled
@@ -242,15 +242,13 @@ const EpfFormInfo = ({ values, handleChange, eventCost }: EpfFormProps) => {
 								<span className="text-lg font-semibold">
 									{values.availableBudget
 										? values.availableBudget + " rs"
-										: "0:00 rs"}
+										: "--"}
 								</span>
 							</div>
 							<div className="bg-gray-100 px-1.5 py-2 rounded-sm flex justify-between items-center">
 								<p>Annual Budget:</p>
 								<span className="text-lg font-semibold">
-									{values.annualBudget
-										? values.annualBudget + " rs"
-										: "0:00 rs"}
+									{values.annualBudget ? values.annualBudget + " rs" : "-- rs"}
 								</span>
 							</div>
 							<div className="bg-gray-100 px-1.5 py-2 rounded-sm flex justify-between items-center">
@@ -258,13 +256,13 @@ const EpfFormInfo = ({ values, handleChange, eventCost }: EpfFormProps) => {
 								<span className="text-lg font-semibold">
 									{values.availableBudget
 										? values.availableBudget + " rs"
-										: "0:00 rs"}
+										: "-- rs"}
 								</span>
 							</div>
 							<div className="bg-gray-100 px-1.5 py-2 rounded-sm flex justify-between items-center">
 								<p>Event Budget:</p>
 								<span className="text-lg font-semibold">
-									{eventCost ? eventCost + " rs" : "0:00 rs"}
+									{eventCost ? eventCost + " rs" : "-- rs"}
 								</span>
 							</div>
 						</div>
