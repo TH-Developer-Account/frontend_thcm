@@ -1,17 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ServerAxios } from "../../../../services/ServerAxios";
-import PageSectionLayout, {
-	PageSection,
-} from "../../../../layout/PageSectionLayout";
+
 import WorkflowCreateHeader from "./components/WorkflowCreateHeader";
 import WorkflowCreateMain from "./WorkflowCreateMain";
 import WorkflowCreateSidebar from "./components/WorkflowCreateSidebar";
-import {
-	mapBasics,
-	mapStages,
-	api_routes,
-} from "../constant/workflow.constant";
+import { mapBasics, mapStages } from "../utils/workflow.helpers";
+import { api_routes } from "../constant/workflow.constant";
 import {
 	addStageApprover,
 	buildWorkflowPayload,
@@ -60,9 +55,19 @@ const WorkflowCreatePage = () => {
 		const fetchWorkflow = async () => {
 			try {
 				setLoading(true);
-				const { data } = await ServerAxios.get(`/work-flow/${id}`);
-				setBasics(mapBasics(data));
-				setStages(mapStages(data.stages));
+
+				const response = await ServerAxios.get(`/work-flow/${id}`);
+
+				const workflow =
+					response.data?.data?.data ?? response.data?.data ?? response.data;
+
+				if (!workflow?.id) {
+					console.error("Workflow data not found:", response.data);
+					return;
+				}
+
+				setBasics(mapBasics(workflow));
+				setStages(mapStages(workflow.stages ?? []));
 			} catch (error) {
 				console.error("Failed to fetch workflow", error);
 			} finally {
@@ -229,53 +234,50 @@ const WorkflowCreatePage = () => {
 
 	if (isLoading) return null;
 	return (
-		<PageSectionLayout>
-			<PageSection className="workflow-create-page-box">
-				<div className="workflow-create-page">
-					<WorkflowCreateHeader currentStep={currentStep} />
+		<div className="workflow-create-page-box content-box">
+			<div className="workflow-create-page">
+				<WorkflowCreateHeader currentStep={currentStep} />
 
-					<div className="workflow-create-page-header">
-						<h2 className="workflow-create-page-title">
-							{id ? "Update Workflow" : "Create Workflow"}
-						</h2>
-						<p className="workflow-create-page-subtitle">
-							Define who approves what, in which order, and under what
-							conditions.
-						</p>
-					</div>
-
-					<div className="workflow-create-grid">
-						<WorkflowCreateMain
-							currentStep={currentStep}
-							goNext={handleNext}
-							goBack={handleBack}
-							basics={basics}
-							stages={stages}
-							currentUserId={user?.id || ""}
-							onBasicChange={handleBasicChange}
-							onStageChange={handleStageChange}
-							onToggleStage={toggleStage}
-							onRemoveApprover={removeApprover}
-							onAddApprover={addApprover}
-							onAddStage={addStage}
-							onSubmit={handleSubmit}
-							loading={loading}
-							basicErrors={basicErrors}
-							stageErrors={stageErrors}
-							stageFormError={stageFormError}
-							onClearBasicError={clearBasicError}
-						/>
-
-						<WorkflowCreateSidebar
-							basics={basics}
-							stageCount={stages.length}
-							approverCount={totalApprovers}
-							minApprovers={2}
-						/>
-					</div>
+				<div className="workflow-create-page-header">
+					<h2 className="workflow-create-page-title">
+						{id ? "Update Workflow" : "Create Workflow"}
+					</h2>
+					<p className="workflow-create-page-subtitle">
+						Define who approves what, in which order, and under what conditions.
+					</p>
 				</div>
-			</PageSection>
-		</PageSectionLayout>
+
+				<div className="workflow-create-grid">
+					<WorkflowCreateMain
+						currentStep={currentStep}
+						goNext={handleNext}
+						goBack={handleBack}
+						basics={basics}
+						stages={stages}
+						currentUserId={user?.id || ""}
+						onBasicChange={handleBasicChange}
+						onStageChange={handleStageChange}
+						onToggleStage={toggleStage}
+						onRemoveApprover={removeApprover}
+						onAddApprover={addApprover}
+						onAddStage={addStage}
+						onSubmit={handleSubmit}
+						loading={loading}
+						basicErrors={basicErrors}
+						stageErrors={stageErrors}
+						stageFormError={stageFormError}
+						onClearBasicError={clearBasicError}
+					/>
+
+					<WorkflowCreateSidebar
+						basics={basics}
+						stageCount={stages.length}
+						approverCount={totalApprovers}
+						minApprovers={2}
+					/>
+				</div>
+			</div>
+		</div>
 	);
 };
 

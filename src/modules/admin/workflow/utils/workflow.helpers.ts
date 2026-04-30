@@ -231,3 +231,44 @@ export const mapWorkflows = (data: WorkFlowTemplate[]): WorkflowCard[] => {
 		})),
 	}));
 };
+
+export const mapBasics = (data: any) => ({
+	id: data?.id ?? "",
+	name: data?.name ?? "",
+	description: data?.description ?? "",
+	workspaceId: data?.workspaceId ?? "",
+	app: data?.appId ?? "",
+	appDesc: data?.app?.name ?? data?.appDesc ?? "",
+	isActive: data?.isActive ?? true,
+	category: data?.metaData_1 ?? "",
+	metaData_2: data?.metaData_2 ?? "",
+	metaData_3: data?.metaData_3 ?? "",
+});
+export const mapStages = (stages: any[] = []) => {
+	return stages
+		.slice()
+		.sort((a, b) => Number(a.stageOrder) - Number(b.stageOrder))
+		.map((stage, index) => ({
+			id: stage?.id ?? `stage-${index + 1}`,
+			name: stage?.name ?? `Stage ${index + 1}`,
+			stageOrder: stage?.stageOrder ?? index + 1,
+			strategy: stage?.strategy ?? "ANY",
+			minApprovals:
+				stage?.strategy === "SOME"
+					? Number(stage?.minApprovals ?? 1)
+					: Number(stage?.minApprovals ?? 1),
+			isExpanded: true,
+			approvers:
+				stage?.approvers?.map((approver: any) => ({
+					id: approver?.id ?? approver?.userId ?? approver?.user?.id,
+					stageId: approver?.stageId ?? stage?.id,
+					userId: approver?.userId ?? approver?.user?.id,
+					user: {
+						id: approver?.user?.id ?? approver?.userId ?? "",
+						first_name: approver?.user?.first_name ?? "",
+						last_name: approver?.user?.last_name ?? "",
+						email: approver?.user?.email ?? "",
+					},
+				})) ?? [],
+		}));
+};

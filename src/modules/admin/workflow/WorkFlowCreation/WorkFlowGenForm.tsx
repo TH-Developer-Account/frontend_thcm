@@ -34,6 +34,7 @@ const WorkFlowGenForm = ({
 	const navigate = useNavigate();
 	const { id } = useParams();
 	const apps = formatApps(permissions);
+	console.log("Data", basics);
 	return (
 		<>
 			<div className="workflow-create-field-row workflow-create-field-row-3">

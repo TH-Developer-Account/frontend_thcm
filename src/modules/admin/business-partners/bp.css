@@ -3,7 +3,7 @@
 
 /* Common styles for Business Partners module */
 .content-box {
-	@apply w-full h-full rounded-sm border border-gray-300 bg-white;
+	@apply w-full h-auto rounded-sm border border-gray-300 bg-white;
 }
 
 button {
