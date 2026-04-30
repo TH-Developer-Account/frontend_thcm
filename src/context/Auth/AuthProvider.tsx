@@ -57,7 +57,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (token) {
         try {
           const { data } = await ServerAxios.get("/users/me");
-          console.log({ user });
           setUser(data.user);
           setWorkspaceId(data.workspaceId);
 
