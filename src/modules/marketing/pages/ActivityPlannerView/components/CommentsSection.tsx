@@ -1,276 +1,300 @@
 import React from "react";
+import { useToast } from "../../../../../context/Auth/AuthContext";
+import { useAuth } from "../../../../../context/Auth/useAuth";
 import { MessageCircle, X, Send } from "lucide-react";
 import Button from "../../../../../components/common/Button";
 import TextareaInput from "../../../../../components/FormElements/TextareaInput";
 import Avatar from "../../../../../components/common/Avatar";
+import { ServerAxios } from "../../../../../services/ServerAxios";
+import type { EpcWorkflowStage } from "../types/ActivityView.types";
 
 export type CommentUser = {
-	id: string;
-	name: string;
-	avatarUrl?: string;
-	role?: string;
+  id: string;
+  first_name: string;
+  last_name: string;
+  avatarUrl?: string;
 };
 
 export type CommentItem = {
-	id: string;
-	comment: string;
-	user: CommentUser;
-	createdAt: string;
-	updatedAt?: string;
-	replies?: CommentItem[];
+  id: string;
+  comment: string;
+  user: CommentUser;
+  createdAt: string;
+  updatedAt?: string;
+  replies?: CommentItem[];
 };
 
 type CommentsSectionProps = {
-	title?: string;
-	comments: CommentItem[];
-	currentUser: CommentUser;
-	loading?: boolean;
-	error?: string;
-	disabled?: boolean;
-	allowReply?: boolean;
-	allowEdit?: boolean;
-	allowDelete?: boolean;
-	onCreate: (comment: string) => Promise<void>;
-	onReply?: (parentCommentId: string, comment: string) => Promise<void>;
-	onUpdate?: (commentId: string, comment: string) => Promise<void>;
-	onDelete?: (commentId: string) => Promise<void>;
+  workFlowId: string;
+  stages: EpcWorkflowStage[];
 };
 
 const formatDate = (value: string) => {
-	if (!value) return "";
-	return new Date(value).toLocaleString("en-IN", {
-		day: "2-digit",
-		month: "short",
-		year: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
+  if (!value) return "";
+  return new Date(value).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
-const getInitials = (name: string) =>
-	name
-		.split(" ")
-		.map((word) => word[0])
-		.join("")
-		.slice(0, 2)
-		.toUpperCase();
-
 function CommentInput({
-	placeholder = "Write a comment...",
-	submitText = "Send",
-	disabled,
-	autoFocus,
-	initialValue = "",
-	onCancel,
-	onSubmit,
+  placeholder = "Write a comment...",
+  submitText = "Send",
+  disabled,
+  autoFocus,
+  initialValue = "",
+  onCancel,
+  onSubmit,
 }: {
-	placeholder?: string;
-	submitText?: string;
-	disabled?: boolean;
-	autoFocus?: boolean;
-	initialValue?: string;
-	onCancel?: () => void;
-	onSubmit: (value: string) => Promise<void>;
+  placeholder?: string;
+  submitText?: string;
+  disabled?: boolean;
+  autoFocus?: boolean;
+  initialValue?: string;
+  onCancel?: () => void;
+  onSubmit: (value: string) => Promise<void>;
 }) {
-	const [value, setValue] = React.useState(initialValue);
-	const [submitting, setSubmitting] = React.useState(false);
+  const [value, setValue] = React.useState(initialValue);
+  const [submitting, setSubmitting] = React.useState(false);
 
-	const handleSubmit = async () => {
-		const trimmed = value.trim();
-		if (!trimmed || submitting || disabled) return;
+  const handleSubmit = async () => {
+    const trimmed = value.trim();
+    if (!trimmed || submitting || disabled) return;
 
-		try {
-			setSubmitting(true);
-			await onSubmit(trimmed);
-			setValue("");
-		} finally {
-			setSubmitting(false);
-		}
-	};
+    try {
+      setSubmitting(true);
+      await onSubmit(trimmed);
+      setValue("");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
-	return (
-		<>
-			<div className="flex items-center justify-between gap-3">
-				<div className="flex-1">
-					<TextareaInput
-						name="comment"
-						autoFocus={autoFocus}
-						value={value}
-						disabled={disabled || submitting}
-						placeholder={placeholder}
-						onChange={(e) => setValue(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-								handleSubmit();
-							}
-						}}
-						rows={4}
-						className="bg-white overflow-y-auto px-2 py-1.5 min-h-[5vh]"
-					/>
-				</div>
-				{/* <p className="comment-helper">Press Ctrl + Enter to send</p> */}
-				<div>
-					{onCancel && (
-						<Button
-							type="button"
-							status="brand"
-							onClick={onCancel}
-							disabled={submitting}
-							text={"Cancel"}
-							Icon={X}
-							iconSize="14"
-						/>
-					)}
-					<Button
-						text={submitting ? "Saving..." : submitText}
-						type="button"
-						status="brand"
-						onClick={handleSubmit}
-						disabled={!value.trim() || disabled || submitting}
-						Icon={Send}
-						iconSize="14"
-					/>
-				</div>
-			</div>
-		</>
-	);
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1">
+          <TextareaInput
+            name="comment"
+            autoFocus={autoFocus}
+            value={value}
+            disabled={disabled || submitting}
+            placeholder={placeholder}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                handleSubmit();
+              }
+            }}
+            rows={4}
+            className="bg-white overflow-y-auto px-2 py-1.5 min-h-[5vh]"
+          />
+        </div>
+        {/* <p className="comment-helper">Press Ctrl + Enter to send</p> */}
+        <div>
+          {onCancel && (
+            <Button
+              type="button"
+              status="brand"
+              onClick={onCancel}
+              disabled={submitting}
+              text={"Cancel"}
+              Icon={X}
+              iconSize="14"
+            />
+          )}
+          <Button
+            text={submitting ? "Saving..." : submitText}
+            type="button"
+            status="brand"
+            onClick={handleSubmit}
+            disabled={!value.trim() || disabled || submitting}
+            Icon={Send}
+            iconSize="14"
+          />
+        </div>
+      </div>
+    </>
+  );
 }
 
 function CommentCard({
-	comment,
-	currentUser,
-	disabled,
-	allowEdit,
-	allowDelete,
-	level = 0,
-	onReply,
-	onUpdate,
-	onDelete,
+  comment,
+  level = 0,
 }: {
-	comment: CommentItem;
-	currentUser: CommentUser;
-	disabled?: boolean;
-	allowReply?: boolean;
-	allowEdit?: boolean;
-	allowDelete?: boolean;
-	level?: number;
-	onReply?: (parentCommentId: string, comment: string) => Promise<void>;
-	onUpdate?: (commentId: string, comment: string) => Promise<void>;
-	onDelete?: (commentId: string) => Promise<void>;
+  comment: CommentItem;
+  level?: number;
 }) {
-	return (
-		<div className={`comment-card ${level > 0 ? "comment-reply-card" : ""}`}>
-			<div className="comment-main">
-				<Avatar firstName={getInitials(comment?.user.name)} size="sm" />
+  return (
+    <div className={`comment-card ${level > 0 ? "comment-reply-card" : ""}`}>
+      <div className="comment-main">
+        <Avatar
+          firstName={comment?.user.first_name}
+          lastName={comment?.user.last_name}
+          size="sm"
+        />
 
-				<div className="comment-content">
-					<div className="comment-bubble">
-						<div className="comment-meta">
-							<p className="comment-author">{comment.user.name}</p>
-							<div className="comment-submeta">
-								{comment.user.role && <span>{comment.user.role}</span>}•
-								<span>{formatDate(comment.createdAt)}</span>
-								{comment.updatedAt && <span>Edited</span>}
-							</div>
-						</div>
-
-						<p className="comment-text">{comment.comment}</p>
-					</div>
-					{comment.replies && comment.replies.length > 0 && (
-						<div className="comment-replies">
-							{comment.replies.map((reply) => (
-								<CommentCard
-									key={reply.id}
-									comment={reply}
-									currentUser={currentUser}
-									disabled={disabled}
-									allowReply={false}
-									allowEdit={allowEdit}
-									allowDelete={allowDelete}
-									level={level + 1}
-									onReply={onReply}
-									onUpdate={onUpdate}
-									onDelete={onDelete}
-								/>
-							))}
-						</div>
-					)}
-				</div>
-			</div>
-		</div>
-	);
+        <div className="comment-content">
+          <div className="comment-bubble">
+            <div className="comment-meta">
+              <p className="comment-author">{`${comment?.user.first_name} ${comment?.user.last_name}`}</p>
+              <div className="comment-submeta">
+                <span>{formatDate(comment.createdAt)}</span>
+              </div>
+            </div>
+            <p className="comment-text">{comment.comment}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function CommentsSection({
-	title = "Comment Section",
-	comments,
-	currentUser,
-	loading = false,
-	error,
-	disabled = false,
-	allowReply = true,
-	allowEdit = true,
-	allowDelete = true,
-	onCreate,
-	onReply,
-	onUpdate,
-	onDelete,
+  workFlowId,
+  stages,
 }: CommentsSectionProps) {
-	return (
-		<section className="comments-section">
-			<div className="comments-header">
-				<div className="px-2.5 py-2 flex flex-row justify-between gap-4 w-full">
-					<h3 className="comments-title">
-						<MessageCircle size={16} />
-						{title}
-					</h3>
-					<p className="comments-subtitle">
-						{comments.length} {comments.length === 1 ? "comment" : "comments"}
-					</p>
-				</div>
-			</div>
+  const { showToast } = useToast();
+  const { user } = useAuth();
+  const [comments, setComments] = React.useState<CommentItem[]>([]);
+  const [commentsLoading, setCommentsLoading] = React.useState(false);
 
-			{loading ? (
-				<div className="comments-loading">
-					<div />
-					<div />
-					<div />
-				</div>
-			) : comments.length === 0 ? (
-				<div className="comments-empty">
-					<MessageCircle size={24} />
-					<p>No comments yet</p>
-					<span>Start the discussion by adding the first comment.</span>
-				</div>
-			) : (
-				<div className="comments-list">
-					{comments.map((comment) => (
-						<CommentCard
-							key={comment.id}
-							comment={comment}
-							currentUser={currentUser}
-							disabled={disabled}
-							allowReply={allowReply}
-							allowEdit={allowEdit}
-							allowDelete={allowDelete}
-							onReply={onReply}
-							onUpdate={onUpdate}
-							onDelete={onDelete}
-						/>
-					))}
-				</div>
-			)}
+  const userId = user?.id as string;
 
-			{!disabled && (
-				<div className="comments-create">
-					<Avatar firstName={currentUser.name} size="sm" />
-					<div className="comments-create-input">
-						<CommentInput disabled={loading} onSubmit={onCreate} />
-					</div>
-				</div>
-			)}
+  React.useEffect(() => {
+    const fetchAllComments = async () => {
+      try {
+        setCommentsLoading(true);
+        const {
+          data: { data },
+        } = await ServerAxios.get(`/comment/${workFlowId}`);
 
-			{error && <div className="comments-error">{error}</div>}
-		</section>
-	);
+        setComments(data);
+
+        console.log({ data });
+      } catch (err) {
+        console.log({ err });
+      } finally {
+        setCommentsLoading(false);
+      }
+    };
+
+    if (workFlowId) fetchAllComments();
+  }, [workFlowId]);
+
+  const currentStage = stages.find(
+    (stage) => stage.status === "IN_PROGRESS" && stage.isCurrentIteration,
+  );
+
+  const isUserInCurrentStage = currentStage?.approvals.some(
+    (approval) => approval.approver.id === userId,
+  );
+
+  const getApprovalIdByUser = (
+    stage: EpcWorkflowStage | undefined,
+    userId: string,
+  ) => {
+    if (!stage) return null;
+
+    const approval = stage.approvals.find((a) => a.approver.id === userId);
+
+    return approval?.id || null;
+  };
+
+  const handleCreate = async (text: string) => {
+    try {
+      const approvalId = getApprovalIdByUser(currentStage, userId);
+
+      const {
+        data: { message, data },
+      } = await ServerAxios.post(`/comment`, {
+        message: text,
+        approvalId,
+      });
+
+      showToast({
+        type: "success",
+        title: "Success",
+        description: message,
+      });
+
+      setComments((prev) => [
+        ...prev,
+        {
+          id: data.id,
+          comment: data.message,
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+          user: {
+            id: data.user.id,
+            first_name: data.user.first_name,
+            last_name: data.user.last_name,
+          },
+        },
+      ]);
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === "string"
+            ? err
+            : "Error while adding the comment";
+      showToast({
+        type: "error",
+        title: "Error",
+        description: message,
+      });
+    }
+  };
+
+  const disabled = !currentStage || !isUserInCurrentStage;
+
+  console.log({ stages, userId });
+
+  return (
+    <section className="comments-section">
+      <div className="comments-header">
+        <div className="px-2.5 py-2 flex flex-row justify-between gap-4 w-full">
+          <h3 className="comments-title">
+            <MessageCircle size={16} />
+            Comment Section
+          </h3>
+          <p className="comments-subtitle">
+            {comments.length} {comments.length === 1 ? "comment" : "comments"}
+          </p>
+        </div>
+      </div>
+
+      {commentsLoading ? (
+        <div className="comments-loading">
+          <div />
+          <div />
+          <div />
+        </div>
+      ) : comments.length === 0 ? (
+        <div className="comments-empty">
+          <MessageCircle size={24} />
+          <p>No comments yet</p>
+          <span>Start the discussion by adding the first comment.</span>
+        </div>
+      ) : (
+        <div className="comments-list">
+          {comments.map((comment) => (
+            <CommentCard key={comment.id} comment={comment} />
+          ))}
+        </div>
+      )}
+
+      {!disabled && (
+        <div className="comments-create">
+          <div className="comments-create-input">
+            <CommentInput disabled={commentsLoading} onSubmit={handleCreate} />
+          </div>
+        </div>
+      )}
+    </section>
+  );
 }
