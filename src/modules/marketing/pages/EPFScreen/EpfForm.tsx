@@ -72,7 +72,7 @@ export default function EpfForm() {
 					isViewer={false}
 					category="EVENT_OVERHEAD"
 				/>
-				<div className="mb-14">
+				<div className="mb-2">
 					{/* ✅ Only passes what EpfFormInfo still needs */}
 					<EpfFormInfo
 						values={values}
