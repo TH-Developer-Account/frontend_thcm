@@ -272,3 +272,33 @@ export const mapStages = (stages: any[] = []) => {
 				})) ?? [],
 		}));
 };
+
+export const getDefaultMapStages = (): WorkflowStage[] => [
+	{
+		id: "stage-1",
+		stageOrder: 1,
+		name: "Recommender",
+		strategy: "ANY",
+		approvers: [],
+		minApprovals: 1,
+		isExpanded: true,
+	},
+	{
+		id: "stage-2",
+		stageOrder: 2,
+		name: "Checker",
+		strategy: "ANY",
+		approvers: [],
+		minApprovals: 1,
+		isExpanded: false,
+	},
+	{
+		id: "stage-3",
+		stageOrder: 3,
+		name: "Approver",
+		strategy: "ANY",
+		approvers: [],
+		minApprovals: 1,
+		isExpanded: false,
+	},
+];

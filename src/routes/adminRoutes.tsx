@@ -71,7 +71,14 @@ export default function AdminRoutes() {
 					</ThemeProvider>
 				}
 			/>
-			<Route path="/admin/workflows/:id" element={<WorkflowCreatePage />} />
+			<Route
+				path="/create-workflows"
+				element={
+					<ThemeProvider>
+						<WorkflowCreatePage />
+					</ThemeProvider>
+				}
+			/>
 			<Route
 				path="edit-workflows/:id"
 				element={
@@ -80,7 +87,6 @@ export default function AdminRoutes() {
 					</ThemeProvider>
 				}
 			/>
-			{/* <Route path="create_user_profile" element={<BusinessProfileList />} /> */}
 		</Routes>
 	);
 }

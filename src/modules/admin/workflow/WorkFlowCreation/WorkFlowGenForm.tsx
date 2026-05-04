@@ -35,9 +35,21 @@ const WorkFlowGenForm = ({
 	const { id } = useParams();
 	const apps = formatApps(permissions);
 	console.log("Data", basics);
+
+	const selectedAppLabel =
+		apps.find((opt: Option) => opt.value === basics.app)?.label || "";
+
+	const showCategory = selectedAppLabel === "Marketing Activity Planner";
+
 	return (
 		<>
-			<div className="workflow-create-field-row workflow-create-field-row-3">
+			<div
+				className={`workflow-create-field-row ${
+					showCategory
+						? "workflow-create-field-row-3"
+						: "workflow-create-field-row-2"
+				}`}
+			>
 				<FormInput
 					name="name"
 					label="Workflow name"
@@ -60,6 +72,12 @@ const WorkFlowGenForm = ({
 					onChange={(v: SingleValue<Option>) => {
 						onBasicChange("app", v?.value || "");
 						onBasicChange("appDesc", v?.label || "");
+
+						if (v?.label !== "Marketing Activity Planner") {
+							onBasicChange("category", "");
+							onClearError("category");
+						}
+
 						onClearError("app");
 					}}
 					error={errors.app}
@@ -67,23 +85,25 @@ const WorkFlowGenForm = ({
 					required
 				/>
 
-				<SelectInput
-					name="category"
-					label="Category"
-					value={
-						budgetCategories.find(
-							(opt: Option) => opt.value === basics.category,
-						) || null
-					}
-					options={budgetCategories}
-					onChange={(v: SingleValue<Option>) => {
-						onBasicChange("category", v?.value || "");
-						onClearError("category");
-					}}
-					error={errors.category}
-					helperText="For which Category this workflow is being created"
-					required
-				/>
+				{showCategory && (
+					<SelectInput
+						name="category"
+						label="Category"
+						value={
+							budgetCategories.find(
+								(opt: Option) => opt.value === basics.category,
+							) || null
+						}
+						options={budgetCategories}
+						onChange={(v: SingleValue<Option>) => {
+							onBasicChange("category", v?.value || "");
+							onClearError("category");
+						}}
+						error={errors.category}
+						helperText="For which Category this workflow is being created"
+						required
+					/>
+				)}
 			</div>
 
 			{id && (

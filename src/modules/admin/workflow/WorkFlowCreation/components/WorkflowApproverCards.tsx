@@ -44,7 +44,7 @@ const WorkflowApproverCards = ({ stages }: Props) => {
 										</td>
 
 										<td className="workflow-approval-td">
-											<span className="workflow-approval-badge">
+											<span className="workflow-create-badge">
 												{stage.approvers.length > 1 ? "Parallel" : "Sequential"}
 											</span>
 										</td>

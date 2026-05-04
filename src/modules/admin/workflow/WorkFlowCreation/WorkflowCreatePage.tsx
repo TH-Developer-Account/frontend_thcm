@@ -8,13 +8,12 @@ import WorkflowCreateSidebar from "./components/WorkflowCreateSidebar";
 import { mapBasics, mapStages } from "../utils/workflow.helpers";
 import { api_routes } from "../constant/workflow.constant";
 import {
-	addStageApprover,
 	buildWorkflowPayload,
-	removeStageApprover,
 	toggleStageExpanded,
 	updateStageField,
 	validateWorkflow,
 	validateWorkflowBasics,
+	getDefaultMapStages,
 } from "../utils/workflow.helpers";
 import type {
 	Approver,
@@ -25,6 +24,9 @@ import type {
 } from "../types/workflow.types";
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { useAuth } from "../../../../context/Auth/useAuth";
+import PageSectionLayout, {
+	PageSection,
+} from "../../../../layout/PageSectionLayout";
 
 const WorkflowCreatePage = () => {
 	const { user, workspaceId, isLoading } = useAuth();
@@ -87,7 +89,30 @@ const WorkflowCreatePage = () => {
 		key: K,
 		value: WorkflowBasics[K],
 	) => {
-		setBasics((prev) => ({ ...prev, [key]: value }));
+		setBasics((prev) => {
+			const updatedBasics = { ...prev, [key]: value };
+
+			if ((key === "app" || key === "appDesc") && !id) {
+				const isMarketingActivityPlanner =
+					updatedBasics.appDesc === "Marketing Activity Planner";
+
+				if (isMarketingActivityPlanner) {
+					setStages((prevStages) => {
+						if (prevStages.length > 0) return prevStages;
+
+						const defaultStages = getDefaultMapStages();
+						setStageErrors(defaultStages.map(() => ({})));
+						return defaultStages;
+					});
+				} else {
+					setStages([]);
+					setStageErrors([]);
+					setStageFormError(null);
+				}
+			}
+
+			return updatedBasics;
+		});
 	};
 
 	const clearBasicError = (key: keyof WorkflowGenErrors) => {
@@ -115,7 +140,21 @@ const WorkflowCreatePage = () => {
 	};
 
 	const removeApprover = (stageId: string, approverId: string) => {
-		setStages((prev) => removeStageApprover(prev, stageId, approverId));
+		setStages((prev) =>
+			prev.map((stage) => {
+				if (stage.id !== stageId) return stage;
+
+				const updatedApprovers = stage.approvers.filter(
+					(a) => a.id !== approverId,
+				);
+
+				return {
+					...stage,
+					approvers: updatedApprovers,
+					minApprovals: updatedApprovers.length, // ✅ always reset to total
+				};
+			}),
+		);
 
 		setStageErrors((prev) =>
 			prev.map((stageError, index) =>
@@ -127,7 +166,19 @@ const WorkflowCreatePage = () => {
 	};
 
 	const addApprover = (stageId: string, approver: Approver) => {
-		setStages((prev) => addStageApprover(prev, stageId, approver));
+		setStages((prev) =>
+			prev.map((stage) => {
+				if (stage.id !== stageId) return stage;
+
+				const updatedApprovers = [...stage.approvers, approver];
+
+				return {
+					...stage,
+					approvers: updatedApprovers,
+					minApprovals: updatedApprovers.length, // ✅ default = total
+				};
+			}),
+		);
 
 		setStageErrors((prev) =>
 			prev.map((stageError, index) =>
@@ -234,49 +285,56 @@ const WorkflowCreatePage = () => {
 
 	if (isLoading) return null;
 	return (
-		<div className="workflow-create-page-box content-box">
-			<div className="workflow-create-page">
-				<WorkflowCreateHeader currentStep={currentStep} />
+		<div className="h-[85dvh] min-h-0 overflow-y-auto scrollbar-sleek">
+			<PageSectionLayout>
+				<PageSection>
+					<div className="workflow-create-page-box scrollbar-sleek">
+						<div className="workflow-create-page">
+							<WorkflowCreateHeader currentStep={currentStep} />
 
-				<div className="workflow-create-page-header">
-					<h2 className="workflow-create-page-title">
-						{id ? "Update Workflow" : "Create Workflow"}
-					</h2>
-					<p className="workflow-create-page-subtitle">
-						Define who approves what, in which order, and under what conditions.
-					</p>
-				</div>
+							<div className="workflow-create-page-header">
+								<h2 className="workflow-create-page-title">
+									{id ? "Update Workflow" : "Create Workflow"}
+								</h2>
+								<p className="workflow-create-page-subtitle">
+									Define who approves what, in which order, and under what
+									conditions.
+								</p>
+							</div>
 
-				<div className="workflow-create-grid">
-					<WorkflowCreateMain
-						currentStep={currentStep}
-						goNext={handleNext}
-						goBack={handleBack}
-						basics={basics}
-						stages={stages}
-						currentUserId={user?.id || ""}
-						onBasicChange={handleBasicChange}
-						onStageChange={handleStageChange}
-						onToggleStage={toggleStage}
-						onRemoveApprover={removeApprover}
-						onAddApprover={addApprover}
-						onAddStage={addStage}
-						onSubmit={handleSubmit}
-						loading={loading}
-						basicErrors={basicErrors}
-						stageErrors={stageErrors}
-						stageFormError={stageFormError}
-						onClearBasicError={clearBasicError}
-					/>
+							<div className="workflow-create-grid">
+								<WorkflowCreateMain
+									currentStep={currentStep}
+									goNext={handleNext}
+									goBack={handleBack}
+									basics={basics}
+									stages={stages}
+									currentUserId={user?.id || ""}
+									onBasicChange={handleBasicChange}
+									onStageChange={handleStageChange}
+									onToggleStage={toggleStage}
+									onRemoveApprover={removeApprover}
+									onAddApprover={addApprover}
+									onAddStage={addStage}
+									onSubmit={handleSubmit}
+									loading={loading}
+									basicErrors={basicErrors}
+									stageErrors={stageErrors}
+									stageFormError={stageFormError}
+									onClearBasicError={clearBasicError}
+								/>
 
-					<WorkflowCreateSidebar
-						basics={basics}
-						stageCount={stages.length}
-						approverCount={totalApprovers}
-						minApprovers={2}
-					/>
-				</div>
-			</div>
+								<WorkflowCreateSidebar
+									basics={basics}
+									stageCount={stages.length}
+									approverCount={totalApprovers}
+									minApprovers={totalApprovers}
+								/>
+							</div>
+						</div>
+					</div>
+				</PageSection>
+			</PageSectionLayout>
 		</div>
 	);
 };

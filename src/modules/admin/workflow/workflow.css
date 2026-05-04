@@ -194,7 +194,7 @@
 	}
 
 	.workflow-create-topbar {
-		@apply mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between;
+		@apply mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between;
 	}
 
 	.workflow-create-badge {

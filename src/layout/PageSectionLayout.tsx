@@ -20,7 +20,7 @@ const PageSectionLayout = ({
 
 export const PageSection = ({ children, className = "" }: PageSectionProps) => {
 	return (
-		<div className={`page-stack-section content-box  ${className}`}>
+		<div className={`page-stack-section content-box ${className}`}>
 			{children}
 		</div>
 	);

@@ -21,7 +21,7 @@ export const DashboardLayout = ({
 					onClose={onToggleSidebar}
 				/>
 
-				<div className="app-main scrollbar-sleek">
+				<div className="app-main">
 					<MainLayout>{children}</MainLayout>
 				</div>
 			</div>

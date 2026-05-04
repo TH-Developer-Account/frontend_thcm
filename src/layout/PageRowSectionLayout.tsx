@@ -1,5 +1,5 @@
+// PageRowSectionLayout.tsx
 import React from "react";
-import PageSectionLayout, { PageSection } from "./PageSectionLayout";
 
 type PageRowSectionLayoutProps = {
 	header_children: React.ReactNode;
@@ -29,19 +29,19 @@ const PageRowSectionLayout = ({
 						: "shrink-0"
 				}`}
 			>
-				<PageSectionLayout>
-					<PageSection>
+				<div className="page-stack-layout">
+					<div className="page-stack-section content-box">
 						<div className={className}>{header_children}</div>
-					</PageSection>
-				</PageSectionLayout>
+					</div>
+				</div>
 			</div>
 
 			<div className="flex-1 min-h-0 overflow-y-auto scrollbar-sleek">
-				<PageSectionLayout>
-					<PageSection>
+				<div className="page-stack-layout">
+					<div className="page-stack-section content-box">
 						<div className={`${className} ${contentClassName}`}>{children}</div>
-					</PageSection>
-				</PageSectionLayout>
+					</div>
+				</div>
 			</div>
 		</div>
 	);
