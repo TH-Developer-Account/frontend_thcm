@@ -1,5 +1,3 @@
-import React from "react";
-
 type TableRow = {
 	id?: string;
 	sno: number;
@@ -8,20 +6,22 @@ type TableRow = {
 	rate: number;
 	qty: number;
 	total: number;
+	height?: string;
+	width?: string;
+	category?: string;
 };
 
 type LineTableViewProps = {
 	title?: string;
 	data?: TableRow[];
 };
-
 const LineTableView = ({ title, data = [] }: LineTableViewProps) => {
 	return (
-		<div className="row-6 text-center mb-4 ">
+		<div className="row-6 text-center mb-1">
 			<p className="font-semibold text-md">{title}</p>
 
 			<div className="w-full text-left px-3 py-1.5 ">
-				<div className="grid grid-cols-12 text-sm font-medium items-center text-gray-600 mb-3 bg-zinc-100 py-1.5 px-2 rounded-sm">
+				<div className="grid grid-cols-12 text-sm font-medium items-center text-gray-600 mb-1 bg-zinc-100 py-1.5 px-2 rounded-sm">
 					<div className="col-span-1">SNo</div>
 					<div className="col-span-2">Particulars</div>
 					<div className="col-span-5">Description</div>
@@ -36,19 +36,19 @@ const LineTableView = ({ title, data = [] }: LineTableViewProps) => {
 					</div>
 				) : (
 					data.map((row, index) => (
-						<div
-							key={row.id ?? index}
-							className="grid grid-cols-12 gap-3 mb-2 py-1.5 px-2 "
-						>
-							<div className="col-span-1 text-gray-500">{row.sno}.</div>
-							<div className="col-span-2">{row.particulars}</div>
-							<div className="col-span-5">{row.description}</div>
-							<div className="col-span-1 text-right">
-								{Number(row.rate || 0).toFixed(2)}
-							</div>
-							<div className="col-span-1 text-right">{row.qty}</div>
-							<div className="col-span-2 text-right">
-								{Number(row.total || 0).toFixed(2)}
+						<div key={row.id ?? index}>
+							<div>{row.category == "EVENT_OVERHEAD" ? null : "CRF Item"}</div>
+							<div className="grid grid-cols-12 gap-3 mb-2 py-1.5 px-2 ">
+								<div className="col-span-1 text-gray-500">{row.sno}.</div>
+								<div className="col-span-2">{row.particulars}</div>
+								<div className="col-span-5">{row.description}</div>
+								<div className="col-span-1 text-right">
+									{Number(row.rate || 0).toFixed(2)}
+								</div>
+								<div className="col-span-1 text-right">{row.qty}</div>
+								<div className="col-span-2 text-right">
+									{Number(row.total || 0).toFixed(2)}
+								</div>
 							</div>
 						</div>
 					))

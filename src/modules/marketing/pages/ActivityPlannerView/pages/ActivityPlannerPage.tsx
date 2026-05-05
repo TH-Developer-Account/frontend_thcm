@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download, Eye } from "lucide-react";
 import ApprovalStatus from "../components/ApprovalStatus";
 import ActivityFormView from "../components/ActivityFormView";
 import { EPCProvider } from "../../../context/EPCprovider";
@@ -11,12 +11,17 @@ import type { EpcDetailResponse } from "../types/ActivityView.types";
 import { statusMap } from "../../../../../utils/types";
 import { Badge } from "../../../../../components/common/Badge";
 import { useEPC } from "../../../context/useEPC";
+import html2pdf from "html2pdf.js";
+import Button from "../../../../../components/common/Button";
+import { Modal } from "../../../../../components/common/Modal";
+import ActivityPlannerPdfTemplate from "../components/ActivityPlannerPdfTemplate";
 
 const ActivityPlannerPageContent = () => {
 	const { id } = useParams();
 	const { data } = useEPC();
 
 	const [epcData, setEPCData] = React.useState<EpcDetailResponse>();
+	const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
 
 	React.useEffect(() => {
 		if (!id) return;
@@ -47,42 +52,114 @@ const ActivityPlannerPageContent = () => {
 
 	const badgeStatus = epcData?.status ? statusMap[epcData.status] : undefined;
 
-	return (
-		<PageStickyLayout
-			header={
-				<div className="flex flex-row gap-4 justify-between">
-					<PageHeader
-						headerText="Activity Planner View"
-						subtitleText="View your activity details"
-						Icon={ArrowLeft}
-						badgeText="EPC Listing"
-						path="/marketing/listing"
-					/>
+	const handleDownload = async () => {
+		const element = document.getElementById("pdf-content");
 
-					<div className="flex justify-between items-center page-header-section text-right">
-						<div>
-							<p>
-								<span className="form-view-label uppercase-label-text ">
-									Status:{" "}
-								</span>
-								<Badge status={badgeStatus} />
-							</p>
-							<h2 className="approval-details-title">{proposalNo}</h2>
-							<p className="page-subtitle approval-details-subtitle">
-								<span className="form-view-label uppercase-label-text ">
-									Created By:{" "}
-								</span>
-								{createdBy}
-							</p>
+		if (!element) return;
+
+		document.body.classList.add("pdf-export-mode");
+
+		try {
+			await html2pdf()
+				.set({
+					margin: 8,
+					filename: `${proposalNo || "activity-planner"}.pdf`,
+					image: { type: "jpeg", quality: 0.98 },
+					html2canvas: {
+						scale: 2,
+						useCORS: true,
+						backgroundColor: "#ffffff",
+					},
+					jsPDF: {
+						unit: "mm",
+						format: "a4",
+						orientation: "portrait",
+					},
+					pagebreak: {
+						mode: ["avoid-all", "css", "legacy"],
+					},
+				})
+				.from(element)
+				.save();
+		} finally {
+			document.body.classList.remove("pdf-export-mode");
+		}
+	};
+	return (
+		<>
+			<PageStickyLayout
+				header={
+					<div className="flex flex-row gap-4 justify-between">
+						<PageHeader
+							headerText="Activity Planner View"
+							subtitleText="View your activity details"
+							Icon={ArrowLeft}
+							badgeText="EPC Listing"
+							path="/marketing/listing"
+						/>
+
+						<div className="flex justify-between items-center page-header-section text-right">
+							<div>
+								<div className="flex gap-4 justify-end">
+									<Badge status={badgeStatus} />
+
+									<Button
+										Icon={Eye}
+										iconPosition="right"
+										onClick={() => setIsPreviewOpen(true)}
+										status="outline"
+										className="p-1 text-xs rounded-full cursor-pointer"
+									/>
+								</div>
+
+								<h2 className="page-title-section text-darkBlue">
+									<span className="font-semibold text-black text-[11px] uppercase-label-text">
+										Proposer:{" "}
+									</span>
+									{createdBy}
+								</h2>
+
+								<p className="page-subtitle">
+									<span className="form-view-label uppercase-label-text">
+										{proposalNo}
+									</span>
+								</p>
+							</div>
 						</div>
 					</div>
+				}
+				sidebar={<ApprovalStatus epcData={epcData} />}
+			>
+				<ActivityFormView epcId={id} epcData={epcData} />
+			</PageStickyLayout>
+
+			<Modal
+				open={isPreviewOpen}
+				title="PDF Preview"
+				onClose={() => setIsPreviewOpen(false)}
+				size="xl"
+				className="content-box"
+				header_children={
+					<Button
+						text="Download PDF"
+						Icon={Download}
+						iconPosition="right"
+						onClick={handleDownload}
+						status="brand"
+						size="sm"
+					/>
+				}
+			>
+				<div className="max-h-[90vh] overflow-y-auto scrollbar-sleek">
+					<div id="pdf-content" className="text-[#111827] mx-auto">
+						<ActivityPlannerPdfTemplate
+							epcData={epcData}
+							createdBy={createdBy}
+						/>
+					</div>
 				</div>
-			}
-			sidebar={<ApprovalStatus epcData={epcData} />}
-			contentClassName="pb-6"
-		>
-			<ActivityFormView epcId={id} epcData={epcData} />
-		</PageStickyLayout>
+			</Modal>
+		</>
 	);
 };
 

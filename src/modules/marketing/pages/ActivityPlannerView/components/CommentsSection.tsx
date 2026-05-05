@@ -13,19 +13,19 @@ import ApprovalTable, {
 } from "../../../../../components/ui/ApprovalTable";
 
 export type CommentUser = {
-  id: string;
-  first_name: string;
-  last_name: string;
-  avatarUrl?: string;
+	id: string;
+	first_name: string;
+	last_name: string;
+	avatarUrl?: string;
 };
 
 export type CommentItem = {
-  id: string;
-  comment: string;
-  user: CommentUser;
-  createdAt: string;
-  updatedAt?: string;
-  replies?: CommentItem[];
+	id: string;
+	comment: string;
+	user: CommentUser;
+	createdAt: string;
+	updatedAt?: string;
+	replies?: CommentItem[];
 };
 
 type CommentsSectionProps = {
@@ -36,127 +36,127 @@ type CommentsSectionProps = {
 };
 
 const formatDate = (value: string) => {
-  if (!value) return "";
-  return new Date(value).toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+	if (!value) return "";
+	return new Date(value).toLocaleString("en-IN", {
+		day: "2-digit",
+		month: "short",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	});
 };
 
 function CommentInput({
-  placeholder = "Write a comment...",
-  submitText = "Send",
-  disabled,
-  autoFocus,
-  initialValue = "",
-  onCancel,
-  onSubmit,
+	placeholder = "Write a comment...",
+	submitText = "Send",
+	disabled,
+	autoFocus,
+	initialValue = "",
+	onCancel,
+	onSubmit,
 }: {
-  placeholder?: string;
-  submitText?: string;
-  disabled?: boolean;
-  autoFocus?: boolean;
-  initialValue?: string;
-  onCancel?: () => void;
-  onSubmit: (value: string) => Promise<void>;
+	placeholder?: string;
+	submitText?: string;
+	disabled?: boolean;
+	autoFocus?: boolean;
+	initialValue?: string;
+	onCancel?: () => void;
+	onSubmit: (value: string) => Promise<void>;
 }) {
-  const [value, setValue] = React.useState(initialValue);
-  const [submitting, setSubmitting] = React.useState(false);
+	const [value, setValue] = React.useState(initialValue);
+	const [submitting, setSubmitting] = React.useState(false);
 
-  const handleSubmit = async () => {
-    const trimmed = value.trim();
-    if (!trimmed || submitting || disabled) return;
+	const handleSubmit = async () => {
+		const trimmed = value.trim();
+		if (!trimmed || submitting || disabled) return;
 
-    try {
-      setSubmitting(true);
-      await onSubmit(trimmed);
-      setValue("");
-    } finally {
-      setSubmitting(false);
-    }
-  };
+		try {
+			setSubmitting(true);
+			await onSubmit(trimmed);
+			setValue("");
+		} finally {
+			setSubmitting(false);
+		}
+	};
 
-  return (
-    <>
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex-1">
-          <TextareaInput
-            name="comment"
-            autoFocus={autoFocus}
-            value={value}
-            disabled={disabled || submitting}
-            placeholder={placeholder}
-            onChange={(e) => setValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-                handleSubmit();
-              }
-            }}
-            rows={4}
-            className="bg-white overflow-y-auto px-2 py-1.5 min-h-[5vh]"
-          />
-        </div>
-        {/* <p className="comment-helper">Press Ctrl + Enter to send</p> */}
-        <div>
-          {onCancel && (
-            <Button
-              type="button"
-              status="brand"
-              onClick={onCancel}
-              disabled={submitting}
-              text={"Cancel"}
-              Icon={X}
-              iconSize="14"
-            />
-          )}
-          <Button
-            text={submitting ? "Saving..." : submitText}
-            type="button"
-            status="brand"
-            onClick={handleSubmit}
-            disabled={!value.trim() || disabled || submitting}
-            Icon={Send}
-            iconSize="14"
-          />
-        </div>
-      </div>
-    </>
-  );
+	return (
+		<>
+			<div className="flex items-center justify-between gap-3">
+				<div className="flex-1">
+					<TextareaInput
+						name="comment"
+						autoFocus={autoFocus}
+						value={value}
+						disabled={disabled || submitting}
+						placeholder={placeholder}
+						onChange={(e) => setValue(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+								handleSubmit();
+							}
+						}}
+						rows={4}
+						className="bg-white overflow-y-auto px-2 py-1.5 min-h-[5vh]"
+					/>
+				</div>
+				{/* <p className="comment-helper">Press Ctrl + Enter to send</p> */}
+				<div>
+					{onCancel && (
+						<Button
+							type="button"
+							status="brand"
+							onClick={onCancel}
+							disabled={submitting}
+							text={"Cancel"}
+							Icon={X}
+							iconSize="14"
+						/>
+					)}
+					<Button
+						text={submitting ? "Saving..." : submitText}
+						type="button"
+						status="brand"
+						onClick={handleSubmit}
+						disabled={!value.trim() || disabled || submitting}
+						Icon={Send}
+						iconSize="14"
+					/>
+				</div>
+			</div>
+		</>
+	);
 }
 
 function CommentCard({
-  comment,
-  level = 0,
+	comment,
+	level = 0,
 }: {
-  comment: CommentItem;
-  level?: number;
+	comment: CommentItem;
+	level?: number;
 }) {
-  return (
-    <div className={`comment-card ${level > 0 ? "comment-reply-card" : ""}`}>
-      <div className="comment-main">
-        <Avatar
-          firstName={comment?.user.first_name}
-          lastName={comment?.user.last_name}
-          size="sm"
-        />
+	return (
+		<div className={`comment-card ${level > 0 ? "comment-reply-card" : ""}`}>
+			<div className="comment-main">
+				<Avatar
+					firstName={comment?.user.first_name}
+					lastName={comment?.user.last_name}
+					size="sm"
+				/>
 
-        <div className="comment-content">
-          <div className="comment-bubble">
-            <div className="comment-meta">
-              <p className="comment-author">{`${comment?.user.first_name} ${comment?.user.last_name}`}</p>
-              <div className="comment-submeta">
-                <span>{formatDate(comment.createdAt)}</span>
-              </div>
-            </div>
-            <p className="comment-text">{comment.comment}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+				<div className="comment-content">
+					<div className="comment-bubble">
+						<div className="comment-meta">
+							<p className="comment-author">{`${comment?.user.first_name} ${comment?.user.last_name}`}</p>
+							<div className="comment-submeta">
+								<span>{formatDate(comment.createdAt)}</span>
+							</div>
+						</div>
+						<p className="comment-text">{comment.comment}</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
 }
 
 export default function CommentsSection({
@@ -165,20 +165,20 @@ export default function CommentsSection({
   approvalRows,
   onWorkflowUpdate,
 }: CommentsSectionProps) {
-  const { showToast } = useToast();
-  const { user } = useAuth();
-  const [comments, setComments] = React.useState<CommentItem[]>([]);
-  const [commentsLoading, setCommentsLoading] = React.useState(false);
+	const { showToast } = useToast();
+	const { user } = useAuth();
+	const [comments, setComments] = React.useState<CommentItem[]>([]);
+	const [commentsLoading, setCommentsLoading] = React.useState(false);
 
-  const userId = user?.id as string;
+	const userId = user?.id as string;
 
-  React.useEffect(() => {
-    const fetchAllComments = async () => {
-      try {
-        setCommentsLoading(true);
-        const {
-          data: { data },
-        } = await ServerAxios.get(`/comment/${workFlowId}`);
+	React.useEffect(() => {
+		const fetchAllComments = async () => {
+			try {
+				setCommentsLoading(true);
+				const {
+					data: { data },
+				} = await ServerAxios.get(`/comment/${workFlowId}`);
 
         setComments(data);
       } catch (err) {
@@ -188,75 +188,75 @@ export default function CommentsSection({
       }
     };
 
-    if (workFlowId) fetchAllComments();
-  }, [workFlowId]);
+		if (workFlowId) fetchAllComments();
+	}, [workFlowId]);
 
-  const currentStage = stages.find(
-    (stage) => stage.status === "IN_PROGRESS" && stage.isCurrentIteration,
-  );
+	const currentStage = stages.find(
+		(stage) => stage.status === "IN_PROGRESS" && stage.isCurrentIteration,
+	);
 
-  const isUserInCurrentStage = currentStage?.approvals.some(
-    (approval) => approval.approver.id === userId,
-  );
+	const getApprovalIdByUser = (
+		stage: EpcWorkflowStage | undefined,
+		userId?: string | null,
+	) => {
+		if (!stage || !userId) return null;
 
-  const getApprovalIdByUser = (
-    stage: EpcWorkflowStage | undefined,
-    userId: string,
-  ) => {
-    if (!stage) return null;
+		const approval = stage.approvals.find(
+			(a) => a.approverId === userId || a.approver?.id === userId,
+		);
 
-    const approval = stage.approvals.find((a) => a.approver.id === userId);
+		return approval?.id ?? null;
+	};
 
-    return approval?.id || null;
-  };
+	const approvalId = getApprovalIdByUser(currentStage, user?.id);
 
-  const handleCreate = async (text: string) => {
-    try {
-      const approvalId = getApprovalIdByUser(currentStage, userId);
+	const canComment = Boolean(currentStage && approvalId);
 
-      const {
-        data: { message, data },
-      } = await ServerAxios.post(`/comment`, {
-        message: text,
-        approvalId,
-      });
+	const handleCreate = async (text: string) => {
+		try {
+			if (!approvalId) {
+				showToast({
+					type: "error",
+					title: "Not allowed",
+					description: "You are not assigned to this approval stage",
+				});
+				return;
+			}
 
-      showToast({
-        type: "success",
-        title: "Success",
-        description: message,
-      });
+			const {
+				data: { message, data },
+			} = await ServerAxios.post(`/comment`, {
+				message: text,
+				approvalId,
+			});
 
-      setComments((prev) => [
-        ...prev,
-        {
-          id: data.id,
-          comment: data.message,
-          createdAt: data.createdAt,
-          updatedAt: data.updatedAt,
-          user: {
-            id: data.user.id,
-            first_name: data.user.first_name,
-            last_name: data.user.last_name,
-          },
-        },
-      ]);
-    } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : typeof err === "string"
-            ? err
-            : "Error while adding the comment";
-      showToast({
-        type: "error",
-        title: "Error",
-        description: message,
-      });
-    }
-  };
+			showToast({
+				type: "success",
+				title: "Success",
+				description: message,
+			});
 
-  const disabled = !currentStage || !isUserInCurrentStage;
+			setComments((prev) => [
+				...prev,
+				{
+					id: data.id,
+					comment: data.message,
+					createdAt: data.createdAt,
+					updatedAt: data.updatedAt,
+					user: {
+						id: data.user.id,
+						first_name: data.user.first_name,
+						last_name: data.user.last_name,
+					},
+				},
+			]);
+		} catch (err) {
+			const message =
+				err instanceof Error
+					? err.message
+					: typeof err === "string"
+						? err
+						: "Error while adding the comment";
 
   const handleApprove = async () => {
     try {
@@ -347,7 +347,7 @@ export default function CommentsSection({
           </div>
         )}
 
-        {!disabled && (
+        {!canComment && (
           <div className="comments-create">
             <div className="comments-create-input">
               <CommentInput
@@ -359,7 +359,7 @@ export default function CommentsSection({
         )}
       </section>
       <Section title="Approval Flow">
-        {!disabled && (
+        {!canComment && (
           <div className="flex flex-row gap-4 items-center justify-end">
             <Button text="Clarify" status="outline" onClick={handleClarify} />
             <Button text="Approve" status="brand" onClick={handleApprove} />
@@ -371,3 +371,4 @@ export default function CommentsSection({
     </React.Fragment>
   );
 }
+

@@ -3,13 +3,14 @@ import Button from "../common/Button";
 import { Edit, Trash } from "lucide-react";
 import FormInput from "../FormElements/FormInput";
 
-export interface MasterItem {
-	id?: string;
+export type MasterItem = {
+	id: string;
 	label: string;
 	code?: string;
 	description?: string;
-	budgetAmount?: number;
-}
+	budgetAmount?: number | string;
+	status?: string;
+};
 
 interface MasterLineItemTableProps {
 	title: string;
@@ -30,19 +31,45 @@ export function MasterLineItemTable({
 	onSelect,
 	isViewer = false,
 }: MasterLineItemTableProps) {
-	const [draft, setDraft] = useState({ id: "", label: "" });
+	const [draft, setDraft] = useState<MasterItem>({
+		id: "",
+		label: "",
+		code: "",
+		description: "",
+		budgetAmount: "",
+	});
 
 	const handleAdd = () => {
-		if (!draft.label.trim()) return;
-		onChange([...items, { ...draft, id: crypto.randomUUID() }]);
-		setDraft({ id: "", label: "" });
-		console.log(draft, "draft");
+		if (!draft.label?.trim()) return;
+
+		const newItem: MasterItem = isBudget
+			? {
+					id: crypto.randomUUID(),
+					label: draft.label.trim(),
+					description: draft.description?.trim() ?? "",
+					budgetAmount: Number(draft.budgetAmount ?? 0),
+				}
+			: {
+					id: crypto.randomUUID(),
+					label: draft.label.trim(),
+					code: draft.code?.trim() ?? "",
+				};
+
+		onChange([...items, newItem]);
+
+		setDraft({
+			id: "",
+			label: "",
+			code: "",
+			description: "",
+			budgetAmount: "",
+		});
 	};
 
 	const handleDelete = (id: any) => {
 		onChange(items.filter((item) => item.id !== id));
 	};
-	console.log("Datttttaaa", items);
+	const isBudget = title === "Budget";
 	return (
 		<div className="flex flex-col h-full overflow-hidden bg-white border border-gray-200 rounded-lg">
 			{/* Header */}
@@ -51,18 +78,32 @@ export function MasterLineItemTable({
 			</div>
 
 			{/* Scrollable table */}
-			<div className="flex-1 overflow-y-auto">
+			<div className="flex-1 overflow-y-auto scrollbar-sleek">
 				<table className="w-full text-sm">
-					<thead className="bg-gray-50 sticky top-0 font-medium text-gray-600">
+					<thead className="bg-gray-50 text-xs text-gray-400 uppercase tracking-wide">
 						<tr>
-							<th className="px-4 py-2.5 w-10">SNo.</th>
-							<th className="px-4 py-2.5 text-left">{nameLabel}</th>
-							<th className="px-4 py-2.5 text-left">Code</th>
-							{!isViewer && (
-								<th className="px-4 py-2.5 w-10 text-right">Edit</th>
+							<th className="px-4 py-3 text-left font-medium w-auto">#</th>
+
+							<th className="px-4 py-3 text-left font-medium">
+								{isBudget ? "Budget Code" : nameLabel}
+							</th>
+
+							{isBudget ? (
+								<>
+									<th className="px-4 py-3 text-left font-medium">
+										Description
+									</th>
+									<th className="px-4 py-3 text-right font-medium">Amount</th>
+								</>
+							) : (
+								<th className="px-4 py-3 text-left font-medium">Code</th>
 							)}
+
 							{!isViewer && (
-								<th className="px-4 py-2.5 w-10 text-right">Delete</th>
+								<>
+									<th className="px-4 py-3 text-right font-medium">Edit</th>
+									<th className="px-4 py-3 text-right font-medium">Delete</th>
+								</>
 							)}
 						</tr>
 					</thead>
@@ -76,23 +117,44 @@ export function MasterLineItemTable({
 									key={item.id}
 									onClick={() => onSelect?.(item)}
 									className={`border-t border-gray-100 cursor-pointer text-left
-              ${
-								isSelected
-									? "bg-orange-50 border-l-2 border-l-orange-400"
-									: "hover:bg-gray-50 border-l-2 border-l-transparent"
-							}`}
+					${
+						isSelected
+							? "bg-orange-50 border-l-2 border-l-orange-400"
+							: "hover:bg-gray-50 border-l-2 border-l-transparent"
+					}`}
 								>
 									<td className="px-4 py-3 text-xs text-gray-400">
 										{index + 1}
 									</td>
 
+									{/* Normal: Name | Budget: Budget Code */}
 									<td className="px-4 py-3 text-sm font-medium text-gray-700">
-										{item.label ? item.label : item.description}
+										{item.label ? item.label : "--"}
 									</td>
 
-									<td className="px-4 py-3 text-sm font-medium text-gray-700">
-										{item.code ? item.code : (item.label ?? "EXM")}
-									</td>
+									{isBudget ? (
+										<>
+											{/* Budget Description */}
+											<td className="px-4 py-3 text-sm text-gray-600">
+												{item.description ? item.description : "--"}
+											</td>
+
+											{/* Budget Amount */}
+											<td className="px-4 py-3 text-sm font-semibold text-gray-700 text-right">
+												{item.budgetAmount !== undefined &&
+												item.budgetAmount !== null
+													? Number(item.budgetAmount).toLocaleString("en-IN")
+													: "--"}
+											</td>
+										</>
+									) : (
+										<>
+											{/* Normal Code */}
+											<td className="px-4 py-3 text-sm font-medium text-gray-700">
+												{item.code ? item.code : "--"}
+											</td>
+										</>
+									)}
 
 									{!isViewer && (
 										<td className="px-4 py-3 text-right">
@@ -135,27 +197,79 @@ export function MasterLineItemTable({
 						{items.length + 1}
 					</span>
 
+					{/* Normal: Name | Budget: Budget Code */}
 					<div className="flex-1">
 						<FormInput
-							name="name"
-							value={draft.label}
-							onChange={(e) => setDraft({ ...draft, label: e.target.value })}
+							name="label"
+							value={draft.label ?? ""}
+							onChange={(e) =>
+								setDraft({
+									...draft,
+									label: e.target.value,
+								})
+							}
 							onKeyDown={(e: React.KeyboardEvent) =>
 								e.key === "Enter" && handleAdd()
 							}
-							placeholder={"Name"}
+							placeholder={isBudget ? "Budget Code" : "Name"}
 						/>
 					</div>
 
-					<div className="flex-1">
-						<FormInput
-							name="code"
-							value={draft.label ?? ""}
-							onChange={(e) => setDraft({ ...draft, label: e.target.value })}
-							placeholder={"Code"}
-						/>
-					</div>
-					<div className="mb-2">
+					{isBudget ? (
+						<>
+							{/* Budget Description */}
+							<div className="flex-1">
+								<FormInput
+									name="description"
+									value={draft.description ?? ""}
+									onChange={(e) =>
+										setDraft({
+											...draft,
+											description: e.target.value,
+										})
+									}
+									placeholder="Description"
+								/>
+							</div>
+
+							{/* Budget Amount */}
+							<div className="flex-1">
+								<FormInput
+									name="budgetAmount"
+									value={String(draft.budgetAmount ?? "")}
+									onChange={(e) =>
+										setDraft({
+											...draft,
+											budgetAmount: e.target.value,
+										})
+									}
+									onKeyDown={(e: React.KeyboardEvent) =>
+										e.key === "Enter" && handleAdd()
+									}
+									placeholder="Amount"
+								/>
+							</div>
+						</>
+					) : (
+						<div className="flex-1">
+							<FormInput
+								name="code"
+								value={draft.code ?? ""}
+								onChange={(e) =>
+									setDraft({
+										...draft,
+										code: e.target.value,
+									})
+								}
+								onKeyDown={(e: React.KeyboardEvent) =>
+									e.key === "Enter" && handleAdd()
+								}
+								placeholder="Code"
+							/>
+						</div>
+					)}
+
+					<div className="">
 						<Button size="sm" status="brand" onClick={handleAdd}>
 							Add
 						</Button>

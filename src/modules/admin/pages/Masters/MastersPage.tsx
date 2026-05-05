@@ -33,8 +33,8 @@ const MastersPage = () => {
 		const observer = new ResizeObserver(([entry]) => {
 			const width = entry.contentRect.width;
 
-			// switch layout when container becomes narrow
-			setIsCompact(width < 1000);
+			// compact sidebar until XL layout
+			setIsCompact(width < 1100);
 		});
 
 		observer.observe(el);
@@ -42,20 +42,31 @@ const MastersPage = () => {
 		return () => observer.disconnect();
 	}, []);
 
-	// Merge API data with local edits
+	const mapNormalMasterItem = (item: any): MasterItem => ({
+		id: item.value ?? item.id ?? crypto.randomUUID(),
+		label: item.label ?? item.name ?? "",
+		code: item.code ?? "",
+		description: item.description ?? "",
+	});
+
+	const mapBudgetMasterItem = (item: any): MasterItem => ({
+		id: item.value ?? item.id ?? crypto.randomUUID(),
+		label: item.label ?? "",
+		description: item.description ?? "",
+		budgetAmount: Number(item.budgetAmount ?? 0),
+	});
+
 	const getItems = (masterName: string): MasterItem[] => {
 		const key = MASTER_KEYS[masterName] ?? masterName.toLowerCase();
-		const apiItems: MasterItem[] = (data?.[key] ?? []).map((b: any) => ({
-			id: b.value ?? b.id ?? crypto.randomUUID(),
-			label: b.label ?? b.name ?? "",
-			code: b.code ?? b.code ?? "",
-			// ✅ extra fields (only used when present)
-			description: b.description ?? "",
-			budgetAmount: b.budgetAmount ? Number(b.budgetAmount) : undefined,
-		}));
+		const apiData = data?.[key] ?? [];
+
+		const apiItems =
+			masterName === "Budget"
+				? apiData.map(mapBudgetMasterItem)
+				: apiData.map(mapNormalMasterItem);
+
 		return localData[masterName] ?? apiItems;
 	};
-
 	const setItems = (masterName: string, items: MasterItem[]) => {
 		setLocalData((prev) => ({ ...prev, [masterName]: items }));
 		// If selected item was deleted, deselect
@@ -88,7 +99,7 @@ const MastersPage = () => {
 	return (
 		<div
 			ref={containerRef}
-			className={`flex gap-4 h-[calc(100vh-58px)] p-4 transition-all duration-400 ${
+			className={`flex gap-4 h-[calc(100vh-65px)] transition-all duration-400 ${
 				isCompact ? "flex-col" : "flex-row"
 			}`}
 		>

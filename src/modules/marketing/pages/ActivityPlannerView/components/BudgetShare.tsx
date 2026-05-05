@@ -19,7 +19,7 @@ const BudgetShare = ({ items, shareInfo }: BudgetProps) => {
 
 	return (
 		<React.Fragment>
-			<div className="grid grid-cols-3 gap-4 p-2">
+			<div className="grid grid-cols-3 gap-2 px-1.5 py-1">
 				{items.map((item) => (
 					<div
 						key={item.label}
@@ -32,7 +32,7 @@ const BudgetShare = ({ items, shareInfo }: BudgetProps) => {
 				))}
 			</div>
 
-			<div className="grid grid-cols-2 gap-5 p-2">
+			<div className="grid grid-cols-2 gap-2 px-1.5 py-1">
 				<div
 					className="epf-budget-card"
 					style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}
@@ -53,7 +53,7 @@ const BudgetShare = ({ items, shareInfo }: BudgetProps) => {
 			</div>
 
 			<div
-				className="rounded-lg p-5 m-2"
+				className="rounded-lg p-5 m-1"
 				style={{ background: "#f8fafc", border: "1px solid #e2e8f0" }}
 			>
 				<div className="flex justify-between text-sm mb-3">

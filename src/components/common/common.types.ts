@@ -33,13 +33,16 @@ export interface PaginationProps {
 	scrollTargetId?: string; // optional container id to scroll
 }
 
-export interface ModalProps {
+export type ModalProps = {
 	open: boolean;
+	children: React.ReactNode;
 	title?: string;
 	message?: string;
-	onClose: () => void;
-	children: React.ReactNode;
-}
+	onClose?: () => void;
+	size?: "sm" | "md" | "lg" | "xl" | "full";
+	className?: string;
+	header_children?: React.ReactNode;
+};
 
 export type CardProps = {
 	children: React.ReactNode;

@@ -21,9 +21,9 @@ const PageStickyLayout = ({
 }: PageStickyLayoutProps) => {
 	return (
 		<div
-			className={`h-[calc(100vh-24px)] min-h-0 overflow-hidden bg-transparent ${className}`}
+			className={`h-[calc(100vh-80px)] min-h-0 overflow-hidden bg-transparent flex flex-col ${className}`}
 		>
-			{/* Header - fixed inside parent */}
+			{/* Header */}
 			<div
 				className={`shrink-0 bg-white border border-zinc-200 rounded-sm z-30 mb-2 ${headerClassName}`}
 			>
@@ -31,13 +31,15 @@ const PageStickyLayout = ({
 			</div>
 
 			{/* Body */}
-			<div className="grid grid-cols-[200px_1fr] gap-2 min-h-0  h-[calc(100%-90px)]">
-				{/* Sidebar - fixed inside parent */}
-				<aside className={`items-start ${sidebarClassName}`}>{sidebar}</aside>
+			<div className="flex-1 min-h-0 grid grid-cols-[200px_1fr] gap-2 overflow-hidden">
+				<aside
+					className={`min-h-0 overflow-y-auto scrollbar-sleek ${sidebarClassName}`}
+				>
+					{sidebar}
+				</aside>
 
-				{/* Only this scrolls */}
 				<main
-					className={`content-box overflow-y-auto scrollbar-sleek ${contentClassName}`}
+					className={`min-h-0 overflow-y-auto scrollbar-sleek ${contentClassName}`}
 				>
 					{children}
 				</main>
