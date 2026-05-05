@@ -6,6 +6,7 @@ export type ApprovalRow = {
 	email: string;
 	stageName: string;
 	strategy: string;
+	status?: string;
 };
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
 };
 
 const ApprovalTable = ({ data }: Props) => {
+	console.log("Data", data);
 	return (
 		<React.Fragment>
 			<div className="w-full overflow-x-auto rounded-sm px-3 mt-4 mb-25">
@@ -25,6 +27,7 @@ const ApprovalTable = ({ data }: Props) => {
 							<th className="px-3 py-2 text-left">Email</th>
 							<th className="px-3 py-2 text-left">Stage</th>
 							<th className="px-3 py-2 text-left">Strategy</th>
+							<th className="px-3 py-2 text-left">Status</th>
 						</tr>
 					</thead>
 
@@ -41,6 +44,7 @@ const ApprovalTable = ({ data }: Props) => {
 								<td className="px-3 py-2 text-gray-600">{row.email}</td>
 								<td className="px-3 py-2">{row.stageName}</td>
 								<td className="px-3 py-2">{row.strategy}</td>
+								<td className="px-3 py-2">{row.status}</td>
 							</tr>
 						))}
 					</tbody>

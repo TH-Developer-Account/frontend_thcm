@@ -12,9 +12,7 @@ import type {
 import CommentsSection from "./CommentsSection";
 import { type ApprovalRow } from "../../../../../components/ui/ApprovalTable";
 import { mapBudgetShareInfo } from "./helper";
-import { useAuth } from "../../../../../context/Auth/useAuth";
-import Participants from "./Participants";
-
+// import { useAuth } from "../../../../../context/Auth/useAuth";
 interface Props {
 	epcId?: string;
 	epcData?: EpcDetailResponse;
@@ -32,6 +30,7 @@ const formatDate = (date?: string) => {
 
 const mapLineItems = (items: any[] = []) => {
 	return items.map((item, index) => {
+		const product = item.product;
 		const rate = Number(item.rate || item.amount || 0);
 		const qty = Number(item.qty || item.quantity || 0);
 
@@ -48,6 +47,8 @@ const mapLineItems = (items: any[] = []) => {
 				item.description ||
 				item.product?.description || // ✅ FIX HERE
 				"--",
+			// ✅ category mapping fixed
+			category: item.category || product?.category || "--",
 			rate,
 			qty,
 			total: Number(item.total || rate * qty || 0),
@@ -103,7 +104,6 @@ const ActivityFormView = ({ epcId }: Props) => {
 	const epf = epcData?.epf;
 
 	const viewData = epcData;
-
 	const { items: budgetItems, shareInfo } = mapBudgetShareInfo({
 		eventBudget: epf?.eventBudget,
 		annualBudget: epf?.annualBudget,
@@ -144,10 +144,11 @@ const ActivityFormView = ({ epcId }: Props) => {
 	const total =
 		(Number(viewData?.epf?.internalParticipants) || 0) +
 		(Number(viewData?.epf?.externalParticipants) || 0);
+	console.log("View Data", approvalRows);
 
 	return (
-		<div className=" h-full min-h-screen max-w-5xl">
-			<div className="w-full h-auto  mt-0 rounded-smounded-lg px-6 py-4">
+		<div className="content-box w-full h-auto max-w-5xl  mx-auto">
+			<div className="px-6 py-4">
 				{/* Dates */}
 				<DateRange
 					fromDate={viewData?.event_from_date}
@@ -155,7 +156,7 @@ const ActivityFormView = ({ epcId }: Props) => {
 				/>
 				<div className="form text-left my-3 text-sm ">
 					<Section title="Activity Planner Details">
-						<div className="grid grid-cols-4 gap-6 text-xs p-3">
+						<div className="grid grid-cols-5 gap-6 text-xs p-3">
 							<div>
 								<span className="uppercase-label-text">Location</span>
 								<br />
@@ -193,12 +194,6 @@ const ActivityFormView = ({ epcId }: Props) => {
 							</div>
 
 							<div>
-								<span className="uppercase-label-text">Event Scale</span>
-								<br />
-								{viewData?.event_scale || "--"}
-							</div>
-
-							<div>
 								<span className="uppercase-label-text">Budget</span>
 								<br />
 								{budgetValue || "--"}
@@ -221,32 +216,53 @@ const ActivityFormView = ({ epcId }: Props) => {
 							</div>
 						</div>
 					</Section>
-
-					<Section title="Collateral Requisition Form Line Items">
-						{viewData?.crf?.lineItems?.length > 0 && (
-							<LineTableView data={mapLineItems(viewData?.crf?.lineItems)} />
-						)}
+					<Section title="Participants">
+						<div className="grid grid-cols-4 gap-6 text-sm px-4 py-1.5">
+							<p className="uppercase-label-text">
+								Internal :{" "}
+								<span className="text-gray-700 leading-relaxed text-xs">
+									{viewData?.epf?.internalParticipants}
+								</span>
+							</p>
+							<p className="uppercase-label-text">
+								External :
+								<span className="text-gray-700 leading-relaxed text-xs">
+									{viewData?.epf?.externalParticipants}
+								</span>
+							</p>
+							<p className="uppercase-label-text">
+								Total :{" "}
+								<span className="text-gray-700 leading-relaxed text-xs">
+									{total}
+								</span>
+							</p>
+						</div>
 					</Section>
+					{viewData?.crf?.lineItems?.length > 0 && (
+						<Section title="Collateral Requisition Form Line Items">
+							<LineTableView data={mapLineItems(viewData?.crf?.lineItems)} />
+						</Section>
+					)}
 					{viewData?.epf?.lineItems?.length > 0 && (
-						<Section title="Activity Proposition Form Line Items">
+						<Section title="Event Cost Overheads">
 							<LineTableView data={mapLineItems(viewData?.epf?.lineItems)} />
 						</Section>
 					)}
-					<Participants
-						internal={viewData?.epf?.internalParticipants}
-						external={viewData?.epf?.externalParticipants}
-					/>
-					<Section title="Activity Proposition Form Budget Information">
-						<BudgetShare items={budgetItems} shareInfo={shareInfo} />
-					</Section>
-					<Section title="Comments">
-						<CommentsSection
-							workFlowId={epcData.activeWorkflow.id}
-							stages={epcData.activeWorkflow.stages}
-							approvalRows={approvalRows}
-							onWorkflowUpdate={fetchEPC}
-						/>
-					</Section>
+					{viewData?.epf && (
+						<Section title="Activity Proposition Form Budget Information">
+							<BudgetShare items={budgetItems} shareInfo={shareInfo} />
+						</Section>
+					)}
+					{viewData?.epf && (
+						<Section title="Comments">
+							<CommentsSection
+								workFlowId={epcData.activeWorkflow.id}
+								stages={epcData.activeWorkflow.stages}
+								approvalRows={approvalRows}
+								onWorkflowUpdate={fetchEPC}
+							/>
+						</Section>
+					)}
 				</div>
 			</div>
 		</div>

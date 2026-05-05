@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { buildLineItemPayload } from "../../constant";
+import { buildLineItemPayload, CRF_CATEGORIES } from "../../constant";
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import LineItemTable from "../../../../components/ui/LineItemTable";
@@ -14,12 +14,6 @@ import Button from "../../../../components/common/Button";
 import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
 import { PageHeader } from "../../../../components/ui/PageHeader";
 import { ArrowLeft } from "lucide-react";
-
-const CRF_CATEGORIES = [
-	{ title: "Printed Materials", value: "PRINTED_MATERIAL" },
-	{ title: "Souvenirs", value: "SOUVENIR" },
-	{ title: "Artworks", value: "ARTWORK" },
-];
 
 export function CrfItemsSection({
 	items,

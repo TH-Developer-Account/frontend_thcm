@@ -320,9 +320,10 @@ export default function CommentsSection({
 		}
 	};
 	const disabled = !currentStage || !isUserInCurrentStage;
+	console.log("approval rows", approvalRows);
 	return (
 		<React.Fragment>
-			<section className="comments-section">
+			<section className="comments-section mb-4">
 				<div className="comments-header">
 					<div className="px-2.5 py-2 flex flex-row justify-between gap-4 w-full">
 						<h3 className="comments-title">
