@@ -1,34 +1,34 @@
-import React from "react";
+import React, { useState } from "react";
 import { Plus } from "lucide-react";
 import { useEPC } from "../../../context/useEPC";
 // import Filters from "../EPCListing/Filters";
 import { SearchInput } from "../../../../../components/FormElements/SearchInput";
 import { Can } from "../../../../../context/permissionHelpers";
 import Button from "../../../../../components/common/Button";
+import ThreeWayToggle from "../../../../../components/common/ThreeWayToggle";
+import {
+	epcListFilterOptions,
+	type EpcListFilterValue,
+} from "../../../constant";
 
 interface TopbarProps {
-	isFilterOpen: boolean;
-	setIsFilterOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	isFilterOpen?: boolean;
+	setIsFilterOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const Topbar: React.FC<TopbarProps> = ({ isFilterOpen, setIsFilterOpen }) => {
+const Topbar: React.FC<TopbarProps> = () => {
 	const { search, setSearch } = useEPC();
+	const [selectedFilter, setSelectedFilter] =
+		useState<EpcListFilterValue>("ALL");
 	return (
 		<div className="topbar-section">
 			<header className=" md:px-6 py-3 text-black">
-				<div className="flex items-center justify-between">
-					{/* Right group */}
-					<div className="flex items-center gap-2">
+				<div className="flex gap-4 flex-col justify-end">
+					<div className="flex items-center justify-end gap-4">
+						{/* Right group */}
 						{/* Search */}
 						<SearchInput value={search} onChange={setSearch} />
-						{/* Filter */}
-						{/* <button
-							className="flex items-center gap-1 border rounded-full px-3 py-2 text-sm"
-							onClick={() => setIsFilterOpen((prev) => !prev)}
-						>
-							<Filter size={16} />
-						</button> */}
-						{/* Add EPC */}
+
 						<Can action="write" app="MAP" module="EPC">
 							<Button
 								Icon={Plus}
@@ -40,6 +40,13 @@ const Topbar: React.FC<TopbarProps> = ({ isFilterOpen, setIsFilterOpen }) => {
 							/>
 						</Can>
 					</div>
+					{/* Filter */}
+					<ThreeWayToggle
+						options={epcListFilterOptions}
+						value={selectedFilter}
+						onChange={setSelectedFilter}
+						className="w-[420px]"
+					/>
 				</div>
 			</header>
 
