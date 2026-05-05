@@ -18,11 +18,11 @@ const ApprovalStatus = ({ epcData }: Props) => {
 	const currentStatus = epcData.status;
 	const steps = getApprovalSteps(currentStatus);
 	const currentIndex = steps.findIndex((step) => step.api === currentStatus);
-
+	console.log("Status ======>", epcData);
 	return (
 		<React.Fragment>
-			<div className=" grid relative bg-white">
-				<div className="approval-dot-section top-0 max-w-[200px] w-full   min-h-0  h-[calc(100%-100px)] overflow-y-auto scrollbar-sleek p-2 border shadow-sm border-zinc-300 rounded-sm">
+			<div className="content-box w-full">
+				<div className="approval-dot-section max-w-[200px] p-2">
 					{steps.map((status, index) => {
 						const isFuture = index > currentIndex;
 						const isCurrent = index === currentIndex;

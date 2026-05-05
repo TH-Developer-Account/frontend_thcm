@@ -18,13 +18,14 @@ const ApprovalTable = ({ data }: Props) => {
 			<div className="w-full overflow-x-auto rounded-sm px-3 mt-4">
 				{/* Table */}
 				<table className="w-full text-xs md:text-sm border border-gray-400">
-					<thead className="bg-gray-200 px-3  border-b border-gray-400 h-auto my-3 py-2 font-semibold text-gray-600 md:text-sm text-xs">
+					<thead className="light-blue-bg-header px-3  border-b border-gray-400 h-auto my-3 py-2 font-medium md:text-sm text-xs">
 						<tr>
 							<th className="px-3 py-2 text-left">Stage Order</th>
 							<th className="px-3 py-2 text-left">Name</th>
 							<th className="px-3 py-2 text-left">Email</th>
 							<th className="px-3 py-2 text-left">Stage</th>
 							<th className="px-3 py-2 text-left">Strategy</th>
+							<th className="px-3 py-2 text-left">Status</th>
 						</tr>
 					</thead>
 
@@ -40,6 +41,7 @@ const ApprovalTable = ({ data }: Props) => {
 								</td>
 								<td className="px-3 py-2 text-gray-600">{row.email}</td>
 								<td className="px-3 py-2">{row.stageName}</td>
+								<td className="px-3 py-2">{row.strategy}</td>
 								<td className="px-3 py-2">{row.strategy}</td>
 							</tr>
 						))}

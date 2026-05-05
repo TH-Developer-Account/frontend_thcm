@@ -57,10 +57,8 @@ body {
 }
 /* accent stripe on section headers */
 .epf-section-header {
-	display: flex;
+	@apply mb-2 flex gap-4;
 	align-items: center;
-	gap: 10px;
-	margin-bottom: 10px;
 }
 
 .epf-section-header::before {

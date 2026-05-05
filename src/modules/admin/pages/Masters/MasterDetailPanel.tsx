@@ -72,38 +72,57 @@ export function MasterDetailPanel({
 			</div>
 
 			{/* Form */}
-			<div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-5">
+			<div className="flex-1 overflow-y-auto scrollbar-sleek px-5 py-5 flex flex-col gap-5">
 				{/* Name field */}
+				{/* Name / Label field */}
 				<FormInput
 					name="label"
-					label={`${masterName.replace(/s$/, "")} Name`}
+					label={
+						masterName === "Budget"
+							? "Budget Code"
+							: `${masterName.replace(/s$/, "")} Name`
+					}
 					value={form.label}
 					onChange={(e) => handleChange("label", e.target.value)}
 					onKeyDown={(e: React.KeyboardEvent) =>
 						e.key === "Enter" && handleSave()
 					}
 				/>
-				{/* Name field */}
-				<FormInput
-					name="label"
-					label={`${masterName.replace(/s$/, "")} Code`}
-					value={form.code}
-					onChange={(e) => handleChange("label", e.target.value)}
-					onKeyDown={(e: React.KeyboardEvent) =>
-						e.key === "Enter" && handleSave()
-					}
-				/>
 
-				{/* Description field — optional extra field */}
+				{/* Code field - hide for Budget and Event Names if not needed */}
+				{masterName !== "Budget" && masterName !== "Event Names" && (
+					<FormInput
+						name="code"
+						label={`${masterName.replace(/s$/, "")} Code`}
+						value={form.code ?? ""}
+						onChange={(e) => handleChange("code", e.target.value)}
+						onKeyDown={(e: React.KeyboardEvent) =>
+							e.key === "Enter" && handleSave()
+						}
+					/>
+				)}
+
+				{/* Description field */}
 				<FormInput
 					name="description"
-					label="Description (optional)"
-					value={(form as any).description ?? ""}
+					label={masterName === "Budget" ? "Budget Description" : "Description"}
+					value={form.description ?? ""}
 					onChange={(e) =>
 						handleChange("description" as keyof MasterItem, e.target.value)
 					}
 				/>
 
+				{/* Budget Amount field - only for Budget */}
+				{masterName === "Budget" && (
+					<FormInput
+						name="budgetAmount"
+						label="Budget Amount"
+						value={String(form.budgetAmount ?? "")}
+						onChange={(e) =>
+							handleChange("budgetAmount" as keyof MasterItem, e.target.value)
+						}
+					/>
+				)}
 				{/* Status toggle */}
 				<div className="flex justify-between">
 					<p className="text-xs font-medium text-gray-500 mb-2">Status</p>

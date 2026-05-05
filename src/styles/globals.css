@@ -72,34 +72,53 @@ main {
 	/* background: var(--color-background-body); */
 }
 @layer utilities {
-	/* =========================================
-	   SLEEK SCROLLBAR
-	========================================= */
-
 	.scrollbar-sleek {
-		scrollbar-width: thin; /* Firefox */
-		scrollbar-color: #818184 #f4f4f5; /* thumb / track */
+		scrollbar-width: thin; /* Firefox (smallest possible) */
+		scrollbar-color: #71717a transparent;
 	}
 
 	.scrollbar-sleek::-webkit-scrollbar {
-		width: 6px;
-		height: 6px;
+		width: 2px;
+		height: 2px;
 	}
 
 	.scrollbar-sleek::-webkit-scrollbar-track {
-		background: #fafafa; /* zinc-50 */
+		background: transparent; /* cleaner, almost invisible */
 	}
 
 	.scrollbar-sleek::-webkit-scrollbar-thumb {
-		background: #18181b; /* zinc-900 */
+		background: #71717a; /* zinc-500 (softer than black) */
 		border-radius: 999px;
 	}
 
 	.scrollbar-sleek::-webkit-scrollbar-thumb:hover {
-		background: #27272a; /* zinc-800 */
+		background: #52525b; /* zinc-600 */
 	}
 
 	.scrollbar-sleek::-webkit-scrollbar-corner {
 		background: transparent;
 	}
+}
+/* pdf-export.css or common.css */
+
+.pdf-export-mode #pdf-content,
+.pdf-export-mode #pdf-content * {
+	color: #111827 !important;
+	background-color: #ffffff !important;
+	border-color: #e5e7eb !important;
+	box-shadow: none !important;
+	text-shadow: none !important;
+}
+
+.pdf-export-mode #pdf-content {
+	width: 100%;
+	padding: 16px;
+}
+
+.pdf-export-mode .no-print {
+	display: none !important;
+}
+
+.pdf-export-mode .content-box {
+	box-shadow: none !important;
 }

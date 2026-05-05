@@ -9,15 +9,23 @@ const Participants = ({ internal, external }: ParticipantsProps) => {
 	const total = (Number(internal) || 0) + (Number(external) || 0);
 	return (
 		<React.Fragment>
-			<div className="row-7 gap-20 w-auto flex items-center p-2 mb-4 light-blue-bg-header">
-				<p className="font-bold ">
-					Internal : <span className="font-light">{internal}</span>
+			<div className="grid grid-cols-3 gap-6 text-sm p-3">
+				<div className="light-blue-bg-header"></div>
+				<p className="uppercase-label-text">
+					Internal :{" "}
+					<span className="text-gray-700 leading-relaxed text-xs">
+						{internal}
+					</span>
 				</p>
-				<p className="font-bold ">
-					External :<span className="font-light ml-2">{external}</span>
+				<p className="uppercase-label-text">
+					External :
+					<span className="text-gray-700 leading-relaxed text-xs">
+						{external}
+					</span>
 				</p>
-				<p className="font-bold ">
-					Total : <span className="font-light">{total}</span>
+				<p className="uppercase-label-text">
+					Total :{" "}
+					<span className="text-gray-700 leading-relaxed text-xs">{total}</span>
 				</p>
 			</div>
 		</React.Fragment>

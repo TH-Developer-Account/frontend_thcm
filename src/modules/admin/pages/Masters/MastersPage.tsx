@@ -42,20 +42,31 @@ const MastersPage = () => {
 		return () => observer.disconnect();
 	}, []);
 
-	// Merge API data with local edits
+	const mapNormalMasterItem = (item: any): MasterItem => ({
+		id: item.value ?? item.id ?? crypto.randomUUID(),
+		label: item.label ?? item.name ?? "",
+		code: item.code ?? "",
+		description: item.description ?? "",
+	});
+
+	const mapBudgetMasterItem = (item: any): MasterItem => ({
+		id: item.value ?? item.id ?? crypto.randomUUID(),
+		label: item.label ?? "",
+		description: item.description ?? "",
+		budgetAmount: Number(item.budgetAmount ?? 0),
+	});
+
 	const getItems = (masterName: string): MasterItem[] => {
 		const key = MASTER_KEYS[masterName] ?? masterName.toLowerCase();
-		const apiItems: MasterItem[] = (data?.[key] ?? []).map((b: any) => ({
-			id: b.value ?? b.id ?? crypto.randomUUID(),
-			label: b.label ?? b.name ?? "",
-			code: b.code ?? b.code ?? "",
-			// ✅ extra fields (only used when present)
-			description: b.description ?? "",
-			budgetAmount: b.budgetAmount ? Number(b.budgetAmount) : undefined,
-		}));
+		const apiData = data?.[key] ?? [];
+
+		const apiItems =
+			masterName === "Budget"
+				? apiData.map(mapBudgetMasterItem)
+				: apiData.map(mapNormalMasterItem);
+
 		return localData[masterName] ?? apiItems;
 	};
-
 	const setItems = (masterName: string, items: MasterItem[]) => {
 		setLocalData((prev) => ({ ...prev, [masterName]: items }));
 		// If selected item was deleted, deselect
@@ -93,7 +104,7 @@ const MastersPage = () => {
 			}`}
 		>
 			{/* Sidebar */}
-			<div className=" shrink-0">
+			<div className="shrink-0">
 				<MasterSidebar
 					activeMaster={activeMaster}
 					onSelectMaster={handleMasterChange}
@@ -103,7 +114,7 @@ const MastersPage = () => {
 			</div>
 
 			{/* Table */}
-			<div className="flex-1 min-w-0">
+			<div className="flex-[1.7] min-w-0">
 				<MasterLineItemTable
 					title={activeMaster}
 					nameLabel={`${activeMaster.replace(/s$/, "")}`}
@@ -115,7 +126,7 @@ const MastersPage = () => {
 			</div>
 
 			{/* Detail */}
-			<div className="flex-1 min-w-0">
+			<div className="flex-[0.8] min-w-[280px] max-w-[380px]">
 				<MasterDetailPanel
 					masterName={activeMaster}
 					item={selectedItem}
