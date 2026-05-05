@@ -26,9 +26,14 @@ export const MasterSidebar = ({
 	return (
 		<nav
 			className={`
-		  border border-zinc-300 shadow-sm rounded-lg p-2
-		  ${isCompact ? "flex flex-row gap-2 overflow-x-auto" : "flex flex-col gap-1 w-[200px] shrink-0"}
-		`}
+		w-full max-w-full min-w-0
+		border border-zinc-300 shadow-sm rounded-lg p-2
+		${
+			isCompact
+				? "flex flex-row gap-2 overflow-x-auto overflow-y-hidden whitespace-nowrap scrollbar-sleek"
+				: "flex flex-col gap-1 shrink-0"
+		}
+	`}
 		>
 			{!isCompact && (
 				<p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-zinc-400">

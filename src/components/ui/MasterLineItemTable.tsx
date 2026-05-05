@@ -269,7 +269,7 @@ export function MasterLineItemTable({
 						</div>
 					)}
 
-					<div className="mb-2">
+					<div className="">
 						<Button size="sm" status="brand" onClick={handleAdd}>
 							Add
 						</Button>

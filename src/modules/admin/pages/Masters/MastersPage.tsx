@@ -33,8 +33,8 @@ const MastersPage = () => {
 		const observer = new ResizeObserver(([entry]) => {
 			const width = entry.contentRect.width;
 
-			// switch layout when container becomes narrow
-			setIsCompact(width < 1000);
+			// compact sidebar until XL layout
+			setIsCompact(width < 1100);
 		});
 
 		observer.observe(el);
@@ -99,12 +99,12 @@ const MastersPage = () => {
 	return (
 		<div
 			ref={containerRef}
-			className={`flex gap-4 h-[calc(100vh-58px)] p-4 transition-all duration-400 ${
+			className={`flex gap-4 h-[calc(100vh-65px)] transition-all duration-400 ${
 				isCompact ? "flex-col" : "flex-row"
 			}`}
 		>
 			{/* Sidebar */}
-			<div className="shrink-0">
+			<div className=" shrink-0">
 				<MasterSidebar
 					activeMaster={activeMaster}
 					onSelectMaster={handleMasterChange}
@@ -114,7 +114,7 @@ const MastersPage = () => {
 			</div>
 
 			{/* Table */}
-			<div className="flex-[1.7] min-w-0">
+			<div className="flex-1 min-w-0">
 				<MasterLineItemTable
 					title={activeMaster}
 					nameLabel={`${activeMaster.replace(/s$/, "")}`}
@@ -126,7 +126,7 @@ const MastersPage = () => {
 			</div>
 
 			{/* Detail */}
-			<div className="flex-[0.8] min-w-[280px] max-w-[380px]">
+			<div className="flex-1 min-w-0">
 				<MasterDetailPanel
 					masterName={activeMaster}
 					item={selectedItem}

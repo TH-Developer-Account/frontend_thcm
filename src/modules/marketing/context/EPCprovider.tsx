@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "../../../hooks/useDebounce";
 import { EPCContext } from "./EPCcontext";
 import { ServerAxios } from "../../../services/ServerAxios";
-import { epc_api_routes } from "../constant";
+import { epc_api_routes, type EpcListFilterValue } from "../constant";
 import type { ReactNode } from "react";
 import type { EPCRow } from "../../../utils/types";
 import type { SortingState } from "@tanstack/react-table";
@@ -20,6 +20,8 @@ export function EPCProvider({ children }: EPCProviderProps) {
   const [pageIndex, setPageIndex] = useState(0);
   const [pageSize, setPageSize] = useState(25);
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [selectedFilter, setSelectedFilter] =
+    useState<EpcListFilterValue>("createdByMe");
 
   const [totalPages, setTotalPages] = useState(0);
   const debouncedSearch = useDebounce(search, 500); // 500ms delay
@@ -42,6 +44,8 @@ export function EPCProvider({ children }: EPCProviderProps) {
           search: debouncedSearch,
           sortBy: sort?.id,
           sortOrder: sort?.desc ? "desc" : "asc",
+          approvedByMe: selectedFilter === "approvedByMe",
+          pendingOnMe: selectedFilter === "pendingOnMe",
         },
       });
 
@@ -52,7 +56,7 @@ export function EPCProvider({ children }: EPCProviderProps) {
     } finally {
       setLoading(false);
     }
-  }, [pageIndex, pageSize, debouncedSearch, sorting]);
+  }, [pageIndex, pageSize, debouncedSearch, sorting, selectedFilter]);
 
   useEffect(() => {
     fetchEPC();
@@ -68,6 +72,8 @@ export function EPCProvider({ children }: EPCProviderProps) {
         pageSize,
         totalPages,
         sorting,
+        selectedFilter,
+        setSelectedFilter,
         setSearch,
         setSorting,
         setPageIndex,

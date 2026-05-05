@@ -25,7 +25,14 @@ export default function AdminRoutes() {
 			<Route path="users" element={<UsersPage />} />
 			<Route path="department" element={<ComingSoon />} />
 			<Route path="roles" element={<CrfForm />} />
-			<Route path="masters" element={<MastersPage />} />
+			<Route
+				path="masters"
+				element={
+					<div className="overflow-y-auto scrollbar-sleek">
+						<MastersPage />
+					</div>
+				}
+			/>
 			<Route path="business-partners" element={<BusinessPartners />} />
 			<Route path="business-partners-view" element={<BusinessPartnerView />} />
 			<Route path="bydesign" element={<ByDesignPage />} />

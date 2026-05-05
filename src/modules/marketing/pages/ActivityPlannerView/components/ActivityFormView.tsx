@@ -10,12 +10,10 @@ import type {
 	EpcDetailResponse,
 } from "../types/ActivityView.types";
 import CommentsSection from "./CommentsSection";
-import ApprovalTable, {
-	type ApprovalRow,
-} from "../../../../../components/ui/ApprovalTable";
-import Button from "../../../../../components/common/Button";
+import { type ApprovalRow } from "../../../../../components/ui/ApprovalTable";
 import { mapBudgetShareInfo } from "./helper";
 import { useAuth } from "../../../../../context/Auth/useAuth";
+import Participants from "./Participants";
 
 interface Props {
 	epcId?: string;
@@ -34,11 +32,9 @@ const formatDate = (date?: string) => {
 
 const mapLineItems = (items: any[] = []) => {
 	return items.map((item, index) => {
-		const product = item.product;
 		const rate = Number(item.rate || item.amount || 0);
 		const qty = Number(item.qty || item.quantity || 0);
-		const category = item.product;
-		console.log("itemsssss", item, category);
+
 		return {
 			id: item.id,
 			sno: index + 1,
@@ -52,8 +48,6 @@ const mapLineItems = (items: any[] = []) => {
 				item.description ||
 				item.product?.description || // ✅ FIX HERE
 				"--",
-			// ✅ category mapping fixed
-			category: item.category || product?.category || "--",
 			rate,
 			qty,
 			total: Number(item.total || rate * qty || 0),
@@ -83,27 +77,23 @@ const ActivityFormView = ({ epcId }: Props) => {
 	const [loading, setLoading] = React.useState(false);
 
 	React.useEffect(() => {
-		if (!epcId) return;
-
-		const load = async () => {
-			try {
-				setLoading(true);
-				const {
-					data: { data },
-				} = await ServerAxios.get(`/epc/${epcId}`);
-
-				setEPCData(data);
-			} catch (err) {
-				console.log({ err });
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		load();
+		if (epcId) fetchEPC();
 	}, [epcId]);
 
-	const { user } = useAuth();
+	const fetchEPC = async () => {
+		try {
+			setLoading(true);
+			const {
+				data: { data },
+			} = await ServerAxios.get(`/epc/${epcId}`);
+
+			setEPCData(data);
+		} catch (err) {
+			console.log({ err });
+		} finally {
+			setLoading(false);
+		}
+	};
 
 	if (loading) return <Loader />;
 	if (!epcId) return <p>No EPC selected</p>;
@@ -113,6 +103,7 @@ const ActivityFormView = ({ epcId }: Props) => {
 	const epf = epcData?.epf;
 
 	const viewData = epcData;
+
 	const { items: budgetItems, shareInfo } = mapBudgetShareInfo({
 		eventBudget: epf?.eventBudget,
 		annualBudget: epf?.annualBudget,
@@ -153,9 +144,10 @@ const ActivityFormView = ({ epcId }: Props) => {
 	const total =
 		(Number(viewData?.epf?.internalParticipants) || 0) +
 		(Number(viewData?.epf?.externalParticipants) || 0);
+
 	return (
-		<div className="content-box w-full h-auto max-w-5xl  mx-auto">
-			<div className="px-6 py-4">
+		<div className=" h-full min-h-screen max-w-5xl">
+			<div className="w-full h-auto  mt-0 rounded-smounded-lg px-6 py-4">
 				{/* Dates */}
 				<DateRange
 					fromDate={viewData?.event_from_date}
@@ -229,70 +221,32 @@ const ActivityFormView = ({ epcId }: Props) => {
 							</div>
 						</div>
 					</Section>
-					<Section title="Participants">
-						<div className="grid grid-cols-4 gap-6 text-sm px-4 py-1.5">
-							<p className="uppercase-label-text">
-								Internal :{" "}
-								<span className="text-gray-700 leading-relaxed text-xs">
-									{viewData?.epf?.internalParticipants}
-								</span>
-							</p>
-							<p className="uppercase-label-text">
-								External :
-								<span className="text-gray-700 leading-relaxed text-xs">
-									{viewData?.epf?.externalParticipants}
-								</span>
-							</p>
-							<p className="uppercase-label-text">
-								Total :{" "}
-								<span className="text-gray-700 leading-relaxed text-xs">
-									{total}
-								</span>
-							</p>
-						</div>
-					</Section>
+
 					<Section title="Collateral Requisition Form Line Items">
 						{viewData?.crf?.lineItems?.length > 0 && (
 							<LineTableView data={mapLineItems(viewData?.crf?.lineItems)} />
 						)}
 					</Section>
 					{viewData?.epf?.lineItems?.length > 0 && (
-						<Section title="Event Cost Overheads">
+						<Section title="Activity Proposition Form Line Items">
 							<LineTableView data={mapLineItems(viewData?.epf?.lineItems)} />
 						</Section>
 					)}
-
+					<Participants
+						internal={viewData?.epf?.internalParticipants}
+						external={viewData?.epf?.externalParticipants}
+					/>
 					<Section title="Activity Proposition Form Budget Information">
 						<BudgetShare items={budgetItems} shareInfo={shareInfo} />
 					</Section>
 					<Section title="Comments">
-						{epcData?.activeWorkflow?.id ? (
-							<CommentsSection
-								workFlowId={epcData.activeWorkflow.id}
-								stages={epcData.activeWorkflow.stages ?? []}
-							/>
-						) : (
-							<div className="text-xs text-gray-500 px-3 py-4">
-								No active workflow found for this activity.
-							</div>
-						)}
+						<CommentsSection
+							workFlowId={epcData.activeWorkflow.id}
+							stages={epcData.activeWorkflow.stages}
+							approvalRows={approvalRows}
+							onWorkflowUpdate={fetchEPC}
+						/>
 					</Section>
-					<Section title="Approval Flow">
-						{approvalRows.length > 0 ? (
-							<ApprovalTable data={approvalRows} />
-						) : (
-							<div className="text-xs text-gray-500 px-3 py-4">
-								No approval flow assigned yet.
-							</div>
-						)}
-					</Section>
-					{viewData?.created_by_id == user?.id ? null : (
-						<div className="flex flex-row gap-4 items-center justify-end">
-							<Button text="Clarify" status="outline" />
-							<Button text="Approve" status="brand" />
-						</div>
-					)}
-					<hr className="epf-divider  mb-4 pb-2 mt-4 " />
 				</div>
 			</div>
 		</div>
