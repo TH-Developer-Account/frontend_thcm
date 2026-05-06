@@ -9,7 +9,7 @@ import { ServerAxios } from "../../../../../services/ServerAxios";
 import type { EpcWorkflowStage } from "../types/ActivityView.types";
 import Section from "./Section";
 import ApprovalTable, {
-  type ApprovalRow,
+	type ApprovalRow,
 } from "../../../../../components/ui/ApprovalTable";
 
 export type CommentUser = {
@@ -29,10 +29,10 @@ export type CommentItem = {
 };
 
 type CommentsSectionProps = {
-  workFlowId: string;
-  stages: EpcWorkflowStage[];
-  approvalRows: ApprovalRow[];
-  onWorkflowUpdate: () => Promise<void>;
+	workFlowId: string;
+	stages: EpcWorkflowStage[];
+	approvalRows: ApprovalRow[];
+	onWorkflowUpdate: () => Promise<void>;
 };
 
 const formatDate = (value: string) => {
@@ -160,10 +160,10 @@ function CommentCard({
 }
 
 export default function CommentsSection({
-  workFlowId,
-  stages,
-  approvalRows,
-  onWorkflowUpdate,
+	workFlowId,
+	stages,
+	approvalRows,
+	onWorkflowUpdate,
 }: CommentsSectionProps) {
 	const { showToast } = useToast();
 	const { user } = useAuth();
@@ -180,13 +180,13 @@ export default function CommentsSection({
 					data: { data },
 				} = await ServerAxios.get(`/comment/${workFlowId}`);
 
-        setComments(data);
-      } catch (err) {
-        console.log({ err });
-      } finally {
-        setCommentsLoading(false);
-      }
-    };
+				setComments(data);
+			} catch (err) {
+				console.log({ err });
+			} finally {
+				setCommentsLoading(false);
+			}
+		};
 
 		if (workFlowId) fetchAllComments();
 	}, [workFlowId]);
@@ -257,118 +257,119 @@ export default function CommentsSection({
 					: typeof err === "string"
 						? err
 						: "Error while adding the comment";
+		}
+	};
 
-  const handleApprove = async () => {
-    try {
-      const {
-        data: { message },
-      } = await ServerAxios.post(`/soa/stages/${currentStage?.id}/approve`);
+	const handleApprove = async () => {
+		try {
+			const {
+				data: { message },
+			} = await ServerAxios.post(`/soa/stages/${currentStage?.id}/approve`);
 
-      showToast({
-        type: "success",
-        title: "Success",
-        description: message,
-      });
-      await onWorkflowUpdate();
-    } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : typeof err === "string"
-            ? err
-            : "Error while adding the comment";
-      showToast({
-        type: "error",
-        title: "Error",
-        description: message,
-      });
-    }
-  };
+			showToast({
+				type: "success",
+				title: "Success",
+				description: message,
+			});
+			await onWorkflowUpdate();
+		} catch (err) {
+			const message =
+				err instanceof Error
+					? err.message
+					: typeof err === "string"
+						? err
+						: "Error while adding the comment";
+			showToast({
+				type: "error",
+				title: "Error",
+				description: message,
+			});
+		}
+	};
 
-  const handleClarify = async () => {
-    try {
-      const {
-        data: { message },
-      } = await ServerAxios.post(`/soa/stages/${currentStage?.id}/clarify`);
+	const handleClarify = async () => {
+		try {
+			const {
+				data: { message },
+			} = await ServerAxios.post(`/soa/stages/${currentStage?.id}/clarify`);
 
-      showToast({
-        type: "success",
-        title: "Success",
-        description: message,
-      });
-      await onWorkflowUpdate();
-    } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : typeof err === "string"
-            ? err
-            : "Error while adding the comment";
-      showToast({
-        type: "error",
-        title: "Error",
-        description: message,
-      });
-    }
-  };
+			showToast({
+				type: "success",
+				title: "Success",
+				description: message,
+			});
+			await onWorkflowUpdate();
+		} catch (err) {
+			const message =
+				err instanceof Error
+					? err.message
+					: typeof err === "string"
+						? err
+						: "Error while adding the comment";
+			showToast({
+				type: "error",
+				title: "Error",
+				description: message,
+			});
+		}
+	};
 
-  return (
-    <React.Fragment>
-      <section className="comments-section">
-        <div className="comments-header">
-          <div className="px-2.5 py-2 flex flex-row justify-between gap-4 w-full">
-            <h3 className="comments-title">
-              <MessageCircle size={16} />
-              Comment Section
-            </h3>
-            <p className="comments-subtitle">
-              {comments.length} {comments.length === 1 ? "comment" : "comments"}
-            </p>
-          </div>
-        </div>
+	return (
+		<React.Fragment>
+			<section className="comments-section">
+				<div className="comments-header">
+					<div className="px-2.5 py-2 flex flex-row justify-between gap-4 w-full">
+						<h3 className="comments-title">
+							<MessageCircle size={16} />
+							Comment Section
+						</h3>
+						<p className="comments-subtitle">
+							{comments.length} {comments.length === 1 ? "comment" : "comments"}
+						</p>
+					</div>
+				</div>
 
-        {commentsLoading ? (
-          <div className="comments-loading">
-            <div />
-            <div />
-            <div />
-          </div>
-        ) : comments.length === 0 ? (
-          <div className="comments-empty">
-            <MessageCircle size={24} />
-            <p>No comments yet</p>
-            <span>Start the discussion by adding the first comment.</span>
-          </div>
-        ) : (
-          <div className="comments-list">
-            {comments.map((comment) => (
-              <CommentCard key={comment.id} comment={comment} />
-            ))}
-          </div>
-        )}
+				{commentsLoading ? (
+					<div className="comments-loading">
+						<div />
+						<div />
+						<div />
+					</div>
+				) : comments.length === 0 ? (
+					<div className="comments-empty">
+						<MessageCircle size={24} />
+						<p>No comments yet</p>
+						<span>Start the discussion by adding the first comment.</span>
+					</div>
+				) : (
+					<div className="comments-list">
+						{comments.map((comment) => (
+							<CommentCard key={comment.id} comment={comment} />
+						))}
+					</div>
+				)}
 
-        {!canComment && (
-          <div className="comments-create">
-            <div className="comments-create-input">
-              <CommentInput
-                disabled={commentsLoading}
-                onSubmit={handleCreate}
-              />
-            </div>
-          </div>
-        )}
-      </section>
-      <Section title="Approval Flow">
-        {!canComment && (
-          <div className="flex flex-row gap-4 items-center justify-end">
-            <Button text="Clarify" status="outline" onClick={handleClarify} />
-            <Button text="Approve" status="brand" onClick={handleApprove} />
-          </div>
-        )}
+				{!canComment && (
+					<div className="comments-create">
+						<div className="comments-create-input">
+							<CommentInput
+								disabled={commentsLoading}
+								onSubmit={handleCreate}
+							/>
+						</div>
+					</div>
+				)}
+			</section>
+			<Section title="Approval Flow">
+				{!canComment && (
+					<div className="flex flex-row gap-4 items-center justify-end">
+						<Button text="Clarify" status="outline" onClick={handleClarify} />
+						<Button text="Approve" status="brand" onClick={handleApprove} />
+					</div>
+				)}
 
-        <ApprovalTable data={approvalRows} />
-      </Section>
-    </React.Fragment>
-  );
+				<ApprovalTable data={approvalRows} />
+			</Section>
+		</React.Fragment>
+	);
 }
-
