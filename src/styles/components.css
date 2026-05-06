@@ -741,10 +741,15 @@
 .workflow-table-shell {
 	@apply flex min-h-0 flex-col overflow-hidden rounded-sm border border-zinc-200 bg-white shadow-sm;
 	height: calc(56vh);
+	width: 100%;
+	min-width: 0;
+	overflow: hidden;
 }
 
 .workflow-table-scroll {
 	@apply min-h-0 flex-1 overflow-auto;
+	width: 100%;
+	min-width: 0;
 }
 
 .workflow-table {

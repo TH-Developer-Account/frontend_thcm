@@ -1,20 +1,11 @@
 import React from "react";
 import type { EpcDetailResponse } from "../types/ActivityView.types";
 import { statusMap } from "../../../../../utils/types";
+import { formatDate } from "../../../../../utils/format";
 
 type Props = {
 	epcData?: EpcDetailResponse;
 	createdBy?: string;
-};
-
-const formatDate = (date?: string) => {
-	if (!date) return "--";
-
-	return new Date(date).toLocaleDateString("en-IN", {
-		day: "2-digit",
-		month: "short",
-		year: "numeric",
-	});
 };
 
 const formatAmount = (value?: number | string | null) => {

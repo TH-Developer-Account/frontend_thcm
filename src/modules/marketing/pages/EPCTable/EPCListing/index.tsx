@@ -12,6 +12,7 @@ export default function EPCList() {
 	return (
 		<EPCProvider>
 			<PageRowSectionLayout
+				contentClassName="min-w-0 overflow-hidden"
 				stickyHeader
 				header_children={
 					<PageHeader

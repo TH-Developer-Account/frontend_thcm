@@ -62,7 +62,7 @@ export function formatDate(date?: string | Date) {
 
 	return d.toLocaleDateString("en-IN", {
 		day: "2-digit",
-		month: "short",
+		month: "2-digit",
 		year: "numeric",
 	});
 }

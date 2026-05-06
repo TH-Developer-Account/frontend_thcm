@@ -12,21 +12,12 @@ import type {
 import CommentsSection from "./CommentsSection";
 import { type ApprovalRow } from "../../../../../components/ui/ApprovalTable";
 import { mapBudgetShareInfo } from "./helper";
+import { formatDate } from "../../../../../utils/format";
 // import { useAuth } from "../../../../../context/Auth/useAuth";
 interface Props {
 	epcId?: string;
 	epcData?: EpcDetailResponse;
 }
-
-const formatDate = (date?: string) => {
-	if (!date) return "--";
-
-	return new Date(date).toLocaleDateString("en-IN", {
-		day: "2-digit",
-		month: "short",
-		year: "numeric",
-	});
-};
 
 const mapLineItems = (items: any[] = []) => {
 	return items.map((item, index) => {

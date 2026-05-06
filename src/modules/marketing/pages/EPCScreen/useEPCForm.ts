@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { validateEpcForm } from "./validation";
 import { useToast } from "../../../../context/Auth/AuthContext";
@@ -26,11 +26,27 @@ const initialValues: EpcFormValues = {
 	status: "DRAFT",
 };
 
+const getNestedId = (data: any, nestedKey: string, fallbackKey: string) => {
+	return data?.[nestedKey]?.id || data?.[fallbackKey] || "";
+};
+
+const getNestedDescription = (
+	data: any,
+	nestedKey: string,
+	fallbackKey: string,
+) => {
+	return data?.[nestedKey]?.description || data?.[fallbackKey] || "";
+};
+
+const formatDateOnly = (date?: string | null) => {
+	if (!date) return "";
+	return String(date).split("T")[0];
+};
+
 export const useEpcForm = ({ epcId }: EpcFormProps) => {
 	const { showToast } = useToast();
 	const navigate = useNavigate();
 
-	// ✅ FIX: your hook returns data, so alias it as masters
 	const { data: masters } = useMasterData();
 
 	const [values, setValues] = useState<EpcFormValues>(initialValues);
@@ -41,13 +57,148 @@ export const useEpcForm = ({ epcId }: EpcFormProps) => {
 
 	const isEditMode = Boolean(epcId);
 
-	const getOptionCode = (options: Option[] = [], value?: string) => {
-		return options.find((opt) => opt.value === value)?.code || "";
-	};
+	const getOptionCode = useCallback(
+		(options: Option[] = [], value?: string) => {
+			return options.find((opt) => opt.value === value)?.code || "";
+		},
+		[],
+	);
+
+	const generateProposalNumber = useCallback(
+		(formValues: EpcFormValues) => {
+			const departmentCode = getOptionCode(
+				masters?.departments || [],
+				formValues.department,
+			);
+
+			const branchCode = getOptionCode(
+				masters?.branches || [],
+				formValues.branch,
+			);
+
+			const regionCode = getOptionCode(
+				masters?.regions || [],
+				formValues.region,
+			);
+
+			const verticalCode = getOptionCode(
+				masters?.vertical || [],
+				formValues.vertical,
+			);
+
+			if (departmentCode && branchCode && regionCode && verticalCode) {
+				return generateEpfNo(
+					departmentCode,
+					branchCode,
+					regionCode,
+					verticalCode,
+				);
+			}
+
+			return "";
+		},
+		[
+			getOptionCode,
+			masters?.branches,
+			masters?.departments,
+			masters?.regions,
+			masters?.vertical,
+		],
+	);
+
+	const mapEpcResponseToForm = useCallback((epc: any): EpcFormValues => {
+		return {
+			epfNo: epc?.proposal_number || "",
+			proposal_number: epc?.proposal_number || "",
+
+			poDocumentRefNo: epc?.poDocumentRefNo || "",
+
+			department: getNestedId(epc, "department", "departmentId"),
+			region: getNestedId(epc, "region", "regionId"),
+			branch: getNestedId(epc, "branch", "branchId"),
+
+			budget_master_id:
+				epc?.budget_master?.id ||
+				epc?.budgetMaster?.id ||
+				epc?.budget_master_id ||
+				epc?.budgetMasterId ||
+				"",
+
+			budgetDescription:
+				getNestedDescription(epc, "budget_master", "budgetDescription") ||
+				epc?.budgetMaster?.description ||
+				"",
+
+			vertical: getNestedId(epc, "vertical", "verticalId"),
+
+			event_scale: epc?.event_scale || "",
+
+			event_name:
+				epc?.event_name?.id ||
+				epc?.eventName?.id ||
+				epc?.event_name_id ||
+				epc?.eventNameId ||
+				"",
+
+			event_description: epc?.event_description || "",
+			event_from_date: formatDateOnly(epc?.event_from_date),
+			event_to_date: formatDateOnly(epc?.event_to_date),
+			location: epc?.location || "",
+			event_objective: epc?.event_objective || "",
+			status: epc?.status || "DRAFT",
+		};
+	}, []);
+
+	useEffect(() => {
+		let ignore = false;
+
+		const fetchEpcDetails = async () => {
+			if (!epcId) {
+				setValues(initialValues);
+				return;
+			}
+
+			try {
+				setLoading(true);
+
+				const response = await ServerAxios.get(`/epc/${epcId}`);
+
+				const epcData =
+					response.data?.data?.eventProposal ||
+					response.data?.data?.epc ||
+					response.data?.data ||
+					response.data;
+
+				if (ignore) return;
+
+				const mappedValues = mapEpcResponseToForm(epcData);
+
+				setValues(mappedValues);
+			} catch (err) {
+				console.error("Failed to fetch EPC details", err);
+
+				showToast({
+					type: "error",
+					title: "Error",
+					description: "Failed to load EPC details",
+				});
+			} finally {
+				if (!ignore) {
+					setLoading(false);
+				}
+			}
+		};
+
+		fetchEpcDetails();
+
+		return () => {
+			ignore = true;
+		};
+	}, [epcId, mapEpcResponseToForm, showToast]);
 
 	const handleChange = (name: keyof EpcFormValues, value: string) => {
 		setValues((prev) => {
-			const updated = {
+			const updated: EpcFormValues = {
 				...prev,
 				[name]: value,
 			};
@@ -56,30 +207,33 @@ export const useEpcForm = ({ epcId }: EpcFormProps) => {
 				updated.branch = "";
 			}
 
-			const departmentCode = getOptionCode(
-				masters?.departments,
-				updated.department,
-			);
-
-			const branchCode = getOptionCode(masters?.branches, updated.branch);
-
-			const regionCode = getOptionCode(masters?.regions, updated.region);
-
-			const verticalCode = getOptionCode(masters?.vertical, updated.vertical);
-
-			if (departmentCode && branchCode && regionCode && verticalCode) {
-				updated.epfNo = generateEpfNo(
-					departmentCode,
-					branchCode,
-					regionCode,
-					verticalCode,
-				);
-			} else {
-				updated.epfNo = "";
+			if (name === "department") {
+				updated.vertical = "";
 			}
 
 			if (name === "budget_master_id") {
 				updated.budgetDescription = "";
+			}
+
+			/*
+				For new EPC create:
+				Generate EPC No automatically.
+
+				For edit:
+				Keep existing proposal_number unless user changes master fields.
+			*/
+			const shouldRegenerateNo =
+				!isEditMode ||
+				name === "department" ||
+				name === "vertical" ||
+				name === "region" ||
+				name === "branch";
+
+			if (shouldRegenerateNo) {
+				const proposalNo = generateProposalNumber(updated);
+
+				updated.epfNo = proposalNo;
+				updated.proposal_number = proposalNo;
 			}
 
 			return updated;
@@ -94,18 +248,21 @@ export const useEpcForm = ({ epcId }: EpcFormProps) => {
 	};
 
 	const handleSave = async (status: "SUBMITTED") => {
-		const formData = {
+		const formData: EpcFormValues = {
 			...values,
+			status,
 			proposal_number: values.epfNo,
 		};
-		if (!values.epfNo) {
+
+		if (!formData.proposal_number) {
 			showToast({
 				type: "error",
 				title: "Error",
-				description: "EPF number not generated yet",
+				description: "EPC number not generated yet",
 			});
 			return;
 		}
+
 		if (status === "SUBMITTED") {
 			const validationErrors = validateEpcForm(formData);
 
@@ -118,25 +275,36 @@ export const useEpcForm = ({ epcId }: EpcFormProps) => {
 		try {
 			setLoading(true);
 
-			const {
-				data: { message },
-			} = await ServerAxios.post("/epc", formData);
+			const response = isEditMode
+				? await ServerAxios.put(`/epc/${epcId}`, formData)
+				: await ServerAxios.post("/epc", formData);
+
+			const message = response.data?.message;
 
 			showToast({
 				type: "success",
 				title: "Success",
-				description: message || "Created EPC Successfully",
+				description:
+					message ||
+					(isEditMode
+						? "EPC updated successfully"
+						: "EPC created successfully"),
 			});
 
+			localStorage.removeItem("epcInfo");
 			setValues(initialValues);
 			setErrors({});
-			navigate(`/marketing/listing`);
+			navigate("/marketing/listing");
 		} catch (err: unknown) {
-			if (err instanceof Error) {
-				console.error(err.message);
-			} else {
-				console.error("An unexpected error occurred", err);
-			}
+			console.error("Failed to save EPC", err);
+
+			showToast({
+				type: "error",
+				title: "Error",
+				description: isEditMode
+					? "Failed to update EPC"
+					: "Failed to create EPC",
+			});
 		} finally {
 			setLoading(false);
 		}

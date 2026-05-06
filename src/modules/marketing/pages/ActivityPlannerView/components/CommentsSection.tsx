@@ -13,6 +13,7 @@ import ApprovalTable, {
 } from "../../../../../components/ui/ApprovalTable";
 import { Modal } from "../../../../../components/common/Modal";
 import { Alert } from "../../../../../components/common/Alert";
+import { formatDateTime } from "../../../../../utils/format";
 
 export type CommentUser = {
 	id: string;
@@ -35,17 +36,6 @@ type CommentsSectionProps = {
 	stages: EpcWorkflowStage[];
 	approvalRows: ApprovalRow[];
 	onWorkflowUpdate: () => Promise<void>;
-};
-
-const formatDate = (value: string) => {
-	if (!value) return "";
-	return new Date(value).toLocaleString("en-IN", {
-		day: "2-digit",
-		month: "short",
-		year: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
 };
 
 function CommentInput({
@@ -150,7 +140,7 @@ function CommentCard({
 						<div className="comment-meta">
 							<p className="comment-author">{`${comment?.user.first_name} ${comment?.user.last_name}`}</p>
 							<div className="comment-submeta">
-								<span>{formatDate(comment.createdAt)}</span>
+								<span>{formatDateTime(comment.createdAt)}</span>
 							</div>
 						</div>
 						<p className="comment-text">{comment.comment}</p>
