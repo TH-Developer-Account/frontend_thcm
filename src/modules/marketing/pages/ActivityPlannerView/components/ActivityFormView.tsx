@@ -144,10 +144,9 @@ const ActivityFormView = ({ epcId }: Props) => {
 	const total =
 		(Number(viewData?.epf?.internalParticipants) || 0) +
 		(Number(viewData?.epf?.externalParticipants) || 0);
-	console.log("View Data", approvalRows);
 
 	return (
-		<div className="content-box w-full h-auto max-w-5xl  mx-auto">
+		<div className="content-box w-full h-auto max-w-full mx-auto">
 			<div className="px-6 py-4">
 				{/* Dates */}
 				<DateRange

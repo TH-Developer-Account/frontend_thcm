@@ -17,7 +17,7 @@ const ApprovalTable = ({ data }: Props) => {
 	console.log("Data", data);
 	return (
 		<React.Fragment>
-			<div className="w-full overflow-x-auto rounded-sm px-3 mt-4 mb-25">
+			<div className="w-full overflow-x-auto rounded-sm px-3 mt-4 mb-4">
 				{/* Table */}
 				<table className="w-full text-xs md:text-sm border border-gray-400">
 					<thead className="bg-gray-200 px-3  border-b border-gray-400 h-auto my-3 py-2 font-semibold text-gray-600 md:text-sm text-xs">

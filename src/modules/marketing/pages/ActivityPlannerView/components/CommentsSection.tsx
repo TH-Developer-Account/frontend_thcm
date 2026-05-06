@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useToast } from "../../../../../context/Auth/AuthContext";
 import { useAuth } from "../../../../../context/Auth/useAuth";
 import { MessageCircle, X, Send } from "lucide-react";
@@ -11,6 +11,8 @@ import Section from "./Section";
 import ApprovalTable, {
 	type ApprovalRow,
 } from "../../../../../components/ui/ApprovalTable";
+import { Modal } from "../../../../../components/common/Modal";
+import { Alert } from "../../../../../components/common/Alert";
 
 export type CommentUser = {
 	id: string;
@@ -169,6 +171,8 @@ export default function CommentsSection({
 	const { user } = useAuth();
 	const [comments, setComments] = React.useState<CommentItem[]>([]);
 	const [commentsLoading, setCommentsLoading] = React.useState(false);
+	const [isClarifyModalOpen, setIsClarifyModalOpen] = useState(false);
+	const [clarifyLoading, setClarifyLoading] = useState(false);
 
 	const userId = user?.id as string;
 
@@ -210,7 +214,8 @@ export default function CommentsSection({
 
 	const approvalId = getApprovalIdByUser(currentStage, user?.id);
 	const isUserInCurrentStage = currentStage?.approvals.some(
-		(approval) => approval.approver.id === userId,
+		(approval) =>
+			approval.approverId === userId || approval.approver?.id === userId,
 	);
 
 	const handleCreate = async (text: string) => {
@@ -295,15 +300,28 @@ export default function CommentsSection({
 
 	const handleClarify = async () => {
 		try {
+			if (!currentStage?.id) {
+				showToast({
+					type: "error",
+					title: "Not allowed",
+					description: "No active approval stage found",
+				});
+				return;
+			}
+
+			setClarifyLoading(true);
+
 			const {
 				data: { message },
-			} = await ServerAxios.post(`/soa/stages/${currentStage?.id}/clarify`);
+			} = await ServerAxios.post(`/soa/stages/${currentStage.id}/clarify`);
 
 			showToast({
 				type: "success",
 				title: "Success",
 				description: message,
 			});
+
+			setIsClarifyModalOpen(false);
 			await onWorkflowUpdate();
 		} catch (err) {
 			const message =
@@ -311,12 +329,15 @@ export default function CommentsSection({
 					? err.message
 					: typeof err === "string"
 						? err
-						: "Error while adding the comment";
+						: "Error while sending clarification request";
+
 			showToast({
 				type: "error",
 				title: "Error",
 				description: message,
 			});
+		} finally {
+			setClarifyLoading(false);
 		}
 	};
 	const disabled = !currentStage || !isUserInCurrentStage;
@@ -370,13 +391,35 @@ export default function CommentsSection({
 			<Section title="Approval Flow">
 				{!disabled && (
 					<div className="flex flex-row gap-4 items-center justify-end">
-						<Button text="Clarify" status="outline" onClick={handleClarify} />
+						<Button
+							text="Clarify"
+							status="outline"
+							onClick={() => setIsClarifyModalOpen(true)}
+						/>
 						<Button text="Approve" status="brand" onClick={handleApprove} />
 					</div>
 				)}
 
 				<ApprovalTable data={approvalRows} />
 			</Section>
+			<Modal
+				open={isClarifyModalOpen}
+				// onClose={() => setIsClarifyModalOpen(false)}
+			>
+				<Alert
+					description="Are you sure you want to send this back for clarification?"
+					variant="warning"
+					title="Send for Clarification"
+					primaryAction={{
+						label: clarifyLoading ? "Sending..." : "Confirm",
+						onClick: handleClarify,
+					}}
+					secondaryAction={{
+						label: "Cancel",
+						onClick: () => setIsClarifyModalOpen(false),
+					}}
+				/>
+			</Modal>
 		</React.Fragment>
 	);
 }
