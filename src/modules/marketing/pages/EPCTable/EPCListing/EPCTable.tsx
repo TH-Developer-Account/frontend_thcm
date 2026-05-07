@@ -26,7 +26,7 @@ const EPCTable = () => {
 					navigate(`/marketing/epc`);
 				},
 				onEPFCreate: () => {
-					navigate(`/marketing/epf`);
+					navigate(`/marketing/epf/${epcId}`);
 				},
 				onCRFCreate: () => {
 					navigate(`/marketing/crf`);

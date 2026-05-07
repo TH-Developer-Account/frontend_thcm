@@ -45,6 +45,7 @@ const EpfFormInfo = ({ values, handleChange, eventCost }: EpfFormProps) => {
 	const { workspaceId } = useAuth();
 	const [previewWFData, setPreviewWFData] = useState<PreviewApproval[]>([]);
 
+	console.log("CRF Total value", values.crfTotal);
 	const handleIsApproval = async () => {
 		try {
 			const app = localStorage.getItem("appId");

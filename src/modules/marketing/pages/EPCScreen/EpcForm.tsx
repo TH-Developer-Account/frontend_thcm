@@ -106,9 +106,9 @@ const EpcForm = ({ epcId: propEpcId }: EpcFormProps) => {
 					</div>
 				}
 			>
-				<div className="mt-2 px-4 py-4 text-left text-xs lg:text-sm">
+				<div className="px-4 py-4 text-left text-xs lg:text-sm">
 					<form>
-						<div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
 							<FormInput
 								name="epfNo"
 								label="EPC No"
@@ -269,7 +269,7 @@ const EpcForm = ({ epcId: propEpcId }: EpcFormProps) => {
 							/>
 						</div>
 
-						<div className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+						<div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
 							<div className="flex min-w-0 flex-col gap-4">
 								<TextareaInput
 									name="event_description"

@@ -98,6 +98,7 @@ const Pagination: React.FC<PaginationProps> = ({
 					onClick={() => onPageChange(pageIndex - 1)}
 					text={"<"}
 					status="brand"
+					size="sm"
 				/>
 
 				{pages.map((page, index) =>
@@ -111,6 +112,7 @@ const Pagination: React.FC<PaginationProps> = ({
 							onClick={() => onPageChange(page - 1)}
 							text={page}
 							status="brand"
+							size="sm"
 						/>
 					),
 				)}
@@ -119,6 +121,7 @@ const Pagination: React.FC<PaginationProps> = ({
 					disabled={pageIndex + 1 >= totalPages}
 					onClick={() => onPageChange(pageIndex + 1)}
 					text={">"}
+					size="sm"
 					status="brand"
 				/>
 			</div>
@@ -132,6 +135,7 @@ const Pagination: React.FC<PaginationProps> = ({
 						)}
 						onChange={handlePageSizeChange}
 						isSearchable={false}
+						className="w-18"
 					/>
 				</div>
 			)}

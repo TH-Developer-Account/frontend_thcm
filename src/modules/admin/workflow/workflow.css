@@ -11,7 +11,7 @@
 	}
 
 	.workflow-section-header {
-		@apply flex flex-col gap-4  px-5 py-4 lg:flex-row lg:items-center lg:justify-between;
+		@apply flex flex-col gap-4  px-5 py-2 lg:flex-row lg:items-center lg:justify-between;
 	}
 
 	.workflow-section-header-content {
@@ -186,7 +186,7 @@
 
 @layer components {
 	.workflow-create-page-box {
-		@apply p-4 sm:p-5;
+		@apply p-2.5 sm:p-3;
 	}
 
 	.workflow-create-page {
@@ -633,7 +633,7 @@
 	}
 
 	.workflow-filter-section {
-		@apply grid grid-cols-1 md:grid-cols-2 gap-4 px-2 py-2;
+		@apply grid grid-cols-1 md:grid-cols-2 gap-4 px-5 py-2;
 	}
 	.filters {
 		@apply flex justify-start gap-4 flex-row;
