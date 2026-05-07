@@ -21,15 +21,15 @@ export type CommentUser = {
 
 export type CommentItem = {
   id: string;
-  comment: string;
-  user: CommentUser;
+  message: string;
+  actor: CommentUser;
   createdAt: string;
   updatedAt?: string;
   replies?: CommentItem[];
 };
 
 type CommentsSectionProps = {
-  workFlowId: string;
+  epcId: string;
   stages: EpcWorkflowStage[];
   approvalRows: ApprovalRow[];
   onWorkflowUpdate: () => Promise<void>;
@@ -138,20 +138,20 @@ function CommentCard({
     <div className={`comment-card ${level > 0 ? "comment-reply-card" : ""}`}>
       <div className="comment-main">
         <Avatar
-          firstName={comment?.user.first_name}
-          lastName={comment?.user.last_name}
+          firstName={comment?.actor.first_name}
+          lastName={comment?.actor.last_name}
           size="sm"
         />
 
         <div className="comment-content">
           <div className="comment-bubble">
             <div className="comment-meta">
-              <p className="comment-author">{`${comment?.user.first_name} ${comment?.user.last_name}`}</p>
+              <p className="comment-author">{`${comment?.actor.first_name} ${comment?.actor.last_name}`}</p>
               <div className="comment-submeta">
                 <span>{formatDate(comment.createdAt)}</span>
               </div>
             </div>
-            <p className="comment-text">{comment.comment}</p>
+            <p className="comment-text">{comment.message}</p>
           </div>
         </div>
       </div>
@@ -160,7 +160,7 @@ function CommentCard({
 }
 
 export default function CommentsSection({
-  workFlowId,
+  epcId,
   stages,
   approvalRows,
   onWorkflowUpdate,
@@ -178,7 +178,9 @@ export default function CommentsSection({
         setCommentsLoading(true);
         const {
           data: { data },
-        } = await ServerAxios.get(`/comment/${workFlowId}`);
+        } = await ServerAxios.get(`/comment/${epcId}`);
+
+        console.log({ data });
 
         setComments(data);
       } catch (err) {
@@ -188,8 +190,8 @@ export default function CommentsSection({
       }
     };
 
-    if (workFlowId) fetchAllComments();
-  }, [workFlowId]);
+    if (epcId) fetchAllComments();
+  }, [epcId]);
 
   const currentStage = stages.find(
     (stage) => stage.status === "IN_PROGRESS" && stage.isCurrentIteration,
@@ -241,10 +243,10 @@ export default function CommentsSection({
         ...prev,
         {
           id: data.id,
-          comment: data.message,
+          message: data.message,
           createdAt: data.createdAt,
           updatedAt: data.updatedAt,
-          user: {
+          actor: {
             id: data.user.id,
             first_name: data.user.first_name,
             last_name: data.user.last_name,
