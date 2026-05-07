@@ -6,7 +6,7 @@ import { NavLink } from "react-router-dom";
 import EPCActionMenu from "./EPCActionMenu";
 
 type epcColumnActions = {
-	onEPFCreate: (epcId: string) => void;
+	onEPFCreate: () => void;
 	onCRFCreate: () => void;
 	onEPCEdit: () => void;
 	onLeadCreate?: () => void;
