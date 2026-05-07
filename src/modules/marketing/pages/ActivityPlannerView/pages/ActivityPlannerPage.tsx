@@ -1,12 +1,11 @@
 import React from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft, Download, Eye } from "lucide-react";
-import ApprovalStatus from "../components/ApprovalStatus";
+// import ApprovalStatus from "../components/ApprovalStatus";
 import ActivityFormView from "../components/ActivityFormView";
 import { EPCProvider } from "../../../context/EPCprovider";
 import { ServerAxios } from "../../../../../services/ServerAxios";
 import { PageHeader } from "../../../../../components/ui/PageHeader";
-import PageStickyLayout from "../../../../../layout/PageStickyLayout";
 import type { EpcDetailResponse } from "../types/ActivityView.types";
 import { statusMap } from "../../../../../utils/types";
 import { Badge } from "../../../../../components/common/Badge";
@@ -15,6 +14,7 @@ import html2pdf from "html2pdf.js";
 import Button from "../../../../../components/common/Button";
 import { Modal } from "../../../../../components/common/Modal";
 import ActivityPlannerPdfTemplate from "../components/ActivityPlannerPdfTemplate";
+import PageRowSectionLayout from "../../../../../layout/PageRowSectionLayout";
 
 const ActivityPlannerPageContent = () => {
 	const { id } = useParams();
@@ -87,20 +87,29 @@ const ActivityPlannerPageContent = () => {
 	};
 	return (
 		<>
-			<PageStickyLayout
-				header={
-					<div className="flex flex-row gap-4 justify-between">
+			<PageRowSectionLayout
+				header_children={
+					<div className="flex flex-row gap-4 justify-between items-center">
 						<PageHeader
 							headerText="Activity Planner View"
 							subtitleText="View your activity details"
-							Icon={ArrowLeft}
-							badgeText="EPC Listing"
-							path="/marketing/listing"
+							badgeProps={{
+								text: "Back",
+								direction: "back",
+							}}
 						/>
+						<div className="flex justify-between flex-col items-center page-header-section">
+							<h2 className="page-title-section text-darkBlue">{title}</h2>
+							<p className="page-subtitle">
+								<span className="form-view-label uppercase-label-text">
+									{proposalNo}
+								</span>
+							</p>
+						</div>
 
 						<div className="flex justify-between items-center page-header-section text-right">
 							<div>
-								<div className="flex gap-4 justify-end">
+								<div className="flex gap-2 justify-end">
 									<Badge status={badgeStatus} />
 
 									<Button
@@ -113,25 +122,19 @@ const ActivityPlannerPageContent = () => {
 								</div>
 
 								<h2 className="page-title-section text-darkBlue">
-									<span className="font-semibold text-black text-[11px] uppercase-label-text">
+									<span className="font-semibold text-black text-[12px] uppercase-label-text">
 										Proposer:{" "}
 									</span>
 									{createdBy}
 								</h2>
-
-								<p className="page-subtitle">
-									<span className="form-view-label uppercase-label-text">
-										{proposalNo}
-									</span>
-								</p>
 							</div>
 						</div>
 					</div>
 				}
-				sidebar={<ApprovalStatus epcData={epcData} />}
+				// sidebar={<ApprovalStatus epcData={epcData} />}
 			>
 				<ActivityFormView epcId={id} epcData={epcData} />
-			</PageStickyLayout>
+			</PageRowSectionLayout>
 
 			<Modal
 				open={isPreviewOpen}

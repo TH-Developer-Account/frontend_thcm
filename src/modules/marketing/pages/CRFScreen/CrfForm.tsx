@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { buildLineItemPayload } from "../../constant";
+import { buildLineItemPayload, CRF_CATEGORIES } from "../../constant";
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import LineItemTable from "../../../../components/ui/LineItemTable";
@@ -13,13 +13,6 @@ import type {
 import Button from "../../../../components/common/Button";
 import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
 import { PageHeader } from "../../../../components/ui/PageHeader";
-import { ArrowLeft } from "lucide-react";
-
-const CRF_CATEGORIES = [
-	{ title: "Printed Materials", value: "PRINTED_MATERIAL" },
-	{ title: "Souvenirs", value: "SOUVENIR" },
-	{ title: "Artworks", value: "ARTWORK" },
-];
 
 export function CrfItemsSection({
 	items,
@@ -228,9 +221,10 @@ export default function CrfForm() {
 						<PageHeader
 							headerText="Collateral Requisition Form (CRF)"
 							subtitleText="Manage your Collateral Requisition Form (CRF) details here"
-							Icon={ArrowLeft}
-							badgeText="EPC Listing"
-							path="/marketing/listing"
+							badgeProps={{
+								text: "Back",
+								direction: "back",
+							}}
 						/>
 						<div className="mx-2 my-4 sm:mx-4 flex flex-col gap-4 items-end">
 							<p className="page-subtitle">

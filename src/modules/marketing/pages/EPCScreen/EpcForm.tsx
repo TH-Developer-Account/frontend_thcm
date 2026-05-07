@@ -9,83 +9,98 @@ import { useEpcForm } from "./useEPCForm";
 import type { EpcFormProps, Option } from "../../types";
 import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
 import { PageHeader } from "../../../../components/ui/PageHeader";
-import { ArrowLeft } from "lucide-react";
 import DatePickerInput from "../../../../components/common/DatePickerInput";
 import { toDateRange } from "./api";
 // import UserAsyncSelect from "../../../../components/FormElements/AsyncSelect";
 
 const formatDateOnly = (date?: Date) => {
 	if (!date) return "";
+
 	const year = date.getFullYear();
 	const month = String(date.getMonth() + 1).padStart(2, "0");
 	const day = String(date.getDate()).padStart(2, "0");
+
 	return `${year}-${month}-${day}`;
 };
 
-const EpcForm = ({ epcId }: EpcFormProps) => {
+const getStoredEpcInfo = () => {
+	try {
+		return JSON.parse(localStorage.getItem("epcInfo") || "{}");
+	} catch {
+		return {};
+	}
+};
+
+const EpcForm = ({ epcId: propEpcId }: EpcFormProps) => {
+	const epcInfo = React.useMemo(() => getStoredEpcInfo(), []);
+	const storedEpcId = epcInfo?.epcId || "";
+	const finalEpcId = propEpcId || storedEpcId || undefined;
 	const { values, errors, isEditMode, handleChange, handleSave, handleReset } =
 		useEpcForm({
-			epcId,
+			epcId: finalEpcId,
 			// masters: data,
 		});
+	console.log("Final EPC ID", values);
 
 	const { data } = useMasterData();
 
-	const [selectedDepartment, setSelectedDepartment] = React.useState<
-		string | null
-	>(null);
-	const [selectedVertical, setSelectedVertical] = React.useState<string | null>(
-		null,
-	);
+	const selectedDepartment = values.department || "";
 
-	const handleDepartmentChange = (option: Option) => {
-		setSelectedDepartment(option.value || null);
-		handleChange("department", option?.value as string);
-		setSelectedVertical(null);
+	const handleDepartmentChange = (option: Option | null) => {
+		const departmentId = option?.value || "";
+
+		handleChange("department", departmentId);
+		handleChange("vertical", "");
 	};
 
-	const handleVerticalChange = (option: Option) => {
-		setSelectedVertical(option.value || null);
-		handleChange("vertical", option?.value as string);
+	const handleVerticalChange = (option: Option | null) => {
+		handleChange("vertical", option?.value || "");
 	};
 
-	const handleBudgetChange = (option: Option) => {
-		console.log({ option });
-		handleChange("budget_master_id", option?.value as string);
-		handleChange("budgetDescription", option?.description as string);
+	const handleBudgetChange = (option: Option | null) => {
+		handleChange("budget_master_id", option?.value || "");
+		handleChange("budgetDescription", option?.description || "");
 	};
 
 	const filteredVerticals = React.useMemo(() => {
 		if (!selectedDepartment) return [];
 
-		return data?.vertical.filter(
-			(v: Option) => v.department === selectedDepartment,
+		return (
+			data?.vertical?.filter(
+				(v: Option) => v.department === selectedDepartment,
+			) || []
 		);
 	}, [selectedDepartment, data?.vertical]);
+
 	return (
 		<React.Fragment>
 			<PageRowSectionLayout
 				header_children={
 					<div className="flex flex-col sm:flex-row sm:justify-between items-end sm:items-center">
 						<PageHeader
-							headerText="Event Planning Calender"
-							subtitleText="Manager your Event Planning Calendar (EPC) details here"
-							Icon={ArrowLeft}
-							badgeText="EPC Listing"
-							path="/marketing/listing"
+							headerText={
+								isEditMode
+									? "Update Event Planning Calendar"
+									: "Event Planning Calendar"
+							}
+							subtitleText="Manage your Event Planning Calendar (EPC) details here"
+							badgeProps={{
+								text: "Back",
+								direction: "back",
+							}}
 						/>
-						<div className="mx-2 my-4 sm:mx-4 flex flex-row gap-4 items-end">
+
+						<div className="mx-2 my-4 sm:mx-4 flex flex-row gap-2 items-end">
 							<Button
 								text="Reset"
 								onClick={() => handleReset()}
 								status="brand"
-								fullWidth
 							/>
+
 							<Button
 								onClick={() => handleSave("SUBMITTED")}
-								text={isEditMode ? "Update & Submit" : "Submit"}
+								text={isEditMode ? "Update" : "Submit"}
 								status="brand"
-								fullWidth
 							/>
 						</div>
 					</div>
@@ -96,12 +111,13 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 						<div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
 							<FormInput
 								name="epfNo"
-								label="EPF No"
+								label="EPC No"
 								value={values.epfNo}
 								disabled
 								className="w-full p-2 text-black"
-								helperText="EPF No. auto generated"
+								helperText="EPC No. auto generated"
 							/>
+
 							<SelectInput
 								name="region"
 								label="Zone"
@@ -119,6 +135,7 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								error={errors.region}
 								className="w-full"
 							/>
+
 							<SelectInput
 								name="branch"
 								label="Branch"
@@ -136,6 +153,7 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								error={errors.branch}
 								className="w-full"
 							/>
+
 							<FormInput
 								name="location"
 								label="Location"
@@ -147,6 +165,7 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								helperText="Location of the event"
 								error={errors.location}
 							/>
+
 							<SelectInput
 								name="department"
 								label="Department"
@@ -157,12 +176,13 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								}
 								options={data?.departments || []}
 								onChange={(v: SingleValue<Option>) =>
-									handleDepartmentChange((v as Option) || null)
+									handleDepartmentChange(v || null)
 								}
 								helperText="Select department to auto populate verticals"
 								error={errors.department}
 								className="w-full"
 							/>
+
 							<SelectInput
 								name="vertical"
 								label="Vertical"
@@ -173,13 +193,14 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								}
 								options={filteredVerticals}
 								onChange={(v: SingleValue<Option>) =>
-									handleVerticalChange((v as Option) || null)
+									handleVerticalChange(v || null)
 								}
 								isDisabled={!selectedDepartment}
 								helperText="Verticals are filtered based on selected department"
 								error={errors.vertical}
 								className="w-full"
 							/>
+
 							<DatePickerInput
 								label="Event [From - To]"
 								mode="range"
@@ -201,6 +222,7 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								className="w-full"
 								error={errors.event_from_date || errors.event_to_date}
 							/>
+
 							<SelectInput
 								name="budget_master_id"
 								label="Budget Code"
@@ -211,12 +233,13 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								}
 								options={data?.budgetMasters || []}
 								onChange={(v: SingleValue<Option>) =>
-									handleBudgetChange((v as Option) || null)
+									handleBudgetChange(v || null)
 								}
 								helperText="Select budget code to auto populate description"
 								error={errors.budget_master_id}
 								className="w-full"
 							/>
+
 							<FormInput
 								name="budgetDescription"
 								label="Budget Description"
@@ -226,7 +249,8 @@ const EpcForm = ({ epcId }: EpcFormProps) => {
 								disabled
 								helperText="Budget Description auto populated based on selected budget code"
 								error={errors.budgetDescription}
-							/>{" "}
+							/>
+
 							<SelectInput
 								name="event_name"
 								label="Event Name"
