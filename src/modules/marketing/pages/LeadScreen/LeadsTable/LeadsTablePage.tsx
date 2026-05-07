@@ -1,6 +1,6 @@
 import PageRowSectionLayout from "../../../../../layout/PageRowSectionLayout";
 import { PageHeader } from "../../../../../components/ui/PageHeader";
-import { ArrowLeft, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import Button from "../../../../../components/common/Button";
 import LeadsTable from "./components/LeadsTable";
 import { Can } from "../../../../../context/permissionHelpers";
@@ -13,10 +13,12 @@ export default function LeadsTablePage() {
 				<PageHeader
 					headerText="Leads Listing"
 					subtitleText="Manage your Lead details here"
-					Icon={ArrowLeft}
-					badgeText="Home Screen"
+					badgeProps={{
+						text: "Back to Home Screen",
+						direction: "back",
+						to: "/",
+					}}
 					className="flex flex-row justify-between items-end"
-					path="/"
 				>
 					<Can action="write" app="MAP" module="EPC">
 						<Button

@@ -10,20 +10,13 @@ import Button from "../../../../../components/common/Button";
 import FormInput from "../../../../../components/FormElements/FormInput";
 import SelectInput from "../../../../../components/FormElements/SelectInput";
 import TextareaInput from "../../../../../components/FormElements/TextareaInput";
+import type { LeadsStatus } from "../types/leads.types";
 
 type Option = {
 	value: string;
 	label: string;
 	[key: string]: any;
 };
-
-export type LeadsStatus =
-	| "NEW"
-	| "CONTACTED"
-	| "INTERESTED"
-	| "FOLLOW_UP"
-	| "CONVERTED"
-	| "REJECTED";
 
 export interface LeadFormValues {
 	id?: string;
@@ -59,17 +52,16 @@ const initialValues: LeadFormValues = {
 	event_name: "",
 	location: "",
 
-	status: "NEW",
+	status: "HOT",
 	remarks: "",
 };
 
 const leadStatusOptions: Option[] = [
-	{ value: "NEW", label: "New" },
-	{ value: "CONTACTED", label: "Contacted" },
-	{ value: "INTERESTED", label: "Interested" },
-	{ value: "FOLLOW_UP", label: "Follow Up" },
-	{ value: "CONVERTED", label: "Converted" },
-	{ value: "REJECTED", label: "Rejected" },
+	{ value: "HOT", label: "Hot" },
+	{ value: "COLD", label: "Cold" },
+	{ value: "SURESHOT", label: "SureShot" },
+	{ value: "LOST", label: "Lost" },
+	{ value: "DROPPED", label: "Dropped" },
 ];
 
 type LeadFormProps = {
@@ -183,15 +175,15 @@ const LeadForm = ({ leadId, epcOptions = [] }: LeadFormProps) => {
 		<React.Fragment>
 			<PageRowSectionLayout
 				header_children={
-					<div className="flex flex-col sm:flex-row sm:justify-between items-end sm:items-center">
+					<div className="flex flex-col sm:flex-row sm:justify-between justify-center items-end sm:items-center">
 						<PageHeader
 							headerText={isEditMode ? "Edit Lead" : "Create Lead"}
 							subtitleText="Capture customer or event lead details here"
-							Icon={ArrowLeft}
-							badgeText="Leads Listing"
-							path="/marketing/leads/listing"
+							badgeProps={{
+								text: "Back",
+								direction: "back",
+							}}
 						/>
-
 						<div className="mx-2 my-4 sm:mx-4 flex flex-row gap-2 items-end">
 							<Button
 								text="Reset"
@@ -214,17 +206,34 @@ const LeadForm = ({ leadId, epcOptions = [] }: LeadFormProps) => {
 			>
 				<div className="mt-2 px-4 py-4 text-left text-xs lg:text-sm">
 					<form>
-						<div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+						<div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+							<FormInput
+								name="event_name"
+								label="Event Name"
+								value={values.event_name}
+								disabled
+								className="w-full p-2 text-black"
+								helperText="Auto populated from selected EPC"
+							/>
+
+							<FormInput
+								name="location"
+								label="Event Location"
+								value={values.location}
+								disabled
+								className="w-full p-2 text-black"
+								helperText="Auto populated from selected EPC"
+							/>
 							<FormInput
 								name="lead_no"
-								label="Lead No"
+								label="Event Date"
 								value={values.lead_no}
 								disabled
 								className="w-full p-2 text-black"
-								helperText="Lead No. auto generated"
+								helperText="Auto populated from selected EPC"
 							/>
 
-							<SelectInput
+							{/* <SelectInput
 								name="epc_id"
 								label="Select EPC"
 								value={
@@ -235,17 +244,16 @@ const LeadForm = ({ leadId, epcOptions = [] }: LeadFormProps) => {
 								required
 								helperText="Select EPC to auto populate event details"
 								className="w-full"
-							/>
+							/> */}
 
-							<FormInput
+							{/* <FormInput
 								name="proposal_number"
 								label="EPC No"
 								value={values.proposal_number}
 								disabled
 								className="w-full p-2 text-black"
 								helperText="Auto populated from selected EPC"
-							/>
-
+							/> */}
 							<SelectInput
 								name="status"
 								label="Lead Status"
@@ -264,24 +272,6 @@ const LeadForm = ({ leadId, epcOptions = [] }: LeadFormProps) => {
 								required
 								helperText="Current lead status"
 								className="w-full"
-							/>
-
-							<FormInput
-								name="event_name"
-								label="Event Name"
-								value={values.event_name}
-								disabled
-								className="w-full p-2 text-black"
-								helperText="Auto populated from selected EPC"
-							/>
-
-							<FormInput
-								name="location"
-								label="Location"
-								value={values.location}
-								disabled
-								className="w-full p-2 text-black"
-								helperText="Auto populated from selected EPC"
 							/>
 
 							<FormInput

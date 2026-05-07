@@ -25,4 +25,4 @@ export interface LeadRow {
 	updated_at?: string;
 }
 
-export type LeadsStatus = "Hot" | "Cold" | "SureShot" | "Lost" | "Dropped";
+export type LeadsStatus = "HOT" | "COLD" | "SURESHOT" | "LOST" | "DROPPED";

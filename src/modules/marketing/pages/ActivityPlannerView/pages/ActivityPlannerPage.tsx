@@ -93,9 +93,10 @@ const ActivityPlannerPageContent = () => {
 						<PageHeader
 							headerText="Activity Planner View"
 							subtitleText="View your activity details"
-							Icon={ArrowLeft}
-							badgeText="EPC Listing"
-							path="/marketing/listing"
+							badgeProps={{
+								text: "Back",
+								direction: "back",
+							}}
 						/>
 						<div className="flex justify-between flex-col items-center page-header-section">
 							<h2 className="page-title-section text-darkBlue">{title}</h2>

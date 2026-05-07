@@ -71,6 +71,19 @@ export type ButtonProps = {
 	path?: string;
 };
 
+export type NavigateDirection = "back" | "forward";
+export type NavigateButtonProps = {
+	text?: string;
+	Icon?: LucideIcon;
+	iconSize?: number;
+	iconPosition?: "left" | "right";
+	to?: string;
+	direction?: "back" | "forward";
+	delta?: number;
+	onClick?: () => void;
+	className?: string;
+};
+
 export interface BadgeProps {
 	children?: React.ReactNode;
 	status?: GeneralStatus;

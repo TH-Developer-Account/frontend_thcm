@@ -9,7 +9,6 @@ import { useEpcForm } from "./useEPCForm";
 import type { EpcFormProps, Option } from "../../types";
 import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
 import { PageHeader } from "../../../../components/ui/PageHeader";
-import { ArrowLeft } from "lucide-react";
 import DatePickerInput from "../../../../components/common/DatePickerInput";
 import { toDateRange } from "./api";
 // import UserAsyncSelect from "../../../../components/FormElements/AsyncSelect";
@@ -85,9 +84,10 @@ const EpcForm = ({ epcId: propEpcId }: EpcFormProps) => {
 									: "Event Planning Calendar"
 							}
 							subtitleText="Manage your Event Planning Calendar (EPC) details here"
-							Icon={ArrowLeft}
-							badgeText="EPC Listing"
-							path="/marketing/listing"
+							badgeProps={{
+								text: "Back",
+								direction: "back",
+							}}
 						/>
 
 						<div className="mx-2 my-4 sm:mx-4 flex flex-row gap-2 items-end">
