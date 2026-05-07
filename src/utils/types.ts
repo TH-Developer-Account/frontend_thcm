@@ -63,8 +63,12 @@ export interface EPCRow {
 	event_name: string;
 	first_name: string;
 	last_name: string;
+	is_epc_form?: boolean;
 	is_crf_form: boolean;
 	is_epf_form: boolean;
+	is_lead_form?: boolean;
+	lead_id?: string;
+	epc_id?: string;
 	epf_id?: string;
 	crf_id?: string;
 }
