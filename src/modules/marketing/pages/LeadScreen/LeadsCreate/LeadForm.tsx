@@ -1,6 +1,5 @@
 import React from "react";
 import type { SingleValue } from "react-select";
-import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ServerAxios } from "../../../../../services/ServerAxios";
 import { useToast } from "../../../../../context/Auth/AuthContext";

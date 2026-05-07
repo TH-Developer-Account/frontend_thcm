@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import { ArrowLeft, Download, Eye } from "lucide-react";
+import { Download, Eye } from "lucide-react";
 // import ApprovalStatus from "../components/ApprovalStatus";
 import ActivityFormView from "../components/ActivityFormView";
 import { EPCProvider } from "../../../context/EPCprovider";
@@ -75,9 +75,9 @@ const ActivityPlannerPageContent = () => {
 						format: "a4",
 						orientation: "portrait",
 					},
-					pagebreak: {
-						mode: ["avoid-all", "css", "legacy"],
-					},
+					// pagebreak: {
+					// 	mode: ["avoid-all", "css", "legacy"],
+					// },
 				})
 				.from(element)
 				.save();

@@ -74,7 +74,7 @@
 		@apply scroll-smooth;
 	}
 	.main-content {
-		@apply px-4 pt-4;
+		@apply px-2 pt-2;
 	}
 }
 
