@@ -265,6 +265,11 @@ export default function CommentsSection({
           : typeof err === "string"
             ? err
             : "Error while adding the comment";
+      showToast({
+        type: "error",
+        title: "error",
+        description: message,
+      });
     }
   };
 
