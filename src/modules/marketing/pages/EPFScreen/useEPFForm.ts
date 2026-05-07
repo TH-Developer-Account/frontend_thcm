@@ -162,33 +162,37 @@ export const useEpfForm = () => {
 			try {
 				setLoading(true);
 
-				const [productsRes, budgetInfo] = await Promise.all([
+				const [productsRes, budgetInfo] = await Promise.allSettled([
 					ServerAxios.get(`/master-data/products?productType=EPF`),
 					ServerAxios.get(`/master-data/budget`),
 				]);
 
-				const budgetInformation = budgetInfo.data.d.results[0];
+				if (budgetInfo.status === "fulfilled" && budgetInfo.value) {
+					const budgetInformation = budgetInfo.value.data.d.results[0];
 
-				setValues((prev) => ({
-					...prev,
-					availableBudget: Number(budgetInformation.Available),
-					annualBudget: Number(budgetInformation.Budget),
-					allotedBudget: Number(budgetInformation.Allocated),
-				}));
+					setValues((prev) => ({
+						...prev,
+						availableBudget: Number(budgetInformation.Available),
+						annualBudget: Number(budgetInformation.Budget),
+						allotedBudget: Number(budgetInformation.Allocated),
+					}));
+				}
 
-				const data = productsRes.data.data;
+				if (productsRes.status === "fulfilled" && productsRes.value) {
+					const data = productsRes.value.data.data;
 
-				setOptions(
-					data.map((item: Product) => ({
-						partNumber: item.partNumber,
-						value: item.id,
-						label: item.name,
-						particular: item.name,
-						description: item.description,
-						rate: parseFloat(item.unitRate),
-						quantity: 1,
-					})),
-				);
+					setOptions(
+						data.map((item: Product) => ({
+							partNumber: item.partNumber,
+							value: item.id,
+							label: item.name,
+							particular: item.name,
+							description: item.description,
+							rate: parseFloat(item.unitRate),
+							quantity: 1,
+						})),
+					);
+				}
 			} catch (err) {
 				console.error("Product search failed:", err);
 			} finally {
@@ -199,22 +203,36 @@ export const useEpfForm = () => {
 		fetchProducts();
 	}, []);
 
+	// Effect 1: Always fetch CRF total if crfId exists (runs independently)
 	React.useEffect(() => {
-		const fetchEPF = async () => {
+		const fetchCRFTotal = async () => {
+			if (!crfId) return;
 			try {
-				setLoading(true);
-
-				const [epfRes, crfRes] = await Promise.all([
-					ServerAxios.get(`/epf/${epfId}`),
-					crfId ? ServerAxios.get(`/crf/${crfId}`) : Promise.resolve(null),
-				]);
-
+				const crfRes = await ServerAxios.get(`/crf/${crfId}`);
 				const crfData = crfRes?.data;
-				const epfData = epfRes?.data;
-
 				const totalCrfAmount = getTotalEventLineitemAmount(
 					crfData?.lineItems || [],
 				);
+				setValues((prev) => ({
+					...prev,
+					crfTotal: totalCrfAmount,
+				}));
+			} catch (err) {
+				console.error("CRF fetch failed:", err);
+			}
+		};
+
+		fetchCRFTotal();
+	}, [crfId]);
+
+	// Effect 2: Only fetch EPF data if editing an existing EPF
+	React.useEffect(() => {
+		const fetchEPF = async () => {
+			if (!epfId) return;
+			try {
+				setLoading(true);
+				const epfRes = await ServerAxios.get(`/epf/${epfId}`);
+				const epfData = epfRes?.data;
 
 				const lineItems: LineItemOption[] = (epfData.lineItems ?? []).map(
 					(item: {
@@ -241,7 +259,7 @@ export const useEpfForm = () => {
 
 				setValues((prev) => ({
 					...prev,
-					crfTotal: totalCrfAmount,
+					// Note: crfTotal is NOT set here anymore — Effect 1 handles it
 					externalParticipants: epfData.externalParticipants,
 					internalParticipants: epfData.internalParticipants,
 					totalParticipants:
@@ -260,8 +278,8 @@ export const useEpfForm = () => {
 			}
 		};
 
-		if (epfId) fetchEPF();
-	}, [epfId, crfId]);
+		fetchEPF();
+	}, [epfId]); // crfId removed from here — handled above
 
 	const handleChange = (name: keyof EpfFormValues, value: string) => {
 		setValues((prev) => {

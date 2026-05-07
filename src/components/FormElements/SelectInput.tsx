@@ -1,7 +1,6 @@
 import Select from "react-select";
 import type { Props, GroupBase, StylesConfig } from "react-select";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
-import type { Option } from "./input.types";
 
 export interface BaseOption {
 	label: string;
@@ -19,7 +18,7 @@ interface SelectInputProps<T extends BaseOption> extends Props<
 	helperText?: string;
 }
 
-export default function SelectInput({
+export default function SelectInput<T extends BaseOption>({
 	label,
 	error,
 	required,
@@ -28,21 +27,19 @@ export default function SelectInput({
 	isDisabled,
 	name,
 	...props
-}: SelectInputProps) {
-	const customStyles: StylesConfig<Option, false> = {
+}: SelectInputProps<T>) {
+	const customStyles: StylesConfig<T, false> = {
 		control: (base, state) => ({
 			...base,
 			minHeight: "44px",
 			borderRadius: "12px",
 			borderWidth: "1px",
 			paddingRight: error ? "36px" : "8px",
-			// 👇 MATCH YOUR FORM INPUT
 			backgroundColor: isDisabled
 				? "#f3f4f6"
 				: state.isFocused
 					? "#ffffff"
 					: "#fafaf8",
-			// backgroundColor: isDisabled ? "#f3f4f6" : "#fff",
 			borderColor: error ? "#dc2626" : state.isFocused ? "#f35a00" : "#d1d5db",
 			boxShadow: error
 				? "0 0 0 1px #dc2626"

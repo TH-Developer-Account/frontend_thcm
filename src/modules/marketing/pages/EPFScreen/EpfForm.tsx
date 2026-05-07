@@ -1,5 +1,4 @@
 import React from "react";
-import { ArrowLeft } from "lucide-react";
 import EpfFormInfo from "./EpfFormInfo";
 import LineItemTable from "../../../../components/ui/LineItemTable";
 import { useEpfForm } from "./useEPFForm";
@@ -25,7 +24,7 @@ export default function EpfForm() {
 		const parsed = JSON.parse(stored);
 		epcId = parsed.epcId || null;
 	}
-
+	console.log("Values ===>", values);
 	return (
 		<React.Fragment>
 			<PageRowSectionLayout
@@ -35,9 +34,10 @@ export default function EpfForm() {
 						<PageHeader
 							headerText="Activity Proposition Form (APF)"
 							subtitleText="Manager your Activity Proposition Form (APF) details here"
-							Icon={ArrowLeft}
-							badgeText="EPC Listing"
-							path="/marketing/listing"
+							badgeProps={{
+								text: "Back",
+								direction: "back",
+							}}
 						/>
 						<div className="mx-2 my-4 sm:mx-4 flex flex-col gap-4 items-start">
 							<p className="page-subtitle">

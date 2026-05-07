@@ -1,19 +1,10 @@
 import React from "react";
 import Section from "./Section";
+import { formatDate } from "../../../../../utils/format";
 
 type DateRangeProps = {
 	fromDate?: string;
 	toDate?: string;
-};
-
-const formatDate = (date?: string) => {
-	if (!date) return "--";
-
-	return new Date(date).toLocaleDateString("en-IN", {
-		day: "2-digit",
-		month: "2-digit",
-		year: "numeric",
-	});
 };
 
 const getDaysCount = (fromDate?: string, toDate?: string) => {

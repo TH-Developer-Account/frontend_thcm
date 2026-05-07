@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useToast } from "../../../../../context/Auth/AuthContext";
 import { useAuth } from "../../../../../context/Auth/useAuth";
 import { MessageCircle, X, Send } from "lucide-react";
@@ -11,6 +11,9 @@ import Section from "./Section";
 import ApprovalTable, {
 	type ApprovalRow,
 } from "../../../../../components/ui/ApprovalTable";
+import { Modal } from "../../../../../components/common/Modal";
+import { Alert } from "../../../../../components/common/Alert";
+import { formatDateTime } from "../../../../../utils/format";
 
 export type CommentUser = {
 	id: string;
@@ -21,29 +24,19 @@ export type CommentUser = {
 
 export type CommentItem = {
 	id: string;
-	comment: string;
-	user: CommentUser;
+	message: string;
+	actor: CommentUser;
 	createdAt: string;
 	updatedAt?: string;
 	replies?: CommentItem[];
 };
 
 type CommentsSectionProps = {
-	workFlowId: string;
+	epcId: string;
 	stages: EpcWorkflowStage[];
 	approvalRows: ApprovalRow[];
 	onWorkflowUpdate: () => Promise<void>;
-};
-
-const formatDate = (value: string) => {
-	if (!value) return "";
-	return new Date(value).toLocaleString("en-IN", {
-		day: "2-digit",
-		month: "short",
-		year: "numeric",
-		hour: "2-digit",
-		minute: "2-digit",
-	});
+	epcCreatedById?: string; // 👈
 };
 
 function CommentInput({
@@ -138,20 +131,20 @@ function CommentCard({
 		<div className={`comment-card ${level > 0 ? "comment-reply-card" : ""}`}>
 			<div className="comment-main">
 				<Avatar
-					firstName={comment?.user.first_name}
-					lastName={comment?.user.last_name}
+					firstName={comment?.actor.first_name}
+					lastName={comment?.actor.last_name}
 					size="sm"
 				/>
 
 				<div className="comment-content">
 					<div className="comment-bubble">
 						<div className="comment-meta">
-							<p className="comment-author">{`${comment?.user.first_name} ${comment?.user.last_name}`}</p>
+							<p className="comment-author">{`${comment?.actor.first_name} ${comment?.actor.last_name}`}</p>
 							<div className="comment-submeta">
-								<span>{formatDate(comment.createdAt)}</span>
+								<span>{formatDateTime(comment.createdAt)}</span>
 							</div>
 						</div>
-						<p className="comment-text">{comment.comment}</p>
+						<p className="comment-text">{comment.message}</p>
 					</div>
 				</div>
 			</div>
@@ -160,17 +153,21 @@ function CommentCard({
 }
 
 export default function CommentsSection({
-	workFlowId,
+	epcId,
 	stages,
 	approvalRows,
 	onWorkflowUpdate,
+	epcCreatedById, // 👈
 }: CommentsSectionProps) {
 	const { showToast } = useToast();
 	const { user } = useAuth();
 	const [comments, setComments] = React.useState<CommentItem[]>([]);
 	const [commentsLoading, setCommentsLoading] = React.useState(false);
+	const [isClarifyModalOpen, setIsClarifyModalOpen] = useState(false);
+	const [clarifyLoading, setClarifyLoading] = useState(false);
 
 	const userId = user?.id as string;
+	const isProposer = user?.id === epcCreatedById;
 
 	React.useEffect(() => {
 		const fetchAllComments = async () => {
@@ -178,7 +175,9 @@ export default function CommentsSection({
 				setCommentsLoading(true);
 				const {
 					data: { data },
-				} = await ServerAxios.get(`/comment/${workFlowId}`);
+				} = await ServerAxios.get(`/comment/${epcId}`);
+
+				console.log({ data });
 
 				setComments(data);
 			} catch (err) {
@@ -188,8 +187,8 @@ export default function CommentsSection({
 			}
 		};
 
-		if (workFlowId) fetchAllComments();
-	}, [workFlowId]);
+		if (epcId) fetchAllComments();
+	}, [epcId]);
 
 	const currentStage = stages.find(
 		(stage) => stage.status === "IN_PROGRESS" && stage.isCurrentIteration,
@@ -209,12 +208,14 @@ export default function CommentsSection({
 	};
 
 	const approvalId = getApprovalIdByUser(currentStage, user?.id);
-
-	const canComment = Boolean(currentStage && approvalId);
+	const isUserInCurrentStage = currentStage?.approvals.some(
+		(approval) =>
+			approval.approverId === userId || approval.approver?.id === userId,
+	);
 
 	const handleCreate = async (text: string) => {
 		try {
-			if (!approvalId) {
+			if (!approvalId && !isProposer) {
 				showToast({
 					type: "error",
 					title: "Not allowed",
@@ -222,13 +223,17 @@ export default function CommentsSection({
 				});
 				return;
 			}
+			const payload: Record<string, string | boolean> = { message: text };
+
+			if (approvalId) {
+				payload.approvalId = approvalId;
+			} else {
+				payload.isProposer = true; // 👈
+			}
 
 			const {
 				data: { message, data },
-			} = await ServerAxios.post(`/comment`, {
-				message: text,
-				approvalId,
-			});
+			} = await ServerAxios.post(`/comment`, payload);
 
 			showToast({
 				type: "success",
@@ -240,10 +245,10 @@ export default function CommentsSection({
 				...prev,
 				{
 					id: data.id,
-					comment: data.message,
+					message: data.message,
 					createdAt: data.createdAt,
 					updatedAt: data.updatedAt,
-					user: {
+					actor: {
 						id: data.user.id,
 						first_name: data.user.first_name,
 						last_name: data.user.last_name,
@@ -289,15 +294,28 @@ export default function CommentsSection({
 
 	const handleClarify = async () => {
 		try {
+			if (!currentStage?.id) {
+				showToast({
+					type: "error",
+					title: "Not allowed",
+					description: "No active approval stage found",
+				});
+				return;
+			}
+
+			setClarifyLoading(true);
+
 			const {
 				data: { message },
-			} = await ServerAxios.post(`/soa/stages/${currentStage?.id}/clarify`);
+			} = await ServerAxios.post(`/soa/stages/${currentStage.id}/clarify`);
 
 			showToast({
 				type: "success",
 				title: "Success",
 				description: message,
 			});
+
+			setIsClarifyModalOpen(false);
 			await onWorkflowUpdate();
 		} catch (err) {
 			const message =
@@ -305,18 +323,21 @@ export default function CommentsSection({
 					? err.message
 					: typeof err === "string"
 						? err
-						: "Error while adding the comment";
+						: "Error while sending clarification request";
+
 			showToast({
 				type: "error",
 				title: "Error",
 				description: message,
 			});
+		} finally {
+			setClarifyLoading(false);
 		}
 	};
-
+	const disabled = !isProposer && (!currentStage || !isUserInCurrentStage);
 	return (
 		<React.Fragment>
-			<section className="comments-section">
+			<section className="comments-section mb-4">
 				<div className="comments-header">
 					<div className="px-2.5 py-2 flex flex-row justify-between gap-4 w-full">
 						<h3 className="comments-title">
@@ -349,7 +370,7 @@ export default function CommentsSection({
 					</div>
 				)}
 
-				{!canComment && (
+				{!disabled && (
 					<div className="comments-create">
 						<div className="comments-create-input">
 							<CommentInput
@@ -361,15 +382,37 @@ export default function CommentsSection({
 				)}
 			</section>
 			<Section title="Approval Flow">
-				{!canComment && (
+				{!disabled && (
 					<div className="flex flex-row gap-4 items-center justify-end">
-						<Button text="Clarify" status="outline" onClick={handleClarify} />
+						<Button
+							text="Clarify"
+							status="outline"
+							onClick={() => setIsClarifyModalOpen(true)}
+						/>
 						<Button text="Approve" status="brand" onClick={handleApprove} />
 					</div>
 				)}
 
 				<ApprovalTable data={approvalRows} />
 			</Section>
+			<Modal
+				open={isClarifyModalOpen}
+				// onClose={() => setIsClarifyModalOpen(false)}
+			>
+				<Alert
+					description="Are you sure you want to send this back for clarification?"
+					variant="warning"
+					title="Send for Clarification"
+					primaryAction={{
+						label: clarifyLoading ? "Sending..." : "Confirm",
+						onClick: handleClarify,
+					}}
+					secondaryAction={{
+						label: "Cancel",
+						onClick: () => setIsClarifyModalOpen(false),
+					}}
+				/>
+			</Modal>
 		</React.Fragment>
 	);
 }
