@@ -68,24 +68,26 @@ const ActivityFormView = ({ epcId }: Props) => {
 	const [epcData, setEPCData] = React.useState<any>(null);
 	const [loading, setLoading] = React.useState(false);
 
-	React.useEffect(() => {
-		if (epcId) fetchEPC();
-	}, [epcId]);
-
-	const fetchEPC = async () => {
+	// Define outside the effect with useCallback
+	const fetchEPC = React.useCallback(async () => {
+		if (!epcId) return;
 		try {
 			setLoading(true);
 			const {
 				data: { data },
 			} = await ServerAxios.get(`/epc/${epcId}`);
-
 			setEPCData(data);
 		} catch (err) {
 			console.log({ err });
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [epcId]);
+
+	// Effect just calls it
+	React.useEffect(() => {
+		fetchEPC();
+	}, [fetchEPC]);
 
 	if (loading) return <Loader />;
 	if (!epcId) return <p>No EPC selected</p>;
@@ -206,28 +208,31 @@ const ActivityFormView = ({ epcId }: Props) => {
 							</div>
 						</div>
 					</Section>
-					<Section title="Participants">
-						<div className="grid grid-cols-4 gap-6 text-sm px-4 py-1.5">
-							<p className="uppercase-label-text">
-								Internal :{" "}
-								<span className="text-gray-700 leading-relaxed text-xs">
-									{viewData?.epf?.internalParticipants}
-								</span>
-							</p>
-							<p className="uppercase-label-text">
-								External :
-								<span className="text-gray-700 leading-relaxed text-xs">
-									{viewData?.epf?.externalParticipants}
-								</span>
-							</p>
-							<p className="uppercase-label-text">
-								Total :{" "}
-								<span className="text-gray-700 leading-relaxed text-xs">
-									{total}
-								</span>
-							</p>
-						</div>
-					</Section>
+					{viewData?.epf?.internalParticipants ||
+					viewData?.epf?.externalParticipants ? (
+						<Section title="Participants">
+							<div className="grid grid-cols-4 gap-6 text-sm px-4 py-1.5">
+								<p className="uppercase-label-text">
+									Internal :{" "}
+									<span className="text-gray-700 leading-relaxed text-xs">
+										{viewData?.epf?.internalParticipants}
+									</span>
+								</p>
+								<p className="uppercase-label-text">
+									External :
+									<span className="text-gray-700 leading-relaxed text-xs">
+										{viewData?.epf?.externalParticipants}
+									</span>
+								</p>
+								<p className="uppercase-label-text">
+									Total :{" "}
+									<span className="text-gray-700 leading-relaxed text-xs">
+										{total}
+									</span>
+								</p>
+							</div>
+						</Section>
+					) : null}
 					{viewData?.crf?.lineItems?.length > 0 && (
 						<Section title="Collateral Requisition Form Line Items">
 							<LineTableView data={mapLineItems(viewData?.crf?.lineItems)} />
