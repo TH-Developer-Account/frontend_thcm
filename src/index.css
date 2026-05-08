@@ -57,17 +57,36 @@ body {
 }
 /* accent stripe on section headers */
 .epf-section-header {
-	@apply mb-2 flex gap-4;
+	display: flex;
 	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
 }
 
-.epf-section-header::before {
+.epf-section-title-wrap {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+}
+
+.epf-section-title-wrap::before {
 	content: "";
 	display: block;
 	width: 3px;
 	height: 16px;
 	border-radius: 99px;
 	background: #1e40af;
+	flex-shrink: 0;
+}
+
+.epf-section-label {
+	min-width: 0;
+}
+
+.epf-section-action {
+	display: flex;
+	align-items: center;
 	flex-shrink: 0;
 }
 
@@ -105,4 +124,23 @@ body {
 .epf-share-bar-fill {
 	height: 100%;
 	border-radius: 99px;
+}
+.section-edit-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	border: 1px solid var(--color-border);
+	background: var(--color-surface);
+	color: var(--color-text-muted);
+	border-radius: 999px;
+	padding: 5px 10px;
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+}
+
+.section-edit-btn:hover {
+	color: var(--color-brand);
+	border-color: var(--color-brand-soft);
+	background: var(--color-brand-softest);
 }

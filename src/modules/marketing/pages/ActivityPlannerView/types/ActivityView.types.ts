@@ -131,15 +131,22 @@ export type EpcWorkflowStage = {
 	stageOrder: number;
 	iteration: number;
 	isCurrentIteration: boolean;
-	strategy: "ALL" | "ANY" | "QUORUM";
+	strategy: "ALL" | "ANY" | "SOME";
 	minApprovals: number | null;
 	startedAt: ApiDateString | null;
 	dueAt: ApiDateString | null;
 	escalatedTo: string | null;
 	status: "PENDING" | "IN_PROGRESS" | "APPROVED" | "REJECTED";
 	approvals: EpcWorkflowApproval[];
+	stageName?: string;
 };
-
+export type StrategyMap = [
+	{
+		label: "ALL";
+		Value: "Parellel";
+	},
+];
+// strategy: stage.approvers.length > 1 ? "Parallel" : "Sequential",
 export type EpcWorkflowApproval = {
 	id: string;
 	stageId: string;

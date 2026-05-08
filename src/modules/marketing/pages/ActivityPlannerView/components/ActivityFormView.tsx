@@ -5,14 +5,12 @@ import DateRange from "./DateRange";
 import Section from "./Section";
 import LineTableView from "./LineTableView";
 import Loader from "../../../../../components/ui/Loader";
-import type {
-	EpcActiveWorkflow,
-	EpcDetailResponse,
-} from "../types/ActivityView.types";
+import type { EpcDetailResponse } from "../types/ActivityView.types";
 import CommentsSection from "./CommentsSection";
-import { type ApprovalRow } from "../../../../../components/ui/ApprovalTable";
 import { mapBudgetShareInfo } from "./helper";
 import { formatDate } from "../../../../../utils/format";
+import Button from "../../../../../components/common/Button";
+import { Pencil } from "lucide-react";
 // import { useAuth } from "../../../../../context/Auth/useAuth";
 interface Props {
 	epcId?: string;
@@ -45,23 +43,6 @@ const mapLineItems = (items: any[] = []) => {
 			total: Number(item.total || rate * qty || 0),
 		};
 	});
-};
-
-const mapEpcWorkflowToApprovalRows = (
-	workflow?: EpcActiveWorkflow | null,
-): ApprovalRow[] => {
-	if (!workflow) return [];
-
-	return workflow.stages.flatMap((stage) =>
-		stage.approvals.map((approval) => ({
-			id: stage.stageOrder,
-			name: `${approval.approver.first_name} ${approval.approver.last_name}`,
-			email: approval.approver.email ?? "-",
-			stageName: `Stage ${stage.stageOrder}`,
-			strategy: stage.strategy,
-			status: approval.status,
-		})),
-	);
 };
 
 const ActivityFormView = ({ epcId }: Props) => {
@@ -131,7 +112,6 @@ const ActivityFormView = ({ epcId }: Props) => {
 			? viewData?.budget_master?.value
 			: viewData?.budget_master;
 
-	const approvalRows = mapEpcWorkflowToApprovalRows(epcData?.activeWorkflow);
 	const total =
 		(Number(viewData?.epf?.internalParticipants) || 0) +
 		(Number(viewData?.epf?.externalParticipants) || 0);
@@ -145,7 +125,17 @@ const ActivityFormView = ({ epcId }: Props) => {
 					toDate={viewData?.event_to_date}
 				/>
 				<div className="form text-left my-3 text-sm ">
-					<Section title="Activity Planner Details">
+					<Section
+						title="Activity Planner Details"
+						action={
+							<Button
+								type="button"
+								Icon={Pencil}
+								iconColor="darkBlue"
+								// onClick={() => setEditingSection("event")}
+							/>
+						}
+					>
 						<div className="grid grid-cols-5 gap-6 text-xs p-3">
 							<div>
 								<span className="uppercase-label-text">Location</span>
@@ -206,7 +196,17 @@ const ActivityFormView = ({ epcId }: Props) => {
 							</div>
 						</div>
 					</Section>
-					<Section title="Participants">
+					<Section
+						title="Participants"
+						action={
+							<Button
+								type="button"
+								Icon={Pencil}
+								iconColor="darkBlue"
+								// onClick={() => setEditingSection("event")}
+							/>
+						}
+					>
 						<div className="grid grid-cols-4 gap-6 text-sm px-4 py-1.5">
 							<p className="uppercase-label-text">
 								Internal :{" "}
@@ -229,30 +229,57 @@ const ActivityFormView = ({ epcId }: Props) => {
 						</div>
 					</Section>
 					{viewData?.crf?.lineItems?.length > 0 && (
-						<Section title="Collateral Requisition Form Line Items">
+						<Section
+							title="Collateral Requisition Form Line Items"
+							action={
+								<Button
+									type="button"
+									Icon={Pencil}
+									iconColor="darkBlue"
+									// onClick={() => setEditingSection("event")}
+								/>
+							}
+						>
 							<LineTableView data={mapLineItems(viewData?.crf?.lineItems)} />
 						</Section>
 					)}
 					{viewData?.epf?.lineItems?.length > 0 && (
-						<Section title="Event Cost Overheads">
+						<Section
+							title="Event Cost Overheads"
+							action={
+								<Button
+									type="button"
+									Icon={Pencil}
+									iconColor="darkBlue"
+									// onClick={() => setEditingSection("event")}
+								/>
+							}
+						>
 							<LineTableView data={mapLineItems(viewData?.epf?.lineItems)} />
 						</Section>
 					)}
 					{viewData?.epf && (
-						<Section title="Activity Proposition Form Budget Information">
+						<Section
+							title="Activity Proposition Form Budget Information"
+							action={
+								<Button
+									type="button"
+									Icon={Pencil}
+									iconColor="darkBlue"
+									// onClick={() => setEditingSection("event")}
+								/>
+							}
+						>
 							<BudgetShare items={budgetItems} shareInfo={shareInfo} />
 						</Section>
 					)}
 					{viewData?.epf && (
-						<Section title="Comments">
-							<CommentsSection
-								epcCreatedById={epcData.created_by_id} // 👈 from your EPC data
-								epcId={epcData.id}
-								stages={epcData.activeWorkflow.stages}
-								approvalRows={approvalRows}
-								onWorkflowUpdate={fetchEPC}
-							/>
-						</Section>
+						<CommentsSection
+							epcCreatedById={epcData.created_by_id} // 👈 from your EPC data
+							epcId={epcData.id}
+							stages={epcData.activeWorkflow.stages}
+							onWorkflowUpdate={fetchEPC}
+						/>
 					)}
 				</div>
 			</div>
