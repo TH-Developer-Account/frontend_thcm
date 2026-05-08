@@ -326,12 +326,15 @@ export default function CommentsSection({
 			if (approvalId) {
 				payload.approvalId = approvalId;
 			} else {
-				payload.isProposer = true; // 👈
+				payload.epcId = epcId;
 			}
 
 			const {
 				data: { message, data },
-			} = await ServerAxios.post(`/comment`, payload);
+			} = await ServerAxios.post(
+				`${approvalId ? "/comment" : "/comment/creator-comment"}`,
+				payload,
+			);
 
 			showToast({
 				type: "success",
@@ -361,14 +364,14 @@ export default function CommentsSection({
 					: typeof err === "string"
 						? err
 						: "Error while adding the comment";
-
 			showToast({
 				type: "error",
-				title: "Error",
+				title: "error",
 				description: message,
 			});
 		}
 	};
+
 	const handleApprove = async () => {
 		try {
 			const {
@@ -525,6 +528,32 @@ export default function CommentsSection({
 								text="Clarify"
 								status="outline"
 								onClick={() => setIsClarifyModalOpen(true)}
+				{commentsLoading ? (
+					<div className="comments-loading">
+						<div />
+						<div />
+						<div />
+					</div>
+				) : comments.length === 0 ? (
+					<div className="comments-empty">
+						<MessageCircle size={24} />
+						<p>No comments yet</p>
+						<span>Start the discussion by adding the first comment.</span>
+					</div>
+				) : (
+					<div className="comments-list">
+						{comments.map((comment) => (
+							<CommentCard key={comment.id} comment={comment} />
+						))}
+					</div>
+				)}
+
+				{!canComment && (
+					<div className="comments-create">
+						<div className="comments-create-input">
+							<CommentInput
+								disabled={commentsLoading}
+								onSubmit={handleCreate}
 							/>
 							<Button text="Approve" status="brand" onClick={handleApprove} />
 						</div>

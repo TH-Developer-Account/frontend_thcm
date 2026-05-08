@@ -49,24 +49,26 @@ const ActivityFormView = ({ epcId }: Props) => {
 	const [epcData, setEPCData] = React.useState<any>(null);
 	const [loading, setLoading] = React.useState(false);
 
-	React.useEffect(() => {
-		if (epcId) fetchEPC();
-	}, [epcId]);
-
-	const fetchEPC = async () => {
+	// Define outside the effect with useCallback
+	const fetchEPC = React.useCallback(async () => {
+		if (!epcId) return;
 		try {
 			setLoading(true);
 			const {
 				data: { data },
 			} = await ServerAxios.get(`/epc/${epcId}`);
-
 			setEPCData(data);
 		} catch (err) {
 			console.log({ err });
 		} finally {
 			setLoading(false);
 		}
-	};
+	}, [epcId]);
+
+	// Effect just calls it
+	React.useEffect(() => {
+		fetchEPC();
+	}, [fetchEPC]);
 
 	if (loading) return <Loader />;
 	if (!epcId) return <p>No EPC selected</p>;
