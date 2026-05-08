@@ -1,4 +1,5 @@
 import { status } from "../modules/marketing/constant";
+import type { EpcWorkflowApproval } from "../modules/marketing/pages/ActivityPlannerView/types/ActivityView.types";
 
 // badge and button types
 export type TableUserStatus =
@@ -87,4 +88,26 @@ export type EventRow = {
 	status: "Pending" | "Approved" | "Rejected";
 	budget: number;
 	participants: number;
+};
+
+export type ApprovalTableRow = {
+	id: string;
+	stageOrder: number;
+	name: string;
+	email: string;
+	stageName?: string;
+	strategy?: string;
+	status?: string;
+	minApprovals?: string;
+};
+
+export type ApprovalRow = {
+	id: number;
+	name: string;
+	email: string;
+	stageName?: string;
+	strategy: string;
+	status?: string;
+	stageOrder?: number;
+	approvals?: EpcWorkflowApproval[];
 };

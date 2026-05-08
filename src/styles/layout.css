@@ -151,10 +151,10 @@
 /* Used for 2 row layout sections */
 @layer components {
 	.page-header-section {
-		@apply p-2 sm:p-4;
+		@apply sm:px-4 sm:py-2 px-2 py-2;
 	}
 	.page-title-section {
-		@apply text-lg font-semibold tracking-tight text-zinc-900 mt-1;
+		@apply text-xl font-semibold tracking-tight text-zinc-900;
 	}
 	.page-subtitle {
 		@apply text-xs text-zinc-500;

@@ -24,7 +24,7 @@ const getDaysCount = (fromDate?: string, toDate?: string) => {
 const DateRange = ({ fromDate, toDate }: DateRangeProps) => {
 	return (
 		<React.Fragment>
-			<div className="light-blue-bg-header rounded-lg p-4">
+			<div className="light-blue-bg-header rounded-lg px-4 py-2">
 				<div className="mx-auto">
 					<div className="flex items-center justify-between">
 						{/* FROM */}

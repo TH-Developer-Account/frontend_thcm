@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useToast } from "../../../../../context/Auth/AuthContext";
 import { useAuth } from "../../../../../context/Auth/useAuth";
 import { MessageCircle, X, Send } from "lucide-react";
@@ -8,12 +8,11 @@ import Avatar from "../../../../../components/common/Avatar";
 import { ServerAxios } from "../../../../../services/ServerAxios";
 import type { EpcWorkflowStage } from "../types/ActivityView.types";
 import Section from "./Section";
-import ApprovalTable, {
-	type ApprovalRow,
-} from "../../../../../components/ui/ApprovalTable";
+import ApprovalTable from "../../../../../components/ui/ApprovalTable";
 import { Modal } from "../../../../../components/common/Modal";
-import { Alert } from "../../../../../components/common/Alert";
 import { formatDateTime } from "../../../../../utils/format";
+import type { ApprovalTableRow } from "../../../../../utils/types";
+import { getApprovalStrategyLabel } from "../helpers/activityFormView.helper";
 
 export type CommentUser = {
 	id: string;
@@ -29,14 +28,85 @@ export type CommentItem = {
 	createdAt: string;
 	updatedAt?: string;
 	replies?: CommentItem[];
+	entryType?: string;
+	reason?: string;
+	action?: string;
+	stageName?: string;
 };
 
 type CommentsSectionProps = {
 	epcId: string;
 	stages: EpcWorkflowStage[];
-	approvalRows: ApprovalRow[];
 	onWorkflowUpdate: () => Promise<void>;
 	epcCreatedById?: string; // 👈
+};
+type AuditAction =
+	| "APPROVED"
+	| "RECOMMENDED"
+	| "CLARIFIED"
+	| "SENT_BACK"
+	| "SUBMITTED"
+	| "CANCELLED"
+	| "COMPLETED"
+	| "REPORT_SUBMITTED"
+	| string;
+
+type AuditComment = {
+	action?: AuditAction | null;
+	reason?: string | null;
+	stageName?: string | null;
+	actor?: {
+		first_name?: string | null;
+		last_name?: string | null;
+	};
+	createdAt: string;
+};
+const getActorName = (comment: AuditComment) => {
+	return [comment.actor?.first_name, comment.actor?.last_name]
+		.filter(Boolean)
+		.join(" ");
+};
+
+const getAuditMessage = (comment: AuditComment) => {
+	const actorName = getActorName(comment) || "Someone";
+	const action = comment.action?.toUpperCase();
+	const reason = comment.reason?.trim();
+	const stageName = comment.stageName;
+	const timeStamp = formatDateTime(comment?.createdAt);
+
+	const reasonText = reason ? ` • ${reason} • ` : "";
+	const stageText = stageName ? `${stageName} • ` : "";
+
+	switch (action) {
+		case "APPROVED":
+			return `${stageText} ${actorName} approved this${reasonText} ${timeStamp}`;
+
+		case "RECOMMENDED":
+			return `${stageText} ${actorName} recommended this${reasonText} ${timeStamp}`;
+
+		case "CLARIFY":
+			return `${stageText} ${actorName} asked for clarification${reasonText} ${timeStamp}`;
+
+		case "SENT_BACK":
+			return `${stageText} ${actorName} sent this back${reasonText} ${timeStamp}`;
+
+		case "SUBMITTED":
+			return `${actorName} submitted this${reasonText} ${timeStamp}`;
+
+		case "CANCELLED":
+			return `${actorName} cancelled this${reasonText} ${timeStamp}`;
+
+		case "COMPLETED":
+			return `${actorName} completed this${reasonText} ${timeStamp}`;
+
+		case "REPORT_SUBMITTED":
+			return `${actorName} submitted the report${reasonText} ${timeStamp}`;
+
+		default:
+			return reason
+				? `${stageText} ${actorName} updated this — ${reason} ${timeStamp}`
+				: `${actorName} updated this ${timeStamp}`;
+	}
 };
 
 function CommentInput({
@@ -127,27 +197,39 @@ function CommentCard({
 	comment: CommentItem;
 	level?: number;
 }) {
+	const isAuditLog = comment.entryType === "AUDIT_LOG";
+
 	return (
 		<div className={`comment-card ${level > 0 ? "comment-reply-card" : ""}`}>
-			<div className="comment-main">
-				<Avatar
-					firstName={comment?.actor.first_name}
-					lastName={comment?.actor.last_name}
-					size="sm"
-				/>
+			{isAuditLog ? (
+				<div className="comment-auditMessage">
+					<span>{getAuditMessage(comment)}</span>
+				</div>
+			) : (
+				<div className="comment-main">
+					<Avatar
+						firstName={comment?.actor?.first_name}
+						lastName={comment?.actor?.last_name}
+						size="sm"
+					/>
 
-				<div className="comment-content">
-					<div className="comment-bubble">
-						<div className="comment-meta">
-							<p className="comment-author">{`${comment?.actor.first_name} ${comment?.actor.last_name}`}</p>
-							<div className="comment-submeta">
-								<span>{formatDateTime(comment.createdAt)}</span>
+					<div className="comment-content">
+						<div className="comment-bubble">
+							<div className="comment-meta">
+								<p className="comment-author">
+									{`${comment?.actor?.first_name ?? ""} ${comment?.actor?.last_name ?? ""}`}
+								</p>
+
+								<div className="comment-submeta">
+									<span>{formatDateTime(comment.createdAt)}</span>
+								</div>
 							</div>
+
+							<p className="comment-text">{comment.message}</p>
 						</div>
-						<p className="comment-text">{comment.message}</p>
 					</div>
 				</div>
-			</div>
+			)}
 		</div>
 	);
 }
@@ -155,7 +237,6 @@ function CommentCard({
 export default function CommentsSection({
 	epcId,
 	stages,
-	approvalRows,
 	onWorkflowUpdate,
 	epcCreatedById, // 👈
 }: CommentsSectionProps) {
@@ -165,6 +246,7 @@ export default function CommentsSection({
 	const [commentsLoading, setCommentsLoading] = React.useState(false);
 	const [isClarifyModalOpen, setIsClarifyModalOpen] = useState(false);
 	const [clarifyLoading, setClarifyLoading] = useState(false);
+	const [clarifyReason, setClarifyReason] = useState("");
 
 	const userId = user?.id as string;
 	const isProposer = user?.id === epcCreatedById;
@@ -213,6 +295,22 @@ export default function CommentsSection({
 			approval.approverId === userId || approval.approver?.id === userId,
 	);
 
+	const approvalRows = useMemo<ApprovalTableRow[]>(() => {
+		return stages.flatMap((stage) =>
+			stage.approvals.map((approval) => ({
+				id: approval.id,
+				stageOrder: stage.stageOrder,
+				name: `${approval.approver?.first_name ?? ""} ${
+					approval.approver?.last_name ?? ""
+				}`.trim(),
+				email: approval.approver?.email ?? "--",
+				stageName: stage.stageName ?? `Stage ${stage.stageOrder}`,
+				strategy: getApprovalStrategyLabel(stage),
+				status: approval.status ?? stage.status ?? "--",
+			})),
+		);
+	}, [stages]);
+
 	const handleCreate = async (text: string) => {
 		try {
 			if (!approvalId && !isProposer) {
@@ -249,6 +347,7 @@ export default function CommentsSection({
 				{
 					id: data.id,
 					message: data.message,
+					entryType: data.entryType ?? "CREATOR_COMMENT",
 					createdAt: data.createdAt,
 					updatedAt: data.updatedAt,
 					actor: {
@@ -301,6 +400,17 @@ export default function CommentsSection({
 	};
 
 	const handleClarify = async () => {
+		const trimmedReason = clarifyReason.trim();
+
+		if (!trimmedReason) {
+			showToast({
+				type: "error",
+				title: "Reason required",
+				description: "Please enter a reason before sending for clarification.",
+			});
+			return;
+		}
+
 		try {
 			if (!currentStage?.id) {
 				showToast({
@@ -313,9 +423,13 @@ export default function CommentsSection({
 
 			setClarifyLoading(true);
 
+			console.log("Clarification reason:", trimmedReason);
+
 			const {
-				data: { message },
-			} = await ServerAxios.post(`/soa/stages/${currentStage.id}/clarify`);
+				data: { message, data },
+			} = await ServerAxios.post(`/soa/stages/${currentStage.id}/clarify`, {
+				reason: trimmedReason,
+			});
 
 			showToast({
 				type: "success",
@@ -323,7 +437,28 @@ export default function CommentsSection({
 				description: message,
 			});
 
+			setComments((prev) => [
+				...prev,
+				{
+					id: data?.id ?? crypto.randomUUID(),
+					message: "",
+					entryType: "AUDIT_LOG",
+					action: "CLARIFIED",
+					reason: data?.reason ?? trimmedReason,
+					stageName: data?.stageName ?? currentStage.stageName,
+					createdAt: data?.createdAt ?? new Date().toISOString(),
+					updatedAt: data?.updatedAt ?? new Date().toISOString(),
+					actor: {
+						id: user?.id ?? "",
+						first_name: user?.first_name ?? "",
+						last_name: user?.last_name ?? "",
+					},
+				},
+			]);
+
+			setClarifyReason("");
 			setIsClarifyModalOpen(false);
+
 			await onWorkflowUpdate();
 		} catch (err) {
 			const message =
@@ -346,19 +481,53 @@ export default function CommentsSection({
 	const canComment = !isProposer && (!currentStage || !isUserInCurrentStage);
 	return (
 		<React.Fragment>
-			<section className="comments-section mb-4">
-				<div className="comments-header">
-					<div className="px-2.5 py-2 flex flex-row justify-between gap-4 w-full">
-						<h3 className="comments-title">
-							<MessageCircle size={16} />
-							Comment Section
-						</h3>
-						<p className="comments-subtitle">
-							{comments.length} {comments.length === 1 ? "comment" : "comments"}
-						</p>
-					</div>
-				</div>
+			<Section
+				title="Comment Section"
+				action={
+					<p className="comments-subtitle">
+						{comments.length} {comments.length === 1 ? "comment" : "comments"}
+					</p>
+				}
+			>
+				<section className="comments-section mb-4">
+					{commentsLoading ? (
+						<div className="comments-loading">
+							<div />
+							<div />
+							<div />
+						</div>
+					) : comments.length === 0 ? (
+						<div className="comments-empty">
+							<MessageCircle size={24} />
+							<p>No comments yet</p>
+							<span>Start the discussion by adding the first comment.</span>
+						</div>
+					) : (
+						<div className="comments-list scrollbar-sleek">
+							{comments.map((comment) => (
+								<CommentCard key={comment.id} comment={comment} />
+							))}
+						</div>
+					)}
 
+					{!canComment && (
+						<div className="comments-create light-blue-bg-header">
+							<div className="comments-create-input">
+								<CommentInput
+									disabled={commentsLoading}
+									onSubmit={handleCreate}
+								/>
+							</div>
+						</div>
+					)}
+				</section>
+				<Section title="Approval Flow">
+					{!disabled && (
+						<div className="flex flex-row gap-4 items-center justify-end">
+							<Button
+								text="Clarify"
+								status="outline"
+								onClick={() => setIsClarifyModalOpen(true)}
 				{commentsLoading ? (
 					<div className="comments-loading">
 						<div />
@@ -386,42 +555,59 @@ export default function CommentsSection({
 								disabled={commentsLoading}
 								onSubmit={handleCreate}
 							/>
+							<Button text="Approve" status="brand" onClick={handleApprove} />
+						</div>
+					)}
+
+					<ApprovalTable data={approvalRows} stages={stages} />
+				</Section>
+				<Modal open={isClarifyModalOpen}>
+					<div className="w-full  rounded-2xl bg-white p-5 shadow-xl border border-zinc-200">
+						<div className="mb-4">
+							<h3 className="text-sm font-semibold text-zinc-900">
+								Send for Clarification
+							</h3>
+
+							<p className="mt-1 text-xs text-zinc-500">
+								Please mention why this request needs clarification. This reason
+								will be shown in the comment section.
+							</p>
+						</div>
+
+						<TextareaInput
+							name="clarifyReason"
+							value={clarifyReason}
+							onChange={(e) => setClarifyReason(e.target.value)}
+							placeholder="Example: Please update the budget breakup before approval."
+							rows={4}
+							autoFocus
+							disabled={clarifyLoading}
+							className="bg-white overflow-y-auto px-2 py-1.5 min-h-[90px]"
+						/>
+
+						<div className="mt-4 flex justify-end gap-3">
+							<Button
+								type="button"
+								text="Cancel"
+								status="outline"
+								disabled={clarifyLoading}
+								onClick={() => {
+									setClarifyReason("");
+									setIsClarifyModalOpen(false);
+								}}
+							/>
+
+							<Button
+								type="button"
+								text={clarifyLoading ? "Sending..." : "Send Clarification"}
+								status="brand"
+								disabled={!clarifyReason.trim() || clarifyLoading}
+								onClick={handleClarify}
+							/>
 						</div>
 					</div>
-				)}
-			</section>
-			<Section title="Approval Flow">
-				{!disabled && (
-					<div className="flex flex-row gap-4 items-center justify-end">
-						<Button
-							text="Clarify"
-							status="outline"
-							onClick={() => setIsClarifyModalOpen(true)}
-						/>
-						<Button text="Approve" status="brand" onClick={handleApprove} />
-					</div>
-				)}
-
-				<ApprovalTable data={approvalRows} />
+				</Modal>
 			</Section>
-			<Modal
-				open={isClarifyModalOpen}
-				// onClose={() => setIsClarifyModalOpen(false)}
-			>
-				<Alert
-					description="Are you sure you want to send this back for clarification?"
-					variant="warning"
-					title="Send for Clarification"
-					primaryAction={{
-						label: clarifyLoading ? "Sending..." : "Confirm",
-						onClick: handleClarify,
-					}}
-					secondaryAction={{
-						label: "Cancel",
-						onClick: () => setIsClarifyModalOpen(false),
-					}}
-				/>
-			</Modal>
 		</React.Fragment>
 	);
 }

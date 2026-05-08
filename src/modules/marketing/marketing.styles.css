@@ -41,10 +41,8 @@
 }
 
 .comments-section {
-	@apply rounded-sm;
 	background: #ffffff;
 	border: 1px solid #e4e4e7;
-
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
@@ -70,7 +68,7 @@
 	display: flex;
 	gap: 10px;
 	align-items: center;
-	@apply bg-zinc-100 px-4 py-2 rounded-b-sm;
+	@apply px-4 py-2 rounded-b-sm;
 }
 
 .comments-create-input {
@@ -92,7 +90,7 @@
 .comments-list {
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
+	gap: 10px;
 	@apply max-h-[40vh] overflow-y-auto px-4 py-2;
 }
 
@@ -235,6 +233,25 @@
 	border-radius: 10px;
 	background: linear-gradient(90deg, #f4f4f5, #fafafa, #f4f4f5);
 	animation: commentPulse 1.2s infinite ease-in-out;
+}
+.comment-auditMessage {
+	@apply my-1;
+	width: 100%;
+	display: flex;
+	justify-content: center;
+}
+
+.comment-auditMessage span {
+	@apply rounded-lg px-2 py-1 text-[11px];
+	max-width: 75%;
+
+	background: #e9f8ed;
+	color: #475569;
+	font-size: 11px;
+	font-weight: 500;
+	line-height: 1.4;
+	text-align: center;
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
 
 @keyframes commentPulse {
