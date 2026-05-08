@@ -528,32 +528,6 @@ export default function CommentsSection({
 								text="Clarify"
 								status="outline"
 								onClick={() => setIsClarifyModalOpen(true)}
-				{commentsLoading ? (
-					<div className="comments-loading">
-						<div />
-						<div />
-						<div />
-					</div>
-				) : comments.length === 0 ? (
-					<div className="comments-empty">
-						<MessageCircle size={24} />
-						<p>No comments yet</p>
-						<span>Start the discussion by adding the first comment.</span>
-					</div>
-				) : (
-					<div className="comments-list">
-						{comments.map((comment) => (
-							<CommentCard key={comment.id} comment={comment} />
-						))}
-					</div>
-				)}
-
-				{!canComment && (
-					<div className="comments-create">
-						<div className="comments-create-input">
-							<CommentInput
-								disabled={commentsLoading}
-								onSubmit={handleCreate}
 							/>
 							<Button text="Approve" status="brand" onClick={handleApprove} />
 						</div>
