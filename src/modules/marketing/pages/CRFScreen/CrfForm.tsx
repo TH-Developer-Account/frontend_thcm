@@ -1,208 +1,23 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { buildLineItemPayload, CRF_CATEGORIES } from "../../constant";
-import { useToast } from "../../../../context/Auth/AuthContext";
-import { ServerAxios } from "../../../../services/ServerAxios";
-import LineItemTable from "../../../../components/ui/LineItemTable";
-import type {
-	CrfProps,
-	Product,
-	LineItemOption,
-	GroupedOption,
-} from "../../types";
+
 import Button from "../../../../components/common/Button";
-import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
-import { PageHeader } from "../../../../components/ui/PageHeader";
+import Section from "../ActivityPlannerView/components/Section";
 
-export function CrfItemsSection({
-	items,
-	onChange,
-	isViewer,
-	options,
-}: CrfProps) {
-	const getOptionsByCategory = (category: string): LineItemOption[] =>
-		options.find((group) => group.label === category)?.options ?? [];
+import { CrfItemsSection } from "./component.CrfLineItemSection";
+import { useCrfForm, type CrfFormProps } from "./useCRFForm";
 
-	const getItemsByCategory = (category: string) =>
-		items.filter((item) => item.category === category);
+export default function CrfForm(props: CrfFormProps) {
+	const { onCancel } = props;
 
-	// ✅ Merge category-level changes back into the full flat array
-	const handleCategoryChange = (
-		category: string,
-		updater: React.SetStateAction<LineItemOption[]>,
-	) => {
-		onChange((prev) => {
-			const otherItems = prev.filter((item) => item.category !== category);
-			const categoryItems = prev.filter((item) => item.category === category);
-			const updated =
-				typeof updater === "function" ? updater(categoryItems) : updater;
-			return [...otherItems, ...updated];
-		});
-	};
-
-	return (
-		<React.Fragment>
-			{CRF_CATEGORIES.map((category) => (
-				<LineItemTable
-					key={category.value}
-					title={category.title}
-					items={getItemsByCategory(category.value)}
-					onChange={(updater) => handleCategoryChange(category.value, updater)} // ✅
-					particularOptions={getOptionsByCategory(category.value)}
-					isViewer={isViewer}
-					category={category.value}
-				/>
-			))}
-		</React.Fragment>
-	);
-}
-
-/* ------------------------------------------------------------------ */
-
-export default function CrfForm() {
-	const { showToast } = useToast();
-	const navigate = useNavigate();
-
-	const [costItems, setCostItems] = React.useState<LineItemOption[]>([]);
-	const [options, setOptions] = React.useState<GroupedOption[]>([]);
-	const [loading, setLoading] = React.useState(false);
-
-	const stored = localStorage.getItem("epcInfo");
-	const epcId: string | null = stored
-		? (JSON.parse(stored)?.epcId ?? null)
-		: null;
-	const crfId: string | null = stored
-		? (JSON.parse(stored)?.crfId ?? null)
-		: null;
-
-	React.useEffect(() => {
-		const fetchAll = async () => {
-			try {
-				const productsRes = await ServerAxios.get(
-					`/master-data/products?productType=CRF`,
-				);
-
-				// Build grouped options from products
-				const products = productsRes.data.data as Product[];
-				const grouped: GroupedOption[] = Object.values(
-					products.reduce<Record<string, GroupedOption>>((acc, item) => {
-						if (!acc[item.category])
-							acc[item.category] = { label: item.category, options: [] };
-						acc[item.category].options.push({
-							value: item.id,
-							label: item.name,
-							particular: item.id,
-							description: item.description,
-							rate: parseFloat(item.unitRate),
-							quantity: 1,
-							partNumber: item.partNumber,
-							category: item.category,
-						});
-						return acc;
-					}, {}),
-				);
-				setOptions(grouped);
-			} catch (err) {
-				console.error("Fetch failed:", err);
-				showToast({
-					type: "error",
-					title: "Error",
-					description: "Failed to load data.",
-				});
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		fetchAll();
-	}, []);
-
-	React.useEffect(() => {
-		const fetchCrf = async () => {
-			try {
-				const crfRes = await ServerAxios.get(`/crf/${crfId}`);
-
-				if (crfId) {
-					const lineItems: LineItemOption[] = (crfRes.data.lineItems ?? []).map(
-						(item: {
-							productId: string;
-							productName: string;
-							partNumber: string;
-							description: string | null;
-							rate: number;
-							quantity: number;
-							category: string;
-							product: Product;
-						}) => {
-							console.log({ item });
-							return {
-								value: item.product.id,
-								label: item.product.name,
-								particular: item.product.id,
-								description: item.product.description ?? "",
-								rate: Number(item.rate) || 0,
-								quantity: Number(item.quantity) || 1,
-								partNumber: item.product.partNumber ?? "",
-								category: item.product.category,
-							};
-						},
-					);
-					setCostItems(lineItems);
-				}
-			} catch (err) {
-				console.error("Fetch failed:", err);
-				showToast({
-					type: "error",
-					title: "Error",
-					description: "Failed to load data.",
-				});
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		if (crfId) fetchCrf();
-	}, [crfId]);
-
-	const handleSubmit = async () => {
-		try {
-			if (!epcId) {
-				console.error("EPC ID not found in localStorage");
-				return;
-			}
-			const payload = buildLineItemPayload(costItems, { epcId });
-
-			if (crfId) {
-				const {
-					data: { message },
-				} = await ServerAxios.put(`/crf/${crfId}`, payload);
-				showToast({
-					type: "success",
-					title: "Success",
-					description: message || "CRF modified successfully",
-				});
-			} else {
-				const {
-					data: { message },
-				} = await ServerAxios.post("/crf", payload);
-				showToast({
-					type: "success",
-					title: "Success",
-					description: message || "CRF created successfully",
-				});
-				localStorage.removeItem("epcInfo");
-			}
-
-			navigate("/marketing/listing");
-		} catch (error) {
-			console.error("CRF save failed:", error);
-			showToast({
-				type: "error",
-				title: "Error",
-				description: "Failed to save CRF.",
-			});
-		}
-	};
+	const {
+		costItems,
+		setCostItems,
+		options,
+		loading,
+		isEditMode,
+		handleSubmit,
+		handleReset,
+	} = useCrfForm(props);
 
 	if (loading) {
 		return (
@@ -211,50 +26,50 @@ export default function CrfForm() {
 			</div>
 		);
 	}
+
 	return (
 		<React.Fragment>
-			<PageRowSectionLayout
-				contentClassName="p-4"
-				stickyHeader
-				header_children={
-					<div className="flex flex-col sm:flex-row sm:justify-between items-end sm:items-center">
-						<PageHeader
-							headerText="Collateral Requisition Form (CRF)"
-							subtitleText="Manage your Collateral Requisition Form (CRF) details here"
-							badgeProps={{
-								text: "Back",
-								direction: "back",
-							}}
-						/>
-						<div className="mx-2 my-4 sm:mx-4 flex flex-col gap-4 items-end">
-							<p className="page-subtitle">
-								<strong>EPC No: </strong>
-								<span>{epcId}</span>
-							</p>
-							<div className="flex flex-row gap-4 items-end">
-								<Button
-									text="Reset"
-									// onClick={() => handleReset()}
-									status="brand"
-								/>
-								<Button
-									status="brand"
-									onClick={handleSubmit}
-									text={crfId ? "Update" : "Save"}
-									className="ml-2"
-								/>
-							</div>
-						</div>
+			<Section
+				title="Collateral Requisition Form"
+				action={
+					<div className="flex flex-row gap-4 items-end">
+						{onCancel && (
+							<Button
+								type="button"
+								onClick={onCancel}
+								text="Cancel"
+								size="sm"
+								iconColor="darkBlue"
+							/>
+						)}
 					</div>
 				}
 			>
+				<div className="flex flex-row gap-4 items-end justify-end">
+					<Button
+						type="button"
+						onClick={handleReset}
+						size="sm"
+						text={"Reset"}
+						iconColor="darkBlue"
+					/>
+
+					<Button
+						type="button"
+						onClick={handleSubmit}
+						text={isEditMode ? "Update" : "Save"}
+						className="ml-2 text-darkBlue"
+						size="sm"
+						iconColor="darkBlue"
+					/>
+				</div>
 				<CrfItemsSection
 					items={costItems}
 					onChange={setCostItems}
 					isViewer={false}
 					options={options}
 				/>
-			</PageRowSectionLayout>
+			</Section>
 		</React.Fragment>
 	);
 }

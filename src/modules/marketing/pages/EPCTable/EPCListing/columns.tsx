@@ -7,14 +7,12 @@ import EPCActionMenu from "./EPCActionMenu";
 
 type epcColumnActions = {
 	onEPFCreate: () => void;
-	onCRFCreate: () => void;
 	onEPCEdit: () => void;
 	onLeadCreate?: () => void;
 };
 
 export const getEPCColumns = ({
 	onEPFCreate,
-	onCRFCreate,
 	onEPCEdit,
 	onLeadCreate,
 }: epcColumnActions): ColumnDef<EPCRow>[] => [
@@ -83,7 +81,6 @@ export const getEPCColumns = ({
 			<EPCActionMenu
 				row={row.original}
 				onEPCEdit={onEPCEdit}
-				onCRFCreate={onCRFCreate}
 				onEPFCreate={onEPFCreate}
 				onLeadCreate={onLeadCreate}
 			/>

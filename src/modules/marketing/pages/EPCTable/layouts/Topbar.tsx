@@ -8,6 +8,7 @@ import Button from "../../../../../components/common/Button";
 import ThreeWayToggle from "../../../../../components/common/ThreeWayToggle";
 import { epcListFilterOptions } from "../../../constant";
 import { useNavigate } from "react-router-dom";
+import { clearStoredEpcInfo } from "../../../helpers/localstorage";
 
 interface TopbarProps {
 	isFilterOpen?: boolean;
@@ -34,9 +35,8 @@ const Topbar: React.FC<TopbarProps> = () => {
 								text="Create EPC"
 								status="brand"
 								onClick={() => {
-									localStorage.removeItem("epcInfo");
-									localStorage.removeItem("LeadInfo");
-									navigate("/marketing/epc");
+									clearStoredEpcInfo();
+									navigate("/marketing/activity-planner/create");
 								}}
 							/>
 						</Can>

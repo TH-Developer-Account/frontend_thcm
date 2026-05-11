@@ -11,7 +11,6 @@ import type { EPCRow } from "../../../../../utils/types";
 type EPCActionMenuProps = {
 	row: EPCRow;
 	onEPFCreate: () => void;
-	onCRFCreate: () => void;
 	onEPCEdit: () => void;
 	onLeadCreate?: () => void;
 };
@@ -19,11 +18,9 @@ type EPCActionMenuProps = {
 export default function EPCActionMenu({
 	row,
 	onEPFCreate,
-	onCRFCreate,
 	onEPCEdit,
 	onLeadCreate,
 }: EPCActionMenuProps) {
-	const crf = row?.crf_id || null;
 	const epf = row?.epf_id || null;
 	const lead = row?.lead_id || null;
 
@@ -36,19 +33,6 @@ export default function EPCActionMenu({
 		);
 
 		onEPCEdit();
-	};
-
-	const handleCRF = () => {
-		localStorage.setItem(
-			"epcInfo",
-			JSON.stringify({
-				epcId: row.id,
-				crfId: row.crf_id,
-				epfId: row.epf_id,
-			}),
-		);
-
-		onCRFCreate();
 	};
 
 	const handleEPF = () => {
@@ -115,21 +99,6 @@ export default function EPCActionMenu({
 						>
 							<Pencil size={14} />
 							Edit EPC
-						</button>
-					</MenuItem>
-
-					<MenuItem>
-						<button
-							type="button"
-							onClick={handleCRF}
-							className="
-                                flex w-full items-center gap-2 rounded px-3 py-2
-                                text-left text-xs font-medium text-zinc-700
-                                data-focus:bg-orange-50 data-focus:text-orange-700
-                            "
-						>
-							{crf ? <Pencil size={14} /> : <Plus size={14} />}
-							{crf ? "Edit CRF" : "Create CRF"}
 						</button>
 					</MenuItem>
 

@@ -15,9 +15,17 @@ export interface CrfProps {
 	options: GroupedOption[];
 }
 
-export interface EpcFormProps {
+export type EpcFormMode = "create" | "edit";
+export type EpcFormVariant = "page" | "inline";
+
+export type EpcFormProps = {
 	epcId?: string;
-}
+	mode?: EpcFormMode;
+	variant?: EpcFormVariant;
+	initialData?: any;
+	onSuccess?: (savedEpc?: any) => void | Promise<void>;
+	onCancel?: () => void;
+};
 
 export type EpcStatus = "DRAFT" | "SUBMITTED";
 
@@ -28,18 +36,18 @@ export interface EpcFormValues {
 	department: string;
 	region: string;
 	branch: string;
-	budget_master_id: string;
-	budgetDescription: string;
-	vertical: string;
+	budget_master_id?: string;
+	budgetDescription?: string;
+	vertical?: string;
 	event_scale?: string;
-	event_name: string;
-	event_description: string;
-	event_from_date: string;
-	event_to_date: string;
-	location: string;
-	event_objective: string;
-	status: EpcStatus;
-	proposal_number: string;
+	event_name?: string;
+	event_description?: string;
+	event_from_date?: string;
+	event_to_date?: string;
+	location?: string;
+	event_objective?: string;
+	status?: EpcStatus;
+	proposal_number?: string;
 }
 
 export type UserRole = "ADMIN" | "EMPLOYEE" | "DEALER";

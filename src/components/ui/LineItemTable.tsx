@@ -129,8 +129,8 @@ export default function LineItemTable({
 		particularOptions.find((o) => o.value === draft.particular) ?? null;
 
 	return (
-		<div className="mb-2 border border-gray-300 rounded-sm bg-white shadow-sm overflow-hidden">
-			<div className="bg-gray-200 px-6 py-2 border-b border-gray-300">
+		<div className="my-2 rounded-sm bg-white  overflow-hidden">
+			<div className="bg-gray-200 px-6 py-1 border-b border-gray-300">
 				<h3 className="font-semibold text-gray-800 text-md">{title}</h3>
 			</div>
 
