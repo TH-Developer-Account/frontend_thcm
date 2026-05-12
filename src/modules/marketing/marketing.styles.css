@@ -5,7 +5,7 @@
 	color: var(--color-blue);
 }
 .uppercase-label-text {
-	@apply text-gray-800  text-xs italic text-[10px] tracking-[0.18em] uppercase  font-bold;
+	@apply text-gray-600  text-xs italic text-[10px] tracking-[0.18em] uppercase  font-bold;
 	word-break: break-word;
 	overflow-wrap: anywhere;
 }
@@ -15,12 +15,96 @@
 }
 
 .epf-section .epf-section-label {
-	color: var(--color-blue);
+	color: var(--color-orange-500);
 	@apply font-semibold;
 }
-.epf-section-header,
+
 .light-blue-bg-header {
 	@apply bg-blue-50 p-1 rounded-sm;
+}
+.epf-section .epf-section-label {
+	color: var(--color-orange-600, #da611c);
+	font-weight: 600;
+}
+
+/* right action area */
+.epf-section-action {
+	@apply flex shrink-0 items-center gap-1.5;
+}
+
+/* small tag */
+.epf-tag {
+	@apply inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold;
+	background: #fff8f2;
+	color: #c2410c;
+	border-color: #fde2cf;
+}
+
+/* total row */
+.epf-cost-total-row {
+	@apply rounded-b-md border-t;
+	background: #fffaf6;
+	border-color: #fde7d8;
+}
+
+/* cards */
+.epf-budget-card {
+	@apply rounded-lg border px-3 py-2;
+	background: #fffdfb;
+	border-color: #f6e7dc;
+}
+
+/* share bar */
+.epf-share-bar {
+	@apply mt-1.5 h-1.5 overflow-hidden rounded-full;
+	background: #fae6d8;
+}
+
+.epf-share-bar-fill {
+	@apply h-full rounded-full;
+	background: linear-gradient(90deg, #f35a00 0%, #f78b45 100%);
+}
+
+.epf-section-header,
+.date-range-card {
+	@apply rounded-sm border px-2.5 py-1;
+	background: #fffdfb;
+	border-color: #f7e4d7;
+}
+
+.epf-section-header {
+	@apply flex items-center justify-between gap-2;
+}
+
+.epf-section-title-wrap {
+	@apply inline-flex min-w-0 items-center gap-2;
+}
+
+.epf-section-title-wrap::before {
+	content: "";
+	@apply block h-3.5 w-0.5 shrink-0 rounded-full;
+	background: var(--color-brand, #f35a00);
+}
+
+.epf-section-label {
+	@apply min-w-0 truncate text-sm font-semibold tracking-tight;
+}
+
+.epf-section-action {
+	@apply flex shrink-0 items-center gap-1.5;
+}
+
+.section-edit-btn {
+	@apply inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium leading-none transition;
+	background: #ffffff;
+	color: var(--color-brand, #f35a00);
+	border-color: #f4d4c1;
+}
+
+.section-edit-btn:hover {
+	background: #fff8f4;
+	border-color: #efb995;
+	color: #d94f00;
 }
 
 .approval-details-title {
@@ -440,4 +524,132 @@
 		size: A4;
 		margin: 0;
 	}
+}
+/* =========================
+   COMPACT DATE RANGE CARD
+========================= */
+
+.date-range-content {
+	@apply flex items-center justify-between gap-3;
+}
+
+.date-range-side {
+	@apply min-w-0;
+}
+
+.date-range-side-left {
+	@apply text-left;
+}
+
+.date-range-side-right {
+	@apply text-right;
+}
+
+.date-range-center {
+	@apply flex flex-1 items-center justify-center px-2;
+}
+
+.date-range-line-wrap {
+	@apply relative flex w-32 items-center;
+}
+
+.date-range-card {
+	@apply rounded-md border px-2.5 py-1.5;
+	background: #fffdfb;
+	border-color: #f7e4d7;
+}
+
+.date-range-label {
+	@apply text-[10px] font-semibold leading-none tracking-widest;
+	color: #da611c;
+}
+
+.date-range-value {
+	@apply mt-1 truncate text-xs font-semibold tracking-tight;
+	color: #da611c;
+}
+
+.date-range-line {
+	@apply h-px w-full;
+	background: #efc2a4;
+}
+
+.date-range-arrow {
+	@apply absolute right-0 h-1.5 w-1.5 rotate-45 border-r border-t;
+	border-color: #d97706;
+}
+
+.date-range-pill {
+	@apply absolute left-1/2 -top-2 -translate-x-1/2 rounded-full border bg-white px-2 py-0.5 text-[10px] font-semibold leading-none shadow-sm;
+	color: var(--color-orange-600, #da611c);
+	border-color: #efd3c0;
+}
+/* =========================
+   PREMIUM LINE VIEW TABLE
+========================= */
+
+.line-view-table {
+	@apply w-full px-4 py-2 text-left text-[13px];
+}
+
+.line-view-table-head {
+	@apply grid grid-cols-12 items-center gap-3 rounded-md border px-3 py-2 text-xs font-semibold;
+	background: #f8fafc;
+	border-color: #eef2f7;
+	color: #334155;
+}
+
+.line-view-group {
+	@apply mt-2;
+}
+
+.line-view-category {
+	@apply mb-1.5 flex items-center px-1;
+}
+
+.line-view-category span {
+	@apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold leading-none;
+	background: #fffdfb;
+	border-color: #f7e4d7;
+	color: #c2410c;
+}
+
+.line-view-row {
+	@apply grid grid-cols-12 items-center gap-3 border-b px-3 py-2 text-[13px] transition;
+	border-color: #f1f5f9;
+}
+
+.line-view-row:hover {
+	background: #fffdfb;
+}
+
+.line-view-empty {
+	@apply rounded-md border border-dashed px-3 py-5 text-center text-xs text-gray-400;
+	border-color: #e5e7eb;
+}
+/* =========================
+   FORM SECTION HEADER
+========================= */
+
+.form-section-header {
+	@apply mb-3 mt-4 flex h-9 items-center gap-2 rounded-lg border px-3;
+	background: linear-gradient(180deg, #ffffff 0%, #fbfbfa 100%);
+	border-color: var(--color-border);
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.form-section-header-accent {
+	@apply h-4 w-1 shrink-0 rounded-full;
+	background-color: var(--color-brand);
+}
+
+.form-section-header-icon {
+	@apply flex h-6 w-6 shrink-0 items-center justify-center rounded-md;
+	background-color: var(--color-brand-softest);
+	border: 1px solid var(--color-brand-soft);
+}
+
+.form-section-header-title {
+	@apply text-[13px] font-semibold tracking-wide;
+	color: var(--color-text-strong);
 }

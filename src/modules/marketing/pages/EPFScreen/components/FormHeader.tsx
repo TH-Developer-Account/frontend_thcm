@@ -4,16 +4,24 @@ interface FormHeaderProps {
 	title: string;
 	Icon?: LucideIcon;
 	iconColor?: string;
+	className?: string;
 }
-const FormHeader = ({ title, Icon, iconColor }: FormHeaderProps) => {
+
+const FormHeader = ({
+	title,
+	Icon,
+	iconColor = "var(--color-brand)",
+	className = "",
+}: FormHeaderProps) => {
 	return (
-		<div className="bg-gray-200 px-3  border-b border-gray-400 text-lg font-normal h-auto my-3 py-2">
-			<div className="flex gap-2 items-center">
-				{Icon && <Icon color={iconColor ? iconColor : "gray"} size={20} />}
-				<h3 className="font-semibold text-gray-600 md:text-sm text-xs">
-					{title}
-				</h3>
+		<div className={`form-section-header ${className}`}>
+			<div className="form-section-header-accent" />
+
+			<div className="form-section-header-icon">
+				{Icon && <Icon color={iconColor} size={15} strokeWidth={2.2} />}
 			</div>
+
+			<h3 className="form-section-header-title">{title}</h3>
 		</div>
 	);
 };

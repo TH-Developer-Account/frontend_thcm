@@ -5,6 +5,7 @@ import Section from "../ActivityPlannerView/components/Section";
 
 import { CrfItemsSection } from "./component.CrfLineItemSection";
 import { useCrfForm, type CrfFormProps } from "./useCRFForm";
+import { LucideSave, RefreshCcw, Save, X } from "lucide-react";
 
 export default function CrfForm(props: CrfFormProps) {
 	const { onCancel } = props;
@@ -39,30 +40,33 @@ export default function CrfForm(props: CrfFormProps) {
 								onClick={onCancel}
 								text="Cancel"
 								size="sm"
-								iconColor="darkBlue"
+								Icon={X}
+								className="text-red-600"
+								iconColor="red"
 							/>
 						)}
+						<Button
+							type="button"
+							onClick={handleReset}
+							size="sm"
+							text={"Reset"}
+							Icon={RefreshCcw}
+							className="text-red-600"
+							iconColor="red"
+						/>
+
+						<Button
+							type="button"
+							onClick={handleSubmit}
+							text={isEditMode ? "Update" : "Save"}
+							className=" text-red-600"
+							size="sm"
+							Icon={isEditMode ? Save : LucideSave}
+							iconColor="red"
+						/>
 					</div>
 				}
 			>
-				<div className="flex flex-row gap-4 items-end justify-end">
-					<Button
-						type="button"
-						onClick={handleReset}
-						size="sm"
-						text={"Reset"}
-						iconColor="darkBlue"
-					/>
-
-					<Button
-						type="button"
-						onClick={handleSubmit}
-						text={isEditMode ? "Update" : "Save"}
-						className="ml-2 text-darkBlue"
-						size="sm"
-						iconColor="darkBlue"
-					/>
-				</div>
 				<CrfItemsSection
 					items={costItems}
 					onChange={setCostItems}

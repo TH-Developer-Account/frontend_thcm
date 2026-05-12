@@ -22,12 +22,6 @@ const EPCTable = () => {
 	const columns = React.useMemo(
 		() =>
 			getEPCColumns({
-				onEPCEdit: () => {
-					navigate(`/marketing/epc`);
-				},
-				onEPFCreate: () => {
-					navigate(`/marketing/epf`);
-				},
 				onLeadCreate: () => {
 					navigate(`/marketing/leads/create`);
 				},

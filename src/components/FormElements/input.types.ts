@@ -54,4 +54,6 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
 	value?: string;
 	error?: string;
 	className?: string;
+	helperText?: string;
+	isTooltip?: boolean;
 }

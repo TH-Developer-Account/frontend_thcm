@@ -169,7 +169,8 @@ const ActivityFormView = ({ epcId }: Props) => {
 								<Button
 									type="button"
 									Icon={Pencil}
-									iconColor="darkBlue"
+									size="sm"
+									iconColor="red"
 									onClick={() => setEditingSection("epc")}
 								/>
 							}
@@ -221,7 +222,7 @@ const ActivityFormView = ({ epcId }: Props) => {
 							<div className="grid grid-cols-2 gap-6 text-sm p-3">
 								<div>
 									<span className="uppercase-label-text">Description</span>
-									<p className="text-gray-700 leading-relaxed text-xs">
+									<p className="text-black leading-relaxed text-xs">
 										{viewData?.event_description || "No Description"}
 									</p>
 								</div>
@@ -258,7 +259,8 @@ const ActivityFormView = ({ epcId }: Props) => {
 									type="button"
 									iconPosition="right"
 									Icon={Pencil}
-									iconColor="darkBlue"
+									iconColor="red"
+									size="sm"
 									onClick={() => setEditingSection("crf")}
 								/>
 							}
@@ -273,7 +275,9 @@ const ActivityFormView = ({ epcId }: Props) => {
 									type="button"
 									text="Create CRF"
 									Icon={Plus}
-									iconColor="darkBlue"
+									iconColor="red"
+									size="sm"
+									className="epf-section-label text-xs"
 									onClick={() => setEditingSection("crf")}
 								/>
 							}
@@ -308,8 +312,9 @@ const ActivityFormView = ({ epcId }: Props) => {
 									<Button
 										type="button"
 										Icon={Pencil}
-										iconColor="darkBlue"
+										iconColor="red"
 										onClick={() => setEditingSection("epf")}
+										size="sm"
 									/>
 								}
 							>
@@ -362,8 +367,10 @@ const ActivityFormView = ({ epcId }: Props) => {
 									type="button"
 									text="Create EPF"
 									Icon={Plus}
-									iconColor="darkBlue"
+									iconColor="red"
 									onClick={() => setEditingSection("epf")}
+									size="sm"
+									className="epf-section-label text-xs"
 								/>
 							}
 						>

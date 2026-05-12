@@ -11,6 +11,7 @@ import EpcFormFields from "./components/EpcFormFields";
 
 import type { EpcFormProps } from "../../types";
 import { getStoredEpcInfo } from "../../helpers/localstorage";
+import { Save, X } from "lucide-react";
 
 const EpcForm = ({
 	epcId: propEpcId,
@@ -75,13 +76,25 @@ const EpcForm = ({
 				action={
 					<div className="flex flex-row gap-2 items-end">
 						{onCancel && (
-							<Button type="button" text="Cancel" onClick={onCancel} />
+							<Button
+								type="button"
+								text="Cancel"
+								onClick={onCancel}
+								size="sm"
+								Icon={X}
+								className="text-red-600"
+								iconColor="red"
+							/>
 						)}
 
 						<Button
 							type="button"
 							text={isEditMode ? "Update" : "Create EPC"}
 							onClick={() => handleSave("SUBMITTED")}
+							size="sm"
+							className="text-red-600"
+							Icon={Save}
+							iconColor="red"
 						/>
 					</div>
 				}

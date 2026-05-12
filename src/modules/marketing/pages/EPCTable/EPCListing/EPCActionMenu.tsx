@@ -5,48 +5,19 @@ import {
 	MenuItems,
 	Portal,
 } from "@headlessui/react";
-import { ChevronDown, FileText, Pencil, Plus, Users } from "lucide-react";
+import { ChevronDown, FileText, Users } from "lucide-react";
 import type { EPCRow } from "../../../../../utils/types";
 
 type EPCActionMenuProps = {
 	row: EPCRow;
-	onEPFCreate: () => void;
-	onEPCEdit: () => void;
 	onLeadCreate?: () => void;
 };
 
 export default function EPCActionMenu({
 	row,
-	onEPFCreate,
-	onEPCEdit,
 	onLeadCreate,
 }: EPCActionMenuProps) {
-	const epf = row?.epf_id || null;
 	const lead = row?.lead_id || null;
-
-	const handleEPCEdit = () => {
-		localStorage.setItem(
-			"epcInfo",
-			JSON.stringify({
-				epcId: row.id,
-			}),
-		);
-
-		onEPCEdit();
-	};
-
-	const handleEPF = () => {
-		localStorage.setItem(
-			"epcInfo",
-			JSON.stringify({
-				epcId: row.id,
-				crfId: row.crf_id,
-				epfId: row.epf_id,
-			}),
-		);
-
-		onEPFCreate();
-	};
 
 	const handleLead = () => {
 		localStorage.setItem(
@@ -87,36 +58,6 @@ export default function EPCActionMenu({
                         data-leave:duration-75 data-leave:ease-in
                     "
 				>
-					<MenuItem>
-						<button
-							type="button"
-							onClick={handleEPCEdit}
-							className="
-                                flex w-full items-center gap-2 rounded px-3 py-2
-                                text-left text-xs font-medium text-zinc-700
-                                data-focus:bg-orange-50 data-focus:text-orange-700
-                            "
-						>
-							<Pencil size={14} />
-							Edit EPC
-						</button>
-					</MenuItem>
-
-					<MenuItem>
-						<button
-							type="button"
-							onClick={handleEPF}
-							className="
-                                flex w-full items-center gap-2 rounded px-3 py-2
-                                text-left text-xs font-medium text-zinc-700
-                                data-focus:bg-orange-50 data-focus:text-orange-700
-                            "
-						>
-							{epf ? <Pencil size={14} /> : <Plus size={14} />}
-							{epf ? "Edit EPF" : "Create EPF"}
-						</button>
-					</MenuItem>
-
 					<MenuItem>
 						<button
 							type="button"

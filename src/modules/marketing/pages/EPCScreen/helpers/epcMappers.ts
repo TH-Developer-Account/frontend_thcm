@@ -1,5 +1,5 @@
 import type { EpcFormValues } from "../../../types";
-import { formatDateOnly } from "./epcDate";
+import { formatDateOnly, formatDateOnlyAPI } from "../../../../../utils/format";
 
 export const initialEpcValues: EpcFormValues = {
 	epfNo: "",
@@ -25,13 +25,13 @@ const getNestedId = (data: any, nestedKey: string, fallbackKey: string) => {
 	return data?.[nestedKey]?.id || data?.[fallbackKey] || "";
 };
 
-const getNestedDescription = (
-	data: any,
-	nestedKey: string,
-	fallbackKey: string,
-) => {
-	return data?.[nestedKey]?.description || data?.[fallbackKey] || "";
-};
+// const getNestedDescription = (
+// 	data: any,
+// 	nestedKey: string,
+// 	fallbackKey: string,
+// ) => {
+// 	return data?.[nestedKey]?.description || data?.[fallbackKey] || "";
+// };
 
 export const normalizeEpcResponse = (response: any) => {
 	return (
@@ -62,8 +62,10 @@ export const mapEpcResponseToForm = (epc: any): EpcFormValues => {
 			"",
 
 		budgetDescription:
-			getNestedDescription(epc, "budget_master", "budgetDescription") ||
+			epc?.budget_master?.description ||
 			epc?.budgetMaster?.description ||
+			epc?.budgetDescription ||
+			epc?.budget_description ||
 			"",
 
 		vertical: getNestedId(epc, "vertical", "verticalId"),
@@ -78,8 +80,8 @@ export const mapEpcResponseToForm = (epc: any): EpcFormValues => {
 			"",
 
 		event_description: epc?.event_description || "",
-		event_from_date: formatDateOnly(epc?.event_from_date),
-		event_to_date: formatDateOnly(epc?.event_to_date),
+		event_from_date: formatDateOnlyAPI(epc?.event_from_date),
+		event_to_date: formatDateOnlyAPI(epc?.event_to_date),
 		location: epc?.location || "",
 		event_objective: epc?.event_objective || "",
 		status: epc?.status || "DRAFT",

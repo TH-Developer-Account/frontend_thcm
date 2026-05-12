@@ -7,6 +7,7 @@ import React, {
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 import { PasswordPolicy } from "../../containers/Login/constant";
+import HelperTooltip from "../common/HelperToolTip";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	label?: string;
@@ -29,7 +30,7 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 			disabled,
 			helperText,
 			placeholder,
-			isTooltip,
+			isTooltip = true,
 			...props
 		},
 		ref,
@@ -46,6 +47,8 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 			return PasswordPolicy.every((rule) => rule.test(value));
 		}, [value, isPassword]);
 
+		const errorId = name ? `${name}-error` : undefined;
+
 		if (isRadio) {
 			return (
 				<label className={`form-radio-field ${disabled ? "opacity-70" : ""}`}>
@@ -55,7 +58,10 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 						name={name}
 						type="radio"
 						disabled={disabled}
+						required={required}
 						className={`form-radio-input ${className}`}
+						aria-invalid={!!error}
+						aria-describedby={error ? errorId : undefined}
 						{...props}
 					/>
 
@@ -70,15 +76,21 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 		}
 
 		return (
-			<div className="form-field relative inline-flex group">
+			<div className="form-field">
 				{label && (
-					<label htmlFor={name} className="form-label">
-						{label}
-						{required && <span className="form-required"> *</span>}
-					</label>
+					<div className="form-label-row">
+						<label htmlFor={name} className="form-label">
+							{label}
+							{required && <span className="form-required"> *</span>}
+						</label>
+
+						{helperText && isTooltip && !error && (
+							<HelperTooltip label={label} text={helperText} />
+						)}
+					</div>
 				)}
 
-				<div className="form-input-wrapper relative">
+				<div className="form-input-wrapper">
 					<input
 						ref={ref}
 						id={name}
@@ -88,7 +100,7 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 						required={required}
 						disabled={disabled}
 						aria-invalid={!!error}
-						aria-describedby={error ? `${name}-error` : undefined}
+						aria-describedby={error ? errorId : undefined}
 						{...(type === "date" && {
 							min: new Date().toISOString().split("T")[0],
 						})}
@@ -110,48 +122,27 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 							type="button"
 							onClick={() => setShowPassword((prev) => !prev)}
 							className="form-icon-right"
+							aria-label={showPassword ? "Hide password" : "Show password"}
 						>
 							{showPassword ? (
-								<AiOutlineEyeInvisible size={20} />
+								<AiOutlineEyeInvisible size={16} />
 							) : (
-								<AiOutlineEye size={20} />
+								<AiOutlineEye size={16} />
 							)}
 						</button>
 					)}
 				</div>
 
 				{error && (
-					<p id={`${name}-error`} className="form-error-text">
+					<p id={errorId} className="form-error-text">
 						{error}
 					</p>
-				)}
-
-				{!error && helperText && (
-					<p className="form-helper-text">{helperText}</p>
-				)}
-				{/* Tooltip */}
-				{isTooltip && (
-					<div
-						className="
-				absolute top-15 left-1/5 -translate-x-1/2 mb-2
-				whitespace-nowrap
-				rounded-md bg-gray-900 text-white text-xs
-				px-2 py-1 shadow-lg
-				opacity-0 scale-95
-				pointer-events-none
-				transition-all duration-150
-				group-hover:opacity-100
-				group-hover:scale-100
-				group-focus-within:opacity-100
-				group-focus-within:scale-100
-				z-50"
-					>
-						{helperText}
-					</div>
 				)}
 			</div>
 		);
 	},
 );
+
+FormInput.displayName = "FormInput";
 
 export default FormInput;

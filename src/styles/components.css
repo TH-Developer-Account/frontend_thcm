@@ -825,3 +825,18 @@
 .workflow-table-pagination-inner {
 	@apply flex items-center justify-between px-3 py-2;
 }
+.rdp-day_today {
+	position: relative;
+}
+
+.rdp-day_today::after {
+	content: "";
+	position: absolute;
+	bottom: 2px;
+	left: 50%;
+	width: 4px;
+	height: 4px;
+	transform: translateX(-50%);
+	border-radius: 999px;
+	background: #f35a00;
+}

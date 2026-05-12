@@ -1,4 +1,5 @@
 import type { EpcFormValues } from "../../../types";
+import { toPrismaDateTime } from "../../../../../utils/format";
 
 export const buildEpcCreatePayload = (
 	values: EpcFormValues,
@@ -11,6 +12,9 @@ export const buildEpcCreatePayload = (
 		epfNo: proposalNumber,
 		proposal_number: proposalNumber,
 		status,
+
+		event_from_date: toPrismaDateTime(values.event_from_date),
+		event_to_date: toPrismaDateTime(values.event_to_date),
 	};
 };
 
@@ -32,8 +36,8 @@ export const buildEpcUpdatePayload = (
 
 		event_scale: values.event_scale ? Number(values.event_scale) : 0,
 		event_description: values.event_description,
-		event_from_date: values.event_from_date,
-		event_to_date: values.event_to_date,
+		event_from_date: toPrismaDateTime(values.event_from_date),
+		event_to_date: toPrismaDateTime(values.event_to_date),
 		location: values.location,
 		event_objective: values.event_objective,
 		status,

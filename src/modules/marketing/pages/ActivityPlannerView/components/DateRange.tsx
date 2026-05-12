@@ -1,5 +1,4 @@
 import React from "react";
-import Section from "./Section";
 import { formatDate } from "../../../../../utils/format";
 
 type DateRangeProps = {
@@ -23,45 +22,30 @@ const getDaysCount = (fromDate?: string, toDate?: string) => {
 
 const DateRange = ({ fromDate, toDate }: DateRangeProps) => {
 	return (
-		<React.Fragment>
-			<div className="light-blue-bg-header rounded-lg px-4 py-2">
-				<div className="mx-auto">
-					<div className="flex items-center justify-between">
-						{/* FROM */}
-						<div className="text-left">
-							<p className="text-xs  font-semibold  tracking-widest">FROM</p>
-							<p className="text-lg font-semibold text-darkBlue ">
-								{formatDate(fromDate)}
-							</p>
-						</div>
+		<div className="date-range-card">
+			<div className="date-range-content">
+				<div className="date-range-side date-range-side-left">
+					<p className="date-range-label">FROM</p>
+					<p className="date-range-value">{formatDate(fromDate)}</p>
+				</div>
 
-						{/* CENTER */}
-						<div className="flex-1 flex items-center justify-center">
-							<div className="relative w-40 flex items-center">
-								<div className="w-full h-px bg-blue-800"></div>
+				<div className="date-range-center">
+					<div className="date-range-line-wrap">
+						<div className="date-range-line" />
+						<div className="date-range-arrow" />
 
-								<div className="absolute right-0 w-2 h-2 border-t border-r border-blue-800 rotate-45"></div>
-
-								<div
-									className="absolute left-1/2 -translate-x-1/2 -top-3 
-										bg-white border text-xs border-blue-800 text-darkBlue font-semibold px-3 py-1 rounded-full shadow-sm"
-								>
-									{getDaysCount(fromDate, toDate)}
-								</div>
-							</div>
-						</div>
-
-						{/* TO */}
-						<div className="text-right">
-							<p className="text-xs font-semibold tracking-widest">TO</p>
-							<p className="text-lg font-semibold text-darkBlue ">
-								{formatDate(toDate)}
-							</p>
+						<div className="date-range-pill">
+							{getDaysCount(fromDate, toDate)}
 						</div>
 					</div>
 				</div>
+
+				<div className="date-range-side date-range-side-right">
+					<p className="date-range-label">TO</p>
+					<p className="date-range-value">{formatDate(toDate)}</p>
+				</div>
 			</div>
-		</React.Fragment>
+		</div>
 	);
 };
 

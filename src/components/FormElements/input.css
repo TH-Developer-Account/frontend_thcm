@@ -1,14 +1,7 @@
 @reference "tailwindcss";
-@import "../../styles//color.css";
+@import "../../styles/color.css";
 
 @layer components {
-	.form-input,
-	.form-textarea,
-	.form-date,
-	.form-native-select {
-		border-radius: var(--form-radius);
-	}
-
 	/* =========================
 	   FORM LAYOUT
 	========================= */
@@ -23,186 +16,269 @@
 	}
 
 	.form-field {
-		@apply flex flex-col gap-1 w-full;
+		@apply flex w-full flex-col gap-1;
 	}
 
 	.form-field-full {
 		@apply md:col-span-2;
 	}
 
+	.form-input-wrapper {
+		@apply relative;
+	}
+
 	/* =========================
 	   LABELS + HELPERS
 	========================= */
 
+	.form-label-row {
+		@apply flex items-center gap-1.5;
+		min-height: 16px;
+	}
+
 	.form-label {
-		@apply text-xs font-medium text-zinc-800;
+		@apply text-[11px] font-medium text-zinc-800;
 	}
 
 	.form-required {
 		color: var(--color-error);
 	}
 
-	.form-helper-text {
-		@apply text-[10px] leading-relaxed text-zinc-400;
-	}
-
-	.form-helper-text {
-		margin-top: 0.25rem;
-		line-height: 1rem;
-		color: #6b7280;
-	}
 	.form-error-text {
-		@apply mt-1 text-left text-[10px] leading-relaxed;
+		margin-top: 0.25rem;
+		text-align: left;
+		font-size: 10px;
+		line-height: 1rem;
 		color: var(--color-error);
 	}
-
-	/* =========================
-	   INPUT WRAPPER
-	========================= */
-
-	.form-input-wrapper {
-		@apply relative;
+	.form-helper-tooltip-wrap {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		flex-shrink: 0;
 	}
 
+	.form-helper-btn {
+		width: 15px;
+		height: 15px;
+		border-radius: 999px;
+		/* border: 1px solid var(--color-border); */
+		background-color: #ffffff;
+		color: var(--color-text-primary);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition:
+			color 150ms ease,
+			border-color 150ms ease,
+			background-color 150ms ease,
+			box-shadow 150ms ease;
+	}
+
+	.form-helper-btn:hover,
+	.form-helper-tooltip-wrap:focus-within .form-helper-btn {
+		color: var(--color-brand);
+		border-color: var(--color-brand-soft);
+		background-color: var(--color-brand-softest);
+	}
+
+	.form-helper-btn:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.form-helper-tooltip {
+		position: absolute;
+		left: 50%;
+		bottom: calc(100% + 7px);
+		transform: translateX(-50%) translateY(2px);
+		z-index: 50;
+
+		width: max-content;
+		max-width: 220px;
+		padding: 6px 8px;
+		border-radius: 8px;
+
+		background-color: #111827;
+		color: #ffffff;
+		font-size: 10px;
+		line-height: 1rem;
+		font-weight: 400;
+		text-align: left;
+
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+
+		box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
+		transition:
+			opacity 150ms ease,
+			visibility 150ms ease,
+			transform 150ms ease;
+	}
+
+	.form-helper-tooltip::after {
+		content: "";
+		position: absolute;
+		top: 100%;
+		left: 50%;
+		transform: translateX(-50%);
+		border-width: 5px;
+		border-style: solid;
+		border-color: #111827 transparent transparent transparent;
+	}
+
+	.form-helper-tooltip-wrap:hover .form-helper-tooltip,
+	.form-helper-tooltip-wrap:focus-within .form-helper-tooltip {
+		opacity: 1;
+		visibility: visible;
+		transform: translateX(-50%) translateY(0);
+	}
 	/* =========================
-	   BASE FIELD LOOK
+	   BASE FORM FIELDS
 	========================= */
 
 	.form-input,
 	.form-textarea,
 	.form-date,
 	.form-native-select {
-		@apply block w-full rounded-md border text-sm;
-		@apply focus:outline-none;
+		@apply block w-full border text-xs outline-none;
+		border-radius: var(--form-radius);
 		border-color: var(--color-border);
+		background-color: #ffffff;
 		color: var(--color-text-primary);
 		box-shadow: none;
-		@apply w-full rounded-md border border-zinc-200 bg-[#fafaf8] px-3 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-[#e85d25] focus:bg-white;
+		transition:
+			border-color 150ms ease,
+			background-color 150ms ease,
+			box-shadow 150ms ease;
+	}
+
+	.form-input,
+	.form-date,
+	.form-native-select {
+		height: 30px;
+		@apply px-2.5;
+	}
+
+	.form-textarea {
+		min-height: 85px !important;
+		resize: vertical;
+		line-height: 1.45;
+		@apply px-2.5 py-2;
 	}
 
 	.form-input::placeholder,
 	.form-textarea::placeholder,
 	.form-date::placeholder,
 	.form-native-select::placeholder {
-		color: var(--color-text-muted);
-		@apply text-sm text-zinc-400;
+		@apply text-xs text-zinc-400;
 	}
 
 	.form-input:hover,
 	.form-textarea:hover,
 	.form-date:hover,
-	.form-native-select:hover,
+	.form-native-select:hover {
+		border-color: var(--color-border);
+		background-color: #ffffff;
+	}
+
 	.form-input:focus,
 	.form-textarea:focus,
 	.form-date:focus,
 	.form-native-select:focus {
-		/* border-color: var(--color-brand); */
-		outline: none;
+		border-color: var(--color-brand);
+		background-color: #ffffff;
+		box-shadow: var(--shadow-focus-brand);
 	}
 
-	/* .form-input:focus,
-	.form-textarea:focus,
-	.form-date:focus,
-	.form-native-select:focus {
-		 box-shadow: var(--shadow-focus-brand); 
-	} */
-
 	/* =========================
-	   INPUTS
+	   FIELD STATES
 	========================= */
 
-	.form-input,
-	.form-date,
-	.form-native-select {
-		@apply px-3;
-		height: 35px;
+	.form-input-error {
+		border-color: var(--color-error) !important;
+		box-shadow: none;
 	}
 
-	.form-input.has-right-icon,
-	.form-input.has-error-icon,
-	.form-date.has-right-icon,
-	.form-date.has-error-icon {
-		@apply pr-9;
+	.form-input-error::placeholder {
+		color: var(--color-error-soft);
+	}
+
+	.form-input-error:focus {
+		border-color: var(--color-error) !important;
+		box-shadow: var(--shadow-focus-error);
+	}
+
+	.form-input-valid {
+		border-color: var(--color-success);
+	}
+
+	.form-input-valid:focus {
+		border-color: var(--color-success);
+		box-shadow: var(--shadow-focus-success);
+	}
+
+	.form-input-disabled,
+	.form-input-disabled:hover,
+	.form-input:disabled,
+	.form-textarea:disabled,
+	.form-date:disabled,
+	.form-native-select:disabled {
+		@apply cursor-not-allowed opacity-80;
+		border-color: var(--color-border-disabled);
+		background-color: var(--color-bg-disabled);
+		color: var(--color-brand-gray);
 	}
 
 	/* =========================
-	   TEXTAREA
+	   RIGHT ICONS
 	========================= */
 
-	.form-textarea {
-		@apply rounded-xl p-3 shadow-sm;
-		min-height: 96px !important;
-		resize: vertical;
-		line-height: 1.5;
-		overflow: hidden;
-		background-color: var(--color-bg);
+	.form-icon-right {
+		@apply absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer;
+		color: var(--color-brand-gray);
 	}
-	.objective textarea {
-		min-height: 96px;
+
+	.form-icon-right:hover {
+		color: var(--color-text-strong);
+	}
+
+	.form-error-icon {
+		@apply absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2;
+		color: var(--color-error);
 	}
 
 	/* =========================
-	   Radio Button
+	   RADIO
 	========================= */
 
 	.form-radio-field {
-		@apply inline-flex items-center gap-2 cursor-pointer;
+		@apply inline-flex cursor-pointer items-center gap-2;
 	}
 
 	.form-radio-input {
-		@apply h-3.5 w-3.5 shrink-0 cursor-pointer text-xs;
+		@apply h-3.5 w-3.5 shrink-0 cursor-pointer;
 		accent-color: var(--color-brand);
-		color: var(--color-text-primary);
 	}
 
 	.form-radio-label {
 		@apply text-xs font-medium text-gray-700;
 	}
 
-	/* =========================
-		RADIO
- ========================= */
-	/* Wrapper */
 	.radio-group {
 		@apply flex flex-col gap-2;
 	}
 
-	/* Label */
 	.radio-group-label {
 		@apply text-sm text-zinc-900;
 	}
 
-	/* Options Row */
 	.radio-group-options {
 		@apply flex flex-row gap-4;
 	}
 
-	/* Each Option */
-	.radio-option {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		cursor: pointer;
-	}
-
-	.radio-option-disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
-	}
-
-	/* Native Radio Input */
-	.radio-input {
-		width: 16px;
-		height: 16px;
-		cursor: pointer;
-		accent-color: #f35a00; /* 🔥 brand color */
-	}
-
-	/* Label Text */
-	.radio-text {
-		font-size: 14px;
-		color: #3f3f46;
-	}
 	/* =========================
 	   DATE
 	========================= */
@@ -234,60 +310,7 @@
 	}
 
 	/* =========================
-	   FIELD STATES
-	========================= */
-
-	.form-input-error {
-		border-color: var(--color-error);
-		box-shadow: none;
-	}
-
-	.form-input-error::placeholder {
-		color: var(--color-error-soft);
-	}
-
-	.form-input-error:focus {
-		border-color: var(--color-error);
-		box-shadow: var(--shadow-focus-error);
-	}
-
-	.form-input-valid {
-		border-color: var(--color-success);
-	}
-
-	.form-input-valid:focus {
-		border-color: var(--color-success);
-		box-shadow: var(--shadow-focus-success);
-	}
-
-	.form-input-disabled,
-	.form-input-disabled:hover {
-		@apply cursor-not-allowed opacity-80;
-		border-color: var(--color-border-disabled);
-		background-color: var(--color-bg-disabled);
-		color: var(--color-brand-gray);
-	}
-
-	/* =========================
-	   ICONS
-	========================= */
-
-	.form-icon-right {
-		@apply absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer;
-		color: var(--color-brand-gray);
-	}
-
-	.form-icon-right:hover {
-		color: var(--color-text-strong);
-	}
-
-	.form-error-icon {
-		@apply absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2;
-		color: var(--color-error);
-	}
-
-	/* =========================
-	   PREMIUM SURFACE VARIANT
+	   SOFT VARIANT
 	========================= */
 
 	.form-field-soft .form-input,
@@ -303,7 +326,7 @@
 	.form-field-soft .form-date:hover,
 	.form-field-soft .form-native-select:hover {
 		border-color: var(--color-brand);
-		background-color: var(--color-bg);
+		background-color: #ffffff;
 	}
 
 	/* =========================
@@ -313,13 +336,13 @@
 	.form-input-compact,
 	.form-date-compact,
 	.form-native-select-compact {
-		height: 34px;
-		@apply px-2.5 text-sm;
+		height: 32px;
+		@apply px-2 text-xs;
 	}
 
 	.form-textarea-compact {
-		@apply px-2.5 py-2 text-sm;
-		min-height: 80px;
+		min-height: 76px;
+		@apply px-2 py-1.5 text-xs;
 	}
 }
 
@@ -329,85 +352,53 @@
 
 .react-select__control {
 	border-radius: var(--form-radius) !important;
+	min-height: 30px !important;
+	height: 30px !important;
+	box-shadow: none !important;
 }
 
 .react-select__menu {
 	border-radius: var(--form-radius) !important;
 	overflow: hidden;
-}
-
-.react-select__control {
-	@apply rounded-xl  shadow-sm border text-sm transition-[border-color,box-shadow,background-color] duration-150 ease-out;
-	background-color: var(--color-bg);
-	border-color: var(--color-border);
-	color: var(--color-text-primary);
-	height: 35px !important;
-	min-height: 35px !important;
-	box-shadow: none !important;
-}
-
-.react-select__control:focus,
-.react-select__control:hover,
-.react-select__control:active {
-	border-color: var(--color-brand) !important;
-	outline: none;
-}
-
-.css-t3ipsp-control:hover,
-.css-t3ipsp-control:focus,
-.css-t3ipsp-control:active {
-	border: none !important;
-}
-
-.css-13cymwt-control:hover {
-	border-color: var(--color-brand);
-}
-
-.react-select__control:hover {
-	border-color: var(--color-brand) !important;
-}
-
-.react-select__control--is-focused {
-	border-color: var(--color-brand) !important;
-	box-shadow: var(--shadow-focus-brand) !important;
-}
-
-.react-select__control--menu-is-open {
-	border-color: var(--color-brand) !important;
+	z-index: 9999 !important;
+	margin-top: 4px !important;
+	border: 1px solid var(--color-border-light);
+	background-color: #ffffff;
+	box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
 }
 
 .react-select__value-container {
-	@apply px-3;
-	height: 35px;
-	padding-top: 0 !important;
-	padding-bottom: 0 !important;
+	height: 30px;
+	padding: 0 10px !important;
 	display: flex;
 	align-items: center;
 }
 
 .react-select__input-container {
-	@apply m-0 p-0 text-sm;
+	margin: 0 !important;
+	padding: 0 !important;
+	font-size: 12px;
 	color: var(--color-text-primary);
 }
 
 .react-select__placeholder {
-	@apply text-sm;
+	font-size: 12px;
 	color: var(--color-text-muted);
 }
 
 .react-select__single-value {
-	@apply text-sm;
+	font-size: 12px;
 	color: var(--color-text-primary);
 }
 
 .react-select__indicators {
-	height: 35px;
+	height: 34px;
 }
 
 .react-select__dropdown-indicator {
-	@apply transition-colors;
-	color: var(--color-brand-gray);
 	padding: 4px !important;
+	color: var(--color-brand-gray);
+	transition: color 150ms ease;
 }
 
 .react-select__dropdown-indicator:hover {
@@ -423,25 +414,17 @@
 	display: none;
 }
 
-.react-select__menu {
-	@apply overflow-hidden rounded-md border shadow-lg;
-	background-color: var(--color-bg);
-	border-color: var(--color-border-light);
-	z-index: 9999 !important;
-	margin-top: 4px !important;
-}
-
 .react-select__menu-list {
 	padding-top: 2px;
 	padding-bottom: 2px;
 }
 
 .react-select__option {
-	@apply cursor-pointer text-sm;
-	font-size: 14px !important;
+	cursor: pointer;
+	font-size: 12px !important;
 	color: var(--color-text-primary);
 	padding: 6px 10px !important;
-	background-color: var(--color-bg);
+	background-color: #ffffff;
 }
 
 .react-select__option--is-focused {
@@ -456,56 +439,33 @@
 }
 
 .react-select__control--is-disabled {
-	@apply cursor-not-allowed opacity-80;
-	border-color: var(--color-border-disabled);
-	background-color: var(--color-bg-disabled);
+	cursor: not-allowed !important;
+	opacity: 0.8;
+	border-color: var(--color-border-disabled) !important;
+	background-color: var(--color-bg-disabled) !important;
 }
 
-.form-input-error .react-select__control {
-	border-color: var(--color-error) !important;
-}
-
-.form-input-error .react-select__control--is-focused {
-	border-color: var(--color-error) !important;
-	box-shadow: var(--shadow-focus-error) !important;
-}
-
-/* ========================
-CHECKBOX BASE
-======================== */
+/* =========================
+   CHECKBOX
+========================= */
 
 .checkbox {
-	@apply flex items-center justify-center
-shrink-0
-transition-all duration-150;
+	@apply flex shrink-0 items-center justify-center transition-all duration-150;
 }
 
-/* ========================
-CHECKBOX STATES
-======================== */
-
 .checkbox-disabled {
-	@apply opacity-60 cursor-not-allowed;
+	@apply cursor-not-allowed opacity-60;
 }
 
 .checkbox-enabled {
 	@apply cursor-pointer;
 }
 
-/* ========================
-CHECK ICON
-======================== */
-
 .checkbox-icon {
 	@apply font-bold leading-none;
 }
-
-.form-input-wrapper {
-	position: relative;
-}
-
-.form-error-text {
-	margin-top: 0.25rem;
-	line-height: 1rem;
-	color: #dc2626;
+.checkbox-field-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }

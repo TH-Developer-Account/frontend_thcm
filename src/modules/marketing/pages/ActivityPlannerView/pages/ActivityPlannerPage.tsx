@@ -15,10 +15,13 @@ import Button from "../../../../../components/common/Button";
 import { Modal } from "../../../../../components/common/Modal";
 import ActivityPlannerPdfTemplate from "../components/ActivityPlannerPdfTemplate";
 import PageRowSectionLayout from "../../../../../layout/PageRowSectionLayout";
+import { useAuth } from "../../../../../context/Auth/useAuth";
+import { getFullName } from "../../../../../utils/format";
 
 const ActivityPlannerPageContent = () => {
 	const { id } = useParams();
 	const { data } = useEPC();
+	const auth = useAuth();
 
 	const [epcData, setEPCData] = React.useState<EpcDetailResponse>();
 	const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
@@ -43,12 +46,21 @@ const ActivityPlannerPageContent = () => {
 
 	const epcFromList = data?.find((item) => item.id === epcData?.id);
 
-	const title = epcData?.event_name?.title || "--";
-	const proposalNo = epcData?.proposal_number || "--";
+	const title = epcData?.event_name?.title || "Event Title";
+	const proposalNo = epcData?.proposal_number || "Proposer Number";
 
-	const createdBy = epcFromList
+	const isCreatedByMe =
+		!!epcData?.created_by_id &&
+		!!auth.user?.id &&
+		epcData.created_by_id === auth.user.id;
+
+	const createdByFromAuth = isCreatedByMe ? getFullName(auth.user) : "";
+
+	const createdByFromList = epcFromList
 		? `${epcFromList.first_name || ""} ${epcFromList.last_name || ""}`.trim()
-		: "--";
+		: "";
+
+	const createdBy = createdByFromList || createdByFromAuth || "--";
 
 	const badgeStatus = epcData?.status ? statusMap[epcData.status] : undefined;
 
@@ -92,14 +104,13 @@ const ActivityPlannerPageContent = () => {
 					<div className="flex flex-row gap-4 justify-between items-center">
 						<PageHeader
 							headerText="Activity Planner View"
-							subtitleText="View your activity details"
 							badgeProps={{
 								text: "Back",
 								direction: "back",
 							}}
 						/>
 						<div className="flex justify-between flex-col items-center page-header-section">
-							<h2 className="page-title-section text-darkBlue">{title}</h2>
+							<h2 className="page-title-section ">{title}</h2>
 							<p className="page-subtitle">
 								<span className="form-view-label uppercase-label-text">
 									{proposalNo}
@@ -108,7 +119,7 @@ const ActivityPlannerPageContent = () => {
 						</div>
 
 						<div className="flex justify-between items-center page-header-section text-right">
-							<div>
+							<div className="flex  flex-col items-end">
 								<div className="flex gap-2 justify-end">
 									<Badge status={badgeStatus} />
 
@@ -121,12 +132,12 @@ const ActivityPlannerPageContent = () => {
 									/>
 								</div>
 
-								<h2 className="page-title-section text-darkBlue">
-									<span className="font-semibold text-black text-[12px] uppercase-label-text">
-										Proposer:{" "}
+								<p className="flex items-center gap-1.5 mt-1 text-[12px] leading-4">
+									<span className="text-gray-500">Proposer:</span>
+									<span className="font-semibold uppercase tracking-[0.06em] text-gray-900">
+										{createdBy}
 									</span>
-									{createdBy}
-								</h2>
+								</p>
 							</div>
 						</div>
 					</div>

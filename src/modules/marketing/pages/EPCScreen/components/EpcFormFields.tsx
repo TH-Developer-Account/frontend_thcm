@@ -7,7 +7,7 @@ import TextareaInput from "../../../../../components/FormElements/TextareaInput"
 import DatePickerInput from "../../../../../components/common/DatePickerInput";
 
 import { toDateRange } from "../api";
-import { formatDateOnly } from "../helpers/epcDate";
+import { formatDateOnly } from "../../../../../utils/format";
 
 import type { EpcFormValues, Option } from "../../../types";
 
@@ -51,7 +51,16 @@ export default function EpcFormFields({
 		onChange("budget_master_id", option?.value || "");
 		onChange("budgetDescription", option?.description || "");
 	};
+	const selectedBudget = React.useMemo(() => {
+		return (
+			masters?.budgetMasters?.find(
+				(opt: Option) => opt.value === values.budget_master_id,
+			) || null
+		);
+	}, [masters?.budgetMasters, values.budget_master_id]);
 
+	const budgetDescription =
+		values.budgetDescription || selectedBudget?.description || "";
 	return (
 		<div className="px-4 py-4 text-left text-xs lg:text-sm">
 			<form>
@@ -150,7 +159,6 @@ export default function EpcFormFields({
 
 					<DatePickerInput
 						label="Event [From - To]"
-						mode="range"
 						value={toDateRange(values.event_from_date, values.event_to_date)}
 						onChange={(value) => {
 							if (value && typeof value === "object" && "from" in value) {
@@ -161,20 +169,14 @@ export default function EpcFormFields({
 								onChange("event_to_date", "");
 							}
 						}}
-						numberOfMonths={1}
-						helperText="Date Range"
-						className="w-full"
+						helperText="Select the start and end date of the event."
 						error={errors.event_from_date || errors.event_to_date}
 					/>
 
 					<SelectInput
 						name="budget_master_id"
 						label="Budget Code"
-						value={
-							masters?.budgetMasters?.find(
-								(opt: Option) => opt.value === values.budget_master_id,
-							) || null
-						}
+						value={selectedBudget}
 						options={masters?.budgetMasters || []}
 						onChange={(v: SingleValue<Option>) => handleBudgetChange(v || null)}
 						helperText="Select budget code to auto populate description"
@@ -186,7 +188,7 @@ export default function EpcFormFields({
 						name="budgetDescription"
 						label="Budget Description"
 						placeholder="Budget Description"
-						value={values.budgetDescription}
+						value={budgetDescription}
 						className="w-full p-2"
 						disabled
 						helperText="Budget Description auto populated based on selected budget code"
@@ -221,6 +223,7 @@ export default function EpcFormFields({
 							className="w-full p-2 h-full"
 							minLength={100}
 							rows={4}
+							helperText="Describe the purpose, audience, and expected outcome of this event."
 							error={errors.event_description}
 						/>
 					</div>
@@ -235,6 +238,7 @@ export default function EpcFormFields({
 							rows={4}
 							className="w-full p-2 h-full"
 							error={errors.event_objective}
+							helperText="Mention the main goal of this event, such as brand awareness, lead generation, dealer engagement, product promotion, customer connect, or sales support."
 						/>
 					</div>
 				</div>

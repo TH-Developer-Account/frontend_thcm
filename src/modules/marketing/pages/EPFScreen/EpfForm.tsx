@@ -3,11 +3,9 @@ import React from "react";
 import EpfFormInfo from "./EpfFormInfo";
 import EpfItemsSection from "./components/EpfItemsSection";
 import { useEpfForm, type EpfFormProps } from "./hooks/useEPFForm";
-
-import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
-import { PageHeader } from "../../../../components/ui/PageHeader";
 import Button from "../../../../components/common/Button";
 import Section from "../ActivityPlannerView/components/Section";
+import { LucideSave, RefreshCcw, Save, X } from "lucide-react";
 
 export default function EpfForm(props: EpfFormProps) {
 	const { variant = "page", onCancel } = props;
@@ -21,7 +19,6 @@ export default function EpfForm(props: EpfFormProps) {
 		setCostItems,
 		handleSubmit,
 		eventCost,
-		epcId,
 		isEditMode,
 		loading,
 	} = useEpfForm(props);
@@ -64,14 +61,33 @@ export default function EpfForm(props: EpfFormProps) {
 				action={
 					<div className="flex flex-row gap-2 items-end">
 						{onCancel && (
-							<Button type="button" text="Cancel" onClick={onCancel} />
+							<Button
+								type="button"
+								text="Cancel"
+								onClick={onCancel}
+								className=" text-red-600"
+								size="sm"
+								Icon={X}
+								iconColor="red"
+							/>
 						)}
-						<Button type="button" text="Reset" onClick={handleReset} />
-
+						<Button
+							type="button"
+							text="Reset"
+							onClick={handleReset}
+							Icon={RefreshCcw}
+							size="sm"
+							className="text-red-600"
+							iconColor="red"
+						/>
 						<Button
 							type="button"
 							onClick={() => handleSubmit("SUBMITTED")}
 							text={isEditMode ? "Update" : "Save"}
+							size="sm"
+							className="text-red-600"
+							iconColor="red"
+							Icon={isEditMode ? Save : LucideSave}
 						/>
 					</div>
 				}
@@ -80,50 +96,4 @@ export default function EpfForm(props: EpfFormProps) {
 			</Section>
 		);
 	}
-
-	return (
-		<PageRowSectionLayout
-			contentClassName="p-4"
-			header_children={
-				<div className="flex flex-col sm:flex-row sm:justify-between items-end sm:items-start">
-					<PageHeader
-						headerText="Activity Proposition Form (APF)"
-						subtitleText="Manage your Activity Proposition Form (APF) details here"
-						badgeProps={{
-							text: "Back",
-							direction: "back",
-						}}
-					/>
-
-					<div className="mx-2 my-4 sm:mx-4 flex flex-col gap-4 items-start">
-						<p className="page-subtitle">
-							<strong>EPC No: </strong>
-							<span>{epcId}</span>
-						</p>
-
-						<div className="flex flex-row gap-4 items-end w-full">
-							<Button
-								type="button"
-								text="Reset"
-								onClick={handleReset}
-								status="brand"
-								fullWidth
-							/>
-
-							<Button
-								type="button"
-								status="brand"
-								onClick={() => handleSubmit("SUBMITTED")}
-								text={isEditMode ? "Update" : "Save"}
-								className="ml-2"
-								fullWidth
-							/>
-						</div>
-					</div>
-				</div>
-			}
-		>
-			{formBody}
-		</PageRowSectionLayout>
-	);
 }

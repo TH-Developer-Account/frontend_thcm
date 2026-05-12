@@ -6,14 +6,10 @@ import { NavLink } from "react-router-dom";
 import EPCActionMenu from "./EPCActionMenu";
 
 type epcColumnActions = {
-	onEPFCreate: () => void;
-	onEPCEdit: () => void;
 	onLeadCreate?: () => void;
 };
 
 export const getEPCColumns = ({
-	onEPFCreate,
-	onEPCEdit,
 	onLeadCreate,
 }: epcColumnActions): ColumnDef<EPCRow>[] => [
 	{
@@ -78,12 +74,7 @@ export const getEPCColumns = ({
 		id: "action",
 		header: "Actions",
 		cell: ({ row }) => (
-			<EPCActionMenu
-				row={row.original}
-				onEPCEdit={onEPCEdit}
-				onEPFCreate={onEPFCreate}
-				onLeadCreate={onLeadCreate}
-			/>
+			<EPCActionMenu row={row.original} onLeadCreate={onLeadCreate} />
 		),
 	},
 ];

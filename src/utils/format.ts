@@ -3,7 +3,19 @@
 /* =========================
    STRING FORMATTING
 ========================= */
+export const getFullName = (
+	user?: {
+		first_name?: string | null;
+		last_name?: string | null;
+		email?: string | null;
+	} | null,
+) => {
+	if (!user) return "";
 
+	const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
+
+	return fullName || user.email || "";
+};
 export function capitalize(text?: string) {
 	if (!text) return "";
 	return text.charAt(0).toUpperCase() + text.slice(1);
@@ -83,6 +95,35 @@ export function formatDateTime(date?: string | Date) {
 		minute: "2-digit",
 	});
 }
+export const formatDateOnly = (date?: Date) => {
+	if (!date) return "";
+
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+
+	return `${year}-${month}-${day}`;
+};
+
+export const formatDateOnlyAPI = (date?: string | null) => {
+	if (!date) return "";
+	return String(date).split("T")[0];
+};
+export const toPrismaDateTime = (date?: string | Date | null) => {
+	if (!date) return null;
+
+	if (date instanceof Date) {
+		return date.toISOString();
+	}
+
+	// Already ISO DateTime
+	if (date.includes("T")) {
+		return date;
+	}
+
+	// Convert YYYY-MM-DD to full ISO DateTime
+	return new Date(`${date}T00:00:00.000Z`).toISOString();
+};
 
 /* =========================
    CURRENCY

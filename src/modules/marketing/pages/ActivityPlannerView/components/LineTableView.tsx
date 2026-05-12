@@ -42,8 +42,8 @@ const LineTableView = ({ title, data = [] }: LineTableViewProps) => {
 		<div className="row-6 text-center mb-1">
 			<p className="font-semibold text-md">{title}</p>
 
-			<div className="w-full text-left px-3 py-1.5">
-				<div className="grid grid-cols-12 text-sm font-medium items-center text-gray-600 mb-2 bg-zinc-100 py-1.5 px-2 rounded-sm">
+			<div className="line-view-table">
+				<div className="line-view-table-head">
 					<div className="col-span-1">SNo.</div>
 					<div className="col-span-2">Particulars</div>
 					<div className="col-span-5">Description</div>
@@ -53,42 +53,51 @@ const LineTableView = ({ title, data = [] }: LineTableViewProps) => {
 				</div>
 
 				{data.length === 0 ? (
-					<div className="text-center text-gray-400 text-sm py-3">
-						No data available
-					</div>
+					<div className="line-view-empty">No data available</div>
 				) : (
-					Object.entries(groupedData).map(([category, rows]) => (
-						<div key={category} className="mb-3">
-							<div className="text-darkBlue font-medium text-sm mb-1 px-2">
-								{category == "EVENT_OVERHEAD"
-									? null
-									: getCategoryTitle(category)}
+					Object.entries(groupedData).map(([category, rows]) => {
+						const categoryTitle =
+							category === "EVENT_OVERHEAD" ? "" : getCategoryTitle(category);
+
+						return (
+							<div key={category} className="line-view-group">
+								{categoryTitle && (
+									<div className="line-view-category">
+										<span>{categoryTitle}</span>
+									</div>
+								)}
+
+								{rows.map((row, index) => (
+									<div
+										key={row.id ?? `${category}-${index}`}
+										className="line-view-row"
+									>
+										<div className="col-span-1 text-gray-500">{row.sno}.</div>
+
+										<div className="col-span-2 font-medium text-gray-900">
+											{row.particulars || "--"}
+										</div>
+
+										<div className="col-span-5 text-gray-600">
+											{row.description || "--"}
+										</div>
+
+										<div className="col-span-1 text-right tabular-nums text-gray-800">
+											{Number(row.rate || 0).toFixed(2)}
+										</div>
+
+										<div className="col-span-1 text-right tabular-nums text-gray-800">
+											{row.qty || 0}
+										</div>
+
+										<div className="col-span-2 text-right font-semibold tabular-nums text-gray-950">
+											{Number(row.total || 0).toFixed(2)}
+										</div>
+									</div>
+								))}
 							</div>
-
-							{rows.map((row, index) => (
-								<div
-									key={row.id ?? `${category}-${index}`}
-									className="grid grid-cols-12 gap-3 py-1.5 px-2"
-								>
-									<div className="col-span-1 text-gray-500">{row.sno}.</div>
-
-									<div className="col-span-2">{row.particulars}</div>
-
-									<div className="col-span-5">{row.description}</div>
-
-									<div className="col-span-1 text-right">
-										{Number(row.rate || 0).toFixed(2)}
-									</div>
-
-									<div className="col-span-1 text-right">{row.qty}</div>
-
-									<div className="col-span-2 text-right">
-										{Number(row.total || 0).toFixed(2)}
-									</div>
-								</div>
-							))}
-						</div>
-					))
+						);
+					})
 				)}
 			</div>
 		</div>

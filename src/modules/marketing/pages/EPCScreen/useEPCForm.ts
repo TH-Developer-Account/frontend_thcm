@@ -158,12 +158,13 @@ export const useEpcForm = ({
 			try {
 				setLoading(true);
 
-				const createPayload = buildEpcCreatePayload(formData, status);
-				const updatePayload = buildEpcUpdatePayload(formData, status);
+				const payload = isEditMode
+					? buildEpcUpdatePayload(formData, status)
+					: buildEpcCreatePayload(formData, status);
 
 				const response = isEditMode
-					? await ServerAxios.put(`/epc/${epcId}`, updatePayload)
-					: await ServerAxios.post("/epc", createPayload);
+					? await ServerAxios.put(`/epc/${epcId}`, payload)
+					: await ServerAxios.post("/epc", payload);
 
 				const savedEpc =
 					response.data?.data?.eventProposal ??
