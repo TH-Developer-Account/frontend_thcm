@@ -34,7 +34,6 @@ export default function LeadsTablePage() {
 			}
 		>
 			<LeadsTable />
-			<div>Hi</div>
 		</PageRowSectionLayout>
 	);
 }

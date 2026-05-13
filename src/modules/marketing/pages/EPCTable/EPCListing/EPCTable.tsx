@@ -7,6 +7,7 @@ import DataTable from "../../../../../components/ui/DataTable";
 
 const EPCTable = () => {
 	const navigate = useNavigate();
+
 	const {
 		data,
 		sorting,
@@ -22,8 +23,22 @@ const EPCTable = () => {
 	const columns = React.useMemo(
 		() =>
 			getEPCColumns({
-				onLeadCreate: () => {
-					navigate(`/marketing/leads/create`);
+				onLeadCreate: (row: EPCRow) => {
+					const leadInfo = {
+						epcId: row.id,
+						leadId: row.lead_id || null,
+						proposalNumber: row.proposal_number,
+						eventName: row.event_name,
+						location: row.location,
+						status: row.status,
+						createdBy: `${row.first_name || ""} ${row.last_name || ""}`.trim(),
+					};
+
+					navigate(`/marketing/leads/create`, {
+						state: {
+							leadInfo,
+						},
+					});
 				},
 			}),
 		[navigate],
@@ -34,18 +49,15 @@ const EPCTable = () => {
 			data={data}
 			columns={columns}
 			loading={loading}
-			/* ------------------ Sorting ------------------ */
 			sorting={sorting}
 			onSortingChange={setSorting}
 			manualSorting
-			/* ---------------- Pagination ---------------- */
 			manualPagination
 			pageIndex={pageIndex}
 			pageSize={pageSize}
 			pageCount={totalPages}
 			onPageChange={setPageIndex}
 			onPageSizeChange={setPageSize}
-			/* --------------- Optional UI ---------------- */
 			scrollTargetId="tableScroll"
 			emptyTitle="No EPC records found"
 			emptyDescription="Try adjusting filters or search"

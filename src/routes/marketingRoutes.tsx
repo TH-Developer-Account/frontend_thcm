@@ -5,15 +5,20 @@ import UserProfile from "../components/ui/UserProfile/UserProfile";
 import UsersPage from "../modules/admin/pages/BusinessUsersMaster/UserPage";
 import ActivityPlannerPage from "../modules/marketing/pages/ActivityPlannerView/pages/ActivityPlannerPage";
 import LeadsTablePage from "../modules/marketing/pages/LeadScreen/LeadsTable/LeadsTablePage";
-import LeadForm from "../modules/marketing/pages/LeadScreen/LeadsCreate/LeadForm";
+import LeadCreatePage from "../modules/marketing/pages/LeadScreen/LeadsCreate/LeadCreatePage";
 
 export default function MarketingRoutes() {
 	return (
 		<Routes>
 			<Route path="dashboard" element={<DashboardPage />} />
 			<Route path="listing" element={<EPCList />} />
-			<Route path="leads/listing" element={<LeadsTablePage />} />
-			<Route path="leads/create" element={<LeadForm />} />
+			<Route path="/leads" element={<LeadsTablePage />} />
+			<Route path="/leads/create" element={<LeadCreatePage />} />
+			{/* <Route path="/leads/:leadId" element={<LeadViewPage />} /> */}
+			<Route
+				path="/marketing/leads/:leadId/edit"
+				element={<LeadCreatePage />}
+			/>
 			<Route path="/profile" element={<UserProfile />} />
 			<Route
 				path="/activity-planner/create"

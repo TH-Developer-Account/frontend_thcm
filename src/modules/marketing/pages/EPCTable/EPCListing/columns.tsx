@@ -5,13 +5,13 @@ import { status } from "../../../constant";
 import { NavLink } from "react-router-dom";
 import EPCActionMenu from "./EPCActionMenu";
 
-type epcColumnActions = {
-	onLeadCreate?: () => void;
+type EpcColumnActions = {
+	onLeadCreate?: (row: EPCRow) => void;
 };
 
 export const getEPCColumns = ({
 	onLeadCreate,
-}: epcColumnActions): ColumnDef<EPCRow>[] => [
+}: EpcColumnActions): ColumnDef<EPCRow>[] => [
 	{
 		accessorKey: "proposal_number",
 		header: "EPC No",
@@ -21,7 +21,7 @@ export const getEPCColumns = ({
 			return (
 				<div>
 					<NavLink
-						to={`/marketing/epf/${epcId}`}
+						to={`/marketing/activity-planner/${epcId}`}
 						className="text-blue-600 underline"
 					>
 						<div className="font-medium">{row.original.proposal_number}</div>
@@ -35,7 +35,7 @@ export const getEPCColumns = ({
 		header: "Event Name",
 		cell: ({ row }) => (
 			<div>
-				<div className="font-medium">{row.original.event_name}</div>
+				<div className="font-medium">{row.original.event_name || "--"}</div>
 			</div>
 		),
 	},
@@ -45,7 +45,9 @@ export const getEPCColumns = ({
 		cell: ({ row }) => (
 			<div>
 				<div className="font-medium">
-					{`${row.original.first_name} ${row.original.last_name}`}
+					{`${row.original.first_name || ""} ${
+						row.original.last_name || ""
+					}`.trim() || "--"}
 				</div>
 			</div>
 		),
@@ -66,7 +68,7 @@ export const getEPCColumns = ({
 		header: "Location",
 		cell: ({ row }) => (
 			<div>
-				<div className="font-medium">{row.original.location}</div>
+				<div className="font-medium">{row.original.location || "--"}</div>
 			</div>
 		),
 	},
