@@ -15,7 +15,7 @@ import type {
 import {
 	calculateBudgetShares,
 	getTotalLineItemAmount,
-} from "../helpers/epfCalculations";
+} from "./epf.calculations";
 
 import {
 	getCrfTotalFromData,
@@ -23,17 +23,20 @@ import {
 	mapEpfLineItemsToFormItems,
 	mapEpfResponseToFormValues,
 	mapProductToEpfOption,
-} from "../helpers/epfMappers";
+} from "./epf.mapper";
 
-import {
-	buildEpfCreatePayload,
-	buildEpfUpdatePayload,
-} from "../helpers/epfPayload";
+import { buildEpfCreatePayload, buildEpfUpdatePayload } from "./epf.payload";
+
 import {
 	clearStoredEpcInfo,
 	getStoredAppId,
 	getStoredEpcInfo,
 } from "../../../helpers/localstorage";
+
+import { crfApi } from "../../api/crf.api";
+import { epfApi } from "../../api/epf.api";
+import { useCreateEpfMutation } from "../../queries/useCreateEpfMutation";
+import { useUpdateEpfMutation } from "../../queries/useUpdateEpfMutation";
 
 export type EpfFormMode = "create" | "edit";
 export type EpfFormVariant = "page" | "inline";
@@ -46,7 +49,7 @@ export type EpfFormProps = {
 	epfId?: string | null;
 	initialData?: any;
 	crfData?: any;
-	onSuccess?: () => void | Promise<void>;
+	onSuccess?: (data?: any) => void | Promise<void>;
 	onCancel?: () => void;
 };
 
@@ -104,6 +107,9 @@ export const useEpfForm = ({
 	const navigate = useNavigate();
 	const { workspaceId } = useAuth();
 
+	const createEpfMutation = useCreateEpfMutation();
+	const updateEpfMutation = useUpdateEpfMutation();
+
 	const storedInfo = React.useMemo(() => getStoredEpcInfo(), []);
 	const appId = React.useMemo(() => getStoredAppId(), []);
 
@@ -133,6 +139,7 @@ export const useEpfForm = ({
 	});
 
 	const [options, setOptions] = React.useState<LineItemOption[]>([]);
+
 	const [costItems, setCostItems] = React.useState<LineItemOption[]>(() => {
 		if (!initialData?.lineItems?.length) return [];
 		return mapEpfLineItemsToFormItems(initialData.lineItems);
@@ -149,7 +156,11 @@ export const useEpfForm = ({
 	const [epfLoading, setEpfLoading] = React.useState(shouldFetchEpf);
 	const [crfLoading, setCrfLoading] = React.useState(shouldFetchCrfTotal);
 
-	const loading = productsLoading || epfLoading || crfLoading;
+	const mutationLoading =
+		createEpfMutation.isPending || updateEpfMutation.isPending;
+
+	const loading =
+		productsLoading || epfLoading || crfLoading || mutationLoading;
 
 	const [draft, setDraft] = React.useState<LineItem>({
 		id: "",
@@ -175,50 +186,69 @@ export const useEpfForm = ({
 		};
 	}, [values, calculatedBudgetValues]);
 
+	const budgetMasterId =
+		initialData?.epc?.budget_master_id ??
+		initialData?.epc?.budgetMasterId ??
+		initialData?.budget_master_id ??
+		crfData?.epc?.budget_master_id ??
+		storedInfo?.budgetMasterId ??
+		null;
+
 	const fetchProductsAndBudget = React.useCallback(async () => {
 		try {
-			const [productsRes, budgetInfo] = await Promise.allSettled([
-				ServerAxios.get(`/master-data/products?productType=EPF`),
-				ServerAxios.get(`/master-data/budget`),
+			const [productsResult, budgetResult] = await Promise.allSettled([
+				epfApi.getProducts(),
+				epfApi.getBudgetInfo(budgetMasterId),
 			]);
 
-			if (budgetInfo.status === "fulfilled") {
-				const budgetInformation =
-					budgetInfo.value?.data?.d?.results?.[0] ??
-					budgetInfo.value?.data?.data?.[0] ??
-					budgetInfo.value?.data?.data ??
-					null;
+			if (productsResult.status === "fulfilled") {
+				const products = productsResult.value ?? [];
+				setOptions((products as Product[]).map(mapProductToEpfOption));
+			}
+
+			if (budgetResult.status === "fulfilled") {
+				const budgetInformation = budgetResult.value;
 
 				if (budgetInformation) {
 					setValues((prev) => ({
 						...prev,
-						availableBudget: Number(budgetInformation.Available ?? 0),
-						annualBudget: Number(budgetInformation.Budget ?? 0),
-						allotedBudget: Number(budgetInformation.Allocated ?? 0),
+						availableBudget: Number(
+							budgetInformation.Available ??
+								budgetInformation.availableBudget ??
+								budgetInformation.available_budget ??
+								prev.availableBudget ??
+								0,
+						),
+						annualBudget: Number(
+							budgetInformation.Budget ??
+								budgetInformation.annualBudget ??
+								budgetInformation.annual_budget ??
+								prev.annualBudget ??
+								0,
+						),
+						allotedBudget: Number(
+							budgetInformation.Allocated ??
+								budgetInformation.allotedBudget ??
+								budgetInformation.allottedBudget ??
+								budgetInformation.allocated_budget ??
+								prev.allotedBudget ??
+								0,
+						),
 					}));
 				}
 			}
-
-			if (productsRes.status === "fulfilled") {
-				const products =
-					productsRes.value?.data?.data ??
-					productsRes.value?.data?.results ??
-					[];
-
-				setOptions((products as Product[]).map(mapProductToEpfOption));
-			}
 		} catch (err) {
-			console.error("Product search failed:", err);
+			console.error("EPF product/budget fetch failed:", err);
 
 			showToast({
 				type: "error",
 				title: "Error",
-				description: "Failed to load EPF products.",
+				description: "Failed to load EPF products or budget data.",
 			});
 		} finally {
 			setProductsLoading(false);
 		}
-	}, [showToast]);
+	}, [budgetMasterId, showToast]);
 
 	const fetchCrfTotal = React.useCallback(async () => {
 		if (!crfId || crfData) {
@@ -227,8 +257,8 @@ export const useEpfForm = ({
 		}
 
 		try {
-			const crfRes = await ServerAxios.get(`/crf/${crfId}`);
-			const totalCrfAmount = getCrfTotalFromData(crfRes?.data);
+			const crfDetails = await crfApi.getById(crfId);
+			const totalCrfAmount = getCrfTotalFromData(crfDetails);
 
 			setValues((prev) => ({
 				...prev,
@@ -248,8 +278,7 @@ export const useEpfForm = ({
 		}
 
 		try {
-			const epfRes = await ServerAxios.get(`/epf/${epfId}`);
-			const epfData = epfRes?.data?.data ?? epfRes?.data;
+			const epfData = await epfApi.getById(epfId);
 
 			const lineItems = mapEpfLineItemsToFormItems(epfData?.lineItems ?? []);
 
@@ -273,12 +302,13 @@ export const useEpfForm = ({
 	}, [epfId, initialData, showToast]);
 
 	React.useEffect(() => {
-		fetchProductsAndBudget();
+		void fetchProductsAndBudget();
 	}, [fetchProductsAndBudget]);
 
 	React.useEffect(() => {
-		fetchCrfTotal();
+		void fetchCrfTotal();
 	}, [fetchCrfTotal]);
+
 	React.useEffect(() => {
 		const sourceCrf = crfData ?? initialData?.crf;
 
@@ -293,9 +323,18 @@ export const useEpfForm = ({
 
 		setCrfLoading(false);
 	}, [crfData, initialData]);
+
 	React.useEffect(() => {
-		fetchEpf();
+		void fetchEpf();
 	}, [fetchEpf]);
+
+	React.useEffect(() => {
+		if (!initialData) return;
+
+		setValues(mapEpfResponseToFormValues(initialData, initialCrfTotal));
+		setCostItems(mapEpfLineItemsToFormItems(initialData.lineItems ?? []));
+		setEpfLoading(false);
+	}, [initialData, initialCrfTotal]);
 
 	const handleChange = React.useCallback(
 		(name: keyof EpfFormValues, value: string) => {
@@ -353,19 +392,21 @@ export const useEpfForm = ({
 
 	const assignWorkflow = React.useCallback(async () => {
 		try {
-			return ServerAxios.post("/soa/assign-workflow", {
+			if (!epcId || !workspaceId || !appId) return;
+
+			await ServerAxios.post("/soa/assign-workflow", {
 				eventProposalId: epcId,
 				workspaceId,
 				appId,
 				budget: eventCost,
 			});
 		} catch (error) {
-			console.log("error while assigning workflow", error);
+			console.error("Error while assigning workflow", error);
 
 			showToast({
 				type: "error",
 				title: "Workflow Error",
-				description: "Saved but workflow assignment failed",
+				description: "Saved, but workflow assignment failed.",
 			});
 		}
 	}, [appId, epcId, eventCost, showToast, workspaceId]);
@@ -398,20 +439,25 @@ export const useEpfForm = ({
 							costItems,
 						});
 
+				let savedData: any;
+
 				if (epfId) {
-					const {
-						data: { message },
-					} = await ServerAxios.put(`/epf/${epfId}`, payload);
+					savedData = await updateEpfMutation.mutateAsync({
+						epcId,
+						epfId,
+						payload,
+					});
 
 					showToast({
 						type: "success",
 						title: "Success",
-						description: message || "EPF modified successfully",
+						description: "EPF modified successfully",
 					});
 				} else {
-					const {
-						data: { message },
-					} = await ServerAxios.post("/epf", payload);
+					savedData = await createEpfMutation.mutateAsync({
+						epcId,
+						payload,
+					});
 
 					if (status === "SUBMITTED") {
 						await assignWorkflow();
@@ -420,14 +466,14 @@ export const useEpfForm = ({
 					showToast({
 						type: "success",
 						title: "Success",
-						description: message || "EPF created successfully",
+						description: "EPF created successfully",
 					});
 				}
 
 				clearStoredEpcInfo();
 
 				if (onSuccess) {
-					await onSuccess();
+					await onSuccess(savedData);
 				} else {
 					navigate("/marketing/listing");
 				}
@@ -449,12 +495,14 @@ export const useEpfForm = ({
 		[
 			assignWorkflow,
 			costItems,
+			createEpfMutation,
 			epcId,
 			epfId,
 			eventCost,
 			navigate,
 			onSuccess,
 			showToast,
+			updateEpfMutation,
 			values,
 		],
 	);

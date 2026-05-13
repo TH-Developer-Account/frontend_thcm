@@ -3,7 +3,7 @@ import { DashboardPage } from "../modules/marketing/pages/Dashboard/DashboardPag
 import EPCList from "../modules/marketing/pages/EPCTable/EPCListing";
 import UserProfile from "../components/ui/UserProfile/UserProfile";
 import UsersPage from "../modules/admin/pages/BusinessUsersMaster/UserPage";
-import ActivityPlannerPage from "../modules/marketing/pages/ActivityPlannerView/pages/ActivityPlannerPage";
+import ActivityPlannerPage from "../modules/marketing/activity-planner/pages/ActivityPlannerPage";
 import LeadsTablePage from "../modules/marketing/pages/LeadScreen/LeadsTable/LeadsTablePage";
 import LeadForm from "../modules/marketing/pages/LeadScreen/LeadsCreate/LeadForm";
 
