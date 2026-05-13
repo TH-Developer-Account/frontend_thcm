@@ -1,5 +1,9 @@
+import {
+	getLineItemQuantity,
+	getLineItemRate,
+	getLineItemsTotal,
+} from "../../../helpers/lineItemHelper";
 import type { EpfFormValues, LineItemOption, Product } from "../../../types";
-import { getTotalLineItemAmount } from "./epfCalculations";
 
 export const initialEpfValues: EpfFormValues = {
 	externalParticipants: 0,
@@ -47,8 +51,8 @@ export const mapEpfLineItemsToFormItems = (
 				item.particular ??
 				"",
 			description: product?.description ?? item.description ?? "",
-			rate: Number(item.rate) || 0,
-			quantity: Number(item.quantity ?? item.qty) || 1,
+			rate: getLineItemRate(item),
+			quantity: getLineItemQuantity(item),
 			partNumber: product?.partNumber ?? item.partNumber ?? "",
 			category: product?.category ?? item.category ?? "EVENT_OVERHEAD",
 		};
@@ -81,12 +85,35 @@ export const mapEpfResponseToFormValues = (
 	};
 };
 
-export const getCrfTotalFromData = (crfData: any) => {
-	const lineItems =
-		crfData?.lineItems ??
-		crfData?.data?.lineItems ??
-		crfData?.data?.crf?.lineItems ??
-		[];
+// export const getCrfTotalFromData = (crfData: any) => {
+// 	const crf =
+// 		crfData?.crf ??
+// 		crfData?.data?.crf ??
+// 		crfData?.data?.data?.crf ??
+// 		crfData?.data ??
+// 		crfData;
 
-	return getTotalLineItemAmount(lineItems);
+// 	return getLineItemsTotal(crf?.lineItems ?? []);
+// };
+export const getCrfTotalFromData = (crfData: any) => {
+	const crf =
+		crfData?.crf ??
+		crfData?.data?.crf ??
+		crfData?.data?.data?.crf ??
+		crfData?.data ??
+		crfData;
+
+	console.table(
+		(crf?.lineItems ?? []).map((item: any) => ({
+			name: item.product?.name,
+			rate: getLineItemRate(item),
+			quantity: getLineItemQuantity(item),
+			total: getLineItemRate(item) * getLineItemQuantity(item),
+			backendAmount: item.amount,
+		})),
+	);
+
+	console.log("CRF TOTAL:", getLineItemsTotal(crf?.lineItems ?? []));
+
+	return getLineItemsTotal(crf?.lineItems ?? []);
 };

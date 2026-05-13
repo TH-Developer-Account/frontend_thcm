@@ -114,9 +114,12 @@ export const useEpfForm = ({
 	const isEditMode = mode === "edit" || Boolean(epfId);
 
 	const initialCrfTotal = React.useMemo(() => {
-		if (crfData) return getCrfTotalFromData(crfData);
-		return 0;
-	}, [crfData]);
+		const sourceCrf = crfData ?? initialData?.crf;
+
+		if (!sourceCrf) return 0;
+
+		return getCrfTotalFromData(sourceCrf);
+	}, [crfData, initialData]);
 
 	const [values, setValues] = React.useState<EpfFormValues>(() => {
 		if (initialData) {
@@ -259,7 +262,18 @@ export const useEpfForm = ({
 	React.useEffect(() => {
 		fetchCrfTotal();
 	}, [fetchCrfTotal]);
+	React.useEffect(() => {
+		const sourceCrf = crfData ?? initialData?.crf;
 
+		if (!sourceCrf) return;
+
+		const crfTotal = getCrfTotalFromData(sourceCrf);
+
+		setValues((prev) => ({
+			...prev,
+			crfTotal,
+		}));
+	}, [crfData, initialData]);
 	React.useEffect(() => {
 		fetchEpf();
 	}, [fetchEpf]);

@@ -114,7 +114,8 @@ const ActivityFormView = ({ epcId }: Props) => {
 	const total =
 		(Number(viewData?.epf?.internalParticipants) || 0) +
 		(Number(viewData?.epf?.externalParticipants) || 0);
-
+	const activeWorkflow = viewData?.activeWorkflow ?? null;
+	const workflowStages = activeWorkflow?.stages ?? [];
 	if (!epcId) {
 		return (
 			<div className="content-box w-full h-auto max-w-full mx-auto">
@@ -380,12 +381,12 @@ const ActivityFormView = ({ epcId }: Props) => {
 						</Section>
 					)}
 
-					{/* { Comment Section } */}
-					{viewData?.epf && (
+					{/* Comment Section */}
+					{viewData?.epf && editingSection !== "epf" && (
 						<CommentsSection
-							epcCreatedById={epcData.created_by_id} // 👈 from your EPC data
-							epcId={epcData.id}
-							stages={epcData.activeWorkflow.stages}
+							epcCreatedById={viewData.created_by_id}
+							epcId={viewData.id}
+							stages={workflowStages}
 							onWorkflowUpdate={fetchEPC}
 						/>
 					)}

@@ -163,7 +163,7 @@
 	}
 
 	.form-textarea {
-		min-height: 85px !important;
+		/* min-height: 85px; */
 		resize: vertical;
 		line-height: 1.45;
 		@apply px-2.5 py-2;

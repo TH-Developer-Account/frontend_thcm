@@ -8,6 +8,7 @@ type Props = {
 };
 const ApprovalTable = ({ data, stages }: Props) => {
 	const totalApprovers = stages?.length;
+	if (totalApprovers === 0) return null;
 	return (
 		<React.Fragment>
 			<div className="w-full overflow-x-auto rounded-sm px-3 mt-4 mb-4">

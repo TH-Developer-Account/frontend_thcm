@@ -1,3 +1,9 @@
+import {
+	getLineItemQuantity,
+	getLineItemRate,
+	getLineItemsTotal,
+	toNumber,
+} from "../../helpers/lineItemHelper";
 import type { GroupedOption, LineItemOption, Product } from "../../types";
 
 export const mapProductToLineItemOption = (item: Product): LineItemOption => {
@@ -6,7 +12,7 @@ export const mapProductToLineItemOption = (item: Product): LineItemOption => {
 		label: item.name,
 		particular: item.id,
 		description: item.description,
-		rate: parseFloat(item.unitRate),
+		rate: toNumber(item.unitRate),
 		quantity: 1,
 		partNumber: item.partNumber,
 		category: item.category,
@@ -38,36 +44,26 @@ export const mapCrfLineItemsToFormItems = (
 	return lineItems.map((item) => {
 		const product = item.product;
 
-		const rate = Number(
-			item.rate ?? item.amount ?? item.unitRate ?? product?.unitRate ?? 0,
-		);
-
-		const quantity = Number(item.quantity ?? item.qty ?? 1);
-
 		return {
 			value: product?.id ?? item.productId ?? item.product_id ?? "",
 			label: product?.name ?? item.productName ?? item.product_name ?? "",
 			particular: product?.id ?? item.productId ?? item.product_id ?? "",
 			description: product?.description ?? item.description ?? "",
-			rate,
-			quantity,
+			rate: getLineItemRate(item),
+			quantity: getLineItemQuantity(item),
 			partNumber: product?.partNumber ?? item.partNumber ?? "",
 			category: product?.category ?? item.category ?? "",
 		};
 	});
 };
-export const getLineItemsTotal = (items: any[] = []) => {
-	return items.reduce((sum, item) => {
-		const rate = Number(
-			item.rate ?? item.amount ?? item.unitRate ?? item.product?.unitRate ?? 0,
-		);
-
-		const quantity = Number(item.quantity ?? item.qty ?? 0);
-
-		return sum + rate * quantity;
-	}, 0);
-};
 
 export const getCrfTotalFromData = (crfData: any) => {
-	return getLineItemsTotal(crfData?.lineItems ?? []);
+	const crf =
+		crfData?.crf ??
+		crfData?.data?.crf ??
+		crfData?.data?.data?.crf ??
+		crfData?.data ??
+		crfData;
+
+	return getLineItemsTotal(crf?.lineItems ?? []);
 };

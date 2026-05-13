@@ -70,13 +70,15 @@ const EpfFormInfo = ({ values, handleChange, eventCost }: EpfFormProps) => {
 			<div className="grid grid-cols-1 lg:grid-cols-[9fr_3fr] gap-4 items-start mx-auto h-full">
 				<div className="text-left lg:text-sm text-xs w-full">
 					{/* Event Participants Section */}
-					<div className="shadow-xs">
+					<div className="mb-2">
 						<FormHeader title="Participants" Icon={Users} />
 						<div className="grid md:grid-cols-4 grid-cols-1 gap-4 items-end px-3 pb-2">
 							<FormInput
 								name="externalParticipants"
 								type="number"
 								placeholder="0"
+								required
+								helperText="External Participants"
 								label="External Participants"
 								value={values.externalParticipants}
 								onChange={(e) =>
@@ -89,6 +91,8 @@ const EpfFormInfo = ({ values, handleChange, eventCost }: EpfFormProps) => {
 								min={0}
 								placeholder="0"
 								label="Internal Participants"
+								required
+								helperText="Internal Participants"
 								value={values.internalParticipants}
 								onChange={(e) =>
 									handleChange("internalParticipants", e.target.value)
@@ -107,57 +111,9 @@ const EpfFormInfo = ({ values, handleChange, eventCost }: EpfFormProps) => {
 						</div>
 					</div>
 
-					{/* Budget Section */}
-					<div className="shadow-xs pb-2">
-						<FormHeader title="Budget Section" Icon={Banknote} />
-						<div className="grid md:grid-cols-4 grid-cols-1 gap-4 items-end px-3">
-							<FormInput
-								name="eventBudget"
-								label="Event budget (₹)"
-								required
-								type="number"
-								disabled
-								readOnly
-								value={eventCost}
-							/>
-							<FormInput
-								name="annualBudget"
-								label="Annual budget (₹)"
-								required
-								type="number"
-								min={0}
-								placeholder="0"
-								disabled
-								readOnly
-								value={values.annualBudget}
-								onChange={(e) => handleChange("annualBudget", e.target.value)}
-							/>
-							<FormInput
-								name="availableBudget"
-								label="Available budget (₹)"
-								readOnly
-								placeholder="0"
-								disabled
-								value={values.availableBudget}
-								onChange={(e) =>
-									handleChange("availableBudget", e.target.value)
-								}
-							/>
-							<FormInput
-								name="tataHitachiPoAmount"
-								label="Tata Hitachi PO Amount"
-								placeholder="0"
-								value={values.tataHitachiPoAmount}
-								onChange={(e) =>
-									handleChange("tataHitachiPoAmount", e.target.value)
-								}
-							/>
-						</div>
-					</div>
-
 					{/* Dealer Info Section */}
-					<div className="shadow-xs pb-2">
-						<FormHeader title="Budget Share" Icon={HandCoins} />
+					<div className="mb-2 pb-2">
+						<FormHeader title="Dealer Info" Icon={HandCoins} />
 						<div className="grid grid-cols-2 gap-4 items-end px-3 pb-2">
 							<FormInput
 								name="dealerName"
@@ -205,12 +161,13 @@ const EpfFormInfo = ({ values, handleChange, eventCost }: EpfFormProps) => {
 					</div>
 
 					{/* Approval Workflow Section — ✅ buttons removed */}
-					<div className="bg-white pb-4 shadow-xs text-right">
+					<div className="bg-white pb-2 text-right">
 						<FormHeader title="Approval Workflow" Icon={ShieldCheck} />
 						<Button
 							text="Display Approval Flow"
 							status="brand"
 							onClick={handleIsApproval}
+							size="sm"
 						/>
 						{previewWFData.length ? (
 							<ApprovalTable data={previewWFData} />
@@ -236,35 +193,51 @@ const EpfFormInfo = ({ values, handleChange, eventCost }: EpfFormProps) => {
 						</div>
 					</div>
 					<div className="bg-white shadow-xs">
-						<FormHeader title="Budget Share" Icon={Wallet} />
-						<div className="text-left text-xs p-4 flex flex-col gap-2">
-							<div className="bg-gray-100 px-1.5 py-2 rounded-sm flex justify-between items-center">
-								<p>Available Budget:</p>
-								<span className="text-lg font-semibold">
-									{values.availableBudget
-										? values.availableBudget + " rs"
-										: "--"}
-								</span>
-							</div>
-							<div className="bg-gray-100 px-1.5 py-2 rounded-sm flex justify-between items-center">
-								<p>Annual Budget:</p>
-								<span className="text-lg font-semibold">
-									{values.annualBudget ? values.annualBudget + " rs" : "-- rs"}
-								</span>
-							</div>
-							<div className="bg-gray-100 px-1.5 py-2 rounded-sm flex justify-between items-center">
-								<p>Allotted Budget:</p>
-								<span className="text-lg font-semibold">
-									{values.availableBudget
-										? values.availableBudget + " rs"
-										: "-- rs"}
-								</span>
-							</div>
-							<div className="bg-gray-100 px-1.5 py-2 rounded-sm flex justify-between items-center">
-								<p>Event Budget:</p>
-								<span className="text-lg font-semibold">
-									{eventCost ? eventCost + " rs" : "-- rs"}
-								</span>
+						{/* Budget Section */}
+						<div className="shadow-xs pb-2">
+							<FormHeader title="Budget Section" Icon={Banknote} />
+							<div className=" px-3">
+								<FormInput
+									name="eventBudget"
+									label="Event budget (₹)"
+									required
+									type="number"
+									disabled
+									readOnly
+									value={eventCost}
+								/>
+								<FormInput
+									name="annualBudget"
+									label="Annual budget (₹)"
+									required
+									type="number"
+									min={0}
+									placeholder="0"
+									disabled
+									readOnly
+									value={values.annualBudget}
+									onChange={(e) => handleChange("annualBudget", e.target.value)}
+								/>
+								<FormInput
+									name="availableBudget"
+									label="Available budget (₹)"
+									readOnly
+									placeholder="0"
+									disabled
+									value={values.availableBudget}
+									onChange={(e) =>
+										handleChange("availableBudget", e.target.value)
+									}
+								/>
+								<FormInput
+									name="tataHitachiPoAmount"
+									label="Tata Hitachi PO Amount"
+									placeholder="0"
+									value={values.tataHitachiPoAmount}
+									onChange={(e) =>
+										handleChange("tataHitachiPoAmount", e.target.value)
+									}
+								/>
 							</div>
 						</div>
 					</div>

@@ -134,8 +134,8 @@ export default function LineItemTable({
 	);
 
 	return (
-		<div className="my-2 overflow-hidden rounded-lg border border-orange-200 bg-white">
-			<div className="flex items-center justify-between border-b border-orange-200 bg-orange-50 px-3 py-2">
+		<div className="my-2 overflow-hidden rounded-sm  bg-white">
+			<div className="flex items-center justify-between px-3 py-1.5">
 				<div className="inline-flex min-w-0 items-center gap-2">
 					<span className="h-4 w-0.5 shrink-0 rounded-full bg-orange-600" />
 
@@ -151,7 +151,7 @@ export default function LineItemTable({
 
 			<div className="overflow-x-auto px-3 py-2">
 				<div className="min-w-[980px]">
-					<div className="grid grid-cols-12 items-center gap-3 rounded-md border border-slate-300 bg-slate-100 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-700">
+					<div className="grid grid-cols-12 items-center gap-3 rounded-md border-b border-slate-300 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-800">
 						<div className="col-span-1">SNo</div>
 						<div className="col-span-2">Part No.</div>
 						<div className="col-span-2">Particulars</div>

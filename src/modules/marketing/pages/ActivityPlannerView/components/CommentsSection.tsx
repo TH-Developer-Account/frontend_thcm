@@ -158,8 +158,8 @@ function CommentInput({
 								handleSubmit();
 							}
 						}}
-						rows={4}
-						className="bg-white overflow-y-auto px-2 py-1.5 min-h-[5vh]"
+						rows={1}
+						className="bg-white overflow-y-auto px-2 py-1.5"
 					/>
 				</div>
 				{/* <p className="comment-helper">Press Ctrl + Enter to send</p> */}

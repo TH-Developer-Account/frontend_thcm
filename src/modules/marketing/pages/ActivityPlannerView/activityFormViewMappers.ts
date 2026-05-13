@@ -21,7 +21,7 @@ export const mapLineItems = (items: any[] = []) => {
 			category: item.category || product?.category || "--",
 			rate,
 			qty,
-			total: Number(item.total || rate * qty || 0),
+			total: Number(item.total || rate),
 		};
 	});
 };
