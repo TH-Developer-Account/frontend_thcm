@@ -1,15 +1,19 @@
 import React from "react";
 import { LucideSave, RefreshCcw, Save, Send, X } from "lucide-react";
-import EpcFormFields from "../EPC/EpcFormFields";
-import { useEpfForm, type EpfFormProps } from "./useEpfForm";
+
 import Button from "../../../../../components/common/Button";
 import Section from "../../components/Section";
 
+import EpfItemsSection from "./EpfItemSection";
+import { useEpfForm, type EpfFormProps } from "./useEpfForm";
+import EpfFormFields from "./EpfFormFields";
+
 export default function EpfForm(props: EpfFormProps) {
-	const { variant = "page", onCancel } = props;
+	const { onCancel } = props;
 
 	const {
 		values,
+		errors,
 		handleChange,
 		handleReset,
 		options,
@@ -19,10 +23,11 @@ export default function EpfForm(props: EpfFormProps) {
 		eventCost,
 		isEditMode,
 		loading,
+		submitting,
 	} = useEpfForm(props);
 
 	const actions = (
-		<div className="flex flex-row gap-2 items-center justify-end">
+		<div className="flex flex-row items-center justify-end gap-2">
 			{onCancel && (
 				<Button
 					type="button"
@@ -32,6 +37,7 @@ export default function EpfForm(props: EpfFormProps) {
 					size="sm"
 					Icon={X}
 					iconColor="red"
+					disabled={submitting}
 				/>
 			)}
 
@@ -43,6 +49,7 @@ export default function EpfForm(props: EpfFormProps) {
 				size="sm"
 				className="text-red-600"
 				iconColor="red"
+				disabled={submitting}
 			/>
 
 			{!isEditMode && (
@@ -54,6 +61,7 @@ export default function EpfForm(props: EpfFormProps) {
 					className="text-red-600"
 					iconColor="red"
 					Icon={LucideSave}
+					disabled={submitting}
 				/>
 			)}
 
@@ -65,65 +73,47 @@ export default function EpfForm(props: EpfFormProps) {
 				className="text-red-600"
 				iconColor="red"
 				Icon={isEditMode ? Save : Send}
+				disabled={submitting}
 			/>
 		</div>
 	);
 
-	const formBody = (
-		<React.Fragment>
-			<EpfItemsSection
-				items={costItems}
-				onChange={setCostItems}
-				options={options}
-				isViewer={false}
-			/>
-
-			<div className="mb-2">
-				<EpcFormFields
-					values={values}
-					errors={errors}
-					masters={masters}
-					onChange={handleChange}
-				/>
-			</div>
-		</React.Fragment>
-	);
-
 	if (loading) {
 		return (
-			<div className="flex items-center justify-center h-64 text-gray-500">
+			<div className="flex h-64 items-center justify-center text-sm text-[var(--color-text-muted)]">
 				Loading EPF details...
 			</div>
 		);
 	}
 
-	if (variant === "inline") {
-		return (
-			<Section
-				title={
-					isEditMode
-						? "Edit Activity Proposition Form"
-						: "Create Activity Proposition Form"
-				}
-				action={actions}
-			>
-				{formBody}
-			</Section>
-		);
-	}
-
 	return (
-		<div className="content-box w-full h-auto max-w-full mx-auto">
+		<div className="content-box mx-auto h-auto w-full max-w-full">
 			<div className="px-6 py-4">
 				<Section
 					title={
 						isEditMode
-							? "Edit Activity Proposition Form"
-							: "Create Activity Proposition Form"
+							? "Edit Event Proposition Form"
+							: "Create Event Proposition Form"
 					}
 					action={actions}
 				>
-					{formBody}
+					<React.Fragment>
+						<EpfItemsSection
+							items={costItems}
+							onChange={setCostItems}
+							options={options}
+							isViewer={false}
+						/>
+
+						<div className="mb-2">
+							<EpfFormFields
+								values={values}
+								errors={errors}
+								handleChange={handleChange}
+								eventCost={eventCost}
+							/>
+						</div>
+					</React.Fragment>
 				</Section>
 			</div>
 		</div>

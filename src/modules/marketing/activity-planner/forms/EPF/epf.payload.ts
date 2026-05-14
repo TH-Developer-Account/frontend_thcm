@@ -1,13 +1,37 @@
 import { buildLineItemPayload } from "../../../constant";
-import type { EpfFormValues, LineItemOption } from "../../../types";
-import { calculateBudgetShares, toNumberOrNull } from "./epf.calculations";
 
-export const prepareEpfBasePayload = (
-	values: EpfFormValues,
-	status: "DRAFT" | "SUBMITTED",
-	epcId: string,
-	eventCost: number,
-) => {
+import type { LineItemOption } from "../../../types";
+import type {
+	EpfCreatePayload,
+	EpfFormValues,
+	EpfStatus,
+	EpfUpdatePayload,
+} from "../../types/epf.types";
+
+import {
+	calculateBudgetShares,
+	// calculateParticipantsTotal,
+	toNumberOrNull,
+} from "./epf.calculations";
+
+type BuildEpfPayloadArgs = {
+	values: EpfFormValues;
+	status: EpfStatus;
+	epcId: string;
+	crfId?: string | null;
+	eventCost: number;
+	costItems: LineItemOption[];
+};
+
+export const prepareEpfBasePayload = ({
+	values,
+	status,
+	epcId,
+	eventCost,
+}: Omit<BuildEpfPayloadArgs, "costItems">): Omit<
+	EpfCreatePayload,
+	"lineItems"
+> => {
 	const budgetValues = calculateBudgetShares(values, eventCost);
 
 	return {
@@ -16,11 +40,12 @@ export const prepareEpfBasePayload = (
 
 		externalParticipants: toNumberOrNull(values.externalParticipants),
 		internalParticipants: toNumberOrNull(values.internalParticipants),
-		totalParticipants:
-			Number(values.externalParticipants || 0) +
-			Number(values.internalParticipants || 0),
+		// totalParticipants: calculateParticipantsTotal(
+		// 	values.externalParticipants,
+		// 	values.internalParticipants,
+		// ),
 
-		crfTotal: toNumberOrNull(values.crfTotal),
+		// crfTotal: toNumberOrNull(values.crfTotal),
 		eventBudget: toNumberOrNull(budgetValues.eventBudget),
 		annualBudget: toNumberOrNull(values.annualBudget),
 		availableBudget: toNumberOrNull(values.availableBudget),
@@ -30,58 +55,35 @@ export const prepareEpfBasePayload = (
 		dealerPercent: toNumberOrNull(budgetValues.dealerPercent),
 		dealerShare: toNumberOrNull(budgetValues.dealerShare),
 
-		tataHitachiPercent: toNumberOrNull(budgetValues.tataHitachiPercent),
-		tataHitachiShare: toNumberOrNull(budgetValues.tataHitachiShare),
-		tataHitachiPoAmount: toNumberOrNull(budgetValues.tataHitachiShare),
+		// tataHitachiPercent: toNumberOrNull(budgetValues.tataHitachiPercent),
+		// tataHitachiShare: toNumberOrNull(budgetValues.tataHitachiShare),
+		// tataHitachiPoAmount: toNumberOrNull(budgetValues.tataHitachiPoAmount),
 	};
 };
 
-export const buildEpfCreatePayload = ({
-	values,
-	status,
-	epcId,
-	eventCost,
-	costItems,
-}: {
-	values: EpfFormValues;
-	status: "DRAFT" | "SUBMITTED";
-	epcId: string;
-	eventCost: number;
-	costItems: LineItemOption[];
-}) => {
-	const epfPayload = prepareEpfBasePayload(values, status, epcId, eventCost);
-	const lineItemPayload = buildLineItemPayload(costItems, { epcId });
+export const buildEpfCreatePayload = (
+	args: BuildEpfPayloadArgs,
+): EpfCreatePayload => {
+	const basePayload = prepareEpfBasePayload(args);
+	const lineItemPayload = buildLineItemPayload(args.costItems, {
+		epcId: args.epcId,
+	});
 
 	return {
-		...epfPayload,
+		...basePayload,
 		lineItems: lineItemPayload.lineItems,
 	};
 };
 
-export const buildEpfUpdatePayload = ({
-	values,
-	status,
-	epcId,
-	eventCost,
-	costItems,
-}: {
-	values: EpfFormValues;
-	status: "DRAFT" | "SUBMITTED";
-	epcId: string;
-	eventCost: number;
-	costItems: LineItemOption[];
-}) => {
-	const payload = buildEpfCreatePayload({
-		values,
-		status,
-		epcId,
-		eventCost,
-		costItems,
-	});
+export const buildEpfUpdatePayload = (
+	args: BuildEpfPayloadArgs,
+): EpfUpdatePayload => {
+	const createPayload = buildEpfCreatePayload(args);
 
-	const { epcId: _removed, ...updatePayload } = payload;
+	const { epcId, crfId, ...updatePayload } = createPayload;
 
-	void _removed;
+	void epcId;
+	void crfId;
 
 	return updatePayload;
 };

@@ -31,7 +31,6 @@ const ActivityDetailsSection = ({
 		return (
 			<EpcForm
 				mode="edit"
-				variant="inline"
 				epcId={epcData.id}
 				initialData={epcData}
 				onCancel={onCancel}

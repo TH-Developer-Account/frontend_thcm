@@ -1,7 +1,10 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-
-import type { GroupedOption, LineItemOption, Product } from "../../../types";
+import type {
+	GroupedOption,
+	LineItemOption,
+	Product,
+} from "../../types/lineItem.types";
 
 import {
 	groupProductsByCategory,
@@ -17,16 +20,14 @@ import {
 
 import { useToast } from "../../../../../context/Auth/AuthContext";
 
-import { crfApi } from "../../api/crf.api";
 import { useCreateCrfMutation } from "../../queries/useCreateCrfMutation";
 import { useUpdateCrfMutation } from "../../queries/useUpdateCrfMutation";
+import { useCrfProductsQuery } from "../../queries/useCrfProductsQuery";
 
 export type CrfFormMode = "create" | "edit";
-export type CrfFormVariant = "page" | "inline";
 
 export type CrfFormProps = {
 	mode?: CrfFormMode;
-	variant?: CrfFormVariant;
 	epcId?: string | null;
 	crfId?: string | null;
 	initialData?: any;
@@ -47,9 +48,14 @@ type UseCrfFormResult = {
 	handleReset: () => void;
 };
 
+const toInitialCostItems = (initialData?: any): LineItemOption[] => {
+	if (!initialData?.lineItems?.length) return [];
+
+	return mapCrfLineItemsToFormItems(initialData.lineItems);
+};
+
 export function useCrfForm({
 	mode = "create",
-	variant = "page",
 	epcId: propEpcId,
 	crfId: propCrfId,
 	initialData,
@@ -69,96 +75,32 @@ export function useCrfForm({
 
 	const isEditMode = mode === "edit" || Boolean(crfId);
 
-	const [costItems, setCostItems] = React.useState<LineItemOption[]>(() => {
-		if (!initialData?.lineItems?.length) return [];
-		return mapCrfLineItemsToFormItems(initialData.lineItems);
-	});
-
-	const [options, setOptions] = React.useState<GroupedOption[]>(
-		initialOptions ?? [],
+	const initialCostItems = React.useMemo(
+		() => toInitialCostItems(initialData),
+		[initialData],
 	);
 
-	const shouldFetchCrfDetails =
-		variant === "page" && Boolean(crfId && !initialData);
+	const [costItems, setCostItems] =
+		React.useState<LineItemOption[]>(initialCostItems);
 
 	const shouldFetchProducts = !initialOptions?.length;
 
-	const [productsLoading, setProductsLoading] =
-		React.useState(shouldFetchProducts);
+	const {
+		data: productData,
+		isLoading: productsLoading,
+		isError: productsError,
+	} = useCrfProductsQuery(shouldFetchProducts);
 
-	const [detailsLoading, setDetailsLoading] = React.useState(
-		shouldFetchCrfDetails,
-	);
+	const options = React.useMemo(() => {
+		if (initialOptions?.length) return initialOptions;
+
+		return groupProductsByCategory((productData ?? []) as Product[]);
+	}, [initialOptions, productData]);
 
 	const mutationLoading =
 		createCrfMutation.isPending || updateCrfMutation.isPending;
 
-	const loading = productsLoading || detailsLoading || mutationLoading;
-
-	const fetchProducts = React.useCallback(async () => {
-		if (!shouldFetchProducts) {
-			setProductsLoading(false);
-			return;
-		}
-
-		try {
-			setProductsLoading(true);
-
-			const products = await crfApi.getProducts();
-
-			setOptions(groupProductsByCategory((products ?? []) as Product[]));
-		} catch (err) {
-			console.error("Failed to fetch CRF products:", err);
-
-			showToast({
-				type: "error",
-				title: "Error",
-				description: "Failed to load CRF product data.",
-			});
-		} finally {
-			setProductsLoading(false);
-		}
-	}, [shouldFetchProducts, showToast]);
-
-	const fetchCrfDetails = React.useCallback(async () => {
-		if (!shouldFetchCrfDetails || !crfId) {
-			setDetailsLoading(false);
-			return;
-		}
-
-		try {
-			setDetailsLoading(true);
-
-			const crfData = await crfApi.getById(crfId);
-
-			setCostItems(mapCrfLineItemsToFormItems(crfData?.lineItems ?? []));
-		} catch (err) {
-			console.error("Failed to fetch CRF details:", err);
-
-			showToast({
-				type: "error",
-				title: "Error",
-				description: "Failed to load CRF details.",
-			});
-		} finally {
-			setDetailsLoading(false);
-		}
-	}, [crfId, shouldFetchCrfDetails, showToast]);
-
-	React.useEffect(() => {
-		void fetchProducts();
-	}, [fetchProducts]);
-
-	React.useEffect(() => {
-		void fetchCrfDetails();
-	}, [fetchCrfDetails]);
-
-	React.useEffect(() => {
-		if (!initialData?.lineItems?.length) return;
-
-		setCostItems(mapCrfLineItemsToFormItems(initialData.lineItems));
-		setDetailsLoading(false);
-	}, [initialData]);
+	const loading = productsLoading || mutationLoading;
 
 	const handleSubmit = React.useCallback(async () => {
 		try {
@@ -167,6 +109,16 @@ export function useCrfForm({
 					type: "error",
 					title: "Error",
 					description: "EPC ID not found.",
+				});
+				return;
+			}
+
+			if (productsError) {
+				showToast({
+					type: "error",
+					title: "Error",
+					description:
+						"CRF products failed to load. Please refresh and try again.",
 				});
 				return;
 			}
@@ -185,7 +137,7 @@ export function useCrfForm({
 				showToast({
 					type: "success",
 					title: "Success",
-					description: "CRF modified successfully",
+					description: "CRF modified successfully.",
 				});
 			} else {
 				savedData = await createCrfMutation.mutateAsync({
@@ -196,7 +148,7 @@ export function useCrfForm({
 				showToast({
 					type: "success",
 					title: "Success",
-					description: "CRF created successfully",
+					description: "CRF created successfully.",
 				});
 
 				clearStoredEpcInfo();
@@ -204,9 +156,10 @@ export function useCrfForm({
 
 			if (onSuccess) {
 				await onSuccess(savedData);
-			} else {
-				navigate("/marketing/listing");
+				return;
 			}
+
+			navigate("/marketing/listing");
 		} catch (error: any) {
 			console.error("CRF save failed:", error);
 
@@ -226,18 +179,14 @@ export function useCrfForm({
 		epcId,
 		navigate,
 		onSuccess,
+		productsError,
 		showToast,
 		updateCrfMutation,
 	]);
 
 	const handleReset = React.useCallback(() => {
-		if (initialData?.lineItems?.length) {
-			setCostItems(mapCrfLineItemsToFormItems(initialData.lineItems));
-			return;
-		}
-
-		setCostItems([]);
-	}, [initialData]);
+		setCostItems(initialCostItems);
+	}, [initialCostItems]);
 
 	return {
 		costItems,

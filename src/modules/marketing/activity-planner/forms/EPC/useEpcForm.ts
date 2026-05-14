@@ -8,26 +8,40 @@ import {
 	getStoredEpcInfo,
 } from "../../../helpers/localstorage";
 
-import { useEpcDetailQuery } from "../../queries/useEpcDetailQuery";
 import { useCreateEpcMutation } from "../../queries/useCreateEpcMutation";
 import { useUpdateEpcMutation } from "../../queries/useUpdateEpcMutation";
 
 import { validateEpcForm, type EpcFormErrors } from "./epc.schema";
 import { buildEpcCreatePayload, buildEpcUpdatePayload } from "./epc.payload";
 import { mapEpcDetailToFormValues } from "./epc.mapper";
+import { buildEpcNoFromValues } from "./epcNumber";
 
 import type { EpcDetailResponse, EpcFormValues } from "../../types/epc.types";
 
 export type EpcFormMode = "create" | "edit";
-export type EpcFormVariant = "page" | "inline";
+
+type MasterOption = {
+	value: string;
+	label: string;
+	code?: string;
+	[key: string]: unknown;
+};
+
+type EpcMasters = {
+	regions?: MasterOption[];
+	branches?: MasterOption[];
+	departments?: MasterOption[];
+	vertical?: MasterOption[];
+	eventNames?: MasterOption[];
+	budgetMasters?: MasterOption[];
+};
 
 export type UseEpcFormProps = {
 	mode?: EpcFormMode;
-	variant?: EpcFormVariant;
 	epcId?: string | null;
 	initialData?: EpcDetailResponse | null;
+	masters?: EpcMasters;
 	onSuccess?: (data?: any) => Promise<void> | void;
-	onCancel?: () => void;
 };
 
 type UseEpcFormResult = {
@@ -38,15 +52,6 @@ type UseEpcFormResult = {
 	handleChange: (name: keyof EpcFormValues, value: string) => void;
 	handleSave: (status: "DRAFT" | "SUBMITTED") => Promise<void>;
 	handleReset: () => void;
-};
-
-const generateProposalNumber = () => {
-	const timestamp = new Date()
-		.toISOString()
-		.replace(/[-:.TZ]/g, "")
-		.slice(0, 14);
-
-	return `EPC/${timestamp}`;
 };
 
 export const initialEpcValues: EpcFormValues = {
@@ -72,11 +77,30 @@ export const initialEpcValues: EpcFormValues = {
 	proposal_number: "",
 };
 
+const toEpcFormValues = (data?: EpcDetailResponse | null): EpcFormValues => ({
+	...initialEpcValues,
+	...mapEpcDetailToFormValues(data),
+});
+
+const shouldRegenerateEpcNo = (
+	mode: EpcFormMode,
+	name: keyof EpcFormValues,
+) => {
+	if (mode === "edit") return false;
+
+	return (
+		name === "department" ||
+		name === "region" ||
+		name === "branch" ||
+		name === "vertical"
+	);
+};
+
 export function useEpcForm({
 	mode = "create",
-	variant = "page",
 	epcId: propEpcId,
 	initialData,
+	masters,
 	onSuccess,
 }: UseEpcFormProps = {}): UseEpcFormResult {
 	const navigate = useNavigate();
@@ -94,89 +118,67 @@ export function useEpcForm({
 
 	const isEditMode = mode === "edit" || Boolean(epcId);
 
-	/**
-	 * Important rule:
-	 * - Inline Activity Planner edit already receives parent `initialData`
-	 * - Page edit can fetch EPC detail only if `initialData` is missing
-	 */
-	const shouldFetchEpcDetail =
-		variant === "page" && Boolean(epcId && !initialData);
-
-	const { data: fetchedEpcData, isLoading: detailLoading } = useEpcDetailQuery(
-		shouldFetchEpcDetail ? epcId : null,
-	);
-
-	const sourceData = initialData ?? fetchedEpcData ?? null;
-
-	const [values, setValues] = React.useState<EpcFormValues>(() => {
-		if (sourceData) {
-			return mapEpcDetailToFormValues(sourceData);
+	const initialValues = React.useMemo(() => {
+		if (initialData) {
+			return toEpcFormValues(initialData);
 		}
 
-		const proposalNumber = generateProposalNumber();
+		return initialEpcValues;
+	}, [initialData]);
 
-		return {
-			...initialEpcValues,
-			epfNo: proposalNumber,
-			proposal_number: proposalNumber,
-		};
-	});
-
+	const [values, setValues] = React.useState<EpcFormValues>(initialValues);
 	const [errors, setErrors] = React.useState<EpcFormErrors>({});
 
-	React.useEffect(() => {
-		if (!sourceData) return;
-
-		setValues(mapEpcDetailToFormValues(sourceData));
-		setErrors({});
-	}, [sourceData]);
-
-	const loading =
-		detailLoading || createEpcMutation.isPending || updateEpcMutation.isPending;
+	const loading = createEpcMutation.isPending || updateEpcMutation.isPending;
 
 	const handleChange = React.useCallback(
 		(name: keyof EpcFormValues, value: string) => {
-			setValues((prev) => ({
-				...prev,
-				[name]: value,
-			}));
+			setValues((prev) => {
+				const nextValues: EpcFormValues = {
+					...prev,
+					[name]: value,
+				};
 
-			if (errors[name]) {
-				setErrors((prev) => ({
+				if (shouldRegenerateEpcNo(mode, name)) {
+					const generatedEpcNo = buildEpcNoFromValues(nextValues, masters);
+
+					nextValues.epfNo = generatedEpcNo;
+					nextValues.proposal_number = generatedEpcNo;
+				}
+
+				return nextValues;
+			});
+
+			setErrors((prev) => {
+				if (!prev[name]) return prev;
+
+				return {
 					...prev,
 					[name]: undefined,
-				}));
-			}
+				};
+			});
 		},
-		[errors],
+		[mode, masters],
 	);
 
 	const handleReset = React.useCallback(() => {
-		if (sourceData) {
-			setValues(mapEpcDetailToFormValues(sourceData));
-			setErrors({});
-			return;
-		}
-
-		const proposalNumber = generateProposalNumber();
-
-		setValues({
-			...initialEpcValues,
-			epfNo: proposalNumber,
-			proposal_number: proposalNumber,
-		});
-
+		setValues(initialValues);
 		setErrors({});
-	}, [sourceData]);
+	}, [initialValues]);
 
 	const handleSave = React.useCallback(
 		async (status: "DRAFT" | "SUBMITTED") => {
 			try {
+				const generatedEpcNo =
+					values.proposal_number ||
+					values.epfNo ||
+					buildEpcNoFromValues(values, masters);
+
 				const nextValues: EpcFormValues = {
 					...values,
 					status,
-					proposal_number: values.proposal_number || values.epfNo,
-					epfNo: values.epfNo || values.proposal_number,
+					proposal_number: generatedEpcNo,
+					epfNo: generatedEpcNo,
 				};
 
 				const validationErrors = validateEpcForm(nextValues);
@@ -188,6 +190,17 @@ export function useEpcForm({
 						type: "error",
 						title: "Validation Error",
 						description: "Please fill all required EPC fields.",
+					});
+
+					return;
+				}
+
+				if (!nextValues.proposal_number) {
+					showToast({
+						type: "error",
+						title: "EPC No missing",
+						description:
+							"Please select Department, Zone, Branch, and Vertical to generate EPC No.",
 					});
 
 					return;
@@ -227,7 +240,12 @@ export function useEpcForm({
 					return;
 				}
 
-				const savedEpcId = savedData?.id ?? epcId;
+				const savedEpcId =
+					savedData?.id ??
+					savedData?.eventProposal?.id ??
+					savedData?.epcId ??
+					savedData?.epc?.id ??
+					epcId;
 
 				if (savedEpcId) {
 					navigate(`/marketing/activity-planner/${savedEpcId}`);
@@ -249,6 +267,7 @@ export function useEpcForm({
 		},
 		[
 			values,
+			masters,
 			isEditMode,
 			epcId,
 			updateEpcMutation,

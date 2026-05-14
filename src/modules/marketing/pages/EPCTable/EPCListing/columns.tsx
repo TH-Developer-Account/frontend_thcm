@@ -21,7 +21,7 @@ export const getEPCColumns = ({
 			return (
 				<div>
 					<NavLink
-						to={`/marketing/epf/${epcId}`}
+						to={`/marketing/activity-planner/${epcId}`}
 						className="text-blue-600 underline"
 					>
 						<div className="font-medium">{row.original.proposal_number}</div>

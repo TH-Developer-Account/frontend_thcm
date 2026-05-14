@@ -14,12 +14,12 @@ type ActivityPlannerHeaderProps = {
 
 const ActivityPlannerHeader = ({
 	epcData,
-	createdBy = "--",
+	createdBy,
 	loading,
 	onPreview,
 }: ActivityPlannerHeaderProps) => {
-	const title = epcData?.event_name?.title || "Activity Planner";
-	const proposalNo = epcData?.proposal_number || "--";
+	const title = epcData?.event_name?.title || null;
+	const proposalNo = epcData?.proposal_number || null;
 	const badgeStatus = epcData?.status ? statusMap[epcData.status] : undefined;
 
 	return (
@@ -28,7 +28,7 @@ const ActivityPlannerHeader = ({
 				headerText="Activity Planner View"
 				badgeProps={{
 					text: "Back",
-					direction: "back",
+					to: "/marketing/listing",
 				}}
 			/>
 
@@ -62,7 +62,7 @@ const ActivityPlannerHeader = ({
 						<span className="text-gray-500">Proposer:</span>
 
 						<span className="font-semibold uppercase tracking-[0.06em] text-gray-900">
-							{createdBy || "--"}
+							{createdBy || null}
 						</span>
 					</p>
 				</div>

@@ -1,9 +1,7 @@
 import React from "react";
-import { Save, X } from "lucide-react";
+import { RefreshCcw, Save, X } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import PageRowSectionLayout from "../../../../../layout/PageRowSectionLayout";
-import { PageHeader } from "../../../../../components/ui/PageHeader";
 import Section from "../../components/Section";
 
 import { useMasterData } from "../../../../../hooks/useMasterData";
@@ -15,7 +13,6 @@ import type { EpcDetailResponse } from "../../types/epc.types";
 
 export type EpcFormProps = {
 	mode?: "create" | "edit";
-	variant?: "page" | "inline";
 	epcId?: string | null;
 	initialData?: EpcDetailResponse | null;
 	onCancel?: () => void;
@@ -25,7 +22,6 @@ export type EpcFormProps = {
 const EpcForm = ({
 	epcId: propEpcId,
 	mode = "create",
-	variant = "page",
 	initialData,
 	onSuccess,
 	onCancel,
@@ -52,20 +48,10 @@ const EpcForm = ({
 	} = useEpcForm({
 		epcId: finalEpcId,
 		mode,
-		variant,
 		initialData,
+		masters,
 		onSuccess,
-		onCancel,
 	});
-
-	const formFields = (
-		<EpcFormFields
-			values={values}
-			errors={errors}
-			masters={masters}
-			onChange={handleChange}
-		/>
-	);
 
 	if (loading) {
 		return (
@@ -75,82 +61,55 @@ const EpcForm = ({
 		);
 	}
 
-	if (variant === "inline") {
-		return (
-			<Section
-				title={
-					isEditMode
-						? "Edit Activity Planner Details"
-						: "Create Activity Planner Details"
-				}
-				action={
-					<div className="flex flex-row items-center justify-end gap-2">
-						{onCancel && (
-							<Button
-								type="button"
-								text="Cancel"
-								onClick={onCancel}
-								size="sm"
-								Icon={X}
-								className="text-red-600"
-								iconColor="red"
-							/>
-						)}
-
+	return (
+		<Section
+			title={
+				isEditMode
+					? "Edit Activity Planner Details"
+					: "Create Activity Planner Details"
+			}
+			action={
+				<div className="flex flex-row items-center justify-end gap-2">
+					{onCancel && (
 						<Button
 							type="button"
-							text={isEditMode ? "Update" : "Create EPC"}
-							onClick={() => handleSave("SUBMITTED")}
+							text="Cancel"
+							onClick={onCancel}
 							size="sm"
+							Icon={X}
 							className="text-red-600"
-							Icon={Save}
 							iconColor="red"
 						/>
-					</div>
-				}
-			>
-				{formFields}
-			</Section>
-		);
-	}
-
-	return (
-		<PageRowSectionLayout
-			header_children={
-				<div className="flex flex-col items-end sm:flex-row sm:items-center sm:justify-between">
-					<PageHeader
-						headerText={
-							isEditMode
-								? "Update Event Planning Calendar"
-								: "Event Planning Calendar"
-						}
-						subtitleText="Manage your Event Planning Calendar (EPC) details here"
-						badgeProps={{
-							text: "Back",
-							direction: "back",
-						}}
+					)}
+					<Button
+						type="button"
+						text="Reset"
+						onClick={handleReset}
+						Icon={RefreshCcw}
+						className="text-red-600"
+						size="sm"
+						iconColor="red"
 					/>
 
-					<div className="mx-2 my-4 flex flex-row items-end gap-2 sm:mx-4">
-						<Button
-							type="button"
-							text="Reset"
-							onClick={handleReset}
-							status="brand"
-						/>
-
-						<Button
-							type="button"
-							onClick={() => handleSave("SUBMITTED")}
-							text={isEditMode ? "Update" : "Submit"}
-							status="brand"
-						/>
-					</div>
+					<Button
+						type="button"
+						text={isEditMode ? "Update" : "Create EPC"}
+						onClick={() => handleSave("SUBMITTED")}
+						size="sm"
+						className="text-red-600"
+						Icon={Save}
+						iconColor="red"
+					/>
 				</div>
 			}
 		>
-			{formFields}
-		</PageRowSectionLayout>
+			<EpcFormFields
+				values={values}
+				errors={errors}
+				masters={masters}
+				onChange={handleChange}
+			/>
+		</Section>
 	);
 };
 

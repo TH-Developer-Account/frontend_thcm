@@ -12,7 +12,11 @@ export const mapEpcDetailToFormValues = (
 		region: data.region_id,
 		branch: data.branch_id,
 		budget_master_id: data.budget_master_id,
-		budgetDescription: data.budget_master?.value ?? "",
+		budgetDescription:
+			data.budget_master?.description ||
+			data.budget_master?.value ||
+			data.budget_master?.code ||
+			"",
 		vertical: data.vertical_id,
 		event_scale: data.event_scale,
 		event_name: data.event_name_id,

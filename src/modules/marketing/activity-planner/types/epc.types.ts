@@ -22,6 +22,7 @@ export type EpcListItem = {
 	first_name?: string;
 	last_name?: string;
 	created_at?: string;
+	location?: string;
 };
 
 export type EpcListResponse = {
@@ -239,6 +240,7 @@ export type EpcFormValues = {
 	event_objective: string;
 	status?: ApprovalApiStatus | "DRAFT" | "SUBMITTED";
 	proposal_number?: string;
+	created_by_id?: string;
 };
 
 export type EpcCreatePayload = Record<string, unknown>;

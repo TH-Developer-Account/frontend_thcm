@@ -1,4 +1,5 @@
-import type { EpfFormValues, LineItemOption } from "../../../types";
+import type { LineItemOption } from "../../../types";
+import type { EpfFormValues } from "../../types/epf.types";
 
 const toNumber = (value: unknown) => {
 	const parsed = Number(value);
@@ -22,8 +23,8 @@ export const calculateParticipantsTotal = (
 export const calculateLineItemsTotal = (items: LineItemOption[] = []) => {
 	return items.reduce((sum, item) => {
 		const quantity = toNumber(item.quantity);
-		const rate = toNumber(item.rate ?? item.amount);
-		const total = toNumber(item.total);
+		const rate = toNumber(item.rate);
+		const total = toNumber((item as any).total);
 
 		return sum + (total || quantity * rate);
 	}, 0);
@@ -33,10 +34,9 @@ export const getTotalLineItemAmount = calculateLineItemsTotal;
 
 export const calculateBudgetShares = (
 	values: EpfFormValues,
-	eventCost?: number,
-): EpfFormValues => {
-	const eventBudget =
-		typeof eventCost === "number" ? eventCost : toNumber(values.eventBudget);
+	eventCost: number,
+) => {
+	const eventBudget = toNumber(eventCost);
 
 	const dealerPercent = Math.min(
 		100,
@@ -45,11 +45,13 @@ export const calculateBudgetShares = (
 
 	const tataHitachiPercent = 100 - dealerPercent;
 
-	const dealerShare = (eventBudget * dealerPercent) / 100;
-	const tataHitachiShare = (eventBudget * tataHitachiPercent) / 100;
+	const dealerShare = Number(((eventBudget * dealerPercent) / 100).toFixed(2));
+
+	const tataHitachiShare = Number(
+		((eventBudget * tataHitachiPercent) / 100).toFixed(2),
+	);
 
 	return {
-		...values,
 		eventBudget,
 		dealerPercent,
 		tataHitachiPercent,

@@ -50,7 +50,7 @@ export const formatCurrency = (value?: number | string | null) => {
 export const getEpcCreatedByName = (
 	epcData?: EpcDetailResponse | null,
 ): string => {
-	if (!epcData?.created_by) return "--";
+	if (!epcData?.created_by) return "";
 
 	const name = [epcData.created_by.first_name, epcData.created_by.last_name]
 		.filter(Boolean)

@@ -1,6 +1,6 @@
 import { CRF_CATEGORIES } from "../../constant";
 
-type TableRow = {
+export type TableRow = {
 	id?: string;
 	sno: number;
 	particulars: string;
@@ -16,6 +16,11 @@ type TableRow = {
 type LineTableViewProps = {
 	title?: string;
 	data?: TableRow[];
+};
+
+const toDisplayNumber = (value: unknown) => {
+	const parsed = Number(value);
+	return Number.isFinite(parsed) ? parsed : 0;
 };
 
 export const getCategoryTitle = (category?: string | null) => {
@@ -40,7 +45,7 @@ const LineTableView = ({ title, data = [] }: LineTableViewProps) => {
 
 	return (
 		<div className="row-6 text-center mb-1">
-			<p className="font-semibold text-md">{title}</p>
+			{title && <p className="font-semibold text-md">{title}</p>}
 
 			<div className="line-view-table">
 				<div className="line-view-table-head">
@@ -83,15 +88,15 @@ const LineTableView = ({ title, data = [] }: LineTableViewProps) => {
 										</div>
 
 										<div className="col-span-1 text-right tabular-nums text-gray-800">
-											{Number(row.rate || 0).toFixed(2)}
+											{toDisplayNumber(row.rate).toFixed(2)}
 										</div>
 
 										<div className="col-span-1 text-right tabular-nums text-gray-800">
-											{row.qty || 0}
+											{toDisplayNumber(row.qty)}
 										</div>
 
 										<div className="col-span-2 text-right font-semibold tabular-nums text-gray-950">
-											{Number(row.total || 0).toFixed(2)}
+											{toDisplayNumber(row.total).toFixed(2)}
 										</div>
 									</div>
 								))}

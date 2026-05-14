@@ -1,6 +1,31 @@
 import { ServerAxios } from "../../../../services/ServerAxios";
 
 export const workflowApi = {
+	assignWorkflow: async (payload: {
+		eventProposalId: string;
+		workspaceId: string;
+		appId: string;
+		budget: number;
+	}) => {
+		const {
+			data: { data, message },
+		} = await ServerAxios.post("/soa/assign-workflow", payload);
+
+		return { data, message };
+	},
+
+	previewWorkflow: async (payload: {
+		workspaceId: string;
+		appId: string;
+		budget: number;
+	}) => {
+		const {
+			data: { data },
+		} = await ServerAxios.post("/soa/preview-workflow", payload);
+
+		return data;
+	},
+
 	approveStage: async (stageId: string) => {
 		const {
 			data: { data, message },

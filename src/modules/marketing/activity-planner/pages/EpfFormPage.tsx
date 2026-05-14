@@ -1,43 +1,49 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { PageHeader } from "../../../../components/ui/PageHeader";
-import Loader from "../../../../components/ui/Loader";
+
 import EpfForm from "../forms/EPF/EpfForm";
 import { useEpcDetailQuery } from "../queries/useEpcDetailQuery";
 
-const EpfFormPage = () => {
-	const { epcId } = useParams();
+export default function EpfFormPage() {
 	const navigate = useNavigate();
+	const { epcId } = useParams<{ epcId: string }>();
 
-	const { data: epcData, isLoading } = useEpcDetailQuery(epcId);
+	const {
+		data: epcData,
+		isLoading,
+		isFetching,
+		refetch,
+	} = useEpcDetailQuery(epcId);
 
-	if (isLoading) return <Loader />;
+	if (isLoading || isFetching) {
+		return (
+			<div className="flex h-64 items-center justify-center text-sm text-[var(--color-text-muted)]">
+				Loading EPF details...
+			</div>
+		);
+	}
+
+	if (!epcId || !epcData) {
+		return (
+			<div className="flex h-64 items-center justify-center text-sm text-red-600">
+				EPC details not found.
+			</div>
+		);
+	}
 
 	return (
-		<div className="page-stack-layout">
-			<PageHeader
-				headerText={epcData?.epf ? "Edit EPF" : "Create EPF"}
-				badgeProps={{
-					text: "Back",
-					direction: "back",
-				}}
-			/>
-
-			<div className="content-box p-4">
-				<EpfForm
-					mode={epcData?.epf ? "edit" : "create"}
-					variant="page"
-					epcId={epcId}
-					crfId={epcData?.crf?.id}
-					epfId={epcData?.epf?.id}
-					initialData={epcData?.epf}
-					crfData={epcData?.crf}
-					onSuccess={async () => {
-						navigate(`/marketing/activity-planner/${epcId}`);
-					}}
-				/>
-			</div>
-		</div>
+		<EpfForm
+			mode={epcData?.epf ? "edit" : "create"}
+			epcId={epcData.id}
+			crfId={epcData?.crf?.id}
+			epfId={epcData?.epf?.id}
+			initialData={epcData?.epf}
+			crfData={epcData?.crf}
+			budgetMasterId={epcData?.budget_master_id}
+			onCancel={() => navigate(`/marketing/activity-planner/${epcId}`)}
+			onSuccess={async () => {
+				await refetch();
+				navigate(`/marketing/activity-planner/${epcId}`);
+			}}
+		/>
 	);
-};
-
-export default EpfFormPage;
+}

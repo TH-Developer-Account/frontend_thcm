@@ -1,10 +1,12 @@
 import { Pencil, Plus } from "lucide-react";
+
 import Button from "../../../../components/common/Button";
 import Section from "./Section";
 import LineTableView from "./LineTableView";
 import CrfForm from "../forms/CRF/CrfForm";
+
 import type { EpcDetailResponse } from "../types/epc.types";
-import { mapCrfLineItemsToFormItems } from "../forms/CRF/crf.mapper";
+import { mapCrfLineItemsToTableRows } from "../forms/CRF/crf.mapper";
 
 type CrfSectionProps = {
 	epcData: EpcDetailResponse;
@@ -52,7 +54,7 @@ const CrfSection = ({
 					/>
 				}
 			>
-				<LineTableView data={mapCrfLineItemsToFormItems(crf?.lineItems)} />
+				<LineTableView data={mapCrfLineItemsToTableRows(crf?.lineItems)} />
 			</Section>
 		);
 	}

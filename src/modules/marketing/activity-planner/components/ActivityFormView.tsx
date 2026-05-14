@@ -31,11 +31,11 @@ const ActivityFormView = ({
 				<div className="px-6 py-4">
 					<EpcForm
 						mode="create"
-						variant="inline"
 						onSuccess={async (savedEpc) => {
 							const createdEpcId =
 								savedEpc?.id ??
 								savedEpc?.eventProposal?.id ??
+								savedEpc?.epcId ??
 								savedEpc?.epc?.id;
 
 							if (!createdEpcId) {
