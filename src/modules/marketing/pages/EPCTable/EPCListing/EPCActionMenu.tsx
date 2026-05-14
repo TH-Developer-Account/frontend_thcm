@@ -30,7 +30,7 @@ export default function EPCActionMenu({
 			createdBy: `${row.first_name || ""} ${row.last_name || ""}`.trim(),
 		};
 
-		localStorage.setItem("LeadInfo", JSON.stringify(leadInfo));
+		localStorage.setItem("epcId", JSON.stringify(leadInfo));
 
 		onLeadCreate?.(row);
 	};

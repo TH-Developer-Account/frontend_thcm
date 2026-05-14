@@ -7,6 +7,7 @@ import PageRowSectionLayout from "../../../../../layout/PageRowSectionLayout";
 import { PageHeader } from "../../../../../components/ui/PageHeader";
 import { ServerAxios } from "../../../../../services/ServerAxios";
 import Section from "../../ActivityPlannerView/components/Section";
+import FormInput from "../../../../../components/FormElements/FormInput";
 
 type LeadInfo = {
 	epcId: string;
@@ -15,24 +16,27 @@ type LeadInfo = {
 	eventName?: string;
 	location?: string;
 	status?: string;
-	createdBy?: string;
 };
 
 type LeadCustomerItem = {
 	id: string;
-	customerName: string;
-	phoneNumber: string;
+	leadName: string;
+	leadPhoneNumber: string;
+	leadEmail: string;
+	notes?: string;
 };
 
 const createEmptyCustomer = (): LeadCustomerItem => ({
 	id: crypto.randomUUID(),
-	customerName: "",
-	phoneNumber: "",
+	leadName: "",
+	leadPhoneNumber: "",
+	leadEmail: "",
+	notes: "",
 });
 
 const getStoredLeadInfo = (): LeadInfo | null => {
 	try {
-		const stored = localStorage.getItem("LeadInfo");
+		const stored = localStorage.getItem("epcId");
 		return stored ? JSON.parse(stored) : null;
 	} catch {
 		return null;
@@ -99,19 +103,22 @@ export default function LeadCreatePage() {
 		}
 
 		items.forEach((item, index) => {
-			if (!item.customerName.trim()) {
-				nextErrors[`customerName-${item.id}`] =
-					`Customer name is required in row ${index + 1}.`;
+			if (!item.leadName.trim()) {
+				nextErrors[`leadName-${item.id}`] =
+					`Lead name is required in row ${index + 1}.`;
 			}
-
-			if (!item.phoneNumber.trim()) {
+			if (!item.leadEmail.trim()) {
+				nextErrors[`leadName-${item.id}`] =
+					`Lead name is required in row ${index + 1}.`;
+			}
+			if (!item.leadPhoneNumber.trim()) {
 				nextErrors[`phoneNumber-${item.id}`] =
 					`Phone number is required in row ${index + 1}.`;
 			}
 
 			if (
-				item.phoneNumber.trim() &&
-				!/^(\+91[\s-]?)?[6-9]\d{9}$/.test(item.phoneNumber.trim())
+				item.leadPhoneNumber.trim() &&
+				!/^(\+91[\s-]?)?[6-9]\d{9}$/.test(item.leadPhoneNumber.trim())
 			) {
 				nextErrors[`phoneNumber-${item.id}`] =
 					`Enter a valid phone number in row ${index + 1}.`;
@@ -132,8 +139,10 @@ export default function LeadCreatePage() {
 			const payload = {
 				epcId: leadInfo?.epcId,
 				customers: items.map((item) => ({
-					customerName: item.customerName.trim(),
-					phoneNumber: item.phoneNumber.trim(),
+					leadName: item.leadName.trim(),
+					leadPhoneNumber: item.leadPhoneNumber.trim(),
+					leadEmail: item.leadEmail.trim(),
+					notes: item.notes,
 				})),
 			};
 
@@ -144,8 +153,7 @@ export default function LeadCreatePage() {
 				await ServerAxios.post(`/leads`, payload);
 			}
 
-			localStorage.removeItem("LeadInfo");
-
+			localStorage.removeItem("epcId");
 			navigate("/marketing/leads");
 		} catch (err) {
 			console.log({ err });
@@ -245,13 +253,6 @@ export default function LeadCreatePage() {
 							</div>
 
 							<div>
-								<span className="uppercase-label-text">Created By</span>
-								<p className="mt-1 font-semibold text-zinc-900">
-									{leadInfo.createdBy || "--"}
-								</p>
-							</div>
-
-							<div>
 								<span className="uppercase-label-text">Status</span>
 								<p className="mt-1 font-semibold text-zinc-900">
 									{leadInfo.status || "--"}
@@ -263,10 +264,10 @@ export default function LeadCreatePage() {
 							<div className="mb-3 flex items-center justify-between">
 								<div>
 									<h3 className="text-sm font-semibold text-zinc-900">
-										Customer Lead Items
+										Lead Items
 									</h3>
 									<p className="mt-0.5 text-xs text-zinc-500">
-										Add all customer details for this selected EPC, then submit
+										Add all lead details for this selected EPC, then submit
 										once.
 									</p>
 								</div>
@@ -292,8 +293,10 @@ export default function LeadCreatePage() {
 									<thead className="bg-zinc-50 text-[11px] uppercase tracking-[0.06em] text-zinc-500">
 										<tr>
 											<th className="w-14 px-3 py-2 font-semibold">S.No</th>
-											<th className="px-3 py-2 font-semibold">Customer Name</th>
+											<th className="px-3 py-2 font-semibold">Lead Name</th>
+											<th className="px-3 py-2 font-semibold">Lead Email</th>
 											<th className="px-3 py-2 font-semibold">Phone Number</th>
+											<th className="px-3 py-2 font-semibold">Notes</th>
 											<th className="w-16 px-3 py-2 text-center font-semibold">
 												Action
 											</th>
@@ -306,57 +309,59 @@ export default function LeadCreatePage() {
 												<td className="px-3 py-3 text-zinc-500">{index + 1}</td>
 
 												<td className="px-3 py-3">
-													<input
-														value={item.customerName}
+													<FormInput
+														value={item.leadName}
 														onChange={(event) =>
 															handleChange(
 																item.id,
-																"customerName",
+																"leadName",
 																event.target.value,
 															)
 														}
-														placeholder="Enter customer name"
-														className="
-															h-9 w-full rounded-md border border-zinc-200 bg-white px-3
-															text-xs font-medium text-zinc-800 outline-none transition
-															placeholder:text-zinc-400
-															focus:border-orange-300 focus:ring-2 focus:ring-orange-100
-														"
+														placeholder="Enter lead name"
+														required
+														error={errors[`customerName-${item.id}`]}
 													/>
-
-													{errors[`customerName-${item.id}`] && (
-														<p className="mt-1 text-[11px] font-medium text-red-600">
-															{errors[`customerName-${item.id}`]}
-														</p>
-													)}
 												</td>
-
 												<td className="px-3 py-3">
-													<input
-														value={item.phoneNumber}
+													<FormInput
+														value={item.leadEmail}
+														type="email"
 														onChange={(event) =>
 															handleChange(
 																item.id,
-																"phoneNumber",
+																"leadEmail",
+																event.target.value,
+															)
+														}
+														placeholder="Enter email"
+														error={errors[`leadEmail-${item.id}`]}
+													/>
+												</td>
+												<td className="px-3 py-3">
+													<FormInput
+														type="mobile"
+														value={item.leadPhoneNumber}
+														onChange={(event) =>
+															handleChange(
+																item.id,
+																"leadPhoneNumber",
 																event.target.value,
 															)
 														}
 														placeholder="Enter phone number"
-														className="
-															h-9 w-full rounded-md border border-zinc-200 bg-white px-3
-															text-xs font-medium text-zinc-800 outline-none transition
-															placeholder:text-zinc-400
-															focus:border-orange-300 focus:ring-2 focus:ring-orange-100
-														"
+														error={errors[`leadPhoneNumber-${item.id}`]}
 													/>
-
-													{errors[`phoneNumber-${item.id}`] && (
-														<p className="mt-1 text-[11px] font-medium text-red-600">
-															{errors[`phoneNumber-${item.id}`]}
-														</p>
-													)}
 												</td>
-
+												<td className="px-3 py-3">
+													<FormInput
+														value={item.notes}
+														onChange={(event) =>
+															handleChange(item.id, "notes", event.target.value)
+														}
+														placeholder="Enter remarks"
+													/>
+												</td>
 												<td className="px-3 py-3 text-center">
 													<button
 														type="button"
