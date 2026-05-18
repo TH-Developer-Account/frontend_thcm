@@ -1,9 +1,8 @@
 import PageRowSectionLayout from "../../../../../layout/PageRowSectionLayout";
 import { PageHeader } from "../../../../../components/ui/PageHeader";
-import { Plus } from "lucide-react";
+import { FileDown, FileUp } from "lucide-react";
 import Button from "../../../../../components/common/Button";
 import LeadsTable from "./components/LeadsTable";
-import { Can } from "../../../../../context/permissionHelpers";
 
 export default function LeadsTablePage() {
 	return (
@@ -20,21 +19,24 @@ export default function LeadsTablePage() {
 					}}
 					className="flex flex-row justify-between items-end"
 				>
-					<Can action="write" app="MAP" module="EPC">
-						<Button
-							type="button"
-							text={"Create New Lead"}
-							Icon={Plus}
-							status="brand"
-							className="text-xs m-2 sm:m-4"
-							path="/marketing/leads/create"
-						/>
-					</Can>
+					<Button
+						type="button"
+						text={"Export"}
+						Icon={FileDown}
+						status="brand"
+						className="text-xs m-1 sm:m-2"
+					/>
+					<Button
+						type="button"
+						text={"Import"}
+						Icon={FileUp}
+						status="brand"
+						className="text-xs m-1 sm:m-2"
+					/>
 				</PageHeader>
 			}
 		>
 			<LeadsTable />
-			<div>Hi</div>
 		</PageRowSectionLayout>
 	);
 }
