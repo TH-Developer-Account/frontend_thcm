@@ -47,23 +47,22 @@ export type EpfLineItemPayload = {
 
 export type EpfCreatePayload = {
 	epcId: string;
-	crfId?: string;
 	status: EpfStatus;
 
 	externalParticipants: number | null;
 	internalParticipants: number | null;
-	totalParticipants?: number;
-
-	crfTotal?: number | null;
 	eventBudget: number | null;
 	annualBudget: number | null;
 	availableBudget: number | null;
-	allotedBudget: number | null;
-
 	dealerName: string;
 	dealerPercent: number | null;
 	dealerShare: number | null;
 
+	// Keep these optional because we are not sending them now.
+	crfId?: string;
+	totalParticipants?: number;
+	crfTotal?: number | null;
+	allotedBudget?: number | null;
 	tataHitachiPercent?: number | null;
 	tataHitachiShare?: number | null;
 	tataHitachiPoAmount?: number | null;
@@ -85,4 +84,5 @@ export type ShareInfo = {
 	dealerShare: number;
 	tataHitachiPercent: number;
 	tataHitachiShare: number;
+	eventBudget?: number;
 };

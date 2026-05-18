@@ -1,6 +1,5 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-
 import { useAuth } from "../../../../../context/Auth/useAuth";
 import { useToast } from "../../../../../context/Auth/AuthContext";
 
@@ -38,9 +37,11 @@ import {
 } from "../../../helpers/localstorage";
 
 import { workflowApi } from "../../api/workflow.api";
-import { useCreateEpfMutation } from "../../queries/useCreateEpfMutation";
-import { useUpdateEpfMutation } from "../../queries/useUpdateEpfMutation";
-import { useEpfProductsQuery } from "../../queries/useEpfProductsQuery";
+import {
+	useCreateEpfMutation,
+	useUpdateEpfMutation,
+	useEpfProductsQuery,
+} from "../../queries/useEpfMutation";
 import { useEpfBudgetInfoQuery } from "../../queries/useEpfBudgetInfoQuery";
 
 export type EpfFormMode = "create" | "edit";
@@ -99,12 +100,10 @@ const getBudgetMasterId = ({
 	budgetMasterId,
 	initialData,
 	crfData,
-	storedBudgetMasterId,
 }: {
 	budgetMasterId?: string | null;
 	initialData?: any;
 	crfData?: any;
-	storedBudgetMasterId?: string | null;
 }) => {
 	return (
 		budgetMasterId ??
@@ -112,7 +111,6 @@ const getBudgetMasterId = ({
 		initialData?.epc?.budgetMasterId ??
 		initialData?.budget_master_id ??
 		crfData?.epc?.budget_master_id ??
-		storedBudgetMasterId ??
 		null
 	);
 };
@@ -141,8 +139,8 @@ export const useEpfForm = ({
 	const isEditMode = mode === "edit" || Boolean(epfId);
 
 	const initialCrfTotal = React.useMemo(() => {
-		return getCrfTotalFromData(crfData ?? initialData?.crf);
-	}, [crfData, initialData]);
+		return getCrfTotalFromData(crfData);
+	}, [crfData]);
 
 	const [values, setValues] = React.useState<EpfFormValues>(() => {
 		if (initialData) {
@@ -167,7 +165,6 @@ export const useEpfForm = ({
 		budgetMasterId: propBudgetMasterId,
 		initialData,
 		crfData,
-		storedBudgetMasterId: storedInfo?.budgetMasterId,
 	});
 
 	const productsQuery = useEpfProductsQuery();
@@ -193,6 +190,17 @@ export const useEpfForm = ({
 			crfTotal: initialCrfTotal,
 		}));
 	}, [initialData, initialCrfTotal]);
+
+	React.useEffect(() => {
+		if (!crfData) return;
+
+		const crfTotal = getCrfTotalFromData(crfData);
+
+		setValues((prev) => ({
+			...prev,
+			crfTotal,
+		}));
+	}, [crfData]);
 
 	React.useEffect(() => {
 		if (!budgetQuery.data) return;

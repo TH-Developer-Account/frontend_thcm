@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import EpcForm from "../forms/EPC/EpcForm";
 import DateRange from "./DateRange";
 import ActivityDetailsSection from "./ActivityDetailsSection";
-import CrfSection from "./CrfSection";
-import EpfSection from "./EpfSection";
+import CrfSection from "../forms/CRF/CrfSection";
+import EpfSection from "../forms/EPF/EpfSection";
 import CommentsSection from "./CommentsSection";
 import type { EpcDetailResponse } from "../types/epc.types";
 

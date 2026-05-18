@@ -2,7 +2,7 @@ import React from "react";
 
 import LineItemTable from "../../../../../components/ui/LineItemTable";
 import { CRF_CATEGORIES } from "../../../constant";
-import type { CrfProps, LineItemOption } from "../../../types";
+import type { CrfProps, LineItemOption } from "../../types/lineItem.types";
 
 export function CrfItemsSection({
 	items,

@@ -201,6 +201,7 @@ export const mapBudgetShareInfo = (data: BudgetShareInput) => {
 		dealerShare,
 		tataHitachiPercent,
 		tataHitachiShare,
+		eventBudget: toNumber(data.eventBudget),
 	};
 
 	return {

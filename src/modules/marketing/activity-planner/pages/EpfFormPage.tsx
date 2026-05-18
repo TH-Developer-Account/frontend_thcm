@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 
 import EpfForm from "../forms/EPF/EpfForm";
-import { useEpcDetailQuery } from "../queries/useEpcDetailQuery";
+import { useEpcDetailQuery } from "../queries/useEpcListQuery";
 
 export default function EpfFormPage() {
 	const navigate = useNavigate();

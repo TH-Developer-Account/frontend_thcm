@@ -9,7 +9,7 @@ import Section from "./Section";
 import ApprovalFlowSection from "./ApprovalFlowSection";
 import { Modal } from "../../../../components/common/Modal";
 import { formatDateTime } from "../../../../utils/format";
-import type { EpcWorkflowStage } from "../types/workflow.types";
+import type { WorkflowStage } from "../types/workflow.types";
 import { workflowApi } from "../api/workflow.api";
 
 export type CommentUser = {
@@ -34,7 +34,7 @@ export type CommentItem = {
 
 type CommentsSectionProps = {
 	epcId: string;
-	stages: EpcWorkflowStage[];
+	stages: WorkflowStage[];
 	onWorkflowUpdate: () => Promise<void>;
 	epcCreatedById?: string;
 };
@@ -147,7 +147,7 @@ function CommentInput({
 							void handleSubmit();
 						}
 					}}
-					rows={4}
+					rows={1}
 					className="bg-white overflow-y-auto px-2 py-1.5 min-h-[5vh]"
 				/>
 			</div>
@@ -442,7 +442,7 @@ export default function CommentsSection({
 				</p>
 			}
 		>
-			<section className="comments-section mb-4">
+			<section className="comments-section mb-4 mt-2">
 				{commentsLoading ? (
 					<div className="comments-loading">
 						<div />
@@ -475,21 +475,19 @@ export default function CommentsSection({
 				)}
 			</section>
 
-			<Section title="Approval Flow">
-				{!disabled && (
-					<div className="flex flex-row gap-4 items-center justify-end">
-						<Button
-							text="Clarify"
-							status="outline"
-							onClick={() => setIsClarifyModalOpen(true)}
-						/>
+			{!disabled && (
+				<div className="flex flex-row gap-4 items-center justify-end">
+					<Button
+						text="Clarify"
+						status="outline"
+						onClick={() => setIsClarifyModalOpen(true)}
+					/>
 
-						<Button text="Approve" status="brand" onClick={handleApprove} />
-					</div>
-				)}
+					<Button text="Approve" status="brand" onClick={handleApprove} />
+				</div>
+			)}
 
-				<ApprovalFlowSection stages={stages} />
-			</Section>
+			<ApprovalFlowSection stages={stages} />
 
 			<Modal open={isClarifyModalOpen}>
 				<div className="w-full rounded-2xl bg-white p-5 shadow-xl border border-zinc-200">

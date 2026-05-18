@@ -128,7 +128,7 @@ export default function EpfFormFields({
 	return (
 		<div className="grid grid-cols-1 gap-4 lg:grid-cols-[9fr_3fr]">
 			<div className="space-y-4 text-left text-xs lg:text-sm">
-				<div className="rounded-xl border border-[var(--color-border)] bg-white pb-3">
+				<div className=" bg-white pb-3">
 					<FormHeader title="Participants" Icon={Users} />
 
 					<div className="grid grid-cols-1 gap-4 px-3 md:grid-cols-3">
@@ -174,7 +174,7 @@ export default function EpfFormFields({
 					</div>
 				</div>
 
-				<div className="rounded-xl border border-[var(--color-border)] bg-white pb-3">
+				<div className=" bg-white pb-3">
 					<FormHeader title="Dealer Info" Icon={HandCoins} />
 
 					<div className="grid grid-cols-1 gap-4 px-3 md:grid-cols-2">
@@ -233,7 +233,7 @@ export default function EpfFormFields({
 					</div>
 				</div>
 
-				<div className="rounded-xl border border-[var(--color-border)] bg-white pb-3">
+				<div className=" bg-white pb-3">
 					<div className="flex items-center justify-between gap-3 pr-3">
 						<FormHeader title="Approval Workflow" Icon={ShieldCheck} />
 

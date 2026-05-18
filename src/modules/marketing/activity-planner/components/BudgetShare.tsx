@@ -30,6 +30,7 @@ const BudgetShare = ({ items, shareInfo }: BudgetShareProps) => {
 		dealerShare,
 		tataHitachiPercent,
 		tataHitachiShare,
+		eventBudget,
 	} = shareInfo;
 
 	return (
@@ -44,9 +45,11 @@ const BudgetShare = ({ items, shareInfo }: BudgetShareProps) => {
 				))}
 			</div>
 
-			<div className="grid grid-cols-2 gap-2 px-1.5 py-1">
+			<div className="grid grid-cols-3 gap-2 px-1.5 py-1">
 				<BudgetCard label="Dealer Name">{dealerName || "--"}</BudgetCard>
-
+				<BudgetCard label="Total Event Cost">
+					{formatCurrency(eventBudget) || "--"}
+				</BudgetCard>
 				<BudgetCard label="Tata Hitachi PO Amount">
 					{formatCurrency(tataHitachiPoAmount)}
 				</BudgetCard>

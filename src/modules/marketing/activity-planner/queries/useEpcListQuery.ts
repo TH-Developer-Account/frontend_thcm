@@ -12,3 +12,12 @@ export const useEpcListQuery = (params: EpcListParams) => {
 		refetchOnMount: "always",
 	});
 };
+
+export function useEpcDetailQuery(epcId?: string) {
+	return useQuery({
+		queryKey: epcKeys.detail(epcId),
+		queryFn: () => epcApi.getById(epcId!),
+		enabled: Boolean(epcId),
+		staleTime: 60_000,
+	});
+}

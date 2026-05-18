@@ -94,32 +94,10 @@
 	@apply flex shrink-0 items-center gap-1.5;
 }
 
-.section-edit-btn {
-	@apply inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium leading-none transition;
-	background: #ffffff;
-	color: var(--color-brand, #f35a00);
-	border-color: #f4d4c1;
-}
-
-.section-edit-btn:hover {
-	background: #fff8f4;
-	border-color: #efb995;
-	color: #d94f00;
-}
-
-.approval-details-title {
-	@apply text-lg font-semibold tracking-tight text-zinc-900 mt-3;
-}
-.approval-details-heading {
-	@apply text-lg font-normal tracking-tight text-zinc-900;
-}
-
 .page-helper-text {
 	@apply italic text-[10px];
 }
-.approval-details-subtitle {
-	@apply text-zinc-800 font-semibold text-lg;
-}
+
 .form-view-label {
 	@apply italic text-[11px];
 }

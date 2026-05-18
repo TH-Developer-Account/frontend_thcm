@@ -8,8 +8,10 @@ import {
 	getStoredEpcInfo,
 } from "../../../helpers/localstorage";
 
-import { useCreateEpcMutation } from "../../queries/useCreateEpcMutation";
-import { useUpdateEpcMutation } from "../../queries/useUpdateEpcMutation";
+import {
+	useCreateEpcMutation,
+	useUpdateEpcMutation,
+} from "../../queries/useEpcMutation";
 
 import { validateEpcForm, type EpcFormErrors } from "./epc.schema";
 import { buildEpcCreatePayload, buildEpcUpdatePayload } from "./epc.payload";

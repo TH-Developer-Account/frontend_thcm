@@ -2,7 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { PageHeader } from "../../../../components/ui/PageHeader";
 import Loader from "../../../../components/ui/Loader";
 import CrfForm from "../forms/CRF/CrfForm";
-import { useEpcDetailQuery } from "../queries/useEpcDetailQuery";
+import { useEpcDetailQuery } from "../queries/useEpcListQuery";
 
 const CrfFormPage = () => {
 	const { epcId } = useParams();

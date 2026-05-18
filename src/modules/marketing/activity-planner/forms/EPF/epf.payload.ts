@@ -1,5 +1,3 @@
-import { buildLineItemPayload } from "../../../constant";
-
 import type { LineItemOption } from "../../../types";
 import type {
 	EpfCreatePayload,
@@ -8,11 +6,7 @@ import type {
 	EpfUpdatePayload,
 } from "../../types/epf.types";
 
-import {
-	calculateBudgetShares,
-	// calculateParticipantsTotal,
-	toNumberOrNull,
-} from "./epf.calculations";
+import { calculateBudgetShares, toNumberOrNull } from "./epf.calculations";
 
 type BuildEpfPayloadArgs = {
 	values: EpfFormValues;
@@ -22,7 +16,18 @@ type BuildEpfPayloadArgs = {
 	eventCost: number;
 	costItems: LineItemOption[];
 };
-
+export const buildLineItemPayload = (
+	items: LineItemOption[],
+	extraPayload: Record<string, unknown>,
+) => {
+	return {
+		...extraPayload,
+		lineItems: items.map((item) => ({
+			productId: item.value, // 👈 map value → productId
+			quantity: item.quantity,
+		})),
+	};
+};
 export const prepareEpfBasePayload = ({
 	values,
 	status,
@@ -40,21 +45,22 @@ export const prepareEpfBasePayload = ({
 
 		externalParticipants: toNumberOrNull(values.externalParticipants),
 		internalParticipants: toNumberOrNull(values.internalParticipants),
-		// totalParticipants: calculateParticipantsTotal(
-		// 	values.externalParticipants,
-		// 	values.internalParticipants,
-		// ),
-
-		// crfTotal: toNumberOrNull(values.crfTotal),
 		eventBudget: toNumberOrNull(budgetValues.eventBudget),
 		annualBudget: toNumberOrNull(values.annualBudget),
 		availableBudget: toNumberOrNull(values.availableBudget),
-		allotedBudget: toNumberOrNull(values.allotedBudget),
 
 		dealerName: values.dealerName || "",
 		dealerPercent: toNumberOrNull(budgetValues.dealerPercent),
 		dealerShare: toNumberOrNull(budgetValues.dealerShare),
 
+		// Later uncomment if backend accepts these:
+		// crfId: crfId || undefined,
+		// totalParticipants: calculateParticipantsTotal(
+		// 	values.externalParticipants,
+		// 	values.internalParticipants,
+		// ),
+		// crfTotal: toNumberOrNull(values.crfTotal),
+		// allotedBudget: toNumberOrNull(values.allotedBudget),
 		// tataHitachiPercent: toNumberOrNull(budgetValues.tataHitachiPercent),
 		// tataHitachiShare: toNumberOrNull(budgetValues.tataHitachiShare),
 		// tataHitachiPoAmount: toNumberOrNull(budgetValues.tataHitachiPoAmount),

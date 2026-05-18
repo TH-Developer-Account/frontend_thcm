@@ -5,7 +5,7 @@ import Loader from "../../../../components/ui/Loader";
 import ActivityFormView from "../components/ActivityFormView";
 import ActivityPlannerHeader from "../components/ActivityPlannerHeader";
 import ActivityPlannerPdfPreview from "../components/ActivityPlannerPdfPreview";
-import { useEpcDetailQuery } from "../queries/useEpcDetailQuery";
+import { useEpcDetailQuery } from "../queries/useEpcListQuery";
 import { getEpcCreatedByName } from "../utils/formatters";
 
 const ActivityPlannerPage = () => {

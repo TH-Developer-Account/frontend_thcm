@@ -1,57 +1,5 @@
 import type { EPCStatus } from "../../utils/types";
 
-export interface CostItem {
-	id: string;
-	particular: string;
-	description: string;
-	rate: number;
-	quantity: number;
-}
-
-export interface CrfProps {
-	items: LineItemOption[];
-	onChange: React.Dispatch<React.SetStateAction<LineItemOption[]>>;
-	isViewer?: boolean;
-	options: GroupedOption[];
-}
-
-export type EpcFormMode = "create" | "edit";
-export type EpcFormVariant = "page" | "inline";
-
-export type EpcFormProps = {
-	epcId?: string;
-	mode?: EpcFormMode;
-	variant?: EpcFormVariant;
-	initialData?: any;
-	onSuccess?: (savedEpc?: any) => void | Promise<void>;
-	onCancel?: () => void;
-};
-
-export type EpcStatus = "DRAFT" | "SUBMITTED";
-
-export interface EpcFormValues {
-	id?: string; // for edit mode
-	epfNo: string;
-	poDocumentRefNo: string;
-	department: string;
-	region: string;
-	branch: string;
-	budget_master_id?: string;
-	budgetDescription?: string;
-	vertical?: string;
-	event_scale?: string;
-	event_name?: string;
-	event_description?: string;
-	event_from_date?: string;
-	event_to_date?: string;
-	location?: string;
-	event_objective?: string;
-	status?: EpcStatus;
-	proposal_number?: string;
-}
-
-export type UserRole = "ADMIN" | "EMPLOYEE" | "DEALER";
-
 export interface Option {
 	label: string;
 	value: string;
@@ -104,27 +52,6 @@ export const EPC_TO_API_STATUS: Record<EPCStatus, ApprovalApiStatus> = {
 	Cancelled: "CANCELLED",
 };
 
-export interface EpfFormValues {
-	// Participants
-	externalParticipants: number;
-	internalParticipants: number;
-	totalParticipants: number;
-	crfTotal: number;
-	// Budget
-	eventBudget: number;
-	annualBudget: number;
-	availableBudget: number;
-	allotedBudget: number;
-	// Dealer
-	dealerName: string;
-	dealerPercent: number;
-	dealerShare: number;
-	// Tata Hitachi
-	tataHitachiPercent: number;
-	tataHitachiShare: number;
-	tataHitachiPoAmount: number;
-}
-
 export interface LineItem {
 	id: string;
 	particular: string;
@@ -132,25 +59,6 @@ export interface LineItem {
 	rate: number;
 	quantity: number;
 }
-
-export interface ValidationCheck {
-	key: keyof EpfFormValues | string;
-	label: string;
-	ok: boolean;
-}
-
-export type Product = {
-	id: string;
-	productType: "EPF" | "CRF";
-	category: string; // you can tighten this if you have enum
-	partNumber: string;
-	name: string;
-	description: string | null;
-	unitRate: string; // ⚠️ comes as string from Prisma Decimal
-	isActive: boolean;
-	created_at: string; // ISO date string
-	updated_at: string; // ISO date string
-};
 
 export type LineItemOption = {
 	value: string;
@@ -164,14 +72,4 @@ export type LineItemOption = {
 	// height?: string;
 	// width?: string;
 	// artworkSize?: string;
-};
-
-export type GroupedOption = {
-	label: string; // category
-	options: LineItemOption[];
-};
-
-export type EPCFormErrors = Partial<Record<keyof EpcFormValues, string>>;
-export type UseEpcFormProps = {
-	epcId?: string | number;
 };

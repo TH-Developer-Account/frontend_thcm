@@ -20,9 +20,11 @@ import {
 
 import { useToast } from "../../../../../context/Auth/AuthContext";
 
-import { useCreateCrfMutation } from "../../queries/useCreateCrfMutation";
-import { useUpdateCrfMutation } from "../../queries/useUpdateCrfMutation";
-import { useCrfProductsQuery } from "../../queries/useCrfProductsQuery";
+import {
+	useCreateCrfMutation,
+	useUpdateCrfMutation,
+	useCrfProductsQuery,
+} from "../../queries/useCrfMutation";
 
 export type CrfFormMode = "create" | "edit";
 

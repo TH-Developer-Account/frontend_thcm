@@ -5,16 +5,15 @@ export type ProductType = "EPF" | "CRF";
 export type Product = {
 	id: string;
 	productType: ProductType;
-	category: string;
+	category: string; // you can tighten this if you have enum
 	partNumber: string;
 	name: string;
 	description: string | null;
-	unitRate: string | number;
-	isActive?: boolean;
-	created_at?: string;
-	updated_at?: string;
+	unitRate: string | number; // ⚠️ comes as string from Prisma Decimal
+	isActive: boolean;
+	created_at: string; // ISO date string
+	updated_at: string; // ISO date string
 };
-
 export type LineItemOption = {
 	/**
 	 * For select/table option value.
