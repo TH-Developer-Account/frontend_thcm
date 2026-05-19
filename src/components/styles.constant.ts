@@ -19,14 +19,13 @@ const STATUS_STYLE_MAP: Record<string, string> = {
 
 	blocked: "bg-rose-100 text-rose-800 ring-rose-200",
 	brand: "bg-[#f35a00] text-white",
-	outline: "bg-orange-10 ring-orange-400 ring-1 text-orange-500",
+	outline:
+		"border border-orange-200 bg-orange-50 text-orange-700 hover:border-red-400 hover:bg-red-100",
 };
 
 export const resolveStatusStyle = ({ status }: { status?: string }): string => {
-	if (!status) return "bg-transparent text-zinc-900 border-orange-500";
-	return (
-		STATUS_STYLE_MAP[status] ?? "bg-transparent text-zinc-900 border-orange-500"
-	);
+	if (!status) return "bg-transparent border-orange-500";
+	return STATUS_STYLE_MAP[status] ?? "bg-transparent  border-orange-500";
 };
 
 const VARIANT_STYLE_MAP: Record<string, string> = {

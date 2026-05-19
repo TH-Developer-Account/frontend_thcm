@@ -20,10 +20,10 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchBoxProps>(
 		return (
 			<React.Fragment>
 				<div
-					className={`flex items-center bg-white border border-gray-300 rounded-xl px-3 py-2 shadow-xs outline-none focus::border-none  ${containerClassName}`}
+					className={`flex items-center bg-white border border-gray-300 rounded-xl px-2 py-1.5 shadow-xs outline-none focus::border-none  ${containerClassName}`}
 				>
 					{/* Left Icon */}
-					<Search size={18} className="text-orange-600 mr-2" />
+					<Search size={14} className="text-orange-600 mr-2" />
 
 					{/* Input */}
 					<input
@@ -35,20 +35,6 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchBoxProps>(
 						placeholder={placeholder}
 						className={`flex-1 bg-transparent text-xs  focus:outline-none focus:border-amber-500${className}`}
 					/>
-
-					{/* Clear Button */}
-					{/* {value && (
-						<button
-							onClick={onClear}
-							className="ml-2 text-gray-400 hover:text-gray-600"
-							type="button"
-						>
-							<X size={16} />
-						</button>
-					)} */}
-
-					{/* Optional Right Element */}
-					{/* {rightElement && <div className="ml-2">{rightElement}</div>} */}
 				</div>
 			</React.Fragment>
 		);

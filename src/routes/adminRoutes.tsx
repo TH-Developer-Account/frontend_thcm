@@ -1,6 +1,5 @@
 import { Routes, Route } from "react-router-dom";
 // import { DashboardPage } from "../modules/marketing/pages/Dashboard/DashboardPage";
-import CrfForm from "../modules/marketing/pages/CRFScreen/CrfForm";
 import UsersPage from "../modules/admin/pages/BusinessUsersMaster/UserPage";
 import { UserProfilePage } from "../modules/admin/user-profile/UserProfilePage";
 import { ProfileFormPage } from "../modules/admin/user-profile/components/ProfileFormPage";
@@ -24,7 +23,6 @@ export default function AdminRoutes() {
 			<Route path="dashboard" element={<ComingSoon />} />
 			<Route path="users" element={<UsersPage />} />
 			<Route path="department" element={<ComingSoon />} />
-			<Route path="roles" element={<CrfForm />} />
 			<Route
 				path="masters"
 				element={

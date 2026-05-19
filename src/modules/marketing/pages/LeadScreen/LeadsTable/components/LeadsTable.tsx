@@ -1,46 +1,50 @@
-// import React from "react";
-// import { useNavigate } from "react-router-dom";
-// import { getLeadColumns } from "../columns";
-// import type { LeadRow } from "../../types/leads.types";
-// import DataTable from "../../../../../../components/ui/DataTable";
-const LeadsTable = () => {
-	// const navigate = useNavigate();
+import React from "react";
 
-	// const columns = React.useMemo(
-	// 	() =>
-	// 		getLeadColumns({
-	// 			onView: () => {
-	// 				navigate(`/leads/view`);
-	// 			},
-	// 			onEdit: () => {
-	// 				navigate(`/leads/edit`);
-	// 			},
-	// 		}),
-	// 	[navigate],
-	// );
+import DataTable from "../../../../../../components/ui/DataTable";
+
+import type { LeadEventGroup } from "../../types/leads.types";
+import { getGroupedLeadColumns } from "../columns/groupedLeadColumns";
+
+type LeadsTableProps = {
+	groups: LeadEventGroup[];
+};
+
+const LeadsTable = ({ groups }: LeadsTableProps) => {
+	const safeGroups = React.useMemo(() => {
+		return Array.isArray(groups) ? groups : [];
+	}, [groups]);
+
+	const handleViewLeads = React.useCallback((group: LeadEventGroup) => {
+		console.log("View leads group", {
+			epcId: group.epcId,
+			eventName: group.event_name,
+			location: group.location,
+			leadCount: group.lead_count,
+			leads: group.leads,
+		});
+	}, []);
+
+	const groupedColumns = React.useMemo(
+		() =>
+			getGroupedLeadColumns({
+				onViewLeads: handleViewLeads,
+			}),
+		[handleViewLeads],
+	);
 
 	return (
-		// <DataTable<LeadRow>
-		// 	// data={data}
-		// 	columns={columns}
-		// 	// loading={loading}
-		// 	/* ------------------ Sorting ------------------ */
-		// 	// sorting={sorting}
-		// 	// onSortingChange={setSorting}
-		// 	manualSorting
-		// 	/* ---------------- Pagination ---------------- */
-		// 	manualPagination
-		// 	// pageIndex={pageIndex}
-		// 	// pageSize={pageSize}
-		// 	// pageCount={totalPages}
-		// 	// onPageChange={setPageIndex}
-		// 	// onPageSizeChange={setPageSize}
-		// 	/* --------------- Optional UI ---------------- */
-		// 	scrollTargetId="tableScroll"
-		// 	emptyTitle="No Lead records found"
-		// 	emptyDescription="Try adjusting filters or search"
-		// />
-		<p>Hi</p>
+		<>
+			<DataTable<LeadEventGroup>
+				data={safeGroups}
+				columns={groupedColumns}
+				loading={false}
+				manualSorting={false}
+				manualPagination={false}
+				scrollTargetId="tableScroll"
+				emptyTitle="No Lead records found"
+				emptyDescription="Create leads from an EPC event to see them here"
+			/>
+		</>
 	);
 };
 

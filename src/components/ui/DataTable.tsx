@@ -54,12 +54,13 @@ function DataTable<T extends object>({
 	scrollTargetId = "tableScroll",
 	className = "",
 }: DataTableProps<T>) {
+	"use no memo";
 	const table = useReactTable({
 		data,
 		columns,
 
 		state: {
-			sorting,
+			sorting: sorting ?? [],
 		},
 
 		onSortingChange,

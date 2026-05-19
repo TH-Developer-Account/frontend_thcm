@@ -6,8 +6,6 @@ import {
 	Table,
 	CalendarDays,
 	LayoutDashboard,
-	// Database,
-	// MapPinHouse,
 	Users,
 } from "lucide-react";
 
@@ -65,40 +63,6 @@ export const marketingSidebar: SidebarItem[] = [
 		link: "/marketing/admin/users",
 		icon: <Users size={20} />,
 	},
-	// {
-	// 	id: "masters",
-	// 	label: "Masters",
-	// 	icon: <Database />,
-	// 	link: "/admin/masters",
-	// 	children: [
-	// 		{
-	// 			id: "users",
-	// 			label: "Users",
-	// 			link: "/marketing/admin/users",
-	// 			icon: <Users size={18} />,
-	// 		},
-	// 		{
-	// 			id: "department",
-	// 			label: "Department",
-	// 			link: "/marketing/admin/department",
-	// 			icon: <Table size={18} />,
-	// 		},
-
-	// 		{
-	// 			id: "roles",
-	// 			label: "Roles",
-	// 			link: "/marketing/admin/roles",
-	// 			icon: <FilePen size={18} />,
-	// 		},
-	// 		{
-	// 			id: "branche",
-	// 			label: "Branches",
-	// 			icon: <MapPinHouse />,
-	// 			link: "/marketing/admin/branches",
-	// 		},
-	// 	],
-	// },
-
 	{
 		id: "settings",
 		label: "Settings",
