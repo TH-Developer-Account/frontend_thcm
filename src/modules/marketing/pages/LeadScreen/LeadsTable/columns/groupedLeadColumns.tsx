@@ -1,8 +1,5 @@
-// columns/groupedLeadColumns.tsx
-
 import type { ColumnDef } from "@tanstack/react-table";
 import { Eye } from "lucide-react";
-import Button from "../../../../../../components/common/Button";
 import { NavLink } from "react-router-dom";
 import { formatDate } from "../../../../../../utils/format";
 import type { LeadEventGroup } from "../../types/leads.types";
@@ -15,16 +12,15 @@ export const getGroupedLeadColumns = ({
 	onViewLeads,
 }: GroupedLeadColumnActions): ColumnDef<LeadEventGroup>[] => [
 	{
-		accessorKey: "proposal_number",
+		accessorKey: "epcId",
 		header: "EPC No",
 		cell: ({ row }) => (
 			<NavLink
-				to={`/marketing/activity-planner/${row.original.epc_id}`}
+				to={`/marketing/activity-planner/${row.original.epcId}`}
 				className="text-blue-600 underline"
+				onClick={(event) => event.stopPropagation()}
 			>
-				<div className="font-medium">
-					{row.original.proposal_number || "--"}
-				</div>
+				<div className="font-medium">{row.original.epcId || "--"}</div>
 			</NavLink>
 		),
 	},
@@ -53,22 +49,26 @@ export const getGroupedLeadColumns = ({
 		accessorKey: "created_at",
 		header: "Created On",
 		cell: ({ row }) => (
-			<div className="font-medium">{formatDate(row.original.created_at)}</div>
+			<div className="font-medium">
+				{row.original.created_at ? formatDate(row.original.created_at) : "--"}
+			</div>
 		),
 	},
 	{
 		id: "action",
 		header: "Actions",
 		cell: ({ row }) => (
-			<Button
+			<button
 				type="button"
-				text="View Leads"
-				Icon={Eye}
-				status="outline"
-				size="sm"
-				className="text-xs"
-				onClick={() => onViewLeads(row.original)}
-			/>
+				className="inline-flex items-center gap-1 rounded-md border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-orange-50 hover:text-orange-700"
+				onClick={(event) => {
+					event.stopPropagation();
+					onViewLeads(row.original);
+				}}
+			>
+				<Eye size={14} />
+				View Leads
+			</button>
 		),
 	},
 ];

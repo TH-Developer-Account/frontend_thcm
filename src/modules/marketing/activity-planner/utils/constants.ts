@@ -1,3 +1,5 @@
+import type { ThreeWayOption } from "../../../../components/common/ThreeWayToggle";
+
 export const ACTIVITY_PLANNER_ROUTES = {
 	list: "/marketing/activity-planner",
 	create: "/marketing/activity-planner/create",
@@ -35,19 +37,23 @@ export const status = {
 	COMPLETED: "Completed",
 } as const;
 
+export type EpcListFilter = "createdByMe" | "pendingOnMe" | "approvedByMe";
+
 export const epcListFilterOptions = [
 	{
-		label: "All",
-		value: "all",
+		value: "pendingOnMe",
+		label: "Pending on me",
 	},
 	{
-		label: "Created by me",
 		value: "createdByMe",
+		label: "Created by me",
 	},
 	{
+		value: "approvedByMe",
 		label: "Approvals by me",
-		value: "approvalsByMe",
 	},
-] as const;
-
-export type EpcListFilter = (typeof epcListFilterOptions)[number]["value"];
+] as const satisfies readonly [
+	ThreeWayOption<EpcListFilter>,
+	ThreeWayOption<EpcListFilter>,
+	ThreeWayOption<EpcListFilter>,
+];

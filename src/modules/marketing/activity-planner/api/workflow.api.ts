@@ -70,4 +70,13 @@ export const workflowApi = {
 
 		return { data, message };
 	},
+	submitClarifiedUpdatedForm: async (epcId: string) => {
+		const {
+			data: { data, message },
+		} = await ServerAxios.patch(`/epc/${epcId}/clarified-update`, {
+			clarifiedUpdatedForm: true,
+		});
+
+		return { data, message };
+	},
 };

@@ -8,8 +8,6 @@ export const useEpcListQuery = (params: EpcListParams) => {
 	return useQuery({
 		queryKey: epcKeys.list(params),
 		queryFn: () => epcApi.getList(params),
-		staleTime: 0,
-		refetchOnMount: "always",
 	});
 };
 

@@ -7,7 +7,7 @@ import ApprovalTable from "../../../../../components/ui/ApprovalTable";
 
 import { useAuth } from "../../../../../context/Auth/useAuth";
 import { workflowApi } from "../../api/workflow.api";
-import { getStoredAppId } from "../../../helpers/localstorage";
+import { getStoredAppId } from "../../helpers/localstorage";
 
 import type { EpfFormValues } from "../../types/epf.types";
 import type { ApprovalTableRow } from "../../../../../utils/types";

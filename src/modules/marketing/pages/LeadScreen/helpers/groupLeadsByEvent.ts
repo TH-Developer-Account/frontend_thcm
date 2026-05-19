@@ -1,34 +1,36 @@
-// helpers/groupLeadsByEvent.ts
+import type {
+	LeadEventDetails,
+	LeadEventGroup,
+	LeadRow,
+} from "../types/leads.types";
 
-import type { LeadEventGroup, LeadRow } from "../types/leads.types";
+export const groupLeadsByEvent = (
+	leads: LeadRow[],
+	epcDetailsMap = new Map<string, LeadEventDetails>(),
+): LeadEventGroup[] => {
+	const groupedMap = new Map<string, LeadEventGroup>();
 
-export const groupLeadsByEvent = (leads: LeadRow[] = []): LeadEventGroup[] => {
-	const map = new Map<string, LeadEventGroup>();
+	for (const lead of leads) {
+		const epcId = lead.epcId || "unknown";
+		const epcDetails = epcDetailsMap.get(epcId);
 
-	leads.forEach((lead) => {
-		const epcId = lead.epc_id;
+		const existing = groupedMap.get(epcId);
 
-		if (!epcId) return;
-
-		if (!map.has(epcId)) {
-			map.set(epcId, {
-				epc_id: epcId,
-				proposal_number: lead.proposal_number,
-				event_name: lead.event_name,
-				location: lead.location,
-				created_at: lead.created_at,
-				lead_count: 0,
-				leads: [],
-			});
+		if (existing) {
+			existing.leads.push(lead);
+			existing.lead_count = existing.leads.length;
+			continue;
 		}
 
-		const group = map.get(epcId);
+		groupedMap.set(epcId, {
+			epcId,
+			event_name: epcDetails?.event_name || "--",
+			location: epcDetails?.location || "--",
+			created_at: epcDetails?.created_at || lead.created_at,
+			lead_count: 1,
+			leads: [lead],
+		});
+	}
 
-		if (!group) return;
-
-		group.leads.push(lead);
-		group.lead_count = group.leads.length;
-	});
-
-	return Array.from(map.values());
+	return Array.from(groupedMap.values());
 };

@@ -26,6 +26,7 @@ export const marketingSidebar: SidebarItem[] = [
 		id: "epc",
 		label: "Activity Planner",
 		icon: <CalendarDays size={20} />,
+		link: "/marketing/epc",
 		permission: {
 			app: "MAP",
 			module: "EPC",

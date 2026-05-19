@@ -5,8 +5,15 @@ import type { SortingState } from "@tanstack/react-table";
 import { useDebouncedValue } from "./useDebouncedValue";
 import { useEpcListQuery } from "../queries/useEpcListQuery";
 import type { EpcListFilter } from "../utils/constants";
+import type { EpcListParams } from "../types/epc.types";
 
 const DEFAULT_EPC_FILTER: EpcListFilter = "createdByMe";
+
+const VALID_EPC_FILTERS: EpcListFilter[] = [
+	"createdByMe",
+	"pendingOnMe",
+	"approvedByMe",
+];
 
 const toNumber = (value: string | null, fallback: number) => {
 	const parsed = Number(value);
@@ -14,8 +21,8 @@ const toNumber = (value: string | null, fallback: number) => {
 };
 
 const getFilterValue = (value: string | null): EpcListFilter => {
-	if (value === "all" || value === "createdByMe" || value === "approvalsByMe") {
-		return value;
+	if (VALID_EPC_FILTERS.includes(value as EpcListFilter)) {
+		return value as EpcListFilter;
 	}
 
 	return DEFAULT_EPC_FILTER;
@@ -35,7 +42,8 @@ export const useEpcListingPage = () => {
 	const debouncedSearch = useDebouncedValue(searchInput, 350);
 
 	const sortBy = sorting[0]?.id || "created_at";
-	const sortOrder =
+
+	const sortOrder: "asc" | "desc" =
 		sorting.length === 0 ? "desc" : sorting[0]?.desc ? "desc" : "asc";
 
 	React.useEffect(() => {
@@ -58,20 +66,22 @@ export const useEpcListingPage = () => {
 		);
 	}, [debouncedSearch, urlSearch, setSearchParams]);
 
-	const isCreatedByMeFilter = selectedFilter === "createdByMe";
-	const isApprovalsByMeFilter = selectedFilter === "approvalsByMe";
+	const queryParams = React.useMemo<EpcListParams>(() => {
+		return {
+			page,
+			limit,
+			search: urlSearch || undefined,
+			status: status || undefined,
+			sortBy,
+			sortOrder,
 
-	const query = useEpcListQuery({
-		page,
-		limit,
-		search: urlSearch || undefined,
-		status: status || undefined,
-		sortBy,
-		sortOrder,
+			createdByMe: selectedFilter === "createdByMe" ? true : undefined,
+			pendingOnMe: selectedFilter === "pendingOnMe" ? true : undefined,
+			approvedByMe: selectedFilter === "approvedByMe" ? true : undefined,
+		};
+	}, [page, limit, urlSearch, status, sortBy, sortOrder, selectedFilter]);
 
-		createdByMe: isCreatedByMeFilter ? true : undefined,
-		approvalsByMe: isApprovalsByMeFilter ? true : undefined,
-	});
+	const query = useEpcListQuery(queryParams);
 
 	const handleFilterChange = (value: EpcListFilter) => {
 		setSearchParams((prev) => {
@@ -79,9 +89,6 @@ export const useEpcListingPage = () => {
 
 			next.set("filter", value);
 			next.set("page", "1");
-
-			next.delete("createdByMe");
-			next.delete("approvalsByMe");
 
 			return next;
 		});

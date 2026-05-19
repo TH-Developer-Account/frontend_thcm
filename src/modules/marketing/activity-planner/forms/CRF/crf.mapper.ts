@@ -2,7 +2,7 @@ import {
 	getLineItemQuantity,
 	getLineItemRate,
 	getLineItemsTotal,
-} from "../../../helpers/lineItemHelper";
+} from "../../helpers/lineItemHelper";
 
 import type {
 	GroupedOption,

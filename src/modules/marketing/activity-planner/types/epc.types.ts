@@ -9,8 +9,10 @@ export type EpcListParams = {
 	status?: string;
 	sortBy?: string;
 	sortOrder?: "asc" | "desc";
+
 	createdByMe?: boolean;
-	approvalsByMe?: boolean;
+	pendingOnMe?: boolean;
+	approvedByMe?: boolean;
 };
 
 export type EpcListItem = {

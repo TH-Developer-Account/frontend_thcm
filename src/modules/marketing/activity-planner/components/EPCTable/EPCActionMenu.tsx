@@ -14,6 +14,12 @@ type EPCActionMenuProps = {
 	onLeadCreate?: (row: EpcListItem) => void;
 };
 
+const getEventName = (row: EpcListItem) => {
+	if (typeof row.event_name === "string") return row.event_name;
+
+	return row.event_title || "--";
+};
+
 export default function EPCActionMenu({
 	row,
 	onLeadCreate,
@@ -23,6 +29,10 @@ export default function EPCActionMenu({
 			"LeadInfo",
 			JSON.stringify({
 				epcId: row.id,
+				proposalNumber: row.proposal_number || "",
+				eventName: getEventName(row),
+				location: row.location || "",
+				status: row.status || "",
 			}),
 		);
 
@@ -49,7 +59,7 @@ export default function EPCActionMenu({
 					anchor="bottom end"
 					transition
 					className="
-						z-[99999] mt-1 w-44 origin-top-right
+						z-99 mt-1 w-44 origin-top-right
 						rounded-md border border-zinc-100 bg-white p-1 shadow-lg
 						outline-none transition
 						data-closed:scale-95 data-closed:transform data-closed:opacity-0

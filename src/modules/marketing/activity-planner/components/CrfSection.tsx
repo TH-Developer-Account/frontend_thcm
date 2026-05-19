@@ -11,6 +11,7 @@ import { mapCrfLineItemsToTableRows } from "../forms/CRF/crf.mapper";
 type CrfSectionProps = {
 	epcData: EpcDetailResponse;
 	isEditing: boolean;
+	isClarifiedUpdate?: boolean;
 	onEdit: () => void;
 	onCancel: () => void;
 	onSuccess: () => Promise<void>;
@@ -22,6 +23,7 @@ const CrfSection = ({
 	onEdit,
 	onCancel,
 	onSuccess,
+	isClarifiedUpdate,
 }: CrfSectionProps) => {
 	const crf = epcData.crf;
 	const hasLineItems = Boolean(crf?.lineItems?.length);
@@ -33,6 +35,7 @@ const CrfSection = ({
 				epcId={epcData.id}
 				crfId={crf?.id}
 				initialData={crf}
+				isClarifiedUpdate={isClarifiedUpdate}
 				onCancel={onCancel}
 				onSuccess={onSuccess}
 			/>

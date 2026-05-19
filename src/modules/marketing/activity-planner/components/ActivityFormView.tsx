@@ -1,12 +1,15 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+
 import EpcForm from "../forms/EPC/EpcForm";
 import DateRange from "./DateRange";
 import ActivityDetailsSection from "./ActivityDetailsSection";
 import CrfSection from "../forms/CRF/CrfSection";
 import EpfSection from "../forms/EPF/EpfSection";
 import CommentsSection from "./CommentsSection";
+
 import type { EpcDetailResponse } from "../types/epc.types";
+import type { UpdatedSection } from "../utils/activityPlannerStatus.helper";
 
 type EditingSection = "epc" | "crf" | "epf" | null;
 
@@ -15,6 +18,8 @@ type ActivityFormViewProps = {
 	editingSection: EditingSection;
 	setEditingSection: React.Dispatch<React.SetStateAction<EditingSection>>;
 	onRefresh: () => Promise<void>;
+	onSectionUpdated?: (section: UpdatedSection) => void;
+	isClarifiedUpdate?: boolean;
 };
 
 const ActivityFormView = ({
@@ -22,6 +27,8 @@ const ActivityFormView = ({
 	editingSection,
 	setEditingSection,
 	onRefresh,
+	onSectionUpdated,
+	isClarifiedUpdate,
 }: ActivityFormViewProps) => {
 	const navigate = useNavigate();
 
@@ -65,33 +72,39 @@ const ActivityFormView = ({
 				<div className="form text-left my-3 text-sm">
 					<ActivityDetailsSection
 						epcData={epcData}
+						isClarifiedUpdate={isClarifiedUpdate}
 						isEditing={editingSection === "epc"}
 						onEdit={() => setEditingSection("epc")}
 						onCancel={() => setEditingSection(null)}
 						onSuccess={async () => {
 							setEditingSection(null);
+							onSectionUpdated?.("epc");
 							await onRefresh();
 						}}
 					/>
 
 					<CrfSection
 						epcData={epcData}
+						isClarifiedUpdate={isClarifiedUpdate}
 						isEditing={editingSection === "crf"}
 						onEdit={() => setEditingSection("crf")}
 						onCancel={() => setEditingSection(null)}
 						onSuccess={async () => {
 							setEditingSection(null);
+							onSectionUpdated?.("crf");
 							await onRefresh();
 						}}
 					/>
 
 					<EpfSection
 						epcData={epcData}
+						isClarifiedUpdate={isClarifiedUpdate}
 						isEditing={editingSection === "epf"}
 						onEdit={() => setEditingSection("epf")}
 						onCancel={() => setEditingSection(null)}
 						onSuccess={async () => {
 							setEditingSection(null);
+							onSectionUpdated?.("epf");
 							await onRefresh();
 						}}
 					/>

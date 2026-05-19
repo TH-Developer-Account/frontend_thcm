@@ -11,7 +11,7 @@ import {
 	type EpcListFilter,
 } from "../../utils/constants";
 
-import { clearStoredEpcInfo } from "../../../helpers/localstorage";
+import { clearStoredEpcInfo } from "../../helpers/localstorage";
 
 type EPCTopbarProps = {
 	search: string;

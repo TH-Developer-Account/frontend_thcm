@@ -18,6 +18,7 @@ type ActivityDetailsSectionProps = {
 	onEdit: () => void;
 	onCancel: () => void;
 	onSuccess: () => Promise<void>;
+	isClarifiedUpdate?: boolean;
 };
 
 const ActivityDetailsSection = ({
@@ -26,6 +27,7 @@ const ActivityDetailsSection = ({
 	onEdit,
 	onCancel,
 	onSuccess,
+	isClarifiedUpdate,
 }: ActivityDetailsSectionProps) => {
 	if (isEditing) {
 		return (
@@ -35,6 +37,7 @@ const ActivityDetailsSection = ({
 				initialData={epcData}
 				onCancel={onCancel}
 				onSuccess={onSuccess}
+				isClarifiedUpdate={isClarifiedUpdate}
 			/>
 		);
 	}

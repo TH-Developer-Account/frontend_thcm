@@ -16,7 +16,7 @@ import { buildCrfPayload } from "./crf.payload";
 import {
 	clearStoredEpcInfo,
 	getStoredEpcInfo,
-} from "../../../helpers/localstorage";
+} from "../../helpers/localstorage";
 
 import { useToast } from "../../../../../context/Auth/AuthContext";
 
@@ -36,6 +36,7 @@ export type CrfFormProps = {
 	initialOptions?: GroupedOption[];
 	onSuccess?: (data?: any) => void | Promise<void>;
 	onCancel?: () => void;
+	isClarifiedUpdate?: boolean;
 };
 
 type UseCrfFormResult = {

@@ -6,7 +6,7 @@ import { useToast } from "../../../../../context/Auth/AuthContext";
 import {
 	clearStoredEpcInfo,
 	getStoredEpcInfo,
-} from "../../../helpers/localstorage";
+} from "../../helpers/localstorage";
 
 import {
 	useCreateEpcMutation,
@@ -18,9 +18,15 @@ import { buildEpcCreatePayload, buildEpcUpdatePayload } from "./epc.payload";
 import { mapEpcDetailToFormValues } from "./epc.mapper";
 import { buildEpcNoFromValues } from "./epcNumber";
 
-import type { EpcDetailResponse, EpcFormValues } from "../../types/epc.types";
+import type {
+	EpcCreatePayload,
+	EpcDetailResponse,
+	EpcFormValues,
+	EpcUpdatePayload,
+} from "../../types/epc.types";
 
 export type EpcFormMode = "create" | "edit";
+export type EpcSaveStatus = "DRAFT" | "SUBMITTED";
 
 type MasterOption = {
 	value: string;
@@ -44,6 +50,7 @@ export type UseEpcFormProps = {
 	initialData?: EpcDetailResponse | null;
 	masters?: EpcMasters;
 	onSuccess?: (data?: any) => Promise<void> | void;
+	isClarifiedUpdate?: boolean;
 };
 
 type UseEpcFormResult = {
@@ -52,7 +59,7 @@ type UseEpcFormResult = {
 	loading: boolean;
 	isEditMode: boolean;
 	handleChange: (name: keyof EpcFormValues, value: string) => void;
-	handleSave: (status: "DRAFT" | "SUBMITTED") => Promise<void>;
+	handleSave: (status: EpcSaveStatus) => Promise<void>;
 	handleReset: () => void;
 };
 
@@ -98,12 +105,24 @@ const shouldRegenerateEpcNo = (
 	);
 };
 
+const removeStatusFromUpdatePayload = (
+	payload: EpcUpdatePayload,
+): EpcUpdatePayload => {
+	const { status: _removedStatus, ...payloadWithoutStatus } =
+		payload as EpcUpdatePayload & { status?: unknown };
+
+	void _removedStatus;
+
+	return payloadWithoutStatus as EpcUpdatePayload;
+};
+
 export function useEpcForm({
 	mode = "create",
 	epcId: propEpcId,
 	initialData,
 	masters,
 	onSuccess,
+	isClarifiedUpdate = false,
 }: UseEpcFormProps = {}): UseEpcFormResult {
 	const navigate = useNavigate();
 	const { showToast } = useToast();
@@ -169,7 +188,7 @@ export function useEpcForm({
 	}, [initialValues]);
 
 	const handleSave = React.useCallback(
-		async (status: "DRAFT" | "SUBMITTED") => {
+		async (status: EpcSaveStatus) => {
 			try {
 				const generatedEpcNo =
 					values.proposal_number ||
@@ -211,7 +230,11 @@ export function useEpcForm({
 				let savedData: any;
 
 				if (isEditMode && epcId) {
-					const payload = buildEpcUpdatePayload(nextValues, status);
+					const payloadWithStatus = buildEpcUpdatePayload(nextValues, status);
+
+					const payload = isClarifiedUpdate
+						? removeStatusFromUpdatePayload(payloadWithStatus)
+						: payloadWithStatus;
 
 					savedData = await updateEpcMutation.mutateAsync({
 						epcId,
@@ -224,7 +247,10 @@ export function useEpcForm({
 						description: "EPC updated successfully.",
 					});
 				} else {
-					const payload = buildEpcCreatePayload(nextValues, status);
+					const payload: EpcCreatePayload = buildEpcCreatePayload(
+						nextValues,
+						status,
+					);
 
 					savedData = await createEpcMutation.mutateAsync(payload);
 
@@ -272,6 +298,7 @@ export function useEpcForm({
 			masters,
 			isEditMode,
 			epcId,
+			isClarifiedUpdate,
 			updateEpcMutation,
 			createEpcMutation,
 			showToast,

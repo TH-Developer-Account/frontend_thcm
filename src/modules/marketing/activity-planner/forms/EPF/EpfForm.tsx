@@ -25,7 +25,7 @@ export default function EpfForm(props: EpfFormProps) {
 		loading,
 		submitting,
 	} = useEpfForm(props);
-
+	const saveStatus = props.isClarifiedUpdate ? "DRAFT" : "SUBMITTED";
 	const actions = (
 		<div className="flex flex-row items-center justify-end gap-2">
 			{onCancel && (
@@ -67,7 +67,7 @@ export default function EpfForm(props: EpfFormProps) {
 
 			<Button
 				type="button"
-				onClick={() => handleSubmit("SUBMITTED")}
+				onClick={() => handleSubmit(saveStatus)}
 				text={isEditMode ? "Update" : "Submit"}
 				size="sm"
 				className="text-red-600"

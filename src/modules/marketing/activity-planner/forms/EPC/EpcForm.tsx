@@ -8,7 +8,7 @@ import { useMasterData } from "../../../../../hooks/useMasterData";
 import { useEpcForm } from "./useEpcForm";
 import EpcFormFields from "./EpcFormFields";
 
-import { getStoredEpcInfo } from "../../../helpers/localstorage";
+import { getStoredEpcInfo } from "../../helpers/localstorage";
 import type { EpcDetailResponse } from "../../types/epc.types";
 
 export type EpcFormProps = {
@@ -17,6 +17,7 @@ export type EpcFormProps = {
 	initialData?: EpcDetailResponse | null;
 	onCancel?: () => void;
 	onSuccess?: (data?: any) => Promise<void> | void;
+	isClarifiedUpdate?: boolean;
 };
 
 const EpcForm = ({
@@ -25,6 +26,7 @@ const EpcForm = ({
 	initialData,
 	onSuccess,
 	onCancel,
+	isClarifiedUpdate,
 }: EpcFormProps) => {
 	const epcInfo = React.useMemo(() => getStoredEpcInfo(), []);
 
@@ -36,7 +38,7 @@ const EpcForm = ({
 			: propEpcId || storedEpcId || undefined;
 
 	const { data: masters } = useMasterData();
-
+	const saveStatus = isClarifiedUpdate ? "DRAFT" : "SUBMITTED";
 	const {
 		values,
 		errors,
@@ -51,8 +53,8 @@ const EpcForm = ({
 		initialData,
 		masters,
 		onSuccess,
+		isClarifiedUpdate,
 	});
-
 	if (loading) {
 		return (
 			<div className="flex h-64 items-center justify-center text-gray-500">
@@ -94,7 +96,7 @@ const EpcForm = ({
 					<Button
 						type="button"
 						text={isEditMode ? "Update" : "Create EPC"}
-						onClick={() => handleSave("SUBMITTED")}
+						onClick={() => handleSave(saveStatus)}
 						size="sm"
 						className="text-red-600"
 						Icon={Save}

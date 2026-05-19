@@ -7,24 +7,15 @@ import { formatDate } from "../../../../../../utils/format";
 import type { LeadRow } from "../../types/leads.types";
 
 const getLeadName = (row: LeadRow) => {
-	const fullName = `${row.lead_first_name || ""} ${
-		row.lead_last_name || ""
-	}`.trim();
+	const fullName = row.name;
 
 	return fullName || "--";
 };
 
 export const getLeadCustomerColumns = (): ColumnDef<LeadRow>[] => [
 	{
-		accessorKey: "lead_no",
-		header: "Lead No",
-		cell: ({ row }) => (
-			<div className="font-medium">{row.original.lead_no || "--"}</div>
-		),
-	},
-	{
 		id: "lead_name",
-		header: "Customer Name",
+		header: "Lead Name",
 		cell: ({ row }) => (
 			<div className="font-medium">{getLeadName(row.original)}</div>
 		),
@@ -33,7 +24,14 @@ export const getLeadCustomerColumns = (): ColumnDef<LeadRow>[] => [
 		accessorKey: "lead_contact_no",
 		header: "Phone Number",
 		cell: ({ row }) => (
-			<div className="font-medium">{row.original.lead_contact_no || "--"}</div>
+			<div className="font-medium">{row.original.phone || "--"}</div>
+		),
+	},
+	{
+		accessorKey: "lead_email",
+		header: "Lead Email",
+		cell: ({ row }) => (
+			<div className="font-medium">{row.original.email || "--"}</div>
 		),
 	},
 	{
@@ -52,9 +50,7 @@ export const getLeadCustomerColumns = (): ColumnDef<LeadRow>[] => [
 		accessorKey: "remarks",
 		header: "Remarks",
 		cell: ({ row }) => (
-			<div className="max-w-[240px] truncate">
-				{row.original.remarks || "--"}
-			</div>
+			<div className="max-w-[240px] truncate">{row.original.notes || "--"}</div>
 		),
 	},
 	{

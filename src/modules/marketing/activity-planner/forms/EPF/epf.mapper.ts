@@ -2,7 +2,7 @@ import {
 	getLineItemQuantity,
 	getLineItemRate,
 	getLineItemsTotal,
-} from "../../../helpers/lineItemHelper";
+} from "../../helpers/lineItemHelper";
 
 import type { LineItemOption } from "../../../types";
 import type { EpfFormValues, EpfProduct } from "../../types/epf.types";

@@ -34,7 +34,7 @@ import {
 	clearStoredEpcInfo,
 	getStoredAppId,
 	getStoredEpcInfo,
-} from "../../../helpers/localstorage";
+} from "../../helpers/localstorage";
 
 import { workflowApi } from "../../api/workflow.api";
 import {
@@ -56,6 +56,7 @@ export type EpfFormProps = {
 	budgetMasterId?: string | null;
 	onSuccess?: (data?: any) => void | Promise<void>;
 	onCancel?: () => void;
+	isClarifiedUpdate?: boolean;
 };
 
 type UseEpfFormResult = {
