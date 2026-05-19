@@ -70,11 +70,11 @@ export const workflowApi = {
 
 		return { data, message };
 	},
-	submitClarifiedUpdatedForm: async (epcId: string) => {
+	submitClarifiedUpdatedForm: async (workflowId: string) => {
 		const {
 			data: { data, message },
-		} = await ServerAxios.patch(`/epc/${epcId}/clarified-update`, {
-			clarifiedUpdatedForm: true,
+		} = await ServerAxios.patch(`/soa/stages/activate-first-stage`, {
+			workflowId,
 		});
 
 		return { data, message };

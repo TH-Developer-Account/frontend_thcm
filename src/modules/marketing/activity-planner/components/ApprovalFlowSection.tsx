@@ -1,29 +1,18 @@
 import { useMemo } from "react";
 import Section from "./Section";
-import ApprovalTable from "../../../../components/ui/ApprovalTable";
-import type { ApprovalTableRow } from "../../../../utils/types";
-import type { EpcWorkflowStage } from "../types/workflow.types";
-import { getApprovalStrategyLabel } from "../utils/formatters";
+import ApprovalTable from "./ApprovalTable";
+import type { WorkflowStage } from "../types/workflow.types";
+import { mapWorkflowStagesToApprovalRows } from "../utils/approvalTable.mapper";
 
 type ApprovalFlowSectionProps = {
-	stages: EpcWorkflowStage[];
+	stages: WorkflowStage[];
 };
 
 const ApprovalFlowSection = ({ stages }: ApprovalFlowSectionProps) => {
-	const approvalRows = useMemo<ApprovalTableRow[]>(() => {
-		return stages.flatMap((stage) =>
-			stage.approvals.map((approval) => ({
-				id: approval.id,
-				stageOrder: stage.stageOrder,
-				name: `${approval.approver?.first_name ?? ""} ${
-					approval.approver?.last_name ?? ""
-				}`.trim(),
-				email: approval.approver?.email ?? "--",
-				stageName: stage.stageName ?? `Stage ${stage.stageOrder}`,
-				strategy: getApprovalStrategyLabel(stage),
-				status: approval.status ?? stage.status ?? "--",
-			})),
-		);
+	const approvalRows = useMemo(() => {
+		return mapWorkflowStagesToApprovalRows(stages, {
+			showOnlyCurrentStageStatus: true,
+		});
 	}, [stages]);
 
 	return (

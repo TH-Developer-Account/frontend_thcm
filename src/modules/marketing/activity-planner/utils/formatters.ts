@@ -172,7 +172,7 @@ export const mapBudgetShareInfo = (data: BudgetShareInput) => {
 	const availableBudget = toNumber(data.availableBudget);
 	const allotedBudget = toNumber(data.allotedBudget);
 	const eventBudget = toNumber(data.eventBudget);
-
+	const tataHitachiPoAmount = toNumber(data.tataHitachiPoAmount);
 	const dealerPercent = clampPercent(toNumber(data.dealerPercent));
 	const dealerShare = (eventBudget * dealerPercent) / 100;
 
@@ -192,11 +192,19 @@ export const mapBudgetShareInfo = (data: BudgetShareInput) => {
 			label: "Allotted Budget",
 			value: allotedBudget,
 		},
+		{
+			label: "Remaining Amount",
+			value: tataHitachiPoAmount,
+		},
+		{
+			label: "Tata Hitachi Po Amount",
+			value: tataHitachiPoAmount,
+		},
 	];
 
 	const shareInfo: ShareInfo = {
 		dealerName: data.dealerName || "-",
-		tataHitachiPoAmount: toNumber(data.tataHitachiPoAmount),
+		tataHitachiPoAmount,
 		dealerPercent,
 		dealerShare,
 		tataHitachiPercent,

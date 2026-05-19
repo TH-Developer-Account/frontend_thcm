@@ -1,37 +1,20 @@
-import React from "react";
-
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { useAuth } from "../../../../context/Auth/useAuth";
 
 import type { EpcDetailResponse } from "../types/epc.types";
-
 import {
-	hasAnyUpdatedSection,
 	hasClarificationInComments,
-	isPendingEpc,
-	type UpdatedSection,
+	isPendingStatus,
 	type WorkflowEntry,
 } from "../utils/activityPlannerStatus.helper";
 
 import { useSubmitClarifiedUpdatedFormMutation } from "../queries/useEpcMutation";
-
-type UpdatedSectionsState = {
-	epcId: string | null;
-	sections: Set<UpdatedSection>;
-};
-
-type ClarifiedState = {
-	epcId: string | null;
-	hasClarification: boolean;
-};
 
 type UseClarifiedResubmissionArgs = {
 	epcData?: EpcDetailResponse | null;
 	workflowEntries?: WorkflowEntry[];
 	onRefresh: () => Promise<unknown>;
 };
-
-const emptyUpdatedSections = new Set<UpdatedSection>();
 
 const getUserId = (authUser: any) => {
 	return (
@@ -56,103 +39,27 @@ export const useClarifiedResubmission = ({
 
 	const submitClarifiedMutation = useSubmitClarifiedUpdatedFormMutation();
 
-	const [updatedSectionsState, setUpdatedSectionsState] =
-		React.useState<UpdatedSectionsState>({
-			epcId: null,
-			sections: new Set(),
-		});
-
-	const [clarifiedState, setClarifiedState] = React.useState<ClarifiedState>({
-		epcId: null,
-		hasClarification: false,
-	});
-
-	const epcId = epcData?.id ?? null;
+	const workflowId = epcData?.activeWorkflow?.id ?? null;
 	const currentUserId = getUserId(auth);
 
 	const isProposer =
 		Boolean(currentUserId) && currentUserId === epcData?.created_by_id;
 
-	const hasClarificationFromComments =
-		hasClarificationInComments(workflowEntries);
-
-	React.useEffect(() => {
-		if (!epcId || !hasClarificationFromComments) return;
-
-		setClarifiedState((prev) => {
-			if (prev.epcId === epcId && prev.hasClarification) return prev;
-
-			return {
-				epcId,
-				hasClarification: true,
-			};
-		});
-	}, [epcId, hasClarificationFromComments]);
-
-	const hasPersistedClarification =
-		clarifiedState.epcId === epcId && clarifiedState.hasClarification;
+	const hasClarification = hasClarificationInComments(workflowEntries);
 
 	const isClarifiedPending =
-		isProposer &&
-		isPendingEpc(epcData) &&
-		(hasClarificationFromComments || hasPersistedClarification);
-
-	const updatedSections =
-		isClarifiedPending && updatedSectionsState.epcId === epcId
-			? updatedSectionsState.sections
-			: emptyUpdatedSections;
-
-	const canSubmitClarifiedUpdate =
-		isClarifiedPending && hasAnyUpdatedSection(updatedSections);
-
-	const markSectionUpdated = (section: UpdatedSection) => {
-		if (!epcId || !isProposer) return;
-
-		setUpdatedSectionsState((prev) => {
-			const nextSections =
-				prev.epcId === epcId
-					? new Set(prev.sections)
-					: new Set<UpdatedSection>();
-
-			nextSections.add(section);
-
-			return {
-				epcId,
-				sections: nextSections,
-			};
-		});
-	};
+		isProposer && isPendingStatus(epcData?.status) && hasClarification;
 
 	const submitClarifiedUpdate = async () => {
-		if (!epcId || !isProposer || !isClarifiedPending) return;
-
-		if (!canSubmitClarifiedUpdate) {
-			showToast({
-				type: "error",
-				title: "Pending Updates",
-				description: "Please update at least one form before final submit.",
-			});
-
-			return;
-		}
+		if (!workflowId || !isClarifiedPending) return;
 
 		try {
-			await submitClarifiedMutation.mutateAsync(epcId);
+			await submitClarifiedMutation.mutateAsync(workflowId);
 
 			showToast({
 				type: "success",
 				title: "Submitted",
 				description: "Updated form submitted successfully.",
-			});
-
-			setUpdatedSectionsState({
-				epcId,
-				sections: new Set(),
-			});
-
-			setClarifiedState({
-				epcId,
-				hasClarification: false,
 			});
 
 			await onRefresh();
@@ -169,11 +76,8 @@ export const useClarifiedResubmission = ({
 	};
 
 	return {
-		updatedSections,
 		isClarifiedPending,
-		canSubmitClarifiedUpdate,
 		isSubmittingClarifiedUpdate: submitClarifiedMutation.isPending,
-		markSectionUpdated,
 		submitClarifiedUpdate,
 	};
 };

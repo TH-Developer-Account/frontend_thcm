@@ -27,7 +27,6 @@ const CrfSection = ({
 }: CrfSectionProps) => {
 	const crf = epcData.crf;
 	const hasLineItems = Boolean(crf?.lineItems?.length);
-
 	if (isEditing) {
 		return (
 			<CrfForm
@@ -57,7 +56,11 @@ const CrfSection = ({
 					/>
 				}
 			>
-				<LineTableView data={mapCrfLineItemsToTableRows(crf?.lineItems)} />
+				<LineTableView
+					data={mapCrfLineItemsToTableRows(crf?.lineItems)}
+					showGrandTotal
+					grandTotalLabel="CRF Grand Total:"
+				/>
 			</Section>
 		);
 	}

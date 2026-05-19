@@ -3,7 +3,7 @@ import { Banknote, HandCoins, ShieldCheck, Users, Wallet } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
 import FormInput from "../../../../../components/FormElements/FormInput";
-import ApprovalTable from "../../../../../components/ui/ApprovalTable";
+import ApprovalTable from "../../components/ApprovalTable";
 
 import { useAuth } from "../../../../../context/Auth/useAuth";
 import { workflowApi } from "../../api/workflow.api";
@@ -13,82 +13,13 @@ import type { EpfFormValues } from "../../types/epf.types";
 import type { ApprovalTableRow } from "../../../../../utils/types";
 
 import FormHeader from "../../components/FormHeader";
+import { mapWorkflowStagesToApprovalRows } from "../../utils/approvalTable.mapper";
 
 type EpfFormInfoProps = {
 	values: EpfFormValues;
 	errors?: Partial<Record<keyof EpfFormValues, string>>;
 	handleChange: (name: keyof EpfFormValues, value: string) => void;
 	eventCost: number;
-};
-
-type WorkflowStage = {
-	id?: string;
-	name: string;
-	stageOrder: number;
-	strategy?: string;
-	minApprovals?: number;
-	approvers?: {
-		id?: string;
-		user?: {
-			id?: string;
-			first_name?: string;
-			last_name?: string;
-			email?: string;
-		};
-	}[];
-};
-
-const getApprovalStrategyLabel = (stage: WorkflowStage) => {
-	const approverCount = stage.approvers?.length ?? 0;
-
-	if (approverCount <= 1) return "Sequential";
-
-	if (stage.minApprovals && stage.minApprovals === approverCount) {
-		return "All Approvers Required";
-	}
-
-	return "Parallel";
-};
-
-const mapWorkflowToRows = (
-	stages: WorkflowStage[] = [],
-): ApprovalTableRow[] => {
-	return stages.flatMap((stage) => {
-		const approvers = stage.approvers ?? [];
-
-		if (!approvers.length) {
-			return [
-				{
-					id: `${stage.stageOrder}-empty`,
-					stageOrder: stage.stageOrder,
-					name: "--",
-					email: "--",
-					stageName: stage.name,
-					strategy: getApprovalStrategyLabel(stage),
-					minApprovals: stage.minApprovals
-						? String(stage.minApprovals)
-						: undefined,
-				},
-			];
-		}
-
-		return approvers.map((approver, index) => {
-			const user = approver.user;
-
-			return {
-				id: approver.id ?? `${stage.stageOrder}-${index}`,
-				stageOrder: stage.stageOrder,
-				name:
-					[user?.first_name, user?.last_name].filter(Boolean).join(" ") || "--",
-				email: user?.email || "--",
-				stageName: stage.name,
-				strategy: getApprovalStrategyLabel(stage),
-				minApprovals: stage.minApprovals
-					? String(stage.minApprovals)
-					: undefined,
-			};
-		});
-	});
 };
 
 export default function EpfFormFields({
@@ -116,7 +47,11 @@ export default function EpfFormFields({
 				budget: eventCost,
 			});
 
-			setPreviewRows(mapWorkflowToRows(data?.stages ?? []));
+			setPreviewRows(
+				mapWorkflowStagesToApprovalRows(data?.stages ?? [], {
+					showOnlyCurrentStageStatus: false,
+				}),
+			);
 		} catch (error) {
 			console.error("Failed to preview workflow:", error);
 			setPreviewRows([]);

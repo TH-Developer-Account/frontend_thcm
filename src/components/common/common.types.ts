@@ -88,6 +88,7 @@ export interface BadgeProps {
 	children?: React.ReactNode;
 	status?: GeneralStatus;
 	variant?: "primary" | "success" | "warning" | "danger" | "disable";
+	text?: string;
 }
 
 export interface AvatarProps {

@@ -1,5 +1,5 @@
 import { status } from "../modules/marketing/constant";
-import type { EpcWorkflowApproval } from "../modules/marketing/pages/ActivityPlannerView/types/ActivityView.types";
+import type { EpcWorkflowApproval } from "../modules/marketing/activity-planner/types/epc.types";
 
 // badge and button types
 export type TableUserStatus =
@@ -90,15 +90,29 @@ export type EventRow = {
 	participants: number;
 };
 
+export type ApprovalTableApproverRow = {
+	id: string;
+	name: string;
+	email: string;
+	minApprovals?: string | number | null;
+	status?: string | null;
+};
+
 export type ApprovalTableRow = {
 	id: string;
 	stageOrder: number;
-	name: string;
-	email: string;
-	stageName?: string;
-	strategy?: string;
-	status?: string;
-	minApprovals?: string;
+	stageName: string;
+	strategy: string;
+	minApprovals?: string | number | null;
+	totalApprovers?: string | number | null;
+	status?: string | null;
+
+	// old compatibility
+	name?: string;
+	email?: string;
+
+	// new display format
+	approvers?: ApprovalTableApproverRow[];
 };
 
 export type ApprovalRow = {

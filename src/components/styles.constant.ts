@@ -21,6 +21,8 @@ const STATUS_STYLE_MAP: Record<string, string> = {
 	brand: "bg-[#f35a00] text-white",
 	outline:
 		"border border-orange-200 bg-orange-50 text-orange-700 hover:border-red-400 hover:bg-red-100",
+	active: "bg-green-100 text-green-800 ",
+	inactive: "bg-red-100 text-red-800 ",
 };
 
 export const resolveStatusStyle = ({ status }: { status?: string }): string => {
@@ -32,8 +34,10 @@ const VARIANT_STYLE_MAP: Record<string, string> = {
 	brand: "bg-[#f35a00] text-white",
 
 	success: "bg-green-100 text-green-800 ",
+	active: "bg-green-100 text-green-800 ",
 
 	danger: "bg-red-100 text-red-800 ",
+	inactive: "bg-red-100 text-red-800 ",
 
 	warning: "bg-yellow-100 text-yellow-800",
 

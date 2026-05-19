@@ -51,7 +51,7 @@ export function useUpdateEpcMutation() {
 
 export const useSubmitClarifiedUpdatedFormMutation = () => {
 	return useMutation({
-		mutationFn: (epcId: string) =>
-			workflowApi.submitClarifiedUpdatedForm(epcId),
+		mutationFn: (workflowId: string) =>
+			workflowApi.submitClarifiedUpdatedForm(workflowId),
 	});
 };

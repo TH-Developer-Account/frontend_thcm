@@ -86,7 +86,7 @@ const EpfSection = ({
 	return (
 		<>
 			<Section
-				title="Event Cost Overheads"
+				title="Activity Proposition Form Budget Information"
 				action={
 					<Button
 						type="button"
@@ -98,15 +98,16 @@ const EpfSection = ({
 				}
 			>
 				{epf.lineItems?.length > 0 ? (
-					<LineTableView data={mapEpfLineItemsToTableRows(epf.lineItems)} />
+					<LineTableView
+						data={mapEpfLineItemsToTableRows(epf.lineItems)}
+						showGrandTotal
+						grandTotalLabel="Event Cost Overheads Grand Total:"
+					/>
 				) : (
 					<div className="text-xs text-gray-500">
 						No event cost overheads added.
 					</div>
 				)}
-			</Section>
-
-			<Section title="Activity Proposition Form Budget Information">
 				{epf.internalParticipants || epf.externalParticipants ? (
 					<div className="my-2 grid grid-cols-4 gap-6 px-4 py-1.5 text-sm">
 						<p className="uppercase-label-text">

@@ -25,7 +25,6 @@ const BudgetCard = ({
 const BudgetShare = ({ items, shareInfo }: BudgetShareProps) => {
 	const {
 		dealerName,
-		tataHitachiPoAmount,
 		dealerPercent,
 		dealerShare,
 		tataHitachiPercent,
@@ -35,7 +34,7 @@ const BudgetShare = ({ items, shareInfo }: BudgetShareProps) => {
 
 	return (
 		<React.Fragment>
-			<div className="grid grid-cols-3 gap-2 px-1.5 py-1">
+			<div className="grid grid-cols-5 gap-2 px-1.5 py-1">
 				{items.map((item) => (
 					<BudgetCard key={item.label} label={item.label}>
 						{typeof item.value === "number"
@@ -45,18 +44,15 @@ const BudgetShare = ({ items, shareInfo }: BudgetShareProps) => {
 				))}
 			</div>
 
-			<div className="grid grid-cols-3 gap-2 px-1.5 py-1">
+			<div className="grid grid-cols-2 gap-2 px-1.5 py-1">
 				<BudgetCard label="Dealer Name">{dealerName || "--"}</BudgetCard>
 				<BudgetCard label="Total Event Cost">
 					{formatCurrency(eventBudget) || "--"}
 				</BudgetCard>
-				<BudgetCard label="Tata Hitachi PO Amount">
-					{formatCurrency(tataHitachiPoAmount)}
-				</BudgetCard>
 			</div>
 
-			<div className="rounded-lg p-5 m-1 bg-slate-50 border border-slate-200">
-				<div className="flex justify-between text-sm mb-3">
+			<div className="rounded-lg px-5 py-3 m-1 bg-slate-50 border border-slate-200">
+				<div className="flex justify-between text-sm mb-2">
 					<div>
 						<span className="uppercase-label-text">Dealer Share</span>
 						<p className="text-slate-800 font-semibold mt-1">

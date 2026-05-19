@@ -9,7 +9,6 @@ import EpfSection from "../forms/EPF/EpfSection";
 import CommentsSection from "./CommentsSection";
 
 import type { EpcDetailResponse } from "../types/epc.types";
-import type { UpdatedSection } from "../utils/activityPlannerStatus.helper";
 
 type EditingSection = "epc" | "crf" | "epf" | null;
 
@@ -18,7 +17,6 @@ type ActivityFormViewProps = {
 	editingSection: EditingSection;
 	setEditingSection: React.Dispatch<React.SetStateAction<EditingSection>>;
 	onRefresh: () => Promise<void>;
-	onSectionUpdated?: (section: UpdatedSection) => void;
 	isClarifiedUpdate?: boolean;
 };
 
@@ -27,8 +25,7 @@ const ActivityFormView = ({
 	editingSection,
 	setEditingSection,
 	onRefresh,
-	onSectionUpdated,
-	isClarifiedUpdate,
+	isClarifiedUpdate = false,
 }: ActivityFormViewProps) => {
 	const navigate = useNavigate();
 
@@ -78,7 +75,6 @@ const ActivityFormView = ({
 						onCancel={() => setEditingSection(null)}
 						onSuccess={async () => {
 							setEditingSection(null);
-							onSectionUpdated?.("epc");
 							await onRefresh();
 						}}
 					/>
@@ -91,7 +87,6 @@ const ActivityFormView = ({
 						onCancel={() => setEditingSection(null)}
 						onSuccess={async () => {
 							setEditingSection(null);
-							onSectionUpdated?.("crf");
 							await onRefresh();
 						}}
 					/>
@@ -104,7 +99,6 @@ const ActivityFormView = ({
 						onCancel={() => setEditingSection(null)}
 						onSuccess={async () => {
 							setEditingSection(null);
-							onSectionUpdated?.("epf");
 							await onRefresh();
 						}}
 					/>

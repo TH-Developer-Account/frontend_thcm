@@ -40,11 +40,8 @@ const ActivityPlannerPage = () => {
 	};
 
 	const {
-		updatedSections,
 		isClarifiedPending,
-		canSubmitClarifiedUpdate,
 		isSubmittingClarifiedUpdate,
-		markSectionUpdated,
 		submitClarifiedUpdate,
 	} = useClarifiedResubmission({
 		epcData: epcData ?? null,
@@ -64,8 +61,6 @@ const ActivityPlannerPage = () => {
 						loading={isFetching}
 						onPreview={() => setIsPreviewOpen(true)}
 						isClarifiedPending={isClarifiedPending}
-						updatedSections={updatedSections}
-						canSubmitClarifiedUpdate={canSubmitClarifiedUpdate}
 						isSubmittingClarifiedUpdate={isSubmittingClarifiedUpdate}
 						onSubmitClarifiedUpdate={submitClarifiedUpdate}
 					/>
@@ -76,7 +71,6 @@ const ActivityPlannerPage = () => {
 					editingSection={editingSection}
 					setEditingSection={setEditingSection}
 					onRefresh={handleRefresh}
-					onSectionUpdated={markSectionUpdated}
 					isClarifiedUpdate={isClarifiedPending}
 				/>
 			</PageRowSectionLayout>
