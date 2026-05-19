@@ -155,7 +155,7 @@ export default function LeadCreatePage() {
 			}
 
 			localStorage.removeItem(LEAD_INFO_STORAGE_KEY);
-			navigate("/marketing/leads/listing");
+			handleReset();
 		} catch (err) {
 			console.log({ err });
 		} finally {
@@ -364,21 +364,32 @@ export default function LeadCreatePage() {
 														placeholder="Enter remarks"
 													/>
 												</td>
-												<td className="px-3 py-3 text-center">
-													<button
+												<td className="px-3 py-3 text-center flex gap-2">
+													<Button
+														type="button"
+														// text={
+														// 	saving
+														// 		? "Saving..."
+														// 		: isEditMode
+														// 			? "Update"
+														// 			: "Add"
+														// }
+														Icon={Plus}
+														status="outline"
+														size="sm"
+														disabled={saving}
+														onClick={handleSubmit}
+														aria-label="Add customer"
+													/>
+													<Button
+														Icon={Trash2}
+														iconSize="14"
 														type="button"
 														onClick={() => handleRemoveRow(item.id)}
 														disabled={items.length === 1}
-														className="
-															inline-flex h-8 w-8 items-center justify-center rounded-md
-															border border-red-200 bg-red-50 text-red-600 transition
-															hover:bg-red-100 disabled:cursor-not-allowed
-															disabled:border-zinc-100 disabled:bg-zinc-50 disabled:text-zinc-300
-														"
 														aria-label="Remove customer"
-													>
-														<Trash2 size={14} />
-													</button>
+														status="outline"
+													/>
 												</td>
 											</tr>
 										))}
