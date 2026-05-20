@@ -189,3 +189,13 @@ export function safe(value: unknown, fallback = "-") {
 	}
 	return value;
 }
+
+export const trimText = (value?: string | null, maxLength = 80) => {
+	if (!value?.trim()) return "--";
+
+	const text = value.trim();
+
+	if (text.length <= maxLength) return text;
+
+	return `${text.slice(0, maxLength).trim()}...`;
+};

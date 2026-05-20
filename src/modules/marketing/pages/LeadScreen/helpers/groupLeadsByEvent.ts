@@ -5,15 +5,15 @@ import type {
 } from "../types/leads.types";
 
 export const groupLeadsByEvent = (
-	leads: LeadRow[],
+	leads: LeadRow[] | undefined | null,
 	epcDetailsMap = new Map<string, LeadEventDetails>(),
 ): LeadEventGroup[] => {
 	const groupedMap = new Map<string, LeadEventGroup>();
+	const safeLeads = Array.isArray(leads) ? leads : [];
 
-	for (const lead of leads) {
+	for (const lead of safeLeads) {
 		const epcId = lead.epcId || "unknown";
 		const epcDetails = epcDetailsMap.get(epcId);
-
 		const existing = groupedMap.get(epcId);
 
 		if (existing) {
@@ -24,9 +24,18 @@ export const groupLeadsByEvent = (
 
 		groupedMap.set(epcId, {
 			epcId,
-			event_name: epcDetails?.event_name || "--",
-			location: epcDetails?.location || "--",
+
+			proposalNumber:
+				lead.proposalNumber || epcDetails?.proposalNumber || epcId,
+
+			event_name: lead.event_name || epcDetails?.event_name || "--",
+
+			location: lead.location || epcDetails?.location || "--",
+
 			created_at: epcDetails?.created_at || lead.created_at,
+
+			status: lead.epcStatus || epcDetails?.status || lead.status,
+
 			lead_count: 1,
 			leads: [lead],
 		});

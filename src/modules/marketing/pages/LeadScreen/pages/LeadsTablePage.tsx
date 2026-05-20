@@ -1,14 +1,14 @@
-import PageRowSectionLayout from "../../../../../layout/PageRowSectionLayout";
-import { PageHeader } from "../../../../../components/ui/PageHeader";
 import { FileDown, FileUp } from "lucide-react";
 import Button from "../../../../../components/common/Button";
 import DataTableSkeleton from "../../../../../components/ui/DataTableSkeleton";
-
-import { useLeadsQuery } from "../queries/useLeadsQuery";
-import LeadsTable from "./components/LeadsTable";
+import { PageHeader } from "../../../../../components/ui/PageHeader";
+import PageRowSectionLayout from "../../../../../layout/PageRowSectionLayout";
+import { useLeadGroupsQuery } from "../queries/useLeadQueries";
+import LeadsTable from "../components/LeadsTable";
+import "../styles/leads.css";
 
 export default function LeadsTablePage() {
-	const { data: leadGroups = [], isLoading } = useLeadsQuery();
+	const { data: leadGroups = [], isLoading, isFetching } = useLeadGroupsQuery();
 
 	return (
 		<PageRowSectionLayout
@@ -22,7 +22,7 @@ export default function LeadsTablePage() {
 						direction: "back",
 						to: "/",
 					}}
-					className="flex flex-row justify-between items-end"
+					className="flex flex-row items-end justify-between"
 				>
 					<Button
 						type="button"
@@ -31,7 +31,6 @@ export default function LeadsTablePage() {
 						status="brand"
 						className="text-xs m-1 sm:m-2"
 					/>
-
 					<Button
 						type="button"
 						text="Import"
@@ -47,6 +46,10 @@ export default function LeadsTablePage() {
 			) : (
 				<LeadsTable groups={leadGroups} />
 			)}
+
+			{isFetching && !isLoading ? (
+				<span className="sr-only">Refreshing lead list</span>
+			) : null}
 		</PageRowSectionLayout>
 	);
 }

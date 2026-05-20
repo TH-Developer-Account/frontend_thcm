@@ -1,34 +1,26 @@
-// columns/leadCustomerColumns.tsx
-
 import type { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "../../../../../../components/common/Badge";
-import { status } from "../../../../constant";
-import { formatDate } from "../../../../../../utils/format";
-import type { LeadRow } from "../../types/leads.types";
-
-const getLeadName = (row: LeadRow) => {
-	const fullName = row.name;
-
-	return fullName || "--";
-};
+import { Badge } from "../../../../../components/common/Badge";
+import { status } from "../../../constant";
+import { formatDate } from "../../../../../utils/format";
+import type { LeadRow } from "../types/leads.types";
 
 export const getLeadCustomerColumns = (): ColumnDef<LeadRow>[] => [
 	{
-		id: "lead_name",
+		id: "name",
 		header: "Lead Name",
 		cell: ({ row }) => (
-			<div className="font-medium">{getLeadName(row.original)}</div>
+			<div className="font-medium">{row.original.name || "--"}</div>
 		),
 	},
 	{
-		accessorKey: "lead_contact_no",
+		accessorKey: "phone",
 		header: "Phone Number",
 		cell: ({ row }) => (
 			<div className="font-medium">{row.original.phone || "--"}</div>
 		),
 	},
 	{
-		accessorKey: "lead_email",
+		accessorKey: "email",
 		header: "Lead Email",
 		cell: ({ row }) => (
 			<div className="font-medium">{row.original.email || "--"}</div>
@@ -41,13 +33,14 @@ export const getLeadCustomerColumns = (): ColumnDef<LeadRow>[] => [
 			<Badge
 				status={
 					status[row.original.status as keyof typeof status] ||
-					row.original.status
+					row.original.status ||
+					"--"
 				}
 			/>
 		),
 	},
 	{
-		accessorKey: "remarks",
+		accessorKey: "notes",
 		header: "Remarks",
 		cell: ({ row }) => (
 			<div className="max-w-[240px] truncate">{row.original.notes || "--"}</div>
@@ -57,7 +50,9 @@ export const getLeadCustomerColumns = (): ColumnDef<LeadRow>[] => [
 		accessorKey: "created_at",
 		header: "Created On",
 		cell: ({ row }) => (
-			<div className="font-medium">{formatDate(row.original.created_at)}</div>
+			<div className="font-medium">
+				{row.original.created_at ? formatDate(row.original.created_at) : "--"}
+			</div>
 		),
 	},
 ];

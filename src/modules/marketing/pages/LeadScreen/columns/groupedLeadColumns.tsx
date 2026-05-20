@@ -1,26 +1,27 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Eye } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { formatDate } from "../../../../../../utils/format";
-import type { LeadEventGroup } from "../../types/leads.types";
+import { formatDate } from "../../../../../utils/format";
+import type { LeadEventGroup } from "../types/leads.types";
 
 type GroupedLeadColumnActions = {
-	onViewLeads: (group: LeadEventGroup) => void;
+	onViewLeads?: (group: LeadEventGroup) => void;
 };
 
 export const getGroupedLeadColumns = ({
 	onViewLeads,
 }: GroupedLeadColumnActions): ColumnDef<LeadEventGroup>[] => [
 	{
-		accessorKey: "epcId",
+		accessorKey: "proposalNumber",
 		header: "EPC No",
 		cell: ({ row }) => (
 			<NavLink
 				to={`/marketing/activity-planner/${row.original.epcId}`}
 				className="text-blue-600 underline"
-				onClick={(event) => event.stopPropagation()}
 			>
-				<div className="font-medium">{row.original.epcId || "--"}</div>
+				<div className="font-medium">
+					{row.original.proposalNumber || row.original.epcId || "--"}
+				</div>
 			</NavLink>
 		),
 	},
@@ -57,13 +58,14 @@ export const getGroupedLeadColumns = ({
 	{
 		id: "action",
 		header: "Actions",
+		enableSorting: false,
 		cell: ({ row }) => (
 			<button
 				type="button"
 				className="inline-flex items-center gap-1 rounded-md border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-orange-50 hover:text-orange-700"
 				onClick={(event) => {
 					event.stopPropagation();
-					onViewLeads(row.original);
+					onViewLeads?.(row.original);
 				}}
 			>
 				<Eye size={14} />

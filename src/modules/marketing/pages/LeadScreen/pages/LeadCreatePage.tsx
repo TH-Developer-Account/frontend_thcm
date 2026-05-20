@@ -1,0 +1,227 @@
+import React from "react";
+import { useLocation } from "react-router-dom";
+import { PageHeader } from "../../../../../components/ui/PageHeader";
+import PageRowSectionLayout from "../../../../../layout/PageRowSectionLayout";
+import Section from "../../../activity-planner/components/Section";
+import {
+	createEmptyLeadFormRow,
+	mapLeadRowToFormRow,
+} from "../helpers/lead.mapper";
+import {
+	buildLeadPayloadItem,
+	buildUpdateLeadPayload,
+} from "../helpers/lead.payload";
+import {
+	clearLeadRowErrors,
+	validateLeadRow,
+} from "../helpers/lead.validation";
+import { getStoredLeadInfo } from "../helpers/lead.storage";
+import {
+	useCreateLeadsMutation,
+	useDeleteLeadMutation,
+	useUpdateLeadMutation,
+} from "../queries/useLeadMutations";
+import { useLeadsByEpcQuery } from "../queries/useLeadQueries";
+import type {
+	LeadFormRow,
+	LeadInfo,
+	LeadValidationErrors,
+} from "../types/leads.types";
+import { LeadEntryTable } from "../components/LeadEntryTable";
+import { LeadReferenceSummary } from "../components/LeadReferenceSummary";
+import "../styles/leads.css";
+import PageSectionLayout from "../../../../../layout/PageSectionLayout";
+import NavigateButton from "../../../../../components/common/NavigateButton";
+
+export default function LeadCreatePage() {
+	const location = useLocation();
+	const routeLeadInfo = location.state?.leadInfo as LeadInfo | undefined;
+	const routeMode = location.state?.mode as "create" | "view" | undefined;
+	const isViewMode = routeMode === "view";
+
+	const [leadInfo] = React.useState<LeadInfo | null>(
+		() => routeLeadInfo || getStoredLeadInfo(),
+	);
+	const [items, setItems] = React.useState<LeadFormRow[]>(() =>
+		routeMode === "view" ? [] : [createEmptyLeadFormRow()],
+	);
+	const [editingLeadId, setEditingLeadId] = React.useState<string | null>(null);
+	const [savingRowId, setSavingRowId] = React.useState<string | null>(null);
+	const [deletingId, setDeletingId] = React.useState<string | null>(null);
+	const [errors, setErrors] = React.useState<LeadValidationErrors>({});
+
+	const { data: savedLeads = [], isLoading } = useLeadsByEpcQuery(
+		leadInfo?.epcId,
+	);
+	const createLeadsMutation = useCreateLeadsMutation();
+	const updateLeadMutation = useUpdateLeadMutation();
+	const deleteLeadMutation = useDeleteLeadMutation();
+
+	// const handleAddRow = React.useCallback(() => {
+	// 	setItems((prev) => [...prev, createEmptyLeadFormRow()]);
+	// }, []);
+
+	// const handleRemoveRow = React.useCallback((rowId: string) => {
+	// 	setItems((prev) =>
+	// 		prev.length === 1 ? prev : prev.filter((item) => item.id !== rowId),
+	// 	);
+	// 	setErrors((prev) => clearLeadRowErrors(prev, rowId));
+	// }, []);
+
+	const handleChange = React.useCallback(
+		(rowId: string, field: keyof Omit<LeadFormRow, "id">, value: string) => {
+			setItems((prev) =>
+				prev.map((item) =>
+					item.id === rowId ? { ...item, [field]: value } : item,
+				),
+			);
+			setErrors((prev) => clearLeadRowErrors(prev, rowId));
+		},
+		[],
+	);
+
+	// const handleReset = React.useCallback(() => {
+	// 	setItems([createEmptyLeadFormRow()]);
+	// 	setEditingLeadId(null);
+	// 	setErrors({});
+	// }, []);
+
+	const handleCancelEdit = React.useCallback(() => {
+		setEditingLeadId(null);
+		setItems([createEmptyLeadFormRow()]);
+		setErrors({});
+	}, []);
+
+	const handleSaveRow = React.useCallback(
+		async (row: LeadFormRow, rowIndex: number) => {
+			const rowErrors = validateLeadRow({
+				row,
+				rowNumber: rowIndex + 1,
+				epcId: leadInfo?.epcId,
+			});
+			if (Object.keys(rowErrors).length > 0 || !leadInfo?.epcId) {
+				setErrors((prev) => ({ ...prev, ...rowErrors }));
+				return;
+			}
+
+			try {
+				setSavingRowId(row.id);
+
+				if (editingLeadId) {
+					await updateLeadMutation.mutateAsync({
+						leadId: editingLeadId,
+						payload: buildUpdateLeadPayload(leadInfo.epcId, row),
+					});
+				} else {
+					await createLeadsMutation.mutateAsync({
+						epcId: leadInfo.epcId,
+						leads: [buildLeadPayloadItem(row)],
+					});
+				}
+
+				setErrors((prev) => clearLeadRowErrors(prev, row.id));
+				setEditingLeadId(null);
+				setItems((prev) => {
+					const remaining = prev.filter((item) => item.id !== row.id);
+					return remaining.length > 0 ? remaining : [createEmptyLeadFormRow()];
+				});
+			} finally {
+				setSavingRowId(null);
+			}
+		},
+		[createLeadsMutation, editingLeadId, leadInfo?.epcId, updateLeadMutation],
+	);
+
+	const handleEditLead = React.useCallback(
+		(lead: (typeof savedLeads)[number]) => {
+			setEditingLeadId(lead.id);
+			setItems([mapLeadRowToFormRow(lead)]);
+			setErrors({});
+		},
+		[],
+	);
+
+	const handleDeleteLead = React.useCallback(
+		async (leadId: string) => {
+			try {
+				setDeletingId(leadId);
+				await deleteLeadMutation.mutateAsync({
+					leadId,
+					epcId: leadInfo?.epcId,
+				});
+				if (editingLeadId === leadId) handleCancelEdit();
+			} finally {
+				setDeletingId(null);
+			}
+		},
+		[deleteLeadMutation, editingLeadId, handleCancelEdit, leadInfo?.epcId],
+	);
+
+	if (!leadInfo?.epcId) {
+		return (
+			<PageRowSectionLayout
+				header_children={
+					<PageHeader
+						headerText="Create Lead"
+						badgeProps={{ text: "Back", direction: "back" }}
+					/>
+				}
+			>
+				<div className="content-box p-5 text-sm text-red-600">
+					EPC reference missing. Please go back to EPC listing and click Create
+					Lead again.
+				</div>
+			</PageRowSectionLayout>
+		);
+	}
+
+	return (
+		<PageSectionLayout className="content-box">
+			<div className="leads-content-box">
+				<div className="leads-section-body">
+					<div className="flex gap-2 justify-between">
+						<NavigateButton direction="back" text="Back" />
+						<NavigateButton
+							to={"/marketing/leads/listing"}
+							text="Lead Listing"
+							iconPosition="right"
+						/>
+					</div>
+					<Section
+						title="Selected EPC Reference"
+						className="mt-2"
+						action={
+							<div>
+								<p className="leads-reference-label uppercase-label-text">
+									Total Leads:{" "}
+									<span className="leads-reference-total">
+										{savedLeads.length}
+									</span>
+								</p>
+							</div>
+						}
+					>
+						<LeadReferenceSummary leadInfo={leadInfo} />
+						<LeadEntryTable
+							items={items}
+							savedLeads={savedLeads}
+							loading={isLoading}
+							editingLeadId={editingLeadId}
+							savingRowId={savingRowId}
+							deletingId={deletingId}
+							errors={errors}
+							isViewMode={isViewMode}
+							// onAddRow={handleAddRow}
+							// onRemoveRow={handleRemoveRow}
+							onChange={handleChange}
+							onSaveRow={handleSaveRow}
+							onEditLead={handleEditLead}
+							onCancelEdit={handleCancelEdit}
+							onDeleteLead={handleDeleteLead}
+						/>
+					</Section>
+				</div>
+			</div>
+		</PageSectionLayout>
+	);
+}

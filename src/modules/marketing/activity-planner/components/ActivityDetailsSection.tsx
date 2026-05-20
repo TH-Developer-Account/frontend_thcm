@@ -3,7 +3,7 @@ import Button from "../../../../components/common/Button";
 import Section from "./Section";
 import EpcForm from "../forms/EPC/EpcForm";
 import type { EpcDetailResponse } from "../types/epc.types";
-import { formatDate } from "../../../../utils/format";
+import { formatDate, trimText } from "../../../../utils/format";
 import {
 	getEpcBranchName,
 	getEpcBudgetValue,
@@ -102,15 +102,15 @@ const ActivityDetailsSection = ({
 			<div className="grid grid-cols-2 gap-6 text-sm p-3">
 				<div>
 					<span className="uppercase-label-text">Description</span>
-					<p className="text-black leading-relaxed text-xs">
-						{epcData.event_description || "No Description"}
+					<p className="text-black leading-relaxed text-xs text-wrap">
+						{trimText(epcData.event_description, 250) || "No Description"}
 					</p>
 				</div>
 
 				<div>
 					<span className="uppercase-label-text">Objective</span>
-					<p className="text-gray-700 leading-relaxed text-xs">
-						{epcData.event_objective || "No Objective"}
+					<p className="text-gray-700 leading-relaxed text-xs text-wrap">
+						{trimText(epcData.event_objective, 250) || "No Objective"}
 					</p>
 				</div>
 			</div>

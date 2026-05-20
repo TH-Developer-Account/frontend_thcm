@@ -37,7 +37,7 @@ const ActivityPlannerHeader = ({
 				headerText="Activity Planner View"
 				badgeProps={{
 					text: "Back",
-					to: "/marketing/listing",
+					direction: "back",
 				}}
 			/>
 

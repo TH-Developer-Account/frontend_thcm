@@ -3,8 +3,8 @@ import { DashboardPage } from "../modules/marketing/pages/Dashboard/DashboardPag
 import UserProfile from "../components/ui/UserProfile/UserProfile";
 import UsersPage from "../modules/admin/pages/BusinessUsersMaster/UserPage";
 import ActivityPlannerPage from "../modules/marketing/activity-planner/pages/ActivityPlannerPage";
-import LeadsTablePage from "../modules/marketing/pages/LeadScreen/LeadsTable/LeadsTablePage";
-import LeadCreatePage from "../modules/marketing/pages/LeadScreen/LeadsCreate/LeadCreatePage";
+import LeadsTablePage from "../modules/marketing/pages/LeadScreen/pages/LeadsTablePage";
+import LeadCreatePage from "../modules/marketing/pages/LeadScreen/pages/LeadCreatePage";
 import EpcListingPage from "../modules/marketing/activity-planner/pages/EpcListingPage";
 
 export default function MarketingRoutes() {
