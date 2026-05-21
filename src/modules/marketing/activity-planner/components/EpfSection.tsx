@@ -30,7 +30,6 @@ const EpfSection = ({
 		return (
 			<EpfForm
 				mode={epf ? "edit" : "create"}
-				variant="inline"
 				epcId={epcData.id}
 				crfId={crf?.id}
 				epfId={epf?.id}

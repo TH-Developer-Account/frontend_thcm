@@ -153,7 +153,7 @@
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	@apply max-h-[40vh] overflow-y-auto px-4 py-2;
+	@apply max-h-[50vh] overflow-y-auto px-4 py-2;
 }
 
 .comment-card {
@@ -328,149 +328,218 @@
 	}
 }
 
+/* =========================
+   Activity Planner PDF
+   Official compact document
+========================= */
+
 .pdf-document {
-	@apply p-4 sm:p-5;
+	@apply px-6 py-5;
+	min-height: 297mm;
+	margin: 0 auto;
 	background: #ffffff;
 	color: #111827;
-	font-size: 12px;
-	line-height: 1.45;
-	font-family: Arial, sans-serif !important;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 10.5px;
+	line-height: 1.35;
+	box-sizing: border-box;
 }
 
+/* Header */
 .pdf-header {
 	display: flex;
-	justify-content: space-between;
 	align-items: flex-start;
-	border-bottom: 1px solid #d1d5db;
-	padding-bottom: 12px;
-	margin-bottom: 16px;
+	justify-content: space-between;
+	gap: 16px;
+	padding-bottom: 8px;
+	margin-bottom: 10px;
+	border-bottom: 1.5px solid #111827;
 }
 
 .pdf-kicker {
-	font-size: 10px;
+	margin: 0 0 3px;
+	font-size: 8px;
+	font-weight: 700;
+	letter-spacing: 0.16em;
 	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	color: #6b7280;
-	margin-bottom: 4px;
+	color: #374151;
 }
 
 .pdf-header h1 {
-	font-size: 22px;
-	font-weight: 700;
-	color: #111827;
 	margin: 0;
+	font-size: 18px;
+	line-height: 1.15;
+	font-weight: 800;
+	color: #111827;
 }
 
 .pdf-subtitle {
-	font-size: 11px;
-	color: #4b5563;
-	margin-top: 4px;
+	margin: 3px 0 0;
+	font-size: 9.5px;
+	font-weight: 600;
+	color: #374151;
 }
 
 .pdf-status {
+	min-width: 82px;
+	text-align: center;
 	border: 1px solid #d1d5db;
 	border-radius: 999px;
-	padding: 5px 12px;
-	font-size: 11px;
-	font-weight: 700;
+	padding: 4px 10px;
+	font-size: 8px;
+	font-weight: 800;
+	letter-spacing: 0.1em;
 	text-transform: uppercase;
 	color: #111827;
-	background: #f9fafb;
+	background: #ffffff;
 }
 
+/* Sections - no cards */
 .pdf-section {
-	border: 1px solid #e5e7eb;
-	border-radius: 8px;
-	padding: 12px;
-	margin-bottom: 12px;
+	margin-top: 0.8rem;
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
 	break-inside: avoid;
-	page-break-inside: avoid;
 }
 
 .pdf-section-title {
-	font-size: 13px;
-	font-weight: 700;
+	margin: 0 0 6px;
+	padding-bottom: 4px;
+	border-bottom: 1px solid #d1d5db;
+	font-size: 9px;
+	font-weight: 800;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
 	color: #111827;
-	margin: 0 0 10px;
-	padding-bottom: 6px;
-	border-bottom: 1px solid #e5e7eb;
 }
 
+/* 4-column details grid */
 .pdf-grid {
 	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	gap: 10px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	column-gap: 16px;
+	row-gap: 7px;
 }
 
 .pdf-field {
-	background: #f9fafb;
-	border: 1px solid #eef0f3;
-	border-radius: 6px;
-	padding: 8px;
+	min-width: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
 }
 
 .pdf-label {
-	font-size: 9px;
+	margin: 0 0 2px;
+	font-size: 7.5px;
+	font-weight: 800;
+	letter-spacing: 0.1em;
 	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	color: #6b7280;
-	margin: 0 0 3px;
-	font-weight: 700;
+	color: #4b5563;
 }
 
 .pdf-value {
-	font-size: 12px;
+	margin: 0;
+	font-size: 10px;
+	font-weight: 700;
 	color: #111827;
+	word-break: break-word;
+}
+
+/* Description + Objective */
+.pdf-summary-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	column-gap: 18px;
+	margin-top: 8px;
+	padding-top: 7px;
+	border-top: 1px solid #e5e7eb;
+}
+
+.pdf-summary-field {
+	min-width: 0;
+}
+
+.pdf-long-value {
 	margin: 0;
-	font-weight: 600;
+	font-size: 9.5px;
+	font-weight: 500;
+	line-height: 1.42;
+	color: #111827;
+	white-space: normal;
+	word-break: break-word;
 }
 
-.pdf-paragraph {
-	font-size: 12px;
-	color: #1f2937;
-	margin: 0;
-	white-space: pre-wrap;
-}
-
-.pdf-divider {
-	height: 1px;
-	background: #e5e7eb;
-	margin: 10px 0;
-}
-
+/* Tables */
 .pdf-table {
 	width: 100%;
 	border-collapse: collapse;
-	font-size: 10.5px;
+	margin-top: 4px;
+	font-size: 9px;
+	table-layout: fixed;
 }
 
 .pdf-table th {
-	background: #f3f4f6;
-	color: #374151;
-	font-weight: 700;
+	padding: 4px 6px;
+	border-top: 1px solid #111827;
+	border-bottom: 1px solid #111827;
 	text-align: left;
-	border: 1px solid #d1d5db;
-	padding: 7px;
+	font-size: 7.5px;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #111827;
+	background: #ffffff;
 }
 
 .pdf-table td {
-	border: 1px solid #e5e7eb;
-	padding: 7px;
-	color: #111827;
+	padding: 4px 6px;
+	border-bottom: 1px solid #e5e7eb;
 	vertical-align: top;
+	color: #111827;
+	font-size: 9px;
+	line-height: 1.3;
+}
+
+.pdf-table th:first-child,
+.pdf-table td:first-child {
+	width: 28px;
+	text-align: center;
+}
+
+.pdf-table th:nth-last-child(-n + 3),
+.pdf-table td:nth-last-child(-n + 3) {
+	text-align: right;
+	white-space: nowrap;
+}
+
+.pdf-table th:nth-child(2),
+.pdf-table td:nth-child(2) {
+	width: 24%;
+}
+
+.pdf-table th:nth-child(3),
+.pdf-table td:nth-child(3) {
+	width: 34%;
 }
 
 .pdf-empty {
-	font-size: 12px;
-	color: #6b7280;
 	margin: 0;
+	font-size: 9.5px;
+	color: #6b7280;
+}
+
+/* Reduce big page gaps */
+.pdf-section + .pdf-section {
+	margin-top: 12px;
 }
 
 .pdf-page-break {
-	page-break-before: always;
-	break-before: page;
+	break-after: page;
 }
 
+/* Print */
 @media print {
 	body * {
 		visibility: hidden;
@@ -485,6 +554,17 @@
 		position: absolute;
 		left: 0;
 		top: 0;
+		width: 100%;
+		margin: 0;
+		padding: 0;
+		box-shadow: none;
+	}
+
+	.pdf-document {
+		width: 100%;
+		min-height: auto;
+		margin: 0;
+		padding: 0;
 	}
 
 	.modal-overlay,
@@ -500,7 +580,7 @@
 
 	@page {
 		size: A4;
-		margin: 0;
+		margin: 12mm;
 	}
 }
 /* =========================

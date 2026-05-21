@@ -785,7 +785,7 @@
 }
 
 .workflow-table-cell-action {
-	@apply px-4 py-3 text-right align-top;
+	@apply px-4 py-3 text-center align-top;
 }
 
 .workflow-table-cell-inner {

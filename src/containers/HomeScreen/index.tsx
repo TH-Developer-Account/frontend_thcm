@@ -20,6 +20,7 @@ export default function HomeScreen() {
 							);
 
 							const appId = appInfo?.appId ?? "";
+							console.log("App ID for", action.appKey, "is", appId);
 
 							return (
 								<ActionCard
