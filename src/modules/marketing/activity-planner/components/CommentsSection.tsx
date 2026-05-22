@@ -164,8 +164,7 @@ export default function CommentsSection({
 	const [isClarifyModalOpen, setIsClarifyModalOpen] = useState(false);
 	const [clarifyLoading, setClarifyLoading] = useState(false);
 	const [clarifyReason, setClarifyReason] = useState("");
-	const [mentionedEmails, setMentionedEmails] = React.useState<string[]>([]);
-
+	const [toEmails, setToEmails] = React.useState<string[]>([]);
 	const userId = user?.id as string | undefined;
 	const isProposer = userId === epcCreatedById;
 
@@ -254,7 +253,7 @@ export default function CommentsSection({
 	// Update handleMentionInsert
 	const handleMentionInsert = React.useCallback((user: CommentUser) => {
 		if (!user.email) return;
-		setMentionedEmails((prev) =>
+		setToEmails((prev) =>
 			prev.includes(user.email!) ? prev : [...prev, user.email!],
 		);
 	}, []);
@@ -276,14 +275,14 @@ export default function CommentsSection({
 					? await workflowApi.createApprovalComment({
 							approvalId,
 							message: text,
-							to: mentionedEmails, // ← emails of @mentioned users
-							cc: ccEmails, // ← emails of past stage approvers
+							to: toEmails, // ← emails of @mentioned users
+							cc: ccEmails.filter((email) => !toEmails.includes(email)), // ← emails of past stage approvers
 						})
 					: await workflowApi.createCreatorComment({
 							epcId,
 							message: text,
-							to: mentionedEmails,
-							cc: ccEmails,
+							to: toEmails,
+							cc: ccEmails.filter((email) => !toEmails.includes(email)),
 						});
 				showToast({
 					type: "success",
@@ -307,7 +306,7 @@ export default function CommentsSection({
 						},
 					},
 				]);
-				setMentionedEmails([]);
+				setToEmails([]);
 			} catch (err) {
 				showToast({
 					type: "error",
@@ -319,7 +318,7 @@ export default function CommentsSection({
 				});
 			}
 		},
-		[approvalId, isProposer, epcId, showToast, mentionedEmails, ccEmails],
+		[approvalId, isProposer, epcId, showToast, toEmails, ccEmails],
 	);
 
 	const handleApprove = React.useCallback(async () => {
