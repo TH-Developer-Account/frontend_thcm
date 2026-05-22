@@ -19,6 +19,7 @@ export type CommentUser = {
 	first_name: string;
 	last_name: string;
 	avatarUrl?: string;
+	email?: string;
 };
 
 export type CommentItem = {
@@ -163,7 +164,7 @@ export default function CommentsSection({
 	const [isClarifyModalOpen, setIsClarifyModalOpen] = useState(false);
 	const [clarifyLoading, setClarifyLoading] = useState(false);
 	const [clarifyReason, setClarifyReason] = useState("");
-	const [mentionedUsers, setMentionedUsers] = React.useState<CommentUser[]>([]);
+	const [mentionedEmails, setMentionedEmails] = React.useState<string[]>([]);
 
 	const userId = user?.id as string | undefined;
 	const isProposer = userId === epcCreatedById;
@@ -225,7 +226,7 @@ export default function CommentsSection({
 		}
 		listEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
 	}, [comments.length]);
-	// Derives mentionable users from stages — add this in CommentsSection
+
 	const mentionableUsers = useMemo(() => {
 		const seen = new Set<string>();
 		const users: CommentUser[] = [];
@@ -243,9 +244,18 @@ export default function CommentsSection({
 		return users;
 	}, [stages]);
 
+	const ccEmails = useMemo(() => {
+		return stages
+			.filter((s) => s.status === "APPROVED")
+			.flatMap((s) => s.approvals.map((a) => a.approver?.email))
+			.filter((email): email is string => Boolean(email));
+	}, [stages]);
+
+	// Update handleMentionInsert
 	const handleMentionInsert = React.useCallback((user: CommentUser) => {
-		setMentionedUsers((prev) =>
-			prev.some((u) => u.id === user.id) ? prev : [...prev, user],
+		if (!user.email) return;
+		setMentionedEmails((prev) =>
+			prev.includes(user.email!) ? prev : [...prev, user.email!],
 		);
 	}, []);
 
@@ -266,12 +276,14 @@ export default function CommentsSection({
 					? await workflowApi.createApprovalComment({
 							approvalId,
 							message: text,
-							mentionedUsers, // ← add to payload
+							to: mentionedEmails, // ← emails of @mentioned users
+							cc: ccEmails, // ← emails of past stage approvers
 						})
 					: await workflowApi.createCreatorComment({
 							epcId,
 							message: text,
-							mentionedUsers, // ← add to payload
+							to: mentionedEmails,
+							cc: ccEmails,
 						});
 				showToast({
 					type: "success",
@@ -295,7 +307,7 @@ export default function CommentsSection({
 						},
 					},
 				]);
-				setMentionedUsers([]);
+				setMentionedEmails([]);
 			} catch (err) {
 				showToast({
 					type: "error",
@@ -307,7 +319,7 @@ export default function CommentsSection({
 				});
 			}
 		},
-		[approvalId, isProposer, epcId, showToast, mentionedUsers],
+		[approvalId, isProposer, epcId, showToast, mentionedEmails, ccEmails],
 	);
 
 	const handleApprove = React.useCallback(async () => {

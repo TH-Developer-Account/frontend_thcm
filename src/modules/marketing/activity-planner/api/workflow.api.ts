@@ -55,7 +55,8 @@ export const workflowApi = {
 	createApprovalComment: async (payload: {
 		approvalId: string;
 		message: string;
-		mentionedUsers?: [];
+		to?: string[];
+		cc?: string[];
 	}) => {
 		const {
 			data: { data, message },
@@ -67,7 +68,8 @@ export const workflowApi = {
 	createCreatorComment: async (payload: {
 		epcId: string;
 		message: string;
-		mentionedUsers?: [];
+		to?: string[];
+		cc?: string[];
 	}) => {
 		const {
 			data: { data, message },
