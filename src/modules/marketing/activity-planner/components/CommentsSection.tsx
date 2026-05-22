@@ -163,6 +163,7 @@ export default function CommentsSection({
 	const [isClarifyModalOpen, setIsClarifyModalOpen] = useState(false);
 	const [clarifyLoading, setClarifyLoading] = useState(false);
 	const [clarifyReason, setClarifyReason] = useState("");
+	const [mentionedUsers, setMentionedUsers] = React.useState<CommentUser[]>([]);
 
 	const userId = user?.id as string | undefined;
 	const isProposer = userId === epcCreatedById;
@@ -238,8 +239,16 @@ export default function CommentsSection({
 				}
 			}
 		}
+		console.log("mentionableUsers", users);
 		return users;
 	}, [stages]);
+
+	const handleMentionInsert = React.useCallback((user: CommentUser) => {
+		setMentionedUsers((prev) =>
+			prev.some((u) => u.id === user.id) ? prev : [...prev, user],
+		);
+	}, []);
+
 	// Stable callbacks — won't break React.memo on CommentInput
 	const handleCreate = React.useCallback(
 		async (text: string) => {
@@ -257,9 +266,13 @@ export default function CommentsSection({
 					? await workflowApi.createApprovalComment({
 							approvalId,
 							message: text,
+							mentionedUsers, // ← add to payload
 						})
-					: await workflowApi.createCreatorComment({ epcId, message: text });
-
+					: await workflowApi.createCreatorComment({
+							epcId,
+							message: text,
+							mentionedUsers, // ← add to payload
+						});
 				showToast({
 					type: "success",
 					title: "Success",
@@ -282,6 +295,7 @@ export default function CommentsSection({
 						},
 					},
 				]);
+				setMentionedUsers([]);
 			} catch (err) {
 				showToast({
 					type: "error",
@@ -293,7 +307,7 @@ export default function CommentsSection({
 				});
 			}
 		},
-		[approvalId, isProposer, epcId, showToast],
+		[approvalId, isProposer, epcId, showToast, mentionedUsers],
 	);
 
 	const handleApprove = React.useCallback(async () => {
@@ -389,7 +403,7 @@ export default function CommentsSection({
 	};
 
 	const disabled = !currentStage || !isUserInCurrentStage;
-	const canComment = isProposer || isUserInCurrentStage;
+	// const canComment = isProposer || isUserInCurrentStage;
 
 	return (
 		<>
@@ -430,21 +444,22 @@ export default function CommentsSection({
 							))}
 						</div>
 					)}
-					{canComment && (
-						<div className="comments-create light-blue-bg-header">
-							<div className="comments-create-input" ref={listEndRef}>
-								<CommentInput
-									disabled={commentsLoading}
-									onSubmit={handleCreate}
-									canApprove={!disabled && isUserInCurrentStage}
-									canClarify={!disabled && isUserInCurrentStage}
-									onApprove={handleApprove}
-									onClarify={openClarifyModal} // ← same modal, triggered from menu now
-									mentionableUsers={mentionableUsers}
-								/>
-							</div>
+					{/* {canComment && ( */}
+					<div className="comments-create light-blue-bg-header">
+						<div className="comments-create-input" ref={listEndRef}>
+							<CommentInput
+								disabled={commentsLoading}
+								onSubmit={handleCreate}
+								canApprove={!disabled && isUserInCurrentStage}
+								canClarify={!disabled && isUserInCurrentStage}
+								onApprove={handleApprove}
+								onClarify={openClarifyModal} // ← same modal, triggered from menu now
+								mentionableUsers={mentionableUsers}
+								onMentionInsert={handleMentionInsert}
+							/>
 						</div>
-					)}
+					</div>
+					{/* )} */}
 				</section>
 
 				<Modal open={isClarifyModalOpen}>

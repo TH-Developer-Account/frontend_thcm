@@ -21,12 +21,12 @@ const PageRowSectionLayout = ({
 	stickyTop = "top-0",
 }: PageRowSectionLayoutProps) => {
 	return (
-		<div className="h-[90dvh] min-h-0 flex flex-col overflow-hidden gap-2 w-full">
+		<div className="h-[92dvh] min-h-0 flex flex-col overflow-hidden gap-2 w-full">
 			<div
 				className={`${headerClassName} ${
 					stickyHeader
 						? `sticky ${stickyTop} z-30 bg-white border-b border-zinc-200 shrink-0`
-						: "shrink-0"
+						: "shrink-0 mt-4"
 				}`}
 			>
 				<div className="page-stack-layout">

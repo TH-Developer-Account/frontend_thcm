@@ -338,7 +338,21 @@ const RichTextarea: ForwardRefRenderFunction<
 												}}
 												className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${canClarify ? "text-zinc-900 hover:bg-zinc-50" : "cursor-not-allowed text-zinc-300"}`}
 											>
-												Clarify / Send back
+												Clarify
+												{!canClarify && (
+													<Lock size={12} className="text-zinc-300" />
+												)}
+											</button>
+											<button
+												type="button"
+												disabled={!canClarify}
+												onClick={() => {
+													onClarify?.();
+													setPopup(null);
+												}}
+												className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${canClarify ? "text-zinc-900 hover:bg-zinc-50" : "cursor-not-allowed text-zinc-300"}`}
+											>
+												Reject
 												{!canClarify && (
 													<Lock size={12} className="text-zinc-300" />
 												)}

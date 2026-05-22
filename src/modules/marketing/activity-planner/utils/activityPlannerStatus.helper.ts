@@ -13,9 +13,10 @@ const normalize = (value: unknown) => String(value ?? "").toUpperCase();
 export const hasClarificationInComments = (entries: WorkflowEntry[] = []) => {
 	return entries.some((entry) => {
 		return (
-			entry.isActiveWorkflow !== false &&
-			normalize(entry.entryType) === "ACTIVITY_LOG" &&
-			normalize(entry.action) === "CLARIFY"
+			(entry.isActiveWorkflow !== false &&
+				normalize(entry.entryType) === "ACTIVITY_LOG" &&
+				normalize(entry.action) === "CLARIFY") ||
+			normalize(entry.action) === "CLARIFIED"
 		);
 	});
 };

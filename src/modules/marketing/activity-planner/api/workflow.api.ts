@@ -55,6 +55,7 @@ export const workflowApi = {
 	createApprovalComment: async (payload: {
 		approvalId: string;
 		message: string;
+		mentionedUsers?: [];
 	}) => {
 		const {
 			data: { data, message },
@@ -63,7 +64,11 @@ export const workflowApi = {
 		return { data, message };
 	},
 
-	createCreatorComment: async (payload: { epcId: string; message: string }) => {
+	createCreatorComment: async (payload: {
+		epcId: string;
+		message: string;
+		mentionedUsers?: [];
+	}) => {
 		const {
 			data: { data, message },
 		} = await ServerAxios.post("/comment/creator-comment", payload);
@@ -73,7 +78,7 @@ export const workflowApi = {
 	submitClarifiedUpdatedForm: async (workflowId: string) => {
 		const {
 			data: { data, message },
-		} = await ServerAxios.patch(`/soa/stages/activate-first-stage`, {
+		} = await ServerAxios.post(`/soa/stages/activate-first-stage`, {
 			workflowId,
 		});
 

@@ -60,13 +60,13 @@ const ActivityFormView = ({
 
 	return (
 		<div className="content-box w-full h-auto max-w-full mx-auto">
-			<div className="px-6 pt-4">
+			<div className="px-6 py-4">
 				<DateRange
 					fromDate={epcData.event_from_date}
 					toDate={epcData.event_to_date}
 				/>
 
-				<div className="form text-left my-1 text-sm">
+				<div className="form text-left my-3 text-sm">
 					<ActivityDetailsSection
 						epcData={epcData}
 						isClarifiedUpdate={isClarifiedUpdate}
