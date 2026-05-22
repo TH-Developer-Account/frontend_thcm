@@ -30,7 +30,10 @@ const ActivityPlannerHeader = ({
 	const title = epcData?.event_name?.title || null;
 	const proposalNo = epcData?.proposal_number || null;
 	const badgeStatus = epcData?.status ? statusMap[epcData.status] : undefined;
-
+	console.log(
+		"ActivityPlannerHeader rendered with isClarifiedPending:",
+		isClarifiedPending,
+	);
 	return (
 		<div className="flex flex-row gap-4 justify-between items-center">
 			<PageHeader

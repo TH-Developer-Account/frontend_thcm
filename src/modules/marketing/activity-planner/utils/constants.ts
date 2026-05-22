@@ -1,5 +1,9 @@
 import type { ThreeWayOption } from "../../../../components/common/ThreeWayToggle";
 
+import { Bold, Italic, Code, List } from "lucide-react";
+import type { FormatType } from "../types/workflow.types";
+import type React from "react";
+
 export const ACTIVITY_PLANNER_ROUTES = {
 	list: "/marketing/activity-planner",
 	create: "/marketing/activity-planner/create",
@@ -57,3 +61,61 @@ export const epcListFilterOptions = [
 	ThreeWayOption<EpcListFilter>,
 	ThreeWayOption<EpcListFilter>,
 ];
+
+export const EMOJIS = [
+	"👍",
+	"❤️",
+	"😊",
+	"🎉",
+	"✅",
+	"🔥",
+	"👏",
+	"💡",
+	"⚠️",
+	"📎",
+	"📋",
+	"🔍",
+	"💬",
+	"📌",
+	"🚀",
+	"⭐",
+	"✨",
+	"🙏",
+	"👀",
+	"💯",
+	"🤔",
+	"😅",
+	"🙌",
+	"📊",
+	"📝",
+	"🔗",
+	"✔️",
+	"❌",
+	"⏰",
+	"📅",
+];
+
+export const FORMAT_ACTIONS: {
+	icon: React.ElementType;
+	fmt: FormatType;
+	title: string;
+}[] = [
+	{ icon: Bold, fmt: "bold", title: "Bold" },
+	{ icon: Italic, fmt: "italic", title: "Italic" },
+	{ icon: Code, fmt: "code", title: "Inline code" },
+	{ icon: List, fmt: "bullet", title: "Bullet list" },
+];
+
+export const FORMAT_WRAP: Record<FormatType, (sel: string) => string> = {
+	bold: (sel) => (sel ? `**${sel}**` : "****"),
+	italic: (sel) => (sel ? `_${sel}_` : "__"),
+	code: (sel) => (sel ? `\`${sel}\`` : "``"),
+	bullet: (sel) => `\n- ${sel || ""}`,
+};
+
+export const FORMAT_CURSOR_OFFSET: Record<FormatType, number> = {
+	bold: 2,
+	italic: 1,
+	code: 1,
+	bullet: 3,
+};

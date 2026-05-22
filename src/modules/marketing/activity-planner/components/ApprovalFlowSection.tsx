@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import Section from "./Section";
 import ApprovalTable from "./ApprovalTable";
 import type { WorkflowStage } from "../types/workflow.types";
 import { mapWorkflowStagesToApprovalRows } from "../utils/approvalTable.mapper";
@@ -15,11 +14,7 @@ const ApprovalFlowSection = ({ stages }: ApprovalFlowSectionProps) => {
 		});
 	}, [stages]);
 
-	return (
-		<Section title="Approval Flow">
-			<ApprovalTable data={approvalRows} stages={stages} />
-		</Section>
-	);
+	return <ApprovalTable data={approvalRows} stages={stages} />;
 };
 
 export default ApprovalFlowSection;

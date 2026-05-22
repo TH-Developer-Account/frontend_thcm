@@ -14,7 +14,7 @@ export const hasClarificationInComments = (entries: WorkflowEntry[] = []) => {
 	return entries.some((entry) => {
 		return (
 			entry.isActiveWorkflow !== false &&
-			normalize(entry.entryType) === "AUDIT_LOG" &&
+			normalize(entry.entryType) === "ACTIVITY_LOG" &&
 			normalize(entry.action) === "CLARIFY"
 		);
 	});

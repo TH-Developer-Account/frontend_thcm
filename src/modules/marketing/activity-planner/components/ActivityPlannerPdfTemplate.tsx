@@ -46,7 +46,22 @@ const InfoGrid = ({
 		</div>
 	);
 };
-
+const TextSummaryGrid = ({
+	items,
+}: {
+	items: { label: string; value?: React.ReactNode }[];
+}) => {
+	return (
+		<div className="pdf-summary-grid">
+			{items.map((item, index) => (
+				<div className="pdf-summary-field" key={`${item.label}-${index}`}>
+					<p className="pdf-label">{item.label}</p>
+					<p className="pdf-long-value">{item.value || "--"}</p>
+				</div>
+			))}
+		</div>
+	);
+};
 const LineItemsTable = ({
 	title,
 	items = [],
@@ -137,6 +152,7 @@ const ActivityPlannerPdfTemplate = ({ epcData, createdBy }: Props) => {
 				</div>
 
 				<div className="pdf-status">{statusLabel}</div>
+				{/* <div>Created By : </div> */}
 			</header>
 
 			<PdfSection title="Basic Details">
@@ -147,15 +163,17 @@ const ActivityPlannerPdfTemplate = ({ epcData, createdBy }: Props) => {
 						{ label: "Region", value: getEpcRegionName(epcData) },
 						{ label: "Branch", value: getEpcBranchName(epcData) },
 						{ label: "Vertical", value: getEpcVerticalName(epcData) },
-						{ label: "Location", value: epcData?.location },
+						{ label: "Location", value: epcData?.location || "--" },
 						{
 							label: "Event From",
 							value: formatDate(epcData?.event_from_date),
 						},
-						{
-							label: "Event To",
-							value: formatDate(epcData?.event_to_date),
-						},
+						{ label: "Event To", value: formatDate(epcData?.event_to_date) },
+					]}
+				/>
+
+				<TextSummaryGrid
+					items={[
 						{
 							label: "Event Description",
 							value: epcData?.event_description || "--",
