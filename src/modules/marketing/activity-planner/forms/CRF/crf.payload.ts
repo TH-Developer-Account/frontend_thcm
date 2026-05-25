@@ -17,12 +17,15 @@ export const buildCrfPayload = (
 			const amount = toNumber(item.rate);
 
 			return {
-				productId: item.value || item.productId || item.product_id || "",
+				productId: item.value || "",
 				category: item.category || "UNCATEGORIZED",
 				quantity,
 				amount,
 				total: toNumber(item.total ?? quantity * amount),
 				description: item.description ?? "",
+				width: item.width,
+				height: item.height,
+				unit: item.unit,
 			};
 		}),
 	};

@@ -1,3 +1,4 @@
+import type { TableRow } from "../../components/LineTableView";
 import {
 	getLineItemQuantity,
 	getLineItemRate,
@@ -13,6 +14,7 @@ import type {
 export type LineTableRow = {
 	id?: string;
 	sno: number;
+	partNumber: string;
 	particulars: string;
 	description: string;
 	rate: number;
@@ -75,10 +77,17 @@ export const mapProductToLineItemOption = (item: Product): LineItemOption => {
 		label: item.name,
 		particular: item.id,
 		description: item.description,
+
 		rate: toNumber(item.unitRate),
 		quantity: 1,
+
 		partNumber: item.partNumber,
 		category: item.category || "UNCATEGORIZED",
+
+		// artwork
+		width: toNumber(item.width),
+		height: toNumber(item.height),
+		unit: item.unit || "ft",
 	};
 };
 
@@ -110,20 +119,29 @@ export const groupProductsByCategory = (
 export const mapCrfLineItemsToFormItems = (
 	lineItems: any[] = [],
 ): LineItemOption[] => {
-	return lineItems.map((item) => {
-		return {
-			id: item?.id,
-			value: getProductId(item),
-			label: getProductName(item),
-			particular: getProductId(item),
-			description: getDescription(item),
-			rate: getLineItemRate(item),
-			quantity: getLineItemQuantity(item),
-			partNumber: getPartNumber(item),
-			category: getCategory(item),
-			total: toNumber(item?.total),
-		};
-	});
+	return lineItems.map((item) => ({
+		id: item?.id,
+
+		value: getProductId(item),
+		label: getProductName(item),
+
+		particular: getProductId(item),
+
+		description: getDescription(item),
+
+		rate: getLineItemRate(item),
+		quantity: getLineItemQuantity(item),
+
+		partNumber: getPartNumber(item),
+		category: getCategory(item),
+
+		total: toNumber(item?.total),
+
+		// artwork
+		width: toNumber(item?.width),
+		height: toNumber(item?.height),
+		unit: item?.unit ?? "ft",
+	}));
 };
 
 /**
@@ -132,7 +150,7 @@ export const mapCrfLineItemsToFormItems = (
  */
 export const mapCrfLineItemsToTableRows = (
 	lineItems: any[] = [],
-): LineTableRow[] => {
+): TableRow[] => {
 	return lineItems.map((item, index) => {
 		const rate = getLineItemRate(item);
 		const qty = getLineItemQuantity(item);
@@ -144,15 +162,23 @@ export const mapCrfLineItemsToTableRows = (
 
 		return {
 			id: item?.id,
+
 			sno: index + 1,
+
 			particulars: getProductName(item),
+
 			description: getDescription(item),
+			partNumber: getPartNumber(item),
 			rate,
 			qty,
 			total,
+
 			category: getCategory(item),
-			height: item?.height,
-			width: item?.width,
+
+			// artwork
+			width: toNumber(item?.width),
+			height: toNumber(item?.height),
+			unit: item?.unit ?? "--",
 		};
 	});
 };

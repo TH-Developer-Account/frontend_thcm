@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 import EpcForm from "../forms/EPC/EpcForm";
-import DateRange from "./DateRange";
+import DateRangeSection from "./DateRangeSection";
 import ActivityDetailsSection from "./ActivityDetailsSection";
 import CrfSection from "../forms/CRF/CrfSection";
 import EpfSection from "../forms/EPF/EpfSection";
@@ -61,7 +61,7 @@ const ActivityFormView = ({
 	return (
 		<div className="content-box w-full h-auto max-w-full mx-auto">
 			<div className="px-6 py-4">
-				<DateRange
+				<DateRangeSection
 					fromDate={epcData.event_from_date}
 					toDate={epcData.event_to_date}
 				/>

@@ -1,25 +1,19 @@
-import { useState } from "react";
 import { Banknote, HandCoins, ShieldCheck, Users, Wallet } from "lucide-react";
-
 import Button from "../../../../../components/common/Button";
 import FormInput from "../../../../../components/FormElements/FormInput";
 import ApprovalTable from "../../components/ApprovalTable";
-
-import { useAuth } from "../../../../../context/Auth/useAuth";
-import { workflowApi } from "../../api/workflow.api";
-import { getStoredAppId } from "../../helpers/localstorage";
-
 import type { EpfFormValues } from "../../types/epf.types";
-import type { ApprovalTableRow } from "../../../../../utils/types";
-
 import FormHeader from "../../components/FormHeader";
-import { mapWorkflowStagesToApprovalRows } from "../../utils/approvalTable.mapper";
+import type { ApprovalTableRow } from "../../../../../utils/types";
 
 type EpfFormInfoProps = {
 	values: EpfFormValues;
 	errors?: Partial<Record<keyof EpfFormValues, string>>;
 	handleChange: (name: keyof EpfFormValues, value: string) => void;
 	eventCost: number;
+	previewRows?: ApprovalTableRow[];
+	previewLoading?: boolean;
+	handlePreviewWorkflow?: () => Promise<void>;
 };
 
 export default function EpfFormFields({
@@ -27,39 +21,10 @@ export default function EpfFormFields({
 	errors = {},
 	handleChange,
 	eventCost,
+	previewRows = [],
+	previewLoading,
+	handlePreviewWorkflow,
 }: EpfFormInfoProps) {
-	const { workspaceId } = useAuth();
-
-	const [previewRows, setPreviewRows] = useState<ApprovalTableRow[]>([]);
-	const [previewLoading, setPreviewLoading] = useState(false);
-
-	const handlePreviewWorkflow = async () => {
-		try {
-			const appId = getStoredAppId();
-
-			if (!workspaceId || !appId) return;
-
-			setPreviewLoading(true);
-
-			const data = await workflowApi.previewWorkflow({
-				workspaceId,
-				appId,
-				budget: eventCost,
-			});
-
-			setPreviewRows(
-				mapWorkflowStagesToApprovalRows(data?.stages ?? [], {
-					showOnlyCurrentStageStatus: false,
-				}),
-			);
-		} catch (error) {
-			console.error("Failed to preview workflow:", error);
-			setPreviewRows([]);
-		} finally {
-			setPreviewLoading(false);
-		}
-	};
-
 	return (
 		<div className="grid grid-cols-1 gap-4 lg:grid-cols-[9fr_3fr]">
 			<div className="space-y-4 text-left text-xs lg:text-sm">
@@ -182,7 +147,7 @@ export default function EpfFormFields({
 						/>
 					</div>
 
-					{previewRows.length > 0 ? (
+					{Array.isArray(previewRows) && previewRows.length > 0 ? (
 						<div className="px-3">
 							<ApprovalTable data={previewRows} />
 						</div>

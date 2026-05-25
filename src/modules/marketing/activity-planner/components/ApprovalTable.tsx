@@ -1,6 +1,8 @@
 import React from "react";
 import type { ApprovalTableRow } from "../../../../utils/types";
 import type { WorkflowStage } from "../types/workflow.types";
+import { Badge } from "../../../../components/common/Badge";
+import { getStatusForBadge } from "./EPCTable/columns";
 
 type Props = {
 	data: ApprovalTableRow[];
@@ -93,7 +95,15 @@ const ApprovalTable = ({ data }: Props) => {
 										<div className="space-y-1">
 											{approvers.length ? (
 												approvers.map((approver) => (
-													<div key={approver.id}>{approver.status || null}</div>
+													<div key={approver.id}>
+														<Badge
+															status={
+																approver?.status
+																	? getStatusForBadge(approver?.status)
+																	: undefined
+															}
+														/>
+													</div>
 												))
 											) : (
 												<div>{row.status || null}</div>

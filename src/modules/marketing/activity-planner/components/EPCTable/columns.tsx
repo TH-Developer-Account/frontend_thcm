@@ -6,6 +6,7 @@ import { status } from "../../utils/constants";
 
 import type { EpcListItem } from "../../types/epc.types";
 import EPCActionMenu from "./EPCActionMenu";
+import { formatDate } from "../../utils/formatters";
 
 type EpcColumnActions = {
 	onLeadCreate?: (row: EpcListItem) => void;
@@ -21,7 +22,7 @@ const getEventName = (row: EpcListItem) => {
 	return row.event_title || "--";
 };
 
-const getStatusForBadge = (apiStatus?: string) => {
+export const getStatusForBadge = (apiStatus?: string) => {
 	if (!apiStatus) return status.PENDING;
 
 	return (
@@ -29,6 +30,25 @@ const getStatusForBadge = (apiStatus?: string) => {
 		status[apiStatus.toUpperCase() as keyof typeof status] ??
 		status[apiStatus.toLowerCase() as keyof typeof status] ??
 		status.PENDING
+	);
+};
+
+const hasEventStarted = (eventFromDate?: string | null) => {
+	if (!eventFromDate) return false;
+
+	const today = new Date();
+	const startDate = new Date(eventFromDate);
+
+	today.setHours(0, 0, 0, 0);
+	startDate.setHours(0, 0, 0, 0);
+
+	return today >= startDate;
+};
+
+const canCreateLead = (row: EpcListItem) => {
+	return (
+		row.status?.toUpperCase() === "APPROVED" &&
+		hasEventStarted(row.event_from_date)
 	);
 };
 
@@ -40,7 +60,7 @@ export const getEPCColumns = ({
 		header: "EPC No",
 		cell: ({ row }) => {
 			const epcId = row.original.id;
-
+			console.log("Rendering EPC No cell", { row: row.original });
 			return (
 				<NavLink
 					to={`/marketing/activity-planner/${epcId}`}
@@ -82,11 +102,24 @@ export const getEPCColumns = ({
 		),
 	},
 	{
+		accessorKey: "created_at",
+		header: "Created At",
+		cell: ({ row }) => (
+			<span className="font-medium">
+				{formatDate(row.original?.created_at) || "--"}
+			</span>
+		),
+	},
+	{
 		id: "action",
 		header: "Actions",
 		enableSorting: false,
 		cell: ({ row }) => (
-			<EPCActionMenu row={row.original} onLeadCreate={onLeadCreate} />
+			<EPCActionMenu
+				row={row.original}
+				onLeadCreate={onLeadCreate}
+				canCreateLead={canCreateLead(row.original)}
+			/>
 		),
 	},
 ];

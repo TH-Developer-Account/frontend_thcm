@@ -97,12 +97,19 @@ export const initialEpfValues: EpfFormValues = {
 export const mapProductToEpfOption = (item: EpfProduct): LineItemOption => {
 	return {
 		partNumber: item.partNumber,
+
 		value: item.id,
+
 		label: item.name,
-		particular: item.name,
+
+		particular: item?.partNumber ?? item.name,
+
 		description: item.description ?? "",
+
 		rate: Number(item.unitRate || 0),
+
 		quantity: 1,
+
 		category: item.category ?? EPF_OVERHEAD_CATEGORY,
 	};
 };
@@ -135,7 +142,6 @@ export const mapEpfLineItemsToFormItems = (
 		};
 	});
 };
-
 /**
  * View mapper.
  * Use this only for readonly LineTableView.
@@ -155,6 +161,7 @@ export const mapEpfLineItemsToTableRows = (
 		return {
 			id: item?.id,
 			sno: index + 1,
+			partNumber: getPartNumber(item),
 			particulars: getProductName(item),
 			description: getDescription(item),
 			rate,

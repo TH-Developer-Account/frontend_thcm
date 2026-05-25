@@ -33,6 +33,7 @@ export type RichTextareaProps = {
 	onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
 	onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 	// Rich-text
+	mentionedUser?: string;
 	mentionableUsers?: CommentUser[];
 	onMentionInsert?: (user: CommentUser) => void;
 	onFileAttach?: (files: FileList) => void;

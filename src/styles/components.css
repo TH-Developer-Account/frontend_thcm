@@ -777,15 +777,15 @@
 }
 
 .workflow-table-cell {
-	@apply px-4 py-3;
+	@apply px-2 py-1.5;
 }
 
 .workflow-table-cell-text {
-	@apply px-4 py-3 text-sm text-zinc-700 align-top;
+	@apply px-2 py-1.5 text-xs text-zinc-700 align-top;
 }
 
 .workflow-table-cell-action {
-	@apply px-4 py-3 text-center align-top;
+	@apply px-2 py-1.5 text-center align-top;
 }
 
 .workflow-table-cell-inner {

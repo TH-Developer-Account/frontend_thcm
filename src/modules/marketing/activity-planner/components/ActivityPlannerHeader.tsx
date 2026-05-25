@@ -23,17 +23,20 @@ const ActivityPlannerHeader = ({
 	createdBy,
 	loading,
 	onPreview,
-	isClarifiedPending = false,
+	// isClarifiedPending = false,
 	isSubmittingClarifiedUpdate = false,
 	onSubmitClarifiedUpdate,
 }: ActivityPlannerHeaderProps) => {
 	const title = epcData?.event_name?.title || null;
 	const proposalNo = epcData?.proposal_number || null;
+	const workflowStatus = epcData?.activeWorkflow?.status?.toUpperCase();
+	const epcStatus = epcData?.status?.toUpperCase();
+
+	const isClarified =
+		workflowStatus === "CLARIFIED" || epcStatus === "CLARIFIED";
+
 	const badgeStatus = epcData?.status ? statusMap[epcData.status] : undefined;
-	console.log(
-		"ActivityPlannerHeader rendered with isClarifiedPending:",
-		isClarifiedPending,
-	);
+
 	return (
 		<div className="flex flex-row gap-4 justify-between items-center">
 			<PageHeader
@@ -57,7 +60,7 @@ const ActivityPlannerHeader = ({
 			<div className="flex justify-between items-center page-header-section text-right">
 				<div className="flex flex-col items-end">
 					<div className="flex gap-2 justify-end">
-						{isClarifiedPending && (
+						{isClarified && (
 							<Button
 								type="button"
 								text={

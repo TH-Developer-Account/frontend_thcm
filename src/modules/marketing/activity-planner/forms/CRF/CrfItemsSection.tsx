@@ -3,6 +3,7 @@ import React from "react";
 import LineItemTable from "../../../../../components/ui/LineItemTable";
 import { CRF_CATEGORIES } from "../../../constant";
 import type { CrfProps, LineItemOption } from "../../types/lineItem.types";
+import { ARTWORK_COLUMNS, DEFAULT_COLUMNS } from "../../utils/columnPresets";
 
 export function CrfItemsSection({
 	items,
@@ -44,6 +45,9 @@ export function CrfItemsSection({
 					particularOptions={getOptionsByCategory(category.value)}
 					isViewer={isViewer}
 					category={category.value}
+					columns={
+						category?.value === "ARTWORK" ? ARTWORK_COLUMNS : DEFAULT_COLUMNS
+					}
 				/>
 			))}
 		</React.Fragment>

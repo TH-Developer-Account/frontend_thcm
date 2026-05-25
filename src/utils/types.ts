@@ -20,7 +20,14 @@ export type EPCStatus =
 	| "Report Submitted"
 	| "Cancelled";
 
-export type GeneralStatus = EPCStatus | TableUserStatus;
+export const APPROVAL_STATUS = {
+	PENDING: "PENDING",
+	APPROVED: "APPROVED",
+	REJECTED: "REJECTED",
+	IN_PROGRESS: "IN_PROGRESS",
+} as const;
+export type ApprovalStatus = "Pending" | "Approved" | "Rejected" | "Clarified";
+export type GeneralStatus = EPCStatus | TableUserStatus | ApprovalStatus;
 
 export const statusMap: Record<string, EPCStatus> = {
 	PENDING: "Pending",
@@ -124,4 +131,13 @@ export type ApprovalRow = {
 	status?: string;
 	stageOrder?: number;
 	approvals?: EpcWorkflowApproval[];
+};
+
+// utils/types/api.types.ts
+
+export type ApiErrorResponse = {
+	success: boolean;
+	statusCode: number;
+	message: string;
+	errors?: Record<string, string[]>;
 };

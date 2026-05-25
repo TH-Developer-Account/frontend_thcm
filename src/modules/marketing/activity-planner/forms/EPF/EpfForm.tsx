@@ -1,4 +1,3 @@
-import React from "react";
 import { LucideSave, RefreshCcw, Save, Send, X } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
@@ -24,8 +23,15 @@ export default function EpfForm(props: EpfFormProps) {
 		isEditMode,
 		loading,
 		submitting,
+
+		// IMPORTANT
+		previewRows,
+		previewLoading,
+		handlePreviewWorkflow,
 	} = useEpfForm(props);
+
 	const saveStatus = props.isClarifiedUpdate ? "DRAFT" : "SUBMITTED";
+
 	const actions = (
 		<div className="flex flex-row items-center justify-end gap-2">
 			{onCancel && (
@@ -97,7 +103,7 @@ export default function EpfForm(props: EpfFormProps) {
 					}
 					action={actions}
 				>
-					<React.Fragment>
+					<>
 						<EpfItemsSection
 							items={costItems}
 							onChange={setCostItems}
@@ -111,9 +117,13 @@ export default function EpfForm(props: EpfFormProps) {
 								errors={errors}
 								handleChange={handleChange}
 								eventCost={eventCost}
+								// IMPORTANT
+								previewRows={previewRows}
+								previewLoading={previewLoading}
+								handlePreviewWorkflow={handlePreviewWorkflow}
 							/>
 						</div>
-					</React.Fragment>
+					</>
 				</Section>
 			</div>
 		</div>

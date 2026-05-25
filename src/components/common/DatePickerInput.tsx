@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { DayPicker, type DateRange } from "react-day-picker";
 import { CalendarDaysIcon } from "@heroicons/react/24/outline";
 import "react-day-picker/dist/style.css";
@@ -22,6 +23,7 @@ type DatePickerInputProps = {
 	numberOfMonths?: number;
 	fromDate?: Date;
 	toDate?: Date;
+	disablePast?: boolean;
 };
 
 function formatDate(date: Date) {
@@ -58,7 +60,7 @@ const calendarClassNames = {
 	month: "space-y-1",
 
 	caption: "relative flex items-center justify-center px-8 py-1.5",
-	caption_label: "mx-auto  text-[11px] font-bold text-orange-700 items-center",
+	caption_label: "mx-auto text-[11px] font-bold text-orange-700 items-center",
 
 	nav: "absolute inset-x-0 top-1.5 flex items-center justify-between px-1",
 	nav_button:
@@ -68,12 +70,13 @@ const calendarClassNames = {
 
 	table: "w-full border-collapse",
 	head_row: "flex",
-	head_cell: "w-6 text-center text-[9px] font-semibold text-gray-400",
+	head_cell: "w-3 text-center text-[8px] font-semibold text-gray-400",
+
+	cell: "h-3 w-3 p-0 text-center",
+
+	day: "h-3 w-3 rounded text-[9px] font-medium text-gray-700 transition hover:bg-orange-50 hover:text-orange-600",
 
 	row: "mt-0.5 flex w-full",
-	cell: "h-6 w-6 p-0 text-center text-xs",
-
-	day: "h-6 w-6 rounded-md text-[10px] font-medium text-gray-700 transition hover:bg-orange-50 hover:text-orange-600",
 
 	day_today:
 		"relative border border-orange-500 bg-orange-100 text-orange-700 font-extrabold shadow-[0_0_0_3px_rgba(243,90,0,0.16)] after:absolute after:bottom-[2px] after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-orange-600",
@@ -96,10 +99,12 @@ export default function DatePickerInput({
 	className = "",
 	disabled = false,
 	numberOfMonths,
+	disablePast = false,
 	fromDate,
 	toDate,
 }: DatePickerInputProps) {
 	const [open, setOpen] = useState(false);
+	const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
 
 	const [internalValue, setInternalValue] = useState<
 		Date | DateRange | undefined
@@ -110,8 +115,11 @@ export default function DatePickerInput({
 	);
 
 	const wrapperRef = useRef<HTMLDivElement>(null);
+	const buttonRef = useRef<HTMLButtonElement>(null);
 
-	const finalNumberOfMonths = numberOfMonths ?? (mode === "range" ? 1 : 1);
+	const effectiveFromDate = disablePast ? (fromDate ?? new Date()) : fromDate;
+
+	const finalNumberOfMonths = numberOfMonths ?? 1;
 
 	const finalPlaceholder =
 		placeholder ?? (mode === "range" ? "Select date range" : "Select date");
@@ -144,11 +152,16 @@ export default function DatePickerInput({
 		}
 	}, [value]);
 
+	// Close on outside click — checks both wrapper and portal
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
+			const target = event.target as Node;
+			const portalEl = document.getElementById("date-picker-portal");
+
 			if (
 				wrapperRef.current &&
-				!wrapperRef.current.contains(event.target as Node)
+				!wrapperRef.current.contains(target) &&
+				!portalEl?.contains(target)
 			) {
 				setOpen(false);
 				setDraftValue(selectedValue);
@@ -156,14 +169,41 @@ export default function DatePickerInput({
 		};
 
 		document.addEventListener("mousedown", handleClickOutside);
-
-		return () => {
-			document.removeEventListener("mousedown", handleClickOutside);
-		};
+		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [selectedValue]);
+
+	// Keep portal anchored on scroll/resize
+	useEffect(() => {
+		if (!open) return;
+
+		const updatePos = () => {
+			if (buttonRef.current) {
+				const rect = buttonRef.current.getBoundingClientRect();
+				setDropdownPos({
+					top: rect.bottom + window.scrollY - 4,
+					left: rect.left + window.scrollX,
+				});
+			}
+		};
+
+		window.addEventListener("scroll", updatePos, true);
+		window.addEventListener("resize", updatePos);
+		return () => {
+			window.removeEventListener("scroll", updatePos, true);
+			window.removeEventListener("resize", updatePos);
+		};
+	}, [open]);
 
 	const handleOpen = () => {
 		if (disabled) return;
+
+		if (buttonRef.current) {
+			const rect = buttonRef.current.getBoundingClientRect();
+			setDropdownPos({
+				top: rect.bottom + window.scrollY - 4,
+				left: rect.left + window.scrollX,
+			});
+		}
 
 		setDraftValue(selectedValue);
 		setOpen(true);
@@ -177,7 +217,6 @@ export default function DatePickerInput({
 		if (value === undefined) {
 			setInternalValue(draftValue);
 		}
-
 		onChange?.(draftValue);
 		setOpen(false);
 	};
@@ -187,8 +226,83 @@ export default function DatePickerInput({
 		setOpen(false);
 	};
 
+	const disabledDays = [
+		...(effectiveFromDate ? [{ before: effectiveFromDate }] : []),
+		...(toDate ? [{ after: toDate }] : []),
+	];
+
+	const dropdown =
+		open && !disabled
+			? createPortal(
+					<div
+						id="date-picker-portal"
+						style={{
+							top: dropdownPos.top,
+							left: dropdownPos.left,
+							transform: "translateY(-70%)",
+						}}
+						className="fixed z-9 rounded-lg border border-gray-200 bg-white p-1.5 shadow-lg"
+					>
+						{mode === "single" ? (
+							<DayPicker
+								mode="single"
+								selected={draftValue instanceof Date ? draftValue : undefined}
+								onSelect={(date) => handleSelect(date)}
+								numberOfMonths={finalNumberOfMonths}
+								showOutsideDays
+								disabled={disabledDays}
+								classNames={calendarClassNames}
+							/>
+						) : (
+							<DayPicker
+								mode="range"
+								selected={
+									draftValue &&
+									typeof draftValue === "object" &&
+									"from" in draftValue
+										? draftValue
+										: undefined
+								}
+								onSelect={(range) => handleSelect(range)}
+								numberOfMonths={finalNumberOfMonths}
+								showOutsideDays
+								disabled={disabledDays}
+								classNames={{
+									...calendarClassNames,
+									day_range_start:
+										"bg-orange-500 text-white rounded-l-md rounded-r-none hover:bg-orange-500 hover:text-white",
+									day_range_end:
+										"bg-orange-500 text-white rounded-r-md rounded-l-none hover:bg-orange-500 hover:text-white",
+									day_range_middle:
+										"bg-orange-100 text-orange-700 rounded-none hover:bg-orange-100 hover:text-orange-700",
+								}}
+							/>
+						)}
+
+						<div className="mt-1.5 flex items-center justify-end gap-1.5 border-t border-gray-100 pt-1.5">
+							<Button
+								type="button"
+								onClick={handleCancel}
+								text="Cancel"
+								className="px-2 py-1 text-[10px]"
+							/>
+
+							<Button
+								type="button"
+								onClick={handleApply}
+								disabled={!canApply}
+								text="Apply"
+								status="brand"
+								className="px-2 py-1 text-[10px]"
+							/>
+						</div>
+					</div>,
+					document.body,
+				)
+			: null;
+
 	return (
-		<div ref={wrapperRef} className={`relative form-field ${className}`}>
+		<div ref={wrapperRef} className={`form-field ${className}`}>
 			{label ? (
 				<div className="form-label-row">
 					<label className="form-label">{label}</label>
@@ -199,15 +313,16 @@ export default function DatePickerInput({
 				</div>
 			) : null}
 
-			<div className="form-input-wrapper relative">
+			<div className="form-input-wrapper">
 				<button
+					ref={buttonRef}
 					type="button"
 					disabled={disabled}
 					onClick={() => (open ? handleCancel() : handleOpen())}
 					aria-invalid={!!error}
 					aria-describedby={error ? errorId : undefined}
 					className={`
-						form-input flex w-full items-center justify-between text-left
+						form-input flex h-8 w-full items-center justify-between rounded-md px-2 text-[11px]
 						${error ? "form-input-error" : ""}
 						${disabled ? "form-input-disabled" : ""}
 					`}
@@ -216,72 +331,12 @@ export default function DatePickerInput({
 						{displayValue || finalPlaceholder}
 					</span>
 
-					<CalendarDaysIcon className="h-4 w-4 shrink-0 text-gray-500" />
+					<CalendarDaysIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
 				</button>
 			</div>
 
-			{open && !disabled ? (
-				<div className="absolute left-0 z-50 mt-1.5 rounded-xl border border-gray-200 bg-white p-2 shadow-xl">
-					{mode === "single" ? (
-						<DayPicker
-							mode="single"
-							selected={draftValue instanceof Date ? draftValue : undefined}
-							onSelect={(date) => handleSelect(date)}
-							numberOfMonths={finalNumberOfMonths}
-							showOutsideDays
-							fromDate={fromDate}
-							toDate={toDate}
-							classNames={calendarClassNames}
-						/>
-					) : (
-						<DayPicker
-							mode="range"
-							selected={
-								draftValue &&
-								typeof draftValue === "object" &&
-								"from" in draftValue
-									? draftValue
-									: undefined
-							}
-							onSelect={(range) => handleSelect(range)}
-							numberOfMonths={finalNumberOfMonths}
-							showOutsideDays
-							fromDate={fromDate}
-							toDate={toDate}
-							classNames={{
-								...calendarClassNames,
-
-								day_range_start:
-									"bg-orange-500 text-white rounded-l-md rounded-r-none hover:bg-orange-500 hover:text-white",
-
-								day_range_end:
-									"bg-orange-500 text-white rounded-r-md rounded-l-none hover:bg-orange-500 hover:text-white",
-
-								day_range_middle:
-									"bg-orange-100 text-orange-700 rounded-none hover:bg-orange-100 hover:text-orange-700",
-							}}
-						/>
-					)}
-
-					<div className="mt-1.5 flex items-center justify-end gap-1.5 border-t border-gray-100 pt-1.5">
-						<Button
-							type="button"
-							onClick={handleCancel}
-							text="Cancel"
-							className="px-2 py-1 text-[10px]"
-						/>
-
-						<Button
-							type="button"
-							onClick={handleApply}
-							disabled={!canApply}
-							text="Apply"
-							status="brand"
-							className="px-2 py-1 text-[10px]"
-						/>
-					</div>
-				</div>
-			) : null}
+			{/* Renders into document.body — zero layout impact on the form */}
+			{dropdown}
 
 			{error ? (
 				<p id={errorId} className="form-error-text">

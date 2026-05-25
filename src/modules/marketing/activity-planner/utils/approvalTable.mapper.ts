@@ -1,4 +1,7 @@
-import type { ApprovalTableRow } from "../../../../utils/types";
+import {
+	APPROVAL_STATUS,
+	type ApprovalTableRow,
+} from "../../../../utils/types";
 
 type ActiveWorkflowApproval = {
 	id?: string;
@@ -37,13 +40,6 @@ type ApprovalStageLike = {
 };
 
 const normalize = (value: unknown) => String(value ?? "").toUpperCase();
-
-const isCurrentStage = (stage: ApprovalStageLike) => {
-	return (
-		stage.isCurrentIteration === true &&
-		normalize(stage.status) === "IN_PROGRESS"
-	);
-};
 
 const getStageName = (stage: ApprovalStageLike) => {
 	return stage.stageName ?? stage.name ?? `Stage ${stage.stageOrder}`;
@@ -97,7 +93,9 @@ const getActiveWorkflowApprovers = (
 				.join(" ") || "--",
 		email: approval.approver?.email || "--",
 		minApprovals,
-		status: shouldShowStatus ? (approval.status ?? "--") : null,
+
+		// FIX
+		status: approval.status ?? "PENDING",
 	}));
 };
 
@@ -117,6 +115,17 @@ const getPreviewWorkflowApprovers = (
 	}));
 };
 
+const shouldRenderStatus = (stage: ApprovalStageLike) => {
+	const status = normalize(stage.status);
+
+	return (
+		status === "APPROVED" ||
+		status === "REJECTED" ||
+		(stage.isCurrentIteration === true &&
+			(status === "IN_PROGRESS" || status === "PENDING"))
+	);
+};
+
 export const mapWorkflowStagesToApprovalRows = (
 	stages: ApprovalStageLike[] = [],
 	options?: {
@@ -128,8 +137,9 @@ export const mapWorkflowStagesToApprovalRows = (
 
 	return stages.map((stage) => {
 		const minApprovals = getStageMinApprovals(stage);
+
 		const shouldShowStatus = showOnlyCurrentStageStatus
-			? isCurrentStage(stage)
+			? shouldRenderStatus(stage)
 			: true;
 
 		const approvers = stage.approvals?.length
@@ -149,4 +159,13 @@ export const mapWorkflowStagesToApprovalRows = (
 			approvers,
 		};
 	});
+};
+
+export const getStatusForBadge = (apiStatus?: string | null) => {
+	if (!apiStatus) return APPROVAL_STATUS.PENDING;
+
+	return (
+		APPROVAL_STATUS[apiStatus.toUpperCase() as keyof typeof APPROVAL_STATUS] ??
+		APPROVAL_STATUS.PENDING
+	);
 };

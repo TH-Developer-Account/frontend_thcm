@@ -61,15 +61,20 @@ export interface LineItem {
 }
 
 export type LineItemOption = {
+	id?: string;
 	value: string;
 	label: string;
 	particular: string;
 	description: string | null;
-	rate: number;
-	quantity: number;
 	category?: string;
 	partNumber?: string;
-	// height?: string;
-	// width?: string;
-	// artworkSize?: string;
+	// default pricing flow
+	rate?: number;
+	quantity?: number;
+	total?: number;
+
+	// artwork flow
+	width?: number;
+	height?: number;
+	unit?: string;
 };

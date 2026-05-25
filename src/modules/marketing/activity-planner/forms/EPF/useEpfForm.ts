@@ -2,6 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../../../context/Auth/useAuth";
 import { useToast } from "../../../../../context/Auth/AuthContext";
+import { mapWorkflowStagesToApprovalRows } from "../../utils/approvalTable.mapper";
 
 import type { LineItemOption } from "../../../types";
 import type {
@@ -43,6 +44,9 @@ import {
 	useEpfProductsQuery,
 } from "../../queries/useEpfMutation";
 import { useEpfBudgetInfoQuery } from "../../queries/useEpfBudgetInfoQuery";
+import type { ApiErrorResponse } from "../../../../../context/context.types";
+import type { AxiosError } from "axios";
+import type { ApprovalTableRow } from "../../../../../utils/types";
 
 export type EpfFormMode = "create" | "edit";
 
@@ -74,6 +78,9 @@ type UseEpfFormResult = {
 	handleChange: (name: keyof EpfFormValues, value: string) => void;
 	handleReset: () => void;
 	handleSubmit: (status: EpfStatus) => Promise<void>;
+	previewRows: ApprovalTableRow[];
+	previewLoading: boolean;
+	handlePreviewWorkflow: () => Promise<void>;
 };
 
 const numericFields = new Set<keyof EpfFormValues>([
@@ -161,7 +168,9 @@ export const useEpfForm = ({
 	const [errors, setErrors] = React.useState<
 		Partial<Record<keyof EpfFormValues, string>>
 	>({});
+	const [previewRows, setPreviewRows] = React.useState<ApprovalTableRow[]>([]);
 
+	const [previewLoading, setPreviewLoading] = React.useState(false);
 	const budgetMasterId = getBudgetMasterId({
 		budgetMasterId: propBudgetMasterId,
 		initialData,
@@ -217,6 +226,7 @@ export const useEpfForm = ({
 		return overheadTotal + Number(values.crfTotal || 0);
 	}, [costItems, values.crfTotal]);
 
+	console.log("Calculated event cost:", eventCost);
 	const displayValues = React.useMemo<EpfFormValues>(() => {
 		const budgetValues = calculateBudgetShares(values, eventCost);
 
@@ -402,7 +412,68 @@ export const useEpfForm = ({
 			updateEpfMutation,
 		],
 	);
+	const handlePreviewWorkflow = React.useCallback(async () => {
+		try {
+			if (!workspaceId) {
+				showToast({
+					type: "error",
+					title: "Workspace Error",
+					description: "Workspace not found.",
+				});
 
+				return;
+			}
+
+			if (!appId) {
+				showToast({
+					type: "error",
+					title: "Application Error",
+					description: "Application ID not found.",
+				});
+
+				return;
+			}
+
+			if (!eventCost || Number(eventCost) <= 0) {
+				showToast({
+					type: "error",
+					title: "Invalid Budget",
+					description: "Event cost must be greater than zero.",
+				});
+
+				return;
+			}
+
+			setPreviewLoading(true);
+
+			const response = await workflowApi.previewWorkflow({
+				workspaceId,
+				appId,
+				budget: Number(eventCost),
+			});
+
+			const rows = mapWorkflowStagesToApprovalRows(response?.stages ?? [], {
+				showOnlyCurrentStageStatus: false,
+			});
+
+			setPreviewRows(rows ?? []);
+		} catch (error) {
+			const err = error as AxiosError<ApiErrorResponse>;
+
+			console.error("Workflow preview failed:", err.response?.data || error);
+
+			showToast({
+				type: "error",
+				title: "Workflow Error",
+				description:
+					err.response?.data?.message || "Unable to preview workflow.",
+			});
+
+			setPreviewRows([]);
+		} finally {
+			setPreviewLoading(false);
+		}
+	}, [workspaceId, appId, eventCost, showToast]);
 	return {
 		values: displayValues,
 		eventCost,
@@ -418,5 +489,8 @@ export const useEpfForm = ({
 		handleChange,
 		handleReset,
 		handleSubmit,
+		previewRows: previewRows ?? [],
+		previewLoading,
+		handlePreviewWorkflow,
 	};
 };

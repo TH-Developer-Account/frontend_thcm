@@ -8,10 +8,12 @@ import {
 import { ChevronDown } from "lucide-react";
 
 import type { EpcListItem } from "../../types/epc.types";
+import Button from "../../../../../components/common/Button";
 
 type EPCActionMenuProps = {
 	row: EpcListItem;
 	onLeadCreate?: (row: EpcListItem) => void;
+	canCreateLead?: boolean;
 };
 
 const getEventName = (row: EpcListItem) => {
@@ -23,6 +25,7 @@ const getEventName = (row: EpcListItem) => {
 export default function EPCActionMenu({
 	row,
 	onLeadCreate,
+	canCreateLead,
 }: EPCActionMenuProps) {
 	const handleLead = () => {
 		localStorage.setItem(
@@ -68,7 +71,7 @@ export default function EPCActionMenu({
 					"
 				>
 					<MenuItem>
-						<button
+						<Button
 							type="button"
 							onClick={handleLead}
 							className="
@@ -76,9 +79,9 @@ export default function EPCActionMenu({
 								text-left text-xs font-medium text-zinc-700
 								data-focus:bg-orange-50 data-focus:text-orange-700
 							"
-						>
-							Create Lead
-						</button>
+							disabled={!canCreateLead}
+							text="Create Lead"
+						/>
 					</MenuItem>
 				</MenuItems>
 			</Portal>

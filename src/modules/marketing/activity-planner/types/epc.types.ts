@@ -25,6 +25,7 @@ export type EpcListItem = {
 	last_name?: string;
 	created_at?: string;
 	location?: string;
+	event_from_date?: string;
 };
 
 export type EpcListResponse = {

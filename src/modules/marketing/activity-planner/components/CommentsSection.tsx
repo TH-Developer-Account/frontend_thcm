@@ -44,7 +44,9 @@ type CommentsSectionProps = {
 
 type AuditComment = {
 	action?: string | null;
-	reason?: string | null;
+	metadata?: {
+		reason?: string | null;
+	};
 	stageName?: string | null;
 	actor?: {
 		first_name?: string | null;
@@ -62,7 +64,7 @@ const getActorName = (comment: AuditComment) => {
 const getAuditMessage = (comment: AuditComment) => {
 	const actorName = getActorName(comment) || "Someone";
 	const action = comment.action?.toUpperCase();
-	const reason = comment.reason?.trim();
+	const reason = comment.metadata?.reason?.trim();
 	const stageName = comment.stageName;
 	const timeStamp = formatDateTime(comment.createdAt);
 
@@ -80,9 +82,6 @@ const getAuditMessage = (comment: AuditComment) => {
 		case "CLARIFY":
 			return `${stageText}${actorName} asked for clarification${reasonText} ${timeStamp}`;
 
-		case "SENT_BACK":
-			return `${stageText}${actorName} sent this back${reasonText} ${timeStamp}`;
-
 		case "SUBMITTED":
 			return `${actorName} submitted this${reasonText} ${timeStamp}`;
 
@@ -95,6 +94,18 @@ const getAuditMessage = (comment: AuditComment) => {
 		case "REPORT_SUBMITTED":
 			return `${actorName} submitted the report${reasonText} ${timeStamp}`;
 
+		case "EPC_CREATED":
+			return `${actorName} created this EPC${reasonText} ${timeStamp}`;
+		case "EPC_UPDATED":
+			return `${actorName} updated this EPC${reasonText} ${timeStamp}`;
+		case "CRF_CREATED":
+			return `${actorName} created this CRF${reasonText} ${timeStamp}`;
+		case "CRF_UPDATED":
+			return `${actorName} updated this CRF${reasonText} ${timeStamp}`;
+		case "EPF_CREATED":
+			return `${actorName} created this EPF${reasonText} ${timeStamp}`;
+		case "EPF_UPDATED":
+			return `${actorName} updated this EPF${reasonText} ${timeStamp}`;
 		default:
 			return reason
 				? `${stageText}${actorName} updated this — ${reason} ${timeStamp}`
@@ -190,9 +201,14 @@ export default function CommentsSection({
 	}, [epcId]);
 
 	const currentStage = useMemo(() => {
-		return stages.find(
-			(stage) => stage.status === "IN_PROGRESS" && stage.isCurrentIteration,
-		);
+		return stages.find((stage) => {
+			const status = stage.status?.toUpperCase();
+
+			return (
+				stage.isCurrentIteration &&
+				(status === "IN_PROGRESS" || status === "CLARIFIED")
+			);
+		});
 	}, [stages]);
 
 	const approvalId = useMemo(() => {
@@ -239,7 +255,6 @@ export default function CommentsSection({
 				}
 			}
 		}
-		console.log("mentionableUsers", users);
 		return users;
 	}, [stages]);
 
@@ -341,6 +356,7 @@ export default function CommentsSection({
 	const openClarifyModal = React.useCallback(() => {
 		setIsClarifyModalOpen(true);
 	}, []);
+
 	const handleClarify = async () => {
 		const trimmedReason = clarifyReason.trim();
 
@@ -365,10 +381,12 @@ export default function CommentsSection({
 		try {
 			setClarifyLoading(true);
 
-			const { data, message } = await workflowApi.clarifyStage(
+			const response = await workflowApi.clarifyStage(
 				currentStage.id,
 				trimmedReason,
 			);
+
+			const { data, message } = response;
 
 			showToast({
 				type: "success",
@@ -376,14 +394,17 @@ export default function CommentsSection({
 				description: message,
 			});
 
+			// refresh workflow + comments from backend
+			await onWorkflowUpdate();
+
+			// optimistic fallback if backend does not return refreshed comments immediately
 			setComments((prev) => [
 				...prev,
 				{
 					id: data?.id ?? crypto.randomUUID(),
-					message: "",
-					entryType: "AUDIT_LOG",
+					message: trimmedReason,
+					entryType: "ACTIVITY_LOG",
 					action: "CLARIFIED",
-					reason: data?.reason ?? trimmedReason,
 					stageName: data?.stageName ?? currentStage.stageName,
 					createdAt: data?.createdAt ?? new Date().toISOString(),
 					updatedAt: data?.updatedAt ?? new Date().toISOString(),
@@ -397,8 +418,6 @@ export default function CommentsSection({
 
 			setClarifyReason("");
 			setIsClarifyModalOpen(false);
-
-			await onWorkflowUpdate();
 		} catch (err) {
 			showToast({
 				type: "error",
@@ -445,13 +464,11 @@ export default function CommentsSection({
 					) : (
 						<div className="comments-list scrollbar-sleek">
 							{comments.map((comment) => (
-								<>
-									<CommentCard
-										key={comment.id}
-										comment={comment}
-										ref={listEndRef}
-									/>
-								</>
+								<CommentCard
+									key={comment.id}
+									comment={comment}
+									ref={listEndRef}
+								/>
 							))}
 						</div>
 					)}

@@ -5,61 +5,35 @@ export type ProductType = "EPF" | "CRF";
 export type Product = {
 	id: string;
 	productType: ProductType;
-	category: string; // you can tighten this if you have enum
+	category: string;
 	partNumber: string;
 	name: string;
 	description: string | null;
-	unitRate: string | number; // ⚠️ comes as string from Prisma Decimal
+	unitRate: string | number;
 	isActive: boolean;
 	created_at: string; // ISO date string
 	updated_at: string; // ISO date string
+	width?: number;
+	height?: number;
+	unit?: string;
 };
 export type LineItemOption = {
-	/**
-	 * For select/table option value.
-	 * Usually product id.
-	 */
+	id?: string;
 	value: string;
-
-	/**
-	 * Display label.
-	 * Usually product name.
-	 */
 	label: string;
-
-	/**
-	 * Existing old code uses `particular`.
-	 * Keep it required so old LineItemTable does not break.
-	 */
 	particular: string;
-
 	description: string | null;
-
-	/**
-	 * Frontend field name used in old LineItemTable.
-	 * Backend may call this amount.
-	 */
-	rate: number;
-
-	quantity: number;
-
 	category?: string;
 	partNumber?: string;
-
-	/**
-	 * Optional fields for migrated API/backend compatibility.
-	 * These should not force code changes, but allow mappers/payloads
-	 * to safely carry backend ids when available.
-	 */
-	id?: string;
-	productId?: string;
-	product_id?: string;
-
-	/**
-	 * Optional only. Do not rely on this in old working code.
-	 * Prefer calculating total from rate * quantity in payload.
-	 */
+	// default pricing flow
+	rate?: number;
+	quantity?: number;
 	total?: number;
+
+	// artwork flow
+	width?: number;
+	height?: number;
+	unit?: string;
 };
 
 export type GroupedOption = {
@@ -101,4 +75,24 @@ export interface CrfProps {
 	onChange: React.Dispatch<React.SetStateAction<LineItemOption[]>>;
 	isViewer?: boolean;
 	options: GroupedOption[];
+}
+
+export type ColumnKey =
+	| "sno"
+	| "partNumber"
+	| "particular"
+	| "description"
+	| "rate"
+	| "quantity"
+	| "total"
+	| "actions"
+	| string; // allow custom keys for flexibility
+
+export interface ColumnConfig {
+	key: ColumnKey;
+	label: string;
+	colSpan: number;
+	align?: "left" | "right" | "center";
+	editable?: boolean; // show input in draft row
+	disabled?: boolean; // show input but disabled
 }

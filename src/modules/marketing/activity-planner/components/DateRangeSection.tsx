@@ -23,7 +23,7 @@ const getDaysCount = (fromDate?: string | null, toDate?: string | null) => {
 	return `${diffDays} ${diffDays === 1 ? "day" : "days"}`;
 };
 
-const DateRange = ({ fromDate, toDate }: DateRangeProps) => {
+const DateRangeSection = ({ fromDate, toDate }: DateRangeProps) => {
 	return (
 		<div className="date-range-card">
 			<div className="date-range-content">
@@ -52,4 +52,4 @@ const DateRange = ({ fromDate, toDate }: DateRangeProps) => {
 	);
 };
 
-export default DateRange;
+export default DateRangeSection;

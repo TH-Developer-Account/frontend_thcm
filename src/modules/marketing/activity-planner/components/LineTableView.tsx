@@ -1,27 +1,48 @@
 import { CRF_CATEGORIES } from "../../constant";
 
+import type { ColumnConfig } from "../types/lineItem.types";
+
+import { ARTWORK_COLUMNS, DEFAULT_COLUMNS } from "../utils/columnPresets";
+
 export type TableRow = {
 	id?: string;
+
 	sno: number;
+
+	partNumber?: string;
+
 	particulars: string;
+
 	description: string;
-	rate: number;
-	qty: number;
-	total: number;
-	height?: string;
-	width?: string;
+
+	rate?: number;
+
+	qty?: number;
+
+	total?: number;
+
+	height?: number;
+
+	width?: number;
+
+	unit?: string;
+
 	category?: string;
 };
 
 type LineTableViewProps = {
 	title?: string;
+
 	data?: TableRow[];
+
 	showGrandTotal?: boolean;
+
 	grandTotalLabel?: string;
 };
 
 const toDisplayNumber = (value: unknown) => {
 	const parsed = Number(value);
+
 	return Number.isFinite(parsed) ? parsed : 0;
 };
 
@@ -44,6 +65,7 @@ const groupByCategory = (data: TableRow[]) => {
 		}
 
 		acc[category].push(row);
+
 		return acc;
 	}, {});
 };
@@ -54,6 +76,14 @@ const getGrandTotal = (data: TableRow[]) => {
 	}, 0);
 };
 
+const alignClass = (align?: "left" | "right" | "center") => {
+	if (align === "right") return "text-right";
+
+	if (align === "center") return "text-center";
+
+	return "text-left";
+};
+
 const LineTableView = ({
 	title,
 	data = [],
@@ -61,23 +91,14 @@ const LineTableView = ({
 	grandTotalLabel = "Grand Total:",
 }: LineTableViewProps) => {
 	const groupedData = groupByCategory(data);
+
 	const grandTotal = getGrandTotal(data);
 
 	return (
-		<div className="row-6 text-center mb-1">
-			{title && <p className="font-semibold text-md">{title}</p>}
+		<div className="row-6 mb-1 text-center">
+			{title && <p className="text-md font-semibold">{title}</p>}
 
-			<div className="line-view-table">
-				<div className="line-view-table-head">
-					<div className="col-span-1">SNo.</div>
-					<div className="col-span-2 text-left">Category</div>
-					<div className="col-span-2">Particulars</div>
-					<div className="col-span-3">Description</div>
-					<div className="col-span-1 text-right">Rate</div>
-					<div className="col-span-1 text-right">Qty</div>
-					<div className="col-span-2 text-right">Total</div>
-				</div>
-
+			<div className="space-y-4">
 				{data.length === 0 ? (
 					<div className="line-view-empty">No data available</div>
 				) : (
@@ -85,50 +106,160 @@ const LineTableView = ({
 						{Object.entries(groupedData).map(([category, rows]) => {
 							const categoryTitle = getCategoryTitle(category);
 
+							const columns: ColumnConfig[] =
+								category === "ARTWORK" ? ARTWORK_COLUMNS : DEFAULT_COLUMNS;
+
 							return (
-								<div key={category} className="line-view-group">
-									{rows.map((row, index) => (
-										<div
-											key={row.id ?? `${category}-${index}`}
-											className="line-view-row"
-										>
-											<div className="col-span-1 text-gray-500">{row.sno}.</div>
+								<div key={category} className="line-view-table">
+									{/* Category Title */}
+									<div className="mb-1 text-left text-sm font-semibold text-orange-800">
+										{categoryTitle}
+									</div>
 
-											<div className="col-span-2 text-left font-medium text-gray-700">
-												{index === 0 ? categoryTitle : ""}
-											</div>
+									{/* Header */}
+									<div className="line-view-table-head">
+										{columns
+											.filter((c) => c.key !== "actions")
+											.map((column) => (
+												<div
+													key={column.key}
+													className={`col-span-${column.colSpan} ${alignClass(column.align)}`}
+												>
+													{column.label}
+												</div>
+											))}
+									</div>
 
-											<div className="col-span-2 font-medium text-gray-900">
-												{row.particulars || "--"}
-											</div>
+									{/* Rows */}
+									<div className="space-y-1">
+										{rows.map((row, index) => (
+											<div
+												key={row.id ?? `${category}-${index}`}
+												className="line-view-row"
+											>
+												{columns
+													.filter((c) => c.key !== "actions")
+													.map((column) => {
+														switch (column.key) {
+															case "sno":
+																return (
+																	<div
+																		key={column.key}
+																		className={`col-span-${column.colSpan}`}
+																	>
+																		{row.sno}.
+																	</div>
+																);
 
-											<div className="col-span-3 text-gray-600">
-												{row.description || "--"}
-											</div>
+															case "partNumber":
+																return (
+																	<div
+																		key={column.key}
+																		className={`col-span-${column.colSpan}`}
+																	>
+																		{row.partNumber || "--"}
+																	</div>
+																);
 
-											<div className="col-span-1 text-right tabular-nums text-gray-800">
-												{toDisplayNumber(row.rate).toFixed(2)}
-											</div>
+															case "particular":
+																return (
+																	<div
+																		key={column.key}
+																		className={`col-span-${column.colSpan} font-medium`}
+																	>
+																		{row.particulars || "--"}
+																	</div>
+																);
 
-											<div className="col-span-1 text-right tabular-nums text-gray-800">
-												{toDisplayNumber(row.qty)}
-											</div>
+															case "description":
+																return (
+																	<div
+																		key={column.key}
+																		className={`col-span-${column.colSpan}`}
+																	>
+																		{row.description || "--"}
+																	</div>
+																);
 
-											<div className="col-span-2 text-right font-semibold tabular-nums text-gray-950">
-												{toDisplayNumber(row.total).toFixed(2)}
+															case "rate":
+																return (
+																	<div
+																		key={column.key}
+																		className={`col-span-${column.colSpan} text-right`}
+																	>
+																		{toDisplayNumber(row.rate).toFixed(2)}
+																	</div>
+																);
+
+															case "quantity":
+																return (
+																	<div
+																		key={column.key}
+																		className={`col-span-${column.colSpan} text-right`}
+																	>
+																		{toDisplayNumber(row.qty)}
+																	</div>
+																);
+
+															case "total":
+																return (
+																	<div
+																		key={column.key}
+																		className={`col-span-${column.colSpan} text-right font-semibold`}
+																	>
+																		{toDisplayNumber(row.total).toFixed(2)}
+																	</div>
+																);
+
+															case "width":
+																return (
+																	<div
+																		key={column.key}
+																		className={`col-span-${column.colSpan} text-right`}
+																	>
+																		{row.width ?? "--"}
+																	</div>
+																);
+
+															case "height":
+																return (
+																	<div
+																		key={column.key}
+																		className={`col-span-${column.colSpan} text-right`}
+																	>
+																		{row.height ?? "--"}
+																	</div>
+																);
+
+															case "unit":
+																return (
+																	<div
+																		key={column.key}
+																		className={`col-span-${column.colSpan}  text-right`}
+																	>
+																		{row.unit ?? "--"}
+																	</div>
+																);
+
+															default:
+																return null;
+														}
+													})}
 											</div>
-										</div>
-									))}
+										))}
+									</div>
 								</div>
 							);
 						})}
 
+						{/* Grand Total */}
 						{showGrandTotal && (
 							<div className="mt-2 flex justify-end rounded-md border border-slate-300 bg-slate-100 px-3 py-1">
 								<div className="flex items-center gap-3 text-xs">
 									<span className="font-semibold text-slate-600">
 										{grandTotalLabel}
 									</span>
+
 									<span className="text-sm font-bold tabular-nums text-orange-800">
 										{grandTotal.toFixed(2)}
 									</span>
