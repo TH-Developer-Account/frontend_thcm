@@ -16,82 +16,91 @@ import BusinessPartners from "../modules/admin/business-partners/BusinessPartner
 import BusinessPartnerView from "../modules/admin/business-partners/BusinessPartnerView";
 import WorkflowPage from "../modules/admin/workflow/WorkflowPage";
 import WorkflowCreatePage from "../modules/admin/workflow/WorkFlowCreation/WorkflowCreatePage";
+import OrgHierarchyPage from "../modules/admin/org-structure/OrgHierarchyPage";
 
 export default function AdminRoutes() {
-	return (
-		<Routes>
-			<Route path="dashboard" element={<ComingSoon />} />
-			<Route path="users" element={<UsersPage />} />
-			<Route path="department" element={<ComingSoon />} />
-			<Route
-				path="masters"
-				element={
-					<div className="overflow-y-auto scrollbar-sleek">
-						<MastersPage />
-					</div>
-				}
-			/>
-			<Route path="business-partners" element={<BusinessPartners />} />
-			<Route path="business-partners-view" element={<BusinessPartnerView />} />
-			<Route path="bydesign" element={<ByDesignPage />} />
-			<Route path="c4c" element={<C4CPage />} />
-			<Route path="/profile" element={<UserProfile />} />
-			<Route
-				path="/profiles/create"
-				element={
-					<ThemeProvider>
-						<ProfileFormPage />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="/profiles/:id/edit"
-				element={
-					<ThemeProvider>
-						<ProfileFormPage />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="user_profiles"
-				element={
-					<ThemeProvider>
-						<UserProfilePage />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="dealers"
-				element={
-					<ThemeProvider>
-						<ComingSoon />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="workflows"
-				element={
-					<ThemeProvider>
-						<WorkflowPage />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="/create-workflows"
-				element={
-					<ThemeProvider>
-						<WorkflowCreatePage />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="edit-workflows/:id"
-				element={
-					<ThemeProvider>
-						<WorkflowCreatePage />
-					</ThemeProvider>
-				}
-			/>
-		</Routes>
-	);
+  return (
+    <Routes>
+      <Route path="dashboard" element={<ComingSoon />} />
+      <Route path="users" element={<UsersPage />} />
+      <Route path="department" element={<ComingSoon />} />
+      <Route
+        path="masters"
+        element={
+          <div className="overflow-y-auto scrollbar-sleek">
+            <MastersPage />
+          </div>
+        }
+      />
+      <Route path="business-partners" element={<BusinessPartners />} />
+      <Route path="business-partners-view" element={<BusinessPartnerView />} />
+      <Route path="bydesign" element={<ByDesignPage />} />
+      <Route path="c4c" element={<C4CPage />} />
+      <Route path="/profile" element={<UserProfile />} />
+      <Route
+        path="/profiles/create"
+        element={
+          <ThemeProvider>
+            <ProfileFormPage />
+          </ThemeProvider>
+        }
+      />
+      <Route
+        path="/profiles/:id/edit"
+        element={
+          <ThemeProvider>
+            <ProfileFormPage />
+          </ThemeProvider>
+        }
+      />
+      <Route
+        path="user_profiles"
+        element={
+          <ThemeProvider>
+            <UserProfilePage />
+          </ThemeProvider>
+        }
+      />
+      <Route
+        path="dealers"
+        element={
+          <ThemeProvider>
+            <ComingSoon />
+          </ThemeProvider>
+        }
+      />
+      <Route
+        path="workflows"
+        element={
+          <ThemeProvider>
+            <WorkflowPage />
+          </ThemeProvider>
+        }
+      />
+      <Route
+        path="/create-workflows"
+        element={
+          <ThemeProvider>
+            <WorkflowCreatePage />
+          </ThemeProvider>
+        }
+      />
+      <Route
+        path="edit-workflows/:id"
+        element={
+          <ThemeProvider>
+            <WorkflowCreatePage />
+          </ThemeProvider>
+        }
+      />
+      <Route
+        path="organisation"
+        element={
+          <ThemeProvider>
+            <OrgHierarchyPage />
+          </ThemeProvider>
+        }
+      />
+    </Routes>
+  );
 }

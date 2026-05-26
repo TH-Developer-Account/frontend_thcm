@@ -53,6 +53,12 @@ export const adminSidebar: SidebarItem[] = [
     link: "/admin/workflows",
   },
   {
+    id: "organisation",
+    label: "Organisation",
+    icon: <BriefcaseBusinessIcon size={18} />,
+    link: "/admin/organisation",
+  },
+  {
     id: "dealers",
     label: "Dealers",
     icon: <BriefcaseBusinessIcon size={18} />,
