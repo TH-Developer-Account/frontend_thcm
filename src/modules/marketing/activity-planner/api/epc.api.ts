@@ -1,3 +1,4 @@
+import qs from "qs";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import type {
 	EpcCreatePayload,
@@ -9,13 +10,25 @@ import type {
 
 export const epcApi = {
 	getList: async (params: EpcListParams): Promise<EpcListResponse> => {
-		const { status, ...rest } = params;
 		const response = await ServerAxios.get("/epc", {
-			params: {
-				...rest,
-				...(status?.length ? { status: status.join(",") } : {}),
+			params,
+			paramsSerializer: (params) => {
+				return qs.stringify(
+					{
+						...params,
+						zone: params.zone ? JSON.stringify(params.zone) : undefined,
+						status: params.status ? JSON.stringify(params.status) : undefined,
+						eventType: params.eventType
+							? JSON.stringify(params.eventType)
+							: undefined,
+					},
+					{
+						encode: false,
+					},
+				);
 			},
 		});
+
 		return response.data;
 	},
 
@@ -23,7 +36,6 @@ export const epcApi = {
 		const {
 			data: { data },
 		} = await ServerAxios.get(`/epc/${epcId}`);
-
 		return data;
 	},
 
@@ -31,7 +43,6 @@ export const epcApi = {
 		const {
 			data: { data },
 		} = await ServerAxios.post("/epc", payload);
-
 		return data;
 	},
 
@@ -39,7 +50,6 @@ export const epcApi = {
 		const {
 			data: { data },
 		} = await ServerAxios.put(`/epc/${epcId}`, payload);
-
 		return data;
 	},
 };

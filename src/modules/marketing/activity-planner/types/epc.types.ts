@@ -9,7 +9,11 @@ export type EpcListParams = {
 	status?: string[];
 	sortBy?: string;
 	sortOrder?: "asc" | "desc";
-
+	zone?: string[];
+	eventType?: string[];
+	eventDateFrom?: string;
+	eventDateTo?: string;
+	createdDate?: string;
 	createdByMe?: boolean;
 	pendingOnMe?: boolean;
 	approvedByMe?: boolean;
