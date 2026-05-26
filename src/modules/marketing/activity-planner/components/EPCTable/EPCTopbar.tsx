@@ -12,15 +12,8 @@ import {
 } from "../../utils/constants";
 import type { EpcFilters } from "../../types/epc.types";
 import { clearStoredEpcInfo } from "../../helpers/localstorage";
-// import {
-// 	useZoneOptionsQuery,
-// 	useEventTypeOptionsQuery,
-// } from "../../queries/useEpcFilterOptionsQuery";
-import {
-	EPC_STATUS_OPTIONS,
-	EPC_ZONE_OPTIONS,
-	EPC_EVENT_TYPE_OPTIONS,
-} from "../../utils/constants";
+import { useMasterData } from "../../../../../hooks/useMasterData";
+import { EPC_STATUS_OPTIONS } from "../../utils/constants";
 
 type EPCTopbarProps = {
 	search: string;
@@ -44,10 +37,9 @@ const EPCTopbar = ({
 	activeFilterCount,
 }: EPCTopbarProps) => {
 	const navigate = useNavigate();
-	// const { data: zoneOptions } = useZoneOptionsQuery();
-	// const { data: eventTypeOptions } = useEventTypeOptionsQuery();
-	const zoneOptions = EPC_ZONE_OPTIONS;
-	const eventTypeOptions = EPC_EVENT_TYPE_OPTIONS;
+	const { data } = useMasterData();
+	const eventTypeOptions = data?.eventNames ?? [];
+	const zoneOptions = data?.regions ?? [];
 	const statusOptions = EPC_STATUS_OPTIONS;
 
 	const handleCreateEpc = () => {
