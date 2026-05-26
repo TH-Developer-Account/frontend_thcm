@@ -226,7 +226,6 @@ export const useEpfForm = ({
 		return overheadTotal + Number(values.crfTotal || 0);
 	}, [costItems, values.crfTotal]);
 
-	console.log("Calculated event cost:", eventCost);
 	const displayValues = React.useMemo<EpfFormValues>(() => {
 		const budgetValues = calculateBudgetShares(values, eventCost);
 

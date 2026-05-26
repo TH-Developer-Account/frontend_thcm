@@ -28,6 +28,8 @@ export type TableRow = {
 	unit?: string;
 
 	category?: string;
+	// EPF specific
+	quotationFileName?: string | null;
 };
 
 type LineTableViewProps = {
@@ -240,7 +242,15 @@ const LineTableView = ({
 																		{row.unit ?? "--"}
 																	</div>
 																);
-
+															case "quotationFile":
+																return (
+																	<div
+																		key={column.key}
+																		className={`col-span-${column.colSpan}  text-right`}
+																	>
+																		{row.quotationFileName ?? "--"}
+																	</div>
+																);
 															default:
 																return null;
 														}

@@ -81,5 +81,6 @@ export type LineItemOption = {
 	quotationFile?: File | null;
 	quotationUrl?: string;
 	quotationFileName?: string;
+	quotationFileType?: string;
 	quotationPreviewUrl?: string;
 };

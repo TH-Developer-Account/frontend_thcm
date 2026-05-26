@@ -1,4 +1,4 @@
-import { Trash2, Pencil, Plus, Check, RotateCcw, Upload } from "lucide-react";
+import { Trash2, Pencil, Plus, Check, RotateCcw, Eye } from "lucide-react";
 import { useEffect, useState } from "react";
 import SelectInput from "../FormElements/SelectInput";
 import FormInput from "../FormElements/FormInput";
@@ -59,8 +59,8 @@ export default function LineItemTable({
 	const [draft, setDraft] = useState<LineItemOption>(EMPTY_DRAFT);
 	const [editingIndex, setEditingIndex] = useState<number | null>(null);
 	const [previewOpen, setPreviewOpen] = useState(false);
-	const [previewFile, setPreviewFile] = useState<File | null>(null);
 	const [previewUrl, setPreviewUrl] = useState("");
+	const [previewType, setPreviewType] = useState("");
 
 	const isEditing = editingIndex !== null;
 
@@ -142,6 +142,14 @@ export default function LineItemTable({
 			height: Number(selected.height) || 0,
 
 			unit: selected.unit ?? "",
+			// quotation
+			quotationFile: selected.quotationFile ?? null,
+
+			quotationUrl: selected.quotationUrl ?? "",
+
+			quotationFileName: selected.quotationFileName ?? "",
+
+			quotationPreviewUrl: selected.quotationPreviewUrl ?? "",
 		}));
 	};
 
@@ -164,6 +172,14 @@ export default function LineItemTable({
 			height: Number(draft.height) || 0,
 
 			unit: draft.unit ?? "",
+			// quotation
+			quotationFile: draft.quotationFile ?? null,
+
+			quotationUrl: draft.quotationUrl ?? "",
+
+			quotationFileName: draft.quotationFileName ?? "",
+
+			quotationPreviewUrl: draft.quotationPreviewUrl ?? "",
 		};
 
 		if (isEditing) {
@@ -233,18 +249,20 @@ export default function LineItemTable({
 
 	const handleQuotationUpload = async (file: File) => {
 		try {
-			const response = await uploadQuotationFile(file);
+			await uploadQuotationFile(file);
 
 			const previewUrl = URL.createObjectURL(file);
 
 			setDraft((prev) => ({
 				...prev,
 				quotationFile: file,
-				quotationUrl: response.url,
-				quotationFileName: file.name,
+				quotationUrl: previewUrl,
 				quotationPreviewUrl: previewUrl,
+				quotationFileName: file.name,
+				quotationFileType: file.type,
 			}));
 		} catch (error) {
+			console.error(error);
 			alert("File upload failed");
 		}
 	};
@@ -439,6 +457,7 @@ export default function LineItemTable({
 											if (!draft.quotationPreviewUrl) return;
 
 											setPreviewUrl(draft.quotationPreviewUrl);
+											setPreviewType(draft.quotationFileType || "");
 											setPreviewOpen(true);
 										}}
 									/>
@@ -564,8 +583,12 @@ export default function LineItemTable({
 												className={`col-span-${col("quotationFile").colSpan}`}
 											>
 												{item.quotationUrl ? (
-													<button
+													<Button
 														type="button"
+														size="sm"
+														status="outline"
+														Icon={Eye}
+														className="h-6 w-8 rounded-full px-1"
 														onClick={() => {
 															setPreviewUrl(
 																item.quotationPreviewUrl ||
@@ -573,12 +596,10 @@ export default function LineItemTable({
 																	"",
 															);
 
+															setPreviewType(item.quotationFileType || "");
 															setPreviewOpen(true);
 														}}
-														className="text-xs font-medium text-blue-600 hover:underline"
-													>
-														View File
-													</button>
+													/>
 												) : (
 													"--"
 												)}
@@ -644,8 +665,8 @@ export default function LineItemTable({
 						/>
 					</div>
 
-					<div className="h-full rounded-sm border border-slate-200">
-						{previewFile?.type === "application/pdf" ? (
+					<div className="h-full rounded-sm border border-slate-200 overflow-hidden">
+						{previewType === "application/pdf" ? (
 							<iframe
 								src={previewUrl}
 								className="h-[80vh] w-full"

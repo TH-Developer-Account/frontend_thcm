@@ -1,8 +1,4 @@
-import {
-	Upload,
-	//  Eye,
-	Replace,
-} from "lucide-react";
+import { Upload, RotateCcw, Eye } from "lucide-react";
 import { useRef } from "react";
 import Button from "../common/Button";
 
@@ -29,25 +25,35 @@ export default function QuotationUploadField({
 	const inputRef = useRef<HTMLInputElement | null>(null);
 
 	const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
+		try {
+			const file = e.target.files?.[0];
 
-		if (!file) return;
+			if (!file) return;
 
-		if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-			alert("Only PDF, PNG and JPG files are allowed.");
-			return;
+			if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+				alert("Only PDF, PNG and JPG files are allowed.");
+				return;
+			}
+
+			if (file.size > MAX_FILE_SIZE) {
+				alert("File size must be less than 5MB.");
+				return;
+			}
+
+			await onUpload(file);
+
+			console.log("UPLOAD SUCCESS");
+		} catch (error) {
+			console.error("UPLOAD FAILED", error);
+		} finally {
+			if (inputRef.current) {
+				inputRef.current.value = "";
+			}
 		}
-
-		if (file.size > MAX_FILE_SIZE) {
-			alert("File size must be less than 5MB.");
-			return;
-		}
-
-		await onUpload(file);
 	};
 
 	return (
-		<div className="flex items-center gap-2">
+		<div className="flex items-center gap-2 justify-center">
 			<input
 				ref={inputRef}
 				type="file"
@@ -61,19 +67,21 @@ export default function QuotationUploadField({
 				type="button"
 				size="sm"
 				status="outline"
-				Icon={value ? Replace : Upload}
+				className="h-6 w-8 rounded-full px-1"
+				Icon={value ? RotateCcw : Upload}
 				onClick={() => inputRef.current?.click()}
 			/>
 
 			{value && (
 				<>
-					<button
+					<Button
 						type="button"
+						size="sm"
+						status="outline"
+						className="h-6 w-8 rounded-full px-1"
+						Icon={Eye}
 						onClick={onPreview}
-						className="text-xs text-blue-600 hover:underline"
-					>
-						{fileName || "View File"}
-					</button>
+					/>
 				</>
 			)}
 		</div>

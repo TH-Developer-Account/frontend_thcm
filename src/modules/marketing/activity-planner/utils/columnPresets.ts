@@ -23,7 +23,7 @@ export const EVENT_COLUMNS: ColumnConfig[] = [
 		key: "quotationFile",
 		label: "File",
 		colSpan: 1,
-		align: "right",
+		align: "center",
 	},
 	{ key: "actions", label: "Action", colSpan: 1, align: "center" },
 ];
