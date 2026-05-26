@@ -6,13 +6,22 @@ export type EpcListParams = {
 	page?: number;
 	limit?: number;
 	search?: string;
-	status?: string;
+	status?: string[];
 	sortBy?: string;
 	sortOrder?: "asc" | "desc";
 
 	createdByMe?: boolean;
 	pendingOnMe?: boolean;
 	approvedByMe?: boolean;
+};
+
+export type EpcFilters = {
+	status: string[];
+	zone: string[];
+	eventType: string[];
+	eventDateFrom: string;
+	eventDateTo: string;
+	createdDate: string;
 };
 
 export type EpcListItem = {

@@ -48,12 +48,11 @@ export default function EPCActionMenu({
 				className="
 					inline-flex items-center justify-center gap-1.5 rounded-md
 					border border-zinc-200 bg-white px-3 py-1.5
-					text-xs font-medium text-zinc-700 shadow-sm transition
+					text-xs font-medium text-zinc-900 shadow-sm transition
 					hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700
-					focus:outline-none focus:ring-2 focus:ring-orange-100
+					focus:outline-none
 				"
 			>
-				Actions
 				<ChevronDown size={14} />
 			</MenuButton>
 
@@ -62,7 +61,7 @@ export default function EPCActionMenu({
 					anchor="bottom end"
 					transition
 					className="
-						z-99 mt-1 w-44 origin-top-right
+						z-99 mt-1 w-auto origin-top-right
 						rounded-md border border-zinc-100 bg-white p-1 shadow-lg
 						outline-none transition
 						data-closed:scale-95 data-closed:transform data-closed:opacity-0
@@ -76,7 +75,7 @@ export default function EPCActionMenu({
 							onClick={handleLead}
 							className="
 								flex w-full items-center gap-2 rounded px-3 py-2
-								text-left text-xs font-medium text-zinc-700
+								text-left text-xs font-medium text-zinc-800
 								data-focus:bg-orange-50 data-focus:text-orange-700
 							"
 							disabled={!canCreateLead}

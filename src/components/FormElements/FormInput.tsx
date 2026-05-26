@@ -7,7 +7,7 @@ import React, {
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 import { PasswordPolicy } from "../../containers/Login/constant";
-import HelperTooltip from "../common/HelperToolTip";
+import HelperTooltip from "../../components/common/HelperTooltip";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	label?: string;

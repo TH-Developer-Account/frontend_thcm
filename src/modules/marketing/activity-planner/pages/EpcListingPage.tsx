@@ -11,20 +11,19 @@ const EpcListingPage = () => {
 		data,
 		isLoading,
 		isFetching,
-
 		searchInput,
 		setSearchInput,
-
 		selectedFilter,
 		handleFilterChange,
-
+		filters,
+		handleAdvancedFilterChange,
+		handleClearAllFilters,
+		activeFilterCount,
 		sorting,
 		setSorting,
-
 		pageIndex,
 		pageSize,
 		pageCount,
-
 		handlePageChange,
 		handlePageSizeChange,
 	} = useEpcListingPage();
@@ -49,6 +48,10 @@ const EpcListingPage = () => {
 						onSearchChange={setSearchInput}
 						selectedFilter={selectedFilter}
 						onFilterChange={handleFilterChange}
+						filters={filters}
+						onAdvancedFilterChange={handleAdvancedFilterChange}
+						onClearAllFilters={handleClearAllFilters}
+						activeFilterCount={activeFilterCount}
 					/>
 				</PageHeader>
 			}

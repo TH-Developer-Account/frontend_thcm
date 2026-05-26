@@ -206,7 +206,7 @@ export default function CommentsSection({
 
 			return (
 				stage.isCurrentIteration &&
-				(status === "IN_PROGRESS" || status === "CLARIFIED")
+				(status === "IN_PROGRESS" || status === "CLARIFY")
 			);
 		});
 	}, [stages]);

@@ -85,18 +85,32 @@ const getActiveWorkflowApprovers = (
 	minApprovals: string | number | null,
 	shouldShowStatus: boolean,
 ) => {
-	return (stage.approvals ?? []).map((approval, index) => ({
-		id: approval.id ?? `${stage.stageOrder}-${index}`,
-		name:
-			[approval.approver?.first_name, approval.approver?.last_name]
-				.filter(Boolean)
-				.join(" ") || "--",
-		email: approval.approver?.email || "--",
-		minApprovals,
+	return (stage.approvals ?? []).map((approval, index) => {
+		const approvalStatus = normalize(approval.status);
 
-		// FIX
-		status: approval.status ?? "PENDING",
-	}));
+		const shouldRenderApprovalStatus =
+			approvalStatus === "APPROVED" ||
+			approvalStatus === "REJECTED" ||
+			approvalStatus === "SENT_BACK" ||
+			approvalStatus === "CLARIFIED" ||
+			shouldShowStatus;
+
+		return {
+			id: approval.id ?? `${stage.stageOrder}-${index}`,
+			name:
+				[approval.approver?.first_name, approval.approver?.last_name]
+					.filter(Boolean)
+					.join(" ") || "--",
+
+			email: approval.approver?.email || "--",
+
+			minApprovals,
+
+			status: shouldRenderApprovalStatus
+				? (approval.status ?? "PENDING")
+				: null,
+		};
+	});
 };
 
 const getPreviewWorkflowApprovers = (
@@ -121,8 +135,7 @@ const shouldRenderStatus = (stage: ApprovalStageLike) => {
 	return (
 		status === "APPROVED" ||
 		status === "REJECTED" ||
-		(stage.isCurrentIteration === true &&
-			(status === "IN_PROGRESS" || status === "PENDING"))
+		(stage.isCurrentIteration === true && status === "IN_PROGRESS")
 	);
 };
 

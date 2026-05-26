@@ -5,20 +5,32 @@ import { SearchInput } from "../../../../../components/FormElements/SearchInput"
 import { Can } from "../../../../../context/permissionHelpers";
 import Button from "../../../../../components/common/Button";
 import ThreeWayToggle from "../../../../../components/common/ThreeWayToggle";
-
+import { EpcFilterDropdown } from "../EPCFilterDropdown";
 import {
 	epcListFilterOptions,
 	type EpcListFilter,
 } from "../../utils/constants";
-
+import type { EpcFilters } from "../../types/epc.types";
 import { clearStoredEpcInfo } from "../../helpers/localstorage";
+// import {
+// 	useZoneOptionsQuery,
+// 	useEventTypeOptionsQuery,
+// } from "../../queries/useEpcFilterOptionsQuery";
+import {
+	EPC_STATUS_OPTIONS,
+	EPC_ZONE_OPTIONS,
+	EPC_EVENT_TYPE_OPTIONS,
+} from "../../utils/constants";
 
 type EPCTopbarProps = {
 	search: string;
 	onSearchChange: (value: string) => void;
-
 	selectedFilter: EpcListFilter;
 	onFilterChange: (value: EpcListFilter) => void;
+	filters: EpcFilters;
+	onAdvancedFilterChange: (updated: Partial<EpcFilters>) => void;
+	onClearAllFilters: () => void;
+	activeFilterCount: number;
 };
 
 const EPCTopbar = ({
@@ -26,8 +38,17 @@ const EPCTopbar = ({
 	onSearchChange,
 	selectedFilter,
 	onFilterChange,
+	filters,
+	onAdvancedFilterChange,
+	onClearAllFilters,
+	activeFilterCount,
 }: EPCTopbarProps) => {
 	const navigate = useNavigate();
+	// const { data: zoneOptions } = useZoneOptionsQuery();
+	// const { data: eventTypeOptions } = useEventTypeOptionsQuery();
+	const zoneOptions = EPC_ZONE_OPTIONS;
+	const eventTypeOptions = EPC_EVENT_TYPE_OPTIONS;
+	const statusOptions = EPC_STATUS_OPTIONS;
 
 	const handleCreateEpc = () => {
 		clearStoredEpcInfo();
@@ -37,28 +58,38 @@ const EPCTopbar = ({
 	return (
 		<div className="topbar-section">
 			<header className="py-3 text-black md:px-6">
-				<div className="flex flex-col gap-4">
-					<div className="flex items-center justify-end gap-4">
-						<SearchInput value={search} onChange={onSearchChange} />
-
-						<ThreeWayToggle
-							options={epcListFilterOptions}
-							value={selectedFilter}
-							onChange={onFilterChange}
-							className="w-[320px]"
+				<div className="flex items-center justify-end gap-4">
+					<SearchInput
+						value={search}
+						onChange={onSearchChange}
+						placeholder="Search by event name"
+					/>
+					<ThreeWayToggle
+						options={epcListFilterOptions}
+						value={selectedFilter}
+						onChange={onFilterChange}
+						className="w-[320px]"
+					/>
+					<EpcFilterDropdown
+						filters={filters}
+						onChange={onAdvancedFilterChange}
+						onClearAll={onClearAllFilters}
+						activeFilterCount={activeFilterCount}
+						zoneOptions={zoneOptions}
+						eventTypeOptions={eventTypeOptions}
+						statusOptions={statusOptions}
+					/>
+					<Can action="write" app="MAP" module="EPC">
+						<Button
+							Icon={Plus}
+							iconSize="16"
+							iconPosition="left"
+							text="Create EPC"
+							status="brand"
+							size="sm"
+							onClick={handleCreateEpc}
 						/>
-						<Can action="write" app="MAP" module="EPC">
-							<Button
-								Icon={Plus}
-								iconSize="16"
-								iconPosition="left"
-								text="Create EPC"
-								status="brand"
-								size="sm"
-								onClick={handleCreateEpc}
-							/>
-						</Can>
-					</div>
+					</Can>
 				</div>
 			</header>
 		</div>

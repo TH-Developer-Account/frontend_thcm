@@ -12,8 +12,6 @@ type ActivityPlannerHeaderProps = {
 	createdBy?: string;
 	loading?: boolean;
 	onPreview: () => void;
-
-	isClarifiedPending?: boolean;
 	isSubmittingClarifiedUpdate?: boolean;
 	onSubmitClarifiedUpdate?: () => void | Promise<void>;
 };
@@ -23,7 +21,6 @@ const ActivityPlannerHeader = ({
 	createdBy,
 	loading,
 	onPreview,
-	// isClarifiedPending = false,
 	isSubmittingClarifiedUpdate = false,
 	onSubmitClarifiedUpdate,
 }: ActivityPlannerHeaderProps) => {
@@ -31,9 +28,7 @@ const ActivityPlannerHeader = ({
 	const proposalNo = epcData?.proposal_number || null;
 	const workflowStatus = epcData?.activeWorkflow?.status?.toUpperCase();
 	const epcStatus = epcData?.status?.toUpperCase();
-
-	const isClarified =
-		workflowStatus === "CLARIFIED" || epcStatus === "CLARIFIED";
+	const isClarified = workflowStatus === "CLARIFY" || epcStatus === "CLARIFY";
 
 	const badgeStatus = epcData?.status ? statusMap[epcData.status] : undefined;
 

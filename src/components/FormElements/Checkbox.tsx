@@ -1,5 +1,5 @@
 import React from "react";
-import HelperTooltip from "../common/HelperToolTip";
+import HelperTooltip from "../common/HelperTooltip";
 
 type CheckboxProps = {
 	name?: string;

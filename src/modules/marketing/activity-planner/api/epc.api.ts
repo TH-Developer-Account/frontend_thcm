@@ -9,7 +9,13 @@ import type {
 
 export const epcApi = {
 	getList: async (params: EpcListParams): Promise<EpcListResponse> => {
-		const response = await ServerAxios.get("/epc", { params });
+		const { status, ...rest } = params;
+		const response = await ServerAxios.get("/epc", {
+			params: {
+				...rest,
+				...(status?.length ? { status: status.join(",") } : {}),
+			},
+		});
 		return response.data;
 	},
 
