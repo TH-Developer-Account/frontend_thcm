@@ -23,8 +23,9 @@ export const buildLineItemPayload = (
 	return {
 		...extraPayload,
 		lineItems: items.map((item) => ({
-			productId: item.value, // 👈 map value → productId
-			quantity: item.quantity,
+			productId: item.value,
+			quantity: Number(item.quantity) || 0,
+			quotationFile: item.quotationUrl || null,
 		})),
 	};
 };

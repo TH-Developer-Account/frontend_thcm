@@ -11,12 +11,12 @@ export type LineTableRow = {
 	id?: string;
 	sno: number;
 	particulars: string;
+	partNumber: string;
 	description: string;
 	rate: number;
 	qty: number;
 	total: number;
-	height?: string;
-	width?: string;
+	quotationFile?: string;
 	category?: string;
 };
 
@@ -102,14 +102,14 @@ export const mapProductToEpfOption = (item: EpfProduct): LineItemOption => {
 
 		label: item.name,
 
-		particular: item?.partNumber ?? item.name,
+		particular: item?.productType ?? item.name,
 
 		description: item.description ?? "",
 
 		rate: Number(item.unitRate || 0),
 
 		quantity: 1,
-
+		quotationFile: "",
 		category: item.category ?? EPF_OVERHEAD_CATEGORY,
 	};
 };
@@ -138,6 +138,7 @@ export const mapEpfLineItemsToFormItems = (
 			quantity: getLineItemQuantity(item),
 			partNumber: getPartNumber(item),
 			category: getCategory(item),
+			quotationFile: item?.quotationFile ?? "",
 			total: toNumber(item?.total),
 		};
 	});
@@ -170,6 +171,7 @@ export const mapEpfLineItemsToTableRows = (
 			category: getCategory(item),
 			height: item?.height,
 			width: item?.width,
+			quotationFile: item?.quotationFile ?? "",
 		};
 	});
 };

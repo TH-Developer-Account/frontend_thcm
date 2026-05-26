@@ -1,5 +1,5 @@
-import { Trash2, Pencil, Plus, Check, RotateCcw } from "lucide-react";
-import { useState } from "react";
+import { Trash2, Pencil, Plus, Check, RotateCcw, Upload } from "lucide-react";
+import { useEffect, useState } from "react";
 import SelectInput from "../FormElements/SelectInput";
 import FormInput from "../FormElements/FormInput";
 import Button from "../common/Button";
@@ -9,6 +9,9 @@ import type {
 	ColumnKey,
 } from "../../modules/marketing/activity-planner/types/lineItem.types";
 import { DEFAULT_COLUMNS } from "../../modules/marketing/activity-planner/utils/columnPresets";
+import { Modal } from "../common/Modal";
+import QuotationUploadField from "../../components/ui/QuotationUploadField";
+import { uploadQuotationFile } from "../../modules/marketing/activity-planner/api/fileUpload.api";
 
 interface LineItemTableProps {
 	title: string;
@@ -34,6 +37,8 @@ const EMPTY_DRAFT: LineItemOption = {
 	width: 0,
 	height: 0,
 	unit: "",
+	quotationFile: null,
+	quotationPreviewUrl: "",
 };
 
 function alignClass(align?: "left" | "right" | "center") {
@@ -53,6 +58,9 @@ export default function LineItemTable({
 }: LineItemTableProps) {
 	const [draft, setDraft] = useState<LineItemOption>(EMPTY_DRAFT);
 	const [editingIndex, setEditingIndex] = useState<number | null>(null);
+	const [previewOpen, setPreviewOpen] = useState(false);
+	const [previewFile, setPreviewFile] = useState<File | null>(null);
+	const [previewUrl, setPreviewUrl] = useState("");
 
 	const isEditing = editingIndex !== null;
 
@@ -80,6 +88,13 @@ export default function LineItemTable({
 
 	const total = Number(draft.rate || 0) * Number(draft.quantity || 0);
 
+	useEffect(() => {
+		return () => {
+			if (previewUrl) {
+				URL.revokeObjectURL(previewUrl);
+			}
+		};
+	}, [previewUrl]);
 	// ── Draft handlers ──────────────────────────────────────────────────────
 
 	const resetDraft = () => {
@@ -192,6 +207,15 @@ export default function LineItemTable({
 			height: Number(item.height) || 0,
 
 			unit: item.unit ?? "",
+
+			// quotation
+			quotationFile: item.quotationFile ?? null,
+
+			quotationUrl: item.quotationUrl ?? "",
+
+			quotationFileName: item.quotationFileName ?? "",
+
+			quotationPreviewUrl: item.quotationPreviewUrl ?? "",
 		});
 
 		setEditingIndex(index);
@@ -207,6 +231,23 @@ export default function LineItemTable({
 		0,
 	);
 
+	const handleQuotationUpload = async (file: File) => {
+		try {
+			const response = await uploadQuotationFile(file);
+
+			const previewUrl = URL.createObjectURL(file);
+
+			setDraft((prev) => ({
+				...prev,
+				quotationFile: file,
+				quotationUrl: response.url,
+				quotationFileName: file.name,
+				quotationPreviewUrl: previewUrl,
+			}));
+		} catch (error) {
+			alert("File upload failed");
+		}
+	};
 	// ── Render ──────────────────────────────────────────────────────────────
 
 	return (
@@ -388,6 +429,22 @@ export default function LineItemTable({
 								</div>
 							)}
 
+							{has("quotationFile") && (
+								<div className={`col-span-${col("quotationFile").colSpan}`}>
+									<QuotationUploadField
+										value={draft.quotationUrl}
+										fileName={draft.quotationFileName}
+										onUpload={handleQuotationUpload}
+										onPreview={() => {
+											if (!draft.quotationPreviewUrl) return;
+
+											setPreviewUrl(draft.quotationPreviewUrl);
+											setPreviewOpen(true);
+										}}
+									/>
+								</div>
+							)}
+
 							{/* Actions */}
 							{has("actions") && (
 								<div
@@ -502,7 +559,31 @@ export default function LineItemTable({
 												{rowTotal.toFixed(2)}
 											</div>
 										)}
+										{has("quotationFile") && (
+											<div
+												className={`col-span-${col("quotationFile").colSpan}`}
+											>
+												{item.quotationUrl ? (
+													<button
+														type="button"
+														onClick={() => {
+															setPreviewUrl(
+																item.quotationPreviewUrl ||
+																	item.quotationUrl ||
+																	"",
+															);
 
+															setPreviewOpen(true);
+														}}
+														className="text-xs font-medium text-blue-600 hover:underline"
+													>
+														View File
+													</button>
+												) : (
+													"--"
+												)}
+											</div>
+										)}
 										{has("actions") && (
 											<div
 												className={`col-span-${col("actions").colSpan} flex justify-center gap-1.5`}
@@ -548,6 +629,38 @@ export default function LineItemTable({
 					)}
 				</div>
 			</div>
+			<Modal open={previewOpen} className="max-w-6xl">
+				<div className="p-1 bg-white">
+					<div className="mb-3 flex items-center justify-between">
+						<h3 className="text-sm font-semibold text-slate-900">
+							File Preview
+						</h3>
+
+						<Button
+							text="Close"
+							status="outline"
+							size="sm"
+							onClick={() => setPreviewOpen(false)}
+						/>
+					</div>
+
+					<div className="h-full rounded-sm border border-slate-200">
+						{previewFile?.type === "application/pdf" ? (
+							<iframe
+								src={previewUrl}
+								className="h-[80vh] w-full"
+								title="PDF Preview"
+							/>
+						) : (
+							<img
+								src={previewUrl}
+								alt="Preview"
+								className="max-h-[80vh] w-full object-contain"
+							/>
+						)}
+					</div>
+				</div>
+			</Modal>
 		</div>
 	);
 }

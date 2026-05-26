@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from "react";
 
 import LineItemTable from "../../../../../components/ui/LineItemTable";
 import type { LineItemOption } from "../../../types";
-import { DEFAULT_COLUMNS } from "../../utils/columnPresets";
+import { DEFAULT_COLUMNS, EVENT_COLUMNS } from "../../utils/columnPresets";
 
 type EpfItemsSectionProps = {
 	items: LineItemOption[];
@@ -25,7 +25,7 @@ export default function EpfItemsSection({
 			particularOptions={options}
 			isViewer={isViewer}
 			category="EVENT_OVERHEAD"
-			columns={DEFAULT_COLUMNS}
+			columns={EVENT_COLUMNS || DEFAULT_COLUMNS}
 		/>
 	);
 }

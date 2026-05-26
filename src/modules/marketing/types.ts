@@ -77,4 +77,9 @@ export type LineItemOption = {
 	width?: number;
 	height?: number;
 	unit?: string;
+	// EPF specific
+	quotationFile?: File | null;
+	quotationUrl?: string;
+	quotationFileName?: string;
+	quotationPreviewUrl?: string;
 };

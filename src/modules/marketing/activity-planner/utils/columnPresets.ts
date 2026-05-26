@@ -11,6 +11,22 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
 	{ key: "total", label: "Total", colSpan: 1, align: "right" },
 	{ key: "actions", label: "Action", colSpan: 1, align: "center" },
 ];
+export const EVENT_COLUMNS: ColumnConfig[] = [
+	{ key: "sno", label: "SNo", colSpan: 1 },
+	{ key: "partNumber", label: "Part No.", colSpan: 2 },
+	{ key: "particular", label: "Particulars", colSpan: 2 },
+	{ key: "description", label: "Description", colSpan: 2, editable: true },
+	{ key: "rate", label: "Rate", colSpan: 1, align: "right", editable: true },
+	{ key: "quantity", label: "Qty", colSpan: 1, align: "right", editable: true },
+	{ key: "total", label: "Total", colSpan: 1, align: "right" },
+	{
+		key: "quotationFile",
+		label: "File",
+		colSpan: 1,
+		align: "right",
+	},
+	{ key: "actions", label: "Action", colSpan: 1, align: "center" },
+];
 
 export const ARTWORK_COLUMNS: ColumnConfig[] = [
 	{ key: "sno", label: "SNo", colSpan: 1 },
@@ -38,7 +54,7 @@ export const ARTWORK_COLUMNS: ColumnConfig[] = [
 ];
 // Map category value → column preset
 export const CATEGORY_COLUMNS: Record<string, ColumnConfig[]> = {
-	// EVENT_OVERHEAD: OVERHEAD_COLUMNS,
+	EVENT_OVERHEAD: EVENT_COLUMNS,
 	ARTWORK: ARTWORK_COLUMNS,
 	// add more as needed
 };
