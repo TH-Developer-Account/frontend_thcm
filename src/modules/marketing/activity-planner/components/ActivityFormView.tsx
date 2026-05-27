@@ -9,6 +9,7 @@ import EpfSection from "../forms/EPF/EpfSection";
 import CommentsSection from "./CommentsSection";
 
 import type { EpcDetailResponse } from "../types/epc.types";
+import SelectInput from "../../../../components/FormElements/SelectInput";
 
 type EditingSection = "epc" | "crf" | "epf" | null;
 
@@ -57,6 +58,7 @@ const ActivityFormView = ({
 
 	const activeWorkflow = epcData.activeWorkflow ?? null;
 	const workflowStages = activeWorkflow?.stages ?? [];
+	const eventStatus = epcData.status ?? "unknown";
 
 	return (
 		<div className="content-box w-full h-auto max-w-full mx-auto">
@@ -110,6 +112,19 @@ const ActivityFormView = ({
 							stages={workflowStages}
 							onWorkflowUpdate={onRefresh}
 						/>
+					)}
+
+					{eventStatus === "APPROVED" && (
+						<div className="grid grid-cols-5 gap-4 justify-between items-end ">
+							<SelectInput
+								options={[
+									{ label: "Conducted", value: "conducted" },
+									{ label: "Not Conducted", value: "not_conducted" },
+								]}
+								label="Event Status"
+								className="col-span-1"
+							/>
+						</div>
 					)}
 				</div>
 			</div>
