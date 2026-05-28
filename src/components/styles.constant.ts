@@ -4,6 +4,7 @@ const STATUS_STYLE_MAP: Record<string, string> = {
 	approved: "bg-teal-100 text-teal-800 ring-teal-200",
 
 	completed: "bg-green-100 text-green-800 ring-green-200  ",
+	conducted: "bg-green-100 text-green-800 ring-green-200  ",
 
 	cancelled: "bg-red-100 text-red-800 ring-red-200",
 

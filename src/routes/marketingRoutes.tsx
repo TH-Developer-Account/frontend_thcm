@@ -20,6 +20,7 @@ export default function MarketingRoutes() {
 				element={<ActivityPlannerPage />}
 			/>
 			<Route path="/activity-planner/:id" element={<ActivityPlannerPage />} />
+
 			<Route path="/admin/users" element={<UsersPage />} />
 		</Routes>
 	);

@@ -440,15 +440,13 @@ export default function CommentsSection({
 			<Section title="Approval Flow">
 				<ApprovalFlowSection stages={stages} />
 			</Section>
-			<Section
-				title="Comment Section"
-				action={
-					<p className="comments-subtitle">
-						{comments.length} {comments.length === 1 ? "comment" : "comments"}
-					</p>
-				}
-			>
+			<Section title="Comment Section">
 				<section className="comments-section mb-2">
+					<div className="flex flex-row justify-end bg-zinc-100">
+						<p className="comments-subtitle">
+							{comments.length} {comments.length === 1 ? "comment" : "comments"}
+						</p>
+					</div>
 					{commentsLoading ? (
 						<div className="comments-loading">
 							<div />

@@ -9,9 +9,32 @@ import ActivityPlannerHeader from "../components/ActivityPlannerHeader";
 import ActivityPlannerPdfPreview from "../components/ActivityPlannerPdfPreview";
 
 import { useEpcDetailQuery } from "../queries/useEpcListQuery";
-import { useActivityCommentsQuery } from "../queries/useActivityCommentsQuery";
+import { useActivityCommentsQuery } from "../queries/useActivityFormQuery";
 import { getEpcCreatedByName } from "../utils/formatters";
 import { useClarifiedResubmission } from "../hooks/useClarifiedResubmission";
+import EventReportTemplate from "../components/EventReport/EventReportTemplate";
+import EventReportPreview from "../components/EventReport/EventReportPreview";
+
+type PageView = "form" | "report-builder" | "report-view";
+
+const dummyImages = [
+	{
+		url: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
+		caption: "Customer interaction during event",
+	},
+	{
+		url: "https://images.unsplash.com/photo-1494526585095-c41746248156",
+		caption: "Machine product showcase",
+	},
+	{
+		url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c",
+		caption: "Dealer networking session",
+	},
+	{
+		url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
+		caption: "Lead discussion and registrations",
+	},
+];
 
 const ActivityPlannerPage = () => {
 	const { id } = useParams<{ id: string }>();
@@ -28,7 +51,8 @@ const ActivityPlannerPage = () => {
 	);
 
 	const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
-
+	const [isReportPreviewOpen, setReportIsPreviewOpen] = React.useState(false);
+	const [pageView, setPageView] = React.useState<PageView>("form");
 	const [editingSection, setEditingSection] = React.useState<
 		"epc" | "crf" | "epf" | null
 	>(null);
@@ -57,22 +81,31 @@ const ActivityPlannerPage = () => {
 				header_children={
 					<ActivityPlannerHeader
 						epcData={epcData ?? null}
-						createdBy={createdBy}
 						loading={isFetching}
-						onPreview={() => setIsPreviewOpen(true)}
-						isClarifiedPending={isClarifiedPending}
+						createdBy={createdBy}
 						isSubmittingClarifiedUpdate={isSubmittingClarifiedUpdate}
 						onSubmitClarifiedUpdate={submitClarifiedUpdate}
 					/>
 				}
 			>
-				<ActivityFormView
-					epcData={epcData ?? null}
-					editingSection={editingSection}
-					setEditingSection={setEditingSection}
-					onRefresh={handleRefresh}
-					isClarifiedUpdate={isClarifiedPending}
-				/>
+				{pageView === "report-builder" ? (
+					<EventReportTemplate
+						eventCost={epcData?.epf?.eventBudget || 0}
+						onBack={() => setPageView("form")}
+						onPreview={() => setReportIsPreviewOpen(true)}
+					/>
+				) : (
+					<ActivityFormView
+						epcData={epcData ?? null}
+						loading={isFetching}
+						onPreview={() => setIsPreviewOpen(true)}
+						editingSection={editingSection}
+						setEditingSection={setEditingSection}
+						onRefresh={handleRefresh}
+						isClarifiedUpdate={isClarifiedPending}
+						onOpenReportBuilder={() => setPageView("report-builder")}
+					/>
+				)}
 			</PageRowSectionLayout>
 
 			<ActivityPlannerPdfPreview
@@ -81,6 +114,15 @@ const ActivityPlannerPage = () => {
 				createdBy={createdBy}
 				onClose={() => setIsPreviewOpen(false)}
 			/>
+			{isReportPreviewOpen && (
+				<EventReportPreview
+					open={isReportPreviewOpen}
+					description="The dealer meet was conducted successfully with participation from regional partners, customers, and sales teams. Product demonstrations, financing discussions, and lead generation activities were carried out during the event."
+					images={dummyImages}
+					onClose={() => setReportIsPreviewOpen(false)}
+					epcData={epcData ?? null}
+				/>
+			)}
 		</>
 	);
 };

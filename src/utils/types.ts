@@ -12,6 +12,7 @@ export type TableUserStatus =
 export type EPCStatus =
 	| "Approved"
 	| "Checked"
+	| "Conducted"
 	| "Recommended"
 	| "Pending"
 	| "Completed"
@@ -36,6 +37,7 @@ export const statusMap: Record<string, EPCStatus> = {
 	SENT_BACK: "Sent Back",
 	APPROVED: "Approved",
 	CANCELLED: "Cancelled",
+	CONDUCTED: "Conducted",
 	COMPLETED: "Completed",
 	REPORT_SUBMITTED: "Report Submitted",
 };

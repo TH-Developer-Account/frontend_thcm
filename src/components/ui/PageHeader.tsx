@@ -2,7 +2,7 @@ import type { NavigateButtonProps } from "../common/common.types";
 import NavigateButton from "../common/NavigateButton";
 
 type PageHeaderSectionProps = {
-	headerText: string;
+	headerText?: string;
 	subtitleText?: string;
 	className?: string;
 	children?: React.ReactNode;

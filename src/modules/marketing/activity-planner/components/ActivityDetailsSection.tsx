@@ -11,6 +11,7 @@ import {
 	getEpcRegionName,
 	getEpcVerticalName,
 } from "../utils/formatters";
+import DateRangeSection from "./DateRangeSection";
 
 type ActivityDetailsSectionProps = {
 	epcData: EpcDetailResponse;
@@ -55,63 +56,70 @@ const ActivityDetailsSection = ({
 				/>
 			}
 		>
-			<div className="grid grid-cols-7 items-center justify-between gap-6 text-xs p-3">
-				<div>
-					<span className="uppercase-label-text">Location</span>
-					<br />
-					{epcData.location || "--"}
+			<div className="mt-3 px-2">
+				<DateRangeSection
+					fromDate={epcData.event_from_date}
+					toDate={epcData.event_to_date}
+				/>
+
+				<div className="grid grid-cols-7 items-start justify-between gap-6 text-xs p-3">
+					<div>
+						<span className="uppercase-label-text">Location</span>
+						<br />
+						{epcData.location || "--"}
+					</div>
+
+					<div>
+						<span className="uppercase-label-text">Branch</span>
+						<br />
+						{getEpcBranchName(epcData)}
+					</div>
+
+					<div>
+						<span className="uppercase-label-text">Department</span>
+						<br />
+						{getEpcDepartmentName(epcData)}
+					</div>
+
+					<div>
+						<span className="uppercase-label-text">Vertical</span>
+						<br />
+						{getEpcVerticalName(epcData)}
+					</div>
+
+					<div>
+						<span className="uppercase-label-text">Zone</span>
+						<br />
+						{getEpcRegionName(epcData)}
+					</div>
+
+					<div>
+						<span className="uppercase-label-text">Created</span>
+						<br />
+						{formatDate(epcData.created_at)}
+					</div>
+
+					<div>
+						<span className="uppercase-label-text">Budget</span>
+						<br />
+						{getEpcBudgetValue(epcData)}
+					</div>
 				</div>
 
-				<div>
-					<span className="uppercase-label-text">Branch</span>
-					<br />
-					{getEpcBranchName(epcData)}
-				</div>
+				<div className="grid grid-cols-2 gap-6 text-sm p-3">
+					<div>
+						<span className="uppercase-label-text">Description</span>
+						<p className="text-black leading-relaxed text-xs text-wrap">
+							{trimText(epcData.event_description, 250) || "No Description"}
+						</p>
+					</div>
 
-				<div>
-					<span className="uppercase-label-text">Department</span>
-					<br />
-					{getEpcDepartmentName(epcData)}
-				</div>
-
-				<div>
-					<span className="uppercase-label-text">Vertical</span>
-					<br />
-					{getEpcVerticalName(epcData)}
-				</div>
-
-				<div>
-					<span className="uppercase-label-text">Zone</span>
-					<br />
-					{getEpcRegionName(epcData)}
-				</div>
-
-				<div>
-					<span className="uppercase-label-text">Created</span>
-					<br />
-					{formatDate(epcData.created_at)}
-				</div>
-
-				<div>
-					<span className="uppercase-label-text">Budget</span>
-					<br />
-					{getEpcBudgetValue(epcData)}
-				</div>
-			</div>
-
-			<div className="grid grid-cols-2 gap-6 text-sm p-3">
-				<div>
-					<span className="uppercase-label-text">Description</span>
-					<p className="text-black leading-relaxed text-xs text-wrap">
-						{trimText(epcData.event_description, 250) || "No Description"}
-					</p>
-				</div>
-
-				<div>
-					<span className="uppercase-label-text">Objective</span>
-					<p className="text-gray-700 leading-relaxed text-xs text-wrap">
-						{trimText(epcData.event_objective, 250) || "No Objective"}
-					</p>
+					<div>
+						<span className="uppercase-label-text">Objective</span>
+						<p className="text-gray-700 leading-relaxed text-xs text-wrap">
+							{trimText(epcData.event_objective, 250) || "No Objective"}
+						</p>
+					</div>
 				</div>
 			</div>
 		</Section>

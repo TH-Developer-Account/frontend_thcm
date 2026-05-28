@@ -86,4 +86,17 @@ export const workflowApi = {
 
 		return { data, message };
 	},
+	eventOutcome: async (
+		epcId: string,
+		payload: {
+			status: string;
+			reason: string;
+		},
+	) => {
+		const {
+			data: { data },
+		} = await ServerAxios.patch(`/epc/${epcId}/event-outcome`, payload);
+
+		return data;
+	},
 };

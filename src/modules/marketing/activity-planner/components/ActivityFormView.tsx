@@ -1,15 +1,16 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-
+import { Eye } from "lucide-react";
 import EpcForm from "../forms/EPC/EpcForm";
-import DateRangeSection from "./DateRangeSection";
 import ActivityDetailsSection from "./ActivityDetailsSection";
 import CrfSection from "../forms/CRF/CrfSection";
 import EpfSection from "../forms/EPF/EpfSection";
 import CommentsSection from "./CommentsSection";
 
 import type { EpcDetailResponse } from "../types/epc.types";
-import SelectInput from "../../../../components/FormElements/SelectInput";
+import { EventOutcome } from "./EventOutcome";
+import { EventReportSection } from "./EventReport/EventReportSection";
+import Button from "../../../../components/common/Button";
 
 type EditingSection = "epc" | "crf" | "epf" | null;
 
@@ -19,6 +20,9 @@ type ActivityFormViewProps = {
 	setEditingSection: React.Dispatch<React.SetStateAction<EditingSection>>;
 	onRefresh: () => Promise<void>;
 	isClarifiedUpdate?: boolean;
+	loading?: boolean;
+	onPreview: () => void;
+	onOpenReportBuilder: () => void;
 };
 
 const ActivityFormView = ({
@@ -26,32 +30,33 @@ const ActivityFormView = ({
 	editingSection,
 	setEditingSection,
 	onRefresh,
+	loading,
+	onOpenReportBuilder,
+	onPreview,
 	isClarifiedUpdate = false,
 }: ActivityFormViewProps) => {
 	const navigate = useNavigate();
 
 	if (!epcData) {
 		return (
-			<div className="content-box w-full h-auto max-w-full mx-auto">
-				<div className="px-6 py-4">
-					<EpcForm
-						mode="create"
-						onSuccess={async (savedEpc) => {
-							const createdEpcId =
-								savedEpc?.id ??
-								savedEpc?.eventProposal?.id ??
-								savedEpc?.epcId ??
-								savedEpc?.epc?.id;
+			<div className="px-6 py-4">
+				<EpcForm
+					mode="create"
+					onSuccess={async (savedEpc) => {
+						const createdEpcId =
+							savedEpc?.id ??
+							savedEpc?.eventProposal?.id ??
+							savedEpc?.epcId ??
+							savedEpc?.epc?.id;
 
-							if (!createdEpcId) {
-								console.error("Created EPC id not found", savedEpc);
-								return;
-							}
+						if (!createdEpcId) {
+							console.error("Created EPC id not found", savedEpc);
+							return;
+						}
 
-							navigate(`/marketing/activity-planner/${createdEpcId}`);
-						}}
-					/>
-				</div>
+						navigate(`/marketing/activity-planner/${createdEpcId}`);
+					}}
+				/>
 			</div>
 		);
 	}
@@ -61,13 +66,8 @@ const ActivityFormView = ({
 	const eventStatus = epcData.status ?? "unknown";
 
 	return (
-		<div className="content-box w-full h-auto max-w-full mx-auto">
+		<>
 			<div className="px-6 py-4">
-				<DateRangeSection
-					fromDate={epcData.event_from_date}
-					toDate={epcData.event_to_date}
-				/>
-
 				<div className="form text-left my-3 text-sm">
 					<ActivityDetailsSection
 						epcData={epcData}
@@ -113,22 +113,34 @@ const ActivityFormView = ({
 							onWorkflowUpdate={onRefresh}
 						/>
 					)}
-
 					{eventStatus === "APPROVED" && (
-						<div className="grid grid-cols-5 gap-4 justify-between items-end ">
-							<SelectInput
-								options={[
-									{ label: "Conducted", value: "conducted" },
-									{ label: "Not Conducted", value: "not_conducted" },
-								]}
-								label="Event Status"
-								className="col-span-1"
-							/>
-						</div>
+						<EventOutcome eventStatus={eventStatus} epcID={epcData?.id} />
+					)}
+					{eventStatus === "CONDUCTED" && (
+						<EventReportSection
+							eventStatus={eventStatus}
+							epcID={epcData?.id}
+							onOpenReportBuilder={onOpenReportBuilder}
+						/>
 					)}
 				</div>
 			</div>
-		</div>
+			{/* Footer Actions */}
+			<div className="sticky bottom-0 z-10 flex items-center justify-end gap-3 border-t border-gray-200 bg-white px-4 py-4">
+				<div className="flex gap-2">
+					<Button
+						type="button"
+						text={"Preview"}
+						Icon={Eye}
+						iconPosition="right"
+						onClick={onPreview}
+						status="outline"
+						disabled={!epcData || loading}
+					/>
+					<Button status="outline">Download</Button>
+				</div>
+			</div>
+		</>
 	);
 };
 

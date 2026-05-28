@@ -29,19 +29,13 @@ const PageRowSectionLayout = ({
 						: "shrink-0 mt-4"
 				}`}
 			>
-				<div className="page-stack-layout">
-					<div className="page-stack-section content-box">
-						<div className={className}>{header_children}</div>
-					</div>
+				<div className="page-stack-section content-box">
+					<div className={className}>{header_children}</div>
 				</div>
 			</div>
 
-			<div className="flex-1 min-h-0 overflow-y-auto scrollbar-sleek">
-				<div className="page-stack-layout">
-					<div className="page-stack-section content-box">
-						<div className={`${className} ${contentClassName}`}>{children}</div>
-					</div>
-				</div>
+			<div className="min-h-0 overflow-y-auto scrollbar-sleek content-box page-stack-section">
+				<div className={`${className} ${contentClassName}`}>{children}</div>
 			</div>
 		</div>
 	);

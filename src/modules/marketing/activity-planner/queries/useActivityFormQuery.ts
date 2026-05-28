@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-
+import { useMutation } from "@tanstack/react-query";
 import { workflowApi } from "../api/workflow.api";
 
 export const activityCommentKeys = {
@@ -14,5 +14,20 @@ export const useActivityCommentsQuery = (epcId?: string | null) => {
 		queryFn: () => workflowApi.getComments(epcId!),
 		enabled: Boolean(epcId),
 		staleTime: 15 * 1000,
+	});
+};
+
+export const useEventOutcomeMutation = () => {
+	return useMutation({
+		mutationFn: ({
+			epcId,
+			payload,
+		}: {
+			epcId: string;
+			payload: {
+				status: string;
+				reason: string;
+			};
+		}) => workflowApi.eventOutcome(epcId, payload),
 	});
 };

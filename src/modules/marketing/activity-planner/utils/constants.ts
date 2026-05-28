@@ -41,6 +41,7 @@ export const status = {
 	SUBMITTED: "Submitted",
 	CANCELLED: "Cancelled",
 	COMPLETED: "Completed",
+	CONDUCTED: "Conducted",
 } as const;
 
 export type EpcListFilter = "createdByMe" | "pendingOnMe" | "approvedByMe";
@@ -141,3 +142,8 @@ export const EMPTY_EPC_FILTERS: EpcFilters = {
 	eventDateTo: "",
 	createdDate: "",
 };
+
+export const eventOutcomeOptions = [
+	{ label: "Conducted", value: "CONDUCTED" },
+	{ label: "Not Conducted", value: "CANCELLED" },
+];
