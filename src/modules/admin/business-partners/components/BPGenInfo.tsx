@@ -55,7 +55,7 @@ const BPGeneralInfo = ({
 	];
 
 	return (
-		<div className="bp-gen-info content-box no-padding">
+		<div className="bp-gen-info content-box no-padding w-full">
 			<div className="bp-gen-header bp-gen-header-clean">
 				<div className="bp-gen-header-left">
 					<div className="bp-gen-title-row">
