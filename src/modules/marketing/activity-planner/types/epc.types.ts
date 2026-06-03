@@ -49,6 +49,25 @@ export type EpcListResponse = {
 	totalPages?: number;
 };
 
+type Report = {
+	id: string;
+	epcId: string;
+	status: string;
+	remarks: string | null;
+	outcomeStatus: string | null;
+	totalLeadsGenerated: number | null;
+	approvedEventCost: number | null;
+	expectedConversion: number | null;
+	validatorId: string | null;
+	images: {
+		id: string;
+		reportId: string;
+		position: number;
+		s3Key: string;
+		fileUrl: string;
+	}[];
+};
+
 export type EpcDetailResponse = {
 	id: string;
 	proposal_number: string;
@@ -98,21 +117,7 @@ export type EpcDetailResponse = {
 	epf?: EpcDetailEpf | null;
 	crf?: EpcDetailCrf | null;
 	activeWorkflow?: EpcActiveWorkflow | null;
-
-	eventReport?: {
-		validatorId: string;
-		eventReportDetails: {
-			eventSummary: string;
-			leadsGenerated: number;
-			images: {
-				url: string;
-				caption: string;
-			}[];
-			conversion?: number;
-			remarks?: string;
-			eventOutcomeStatus?: string;
-		};
-	};
+	report?: Report | null;
 };
 
 export type EpcDepartment = {

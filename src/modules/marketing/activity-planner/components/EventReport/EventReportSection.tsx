@@ -5,7 +5,7 @@ import Button from "../../../../../components/common/Button";
 import Section from "../Section";
 
 type EventReportSectionProps = {
-	eventStatus: string;
+	eventStatus?: string;
 	epcID?: string | null;
 
 	report?: {
@@ -20,18 +20,13 @@ type EventReportSectionProps = {
 };
 
 export const EventReportSection = ({
-	eventStatus,
 	report,
 	onSubmitValidation,
 	isSubmitting,
 	onOpenReportBuilder,
 	isValidator,
 }: EventReportSectionProps) => {
-	if (eventStatus !== "CONDUCTED") {
-		return null;
-	}
-
-	const isReportCreated = Boolean(report?.id);
+	const isReportCreated = Boolean(report);
 
 	return (
 		<Section title="Activity Report Section">

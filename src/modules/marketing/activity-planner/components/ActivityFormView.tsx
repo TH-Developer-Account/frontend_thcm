@@ -118,9 +118,9 @@ const ActivityFormView = ({
 					{eventStatus === "APPROVED" && (
 						<EventOutcome eventStatus={eventStatus} epcID={epcData?.id} />
 					)}
-					{eventStatus === "CONDUCTED" && (
+					{["CONDUCTED", "CLARIFY_REPORT"].includes(eventStatus) && (
 						<EventReportSection
-							eventStatus={eventStatus}
+							report={epcData?.report?.id ?? null}
 							epcID={epcData?.id}
 							onOpenReportBuilder={onOpenReportBuilder}
 							isValidator={isValidator}
