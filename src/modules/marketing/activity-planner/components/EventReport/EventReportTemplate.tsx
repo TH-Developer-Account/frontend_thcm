@@ -1,11 +1,12 @@
 import React from "react";
-import { Upload, Send, X, Eye } from "lucide-react";
+import { Upload, Send, X, Eye, ArrowLeft } from "lucide-react";
 import { useParams } from "react-router-dom";
 
 import Button from "../../../../../components/common/Button";
 import FormInput from "../../../../../components/FormElements/FormInput";
 import SelectInput from "../../../../../components/FormElements/SelectInput";
 import TextareaInput from "../../../../../components/FormElements/TextareaInput";
+import NavigateButton from "../../../../../components/common/NavigateButton";
 
 type ReportImage = {
 	url: string;
@@ -106,14 +107,17 @@ const EventReportTemplate = ({
 			{/* Header */}
 			<div className="">
 				<div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
-					<div>
-						<h3 className="text-sm font-semibold text-gray-900">
-							Photo Evidence
-						</h3>
+					<div className="flex items-start justify-start flex-row gap-3">
+						<NavigateButton onClick={onBack} Icon={ArrowLeft} />
+						<div className="flex items-start justify-start flex-col">
+							<h3 className="text-sm font-semibold text-gray-900">
+								Photo Evidence
+							</h3>
 
-						<p className="mt-1 text-xs text-gray-500">
-							Add up to 4 event photos with captions
-						</p>
+							<p className="mt-1 text-xs text-gray-500">
+								Add up to 4 event photos with captions
+							</p>
+						</div>
 					</div>
 
 					<div className="rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700">

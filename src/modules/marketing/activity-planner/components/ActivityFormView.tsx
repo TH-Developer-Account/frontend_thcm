@@ -11,6 +11,7 @@ import type { EpcDetailResponse } from "../types/epc.types";
 import { EventOutcome } from "./EventOutcome";
 import { EventReportSection } from "./EventReport/EventReportSection";
 import Button from "../../../../components/common/Button";
+import { useAuth } from "../../../../context/Auth/useAuth";
 
 type EditingSection = "epc" | "crf" | "epf" | null;
 
@@ -36,10 +37,11 @@ const ActivityFormView = ({
 	isClarifiedUpdate = false,
 }: ActivityFormViewProps) => {
 	const navigate = useNavigate();
+	const { user } = useAuth();
 
 	if (!epcData) {
 		return (
-			<div className="px-6 py-4">
+			<div className="px-6 py-4 ">
 				<EpcForm
 					mode="create"
 					onSuccess={async (savedEpc) => {
@@ -64,7 +66,7 @@ const ActivityFormView = ({
 	const activeWorkflow = epcData.activeWorkflow ?? null;
 	const workflowStages = activeWorkflow?.stages ?? [];
 	const eventStatus = epcData.status ?? "unknown";
-
+	const isValidator = epcData.eventReport?.validatorId === user?.id;
 	return (
 		<>
 			<div className="px-6 py-4">
@@ -121,6 +123,7 @@ const ActivityFormView = ({
 							eventStatus={eventStatus}
 							epcID={epcData?.id}
 							onOpenReportBuilder={onOpenReportBuilder}
+							isValidator={isValidator}
 						/>
 					)}
 				</div>

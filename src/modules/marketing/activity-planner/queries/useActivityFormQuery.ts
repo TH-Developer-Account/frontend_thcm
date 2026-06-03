@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
+import { EventOutcomeApi } from "../api/event.outcome.api";
 import { workflowApi } from "../api/workflow.api";
 
 export const activityCommentKeys = {
@@ -28,6 +29,29 @@ export const useEventOutcomeMutation = () => {
 				status: string;
 				reason: string;
 			};
-		}) => workflowApi.eventOutcome(epcId, payload),
+		}) => EventOutcomeApi.eventOutcome(epcId, payload),
+	});
+};
+export const useEventReportQuery = (epcId?: string | null) => {
+	return useQuery({
+		queryKey: ["event-report", epcId],
+		queryFn: () => EventOutcomeApi.getEventReport(epcId!),
+		enabled: Boolean(epcId),
+		staleTime: 15 * 1000,
+	});
+};
+
+export const useSubmitValidationActionMutation = () => {
+	return useMutation({
+		mutationFn: ({
+			epcId,
+			payload,
+		}: {
+			epcId: string;
+			payload: {
+				action: string;
+				reason: string;
+			};
+		}) => EventOutcomeApi.submitValidationAction(epcId, payload),
 	});
 };
