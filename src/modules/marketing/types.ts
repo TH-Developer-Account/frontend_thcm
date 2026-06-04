@@ -17,6 +17,7 @@ export const ALL_STATUSES = [
 	{ api: "COMPLETED", label: "Completed" },
 	{ api: "CONDUCTED", label: "Conducted" },
 	{ api: "REPORT_SUBMITTED", label: "Report Submitted" },
+	{ api: "VALIDATED", label: "Validated" },
 ] as const;
 
 export type ApprovalApiStatus = (typeof ALL_STATUSES)[number]["api"];

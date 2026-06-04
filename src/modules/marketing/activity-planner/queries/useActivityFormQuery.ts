@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
-import { useMutation } from "@tanstack/react-query";
-import { EventOutcomeApi } from "../api/event.outcome.api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { eventOutcomeApi } from "../api/event.outcome.api";
+import { eventReportApi } from "../api/eventReport.api";
 import { workflowApi } from "../api/workflow.api";
+import { epcKeys } from "./epc.keys";
 
 export const activityCommentKeys = {
 	all: ["activity-comments"] as const,
@@ -29,19 +30,10 @@ export const useEventOutcomeMutation = () => {
 				status: string;
 				reason: string;
 			};
-		}) => EventOutcomeApi.eventOutcome(epcId, payload),
+		}) => eventOutcomeApi.eventOutcome(epcId, payload),
 	});
 };
-export const useEventReportQuery = (epcId?: string | null) => {
-	return useQuery({
-		queryKey: ["event-report", epcId],
-		queryFn: () => EventOutcomeApi.getEventReport(epcId!),
-		enabled: Boolean(epcId),
-		staleTime: 15 * 1000,
-	});
-};
-
-export const useSubmitValidationActionMutation = () => {
+export const useEventDeviationMutation = () => {
 	return useMutation({
 		mutationFn: ({
 			epcId,
@@ -49,9 +41,71 @@ export const useSubmitValidationActionMutation = () => {
 		}: {
 			epcId: string;
 			payload: {
-				action: string;
+				status: string;
 				reason: string;
 			};
-		}) => EventOutcomeApi.submitValidationAction(epcId, payload),
+		}) => eventOutcomeApi.deviation(epcId, payload),
 	});
 };
+
+export const eventReportKeys = {
+	detail: (epcId?: string | null) => ["event-report", epcId] as const,
+};
+
+export function useEventReportQuery(epcId?: string | null, enabled = true) {
+	return useQuery({
+		queryKey: eventReportKeys.detail(epcId),
+		queryFn: () => eventReportApi.getByEpcId(epcId!),
+		enabled: Boolean(epcId) && enabled,
+		staleTime: 30 * 1000,
+		retry: false,
+	});
+}
+
+export function useSubmitEventReportMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({
+			epcId,
+			payload,
+			isEditMode,
+		}: {
+			epcId: string;
+			payload: FormData;
+			isEditMode: boolean;
+		}) =>
+			isEditMode
+				? eventReportApi.resubmit(epcId, payload)
+				: eventReportApi.submit(epcId, payload),
+
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({
+				queryKey: epcKeys.detail(variables.epcId),
+			});
+
+			queryClient.invalidateQueries({
+				queryKey: eventReportKeys.detail(variables.epcId),
+			});
+		},
+	});
+}
+
+export function useValidateEventReportMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({ reportId }: { reportId: string }) =>
+			eventReportApi.approve(reportId),
+
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({
+				queryKey: epcKeys.detail(variables.reportId),
+			});
+
+			queryClient.invalidateQueries({
+				queryKey: eventReportKeys.detail(variables.reportId),
+			});
+		},
+	});
+}

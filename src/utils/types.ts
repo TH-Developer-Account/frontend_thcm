@@ -18,8 +18,12 @@ export type EPCStatus =
 	| "Completed"
 	| "Submitted"
 	| "Sent Back"
+	| "Validated"
 	| "Report Submitted"
-	| "Cancelled";
+	| "Cancelled"
+	| "Clarified"
+	| "In Progress"
+	| "Rejected";
 
 export const APPROVAL_STATUS = {
 	PENDING: "PENDING",
@@ -40,6 +44,7 @@ export const statusMap: Record<string, EPCStatus> = {
 	CONDUCTED: "Conducted",
 	COMPLETED: "Completed",
 	REPORT_SUBMITTED: "Report Submitted",
+	VALIDATED: "Validated",
 };
 export interface TableUser {
 	id: number;

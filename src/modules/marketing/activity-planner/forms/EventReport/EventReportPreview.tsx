@@ -10,17 +10,14 @@ import { Modal } from "../../../../../components/common/Modal";
 import Button from "../../../../../components/common/Button";
 import type { EpcDetailResponse } from "../../types/epc.types";
 import { formatDate } from "../../utils/formatters";
+import { mapReportToPreviewImages } from "./eventReport.mapper";
+import type { EventReportDetail } from "./types";
 
 type PreviewProps = {
-	eventName?: string;
-	description?: string;
-	images?: {
-		url: string;
-		caption: string;
-	}[];
 	open: boolean;
 	onClose: () => void;
 	epcData?: EpcDetailResponse | null;
+	report?: EventReportDetail | null;
 	loading?: boolean;
 };
 
@@ -29,10 +26,9 @@ const Skeleton = ({ className = "" }: { className?: string }) => (
 );
 
 const EventReportPreview = ({
-	description = "The event was successfully conducted with dealer participation across multiple regions. Product demonstrations, customer engagement activities, and financing discussions were carried out during the event.",
-	images = [],
 	open,
 	epcData,
+	report,
 	loading = false,
 	onClose,
 }: PreviewProps) => {
@@ -48,6 +44,8 @@ const EventReportPreview = ({
 		!!epcData &&
 		(title || proposalNo || epcData?.event_description || epcData?.location);
 
+	const previewImages = mapReportToPreviewImages(report);
+
 	const summaryRows = [
 		{
 			label: "Internal Participants",
@@ -60,6 +58,22 @@ const EventReportPreview = ({
 		{
 			label: "Total Participants",
 			value: totalParticipants,
+		},
+		{
+			label: "Total Leads Generated",
+			value: report?.totalLeadsGenerated ?? "--",
+		},
+		{
+			label: "Approved Event Cost",
+			value: report?.approvedEventCost ?? "--",
+		},
+		{
+			label: "Expected Conversion",
+			value: report?.expectedConversion ?? "--",
+		},
+		{
+			label: "Outcome Status",
+			value: report?.outcomeStatus ?? "--",
 		},
 	];
 	return (
@@ -133,7 +147,7 @@ const EventReportPreview = ({
 											<Skeleton className="h-4 w-9/12" />
 										</div>
 									) : hasData ? (
-										epcData?.event_description || description
+										epcData?.event_description
 									) : (
 										"No event description available."
 									)}
@@ -186,7 +200,7 @@ const EventReportPreview = ({
 									</div>
 
 									<div className="rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700">
-										{images.length} Photos
+										{previewImages.length} Photos
 									</div>
 								</div>
 								{loading ? (
@@ -195,9 +209,9 @@ const EventReportPreview = ({
 											<Skeleton key={item} className="h-[240px] rounded-2xl" />
 										))}
 									</div>
-								) : images.length > 0 ? (
+								) : previewImages.length > 0 ? (
 									<div className="grid grid-cols-2 gap-4">
-										{images.map((image, index) => (
+										{previewImages.map((image, index) => (
 											<div
 												key={index}
 												className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50"
@@ -300,7 +314,7 @@ const EventReportPreview = ({
 											</div>
 										) : (
 											<p className="mt-2 text-sm leading-7 text-gray-700">
-												{epcData?.event_description ||
+												{report?.remarks ||
 													"Outcome information not available."}
 											</p>
 										)}

@@ -56,8 +56,13 @@ type Report = {
 	remarks: string | null;
 	outcomeStatus: string | null;
 	totalLeadsGenerated: number | null;
-	approvedEventCost: number | null;
-	expectedConversion: number | null;
+
+	// API returns Decimal as string
+	approvedEventCost: string | null;
+
+	// API currently returns this as string
+	expectedConversion: string | null;
+
 	validatorId: string | null;
 	images: {
 		id: string;

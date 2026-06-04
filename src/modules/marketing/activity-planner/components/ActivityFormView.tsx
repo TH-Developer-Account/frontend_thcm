@@ -9,14 +9,21 @@ import CommentsSection from "./CommentsSection";
 
 import type { EpcDetailResponse } from "../types/epc.types";
 import { EventOutcome } from "./EventOutcome";
-import { EventReportSection } from "./EventReport/EventReportSection";
+import { EventReportSection } from "../forms/EventReport/EventReportSection";
 import Button from "../../../../components/common/Button";
-import { useAuth } from "../../../../context/Auth/useAuth";
+import type { EventReportDetail } from "../forms/EventReport/types";
 
 type EditingSection = "epc" | "crf" | "epf" | null;
 
 type ActivityFormViewProps = {
 	epcData?: EpcDetailResponse | null;
+	report?: EventReportDetail | null;
+	isProposer?: boolean;
+	isValidator?: boolean;
+	hasValidatorPreviewed?: boolean;
+	isValidatingReport?: boolean;
+	onOpenReportPreview: () => void;
+	onValidateReport: () => void;
 	editingSection: EditingSection;
 	setEditingSection: React.Dispatch<React.SetStateAction<EditingSection>>;
 	onRefresh: () => Promise<void>;
@@ -32,12 +39,18 @@ const ActivityFormView = ({
 	setEditingSection,
 	onRefresh,
 	loading,
+	isProposer,
+	isValidator,
+	hasValidatorPreviewed,
+	isValidatingReport,
 	onOpenReportBuilder,
+	onOpenReportPreview,
 	onPreview,
+	onValidateReport,
+	report,
 	isClarifiedUpdate = false,
 }: ActivityFormViewProps) => {
 	const navigate = useNavigate();
-	const { user } = useAuth();
 
 	if (!epcData) {
 		return (
@@ -66,7 +79,7 @@ const ActivityFormView = ({
 	const activeWorkflow = epcData.activeWorkflow ?? null;
 	const workflowStages = activeWorkflow?.stages ?? [];
 	const eventStatus = epcData.status ?? "unknown";
-	const isValidator = epcData.eventReport?.validatorId === user?.id;
+
 	return (
 		<>
 			<div className="px-6 py-4">
@@ -118,13 +131,22 @@ const ActivityFormView = ({
 					{eventStatus === "APPROVED" && (
 						<EventOutcome eventStatus={eventStatus} epcID={epcData?.id} />
 					)}
-					{["CONDUCTED", "CLARIFY_REPORT"].includes(eventStatus) && (
+					{["CONDUCTED", "CLARIFY_REPORT", "REPORT_SUBMITTED"].includes(
+						eventStatus,
+					) && (
 						<EventReportSection
-							report={epcData?.report?.id ?? null}
-							epcID={epcData?.id}
+							report={report ?? null}
+							isProposer={Boolean(isProposer)}
+							isValidator={Boolean(isValidator)}
+							hasValidatorPreviewed={hasValidatorPreviewed}
+							isValidating={Boolean(isValidatingReport)}
 							onOpenReportBuilder={onOpenReportBuilder}
-							isValidator={isValidator}
+							onOpenReportPreview={onOpenReportPreview}
+							onValidateReport={onValidateReport}
 						/>
+					)}
+					{eventStatus === "VALIDATED" && (
+						<EventOutcome eventStatus={eventStatus} epcID={epcData?.id} />
 					)}
 				</div>
 			</div>

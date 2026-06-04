@@ -9,35 +9,22 @@ import ActivityPlannerHeader from "../components/ActivityPlannerHeader";
 import ActivityPlannerPdfPreview from "../components/ActivityPlannerPdfPreview";
 
 import { useEpcDetailQuery } from "../queries/useEpcListQuery";
-import { useActivityCommentsQuery } from "../queries/useActivityFormQuery";
+import {
+	useActivityCommentsQuery,
+	useValidateEventReportMutation,
+	useEventReportQuery,
+} from "../queries/useActivityFormQuery";
 import { getEpcCreatedByName } from "../utils/formatters";
 import { useClarifiedResubmission } from "../hooks/useClarifiedResubmission";
-import EventReportTemplate from "../components/EventReport/EventReportTemplate";
-import EventReportPreview from "../components/EventReport/EventReportPreview";
+import EventReportTemplate from "../forms/EventReport/EventReportTemplate";
+import EventReportPreview from "../forms/EventReport/EventReportPreview";
+import { useAuth } from "../../../../context/Auth/useAuth";
 
 type PageView = "form" | "report-builder" | "report-view";
 
-const dummyImages = [
-	{
-		url: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
-		caption: "Customer interaction during event",
-	},
-	{
-		url: "https://images.unsplash.com/photo-1494526585095-c41746248156",
-		caption: "Machine product showcase",
-	},
-	{
-		url: "https://images.unsplash.com/photo-1519389950473-47ba0277781c",
-		caption: "Dealer networking session",
-	},
-	{
-		url: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
-		caption: "Lead discussion and registrations",
-	},
-];
-
 const ActivityPlannerPage = () => {
 	const { id } = useParams<{ id: string }>();
+	const { user } = useAuth();
 
 	const {
 		data: epcData,
@@ -59,10 +46,50 @@ const ActivityPlannerPage = () => {
 
 	const createdBy = getEpcCreatedByName(epcData ?? null);
 
+	const reportQuery = useEventReportQuery(
+		id,
+		Boolean(id) &&
+			Boolean(
+				epcData?.status &&
+				["CONDUCTED", "CLARIFY_REPORT", "REPORT_SUBMITTED"].includes(
+					epcData.status,
+				),
+			),
+	);
+
+	const reportData = reportQuery.data ?? epcData?.report ?? null;
+
+	const isProposer = epcData?.created_by_id === user?.id;
+	const isValidator = reportData?.validatorId === user?.id;
+
+	const [hasValidatorPreviewed, setHasValidatorPreviewed] =
+		React.useState(false);
+
+	const validateReportMutation = useValidateEventReportMutation();
+
 	const handleRefresh = async () => {
 		await refetch();
 	};
 
+	const handleOpenReportPreview = () => {
+		setReportIsPreviewOpen(true);
+
+		if (isValidator) {
+			setHasValidatorPreviewed(true);
+		}
+	};
+
+	const handleValidateReport = async () => {
+		if (!reportData?.id || !epcData?.id) return;
+
+		await validateReportMutation.mutateAsync({
+			reportId: reportData.id,
+		});
+
+		setHasValidatorPreviewed(false);
+		await handleRefresh();
+		await reportQuery.refetch();
+	};
 	const {
 		isClarifiedPending,
 		isSubmittingClarifiedUpdate,
@@ -90,9 +117,16 @@ const ActivityPlannerPage = () => {
 			>
 				{pageView === "report-builder" ? (
 					<EventReportTemplate
+						epcId={id!}
 						eventCost={epcData?.epf?.eventBudget || 0}
+						initialReport={reportData}
 						onBack={() => setPageView("form")}
-						onPreview={() => setReportIsPreviewOpen(true)}
+						onPreview={handleOpenReportPreview}
+						onSuccess={async () => {
+							setPageView("form");
+							await handleRefresh();
+							await reportQuery.refetch();
+						}}
 					/>
 				) : (
 					<ActivityFormView
@@ -103,7 +137,14 @@ const ActivityPlannerPage = () => {
 						setEditingSection={setEditingSection}
 						onRefresh={handleRefresh}
 						isClarifiedUpdate={isClarifiedPending}
+						report={reportData}
+						isProposer={Boolean(isProposer)}
+						isValidator={Boolean(isValidator)}
+						hasValidatorPreviewed={hasValidatorPreviewed}
+						isValidatingReport={validateReportMutation.isPending}
 						onOpenReportBuilder={() => setPageView("report-builder")}
+						onOpenReportPreview={handleOpenReportPreview}
+						onValidateReport={handleValidateReport}
 					/>
 				)}
 			</PageRowSectionLayout>
@@ -117,10 +158,10 @@ const ActivityPlannerPage = () => {
 			{isReportPreviewOpen && (
 				<EventReportPreview
 					open={isReportPreviewOpen}
-					description="The dealer meet was conducted successfully with participation from regional partners, customers, and sales teams. Product demonstrations, financing discussions, and lead generation activities were carried out during the event."
-					images={dummyImages}
 					onClose={() => setReportIsPreviewOpen(false)}
 					epcData={epcData ?? null}
+					report={reportData}
+					loading={reportQuery.isLoading || reportQuery.isFetching}
 				/>
 			)}
 		</>

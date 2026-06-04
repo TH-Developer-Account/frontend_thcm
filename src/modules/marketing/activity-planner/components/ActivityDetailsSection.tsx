@@ -62,61 +62,71 @@ const ActivityDetailsSection = ({
 					toDate={epcData.event_to_date}
 				/>
 
-				<div className="grid grid-cols-7 items-start justify-between gap-6 text-xs p-3">
-					<div>
+				<div className="grid grid-cols-1 gap-3 p-3 text-xs sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+					<div className="min-w-0">
 						<span className="uppercase-label-text">Location</span>
-						<br />
-						{epcData.location || "--"}
+						<p
+							className="mt-0.5 max-w-full break-words text-[11px] leading-4 text-gray-900"
+							title={epcData.location || "--"}
+						>
+							{epcData.location || "--"}
+						</p>
 					</div>
 
-					<div>
+					<div className="min-w-0">
 						<span className="uppercase-label-text">Branch</span>
-						<br />
-						{getEpcBranchName(epcData)}
+						<p className="mt-0.5 truncate text-[11px] leading-4 text-gray-900">
+							{getEpcBranchName(epcData)}
+						</p>
 					</div>
 
-					<div>
+					<div className="min-w-0">
 						<span className="uppercase-label-text">Department</span>
-						<br />
-						{getEpcDepartmentName(epcData)}
+						<p className="mt-0.5 truncate text-[11px] leading-4 text-gray-900">
+							{getEpcDepartmentName(epcData)}
+						</p>
 					</div>
 
-					<div>
+					<div className="min-w-0">
 						<span className="uppercase-label-text">Vertical</span>
-						<br />
-						{getEpcVerticalName(epcData)}
+						<p className="mt-0.5 truncate text-[11px] leading-4 text-gray-900">
+							{getEpcVerticalName(epcData)}
+						</p>
 					</div>
 
-					<div>
+					<div className="min-w-0">
 						<span className="uppercase-label-text">Zone</span>
-						<br />
-						{getEpcRegionName(epcData)}
+						<p className="mt-0.5 truncate text-[11px] leading-4 text-gray-900">
+							{getEpcRegionName(epcData)}
+						</p>
 					</div>
 
-					<div>
+					<div className="min-w-0">
 						<span className="uppercase-label-text">Created</span>
-						<br />
-						{formatDate(epcData.created_at)}
+						<p className="mt-0.5 truncate text-[11px] leading-4 text-gray-900">
+							{formatDate(epcData.created_at)}
+						</p>
 					</div>
 
-					<div>
+					<div className="min-w-0">
 						<span className="uppercase-label-text">Budget</span>
-						<br />
-						{getEpcBudgetValue(epcData)}
+						<p className="mt-0.5 truncate text-[11px] leading-4 text-gray-900">
+							{getEpcBudgetValue(epcData)}
+						</p>
 					</div>
 				</div>
 
-				<div className="grid grid-cols-2 gap-6 text-sm p-3">
-					<div>
+				<div className="grid grid-cols-1 gap-4 p-3 text-sm md:grid-cols-2">
+					<div className="min-w-0">
 						<span className="uppercase-label-text">Description</span>
-						<p className="text-black leading-relaxed text-xs text-wrap">
+						<p className="mt-1 break-words text-xs leading-relaxed text-gray-900">
 							{trimText(epcData.event_description, 250) || "No Description"}
 						</p>
 					</div>
 
-					<div>
+					<div className="min-w-0">
 						<span className="uppercase-label-text">Objective</span>
-						<p className="text-gray-700 leading-relaxed text-xs text-wrap">
+						<p className="mt-1 break-words text-xs leading-relaxed text-gray-700">
 							{trimText(epcData.event_objective, 250) || "No Objective"}
 						</p>
 					</div>
