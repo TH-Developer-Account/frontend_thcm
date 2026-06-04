@@ -33,7 +33,7 @@ const ActivityPlannerHeader = ({
 		<div className="flex flex-row gap-4 justify-between items-start">
 			<PageHeader
 				badgeProps={{
-					text: "Back",
+					text: "Back to Listing",
 					direction: "back",
 				}}
 			/>

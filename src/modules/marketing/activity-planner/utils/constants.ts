@@ -42,6 +42,10 @@ export const status = {
 	CANCELLED: "Cancelled",
 	COMPLETED: "Completed",
 	CONDUCTED: "Conducted",
+	NOT_CONDUCTED: "Cancelled",
+	VALIDATED: "Validated",
+	CLARIFIED: "Clarified",
+	IN_PROGRESS: "In Progress",
 } as const;
 
 export type EpcListFilter = "createdByMe" | "pendingOnMe" | "approvedByMe";
@@ -146,4 +150,9 @@ export const EMPTY_EPC_FILTERS: EpcFilters = {
 export const eventOutcomeOptions = [
 	{ label: "Conducted", value: "CONDUCTED" },
 	{ label: "Not Conducted", value: "CANCELLED" },
+];
+export const eventDeviationOptions = [
+	{ label: "Required", value: "REQUIRED" },
+	{ label: "Not Required", value: "NOT_REQUIRED" },
+	{ label: "Dropped", value: "DROPPED" },
 ];

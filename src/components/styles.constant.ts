@@ -24,6 +24,9 @@ const STATUS_STYLE_MAP: Record<string, string> = {
 		"border border-orange-200 bg-orange-50 text-orange-700 hover:border-red-400 hover:bg-red-100",
 	active: "bg-green-100 text-green-800 ",
 	inactive: "bg-red-100 text-red-800 ",
+	validated: "bg-green-100 text-green-800 ring-green-200  ",
+	clarified: "bg-yellow-100 text-yellow-800 ring-yellow-200",
+	in_progress: "bg-blue-100 text-blue-800 ring-blue-200",
 };
 
 export const resolveStatusStyle = ({ status }: { status?: string }): string => {

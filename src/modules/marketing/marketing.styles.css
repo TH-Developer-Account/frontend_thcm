@@ -9,6 +9,13 @@
 	word-break: break-word;
 	overflow-wrap: anywhere;
 }
+.uppercase-label-text {
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.22em;
+	text-transform: uppercase;
+	color: #475569;
+}
 .approval-details .epc-status-approver {
 	@apply text-gray-700 font-normal italic text-[10px];
 	font-style: italic;
