@@ -1,7 +1,7 @@
 import { LucideSave, RefreshCcw, Save, Send, X } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/Section";
+import Section from "../../components/common/Section";
 
 import EpfItemsSection from "./EpfItemSection";
 import { useEpfForm, type EpfFormProps } from "./useEpfForm";

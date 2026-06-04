@@ -1,18 +1,18 @@
 import React, { useMemo, useState } from "react";
 import { MessageCircle } from "lucide-react";
-import { useToast } from "../../../../context/Auth/AuthContext";
-import { useAuth } from "../../../../context/Auth/useAuth";
-import Button from "../../../../components/common/Button";
-import TextareaInput from "../../../../components/FormElements/TextareaInput";
-import Avatar from "../../../../components/common/Avatar";
-import Section from "./Section";
-import ApprovalFlowSection from "./ApprovalFlowSection";
-import { Modal } from "../../../../components/common/Modal";
-import { formatDateTime } from "../../../../utils/format";
-import type { WorkflowStage } from "../types/workflow.types";
-import { workflowApi } from "../api/workflow.api";
+import { useToast } from "../../../../../context/Auth/AuthContext";
+import { useAuth } from "../../../../../context/Auth/useAuth";
+import Button from "../../../../../components/common/Button";
+import TextareaInput from "../../../../../components/FormElements/TextareaInput";
+import Avatar from "../../../../../components/common/Avatar";
+import Section from "../common/Section";
+import ApprovalFlowSection from "../activityFormView/ApprovalFlowSection";
+import { Modal } from "../../../../../components/common/Modal";
+import { formatDateTime } from "../../../../../utils/format";
+import type { WorkflowStage } from "../../types/workflow.types";
+import { workflowApi } from "../../api/workflow.api";
 import CommentInput from "./CommentInput";
-import "../../marketing.styles.css";
+import "../../../marketing.styles.css";
 
 export type CommentUser = {
 	id: string;

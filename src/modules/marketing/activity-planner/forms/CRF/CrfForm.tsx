@@ -1,7 +1,7 @@
 import { LucideSave, RefreshCcw, Save, X } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/Section";
+import Section from "../../components/common/Section";
 
 import { CrfItemsSection } from "./CrfItemsSection";
 import { useCrfForm, type CrfFormProps } from "./useCrfForm";

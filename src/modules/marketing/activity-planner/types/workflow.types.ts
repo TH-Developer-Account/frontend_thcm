@@ -3,7 +3,7 @@ import type {
 	EpcWorkflowApproval,
 	EpcWorkflowStage,
 } from "./epc.types";
-import type { CommentUser } from "../components/CommentsSection";
+import type { CommentUser } from "../components/commentSection/CommentsSection";
 
 export type MenuAction = {
 	icon: React.ElementType;

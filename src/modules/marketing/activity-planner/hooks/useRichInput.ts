@@ -1,5 +1,5 @@
 import React from "react";
-import type { CommentUser } from "../components/CommentsSection";
+import type { CommentUser } from "../components/commentSection/CommentsSection";
 import type { FormatType, PopupState } from "../types/workflow.types";
 import { FORMAT_WRAP, FORMAT_CURSOR_OFFSET } from "../utils/constants";
 

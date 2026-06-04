@@ -2,7 +2,7 @@ import React from "react";
 import { useLocation } from "react-router-dom";
 import { PageHeader } from "../../../../../components/ui/PageHeader";
 import PageRowSectionLayout from "../../../../../layout/PageRowSectionLayout";
-import Section from "../../../activity-planner/components/Section";
+import Section from "../../../activity-planner/components/common/Section";
 import {
 	createEmptyLeadFormRow,
 	mapLeadRowToFormRow,

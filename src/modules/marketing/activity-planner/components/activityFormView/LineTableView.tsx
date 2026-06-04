@@ -1,8 +1,8 @@
-import { CRF_CATEGORIES } from "../../constant";
+import { CRF_CATEGORIES } from "../../../constant";
 
-import type { ColumnConfig } from "../types/lineItem.types";
+import type { ColumnConfig } from "../../types/lineItem.types";
 
-import { ARTWORK_COLUMNS, DEFAULT_COLUMNS } from "../utils/columnPresets";
+import { ARTWORK_COLUMNS, DEFAULT_COLUMNS } from "../../utils/columnPresets";
 
 export type TableRow = {
 	id?: string;

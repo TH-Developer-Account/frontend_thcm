@@ -1,8 +1,8 @@
 import React from "react";
-import type { ApprovalTableRow } from "../../../../utils/types";
-import type { WorkflowStage } from "../types/workflow.types";
-import { Badge } from "../../../../components/common/Badge";
-import { getStatusForBadge } from "./EPCTable/columns";
+import type { ApprovalTableRow } from "../../../../../utils/types";
+import type { WorkflowStage } from "../../types/workflow.types";
+import { Badge } from "../../../../../components/common/Badge";
+import { getStatusForBadge } from "../EPCTable/columns";
 
 type Props = {
 	data: ApprovalTableRow[];

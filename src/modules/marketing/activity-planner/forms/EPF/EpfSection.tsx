@@ -1,9 +1,9 @@
 import { Pencil, Plus } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/Section";
-import LineTableView from "../../components/LineTableView";
-import BudgetShare from "../../components/BudgetShare";
+import Section from "../../components/common/Section";
+import LineTableView from "../../components/activityFormView/LineTableView";
+import BudgetShare from "../../components/activityFormView/BudgetShare";
 import EpfForm from "./EpfForm";
 
 import type { EpcDetailResponse } from "../../types/epc.types";

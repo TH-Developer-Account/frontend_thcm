@@ -1,8 +1,8 @@
 import { Pencil, Plus } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/Section";
-import LineTableView from "../../components/LineTableView";
+import Section from "../../components/common/Section";
+import LineTableView from "../../components/activityFormView/LineTableView";
 import CrfForm from "./CrfForm";
 
 import type { EpcDetailResponse } from "../../types/epc.types";

@@ -4,9 +4,9 @@ import { useParams } from "react-router-dom";
 import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
 import Loader from "../../../../components/ui/Loader";
 
-import ActivityFormView from "../components/ActivityFormView";
-import ActivityPlannerHeader from "../components/ActivityPlannerHeader";
-import ActivityPlannerPdfPreview from "../components/ActivityPlannerPdfPreview";
+import ActivityFormView from "../components/activityFormView/ActivityFormView";
+import ActivityPlannerHeader from "../components/activityFormView/ActivityPlannerHeader";
+import ActivityPlannerPdfPreview from "../components/activityFormView/ActivityPlannerPdfPreview";
 
 import { useEpcDetailQuery } from "../queries/useEpcListQuery";
 import {

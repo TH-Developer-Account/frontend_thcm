@@ -2,7 +2,7 @@ import React from "react";
 import { RefreshCcw, Save, X } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/Section";
+import Section from "../../components/common/Section";
 
 import { useMasterData } from "../../../../../hooks/useMasterData";
 import { useEpcForm } from "./useEpcForm";

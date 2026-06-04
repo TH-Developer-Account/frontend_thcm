@@ -1,10 +1,10 @@
 import { Send } from "lucide-react";
-import { PageHeader } from "../../../../components/ui/PageHeader";
-import Button from "../../../../components/common/Button";
-import { Badge } from "../../../../components/common/Badge";
-import { statusMap } from "../../../../utils/types";
+import { PageHeader } from "../../../../../components/ui/PageHeader";
+import Button from "../../../../../components/common/Button";
+import { Badge } from "../../../../../components/common/Badge";
+import { statusMap } from "../../../../../utils/types";
 
-import type { EpcDetailResponse } from "../types/epc.types";
+import type { EpcDetailResponse } from "../../types/epc.types";
 
 type ActivityPlannerHeaderProps = {
 	epcData?: EpcDetailResponse | null;

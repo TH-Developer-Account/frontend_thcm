@@ -1,30 +1,33 @@
 import React from "react";
 import type { SingleValue } from "react-select";
 
-import SelectInput from "../../../../components/FormElements/SelectInput";
-import TextareaInput from "../../../../components/FormElements/TextareaInput";
-import Button from "../../../../components/common/Button";
-import Section from "./Section";
-import { validateUploadFile } from "../../../../components/FileUpload/fileUpload.helpers";
-import { eventDeviationOptions, eventOutcomeOptions } from "../utils/constants";
+import SelectInput from "../../../../../components/FormElements/SelectInput";
+import TextareaInput from "../../../../../components/FormElements/TextareaInput";
+import Button from "../../../../../components/common/Button";
+import Section from "../../components/common/Section";
+import { validateUploadFile } from "../../../../../components/FileUpload/fileUpload.helpers";
+import {
+	eventDeviationOptions,
+	eventOutcomeOptions,
+} from "../../utils/constants";
 import {
 	useEventOutcomeMutation,
 	useEventDeviationMutation,
-} from "../queries/useActivityFormQuery";
-import { useToast } from "../../../../context/Auth/AuthContext";
-import type { Option } from "../../../../components/FormElements/input.types";
-import { getEventOutcomeMode } from "../utils/eventOutcome.helper";
-import FormInput from "../../../../components/FormElements/FormInput";
+} from "../../queries/useActivityFormQuery";
+import { useToast } from "../../../../../context/Auth/AuthContext";
+import type { Option } from "../../../../../components/FormElements/input.types";
+import { getEventOutcomeMode } from "../../utils/eventOutcome.helper";
+import FormInput from "../../../../../components/FormElements/FormInput";
 import type {
 	DeviationInfo,
 	EventOutcomeProps,
-} from "../types/event.outcome.types";
-import { usePreviewWorkflowMutation } from "../queries/useEventOutcomeMutation";
+} from "../../types/event.outcome.types";
+import { usePreviewWorkflowMutation } from "../../queries/useEventOutcomeMutation";
 import {
 	showApiErrorToast,
 	showSuccessToast,
-} from "../../../../utils/apiError.helper";
-import { FileUploadField } from "../../../../components/FileUpload/FileUploadField";
+} from "../../../../../utils/apiError.helper";
+import { FileUploadField } from "../../../../../components/FileUpload/FileUploadField";
 
 const initialDeviationInfo: DeviationInfo = {
 	reason: "",
@@ -229,8 +232,12 @@ export const EventOutcome = ({
 
 	return (
 		<Section title="Activity Outcome">
-			<div className="mt-4  text-right px-4 py-2">
-				<div className="grid grid-cols-2 gap-2 mb-4 text-left">
+			<div
+				className={`mt-4 px-4 py-2 ${isDeviationRequired ? "text-right" : "text-left"}`}
+			>
+				<div
+					className={`grid grid-cols-2 gap-2  ${isDeviationRequired && "mb-4"}  text-left`}
+				>
 					<SelectInput
 						options={options}
 						label={label}

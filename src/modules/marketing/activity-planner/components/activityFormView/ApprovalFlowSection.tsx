@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import ApprovalTable from "./ApprovalTable";
-import type { WorkflowStage } from "../types/workflow.types";
-import { mapWorkflowStagesToApprovalRows } from "../utils/approvalTable.mapper";
+import type { WorkflowStage } from "../../types/workflow.types";
+import { mapWorkflowStagesToApprovalRows } from "../../utils/approvalTable.mapper";
 
 type ApprovalFlowSectionProps = {
 	stages: WorkflowStage[];

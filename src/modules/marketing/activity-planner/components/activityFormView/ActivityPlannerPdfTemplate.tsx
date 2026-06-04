@@ -1,6 +1,6 @@
 import React from "react";
-import type { EpcDetailResponse } from "../types/epc.types";
-import { statusMap } from "../../../../utils/types";
+import type { EpcDetailResponse } from "../../types/epc.types";
+import { statusMap } from "../../../../../utils/types";
 import {
 	formatCurrency,
 	formatDate,
@@ -8,7 +8,7 @@ import {
 	getEpcDepartmentName,
 	getEpcRegionName,
 	getEpcVerticalName,
-} from "../utils/formatters";
+} from "../../utils/formatters";
 
 type Props = {
 	epcData?: EpcDetailResponse | null;

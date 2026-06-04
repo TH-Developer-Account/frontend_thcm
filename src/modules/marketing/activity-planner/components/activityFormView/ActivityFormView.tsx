@@ -1,20 +1,20 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye } from "lucide-react";
-import EpcForm from "../forms/EPC/EpcForm";
-import ActivityDetailsSection from "./ActivityDetailsSection";
-import CrfSection from "../forms/CRF/CrfSection";
-import EpfSection from "../forms/EPF/EpfSection";
-import CommentsSection from "./CommentsSection";
+import EpcForm from "../../forms/EPC/EpcForm";
+import ActivityDetailsSection from "../activityFormView/ActivityDetailsSection";
+import CrfSection from "../../forms/CRF/CrfSection";
+import EpfSection from "../../forms/EPF/EpfSection";
+import CommentsSection from "../commentSection/CommentsSection";
 
-import type { EpcDetailResponse } from "../types/epc.types";
-import { EventOutcome } from "./EventOutcome";
-import { EventReportSection } from "../forms/EventReport/EventReportSection";
-import Button from "../../../../components/common/Button";
-import type { WorkflowStage } from "../types/workflow.types";
-import { useAuth } from "../../../../context/Auth/useAuth";
-import { getStoredAppId } from "../helpers/localstorage";
-import type { EventReportDetail } from "../types/event.report.types";
+import type { EpcDetailResponse } from "../../types/epc.types";
+import { EventOutcome } from "../../forms/EventOutcome/EventOutcome";
+import { EventReportSection } from "../../forms/EventReport/EventReportSection";
+import Button from "../../../../../components/common/Button";
+import type { WorkflowStage } from "../../types/workflow.types";
+import { useAuth } from "../../../../../context/Auth/useAuth";
+import { getStoredAppId } from "../../helpers/localstorage";
+import type { EventReportDetail } from "../../types/event.report.types";
 
 type EditingSection = "epc" | "crf" | "epf" | null;
 

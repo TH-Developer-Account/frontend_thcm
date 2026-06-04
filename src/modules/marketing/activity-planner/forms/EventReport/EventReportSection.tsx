@@ -2,7 +2,7 @@ import React from "react";
 import { CheckCircle2, Eye, FileText, Pencil } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/Section";
+import Section from "../../components/common/Section";
 import type { EventReportSectionProps } from "../../types/event.report.types";
 
 export const EventReportSection = ({

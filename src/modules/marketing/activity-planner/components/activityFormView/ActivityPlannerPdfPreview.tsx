@@ -1,9 +1,9 @@
 import { Download } from "lucide-react";
 import html2pdf from "html2pdf.js";
-import Button from "../../../../components/common/Button";
-import { Modal } from "../../../../components/common/Modal";
+import Button from "../../../../../components/common/Button";
+import { Modal } from "../../../../../components/common/Modal";
 import ActivityPlannerPdfTemplate from "./ActivityPlannerPdfTemplate";
-import type { EpcDetailResponse } from "../types/epc.types";
+import type { EpcDetailResponse } from "../../types/epc.types";
 
 type ActivityPlannerPdfPreviewProps = {
 	open: boolean;

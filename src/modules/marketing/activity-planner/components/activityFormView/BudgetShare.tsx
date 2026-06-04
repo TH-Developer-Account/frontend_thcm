@@ -1,6 +1,6 @@
 import React from "react";
-import { formatCurrency } from "../utils/formatters";
-import type { BudgetItem, ShareInfo } from "../types/epf.types";
+import { formatCurrency } from "../../utils/formatters";
+import type { BudgetItem, ShareInfo } from "../../types/epf.types";
 
 type BudgetShareProps = {
 	items: BudgetItem[];

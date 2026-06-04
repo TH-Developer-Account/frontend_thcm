@@ -1,17 +1,13 @@
 import React from "react";
-import {
-	AtSign,
-	// HelpCircle, Paperclip, Send, FileText
-} from "lucide-react";
+import { AtSign } from "lucide-react";
 import type { CommentUser } from "./CommentsSection";
-import RichTextareaInput from "./RichTextareaInput";
+import RichTextareaInput from "../common/RichTextareaInput";
 
 // ============================
 //  Menu items
 // ============================
 
 const COMMENT_MENU_ITEMS = [
-	// { icon: Send, label: "Send comment", action: "submit" },
 	{ icon: AtSign, label: "Mention someone", action: "mention" },
 	// { icon: Paperclip, label: "Attach file / reference", action: "attach" },
 	// { icon: HelpCircle, label: "Mark as question", action: "question" },

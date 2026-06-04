@@ -1,16 +1,16 @@
 import { Pencil } from "lucide-react";
-import Button from "../../../../components/common/Button";
-import Section from "./Section";
-import EpcForm from "../forms/EPC/EpcForm";
-import type { EpcDetailResponse } from "../types/epc.types";
-import { formatDate, trimText } from "../../../../utils/format";
+import Button from "../../../../../components/common/Button";
+import Section from "../common/Section";
+import EpcForm from "../../forms/EPC/EpcForm";
+import type { EpcDetailResponse } from "../../types/epc.types";
+import { formatDate, trimText } from "../../../../../utils/format";
 import {
 	getEpcBranchName,
 	getEpcBudgetValue,
 	getEpcDepartmentName,
 	getEpcRegionName,
 	getEpcVerticalName,
-} from "../utils/formatters";
+} from "../../utils/formatters";
 import DateRangeSection from "./DateRangeSection";
 
 type ActivityDetailsSectionProps = {
