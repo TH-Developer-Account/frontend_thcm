@@ -3,6 +3,10 @@ import { eventOutcomeApi } from "../api/event.outcome.api";
 import { eventReportApi } from "../api/eventReport.api";
 import { workflowApi } from "../api/workflow.api";
 import { epcKeys } from "./epc.keys";
+import type {
+	EventDeviationPayload,
+	EventOutcomePayload,
+} from "../types/event.outcome.types";
 
 export const activityCommentKeys = {
 	all: ["activity-comments"] as const,
@@ -26,27 +30,22 @@ export const useEventOutcomeMutation = () => {
 			payload,
 		}: {
 			epcId: string;
-			payload: {
-				status: string;
-				reason: string;
-			};
+			payload: EventOutcomePayload;
 		}) => eventOutcomeApi.eventOutcome(epcId, payload),
 	});
 };
-export const useEventDeviationMutation = () => {
+
+export function useEventDeviationMutation() {
 	return useMutation({
 		mutationFn: ({
 			epcId,
 			payload,
 		}: {
 			epcId: string;
-			payload: {
-				status: string;
-				reason: string;
-			};
+			payload: EventDeviationPayload;
 		}) => eventOutcomeApi.deviation(epcId, payload),
 	});
-};
+}
 
 export const eventReportKeys = {
 	detail: (epcId?: string | null) => ["event-report", epcId] as const,

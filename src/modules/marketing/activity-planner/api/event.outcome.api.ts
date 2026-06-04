@@ -1,9 +1,8 @@
 import { ServerAxios } from "../../../../services/ServerAxios";
-
-export type EventOutcomePayload = {
-	status: string;
-	reason: string;
-};
+import type {
+	EventDeviationPayload,
+	EventOutcomePayload,
+} from "../types/event.outcome.types";
 
 export const eventOutcomeApi = {
 	eventOutcome: async (epcId: string, payload: EventOutcomePayload) => {
@@ -14,10 +13,19 @@ export const eventOutcomeApi = {
 		return data;
 	},
 
-	deviation: async (epcId: string, payload: EventOutcomePayload) => {
+	deviation: async (epcId: string, payload: EventDeviationPayload) => {
+		const isFormData = payload instanceof FormData;
+
 		const { data } = await ServerAxios.post(
-			`/epc/${epcId}/event-deviation`,
+			`/event-deviation/${epcId}`,
 			payload,
+			isFormData
+				? {
+						headers: {
+							"Content-Type": "multipart/form-data",
+						},
+					}
+				: undefined,
 		);
 
 		return data;

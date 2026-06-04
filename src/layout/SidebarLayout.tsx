@@ -7,6 +7,7 @@ export const SidebarLayout = ({
 	isOpen,
 	items,
 	onClose,
+	onToggleSidebar,
 }: SidebarLayoutProps) => {
 	const [openItem, setOpenItem] = useState<string | null>(null);
 
@@ -43,11 +44,18 @@ export const SidebarLayout = ({
 								{/* Parent Item */}
 								{hasChildren ? (
 									<button
-										onClick={() => toggleItem(item.id)}
-										className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-200 "
+										type="button"
+										onClick={() => {
+											if (!isOpen) {
+												onToggleSidebar?.();
+												return;
+											}
+										}}
+										className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-200"
 									>
 										<div className="flex items-center gap-2 text-black">
 											<span className="text-xs shrink-0">{item.icon}</span>
+
 											{isOpen && (
 												<span className="text-xs font-medium">
 													{item.label}
@@ -56,12 +64,22 @@ export const SidebarLayout = ({
 										</div>
 
 										{isOpen && (
-											<ChevronDown
-												size={14}
-												className={`transition-transform text-black ${
-													openItem === item.id ? "rotate-180" : ""
-												}`}
-											/>
+											<button
+												type="button"
+												onClick={(e) => {
+													e.stopPropagation();
+													toggleItem(item.id);
+												}}
+												className="rounded p-1 hover:bg-gray-300"
+												aria-label={`Toggle ${item.label}`}
+											>
+												<ChevronDown
+													size={14}
+													className={`transition-transform text-black ${
+														openItem === item.id ? "rotate-180" : ""
+													}`}
+												/>
+											</button>
 										)}
 									</button>
 								) : (

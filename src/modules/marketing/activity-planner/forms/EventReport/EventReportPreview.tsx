@@ -8,18 +8,9 @@ import {
 } from "lucide-react";
 import { Modal } from "../../../../../components/common/Modal";
 import Button from "../../../../../components/common/Button";
-import type { EpcDetailResponse } from "../../types/epc.types";
 import { formatDate } from "../../utils/formatters";
 import { mapReportToPreviewImages } from "./eventReport.mapper";
-import type { EventReportDetail } from "./types";
-
-type PreviewProps = {
-	open: boolean;
-	onClose: () => void;
-	epcData?: EpcDetailResponse | null;
-	report?: EventReportDetail | null;
-	loading?: boolean;
-};
+import type { PreviewProps } from "../../types/event.report.types";
 
 const Skeleton = ({ className = "" }: { className?: string }) => (
 	<div className={`animate-pulse rounded bg-gray-200 ${className}`} />

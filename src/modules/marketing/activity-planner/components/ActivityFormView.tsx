@@ -11,7 +11,10 @@ import type { EpcDetailResponse } from "../types/epc.types";
 import { EventOutcome } from "./EventOutcome";
 import { EventReportSection } from "../forms/EventReport/EventReportSection";
 import Button from "../../../../components/common/Button";
-import type { EventReportDetail } from "../forms/EventReport/types";
+import type { WorkflowStage } from "../types/workflow.types";
+import { useAuth } from "../../../../context/Auth/useAuth";
+import { getStoredAppId } from "../helpers/localstorage";
+import type { EventReportDetail } from "../types/event.report.types";
 
 type EditingSection = "epc" | "crf" | "epf" | null;
 
@@ -51,6 +54,21 @@ const ActivityFormView = ({
 	isClarifiedUpdate = false,
 }: ActivityFormViewProps) => {
 	const navigate = useNavigate();
+	const { workspaceId } = useAuth();
+
+	const appId = React.useMemo(() => getStoredAppId(), []);
+
+	const [deviationPreviewStages, setDeviationPreviewStages] = React.useState<
+		WorkflowStage[]
+	>([]);
+
+	const handleSuccess = React.useCallback(async () => {
+		await onRefresh();
+	}, [onRefresh]);
+
+	const activeWorkflow = epcData?.activeWorkflow ?? null;
+	const workflowStages = activeWorkflow?.stages ?? [];
+	const eventStatus = epcData?.status ?? "unknown";
 
 	if (!epcData) {
 		return (
@@ -75,11 +93,6 @@ const ActivityFormView = ({
 			</div>
 		);
 	}
-
-	const activeWorkflow = epcData.activeWorkflow ?? null;
-	const workflowStages = activeWorkflow?.stages ?? [];
-	const eventStatus = epcData.status ?? "unknown";
-
 	return (
 		<>
 			<div className="px-6 py-4">
@@ -122,9 +135,10 @@ const ActivityFormView = ({
 
 					{epcData.epf && editingSection !== "epf" && (
 						<CommentsSection
-							epcCreatedById={epcData.created_by_id}
-							epcId={epcData.id}
+							epcCreatedById={epcData?.created_by_id}
+							epcId={epcData?.id}
 							stages={workflowStages}
+							deviationPreviewStages={deviationPreviewStages}
 							onWorkflowUpdate={onRefresh}
 						/>
 					)}
@@ -146,7 +160,14 @@ const ActivityFormView = ({
 						/>
 					)}
 					{eventStatus === "VALIDATED" && (
-						<EventOutcome eventStatus={eventStatus} epcID={epcData?.id} />
+						<EventOutcome
+							eventStatus={eventStatus}
+							epcID={epcData.id}
+							workspaceId={workspaceId ?? undefined}
+							appId={appId ?? undefined}
+							onSuccess={handleSuccess}
+							onDeviationPreviewSuccess={setDeviationPreviewStages}
+						/>
 					)}
 				</div>
 			</div>

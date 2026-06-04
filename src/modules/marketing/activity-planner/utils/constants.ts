@@ -148,11 +148,12 @@ export const EMPTY_EPC_FILTERS: EpcFilters = {
 };
 
 export const eventOutcomeOptions = [
+	{ label: "Select..", value: "" },
 	{ label: "Conducted", value: "CONDUCTED" },
 	{ label: "Not Conducted", value: "CANCELLED" },
 ];
 export const eventDeviationOptions = [
+	{ label: "Select..", value: "" },
 	{ label: "Required", value: "REQUIRED" },
 	{ label: "Not Required", value: "NOT_REQUIRED" },
-	{ label: "Dropped", value: "DROPPED" },
 ];

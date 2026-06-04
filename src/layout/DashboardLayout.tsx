@@ -19,6 +19,7 @@ export const DashboardLayout = ({
 					isOpen={isSidebarOpen}
 					items={sidebarItems}
 					onClose={onToggleSidebar}
+					onToggleSidebar={onToggleSidebar}
 				/>
 
 				<div className="app-main">

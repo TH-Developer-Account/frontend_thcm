@@ -6,7 +6,10 @@ import SelectInput from "../../../../../components/FormElements/SelectInput";
 import TextareaInput from "../../../../../components/FormElements/TextareaInput";
 
 import { OUTCOME_OPTIONS, MAX_IMAGES } from "./constant";
-import type { EventReportTemplateProps, OutcomeStatus } from "./types";
+import type {
+	EventReportTemplateProps,
+	OutcomeStatus,
+} from "../../types/event.report.types";
 import { ImageCard } from "./ImageCard";
 import { useEventReportForm } from "./useEventReportForm";
 

@@ -12,7 +12,7 @@ export default function HelperTooltip({
 	if (!text) return null;
 
 	return (
-		<span className="form-helper-tooltip-wrap">
+		<span className="form-helper-tooltip-wrap ">
 			<button
 				type="button"
 				className="form-helper-btn"
@@ -21,7 +21,7 @@ export default function HelperTooltip({
 				<Info size={11} strokeWidth={2.4} />
 			</button>
 
-			<span className="form-helper-tooltip" role="tooltip">
+			<span className="form-helper-tooltip " role="tooltip">
 				{text}
 			</span>
 		</span>

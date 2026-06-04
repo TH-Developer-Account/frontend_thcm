@@ -1,3 +1,5 @@
+import type { EpcDetailResponse } from "../types/epc.types";
+
 export type ReportStatus =
 	| "DRAFT"
 	| "SUBMITTED"
@@ -12,6 +14,16 @@ export type ReportImage = {
 	caption?: string;
 	file?: File;
 };
+
+export type UploadFileItem = {
+	url: string;
+	file?: File;
+	name?: string;
+	type?: string;
+	size?: number;
+};
+
+export type AllowedFileKind = "image" | "pdf" | "document" | "any";
 
 export type OutcomeStatus =
 	| "SUCCESSFUL"
@@ -48,4 +60,30 @@ export type EventReportTemplateProps = {
 	onPreview: () => void;
 	onSuccess?: () => void | Promise<void>;
 	eventCost?: number | string;
+};
+
+export type PreviewProps = {
+	open: boolean;
+	onClose: () => void;
+	epcData?: EpcDetailResponse | null;
+	report?: EventReportDetail | null;
+	loading?: boolean;
+};
+
+export type EventReportSectionProps = {
+	report?: EventReportDetail | null;
+	isProposer: boolean;
+	isValidator: boolean;
+	hasValidatorPreviewed?: boolean;
+	isValidating?: boolean;
+	onOpenReportBuilder: () => void;
+	onOpenReportPreview: () => void;
+	onValidateReport?: () => void;
+};
+
+export type UseEventReportFormProps = {
+	epcId: string;
+	eventCost?: string | number;
+	initialReport?: EventReportDetail | null;
+	onSuccess?: () => void | Promise<void>;
 };

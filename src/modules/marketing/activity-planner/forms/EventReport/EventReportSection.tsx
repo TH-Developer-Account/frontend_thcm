@@ -3,18 +3,7 @@ import { CheckCircle2, Eye, FileText, Pencil } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
 import Section from "../../components/Section";
-import type { EventReportDetail } from "./types";
-
-type EventReportSectionProps = {
-	report?: EventReportDetail | null;
-	isProposer: boolean;
-	isValidator: boolean;
-	hasValidatorPreviewed?: boolean;
-	isValidating?: boolean;
-	onOpenReportBuilder: () => void;
-	onOpenReportPreview: () => void;
-	onValidateReport?: () => void;
-};
+import type { EventReportSectionProps } from "../../types/event.report.types";
 
 export const EventReportSection = ({
 	report,

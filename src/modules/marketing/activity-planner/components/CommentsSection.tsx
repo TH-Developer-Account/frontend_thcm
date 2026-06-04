@@ -38,6 +38,7 @@ export type CommentItem = {
 type CommentsSectionProps = {
 	epcId: string;
 	stages: WorkflowStage[];
+	deviationPreviewStages?: WorkflowStage[];
 	onWorkflowUpdate: () => Promise<void>;
 	epcCreatedById?: string;
 };
@@ -164,6 +165,7 @@ const CommentCard = React.memo(function CommentCard({
 export default function CommentsSection({
 	epcId,
 	stages,
+	deviationPreviewStages = [],
 	onWorkflowUpdate,
 	epcCreatedById,
 }: CommentsSectionProps) {
@@ -438,7 +440,10 @@ export default function CommentsSection({
 	return (
 		<>
 			<Section title="Approval Flow">
-				<ApprovalFlowSection stages={stages} />
+				<ApprovalFlowSection
+					stages={stages}
+					deviationPreviewStages={deviationPreviewStages}
+				/>
 			</Section>
 			<Section title="Comment Section">
 				<section className="comments-section mb-2">
