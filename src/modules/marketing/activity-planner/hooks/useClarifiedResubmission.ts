@@ -54,12 +54,13 @@ export const useClarifiedResubmission = ({
 	// console.log("hasUnresolvedClarification", hasUnresolvedClarification);
 	// console.log("hasSubmittedClarifiedUpdate", hasSubmittedClarifiedUpdate);
 
-	const isClarifiedPending =
-		isProposer &&
-		epcStatus &&
-		!hasSubmittedClarifiedUpdate &&
-		hasUnresolvedClarification;
-
+	// const isClarifiedPending =
+	// 	isProposer &&
+	// 	epcStatus &&
+	// 	!hasSubmittedClarifiedUpdate &&
+	// 	hasUnresolvedClarification;
+	//from activity log clarified resubmit status should be provided, then status can be compared. and Once in epc clearifed submit shows button can be disabled.
+	const isClarifiedPending = isProposer && epcStatus;
 	// console.log("isClarifiedPending", isClarifiedPending);
 
 	const submitClarifiedUpdate = async () => {

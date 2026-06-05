@@ -177,18 +177,20 @@ const EventReportTemplate = ({
 			)}
 
 			<div className="mb-4 flex items-center justify-end gap-3 border-t border-gray-200 bg-white px-1 pt-4">
-				<Button status="outline" onClick={onBack} disabled={isSubmitting}>
+				<Button
+					status="outline"
+					onClick={onBack}
+					disabled={isSubmitting}
+					size="sm"
+				>
 					<X className="h-4 w-4" />
 					Cancel
 				</Button>
 
-				<Button status="outline" onClick={onPreview} disabled={isSubmitting}>
-					<Eye className="h-4 w-4" />
-					Preview
-				</Button>
-
 				<Button
 					onClick={handleSubmit}
+					status="outline"
+					size="sm"
 					disabled={filledCount === 0 || isSubmitting}
 				>
 					<Send className="h-4 w-4" />

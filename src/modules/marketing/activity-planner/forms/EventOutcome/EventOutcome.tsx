@@ -232,9 +232,7 @@ export const EventOutcome = ({
 
 	return (
 		<Section title="Activity Outcome">
-			<div
-				className={`mt-4 px-4 py-2 ${isDeviationRequired ? "text-right" : "text-left"}`}
-			>
+			<div className="mt-4 px-4 py-2">
 				<div
 					className={`grid grid-cols-2 gap-2  ${isDeviationRequired && "mb-4"}  text-left`}
 				>
@@ -279,16 +277,29 @@ export const EventOutcome = ({
 						</>
 					)}
 				</div>
-
-				<Button
-					type="button"
-					onClick={handleSubmit}
-					status="brand"
-					size="sm"
-					disabled={!selectedOption?.value || isSubmitting}
+				<div
+					className={`flex flex-row gap-2 ${isDeviationRequired ? "justify-end" : "justify-start"}`}
 				>
-					{isSubmitting ? "Saving..." : "Save"}
-				</Button>
+					<Button
+						type="button"
+						status="brand"
+						size="sm"
+						text={"Reset"}
+						onClick={() => {
+							setDeviationInfo(initialDeviationInfo);
+							setSelectedOption(null);
+						}}
+					/>
+					<Button
+						type="button"
+						onClick={handleSubmit}
+						status="brand"
+						size="sm"
+						disabled={!selectedOption?.value || isSubmitting}
+					>
+						{isSubmitting ? "Saving..." : "Save"}
+					</Button>
+				</div>
 			</div>
 		</Section>
 	);

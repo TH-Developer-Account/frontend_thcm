@@ -51,12 +51,8 @@ export const getAuditMessage = (comment: AuditComment) => {
 		case "COMPLETED":
 			return `${actorName} completed this${reasonText} ${timeStamp}`;
 
-		case "REPORT_SUBMITTED":
-			return `${actorName} submitted the report${reasonText} ${timeStamp}`;
-
 		case "EPC_CREATED":
 			return `${actorName} created this EPC${reasonText} ${timeStamp}`;
-
 		case "EPC_UPDATED":
 			return `${actorName} updated this EPC${reasonText} ${timeStamp}`;
 
@@ -77,6 +73,12 @@ export const getAuditMessage = (comment: AuditComment) => {
 
 		case "EPC_CANCELLED":
 			return `Event was cancelled ${timeStamp}`;
+
+		case "REPORT_SUBMITTED":
+			return `${actorName} submitted the report${reasonText} ${timeStamp}`;
+
+		case "REPORT_VALIDATED":
+			return `${actorName} validated the report ${timeStamp}`;
 
 		default:
 			return reason

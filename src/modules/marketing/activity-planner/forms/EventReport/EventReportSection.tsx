@@ -21,23 +21,33 @@ export const EventReportSection = ({
 	const isSubmitted = reportStatus === "SUBMITTED";
 	const isValidated = reportStatus === "VALIDATED";
 
-	const canProposerCreate = isProposer && !isReportCreated;
+	/**
+	 * Important:
+	 * - Only proposer can see the create tile before report exists.
+	 * - Validator / approver / other users should not see this section until report exists.
+	 */
+	const canShowSection = Boolean(isProposer) || isReportCreated;
+
+	if (!canShowSection) return null;
+
+	const canProposerCreate = Boolean(isProposer) && !isReportCreated;
 
 	const canProposerEdit =
-		isProposer && isReportCreated && !isSubmitted && !isValidated;
+		Boolean(isProposer) && isReportCreated && !isSubmitted && !isValidated;
 
 	const canPreview = isReportCreated;
 
 	const canValidatorValidate =
-		isValidator && isSubmitted && hasValidatorPreviewed && Boolean(report?.id);
+		Boolean(isValidator) &&
+		isSubmitted &&
+		hasValidatorPreviewed &&
+		Boolean(report?.id);
 
 	const title = !isReportCreated
 		? "Create Report"
-		: isValidator
-			? "Preview Report"
-			: canProposerEdit
-				? "Edit Report"
-				: "Preview Report";
+		: canProposerEdit
+			? "Edit Report"
+			: "Preview Report";
 
 	const description = !isReportCreated
 		? "Create activity report after event is conducted"

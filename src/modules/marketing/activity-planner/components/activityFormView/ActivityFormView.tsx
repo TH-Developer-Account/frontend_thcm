@@ -119,7 +119,16 @@ const ActivityFormView = ({
 		() => getApprovalIdForUser(workflowStages, userId),
 		[workflowStages, userId],
 	);
+	const isReportFlowStatus = [
+		"CONDUCTED",
+		"CLARIFY_REPORT",
+		"REPORT_SUBMITTED",
+	].includes(eventStatus);
 
+	const isReportCreated = Boolean(report?.id);
+
+	const canShowReportSection =
+		isReportFlowStatus && (Boolean(isProposer) || isReportCreated);
 	const mentionableUsers = React.useMemo(
 		() => getMentionableUsersFromStages(workflowStages),
 		[workflowStages],
@@ -286,12 +295,10 @@ const ActivityFormView = ({
 							/>
 						</>
 					)}
-					{eventStatus === "APPROVED" && (
+					{isProposerUser && eventStatus === "APPROVED" && (
 						<EventOutcome eventStatus={eventStatus} epcID={epcData?.id} />
 					)}
-					{["CONDUCTED", "CLARIFY_REPORT", "REPORT_SUBMITTED"].includes(
-						eventStatus,
-					) && (
+					{canShowReportSection && (
 						<EventReportSection
 							report={report ?? null}
 							isProposer={Boolean(isProposer)}
