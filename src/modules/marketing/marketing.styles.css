@@ -78,6 +78,9 @@
 	background: #fffdfb;
 	border-color: #f7e4d7;
 }
+.action-bar {
+	@apply rounded-sm border px-2.5 py-1;
+}
 
 .epf-section-header {
 	@apply flex items-center justify-between gap-2;

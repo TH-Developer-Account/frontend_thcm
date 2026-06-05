@@ -186,8 +186,6 @@ export default function EpcFormFields({
 		} as any);
 	};
 
-	console.log("Selected pincode option:", selectedPincode);
-
 	return (
 		<div className="px-4 py-4 text-left text-xs lg:text-sm">
 			<form>

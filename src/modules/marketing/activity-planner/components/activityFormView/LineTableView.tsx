@@ -254,7 +254,7 @@ const LineTableView = ({
 
 						{/* Grand Total */}
 						{showGrandTotal && (
-							<div className="mt-2 flex justify-end rounded-md border border-slate-300 bg-slate-100 px-3 py-1">
+							<div className="mt-2 flex justify-end border-t border-b border-slate-300 border-dashed  px-4 py-1">
 								<div className="flex items-center gap-3 text-xs">
 									<span className="font-semibold text-slate-600">
 										{grandTotalLabel}

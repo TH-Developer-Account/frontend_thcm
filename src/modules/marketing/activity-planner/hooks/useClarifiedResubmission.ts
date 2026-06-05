@@ -1,12 +1,12 @@
+import React from "react";
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { useAuth } from "../../../../context/Auth/useAuth";
 
 import type { EpcDetailResponse } from "../types/epc.types";
 import {
-	hasClarificationInComments,
-	isPendingStatus,
+	hasUnresolvedClarificationInComments,
 	type WorkflowEntry,
-} from "../utils/activityPlannerStatus.helper";
+} from "../helpers/activityPlannerStatus.helper";
 
 import { useSubmitClarifiedUpdatedFormMutation } from "../queries/useEpcMutation";
 
@@ -39,19 +39,47 @@ export const useClarifiedResubmission = ({
 
 	const submitClarifiedMutation = useSubmitClarifiedUpdatedFormMutation();
 
+	const [hasSubmittedClarifiedUpdate, setHasSubmittedClarifiedUpdate] =
+		React.useState(false);
+
 	const workflowId = epcData?.activeWorkflow?.id ?? null;
 	const currentUserId = getUserId(auth);
 
 	const isProposer =
 		Boolean(currentUserId) && currentUserId === epcData?.created_by_id;
+	const epcStatus = epcData?.status === "CLARIFY";
+	const hasUnresolvedClarification =
+		hasUnresolvedClarificationInComments(workflowEntries);
 
-	const hasClarification = hasClarificationInComments(workflowEntries);
+	// console.log("hasUnresolvedClarification", hasUnresolvedClarification);
+	// console.log("hasSubmittedClarifiedUpdate", hasSubmittedClarifiedUpdate);
 
 	const isClarifiedPending =
-		isProposer && isPendingStatus(epcData?.status) && hasClarification;
+		isProposer &&
+		epcStatus &&
+		!hasSubmittedClarifiedUpdate &&
+		hasUnresolvedClarification;
+
+	// console.log("isClarifiedPending", isClarifiedPending);
 
 	const submitClarifiedUpdate = async () => {
-		if (!workflowId || !isClarifiedPending) return;
+		if (!workflowId) {
+			showToast({
+				type: "error",
+				title: "Cannot submit",
+				description: "No active workflow found.",
+			});
+			return;
+		}
+
+		if (!isClarifiedPending) {
+			showToast({
+				type: "error",
+				title: "Cannot submit",
+				description: "This clarification has already been submitted.",
+			});
+			return;
+		}
 
 		try {
 			await submitClarifiedMutation.mutateAsync(workflowId);
@@ -61,7 +89,7 @@ export const useClarifiedResubmission = ({
 				title: "Submitted",
 				description: "Updated form submitted successfully.",
 			});
-
+			setHasSubmittedClarifiedUpdate(true);
 			await onRefresh();
 		} catch (error: any) {
 			showToast({

@@ -1,13 +1,5 @@
 import React, { type ForwardRefRenderFunction } from "react";
-import {
-	Smile,
-	//   Paperclip,
-	AtSign,
-	Type,
-	Send,
-	ChevronUp,
-	Lock,
-} from "lucide-react";
+import { Smile, Type, Send, ChevronUp } from "lucide-react";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 import { useRichInput } from "../../hooks/useRichInput";
 import { EMOJIS, FORMAT_ACTIONS } from "../../utils/constants";
@@ -45,10 +37,6 @@ const RichTextarea: ForwardRefRenderFunction<
 		onSubmit,
 		menuItems = [],
 		onMenuAction,
-		canApprove,
-		canClarify,
-		onApprove,
-		onClarify,
 	},
 	ref,
 ) => {
@@ -66,7 +54,6 @@ const RichTextarea: ForwardRefRenderFunction<
 		insertAtCursor,
 		insertMention,
 		applyFormat,
-		// handleAttach,
 	} = useRichInput({
 		value,
 		taRef,
@@ -187,31 +174,7 @@ const RichTextarea: ForwardRefRenderFunction<
 								</div>
 							)}
 						</div>
-
-						{/* ATTACH */}
-						{/* <button
-							type="button"
-							title="Attach file"
-							onClick={handleAttach}
-							className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition-colors"
-						>
-							<Paperclip size={15} />
-						</button> */}
-
-						{/* MENTION */}
-						<button
-							type="button"
-							title="Mention someone"
-							onClick={() => {
-								insertAtCursor("@");
-							}}
-							className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition-colors"
-						>
-							<AtSign size={15} />
-						</button>
-
 						<div className="mx-1 h-4 w-px bg-zinc-200" />
-
 						{/* FORMAT */}
 						<div className="relative">
 							<button
@@ -314,50 +277,6 @@ const RichTextarea: ForwardRefRenderFunction<
 												))}
 											</div>
 										)}
-										<div className="py-1">
-											<button
-												type="button"
-												disabled={!canApprove}
-												onClick={() => {
-													onApprove?.();
-													setPopup(null);
-												}}
-												className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${canApprove ? "text-zinc-900 hover:bg-zinc-50" : "cursor-not-allowed text-zinc-300"}`}
-											>
-												Approve
-												{!canApprove && (
-													<Lock size={12} className="text-zinc-300" />
-												)}
-											</button>
-											<button
-												type="button"
-												disabled={!canClarify}
-												onClick={() => {
-													onClarify?.();
-													setPopup(null);
-												}}
-												className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${canClarify ? "text-zinc-900 hover:bg-zinc-50" : "cursor-not-allowed text-zinc-300"}`}
-											>
-												Clarify
-												{!canClarify && (
-													<Lock size={12} className="text-zinc-300" />
-												)}
-											</button>
-											<button
-												type="button"
-												disabled={!canClarify}
-												onClick={() => {
-													onClarify?.();
-													setPopup(null);
-												}}
-												className={`flex w-full items-center justify-between px-3 py-2 text-left text-sm ${canClarify ? "text-zinc-900 hover:bg-zinc-50" : "cursor-not-allowed text-zinc-300"}`}
-											>
-												Reject
-												{!canClarify && (
-													<Lock size={12} className="text-zinc-300" />
-												)}
-											</button>
-										</div>
 									</div>
 								)}
 							</div>

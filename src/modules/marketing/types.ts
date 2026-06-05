@@ -14,6 +14,7 @@ export const ALL_STATUSES = [
 	{ api: "SENT_BACK", label: "Sent Back" },
 	{ api: "APPROVED", label: "Approved" },
 	{ api: "CANCELLED", label: "Cancelled" },
+	{ api: "CLARIFY", label: "Clarified" },
 	{ api: "COMPLETED", label: "Completed" },
 	{ api: "CONDUCTED", label: "Conducted" },
 	{ api: "REPORT_SUBMITTED", label: "Report Submitted" },

@@ -27,6 +27,7 @@ const CrfSection = ({
 }: CrfSectionProps) => {
 	const crf = epcData.crf;
 	const hasLineItems = Boolean(crf?.lineItems?.length);
+
 	if (isEditing) {
 		return (
 			<CrfForm

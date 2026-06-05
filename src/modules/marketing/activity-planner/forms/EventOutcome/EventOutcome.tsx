@@ -16,7 +16,7 @@ import {
 } from "../../queries/useActivityFormQuery";
 import { useToast } from "../../../../../context/Auth/AuthContext";
 import type { Option } from "../../../../../components/FormElements/input.types";
-import { getEventOutcomeMode } from "../../utils/eventOutcome.helper";
+import { getEventOutcomeMode } from "../../helpers/eventOutcome.helper";
 import FormInput from "../../../../../components/FormElements/FormInput";
 import type {
 	DeviationInfo,

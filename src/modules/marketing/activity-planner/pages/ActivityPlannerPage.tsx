@@ -44,8 +44,6 @@ const ActivityPlannerPage = () => {
 		"epc" | "crf" | "epf" | null
 	>(null);
 
-	const createdBy = getEpcCreatedByName(epcData ?? null);
-
 	const reportQuery = useEventReportQuery(
 		id,
 		Boolean(id) &&
@@ -56,12 +54,14 @@ const ActivityPlannerPage = () => {
 				),
 			),
 	);
-
 	const reportData = reportQuery.data ?? epcData?.report ?? null;
-
 	const isProposer = epcData?.created_by_id === user?.id;
+	const createdBy = getEpcCreatedByName(epcData ?? null);
 	const isValidator = reportData?.validatorId === user?.id;
-
+	const ProposeName = isProposer
+		? `${user?.first_name} ${user?.last_name}`
+		: "--";
+	console.log("isProposer", isProposer);
 	const [hasValidatorPreviewed, setHasValidatorPreviewed] =
 		React.useState(false);
 
@@ -109,9 +109,8 @@ const ActivityPlannerPage = () => {
 					<ActivityPlannerHeader
 						epcData={epcData ?? null}
 						loading={isFetching}
-						createdBy={createdBy}
-						isSubmittingClarifiedUpdate={isSubmittingClarifiedUpdate}
-						onSubmitClarifiedUpdate={submitClarifiedUpdate}
+						createdBy={ProposeName}
+						onPreview={() => setIsPreviewOpen(true)}
 					/>
 				}
 			>
@@ -132,7 +131,6 @@ const ActivityPlannerPage = () => {
 					<ActivityFormView
 						epcData={epcData ?? null}
 						loading={isFetching}
-						onPreview={() => setIsPreviewOpen(true)}
 						editingSection={editingSection}
 						setEditingSection={setEditingSection}
 						onRefresh={handleRefresh}
@@ -145,6 +143,9 @@ const ActivityPlannerPage = () => {
 						onOpenReportBuilder={() => setPageView("report-builder")}
 						onOpenReportPreview={handleOpenReportPreview}
 						onValidateReport={handleValidateReport}
+						isClarifiedPending={isClarifiedPending}
+						isSubmittingClarifiedUpdate={isSubmittingClarifiedUpdate}
+						onSubmitClarifiedUpdate={submitClarifiedUpdate}
 					/>
 				)}
 			</PageRowSectionLayout>

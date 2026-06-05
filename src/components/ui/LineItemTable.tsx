@@ -417,7 +417,7 @@ export default function LineItemTable({
 					{/* ── Items list ── */}
 					<div className="mt-2 divide-y divide-slate-200">
 						{items.length === 0 ? (
-							<div className="rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-1.5 text-center text-xs font-medium text-slate-500">
+							<div className="text-center text-xs font-medium text-slate-500">
 								No line items added yet
 							</div>
 						) : (
@@ -535,7 +535,7 @@ export default function LineItemTable({
 
 					{/* ── Grand total ── */}
 					{items.length > 0 && (
-						<div className="mt-2 flex justify-end rounded-md border border-slate-300 bg-slate-100 px-3 py-1.5">
+						<div className="mt-2 flex justify-end border-t border-slate-300 border-dashed  px-4 py-1">
 							<div className="flex items-center gap-3 text-xs">
 								<span className="font-semibold text-slate-600">
 									Grand Total

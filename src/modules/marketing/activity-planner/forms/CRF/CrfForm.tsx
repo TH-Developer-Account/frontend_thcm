@@ -28,50 +28,50 @@ export default function CrfForm(props: CrfFormProps) {
 	}
 
 	return (
-		<Section
-			title="Collateral Requisition Form"
-			action={
-				<div className="flex flex-row items-end gap-4">
-					{onCancel && (
-						<Button
-							type="button"
-							onClick={onCancel}
-							text="Cancel"
-							size="sm"
-							Icon={X}
-							className="text-red-600"
-							iconColor="red"
-						/>
-					)}
-
-					<Button
-						type="button"
-						onClick={handleReset}
-						size="sm"
-						text="Reset"
-						Icon={RefreshCcw}
-						className="text-red-600"
-						iconColor="red"
-					/>
-
-					<Button
-						type="button"
-						onClick={handleSubmit}
-						text={isEditMode ? "Update" : "Save"}
-						className="text-red-600"
-						size="sm"
-						Icon={isEditMode ? Save : LucideSave}
-						iconColor="red"
-					/>
-				</div>
-			}
-		>
+		<Section title="Collateral Requisition Form">
 			<CrfItemsSection
 				items={costItems}
 				onChange={setCostItems}
 				isViewer={false}
 				options={options}
 			/>
+
+			<div className="pt-4 flex flex-row items-center justify-end gap-2 px-4 border-t border-dashed border-zinc-300">
+				{onCancel && (
+					<Button
+						type="button"
+						onClick={onCancel}
+						text="Cancel"
+						size="sm"
+						Icon={X}
+						className="text-red-600"
+						status="brand"
+						iconColor="white"
+					/>
+				)}
+
+				<Button
+					type="button"
+					onClick={handleReset}
+					size="sm"
+					text="Reset"
+					Icon={RefreshCcw}
+					className="text-red-600"
+					status="brand"
+					iconColor="white"
+				/>
+
+				<Button
+					type="button"
+					onClick={handleSubmit}
+					text={isEditMode ? "Update" : "Save"}
+					className="text-red-600"
+					size="sm"
+					Icon={isEditMode ? Save : LucideSave}
+					status="brand"
+					iconColor="white"
+				/>
+			</div>
 		</Section>
 	);
 }

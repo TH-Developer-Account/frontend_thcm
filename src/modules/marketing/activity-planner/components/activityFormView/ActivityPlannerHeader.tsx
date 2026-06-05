@@ -1,4 +1,4 @@
-import { Send } from "lucide-react";
+import { Eye } from "lucide-react";
 import { PageHeader } from "../../../../../components/ui/PageHeader";
 import Button from "../../../../../components/common/Button";
 import { Badge } from "../../../../../components/common/Badge";
@@ -10,22 +10,17 @@ type ActivityPlannerHeaderProps = {
 	epcData?: EpcDetailResponse | null;
 	createdBy?: string;
 	loading?: boolean;
-	isSubmittingClarifiedUpdate?: boolean;
-	onSubmitClarifiedUpdate?: () => void | Promise<void>;
+	onPreview: () => void;
 };
 
 const ActivityPlannerHeader = ({
 	epcData,
-	createdBy,
 	loading,
-	isSubmittingClarifiedUpdate = false,
-	onSubmitClarifiedUpdate,
+	createdBy,
+	onPreview,
 }: ActivityPlannerHeaderProps) => {
 	const title = epcData?.event_name?.title || null;
 	const proposalNo = epcData?.proposal_number || null;
-	const workflowStatus = epcData?.activeWorkflow?.status?.toUpperCase();
-	const epcStatus = epcData?.status?.toUpperCase();
-	const isClarified = workflowStatus === "CLARIFY" || epcStatus === "CLARIFY";
 
 	const badgeStatus = epcData?.status ? statusMap[epcData.status] : undefined;
 
@@ -36,6 +31,12 @@ const ActivityPlannerHeader = ({
 					text: "Back to Listing",
 					direction: "back",
 				}}
+				children={
+					<p className="flex items-center gap-1.5 px-4 text-[12px] leading-4">
+						<span className="uppercase-label-text">Proposer:</span>
+						{createdBy ? ` ${createdBy}` : null}
+					</p>
+				}
 			/>
 
 			<div className="flex justify-between flex-col items-center page-header-section">
@@ -48,33 +49,24 @@ const ActivityPlannerHeader = ({
 
 			<div className="flex justify-between items-center page-header-section text-right">
 				<div className="flex flex-col items-end">
-					<div className="flex gap-2 justify-end">
-						{isClarified && (
-							<Button
-								type="button"
-								text={
-									isSubmittingClarifiedUpdate
-										? "Submitting..."
-										: "Save & Final Submit"
-								}
-								Icon={Send}
-								iconPosition="right"
-								onClick={onSubmitClarifiedUpdate}
-								status="brand"
-								disabled={!epcData || loading || isSubmittingClarifiedUpdate}
-								className="p-1 text-xs cursor-pointer"
-							/>
-						)}
-					</div>
-
 					<p className="flex items-center gap-1.5 mt-1 text-[12px] leading-4">
-						<span className="font-semibold uppercase tracking-[0.06em] text-gray-900">
-							{createdBy ? `Proposer ${createdBy}` : null}
-						</span>
-
 						<span className="uppercase-label-text">Status:</span>
 						<Badge status={badgeStatus} text="Status" />
 					</p>
+
+					<div className="flex flex-row items-end px-2  mt-1">
+						<Button
+							type="button"
+							Icon={Eye}
+							text={"Preview"}
+							size="sm"
+							iconPosition="right"
+							iconColor="orange"
+							onClick={onPreview}
+							className="bg-red-50 border-orange-500 text-orange-500 border px-1 py-0.5 rounded-full"
+							disabled={!epcData || loading}
+						/>
+					</div>
 				</div>
 			</div>
 		</div>

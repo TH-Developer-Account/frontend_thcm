@@ -39,6 +39,7 @@ const EpcForm = ({
 
 	const { data: masters } = useMasterData();
 	const saveStatus = isClarifiedUpdate ? "DRAFT" : "SUBMITTED";
+
 	const {
 		values,
 		errors,
@@ -55,6 +56,7 @@ const EpcForm = ({
 		onSuccess,
 		isClarifiedUpdate,
 	});
+
 	if (loading) {
 		return (
 			<div className="flex h-64 items-center justify-center text-gray-500">
@@ -70,40 +72,6 @@ const EpcForm = ({
 					? "Edit Activity Planner Details"
 					: "Create Activity Planner Details"
 			}
-			action={
-				<div className="flex flex-row items-center justify-end gap-2">
-					{onCancel && (
-						<Button
-							type="button"
-							text="Cancel"
-							onClick={onCancel}
-							size="sm"
-							Icon={X}
-							className="text-red-600"
-							iconColor="red"
-						/>
-					)}
-					<Button
-						type="button"
-						text="Reset"
-						onClick={handleReset}
-						Icon={RefreshCcw}
-						className="text-red-600"
-						size="sm"
-						iconColor="red"
-					/>
-
-					<Button
-						type="button"
-						text={isEditMode ? "Update" : "Create EPC"}
-						onClick={() => handleSave(saveStatus)}
-						size="sm"
-						className="text-red-600"
-						Icon={Save}
-						iconColor="red"
-					/>
-				</div>
-			}
 		>
 			<EpcFormFields
 				values={values}
@@ -111,6 +79,43 @@ const EpcForm = ({
 				masters={masters}
 				onChange={handleChange}
 			/>
+
+			<div className="mt-4 flex flex-row items-center justify-end gap-2">
+				{onCancel && (
+					<Button
+						type="button"
+						text="Cancel"
+						onClick={onCancel}
+						size="sm"
+						Icon={X}
+						status="outline"
+						className="text-red-600"
+						iconColor="red"
+					/>
+				)}
+
+				<Button
+					type="button"
+					text="Reset"
+					onClick={handleReset}
+					Icon={RefreshCcw}
+					className="text-red-600"
+					size="sm"
+					status="outline"
+					iconColor="red"
+				/>
+
+				<Button
+					type="button"
+					text={isEditMode ? "Update" : "Create EPC"}
+					onClick={() => handleSave(saveStatus)}
+					size="sm"
+					className="text-red-600"
+					Icon={Save}
+					status="outline"
+					iconColor="red"
+				/>
+			</div>
 		</Section>
 	);
 };

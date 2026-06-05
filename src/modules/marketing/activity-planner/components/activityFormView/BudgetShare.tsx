@@ -1,6 +1,7 @@
 import React from "react";
 import { formatCurrency } from "../../utils/formatters";
 import type { BudgetItem, ShareInfo } from "../../types/epf.types";
+import { StoreIcon } from "lucide-react";
 
 type BudgetShareProps = {
 	items: BudgetItem[];
@@ -44,10 +45,19 @@ const BudgetShare = ({ items, shareInfo }: BudgetShareProps) => {
 				))}
 			</div>
 
-			<div className="grid grid-cols-2 gap-2 px-1.5 py-1">
-				<BudgetCard label="Dealer Name">{dealerName || "--"}</BudgetCard>
+			<div className="grid grid-cols-[1fr_220px] gap-2 px-1.5 py-1">
+				<BudgetCard label="Dealer Name">
+					<div className="flex items-center gap-2">
+						<div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+							<StoreIcon className="h-3.5 w-3.5 text-blue-500" />
+						</div>
+						{dealerName || "--"}
+					</div>
+				</BudgetCard>
 				<BudgetCard label="Total Event Cost">
-					{formatCurrency(eventBudget) || "--"}
+					<span className="text-orange-600 text-lg font-semibold">
+						{formatCurrency(eventBudget) || "--"}
+					</span>
 				</BudgetCard>
 			</div>
 
