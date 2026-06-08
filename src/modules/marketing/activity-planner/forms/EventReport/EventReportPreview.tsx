@@ -11,9 +11,10 @@ import Button from "../../../../../components/common/Button";
 import { formatDate } from "../../utils/formatters";
 import { mapReportToPreviewImages } from "./eventReport.mapper";
 import type { PreviewProps } from "../../types/event.report.types";
+import html2pdf from "html2pdf.js";
 
 const Skeleton = ({ className = "" }: { className?: string }) => (
-	<div className={`animate-pulse rounded bg-gray-200 ${className}`} />
+	<span className={`animate-pulse rounded bg-gray-200 ${className}`} />
 );
 
 const EventReportPreview = ({
@@ -67,6 +68,43 @@ const EventReportPreview = ({
 			value: report?.outcomeStatus ?? "--",
 		},
 	];
+
+	const handleDownload = async () => {
+		const element = document.getElementById("event-report-pdf-content");
+		if (!element) return;
+
+		const fileName =
+			epcData?.proposal_number || epcData?.event_name?.title || "event-report";
+
+		document.body.classList.add("pdf-export-mode");
+
+		try {
+			await html2pdf()
+				.set({
+					margin: 8,
+					filename: `${fileName}.pdf`,
+					image: { type: "jpeg", quality: 0.98 },
+					html2canvas: {
+						scale: 2,
+						useCORS: true,
+						backgroundColor: "#ffffff",
+					},
+					jsPDF: {
+						unit: "mm",
+						format: "a4",
+						orientation: "portrait",
+					},
+					pagebreak: {
+						mode: ["avoid-all", "css", "legacy"],
+					},
+				})
+				.from(element)
+				.save();
+		} finally {
+			document.body.classList.remove("pdf-export-mode");
+		}
+	};
+
 	return (
 		<Modal
 			open={open}
@@ -80,10 +118,10 @@ const EventReportPreview = ({
 					text="Download PDF"
 					Icon={Download}
 					iconPosition="right"
-					// onClick={handleDownload}
+					onClick={handleDownload}
 					status="brand"
 					size="sm"
-					// disabled={!epcData}
+					disabled={!report || loading}
 				/>
 			}
 		>
@@ -130,19 +168,22 @@ const EventReportPreview = ({
 									)}
 								</h1>
 
-								<p className="mt-4 max-w-3xl text-sm leading-7 text-white/90">
+								<div className="mt-4 max-w-3xl text-sm leading-7 text-white/90">
 									{loading ? (
 										<div className="space-y-2">
-											<Skeleton className="h-4 w-full" />
-											<Skeleton className="h-4 w-11/12" />
-											<Skeleton className="h-4 w-9/12" />
+											<Skeleton className="h-4 w-full bg-white/20" />
+											<Skeleton className="h-4 w-11/12 bg-white/20" />
+											<Skeleton className="h-4 w-9/12 bg-white/20" />
 										</div>
 									) : hasData ? (
-										epcData?.event_description
+										<p>
+											{epcData?.event_description ||
+												"No event description available."}
+										</p>
 									) : (
-										"No event description available."
+										<p>No event description available.</p>
 									)}
-								</p>
+								</div>
 
 								<div className="mt-6 flex flex-wrap gap-3">
 									{loading ? (

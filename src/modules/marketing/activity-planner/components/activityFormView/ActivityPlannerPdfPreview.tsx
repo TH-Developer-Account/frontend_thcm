@@ -21,7 +21,7 @@ const ActivityPlannerPdfPreview = ({
 	const proposalNo = epcData?.proposal_number || "activity-planner";
 
 	const handleDownload = async () => {
-		const element = document.getElementById("pdf-content");
+		const element = document.getElementById("activity-planner-pdf-export");
 		if (!element) return;
 
 		document.body.classList.add("pdf-export-mode");
@@ -29,18 +29,23 @@ const ActivityPlannerPdfPreview = ({
 		try {
 			await html2pdf()
 				.set({
-					margin: 8,
+					margin: [8, 8, 8, 8],
 					filename: `${proposalNo}.pdf`,
 					image: { type: "jpeg", quality: 0.98 },
 					html2canvas: {
 						scale: 2,
 						useCORS: true,
 						backgroundColor: "#ffffff",
+						letterRendering: true,
 					},
 					jsPDF: {
 						unit: "mm",
 						format: "a4",
 						orientation: "portrait",
+					},
+					pagebreak: {
+						mode: ["css", "legacy"],
+						avoid: [".pdf-section-heading", ".pdf-metric-card", "tr"],
 					},
 				})
 				.from(element)
@@ -70,8 +75,11 @@ const ActivityPlannerPdfPreview = ({
 				/>
 			}
 		>
-			<div className="max-h-[90vh] overflow-y-auto scrollbar-sleek">
-				<div id="pdf-content" className="text-[#111827] mx-auto">
+			<div className="max-h-[90vh] overflow-y-auto bg-slate-100 px-4 py-5 scrollbar-sleek">
+				<div
+					id="activity-planner-pdf-export"
+					className="pdf-preview-sheet mx-auto"
+				>
 					<ActivityPlannerPdfTemplate
 						epcData={epcData ?? undefined}
 						createdBy={createdBy}

@@ -331,230 +331,386 @@
 		opacity: 0.6;
 	}
 }
-
 /* =========================
    Activity Planner PDF
-   Official compact document
+   Clean official A4 document
 ========================= */
 
+.pdf-preview-sheet {
+	width: 250mm;
+	min-height: 297mm;
+	background: #ffffff;
+	box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+}
+
 .pdf-document {
-	@apply px-6 py-5;
+	width: 250mm;
 	min-height: 297mm;
 	margin: 0 auto;
+	padding: 12mm;
+	box-sizing: border-box;
 	background: #ffffff;
 	color: #111827;
 	font-family: Arial, Helvetica, sans-serif;
-	font-size: 10.5px;
+	font-size: 10px;
 	line-height: 1.35;
-	box-sizing: border-box;
 }
 
-/* Header */
-.pdf-header {
+.pdf-cover-header {
 	display: flex;
 	align-items: flex-start;
 	justify-content: space-between;
-	gap: 16px;
-	padding-bottom: 8px;
-	margin-bottom: 10px;
-	border-bottom: 1.5px solid #111827;
+	gap: 18px;
+	padding-bottom: 10px;
+	border-bottom: 2px solid #111827;
+}
+
+.pdf-brand-block {
+	min-width: 0;
 }
 
 .pdf-kicker {
-	margin: 0 0 3px;
+	margin: 0 0 4px;
 	font-size: 8px;
-	font-weight: 700;
-	letter-spacing: 0.16em;
+	font-weight: 800;
+	letter-spacing: 0.22em;
 	text-transform: uppercase;
-	color: #374151;
+	color: #f35a00;
 }
 
-.pdf-header h1 {
+.pdf-cover-header h1 {
+	max-width: 138mm;
 	margin: 0;
-	font-size: 18px;
-	line-height: 1.15;
+	font-size: 20px;
+	line-height: 1.12;
 	font-weight: 800;
 	color: #111827;
+	word-break: break-word;
 }
 
 .pdf-subtitle {
-	margin: 3px 0 0;
-	font-size: 9.5px;
-	font-weight: 600;
+	margin: 5px 0 0;
+	font-size: 10px;
+	font-weight: 500;
 	color: #374151;
+}
+
+.pdf-header-meta {
+	flex-shrink: 0;
+	text-align: right;
+}
+
+.pdf-header-meta p {
+	margin: 6px 0 0;
+	font-size: 8px;
+	font-weight: 600;
+	color: #6b7280;
+}
+
+.pdf-status,
+.pdf-status-pill {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid #fed7aa;
+	border-radius: 999px;
+	background: #fff7ed;
+	color: #9a3412;
+	font-size: 8px;
+	font-weight: 800;
+	letter-spacing: 0.1em;
+	line-height: 1;
+	text-transform: uppercase;
 }
 
 .pdf-status {
 	min-width: 82px;
-	text-align: center;
-	border: 1px solid #d1d5db;
-	border-radius: 999px;
-	padding: 4px 10px;
-	font-size: 8px;
-	font-weight: 800;
-	letter-spacing: 0.1em;
-	text-transform: uppercase;
-	color: #111827;
-	background: #ffffff;
+	padding: 6px 10px;
 }
 
-/* Sections - no cards */
+.pdf-status-pill {
+	padding: 4px 7px;
+	letter-spacing: 0.06em;
+}
+
+.pdf-hero-card {
+	display: grid;
+	grid-template-columns: 1.15fr 1.15fr 1fr 1fr;
+	gap: 10px;
+	margin-top: 10px;
+	padding: 10px;
+	border: 1px solid #e5e7eb;
+	border-radius: 10px;
+	background: linear-gradient(180deg, #fffaf7 0%, #ffffff 100%);
+}
+
+.pdf-hero-value {
+	margin: 2px 0 0;
+	font-size: 11px;
+	font-weight: 800;
+	color: #111827;
+	word-break: break-word;
+}
+
+.pdf-money {
+	color: #c2410c;
+}
+
 .pdf-section {
-	margin-top: 0.8rem;
-	padding: 0;
-	border: 0;
-	border-radius: 0;
-	background: transparent;
+	margin-top: 12px;
 	break-inside: avoid;
+	page-break-inside: avoid;
+}
+
+.pdf-keep-together-soft {
+	break-inside: auto;
+	page-break-inside: auto;
+}
+
+.pdf-section-heading {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	margin-bottom: 7px;
+	padding-bottom: 5px;
+	border-bottom: 1px solid #d1d5db;
+}
+
+.pdf-section-marker {
+	width: 4px;
+	height: 14px;
+	border-radius: 999px;
+	background: #f35a00;
 }
 
 .pdf-section-title {
-	margin: 0 0 6px;
-	padding-bottom: 4px;
-	border-bottom: 1px solid #d1d5db;
+	margin: 0;
 	font-size: 9px;
 	font-weight: 800;
-	letter-spacing: 0.12em;
+	letter-spacing: 0.14em;
 	text-transform: uppercase;
 	color: #111827;
 }
 
-/* 4-column details grid */
 .pdf-grid {
 	display: grid;
 	grid-template-columns: repeat(4, minmax(0, 1fr));
-	column-gap: 16px;
-	row-gap: 7px;
+	gap: 8px 12px;
 }
 
 .pdf-field {
 	min-width: 0;
-	padding: 0;
-	border: 0;
-	background: transparent;
+	padding: 7px 8px;
+	border: 1px solid #edf0f3;
+	border-radius: 7px;
+	background: #fcfcfd;
+}
+
+.pdf-field-wide {
+	grid-column: span 2;
+}
+
+.pdf-field-full {
+	grid-column: 1 / -1;
 }
 
 .pdf-label {
-	margin: 0 0 2px;
-	font-size: 7.5px;
+	margin: 0 0 3px;
+	font-size: 7px;
 	font-weight: 800;
-	letter-spacing: 0.1em;
+	letter-spacing: 0.13em;
 	text-transform: uppercase;
-	color: #4b5563;
+	color: #64748b;
 }
 
 .pdf-value {
 	margin: 0;
-	font-size: 10px;
+	font-size: 9.5px;
 	font-weight: 700;
 	color: #111827;
 	word-break: break-word;
 }
 
-/* Description + Objective */
-.pdf-summary-grid {
+.pdf-narrative-grid {
 	display: grid;
 	grid-template-columns: repeat(2, minmax(0, 1fr));
-	column-gap: 18px;
-	margin-top: 8px;
-	padding-top: 7px;
-	border-top: 1px solid #e5e7eb;
+	gap: 10px;
+	margin-top: 9px;
 }
 
-.pdf-summary-field {
+.pdf-narrative-field {
 	min-width: 0;
+	padding: 8px 9px;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	background: #ffffff;
 }
 
 .pdf-long-value {
 	margin: 0;
 	font-size: 9.5px;
 	font-weight: 500;
-	line-height: 1.42;
-	color: #111827;
-	white-space: normal;
+	line-height: 1.45;
+	color: #1f2937;
+	white-space: pre-wrap;
 	word-break: break-word;
 }
 
-/* Tables */
+.pdf-metric-grid {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 8px;
+	margin-bottom: 9px;
+}
+
+.pdf-metric-card {
+	padding: 9px 10px;
+	border: 1px solid #e5e7eb;
+	border-radius: 9px;
+	background: #f8fafc;
+}
+
+.pdf-metric-card-strong {
+	border-color: #fed7aa;
+	background: #fff7ed;
+}
+
+.pdf-metric-value {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 800;
+	color: #111827;
+}
+
+.pdf-metric-card-strong .pdf-metric-value {
+	color: #c2410c;
+}
+
 .pdf-table {
 	width: 100%;
 	border-collapse: collapse;
 	margin-top: 4px;
-	font-size: 9px;
+	font-size: 8.5px;
 	table-layout: fixed;
 }
 
 .pdf-table th {
-	padding: 4px 6px;
-	border-top: 1px solid #111827;
-	border-bottom: 1px solid #111827;
+	padding: 5px 6px;
+	border: 1px solid #d1d5db;
 	text-align: left;
-	font-size: 7.5px;
+	font-size: 7px;
 	font-weight: 800;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
-	color: #111827;
-	background: #ffffff;
+	color: #374151;
+	background: #f3f4f6;
 }
 
 .pdf-table td {
-	padding: 4px 6px;
-	border-bottom: 1px solid #e5e7eb;
+	padding: 5px 6px;
+	border: 1px solid #e5e7eb;
 	vertical-align: top;
 	color: #111827;
-	font-size: 9px;
-	line-height: 1.3;
+	font-size: 8.5px;
+	line-height: 1.35;
+	word-break: break-word;
 }
 
-.pdf-table th:first-child,
-.pdf-table td:first-child {
-	width: 28px;
+.pdf-line-table th:first-child,
+.pdf-line-table td:first-child {
+	width: 24px;
 	text-align: center;
 }
 
-.pdf-table th:nth-last-child(-n + 3),
-.pdf-table td:nth-last-child(-n + 3) {
+.pdf-line-table th:nth-child(2),
+.pdf-line-table td:nth-child(2) {
+	width: 25%;
+}
+
+.pdf-line-table th:nth-child(3),
+.pdf-line-table td:nth-child(3) {
+	width: 34%;
+}
+
+.pdf-line-table th:nth-last-child(-n + 3),
+.pdf-line-table td:nth-last-child(-n + 3) {
 	text-align: right;
 	white-space: nowrap;
 }
 
-.pdf-table th:nth-child(2),
-.pdf-table td:nth-child(2) {
-	width: 24%;
+.pdf-table tfoot td {
+	border-top: 2px solid #111827;
+	background: #fff7ed;
+	font-weight: 800;
 }
 
-.pdf-table th:nth-child(3),
-.pdf-table td:nth-child(3) {
-	width: 34%;
+.pdf-table tfoot td:first-child {
+	text-align: right;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: #374151;
+}
+
+.pdf-approval-table th:first-child,
+.pdf-approval-table td:first-child {
+	width: 30px;
+	text-align: center;
+}
+
+.pdf-approval-table th:nth-child(2),
+.pdf-approval-table td:nth-child(2) {
+	width: 20%;
+}
+
+.pdf-approval-table th:nth-child(3),
+.pdf-approval-table td:nth-child(3) {
+	width: 12%;
+}
+
+.pdf-approval-table th:nth-child(4),
+.pdf-approval-table td:nth-child(4) {
+	width: 22%;
+}
+
+.pdf-approval-table th:nth-child(5),
+.pdf-approval-table td:nth-child(5) {
+	width: 28%;
 }
 
 .pdf-empty {
 	margin: 0;
+	padding: 10px;
+	border: 1px dashed #d1d5db;
+	border-radius: 8px;
+	background: #f9fafb;
 	font-size: 9.5px;
+	font-weight: 600;
 	color: #6b7280;
 }
 
-/* Reduce big page gaps */
-.pdf-section + .pdf-section {
-	margin-top: 12px;
+.pdf-export-mode .pdf-preview-sheet {
+	width: auto;
+	min-height: auto;
+	box-shadow: none;
 }
 
-.pdf-page-break {
-	break-after: page;
+.pdf-export-mode .pdf-document {
+	width: 194mm;
+	min-height: auto;
+	padding: 0;
 }
 
-/* Print */
 @media print {
 	body * {
 		visibility: hidden;
 	}
 
-	#pdf-content,
-	#pdf-content * {
+	#activity-planner-pdf-export,
+	#activity-planner-pdf-export * {
 		visibility: visible;
 	}
 
-	#pdf-content {
+	#activity-planner-pdf-export {
 		position: absolute;
 		left: 0;
 		top: 0;
@@ -564,11 +720,13 @@
 		box-shadow: none;
 	}
 
+	.pdf-preview-sheet,
 	.pdf-document {
 		width: 100%;
 		min-height: auto;
 		margin: 0;
 		padding: 0;
+		box-shadow: none;
 	}
 
 	.modal-overlay,
@@ -584,9 +742,10 @@
 
 	@page {
 		size: A4;
-		margin: 12mm;
+		margin: 8mm;
 	}
 }
+
 /* =========================
    COMPACT DATE RANGE CARD
 ========================= */

@@ -14,7 +14,6 @@ import {
 	useValidateEventReportMutation,
 	useEventReportQuery,
 } from "../queries/useActivityFormQuery";
-import { getEpcCreatedByName } from "../utils/formatters";
 import { useClarifiedResubmission } from "../hooks/useClarifiedResubmission";
 import EventReportTemplate from "../forms/EventReport/EventReportTemplate";
 import EventReportPreview from "../forms/EventReport/EventReportPreview";
@@ -56,7 +55,6 @@ const ActivityPlannerPage = () => {
 	);
 	const reportData = reportQuery.data ?? epcData?.report ?? null;
 	const isProposer = epcData?.created_by_id === user?.id;
-	const createdBy = getEpcCreatedByName(epcData ?? null);
 	const isValidator = reportData?.validatorId === user?.id;
 	const ProposeName = isProposer
 		? `${user?.first_name} ${user?.last_name}`
@@ -115,18 +113,20 @@ const ActivityPlannerPage = () => {
 				}
 			>
 				{pageView === "report-builder" ? (
-					<EventReportTemplate
-						epcId={id!}
-						eventCost={epcData?.epf?.eventBudget || 0}
-						initialReport={reportData}
-						onBack={() => setPageView("form")}
-						onPreview={handleOpenReportPreview}
-						onSuccess={async () => {
-							setPageView("form");
-							await handleRefresh();
-							await reportQuery.refetch();
-						}}
-					/>
+					<div id="event-report-pdf-content" className="bg-white">
+						<EventReportTemplate
+							epcId={id!}
+							eventCost={epcData?.epf?.eventBudget || 0}
+							initialReport={reportData}
+							onBack={() => setPageView("form")}
+							onPreview={handleOpenReportPreview}
+							onSuccess={async () => {
+								setPageView("form");
+								await handleRefresh();
+								await reportQuery.refetch();
+							}}
+						/>
+					</div>
 				) : (
 					<ActivityFormView
 						epcData={epcData ?? null}
@@ -153,7 +153,7 @@ const ActivityPlannerPage = () => {
 			<ActivityPlannerPdfPreview
 				open={isPreviewOpen}
 				epcData={epcData ?? null}
-				createdBy={createdBy}
+				createdBy={ProposeName}
 				onClose={() => setIsPreviewOpen(false)}
 			/>
 			{isReportPreviewOpen && (

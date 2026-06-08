@@ -15,67 +15,137 @@ type Props = {
 	createdBy?: string;
 };
 
+type InfoItem = {
+	label: string;
+	value?: React.ReactNode;
+	span?: "default" | "wide" | "full";
+};
+
+type LineItem = NonNullable<EpcDetailResponse["epf"]>["lineItems"][number];
+
+type ApprovalRow = {
+	stageOrder?: number | string | null;
+	stageName?: string | null;
+	strategy?: string | null;
+	approver: string;
+	email?: string | null;
+	status?: string | null;
+};
+
+const safeValue = (value?: React.ReactNode) => {
+	if (value === null || value === undefined || value === "") return "--";
+	return value;
+};
+
+const toNumber = (value: unknown, fallback = 0) => {
+	const parsed = Number(value);
+	return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const getLineItemRate = (item: any) => {
+	return toNumber(item?.rate ?? item?.amount ?? item?.unitRate ?? 0);
+};
+
+const getLineItemQty = (item: any) => {
+	return toNumber(item?.quantity ?? item?.qty ?? 1, 1);
+};
+
+const getLineItemTotal = (item: any) => {
+	const rate = getLineItemRate(item);
+	const qty = getLineItemQty(item);
+	return toNumber(item?.total ?? item?.totalAmount ?? rate * qty);
+};
+
+const getGrandTotal = (items: LineItem[] = []) => {
+	return items.reduce((sum, item) => sum + getLineItemTotal(item), 0);
+};
+
 const PdfSection = ({
 	title,
 	children,
+	className = "",
 }: {
 	title: string;
 	children: React.ReactNode;
+	className?: string;
 }) => {
 	return (
-		<section className="pdf-section">
-			<h2 className="pdf-section-title">{title}</h2>
+		<section className={`pdf-section ${className}`}>
+			<div className="pdf-section-heading">
+				<span className="pdf-section-marker" />
+				<h2 className="pdf-section-title">{title}</h2>
+			</div>
 			{children}
 		</section>
 	);
 };
 
-const InfoGrid = ({
-	items,
-}: {
-	items: { label: string; value?: React.ReactNode }[];
-}) => {
+const InfoGrid = ({ items }: { items: InfoItem[] }) => {
 	return (
 		<div className="pdf-grid">
 			{items.map((item, index) => (
-				<div className="pdf-field" key={`${item.label}-${index}`}>
+				<div
+					className={`pdf-field ${
+						item.span === "wide"
+							? "pdf-field-wide"
+							: item.span === "full"
+								? "pdf-field-full"
+								: ""
+					}`}
+					key={`${item.label}-${index}`}
+				>
 					<p className="pdf-label">{item.label}</p>
-					<p className="pdf-value">{item.value || "--"}</p>
+					<p className="pdf-value">{safeValue(item.value)}</p>
 				</div>
 			))}
 		</div>
 	);
 };
-const TextSummaryGrid = ({
-	items,
+
+const NarrativeBlock = ({ items }: { items: InfoItem[] }) => {
+	return (
+		<div className="pdf-narrative-grid">
+			{items.map((item, index) => (
+				<div className="pdf-narrative-field" key={`${item.label}-${index}`}>
+					<p className="pdf-label">{item.label}</p>
+					<p className="pdf-long-value">{safeValue(item.value)}</p>
+				</div>
+			))}
+		</div>
+	);
+};
+
+const MetricCard = ({
+	label,
+	value,
+	tone = "default",
 }: {
-	items: { label: string; value?: React.ReactNode }[];
+	label: string;
+	value?: React.ReactNode;
+	tone?: "default" | "strong";
 }) => {
 	return (
-		<div className="pdf-summary-grid">
-			{items.map((item, index) => (
-				<div className="pdf-summary-field" key={`${item.label}-${index}`}>
-					<p className="pdf-label">{item.label}</p>
-					<p className="pdf-long-value">{item.value || "--"}</p>
-				</div>
-			))}
+		<div
+			className={`pdf-metric-card ${tone === "strong" ? "pdf-metric-card-strong" : ""}`}
+		>
+			<p className="pdf-label">{label}</p>
+			<p className="pdf-metric-value">{safeValue(value)}</p>
 		</div>
 	);
 };
+
 const LineItemsTable = ({
 	title,
 	items = [],
 }: {
 	title: string;
-	items?:
-		| EpcDetailResponse["epf"]["lineItems"]
-		| EpcDetailResponse["crf"]["lineItems"];
+	items?: LineItem[];
 }) => {
-	if (!items?.length) return null;
+	if (!items.length) return null;
 
 	return (
-		<PdfSection title={title}>
-			<table className="pdf-table">
+		<PdfSection title={title} className="pdf-keep-together-soft">
+			<table className="pdf-table pdf-line-table">
 				<thead>
 					<tr>
 						<th>#</th>
@@ -88,10 +158,10 @@ const LineItemsTable = ({
 				</thead>
 
 				<tbody>
-					{items.map((item, index) => {
-						const rate = Number(item.rate || item.amount || 0);
-						const quantity = Number(item.quantity || item.qty || 1);
-						const total = Number(item.total || rate * quantity);
+					{items.map((item: any, index) => {
+						const rate = getLineItemRate(item);
+						const quantity = getLineItemQty(item);
+						const total = getLineItemTotal(item);
 
 						return (
 							<tr key={item.id || `${title}-${index}`}>
@@ -110,21 +180,76 @@ const LineItemsTable = ({
 						);
 					})}
 				</tbody>
+
+				<tfoot>
+					<tr>
+						<td colSpan={5}>Grand Total</td>
+						<td>{formatCurrency(getGrandTotal(items))}</td>
+					</tr>
+				</tfoot>
 			</table>
 		</PdfSection>
 	);
 };
 
-const ActivityPlannerPdfTemplate = ({ epcData, createdBy }: Props) => {
-	const epf = epcData?.epf;
-	const crf = epcData?.crf;
-	const activeWorkflow = epcData?.activeWorkflow;
+const ApprovalTable = ({ rows }: { rows: ApprovalRow[] }) => {
+	if (!rows.length) {
+		return <p className="pdf-empty">No approval flow available.</p>;
+	}
 
-	const statusLabel = epcData?.status
+	return (
+		<table className="pdf-table pdf-approval-table">
+			<thead>
+				<tr>
+					<th>Stage</th>
+					<th>Stage Name</th>
+					<th>Flow</th>
+					<th>Approver</th>
+					<th>Email</th>
+					<th>Status</th>
+				</tr>
+			</thead>
+
+			<tbody>
+				{rows.map((row, index) => (
+					<tr key={`${row.stageOrder}-${row.approver}-${index}`}>
+						<td>{safeValue(row.stageOrder)}</td>
+						<td>{safeValue(row.stageName)}</td>
+						<td>{safeValue(row.strategy)}</td>
+						<td>{safeValue(row.approver)}</td>
+						<td>{safeValue(row.email)}</td>
+						<td>
+							<span className="pdf-status-pill">{safeValue(row.status)}</span>
+						</td>
+					</tr>
+				))}
+			</tbody>
+		</table>
+	);
+};
+
+const ActivityPlannerPdfTemplate = ({ epcData, createdBy }: Props) => {
+	if (!epcData) {
+		return (
+			<div className="pdf-document">
+				<p className="pdf-empty">No activity planner data available.</p>
+			</div>
+		);
+	}
+
+	const epf = epcData.epf;
+	const crf = epcData.crf;
+	const activeWorkflow = epcData.activeWorkflow;
+
+	const statusLabel = epcData.status
 		? statusMap[epcData.status] || epcData.status
 		: "--";
 
-	const approvalRows =
+	const internalParticipants = toNumber(epf?.internalParticipants);
+	const externalParticipants = toNumber(epf?.externalParticipants);
+	const totalParticipants = internalParticipants + externalParticipants;
+
+	const approvalRows: ApprovalRow[] =
 		activeWorkflow?.stages?.flatMap((stage) =>
 			(stage.approvals || []).map((approval) => ({
 				stageOrder: stage.stageOrder,
@@ -136,78 +261,98 @@ const ActivityPlannerPdfTemplate = ({ epcData, createdBy }: Props) => {
 					}`.trim() ||
 					approval.approver?.email ||
 					"--",
+				email: approval.approver?.email,
 				status: approval.status || "--",
 			})),
 		) || [];
 
 	return (
-		<div id="pdf-content" className="pdf-document">
-			<header className="pdf-header">
-				<div>
-					<p className="pdf-kicker">Activity Planner Report</p>
-					<h1>{epcData?.event_name?.title || "Activity Planner"}</h1>
+		<div className="pdf-document">
+			<header className="pdf-cover-header">
+				<div className="pdf-brand-block">
+					<p className="pdf-kicker">Activity Planner</p>
+					<h1>{epcData.event_name?.title || "Activity Planner"}</h1>
 					<p className="pdf-subtitle">
-						Proposal No: {epcData?.proposal_number || "--"}
+						Proposal No: <strong>{epcData.proposal_number || "--"}</strong>
 					</p>
 				</div>
 
-				<div className="pdf-status">{statusLabel}</div>
-				{/* <div>Created By : </div> */}
+				<div className="pdf-header-meta">
+					<div className="pdf-status">{statusLabel}</div>
+					<p>Generated: {formatDate(new Date().toISOString())}</p>
+				</div>
 			</header>
 
-			<PdfSection title="Basic Details">
+			<section className="pdf-hero-card">
+				<div>
+					<p className="pdf-label">Proposer</p>
+					<p className="pdf-hero-value">{createdBy || "--"}</p>
+				</div>
+				<div>
+					<p className="pdf-label">Department</p>
+					<p className="pdf-hero-value">{getEpcDepartmentName(epcData)}</p>
+				</div>
+				<div>
+					<p className="pdf-label">Branch</p>
+					<p className="pdf-hero-value">{getEpcBranchName(epcData)}</p>
+				</div>
+				<div>
+					<p className="pdf-label">Event Budget</p>
+					<p className="pdf-hero-value pdf-money">
+						{formatCurrency(epf?.eventBudget)}
+					</p>
+				</div>
+			</section>
+
+			<PdfSection title="Activity Details">
 				<InfoGrid
 					items={[
-						{ label: "Proposer", value: createdBy || "--" },
-						{ label: "Department", value: getEpcDepartmentName(epcData) },
-						{ label: "Region", value: getEpcRegionName(epcData) },
-						{ label: "Branch", value: getEpcBranchName(epcData) },
+						{ label: "Event From", value: formatDate(epcData.event_from_date) },
+						{ label: "Event To", value: formatDate(epcData.event_to_date) },
+						{ label: "Region / Zone", value: getEpcRegionName(epcData) },
 						{ label: "Vertical", value: getEpcVerticalName(epcData) },
-						{ label: "Location", value: epcData?.location || "--" },
 						{
-							label: "Event From",
-							value: formatDate(epcData?.event_from_date),
+							label: "Location",
+							value: epcData.location || "--",
+							span: "wide",
 						},
-						{ label: "Event To", value: formatDate(epcData?.event_to_date) },
+						{ label: "Created Date", value: formatDate(epcData.created_at) },
+						{ label: "Current Status", value: statusLabel },
 					]}
 				/>
 
-				<TextSummaryGrid
+				<NarrativeBlock
 					items={[
 						{
 							label: "Event Description",
-							value: epcData?.event_description || "--",
+							value: epcData.event_description || "--",
 						},
 						{
 							label: "Objective",
-							value: epcData?.event_objective || "--",
+							value: epcData.event_objective || "--",
 						},
 					]}
 				/>
 			</PdfSection>
 
-			<PdfSection title="Participants">
-				<InfoGrid
-					items={[
-						{
-							label: "External Participants",
-							value: epf?.externalParticipants ?? "--",
-						},
-						{
-							label: "Internal Participants",
-							value: epf?.internalParticipants ?? "--",
-						},
-						{
-							label: "Total Participants",
-							value:
-								Number(epf?.externalParticipants || 0) +
-								Number(epf?.internalParticipants || 0),
-						},
-					]}
-				/>
-			</PdfSection>
+			<PdfSection title="Participants & Budget Summary">
+				<div className="pdf-metric-grid">
+					<MetricCard
+						label="Internal Participants"
+						value={internalParticipants}
+					/>
+					<MetricCard
+						label="External Participants"
+						value={externalParticipants}
+					/>
+					<MetricCard label="Total Participants" value={totalParticipants} />
+					<MetricCard
+						label="Total Event Cost"
+						value={formatCurrency(epf?.eventBudget)}
+						tone="strong"
+					/>
+				</div>
 
-			<PdfSection title="Budget Summary">
 				<InfoGrid
 					items={[
 						{
@@ -219,18 +364,13 @@ const ActivityPlannerPdfTemplate = ({ epcData, createdBy }: Props) => {
 							value: formatCurrency(epf?.availableBudget),
 						},
 						{
-							label: "Event Budget",
-							value: formatCurrency(epf?.eventBudget),
-						},
-						{
 							label: "Dealer Name",
 							value: epf?.dealerName || "--",
+							span: "wide",
 						},
 						{
 							label: "Dealer Share",
-							value: `${epf?.dealerPercent || 0}% / ${formatCurrency(
-								epf?.dealerShare,
-							)}`,
+							value: `${epf?.dealerPercent || 0}% / ${formatCurrency(epf?.dealerShare)}`,
 						},
 						{
 							label: "Tata Hitachi Share",
@@ -246,39 +386,11 @@ const ActivityPlannerPdfTemplate = ({ epcData, createdBy }: Props) => {
 				/>
 			</PdfSection>
 
-			<div className="pdf-page-break" />
-
 			<LineItemsTable title="EPF Cost Items" items={epf?.lineItems || []} />
 			<LineItemsTable title="CRF Cost Items" items={crf?.lineItems || []} />
 
 			<PdfSection title="Approval Flow">
-				{approvalRows.length ? (
-					<table className="pdf-table">
-						<thead>
-							<tr>
-								<th>Stage</th>
-								<th>Stage Name</th>
-								<th>Strategy</th>
-								<th>Approver</th>
-								<th>Status</th>
-							</tr>
-						</thead>
-
-						<tbody>
-							{approvalRows.map((row, index) => (
-								<tr key={`${row.stageOrder}-${row.approver}-${index}`}>
-									<td>{row.stageOrder}</td>
-									<td>{row.stageName}</td>
-									<td>{row.strategy}</td>
-									<td>{row.approver}</td>
-									<td>{row.status}</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				) : (
-					<p className="pdf-empty">No approval flow available.</p>
-				)}
+				<ApprovalTable rows={approvalRows} />
 			</PdfSection>
 		</div>
 	);
