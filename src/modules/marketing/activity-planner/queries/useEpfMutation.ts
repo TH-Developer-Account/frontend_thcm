@@ -6,13 +6,13 @@ import type { EpfCreatePayload, EpfUpdatePayload } from "../types/epf.types";
 
 type CreateEpfVariables = {
 	epcId: string;
-	payload: EpfCreatePayload;
+	payload: EpfCreatePayload | FormData;
 };
 
 type UpdateEpfVariables = {
 	epcId: string;
 	epfId: string;
-	payload: EpfUpdatePayload;
+	payload: EpfUpdatePayload | FormData;
 };
 
 export function useCreateEpfMutation() {

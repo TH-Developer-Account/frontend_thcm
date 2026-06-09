@@ -19,6 +19,7 @@ export const ALL_STATUSES = [
 	{ api: "CONDUCTED", label: "Conducted" },
 	{ api: "REPORT_SUBMITTED", label: "Report Submitted" },
 	{ api: "VALIDATED", label: "Validated" },
+	{ api: "DEVIATION", label: "Deviation" },
 ] as const;
 
 export type ApprovalApiStatus = (typeof ALL_STATUSES)[number]["api"];
@@ -39,5 +40,5 @@ export const SUCCESS_STEPS = ALL_STATUSES.filter((s) =>
 );
 
 export const INTERRUPT_STEPS = ALL_STATUSES.filter((s) =>
-	["SENT_BACK", "CANCELLED"].includes(s.api),
+	["SENT_BACK", "CANCELLED", "CLARIFY", "DEVIATION"].includes(s.api),
 );

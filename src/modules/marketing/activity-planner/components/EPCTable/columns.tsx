@@ -11,6 +11,7 @@ import { trimText } from "../../../../../utils/format";
 
 type EpcColumnActions = {
 	onLeadCreate?: (row: EpcListItem) => void;
+	currentUserId?: string;
 };
 
 const getCreatedByName = (row: EpcListItem) => {
@@ -52,9 +53,21 @@ const canCreateLead = (row: EpcListItem) => {
 			hasEventStarted(row.event_from_date))
 	);
 };
+// const canCreateLead = (row: EpcListItem, currentUserId?: string) => {
+// 	const isProposer =
+// 		Boolean(currentUserId) && row.created_by_id === currentUserId;
+
+// 	const isAllowedStatus =
+// 		row.status?.toUpperCase() === "APPROVED" ||
+// 		(row.status?.toUpperCase() === "CONDUCTED" &&
+// 			hasEventStarted(row.event_from_date));
+
+// 	return isProposer && isAllowedStatus;
+// };
 
 export const getEPCColumns = ({
 	onLeadCreate,
+	// currentUserId,
 }: EpcColumnActions): ColumnDef<EpcListItem>[] => [
 	{
 		accessorKey: "proposal_number",
@@ -121,6 +134,7 @@ export const getEPCColumns = ({
 				row={row.original}
 				onLeadCreate={onLeadCreate}
 				canCreateLead={canCreateLead(row.original)}
+				// canCreateLead={canCreateLead(row.original, currentUserId)}
 			/>
 		),
 	},

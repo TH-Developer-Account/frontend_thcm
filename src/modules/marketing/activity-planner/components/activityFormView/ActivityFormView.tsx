@@ -97,7 +97,11 @@ const ActivityFormView = ({
 	}, [onRefresh, refreshComments]);
 
 	const activeWorkflow = epcData?.activeWorkflow ?? null;
-	const workflowStages = activeWorkflow?.stages ?? [];
+
+	const workflowStages = React.useMemo(
+		() => activeWorkflow?.stages ?? [],
+		[activeWorkflow?.stages],
+	);
 	const eventStatus = epcData?.status ?? "unknown";
 
 	const userId = user?.id as string | undefined;
@@ -125,10 +129,9 @@ const ActivityFormView = ({
 		"REPORT_SUBMITTED",
 	].includes(eventStatus);
 
-	const isReportCreated = Boolean(report?.id);
-
 	const canShowReportSection =
-		isReportFlowStatus && (Boolean(isProposer) || isReportCreated);
+		isReportFlowStatus && (Boolean(isProposer) || Boolean(report));
+
 	const mentionableUsers = React.useMemo(
 		() => getMentionableUsersFromStages(workflowStages),
 		[workflowStages],

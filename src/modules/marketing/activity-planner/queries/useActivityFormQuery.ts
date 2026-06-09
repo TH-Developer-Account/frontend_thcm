@@ -43,7 +43,7 @@ export function useEventDeviationMutation() {
 		}: {
 			epcId: string;
 			payload: EventDeviationPayload;
-		}) => eventOutcomeApi.deviation(epcId, payload),
+		}) => workflowApi.deviationStage(epcId, payload),
 	});
 }
 

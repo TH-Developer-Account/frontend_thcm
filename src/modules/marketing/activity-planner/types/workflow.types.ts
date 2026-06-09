@@ -1,8 +1,4 @@
-import type {
-	ApiDateString,
-	EpcWorkflowApproval,
-	EpcWorkflowStage,
-} from "./epc.types";
+import type { EpcWorkflowApproval, EpcWorkflowStage } from "./epc.types";
 import type { CommentUser } from "../components/commentSection/CommentsSection";
 
 export type MenuAction = {
@@ -63,17 +59,21 @@ export type WorkflowStatus = "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 export type WorkflowStrategy = "ALL" | "ANY" | "SOME" | "QUORUM";
 
 export type WorkflowComment = {
-	id: string;
-	message: string;
-	entryType?: string;
-	action?: string;
-	reason?: string;
-	stageName?: string;
-	createdAt: ApiDateString;
-	updatedAt?: ApiDateString;
-	actor: {
-		id: string;
-		first_name: string;
-		last_name: string;
-	};
+	id?: string;
+	entryType?: string | null;
+	action?: string | null;
+	reason?: string | null;
+	message?: string | null;
+	stageName?: string | null;
+	createdAt?: string | null;
+	updatedAt?: string | null;
+	actor?: {
+		id?: string;
+		first_name?: string | null;
+		last_name?: string | null;
+		email?: string | null;
+	} | null;
+	metadata?: {
+		reason?: string | null;
+	} | null;
 };

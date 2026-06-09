@@ -10,9 +10,14 @@ import {
 	getEpcVerticalName,
 } from "../../utils/formatters";
 
+import { formatDateTime } from "../../../../../utils/format";
+import { getAuditMessage } from "../../helpers/activityLogMessage.helper";
+import type { WorkflowComment } from "../../types/workflow.types";
+
 type Props = {
 	epcData?: EpcDetailResponse | null;
 	createdBy?: string;
+	workflowEntries?: WorkflowComment[];
 };
 
 type InfoItem = {
@@ -45,7 +50,21 @@ const toNumber = (value: unknown, fallback = 0) => {
 const getLineItemRate = (item: any) => {
 	return toNumber(item?.rate ?? item?.amount ?? item?.unitRate ?? 0);
 };
+const getActorName = (entry: WorkflowComment) => {
+	const name = `${entry.actor?.first_name ?? ""} ${
+		entry.actor?.last_name ?? ""
+	}`.trim();
 
+	return name || entry.actor?.email || "--";
+};
+
+const sortWorkflowEntries = (entries: WorkflowComment[] = []) => {
+	return [...entries].sort(
+		(a, b) =>
+			new Date(a.createdAt ?? 0).getTime() -
+			new Date(b.createdAt ?? 0).getTime(),
+	);
+};
 const getLineItemQty = (item: any) => {
 	return toNumber(item?.quantity ?? item?.qty ?? 1, 1);
 };
@@ -228,7 +247,63 @@ const ApprovalTable = ({ rows }: { rows: ApprovalRow[] }) => {
 	);
 };
 
-const ActivityPlannerPdfTemplate = ({ epcData, createdBy }: Props) => {
+const PdfCommentsAndAuditTrail = ({
+	entries = [],
+}: {
+	entries?: WorkflowComment[];
+}) => {
+	const sortedEntries = sortWorkflowEntries(entries);
+
+	if (!sortedEntries.length) {
+		return (
+			<p className="pdf-empty">No comments or audit messages available.</p>
+		);
+	}
+
+	return (
+		<div className="pdf-audit-list">
+			{sortedEntries.map((entry, index) => {
+				const isAuditLog = entry.entryType === "ACTIVITY_LOG";
+
+				return (
+					<div
+						key={entry.id || `${entry.entryType}-${entry.createdAt}-${index}`}
+						className="pdf-audit-item"
+					>
+						<div className="pdf-audit-dot" />
+
+						<div className="pdf-audit-content">
+							{isAuditLog ? (
+								<p className="pdf-audit-message">
+									{getAuditMessage(entry as any)}
+								</p>
+							) : (
+								<>
+									<div className="pdf-audit-meta">
+										<strong>{getActorName(entry)}</strong>
+										<span>
+											{entry.createdAt ? formatDateTime(entry.createdAt) : "--"}
+										</span>
+									</div>
+
+									<p className="pdf-comment-message">
+										{entry.message || entry.reason || "--"}
+									</p>
+								</>
+							)}
+						</div>
+					</div>
+				);
+			})}
+		</div>
+	);
+};
+
+const ActivityPlannerPdfTemplate = ({
+	epcData,
+	createdBy,
+	workflowEntries = [],
+}: Props) => {
 	if (!epcData) {
 		return (
 			<div className="pdf-document">
@@ -391,6 +466,10 @@ const ActivityPlannerPdfTemplate = ({ epcData, createdBy }: Props) => {
 
 			<PdfSection title="Approval Flow">
 				<ApprovalTable rows={approvalRows} />
+			</PdfSection>
+
+			<PdfSection title="Comments & Audit Trail">
+				<PdfCommentsAndAuditTrail entries={workflowEntries} />
 			</PdfSection>
 		</div>
 	);

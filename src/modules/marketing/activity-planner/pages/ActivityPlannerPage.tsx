@@ -18,6 +18,7 @@ import { useClarifiedResubmission } from "../hooks/useClarifiedResubmission";
 import EventReportTemplate from "../forms/EventReport/EventReportTemplate";
 import EventReportPreview from "../forms/EventReport/EventReportPreview";
 import { useAuth } from "../../../../context/Auth/useAuth";
+import type { EventReportDetail } from "../types/event.report.types";
 
 type PageView = "form" | "report-builder" | "report-view";
 
@@ -32,10 +33,8 @@ const ActivityPlannerPage = () => {
 		refetch,
 	} = useEpcDetailQuery(id);
 
-	const { data: workflowEntries = [] } = useActivityCommentsQuery(
-		epcData?.id ?? null,
-	);
-
+	const { data: workflowEntries = [], refetch: refetchWorkflowEntries } =
+		useActivityCommentsQuery(epcData?.id ?? null);
 	const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
 	const [isReportPreviewOpen, setReportIsPreviewOpen] = React.useState(false);
 	const [pageView, setPageView] = React.useState<PageView>("form");
@@ -53,13 +52,32 @@ const ActivityPlannerPage = () => {
 				),
 			),
 	);
-	const reportData = reportQuery.data ?? epcData?.report ?? null;
+
+	const normalizeReportForView = (
+		report: EventReportDetail | any | null | undefined,
+	): EventReportDetail | null => {
+		if (!report) return null;
+
+		return {
+			...report,
+			images:
+				report.images?.map((image: any) => ({
+					...image,
+					url: image.url ?? image.fileUrl ?? "",
+				})) ?? [],
+		} as EventReportDetail;
+	};
+	const reportData = React.useMemo(
+		() => normalizeReportForView(reportQuery.data ?? epcData?.report ?? null),
+		[reportQuery.data, epcData?.report],
+	);
+
 	const isProposer = epcData?.created_by_id === user?.id;
 	const isValidator = reportData?.validatorId === user?.id;
 	const ProposeName = isProposer
 		? `${user?.first_name} ${user?.last_name}`
 		: "--";
-	console.log("isProposer", isProposer);
+	// const isDeviationPending = epcData?.status === "DEVIATION";
 	const [hasValidatorPreviewed, setHasValidatorPreviewed] =
 		React.useState(false);
 
@@ -67,8 +85,8 @@ const ActivityPlannerPage = () => {
 
 	const handleRefresh = async () => {
 		await refetch();
+		await refetchWorkflowEntries();
 	};
-
 	const handleOpenReportPreview = () => {
 		setReportIsPreviewOpen(true);
 
@@ -146,6 +164,9 @@ const ActivityPlannerPage = () => {
 						isClarifiedPending={isClarifiedPending}
 						isSubmittingClarifiedUpdate={isSubmittingClarifiedUpdate}
 						onSubmitClarifiedUpdate={submitClarifiedUpdate}
+						// later:
+						// isSubmittingDeviationUpdate={isSubmittingDeviationUpdate}
+						// onSubmitDeviationUpdate={submitDeviationUpdate}
 					/>
 				)}
 			</PageRowSectionLayout>
@@ -154,6 +175,7 @@ const ActivityPlannerPage = () => {
 				open={isPreviewOpen}
 				epcData={epcData ?? null}
 				createdBy={ProposeName}
+				workflowEntries={workflowEntries}
 				onClose={() => setIsPreviewOpen(false)}
 			/>
 			{isReportPreviewOpen && (

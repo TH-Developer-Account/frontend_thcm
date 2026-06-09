@@ -745,6 +745,58 @@
 		margin: 8mm;
 	}
 }
+.pdf-audit-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	position: relative;
+}
+
+.pdf-audit-item {
+	display: grid;
+	grid-template-columns: 14px 1fr;
+	gap: 8px;
+	break-inside: avoid;
+	page-break-inside: avoid;
+}
+
+.pdf-audit-dot {
+	width: 8px;
+	height: 8px;
+	margin-top: 6px;
+	border-radius: 999px;
+	background: #64748b;
+}
+
+.pdf-audit-content {
+	border: 1px solid #e2e8f0;
+	background: #f8fafc;
+	border-radius: 8px;
+	padding: 8px 10px;
+}
+
+.pdf-audit-meta {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	font-size: 10px;
+	color: #475569;
+	margin-bottom: 4px;
+}
+
+.pdf-audit-meta strong {
+	color: #0f172a;
+	font-weight: 700;
+}
+
+.pdf-audit-message,
+.pdf-comment-message {
+	font-size: 10.5px;
+	line-height: 1.5;
+	color: #1e293b;
+	margin: 0;
+	white-space: pre-wrap;
+}
 
 /* =========================
    COMPACT DATE RANGE CARD
