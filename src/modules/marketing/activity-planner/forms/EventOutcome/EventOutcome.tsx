@@ -58,7 +58,7 @@ export const EventOutcome = ({
 	const mode = getEventOutcomeMode(eventStatus);
 
 	const isOutcomeMode = mode === "OUTCOME";
-	const isDeviationMode = mode === "DEVIATION";
+	const isDeviationMode = mode === "DEVIATION_IN_PROGRESS";
 	const isDeviationRequired =
 		isDeviationMode && selectedOption?.value === "REQUIRED";
 

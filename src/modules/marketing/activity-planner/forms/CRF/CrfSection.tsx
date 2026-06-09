@@ -14,7 +14,6 @@ type CrfSectionProps = {
 	onEdit: () => void;
 	onCancel: () => void;
 	onSuccess: () => Promise<void>;
-	isClarifiedUpdate?: boolean;
 };
 
 const CrfSection = ({
@@ -23,7 +22,6 @@ const CrfSection = ({
 	onEdit,
 	onCancel,
 	onSuccess,
-	isClarifiedUpdate,
 }: CrfSectionProps) => {
 	const crf = epcData.crf;
 	const hasLineItems = Boolean(crf?.lineItems?.length);
@@ -37,7 +35,6 @@ const CrfSection = ({
 				initialData={crf}
 				onCancel={onCancel}
 				onSuccess={onSuccess}
-				isClarifiedUpdate={isClarifiedUpdate}
 			/>
 		);
 	}

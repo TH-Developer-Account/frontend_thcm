@@ -36,7 +36,6 @@ export type CrfFormProps = {
 	initialOptions?: GroupedOption[];
 	onSuccess?: (data?: any) => void | Promise<void>;
 	onCancel?: () => void;
-	isClarifiedUpdate?: boolean;
 };
 
 type UseCrfFormResult = {

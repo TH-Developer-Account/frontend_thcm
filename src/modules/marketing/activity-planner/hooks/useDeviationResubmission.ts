@@ -4,9 +4,10 @@ import { useAuth } from "../../../../context/Auth/useAuth";
 import type { EpcDetailResponse } from "../types/epc.types";
 import {
 	hasUnresolvedDeviationInComments,
-	isDeviationStatus,
+	isStatus,
 	getUserId,
 	type WorkflowEntry,
+	hasFormUpdateAfterIssue,
 } from "../helpers/activityPlannerStatus.helper";
 import { useSubmitDeviatedUpdatedFormMutation } from "../queries/useEventOutcomeMutation";
 import {
@@ -18,15 +19,18 @@ type UseDeviationResubmissionArgs = {
 	epcData?: EpcDetailResponse | null;
 	workflowEntries?: WorkflowEntry[];
 	onRefresh: () => Promise<unknown>;
+	appId?: string | null;
 };
 
 export const useDeviationResubmission = ({
 	epcData,
 	workflowEntries = [],
 	onRefresh,
+	appId,
 }: UseDeviationResubmissionArgs) => {
 	const { showToast } = useToast();
 	const auth = useAuth();
+	const { workspaceId } = useAuth();
 	const currentUserId = getUserId(auth);
 
 	const submitDeviationMutation = useSubmitDeviatedUpdatedFormMutation();
@@ -36,13 +40,15 @@ export const useDeviationResubmission = ({
 
 	const workflowId = epcData?.activeWorkflow?.id ?? null;
 
-	const hasUnresolvedDeviationClarification =
+	const hasUnresolvedDeviation =
 		hasUnresolvedDeviationInComments(workflowEntries);
-
 	const isDeviationPending =
 		isProposer &&
-		isDeviationStatus(epcData?.status) &&
-		hasUnresolvedDeviationClarification;
+		isStatus(epcData?.status, "DEVIATION_IN_PROGRESS") &&
+		hasUnresolvedDeviation;
+	const hasFormUpdate = hasFormUpdateAfterIssue(workflowEntries, "DEVIATION");
+
+	const canSubmitDeviationUpdate = isDeviationPending && hasFormUpdate;
 
 	const submitDeviationUpdate = async () => {
 		if (!workflowId) {
@@ -54,9 +60,20 @@ export const useDeviationResubmission = ({
 			showApiErrorToast(showToast, "No pending deviation clarification found.");
 			return;
 		}
-
+		if (!canSubmitDeviationUpdate) {
+			showApiErrorToast(showToast, "Please update the form before submitting.");
+			return;
+		}
 		try {
-			await submitDeviationMutation.mutateAsync(workflowId);
+			const payload = {
+				workflowId,
+				eventProposalId: epcData?.id,
+				workspaceId: workspaceId ?? undefined,
+				appId: appId ?? undefined,
+				newBudget: epcData?.epf?.eventBudget,
+			};
+
+			await submitDeviationMutation.mutateAsync(payload);
 			showSuccessToast(
 				showToast,
 				"Updated deviation form submitted successfully.",
@@ -74,5 +91,6 @@ export const useDeviationResubmission = ({
 		submitDeviationUpdate,
 		isDeviationPending,
 		isSubmittingDeviationUpdate: submitDeviationMutation.isPending,
+		canSubmitDeviationUpdate,
 	};
 };

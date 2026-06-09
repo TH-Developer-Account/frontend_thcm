@@ -6,6 +6,7 @@ import type { EpcDetailResponse } from "../types/epc.types";
 import {
 	getUserId,
 	hasUnresolvedClarificationInComments,
+	hasFormUpdateAfterIssue,
 	type WorkflowEntry,
 } from "../helpers/activityPlannerStatus.helper";
 
@@ -39,21 +40,17 @@ export const useClarifiedResubmission = ({
 
 	const isProposer =
 		Boolean(currentUserId) && currentUserId === epcData?.created_by_id;
-	const epcStatus = epcData?.status === "CLARIFY";
-	const hasUnresolvedDeviation =
+	const hasUnresolvedClarification =
 		hasUnresolvedClarificationInComments(workflowEntries);
 
-	// console.log("hasUnresolvedClarification", hasUnresolvedClarification);
-	// console.log("hasSubmittedClarifiedUpdate", hasSubmittedClarifiedUpdate);
+	const isClarifiedPending =
+		isProposer && !hasSubmittedClarifiedUpdate && hasUnresolvedClarification;
 
-	// const isClarifiedPending =
-	// 	isProposer &&
-	// 	epcStatus &&
-	// 	!hasSubmittedClarifiedUpdate &&
-	// 	hasUnresolvedClarification;
-	//from activity log clarified resubmit status should be provided, then status can be compared. and Once in epc clearifed submit shows button can be disabled.
-	const isClarifiedPending = isProposer && epcStatus;
-	// console.log("isClarifiedPending", isClarifiedPending);
+	const hasFormUpdate = hasFormUpdateAfterIssue(
+		workflowEntries,
+		"CLARIFICATION",
+	);
+	const canSubmitClarifiedUpdate = isClarifiedPending && hasFormUpdate;
 
 	const submitClarifiedUpdate = async () => {
 		if (!workflowId) {
@@ -61,11 +58,8 @@ export const useClarifiedResubmission = ({
 			return;
 		}
 
-		if (!isClarifiedPending) {
-			showApiErrorToast(
-				showToast,
-				"This clarification has already been submitted.",
-			);
+		if (!canSubmitClarifiedUpdate) {
+			showApiErrorToast(showToast, "Please update the form before submitting.");
 			return;
 		}
 
@@ -81,6 +75,7 @@ export const useClarifiedResubmission = ({
 
 	return {
 		isClarifiedPending,
+		canSubmitClarifiedUpdate,
 		isSubmittingClarifiedUpdate: submitClarifiedMutation.isPending,
 		submitClarifiedUpdate,
 	};

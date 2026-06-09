@@ -17,7 +17,6 @@ export type EpcFormProps = {
 	initialData?: EpcDetailResponse | null;
 	onCancel?: () => void;
 	onSuccess?: (data?: any) => Promise<void> | void;
-	isClarifiedUpdate?: boolean;
 };
 
 const EpcForm = ({
@@ -26,7 +25,6 @@ const EpcForm = ({
 	initialData,
 	onSuccess,
 	onCancel,
-	isClarifiedUpdate,
 }: EpcFormProps) => {
 	const epcInfo = React.useMemo(() => getStoredEpcInfo(), []);
 
@@ -38,7 +36,7 @@ const EpcForm = ({
 			: propEpcId || storedEpcId || undefined;
 
 	const { data: masters } = useMasterData();
-	const saveStatus = isClarifiedUpdate ? "DRAFT" : "SUBMITTED";
+	const saveStatus = "SUBMITTED";
 
 	const {
 		values,
@@ -54,7 +52,6 @@ const EpcForm = ({
 		initialData,
 		masters,
 		onSuccess,
-		isClarifiedUpdate,
 	});
 
 	if (loading) {

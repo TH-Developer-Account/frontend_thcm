@@ -16,7 +16,6 @@ type EpfSectionProps = {
 	onEdit: () => void;
 	onCancel: () => void;
 	onSuccess: () => Promise<void>;
-	isClarifiedUpdate?: boolean;
 };
 
 const EpfSection = ({
@@ -25,7 +24,6 @@ const EpfSection = ({
 	onEdit,
 	onCancel,
 	onSuccess,
-	isClarifiedUpdate,
 }: EpfSectionProps) => {
 	const epf = epcData.epf;
 	const crf = epcData.crf;
@@ -41,7 +39,6 @@ const EpfSection = ({
 				crfData={crf}
 				onCancel={onCancel}
 				onSuccess={onSuccess}
-				isClarifiedUpdate={isClarifiedUpdate}
 			/>
 		);
 	}

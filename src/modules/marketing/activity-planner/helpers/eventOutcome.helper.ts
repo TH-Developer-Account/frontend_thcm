@@ -1,4 +1,4 @@
-export type EventOutcomeMode = "OUTCOME" | "DEVIATION";
+export type EventOutcomeMode = "OUTCOME" | "DEVIATION_IN_PROGRESS";
 
 export function getEventOutcomeMode(
 	eventStatus?: string | null,
@@ -6,7 +6,7 @@ export function getEventOutcomeMode(
 	if (eventStatus === "APPROVED") return "OUTCOME";
 
 	if (eventStatus === "RECOMMENDED" || eventStatus === "VALIDATED") {
-		return "DEVIATION";
+		return "DEVIATION_IN_PROGRESS";
 	}
 
 	return null;

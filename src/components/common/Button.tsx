@@ -2,6 +2,7 @@ import React from "react";
 import { resolveStatusStyle, resolveVariantStyle } from "../styles.constant";
 import type { ButtonProps } from "./common.types";
 import { useNavigate } from "react-router-dom";
+import HelperTooltip from "./HelperTooltip";
 
 const Button: React.FC<ButtonProps> = ({
 	text,
@@ -57,7 +58,7 @@ const Button: React.FC<ButtonProps> = ({
 
 	return (
 		<div
-			className={`${fullWidth ? "w-full" : "w-auto"} relative inline-flex group`}
+			className={`${fullWidth ? "w-full" : "w-auto"} relative inline-flex items-center group shrink-0`}
 		>
 			<button
 				type={type}
@@ -85,7 +86,11 @@ const Button: React.FC<ButtonProps> = ({
 				{children ?? null}
 			</button>
 
-			{isTooltip ? <div className="btn-tooltip">{isTooltip}</div> : null}
+			{isTooltip ? (
+				<span className="btn-tooltip" role="tooltip">
+					{isTooltip}
+				</span>
+			) : null}
 		</div>
 	);
 };

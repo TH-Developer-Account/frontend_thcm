@@ -20,7 +20,6 @@ type ActivityDetailsSectionProps = {
 	onEdit: () => void;
 	onCancel: () => void;
 	onSuccess: () => Promise<void>;
-	isClarifiedUpdate?: boolean;
 };
 
 const ActivityDetailsSection = ({
@@ -29,7 +28,6 @@ const ActivityDetailsSection = ({
 	onEdit,
 	onCancel,
 	onSuccess,
-	isClarifiedUpdate,
 }: ActivityDetailsSectionProps) => {
 	const [showFullDescription, setShowFullDescription] = useState(false);
 	const [showFullObjective, setShowFullObjective] = useState(false);
@@ -48,7 +46,6 @@ const ActivityDetailsSection = ({
 				initialData={epcData}
 				onCancel={onCancel}
 				onSuccess={onSuccess}
-				isClarifiedUpdate={isClarifiedUpdate}
 			/>
 		);
 	}

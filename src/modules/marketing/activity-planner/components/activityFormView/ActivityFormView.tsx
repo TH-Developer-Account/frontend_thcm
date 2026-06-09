@@ -1,6 +1,5 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Send } from "lucide-react";
 import EpcForm from "../../forms/EPC/EpcForm";
 import ActivityDetailsSection from "../activityFormView/ActivityDetailsSection";
 import CrfSection from "../../forms/CRF/CrfSection";
@@ -27,6 +26,8 @@ import {
 	getCurrentApprovalStage,
 	getIsUserInCurrentStage,
 } from "../../helpers/approvalWorkflow.helpers";
+import { isReportFlowStatus } from "../../helpers/activityPlannerStatus.helper";
+import ResubmitFooterAction from "./ResubmitFooterAction";
 
 type EditingSection = "epc" | "crf" | "epf" | null;
 
@@ -42,12 +43,18 @@ type ActivityFormViewProps = {
 	editingSection: EditingSection;
 	setEditingSection: React.Dispatch<React.SetStateAction<EditingSection>>;
 	onRefresh: () => Promise<void>;
-	isClarifiedUpdate?: boolean;
 	onOpenReportBuilder: () => void;
 	loading?: boolean;
+	// clarification
 	isClarifiedPending?: boolean;
 	isSubmittingClarifiedUpdate?: boolean;
+	canSubmitClarifiedUpdate?: boolean;
 	onSubmitClarifiedUpdate?: () => void | Promise<void>;
+	// deviation
+	isDeviationPending?: boolean;
+	isSubmittingDeviationUpdate?: boolean;
+	canSubmitDeviationUpdate?: boolean;
+	onSubmitDeviationUpdate?: () => void | Promise<void>;
 };
 
 const ActivityFormView = ({
@@ -55,7 +62,6 @@ const ActivityFormView = ({
 	editingSection,
 	setEditingSection,
 	onRefresh,
-	loading,
 	isProposer,
 	isValidator,
 	hasValidatorPreviewed,
@@ -64,10 +70,14 @@ const ActivityFormView = ({
 	onOpenReportPreview,
 	onValidateReport,
 	report,
-	isClarifiedUpdate = false,
 	isClarifiedPending = false,
 	isSubmittingClarifiedUpdate = false,
+	canSubmitClarifiedUpdate = false,
 	onSubmitClarifiedUpdate,
+	isDeviationPending = false,
+	isSubmittingDeviationUpdate = false,
+	canSubmitDeviationUpdate = false,
+	onSubmitDeviationUpdate,
 }: ActivityFormViewProps) => {
 	const navigate = useNavigate();
 	const { workspaceId, user } = useAuth();
@@ -123,14 +133,9 @@ const ActivityFormView = ({
 		() => getApprovalIdForUser(workflowStages, userId),
 		[workflowStages, userId],
 	);
-	const isReportFlowStatus = [
-		"CONDUCTED",
-		"CLARIFY_REPORT",
-		"REPORT_SUBMITTED",
-	].includes(eventStatus);
 
 	const canShowReportSection =
-		isReportFlowStatus && (Boolean(isProposer) || Boolean(report));
+		isReportFlowStatus(eventStatus) && (Boolean(isProposer) || Boolean(report));
 
 	const mentionableUsers = React.useMemo(
 		() => getMentionableUsersFromStages(workflowStages),
@@ -217,6 +222,7 @@ const ActivityFormView = ({
 		}
 	}, [clarifyReason, currentStage, handleWorkflowUpdate, showToast]);
 
+	console.log({ isDeviationPending, isClarifiedPending });
 	if (!epcData) {
 		return (
 			<div className="px-6 py-4 ">
@@ -246,7 +252,6 @@ const ActivityFormView = ({
 				<div className="form text-left my-3 text-sm">
 					<ActivityDetailsSection
 						epcData={epcData}
-						isClarifiedUpdate={isClarifiedUpdate}
 						isEditing={editingSection === "epc"}
 						onEdit={() => setEditingSection("epc")}
 						onCancel={() => setEditingSection(null)}
@@ -258,7 +263,6 @@ const ActivityFormView = ({
 
 					<CrfSection
 						epcData={epcData}
-						isClarifiedUpdate={isClarifiedUpdate}
 						isEditing={editingSection === "crf"}
 						onEdit={() => setEditingSection("crf")}
 						onCancel={() => setEditingSection(null)}
@@ -270,7 +274,6 @@ const ActivityFormView = ({
 
 					<EpfSection
 						epcData={epcData}
-						isClarifiedUpdate={isClarifiedUpdate}
 						isEditing={editingSection === "epf"}
 						onEdit={() => setEditingSection("epf")}
 						onCancel={() => setEditingSection(null)}
@@ -349,30 +352,23 @@ const ActivityFormView = ({
 			)}
 
 			{isClarifiedPending && (
-				<div className="sticky bottom-0 z-10 flex items-center justify-end gap-3 border-t border-gray-200 bg-white px-4 py-4">
-					<div className="flex gap-2">
-						<Button
-							type="button"
-							text={
-								isSubmittingClarifiedUpdate
-									? "Submitting..."
-									: "Save & Final Submit"
-							}
-							Icon={Send}
-							iconPosition="right"
-							onClick={onSubmitClarifiedUpdate}
-							status="brand"
-							disabled={
-								!epcData ||
-								loading ||
-								isSubmittingClarifiedUpdate ||
-								!onSubmitClarifiedUpdate
-							}
-							size="sm"
-							className="text-xs cursor-pointer"
-						/>
-					</div>
-				</div>
+				<ResubmitFooterAction
+					isPending={isClarifiedPending}
+					isSubmitting={isSubmittingClarifiedUpdate}
+					canSubmit={canSubmitClarifiedUpdate}
+					onSubmit={onSubmitClarifiedUpdate}
+					tooltip="This will submit all clarified changes back to the approval workflow."
+				/>
+			)}
+
+			{isDeviationPending && (
+				<ResubmitFooterAction
+					isPending={isDeviationPending}
+					isSubmitting={isSubmittingDeviationUpdate}
+					canSubmit={canSubmitDeviationUpdate}
+					onSubmit={onSubmitDeviationUpdate}
+					tooltip="This will submit all deviation changes back to the approval workflow."
+				/>
 			)}
 
 			<Modal open={isClarifyModalOpen}>
