@@ -1,8 +1,13 @@
-import { CRF_CATEGORIES } from "../../constant";
+import { Paperclip } from "lucide-react";
+import { CRF_CATEGORIES } from "../../../constant";
 
-import type { ColumnConfig } from "../types/lineItem.types";
+import type { ColumnConfig } from "../../types/lineItem.types";
 
-import { ARTWORK_COLUMNS, DEFAULT_COLUMNS } from "../utils/columnPresets";
+import {
+	ARTWORK_COLUMNS,
+	DEFAULT_COLUMNS,
+	OVERHEAD_COLUMNS,
+} from "../../utils/columnPresets";
 
 export type TableRow = {
 	id?: string;
@@ -28,6 +33,8 @@ export type TableRow = {
 	unit?: string;
 
 	category?: string;
+	quotationUrl?: string | null;
+	quotationFileName?: string | null;
 };
 
 type LineTableViewProps = {
@@ -107,7 +114,11 @@ const LineTableView = ({
 							const categoryTitle = getCategoryTitle(category);
 
 							const columns: ColumnConfig[] =
-								category === "ARTWORK" ? ARTWORK_COLUMNS : DEFAULT_COLUMNS;
+								category === "ARTWORK"
+									? ARTWORK_COLUMNS
+									: category === "EVENT_OVERHEAD"
+										? OVERHEAD_COLUMNS
+										: DEFAULT_COLUMNS;
 
 							return (
 								<div key={category} className="line-view-table">
@@ -240,6 +251,39 @@ const LineTableView = ({
 																		{row.unit ?? "--"}
 																	</div>
 																);
+															case "quotation":
+																return (
+																	<div
+																		key={column.key}
+																		className={`col-span-${column.colSpan} text-center`}
+																	>
+																		{row.quotationUrl ? (
+																			<a
+																				href={row.quotationUrl}
+																				target="_blank"
+																				rel="noreferrer"
+																				className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-slate-50 hover:bg-orange-50"
+																				title={
+																					row.quotationFileName ??
+																					"View quotation"
+																				}
+																			>
+																				<Paperclip className="h-4 w-4 text-orange-700" />
+																			</a>
+																		) : row.quotationFileName ? (
+																			<span
+																				className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-slate-50"
+																				title={row.quotationFileName}
+																			>
+																				<Paperclip className="h-4 w-4 text-slate-500" />
+																			</span>
+																		) : (
+																			<span className="text-xs text-slate-400">
+																				--
+																			</span>
+																		)}
+																	</div>
+																);
 
 															default:
 																return null;
@@ -254,7 +298,7 @@ const LineTableView = ({
 
 						{/* Grand Total */}
 						{showGrandTotal && (
-							<div className="mt-2 flex justify-end rounded-md border border-slate-300 bg-slate-100 px-3 py-1">
+							<div className="mt-2 flex justify-end border-t border-b border-slate-300 border-dashed  px-4 py-1">
 								<div className="flex items-center gap-3 text-xs">
 									<span className="font-semibold text-slate-600">
 										{grandTotalLabel}

@@ -4,7 +4,7 @@ import type {
 	FormState,
 	OutcomeStatus,
 	ReportImage,
-} from "./types";
+} from "../../types/event.report.types";
 
 export function mapReportToImages(
 	report?: EventReportDetail | null,

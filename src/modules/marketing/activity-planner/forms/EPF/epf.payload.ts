@@ -1,7 +1,8 @@
-import type { LineItemOption } from "../../../types";
+import type { LineItemOption } from "../../types/lineItem.types";
 import type {
 	EpfCreatePayload,
 	EpfFormValues,
+	EpfLineItemPayload,
 	EpfStatus,
 	EpfUpdatePayload,
 } from "../../types/epf.types";
@@ -16,18 +17,25 @@ type BuildEpfPayloadArgs = {
 	eventCost: number;
 	costItems: LineItemOption[];
 };
+
 export const buildLineItemPayload = (
 	items: LineItemOption[],
 	extraPayload: Record<string, unknown>,
 ) => {
 	return {
 		...extraPayload,
-		lineItems: items.map((item) => ({
-			productId: item.value, // 👈 map value → productId
-			quantity: item.quantity,
-		})),
+		lineItems: items.map(
+			(item): EpfLineItemPayload => ({
+				productId: item.value,
+				quantity: Number(item.quantity) || 1,
+				description: item.description || undefined,
+				amount: item.rate,
+				category: "EVENT_OVERHEAD",
+			}),
+		),
 	};
 };
+
 export const prepareEpfBasePayload = ({
 	values,
 	status,
@@ -52,18 +60,6 @@ export const prepareEpfBasePayload = ({
 		dealerName: values.dealerName || "",
 		dealerPercent: toNumberOrNull(budgetValues.dealerPercent),
 		dealerShare: toNumberOrNull(budgetValues.dealerShare),
-
-		// Later uncomment if backend accepts these:
-		// crfId: crfId || undefined,
-		// totalParticipants: calculateParticipantsTotal(
-		// 	values.externalParticipants,
-		// 	values.internalParticipants,
-		// ),
-		// crfTotal: toNumberOrNull(values.crfTotal),
-		// allotedBudget: toNumberOrNull(values.allotedBudget),
-		// tataHitachiPercent: toNumberOrNull(budgetValues.tataHitachiPercent),
-		// tataHitachiShare: toNumberOrNull(budgetValues.tataHitachiShare),
-		// tataHitachiPoAmount: toNumberOrNull(budgetValues.tataHitachiPoAmount),
 	};
 };
 
@@ -93,3 +89,40 @@ export const buildEpfUpdatePayload = (
 
 	return updatePayload;
 };
+
+// FUTURE: Uncomment/use this when backend supports multipart quotation upload.
+// Currently EPF backend only accepts JSON, so this function should NOT be used.
+// export const buildEpfFormData = (args: BuildEpfPayloadArgs) => {
+// 	const basePayload = prepareEpfBasePayload(args);
+// 	const formData = new FormData();
+//
+// 	Object.entries(basePayload).forEach(([key, value]) => {
+// 		if (value !== undefined && value !== null) {
+// 			formData.append(key, String(value));
+// 		}
+// 	});
+//
+// 	args.costItems.forEach((item, index) => {
+// 		formData.append(`lineItems[${index}][productId]`, item.value);
+// 		formData.append(
+// 			`lineItems[${index}][quantity]`,
+// 			String(Number(item.quantity) || 1),
+// 		);
+//
+// 		if (item.description) {
+// 			formData.append(`lineItems[${index}][description]`, item.description);
+// 		}
+//
+// 		if (item.rate !== undefined) {
+// 			formData.append(`lineItems[${index}][amount]`, String(item.rate));
+// 		}
+//
+// 		formData.append(`lineItems[${index}][category]`, "EVENT_OVERHEAD");
+//
+// 		if (item.quotationFile) {
+// 			formData.append(`lineItems[${index}][quotation]`, item.quotationFile);
+// 		}
+// 	});
+//
+// 	return formData;
+// };

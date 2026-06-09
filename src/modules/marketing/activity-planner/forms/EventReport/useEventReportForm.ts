@@ -1,20 +1,17 @@
 import React from "react";
 import { useToast } from "../../../../../context/Auth/AuthContext";
 import { MAX_IMAGES, validateImageFile } from "./constant";
-import type { EventReportDetail, FormState, ReportImage } from "./types";
+import type {
+	UseEventReportFormProps,
+	FormState,
+	ReportImage,
+} from "../../types/event.report.types";
 import {
 	buildEventReportFormData,
 	mapReportToForm,
 	mapReportToImages,
 } from "./eventReport.mapper";
 import { useSubmitEventReportMutation } from "../../queries/useActivityFormQuery";
-
-type UseEventReportFormProps = {
-	epcId: string;
-	eventCost?: string | number;
-	initialReport?: EventReportDetail | null;
-	onSuccess?: () => void | Promise<void>;
-};
 
 export function useEventReportForm({
 	epcId,

@@ -1,4 +1,4 @@
-import { formatDate } from "../utils/formatters";
+import { formatDate } from "../../utils/formatters";
 
 type DateRangeProps = {
 	fromDate?: string | null;

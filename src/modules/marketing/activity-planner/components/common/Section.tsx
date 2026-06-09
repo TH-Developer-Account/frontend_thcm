@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import type { ReactNode } from "react";
 import { ChevronDown } from "lucide-react";
-import Button from "../../../../components/common/Button";
+import Button from "../../../../../components/common/Button";
 
 type SectionProps = {
 	title: string;

@@ -5,7 +5,7 @@ import { SearchInput } from "../../../../../components/FormElements/SearchInput"
 import { Can } from "../../../../../context/permissionHelpers";
 import Button from "../../../../../components/common/Button";
 import ThreeWayToggle from "../../../../../components/common/ThreeWayToggle";
-import { EpcFilterDropdown } from "../EPCFilterDropdown";
+import { EpcFilterDropdown } from "./EpcFilterDropdown";
 import {
 	epcListFilterOptions,
 	type EpcListFilter,

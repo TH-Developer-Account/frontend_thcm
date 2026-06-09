@@ -1,26 +1,26 @@
 import React from "react";
-import {
-	AtSign,
-	// HelpCircle, Paperclip, Send, FileText
-} from "lucide-react";
+import { AtSign, MessageCircle } from "lucide-react";
 import type { CommentUser } from "./CommentsSection";
-import RichTextareaInput from "./RichTextareaInput";
+import RichTextareaInput from "../common/RichTextareaInput";
 
 // ============================
 //  Menu items
 // ============================
-
 const COMMENT_MENU_ITEMS = [
-	// { icon: Send, label: "Send comment", action: "submit" },
 	{ icon: AtSign, label: "Mention someone", action: "mention" },
-	// { icon: Paperclip, label: "Attach file / reference", action: "attach" },
-	// { icon: HelpCircle, label: "Mark as question", action: "question" },
-	// { icon: FileText, label: "Save as draft", action: "draft" },
+	{ icon: MessageCircle, label: "Chat", action: "submit" },
 ];
 
-// ============================
-//  CommentInput
-// ============================
+type CommentInputProps = {
+	placeholder?: string;
+	submitText?: string;
+	disabled?: boolean;
+	autoFocus?: boolean;
+	initialValue?: string;
+	onSubmit: (value: string) => Promise<void>;
+	mentionableUsers?: CommentUser[];
+	onMentionInsert?: (user: CommentUser) => void;
+};
 
 const CommentInput = React.memo(function CommentInput({
 	placeholder = "Write a comment...",
@@ -29,26 +29,9 @@ const CommentInput = React.memo(function CommentInput({
 	autoFocus,
 	initialValue = "",
 	onSubmit,
-	canApprove,
-	canClarify,
-	onApprove,
-	onClarify,
 	mentionableUsers = [],
-	onMentionInsert, // ← new
-}: {
-	placeholder?: string;
-	submitText?: string;
-	disabled?: boolean;
-	autoFocus?: boolean;
-	initialValue?: string;
-	onSubmit: (value: string) => Promise<void>;
-	canApprove?: boolean;
-	canClarify?: boolean;
-	onApprove?: () => void;
-	onClarify?: () => void;
-	mentionableUsers?: CommentUser[];
-	onMentionInsert?: (user: CommentUser) => void; // ← new
-}) {
+	onMentionInsert,
+}: CommentInputProps) {
 	const [value, setValue] = React.useState(initialValue);
 	const [submitting, setSubmitting] = React.useState(false);
 	const textareaRef = React.useRef<HTMLTextAreaElement>(null);
@@ -57,6 +40,7 @@ const CommentInput = React.memo(function CommentInput({
 
 	const handleSubmit = React.useCallback(async () => {
 		if (submitting || disabled || !hasRealContent) return;
+
 		try {
 			setSubmitting(true);
 			await onSubmit(value.trim());
@@ -103,10 +87,6 @@ const CommentInput = React.memo(function CommentInput({
 			onSubmit={handleSubmit}
 			menuItems={COMMENT_MENU_ITEMS}
 			onMenuAction={handleMenuAction}
-			canApprove={canApprove}
-			canClarify={canClarify}
-			onApprove={onApprove}
-			onClarify={onClarify}
 		/>
 	);
 });

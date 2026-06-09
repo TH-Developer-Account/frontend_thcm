@@ -1,7 +1,7 @@
-import { LucideSave, RefreshCcw, Save, Send, X } from "lucide-react";
+import { RefreshCcw, Save, Send, X } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/Section";
+import Section from "../../components/common/Section";
 
 import EpfItemsSection from "./EpfItemSection";
 import { useEpfForm, type EpfFormProps } from "./useEpfForm";
@@ -32,58 +32,6 @@ export default function EpfForm(props: EpfFormProps) {
 
 	const saveStatus = props.isClarifiedUpdate ? "DRAFT" : "SUBMITTED";
 
-	const actions = (
-		<div className="flex flex-row items-center justify-end gap-2">
-			{onCancel && (
-				<Button
-					type="button"
-					text="Cancel"
-					onClick={onCancel}
-					className="text-red-600"
-					size="sm"
-					Icon={X}
-					iconColor="red"
-					disabled={submitting}
-				/>
-			)}
-
-			<Button
-				type="button"
-				text="Reset"
-				onClick={handleReset}
-				Icon={RefreshCcw}
-				size="sm"
-				className="text-red-600"
-				iconColor="red"
-				disabled={submitting}
-			/>
-
-			{!isEditMode && (
-				<Button
-					type="button"
-					onClick={() => handleSubmit("DRAFT")}
-					text="Save Draft"
-					size="sm"
-					className="text-red-600"
-					iconColor="red"
-					Icon={LucideSave}
-					disabled={submitting}
-				/>
-			)}
-
-			<Button
-				type="button"
-				onClick={() => handleSubmit(saveStatus)}
-				text={isEditMode ? "Update" : "Submit"}
-				size="sm"
-				className="text-red-600"
-				iconColor="red"
-				Icon={isEditMode ? Save : Send}
-				disabled={submitting}
-			/>
-		</div>
-	);
-
 	if (loading) {
 		return (
 			<div className="flex h-64 items-center justify-center text-sm text-[var(--color-text-muted)]">
@@ -93,39 +41,73 @@ export default function EpfForm(props: EpfFormProps) {
 	}
 
 	return (
-		<div className="content-box mx-auto h-auto w-full max-w-full">
-			<div className="px-6 py-4">
-				<Section
-					title={
-						isEditMode
-							? "Edit Event Proposition Form"
-							: "Create Event Proposition Form"
-					}
-					action={actions}
-				>
-					<>
-						<EpfItemsSection
-							items={costItems}
-							onChange={setCostItems}
-							options={options}
-							isViewer={false}
-						/>
+		<div className=" mx-auto h-auto w-full max-w-full">
+			<Section
+				title={
+					isEditMode
+						? "Edit Event Proposition Form"
+						: "Create Event Proposition Form"
+				}
+			>
+				<EpfItemsSection
+					items={costItems}
+					onChange={setCostItems}
+					options={options}
+					isViewer={false}
+				/>
 
-						<div className="mb-2">
-							<EpfFormFields
-								values={values}
-								errors={errors}
-								handleChange={handleChange}
-								eventCost={eventCost}
-								// IMPORTANT
-								previewRows={previewRows}
-								previewLoading={previewLoading}
-								handlePreviewWorkflow={handlePreviewWorkflow}
-							/>
-						</div>
-					</>
-				</Section>
-			</div>
+				<div className="mb-2">
+					<EpfFormFields
+						values={values}
+						errors={errors}
+						handleChange={handleChange}
+						eventCost={eventCost}
+						previewRows={previewRows}
+						previewLoading={previewLoading}
+						handlePreviewWorkflow={handlePreviewWorkflow}
+					/>
+				</div>
+
+				<div className="mt-4 flex flex-row items-center justify-end gap-2 py-2  px-4 border-t border-dashed border-zinc-300">
+					{onCancel && (
+						<Button
+							type="button"
+							text="Cancel"
+							onClick={onCancel}
+							className="text-red-600"
+							size="sm"
+							Icon={X}
+							status="brand"
+							iconColor="white"
+							disabled={submitting}
+						/>
+					)}
+
+					<Button
+						type="button"
+						text="Reset"
+						onClick={handleReset}
+						Icon={RefreshCcw}
+						size="sm"
+						className="text-red-600"
+						status="brand"
+						iconColor="white"
+						disabled={submitting}
+					/>
+
+					<Button
+						type="button"
+						onClick={() => handleSubmit(saveStatus)}
+						text={isEditMode ? "Update" : "Submit"}
+						size="sm"
+						className="text-red-600"
+						status="brand"
+						iconColor="white"
+						Icon={isEditMode ? Save : Send}
+						disabled={submitting}
+					/>
+				</div>
+			</Section>
 		</div>
 	);
 }

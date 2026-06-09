@@ -4,7 +4,7 @@ import {
 	getLineItemsTotal,
 } from "../../helpers/lineItemHelper";
 
-import type { LineItemOption } from "../../../types";
+import type { LineItemOption } from "../../types/lineItem.types";
 import type { EpfFormValues, EpfProduct } from "../../types/epf.types";
 
 export type LineTableRow = {
@@ -139,6 +139,9 @@ export const mapEpfLineItemsToFormItems = (
 			partNumber: getPartNumber(item),
 			category: getCategory(item),
 			total: toNumber(item?.total),
+
+			quotationFileUrl: getQuotationUrl(item),
+			quotationFileName: getQuotationFileName(item),
 		};
 	});
 };
@@ -170,6 +173,9 @@ export const mapEpfLineItemsToTableRows = (
 			category: getCategory(item),
 			height: item?.height,
 			width: item?.width,
+
+			quotationFileUrl: getQuotationUrl(item),
+			quotationFileName: getQuotationFileName(item),
 		};
 	});
 };
@@ -237,4 +243,29 @@ export const mapBudgetInfoToFormValues = (budgetInfo?: any) => {
 				0,
 		),
 	};
+};
+
+const getQuotationUrl = (item: any) => {
+	return (
+		item?.quotationUrl ??
+		item?.quotation_url ??
+		item?.quotation?.url ??
+		item?.quotationFile?.url ??
+		item?.fileUrl ??
+		item?.file_url ??
+		null
+	);
+};
+
+const getQuotationFileName = (item: any) => {
+	return (
+		item?.quotationFileName ??
+		item?.quotation_file_name ??
+		item?.quotation?.fileName ??
+		item?.quotation?.filename ??
+		item?.quotationFile?.fileName ??
+		item?.fileName ??
+		item?.filename ??
+		null
+	);
 };

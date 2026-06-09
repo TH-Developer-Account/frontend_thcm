@@ -1,9 +1,9 @@
 import { useRef, useState, useEffect } from "react";
 import { Filter, ChevronDown, X } from "lucide-react";
 
-import Button from "../../../../components/common/Button";
-import Checkbox from "../../../../components/FormElements/Checkbox";
-import type { EpcFilters } from "../types/epc.types";
+import Button from "../../../../../components/common/Button";
+import Checkbox from "../../../../../components/FormElements/Checkbox";
+import type { EpcFilters } from "../../types/epc.types";
 
 type OptionItem = { label: string; value: string };
 

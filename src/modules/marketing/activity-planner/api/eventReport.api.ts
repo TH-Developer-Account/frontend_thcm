@@ -1,5 +1,5 @@
 import { ServerAxios } from "../../../../services/ServerAxios";
-import { type EventReportDetail } from "../forms/EventReport/types";
+import { type EventReportDetail } from "../types/event.report.types";
 
 export const eventReportApi = {
 	getByEpcId: async (epcId: string): Promise<EventReportDetail | null> => {

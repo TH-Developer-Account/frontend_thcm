@@ -17,6 +17,7 @@ export type Product = {
 	height?: number;
 	unit?: string;
 };
+
 export type LineItemOption = {
 	id?: string;
 	value: string;
@@ -25,16 +26,28 @@ export type LineItemOption = {
 	description: string | null;
 	category?: string;
 	partNumber?: string;
-	// default pricing flow
+
 	rate?: number;
 	quantity?: number;
 	total?: number;
 
-	// artwork flow
 	width?: number;
 	height?: number;
 	unit?: string;
+
+	// EPF quotation upload
+	quotationFile?: File | null;
+	quotationFileUrl?: string | null;
+	quotationFileName?: string | null;
 };
+
+export interface LineItem {
+	id: string;
+	particular: string;
+	description: string;
+	rate: number;
+	quantity: number;
+}
 
 export type GroupedOption = {
 	label: string;
@@ -52,6 +65,9 @@ export type LineTableRow = {
 	height?: string;
 	width?: string;
 	category?: string;
+
+	quotationFileUrl?: string | null;
+	quotationFileName?: string | null;
 };
 
 export interface CostItem {

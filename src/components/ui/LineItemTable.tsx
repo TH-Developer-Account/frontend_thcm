@@ -1,9 +1,19 @@
-import { Trash2, Pencil, Plus, Check, RotateCcw } from "lucide-react";
+import {
+	Trash2,
+	Pencil,
+	Plus,
+	Check,
+	RotateCcw,
+	Upload,
+	FileText,
+	Paperclip,
+	X,
+} from "lucide-react";
 import { useState } from "react";
 import SelectInput from "../FormElements/SelectInput";
 import FormInput from "../FormElements/FormInput";
 import Button from "../common/Button";
-import type { LineItemOption } from "../../modules/marketing/types";
+import type { LineItemOption } from "../../modules/marketing/activity-planner/types/lineItem.types";
 import type {
 	ColumnConfig,
 	ColumnKey,
@@ -34,6 +44,9 @@ const EMPTY_DRAFT: LineItemOption = {
 	width: 0,
 	height: 0,
 	unit: "",
+	quotationFile: null,
+	quotationFileUrl: null,
+	quotationFileName: null,
 };
 
 function alignClass(align?: "left" | "right" | "center") {
@@ -129,7 +142,52 @@ export default function LineItemTable({
 			unit: selected.unit ?? "",
 		}));
 	};
+	const handleDraftQuotationChange = (file?: File | null) => {
+		setDraft((prev) => ({
+			...prev,
+			quotationFile: file ?? null,
+			quotationFileName: file?.name ?? null,
+		}));
+	};
 
+	const handleRowQuotationChange = (index: number, file?: File | null) => {
+		onChange((prev) =>
+			prev.map((item, itemIndex) =>
+				itemIndex === index
+					? {
+							...item,
+							quotationFile: file ?? null,
+							quotationFileName: file?.name ?? null,
+						}
+					: item,
+			),
+		);
+	};
+	const handleQuotationChange = (file?: File | null) => {
+		if (!file) return;
+
+		setDraft((prev) => ({
+			...prev,
+			quotationFile: file,
+			quotationFileName: file.name,
+			quotationUrl: URL.createObjectURL(file),
+		}));
+	};
+
+	const removeQuotation = () => {
+		setDraft((prev) => {
+			if (prev.quotationFile && prev.quotationUrl) {
+				URL.revokeObjectURL(prev.quotationUrl);
+			}
+
+			return {
+				...prev,
+				quotationFile: null,
+				quotationUrl: null,
+				quotationFileName: null,
+			};
+		});
+	};
 	const handleAddOrUpdate = () => {
 		if (!draft.particular) return;
 
@@ -171,27 +229,21 @@ export default function LineItemTable({
 
 		setDraft({
 			value: item.value,
-
 			label: item.label,
-
 			particular: item.particular || item.value,
-
 			description: item.description ?? "",
-
 			rate: Number(item.rate) || 0,
-
 			quantity: Number(item.quantity) || 1,
-
 			partNumber: item.partNumber ?? "",
-
 			category: item.category,
 
-			// artwork
 			width: Number(item.width) || 0,
-
 			height: Number(item.height) || 0,
-
 			unit: item.unit ?? "",
+
+			quotationFile: item.quotationFile ?? null,
+			quotationFileUrl: item.quotationFileUrl ?? null,
+			quotationFileName: item.quotationFileName ?? null,
 		});
 
 		setEditingIndex(index);
@@ -387,7 +439,52 @@ export default function LineItemTable({
 									/>
 								</div>
 							)}
+							{/* Quotation file */}
+							{has("quotation") && (
+								<div
+									className={`col-span-${col("quotation").colSpan} flex justify-center`}
+								>
+									<input
+										id="quotation-upload"
+										type="file"
+										accept=".pdf,.jpg,.jpeg,.png,.webp"
+										className="hidden"
+										onChange={(e) =>
+											handleQuotationChange(e.target.files?.[0] ?? null)
+										}
+									/>
 
+									{draft.quotationFileName || draft.quotationFileUrl ? (
+										<div className="flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1">
+											<Paperclip className="h-3.5 w-3.5 text-slate-500" />
+
+											<span
+												className="max-w-[80px] truncate text-[11px] text-slate-700"
+												title={draft.quotationFileName ?? "Quotation"}
+											>
+												{draft.quotationFileName ?? "File"}
+											</span>
+
+											<button
+												type="button"
+												onClick={removeQuotation}
+												className="rounded-full p-0.5 hover:bg-slate-200"
+												title="Remove quotation"
+											>
+												<X className="h-3 w-3 text-slate-500" />
+											</button>
+										</div>
+									) : (
+										<label
+											htmlFor="quotation-upload"
+											className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-dashed border-slate-300 bg-white hover:border-orange-300 hover:bg-orange-50"
+											title="Upload quotation"
+										>
+											<Upload className="h-4 w-4 text-slate-500" />
+										</label>
+									)}
+								</div>
+							)}
 							{/* Actions */}
 							{has("actions") && (
 								<div
@@ -417,7 +514,7 @@ export default function LineItemTable({
 					{/* ── Items list ── */}
 					<div className="mt-2 divide-y divide-slate-200">
 						{items.length === 0 ? (
-							<div className="rounded-md border border-dashed border-slate-300 bg-slate-50 px-3 py-1.5 text-center text-xs font-medium text-slate-500">
+							<div className="text-center text-xs font-medium text-slate-500">
 								No line items added yet
 							</div>
 						) : (
@@ -502,7 +599,32 @@ export default function LineItemTable({
 												{rowTotal.toFixed(2)}
 											</div>
 										)}
-
+										{has("quotation") && (
+											<div
+												className={`col-span-${col("quotation").colSpan} flex justify-center`}
+											>
+												{item.quotationFileUrl ? (
+													<a
+														href={item.quotationFileUrl}
+														target="_blank"
+														rel="noreferrer"
+														className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50 hover:bg-orange-50"
+														title={item.quotationFileName ?? "View quotation"}
+													>
+														<Paperclip className="h-4 w-4 text-orange-700" />
+													</a>
+												) : item.quotationFileName ? (
+													<span
+														className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50"
+														title={item.quotationFileName}
+													>
+														<Paperclip className="h-4 w-4 text-slate-500" />
+													</span>
+												) : (
+													<span className="text-xs text-slate-400">--</span>
+												)}
+											</div>
+										)}
 										{has("actions") && (
 											<div
 												className={`col-span-${col("actions").colSpan} flex justify-center gap-1.5`}
@@ -535,7 +657,7 @@ export default function LineItemTable({
 
 					{/* ── Grand total ── */}
 					{items.length > 0 && (
-						<div className="mt-2 flex justify-end rounded-md border border-slate-300 bg-slate-100 px-3 py-1.5">
+						<div className="mt-2 flex justify-end border-t border-slate-300 border-dashed  px-4 py-1">
 							<div className="flex items-center gap-3 text-xs">
 								<span className="font-semibold text-slate-600">
 									Grand Total
