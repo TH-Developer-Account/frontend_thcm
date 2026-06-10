@@ -1,4 +1,4 @@
-import { Upload, Send, X, Eye } from "lucide-react";
+import { Upload, Send, X } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
 import FormInput from "../../../../../components/FormElements/FormInput";
@@ -16,7 +16,6 @@ import { useEventReportForm } from "./useEventReportForm";
 const EventReportTemplate = ({
 	epcId,
 	onBack,
-	onPreview,
 	eventCost,
 	initialReport,
 	onSuccess,
@@ -32,6 +31,7 @@ const EventReportTemplate = ({
 		handleFileChange,
 		removeImage,
 		handleFormChange,
+		canSubmitReport,
 		handleSubmit,
 	} = useEventReportForm({
 		epcId,
@@ -191,7 +191,7 @@ const EventReportTemplate = ({
 					onClick={handleSubmit}
 					status="outline"
 					size="sm"
-					disabled={filledCount === 0 || isSubmitting}
+					disabled={!canSubmitReport}
 				>
 					<Send className="h-4 w-4" />
 					{isSubmitting ? "Submitting..." : "Submit Report"}

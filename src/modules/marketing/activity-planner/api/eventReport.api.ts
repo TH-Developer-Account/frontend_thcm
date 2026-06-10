@@ -30,10 +30,19 @@ export const eventReportApi = {
 		return data;
 	},
 
-	approve: async (reportId: string) => {
+	validateReport: async (reportId: string) => {
 		const {
 			data: { data },
 		} = await ServerAxios.post(`/report/${reportId}/validate`);
+
+		return data;
+	},
+	clarifyReport: async (reportId: string, reason: string) => {
+		const {
+			data: { data },
+		} = await ServerAxios.post(`/report/${reportId}/clarify`, {
+			reason,
+		});
 
 		return data;
 	},

@@ -2,7 +2,6 @@ import React from "react";
 import { resolveStatusStyle, resolveVariantStyle } from "../styles.constant";
 import type { ButtonProps } from "./common.types";
 import { useNavigate } from "react-router-dom";
-import HelperTooltip from "./HelperTooltip";
 
 const Button: React.FC<ButtonProps> = ({
 	text,

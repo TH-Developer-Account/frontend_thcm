@@ -9,12 +9,14 @@ export type ReportStatus =
 
 export type ReportImage = {
 	id?: string;
-	url: string;
+	url?: string | null;
+	fileUrl?: string | null;
+	s3Key?: string | null;
+	reportId?: string;
 	position?: number;
 	caption?: string;
 	file?: File;
 };
-
 export type UploadFileItem = {
 	url: string;
 	file?: File;
@@ -72,13 +74,17 @@ export type PreviewProps = {
 
 export type EventReportSectionProps = {
 	report?: EventReportDetail | null;
-	isProposer: boolean;
-	isValidator: boolean;
+	isProposer?: boolean;
+	isValidator?: boolean;
+	canCreateReport?: boolean;
+	canViewReport?: boolean;
 	hasValidatorPreviewed?: boolean;
 	isValidating?: boolean;
+	isClarifying?: boolean;
 	onOpenReportBuilder: () => void;
 	onOpenReportPreview: () => void;
-	onValidateReport?: () => void;
+	onValidateReport?: () => void | Promise<void>;
+	onClarifyReport?: () => void | Promise<void>;
 };
 
 export type UseEventReportFormProps = {

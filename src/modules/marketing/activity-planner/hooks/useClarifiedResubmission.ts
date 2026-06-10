@@ -40,17 +40,22 @@ export const useClarifiedResubmission = ({
 
 	const isProposer =
 		Boolean(currentUserId) && currentUserId === epcData?.created_by_id;
-	const hasUnresolvedClarification =
+
+	const hasUnresolvedWorkflowClarification =
 		hasUnresolvedClarificationInComments(workflowEntries);
 
-	const isClarifiedPending =
-		isProposer && !hasSubmittedClarifiedUpdate && hasUnresolvedClarification;
+	const isWorkflowClarifiedPending =
+		isProposer &&
+		!hasSubmittedClarifiedUpdate &&
+		hasUnresolvedWorkflowClarification;
 
-	const hasFormUpdate = hasFormUpdateAfterIssue(
+	const hasWorkflowFormUpdate = hasFormUpdateAfterIssue(
 		workflowEntries,
 		"CLARIFICATION",
 	);
-	const canSubmitClarifiedUpdate = isClarifiedPending && hasFormUpdate;
+
+	const canSubmitClarifiedUpdate =
+		isWorkflowClarifiedPending && hasWorkflowFormUpdate;
 
 	const submitClarifiedUpdate = async () => {
 		if (!workflowId) {
@@ -74,7 +79,7 @@ export const useClarifiedResubmission = ({
 	};
 
 	return {
-		isClarifiedPending,
+		isClarifiedPending: isWorkflowClarifiedPending,
 		canSubmitClarifiedUpdate,
 		isSubmittingClarifiedUpdate: submitClarifiedMutation.isPending,
 		submitClarifiedUpdate,

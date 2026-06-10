@@ -1,6 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import type { GeneralStatus } from "../../utils/types";
-import type { ApprovalApiStatus } from "../../modules/marketing/types";
 
 export interface ToggleProps {
 	checked: boolean;
@@ -149,16 +148,3 @@ export interface ProfileCardRendererProps {
 	onEdit?: () => void;
 	editable?: boolean;
 }
-
-export type ApprovalDotProps = {
-	label?: string;
-	status?: string;
-	state?: ApprovalApiStatus;
-	className?: string;
-	size?: "xs" | "sm" | "md" | "lg";
-	children?: React.ReactNode;
-	isLast?: boolean;
-	isFuture?: boolean;
-	isCompleted?: boolean;
-	isCurrent?: boolean;
-};

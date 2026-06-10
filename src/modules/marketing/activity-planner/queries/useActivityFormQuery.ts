@@ -86,6 +86,10 @@ export function useSubmitEventReportMutation() {
 			queryClient.invalidateQueries({
 				queryKey: eventReportKeys.detail(variables.epcId),
 			});
+
+			queryClient.invalidateQueries({
+				queryKey: activityCommentKeys.byEpcId(variables.epcId),
+			});
 		},
 	});
 }
@@ -94,16 +98,41 @@ export function useValidateEventReportMutation() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: ({ reportId }: { reportId: string }) =>
-			eventReportApi.approve(reportId),
+		mutationFn: ({ reportId }: { reportId: string; epcId: string }) =>
+			eventReportApi.validateReport(reportId),
 
 		onSuccess: (_, variables) => {
 			queryClient.invalidateQueries({
-				queryKey: epcKeys.detail(variables.reportId),
+				queryKey: epcKeys.detail(variables.epcId),
 			});
 
 			queryClient.invalidateQueries({
-				queryKey: eventReportKeys.detail(variables.reportId),
+				queryKey: eventReportKeys.detail(variables.epcId),
+			});
+		},
+	});
+}
+
+export function useClarifyEventReportMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({
+			reportId,
+			reason,
+		}: {
+			reportId: string;
+			epcId: string;
+			reason: string;
+		}) => eventReportApi.clarifyReport(reportId, reason),
+
+		onSuccess: (_, variables) => {
+			queryClient.invalidateQueries({
+				queryKey: epcKeys.detail(variables.epcId),
+			});
+
+			queryClient.invalidateQueries({
+				queryKey: eventReportKeys.detail(variables.epcId),
 			});
 		},
 	});

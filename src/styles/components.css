@@ -59,6 +59,9 @@
 		background: rgb(var(--color-border));
 		color: rgb(var(--color-muted));
 	}
+	.btn-disable:hover {
+		cursor: not-allowed;
+	}
 	.btn-tooltip {
 		position: absolute;
 		right: 0;

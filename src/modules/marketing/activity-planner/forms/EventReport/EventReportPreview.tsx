@@ -10,6 +10,7 @@ import { Modal } from "../../../../../components/common/Modal";
 import Button from "../../../../../components/common/Button";
 import { formatDate } from "../../utils/formatters";
 import { mapReportToPreviewImages } from "./eventReport.mapper";
+import { getEventReportPreviewState } from "./eventReport.logic";
 import type { PreviewProps } from "../../types/event.report.types";
 import html2pdf from "html2pdf.js";
 
@@ -24,50 +25,12 @@ const EventReportPreview = ({
 	loading = false,
 	onClose,
 }: PreviewProps) => {
-	const title = epcData?.event_name?.title;
-	const proposalNo = epcData?.proposal_number;
-	const epf = epcData?.epf;
-
-	const totalParticipants =
-		(Number(epf?.internalParticipants) || 0) +
-		(Number(epf?.externalParticipants) || 0);
-
-	const hasData =
-		!!epcData &&
-		(title || proposalNo || epcData?.event_description || epcData?.location);
-
+	const { totalParticipants, hasData, summaryRows } =
+		getEventReportPreviewState(epcData, report);
 	const previewImages = mapReportToPreviewImages(report);
 
-	const summaryRows = [
-		{
-			label: "Internal Participants",
-			value: epf?.internalParticipants || "--",
-		},
-		{
-			label: "External Participants",
-			value: epf?.externalParticipants || "--",
-		},
-		{
-			label: "Total Participants",
-			value: totalParticipants,
-		},
-		{
-			label: "Total Leads Generated",
-			value: report?.totalLeadsGenerated ?? "--",
-		},
-		{
-			label: "Approved Event Cost",
-			value: report?.approvedEventCost ?? "--",
-		},
-		{
-			label: "Expected Conversion",
-			value: report?.expectedConversion ?? "--",
-		},
-		{
-			label: "Outcome Status",
-			value: report?.outcomeStatus ?? "--",
-		},
-	];
+	const title = epcData?.event_name?.title;
+	const proposalNo = epcData?.proposal_number;
 
 	const handleDownload = async () => {
 		const element = document.getElementById("event-report-pdf-content");
@@ -75,7 +38,6 @@ const EventReportPreview = ({
 
 		const fileName =
 			epcData?.proposal_number || epcData?.event_name?.title || "event-report";
-
 		document.body.classList.add("pdf-export-mode");
 
 		try {
@@ -84,19 +46,9 @@ const EventReportPreview = ({
 					margin: 8,
 					filename: `${fileName}.pdf`,
 					image: { type: "jpeg", quality: 0.98 },
-					html2canvas: {
-						scale: 2,
-						useCORS: true,
-						backgroundColor: "#ffffff",
-					},
-					jsPDF: {
-						unit: "mm",
-						format: "a4",
-						orientation: "portrait",
-					},
-					pagebreak: {
-						mode: ["avoid-all", "css", "legacy"],
-					},
+					html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+					jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+					pagebreak: { mode: ["avoid-all", "css", "legacy"] },
 				})
 				.from(element)
 				.save();
@@ -125,27 +77,22 @@ const EventReportPreview = ({
 				/>
 			}
 		>
-			<div className=" max-h-[90vh] overflow-y-auto scrollbar-sleek">
+			<div className="max-h-[90vh] overflow-y-auto scrollbar-sleek">
 				{!loading && !hasData ? (
 					<div className="flex min-h-[500px] flex-col items-center justify-center px-6 text-center">
 						<CheckCircle2 className="mb-4 h-12 w-12 text-gray-300" />
-
 						<h3 className="text-lg font-semibold text-gray-900">
 							No Report Data Available
 						</h3>
-
 						<p className="mt-2 text-sm text-gray-500">
 							Event report information has not been submitted yet.
 						</p>
 					</div>
 				) : (
-					<div className="mx-auto  rounded-sm border border-gray-200 bg-white shadow-sm">
+					<div className="mx-auto rounded-sm border border-gray-200 bg-white shadow-sm">
 						{/* HERO */}
 						<div className="relative overflow-hidden bg-[#F58220] px-8 py-10">
-							{/* Background Overlay */}
 							<div className="absolute inset-0 bg-linear-to-r from-black/30 to-black/10" />
-
-							{/* Brand Watermark */}
 							<div className="absolute right-0 top-0 h-full w-[320px] opacity-10">
 								<div className="flex h-full items-center justify-center text-[120px] font-black text-white">
 									TH
@@ -154,7 +101,6 @@ const EventReportPreview = ({
 
 							<div className="relative z-10">
 								<div className="inline-flex items-center rounded-full bg-white/15 px-4 py-1 text-xs font-medium tracking-wide text-white backdrop-blur-sm">
-									{/* EVENT REPORT */}
 									{proposalNo}
 								</div>
 
@@ -173,15 +119,12 @@ const EventReportPreview = ({
 										<div className="space-y-2">
 											<Skeleton className="h-4 w-full bg-white/20" />
 											<Skeleton className="h-4 w-11/12 bg-white/20" />
-											<Skeleton className="h-4 w-9/12 bg-white/20" />
 										</div>
-									) : hasData ? (
+									) : (
 										<p>
 											{epcData?.event_description ||
 												"No event description available."}
 										</p>
-									) : (
-										<p>No event description available.</p>
 									)}
 								</div>
 
@@ -200,12 +143,10 @@ const EventReportPreview = ({
 													? formatDate(epcData.event_from_date)
 													: "--"}
 											</div>
-
 											<div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm text-white">
 												<MapPin className="h-4 w-4" />
 												{epcData?.location || "--"}
 											</div>
-
 											<div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm text-white">
 												<Users className="h-4 w-4" />
 												{totalParticipants}
@@ -225,20 +166,19 @@ const EventReportPreview = ({
 										<h2 className="text-lg font-semibold text-gray-900">
 											Event Highlights
 										</h2>
-
 										<p className="mt-1 text-sm text-gray-500">
 											Photos captured during the event activities
 										</p>
 									</div>
-
 									<div className="rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700">
 										{previewImages.length} Photos
 									</div>
 								</div>
+
 								{loading ? (
 									<div className="grid grid-cols-2 gap-4">
-										{[1, 2, 3, 4].map((item) => (
-											<Skeleton key={item} className="h-[240px] rounded-2xl" />
+										{[1, 2, 3, 4].map((i) => (
+											<Skeleton key={i} className="h-[240px] rounded-2xl" />
 										))}
 									</div>
 								) : previewImages.length > 0 ? (
@@ -251,15 +191,13 @@ const EventReportPreview = ({
 												<div className="relative h-[240px] overflow-hidden">
 													<img
 														src={image.url}
-														alt=""
+														alt={image.caption}
 														className="h-full w-full object-cover"
 													/>
-
 													<div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent" />
-
 													<div className="absolute bottom-0 left-0 right-0 p-4">
 														<p className="text-sm font-medium text-white">
-															{image.caption || `Event Photo ${index + 1}`}
+															{image.caption}
 														</p>
 													</div>
 												</div>
@@ -277,7 +215,6 @@ const EventReportPreview = ({
 							<div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
 								<div className="flex items-center gap-2">
 									<TrendingUp className="h-5 w-5 text-orange-600" />
-
 									<h2 className="text-lg font-semibold text-gray-900">
 										Event Summary
 									</h2>
@@ -290,7 +227,6 @@ const EventReportPreview = ({
 												<th className="border-b border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">
 													Metric
 												</th>
-
 												<th className="border-b border-gray-200 px-4 py-3 text-left font-semibold text-gray-700">
 													Value
 												</th>
@@ -298,12 +234,11 @@ const EventReportPreview = ({
 										</thead>
 										<tbody>
 											{loading
-												? Array.from({ length: 3 }).map((_, index) => (
-														<tr key={index}>
+												? Array.from({ length: 3 }).map((_, i) => (
+														<tr key={i}>
 															<td className="px-4 py-3">
 																<Skeleton className="h-4 w-32" />
 															</td>
-
 															<td className="px-4 py-3">
 																<Skeleton className="h-4 w-20" />
 															</td>
@@ -314,7 +249,6 @@ const EventReportPreview = ({
 															<td className="border-b border-gray-100 px-4 py-3 text-gray-600">
 																{row.label}
 															</td>
-
 															<td className="border-b border-gray-100 px-4 py-3 font-medium text-gray-900">
 																{row.value}
 															</td>
@@ -331,18 +265,14 @@ const EventReportPreview = ({
 									<div className="flex h-10 w-10 items-center justify-center rounded-full bg-white">
 										<CheckCircle2 className="h-5 w-5 text-green-600" />
 									</div>
-
 									<div>
 										<h2 className="text-lg font-semibold text-gray-900">
 											Event Outcome
 										</h2>
-
 										{loading ? (
 											<div className="space-y-3">
 												<Skeleton className="h-5 w-40" />
 												<Skeleton className="h-4 w-full" />
-												<Skeleton className="h-4 w-11/12" />
-												<Skeleton className="h-4 w-9/12" />
 											</div>
 										) : (
 											<p className="mt-2 text-sm leading-7 text-gray-700">
@@ -350,20 +280,6 @@ const EventReportPreview = ({
 													"Outcome information not available."}
 											</p>
 										)}
-
-										<div className="mt-4 flex flex-wrap gap-2">
-											<div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-green-700">
-												Lead Generation Successful
-											</div>
-
-											<div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-green-700">
-												High Participation
-											</div>
-
-											<div className="rounded-full bg-white px-3 py-1 text-xs font-medium text-green-700">
-												Product Awareness Increased
-											</div>
-										</div>
 									</div>
 								</div>
 							</div>

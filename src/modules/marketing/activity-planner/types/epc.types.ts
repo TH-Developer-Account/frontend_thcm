@@ -72,14 +72,21 @@ type Report = {
 		fileUrl: string;
 	}[];
 };
+export type EpcDeviationInfo = {
+	deviationReason?: string | null;
+	deviationAmount?: string | number | null;
+	deviationDocUrl?: string | null;
+	deviationDocS3Key?: string | null;
+};
 
-export type EpcDetailResponse = {
+export type EpcDetailResponse = EpcDeviationInfo & {
 	id: string;
 	proposal_number: string;
 	event_from_date: ApiDateString;
 	event_to_date: ApiDateString;
 	event_description: string;
 	location: string;
+
 	locationMeta: {
 		pincode: string;
 		officeName: string;
@@ -88,6 +95,7 @@ export type EpcDetailResponse = {
 		latitude: number | null;
 		longitude: number | null;
 	};
+
 	event_objective: string;
 	status: ApprovalApiStatus;
 

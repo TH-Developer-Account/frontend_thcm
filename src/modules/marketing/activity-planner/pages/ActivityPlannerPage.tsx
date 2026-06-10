@@ -27,9 +27,12 @@ const ActivityPlannerPage = () => {
 		proposerName,
 		hasValidatorPreviewed,
 		isValidatingReport,
+		isClarifyingReport,
+		isClosingEPC,
 		handleRefresh,
 		handleOpenReportPreview,
 		handleValidateReport,
+		handleClarifyReport,
 		isClarifiedPending,
 		canSubmitClarifiedUpdate,
 		isSubmittingClarifiedUpdate,
@@ -38,6 +41,7 @@ const ActivityPlannerPage = () => {
 		isDeviationPending,
 		isSubmittingDeviationUpdate,
 		submitDeviationUpdate,
+		handleCloseEPC,
 	} = useActivityPlanner(id);
 
 	const [pageView, setPageView] = React.useState<PageView>("form");
@@ -81,7 +85,6 @@ const ActivityPlannerPage = () => {
 				) : (
 					<ActivityFormView
 						epcData={epcData ?? null}
-						loading={isFetching}
 						editingSection={editingSection}
 						setEditingSection={setEditingSection}
 						onRefresh={handleRefresh}
@@ -90,6 +93,7 @@ const ActivityPlannerPage = () => {
 						isValidator={Boolean(isValidator)}
 						hasValidatorPreviewed={hasValidatorPreviewed}
 						isValidatingReport={isValidatingReport}
+						isClarifyingReport={isClarifyingReport}
 						isClarifiedPending={isClarifiedPending}
 						isSubmittingClarifiedUpdate={isSubmittingClarifiedUpdate}
 						onOpenReportBuilder={() => setPageView("report-builder")}
@@ -97,12 +101,15 @@ const ActivityPlannerPage = () => {
 							handleOpenReportPreview(() => setReportIsPreviewOpen(true))
 						}
 						onValidateReport={handleValidateReport}
+						onClarifyReport={handleClarifyReport}
 						onSubmitClarifiedUpdate={submitClarifiedUpdate}
 						canSubmitClarifiedUpdate={canSubmitClarifiedUpdate}
 						canSubmitDeviationUpdate={canSubmitDeviationUpdate}
 						isDeviationPending={isDeviationPending}
 						isSubmittingDeviationUpdate={isSubmittingDeviationUpdate}
 						onSubmitDeviationUpdate={submitDeviationUpdate}
+						onEPCClose={handleCloseEPC}
+						isEPCClose={isClosingEPC}
 					/>
 				)}
 			</PageRowSectionLayout>

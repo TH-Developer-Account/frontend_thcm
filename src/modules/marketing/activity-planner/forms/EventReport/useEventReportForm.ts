@@ -158,6 +158,48 @@ export function useEventReportForm({
 		return null;
 	}, [form, images]);
 
+	const getFormSnapshot = React.useCallback(
+		(formState: FormState, imageState: (ReportImage | undefined)[]) => {
+			return JSON.stringify({
+				totalLeadsGenerated: formState.totalLeadsGenerated.trim(),
+				outcomeStatus: formState.outcomeStatus,
+				approvedEventCost: formState.approvedEventCost.trim(),
+				expectedConversion: formState.expectedConversion.trim(),
+				remarks: formState.remarks.trim(),
+				images: imageState.map((image) => ({
+					id: image?.id ?? null,
+					url: image?.url ?? "",
+					fileUrl: image?.fileUrl ?? "",
+					fileName: image?.file?.name ?? null,
+					position: image?.position ?? null,
+				})),
+			});
+		},
+		[],
+	);
+	const initialSnapshot = React.useMemo(() => {
+		return getFormSnapshot(
+			mapReportToForm(initialReport, eventCost),
+			mapReportToImages(initialReport),
+		);
+	}, [eventCost, getFormSnapshot, initialReport]);
+
+	const currentSnapshot = React.useMemo(() => {
+		return getFormSnapshot(form, images);
+	}, [form, getFormSnapshot, images]);
+
+	const hasChanges = currentSnapshot !== initialSnapshot;
+
+	const formValidationError = React.useMemo(() => {
+		return validateForm();
+	}, [validateForm]);
+
+	const isFormValid = !formValidationError;
+
+	const canSubmitReport =
+		isFormValid &&
+		!submitMutation.isPending &&
+		(form.formType === "CREATE" || hasChanges);
 	const handleSubmit = React.useCallback(async () => {
 		const validationError = validateForm();
 
@@ -201,6 +243,9 @@ export function useEventReportForm({
 		fileInputRef,
 		filledCount: images.filter(Boolean).length,
 		isSubmitting: submitMutation.isPending,
+		hasChanges,
+		isFormValid,
+		canSubmitReport,
 		openFilePicker,
 		handleFileChange,
 		removeImage,

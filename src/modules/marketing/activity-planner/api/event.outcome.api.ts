@@ -9,4 +9,11 @@ export const eventOutcomeApi = {
 
 		return data;
 	},
+	closeEpc: async (epcId: string) => {
+		const {
+			data: { data },
+		} = await ServerAxios.patch(`/epc/${epcId}/close`);
+
+		return data;
+	},
 };

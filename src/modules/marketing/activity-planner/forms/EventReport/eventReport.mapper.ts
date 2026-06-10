@@ -6,20 +6,36 @@ import type {
 	ReportImage,
 } from "../../types/event.report.types";
 
+export const getReportImageUrl = (image?: ReportImage | null) => {
+	return image?.url || image?.fileUrl || "";
+};
+
 export function mapReportToImages(
 	report?: EventReportDetail | null,
 ): (ReportImage | undefined)[] {
-	const slots: (ReportImage | undefined)[] = Array(MAX_IMAGES).fill(undefined);
+	const slots: (ReportImage | undefined)[] = Array.from(
+		{ length: MAX_IMAGES },
+		() => undefined,
+	);
 
 	report?.images?.forEach((img, index) => {
+		const imageUrl = getReportImageUrl(img);
+
+		if (!imageUrl) return;
+
 		const slotIndex =
-			typeof img.position === "number" ? img.position - 1 : index;
+			typeof img.position === "number" && img.position > 0
+				? img.position - 1
+				: index;
 
 		if (slotIndex >= 0 && slotIndex < MAX_IMAGES) {
 			slots[slotIndex] = {
 				id: img.id,
-				url: img.url,
-				position: img.position,
+				url: imageUrl,
+				fileUrl: img.fileUrl ?? imageUrl,
+				s3Key: img.s3Key,
+				reportId: img.reportId,
+				position: img.position ?? slotIndex + 1,
 				caption: img.caption,
 			};
 		}
@@ -47,10 +63,26 @@ export function mapReportToPreviewImages(report?: EventReportDetail | null) {
 		report?.images
 			?.slice()
 			.sort((a, b) => Number(a.position ?? 0) - Number(b.position ?? 0))
-			.map((image, index) => ({
-				url: image.url,
-				caption: image.caption || `Event Photo ${index + 1}`,
-			})) ?? []
+			.map((image, index) => {
+				const imageUrl = getReportImageUrl(image);
+
+				if (!imageUrl) return null;
+
+				return {
+					url: imageUrl,
+					caption: image.caption || `Event Photo ${index + 1}`,
+					position: image.position ?? index + 1,
+				};
+			})
+			.filter(
+				(
+					image,
+				): image is {
+					url: string;
+					caption: string;
+					position: number;
+				} => Boolean(image?.url),
+			) ?? []
 	);
 }
 
