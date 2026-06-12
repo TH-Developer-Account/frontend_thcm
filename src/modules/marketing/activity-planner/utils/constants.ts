@@ -4,8 +4,10 @@ import { Bold, Italic, Code, List } from "lucide-react";
 import type { FormatType } from "../types/workflow.types";
 import type React from "react";
 import type { EpcFilters } from "../types/epc.types";
-import type { ApiStatus } from "./status";
-import { getStatusLabel } from "./formatters";
+import {
+	createActivityActionOptions,
+	createEntityStatusOptions,
+} from "./statusConfig";
 
 export const ACTIVITY_PLANNER_ROUTES = {
 	list: "/marketing/activity-planner",
@@ -35,7 +37,6 @@ export type EditingSection =
 
 export const status = {
 	PENDING: "Pending",
-	SENT_BACK: "Sent Back",
 	REPORT_SUBMITTED: "Report Submitted",
 	APPROVED: "Approved",
 	SUBMITTED: "Submitted",
@@ -130,22 +131,6 @@ export const FORMAT_CURSOR_OFFSET: Record<FormatType, number> = {
 	bullet: 3,
 };
 
-// Define once, outside the component (or in constants.ts)
-
-export const EPC_STATUS_OPTIONS = [
-	"PENDING",
-	"SUBMITTED",
-	"IN_PROGRESS",
-	"APPROVED",
-	"REJECTED",
-	"CLARIFIED",
-	"CANCELLED",
-] as const satisfies readonly ApiStatus[];
-
-export const epcStatusOptions = EPC_STATUS_OPTIONS.map((value) => ({
-	value,
-	label: getStatusLabel(value),
-}));
 export const EMPTY_EPC_FILTERS: EpcFilters = {
 	status: [],
 	zone: [],
@@ -165,3 +150,64 @@ export const eventDeviationOptions = [
 	{ label: "Required", value: "REQUIRED" },
 	{ label: "Not Required", value: "NOT_REQUIRED" },
 ];
+
+export const EPC_STATUSES = [
+	"PENDING",
+	"SUBMITTED",
+	"IN_PROGRESS",
+	"APPROVED",
+	"REJECTED",
+	"CLARIFY",
+	"CLARIFIED",
+	"CONDUCTED",
+	"CANCELLED",
+	"COMPLETED",
+	"VALIDATED",
+	"REPORT_SUBMITTED",
+	"REPORT_RESUBMITTED",
+	"REPORT_VALIDATED",
+	"REPORT_REJECTED",
+	"REPORT_CLARIFICATION_REQUESTED",
+	"DEVIATION_RAISED",
+	"DEVIATION_IN_PROGRESS",
+	"CLOSED",
+	"NOT_CONDUCTED",
+] as const;
+
+export const REPORT_STATUSES = [
+	"SUBMITTED",
+	"VALIDATED",
+	"REJECTED",
+	"CLARIFICATION_REQUESTED",
+] as const;
+
+export const ACTIVITY_ACTIONS = [
+	"EPC_CREATED",
+	"EPC_UPDATED",
+	"EPF_CREATED",
+	"EPF_UPDATED",
+	"CRF_CREATED",
+	"CRF_UPDATED",
+	"EPC_RESUBMITTED",
+	"EPC_CONDUCTED",
+	"EPC_CANCELLED",
+	"REPORT_SUBMITTED",
+	"REPORT_RESUBMITTED",
+	"REPORT_VALIDATED",
+	"REPORT_REJECTED",
+	"REPORT_CLARIFICATION_REQUESTED",
+	"EPC_CLOSED",
+	"APPROVED",
+	"REJECTED",
+	"CLARIFY",
+	"DEVIATION_RAISED",
+] as const;
+
+export type EpcStatus = (typeof EPC_STATUSES)[number];
+export type ReportStatus = (typeof REPORT_STATUSES)[number];
+export type ActivityAction = (typeof ACTIVITY_ACTIONS)[number];
+
+export const epcStatusOptions = createEntityStatusOptions(EPC_STATUSES);
+export const reportStatusOptions = createEntityStatusOptions(REPORT_STATUSES);
+export const activityActionOptions =
+	createActivityActionOptions(ACTIVITY_ACTIONS);

@@ -8,13 +8,12 @@ import ThreeWayToggle from "../../../../../components/common/ThreeWayToggle";
 import { EpcFilterDropdown } from "./EpcFilterDropdown";
 import {
 	epcListFilterOptions,
+	epcStatusOptions,
 	type EpcListFilter,
 } from "../../utils/constants";
 import type { EpcFilters } from "../../types/epc.types";
 import { clearStoredEpcInfo } from "../../helpers/localstorage";
 import { useMasterData } from "../../../../../hooks/useMasterData";
-import { EPC_STATUS_OPTIONS } from "../../utils/constants";
-import { getStatusLabel } from "../../utils/formatters";
 
 type EPCTopbarProps = {
 	search: string;
@@ -39,12 +38,10 @@ const EPCTopbar = ({
 }: EPCTopbarProps) => {
 	const navigate = useNavigate();
 	const { data } = useMasterData();
+
 	const eventTypeOptions = data?.eventNames ?? [];
 	const zoneOptions = data?.regions ?? [];
-	const EPC_STATUS_FILTER_OPTIONS = EPC_STATUS_OPTIONS.map((status) => ({
-		label: getStatusLabel(status),
-		value: status,
-	}));
+
 	const handleCreateEpc = () => {
 		clearStoredEpcInfo();
 		navigate("/marketing/activity-planner/create");
@@ -59,12 +56,14 @@ const EPCTopbar = ({
 						onChange={onSearchChange}
 						placeholder="Search by event name"
 					/>
+
 					<ThreeWayToggle
 						options={epcListFilterOptions}
 						value={selectedFilter}
 						onChange={onFilterChange}
 						className="w-[320px]"
 					/>
+
 					<EpcFilterDropdown
 						filters={filters}
 						onChange={onAdvancedFilterChange}
@@ -72,8 +71,9 @@ const EPCTopbar = ({
 						activeFilterCount={activeFilterCount}
 						zoneOptions={zoneOptions}
 						eventTypeOptions={eventTypeOptions}
-						statusOptions={EPC_STATUS_FILTER_OPTIONS}
+						statusOptions={epcStatusOptions}
 					/>
+
 					<Can action="write" app="MAP" module="EPC">
 						<Button
 							Icon={Plus}

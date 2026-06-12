@@ -2,7 +2,7 @@ import React from "react";
 import type { ApprovalTableRow } from "../../../../../utils/types";
 import type { WorkflowStage } from "../../types/workflow.types";
 import { Badge } from "../../../../../components/common/Badge";
-import { getStatusForBadge } from "../../../activity-planner/utils/status";
+import { getStatusLabel } from "../../../activity-planner/utils/status";
 
 type Props = {
 	data: ApprovalTableRow[];
@@ -99,7 +99,7 @@ const ApprovalTable = ({ data }: Props) => {
 														<Badge
 															status={
 																approver?.status
-																	? getStatusForBadge(approver?.status)
+																	? getStatusLabel(approver?.status)
 																	: undefined
 															}
 														/>

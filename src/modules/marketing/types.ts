@@ -9,7 +9,6 @@ export interface Option {
 export const ALL_STATUSES = [
 	{ api: "PENDING", label: "Pending" },
 	{ api: "SUBMITTED", label: "Submitted" },
-	{ api: "SENT_BACK", label: "Sent Back" },
 	{ api: "APPROVED", label: "Approved" },
 	{ api: "CANCELLED", label: "Cancelled" },
 	{ api: "CLARIFY", label: "Clarified" },
