@@ -46,16 +46,19 @@ type CommentsSectionProps = {
 	ccEmails?: string[];
 	refreshKey?: number;
 	canComment?: boolean;
+	currentUserId?: string;
 };
 
 const CommentCard = React.memo(function CommentCard({
 	comment,
 	ref,
 	level = 0,
+	isSelf = false,
 }: {
 	comment: CommentItem;
 	level?: number;
 	ref?: React.Ref<HTMLDivElement>;
+	isSelf?: boolean;
 }) {
 	const isAuditLog = comment.entryType === "ACTIVITY_LOG";
 
@@ -66,36 +69,52 @@ const CommentCard = React.memo(function CommentCard({
 					<span>{getAuditMessage(comment)}</span>
 				</div>
 			) : (
-				<div className="comment-main" ref={ref}>
-					<Avatar
-						firstName={comment.actor?.first_name}
-						lastName={comment.actor?.last_name}
-						size="sm"
-					/>
+				<div
+					className={`comment-main ${isSelf ? "comment-main--self" : ""}`}
+					ref={ref}
+				>
+					{!isSelf && (
+						<Avatar
+							firstName={comment.actor?.first_name}
+							lastName={comment.actor?.last_name}
+							size="sm"
+						/>
+					)}
 
 					<div className="comment-content">
-						<div className="comment-bubble">
+						<div
+							className={`comment-bubble ${isSelf ? "comment-bubble--self" : ""}`}
+						>
 							<div className="comment-meta">
-								<p className="comment-author">
-									{`${comment.actor?.first_name ?? ""} ${
-										comment.actor?.last_name ?? ""
-									}`}
-								</p>
-
-								<div className="comment-submeta">
-									<span>{formatDateTime(comment.createdAt)}</span>
-								</div>
+								{!isSelf ? (
+									<p className="comment-author">
+										{`${comment.actor?.first_name ?? ""} ${comment.actor?.last_name ?? ""}`.trim()}
+									</p>
+								) : (
+									<p className="comment-author">
+										{`${comment.actor?.first_name ?? ""} ${comment.actor?.last_name ?? ""}`.trim()}
+									</p>
+								)}
+								<span className="comment-submeta">
+									{formatDateTime(comment.createdAt)}
+								</span>
 							</div>
-
 							<p className="comment-text">{comment.message}</p>
 						</div>
 					</div>
+
+					{isSelf && (
+						<Avatar
+							firstName={comment.actor?.first_name}
+							lastName={comment.actor?.last_name}
+							size="sm"
+						/>
+					)}
 				</div>
 			)}
 		</div>
 	);
 });
-
 export default function CommentsSection({
 	epcId,
 	approvalId,
@@ -104,6 +123,7 @@ export default function CommentsSection({
 	ccEmails = [],
 	refreshKey = 0,
 	canComment,
+	currentUserId,
 }: CommentsSectionProps) {
 	const { showToast } = useToast();
 
@@ -243,6 +263,7 @@ export default function CommentsSection({
 							<CommentCard
 								key={comment.id}
 								comment={comment}
+								isSelf={comment.actor?.id === currentUserId}
 								ref={listEndRef}
 							/>
 						))}

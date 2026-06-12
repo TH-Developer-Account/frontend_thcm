@@ -350,6 +350,7 @@ const ActivityFormView = ({
 
 							<CommentsSection
 								epcId={epcData.id}
+								currentUserId={user?.id}
 								approvalId={approvalId}
 								isProposer={permissions.isProposer}
 								mentionableUsers={mentionableUsers}

@@ -156,7 +156,7 @@
 .comments-list {
 	display: flex;
 	flex-direction: column;
-	gap: 10px;
+	gap: 5px;
 	@apply max-h-[45vh] overflow-y-auto px-4 py-2;
 }
 
@@ -165,7 +165,7 @@
 }
 
 .comment-main {
-	@apply flex items-center gap-2;
+	@apply flex items-center gap-1;
 }
 
 .comment-content {
@@ -253,6 +253,16 @@
 	width: 30px;
 	height: 30px;
 }
+.comment-main--self {
+	flex-direction: row-reverse;
+}
+
+/* Right-aligned bubble with brand tint */
+.comment-bubble--self {
+	background-color: #fef0eb; /* light coral tint — matches #E85D2F brand */
+	border-color: #f5b49a;
+	align-items: flex-end; /* right-align meta + text inside */
+}
 
 .comments-empty {
 	@apply p-2 sm:p-4;
@@ -301,23 +311,61 @@
 	animation: commentPulse 1.2s infinite ease-in-out;
 }
 .comment-auditMessage {
-	@apply my-1;
+	@apply my-0.5;
 	width: 100%;
 	display: flex;
 	justify-content: center;
 }
 
 .comment-auditMessage span {
-	@apply rounded-lg px-2 py-1 text-[11px];
+	@apply rounded-lg px-2 py-1 text-[10px] bg-green-50 text-green-800 border-green-200 border;
 	max-width: 75%;
-
-	background: #e9f8ed;
-	color: #475569;
 	font-size: 11px;
 	font-weight: 500;
-	line-height: 1.4;
+	line-height: 1.1;
 	text-align: center;
-	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+/* Bubble layout: meta row on top, message below */
+.comment-bubble {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	justify-content: start;
+	align-items: baseline;
+}
+
+.comment-meta {
+	display: flex;
+	align-items: center;
+	gap: 6px; /* space between name and timestamp */
+	flex-wrap: wrap; /* wraps gracefully on narrow bubbles */
+}
+
+.comment-author {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--color-text-primary);
+	margin: 0;
+	line-height: 1.2;
+}
+
+.comment-submeta {
+	font-size: 10px;
+	color: var(--color-text-tertiary);
+	line-height: 1.2;
+}
+
+.comment-submeta span {
+	display: inline; /* was likely block, which was causing the line break */
+}
+
+.comment-text {
+	font-size: 11px;
+	color: var(--color-text-primary);
+	margin: 0;
+	line-height: 1.5;
+	word-break: break-word;
+	text-align: left;
 }
 
 @keyframes commentPulse {
