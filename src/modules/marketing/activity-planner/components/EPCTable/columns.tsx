@@ -43,14 +43,12 @@ const canCreateLead = (row: EpcListItem) => {
 
 export const getEPCColumns = ({
 	onLeadCreate,
-	// currentUserId,
 }: EpcColumnActions): ColumnDef<EpcListItem>[] => [
 	{
 		accessorKey: "proposal_number",
 		header: "EPC No",
 		cell: ({ row }) => {
 			const epcId = row.original.id;
-			console.log("status", row.original.status);
 			return (
 				<NavLink
 					to={`/marketing/activity-planner/${epcId}`}

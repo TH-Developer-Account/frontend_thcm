@@ -2,10 +2,7 @@ import { Eye } from "lucide-react";
 import { PageHeader } from "../../../../../components/ui/PageHeader";
 import Button from "../../../../../components/common/Button";
 import { Badge } from "../../../../../components/common/Badge";
-import { statusMap } from "../../../../../utils/types";
-
 import type { EpcDetailResponse } from "../../types/epc.types";
-import { getStatusLabel } from "../../utils/formatters";
 
 type ActivityPlannerHeaderProps = {
 	epcData?: EpcDetailResponse | null;
@@ -22,8 +19,6 @@ const ActivityPlannerHeader = ({
 }: ActivityPlannerHeaderProps) => {
 	const title = epcData?.event_name?.title || null;
 	const proposalNo = epcData?.proposal_number || null;
-	const apiStatus = getStatusLabel(epcData?.status);
-	const badgeStatus = epcData?.status ? apiStatus : undefined;
 
 	return (
 		<div className="flex flex-row gap-4 justify-between items-start">
@@ -52,7 +47,7 @@ const ActivityPlannerHeader = ({
 				<div className="flex flex-col items-end">
 					<p className="flex items-center gap-1.5 mt-1 text-[12px] leading-4">
 						<span className="uppercase-label-text">Status:</span>
-						<Badge status={badgeStatus} />
+						<Badge status={epcData?.status} />
 					</p>
 
 					<div className="flex flex-row items-end px-2  mt-1">
