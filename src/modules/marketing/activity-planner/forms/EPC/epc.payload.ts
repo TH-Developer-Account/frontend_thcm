@@ -33,11 +33,11 @@ export const buildEpcUpdatePayload = (
 	return {
 		proposal_number: proposalNumber,
 
-		department_id: values.department,
-		region_id: values.region,
-		branch_id: values.branch,
+		// department_id: values.department,
+		// region_id: values.region,
+		// branch_id: values.branch,
 		budget_master_id: values.budget_master_id,
-		vertical_id: values.vertical,
+		// vertical_id: values.vertical,
 		event_name_id: values.event_name,
 
 		event_scale: toNumber(values.event_scale),

@@ -35,6 +35,7 @@ type EpcFormFieldsProps = {
 	errors: Partial<Record<keyof EpcFormValues, string>>;
 	masters?: EpcMasters;
 	onChange: (name: keyof EpcFormValues, value: string) => void;
+	lockOrgFields?: boolean;
 };
 
 const toDateRange = (from?: string | null, to?: string | null) => {
@@ -64,6 +65,7 @@ export default function EpcFormFields({
 	errors,
 	masters,
 	onChange,
+	lockOrgFields = false,
 }: EpcFormFieldsProps) {
 	const selectedDepartment = values.department || "";
 
@@ -165,7 +167,7 @@ export default function EpcFormFields({
 
 	const selectedPincode = React.useMemo(
 		() => buildPincodeOptionFromValues(values),
-		[values.location, values.locationMeta],
+		[values],
 	);
 
 	const handlePincodeChange = (option: PincodeOption | null) => {
@@ -205,8 +207,13 @@ export default function EpcFormFields({
 						value={findOption(masters?.regions ?? [], values.region)}
 						options={masters?.regions || []}
 						onChange={handleRegionChange}
+						isDisabled={lockOrgFields}
 						required
-						helperText="Select zone to auto populate branches"
+						helperText={
+							lockOrgFields
+								? "Zone cannot be changed after EPC creation"
+								: "Select zone to auto populate branches"
+						}
 						error={errors.region}
 						className="w-full"
 					/>
@@ -219,8 +226,13 @@ export default function EpcFormFields({
 						onChange={(option: SingleValue<Option>) =>
 							onChange("branch", option?.value || "")
 						}
+						isDisabled={lockOrgFields}
 						required
-						helperText="Branches are filtered based on selected zone"
+						helperText={
+							lockOrgFields
+								? "Branch cannot be changed after EPC creation"
+								: "Branches are filtered based on selected zone"
+						}
 						error={errors.branch}
 						className="w-full"
 					/>
@@ -241,8 +253,13 @@ export default function EpcFormFields({
 						value={findOption(masters?.departments ?? [], values.department)}
 						options={masters?.departments || []}
 						onChange={handleDepartmentChange}
+						isDisabled={lockOrgFields}
 						required
-						helperText="Select department to auto populate verticals"
+						helperText={
+							lockOrgFields
+								? "Department cannot be changed after EPC creation"
+								: "Select department to auto populate verticals"
+						}
 						error={errors.department}
 						className="w-full"
 					/>
@@ -255,9 +272,13 @@ export default function EpcFormFields({
 						onChange={(option: SingleValue<Option>) =>
 							onChange("vertical", option?.value || "")
 						}
-						isDisabled={!selectedDepartment}
+						isDisabled={lockOrgFields || !selectedDepartment}
 						required
-						helperText="Verticals are filtered based on selected department"
+						helperText={
+							lockOrgFields
+								? "Vertical cannot be changed after EPC creation"
+								: "Verticals are filtered based on selected department"
+						}
 						error={errors.vertical}
 						className="w-full"
 					/>

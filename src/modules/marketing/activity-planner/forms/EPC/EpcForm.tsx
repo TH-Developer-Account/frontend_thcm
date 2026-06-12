@@ -75,6 +75,7 @@ const EpcForm = ({
 				errors={errors}
 				masters={masters}
 				onChange={handleChange}
+				lockOrgFields={isEditMode}
 			/>
 
 			<div className="mt-4 flex flex-row items-center justify-end gap-2">

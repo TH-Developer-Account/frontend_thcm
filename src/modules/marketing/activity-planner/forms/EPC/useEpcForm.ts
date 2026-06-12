@@ -110,7 +110,12 @@ const shouldRegenerateEpcNo = (
 		name === "vertical"
 	);
 };
-
+const LOCKED_EDIT_FIELDS: readonly (keyof EpcFormValues)[] = [
+	"department",
+	"region",
+	"branch",
+	"vertical",
+];
 export function useEpcForm({
 	mode = "create",
 	epcId: propEpcId,
@@ -148,6 +153,10 @@ export function useEpcForm({
 
 	const handleChange = React.useCallback(
 		(name: keyof EpcFormValues, value: string) => {
+			if (isEditMode && LOCKED_EDIT_FIELDS.includes(name)) {
+				return;
+			}
+
 			setValues((prev) => {
 				const nextValues: EpcFormValues = {
 					...prev,
@@ -173,7 +182,7 @@ export function useEpcForm({
 				};
 			});
 		},
-		[mode, masters],
+		[isEditMode, mode, masters],
 	);
 
 	const handleReset = React.useCallback(() => {
