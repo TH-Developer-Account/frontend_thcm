@@ -364,7 +364,7 @@ const ActivityFormView = ({
 						<EventOutcome eventStatus={eventStatus} epcID={epcData.id} />
 					)}
 
-					{permissions.canPreviewReport && (
+					{permissions.canShowReportSection && (
 						<EventReportSection
 							report={report ?? null}
 							isProposer={permissions.isProposer}

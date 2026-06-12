@@ -52,7 +52,7 @@ const ActivityPlannerHeader = ({
 				<div className="flex flex-col items-end">
 					<p className="flex items-center gap-1.5 mt-1 text-[12px] leading-4">
 						<span className="uppercase-label-text">Status:</span>
-						<Badge status={badgeStatus} text="Status" />
+						<Badge status={badgeStatus} />
 					</p>
 
 					<div className="flex flex-row items-end px-2  mt-1">
