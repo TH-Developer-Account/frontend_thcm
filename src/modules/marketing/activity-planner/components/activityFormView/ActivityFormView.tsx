@@ -25,9 +25,9 @@ import {
 	getCurrentApprovalStage,
 	getIsUserInCurrentStage,
 } from "../../helpers/approvalWorkflow.helpers";
-import { isReportFlowStatus } from "../../helpers/activityPlannerStatus.helper";
 import ResubmitFooterAction from "./ResubmitFooterAction";
 import { ReasonActionModal } from "../common/ReasonActionModal";
+import type { ActivityPermissions } from "../../helpers/activityPermissions.helper";
 
 type EditingSection = "epc" | "crf" | "epf" | null;
 type ReasonModalState = {
@@ -38,49 +38,38 @@ type ReasonModalState = {
 type ActivityFormViewProps = {
 	epcData?: EpcDetailResponse | null;
 	report?: EventReportDetail | null;
-	isProposer?: boolean;
-	isValidator?: boolean;
+	permissions: ActivityPermissions;
+
 	loading?: boolean;
 	hasValidatorPreviewed?: boolean;
 	isValidatingReport?: boolean;
 	isClarifyingReport?: boolean;
+
 	onOpenReportPreview: () => void;
 	onValidateReport: () => void;
 	onClarifyReport?: (reason: string) => void | Promise<void>;
 	onEPCClose?: () => void | Promise<void>;
 	isEPCClose?: boolean;
+
 	editingSection: EditingSection;
 	setEditingSection: React.Dispatch<React.SetStateAction<EditingSection>>;
 	onRefresh: () => Promise<void>;
 	onOpenReportBuilder: () => void;
 
-	isClarifiedPending?: boolean;
 	isSubmittingClarifiedUpdate?: boolean;
-	canSubmitClarifiedUpdate?: boolean;
 	onSubmitClarifiedUpdate?: () => void | Promise<void>;
 
-	isDeviationPending?: boolean;
 	isSubmittingDeviationUpdate?: boolean;
-	canSubmitDeviationUpdate?: boolean;
 	onSubmitDeviationUpdate?: () => void | Promise<void>;
-};
-
-const isDeviationWorkflow = (epcData?: EpcDetailResponse | null) => {
-	return Boolean(
-		epcData?.deviationAmount ||
-		epcData?.deviationReason ||
-		epcData?.deviationDocUrl ||
-		epcData?.deviationDocS3Key,
-	);
 };
 
 const ActivityFormView = ({
 	epcData,
+	report,
+	permissions,
 	editingSection,
 	setEditingSection,
 	onRefresh,
-	isProposer,
-	isValidator,
 	hasValidatorPreviewed,
 	isValidatingReport,
 	isClarifyingReport,
@@ -88,14 +77,9 @@ const ActivityFormView = ({
 	onOpenReportBuilder,
 	onOpenReportPreview,
 	onValidateReport,
-	report,
-	isClarifiedPending = false,
 	isSubmittingClarifiedUpdate = false,
-	canSubmitClarifiedUpdate = false,
 	onSubmitClarifiedUpdate,
-	isDeviationPending = false,
 	isSubmittingDeviationUpdate = false,
-	canSubmitDeviationUpdate = false,
 	onSubmitDeviationUpdate,
 	onEPCClose,
 	isEPCClose = false,
@@ -103,7 +87,6 @@ const ActivityFormView = ({
 	const navigate = useNavigate();
 	const { workspaceId, user } = useAuth();
 	const { showToast } = useToast();
-
 	const appId = React.useMemo(() => getStoredAppId(), []);
 
 	const [deviationPreviewStages, setDeviationPreviewStages] = React.useState<
@@ -154,17 +137,7 @@ const ActivityFormView = ({
 	);
 
 	const eventStatus = epcData?.status ?? "unknown";
-
-	const normalizedEventStatus = String(eventStatus).trim().toUpperCase();
-
-	const isEpcClosed =
-		normalizedEventStatus === "EPC_CLOSED" ||
-		normalizedEventStatus === "CLOSED";
-	const wasDeviated = isDeviationWorkflow(epcData);
-
 	const userId = user?.id as string | undefined;
-	const isProposerUser = userId === epcData?.created_by_id;
-
 	const currentStage = React.useMemo(
 		() => getCurrentApprovalStage(workflowStages),
 		[workflowStages],
@@ -183,37 +156,17 @@ const ActivityFormView = ({
 	);
 
 	const mentionableUsers = React.useMemo(
-		() => getMentionableUsersFromStages(workflowStages),
-		[workflowStages],
+		() => getMentionableUsersFromStages(workflowStages, epcData?.created_by),
+		[workflowStages, epcData?.created_by],
 	);
-
 	const ccEmails = React.useMemo(
 		() => getApprovedStageCcEmails(workflowStages),
 		[workflowStages],
 	);
 
-	const isReportCreated = Boolean(report?.id);
-
-	const canCreateReport =
-		isReportFlowStatus(eventStatus) &&
-		Boolean(isProposer) &&
-		!isReportCreated &&
-		!wasDeviated;
-
-	const canShowReportSection = isReportCreated || canCreateReport;
-
-	const canShowInitialEventOutcome =
-		isProposerUser && eventStatus === "APPROVED" && !wasDeviated;
-
-	const canShowPostReportEventOutcome =
-		eventStatus === "VALIDATED" && !wasDeviated && isProposerUser;
-
 	const reasonMode = reasonModal.mode;
 	const currentStageId = currentStage?.id ?? "";
 	const reportId = report?.id ?? "";
-	const canShowCloseEPCAction =
-		Boolean(onEPCClose) &&
-		(wasDeviated || normalizedEventStatus === "VALIDATED");
 
 	const handleApprove = React.useCallback(async () => {
 		if (!currentStage?.id) return;
@@ -352,6 +305,7 @@ const ActivityFormView = ({
 					<ActivityDetailsSection
 						epcData={epcData}
 						isEditing={editingSection === "epc"}
+						canEdit={permissions.canEditEpc}
 						onEdit={() => setEditingSection("epc")}
 						onCancel={() => setEditingSection(null)}
 						onSuccess={async () => {
@@ -363,6 +317,8 @@ const ActivityFormView = ({
 					<CrfSection
 						epcData={epcData}
 						isEditing={editingSection === "crf"}
+						canEdit={permissions.canEditCrf}
+						canCreate={permissions.canCreateCrf}
 						onEdit={() => setEditingSection("crf")}
 						onCancel={() => setEditingSection(null)}
 						onSuccess={async () => {
@@ -374,6 +330,8 @@ const ActivityFormView = ({
 					<EpfSection
 						epcData={epcData}
 						isEditing={editingSection === "epf"}
+						canEdit={permissions.canEditEpf}
+						canCreate={permissions.canCreateEpf}
 						onEdit={() => setEditingSection("epf")}
 						onCancel={() => setEditingSection(null)}
 						onSuccess={async () => {
@@ -393,24 +351,25 @@ const ActivityFormView = ({
 							<CommentsSection
 								epcId={epcData.id}
 								approvalId={approvalId}
-								isProposer={isProposerUser}
+								isProposer={permissions.isProposer}
 								mentionableUsers={mentionableUsers}
 								ccEmails={ccEmails}
 								refreshKey={commentsRefreshKey}
+								canComment={permissions.isClosed}
 							/>
 						</>
 					)}
 
-					{canShowInitialEventOutcome && (
+					{permissions.canShowInitialEventOutcome && (
 						<EventOutcome eventStatus={eventStatus} epcID={epcData.id} />
 					)}
 
-					{canShowReportSection && (
+					{permissions.canPreviewReport && (
 						<EventReportSection
 							report={report ?? null}
-							isProposer={Boolean(isProposer)}
-							isValidator={Boolean(isValidator)}
-							canCreateReport={canCreateReport}
+							isProposer={permissions.isProposer}
+							isValidator={permissions.isValidator}
+							canCreateReport={permissions.canCreateReport}
 							hasValidatorPreviewed={hasValidatorPreviewed}
 							isValidating={Boolean(isValidatingReport)}
 							isClarifying={Boolean(isClarifyingReport)}
@@ -421,7 +380,7 @@ const ActivityFormView = ({
 						/>
 					)}
 
-					{canShowPostReportEventOutcome && (
+					{permissions.canShowPostReportEventOutcome && (
 						<EventOutcome
 							eventStatus={eventStatus}
 							epcID={epcData.id}
@@ -454,41 +413,41 @@ const ActivityFormView = ({
 						/>
 					</div>
 				)}
-				{canShowCloseEPCAction && (
+				{permissions.canShowCloseEpcAction && (
 					<Button
 						type="button"
 						text={
 							isEPCClose
 								? "Closing..."
-								: isEpcClosed
+								: permissions.isClosed
 									? "EPC Closed"
 									: "Close EPC"
 						}
 						status="outline"
-						disabled={isEPCClose || isEpcClosed}
+						disabled={isEPCClose || permissions.isClosed}
 						onClick={() => {
-							if (isEpcClosed || isEPCClose) return;
+							if (permissions.isClosed || isEPCClose) return;
 							onEPCClose?.();
 						}}
 					/>
 				)}
 			</div>
 
-			{isClarifiedPending && (
+			{permissions.isClarifiedPending && (
 				<ResubmitFooterAction
-					isPending={isClarifiedPending}
+					isPending={permissions.isClarifiedPending}
 					isSubmitting={isSubmittingClarifiedUpdate}
-					canSubmit={canSubmitClarifiedUpdate}
+					canSubmit={permissions.canSubmitClarifiedUpdate}
 					onSubmit={onSubmitClarifiedUpdate}
 					tooltip="Submit clarified changes"
 				/>
 			)}
 
-			{isDeviationPending && (
+			{permissions.isDeviationPending && (
 				<ResubmitFooterAction
-					isPending={isDeviationPending}
+					isPending={permissions.isDeviationPending}
 					isSubmitting={isSubmittingDeviationUpdate}
-					canSubmit={canSubmitDeviationUpdate}
+					canSubmit={permissions.canSubmitDeviationUpdate}
 					onSubmit={onSubmitDeviationUpdate}
 					tooltip="Submit deviation changes"
 				/>

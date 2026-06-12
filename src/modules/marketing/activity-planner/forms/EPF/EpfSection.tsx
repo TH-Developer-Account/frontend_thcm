@@ -16,6 +16,8 @@ type EpfSectionProps = {
 	onEdit: () => void;
 	onCancel: () => void;
 	onSuccess: () => Promise<void>;
+	canEdit?: boolean;
+	canCreate?: boolean;
 };
 
 const EpfSection = ({
@@ -24,6 +26,8 @@ const EpfSection = ({
 	onEdit,
 	onCancel,
 	onSuccess,
+	canEdit,
+	canCreate,
 }: EpfSectionProps) => {
 	const epf = epcData.epf;
 	const crf = epcData.crf;
@@ -48,15 +52,17 @@ const EpfSection = ({
 			<Section
 				title="Activity Proposition Form"
 				action={
-					<Button
-						type="button"
-						text="Create EPF"
-						Icon={Plus}
-						iconColor="red"
-						onClick={onEdit}
-						size="sm"
-						className="epf-section-label text-xs"
-					/>
+					canCreate && (
+						<Button
+							type="button"
+							text="Create EPF"
+							Icon={Plus}
+							iconColor="red"
+							onClick={onEdit}
+							size="sm"
+							className="epf-section-label text-xs"
+						/>
+					)
 				}
 			>
 				<div className="text-xs text-gray-500">
@@ -84,13 +90,15 @@ const EpfSection = ({
 		<Section
 			title="Activity Proposition Form Budget Information"
 			action={
-				<Button
-					type="button"
-					Icon={Pencil}
-					iconColor="red"
-					onClick={onEdit}
-					size="sm"
-				/>
+				canEdit && (
+					<Button
+						type="button"
+						Icon={Pencil}
+						iconColor="red"
+						onClick={onEdit}
+						size="sm"
+					/>
+				)
 			}
 		>
 			{epf.lineItems?.length > 0 ? (

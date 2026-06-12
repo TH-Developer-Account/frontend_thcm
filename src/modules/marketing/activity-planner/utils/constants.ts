@@ -4,7 +4,8 @@ import { Bold, Italic, Code, List } from "lucide-react";
 import type { FormatType } from "../types/workflow.types";
 import type React from "react";
 import type { EpcFilters } from "../types/epc.types";
-import type { Option } from "../../../../components/FormElements/input.types";
+import type { ApiStatus } from "./status";
+import { getStatusLabel } from "./formatters";
 
 export const ACTIVITY_PLANNER_ROUTES = {
 	list: "/marketing/activity-planner",
@@ -130,16 +131,21 @@ export const FORMAT_CURSOR_OFFSET: Record<FormatType, number> = {
 };
 
 // Define once, outside the component (or in constants.ts)
-export const EPC_STATUS_OPTIONS: Option[] = [
-	{ label: "Submitted", value: "SUBMITTED" },
-	{ label: "Pending", value: "PENDING" },
-	{ label: "In Progress", value: "IN_PROGRESS" },
-	{ label: "Approved", value: "APPROVED" },
-	{ label: "Rejected", value: "REJECTED" },
-	{ label: "Clarified", value: "CLARIFIED" },
-	{ label: "Cancelled", value: "CANCELLED" },
-];
 
+export const EPC_STATUS_OPTIONS = [
+	"PENDING",
+	"SUBMITTED",
+	"IN_PROGRESS",
+	"APPROVED",
+	"REJECTED",
+	"CLARIFIED",
+	"CANCELLED",
+] as const satisfies readonly ApiStatus[];
+
+export const epcStatusOptions = EPC_STATUS_OPTIONS.map((value) => ({
+	value,
+	label: getStatusLabel(value),
+}));
 export const EMPTY_EPC_FILTERS: EpcFilters = {
 	status: [],
 	zone: [],

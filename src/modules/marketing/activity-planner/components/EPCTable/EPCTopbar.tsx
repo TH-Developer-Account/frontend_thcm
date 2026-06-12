@@ -14,6 +14,7 @@ import type { EpcFilters } from "../../types/epc.types";
 import { clearStoredEpcInfo } from "../../helpers/localstorage";
 import { useMasterData } from "../../../../../hooks/useMasterData";
 import { EPC_STATUS_OPTIONS } from "../../utils/constants";
+import { getStatusLabel } from "../../utils/formatters";
 
 type EPCTopbarProps = {
 	search: string;
@@ -40,8 +41,10 @@ const EPCTopbar = ({
 	const { data } = useMasterData();
 	const eventTypeOptions = data?.eventNames ?? [];
 	const zoneOptions = data?.regions ?? [];
-	const statusOptions = EPC_STATUS_OPTIONS;
-
+	const EPC_STATUS_FILTER_OPTIONS = EPC_STATUS_OPTIONS.map((status) => ({
+		label: getStatusLabel(status),
+		value: status,
+	}));
 	const handleCreateEpc = () => {
 		clearStoredEpcInfo();
 		navigate("/marketing/activity-planner/create");
@@ -69,7 +72,7 @@ const EPCTopbar = ({
 						activeFilterCount={activeFilterCount}
 						zoneOptions={zoneOptions}
 						eventTypeOptions={eventTypeOptions}
-						statusOptions={statusOptions}
+						statusOptions={EPC_STATUS_FILTER_OPTIONS}
 					/>
 					<Can action="write" app="MAP" module="EPC">
 						<Button

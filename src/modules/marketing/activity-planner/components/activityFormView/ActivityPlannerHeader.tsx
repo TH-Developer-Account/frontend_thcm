@@ -5,6 +5,7 @@ import { Badge } from "../../../../../components/common/Badge";
 import { statusMap } from "../../../../../utils/types";
 
 import type { EpcDetailResponse } from "../../types/epc.types";
+import { getStatusLabel } from "../../utils/formatters";
 
 type ActivityPlannerHeaderProps = {
 	epcData?: EpcDetailResponse | null;
@@ -21,8 +22,8 @@ const ActivityPlannerHeader = ({
 }: ActivityPlannerHeaderProps) => {
 	const title = epcData?.event_name?.title || null;
 	const proposalNo = epcData?.proposal_number || null;
-
-	const badgeStatus = epcData?.status ? statusMap[epcData.status] : undefined;
+	const apiStatus = getStatusLabel(epcData?.status);
+	const badgeStatus = epcData?.status ? apiStatus : undefined;
 
 	return (
 		<div className="flex flex-row gap-4 justify-between items-start">

@@ -1,4 +1,5 @@
 import type React from "react";
+import type { TableRow } from "../components/activityFormView/LineTableView";
 
 export type ProductType = "EPF" | "CRF";
 
@@ -69,6 +70,35 @@ export type LineTableRow = {
 	quotationFileUrl?: string | null;
 	quotationFileName?: string | null;
 };
+
+export type TableRow = {
+	id?: string;
+
+	sno: number;
+
+	partNumber?: string;
+
+	particulars: string;
+
+	description: string;
+
+	rate?: number;
+
+	qty?: number;
+
+	total?: number;
+
+	height?: number;
+
+	width?: number;
+
+	unit?: string;
+
+	category?: string;
+	quotationUrl?: string | null;
+	quotationFileName?: string | null;
+};
+export type LineItemTableGen = LineTableRow[] | TableRow[];
 
 export interface CostItem {
 	id: string;

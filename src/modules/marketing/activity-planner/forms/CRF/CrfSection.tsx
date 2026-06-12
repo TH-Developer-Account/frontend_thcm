@@ -14,6 +14,8 @@ type CrfSectionProps = {
 	onEdit: () => void;
 	onCancel: () => void;
 	onSuccess: () => Promise<void>;
+	canEdit?: boolean;
+	canCreate?: boolean;
 };
 
 const CrfSection = ({
@@ -22,6 +24,8 @@ const CrfSection = ({
 	onEdit,
 	onCancel,
 	onSuccess,
+	canEdit,
+	canCreate,
 }: CrfSectionProps) => {
 	const crf = epcData.crf;
 	const hasLineItems = Boolean(crf?.lineItems?.length);
@@ -44,14 +48,16 @@ const CrfSection = ({
 			<Section
 				title="Collateral Requisition Form Line Items"
 				action={
-					<Button
-						type="button"
-						iconPosition="right"
-						Icon={Pencil}
-						iconColor="red"
-						size="sm"
-						onClick={onEdit}
-					/>
+					canEdit && (
+						<Button
+							type="button"
+							iconPosition="right"
+							Icon={Pencil}
+							iconColor="red"
+							size="sm"
+							onClick={onEdit}
+						/>
+					)
 				}
 			>
 				<LineTableView
@@ -67,15 +73,17 @@ const CrfSection = ({
 		<Section
 			title="Collateral Requisition Form"
 			action={
-				<Button
-					type="button"
-					text="Create CRF"
-					Icon={Plus}
-					iconColor="red"
-					size="sm"
-					className="epf-section-label text-xs"
-					onClick={onEdit}
-				/>
+				canCreate && (
+					<Button
+						type="button"
+						text="Create CRF"
+						Icon={Plus}
+						iconColor="red"
+						size="sm"
+						className="epf-section-label text-xs"
+						onClick={onEdit}
+					/>
+				)
 			}
 		>
 			<div className="text-sm text-gray-500">

@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import type { GeneralStatus } from "../../utils/types";
+import type { StatusVariant } from "../../modules/marketing/activity-planner/utils/status";
 
 export interface ToggleProps {
 	checked: boolean;
@@ -85,8 +85,8 @@ export type NavigateButtonProps = {
 
 export interface BadgeProps {
 	children?: React.ReactNode;
-	status?: GeneralStatus;
-	variant?: "primary" | "success" | "warning" | "danger" | "disable";
+	status?: string | null;
+	variant?: StatusVariant | string | null;
 	text?: string;
 }
 

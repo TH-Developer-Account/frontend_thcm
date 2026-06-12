@@ -9,6 +9,14 @@ import CommentInput from "./CommentInput";
 import "../../../marketing.styles.css";
 import { getAuditMessage } from "../../helpers/activityLogMessage.helper";
 
+export type MentionableUserInput = {
+	id: string;
+	first_name?: string | null;
+	last_name?: string | null;
+	email?: string | null;
+	avatarUrl?: string | null;
+};
+
 export type CommentUser = {
 	id: string;
 	first_name: string;
@@ -37,6 +45,7 @@ type CommentsSectionProps = {
 	mentionableUsers?: CommentUser[];
 	ccEmails?: string[];
 	refreshKey?: number;
+	canComment?: boolean;
 };
 
 const CommentCard = React.memo(function CommentCard({
@@ -94,6 +103,7 @@ export default function CommentsSection({
 	mentionableUsers = [],
 	ccEmails = [],
 	refreshKey = 0,
+	canComment,
 }: CommentsSectionProps) {
 	const { showToast } = useToast();
 
@@ -240,14 +250,16 @@ export default function CommentsSection({
 				)}
 
 				<div className="comments-create light-blue-bg-header">
-					<div className="comments-create-input" ref={listEndRef}>
-						<CommentInput
-							disabled={commentsLoading}
-							onSubmit={handleCreate}
-							mentionableUsers={mentionableUsers}
-							onMentionInsert={handleMentionInsert}
-						/>
-					</div>
+					{!canComment && (
+						<div className="comments-create-input" ref={listEndRef}>
+							<CommentInput
+								disabled={commentsLoading}
+								onSubmit={handleCreate}
+								mentionableUsers={mentionableUsers}
+								onMentionInsert={handleMentionInsert}
+							/>
+						</div>
+					)}
 				</div>
 			</section>
 		</Section>

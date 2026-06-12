@@ -1,3 +1,7 @@
+import type {
+	CommentUser,
+	MentionableUserInput,
+} from "../components/commentSection/CommentsSection";
 import type { WorkflowStage } from "../types/workflow.types";
 
 export const getCurrentApprovalStage = (stages: WorkflowStage[]) => {
@@ -37,23 +41,55 @@ export const getIsUserInCurrentStage = (
 	);
 };
 
-export const getMentionableUsersFromStages = (stages: WorkflowStage[]) => {
-	const seen = new Set<string>();
+const toCommentUser = (
+	user?: MentionableUserInput | null,
+	fallbackName = "User",
+): CommentUser | null => {
+	if (!user?.id) return null;
 
-	return stages.flatMap((stage) =>
-		stage.approvals.flatMap((approval) => {
-			const user = approval.approver;
-			if (!user || seen.has(user.id)) return [];
-
-			seen.add(user.id);
-			return [user];
-		}),
-	);
+	return {
+		id: user.id,
+		first_name: user.first_name ?? fallbackName,
+		last_name: user.last_name ?? "",
+		email: user.email ?? undefined,
+		avatarUrl: user.avatarUrl ?? undefined,
+	};
 };
 
+export const getMentionableUsersFromStages = (
+	stages: WorkflowStage[],
+	proposer?: MentionableUserInput | null,
+): CommentUser[] => {
+	const seen = new Set<string>();
+	const users: CommentUser[] = [];
+
+	const addUser = (
+		user?: MentionableUserInput | null,
+		fallbackName = "User",
+	) => {
+		const normalizedUser = toCommentUser(user, fallbackName);
+
+		if (!normalizedUser || seen.has(normalizedUser.id)) return;
+
+		seen.add(normalizedUser.id);
+		users.push(normalizedUser);
+	};
+
+	addUser(proposer, "Proposer");
+
+	stages.forEach((stage) => {
+		stage.approvals.forEach((approval) => {
+			addUser(approval.approver, "Approver");
+		});
+	});
+
+	return users;
+};
 export const getApprovedStageCcEmails = (stages: WorkflowStage[]) => {
 	return stages
 		.filter((stage) => stage.status === "APPROVED")
-		.flatMap((stage) => stage.approvals.map((approval) => approval.approver?.email))
+		.flatMap((stage) =>
+			stage.approvals.map((approval) => approval.approver?.email),
+		)
 		.filter((email): email is string => Boolean(email));
 };

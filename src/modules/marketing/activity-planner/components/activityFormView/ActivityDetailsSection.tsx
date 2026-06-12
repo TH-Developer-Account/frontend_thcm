@@ -20,6 +20,7 @@ type ActivityDetailsSectionProps = {
 	onEdit: () => void;
 	onCancel: () => void;
 	onSuccess: () => Promise<void>;
+	canEdit?: boolean;
 };
 
 const ActivityDetailsSection = ({
@@ -28,6 +29,7 @@ const ActivityDetailsSection = ({
 	onEdit,
 	onCancel,
 	onSuccess,
+	canEdit,
 }: ActivityDetailsSectionProps) => {
 	const [showFullDescription, setShowFullDescription] = useState(false);
 	const [showFullObjective, setShowFullObjective] = useState(false);
@@ -54,13 +56,15 @@ const ActivityDetailsSection = ({
 		<Section
 			title="Activity Planner Details"
 			action={
-				<Button
-					type="button"
-					Icon={Pencil}
-					size="sm"
-					iconColor="red"
-					onClick={onEdit}
-				/>
+				canEdit ? (
+					<Button
+						type="button"
+						Icon={Pencil}
+						iconColor="red"
+						size="sm"
+						onClick={onEdit}
+					/>
+				) : null
 			}
 		>
 			<div className="mt-3 px-2">

@@ -1,5 +1,7 @@
-import type { ApprovalApiStatus } from "../../types";
+import type { CommentUser } from "../components/commentSection/CommentsSection";
+import type { ApiStatus } from "../utils/status";
 
+export type ApprovalApiStatus = ApiStatus;
 export type ApiDateString = string;
 
 export type EpcListParams = {
@@ -102,12 +104,15 @@ export type EpcDetailResponse = EpcDeviationInfo & {
 	created_by_id: string;
 	updated_by_id: string;
 
-	created_by?: {
-		id: string;
-		first_name?: string;
-		last_name?: string;
-		email?: string;
-	} | null;
+	created_by?:
+		| {
+				id: string;
+				first_name?: string;
+				last_name?: string;
+				email?: string;
+		  }
+		| CommentUser
+		| null;
 
 	department_id: string;
 	region_id: string;

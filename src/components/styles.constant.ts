@@ -7,7 +7,7 @@ const STATUS_STYLE_MAP: Record<string, string> = {
 	cancelled: "bg-red-100 text-red-800 ring-red-200",
 	pending: "bg-amber-100 text-amber-800 ring-amber-200 ",
 	submitted: "bg-blue-100 text-blue-800 ring-blue-200",
-	"report submitted": "bg-sky-100 text-sky-800 ring-sky-200",
+	report_submitted: "bg-sky-100 text-sky-800 ring-sky-200",
 	brand: "bg-[#f35a00] text-white",
 	outline:
 		"border border-orange-200 bg-orange-50 text-orange-700 hover:border-red-400 hover:bg-red-100",
@@ -15,10 +15,11 @@ const STATUS_STYLE_MAP: Record<string, string> = {
 	inactive: "bg-red-100 text-red-800 ",
 	validated: "bg-green-100 text-green-800 ring-green-200  ",
 	clarified: "bg-yellow-100 text-yellow-800 ring-yellow-200",
-	"report clarified": "bg-yellow-100 text-yellow-800 ring-yellow-200",
+	report_clarified: "bg-yellow-100 text-yellow-800 ring-yellow-200",
 	in_progress: "bg-blue-100 text-blue-800 ring-blue-200",
 	deviated: "bg-red-100 text-red-800 ring-red-200",
 	closed: "bg-gray-100 text-gray-800 ring-gray-200",
+	sent_back: "bg-gray-100 text-gray-800 ring-gray-200",
 };
 
 export const resolveStatusStyle = ({ status }: { status?: string }): string => {

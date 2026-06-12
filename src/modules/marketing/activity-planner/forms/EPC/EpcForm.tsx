@@ -91,17 +91,18 @@ const EpcForm = ({
 					/>
 				)}
 
-				<Button
-					type="button"
-					text="Reset"
-					onClick={handleReset}
-					Icon={RefreshCcw}
-					className="text-red-600"
-					size="sm"
-					status="outline"
-					iconColor="red"
-				/>
-
+				{isEditMode && (
+					<Button
+						type="button"
+						text="Reset"
+						onClick={handleReset}
+						Icon={RefreshCcw}
+						className="text-red-600"
+						size="sm"
+						status="outline"
+						iconColor="red"
+					/>
+				)}
 				<Button
 					type="button"
 					text={isEditMode ? "Update" : "Create EPC"}

@@ -1,54 +1,33 @@
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { useAuth } from "../../../../context/Auth/useAuth";
-
 import type { EpcDetailResponse } from "../types/epc.types";
-import {
-	hasUnresolvedDeviationInComments,
-	isStatus,
-	getUserId,
-	type WorkflowEntry,
-	hasFormUpdateAfterIssue,
-} from "../helpers/activityPlannerStatus.helper";
 import { useSubmitDeviatedUpdatedFormMutation } from "../queries/useEventOutcomeMutation";
 import {
 	showApiErrorToast,
 	showSuccessToast,
 } from "../../../../utils/apiError.helper";
+import type { ActivityPermissions } from "../helpers/activityPermissions.helper";
 
 type UseDeviationResubmissionArgs = {
 	epcData?: EpcDetailResponse | null;
-	workflowEntries?: WorkflowEntry[];
+	permissions: ActivityPermissions;
 	onRefresh: () => Promise<unknown>;
 	appId?: string | null;
 };
 
 export const useDeviationResubmission = ({
 	epcData,
-	workflowEntries = [],
 	onRefresh,
+	permissions,
 	appId,
 }: UseDeviationResubmissionArgs) => {
 	const { showToast } = useToast();
-	const auth = useAuth();
 	const { workspaceId } = useAuth();
-	const currentUserId = getUserId(auth);
 
 	const submitDeviationMutation = useSubmitDeviatedUpdatedFormMutation();
-
-	const isProposer =
-		Boolean(currentUserId) && currentUserId === epcData?.created_by_id;
-
 	const workflowId = epcData?.activeWorkflow?.id ?? null;
-
-	const hasUnresolvedDeviation =
-		hasUnresolvedDeviationInComments(workflowEntries);
-	const isDeviationPending =
-		isProposer &&
-		isStatus(epcData?.status, "DEVIATION_IN_PROGRESS") &&
-		hasUnresolvedDeviation;
-	const hasFormUpdate = hasFormUpdateAfterIssue(workflowEntries, "DEVIATION");
-
-	const canSubmitDeviationUpdate = isDeviationPending && hasFormUpdate;
+	const isDeviationPending = permissions.isDeviationPending;
+	const canSubmitDeviationUpdate = permissions.canSubmitDeviationUpdate;
 
 	const submitDeviationUpdate = async () => {
 		if (!workflowId) {

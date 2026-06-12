@@ -1,7 +1,11 @@
 import { Paperclip } from "lucide-react";
 import { CRF_CATEGORIES } from "../../../constant";
 
-import type { ColumnConfig } from "../../types/lineItem.types";
+import type {
+	ColumnConfig,
+	LineItemTableGen,
+	TableRow,
+} from "../../types/lineItem.types";
 
 import {
 	ARTWORK_COLUMNS,
@@ -9,38 +13,10 @@ import {
 	OVERHEAD_COLUMNS,
 } from "../../utils/columnPresets";
 
-export type TableRow = {
-	id?: string;
-
-	sno: number;
-
-	partNumber?: string;
-
-	particulars: string;
-
-	description: string;
-
-	rate?: number;
-
-	qty?: number;
-
-	total?: number;
-
-	height?: number;
-
-	width?: number;
-
-	unit?: string;
-
-	category?: string;
-	quotationUrl?: string | null;
-	quotationFileName?: string | null;
-};
-
 type LineTableViewProps = {
 	title?: string;
 
-	data?: TableRow[];
+	data?: LineItemTableGen[] | TableRow[];
 
 	showGrandTotal?: boolean;
 

@@ -1,5 +1,11 @@
 import type { EpcDetailResponse, EpcWorkflowStage } from "../types/epc.types";
 import type { BudgetItem, ShareInfo } from "../types/epf.types";
+import {
+	STATUS_CONFIG,
+	type ApiStatus,
+	type StatusLabel,
+	type StatusVariant,
+} from "./status";
 
 export const formatDate = (value?: string | null) => {
 	if (!value) return "--";
@@ -184,3 +190,32 @@ export const mapBudgetShareInfo = (data: BudgetShareInput) => {
 		shareInfo,
 	};
 };
+
+export const normalizeApiStatus = (status?: string | null) =>
+	String(status ?? "")
+		.trim()
+		.toUpperCase();
+
+export const getStatusConfig = (status?: string | null) => {
+	const normalized = normalizeApiStatus(status);
+
+	return STATUS_CONFIG[normalized as ApiStatus];
+};
+
+export const getStatusLabel = (
+	status?: string | null,
+): StatusLabel | string => {
+	return getStatusConfig(status)?.label ?? String(status ?? "--");
+};
+
+export const getStatusVariant = (
+	status?: string | null,
+): StatusVariant | undefined => {
+	return getStatusConfig(status)?.variant;
+};
+
+export const getStatusOptions = () =>
+	Object.entries(STATUS_CONFIG).map(([value, config]) => ({
+		value,
+		label: config.label,
+	}));

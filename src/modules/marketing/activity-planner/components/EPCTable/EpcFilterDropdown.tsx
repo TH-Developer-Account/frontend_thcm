@@ -5,16 +5,19 @@ import Button from "../../../../../components/common/Button";
 import Checkbox from "../../../../../components/FormElements/Checkbox";
 import type { EpcFilters } from "../../types/epc.types";
 
-type OptionItem = { label: string; value: string };
+type OptionItem = {
+	label: string;
+	value: string;
+};
 
 type EpcFilterDropdownProps = {
 	filters: EpcFilters;
 	onChange: (updated: Partial<EpcFilters>) => void;
 	onClearAll: () => void;
 	activeFilterCount: number;
-	zoneOptions: OptionItem[];
-	eventTypeOptions: OptionItem[];
-	statusOptions: OptionItem[];
+	zoneOptions: readonly OptionItem[];
+	eventTypeOptions: readonly OptionItem[];
+	statusOptions: readonly OptionItem[];
 };
 
 const SectionLabel = ({ label }: { label: string }) => (
@@ -49,7 +52,7 @@ const CheckboxList = ({
 	onToggle,
 	cols = 2,
 }: {
-	options: OptionItem[];
+	options: readonly OptionItem[];
 	selected: string[];
 	onToggle: (value: string) => void;
 	cols?: 1 | 2;

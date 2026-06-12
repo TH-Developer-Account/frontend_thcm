@@ -10,7 +10,7 @@ import EventReportTemplate from "../forms/EventReport/EventReportTemplate";
 import EventReportPreview from "../forms/EventReport/EventReportPreview";
 import { useActivityPlanner } from "../hooks/useActivityPlanner";
 
-type PageView = "form" | "report-builder";
+type PageView = "form" | "report-builder" | "report-preview";
 
 const ActivityPlannerPage = () => {
 	const { id } = useParams<{ id: string }>();
@@ -20,10 +20,9 @@ const ActivityPlannerPage = () => {
 		workflowEntries,
 		reportData,
 		reportQuery,
+		permissions,
 		isLoading,
 		isFetching,
-		isProposer,
-		isValidator,
 		proposerName,
 		hasValidatorPreviewed,
 		isValidatingReport,
@@ -33,12 +32,8 @@ const ActivityPlannerPage = () => {
 		handleOpenReportPreview,
 		handleValidateReport,
 		handleClarifyReport,
-		isClarifiedPending,
-		canSubmitClarifiedUpdate,
 		isSubmittingClarifiedUpdate,
 		submitClarifiedUpdate,
-		canSubmitDeviationUpdate,
-		isDeviationPending,
 		isSubmittingDeviationUpdate,
 		submitDeviationUpdate,
 		handleCloseEPC,
@@ -46,11 +41,22 @@ const ActivityPlannerPage = () => {
 
 	const [pageView, setPageView] = React.useState<PageView>("form");
 	const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
-	const [isReportPreviewOpen, setReportIsPreviewOpen] = React.useState(false);
+
 	const [editingSection, setEditingSection] = React.useState<
 		"epc" | "crf" | "epf" | null
 	>(null);
 
+	const closeReportPreview = React.useCallback(() => {
+		setPageView("form");
+	}, []);
+	const openReportBuilder = React.useCallback(() => {
+		setPageView("report-builder");
+	}, []);
+
+	const openReportPreview = React.useCallback(() => {
+		handleOpenReportPreview();
+		setPageView("report-preview");
+	}, [handleOpenReportPreview]);
 	if (isLoading) return <Loader />;
 
 	return (
@@ -72,9 +78,7 @@ const ActivityPlannerPage = () => {
 							eventCost={epcData?.epf?.eventBudget || 0}
 							initialReport={reportData}
 							onBack={() => setPageView("form")}
-							onPreview={() =>
-								handleOpenReportPreview(() => setReportIsPreviewOpen(true))
-							}
+							onPreview={openReportPreview}
 							onSuccess={async () => {
 								setPageView("form");
 								await handleRefresh();
@@ -89,23 +93,16 @@ const ActivityPlannerPage = () => {
 						setEditingSection={setEditingSection}
 						onRefresh={handleRefresh}
 						report={reportData}
-						isProposer={Boolean(isProposer)}
-						isValidator={Boolean(isValidator)}
+						permissions={permissions}
 						hasValidatorPreviewed={hasValidatorPreviewed}
 						isValidatingReport={isValidatingReport}
 						isClarifyingReport={isClarifyingReport}
-						isClarifiedPending={isClarifiedPending}
 						isSubmittingClarifiedUpdate={isSubmittingClarifiedUpdate}
-						onOpenReportBuilder={() => setPageView("report-builder")}
-						onOpenReportPreview={() =>
-							handleOpenReportPreview(() => setReportIsPreviewOpen(true))
-						}
+						onOpenReportBuilder={openReportBuilder}
+						onOpenReportPreview={openReportPreview}
 						onValidateReport={handleValidateReport}
 						onClarifyReport={handleClarifyReport}
 						onSubmitClarifiedUpdate={submitClarifiedUpdate}
-						canSubmitClarifiedUpdate={canSubmitClarifiedUpdate}
-						canSubmitDeviationUpdate={canSubmitDeviationUpdate}
-						isDeviationPending={isDeviationPending}
 						isSubmittingDeviationUpdate={isSubmittingDeviationUpdate}
 						onSubmitDeviationUpdate={submitDeviationUpdate}
 						onEPCClose={handleCloseEPC}
@@ -122,10 +119,10 @@ const ActivityPlannerPage = () => {
 				onClose={() => setIsPreviewOpen(false)}
 			/>
 
-			{isReportPreviewOpen && (
+			{pageView === "report-preview" && (
 				<EventReportPreview
-					open={isReportPreviewOpen}
-					onClose={() => setReportIsPreviewOpen(false)}
+					open={true}
+					onClose={closeReportPreview}
 					epcData={epcData ?? null}
 					report={reportData}
 					loading={reportQuery.isLoading || reportQuery.isFetching}

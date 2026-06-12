@@ -11,9 +11,9 @@ import { useCloseEPC } from "../queries/useEventOutcomeMutation";
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { useClarifiedResubmission } from "./useClarifiedResubmission";
 import { useDeviationResubmission } from "./useDeviationResubmission";
-import { isReportFlowStatus } from "../helpers/activityPlannerStatus.helper";
 import type { EventReportDetail } from "../types/event.report.types";
 import { getStoredAppId } from "../helpers/localstorage";
+import { getActivityPermissions } from "../helpers/activityPermissions.helper";
 
 const normalizeReportForView = (
 	report: EventReportDetail | any | null | undefined,
@@ -41,11 +41,7 @@ export const useActivityPlanner = (id: string | undefined) => {
 		refetch,
 	} = useEpcDetailQuery(id);
 
-	const reportQuery = useEventReportQuery(
-		id,
-		Boolean(id) && isReportFlowStatus(epcData?.status),
-	);
-
+	const reportQuery = useEventReportQuery(id, Boolean(id) && Boolean(epcData));
 	const reportData = React.useMemo(
 		() => normalizeReportForView(reportQuery.data ?? epcData?.report ?? null),
 		[reportQuery.data, epcData?.report],
@@ -68,8 +64,20 @@ export const useActivityPlanner = (id: string | undefined) => {
 	const [hasValidatorPreviewed, setHasValidatorPreviewed] =
 		React.useState(false);
 
-	const isProposer = epcData?.created_by_id === user?.id;
-	const isValidator = reportData?.validatorId === user?.id;
+	const permissions = React.useMemo(
+		() =>
+			getActivityPermissions({
+				epcData: epcData ?? null,
+				report: reportData,
+				workflowEntries,
+				hasValidatorPreviewed,
+				userId: user?.id,
+			}),
+		[epcData, reportData, workflowEntries, hasValidatorPreviewed, user?.id],
+	);
+
+	const isProposer = permissions.isProposer;
+	const isValidator = permissions.isValidator;
 
 	const proposerName = epcData?.created_by
 		? `${epcData.created_by.first_name ?? ""} ${
@@ -84,16 +92,11 @@ export const useActivityPlanner = (id: string | undefined) => {
 		await refetchWorkflowEntries();
 	}, [refetch, refetchWorkflowEntries]);
 
-	const handleOpenReportPreview = React.useCallback(
-		(onOpen: () => void) => {
-			onOpen();
-
-			if (isValidator) {
-				setHasValidatorPreviewed(true);
-			}
-		},
-		[isValidator],
-	);
+	const handleOpenReportPreview = React.useCallback(() => {
+		if (isValidator) {
+			setHasValidatorPreviewed(true);
+		}
+	}, [isValidator]);
 
 	const handleValidateReport = React.useCallback(async () => {
 		if (!reportId || !epcId) {
@@ -169,7 +172,7 @@ export const useActivityPlanner = (id: string | undefined) => {
 
 	const clarifiedResubmission = useClarifiedResubmission({
 		epcData: epcData ?? null,
-		workflowEntries,
+		permissions,
 		onRefresh: handleRefresh,
 	});
 
@@ -177,7 +180,7 @@ export const useActivityPlanner = (id: string | undefined) => {
 
 	const deviationResubmission = useDeviationResubmission({
 		epcData: epcData ?? null,
-		workflowEntries,
+		permissions,
 		onRefresh: handleRefresh,
 		appId,
 	});
@@ -188,10 +191,13 @@ export const useActivityPlanner = (id: string | undefined) => {
 		reportData,
 		reportQuery,
 
+		permissions,
+
 		isLoading,
 		isFetching,
-		isProposer,
-		isValidator,
+		isProposer: permissions.isProposer,
+		isValidator: permissions.isValidator,
+
 		proposerName,
 		hasValidatorPreviewed,
 		isValidatingReport: validateReportMutation.isPending,

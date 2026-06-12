@@ -1,9 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { NavLink } from "react-router-dom";
-
 import { Badge } from "../../../../../components/common/Badge";
-import { status } from "../../utils/constants";
-
 import type { EpcListItem } from "../../types/epc.types";
 import EPCActionMenu from "./EPCActionMenu";
 import { formatDate } from "../../utils/formatters";
@@ -24,16 +21,6 @@ const getEventName = (row: EpcListItem) => {
 	return row.event_title || "--";
 };
 
-export const getStatusForBadge = (apiStatus?: string) => {
-	if (!apiStatus) return status.PENDING;
-
-	return (
-		status[apiStatus as keyof typeof status] ??
-		status[apiStatus.toUpperCase() as keyof typeof status] ??
-		status[apiStatus.toLowerCase() as keyof typeof status] ??
-		status.PENDING
-	);
-};
 const hasEventStarted = (eventFromDate?: string | null) => {
 	if (!eventFromDate) return false;
 
@@ -53,17 +40,6 @@ const canCreateLead = (row: EpcListItem) => {
 			hasEventStarted(row.event_from_date))
 	);
 };
-// const canCreateLead = (row: EpcListItem, currentUserId?: string) => {
-// 	const isProposer =
-// 		Boolean(currentUserId) && row.created_by_id === currentUserId;
-
-// 	const isAllowedStatus =
-// 		row.status?.toUpperCase() === "APPROVED" ||
-// 		(row.status?.toUpperCase() === "CONDUCTED" &&
-// 			hasEventStarted(row.event_from_date));
-
-// 	return isProposer && isAllowedStatus;
-// };
 
 export const getEPCColumns = ({
 	onLeadCreate,
@@ -74,6 +50,7 @@ export const getEPCColumns = ({
 		header: "EPC No",
 		cell: ({ row }) => {
 			const epcId = row.original.id;
+			console.log("status", row.original.status);
 			return (
 				<NavLink
 					to={`/marketing/activity-planner/${epcId}`}
@@ -103,9 +80,7 @@ export const getEPCColumns = ({
 	{
 		accessorKey: "status",
 		header: "Status",
-		cell: ({ row }) => (
-			<Badge status={getStatusForBadge(row.original.status)} />
-		),
+		cell: ({ row }) => <Badge status={row.original.status} />,
 	},
 	{
 		accessorKey: "location",
