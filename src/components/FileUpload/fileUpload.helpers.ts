@@ -29,26 +29,14 @@ export function getAcceptByKind(
 ): string | undefined {
 	const config = FILE_UPLOAD_LIMITS[kind];
 
-	if (!config.mimeTypes.length) return undefined;
+	const acceptValues = [
+		...config.mimeTypes,
+		...(config.extensions ?? []).map((extension) => `.${extension}`),
+	];
 
-	return config.mimeTypes.join(",");
-}
-
-export function validateUploadFile(
-	file: File,
-	kind: FileUploadKind = "image",
-): FileUploadError {
-	const config = FILE_UPLOAD_LIMITS[kind];
-
-	if (config.mimeTypes.length > 0 && !config.mimeTypes.includes(file.type)) {
-		return `"${file.name}" is not supported. Use ${config.label}.`;
-	}
-
-	if (file.size > config.maxSize) {
-		return `"${file.name}" exceeds the ${formatFileSize(config.maxSize)} limit.`;
-	}
-
-	return null;
+	return acceptValues.length > 0
+		? [...new Set(acceptValues)].join(",")
+		: undefined;
 }
 
 export function createFileUploadValue(file: File): FileUploadValue {
@@ -104,4 +92,33 @@ export function isPdfUpload(value: FileUploadValue): boolean {
 	return (
 		value.type === "application/pdf" || /\.pdf$/i.test(value.name || value.url)
 	);
+}
+
+export function validateUploadFile(
+	file: File,
+	kind: FileUploadKind = "image",
+): FileUploadError {
+	const config = FILE_UPLOAD_LIMITS[kind];
+	const extension = getFileExtension(file.name);
+
+	const hasMimeRestrictions = config.mimeTypes.length > 0;
+	const hasExtensionRestrictions = Boolean(config.extensions?.length);
+
+	const validMimeType =
+		!hasMimeRestrictions || config.mimeTypes.includes(file.type);
+
+	const validExtension =
+		!hasExtensionRestrictions || config.extensions?.includes(extension);
+
+	if (!validMimeType && !validExtension) {
+		return `"${file.name}" is not supported. Use ${config.label}.`;
+	}
+
+	if (file.size > config.maxSize) {
+		return `"${file.name}" exceeds the ${formatFileSize(
+			config.maxSize,
+		)} limit.`;
+	}
+
+	return null;
 }

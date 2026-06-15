@@ -1,7 +1,12 @@
-export type FileUploadKind = "image" | "pdf" | "document" | "any";
+export type FileUploadKind =
+	| "image"
+	| "pdf"
+	| "document"
+	| "spreadsheet"
+	| "any";
 
 export type FileUploadValue = {
-	id: string;
+	id?: string;
 	file: File | null;
 	url: string;
 	name: string;

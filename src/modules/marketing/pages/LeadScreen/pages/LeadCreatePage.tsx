@@ -33,7 +33,13 @@ import "../styles/leads.css";
 import PageSectionLayout from "../../../../../layout/PageSectionLayout";
 import NavigateButton from "../../../../../components/common/NavigateButton";
 import Button from "../../../../../components/common/Button";
-import { FileUp } from "lucide-react";
+import { FileUp, Upload, X } from "lucide-react";
+import { Modal } from "../../../../../components/common/Modal";
+import { FileUploadField } from "../../../../../components/FileUpload/FileUploadField";
+import type {
+	FileUploadChangeMeta,
+	FileUploadValue,
+} from "../../../../../components/FileUpload/fileUpload.types";
 
 export default function LeadCreatePage() {
 	const location = useLocation();
@@ -51,10 +57,17 @@ export default function LeadCreatePage() {
 	const [savingRowId, setSavingRowId] = React.useState<string | null>(null);
 	const [deletingId, setDeletingId] = React.useState<string | null>(null);
 	const [errors, setErrors] = React.useState<LeadValidationErrors>({});
+	const [isImportModalOpen, setIsImportModalOpen] = React.useState(false);
+	const [importFile, setImportFile] = React.useState<FileUploadValue | null>(
+		null,
+	);
+	const [importFileError, setImportFileError] = React.useState<string>();
+	const [isImporting, setIsImporting] = React.useState(false);
 
 	const { data: savedLeads = [], isLoading } = useLeadsByEpcQuery(
 		leadInfo?.epcId,
 	);
+	const epcId = leadInfo?.epcId;
 	const createLeadsMutation = useCreateLeadsMutation();
 	const updateLeadMutation = useUpdateLeadMutation();
 	const deleteLeadMutation = useDeleteLeadMutation();
@@ -159,7 +172,67 @@ export default function LeadCreatePage() {
 		[deleteLeadMutation, editingLeadId, handleCancelEdit, leadInfo?.epcId],
 	);
 
-	if (!leadInfo?.epcId) {
+	const handleOpenImportModal = React.useCallback(() => {
+		setImportFileError(undefined);
+		setIsImportModalOpen(true);
+	}, []);
+
+	const handleCloseImportModal = React.useCallback(() => {
+		if (isImporting) return;
+
+		setIsImportModalOpen(false);
+		setImportFile(null);
+		setImportFileError(undefined);
+	}, [isImporting]);
+
+	const handleImportFileChange = React.useCallback(
+		(value: FileUploadValue | null, _meta: FileUploadChangeMeta) => {
+			setImportFile(value);
+			setImportFileError(undefined);
+		},
+		[],
+	);
+
+	const handleImportFile = async () => {
+		const selectedFile = importFile?.file;
+		const epcId = leadInfo?.epcId;
+
+		if (!selectedFile) {
+			setImportFileError("Please select an Excel file.");
+			return;
+		}
+
+		if (!epcId) {
+			setImportFileError("EPC reference is missing.");
+			return;
+		}
+
+		try {
+			setIsImporting(true);
+			setImportFileError(undefined);
+
+			const formData = new FormData();
+
+			formData.append("file", selectedFile);
+			formData.append("epcId", epcId);
+			console.log("excel file data", selectedFile, epcId);
+			// await importLeadsMutation.mutateAsync({
+			// 	epcId,
+			// 	formData,
+			// });
+
+			setIsImportModalOpen(false);
+			setImportFile(null);
+		} catch {
+			setImportFileError(
+				"Unable to import the selected file. Please try again.",
+			);
+		} finally {
+			setIsImporting(false);
+		}
+	};
+
+	if (!epcId) {
 		return (
 			<PageRowSectionLayout
 				header_children={
@@ -181,36 +254,43 @@ export default function LeadCreatePage() {
 		<PageSectionLayout className="content-box">
 			<div className="leads-content-box">
 				<div className="leads-section-body">
-					<div className="flex gap-2 justify-between">
+					<div className="flex justify-between gap-2">
 						<NavigateButton direction="back" text="Back" />
+
 						<NavigateButton
-							to={"/marketing/leads/listing"}
+							to="/marketing/leads/listing"
 							text="Lead Listing"
 							iconPosition="right"
 						/>
 					</div>
+
 					<Section
 						title="Selected EPC Reference"
 						className="mt-2 text-right"
 						action={
-							<div>
-								<p className="leads-reference-label uppercase-label-text">
-									Total Leads:{" "}
-									<span className="leads-reference-total">
-										{savedLeads.length}
-									</span>
-								</p>
-							</div>
+							<p className="leads-reference-label uppercase-label-text">
+								Total Leads:{" "}
+								<span className="leads-reference-total">
+									{savedLeads.length}
+								</span>
+							</p>
 						}
 					>
 						<LeadReferenceSummary leadInfo={leadInfo} />
-						<Button
-							type="button"
-							text="Import"
-							Icon={FileUp}
-							status="brand"
-							className="text-xs m-1 sm:m-2 text-right"
-						/>
+
+						{!isViewMode && (
+							<div className="flex justify-end">
+								<Button
+									type="button"
+									text="Import"
+									Icon={FileUp}
+									status="brand"
+									className="m-1 text-xs sm:m-2"
+									onClick={handleOpenImportModal}
+								/>
+							</div>
+						)}
+
 						<LeadEntryTable
 							items={items}
 							savedLeads={savedLeads}
@@ -220,8 +300,6 @@ export default function LeadCreatePage() {
 							deletingId={deletingId}
 							errors={errors}
 							isViewMode={isViewMode}
-							// onAddRow={handleAddRow}
-							// onRemoveRow={handleRemoveRow}
 							onChange={handleChange}
 							onSaveRow={handleSaveRow}
 							onEditLead={handleEditLead}
@@ -231,6 +309,54 @@ export default function LeadCreatePage() {
 					</Section>
 				</div>
 			</div>
+
+			<Modal
+				open={isImportModalOpen}
+				title="Import Leads"
+				size="sm"
+				className=" content-box"
+				onClose={handleCloseImportModal}
+			>
+				<div className="p-5">
+					<p className="mb-4 text-sm text-gray-500">
+						Upload an Excel sheet containing the lead details.
+					</p>
+
+					<FileUploadField
+						value={importFile}
+						onChange={handleImportFileChange}
+						kind="spreadsheet"
+						label="Upload Excel File"
+						description="Supported formats: XLSX, XLS and CSV"
+						required
+						error={importFileError}
+						disabled={isImporting}
+						heightClassName="h-[180px]"
+					/>
+				</div>
+
+				<div className="flex items-center justify-end gap-3 border-t border-gray-200 px-5 py-4">
+					<Button
+						type="button"
+						text="Cancel"
+						Icon={X}
+						status="outline"
+						size="sm"
+						onClick={handleCloseImportModal}
+						disabled={isImporting}
+					/>
+
+					<Button
+						type="button"
+						text={isImporting ? "Importing..." : "Import File"}
+						Icon={Upload}
+						status="brand"
+						size="sm"
+						onClick={handleImportFile}
+						disabled={!importFile?.file || isImporting}
+					/>
+				</div>
+			</Modal>
 		</PageSectionLayout>
 	);
 }
