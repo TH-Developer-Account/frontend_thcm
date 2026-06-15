@@ -20,6 +20,7 @@ import {
 	useCreateLeadsMutation,
 	useDeleteLeadMutation,
 	useUpdateLeadMutation,
+	useLeadsImportMutation,
 } from "../queries/useLeadMutations";
 import { useLeadsByEpcQuery } from "../queries/useLeadQueries";
 import type {
@@ -73,6 +74,7 @@ export default function LeadCreatePage() {
 	const createLeadsMutation = useCreateLeadsMutation();
 	const updateLeadMutation = useUpdateLeadMutation();
 	const deleteLeadMutation = useDeleteLeadMutation();
+	const importLeadsMutation = useLeadsImportMutation();
 
 	// const handleAddRow = React.useCallback(() => {
 	// 	setItems((prev) => [...prev, createEmptyLeadFormRow()]);
@@ -220,11 +222,7 @@ export default function LeadCreatePage() {
 
 			formData.append("file", selectedFile);
 			formData.append("epcId", epcId);
-			console.log("excel file data", selectedFile, epcId);
-			// await importLeadsMutation.mutateAsync({
-			// 	epcId,
-			// 	formData,
-			// });
+			await importLeadsMutation.mutateAsync(formData);
 
 			setIsImportModalOpen(false);
 			setImportFile(null);

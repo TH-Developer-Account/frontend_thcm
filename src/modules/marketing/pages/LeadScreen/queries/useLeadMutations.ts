@@ -1,18 +1,28 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+	type QueryClient,
+	useMutation,
+	useQueryClient,
+} from "@tanstack/react-query";
 import { leadsApi } from "../api/leads.api";
 import type {
 	CreateLeadsPayload,
 	UpdateLeadPayload,
+	leadsImportPayload,
 } from "../types/leads.types";
 import { leadKeys } from "./lead.keys";
+
+const invalidateLeadQueries = (queryClient: QueryClient, epcId?: string) => {
+	queryClient.invalidateQueries({ queryKey: leadKeys.lists() });
+	if (epcId) queryClient.invalidateQueries({ queryKey: leadKeys.byEpc(epcId) });
+};
 
 export const useCreateLeadsMutation = () => {
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: (payload: CreateLeadsPayload) => leadsApi.createMany(payload),
-		onSuccess: () =>
-			queryClient.invalidateQueries({ queryKey: leadKeys.lists() }),
+		onSuccess: (_data, variables) =>
+			invalidateLeadQueries(queryClient, variables.epcId),
 	});
 };
 
@@ -27,8 +37,8 @@ export const useUpdateLeadMutation = () => {
 			leadId: string;
 			payload: UpdateLeadPayload;
 		}) => leadsApi.updateOne(leadId, payload),
-		onSuccess: () =>
-			queryClient.invalidateQueries({ queryKey: leadKeys.lists() }),
+		onSuccess: (_data, variables) =>
+			invalidateLeadQueries(queryClient, variables.payload.epcId),
 	});
 };
 
@@ -38,7 +48,20 @@ export const useDeleteLeadMutation = () => {
 	return useMutation({
 		mutationFn: ({ leadId }: { leadId: string; epcId?: string }) =>
 			leadsApi.deleteOne(leadId),
-		onSuccess: () =>
-			queryClient.invalidateQueries({ queryKey: leadKeys.lists() }),
+		onSuccess: (_data, variables) =>
+			invalidateLeadQueries(queryClient, variables.epcId),
+	});
+};
+
+export const useLeadsImportMutation = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (payload: leadsImportPayload) => leadsApi.importLeads(payload),
+		onSuccess: (_data, variables) => {
+			const epcId = variables.get("epcId") as string;
+
+			invalidateLeadQueries(queryClient, epcId);
+		},
 	});
 };
