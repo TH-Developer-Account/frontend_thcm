@@ -32,6 +32,8 @@ import { LeadReferenceSummary } from "../components/LeadReferenceSummary";
 import "../styles/leads.css";
 import PageSectionLayout from "../../../../../layout/PageSectionLayout";
 import NavigateButton from "../../../../../components/common/NavigateButton";
+import Button from "../../../../../components/common/Button";
+import { FileUp } from "lucide-react";
 
 export default function LeadCreatePage() {
 	const location = useLocation();
@@ -189,7 +191,7 @@ export default function LeadCreatePage() {
 					</div>
 					<Section
 						title="Selected EPC Reference"
-						className="mt-2"
+						className="mt-2 text-right"
 						action={
 							<div>
 								<p className="leads-reference-label uppercase-label-text">
@@ -202,6 +204,13 @@ export default function LeadCreatePage() {
 						}
 					>
 						<LeadReferenceSummary leadInfo={leadInfo} />
+						<Button
+							type="button"
+							text="Import"
+							Icon={FileUp}
+							status="brand"
+							className="text-xs m-1 sm:m-2 text-right"
+						/>
 						<LeadEntryTable
 							items={items}
 							savedLeads={savedLeads}

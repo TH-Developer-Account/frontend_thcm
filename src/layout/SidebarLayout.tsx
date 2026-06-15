@@ -30,7 +30,7 @@ export const SidebarLayout = ({
           fixed inset-y-0 left-0 z-50 top-0
           bg-gray-50 border-r-2 border-orange-600 
           transition-all duration-300 ease-in-out
-          ${isOpen ? "w-45" : "w-14"}
+          ${isOpen ? "w-auto" : "w-14"}
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
           md:static md:translate-x-0
         `}
