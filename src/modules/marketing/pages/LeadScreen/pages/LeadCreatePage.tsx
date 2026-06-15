@@ -33,13 +33,15 @@ import "../styles/leads.css";
 import PageSectionLayout from "../../../../../layout/PageSectionLayout";
 import NavigateButton from "../../../../../components/common/NavigateButton";
 import Button from "../../../../../components/common/Button";
-import { FileUp, Upload, X } from "lucide-react";
+import { Download, FileUp, Save, X } from "lucide-react";
 import { Modal } from "../../../../../components/common/Modal";
 import { FileUploadField } from "../../../../../components/FileUpload/FileUploadField";
 import type {
-	FileUploadChangeMeta,
+	// FileUploadChangeMeta,
 	FileUploadValue,
 } from "../../../../../components/FileUpload/fileUpload.types";
+import { downloadLeadImportTemplate } from "../../../../../utils/generateImportTemplate";
+import { LeadExcelPreview } from "../components/LeadExcelPreview";
 
 export default function LeadCreatePage() {
 	const location = useLocation();
@@ -186,7 +188,10 @@ export default function LeadCreatePage() {
 	}, [isImporting]);
 
 	const handleImportFileChange = React.useCallback(
-		(value: FileUploadValue | null, _meta: FileUploadChangeMeta) => {
+		(
+			value: FileUploadValue | null,
+			//  _meta: FileUploadChangeMeta
+		) => {
 			setImportFile(value);
 			setImportFileError(undefined);
 		},
@@ -263,7 +268,28 @@ export default function LeadCreatePage() {
 							iconPosition="right"
 						/>
 					</div>
-
+					<div className="flex justify-end text-xs gap-2 mb-2 mt-2">
+						<Button
+							type="button"
+							onClick={downloadLeadImportTemplate}
+							size="sm"
+							status="outline"
+							Icon={Download}
+							text={"Download Template"}
+						/>
+						{!isViewMode && (
+							<div className="flex justify-end">
+								<Button
+									type="button"
+									text="Import"
+									Icon={FileUp}
+									size="sm"
+									status="brand"
+									onClick={handleOpenImportModal}
+								/>
+							</div>
+						)}
+					</div>
 					<Section
 						title="Selected EPC Reference"
 						className="mt-2 text-right"
@@ -277,19 +303,6 @@ export default function LeadCreatePage() {
 						}
 					>
 						<LeadReferenceSummary leadInfo={leadInfo} />
-
-						{!isViewMode && (
-							<div className="flex justify-end">
-								<Button
-									type="button"
-									text="Import"
-									Icon={FileUp}
-									status="brand"
-									className="m-1 text-xs sm:m-2"
-									onClick={handleOpenImportModal}
-								/>
-							</div>
-						)}
 
 						<LeadEntryTable
 							items={items}
@@ -314,14 +327,30 @@ export default function LeadCreatePage() {
 				open={isImportModalOpen}
 				title="Import Leads"
 				size="sm"
-				className=" content-box"
+				className="content-box overflow-auto"
 				onClose={handleCloseImportModal}
 			>
-				<div className="p-5">
-					<p className="mb-4 text-sm text-gray-500">
-						Upload an Excel sheet containing the lead details.
-					</p>
+				<div className="p-5 flex flex-col gap-4">
+					{/* Format hint */}
+					<div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+						<div className="flex items-center justify-between mb-2">
+							<p className="text-xs font-medium text-zinc-600 uppercase tracking-wide">
+								Expected Format
+							</p>
+							<Button
+								type="button"
+								onClick={downloadLeadImportTemplate}
+								size="sm"
+								status="brand"
+								Icon={Download}
+								text={"Download Template"}
+							/>
+						</div>
 
+						<LeadExcelPreview />
+					</div>
+
+					{/* File upload */}
 					<FileUploadField
 						value={importFile}
 						onChange={handleImportFileChange}
@@ -331,7 +360,7 @@ export default function LeadCreatePage() {
 						required
 						error={importFileError}
 						disabled={isImporting}
-						heightClassName="h-[180px]"
+						heightClassName="h-[100px]"
 					/>
 				</div>
 
@@ -345,11 +374,10 @@ export default function LeadCreatePage() {
 						onClick={handleCloseImportModal}
 						disabled={isImporting}
 					/>
-
 					<Button
 						type="button"
-						text={isImporting ? "Importing..." : "Import File"}
-						Icon={Upload}
+						text={isImporting ? "Importing..." : "Save"}
+						Icon={Save}
 						status="brand"
 						size="sm"
 						onClick={handleImportFile}

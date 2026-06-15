@@ -22,7 +22,7 @@ export const FileUploadField = React.memo(
 		error,
 		disabled = false,
 		readonly = false,
-		heightClassName = "h-[105px]",
+		heightClassName = "h-[100px]",
 		className = "",
 		inputName,
 	}: FileUploadFieldProps) => {
@@ -187,15 +187,15 @@ const FileUploadPreviewCard = React.memo(
 					/>
 				) : (
 					<div className="flex h-full flex-col items-center justify-center bg-gray-50 px-4 text-center">
-						<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm">
+						<div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-sm">
 							{showPdfPreview ? (
-								<FileText className="h-6 w-6 text-red-500" />
+								<FileText className="h-4 w-4 text-red-500" />
 							) : (
-								<ImageIcon className="h-6 w-6 text-gray-500" />
+								<ImageIcon className="h-4 w-4 text-gray-500" />
 							)}
 						</div>
 
-						<p className="mt-3 max-w-full truncate text-xs font-semibold text-gray-800">
+						<p className="mt-2 max-w-full truncate text-xs font-semibold text-gray-800">
 							{value.name}
 						</p>
 
@@ -280,6 +280,9 @@ const FileUploadEmptyState = React.memo(
 					{description && (
 						<span className="mt-1 text-xs text-gray-400">{description}</span>
 					)}
+					<span className="mt-1 text-xs text-red-500">
+						Make sure the excel is filled with the expected format
+					</span>
 				</div>
 			</button>
 		);
