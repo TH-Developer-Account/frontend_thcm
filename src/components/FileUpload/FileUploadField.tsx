@@ -269,7 +269,7 @@ const FileUploadEmptyState = React.memo(
 				className={`group relative w-full overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 transition-all duration-200 hover:border-orange-300 hover:bg-orange-50/40 disabled:cursor-not-allowed disabled:opacity-60 ${heightClassName}`}
 			>
 				<div className="flex h-full flex-col items-center justify-center px-4 text-center">
-					<div className="flex h-8 w-8 items-center justify-center rounded-full bg-white shadow-sm transition-transform group-hover:scale-105">
+					<div className="flex h-8 w-8 mt-1 items-center justify-center rounded-full bg-white shadow-sm transition-transform group-hover:scale-105">
 						<Upload className="h-4 w-4 text-gray-500" />
 					</div>
 
@@ -278,9 +278,11 @@ const FileUploadEmptyState = React.memo(
 					</span>
 
 					{description && (
-						<span className="mt-1 text-xs text-gray-400">{description}</span>
+						<span className="mt-1 text-[10px] text-gray-400">
+							{description}
+						</span>
 					)}
-					<span className="mt-1 text-xs text-red-500">
+					<span className="mt-1 text-[10px] text-gray-500">
 						Make sure the excel is filled with the expected format
 					</span>
 				</div>
