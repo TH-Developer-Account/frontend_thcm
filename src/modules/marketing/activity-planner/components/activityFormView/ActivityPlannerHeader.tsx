@@ -6,7 +6,7 @@ import type { EpcDetailResponse } from "../../types/epc.types";
 
 type ActivityPlannerHeaderProps = {
 	epcData?: EpcDetailResponse | null;
-	createdBy?: string;
+	proposerName?: string;
 	loading?: boolean;
 	onPreview: () => void;
 };
@@ -14,12 +14,11 @@ type ActivityPlannerHeaderProps = {
 const ActivityPlannerHeader = ({
 	epcData,
 	loading,
-	createdBy,
+	proposerName,
 	onPreview,
 }: ActivityPlannerHeaderProps) => {
 	const title = epcData?.event_name?.title || null;
 	const proposalNo = epcData?.proposal_number || null;
-
 	return (
 		<div className="flex flex-row gap-4 justify-between items-start">
 			<PageHeader
@@ -30,7 +29,7 @@ const ActivityPlannerHeader = ({
 				children={
 					<p className="flex items-center gap-1.5 px-4 text-[12px] leading-4">
 						<span className="uppercase-label-text">Proposer:</span>
-						{createdBy ? ` ${createdBy}` : null}
+						{proposerName || "--"}
 					</p>
 				}
 			/>
@@ -47,7 +46,7 @@ const ActivityPlannerHeader = ({
 				<div className="flex flex-col items-end">
 					<p className="flex items-center gap-1.5 mt-1 text-[12px] leading-4">
 						<span className="uppercase-label-text">Status:</span>
-						<Badge status={epcData?.status} />
+						<Badge status={epcData?.status || "IN_PROGRESS"} />
 					</p>
 
 					<div className="flex flex-row items-end px-2  mt-1">

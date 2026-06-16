@@ -79,12 +79,23 @@ export const useActivityPlanner = (id: string | undefined) => {
 	const isProposer = permissions.isProposer;
 	const isValidator = permissions.isValidator;
 
-	const proposerName = epcData?.created_by
-		? `${epcData.created_by.first_name ?? ""} ${
-				epcData.created_by.last_name ?? ""
-			}`.trim()
+	const createdByName = [
+		epcData?.created_by?.first_name,
+		epcData?.created_by?.last_name,
+	]
+		.filter(Boolean)
+		.join(" ")
+		.trim();
+
+	const loggedInUserName = [user?.first_name, user?.last_name]
+		.filter(Boolean)
+		.join(" ")
+		.trim();
+
+	const proposerName: string = epcData
+		? createdByName || "--"
 		: isProposer
-			? `${user?.first_name ?? ""} ${user?.last_name ?? ""}`.trim()
+			? loggedInUserName || "--"
 			: "--";
 
 	const handleRefresh = React.useCallback(async () => {

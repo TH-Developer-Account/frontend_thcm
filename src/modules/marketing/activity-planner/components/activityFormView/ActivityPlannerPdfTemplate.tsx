@@ -13,6 +13,8 @@ import {
 import { formatDateTime } from "../../../../../utils/format";
 import { getAuditMessage } from "../../helpers/activityLogMessage.helper";
 import type { WorkflowComment } from "../../types/workflow.types";
+import { mapCrfLineItemsToTableRows } from "../../forms/CRF/crf.mapper";
+import { mapEpfLineItemsToTableRows } from "../../forms/EPF/epf.mapper";
 
 type Props = {
 	epcData?: EpcDetailResponse | null;
@@ -461,9 +463,14 @@ const ActivityPlannerPdfTemplate = ({
 				/>
 			</PdfSection>
 
-			<LineItemsTable title="EPF Cost Items" items={epf?.lineItems || []} />
-			<LineItemsTable title="CRF Cost Items" items={crf?.lineItems || []} />
-
+			<LineItemsTable
+				title="CRF Cost Items"
+				items={mapCrfLineItemsToTableRows(crf?.lineItems) || []}
+			/>
+			<LineItemsTable
+				title="EPF Cost Items"
+				items={mapEpfLineItemsToTableRows(epf?.lineItems) || []}
+			/>
 			<PdfSection title="Approval Flow">
 				<ApprovalTable rows={approvalRows} />
 			</PdfSection>

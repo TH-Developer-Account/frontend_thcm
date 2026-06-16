@@ -66,7 +66,7 @@ const ActivityPlannerPage = () => {
 					<ActivityPlannerHeader
 						epcData={epcData ?? null}
 						loading={isFetching}
-						createdBy={proposerName}
+						proposerName={proposerName}
 						onPreview={() => setIsPreviewOpen(true)}
 					/>
 				}
