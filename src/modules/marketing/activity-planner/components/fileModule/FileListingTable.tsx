@@ -2,7 +2,7 @@ import React from "react";
 
 import DataTable from "../../../../../components/ui/DataTable";
 import { getFilesListingColumns } from "./files.module.columns";
-import type { FileModuleListingRow } from "./fileModule.types";
+import type { FileModuleListingRow } from "../../types/fileModule.types";
 
 type FileModuleListingRowProps = {
 	files: FileModuleListingRow[];
@@ -15,7 +15,7 @@ const FileListingTable = ({
 }: FileModuleListingRowProps) => {
 	const columns = React.useMemo(() => getFilesListingColumns(), []);
 	const tableData = Array.isArray(files) ? files : [];
-
+	console.log("tableData", tableData);
 	return (
 		<DataTable<FileModuleListingRow>
 			data={tableData}

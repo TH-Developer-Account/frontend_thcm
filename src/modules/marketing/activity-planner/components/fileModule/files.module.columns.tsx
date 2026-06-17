@@ -1,7 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { NavLink } from "react-router-dom";
 import { formatDate } from "../../../../../utils/format";
-import type { FileModuleListingRow } from "./fileModule.types";
+import type { FileModuleListingRow } from "../../types/fileModule.types";
 import { Badge } from "../../../../../components/common/Badge";
 
 export const getFilesListingColumns = (): ColumnDef<FileModuleListingRow>[] => [
@@ -9,18 +8,7 @@ export const getFilesListingColumns = (): ColumnDef<FileModuleListingRow>[] => [
 		accessorKey: "proposalNumber",
 		header: "EPC No",
 		cell: ({ row }) => {
-			const { epcId, proposalNumber } = row.original;
-
-			return epcId ? (
-				<NavLink
-					to={`/marketing/activity-planner/${epcId}`}
-					className="font-medium text-blue-600 underline"
-				>
-					{proposalNumber || epcId}
-				</NavLink>
-			) : (
-				<span>--</span>
-			);
+			<div className="font-medium">{row.original.created_at || "--"}</div>;
 		},
 	},
 	{
@@ -51,10 +39,13 @@ export const getFilesListingColumns = (): ColumnDef<FileModuleListingRow>[] => [
 	{
 		accessorKey: "status",
 		header: "Status",
-		cell: ({ row }) => (
-			<div className="font-medium">
-				<Badge status={row.original.status} />
-			</div>
-		),
+		cell: ({ row }) => {
+			console.log("epc no", row.original.proposal_number);
+			return (
+				<div className="font-medium">
+					<Badge status={row.original.status} />
+				</div>
+			);
+		},
 	},
 ];
