@@ -3,8 +3,11 @@ import { PageHeader } from "../../../../components/ui/PageHeader";
 import Button from "../../../../components/common/Button";
 import { FileDown, FileUp } from "lucide-react";
 import DataTableSkeleton from "../../../../components/ui/DataTableSkeleton";
+import { useFileModuleQuery } from "../queries/useFileModuleQuery";
+import FileListingTable from "../components/fileModule/FileListingTable";
 
 const FilesModule = () => {
+	const { data: files = [], isLoading, isFetching } = useFileModuleQuery();
 	return (
 		<PageRowSectionLayout
 			stickyHeader
@@ -50,7 +53,14 @@ const FilesModule = () => {
 				</PageHeader>
 			}
 		>
-			<DataTableSkeleton rows={8} columns={5} showPagination />
+			{isLoading ? (
+				<DataTableSkeleton rows={8} columns={6} showPagination />
+			) : (
+				<FileListingTable files={files} />
+			)}
+			{isFetching && !isLoading ? (
+				<span className="sr-only">Refreshing lead list</span>
+			) : null}
 		</PageRowSectionLayout>
 	);
 };

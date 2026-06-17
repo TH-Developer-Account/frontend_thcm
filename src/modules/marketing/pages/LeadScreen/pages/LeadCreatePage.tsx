@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { PageHeader } from "../../../../../components/ui/PageHeader";
 import PageRowSectionLayout from "../../../../../layout/PageRowSectionLayout";
 import Section from "../../../activity-planner/components/common/Section";
@@ -46,6 +46,7 @@ import { LeadExcelPreview } from "../components/LeadExcelPreview";
 
 export default function LeadCreatePage() {
 	const location = useLocation();
+	const navigate = useNavigate();
 	const routeLeadInfo = location.state?.leadInfo as LeadInfo | undefined;
 	const routeMode = location.state?.mode as "create" | "view" | undefined;
 	const isViewMode = routeMode === "view";
@@ -226,6 +227,7 @@ export default function LeadCreatePage() {
 
 			setIsImportModalOpen(false);
 			setImportFile(null);
+			navigate("/marketing/file-module/listing");
 		} catch {
 			setImportFileError(
 				"Unable to import the selected file. Please try again.",
