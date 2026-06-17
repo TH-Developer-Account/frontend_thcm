@@ -9,7 +9,12 @@ export const filesApi = {
 	getAll: async (): Promise<FileModuleListingRow[]> => {
 		const {
 			data: { data },
-		} = await ServerAxios.post("/import-export-logs/leads/import/history");
+		} = await ServerAxios.post("/import-export-logs/history", {
+			type: "LEAD_IMPORT",
+		});
+
+		// LEAD_EXPORT
+		// EPC_EXPORT
 		return mapImportExportResponseToRows(unwrapLeadList(data));
 	},
 };
