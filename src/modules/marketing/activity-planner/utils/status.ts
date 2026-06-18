@@ -7,6 +7,8 @@ export const STATUS_VARIANTS = {
 	danger: "danger",
 	disable: "disable",
 	neutral: "neutral",
+	passed: "passed",
+	failed: "failed",
 } as const;
 
 export type StatusVariant =
@@ -23,6 +25,13 @@ type StatusConfig = {
  * Do not use this list directly for filters.
  */
 export const STATUS_CONFIG = {
+	// General Badge statuses
+
+	FAILED: {
+		label: "Failed",
+		variant: "danger",
+	},
+
 	// EPC / approval statuses
 	PENDING: {
 		label: "Pending",

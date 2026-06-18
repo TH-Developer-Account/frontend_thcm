@@ -43,18 +43,18 @@ export const getLeadCustomerColumns = (): ColumnDef<LeadRow>[] => [
 	},
 	{
 		accessorKey: "phone",
-		header: "Phone Number",
+		header: "Phone",
 		cell: ({ row }) => <div>{row.original.phone || "--"}</div>,
 	},
 	{
 		accessorKey: "email",
-		header: "Lead Email",
+		header: "Email",
 		cell: ({ row }) => <div>{row.original.email || "--"}</div>,
 	},
 
 	{
 		accessorKey: "notes",
-		header: "Remarks",
+		header: "Notes",
 		cell: ({ row }) => (
 			<div className="max-w-[240px] truncate">{row.original.notes || "--"}</div>
 		),

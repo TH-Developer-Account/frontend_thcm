@@ -3,7 +3,7 @@ import React from "react";
 const COLUMNS = [
 	{ label: "Name", required: true },
 	{ label: "Email", required: true },
-	{ label: "Phone Number", required: false },
+	{ label: "Phone", required: false },
 	{ label: "Notes", required: false },
 ];
 

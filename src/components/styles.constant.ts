@@ -26,6 +26,7 @@ const STATUS_STYLE_MAP: Record<string, string> = {
 	not_conducted: "bg-red-100 text-red-800 ring-red-200",
 	superseded: "bg-gray-100 text-gray-800 ring-gray-200",
 	brand: "bg-[#f35a00] text-white",
+	failed: "bg-red-100 text-red-800",
 	outline:
 		"border border-orange-200 bg-orange-50 text-orange-700 hover:border-red-400 hover:bg-red-100",
 };
@@ -64,6 +65,9 @@ const VARIANT_STYLE_MAP: Record<string, string> = {
 	primary: "bg-blue-100 text-blue-800",
 
 	outline: "bg-orange-50 ring-orange-200 text-orange-700",
+
+	passed: "bg-green-100 text-green-800",
+	failed: "bg-red-100 text-red-800",
 };
 
 export const resolveVariantStyle = ({

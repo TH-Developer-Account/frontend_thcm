@@ -92,8 +92,8 @@ export const useActivityPlanner = (id: string | undefined) => {
 		.join(" ")
 		.trim();
 
-	const proposerName: string = epcData
-		? createdByName || "--"
+	const proposerName = epcData
+		? createdByName || loggedInUserName || "--"
 		: isProposer
 			? loggedInUserName || "--"
 			: "--";

@@ -24,7 +24,7 @@ const ActivityPlannerHeader = ({
 			<PageHeader
 				badgeProps={{
 					text: "Back to Listing",
-					direction: "back",
+					to: "/marketing/listing",
 				}}
 				children={
 					<p className="flex items-center gap-1.5 px-4 text-[12px] leading-4">

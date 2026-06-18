@@ -9,7 +9,7 @@ type TemplateColumn = {
 const LEAD_IMPORT_COLUMNS: TemplateColumn[] = [
 	{ header: "Name", example: "John Doe", width: 28 },
 	{ header: "Email", example: "xyz@gmail.com", width: 24 },
-	{ header: "Phone Number", example: "****9876", width: 22 },
+	{ header: "Phone", example: "****9876", width: 22 },
 	{ header: "Notes", example: "Cold", width: 28 },
 ];
 
@@ -17,7 +17,7 @@ const FIELD_GUIDE_COLUMNS: string[][] = [
 	["Field", "Format", "Required", "Notes"],
 	["Name", "Text", "Yes", "Full name of the lead"],
 	["Email", "Email", "Yes", "Must be a valid email address"],
-	["Phone Number", "Text", "No", "10-digit number"],
+	["Phone", "Text", "No", "10-digit number"],
 	["Notes", "Text", "No", "E.g. Cold, Warm, Hot, Sure Shot"],
 ];
 
