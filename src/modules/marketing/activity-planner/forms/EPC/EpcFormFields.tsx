@@ -103,15 +103,29 @@ export default function EpcFormFields({
 		});
 	}, [selectedDepartment, masters?.vertical]);
 
-	const selectedBudget = React.useMemo(() => {
-		return findOption(masters?.budgetMasters ?? [], values.budget_master_id);
-	}, [masters?.budgetMasters, values.budget_master_id]);
+	const budgetCodeOptions = React.useMemo<Option[]>(() => {
+		return (masters?.budgetMasters ?? []).map((budget) => ({
+			...budget,
+			value: budget.value,
+			label: budget.code || budget.label || budget.value,
+		}));
+	}, [masters?.budgetMasters]);
 
-	const budgetDescription =
-		values.budgetDescription ||
-		selectedBudget?.description ||
-		selectedBudget?.label ||
-		"";
+	const budgetDescriptionOptions = React.useMemo<Option[]>(() => {
+		return (masters?.budgetMasters ?? []).map((budget) => ({
+			...budget,
+			value: budget.value,
+			label: budget.description || budget.label || budget.code || budget.value,
+		}));
+	}, [masters?.budgetMasters]);
+
+	const selectedBudgetCode = React.useMemo(() => {
+		return findOption(budgetCodeOptions, values.budget_master_id);
+	}, [budgetCodeOptions, values.budget_master_id]);
+
+	const selectedBudgetDescription = React.useMemo(() => {
+		return findOption(budgetDescriptionOptions, values.budget_master_id);
+	}, [budgetDescriptionOptions, values.budget_master_id]);
 
 	const handleRegionChange = (option: SingleValue<Option>) => {
 		const regionId = option?.value || "";
@@ -128,8 +142,18 @@ export default function EpcFormFields({
 	};
 
 	const handleBudgetChange = (option: SingleValue<Option>) => {
-		onChange("budget_master_id", option?.value || "");
-		onChange("budgetDescription", option?.description || option?.label || "");
+		const budgetMasterId = option?.value || "";
+
+		const selectedMaster = findOption(
+			masters?.budgetMasters ?? [],
+			budgetMasterId,
+		);
+
+		onChange("budget_master_id", budgetMasterId);
+		onChange(
+			"budgetDescription",
+			selectedMaster?.description || selectedMaster?.label || "",
+		);
 	};
 
 	const handleDateRangeChange = (value: unknown) => {
@@ -294,24 +318,25 @@ export default function EpcFormFields({
 					<SelectInput
 						name="budget_master_id"
 						label="Budget Code"
-						value={selectedBudget}
-						options={masters?.budgetMasters || []}
+						value={selectedBudgetCode}
+						options={budgetCodeOptions}
 						onChange={handleBudgetChange}
 						required
-						helperText="Select budget code to auto populate description"
+						helperText="Select a budget code to populate its description"
 						error={errors.budget_master_id}
 						className="w-full"
 					/>
 
-					<FormInput
+					<SelectInput
 						name="budgetDescription"
 						label="Budget Description"
-						placeholder="Budget Description"
-						value={budgetDescription}
-						className="w-full p-2"
-						disabled
-						helperText="Budget Description auto populated based on selected budget code"
+						value={selectedBudgetDescription}
+						options={budgetDescriptionOptions}
+						onChange={handleBudgetChange}
+						required
+						helperText="Select a description to populate its budget code"
 						error={errors.budgetDescription}
+						className="w-full"
 					/>
 
 					<SelectInput
