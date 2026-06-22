@@ -1,48 +1,434 @@
 /* =========================================================
-   common.css
-   Global Branding & Design Variables
+   color.css
+   Tata Hitachi — Global Colour Tokens
+
+   Rules:
+   - All application colours must be defined in this file.
+   - Components must never contain raw hex, rgb or hsl values.
+   - Primitive tokens define the palette.
+   - Semantic tokens define how colours are used.
    ========================================================= */
 
 @layer base {
 	:root {
-		--form-radius: 6px;
+		/* =====================================================
+		   PRIMITIVE COLOURS
+		   Do not use primitive tokens directly in components
+		   unless no semantic token applies.
+		===================================================== */
 
-		/* =========================
-		   BRAND COLORS
-		========================= */
-		--color-brand: #f35a00;
-		--color-brand-hover: #f35a00;
-		--color-brand-soft: #ffedd5;
-		--color-brand-softest: #fff7ed;
+		/* Brand orange scale */
+		--color-orange-50: #fff4ed;
+		--color-orange-100: #ffd6b8;
+		--color-orange-200: #ffb07a;
+		--color-orange-300: #ff8040;
+		--color-orange-400: #f36518;
+		--color-orange-500: #f35a00;
+		--color-orange-600: #d44e00;
+		--color-orange-700: #c44800;
+		--color-orange-800: #9e3800;
+		--color-orange-900: #7a2d00;
 
-		--color-brand-gray: #575757;
-		--color-white: #fff;
-		--color-black: #000;
-		--color-blue: #1e40af;
-		/* =========================
-		   UI COLORS
-		========================= */
-		--color-text-primary: #575757;
-		--color-text-strong: #000;
-		--color-text-muted: #9ca3af;
+		/* Core brand neutrals */
+		--color-machine-black: #1a1a1a;
+		--color-clean-white: #ffffff;
+		--color-fog: #f7f8f9;
+		--color-ash: #e5e8ea;
+		--color-slate: #92999e;
+		--color-steel-blue: #6b7b95;
+		--color-iron: #3d4a58;
+		--color-iron-dark: #1a2028;
 
-		--color-border: #d1d5db;
-		--color-border-light: #e5e7eb;
-		--color-border-disabled: #9ca3af;
+		/* Neutral scale */
+		--color-neutral-0: #ffffff;
+		--color-neutral-50: #f7f8f9;
+		--color-neutral-100: #f1f3f4;
+		--color-neutral-200: #e5e8ea;
+		--color-neutral-300: #d4d8dc;
+		--color-neutral-400: #b3b9be;
+		--color-neutral-500: #92999e;
+		--color-neutral-600: #6f787f;
+		--color-neutral-700: #575f66;
+		--color-neutral-800: #3d4a58;
+		--color-neutral-900: #1a2028;
+		--color-neutral-950: #1a1a1a;
 
-		--color-bg: #fff;
-		--color-bg-soft: #f9fafb;
-		--color-bg-disabled: #e5e7eb;
+		/* Status primitives */
+		--color-green-50: #e8f5ec;
+		--color-green-600: #2d7d46;
+		--color-green-700: #236438;
 
-		--color-error: #ef4444;
-		--color-error-soft: #f87171;
-		--color-success: #22c55e;
+		--color-amber-50: #fff3e0;
+		--color-amber-600: #b85c00;
+		--color-amber-700: #934a00;
 
-		--shadow-focus-brand: 0 0 0 1px var(--color-brand);
-		--shadow-focus-error: 0 0 0 1px var(--color-error);
-		--shadow-focus-success: 0 0 0 1px var(--color-success);
+		--color-red-50: #fdecea;
+		--color-red-600: #c0392b;
+		--color-red-700: #9f3025;
 
-		/* lighter yellow variants */
-		--color-yellow-warm: #fdba74;
+		--color-blue-50: #edf2f7;
+		--color-blue-600: #516782;
+		--color-blue-700: #41536a;
+
+		/* =====================================================
+		   LIGHT THEME — SEMANTIC TOKENS (default)
+		===================================================== */
+
+		/* Brand */
+		--color-brand: var(--color-orange-500);
+		--color-brand-hover: var(--color-orange-600);
+		--color-brand-active: var(--color-orange-700);
+		--color-brand-soft: var(--color-orange-100);
+		--color-brand-subtle: var(--color-orange-50);
+		--color-brand-foreground: var(--color-clean-white);
+
+		/* Backgrounds */
+		--color-bg-page: #f0ece6;
+		--color-bg-surface: var(--color-clean-white);
+		--color-bg-surface-subtle: #f8f5f1;
+		--color-bg-surface-muted: var(--color-neutral-100);
+		--color-bg-surface-hover: var(--color-neutral-100);
+		--color-bg-surface-active: var(--color-orange-50);
+		--color-bg-disabled: var(--color-ash);
+		--color-bg-overlay: rgb(26 32 40 / 55%);
+
+		/* Dark surfaces (sidebar, action cards in light stay light) */
+		--color-bg-dark: var(--color-iron);
+		--color-bg-darker: var(--color-iron-dark);
+		--color-bg-sidebar: var(--color-iron-dark);
+		--color-bg-sidebar-hover: var(--color-iron);
+		--color-bg-sidebar-active: var(--color-orange-500);
+		--color-bg-action-card: var(--color-clean-white);
+
+		/* Text */
+		--color-text-primary: var(--color-machine-black);
+		--color-text-secondary: var(--color-iron);
+		--color-text-muted: var(--color-slate);
+		--color-text-subtle: var(--color-neutral-400);
+		--color-text-disabled: var(--color-neutral-400);
+		--color-text-inverse: var(--color-clean-white);
+		--color-text-brand: var(--color-orange-500);
+		--color-text-link: var(--color-orange-600);
+		--color-text-link-hover: var(--color-orange-700);
+
+		/* Borders */
+		--color-border-default: #e8e2da;
+		--color-border-subtle: var(--color-neutral-100);
+		--color-border-strong: var(--color-neutral-300);
+		--color-border-hover: var(--color-steel-blue);
+		--color-border-brand: var(--color-orange-500);
+		--color-border-disabled: var(--color-neutral-300);
+		--color-border-dark: var(--color-iron);
+
+		/* Icons */
+		--color-icon-primary: var(--color-iron);
+		--color-icon-secondary: var(--color-steel-blue);
+		--color-icon-muted: var(--color-slate);
+		--color-icon-disabled: var(--color-neutral-400);
+		--color-icon-brand: var(--color-orange-500);
+		--color-icon-inverse: var(--color-clean-white);
+
+		/* Forms */
+		--color-input-bg: var(--color-clean-white);
+		--color-input-text: var(--color-machine-black);
+		--color-input-placeholder: var(--color-slate);
+		--color-input-border: var(--color-ash);
+		--color-input-border-hover: var(--color-steel-blue);
+		--color-input-border-focus: var(--color-orange-500);
+		--color-input-bg-disabled: var(--color-neutral-100);
+		--color-input-text-disabled: var(--color-neutral-500);
+
+		/* Status */
+		--color-status-approved-text: #2d7d46;
+		--color-status-approved-bg: #e8f5ec;
+		--color-status-approved-border: #b9dfc3;
+
+		--color-status-pending-text: #b85c00;
+		--color-status-pending-bg: #fff3e0;
+		--color-status-pending-border: #f1cf9b;
+
+		--color-status-rejected-text: #c0392b;
+		--color-status-rejected-bg: #fdecea;
+		--color-status-rejected-border: #efc1bc;
+
+		--color-status-draft-text: #c44800;
+		--color-status-draft-bg: #fff4ed;
+		--color-status-draft-border: #ffd6b8;
+
+		--color-status-inactive-text: #3d4a58;
+		--color-status-inactive-bg: #e5e8ea;
+		--color-status-inactive-border: #d4d8dc;
+
+		--color-status-info-text: var(--color-blue-700);
+		--color-status-info-bg: var(--color-blue-50);
+		--color-status-info-border: var(--color-neutral-300);
+
+		/* Feedback */
+		--color-success: var(--color-green-600);
+		--color-success-hover: var(--color-green-700);
+		--color-success-bg: var(--color-green-50);
+		--color-success-border: #b9dfc3;
+
+		--color-warning: var(--color-amber-600);
+		--color-warning-hover: var(--color-amber-700);
+		--color-warning-bg: var(--color-amber-50);
+		--color-warning-border: #f1cf9b;
+
+		--color-error: var(--color-red-600);
+		--color-error-hover: var(--color-red-700);
+		--color-error-bg: var(--color-red-50);
+		--color-error-border: #efc1bc;
+
+		--color-info: var(--color-blue-600);
+		--color-info-hover: var(--color-blue-700);
+		--color-info-bg: var(--color-blue-50);
+		--color-info-border: var(--color-neutral-300);
+
+		/* Interaction */
+		--color-focus-ring: var(--color-orange-500);
+		--color-selection-bg: var(--color-orange-100);
+		--color-selection-text: var(--color-machine-black);
+
+		/* Table */
+		--color-table-bg: var(--color-clean-white);
+		--color-table-header-bg: var(--color-neutral-100);
+		--color-table-header-text: var(--color-iron);
+		--color-table-row-hover: var(--color-orange-50);
+		--color-table-row-selected: var(--color-orange-100);
+		--color-table-border: var(--color-ash);
+		--color-table-striped: var(--color-neutral-50);
+
+		/* Navigation */
+		--color-nav-text: var(--color-steel-blue);
+		--color-nav-text-hover: var(--color-machine-black);
+		--color-nav-text-active: var(--color-orange-500);
+		--color-nav-bg-hover: var(--color-neutral-100);
+		--color-nav-bg-active: var(--color-orange-50);
+
+		--color-sidebar-text: var(--color-neutral-300);
+		--color-sidebar-text-hover: var(--color-clean-white);
+		--color-sidebar-text-active: var(--color-clean-white);
+		--color-sidebar-icon: var(--color-neutral-400);
+		--color-sidebar-icon-active: var(--color-clean-white);
+
+		/* Skeleton */
+		--color-skeleton-base: var(--color-neutral-200);
+		--color-skeleton-highlight: var(--color-neutral-100);
+
+		/* Scrollbar */
+		--color-scrollbar-track: transparent;
+		--color-scrollbar-thumb: var(--color-neutral-300);
+		--color-scrollbar-thumb-hover: var(--color-slate);
+
+		/* Gradients */
+		--gradient-brand-start: var(--color-orange-500);
+		--gradient-brand-end: var(--color-orange-700);
+		--gradient-brand-soft-start: rgb(243 90 0 / 16%);
+		--gradient-brand-soft-end: rgb(196 72 0 / 8%);
+
+		/* Action card component tokens */
+		--action-card-bg: var(--color-bg-surface);
+		--action-card-bg-hover: var(--color-bg-surface-subtle);
+		--action-card-border: var(--color-border-default);
+		--action-card-border-hover: var(--color-steel-blue);
+		--action-card-rail: var(--color-steel-blue);
+		--action-card-featured-bg: var(--color-bg-surface);
+		--action-card-featured-border: var(--color-orange-200);
+		--action-card-featured-rail: var(--color-brand);
+		--action-card-icon-bg: var(--color-bg-surface);
+		--action-card-icon-border: var(--color-neutral-300);
+		--action-card-icon-text: var(--color-steel-blue);
+		--action-card-icon-featured-bg: var(--color-brand-subtle);
+		--action-card-icon-featured-border: var(--color-orange-200);
+		--action-card-icon-featured-text: var(--color-brand);
+		/* =====================================================
+  		 ACTION CARD COMPONENT TOKENS
+		===================================================== */
+
+		--action-card-bg: var(--color-bg-surface);
+		--action-card-bg-hover: var(--color-bg-surface-subtle);
+		--action-card-border: var(--color-border-default);
+		--action-card-border-hover: var(--color-steel-blue);
+		--action-card-rail: var(--color-steel-blue);
+
+		--action-card-featured-bg: var(--color-bg-surface);
+		--action-card-featured-border: var(--color-orange-200);
+		--action-card-featured-rail: var(--color-brand);
+
+		--action-card-icon-bg: var(--color-bg-surface);
+		--action-card-icon-border: var(--color-neutral-300);
+		--action-card-icon-text: var(--color-steel-blue);
+
+		--action-card-icon-featured-bg: var(--color-brand-subtle);
+		--action-card-icon-featured-border: var(--color-orange-200);
+		--action-card-icon-featured-text: var(--color-brand);
+		/* Legacy aliases — remove after full migration */
+		--color-white: var(--color-clean-white);
+		--color-black: var(--color-machine-black);
+		--color-bg: var(--color-bg-surface);
+		--color-bg-soft: var(--color-bg-surface-subtle);
+		--color-border: var(--color-border-default);
+		--color-border-light: var(--color-border-subtle);
+		--color-text-strong: var(--color-text-primary);
+		--color-brand-gray: var(--color-text-secondary);
+	}
+
+	/* =====================================================
+	   DARK THEME
+	   Applied via [data-theme="dark"] on <html> or <body>.
+	   Only overrides semantic tokens — primitives stay global.
+	===================================================== */
+
+	[data-theme="dark"] {
+		/* Backgrounds */
+		--color-bg-page: #111111;
+		--color-bg-surface: #1a1a1a;
+		--color-bg-surface-subtle: #161616;
+		--color-bg-surface-muted: #1f1f1f;
+		--color-bg-surface-hover: #1f1f1f;
+		--color-bg-surface-active: #1e1512;
+		--color-bg-disabled: #2a2a2a;
+		--color-bg-overlay: rgb(0 0 0 / 65%);
+		--color-bg-action-card: #1a1a1a;
+
+		/* Text */
+		--color-text-primary: #e8e4de;
+		--color-text-secondary: #b0a89e;
+		--color-text-muted: #6a6560;
+		--color-text-subtle: #444444;
+		--color-text-disabled: #3a3a3a;
+		--color-text-inverse: #111111;
+
+		/* Borders */
+		--color-border-default: #242424;
+		--color-border-subtle: #1e1e1e;
+		--color-border-strong: #333333;
+		--color-border-hover: #4a6275;
+		--color-border-disabled: #2a2a2a;
+		--color-border-dark: #3d4a58;
+
+		/* Icons */
+		--color-icon-primary: #c8c0b8;
+		--color-icon-secondary: #6b7b95;
+		--color-icon-muted: #4a4a4a;
+		--color-icon-disabled: #333333;
+
+		/* Forms */
+		--color-input-bg: #1f1f1f;
+		--color-input-text: #e8e4de;
+		--color-input-placeholder: #555555;
+		--color-input-border: #2a2a2a;
+		--color-input-border-hover: #4a6275;
+		--color-input-border-focus: var(--color-orange-500);
+		--color-input-bg-disabled: #1a1a1a;
+		--color-input-text-disabled: #444444;
+
+		/* Status — dark-adjusted */
+		--color-status-approved-text: #5bb876;
+		--color-status-approved-bg: #0d2e18;
+		--color-status-approved-border: #1a4d2a;
+
+		--color-status-pending-text: #f09840;
+		--color-status-pending-bg: #2a1800;
+		--color-status-pending-border: #4a2e00;
+
+		--color-status-rejected-text: #e06c6c;
+		--color-status-rejected-bg: #2a0e0e;
+		--color-status-rejected-border: #4a1a1a;
+
+		--color-status-draft-text: var(--color-orange-300);
+		--color-status-draft-bg: #1e1008;
+		--color-status-draft-border: #3a2010;
+
+		--color-status-inactive-text: #6a6560;
+		--color-status-inactive-bg: #222222;
+		--color-status-inactive-border: #2a2a2a;
+
+		--color-status-info-text: #7a9ab8;
+		--color-status-info-bg: #0e1a24;
+		--color-status-info-border: #1e3044;
+
+		/* Feedback */
+		--color-success: #5bb876;
+		--color-success-hover: #4da066;
+		--color-success-bg: #0d2e18;
+		--color-success-border: #1a4d2a;
+
+		--color-warning: #f09840;
+		--color-warning-hover: #d88030;
+		--color-warning-bg: #2a1800;
+		--color-warning-border: #4a2e00;
+
+		--color-error: #e06c6c;
+		--color-error-hover: #cc5a5a;
+		--color-error-bg: #2a0e0e;
+		--color-error-border: #4a1a1a;
+
+		--color-info: #7a9ab8;
+		--color-info-hover: #6888a4;
+		--color-info-bg: #0e1a24;
+		--color-info-border: #1e3044;
+
+		/* Interaction */
+		--color-selection-bg: #3a2010;
+		--color-selection-text: #e8e4de;
+
+		/* Table */
+		--color-table-bg: #1a1a1a;
+		--color-table-header-bg: #161616;
+		--color-table-header-text: #888880;
+		--color-table-row-hover: #1e1512;
+		--color-table-row-selected: #2a1a0e;
+		--color-table-border: #242424;
+		--color-table-striped: #1e1e1e;
+
+		/* Navigation */
+		--color-nav-text: #6b7b95;
+		--color-nav-text-hover: #e8e4de;
+		--color-nav-text-active: var(--color-orange-500);
+		--color-nav-bg-hover: #1f1f1f;
+		--color-nav-bg-active: #1e1512;
+
+		/* Skeleton */
+		--color-skeleton-base: #242424;
+		--color-skeleton-highlight: #2a2a2a;
+
+		/* Scrollbar */
+		--color-scrollbar-thumb: #333333;
+		--color-scrollbar-thumb-hover: #444444;
+
+		/* Action card component tokens — dark overrides */
+		--action-card-bg: #1a1a1a;
+		--action-card-bg-hover: #1f1f1f;
+		--action-card-border: #242424;
+		--action-card-border-hover: #4a6275;
+		--action-card-rail: #4a6275;
+		--action-card-featured-bg: #1e1512;
+		--action-card-featured-border: #3a2010;
+		--action-card-featured-rail: var(--color-brand);
+		--action-card-icon-bg: #222222;
+		--action-card-icon-border: #2a2a2a;
+		--action-card-icon-text: #6b7b95;
+		--action-card-icon-featured-bg: #1e1512;
+		--action-card-icon-featured-border: #3a2010;
+		--action-card-icon-featured-text: var(--color-brand);
+
+		--action-card-bg: #1a1a1a;
+		--action-card-bg-hover: #1f1f1f;
+		--action-card-border: #242424;
+		--action-card-border-hover: #4a6275;
+		--action-card-rail: #4a6275;
+
+		--action-card-featured-bg: #1e1512;
+		--action-card-featured-border: #3a2010;
+		--action-card-featured-rail: var(--color-brand);
+
+		--action-card-icon-bg: #222222;
+		--action-card-icon-border: #2a2a2a;
+		--action-card-icon-text: #6b7b95;
+
+		--action-card-icon-featured-bg: #1e1512;
+		--action-card-icon-featured-border: #3a2010;
+		--action-card-icon-featured-text: var(--color-brand);
 	}
 }

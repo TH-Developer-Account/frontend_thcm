@@ -2,100 +2,649 @@
 @reference "tailwindcss";
 
 /* =====================================================
-   BUTTON
+   BUTTON SYSTEM
+
+   Architecture:
+   .button-base       → shared interaction foundation
+   .button-cta        → rugged industrial CTA shape
+   .button-standard   → normal application button
+   .button-filter     → filter chip/button
+   .button-segmented  → segmented control option
+   .button-toggle     → pressed/unpressed text toggle
+   .button-icon       → icon-only control
+   .button-ghost      → low-emphasis control
+
+   Variant classes control colour only.
 ===================================================== */
 
 @layer components {
-	.btn {
-		@apply rounded-sm font-semibold
-    flex items-center justify-center gap-2
-    disabled:opacity-50
-    cursor-pointer;
+	/* =====================================================
+	   WRAPPER
+	===================================================== */
+
+	.button-wrapper {
+		position: relative;
+		display: inline-flex;
+		width: auto;
+		min-width: 0;
+		flex-shrink: 0;
+		align-items: center;
 	}
 
-	.btn-sm {
-		@apply px-3 py-1.5 text-xs;
-	}
-	.btn-md {
-		@apply px-4 py-2 text-sm;
-	}
-	.btn-lg {
-		@apply px-6 py-2.5 text-sm;
-	}
-	.btn-xl {
-		@apply px-8 py-3 text-base;
+	.button-wrapper-full {
+		display: flex;
+		width: 100%;
 	}
 
-	.btn-brand {
-		color: var(--color-white);
-		background: rgb(var(--color-primary));
+	/* =====================================================
+	   BASE
+	   No industrial shape here.
+	===================================================== */
+
+	.button-base {
+		position: relative;
+		display: inline-flex;
+		min-width: 0;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
+
+		margin: 0;
+		border: var(--border-width-default) solid transparent;
+
+		font-family: var(--font-sans);
+		font-weight: var(--font-weight-medium);
+		line-height: 1;
+		text-align: center;
+		text-decoration: none;
+		white-space: nowrap;
+
+		cursor: pointer;
+		user-select: none;
+		appearance: none;
+		-webkit-tap-highlight-color: transparent;
+
+		transition:
+			background-color var(--duration-fast) var(--ease-standard),
+			border-color var(--duration-fast) var(--ease-standard),
+			color var(--duration-fast) var(--ease-standard),
+			box-shadow var(--duration-fast) var(--ease-standard),
+			transform var(--duration-fast) var(--ease-standard);
 	}
 
-	.btn-brand:hover {
-		background: rgb(var(--color-primary-600));
+	.button-base:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-focus-brand);
 	}
 
-	.btn-primary {
-		background: rgb(var(--color-primary) / 0.1);
-		color: rgb(var(--color-primary));
-	}
-
-	.btn-success {
-		background: rgb(var(--color-success) / 0.15);
-		color: rgb(var(--color-success));
-	}
-
-	.btn-warning {
-		background: rgb(var(--color-warning) / 0.15);
-		color: rgb(var(--color-warning));
-	}
-
-	.btn-danger {
-		background: rgb(var(--color-danger) / 0.15);
-		color: rgb(var(--color-danger));
-	}
-
-	.btn-disable {
-		background: rgb(var(--color-border));
-		color: rgb(var(--color-muted));
-	}
-	.btn-disable:hover {
+	.button-base:disabled {
 		cursor: not-allowed;
+		opacity: 0.5;
+		transform: none;
 	}
-	.btn-tooltip {
+
+	.button-full-width {
+		width: 100%;
+	}
+
+	.button-label {
+		display: inline-block;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.button-leading-icon,
+	.button-trailing-icon,
+	.button-loader {
+		flex-shrink: 0;
+	}
+
+	.button-leading-icon,
+	.button-trailing-icon {
+		stroke-width: 1.8;
+	}
+
+	.button-loader {
+		animation: button-spin 700ms linear infinite;
+	}
+
+	@keyframes button-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	/* =====================================================
+	   SIZE
+	===================================================== */
+
+	.button-sm {
+		min-height: var(--control-height-sm);
+		padding: var(--space-1-5) var(--space-3);
+		font-size: var(--font-size-xs);
+	}
+
+	.button-md {
+		min-height: var(--control-height-md);
+		padding: var(--space-2) var(--space-4);
+		font-size: var(--font-size-sm);
+	}
+
+	.button-lg {
+		min-height: var(--control-height-lg);
+		padding: var(--space-2-5) var(--space-5);
+		font-size: var(--font-size-sm);
+	}
+
+	.button-xl {
+		min-height: 3rem;
+		padding: var(--space-3) var(--space-6);
+		font-size: var(--font-size-base);
+	}
+
+	/* =====================================================
+	   CTA APPEARANCE
+	   Rugged industrial style is isolated here.
+	===================================================== */
+
+	.button-cta {
+		--button-cut-size: 0.75rem;
+
+		overflow: hidden;
+		border-radius: 0;
+
+		font-weight: var(--font-weight-semibold);
+		letter-spacing: 0.045em;
+		text-transform: uppercase;
+
+		isolation: isolate;
+
+		clip-path: polygon(
+			0 0,
+			calc(100% - var(--button-cut-size)) 0,
+			100% var(--button-cut-size),
+			100% calc(100% - var(--button-cut-size)),
+			calc(100% - var(--button-cut-size)) 100%,
+			0 100%
+		);
+	}
+
+	/* Animated precision rail */
+	.button-cta::before {
+		position: absolute;
+		top: 0;
+		left: 0;
+		z-index: -1;
+
+		width: 2.75rem;
+		height: var(--border-width-strong);
+
+		background-color: currentColor;
+		content: "";
+		opacity: 0.35;
+
+		transition:
+			width var(--duration-slow) var(--ease-standard),
+			opacity var(--duration-fast) var(--ease-standard);
+	}
+
+	/* Machined light sweep */
+	.button-cta::after {
+		position: absolute;
+		inset: 0;
+		z-index: -2;
+
+		background: linear-gradient(
+			110deg,
+			transparent 0%,
+			rgb(255 255 255 / 12%) 42%,
+			transparent 68%
+		);
+
+		content: "";
+		transform: translateX(-115%);
+
+		transition: transform var(--duration-slow) var(--ease-standard);
+	}
+
+	.button-cta:hover:not(:disabled) {
+		transform: translateY(-1px);
+	}
+
+	.button-cta:hover:not(:disabled)::before {
+		width: 100%;
+		opacity: 0.85;
+	}
+
+	.button-cta:hover:not(:disabled)::after {
+		transform: translateX(115%);
+	}
+
+	.button-cta:active:not(:disabled) {
+		transform: translateY(0) scale(0.99);
+	}
+
+	.button-cta.button-sm {
+		--button-cut-size: 0.55rem;
+	}
+
+	.button-cta.button-lg {
+		--button-cut-size: 0.875rem;
+	}
+
+	.button-cta.button-xl {
+		--button-cut-size: 1rem;
+	}
+
+	/* =====================================================
+	   STANDARD APPEARANCE
+	===================================================== */
+
+	.button-standard {
+		border-radius: var(--button-radius);
+	}
+
+	.button-standard:hover:not(:disabled) {
+		transform: translateY(-1px);
+	}
+
+	.button-standard:active:not(:disabled) {
+		transform: translateY(0);
+	}
+
+	/* =====================================================
+	   FILTER APPEARANCE
+	===================================================== */
+
+	.button-filter {
+		min-height: var(--control-height-sm);
+		padding: var(--space-1-5) var(--space-3);
+
+		border-color: var(--color-border-default);
+		border-radius: var(--radius-full);
+
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-secondary);
+		box-shadow: none;
+
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		letter-spacing: 0;
+		text-transform: none;
+
+		clip-path: none;
+	}
+
+	.button-filter:hover:not(:disabled) {
+		border-color: var(--color-border-hover);
+		background-color: var(--color-bg-surface-hover);
+		color: var(--color-text-primary);
+	}
+
+	.button-filter.is-active,
+	.button-filter[data-active="true"] {
+		border-color: var(--color-brand);
+		background-color: var(--color-brand-subtle);
+		color: var(--color-brand-active);
+	}
+
+	/* =====================================================
+	   SEGMENTED APPEARANCE
+	===================================================== */
+
+	.button-segmented {
+		min-height: var(--control-height-sm);
+		padding: var(--space-1-5) var(--space-3);
+
+		border-color: transparent;
+		border-radius: var(--radius-sm);
+
+		background-color: transparent;
+		color: var(--color-text-muted);
+		box-shadow: none;
+
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		letter-spacing: 0;
+		text-transform: none;
+
+		clip-path: none;
+	}
+
+	.button-segmented:hover:not(:disabled) {
+		background-color: var(--color-bg-surface-hover);
+		color: var(--color-text-primary);
+	}
+
+	.button-segmented.is-active,
+	.button-segmented[data-active="true"] {
+		border-color: var(--color-border-default);
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-primary);
+		box-shadow: var(--shadow-xs);
+	}
+
+	/* =====================================================
+	   TOGGLE APPEARANCE
+	   For pressed/unpressed buttons, not switch tracks.
+	===================================================== */
+
+	.button-toggle {
+		min-height: var(--control-height-sm);
+		padding: var(--space-1-5) var(--space-3);
+
+		border-color: var(--color-border-default);
+		border-radius: var(--radius-sm);
+
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-secondary);
+		box-shadow: none;
+
+		font-size: var(--font-size-xs);
+		letter-spacing: 0;
+		text-transform: none;
+
+		clip-path: none;
+	}
+
+	.button-toggle:hover:not(:disabled) {
+		border-color: var(--color-border-hover);
+		background-color: var(--color-bg-surface-hover);
+	}
+
+	.button-toggle.is-active,
+	.button-toggle[data-active="true"] {
+		border-color: var(--color-brand);
+		background-color: var(--color-brand);
+		color: var(--color-brand-foreground);
+	}
+
+	/*
+	 * Toggle and segmented active states own their colours.
+	 * This prevents variant colour classes from overriding them.
+	 */
+	.button-filter.is-active,
+	.button-filter[data-active="true"],
+	.button-segmented.is-active,
+	.button-segmented[data-active="true"],
+	.button-toggle.is-active,
+	.button-toggle[data-active="true"] {
+		box-shadow: none;
+	}
+
+	/* =====================================================
+	   ICON APPEARANCE
+	===================================================== */
+
+	.button-icon {
+		width: var(--control-height-md);
+		height: var(--control-height-md);
+		min-height: var(--control-height-md);
+		flex-shrink: 0;
+
+		padding: 0;
+		border-color: transparent;
+		border-radius: var(--radius-sm);
+
+		background-color: transparent;
+		color: var(--color-icon-secondary);
+		box-shadow: none;
+
+		clip-path: none;
+	}
+
+	.button-icon.button-sm {
+		width: var(--control-height-sm);
+		height: var(--control-height-sm);
+		min-height: var(--control-height-sm);
+	}
+
+	.button-icon.button-lg {
+		width: var(--control-height-lg);
+		height: var(--control-height-lg);
+		min-height: var(--control-height-lg);
+	}
+
+	.button-icon.button-xl {
+		width: 3rem;
+		height: 3rem;
+		min-height: 3rem;
+	}
+
+	.button-icon:hover:not(:disabled) {
+		border-color: var(--color-border-default);
+		background-color: var(--color-bg-surface-hover);
+		color: var(--color-icon-primary);
+	}
+
+	.button-icon.is-active,
+	.button-icon[data-active="true"] {
+		border-color: var(--color-brand-soft);
+		background-color: var(--color-brand-subtle);
+		color: var(--color-icon-brand);
+	}
+
+	/*
+	 * Do not render an empty label wrapper in icon-only buttons.
+	 * Button.tsx already omits it when no text/children are supplied.
+	 */
+	.button-icon-only {
+		flex-shrink: 0;
+	}
+
+	/* =====================================================
+	   GHOST APPEARANCE
+	===================================================== */
+
+	.button-ghost {
+		border-color: transparent;
+		border-radius: var(--button-radius);
+
+		background-color: transparent;
+		color: var(--color-text-secondary);
+		box-shadow: none;
+
+		clip-path: none;
+	}
+
+	.button-ghost:hover:not(:disabled) {
+		background-color: var(--color-bg-surface-hover);
+		color: var(--color-text-primary);
+	}
+
+	.button-ghost.is-active,
+	.button-ghost[data-active="true"] {
+		background-color: var(--color-brand-subtle);
+		color: var(--color-brand-active);
+	}
+
+	/* =====================================================
+		TRANSPARENT APPEARANCE
+		===================================================== */
+
+	.button-transparent {
+		border-color: transparent;
+		border-radius: var(--button-radius);
+
+		background-color: transparent;
+		color: var(--color-text-secondary);
+		box-shadow: none;
+
+		clip-path: none;
+	}
+	/* =====================================================
+	   COLOUR VARIANTS
+	===================================================== */
+
+	.button-brand {
+		border-color: var(--color-brand);
+		background-color: var(--color-brand);
+		color: var(--color-brand-foreground);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.button-brand:hover:not(:disabled) {
+		border-color: var(--color-brand-active);
+		background-color: var(--color-brand-hover);
+		box-shadow:
+			0 8px 18px rgb(243 90 0 / 18%),
+			var(--shadow-md);
+	}
+
+	.button-outline {
+		border-color: var(--color-border-dark);
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-secondary);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.button-outline:hover:not(:disabled) {
+		border-color: var(--color-brand);
+		background-color: var(--color-brand-subtle);
+		color: var(--color-brand-active);
+		box-shadow: var(--shadow-md);
+	}
+
+	.button-secondary {
+		border-color: var(--color-border-default);
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-secondary);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.button-secondary:hover:not(:disabled) {
+		border-color: var(--color-border-hover);
+		background-color: var(--color-bg-surface-hover);
+		color: var(--color-text-primary);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.button-success {
+		border-color: var(--color-success);
+		background-color: var(--color-success);
+		color: var(--color-clean-white);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.button-success:hover:not(:disabled) {
+		border-color: var(--color-success-hover);
+		background-color: var(--color-success-hover);
+		box-shadow: var(--shadow-md);
+	}
+
+	.button-warning {
+		border-color: var(--color-warning);
+		background-color: var(--color-warning);
+		color: var(--color-clean-white);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.button-warning:hover:not(:disabled) {
+		border-color: var(--color-warning-hover);
+		background-color: var(--color-warning-hover);
+		box-shadow: var(--shadow-md);
+	}
+
+	.button-danger {
+		border-color: var(--color-error);
+		background-color: var(--color-error);
+		color: var(--color-clean-white);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.button-danger:hover:not(:disabled) {
+		border-color: var(--color-error-hover);
+		background-color: var(--color-error-hover);
+		box-shadow: var(--shadow-md);
+	}
+
+	/* Filter, segmented and toggle appearances use their own state colours. */
+	.button-filter.button-brand:not(.is-active),
+	.button-filter.button-secondary:not(.is-active),
+	.button-segmented.button-brand:not(.is-active),
+	.button-segmented.button-secondary:not(.is-active),
+	.button-toggle.button-brand:not(.is-active),
+	.button-toggle.button-secondary:not(.is-active) {
+		box-shadow: none;
+	}
+
+	/* =====================================================
+	   TOOLTIP
+	===================================================== */
+
+	.button-tooltip {
 		position: absolute;
 		right: 0;
-		bottom: calc(100% + 8px);
-		z-index: 9999;
+		bottom: calc(100% + var(--space-2));
+		z-index: var(--z-overlay);
 
-		max-width: 320px;
 		width: max-content;
-		white-space: normal;
+		max-width: 20rem;
+		padding: var(--space-2) var(--space-3);
 
-		border-radius: 8px;
-		background: #111827;
-		color: #ffffff;
-		font-size: 12px;
-		font-weight: 500;
-		line-height: 1.35;
-		padding: 8px 10px;
+		border: var(--border-width-default) solid var(--color-border-dark);
+		border-radius: var(--radius-sm);
+
+		background-color: var(--color-bg-darker);
+		color: var(--color-text-inverse);
+		box-shadow: var(--shadow-overlay);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-tight);
+		white-space: normal;
 
 		opacity: 0;
 		visibility: hidden;
 		pointer-events: none;
+		transform: translateY(var(--space-1));
 
-		transform: translateY(4px);
 		transition:
-			opacity 150ms ease,
-			visibility 150ms ease,
-			transform 150ms ease;
+			opacity var(--duration-fast) var(--ease-standard),
+			visibility var(--duration-fast) var(--ease-standard),
+			transform var(--duration-fast) var(--ease-standard);
 	}
 
-	.group:hover .btn-tooltip,
-	.group:focus-within .btn-tooltip {
+	.button-wrapper:hover .button-tooltip,
+	.button-wrapper:focus-within .button-tooltip {
 		opacity: 1;
 		visibility: visible;
 		transform: translateY(0);
+	}
+
+	/* =====================================================
+	   RESPONSIVE / MOTION
+	===================================================== */
+
+	@media (max-width: 640px) {
+		.button-cta {
+			letter-spacing: 0.035em;
+		}
+
+		.button-xl {
+			padding-inline: var(--space-5);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.button-base,
+		.button-cta::before,
+		.button-cta::after,
+		.button-tooltip {
+			transition-duration: 0.01ms;
+		}
+
+		.button-base:hover:not(:disabled),
+		.button-base:active:not(:disabled) {
+			transform: none;
+		}
+
+		.button-loader {
+			animation-duration: 1.5s;
+		}
 	}
 }
 
@@ -421,18 +970,20 @@
 
 	.avatar {
 		@apply rounded-full flex items-center justify-center
-    font-semibold overflow-hidden select-none cursor-pointer text-white;
+		font-semibold overflow-hidden select-none cursor-pointer;
 
-		background: rgb(var(--color-primary));
+		/* was rgb(var(--color-primary)) — that token no longer exists */
+		background-color: var(--color-brand);
+		color: var(--color-brand-foreground);
 	}
 
 	.avatar-tooltip {
 		@apply absolute bottom-full left-1/2 -translate-x-1/2 mb-2
-    whitespace-nowrap rounded-md text-xs px-2 py-1 shadow-lg
-    opacity-0 scale-95 pointer-events-none transition-all duration-150 z-50;
+		whitespace-nowrap rounded-md text-xs px-2 py-1 shadow-lg
+		opacity-0 scale-95 pointer-events-none transition-all duration-150 z-50;
 
-		background: rgb(var(--color-text));
-		color: var(--color-white);
+		background-color: var(--color-text-primary);
+		color: var(--color-text-inverse);
 	}
 
 	.avatar-wrapper:hover .avatar-tooltip,
@@ -440,106 +991,271 @@
 		@apply opacity-100 scale-100;
 	}
 }
-
-/* =========================================
-   ACTION CARD
-========================================= */
+/* =====================================================
+   USER MENU PROFILE
+   Tata Hitachi — User Profile Dropdown
+===================================================== */
 
 @layer components {
-	.action-card {
-		@apply cursor-pointer
-		rounded-2xl
-		transition-all
-		duration-200
-		ease-in-out bg-white;
-		/* @apply ring-2  ring-orange-50 text-white; */
+	/* =====================================================
+	   WRAPPER
+	===================================================== */
+
+	.user-menu {
+		position: relative;
+		display: inline-flex;
+		flex-shrink: 0;
 	}
 
-	/* Default card */
+	/* =====================================================
+	   TRIGGER
+	===================================================== */
 
-	.action-card-default {
-		@apply bg-gray-50 border-gray-100 shadow-sm
-		hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02];
+	.user-menu-trigger {
+		display: inline-flex;
+		min-height: var(--control-height-lg);
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--space-2);
+
+		padding: var(--space-1) var(--space-1) var(--space-1) var(--space-3);
+
+		border: var(--border-width-default) solid transparent;
+		border-radius: var(--radius-sm);
+		background-color: transparent;
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		line-height: 1;
+
+		color: var(--color-text-primary);
+		cursor: pointer;
+
+		transition:
+			border-color var(--duration-normal) var(--ease-standard),
+			background-color var(--duration-normal) var(--ease-standard),
+			box-shadow var(--duration-normal) var(--ease-standard);
 	}
 
-	/* Primary card */
-
-	.action-card-primary {
-		background: linear-gradient(
-			to right,
-			var(--color-brand-softest),
-			var(--color-brand-soft)
-		);
-		border-color: var(--color-brand-soft);
-		@apply shadow-md;
+	.user-menu-trigger:hover {
+		border-color: var(--color-border-default);
+		background-color: var(--color-bg-surface-hover);
 	}
 
-	/* =========================================
-		 CARD BODY
-	  ========================================= */
-
-	.action-card-body {
-		@apply rounded-xl p-6 flex flex-col items-center justify-center text-center transition-colors duration-200;
+	.user-menu-trigger:focus-visible {
+		outline: none;
+		border-color: var(--color-border-brand);
+		box-shadow: var(--shadow-focus-brand);
 	}
 
-	/* Default body */
+	.user-menu-name {
+		max-width: 12rem;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
 
-	.action-card-body-default {
+	.user-menu-chevron {
+		flex-shrink: 0;
+		color: var(--color-icon-muted);
+
+		transition:
+			color var(--duration-normal) var(--ease-standard),
+			transform var(--duration-normal) var(--ease-standard);
+	}
+
+	.user-menu-trigger:hover .user-menu-chevron {
+		color: var(--color-icon-primary);
+	}
+
+	/* Headless UI sets [data-open] on the MenuButton when open */
+	.user-menu-trigger[data-open] .user-menu-chevron {
 		color: var(--color-brand);
+		transform: rotate(180deg);
 	}
 
-	.action-card:hover .action-card-body-default {
-		background-color: var(--color-brand-soft);
-		color: var(--color-brand);
+	/* =====================================================
+	   DROPDOWN PANEL
+	===================================================== */
+
+	.user-menu-panel {
+		z-index: var(--z-overlay);
+		width: 16rem;
+		overflow: hidden;
+
+		margin-top: var(--space-2);
+		padding: var(--space-2);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-lg);
+
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-primary);
+		box-shadow: var(--shadow-overlay);
+
+		outline: none;
+		transform-origin: top right;
+
+		transition:
+			opacity var(--duration-fast) var(--ease-standard),
+			transform var(--duration-fast) var(--ease-standard);
 	}
 
-	/* Primary body */
-
-	.action-card-body-primary {
-		background-color: var(--color-brand-soft);
-		color: var(--color-brand);
+	/* Headless UI transition states */
+	.user-menu-panel[data-closed] {
+		opacity: 0;
+		transform: translateY(calc(var(--space-1) * -1)) scale(0.98);
 	}
 
-	/* =========================================
-		 ICON
-	  ========================================= */
-
-	.action-card-icon {
-		@apply flex items-center justify-center mb-3 text-4xl;
+	/* Fallback positioning when anchor="bottom end" is unavailable */
+	.user-menu-panel:not([data-anchor]) {
+		position: absolute;
+		top: calc(100% + var(--space-2));
+		right: 0;
 	}
 
-	/* =========================================
-		 TITLE
-	  ========================================= */
+	/* =====================================================
+	   USER SUMMARY ROW
+	===================================================== */
 
-	.action-card-title {
-		@apply text-lg font-semibold text-gray-800;
+	.user-menu-summary {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		padding: var(--space-2) var(--space-2) var(--space-3);
+
+		border-bottom: var(--border-width-default) solid var(--color-border-subtle);
 	}
 
-	.action-card:hover .action-card-title,
-	.action-card:hover .action-card-icon {
-		color: var(--color-brand);
+	.user-menu-summary-copy {
+		display: flex;
+		min-width: 0;
+		flex: 1;
+		flex-direction: column;
+		gap: var(--space-1);
 	}
 
-	/* =========================================
-		 DESCRIPTION
-	  ========================================= */
+	.user-menu-summary-name {
+		overflow: hidden;
 
-	.action-card-description {
-		@apply text-sm text-gray-600 mt-1;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+		text-overflow: ellipsis;
+		white-space: nowrap;
+
+		color: var(--color-text-primary);
 	}
 
-	.action-card:hover .action-card-description {
-		color: var(--color-brand);
+	.user-menu-summary-label {
+		font-family: var(--font-mono);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: 1;
+		letter-spacing: var(--tracking-eyebrow);
+		text-transform: uppercase;
+
+		color: var(--color-text-muted);
 	}
 
-	/* =========================================
-		 SUBTEXT
-	  ========================================= */
+	/* =====================================================
+	   MENU ITEMS
+	===================================================== */
 
-	.action-card-subtext {
-		@apply text-xs mt-2 font-medium;
-		color: var(--color-brand);
+	.user-menu-items {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+		padding-top: var(--space-2);
+	}
+
+	.user-menu-item {
+		display: flex;
+		width: 100%;
+		min-height: var(--control-height-md);
+		align-items: center;
+		gap: var(--space-3);
+
+		padding-inline: var(--space-3);
+
+		border: 0;
+		border-radius: var(--radius-md);
+		background-color: transparent;
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-regular);
+		line-height: 1;
+		text-align: left;
+
+		color: var(--color-text-secondary);
+		cursor: pointer;
+
+		transition:
+			background-color var(--duration-fast) var(--ease-standard),
+			color var(--duration-fast) var(--ease-standard);
+	}
+
+	.user-menu-item svg {
+		flex-shrink: 0;
+		color: var(--color-icon-secondary);
+
+		transition: color var(--duration-fast) var(--ease-standard);
+	}
+
+	.user-menu-item:hover,
+	.user-menu-item-focus {
+		background-color: var(--color-bg-surface-hover);
+		color: var(--color-text-primary);
+	}
+
+	.user-menu-item:hover svg,
+	.user-menu-item-focus svg {
+		color: var(--color-icon-primary);
+	}
+
+	/* Danger variant — sign out */
+	.user-menu-item-danger {
+		color: var(--color-error);
+	}
+
+	.user-menu-item-danger svg {
+		color: var(--color-error);
+	}
+
+	.user-menu-item-danger:hover,
+	.user-menu-item-danger.user-menu-item-focus {
+		background-color: var(--color-error-bg);
+		color: var(--color-error);
+	}
+
+	.user-menu-item-danger:hover svg,
+	.user-menu-item-danger.user-menu-item-focus svg {
+		color: var(--color-error);
+	}
+
+	/* =====================================================
+	   RESPONSIVE
+	===================================================== */
+
+	@media (max-width: 640px) {
+		.user-menu-name {
+			display: none;
+		}
+
+		.user-menu-trigger {
+			padding: var(--space-1);
+		}
+
+		.user-menu-chevron {
+			display: none;
+		}
+
+		.user-menu-panel {
+			width: min(16rem, calc(100vw - var(--space-6)));
+		}
 	}
 }
 
@@ -759,105 +1475,111 @@
 	}
 }
 
-.workflow-table-shell {
-	@apply flex min-h-0 flex-col rounded-sm border border-zinc-200 bg-white shadow-sm;
+/* =========================================
+	WORKFLOW TABLE 
+========================================= */
 
-	width: 100%;
-	min-width: 0;
-	overflow: hidden;
-}
+@layer components {
+	.workflow-table-shell {
+		@apply flex min-h-0 flex-col rounded-sm border border-zinc-200 bg-white shadow-sm;
 
-.workflow-table-scroll {
-	@apply min-h-0 flex-1 overflow-auto;
-	width: 100%;
-	min-width: 0;
-}
+		width: 100%;
+		min-width: 0;
+		overflow: hidden;
+	}
 
-.workflow-table {
-	@apply w-full min-w-[980px] border-collapse;
-}
+	.workflow-table-scroll {
+		@apply min-h-0 flex-1 overflow-auto;
+		width: 100%;
+		min-width: 0;
+	}
 
-.workflow-table-head {
-	@apply sticky top-0 z-10 bg-zinc-200;
-}
+	.workflow-table {
+		@apply w-full min-w-[980px] border-collapse;
+	}
 
-.workflow-table-head-cell {
-	@apply border-b border-zinc-200 px-4 py-3 text-left text-xs font-semibold text-zinc-600;
-}
+	.workflow-table-head {
+		@apply sticky top-0 z-10 bg-zinc-200;
+	}
 
-.workflow-table-head-cell-sortable {
-	@apply cursor-pointer select-none;
-}
+	.workflow-table-head-cell {
+		@apply border-b border-zinc-200 px-4 py-3 text-left text-xs font-semibold text-zinc-600;
+	}
 
-.workflow-table-head-content {
-	@apply flex items-center gap-1;
-}
+	.workflow-table-head-cell-sortable {
+		@apply cursor-pointer select-none;
+	}
 
-.workflow-table-row {
-	@apply border-t border-zinc-200 transition hover:bg-zinc-50;
-}
+	.workflow-table-head-content {
+		@apply flex items-center gap-1;
+	}
 
-.workflow-table-cell {
-	@apply px-2 py-1.5;
-}
+	.workflow-table-row {
+		@apply border-t border-zinc-200 transition hover:bg-zinc-50;
+	}
 
-.workflow-table-cell-text {
-	@apply px-2 py-1.5 text-xs text-zinc-700 align-top;
-}
+	.workflow-table-cell {
+		@apply px-2 py-1.5;
+	}
 
-.workflow-table-cell-action {
-	@apply px-2 py-1.5 text-center align-top;
-}
+	.workflow-table-cell-text {
+		@apply px-2 py-1.5 text-xs text-zinc-700 align-top;
+	}
 
-.workflow-table-cell-inner {
-	@apply min-w-0 overflow-hidden;
-	/* word-break: break-word;
+	.workflow-table-cell-action {
+		@apply px-2 py-1.5 text-center align-top;
+	}
+
+	.workflow-table-cell-inner {
+		@apply min-w-0 overflow-hidden;
+		/* word-break: break-word;
 	overflow-wrap: anywhere; */
-}
+	}
 
-.workflow-table-skeleton {
-	@apply h-4 w-full animate-pulse rounded bg-zinc-200;
-}
+	.workflow-table-skeleton {
+		@apply h-4 w-full animate-pulse rounded bg-zinc-200;
+	}
 
-.workflow-empty-state {
-	@apply px-4 py-10 text-center text-sm text-zinc-500;
-}
+	.workflow-empty-state {
+		@apply px-4 py-10 text-center text-sm text-zinc-500;
+	}
 
-.workflow-empty-state-inner {
-	@apply flex flex-col items-center gap-1;
-}
+	.workflow-empty-state-inner {
+		@apply flex flex-col items-center gap-1;
+	}
 
-.workflow-empty-title {
-	@apply text-sm font-medium text-zinc-700;
-}
+	.workflow-empty-title {
+		@apply text-sm font-medium text-zinc-700;
+	}
 
-.workflow-empty-description {
-	@apply text-xs text-zinc-400;
-}
+	.workflow-empty-description {
+		@apply text-xs text-zinc-400;
+	}
 
-.workflow-table-head {
-	@apply sticky top-0 z-10 bg-zinc-100;
-}
+	.workflow-table-head {
+		@apply sticky top-0 z-10 bg-zinc-100;
+	}
 
-.workflow-table-pagination {
-	@apply shrink-0 border-t border-zinc-200 bg-zinc-50;
-}
+	.workflow-table-pagination {
+		@apply shrink-0 border-t border-zinc-200 bg-zinc-50;
+	}
 
-.workflow-table-pagination-inner {
-	@apply flex items-center justify-between px-3 py-2;
-}
-.rdp-day_today {
-	position: relative;
-}
+	.workflow-table-pagination-inner {
+		@apply flex items-center justify-between px-3 py-2;
+	}
+	.rdp-day_today {
+		position: relative;
+	}
 
-.rdp-day_today::after {
-	content: "";
-	position: absolute;
-	bottom: 2px;
-	left: 50%;
-	width: 4px;
-	height: 4px;
-	transform: translateX(-50%);
-	border-radius: 999px;
-	background: #f35a00;
+	.rdp-day_today::after {
+		content: "";
+		position: absolute;
+		bottom: 2px;
+		left: 50%;
+		width: 4px;
+		height: 4px;
+		transform: translateX(-50%);
+		border-radius: 999px;
+		background: #f35a00;
+	}
 }

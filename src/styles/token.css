@@ -1,2 +1,314 @@
+/* =========================================================
+   token.css
+   Semantic component aliases
+   ========================================================= */
+
 @layer base {
+	:root {
+		/* Auth shell */
+		--auth-panel-bg: var(--color-bg-page);
+		--auth-card-bg: var(--color-bg-surface);
+		--auth-card-border: var(--color-border-default);
+		--auth-card-accent: var(--color-brand);
+		--auth-card-shadow: var(--shadow-lg);
+
+		/* Application shell */
+		--app-bg: var(--color-bg-page);
+		--app-surface: var(--color-bg-surface);
+		--app-text: var(--color-text-primary);
+		--app-border: var(--color-border-default);
+
+		/* Cards */
+		--card-bg: var(--color-bg-surface);
+		--card-text: var(--color-text-primary);
+		--card-border: var(--color-border-default);
+		--card-border-hover: var(--color-border-hover);
+		--card-shadow: var(--shadow-sm);
+		--card-shadow-hover: var(--shadow-md);
+
+		/* Buttons */
+		--button-primary-bg: var(--color-brand);
+		--button-primary-bg-hover: var(--color-brand-hover);
+		--button-primary-bg-active: var(--color-brand-active);
+		--button-primary-text: var(--color-brand-foreground);
+
+		--button-secondary-bg: var(--color-bg-surface);
+		--button-secondary-bg-hover: var(--color-bg-surface-hover);
+		--button-secondary-text: var(--color-text-primary);
+		--button-secondary-border: var(--color-border-default);
+
+		--button-disabled-bg: var(--color-bg-disabled);
+		--button-disabled-text: var(--color-text-disabled);
+
+		/* Forms */
+		--field-bg: var(--color-input-bg);
+		--field-text: var(--color-input-text);
+		--field-placeholder: var(--color-input-placeholder);
+		--field-border: var(--color-input-border);
+		--field-border-hover: var(--color-input-border-hover);
+		--field-border-focus: var(--color-input-border-focus);
+
+		/* Navigation */
+		--navigation-bg: var(--color-bg-surface);
+		--navigation-text: var(--color-nav-text);
+		--navigation-text-hover: var(--color-nav-text-hover);
+		--navigation-text-active: var(--color-nav-text-active);
+		--navigation-bg-hover: var(--color-nav-bg-hover);
+		--navigation-bg-active: var(--color-nav-bg-active);
+
+		/* Sidebar */
+		--sidebar-bg: var(--color-bg-sidebar);
+		--sidebar-bg-hover: var(--color-bg-sidebar-hover);
+		--sidebar-bg-active: var(--color-bg-sidebar-active);
+		--sidebar-text: var(--color-sidebar-text);
+		--sidebar-text-hover: var(--color-sidebar-text-hover);
+		--sidebar-text-active: var(--color-sidebar-text-active);
+
+		/* Tables */
+		--table-bg: var(--color-table-bg);
+		--table-header-bg: var(--color-table-header-bg);
+		--table-header-text: var(--color-table-header-text);
+		--table-row-hover: var(--color-table-row-hover);
+		--table-border: var(--color-table-border);
+	}
+	:root {
+		/* =====================================================
+		   LAYOUT
+		===================================================== */
+
+		--content-max-width: 90rem;
+		--header-height: 3.5rem;
+		--layout-section-gap: 1.5rem;
+		--layout-card-gap: 0.75rem;
+
+		/* =====================================================
+		   SPACING
+		===================================================== */
+
+		--space-0-5: 0.125rem;
+		--space-1: 0.25rem;
+		--space-2: 0.5rem;
+		--space-3: 0.75rem;
+		--space-4: 1rem;
+		--space-5: 1.25rem;
+		--space-6: 1.5rem;
+		--space-7: 1.75rem;
+		--space-8: 2rem;
+		--space-10: 2.5rem;
+		--space-12: 3rem;
+
+		/* =====================================================
+		   BORDER
+		===================================================== */
+
+		--border-width-default: 1px;
+		--border-width-strong: 2px;
+
+		/* =====================================================
+		   BORDER RADIUS
+		===================================================== */
+
+		--radius-xs: 0.125rem;
+		--radius-sm: 0.25rem;
+		--radius-md: 0.375rem;
+		--radius-lg: 0.5rem;
+		--radius-xl: 0.75rem;
+		--radius-2xl: 1rem;
+		--radius-full: 9999px;
+
+		/* =====================================================
+		   SHADOWS
+		===================================================== */
+
+		--shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+
+		--shadow-sm:
+			0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+
+		--shadow-md:
+			0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.06);
+
+		--shadow-lg:
+			0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+
+		--shadow-xl:
+			0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04);
+
+		--shadow-overlay:
+			0 8px 24px -4px rgb(0 0 0 / 0.12), 0 2px 8px -2px rgb(0 0 0 / 0.08);
+
+		--shadow-focus-brand: 0 0 0 3px rgb(243 90 0 / 0.2);
+		--shadow-focus-error: 0 0 0 3px rgb(192 57 43 / 0.2);
+
+		/* =====================================================
+		   MOTION
+		===================================================== */
+
+		--duration-instant: 50ms;
+		--duration-fast: 120ms;
+		--duration-normal: 200ms;
+		--duration-slow: 350ms;
+		--duration-slower: 500ms;
+
+		--ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+		--ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+		--ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+		--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+		/* =====================================================
+		   Z-INDEX
+		===================================================== */
+
+		--z-below: -1;
+		--z-base: 0;
+		--z-raised: 10;
+		--z-header: 100;
+		--z-overlay: 200;
+		--z-modal: 300;
+		--z-toast: 400;
+
+		/* =====================================================
+		   CONTROLS
+		===================================================== */
+
+		--control-height-xs: 1.5rem;
+		--control-height-sm: 1.75rem;
+		--control-height-md: 2rem;
+		--control-height-lg: 2.5rem;
+		--control-height-xl: 3rem;
+	}
+}
+@layer base {
+	:root {
+		--home-page-bg: var(--color-bg-page);
+		--home-header-bg: var(--color-bg-surface);
+		--home-context-bg: var(--color-bg-surface-subtle);
+		--home-divider: var(--color-border-default);
+
+		--home-card-bg: var(--color-bg-surface);
+		--home-card-hover-bg: var(--color-bg-surface-hover);
+		--home-card-border: var(--color-border-default);
+		--home-card-hover-border: var(--color-border-hover);
+		--home-card-active-bg: var(--color-brand-subtle);
+		--home-card-active-hover-bg: var(--color-bg-surface-active);
+		--home-card-active-border: var(--color-border-brand);
+		--home-status-bg: var(--color-bg-surface);
+
+		--home-header-height: 5rem;
+		--home-context-height: 3.25rem;
+		--home-inline-padding: clamp(var(--space-4), 3vw, var(--space-10));
+		--home-main-block-padding: clamp(var(--space-5), 3vw, var(--space-8));
+		--home-card-min-height: 14.25rem;
+		--home-card-min-height-mobile: 10rem;
+		--home-card-padding-block: clamp(var(--space-6), 3vw, var(--space-10));
+		--home-card-padding-inline: clamp(var(--space-5), 2.5vw, var(--space-8));
+		--home-status-reserved-width: 5.5rem;
+		--home-logo-height: 2.25rem;
+		--home-logo-height-mobile: 1.75rem;
+		--home-logo-max-width: 24rem;
+		--home-logo-max-width-mobile: 14rem;
+	}
+
+	[data-theme="dark"] {
+		--home-context-bg: var(--color-bg-surface-subtle);
+		--home-card-active-bg: var(--color-bg-surface-active);
+		--home-card-active-hover-bg: var(--color-bg-surface-hover);
+		--home-status-bg: var(--color-bg-surface-subtle);
+	}
+}
+@layer base {
+	:root {
+		/* =====================================================
+		   MODULE GRID
+		===================================================== */
+
+		--module-grid-gap: var(--border-width-default);
+		--module-grid-bg: var(--color-border-default);
+
+		--module-card-min-height: 14rem;
+		--module-card-padding-inline: var(--space-6);
+		--module-card-padding-block: var(--space-8);
+
+		--module-card-bg: var(--color-bg-surface);
+		--module-card-bg-hover: var(--color-bg-surface-subtle);
+		--module-card-border: var(--color-border-default);
+
+		--module-card-active-bg: var(--color-brand-subtle);
+		--module-card-active-border: var(--color-orange-200);
+		--module-card-active-rail: var(--color-brand);
+
+		--module-card-title: var(--color-text-primary);
+		--module-card-title-active: var(--color-brand);
+		--module-card-description: var(--color-text-muted);
+
+		--module-card-status-bg: var(--color-brand-subtle);
+		--module-card-status-border: var(--color-orange-200);
+		--module-card-status-text: var(--color-brand);
+	}
+
+	[data-theme="dark"] {
+		--module-grid-bg: var(--color-border-default);
+
+		--module-card-bg: var(--color-bg-surface);
+		--module-card-bg-hover: var(--color-bg-surface-hover);
+
+		--module-card-active-bg: var(--color-bg-surface-active);
+		--module-card-active-border: var(--color-brand-active);
+
+		--module-card-status-bg: var(--color-bg-surface-active);
+		--module-card-status-border: var(--color-brand-active);
+	}
+}
+@layer base {
+	:root {
+		/* =====================================================
+		   HOME MODULE CARD
+		===================================================== */
+
+		--action-card-min-height: 7rem;
+		--action-card-padding-inline: var(--space-5);
+		--action-card-padding-block: var(--space-5);
+		--action-card-content-gap: var(--space-3);
+
+		--action-card-bg: var(--color-bg-surface);
+		--action-card-bg-hover: var(--color-bg-surface-subtle);
+
+		--action-card-border: var(--color-border-default);
+		--action-card-border-hover: var(--color-border-strong);
+
+		--action-card-active-bg: var(--color-brand-subtle);
+		--action-card-active-border: var(--color-orange-200);
+
+		--action-card-title: var(--color-text-primary);
+		--action-card-title-active: var(--color-brand-active);
+		--action-card-description: var(--color-text-muted);
+
+		--action-card-icon: var(--color-brand);
+		--action-card-arrow: var(--color-icon-muted);
+		--action-card-arrow-hover: var(--color-brand);
+
+		--action-card-badge-bg: var(--color-brand-subtle);
+		--action-card-badge-text: var(--color-brand);
+		--action-card-badge-border: var(--color-orange-200);
+
+		--action-card-rail: transparent;
+		--action-card-rail-hover: var(--color-brand);
+	}
+
+	[data-theme="dark"] {
+		--action-card-bg: var(--color-bg-surface);
+		--action-card-bg-hover: var(--color-bg-surface-hover);
+
+		--action-card-border: var(--color-border-default);
+		--action-card-border-hover: var(--color-border-strong);
+
+		--action-card-active-bg: var(--color-bg-surface-active);
+		--action-card-active-border: var(--color-status-draft-border);
+
+		--action-card-title-active: var(--color-brand);
+		--action-card-arrow: var(--color-text-subtle);
+
+		--action-card-badge-bg: var(--color-bg-surface-active);
+		--action-card-badge-border: var(--color-status-draft-border);
+	}
 }

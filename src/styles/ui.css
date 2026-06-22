@@ -7,6 +7,7 @@
 .dropdown-icon-style {
 	@apply h-4 w-4  duration-200 text-orange-700;
 }
+
 @layer components {
 	/* =========================================
 	   COMING SOON PAGE
@@ -170,35 +171,5 @@
 	.coming-soon-ground {
 		@apply absolute bottom-0 left-0 right-0 h-10 border-t border-stone-300;
 		background: linear-gradient(180deg, #f5f5f4, #e7e5e4);
-	}
-}
-
-/* animations */
-
-@keyframes road-scroll {
-	from {
-		background-position: 0 0;
-	}
-	to {
-		background-position: 70px 0;
-	}
-}
-
-@keyframes tape-scroll {
-	from {
-		background-position: 0 0;
-	}
-	to {
-		background-position: 36px 0;
-	}
-}
-
-@keyframes excavator-idle {
-	0%,
-	100% {
-		transform: translate(-50%, 0);
-	}
-	50% {
-		transform: translate(-50%, -4px);
 	}
 }

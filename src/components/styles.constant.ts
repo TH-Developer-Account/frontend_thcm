@@ -50,24 +50,21 @@ export const resolveStatusStyle = ({
 };
 
 const VARIANT_STYLE_MAP: Record<string, string> = {
-	brand: "bg-[#f35a00] text-white",
+	brand: "btn-brand",
+	primary: "btn-brand",
+	outline: "btn-outline",
 
-	success: "bg-green-100 text-green-800",
-	active: "bg-green-100 text-green-800",
+	success: "btn-success",
+	active: "btn-success",
+	passed: "btn-success",
 
-	danger: "bg-red-100 text-red-800",
-	inactive: "bg-red-100 text-red-800",
+	danger: "btn-danger",
+	inactive: "btn-danger",
+	failed: "btn-danger",
 
-	warning: "bg-yellow-100 text-yellow-800",
+	warning: "btn-warning",
 
-	disable: "bg-gray-100 text-gray-800",
-
-	primary: "bg-blue-100 text-blue-800",
-
-	outline: "bg-orange-50 ring-orange-200 text-orange-700",
-
-	passed: "bg-green-100 text-green-800",
-	failed: "bg-red-100 text-red-800",
+	disable: "btn-disable",
 };
 
 export const resolveVariantStyle = ({
@@ -75,11 +72,10 @@ export const resolveVariantStyle = ({
 }: {
 	variant?: string;
 }): string => {
-	if (!variant) return "bg-orange-50 ring-orange-200 text-orange-700";
-
-	return (
-		VARIANT_STYLE_MAP[variant] ?? "bg-orange-50 ring-orange-200 text-orange-700"
-	);
+	const key = String(variant ?? "")
+		.trim()
+		.toLowerCase();
+	return VARIANT_STYLE_MAP[key] ?? "btn-outline";
 };
 
 export const toastStyles: Record<ToastVariant, ToastStyle> = {

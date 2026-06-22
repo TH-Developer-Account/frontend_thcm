@@ -1,57 +1,33 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap");
-
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap");
 @import "tailwindcss";
 
-@import "./styles/theme.css";
-@import "./styles/ui.css";
-@import "./styles/typography.css";
-@import "./styles/globals.css";
+/* =========================================================
+   FOUNDATION
+   Variables must load before any stylesheet consumes them.
+   ========================================================= */
+
 @import "./styles/color.css";
+@import "./styles/theme.css";
 @import "./styles/token.css";
-@import "./styles/form.css";
+
+/* =========================================================
+   GLOBAL SYSTEM STYLES
+   ========================================================= */
+
+@import "./styles/globals.css";
+@import "./styles/typography.css";
 @import "./styles/layout.css";
+@import "./styles/ui.css";
+@import "./styles/form.css";
 @import "./styles/components.css";
+@import "./styles/home.css";
+
+/* =========================================================
+   FEATURE AND MODULE STYLES
+   ========================================================= */
+
 @import "./components/FormElements/input.css";
 @import "./modules/admin/workflow/workflow.css";
 @import "./modules/admin/business-partners/bp.css";
 @import "./modules/marketing/marketing.styles.css";
-
-body {
-	background-color: transparent;
-	font-family: var(--font-sans);
-	margin: 0;
-	padding: 0;
-}
-.container {
-	min-height: 100vh;
-	width: 100%;
-	height: 100%;
-	max-width: 1440px;
-	margin: 0 auto;
-	text-align: center;
-}
-
-/* Mobile (default styles apply here) */
-@media (max-width: 480px) {
-	/* styles for small mobile devices */
-	.authStyles {
-		background-color: #ffffff;
-		transition: 1s;
-	}
-	.authformStyles {
-		border: none;
-		box-shadow: none;
-	}
-	form {
-		font-size: 0.8rem;
-	}
-}
-.header {
-	background-color: #fff;
-	color: rgb(var(--color-text));
-	border-bottom: 2px solid #f35a00;
-}
-
-.aside-br {
-	border-right: 2px solid #f35a00;
-}

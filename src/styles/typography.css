@@ -1,40 +1,286 @@
 /* =========================================================
-   common.css
-   Global Branding & Design Variables
+   typography.css
+   Tata Hitachi — Typography System
    ========================================================= */
 
-/* ---------- Typography ---------- */
-:root {
-	--font-sans:
-		"Quicksand", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-	--font-mono: "JetBrains Mono", monospace;
+@layer base {
+	:root {
+		/* Font families */
+		--font-sans:
+			"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+			sans-serif;
+		--font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
 
-	--font-size-xs: 0.75rem;
-	--font-size-sm: 0.875rem;
-	--font-size-md: 1rem;
-	--font-size-lg: 1.125rem;
-	--font-size-xl: 1.25rem;
-	--font-size-2xl: 1.5rem;
-	--font-size-3xl: 1.875rem;
+		/* Font sizes */
+		--font-size-2xs: 0.6875rem;
+		--font-size-xs: 0.75rem;
+		--font-size-sm: 0.875rem;
+		--font-size-base: 1rem;
+		--font-size-lg: 1.125rem;
+		--font-size-xl: 1.25rem;
+		--font-size-2xl: 1.5rem;
+		--font-size-3xl: 1.875rem;
+		--font-size-4xl: 2.25rem;
+		--font-size-5xl: 3rem;
 
-	--font-weight-regular: 400;
-	--font-weight-medium: 500;
-	--font-weight-semibold: 600;
-	--font-weight-bold: 700;
+		/* Weights */
+		--font-weight-light: 300;
+		--font-weight-regular: 400;
+		--font-weight-medium: 500;
+		--font-weight-semibold: 600;
 
-	--line-height-tight: 1.25;
-	--line-height-normal: 1.5;
-	--line-height-relaxed: 1.75;
+		/* Line heights */
+		--line-height-display: 1.08;
+		--line-height-heading: 1.2;
+		--line-height-tight: 1.35;
+		--line-height-normal: 1.625;
+		--line-height-relaxed: 1.75;
+
+		/* Tracking */
+		--tracking-display: -0.035em;
+		--tracking-heading: -0.025em;
+		--tracking-title: -0.015em;
+		--tracking-normal: 0;
+		--tracking-eyebrow: 0.12em;
+		--tracking-wide: 0.06em;
+	}
+
+	html {
+		font-family: var(--font-sans);
+		font-size: 16px;
+		font-synthesis: none;
+		text-rendering: optimizeLegibility;
+		-webkit-font-smoothing: antialiased;
+		-moz-osx-font-smoothing: grayscale;
+	}
+
+	body {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-primary);
+	}
+
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		margin: 0;
+		font-family: var(--font-sans);
+		color: var(--color-text-primary);
+	}
+
+	h1 {
+		font-size: clamp(2.5rem, 5vw, 4.5rem);
+		font-weight: var(--font-weight-light);
+		line-height: var(--line-height-display);
+		letter-spacing: var(--tracking-display);
+	}
+
+	h2 {
+		font-size: clamp(2rem, 4vw, 3.25rem);
+		font-weight: var(--font-weight-regular);
+		line-height: 1.12;
+		letter-spacing: var(--tracking-heading);
+	}
+
+	h3 {
+		font-size: clamp(var(--font-size-lg), 2vw, var(--font-size-2xl));
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-heading);
+		letter-spacing: var(--tracking-title);
+	}
+
+	h4 {
+		font-size: var(--font-size-lg);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+	}
+
+	h5,
+	h6 {
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+	}
+
+	p {
+		margin: 0;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-secondary);
+	}
+
+	small {
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-muted);
+	}
+
+	button,
+	input,
+	select,
+	textarea {
+		font-family: var(--font-sans);
+		font-weight: var(--font-weight-medium);
+	}
+
+	strong,
+	b {
+		font-weight: var(--font-weight-medium);
+	}
+
+	code,
+	kbd,
+	samp,
+	pre {
+		font-family: var(--font-mono);
+	}
 }
 
-form h2 {
-	font-size: 1.5rem;
-}
+@layer components {
+	/* Display / hero */
+	.text-hero {
+		font-family: var(--font-sans);
+		font-size: clamp(2.5rem, 5vw, 4.5rem);
+		font-weight: var(--font-weight-light);
+		line-height: var(--line-height-display);
+		letter-spacing: var(--tracking-display);
+		color: var(--color-text-primary);
+	}
 
-.text-primary {
-	color: var(--color-primary-600);
-}
+	/* Page-level heading — used by .home-title */
+	.text-page-title {
+		font-family: var(--font-sans);
+		font-size: clamp(var(--font-size-3xl), 3vw, var(--font-size-4xl));
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-display);
+		letter-spacing: var(--tracking-heading);
+		color: var(--color-text-primary);
+	}
 
-body {
-	color: black;
+	/* Section heading */
+	.text-section-title {
+		font-family: var(--font-sans);
+		font-size: clamp(2rem, 4vw, 3.25rem);
+		font-weight: var(--font-weight-regular);
+		line-height: 1.12;
+		letter-spacing: var(--tracking-heading);
+		color: var(--color-text-primary);
+	}
+
+	/* Card / panel title */
+	.text-card-title {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-heading);
+		letter-spacing: var(--tracking-title);
+		color: var(--color-text-primary);
+	}
+
+	/* Body — page descriptions */
+	.text-body {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-muted);
+	}
+
+	/* Eyebrow / section label — mono, caps, tracked */
+	.text-eyebrow {
+		font-family: var(--font-mono);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: 1;
+		letter-spacing: var(--tracking-eyebrow);
+		text-transform: uppercase;
+		color: var(--color-text-brand);
+	}
+
+	/* Sub-label — used in cards, footers, meta */
+	.text-sublabel {
+		font-family: var(--font-mono);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: 1;
+		letter-spacing: var(--tracking-eyebrow);
+		text-transform: uppercase;
+		color: var(--color-text-muted);
+	}
+
+	/* Field label */
+	.text-label {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+		color: var(--color-text-secondary);
+	}
+
+	/* Table heading */
+	.text-table-head {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+		letter-spacing: 0.02em;
+		color: var(--color-text-muted);
+	}
+
+	/* Table cell */
+	.text-table-cell {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-secondary);
+	}
+
+	.text-hero,
+	.hero-title {
+		font-family: var(--font-sans);
+		font-size: clamp(2.5rem, 5vw, 4.5rem);
+		font-weight: var(--font-weight-light);
+		line-height: var(--line-height-display);
+		letter-spacing: var(--tracking-display);
+		color: var(--color-text-primary);
+	}
+
+	.text-section-title,
+	.section-title {
+		font-family: var(--font-sans);
+		font-size: clamp(2rem, 4vw, 3.25rem);
+		font-weight: var(--font-weight-regular);
+		line-height: 1.12;
+		letter-spacing: var(--tracking-heading);
+		color: var(--color-text-primary);
+	}
+
+	.text-card-title,
+	.card-title {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-heading);
+		letter-spacing: var(--tracking-title);
+		color: var(--color-text-primary);
+	}
+
+	.text-body,
+	.card-description,
+	.page-subtitle {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-muted);
+	}
 }

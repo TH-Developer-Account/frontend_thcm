@@ -1,186 +1,761 @@
 @reference "tailwindcss";
+
+/* =========================================================
+   AUTHENTICATION LAYOUT
+   Tata Hitachi — Industrial split-screen auth system
+========================================================= */
+
 @layer components {
-	/* ========================
-       PAGE HEADER
-    ======================== */
+	.auth-layout {
+		@apply grid min-h-dvh w-full overflow-hidden
+			lg:grid-cols-[minmax(0,1.15fr)_minmax(25rem,0.85fr)];
 
-	.page-header {
-		@apply px-3 py-3 text-left;
+		background-color: var(--color-bg-page);
+		color: var(--color-text-primary);
 	}
 
-	/* ========================
-       PAGE TITLE
-    ======================== */
+	/* =====================================================
+	   VISUAL PANEL
+	===================================================== */
 
-	.page-title {
-		@apply text-xl font-semibold text-gray-900 mb-4;
+	.auth-visual {
+		@apply relative hidden min-h-dvh overflow-hidden lg:block;
+
+		background-color: var(--color-bg-darker);
+		color: var(--color-text-inverse);
 	}
 
-	/* ========================
-       BREADCRUMB CONTAINER
-    ======================== */
+	.auth-visual-image {
+		@apply absolute inset-0 h-full w-full object-cover;
 
-	.breadcrumb {
-		@apply flex items-center text-sm text-gray-500 space-x-3;
+		object-position: center;
+		filter: saturate(0.82) contrast(1.08);
 	}
 
-	.breadcrumb-item {
-		@apply flex items-center space-x-3;
+	.auth-visual-overlay {
+		@apply absolute inset-0;
+
+		background:
+			linear-gradient(
+				90deg,
+				rgb(26 32 40 / 94%) 0%,
+				rgb(26 32 40 / 72%) 48%,
+				rgb(26 32 40 / 38%) 100%
+			),
+			linear-gradient(0deg, rgb(26 32 40 / 80%) 0%, transparent 58%);
 	}
 
-	/* ========================
-       BREADCRUMB LINK
-    ======================== */
+	.auth-visual-grid {
+		@apply absolute inset-0 opacity-20;
 
-	.breadcrumb-link {
-		@apply hover:text-gray-700 transition;
+		background-image:
+			linear-gradient(var(--color-clean-white) 1px, transparent 1px),
+			linear-gradient(90deg, var(--color-clean-white) 1px, transparent 1px);
+
+		background-size: 4rem 4rem;
+		mask-image: linear-gradient(
+			to bottom,
+			transparent,
+			var(--color-machine-black),
+			transparent
+		);
 	}
 
-	.breadcrumb-current {
-		@apply text-gray-400;
-	}
-	/* ========================
-     HEADER LOGO
-  ======================== */
+	.auth-visual::before {
+		@apply absolute right-0 top-0 z-10 h-full;
 
-	.header-logo {
-		@apply md:w-[150px] w-[120px];
+		width: var(--border-width-strong);
+		background-color: var(--color-brand);
+		content: "";
+	}
+
+	.auth-visual::after {
+		@apply absolute right-0 top-0 z-10;
+
+		width: 5rem;
+		height: 5rem;
+
+		background-color: var(--color-brand);
+
+		clip-path: polygon(100% 0, 100% 100%, 0 0);
+
+		content: "";
+		opacity: 0.88;
+	}
+
+	.auth-visual-content {
+		@apply relative z-20 flex h-full min-h-dvh
+			flex-col justify-between px-10 py-8
+			xl:px-14 xl:py-10;
+	}
+
+	.auth-brand-link {
+		@apply inline-flex w-fit items-center
+			focus-visible:outline-none;
+	}
+
+	.auth-brand-link:focus-visible {
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.auth-brand-logo {
+		@apply h-auto w-auto object-contain;
+
+		max-width: 12rem;
+		filter: brightness(0) invert(1);
+	}
+
+	.auth-visual-copy {
+		@apply max-w-xl;
+	}
+
+	.auth-visual-eyebrow {
+		@apply mb-4 uppercase;
+
+		font-family: var(--font-mono);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		letter-spacing: var(--tracking-eyebrow);
+		color: var(--color-orange-300);
+	}
+
+	.auth-visual-title {
+		@apply mb-5;
+
+		max-width: 36rem;
+		font-size: clamp(2.75rem, 5vw, 5.25rem);
+		font-weight: var(--font-weight-light);
+		line-height: 0.98;
+		letter-spacing: var(--tracking-display);
+		color: var(--color-text-inverse);
+	}
+
+	.auth-visual-description {
+		@apply max-w-lg;
+
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-relaxed);
+		color: var(--color-neutral-300);
+	}
+
+	.auth-visual-footer {
+		@apply flex items-center justify-between gap-6
+			border-t pt-5 uppercase;
+
+		border-color: rgb(255 255 255 / 18%);
+		font-family: var(--font-mono);
+		font-size: var(--font-size-2xs);
+		letter-spacing: var(--tracking-wide);
+		color: var(--color-neutral-400);
+	}
+
+	.auth-system-status {
+		@apply inline-flex items-center gap-2;
+	}
+
+	.auth-system-dot {
+		@apply block h-1.5 w-1.5 rounded-full;
+
+		background-color: var(--color-success);
+		box-shadow: 0 0 0 3px rgb(45 125 70 / 18%);
+	}
+
+	/* =====================================================
+	   FORM PANEL
+	===================================================== */
+
+	.auth-form-panel {
+		@apply relative flex min-h-dvh flex-col
+			items-center justify-center overflow-y-auto
+			px-4 py-8 sm:px-8 lg:px-10 xl:px-14;
+
+		background-color: var(--color-bg-page);
+	}
+
+	.auth-form-panel::before {
+		@apply absolute inset-x-0 top-0 h-0.5 lg:hidden;
+
+		background-color: var(--color-brand);
+		content: "";
+	}
+
+	.auth-card {
+		@apply relative w-full border px-5 py-6
+			sm:px-8 sm:py-8;
+
+		max-width: 30rem;
+
+		border-color: var(--color-border-default);
+		border-radius: var(--radius-lg);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-lg);
+
+		clip-path: polygon(
+			0 0,
+			calc(100% - 1.25rem) 0,
+			100% 1.25rem,
+			100% 100%,
+			0 100%
+		);
+	}
+
+	.auth-card::before {
+		@apply absolute left-0 top-0 h-0.5;
+
+		width: 5rem;
+		background-color: var(--color-brand);
+		content: "";
+	}
+
+	.auth-card::after {
+		@apply absolute right-0 top-0;
+
+		width: 1.25rem;
+		height: 1.25rem;
+
+		border-left: var(--border-width-default) solid var(--color-orange-200);
+		border-bottom: var(--border-width-default) solid var(--color-orange-200);
+
+		content: "";
+	}
+
+	.auth-form-footer {
+		@apply mt-5 text-center uppercase;
+
+		font-family: var(--font-mono);
+		font-size: var(--font-size-2xs);
+		letter-spacing: var(--tracking-wide);
+		color: var(--color-text-muted);
+	}
+
+	/* =====================================================
+	   FORM HEADER
+	===================================================== */
+
+	.auth-form-header {
+		@apply mb-6 text-left;
+	}
+
+	.auth-mobile-logo {
+		@apply mb-6 hidden lg:hidden;
+	}
+
+	.auth-mobile-logo img {
+		@apply h-auto w-auto object-contain;
+
+		max-width: 10rem;
+	}
+
+	.auth-form-eyebrow {
+		@apply mb-2 uppercase;
+
+		font-family: var(--font-mono);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: 1;
+		letter-spacing: var(--tracking-eyebrow);
+		color: var(--color-text-brand);
+	}
+
+	.auth-form-title {
+		@apply mb-2;
+
+		font-size: clamp(var(--font-size-2xl), 4vw, var(--font-size-3xl));
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-heading);
+		letter-spacing: var(--tracking-heading);
+		color: var(--color-text-primary);
+	}
+
+	.auth-form-description {
+		@apply max-w-md;
+
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-muted);
+	}
+
+	.auth-form-icon {
+		@apply mb-4 inline-flex h-11 w-11
+			items-center justify-center border;
+
+		border-color: var(--color-orange-200);
+		border-radius: var(--radius-sm);
+		background-color: var(--color-brand-subtle);
+		color: var(--color-brand);
+	}
+
+	/* =====================================================
+	   TABS
+	===================================================== */
+
+	.auth-tabs {
+		@apply relative mb-6 grid grid-cols-2 border-b;
+
+		border-color: var(--color-border-default);
+	}
+
+	.auth-tab {
+		@apply relative px-3 py-3 text-center
+			text-sm font-medium
+			transition-colors duration-200
+			focus-visible:outline-none;
+
+		color: var(--color-text-muted);
+	}
+
+	.auth-tab:hover {
+		color: var(--color-text-primary);
+	}
+
+	.auth-tab::after {
+		@apply absolute inset-x-0 bottom-0 h-0.5;
+
+		background-color: transparent;
+		content: "";
+	}
+
+	.auth-tab-active {
+		color: var(--color-text-primary);
+	}
+
+	.auth-tab-active::after {
+		background-color: var(--color-brand);
+	}
+
+	.auth-tab:focus-visible {
+		box-shadow: inset 0 0 0 2px var(--color-focus-ring);
+	}
+
+	.auth-tab-panel {
+		@apply min-w-0;
+	}
+
+	/* =====================================================
+	   AUTH FORM
+	===================================================== */
+
+	.auth-form {
+		@apply flex min-w-0 flex-col gap-5;
+	}
+
+	.auth-form-fields {
+		@apply flex flex-col gap-4;
+	}
+
+	.auth-form-options {
+		@apply flex items-center justify-end;
+	}
+
+	.auth-text-link,
+	.auth-text-button {
+		@apply text-sm font-medium
+			transition-colors duration-200
+			focus-visible:outline-none;
+
+		color: var(--color-text-link);
+	}
+
+	.auth-text-link:hover,
+	.auth-text-button:hover:not(:disabled) {
+		color: var(--color-text-link-hover);
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+
+	.auth-text-link:focus-visible,
+	.auth-text-button:focus-visible {
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.auth-text-button {
+		@apply border-0 bg-transparent p-0;
+	}
+
+	.auth-text-button:disabled {
+		@apply cursor-not-allowed no-underline;
+
+		color: var(--color-text-disabled);
+	}
+
+	.auth-inline-actions {
+		@apply flex flex-wrap items-center
+			justify-between gap-3 border-t pt-4;
+
+		border-color: var(--color-border-subtle);
+	}
+
+	.auth-field-helper {
+		margin-top: calc(var(--space-3) * -1);
+		font-size: var(--font-size-xs);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-muted);
+	}
+
+	.auth-form-error {
+		@apply border px-3 py-2 text-sm;
+
+		border-color: var(--color-error-border);
+		border-radius: var(--radius-sm);
+		background-color: var(--color-error-bg);
+		color: var(--color-error);
+	}
+
+	/* =====================================================
+	   OTP
+	===================================================== */
+
+	.auth-otp-intro {
+		@apply border-l-2 pl-3;
+
+		border-color: var(--color-brand);
+	}
+
+	.auth-otp-label {
+		@apply mb-1 uppercase;
+
+		font-family: var(--font-mono);
+		font-size: var(--font-size-2xs);
+		letter-spacing: var(--tracking-eyebrow);
+		color: var(--color-text-brand);
+	}
+
+	.auth-otp-description {
+		font-size: var(--font-size-sm);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-muted);
+	}
+
+	.auth-otp-description strong {
+		color: var(--color-text-primary);
+	}
+
+	/* =====================================================
+	   PASSWORD POLICY
+	===================================================== */
+
+	.auth-password-policy {
+		@apply grid grid-cols-1 gap-2 border p-3
+			sm:grid-cols-2;
+
+		border-color: var(--color-border-subtle);
+		border-radius: var(--radius-sm);
+		background-color: var(--color-bg-surface-subtle);
+	}
+
+	.auth-password-rule {
+		@apply flex items-center gap-2 text-xs;
+
+		color: var(--color-text-muted);
+	}
+
+	.auth-password-rule svg {
+		@apply shrink-0;
+	}
+
+	.auth-password-rule-valid {
+		color: var(--color-success);
+	}
+
+	/* =====================================================
+	   RESULT STATE
+	===================================================== */
+
+	.auth-result {
+		@apply flex flex-col items-start;
+	}
+
+	.auth-result-icon {
+		@apply mb-5 inline-flex h-12 w-12
+			items-center justify-center border;
+
+		border-color: var(--color-success-border);
+		border-radius: var(--radius-sm);
+		background-color: var(--color-success-bg);
+		color: var(--color-success);
+	}
+
+	.auth-primary-link {
+		@apply inline-flex min-h-10 w-full items-center
+			justify-center px-4 text-sm font-medium
+			transition-colors duration-200
+			focus-visible:outline-none;
+
+		border-radius: var(--button-radius);
+		background-color: var(--button-primary-bg);
+		color: var(--button-primary-text);
+	}
+
+	.auth-primary-link:hover {
+		background-color: var(--button-primary-bg-hover);
+	}
+
+	.auth-primary-link:focus-visible {
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.auth-secondary-link {
+		@apply text-center text-sm font-medium
+			transition-colors duration-200
+			focus-visible:outline-none;
+
+		color: var(--color-text-secondary);
+	}
+
+	.auth-secondary-link:hover {
+		color: var(--color-text-link-hover);
+	}
+
+	.auth-secondary-link:focus-visible {
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	/* =====================================================
+	   RESPONSIVE
+	===================================================== */
+
+	@media (max-width: 1023px) {
+		.auth-layout {
+			@apply block;
+		}
+
+		.auth-form-panel {
+			@apply min-h-dvh;
+		}
+
+		.auth-mobile-logo {
+			@apply block;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.auth-form-panel {
+			@apply justify-start px-3 py-6;
+		}
+
+		.auth-card {
+			@apply border-0 px-4 py-5;
+			max-width: 100%;
+			box-shadow: none;
+			clip-path: none;
+		}
+
+		.auth-card::after {
+			display: none;
+		}
+
+		.auth-form-title {
+			font-size: var(--font-size-2xl);
+		}
+
+		.auth-form-footer {
+			@apply mt-3;
+		}
+
+		.auth-inline-actions {
+			@apply flex-col items-start;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.auth-tab,
+		.auth-text-link,
+		.auth-text-button,
+		.auth-primary-link,
+		.auth-secondary-link {
+			transition-duration: 0.01ms;
+		}
 	}
 }
+/* =========================================================
+   APPLICATION SHELL
+========================================================= */
 
 @layer components {
-	/* =========================
-	   APP LAYOUT
-	========================= */
-
 	.app-layout {
-		@apply h-screen flex flex-col overflow-hidden;
+		@apply flex h-dvh w-full min-h-0 min-w-0
+			flex-col overflow-hidden;
+
+		background-color: var(--color-bg-page);
+		color: var(--color-text-primary);
 	}
 
 	.app-body {
-		@apply relative flex flex-1 overflow-hidden transition-transform duration-300 ease-in-out;
+		@apply relative flex min-h-0 min-w-0 flex-1 overflow-hidden;
 	}
-
-	/* =========================
-	   MAIN CONTENT AREA
-	========================= */
 
 	.app-main {
-		@apply flex-1 md:ml-0 bg-zinc-50 scroll-smooth;
+		@apply flex min-h-0 min-w-0 flex-1
+			flex-col overflow-hidden;
+
+		background-color: var(--color-bg-page);
 	}
 
-	/* Optional: smoother scrolling feel */
-	.app-main-smooth {
-		@apply scroll-smooth;
-	}
 	.main-content {
-		@apply px-2 pt-2;
+		@apply min-h-0 min-w-0 flex-1
+			overflow-x-hidden overflow-y-auto p-3;
 	}
-}
-
-@layer components {
-	/* =========================
-	   AUTH LAYOUT
-	========================= */
-
-	.auth-layout {
-		@apply min-h-screen flex items-center justify-center bg-transparent shadow-lg;
-	}
-
-	/* =========================
-	   AUTH CARD / FORM
-	========================= */
-
-	.auth-card {
-		@apply w-full max-w-[400px] bg-white shadow-lg rounded-xl p-6 pt-4 border-b border-gray-200;
-	}
-
-	/* Optional variants */
-
-	.auth-card-compact {
-		@apply p-4;
-	}
-
-	.auth-card-wide {
-		@apply max-w-[480px];
-	}
-}
-@layer components {
-	/* =========================
-	   HEADER BAR
-	========================= */
 
 	.app-header {
-		@apply h-14 flex items-center gap-3 px-3 py-2 sm:px-3 text-white;
-		@apply shadow-[0px_3px_12px_0px_rgba(0,0,0,0.2)];
-	}
+		@apply relative z-30 flex w-full shrink-0
+			items-center gap-3 border-b px-3;
 
-	/* =========================
-	   HEADER INNER WRAPPER
-	========================= */
+		min-height: var(--header-height);
+		border-color: var(--color-border-default);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs);
+	}
 
 	.app-header-content {
-		@apply flex items-center justify-between w-full;
+		@apply flex min-w-0 flex-1 items-center
+			justify-between gap-3;
 	}
 
-	/* =========================
-	   HEADER MENU BUTTON
-	========================= */
-
 	.app-header-btn {
-		@apply p-2 rounded-md bg-transparent text-black font-bold text-xl cursor-pointer;
-		@apply transition-all duration-300 ease-in-out;
+		@apply inline-flex shrink-0 items-center justify-center
+			 border-transparent bg-transparent p-0
+			transition-colors duration-200
+			focus-visible:outline-none;
+
+		width: var(--control-height-lg);
+		height: var(--control-height-lg);
+		border-radius: var(--radius-md);
+		color: var(--color-icon-primary);
 	}
 
 	.app-header-btn:hover {
-		@apply bg-gray-50 text-orange-600;
-	}
-}
-
-/* page-section-layout.css */
-@layer components {
-	.page-stack-layout {
-		@apply flex w-full min-w-0 flex-col items-stretch gap-2;
+		border-color: var(--color-border-default);
+		background-color: var(--color-bg-surface-hover);
+		color: var(--color-brand);
 	}
 
-	.page-stack-section {
-		@apply w-full min-w-0;
+	.app-header-btn:focus-visible {
+		box-shadow: var(--shadow-focus-brand);
 	}
-}
 
-/* Used for 2 row layout sections */
-@layer components {
-	.page-header-section {
-		@apply sm:px-4 sm:py-2 px-2 py-2;
+	.page-screen {
+		@apply flex min-h-dvh flex-col overflow-hidden;
+
+		background-color: var(--color-bg-page);
+		color: var(--color-text-primary);
 	}
-	.page-title-section {
-		@apply text-lg font-semibold tracking-tight text-zinc-900;
+
+	.page-header {
+		@apply sticky top-0 z-30 flex shrink-0
+			items-center border-b-2;
+
+		min-height: var(--header-height);
+		border-color: var(--color-brand);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs);
 	}
-	.page-subtitle {
-		@apply text-xs text-zinc-300;
+
+	.page-header > * {
+		@apply w-full;
 	}
-	.page-header-badge {
-		@apply inline-flex items-center gap-2 self-start rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700;
+
+	.page-header-inner {
+		@apply mx-auto flex w-full min-w-0 items-center
+			justify-between gap-4 px-5 sm:px-3;
+
+		max-width: var(--content-max-width);
 	}
-}
-/* ---------- Utility Examples ---------- */
 
-/* Mobile */
-@media (min-width: 427px) and (max-width: 640px) {
-	/* styles for tablets */
-}
+	.page-content {
+		@apply mx-auto flex w-full min-w-0 flex-1
+			flex-col px-5 pb-4 pt-5
+			max-md:px-3 max-md:pb-3 max-md:pt-4;
 
-/* Tablets */
-@media (min-width: 641px) and (max-width: 1024px) {
-	/* styles for tablets */
-}
+		max-width: var(--content-max-width);
+	}
 
-/* Small laptops */
-@media (min-width: 1025px) and (max-width: 1280px) {
-	/* styles for small laptops */
-}
+	.section-intro {
+		@apply flex flex-col items-start gap-2;
 
-/* Desktops */
-@media (min-width: 1281px) and (max-width: 1536px) {
-	/* styles for desktops */
+		margin-bottom: var(--layout-section-gap);
+	}
+
+	.panel {
+		@apply relative w-full min-w-0 border p-4
+			max-md:p-3;
+
+		border-color: var(--color-border-default);
+		border-radius: var(--radius-xl);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.panel-industrial {
+		clip-path: polygon(
+			0 0,
+			calc(100% - var(--space-4)) 0,
+			100% var(--space-4),
+			100% calc(100% - var(--space-4)),
+			calc(100% - var(--space-4)) 100%,
+			0 100%
+		);
+	}
+
+	.panel-industrial::before {
+		@apply absolute top-0;
+
+		left: var(--space-5);
+		width: 7rem;
+		height: var(--border-width-strong);
+		background-color: var(--color-iron);
+		content: "";
+	}
+
+	.card-grid {
+		@apply grid items-stretch;
+
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+		gap: var(--layout-card-gap);
+	}
+
+	.empty-state {
+		@apply flex min-h-48 flex-col items-center
+			justify-center gap-2 text-center;
+	}
+
+	.page-footer {
+		@apply mt-auto flex items-center justify-between
+			gap-4 pt-4 max-md:flex-col max-md:items-start;
+
+		font-family: var(--font-mono);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: 1;
+		letter-spacing: var(--tracking-eyebrow);
+		text-transform: uppercase;
+		color: var(--color-text-muted);
+	}
+
+	.logo-link {
+		@apply inline-flex min-w-0 items-center
+			transition-opacity duration-150
+			hover:opacity-85 focus-visible:outline-none;
+
+		border-radius: var(--radius-sm);
+	}
+
+	.logo-link:focus-visible {
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.logo-img {
+		@apply block h-8 w-auto object-contain object-left
+			max-sm:h-6;
+
+		max-width: 13rem;
+	}
+
+	@media (max-width: 480px) {
+		.panel-industrial {
+			@apply rounded-xl;
+			clip-path: none;
+		}
+	}
 }
