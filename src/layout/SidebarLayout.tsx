@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
+import { NavLink } from "react-router-dom";
 
 import type { SidebarLayoutProps } from "./layout.types";
 
@@ -22,116 +22,130 @@ export const SidebarLayout = ({
 		setOpenItem((currentItem) => (currentItem === itemId ? null : itemId));
 	};
 
+	const handleNavigation = () => {
+		/*
+		 * Close only the mobile drawer.
+		 *
+		 * Desktop state should remain controlled by the header toggle.
+		 * CSS hides the overlay on desktop, but the callback itself cannot
+		 * determine the viewport, so SidebarLayoutProps should ideally
+		 * expose a dedicated onMobileClose callback in the future.
+		 */
+		onClose?.();
+	};
+
 	return (
 		<>
-			{isOpen && (
-				<div
-					className="fixed inset-0 z-40 bg-black/40 md:hidden"
-					onClick={onClose}
-					aria-hidden="true"
-				/>
-			)}
+			<div
+				className={`app-sidebar-overlay ${
+					isOpen ? "app-sidebar-overlay-open" : ""
+				}`}
+				onClick={onClose}
+				aria-hidden="true"
+			/>
 
 			<aside
-				className={`
-					aside-br fixed inset-y-0 left-0 top-0 z-50 h-full
-					border-r-2 border-orange-600 bg-gray-50
-					transition-all duration-300 ease-in-out
-					${isOpen ? "w-auto translate-x-0" : "w-14 -translate-x-full"}
-					md:static md:translate-x-0
-				`}
+				id="app-sidebar"
+				className={`app-sidebar ${
+					isOpen ? "app-sidebar-open" : "app-sidebar-collapsed"
+				}`}
+				aria-label="Application navigation"
 			>
-				<nav className="scrollbar-sleek min-h-screen w-full space-y-1 overflow-y-auto px-2 py-4">
+				<nav className="app-sidebar-nav">
 					{items.map((item) => {
 						const hasChildren = Boolean(item.children?.length);
 						const isExpanded = openItem === item.id;
 
 						return (
-							<div key={item.id}>
+							<div className="app-sidebar-group" key={item.id}>
 								{hasChildren ? (
 									<button
 										type="button"
 										onClick={() => handleParentClick(item.id)}
-										className="flex w-full items-center justify-between rounded-lg p-2 text-black transition hover:bg-gray-200"
+										className={`app-sidebar-item app-sidebar-parent ${
+											isExpanded ? "app-sidebar-item-expanded" : ""
+										}`}
 										aria-expanded={isExpanded}
 										aria-controls={`sidebar-children-${item.id}`}
+										title={!isOpen ? item.label : undefined}
 									>
-										<span className="flex min-w-0 items-center gap-2">
-											<span className="shrink-0 text-xs">{item.icon}</span>
+										<span className="app-sidebar-item-main">
+											<span className="app-sidebar-icon" aria-hidden="true">
+												{item.icon}
+											</span>
 
-											{isOpen && (
-												<span className="truncate text-xs font-medium">
-													{item.label}
-												</span>
-											)}
+											<span className="app-sidebar-label">{item.label}</span>
 										</span>
 
-										{isOpen && (
-											<span className="rounded p-1" aria-hidden="true">
-												<ChevronDown
-													size={14}
-													className={`text-black transition-transform ${
-														isExpanded ? "rotate-180" : ""
-													}`}
-												/>
-											</span>
-										)}
+										<span
+											className={`app-sidebar-chevron ${
+												isExpanded ? "app-sidebar-chevron-expanded" : ""
+											}`}
+											aria-hidden="true"
+										>
+											<ChevronDown size={14} />
+										</span>
 									</button>
 								) : (
 									<NavLink
 										to={item.link ?? "#"}
-										onClick={() => {
-											if (!isOpen) {
-												onToggleSidebar?.();
-											}
-
-											onClose?.();
-										}}
+										onClick={handleNavigation}
+										title={!isOpen ? item.label : undefined}
 										className={({ isActive }) =>
-											`flex items-center gap-2 rounded-lg p-2 text-black transition ${
-												isActive
-													? "bg-orange-100 text-orange-600"
-													: "hover:bg-gray-200"
-											}`
+											[
+												"app-sidebar-item",
+												"app-sidebar-link",
+												isActive ? "app-sidebar-item-active" : "",
+											]
+												.filter(Boolean)
+												.join(" ")
 										}
 									>
-										<span className="shrink-0 text-xs">{item.icon}</span>
+										<span className="app-sidebar-icon" aria-hidden="true">
+											{item.icon}
+										</span>
 
-										{isOpen && (
-											<span className="truncate text-xs font-medium">
-												{item.label}
-											</span>
-										)}
+										<span className="app-sidebar-label">{item.label}</span>
 									</NavLink>
 								)}
 
-								{hasChildren && isExpanded && isOpen && (
+								{hasChildren ? (
 									<div
 										id={`sidebar-children-${item.id}`}
-										className="ml-3 mt-1 space-y-1 text-left text-xs"
+										className={`app-sidebar-children ${
+											isExpanded && isOpen ? "app-sidebar-children-open" : ""
+										}`}
 									>
-										{item.children?.map((child) => (
-											<NavLink
-												key={child.id}
-												to={child.link ?? "#"}
-												onClick={onClose}
-												className={({ isActive }) =>
-													`flex items-center gap-1 rounded-md px-2 py-1.5 text-left text-xs text-black transition ${
-														isActive
-															? "bg-orange-100 text-orange-600"
-															: "hover:bg-gray-200"
-													}`
-												}
-											>
-												<span className="inline-flex shrink-0 items-center justify-center">
-													{child.icon}
-												</span>
+										<div className="app-sidebar-children-inner">
+											{item.children?.map((child) => (
+												<NavLink
+													key={child.id}
+													to={child.link ?? "#"}
+													onClick={handleNavigation}
+													className={({ isActive }) =>
+														[
+															"app-sidebar-child-link",
+															isActive ? "app-sidebar-child-link-active" : "",
+														]
+															.filter(Boolean)
+															.join(" ")
+													}
+												>
+													<span
+														className="app-sidebar-child-icon"
+														aria-hidden="true"
+													>
+														{child.icon}
+													</span>
 
-												<span>{child.label}</span>
-											</NavLink>
-										))}
+													<span className="app-sidebar-child-label">
+														{child.label}
+													</span>
+												</NavLink>
+											))}
+										</div>
 									</div>
-								)}
+								) : null}
 							</div>
 						);
 					})}

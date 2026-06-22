@@ -1,6 +1,14 @@
 import type { ThreeWayOption } from "../../../../components/common/ThreeWayToggle";
 
-import { Bold, Italic, Code, List } from "lucide-react";
+import {
+	Bold,
+	Italic,
+	Code,
+	List,
+	ClipboardCheck,
+	FileUser,
+	UserRoundCheck,
+} from "lucide-react";
 import type { FormatType } from "../types/workflow.types";
 import type React from "react";
 import type { EpcFilters } from "../types/epc.types";
@@ -58,14 +66,20 @@ export const epcListFilterOptions = [
 	{
 		value: "pendingOnMe",
 		label: "Pending on me",
+		shortLabel: "Pending",
+		Icon: ClipboardCheck,
 	},
 	{
 		value: "createdByMe",
 		label: "Created by me",
+		shortLabel: "Created",
+		Icon: FileUser,
 	},
 	{
 		value: "approvedByMe",
 		label: "Approvals by me",
+		shortLabel: "Approvals",
+		Icon: UserRoundCheck,
 	},
 ] as const satisfies readonly [
 	ThreeWayOption<EpcListFilter>,

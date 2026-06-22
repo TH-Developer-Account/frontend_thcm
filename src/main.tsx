@@ -17,13 +17,16 @@ import "./components/FormElements/input.css";
 import App from "./App.tsx";
 import { AuthProvider } from "./context/Auth/AuthProvider.tsx";
 import ToastProvider from "./components/common/Toast/ToastProvider.tsx";
+import { ThemeProvider } from "./context/Theme/ThemeProvider.tsx";
 
 createRoot(document.getElementById("root")!).render(
 	<StrictMode>
 		<BrowserRouter>
 			<ToastProvider>
 				<AuthProvider>
-					<App />
+					<ThemeProvider>
+						<App />
+					</ThemeProvider>
 				</AuthProvider>
 			</ToastProvider>
 		</BrowserRouter>

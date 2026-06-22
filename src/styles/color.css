@@ -104,6 +104,7 @@
 		--color-text-primary: var(--color-machine-black);
 		--color-text-secondary: var(--color-iron);
 		--color-text-muted: var(--color-slate);
+		--color-text-tertiary: var(--color-slate);
 		--color-text-subtle: var(--color-neutral-400);
 		--color-text-disabled: var(--color-neutral-400);
 		--color-text-inverse: var(--color-clean-white);
@@ -211,20 +212,54 @@
 		--color-sidebar-icon: var(--color-neutral-400);
 		--color-sidebar-icon-active: var(--color-clean-white);
 
+		/* Scrollbar */
+		--color-scrollbar-track: transparent;
+		--color-scrollbar-thumb: var(--color-neutral-300);
+		--color-scrollbar-thumb-hover: var(--color-neutral-500);
+
 		/* Skeleton */
 		--color-skeleton-base: var(--color-neutral-200);
 		--color-skeleton-highlight: var(--color-neutral-100);
 
-		/* Scrollbar */
-		--color-scrollbar-track: transparent;
-		--color-scrollbar-thumb: var(--color-neutral-300);
-		--color-scrollbar-thumb-hover: var(--color-slate);
+		/* Authentication overlays */
+		--color-auth-overlay-strong: rgb(26 32 40 / 94%);
+		--color-auth-overlay-medium: rgb(26 32 40 / 72%);
+		--color-auth-overlay-soft: rgb(26 32 40 / 38%);
+		--color-auth-overlay-bottom: rgb(26 32 40 / 80%);
+
+		--color-auth-grid-line: var(--color-clean-white);
+
+		/* Inverse surfaces */
+		--color-border-inverse-subtle: rgb(255 255 255 / 18%);
+
+		/* Feedback emphasis */
+		--color-success-emphasis-ring: rgb(45 125 70 / 18%);
 
 		/* Gradients */
 		--gradient-brand-start: var(--color-orange-500);
 		--gradient-brand-end: var(--color-orange-700);
 		--gradient-brand-soft-start: rgb(243 90 0 / 16%);
 		--gradient-brand-soft-end: rgb(196 72 0 / 8%);
+
+		/* Sidebar */
+		--color-bg-sidebar: var(--color-bg-surface);
+		--color-bg-sidebar-hover: var(--color-bg-surface-hover);
+		--color-bg-sidebar-active: var(--color-brand-subtle);
+
+		--color-sidebar-text: var(--color-text-secondary);
+		--color-sidebar-text-hover: var(--color-text-primary);
+		--color-sidebar-text-active: var(--color-brand-active);
+
+		--color-sidebar-icon: var(--color-icon-secondary);
+		--color-sidebar-icon-active: var(--color-brand);
+
+		--color-sidebar-border-hover: var(--color-border-default);
+		--color-sidebar-border-active: var(--color-border-brand);
+
+		--color-sidebar-child-border: var(--color-border-subtle);
+		--color-sidebar-child-border-active: var(--color-border-brand);
+		--color-sidebar-child-bg-active: var(--color-brand-subtle);
+		--color-bg-sidebar-expanded: var(--color-bg-surface-muted);
 
 		/* Action card component tokens */
 		--action-card-bg: var(--color-bg-surface);
@@ -292,11 +327,12 @@
 		--color-bg-action-card: #1a1a1a;
 
 		/* Text */
-		--color-text-primary: #e8e4de;
-		--color-text-secondary: #b0a89e;
-		--color-text-muted: #6a6560;
-		--color-text-subtle: #444444;
-		--color-text-disabled: #3a3a3a;
+		--color-text-primary: #f4f5f6;
+		--color-text-secondary: #d5d9dc;
+		--color-text-muted: #a4abb1;
+		--color-text-tertiary: #8f979e;
+		--color-text-subtle: #7d858c;
+		--color-text-disabled: #697178;
 		--color-text-inverse: #111111;
 
 		/* Borders */
@@ -308,15 +344,15 @@
 		--color-border-dark: #3d4a58;
 
 		/* Icons */
-		--color-icon-primary: #c8c0b8;
-		--color-icon-secondary: #6b7b95;
-		--color-icon-muted: #4a4a4a;
+		--color-icon-primary: #d9dde1;
+		--color-icon-secondary: #91a3b8;
+		--color-icon-muted: #78828b;
 		--color-icon-disabled: #333333;
 
 		/* Forms */
 		--color-input-bg: #1f1f1f;
 		--color-input-text: #e8e4de;
-		--color-input-placeholder: #555555;
+		--color-input-placeholder: #89929a;
 		--color-input-border: #2a2a2a;
 		--color-input-border-hover: #4a6275;
 		--color-input-border-focus: var(--color-orange-500);
@@ -376,7 +412,7 @@
 		/* Table */
 		--color-table-bg: #1a1a1a;
 		--color-table-header-bg: #161616;
-		--color-table-header-text: #888880;
+		--color-table-header-text: #c7cdd2;
 		--color-table-row-hover: #1e1512;
 		--color-table-row-selected: #2a1a0e;
 		--color-table-border: #242424;
@@ -389,13 +425,39 @@
 		--color-nav-bg-hover: #1f1f1f;
 		--color-nav-bg-active: #1e1512;
 
+		/* Scrollbar */
+		--color-scrollbar-track: transparent;
+		--color-scrollbar-thumb: var(--color-neutral-300);
+		--color-scrollbar-thumb-hover: var(--color-neutral-500);
+
 		/* Skeleton */
 		--color-skeleton-base: #242424;
 		--color-skeleton-highlight: #2a2a2a;
 
 		/* Scrollbar */
-		--color-scrollbar-thumb: #333333;
+		--color-scrollbar-track: transparent;
+		--color-scrollbar-thumb: #4b5157;
 		--color-scrollbar-thumb-hover: #444444;
+
+		/* Sidebar */
+		--color-bg-sidebar: var(--color-bg-surface);
+		--color-bg-sidebar-hover: var(--color-bg-surface-hover);
+		--color-bg-sidebar-active: var(--color-bg-surface-active);
+
+		--color-sidebar-text: var(--color-text-secondary);
+		--color-sidebar-text-hover: var(--color-text-primary);
+		--color-sidebar-text-active: var(--color-brand);
+
+		--color-sidebar-icon: var(--color-icon-secondary);
+		--color-sidebar-icon-active: var(--color-brand);
+
+		--color-sidebar-border-hover: var(--color-border-default);
+		--color-sidebar-border-active: var(--color-brand-active);
+
+		--color-sidebar-child-border: var(--color-border-subtle);
+		--color-sidebar-child-border-active: var(--color-brand-active);
+		--color-sidebar-child-bg-active: var(--color-bg-surface-active);
+		--color-bg-sidebar-expanded: var(--color-bg-surface-hover);
 
 		/* Action card component tokens — dark overrides */
 		--action-card-bg: #1a1a1a;

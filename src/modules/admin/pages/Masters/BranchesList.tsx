@@ -47,12 +47,7 @@ const BranchesList = () => {
 
 								<td className="px-6 py-4">
 									<div className="flex justify-end gap-2">
-										<Button
-											size="sm"
-											Icon={Edit}
-											variant="primary"
-											isTooltip="Edit"
-										/>
+										<Button size="sm" Icon={Edit} isTooltip="Edit" />
 										<Button
 											size="sm"
 											Icon={Trash}

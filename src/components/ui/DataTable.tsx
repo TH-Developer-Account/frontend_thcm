@@ -1,13 +1,14 @@
 import {
-	useReactTable,
+	flexRender,
 	getCoreRowModel,
 	getSortedRowModel,
-	flexRender,
+	useReactTable,
 	type ColumnDef,
-	type SortingState,
 	type OnChangeFn,
+	type SortingState,
 } from "@tanstack/react-table";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
+
 import Pagination from "../common/Pagination";
 
 export interface DataTableProps<T extends object> {
@@ -29,9 +30,17 @@ export interface DataTableProps<T extends object> {
 
 	emptyTitle?: string;
 	emptyDescription?: string;
+
 	scrollTargetId?: string;
 	className?: string;
+
+	getRowClassName?: (row: T, rowIndex: number) => string;
+	onRowClick?: (row: T) => void;
 }
+
+const joinClassNames = (
+	...classNames: Array<string | false | null | undefined>
+) => classNames.filter(Boolean).join(" ");
 
 function DataTable<T extends object>({
 	data,
@@ -50,11 +59,15 @@ function DataTable<T extends object>({
 	onPageSizeChange,
 
 	emptyTitle = "No records found",
-	emptyDescription = "Try adjusting filters or search",
-	scrollTargetId = "tableScroll",
+	emptyDescription = "Try adjusting your filters or search.",
+	scrollTargetId = "data-table-scroll",
 	className = "",
+
+	getRowClassName,
+	onRowClick,
 }: DataTableProps<T>) {
 	"use no memo";
+
 	const table = useReactTable({
 		data,
 		columns,
@@ -73,44 +86,108 @@ function DataTable<T extends object>({
 	});
 
 	const rows = table.getRowModel().rows;
+	const visibleColumnCount = table.getVisibleLeafColumns().length;
+
+	const shouldRenderPagination =
+		manualPagination &&
+		pageCount >= 1 &&
+		Boolean(onPageChange) &&
+		Boolean(onPageSizeChange);
 
 	return (
-		<div className={`workflow-table-shell ${className}`}>
-			<div className="workflow-table-scroll scrollbar-sleek">
-				<table className="workflow-table " id={scrollTargetId}>
-					<thead className="workflow-table-head">
-						{table.getHeaderGroups().map((group) => (
-							<tr key={group.id}>
-								{group.headers.map((header) => {
-									const isSorted = header.column.getIsSorted();
+		<section
+			className={joinClassNames(
+				"data-table-shell",
+				loading && "data-table-shell-loading",
+				className,
+			)}
+			aria-busy={loading}
+		>
+			<div
+				id={scrollTargetId}
+				className="data-table-scroll scrollbar-sleek"
+				tabIndex={0}
+				role="region"
+				aria-label="Data table"
+			>
+				<table className="data-table">
+					<thead className="data-table-head">
+						{table.getHeaderGroups().map((headerGroup) => (
+							<tr key={headerGroup.id} className="data-table-head-row">
+								{headerGroup.headers.map((header) => {
+									const canSort = header.column.getCanSort();
+
+									const sortedState = header.column.getIsSorted();
+
+									const columnMeta = header.column.columnDef.meta as
+										| {
+												headerClassName?: string;
+												cellClassName?: string;
+												align?: "left" | "center" | "right";
+										  }
+										| undefined;
+
+									const alignmentClass =
+										columnMeta?.align === "center"
+											? "data-table-align-center"
+											: columnMeta?.align === "right"
+												? "data-table-align-right"
+												: "data-table-align-left";
 
 									return (
 										<th
 											key={header.id}
-											onClick={
-												header.column.getCanSort()
-													? header.column.getToggleSortingHandler()
-													: undefined
+											scope="col"
+											className={joinClassNames(
+												"data-table-head-cell",
+												alignmentClass,
+												columnMeta?.headerClassName,
+											)}
+											aria-sort={
+												sortedState === "asc"
+													? "ascending"
+													: sortedState === "desc"
+														? "descending"
+														: "none"
 											}
-											className={`workflow-table-head-cell ${
-												header.column.getCanSort()
-													? "workflow-table-head-cell-sortable"
-													: ""
-											}`}
 										>
-											<div className="workflow-table-head-content">
-												{flexRender(
-													header.column.columnDef.header,
-													header.getContext(),
-												)}
+											{header.isPlaceholder ? null : canSort ? (
+												<button
+													type="button"
+													className={joinClassNames(
+														"data-table-sort-button",
+														sortedState && "data-table-sort-button-active",
+													)}
+													onClick={header.column.getToggleSortingHandler()}
+												>
+													<span className="data-table-head-label">
+														{flexRender(
+															header.column.columnDef.header,
+															header.getContext(),
+														)}
+													</span>
 
-												{isSorted === "asc" && (
-													<ChevronUp size={14} className="text-[#f35a00]" />
-												)}
-												{isSorted === "desc" && (
-													<ChevronDown size={14} className="text-[#f35a00]" />
-												)}
-											</div>
+													<span
+														className="data-table-sort-icon"
+														aria-hidden="true"
+													>
+														{sortedState === "asc" ? (
+															<ChevronUp size={12} />
+														) : sortedState === "desc" ? (
+															<ChevronDown size={12} />
+														) : (
+															<ChevronsUpDown size={12} />
+														)}
+													</span>
+												</button>
+											) : (
+												<div className="data-table-head-content">
+													{flexRender(
+														header.column.columnDef.header,
+														header.getContext(),
+													)}
+												</div>
+											)}
 										</th>
 									);
 								})}
@@ -118,71 +195,146 @@ function DataTable<T extends object>({
 						))}
 					</thead>
 
-					<tbody>
+					<tbody className="data-table-body">
 						{loading ? (
-							Array.from({ length: pageSize }).map((_, i) => (
-								<tr key={i} className="workflow-table-row">
-									<td colSpan={columns.length} className="workflow-table-cell">
-										<div className="workflow-table-skeleton" />
-									</td>
-								</tr>
-							))
-						) : rows.length === 0 ? (
-							<tr>
-								<td colSpan={columns.length} className="workflow-empty-state">
-									<div className="workflow-empty-state-inner">
-										<div className="workflow-empty-title">{emptyTitle}</div>
-										<div className="workflow-empty-description">
-											{emptyDescription}
-										</div>
-									</div>
-								</td>
-							</tr>
-						) : (
-							rows.map((row) => (
-								<tr key={row.id} className="workflow-table-row">
-									{row.getVisibleCells().map((cell) => (
+							Array.from({
+								length: Math.max(1, pageSize),
+							}).map((_, rowIndex) => (
+								<tr
+									key={`skeleton-row-${rowIndex}`}
+									className="data-table-row data-table-row-loading"
+									aria-hidden="true"
+								>
+									{Array.from({
+										length: Math.max(1, visibleColumnCount),
+									}).map((__, columnIndex) => (
 										<td
-											key={cell.id}
-											className={
-												cell.column.id === "action"
-													? "workflow-table-cell-action"
-													: "workflow-table-cell-text"
-											}
+											key={`skeleton-cell-${rowIndex}-${columnIndex}`}
+											className="data-table-cell data-table-cell-text"
 										>
-											<div className="workflow-table-cell-inner">
-												{flexRender(
-													cell.column.columnDef.cell,
-													cell.getContext(),
-												)}
+											<div className="data-table-cell-inner">
+												<div
+													className={joinClassNames(
+														"data-table-skeleton",
+														columnIndex === 0 && "data-table-skeleton-wide",
+														columnIndex === visibleColumnCount - 1 &&
+															"data-table-skeleton-short",
+													)}
+												/>
 											</div>
 										</td>
 									))}
 								</tr>
 							))
+						) : rows.length === 0 ? (
+							<tr className="data-table-empty-row">
+								<td
+									colSpan={Math.max(1, visibleColumnCount)}
+									className="data-table-empty-state"
+								>
+									<div className="data-table-empty-state-inner">
+										<p className="data-table-empty-title">{emptyTitle}</p>
+
+										<p className="data-table-empty-description">
+											{emptyDescription}
+										</p>
+									</div>
+								</td>
+							</tr>
+						) : (
+							rows.map((row, rowIndex) => {
+								const isInteractive = Boolean(onRowClick);
+
+								return (
+									<tr
+										key={row.id}
+										className={joinClassNames(
+											"data-table-row",
+											isInteractive && "data-table-row-interactive",
+											getRowClassName?.(row.original, rowIndex),
+										)}
+										tabIndex={isInteractive ? 0 : undefined}
+										onClick={
+											isInteractive
+												? () => onRowClick?.(row.original)
+												: undefined
+										}
+										onKeyDown={
+											isInteractive
+												? (event) => {
+														if (event.key === "Enter" || event.key === " ") {
+															event.preventDefault();
+
+															onRowClick?.(row.original);
+														}
+													}
+												: undefined
+										}
+									>
+										{row.getVisibleCells().map((cell) => {
+											const columnMeta = cell.column.columnDef.meta as
+												| {
+														headerClassName?: string;
+														cellClassName?: string;
+														align?: "left" | "center" | "right";
+												  }
+												| undefined;
+
+											const isActionColumn =
+												cell.column.id === "action" ||
+												cell.column.id === "actions";
+
+											const alignmentClass =
+												columnMeta?.align === "center"
+													? "data-table-align-center"
+													: columnMeta?.align === "right"
+														? "data-table-align-right"
+														: "data-table-align-left";
+
+											return (
+												<td
+													key={cell.id}
+													className={joinClassNames(
+														"data-table-cell",
+														isActionColumn
+															? "data-table-cell-action"
+															: "data-table-cell-text",
+														alignmentClass,
+														columnMeta?.cellClassName,
+													)}
+												>
+													<div className="data-table-cell-inner">
+														{flexRender(
+															cell.column.columnDef.cell,
+															cell.getContext(),
+														)}
+													</div>
+												</td>
+											);
+										})}
+									</tr>
+								);
+							})
 						)}
 					</tbody>
 				</table>
 			</div>
 
-			{manualPagination &&
-				pageCount >= 1 &&
-				onPageChange &&
-				onPageSizeChange && (
-					<div className="workflow-table-pagination">
-						<div className="workflow-table-pagination-inner">
-							<Pagination
-								pageIndex={pageIndex}
-								pageSize={pageSize}
-								totalPages={pageCount}
-								onPageChange={onPageChange}
-								onPageSizeChange={onPageSizeChange}
-								scrollTargetId={scrollTargetId}
-							/>
-						</div>
+			{shouldRenderPagination ? (
+				<footer className="data-table-pagination">
+					<div className="data-table-pagination-inner">
+						<Pagination
+							pageIndex={pageIndex}
+							pageSize={pageSize}
+							totalPages={pageCount}
+							onPageChange={onPageChange!}
+							onPageSizeChange={onPageSizeChange!}
+							scrollTargetId={scrollTargetId}
+						/>
 					</div>
-				)}
-		</div>
+				</footer>
+			) : null}
+		</section>
 	);
 }
 

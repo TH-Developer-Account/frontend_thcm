@@ -1,5 +1,11 @@
 import type { LucideIcon } from "lucide-react";
 import type { StatusVariant } from "../../modules/marketing/activity-planner/utils/status";
+import type {
+	ButtonHTMLAttributes,
+	ComponentType,
+	MouseEvent,
+	ReactNode,
+} from "react";
 
 export interface ToggleProps {
 	checked: boolean;
@@ -51,24 +57,61 @@ export type CardProps = {
 	style?: React.CSSProperties;
 };
 
-export type ButtonProps = {
-	text?: string | number;
-	onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
-	type?: "button" | "submit";
-	disabled?: boolean;
-	status?: string;
+export type ButtonAppearance =
+	| "cta"
+	| "standard"
+	| "filter"
+	| "toggle"
+	| "segmented"
+	| "icon"
+	| "ghost"
+	| "switch"
+	| "transparent";
+
+export type ButtonVariant =
+	| "brand"
+	| "outline"
+	| "secondary"
+	| "danger"
+	| "success"
+	| "warning"
+	| "transparent";
+
+export type ButtonSize = "sm" | "md" | "lg" | "xl";
+
+export interface ButtonIconProps {
+	size?: number;
 	className?: string;
-	variant?: string;
-	size?: "sm" | "md" | "lg" | "xl";
-	Icon?: LucideIcon;
-	iconPosition?: "left" | "right";
-	iconColor?: string;
+	color?: string;
+	"aria-hidden"?: boolean | "true" | "false";
+}
+
+export interface ButtonProps extends Omit<
+	ButtonHTMLAttributes<HTMLButtonElement>,
+	"children"
+> {
+	text?: ReactNode;
+	children?: ReactNode;
+
+	appearance?: ButtonAppearance;
+	variant?: ButtonVariant;
+	size?: ButtonSize;
+
+	active?: boolean;
+	loading?: boolean;
 	fullWidth?: boolean;
-	children?: React.ReactNode;
-	isTooltip?: string;
-	iconSize?: string;
+
+	Icon?: ComponentType<ButtonIconProps>;
+	iconPosition?: "left" | "right";
+	iconSize?: number;
+	iconColor?: string;
+
 	path?: string;
-};
+
+	isTooltip?: ReactNode;
+
+	onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
+}
 
 export type NavigateDirection = "back" | "forward";
 export type NavigateButtonProps = {

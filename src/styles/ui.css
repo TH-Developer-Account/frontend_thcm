@@ -31,7 +31,7 @@
 
 	.coming-soon-title {
 		@apply text-2xl md:text-3xl font-semibold;
-		color: rgb(var(--color-text));
+		color: var(--color-text-primary);
 	}
 
 	/* =========================================
@@ -40,7 +40,7 @@
 
 	.coming-soon-text {
 		@apply text-sm md:text-base max-w-md;
-		color: rgb(var(--color-muted));
+		color: var(--color-text-muted);
 	}
 }
 
@@ -68,7 +68,7 @@
 
 	.coming-soon-title {
 		@apply text-2xl md:text-3xl font-semibold;
-		color: rgb(var(--color-text));
+		color: var(--color-text-primary);
 	}
 
 	/* =========================================
@@ -77,7 +77,7 @@
 
 	.coming-soon-text {
 		@apply text-sm md:text-base max-w-md;
-		color: rgb(var(--color-muted));
+		color: var(--color-text-muted);
 	}
 }
 
@@ -116,7 +116,7 @@
 	/* subtitle text */
 	.coming-soon-text {
 		@apply mb-10 max-w-md text-center text-sm leading-relaxed md:text-base;
-		color: rgb(var(--color-muted));
+		color: var(--color-text-muted);
 	}
 
 	/* scene container */

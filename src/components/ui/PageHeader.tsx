@@ -1,41 +1,72 @@
+import type { ReactNode } from "react";
+
 import type { NavigateButtonProps } from "../common/common.types";
 import NavigateButton from "../common/NavigateButton";
 
-type PageHeaderSectionProps = {
+type PageHeaderProps = {
 	headerText?: string;
 	subtitleText?: string;
-	className?: string;
-	children?: React.ReactNode;
 	metaText?: string | null;
+	className?: string;
+	contentClassName?: string;
+	actionsClassName?: string;
+	children?: ReactNode;
 	badgeProps?: NavigateButtonProps;
 };
+
+const joinClassNames = (
+	...classNames: Array<string | false | null | undefined>
+) => classNames.filter(Boolean).join(" ");
 
 export const PageHeader = ({
 	headerText,
 	subtitleText,
-	className = "",
-	children,
 	metaText,
+	className = "",
+	contentClassName = "",
+	actionsClassName = "",
+	children,
 	badgeProps,
-}: PageHeaderSectionProps) => {
+}: PageHeaderProps) => {
+	const hasCopy = Boolean(headerText || subtitleText || metaText);
+
 	return (
-		<div className={className}>
-			<div className="page-header-section">
-				{badgeProps && (
-					<NavigateButton
-						{...badgeProps}
-						className={`page-header-badge ${badgeProps.className ?? ""}`}
-					/>
-				)}
+		<div className={joinClassNames("page-header", className)}>
+			<div className={joinClassNames("page-header-primary", contentClassName)}>
+				{badgeProps ? (
+					<div className="page-header-badge-wrapper">
+						<NavigateButton
+							{...badgeProps}
+							className={joinClassNames(
+								"page-header-badge",
+								badgeProps.className,
+							)}
+						/>
+					</div>
+				) : null}
 
-				<h2 className="page-title-section">{headerText}</h2>
+				{hasCopy ? (
+					<div className="page-header-copy">
+						{headerText ? (
+							<h2 className="page-header-title">{headerText}</h2>
+						) : null}
 
-				{subtitleText && <p className="page-subtitle">{subtitleText}</p>}
+						{subtitleText ? (
+							<p className="page-header-subtitle">{subtitleText}</p>
+						) : null}
 
-				{metaText && <p className="page-subtitle">{metaText}</p>}
+						{metaText ? <p className="page-header-meta">{metaText}</p> : null}
+					</div>
+				) : null}
 			</div>
 
-			<div className="page-header-children-section">{children}</div>
+			{children ? (
+				<div
+					className={joinClassNames("page-header-toolbar", actionsClassName)}
+				>
+					{children}
+				</div>
+			) : null}
 		</div>
 	);
 };

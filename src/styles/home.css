@@ -16,7 +16,7 @@
 		--home-divider: #e0d9d0;
 		--home-title: #1a1a1a;
 		--home-title-active: #c94800;
-		--home-user-text: #888888;
+		--home-user-text: #c4c9ce;
 		--home-description: #aaaaaa;
 		--home-meta: #aaaaaa;
 		--home-section-label: #bbbbbb;
@@ -43,13 +43,13 @@
 		--home-divider: #222222;
 		--home-title: #e8e4de;
 		--home-title-active: var(--color-brand);
-		--home-user-text: #888888;
-		--home-description: #4a4a4a;
-		--home-meta: #555555;
-		--home-section-label: #444444;
-		--home-arrow: #2d2d2d;
-		--home-status-text: #3a3a3a;
-		--home-status-build: #555555;
+		--home-user-text: #c4c9ce;
+		--home-description: #a8b0b7;
+		--home-meta: #929aa2;
+		--home-section-label: #858e96;
+		--home-arrow: #737d86;
+		--home-status-text: #89929a;
+		--home-status-build: #929aa2;
 		--home-status-bg: #0e0e0e;
 		--home-success-dot: #2a6b3a;
 		--home-warning-dot: #a07820;
@@ -81,13 +81,17 @@
 
 	.home-header-content,
 	.home-subheader-content {
+		gap: var(--space-4);
+		padding-inline: 1.75rem;
+	}
+	.home-header-content,
+	.home-subheader-content,
+	.app-header-actions {
 		display: flex;
 		width: 100%;
 		height: 100%;
 		align-items: center;
 		justify-content: space-between;
-		gap: var(--space-4);
-		padding-inline: 1.75rem;
 	}
 	.home-header-content img {
 		width: 150px;

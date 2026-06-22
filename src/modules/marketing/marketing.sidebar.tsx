@@ -70,12 +70,6 @@ export const marketingSidebar: SidebarItem[] = [
 		],
 	},
 	{
-		id: "users",
-		label: "User Management",
-		link: "/marketing/admin/users",
-		icon: <Users size={20} />,
-	},
-	{
 		id: "settings",
 		label: "Settings",
 		icon: <Settings size={20} />,

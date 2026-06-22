@@ -1,8 +1,15 @@
-import Button from "./Button";
+import type { ComponentType, CSSProperties, SVGProps } from "react";
 
 export type ThreeWayOption<T extends string = string> = {
 	value: T;
 	label: string;
+	shortLabel?: string;
+	Icon?: ComponentType<
+		SVGProps<SVGSVGElement> & {
+			size?: number | string;
+			strokeWidth?: number | string;
+		}
+	>;
 };
 
 type ThreeWayToggleProps<T extends string = string> = {
@@ -11,7 +18,12 @@ type ThreeWayToggleProps<T extends string = string> = {
 	onChange: (value: T) => void;
 	className?: string;
 	disabled?: boolean;
+	ariaLabel?: string;
 };
+
+const joinClassNames = (
+	...classNames: Array<string | false | null | undefined>
+) => classNames.filter(Boolean).join(" ");
 
 const ThreeWayToggle = <T extends string>({
 	options,
@@ -19,42 +31,68 @@ const ThreeWayToggle = <T extends string>({
 	onChange,
 	className = "",
 	disabled = false,
+	ariaLabel = "View filter",
 }: ThreeWayToggleProps<T>) => {
 	const activeIndex = options.findIndex((option) => option.value === value);
+
 	const safeActiveIndex = activeIndex >= 0 ? activeIndex : 0;
 
 	return (
 		<div
-			className={`relative grid grid-cols-3 rounded-full border border-(--color-border) bg-(--color-surface-soft) p-0.5 text-[11px] ${className}`}
+			className={joinClassNames(
+				"three-way-toggle",
+				disabled && "three-way-toggle-disabled",
+				className,
+			)}
+			role="radiogroup"
+			aria-label={ariaLabel}
+			aria-disabled={disabled}
+			style={
+				{
+					"--three-way-active-index": safeActiveIndex,
+				} as CSSProperties
+			}
 		>
-			<div
-				className="absolute bottom-0.5 top-0.5 rounded-full bg-(--color-brand) transition-all duration-300 ease-out"
-				style={{
-					width: "calc((100% - 4px) / 3)",
-					left: `calc(2px + ${safeActiveIndex} * ((100% - 4px) / 3))`,
-				}}
-			/>
+			<span className="three-way-toggle-indicator" aria-hidden="true" />
 
 			{options.map((option) => {
 				const isActive = option.value === value;
+				const Icon = option.Icon;
 
 				return (
-					<Button
+					<button
 						key={option.value}
 						type="button"
+						role="radio"
+						aria-checked={isActive}
 						disabled={disabled}
+						title={option.label}
+						className={joinClassNames(
+							"three-way-toggle-option",
+							isActive && "three-way-toggle-option-active",
+						)}
 						onClick={() => {
-							if (disabled || isActive) return;
+							if (disabled || isActive) {
+								return;
+							}
+
 							onChange(option.value);
 						}}
-						className={`relative z-10 min-h-0 rounded-full mx-auto px-2  py-0.5 text-[11px] font-medium leading-5 transition-colors duration-200 ${
-							isActive
-								? "text-white"
-								: "text-(--color-text-muted) hover:text-(--color-text-strong)"
-						} ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
 					>
-						{option.label}
-					</Button>
+						{Icon ? (
+							<Icon
+								className="three-way-toggle-icon"
+								size={14}
+								aria-hidden="true"
+							/>
+						) : null}
+
+						<span className="three-way-toggle-label">{option.shortLabel}</span>
+						{/* 
+						<span className="three-way-toggle-short-label">
+							{option.shortLabel ?? option.label}
+						</span> */}
+					</button>
 				);
 			})}
 		</div>

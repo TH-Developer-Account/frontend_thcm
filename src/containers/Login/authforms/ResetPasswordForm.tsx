@@ -1,210 +1,261 @@
-import { useState, useMemo } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ServerAxios } from "../../../services/ServerAxios";
-import { useAuth } from "../../../context/Auth/useAuth";
+import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { Check, Circle, ShieldCheck } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+
 import Button from "../../../components/common/Button";
-import { PasswordPolicy } from "../constant";
 import FormInput from "../../../components/FormElements/FormInput";
 import { useToast } from "../../../context/Auth/AuthContext";
+import { useAuth } from "../../../context/Auth/useAuth";
+import { ServerAxios } from "../../../services/ServerAxios";
+import { PasswordPolicy } from "../constant";
 
-interface Errors {
-	password?: string;
+type ResetPasswordErrors = {
+	oldPassword?: string;
+	newPassword?: string;
 	confirmPassword?: string;
 	general?: string;
-}
+};
+
+type ResetPasswordState = {
+	oldPassword: string;
+	newPassword: string;
+	confirmPassword: string;
+	errors: ResetPasswordErrors;
+	loading: boolean;
+	showPolicy: boolean;
+};
 
 const ResetPasswordForm = () => {
 	const navigate = useNavigate();
 	const { token } = useParams<{ token: string }>();
 	const { resetPassword } = useAuth();
 	const { showToast } = useToast();
-	const [state, setState] = useState({
+
+	const [state, setState] = useState<ResetPasswordState>({
 		oldPassword: "",
 		newPassword: "",
 		confirmPassword: "",
-		errors: {} as Errors,
+		errors: {},
 		loading: false,
-		showFocus: false,
+		showPolicy: false,
 	});
 
-	const {
-		oldPassword,
-		newPassword,
-		confirmPassword,
-		errors,
-		loading,
-		showFocus,
-	} = state;
-	// ✅ Password policy validation
-	const isValid = useMemo(
-		() => PasswordPolicy.every((rule) => rule.test(newPassword)),
-		[newPassword],
+	const isPasswordValid = useMemo(
+		() => PasswordPolicy.every((rule) => rule.test(state.newPassword)),
+		[state.newPassword],
 	);
 
-	const validate = (): boolean => {
-		const newErrors: Errors = {};
+	const validateForm = () => {
+		const nextErrors: ResetPasswordErrors = {};
 
-		if (!newPassword) {
-			newErrors.password = "Password is required";
-		} else if (!isValid) {
-			newErrors.password = "Password does not meet policy requirements";
+		if (!token && !state.oldPassword) {
+			nextErrors.oldPassword = "Current password is required";
 		}
 
-		if (!confirmPassword) {
-			newErrors.confirmPassword = "Please confirm your password";
-		} else if (confirmPassword !== newPassword) {
-			newErrors.confirmPassword = "Passwords do not match";
+		if (!state.newPassword) {
+			nextErrors.newPassword = "New password is required";
+		} else if (!isPasswordValid) {
+			nextErrors.newPassword = "Password does not meet all requirements";
 		}
 
-		setState((prev) => ({ ...prev, errors: newErrors }));
-		return Object.keys(newErrors).length === 0;
+		if (!state.confirmPassword) {
+			nextErrors.confirmPassword = "Confirm your new password";
+		} else if (state.confirmPassword !== state.newPassword) {
+			nextErrors.confirmPassword = "Passwords do not match";
+		}
+
+		setState((current) => ({
+			...current,
+			errors: nextErrors,
+		}));
+
+		return Object.keys(nextErrors).length === 0;
 	};
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const { name, value } = e.target;
+	const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+		const { name, value } = event.target;
 
-		setState((prev) => ({
-			...prev,
+		setState((current) => ({
+			...current,
 			[name]: value,
-			errors: { ...prev.errors, [name]: undefined },
+			errors: {
+				...current.errors,
+				[name]: undefined,
+				general: undefined,
+			},
 		}));
 	};
 
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
+	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
 
-		if (!validate()) return;
+		if (!validateForm()) return;
 
-		setState((prev) => ({ ...prev, loading: true }));
+		setState((current) => ({
+			...current,
+			loading: true,
+		}));
 
 		try {
-			if (!token) {
-				resetPassword(oldPassword, newPassword);
-			} else {
+			if (token) {
 				await ServerAxios.post(`/auth/reset-password/${token}`, {
-					newPassword,
+					newPassword: state.newPassword,
 				});
+			} else {
+				await resetPassword(state.oldPassword, state.newPassword);
 			}
-			setState({
-				oldPassword: "",
-				newPassword: "",
-				confirmPassword: "",
-				errors: {},
-				loading: false,
-				showFocus: false,
+
+			showToast({
+				type: "success",
+				title: "Password updated",
+				description: "Your password has been changed successfully.",
 			});
+
 			navigate("/login");
-		} catch (err: unknown) {
+		} catch (error: unknown) {
 			const message =
-				err instanceof Error
-					? err.message
-					: typeof err === "string"
-						? err
-						: "Invalid OTP";
+				error instanceof Error
+					? error.message
+					: "Unable to update your password.";
+
+			setState((current) => ({
+				...current,
+				errors: {
+					...current.errors,
+					general: message,
+				},
+			}));
+
 			showToast({
 				type: "error",
-				title: "Error",
+				title: "Password update failed",
 				description: message,
 			});
+		} finally {
+			setState((current) => ({
+				...current,
+				loading: false,
+			}));
 		}
 	};
 
 	return (
-		<form className="space-y-4" onSubmit={handleSubmit}>
-			<div className="form-head mb-4">
-				{/* Logo */}
-				<div className="logos flex justify-center items-center mb-4">
-					<img
-						src="src\assets\resetpwd.png"
-						alt="logo"
-						className="text-center w-[100px]"
-					/>
+		<>
+			<header className="auth-form-header">
+				<div className="auth-mobile-logo">
+					<img src="/th-brand-logo.png" alt="Tata Hitachi" />
 				</div>
-				<h2 className=" text-xl md:text-xl font-semibold tracking-tight text-gray-900">
-					Reset your Password?
-				</h2>
-				<p className="">Please enter your password</p>
-			</div>
-			{/* Old Password */}
-			{!token && (
-				<div className="relative">
-					<FormInput
-						name="oldPassword"
-						type="password"
-						label="Old Password"
-						placeholder="Enter your old password"
-						value={oldPassword}
-						onChange={handleChange}
-						error={errors.password}
-						required
-						className={
-							isValid ? "border-green-500 focus:ring-green-500 pr-10" : ""
-						}
-					/>
-				</div>
-			)}
-			{/* New Password */}
-			<div className="relative">
-				<FormInput
-					type="password"
-					label="New Password"
-					name="newPassword"
-					placeholder="Enter your new password"
-					value={newPassword}
-					onChange={handleChange}
-					error={errors.password}
-					onFocus={
-						showFocus
-							? undefined
-							: () => setState((prev) => ({ ...prev, showFocus: true }))
-					}
-					required
-					className={
-						isValid ? "border-green-500 focus:ring-green-500 pr-10" : ""
-					}
-				/>
-			</div>
-			{showFocus && !isValid && (
-				<>
-					{/* Password rules */}
-					<ul className="mt-2 space-y-1 text-xs grid grid-cols-1 md:grid-cols-2 transition-colors duration-200 ease-in-out">
-						{PasswordPolicy.map((rule, index) => (
-							<li
-								key={index}
-								className={`flex items-center gap-2 ${
-									rule.test(newPassword) ? "text-green-600" : "text-gray-500"
-								}`}
-							>
-								<span>{rule.test(newPassword) ? "✔" : "•"}</span>
-								{rule.label}
-							</li>
-						))}
-					</ul>
-				</>
-			)}
 
-			<FormInput
-				type="password"
-				name="confirmPassword"
-				label="Confirm New Password"
-				placeholder="Confirm your new password"
-				value={confirmPassword}
-				onChange={handleChange}
-				error={errors.confirmPassword}
-				required
-				className={isValid ? "border-green-500 focus:ring-green-500 pr-10" : ""}
-			/>
-			{errors.general && (
-				<p className="text-sm text-red-600 text-left">{errors.general}</p>
-			)}
-			<Button
-				text={loading ? "Saving..." : "Change Password"}
-				className=""
-				type="submit"
-				disabled={loading || !isValid}
-				status="brand"
-			/>
-		</form>
+				<div className="auth-form-icon">
+					<ShieldCheck aria-hidden="true" size={24} strokeWidth={1.75} />
+				</div>
+
+				<p className="auth-form-eyebrow">Security control</p>
+
+				<h2 className="auth-form-title">
+					{token ? "Create a new password" : "Change your password"}
+				</h2>
+
+				<p className="auth-form-description">
+					Use a secure password that meets all enterprise policy requirements.
+				</p>
+			</header>
+
+			<form className="auth-form" onSubmit={handleSubmit} noValidate>
+				<div className="auth-form-fields">
+					{!token ? (
+						<FormInput
+							name="oldPassword"
+							type="password"
+							label="Current password"
+							placeholder="Enter current password"
+							value={state.oldPassword}
+							onChange={handleChange}
+							error={state.errors.oldPassword}
+							autoComplete="current-password"
+							required
+						/>
+					) : null}
+
+					<FormInput
+						name="newPassword"
+						type="password"
+						label="New password"
+						placeholder="Enter new password"
+						value={state.newPassword}
+						onChange={handleChange}
+						onFocus={() =>
+							setState((current) => ({
+								...current,
+								showPolicy: true,
+							}))
+						}
+						error={state.errors.newPassword}
+						autoComplete="new-password"
+						required
+					/>
+
+					{state.showPolicy ? (
+						<ul className="auth-password-policy">
+							{PasswordPolicy.map((rule) => {
+								const passed = rule.test(state.newPassword);
+
+								return (
+									<li
+										key={rule.label}
+										className={
+											passed
+												? "auth-password-rule auth-password-rule-valid"
+												: "auth-password-rule"
+										}
+									>
+										{passed ? (
+											<Check aria-hidden="true" size={14} />
+										) : (
+											<Circle aria-hidden="true" size={8} fill="currentColor" />
+										)}
+
+										<span>{rule.label}</span>
+									</li>
+								);
+							})}
+						</ul>
+					) : null}
+
+					<FormInput
+						name="confirmPassword"
+						type="password"
+						label="Confirm new password"
+						placeholder="Re-enter new password"
+						value={state.confirmPassword}
+						onChange={handleChange}
+						error={state.errors.confirmPassword}
+						autoComplete="new-password"
+						required
+					/>
+				</div>
+
+				{state.errors.general ? (
+					<p className="auth-form-error" role="alert">
+						{state.errors.general}
+					</p>
+				) : null}
+
+				<Button
+					text={state.loading ? "Updating password..." : "Update password"}
+					disabled={state.loading || !isPasswordValid}
+					fullWidth
+					type="submit"
+					appearance="cta"
+					variant="brand"
+				/>
+
+				<Link to="/login" className="auth-secondary-link">
+					Return to sign in
+				</Link>
+			</form>
+		</>
 	);
 };
+
 export default ResetPasswordForm;

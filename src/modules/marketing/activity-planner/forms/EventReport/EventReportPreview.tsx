@@ -63,16 +63,16 @@ const EventReportPreview = ({
 			title="PDF Preview"
 			onClose={onClose}
 			size="xl"
-			className="content-box"
 			header_children={
 				<Button
-					type="button"
 					text="Download PDF"
 					Icon={Download}
-					iconPosition="right"
-					onClick={handleDownload}
-					status="brand"
+					iconPosition="left"
+					iconSize={14}
+					appearance="cta"
+					variant="brand"
 					size="sm"
+					onClick={handleDownload}
 					disabled={!report || loading}
 				/>
 			}

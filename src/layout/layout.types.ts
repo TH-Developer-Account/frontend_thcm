@@ -3,8 +3,9 @@ import type { PermissionAction } from "../context/context.types";
 export type Role = "ADMIN" | "DEALER" | "EMPLOYEE";
 
 export type HeaderLayoutProps = {
+	children: React.ReactNode;
+	isSidebarOpen: boolean;
 	onToggleSidebar: () => void;
-	children?: React.ReactNode;
 };
 
 export type DashboardLayoutProps = {

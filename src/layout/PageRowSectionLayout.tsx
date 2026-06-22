@@ -1,15 +1,31 @@
-// PageRowSectionLayout.tsx
-import React from "react";
+import type { CSSProperties, ReactNode } from "react";
+
+type PageRowContentMode = "page-scroll" | "contained";
 
 type PageRowSectionLayoutProps = {
-	header_children: React.ReactNode;
-	children: React.ReactNode;
+	header_children: ReactNode;
+	children: ReactNode;
 	className?: string;
 	headerClassName?: string;
 	contentClassName?: string;
 	stickyHeader?: boolean;
 	stickyTop?: string;
+
+	/**
+	 * page-scroll:
+	 * The whole content area scrolls. Use when the page contains
+	 * multiple sections or content below the table.
+	 *
+	 * contained:
+	 * The content fills the available desktop height. A child such
+	 * as DataTable owns the internal scrolling region.
+	 */
+	contentMode?: PageRowContentMode;
 };
+
+const joinClassNames = (
+	...classNames: Array<string | false | null | undefined>
+) => classNames.filter(Boolean).join(" ");
 
 const PageRowSectionLayout = ({
 	header_children,
@@ -18,26 +34,46 @@ const PageRowSectionLayout = ({
 	headerClassName = "",
 	contentClassName = "",
 	stickyHeader = false,
-	stickyTop = "top-0",
+	stickyTop = "0px",
+	contentMode = "page-scroll",
 }: PageRowSectionLayoutProps) => {
+	const layoutStyle = {
+		"--page-row-sticky-top": stickyTop,
+	} as CSSProperties;
+
 	return (
-		<div className="h-[92dvh] min-h-0 flex flex-col overflow-hidden gap-2 w-full">
-			<div
-				className={`${headerClassName} ${
-					stickyHeader
-						? `sticky ${stickyTop} z-30 bg-white border-b border-zinc-200 shrink-0`
-						: "shrink-0 mt-4"
-				}`}
+		<section
+			className={joinClassNames(
+				"page-row-layout",
+				stickyHeader && "page-row-layout-sticky",
+				contentMode === "contained"
+					? "page-row-layout-contained"
+					: "page-row-layout-page-scroll",
+			)}
+			style={layoutStyle}
+		>
+			<header
+				className={joinClassNames("page-row-layout-header", headerClassName)}
 			>
-				<div className="page-stack-section content-box">
+				<div className="page-row-layout-header-inner content-box page-stack-section">
 					<div className={className}>{header_children}</div>
 				</div>
-			</div>
+			</header>
 
-			<div className="min-h-0 overflow-y-auto scrollbar-sleek content-box page-stack-section">
-				<div className={`${className} ${contentClassName}`}>{children}</div>
+			<div className="page-row-layout-content">
+				<div className="page-row-layout-content-inner content-box page-stack-section">
+					<div
+						className={joinClassNames(
+							"page-row-layout-content-body",
+							className,
+							contentClassName,
+						)}
+					>
+						{children}
+					</div>
+				</div>
 			</div>
-		</div>
+		</section>
 	);
 };
 

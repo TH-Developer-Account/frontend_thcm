@@ -263,7 +263,9 @@ export default function PermissionMatrix({
 					disabled={isLoading}
 					onClick={collectPermissions}
 					text="Save Permissions"
-					status="brand"
+					type="submit"
+					appearance="cta"
+					variant="brand"
 				/>
 			</div>
 		</div>

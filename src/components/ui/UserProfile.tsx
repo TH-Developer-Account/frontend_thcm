@@ -1,55 +1,96 @@
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
+import { ChevronDown, LogOut, UserRound } from "lucide-react";
+
 import Avatar from "../../components/common/Avatar";
 import { useAuth } from "../../context/Auth/useAuth";
-import { LogOut } from "lucide-react";
 
 const UserProfile = () => {
 	const { logout, user } = useAuth();
-	return (
-		<div className="relative">
-			<div className="flex items-center gap-1 sm:gap-1 ">
-				<Menu as="div" className="relative inline-block">
-					<MenuButton className="inline-flex w-full text-gray-900 justify-center gap-x-1 rounded-md items-center text-sm font-semibold ">
-						{user?.first_name + `, ` + user?.last_name}
-						<Avatar
-							firstName={user?.first_name || "User"}
-							lastName={user?.last_name || ""}
-							imageUrl={""}
-							size="md"
-							isTooltip={false}
-						/>
-					</MenuButton>
 
-					<MenuItems
-						transition
-						className="z-50 brand absolute shadow-[0px_3px_12px_0px_rgba(0,0,0,0.2)] top-9 right-0 mt-2 w-35 text-black origin-top-right divide-y divide-white/10 rounded-md bg-white outline-1 -outline-offset-1 outline-white/10 transition data-closed:scale-95 data-closed:transform data-closed:opacity-0 data-enter:duration-100 data-enter:ease-out data-leave:duration-75 data-leave:ease-in"
-					>
-						<div className="py-1 text-left">
-							<MenuItem>
-								<a
-									href="#"
-									className="brand block px-4 py-2 text-sm text-gray-900 data-focus:outline-hidden"
-								>
-									User Profile
-								</a>
-							</MenuItem>
-							<MenuItem>
-								<button
-									onClick={logout}
-									className="block inline-flex justify-between px-4 py-2 text-sm text-gray-900 data-focus:outline-hidden cursor-pointer"
-								>
-									Sign Out
-									<LogOut
-										size={5}
-										className="ml-1 size-5 font-bold bg-white text-orange-600 user-profile-button"
-									/>
-								</button>
-							</MenuItem>
-						</div>
-					</MenuItems>
-				</Menu>
-			</div>
-		</div>
+	const firstName = user?.first_name?.trim() || "User";
+	const lastName = user?.last_name?.trim() || "";
+
+	const displayName = lastName ? `${firstName}, ${lastName}` : firstName;
+
+	return (
+		<Menu as="div" className="user-menu">
+			<MenuButton className="user-menu-trigger">
+				<span className="user-menu-name">{displayName}</span>
+
+				<Avatar
+					firstName={firstName}
+					lastName={lastName}
+					imageUrl=""
+					size="md"
+					isTooltip={false}
+				/>
+
+				<ChevronDown
+					aria-hidden="true"
+					className="user-menu-chevron"
+					size={16}
+					strokeWidth={1.75}
+				/>
+			</MenuButton>
+
+			<MenuItems anchor="bottom end" transition className="user-menu-panel">
+				<div className="user-menu-summary">
+					<Avatar
+						firstName={firstName}
+						lastName={lastName}
+						imageUrl=""
+						size="md"
+						isTooltip={false}
+					/>
+
+					<div className="user-menu-summary-copy">
+						<span className="user-menu-summary-name">{displayName}</span>
+
+						<span className="user-menu-summary-label">Signed-in user</span>
+					</div>
+				</div>
+
+				<div className="user-menu-items">
+					<MenuItem>
+						{({ focus }) => (
+							<button
+								type="button"
+								className={[
+									"user-menu-item",
+									focus ? "user-menu-item-focus" : "",
+								]
+									.filter(Boolean)
+									.join(" ")}
+							>
+								<UserRound aria-hidden="true" size={17} strokeWidth={1.75} />
+
+								<span>User profile</span>
+							</button>
+						)}
+					</MenuItem>
+
+					<MenuItem>
+						{({ focus }) => (
+							<button
+								type="button"
+								onClick={logout}
+								className={[
+									"user-menu-item",
+									"user-menu-item-danger",
+									focus ? "user-menu-item-focus" : "",
+								]
+									.filter(Boolean)
+									.join(" ")}
+							>
+								<LogOut aria-hidden="true" size={17} strokeWidth={1.75} />
+
+								<span>Sign out</span>
+							</button>
+						)}
+					</MenuItem>
+				</div>
+			</MenuItems>
+		</Menu>
 	);
 };
 

@@ -88,12 +88,12 @@ const ActivityPlannerPdfPreview = ({
 			className="content-box"
 			header_children={
 				<Button
-					type="button"
 					text="Download PDF"
 					Icon={Download}
 					iconPosition="right"
 					onClick={handleDownload}
-					status="brand"
+					appearance="cta"
+					variant="brand"
 					size="sm"
 					disabled={!epcData}
 				/>

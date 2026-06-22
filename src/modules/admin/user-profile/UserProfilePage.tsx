@@ -2,14 +2,12 @@ import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/Auth/useAuth";
-import { useTheme } from "../../../providers/ThemeContext";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { ServerAxios } from "../../../services/ServerAxios";
 import ProfileList from "./components/ProfileList";
 import type { Profile } from "./types/profile.types";
 
 export const UserProfilePage = () => {
-	const { theme } = useTheme();
 	const { workspaceId } = useAuth();
 	const navigate = useNavigate();
 	const { showToast } = useToast();
@@ -73,10 +71,7 @@ export const UserProfilePage = () => {
 	};
 
 	return (
-		<div
-			className=" 0.3s ease max-w-full mx-auto h-full min-h-screen"
-			data-theme={theme}
-		>
+		<div className=" 0.3s ease max-w-full mx-auto h-full min-h-screen">
 			<ProfileList
 				profiles={filteredUsers}
 				search={search}
@@ -84,7 +79,6 @@ export const UserProfilePage = () => {
 				onCreateNew={() => navigate("/admin/profiles/create")}
 				onEdit={(profile) => navigate(`/admin/profiles/${profile.id}/edit`)}
 				onDelete={handleDelete}
-				setProfiles={setProfiles}
 			/>
 		</div>
 	);

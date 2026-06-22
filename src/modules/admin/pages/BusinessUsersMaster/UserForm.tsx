@@ -69,8 +69,20 @@ export const UserForm = ({ initial = {}, onSubmit }: Props) => {
 				<option>Banned</option>
 			</select>
 
-			<Button type="submit" text="Save" disabled />
-			<Button text="Cancel" disabled />
+			<Button
+				type="submit"
+				appearance="cta"
+				variant="brand"
+				text="Save"
+				disabled
+			/>
+			<Button
+				text="Cancel"
+				type="submit"
+				appearance="cta"
+				variant="outline"
+				disabled
+			/>
 		</form>
 	);
 };

@@ -2,9 +2,6 @@
 @import "../../../styles/color.css";
 
 /* Common styles for Business Partners module */
-.content-box {
-	@apply rounded-sm border border-gray-300 bg-white;
-}
 
 button {
 	cursor: pointer;

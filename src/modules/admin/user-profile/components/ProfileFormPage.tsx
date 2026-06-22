@@ -10,7 +10,6 @@ import { ArrowLeft } from "lucide-react";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import { useAuth } from "../../../../context/Auth/useAuth";
 import { useToast } from "../../../../context/Auth/AuthContext";
-import { useTheme } from "../../../../providers/ThemeContext";
 import ProfileGeneralSection from "./ProfileGeneralSection";
 import PermissionMatrix from "./PermissionMatrix";
 import { apps } from "../constant";
@@ -38,7 +37,6 @@ export const ProfileFormPage = () => {
 	const navigate = useNavigate();
 	const { workspaceId } = useAuth();
 	const { showToast } = useToast();
-	const { theme } = useTheme();
 
 	// 🔥 All permission logic comes from hook
 	const {
@@ -131,10 +129,7 @@ export const ProfileFormPage = () => {
 	console.log({ permState });
 
 	return (
-		<div
-			className="bg-white 0.3s ease max-w-full mx-auto h-full min-h-screen"
-			data-theme={theme}
-		>
+		<div className="bg-white 0.3s ease max-w-full mx-auto h-full min-h-screen">
 			<div className="max-w-full mx-auto h-full p-4">
 				{/* Header */}
 				<div className="flex items-center gap-4 mb-8">

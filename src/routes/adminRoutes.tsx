@@ -3,7 +3,6 @@ import { Routes, Route } from "react-router-dom";
 import UsersPage from "../modules/admin/pages/BusinessUsersMaster/UserPage";
 import { UserProfilePage } from "../modules/admin/user-profile/UserProfilePage";
 import { ProfileFormPage } from "../modules/admin/user-profile/components/ProfileFormPage";
-import { ThemeProvider } from "../providers/ThemeContext";
 // import Departments from "../modules/admin/pages/BusinessUsersMaster/Departments";
 import ByDesignPage from "../modules/admin/pages/FetchUsers/ByDesign";
 import C4CPage from "../modules/admin/pages/FetchUsers/C4C";
@@ -36,62 +35,13 @@ export default function AdminRoutes() {
 			<Route path="bydesign" element={<ByDesignPage />} />
 			<Route path="c4c" element={<C4CPage />} />
 			<Route path="/profile" element={<UserProfile />} />
-			<Route
-				path="/profiles/create"
-				element={
-					<ThemeProvider>
-						<ProfileFormPage />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="/profiles/:id/edit"
-				element={
-					<ThemeProvider>
-						<ProfileFormPage />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="user_profiles"
-				element={
-					<ThemeProvider>
-						<UserProfilePage />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="dealers"
-				element={
-					<ThemeProvider>
-						<ComingSoon />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="workflows"
-				element={
-					<ThemeProvider>
-						<WorkflowPage />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="/create-workflows"
-				element={
-					<ThemeProvider>
-						<WorkflowCreatePage />
-					</ThemeProvider>
-				}
-			/>
-			<Route
-				path="edit-workflows/:id"
-				element={
-					<ThemeProvider>
-						<WorkflowCreatePage />
-					</ThemeProvider>
-				}
-			/>
+			<Route path="/profiles/create" element={<ProfileFormPage />} />
+			<Route path="/profiles/:id/edit" element={<ProfileFormPage />} />
+			<Route path="user_profiles" element={<UserProfilePage />} />
+			<Route path="dealers" element={<ComingSoon />} />
+			<Route path="workflows" element={<WorkflowPage />} />
+			<Route path="/create-workflows" element={<WorkflowCreatePage />} />
+			<Route path="edit-workflows/:id" element={<WorkflowCreatePage />} />
 		</Routes>
 	);
 }

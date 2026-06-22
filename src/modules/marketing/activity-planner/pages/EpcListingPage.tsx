@@ -30,18 +30,17 @@ const EpcListingPage = () => {
 
 	return (
 		<PageRowSectionLayout
-			contentClassName="min-w-0 overflow-hidden"
+			contentMode="contained"
 			stickyHeader
 			header_children={
 				<PageHeader
 					headerText="Event Planning Calendar (EPC) Listing"
 					subtitleText="Manage your Event Planning Calendar (EPC) details here"
 					badgeProps={{
-						text: "Back to Home Screen",
+						text: "",
 						to: "/",
 						direction: "back",
 					}}
-					className="flex flex-row justify-between items-start"
 				>
 					<EPCTopbar
 						search={searchInput}
