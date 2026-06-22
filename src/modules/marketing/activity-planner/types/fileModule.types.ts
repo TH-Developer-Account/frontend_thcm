@@ -1,15 +1,64 @@
+export type FileDownloadKind = "output" | "error";
+
+export type FileModuleTriggeredBy = {
+	id: string;
+	firstName: string;
+	lastName: string;
+	fullName: string;
+	email: string;
+};
+
+export type FileModuleEpc = {
+	id: string;
+	proposalNumber: string;
+};
+
+export type FileModuleApiItem = {
+	id?: unknown;
+	type?: unknown;
+	status?: unknown;
+
+	totalRecords?: unknown;
+	successRecords?: unknown;
+	failedRecords?: unknown;
+
+	hasOutputFile?: unknown;
+	hasErrorFile?: unknown;
+
+	createdAt?: unknown;
+
+	triggeredBy?: {
+		id?: unknown;
+		first_name?: unknown;
+		last_name?: unknown;
+		email?: unknown;
+	} | null;
+
+	epc?: {
+		id?: unknown;
+		proposal_number?: unknown;
+	} | null;
+};
+
 export type FileModuleListingRow = {
 	id: string;
+	type: string;
+	status: string;
 
-	epcID: string;
-	proposal_number: string;
-	fileName?: string;
-	status?: string;
+	totalRecords: number;
+	successRecords: number;
+	failedRecords: number;
 
-	created_at?: string;
-	updated_at?: string;
+	hasOutputFile: boolean;
+	hasErrorFile: boolean;
 
-	event_name?: string;
-	errorFile?: boolean;
-	errorFileS3Key?: string;
+	createdAt: string;
+
+	triggeredBy: FileModuleTriggeredBy | null;
+	epc: FileModuleEpc | null;
+};
+
+export type FileDownloadUrlResponse = {
+	success: boolean;
+	url: string;
 };

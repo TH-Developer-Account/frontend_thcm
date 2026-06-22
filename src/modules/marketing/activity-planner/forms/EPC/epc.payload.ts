@@ -11,7 +11,6 @@ const toNumber = (value: unknown, fallback = 0) => {
 
 export const buildEpcCreatePayload = (
 	values: EpcFormValues,
-	status: "DRAFT" | "SUBMITTED",
 ): EpcCreatePayload => {
 	const proposalNumber = values.proposal_number || values.epfNo;
 
@@ -19,14 +18,12 @@ export const buildEpcCreatePayload = (
 		...values,
 		epfNo: proposalNumber,
 		proposal_number: proposalNumber,
-		status,
 		event_scale: toNumber(values.event_scale),
 	};
 };
 
 export const buildEpcUpdatePayload = (
 	values: EpcFormValues,
-	status: "DRAFT" | "SUBMITTED",
 ): EpcUpdatePayload => {
 	const proposalNumber = values.proposal_number || values.epfNo;
 
@@ -46,7 +43,5 @@ export const buildEpcUpdatePayload = (
 		event_to_date: values.event_to_date,
 		location: values.location,
 		event_objective: values.event_objective,
-
-		status,
 	};
 };

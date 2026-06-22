@@ -1,9 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
+
 import { filesApi } from "../api/file.module.api";
 
 export const fileModuleKeys = {
 	all: ["files"] as const,
+
 	lists: () => [...fileModuleKeys.all, "list"] as const,
+
 	list: (params?: Record<string, unknown>) =>
 		[...fileModuleKeys.lists(), params ?? {}] as const,
 };
