@@ -17,6 +17,9 @@ interface InputProps extends Omit<
 	onChange?: (value: string) => void;
 }
 
+const joinClassNames = (...classes: Array<string | false | null | undefined>) =>
+	classes.filter(Boolean).join(" ");
+
 const Radio = forwardRef<HTMLInputElement, InputProps>(
 	(
 		{
@@ -39,27 +42,44 @@ const Radio = forwardRef<HTMLInputElement, InputProps>(
 		ref,
 	) => {
 		const errorId = name ? `${name}-error` : undefined;
+		const helperId = name ? `${name}-helper` : undefined;
+		const describedBy = error
+			? errorId
+			: helperText && !isTooltip
+				? helperId
+				: undefined;
 
 		return (
-			<div className="radio-group">
-				{groupLabel && (
-					<div className="form-label-row">
-						<label className="form-label">
-							{groupLabel}
-							{required && <span className="form-required"> *</span>}
-						</label>
-
-						{helperText && isTooltip && !error && (
-							<HelperTooltip label={groupLabel} text={helperText} />
-						)}
-					</div>
+			<div
+				className={joinClassNames(
+					"radio-group",
+					disabled && "is-disabled",
+					error && "has-error",
 				)}
+			>
+				{groupLabel ? (
+					<div className="form-label-row">
+						<span className="form-label">
+							{groupLabel}
+							{required ? (
+								<span className="form-required" aria-hidden="true">
+									*
+								</span>
+							) : null}
+						</span>
+						{helperText && isTooltip && !error ? (
+							<HelperTooltip label={groupLabel} text={helperText} />
+						) : null}
+					</div>
+				) : null}
 
 				<div
 					className="radio-group-options"
-					aria-describedby={error ? errorId : undefined}
+					role="radiogroup"
+					aria-label={groupLabel}
+					aria-describedby={describedBy}
 				>
-					<label className={`form-radio-field ${disabled ? "opacity-70" : ""}`}>
+					<label className="form-radio-field">
 						<input
 							ref={ref}
 							id={`${name}-${value1}`}
@@ -70,15 +90,18 @@ const Radio = forwardRef<HTMLInputElement, InputProps>(
 							checked={selectedValue === value1}
 							value={value1}
 							onChange={() => onChange?.(value1)}
-							className={`form-radio-input ${className}`}
-							aria-invalid={!!error}
+							className={joinClassNames(
+								"form-radio-input",
+								error && "form-radio-input-error",
+								className,
+							)}
+							aria-invalid={error ? "true" : undefined}
 							{...props}
 						/>
-
-						{label1 && <span className="form-radio-label">{label1}</span>}
+						{label1 ? <span className="form-radio-label">{label1}</span> : null}
 					</label>
 
-					<label className={`form-radio-field ${disabled ? "opacity-70" : ""}`}>
+					<label className="form-radio-field">
 						<input
 							id={`${name}-${value2}`}
 							name={name}
@@ -88,25 +111,31 @@ const Radio = forwardRef<HTMLInputElement, InputProps>(
 							checked={selectedValue === value2}
 							value={value2}
 							onChange={() => onChange?.(value2)}
-							className={`form-radio-input ${className}`}
-							aria-invalid={!!error}
+							className={joinClassNames(
+								"form-radio-input",
+								error && "form-radio-input-error",
+								className,
+							)}
+							aria-invalid={error ? "true" : undefined}
 							{...props}
 						/>
-
-						{label2 && <span className="form-radio-label">{label2}</span>}
+						{label2 ? <span className="form-radio-label">{label2}</span> : null}
 					</label>
 				</div>
 
-				{error && (
-					<p id={errorId} className="form-error-text">
+				{error ? (
+					<p id={errorId} className="form-error-text" role="alert">
 						{error}
 					</p>
-				)}
+				) : helperText && !isTooltip ? (
+					<p id={helperId} className="form-helper-text">
+						{helperText}
+					</p>
+				) : null}
 			</div>
 		);
 	},
 );
 
 Radio.displayName = "Radio";
-
 export default Radio;

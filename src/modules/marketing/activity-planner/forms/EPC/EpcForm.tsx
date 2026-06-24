@@ -2,7 +2,7 @@ import React from "react";
 import { RefreshCcw, Save, X } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/common/Section";
+import SectionAccordion from "../../../../../components/common/SectionAccordion";
 
 import { useMasterData } from "../../../../../hooks/useMasterData";
 import { useEpcForm } from "./useEpcForm";
@@ -63,7 +63,7 @@ const EpcForm = ({
 	}
 
 	return (
-		<Section
+		<SectionAccordion
 			title={
 				isEditMode
 					? "Edit Activity Planner Details"
@@ -86,9 +86,8 @@ const EpcForm = ({
 						onClick={onCancel}
 						size="sm"
 						Icon={X}
-						status="outline"
-						className="text-red-600"
-						iconColor="red"
+						appearance="standard"
+						variant="outline"
 					/>
 				)}
 
@@ -97,25 +96,24 @@ const EpcForm = ({
 						type="button"
 						text="Reset"
 						onClick={handleReset}
-						Icon={RefreshCcw}
-						className="text-red-600"
 						size="sm"
-						status="outline"
-						iconColor="red"
+						Icon={RefreshCcw}
+						appearance="standard"
+						variant="outline"
 					/>
 				)}
+
 				<Button
 					type="button"
 					text={isEditMode ? "Update" : "Create EPC"}
 					onClick={() => handleSave(saveStatus)}
 					size="sm"
-					className="text-red-600"
 					Icon={Save}
-					status="outline"
-					iconColor="red"
+					appearance="standard"
+					variant="brand"
 				/>
 			</div>
-		</Section>
+		</SectionAccordion>
 	);
 };
 

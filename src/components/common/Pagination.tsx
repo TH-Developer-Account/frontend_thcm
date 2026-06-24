@@ -1,9 +1,11 @@
 import React, { useEffect, useRef } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { SingleValue } from "react-select";
-import SelectInput from "../FormElements/SelectInput";
-import type { PaginationProps } from "./common.types";
-import Button from "./Button";
+
 import type { Option } from "../../modules/marketing/types";
+import SelectInput from "../FormElements/SelectInput";
+import Button from "./Button";
+import type { PaginationProps } from "./common.types";
 
 const PAGE_SIZE_OPTIONS: Option[] = [
 	{ label: "15", value: "15" },
@@ -23,26 +25,24 @@ const Pagination: React.FC<PaginationProps> = ({
 }) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const currentPage = pageIndex + 1;
+	const safeTotalPages = Math.max(1, totalPages);
 
-	/* -------------------------------- */
-	/* Auto Scroll To Top */
-	/* -------------------------------- */
 	useEffect(() => {
 		if (!scrollTargetId) return;
 
-		const el = document.getElementById(scrollTargetId);
-		el?.scrollTo({ top: 0, behavior: "smooth" });
+		const element = document.getElementById(scrollTargetId);
+		element?.scrollTo({ top: 0, behavior: "smooth" });
 	}, [pageIndex, scrollTargetId]);
 
-	/* -------------------------------- */
-	/* Keyboard Navigation */
-	/* -------------------------------- */
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-		if (e.key === "Home") {
+	const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+		if (event.key === "Home") {
+			event.preventDefault();
 			onPageChange(0);
 		}
-		if (e.key === "End") {
-			onPageChange(totalPages - 1);
+
+		if (event.key === "End") {
+			event.preventDefault();
+			onPageChange(safeTotalPages - 1);
 		}
 	};
 
@@ -51,83 +51,90 @@ const Pagination: React.FC<PaginationProps> = ({
 		onPageSizeChange(Number(option.value));
 	};
 
-	const generatePages = (): (number | "ellipsis")[] => {
-		const pages: (number | "ellipsis")[] = [];
-		const windowSize = 1;
-
-		const start = Math.max(2, currentPage - windowSize);
-		const end = Math.min(totalPages - 1, currentPage + windowSize);
-
-		pages.push(1);
-		if (start > 2) pages.push("ellipsis");
-
-		for (let i = start; i <= end; i++) {
-			pages.push(i);
+	const generatePages = (): (number | "ellipsis-start" | "ellipsis-end")[] => {
+		if (safeTotalPages <= 5) {
+			return Array.from({ length: safeTotalPages }, (_, index) => index + 1);
 		}
 
-		if (end < totalPages - 1) pages.push("ellipsis");
-		if (totalPages > 1) pages.push(totalPages);
+		const pages: (number | "ellipsis-start" | "ellipsis-end")[] = [1];
+		const start = Math.max(2, currentPage - 1);
+		const end = Math.min(safeTotalPages - 1, currentPage + 1);
+
+		if (start > 2) pages.push("ellipsis-start");
+		for (let page = start; page <= end; page += 1) pages.push(page);
+		if (end < safeTotalPages - 1) pages.push("ellipsis-end");
+		pages.push(safeTotalPages);
 
 		return pages;
 	};
 
+	const compact = variant === "compact";
 	const pages = generatePages();
 
-	const compact = variant === "compact";
-
 	return (
-		<div
+		<nav
 			ref={containerRef}
 			tabIndex={0}
 			onKeyDown={handleKeyDown}
-			className={`
-				pagination
-				${compact ? "pagination-compact" : "pagination-default"}
-			`}
+			className={`pagination ${compact ? "pagination-compact" : "pagination-default"}`}
+			aria-label="Table pagination"
 		>
-			{!compact && (
-				<div className="pagination-info">
-					Page <span className="pagination-info-number">{currentPage}</span> of{" "}
-					<span className="pagination-info-number">{totalPages}</span>
+			{!compact ? (
+				<div className="pagination-summary" aria-live="polite">
+					<span>Page</span>
+					<strong>{currentPage}</strong>
+					<span>of {safeTotalPages}</span>
 				</div>
-			)}
+			) : null}
 
 			<div className="pagination-pages">
 				<Button
+					type="button"
+					appearance="icon"
+					variant="secondary"
+					size="sm"
+					Icon={ChevronLeft}
+					aria-label="Previous page"
 					disabled={pageIndex === 0}
 					onClick={() => onPageChange(pageIndex - 1)}
-					text={"<"}
-					status="brand"
-					size="sm"
 				/>
 
-				{pages.map((page, index) =>
-					page === "ellipsis" ? (
-						<span key={index} className="pagination-ellipsis">
-							...
+				{pages.map((page) =>
+					typeof page === "string" ? (
+						<span key={page} className="pagination-ellipsis" aria-hidden="true">
+							…
 						</span>
 					) : (
 						<Button
-							key={index}
-							onClick={() => onPageChange(page - 1)}
-							text={page}
-							status="brand"
+							key={page}
+							type="button"
+							appearance="filter"
+							variant="secondary"
 							size="sm"
+							active={page === currentPage}
+							text={page}
+							aria-label={`Go to page ${page}`}
+							aria-current={page === currentPage ? "page" : undefined}
+							onClick={() => onPageChange(page - 1)}
 						/>
 					),
 				)}
 
 				<Button
-					disabled={pageIndex + 1 >= totalPages}
-					onClick={() => onPageChange(pageIndex + 1)}
-					text={">"}
+					type="button"
+					appearance="icon"
+					variant="secondary"
 					size="sm"
-					status="brand"
+					Icon={ChevronRight}
+					aria-label="Next page"
+					disabled={pageIndex + 1 >= safeTotalPages}
+					onClick={() => onPageChange(pageIndex + 1)}
 				/>
 			</div>
 
-			{!compact && (
-				<div className="pagination-page-size">
+			{!compact ? (
+				<label className="pagination-page-size">
+					<span className="pagination-page-size-label">Rows</span>
 					<SelectInput
 						options={PAGE_SIZE_OPTIONS}
 						value={PAGE_SIZE_OPTIONS.find(
@@ -135,11 +142,12 @@ const Pagination: React.FC<PaginationProps> = ({
 						)}
 						onChange={handlePageSizeChange}
 						isSearchable={false}
-						className="w-18"
+						aria-label="Rows per page"
+						className="pagination-page-size-select"
 					/>
-				</div>
-			)}
-		</div>
+				</label>
+			) : null}
+		</nav>
 	);
 };
 

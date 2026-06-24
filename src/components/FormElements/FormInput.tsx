@@ -1,143 +1,225 @@
 import React, {
 	forwardRef,
-	useState,
+	useId,
 	useMemo,
+	useState,
 	type InputHTMLAttributes,
 } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
-import { PasswordPolicy } from "../../containers/Login/constant";
+
 import HelperTooltip from "../../components/common/HelperTooltip";
+import { PasswordPolicy } from "../../containers/Login/constant";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	label?: string;
 	error?: string;
 	helperText?: string;
-	placeholder?: string;
 	isTooltip?: boolean;
 }
+
+const joinClassNames = (
+	...classes: Array<string | false | null | undefined>
+): string => classes.filter(Boolean).join(" ");
+
+const getTodayDate = (): string => {
+	const now = new Date();
+	const timezoneOffset = now.getTimezoneOffset() * 60_000;
+
+	return new Date(now.getTime() - timezoneOffset).toISOString().split("T")[0];
+};
 
 const FormInput = forwardRef<HTMLInputElement, InputProps>(
 	(
 		{
+			id,
 			label,
 			name,
 			type = "text",
 			error,
 			value,
-			required,
+			required = false,
 			className = "",
-			disabled,
+			disabled = false,
 			helperText,
 			placeholder,
 			isTooltip = true,
-			...props
+			min,
+			...nativeInputProps
 		},
 		ref,
 	) => {
+		const generatedId = useId();
 		const [showPassword, setShowPassword] = useState(false);
+
+		const inputId = id ?? name ?? `form-input-${generatedId}`;
+		const errorId = `${inputId}-error`;
+		const helperId = `${inputId}-helper`;
 
 		const isPassword = type === "password";
 		const isRadio = type === "radio";
+		const resolvedInputType = isPassword && showPassword ? "text" : type;
 
-		const inputType = isPassword && showPassword ? "text" : type;
+		const passwordIsValid = useMemo(() => {
+			if (!isPassword || typeof value !== "string" || value.length === 0) {
+				return false;
+			}
 
-		const isValid = useMemo(() => {
-			if (!isPassword || typeof value !== "string") return false;
 			return PasswordPolicy.every((rule) => rule.test(value));
-		}, [value, isPassword]);
+		}, [isPassword, value]);
 
-		const errorId = name ? `${name}-error` : undefined;
+		const describedBy = [
+			error ? errorId : undefined,
+			helperText && !isTooltip ? helperId : undefined,
+		]
+			.filter(Boolean)
+			.join(" ");
+
+		const resolvedMin = type === "date" ? (min ?? getTodayDate()) : min;
+
+		const togglePasswordVisibility = () => {
+			setShowPassword((previous) => !previous);
+		};
 
 		if (isRadio) {
 			return (
-				<label className={`form-radio-field ${disabled ? "opacity-70" : ""}`}>
-					<input
-						ref={ref}
-						id={name}
-						name={name}
-						type="radio"
-						disabled={disabled}
-						required={required}
-						className={`form-radio-input ${className}`}
-						aria-invalid={!!error}
-						aria-describedby={error ? errorId : undefined}
-						{...props}
-					/>
-
-					{label && (
-						<span className="form-radio-label">
-							{label}
-							{required && <span className="form-required"> *</span>}
-						</span>
+				<div
+					className={joinClassNames(
+						"form-radio-group-item",
+						disabled && "is-disabled",
 					)}
-				</label>
+				>
+					<label htmlFor={inputId} className="form-radio-field">
+						<input
+							{...nativeInputProps}
+							ref={ref}
+							id={inputId}
+							name={name}
+							type="radio"
+							value={value}
+							disabled={disabled}
+							required={required}
+							aria-invalid={error ? "true" : undefined}
+							aria-describedby={error ? errorId : undefined}
+							className={joinClassNames(
+								"form-radio-input",
+								error && "form-radio-input-error",
+								className,
+							)}
+						/>
+
+						{label ? (
+							<span className="form-radio-label">
+								{label}
+
+								{required ? (
+									<span className="form-required" aria-hidden="true">
+										*
+									</span>
+								) : null}
+							</span>
+						) : null}
+					</label>
+
+					{error ? (
+						<p
+							id={errorId}
+							className="form-error-text form-radio-error-text"
+							role="alert"
+						>
+							{error}
+						</p>
+					) : null}
+				</div>
 			);
 		}
 
 		return (
-			<div className="form-field">
-				{label && (
+			<div
+				className={joinClassNames(
+					"form-field",
+					disabled && "is-disabled",
+					error && "has-error",
+					passwordIsValid && !error && "is-valid",
+				)}
+			>
+				{label ? (
 					<div className="form-label-row">
-						<label htmlFor={name} className="form-label">
+						<label htmlFor={inputId} className="form-label">
 							{label}
-							{required && <span className="form-required"> *</span>}
+
+							{required ? (
+								<span className="form-required" aria-hidden="true">
+									*
+								</span>
+							) : null}
 						</label>
 
-						{helperText && isTooltip && !error && (
+						{helperText && isTooltip && !error ? (
 							<HelperTooltip label={label} text={helperText} />
-						)}
+						) : null}
 					</div>
-				)}
+				) : null}
 
 				<div className="form-input-wrapper">
 					<input
+						{...nativeInputProps}
 						ref={ref}
-						id={name}
+						id={inputId}
 						name={name}
-						type={inputType}
+						type={resolvedInputType}
 						value={value}
 						required={required}
 						disabled={disabled}
-						aria-invalid={!!error}
-						aria-describedby={error ? errorId : undefined}
-						{...(type === "date" && {
-							min: new Date().toISOString().split("T")[0],
-						})}
-						className={`
-							form-input
-							${error ? "form-input-error" : ""}
-							${disabled ? "form-input-disabled" : ""}
-							${isValid && !error ? "form-input-valid" : ""}
-							${className}
-						`}
+						min={resolvedMin}
 						placeholder={placeholder}
-						{...props}
+						aria-invalid={error ? "true" : undefined}
+						aria-describedby={describedBy || undefined}
+						className={joinClassNames(
+							"form-input",
+							(error || isPassword) && "form-input-with-icon",
+							error && "form-input-error",
+							disabled && "form-input-disabled",
+							passwordIsValid && !error && "form-input-valid",
+							className,
+						)}
 					/>
 
-					{error && <ExclamationCircleIcon className="form-error-icon" />}
+					{error ? (
+						<ExclamationCircleIcon
+							aria-hidden="true"
+							className="form-error-icon"
+						/>
+					) : null}
 
-					{isPassword && !error && (
+					{isPassword && !error ? (
 						<button
 							type="button"
-							onClick={() => setShowPassword((prev) => !prev)}
 							className="form-icon-right"
+							onClick={togglePasswordVisibility}
+							disabled={disabled}
 							aria-label={showPassword ? "Hide password" : "Show password"}
+							aria-controls={inputId}
+							aria-pressed={showPassword}
 						>
 							{showPassword ? (
-								<AiOutlineEyeInvisible size={16} />
+								<AiOutlineEyeInvisible aria-hidden="true" size={16} />
 							) : (
-								<AiOutlineEye size={16} />
+								<AiOutlineEye aria-hidden="true" size={16} />
 							)}
 						</button>
-					)}
+					) : null}
 				</div>
 
-				{error && (
-					<p id={errorId} className="form-error-text">
+				{error ? (
+					<p id={errorId} className="form-error-text" role="alert">
 						{error}
 					</p>
-				)}
+				) : helperText && !isTooltip ? (
+					<p id={helperId} className="form-helper-text">
+						{helperText}
+					</p>
+				) : null}
 			</div>
 		);
 	},

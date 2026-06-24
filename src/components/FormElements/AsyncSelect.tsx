@@ -1,8 +1,13 @@
-import React from "react";
+import React, { useId, useMemo, useState } from "react";
 import Select from "react-select";
-import type { SingleValue } from "react-select";
-import { ServerAxios } from "../../services/ServerAxios";
+import type {
+	//  ActionMeta,
+	InputActionMeta,
+	SingleValue,
+} from "react-select";
+
 import { useDebounce } from "../../hooks/useDebounce";
+import { ServerAxios } from "../../services/ServerAxios";
 import type { UserResponse } from "../../modules/admin/user-profile/types/profile.types";
 
 export type UserOption = {
@@ -13,110 +18,216 @@ export type UserOption = {
 	lastName?: string;
 };
 
-type Props = {
+type UserAsyncSelectProps = {
+	name?: string;
 	value?: UserOption | null;
 	onChange: (user: UserOption | null) => void;
 	excludedUserIds?: string[];
 	placeholder?: string;
 	isClearable?: boolean;
+	isDisabled?: boolean;
+	required?: boolean;
 	error?: string;
 	label?: string;
+	helperText?: string;
+	className?: string;
 };
 
-const UserAsyncSelect: React.FC<Props> = ({
+const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
+	name = "user",
+	value = null,
 	onChange,
 	excludedUserIds = [],
 	error,
+	label,
+	helperText,
 	placeholder = "Search users...",
 	isClearable = true,
-	...props
+	isDisabled = false,
+	required = false,
+	className = "",
 }) => {
-	const [inputValue, setInputValue] = React.useState("");
-	const [options, setOptions] = React.useState<UserOption[]>([]);
-	const [isLoading, setIsLoading] = React.useState(false);
+	const generatedId = useId();
+	const inputId = `${name}-${generatedId}`;
+	const errorId = error ? `${inputId}-error` : undefined;
+	const helperId = helperText && !error ? `${inputId}-helper` : undefined;
+	const describedBy = errorId ?? helperId;
 
-	// 🔥 your debounce hook
-	const debouncedInput = useDebounce(inputValue, 400);
-	// 🔥 API call triggered only when debounced value changes
+	const [inputValue, setInputValue] = useState("");
+	const [options, setOptions] = useState<UserOption[]>([]);
+	const [isLoading, setIsLoading] = useState(false);
+
+	const debouncedInput = useDebounce(inputValue.trim(), 400);
+
+	/*
+	 * Keep a stable lookup representation so filtering does not repeatedly
+	 * scan the original array for every returned user.
+	 */
+	const excludedUserIdKey = excludedUserIds.join("|");
+
+	const excludedUserIdSet = useMemo(
+		() => new Set(excludedUserIds),
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[excludedUserIdKey],
+	);
+
 	React.useEffect(() => {
+		if (!debouncedInput || isDisabled) return;
+
+		const controller = new AbortController();
+		let requestIsActive = true;
+
 		const fetchUsers = async () => {
-			if (!debouncedInput) {
-				setOptions([]);
-				return;
-			}
-
-			setIsLoading(true);
-
 			try {
-				const { data } = await ServerAxios.get(
-					`/users?search=${encodeURIComponent(debouncedInput)}`,
-				);
+				const { data } = await ServerAxios.get<UserResponse[]>("/users", {
+					params: {
+						search: debouncedInput,
+					},
+					signal: controller.signal,
+				});
 
-				const formatted = data
-					.filter((user: UserResponse) => !excludedUserIds.includes(user.id))
-					.map((user: UserResponse) => ({
+				if (!requestIsActive) return;
+
+				const formattedOptions = data
+					.filter((user) => !excludedUserIdSet.has(user.id))
+					.map<UserOption>((user) => ({
 						value: user.id,
 						firstName: user.first_name,
 						lastName: user.last_name,
-						label: `${user.first_name} ${user.last_name}`,
+						label: `${user.first_name} ${user.last_name}`.trim(),
 						email: user.email,
 					}));
 
-				setOptions(formatted);
+				setOptions(formattedOptions);
 			} catch (err) {
+				if (!requestIsActive || controller.signal.aborted) return;
+
 				console.error("User search failed:", err);
 				setOptions([]);
 			} finally {
-				setIsLoading(false);
+				if (requestIsActive) {
+					setIsLoading(false);
+				}
 			}
 		};
 
-		fetchUsers();
-	}, [debouncedInput, excludedUserIds]);
+		void fetchUsers();
+
+		return () => {
+			requestIsActive = false;
+			controller.abort();
+		};
+	}, [debouncedInput, excludedUserIdSet, isDisabled]);
+
+	const handleInputChange = (
+		nextValue: string,
+		actionMeta: InputActionMeta,
+	) => {
+		if (actionMeta.action !== "input-change") {
+			return;
+		}
+
+		setInputValue(nextValue);
+
+		if (!nextValue.trim()) {
+			setOptions([]);
+			setIsLoading(false);
+			return;
+		}
+
+		setIsLoading(true);
+	};
+
+	const handleChange = (
+		selected: SingleValue<UserOption>,
+		// _actionMeta: ActionMeta<UserOption>,
+	) => {
+		onChange(selected);
+		setInputValue("");
+		setOptions([]);
+		setIsLoading(false);
+	};
 
 	return (
-		<React.Fragment>
-			<label className="text-xs font-semibold text-zinc-600">
-				{props.label}
-			</label>
-			<Select<UserOption>
+		<div
+			className={[
+				"form-field",
+				"user-async-select-field",
+				isDisabled ? "is-disabled" : "",
+				className,
+			]
+				.filter(Boolean)
+				.join(" ")}
+		>
+			{label && (
+				<div className="form-label-row">
+					<label htmlFor={inputId} className="form-label">
+						{label}
+
+						{required && (
+							<span className="form-required" aria-hidden="true">
+								*
+							</span>
+						)}
+					</label>
+				</div>
+			)}
+
+			<Select<UserOption, false>
+				inputId={inputId}
+				name={name}
+				value={value}
 				inputValue={inputValue}
-				onInputChange={(val, { action }) => {
-					if (action === "input-change") {
-						setInputValue(val);
-					}
-				}}
-				options={options} // 🔥 controlled options
+				options={options}
 				isLoading={isLoading}
-				value={null}
-				onChange={(selected: SingleValue<UserOption>) => {
-					onChange(selected as UserOption);
-					setInputValue("");
-					setOptions([]);
-				}}
+				isDisabled={isDisabled}
 				isClearable={isClearable}
 				placeholder={placeholder}
 				filterOption={null}
-				className={`
-					 userAsyncSelect
-					${error ? "form-input-error" : ""}
-				`}
-				menuPortalTarget={document.body}
-				styles={{
-					menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-					menu: (base) => ({ ...base, zIndex: 9999 }),
-				}}
+				className={[
+					"react-select-container",
+					error ? "react-select-container-error" : "",
+				]
+					.filter(Boolean)
+					.join(" ")}
 				classNamePrefix="react-select"
-				formatOptionLabel={(option: UserOption) => (
-					<div>
-						<div>{option.label}</div>
+				menuPortalTarget={
+					typeof document !== "undefined" ? document.body : undefined
+				}
+				menuPosition="fixed"
+				menuPlacement="auto"
+				aria-invalid={Boolean(error)}
+				aria-describedby={describedBy}
+				aria-required={required}
+				onInputChange={handleInputChange}
+				onChange={handleChange}
+				noOptionsMessage={({ inputValue: currentInput }) =>
+					currentInput.trim()
+						? "No matching users found"
+						: "Start typing to search users"
+				}
+				loadingMessage={() => "Searching users..."}
+				formatOptionLabel={(option) => (
+					<div className="select-option-content">
+						<div className="select-option-primary">{option.label}</div>
+
 						{option.email && (
-							<div style={{ fontSize: 12, opacity: 0.7 }}>{option.email}</div>
+							<div className="select-option-secondary">{option.email}</div>
 						)}
 					</div>
 				)}
 			/>
-		</React.Fragment>
+
+			{error ? (
+				<p id={errorId} className="form-error-text" role="alert">
+					{error}
+				</p>
+			) : helperText ? (
+				<p id={helperId} className="form-helper-text">
+					{helperText}
+				</p>
+			) : null}
+		</div>
 	);
 };
 

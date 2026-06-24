@@ -1,6 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { OtpInputProps } from "./input.types";
 
+const createOtpValue = (currentValue: string | undefined, length: number) => {
+	const chars = currentValue?.split("").slice(0, length) ?? [];
+
+	return [...chars, ...Array(Math.max(length - chars.length, 0)).fill("")];
+};
+
 const OtpInput: React.FC<OtpInputProps> = ({
 	name = "otp",
 	length = 6,
@@ -13,85 +19,157 @@ const OtpInput: React.FC<OtpInputProps> = ({
 }) => {
 	const inputsRef = useRef<HTMLInputElement[]>([]);
 
-	const [otp, setOtp] = useState<string[]>(() => {
-		const chars = value?.split("").slice(0, length) ?? [];
-		return [...chars, ...Array(length - chars.length).fill("")];
-	});
+	const [internalOtp, setInternalOtp] = useState<string[]>(() =>
+		createOtpValue(value, length),
+	);
 
-	const [secondsLeft, setSecondsLeft] = useState(timerSeconds);
+	const [timerState, setTimerState] = useState(() => ({
+		configuredSeconds: timerSeconds,
+		secondsLeft: timerSeconds,
+	}));
+
+	/*
+	 * Controlled mode derives directly from `value`, so no synchronising effect
+	 * or cascading render is needed. Without `value`, the component keeps its
+	 * own local OTP state.
+	 */
+	const otp =
+		value !== undefined
+			? createOtpValue(value, length)
+			: createOtpValue(internalOtp.join(""), length);
+
+	/*
+	 * React permits adjusting state during render when a prop changes, provided
+	 * it is guarded like this. This avoids calling setState synchronously inside
+	 * an effect while still resetting the timer when timerSeconds changes.
+	 */
+	if (timerState.configuredSeconds !== timerSeconds) {
+		setTimerState({
+			configuredSeconds: timerSeconds,
+			secondsLeft: timerSeconds,
+		});
+	}
+
+	const secondsLeft = timerState.secondsLeft;
 
 	useEffect(() => {
-		if (secondsLeft <= 0) {
-			onTimerChange?.(0, false);
-			return;
-		}
-
-		onTimerChange?.(secondsLeft, true);
-
-		const interval = setInterval(() => {
-			setSecondsLeft((prev) => prev - 1);
-		}, 1000);
-
-		return () => clearInterval(interval);
+		onTimerChange?.(secondsLeft, secondsLeft > 0);
 	}, [secondsLeft, onTimerChange]);
 
-	const handleChange = (val: string, index: number) => {
-		if (!/^[0-9]?$/.test(val)) return;
+	useEffect(() => {
+		if (secondsLeft <= 0) return;
 
-		const newOtp = [...otp];
-		newOtp[index] = val;
-		setOtp(newOtp);
-		onChange(newOtp.join(""));
+		const timeoutId = window.setTimeout(() => {
+			setTimerState((previous) => ({
+				...previous,
+				secondsLeft: Math.max(previous.secondsLeft - 1, 0),
+			}));
+		}, 1000);
 
-		if (val && index < length - 1) {
+		return () => window.clearTimeout(timeoutId);
+	}, [secondsLeft]);
+
+	const commitOtp = (nextOtp: string[]) => {
+		if (value === undefined) {
+			setInternalOtp(nextOtp);
+		}
+
+		onChange(nextOtp.join(""));
+	};
+
+	const handleChange = (inputValue: string, index: number) => {
+		if (!/^\d?$/.test(inputValue)) return;
+
+		const nextOtp = [...otp];
+		nextOtp[index] = inputValue;
+		commitOtp(nextOtp);
+
+		if (inputValue && index < length - 1) {
 			inputsRef.current[index + 1]?.focus();
 		}
 	};
 
 	const handleKeyDown = (
-		e: React.KeyboardEvent<HTMLInputElement>,
+		event: React.KeyboardEvent<HTMLInputElement>,
 		index: number,
 	) => {
-		if (e.key === "Backspace" && !otp[index] && index > 0) {
+		if (event.key === "Backspace" && !otp[index] && index > 0) {
 			inputsRef.current[index - 1]?.focus();
+		}
+
+		if (event.key === "ArrowLeft" && index > 0) {
+			event.preventDefault();
+			inputsRef.current[index - 1]?.focus();
+		}
+
+		if (event.key === "ArrowRight" && index < length - 1) {
+			event.preventDefault();
+			inputsRef.current[index + 1]?.focus();
 		}
 	};
 
+	const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+		const pastedDigits = event.clipboardData
+			.getData("text")
+			.replace(/\D/g, "")
+			.slice(0, length);
+
+		if (!pastedDigits) return;
+
+		event.preventDefault();
+
+		const nextOtp = createOtpValue(pastedDigits, length);
+		commitOtp(nextOtp);
+
+		const focusIndex = Math.min(pastedDigits.length, length) - 1;
+		inputsRef.current[Math.max(focusIndex, 0)]?.focus();
+	};
+
+	const errorId = error ? `${name}-error` : undefined;
+	const timerId = `${name}-timer`;
+
 	return (
-		<div className="otp-wrapper">
-			<div className="otp-container">
+		<div className={`otp-wrapper ${className}`.trim()}>
+			<div
+				className="otp-container"
+				role="group"
+				aria-label="One-time password"
+				onPaste={handlePaste}
+			>
 				{otp.map((digit, index) => (
 					<input
-						key={index}
+						key={`${name}-${index}`}
 						id={`${name}-${index}`}
-						ref={(el) => {
-							if (el) inputsRef.current[index] = el;
+						ref={(element) => {
+							if (element) inputsRef.current[index] = element;
 						}}
 						type="text"
 						inputMode="numeric"
+						autoComplete={index === 0 ? "one-time-code" : "off"}
+						pattern="[0-9]*"
 						maxLength={1}
 						value={digit}
-						aria-invalid={!!error}
-						aria-describedby={error ? `${name}-error` : undefined}
-						onChange={(e) => handleChange(e.target.value, index)}
-						onKeyDown={(e) => handleKeyDown(e, index)}
-						className={`
-							otp-input
-							otp-size
-							${error ? "otp-error" : "otp-normal"}
-							${className}
-						`}
+						aria-label={`OTP digit ${index + 1} of ${length}`}
+						aria-invalid={Boolean(error)}
+						aria-describedby={[errorId, timerId].filter(Boolean).join(" ")}
+						onChange={(event) => handleChange(event.target.value, index)}
+						onKeyDown={(event) => handleKeyDown(event, index)}
+						className={`otp-input ${error ? "otp-error" : "otp-normal"}`}
 					/>
 				))}
 			</div>
 
 			{error && (
-				<p id={`${name}-error`} className="otp-error-text">
+				<p id={errorId} className="otp-error-text" role="alert">
 					{error}
 				</p>
 			)}
 
-			<p className="otp-timer">Resend OTP in {secondsLeft}s</p>
+			<p id={timerId} className="otp-timer" aria-live="polite">
+				{secondsLeft > 0
+					? `Resend OTP in ${secondsLeft}s`
+					: "You can resend the OTP now"}
+			</p>
 		</div>
 	);
 };

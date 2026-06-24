@@ -1,11 +1,11 @@
 import { RefreshCcw, Save, Send, X } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/common/Section";
 
 import EpfItemsSection from "./EpfItemSection";
 import { useEpfForm, type EpfFormProps } from "./useEpfForm";
 import EpfFormFields from "./EpfFormFields";
+import SectionAccordion from "../../../../../components/common/SectionAccordion";
 
 export default function EpfForm(props: EpfFormProps) {
 	const { onCancel } = props;
@@ -40,7 +40,7 @@ export default function EpfForm(props: EpfFormProps) {
 
 	return (
 		<div className=" mx-auto h-auto w-full max-w-full">
-			<Section
+			<SectionAccordion
 				title={
 					isEditMode
 						? "Edit Event Proposition Form"
@@ -105,7 +105,7 @@ export default function EpfForm(props: EpfFormProps) {
 						disabled={submitting}
 					/>
 				</div>
-			</Section>
+			</SectionAccordion>
 		</div>
 	);
 }

@@ -35,7 +35,7 @@ const EpcListingPage = () => {
 			header_children={
 				<PageHeader
 					headerText="Event Planning Calendar (EPC) Listing"
-					subtitleText="Manage your Event Planning Calendar (EPC) details here"
+					// subtitleText="Manage your Event Planning Calendar (EPC) details here"
 					badgeProps={{
 						text: "",
 						to: "/",

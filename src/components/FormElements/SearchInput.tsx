@@ -1,8 +1,10 @@
-// components/common/SearchBox.tsx
-
 import React, { forwardRef } from "react";
 import { Search } from "lucide-react";
 import type { SearchBoxProps } from "./input.types";
+
+const joinClassNames = (
+	...classes: Array<string | false | null | undefined>
+): string => classes.filter(Boolean).join(" ");
 
 export const SearchInput = forwardRef<HTMLInputElement, SearchBoxProps>(
 	(
@@ -11,34 +13,30 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchBoxProps>(
 			onChange,
 			placeholder = "Search...",
 			disabled,
-			className,
-			containerClassName,
-			// rightElement,
+			className = "",
+			containerClassName = "",
 		},
 		ref,
-	) => {
-		return (
-			<React.Fragment>
-				<div
-					className={`flex items-center bg-white border border-gray-300 rounded-xl px-2 py-1.5 shadow-xs outline-none focus::border-none  ${containerClassName}`}
-				>
-					{/* Left Icon */}
-					<Search size={14} className="text-orange-600 mr-2" />
-
-					{/* Input */}
-					<input
-						ref={ref}
-						type="search"
-						value={value}
-						disabled={disabled}
-						onChange={(e) => onChange(e.target.value)}
-						placeholder={placeholder}
-						className={`flex-1 bg-transparent text-xs  focus:outline-none focus:border-amber-500${className}`}
-					/>
-				</div>
-			</React.Fragment>
-		);
-	},
+	) => (
+		<div
+			className={joinClassNames(
+				"search-input-control",
+				disabled && "is-disabled",
+				containerClassName,
+			)}
+		>
+			<Search aria-hidden="true" className="search-input-icon" />
+			<input
+				ref={ref}
+				type="search"
+				value={value}
+				disabled={disabled}
+				onChange={(event) => onChange(event.target.value)}
+				placeholder={placeholder}
+				className={joinClassNames("search-input-field", className)}
+			/>
+		</div>
+	),
 );
 
 SearchInput.displayName = "SearchInput";

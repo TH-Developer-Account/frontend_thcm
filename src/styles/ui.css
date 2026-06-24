@@ -5,7 +5,8 @@
 @reference "tailwindcss";
 
 .dropdown-icon-style {
-	@apply h-4 w-4  duration-200 text-orange-700;
+	@apply h-4 w-4 duration-200;
+	color: var(--color-icon-brand);
 }
 
 @layer components {
@@ -84,7 +85,8 @@
 @layer components {
 	/* container */
 	.coming-soon-wrapper {
-		@apply relative flex flex-col items-center justify-center overflow-hidden bg-zinc-50;
+		@apply relative flex flex-col items-center justify-center overflow-hidden;
+		background-color: var(--color-bg-page);
 	}
 
 	/* top hazard bar */
@@ -169,7 +171,12 @@
 
 	/* ground */
 	.coming-soon-ground {
-		@apply absolute bottom-0 left-0 right-0 h-10 border-t border-stone-300;
-		background: linear-gradient(180deg, #f5f5f4, #e7e5e4);
+		@apply absolute bottom-0 left-0 right-0 h-10 border-t;
+		border-color: var(--color-border-default);
+		background: linear-gradient(
+			180deg,
+			var(--color-bg-surface-subtle),
+			var(--color-bg-surface-muted)
+		);
 	}
 }

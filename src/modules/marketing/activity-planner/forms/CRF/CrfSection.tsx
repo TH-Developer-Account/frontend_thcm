@@ -1,12 +1,12 @@
 import { Pencil, Plus } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/common/Section";
 import LineTableView from "../../components/activityFormView/LineTableView";
 import CrfForm from "./CrfForm";
 
 import type { EpcDetailResponse } from "../../types/epc.types";
 import { mapCrfLineItemsToTableRows } from "./crf.mapper";
+import SectionAccordion from "../../../../../components/common/SectionAccordion";
 
 type CrfSectionProps = {
 	epcData: EpcDetailResponse;
@@ -45,17 +45,18 @@ const CrfSection = ({
 
 	if (hasLineItems) {
 		return (
-			<Section
+			<SectionAccordion
 				title="Collateral Requisition Form Line Items"
 				action={
 					canEdit && (
 						<Button
 							type="button"
-							iconPosition="right"
 							Icon={Pencil}
-							iconColor="red"
+							text="Edit CRF"
 							size="sm"
 							onClick={onEdit}
+							appearance="standard"
+							variant="outline"
 						/>
 					)
 				}
@@ -65,12 +66,12 @@ const CrfSection = ({
 					showGrandTotal
 					grandTotalLabel="CRF Grand Total:"
 				/>
-			</Section>
+			</SectionAccordion>
 		);
 	}
 
 	return (
-		<Section
+		<SectionAccordion
 			title="Collateral Requisition Form"
 			action={
 				canCreate && (
@@ -78,10 +79,10 @@ const CrfSection = ({
 						type="button"
 						text="Create CRF"
 						Icon={Plus}
-						iconColor="red"
 						size="sm"
-						className="epf-section-label text-xs"
 						onClick={onEdit}
+						appearance="standard"
+						variant="outline"
 					/>
 				)
 			}
@@ -89,7 +90,7 @@ const CrfSection = ({
 			<div className="text-sm text-gray-500">
 				No CRF has been created for this EPC yet.
 			</div>
-		</Section>
+		</SectionAccordion>
 	);
 };
 

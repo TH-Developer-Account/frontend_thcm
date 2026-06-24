@@ -276,32 +276,30 @@ const ActivityFormView = ({
 
 	if (!epcData) {
 		return (
-			<div className="px-6 py-4">
-				<EpcForm
-					mode="create"
-					onSuccess={async (savedEpc) => {
-						const createdEpcId =
-							savedEpc?.id ??
-							savedEpc?.eventProposal?.id ??
-							savedEpc?.epcId ??
-							savedEpc?.epc?.id;
+			<EpcForm
+				mode="create"
+				onSuccess={async (savedEpc) => {
+					const createdEpcId =
+						savedEpc?.id ??
+						savedEpc?.eventProposal?.id ??
+						savedEpc?.epcId ??
+						savedEpc?.epc?.id;
 
-						if (!createdEpcId) {
-							console.error("Created EPC id not found", savedEpc);
-							return;
-						}
+					if (!createdEpcId) {
+						console.error("Created EPC id not found", savedEpc);
+						return;
+					}
 
-						navigate(`/marketing/activity-planner/${createdEpcId}`);
-					}}
-				/>
-			</div>
+					navigate(`/marketing/activity-planner/${createdEpcId}`);
+				}}
+			/>
 		);
 	}
 
 	return (
 		<>
-			<div className="px-6 py-4">
-				<div className="form my-3 text-left text-sm">
+			<div className="px-3 py-2">
+				<div className="form text-left text-sm">
 					<ActivityDetailsSection
 						epcData={epcData}
 						isEditing={editingSection === "epc"}

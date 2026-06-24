@@ -4,7 +4,6 @@ import type { SingleValue } from "react-select";
 import SelectInput from "../../../../../components/FormElements/SelectInput";
 import TextareaInput from "../../../../../components/FormElements/TextareaInput";
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/common/Section";
 import { validateUploadFile } from "../../../../../components/FileUpload/fileUpload.helpers";
 import {
 	eventDeviationOptions,
@@ -28,6 +27,7 @@ import {
 	showSuccessToast,
 } from "../../../../../utils/apiError.helper";
 import { FileUploadField } from "../../../../../components/FileUpload/FileUploadField";
+import SectionAccordion from "../../../../../components/common/SectionAccordion";
 
 const initialDeviationInfo: DeviationInfo = {
 	reason: "",
@@ -231,7 +231,7 @@ export const EventOutcome = ({
 	if (!mode) return null;
 
 	return (
-		<Section title="Activity Outcome">
+		<SectionAccordion title="Activity Outcome">
 			<div className="mt-4 px-4 py-2">
 				<div
 					className={`grid grid-cols-2 gap-2  ${isDeviationRequired && "mb-4"}  text-left`}
@@ -301,6 +301,6 @@ export const EventOutcome = ({
 					</Button>
 				</div>
 			</div>
-		</Section>
+		</SectionAccordion>
 	);
 };

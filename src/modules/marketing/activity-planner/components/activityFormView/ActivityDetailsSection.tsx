@@ -1,6 +1,5 @@
 import { Pencil } from "lucide-react";
 import Button from "../../../../../components/common/Button";
-import Section from "../common/Section";
 import EpcForm from "../../forms/EPC/EpcForm";
 import type { EpcDetailResponse } from "../../types/epc.types";
 import { formatDate, trimText } from "../../../../../utils/format";
@@ -13,6 +12,7 @@ import {
 } from "../../utils/formatters";
 import DateRangeSection from "./DateRangeSection";
 import { useState } from "react";
+import SectionAccordion from "../../../../../components/common/SectionAccordion";
 
 type ActivityDetailsSectionProps = {
 	epcData: EpcDetailResponse;
@@ -53,84 +53,88 @@ const ActivityDetailsSection = ({
 	}
 
 	return (
-		<Section
+		<SectionAccordion
 			title="Activity Planner Details"
 			action={
 				canEdit ? (
 					<Button
 						type="button"
 						Icon={Pencil}
-						iconColor="red"
+						text="Edit EPC"
 						size="sm"
 						onClick={onEdit}
+						appearance="standard"
+						variant="outline"
 					/>
 				) : null
 			}
 		>
-			<div className="mt-3 px-2">
+			<div className="activity-details-content">
 				<DateRangeSection
 					fromDate={epcData.event_from_date}
 					toDate={epcData.event_to_date}
 				/>
 
-				<div className="grid grid-cols-1 gap-3 p-3 text-xs sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
-					<div className="min-w-0">
-						<span className="uppercase-label-text">Branch</span>
-						<p className="mt-0.5 truncate text-[11px] leading-4 text-gray-900">
+				<div className="activity-details-primary-grid">
+					<div className="activity-detail-item">
+						<span className="activity-detail-label">Branch</span>
+						<p className="activity-detail-value activity-detail-value-truncate">
 							{getEpcBranchName(epcData)}
 						</p>
 					</div>
 
-					<div className="min-w-0">
-						<span className="uppercase-label-text">Department</span>
-						<p className="mt-0.5 truncate text-[11px] leading-4 text-gray-900">
+					<div className="activity-detail-item">
+						<span className="activity-detail-label">Department</span>
+						<p className="activity-detail-value activity-detail-value-truncate">
 							{getEpcDepartmentName(epcData)}
 						</p>
 					</div>
 
-					<div className="min-w-0">
-						<span className="uppercase-label-text">Vertical</span>
-						<p className="mt-0.5 truncate text-[11px] leading-4 text-gray-900">
+					<div className="activity-detail-item">
+						<span className="activity-detail-label">Vertical</span>
+						<p className="activity-detail-value activity-detail-value-truncate">
 							{getEpcVerticalName(epcData)}
 						</p>
 					</div>
 
-					<div className="min-w-0">
-						<span className="uppercase-label-text">Zone</span>
-						<p className="mt-0.5 truncate text-[11px] leading-4 text-gray-900">
+					<div className="activity-detail-item">
+						<span className="activity-detail-label">Zone</span>
+						<p className="activity-detail-value activity-detail-value-truncate">
 							{getEpcRegionName(epcData)}
 						</p>
 					</div>
 
-					<div className="min-w-0">
-						<span className="uppercase-label-text">Created</span>
-						<p className="mt-0.5 truncate text-[11px] leading-4 text-gray-900">
+					<div className="activity-detail-item">
+						<span className="activity-detail-label">Created</span>
+						<p className="activity-detail-value activity-detail-value-truncate">
 							{formatDate(epcData.created_at)}
 						</p>
 					</div>
 
-					<div className="min-w-0">
-						<span className="uppercase-label-text">Budget</span>
-						<p className="mt-0.5 truncate text-[11px] leading-4 text-gray-900">
+					<div className="activity-detail-item">
+						<span className="activity-detail-label">Budget</span>
+						<p className="activity-detail-value activity-detail-value-truncate">
 							{getEpcBudgetValue(epcData)}
 						</p>
 					</div>
 				</div>
 
-				<div className="grid grid-cols-1 gap-4 p-3 text-sm md:grid-cols-3">
-					<div className="min-w-0">
-						<span className="uppercase-label-text">Location</span>
+				<div className="activity-details-secondary-grid">
+					<div className="activity-detail-item">
+						<span className="activity-detail-label">Location</span>
+
 						<p
-							className="mt-0.5 max-w-full break-words text-[11px] leading-4 text-gray-900"
+							className="activity-detail-value activity-detail-value-wrap"
 							title={epcData.location || "--"}
 						>
 							{epcData.location || "--"}
 						</p>
 					</div>
-					<div className="min-w-0">
-						<span className="uppercase-label-text">Description</span>
 
-						<p className="mt-1 break-words text-xs leading-relaxed text-gray-900">
+					<div className="activity-detail-item">
+						<span className="activity-detail-label">Description</span>
+
+						<p className="activity-detail-value activity-detail-value-wrap">
 							{description
 								? showFullDescription
 									? description
@@ -140,18 +144,22 @@ const ActivityDetailsSection = ({
 							{isDescriptionLong && (
 								<button
 									type="button"
-									onClick={() => setShowFullDescription((prev) => !prev)}
-									className="ml-1 text-xs font-medium text-blue-600 hover:underline"
+									onClick={() =>
+										setShowFullDescription((previous) => !previous)
+									}
+									className="activity-detail-more"
+									aria-expanded={showFullDescription}
 								>
 									{showFullDescription ? "See less" : "See more"}
 								</button>
 							)}
 						</p>
 					</div>
-					<div className="min-w-0">
-						<span className="uppercase-label-text">Objective</span>
 
-						<p className="mt-1 break-words text-xs leading-relaxed text-gray-700">
+					<div className="activity-detail-item">
+						<span className="activity-detail-label">Objective</span>
+
+						<p className="activity-detail-value activity-detail-value-wrap">
 							{objective
 								? showFullObjective
 									? objective
@@ -161,8 +169,9 @@ const ActivityDetailsSection = ({
 							{isObjectiveLong && (
 								<button
 									type="button"
-									onClick={() => setShowFullObjective((prev) => !prev)}
-									className="ml-1 text-xs font-medium text-blue-600 hover:underline"
+									onClick={() => setShowFullObjective((previous) => !previous)}
+									className="activity-detail-more"
+									aria-expanded={showFullObjective}
 								>
 									{showFullObjective ? "See less" : "See more"}
 								</button>
@@ -171,7 +180,7 @@ const ActivityDetailsSection = ({
 					</div>
 				</div>
 			</div>
-		</Section>
+		</SectionAccordion>
 	);
 };
 

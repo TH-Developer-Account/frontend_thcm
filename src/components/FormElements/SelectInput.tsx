@@ -1,6 +1,8 @@
+import { useId } from "react";
 import Select from "react-select";
-import type { Props, GroupBase, StylesConfig } from "react-select";
+import type { GroupBase, Props } from "react-select";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
+
 import HelperTooltip from "../common/HelperTooltip";
 
 export interface BaseOption {
@@ -15,118 +17,125 @@ interface SelectInputProps<T extends BaseOption> extends Props<
 > {
 	label?: string;
 	error?: string;
-	required?: boolean;
 	helperText?: string;
 	isTooltip?: boolean;
+	required?: boolean;
 }
+
+const joinClassNames = (
+	...classes: Array<string | false | null | undefined>
+): string => classes.filter(Boolean).join(" ");
 
 export default function SelectInput<T extends BaseOption>({
 	label,
 	error,
-	required,
-	className = "",
 	helperText,
-	isDisabled,
-	name,
 	isTooltip = true,
-	...props
-}: SelectInputProps<T>) {
-	const errorId = name ? `${name}-error` : undefined;
+	required = false,
 
-	const customStyles: StylesConfig<T, false> = {
-		control: (base, state) => ({
-			...base,
-			minHeight: "30px",
-			height: "30px",
-			borderRadius: "12px",
-			borderWidth: "1px",
-			paddingRight: error ? "36px" : "8px",
-			backgroundColor: isDisabled ? "var(--color-bg-disabled)" : "#ffffff",
-			borderColor: error ? "#dc2626" : state.isFocused ? "#f35a00" : "#d1d5db",
-			boxShadow: error
-				? "0 0 0 1px #dc2626"
-				: state.isFocused
-					? "0 0 0 1px #f35a00"
-					: "none",
-			"&:hover": {
-				borderColor: error ? "#dc2626" : "#f35a00",
-			},
-			scrollbarWidth: "thin",
-		}),
-		valueContainer: (base) => ({
-			...base,
-			height: "30px",
-			padding: "0 8px",
-			scrollbarWidth: "thin",
-		}),
-		input: (base) => ({
-			...base,
-			margin: 0,
-			padding: 0,
-		}),
-		placeholder: (base) => ({
-			...base,
-			color: "#9ca3af",
-			fontSize: "12px",
-		}),
-		singleValue: (base) => ({
-			...base,
-			fontSize: "12px",
-		}),
-		indicatorsContainer: (base) => ({
-			...base,
-			height: "30px",
-		}),
-		indicatorSeparator: () => ({
-			display: "none",
-		}),
-		menuPortal: (base) => ({
-			...base,
-			zIndex: 9999,
-		}),
-	};
+	id,
+	inputId,
+	name,
+	className = "",
+	isDisabled = false,
+
+	menuPortalTarget,
+	menuPosition = "fixed",
+	menuPlacement = "auto",
+
+	...selectProps
+}: SelectInputProps<T>) {
+	const generatedId = useId();
+
+	const resolvedInputId =
+		inputId ?? id ?? name ?? `select-input-${generatedId}`;
+
+	const errorId = `${resolvedInputId}-error`;
+	const helperId = `${resolvedInputId}-helper`;
+
+	const describedBy = [
+		error ? errorId : undefined,
+		helperText && !isTooltip ? helperId : undefined,
+	]
+		.filter(Boolean)
+		.join(" ");
+
+	const resolvedPortalTarget =
+		menuPortalTarget !== undefined
+			? menuPortalTarget
+			: typeof document !== "undefined"
+				? document.body
+				: undefined;
 
 	return (
-		<div className="form-field">
-			{label && (
+		<div
+			className={joinClassNames(
+				"form-field",
+				"select-field",
+				error && "has-error",
+				isDisabled && "is-disabled",
+			)}
+		>
+			{label ? (
 				<div className="form-label-row">
-					<label htmlFor={name} className="form-label">
+					<label htmlFor={resolvedInputId} className="form-label">
 						{label}
-						{required && <span className="form-required"> *</span>}
+
+						{required ? (
+							<span className="form-required" aria-hidden="true">
+								*
+							</span>
+						) : null}
 					</label>
 
-					{helperText && isTooltip && !error && (
+					{helperText && isTooltip && !error ? (
 						<HelperTooltip label={label} text={helperText} />
-					)}
+					) : null}
 				</div>
-			)}
+			) : null}
 
-			<div className="form-input-wrapper relative">
-				<Select
-					{...props}
-					inputId={name}
+			<div className="form-input-wrapper">
+				<Select<T, false, GroupBase<T>>
+					{...selectProps}
+					id={id}
+					inputId={resolvedInputId}
 					name={name}
+					required={required}
 					isDisabled={isDisabled}
+					unstyled
 					classNamePrefix="react-select"
-					menuPortalTarget={
-						typeof window !== "undefined" ? document.body : undefined
-					}
-					menuPosition="fixed"
-					menuPlacement="auto"
-					styles={customStyles}
-					aria-invalid={!!error}
-					aria-describedby={error ? errorId : undefined}
-					className={`${className} scrollbar-sleek`}
+					className={joinClassNames(
+						"react-select-container",
+						error && "react-select-container-error",
+						isDisabled && "react-select-container-disabled",
+						className,
+					)}
+					menuPortalTarget={resolvedPortalTarget}
+					menuPosition={menuPosition}
+					menuPlacement={menuPlacement}
+					aria-invalid={error ? "true" : undefined}
+					aria-required={required || undefined}
+					aria-describedby={describedBy || undefined}
+					aria-errormessage={error ? errorId : undefined}
 				/>
 
-				{error && <ExclamationCircleIcon className="form-error-icon" />}
+				{error ? (
+					<ExclamationCircleIcon
+						aria-hidden="true"
+						className="form-error-icon select-error-icon"
+					/>
+				) : null}
 			</div>
 
-			{error && (
-				<p id={errorId} className="form-error-text">
+			{error ? (
+				<p id={errorId} className="form-error-text" role="alert">
 					{error}
 				</p>
-			)}
+			) : helperText && !isTooltip ? (
+				<p id={helperId} className="form-helper-text">
+					{helperText}
+				</p>
+			) : null}
 		</div>
 	);
 }

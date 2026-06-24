@@ -1,43 +1,96 @@
 /* =========================================================
    typography.css
-   Tata Hitachi — Theme-aware enterprise typography
+   Tata Hitachi — EPC reference typography
 ========================================================= */
 
 @layer base {
 	:root {
+		/* =====================================================
+		   FONT FAMILIES
+		===================================================== */
+
 		--font-sans:
-			"Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+			"Nunito Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
 			sans-serif;
+
 		--font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
 
-		--font-size-2xs: 0.6875rem;
-		--font-size-xs: 0.75rem;
-		--font-size-sm: 0.875rem;
-		--font-size-base: 1rem;
-		--font-size-lg: 1.125rem;
-		--font-size-xl: 1.25rem;
-		--font-size-2xl: 1.5rem;
-		--font-size-3xl: 1.875rem;
-		--font-size-4xl: 2.25rem;
-		--font-size-5xl: 3rem;
+		/* =====================================================
+		   FONT SIZES
+		   Tuned to match the EPC listing reference.
+		===================================================== */
+
+		--font-size-2xs: 0.6875rem; /* 11px */
+		--font-size-xs: 0.75rem; /* 12px */
+		--font-size-sm: 0.8125rem; /* 13px */
+		--font-size-md: 0.875rem; /* 14px */
+		--font-size-base: 0.9375rem; /* 15px */
+		--font-size-lg: 1rem; /* 16px */
+		--font-size-xl: 1.125rem; /* 18px */
+		--font-size-2xl: 1.5rem; /* 24px */
+		--font-size-3xl: 1.75rem; /* 28px */
+		--font-size-4xl: 2.25rem; /* 36px */
+		--font-size-5xl: 3rem; /* 48px */
+
+		/* =====================================================
+		   FONT WEIGHTS
+		===================================================== */
 
 		--font-weight-light: 300;
 		--font-weight-regular: 400;
 		--font-weight-medium: 500;
 		--font-weight-semibold: 600;
 
-		--line-height-display: 1.08;
-		--line-height-heading: 1.2;
-		--line-height-tight: 1.35;
-		--line-height-normal: 1.55;
-		--line-height-relaxed: 1.7;
+		/* =====================================================
+		   LINE HEIGHTS
+		===================================================== */
 
-		--tracking-display: -0.035em;
-		--tracking-heading: -0.025em;
-		--tracking-title: -0.015em;
+		--line-height-display: 1.05;
+		--line-height-heading: 1.18;
+		--line-height-tight: 1.25;
+		--line-height-control: 1.2;
+		--line-height-normal: 1.45;
+		--line-height-relaxed: 1.6;
+
+		/* =====================================================
+		   LETTER SPACING
+		===================================================== */
+
+		--tracking-display: -0.04em;
+		--tracking-heading: -0.028em;
+		--tracking-title: -0.018em;
+		--tracking-control: -0.006em;
 		--tracking-normal: 0;
-		--tracking-eyebrow: 0.12em;
-		--tracking-wide: 0.06em;
+		--tracking-table-head: 0.015em;
+		--tracking-eyebrow: 0.1em;
+		--tracking-wide: 0.055em;
+
+		/* =====================================================
+		   APPLICATION TYPOGRAPHY ROLES
+		===================================================== */
+
+		--type-page-title-size: var(--font-size-2xl);
+		--type-page-title-weight: var(--font-weight-semibold);
+		--type-page-title-line-height: var(--line-height-heading);
+		--type-page-title-tracking: var(--tracking-heading);
+
+		--type-page-subtitle-size: var(--font-size-base);
+		--type-page-subtitle-weight: var(--font-weight-regular);
+		--type-page-subtitle-line-height: var(--line-height-normal);
+
+		--type-nav-size: var(--font-size-base);
+		--type-nav-weight: var(--font-weight-regular);
+
+		--type-control-size: var(--font-size-sm);
+		--type-control-weight: var(--font-weight-medium);
+
+		--type-table-head-size: var(--font-size-xs);
+		--type-table-head-weight: var(--font-weight-medium);
+
+		--type-table-cell-size: var(--font-size-md);
+		--type-table-cell-weight: var(--font-weight-regular);
+
+		--type-link-weight: var(--font-weight-medium);
 	}
 
 	html {
@@ -51,9 +104,10 @@
 
 	body {
 		font-family: var(--font-sans);
-		font-size: var(--font-size-sm);
+		font-size: var(--font-size-base);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-normal);
+		letter-spacing: var(--tracking-normal);
 		color: var(--color-text-primary);
 	}
 
@@ -64,29 +118,39 @@
 	h5,
 	h6 {
 		margin: 0;
+
 		font-family: var(--font-sans);
-		font-weight: var(--font-weight-regular);
+		font-weight: var(--font-weight-medium);
 		line-height: var(--line-height-heading);
 		letter-spacing: var(--tracking-title);
+
 		color: inherit;
 	}
 
 	h1 {
-		font-size: var(--font-size-2xl);
+		font-size: var(--font-size-3xl);
+		font-weight: var(--font-weight-semibold);
+		letter-spacing: var(--tracking-heading);
 	}
+
 	h2 {
-		font-size: var(--font-size-xl);
+		font-size: var(--font-size-2xl);
+		font-weight: var(--font-weight-semibold);
 	}
+
 	h3 {
-		font-size: var(--font-size-lg);
-	}
-	h4 {
-		font-size: var(--font-size-base);
+		font-size: var(--font-size-xl);
 		font-weight: var(--font-weight-medium);
 	}
+
+	h4 {
+		font-size: var(--font-size-lg);
+		font-weight: var(--font-weight-medium);
+	}
+
 	h5,
 	h6 {
-		font-size: var(--font-size-sm);
+		font-size: var(--font-size-md);
 		font-weight: var(--font-weight-medium);
 	}
 
@@ -98,14 +162,17 @@
 
 	a {
 		color: var(--color-text-link);
+		font-weight: var(--type-link-weight);
 		text-decoration-thickness: 1px;
-		text-underline-offset: 2px;
+		text-underline-offset: 0.18em;
+
 		transition: color var(--duration-fast) var(--ease-standard);
 	}
 
 	a:hover {
 		color: var(--color-text-link-hover);
 	}
+
 	a:focus-visible {
 		outline: none;
 		box-shadow: var(--shadow-focus-brand);
@@ -114,17 +181,26 @@
 	small {
 		color: var(--color-text-muted);
 		font-size: var(--font-size-xs);
+		line-height: var(--line-height-normal);
 	}
+
 	button,
 	input,
 	select,
 	textarea {
 		font: inherit;
+		letter-spacing: inherit;
 	}
+
+	button {
+		font-weight: var(--type-control-weight);
+	}
+
 	strong,
 	b {
-		font-weight: var(--font-weight-medium);
+		font-weight: var(--font-weight-semibold);
 	}
+
 	code,
 	kbd,
 	samp,
@@ -138,28 +214,47 @@
 	}
 }
 
+/* =====================================================
+   SEMANTIC TYPOGRAPHY
+===================================================== */
+
 @layer components {
+	/* =====================================================
+	   COLOUR UTILITIES
+	===================================================== */
+
 	.text-primary {
 		color: var(--color-text-primary);
 	}
+
 	.text-secondary {
 		color: var(--color-text-secondary);
 	}
+
 	.text-muted {
 		color: var(--color-text-muted);
 	}
+
 	.text-disabled {
 		color: var(--color-text-disabled);
 	}
+
 	.text-inverse {
 		color: var(--color-text-inverse);
 	}
+
 	.text-link {
 		color: var(--color-text-link);
+		font-weight: var(--type-link-weight);
 	}
+
 	.text-link:hover {
 		color: var(--color-text-link-hover);
 	}
+
+	/* =====================================================
+	   DISPLAY
+	===================================================== */
 
 	.text-hero,
 	.hero-title {
@@ -170,82 +265,249 @@
 		color: var(--color-text-primary);
 	}
 
+	/* =====================================================
+	   PAGE HEADER
+	===================================================== */
+
 	.text-page-title,
-	.heading-page {
-		font-size: var(--font-size-xl);
-		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-heading);
-		letter-spacing: var(--tracking-heading);
+	.heading-page,
+	.page-title {
+		font-size: var(--type-page-title-size);
+		font-weight: var(--type-page-title-weight);
+		line-height: var(--type-page-title-line-height);
+		letter-spacing: var(--type-page-title-tracking);
 		color: var(--color-text-primary);
 	}
+
+	.text-page-subtitle,
+	.page-subtitle {
+		font-size: var(--type-page-subtitle-size);
+		font-weight: var(--type-page-subtitle-weight);
+		line-height: var(--type-page-subtitle-line-height);
+		letter-spacing: var(--tracking-normal);
+		color: var(--color-text-secondary);
+	}
+
+	/* =====================================================
+	   SECTION AND CARD TITLES
+	===================================================== */
 
 	.text-section-title,
 	.section-title,
 	.heading-section {
-		font-size: var(--font-size-lg);
-		font-weight: var(--font-weight-regular);
+		font-size: var(--font-size-xl);
+		font-weight: var(--font-weight-medium);
 		line-height: var(--line-height-heading);
+		letter-spacing: var(--tracking-title);
 		color: var(--color-text-primary);
 	}
 
 	.text-card-title,
 	.card-title,
 	.heading-card {
-		font-size: var(--font-size-sm);
+		font-size: var(--font-size-base);
 		font-weight: var(--font-weight-medium);
 		line-height: var(--line-height-tight);
+		letter-spacing: var(--tracking-control);
 		color: var(--color-text-primary);
 	}
 
+	/* =====================================================
+	   BODY
+	===================================================== */
+
 	.text-body,
 	.card-description,
-	.page-subtitle,
 	.body-default {
-		font-size: var(--font-size-sm);
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+		letter-spacing: var(--tracking-normal);
+		color: var(--color-text-secondary);
+	}
+
+	.body-compact {
+		font-size: var(--font-size-md);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-normal);
 		color: var(--color-text-secondary);
 	}
 
-	.body-compact,
-	.text-table-cell {
+	/* =====================================================
+	   NAVIGATION
+	===================================================== */
+
+	.text-nav,
+	.nav-label,
+	.app-sidebar-label {
+		font-size: var(--type-nav-size);
+		font-weight: var(--type-nav-weight);
+		line-height: var(--line-height-control);
+		letter-spacing: var(--tracking-control);
+	}
+
+	.app-sidebar-child-label {
+		font-size: var(--font-size-md);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-control);
+		letter-spacing: var(--tracking-control);
+	}
+
+	/* =====================================================
+	   CONTROLS
+	===================================================== */
+
+	.text-control,
+	.button-label,
+	.three-way-toggle-option,
+	.epc-filter-trigger {
+		font-size: var(--type-control-size);
+		font-weight: var(--type-control-weight);
+		line-height: var(--line-height-control);
+		letter-spacing: var(--tracking-control);
+	}
+
+	input,
+	textarea,
+	select {
+		font-size: var(--font-size-md);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-control);
+	}
+
+	input::placeholder,
+	textarea::placeholder {
+		font-size: inherit;
+		font-weight: var(--font-weight-regular);
+		color: var(--color-input-placeholder);
+		opacity: 1;
+	}
+
+	/* =====================================================
+	   LABELS
+	===================================================== */
+
+	.text-label,
+	.label-default,
+	label {
+		font-size: var(--font-size-md);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+		letter-spacing: var(--tracking-control);
+		color: var(--color-text-secondary);
+	}
+
+	.text-sublabel,
+	.caption {
 		font-size: var(--font-size-xs);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-normal);
-		color: var(--color-text-secondary);
+		color: var(--color-text-muted);
 	}
+
+	/* =====================================================
+	   EYEBROWS
+	===================================================== */
 
 	.text-eyebrow {
 		font-family: var(--font-mono);
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-regular);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-medium);
 		line-height: 1;
 		letter-spacing: var(--tracking-eyebrow);
 		text-transform: uppercase;
 		color: var(--color-text-brand);
 	}
 
-	.text-sublabel,
-	.caption {
-		font-size: var(--font-size-2xs);
-		font-weight: var(--font-weight-regular);
+	/* =====================================================
+	   TABLE
+	===================================================== */
+
+	.text-table-head,
+	.data-table-head-cell,
+	.workflow-table-head-cell {
+		font-size: var(--type-table-head-size);
+		font-weight: var(--type-table-head-weight);
+		line-height: var(--line-height-tight);
+		letter-spacing: var(--tracking-table-head);
+		text-transform: uppercase;
+		color: var(--color-table-header-text);
+	}
+
+	.text-table-cell,
+	.data-table-cell,
+	.workflow-table-cell-text {
+		font-size: var(--type-table-cell-size);
+		font-weight: var(--type-table-cell-weight);
 		line-height: var(--line-height-normal);
-		color: var(--color-text-muted);
-	}
-
-	.text-label,
-	.label-default {
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-tight);
+		letter-spacing: var(--tracking-normal);
 		color: var(--color-text-secondary);
 	}
 
-	.text-table-head {
-		font-size: var(--font-size-2xs);
+	.epc-number-link {
+		font-size: var(--font-size-md);
 		font-weight: var(--font-weight-medium);
 		line-height: var(--line-height-tight);
-		letter-spacing: 0.02em;
-		color: var(--color-text-secondary);
+		letter-spacing: var(--tracking-control);
+	}
+
+	.epc-event-name,
+	.epc-cell-primary {
+		font-size: var(--font-size-md);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+	}
+
+	.epc-event-meta,
+	.epc-cell-secondary,
+	.epc-date-cell {
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-tight);
+	}
+
+	/* =====================================================
+	   PAGINATION
+	===================================================== */
+
+	.pagination,
+	.pagination-summary,
+	.pagination-page-size {
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-control);
+	}
+
+	.pagination-summary strong {
+		font-weight: var(--font-weight-medium);
+	}
+
+	/* =====================================================
+	   RESPONSIVE
+	===================================================== */
+
+	@media (max-width: 767px) {
+		.text-page-title,
+		.heading-page,
+		.page-title {
+			font-size: var(--font-size-xl);
+		}
+
+		.text-page-subtitle,
+		.page-subtitle {
+			font-size: var(--font-size-md);
+		}
+
+		.text-nav,
+		.nav-label,
+		.app-sidebar-label {
+			font-size: var(--font-size-md);
+		}
+
+		.text-table-cell,
+		.data-table-cell,
+		.workflow-table-cell-text {
+			font-size: var(--font-size-sm);
+		}
 	}
 }

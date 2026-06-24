@@ -1,7 +1,6 @@
 import { GlobeIcon, Pencil, Plus, UsersIcon } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/common/Section";
 import LineTableView from "../../components/activityFormView/LineTableView";
 import BudgetShare from "../../components/activityFormView/BudgetShare";
 import EpfForm from "./EpfForm";
@@ -9,6 +8,7 @@ import EpfForm from "./EpfForm";
 import type { EpcDetailResponse } from "../../types/epc.types";
 import { mapEpfLineItemsToTableRows } from "./epf.mapper";
 import { mapBudgetShareInfo } from "../../utils/formatters";
+import SectionAccordion from "../../../../../components/common/SectionAccordion";
 
 type EpfSectionProps = {
 	epcData: EpcDetailResponse;
@@ -49,7 +49,7 @@ const EpfSection = ({
 
 	if (!epf) {
 		return (
-			<Section
+			<SectionAccordion
 				title="Activity Proposition Form"
 				action={
 					canCreate && (
@@ -57,10 +57,10 @@ const EpfSection = ({
 							type="button"
 							text="Create EPF"
 							Icon={Plus}
-							iconColor="red"
 							onClick={onEdit}
 							size="sm"
-							className="epf-section-label text-xs"
+							appearance="standard"
+							variant="outline"
 						/>
 					)
 				}
@@ -68,7 +68,7 @@ const EpfSection = ({
 				<div className="text-xs text-gray-500">
 					No EPF has been created for this EPC yet.
 				</div>
-			</Section>
+			</SectionAccordion>
 		);
 	}
 
@@ -87,7 +87,7 @@ const EpfSection = ({
 	});
 
 	return (
-		<Section
+		<SectionAccordion
 			title="Activity Proposition Form Budget Information"
 			action={
 				canEdit && (
@@ -140,7 +140,7 @@ const EpfSection = ({
 			) : null}
 
 			<BudgetShare items={budgetItems} shareInfo={shareInfo} />
-		</Section>
+		</SectionAccordion>
 	);
 };
 

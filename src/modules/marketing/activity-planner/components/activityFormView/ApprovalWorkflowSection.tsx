@@ -1,6 +1,6 @@
-import Section from "../common/Section";
 import ApprovalFlowSection from "./ApprovalFlowSection";
 import type { WorkflowStage } from "../../types/workflow.types";
+import SectionAccordion from "../../../../../components/common/SectionAccordion";
 
 type ApprovalWorkflowSectionProps = {
 	stages: WorkflowStage[];
@@ -13,12 +13,12 @@ const ApprovalWorkflowSection = ({
 	deviationPreviewStages = [],
 }: ApprovalWorkflowSectionProps) => {
 	return (
-		<Section title="Approval Flow">
+		<SectionAccordion title="Approval Flow">
 			<ApprovalFlowSection
 				stages={stages}
 				deviationPreviewStages={deviationPreviewStages}
 			/>
-		</Section>
+		</SectionAccordion>
 	);
 };
 

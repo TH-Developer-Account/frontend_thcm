@@ -14,34 +14,46 @@ const DataTableSkeleton = ({
 	className = "",
 }: DataTableSkeletonProps) => {
 	return (
-		<div className={`workflow-table-shell ${className}`}>
-			<div className="workflow-table-scroll scrollbar-sleek">
-				<table className="workflow-table">
-					{showHeader && (
-						<thead className="workflow-table-head">
-							<tr>
+		<section
+			className={["data-table-shell", "data-table-shell-loading", className]
+				.filter(Boolean)
+				.join(" ")}
+			aria-label="Loading table"
+			aria-busy="true"
+		>
+			<div className="data-table-scroll scrollbar-sleek" aria-hidden="true">
+				<table className="data-table">
+					{showHeader ? (
+						<thead className="data-table-head">
+							<tr className="data-table-head-row">
 								{Array.from({ length: columns }).map((_, index) => (
-									<th key={index} className="workflow-table-head-cell">
-										<div className="workflow-table-skeleton h-3 w-20" />
+									<th key={index} className="data-table-head-cell">
+										<div className="data-table-skeleton data-table-skeleton-header" />
 									</th>
 								))}
 							</tr>
 						</thead>
-					)}
+					) : null}
 
-					<tbody>
+					<tbody className="data-table-body">
 						{Array.from({ length: rows }).map((_, rowIndex) => (
-							<tr key={rowIndex} className="workflow-table-row">
-								{Array.from({ length: columns }).map((_, columnIndex) => (
-									<td key={columnIndex} className="workflow-table-cell-text">
-										<div className="workflow-table-cell-inner">
+							<tr
+								key={rowIndex}
+								className="data-table-row data-table-row-loading"
+							>
+								{Array.from({ length: columns }).map((__, columnIndex) => (
+									<td
+										key={columnIndex}
+										className="data-table-cell data-table-cell-text"
+									>
+										<div className="data-table-cell-inner">
 											<div
-												className={`workflow-table-skeleton h-3 ${
+												className={`data-table-skeleton ${
 													columnIndex === 0
-														? "w-32"
+														? "data-table-skeleton-wide"
 														: columnIndex === columns - 1
-															? "w-20"
-															: "w-24"
+															? "data-table-skeleton-short"
+															: ""
 												}`}
 											/>
 										</div>
@@ -53,21 +65,19 @@ const DataTableSkeleton = ({
 				</table>
 			</div>
 
-			{showPagination && (
-				<div className="workflow-table-pagination">
-					<div className="workflow-table-pagination-inner flex items-center justify-between">
-						<div className="workflow-table-skeleton h-3 w-32" />
-
-						<div className="flex items-center gap-2">
-							<div className="workflow-table-skeleton h-8 w-20" />
-							<div className="workflow-table-skeleton h-8 w-8" />
-							<div className="workflow-table-skeleton h-8 w-8" />
-							<div className="workflow-table-skeleton h-8 w-20" />
+			{showPagination ? (
+				<footer className="data-table-pagination" aria-hidden="true">
+					<div className="data-table-pagination-inner data-table-skeleton-pagination">
+						<div className="data-table-skeleton data-table-skeleton-wide" />
+						<div className="data-table-skeleton-actions">
+							<div className="data-table-skeleton data-table-skeleton-control" />
+							<div className="data-table-skeleton data-table-skeleton-control" />
+							<div className="data-table-skeleton data-table-skeleton-control" />
 						</div>
 					</div>
-				</div>
-			)}
-		</div>
+				</footer>
+			) : null}
+		</section>
 	);
 };
 

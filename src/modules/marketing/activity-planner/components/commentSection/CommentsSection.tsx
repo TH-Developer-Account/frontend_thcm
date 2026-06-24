@@ -2,12 +2,12 @@ import React from "react";
 import { MessageCircle } from "lucide-react";
 import { useToast } from "../../../../../context/Auth/AuthContext";
 import Avatar from "../../../../../components/common/Avatar";
-import Section from "../common/Section";
 import { formatDateTime } from "../../../../../utils/format";
 import { workflowApi } from "../../api/workflow.api";
 import CommentInput from "./CommentInput";
 import "../../../marketing.styles.css";
 import { getAuditMessage } from "../../helpers/activityLogMessage.helper";
+import SectionAccordion from "../../../../../components/common/SectionAccordion";
 
 export type MentionableUserInput = {
 	id: string;
@@ -237,7 +237,7 @@ export default function CommentsSection({
 	);
 
 	return (
-		<Section title="Comment Section">
+		<SectionAccordion title="Comment Section">
 			<section className="comments-section mb-2">
 				<div className="flex flex-row justify-end bg-zinc-100">
 					<p className="comments-subtitle">
@@ -283,6 +283,6 @@ export default function CommentsSection({
 					)}
 				</div>
 			</section>
-		</Section>
+		</SectionAccordion>
 	);
 }

@@ -5,6 +5,7 @@ import type {
 	ComponentType,
 	MouseEvent,
 	ReactNode,
+	CSSProperties,
 } from "react";
 
 export interface ToggleProps {
@@ -70,6 +71,7 @@ export type ButtonAppearance =
 
 export type ButtonVariant =
 	| "brand"
+	| "iron"
 	| "outline"
 	| "secondary"
 	| "danger"
@@ -79,12 +81,13 @@ export type ButtonVariant =
 
 export type ButtonSize = "sm" | "md" | "lg" | "xl";
 
-export interface ButtonIconProps {
-	size?: number;
-	className?: string;
+export type ButtonIconProps = {
+	size?: string | number;
 	color?: string;
+	className?: string;
+	style?: CSSProperties;
 	"aria-hidden"?: boolean | "true" | "false";
-}
+};
 
 export interface ButtonProps extends Omit<
 	ButtonHTMLAttributes<HTMLButtonElement>,
@@ -104,10 +107,9 @@ export interface ButtonProps extends Omit<
 	Icon?: ComponentType<ButtonIconProps>;
 	iconPosition?: "left" | "right";
 	iconSize?: number;
-	iconColor?: string;
+	iconColor?: CSSProperties["color"];
 
 	path?: string;
-
 	isTooltip?: ReactNode;
 
 	onClick?: (event: MouseEvent<HTMLButtonElement>) => void;

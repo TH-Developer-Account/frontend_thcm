@@ -262,3 +262,62 @@ HOME MODULE CARD
 		--action-card-badge-border: var(--color-status-draft-border);
 	}
 }
+
+/* =====================================================
+   FEATURE SURFACE TOKENS
+   Theme-aware aliases for EPF, comments, accordions and workflow tables.
+===================================================== */
+@layer base {
+	:root {
+		/* EPF sections */
+		--epf-section-bg: var(--color-bg-surface);
+		--epf-section-header-bg: var(--color-bg-surface);
+		--epf-section-border: var(--color-border-default);
+		--epf-section-divider: var(--color-border-subtle);
+		--epf-section-title: var(--color-text-primary);
+		--epf-section-accent: var(--color-text-brand);
+
+		/* Cards */
+		--epf-card-bg: var(--color-bg-surface-subtle);
+		--epf-card-border: var(--color-border-subtle);
+
+		/* Tags */
+		--epf-tag-bg: var(--color-brand-subtle);
+		--epf-tag-text: var(--color-brand-active);
+		--epf-tag-border: var(--color-brand-soft);
+
+		/* Share/progress track */
+		--epf-share-track: var(--color-brand-subtle);
+
+		/* Comments */
+		--comment-panel-bg: var(--color-bg-surface);
+		--comment-header-bg: var(--color-bg-surface-muted);
+		--comment-bubble-bg: var(--color-bg-surface-subtle);
+		--comment-bubble-border: var(--color-border-subtle);
+		--comment-self-bg: var(--color-brand-subtle);
+		--comment-self-border: var(--color-brand-soft);
+		--comment-action-bg: var(--color-bg-surface);
+		--comment-action-hover-bg: var(--color-brand-subtle);
+		--comment-empty-bg: var(--color-bg-surface-subtle);
+		--comment-skeleton-start: var(--color-skeleton-base);
+		--comment-skeleton-mid: var(--color-skeleton-highlight);
+
+		/* Generic accordion */
+		--accordion-bg: var(--color-bg-surface);
+		--accordion-header-hover: var(--color-bg-surface-hover);
+		--accordion-border: var(--color-border-default);
+		--accordion-border-open: var(--color-brand-soft);
+		--accordion-title: var(--color-text-primary);
+		--accordion-content-text: var(--color-text-secondary);
+
+		/* Workflow table */
+		--workflow-bg: var(--color-table-bg);
+		--workflow-header-bg: var(--color-table-header-bg);
+		--workflow-header-text: var(--color-table-header-text);
+		--workflow-row-hover: var(--color-table-row-hover);
+		--workflow-border: var(--color-table-border);
+		--workflow-text: var(--color-text-secondary);
+		--workflow-muted: var(--color-text-muted);
+		--workflow-footer-bg: var(--color-bg-surface-subtle);
+	}
+}

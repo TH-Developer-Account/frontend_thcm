@@ -2,7 +2,6 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PageHeader } from "../../../../../components/ui/PageHeader";
 import PageRowSectionLayout from "../../../../../layout/PageRowSectionLayout";
-import Section from "../../../activity-planner/components/common/Section";
 import {
 	createEmptyLeadFormRow,
 	mapLeadRowToFormRow,
@@ -43,6 +42,7 @@ import type {
 } from "../../../../../components/FileUpload/fileUpload.types";
 import { downloadLeadImportTemplate } from "../../../../../utils/generateImportTemplate";
 import { LeadExcelPreview } from "../components/LeadExcelPreview";
+import SectionAccordion from "../../../../../components/common/SectionAccordion";
 
 export default function LeadCreatePage() {
 	const location = useLocation();
@@ -290,7 +290,7 @@ export default function LeadCreatePage() {
 							</div>
 						)}
 					</div>
-					<Section
+					<SectionAccordion
 						title="Selected EPC Reference"
 						className="mt-2 text-right"
 						action={
@@ -319,7 +319,7 @@ export default function LeadCreatePage() {
 							onCancelEdit={handleCancelEdit}
 							onDeleteLead={handleDeleteLead}
 						/>
-					</Section>
+					</SectionAccordion>
 				</div>
 			</div>
 

@@ -1,10 +1,10 @@
 import { LucideSave, RefreshCcw, Save, X } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/common/Section";
 
 import { CrfItemsSection } from "./CrfItemsSection";
 import { useCrfForm, type CrfFormProps } from "./useCrfForm";
+import SectionAccordion from "../../../../../components/common/SectionAccordion";
 
 export default function CrfForm(props: CrfFormProps) {
 	const { onCancel } = props;
@@ -28,7 +28,7 @@ export default function CrfForm(props: CrfFormProps) {
 	}
 
 	return (
-		<Section title="Collateral Requisition Form">
+		<SectionAccordion title="Collateral Requisition Form">
 			<CrfItemsSection
 				items={costItems}
 				onChange={setCostItems}
@@ -44,9 +44,8 @@ export default function CrfForm(props: CrfFormProps) {
 						text="Cancel"
 						size="sm"
 						Icon={X}
-						className="text-red-600"
-						status="brand"
-						iconColor="white"
+						appearance="standard"
+						variant="outline"
 					/>
 				)}
 
@@ -56,22 +55,20 @@ export default function CrfForm(props: CrfFormProps) {
 					size="sm"
 					text="Reset"
 					Icon={RefreshCcw}
-					className="text-red-600"
-					status="brand"
-					iconColor="white"
+					appearance="standard"
+					variant="outline"
 				/>
 
 				<Button
 					type="button"
 					onClick={handleSubmit}
 					text={isEditMode ? "Update" : "Save"}
-					className="text-red-600"
 					size="sm"
 					Icon={isEditMode ? Save : LucideSave}
-					status="brand"
-					iconColor="white"
+					appearance="standard"
+					variant="brand"
 				/>
 			</div>
-		</Section>
+		</SectionAccordion>
 	);
 }

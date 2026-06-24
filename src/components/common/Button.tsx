@@ -10,7 +10,11 @@ import type {
 } from "./common.types";
 
 const APPEARANCE_CLASS_MAP: Record<ButtonAppearance, string> = {
-	cta: "button-cta",
+	/*
+	 * Kept for backward compatibility.
+	 * Industrial geometry is now controlled only by variant="iron".
+	 */
+	cta: "button-standard",
 	standard: "button-standard",
 	filter: "button-filter",
 	toggle: "button-toggle",
@@ -23,6 +27,7 @@ const APPEARANCE_CLASS_MAP: Record<ButtonAppearance, string> = {
 
 const VARIANT_CLASS_MAP: Record<ButtonVariant, string> = {
 	brand: "button-brand",
+	iron: "button-iron",
 	outline: "button-outline",
 	secondary: "button-secondary",
 	danger: "button-danger",
@@ -80,6 +85,7 @@ const Button: React.FC<ButtonProps> = ({
 
 	const isDisabled = disabled || loading;
 	const isIconOnly = appearance === "icon";
+	const isIron = variant === "iron";
 
 	const resolvedIconSize =
 		iconSize ?? (size === "sm" ? 14 : size === "xl" ? 20 : 16);
@@ -104,6 +110,8 @@ const Button: React.FC<ButtonProps> = ({
 		appearance === "switch" ||
 		appearance === "segmented";
 
+	const iconStyle = iconColor ? { color: iconColor } : undefined;
+
 	return (
 		<span
 			className={joinClassNames(
@@ -123,12 +131,14 @@ const Button: React.FC<ButtonProps> = ({
 				}
 				data-active={active ? "true" : "false"}
 				data-loading={loading ? "true" : "false"}
+				data-variant={variant}
 				onClick={handleClick}
 				className={joinClassNames(
 					"button-base",
 					appearanceClass,
 					variantClass,
 					sizeClass,
+					isIron && "button-industrial",
 					active && "is-active",
 					fullWidth && "button-full-width",
 					isIconOnly && "button-icon-only",
@@ -146,7 +156,7 @@ const Button: React.FC<ButtonProps> = ({
 						aria-hidden="true"
 						className="button-leading-icon"
 						size={resolvedIconSize}
-						color={iconColor}
+						style={iconStyle}
 					/>
 				) : null}
 
@@ -159,7 +169,7 @@ const Button: React.FC<ButtonProps> = ({
 						aria-hidden="true"
 						className="button-trailing-icon"
 						size={resolvedIconSize}
-						color={iconColor}
+						style={iconStyle}
 					/>
 				) : null}
 			</button>
