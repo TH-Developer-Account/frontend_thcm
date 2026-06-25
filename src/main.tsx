@@ -6,6 +6,7 @@ import "./index.css";
 import "./App.css";
 import App from "./App.tsx";
 import { AuthProvider } from "./context/AuthProvider.tsx";
+import { registerServiceWorker } from "./registerServiceWorker";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -18,3 +19,5 @@ createRoot(document.getElementById("root")!).render(
     </BrowserRouter>
   </StrictMode>,
 );
+
+registerServiceWorker(); // Add this line
