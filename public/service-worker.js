@@ -1,6 +1,12 @@
 const CACHE_NAME = "thcm-v1";
 
-const STATIC_ASSETS = ["/", "/index.html", "/manifest.json"];
+// Only truly static files — never React Router routes
+const STATIC_ASSETS = [
+  "/index.html",
+  "/manifest.json",
+  "/icons/logo.svg",
+  "/icons/test.svg",
+];
 
 // Cache static shell on install
 self.addEventListener("install", (event) => {
@@ -26,14 +32,17 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Fetch strategy: cache-first for static, network-first for API
 self.addEventListener("fetch", (event) => {
-  // Never intercept API calls — always go to network
+  // Let API calls go straight to network — never cache these
   if (event.request.url.includes("/api/")) return;
 
-  // Never intercept non-GET requests
+  // Let React Router handle all navigation (page routes like /login, /dashboard)
+  if (event.request.mode === "navigate") return;
+
+  // Only handle GET requests
   if (event.request.method !== "GET") return;
 
+  // Cache-first for everything else (icons, fonts, static assets)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return cached || fetch(event.request);
