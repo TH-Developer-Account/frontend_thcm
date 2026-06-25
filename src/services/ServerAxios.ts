@@ -1,7 +1,7 @@
 // src/api/axios.ts
 import axios from "axios";
 
-export const API_BASE_URL = "http://localhost:8000/api/v1";
+export const API_BASE_URL = "https://thcmconnect.tatahitachi.co.in/api/v1";
 
 export const ServerAxios = axios.create({
   baseURL: API_BASE_URL,
@@ -54,7 +54,7 @@ ServerAxios.interceptors.response.use(
 
       try {
         // Call refresh endpoint (sends httpOnly cookie automatically)
-        const { data } = await axios.post(
+        const { data } = await ServerAxios.post(
           `${API_BASE_URL}/auth/refresh`,
           {},
           { withCredentials: true },

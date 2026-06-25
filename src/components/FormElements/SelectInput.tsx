@@ -1,68 +1,132 @@
 import Select from "react-select";
-import type { Props, GroupBase } from "react-select";
+import type { Props, GroupBase, StylesConfig } from "react-select";
+import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
+import HelperTooltip from "../common/HelperTooltip";
 
-export interface Option {
-  label: string;
-  value: string;
+export interface BaseOption {
+	label: string;
+	value: string;
 }
 
-interface SelectInputProps extends Props<Option, boolean, GroupBase<Option>> {
-  label?: string;
-  error?: string;
+interface SelectInputProps<T extends BaseOption> extends Props<
+	T,
+	false,
+	GroupBase<T>
+> {
+	label?: string;
+	error?: string;
+	required?: boolean;
+	helperText?: string;
+	isTooltip?: boolean;
 }
 
-export default function SelectInput({
-  label,
-  error,
-  className,
-  ...props
-}: SelectInputProps) {
-  return (
-    <div className="w-full">
-      {label && (
-        <label className="mb-1 block text-sm font-medium text-gray-700">
-          {label}
-        </label>
-      )}
+export default function SelectInput<T extends BaseOption>({
+	label,
+	error,
+	required,
+	className = "",
+	helperText,
+	isDisabled,
+	name,
+	isTooltip = true,
+	...props
+}: SelectInputProps<T>) {
+	const errorId = name ? `${name}-error` : undefined;
 
-      <Select
-        {...props}
-        className={`react-select-container ${className ?? ""}`}
-        classNamePrefix="react-select"
-        styles={{
-          control: (base, state) => ({
-            ...base,
-            minHeight: "44px", // mobile friendly
-            borderRadius: "0.5rem",
-            borderColor: error
-              ? "#ef4444"
-              : state.isFocused
-                ? "#3b82f6"
-                : "#d1d5db",
-            boxShadow: state.isFocused ? "0 0 0 1px #3b82f6" : "none",
-            "&:hover": {
-              borderColor: "#3b82f6",
-            },
-          }),
-          menu: (base) => ({
-            ...base,
-            borderRadius: "0.5rem",
-            zIndex: 50,
-          }),
-          option: (base, state) => ({
-            ...base,
-            backgroundColor: state.isSelected
-              ? "#3b82f6"
-              : state.isFocused
-                ? "#e0e7ff"
-                : "white",
-            color: state.isSelected ? "white" : "#111827",
-            cursor: "pointer",
-          }),
-        }}
-      />
+	const customStyles: StylesConfig<T, false> = {
+		control: (base, state) => ({
+			...base,
+			minHeight: "30px",
+			height: "30px",
+			borderRadius: "12px",
+			borderWidth: "1px",
+			paddingRight: error ? "36px" : "8px",
+			backgroundColor: isDisabled ? "var(--color-bg-disabled)" : "#ffffff",
+			borderColor: error ? "#dc2626" : state.isFocused ? "#f35a00" : "#d1d5db",
+			boxShadow: error
+				? "0 0 0 1px #dc2626"
+				: state.isFocused
+					? "0 0 0 1px #f35a00"
+					: "none",
+			"&:hover": {
+				borderColor: error ? "#dc2626" : "#f35a00",
+			},
+			scrollbarWidth: "thin",
+		}),
+		valueContainer: (base) => ({
+			...base,
+			height: "30px",
+			padding: "0 8px",
+			scrollbarWidth: "thin",
+		}),
+		input: (base) => ({
+			...base,
+			margin: 0,
+			padding: 0,
+		}),
+		placeholder: (base) => ({
+			...base,
+			color: "#9ca3af",
+			fontSize: "12px",
+		}),
+		singleValue: (base) => ({
+			...base,
+			fontSize: "12px",
+		}),
+		indicatorsContainer: (base) => ({
+			...base,
+			height: "30px",
+		}),
+		indicatorSeparator: () => ({
+			display: "none",
+		}),
+		menuPortal: (base) => ({
+			...base,
+			zIndex: 9999,
+		}),
+	};
 
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
-    </div>
-  );
+	return (
+		<div className="form-field">
+			{label && (
+				<div className="form-label-row">
+					<label htmlFor={name} className="form-label">
+						{label}
+						{required && <span className="form-required"> *</span>}
+					</label>
+
+					{helperText && isTooltip && !error && (
+						<HelperTooltip label={label} text={helperText} />
+					)}
+				</div>
+			)}
+
+			<div className="form-input-wrapper relative">
+				<Select
+					{...props}
+					inputId={name}
+					name={name}
+					isDisabled={isDisabled}
+					classNamePrefix="react-select"
+					menuPortalTarget={
+						typeof window !== "undefined" ? document.body : undefined
+					}
+					menuPosition="fixed"
+					menuPlacement="auto"
+					styles={customStyles}
+					aria-invalid={!!error}
+					aria-describedby={error ? errorId : undefined}
+					className={`${className} scrollbar-sleek`}
+				/>
+
+				{error && <ExclamationCircleIcon className="form-error-icon" />}
+			</div>
+
+			{error && (
+				<p id={errorId} className="form-error-text">
+					{error}
+				</p>
+			)}
+		</div>
+	);
 }

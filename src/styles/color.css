@@ -1,0 +1,48 @@
+/* =========================================================
+   common.css
+   Global Branding & Design Variables
+   ========================================================= */
+
+@layer base {
+	:root {
+		--form-radius: 6px;
+
+		/* =========================
+		   BRAND COLORS
+		========================= */
+		--color-brand: #f35a00;
+		--color-brand-hover: #f35a00;
+		--color-brand-soft: #ffedd5;
+		--color-brand-softest: #fff7ed;
+
+		--color-brand-gray: #575757;
+		--color-white: #fff;
+		--color-black: #000;
+		--color-blue: #1e40af;
+		/* =========================
+		   UI COLORS
+		========================= */
+		--color-text-primary: #575757;
+		--color-text-strong: #000;
+		--color-text-muted: #9ca3af;
+
+		--color-border: #d1d5db;
+		--color-border-light: #e5e7eb;
+		--color-border-disabled: #9ca3af;
+
+		--color-bg: #fff;
+		--color-bg-soft: #f9fafb;
+		--color-bg-disabled: #e5e7eb;
+
+		--color-error: #ef4444;
+		--color-error-soft: #f87171;
+		--color-success: #22c55e;
+
+		--shadow-focus-brand: 0 0 0 1px var(--color-brand);
+		--shadow-focus-error: 0 0 0 1px var(--color-error);
+		--shadow-focus-success: 0 0 0 1px var(--color-success);
+
+		/* lighter yellow variants */
+		--color-yellow-warm: #fdba74;
+	}
+}
