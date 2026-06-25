@@ -8,7 +8,6 @@ const STATIC_ASSETS = [
   "/icons/test.svg",
 ];
 
-// Cache static shell on install
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS)),
@@ -16,7 +15,6 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-// Clean up old caches on activate
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -33,16 +31,17 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  // Let API calls go straight to network — never cache these
-  if (event.request.url.includes("/api/")) return;
+  const url = new URL(event.request.url);
 
-  // Let React Router handle all navigation (page routes like /login, /dashboard)
-  if (event.request.mode === "navigate") return;
+  // Allow everything except explicitly cached static files to go to network
+  const isCachedAsset = STATIC_ASSETS.includes(url.pathname);
 
-  // Only handle GET requests
-  if (event.request.method !== "GET") return;
+  if (!isCachedAsset) {
+    // Network only — don't intercept at all
+    return;
+  }
 
-  // Cache-first for everything else (icons, fonts, static assets)
+  // Cache first only for explicitly listed static assets
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return cached || fetch(event.request);
