@@ -128,6 +128,35 @@
 		--epc-topbar-count-border: var(--color-brand-soft);
 
 		--epc-topbar-divider: var(--color-border-subtle);
+
+		/* =====================================================
+   			COMMON CARD
+		===================================================== */
+
+		--card-bg: var(--color-bg-surface);
+		--card-bg-subtle: var(--color-bg-surface-subtle);
+		--card-bg-hover: var(--color-bg-surface-hover);
+
+		--card-text: var(--color-text-primary);
+		--card-subtitle-text: var(--color-text-muted);
+
+		--card-border: var(--color-border-default);
+		--card-border-subtle: var(--color-border-subtle);
+		--card-border-hover: var(--color-border-hover);
+
+		--card-header-bg: var(--color-bg-surface);
+		--card-footer-bg: var(--color-bg-surface);
+
+		--card-shadow: var(--shadow-xs);
+		--card-shadow-hover: var(--shadow-sm);
+
+		--card-radius: var(--radius-md);
+
+		--card-disabled-bg: var(--color-bg-disabled);
+		--card-disabled-text: var(--color-text-disabled);
+
+		--card-loading-track: var(--color-bg-surface-muted);
+		--card-loading-indicator: var(--color-brand);
 	}
 }
 @layer base {
@@ -319,5 +348,13 @@ HOME MODULE CARD
 		--workflow-text: var(--color-text-secondary);
 		--workflow-muted: var(--color-text-muted);
 		--workflow-footer-bg: var(--color-bg-surface-subtle);
+	}
+	[data-theme="dark"] {
+		--epf-card-bg: var(--color-bg-surface-muted);
+		--epf-card-border: var(--color-border-default);
+
+		--epf-tag-bg: var(--color-bg-surface-active);
+		--epf-tag-text: var(--color-text-brand);
+		--epf-tag-border: var(--color-brand-soft);
 	}
 }

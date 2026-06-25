@@ -120,7 +120,7 @@ const ActivityDetailsSection = ({
 				</div>
 
 				<div className="activity-details-secondary-grid">
-					<div className="activity-detail-item">
+					<div className="activity-detail-item activity-detail-item-wide">
 						<span className="activity-detail-label">Location</span>
 
 						<p
@@ -131,7 +131,7 @@ const ActivityDetailsSection = ({
 						</p>
 					</div>
 
-					<div className="activity-detail-item">
+					<div className="activity-detail-item activity-detail-item-wide">
 						<span className="activity-detail-label">Description</span>
 
 						<p className="activity-detail-value activity-detail-value-wrap">
@@ -156,7 +156,7 @@ const ActivityDetailsSection = ({
 						</p>
 					</div>
 
-					<div className="activity-detail-item">
+					<div className="activity-detail-item activity-detail-item-wide">
 						<span className="activity-detail-label">Objective</span>
 
 						<p className="activity-detail-value activity-detail-value-wrap">

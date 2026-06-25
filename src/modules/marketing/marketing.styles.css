@@ -67,11 +67,6 @@
 	);
 }
 
-.date-range-card {
-	@apply rounded-sm border px-2.5 py-1;
-	background-color: var(--epf-card-bg);
-	border-color: var(--epf-section-divider);
-}
 .action-bar {
 	@apply rounded-sm border px-2.5 py-1;
 }
@@ -91,7 +86,7 @@
 	.comments-section {
 		background-color: var(--comment-panel-bg);
 		border: var(--border-width-default) solid var(--color-border-default);
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+		box-shadow: var(--comment-panel-shadow);
 	}
 
 	.comments-header {
@@ -380,8 +375,8 @@
 	.pdf-preview-sheet {
 		width: 250mm;
 		min-height: 297mm;
-		background: #ffffff;
-		box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+		background: var(--pdf-bg);
+		box-shadow: var(--pdf-shadow);
 	}
 
 	.pdf-document {
@@ -390,8 +385,8 @@
 		margin: 0 auto;
 		padding: 12mm;
 		box-sizing: border-box;
-		background: #ffffff;
-		color: #111827;
+		background: var(--pdf-bg);
+		color: var(--pdf-text);
 		font-family: Arial, Helvetica, sans-serif;
 		font-size: 10px;
 		line-height: 1.35;
@@ -403,7 +398,7 @@
 		justify-content: space-between;
 		gap: 18px;
 		padding-bottom: 10px;
-		border-bottom: 2px solid #111827;
+		border-bottom: 2px solid var(--pdf-text);
 	}
 
 	.pdf-brand-block {
@@ -416,7 +411,7 @@
 		font-weight: 800;
 		letter-spacing: 0.22em;
 		text-transform: uppercase;
-		color: #f35a00;
+		color: var(--pdf-brand);
 	}
 
 	.pdf-cover-header h1 {
@@ -425,7 +420,7 @@
 		font-size: 20px;
 		line-height: 1.12;
 		font-weight: 800;
-		color: #111827;
+		color: var(--pdf-text);
 		word-break: break-word;
 	}
 
@@ -433,7 +428,7 @@
 		margin: 5px 0 0;
 		font-size: 10px;
 		font-weight: 500;
-		color: #374151;
+		color: var(--pdf-text-secondary);
 	}
 
 	.pdf-header-meta {
@@ -445,7 +440,7 @@
 		margin: 6px 0 0;
 		font-size: 8px;
 		font-weight: 600;
-		color: #6b7280;
+		color: var(--pdf-text-muted);
 	}
 
 	.pdf-status,
@@ -453,10 +448,10 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		border: 1px solid #fed7aa;
+		border: 1px solid var(--pdf-status-border);
 		border-radius: 999px;
-		background: #fff7ed;
-		color: #9a3412;
+		background: var(--pdf-status-bg);
+		color: var(--pdf-status-text);
 		font-size: 8px;
 		font-weight: 800;
 		letter-spacing: 0.1em;
@@ -480,21 +475,25 @@
 		gap: 10px;
 		margin-top: 10px;
 		padding: 10px;
-		border: 1px solid #e5e7eb;
+		border: 1px solid var(--pdf-border);
 		border-radius: 10px;
-		background: linear-gradient(180deg, #fffaf7 0%, #ffffff 100%);
+		background: linear-gradient(
+			180deg,
+			var(--pdf-hero-bg-start) 0%,
+			var(--pdf-bg) 100%
+		);
 	}
 
 	.pdf-hero-value {
 		margin: 2px 0 0;
 		font-size: 11px;
 		font-weight: 800;
-		color: #111827;
+		color: var(--pdf-text);
 		word-break: break-word;
 	}
 
 	.pdf-money {
-		color: #c2410c;
+		color: var(--pdf-brand-dark);
 	}
 
 	.pdf-section {
@@ -514,14 +513,14 @@
 		gap: 7px;
 		margin-bottom: 7px;
 		padding-bottom: 5px;
-		border-bottom: 1px solid #d1d5db;
+		border-bottom: 1px solid var(--pdf-border-strong);
 	}
 
 	.pdf-section-marker {
 		width: 4px;
 		height: 14px;
 		border-radius: 999px;
-		background: #f35a00;
+		background: var(--pdf-brand);
 	}
 
 	.pdf-section-title {
@@ -530,7 +529,7 @@
 		font-weight: 800;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
-		color: #111827;
+		color: var(--pdf-text);
 	}
 
 	.pdf-grid {
@@ -542,9 +541,9 @@
 	.pdf-field {
 		min-width: 0;
 		padding: 7px 8px;
-		border: 1px solid #edf0f3;
+		border: 1px solid var(--pdf-border-soft);
 		border-radius: 7px;
-		background: #fcfcfd;
+		background: var(--pdf-field-bg);
 	}
 
 	.pdf-field-wide {
@@ -561,14 +560,14 @@
 		font-weight: 800;
 		letter-spacing: 0.13em;
 		text-transform: uppercase;
-		color: #64748b;
+		color: var(--pdf-text-slate);
 	}
 
 	.pdf-value {
 		margin: 0;
 		font-size: 9.5px;
 		font-weight: 700;
-		color: #111827;
+		color: var(--pdf-text);
 		word-break: break-word;
 	}
 
@@ -582,9 +581,9 @@
 	.pdf-narrative-field {
 		min-width: 0;
 		padding: 8px 9px;
-		border: 1px solid #e5e7eb;
+		border: 1px solid var(--pdf-border);
 		border-radius: 8px;
-		background: #ffffff;
+		background: var(--pdf-bg);
 	}
 
 	.pdf-long-value {
@@ -592,7 +591,7 @@
 		font-size: 9.5px;
 		font-weight: 500;
 		line-height: 1.45;
-		color: #1f2937;
+		color: var(--pdf-text-body);
 		white-space: pre-wrap;
 		word-break: break-word;
 	}
@@ -606,25 +605,25 @@
 
 	.pdf-metric-card {
 		padding: 9px 10px;
-		border: 1px solid #e5e7eb;
+		border: 1px solid var(--pdf-border);
 		border-radius: 9px;
-		background: #f8fafc;
+		background: var(--pdf-surface-subtle);
 	}
 
 	.pdf-metric-card-strong {
-		border-color: #fed7aa;
-		background: #fff7ed;
+		border-color: var(--pdf-status-border);
+		background: var(--pdf-status-bg);
 	}
 
 	.pdf-metric-value {
 		margin: 0;
 		font-size: 13px;
 		font-weight: 800;
-		color: #111827;
+		color: var(--pdf-text);
 	}
 
 	.pdf-metric-card-strong .pdf-metric-value {
-		color: #c2410c;
+		color: var(--pdf-brand-dark);
 	}
 
 	.pdf-table {
@@ -637,21 +636,21 @@
 
 	.pdf-table th {
 		padding: 5px 6px;
-		border: 1px solid #d1d5db;
+		border: 1px solid var(--pdf-border-strong);
 		text-align: left;
 		font-size: 7px;
 		font-weight: 800;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		color: #374151;
-		background: #f3f4f6;
+		color: var(--pdf-text-secondary);
+		background: var(--pdf-surface-header);
 	}
 
 	.pdf-table td {
 		padding: 5px 6px;
-		border: 1px solid #e5e7eb;
+		border: 1px solid var(--pdf-border);
 		vertical-align: top;
-		color: #111827;
+		color: var(--pdf-text);
 		font-size: 8.5px;
 		line-height: 1.35;
 		word-break: break-word;
@@ -680,8 +679,8 @@
 	}
 
 	.pdf-table tfoot td {
-		border-top: 2px solid #111827;
-		background: #fff7ed;
+		border-top: 2px solid var(--pdf-text);
+		background: var(--pdf-status-bg);
 		font-weight: 800;
 	}
 
@@ -689,7 +688,7 @@
 		text-align: right;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
-		color: #374151;
+		color: var(--pdf-text-secondary);
 	}
 
 	.pdf-approval-table th:first-child,
@@ -721,12 +720,12 @@
 	.pdf-empty {
 		margin: 0;
 		padding: 10px;
-		border: 1px dashed #d1d5db;
+		border: 1px dashed var(--pdf-border-strong);
 		border-radius: 8px;
-		background: #f9fafb;
+		background: var(--pdf-surface-muted);
 		font-size: 9.5px;
 		font-weight: 600;
-		color: #6b7280;
+		color: var(--pdf-text-muted);
 	}
 
 	.pdf-export-mode .pdf-preview-sheet {
@@ -773,7 +772,7 @@
 		.modal-overlay,
 		.modal-container {
 			position: static !important;
-			background: #ffffff !important;
+			background: var(--pdf-bg) !important;
 			box-shadow: none !important;
 		}
 
@@ -806,12 +805,12 @@
 		height: 8px;
 		margin-top: 6px;
 		border-radius: 999px;
-		background: #64748b;
+		background: var(--pdf-text-slate);
 	}
 
 	.pdf-audit-content {
-		border: 1px solid #e2e8f0;
-		background: #f8fafc;
+		border: 1px solid var(--pdf-border-slate);
+		background: var(--pdf-surface-subtle);
 		border-radius: 8px;
 		padding: 8px 10px;
 	}
@@ -821,12 +820,12 @@
 		justify-content: space-between;
 		gap: 12px;
 		font-size: 10px;
-		color: #475569;
+		color: var(--pdf-text-soft);
 		margin-bottom: 4px;
 	}
 
 	.pdf-audit-meta strong {
-		color: #0f172a;
+		color: var(--pdf-text-strong);
 		font-weight: 700;
 	}
 
@@ -834,7 +833,7 @@
 	.pdf-comment-message {
 		font-size: 10.5px;
 		line-height: 1.5;
-		color: #1e293b;
+		color: var(--pdf-text-heading-soft);
 		margin: 0;
 		white-space: pre-wrap;
 	}
@@ -850,9 +849,9 @@
 
 	.line-view-table-head {
 		@apply grid grid-cols-12 items-center gap-3 rounded-md border px-3 py-2 text-xs font-semibold;
-		background: #f8fafc;
-		border-color: #eef2f7;
-		color: #334155;
+		background: var(--pdf-surface-subtle);
+		border-color: var(--pdf-border-muted);
+		color: var(--pdf-text-label);
 	}
 
 	.line-view-group {
@@ -865,23 +864,23 @@
 
 	.line-view-category span {
 		@apply inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold leading-none;
-		background: #fffdfb;
-		border-color: #f7e4d7;
-		color: #c2410c;
+		background: var(--pdf-surface-warm);
+		border-color: var(--pdf-border-warm);
+		color: var(--pdf-brand-dark);
 	}
 
 	.line-view-row {
 		@apply grid grid-cols-12 items-center gap-3 border-b px-3 py-2 text-[13px] transition;
-		border-color: #f1f5f9;
+		border-color: var(--pdf-border-faint);
 	}
 
 	.line-view-row:hover {
-		background: #fffdfb;
+		background: var(--pdf-surface-warm);
 	}
 
 	.line-view-empty {
-		@apply rounded-md border border-dashed px-3 py-5 text-center text-xs text-gray-400;
-		border-color: #e5e7eb;
+		@apply rounded-md border border-dashed px-3 py-5 text-center text-xs;
+		border-color: var(--pdf-border);
 	}
 }
 /* =========================
@@ -890,9 +889,13 @@
 @layer components {
 	.form-section-header {
 		@apply mb-3 mt-4 flex h-9 items-center gap-2 rounded-lg border px-3;
-		background: linear-gradient(180deg, #ffffff 0%, #fbfbfa 100%);
+		background: linear-gradient(
+			180deg,
+			var(--pdf-bg) 0%,
+			var(--pdf-surface-end) 100%
+		);
 		border-color: var(--color-border);
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+		box-shadow: var(--pdf-shadow-xs);
 	}
 
 	.form-section-header-accent {
@@ -1054,23 +1057,6 @@
 
 	.epf-section-content[hidden] {
 		display: none;
-	}
-
-	/* =====================================================
-	   DATE RANGE
-	   No bordered card appearance
-	===================================================== */
-
-	.date-range-card {
-		min-width: 0;
-		padding: var(--space-3) 0;
-
-		border: 0;
-		border-radius: 0;
-
-		background-color: transparent;
-		color: var(--color-text-primary);
-		box-shadow: none;
 	}
 
 	/* =====================================================
@@ -1720,7 +1706,8 @@ pagination.
 }
 
 /* =====================================================
-ACTIVITY DETAILS CONTENT &  COMPACT DATE RANGE CARD
+ACTIVITY DETAILS
+Responsive enterprise detail layout
 ===================================================== */
 
 @layer components {
@@ -1729,23 +1716,37 @@ ACTIVITY DETAILS CONTENT &  COMPACT DATE RANGE CARD
 		width: 100%;
 		min-width: 0;
 		flex-direction: column;
-		gap: var(--space-4);
+		gap: var(--space-3);
 
 		padding: var(--space-3);
 	}
 
+	/* =====================================================
+	   PRIMARY DETAILS
+	   Branch, Department, Vertical, Zone, Created, Budget
+	===================================================== */
+
 	.activity-details-primary-grid {
 		display: grid;
+		width: 100%;
 		min-width: 0;
-		grid-template-columns: repeat(1, minmax(0, 1fr));
-		gap: var(--space-3);
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		align-items: start;
+		gap: var(--space-3) var(--space-2);
 	}
+
+	/* =====================================================
+	   SECONDARY DETAILS
+	   Location, Description, Objective
+	===================================================== */
 
 	.activity-details-secondary-grid {
 		display: grid;
+		width: 100%;
 		min-width: 0;
-		grid-template-columns: repeat(1, minmax(0, 1fr));
-		gap: var(--space-4);
+		grid-template-columns: minmax(0, 1fr);
+		align-items: start;
+		gap: var(--space-3);
 
 		padding-top: var(--space-1);
 	}
@@ -1756,18 +1757,45 @@ ACTIVITY DETAILS CONTENT &  COMPACT DATE RANGE CARD
 
 	.activity-detail-item {
 		display: flex;
+		width: 100%;
 		min-width: 0;
 		flex-direction: column;
 		gap: var(--space-1);
 
-		padding: var(--space-1) var(--space-1);
+		padding: var(--space-1);
 	}
+
+	/*
+	 * Location, Description and Objective use this class.
+	 * They occupy the full grid width until desktop.
+	 */
+	.activity-detail-item-wide {
+		grid-column: 1 / -1;
+	}
+
+	/*
+	 * Optional utility when a field should occupy two columns.
+	 */
+	.activity-detail-item-span-2 {
+		grid-column: span 2;
+	}
+
+	/*
+	 * Optional utility when a field must always occupy a full row.
+	 */
+	.activity-detail-item-full {
+		grid-column: 1 / -1;
+	}
+
+	/* =====================================================
+	   LABEL
+	===================================================== */
 
 	.activity-detail-label {
 		display: block;
 		min-width: 0;
 
-		color: var(--color-text-muted);
+		color: var(--color-text-secondary);
 
 		font-family: var(--font-sans);
 		font-size: var(--font-size-2xs);
@@ -1775,9 +1803,16 @@ ACTIVITY DETAILS CONTENT &  COMPACT DATE RANGE CARD
 		letter-spacing: var(--tracking-wide);
 		line-height: 1;
 		text-transform: uppercase;
+
+		overflow-wrap: anywhere;
 	}
 
+	/* =====================================================
+	   VALUE
+	===================================================== */
+
 	.activity-detail-value {
+		width: 100%;
 		min-width: 0;
 		margin: 0;
 
@@ -1791,6 +1826,7 @@ ACTIVITY DETAILS CONTENT &  COMPACT DATE RANGE CARD
 
 	.activity-detail-value-truncate {
 		overflow: hidden;
+
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
@@ -1798,7 +1834,12 @@ ACTIVITY DETAILS CONTENT &  COMPACT DATE RANGE CARD
 	.activity-detail-value-wrap {
 		overflow-wrap: anywhere;
 		word-break: break-word;
+		white-space: normal;
 	}
+
+	/* =====================================================
+	   SEE MORE BUTTON
+	===================================================== */
 
 	.activity-detail-more {
 		display: inline;
@@ -1811,13 +1852,19 @@ ACTIVITY DETAILS CONTENT &  COMPACT DATE RANGE CARD
 
 		background-color: transparent;
 		color: var(--color-text-link);
+		box-shadow: none;
 
 		font: inherit;
 		font-weight: var(--font-weight-medium);
 		line-height: inherit;
+		text-align: left;
 		text-decoration: none;
 
 		cursor: pointer;
+
+		transition:
+			color var(--duration-fast) var(--ease-standard),
+			box-shadow var(--duration-fast) var(--ease-standard);
 	}
 
 	.activity-detail-more:hover {
@@ -1832,157 +1879,124 @@ ACTIVITY DETAILS CONTENT &  COMPACT DATE RANGE CARD
 	}
 
 	/* =====================================================
-	   DATE RANGE
+	   VERY SMALL MOBILE
+	   All fields become one column.
 	===================================================== */
 
-	.date-range-card {
-		width: 100%;
-		min-width: 0;
+	@media (max-width: 379px) {
+		.activity-details-content {
+			gap: var(--space-2);
+			padding: var(--space-2);
+		}
 
-		padding: var(--space-2) var(--space-4);
+		.activity-details-primary-grid,
+		.activity-details-secondary-grid {
+			grid-template-columns: minmax(0, 1fr);
+			gap: var(--space-2);
+		}
 
-		border: 0;
-		border-radius: var(--radius-sm);
-
-		background-color: var(--color-bg-surface-subtle);
-		color: var(--color-text-primary);
-		box-shadow: none;
+		.activity-detail-item,
+		.activity-detail-item-wide,
+		.activity-detail-item-span-2,
+		.activity-detail-item-full {
+			grid-column: auto;
+		}
 	}
 
-	.date-range-content {
-		display: flex;
-		min-width: 0;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-3);
-	}
+	/* =====================================================
+	   MOBILE / SMALL TABLET
+	   Primary details stay two columns.
+	   Secondary details stay full width.
+	===================================================== */
 
-	.date-range-side {
-		min-width: 0;
-		flex: 0 0 auto;
-	}
+	@media (min-width: 480px) {
+		.activity-details-primary-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			column-gap: var(--space-3);
+		}
 
-	.date-range-side-left {
-		text-align: left;
-	}
-
-	.date-range-side-right {
-		text-align: right;
-	}
-
-	.date-range-label {
-		margin: 0;
-
-		color: var(--color-text-brand);
-
-		font-size: var(--font-size-2xs);
-		font-weight: var(--font-weight-medium);
-		letter-spacing: var(--tracking-wide);
-		line-height: 1;
-		text-transform: uppercase;
-	}
-
-	.date-range-value {
-		margin: var(--space-1) 0 0;
-		overflow: hidden;
-
-		color: var(--color-text-primary);
-
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-tight);
-		letter-spacing: var(--tracking-normal);
-
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.date-range-center {
-		display: flex;
-		min-width: 0;
-		flex: 1 1 auto;
-		align-items: center;
-		justify-content: center;
-
-		padding-inline: var(--space-2);
-	}
-
-	.date-range-line-wrap {
-		position: relative;
-
-		display: flex;
-		width: min(12rem, 100%);
-		min-width: 4rem;
-		align-items: center;
-	}
-
-	.date-range-line {
-		width: 100%;
-		height: var(--border-width-default);
-
-		background-color: var(--color-brand-soft);
-	}
-
-	.date-range-arrow {
-		position: absolute;
-		right: 0;
-
-		width: var(--space-1-5);
-		height: var(--space-1-5);
-
-		border-top: var(--border-width-default) solid var(--color-brand);
-		border-right: var(--border-width-default) solid var(--color-brand);
-
-		transform: rotate(45deg);
-	}
-
-	.date-range-pill {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-
-		padding: var(--space-1) var(--space-2);
-
-		border: var(--border-width-default) solid var(--color-brand-soft);
-		border-radius: var(--radius-full);
-
-		background-color: var(--color-bg-surface);
-		color: var(--color-text-brand);
-		box-shadow: var(--shadow-xs);
-
-		font-size: var(--font-size-2xs);
-		font-weight: var(--font-weight-medium);
-		line-height: 1;
-		white-space: nowrap;
-
-		transform: translate(-50%, -50%);
+		.activity-details-secondary-grid {
+			grid-template-columns: minmax(0, 1fr);
+		}
 	}
 
 	/* =====================================================
 	   TABLET
+	   Primary details become three columns.
+	   Location, Description and Objective remain single-column.
 	===================================================== */
 
 	@media (min-width: 640px) {
 		.activity-details-primary-grid {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: var(--space-3);
+		}
+
+		.activity-details-secondary-grid {
+			grid-template-columns: minmax(0, 1fr);
+			gap: var(--space-3);
+		}
+
+		.activity-details-secondary-grid .activity-detail-item-wide {
+			grid-column: 1 / -1;
 		}
 	}
 
+	/* =====================================================
+	   TABLET LANDSCAPE
+	   Primary details become four columns.
+	   Narrative fields remain full width.
+	===================================================== */
+
 	@media (min-width: 768px) {
+		.activity-details-primary-grid {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+
 		.activity-details-secondary-grid {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
+			grid-template-columns: minmax(0, 1fr);
+			gap: var(--space-3);
+		}
+
+		.activity-details-secondary-grid .activity-detail-item-wide {
+			grid-column: 1 / -1;
 		}
 	}
 
 	/* =====================================================
 	   DESKTOP
+	   Primary details become five columns.
+	   Secondary fields become three equal columns.
 	===================================================== */
 
 	@media (min-width: 1024px) {
+		.activity-details-content {
+			gap: var(--space-4);
+		}
+
 		.activity-details-primary-grid {
-			grid-template-columns: repeat(4, minmax(0, 1fr));
+			grid-template-columns: repeat(5, minmax(0, 1fr));
+			gap: var(--space-3);
+		}
+
+		.activity-details-secondary-grid {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+			gap: var(--space-4);
+		}
+
+		.activity-details-secondary-grid .activity-detail-item-wide {
+			grid-column: auto;
+		}
+
+		.activity-details-secondary-grid .activity-detail-item-full {
+			grid-column: 1 / -1;
 		}
 	}
+
+	/* =====================================================
+	   LARGE DESKTOP
+	   All six primary values fit in one row.
+	===================================================== */
 
 	@media (min-width: 1280px) {
 		.activity-details-primary-grid {
@@ -1991,38 +2005,302 @@ ACTIVITY DETAILS CONTENT &  COMPACT DATE RANGE CARD
 	}
 
 	/* =====================================================
-	   MOBILE DATE RANGE
+	   EXTRA LARGE DESKTOP
+	   Keep six columns and slightly increase spacing.
 	===================================================== */
 
-	@media (max-width: 480px) {
-		.activity-details-content {
-			gap: var(--space-3);
-			padding: var(--space-3);
+	@media (min-width: 1536px) {
+		.activity-details-primary-grid {
+			grid-template-columns: repeat(6, minmax(0, 1fr));
+			column-gap: var(--space-4);
 		}
+	}
 
+	/* =====================================================
+	   REDUCED MOTION
+	===================================================== */
+
+	@media (prefers-reduced-motion: reduce) {
+		.activity-detail-more {
+			transition-duration: 0.01ms;
+		}
+	}
+}
+
+/* =====================================================
+   COMPACT DATE RANGE
+   Theme-aware animated event timeline
+===================================================== */
+
+@layer components {
+	.date-range-card {
+		position: relative;
+
+		width: 100%;
+		min-width: 0;
+		overflow: hidden;
+
+		padding: var(--space-2) var(--space-3);
+
+		border: var(--border-width-default) solid var(--epf-card-border);
+		border-radius: var(--radius-sm);
+
+		background-color: var(--epf-card-bg);
+		color: var(--color-text-primary);
+		box-shadow: none;
+
+		isolation: isolate;
+
+		transition:
+			background-color var(--duration-fast) var(--ease-standard),
+			border-color var(--duration-fast) var(--ease-standard),
+			box-shadow var(--duration-fast) var(--ease-standard);
+	}
+
+	/*
+	 * Restrained industrial accent.
+	 * Uses only 2px and does not dominate the card.
+	 */
+
+	/* =====================================================
+	   LAYOUT
+	===================================================== */
+
+	.date-range-content {
+		display: grid;
+		min-width: 0;
+		grid-template-columns:
+			minmax(5.5rem, auto)
+			minmax(5rem, 1fr)
+			minmax(5.5rem, auto);
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	.date-range-side {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-0-5);
+	}
+
+	.date-range-side-left {
+		align-items: flex-start;
+		text-align: left;
+	}
+
+	.date-range-side-right {
+		align-items: flex-end;
+		text-align: right;
+	}
+
+	/* =====================================================
+	   TYPOGRAPHY
+	===================================================== */
+
+	.date-range-label {
+		display: block;
+		margin: 0;
+
+		color: var(--color-text-muted);
+
+		font-family: var(--font-mono);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		letter-spacing: var(--tracking-wide);
+		line-height: 1;
+		text-transform: uppercase;
+	}
+
+	.date-range-value {
+		display: block;
+		max-width: 100%;
+		margin: 0;
+		overflow: hidden;
+
+		color: var(--color-text-primary);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-style: normal;
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+		letter-spacing: var(--tracking-normal);
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* =====================================================
+	   TIMELINE
+	===================================================== */
+
+	.date-range-center {
+		display: flex;
+		min-width: 0;
+		align-items: center;
+		justify-content: center;
+
+		padding-inline: var(--space-1);
+	}
+
+	.date-range-line-wrap {
+		position: relative;
+
+		display: flex;
+		width: min(11rem, 100%);
+		min-width: 4.5rem;
+		height: var(--control-height-xs);
+		align-items: center;
+		justify-content: center;
+	}
+
+	.date-range-line {
+		position: absolute;
+		right: var(--space-1);
+		left: var(--space-1);
+
+		height: var(--border-width-default);
+
+		background-color: var(--color-border-strong);
+	}
+
+	.date-range-start-dot {
+		position: absolute;
+		left: 0;
+		z-index: 2;
+
+		width: var(--space-1-5);
+		height: var(--space-1-5);
+
+		border: var(--border-width-default) solid var(--color-icon-secondary);
+		border-radius: var(--radius-full);
+
+		background-color: var(--epf-card-bg);
+
+		transition:
+			background-color var(--duration-fast) var(--ease-standard),
+			border-color var(--duration-fast) var(--ease-standard),
+			transform var(--duration-fast) var(--ease-standard);
+	}
+
+	.date-range-arrow {
+		position: absolute;
+		right: 0;
+		z-index: 2;
+
+		width: var(--space-1-5);
+		height: var(--space-1-5);
+
+		border-top: var(--border-width-default) solid var(--color-icon-secondary);
+		border-right: var(--border-width-default) solid var(--color-icon-secondary);
+
+		transform: rotate(45deg);
+
+		transition:
+			border-color var(--duration-fast) var(--ease-standard),
+			transform var(--duration-fast) var(--ease-standard);
+	}
+
+	/* =====================================================
+	   DURATION LABEL
+	===================================================== */
+
+	.date-range-pill {
+		position: relative;
+		z-index: 3;
+
+		display: inline-flex;
+		max-width: calc(100% - var(--space-6));
+		min-height: 1.25rem;
+		align-items: center;
+		justify-content: center;
+
+		padding: var(--space-0-5) var(--space-2);
+
+		border: var(--border-width-default) solid var(--epf-tag-border);
+		border-radius: var(--radius-xs);
+
+		background-color: var(--epf-tag-bg);
+		color: var(--epf-tag-text);
+		box-shadow: var(--shadow-xs);
+
+		font-family: var(--font-mono);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-medium);
+		letter-spacing: 0.01em;
+		line-height: 1;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+
+		transition:
+			background-color var(--duration-fast) var(--ease-standard),
+			border-color var(--duration-fast) var(--ease-standard),
+			color var(--duration-fast) var(--ease-standard),
+			transform var(--duration-fast) var(--ease-standard);
+	}
+
+	.date-range-card:hover .date-range-pill {
+		border-color: var(--color-brand-soft);
+		background-color: var(--color-brand-subtle);
+		color: var(--color-brand-active);
+		transform: translateY(calc(var(--space-0-5) * -1));
+	}
+
+	/* =====================================================
+	   TABLET / MOBILE
+	===================================================== */
+
+	@media (max-width: 640px) {
 		.date-range-card {
-			padding: var(--space-3);
+			padding: var(--space-2) var(--space-3);
 		}
 
 		.date-range-content {
-			display: grid;
+			grid-template-columns:
+				minmax(4.75rem, auto)
+				minmax(3.5rem, 1fr)
+				minmax(4.75rem, auto);
+			gap: var(--space-2);
+		}
+
+		.date-range-center {
+			padding-inline: 0;
+		}
+
+		.date-range-line-wrap {
+			min-width: 3.5rem;
+		}
+
+		.date-range-pill {
+			padding-inline: var(--space-1-5);
+		}
+	}
+
+	@media (max-width: 420px) {
+		.date-range-card {
+			padding: var(--space-2);
+		}
+
+		.date-range-content {
 			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-			gap: var(--space-3);
+			gap: var(--space-2);
 		}
 
 		.date-range-center {
 			grid-column: 1 / -1;
 			grid-row: 2;
 
-			padding-inline: 0;
+			width: 100%;
 		}
 
 		.date-range-line-wrap {
 			width: 100%;
+			max-width: none;
 		}
 
 		.date-range-side-right {
-			text-align: right;
+			align-items: flex-end;
 		}
 	}
 }

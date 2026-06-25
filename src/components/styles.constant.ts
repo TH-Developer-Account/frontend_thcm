@@ -31,7 +31,7 @@ const STATUS_STYLE_MAP: Record<string, string> = {
 		"border border-orange-200 bg-orange-50 text-orange-700 hover:border-red-400 hover:bg-red-100",
 };
 
-const DEFAULT_STATUS_STYLE = "bg-transparent text-gray-700 ring-gray-200";
+const DEFAULT_STATUS_STYLE = "bg-zinc-200 text-zinc-800 ring-zinc-200";
 
 const normalizeStyleKey = (value?: string | null) =>
 	String(value ?? "")

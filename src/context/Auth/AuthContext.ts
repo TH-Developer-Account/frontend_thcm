@@ -11,6 +11,7 @@ export interface User {
 	last_name: string;
 	phone_number: string;
 	role?: "ADMIN" | "DEALER" | "EMPLOYEE" | undefined;
+	profile_image?: string;
 }
 
 export interface ToastContextType {

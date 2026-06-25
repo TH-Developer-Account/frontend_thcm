@@ -93,6 +93,8 @@
 		--font-weight-regular: 400;
 		--font-weight-medium: 500;
 		--font-weight-semibold: 600;
+		--font-weight-small: var(--font-weight-regular);
+		--type-control-weight: var(--font-weight-medium);
 
 		/* Do not introduce 700 as a standard UI weight. */
 
@@ -108,6 +110,7 @@
 		--line-height-normal: 1.5;
 		--line-height-relaxed: 1.65;
 		--line-height-prose: 1.75;
+		--line-height-control: var(--line-height-none);
 
 		/* =====================================================
 		   LETTER SPACING
@@ -122,6 +125,7 @@
 		--tracking-wide: 0.06em;
 		--tracking-eyebrow: 0.12em;
 		--tracking-technical: 0.08em;
+		--tracking-control: var(--tracking-normal);
 
 		/* =====================================================
 		   TYPOGRAPHIC SPACING

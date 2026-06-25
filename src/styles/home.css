@@ -1,60 +1,8 @@
-/* Home-screen replica tokens. Add these inside your existing :root/[data-theme]. */
+/* Home-screen typography aliases. Colour tokens are owned by color.css. */
 @layer base {
 	:root {
 		--font-home-sans: "Barlow", var(--font-sans);
 		--font-home-display: "Barlow Condensed", "Barlow", var(--font-sans);
-
-		--home-page-bg: #f0ece6;
-		--home-header-bg: #ffffff;
-		--home-subheader-bg: #f8f5f1;
-		--home-card-bg: #ffffff;
-		--home-card-hover-bg: #faf7f4;
-		--home-card-active-bg: #fff7f2;
-		--home-card-border: #e8e2da;
-		--home-card-border-hover: #d4cdc4;
-		--home-card-active-border: #f5c9aa;
-		--home-divider: #e0d9d0;
-		--home-title: #1a1a1a;
-		--home-title-active: #c94800;
-		--home-user-text: #c4c9ce;
-		--home-description: #aaaaaa;
-		--home-meta: #aaaaaa;
-		--home-section-label: #bbbbbb;
-		--home-arrow: #dddddd;
-		--home-status-text: #bbbbbb;
-		--home-status-build: #cccccc;
-		--home-status-bg: #f8f5f1;
-		--home-success-dot: #3a9e55;
-		--home-warning-dot: #c49020;
-		--home-active-badge-bg: rgb(243 90 0 / 6%);
-		--home-active-badge-border: rgb(243 90 0 / 25%);
-	}
-
-	[data-theme="dark"] {
-		--home-page-bg: #111111;
-		--home-header-bg: #0a0a0a;
-		--home-subheader-bg: #161616;
-		--home-card-bg: #1a1a1a;
-		--home-card-hover-bg: #1f1f1f;
-		--home-card-active-bg: #1e1512;
-		--home-card-border: #242424;
-		--home-card-border-hover: #333333;
-		--home-card-active-border: #3a2010;
-		--home-divider: #222222;
-		--home-title: #e8e4de;
-		--home-title-active: var(--color-brand);
-		--home-user-text: #c4c9ce;
-		--home-description: #a8b0b7;
-		--home-meta: #929aa2;
-		--home-section-label: #858e96;
-		--home-arrow: #737d86;
-		--home-status-text: #89929a;
-		--home-status-build: #929aa2;
-		--home-status-bg: #0e0e0e;
-		--home-success-dot: #2a6b3a;
-		--home-warning-dot: #a07820;
-		--home-active-badge-bg: rgb(243 90 0 / 8%);
-		--home-active-badge-border: rgb(243 90 0 / 20%);
 	}
 }
 
@@ -476,52 +424,6 @@
    HOME ACTION CARD — DARK THEME SURFACE ENHANCEMENT
 
 ========================================================= */
-
-@layer base {
-	[data-theme="dark"] {
-		/*
-		 * Existing page background: #111111
-		 *
-		 * The card is intentionally lifted above the page using
-		 * a slightly cooler graphite surface.
-		 */
-		--home-card-bg: rgb(23 28 36);
-		--home-card-hover-bg: rgb(30 36 46);
-
-		/*
-		 * Existing active card remains warm and brand-related.
-		 */
-		--home-card-active-bg: rgb(31 23 20);
-
-		/*
-		 * More visible border than the previous #242424.
-		 * The hover border is equivalent to a restrained gray-700.
-		 */
-		--home-card-border: rgb(42 50 61);
-		--home-card-border-hover: rgb(55 65 81);
-		--home-card-active-border: rgb(74 43 27);
-
-		/*
-		 * Default elevation remains extremely subtle.
-		 */
-		--home-card-shadow: 0 1px 2px rgb(0 0 0 / 24%), 0 3px 8px rgb(0 0 0 / 14%);
-
-		/*
-		 * Hover glow:
-		 * - faint light edge
-		 * - restrained dark elevation
-		 * - intentionally weaker than Tailwind shadow-lg
-		 */
-		--home-card-shadow-hover:
-			0 10px 15px -3px rgb(255 255 255 / 6%),
-			0 4px 6px -2px rgb(255 255 255 / 3%), 0 8px 20px rgb(0 0 0 / 24%);
-
-		/*
-		 * Very light translucent tint applied over the hover surface.
-		 */
-		--home-card-hover-tint: rgb(255 255 255 / 2.5%);
-	}
-}
 
 @layer components {
 	/* =====================================================

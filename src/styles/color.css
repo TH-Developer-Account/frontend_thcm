@@ -494,3 +494,118 @@
 		--action-card-icon-featured-text: var(--color-brand);
 	}
 }
+
+/* =========================================================
+   CENTRALIZED COMPONENT COLOUR TOKENS
+   All component styles consume these values via var(...).
+========================================================= */
+@layer base {
+	:root {
+		/* Compatibility aliases */
+		--color-blue: var(--color-blue-600);
+		--color-bg-input: var(--color-input-bg);
+		--color-brand-dark: var(--color-brand-active);
+		--color-brand-softest: var(--color-brand-subtle);
+		--color-yellow-warm: var(--color-amber-600);
+		--color-effect-sheen: rgb(255 255 255 / 10%);
+
+		/* Home screen */
+		--home-page-bg: #f0ece6;
+		--home-header-bg: #ffffff;
+		--home-subheader-bg: #f8f5f1;
+		--home-card-bg: #ffffff;
+		--home-card-hover-bg: #faf7f4;
+		--home-card-active-bg: #fff7f2;
+		--home-card-border: #e8e2da;
+		--home-card-border-hover: #d4cdc4;
+		--home-card-active-border: #f5c9aa;
+		--home-divider: #e0d9d0;
+		--home-title: #1a1a1a;
+		--home-title-active: #c94800;
+		--home-user-text: #c4c9ce;
+		--home-description: #aaaaaa;
+		--home-meta: #aaaaaa;
+		--home-section-label: #bbbbbb;
+		--home-arrow: #dddddd;
+		--home-status-text: #bbbbbb;
+		--home-status-build: #cccccc;
+		--home-status-bg: #f8f5f1;
+		--home-success-dot: #3a9e55;
+		--home-warning-dot: #c49020;
+		--home-active-badge-bg: rgb(243 90 0 / 6%);
+		--home-active-badge-border: rgb(243 90 0 / 25%);
+		--home-card-shadow: var(--shadow-xs);
+		--home-card-shadow-hover: var(--shadow-md);
+		--home-card-hover-tint: transparent;
+
+		/* Marketing comments */
+		--comment-panel-shadow: var(--shadow-xs);
+
+		/* Activity Planner printable document palette */
+		--pdf-bg: #ffffff;
+		--pdf-text: #111827;
+		--pdf-text-secondary: #374151;
+		--pdf-text-muted: #6b7280;
+		--pdf-text-slate: #64748b;
+		--pdf-text-soft: #475569;
+		--pdf-text-strong: #0f172a;
+		--pdf-text-body: #1f2937;
+		--pdf-text-heading-soft: #1e293b;
+		--pdf-text-label: #334155;
+		--pdf-brand: #f35a00;
+		--pdf-brand-dark: #c2410c;
+		--pdf-status-text: #9a3412;
+		--pdf-status-bg: #fff7ed;
+		--pdf-status-border: #fed7aa;
+		--pdf-hero-bg-start: #fffaf7;
+		--pdf-field-bg: #fcfcfd;
+		--pdf-surface-subtle: #f8fafc;
+		--pdf-surface-muted: #f9fafb;
+		--pdf-surface-header: #f3f4f6;
+		--pdf-surface-warm: #fffdfb;
+		--pdf-surface-end: #fbfbfa;
+		--pdf-border: #e5e7eb;
+		--pdf-border-strong: #d1d5db;
+		--pdf-border-soft: #edf0f3;
+		--pdf-border-slate: #e2e8f0;
+		--pdf-border-muted: #eef2f7;
+		--pdf-border-faint: #f1f5f9;
+		--pdf-border-warm: #f7e4d7;
+		--pdf-shadow: 0 18px 45px rgb(15 23 42 / 18%);
+		--pdf-shadow-xs: 0 1px 2px rgb(15 23 42 / 4%);
+	}
+
+	[data-theme="dark"] {
+		--color-effect-sheen: rgb(255 255 255 / 10%);
+
+		--home-page-bg: #111111;
+		--home-header-bg: #0a0a0a;
+		--home-subheader-bg: #161616;
+		--home-card-bg: rgb(23 28 36);
+		--home-card-hover-bg: rgb(30 36 46);
+		--home-card-active-bg: rgb(31 23 20);
+		--home-card-border: rgb(42 50 61);
+		--home-card-border-hover: rgb(55 65 81);
+		--home-card-active-border: rgb(74 43 27);
+		--home-divider: #222222;
+		--home-title: #e8e4de;
+		--home-title-active: var(--color-brand);
+		--home-user-text: #c4c9ce;
+		--home-description: #a8b0b7;
+		--home-meta: #929aa2;
+		--home-section-label: #858e96;
+		--home-arrow: #737d86;
+		--home-status-text: #89929a;
+		--home-status-build: #929aa2;
+		--home-status-bg: #0e0e0e;
+		--home-success-dot: #2a6b3a;
+		--home-warning-dot: #a07820;
+		--home-active-badge-bg: rgb(243 90 0 / 8%);
+		--home-active-badge-border: rgb(243 90 0 / 20%);
+		--home-card-shadow: 0 1px 2px rgb(0 0 0 / 24%), 0 3px 8px rgb(0 0 0 / 14%);
+		--home-card-shadow-hover:
+			0 10px 15px -3px rgb(255 255 255 / 6%),
+			0 4px 6px -2px rgb(255 255 255 / 3%), 0 8px 20px rgb(0 0 0 / 24%);
+		--home-card-hover-tint: rgb(255 255 255 / 2.5%);
+	}
+}

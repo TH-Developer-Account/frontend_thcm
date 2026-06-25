@@ -10,13 +10,13 @@
 	html {
 		@apply min-h-full min-w-80;
 
-		background-color: var(--color-bg-page);
+		background-color: transparent;
 	}
 
 	body {
 		@apply m-0 min-h-dvh min-w-80;
 
-		background-color: var(--color-bg-page);
+		background-color: transparent;
 		color: var(--color-text-primary);
 	}
 

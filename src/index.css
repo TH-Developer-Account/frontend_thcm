@@ -13,14 +13,14 @@
 
 @import "./styles/color.css";
 @import "./styles/theme.css";
-@import "./styles/token.css";
+@import "./styles/typography.css";
 
 /* =========================================================
    GLOBAL SYSTEM STYLES
    ========================================================= */
 
+@import "./styles/token.css";
 @import "./styles/globals.css";
-@import "./styles/typography.css";
 @import "./styles/layout.css";
 @import "./styles/ui.css";
 @import "./styles/form.css";
@@ -30,7 +30,6 @@
 /* =========================================================
    FEATURE AND MODULE STYLES
    ========================================================= */
-
 @import "./components/FormElements/input.css";
 @import "./modules/admin/workflow/workflow.css";
 @import "./modules/admin/business-partners/bp.css";
