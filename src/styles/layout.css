@@ -979,7 +979,7 @@
 
 		font-family: var(--font-sans);
 		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-medium);
+		font-weight: var(--font-weight-regular);
 		line-height: 1;
 		text-align: left;
 		text-decoration: none;
@@ -1021,7 +1021,8 @@
 	.app-sidebar-item-active {
 		border-color: var(--color-brand-soft);
 		background-color: var(--color-brand-subtle);
-		color: var(--color-text-primary);
+		color: var(--color-brand-active);
+		font-weight: var(--font-weight-medium);
 	}
 
 	.app-sidebar-item-active::before {
@@ -1045,7 +1046,7 @@
 	.app-sidebar-item-active:hover {
 		border-color: var(--color-brand-soft);
 		background-color: var(--color-brand-subtle);
-		color: var(--color-text-primary);
+		color: var(--color-brand-active);
 	}
 
 	.app-sidebar-item-active:hover .app-sidebar-icon {
@@ -1061,6 +1062,7 @@
 		border-color: var(--color-border-default);
 		background-color: var(--color-bg-surface-muted);
 		color: var(--color-text-primary);
+		font-weight: var(--font-weight-medium);
 	}
 
 	.app-sidebar-item-expanded .app-sidebar-icon,
@@ -1282,7 +1284,8 @@
 	.app-sidebar-child-link-active {
 		border-color: var(--color-brand-soft);
 		background-color: var(--color-brand-subtle);
-		color: var(--color-text-primary);
+		color: var(--color-brand-active);
+		font-weight: var(--font-weight-medium);
 	}
 
 	.app-sidebar-child-link-active::before {
@@ -1306,7 +1309,7 @@
 	.app-sidebar-child-link-active:hover {
 		border-color: var(--color-brand-soft);
 		background-color: var(--color-brand-subtle);
-		color: var(--color-text-primary);
+		color: var(--color-brand-active);
 	}
 
 	.app-sidebar-child-link-active:hover .app-sidebar-child-icon {
@@ -2213,6 +2216,231 @@ Generic page title container only
 
 		.page-header-title {
 			font-size: var(--font-size-lg);
+		}
+	}
+}
+/* =====================================================
+   RESPONSIVE SAAS SPACING
+===================================================== */
+
+@layer components {
+	.saas-page {
+		width: 100%;
+		min-width: 0;
+
+		padding: var(--page-padding-block-mobile) var(--page-padding-inline-mobile);
+	}
+
+	.saas-page-stack {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--page-section-gap-mobile);
+	}
+
+	.saas-page-header {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--page-header-gap-mobile);
+	}
+
+	.saas-page-header-copy {
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+		gap: var(--page-heading-gap);
+	}
+
+	.saas-page-header-actions {
+		display: flex;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--page-header-actions-gap);
+	}
+
+	.saas-panel {
+		width: 100%;
+		min-width: 0;
+		padding: var(--panel-padding-mobile);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-lg);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.saas-card {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--card-content-gap);
+
+		padding: var(--card-padding-mobile);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-md);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.saas-card-header {
+		display: flex;
+		min-width: 0;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--card-action-gap);
+	}
+
+	.saas-card-copy {
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+		gap: var(--card-header-gap);
+	}
+
+	.saas-toolbar {
+		display: flex;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--toolbar-gap);
+
+		padding: var(--toolbar-padding);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-md);
+		background-color: var(--color-bg-surface);
+	}
+
+	.saas-toolbar-group {
+		display: flex;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--toolbar-group-gap);
+	}
+
+	.saas-form {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--form-section-gap);
+	}
+
+	.saas-form-grid {
+		display: grid;
+		min-width: 0;
+		grid-template-columns: minmax(0, 1fr);
+		column-gap: var(--form-grid-column-gap);
+		row-gap: var(--form-grid-row-gap);
+	}
+
+	.saas-form-field {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--form-field-gap);
+	}
+
+	.saas-form-actions {
+		display: flex;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--form-action-gap);
+	}
+
+	.saas-detail-grid {
+		display: grid;
+		min-width: 0;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--detail-grid-gap);
+	}
+
+	@media (min-width: 640px) {
+		.saas-page {
+			padding: var(--page-padding-block-tablet)
+				var(--page-padding-inline-tablet);
+		}
+
+		.saas-page-stack {
+			gap: var(--page-section-gap-tablet);
+		}
+
+		.saas-panel {
+			padding: var(--panel-padding-tablet);
+		}
+
+		.saas-form-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+
+		.saas-detail-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.saas-page {
+			padding: var(--page-padding-block-desktop)
+				var(--page-padding-inline-desktop);
+		}
+
+		.saas-page-stack {
+			gap: var(--page-section-gap-desktop);
+		}
+
+		.saas-page-header {
+			flex-direction: row;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: var(--page-header-gap-desktop);
+		}
+
+		.saas-page-header-actions {
+			flex: 0 0 auto;
+			justify-content: flex-end;
+		}
+
+		.saas-panel {
+			padding: var(--panel-padding-desktop);
+		}
+
+		.saas-card {
+			padding: var(--card-padding-desktop);
+		}
+
+		.saas-form-grid-3 {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+
+		.saas-form-grid-4 {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+
+		.saas-detail-grid {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+
+	@media (min-width: 1440px) {
+		.saas-page {
+			padding-inline: var(--page-padding-inline-wide);
+		}
+	}
+
+	@media (max-width: 639px) {
+		.saas-form-actions > * {
+			flex: 1 1 auto;
+		}
+
+		.saas-toolbar > * {
+			min-width: 0;
 		}
 	}
 }

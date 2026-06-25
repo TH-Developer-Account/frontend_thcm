@@ -140,7 +140,8 @@ export default function EpfFormFields({
 						<Button
 							type="button"
 							text={previewLoading ? "Loading..." : "Display Approval Flow"}
-							status="brand"
+							appearance="standard"
+							variant="brand"
 							onClick={handlePreviewWorkflow}
 							size="sm"
 							disabled={previewLoading}

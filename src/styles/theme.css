@@ -219,5 +219,73 @@
 
 		--epc-topbar-mobile-gap: var(--space-2);
 		--epc-topbar-mobile-search-width: 100%;
+
+		/* =====================================================
+   SAAS CONTENT SPACING
+   Add inside theme.css :root
+===================================================== */
+
+		/* Page rhythm */
+		--page-padding-inline-mobile: var(--space-3);
+		--page-padding-inline-tablet: var(--space-5);
+		--page-padding-inline-desktop: var(--space-6);
+		--page-padding-inline-wide: var(--space-8);
+
+		--page-padding-block-mobile: var(--space-3);
+		--page-padding-block-tablet: var(--space-4);
+		--page-padding-block-desktop: var(--space-5);
+
+		--page-section-gap-mobile: var(--space-4);
+		--page-section-gap-tablet: var(--space-5);
+		--page-section-gap-desktop: var(--space-6);
+
+		/* Header rhythm */
+		--page-heading-gap: var(--space-1);
+		--page-header-gap-mobile: var(--space-3);
+		--page-header-gap-desktop: var(--space-4);
+		--page-header-actions-gap: var(--space-2);
+
+		/* Panels and cards */
+		--panel-padding-mobile: var(--space-3);
+		--panel-padding-tablet: var(--space-4);
+		--panel-padding-desktop: var(--space-5);
+
+		--card-padding-mobile: var(--space-3);
+		--card-padding-desktop: var(--space-4);
+
+		--card-content-gap: var(--space-3);
+		--card-header-gap: var(--space-1);
+		--card-action-gap: var(--space-2);
+
+		/* Forms */
+		--form-section-gap: var(--space-5);
+		--form-row-gap: var(--space-4);
+		--form-field-gap: var(--space-1);
+		--form-grid-column-gap: var(--space-4);
+		--form-grid-row-gap: var(--space-3);
+		--form-action-gap: var(--space-2);
+
+		/* Tables */
+		--table-cell-padding-inline: var(--space-3);
+		--table-cell-padding-block: var(--space-2-5);
+		--table-header-padding-block: var(--space-2-5);
+		--table-toolbar-gap: var(--space-3);
+		--table-footer-padding: var(--space-3);
+
+		/* Toolbars */
+		--toolbar-gap: var(--space-2);
+		--toolbar-group-gap: var(--space-1);
+		--toolbar-padding: var(--space-3);
+
+		/* Lists and details */
+		--detail-grid-gap: var(--space-3);
+		--detail-item-gap: var(--space-1);
+		--list-item-gap: var(--space-2);
+
+		/* Modal */
+		--modal-header-padding-inline: var(--space-4);
+		--modal-header-padding-block: var(--space-3);
+		--modal-body-padding: var(--space-4);
+		--modal-footer-padding: var(--space-3) var(--space-4);
 	}
 }

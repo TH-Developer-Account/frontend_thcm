@@ -72,11 +72,10 @@ export default function EpfForm(props: EpfFormProps) {
 							type="button"
 							text="Cancel"
 							onClick={onCancel}
-							className="text-red-600"
 							size="sm"
 							Icon={X}
-							status="brand"
-							iconColor="white"
+							appearance="standard"
+							variant="outline"
 							disabled={submitting}
 						/>
 					)}
@@ -87,9 +86,8 @@ export default function EpfForm(props: EpfFormProps) {
 						onClick={handleReset}
 						Icon={RefreshCcw}
 						size="sm"
-						className="text-red-600"
-						status="brand"
-						iconColor="white"
+						appearance="standard"
+						variant="outline"
 						disabled={submitting}
 					/>
 
@@ -98,9 +96,8 @@ export default function EpfForm(props: EpfFormProps) {
 						onClick={() => handleSubmit(saveStatus)}
 						text={isEditMode ? "Update" : "Submit"}
 						size="sm"
-						className="text-red-600"
-						status="brand"
-						iconColor="white"
+						appearance="standard"
+						variant="brand"
 						Icon={isEditMode ? Save : Send}
 						disabled={submitting}
 					/>

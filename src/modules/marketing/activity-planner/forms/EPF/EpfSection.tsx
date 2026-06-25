@@ -94,9 +94,11 @@ const EpfSection = ({
 					<Button
 						type="button"
 						Icon={Pencil}
-						iconColor="red"
+						text="Edit EPF"
 						onClick={onEdit}
 						size="sm"
+						appearance="standard"
+						variant="outline"
 					/>
 				)
 			}

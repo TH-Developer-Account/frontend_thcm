@@ -1,6 +1,22 @@
 /* =========================================================
    typography.css
-   Tata Hitachi — EPC reference typography
+   Tata Hitachi — Modern Enterprise SaaS Typography
+
+   Ownership:
+   - Font families
+   - Font sizes
+   - Font weights
+   - Line heights
+   - Letter spacing
+   - Text hierarchy
+   - Text-specific spacing
+   - Responsive typography
+
+   Notes:
+   - Inter is the primary application font.
+   - JetBrains Mono is reserved for IDs, codes and metadata.
+   - Colours are consumed from color.css.
+   - General layout spacing is consumed from theme.css.
 ========================================================= */
 
 @layer base {
@@ -10,27 +26,64 @@
 		===================================================== */
 
 		--font-sans:
-			"Nunito Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-			sans-serif;
+			"Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+			"Segoe UI", sans-serif;
 
-		--font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+		--font-mono:
+			"JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 
 		/* =====================================================
-		   FONT SIZES
-		   Tuned to match the EPC listing reference.
+		   TYPE SCALE
+		   Compact enterprise SaaS scale
 		===================================================== */
 
+		--font-size-3xs: 0.625rem; /* 10px */
 		--font-size-2xs: 0.6875rem; /* 11px */
 		--font-size-xs: 0.75rem; /* 12px */
 		--font-size-sm: 0.8125rem; /* 13px */
-		--font-size-md: 0.875rem; /* 14px */
-		--font-size-base: 0.9375rem; /* 15px */
+		--font-size-base: 0.875rem; /* 14px */
+		--font-size-md: 0.9375rem; /* 15px */
 		--font-size-lg: 1rem; /* 16px */
 		--font-size-xl: 1.125rem; /* 18px */
-		--font-size-2xl: 1.5rem; /* 24px */
-		--font-size-3xl: 1.75rem; /* 28px */
-		--font-size-4xl: 2.25rem; /* 36px */
-		--font-size-5xl: 3rem; /* 48px */
+		--font-size-2xl: 1.25rem; /* 20px */
+		--font-size-3xl: 1.5rem; /* 24px */
+		--font-size-4xl: 1.875rem; /* 30px */
+		--font-size-5xl: 2.25rem; /* 36px */
+		--font-size-6xl: 3rem; /* 48px */
+
+		/* =====================================================
+		   RESPONSIVE FONT SIZES
+		===================================================== */
+
+		--font-size-display: clamp(
+			var(--font-size-4xl),
+			3vw + 1rem,
+			var(--font-size-6xl)
+		);
+
+		--font-size-page-title: clamp(
+			var(--font-size-xl),
+			1vw + 0.875rem,
+			var(--font-size-3xl)
+		);
+
+		--font-size-section-title: clamp(
+			var(--font-size-lg),
+			0.45vw + 0.9rem,
+			var(--font-size-xl)
+		);
+
+		--font-size-card-title: clamp(
+			var(--font-size-sm),
+			0.2vw + 0.75rem,
+			var(--font-size-base)
+		);
+
+		--font-size-body-responsive: clamp(
+			var(--font-size-sm),
+			0.12vw + 0.78rem,
+			var(--font-size-base)
+		);
 
 		/* =====================================================
 		   FONT WEIGHTS
@@ -41,57 +94,56 @@
 		--font-weight-medium: 500;
 		--font-weight-semibold: 600;
 
+		/* Do not introduce 700 as a standard UI weight. */
+
 		/* =====================================================
 		   LINE HEIGHTS
 		===================================================== */
 
+		--line-height-none: 1;
 		--line-height-display: 1.05;
-		--line-height-heading: 1.18;
-		--line-height-tight: 1.25;
-		--line-height-control: 1.2;
-		--line-height-normal: 1.45;
-		--line-height-relaxed: 1.6;
+		--line-height-heading: 1.2;
+		--line-height-tight: 1.3;
+		--line-height-compact: 1.4;
+		--line-height-normal: 1.5;
+		--line-height-relaxed: 1.65;
+		--line-height-prose: 1.75;
 
 		/* =====================================================
 		   LETTER SPACING
 		===================================================== */
 
 		--tracking-display: -0.04em;
-		--tracking-heading: -0.028em;
-		--tracking-title: -0.018em;
-		--tracking-control: -0.006em;
+		--tracking-heading: -0.025em;
+		--tracking-title: -0.015em;
+		--tracking-tight: -0.01em;
 		--tracking-normal: 0;
-		--tracking-table-head: 0.015em;
-		--tracking-eyebrow: 0.1em;
-		--tracking-wide: 0.055em;
+		--tracking-label: 0.01em;
+		--tracking-wide: 0.06em;
+		--tracking-eyebrow: 0.12em;
+		--tracking-technical: 0.08em;
 
 		/* =====================================================
-		   APPLICATION TYPOGRAPHY ROLES
+		   TYPOGRAPHIC SPACING
+		   Text-specific rhythm only
 		===================================================== */
 
-		--type-page-title-size: var(--font-size-2xl);
-		--type-page-title-weight: var(--font-weight-semibold);
-		--type-page-title-line-height: var(--line-height-heading);
-		--type-page-title-tracking: var(--tracking-heading);
+		--text-gap-2xs: var(--space-0-5);
+		--text-gap-xs: var(--space-1);
+		--text-gap-sm: var(--space-1-5);
+		--text-gap-md: var(--space-2);
+		--text-gap-lg: var(--space-3);
+		--text-gap-xl: var(--space-4);
 
-		--type-page-subtitle-size: var(--font-size-base);
-		--type-page-subtitle-weight: var(--font-weight-regular);
-		--type-page-subtitle-line-height: var(--line-height-normal);
-
-		--type-nav-size: var(--font-size-base);
-		--type-nav-weight: var(--font-weight-regular);
-
-		--type-control-size: var(--font-size-sm);
-		--type-control-weight: var(--font-weight-medium);
-
-		--type-table-head-size: var(--font-size-xs);
-		--type-table-head-weight: var(--font-weight-medium);
-
-		--type-table-cell-size: var(--font-size-md);
-		--type-table-cell-weight: var(--font-weight-regular);
-
-		--type-link-weight: var(--font-weight-medium);
+		--heading-margin-after: var(--space-2);
+		--paragraph-margin-after: var(--space-3);
+		--label-margin-after: var(--space-1);
+		--helper-margin-before: var(--space-1);
 	}
+
+	/* =====================================================
+	   DOCUMENT FOUNDATION
+	===================================================== */
 
 	html {
 		font-family: var(--font-sans);
@@ -108,80 +160,8 @@
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-normal);
 		letter-spacing: var(--tracking-normal);
+
 		color: var(--color-text-primary);
-	}
-
-	h1,
-	h2,
-	h3,
-	h4,
-	h5,
-	h6 {
-		margin: 0;
-
-		font-family: var(--font-sans);
-		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-heading);
-		letter-spacing: var(--tracking-title);
-
-		color: inherit;
-	}
-
-	h1 {
-		font-size: var(--font-size-3xl);
-		font-weight: var(--font-weight-semibold);
-		letter-spacing: var(--tracking-heading);
-	}
-
-	h2 {
-		font-size: var(--font-size-2xl);
-		font-weight: var(--font-weight-semibold);
-	}
-
-	h3 {
-		font-size: var(--font-size-xl);
-		font-weight: var(--font-weight-medium);
-	}
-
-	h4 {
-		font-size: var(--font-size-lg);
-		font-weight: var(--font-weight-medium);
-	}
-
-	h5,
-	h6 {
-		font-size: var(--font-size-md);
-		font-weight: var(--font-weight-medium);
-	}
-
-	p {
-		margin: 0;
-		font: inherit;
-		color: inherit;
-	}
-
-	a {
-		color: var(--color-text-link);
-		font-weight: var(--type-link-weight);
-		text-decoration-thickness: 1px;
-		text-underline-offset: 0.18em;
-
-		transition: color var(--duration-fast) var(--ease-standard);
-	}
-
-	a:hover {
-		color: var(--color-text-link-hover);
-	}
-
-	a:focus-visible {
-		outline: none;
-		box-shadow: var(--shadow-focus-brand);
-	}
-
-	small {
-		color: var(--color-text-muted);
-		font-size: var(--font-size-xs);
-		line-height: var(--line-height-normal);
 	}
 
 	button,
@@ -192,13 +172,121 @@
 		letter-spacing: inherit;
 	}
 
-	button {
-		font-weight: var(--type-control-weight);
+	/* =====================================================
+	   RESET TYPOGRAPHIC MARGINS
+	===================================================== */
+
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6,
+	p,
+	ul,
+	ol,
+	dl,
+	blockquote,
+	figure,
+	pre {
+		margin: 0;
+	}
+
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		font-family: var(--font-sans);
+		color: inherit;
+	}
+
+	/* =====================================================
+	   SEMANTIC HEADINGS
+	===================================================== */
+
+	h1 {
+		font-size: var(--font-size-page-title);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-heading);
+		letter-spacing: var(--tracking-heading);
+	}
+
+	h2 {
+		font-size: var(--font-size-2xl);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-heading);
+		letter-spacing: var(--tracking-title);
+	}
+
+	h3 {
+		font-size: var(--font-size-xl);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-tight);
+		letter-spacing: var(--tracking-title);
+	}
+
+	h4 {
+		font-size: var(--font-size-lg);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+		letter-spacing: var(--tracking-tight);
+	}
+
+	h5 {
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-compact);
+		letter-spacing: var(--tracking-normal);
+	}
+
+	h6 {
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-compact);
+		letter-spacing: var(--tracking-label);
+	}
+
+	p {
+		font-size: inherit;
+		font-weight: inherit;
+		line-height: inherit;
+		color: inherit;
 	}
 
 	strong,
 	b {
-		font-weight: var(--font-weight-semibold);
+		font-weight: var(--font-weight-medium);
+	}
+
+	small {
+		font-size: var(--font-size-xs);
+		line-height: var(--line-height-compact);
+		color: var(--color-text-muted);
+	}
+
+	a {
+		color: var(--color-text-link);
+		text-decoration-line: underline;
+		text-decoration-color: transparent;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+
+		transition:
+			color var(--duration-fast) var(--ease-standard),
+			text-decoration-color var(--duration-fast) var(--ease-standard);
+	}
+
+	a:hover {
+		color: var(--color-text-link-hover);
+		text-decoration-color: currentColor;
+	}
+
+	a:focus-visible {
+		border-radius: var(--radius-xs);
+		outline: none;
+		box-shadow: var(--shadow-focus-brand);
 	}
 
 	code,
@@ -208,21 +296,34 @@
 		font-family: var(--font-mono);
 	}
 
+	code {
+		font-size: 0.92em;
+	}
+
+	kbd {
+		padding: var(--space-0-5) var(--space-1);
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-xs);
+		background-color: var(--color-bg-surface-muted);
+		color: var(--color-text-secondary);
+		box-shadow: var(--shadow-xs);
+
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-none);
+	}
+
 	::selection {
 		background-color: var(--color-selection-bg);
 		color: var(--color-selection-text);
 	}
 }
 
-/* =====================================================
-   SEMANTIC TYPOGRAPHY
-===================================================== */
+/* =========================================================
+   TEXT COLOUR UTILITIES
+========================================================= */
 
 @layer components {
-	/* =====================================================
-	   COLOUR UTILITIES
-	===================================================== */
-
 	.text-primary {
 		color: var(--color-text-primary);
 	}
@@ -235,6 +336,10 @@
 		color: var(--color-text-muted);
 	}
 
+	.text-subtle {
+		color: var(--color-text-subtle);
+	}
+
 	.text-disabled {
 		color: var(--color-text-disabled);
 	}
@@ -243,271 +348,840 @@
 		color: var(--color-text-inverse);
 	}
 
+	.text-brand {
+		color: var(--color-text-brand);
+	}
+
 	.text-link {
 		color: var(--color-text-link);
-		font-weight: var(--type-link-weight);
 	}
 
 	.text-link:hover {
 		color: var(--color-text-link-hover);
 	}
+}
 
-	/* =====================================================
-	   DISPLAY
-	===================================================== */
+/* =========================================================
+   DISPLAY AND PAGE TITLES
+========================================================= */
 
-	.text-hero,
+@layer components {
+	.text-display,
+	.heading-display,
 	.hero-title {
-		font-size: clamp(2.5rem, 5vw, 4.5rem);
+		font-family: var(--font-sans);
+		font-size: var(--font-size-display);
 		font-weight: var(--font-weight-light);
 		line-height: var(--line-height-display);
 		letter-spacing: var(--tracking-display);
 		color: var(--color-text-primary);
 	}
 
-	/* =====================================================
-	   PAGE HEADER
-	===================================================== */
-
 	.text-page-title,
 	.heading-page,
 	.page-title {
-		font-size: var(--type-page-title-size);
-		font-weight: var(--type-page-title-weight);
-		line-height: var(--type-page-title-line-height);
-		letter-spacing: var(--type-page-title-tracking);
+		font-family: var(--font-sans);
+		font-size: var(--font-size-page-title);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-heading);
+		letter-spacing: var(--tracking-heading);
 		color: var(--color-text-primary);
 	}
 
 	.text-page-subtitle,
 	.page-subtitle {
-		font-size: var(--type-page-subtitle-size);
-		font-weight: var(--type-page-subtitle-weight);
-		line-height: var(--type-page-subtitle-line-height);
+		max-width: 70ch;
+
+		font-size: var(--font-size-body-responsive);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
 		letter-spacing: var(--tracking-normal);
+
 		color: var(--color-text-secondary);
 	}
 
-	/* =====================================================
-	   SECTION AND CARD TITLES
-	===================================================== */
+	.page-heading-group {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--text-gap-xs);
+	}
 
+	.page-heading-group-compact {
+		gap: var(--text-gap-2xs);
+	}
+}
+
+/* =========================================================
+   SECTION TYPOGRAPHY
+========================================================= */
+
+@layer components {
 	.text-section-title,
-	.section-title,
-	.heading-section {
-		font-size: var(--font-size-xl);
-		font-weight: var(--font-weight-medium);
+	.heading-section,
+	.section-title {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-section-title);
+		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-heading);
 		letter-spacing: var(--tracking-title);
 		color: var(--color-text-primary);
 	}
 
+	.text-section-description,
+	.section-description {
+		max-width: 72ch;
+
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-secondary);
+	}
+
+	.section-heading-group {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--text-gap-xs);
+	}
+
+	.section-heading-row {
+		display: flex;
+		min-width: 0;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+
+	.section-heading-copy {
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+		gap: var(--text-gap-xs);
+	}
+}
+
+/* =========================================================
+   CARD AND PANEL TYPOGRAPHY
+========================================================= */
+
+@layer components {
 	.text-card-title,
-	.card-title,
-	.heading-card {
-		font-size: var(--font-size-base);
+	.heading-card,
+	.card-title {
+		font-size: var(--font-size-card-title);
 		font-weight: var(--font-weight-medium);
 		line-height: var(--line-height-tight);
-		letter-spacing: var(--tracking-control);
+		letter-spacing: var(--tracking-tight);
 		color: var(--color-text-primary);
 	}
 
-	/* =====================================================
-	   BODY
-	===================================================== */
+	.text-card-description,
+	.card-description {
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-secondary);
+	}
 
-	.text-body,
-	.card-description,
-	.body-default {
+	.card-heading-group {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--text-gap-xs);
+	}
+
+	.panel-title {
 		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+		letter-spacing: var(--tracking-tight);
+		color: var(--color-text-primary);
+	}
+
+	.panel-description {
+		font-size: var(--font-size-sm);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-muted);
+	}
+}
+
+/* =========================================================
+   BODY TEXT
+========================================================= */
+
+@layer components {
+	.text-body,
+	.body-text {
+		font-size: var(--font-size-body-responsive);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-normal);
 		letter-spacing: var(--tracking-normal);
-		color: var(--color-text-secondary);
+		color: var(--color-text-primary);
 	}
 
-	.body-compact {
-		font-size: var(--font-size-md);
+	.text-body-sm,
+	.body-small {
+		font-size: var(--font-size-sm);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-normal);
 		color: var(--color-text-secondary);
 	}
 
-	/* =====================================================
-	   NAVIGATION
-	===================================================== */
-
-	.text-nav,
-	.nav-label,
-	.app-sidebar-label {
-		font-size: var(--type-nav-size);
-		font-weight: var(--type-nav-weight);
-		line-height: var(--line-height-control);
-		letter-spacing: var(--tracking-control);
-	}
-
-	.app-sidebar-child-label {
-		font-size: var(--font-size-md);
+	.text-body-xs,
+	.body-extra-small {
+		font-size: var(--font-size-xs);
 		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-control);
-		letter-spacing: var(--tracking-control);
+		line-height: var(--line-height-compact);
+		color: var(--color-text-muted);
 	}
 
-	/* =====================================================
-	   CONTROLS
-	===================================================== */
+	.text-prose,
+	.prose-text {
+		max-width: 72ch;
 
-	.text-control,
-	.button-label,
-	.three-way-toggle-option,
-	.epc-filter-trigger {
-		font-size: var(--type-control-size);
-		font-weight: var(--type-control-weight);
-		line-height: var(--line-height-control);
-		letter-spacing: var(--tracking-control);
-	}
-
-	input,
-	textarea,
-	select {
-		font-size: var(--font-size-md);
+		font-size: var(--font-size-base);
 		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-control);
-	}
-
-	input::placeholder,
-	textarea::placeholder {
-		font-size: inherit;
-		font-weight: var(--font-weight-regular);
-		color: var(--color-input-placeholder);
-		opacity: 1;
-	}
-
-	/* =====================================================
-	   LABELS
-	===================================================== */
-
-	.text-label,
-	.label-default,
-	label {
-		font-size: var(--font-size-md);
-		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-tight);
-		letter-spacing: var(--tracking-control);
+		line-height: var(--line-height-prose);
 		color: var(--color-text-secondary);
 	}
 
-	.text-sublabel,
-	.caption {
+	.text-lead,
+	.lead-text {
+		max-width: 68ch;
+
+		font-size: var(--font-size-md);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-relaxed);
+		color: var(--color-text-secondary);
+	}
+}
+
+/* =========================================================
+   LABELS AND FORM TYPOGRAPHY
+========================================================= */
+
+@layer components {
+	.text-label,
+	.field-label,
+	.form-label {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+
 		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-compact);
+		letter-spacing: var(--tracking-label);
+
+		color: var(--color-text-secondary);
+	}
+
+	.field-label-required::after,
+	.form-label-required::after {
+		color: var(--color-error);
+		content: "*";
+	}
+
+	.field-helper,
+	.form-helper,
+	.helper-text {
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-compact);
+		color: var(--color-text-muted);
+	}
+
+	.field-error,
+	.form-error,
+	.error-text {
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-compact);
+		color: var(--color-error);
+	}
+
+	.field-success,
+	.success-text {
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-compact);
+		color: var(--color-success);
+	}
+
+	.field-value,
+	.form-value {
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-primary);
+	}
+
+	.field-readonly-value {
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-primary);
+	}
+
+	.form-field-copy {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--text-gap-xs);
+	}
+
+	.form-field-message {
+		margin-top: var(--helper-margin-before);
+	}
+}
+
+/* =========================================================
+   BUTTON TYPOGRAPHY
+========================================================= */
+
+@layer components {
+	.text-button,
+	.button-text {
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-none);
+		letter-spacing: var(--tracking-label);
+	}
+
+	.text-button-sm {
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-none);
+	}
+
+	.text-button-lg {
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-none);
+	}
+
+	.text-button-industrial {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-semibold);
+		line-height: var(--line-height-none);
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+	}
+}
+
+/* =========================================================
+   NAVIGATION TYPOGRAPHY
+========================================================= */
+
+@layer components {
+	.text-nav,
+	.nav-label {
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-none);
+		letter-spacing: var(--tracking-normal);
+	}
+
+	.text-nav-child,
+	.nav-child-label {
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-tight);
+		letter-spacing: var(--tracking-normal);
+	}
+
+	.text-breadcrumb,
+	.breadcrumb-label {
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-compact);
+		color: var(--color-text-muted);
+	}
+
+	.text-tab,
+	.tab-label {
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-none);
+		letter-spacing: var(--tracking-label);
+	}
+}
+
+/* =========================================================
+   TABLE TYPOGRAPHY
+========================================================= */
+
+@layer components {
+	.text-table-header,
+	.table-header-text {
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+
+		color: var(--color-table-header-text);
+	}
+
+	.text-table-cell,
+	.table-cell-text {
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-compact);
+		color: var(--color-text-primary);
+	}
+
+	.text-table-secondary,
+	.table-cell-secondary {
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-compact);
+		color: var(--color-text-muted);
+	}
+
+	.text-table-link,
+	.table-cell-link {
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-compact);
+		color: var(--color-text-link);
+	}
+
+	.text-table-link:hover,
+	.table-cell-link:hover {
+		color: var(--color-text-link-hover);
+	}
+
+	.text-table-id,
+	.table-id {
+		font-family: var(--font-mono);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-compact);
+		letter-spacing: -0.015em;
+		color: var(--color-text-link);
+	}
+}
+
+/* =========================================================
+   BADGE AND STATUS TYPOGRAPHY
+========================================================= */
+
+@layer components {
+	.text-badge,
+	.badge-text {
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-none);
+		letter-spacing: var(--tracking-label);
+	}
+
+	.text-status,
+	.status-text {
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-none);
+		letter-spacing: var(--tracking-label);
+	}
+}
+
+/* =========================================================
+   EYEBROWS, METADATA AND TECHNICAL TEXT
+========================================================= */
+
+@layer components {
+	.text-eyebrow,
+	.eyebrow {
+		font-family: var(--font-mono);
+		font-size: var(--font-size-3xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-none);
+		letter-spacing: var(--tracking-eyebrow);
+		text-transform: uppercase;
+
+		color: var(--color-text-muted);
+	}
+
+	.text-eyebrow-brand,
+	.eyebrow-brand {
+		color: var(--color-text-brand);
+	}
+
+	.text-meta,
+	.metadata {
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-compact);
+		color: var(--color-text-muted);
+	}
+
+	.text-technical,
+	.technical-text {
+		font-family: var(--font-mono);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-compact);
+		letter-spacing: var(--tracking-technical);
+		color: var(--color-text-muted);
+	}
+
+	.text-id,
+	.identifier-text {
+		font-family: var(--font-mono);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-compact);
+		letter-spacing: -0.015em;
+		color: var(--color-text-primary);
+	}
+}
+
+/* =========================================================
+   EMPTY, LOADING AND FEEDBACK TEXT
+========================================================= */
+
+@layer components {
+	.empty-title {
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+		color: var(--color-text-primary);
+	}
+
+	.empty-description {
+		max-width: 48ch;
+
+		font-size: var(--font-size-sm);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-normal);
 		color: var(--color-text-muted);
 	}
 
-	/* =====================================================
-	   EYEBROWS
-	===================================================== */
-
-	.text-eyebrow {
-		font-family: var(--font-mono);
-		font-size: var(--font-size-2xs);
+	.feedback-title {
+		font-size: var(--font-size-sm);
 		font-weight: var(--font-weight-medium);
-		line-height: 1;
-		letter-spacing: var(--tracking-eyebrow);
-		text-transform: uppercase;
-		color: var(--color-text-brand);
-	}
-
-	/* =====================================================
-	   TABLE
-	===================================================== */
-
-	.text-table-head,
-	.data-table-head-cell,
-	.workflow-table-head-cell {
-		font-size: var(--type-table-head-size);
-		font-weight: var(--type-table-head-weight);
 		line-height: var(--line-height-tight);
-		letter-spacing: var(--tracking-table-head);
-		text-transform: uppercase;
-		color: var(--color-table-header-text);
+		color: var(--color-text-primary);
 	}
 
-	.text-table-cell,
-	.data-table-cell,
-	.workflow-table-cell-text {
-		font-size: var(--type-table-cell-size);
-		font-weight: var(--type-table-cell-weight);
+	.feedback-description {
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-normal);
-		letter-spacing: var(--tracking-normal);
 		color: var(--color-text-secondary);
 	}
 
-	.epc-number-link {
-		font-size: var(--font-size-md);
+	.loading-text {
+		font-size: var(--font-size-xs);
 		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-tight);
-		letter-spacing: var(--tracking-control);
+		line-height: var(--line-height-compact);
+		color: var(--color-text-muted);
+	}
+}
+
+/* =========================================================
+   DESCRIPTION LISTS / DETAILS
+========================================================= */
+
+@layer components {
+	.detail-list {
+		display: grid;
+		gap: var(--space-3);
 	}
 
-	.epc-event-name,
-	.epc-cell-primary {
-		font-size: var(--font-size-md);
-		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-tight);
+	.detail-item {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--text-gap-xs);
 	}
 
-	.epc-event-meta,
-	.epc-cell-secondary,
-	.epc-date-cell {
+	.detail-label {
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-compact);
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+		color: var(--color-text-muted);
+	}
+
+	.detail-value {
+		min-width: 0;
+
 		font-size: var(--font-size-sm);
 		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-tight);
+		line-height: var(--line-height-normal);
+		color: var(--color-text-primary);
+
+		overflow-wrap: anywhere;
 	}
 
-	/* =====================================================
-	   PAGINATION
-	===================================================== */
-
-	.pagination,
-	.pagination-summary,
-	.pagination-page-size {
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-control);
-	}
-
-	.pagination-summary strong {
+	.detail-value-strong {
 		font-weight: var(--font-weight-medium);
 	}
+}
 
-	/* =====================================================
-	   RESPONSIVE
-	===================================================== */
+/* =========================================================
+   TEXT WRAPPING AND TRUNCATION
+========================================================= */
 
+@layer utilities {
+	.text-truncate {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.text-clamp-1,
+	.text-clamp-2,
+	.text-clamp-3 {
+		display: -webkit-box;
+		overflow: hidden;
+		-webkit-box-orient: vertical;
+	}
+
+	.text-clamp-1 {
+		-webkit-line-clamp: 1;
+	}
+
+	.text-clamp-2 {
+		-webkit-line-clamp: 2;
+	}
+
+	.text-clamp-3 {
+		-webkit-line-clamp: 3;
+	}
+
+	.text-break {
+		overflow-wrap: anywhere;
+		word-break: break-word;
+	}
+
+	.text-nowrap {
+		white-space: nowrap;
+	}
+
+	.text-balance {
+		text-wrap: balance;
+	}
+
+	.text-pretty {
+		text-wrap: pretty;
+	}
+}
+
+/* =========================================================
+   TYPOGRAPHIC STACKS AND SPACING
+========================================================= */
+
+@layer components {
+	.text-stack {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+	}
+
+	.text-stack-2xs {
+		gap: var(--text-gap-2xs);
+	}
+
+	.text-stack-xs {
+		gap: var(--text-gap-xs);
+	}
+
+	.text-stack-sm {
+		gap: var(--text-gap-sm);
+	}
+
+	.text-stack-md {
+		gap: var(--text-gap-md);
+	}
+
+	.text-stack-lg {
+		gap: var(--text-gap-lg);
+	}
+
+	.text-stack-xl {
+		gap: var(--text-gap-xl);
+	}
+
+	.content-flow > * + * {
+		margin-top: var(--space-3);
+	}
+
+	.content-flow-compact > * + * {
+		margin-top: var(--space-2);
+	}
+
+	.content-flow-relaxed > * + * {
+		margin-top: var(--space-4);
+	}
+
+	.prose-flow > * + * {
+		margin-top: var(--space-3);
+	}
+
+	.prose-flow > h2 {
+		margin-top: var(--space-8);
+	}
+
+	.prose-flow > h3 {
+		margin-top: var(--space-6);
+	}
+
+	.prose-flow > h4 {
+		margin-top: var(--space-5);
+	}
+
+	.prose-flow > ul,
+	.prose-flow > ol {
+		padding-left: var(--space-5);
+	}
+
+	.prose-flow li + li {
+		margin-top: var(--space-1-5);
+	}
+}
+
+/* =========================================================
+   RESPONSIVE BEHAVIOUR
+========================================================= */
+
+@layer components {
 	@media (max-width: 767px) {
-		.text-page-title,
-		.heading-page,
-		.page-title {
-			font-size: var(--font-size-xl);
+		:root {
+			--font-size-page-title: clamp(
+				var(--font-size-xl),
+				4vw + 0.5rem,
+				var(--font-size-2xl)
+			);
+
+			--font-size-section-title: clamp(
+				var(--font-size-lg),
+				2vw + 0.75rem,
+				var(--font-size-xl)
+			);
+		}
+
+		body {
+			font-size: var(--font-size-sm);
+		}
+
+		.text-display,
+		.heading-display,
+		.hero-title {
+			font-size: clamp(var(--font-size-3xl), 9vw, var(--font-size-5xl));
 		}
 
 		.text-page-subtitle,
 		.page-subtitle {
-			font-size: var(--font-size-md);
+			font-size: var(--font-size-sm);
 		}
 
-		.text-nav,
-		.nav-label,
-		.app-sidebar-label {
-			font-size: var(--font-size-md);
+		.section-heading-row {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.text-table-header,
+		.table-header-text {
+			font-size: var(--font-size-3xs);
 		}
 
 		.text-table-cell,
-		.data-table-cell,
-		.workflow-table-cell-text {
-			font-size: var(--font-size-sm);
+		.table-cell-text {
+			font-size: var(--font-size-xs);
+		}
+
+		.page-heading-group,
+		.section-heading-group {
+			gap: var(--text-gap-xs);
+		}
+	}
+
+	@media (min-width: 768px) and (max-width: 1199px) {
+		.text-page-title,
+		.heading-page,
+		.page-title {
+			font-size: var(--font-size-2xl);
+		}
+
+		.text-section-title,
+		.heading-section,
+		.section-title {
+			font-size: var(--font-size-lg);
+		}
+	}
+
+	@media (min-width: 1200px) {
+		.text-page-title,
+		.heading-page,
+		.page-title {
+			font-size: var(--font-size-3xl);
+		}
+
+		.text-section-title,
+		.heading-section,
+		.section-title {
+			font-size: var(--font-size-xl);
+		}
+	}
+}
+
+/* =========================================================
+   HIGH DENSITY MODE
+   Optional: add data-density="compact" to the app root
+========================================================= */
+
+@layer components {
+	[data-density="compact"] {
+		--font-size-body-responsive: var(--font-size-sm);
+		--paragraph-margin-after: var(--space-2);
+		--heading-margin-after: var(--space-1-5);
+		--label-margin-after: var(--space-0-5);
+	}
+
+	[data-density="compact"] .text-table-cell,
+	[data-density="compact"] .table-cell-text {
+		font-size: var(--font-size-xs);
+		line-height: var(--line-height-compact);
+	}
+
+	[data-density="compact"] .text-label,
+	[data-density="compact"] .field-label,
+	[data-density="compact"] .form-label {
+		font-size: var(--font-size-2xs);
+	}
+}
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+@layer base {
+	@media (prefers-reduced-motion: reduce) {
+		a {
+			transition-duration: 0.01ms;
+		}
+	}
+
+	@media (prefers-contrast: more) {
+		body {
+			font-weight: var(--font-weight-regular);
+		}
+
+		.text-muted,
+		.text-subtle,
+		.text-meta,
+		.metadata,
+		.field-helper,
+		.form-helper,
+		.helper-text {
+			color: var(--color-text-secondary);
 		}
 	}
 }

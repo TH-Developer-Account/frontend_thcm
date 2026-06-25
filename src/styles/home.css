@@ -472,3 +472,151 @@
 		}
 	}
 }
+/* =========================================================
+   HOME ACTION CARD — DARK THEME SURFACE ENHANCEMENT
+
+========================================================= */
+
+@layer base {
+	[data-theme="dark"] {
+		/*
+		 * Existing page background: #111111
+		 *
+		 * The card is intentionally lifted above the page using
+		 * a slightly cooler graphite surface.
+		 */
+		--home-card-bg: rgb(23 28 36);
+		--home-card-hover-bg: rgb(30 36 46);
+
+		/*
+		 * Existing active card remains warm and brand-related.
+		 */
+		--home-card-active-bg: rgb(31 23 20);
+
+		/*
+		 * More visible border than the previous #242424.
+		 * The hover border is equivalent to a restrained gray-700.
+		 */
+		--home-card-border: rgb(42 50 61);
+		--home-card-border-hover: rgb(55 65 81);
+		--home-card-active-border: rgb(74 43 27);
+
+		/*
+		 * Default elevation remains extremely subtle.
+		 */
+		--home-card-shadow: 0 1px 2px rgb(0 0 0 / 24%), 0 3px 8px rgb(0 0 0 / 14%);
+
+		/*
+		 * Hover glow:
+		 * - faint light edge
+		 * - restrained dark elevation
+		 * - intentionally weaker than Tailwind shadow-lg
+		 */
+		--home-card-shadow-hover:
+			0 10px 15px -3px rgb(255 255 255 / 6%),
+			0 4px 6px -2px rgb(255 255 255 / 3%), 0 8px 20px rgb(0 0 0 / 24%);
+
+		/*
+		 * Very light translucent tint applied over the hover surface.
+		 */
+		--home-card-hover-tint: rgb(255 255 255 / 2.5%);
+	}
+}
+
+@layer components {
+	/* =====================================================
+	   DARK CARD DEFAULT
+	   Keeps all existing geometry, spacing and typography.
+	===================================================== */
+
+	[data-theme="dark"] .action-card {
+		background: var(--home-card-bg);
+		border-color: var(--home-card-border);
+		box-shadow: var(--home-card-shadow);
+
+		/*
+		 * Extends the existing transition without changing
+		 * its timing or interaction character.
+		 */
+		transition:
+			background-color 150ms ease,
+			border-color 150ms ease,
+			box-shadow 150ms ease;
+	}
+
+	/* =====================================================
+	   DARK CARD HOVER
+	===================================================== */
+
+	[data-theme="dark"] .action-card:hover:not(:disabled) {
+		border-color: var(--home-card-border-hover);
+
+		/*
+		 * The existing hover background remains underneath.
+		 * The gradient adds only a slight white tint.
+		 */
+		background:
+			linear-gradient(var(--home-card-hover-tint), var(--home-card-hover-tint)),
+			var(--home-card-hover-bg);
+
+		box-shadow: var(--home-card-shadow-hover);
+
+		/*
+		 * Preserve the existing no-lift card interaction.
+		 */
+		transform: none;
+	}
+
+	/* =====================================================
+	   DARK ACTIVE CARD
+	===================================================== */
+
+	[data-theme="dark"] .action-card-active {
+		border-color: var(--home-card-active-border);
+		background: var(--home-card-active-bg);
+		box-shadow: var(--home-card-shadow);
+	}
+
+	[data-theme="dark"] .action-card-active:hover:not(:disabled) {
+		border-color: var(--home-card-active-border);
+
+		background:
+			linear-gradient(var(--home-card-hover-tint), var(--home-card-hover-tint)),
+			var(--home-card-active-bg);
+
+		box-shadow: var(--home-card-shadow-hover);
+		transform: none;
+	}
+
+	/* =====================================================
+	   PRESERVE EXISTING ORANGE TOP RAIL
+	===================================================== */
+
+	[data-theme="dark"] .action-card:hover:not(:disabled)::before,
+	[data-theme="dark"] .action-card-active::before {
+		background: var(--color-brand);
+	}
+
+	/* =====================================================
+	   PRESERVE ACCESSIBLE FOCUS
+	   Keep orange inset focus while retaining card elevation.
+	===================================================== */
+
+	[data-theme="dark"] .action-card:focus-visible {
+		z-index: 2;
+		outline: none;
+		box-shadow:
+			inset 0 0 0 2px var(--color-brand),
+			var(--home-card-shadow);
+	}
+
+	/* =====================================================
+	   REDUCED MOTION
+	===================================================== */
+
+	@media (prefers-reduced-motion: reduce) {
+		[data-theme="dark"] .action-card {
+			transition-duration: 0.01ms;
+		}
+	}
+}
