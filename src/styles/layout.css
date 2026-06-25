@@ -1,0 +1,186 @@
+@reference "tailwindcss";
+@layer components {
+	/* ========================
+       PAGE HEADER
+    ======================== */
+
+	.page-header {
+		@apply px-3 py-3 text-left;
+	}
+
+	/* ========================
+       PAGE TITLE
+    ======================== */
+
+	.page-title {
+		@apply text-xl font-semibold text-gray-900 mb-4;
+	}
+
+	/* ========================
+       BREADCRUMB CONTAINER
+    ======================== */
+
+	.breadcrumb {
+		@apply flex items-center text-sm text-gray-500 space-x-3;
+	}
+
+	.breadcrumb-item {
+		@apply flex items-center space-x-3;
+	}
+
+	/* ========================
+       BREADCRUMB LINK
+    ======================== */
+
+	.breadcrumb-link {
+		@apply hover:text-gray-700 transition;
+	}
+
+	.breadcrumb-current {
+		@apply text-gray-400;
+	}
+	/* ========================
+     HEADER LOGO
+  ======================== */
+
+	.header-logo {
+		@apply md:w-[150px] w-[120px];
+	}
+}
+
+@layer components {
+	/* =========================
+	   APP LAYOUT
+	========================= */
+
+	.app-layout {
+		@apply h-screen flex flex-col overflow-hidden;
+	}
+
+	.app-body {
+		@apply relative flex flex-1 overflow-hidden transition-transform duration-300 ease-in-out;
+	}
+
+	/* =========================
+	   MAIN CONTENT AREA
+	========================= */
+
+	.app-main {
+		@apply flex-1 md:ml-0 bg-zinc-50 scroll-smooth;
+	}
+
+	/* Optional: smoother scrolling feel */
+	.app-main-smooth {
+		@apply scroll-smooth;
+	}
+	.main-content {
+		@apply px-2 pt-2;
+	}
+}
+
+@layer components {
+	/* =========================
+	   AUTH LAYOUT
+	========================= */
+
+	.auth-layout {
+		@apply min-h-screen flex items-center justify-center bg-transparent shadow-lg;
+	}
+
+	/* =========================
+	   AUTH CARD / FORM
+	========================= */
+
+	.auth-card {
+		@apply w-full max-w-[400px] bg-white shadow-lg rounded-xl p-6 pt-4 border-b border-gray-200;
+	}
+
+	/* Optional variants */
+
+	.auth-card-compact {
+		@apply p-4;
+	}
+
+	.auth-card-wide {
+		@apply max-w-[480px];
+	}
+}
+@layer components {
+	/* =========================
+	   HEADER BAR
+	========================= */
+
+	.app-header {
+		@apply h-14 flex items-center gap-3 px-3 py-2 sm:px-3 text-white;
+		@apply shadow-[0px_3px_12px_0px_rgba(0,0,0,0.2)];
+	}
+
+	/* =========================
+	   HEADER INNER WRAPPER
+	========================= */
+
+	.app-header-content {
+		@apply flex items-center justify-between w-full;
+	}
+
+	/* =========================
+	   HEADER MENU BUTTON
+	========================= */
+
+	.app-header-btn {
+		@apply p-2 rounded-md bg-transparent text-black font-bold text-xl cursor-pointer;
+		@apply transition-all duration-300 ease-in-out;
+	}
+
+	.app-header-btn:hover {
+		@apply bg-gray-50 text-orange-600;
+	}
+}
+
+/* page-section-layout.css */
+@layer components {
+	.page-stack-layout {
+		@apply flex w-full min-w-0 flex-col items-stretch gap-2;
+	}
+
+	.page-stack-section {
+		@apply w-full min-w-0;
+	}
+}
+
+/* Used for 2 row layout sections */
+@layer components {
+	.page-header-section {
+		@apply sm:px-4 sm:py-2 px-2 py-2;
+	}
+	.page-title-section {
+		@apply text-lg font-semibold tracking-tight text-zinc-900;
+	}
+	.page-subtitle {
+		@apply text-xs text-zinc-300;
+	}
+	.page-header-badge {
+		@apply inline-flex items-center gap-2 self-start rounded-full border border-orange-200 bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700;
+	}
+}
+/* ---------- Utility Examples ---------- */
+
+/* Mobile */
+@media (min-width: 427px) and (max-width: 640px) {
+	/* styles for tablets */
+}
+
+/* Tablets */
+@media (min-width: 641px) and (max-width: 1024px) {
+	/* styles for tablets */
+}
+
+/* Small laptops */
+@media (min-width: 1025px) and (max-width: 1280px) {
+	/* styles for small laptops */
+}
+
+/* Desktops */
+@media (min-width: 1281px) and (max-width: 1536px) {
+	/* styles for desktops */
+}

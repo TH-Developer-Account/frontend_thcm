@@ -1,121 +1,157 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../context/useAuth";
+import { useAuth } from "../../../context/Auth/useAuth";
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/FormElements/FormInput";
 import { EMAIL_REGEX } from "../../Login/constant";
+import { useToast } from "../../../context/Auth/AuthContext";
 
 type Errors = {
-  email?: string;
-  password?: string;
+	email?: string;
+	password?: string;
 };
 
 const EmailLoginForm = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Errors>({});
-  const { login } = useAuth();
-  const navigate = useNavigate();
+	const [formData, setFormData] = useState({
+		email: "",
+		password: "",
+	});
+	const [loading, setLoading] = useState(false);
+	const [errors, setErrors] = useState<Errors>({});
+	const { login } = useAuth();
+	const navigate = useNavigate();
+	const { showToast } = useToast();
+	const validateForm = () => {
+		const newErrors: Errors = {};
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+		if (!formData.email) {
+			newErrors.email = "Please fill in the email field";
+		} else if (!EMAIL_REGEX.test(formData.email)) {
+			newErrors.email = "Invalid email format";
+		}
 
-    setErrors((prev) => {
-      if (!prev[name as keyof Errors]) return prev; // nothing to clear
+		if (!formData.password) {
+			newErrors.password = "Please fill in the password field";
+		}
 
-      const newErrors = { ...prev };
-      delete newErrors[name as keyof Errors];
-      return newErrors;
-    });
-  };
+		setErrors(newErrors);
 
-  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const result = await login(formData.email, formData.password);
-      // ✅ Check if password reset is required
-      if (result.requiresPasswordReset) {
-        navigate("/reset-password");
-      } else {
-        navigate("/");
-      }
-    } catch (error: unknown) {
-      console.error("Login error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+		// ✅ if no errors, form is valid
+		return Object.keys(newErrors).length === 0;
+	};
 
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const { name, value } = e.target;
+		setFormData((prev) => ({
+			...prev,
+			[name]: value,
+		}));
 
-    setErrors((prev) => {
-      const newErrors = { ...prev };
+		setErrors((prev) => {
+			if (!prev[name as keyof Errors]) return prev;
 
-      if (name === "email") {
-        if (!value) {
-          newErrors.email = "Please fill in the email field";
-        } else if (!EMAIL_REGEX.test(value)) {
-          newErrors.email = "Invalid email format";
-        } else {
-          delete newErrors.email;
-        }
-      }
+			const newErrors = { ...prev };
+			delete newErrors[name as keyof Errors];
+			return newErrors;
+		});
+	};
 
-      if (name === "password") {
-        if (!value) {
-          newErrors.password = "Please fill in the password field";
-        } else {
-          delete newErrors.password;
-        }
-      }
+	const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
+		e.preventDefault();
+		// 🚫 Stop here if validation fails
+		if (!validateForm()) return;
+		setLoading(true);
+		try {
+			const result = await login(formData.email, formData.password);
+			// ✅ Check if password reset is required
+			if (result.requiresPasswordReset) {
+				navigate("/reset-password");
+			} else {
+				navigate("/");
+			}
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error
+					? err.message
+					: typeof err === "string"
+						? err
+						: "Invalid OTP";
+			showToast({
+				type: "error",
+				title: "Error",
+				description: message,
+			});
+		} finally {
+			setLoading(false);
+		}
+	};
 
-      return newErrors;
-    });
-  };
+	const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+		const { name, value } = e.target;
 
-  return (
-    <form className="space-y-4">
-      <FormInput
-        name="email"
-        label="Email"
-        placeholder="john@mail.com"
-        value={formData.email}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={errors?.email}
-      />
+		setErrors((prev) => {
+			const newErrors = { ...prev };
 
-      <FormInput
-        name="password"
-        label="Password"
-        placeholder="Enter your password"
-        type="password"
-        value={formData.password}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        error={errors?.password}
-      />
+			if (name === "email") {
+				if (!value) {
+					newErrors.email = "Please fill in the email field";
+				} else if (!EMAIL_REGEX.test(value)) {
+					newErrors.email = "Invalid email format";
+				} else {
+					delete newErrors.email;
+				}
+			}
 
-      <div className="flex justify-end">
-        <a
-          href="/forgot-password"
-          className="text-sm text-blue-600 hover:underline"
-        >
-          Forgot password?
-        </a>
-      </div>
+			if (name === "password") {
+				if (!value) {
+					newErrors.password = "Please fill in the password field";
+				} else {
+					delete newErrors.password;
+				}
+			}
 
-      <Button text="Sign In" onClick={handleSubmit} disabled={loading} />
-    </form>
-  );
+			return newErrors;
+		});
+	};
+
+	return (
+		<form className="space-y-4">
+			<FormInput
+				name="email"
+				label="Email"
+				type="email"
+				placeholder="john@mail.com"
+				value={formData.email}
+				onChange={handleChange}
+				onBlur={handleBlur}
+				required
+				error={errors?.email}
+			/>
+			<FormInput
+				type="password"
+				name="password"
+				label="Password"
+				value={formData.password}
+				onChange={handleChange}
+				error={errors.password}
+				required
+				placeholder="Enter your password"
+			/>
+
+			<div className="flex justify-end">
+				<a href="/forgot-password" className="text-sm hover:underline ">
+					Forgot password?
+				</a>
+			</div>
+
+			<Button
+				text="Sign In"
+				onClick={handleSubmit}
+				disabled={loading}
+				fullWidth
+				status="brand"
+			/>
+		</form>
+	);
 };
 export default EmailLoginForm;

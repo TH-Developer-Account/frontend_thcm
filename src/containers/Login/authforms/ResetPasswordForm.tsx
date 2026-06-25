@@ -1,10 +1,11 @@
 import { useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ServerAxios } from "../../../services/ServerAxios";
-import { useAuth } from "../../../context/useAuth";
+import { useAuth } from "../../../context/Auth/useAuth";
 import Button from "../../../components/common/Button";
 import { PasswordPolicy } from "../constant";
-import PasswordInput from "../../../components/FormElements/PasswordInput";
+import FormInput from "../../../components/FormElements/FormInput";
+import { useToast } from "../../../context/Auth/AuthContext";
 
 interface Errors {
 	password?: string;
@@ -16,6 +17,7 @@ const ResetPasswordForm = () => {
 	const navigate = useNavigate();
 	const { token } = useParams<{ token: string }>();
 	const { resetPassword } = useAuth();
+	const { showToast } = useToast();
 	const [state, setState] = useState({
 		oldPassword: "",
 		newPassword: "",
@@ -92,13 +94,18 @@ const ResetPasswordForm = () => {
 				showFocus: false,
 			});
 			navigate("/login");
-		} catch (err) {
-			console.log("Error====>", err);
-			setState((prev) => ({
-				...prev,
-				loading: false,
-				errors: { general: "Something went wrong. Please try again." },
-			}));
+		} catch (err: unknown) {
+			const message =
+				err instanceof Error
+					? err.message
+					: typeof err === "string"
+						? err
+						: "Invalid OTP";
+			showToast({
+				type: "error",
+				title: "Error",
+				description: message,
+			});
 		}
 	};
 
@@ -121,8 +128,9 @@ const ResetPasswordForm = () => {
 			{/* Old Password */}
 			{!token && (
 				<div className="relative">
-					<PasswordInput
+					<FormInput
 						name="oldPassword"
+						type="password"
 						label="Old Password"
 						placeholder="Enter your old password"
 						value={oldPassword}
@@ -137,7 +145,8 @@ const ResetPasswordForm = () => {
 			)}
 			{/* New Password */}
 			<div className="relative">
-				<PasswordInput
+				<FormInput
+					type="password"
 					label="New Password"
 					name="newPassword"
 					placeholder="Enter your new password"
@@ -174,7 +183,8 @@ const ResetPasswordForm = () => {
 				</>
 			)}
 
-			<PasswordInput
+			<FormInput
+				type="password"
 				name="confirmPassword"
 				label="Confirm New Password"
 				placeholder="Confirm your new password"
@@ -182,6 +192,7 @@ const ResetPasswordForm = () => {
 				onChange={handleChange}
 				error={errors.confirmPassword}
 				required
+				className={isValid ? "border-green-500 focus:ring-green-500 pr-10" : ""}
 			/>
 			{errors.general && (
 				<p className="text-sm text-red-600 text-left">{errors.general}</p>
@@ -191,6 +202,7 @@ const ResetPasswordForm = () => {
 				className=""
 				type="submit"
 				disabled={loading || !isValid}
+				status="brand"
 			/>
 		</form>
 	);

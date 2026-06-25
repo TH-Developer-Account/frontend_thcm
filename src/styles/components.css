@@ -1,0 +1,863 @@
+@import "./color.css";
+@reference "tailwindcss";
+
+/* =====================================================
+   BUTTON
+===================================================== */
+
+@layer components {
+	.btn {
+		@apply rounded-sm font-semibold
+    flex items-center justify-center gap-2
+    disabled:opacity-50
+    cursor-pointer;
+	}
+
+	.btn-sm {
+		@apply px-3 py-1.5 text-xs;
+	}
+	.btn-md {
+		@apply px-4 py-2 text-sm;
+	}
+	.btn-lg {
+		@apply px-6 py-2.5 text-sm;
+	}
+	.btn-xl {
+		@apply px-8 py-3 text-base;
+	}
+
+	.btn-brand {
+		color: var(--color-white);
+		background: rgb(var(--color-primary));
+	}
+
+	.btn-brand:hover {
+		background: rgb(var(--color-primary-600));
+	}
+
+	.btn-primary {
+		background: rgb(var(--color-primary) / 0.1);
+		color: rgb(var(--color-primary));
+	}
+
+	.btn-success {
+		background: rgb(var(--color-success) / 0.15);
+		color: rgb(var(--color-success));
+	}
+
+	.btn-warning {
+		background: rgb(var(--color-warning) / 0.15);
+		color: rgb(var(--color-warning));
+	}
+
+	.btn-danger {
+		background: rgb(var(--color-danger) / 0.15);
+		color: rgb(var(--color-danger));
+	}
+
+	.btn-disable {
+		background: rgb(var(--color-border));
+		color: rgb(var(--color-muted));
+	}
+	.btn-disable:hover {
+		cursor: not-allowed;
+	}
+	.btn-tooltip {
+		position: absolute;
+		right: 0;
+		bottom: calc(100% + 8px);
+		z-index: 9999;
+
+		max-width: 320px;
+		width: max-content;
+		white-space: normal;
+
+		border-radius: 8px;
+		background: #111827;
+		color: #ffffff;
+		font-size: 12px;
+		font-weight: 500;
+		line-height: 1.35;
+		padding: 8px 10px;
+
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+
+		transform: translateY(4px);
+		transition:
+			opacity 150ms ease,
+			visibility 150ms ease,
+			transform 150ms ease;
+	}
+
+	.group:hover .btn-tooltip,
+	.group:focus-within .btn-tooltip {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0);
+	}
+}
+
+/* =====================================================
+   BADGE
+===================================================== */
+
+@layer components {
+	.badge {
+		@apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+	}
+}
+
+/* =====================================================
+   CARD
+===================================================== */
+
+@layer components {
+	.card {
+		@apply rounded-xl;
+		background: rgb(var(--color-surface));
+		border: 1px solid rgb(var(--color-border));
+	}
+
+	.card-hover {
+		@apply cursor-pointer transition-all duration-200;
+	}
+
+	.card-hover:hover {
+		border-color: rgb(var(--color-primary) / 0.5);
+		background: rgb(var(--color-primary) / 0.04);
+	}
+}
+
+/* =====================================================
+   FULLSCREEN LOADER
+===================================================== */
+
+@layer components {
+	.loader-fullscreen {
+		@apply fixed inset-0 z-50 flex flex-col items-center justify-center;
+		background: rgb(var(--color-surface));
+	}
+
+	.loader-gif-wrapper {
+		@apply flex items-center justify-center;
+	}
+
+	.loader-gif {
+		@apply w-28 h-28 object-contain;
+	}
+
+	.loader-text {
+		@apply mt-4 text-sm font-semibold animate-pulse;
+		color: rgb(var(--color-muted));
+	}
+}
+
+/* =====================================================
+   MODAL
+===================================================== */
+
+@layer components {
+	.modal-overlay {
+		@apply fixed inset-0 z-50 flex items-center justify-center;
+		background: rgb(0 0 0 / 46%);
+	}
+
+	.modal-container {
+		@apply w-full rounded-2xl;
+		background: transparent;
+	}
+}
+
+/* =====================================================
+   PAGINATION
+===================================================== */
+
+@layer components {
+	.pagination {
+		@apply flex items-center justify-between gap-4 outline-none;
+	}
+
+	.pagination-default {
+		@apply text-sm;
+	}
+	.pagination-compact {
+		@apply text-xs;
+	}
+
+	.pagination-btn-default {
+		@apply px-3 py-1.5;
+	}
+
+	.pagination-btn-compact {
+		@apply px-2 py-1;
+	}
+
+	.pagination-info {
+		color: rgb(var(--color-brand));
+	}
+
+	.pagination-info-number {
+		color: rgb(var(--color-brand));
+		@apply font-semibold;
+	}
+
+	.pagination-btn {
+		@apply rounded-lg border transition;
+		background: rgb(var(--color-yellow-warm));
+		border-color: rgb(var(--color-primary));
+		color: rgb(var(--color-text));
+	}
+
+	.pagination-btn-hover:hover {
+		border-color: rgb(var(--color-primary));
+		color: rgb(var(--color-primary));
+	}
+
+	.pagination-btn-active {
+		background: rgb(var(--color-primary));
+		border-color: rgb(var(--color-primary));
+		color: var(--color-black);
+	}
+
+	.pagination-btn-disabled {
+		@apply disabled:opacity-60;
+	}
+
+	.pagination-pages {
+		@apply flex items-center gap-1;
+	}
+
+	.pagination-ellipsis {
+		@apply px-2;
+		color: rgb(var(--color-muted));
+	}
+
+	.pagination-page-size {
+		@apply w-25 text-xs flex items-center mb-0;
+	}
+}
+
+/* =====================================================
+   TABS
+===================================================== */
+
+@layer components {
+	.tabs-bar {
+		@apply flex items-center gap-8 px-6 pt-5;
+	}
+
+	.tab-item {
+		@apply relative pb-4 text-sm font-medium transition cursor-pointer text-center;
+	}
+
+	.tab-label {
+		color: rgb(var(--color-muted));
+	}
+
+	.tab-label-active {
+		color: rgb(var(--color-text));
+	}
+
+	.tab-indicator {
+		@apply absolute left-0 -bottom-[1px] w-full h-[2px] rounded-full;
+		background: rgb(var(--color-text));
+	}
+}
+
+/* =====================================================
+   TOAST
+===================================================== */
+
+@layer components {
+	.toast {
+		@apply flex items-start gap-2 sm:gap-4 p-2 sm:p-4 border rounded-lg sm:rounded-xl;
+		border-color: rgb(var(--color-border));
+		background: rgb(var(--color-surface));
+	}
+
+	.toast-icon {
+		@apply flex items-center justify-center
+    w-8 h-8 sm:w-10 sm:h-10
+    rounded-full text-white text-sm sm:text-base font-bold;
+	}
+	.toast-content {
+		@apply flex-1;
+	}
+	.toast-action {
+		@apply underline font-medium hover:opacity-80;
+	}
+	.toast-title {
+		@apply font-semibold text-xs sm:text-sm;
+		color: rgb(var(--color-text));
+	}
+
+	.toast-desc {
+		@apply mt-1 text-xs sm:text-sm;
+		color: rgb(var(--color-muted));
+	}
+
+	.toast-close {
+		@apply text-sm sm:text-base leading-none;
+		color: rgb(var(--color-muted));
+	}
+}
+
+/* =====================================================
+   TOGGLE
+===================================================== */
+
+@layer components {
+	.toggle {
+		@apply relative inline-flex items-center gap-2;
+	}
+
+	.toggle-disabled {
+		@apply opacity-40 cursor-not-allowed;
+	}
+	.toggle-enabled {
+		@apply cursor-pointer;
+	}
+
+	.toggle-label {
+		color: rgb(var(--color-muted));
+	}
+
+	.toggle-track {
+		@apply rounded-full transition-colors duration-200;
+	}
+
+	.toggle-track-on {
+		background: rgb(var(--color-primary));
+	}
+
+	.toggle-track-off {
+		background: rgb(var(--color-border));
+	}
+
+	.toggle-thumb {
+		@apply absolute top-0.5 rounded-full bg-white shadow transition-transform duration-200;
+	}
+}
+
+/* =====================================================
+   PROFILE CARD
+===================================================== */
+
+@layer components {
+	.profile-card {
+		@apply p-5 lg:p-6 rounded-2xl shadow-sm text-left;
+		background: rgb(var(--color-surface));
+		border: 1px solid rgb(var(--color-border));
+	}
+	.profile-card-layout {
+		@apply flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between;
+	}
+	.profile-grid {
+		@apply grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-7;
+	}
+
+	.profile-grid-span-2 {
+		@apply lg:col-span-2;
+	}
+	.profile-section-title {
+		color: rgb(var(--color-text));
+	}
+
+	.profile-field-label {
+		color: rgb(var(--color-muted));
+	}
+
+	.profile-field-value {
+		color: rgb(var(--color-text));
+	}
+	/* META HEADER */
+
+	.profile-meta-header {
+		@apply flex items-center gap-6 mb-6;
+	}
+
+	.profile-meta-avatar {
+		@apply w-20 h-20 rounded-full overflow-hidden border border-gray-200;
+	}
+
+	.profile-meta-avatar img {
+		@apply w-full h-full object-cover;
+	}
+
+	.profile-meta-name {
+		@apply text-lg font-semibold text-gray-800 mb-1;
+	}
+
+	.profile-meta-subtitle {
+		@apply text-sm text-gray-500;
+	}
+	/* =====================================
+	PROFILE PAGE
+ ===================================== */
+
+	.profile-page {
+		@apply py-2 lg:py-4;
+	}
+
+	.profile-page-title {
+		@apply mb-4 text-lg font-semibold text-gray-800 text-left lg:mb-7;
+	}
+
+	.profile-page-sections {
+		@apply space-y-6;
+	}
+}
+
+/* =====================================================
+   AVATAR
+===================================================== */
+
+@layer components {
+	.avatar-wrapper {
+		@apply relative inline-flex;
+	}
+
+	.avatar {
+		@apply rounded-full flex items-center justify-center
+    font-semibold overflow-hidden select-none cursor-pointer text-white;
+
+		background: rgb(var(--color-primary));
+	}
+
+	.avatar-tooltip {
+		@apply absolute bottom-full left-1/2 -translate-x-1/2 mb-2
+    whitespace-nowrap rounded-md text-xs px-2 py-1 shadow-lg
+    opacity-0 scale-95 pointer-events-none transition-all duration-150 z-50;
+
+		background: rgb(var(--color-text));
+		color: var(--color-white);
+	}
+
+	.avatar-wrapper:hover .avatar-tooltip,
+	.avatar-wrapper:focus-within .avatar-tooltip {
+		@apply opacity-100 scale-100;
+	}
+}
+
+/* =========================================
+   ACTION CARD
+========================================= */
+
+@layer components {
+	.action-card {
+		@apply cursor-pointer
+		rounded-2xl
+		transition-all
+		duration-200
+		ease-in-out bg-white;
+		/* @apply ring-2  ring-orange-50 text-white; */
+	}
+
+	/* Default card */
+
+	.action-card-default {
+		@apply bg-gray-50 border-gray-100 shadow-sm
+		hover:shadow-lg hover:-translate-y-1 hover:scale-[1.02];
+	}
+
+	/* Primary card */
+
+	.action-card-primary {
+		background: linear-gradient(
+			to right,
+			var(--color-brand-softest),
+			var(--color-brand-soft)
+		);
+		border-color: var(--color-brand-soft);
+		@apply shadow-md;
+	}
+
+	/* =========================================
+		 CARD BODY
+	  ========================================= */
+
+	.action-card-body {
+		@apply rounded-xl p-6 flex flex-col items-center justify-center text-center transition-colors duration-200;
+	}
+
+	/* Default body */
+
+	.action-card-body-default {
+		color: var(--color-brand);
+	}
+
+	.action-card:hover .action-card-body-default {
+		background-color: var(--color-brand-soft);
+		color: var(--color-brand);
+	}
+
+	/* Primary body */
+
+	.action-card-body-primary {
+		background-color: var(--color-brand-soft);
+		color: var(--color-brand);
+	}
+
+	/* =========================================
+		 ICON
+	  ========================================= */
+
+	.action-card-icon {
+		@apply flex items-center justify-center mb-3 text-4xl;
+	}
+
+	/* =========================================
+		 TITLE
+	  ========================================= */
+
+	.action-card-title {
+		@apply text-lg font-semibold text-gray-800;
+	}
+
+	.action-card:hover .action-card-title,
+	.action-card:hover .action-card-icon {
+		color: var(--color-brand);
+	}
+
+	/* =========================================
+		 DESCRIPTION
+	  ========================================= */
+
+	.action-card-description {
+		@apply text-sm text-gray-600 mt-1;
+	}
+
+	.action-card:hover .action-card-description {
+		color: var(--color-brand);
+	}
+
+	/* =========================================
+		 SUBTEXT
+	  ========================================= */
+
+	.action-card-subtext {
+		@apply text-xs mt-2 font-medium;
+		color: var(--color-brand);
+	}
+}
+
+/* =========================================
+   ALERT CARD
+========================================= */
+@layer components {
+	/* =========================================
+	   ALERT CARD
+	========================================= */
+
+	.alert-card {
+		@apply mx-auto mt-4 w-full max-w-[380px]
+	  rounded-2xl bg-white
+	  p-4 sm:p-6 shadow-lg;
+	}
+
+	/* =========================================
+	   ICON WRAPPER
+	========================================= */
+
+	.alert-icon-wrapper {
+		@apply mx-auto mb-3 sm:mb-4
+	  flex items-center justify-center
+	  rounded-full
+	  h-10 w-10 sm:h-12 sm:w-12;
+	}
+
+	.alert-icon {
+		@apply text-base sm:text-lg;
+	}
+
+	/* =========================================
+	   TITLE
+	========================================= */
+
+	.alert-title {
+		@apply mb-2 text-center
+	  text-base sm:text-lg
+	  font-semibold;
+	}
+
+	/* =========================================
+	   DESCRIPTION
+	========================================= */
+
+	.alert-description {
+		@apply mb-5 sm:mb-6
+	  text-center
+	  text-xs sm:text-sm
+	  text-gray-500;
+	}
+
+	/* =========================================
+	   ACTION CONTAINER
+	========================================= */
+
+	.alert-actions {
+		@apply flex flex-col gap-2
+	  sm:flex-row sm:gap-3;
+	}
+
+	/* =========================================
+	   PRIMARY BUTTON
+	========================================= */
+
+	.alert-btn-primary {
+		@apply flex-1 rounded-lg
+	  px-4 py-2
+	  text-xs sm:text-sm
+	  font-medium
+	  hover:opacity-90;
+		background-color: var(--color-black);
+		color: var(--color-white);
+	}
+
+	/* =========================================
+	   SECONDARY BUTTON
+	========================================= */
+
+	.alert-btn-secondary {
+		@apply flex-1 rounded-lg border
+	  px-4 py-2
+	  text-xs sm:text-sm
+	  font-medium
+	  hover:bg-gray-50;
+	}
+}
+
+/* =========================================
+	POPOVER 
+========================================= */
+
+@layer components {
+	/* =========================================
+	   POPOVER WRAPPER
+	========================================= */
+
+	.popover {
+		@apply relative inline-block;
+	}
+
+	/* =========================================
+	   TRIGGER
+	========================================= */
+
+	.popover-trigger {
+		@apply cursor-pointer inline-flex items-center;
+	}
+
+	/* =========================================
+	   PANEL
+	========================================= */
+
+	.popover-panel {
+		@apply absolute z-50 mt-2 min-w-[150px] rounded-lg shadow-lg border p-1;
+
+		background: rgb(var(--color-surface));
+		border-color: rgb(var(--color-border));
+	}
+
+	/* =========================================
+	   POSITIONING
+	========================================= */
+
+	.popover-bottom {
+		@apply top-full left-1/2 -translate-x-1/2;
+	}
+
+	.popover-top {
+		@apply bottom-full left-1/2 -translate-x-1/2 mb-2;
+	}
+
+	.popover-left {
+		@apply right-full top-1/2 -translate-y-1/2 mr-2;
+	}
+
+	.popover-right {
+		@apply left-full top-1/2 -translate-y-1/2 ml-2;
+	}
+
+	/* =========================================
+	   ANIMATION
+	========================================= */
+}
+
+@keyframes popover-in {
+	from {
+		opacity: 0;
+		transform: scale(0.95) translateY(4px);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+@layer utilities {
+	.animate-popover {
+		animation: popover-in 0.16s ease-out;
+	}
+}
+
+/* =========================================
+	ACCORDION 
+========================================= */
+
+@layer components {
+	.accordion {
+		@apply w-full space-y-3;
+	}
+
+	.accordion-item {
+		@apply w-full overflow-hidden rounded-sm border border-gray-300 bg-white transition-all duration-200;
+	}
+
+	.accordion-item-open {
+		@apply border-[var(--color-brand-soft)] shadow-sm;
+	}
+
+	.accordion-trigger {
+		@apply flex w-full items-center justify-between gap-3 px-2 py-2 text-left transition-colors duration-200;
+	}
+
+	.accordion-trigger:hover {
+		@apply bg-[var(--color-brand-softest)];
+	}
+
+	.accordion-title {
+		@apply min-w-0 flex-1 text-sm font-semibold text-gray-800;
+	}
+
+	.accordion-icon {
+		@apply flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gray-200 text-base font-semibold text-[var(--color-brand)];
+	}
+
+	.accordion-item-open .accordion-icon {
+		@apply border-[var(--color-brand-soft)] bg-[var(--color-brand-softest)];
+	}
+
+	.accordion-content {
+		@apply border-t border-gray-200 px-2 text-sm text-gray-700 overflow-y-auto py-1 max-h-[45vh];
+	}
+	.accordion-item-title {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+	.accordion-item-title::before {
+		content: "";
+		display: block;
+		width: 3px;
+		height: 16px;
+		border-radius: 99px;
+		background: #1e40af;
+		flex-shrink: 0;
+	}
+}
+
+.workflow-table-shell {
+	@apply flex min-h-0 flex-col rounded-sm border border-zinc-200 bg-white shadow-sm;
+
+	width: 100%;
+	min-width: 0;
+	overflow: hidden;
+}
+
+.workflow-table-scroll {
+	@apply min-h-0 flex-1 overflow-auto;
+	width: 100%;
+	min-width: 0;
+}
+
+.workflow-table {
+	@apply w-full min-w-[980px] border-collapse;
+}
+
+.workflow-table-head {
+	@apply sticky top-0 z-10 bg-zinc-200;
+}
+
+.workflow-table-head-cell {
+	@apply border-b border-zinc-200 px-4 py-3 text-left text-xs font-semibold text-zinc-600;
+}
+
+.workflow-table-head-cell-sortable {
+	@apply cursor-pointer select-none;
+}
+
+.workflow-table-head-content {
+	@apply flex items-center gap-1;
+}
+
+.workflow-table-row {
+	@apply border-t border-zinc-200 transition hover:bg-zinc-50;
+}
+
+.workflow-table-cell {
+	@apply px-2 py-1.5;
+}
+
+.workflow-table-cell-text {
+	@apply px-2 py-1.5 text-xs text-zinc-700 align-top;
+}
+
+.workflow-table-cell-action {
+	@apply px-2 py-1.5 text-center align-top;
+}
+
+.workflow-table-cell-inner {
+	@apply min-w-0 overflow-hidden;
+	/* word-break: break-word;
+	overflow-wrap: anywhere; */
+}
+
+.workflow-table-skeleton {
+	@apply h-4 w-full animate-pulse rounded bg-zinc-200;
+}
+
+.workflow-empty-state {
+	@apply px-4 py-10 text-center text-sm text-zinc-500;
+}
+
+.workflow-empty-state-inner {
+	@apply flex flex-col items-center gap-1;
+}
+
+.workflow-empty-title {
+	@apply text-sm font-medium text-zinc-700;
+}
+
+.workflow-empty-description {
+	@apply text-xs text-zinc-400;
+}
+
+.workflow-table-head {
+	@apply sticky top-0 z-10 bg-zinc-100;
+}
+
+.workflow-table-pagination {
+	@apply shrink-0 border-t border-zinc-200 bg-zinc-50;
+}
+
+.workflow-table-pagination-inner {
+	@apply flex items-center justify-between px-3 py-2;
+}
+.rdp-day_today {
+	position: relative;
+}
+
+.rdp-day_today::after {
+	content: "";
+	position: absolute;
+	bottom: 2px;
+	left: 50%;
+	width: 4px;
+	height: 4px;
+	transform: translateX(-50%);
+	border-radius: 999px;
+	background: #f35a00;
+}

@@ -1,31 +1,41 @@
-import { Megaphone, Box } from "lucide-react";
-import Header from "./Header";
+import Header from "../../components/ui/Header";
 import ActionCard from "./components/Card";
+import { actions } from "./constant";
+import { useAuth } from "../../context/Auth/AuthContext";
 
 export default function HomeScreen() {
-  return (
-    <div className="min-h-screen bg-gray-100">
-      <Header />
+	const { canReadApp, permissions } = useAuth();
+	return (
+		<div className="min-h-screen bg-gray-100 overflow-hidden">
+			<header className="wrapper header px-4 sm:px-6 py-2 flex items-center justify-between text-white">
+				<Header />
+			</header>
+			<main className="flex items-center justify-center px-4 py-4 sm:py-4 sm:pt-6">
+				<div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-6 w-full max-w-4xl">
+					{actions.map((action) => {
+						const Icon = action.icon;
+						if (canReadApp(action.appKey)) {
+							const appInfo = permissions.find(
+								(i) => i.appKey === action.appKey,
+							);
 
-      <main className="flex items-center justify-center px-4 py-12 sm:py-20">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12 w-full max-w-4xl">
-          <ActionCard
-            icon={<Megaphone size={40} className="text-orange-500" />}
-            title="Marketing Activity Planner"
-            description="Streamline your campaigns and track performance."
-            subText="Plan, execute, and analyze all your marketing efforts."
-            path="/listing"
-          />
+							const appId = appInfo?.appId ?? "";
 
-          <ActionCard
-            icon={<Box size={40} className="text-orange-500" />}
-            title="Product Selector"
-            description="Discover the perfect products for your needs."
-            subText="Browse and compare features to make informed decisions."
-            path="/listing"
-          />
-        </div>
-      </main>
-    </div>
-  );
+							return (
+								<ActionCard
+									key={action.title}
+									icon={<Icon size={40} />}
+									title={action.title}
+									description={action.description}
+									subText={action.subText}
+									path={action.path}
+									appId={appId}
+								/>
+							);
+						}
+					})}
+				</div>
+			</main>
+		</div>
+	);
 }

@@ -1,81 +1,143 @@
-import React, {
-  type ForwardRefRenderFunction,
-  type InputHTMLAttributes,
-} from "react";
+import { forwardRef, useState, useMemo, type InputHTMLAttributes } from "react";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
+import { PasswordPolicy } from "../../containers/Login/constant";
+import HelperTooltip from "../../components/common/HelperTooltip";
 
-// Define the props for the Input component
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  name: string; // Required
-  label: string; // Required
-  placeholder: string; // Required
-  value?: string | number;
-
-  error?: string; // NEW: error message
-  helperText?: string; // NEW: helper text
-  className?: string;
+	label?: string;
+	error?: string;
+	helperText?: string;
+	placeholder?: string;
+	isTooltip?: boolean;
 }
 
-// Create the Input component using ForwardRefRenderFunction
-const Input: ForwardRefRenderFunction<HTMLInputElement, InputProps> = (
-  {
-    name,
-    label,
-    placeholder,
-    value,
-    error,
-    className = "",
-    required,
-    disabled,
-    ...otherProps
-  },
-  ref,
-) => {
-  return (
-    <div className="relative sm:col-span-3 mb-4">
-      <label
-        htmlFor={name}
-        className="text-left block text-sm/6 font-medium text-gray-900"
-      >
-        {label}
-        {required && <span className="text-red-500"> *</span>}
-      </label>
-      <div className="mt-2">
-      <input
-        id={name}
-        ref={ref}
-        name={name}
-        placeholder={placeholder}
-        value={value}
-        disabled={disabled}
-        aria-invalid={!!error}
-        aria-describedby={error ? `${name}-error` : undefined}
-        className={`block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 sm:text-sm/6
-           ${
-             error
-               ? "focus:outline-red-500 outline-red-500 focus:ring-red-500"
-               : "focus:outline-gray-400"
-           }
-          ${disabled ? "opacity-60 cursor-not-allowed" : ""}
-          ${className}
-        `}
-        {...otherProps}
-      />
-      </div>
-      {error && (
-        <ExclamationCircleIcon className="absolute right-3 top-10 h-5 w-5 text-red-500" />
-      )}
-      {/* Error message */}
-      {error && (
-        <p id={`${name}-error`} className="mt-1 text-xs text-red-600 text-left">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-};
+const FormInput = forwardRef<HTMLInputElement, InputProps>(
+	(
+		{
+			label,
+			name,
+			type = "text",
+			error,
+			value,
+			required,
+			className = "",
+			disabled,
+			helperText,
+			placeholder,
+			isTooltip = true,
+			...props
+		},
+		ref,
+	) => {
+		const [showPassword, setShowPassword] = useState(false);
 
-// Wrap the Input component with React.forwardRef
-const FormInput = React.forwardRef(Input);
+		const isPassword = type === "password";
+		const isRadio = type === "radio";
+
+		const inputType = isPassword && showPassword ? "text" : type;
+
+		const isValid = useMemo(() => {
+			if (!isPassword || typeof value !== "string") return false;
+			return PasswordPolicy.every((rule) => rule.test(value));
+		}, [value, isPassword]);
+
+		const errorId = name ? `${name}-error` : undefined;
+
+		if (isRadio) {
+			return (
+				<label className={`form-radio-field ${disabled ? "opacity-70" : ""}`}>
+					<input
+						ref={ref}
+						id={name}
+						name={name}
+						type="radio"
+						disabled={disabled}
+						required={required}
+						className={`form-radio-input ${className}`}
+						aria-invalid={!!error}
+						aria-describedby={error ? errorId : undefined}
+						{...props}
+					/>
+
+					{label && (
+						<span className="form-radio-label">
+							{label}
+							{required && <span className="form-required"> *</span>}
+						</span>
+					)}
+				</label>
+			);
+		}
+
+		return (
+			<div className="form-field">
+				{label && (
+					<div className="form-label-row">
+						<label htmlFor={name} className="form-label">
+							{label}
+							{required && <span className="form-required"> *</span>}
+						</label>
+
+						{helperText && isTooltip && !error && (
+							<HelperTooltip label={label} text={helperText} />
+						)}
+					</div>
+				)}
+
+				<div className="form-input-wrapper">
+					<input
+						ref={ref}
+						id={name}
+						name={name}
+						type={inputType}
+						value={value}
+						required={required}
+						disabled={disabled}
+						aria-invalid={!!error}
+						aria-describedby={error ? errorId : undefined}
+						{...(type === "date" && {
+							min: new Date().toISOString().split("T")[0],
+						})}
+						className={`
+							form-input
+							${error ? "form-input-error" : ""}
+							${disabled ? "form-input-disabled" : ""}
+							${isValid && !error ? "form-input-valid" : ""}
+							${className}
+						`}
+						placeholder={placeholder}
+						{...props}
+					/>
+
+					{error && <ExclamationCircleIcon className="form-error-icon" />}
+
+					{isPassword && !error && (
+						<button
+							type="button"
+							onClick={() => setShowPassword((prev) => !prev)}
+							className="form-icon-right"
+							aria-label={showPassword ? "Hide password" : "Show password"}
+						>
+							{showPassword ? (
+								<AiOutlineEyeInvisible size={16} />
+							) : (
+								<AiOutlineEye size={16} />
+							)}
+						</button>
+					)}
+				</div>
+
+				{error && (
+					<p id={errorId} className="form-error-text">
+						{error}
+					</p>
+				)}
+			</div>
+		);
+	},
+);
+
+FormInput.displayName = "FormInput";
 
 export default FormInput;
