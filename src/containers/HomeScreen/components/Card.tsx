@@ -1,56 +1,54 @@
 import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../context/Auth/useAuth";
 import "../../../styles/components.css";
 interface ActionCardProps {
-  icon: ReactNode;
-  title: string;
-  description: string;
-  subText: string;
-  path: string;
-  isPrimary?: boolean;
-  appId: string;
+	icon: ReactNode;
+	title: string;
+	description: string;
+	subText: string;
+	path: string;
+	isPrimary?: boolean;
+	appId: string;
 }
 
 function ActionCard({
-  icon,
-  title,
-  description,
-  subText,
-  path,
-  isPrimary = false,
-  appId,
+	icon,
+	title,
+	description,
+	subText,
+	path,
+	isPrimary = false,
+	appId,
 }: ActionCardProps) {
-  const navigate = useNavigate();
-  const { setUser } = useAuth();
+	const navigate = useNavigate();
 
-  return (
-    <div
-      onClick={() => {
-        localStorage.setItem("appId", appId);
-        navigate(path);
-      }}
-      className={`action-card  ${
-        isPrimary ? "action-card-primary" : "action-card-default"
-      }`}
-    >
-      <div
-        className={`action-card-body ${
-          isPrimary ? "action-card-body-primary" : "action-card-body-default"
-        }`}
-      >
-        <div className="action-card-icon">{icon}</div>
+	return (
+		<div
+			onClick={() => {
+				localStorage.setItem("appId", appId);
+				navigate(path);
+			}}
+			className={`action-card  ${
+				isPrimary ? "action-card-primary" : "action-card-default"
+			}`}
+		>
+			<div
+				className={`action-card-body ${
+					isPrimary ? "action-card-body-primary" : "action-card-body-default"
+				}`}
+			>
+				<div className="action-card-icon">{icon}</div>
 
-        <h3 className="action-card-title">{title}</h3>
+				<h3 className="action-card-title">{title}</h3>
 
-        {description && (
-          <p className="action-card-description">{description}</p>
-        )}
+				{description && (
+					<p className="action-card-description">{description}</p>
+				)}
 
-        {subText && <p className="action-card-subtext">{subText}</p>}
-      </div>
-    </div>
-  );
+				{subText && <p className="action-card-subtext">{subText}</p>}
+			</div>
+		</div>
+	);
 }
 
 export default ActionCard;

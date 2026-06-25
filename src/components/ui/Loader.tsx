@@ -1,5 +1,3 @@
-import React from "react";
-
 const Loader = () => {
 	return (
 		<div className="coming-soon-wrapper min-h-[89vh] max-w-2xl mx-auto overflow-hidden bg-transparent">

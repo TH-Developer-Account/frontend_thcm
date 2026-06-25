@@ -2,7 +2,6 @@ import React from "react";
 import axios from "axios";
 
 import DataTable from "../../../../../components/ui/DataTable";
-import { filesApi } from "../../api/file.module.api";
 import type {
 	FileDownloadKind,
 	FileModuleListingRow,
@@ -21,62 +20,8 @@ type DownloadNotice = {
 	url?: string;
 };
 
-const getDownloadKey = (logId: string, kind: FileDownloadKind): string =>
-	`${logId}:${kind}`;
-
 const getFileLabel = (kind: FileDownloadKind): string =>
 	kind === "output" ? "success file" : "error file";
-
-const createDownloadWindow = (): Window | null => {
-	try {
-		return window.open("", "_blank");
-	} catch {
-		return null;
-	}
-};
-
-const closeDownloadWindow = (downloadWindow: Window | null): void => {
-	if (!downloadWindow || downloadWindow.closed) return;
-
-	try {
-		downloadWindow.close();
-	} catch {
-		// The browser may block closing a window after cross-origin navigation.
-	}
-};
-
-const navigateDownloadWindow = (
-	downloadWindow: Window | null,
-	url: string,
-): boolean => {
-	if (!downloadWindow || downloadWindow.closed) {
-		return false;
-	}
-
-	try {
-		downloadWindow.opener = null;
-		downloadWindow.location.replace(url);
-		return true;
-	} catch {
-		return false;
-	}
-};
-
-const triggerAnchorDownload = (url: string): void => {
-	const anchor = document.createElement("a");
-
-	anchor.href = url;
-	anchor.target = "_blank";
-	anchor.rel = "noopener noreferrer";
-	anchor.download = "";
-
-	document.body.appendChild(anchor);
-	anchor.click();
-
-	window.setTimeout(() => {
-		anchor.remove();
-	}, 0);
-};
 
 const getDownloadErrorMessage = (
 	error: unknown,
@@ -127,36 +72,9 @@ const FileListingTable = ({
 	files,
 	loading = false,
 }: FileListingTableProps) => {
-	const activeDownloadKeysRef = React.useRef<Set<string>>(new Set());
-
-	const [downloadingKeys, setDownloadingKeys] = React.useState<Set<string>>(
-		() => new Set(),
-	);
+	const [downloadingKeys] = React.useState<Set<string>>(() => new Set());
 	const [downloadNotice, setDownloadNotice] =
 		React.useState<DownloadNotice | null>(null);
-
-	const updateDownloadState = React.useCallback(
-		(key: string, isDownloading: boolean) => {
-			if (isDownloading) {
-				activeDownloadKeysRef.current.add(key);
-			} else {
-				activeDownloadKeysRef.current.delete(key);
-			}
-
-			setDownloadingKeys((currentKeys) => {
-				const nextKeys = new Set(currentKeys);
-
-				if (isDownloading) {
-					nextKeys.add(key);
-				} else {
-					nextKeys.delete(key);
-				}
-
-				return nextKeys;
-			});
-		},
-		[],
-	);
 
 	const handleDownloadFile = React.useCallback(
 		async (

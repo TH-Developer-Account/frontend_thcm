@@ -15,9 +15,9 @@ const BranchesList = () => {
 
 	const [branches, setBranches] = useState(branches_data);
 
-	const handleAddBranch = (item: { id: string; label: string }) => {
-		setBranches([...branches, item]);
-	};
+	// const handleAddBranch = (item: { id: string; label: string }) => {
+	// 	setBranches([...branches, item]);
+	// };
 	return (
 		<div className=" border-b-0 text-gray-600">
 			<MasterLineItemTable

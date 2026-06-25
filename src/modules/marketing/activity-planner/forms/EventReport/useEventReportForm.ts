@@ -13,6 +13,12 @@ import {
 } from "./eventReport.mapper";
 import { useSubmitEventReportMutation } from "../../queries/useActivityFormQuery";
 
+const revokeObjectUrl = (url?: string | null): void => {
+	if (url?.startsWith("blob:")) {
+		URL.revokeObjectURL(url);
+	}
+};
+
 export function useEventReportForm({
 	epcId,
 	eventCost,
@@ -43,7 +49,7 @@ export function useEventReportForm({
 	React.useEffect(() => {
 		return () => {
 			images.forEach((img) => {
-				if (img?.file) URL.revokeObjectURL(img.url);
+				revokeObjectUrl(img?.url);
 			});
 		};
 	}, []);
@@ -73,7 +79,7 @@ export function useEventReportForm({
 					const old = updated[targetSlotRef.current];
 
 					if (old?.file) {
-						URL.revokeObjectURL(old.url);
+						revokeObjectUrl(old.url);
 					}
 
 					updated[targetSlotRef.current] = {
@@ -120,7 +126,7 @@ export function useEventReportForm({
 			const old = updated[index];
 
 			if (old?.file) {
-				URL.revokeObjectURL(old.url);
+				revokeObjectUrl(old.url);
 			}
 
 			updated[index] = undefined;

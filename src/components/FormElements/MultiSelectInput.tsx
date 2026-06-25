@@ -1,5 +1,5 @@
 import Select from "react-select";
-import type { Props, GroupBase, MultiValue, ActionMeta } from "react-select";
+import type { Props, GroupBase, MultiValue } from "react-select";
 import type { Option } from "./input.types";
 
 interface MultiSelectProps extends Props<Option, true, GroupBase<Option>> {

@@ -7,8 +7,8 @@ import { PageLocationStepper } from "../../../../components/ui/PageLocationStepp
 
 export default function DealerListPage() {
 	// const { data, loading, error } = useUsers();
-	const [activeTab, setActiveTab] = useState("All");
-	const [search, setSearch] = useState("");
+	const [activeTab] = useState("All");
+	const [search] = useState("");
 
 	// Filtered Data
 	const filteredUsers = useMemo(() => {

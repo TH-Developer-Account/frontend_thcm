@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getWorkflowColumns } from "./workflow.columns";
 import DataTable from "../../../../components/ui/DataTable";
@@ -29,14 +29,15 @@ const WorkflowTable = () => {
 	const [assignModalOpen, setAssignModalOpen] = useState<WorkflowRow | null>(
 		null,
 	);
-	useEffect(() => {}, [assignModalOpen]);
 	const [deleteModal, setDeleteModal] = useState<WorkflowRow | null>(null);
 	const { showToast } = useToast(); // use your actual toast hook
 
 	const handleAssignUser = async (
 		userIds: string[],
-		workflow: WorkflowRow | null,
+		workflowId?: string,
 	): Promise<void> => {
+		if (!workflowId) return;
+
 		try {
 			const {
 				data: { message },
@@ -44,7 +45,7 @@ const WorkflowTable = () => {
 				api_routes.create_assign_users_workflow_template,
 				{
 					userIds,
-					templateId: workflow,
+					templateId: workflowId,
 				},
 			);
 
@@ -53,21 +54,41 @@ const WorkflowTable = () => {
 				title: "Success",
 				description: message,
 			});
+
+			setAssignModalOpen(null);
 		} catch (error) {
 			console.error("Failed to assign users:", error);
-		} finally {
-			setAssignModalOpen(null);
+
+			showToast({
+				type: "error",
+				title: "Assignment failed",
+				description: "Unable to assign users. Please try again.",
+			});
+
+			throw error;
 		}
 	};
 
-	const handleEdit = (workflow: WorkflowRow) => {
-		navigate(`/admin/edit-workflows/${workflow.id}`);
-	};
+	const handleEdit = useCallback(
+		(workflow: WorkflowRow) => {
+			navigate(`/admin/edit-workflows/${workflow.id}`);
+		},
+		[navigate],
+	);
 
-	const setDelete = (workflow: WorkflowRow) => {
-		console.log("Delete workflow", workflow);
+	const setDelete = useCallback((workflow: WorkflowRow) => {
 		setDeleteModal(workflow);
-	};
+	}, []);
+
+	const columns = useMemo(
+		() =>
+			getWorkflowColumns({
+				onAssign: setAssignModalOpen,
+				onEdit: handleEdit,
+				onDelete: setDelete,
+			}),
+		[handleEdit, setDelete],
+	);
 
 	const handleDelete = async (workflowId: string) => {
 		try {
@@ -89,16 +110,6 @@ const WorkflowTable = () => {
 			setDeleteModal(null);
 		}
 	};
-
-	const columns = useMemo(
-		() =>
-			getWorkflowColumns({
-				onAssign: setAssignModalOpen,
-				onEdit: handleEdit,
-				onDelete: setDelete,
-			}),
-		[],
-	);
 
 	return (
 		<>

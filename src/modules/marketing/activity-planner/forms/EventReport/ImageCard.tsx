@@ -19,11 +19,17 @@ export const ImageCard = ({
 				key={index}
 				className="group relative h-[180px] overflow-hidden rounded-2xl bg-gray-100"
 			>
-				<img
-					src={image.url}
-					alt={`Event ${index + 1}`}
-					className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-				/>
+				{image.url ? (
+					<img
+						src={image.url}
+						alt={image.caption || "Event report image"}
+						className="h-full w-full object-cover"
+					/>
+				) : (
+					<div className="flex h-full w-full items-center justify-center text-sm text-gray-500">
+						Image unavailable
+					</div>
+				)}
 
 				{/* Overlay */}
 				<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />

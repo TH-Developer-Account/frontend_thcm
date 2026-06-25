@@ -18,7 +18,7 @@ export default function ProfileCardRenderer({
 						<div className="profile-meta-header">
 							{header.avatar && (
 								<div className="profile-meta-avatar">
-									<img src={header.avatar} alt="user" />
+									<img src={header.avatar ?? undefined} alt="user" />
 								</div>
 							)}
 

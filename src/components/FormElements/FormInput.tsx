@@ -1,9 +1,4 @@
-import React, {
-	forwardRef,
-	useState,
-	useMemo,
-	type InputHTMLAttributes,
-} from "react";
+import { forwardRef, useState, useMemo, type InputHTMLAttributes } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 import { PasswordPolicy } from "../../containers/Login/constant";

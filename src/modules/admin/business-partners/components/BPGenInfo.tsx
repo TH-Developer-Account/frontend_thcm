@@ -13,8 +13,6 @@ type BPGeneralInfoProps = {
 	title?: string;
 };
 
-const fallbackValue = "--";
-
 const BPGeneralInfo = ({
 	name,
 	// number,

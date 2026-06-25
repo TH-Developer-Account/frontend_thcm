@@ -1,4 +1,4 @@
-import type { TableRow } from "../../components/activityFormView/LineTableView";
+import type { TableRow } from "../../types/lineItem.types";
 import {
 	getLineItemQuantity,
 	getLineItemRate,

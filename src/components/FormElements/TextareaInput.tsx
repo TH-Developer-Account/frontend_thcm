@@ -1,6 +1,6 @@
 import React, { type ForwardRefRenderFunction } from "react";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
-import HelperTooltip from "../common/HelperToolTip";
+import HelperTooltip from "../common/HelperTooltip";
 import type { TextareaProps } from "./input.types";
 
 const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (

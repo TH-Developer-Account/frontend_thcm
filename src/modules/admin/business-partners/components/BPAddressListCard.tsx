@@ -1,4 +1,3 @@
-import React from "react";
 import type { AddressItem } from "./BPAddress";
 import { Pencil, Trash } from "lucide-react";
 

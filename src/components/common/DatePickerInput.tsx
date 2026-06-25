@@ -5,7 +5,7 @@ import { CalendarDaysIcon } from "@heroicons/react/24/outline";
 import "react-day-picker/dist/style.css";
 
 import Button from "./Button";
-import HelperTooltip from "./HelperToolTip";
+import HelperTooltip from "./HelperTooltip";
 
 type PickerMode = "single" | "range";
 
