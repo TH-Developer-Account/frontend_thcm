@@ -289,6 +289,34 @@ HOME MODULE CARD
 
 		--action-card-badge-bg: var(--color-bg-surface-active);
 		--action-card-badge-border: var(--color-status-draft-border);
+
+		/* =====================================================
+   EPF BUDGET SUMMARY
+===================================================== */
+
+		--epf-summary-bg: var(--color-bg-surface);
+		--epf-summary-subtle-bg: var(--color-bg-surface-subtle);
+		--epf-summary-muted-bg: var(--color-bg-surface-muted);
+
+		--epf-summary-border: var(--color-border-default);
+		--epf-summary-border-subtle: var(--color-border-subtle);
+		--epf-summary-border-emphasis: var(--color-brand-soft);
+
+		--epf-summary-label: var(--color-text-muted);
+		--epf-summary-value: var(--color-text-primary);
+		--epf-summary-secondary: var(--color-text-secondary);
+
+		--epf-summary-icon-bg: var(--color-info-bg);
+		--epf-summary-icon-border: var(--color-info-border);
+		--epf-summary-icon: var(--color-info);
+
+		--epf-summary-total-bg: var(--color-brand-subtle);
+		--epf-summary-total-border: var(--color-brand-soft);
+		--epf-summary-total-text: var(--color-brand-active);
+
+		--epf-share-track: var(--color-brand-subtle);
+		--epf-share-fill-start: var(--color-brand);
+		--epf-share-fill-end: var(--color-orange-300);
 	}
 }
 
@@ -318,16 +346,29 @@ HOME MODULE CARD
 		/* Share/progress track */
 		--epf-share-track: var(--color-brand-subtle);
 
-		/* Comments */
+		/*  Comments */
+
 		--comment-panel-bg: var(--color-bg-surface);
-		--comment-header-bg: var(--color-bg-surface-muted);
+		--comment-panel-border: var(--color-border-default);
+		--comment-panel-divider: var(--color-border-subtle);
+		--comment-panel-shadow: none;
+
+		--comment-header-bg: var(--color-bg-surface-subtle);
+		--comment-composer-bg: var(--color-bg-surface);
+		--comment-toolbar-bg: var(--color-bg-surface-subtle);
+
 		--comment-bubble-bg: var(--color-bg-surface-subtle);
 		--comment-bubble-border: var(--color-border-subtle);
+
 		--comment-self-bg: var(--color-brand-subtle);
 		--comment-self-border: var(--color-brand-soft);
-		--comment-action-bg: var(--color-bg-surface);
-		--comment-action-hover-bg: var(--color-brand-subtle);
-		--comment-empty-bg: var(--color-bg-surface-subtle);
+
+		--comment-empty-bg: var(--color-bg-surface);
+
+		--comment-audit-bg: var(--color-info-bg);
+		--comment-audit-border: var(--color-info-border);
+		--comment-audit-text: var(--color-info);
+
 		--comment-skeleton-start: var(--color-skeleton-base);
 		--comment-skeleton-mid: var(--color-skeleton-highlight);
 

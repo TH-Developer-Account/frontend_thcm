@@ -9,6 +9,7 @@ import {
 	AiOutlineFacebook,
 	AiOutlineInstagram,
 	AiOutlineLinkedin,
+	AiOutlineTwitter,
 } from "react-icons/ai";
 
 type UserRole = "ADMIN" | "MANAGER" | "VIEWER";
@@ -168,7 +169,7 @@ export default function UserProfile({ userRole = "ADMIN" }: UserProfileProps) {
 					<SocialLink
 						href={profileValues.twitter}
 						label="X"
-						icon={<Twitter size={18} aria-hidden="true" />}
+						icon={<AiOutlineTwitter size={18} aria-hidden="true" />}
 					/>
 
 					<SocialLink

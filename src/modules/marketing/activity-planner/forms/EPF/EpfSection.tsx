@@ -1,6 +1,9 @@
-import { GlobeIcon, Pencil, Plus, UsersIcon } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
+import Card from "../../../../../components/common/Card";
+import SectionAccordion from "../../../../../components/common/SectionAccordion";
+
 import LineTableView from "../../components/activityFormView/LineTableView";
 import BudgetShare from "../../components/activityFormView/BudgetShare";
 import EpfForm from "./EpfForm";
@@ -8,7 +11,6 @@ import EpfForm from "./EpfForm";
 import type { EpcDetailResponse } from "../../types/epc.types";
 import { mapEpfLineItemsToTableRows } from "./epf.mapper";
 import { mapBudgetShareInfo } from "../../utils/formatters";
-import SectionAccordion from "../../../../../components/common/SectionAccordion";
 
 type EpfSectionProps = {
 	epcData: EpcDetailResponse;
@@ -52,7 +54,7 @@ const EpfSection = ({
 			<SectionAccordion
 				title="Activity Proposition Form"
 				action={
-					canCreate && (
+					canCreate ? (
 						<Button
 							type="button"
 							text="Create EPF"
@@ -62,19 +64,21 @@ const EpfSection = ({
 							appearance="standard"
 							variant="outline"
 						/>
-					)
+					) : null
 				}
 			>
-				<div className="text-xs text-gray-500">
-					No EPF has been created for this EPC yet.
-				</div>
+				<Card variant="subtle" padding="compact">
+					<p className="epf-empty-message">
+						No EPF has been created for this EPC yet.
+					</p>
+				</Card>
 			</SectionAccordion>
 		);
 	}
 
-	const totalParticipants =
-		(Number(epf.internalParticipants) || 0) +
-		(Number(epf.externalParticipants) || 0);
+	const internalParticipants = Number(epf.internalParticipants) || 0;
+
+	const externalParticipants = Number(epf.externalParticipants) || 0;
 
 	const { items: budgetItems, shareInfo } = mapBudgetShareInfo({
 		eventBudget: epf.eventBudget,
@@ -90,7 +94,7 @@ const EpfSection = ({
 		<SectionAccordion
 			title="Activity Proposition Form Budget Information"
 			action={
-				canEdit && (
+				canEdit ? (
 					<Button
 						type="button"
 						Icon={Pencil}
@@ -100,48 +104,29 @@ const EpfSection = ({
 						appearance="standard"
 						variant="outline"
 					/>
-				)
+				) : null
 			}
 		>
-			{epf.lineItems?.length > 0 ? (
-				<LineTableView
-					data={mapEpfLineItemsToTableRows(epf.lineItems)}
-					showGrandTotal
-					grandTotalLabel="Event Cost Overheads Grand Total:"
+			<div className="epf-summary-section">
+				{epf.lineItems?.length > 0 ? (
+					<LineTableView
+						data={mapEpfLineItemsToTableRows(epf.lineItems)}
+						showGrandTotal
+						grandTotalLabel="Event Cost Overheads Grand Total:"
+					/>
+				) : (
+					<Card variant="subtle" padding="compact">
+						<p className="epf-empty-message">No event cost overheads added.</p>
+					</Card>
+				)}
+
+				<BudgetShare
+					items={budgetItems}
+					shareInfo={shareInfo}
+					internalParticipants={internalParticipants}
+					externalParticipants={externalParticipants}
 				/>
-			) : (
-				<div className="text-xs text-gray-500">
-					No event cost overheads added.
-				</div>
-			)}
-
-			{epf.internalParticipants || epf.externalParticipants ? (
-				<div className="flex items-center gap-2 my-3">
-					<span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-sm">
-						<UsersIcon className="h-3.5 w-3.5 text-slate-400" />
-						<span className="text-slate-500">Internal</span>
-						<span className="font-medium text-slate-800">
-							{epf.internalParticipants || 0}
-						</span>
-					</span>
-					<span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-sm">
-						<GlobeIcon className="h-3.5 w-3.5 text-slate-400" />
-						<span className="text-slate-500">External</span>
-						<span className="font-medium text-slate-800">
-							{epf.externalParticipants || 0}
-						</span>
-					</span>
-					<div className="w-px h-4 bg-slate-200" />
-					<span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-sm">
-						<span className="text-slate-500">Total</span>
-						<span className="font-medium text-slate-800">
-							{totalParticipants}
-						</span>
-					</span>
-				</div>
-			) : null}
-
-			<BudgetShare items={budgetItems} shareInfo={shareInfo} />
+			</div>
 		</SectionAccordion>
 	);
 };

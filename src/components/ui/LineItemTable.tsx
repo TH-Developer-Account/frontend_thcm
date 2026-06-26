@@ -1,22 +1,25 @@
 import {
-	Trash2,
+	Check,
+	Paperclip,
 	Pencil,
 	Plus,
-	Check,
 	RotateCcw,
+	Trash2,
 	Upload,
-	Paperclip,
 	X,
 } from "lucide-react";
-import { useState } from "react";
-import SelectInput from "../FormElements/SelectInput";
-import FormInput from "../FormElements/FormInput";
+import { useEffect, useId, useMemo, useState } from "react";
+
 import Button from "../common/Button";
-import type { LineItemOption } from "../../modules/marketing/activity-planner/types/lineItem.types";
+import FormInput from "../FormElements/FormInput";
+import SelectInput from "../FormElements/SelectInput";
+
 import type {
 	ColumnConfig,
 	ColumnKey,
+	LineItemOption,
 } from "../../modules/marketing/activity-planner/types/lineItem.types";
+
 import { DEFAULT_COLUMNS } from "../../modules/marketing/activity-planner/utils/columnPresets";
 
 interface LineItemTableProps {
@@ -29,7 +32,7 @@ interface LineItemTableProps {
 	columns?: ColumnConfig[];
 }
 
-const EMPTY_DRAFT: LineItemOption = {
+const createEmptyDraft = (): LineItemOption => ({
 	value: "",
 	label: "",
 	particular: "",
@@ -43,16 +46,48 @@ const EMPTY_DRAFT: LineItemOption = {
 	width: 0,
 	height: 0,
 	unit: "",
+
 	quotationFile: null,
 	quotationFileUrl: null,
 	quotationFileName: null,
+});
+
+const COLUMN_SPAN_CLASSES: Record<number, string> = {
+	1: "col-span-1",
+	2: "col-span-2",
+	3: "col-span-3",
+	4: "col-span-4",
+	5: "col-span-5",
+	6: "col-span-6",
+	7: "col-span-7",
+	8: "col-span-8",
+	9: "col-span-9",
+	10: "col-span-10",
+	11: "col-span-11",
+	12: "col-span-12",
 };
 
-function alignClass(align?: "left" | "right" | "center") {
-	if (align === "right") return "text-right";
-	if (align === "center") return "text-center";
-	return "text-left";
-}
+const getColumnSpanClass = (colSpan?: number): string => {
+	return COLUMN_SPAN_CLASSES[colSpan ?? 1] ?? "col-span-1";
+};
+
+const getAlignmentClass = (align?: "left" | "right" | "center"): string => {
+	if (align === "right") {
+		return "line-item-align-right";
+	}
+
+	if (align === "center") {
+		return "line-item-align-center";
+	}
+
+	return "line-item-align-left";
+};
+
+const getColumnClassName = (column: ColumnConfig): string => {
+	return [getColumnSpanClass(column.colSpan), getAlignmentClass(column.align)]
+		.filter(Boolean)
+		.join(" ");
+};
 
 export default function LineItemTable({
 	title,
@@ -63,45 +98,107 @@ export default function LineItemTable({
 	category,
 	columns = DEFAULT_COLUMNS,
 }: LineItemTableProps) {
-	const [draft, setDraft] = useState<LineItemOption>(EMPTY_DRAFT);
+	const quotationInputId = useId();
+
+	const [draft, setDraft] = useState<LineItemOption>(createEmptyDraft);
+
 	const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
 	const isEditing = editingIndex !== null;
 
-	// Strip "actions" column when in viewer mode
-	const visibleColumns = isViewer
-		? columns.filter((c) => c.key !== "actions")
-		: columns;
+	const visibleColumns = useMemo(
+		() =>
+			isViewer ? columns.filter((column) => column.key !== "actions") : columns,
+		[columns, isViewer],
+	);
 
-	// Quick helpers
-	const has = (key: ColumnKey) => visibleColumns.some((c) => c.key === key);
-	const col = (key: ColumnKey) => visibleColumns.find((c) => c.key === key)!;
+	const columnMap = useMemo(() => {
+		return visibleColumns.reduce<Partial<Record<ColumnKey, ColumnConfig>>>(
+			(accumulator, column) => {
+				accumulator[column.key] = column;
+				return accumulator;
+			},
+			{},
+		);
+	}, [visibleColumns]);
 
-	// ── Select options ──────────────────────────────────────────────────────
+	const hasColumn = (key: ColumnKey): boolean => Boolean(columnMap[key]);
 
-	const partNumbers = particularOptions.map((item) => ({
-		value: item.particular,
-		label: item.partNumber || "--",
-	}));
+	const getColumn = (key: ColumnKey): ColumnConfig | undefined => {
+		return columnMap[key];
+	};
 
-	const draftPartNumberOpt =
-		partNumbers.find((o) => o.label === draft.partNumber) ?? null;
+	const getCellClassName = (
+		key: ColumnKey,
+		additionalClassName = "",
+	): string => {
+		const column = getColumn(key);
 
-	const draftParticularOpt =
-		particularOptions.find((o) => o.value === draft.particular) ?? null;
+		if (!column) {
+			return additionalClassName;
+		}
 
-	const total = Number(draft.rate || 0) * Number(draft.quantity || 0);
+		return [
+			"line-item-grid-cell",
+			getColumnClassName(column),
+			additionalClassName,
+		]
+			.filter(Boolean)
+			.join(" ");
+	};
 
-	// ── Draft handlers ──────────────────────────────────────────────────────
+	const partNumberOptions = useMemo(
+		() =>
+			particularOptions.map((item) => ({
+				value: item.particular,
+				label: item.partNumber || "--",
+			})),
+		[particularOptions],
+	);
+
+	const draftPartNumberOption =
+		partNumberOptions.find((option) => option.label === draft.partNumber) ??
+		null;
+
+	const draftParticularOption =
+		particularOptions.find((option) => option.value === draft.particular) ??
+		null;
+
+	const draftTotal = Number(draft.rate || 0) * Number(draft.quantity || 0);
+
+	const grandTotal = items.reduce(
+		(sum, item) => sum + Number(item.rate || 0) * Number(item.quantity || 0),
+		0,
+	);
+
+	const revokeBlobUrl = (url?: string | null) => {
+		if (url?.startsWith("blob:")) {
+			URL.revokeObjectURL(url);
+		}
+	};
 
 	const resetDraft = () => {
-		setDraft(EMPTY_DRAFT);
+		revokeBlobUrl(draft.quotationFileUrl);
+
+		setDraft(createEmptyDraft());
 		setEditingIndex(null);
 	};
 
+	useEffect(() => {
+		return () => {
+			revokeBlobUrl(draft.quotationFileUrl);
+		};
+	}, [draft.quotationFileUrl]);
+
 	const handleParticularChange = (
-		fieldName: string,
-		option: LineItemOption | { value: string; label: string } | null,
+		fieldName: "partNumber" | "particular",
+		option:
+			| LineItemOption
+			| {
+					value: string;
+					label: string;
+			  }
+			| null,
 	) => {
 		if (!option) return;
 
@@ -112,10 +209,9 @@ export default function LineItemTable({
 
 		if (!selected) return;
 
-		setDraft((prev) => ({
-			...prev,
+		setDraft((previous) => ({
+			...previous,
 
-			// common
 			value: selected.value,
 			label: selected.label,
 			particular: selected.value,
@@ -125,100 +221,83 @@ export default function LineItemTable({
 
 			category: selected.category,
 
-			// default pricing flow
 			rate: Number(selected.rate) || 0,
 
 			quantity:
-				(prev.quantity ?? 0) > 0
-					? prev.quantity
+				Number(previous.quantity) > 0
+					? previous.quantity
 					: Number(selected.quantity) || 1,
 
-			// artwork flow
 			width: Number(selected.width) || 0,
-
 			height: Number(selected.height) || 0,
-
 			unit: selected.unit ?? "",
 		}));
 	};
-	// const handleDraftQuotationChange = (file?: File | null) => {
-	// 	setDraft((prev) => ({
-	// 		...prev,
-	// 		quotationFile: file ?? null,
-	// 		quotationFileName: file?.name ?? null,
-	// 	}));
-	// };
 
-	// const handleRowQuotationChange = (index: number, file?: File | null) => {
-	// 	onChange((prev) =>
-	// 		prev.map((item, itemIndex) =>
-	// 			itemIndex === index
-	// 				? {
-	// 						...item,
-	// 						quotationFile: file ?? null,
-	// 						quotationFileName: file?.name ?? null,
-	// 					}
-	// 				: item,
-	// 		),
-	// 	);
-	// };
 	const handleQuotationChange = (file?: File | null) => {
 		if (!file) return;
 
-		setDraft((prev) => ({
-			...prev,
-			quotationFile: file,
-			quotationFileName: file.name,
-			quotationUrl: URL.createObjectURL(file),
-		}));
+		setDraft((previous) => {
+			revokeBlobUrl(previous.quotationFileUrl);
+
+			return {
+				...previous,
+				quotationFile: file,
+				quotationFileName: file.name,
+				quotationFileUrl: URL.createObjectURL(file),
+			};
+		});
 	};
 
 	const removeQuotation = () => {
-		setDraft((prev) => {
-			if (prev.quotationFile && prev.quotationFileUrl?.startsWith("blob:")) {
-				URL.revokeObjectURL(prev.quotationFileUrl);
-			}
+		setDraft((previous) => {
+			revokeBlobUrl(previous.quotationFileUrl);
 
 			return {
-				...prev,
+				...previous,
 				quotationFile: null,
-				quotationUrl: null,
+				quotationFileUrl: null,
 				quotationFileName: null,
 			};
 		});
 	};
+
 	const handleAddOrUpdate = () => {
 		if (!draft.particular) return;
 
 		const payload: LineItemOption = {
 			...draft,
-
 			category,
 
-			// pricing flow
 			rate: Number(draft.rate) || 0,
-
 			quantity: Number(draft.quantity) || 1,
 
-			// artwork flow
 			width: Number(draft.width) || 0,
-
 			height: Number(draft.height) || 0,
-
 			unit: draft.unit ?? "",
 		};
 
 		if (isEditing) {
-			onChange((prev) =>
-				prev.map((item, index) =>
-					index === editingIndex ? { ...item, ...payload } : item,
+			onChange((previous) =>
+				previous.map((item, index) =>
+					index === editingIndex
+						? {
+								...item,
+								...payload,
+							}
+						: item,
 				),
 			);
 		} else {
-			onChange((prev) => [...prev, payload]);
+			onChange((previous) => [...previous, payload]);
 		}
 
-		resetDraft();
+		/*
+		 * Do not revoke the quotation URL here because the
+		 * newly added item may still use that blob URL.
+		 */
+		setDraft(createEmptyDraft());
+		setEditingIndex(null);
 	};
 
 	const handleEdit = (index: number) => {
@@ -226,13 +305,17 @@ export default function LineItemTable({
 
 		if (!item) return;
 
+		revokeBlobUrl(draft.quotationFileUrl);
+
 		setDraft({
 			value: item.value,
 			label: item.label,
 			particular: item.particular || item.value,
 			description: item.description ?? "",
+
 			rate: Number(item.rate) || 0,
 			quantity: Number(item.quantity) || 1,
+
 			partNumber: item.partNumber ?? "",
 			category: item.category,
 
@@ -249,426 +332,508 @@ export default function LineItemTable({
 	};
 
 	const handleDelete = (index: number) => {
-		if (editingIndex === index) resetDraft();
-		onChange((prev) => prev.filter((_, i) => i !== index));
+		if (editingIndex === index) {
+			setDraft(createEmptyDraft());
+			setEditingIndex(null);
+		}
+
+		onChange((previous) => {
+			const deletedItem = previous[index];
+
+			revokeBlobUrl(deletedItem?.quotationFileUrl);
+
+			return previous.filter((_, itemIndex) => itemIndex !== index);
+		});
 	};
 
-	const grandTotal = items.reduce(
-		(sum, item) => sum + Number(item.rate || 0) * Number(item.quantity || 0),
-		0,
-	);
-
-	// ── Render ──────────────────────────────────────────────────────────────
-
 	return (
-		<div className="my-2 overflow-hidden rounded-sm bg-white">
-			{/* Title bar */}
-			<div className="flex items-center justify-between px-3 py-1.5">
-				<div className="inline-flex min-w-0 items-center gap-2">
-					<span className="h-4 w-0.5 shrink-0 rounded-full bg-orange-600" />
-					<h3 className="truncate text-[13px] font-semibold tracking-tight text-orange-800">
-						{title}
-					</h3>
-				</div>
-				<span className="rounded-full border border-orange-300 bg-white px-2.5 py-0.5 text-[11px] font-semibold text-orange-700">
-					{items.length} item{items.length === 1 ? "" : "s"}
-				</span>
-			</div>
+		<section className="line-item-editor">
+			<header className="line-item-editor-header">
+				<div className="line-item-editor-heading">
+					<span className="line-item-editor-marker" aria-hidden="true" />
 
-			<div className="overflow-x-auto px-3 py-2">
-				<div className="min-w-[980px]">
-					{/* ── Header row ── */}
-					<div className="grid grid-cols-12 items-center gap-3 rounded-md border-b border-slate-300 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-slate-800">
-						{visibleColumns.map((c) => (
+					<h3 className="line-item-editor-title">{title}</h3>
+				</div>
+
+				<span className="line-item-editor-count">
+					{items.length} {items.length === 1 ? "item" : "items"}
+				</span>
+			</header>
+
+			<div className="line-item-editor-scroll scrollbar-sleek">
+				<div className="line-item-editor-table">
+					<div className="line-item-editor-head" role="row">
+						{visibleColumns.map((column) => (
 							<div
-								key={c.key}
-								className={`col-span-${c.colSpan} ${alignClass(c.align)}`}
+								key={column.key}
+								className={[
+									"line-item-editor-head-cell",
+									getColumnClassName(column),
+								]
+									.filter(Boolean)
+									.join(" ")}
+								role="columnheader"
 							>
-								{c.label}
+								{column.label}
 							</div>
 						))}
 					</div>
 
-					{/* ── Draft / add row ── */}
-					{!isViewer && (
-						<div className="mt-2 grid grid-cols-12 items-center gap-3 px-3 py-2">
-							{/* SNo */}
-							{has("sno") && (
+					{!isViewer ? (
+						<div className="line-item-editor-draft">
+							{hasColumn("sno") ? (
 								<div
-									className={`col-span-${col("sno").colSpan} text-xs font-semibold text-slate-600`}
+									className={getCellClassName("sno", "line-item-editor-index")}
 								>
 									{isEditing ? Number(editingIndex) + 1 : items.length + 1}.
 								</div>
-							)}
+							) : null}
 
-							{/* Part Number */}
-							{has("partNumber") && (
-								<div className={`col-span-${col("partNumber").colSpan}`}>
+							{hasColumn("partNumber") ? (
+								<div className={getCellClassName("partNumber")}>
 									<SelectInput
 										name="partNumber"
-										options={partNumbers}
-										value={draftPartNumberOpt}
+										options={partNumberOptions}
+										value={draftPartNumberOption}
 										onChange={(option) =>
 											handleParticularChange("partNumber", option)
 										}
 										placeholder="Part no."
 									/>
 								</div>
-							)}
+							) : null}
 
-							{/* Particular */}
-							{has("particular") && (
-								<div className={`col-span-${col("particular").colSpan}`}>
+							{hasColumn("particular") ? (
+								<div className={getCellClassName("particular")}>
 									<SelectInput
 										name="particular"
 										options={particularOptions}
-										value={draftParticularOpt}
+										value={draftParticularOption}
 										onChange={(option) =>
 											handleParticularChange("particular", option)
 										}
 										placeholder="Select item"
 									/>
 								</div>
-							)}
+							) : null}
 
-							{/* Description */}
-							{has("description") && (
-								<div className={`col-span-${col("description").colSpan}`}>
+							{hasColumn("description") ? (
+								<div className={getCellClassName("description")}>
 									<FormInput
 										name="description"
-										value={draft.description as string}
+										value={draft.description ?? ""}
 										placeholder="Description"
-										onChange={(e) =>
-											setDraft((prev) => ({
-												...prev,
-												description: e.target.value,
+										onChange={(event) =>
+											setDraft((previous) => ({
+												...previous,
+												description: event.target.value,
 											}))
 										}
 									/>
 								</div>
-							)}
+							) : null}
 
-							{/* Rate */}
-							{has("rate") && (
-								<div className={`col-span-${col("rate").colSpan}`}>
+							{hasColumn("rate") ? (
+								<div className={getCellClassName("rate")}>
 									<FormInput
 										type="number"
 										name="rate"
 										value={draft.rate}
-										disabled={col("rate").disabled}
-										onChange={(e) =>
-											setDraft((prev) => ({
-												...prev,
-												rate: Number(e.target.value),
+										disabled={getColumn("rate")?.disabled}
+										onChange={(event) =>
+											setDraft((previous) => ({
+												...previous,
+												rate: Number(event.target.value),
 											}))
 										}
 									/>
 								</div>
-							)}
+							) : null}
 
-							{has("width") && (
-								<div className={`col-span-${col("width").colSpan}`}>
+							{hasColumn("width") ? (
+								<div className={getCellClassName("width")}>
 									<FormInput
 										type="number"
 										name="width"
 										value={draft.width ?? ""}
-										onChange={(e) =>
-											setDraft((prev) => ({
-												...prev,
-												width: Number(e.target.value),
+										onChange={(event) =>
+											setDraft((previous) => ({
+												...previous,
+												width: Number(event.target.value),
 											}))
 										}
 									/>
 								</div>
-							)}
-							{has("height") && (
-								<div className={`col-span-${col("height").colSpan}`}>
+							) : null}
+
+							{hasColumn("height") ? (
+								<div className={getCellClassName("height")}>
 									<FormInput
 										type="number"
 										name="height"
 										value={draft.height ?? ""}
-										onChange={(e) =>
-											setDraft((prev) => ({
-												...prev,
-												height: Number(e.target.value),
+										onChange={(event) =>
+											setDraft((previous) => ({
+												...previous,
+												height: Number(event.target.value),
 											}))
 										}
 									/>
 								</div>
-							)}
-							{has("unit") && (
-								<div className={`col-span-${col("unit").colSpan}`}>
+							) : null}
+
+							{hasColumn("unit") ? (
+								<div className={getCellClassName("unit")}>
 									<FormInput
 										name="unit"
 										value={draft.unit ?? ""}
-										onChange={(e) =>
-											setDraft((prev) => ({
-												...prev,
-												unit: e.target.value,
+										onChange={(event) =>
+											setDraft((previous) => ({
+												...previous,
+												unit: event.target.value,
 											}))
 										}
 									/>
 								</div>
-							)}
-							{/* Quantity */}
-							{has("quantity") && (
-								<div className={`col-span-${col("quantity").colSpan}`}>
+							) : null}
+
+							{hasColumn("quantity") ? (
+								<div className={getCellClassName("quantity")}>
 									<FormInput
 										type="number"
 										name="quantity"
 										min={1}
 										value={draft.quantity}
-										onChange={(e) =>
-											setDraft((prev) => ({
-												...prev,
-												quantity: Number(e.target.value),
+										onChange={(event) =>
+											setDraft((previous) => ({
+												...previous,
+												quantity: Number(event.target.value),
 											}))
 										}
 									/>
 								</div>
-							)}
-							{/* Total (always disabled — computed) */}
-							{has("total") && (
-								<div className={`col-span-${col("total").colSpan}`}>
+							) : null}
+
+							{hasColumn("total") ? (
+								<div className={getCellClassName("total")}>
 									<FormInput
 										type="number"
 										name="total"
-										value={total}
+										value={draftTotal}
 										disabled
+										readOnly
 									/>
 								</div>
-							)}
-							{/* Quotation file */}
-							{has("quotation") && (
+							) : null}
+
+							{hasColumn("quotation") ? (
 								<div
-									className={`col-span-${col("quotation").colSpan} flex justify-center`}
+									className={getCellClassName(
+										"quotation",
+										"line-item-editor-center",
+									)}
 								>
 									<input
-										id="quotation-upload"
+										id={quotationInputId}
 										type="file"
 										accept=".pdf,.jpg,.jpeg,.png,.webp"
-										className="hidden"
-										onChange={(e) =>
-											handleQuotationChange(e.target.files?.[0] ?? null)
-										}
+										className="line-item-file-input"
+										onChange={(event) => {
+											handleQuotationChange(event.target.files?.[0] ?? null);
+
+											event.target.value = "";
+										}}
 									/>
 
 									{draft.quotationFileName || draft.quotationFileUrl ? (
-										<div className="flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1">
-											<Paperclip className="h-3.5 w-3.5 text-slate-500" />
+										<div className="line-item-file-chip">
+											<Paperclip aria-hidden="true" />
 
 											<span
-												className="max-w-[80px] truncate text-[11px] text-slate-700"
+												className="line-item-file-name"
 												title={draft.quotationFileName ?? "Quotation"}
 											>
 												{draft.quotationFileName ?? "File"}
 											</span>
 
-											<button
+											<Button
 												type="button"
+												appearance="icon"
+												variant="secondary"
+												size="sm"
+												Icon={X}
+												aria-label="Remove quotation"
+												isTooltip
 												onClick={removeQuotation}
-												className="rounded-full p-0.5 hover:bg-slate-200"
-												title="Remove quotation"
-											>
-												<X className="h-3 w-3 text-slate-500" />
-											</button>
+												className="line-item-file-remove"
+											/>
 										</div>
 									) : (
 										<label
-											htmlFor="quotation-upload"
-											className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-dashed border-slate-300 bg-white hover:border-orange-300 hover:bg-orange-50"
+											htmlFor={quotationInputId}
+											className="line-item-file-upload"
 											title="Upload quotation"
+											aria-label="Upload quotation"
 										>
-											<Upload className="h-4 w-4 text-slate-500" />
+											<Upload aria-hidden="true" />
 										</label>
 									)}
 								</div>
-							)}
-							{/* Actions */}
-							{has("actions") && (
+							) : null}
+
+							{hasColumn("actions") ? (
 								<div
-									className={`col-span-${col("actions").colSpan} flex justify-center gap-1.5`}
+									className={getCellClassName(
+										"actions",
+										"line-item-editor-actions",
+									)}
 								>
 									<Button
 										type="button"
-										onClick={handleAddOrUpdate}
-										status="brand"
+										appearance="icon"
+										variant="outline"
 										size="sm"
 										Icon={isEditing ? Check : Plus}
-										className="h-6 w-8 rounded-full px-1"
+										aria-label={
+											isEditing ? "Update line item" : "Add line item"
+										}
+										onClick={handleAddOrUpdate}
 									/>
+
 									<Button
 										type="button"
-										onClick={resetDraft}
-										status="outline"
+										appearance="icon"
+										variant="outline"
 										size="sm"
 										Icon={RotateCcw}
-										className="h-6 w-8 rounded-full px-1"
+										aria-label="Reset line item"
+										onClick={resetDraft}
 									/>
 								</div>
-							)}
+							) : null}
 						</div>
-					)}
+					) : null}
 
-					{/* ── Items list ── */}
-					<div className="mt-2 divide-y divide-slate-200">
+					<div className="line-item-editor-body">
 						{items.length === 0 ? (
-							<div className="text-center text-xs font-medium text-slate-500">
-								No line items added yet
+							<div className="line-item-editor-empty">
+								<p className="line-item-editor-empty-title">
+									No line items added
+								</p>
+
+								{!isViewer ? (
+									<p className="line-item-editor-empty-description">
+										Use the row above to add the first item.
+									</p>
+								) : null}
 							</div>
 						) : (
 							items.map((item, index) => {
 								const rowTotal =
 									Number(item.rate || 0) * Number(item.quantity || 0);
+
 								const isActiveRow = editingIndex === index;
 
 								return (
 									<div
 										key={item.id ?? item.value ?? `${category}-${index}`}
-										className={`grid grid-cols-12 items-center gap-3 px-3 py-2 text-[13px] transition ${
-											isActiveRow ? "bg-orange-100" : "hover:bg-slate-50"
-										}`}
+										className={[
+											"line-item-editor-row",
+											isActiveRow && "line-item-editor-row-active",
+										]
+											.filter(Boolean)
+											.join(" ")}
 									>
-										{has("sno") && (
+										{hasColumn("sno") ? (
 											<div
-												className={`col-span-${col("sno").colSpan} text-xs font-medium text-slate-600`}
+												className={getCellClassName(
+													"sno",
+													"line-item-editor-index",
+												)}
 											>
 												{index + 1}.
 											</div>
-										)}
+										) : null}
 
-										{has("partNumber") && (
+										{hasColumn("partNumber") ? (
 											<div
-												className={`col-span-${col("partNumber").colSpan} truncate text-slate-700`}
+												className={getCellClassName(
+													"partNumber",
+													"line-item-editor-value",
+												)}
 											>
 												{item.partNumber || "--"}
 											</div>
-										)}
+										) : null}
 
-										{has("particular") && (
+										{hasColumn("particular") ? (
 											<div
-												className={`col-span-${col("particular").colSpan} truncate font-semibold text-slate-950`}
+												className={getCellClassName(
+													"particular",
+													"line-item-editor-value line-item-editor-value-primary",
+												)}
 											>
 												{item.label || item.particular || "--"}
 											</div>
-										)}
+										) : null}
 
-										{has("description") && (
+										{hasColumn("description") ? (
 											<div
-												className={`col-span-${col("description").colSpan} truncate text-slate-700`}
+												className={getCellClassName(
+													"description",
+													"line-item-editor-value line-item-editor-description",
+												)}
 											>
 												{item.description || "--"}
 											</div>
-										)}
-										{has("width") && (
-											<div className={`col-span-${col("width").colSpan}`}>
+										) : null}
+
+										{hasColumn("width") ? (
+											<div
+												className={getCellClassName(
+													"width",
+													"line-item-editor-value line-item-editor-number",
+												)}
+											>
 												{item.width ?? "--"}
 											</div>
-										)}
-										{has("height") && (
-											<div className={`col-span-${col("height").colSpan}`}>
+										) : null}
+
+										{hasColumn("height") ? (
+											<div
+												className={getCellClassName(
+													"height",
+													"line-item-editor-value line-item-editor-number",
+												)}
+											>
 												{item.height ?? "--"}
 											</div>
-										)}
-										{has("unit") && (
-											<div className={`col-span-${col("unit").colSpan}`}>
+										) : null}
+
+										{hasColumn("unit") ? (
+											<div
+												className={getCellClassName(
+													"unit",
+													"line-item-editor-value",
+												)}
+											>
 												{item.unit ?? "--"}
 											</div>
-										)}
-										{has("rate") && (
+										) : null}
+
+										{hasColumn("rate") ? (
 											<div
-												className={`col-span-${col("rate").colSpan} ${alignClass(col("rate").align)} tabular-nums font-medium text-slate-800`}
+												className={getCellClassName(
+													"rate",
+													"line-item-editor-value line-item-editor-number",
+												)}
 											>
 												{Number(item.rate || 0).toFixed(2)}
 											</div>
-										)}
+										) : null}
 
-										{has("quantity") && (
+										{hasColumn("quantity") ? (
 											<div
-												className={`col-span-${col("quantity").colSpan} ${alignClass(col("quantity").align)} tabular-nums font-medium text-slate-800`}
+												className={getCellClassName(
+													"quantity",
+													"line-item-editor-value line-item-editor-number",
+												)}
 											>
 												{Number(item.quantity || 0)}
 											</div>
-										)}
+										) : null}
 
-										{has("total") && (
+										{hasColumn("total") ? (
 											<div
-												className={`col-span-${col("total").colSpan} ${alignClass(col("total").align)} font-bold tabular-nums text-slate-950`}
+												className={getCellClassName(
+													"total",
+													"line-item-editor-value line-item-editor-total",
+												)}
 											>
 												{rowTotal.toFixed(2)}
 											</div>
-										)}
-										{has("quotation") && (
+										) : null}
+
+										{hasColumn("quotation") ? (
 											<div
-												className={`col-span-${col("quotation").colSpan} flex justify-center`}
+												className={getCellClassName(
+													"quotation",
+													"line-item-editor-center",
+												)}
 											>
 												{item.quotationFileUrl ? (
 													<a
 														href={item.quotationFileUrl}
 														target="_blank"
-														rel="noreferrer"
-														className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50 hover:bg-orange-50"
+														rel="noopener noreferrer"
+														className="line-item-file-action"
 														title={item.quotationFileName ?? "View quotation"}
+														aria-label={
+															item.quotationFileName
+																? `View quotation: ${item.quotationFileName}`
+																: "View quotation"
+														}
 													>
-														<Paperclip className="h-4 w-4 text-orange-700" />
+														<Paperclip aria-hidden="true" />
 													</a>
 												) : item.quotationFileName ? (
 													<span
-														className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50"
+														className="line-item-file-action line-item-file-action-disabled"
 														title={item.quotationFileName}
 													>
-														<Paperclip className="h-4 w-4 text-slate-500" />
+														<Paperclip aria-hidden="true" />
 													</span>
 												) : (
-													<span className="text-xs text-slate-400">--</span>
+													<span className="line-item-empty-value">--</span>
 												)}
 											</div>
-										)}
-										{has("actions") && (
+										) : null}
+
+										{hasColumn("actions") ? (
 											<div
-												className={`col-span-${col("actions").colSpan} flex justify-center gap-1.5`}
+												className={getCellClassName(
+													"actions",
+													"line-item-editor-actions",
+												)}
 											>
 												<Button
 													type="button"
-													onClick={() => handleEdit(index)}
-													Icon={Pencil}
-													status="brand"
+													appearance="icon"
+													variant="outline"
 													size="sm"
-													className="h-6 w-8 rounded-full px-1"
+													Icon={Pencil}
 													aria-label="Edit line item"
+													onClick={() => handleEdit(index)}
 												/>
+
 												<Button
 													type="button"
-													onClick={() => handleDelete(index)}
-													Icon={Trash2}
-													status="outline"
+													appearance="icon"
+													variant="outline"
 													size="sm"
-													className="h-6 w-8 rounded-full px-1"
+													Icon={Trash2}
 													aria-label="Delete line item"
+													onClick={() => handleDelete(index)}
 												/>
 											</div>
-										)}
+										) : null}
 									</div>
 								);
 							})
 						)}
 					</div>
 
-					{/* ── Grand total ── */}
-					{items.length > 0 && (
-						<div className="mt-2 flex justify-end border-t border-slate-300 border-dashed  px-4 py-1">
-							<div className="flex items-center gap-3 text-xs">
-								<span className="font-semibold text-slate-600">
-									Grand Total
-								</span>
-								<span className="text-sm font-bold tabular-nums text-orange-800">
-									{grandTotal.toFixed(2)}
-								</span>
-							</div>
-						</div>
-					)}
+					{items.length > 0 ? (
+						<footer className="line-item-editor-total-row">
+							<span className="line-item-editor-total-label">Grand Total</span>
+
+							<strong className="line-item-editor-total-value">
+								{grandTotal.toFixed(2)}
+							</strong>
+						</footer>
+					) : null}
 				</div>
 			</div>
-		</div>
+		</section>
 	);
 }

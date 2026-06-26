@@ -8,9 +8,9 @@ import {
 	ClipboardCheck,
 	FileUser,
 	UserRoundCheck,
+	type LucideIcon,
 } from "lucide-react";
 import type { FormatType } from "../types/workflow.types";
-import type React from "react";
 import type { EpcFilters } from "../types/epc.types";
 import {
 	createActivityActionOptions,
@@ -119,17 +119,18 @@ export const EMOJIS = [
 	"⏰",
 	"📅",
 ];
-
-export const FORMAT_ACTIONS: {
-	icon: React.ElementType;
+type FormatAction = {
+	icon: LucideIcon;
 	fmt: FormatType;
 	title: string;
-}[] = [
+};
+
+export const FORMAT_ACTIONS = [
 	{ icon: Bold, fmt: "bold", title: "Bold" },
 	{ icon: Italic, fmt: "italic", title: "Italic" },
 	{ icon: Code, fmt: "code", title: "Inline code" },
 	{ icon: List, fmt: "bullet", title: "Bullet list" },
-];
+] satisfies FormatAction[];
 
 export const FORMAT_WRAP: Record<FormatType, (sel: string) => string> = {
 	bold: (sel) => (sel ? `**${sel}**` : "****"),

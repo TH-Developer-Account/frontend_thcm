@@ -1,15 +1,20 @@
 import {
 	flexRender,
 	getCoreRowModel,
+	getPaginationRowModel,
 	getSortedRowModel,
 	useReactTable,
 	type ColumnDef,
 	type OnChangeFn,
+	type PaginationState,
 	type SortingState,
 } from "@tanstack/react-table";
 import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import Pagination from "../common/Pagination";
+
+export type DataTableMinWidth = "none" | "sm" | "md" | "lg" | "xl";
 
 export interface DataTableProps<T extends object> {
 	data: T[];
@@ -20,7 +25,9 @@ export interface DataTableProps<T extends object> {
 	sorting?: SortingState;
 	onSortingChange?: OnChangeFn<SortingState>;
 	manualSorting?: boolean;
+	enableSorting?: boolean;
 
+	enablePagination?: boolean;
 	manualPagination?: boolean;
 	pageIndex?: number;
 	pageSize?: number;
@@ -33,14 +40,42 @@ export interface DataTableProps<T extends object> {
 
 	scrollTargetId?: string;
 	className?: string;
+	tableClassName?: string;
+	minWidth?: DataTableMinWidth;
+	ariaLabel?: string;
+
+	getRowId?: (originalRow: T, index: number, parent?: unknown) => string;
 
 	getRowClassName?: (row: T, rowIndex: number) => string;
+
 	onRowClick?: (row: T) => void;
+
+	footer?: ReactNode;
 }
 
 const joinClassNames = (
 	...classNames: Array<string | false | null | undefined>
-) => classNames.filter(Boolean).join(" ");
+): string => classNames.filter(Boolean).join(" ");
+
+const getAlignmentClass = (align?: "left" | "center" | "right"): string => {
+	if (align === "center") {
+		return "data-table-align-center";
+	}
+
+	if (align === "right") {
+		return "data-table-align-right";
+	}
+
+	return "data-table-align-left";
+};
+
+const getMinWidthClass = (minWidth: DataTableMinWidth): string => {
+	if (minWidth === "none") {
+		return "";
+	}
+
+	return `data-table-min-${minWidth}`;
+};
 
 function DataTable<T extends object>({
 	data,
@@ -50,7 +85,9 @@ function DataTable<T extends object>({
 	sorting,
 	onSortingChange,
 	manualSorting = false,
+	enableSorting = true,
 
+	enablePagination,
 	manualPagination = false,
 	pageIndex = 0,
 	pageSize = 10,
@@ -60,39 +97,108 @@ function DataTable<T extends object>({
 
 	emptyTitle = "No records found",
 	emptyDescription = "Try adjusting your filters or search.",
+
 	scrollTargetId = "data-table-scroll",
 	className = "",
+	tableClassName = "",
+	minWidth = "none",
+	ariaLabel = "Data table",
 
+	getRowId,
 	getRowClassName,
 	onRowClick,
+
+	footer,
 }: DataTableProps<T>) {
 	"use no memo";
+
+	const shouldUsePagination = enablePagination ?? manualPagination;
+
+	const [internalPagination, setInternalPagination] = useState<PaginationState>(
+		{
+			pageIndex,
+			pageSize,
+		},
+	);
+
+	useEffect(() => {
+		if (!manualPagination) return;
+
+		setInternalPagination({
+			pageIndex,
+			pageSize,
+		});
+	}, [manualPagination, pageIndex, pageSize]);
 
 	const table = useReactTable({
 		data,
 		columns,
+		getRowId,
 
 		state: {
 			sorting: sorting ?? [],
+			...(!manualPagination && shouldUsePagination
+				? {
+						pagination: internalPagination,
+					}
+				: {}),
 		},
 
 		onSortingChange,
+		onPaginationChange:
+			!manualPagination && shouldUsePagination
+				? setInternalPagination
+				: undefined,
+
+		enableSorting,
 		manualSorting,
 		manualPagination,
-		pageCount,
+
+		pageCount: manualPagination ? pageCount : undefined,
 
 		getCoreRowModel: getCoreRowModel(),
-		getSortedRowModel: getSortedRowModel(),
+
+		getSortedRowModel: enableSorting ? getSortedRowModel() : undefined,
+
+		getPaginationRowModel:
+			shouldUsePagination && !manualPagination
+				? getPaginationRowModel()
+				: undefined,
 	});
 
 	const rows = table.getRowModel().rows;
+
 	const visibleColumnCount = table.getVisibleLeafColumns().length;
 
-	const shouldRenderPagination =
-		manualPagination &&
-		pageCount >= 1 &&
-		Boolean(onPageChange) &&
-		Boolean(onPageSizeChange);
+	const resolvedPageIndex = manualPagination
+		? pageIndex
+		: table.getState().pagination.pageIndex;
+
+	const resolvedPageSize = manualPagination
+		? pageSize
+		: table.getState().pagination.pageSize;
+
+	const resolvedPageCount = manualPagination ? pageCount : table.getPageCount();
+
+	const handlePageChange = (page: number) => {
+		if (manualPagination) {
+			onPageChange?.(page);
+			return;
+		}
+
+		table.setPageIndex(page);
+	};
+
+	const handlePageSizeChange = (size: number) => {
+		if (manualPagination) {
+			onPageSizeChange?.(size);
+			return;
+		}
+
+		table.setPageSize(size);
+	};
+
+	const shouldRenderPagination = shouldUsePagination && resolvedPageCount >= 1;
 
 	return (
 		<section
@@ -108,14 +214,20 @@ function DataTable<T extends object>({
 				className="data-table-scroll scrollbar-sleek"
 				tabIndex={0}
 				role="region"
-				aria-label="Data table"
+				aria-label={ariaLabel}
 			>
-				<table className="data-table">
+				<table
+					className={joinClassNames(
+						"data-table",
+						getMinWidthClass(minWidth),
+						tableClassName,
+					)}
+				>
 					<thead className="data-table-head">
 						{table.getHeaderGroups().map((headerGroup) => (
 							<tr key={headerGroup.id} className="data-table-head-row">
 								{headerGroup.headers.map((header) => {
-									const canSort = header.column.getCanSort();
+									const canSort = enableSorting && header.column.getCanSort();
 
 									const sortedState = header.column.getIsSorted();
 
@@ -127,20 +239,13 @@ function DataTable<T extends object>({
 										  }
 										| undefined;
 
-									const alignmentClass =
-										columnMeta?.align === "center"
-											? "data-table-align-center"
-											: columnMeta?.align === "right"
-												? "data-table-align-right"
-												: "data-table-align-left";
-
 									return (
 										<th
 											key={header.id}
 											scope="col"
 											className={joinClassNames(
 												"data-table-head-cell",
-												alignmentClass,
+												getAlignmentClass(columnMeta?.align),
 												columnMeta?.headerClassName,
 											)}
 											aria-sort={
@@ -198,7 +303,7 @@ function DataTable<T extends object>({
 					<tbody className="data-table-body">
 						{loading ? (
 							Array.from({
-								length: Math.max(1, pageSize),
+								length: Math.max(1, resolvedPageSize),
 							}).map((_, rowIndex) => (
 								<tr
 									key={`skeleton-row-${rowIndex}`}
@@ -235,9 +340,11 @@ function DataTable<T extends object>({
 									<div className="data-table-empty-state-inner">
 										<p className="data-table-empty-title">{emptyTitle}</p>
 
-										<p className="data-table-empty-description">
-											{emptyDescription}
-										</p>
+										{emptyDescription ? (
+											<p className="data-table-empty-description">
+												{emptyDescription}
+											</p>
+										) : null}
 									</div>
 								</td>
 							</tr>
@@ -284,13 +391,6 @@ function DataTable<T extends object>({
 												cell.column.id === "action" ||
 												cell.column.id === "actions";
 
-											const alignmentClass =
-												columnMeta?.align === "center"
-													? "data-table-align-center"
-													: columnMeta?.align === "right"
-														? "data-table-align-right"
-														: "data-table-align-left";
-
 											return (
 												<td
 													key={cell.id}
@@ -299,7 +399,7 @@ function DataTable<T extends object>({
 														isActionColumn
 															? "data-table-cell-action"
 															: "data-table-cell-text",
-														alignmentClass,
+														getAlignmentClass(columnMeta?.align),
 														columnMeta?.cellClassName,
 													)}
 												>
@@ -320,15 +420,17 @@ function DataTable<T extends object>({
 				</table>
 			</div>
 
+			{footer ? <div className="data-table-custom-footer">{footer}</div> : null}
+
 			{shouldRenderPagination ? (
 				<footer className="data-table-pagination">
 					<div className="data-table-pagination-inner">
 						<Pagination
-							pageIndex={pageIndex}
-							pageSize={pageSize}
-							totalPages={pageCount}
-							onPageChange={onPageChange!}
-							onPageSizeChange={onPageSizeChange!}
+							pageIndex={resolvedPageIndex}
+							pageSize={resolvedPageSize}
+							totalPages={resolvedPageCount}
+							onPageChange={handlePageChange}
+							onPageSizeChange={handlePageSizeChange}
 							scrollTargetId={scrollTargetId}
 						/>
 					</div>

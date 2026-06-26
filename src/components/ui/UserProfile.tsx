@@ -3,15 +3,18 @@ import { ChevronDown, LogOut, UserRound } from "lucide-react";
 
 import Avatar from "../../components/common/Avatar";
 import { useAuth } from "../../context/Auth/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const UserProfile = () => {
 	const { logout, user } = useAuth();
-
+	const navigate = useNavigate();
 	const firstName = user?.first_name?.trim() || "User";
 	const lastName = user?.last_name?.trim() || "";
 
 	const displayName = lastName ? `${firstName}, ${lastName}` : firstName;
-
+	const handleNavigate = () => {
+		navigate("marketing/profile");
+	};
 	return (
 		<Menu as="div" className="user-menu">
 			<MenuButton className="user-menu-trigger">
@@ -55,6 +58,7 @@ const UserProfile = () => {
 						{({ focus }) => (
 							<button
 								type="button"
+								onClick={handleNavigate}
 								className={[
 									"user-menu-item",
 									focus ? "user-menu-item-focus" : "",

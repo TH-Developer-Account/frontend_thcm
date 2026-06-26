@@ -1,7 +1,10 @@
 import React from "react";
 import { FileText, ImageIcon, RefreshCw, Trash2, Upload } from "lucide-react";
 
+import Button from "../common/Button";
+
 import type { FileUploadFieldProps } from "./fileUpload.types";
+
 import {
 	createFileUploadValue,
 	getAcceptByKind,
@@ -10,6 +13,10 @@ import {
 	revokeFilePreview,
 	validateUploadFile,
 } from "./fileUpload.helpers";
+
+const joinClassNames = (
+	...classNames: Array<string | false | null | undefined>
+): string => classNames.filter(Boolean).join(" ");
 
 export const FileUploadField = React.memo(
 	({
@@ -22,11 +29,13 @@ export const FileUploadField = React.memo(
 		error,
 		disabled = false,
 		readonly = false,
-		heightClassName = "h-[100px]",
+		heightClassName = "",
 		className = "",
 		inputName,
 	}: FileUploadFieldProps) => {
 		const inputRef = React.useRef<HTMLInputElement>(null);
+
+		const inputId = React.useId();
 
 		const openFilePicker = React.useCallback(
 			(event?: React.MouseEvent) => {
@@ -90,7 +99,7 @@ export const FileUploadField = React.memo(
 					previousValue: value,
 				});
 			},
-			[disabled, readonly, onChange, value],
+			[disabled, onChange, readonly, value],
 		);
 
 		React.useEffect(() => {
@@ -104,21 +113,26 @@ export const FileUploadField = React.memo(
 		const accept = React.useMemo(() => getAcceptByKind(kind), [kind]);
 
 		return (
-			<div className={`form-field ${className}`}>
+			<div
+				className={joinClassNames("form-field", "file-upload-field", className)}
+			>
 				<div className="form-label-row">
-					<label className="form-label">
+					<label htmlFor={inputId} className="form-label">
 						{label}
-						{required && <span className="form-required"> *</span>}
+
+						{required ? <span className="form-required"> *</span> : null}
 					</label>
 				</div>
 
 				<input
+					id={inputId}
 					ref={inputRef}
 					name={inputName}
 					type="file"
 					accept={accept}
-					className="hidden"
+					className="file-upload-native-input"
 					disabled={disabled || readonly}
+					aria-invalid={Boolean(error)}
 					onChange={handleFileChange}
 				/>
 
@@ -142,7 +156,7 @@ export const FileUploadField = React.memo(
 					/>
 				)}
 
-				{error && <p className="form-error-text">{error}</p>}
+				{error ? <p className="form-error-text">{error}</p> : null}
 			</div>
 		);
 	},
@@ -171,72 +185,85 @@ const FileUploadPreviewCard = React.memo(
 		onRemove,
 	}: PreviewCardProps) => {
 		const showImagePreview = isImageUpload(value);
+
 		const showPdfPreview = isPdfUpload(value);
 
 		return (
 			<div
-				className={`group relative overflow-hidden rounded-2xl border border-gray-200 bg-gray-100 ${heightClassName}`}
+				className={joinClassNames(
+					"file-upload-preview",
+					showImagePreview && "file-upload-preview-image",
+					heightClassName,
+				)}
 				onClick={(event) => event.stopPropagation()}
 			>
 				{showImagePreview ? (
-					<img
-						src={value.url}
-						alt={value.name}
-						className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-						loading="lazy"
-					/>
+					<>
+						<img
+							src={value.url}
+							alt={value.name}
+							className="file-upload-preview-image-content"
+							loading="lazy"
+						/>
+
+						<div className="file-upload-preview-overlay" aria-hidden="true" />
+					</>
 				) : (
-					<div className="flex h-full flex-col items-center justify-center bg-gray-50 px-4 text-center">
-						<div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-sm">
+					<div className="file-upload-document-preview">
+						<div className="file-upload-document-icon">
 							{showPdfPreview ? (
-								<FileText className="h-4 w-4 text-red-500" />
+								<FileText aria-hidden="true" />
 							) : (
-								<ImageIcon className="h-4 w-4 text-gray-500" />
+								<ImageIcon aria-hidden="true" />
 							)}
 						</div>
 
-						<p className="mt-2 max-w-full truncate text-xs font-semibold text-gray-800">
-							{value.name}
-						</p>
+						<div className="file-upload-document-copy">
+							<p className="file-upload-file-name" title={value.name}>
+								{value.name}
+							</p>
 
-						<p className="mt-1 text-[11px] text-gray-500">
-							{showPdfPreview ? "PDF Document" : value.type || "Uploaded file"}
-							{value.sizeLabel ? ` · ${value.sizeLabel}` : ""}
-						</p>
+							<p className="file-upload-file-meta">
+								{showPdfPreview
+									? "PDF document"
+									: value.type || "Uploaded file"}
+
+								{value.sizeLabel ? ` · ${value.sizeLabel}` : ""}
+							</p>
+						</div>
 					</div>
 				)}
 
-				{showImagePreview && (
-					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-				)}
-
-				{!readonly && !disabled && (
-					<>
-						<button
+				{!readonly && !disabled ? (
+					<div className="file-upload-preview-actions">
+						<Button
 							type="button"
+							appearance="icon"
+							variant="secondary"
+							size="sm"
+							Icon={RefreshCw}
+							aria-label="Replace file"
+							isTooltip
 							onClick={onReplace}
-							className="absolute left-3 top-3 z-10 rounded-full bg-white/90 p-1.5 shadow-sm backdrop-blur-sm transition hover:bg-white"
-							title="Replace file"
-						>
-							<RefreshCw className="h-4 w-4 text-gray-700" />
-						</button>
+						/>
 
-						<button
+						<Button
 							type="button"
+							appearance="icon"
+							variant="danger"
+							size="sm"
+							Icon={Trash2}
+							aria-label="Remove file"
+							isTooltip
 							onClick={onRemove}
-							className="absolute right-3 top-3 z-10 rounded-full bg-white/90 p-1.5 shadow-sm backdrop-blur-sm transition hover:bg-white"
-							title="Remove file"
-						>
-							<Trash2 className="h-4 w-4 text-gray-700" />
-						</button>
-					</>
-				)}
+						/>
+					</div>
+				) : null}
 
-				<div className="absolute bottom-3 left-3 max-w-[calc(100%-24px)] rounded-full bg-black/50 px-2 py-0.5 text-xs text-white backdrop-blur-sm">
-					<span className="inline-flex items-center gap-1 truncate">
-						<Upload className="h-3 w-3 shrink-0" />
-						{label}
-					</span>
+				<div className="file-upload-preview-label">
+					<Upload aria-hidden="true" />
+
+					<span>{label}</span>
 				</div>
 			</div>
 		);
@@ -266,26 +293,19 @@ const FileUploadEmptyState = React.memo(
 				type="button"
 				disabled={disabled}
 				onClick={onClick}
-				className={`group relative w-full overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 transition-all duration-200 hover:border-orange-300 hover:bg-orange-50/40 disabled:cursor-not-allowed disabled:opacity-60 ${heightClassName}`}
+				className={joinClassNames("file-upload-empty", heightClassName)}
 			>
-				<div className="flex h-full flex-col items-center justify-center px-4 text-center">
-					<div className="flex h-8 w-8 mt-1 items-center justify-center rounded-full bg-white shadow-sm transition-transform group-hover:scale-105">
-						<Upload className="h-4 w-4 text-gray-500" />
-					</div>
+				<span className="file-upload-empty-icon">
+					<Upload aria-hidden="true" />
+				</span>
 
-					<span className="mt-2 text-sm font-medium text-gray-600">
-						{label}
-					</span>
+				<span className="file-upload-empty-copy">
+					<span className="file-upload-empty-title">{label}</span>
 
-					{description && (
-						<span className="mt-1 text-[10px] text-gray-400">
-							{description}
-						</span>
-					)}
-					<span className="mt-1 text-[10px] text-gray-500">
-						Make sure the excel is filled with the expected format
-					</span>
-				</div>
+					{description ? (
+						<span className="file-upload-empty-description">{description}</span>
+					) : null}
+				</span>
 			</button>
 		);
 	},
