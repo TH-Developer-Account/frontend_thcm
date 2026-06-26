@@ -1,4 +1,4 @@
-import React, { type JSX } from "react";
+import { type JSX } from "react";
 import BranchesList from "./BranchesList";
 import DepartmentsList from "./DepartmentsList";
 import RegionsList from "./RegionsList";

@@ -1,11 +1,8 @@
 import { Paperclip } from "lucide-react";
+
 import { CRF_CATEGORIES } from "../../../constant";
 
-import type {
-	ColumnConfig,
-	LineItemTableGen,
-	TableRow,
-} from "../../types/lineItem.types";
+import type { ColumnConfig, TableRow } from "../../types/lineItem.types";
 
 import {
 	ARTWORK_COLUMNS,
@@ -15,56 +12,71 @@ import {
 
 type LineTableViewProps = {
 	title?: string;
-
-	data?: LineItemTableGen[] | TableRow[];
-
+	data?: TableRow[];
 	showGrandTotal?: boolean;
-
 	grandTotalLabel?: string;
 };
 
-const toDisplayNumber = (value: unknown) => {
+const toDisplayNumber = (value: unknown): number => {
 	const parsed = Number(value);
 
 	return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const getCategoryTitle = (category?: string | null) => {
+const getCategoryTitle = (category?: string | null): string => {
 	if (!category) return "--";
 
 	if (category === "EVENT_OVERHEAD") {
 		return "Event Cost Overheads";
 	}
 
-	return CRF_CATEGORIES.find((item) => item.value === category)?.title || "--";
+	return CRF_CATEGORIES.find((item) => item.value === category)?.title ?? "--";
 };
 
-const groupByCategory = (data: TableRow[]) => {
-	return data.reduce<Record<string, TableRow[]>>((acc, row) => {
+const groupByCategory = (data: TableRow[]): Record<string, TableRow[]> => {
+	return data.reduce<Record<string, TableRow[]>>((accumulator, row) => {
 		const category = row.category || "UNCATEGORIZED";
 
-		if (!acc[category]) {
-			acc[category] = [];
+		if (!accumulator[category]) {
+			accumulator[category] = [];
 		}
 
-		acc[category].push(row);
+		accumulator[category].push(row);
 
-		return acc;
+		return accumulator;
 	}, {});
 };
 
-const getGrandTotal = (data: TableRow[]) => {
+const getGrandTotal = (data: TableRow[]): number => {
 	return data.reduce((sum, row) => {
 		return sum + toDisplayNumber(row.total);
 	}, 0);
 };
 
-const alignClass = (align?: "left" | "right" | "center") => {
+const alignClass = (align?: "left" | "right" | "center"): string => {
 	if (align === "right") return "text-right";
-
 	if (align === "center") return "text-center";
 
 	return "text-left";
+};
+
+const getColumnSpanClass = (colSpan: number): string => {
+	const classes: Record<number, string> = {
+		1: "col-span-1",
+		2: "col-span-2",
+		3: "col-span-3",
+		4: "col-span-4",
+		5: "col-span-5",
+		6: "col-span-6",
+		7: "col-span-7",
+		8: "col-span-8",
+		9: "col-span-9",
+		10: "col-span-10",
+		11: "col-span-11",
+		12: "col-span-12",
+	};
+
+	return classes[colSpan] ?? "col-span-1";
 };
 
 const LineTableView = ({
@@ -74,12 +86,11 @@ const LineTableView = ({
 	grandTotalLabel = "Grand Total:",
 }: LineTableViewProps) => {
 	const groupedData = groupByCategory(data);
-
 	const grandTotal = getGrandTotal(data);
 
 	return (
-		<div className="row-6 mb-1 text-center">
-			{title && <p className="text-md font-semibold">{title}</p>}
+		<div className="mb-1 text-center">
+			{title ? <p className="text-md font-semibold">{title}</p> : null}
 
 			<div className="space-y-4">
 				{data.length === 0 ? (
@@ -96,175 +107,181 @@ const LineTableView = ({
 										? OVERHEAD_COLUMNS
 										: DEFAULT_COLUMNS;
 
+							const visibleColumns = columns.filter(
+								(column) => column.key !== "actions",
+							);
+
 							return (
 								<div key={category} className="line-view-table">
-									{/* Category Title */}
 									<div className="mb-1 text-left text-sm font-semibold text-orange-800">
 										{categoryTitle}
 									</div>
 
-									{/* Header */}
 									<div className="line-view-table-head">
-										{columns
-											.filter((c) => c.key !== "actions")
-											.map((column) => (
-												<div
-													key={column.key}
-													className={`col-span-${column.colSpan} ${alignClass(column.align)}`}
-												>
-													{column.label}
-												</div>
-											))}
+										{visibleColumns.map((column) => (
+											<div
+												key={column.key}
+												className={`${getColumnSpanClass(
+													column.colSpan,
+												)} ${alignClass(column.align)}`}
+											>
+												{column.label}
+											</div>
+										))}
 									</div>
 
-									{/* Rows */}
 									<div className="space-y-1">
 										{rows.map((row, index) => (
 											<div
 												key={row.id ?? `${category}-${index}`}
 												className="line-view-row"
 											>
-												{columns
-													.filter((c) => c.key !== "actions")
-													.map((column) => {
-														switch (column.key) {
-															case "sno":
-																return (
-																	<div
-																		key={column.key}
-																		className={`col-span-${column.colSpan}`}
-																	>
-																		{row.sno}.
-																	</div>
-																);
+												{visibleColumns.map((column) => {
+													const columnClass = getColumnSpanClass(
+														column.colSpan,
+													);
 
-															case "partNumber":
-																return (
-																	<div
-																		key={column.key}
-																		className={`col-span-${column.colSpan}`}
-																	>
-																		{row.partNumber || "--"}
-																	</div>
-																);
+													switch (column.key) {
+														case "sno":
+															return (
+																<div key={column.key} className={columnClass}>
+																	{row.sno}.
+																</div>
+															);
 
-															case "particular":
-																return (
-																	<div
-																		key={column.key}
-																		className={`col-span-${column.colSpan} font-medium`}
-																	>
-																		{row.particulars || "--"}
-																	</div>
-																);
+														case "partNumber":
+															return (
+																<div key={column.key} className={columnClass}>
+																	{row.partNumber || "--"}
+																</div>
+															);
 
-															case "description":
-																return (
-																	<div
-																		key={column.key}
-																		className={`col-span-${column.colSpan}`}
-																	>
-																		{row.description || "--"}
-																	</div>
-																);
+														case "particular":
+															return (
+																<div
+																	key={column.key}
+																	className={`${columnClass} font-medium`}
+																>
+																	{row.particulars || "--"}
+																</div>
+															);
 
-															case "rate":
-																return (
-																	<div
-																		key={column.key}
-																		className={`col-span-${column.colSpan} text-right`}
-																	>
-																		{toDisplayNumber(row.rate).toFixed(2)}
-																	</div>
-																);
+														case "description":
+															return (
+																<div key={column.key} className={columnClass}>
+																	{row.description || "--"}
+																</div>
+															);
 
-															case "quantity":
-																return (
-																	<div
-																		key={column.key}
-																		className={`col-span-${column.colSpan} text-right`}
-																	>
-																		{toDisplayNumber(row.qty)}
-																	</div>
-																);
+														case "rate":
+															return (
+																<div
+																	key={column.key}
+																	className={`${columnClass} text-right`}
+																>
+																	{toDisplayNumber(row.rate).toFixed(2)}
+																</div>
+															);
 
-															case "total":
-																return (
-																	<div
-																		key={column.key}
-																		className={`col-span-${column.colSpan} text-right font-semibold`}
-																	>
-																		{toDisplayNumber(row.total).toFixed(2)}
-																	</div>
-																);
+														case "quantity":
+															return (
+																<div
+																	key={column.key}
+																	className={`${columnClass} text-right`}
+																>
+																	{toDisplayNumber(row.qty)}
+																</div>
+															);
 
-															case "width":
-																return (
-																	<div
-																		key={column.key}
-																		className={`col-span-${column.colSpan} text-right`}
-																	>
-																		{row.width ?? "--"}
-																	</div>
-																);
+														case "total":
+															return (
+																<div
+																	key={column.key}
+																	className={`${columnClass} text-right font-semibold`}
+																>
+																	{toDisplayNumber(row.total).toFixed(2)}
+																</div>
+															);
 
-															case "height":
-																return (
-																	<div
-																		key={column.key}
-																		className={`col-span-${column.colSpan} text-right`}
-																	>
-																		{row.height ?? "--"}
-																	</div>
-																);
+														case "width":
+															return (
+																<div
+																	key={column.key}
+																	className={`${columnClass} text-right`}
+																>
+																	{row.width ?? "--"}
+																</div>
+															);
 
-															case "unit":
-																return (
-																	<div
-																		key={column.key}
-																		className={`col-span-${column.colSpan}  text-right`}
-																	>
-																		{row.unit ?? "--"}
-																	</div>
-																);
-															case "quotation":
-																return (
-																	<div
-																		key={column.key}
-																		className={`col-span-${column.colSpan} text-center`}
-																	>
-																		{row.quotationUrl ? (
-																			<a
-																				href={row.quotationUrl}
-																				target="_blank"
-																				rel="noreferrer"
-																				className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-slate-50 hover:bg-orange-50"
-																				title={
-																					row.quotationFileName ??
-																					"View quotation"
-																				}
-																			>
-																				<Paperclip className="h-4 w-4 text-orange-700" />
-																			</a>
-																		) : row.quotationFileName ? (
-																			<span
-																				className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-slate-50"
-																				title={row.quotationFileName}
-																			>
-																				<Paperclip className="h-4 w-4 text-slate-500" />
-																			</span>
-																		) : (
-																			<span className="text-xs text-slate-400">
-																				--
-																			</span>
-																		)}
-																	</div>
-																);
+														case "height":
+															return (
+																<div
+																	key={column.key}
+																	className={`${columnClass} text-right`}
+																>
+																	{row.height ?? "--"}
+																</div>
+															);
 
-															default:
-																return null;
-														}
-													})}
+														case "unit":
+															return (
+																<div
+																	key={column.key}
+																	className={`${columnClass} text-right`}
+																>
+																	{row.unit ?? "--"}
+																</div>
+															);
+
+														case "quotation":
+															return (
+																<div
+																	key={column.key}
+																	className={`${columnClass} text-center`}
+																>
+																	{row.quotationUrl ? (
+																		<a
+																			href={row.quotationUrl}
+																			target="_blank"
+																			rel="noreferrer"
+																			className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-slate-50 hover:bg-orange-50"
+																			title={
+																				row.quotationFileName ??
+																				"View quotation"
+																			}
+																			aria-label={
+																				row.quotationFileName
+																					? `View quotation: ${row.quotationFileName}`
+																					: "View quotation"
+																			}
+																		>
+																			<Paperclip
+																				className="h-4 w-4 text-orange-700"
+																				aria-hidden="true"
+																			/>
+																		</a>
+																	) : row.quotationFileName ? (
+																		<span
+																			className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-slate-50"
+																			title={row.quotationFileName}
+																		>
+																			<Paperclip
+																				className="h-4 w-4 text-slate-500"
+																				aria-hidden="true"
+																			/>
+																		</span>
+																	) : (
+																		<span className="text-xs text-slate-400">
+																			--
+																		</span>
+																	)}
+																</div>
+															);
+
+														default:
+															return null;
+													}
+												})}
 											</div>
 										))}
 									</div>
@@ -272,9 +289,8 @@ const LineTableView = ({
 							);
 						})}
 
-						{/* Grand Total */}
-						{showGrandTotal && (
-							<div className="mt-2 flex justify-end border-t border-b border-slate-300 border-dashed  px-4 py-1">
+						{showGrandTotal ? (
+							<div className="mt-2 flex justify-end border-y border-dashed border-slate-300 px-4 py-1">
 								<div className="flex items-center gap-3 text-xs">
 									<span className="font-semibold text-slate-600">
 										{grandTotalLabel}
@@ -285,7 +301,7 @@ const LineTableView = ({
 									</span>
 								</div>
 							</div>
-						)}
+						) : null}
 					</>
 				)}
 			</div>

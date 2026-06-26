@@ -26,6 +26,7 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 	const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState<string>("");
+	const [submitting, setSubmitting] = useState(false);
 
 	const filteredUsers = useMemo(() => {
 		const keyword = search.trim().toLowerCase();
@@ -71,6 +72,17 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 
 		loadUsers();
 	}, [workflow]);
+
+	const handleSubmit = async (): Promise<void> => {
+		if (!workflow?.id || submitting) return;
+
+		try {
+			setSubmitting(true);
+			await handleAssignUser(selectedUsers, workflow.id);
+		} finally {
+			setSubmitting(false);
+		}
+	};
 
 	return (
 		<Modal open={!!workflow?.id} size="lg">
@@ -127,13 +139,13 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 
 									<div className="flex-1 min-w-0">
 										<p className="text-xs text-gray-500 truncate">
-											{user.email ?? "example@tatahitachi.co.in"}
+											{user.email ?? "--"}
 										</p>
 									</div>
 
 									<div className="flex-1 min-w-0">
 										<p className="text-xs text-gray-500 truncate">
-											{user.phone ?? "914******7"}
+											{user.phone ?? "--"}
 										</p>
 									</div>
 
@@ -157,9 +169,10 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 				<div className="p-4 border-t flex justify-end gap-3">
 					<Button text="Cancel" onClick={onClose} status="brand" />
 					<Button
-						text="Assign Users"
+						text={submitting ? "Assigning..." : "Assign Users"}
 						status="brand"
-						onClick={() => handleAssignUser(selectedUsers, workflow?.id)}
+						onClick={handleSubmit}
+						disabled={!workflow?.id || submitting}
 					/>
 				</div>
 			</div>

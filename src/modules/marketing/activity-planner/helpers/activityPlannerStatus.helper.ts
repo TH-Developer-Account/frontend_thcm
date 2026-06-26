@@ -30,6 +30,18 @@ const sortByDate = (entries: WorkflowEntry[]): WorkflowEntry[] =>
 		(a, b) => toTimestamp(a.createdAt) - toTimestamp(b.createdAt),
 	);
 
+const findLastMatchingIndex = <T>(
+	items: readonly T[],
+	predicate: (item: T, index: number) => boolean,
+): number => {
+	for (let index = items.length - 1; index >= 0; index -= 1) {
+		if (predicate(items[index], index)) {
+			return index;
+		}
+	}
+
+	return -1;
+};
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export const getUserId = (authUser: unknown): string | null => {
@@ -102,14 +114,17 @@ export const hasUnresolvedWorkflowIssue = (
 	const config = WORKFLOW_ISSUE_CONFIG[issueType];
 	const sorted = sortByDate(entries);
 
-	const latestTriggerIndex = sorted.findLastIndex((entry) => {
-		const action = normalize(entry.action);
-		const match =
-			isActivityLog(entry) && config.triggerActions.includes(action);
-		return (
-			match && (!config.onlyActiveWorkflow || entry.isActiveWorkflow === true)
-		);
-	});
+	const latestTriggerIndex = findLastMatchingIndex(
+		sorted,
+		(entry: WorkflowEntry) => {
+			const action = normalize(entry.action);
+			const match =
+				isActivityLog(entry) && config.triggerActions.includes(action);
+			return (
+				match && (!config.onlyActiveWorkflow || entry.isActiveWorkflow === true)
+			);
+		},
+	);
 
 	if (latestTriggerIndex === -1) return false;
 
@@ -129,7 +144,8 @@ export const hasFormUpdateAfterIssue = (
 	const config = WORKFLOW_ISSUE_CONFIG[issueType];
 	const sorted = sortByDate(entries);
 
-	const latestTriggerIndex = sorted.findLastIndex(
+	const latestTriggerIndex = findLastMatchingIndex(
+		sorted,
 		(entry: WorkflowEntry) =>
 			isActivityLog(entry) &&
 			config.triggerActions.includes(normalize(entry.action)),

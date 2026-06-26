@@ -4,21 +4,8 @@ import {
 	getLineItemsTotal,
 } from "../../helpers/lineItemHelper";
 
-import type { LineItemOption } from "../../types/lineItem.types";
+import type { LineItemOption, TableRow } from "../../types/lineItem.types";
 import type { EpfFormValues, EpfProduct } from "../../types/epf.types";
-
-export type LineTableRow = {
-	id?: string;
-	sno: number;
-	particulars: string;
-	description: string;
-	rate: number;
-	qty: number;
-	total: number;
-	height?: string;
-	width?: string;
-	category?: string;
-};
 
 const EPF_OVERHEAD_CATEGORY = "EVENT_OVERHEAD";
 
@@ -149,20 +136,23 @@ export const mapEpfLineItemsToFormItems = (
  * View mapper.
  * Use this only for readonly LineTableView.
  */
+
 export const mapEpfLineItemsToTableRows = (
-	lineItems: any[] = [],
-): LineTableRow[] => {
-	return lineItems.map((item, index) => {
+	lineItems: unknown[] = [],
+): TableRow[] => {
+	return lineItems.map((rawItem, index) => {
+		const item = rawItem as Record<string, unknown>;
+
 		const rate = getLineItemRate(item);
 		const qty = getLineItemQuantity(item);
 
-		const total =
-			item?.total !== undefined && item?.total !== null && item?.total !== ""
-				? toNumber(item.total)
-				: rate * qty;
+		const hasProvidedTotal =
+			item.total !== undefined && item.total !== null && item.total !== "";
+
+		const total = hasProvidedTotal ? toNumber(item.total) : rate * qty;
 
 		return {
-			id: item?.id,
+			id: typeof item.id === "string" ? item.id : undefined,
 			sno: index + 1,
 			partNumber: getPartNumber(item),
 			particulars: getProductName(item),
@@ -171,10 +161,15 @@ export const mapEpfLineItemsToTableRows = (
 			qty,
 			total,
 			category: getCategory(item),
-			height: item?.height,
-			width: item?.width,
-
-			quotationFileUrl: getQuotationUrl(item),
+			height:
+				typeof item.height === "string" || typeof item.height === "number"
+					? item.height
+					: undefined,
+			width:
+				typeof item.width === "string" || typeof item.width === "number"
+					? item.width
+					: undefined,
+			quotationUrl: getQuotationUrl(item),
 			quotationFileName: getQuotationFileName(item),
 		};
 	});

@@ -1,8 +1,11 @@
 import { Download } from "lucide-react";
 import html2pdf from "html2pdf.js";
+
 import Button from "../../../../../components/common/Button";
 import { Modal } from "../../../../../components/common/Modal";
+
 import ActivityPlannerPdfTemplate from "./ActivityPlannerPdfTemplate";
+
 import type { EpcDetailResponse } from "../../types/epc.types";
 import type { WorkflowComment } from "../../types/workflow.types";
 
@@ -14,6 +17,55 @@ type ActivityPlannerPdfPreviewProps = {
 	onClose: () => void;
 };
 
+type Html2CanvasOptions = {
+	scale?: number;
+	useCORS?: boolean;
+	backgroundColor?: string;
+	letterRendering?: boolean;
+	logging?: boolean;
+};
+
+type JsPdfOptions = {
+	unit?: "pt" | "mm" | "cm" | "in" | "px" | "pc" | "em" | "ex";
+	format?: string | [number, number];
+	orientation?: "portrait" | "landscape";
+};
+
+type Html2PdfPagebreakOptions = {
+	mode?: Array<"avoid-all" | "css" | "legacy">;
+	before?: string | string[];
+	after?: string | string[];
+	avoid?: string | string[];
+};
+
+type Html2PdfOptions = {
+	margin?: number | number[];
+	filename?: string;
+	image?: {
+		type: "jpeg" | "png" | "webp";
+		quality: number;
+	};
+	html2canvas?: Html2CanvasOptions;
+	jsPDF?: JsPdfOptions;
+	pagebreak?: Html2PdfPagebreakOptions;
+};
+
+/**
+ * html2pdf.js exposes a fluent worker API at runtime, but some versions of
+ * its TypeScript declaration incorrectly type html2pdf() as Promise<void>.
+ */
+type Html2PdfWorker = {
+	set(options: Html2PdfOptions): Html2PdfWorker;
+	from(source: HTMLElement): Html2PdfWorker;
+	save(): Promise<void>;
+};
+
+type Html2PdfFactory = () => Html2PdfWorker;
+
+const createHtml2PdfWorker = (): Html2PdfWorker => {
+	return (html2pdf as unknown as Html2PdfFactory)();
+};
+
 const ActivityPlannerPdfPreview = ({
 	open,
 	epcData,
@@ -21,37 +73,22 @@ const ActivityPlannerPdfPreview = ({
 	onClose,
 	workflowEntries = [],
 }: ActivityPlannerPdfPreviewProps) => {
-	const proposalNo = epcData?.proposal_number || "activity-planner";
+	const proposalNo = epcData?.proposal_number?.trim() || "activity-planner";
 
-	type Html2PdfPagebreakOptions = {
-		mode?: Array<"avoid-all" | "css" | "legacy">;
-		before?: string | string[];
-		after?: string | string[];
-		avoid?: string | string[];
-	};
-
-	type Html2PdfOptionsWithPagebreak = {
-		margin: number | number[];
-		filename: string;
-		image: {
-			type: "jpeg" | "png" | "webp";
-			quality: number;
-		};
-		html2canvas: Record<string, unknown>;
-		jsPDF: Record<string, unknown>;
-		pagebreak?: Html2PdfPagebreakOptions;
-	};
-
-	const handleDownload = async () => {
+	const handleDownload = async (): Promise<void> => {
 		const element = document.getElementById("activity-planner-pdf-export");
-		if (!element) return;
 
-		document.body.classList.add("pdf-export-mode");
+		if (!element || !epcData) {
+			return;
+		}
 
-		const pdfOptions: Html2PdfOptionsWithPagebreak = {
+		const pdfOptions: Html2PdfOptions = {
 			margin: [8, 8, 8, 8],
 			filename: `${proposalNo}.pdf`,
-			image: { type: "jpeg", quality: 0.98 },
+			image: {
+				type: "jpeg",
+				quality: 0.98,
+			},
 			html2canvas: {
 				scale: 2,
 				useCORS: true,
@@ -69,11 +106,10 @@ const ActivityPlannerPdfPreview = ({
 			},
 		};
 
+		document.body.classList.add("pdf-export-mode");
+
 		try {
-			await html2pdf()
-				.set(pdfOptions as Parameters<ReturnType<typeof html2pdf>["set"]>[0])
-				.from(element)
-				.save();
+			await createHtml2PdfWorker().set(pdfOptions).from(element).save();
 		} finally {
 			document.body.classList.remove("pdf-export-mode");
 		}

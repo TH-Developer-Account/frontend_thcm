@@ -23,6 +23,7 @@ type ProfileListProps = {
 	onTabChange?: (tab: string) => void;
 	search: string;
 	onSearchChange: (value: string) => void;
+	// setProfiles: React.Dispatch<React.SetStateAction<Profile[]>>;
 };
 
 const ProfileList: React.FC<ProfileListProps> = ({

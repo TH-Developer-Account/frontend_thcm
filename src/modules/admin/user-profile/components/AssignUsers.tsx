@@ -87,10 +87,11 @@ export const AssignUsers: React.FC<AssignProps> = ({
 						filteredUsers.map((user) => {
 							const selected = selectedUsers.includes(user.id);
 							return (
-								<div
-									key={user.id}
+								<button
+									type="button"
 									onClick={() => toggleUser(user.id)}
-									className={`flex items-center text-left justify-between gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-150 ${
+									aria-pressed={selected}
+									className={`flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left transition-all duration-150 ${
 										selected
 											? "bg-amber-500/5 border-amber-500/30"
 											: "bg-gray-100/40 border-gray-200 hover:border-gray-300 hover:bg-gray-100"
@@ -110,7 +111,7 @@ export const AssignUsers: React.FC<AssignProps> = ({
 									</div>
 									<div className="flex-1 min-w-0">
 										<p className="text-xs text-gray-500 truncate ">
-											{user.email ?? "example@tatahitachi.co.in"}
+											{user.email ?? "--"}
 										</p>
 									</div>
 									{/* <div className="flex-1 min-w-0">
@@ -120,7 +121,7 @@ export const AssignUsers: React.FC<AssignProps> = ({
 									</div> */}
 									<div className="flex-1 min-w-0">
 										<p className="text-xs text-gray-500 truncate">
-											{user.phone ?? "914******7"}
+											{user.phone ?? "--"}
 										</p>
 									</div>
 									<div
@@ -134,7 +135,7 @@ export const AssignUsers: React.FC<AssignProps> = ({
 											<span className="text-white text-xs font-bold">✓</span>
 										)}
 									</div>
-								</div>
+								</button>
 							);
 						})
 					)}
@@ -142,18 +143,9 @@ export const AssignUsers: React.FC<AssignProps> = ({
 
 				{/* Footer */}
 				<div className="p-4 border-t flex justify-end gap-3">
-					<Button
-						text="Cancel"
-						onClick={onClose}
-						type="submit"
-						appearance="cta"
-						variant="outline"
-					/>
+					<Button text="Cancel" onClick={onClose} />
 					<Button
 						text="Assign Users"
-						type="submit"
-						appearance="cta"
-						variant="brand"
 						onClick={() => handleAssignUser(selectedUsers, profile?.id)}
 					/>
 				</div>

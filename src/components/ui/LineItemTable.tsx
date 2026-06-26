@@ -5,7 +5,6 @@ import {
 	Check,
 	RotateCcw,
 	Upload,
-	FileText,
 	Paperclip,
 	X,
 } from "lucide-react";
@@ -142,27 +141,27 @@ export default function LineItemTable({
 			unit: selected.unit ?? "",
 		}));
 	};
-	const handleDraftQuotationChange = (file?: File | null) => {
-		setDraft((prev) => ({
-			...prev,
-			quotationFile: file ?? null,
-			quotationFileName: file?.name ?? null,
-		}));
-	};
+	// const handleDraftQuotationChange = (file?: File | null) => {
+	// 	setDraft((prev) => ({
+	// 		...prev,
+	// 		quotationFile: file ?? null,
+	// 		quotationFileName: file?.name ?? null,
+	// 	}));
+	// };
 
-	const handleRowQuotationChange = (index: number, file?: File | null) => {
-		onChange((prev) =>
-			prev.map((item, itemIndex) =>
-				itemIndex === index
-					? {
-							...item,
-							quotationFile: file ?? null,
-							quotationFileName: file?.name ?? null,
-						}
-					: item,
-			),
-		);
-	};
+	// const handleRowQuotationChange = (index: number, file?: File | null) => {
+	// 	onChange((prev) =>
+	// 		prev.map((item, itemIndex) =>
+	// 			itemIndex === index
+	// 				? {
+	// 						...item,
+	// 						quotationFile: file ?? null,
+	// 						quotationFileName: file?.name ?? null,
+	// 					}
+	// 				: item,
+	// 		),
+	// 	);
+	// };
 	const handleQuotationChange = (file?: File | null) => {
 		if (!file) return;
 
@@ -176,8 +175,8 @@ export default function LineItemTable({
 
 	const removeQuotation = () => {
 		setDraft((prev) => {
-			if (prev.quotationFile && prev.quotationUrl) {
-				URL.revokeObjectURL(prev.quotationUrl);
+			if (prev.quotationFile && prev.quotationFileUrl?.startsWith("blob:")) {
+				URL.revokeObjectURL(prev.quotationFileUrl);
 			}
 
 			return {

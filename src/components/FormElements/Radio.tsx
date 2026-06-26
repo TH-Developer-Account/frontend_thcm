@@ -1,5 +1,5 @@
-import React, { forwardRef, type InputHTMLAttributes } from "react";
-import HelperTooltip from "../common/HelperToolTip";
+import { forwardRef, type InputHTMLAttributes } from "react";
+import HelperTooltip from "../common/HelperTooltip";
 
 interface InputProps extends Omit<
 	InputHTMLAttributes<HTMLInputElement>,

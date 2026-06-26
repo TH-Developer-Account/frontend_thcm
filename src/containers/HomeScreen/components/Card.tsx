@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
 interface ActionCardProps {
 	icon: ReactNode;
 	title: string;

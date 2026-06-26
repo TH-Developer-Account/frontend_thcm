@@ -233,7 +233,7 @@ export function useEpcForm({
 				let savedData: any;
 
 				if (isEditMode && epcId) {
-					const payload = buildEpcUpdatePayload(nextValues, status);
+					const payload = buildEpcUpdatePayload(nextValues);
 
 					savedData = await updateEpcMutation.mutateAsync({
 						epcId,
@@ -246,10 +246,7 @@ export function useEpcForm({
 						description: "EPC updated successfully.",
 					});
 				} else {
-					const payload: EpcCreatePayload = buildEpcCreatePayload(
-						nextValues,
-						status,
-					);
+					const payload: EpcCreatePayload = buildEpcCreatePayload(nextValues);
 
 					savedData = await createEpcMutation.mutateAsync(payload);
 

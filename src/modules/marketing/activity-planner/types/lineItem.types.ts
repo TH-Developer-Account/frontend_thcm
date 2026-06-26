@@ -1,5 +1,4 @@
 import type React from "react";
-import type { TableRow } from "../components/activityFormView/LineTableView";
 
 export type ProductType = "EPF" | "CRF";
 
@@ -12,8 +11,8 @@ export type Product = {
 	description: string | null;
 	unitRate: string | number;
 	isActive: boolean;
-	created_at: string; // ISO date string
-	updated_at: string; // ISO date string
+	created_at: string;
+	updated_at: string;
 	width?: number;
 	height?: number;
 	unit?: string;
@@ -36,7 +35,6 @@ export type LineItemOption = {
 	height?: number;
 	unit?: string;
 
-	// EPF quotation upload
 	quotationFile?: File | null;
 	quotationFileUrl?: string | null;
 	quotationFileName?: string | null;
@@ -55,60 +53,42 @@ export type GroupedOption = {
 	options: LineItemOption[];
 };
 
-export type LineTableRow = {
-	id?: string;
-	sno: number;
-	particulars: string;
-	description: string;
-	rate: number;
-	qty: number;
-	total: number;
-	height?: string;
-	width?: string;
-	category?: string;
-
-	quotationFileUrl?: string | null;
-	quotationFileName?: string | null;
-};
-
+/**
+ * Normalized row consumed by LineTableView.
+ *
+ * Values such as height and width may arrive from the API as either
+ * numbers or numeric strings, so the view model supports both.
+ */
 export type TableRow = {
 	id?: string;
 
 	sno: number;
-
 	partNumber?: string;
 
 	particulars: string;
-
 	description: string;
 
 	rate?: number;
-
 	qty?: number;
-
 	total?: number;
 
-	height?: number;
-
-	width?: number;
-
+	height?: number | string;
+	width?: number | string;
 	unit?: string;
 
 	category?: string;
+
 	quotationUrl?: string | null;
 	quotationFileName?: string | null;
 };
-export type LineItemTableGen = LineTableRow[] | TableRow[];
+
+/**
+ * Kept as an alias only if existing files already import this name.
+ * This represents one row, not an array of rows.
+ */
+export type LineItemTableGen = TableRow;
 
 export interface CostItem {
-	id: string;
-	particular: string;
-	description: string;
-	rate: number;
-	quantity: number;
-}
-
-export interface LineItem {
 	id: string;
 	particular: string;
 	description: string;
@@ -131,14 +111,17 @@ export type ColumnKey =
 	| "rate"
 	| "quantity"
 	| "total"
-	| "actions"
-	| string; // allow custom keys for flexibility
+	| "width"
+	| "height"
+	| "unit"
+	| "quotation"
+	| "actions";
 
 export interface ColumnConfig {
 	key: ColumnKey;
 	label: string;
 	colSpan: number;
 	align?: "left" | "right" | "center";
-	editable?: boolean; // show input in draft row
-	disabled?: boolean; // show input but disabled
+	editable?: boolean;
+	disabled?: boolean;
 }
