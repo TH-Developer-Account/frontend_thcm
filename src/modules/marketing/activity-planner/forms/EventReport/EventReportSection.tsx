@@ -68,7 +68,8 @@ export const EventReportSection = ({
 						<Button
 							type="button"
 							size="sm"
-							status="outline"
+							appearance="standard"
+							variant="outline"
 							onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
 								e.stopPropagation();
 								onOpenReportBuilder();
@@ -84,16 +85,16 @@ export const EventReportSection = ({
 						<Button
 							type="button"
 							size="sm"
-							status="outline"
+							appearance="standard"
+							variant="outline"
 							onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
 								e.stopPropagation();
 								onOpenReportPreview();
 							}}
 							isTooltip="View report"
-						>
-							<Eye className="h-4 w-4" />
-							Preview
-						</Button>
+							Icon={Eye}
+							text="Preview"
+						/>
 					) : null}
 				</div>
 
@@ -111,7 +112,8 @@ export const EventReportSection = ({
 						<Button
 							type="button"
 							size="sm"
-							status="outline"
+							appearance="standard"
+							variant="outline"
 							onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
 								e.stopPropagation();
 								onValidateReport?.();
@@ -143,7 +145,8 @@ export const EventReportSection = ({
 						<Button
 							type="button"
 							size="sm"
-							status="outline"
+							appearance="standard"
+							variant="outline"
 							onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
 								e.stopPropagation();
 								onClarifyReport?.();

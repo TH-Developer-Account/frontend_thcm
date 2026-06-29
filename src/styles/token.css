@@ -67,8 +67,10 @@
 
 		/* Page row section */
 		--page-row-bg: var(--color-bg-page);
-		--page-row-header-bg: var(--color-bg-page);
-		--page-row-header-border: var(--color-border-default);
+		--page-row-section-bg: var(--color-bg-surface);
+		--page-row-section-border: var(--color-border-default);
+		--page-row-header-bg: var(--page-row-section-bg);
+		--page-row-header-border: var(--page-row-section-border);
 		--page-row-scrollbar-thumb: var(--color-scrollbar-thumb);
 		--page-row-scrollbar-thumb-hover: var(--color-scrollbar-thumb-hover);
 
@@ -326,14 +328,13 @@ HOME MODULE CARD
 ===================================================== */
 @layer base {
 	:root {
-		/* EPF sections */
-		--epf-section-bg: var(--color-bg-surface);
-		--epf-section-header-bg: var(--color-bg-surface);
-		--epf-section-border: var(--color-border-default);
-		--epf-section-divider: var(--color-border-subtle);
-		--epf-section-title: var(--color-text-primary);
-		--epf-section-accent: var(--color-text-brand);
-
+		/* Section accordion */
+		--section-accordion-bg: var(--color-bg-surface);
+		--section-accordion-header-bg: var(--color-bg-surface);
+		--section-accordion-border: var(--color-border-default);
+		--section-accordion-divider: var(--color-border-subtle);
+		--section-accordion-title: var(--color-text-primary);
+		--section-accordion-accent: var(--color-text-brand);
 		/* Cards */
 		--epf-card-bg: var(--color-bg-surface-subtle);
 		--epf-card-border: var(--color-border-subtle);

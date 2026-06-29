@@ -577,15 +577,27 @@
 
 @layer components {
 	.app-layout {
-		@apply flex h-dvh w-full min-h-0 min-w-0
-			flex-col overflow-hidden;
+		display: flex;
+		width: 100%;
+		height: 100dvh;
+		min-width: 0;
+		min-height: 0;
+		flex-direction: column;
+		overflow: hidden;
 
 		background-color: transparent;
 		color: var(--color-text-primary);
 	}
 
 	.app-body {
-		@apply relative flex min-h-0 min-w-0 flex-1 overflow-hidden;
+		position: relative;
+
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		min-height: 0;
+		flex: 1 1 auto;
+		overflow: hidden;
 	}
 
 	.app-shell {
@@ -615,6 +627,7 @@
 		flex: 1 1 auto;
 		flex-direction: column;
 		overflow: hidden;
+
 		background-color: var(--app-bg);
 	}
 
@@ -625,54 +638,94 @@
 		min-height: 0;
 		flex: 1 1 auto;
 		flex-direction: column;
-		overflow: hidden;
+		overflow: visible;
 	}
-	@media (max-width: 767px) {
-		.app-main,
-		.app-page-outlet {
-			height: auto;
-			min-height: 0;
-			overflow: visible;
-		}
-	}
-	@media (min-width: 768px) {
-		.app-main,
-		.app-page-outlet {
-			min-height: 0;
-			flex: 1 1 auto;
-			overflow: hidden;
-		}
-	}
+
 	.main-content {
-		@apply min-h-0 min-w-0 flex-1
-			overflow-x-hidden overflow-y-auto px-1;
+		position: relative;
+
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		min-height: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+
+		overflow-x: hidden;
+		overflow-y: auto;
+
+		padding: var(--space-1);
+
+		overscroll-behavior-y: contain;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-gutter: stable;
+		scrollbar-width: thin;
+		scrollbar-color: var(--color-scrollbar-thumb) transparent;
+	}
+
+	.main-content::-webkit-scrollbar {
+		width: 5px;
+		height: 5px;
+	}
+
+	.main-content::-webkit-scrollbar-track {
+		background-color: transparent;
+	}
+
+	.main-content::-webkit-scrollbar-thumb {
+		border-radius: var(--radius-full);
+		background-color: var(--color-scrollbar-thumb);
+	}
+
+	.main-content::-webkit-scrollbar-thumb:hover {
+		background-color: var(--color-scrollbar-thumb-hover);
 	}
 
 	.app-header {
-		@apply flex w-full shrink-0
-			items-center gap-3 border-b px-3;
 		position: relative;
 		z-index: var(--z-header);
+
+		display: flex;
+		width: 100%;
 		min-height: var(--header-height);
-		border-color: var(--color-border-default);
+		flex: 0 0 auto;
+		align-items: center;
+		gap: var(--space-3);
+
+		padding-inline: var(--space-3);
+
+		border-bottom: var(--border-width-default) solid var(--color-border-default);
+
 		background-color: var(--color-bg-surface);
 		box-shadow: var(--shadow-xs);
 	}
 
 	.app-header-content {
-		@apply flex min-w-0 flex-1 items-center
-			justify-between gap-3;
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
 	}
 
 	.app-header-btn {
-		@apply inline-flex shrink-0 items-center justify-center
-			 border-transparent bg-transparent p-0
-			focus-visible:outline-none;
-
+		display: inline-flex;
 		width: var(--control-height-lg);
 		height: var(--control-height-lg);
+		flex: 0 0 auto;
+		align-items: center;
+		justify-content: center;
+
+		padding: 0;
+
+		border-color: transparent;
 		border-radius: var(--radius-md);
+
+		background-color: transparent;
 		color: var(--color-icon-primary);
+
+		outline: none;
 	}
 
 	.app-header-btn:hover {
@@ -684,6 +737,7 @@
 	.app-header-btn:focus-visible {
 		box-shadow: var(--shadow-focus-brand);
 	}
+
 	.app-header-btn.button-base {
 		width: var(--control-height-lg);
 		height: var(--control-height-lg);
@@ -699,16 +753,18 @@
 		color: var(--color-brand);
 		transform: none;
 	}
+
 	.page-screen {
-		@apply flex w-full min-w-0 flex-1 flex-col overflow-hidden;
+		display: flex;
+		width: 100%;
+		min-width: 0;
 		min-height: 0;
+		flex: 0 0 auto;
+		flex-direction: column;
+		overflow: visible;
+
 		color: var(--color-text-primary);
 	}
-
-	/* =====================================================
-	PAGE SCREEN HEADER
-	Structural application-level page header
- ===================================================== */
 
 	.page-screen-header {
 		position: sticky;
@@ -746,40 +802,37 @@
 		padding-inline: var(--space-3);
 	}
 
-	@media (min-width: 640px) {
-		.page-screen-header-inner {
-			padding-inline: var(--space-5);
-		}
-	}
-
-	@media (max-width: 767px) {
-		.page-screen-header {
-			position: relative;
-			top: auto;
-			z-index: auto;
-		}
-	}
-
 	.page-content {
-		@apply mx-auto flex w-full min-w-0 flex-1
-			flex-col px-5 pb-4 pt-5
-			max-md:px-3 max-md:pb-3 max-md:pt-4;
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		min-height: 0;
+		flex: 0 0 auto;
+		flex-direction: column;
 
 		max-width: var(--content-max-width);
+		margin-inline: auto;
+		padding: 0;
 	}
 
 	.section-intro {
-		@apply flex flex-col items-start gap-2;
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--space-2);
 
 		margin-bottom: var(--layout-section-gap);
 	}
 
 	.panel {
-		@apply relative w-full min-w-0 border p-4
-			max-md:p-3;
+		position: relative;
+		width: 100%;
+		min-width: 0;
+		padding: var(--space-4);
 
-		border-color: var(--color-border-default);
+		border: var(--border-width-default) solid var(--color-border-default);
 		border-radius: var(--radius-xl);
+
 		background-color: var(--color-bg-surface);
 		box-shadow: var(--shadow-sm);
 	}
@@ -796,30 +849,42 @@
 	}
 
 	.panel-industrial::before {
-		@apply absolute top-0;
-
+		position: absolute;
+		top: 0;
 		left: var(--space-5);
+
 		width: 7rem;
 		height: var(--border-width-strong);
+
 		background-color: var(--color-iron);
 		content: "";
 	}
 
 	.card-grid {
-		@apply grid items-stretch;
-
+		display: grid;
+		align-items: stretch;
 		grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
 		gap: var(--layout-card-gap);
 	}
 
 	.empty-state {
-		@apply flex min-h-48 flex-col items-center
-			justify-center gap-2 text-center;
+		display: flex;
+		min-height: 12rem;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
+		text-align: center;
 	}
 
 	.page-footer {
-		@apply mt-auto flex items-center justify-between
-			gap-4 pt-4 max-md:flex-col max-md:items-start;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-4);
+
+		margin-top: auto;
+		padding-top: var(--space-4);
 
 		font-family: var(--font-mono);
 		font-size: var(--font-size-2xs);
@@ -831,33 +896,142 @@
 	}
 
 	.logo-link {
-		@apply inline-flex min-w-0 items-center
-			transition-opacity duration-150
-			hover:opacity-85 focus-visible:outline-none;
-
+		display: inline-flex;
+		min-width: 0;
+		align-items: center;
 		border-radius: var(--radius-sm);
+		transition: opacity var(--duration-fast) var(--ease-standard);
 	}
+
 	.logo-link:hover {
 		opacity: 0.85;
 	}
+
 	.logo-link:focus-visible {
+		outline: none;
 		box-shadow: var(--shadow-focus-brand);
 	}
 
 	.logo-img {
-		@apply block h-8 w-auto object-contain object-left
-			max-sm:h-6;
-
+		display: block;
+		width: auto;
+		height: 2rem;
 		max-width: 13rem;
+		object-fit: contain;
+		object-position: left;
+	}
+
+	@media (min-width: 640px) {
+		.page-screen-header-inner {
+			padding-inline: var(--space-5);
+		}
+	}
+
+	@media (max-width: 767px) {
+		html,
+		body,
+		#root {
+			width: 100%;
+			height: 100%;
+			min-height: 0;
+			overflow: hidden;
+		}
+
+		.app-layout,
+		.app-shell {
+			width: 100%;
+			height: 100dvh;
+			min-height: 100dvh;
+			overflow: hidden;
+		}
+
+		.app-body,
+		.app-shell-body,
+		.app-main {
+			min-width: 0;
+			min-height: 0;
+			flex: 1 1 auto;
+			overflow: hidden;
+		}
+
+		.main-content {
+			width: 100%;
+			height: 100%;
+			min-width: 0;
+			min-height: 0;
+			flex: 1 1 auto;
+
+			overflow-x: hidden;
+			overflow-y: auto;
+
+			padding: var(--space-1);
+			padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+
+			scrollbar-gutter: auto;
+		}
+
+		.app-page-outlet {
+			display: block;
+			width: 100%;
+			height: auto;
+			min-width: 0;
+			min-height: 100%;
+			overflow: visible;
+		}
+
+		.page-screen {
+			width: 100%;
+			height: auto;
+			min-width: 0;
+			min-height: 100%;
+			flex: 0 0 auto;
+			overflow: visible;
+		}
+
+		.page-screen-header {
+			position: relative;
+			top: auto;
+			z-index: auto;
+		}
+
+		.page-content {
+			width: 100%;
+			min-width: 0;
+			min-height: 0;
+			flex: 0 0 auto;
+
+			padding: 0;
+			padding-bottom: max(var(--space-2), env(safe-area-inset-bottom));
+		}
+
+		.panel {
+			padding: var(--space-3);
+		}
+
+		.page-footer {
+			align-items: flex-start;
+			flex-direction: column;
+		}
+
+		.logo-img {
+			height: 1.5rem;
+		}
 	}
 
 	@media (max-width: 480px) {
 		.panel-industrial {
-			@apply rounded-xl;
+			border-radius: var(--radius-xl);
 			clip-path: none;
 		}
 	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.main-content {
+			scroll-behavior: auto;
+		}
+	}
 }
+
 /* =========================================================
    SIDEBAR LAYOUT
    Tata Hitachi — Collapsible enterprise navigation
@@ -1595,10 +1769,17 @@
 	}
 }
 
-/* =====================================================
-PAGE ROW LAYOUT
-Mobile-first: normal full-page scrolling
-===================================================== */
+/* =========================================================
+   PAGE ROW SECTION LAYOUT
+
+   Scroll ownership:
+   - main-content owns normal page scrolling.
+   - Page Row header becomes sticky only after reaching
+     the top of main-content.
+   - page-scroll mode does not create a nested scrollbar.
+   - contained mode remains available for full-height tables.
+========================================================= */
+
 @layer components {
 	.page-row-layout {
 		position: relative;
@@ -1606,235 +1787,149 @@ Mobile-first: normal full-page scrolling
 		display: flex;
 		width: 100%;
 		min-width: 0;
+		flex: 0 0 auto;
 		flex-direction: column;
-		gap: var(--page-row-mobile-gap);
+		gap: var(--space-1);
+		overflow: visible;
 
-		/* background-color: var(--page-row-bg); */
 		color: var(--color-text-primary);
 	}
 
-	/* =====================================================
-	   PAGE HEADER
-	===================================================== */
+	.page-row-layout-section {
+		width: 100%;
+		min-width: 0;
+
+		padding: var(--space-2);
+
+		border: var(--border-width-default) solid var(--page-row-section-border);
+		border-radius: var(--page-row-section-radius);
+
+		background-color: var(--page-row-section-bg);
+		color: var(--color-text-primary);
+		box-shadow: var(--page-row-section-shadow);
+	}
 
 	.page-row-layout-header {
 		position: relative;
-		z-index: auto;
+		z-index: var(--z-raised);
 
 		width: 100%;
 		min-width: 0;
 		flex: 0 0 auto;
-
-		padding-block: var(--page-row-mobile-header-padding-block);
-
-		/* border-bottom: var(--border-width-default) solid transparent; */
-		/* background-color: var(--page-row-header-bg); */
 	}
 
-	.page-row-layout-header-inner {
-		width: 100%;
-		min-width: 0;
-	}
-
-	/*
-	 * Mobile always uses normal document flow.
-	 * stickyHeader is intentionally disabled below 768px.
-	 */
-	.page-row-layout-sticky .page-row-layout-header {
-		position: relative;
-		top: auto;
-		z-index: auto;
-		border-bottom-color: transparent;
-	}
-
-	/* =====================================================
-	   CONTENT BASE
-	===================================================== */
-
-	.page-row-layout-content {
-		width: 100%;
-		min-width: 0;
-	}
-
+	.page-row-layout-header-inner,
+	.page-row-layout-header-body,
+	.page-row-layout-content,
 	.page-row-layout-content-inner,
 	.page-row-layout-content-body {
 		width: 100%;
 		min-width: 0;
 	}
 
-	/* =====================================================
-	   MOBILE
-	   Entire page scrolls naturally
-	===================================================== */
-
-	@media (max-width: 767px) {
-		.page-row-layout {
-			min-height: auto;
-			overflow: visible;
-		}
-
-		.page-row-layout-content {
-			overflow: visible;
-
-			padding-bottom: var(--page-row-mobile-content-padding-bottom);
-		}
-
-		.page-row-layout-content-inner,
-		.page-row-layout-content-body {
-			display: block;
-			overflow: visible;
-		}
+	.page-row-layout-header-body {
+		display: block;
 	}
 
-	/* =====================================================
-	   TABLET AND DESKTOP BASE
-	===================================================== */
+	.page-row-layout-page-scroll,
+	.page-row-layout-page-scroll .page-row-layout-content,
+	.page-row-layout-page-scroll .page-row-layout-content-inner,
+	.page-row-layout-page-scroll .page-row-layout-content-body {
+		height: auto;
+		min-height: 0;
+		overflow: visible;
+	}
+
+	.page-row-layout-page-scroll {
+		flex: 0 0 auto;
+	}
+
+	.page-row-layout-page-scroll .page-row-layout-content {
+		display: block;
+		flex: 0 0 auto;
+		padding-bottom: var(--space-1);
+	}
+
+	.page-row-layout-page-scroll .page-row-layout-content-inner,
+	.page-row-layout-page-scroll .page-row-layout-content-body {
+		display: block;
+	}
 
 	@media (min-width: 768px) {
-		.page-row-layout {
-			height: 100%;
-			min-height: 0;
-			flex: 1 1 auto;
-			gap: var(--page-row-layout-gap);
-			overflow: hidden;
-		}
-
-		.page-row-layout-header {
-			position: relative;
-			z-index: var(--z-raised);
-			padding-block: var(--page-row-tablet-header-padding-block);
-		}
-
 		.page-row-layout-sticky .page-row-layout-header {
 			position: sticky;
 			top: var(--page-row-sticky-top, var(--page-row-sticky-offset));
 			z-index: var(--z-sticky);
-
-			border-bottom-color: var(--page-row-header-border);
 		}
 
-		.page-row-layout-content {
-			width: 100%;
-			min-width: 0;
+		.page-row-layout-contained {
+			height: 100%;
 			min-height: 0;
 			flex: 1 1 auto;
+			overflow: hidden;
 		}
 
-		.page-row-layout-content-inner,
-		.page-row-layout-content-body {
-			min-height: 0;
-		}
-	}
-
-	/* =====================================================
-	   PAGE-SCROLL MODE
-	   Use when content exists below the table
-	===================================================== */
-
-	@media (min-width: 768px) {
-		.page-row-layout-page-scroll .page-row-layout-content {
-			overflow-x: hidden;
-			overflow-y: auto;
-
-			padding-bottom: var(--page-row-content-padding-bottom);
-
-			overscroll-behavior-y: contain;
-			scrollbar-gutter: stable;
-			scrollbar-width: thin;
-			scrollbar-color: var(--page-row-scrollbar-thumb) transparent;
-		}
-
-		.page-row-layout-page-scroll .page-row-layout-content-inner,
-		.page-row-layout-page-scroll .page-row-layout-content-body {
-			display: block;
-			height: auto;
-			overflow: visible;
-		}
-	}
-
-	/* =====================================================
-	   CONTAINED MODE
-	   Use for full-height table/listing pages
-	===================================================== */
-
-	@media (min-width: 768px) {
 		.page-row-layout-contained .page-row-layout-content {
 			display: flex;
+			min-height: 0;
+			flex: 1 1 auto;
 			flex-direction: column;
 			overflow: hidden;
-
 			padding-bottom: 0;
 		}
 
-		.page-row-layout-contained .page-row-layout-content-inner {
-			display: flex;
-			flex: 1 1 auto;
-			flex-direction: column;
-			overflow: hidden;
-		}
-
+		.page-row-layout-contained .page-row-layout-content-inner,
 		.page-row-layout-contained .page-row-layout-content-body {
 			display: flex;
+			min-height: 0;
 			flex: 1 1 auto;
 			flex-direction: column;
 			overflow: hidden;
 		}
 	}
 
-	/* =====================================================
-	   PAGE SCROLLBAR
-	===================================================== */
+	@media (max-width: 767px) {
+		.page-row-layout {
+			height: auto;
+			min-height: 0;
+			gap: var(--space-1);
+			overflow: visible;
+		}
 
-	.page-row-layout-page-scroll .page-row-layout-content::-webkit-scrollbar {
-		width: 5px;
-		height: 5px;
-	}
+		.page-row-layout-section {
+			padding: var(--space-2);
+		}
 
-	.page-row-layout-page-scroll
-		.page-row-layout-content::-webkit-scrollbar-track {
-		background-color: transparent;
-	}
+		.page-row-layout-sticky .page-row-layout-header {
+			position: relative;
+			top: auto;
+			z-index: auto;
+		}
 
-	.page-row-layout-page-scroll
-		.page-row-layout-content::-webkit-scrollbar-thumb {
-		border-radius: var(--radius-full);
-		background-color: var(--page-row-scrollbar-thumb);
-	}
+		.page-row-layout-header,
+		.page-row-layout-header-inner,
+		.page-row-layout-header-body,
+		.page-row-layout-content,
+		.page-row-layout-content-inner,
+		.page-row-layout-content-body {
+			height: auto;
+			min-height: 0;
+			overflow: visible;
+		}
 
-	.page-row-layout-page-scroll
-		.page-row-layout-content::-webkit-scrollbar-thumb:hover {
-		background-color: var(--page-row-scrollbar-thumb-hover);
-	}
-
-	/* =====================================================
-	   DESKTOP
-	===================================================== */
-
-	@media (min-width: 1024px) {
-		.page-row-layout-header {
-			padding-block: var(--page-row-desktop-header-padding-block);
+		.page-row-layout-content {
+			padding-bottom: var(--space-1);
 		}
 	}
-
-	/* =====================================================
-	   SHORT VIEWPORTS
-	===================================================== */
 
 	@media (min-width: 768px) and (max-height: 700px) {
-		.page-row-layout {
-			gap: var(--space-1);
-		}
-
-		.page-row-layout-header {
-			padding-block: var(--space-1);
+		.page-row-layout-section {
+			padding-block: var(--space-1-5);
 		}
 	}
 
-	/* =====================================================
-	   REDUCED MOTION
-	===================================================== */
-
 	@media (prefers-reduced-motion: reduce) {
+		.page-row-layout,
 		.page-row-layout-content {
 			scroll-behavior: auto;
 		}
@@ -2054,10 +2149,18 @@ Mobile-first: normal full-page scrolling
 	}
 }
 
-/* =====================================================
-PAGE HEADER
-Generic page title container only
-===================================================== */
+/* =========================================================
+   PAGE HEADER
+
+   Ownership:
+   - back-navigation alignment
+   - title/subtitle/meta typography
+   - reusable identity layout
+   - reusable toolbar separation
+
+   Surface styling is owned by PageRowSectionLayout.
+========================================================= */
+
 @layer components {
 	.page-header {
 		display: flex;
@@ -2066,33 +2169,25 @@ Generic page title container only
 		flex-direction: column;
 		gap: var(--space-3);
 
-		padding: var(--space-3) var(--space-4);
-
-		border: var(--border-width-default) solid var(--color-border-default);
-		border-radius: var(--radius-sm);
-
-		background-color: var(--color-bg-surface);
 		color: var(--color-text-primary);
-		box-shadow: var(--shadow-xs);
 	}
 
 	/* =====================================================
-	   PAGE IDENTITY
+	   IDENTITY
 	===================================================== */
 
 	.page-header-primary {
 		display: flex;
 		width: 100%;
 		min-width: 0;
-		align-items: center;
+		align-items: start;
 		gap: var(--space-3);
 	}
 
 	.page-header-badge-wrapper {
 		display: flex;
 		flex: 0 0 auto;
-		align-items: flex-start;
-		padding-top: 1px;
+		align-items: center;
 	}
 
 	.page-header-badge {
@@ -2115,13 +2210,13 @@ Generic page title container only
 		min-width: 0;
 		margin: 0;
 
-		color: var(--color-text-primary);
+		color: var(--page-header-title-color);
 
 		font-family: var(--font-sans);
-		font-size: var(--font-size-lg);
+		font-size: var(--page-header-title-size);
 		font-weight: var(--font-weight-regular);
-		line-height: 1.25;
-		letter-spacing: -0.015em;
+		line-height: var(--page-header-title-line-height);
+		letter-spacing: var(--page-header-title-tracking);
 
 		overflow-wrap: anywhere;
 	}
@@ -2133,31 +2228,30 @@ Generic page title container only
 
 		font-family: var(--font-sans);
 		font-weight: var(--font-weight-regular);
-		line-height: 1.4;
+		line-height: var(--line-height-normal);
 
 		overflow-wrap: anywhere;
 	}
 
 	.page-header-subtitle {
-		color: var(--color-text-secondary);
-		font-size: var(--font-size-xs);
+		color: var(--page-header-subtitle-color);
+		font-size: var(--page-header-subtitle-size);
 	}
 
 	.page-header-meta {
-		color: var(--color-text-muted);
-		font-size: var(--font-size-2xs);
+		color: var(--page-header-meta-color);
+		font-size: var(--page-header-meta-size);
 	}
 
 	/* =====================================================
-	   CHILDREN CONTAINER
-	   Page-specific component handles its own internal layout
+	   TOOLBAR
 	===================================================== */
 
 	.page-header-toolbar {
 		width: 100%;
 		min-width: 0;
 
-		padding-top: var(--space-3);
+		padding-top: var(--space-1);
 
 		border-top: var(--border-width-default) solid var(--color-border-subtle);
 	}
@@ -2174,8 +2268,6 @@ Generic page title container only
 	@media (max-width: 767px) {
 		.page-header {
 			gap: var(--space-2);
-
-			padding: var(--space-3);
 		}
 
 		.page-header-primary {
@@ -2183,7 +2275,7 @@ Generic page title container only
 		}
 
 		.page-header-title {
-			font-size: var(--font-size-base);
+			font-size: var(--page-header-mobile-title-size);
 		}
 
 		.page-header-toolbar {
@@ -2192,26 +2284,13 @@ Generic page title container only
 	}
 
 	/* =====================================================
-	   TABLET
+	   REDUCED MOTION
 	===================================================== */
 
-	@media (min-width: 768px) and (max-width: 1023px) {
-		.page-header {
-			padding: var(--space-3) var(--space-4);
-		}
-	}
-
-	/* =====================================================
-	   DESKTOP
-	===================================================== */
-
-	@media (min-width: 1024px) {
-		.page-header {
-			padding: var(--space-3) var(--space-4);
-		}
-
-		.page-header-title {
-			font-size: var(--font-size-lg);
+	@media (prefers-reduced-motion: reduce) {
+		.page-header,
+		.page-header-toolbar {
+			scroll-behavior: auto;
 		}
 	}
 }

@@ -1,9 +1,10 @@
 // components/common/ReasonActionModal.tsx
 
 import React from "react";
+
 import Button from "../../../../../components/common/Button";
-import TextareaInput from "../../../../../components/FormElements/TextareaInput";
 import { Modal } from "../../../../../components/common/Modal";
+import TextareaInput from "../../../../../components/FormElements/TextareaInput";
 
 export type ReasonActionMode = "clarify-workflow" | "clarify-report";
 
@@ -15,20 +16,19 @@ type ReasonActionModalProps = {
 	onConfirm: (reason: string) => void | Promise<void>;
 };
 
-const MODAL_COPY: Record<
-	ReasonActionMode,
-	{
-		title: string;
-		description: string;
-		placeholder: string;
-		confirmText: string;
-		loadingText: string;
-	}
-> = {
+type ReasonActionCopy = {
+	title: string;
+	description: string;
+	placeholder: string;
+	confirmText: string;
+	loadingText: string;
+};
+
+const MODAL_COPY: Record<ReasonActionMode, ReasonActionCopy> = {
 	"clarify-workflow": {
 		title: "Send for Clarification",
 		description:
-			"This will send the EPC back to the proposer. The proposer can update EPC, CRF, or EPF and resubmit the workflow.",
+			"This will send the EPC back to the proposer. The proposer can update the EPC, CRF, or EPF and resubmit the workflow.",
 		placeholder: "Example: Please update the budget breakup before approval.",
 		confirmText: "Send Clarification",
 		loadingText: "Sending...",
@@ -62,57 +62,68 @@ export const ReasonActionModal = ({
 	if (!mode) return null;
 
 	const copy = MODAL_COPY[mode];
+	const trimmedReason = reason.trim();
 
 	const handleClose = () => {
 		if (loading) return;
+
 		setReason("");
 		onClose();
 	};
 
 	const handleConfirm = async () => {
-		const trimmedReason = reason.trim();
-		if (!trimmedReason) return;
+		if (!trimmedReason || loading) return;
 
 		await onConfirm(trimmedReason);
 	};
 
 	return (
-		<Modal open={open} onClose={handleClose}>
-			<div className="w-full rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl">
-				<div className="mb-4">
-					<h3 className="text-sm font-semibold text-zinc-900">{copy.title}</h3>
-
-					<p className="mt-1 text-xs text-zinc-500">{copy.description}</p>
-				</div>
+		<Modal open={open} title={copy.title} size="md" onClose={handleClose}>
+			<div className="modal-form">
+				<p className="modal-description">{copy.description}</p>
 
 				<TextareaInput
 					name="reason"
+					label="Reason"
 					value={reason}
-					onChange={(e) => setReason(e.target.value)}
 					placeholder={copy.placeholder}
 					rows={4}
 					autoFocus
 					disabled={loading}
-					className="min-h-[90px] overflow-y-auto bg-white px-2 py-1.5"
+					onChange={(event) => setReason(event.target.value)}
+					onKeyDown={(event) => {
+						if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+							event.preventDefault();
+							void handleConfirm();
+						}
+					}}
 				/>
 
-				<div className="mt-4 flex justify-end gap-3">
-					<Button
-						type="button"
-						text="Cancel"
-						status="outline"
-						disabled={loading}
-						onClick={handleClose}
-					/>
+				<footer className="modal-footer">
+					<span className="modal-footer-hint">Ctrl + Enter to submit</span>
 
-					<Button
-						type="button"
-						text={loading ? copy.loadingText : copy.confirmText}
-						status="brand"
-						disabled={!reason.trim() || loading}
-						onClick={handleConfirm}
-					/>
-				</div>
+					<div className="modal-footer-actions">
+						<Button
+							type="button"
+							text="Cancel"
+							appearance="standard"
+							variant="outline"
+							size="sm"
+							disabled={loading}
+							onClick={handleClose}
+						/>
+
+						<Button
+							type="button"
+							text={loading ? copy.loadingText : copy.confirmText}
+							appearance="standard"
+							variant="brand"
+							size="sm"
+							disabled={!trimmedReason || loading}
+							onClick={handleConfirm}
+						/>
+					</div>
+				</footer>
 			</div>
 		</Modal>
 	);

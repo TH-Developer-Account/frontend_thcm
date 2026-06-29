@@ -6,7 +6,7 @@ import React from "react";
 export default function ComingSoon() {
 	return (
 		<React.Fragment>
-			<div className="coming-soon-wrapper min-h-[89vh] overflow-hidden bg-transparent">
+			<div className="coming-soon-wrapper min-h-[89vh] overflow-hidden bg-gray-900">
 				{/* Brand */}
 				<div className="coming-soon-brand">
 					<span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>

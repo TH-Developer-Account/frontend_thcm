@@ -76,7 +76,8 @@ const WorkflowTopSection = () => {
 						<Button
 							text="Create Workflow"
 							iconPosition="right"
-							status="brand"
+							variant="brand"
+							size="sm"
 							Icon={Plus}
 							onClick={() => navigate("/admin/create-workflows")}
 						/>

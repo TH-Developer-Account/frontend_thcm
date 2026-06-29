@@ -285,7 +285,7 @@ const WorkflowCreatePage = () => {
 
 	if (isLoading) return null;
 	return (
-		<div className="h-[85dvh] min-h-0 overflow-y-auto scrollbar-sleek">
+		<div className="content-box">
 			<PageSectionLayout>
 				<PageSection>
 					<div className="workflow-create-page-box scrollbar-sleek">

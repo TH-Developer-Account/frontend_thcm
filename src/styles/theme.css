@@ -71,6 +71,23 @@
 
 		--page-row-tablet-header-padding-block: var(--space-3);
 		--page-row-desktop-header-padding-block: var(--space-4);
+		/* =====================================================
+   PAGE ROW SECTION LAYOUT
+===================================================== */
+
+		--page-row-layout-gap: var(--space-2);
+
+		--page-row-section-padding: var(--space-3);
+		--page-row-mobile-section-padding: var(--space-2);
+
+		--page-row-section-radius: var(--radius-sm);
+		--page-row-section-shadow: var(--shadow-xs);
+
+		--page-row-content-padding-bottom: var(--space-4);
+		--page-row-sticky-offset: 0px;
+
+		--page-row-mobile-gap: var(--space-1);
+		--page-row-mobile-content-padding-bottom: var(--space-3);
 
 		/* =====================================================
    			PAGE HEADER

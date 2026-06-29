@@ -6,7 +6,7 @@ import type { ModalProps } from "./common.types";
 
 const joinClassNames = (
 	...classNames: Array<string | false | null | undefined>
-) => classNames.filter(Boolean).join(" ");
+): string => classNames.filter(Boolean).join(" ");
 
 const modalSizeClasses = {
 	sm: "modal-container-sm",
@@ -25,30 +25,42 @@ export function Modal({
 	className = "",
 	header_children,
 }: ModalProps) {
-	const titleId = React.useId();
+	const generatedTitleId = React.useId();
 	const modalRef = React.useRef<HTMLDivElement>(null);
 
 	React.useEffect(() => {
 		if (!open) return;
 
+		const previousActiveElement =
+			document.activeElement instanceof HTMLElement
+				? document.activeElement
+				: null;
+
 		const previousOverflow = document.body.style.overflow;
+
 		document.body.style.overflow = "hidden";
 
 		const handleKeyDown = (event: KeyboardEvent) => {
 			if (event.key === "Escape" && onClose) {
+				event.preventDefault();
 				onClose();
 			}
 		};
 
 		document.addEventListener("keydown", handleKeyDown);
 
-		requestAnimationFrame(() => {
+		const animationFrameId = requestAnimationFrame(() => {
 			modalRef.current?.focus();
 		});
 
 		return () => {
+			cancelAnimationFrame(animationFrameId);
+
 			document.body.style.overflow = previousOverflow;
+
 			document.removeEventListener("keydown", handleKeyDown);
+
+			previousActiveElement?.focus();
 		};
 	}, [open, onClose]);
 
@@ -75,24 +87,26 @@ export function Modal({
 				)}
 				role="dialog"
 				aria-modal="true"
-				aria-labelledby={title ? titleId : undefined}
+				aria-labelledby={title ? generatedTitleId : undefined}
 				tabIndex={-1}
 				onMouseDown={(event) => event.stopPropagation()}
 			>
 				{hasHeader ? (
 					<header className="modal-header">
 						<div className="modal-header-copy">
-							{title ? (
-								<h2 id={titleId} className="modal-title">
-									{title}
-								</h2>
-							) : null}
+							{header_children ?? (
+								<>
+									{title ? (
+										<h2 id={generatedTitleId} className="modal-title">
+											{title}
+										</h2>
+									) : null}
+								</>
+							)}
 						</div>
 
-						<div className="modal-header-actions">
-							{header_children}
-
-							{onClose ? (
+						{onClose ? (
+							<div className="modal-header-actions">
 								<button
 									type="button"
 									className="modal-close-button"
@@ -101,8 +115,8 @@ export function Modal({
 								>
 									<X className="modal-close-icon" aria-hidden="true" />
 								</button>
-							) : null}
-						</div>
+							</div>
+						) : null}
 					</header>
 				) : null}
 

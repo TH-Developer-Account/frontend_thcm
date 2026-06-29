@@ -12,6 +12,8 @@ type PageHeaderProps = {
 	actionsClassName?: string;
 	children?: ReactNode;
 	badgeProps?: NavigateButtonProps;
+	header_children?: ReactNode;
+	textAlign?: string;
 };
 
 const joinClassNames = (
@@ -26,7 +28,9 @@ export const PageHeader = ({
 	contentClassName = "",
 	actionsClassName = "",
 	children,
+	header_children,
 	badgeProps,
+	textAlign,
 }: PageHeaderProps) => {
 	const hasCopy = Boolean(headerText || subtitleText || metaText);
 
@@ -46,7 +50,7 @@ export const PageHeader = ({
 				) : null}
 
 				{hasCopy ? (
-					<div className="page-header-copy">
+					<div className={`page-header-copy ${textAlign} `}>
 						{headerText ? (
 							<h2 className="page-header-title">{headerText}</h2>
 						) : null}
@@ -58,6 +62,7 @@ export const PageHeader = ({
 						{metaText ? <p className="page-header-meta">{metaText}</p> : null}
 					</div>
 				) : null}
+				<div>{header_children}</div>
 			</div>
 
 			{children ? (

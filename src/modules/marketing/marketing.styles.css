@@ -481,12 +481,12 @@
 			box-shadow: none;
 		}
 
-		.modal-overlay,
-		.modal-container {
-			position: static !important;
-			background: var(--pdf-bg) !important;
-			box-shadow: none !important;
-		}
+		/* .modal-overlay,
+			.modal-container {
+				position: static !important;
+				background: var(--pdf-bg) !important;
+				box-shadow: none !important;
+			} */
 
 		.no-print {
 			display: none !important;
@@ -587,12 +587,7 @@
    SECTION ACCORDION
 ===================================================== */
 @layer components {
-	/* =====================================================
-	   EPF SECTION
-	   Borderless, spacious, theme-aware
-	===================================================== */
-
-	.epf-section {
+	.section-accordion {
 		width: 100%;
 		min-width: 0;
 		margin-bottom: var(--space-2);
@@ -601,17 +596,18 @@
 		border: 0;
 		border-radius: 0;
 
-		background-color: var(--epf-section-bg);
+		background-color: var(--section-accordion-bg);
 		color: var(--color-text-primary);
 		box-shadow: none;
 	}
 
 	/* =====================================================
-	   SECTION HEADER
+	   HEADER
 	===================================================== */
 
-	.epf-section-header {
+	.section-accordion-header {
 		display: flex;
+		width: 100%;
 		min-width: 0;
 		align-items: center;
 		justify-content: space-between;
@@ -619,16 +615,15 @@
 
 		padding: var(--space-2) var(--space-3);
 
-		border: 0;
-		border: var(--border-width-default) solid var(--epf-section-divider);
+		border: var(--border-width-default) solid var(--section-accordion-divider);
 		border-radius: 0;
 
-		background-color: var(--epf-section-header-bg);
+		background-color: var(--section-accordion-header-bg);
 		color: var(--color-text-primary);
 		box-shadow: none;
 	}
 
-	.epf-section-trigger {
+	.section-accordion-trigger {
 		display: inline-flex;
 		min-width: 0;
 		flex: 1 1 auto;
@@ -643,7 +638,7 @@
 		border-radius: 0;
 
 		background-color: transparent;
-		color: var(--epf-section-title);
+		color: var(--section-accordion-title);
 		box-shadow: none;
 
 		font: inherit;
@@ -651,84 +646,115 @@
 		cursor: pointer;
 	}
 
-	.epf-section-trigger:hover,
-	.epf-section-trigger:active {
+	.section-accordion-trigger:hover,
+	.section-accordion-trigger:active {
 		border-color: transparent;
 		background-color: transparent;
-		color: var(--epf-section-title);
+		color: var(--section-accordion-title);
 		box-shadow: none;
 	}
 
-	.epf-section-trigger:focus-visible {
+	.section-accordion-trigger:focus-visible {
 		border-radius: var(--radius-sm);
 		outline: none;
 		box-shadow: var(--shadow-focus-brand);
 	}
 
 	/* =====================================================
-	   SECTION TITLE
+	   TITLE
 	===================================================== */
 
-	.epf-section-title-wrap {
+	.section-accordion-title-wrap {
 		display: inline-flex;
 		min-width: 0;
 		align-items: center;
 		gap: var(--space-2);
 	}
 
-	.epf-section-label,
-	.epf-section .epf-section-label {
+	.section-accordion-label {
 		display: block;
 		min-width: 0;
 		overflow: hidden;
 
-		color: var(--epf-section-title);
+		color: var(--section-accordion-title);
 
 		font-family: var(--font-sans);
 		font-size: var(--font-size-sm);
 		font-weight: var(--font-weight-medium);
-		letter-spacing: var(--tracking-title);
 		line-height: var(--line-height-tight);
+		letter-spacing: var(--tracking-title);
 
 		text-overflow: ellipsis;
 		white-space: nowrap;
 	}
 
-	.epf-section-label::before {
+	.section-accordion-label::before {
 		display: inline-block;
 		width: var(--border-width-strong);
 		height: 0.875rem;
 		margin-right: var(--space-2);
 
-		background-color: var(--epf-section-accent);
+		background-color: var(--section-accordion-accent);
+
 		content: "";
 		vertical-align: -0.1em;
 	}
 
-	.epf-section-action {
+	.section-accordion-action {
 		display: inline-flex;
+		min-width: 0;
 		flex: 0 0 auto;
 		align-items: center;
 		gap: var(--space-2);
 	}
 
 	/* =====================================================
-	   SECTION CONTENT
+	   CONTENT
 	===================================================== */
 
-	.epf-section-content {
+	.section-accordion-content {
+		width: 100%;
+		min-width: 0;
+
 		padding: var(--space-4);
-		border: var(--border-width-default) solid var(--epf-section-divider);
-		background-color: var(--epf-section-bg);
+
+		border: var(--border-width-default) solid var(--section-accordion-divider);
+		border-top: 0;
+
+		background-color: var(--section-accordion-bg);
 		color: var(--color-text-primary);
 	}
 
-	.epf-section-content[hidden] {
+	.section-accordion-content[hidden] {
 		display: none;
 	}
 
 	/* =====================================================
-	   EPF TAG
+	   EMPTY STATE
+	===================================================== */
+
+	.section-accordion-empty {
+		display: flex;
+		width: 100%;
+		align-items: center;
+		justify-content: start;
+
+		padding: var(--space-2);
+
+		color: var(--color-text-muted);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+		text-align: center;
+
+		overflow-wrap: anywhere;
+	}
+
+	/* =====================================================
+	   EPF-SPECIFIC STYLES
+	   Keep these feature-specific names unchanged.
 	===================================================== */
 
 	.epf-tag {
@@ -748,11 +774,6 @@
 		line-height: var(--line-height-tight);
 	}
 
-	/* =====================================================
-	   BUDGET CARD
-	   Soft grouped surface, no visible border
-	===================================================== */
-
 	.epf-budget-card {
 		min-width: 0;
 		padding: var(--space-3);
@@ -769,16 +790,13 @@
 		padding: var(--space-3);
 
 		border: 0;
-		border-top: var(--border-width-default) solid var(--epf-section-divider);
+		border-top: var(--border-width-default) solid
+			var(--section-accordion-divider);
 		border-radius: 0;
 
 		background-color: var(--epf-card-bg);
 		color: var(--color-text-primary);
 	}
-
-	/* =====================================================
-	   SHARE BAR
-	===================================================== */
 
 	.epf-share-bar {
 		height: var(--space-1-5);
@@ -791,7 +809,9 @@
 
 	.epf-share-bar-fill {
 		height: 100%;
+
 		border-radius: inherit;
+
 		background-color: var(--color-brand);
 
 		transition: width var(--duration-normal) var(--ease-standard);
@@ -802,21 +822,22 @@
 	===================================================== */
 
 	@media (max-width: 640px) {
-		.epf-section {
+		.section-accordion {
 			margin-bottom: var(--space-3);
 		}
 
-		.epf-section-header {
+		.section-accordion-header {
 			align-items: flex-start;
 			gap: var(--space-2);
+
 			padding: var(--space-3);
 		}
 
-		.epf-section-content {
+		.section-accordion-content {
 			padding: var(--space-3);
 		}
 
-		.epf-section-action {
+		.section-accordion-action {
 			gap: var(--space-1-5);
 		}
 
@@ -835,7 +856,6 @@
 		}
 	}
 }
-
 /* =====================================================
 ACTIVITY DETAILS
 Responsive enterprise detail layout

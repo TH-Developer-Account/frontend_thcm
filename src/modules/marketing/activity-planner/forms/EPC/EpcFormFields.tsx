@@ -213,181 +213,179 @@ export default function EpcFormFields({
 	};
 
 	return (
-		<div className="px-4 py-4 text-left text-xs lg:text-sm">
-			<form>
-				<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-					<FormInput
-						name="epfNo"
-						label="EPC No"
-						value={values.epfNo || values.proposal_number || ""}
-						disabled
-						className="w-full p-2 text-black"
-						helperText="EPC No. auto generated"
-					/>
+		<form>
+			<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+				<FormInput
+					name="epfNo"
+					label="EPC No"
+					value={values.epfNo || values.proposal_number || ""}
+					disabled
+					className="w-full p-2 text-black"
+					helperText="EPC No. auto generated"
+				/>
 
-					<SelectInput
-						name="region"
-						label="Zone"
-						value={findOption(masters?.regions ?? [], values.region)}
-						options={masters?.regions || []}
-						onChange={handleRegionChange}
-						isDisabled={lockOrgFields}
-						required
-						helperText={
-							lockOrgFields
-								? "Zone cannot be changed after EPC creation"
-								: "Select zone to auto populate branches"
-						}
-						error={errors.region}
-						className="w-full"
-					/>
+				<SelectInput
+					name="region"
+					label="Zone"
+					value={findOption(masters?.regions ?? [], values.region)}
+					options={masters?.regions || []}
+					onChange={handleRegionChange}
+					isDisabled={lockOrgFields}
+					required
+					helperText={
+						lockOrgFields
+							? "Zone cannot be changed after EPC creation"
+							: "Select zone to auto populate branches"
+					}
+					error={errors.region}
+					className="w-full"
+				/>
 
-					<SelectInput
-						name="branch"
-						label="Branch"
-						options={filteredBranches}
-						value={findOption(filteredBranches, values.branch)}
-						onChange={(option: SingleValue<Option>) =>
-							onChange("branch", option?.value || "")
-						}
-						isDisabled={lockOrgFields}
-						required
-						helperText={
-							lockOrgFields
-								? "Branch cannot be changed after EPC creation"
-								: "Branches are filtered based on selected zone"
-						}
-						error={errors.branch}
-						className="w-full"
-					/>
+				<SelectInput
+					name="branch"
+					label="Branch"
+					options={filteredBranches}
+					value={findOption(filteredBranches, values.branch)}
+					onChange={(option: SingleValue<Option>) =>
+						onChange("branch", option?.value || "")
+					}
+					isDisabled={lockOrgFields}
+					required
+					helperText={
+						lockOrgFields
+							? "Branch cannot be changed after EPC creation"
+							: "Branches are filtered based on selected zone"
+					}
+					error={errors.branch}
+					className="w-full"
+				/>
 
-					<div className="flex flex-col gap-1">
-						<PincodeAsyncSelect
-							label="Location"
-							value={selectedPincode}
-							onChange={handlePincodeChange}
-							error={errors.location}
-							helperText="Search by pincode, office name, district, or state."
-						/>
-					</div>
-
-					<SelectInput
-						name="department"
-						label="Department"
-						value={findOption(masters?.departments ?? [], values.department)}
-						options={masters?.departments || []}
-						onChange={handleDepartmentChange}
-						isDisabled={lockOrgFields}
-						required
-						helperText={
-							lockOrgFields
-								? "Department cannot be changed after EPC creation"
-								: "Select department to auto populate verticals"
-						}
-						error={errors.department}
-						className="w-full"
-					/>
-
-					<SelectInput
-						name="vertical"
-						label="Vertical"
-						value={findOption(filteredVerticals, values.vertical)}
-						options={filteredVerticals}
-						onChange={(option: SingleValue<Option>) =>
-							onChange("vertical", option?.value || "")
-						}
-						isDisabled={lockOrgFields || !selectedDepartment}
-						required
-						helperText={
-							lockOrgFields
-								? "Vertical cannot be changed after EPC creation"
-								: "Verticals are filtered based on selected department"
-						}
-						error={errors.vertical}
-						className="w-full"
-					/>
-
-					<DatePickerInput
-						label="Event [From - To]"
-						value={toDateRange(values.event_from_date, values.event_to_date)}
-						onChange={handleDateRangeChange}
-						helperText="Select the start and end date of the event."
-						error={errors.event_from_date || errors.event_to_date}
-					/>
-
-					<SelectInput
-						name="budget_master_id"
-						label="Budget Code"
-						value={selectedBudgetCode}
-						options={budgetCodeOptions}
-						onChange={handleBudgetChange}
-						required
-						helperText="Select a budget code to populate its description"
-						error={errors.budget_master_id}
-						className="w-full"
-					/>
-
-					<SelectInput
-						name="budgetDescription"
-						label="Budget Description"
-						value={selectedBudgetDescription}
-						options={budgetDescriptionOptions}
-						onChange={handleBudgetChange}
-						required
-						helperText="Select a description to populate its budget code"
-						error={errors.budgetDescription}
-						className="w-full"
-					/>
-
-					<SelectInput
-						name="event_name"
-						label="Event Name"
-						value={findOption(masters?.eventNames ?? [], values.event_name)}
-						options={masters?.eventNames || []}
-						onChange={(option: SingleValue<Option>) =>
-							onChange("event_name", option?.value || "")
-						}
-						required
-						helperText="Select from past events or create new by typing and pressing enter"
-						error={errors.event_name}
-						className="w-full"
+				<div className="flex flex-col gap-1">
+					<PincodeAsyncSelect
+						label="Location"
+						value={selectedPincode}
+						onChange={handlePincodeChange}
+						error={errors.location}
+						helperText="Search by pincode, office name, district, or state."
 					/>
 				</div>
 
-				<div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
-					<div className="flex min-w-0 flex-col gap-4">
-						<TextareaInput
-							name="event_description"
-							label="Event Description"
-							value={values.event_description || ""}
-							onChange={(event) =>
-								onChange("event_description", event.target.value)
-							}
-							className="h-full w-full p-2"
-							minLength={100}
-							rows={4}
-							helperText="Describe the purpose, audience, and expected outcome of this event."
-							error={errors.event_description}
-						/>
-					</div>
+				<SelectInput
+					name="department"
+					label="Department"
+					value={findOption(masters?.departments ?? [], values.department)}
+					options={masters?.departments || []}
+					onChange={handleDepartmentChange}
+					isDisabled={lockOrgFields}
+					required
+					helperText={
+						lockOrgFields
+							? "Department cannot be changed after EPC creation"
+							: "Select department to auto populate verticals"
+					}
+					error={errors.department}
+					className="w-full"
+				/>
 
-					<div className="min-w-0">
-						<TextareaInput
-							name="event_objective"
-							label="Objective"
-							value={values.event_objective || ""}
-							onChange={(event) =>
-								onChange("event_objective", event.target.value)
-							}
-							minLength={100}
-							rows={4}
-							className="h-full w-full p-2"
-							error={errors.event_objective}
-							helperText="Mention the main goal of this event, such as brand awareness, lead generation, dealer engagement, product promotion, customer connect, or sales support."
-						/>
-					</div>
+				<SelectInput
+					name="vertical"
+					label="Vertical"
+					value={findOption(filteredVerticals, values.vertical)}
+					options={filteredVerticals}
+					onChange={(option: SingleValue<Option>) =>
+						onChange("vertical", option?.value || "")
+					}
+					isDisabled={lockOrgFields || !selectedDepartment}
+					required
+					helperText={
+						lockOrgFields
+							? "Vertical cannot be changed after EPC creation"
+							: "Verticals are filtered based on selected department"
+					}
+					error={errors.vertical}
+					className="w-full"
+				/>
+
+				<DatePickerInput
+					label="Event [From - To]"
+					value={toDateRange(values.event_from_date, values.event_to_date)}
+					onChange={handleDateRangeChange}
+					helperText="Select the start and end date of the event."
+					error={errors.event_from_date || errors.event_to_date}
+				/>
+
+				<SelectInput
+					name="budget_master_id"
+					label="Budget Code"
+					value={selectedBudgetCode}
+					options={budgetCodeOptions}
+					onChange={handleBudgetChange}
+					required
+					helperText="Select a budget code to populate its description"
+					error={errors.budget_master_id}
+					className="w-full"
+				/>
+
+				<SelectInput
+					name="budgetDescription"
+					label="Budget Description"
+					value={selectedBudgetDescription}
+					options={budgetDescriptionOptions}
+					onChange={handleBudgetChange}
+					required
+					helperText="Select a description to populate its budget code"
+					error={errors.budgetDescription}
+					className="w-full"
+				/>
+
+				<SelectInput
+					name="event_name"
+					label="Event Name"
+					value={findOption(masters?.eventNames ?? [], values.event_name)}
+					options={masters?.eventNames || []}
+					onChange={(option: SingleValue<Option>) =>
+						onChange("event_name", option?.value || "")
+					}
+					required
+					helperText="Select from past events or create new by typing and pressing enter"
+					error={errors.event_name}
+					className="w-full"
+				/>
+			</div>
+
+			<div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+				<div className="flex min-w-0 flex-col gap-4">
+					<TextareaInput
+						name="event_description"
+						label="Event Description"
+						value={values.event_description || ""}
+						onChange={(event) =>
+							onChange("event_description", event.target.value)
+						}
+						className="h-full w-full p-2"
+						minLength={100}
+						rows={4}
+						helperText="Describe the purpose, audience, and expected outcome of this event."
+						error={errors.event_description}
+					/>
 				</div>
-			</form>
-		</div>
+
+				<div className="min-w-0">
+					<TextareaInput
+						name="event_objective"
+						label="Objective"
+						value={values.event_objective || ""}
+						onChange={(event) =>
+							onChange("event_objective", event.target.value)
+						}
+						minLength={100}
+						rows={4}
+						className="h-full w-full p-2"
+						error={errors.event_objective}
+						helperText="Mention the main goal of this event, such as brand awareness, lead generation, dealer engagement, product promotion, customer connect, or sales support."
+					/>
+				</div>
+			</div>
+		</form>
 	);
 }

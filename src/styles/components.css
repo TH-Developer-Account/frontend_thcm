@@ -1573,7 +1573,7 @@
 
 /* =====================================================
    MODAL
-   Theme-aware responsive dialog system
+   Generic theme-aware responsive dialog
 ===================================================== */
 
 @layer components {
@@ -1614,11 +1614,11 @@
 		flex-direction: column;
 		overflow: hidden;
 
-		border: var(--border-width-default) solid var(--color-border-default);
+		border: var(--border-width-default) solid var(--modal-border);
 		border-radius: var(--radius-lg);
 
-		background-color: var(--color-bg-surface);
-		color: var(--color-text-primary);
+		background-color: var(--modal-bg);
+		color: var(--modal-text);
 		box-shadow: var(--shadow-overlay);
 
 		outline: none;
@@ -1663,18 +1663,17 @@
 		display: flex;
 		width: 100%;
 		min-width: 0;
-		min-height: var(--control-height-lg);
 		flex: 0 0 auto;
-		align-items: center;
+		align-items: flex-start;
 		justify-content: space-between;
 		gap: var(--space-3);
 
-		padding: var(--space-2) var(--space-3);
+		padding: var(--space-3) var(--space-4);
 
 		border-bottom: var(--border-width-default) solid var(--color-border-subtle);
 
-		background-color: var(--color-bg-surface);
-		color: var(--color-text-primary);
+		background-color: var(--modal-bg);
+		color: var(--modal-text);
 	}
 
 	.modal-header-copy {
@@ -1688,7 +1687,6 @@
 	.modal-title {
 		min-width: 0;
 		margin: 0;
-		overflow: hidden;
 
 		color: var(--color-text-primary);
 
@@ -1698,8 +1696,7 @@
 		line-height: var(--line-height-tight);
 		letter-spacing: var(--tracking-title);
 
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		overflow-wrap: anywhere;
 	}
 
 	.modal-header-actions {
@@ -1728,7 +1725,7 @@
 		padding: 0;
 
 		border: var(--border-width-default) solid transparent;
-		border-radius: var(--radius-sm);
+		border-radius: var(--radius-xs);
 
 		background-color: transparent;
 		color: var(--color-icon-secondary);
@@ -1777,8 +1774,8 @@
 
 		padding: var(--space-4);
 
-		background-color: var(--color-bg-surface);
-		color: var(--color-text-secondary);
+		background-color: var(--modal-bg);
+		color: var(--modal-body-text);
 
 		overscroll-behavior: contain;
 		scrollbar-width: thin;
@@ -1802,30 +1799,95 @@
 	.modal-body::-webkit-scrollbar-thumb:hover {
 		background-color: var(--color-scrollbar-thumb-hover);
 	}
-	.modal-container,
-	.modal-header,
-	.modal-body {
-		background-color: var(--modal-bg);
-	}
-
-	.modal-container {
-		border-color: var(--modal-border);
-		color: var(--modal-text);
-	}
-
-	.modal-body {
-		color: var(--modal-body-text);
-	}
-
 	/* =====================================================
-	   MOBILE
-	   Bottom-sheet presentation
+	GENERIC MODAL CONTENT HELPERS
+ ===================================================== */
+
+	.modal-form {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	.modal-form > .form-field {
+		margin: 0;
+	}
+
+	.modal-description {
+		max-width: 44rem;
+		margin: 0;
+
+		color: var(--color-text-muted);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+
+		overflow-wrap: anywhere;
+	}
+
+	.modal-footer {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+
+		padding-top: var(--space-3);
+
+		border-top: var(--border-width-default) solid var(--color-border-subtle);
+	}
+
+	.modal-footer-actions {
+		display: flex;
+		min-width: 0;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--space-2);
+	}
+
+	.modal-footer-hint {
+		color: var(--color-text-muted);
+
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-tight);
+		white-space: nowrap;
+	}
+
+	@media (max-width: 640px) {
+		.modal-footer {
+			align-items: stretch;
+			flex-direction: column;
+		}
+
+		.modal-footer-hint {
+			display: none;
+		}
+
+		.modal-footer-actions {
+			width: 100%;
+		}
+
+		.modal-footer-actions .button-wrapper {
+			flex: 1 1 0;
+		}
+
+		.modal-footer-actions .button-base {
+			width: 100%;
+		}
+	}
+	/* =====================================================
+	   MOBILE — BOTTOM SHEET
 	===================================================== */
 
 	@media (max-width: 640px) {
 		.modal-overlay {
 			align-items: flex-end;
-
 			padding: 0;
 		}
 
@@ -1847,13 +1909,7 @@
 		}
 
 		.modal-header {
-			min-height: var(--control-height-lg);
-
-			padding: var(--space-2) var(--space-3);
-		}
-
-		.modal-title {
-			font-size: var(--font-size-sm);
+			padding: var(--space-3);
 		}
 
 		.modal-body {
@@ -1861,14 +1917,9 @@
 		}
 	}
 
-	/* =====================================================
-	   VERY SMALL MOBILE
-	===================================================== */
-
 	@media (max-width: 380px) {
 		.modal-header {
 			gap: var(--space-2);
-
 			padding-inline: var(--space-2);
 		}
 
@@ -1881,10 +1932,6 @@
 		}
 	}
 
-	/* =====================================================
-	   REDUCED MOTION
-	===================================================== */
-
 	@media (prefers-reduced-motion: reduce) {
 		.modal-close-button {
 			transition-duration: 0.01ms;
@@ -1894,73 +1941,302 @@
 
 /* =====================================================
    PAGINATION
+   Generic application-wide pagination
 ===================================================== */
 
 @layer components {
 	.pagination {
-		@apply flex items-center justify-between gap-4 outline-none;
+		display: grid;
+		width: 100%;
+		min-width: 0;
+		grid-template-columns:
+			minmax(max-content, 1fr)
+			auto
+			minmax(max-content, 1fr);
+		align-items: center;
+		gap: var(--space-3);
+
+		color: var(--color-text-secondary);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-tight);
+
+		outline: none;
 	}
 
 	.pagination-default {
-		@apply text-sm;
+		padding: 0;
 	}
+
 	.pagination-compact {
-		@apply text-xs;
+		display: flex;
+		width: auto;
+		justify-content: center;
+		padding: 0;
 	}
 
-	.pagination-btn-default {
-		@apply px-3 py-1.5;
+	/* =====================================================
+	   SUMMARY
+	===================================================== */
+
+	.pagination-summary {
+		display: inline-flex;
+		min-width: 0;
+		align-items: baseline;
+		justify-self: start;
+		gap: var(--space-1);
+
+		margin: 0;
+
+		color: var(--color-text-muted);
+		white-space: nowrap;
 	}
 
-	.pagination-btn-compact {
-		@apply px-2 py-1;
-	}
-
-	.pagination-info {
-		color: var(--color-brand);
-	}
-
-	.pagination-info-number {
-		color: var(--color-brand);
-		@apply font-semibold;
-	}
-
-	.pagination-btn {
-		@apply rounded-lg border transition;
-		background: var(--color-brand-subtle);
-		border-color: var(--color-brand);
+	.pagination-summary strong {
 		color: var(--color-text-primary);
+		font-weight: var(--font-weight-medium);
+		font-variant-numeric: tabular-nums;
 	}
 
-	.pagination-btn-hover:hover {
-		border-color: var(--color-brand);
-		color: var(--color-brand);
-	}
-
-	.pagination-btn-active {
-		background: var(--color-brand);
-		border-color: var(--color-brand);
-		color: var(--color-black);
-	}
-
-	.pagination-btn-disabled {
-		@apply disabled:opacity-60;
-	}
+	/* =====================================================
+	   PAGE CONTROLS
+	===================================================== */
 
 	.pagination-pages {
-		@apply flex items-center gap-1;
+		display: flex;
+		min-width: 0;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-1);
+	}
+
+	.pagination-page-numbers {
+		display: flex;
+		min-width: 0;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-1);
+	}
+
+	.pagination-page-numbers .button-filter {
+		width: var(--control-height-sm);
+		min-width: var(--control-height-sm);
+		height: var(--control-height-sm);
+
+		padding: 0;
+
+		font-variant-numeric: tabular-nums;
+	}
+
+	.pagination-page-numbers .button-filter.is-active {
+		border-color: var(--color-border-brand);
+		background-color: var(--color-brand-subtle);
+		color: var(--color-text-brand);
+	}
+
+	.pagination-page-numbers .button-filter.is-active:hover {
+		border-color: var(--color-brand);
+		background-color: var(--color-brand-subtle);
+		color: var(--color-text-brand);
 	}
 
 	.pagination-ellipsis {
-		@apply px-2;
+		display: inline-flex;
+		width: var(--control-height-sm);
+		height: var(--control-height-sm);
+		flex: 0 0 auto;
+		align-items: center;
+		justify-content: center;
+
 		color: var(--color-text-muted);
+
+		font-size: var(--font-size-xs);
+		line-height: 1;
+		user-select: none;
 	}
+
+	/* =====================================================
+	   PAGE SIZE
+	===================================================== */
 
 	.pagination-page-size {
-		@apply w-25 text-xs flex items-center mb-0;
+		display: flex;
+		min-width: 0;
+		align-items: center;
+		justify-content: flex-end;
+		justify-self: end;
+		gap: var(--space-2);
+	}
+
+	.pagination-page-size-label {
+		color: var(--color-text-muted);
+		white-space: nowrap;
+	}
+
+	.pagination-page-size-select {
+		width: 4.75rem;
+		min-width: 4.75rem;
+		max-width: 4.75rem;
+		margin: 0;
+	}
+
+	.pagination-page-size-select.form-field,
+	.pagination-page-size-select .form-field {
+		width: 100%;
+		min-width: 0;
+		margin: 0;
+	}
+
+	/*
+	 * Keep react-select and its control from expanding beyond
+	 * the compact page-size field.
+	 */
+	.pagination-page-size-select .select-input-container,
+	.pagination-page-size-select .select-input-control {
+		width: 100%;
+		min-width: 0;
+	}
+
+	/* =====================================================
+	   DATATABLE INTEGRATION
+	===================================================== */
+
+	.data-table-pagination .pagination {
+		width: 100%;
+		min-width: 0;
+
+		background-color: var(--table-bg);
+	}
+
+	/* =====================================================
+	   NARROW DESKTOP / TABLET
+	   Keep all three areas on the same row.
+	===================================================== */
+
+	@media (max-width: 900px) and (min-width: 641px) {
+		.pagination {
+			grid-template-columns:
+				minmax(max-content, 1fr)
+				auto
+				minmax(max-content, 1fr);
+			gap: var(--space-2);
+		}
+
+		.pagination-summary {
+			grid-column: auto;
+			grid-row: auto;
+		}
+
+		.pagination-pages {
+			grid-column: auto;
+			grid-row: auto;
+		}
+
+		.pagination-page-size {
+			grid-column: auto;
+			grid-row: auto;
+		}
+
+		.pagination-page-size-label {
+			font-size: var(--font-size-2xs);
+		}
+	}
+
+	/* =====================================================
+	   MOBILE
+	===================================================== */
+
+	@media (max-width: 640px) {
+		.pagination-default {
+			display: grid;
+			grid-template-columns: 1fr auto;
+			gap: var(--space-2);
+
+			padding: 0;
+		}
+
+		.pagination-pages {
+			grid-column: 1 / -1;
+			grid-row: 1;
+
+			width: 100%;
+			justify-content: center;
+		}
+
+		.pagination-summary {
+			grid-column: 1;
+			grid-row: 2;
+
+			justify-self: start;
+		}
+
+		.pagination-page-size {
+			grid-column: 2;
+			grid-row: 2;
+
+			justify-self: end;
+		}
+
+		.pagination-page-numbers {
+			max-width: calc(
+				100vw - (var(--control-height-sm) * 2) - (var(--space-8))
+			);
+			overflow-x: auto;
+
+			scrollbar-width: none;
+		}
+
+		.pagination-page-numbers::-webkit-scrollbar {
+			display: none;
+		}
+
+		.pagination-compact {
+			display: flex;
+			width: 100%;
+		}
+
+		.pagination-compact .pagination-pages {
+			justify-content: center;
+		}
+	}
+
+	/* =====================================================
+	   VERY SMALL MOBILE
+	===================================================== */
+
+	@media (max-width: 420px) {
+		.pagination-default {
+			grid-template-columns: 1fr;
+		}
+
+		.pagination-summary,
+		.pagination-page-size {
+			grid-column: 1;
+			justify-self: center;
+		}
+
+		.pagination-summary {
+			grid-row: 2;
+		}
+
+		.pagination-page-size {
+			grid-row: 3;
+		}
+
+		.pagination-page-numbers .button-filter {
+			width: var(--control-height-xs);
+			min-width: var(--control-height-xs);
+			height: var(--control-height-xs);
+		}
+
+		.pagination-ellipsis {
+			width: var(--control-height-xs);
+			height: var(--control-height-xs);
+		}
 	}
 }
-
 /* =====================================================
    TABS
 ===================================================== */
@@ -3296,8 +3572,10 @@
 		width: 100%;
 		min-width: 0;
 		min-height: 0;
-		flex: 1 1 auto;
-		overflow: auto;
+		flex: 1 1 0%;
+
+		overflow-x: auto;
+		overflow-y: auto;
 
 		background-color: var(--table-bg);
 
@@ -3445,10 +3723,6 @@
 		vertical-align: middle;
 	}
 
-	.data-table-head-cell:not(:last-child) {
-		border-right: var(--border-width-default) solid var(--table-border);
-	}
-
 	.data-table-head-content,
 	.data-table-sort-button {
 		display: flex;
@@ -3594,10 +3868,6 @@
 	}
 	.data-table-row:last-child .data-table-cell {
 		border-bottom: 0;
-	}
-
-	.data-table-cell:not(:last-child) {
-		border-right: var(--border-width-default) solid var(--color-border-subtle);
 	}
 
 	.data-table-cell-inner {
@@ -3878,57 +4148,12 @@
 		width: 100%;
 		min-width: 0;
 
-		padding: var(--space-3) var(--space-4);
+		padding: var(--space-1-5) var(--space-3);
 	}
 
 	.data-table-pagination .pagination {
 		width: 100%;
 		min-width: 0;
-	}
-
-	/* Neutralize the older orange-heavy Pagination styling
-	   when Pagination is rendered inside DataTable. */
-	.data-table-pagination .pagination-info,
-	.data-table-pagination .pagination-info-number {
-		color: var(--color-text-muted);
-	}
-
-	.data-table-pagination .pagination-info-number {
-		color: var(--color-text-primary);
-		font-weight: var(--font-weight-medium);
-	}
-
-	.data-table-pagination .pagination-pages {
-		gap: var(--space-1);
-	}
-
-	.data-table-pagination .pagination-btn,
-	.data-table-pagination .pagination-pages .button-base {
-		border-color: var(--color-border-default);
-		border-radius: var(--radius-xs);
-
-		background-color: var(--color-bg-surface);
-		color: var(--color-text-secondary);
-		box-shadow: none;
-	}
-
-	.data-table-pagination .pagination-btn:hover:not(:disabled),
-	.data-table-pagination .pagination-pages .button-base:hover:not(:disabled) {
-		border-color: var(--color-border-hover);
-		background-color: var(--color-bg-surface-hover);
-		color: var(--color-text-primary);
-	}
-
-	.data-table-pagination .pagination-btn-active,
-	.data-table-pagination .pagination-pages .button-base[aria-current="page"] {
-		border-color: var(--color-border-brand);
-		background-color: var(--color-brand-subtle);
-		color: var(--color-text-brand);
-	}
-
-	.data-table-pagination .pagination-page-size {
-		min-width: 5rem;
-		margin: 0;
 	}
 
 	/* =====================================================
@@ -3966,7 +4191,32 @@
 			width: auto;
 		}
 	}
+	@media (min-width: 768px) {
+		.data-table-shell {
+			width: 100%;
+			height: 100%;
+			min-width: 0;
+			min-height: 0;
+			max-height: 100%;
+			overflow: hidden;
+		}
 
+		.data-table-scroll {
+			min-height: 0;
+			flex: 1 1 0%;
+			overflow-x: auto;
+			overflow-y: auto;
+		}
+
+		.data-table-pagination {
+			position: relative;
+			z-index: var(--z-raised);
+
+			flex: 0 0 auto;
+			width: 100%;
+			min-width: 0;
+		}
+	}
 	/* =====================================================
 	   MOBILE
 	===================================================== */
@@ -3974,79 +4224,34 @@
 	@media (max-width: 767px) {
 		.data-table-shell {
 			display: block;
+			height: auto;
+			max-height: none;
 			overflow: hidden;
 		}
 
-		.data-table-toolbar {
-			align-items: stretch;
-			flex-direction: column;
-
-			padding: var(--space-3);
-		}
-
-		.data-table-toolbar-start,
-		.data-table-toolbar-end {
-			width: 100%;
-			align-items: stretch;
-		}
-
-		.data-table-toolbar-end {
-			flex-direction: column;
-		}
-
-		.data-table-toolbar-search {
-			width: 100%;
-			min-width: 0;
-		}
-
-		.data-table-toolbar-actions {
-			width: 100%;
-			justify-content: flex-start;
-		}
-
 		.data-table-scroll {
+			width: 100%;
+			height: auto;
+			max-height: none;
+
 			overflow-x: auto;
 			overflow-y: visible;
+
 			scrollbar-gutter: auto;
+			-webkit-overflow-scrolling: touch;
 		}
 
 		.data-table-head {
 			position: static;
 		}
 
-		.data-table-head-content,
-		.data-table-sort-button {
-			min-height: var(--control-height-md);
-
-			padding: var(--space-2) var(--space-3);
-		}
-
-		.data-table-head-cell {
-			height: var(--control-height-md);
-			font-size: var(--font-size-2xs);
-		}
-
-		.data-table-cell {
-			font-size: var(--font-size-xs);
-		}
-
-		.data-table-cell-inner {
-			min-height: 2.5rem;
-
-			padding: var(--space-1) var(--space-3);
-		}
-
 		.data-table-pagination {
 			position: static;
+			width: 100%;
 		}
 
 		.data-table-pagination-inner {
 			padding: var(--space-2) var(--space-3);
-		}
-
-		.data-table-pagination .pagination {
-			align-items: stretch;
-			flex-direction: column;
 		}
 	}
 
@@ -5746,24 +5951,23 @@ Compact responsive listing controls
 	}
 }
 
-/* =====================================================
-   ACTIVITY PLANNER PAGE
-===================================================== */
+/* =========================================================
+   ACTIVITY PLANNER HEADER
+
+   Ownership:
+   - EPC metadata row
+   - status placement
+   - preview action placement
+   - responsive EPC-specific arrangement
+
+   Generic title and surface styling are owned elsewhere.
+========================================================= */
 
 @layer components {
-	.activity-planner-page-content {
-		background-color: var(--color-clean-white);
-	}
-	.activity-planner-header {
-		background-color: var(--color-bg-surface);
-		color: var(--color-text-primary);
-	}
+	/* =====================================================
+	   HEADER ROW
+	===================================================== */
 
-	.activity-planner-header-toolbar {
-		border-top-color: var(--color-border-subtle);
-	}
-
-	/* EPC details left, status/actions right */
 	.activity-planner-header-row {
 		display: flex;
 		width: 100%;
@@ -5774,7 +5978,7 @@ Compact responsive listing controls
 	}
 
 	/* =====================================================
-	   LEFT SIDE
+	   DETAILS
 	===================================================== */
 
 	.activity-planner-header-details {
@@ -5798,9 +6002,9 @@ Compact responsive listing controls
 
 		color: var(--color-text-muted);
 
-		font-family: var(--font-sans);
+		font-family: var(--font-mono);
 		font-size: var(--font-size-2xs);
-		font-weight: var(--font-weight-medium);
+		font-weight: var(--font-weight-regular);
 		line-height: 1;
 		letter-spacing: var(--tracking-wide);
 		text-transform: uppercase;
@@ -5823,7 +6027,7 @@ Compact responsive listing controls
 	}
 
 	/* =====================================================
-	   RIGHT SIDE
+	   STATUS AND ACTIONS
 	===================================================== */
 
 	.activity-planner-header-actions {
@@ -5832,7 +6036,7 @@ Compact responsive listing controls
 		flex: 0 0 auto;
 		align-items: center;
 		justify-content: flex-end;
-		gap: var(--space-3);
+		gap: var(--space-1);
 	}
 
 	.activity-planner-header-status {
@@ -5842,31 +6046,13 @@ Compact responsive listing controls
 		gap: var(--space-2);
 	}
 
+	/*
+	 * Button appearance and variant already provide the
+	 * visual treatment. Keep only page-specific sizing.
+	 */
 	.activity-planner-preview-button.button-base {
+		flex: 0 0 auto;
 		min-height: var(--control-height-sm);
-
-		border-color: var(--color-border-default);
-		background-color: var(--color-bg-surface);
-		color: var(--color-text-secondary);
-		box-shadow: none;
-
-		font-size: var(--font-size-xs);
-	}
-
-	.activity-planner-preview-button.button-base svg {
-		color: var(--color-icon-brand);
-	}
-
-	.activity-planner-preview-button.button-base:hover:not(:disabled) {
-		border-color: var(--color-border-brand);
-		background-color: var(--color-brand-subtle);
-		color: var(--color-brand-active);
-		box-shadow: none;
-		transform: none;
-	}
-
-	.activity-planner-preview-button.button-base:hover:not(:disabled) svg {
-		color: var(--color-brand);
 	}
 
 	/* =====================================================
@@ -5905,11 +6091,11 @@ Compact responsive listing controls
 			width: 100%;
 			justify-content: space-between;
 		}
-
-		.activity-planner-preview-button.button-base {
-			flex: 0 0 auto;
-		}
 	}
+
+	/* =====================================================
+	   SMALL MOBILE
+	===================================================== */
 
 	@media (max-width: 420px) {
 		.activity-planner-header-actions {

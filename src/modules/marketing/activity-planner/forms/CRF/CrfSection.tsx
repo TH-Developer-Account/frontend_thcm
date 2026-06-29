@@ -86,11 +86,8 @@ const CrfSection = ({
 					/>
 				)
 			}
-		>
-			<div className="text-sm text-gray-500">
-				No CRF has been created for this EPC yet.
-			</div>
-		</SectionAccordion>
+			emptyMessage="No CRF has been created for this EPC yet."
+		/>
 	);
 };
 

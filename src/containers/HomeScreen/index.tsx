@@ -6,17 +6,21 @@ import { actions } from "./constant";
 
 export default function HomeScreen() {
 	const { canReadApp, permissions } = useAuth();
+
 	const visibleActions = actions.filter((action) => canReadApp(action.appKey));
 
 	return (
 		<div className="home-screen">
 			<header className="home-header">
-				<Header />
+				<div className="home-header-content">
+					<Header />
+				</div>
 			</header>
 
 			<div className="home-subheader">
 				<div className="home-subheader-content">
 					<span className="home-eyebrow">Module Selector</span>
+
 					<span className="home-meta">
 						FY 2025–26 · Sales &amp; Marketing Ops
 					</span>
@@ -24,7 +28,7 @@ export default function HomeScreen() {
 			</div>
 
 			<main className="home-main">
-				<section className="home-intro mb-4" aria-labelledby="home-title">
+				<section className="home-intro" aria-labelledby="home-title">
 					<h1 id="home-title" className="home-title">
 						Choose an application
 					</h1>
@@ -34,11 +38,13 @@ export default function HomeScreen() {
 						and business operations.
 					</p>
 				</section>
-				<section>
+
+				<section className="home-module-section">
 					{visibleActions.length > 0 ? (
 						<div className="action-card-grid">
 							{visibleActions.map((action) => {
 								const Icon = action.icon;
+
 								const appInfo = permissions.find(
 									(permission) => permission.appKey === action.appKey,
 								);
@@ -59,6 +65,7 @@ export default function HomeScreen() {
 					) : (
 						<div className="home-empty-state">
 							<p className="home-empty-title">No applications available</p>
+
 							<p className="home-empty-description">
 								You currently do not have access to any application modules.
 							</p>
@@ -66,25 +73,6 @@ export default function HomeScreen() {
 					)}
 				</section>
 			</main>
-
-			{/*<footer className="home-status-bar bg-black">
-				<div className="scroll-wrapper">
-					<div className="scroll-track">
-						 <div className="home-status-item">
-					<span className="home-status-dot" />
-					All systems operational
-				</div>
-				<div className="home-status-item">
-					<span className="home-status-dot home-status-dot-warning" />3 claims
-					pending review
-				</div>
-				<div className="home-status-item home-status-build">
-					Build v2.4.1 · Last sync 2 min ago
-				</div> 
-						<div className="road bg-white"></div>
-					</div>
-				</div>
-			</footer>*/}
 		</div>
 	);
 }

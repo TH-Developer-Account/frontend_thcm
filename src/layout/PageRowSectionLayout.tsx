@@ -13,12 +13,11 @@ type PageRowSectionLayoutProps = {
 
 	/**
 	 * page-scroll:
-	 * The whole content area scrolls. Use when the page contains
-	 * multiple sections or content below the table.
+	 * The complete content section owns vertical scrolling.
 	 *
 	 * contained:
-	 * The content fills the available desktop height. A child such
-	 * as DataTable owns the internal scrolling region.
+	 * The content section fills the available desktop height.
+	 * A child such as DataTable owns the internal scrolling.
 	 */
 	contentMode?: PageRowContentMode;
 };
@@ -55,13 +54,17 @@ const PageRowSectionLayout = ({
 			<header
 				className={joinClassNames("page-row-layout-header", headerClassName)}
 			>
-				<div className="page-row-layout-header-inner content-box page-stack-section">
-					<div className={className}>{header_children}</div>
+				<div className="page-row-layout-header-inner page-row-layout-section content-box">
+					<div
+						className={joinClassNames("page-row-layout-header-body", className)}
+					>
+						{header_children}
+					</div>
 				</div>
 			</header>
 
-			<div className="page-row-layout-content">
-				<div className="page-row-layout-content-inner content-box page-stack-section">
+			<div className="page-row-layout-content  content-box">
+				<div className="page-row-layout-content-inner page-row-layout-section">
 					<div
 						className={joinClassNames(
 							"page-row-layout-content-body",

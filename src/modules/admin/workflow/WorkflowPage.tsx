@@ -9,6 +9,7 @@ const WorkflowPage = () => {
 	return (
 		<WorkflowProvider>
 			<PageRowSectionLayout
+				contentMode="contained"
 				stickyHeader
 				header_children={<WorkflowTopSection />}
 			>

@@ -432,6 +432,7 @@ function DataTable<T extends object>({
 							onPageChange={handlePageChange}
 							onPageSizeChange={handlePageSizeChange}
 							scrollTargetId={scrollTargetId}
+							variant="default"
 						/>
 					</div>
 				</footer>

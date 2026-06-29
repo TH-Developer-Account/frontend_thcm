@@ -66,13 +66,8 @@ const EpfSection = ({
 						/>
 					) : null
 				}
-			>
-				<Card variant="subtle" padding="compact">
-					<p className="epf-empty-message">
-						No EPF has been created for this EPC yet.
-					</p>
-				</Card>
-			</SectionAccordion>
+				emptyMessage="No EPF has been created for this EPC yet."
+			/>
 		);
 	}
 
