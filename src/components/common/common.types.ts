@@ -1,5 +1,4 @@
 import type { LucideIcon } from "lucide-react";
-import type { StatusVariant } from "../../modules/marketing/activity-planner/utils/status";
 import type {
 	ButtonHTMLAttributes,
 	ComponentType,
@@ -131,7 +130,7 @@ export type NavigateButtonProps = {
 export interface BadgeProps {
 	children?: React.ReactNode;
 	status?: string | null;
-	variant?: StatusVariant | string | null;
+	variant?: string | null;
 	text?: string;
 }
 

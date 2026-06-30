@@ -1,6 +1,6 @@
 import { Pencil, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import Button from "../../../../../components/common/Button";
-import FormInput from "../../../../../components/FormElements/FormInput";
+import FormInput from "../../../../../components/forms/FormInput";
 import type {
 	LeadFormRow,
 	LeadRow,

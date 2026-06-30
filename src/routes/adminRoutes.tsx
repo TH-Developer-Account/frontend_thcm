@@ -1,6 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 // import { DashboardPage } from "../modules/marketing/pages/Dashboard/DashboardPage";
-import UsersPage from "../modules/admin/pages/BusinessUsersMaster/UserPage";
+import UsersPage from "../modules/admin/users/UsersPage";
 import { UserProfilePage } from "../modules/admin/user-profile/UserProfilePage";
 import { ProfileFormPage } from "../modules/admin/user-profile/components/ProfileFormPage";
 // import Departments from "../modules/admin/pages/BusinessUsersMaster/Departments";

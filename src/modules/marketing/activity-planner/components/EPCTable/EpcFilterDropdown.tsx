@@ -2,7 +2,7 @@ import { ChevronDown, Filter, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 
 import Button from "../../../../../components/common/Button";
-import Checkbox from "../../../../../components/FormElements/Checkbox";
+import Checkbox from "../../../../../components/forms/Checkbox";
 import type { EpcFilters } from "../../types/epc.types";
 
 type OptionItem = {

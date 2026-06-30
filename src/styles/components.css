@@ -3435,862 +3435,6 @@
 }
 
 /* =====================================================
-   DATA TABLE SYSTEM
-   Authoritative styling for every application DataTable
-
-===================================================== */
-
-@layer components {
-	/* =====================================================
-	   SHELL
-	===================================================== */
-
-	.data-table-shell {
-		position: relative;
-
-		display: flex;
-		width: 100%;
-		min-width: 0;
-		min-height: 0;
-		flex: 1 1 auto;
-		flex-direction: column;
-		overflow: hidden;
-
-		border: var(--border-width-default) solid var(--table-border);
-		border-radius: var(--radius-lg);
-
-		background-color: var(--table-bg);
-		color: var(--color-text-primary);
-		box-shadow: var(--shadow-xs);
-
-		font-family: var(--font-sans);
-	}
-
-	.data-table-shell-loading {
-		cursor: progress;
-	}
-
-	/* Prevent a DataTable nested inside Card from producing
-	   an unnecessary second outer border. */
-	.ui-card-body-none > .data-table-shell,
-	.ui-card-body-none > .data-table-shell:first-child:last-child {
-		border: 0;
-		border-radius: 0;
-		box-shadow: none;
-	}
-
-	/* =====================================================
-	   OPTIONAL TOOLBAR
-	   Use above DataTable for search, page-size controls,
-	   filters, download and custom actions.
-	===================================================== */
-
-	.data-table-toolbar {
-		display: flex;
-		width: 100%;
-		min-width: 0;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-3);
-
-		padding: var(--space-4);
-
-		border: var(--border-width-default) solid var(--table-border);
-		border-bottom: 0;
-		border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-
-		background-color: var(--table-bg);
-		color: var(--color-text-secondary);
-	}
-
-	.data-table-toolbar + .data-table-shell {
-		border-top-left-radius: 0;
-		border-top-right-radius: 0;
-	}
-
-	.data-table-toolbar-start,
-	.data-table-toolbar-end {
-		display: flex;
-		min-width: 0;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-3);
-	}
-
-	.data-table-toolbar-end {
-		margin-left: auto;
-	}
-
-	.data-table-toolbar-label {
-		color: var(--color-text-secondary);
-
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-normal);
-		white-space: nowrap;
-	}
-
-	.data-table-toolbar-page-size {
-		display: inline-flex;
-		min-width: 0;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	.data-table-toolbar-page-size-control {
-		min-width: 5rem;
-	}
-
-	.data-table-toolbar-search {
-		width: min(28rem, 42vw);
-		min-width: 14rem;
-	}
-
-	.data-table-toolbar-search > * {
-		width: 100%;
-		min-width: 0;
-		max-width: none;
-	}
-
-	.data-table-toolbar-actions {
-		display: flex;
-		min-width: 0;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: flex-end;
-		gap: var(--space-2);
-	}
-
-	/* =====================================================
-	   SCROLLER
-	===================================================== */
-
-	.data-table-scroll {
-		position: relative;
-
-		width: 100%;
-		min-width: 0;
-		min-height: 0;
-		flex: 1 1 0%;
-
-		overflow-x: auto;
-		overflow-y: auto;
-
-		background-color: var(--table-bg);
-
-		overscroll-behavior: contain;
-		scrollbar-gutter: stable;
-		scrollbar-width: thin;
-		scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
-
-		-webkit-overflow-scrolling: touch;
-	}
-
-	.data-table-scroll:focus-visible {
-		outline: none;
-		box-shadow: inset var(--shadow-focus-brand);
-	}
-
-	.data-table-scroll::-webkit-scrollbar {
-		width: 5px;
-		height: 5px;
-	}
-
-	.data-table-scroll::-webkit-scrollbar-track {
-		background-color: var(--color-scrollbar-track);
-	}
-
-	.data-table-scroll::-webkit-scrollbar-thumb {
-		border-radius: var(--radius-full);
-		background-color: var(--color-scrollbar-thumb);
-	}
-
-	.data-table-scroll::-webkit-scrollbar-thumb:hover {
-		background-color: var(--color-scrollbar-thumb-hover);
-	}
-
-	/* =====================================================
-	   TABLE
-	===================================================== */
-
-	.data-table {
-		width: 100%;
-		min-width: max(100%, 48rem);
-
-		border-collapse: separate;
-		border-spacing: 0;
-
-		background-color: var(--table-bg);
-		color: var(--color-text-secondary);
-
-		font-family: var(--font-sans);
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-normal);
-		table-layout: auto;
-	}
-
-	/* =====================================================
-	   WIDTH PRESETS
-	===================================================== */
-
-	.data-table-min-sm {
-		min-width: max(100%, 32rem);
-	}
-
-	.data-table-min-md {
-		min-width: max(100%, 42rem);
-	}
-
-	.data-table-min-lg {
-		min-width: max(100%, 56rem);
-	}
-
-	.data-table-min-xl {
-		min-width: max(100%, 72rem);
-	}
-
-	/* =====================================================
-	   REUSABLE COLUMN WIDTHS
-	===================================================== */
-
-	.data-table-column-xs {
-		width: 4rem;
-		min-width: 4rem;
-	}
-
-	.data-table-column-sm {
-		width: 7rem;
-		min-width: 7rem;
-	}
-
-	.data-table-column-md {
-		width: 10rem;
-		min-width: 10rem;
-	}
-
-	.data-table-column-lg {
-		width: 14rem;
-		min-width: 14rem;
-	}
-
-	.data-table-column-xl {
-		width: 18rem;
-		min-width: 18rem;
-	}
-
-	.data-table-column-2xl {
-		width: 22rem;
-		min-width: 22rem;
-	}
-
-	/* =====================================================
-	   HEADER
-	===================================================== */
-
-	.data-table-head {
-		position: sticky;
-		top: 0;
-		z-index: var(--z-raised);
-
-		background-color: var(--table-header-bg);
-		color: var(--table-header-text);
-	}
-
-	.data-table-head-row {
-		height: var(--control-height-lg);
-	}
-
-	.data-table-head-cell {
-		position: relative;
-
-		height: var(--control-height-lg);
-		padding: 0;
-
-		border-bottom: var(--border-width-default) solid var(--table-border);
-
-		background-color: var(--table-header-bg);
-		color: var(--table-header-text);
-
-		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-tight);
-		letter-spacing: var(--tracking-normal);
-		text-align: left;
-		white-space: nowrap;
-		vertical-align: middle;
-	}
-
-	.data-table-head-content,
-	.data-table-sort-button {
-		display: flex;
-		width: 100%;
-		min-width: 0;
-		min-height: var(--control-height-lg);
-		align-items: center;
-		gap: var(--space-2);
-
-		padding: var(--space-2) var(--space-4);
-	}
-
-	.data-table-head-label {
-		min-width: 0;
-		overflow: hidden;
-
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	/* =====================================================
-	   SORTING
-	===================================================== */
-
-	.data-table-sort-button {
-		justify-content: space-between;
-
-		margin: 0;
-		border: 0;
-
-		background-color: transparent;
-		color: inherit;
-
-		font: inherit;
-		text-align: inherit;
-
-		cursor: pointer;
-		appearance: none;
-
-		transition:
-			background-color var(--duration-fast) var(--ease-standard),
-			color var(--duration-fast) var(--ease-standard);
-	}
-
-	.data-table-sort-button:hover {
-		background-color: var(--color-bg-surface-hover);
-		color: var(--color-text-primary);
-	}
-
-	.data-table-sort-button:focus-visible {
-		outline: none;
-		box-shadow: inset var(--shadow-focus-brand);
-	}
-
-	.data-table-sort-icon {
-		display: inline-flex;
-		width: 0.875rem;
-		height: 0.875rem;
-		flex: 0 0 auto;
-		align-items: center;
-		justify-content: center;
-
-		color: var(--color-icon-muted);
-	}
-
-	.data-table-sort-icon svg {
-		width: 0.875rem;
-		height: 0.875rem;
-		stroke-width: 1.75;
-	}
-
-	.data-table-sort-button-active {
-		color: var(--color-text-primary);
-	}
-
-	.data-table-sort-button-active .data-table-sort-icon {
-		color: var(--color-icon-brand);
-	}
-
-	/* =====================================================
-	   BODY AND ROWS
-	===================================================== */
-
-	.data-table-body {
-		background-color: var(--table-bg);
-	}
-
-	.data-table-row {
-		background-color: var(--table-bg);
-
-		transition:
-			background-color var(--duration-fast) var(--ease-standard),
-			color var(--duration-fast) var(--ease-standard);
-	}
-
-	.data-table-row:hover {
-		background-color: var(--table-row-hover);
-	}
-
-	.data-table-row-interactive {
-		cursor: pointer;
-	}
-
-	.data-table-row-interactive:focus-visible {
-		position: relative;
-		z-index: 1;
-
-		outline: none;
-		box-shadow: inset var(--shadow-focus-brand);
-	}
-
-	.data-table-row-selected {
-		background-color: var(--color-table-row-selected);
-	}
-
-	.data-table-row-selected:hover {
-		background-color: var(--color-table-row-selected);
-	}
-
-	.data-table-row-loading {
-		pointer-events: none;
-	}
-
-	/* =====================================================
-	   CELLS
-	===================================================== */
-
-	.data-table-cell {
-		min-width: 0;
-		padding: 0;
-
-		border-bottom: var(--border-width-default) solid var(--table-border);
-
-		background-color: inherit;
-		color: var(--color-text-secondary);
-
-		font-family: var(--font-sans);
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-normal);
-
-		vertical-align: middle;
-	}
-	.data-table-row:last-child .data-table-cell {
-		border-bottom: 0;
-	}
-
-	.data-table-cell-inner {
-		display: flex;
-		width: 100%;
-		min-width: 0;
-		min-height: 2.5rem;
-		align-items: center;
-
-		padding: var(--space-1) var(--space-2);
-
-		overflow-wrap: anywhere;
-	}
-
-	.data-table-cell-text .data-table-cell-inner {
-		justify-content: flex-start;
-	}
-
-	.data-table-cell-action {
-		width: 1%;
-		white-space: nowrap;
-	}
-
-	.data-table-cell-action .data-table-cell-inner {
-		justify-content: center;
-		gap: var(--space-1);
-	}
-
-	.data-table-cell-action .button-base {
-		flex: 0 0 auto;
-	}
-
-	.data-table-cell-action .button-icon {
-		width: var(--control-height-sm);
-		height: var(--control-height-sm);
-		min-height: var(--control-height-sm);
-	}
-
-	/* =====================================================
-	   ALIGNMENT
-	===================================================== */
-
-	.data-table-align-left {
-		text-align: left;
-	}
-
-	.data-table-align-center {
-		text-align: center;
-	}
-
-	.data-table-align-right {
-		text-align: right;
-	}
-
-	.data-table-align-center .data-table-head-content,
-	.data-table-align-center .data-table-sort-button,
-	.data-table-align-center .data-table-cell-inner {
-		justify-content: center;
-	}
-
-	.data-table-align-right .data-table-head-content,
-	.data-table-align-right .data-table-sort-button,
-	.data-table-align-right .data-table-cell-inner {
-		justify-content: flex-end;
-	}
-
-	/* =====================================================
-	   COMMON CELL CONTENT
-	===================================================== */
-
-	.data-table-cell-inner a {
-		color: var(--color-text-link);
-
-		font-size: inherit;
-		font-weight: var(--font-weight-regular);
-		text-decoration: none;
-	}
-
-	.data-table-cell-inner a:hover {
-		color: var(--color-text-link-hover);
-		text-decoration: underline;
-		text-underline-offset: 2px;
-	}
-
-	.data-table-cell-inner a:focus-visible {
-		border-radius: var(--radius-xs);
-		outline: none;
-		box-shadow: var(--shadow-focus-brand);
-	}
-
-	.data-table-cell-inner :where(.badge, .status-badge, [data-status]) {
-		flex: 0 0 auto;
-	}
-
-	.data-table-primary-value {
-		color: var(--color-text-primary);
-		font-weight: var(--font-weight-medium);
-	}
-
-	.data-table-secondary-value {
-		color: var(--color-text-secondary);
-		font-weight: var(--font-weight-regular);
-	}
-
-	.data-table-muted-value {
-		color: var(--color-text-muted);
-	}
-
-	.data-table-number {
-		font-variant-numeric: tabular-nums;
-	}
-
-	.data-table-action-group {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		gap: var(--space-1);
-	}
-
-	/* =====================================================
-	   CHECKBOXES
-	   Applied when a selection column is present.
-	===================================================== */
-
-	.data-table-checkbox {
-		width: 1rem;
-		height: 1rem;
-
-		border: var(--border-width-default) solid var(--color-input-border);
-		border-radius: var(--radius-xs);
-
-		background-color: var(--color-input-bg);
-
-		accent-color: var(--color-brand);
-		cursor: pointer;
-	}
-
-	.data-table-checkbox:focus-visible {
-		outline: none;
-		box-shadow: var(--shadow-focus-brand);
-	}
-
-	.data-table-checkbox:disabled {
-		cursor: not-allowed;
-		opacity: var(--opacity-disabled);
-	}
-
-	/* =====================================================
-	   LOADING SKELETON
-	===================================================== */
-
-	.data-table-skeleton {
-		display: block;
-		width: 62%;
-		height: 0.75rem;
-
-		border-radius: var(--radius-xs);
-
-		background: linear-gradient(
-			90deg,
-			var(--color-skeleton-base),
-			var(--color-skeleton-highlight),
-			var(--color-skeleton-base)
-		);
-
-		background-size: 200% 100%;
-		animation: data-table-skeleton-loading 1.4s var(--ease-standard) infinite;
-	}
-
-	.data-table-skeleton-wide {
-		width: 82%;
-	}
-
-	.data-table-skeleton-short {
-		width: 38%;
-	}
-
-	@keyframes data-table-skeleton-loading {
-		from {
-			background-position: 200% 0;
-		}
-
-		to {
-			background-position: -200% 0;
-		}
-	}
-
-	/* =====================================================
-	   EMPTY STATE
-	===================================================== */
-
-	.data-table-empty-row,
-	.data-table-empty-row:hover {
-		background-color: var(--table-bg);
-	}
-
-	.data-table-empty-state {
-		padding: var(--space-8) var(--space-4);
-
-		border-bottom: 0;
-
-		background-color: var(--table-bg);
-	}
-
-	.data-table-empty-state-inner {
-		display: flex;
-		width: 100%;
-		min-height: 8rem;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: var(--space-1);
-
-		text-align: center;
-	}
-
-	.data-table-empty-title {
-		margin: 0;
-
-		color: var(--color-text-primary);
-
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-tight);
-	}
-
-	.data-table-empty-description {
-		max-width: 24rem;
-		margin: 0;
-
-		color: var(--color-text-muted);
-
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-normal);
-	}
-
-	/* =====================================================
-	   CUSTOM FOOTER
-	===================================================== */
-
-	.data-table-custom-footer {
-		display: flex;
-		width: 100%;
-		min-width: 0;
-		flex: 0 0 auto;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: flex-end;
-		gap: var(--space-3);
-
-		padding: var(--space-3) var(--space-4);
-
-		border-top: var(--border-width-default) solid var(--table-border);
-
-		background-color: var(--table-bg);
-		color: var(--color-text-secondary);
-	}
-
-	/* =====================================================
-	   PAGINATION
-	===================================================== */
-
-	.data-table-pagination {
-		position: relative;
-		z-index: var(--z-raised);
-
-		width: 100%;
-		min-width: 0;
-		flex: 0 0 auto;
-
-		border-top: var(--border-width-default) solid var(--table-border);
-
-		background-color: var(--table-bg);
-	}
-
-	.data-table-pagination-inner {
-		width: 100%;
-		min-width: 0;
-
-		padding: var(--space-1-5) var(--space-3);
-	}
-
-	.data-table-pagination .pagination {
-		width: 100%;
-		min-width: 0;
-	}
-
-	/* =====================================================
-	   NESTED TABLE CARD SUPPORT
-	===================================================== */
-
-	.line-table-card .data-table-shell,
-	.approval-flow-table .data-table-shell {
-		border: 0;
-		border-radius: 0;
-		box-shadow: none;
-	}
-
-	/* =====================================================
-	   TABLET
-	===================================================== */
-
-	@media (max-width: 1023px) {
-		.data-table-toolbar {
-			align-items: stretch;
-		}
-
-		.data-table-toolbar-start,
-		.data-table-toolbar-end {
-			width: 100%;
-		}
-
-		.data-table-toolbar-end {
-			margin-left: 0;
-			justify-content: flex-end;
-		}
-
-		.data-table-toolbar-search {
-			flex: 1 1 18rem;
-			width: auto;
-		}
-	}
-	@media (min-width: 768px) {
-		.data-table-shell {
-			width: 100%;
-			height: 100%;
-			min-width: 0;
-			min-height: 0;
-			max-height: 100%;
-			overflow: hidden;
-		}
-
-		.data-table-scroll {
-			min-height: 0;
-			flex: 1 1 0%;
-			overflow-x: auto;
-			overflow-y: auto;
-		}
-
-		.data-table-pagination {
-			position: relative;
-			z-index: var(--z-raised);
-
-			flex: 0 0 auto;
-			width: 100%;
-			min-width: 0;
-		}
-	}
-	/* =====================================================
-	   MOBILE
-	===================================================== */
-
-	@media (max-width: 767px) {
-		.data-table-shell {
-			display: block;
-			height: auto;
-			max-height: none;
-			overflow: hidden;
-		}
-
-		.data-table-scroll {
-			width: 100%;
-			height: auto;
-			max-height: none;
-
-			overflow-x: auto;
-			overflow-y: visible;
-
-			scrollbar-gutter: auto;
-			-webkit-overflow-scrolling: touch;
-		}
-
-		.data-table-head {
-			position: static;
-		}
-
-		.data-table-pagination {
-			position: static;
-			width: 100%;
-		}
-
-		.data-table-pagination-inner {
-			padding: var(--space-2) var(--space-3);
-		}
-	}
-
-	/* =====================================================
-	   VERY SMALL MOBILE
-	===================================================== */
-
-	@media (max-width: 420px) {
-		.data-table-toolbar-page-size {
-			width: 100%;
-			flex-wrap: wrap;
-		}
-
-		.data-table-toolbar-actions > * {
-			max-width: 100%;
-		}
-
-		.data-table-pagination .pagination-pages {
-			width: 100%;
-			justify-content: space-between;
-		}
-	}
-
-	/* =====================================================
-	   REDUCED MOTION
-	===================================================== */
-
-	@media (prefers-reduced-motion: reduce) {
-		.data-table-row,
-		.data-table-sort-button,
-		.data-table-skeleton {
-			transition-duration: 0.01ms;
-			animation-duration: 0.01ms;
-			animation-iteration-count: 1;
-		}
-	}
-}
-
-/* =====================================================
    EDITABLE LINE ITEM TABLE
 
    Separate from shared DataTable because this component
@@ -7437,5 +6581,123 @@ Compact responsive listing controls
 		.file-upload-preview-image:hover .file-upload-preview-image-content {
 			transform: none;
 		}
+	}
+}
+
+/* =====================================================
+   MIGRATED GENERIC STATE STYLES
+===================================================== */
+@layer components {
+	.badge {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		min-height: 1.375rem;
+		padding: var(--space-0-5) var(--space-2);
+		border: var(--border-width-default) solid transparent;
+		border-radius: var(--radius-full);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-medium);
+		line-height: 1;
+		white-space: nowrap;
+	}
+	.badge-brand {
+		background: var(--color-brand);
+		color: var(--color-brand-foreground);
+		border-color: var(--color-brand);
+	}
+	.badge-success {
+		background: var(--color-success-bg);
+		color: var(--color-success);
+		border-color: var(--color-success-border);
+	}
+	.badge-pending,
+	.badge-warning {
+		background: var(--color-warning-bg);
+		color: var(--color-warning);
+		border-color: var(--color-warning-border);
+	}
+	.badge-danger {
+		background: var(--color-error-bg);
+		color: var(--color-error);
+		border-color: var(--color-error-border);
+	}
+	.badge-info {
+		background: var(--color-info-bg);
+		color: var(--color-info);
+		border-color: var(--color-info-border);
+	}
+	.badge-neutral {
+		background: var(--color-bg-surface-muted);
+		color: var(--color-text-secondary);
+		border-color: var(--color-border-default);
+	}
+	.badge-outline {
+		background: transparent;
+		color: var(--color-text-secondary);
+		border-color: var(--color-border-default);
+	}
+
+	.avatar-xs {
+		width: 1.5rem;
+		height: 1.5rem;
+		font-size: var(--font-size-3xs);
+	}
+	.avatar-sm {
+		width: 2rem;
+		height: 2rem;
+		font-size: var(--font-size-2xs);
+	}
+	.avatar-md {
+		width: 2.5rem;
+		height: 2.5rem;
+		font-size: var(--font-size-xs);
+	}
+	.avatar-lg {
+		width: 3.5rem;
+		height: 3.5rem;
+		font-size: var(--font-size-lg);
+	}
+	.avatar-image {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.alert-icon-warning,
+	.toast-icon-warning {
+		background: var(--color-warning-bg);
+		color: var(--color-warning);
+	}
+	.alert-icon-info,
+	.toast-icon-info {
+		background: var(--color-info-bg);
+		color: var(--color-info);
+	}
+	.alert-icon-error,
+	.toast-icon-error {
+		background: var(--color-error-bg);
+		color: var(--color-error);
+	}
+	.alert-icon-success,
+	.toast-icon-success {
+		background: var(--color-success-bg);
+		color: var(--color-success);
+	}
+	.toast-success {
+		border-color: var(--color-success-border);
+		background: var(--color-success-bg);
+	}
+	.toast-info {
+		border-color: var(--color-info-border);
+		background: var(--color-info-bg);
+	}
+	.toast-warning {
+		border-color: var(--color-warning-border);
+		background: var(--color-warning-bg);
+	}
+	.toast-error {
+		border-color: var(--color-error-border);
+		background: var(--color-error-bg);
 	}
 }

@@ -98,6 +98,23 @@
 		--page-row-mobile-gap: var(--space-1);
 		--page-row-mobile-content-padding-bottom: var(--space-3);
 
+		--page-section-max-width: var(--content-max-width);
+
+		--page-section-padding-inline-mobile: var(--space-3);
+		--page-section-padding-inline-tablet: var(--space-4);
+		--page-section-padding-inline-desktop: var(--space-4);
+
+		--page-section-padding-top-mobile: var(--space-3);
+		--page-section-padding-bottom-mobile: var(--space-4);
+
+		--page-section-padding-top-tablet: var(--space-4);
+		--page-section-padding-bottom-tablet: var(--space-5);
+
+		--page-section-padding-top-desktop: var(--space-5);
+		--page-section-padding-bottom-desktop: var(--space-6);
+
+		--page-section-content-gap: var(--layout-section-gap);
+
 		--page-header-title-size: var(--font-size-xl);
 		--page-header-title-line-height: var(--line-height-tight);
 		--page-header-title-tracking: var(--tracking-title);

@@ -8,7 +8,7 @@ import { Link } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 
 import Button from "../../../components/common/Button";
-import FormInput from "../../../components/FormElements/FormInput";
+import FormInput from "../../../components/forms/FormInput";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { ServerAxios } from "../../../services/ServerAxios";
 import { EMAIL_REGEX, api_routes } from "../constant";

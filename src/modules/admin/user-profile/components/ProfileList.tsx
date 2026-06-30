@@ -7,7 +7,7 @@ import { Modal } from "../../../../components/common/Modal";
 import { Alert } from "../../../../components/common/Alert";
 import type { Profile } from "../types/profile.types";
 import Avatar from "../../../../components/common/Avatar";
-import { SearchInput } from "../../../../components/FormElements/SearchInput";
+import { SearchInput } from "../../../../components/forms/SearchInput";
 import { AssignUsers } from "./AssignUsers";
 import { useToast } from "../../../../context/Auth/AuthContext";
 import Popover from "../../../../components/common/Popover";

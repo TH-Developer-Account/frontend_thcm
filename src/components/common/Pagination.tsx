@@ -2,8 +2,8 @@ import React, { useEffect, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { SingleValue } from "react-select";
 
-import type { Option } from "../../modules/marketing/types";
-import SelectInput from "../FormElements/SelectInput";
+type Option = { label: string; value: string };
+import SelectInput from "../forms/SelectInput";
 import Button from "./Button";
 import type { PaginationProps } from "./common.types";
 

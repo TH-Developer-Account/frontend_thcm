@@ -1,4 +1,4 @@
-import SelectInput from "../../../../components/FormElements/SelectInput";
+import SelectInput from "../../../../components/forms/SelectInput";
 import "../bp.css";
 
 const BPFilters = () => {

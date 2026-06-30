@@ -9,7 +9,7 @@ import { Pencil } from "lucide-react";
 
 import Button from "./Button";
 import Card from "./Card";
-import FormInput from "../FormElements/FormInput";
+import FormInput from "../forms/FormInput";
 
 export type EditableCardField<T extends Record<string, unknown>> = {
 	/**

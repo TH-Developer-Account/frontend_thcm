@@ -1,13 +1,13 @@
 import React from "react";
 import type { SingleValue } from "react-select";
 
-import FormInput from "../../../../../components/FormElements/FormInput";
-import SelectInput from "../../../../../components/FormElements/SelectInput";
-import TextareaInput from "../../../../../components/FormElements/TextareaInput";
+import FormInput from "../../../../../components/forms/FormInput";
+import SelectInput from "../../../../../components/forms/SelectInput";
+import TextareaInput from "../../../../../components/forms/TextareaInput";
 import DatePickerInput from "../../../../../components/common/DatePickerInput";
 import PincodeAsyncSelect, {
 	type PincodeOption,
-} from "../../../../../components/FormElements/PincodeAsyncSelect";
+} from "../../../../../components/forms/PincodeAsyncSelect";
 
 import { formatDateOnly } from "../../../../../utils/format";
 import type { EpcFormValues } from "../../types/epc.types";

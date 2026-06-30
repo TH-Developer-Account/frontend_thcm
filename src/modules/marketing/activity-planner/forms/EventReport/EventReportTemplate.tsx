@@ -1,9 +1,9 @@
 import { Upload, Send, X } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import FormInput from "../../../../../components/FormElements/FormInput";
-import SelectInput from "../../../../../components/FormElements/SelectInput";
-import TextareaInput from "../../../../../components/FormElements/TextareaInput";
+import FormInput from "../../../../../components/forms/FormInput";
+import SelectInput from "../../../../../components/forms/SelectInput";
+import TextareaInput from "../../../../../components/forms/TextareaInput";
 
 import { OUTCOME_OPTIONS, MAX_IMAGES } from "./constant";
 import type {

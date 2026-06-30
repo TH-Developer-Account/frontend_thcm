@@ -3,7 +3,7 @@ import { Check, Circle, ShieldCheck } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import Button from "../../../components/common/Button";
-import FormInput from "../../../components/FormElements/FormInput";
+import FormInput from "../../../components/forms/FormInput";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { ServerAxios } from "../../../services/ServerAxios";

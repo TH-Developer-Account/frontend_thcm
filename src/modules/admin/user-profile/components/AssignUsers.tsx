@@ -7,7 +7,7 @@ import { ServerAxios } from "../../../../services/ServerAxios";
 import Avatar from "../../../../components/common/Avatar";
 // import { Badge } from "../../../../components/common/Badge";
 import type { Profile } from "../types/profile.types";
-import { SearchInput } from "../../../../components/FormElements/SearchInput";
+import { SearchInput } from "../../../../components/forms/SearchInput";
 
 type AssignProps = {
 	profile: Profile | null;

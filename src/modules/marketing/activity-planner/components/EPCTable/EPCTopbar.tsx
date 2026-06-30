@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import Button from "../../../../../components/common/Button";
 import ThreeWayToggle from "../../../../../components/common/ThreeWayToggle";
-import { SearchInput } from "../../../../../components/FormElements/SearchInput";
+import { SearchInput } from "../../../../../components/forms/SearchInput";
 import { Can } from "../../../../../context/permissionHelpers";
 import { useMasterData } from "../../../../../hooks/useMasterData";
 

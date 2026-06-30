@@ -1,13 +1,13 @@
 import React from "react";
 import { Plus } from "lucide-react";
-import UserAsyncSelect from "../../../../components/FormElements/AsyncSelect";
+import UserAsyncSelect from "../../../../components/forms/AsyncSelect";
 import Avatar from "../../../../components/common/Avatar";
 import type {
 	WorkflowStage,
 	Approver,
 	WorkflowStageErrors,
 } from "../types/workflow.types";
-import FormInput from "../../../../components/FormElements/FormInput";
+import FormInput from "../../../../components/forms/FormInput";
 
 type Props = {
 	stages: WorkflowStage[];

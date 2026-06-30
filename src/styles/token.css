@@ -74,6 +74,9 @@
 		--page-header-surface: var(--color-bg-surface);
 		--page-header-border: var(--color-border-default);
 
+		--page-section-bg: var(--color-bg-page);
+		--page-section-text: var(--color-text-primary);
+
 		--table-bg: var(--color-table-bg);
 		--table-header-bg: var(--color-table-header-bg);
 		--table-header-text: var(--color-table-header-text);

@@ -1,78 +1,40 @@
 import type { AvatarProps } from "./common.types";
 
 const sizeClasses = {
-	xs: "w-6 h-6 text-xs",
-	sm: "w-8 h-8 text-xs",
-	md: "w-10 h-10 text-sm",
-	lg: "w-14 h-14 text-lg",
-};
+	xs: "avatar-xs",
+	sm: "avatar-sm",
+	md: "avatar-md",
+	lg: "avatar-lg",
+} as const;
 
-const Avatar: React.FC<AvatarProps> = ({
+const joinClassNames = (...values: Array<string | undefined | false>) =>
+	values.filter(Boolean).join(" ");
+
+export default function Avatar({
 	firstName,
 	lastName = "",
 	imageUrl,
 	size = "md",
-	className,
-	isTooltip,
-}) => {
+	className = "",
+	isTooltip = false,
+}: AvatarProps) {
 	const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-	const fullName = `${firstName} ${lastName}`.trim();
+	const fullName = `${firstName} ${lastName}`.trim() || "User";
 
 	return (
-		<div className="relative inline-flex group ">
-			{/* Avatar */}
-			<div
-				tabIndex={0}
-				className={`
-					${sizeClasses[size]}
-					rounded-full
-					bg-[#f35a00]
-					flex items-center justify-center
-					font-semibold
-					overflow-hidden
-					select-none
-					cursor-pointer
-					text-white
-					text-md
-					${className}
-					`}
+		<span className="avatar-wrapper">
+			<span
+				tabIndex={isTooltip ? 0 : undefined}
+				className={joinClassNames("avatar", sizeClasses[size], className)}
 				aria-label={fullName}
 			>
 				{imageUrl ? (
-					<img
-						src={imageUrl}
-						alt={fullName}
-						className="w-full h-full object-cover"
-						onError={(e) => {
-							(e.currentTarget as HTMLImageElement).style.display = "none";
-						}}
-					/>
+					<img src={imageUrl} alt={fullName} className="avatar-image" />
 				) : (
-					<span>{initials} </span>
+					<span aria-hidden="true">{initials || "U"}</span>
 				)}
-			</div>
-			{/* Tooltip */}
-			{isTooltip && (
-				<div
-					className="
-				absolute bottom-full left-1/2 -translate-x-1/2 mb-2
-				whitespace-nowrap
-				rounded-md bg-gray-900 text-white text-xs
-				px-2 py-1 shadow-lg
-				opacity-0 scale-95
-				pointer-events-none
-				transition-all duration-150
-				group-hover:opacity-100
-				group-hover:scale-100
-				group-focus-within:opacity-100
-				group-focus-within:scale-100
-				z-50"
-				>
-					{fullName}
-				</div>
-			)}
-		</div>
+			</span>
+			{isTooltip ? <span className="avatar-tooltip">{fullName}</span> : null}
+		</span>
 	);
-};
-
-export default Avatar;
+}

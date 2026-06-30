@@ -3,8 +3,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 import Button from "../../../components/common/Button";
-import FormInput from "../../../components/FormElements/FormInput";
-import OtpInput from "../../../components/FormElements/OtpInput";
+import FormInput from "../../../components/forms/FormInput";
+import OtpInput from "../../../components/forms/OtpInput";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { API_BASE_URL, ServerAxios } from "../../../services/ServerAxios";

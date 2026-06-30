@@ -1,13 +1,7 @@
 import type { EpcWorkflowApproval } from "../modules/marketing/activity-planner/types/epc.types";
 
 // badge and button types
-export type TableUserStatus =
-	| "Active"
-	| "Blocked"
-	| "Inactive"
-	| "active"
-	| "inactive"
-	| "blocked";
+export type TableUserStatus = "Active" | "Blocked" | "Inactive";
 
 export type EPCStatus =
 	| "Approved"
@@ -60,11 +54,11 @@ export interface TableUser {
 }
 export const statusStyles: Record<TableUserStatus, string> = {
 	Active: "bg-green-100 text-green-700",
-	active: "bg-green-100 text-green-700",
+	// active: "bg-green-100 text-green-700",
 	Inactive: "bg-amber-100 text-amber-700",
-	inactive: "bg-amber-100 text-amber-700",
+	// inactive: "bg-amber-100 text-amber-700",
 	Blocked: "bg-red-100 text-red-600",
-	blocked: "bg-red-100 text-red-600",
+	// blocked: "bg-red-100 text-red-600",
 };
 
 export interface PaginationProps {

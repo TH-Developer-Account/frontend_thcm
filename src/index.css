@@ -15,9 +15,12 @@
 @import "./styles/form.css";
 @import "./styles/components.css";
 @import "./styles/home.css";
+@import "./styles/form.css";
+@import "./styles/table.css";
 
 /* Existing feature styles. Keep until each module is migrated. */
-@import "./components/FormElements/input.css";
+@import "./components/forms/input.css";
 @import "./modules/admin/workflow/workflow.css";
 @import "./modules/admin/business-partners/bp.css";
 @import "./modules/marketing/marketing.styles.css";
+@import "./styles/user-management.css";

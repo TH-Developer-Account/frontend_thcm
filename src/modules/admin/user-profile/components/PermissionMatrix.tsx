@@ -1,6 +1,6 @@
 import React from "react";
-import Checkbox from "../../../../components/FormElements/Checkbox";
-import { SearchInput } from "../../../../components/FormElements/SearchInput";
+import Checkbox from "../../../../components/forms/Checkbox";
+import { SearchInput } from "../../../../components/forms/SearchInput";
 import { Badge } from "../../../../components/common/Badge";
 import type { WorkspacePayload } from "../types/profile.types";
 import Button from "../../../../components/common/Button";

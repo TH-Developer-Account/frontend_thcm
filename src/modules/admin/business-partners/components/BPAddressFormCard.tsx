@@ -1,5 +1,5 @@
-import FormInput from "../../../../components/FormElements/FormInput";
-import TextareaInput from "../../../../components/FormElements/TextareaInput";
+import FormInput from "../../../../components/forms/FormInput";
+import TextareaInput from "../../../../components/forms/TextareaInput";
 
 type FormState = {
 	label: string;

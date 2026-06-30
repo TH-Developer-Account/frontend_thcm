@@ -4,7 +4,7 @@ import React from "react";
 
 import Button from "../../../../../components/common/Button";
 import { Modal } from "../../../../../components/common/Modal";
-import TextareaInput from "../../../../../components/FormElements/TextareaInput";
+import TextareaInput from "../../../../../components/forms/TextareaInput";
 
 export type ReasonActionMode = "clarify-workflow" | "clarify-report";
 

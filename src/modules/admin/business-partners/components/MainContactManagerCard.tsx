@@ -1,5 +1,5 @@
 import { Accordion } from "../../../../components/common/Accordion";
-import { SearchInput } from "../../../../components/FormElements/SearchInput";
+import { SearchInput } from "../../../../components/forms/SearchInput";
 import type { MainContact, User } from "../utils/bp.types";
 
 type Props = {

@@ -5,7 +5,7 @@ import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 import Avatar from "../../../../../components/common/Avatar";
 import Button from "../../../../../components/common/Button";
 import HelperTooltip from "../../../../../components/common/HelperTooltip";
-import TextareaInput from "../../../../../components/FormElements/TextareaInput";
+import TextareaInput from "../../../../../components/forms/TextareaInput";
 
 import { useRichInput } from "../../hooks/useRichInput";
 import { EMOJIS, FORMAT_ACTIONS } from "../../utils/constants";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Button from "../common/Button";
 import { Edit, Trash } from "lucide-react";
-import FormInput from "../FormElements/FormInput";
+import FormInput from "../forms/FormInput";
 
 export type MasterItem = {
 	id: string;

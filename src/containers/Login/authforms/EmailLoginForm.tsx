@@ -7,7 +7,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 
 import Button from "../../../components/common/Button";
-import FormInput from "../../../components/FormElements/FormInput";
+import FormInput from "../../../components/forms/FormInput";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { EMAIL_REGEX } from "../../Login/constant";

@@ -1,11 +1,11 @@
 import { useNavigate, useParams } from "react-router-dom";
 import type { SingleValue } from "react-select";
 import { useAuth } from "../../../../context/Auth/useAuth";
-import FormInput from "../../../../components/FormElements/FormInput";
-import TextareaInput from "../../../../components/FormElements/TextareaInput";
-import SelectInput from "../../../../components/FormElements/SelectInput";
-import Radio from "../../../../components/FormElements/Radio";
-import type { Option } from "../../../../components/FormElements/input.types";
+import FormInput from "../../../../components/forms/FormInput";
+import TextareaInput from "../../../../components/forms/TextareaInput";
+import SelectInput from "../../../../components/forms/SelectInput";
+import Radio from "../../../../components/forms/Radio";
+import type { Option } from "../../../../components/forms/input.types";
 import type {
 	WorkflowBasics,
 	WorkflowGenErrors,

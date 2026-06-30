@@ -2,9 +2,9 @@ import React from "react";
 import type { SingleValue } from "react-select";
 
 import Button from "../../../../../components/common/Button";
-import SelectInput from "../../../../../components/FormElements/SelectInput";
-import FormInput from "../../../../../components/FormElements/FormInput";
-import TextareaInput from "../../../../../components/FormElements/TextareaInput";
+import SelectInput from "../../../../../components/forms/SelectInput";
+import FormInput from "../../../../../components/forms/FormInput";
+import TextareaInput from "../../../../../components/forms/TextareaInput";
 import { FileUploadField } from "../../../../../components/FileUpload/FileUploadField";
 import { validateUploadFile } from "../../../../../components/FileUpload/fileUpload.helpers";
 import SectionAccordion from "../../../../../components/common/SectionAccordion";
@@ -15,7 +15,7 @@ import {
 	showSuccessToast,
 } from "../../../../../utils/apiError.helper";
 
-import type { Option } from "../../../../../components/FormElements/input.types";
+import type { Option } from "../../../../../components/forms/input.types";
 import type {
 	DeviationInfo,
 	EventOutcomeProps,

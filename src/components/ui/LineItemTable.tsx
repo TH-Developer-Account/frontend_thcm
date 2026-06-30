@@ -11,8 +11,8 @@ import {
 import { useEffect, useId, useMemo, useState } from "react";
 
 import Button from "../common/Button";
-import FormInput from "../FormElements/FormInput";
-import SelectInput from "../FormElements/SelectInput";
+import FormInput from "../forms/FormInput";
+import SelectInput from "../forms/SelectInput";
 
 import type {
 	ColumnConfig,

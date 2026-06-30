@@ -1,7 +1,7 @@
 import React from "react";
 import Button from "../../../../components/common/Button";
-import FormInput from "../../../../components/FormElements/FormInput";
-import TextareaInput from "../../../../components/FormElements/TextareaInput";
+import FormInput from "../../../../components/forms/FormInput";
+import TextareaInput from "../../../../components/forms/TextareaInput";
 import type { Profile } from "../types/profile.types";
 import { ArrowRight } from "lucide-react";
 

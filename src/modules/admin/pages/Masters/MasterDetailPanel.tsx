@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, Save, Database } from "lucide-react";
 import { type MasterItem } from "../../../../components/ui/MasterLineItemTable";
-import FormInput from "../../../../components/FormElements/FormInput";
+import FormInput from "../../../../components/forms/FormInput";
 import Button from "../../../../components/common/Button";
 
 interface MasterDetailPanelProps {
