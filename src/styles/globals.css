@@ -4,24 +4,31 @@
 	*,
 	*::before,
 	*::after {
-		@apply box-border;
+		box-sizing: border-box;
+	}
+
+	html,
+	body,
+	#root {
+		width: 100%;
+		min-width: 20rem;
+		min-height: 100%;
 	}
 
 	html {
-		@apply min-h-full min-w-80;
-
-		background-color: transparent;
+		background-color: var(--color-bg-page);
 	}
 
 	body {
-		@apply m-0 min-h-dvh min-w-80;
-
-		background-color: transparent;
+		margin: 0;
+		min-height: 100dvh;
+		background-color: var(--color-bg-page);
 		color: var(--color-text-primary);
 	}
 
 	#root {
-		@apply min-h-dvh w-full isolate;
+		min-height: 100dvh;
+		isolation: isolate;
 	}
 
 	button,
@@ -32,17 +39,22 @@
 		color: inherit;
 	}
 
-	img,
-	svg {
-		@apply block max-w-full;
+	button {
+		cursor: pointer;
 	}
 
-	button {
-		@apply cursor-pointer disabled:cursor-not-allowed;
+	button:disabled {
+		cursor: not-allowed;
+	}
+
+	img,
+	svg {
+		display: block;
+		max-width: 100%;
 	}
 
 	[hidden] {
-		@apply hidden;
+		display: none !important;
 	}
 }
 
@@ -53,8 +65,8 @@
 	}
 
 	.scrollbar-sleek::-webkit-scrollbar {
-		width: 4px;
-		height: 4px;
+		width: 5px;
+		height: 5px;
 	}
 
 	.scrollbar-sleek::-webkit-scrollbar-track {
@@ -62,8 +74,8 @@
 	}
 
 	.scrollbar-sleek::-webkit-scrollbar-thumb {
-		background-color: var(--color-scrollbar-thumb);
 		border-radius: var(--radius-full);
+		background-color: var(--color-scrollbar-thumb);
 	}
 
 	.scrollbar-sleek::-webkit-scrollbar-thumb:hover {

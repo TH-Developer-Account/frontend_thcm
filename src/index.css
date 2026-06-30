@@ -1,25 +1,14 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap");
 
 @import "tailwindcss";
 
-/* =========================================================
-   FOUNDATION
-   Variables must load before any stylesheet consumes them.
-   ========================================================= */
-
+/* Foundation: variables before consumers. */
 @import "./styles/color.css";
 @import "./styles/theme.css";
 @import "./styles/typography.css";
-
-/* =========================================================
-   GLOBAL SYSTEM STYLES
-   ========================================================= */
-
 @import "./styles/token.css";
+
+/* Global system. */
 @import "./styles/globals.css";
 @import "./styles/layout.css";
 @import "./styles/ui.css";
@@ -27,9 +16,7 @@
 @import "./styles/components.css";
 @import "./styles/home.css";
 
-/* =========================================================
-   FEATURE AND MODULE STYLES
-   ========================================================= */
+/* Existing feature styles. Keep until each module is migrated. */
 @import "./components/FormElements/input.css";
 @import "./modules/admin/workflow/workflow.css";
 @import "./modules/admin/business-partners/bp.css";

@@ -1,8 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
-import type { SidebarLayoutProps } from "./layout.types";
+import type { SidebarItem, SidebarLayoutProps } from "./layout.types";
+
+const MOBILE_SIDEBAR_QUERY = "(max-width: 767px)";
+
+const containsActivePath = (item: SidebarItem, pathname: string): boolean => {
+	if (item.link && pathname.startsWith(item.link)) return true;
+
+	return Boolean(
+		item.children?.some(
+			(child) => child.link && pathname.startsWith(child.link),
+		),
+	);
+};
 
 export const SidebarLayout = ({
 	isOpen,
@@ -10,11 +22,23 @@ export const SidebarLayout = ({
 	onClose,
 	onToggleSidebar,
 }: SidebarLayoutProps) => {
+	const location = useLocation();
 	const [openItem, setOpenItem] = useState<string | null>(null);
+
+	useEffect(() => {
+		const activeParent = items.find(
+			(item) =>
+				item.children?.length && containsActivePath(item, location.pathname),
+		);
+
+		if (activeParent) {
+			setOpenItem(activeParent.id);
+		}
+	}, [items, location.pathname]);
 
 	const handleParentClick = (itemId: string) => {
 		if (!isOpen) {
-			onToggleSidebar?.();
+			onToggleSidebar();
 			setOpenItem(itemId);
 			return;
 		}
@@ -23,25 +47,21 @@ export const SidebarLayout = ({
 	};
 
 	const handleNavigation = () => {
-		/*
-		 * Close only the mobile drawer.
-		 *
-		 * Desktop state should remain controlled by the header toggle.
-		 * CSS hides the overlay on desktop, but the callback itself cannot
-		 * determine the viewport, so SidebarLayoutProps should ideally
-		 * expose a dedicated onMobileClose callback in the future.
-		 */
-		onClose?.();
+		if (window.matchMedia(MOBILE_SIDEBAR_QUERY).matches) {
+			onClose();
+		}
 	};
 
 	return (
 		<>
-			<div
+			<button
+				type="button"
 				className={`app-sidebar-overlay ${
 					isOpen ? "app-sidebar-overlay-open" : ""
 				}`}
 				onClick={onClose}
-				aria-hidden="true"
+				aria-label="Close navigation"
+				tabIndex={isOpen ? 0 : -1}
 			/>
 
 			<aside
@@ -65,7 +85,7 @@ export const SidebarLayout = ({
 										className={`app-sidebar-item app-sidebar-parent ${
 											isExpanded ? "app-sidebar-item-expanded" : ""
 										}`}
-										aria-expanded={isExpanded}
+										aria-expanded={isOpen && isExpanded}
 										aria-controls={`sidebar-children-${item.id}`}
 										title={!isOpen ? item.label : undefined}
 									>

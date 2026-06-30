@@ -1,93 +1,15 @@
-/* =========================================================
-   App.css
-   Application-level styles only.
-
-   Do not define design tokens or raw colours here.
-   ========================================================= */
-
+/* Application-root styles only. Design tokens belong in src/styles. */
 .app-root {
-	min-height: 100dvh;
 	width: 100%;
-	background-color: transparent;
-	color: var(--color-text-primary);
+	min-width: 0;
+	min-height: 100dvh;
+	background-color: var(--app-bg);
+	color: var(--app-text);
 }
 
-/* Application content boundary.
-   Renamed from `.container` to avoid conflicting with
-   Tailwind's built-in container utility.
-*/
 .app-container {
 	width: 100%;
-	max-width: 1440px;
-	min-height: 100dvh;
+	min-width: 0;
+	max-width: var(--content-max-width);
 	margin-inline: auto;
-}
-
-/* =========================================================
-   AUTHENTICATION
-   ========================================================= */
-
-@media (max-width: 480px) {
-	.authStyles {
-		background-color: var(--color-bg-surface);
-		transition:
-			background-color 200ms ease-out,
-			color 200ms ease-out;
-	}
-
-	.authformStyles {
-		border: 0;
-		box-shadow: none;
-	}
-
-	.authformStyles form {
-		font-size: 0.8125rem;
-	}
-}
-
-/* =========================================================
-   APPLICATION SHELL
-   ========================================================= */
-
-.header {
-	background-color: var(--color-bg-surface);
-	color: var(--color-text-primary);
-	border-bottom: 1px solid var(--color-border-default);
-}
-
-.aside-br {
-	border-right: 1px solid var(--color-border-default);
-}
-.container {
-	min-height: 100vh;
-	width: 100%;
-	height: 100%;
-	max-width: 1440px;
-	margin: 0 auto;
-	text-align: center;
-}
-
-/* Mobile (default styles apply here) */
-@media (max-width: 480px) {
-	/* styles for small mobile devices */
-	.authStyles {
-		background-color: #ffffff;
-		transition: 1s;
-	}
-	.authformStyles {
-		border: none;
-		box-shadow: none;
-	}
-	form {
-		font-size: 0.8rem;
-	}
-}
-.header {
-	background-color: #fff;
-	color: rgb(var(--color-text));
-	border-bottom: 2px solid #f35a00;
-}
-
-.aside-br {
-	border-right: 2px solid #f35a00;
 }

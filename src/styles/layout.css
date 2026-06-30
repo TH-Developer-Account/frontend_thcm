@@ -2519,3 +2519,39 @@
 		}
 	}
 }
+
+/* =========================================================
+   SIDEBAR INTERACTION GUARD
+   The collapsed desktop sidebar is controlled only by React state.
+   Hover may style items, but it must never change sidebar width.
+========================================================= */
+@layer components {
+	.app-sidebar-overlay {
+		margin: 0;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		appearance: none;
+		cursor: default;
+	}
+
+	.app-sidebar-overlay-open {
+		cursor: pointer;
+	}
+
+	@media (min-width: 768px) {
+		.app-sidebar-collapsed,
+		.app-sidebar-collapsed:hover,
+		.app-sidebar-collapsed:focus-within {
+			width: var(--sidebar-collapsed-width);
+			min-width: var(--sidebar-collapsed-width);
+		}
+
+		.app-sidebar-open,
+		.app-sidebar-open:hover,
+		.app-sidebar-open:focus-within {
+			width: var(--sidebar-width);
+			min-width: var(--sidebar-width);
+		}
+	}
+}

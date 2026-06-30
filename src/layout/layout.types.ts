@@ -1,9 +1,11 @@
+import type { ReactNode } from "react";
+
 import type { PermissionAction } from "../context/context.types";
 
 export type Role = "ADMIN" | "DEALER" | "EMPLOYEE";
 
 export type HeaderLayoutProps = {
-	children: React.ReactNode;
+	children: ReactNode;
 	isSidebarOpen: boolean;
 	onToggleSidebar: () => void;
 };
@@ -11,27 +13,28 @@ export type HeaderLayoutProps = {
 export type DashboardLayoutProps = {
 	isSidebarOpen: boolean;
 	onToggleSidebar: () => void;
+	onCloseSidebar: () => void;
 	sidebarItems: SidebarItem[];
-	header?: React.ReactNode;
-	children: React.ReactNode;
+	header?: ReactNode;
+	children: ReactNode;
 };
 
 export type MainLayoutProps = {
-	children: React.ReactNode;
+	children: ReactNode;
 	className?: string;
 };
 
 export type SidebarLayoutProps = {
 	isOpen: boolean;
 	items: SidebarItem[];
-	onClose?: () => void;
+	onClose: () => void;
 	onToggleSidebar: () => void;
 };
 
 export type SidebarItem = {
 	id: string;
 	label: string;
-	icon?: React.ReactNode;
+	icon?: ReactNode;
 	link?: string;
 	children?: SidebarItem[];
 
