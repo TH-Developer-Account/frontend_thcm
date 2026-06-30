@@ -1,4 +1,3 @@
-import Header from "../../components/ui/Header";
 import { useAuth } from "../../context/Auth/AuthContext";
 
 import ActionCard from "./components/Card";
@@ -11,12 +10,6 @@ export default function HomeScreen() {
 
 	return (
 		<div className="home-screen">
-			<header className="home-header">
-				<div className="home-header-content">
-					<Header />
-				</div>
-			</header>
-
 			<div className="home-subheader">
 				<div className="home-subheader-content">
 					<span className="home-eyebrow">Module Selector</span>
@@ -27,7 +20,7 @@ export default function HomeScreen() {
 				</div>
 			</div>
 
-			<main className="home-main">
+			<div className="home-main">
 				<section className="home-intro" aria-labelledby="home-title">
 					<h1 id="home-title" className="home-title">
 						Choose an application
@@ -39,7 +32,10 @@ export default function HomeScreen() {
 					</p>
 				</section>
 
-				<section className="home-module-section">
+				<section
+					className="home-module-section"
+					aria-label="Available applications"
+				>
 					{visibleActions.length > 0 ? (
 						<div className="action-card-grid">
 							{visibleActions.map((action) => {
@@ -54,7 +50,9 @@ export default function HomeScreen() {
 										key={action.appKey}
 										appId={appInfo?.appId ?? ""}
 										description={action.description}
-										icon={<Icon size={22} strokeWidth={1.8} />}
+										icon={
+											<Icon size={22} strokeWidth={1.8} aria-hidden="true" />
+										}
 										isActive={action.isActive}
 										path={action.path}
 										title={action.title}
@@ -63,7 +61,7 @@ export default function HomeScreen() {
 							})}
 						</div>
 					) : (
-						<div className="home-empty-state">
+						<div className="home-empty-state" role="status">
 							<p className="home-empty-title">No applications available</p>
 
 							<p className="home-empty-description">
@@ -72,7 +70,7 @@ export default function HomeScreen() {
 						</div>
 					)}
 				</section>
-			</main>
+			</div>
 		</div>
 	);
 }
