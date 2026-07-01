@@ -17,10 +17,19 @@ export default function LeadsTablePage() {
 				<PageHeader
 					headerText="Leads Listing"
 					subtitleText="Manage your Lead details here"
-					badgeProps={{
-						text: "Back to Home Screen",
-						direction: "back",
-						to: "/",
+					navigation={{
+						variant: "breadcrumbs",
+						ariaLabel: "Activity planner location",
+						breadcrumbs: [
+							{
+								label: "EPC Listing",
+								href: "/marketing/listing",
+							},
+							{
+								label: "Leads Listing",
+							},
+						],
+						separator: "›",
 					}}
 					className="flex flex-row items-end justify-between"
 				>

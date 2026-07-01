@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import type { NavigateButtonProps } from "../common/common.types";
-import NavigateButton from "../common/NavigateButton";
+import PageNavigation from "./PageNavigation/PageNavigation";
+import type { PageNavigationProps } from "./PageNavigation/pageNavigation.types";
 
 type PageHeaderProps = {
 	headerText?: string;
@@ -11,14 +11,14 @@ type PageHeaderProps = {
 	contentClassName?: string;
 	actionsClassName?: string;
 	children?: ReactNode;
-	badgeProps?: NavigateButtonProps;
-	header_children?: ReactNode;
-	textAlign?: string;
+	navigation?: PageNavigationProps;
+	headerChildren?: ReactNode;
+	textAlign?: "left" | "center" | "right";
 };
 
 const joinClassNames = (
 	...classNames: Array<string | false | null | undefined>
-) => classNames.filter(Boolean).join(" ");
+): string => classNames.filter(Boolean).join(" ");
 
 export const PageHeader = ({
 	headerText,
@@ -28,42 +28,53 @@ export const PageHeader = ({
 	contentClassName = "",
 	actionsClassName = "",
 	children,
-	header_children,
-	badgeProps,
-	textAlign,
+	headerChildren,
+	navigation,
+	textAlign = "left",
 }: PageHeaderProps) => {
 	const hasCopy = Boolean(headerText || subtitleText || metaText);
+	const hasPrimaryContent = Boolean(hasCopy || headerChildren || navigation);
 
 	return (
-		<div className={joinClassNames("page-header", className)}>
-			<div className={joinClassNames("page-header-primary", contentClassName)}>
-				{badgeProps ? (
-					<div className="page-header-badge-wrapper">
-						<NavigateButton
-							{...badgeProps}
-							className={joinClassNames(
-								"page-header-badge",
-								badgeProps.className,
-							)}
-						/>
-					</div>
-				) : null}
+		<header className={joinClassNames("page-header", className)}>
+			{hasPrimaryContent ? (
+				<div
+					className={joinClassNames("page-header-primary", contentClassName)}
+				>
+					<div className="page-header-heading-group">
+						{hasCopy ? (
+							<div
+								className={joinClassNames(
+									"page-header-copy",
+									`is-${textAlign}`,
+								)}
+							>
+								{headerText ? (
+									<h2 className="page-header-title">{headerText}</h2>
+								) : null}
 
-				{hasCopy ? (
-					<div className={`page-header-copy ${textAlign} `}>
-						{headerText ? (
-							<h2 className="page-header-title">{headerText}</h2>
+								{subtitleText ? (
+									<p className="page-header-subtitle">{subtitleText}</p>
+								) : null}
+
+								{metaText ? (
+									<p className="page-header-meta">{metaText}</p>
+								) : null}
+							</div>
 						) : null}
 
-						{subtitleText ? (
-							<p className="page-header-subtitle">{subtitleText}</p>
+						{headerChildren ? (
+							<div className="page-header-extra">{headerChildren}</div>
 						) : null}
-
-						{metaText ? <p className="page-header-meta">{metaText}</p> : null}
 					</div>
-				) : null}
-				<div>{header_children}</div>
-			</div>
+
+					{navigation ? (
+						<div className="page-header-navigation">
+							<PageNavigation {...navigation} />
+						</div>
+					) : null}
+				</div>
+			) : null}
 
 			{children ? (
 				<div
@@ -72,6 +83,6 @@ export const PageHeader = ({
 					{children}
 				</div>
 			) : null}
-		</div>
+		</header>
 	);
 };

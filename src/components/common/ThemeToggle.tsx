@@ -20,11 +20,11 @@ export const ThemeToggle = () => {
 		>
 			<span className="app-theme-switch__track" aria-hidden="true">
 				<span className="app-theme-switch__icon app-theme-switch__icon--sun">
-					<Sun size={16} />
+					<Sun size={14} />
 				</span>
 
 				<span className="app-theme-switch__icon app-theme-switch__icon--moon">
-					<Moon size={16} />
+					<Moon size={14} />
 				</span>
 
 				<span className="app-theme-switch__thumb" />

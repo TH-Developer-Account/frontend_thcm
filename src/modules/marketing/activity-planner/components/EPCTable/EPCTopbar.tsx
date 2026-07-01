@@ -2,8 +2,8 @@ import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import Button from "../../../../../components/common/Button";
-import ThreeWayToggle from "../../../../../components/common/ThreeWayToggle";
 import { SearchInput } from "../../../../../components/forms/SearchInput";
+import { FilterTabs } from "../../../../../components/ui/FilterTabs";
 import { Can } from "../../../../../context/permissionHelpers";
 import { useMasterData } from "../../../../../hooks/useMasterData";
 
@@ -30,7 +30,7 @@ type EPCTopbarProps = {
 
 const joinClassNames = (
 	...classNames: Array<string | false | null | undefined>
-) => classNames.filter(Boolean).join(" ");
+): string => classNames.filter(Boolean).join(" ");
 
 const EPCTopbar = ({
 	search,
@@ -49,6 +49,13 @@ const EPCTopbar = ({
 	const eventTypeOptions = data?.eventNames ?? [];
 	const zoneOptions = data?.regions ?? [];
 
+	const filterTabs = epcListFilterOptions.map((option) => ({
+		value: option.value,
+		label: option.label,
+		tooltipLabel: option.tooltipLabel,
+		Icon: option.Icon,
+	}));
+
 	const handleCreateEpc = () => {
 		clearStoredEpcInfo();
 		navigate("/marketing/activity-planner/create");
@@ -59,19 +66,22 @@ const EPCTopbar = ({
 			className={joinClassNames("epc-topbar", className)}
 			aria-label="EPC listing controls"
 		>
+			<div className="epc-topbar-tabs">
+				<FilterTabs
+					id="epc-list-filter-tabs"
+					ariaLabel="Filter EPC listings"
+					items={filterTabs}
+					value={selectedFilter}
+					onChange={onFilterChange}
+					className="border-b-none"
+				/>
+			</div>
+
 			<div className="epc-topbar-search">
 				<SearchInput
 					value={search}
 					onChange={onSearchChange}
 					placeholder="Search by event name"
-				/>
-			</div>
-
-			<div className="epc-topbar-toggle">
-				<ThreeWayToggle
-					options={epcListFilterOptions}
-					value={selectedFilter}
-					onChange={onFilterChange}
 				/>
 			</div>
 

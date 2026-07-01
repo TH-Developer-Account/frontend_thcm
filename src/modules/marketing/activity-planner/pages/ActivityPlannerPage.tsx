@@ -2,6 +2,7 @@ import React from "react";
 import { useParams } from "react-router-dom";
 
 import Loader from "../../../../components/ui/Loader";
+import { PageHeader } from "../../../../components/ui/PageHeader";
 import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
 import ActivityFormView from "../components/activityFormView/ActivityFormView";
 import ActivityPlannerHeader from "../components/activityFormView/ActivityPlannerHeader";
@@ -67,6 +68,33 @@ const ActivityPlannerPage = () => {
 			<PageRowSectionLayout
 				contentMode="page-scroll"
 				stickyHeader
+				stickyTop="0px"
+				className="activity-planner-layout"
+				pageHeaderClassName="activity-planner-layout-page-header"
+				headerClassName="activity-planner-layout-header"
+				headerBodyClassName="activity-planner-layout-header-body"
+				contentClassName="activity-planner-layout-content"
+				contentBodyClassName="activity-planner-layout-content-body"
+				pageHeader={
+					<PageHeader
+						headerText="Activity Form View"
+						className="activity-planner-page-header"
+						navigation={{
+							variant: "breadcrumbs",
+							ariaLabel: "Activity planner location",
+							breadcrumbs: [
+								{
+									label: "EPC Listing",
+									href: "/marketing/listing",
+								},
+								{
+									label: "Form View",
+								},
+							],
+							separator: "›",
+						}}
+					/>
+				}
 				header_children={
 					<ActivityPlannerHeader
 						epcData={epcData ?? null}
@@ -76,49 +104,47 @@ const ActivityPlannerPage = () => {
 					/>
 				}
 			>
-				<div className="activity-planner-page-content">
-					{pageView === "report-builder" ? (
-						<div
-							id="event-report-pdf-content"
-							className="activity-planner-report-builder"
-						>
-							<EventReportTemplate
-								epcId={id!}
-								eventCost={epcData?.epf?.eventBudget || 0}
-								initialReport={reportData}
-								onBack={() => setPageView("form")}
-								onPreview={openReportPreview}
-								onSuccess={async () => {
-									setPageView("form");
-									await handleRefresh();
-									await reportQuery.refetch();
-								}}
-							/>
-						</div>
-					) : (
-						<ActivityFormView
-							epcData={epcData ?? null}
-							editingSection={editingSection}
-							setEditingSection={setEditingSection}
-							onRefresh={handleRefresh}
-							report={reportData}
-							permissions={permissions}
-							hasValidatorPreviewed={hasValidatorPreviewed}
-							isValidatingReport={isValidatingReport}
-							isClarifyingReport={isClarifyingReport}
-							isSubmittingClarifiedUpdate={isSubmittingClarifiedUpdate}
-							onOpenReportBuilder={openReportBuilder}
-							onOpenReportPreview={openReportPreview}
-							onValidateReport={handleValidateReport}
-							onClarifyReport={handleClarifyReport}
-							onSubmitClarifiedUpdate={submitClarifiedUpdate}
-							isSubmittingDeviationUpdate={isSubmittingDeviationUpdate}
-							onSubmitDeviationUpdate={submitDeviationUpdate}
-							onEPCClose={handleCloseEPC}
-							isEPCClose={isClosingEPC}
+				{pageView === "report-builder" ? (
+					<div
+						id="event-report-pdf-content"
+						className="activity-planner-report-builder"
+					>
+						<EventReportTemplate
+							epcId={id!}
+							eventCost={epcData?.epf?.eventBudget || 0}
+							initialReport={reportData}
+							onBack={() => setPageView("form")}
+							onPreview={openReportPreview}
+							onSuccess={async () => {
+								setPageView("form");
+								await handleRefresh();
+								await reportQuery.refetch();
+							}}
 						/>
-					)}
-				</div>
+					</div>
+				) : (
+					<ActivityFormView
+						epcData={epcData ?? null}
+						editingSection={editingSection}
+						setEditingSection={setEditingSection}
+						onRefresh={handleRefresh}
+						report={reportData}
+						permissions={permissions}
+						hasValidatorPreviewed={hasValidatorPreviewed}
+						isValidatingReport={isValidatingReport}
+						isClarifyingReport={isClarifyingReport}
+						isSubmittingClarifiedUpdate={isSubmittingClarifiedUpdate}
+						onOpenReportBuilder={openReportBuilder}
+						onOpenReportPreview={openReportPreview}
+						onValidateReport={handleValidateReport}
+						onClarifyReport={handleClarifyReport}
+						onSubmitClarifiedUpdate={submitClarifiedUpdate}
+						isSubmittingDeviationUpdate={isSubmittingDeviationUpdate}
+						onSubmitDeviationUpdate={submitDeviationUpdate}
+						onEPCClose={handleCloseEPC}
+						isEPCClose={isClosingEPC}
+					/>
+				)}
 			</PageRowSectionLayout>
 
 			<ActivityPlannerPdfPreview

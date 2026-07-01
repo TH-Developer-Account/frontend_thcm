@@ -3001,7 +3001,7 @@
 	.user-menu-trigger:focus-visible {
 		outline: none;
 		border-color: var(--color-border-brand);
-		box-shadow: var(--shadow-focus-brand);
+		box-shadow: none;
 	}
 
 	.user-menu-name {
@@ -4847,25 +4847,76 @@ Only declarations not already covered by base styles
 	}
 }
 
-/* =====================================================
-EPC TOPBAR
-Compact responsive listing controls
-===================================================== */
 @layer components {
 	.epc-topbar {
 		display: grid;
 		width: 100%;
 		min-width: 0;
-		grid-template-columns: minmax(12rem, 1fr);
+		grid-template-columns:
+			minmax(16rem, 1fr)
+			minmax(13rem, 17rem)
+			auto;
 		align-items: center;
-		gap: var(--space-2);
+		gap: var(--space-3);
 
 		background-color: var(--epc-topbar-bg);
 		color: var(--epc-topbar-text);
 	}
 
 	/* =====================================================
-   	SEARCH
+	   FILTER TABS
+	===================================================== */
+
+	.epc-topbar-tabs {
+		width: 100%;
+		min-width: 0;
+		overflow: hidden;
+	}
+
+	.epc-topbar-tabs .filter-tabs {
+		width: 100%;
+		min-width: 0;
+		gap: var(--space-4);
+		overflow-x: auto;
+		overflow-y: hidden;
+
+		padding: 0;
+		border-bottom: var(--border-width-default) solid var(--color-border-subtle);
+
+		scrollbar-width: none;
+		overscroll-behavior-inline: contain;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.epc-topbar-tabs .filter-tabs::-webkit-scrollbar {
+		display: none;
+	}
+
+	.epc-topbar-tabs .filter-tab {
+		min-height: var(--control-height-md);
+		gap: var(--space-2);
+
+		padding: 0 var(--space-1) var(--space-2);
+
+		font-size: var(--font-size-xs);
+		white-space: nowrap;
+	}
+
+	.epc-topbar-tabs .filter-tab-icon {
+		width: 0.95rem;
+		height: 0.95rem;
+		flex: 0 0 auto;
+	}
+
+	.epc-topbar-tabs .filter-tab-label {
+		max-width: 10rem;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* =====================================================
+	   SEARCH
 	===================================================== */
 
 	.epc-topbar-search {
@@ -4879,10 +4930,6 @@ Compact responsive listing controls
 		max-width: none;
 	}
 
-	/*
- * Style the complete SearchInput container.
- * This keeps the icon and text field on one uniform surface.
- */
 	.epc-topbar-search .search-input-control {
 		width: 100%;
 		height: var(--control-height-md);
@@ -4894,19 +4941,12 @@ Compact responsive listing controls
 		box-shadow: none;
 	}
 
-	/*
- * Hover applies to the complete container, including the icon area.
- */
 	.epc-topbar-search .search-input-control:hover:not(.is-disabled) {
 		border-color: var(--epc-topbar-control-border-hover);
 		background-color: var(--epc-topbar-control-bg-hover);
 		box-shadow: none;
 	}
 
-	/*
- * Focus stays visually consistent with FormInput and SelectInput:
- * border change only, with no ring or shadow.
- */
 	.epc-topbar-search .search-input-control:focus-within:not(.is-disabled) {
 		border-color: var(--color-input-border-hover);
 		background-color: var(--epc-topbar-control-bg);
@@ -4914,10 +4954,6 @@ Compact responsive listing controls
 		box-shadow: none;
 	}
 
-	/*
- * Keep the actual input transparent so it does not create a separate
- * background or focus surface inside the wrapper.
- */
 	.epc-topbar-search .search-input-field {
 		height: 100%;
 		min-height: 0;
@@ -4944,10 +4980,6 @@ Compact responsive listing controls
 		color: var(--epc-topbar-control-placeholder);
 	}
 
-	/*
- * The icon inherits the complete wrapper's hover surface.
- * Only its foreground colour changes.
- */
 	.epc-topbar-search .search-input-icon {
 		color: var(--epc-topbar-icon);
 	}
@@ -4962,40 +4994,14 @@ Compact responsive listing controls
 	}
 
 	/* =====================================================
-	   TOGGLE WRAPPER
-	===================================================== */
-
-	.epc-topbar-toggle {
-		width: 100%;
-		min-width: 0;
-		max-width: 28rem;
-		overflow-x: auto;
-		overflow-y: hidden;
-
-		scrollbar-width: none;
-		overscroll-behavior-x: contain;
-		-webkit-overflow-scrolling: touch;
-	}
-
-	.epc-topbar-toggle::-webkit-scrollbar {
-		display: none;
-	}
-
-	.epc-topbar-toggle > * {
-		width: 100%;
-		min-width: 20rem;
-	}
-
-	/* =====================================================
 	   ACTIONS
 	===================================================== */
 
 	.epc-topbar-actions {
-		display: flex;
+		display: inline-flex;
 		width: auto;
 		min-width: 0;
 		flex: 0 0 auto;
-		flex-wrap: nowrap;
 		align-items: center;
 		justify-content: flex-end;
 		gap: var(--space-2);
@@ -5007,8 +5013,8 @@ Compact responsive listing controls
 	}
 
 	.epc-topbar-create {
-		flex: 0 0 auto;
 		min-height: var(--control-height-sm);
+		flex: 0 0 auto;
 
 		padding-inline: var(--space-3);
 
@@ -5017,103 +5023,517 @@ Compact responsive listing controls
 	}
 
 	/* =====================================================
-	   RESPONSIVE
+	   TABLET
+	   Tabs occupy first row.
+	   Search and actions share second row.
 	===================================================== */
 
-	@media (max-width: 767px) {
+	@media (min-width: 640px) and (max-width: 1023px) {
+		.epc-topbar {
+			grid-template-columns: minmax(12rem, 1fr) auto;
+			gap: var(--space-3);
+		}
+
+		.epc-topbar-tabs {
+			grid-column: 1 / -1;
+			grid-row: 1;
+		}
+
+		.epc-topbar-search {
+			grid-column: 1;
+			grid-row: 2;
+		}
+
+		.epc-topbar-actions {
+			grid-column: 2;
+			grid-row: 2;
+		}
+
+		.epc-topbar-tabs .filter-tabs {
+			gap: var(--space-4);
+		}
+
+		.epc-topbar-tabs .filter-tab {
+			min-height: var(--control-height-sm);
+			padding-bottom: var(--space-2);
+		}
+	}
+
+	/* =====================================================
+	   MOBILE
+	   Tabs first, search second, actions third.
+	===================================================== */
+
+	@media (max-width: 639px) {
 		.epc-topbar {
 			grid-template-columns: minmax(0, 1fr);
+			align-items: stretch;
+			gap: var(--space-2);
 		}
 
+		.epc-topbar-tabs,
 		.epc-topbar-search,
-		.epc-topbar-toggle,
 		.epc-topbar-actions {
 			grid-column: 1;
+			width: 100%;
+			min-width: 0;
 		}
 
-		.epc-topbar-toggle {
-			max-width: 100%;
+		.epc-topbar-tabs {
+			grid-row: 1;
 		}
 
-		.epc-topbar-toggle > * {
-			min-width: 18rem;
+		.epc-topbar-search {
+			grid-row: 2;
 		}
 
 		.epc-topbar-actions {
+			grid-row: 3;
 			display: grid;
-			width: 100%;
 			grid-template-columns: auto minmax(0, 1fr);
-			justify-content: stretch;
+			align-items: center;
+			gap: var(--space-2);
+		}
+
+		.epc-topbar-tabs .filter-tabs {
+			gap: var(--space-3);
+		}
+
+		.epc-topbar-tabs .filter-tab {
+			min-height: 2rem;
+			gap: var(--space-1);
+
+			padding-inline: 0;
+			padding-bottom: var(--space-2);
+
+			font-size: var(--font-size-2xs);
+		}
+
+		.epc-topbar-tabs .filter-tab-icon {
+			width: 0.85rem;
+			height: 0.85rem;
+		}
+
+		.epc-topbar-tabs .filter-tab-label {
+			max-width: 7rem;
+		}
+
+		.epc-topbar-tabs .filter-tab .badge {
+			min-height: 1rem;
+			padding-inline: var(--space-1);
+
+			font-size: var(--font-size-2xs);
+		}
+
+		.epc-topbar-search .search-input-control {
+			height: var(--control-height-sm);
+			min-height: var(--control-height-sm);
+		}
+
+		.epc-topbar-search .search-input-field {
+			font-size: var(--font-size-2xs);
+		}
+
+		.epc-topbar-search .search-input-icon {
+			width: 0.9rem;
+			height: 0.9rem;
 		}
 
 		.epc-topbar-create {
 			width: 100%;
+			min-height: var(--control-height-sm);
 			justify-content: center;
+
+			padding-inline: var(--space-2);
+
+			font-size: var(--font-size-2xs);
+		}
+	}
+
+	/* =====================================================
+	   SMALL MOBILE
+	   Keep tabs compact and horizontally scrollable.
+	   Stack actions only when width is very limited.
+	===================================================== */
+
+	@media (max-width: 479px) {
+		.epc-topbar-tabs .filter-tabs {
+			gap: var(--space-3);
+		}
+
+		.epc-topbar-tabs .filter-tab {
+			min-height: 1.875rem;
+			gap: var(--space-1);
+
+			font-size: var(--font-size-2xs);
+		}
+
+		.epc-topbar-tabs .filter-tab-label {
+			max-width: 5.5rem;
+		}
+
+		.epc-topbar-actions {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.epc-topbar-actions > * {
+			width: 100%;
+			min-width: 0;
+		}
+
+		.epc-topbar-create {
+			width: 100%;
+		}
+	}
+
+	/* =====================================================
+	   VERY SMALL MOBILE
+	   Use icons and labels without badge crowding.
+	===================================================== */
+
+	@media (max-width: 359px) {
+		.epc-topbar-tabs .filter-tab {
+			gap: var(--space-1);
+		}
+
+		.epc-topbar-tabs .filter-tab-label {
+			max-width: 4.75rem;
+		}
+
+		.epc-topbar-tabs .filter-tab .badge {
+			display: none;
+		}
+	}
+}
+/* =====================================================
+PAGE NAVIGATION
+===================================================== */
+@layer components {
+	.page-navigation {
+		min-width: 0;
+		color: var(--color-text-primary);
+	}
+
+	/* =====================================================
+	   BUTTON VARIANT
+	===================================================== */
+
+	.page-navigation-button {
+		display: inline-flex;
+		min-height: var(--control-height-sm);
+		flex: 0 0 auto;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
+
+		padding: var(--space-1) var(--space-3);
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-sm);
+
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-secondary);
+		box-shadow: var(--shadow-xs);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-normal);
+		white-space: nowrap;
+
+		cursor: pointer;
+		transition:
+			border-color var(--transition-fast),
+			background-color var(--transition-fast),
+			color var(--transition-fast),
+			box-shadow var(--transition-fast);
+	}
+
+	.page-navigation-button:hover:not(:disabled) {
+		border-color: var(--color-border-hover);
+		background-color: var(--color-bg-surface-hover);
+		color: var(--color-text-primary);
+		box-shadow: var(--shadow-sm);
+	}
+
+	.page-navigation-button:focus-visible {
+		outline: none;
+		border-color: var(--color-brand);
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.page-navigation-button:disabled {
+		cursor: not-allowed;
+		opacity: var(--opacity-disabled);
+	}
+
+	.page-navigation-button-icon {
+		width: 1rem;
+		height: 1rem;
+		flex: 0 0 auto;
+		color: currentcolor;
+	}
+
+	.page-navigation-button-label {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* =====================================================
+	   BREADCRUMB VARIANT
+	===================================================== */
+
+	.page-navigation-breadcrumbs-layout {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.page-navigation-title {
+		min-width: 0;
+		margin: 0;
+
+		color: var(--page-header-title-color);
+
+		font-family: var(--font-sans);
+		font-size: var(--page-header-title-size);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--page-header-title-line-height);
+		letter-spacing: var(--page-header-title-tracking);
+
+		overflow-wrap: anywhere;
+	}
+
+	.page-navigation-breadcrumbs {
+		width: 100%;
+		min-width: 0;
+		overflow: hidden;
+	}
+
+	.page-navigation-breadcrumb-list {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1);
+
+		margin: 0;
+		padding: 0;
+
+		list-style: none;
+	}
+
+	.page-navigation-breadcrumb-item {
+		display: inline-flex;
+		min-width: 0;
+		align-items: center;
+		gap: var(--space-1);
+
+		color: var(--color-text-muted);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+	}
+
+	.page-navigation-breadcrumb-link {
+		min-width: 0;
+
+		color: var(--color-text-muted);
+		text-decoration: none;
+
+		transition: color var(--transition-fast);
+	}
+
+	.page-navigation-breadcrumb-link:hover {
+		color: var(--color-text-primary);
+	}
+
+	.page-navigation-breadcrumb-link:focus-visible {
+		border-radius: var(--radius-xs);
+		outline: none;
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.page-navigation-breadcrumb-text,
+	.page-navigation-breadcrumb-link {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.page-navigation-breadcrumb-current {
+		color: var(--color-text-secondary);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.page-navigation-breadcrumb-separator {
+		flex: 0 0 auto;
+		color: var(--color-text-disabled);
+		user-select: none;
+	}
+
+	/* =====================================================
+	   PAGE HEADER INTEGRATION
+	===================================================== */
+
+	.page-header-navigation {
+		display: flex;
+		width: auto;
+		min-width: 0;
+		flex: 0 1 auto;
+		align-items: flex-start;
+	}
+
+	.page-header-extra {
+		display: flex;
+		min-width: 0;
+		flex: 0 0 auto;
+		align-items: center;
+	}
+
+	.page-header-copy.is-left {
+		text-align: left;
+	}
+
+	.page-header-copy.is-center {
+		text-align: center;
+	}
+
+	.page-header-copy.is-right {
+		text-align: right;
+	}
+
+	/* =====================================================
+	   MOBILE
+	===================================================== */
+
+	@media (max-width: 767px) {
+		.page-navigation-button {
+			min-height: var(--control-height-sm);
+			gap: var(--space-1);
+
+			padding-inline: var(--space-2);
+
+			font-size: var(--font-size-2xs);
+		}
+
+		.page-navigation-button-icon {
+			width: 0.875rem;
+			height: 0.875rem;
+		}
+
+		.page-navigation-title {
+			font-size: var(--page-header-mobile-title-size);
+		}
+
+		.page-navigation-breadcrumb-list {
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			overflow-y: hidden;
+
+			scrollbar-width: none;
+			overscroll-behavior-inline: contain;
+			-webkit-overflow-scrolling: touch;
+		}
+
+		.page-navigation-breadcrumb-list::-webkit-scrollbar {
+			display: none;
+		}
+
+		.page-navigation-breadcrumb-item {
+			flex: 0 0 auto;
+			font-size: var(--font-size-2xs);
+		}
+
+		.page-navigation-breadcrumb-current {
+			max-width: 10rem;
 		}
 	}
 
 	@media (max-width: 479px) {
-		.epc-topbar-actions {
-			grid-template-columns: minmax(0, 1fr);
+		.page-header-primary {
+			flex-wrap: wrap;
 		}
 
-		.epc-topbar-actions > *,
-		.epc-topbar-create {
-			width: 100%;
-		}
-	}
-
-	@media (min-width: 768px) and (max-width: 1023px) {
-		.epc-topbar {
-			grid-template-columns:
-				minmax(12rem, 1fr)
-				minmax(18rem, 24rem);
+		.page-header-navigation {
+			max-width: 100%;
 		}
 
-		.epc-topbar-actions {
-			grid-column: 1 / -1;
-			justify-self: end;
+		.page-navigation-button-label {
+			max-width: 8rem;
+		}
+
+		.page-navigation-breadcrumb-current {
+			max-width: 7rem;
 		}
 	}
 
-	@media (min-width: 1024px) {
-		.epc-topbar {
-			grid-template-columns:
-				minmax(15rem, 1fr)
-				minmax(21rem, 27rem)
-				auto;
-		}
-
-		.epc-topbar-toggle {
-			max-width: 27rem;
-			overflow: visible;
-		}
-
-		.epc-topbar-toggle > * {
-			min-width: 0;
+	@media (prefers-reduced-motion: reduce) {
+		.page-navigation-button,
+		.page-navigation-breadcrumb-link {
+			transition: none;
 		}
 	}
 }
 
 /* =========================================================
-   ACTIVITY PLANNER HEADER
+   ACTIVITY PLANNER DETAIL PAGE
 
-   Ownership:
-   - EPC metadata row
-   - status placement
-   - preview action placement
-   - responsive EPC-specific arrangement
-
-   Generic title and surface styling are owned elsewhere.
+   Visual structure:
+   1. Transparent sticky PageHeader
+   2. Planner summary forms the top of one continuous surface
+   3. ActivityFormView continues inside the same surface
+   4. No visible split, duplicated border, radius or shadow
 ========================================================= */
 
 @layer components {
 	/* =====================================================
-	   HEADER ROW
+	   LAYOUT ROOT
 	===================================================== */
 
-	.activity-planner-header-row {
-		display: flex;
+	.activity-planner-layout {
+		width: 100%;
+		min-width: 0;
+
+		background-color: transparent;
+		color: var(--color-text-primary);
+		padding-bottom: var(--space-4);
+	}
+
+	/*
+	 * The complete sticky region needs an opaque backdrop so
+	 * form content scrolling underneath cannot show through.
+	 */
+	.activity-planner-layout-header {
+		background-color: var(--app-bg);
+	}
+
+	/* =====================================================
+	   PAGE HEADER
+	   Transparent title and breadcrumb row
+	===================================================== */
+
+	.activity-planner-layout-page-header {
+		background-color: transparent;
+	}
+
+	.activity-planner-page-header {
+		width: 100%;
+		min-width: 0;
+
+		padding: var(--space-4) 0 var(--space-3);
+
+		border: 0;
+		background-color: transparent;
+		box-shadow: none;
+	}
+
+	.activity-planner-page-header .page-header-primary {
 		width: 100%;
 		min-width: 0;
 		align-items: center;
@@ -5121,27 +5541,240 @@ Compact responsive listing controls
 		gap: var(--space-4);
 	}
 
+	.activity-planner-page-header .page-header-heading-group {
+		min-width: 0;
+		flex: 1 1 auto;
+	}
+
+	.activity-planner-page-header .page-header-copy {
+		min-width: 0;
+	}
+
+	.activity-planner-page-header .page-header-title {
+		min-width: 0;
+		overflow: hidden;
+
+		font-size: var(--page-header-title-size);
+		font-weight: var(--font-weight-medium);
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		overflow-wrap: normal;
+	}
+
+	.activity-planner-page-header .page-header-navigation {
+		width: auto;
+		min-width: 0;
+		max-width: 50%;
+		flex: 0 1 auto;
+		justify-content: flex-end;
+	}
+
+	.activity-planner-page-header .page-navigation-breadcrumbs-layout,
+	.activity-planner-page-header .page-navigation-breadcrumbs,
+	.activity-planner-page-header .page-navigation-breadcrumb-list {
+		width: auto;
+		min-width: 0;
+		max-width: 100%;
+	}
+
+	.activity-planner-page-header .page-navigation-breadcrumb-list {
+		flex-wrap: nowrap;
+		justify-content: flex-end;
+	}
+
+	.activity-planner-page-header .page-navigation-breadcrumb-item {
+		min-width: 0;
+		flex: 0 1 auto;
+	}
+
+	.activity-planner-page-header .page-navigation-breadcrumb-link,
+	.activity-planner-page-header .page-navigation-breadcrumb-text {
+		max-width: 14rem;
+		overflow: hidden;
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
 	/* =====================================================
-	   DETAILS
+	   SHARED CONTINUOUS SURFACE
+
+	   The PageRowSectionLayout owns:
+	   - outer border
+	   - outer radius
+	   - outer shadow
+	   - white/surface background
+
+	   Planner header and form content must not add their own.
 	===================================================== */
 
-	.activity-planner-header-details {
+	.activity-planner-layout .page-row-layout-surface-header,
+	.activity-planner-layout .page-row-layout-surface-content {
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-primary);
+	}
+
+	.activity-planner-layout .page-row-layout-surface-header {
+		overflow: hidden;
+
+		border-color: var(--color-border-default);
+		border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+	}
+
+	.activity-planner-layout .page-row-layout-surface-content {
+		overflow: hidden;
+
+		border-color: var(--color-border-default);
+		border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs);
+	}
+	/*
+	 * Prevent a visible seam between header and content.
+	 * The surface-content begins immediately after the header.
+	 */
+	.activity-planner-layout .page-row-layout-surface-content {
+		margin-top: 0;
+	}
+
+	.activity-planner-layout-header-body {
+		background-color: var(--color-bg-surface);
+	}
+
+	/* =====================================================
+	   PLANNER SUMMARY
+	   Uses the parent continuous surface
+	===================================================== */
+
+	.activity-planner-summary {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-direction: column;
+		overflow: hidden;
+
+		border: 0;
+		border-radius: 0;
+
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-primary);
+		box-shadow: none;
+	}
+
+	/* =====================================================
+	   SUMMARY TOP ROW
+	===================================================== */
+
+	.activity-planner-summary-main {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-4);
+
+		padding: var(--space-3) var(--space-4);
+
+		background-color: var(--color-bg-surface);
+	}
+
+	.activity-planner-summary-copy {
 		display: flex;
 		min-width: 0;
 		flex: 1 1 auto;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: var(--space-3) var(--space-6);
+		flex-direction: column;
+		gap: var(--space-1);
 	}
 
-	.activity-planner-header-detail {
+	.activity-planner-summary-title {
+		min-width: 0;
+		margin: 0;
+		overflow: hidden;
+
+		color: var(--color-text-primary);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-lg);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+		letter-spacing: var(--tracking-title);
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.activity-planner-summary-proposal {
+		min-width: 0;
+		margin: 0;
+		overflow: hidden;
+
+		color: var(--color-text-secondary);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+		font-variant-numeric: tabular-nums;
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.activity-planner-summary-actions {
+		display: inline-flex;
+		min-width: 0;
+		flex: 0 0 auto;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--space-2);
+	}
+
+	.activity-planner-preview-button.button-base {
+		min-height: var(--control-height-sm);
+		flex: 0 0 auto;
+
+		padding-inline: var(--space-3);
+
+		font-size: var(--font-size-xs);
+		white-space: nowrap;
+	}
+
+	/* =====================================================
+	   SUMMARY META ROW
+	===================================================== */
+
+	.activity-planner-summary-meta {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		min-height: var(--control-height-lg);
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-4);
+
+		padding: var(--space-2) var(--space-4);
+
+		border-top: var(--border-width-default) solid var(--color-border-subtle);
+		border-bottom: var(--border-width-default) solid var(--color-border-subtle);
+
+		background-color: var(--color-bg-surface-subtle);
+	}
+
+	.activity-planner-summary-meta-item {
 		display: inline-flex;
 		min-width: 0;
 		align-items: center;
 		gap: var(--space-2);
 	}
 
-	.activity-planner-header-label {
+	.activity-planner-summary-status {
+		flex: 0 0 auto;
+		justify-content: flex-end;
+	}
+
+	.activity-planner-summary-label {
 		flex: 0 0 auto;
 
 		color: var(--color-text-muted);
@@ -5155,7 +5788,7 @@ Compact responsive listing controls
 		white-space: nowrap;
 	}
 
-	.activity-planner-header-value {
+	.activity-planner-summary-value {
 		min-width: 0;
 		overflow: hidden;
 
@@ -5170,46 +5803,137 @@ Compact responsive listing controls
 		white-space: nowrap;
 	}
 
-	/* =====================================================
-	   STATUS AND ACTIONS
-	===================================================== */
-
-	.activity-planner-header-actions {
-		display: inline-flex;
-		min-width: 0;
+	.activity-planner-summary-status .badge {
 		flex: 0 0 auto;
-		align-items: center;
-		justify-content: flex-end;
-		gap: var(--space-1);
+		white-space: nowrap;
 	}
 
-	.activity-planner-header-status {
-		display: inline-flex;
+	/* =====================================================
+	   FORM CONTENT
+
+	   Continues directly from the planner summary.
+	   No card, no border, no radius, no shadow.
+	===================================================== */
+
+	.activity-planner-layout-content {
+		width: 100%;
 		min-width: 0;
-		align-items: center;
-		gap: var(--space-2);
+
+		margin: 0;
+		padding: 0;
+
+		border: 0;
+		border-radius: 0;
+
+		background-color: var(--color-bg-surface);
+		box-shadow: none;
+	}
+
+	.activity-planner-layout-content .page-row-layout-content-inner,
+	.activity-planner-layout-content-body {
+		width: 100%;
+		min-width: 0;
+		overflow: visible;
+
+		margin: 0;
+		padding: 0;
+
+		border: 0;
+		border-radius: 0;
+
+		background-color: var(--color-bg-surface);
+		box-shadow: none;
+	}
+
+	.activity-planner-layout-content-body > * {
+		width: 100%;
+		min-width: 0;
+		max-width: 100%;
 	}
 
 	/*
-	 * Button appearance and variant already provide the
-	 * visual treatment. Keep only page-specific sizing.
+	 * ActivityFormView should not create another outer card shell.
+	 * Internal accordion/section borders can remain.
 	 */
-	.activity-planner-preview-button.button-base {
-		flex: 0 0 auto;
-		min-height: var(--control-height-sm);
+	.activity-planner-layout-content-body > .activity-form-view {
+		margin: 0;
+		padding: 0;
+
+		border: 0;
+		border-radius: 0;
+
+		background-color: transparent;
+		box-shadow: none;
+	}
+
+	.activity-planner-report-builder {
+		width: 100%;
+		min-width: 0;
+
+		margin: 0;
+		padding: 0;
+
+		background-color: transparent;
+	}
+
+	/* =====================================================
+	   STICKY HEADER APPEARANCE
+	===================================================== */
+
+	.page-row-layout-sticky.activity-planner-layout .page-row-layout-header {
+		background-color: var(--app-bg);
+	}
+
+	/*
+	 * Keep the opaque padding below the sticky planner header.
+	 * This hides form content while it scrolls underneath.
+	 */
+	.page-row-layout-sticky.activity-planner-layout
+		.page-row-layout-header::after {
+		height: var(--space-3);
+		background-color: var(--color-bg-surface);
+		border-color: var(--color-border-default);
+		border-left: var(--border-width-default) solid var(--color-border-default);
+		border-right: var(--border-width-default) solid var(--color-border-default);
+		border-bottom: var(--border-width-default) solid var(--color-border-default);
+	}
+
+	/*
+	 * The planner header belongs to the same surface as the form,
+	 * so it should not have an independent shadow.
+	 */
+	.page-row-layout-sticky.activity-planner-layout
+		.page-row-layout-surface-header {
+		box-shadow: none;
 	}
 
 	/* =====================================================
 	   TABLET
 	===================================================== */
 
-	@media (max-width: 900px) {
-		.activity-planner-header-row {
-			align-items: flex-start;
+	@media (max-width: 1023px) {
+		.activity-planner-page-header {
+			padding-top: var(--space-3);
+			padding-bottom: var(--space-2);
 		}
 
-		.activity-planner-header-details {
-			gap: var(--space-2) var(--space-4);
+		.activity-planner-page-header .page-header-navigation {
+			max-width: 45%;
+		}
+
+		.activity-planner-page-header .page-navigation-breadcrumb-link,
+		.activity-planner-page-header .page-navigation-breadcrumb-text {
+			max-width: 10rem;
+		}
+
+		.activity-planner-summary-main,
+		.activity-planner-summary-meta {
+			padding-inline: var(--space-3);
+		}
+
+		.page-row-layout-sticky.activity-planner-layout
+			.page-row-layout-header::after {
+			height: var(--space-2);
 		}
 	}
 
@@ -5217,23 +5941,95 @@ Compact responsive listing controls
 	   MOBILE
 	===================================================== */
 
-	@media (max-width: 640px) {
-		.activity-planner-header-row {
-			flex-direction: column;
+	@media (max-width: 767px) {
+		.activity-planner-page-header {
+			padding-top: var(--space-2);
+			padding-bottom: var(--space-2);
+		}
+
+		.activity-planner-page-header .page-header-primary {
 			align-items: stretch;
-			gap: var(--space-3);
-		}
-
-		.activity-planner-header-details {
-			width: 100%;
 			flex-direction: column;
-			align-items: flex-start;
-			gap: var(--space-2);
+			gap: var(--space-1-5);
 		}
 
-		.activity-planner-header-actions {
+		.activity-planner-page-header .page-header-heading-group {
 			width: 100%;
-			justify-content: space-between;
+		}
+
+		.activity-planner-page-header .page-header-navigation {
+			width: 100%;
+			max-width: none;
+			justify-content: flex-start;
+		}
+
+		.activity-planner-page-header .page-navigation-breadcrumb-list {
+			width: 100%;
+			justify-content: flex-start;
+			overflow-x: auto;
+			overflow-y: hidden;
+
+			scrollbar-width: none;
+			overscroll-behavior-inline: contain;
+			-webkit-overflow-scrolling: touch;
+		}
+
+		.activity-planner-page-header
+			.page-navigation-breadcrumb-list::-webkit-scrollbar {
+			display: none;
+		}
+
+		.activity-planner-page-header .page-navigation-breadcrumb-item {
+			flex: 0 0 auto;
+		}
+
+		.activity-planner-page-header .page-navigation-breadcrumb-link,
+		.activity-planner-page-header .page-navigation-breadcrumb-text {
+			max-width: 9rem;
+		}
+
+		.activity-planner-layout .page-row-layout-surface-header {
+			border-radius: var(--radius-md) var(--radius-md) 0 0;
+		}
+
+		.activity-planner-layout .page-row-layout-surface-content {
+			border-radius: 0 0 var(--radius-md) var(--radius-md);
+		}
+
+		.activity-planner-summary-main {
+			gap: var(--space-2);
+			padding: var(--space-2);
+		}
+
+		.activity-planner-summary-title {
+			font-size: var(--font-size-base);
+		}
+
+		.activity-planner-summary-proposal {
+			font-size: var(--font-size-2xs);
+		}
+
+		.activity-planner-preview-button.button-base {
+			padding-inline: var(--space-2);
+
+			font-size: var(--font-size-2xs);
+		}
+
+		.activity-planner-summary-meta {
+			min-height: var(--control-height-md);
+			gap: var(--space-2);
+
+			padding: var(--space-2);
+		}
+
+		.activity-planner-summary-label,
+		.activity-planner-summary-value {
+			font-size: var(--font-size-2xs);
+		}
+
+		.page-row-layout-sticky.activity-planner-layout
+			.page-row-layout-header::after {
+			height: var(--space-2);
 		}
 	}
 
@@ -5241,21 +6037,69 @@ Compact responsive listing controls
 	   SMALL MOBILE
 	===================================================== */
 
-	@media (max-width: 420px) {
-		.activity-planner-header-actions {
-			flex-direction: column;
+	@media (max-width: 479px) {
+		.activity-planner-summary-main {
 			align-items: stretch;
+			flex-direction: column;
 		}
 
-		.activity-planner-header-status {
-			justify-content: space-between;
+		.activity-planner-summary-actions {
+			width: 100%;
 		}
 
 		.activity-planner-preview-button.button-base {
 			width: 100%;
+			justify-content: center;
+		}
+
+		.activity-planner-summary-meta {
+			align-items: stretch;
+			flex-direction: column;
+		}
+
+		.activity-planner-summary-meta-item,
+		.activity-planner-summary-status {
+			width: 100%;
+			justify-content: space-between;
+		}
+
+		.activity-planner-layout .page-row-layout-surface-header {
+			border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+		}
+
+		.activity-planner-layout .page-row-layout-surface-content {
+			border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+		}
+	}
+
+	/* =====================================================
+	   VERY SMALL MOBILE
+	===================================================== */
+
+	@media (max-width: 359px) {
+		.activity-planner-summary-main,
+		.activity-planner-summary-meta {
+			padding-inline: var(--space-1-5);
+		}
+
+		.activity-planner-page-header .page-navigation-breadcrumb-current {
+			max-width: 6rem;
+		}
+	}
+
+	/* =====================================================
+	   REDUCED MOTION
+	===================================================== */
+
+	@media (prefers-reduced-motion: reduce) {
+		.activity-planner-layout,
+		.activity-planner-layout-content,
+		.activity-planner-summary {
+			scroll-behavior: auto;
 		}
 	}
 }
+
 /* =====================================================
    EPF SUMMARY
  
@@ -6699,5 +7543,176 @@ Compact responsive listing controls
 	.toast-error {
 		border-color: var(--color-error-border);
 		background: var(--color-error-bg);
+	}
+}
+
+/* =====================================================
+  Filter Tabs
+===================================================== */
+
+@layer components {
+	.filter-tabs {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		align-items: center;
+		gap: var(--space-5);
+		overflow-x: auto;
+		overflow-y: hidden;
+
+		padding: var(--space-4) var(--space-5) 0;
+		border-bottom: var(--border-width-default) solid var(--color-border-subtle);
+
+		scrollbar-width: none;
+		overscroll-behavior-inline: contain;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.filter-tabs::-webkit-scrollbar {
+		display: none;
+	}
+
+	.filter-tab {
+		position: relative;
+		display: inline-flex;
+		min-width: 0;
+		min-height: var(--control-height-md);
+		flex: 0 0 auto;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
+
+		margin: 0;
+		padding: 0 0 var(--space-3);
+		border: 0;
+		border-radius: 0;
+
+		background-color: transparent;
+		color: var(--color-text-muted);
+
+		font: inherit;
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-normal);
+		text-align: center;
+		text-decoration: none;
+		white-space: nowrap;
+
+		cursor: pointer;
+		transition:
+			color var(--transition-fast),
+			opacity var(--transition-fast);
+	}
+
+	.filter-tab::after {
+		position: absolute;
+		right: 0;
+		bottom: calc(var(--border-width-default) * -1);
+		left: 0;
+
+		height: var(--border-width-stronger);
+
+		background-color: transparent;
+		content: "";
+
+		transition: background-color var(--transition-fast);
+	}
+
+	.filter-tab:hover:not(:disabled),
+	.filter-tab.is-active {
+		color: var(--color-text-primary);
+	}
+
+	.filter-tab.is-active::after {
+		background-color: var(--color-brand);
+	}
+
+	.filter-tab:focus-visible {
+		border-radius: var(--radius-xs);
+		outline: none;
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.filter-tab:disabled {
+		color: var(--color-text-disabled);
+		cursor: not-allowed;
+		opacity: var(--opacity-disabled);
+	}
+
+	.filter-tab:disabled::after {
+		background-color: transparent;
+	}
+
+	.filter-tab-label {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	@media (max-width: 640px) {
+		.filter-tabs {
+			gap: var(--space-4);
+			padding-top: var(--space-3);
+			padding-inline: var(--space-3);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.filter-tab,
+		.filter-tab::after {
+			transition: none;
+		}
+	}
+
+	/* / ICONS / */
+	@layer components {
+		.filter-tab-icon {
+			width: 1rem;
+			height: 1rem;
+			flex: 0 0 auto;
+
+			color: currentcolor;
+			stroke-width: 1.8;
+		}
+
+		.filter-tab-label {
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.filter-tab-short-label {
+			display: none;
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.filter-tab.is-icon-only {
+			width: var(--control-height-md);
+			min-width: var(--control-height-md);
+			padding-inline: 0;
+		}
+
+		.filter-tab.is-icon-only .filter-tab-icon {
+			margin-inline: auto;
+		}
+
+		@media (max-width: 640px) {
+			.filter-tab-label {
+				display: none;
+			}
+
+			.filter-tab-short-label {
+				display: inline;
+			}
+
+			.filter-tab:not(:has(.filter-tab-short-label)) .filter-tab-label {
+				display: inline;
+			}
+		}
 	}
 }

@@ -1,10 +1,11 @@
-import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
 import { PageHeader } from "../../../../components/ui/PageHeader";
 import DataTableSkeleton from "../../../../components/ui/DataTableSkeleton";
 
 import EPCTable from "../components/EPCTable/EPCTable";
 import EPCTopbar from "../components/EPCTable/EPCTopbar";
 import { useEpcListingPage } from "../hooks/useEpcListingPage";
+import PageSectionLayout from "../../../../layout/PageSectionLayout";
+import Card from "../../../../components/common/Card";
 
 const EpcListingPage = () => {
 	const {
@@ -29,19 +30,25 @@ const EpcListingPage = () => {
 	} = useEpcListingPage();
 
 	return (
-		<PageRowSectionLayout
-			contentMode="contained"
-			stickyHeader
-			header_children={
-				<PageHeader
-					headerText="Event Planning Calendar (EPC) Listing"
-					// subtitleText="Manage your Event Planning Calendar (EPC) details here"
-					badgeProps={{
-						text: "",
-						to: "/",
-						direction: "back",
-					}}
-				>
+		<PageSectionLayout>
+			<PageHeader
+				headerText="Event Planning Calendar (EPC) Listing"
+				navigation={{
+					variant: "breadcrumbs",
+					breadcrumbs: [
+						{
+							label: "Home Screen",
+							href: "/",
+						},
+						{
+							label: "EPC Listing",
+						},
+					],
+					separator: ">",
+				}}
+			></PageHeader>
+			<Card
+				title={
 					<EPCTopbar
 						search={searchInput}
 						onSearchChange={setSearchInput}
@@ -52,25 +59,25 @@ const EpcListingPage = () => {
 						onClearAllFilters={handleClearAllFilters}
 						activeFilterCount={activeFilterCount}
 					/>
-				</PageHeader>
-			}
-		>
-			{isLoading || isFetching ? (
-				<DataTableSkeleton rows={8} columns={6} showPagination />
-			) : (
-				<EPCTable
-					data={data?.data ?? []}
-					loading={false}
-					sorting={sorting}
-					onSortingChange={setSorting}
-					pageIndex={pageIndex}
-					pageSize={pageSize}
-					pageCount={pageCount}
-					onPageChange={handlePageChange}
-					onPageSizeChange={handlePageSizeChange}
-				/>
-			)}
-		</PageRowSectionLayout>
+				}
+			>
+				{isLoading || isFetching ? (
+					<DataTableSkeleton rows={8} columns={6} showPagination />
+				) : (
+					<EPCTable
+						data={data?.data ?? []}
+						loading={false}
+						sorting={sorting}
+						onSortingChange={setSorting}
+						pageIndex={pageIndex}
+						pageSize={pageSize}
+						pageCount={pageCount}
+						onPageChange={handlePageChange}
+						onPageSizeChange={handlePageSizeChange}
+					/>
+				)}
+			</Card>
+		</PageSectionLayout>
 	);
 };
 

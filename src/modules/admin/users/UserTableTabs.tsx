@@ -1,4 +1,4 @@
-import { Badge } from "../../../components/common/Badge";
+import { FilterTabs } from "../../../components/ui/FilterTabs";
 
 import type { UserCounts, UserStatusTab } from "./user-management.types";
 import { USER_STATUS_TABS } from "./user-management.utils";
@@ -31,30 +31,20 @@ export function UserTableTabs({
 	counts,
 	onChange,
 }: UserTableTabsProps) {
+	const items = USER_STATUS_TABS.map((tab) => ({
+		value: tab,
+		label: tab,
+		count: counts[tab],
+		badgeVariant: getBadgeVariant(tab),
+	}));
+
 	return (
-		<div
-			className="user-management-tabs"
-			role="tablist"
-			aria-label="User status"
-		>
-			{USER_STATUS_TABS.map((tab) => {
-				const isActive = activeTab === tab;
-
-				return (
-					<button
-						key={tab}
-						type="button"
-						role="tab"
-						aria-selected={isActive}
-						className={`user-management-tab${isActive ? " is-active" : ""}`}
-						onClick={() => onChange(tab)}
-					>
-						<span>{tab}</span>
-
-						<Badge variant={getBadgeVariant(tab)}>{counts[tab]}</Badge>
-					</button>
-				);
-			})}
-		</div>
+		<FilterTabs
+			id="user-status-tabs"
+			ariaLabel="User status"
+			items={items}
+			value={activeTab}
+			onChange={onChange}
+		/>
 	);
 }

@@ -1,4 +1,5 @@
 import {
+	ClipboardCheck,
 	Database,
 	FileText,
 	HatGlasses,
@@ -33,6 +34,14 @@ export const actions = [
 		description: "Configure and compare machinery specs for customer needs.",
 		path: "/",
 		appKey: "PRODUCT_SELECTOR",
+		isActive: false,
+	},
+	{
+		icon: ClipboardCheck,
+		title: "Audit",
+		description: "Conduct audits and compliance checks.",
+		path: "/",
+		appKey: "AUDIT",
 		isActive: false,
 	},
 	{
