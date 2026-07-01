@@ -84,7 +84,7 @@ export const UserProfilePage = () => {
 				onCreateNew={() => navigate("/admin/profiles/create")}
 				onEdit={(profile) => navigate(`/admin/profiles/${profile.id}/edit`)}
 				onDelete={handleDelete}
-				setProfiles={setProfiles}
+				// setProfiles={setProfiles}
 			/>
 		</div>
 	);

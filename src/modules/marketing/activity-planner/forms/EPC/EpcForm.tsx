@@ -2,7 +2,7 @@ import React from "react";
 import { RefreshCcw, Save, X } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/Section";
+import Section from "../../components/common/Section";
 
 import { useMasterData } from "../../../../../hooks/useMasterData";
 import { useEpcForm } from "./useEpcForm";
@@ -17,7 +17,6 @@ export type EpcFormProps = {
 	initialData?: EpcDetailResponse | null;
 	onCancel?: () => void;
 	onSuccess?: (data?: any) => Promise<void> | void;
-	isClarifiedUpdate?: boolean;
 };
 
 const EpcForm = ({
@@ -26,7 +25,6 @@ const EpcForm = ({
 	initialData,
 	onSuccess,
 	onCancel,
-	isClarifiedUpdate,
 }: EpcFormProps) => {
 	const epcInfo = React.useMemo(() => getStoredEpcInfo(), []);
 
@@ -38,7 +36,8 @@ const EpcForm = ({
 			: propEpcId || storedEpcId || undefined;
 
 	const { data: masters } = useMasterData();
-	const saveStatus = isClarifiedUpdate ? "DRAFT" : "SUBMITTED";
+	const saveStatus = "SUBMITTED";
+
 	const {
 		values,
 		errors,
@@ -53,8 +52,8 @@ const EpcForm = ({
 		initialData,
 		masters,
 		onSuccess,
-		isClarifiedUpdate,
 	});
+
 	if (loading) {
 		return (
 			<div className="flex h-64 items-center justify-center text-gray-500">
@@ -70,19 +69,30 @@ const EpcForm = ({
 					? "Edit Activity Planner Details"
 					: "Create Activity Planner Details"
 			}
-			action={
-				<div className="flex flex-row items-center justify-end gap-2">
-					{onCancel && (
-						<Button
-							type="button"
-							text="Cancel"
-							onClick={onCancel}
-							size="sm"
-							Icon={X}
-							className="text-red-600"
-							iconColor="red"
-						/>
-					)}
+		>
+			<EpcFormFields
+				values={values}
+				errors={errors}
+				masters={masters}
+				onChange={handleChange}
+				lockOrgFields={isEditMode}
+			/>
+
+			<div className="mt-4 flex flex-row items-center justify-end gap-2">
+				{onCancel && (
+					<Button
+						type="button"
+						text="Cancel"
+						onClick={onCancel}
+						size="sm"
+						Icon={X}
+						status="outline"
+						className="text-red-600"
+						iconColor="red"
+					/>
+				)}
+
+				{isEditMode && (
 					<Button
 						type="button"
 						text="Reset"
@@ -90,27 +100,21 @@ const EpcForm = ({
 						Icon={RefreshCcw}
 						className="text-red-600"
 						size="sm"
+						status="outline"
 						iconColor="red"
 					/>
-
-					<Button
-						type="button"
-						text={isEditMode ? "Update" : "Create EPC"}
-						onClick={() => handleSave(saveStatus)}
-						size="sm"
-						className="text-red-600"
-						Icon={Save}
-						iconColor="red"
-					/>
-				</div>
-			}
-		>
-			<EpcFormFields
-				values={values}
-				errors={errors}
-				masters={masters}
-				onChange={handleChange}
-			/>
+				)}
+				<Button
+					type="button"
+					text={isEditMode ? "Update" : "Create EPC"}
+					onClick={() => handleSave(saveStatus)}
+					size="sm"
+					className="text-red-600"
+					Icon={Save}
+					status="outline"
+					iconColor="red"
+				/>
+			</div>
 		</Section>
 	);
 };

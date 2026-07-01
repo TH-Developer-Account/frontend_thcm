@@ -14,7 +14,7 @@ const BusinessPartnerView = () => {
 				zone="WEST"
 				status="Active"
 			/>
-			<div className="bp-tab-container content-box">
+			<div className="bp-tab-container content-box w-full">
 				<div className="bp-tab-wrapper">
 					<BPTabs />
 				</div>

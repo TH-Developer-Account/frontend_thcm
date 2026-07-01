@@ -2,61 +2,86 @@ import type { ToastStyle, ToastVariant } from "./common/Toast/toast.types";
 
 const STATUS_STYLE_MAP: Record<string, string> = {
 	approved: "bg-teal-100 text-teal-800 ring-teal-200",
-
-	completed: "bg-green-100 text-green-800 ring-green-200  ",
-
+	completed: "bg-green-100 text-green-800 ring-green-200",
+	conducted: "bg-green-100 text-green-800 ring-green-200",
 	cancelled: "bg-red-100 text-red-800 ring-red-200",
-
-	"sent back": "bg-orange-100 text-orange-800 ring-orange-200",
-
-	pending: "bg-amber-100 text-amber-800 ring-amber-200 ",
-
+	pending: "bg-amber-100 text-amber-800 ring-amber-200",
 	submitted: "bg-blue-100 text-blue-800 ring-blue-200",
-
-	"report submitted": "bg-sky-100 text-sky-800 ring-sky-200",
-
-	recommended: "bg-violet-100 text-violet-800 ring-violet-200",
-
-	blocked: "bg-rose-100 text-rose-800 ring-rose-200",
+	report_submitted: "bg-sky-100 text-sky-800 ring-sky-200",
+	report_resubmitted: "bg-sky-100 text-sky-800 ring-sky-200",
+	report_validated: "bg-green-100 text-green-800 ring-green-200",
+	report_rejected: "bg-red-100 text-red-800 ring-red-200",
+	report_clarification_requested:
+		"bg-yellow-100 text-yellow-800 ring-yellow-200",
+	clarification_requested: "bg-yellow-100 text-yellow-800 ring-yellow-200",
+	clarify: "bg-yellow-100 text-yellow-800 ring-yellow-200",
+	clarified: "bg-yellow-100 text-yellow-800 ring-yellow-200",
+	in_progress: "bg-blue-100 text-blue-800 ring-blue-200",
+	validated: "bg-green-100 text-green-800 ring-green-200",
+	rejected: "bg-red-100 text-red-800 ring-red-200",
+	deviation_raised: "bg-red-100 text-red-800 ring-red-200",
+	deviation_in_progress: "bg-orange-100 text-orange-800 ring-orange-200",
+	closed: "bg-gray-100 text-gray-800 ring-gray-200",
+	epc_closed: "bg-gray-100 text-gray-800 ring-gray-200",
+	not_conducted: "bg-red-100 text-red-800 ring-red-200",
+	superseded: "bg-gray-100 text-gray-800 ring-gray-200",
 	brand: "bg-[#f35a00] text-white",
+	failed: "bg-red-100 text-red-800",
 	outline:
 		"border border-orange-200 bg-orange-50 text-orange-700 hover:border-red-400 hover:bg-red-100",
-	active: "bg-green-100 text-green-800 ",
-	inactive: "bg-red-100 text-red-800 ",
 };
 
-export const resolveStatusStyle = ({ status }: { status?: string }): string => {
-	if (!status) return "bg-transparent border-orange-500";
-	return STATUS_STYLE_MAP[status] ?? "bg-transparent  border-orange-500";
+const DEFAULT_STATUS_STYLE = "bg-transparent text-gray-700 ring-gray-200";
+
+const normalizeStyleKey = (value?: string | null) =>
+	String(value ?? "")
+		.trim()
+		.toLowerCase();
+
+export const resolveStatusStyle = ({
+	status,
+}: {
+	status?: string | null;
+}): string => {
+	const key = normalizeStyleKey(status);
+	if (!key) return DEFAULT_STATUS_STYLE;
+
+	return STATUS_STYLE_MAP[key] ?? DEFAULT_STATUS_STYLE;
 };
 
 const VARIANT_STYLE_MAP: Record<string, string> = {
 	brand: "bg-[#f35a00] text-white",
 
-	success: "bg-green-100 text-green-800 ",
-	active: "bg-green-100 text-green-800 ",
+	success: "bg-green-100 text-green-800",
+	active: "bg-green-100 text-green-800",
 
-	danger: "bg-red-100 text-red-800 ",
-	inactive: "bg-red-100 text-red-800 ",
+	danger: "bg-red-100 text-red-800",
+	inactive: "bg-red-100 text-red-800",
 
 	warning: "bg-yellow-100 text-yellow-800",
 
-	disable: "bg-gray-100 text-gray-80",
+	disable: "bg-gray-100 text-gray-800",
 
-	primary: "bg-blue-100 text-blue-800 ",
+	primary: "bg-blue-100 text-blue-800",
 
-	outline: "bg-orange-50 ring-orange-200 text-orange-300",
+	outline: "bg-orange-50 ring-orange-200 text-orange-700",
+
+	passed: "bg-green-100 text-green-800",
+	failed: "bg-red-100 text-red-800",
 };
+
 export const resolveVariantStyle = ({
 	variant,
 }: {
 	variant?: string;
 }): string => {
-	if (!variant) return "bg-orange-50 ring-orange-200 text-orange-300";
+	if (!variant) return "bg-orange-50 ring-orange-200 text-orange-700";
+
 	return (
-		VARIANT_STYLE_MAP[variant] ?? "bg-orange-50 ring-orange-200 text-orange-300"
+		VARIANT_STYLE_MAP[variant] ?? "bg-orange-50 ring-orange-200 text-orange-700"
 	);
 };
+
 export const toastStyles: Record<ToastVariant, ToastStyle> = {
 	success: {
 		wrapper: "bg-green-50 border-green-200",
@@ -105,52 +130,4 @@ export const styles = {
 		icon: "✅",
 		iconBg: "bg-green-100 text-green-600",
 	},
-};
-
-export const APPROVAL_DOT_STATUS_COMPLETED: Record<string, string> = {
-	approved: "bg-teal-100 text-teal-600 ring-teal-200",
-
-	completed: "bg-green-100 text-green-600 ring-green-200",
-
-	cancelled: "bg-red-100 text-red-600 ring-red-200",
-
-	"sent back": "bg-orange-100 text-orange-600 ring-orange-200",
-
-	pending: "bg-amber-100 text-amber-600 ring-amber-200 ",
-
-	submitted: "bg-blue-100 text-blue-600 ring-blue-200",
-
-	"report submitted": "bg-sky-100 text-sky-600 ring-sky-200",
-
-	recommended: "bg-violet-100 text-violet-600 ring-violet-200",
-
-	blocked: "bg-rose-100 text-rose-600 ring-rose-200",
-};
-
-export const APPROVAL_DOT_STATUS_ACTIVE: Record<string, string> = {
-	approved:
-		"bg-teal-200 text-teal-600 ring-teal-300  shadow-lg border border-white",
-
-	completed:
-		"bg-green-200 text-green-600 ring-green-400  shadow-lg border border-white",
-
-	cancelled:
-		"bg-red-200 text-red-600 ring-red-300  shadow-lg border border-white",
-
-	"sent back":
-		"bg-orange-200 text-orange-600 ring-orange-300  shadow-lg border border-white",
-
-	pending: "bg-amber-200 text-amber-600 ring-amber-300  shadow-lg border-white",
-
-	submitted:
-		"bg-blue-200 text-blue-600 ring-blue-300  shadow-lg border border-white",
-
-	"report submitted":
-		"bg-sky-200 text-sky-600 ring-sky-300  shadow-lg border border-white",
-
-	recommended:
-		"bg-violet-200 text-violet-600 ring-violet-300  shadow-lg border border-white",
-
-	blocked:
-		"bg-rose-200 text-rose-600 ring-rose-300  shadow-lg border border-white",
 };

@@ -1,14 +1,14 @@
-import { FileDown, FileUp } from "lucide-react";
+import { FileDown } from "lucide-react";
 import Button from "../../../../../components/common/Button";
 import DataTableSkeleton from "../../../../../components/ui/DataTableSkeleton";
 import { PageHeader } from "../../../../../components/ui/PageHeader";
 import PageRowSectionLayout from "../../../../../layout/PageRowSectionLayout";
-import { useLeadGroupsQuery } from "../queries/useLeadQueries";
 import LeadsTable from "../components/LeadsTable";
+import { useLeadRowsQuery } from "../queries/useLeadQueries";
 import "../styles/leads.css";
 
 export default function LeadsTablePage() {
-	const { data: leadGroups = [], isLoading, isFetching } = useLeadGroupsQuery();
+	const { data: leads = [], isLoading, isFetching } = useLeadRowsQuery();
 
 	return (
 		<PageRowSectionLayout
@@ -29,22 +29,15 @@ export default function LeadsTablePage() {
 						text="Export"
 						Icon={FileDown}
 						status="brand"
-						className="text-xs m-1 sm:m-2"
-					/>
-					<Button
-						type="button"
-						text="Import"
-						Icon={FileUp}
-						status="brand"
-						className="text-xs m-1 sm:m-2"
+						className="m-1 text-xs sm:m-2"
 					/>
 				</PageHeader>
 			}
 		>
 			{isLoading ? (
-				<DataTableSkeleton rows={8} columns={5} showPagination />
+				<DataTableSkeleton rows={8} columns={6} showPagination />
 			) : (
-				<LeadsTable groups={leadGroups} />
+				<LeadsTable leads={leads} />
 			)}
 
 			{isFetching && !isLoading ? (

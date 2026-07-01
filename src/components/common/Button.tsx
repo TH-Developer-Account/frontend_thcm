@@ -57,7 +57,7 @@ const Button: React.FC<ButtonProps> = ({
 
 	return (
 		<div
-			className={`${fullWidth ? "w-full" : "w-auto"} relative inline-flex group`}
+			className={`${fullWidth ? "w-full" : "w-auto"} relative inline-flex items-center group shrink-0`}
 		>
 			<button
 				type={type}
@@ -85,7 +85,11 @@ const Button: React.FC<ButtonProps> = ({
 				{children ?? null}
 			</button>
 
-			{isTooltip ? <div className="btn-tooltip">{isTooltip}</div> : null}
+			{isTooltip ? (
+				<span className="btn-tooltip" role="tooltip">
+					{isTooltip}
+				</span>
+			) : null}
 		</div>
 	);
 };

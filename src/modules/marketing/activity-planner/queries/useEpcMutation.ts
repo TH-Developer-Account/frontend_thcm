@@ -1,7 +1,6 @@
 // queries/useCreateEpcMutation.ts
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { epcApi } from "../api/epc.api";
-import { workflowApi } from "../api/workflow.api";
 import { epcKeys } from "./epc.keys";
 import type { EpcCreatePayload, EpcUpdatePayload } from "../types/epc.types";
 
@@ -48,10 +47,3 @@ export function useUpdateEpcMutation() {
 		},
 	});
 }
-
-export const useSubmitClarifiedUpdatedFormMutation = () => {
-	return useMutation({
-		mutationFn: (workflowId: string) =>
-			workflowApi.submitClarifiedUpdatedForm(workflowId),
-	});
-};

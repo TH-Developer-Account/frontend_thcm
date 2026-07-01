@@ -1,82 +1,54 @@
 import { useToast } from "../../../../context/Auth/AuthContext";
-import { useAuth } from "../../../../context/Auth/useAuth";
-
 import type { EpcDetailResponse } from "../types/epc.types";
+import { useSubmitClarifiedUpdatedFormMutation } from "../queries/useEventOutcomeMutation";
 import {
-	hasClarificationInComments,
-	isPendingStatus,
-	type WorkflowEntry,
-} from "../utils/activityPlannerStatus.helper";
-
-import { useSubmitClarifiedUpdatedFormMutation } from "../queries/useEpcMutation";
+	showApiErrorToast,
+	showSuccessToast,
+} from "../../../../utils/apiError.helper";
+import type { ActivityPermissions } from "../helpers/activityPermissions.helper";
 
 type UseClarifiedResubmissionArgs = {
 	epcData?: EpcDetailResponse | null;
-	workflowEntries?: WorkflowEntry[];
 	onRefresh: () => Promise<unknown>;
-};
-
-const getUserId = (authUser: any) => {
-	return (
-		authUser?.id ??
-		authUser?.userId ??
-		authUser?.user_id ??
-		authUser?.user?.id ??
-		authUser?.user?.userId ??
-		authUser?.data?.id ??
-		authUser?.profile?.id ??
-		null
-	);
+	permissions: ActivityPermissions;
 };
 
 export const useClarifiedResubmission = ({
 	epcData,
-	workflowEntries = [],
 	onRefresh,
+	permissions,
 }: UseClarifiedResubmissionArgs) => {
 	const { showToast } = useToast();
-	const auth = useAuth();
 
 	const submitClarifiedMutation = useSubmitClarifiedUpdatedFormMutation();
-
 	const workflowId = epcData?.activeWorkflow?.id ?? null;
-	const currentUserId = getUserId(auth);
 
-	const isProposer =
-		Boolean(currentUserId) && currentUserId === epcData?.created_by_id;
-
-	const hasClarification = hasClarificationInComments(workflowEntries);
-
-	const isClarifiedPending =
-		isProposer && isPendingStatus(epcData?.status) && hasClarification;
+	const isWorkflowClarifiedPending = permissions.isClarifiedPending;
+	const canSubmitClarifiedUpdate = permissions.canSubmitClarifiedUpdate;
 
 	const submitClarifiedUpdate = async () => {
-		if (!workflowId || !isClarifiedPending) return;
+		if (!workflowId) {
+			showApiErrorToast(showToast, "No active workflow found.");
+			return;
+		}
+
+		if (!canSubmitClarifiedUpdate) {
+			showApiErrorToast(showToast, "Please update the form before submitting.");
+			return;
+		}
 
 		try {
 			await submitClarifiedMutation.mutateAsync(workflowId);
-
-			showToast({
-				type: "success",
-				title: "Submitted",
-				description: "Updated form submitted successfully.",
-			});
-
+			showSuccessToast(showToast, "Updated form submitted successfully.");
 			await onRefresh();
-		} catch (error: any) {
-			showToast({
-				type: "error",
-				title: "Error",
-				description:
-					error?.response?.data?.message ||
-					error?.message ||
-					"Failed to submit updated form.",
-			});
+		} catch (error: unknown) {
+			showApiErrorToast(showToast, `Failed to submit updated form ${error}.`);
 		}
 	};
 
 	return {
-		isClarifiedPending,
+		isClarifiedPending: isWorkflowClarifiedPending,
+		canSubmitClarifiedUpdate,
 		isSubmittingClarifiedUpdate: submitClarifiedMutation.isPending,
 		submitClarifiedUpdate,
 	};

@@ -4,6 +4,9 @@
 ========================================================= */
 @reference "tailwindcss";
 
+.dropdown-icon-style {
+	@apply h-4 w-4  duration-200 text-orange-700;
+}
 @layer components {
 	/* =========================================
 	   COMING SOON PAGE

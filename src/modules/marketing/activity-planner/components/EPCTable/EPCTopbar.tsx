@@ -5,15 +5,15 @@ import { SearchInput } from "../../../../../components/FormElements/SearchInput"
 import { Can } from "../../../../../context/permissionHelpers";
 import Button from "../../../../../components/common/Button";
 import ThreeWayToggle from "../../../../../components/common/ThreeWayToggle";
-import { EpcFilterDropdown } from "../EPCFilterDropdown";
+import { EpcFilterDropdown } from "./EpcFilterDropdown";
 import {
 	epcListFilterOptions,
+	epcStatusOptions,
 	type EpcListFilter,
 } from "../../utils/constants";
 import type { EpcFilters } from "../../types/epc.types";
 import { clearStoredEpcInfo } from "../../helpers/localstorage";
 import { useMasterData } from "../../../../../hooks/useMasterData";
-import { EPC_STATUS_OPTIONS } from "../../utils/constants";
 
 type EPCTopbarProps = {
 	search: string;
@@ -38,9 +38,9 @@ const EPCTopbar = ({
 }: EPCTopbarProps) => {
 	const navigate = useNavigate();
 	const { data } = useMasterData();
+
 	const eventTypeOptions = data?.eventNames ?? [];
 	const zoneOptions = data?.regions ?? [];
-	const statusOptions = EPC_STATUS_OPTIONS;
 
 	const handleCreateEpc = () => {
 		clearStoredEpcInfo();
@@ -56,12 +56,14 @@ const EPCTopbar = ({
 						onChange={onSearchChange}
 						placeholder="Search by event name"
 					/>
+
 					<ThreeWayToggle
 						options={epcListFilterOptions}
 						value={selectedFilter}
 						onChange={onFilterChange}
 						className="w-[320px]"
 					/>
+
 					<EpcFilterDropdown
 						filters={filters}
 						onChange={onAdvancedFilterChange}
@@ -69,8 +71,9 @@ const EPCTopbar = ({
 						activeFilterCount={activeFilterCount}
 						zoneOptions={zoneOptions}
 						eventTypeOptions={eventTypeOptions}
-						statusOptions={statusOptions}
+						statusOptions={epcStatusOptions}
 					/>
+
 					<Can action="write" app="MAP" module="EPC">
 						<Button
 							Icon={Plus}

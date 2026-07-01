@@ -83,17 +83,16 @@ export const getApprovalStrategyLabel = (stage: ApprovalStageLike) => {
 const getActiveWorkflowApprovers = (
 	stage: ApprovalStageLike,
 	minApprovals: string | number | null,
-	shouldShowStatus: boolean,
+	// shouldShowStatus: boolean,
 ) => {
 	return (stage.approvals ?? []).map((approval, index) => {
 		const approvalStatus = normalize(approval.status);
 
-		const shouldRenderApprovalStatus =
-			approvalStatus === "APPROVED" ||
-			approvalStatus === "REJECTED" ||
-			approvalStatus === "SENT_BACK" ||
-			approvalStatus === "CLARIFIED" ||
-			shouldShowStatus;
+		// const shouldRenderApprovalStatus =
+		// 	approvalStatus === "APPROVED" ||
+		// 	approvalStatus === "REJECTED" ||
+		// 	approvalStatus === "CLARIFIED" ||
+		// 	shouldShowStatus;
 
 		return {
 			id: approval.id ?? `${stage.stageOrder}-${index}`,
@@ -106,9 +105,7 @@ const getActiveWorkflowApprovers = (
 
 			minApprovals,
 
-			status: shouldRenderApprovalStatus
-				? (approval.status ?? "PENDING")
-				: null,
+			status: approvalStatus || null,
 		};
 	});
 };
@@ -156,7 +153,7 @@ export const mapWorkflowStagesToApprovalRows = (
 			: true;
 
 		const approvers = stage.approvals?.length
-			? getActiveWorkflowApprovers(stage, minApprovals, shouldShowStatus)
+			? getActiveWorkflowApprovers(stage, minApprovals)
 			: getPreviewWorkflowApprovers(stage, minApprovals);
 
 		return {

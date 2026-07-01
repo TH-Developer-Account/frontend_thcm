@@ -4,7 +4,7 @@ import { useAuth } from "../../../../../context/Auth/useAuth";
 import { useToast } from "../../../../../context/Auth/AuthContext";
 import { mapWorkflowStagesToApprovalRows } from "../../utils/approvalTable.mapper";
 
-import type { LineItemOption } from "../../../types";
+import type { LineItemOption } from "../../types/lineItem.types";
 import type {
 	EpfCrfData,
 	EpfDetailResponse,
@@ -28,7 +28,11 @@ import {
 	mapEpfResponseToFormValues,
 } from "./epf.mapper";
 
-import { buildEpfCreatePayload, buildEpfUpdatePayload } from "./epf.payload";
+import {
+	buildEpfCreatePayload,
+	buildEpfUpdatePayload,
+	// buildEpfFormData,
+} from "./epf.payload";
 import { validateEpfForm } from "../../utils/validations";
 
 import {
@@ -226,7 +230,6 @@ export const useEpfForm = ({
 		return overheadTotal + Number(values.crfTotal || 0);
 	}, [costItems, values.crfTotal]);
 
-	console.log("Calculated event cost:", eventCost);
 	const displayValues = React.useMemo<EpfFormValues>(() => {
 		const budgetValues = calculateBudgetShares(values, eventCost);
 
@@ -331,6 +334,21 @@ export const useEpfForm = ({
 
 					return;
 				}
+				const QUOTATION_THRESHOLD = 25000;
+
+				const missingQuotation =
+					eventCost > QUOTATION_THRESHOLD &&
+					costItems.some((item) => !item.quotationFile);
+
+				if (missingQuotation) {
+					showToast({
+						type: "error",
+						title: "Quotation Required",
+						description:
+							"Please upload quotation for all event cost overhead items above 25000/-.",
+					});
+					return;
+				}
 
 				const payloadArgs = {
 					values: displayValues,
@@ -341,6 +359,22 @@ export const useEpfForm = ({
 					costItems,
 				};
 
+				// const hasQuotationFiles = costItems.some((item) => item.quotationFile);
+
+				// const savedData = epfId
+				// 	? await updateEpfMutation.mutateAsync({
+				// 			epcId,
+				// 			epfId,
+				// 			payload: hasQuotationFiles
+				// 				? buildEpfFormData(payloadArgs)
+				// 				: buildEpfUpdatePayload(payloadArgs),
+				// 		})
+				// 	: await createEpfMutation.mutateAsync({
+				// 			epcId,
+				// 			payload: hasQuotationFiles
+				// 				? buildEpfFormData(payloadArgs)
+				// 				: buildEpfCreatePayload(payloadArgs),
+				// 		});
 				const savedData = epfId
 					? await updateEpfMutation.mutateAsync({
 							epcId,
@@ -351,7 +385,6 @@ export const useEpfForm = ({
 							epcId,
 							payload: buildEpfCreatePayload(payloadArgs),
 						});
-
 				if (!epfId && status === "SUBMITTED") {
 					try {
 						await assignWorkflow();
@@ -373,9 +406,7 @@ export const useEpfForm = ({
 					title: "Success",
 					description: epfId
 						? "EPF updated successfully."
-						: status === "DRAFT"
-							? "EPF draft saved successfully."
-							: "EPF submitted successfully.",
+						: "EPF submitted successfully.",
 				});
 
 				if (onSuccess) {

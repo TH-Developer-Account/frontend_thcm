@@ -1,4 +1,5 @@
 import { ServerAxios } from "../../../../services/ServerAxios";
+import type { EventDeviationPayload } from "../types/event.outcome.types";
 
 export const workflowApi = {
 	assignWorkflow: async (payload: {
@@ -30,16 +31,6 @@ export const workflowApi = {
 		const {
 			data: { data, message },
 		} = await ServerAxios.post(`/soa/stages/${stageId}/approve`);
-
-		return { data, message };
-	},
-
-	clarifyStage: async (stageId: string, reason: string) => {
-		const {
-			data: { data, message },
-		} = await ServerAxios.post(`/soa/stages/${stageId}/clarify`, {
-			reason,
-		});
 
 		return { data, message };
 	},
@@ -77,12 +68,54 @@ export const workflowApi = {
 
 		return { data, message };
 	},
+
+	clarifyStage: async (stageId: string, reason: string) => {
+		const {
+			data: { data, message },
+		} = await ServerAxios.post(`/soa/stages/${stageId}/clarify`, {
+			reason,
+		});
+
+		return { data, message };
+	},
 	submitClarifiedUpdatedForm: async (workflowId: string) => {
 		const {
 			data: { data, message },
 		} = await ServerAxios.post(`/soa/stages/activate-first-stage`, {
 			workflowId,
 		});
+
+		return { data, message };
+	},
+
+	deviationStage: async (epcId: string, payload: EventDeviationPayload) => {
+		const isFormData = payload instanceof FormData;
+
+		const { data } = await ServerAxios.post(
+			`/epc/${epcId}/initiate-deviation`,
+			payload,
+			isFormData
+				? {
+						headers: {
+							"Content-Type": "multipart/form-data",
+						},
+					}
+				: undefined,
+		);
+
+		return data;
+	},
+
+	submitDeviationUpdatedForm: async (payload: {
+		workflowId: string;
+		eventProposalId?: string;
+		workspaceId?: string;
+		appId?: string;
+		newBudget?: string | number;
+	}) => {
+		const {
+			data: { data, message },
+		} = await ServerAxios.post(`/soa/stages/trigger-deviation`, payload);
 
 		return { data, message };
 	},

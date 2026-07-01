@@ -1,7 +1,7 @@
 import Select from "react-select";
 import type { Props, GroupBase, StylesConfig } from "react-select";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
-import HelperTooltip from "../common/HelperToolTip";
+import HelperTooltip from "../common/HelperTooltip";
 
 export interface BaseOption {
 	label: string;

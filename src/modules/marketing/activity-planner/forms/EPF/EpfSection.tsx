@@ -1,9 +1,9 @@
-import { Pencil, Plus } from "lucide-react";
+import { GlobeIcon, Pencil, Plus, UsersIcon } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/Section";
-import LineTableView from "../../components/LineTableView";
-import BudgetShare from "../../components/BudgetShare";
+import Section from "../../components/common/Section";
+import LineTableView from "../../components/activityFormView/LineTableView";
+import BudgetShare from "../../components/activityFormView/BudgetShare";
 import EpfForm from "./EpfForm";
 
 import type { EpcDetailResponse } from "../../types/epc.types";
@@ -16,7 +16,8 @@ type EpfSectionProps = {
 	onEdit: () => void;
 	onCancel: () => void;
 	onSuccess: () => Promise<void>;
-	isClarifiedUpdate?: boolean;
+	canEdit?: boolean;
+	canCreate?: boolean;
 };
 
 const EpfSection = ({
@@ -25,7 +26,8 @@ const EpfSection = ({
 	onEdit,
 	onCancel,
 	onSuccess,
-	isClarifiedUpdate,
+	canEdit,
+	canCreate,
 }: EpfSectionProps) => {
 	const epf = epcData.epf;
 	const crf = epcData.crf;
@@ -39,10 +41,8 @@ const EpfSection = ({
 				epfId={epf?.id}
 				initialData={epf}
 				crfData={crf}
-				// budgetMasterId={epcData.budget_master_id}
 				onCancel={onCancel}
 				onSuccess={onSuccess}
-				isClarifiedUpdate={isClarifiedUpdate}
 			/>
 		);
 	}
@@ -52,15 +52,17 @@ const EpfSection = ({
 			<Section
 				title="Activity Proposition Form"
 				action={
-					<Button
-						type="button"
-						text="Create EPF"
-						Icon={Plus}
-						iconColor="red"
-						onClick={onEdit}
-						size="sm"
-						className="epf-section-label text-xs"
-					/>
+					canCreate && (
+						<Button
+							type="button"
+							text="Create EPF"
+							Icon={Plus}
+							iconColor="red"
+							onClick={onEdit}
+							size="sm"
+							className="epf-section-label text-xs"
+						/>
+					)
 				}
 			>
 				<div className="text-xs text-gray-500">
@@ -83,11 +85,12 @@ const EpfSection = ({
 		tataHitachiPoAmount: epf.tataHitachiPoAmount,
 		dealerPercent: epf.dealerPercent,
 	});
+
 	return (
-		<>
-			<Section
-				title="Activity Proposition Form Budget Information"
-				action={
+		<Section
+			title="Activity Proposition Form Budget Information"
+			action={
+				canEdit && (
 					<Button
 						type="button"
 						Icon={Pencil}
@@ -95,47 +98,49 @@ const EpfSection = ({
 						onClick={onEdit}
 						size="sm"
 					/>
-				}
-			>
-				{epf.lineItems?.length > 0 ? (
-					<LineTableView
-						data={mapEpfLineItemsToTableRows(epf.lineItems)}
-						showGrandTotal
-						grandTotalLabel="Event Cost Overheads Grand Total:"
-					/>
-				) : (
-					<div className="text-xs text-gray-500">
-						No event cost overheads added.
-					</div>
-				)}
-				{epf.internalParticipants || epf.externalParticipants ? (
-					<div className="my-2 grid grid-cols-4 gap-6 px-4 py-1.5 text-sm">
-						<p className="uppercase-label-text">
-							Internal:{" "}
-							<span className="text-xs leading-relaxed text-gray-700">
-								{epf.internalParticipants || 0}
-							</span>
-						</p>
+				)
+			}
+		>
+			{epf.lineItems?.length > 0 ? (
+				<LineTableView
+					data={mapEpfLineItemsToTableRows(epf.lineItems)}
+					showGrandTotal
+					grandTotalLabel="Event Cost Overheads Grand Total:"
+				/>
+			) : (
+				<div className="text-xs text-gray-500">
+					No event cost overheads added.
+				</div>
+			)}
 
-						<p className="uppercase-label-text">
-							External:{" "}
-							<span className="text-xs leading-relaxed text-gray-700">
-								{epf.externalParticipants || 0}
-							</span>
-						</p>
+			{epf.internalParticipants || epf.externalParticipants ? (
+				<div className="flex items-center gap-2 my-3">
+					<span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-sm">
+						<UsersIcon className="h-3.5 w-3.5 text-slate-400" />
+						<span className="text-slate-500">Internal</span>
+						<span className="font-medium text-slate-800">
+							{epf.internalParticipants || 0}
+						</span>
+					</span>
+					<span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-sm">
+						<GlobeIcon className="h-3.5 w-3.5 text-slate-400" />
+						<span className="text-slate-500">External</span>
+						<span className="font-medium text-slate-800">
+							{epf.externalParticipants || 0}
+						</span>
+					</span>
+					<div className="w-px h-4 bg-slate-200" />
+					<span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 border border-slate-200 px-3 py-1 text-sm">
+						<span className="text-slate-500">Total</span>
+						<span className="font-medium text-slate-800">
+							{totalParticipants}
+						</span>
+					</span>
+				</div>
+			) : null}
 
-						<p className="uppercase-label-text">
-							Total:{" "}
-							<span className="text-xs leading-relaxed text-gray-700">
-								{totalParticipants}
-							</span>
-						</p>
-					</div>
-				) : null}
-
-				<BudgetShare items={budgetItems} shareInfo={shareInfo} />
-			</Section>
-		</>
+			<BudgetShare items={budgetItems} shareInfo={shareInfo} />
+		</Section>
 	);
 };
 

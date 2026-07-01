@@ -1,9 +1,9 @@
 import { Banknote, HandCoins, ShieldCheck, Users, Wallet } from "lucide-react";
 import Button from "../../../../../components/common/Button";
 import FormInput from "../../../../../components/FormElements/FormInput";
-import ApprovalTable from "../../components/ApprovalTable";
+import ApprovalTable from "../../components/activityFormView/ApprovalTable";
 import type { EpfFormValues } from "../../types/epf.types";
-import FormHeader from "../../components/FormHeader";
+import FormHeader from "../../components/common/FormHeader";
 import type { ApprovalTableRow } from "../../../../../utils/types";
 
 type EpfFormInfoProps = {

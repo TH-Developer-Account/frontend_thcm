@@ -4,7 +4,10 @@ import { Bold, Italic, Code, List } from "lucide-react";
 import type { FormatType } from "../types/workflow.types";
 import type React from "react";
 import type { EpcFilters } from "../types/epc.types";
-import type { Option } from "../../../../components/FormElements/input.types";
+import {
+	createActivityActionOptions,
+	createEntityStatusOptions,
+} from "./statusConfig";
 
 export const ACTIVITY_PLANNER_ROUTES = {
 	list: "/marketing/activity-planner",
@@ -33,14 +36,20 @@ export type EditingSection =
 	| null;
 
 export const status = {
-	RECOMMENDED: "Recommended",
 	PENDING: "Pending",
-	SENT_BACK: "Sent Back",
 	REPORT_SUBMITTED: "Report Submitted",
 	APPROVED: "Approved",
 	SUBMITTED: "Submitted",
 	CANCELLED: "Cancelled",
 	COMPLETED: "Completed",
+	CONDUCTED: "Conducted",
+	NOT_CONDUCTED: "Cancelled",
+	VALIDATED: "Validated",
+	CLARIFIED: "Clarified",
+	IN_PROGRESS: "In Progress",
+	DEVIATION_IN_PROGRESS: "Deviated",
+	CLARIFY_REPORT: "Report Clarified",
+	CLOSED: "Closed",
 } as const;
 
 export type EpcListFilter = "createdByMe" | "pendingOnMe" | "approvedByMe";
@@ -122,17 +131,6 @@ export const FORMAT_CURSOR_OFFSET: Record<FormatType, number> = {
 	bullet: 3,
 };
 
-// Define once, outside the component (or in constants.ts)
-export const EPC_STATUS_OPTIONS: Option[] = [
-	{ label: "Submitted", value: "SUBMITTED" },
-	{ label: "Pending", value: "PENDING" },
-	{ label: "In Progress", value: "IN_PROGRESS" },
-	{ label: "Approved", value: "APPROVED" },
-	{ label: "Rejected", value: "REJECTED" },
-	{ label: "Clarified", value: "CLARIFIED" },
-	{ label: "Cancelled", value: "CANCELLED" },
-];
-
 export const EMPTY_EPC_FILTERS: EpcFilters = {
 	status: [],
 	zone: [],
@@ -141,3 +139,74 @@ export const EMPTY_EPC_FILTERS: EpcFilters = {
 	eventDateTo: "",
 	createdDate: "",
 };
+
+export const eventOutcomeOptions = [
+	{ label: "Select..", value: "" },
+	{ label: "Conducted", value: "CONDUCTED" },
+	{ label: "Not Conducted", value: "CANCELLED" },
+];
+export const eventDeviationOptions = [
+	{ label: "Select..", value: "" },
+	{ label: "Required", value: "REQUIRED" },
+	{ label: "Not Required", value: "NOT_REQUIRED" },
+];
+
+export const EPC_STATUSES = [
+	"PENDING",
+	"SUBMITTED",
+	"IN_PROGRESS",
+	"APPROVED",
+	"REJECTED",
+	"CLARIFY",
+	"CONDUCTED",
+	"CANCELLED",
+	"COMPLETED",
+	"VALIDATED",
+	"REPORT_SUBMITTED",
+	"REPORT_RESUBMITTED",
+	"REPORT_VALIDATED",
+	"REPORT_REJECTED",
+	"REPORT_CLARIFICATION_REQUESTED",
+	"DEVIATION_RAISED",
+	"DEVIATION_IN_PROGRESS",
+	"CLOSED",
+	"NOT_CONDUCTED",
+] as const;
+
+export const REPORT_STATUSES = [
+	"SUBMITTED",
+	"VALIDATED",
+	"REJECTED",
+	"CLARIFICATION_REQUESTED",
+] as const;
+
+export const ACTIVITY_ACTIONS = [
+	"EPC_CREATED",
+	"EPC_UPDATED",
+	"EPF_CREATED",
+	"EPF_UPDATED",
+	"CRF_CREATED",
+	"CRF_UPDATED",
+	"EPC_RESUBMITTED",
+	"EPC_CONDUCTED",
+	"EPC_CANCELLED",
+	"REPORT_SUBMITTED",
+	"REPORT_RESUBMITTED",
+	"REPORT_VALIDATED",
+	"REPORT_REJECTED",
+	"REPORT_CLARIFICATION_REQUESTED",
+	"EPC_CLOSED",
+	"APPROVED",
+	"REJECTED",
+	"CLARIFY",
+	"DEVIATION_RAISED",
+] as const;
+
+export type EpcStatus = (typeof EPC_STATUSES)[number];
+export type ReportStatus = (typeof REPORT_STATUSES)[number];
+export type ActivityAction = (typeof ACTIVITY_ACTIONS)[number];
+
+export const epcStatusOptions = createEntityStatusOptions(EPC_STATUSES);
+export const reportStatusOptions = createEntityStatusOptions(REPORT_STATUSES);
+export const activityActionOptions =
+	createActivityActionOptions(ACTIVITY_ACTIONS);

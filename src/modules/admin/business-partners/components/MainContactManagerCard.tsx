@@ -1,4 +1,3 @@
-import React from "react";
 import { Accordion } from "../../../../components/common/Accordion";
 import { SearchInput } from "../../../../components/FormElements/SearchInput";
 import type { MainContact, User } from "../utils/bp.types";

@@ -7,6 +7,7 @@ import {
 	CalendarDays,
 	LayoutDashboard,
 	Users,
+	Upload,
 } from "lucide-react";
 
 export const marketingSidebar: SidebarItem[] = [
@@ -52,6 +53,17 @@ export const marketingSidebar: SidebarItem[] = [
 				permission: {
 					app: "MAP",
 					module: "Leads",
+					action: "read",
+				},
+			},
+			{
+				id: "file-module",
+				label: "Import/Export Module",
+				link: "/marketing/file-module/listing",
+				icon: <Upload size={18} />,
+				permission: {
+					app: "MAP",
+					module: "file-module",
 					action: "read",
 				},
 			},

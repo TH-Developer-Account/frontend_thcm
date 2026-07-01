@@ -6,6 +6,7 @@ import DataTable from "../../../../../components/ui/DataTable";
 import type { EpcListItem } from "../../types/epc.types";
 
 import { getEPCColumns } from "./columns";
+import { useAuth } from "../../../../../context/Auth/useAuth";
 
 type EPCTableProps = {
 	data: EpcListItem[];
@@ -34,15 +35,16 @@ const EPCTable = ({
 	onPageSizeChange,
 }: EPCTableProps) => {
 	const navigate = useNavigate();
-
+	const { user } = useAuth();
 	const columns = React.useMemo(
 		() =>
 			getEPCColumns({
 				onLeadCreate: () => {
 					navigate("/marketing/leads/create");
 				},
+				currentUserId: user?.id,
 			}),
-		[navigate],
+		[navigate, user?.id],
 	);
 
 	return (

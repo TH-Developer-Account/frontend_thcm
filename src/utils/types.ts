@@ -1,4 +1,3 @@
-import { status } from "../modules/marketing/constant";
 import type { EpcWorkflowApproval } from "../modules/marketing/activity-planner/types/epc.types";
 
 // badge and button types
@@ -9,16 +8,22 @@ export type TableUserStatus =
 	| "active"
 	| "inactive"
 	| "blocked";
+
 export type EPCStatus =
 	| "Approved"
-	| "Checked"
-	| "Recommended"
+	| "Conducted"
 	| "Pending"
 	| "Completed"
 	| "Submitted"
-	| "Sent Back"
+	| "Validated"
 	| "Report Submitted"
-	| "Cancelled";
+	| "Report Clarified"
+	| "Cancelled"
+	| "Clarified"
+	| "In Progress"
+	| "Rejected"
+	| "Deviated"
+	| "Closed";
 
 export const APPROVAL_STATUS = {
 	PENDING: "PENDING",
@@ -31,13 +36,17 @@ export type GeneralStatus = EPCStatus | TableUserStatus | ApprovalStatus;
 
 export const statusMap: Record<string, EPCStatus> = {
 	PENDING: "Pending",
-	RECOMMENDED: "Recommended",
 	SUBMITTED: "Submitted",
-	SENT_BACK: "Sent Back",
 	APPROVED: "Approved",
 	CANCELLED: "Cancelled",
+	CONDUCTED: "Conducted",
 	COMPLETED: "Completed",
 	REPORT_SUBMITTED: "Report Submitted",
+	CLARIFY_REPORT: "Report Clarified",
+	CLARIFY: "Clarified",
+	VALIDATED: "Validated",
+	DEVIATION_IN_PROGRESS: "Deviated",
+	CLOSED: "Closed",
 };
 export interface TableUser {
 	id: number;
@@ -57,29 +66,6 @@ export const statusStyles: Record<TableUserStatus, string> = {
 	Blocked: "bg-red-100 text-red-600",
 	blocked: "bg-red-100 text-red-600",
 };
-// types.ts (or same file)
-type StatusKey = keyof typeof status;
-
-// EPC Listing Table
-export interface EPCRow {
-	id: string;
-	proposal_number: string;
-	event_description: string;
-	created_by: string;
-	status: StatusKey;
-	location: string;
-	event_name: string;
-	first_name: string;
-	last_name: string;
-	is_epc_form?: boolean;
-	is_crf_form: boolean;
-	is_epf_form: boolean;
-	is_lead_form?: boolean;
-	lead_id?: string;
-	epc_id?: string;
-	epf_id?: string;
-	crf_id?: string;
-}
 
 export interface PaginationProps {
 	pageIndex: number; // 0-based

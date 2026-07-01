@@ -1,8 +1,8 @@
 import { Pencil, Plus } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/Section";
-import LineTableView from "../../components/LineTableView";
+import Section from "../../components/common/Section";
+import LineTableView from "../../components/activityFormView/LineTableView";
 import CrfForm from "./CrfForm";
 
 import type { EpcDetailResponse } from "../../types/epc.types";
@@ -14,7 +14,8 @@ type CrfSectionProps = {
 	onEdit: () => void;
 	onCancel: () => void;
 	onSuccess: () => Promise<void>;
-	isClarifiedUpdate?: boolean;
+	canEdit?: boolean;
+	canCreate?: boolean;
 };
 
 const CrfSection = ({
@@ -23,10 +24,12 @@ const CrfSection = ({
 	onEdit,
 	onCancel,
 	onSuccess,
-	isClarifiedUpdate,
+	canEdit,
+	canCreate,
 }: CrfSectionProps) => {
 	const crf = epcData.crf;
 	const hasLineItems = Boolean(crf?.lineItems?.length);
+
 	if (isEditing) {
 		return (
 			<CrfForm
@@ -36,7 +39,6 @@ const CrfSection = ({
 				initialData={crf}
 				onCancel={onCancel}
 				onSuccess={onSuccess}
-				isClarifiedUpdate={isClarifiedUpdate}
 			/>
 		);
 	}
@@ -46,14 +48,16 @@ const CrfSection = ({
 			<Section
 				title="Collateral Requisition Form Line Items"
 				action={
-					<Button
-						type="button"
-						iconPosition="right"
-						Icon={Pencil}
-						iconColor="red"
-						size="sm"
-						onClick={onEdit}
-					/>
+					canEdit && (
+						<Button
+							type="button"
+							iconPosition="right"
+							Icon={Pencil}
+							iconColor="red"
+							size="sm"
+							onClick={onEdit}
+						/>
+					)
 				}
 			>
 				<LineTableView
@@ -69,15 +73,17 @@ const CrfSection = ({
 		<Section
 			title="Collateral Requisition Form"
 			action={
-				<Button
-					type="button"
-					text="Create CRF"
-					Icon={Plus}
-					iconColor="red"
-					size="sm"
-					className="epf-section-label text-xs"
-					onClick={onEdit}
-				/>
+				canCreate && (
+					<Button
+						type="button"
+						text="Create CRF"
+						Icon={Plus}
+						iconColor="red"
+						size="sm"
+						className="epf-section-label text-xs"
+						onClick={onEdit}
+					/>
+				)
 			}
 		>
 			<div className="text-sm text-gray-500">

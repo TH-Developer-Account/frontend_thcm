@@ -4,6 +4,7 @@ import type {
 	CreateLeadsPayload,
 	LeadRow,
 	UpdateLeadPayload,
+	leadsImportPayload,
 } from "../types/leads.types";
 
 export const leadsApi = {
@@ -12,6 +13,9 @@ export const leadsApi = {
 		return mapLeadResponseToRows(unwrapLeadList(response));
 	},
 
+	createMany: async (payload: CreateLeadsPayload) => {
+		return ServerAxios.post("/leads/create-leads", payload);
+	},
 	getByEpcId: async (epcId: string): Promise<LeadRow[]> => {
 		if (!epcId) return [];
 
@@ -28,15 +32,19 @@ export const leadsApi = {
 		}
 	},
 
-	createMany: async (payload: CreateLeadsPayload) => {
-		return ServerAxios.post("/leads/create-leads", payload);
-	},
-
 	updateOne: async (leadId: string, payload: UpdateLeadPayload) => {
 		return ServerAxios.put(`/leads/${leadId}`, payload);
 	},
 
 	deleteOne: async (leadId: string) => {
 		return ServerAxios.delete(`/leads/${leadId}`);
+	},
+
+	importLeads: async (payload: leadsImportPayload) => {
+		return ServerAxios.post(`/import/leads`, payload, {
+			headers: {
+				"Content-Type": "multipart/form-data",
+			},
+		});
 	},
 };
