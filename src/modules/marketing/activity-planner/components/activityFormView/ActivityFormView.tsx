@@ -19,11 +19,11 @@ import type { EventReportDetail } from "../../types/event.report.types";
 import { useToast } from "../../../../../context/Auth/AuthContext";
 import { workflowApi } from "../../api/workflow.api";
 import {
-	getApprovalIdForUser,
-	getApprovedStageCcEmails,
-	getMentionableUsersFromStages,
-	getCurrentApprovalStage,
-	getIsUserInCurrentStage,
+  getApprovalIdForUser,
+  getApprovedStageCcEmails,
+  getMentionableUsersFromStages,
+  getCurrentApprovalStage,
+  getIsUserInCurrentStage,
 } from "../../helpers/approvalWorkflow.helpers";
 import ResubmitFooterAction from "./ResubmitFooterAction";
 import { ReasonActionModal } from "../common/ReasonActionModal";
@@ -31,437 +31,439 @@ import type { ActivityPermissions } from "../../helpers/activityPermissions.help
 
 type EditingSection = "epc" | "crf" | "epf" | null;
 type ReasonModalState = {
-	mode: "clarify-workflow" | "clarify-report" | null;
-	loading: boolean;
+  mode: "clarify-workflow" | "clarify-report" | null;
+  loading: boolean;
 };
 
 type ActivityFormViewProps = {
-	epcData?: EpcDetailResponse | null;
-	report?: EventReportDetail | null;
-	permissions: ActivityPermissions;
+  epcData?: EpcDetailResponse | null;
+  report?: EventReportDetail | null;
+  permissions: ActivityPermissions;
 
-	loading?: boolean;
-	hasValidatorPreviewed?: boolean;
-	isValidatingReport?: boolean;
-	isClarifyingReport?: boolean;
+  loading?: boolean;
+  hasValidatorPreviewed?: boolean;
+  isValidatingReport?: boolean;
+  isClarifyingReport?: boolean;
 
-	onOpenReportPreview: () => void;
-	onValidateReport: () => void;
-	onClarifyReport?: (reason: string) => void | Promise<void>;
-	onEPCClose?: () => void | Promise<void>;
-	isEPCClose?: boolean;
+  onOpenReportPreview: () => void;
+  onValidateReport: () => void;
+  onClarifyReport?: (reason: string) => void | Promise<void>;
+  onEPCClose?: () => void | Promise<void>;
+  isEPCClose?: boolean;
 
-	editingSection: EditingSection;
-	setEditingSection: React.Dispatch<React.SetStateAction<EditingSection>>;
-	onRefresh: () => Promise<void>;
-	onOpenReportBuilder: () => void;
+  editingSection: EditingSection;
+  setEditingSection: React.Dispatch<React.SetStateAction<EditingSection>>;
+  onRefresh: () => Promise<void>;
+  onOpenReportBuilder: () => void;
 
-	isSubmittingClarifiedUpdate?: boolean;
-	onSubmitClarifiedUpdate?: () => void | Promise<void>;
+  isSubmittingClarifiedUpdate?: boolean;
+  onSubmitClarifiedUpdate?: () => void | Promise<void>;
 
-	isSubmittingDeviationUpdate?: boolean;
-	onSubmitDeviationUpdate?: () => void | Promise<void>;
+  isSubmittingDeviationUpdate?: boolean;
+  onSubmitDeviationUpdate?: () => void | Promise<void>;
 };
 
 const ActivityFormView = ({
-	epcData,
-	report,
-	permissions,
-	editingSection,
-	setEditingSection,
-	onRefresh,
-	hasValidatorPreviewed,
-	isValidatingReport,
-	isClarifyingReport,
-	onClarifyReport,
-	onOpenReportBuilder,
-	onOpenReportPreview,
-	onValidateReport,
-	isSubmittingClarifiedUpdate = false,
-	onSubmitClarifiedUpdate,
-	isSubmittingDeviationUpdate = false,
-	onSubmitDeviationUpdate,
-	onEPCClose,
-	isEPCClose = false,
+  epcData,
+  report,
+  permissions,
+  editingSection,
+  setEditingSection,
+  onRefresh,
+  hasValidatorPreviewed,
+  isValidatingReport,
+  isClarifyingReport,
+  onClarifyReport,
+  onOpenReportBuilder,
+  onOpenReportPreview,
+  onValidateReport,
+  isSubmittingClarifiedUpdate = false,
+  onSubmitClarifiedUpdate,
+  isSubmittingDeviationUpdate = false,
+  onSubmitDeviationUpdate,
+  onEPCClose,
+  isEPCClose = false,
 }: ActivityFormViewProps) => {
-	const navigate = useNavigate();
-	const { workspaceId, user } = useAuth();
-	const { showToast } = useToast();
-	const appId = React.useMemo(() => getStoredAppId(), []);
+  const navigate = useNavigate();
+  const { workspaceId, user } = useAuth();
+  const { showToast } = useToast();
+  const appId = React.useMemo(() => getStoredAppId(), []);
 
-	const [deviationPreviewStages, setDeviationPreviewStages] = React.useState<
-		WorkflowStage[]
-	>([]);
+  const [deviationPreviewStages, setDeviationPreviewStages] = React.useState<
+    WorkflowStage[]
+  >([]);
 
-	const [commentsRefreshKey, setCommentsRefreshKey] = React.useState(0);
+  const [commentsRefreshKey, setCommentsRefreshKey] = React.useState(0);
 
-	const [reasonModal, setReasonModal] = React.useState<ReasonModalState>({
-		mode: null,
-		loading: false,
-	});
+  const [reasonModal, setReasonModal] = React.useState<ReasonModalState>({
+    mode: null,
+    loading: false,
+  });
 
-	const openReasonModal = React.useCallback(
-		(mode: ReasonModalState["mode"]) => {
-			setReasonModal({
-				mode,
-				loading: false,
-			});
-		},
-		[],
-	);
+  const openReasonModal = React.useCallback(
+    (mode: ReasonModalState["mode"]) => {
+      setReasonModal({
+        mode,
+        loading: false,
+      });
+    },
+    [],
+  );
 
-	const closeReasonModal = React.useCallback(() => {
-		setReasonModal({
-			mode: null,
-			loading: false,
-		});
-	}, []);
-	const refreshComments = React.useCallback(() => {
-		setCommentsRefreshKey((prev) => prev + 1);
-	}, []);
+  const closeReasonModal = React.useCallback(() => {
+    setReasonModal({
+      mode: null,
+      loading: false,
+    });
+  }, []);
+  const refreshComments = React.useCallback(() => {
+    setCommentsRefreshKey((prev) => prev + 1);
+  }, []);
 
-	const handleSuccess = React.useCallback(async () => {
-		await onRefresh();
-	}, [onRefresh]);
+  const handleSuccess = React.useCallback(async () => {
+    await onRefresh();
+  }, [onRefresh]);
 
-	const handleWorkflowUpdate = React.useCallback(async () => {
-		await onRefresh();
-		refreshComments();
-	}, [onRefresh, refreshComments]);
+  const handleWorkflowUpdate = React.useCallback(async () => {
+    await onRefresh();
+    refreshComments();
+  }, [onRefresh, refreshComments]);
 
-	const activeWorkflow = epcData?.activeWorkflow ?? null;
+  const activeWorkflow = epcData?.activeWorkflow ?? null;
 
-	const workflowStages = React.useMemo(
-		() => activeWorkflow?.stages ?? [],
-		[activeWorkflow?.stages],
-	);
+  console.log({ epcData, activeWorkflow });
 
-	const eventStatus = epcData?.status ?? "unknown";
-	const userId = user?.id as string | undefined;
-	const currentStage = React.useMemo(
-		() => getCurrentApprovalStage(workflowStages),
-		[workflowStages],
-	);
+  const workflowStages = React.useMemo(
+    () => activeWorkflow?.stages ?? [],
+    [activeWorkflow?.stages],
+  );
 
-	const isUserInCurrentStage = React.useMemo(
-		() => getIsUserInCurrentStage(workflowStages, userId),
-		[workflowStages, userId],
-	);
+  const eventStatus = epcData?.status ?? "unknown";
+  const userId = user?.id as string | undefined;
+  const currentStage = React.useMemo(
+    () => getCurrentApprovalStage(workflowStages),
+    [workflowStages],
+  );
 
-	const canActOnCurrentStage = Boolean(currentStage && isUserInCurrentStage);
+  const isUserInCurrentStage = React.useMemo(
+    () => getIsUserInCurrentStage(workflowStages, userId),
+    [workflowStages, userId],
+  );
 
-	const approvalId = React.useMemo(
-		() => getApprovalIdForUser(workflowStages, userId),
-		[workflowStages, userId],
-	);
+  const canActOnCurrentStage = Boolean(currentStage && isUserInCurrentStage);
 
-	const mentionableUsers = React.useMemo(
-		() => getMentionableUsersFromStages(workflowStages, epcData?.created_by),
-		[workflowStages, epcData?.created_by],
-	);
-	const ccEmails = React.useMemo(
-		() => getApprovedStageCcEmails(workflowStages),
-		[workflowStages],
-	);
+  const approvalId = React.useMemo(
+    () => getApprovalIdForUser(workflowStages, userId),
+    [workflowStages, userId],
+  );
 
-	const reasonMode = reasonModal.mode;
-	const currentStageId = currentStage?.id ?? "";
-	const reportId = report?.id ?? "";
+  const mentionableUsers = React.useMemo(
+    () => getMentionableUsersFromStages(workflowStages, epcData?.created_by),
+    [workflowStages, epcData?.created_by],
+  );
+  const ccEmails = React.useMemo(
+    () => getApprovedStageCcEmails(workflowStages),
+    [workflowStages],
+  );
 
-	const handleApprove = React.useCallback(async () => {
-		if (!currentStage?.id) return;
+  const reasonMode = reasonModal.mode;
+  const currentStageId = currentStage?.id ?? "";
+  const reportId = report?.id ?? "";
 
-		try {
-			const { message } = await workflowApi.approveStage(currentStage.id);
+  const handleApprove = React.useCallback(async () => {
+    if (!currentStage?.id) return;
 
-			showToast({
-				type: "success",
-				title: "Success",
-				description: message,
-			});
+    try {
+      const { message } = await workflowApi.approveStage(currentStage.id);
 
-			await handleWorkflowUpdate();
-		} catch (err) {
-			showToast({
-				type: "error",
-				title: "Error",
-				description:
-					err instanceof Error ? err.message : "Error while approving",
-			});
-		}
-	}, [currentStage, handleWorkflowUpdate, showToast]);
+      showToast({
+        type: "success",
+        title: "Success",
+        description: message,
+      });
 
-	const handleReasonConfirm = React.useCallback(
-		async (reason: string) => {
-			if (!reasonMode) return;
+      await handleWorkflowUpdate();
+    } catch (err) {
+      showToast({
+        type: "error",
+        title: "Error",
+        description:
+          err instanceof Error ? err.message : "Error while approving",
+      });
+    }
+  }, [currentStage, handleWorkflowUpdate, showToast]);
 
-			try {
-				setReasonModal((prev) => ({
-					...prev,
-					loading: true,
-				}));
+  const handleReasonConfirm = React.useCallback(
+    async (reason: string) => {
+      if (!reasonMode) return;
 
-				if (reasonMode === "clarify-workflow") {
-					if (!currentStageId) {
-						showToast({
-							type: "error",
-							title: "Not allowed",
-							description: "No active approval stage found.",
-						});
-						return;
-					}
+      try {
+        setReasonModal((prev) => ({
+          ...prev,
+          loading: true,
+        }));
 
-					const { message } = await workflowApi.clarifyStage(
-						currentStageId,
-						reason,
-					);
+        if (reasonMode === "clarify-workflow") {
+          if (!currentStageId) {
+            showToast({
+              type: "error",
+              title: "Not allowed",
+              description: "No active approval stage found.",
+            });
+            return;
+          }
 
-					showToast({
-						type: "success",
-						title: "Success",
-						description: message,
-					});
+          const { message } = await workflowApi.clarifyStage(
+            currentStageId,
+            reason,
+          );
 
-					await handleWorkflowUpdate();
-				}
+          showToast({
+            type: "success",
+            title: "Success",
+            description: message,
+          });
 
-				if (reasonMode === "clarify-report") {
-					if (!reportId) {
-						showToast({
-							type: "error",
-							title: "Not allowed",
-							description: "No submitted report found.",
-						});
-						return;
-					}
+          await handleWorkflowUpdate();
+        }
 
-					await onClarifyReport?.(reason);
+        if (reasonMode === "clarify-report") {
+          if (!reportId) {
+            showToast({
+              type: "error",
+              title: "Not allowed",
+              description: "No submitted report found.",
+            });
+            return;
+          }
 
-					showToast({
-						type: "success",
-						title: "Success",
-						description: "Report sent back to proposer for correction.",
-					});
+          await onClarifyReport?.(reason);
 
-					await handleWorkflowUpdate();
-				}
+          showToast({
+            type: "success",
+            title: "Success",
+            description: "Report sent back to proposer for correction.",
+          });
 
-				closeReasonModal();
-			} catch (err) {
-				showToast({
-					type: "error",
-					title: "Error",
-					description:
-						err instanceof Error
-							? err.message
-							: "Unable to complete this action.",
-				});
-			} finally {
-				setReasonModal((prev) => ({
-					...prev,
-					loading: false,
-				}));
-			}
-		},
-		[
-			reasonMode,
-			currentStageId,
-			reportId,
-			onClarifyReport,
-			showToast,
-			handleWorkflowUpdate,
-			closeReasonModal,
-		],
-	);
+          await handleWorkflowUpdate();
+        }
 
-	if (!epcData) {
-		return (
-			<div className="px-6 py-4">
-				<EpcForm
-					mode="create"
-					onSuccess={async (savedEpc) => {
-						const createdEpcId =
-							savedEpc?.id ??
-							savedEpc?.eventProposal?.id ??
-							savedEpc?.epcId ??
-							savedEpc?.epc?.id;
+        closeReasonModal();
+      } catch (err) {
+        showToast({
+          type: "error",
+          title: "Error",
+          description:
+            err instanceof Error
+              ? err.message
+              : "Unable to complete this action.",
+        });
+      } finally {
+        setReasonModal((prev) => ({
+          ...prev,
+          loading: false,
+        }));
+      }
+    },
+    [
+      reasonMode,
+      currentStageId,
+      reportId,
+      onClarifyReport,
+      showToast,
+      handleWorkflowUpdate,
+      closeReasonModal,
+    ],
+  );
 
-						if (!createdEpcId) {
-							console.error("Created EPC id not found", savedEpc);
-							return;
-						}
+  if (!epcData) {
+    return (
+      <div className="px-6 py-4">
+        <EpcForm
+          mode="create"
+          onSuccess={async (savedEpc) => {
+            const createdEpcId =
+              savedEpc?.id ??
+              savedEpc?.eventProposal?.id ??
+              savedEpc?.epcId ??
+              savedEpc?.epc?.id;
 
-						navigate(`/marketing/activity-planner/${createdEpcId}`);
-					}}
-				/>
-			</div>
-		);
-	}
+            if (!createdEpcId) {
+              console.error("Created EPC id not found", savedEpc);
+              return;
+            }
 
-	return (
-		<>
-			<div className="px-6 py-4">
-				<div className="form my-3 text-left text-sm">
-					<ActivityDetailsSection
-						epcData={epcData}
-						isEditing={editingSection === "epc"}
-						canEdit={permissions.canEditEpc}
-						onEdit={() => setEditingSection("epc")}
-						onCancel={() => setEditingSection(null)}
-						onSuccess={async () => {
-							setEditingSection(null);
-							await onRefresh();
-						}}
-					/>
+            navigate(`/marketing/activity-planner/${createdEpcId}`);
+          }}
+        />
+      </div>
+    );
+  }
 
-					<CrfSection
-						epcData={epcData}
-						isEditing={editingSection === "crf"}
-						canEdit={permissions.canEditCrf}
-						canCreate={permissions.canCreateCrf}
-						onEdit={() => setEditingSection("crf")}
-						onCancel={() => setEditingSection(null)}
-						onSuccess={async () => {
-							setEditingSection(null);
-							await onRefresh();
-						}}
-					/>
+  return (
+    <>
+      <div className="px-6 py-4">
+        <div className="form my-3 text-left text-sm">
+          <ActivityDetailsSection
+            epcData={epcData}
+            isEditing={editingSection === "epc"}
+            canEdit={permissions.canEditEpc}
+            onEdit={() => setEditingSection("epc")}
+            onCancel={() => setEditingSection(null)}
+            onSuccess={async () => {
+              setEditingSection(null);
+              await onRefresh();
+            }}
+          />
 
-					<EpfSection
-						epcData={epcData}
-						isEditing={editingSection === "epf"}
-						canEdit={permissions.canEditEpf}
-						canCreate={permissions.canCreateEpf}
-						onEdit={() => setEditingSection("epf")}
-						onCancel={() => setEditingSection(null)}
-						onSuccess={async () => {
-							setEditingSection(null);
-							await onRefresh();
-						}}
-					/>
+          <CrfSection
+            epcData={epcData}
+            isEditing={editingSection === "crf"}
+            canEdit={permissions.canEditCrf}
+            canCreate={permissions.canCreateCrf}
+            onEdit={() => setEditingSection("crf")}
+            onCancel={() => setEditingSection(null)}
+            onSuccess={async () => {
+              setEditingSection(null);
+              await onRefresh();
+            }}
+          />
 
-					{epcData.epf && editingSection !== "epf" && (
-						<>
-							<ApprovalWorkflowSection
-								stages={workflowStages}
-								deviationPreviewStages={deviationPreviewStages}
-								onWorkflowUpdate={handleWorkflowUpdate}
-							/>
+          <EpfSection
+            epcData={epcData}
+            isEditing={editingSection === "epf"}
+            canEdit={permissions.canEditEpf}
+            canCreate={permissions.canCreateEpf}
+            onEdit={() => setEditingSection("epf")}
+            onCancel={() => setEditingSection(null)}
+            onSuccess={async () => {
+              setEditingSection(null);
+              await onRefresh();
+            }}
+          />
 
-							<CommentsSection
-								epcId={epcData.id}
-								currentUserId={user?.id}
-								approvalId={approvalId}
-								isProposer={permissions.isProposer}
-								mentionableUsers={mentionableUsers}
-								ccEmails={ccEmails}
-								refreshKey={commentsRefreshKey}
-								canComment={permissions.isClosed}
-							/>
-						</>
-					)}
+          {epcData.epf && editingSection !== "epf" && (
+            <>
+              <ApprovalWorkflowSection
+                stages={workflowStages}
+                deviationPreviewStages={deviationPreviewStages}
+                onWorkflowUpdate={handleWorkflowUpdate}
+              />
 
-					{permissions.canShowInitialEventOutcome && (
-						<EventOutcome eventStatus={eventStatus} epcID={epcData.id} />
-					)}
+              <CommentsSection
+                epcId={epcData.id}
+                currentUserId={user?.id}
+                approvalId={approvalId}
+                isProposer={permissions.isProposer}
+                mentionableUsers={mentionableUsers}
+                ccEmails={ccEmails}
+                refreshKey={commentsRefreshKey}
+                canComment={permissions.isClosed}
+              />
+            </>
+          )}
 
-					{permissions.canShowReportSection && (
-						<EventReportSection
-							report={report ?? null}
-							isProposer={permissions.isProposer}
-							isValidator={permissions.isValidator}
-							canCreateReport={permissions.canCreateReport}
-							hasValidatorPreviewed={hasValidatorPreviewed}
-							isValidating={Boolean(isValidatingReport)}
-							isClarifying={Boolean(isClarifyingReport)}
-							onOpenReportBuilder={onOpenReportBuilder}
-							onOpenReportPreview={onOpenReportPreview}
-							onValidateReport={onValidateReport}
-							onClarifyReport={() => openReasonModal("clarify-report")}
-						/>
-					)}
+          {permissions.canShowInitialEventOutcome && (
+            <EventOutcome eventStatus={eventStatus} epcID={epcData.id} />
+          )}
 
-					{permissions.canShowPostReportEventOutcome && (
-						<EventOutcome
-							eventStatus={eventStatus}
-							epcID={epcData.id}
-							workspaceId={workspaceId ?? undefined}
-							appId={appId ?? undefined}
-							onSuccess={handleSuccess}
-							onDeviationPreviewSuccess={setDeviationPreviewStages}
-						/>
-					)}
-				</div>
-			</div>
+          {permissions.canShowReportSection && (
+            <EventReportSection
+              report={report ?? null}
+              isProposer={permissions.isProposer}
+              isValidator={permissions.isValidator}
+              canCreateReport={permissions.canCreateReport}
+              hasValidatorPreviewed={hasValidatorPreviewed}
+              isValidating={Boolean(isValidatingReport)}
+              isClarifying={Boolean(isClarifyingReport)}
+              onOpenReportBuilder={onOpenReportBuilder}
+              onOpenReportPreview={onOpenReportPreview}
+              onValidateReport={onValidateReport}
+              onClarifyReport={() => openReasonModal("clarify-report")}
+            />
+          )}
 
-			<div className="sticky bottom-0 z-10 flex items-center justify-end gap-3 overflow-visible border-t border-gray-200 bg-white px-4 py-4">
-				{canActOnCurrentStage && (
-					<div className="flex gap-2">
-						<Button
-							type="button"
-							text="Send for Clarification"
-							status="outline"
-							disabled={!canActOnCurrentStage}
-							onClick={() => openReasonModal("clarify-workflow")}
-						/>
+          {permissions.canShowPostReportEventOutcome && (
+            <EventOutcome
+              eventStatus={eventStatus}
+              epcID={epcData.id}
+              workspaceId={workspaceId ?? undefined}
+              appId={appId ?? undefined}
+              onSuccess={handleSuccess}
+              onDeviationPreviewSuccess={setDeviationPreviewStages}
+            />
+          )}
+        </div>
+      </div>
 
-						<Button
-							type="button"
-							text="Approve"
-							status="brand"
-							disabled={!canActOnCurrentStage}
-							onClick={handleApprove}
-						/>
-					</div>
-				)}
-				{permissions.canShowCloseEpcAction && (
-					<Button
-						type="button"
-						text={
-							isEPCClose
-								? "Closing..."
-								: permissions.isClosed
-									? "EPC Closed"
-									: "Close EPC"
-						}
-						status="outline"
-						disabled={isEPCClose || permissions.isClosed}
-						onClick={() => {
-							if (permissions.isClosed || isEPCClose) return;
-							onEPCClose?.();
-						}}
-					/>
-				)}
-			</div>
+      <div className="sticky bottom-0 z-10 flex items-center justify-end gap-3 overflow-visible border-t border-gray-200 bg-white px-4 py-4">
+        {canActOnCurrentStage && (
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              text="Send for Clarification"
+              status="outline"
+              disabled={!canActOnCurrentStage}
+              onClick={() => openReasonModal("clarify-workflow")}
+            />
 
-			{permissions.isClarifiedPending && (
-				<ResubmitFooterAction
-					isPending={permissions.isClarifiedPending}
-					isSubmitting={isSubmittingClarifiedUpdate}
-					canSubmit={permissions.canSubmitClarifiedUpdate}
-					onSubmit={onSubmitClarifiedUpdate}
-					tooltip="Submit clarified changes"
-				/>
-			)}
+            <Button
+              type="button"
+              text="Approve"
+              status="brand"
+              disabled={!canActOnCurrentStage}
+              onClick={handleApprove}
+            />
+          </div>
+        )}
+        {permissions.canShowCloseEpcAction && (
+          <Button
+            type="button"
+            text={
+              isEPCClose
+                ? "Closing..."
+                : permissions.isClosed
+                  ? "EPC Closed"
+                  : "Close EPC"
+            }
+            status="outline"
+            disabled={isEPCClose || permissions.isClosed}
+            onClick={() => {
+              if (permissions.isClosed || isEPCClose) return;
+              onEPCClose?.();
+            }}
+          />
+        )}
+      </div>
 
-			{permissions.isDeviationPending && (
-				<ResubmitFooterAction
-					isPending={permissions.isDeviationPending}
-					isSubmitting={isSubmittingDeviationUpdate}
-					canSubmit={permissions.canSubmitDeviationUpdate}
-					onSubmit={onSubmitDeviationUpdate}
-					tooltip="Submit deviation changes"
-				/>
-			)}
-			<ReasonActionModal
-				open={Boolean(reasonModal.mode)}
-				mode={reasonModal.mode}
-				loading={reasonModal.loading || Boolean(isClarifyingReport)}
-				onClose={closeReasonModal}
-				onConfirm={handleReasonConfirm}
-			/>
-		</>
-	);
+      {permissions.isClarifiedPending && (
+        <ResubmitFooterAction
+          isPending={permissions.isClarifiedPending}
+          isSubmitting={isSubmittingClarifiedUpdate}
+          canSubmit={permissions.canSubmitClarifiedUpdate}
+          onSubmit={onSubmitClarifiedUpdate}
+          tooltip="Submit clarified changes"
+        />
+      )}
+
+      {permissions.isDeviationPending && (
+        <ResubmitFooterAction
+          isPending={permissions.isDeviationPending}
+          isSubmitting={isSubmittingDeviationUpdate}
+          canSubmit={permissions.canSubmitDeviationUpdate}
+          onSubmit={onSubmitDeviationUpdate}
+          tooltip="Submit deviation changes"
+        />
+      )}
+      <ReasonActionModal
+        open={Boolean(reasonModal.mode)}
+        mode={reasonModal.mode}
+        loading={reasonModal.loading || Boolean(isClarifyingReport)}
+        onClose={closeReasonModal}
+        onConfirm={handleReasonConfirm}
+      />
+    </>
+  );
 };
 
 export default ActivityFormView;
