@@ -84,6 +84,10 @@ const ActivityPlannerPage = () => {
 							ariaLabel: "Activity planner location",
 							breadcrumbs: [
 								{
+									label: "Home Screen",
+									href: "/",
+								},
+								{
 									label: "EPC Listing",
 									href: "/marketing/listing",
 								},

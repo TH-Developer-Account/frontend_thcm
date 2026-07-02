@@ -24,13 +24,21 @@ const getFilterValue = (value: string | null): EpcListFilter => {
 		return value as EpcListFilter;
 	return DEFAULT_EPC_FILTER;
 };
+const DEFAULT_PAGE_SIZE = 5;
+const VALID_PAGE_SIZES = [5, 10, 15, 25, 50, 100];
+
+const getPageSize = (value: string | null): number => {
+	const parsed = Number(value);
+
+	return VALID_PAGE_SIZES.includes(parsed) ? parsed : DEFAULT_PAGE_SIZE;
+};
 
 export const useEpcListingPage = () => {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const [sorting, setSorting] = useState<SortingState>([]);
 
 	const page = toNumber(searchParams.get("page"), 1);
-	const limit = toNumber(searchParams.get("limit"), 10);
+	const limit = getPageSize(searchParams.get("limit"));
 	const urlSearch = searchParams.get("search") || "";
 	const selectedFilter = getFilterValue(searchParams.get("filter"));
 

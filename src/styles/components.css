@@ -783,20 +783,12 @@
 		flex-direction: column;
 		overflow: hidden;
 
-		border: var(--border-width-default) solid var(--card-border);
+		border: var(--border-width-default) solid var(--color-border-default);
 		border-radius: var(--card-radius);
 
-		background-color: var(--card-bg);
-		color: var(--card-text);
-		box-shadow: var(--card-shadow);
-
-		font-family: var(--font-sans);
-
-		transition:
-			background-color var(--duration-fast) var(--ease-standard),
-			border-color var(--duration-fast) var(--ease-standard),
-			box-shadow var(--duration-fast) var(--ease-standard),
-			opacity var(--duration-fast) var(--ease-standard);
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-primary);
+		box-shadow: var(--shadow-xs);
 	}
 
 	/* =====================================================
@@ -804,48 +796,57 @@
 	===================================================== */
 
 	.ui-card-default {
-		background-color: var(--card-bg);
-		border-color: var(--card-border);
-		box-shadow: var(--card-shadow);
+		border-color: var(--color-border-default);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs);
 	}
 
 	.ui-card-subtle {
-		background-color: var(--card-bg-subtle);
-		border-color: var(--card-border-subtle);
+		border-color: var(--color-border-subtle);
+		background-color: var(--color-bg-surface-subtle);
 		box-shadow: none;
 	}
 
 	.ui-card-outlined {
-		background-color: var(--card-bg);
-		border-color: var(--card-border);
+		border-color: var(--color-border-default);
+		background-color: transparent;
 		box-shadow: none;
 	}
 
 	.ui-card-flat {
 		border-color: transparent;
-		border-radius: var(--radius-none);
-		background-color: transparent;
+		background-color: var(--color-bg-surface);
 		box-shadow: none;
 	}
 
 	/* =====================================================
-	   HEADER
+	   SHARED SECTIONS
+	===================================================== */
+
+	.ui-card-header,
+	.ui-card-secondary-header,
+	.ui-card-body,
+	.ui-card-footer {
+		width: 100%;
+		min-width: 0;
+	}
+
+	/* =====================================================
+	   PRIMARY HEADER
 	===================================================== */
 
 	.ui-card-header {
 		display: flex;
-		width: 100%;
-		min-width: 0;
-		flex: 0 0 auto;
-		align-items: flex-start;
+		min-height: var(--control-height-lg);
+		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-4);
 
-		padding: var(--space-3) var(--space-4);
+		padding: var(--space-3) var(--space-5);
+		padding-bottom: 0;
+		border-bottom: var(--border-width-default) solid var(--color-border-subtle);
 
-		border-bottom: var(--border-width-default) solid var(--card-border-subtle);
-
-		background-color: var(--card-header-bg);
+		background-color: var(--color-bg-surface);
 	}
 
 	.ui-card-header-copy {
@@ -860,10 +861,10 @@
 		min-width: 0;
 		margin: 0;
 
-		color: var(--card-text);
+		color: var(--color-text-primary);
 
 		font-family: var(--font-sans);
-		font-size: var(--font-size-sm);
+		font-size: var(--font-size-base);
 		font-weight: var(--font-weight-medium);
 		line-height: var(--line-height-tight);
 		letter-spacing: var(--tracking-title);
@@ -874,8 +875,9 @@
 	.ui-card-subtitle {
 		min-width: 0;
 
-		color: var(--card-subtitle-text);
+		color: var(--color-text-secondary);
 
+		font-family: var(--font-sans);
 		font-size: var(--font-size-xs);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-normal);
@@ -884,13 +886,41 @@
 	}
 
 	.ui-card-actions {
-		display: flex;
+		display: inline-flex;
 		min-width: 0;
 		flex: 0 0 auto;
-		flex-wrap: wrap;
 		align-items: center;
 		justify-content: flex-end;
 		gap: var(--space-2);
+	}
+
+	/* =====================================================
+	   SECONDARY HEADER
+
+	   Intended for:
+	   - tabs
+	   - filters
+	   - toolbars
+	   - contextual metadata
+	   - secondary navigation
+	===================================================== */
+
+	.ui-card-secondary-header {
+		display: flex;
+		min-height: var(--control-height-md);
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+
+		padding: var(--space-3) var(--space-5);
+
+		border-bottom: var(--border-width-default) solid var(--color-border-subtle);
+
+		background-color: var(--color-bg-surface);
+	}
+
+	.ui-card-secondary-header > * {
+		min-width: 0;
 	}
 
 	/* =====================================================
@@ -898,8 +928,13 @@
 	===================================================== */
 
 	.ui-card-body {
-		min-width: 0;
+		position: relative;
+
+		display: block;
+		min-height: 0;
 		flex: 1 1 auto;
+
+		background-color: var(--color-bg-surface);
 	}
 
 	.ui-card-body-none {
@@ -907,15 +942,20 @@
 	}
 
 	.ui-card-body-compact {
-		padding: var(--space-3);
+		padding: var(--space-2);
 	}
 
 	.ui-card-body-default {
-		padding: var(--space-4);
+		padding: var(--space-3) var(--space-5);
 	}
 
 	.ui-card-body-spacious {
 		padding: var(--space-5);
+	}
+
+	.ui-card-body > * {
+		min-width: 0;
+		max-width: 100%;
 	}
 
 	/* =====================================================
@@ -924,19 +964,37 @@
 
 	.ui-card-footer {
 		display: flex;
-		width: 100%;
-		min-width: 0;
-		flex: 0 0 auto;
-		flex-wrap: wrap;
+		min-height: var(--control-height-md);
 		align-items: center;
 		justify-content: flex-end;
 		gap: var(--space-2);
 
-		padding: var(--space-3) var(--space-4);
+		padding: var(--space-2) var(--space-4);
 
-		border-top: var(--border-width-default) solid var(--card-border-subtle);
+		border-top: var(--border-width-default) solid var(--color-border-subtle);
 
-		background-color: var(--card-footer-bg);
+		background-color: var(--color-bg-surface-subtle);
+	}
+
+	/* =====================================================
+	   LISTING LAYOUT
+	===================================================== */
+
+	.ui-card-layout-listing .ui-card-header {
+		padding-block: var(--space-2);
+	}
+
+	.ui-card-layout-listing .ui-card-secondary-header {
+		padding-block: var(--space-2);
+	}
+
+	.ui-card-layout-listing .ui-card-body-default,
+	.ui-card-layout-listing .ui-card-body-compact {
+		padding: 0;
+	}
+
+	.ui-card-layout-listing .ui-card-footer {
+		padding-block: var(--space-2);
 	}
 
 	/* =====================================================
@@ -944,19 +1002,17 @@
 	===================================================== */
 
 	.ui-card-disabled {
-		background-color: var(--card-disabled-bg);
-		color: var(--card-disabled-text);
-		opacity: 0.72;
+		opacity: var(--opacity-disabled);
 		pointer-events: none;
 	}
 
 	.ui-card-loading {
-		min-height: var(--control-height-lg);
+		cursor: progress;
 	}
 
 	.ui-card-loading-state {
 		display: flex;
-		min-height: var(--control-height-lg);
+		min-height: 6rem;
 		align-items: center;
 		justify-content: center;
 		gap: var(--space-2);
@@ -964,7 +1020,6 @@
 		color: var(--color-text-muted);
 
 		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-normal);
 	}
 
@@ -973,52 +1028,93 @@
 		height: var(--space-4);
 		flex: 0 0 auto;
 
-		border: var(--border-width-strong) solid var(--card-loading-track);
-		border-top-color: var(--card-loading-indicator);
+		border: var(--border-width-thick) solid var(--color-border-default);
+		border-top-color: var(--color-brand);
 		border-radius: var(--radius-full);
 
-		animation: ui-card-spin 700ms linear infinite;
+		animation: ui-card-loading-spin var(--duration-slow) linear infinite;
 	}
 
-	@keyframes ui-card-spin {
+	@keyframes ui-card-loading-spin {
 		to {
 			transform: rotate(360deg);
 		}
 	}
 
 	/* =====================================================
-	   OPTIONAL INTERACTIVE STATE
-	   Apply the class only when the whole card is clickable.
+	   TABLET
 	===================================================== */
 
-	.ui-card-interactive {
-		cursor: pointer;
-	}
-
-	.ui-card-interactive:hover {
-		border-color: var(--card-border-hover);
-		background-color: var(--card-bg-hover);
-		box-shadow: var(--card-shadow-hover);
-	}
-
-	.ui-card-interactive:focus-visible {
-		border-color: var(--color-border-brand);
-		outline: none;
-		box-shadow: var(--shadow-focus-brand);
-	}
-
-	/* =====================================================
-	   RESPONSIVE
-	===================================================== */
-
-	@media (max-width: 640px) {
+	@media (max-width: 1023px) {
 		.ui-card-header {
-			align-items: stretch;
-			gap: var(--space-3);
+			padding-inline: var(--space-3);
+		}
+
+		.ui-card-secondary-header {
+			padding-inline: var(--space-3);
+		}
+
+		.ui-card-body-default {
 			padding: var(--space-3);
 		}
 
-		.ui-card-header:has(.ui-card-actions) {
+		.ui-card-body-spacious {
+			padding: var(--space-4);
+		}
+
+		.ui-card-footer {
+			padding-inline: var(--space-3);
+		}
+	}
+
+	/* =====================================================
+	   MOBILE
+	===================================================== */
+
+	@media (max-width: 767px) {
+		.ui-card {
+			border-radius: var(--radius-md);
+		}
+
+		.ui-card-header {
+			align-items: flex-start;
+			gap: var(--space-2);
+			padding: var(--space-2);
+		}
+
+		.ui-card-actions {
+			flex-wrap: wrap;
+		}
+
+		.ui-card-secondary-header {
+			align-items: stretch;
+			flex-wrap: wrap;
+			gap: var(--space-2);
+			padding: var(--space-2);
+		}
+
+		.ui-card-body-compact,
+		.ui-card-body-default {
+			padding: var(--space-2);
+		}
+
+		.ui-card-body-spacious {
+			padding: var(--space-3);
+		}
+
+		.ui-card-footer {
+			flex-wrap: wrap;
+			padding: var(--space-2);
+		}
+	}
+
+	/* =====================================================
+	   SMALL MOBILE
+	===================================================== */
+
+	@media (max-width: 479px) {
+		.ui-card-header {
+			align-items: stretch;
 			flex-direction: column;
 		}
 
@@ -1027,13 +1123,18 @@
 			justify-content: flex-start;
 		}
 
-		.ui-card-body-default,
-		.ui-card-body-spacious {
-			padding: var(--space-3);
+		.ui-card-secondary-header {
+			flex-direction: column;
 		}
 
 		.ui-card-footer {
-			padding: var(--space-3);
+			align-items: stretch;
+			flex-direction: column;
+		}
+
+		.ui-card-footer > .button-base {
+			width: 100%;
+			justify-content: center;
 		}
 	}
 
@@ -1042,10 +1143,8 @@
 	===================================================== */
 
 	@media (prefers-reduced-motion: reduce) {
-		.ui-card,
 		.ui-card-loading-indicator {
-			transition-duration: 0.01ms;
-			animation-duration: 1.5s;
+			animation: none;
 		}
 	}
 }

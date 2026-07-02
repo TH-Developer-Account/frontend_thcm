@@ -1,8 +1,8 @@
 import type { ElementType, HTMLAttributes, ReactNode } from "react";
 
 export type CardVariant = "default" | "subtle" | "outlined" | "flat";
-
 export type CardPadding = "none" | "compact" | "default" | "spacious";
+export type CardLayout = "default" | "listing";
 
 export type CardProps = Omit<
 	HTMLAttributes<HTMLElement>,
@@ -11,34 +11,19 @@ export type CardProps = Omit<
 	title?: ReactNode;
 	subtitle?: ReactNode;
 	actions?: ReactNode;
+
+	secondaryHeader?: ReactNode;
 	children?: ReactNode;
 	footer?: ReactNode;
 
-	/**
-	 * Changes the card surface treatment without allowing
-	 * page-specific colors or visual overrides.
-	 */
 	variant?: CardVariant;
-
-	/**
-	 * Controls content padding.
-	 *
-	 * Use "none" when the child component owns its spacing,
-	 * such as a table or full-width form.
-	 */
 	padding?: CardPadding;
-
-	/**
-	 * Semantic container element.
-	 */
+	layout?: CardLayout;
 	as?: ElementType;
-
-	/**
-	 * Heading level used when title is a string or normal node.
-	 */
 	titleAs?: "h2" | "h3" | "h4" | "h5" | "h6";
 
 	headerClassName?: string;
+	secondaryHeaderClassName?: string;
 	bodyClassName?: string;
 	footerClassName?: string;
 
@@ -48,20 +33,23 @@ export type CardProps = Omit<
 
 const joinClassNames = (
 	...classNames: Array<string | false | null | undefined>
-) => classNames.filter(Boolean).join(" ");
+): string => classNames.filter(Boolean).join(" ");
 
 export default function Card({
 	title,
 	subtitle,
 	actions,
+	secondaryHeader,
 	children,
 	footer,
 	variant = "default",
 	padding = "default",
+	layout = "default",
 	as: Component = "section",
 	titleAs: TitleComponent = "h3",
 	className = "",
 	headerClassName = "",
+	secondaryHeaderClassName = "",
 	bodyClassName = "",
 	footerClassName = "",
 	loading = false,
@@ -71,6 +59,7 @@ export default function Card({
 	...props
 }: CardProps) {
 	const hasHeader = Boolean(title || subtitle || actions);
+	const hasSecondaryHeader = Boolean(secondaryHeader);
 	const hasFooter = Boolean(footer);
 
 	return (
@@ -78,6 +67,7 @@ export default function Card({
 			className={joinClassNames(
 				"ui-card",
 				`ui-card-${variant}`,
+				`ui-card-layout-${layout}`,
 				disabled && "ui-card-disabled",
 				loading && "ui-card-loading",
 				className,
@@ -102,6 +92,17 @@ export default function Card({
 				</header>
 			) : null}
 
+			{hasSecondaryHeader ? (
+				<div
+					className={joinClassNames(
+						"ui-card-secondary-header",
+						secondaryHeaderClassName,
+					)}
+				>
+					{secondaryHeader}
+				</div>
+			) : null}
+
 			<div
 				className={joinClassNames(
 					"ui-card-body",
@@ -116,7 +117,6 @@ export default function Card({
 						aria-live="polite"
 					>
 						<span className="ui-card-loading-indicator" aria-hidden="true" />
-
 						<span>Loading content…</span>
 					</div>
 				) : (

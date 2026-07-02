@@ -11,6 +11,7 @@ import {
 	AiOutlineLinkedin,
 	AiOutlineTwitter,
 } from "react-icons/ai";
+import Card from "../../common/Card";
 
 type UserRole = "ADMIN" | "MANAGER" | "VIEWER";
 
@@ -345,6 +346,7 @@ export default function UserProfile({ userRole = "ADMIN" }: UserProfileProps) {
 					editable={!isViewer}
 					onSubmit={saveAddress}
 				/>
+				<Card>Hello</Card>
 			</div>
 		</section>
 	);

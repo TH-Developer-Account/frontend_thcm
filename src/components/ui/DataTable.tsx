@@ -50,6 +50,7 @@ export interface DataTableProps<T extends object> {
 
 	onRowClick?: (row: T) => void;
 
+	/** Optional custom content rendered above pagination. */
 	footer?: ReactNode;
 }
 
@@ -145,6 +146,7 @@ function DataTable<T extends object>({
 		},
 
 		onSortingChange,
+
 		onPaginationChange:
 			!manualPagination && shouldUsePagination
 				? setInternalPagination

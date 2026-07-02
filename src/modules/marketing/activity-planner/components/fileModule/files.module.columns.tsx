@@ -6,6 +6,7 @@ import Button from "../../../../../components/common/Button";
 import { formatDate } from "../../../../../utils/format";
 import type {
 	FileDownloadKind,
+	FileModuleEventGroupRow,
 	FileModuleListingRow,
 } from "../../types/fileModule.types";
 
@@ -22,7 +23,7 @@ type GetFilesListingColumnsOptions = {
 const getDownloadKey = (logId: string, kind: FileDownloadKind): string =>
 	`${logId}:${kind}`;
 
-const formatImportType = (type: string): string => {
+const formatOperationType = (type: string): string => {
 	const normalizedType = type.trim();
 
 	if (!normalizedType) {
@@ -43,6 +44,26 @@ const normalizeStatus = (status: string): string => {
 	return normalizedStatus || "UNKNOWN";
 };
 
+const getRecordStatus = (
+	totalRecords: number,
+	successRecords: number,
+	failedRecords: number,
+): string => {
+	if (totalRecords <= 0) {
+		return "UNKNOWN";
+	}
+
+	if (successRecords === totalRecords && failedRecords === 0) {
+		return "COMPLETED";
+	}
+
+	if (successRecords === 0 && failedRecords > 0) {
+		return "FAILED";
+	}
+
+	return "PARTIAL";
+};
+
 export const getFilesListingColumns = ({
 	onDownloadFile,
 	downloadingKeys,
@@ -61,7 +82,46 @@ export const getFilesListingColumns = ({
 		accessorKey: "type",
 		header: "Operation",
 		cell: ({ row }) => (
-			<span className="font-medium">{formatImportType(row.original.type)}</span>
+			<span className="file-operation-chip">
+				{formatOperationType(row.original.type)}
+			</span>
+		),
+	},
+	{
+		accessorKey: "totalRecords",
+		header: "Total",
+		cell: ({ row }) => (
+			<span className="tabular-nums">{row.original.totalRecords}</span>
+		),
+	},
+	{
+		accessorKey: "successRecords",
+		header: "Successful",
+		cell: ({ row }) => (
+			<span
+				className={
+					row.original.successRecords > 0
+						? "tabular-nums text-approved"
+						: "tabular-nums text-muted"
+				}
+			>
+				{row.original.successRecords}
+			</span>
+		),
+	},
+	{
+		accessorKey: "failedRecords",
+		header: "Failed",
+		cell: ({ row }) => (
+			<span
+				className={
+					row.original.failedRecords > 0
+						? "tabular-nums text-rejected"
+						: "tabular-nums text-muted"
+				}
+			>
+				{row.original.failedRecords}
+			</span>
 		),
 	},
 	{
@@ -72,7 +132,7 @@ export const getFilesListingColumns = ({
 			const user = row.original.triggeredBy;
 
 			if (!user) {
-				return <span>--</span>;
+				return <span className="text-muted">--</span>;
 			}
 
 			return (
@@ -96,9 +156,19 @@ export const getFilesListingColumns = ({
 		),
 	},
 	{
-		accessorKey: "status",
+		id: "derivedStatus",
+		accessorFn: (row) =>
+			getRecordStatus(row.totalRecords, row.successRecords, row.failedRecords),
 		header: "Status",
-		cell: ({ row }) => <Badge status={normalizeStatus(row.original.status)} />,
+		cell: ({ row }) => {
+			const status = getRecordStatus(
+				row.original.totalRecords,
+				row.original.successRecords,
+				row.original.failedRecords,
+			);
+
+			return <Badge status={normalizeStatus(status)} />;
+		},
 	},
 	{
 		id: "downloads",
@@ -108,9 +178,11 @@ export const getFilesListingColumns = ({
 			const file = row.original;
 
 			const outputDownloadKey = getDownloadKey(file.id, "output");
+
 			const errorDownloadKey = getDownloadKey(file.id, "error");
 
 			const isOutputDownloading = downloadingKeys.has(outputDownloadKey);
+
 			const isErrorDownloading = downloadingKeys.has(errorDownloadKey);
 
 			if (!file.hasOutputFile && !file.hasErrorFile) {
@@ -124,8 +196,11 @@ export const getFilesListingColumns = ({
 							type="button"
 							text={isOutputDownloading ? "Preparing..." : "Success file"}
 							Icon={Download}
+							iconPosition="left"
+							iconSize={16}
 							size="sm"
-							status="outline"
+							appearance="standard"
+							variant="outline"
 							disabled={isOutputDownloading}
 							aria-busy={isOutputDownloading}
 							onClick={() => {
@@ -139,8 +214,11 @@ export const getFilesListingColumns = ({
 							type="button"
 							text={isErrorDownloading ? "Preparing..." : "Error file"}
 							Icon={Download}
+							iconPosition="left"
+							iconSize={16}
 							size="sm"
-							status="brand"
+							appearance="standard"
+							variant="outline"
 							disabled={isErrorDownloading}
 							aria-busy={isErrorDownloading}
 							onClick={() => {
@@ -153,3 +231,146 @@ export const getFilesListingColumns = ({
 		},
 	},
 ];
+
+export const getGroupedFilesListingColumns =
+	(): ColumnDef<FileModuleEventGroupRow>[] => [
+		{
+			id: "proposalNumber",
+			accessorFn: (row) => row.epc?.proposalNumber ?? "",
+			header: "EPC No",
+			cell: ({ row }) => (
+				<div className="min-w-0">
+					<p className="truncate font-medium">
+						{row.original.epc?.proposalNumber || "Unassigned event"}
+					</p>
+
+					<p className="text-xs text-muted">
+						{row.original.operationCount}{" "}
+						{row.original.operationCount === 1 ? "operation" : "operations"}
+					</p>
+				</div>
+			),
+		},
+		{
+			id: "operationTypes",
+			accessorFn: (row) => row.operationTypes.join(", "),
+			header: "Operations",
+			cell: ({ row }) => (
+				<div className="flex min-w-0 flex-wrap gap-1">
+					{row.original.operationTypes.map((type) => (
+						<span key={type} className="file-operation-chip">
+							{formatOperationType(type)}
+						</span>
+					))}
+				</div>
+			),
+		},
+		{
+			accessorKey: "totalRecords",
+			header: "Total",
+			cell: ({ row }) => (
+				<span className="tabular-nums">{row.original.totalRecords}</span>
+			),
+		},
+		{
+			accessorKey: "successRecords",
+			header: "Successful",
+			cell: ({ row }) => (
+				<span
+					className={
+						row.original.successRecords > 0
+							? "tabular-nums text-approved"
+							: "tabular-nums text-muted"
+					}
+				>
+					{row.original.successRecords}
+				</span>
+			),
+		},
+		{
+			accessorKey: "failedRecords",
+			header: "Failed",
+			cell: ({ row }) => (
+				<span
+					className={
+						row.original.failedRecords > 0
+							? "tabular-nums text-rejected"
+							: "tabular-nums text-muted"
+					}
+				>
+					{row.original.failedRecords}
+				</span>
+			),
+		},
+		{
+			id: "triggeredBy",
+			accessorFn: (row) =>
+				row.triggeredBy.map((user) => user.fullName).join(", "),
+			header: "Triggered By",
+			cell: ({ row }) => {
+				const users = row.original.triggeredBy;
+
+				if (!users.length) {
+					return <span className="text-muted">--</span>;
+				}
+
+				const firstUser = users[0];
+				const additionalCount = users.length - 1;
+
+				return (
+					<div className="min-w-0">
+						<p className="truncate font-medium">{firstUser.fullName}</p>
+
+						{additionalCount > 0 ? (
+							<p className="text-xs text-muted">+{additionalCount} more</p>
+						) : firstUser.email ? (
+							<p className="truncate text-xs text-muted">{firstUser.email}</p>
+						) : null}
+					</div>
+				);
+			},
+		},
+		{
+			accessorKey: "latestCreatedAt",
+			header: "Latest Activity",
+			cell: ({ row }) => (
+				<span className="whitespace-nowrap">
+					{row.original.latestCreatedAt
+						? formatDate(row.original.latestCreatedAt)
+						: "--"}
+				</span>
+			),
+		},
+		{
+			id: "derivedStatus",
+			accessorFn: (row) =>
+				getRecordStatus(
+					row.totalRecords,
+					row.successRecords,
+					row.failedRecords,
+				),
+			header: "Status",
+			cell: ({ row }) => {
+				const status = getRecordStatus(
+					row.original.totalRecords,
+					row.original.successRecords,
+					row.original.failedRecords,
+				);
+
+				return <Badge status={normalizeStatus(status)} />;
+			},
+		},
+		{
+			id: "files",
+			accessorFn: (row) => row.successRecords + row.errorFileCount,
+			header: "Files",
+			enableSorting: true,
+			cell: ({ row }) => (
+				<div className="file-group-counts">
+					<span>{row.original.successRecords} success</span>
+
+					<span>{row.original.errorFileCount} error</span>
+				</div>
+			),
+		},
+	];
