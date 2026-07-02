@@ -12,6 +12,7 @@ import MarketingRoutes from "./marketingRoutes";
 import AdminRoutes from "./adminRoutes";
 import ProtectedRoute from "./ProtectedRoute";
 import HomeLayout from "../layout/HomeLayout";
+import VendorOnboardingRoutes from "./vendorOnboardingRoutes";
 
 export default function AppRoutes() {
 	return (
@@ -40,6 +41,7 @@ export default function AppRoutes() {
 				<Route element={<MainContentWrapper />}>
 					<Route path="/marketing/*" element={<MarketingRoutes />} />
 					<Route path="/admin/*" element={<AdminRoutes />} />
+					<Route path="/vendor/*" element={<VendorOnboardingRoutes />} />
 				</Route>
 			</Routes>
 		</SessionTimeoutProvider>

@@ -6,6 +6,7 @@ import { useSidebarPermissions } from "../hooks/useSidebarPermission";
 import { adminSidebar } from "../modules/admin/admin.sidebar";
 import { marketingSidebar } from "../modules/marketing/marketing.sidebar";
 import { DashboardLayout } from "./DashboardLayout";
+import { vendorSidebar } from "../modules/vendorOnboarding/vendor.sidebar";
 
 const MOBILE_SIDEBAR_QUERY = "(max-width: 767px)";
 
@@ -52,6 +53,9 @@ export default function MainContentWrapper() {
 
 		if (path.startsWith("/admin")) {
 			return adminSidebar;
+		}
+		if (path.startsWith("/vendor")) {
+			return vendorSidebar;
 		}
 
 		return [];

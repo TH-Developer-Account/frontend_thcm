@@ -46,6 +46,15 @@ export const actions = [
 	},
 	{
 		icon: UserCheck,
+		title: "Vendor Onboarding",
+		description:
+			"Manage vendor registration, verification, and approval processes.",
+		path: "/",
+		appKey: "VENDOR_ONBOARDING",
+		isActive: false,
+	},
+	{
+		icon: UserCheck,
 		title: "Key Account",
 		description: "Manage strategic accounts and relationship data.",
 		path: "/",

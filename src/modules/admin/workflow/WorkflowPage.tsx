@@ -1,20 +1,33 @@
-// WorkflowPage.tsx
-import WorkflowTopSection from "./WorkFlowCreation/components/WorkflowTopSection";
+import { PageHeader } from "../../../components/ui/PageHeader";
+import PageSectionLayout from "../../../layout/PageSectionLayout";
 
 import { WorkflowProvider } from "./context/WorkflowProvider";
 import WorkflowTable from "./WorkflowTable/WorkflowTable";
-import PageRowSectionLayout from "../../../layout/PageRowSectionLayout";
 
 const WorkflowPage = () => {
 	return (
 		<WorkflowProvider>
-			<PageRowSectionLayout
-				contentMode="contained"
-				stickyHeader
-				header_children={<WorkflowTopSection />}
-			>
+			<PageSectionLayout>
+				<PageHeader
+					headerText="Workflow Management"
+					navigation={{
+						variant: "breadcrumbs",
+						ariaLabel: "Workflow management page location",
+						breadcrumbs: [
+							{
+								label: "Home Screen",
+								href: "/",
+							},
+							{
+								label: "Workflows",
+							},
+						],
+						separator: "›",
+					}}
+				/>
+
 				<WorkflowTable />
-			</PageRowSectionLayout>
+			</PageSectionLayout>
 		</WorkflowProvider>
 	);
 };
