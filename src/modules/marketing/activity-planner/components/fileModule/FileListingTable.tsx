@@ -228,10 +228,10 @@ const FileListingTable = ({
 					items={FILES_FILTER_TABS}
 					value={selectedFilter}
 					onChange={onFilterChange}
-					className="border-b-none px-0 py-0"
+					className="border-none px-0 py-0"
 				/>
 			}
-			secondaryHeader={
+			actions={
 				<>
 					<Button
 						type="button"

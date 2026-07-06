@@ -24,6 +24,8 @@ export function Modal({
 	size = "md",
 	className = "",
 	header_children,
+	footer_children,
+	footer_actions,
 }: ModalProps) {
 	const generatedTitleId = React.useId();
 	const modalRef = React.useRef<HTMLDivElement>(null);
@@ -121,6 +123,12 @@ export function Modal({
 				) : null}
 
 				<div className="modal-body">{children}</div>
+				{footer_children || footer_actions ? (
+					<footer className="modal-footer">
+						<div className="modal-footer-copy">{footer_children}</div>
+						<div className="modal-footer-actions">{footer_actions}</div>
+					</footer>
+				) : null}
 			</div>
 		</div>
 	);

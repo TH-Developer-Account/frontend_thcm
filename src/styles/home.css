@@ -581,7 +581,7 @@
 
 	[data-theme="dark"] .action-card-active {
 		border-color: var(--home-card-active-border);
-		background-color: var(--home-card-active-bg);
+		/* background-color: var(--home-card-active-bg); */
 		box-shadow: var(--home-card-shadow);
 	}
 

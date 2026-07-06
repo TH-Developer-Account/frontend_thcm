@@ -1,12 +1,5 @@
-// ProfileFormPage.tsx
-// ------------------------------------------------------------------
-// Main form container.
-// Now very clean because permission logic is abstracted.
-// ------------------------------------------------------------------
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import { useAuth } from "../../../../context/Auth/useAuth";
 import { useToast } from "../../../../context/Auth/AuthContext";
@@ -15,6 +8,8 @@ import PermissionMatrix from "./PermissionMatrix";
 import { apps } from "../constant";
 import { usePermissionMatrix } from "../hooks/userPermissionMatrix";
 import type { Profile, WorkspacePayload } from "../types/profile.types";
+import PageSectionLayout from "../../../../layout/PageSectionLayout";
+import { PageHeader } from "../../../../components/ui/PageHeader";
 
 export const ProfileFormPage = () => {
 	const { id } = useParams();
@@ -125,56 +120,55 @@ export const ProfileFormPage = () => {
 			m.name.toLowerCase().includes(search.toLowerCase()),
 		),
 	}));
-
-	console.log({ permState });
-
 	return (
-		<div className="bg-white 0.3s ease max-w-full mx-auto h-full min-h-screen">
-			<div className="max-w-full mx-auto h-full p-4">
-				{/* Header */}
-				<div className="flex items-center gap-4 mb-8">
-					<button
-						onClick={() => navigate("/admin/user_profiles")}
-						className="w-9 h-9 rounded-lg bg-gray-50 border border-zinc-800 flex items-center justify-center"
-					>
-						<ArrowLeft />
-					</button>
-
-					<h2 className="text-xl font-bold text-zinc-900">
-						{isEditing ? `Editing: ${form?.name}` : "New User Profile"}
-					</h2>
-				</div>
-
-				{/* Sections */}
-				{activeSection === "general" && (
-					<ProfileGeneralSection
-						form={form}
-						isEditing={isEditing}
-						handleChange={handleChange}
-						setForm={setForm}
-						onCancel={() => navigate("/admin/user_profiles")}
-						onSubmit={() => {}}
-						onPermission={() => setActiveSection("permissions")}
-					/>
-				)}
-
-				{activeSection === "permissions" && (
-					<PermissionMatrix
-						filteredApps={filteredApps}
-						collapsed={collapsed}
-						permState={permState}
-						search={search}
-						setSearch={setSearch}
-						setCollapsed={setCollapsed}
-						appActionState={appActionState}
-						toggleAppAll={toggleAppAll}
-						toggleAppAction={toggleAppAction}
-						togglePerm={togglePerm}
-						onSavePermissions={handleSave}
-						isLoading={isLoading}
-					/>
-				)}
-			</div>
-		</div>
+		<PageSectionLayout>
+			<PageHeader
+				headerText={isEditing ? "Edit Profile" : "Create Profile"}
+				navigation={{
+					variant: "breadcrumbs",
+					ariaLabel: "User Profile page location",
+					breadcrumbs: [
+						{
+							label: "User profiles",
+							href: "/admin/user_profiles",
+						},
+						{
+							label: isEditing ? "Edit Profile" : "Create Profile",
+							href: "/admin/user_profiles/create",
+						},
+					],
+					separator: "›",
+				}}
+			/>
+			{/* Sections */}
+			{activeSection === "general" && (
+				<ProfileGeneralSection
+					form={form}
+					isEditing={isEditing}
+					handleChange={handleChange}
+					setForm={setForm}
+					onCancel={() => navigate("/admin/user_profiles")}
+					onSubmit={() => {}}
+					onPermission={() => setActiveSection("permissions")}
+				/>
+			)}
+			{activeSection === "permissions" && (
+				<PermissionMatrix
+					filteredApps={filteredApps}
+					collapsed={collapsed}
+					permState={permState}
+					search={search}
+					setSearch={setSearch}
+					setCollapsed={setCollapsed}
+					appActionState={appActionState}
+					toggleAppAll={toggleAppAll}
+					toggleAppAction={toggleAppAction}
+					togglePerm={togglePerm}
+					onSavePermissions={handleSave}
+					isLoading={isLoading}
+					goBack={() => setActiveSection("general")}
+				/>
+			)}
+		</PageSectionLayout>
 	);
 };

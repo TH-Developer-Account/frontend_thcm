@@ -1,9 +1,10 @@
 import React from "react";
 import Checkbox from "../../../../components/forms/Checkbox";
 import { SearchInput } from "../../../../components/forms/SearchInput";
-import { Badge } from "../../../../components/common/Badge";
 import type { WorkspacePayload } from "../types/profile.types";
 import Button from "../../../../components/common/Button";
+import Card from "../../../../components/common/Card";
+import { ArrowLeft } from "lucide-react";
 
 type Permission = {
 	read: boolean;
@@ -47,6 +48,7 @@ interface Props {
 	togglePerm: (app: string, mod: string, action: Action) => void;
 	onSavePermissions: (data: WorkspacePayload) => void;
 	isLoading: boolean;
+	goBack: () => void;
 }
 
 export default function PermissionMatrix({
@@ -62,6 +64,7 @@ export default function PermissionMatrix({
 	toggleAppAction,
 	togglePerm,
 	onSavePermissions,
+	goBack,
 }: Props) {
 	const collectPermissions = () => {
 		const permissions: WorkspacePayload = [];
@@ -90,25 +93,16 @@ export default function PermissionMatrix({
 	};
 
 	return (
-		<div className="bg-gradient-to-b from-white to-slate-50 rounded-2xl border border-slate-200 overflow-hidden shadow-md">
-			{/* HEADER */}
-			<div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-slate-200 bg-slate-50/70 backdrop-blur-sm">
-				<div>
-					<Badge variant="primary">03</Badge>
-					<span className="text-sm font-semibold text-slate-800 flex-1 ml-2">
-						Permissions Matrix
-					</span>
-				</div>
-
-				<div className="relative">
-					<SearchInput
-						value={search}
-						onChange={(value) => setSearch(value)}
-						placeholder="Search modules..."
-					/>
-				</div>
-			</div>
-
+		<Card
+			title="Permissions Matrix"
+			actions={
+				<SearchInput
+					value={search}
+					onChange={(value) => setSearch(value)}
+					placeholder="Search modules..."
+				/>
+			}
+		>
 			{/* COLUMN HEADER */}
 			<div className="grid grid-cols-[1fr_88px_88px] border-b border-slate-200 bg-slate-50">
 				<div className="px-6 py-2.5 text-[10px] font-bold text-slate-600 uppercase tracking-wider">
@@ -258,7 +252,16 @@ export default function PermissionMatrix({
 					</div>
 				)}
 			</div>
-			<div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-white">
+			<div className="flex justify-between gap-3 px-6 py-4 border-t border-slate-200 bg-white">
+				<Button
+					text="Back"
+					type="submit"
+					onClick={goBack}
+					Icon={ArrowLeft}
+					appearance="cta"
+					variant="outline"
+					size="sm"
+				/>
 				<Button
 					disabled={isLoading}
 					onClick={collectPermissions}
@@ -266,8 +269,9 @@ export default function PermissionMatrix({
 					type="submit"
 					appearance="cta"
 					variant="brand"
+					size="sm"
 				/>
 			</div>
-		</div>
+		</Card>
 	);
 }

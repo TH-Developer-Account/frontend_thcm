@@ -558,10 +558,10 @@
 	===================================================== */
 
 	.button-outline {
-		border-color: var(--color-border-dark);
-		background-color: var(--color-bg-surface);
-		color: var(--color-text-secondary);
-		box-shadow: none;
+		border-color: var(--color-brand);
+		background-color: var(--color-brand-subtle);
+		color: var(--color-brand-active);
+		box-shadow: var(--shadow-xs);
 	}
 
 	.button-outline:hover:not(:disabled) {
@@ -892,6 +892,7 @@
 		align-items: center;
 		justify-content: flex-end;
 		gap: var(--space-2);
+		margin-bottom: var(--space-2);
 	}
 
 	/* =====================================================
@@ -1733,18 +1734,30 @@
 
 	.modal-container-sm {
 		max-width: 28rem;
+		.modal-title {
+			font-size: var(--font-size-sm);
+		}
 	}
 
 	.modal-container-md {
 		max-width: 42rem;
+		.modal-title {
+			font-size: var(--font-size-md);
+		}
 	}
 
 	.modal-container-lg {
 		max-width: 56rem;
+		.modal-title {
+			font-size: var(--font-size-lg);
+		}
 	}
 
 	.modal-container-xl {
 		max-width: 72rem;
+		.modal-title {
+			font-size: var(--font-size-xl);
+		}
 	}
 
 	.modal-container-full {
@@ -1763,7 +1776,7 @@
 		width: 100%;
 		min-width: 0;
 		flex: 0 0 auto;
-		align-items: flex-start;
+		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);
 
@@ -1936,7 +1949,7 @@
 		justify-content: space-between;
 		gap: var(--space-3);
 
-		padding-top: var(--space-3);
+		padding: var(--space-3);
 
 		border-top: var(--border-width-default) solid var(--color-border-subtle);
 	}
@@ -7611,21 +7624,25 @@ PAGE NAVIGATION
 	.toast-icon-warning {
 		background: var(--color-warning-bg);
 		color: var(--color-warning);
+		border: var(--color-warning);
 	}
 	.alert-icon-info,
 	.toast-icon-info {
 		background: var(--color-info-bg);
 		color: var(--color-info);
+		border: var(--color-info);
 	}
 	.alert-icon-error,
 	.toast-icon-error {
 		background: var(--color-error-bg);
 		color: var(--color-error);
+		border: var(--color-error);
 	}
 	.alert-icon-success,
 	.toast-icon-success {
 		background: var(--color-success-bg);
 		color: var(--color-success);
+		border: var(--color-success);
 	}
 	.toast-success {
 		border-color: var(--color-success-border);

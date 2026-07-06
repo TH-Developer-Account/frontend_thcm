@@ -6,6 +6,7 @@ import {
 } from "../../../../components/ui/MasterLineItemTable";
 import { MasterDetailPanel } from "./MasterDetailPanel";
 import { useMasterData } from "../../../../hooks/useMasterData";
+import PageSectionLayout from "../../../../layout/PageSectionLayout";
 
 // Map each sidebar master key → your data source key
 const MASTER_KEYS: Record<string, string> = {
@@ -34,7 +35,7 @@ const MastersPage = () => {
 			const width = entry.contentRect.width;
 
 			// compact sidebar until XL layout
-			setIsCompact(width < 1100);
+			setIsCompact(width < 1000);
 		});
 
 		observer.observe(el);
@@ -97,45 +98,47 @@ const MastersPage = () => {
 		Object.keys(MASTER_KEYS).map((k) => [k, getItems(k).length]),
 	);
 	return (
-		<div
-			ref={containerRef}
-			className={`flex gap-4 h-[calc(100vh-65px)] transition-all duration-400 ${
-				isCompact ? "flex-col" : "flex-row"
-			}`}
-		>
-			{/* Sidebar */}
-			<div className=" shrink-0">
-				<MasterSidebar
-					activeMaster={activeMaster}
-					onSelectMaster={handleMasterChange}
-					counts={counts}
-					isCompact={isCompact}
-				/>
-			</div>
+		<PageSectionLayout>
+			<div
+				ref={containerRef}
+				className={`flex gap-4 h-[calc(100vh-100px)] transition-all duration-400 ${
+					isCompact ? "flex-col" : "flex-row"
+				}`}
+			>
+				{/* Sidebar */}
+				<div className=" shrink-0">
+					<MasterSidebar
+						activeMaster={activeMaster}
+						onSelectMaster={handleMasterChange}
+						counts={counts}
+						isCompact={isCompact}
+					/>
+				</div>
 
-			{/* Table */}
-			<div className="flex-1 min-w-0">
-				<MasterLineItemTable
-					title={activeMaster}
-					nameLabel={`${activeMaster.replace(/s$/, "")}`}
-					items={items}
-					selectedId={selectedItem?.id}
-					onChange={(updated) => setItems(activeMaster, updated)}
-					onSelect={setSelectedItem}
-				/>
-			</div>
+				{/* Table */}
+				<div className="flex-1 min-w-0">
+					<MasterLineItemTable
+						title={activeMaster}
+						nameLabel={`${activeMaster.replace(/s$/, "")}`}
+						items={items}
+						selectedId={selectedItem?.id}
+						onChange={(updated) => setItems(activeMaster, updated)}
+						onSelect={setSelectedItem}
+					/>
+				</div>
 
-			{/* Detail */}
-			<div className="flex-1 min-w-0">
-				<MasterDetailPanel
-					masterName={activeMaster}
-					item={selectedItem}
-					onSave={handleSave}
-					onClose={() => setSelectedItem(null)}
-					key={selectedItem?.id}
-				/>
+				{/* Detail */}
+				<div className="flex-1 min-w-0">
+					<MasterDetailPanel
+						masterName={activeMaster}
+						item={selectedItem}
+						onSave={handleSave}
+						onClose={() => setSelectedItem(null)}
+						key={selectedItem?.id}
+					/>
+				</div>
 			</div>
-		</div>
+		</PageSectionLayout>
 	);
 };
 

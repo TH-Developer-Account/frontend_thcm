@@ -143,7 +143,8 @@ export const LeadEntryTable = ({
 												<Button
 													type="button"
 													Icon={editingLeadId ? Save : Plus}
-													status="outline"
+													appearance="standard"
+													variant="outline"
 													size="sm"
 													disabled={savingRowId === item.id}
 													onClick={() => onSaveRow(item, index)}
@@ -155,7 +156,8 @@ export const LeadEntryTable = ({
 												<Button
 													type="button"
 													Icon={RotateCcw}
-													status="outline"
+													appearance="standard"
+													variant="outline"
 													size="sm"
 													disabled={savingRowId === item.id}
 													onClick={onCancelEdit}
@@ -186,19 +188,21 @@ export const LeadEntryTable = ({
 											<Button
 												type="button"
 												Icon={Pencil}
-												status="outline"
+												appearance="standard"
+												variant="outline"
 												size="sm"
 												onClick={() => onEditLead(lead)}
 												aria-label="Edit lead"
 											/>
 											<Button
 												Icon={Trash2}
-												iconSize="14"
+												appearance="standard"
+												variant="outline"
 												type="button"
+												size="sm"
 												onClick={() => onDeleteLead(lead.id)}
 												disabled={deletingId === lead.id}
 												aria-label="Remove customer"
-												status="outline"
 											/>
 										</div>
 									</td>

@@ -177,7 +177,7 @@ type PreviewCardProps = {
 const FileUploadPreviewCard = React.memo(
 	({
 		value,
-		label,
+		// label,
 		heightClassName,
 		readonly,
 		disabled,
@@ -243,28 +243,26 @@ const FileUploadPreviewCard = React.memo(
 							size="sm"
 							Icon={RefreshCw}
 							aria-label="Replace file"
-							isTooltip
 							onClick={onReplace}
 						/>
 
 						<Button
 							type="button"
 							appearance="icon"
-							variant="danger"
+							variant="secondary"
 							size="sm"
 							Icon={Trash2}
 							aria-label="Remove file"
-							isTooltip
 							onClick={onRemove}
 						/>
 					</div>
 				) : null}
 
-				<div className="file-upload-preview-label">
+				{/* <div className="file-upload-preview-label">
 					<Upload aria-hidden="true" />
 
 					<span>{label}</span>
-				</div>
+				</div> */}
 			</div>
 		);
 	},

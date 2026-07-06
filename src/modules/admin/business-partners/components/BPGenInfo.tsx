@@ -1,6 +1,7 @@
 import { Badge } from "../../../../components/common/Badge";
 import { Building2, Hash, MapPinned, Phone, UserRound } from "lucide-react";
 import BPCards from "./BPCards";
+import Card from "../../../../components/common/Card";
 
 type BPGeneralInfoProps = {
 	name?: string;
@@ -53,7 +54,7 @@ const BPGeneralInfo = ({
 	];
 
 	return (
-		<div className="bp-gen-info content-box no-padding w-full">
+		<Card padding="none" variant="default">
 			<div className="bp-gen-header bp-gen-header-clean">
 				<div className="bp-gen-header-left">
 					<div className="bp-gen-title-row">
@@ -77,23 +78,7 @@ const BPGeneralInfo = ({
 				items={generalInfoCards}
 				columnsClassName="sm:grid-cols-2 xl:grid-cols-4"
 			/>
-			{/* <div className="bp-gen-content">
-				<div className="bp-general-info-cards">
-					{infoCards.map((item) => (
-						<div key={item.label} className="bp-info-mini-card">
-							<div className={`bp-info-mini-icon ${item.iconClass}`}>
-								{item.icon}
-							</div>
-
-							<div className="bp-info-mini-content">
-								<p className="bp-info-mini-label">{item.label}</p>
-								<p className="bp-info-mini-value">{item.value}</p>
-							</div>
-						</div>
-					))}
-				</div>
-			</div> */}
-		</div>
+		</Card>
 	);
 };
 

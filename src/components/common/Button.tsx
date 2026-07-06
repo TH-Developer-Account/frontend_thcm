@@ -1,5 +1,5 @@
 import React from "react";
-import { LoaderCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, LoaderCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import type {
@@ -68,6 +68,9 @@ const Button: React.FC<ButtonProps> = ({
 
 	path,
 	isTooltip,
+	to,
+	direction,
+	delta,
 
 	className = "",
 	onClick,
@@ -76,7 +79,14 @@ const Button: React.FC<ButtonProps> = ({
 	...nativeButtonProps
 }) => {
 	const navigate = useNavigate();
+	const isNavigationButton =
+		typeof delta === "number" ||
+		!!to ||
+		direction === "back" ||
+		direction === "forward";
 
+	const LeftIcon = isNavigationButton ? ArrowLeft : Icon;
+	const RightIcon = isNavigationButton ? ArrowRight : Icon;
 	const appearanceClass = APPEARANCE_CLASS_MAP[appearance] ?? "button-standard";
 
 	const variantClass = VARIANT_CLASS_MAP[variant] ?? "button-secondary";
@@ -99,6 +109,24 @@ const Button: React.FC<ButtonProps> = ({
 
 		if (path) {
 			navigate(path);
+		}
+		if (typeof delta === "number") {
+			navigate(delta);
+			return;
+		}
+
+		if (to) {
+			navigate(to);
+			return;
+		}
+
+		if (direction === "forward") {
+			navigate(1);
+			return;
+		}
+
+		if (direction === "back") {
+			navigate(-1);
 		}
 	};
 
@@ -159,7 +187,7 @@ const Button: React.FC<ButtonProps> = ({
 						style={iconStyle}
 					/>
 				) : null}
-
+				{direction === "back" && LeftIcon && <LeftIcon size="16" />}
 				{content != null ? (
 					<span className="button-label">{content}</span>
 				) : null}
@@ -172,6 +200,7 @@ const Button: React.FC<ButtonProps> = ({
 						style={iconStyle}
 					/>
 				) : null}
+				{direction === "forward" && RightIcon && <RightIcon size="16" />}
 			</button>
 
 			{isTooltip ? (

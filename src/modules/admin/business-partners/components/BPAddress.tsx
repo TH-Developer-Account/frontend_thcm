@@ -113,8 +113,6 @@ const BPAddress = () => {
 
 	return (
 		<div className="bp-gen-content">
-			{/* <h4 className="bp-section-title">Organization Address</h4> */}
-
 			<div className="bp-address-grid-wrap">
 				<BPAddressFormCard
 					form={form}

@@ -1,7 +1,6 @@
 import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PageHeader } from "../../../../../components/ui/PageHeader";
-import PageRowSectionLayout from "../../../../../layout/PageRowSectionLayout";
 import {
 	createEmptyLeadFormRow,
 	mapLeadRowToFormRow,
@@ -31,7 +30,6 @@ import { LeadEntryTable } from "../components/LeadEntryTable";
 import { LeadReferenceSummary } from "../components/LeadReferenceSummary";
 import "../styles/leads.css";
 import PageSectionLayout from "../../../../../layout/PageSectionLayout";
-import NavigateButton from "../../../../../components/common/NavigateButton";
 import Button from "../../../../../components/common/Button";
 import { Download, FileUp, Save, X } from "lucide-react";
 import { Modal } from "../../../../../components/common/Modal";
@@ -43,6 +41,7 @@ import type {
 import { downloadLeadImportTemplate } from "../../../../../utils/generateImportTemplate";
 import { LeadExcelPreview } from "../components/LeadExcelPreview";
 import SectionAccordion from "../../../../../components/common/SectionAccordion";
+import Card from "../../../../../components/common/Card";
 
 export default function LeadCreatePage() {
 	const location = useLocation();
@@ -239,41 +238,70 @@ export default function LeadCreatePage() {
 
 	if (!epcId) {
 		return (
-			<PageRowSectionLayout
-				header_children={
-					<PageHeader
-						headerText="Create Lead"
-						badgeProps={{ text: "Back", direction: "back" }}
-					/>
-				}
-			>
-				<div className="content-box p-5 text-sm text-red-600">
-					EPC reference missing. Please go back to EPC listing and click Create
-					Lead again.
-				</div>
-			</PageRowSectionLayout>
+			<PageSectionLayout>
+				<PageHeader
+					headerText="Leads Entry"
+					navigation={{
+						variant: "breadcrumbs",
+						ariaLabel: "Leads Import/Create",
+						breadcrumbs: [
+							{
+								label: "Home Screen",
+								href: "/",
+							},
+							{
+								label: "Leads listing",
+								href: "/marketing/leads/listing",
+							},
+							{ label: "Create lead" },
+						],
+						separator: "›",
+					}}
+				/>
+				<Card className=" p-5 text-sm text-red-600 text-center">
+					EPC reference missing. Please go back to{" "}
+					<a href="/marketing/listing" className="underline">
+						{" "}
+						EPC listing{" "}
+					</a>{" "}
+					and click create lead again.
+				</Card>
+			</PageSectionLayout>
 		);
 	}
 
 	return (
-		<PageSectionLayout className="content-box">
-			<div className="leads-content-box">
-				<div className="leads-section-body">
-					<div className="flex justify-between gap-2">
-						<NavigateButton direction="back" text="Back" />
-
-						<NavigateButton
-							to="/marketing/leads/listing"
-							text="Lead Listing"
-							iconPosition="right"
-						/>
-					</div>
-					<div className="flex justify-end text-xs gap-2 mb-2 mt-2">
+		<PageSectionLayout>
+			<PageHeader
+				headerText="Leads Entry"
+				navigation={{
+					variant: "breadcrumbs",
+					ariaLabel: "Leads Import/Create",
+					breadcrumbs: [
+						{
+							label: "Home Screen",
+							href: "/",
+						},
+						{
+							label: "Leads listing",
+							href: "/marketing/leads/listing",
+						},
+						{ label: "Create lead" },
+					],
+					separator: "›",
+				}}
+			/>
+			<Card
+				className="leads-content-box"
+				title="Selected EPC Reference"
+				actions={
+					<>
 						<Button
 							type="button"
 							onClick={downloadLeadImportTemplate}
 							size="sm"
-							status="outline"
+							appearance="standard"
+							variant="outline"
 							Icon={Download}
 							text={"Download Template"}
 						/>
@@ -284,14 +312,18 @@ export default function LeadCreatePage() {
 									text="Import"
 									Icon={FileUp}
 									size="sm"
-									status="brand"
+									appearance="standard"
+									variant="brand"
 									onClick={handleOpenImportModal}
 								/>
 							</div>
 						)}
-					</div>
+					</>
+				}
+			>
+				<div className="leads-section-body">
 					<SectionAccordion
-						title="Selected EPC Reference"
+						title="Leads Entry"
 						className="mt-2 text-right"
 						action={
 							<p className="leads-reference-label uppercase-label-text">
@@ -321,7 +353,7 @@ export default function LeadCreatePage() {
 						/>
 					</SectionAccordion>
 				</div>
-			</div>
+			</Card>
 
 			<Modal
 				open={isImportModalOpen}
@@ -341,7 +373,8 @@ export default function LeadCreatePage() {
 								type="button"
 								onClick={downloadLeadImportTemplate}
 								size="sm"
-								status="brand"
+								appearance="standard"
+								variant="outline"
 								Icon={Download}
 								text={"Download Template"}
 							/>
@@ -369,7 +402,8 @@ export default function LeadCreatePage() {
 						type="button"
 						text="Cancel"
 						Icon={X}
-						status="outline"
+						appearance="standard"
+						variant="outline"
 						size="sm"
 						onClick={handleCloseImportModal}
 						disabled={isImporting}
@@ -378,7 +412,8 @@ export default function LeadCreatePage() {
 						type="button"
 						text={isImporting ? "Importing..." : "Save"}
 						Icon={Save}
-						status="brand"
+						appearance="standard"
+						variant="brand"
 						size="sm"
 						onClick={handleImportFile}
 						disabled={!importFile?.file || isImporting}

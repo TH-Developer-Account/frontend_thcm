@@ -1,6 +1,6 @@
 import React from "react";
 import { Check } from "lucide-react";
-import NavigateButton from "../../../../../components/common/NavigateButton";
+// import NavigateButton from "../../../../../components/common/NavigateButton";
 
 type Props = {
 	currentStep: number;
@@ -15,11 +15,11 @@ const steps = [
 const WorkflowCreateHeader = ({ currentStep }: Props) => {
 	return (
 		<>
-			<div className="workflow-create-topbar">
+			{/* <div className="workflow-create-topbar">
 				<NavigateButton text="Back" direction="back" iconPosition="left" />
-			</div>
+			</div> */}
 
-			<div className="workflow-progress">
+			<div className="workflow-progress mt-4">
 				{steps.map((step, index) => {
 					const isDone = currentStep > step.id;
 					const isActive = currentStep === step.id;

@@ -16,18 +16,6 @@ button {
 
 /* BP Listing Page */
 @layer components {
-	.business-partners {
-		@apply mt-2 w-full max-w-full px-2 py-1.5 sm:px-3 md:px-4;
-	}
-
-	.bp-header {
-		@apply mb-3 flex flex-col gap-2 px-1 sm:mb-4 sm:flex-row sm:items-center sm:justify-between;
-	}
-
-	.bp-header h3 {
-		@apply text-lg font-semibold leading-tight sm:text-xl md:text-2xl;
-	}
-
 	.bp-container,
 	.bp-box,
 	.middle-box {
@@ -45,42 +33,10 @@ button {
 	}
 }
 
-/* BP Table */
-@layer components {
-	.bp-table-container {
-		@apply mt-3 h-[350px] w-full max-w-full min-w-0 overflow-x-auto overflow-y-auto rounded-sm border border-gray-300 bg-white text-xs text-gray-600 sm:text-sm;
-		-webkit-overflow-scrolling: touch;
-	}
-
-	.bp-table-container table {
-		@apply w-full min-w-[800px] border-collapse lg:min-w-full;
-	}
-
-	.bp-table-container thead {
-		@apply bg-gray-100;
-	}
-
-	.bp-table-container thead th {
-		@apply sticky top-0 z-10 whitespace-nowrap bg-gray-300 px-2 py-2.5 text-left text-xs sm:px-3 sm:text-sm;
-	}
-
-	.bp-table-container tbody td {
-		@apply whitespace-nowrap px-2 py-2.5 text-left text-xs sm:px-3 sm:text-sm;
-	}
-
-	.bp-table-container tbody tr {
-		@apply border-y border-gray-200 transition hover:bg-gray-50;
-	}
-}
-
 /* BP View Page */
 @layer components {
 	.bp-view-container {
 		@apply flex h-full w-full min-w-0 flex-col items-start justify-center gap-2;
-	}
-
-	.bp-gen-info {
-		@apply overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm;
 	}
 
 	.bp-gen-header-clean {

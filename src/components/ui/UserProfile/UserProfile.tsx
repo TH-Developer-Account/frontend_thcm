@@ -11,7 +11,8 @@ import {
 	AiOutlineLinkedin,
 	AiOutlineTwitter,
 } from "react-icons/ai";
-import Card from "../../common/Card";
+import PageSectionLayout from "../../../layout/PageSectionLayout";
+import { PageHeader } from "../PageHeader";
 
 type UserRole = "ADMIN" | "MANAGER" | "VIEWER";
 
@@ -283,71 +284,80 @@ export default function UserProfile({ userRole = "ADMIN" }: UserProfileProps) {
 	};
 
 	return (
-		<section className="profile-page" aria-labelledby="profile-page-title">
-			<header className="profile-page-header">
-				<div className="profile-page-heading">
-					<p className="profile-page-eyebrow">Account settings</p>
+		<PageSectionLayout>
+			<PageHeader
+				headerText="User Profile"
+				navigation={{
+					variant: "breadcrumbs",
+					ariaLabel: "Vendors listing location",
+					breadcrumbs: [
+						{
+							label: "Home Screen",
+							href: "/",
+						},
 
-					<h2 id="profile-page-title" className="profile-page-title">
-						Profile
-					</h2>
-				</div>
-			</header>
-
-			<div className="profile-page-sections">
-				<EditableCard
-					title="User Information"
-					subtitle="Personal information, contact details and social profiles"
-					editTitle="Edit User Information"
-					editSubtitle="Update your personal information and social profile URLs."
-					value={profileValues}
-					fields={profileFields}
-					editable={!isViewer}
-					onSubmit={saveProfile}
-					header={
-						<div className="profile-summary">
-							<div className="profile-summary-avatar">
-								{user?.profile_image ? (
-									<img src={user.profile_image} alt={`${fullName} profile`} />
-								) : (
-									<span aria-hidden="true">{initials}</span>
-								)}
-							</div>
-
-							<div className="profile-summary-content">
-								<div className="profile-summary-heading">
-									<h3 className="profile-summary-name">{fullName}</h3>
-
-									<span className="profile-summary-role">
-										{profileValues.bio}
-									</span>
+						{
+							label: "User profile",
+						},
+					],
+					separator: "›",
+				}}
+			/>
+			<section className="profile-page" aria-labelledby="profile-page-title">
+				<div className="profile-page-sections">
+					<EditableCard
+						title="User Information"
+						// subtitle="Personal information, contact details and social profiles"
+						editTitle="Edit User Information"
+						editSubtitle="Update your personal information and social profile URLs."
+						value={profileValues}
+						fields={profileFields}
+						editable={!isViewer}
+						onSubmit={saveProfile}
+						header={
+							<div className="profile-summary">
+								<div className="profile-summary-avatar">
+									{user?.profile_image ? (
+										<img src={user.profile_image} alt={`${fullName} profile`} />
+									) : (
+										<span aria-hidden="true">{initials}</span>
+									)}
 								</div>
 
-								<div className="profile-summary-details">
-									{profileValues.location ? (
-										<span className="profile-summary-detail">
-											<MapPin size={14} aria-hidden="true" />
-											<span>{profileValues.location}</span>
+								<div className="profile-summary-content">
+									<div className="profile-summary-heading">
+										<h3 className="profile-summary-name">{fullName}</h3>
+
+										<span className="profile-summary-role">
+											{profileValues.bio}
 										</span>
-									) : null}
+									</div>
+
+									<div className="profile-summary-details">
+										{profileValues.location ? (
+											<span className="profile-summary-detail">
+												<MapPin size={14} aria-hidden="true" />
+												<span>{profileValues.location}</span>
+											</span>
+										) : null}
+									</div>
 								</div>
 							</div>
-						</div>
-					}
-				/>
+						}
+					/>
 
-				<EditableCard
-					title="Address"
-					subtitle="Registered address and tax information"
-					editTitle="Edit Address"
-					editSubtitle="Update your registered address and tax information."
-					value={address}
-					fields={addressFields}
-					editable={!isViewer}
-					onSubmit={saveAddress}
-				/>
-				<Card>Hello</Card>
-			</div>
-		</section>
+					<EditableCard
+						title="Address"
+						// subtitle="Registered address and tax information"
+						editTitle="Edit Address"
+						editSubtitle="Update your registered address and tax information."
+						value={address}
+						fields={addressFields}
+						editable={!isViewer}
+						onSubmit={saveAddress}
+					/>
+				</div>
+			</section>
+		</PageSectionLayout>
 	);
 }

@@ -185,14 +185,6 @@
 }
 
 @layer components {
-	.workflow-create-page-box {
-		@apply p-2.5 sm:p-3;
-	}
-
-	.workflow-create-page {
-		@apply w-full;
-	}
-
 	.workflow-create-topbar {
 		@apply mb-3 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between;
 	}

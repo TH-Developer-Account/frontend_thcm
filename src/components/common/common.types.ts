@@ -47,6 +47,8 @@ export type ModalProps = {
 	size?: "sm" | "md" | "lg" | "xl" | "full";
 	className?: string;
 	header_children?: React.ReactNode;
+	footer_children?: React.ReactNode;
+	footer_actions?: React.ReactNode;
 };
 
 export type CardProps = {
@@ -110,6 +112,9 @@ export interface ButtonProps extends Omit<
 
 	path?: string;
 	isTooltip?: ReactNode;
+	to?: string;
+	direction?: "back" | "forward";
+	delta?: number;
 
 	onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
 }

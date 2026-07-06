@@ -18,7 +18,7 @@ export const LeadReferenceSummary = ({
 	];
 
 	return (
-		<div className="leads-reference-grid text-left">
+		<div className="grid grid-cols-4 text-left mb-4 text-sm">
 			{items.map((item) => (
 				<div key={item.label}>
 					<span className="leads-reference-label uppercase-label-text">

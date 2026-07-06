@@ -125,7 +125,7 @@ const WorkflowTable = () => {
 							label: fullName || "Unnamed user",
 						};
 					})
-					.filter((user): user is Option => user !== null);
+					.filter((user: any): user is Option => user !== null);
 
 				setUsers(formattedUsers);
 			} catch (error) {

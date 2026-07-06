@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { CircleX } from "lucide-react";
 import { Modal } from "../../../../components/common/Modal";
 import Button from "../../../../components/common/Button";
 import { mapUser, type User } from "../../user-profile/types/profile.types";
@@ -85,96 +84,89 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 	};
 
 	return (
-		<Modal open={!!workflow?.id} size="lg">
-			<div className="w-full max-h-[520px] flex flex-col mx-auto bg-white p-4 rounded-xl">
-				<div className="flex items-center justify-between mb-6">
-					<h2 className="font-bold text-xl text-zinc-900 flex items-center gap-2 ml-4">
-						Assign Users
-					</h2>
-
+		<Modal
+			open={!!workflow?.id}
+			onClose={onClose}
+			size="xl"
+			title="Assign Users"
+			footer_actions={
+				<>
 					<Button
-						variant="primary"
-						className="text-xs p-0 rounded-full bg-transparent"
+						text="Cancel"
 						onClick={onClose}
-						Icon={CircleX}
-						iconSize="20"
+						appearance="standard"
+						variant="outline"
 					/>
-				</div>
-
-				<div className="relative mb-4">
-					<SearchInput value={search} onChange={setSearch} />
-				</div>
-
-				<div className="space-y-2 overflow-y-auto scrollbar-sleek p-6 flex-1">
-					{loading ? (
-						<p className="text-sm text-gray-400">Loading users...</p>
-					) : filteredUsers.length === 0 ? (
-						<p className="text-sm text-gray-400">No users found.</p>
-					) : (
-						filteredUsers.map((user) => {
-							const selected = selectedUsers.includes(user.id);
-
-							return (
-								<div
-									key={user.id}
-									onClick={() => toggleUser(user.id)}
-									className={`flex items-center text-left justify-between gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-150 ${
-										selected
-											? "bg-amber-500/5 border-amber-500/30"
-											: "bg-gray-100/40 border-gray-200 hover:border-gray-300 hover:bg-gray-100"
-									}`}
-								>
-									<div>
-										<Avatar
-											firstName={user.firstName}
-											lastName={user.lastName}
-										/>
-									</div>
-
-									<div className="min-w-0 flex-1">
-										<p className="text-sm font-semibold truncate">
-											{user.firstName} {user.lastName}
-										</p>
-									</div>
-
-									<div className="flex-1 min-w-0">
-										<p className="text-xs text-gray-500 truncate">
-											{user.email ?? "--"}
-										</p>
-									</div>
-
-									<div className="flex-1 min-w-0">
-										<p className="text-xs text-gray-500 truncate">
-											{user.phone ?? "--"}
-										</p>
-									</div>
-
-									<div
-										className={`w-5 h-5 rounded-md border flex items-center justify-center ${
-											selected
-												? "bg-amber-500 border-amber-500"
-												: "border-gray-300"
-										}`}
-									>
-										{selected && (
-											<span className="text-white text-xs font-bold">✓</span>
-										)}
-									</div>
-								</div>
-							);
-						})
-					)}
-				</div>
-
-				<div className="p-4 border-t flex justify-end gap-3">
-					<Button text="Cancel" onClick={onClose} status="brand" />
 					<Button
 						text={submitting ? "Assigning..." : "Assign Users"}
-						status="brand"
+						appearance="standard"
+						variant="brand"
 						onClick={handleSubmit}
 						disabled={!workflow?.id || submitting}
 					/>
-				</div>
+				</>
+			}
+		>
+			<div className="relative mb-4">
+				<SearchInput value={search} onChange={setSearch} />
+			</div>
+
+			<div className="space-y-2 overflow-y-auto scrollbar-sleek p-4 flex-1">
+				{loading ? (
+					<p className="text-sm text-gray-400">Loading users...</p>
+				) : filteredUsers.length === 0 ? (
+					<p className="text-sm text-gray-400">No users found.</p>
+				) : (
+					filteredUsers.map((user) => {
+						const selected = selectedUsers.includes(user.id);
+
+						return (
+							<div
+								key={user.id}
+								onClick={() => toggleUser(user.id)}
+								className={`flex items-center text-left justify-between gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-150 ${
+									selected
+										? "bg-amber-500/5 border-amber-500/30"
+										: "bg-gray-100/40 border-gray-200 hover:border-gray-300 hover:bg-gray-100"
+								}`}
+							>
+								<div>
+									<Avatar firstName={user.firstName} lastName={user.lastName} />
+								</div>
+
+								<div className="min-w-0 flex-1">
+									<p className="text-sm font-semibold truncate">
+										{user.firstName} {user.lastName}
+									</p>
+								</div>
+
+								<div className="flex-1 min-w-0">
+									<p className="text-xs text-gray-500 truncate">
+										{user.email ?? "--"}
+									</p>
+								</div>
+
+								<div className="flex-1 min-w-0">
+									<p className="text-xs text-gray-500 truncate">
+										{user.phone ?? "--"}
+									</p>
+								</div>
+
+								<div
+									className={`w-5 h-5 rounded-md border flex items-center justify-center ${
+										selected
+											? "bg-amber-500 border-amber-500"
+											: "border-gray-300"
+									}`}
+								>
+									{selected && (
+										<span className="text-white text-xs font-bold">✓</span>
+									)}
+								</div>
+							</div>
+						);
+					})
+				)}
 			</div>
 		</Modal>
 	);

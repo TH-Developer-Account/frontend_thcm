@@ -49,7 +49,7 @@ export const getWorkflowColumns = ({
 		accessorKey: "isActive",
 		header: "Status",
 		cell: ({ row }) => (
-			<Badge status={row.original.isActive ? "active" : "inactive"}>
+			<Badge variant={row.original.isActive ? "active" : "inactive"}>
 				{row.original.isActive ? "Active" : "Inactive"}
 			</Badge>
 		),
@@ -83,30 +83,28 @@ export const getWorkflowColumns = ({
 				<div className="flex flex-row justify-start gap-2">
 					<Button
 						size="sm"
-						status="primary"
+						appearance="icon"
+						variant="secondary"
 						onClick={() => onAssign(workflow)}
 						Icon={UserPlus}
 						isTooltip="Assign Users"
-						iconColor="#f35a00"
 					/>
 
 					<Button
 						type="button"
-						className="bg-transparent text-orange-900"
 						onClick={() => onEdit(workflow)}
 						Icon={Edit}
-						iconPosition="right"
-						iconColor="#f35a00"
+						appearance="icon"
+						variant="secondary"
 						isTooltip="Edit"
 					/>
 
 					<Button
 						type="button"
-						className="bg-transparent text-orange-900"
 						onClick={() => onDelete(workflow)}
 						Icon={Trash}
-						iconPosition="right"
-						iconColor="#f35a00"
+						appearance="icon"
+						variant="secondary"
 						isTooltip="Delete"
 					/>
 				</div>

@@ -345,7 +345,7 @@ const ApprovalTable = ({
 				enablePagination={false}
 				emptyTitle="No approval stages available"
 				emptyDescription="Approval stages will appear after the workflow has been generated."
-				minWidth="xl"
+				minWidth="lg"
 				ariaLabel={title ?? "Approval flow"}
 			/>
 		</Card>

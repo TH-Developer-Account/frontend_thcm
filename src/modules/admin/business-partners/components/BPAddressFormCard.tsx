@@ -1,3 +1,4 @@
+import Card from "../../../../components/common/Card";
 import FormInput from "../../../../components/forms/FormInput";
 import TextareaInput from "../../../../components/forms/TextareaInput";
 
@@ -20,7 +21,7 @@ const BPAddressFormCard = ({
 	isEditing = false,
 }: Props) => {
 	return (
-		<div className="bp-address-card">
+		<Card>
 			<div className="bp-address-card-header">
 				<h5>{isEditing ? "Edit Address" : "Add Address"}</h5>
 
@@ -85,7 +86,7 @@ const BPAddressFormCard = ({
 					/>
 				</div>
 			</div>
-		</div>
+		</Card>
 	);
 };
 

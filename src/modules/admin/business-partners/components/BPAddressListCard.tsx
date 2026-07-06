@@ -1,3 +1,4 @@
+import Card from "../../../../components/common/Card";
 import type { AddressItem } from "./BPAddress";
 import { Pencil, Trash } from "lucide-react";
 
@@ -21,7 +22,7 @@ const BPAddressListCard = ({
 	onRemove,
 }: Props) => {
 	return (
-		<div className="bp-address-card">
+		<Card>
 			<div className="bp-address-card-header">
 				<h5>{title}</h5>
 
@@ -87,7 +88,7 @@ const BPAddressListCard = ({
 					</button>
 				</div>
 			)}
-		</div>
+		</Card>
 	);
 };
 

@@ -4,6 +4,7 @@ import FormInput from "../../../../components/forms/FormInput";
 import TextareaInput from "../../../../components/forms/TextareaInput";
 import type { Profile } from "../types/profile.types";
 import { ArrowRight } from "lucide-react";
+import Card from "../../../../components/common/Card";
 
 interface Props {
 	form: Profile;
@@ -22,9 +23,10 @@ const ProfileGeneralSection: React.FC<Props> = ({
 	handleChange,
 	onPermission,
 	onCancel,
+	isEditing,
 }) => {
 	return (
-		<div className="p-6 bg-white shadow-sm border-zinc-200 border rounded-xl h-full">
+		<Card title={isEditing ? `Editing: ${form?.name}` : "New User Profile"}>
 			<FormInput
 				name="name"
 				label="Profile Name"
@@ -32,6 +34,7 @@ const ProfileGeneralSection: React.FC<Props> = ({
 				onChange={handleChange}
 				placeholder="e.g. Sales Manager, HR Executive"
 				required
+				className="mb-2"
 			/>
 
 			<TextareaInput
@@ -42,7 +45,7 @@ const ProfileGeneralSection: React.FC<Props> = ({
 				placeholder="Briefly describe what this profile can access and do..."
 			/>
 
-			<div className="flex justify-end gap-3 mt-6">
+			<div className="flex justify-end gap-3 mt-4">
 				<Button
 					text="Cancel"
 					type="submit"
@@ -62,7 +65,7 @@ const ProfileGeneralSection: React.FC<Props> = ({
 					variant="brand"
 				/>
 			</div>
-		</div>
+		</Card>
 	);
 };
 

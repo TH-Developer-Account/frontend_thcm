@@ -25,6 +25,8 @@ import type {
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { useAuth } from "../../../../context/Auth/useAuth";
 import PageSectionLayout from "../../../../layout/PageSectionLayout";
+import Card from "../../../../components/common/Card";
+import { PageHeader } from "../../../../components/ui/PageHeader";
 
 const WorkflowCreatePage = () => {
 	const { user, workspaceId, isLoading } = useAuth();
@@ -283,55 +285,71 @@ const WorkflowCreatePage = () => {
 
 	if (isLoading) return null;
 	return (
-		<div className="content-box">
-			<PageSectionLayout>
-				<div className="workflow-create-page-box scrollbar-sleek">
-					<div className="workflow-create-page">
-						<WorkflowCreateHeader currentStep={currentStep} />
+		<PageSectionLayout>
+			<PageHeader
+				headerText="Workflow Creation"
+				navigation={{
+					variant: "breadcrumbs",
+					ariaLabel: "Vendors listing location",
+					breadcrumbs: [
+						{
+							label: "Home Screen",
+							href: "/",
+						},
+						{
+							label: "Workflows Listing",
+							href: "/admin/workflows",
+						},
+						{
+							label: "Create workflow",
+						},
+					],
+					separator: "›",
+				}}
+			/>
+			<Card>
+				<WorkflowCreateHeader currentStep={currentStep} />
 
-						<div className="workflow-create-page-header">
-							<h2 className="workflow-create-page-title">
-								{id ? "Update Workflow" : "Create Workflow"}
-							</h2>
-							<p className="workflow-create-page-subtitle">
-								Define who approves what, in which order, and under what
-								conditions.
-							</p>
-						</div>
-
-						<div className="workflow-create-grid">
-							<WorkflowCreateMain
-								currentStep={currentStep}
-								goNext={handleNext}
-								goBack={handleBack}
-								basics={basics}
-								stages={stages}
-								currentUserId={user?.id || ""}
-								onBasicChange={handleBasicChange}
-								onStageChange={handleStageChange}
-								onToggleStage={toggleStage}
-								onRemoveApprover={removeApprover}
-								onAddApprover={addApprover}
-								onAddStage={addStage}
-								onSubmit={handleSubmit}
-								loading={loading}
-								basicErrors={basicErrors}
-								stageErrors={stageErrors}
-								stageFormError={stageFormError}
-								onClearBasicError={clearBasicError}
-							/>
-
-							<WorkflowCreateSidebar
-								basics={basics}
-								stageCount={stages.length}
-								approverCount={totalApprovers}
-								minApprovers={totalApprovers}
-							/>
-						</div>
-					</div>
+				<div className="workflow-create-page-header">
+					<h2 className="workflow-create-page-title">
+						{id ? "Update Workflow" : "Create Workflow"}
+					</h2>
+					<p className="workflow-create-page-subtitle">
+						Define who approves what, in which order, and under what conditions.
+					</p>
 				</div>
-			</PageSectionLayout>
-		</div>
+
+				<div className="workflow-create-grid">
+					<WorkflowCreateMain
+						currentStep={currentStep}
+						goNext={handleNext}
+						goBack={handleBack}
+						basics={basics}
+						stages={stages}
+						currentUserId={user?.id || ""}
+						onBasicChange={handleBasicChange}
+						onStageChange={handleStageChange}
+						onToggleStage={toggleStage}
+						onRemoveApprover={removeApprover}
+						onAddApprover={addApprover}
+						onAddStage={addStage}
+						onSubmit={handleSubmit}
+						loading={loading}
+						basicErrors={basicErrors}
+						stageErrors={stageErrors}
+						stageFormError={stageFormError}
+						onClearBasicError={clearBasicError}
+					/>
+
+					<WorkflowCreateSidebar
+						basics={basics}
+						stageCount={stages.length}
+						approverCount={totalApprovers}
+						minApprovers={totalApprovers}
+					/>
+				</div>
+			</Card>
+		</PageSectionLayout>
 	);
 };
 
