@@ -205,50 +205,6 @@
 		@apply rounded-lg border border-[#e85d25] bg-[#e85d25] px-5 py-2 text-sm font-medium text-white transition hover:bg-[#c94d1a];
 	}
 
-	.workflow-progress {
-		@apply mb-5 flex items-center gap-0 overflow-x-auto;
-	}
-
-	.workflow-progress-step {
-		@apply flex items-center gap-2 shrink-0;
-	}
-
-	.workflow-progress-dot {
-		@apply flex h-[22px] w-[22px] items-center justify-center rounded-full border text-[10px] font-semibold;
-	}
-
-	.workflow-progress-dot-done {
-		@apply border-[#e85d25] bg-[#e85d25] text-white;
-	}
-
-	.workflow-progress-dot-active {
-		@apply border-[#e85d25] bg-white text-[#e85d25];
-	}
-
-	.workflow-progress-dot-wait {
-		@apply border-zinc-300 bg-white text-zinc-400;
-	}
-
-	.workflow-progress-line {
-		@apply mx-2 h-px min-w-[18px] flex-1 bg-zinc-200;
-	}
-
-	.workflow-progress-label {
-		@apply text-[11px];
-	}
-
-	.workflow-progress-label-done {
-		@apply text-[#e85d25];
-	}
-
-	.workflow-progress-label-active {
-		@apply font-medium text-zinc-900;
-	}
-
-	.workflow-progress-label-wait {
-		@apply text-zinc-400;
-	}
-
 	.workflow-create-page-header {
 		@apply mb-5;
 	}

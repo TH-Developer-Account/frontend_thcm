@@ -38,17 +38,28 @@ export interface PaginationProps {
 	scrollTargetId?: string; // optional container id to scroll
 }
 
+export type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
+
+export type ModalMode = "standard" | "shell";
+
 export type ModalProps = {
 	open: boolean;
-	children: React.ReactNode;
-	title?: string;
-	message?: string;
+	children: ReactNode;
 	onClose?: () => void;
-	size?: "sm" | "md" | "lg" | "xl" | "full";
+
+	title?: string;
+	size?: ModalSize;
+	mode?: ModalMode;
 	className?: string;
-	header_children?: React.ReactNode;
-	footer_children?: React.ReactNode;
-	footer_actions?: React.ReactNode;
+
+	header_children?: ReactNode;
+	footer_children?: ReactNode;
+	footer_actions?: ReactNode;
+
+	dialogRole?: "dialog" | "alertdialog";
+	ariaLabel?: string;
+	ariaDescribedBy?: string;
+	closeOnOverlayClick?: boolean;
 };
 
 export type CardProps = {
@@ -148,22 +159,23 @@ export interface AvatarProps {
 	isTooltip?: boolean;
 }
 
-export type AlertVariant = "warning" | "info" | "error" | "success";
+export type AlertVariant = "success" | "warning" | "error" | "info";
 
-export interface AlertCardProps {
+export type AlertType = "banner" | "box";
+
+export type AlertAction = {
+	label: string;
+	onClick: () => void;
+};
+
+export type AlertCardProps = {
 	variant: AlertVariant;
+	type?: AlertType;
 	title: string;
-	description: string;
-	primaryAction: {
-		label: string;
-		onClick: () => void;
-	};
-	secondaryAction?: {
-		label: string;
-		onClick: () => void;
-	};
-}
-
+	description?: string;
+	primaryAction?: AlertAction;
+	secondaryAction?: AlertAction;
+};
 export interface AccordionItem {
 	id: string;
 	title: React.ReactNode;

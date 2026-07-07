@@ -189,6 +189,7 @@ const ProfileList = ({
 					) : isError ? (
 						<div className="profile-listing-state">
 							<Alert
+								type="banner"
 								variant="error"
 								title="Unable to load profiles"
 								description="The profile listing could not be retrieved. Refresh the page or try again."
@@ -218,8 +219,16 @@ const ProfileList = ({
 				</section>
 			</Card>
 
-			<Modal open={Boolean(deleteModal)} onClose={() => setDeleteModal(null)}>
+			<Modal
+				open={Boolean(deleteModal)}
+				onClose={() => setDeleteModal(null)}
+				mode="shell"
+				size="sm"
+				dialogRole="alertdialog"
+				ariaLabel="Delete profile confirmation"
+			>
 				<Alert
+					type="box"
 					variant="warning"
 					title="Delete Profile"
 					description={`Are you sure you want to delete "${

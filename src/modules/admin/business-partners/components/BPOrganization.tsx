@@ -44,13 +44,15 @@ const BPOrganization = ({ data }: BPOrganizationProps) => {
 
 	return (
 		<div className="bp-gen-content">
-			<div className="bp-info-grid">
-				{fields.map((field) => (
-					<div key={field.label} className="bp-info-row">
-						<p className="bp-info-label">{field.label}</p>
-						<p className="bp-info-value">{field.value || fallbackValue}</p>
-					</div>
-				))}
+			<div className="detail-section">
+				<div className="detail-grid">
+					{fields.map((field) => (
+						<div key={field.label} className="detail-row">
+							<p className="detail-label">{field.label}</p>
+							<p className="detail-value">{field.value || fallbackValue}</p>
+						</div>
+					))}
+				</div>
 			</div>
 		</div>
 	);

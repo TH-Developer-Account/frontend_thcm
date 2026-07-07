@@ -1,5 +1,7 @@
+import Button from "../../../../components/common/Button";
 import { Accordion } from "../../../../components/common/Accordion";
 import { SearchInput } from "../../../../components/forms/SearchInput";
+
 import type { MainContact, User } from "../utils/bp.types";
 
 type Props = {
@@ -27,7 +29,8 @@ const MainContactManagerCard = ({
 				<div className="main-contact-manage">
 					<div className="main-contact-search">
 						<SearchInput
-							placeholder="Search User"
+							placeholder="Search user"
+							aria-label="Search user to assign as main contact"
 							onChange={onSearch}
 							value={search}
 						/>
@@ -37,13 +40,14 @@ const MainContactManagerCard = ({
 						<table>
 							<thead>
 								<tr>
-									<th>Name</th>
-									<th>Email</th>
-									<th>Number</th>
-									<th>Department</th>
-									<th>Action</th>
+									<th scope="col">Name</th>
+									<th scope="col">Email</th>
+									<th scope="col">Number</th>
+									<th scope="col">Department</th>
+									<th scope="col">Action</th>
 								</tr>
 							</thead>
+
 							<tbody>
 								{filteredUsers.length > 0 ? (
 									filteredUsers.map((user) => {
@@ -58,14 +62,15 @@ const MainContactManagerCard = ({
 												<td>{user.number}</td>
 												<td>{user.department || fallbackValue}</td>
 												<td>
-													<button
+													<Button
 														type="button"
-														className="main-contact-action-btn"
+														text={alreadyAdded ? "Added" : "Add"}
+														appearance="standard"
+														variant={alreadyAdded ? "secondary" : "brand"}
+														size="sm"
 														onClick={() => onAddContact(user)}
 														disabled={alreadyAdded}
-													>
-														{alreadyAdded ? "Added" : "Add"}
-													</button>
+													/>
 												</td>
 											</tr>
 										);
@@ -90,6 +95,7 @@ const MainContactManagerCard = ({
 			<div className="main-contact-card-header">
 				<h4>Main Contact Management</h4>
 			</div>
+
 			<Accordion items={items} />
 		</div>
 	);

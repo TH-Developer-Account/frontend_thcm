@@ -392,7 +392,7 @@
 		font-size: var(--font-size-2xs);
 		font-weight: 500;
 		letter-spacing: var(--tracking-wide);
-		text-transform: uppercase;
+		/* text-transform: uppercase; */
 		color: var(--color-text-muted);
 	}
 	.detail-value {

@@ -1,3 +1,4 @@
+import Button from "../../../../components/common/Button";
 import Card from "../../../../components/common/Card";
 import FormInput from "../../../../components/forms/FormInput";
 import TextareaInput from "../../../../components/forms/TextareaInput";
@@ -14,64 +15,55 @@ type Props = {
 	isEditing?: boolean;
 };
 
+const addressTypes = [
+	"Head Office",
+	"Branch Office",
+	"Billing Address",
+	"Warehouse",
+];
+
 const BPAddressFormCard = ({
 	form,
 	onChange,
 	onAdd,
 	isEditing = false,
 }: Props) => {
+	const isActionDisabled = !form.address.trim();
+
 	return (
 		<Card>
 			<div className="bp-address-card-header">
 				<h5>{isEditing ? "Edit Address" : "Add Address"}</h5>
 
-				<button type="button" className="bp-address-add-btn" onClick={onAdd}>
-					{isEditing ? "Update" : "Add"}
-				</button>
+				<Button
+					type="button"
+					text={isEditing ? "Update" : "Add"}
+					appearance="standard"
+					variant="brand"
+					size="sm"
+					onClick={onAdd}
+					disabled={isActionDisabled}
+				/>
 			</div>
 
 			<div className="bp-address-form">
-				<div className="bp-address-field">
-					<p className="bp-info-label">Address Type</p>
+				<fieldset className="bp-radio-fieldset">
+					<legend className="detail-label">Address Type</legend>
 
 					<div className="bp-radio-group">
-						<FormInput
-							type="radio"
-							label="Head Office"
-							name="addressType"
-							value="Head Office"
-							checked={form.label === "Head Office"}
-							onChange={() => onChange("label", "Head Office")}
-						/>
-
-						<FormInput
-							type="radio"
-							label="Branch Office"
-							name="addressType"
-							value="Branch Office"
-							checked={form.label === "Branch Office"}
-							onChange={() => onChange("label", "Branch Office")}
-						/>
-
-						<FormInput
-							type="radio"
-							label="Billing Address"
-							name="addressType"
-							value="Billing Address"
-							checked={form.label === "Billing Address"}
-							onChange={() => onChange("label", "Billing Address")}
-						/>
-
-						<FormInput
-							type="radio"
-							label="Warehouse"
-							name="addressType"
-							value="Warehouse"
-							checked={form.label === "Warehouse"}
-							onChange={() => onChange("label", "Warehouse")}
-						/>
+						{addressTypes.map((addressType) => (
+							<FormInput
+								key={addressType}
+								type="radio"
+								label={addressType}
+								name="addressType"
+								value={addressType}
+								checked={form.label === addressType}
+								onChange={() => onChange("label", addressType)}
+							/>
+						))}
 					</div>
-				</div>
+				</fieldset>
 
 				<div className="bp-address-field">
 					<TextareaInput
@@ -82,7 +74,7 @@ const BPAddressFormCard = ({
 						placeholder="Flat / Building / Street / Area"
 						rows={4}
 						maxLength={100}
-						className="px-1.5 py-1 bigtextArea"
+						className="bigtextArea"
 					/>
 				</div>
 			</div>

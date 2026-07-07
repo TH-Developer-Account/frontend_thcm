@@ -1,6 +1,7 @@
 import Card from "../../../components/common/Card";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
+
 import BPGenInfo from "./components/BPGenInfo";
 import { BPTabs } from "./components/BPTabs";
 
@@ -24,6 +25,7 @@ const BusinessPartnerView = () => {
 					separator: "›",
 				}}
 			/>
+
 			<div className="bp-view-container">
 				<BPGenInfo
 					title="Joe & De Engineers"

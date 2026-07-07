@@ -1,6 +1,9 @@
-import Card from "../../../../components/common/Card";
-import type { AddressItem } from "./BPAddress";
 import { Pencil, Trash } from "lucide-react";
+
+import Button from "../../../../components/common/Button";
+import Card from "../../../../components/common/Card";
+
+import type { AddressItem } from "./BPAddress";
 
 type Props = {
 	title: string;
@@ -34,22 +37,25 @@ const BPAddressListCard = ({
 					{showActions && address && (
 						<div className="bp-address-header-actions">
 							{!address.isDefault && (
-								<button
+								<Button
 									type="button"
-									className="main-contact-secondary-btn"
+									text="Set Default"
+									appearance="standard"
+									variant="secondary"
+									size="sm"
 									onClick={onSetDefault}
-								>
-									Set Default
-								</button>
+								/>
 							)}
 
-							<button
+							<Button
 								type="button"
-								className="main-contact-danger-btn"
+								appearance="icon"
+								variant="danger"
+								Icon={Trash}
+								iconSize={15}
+								aria-label={`Remove ${address.label || "address"}`}
 								onClick={onRemove}
-							>
-								<Trash size={15} />
-							</button>
+							/>
 						</div>
 					)}
 				</div>
@@ -79,13 +85,15 @@ const BPAddressListCard = ({
 
 			{showActions && address && (
 				<div className="bp-address-footer-actions">
-					<button
+					<Button
 						type="button"
-						className="main-contact-secondary-btn"
+						appearance="icon"
+						variant="secondary"
+						Icon={Pencil}
+						iconSize={15}
+						aria-label={`Edit ${address.label || "address"}`}
 						onClick={onEdit}
-					>
-						<Pencil size={15} />
-					</button>
+					/>
 				</div>
 			)}
 		</Card>

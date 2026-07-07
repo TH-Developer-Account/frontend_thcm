@@ -1,5 +1,7 @@
 import React from "react";
+import { Plus } from "lucide-react";
 
+import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
 import { SearchInput } from "../../../components/forms/SearchInput";
 import { PageHeader } from "../../../components/ui/PageHeader";
@@ -7,8 +9,6 @@ import PageSectionLayout from "../../../layout/PageSectionLayout";
 
 import BPTable from "./components/BPTable";
 import type { BusinessPartner } from "./utils/bp.types";
-import Button from "../../../components/common/Button";
-import { Plus } from "lucide-react";
 
 const BUSINESS_PARTNERS: BusinessPartner[] = [
 	{
@@ -130,26 +130,32 @@ const BusinessPartners = () => {
 			/>
 
 			<Card
+				className="bp-listing-card"
 				secondaryHeader={
-					<>
-						<SearchInput
-							value={search}
-							onChange={setSearch}
-							placeholder="Search business partners"
-							aria-label="Search business partners"
-						/>
-						<Button
-							type="button"
-							text="Create New"
-							Icon={Plus}
-							iconPosition="left"
-							iconSize={16}
-							appearance="cta"
-							variant="brand"
-							size="sm"
-							// onClick={onCreateNew}
-						/>
-					</>
+					<div className="bp-listing-toolbar">
+						<div className="bp-listing-search">
+							<SearchInput
+								value={search}
+								onChange={setSearch}
+								placeholder="Search business partners"
+								aria-label="Search business partners"
+							/>
+						</div>
+
+						<div className="bp-listing-action">
+							<Button
+								type="button"
+								text="Create New"
+								Icon={Plus}
+								iconPosition="left"
+								iconSize={16}
+								appearance="standard"
+								variant="brand"
+								size="sm"
+								// onClick={onCreateNew}
+							/>
+						</div>
+					</div>
 				}
 			>
 				<BPTable partners={filteredPartners} />

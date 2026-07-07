@@ -6,6 +6,7 @@
 button {
 	cursor: pointer;
 }
+
 .brand-text h3 {
 	@apply text-(--color-brand) text-lg font-semibold sm:text-xl md:text-2xl;
 }
@@ -20,6 +21,22 @@ button {
 	.bp-box,
 	.middle-box {
 		@apply w-full max-w-full min-w-0;
+	}
+
+	.bp-listing-card {
+		@apply w-full min-w-0;
+	}
+
+	.bp-listing-toolbar {
+		@apply flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between;
+	}
+
+	.bp-listing-search {
+		@apply w-full min-w-0 sm:max-w-sm;
+	}
+
+	.bp-listing-action {
+		@apply w-full sm:w-auto;
 	}
 
 	.top-box {
@@ -37,6 +54,10 @@ button {
 @layer components {
 	.bp-view-container {
 		@apply flex h-full w-full min-w-0 flex-col items-start justify-center gap-2;
+	}
+
+	.bp-view-tabs-card {
+		@apply w-full min-w-0;
 	}
 
 	.bp-gen-header-clean {
@@ -64,7 +85,7 @@ button {
 	}
 
 	.bp-gen-subtext {
-		@apply mt-1 text-xs text-zinc-500 sm:text-sm;
+		@apply mt-1 text-xs text-zinc-400 sm:text-sm;
 	}
 
 	.bp-header-status {
@@ -109,16 +130,57 @@ button {
 	}
 }
 
+/* BP Summary Cards */
+/* Added only to support the updated BPCards.tsx class names.
+   Visual values are matched to the old inline BPCards UI. */
+@layer components {
+	.bp-summary-grid {
+		@apply grid gap-3 border-b border-zinc-200 bg-zinc-50/70 px-4 py-4 sm:grid-cols-2 xl:grid-cols-4;
+	}
+
+	.bp-stat-card {
+		@apply rounded-xl border border-zinc-200 bg-white px-3 py-2.5 flex items-center justify-between;
+	}
+
+	.bp-stat-card-inner {
+		@apply flex items-start justify-start flex-col;
+	}
+
+	.bp-stat-content {
+		@apply min-w-0;
+	}
+
+	.bp-stat-label {
+		@apply text-[10px] font-medium uppercase tracking-wide text-zinc-400;
+	}
+
+	.bp-stat-value {
+		@apply mt-0.5 truncate text-sm font-medium text-zinc-800;
+	}
+
+	.bp-stat-icon {
+		@apply rounded-md bg-zinc-100 p-1.5 text-zinc-500;
+	}
+
+	.bp-stat-icon--brand,
+	.bp-stat-icon--neutral,
+	.bp-stat-icon--info,
+	.bp-stat-icon--success,
+	.bp-stat-icon--warning {
+		@apply bg-zinc-100 text-zinc-500;
+	}
+}
+
 /* BP Tabs */
 @layer components {
 	.bp-tabs {
-		@apply mb-2 flex w-full min-w-0 flex-nowrap gap-2 overflow-x-auto border-b p-2 font-semibold;
+		@apply mb-2 flex w-full min-w-0 flex-nowrap gap-2 overflow-x-auto border-b p-2 font-medium;
 		border-color: var(--color-brand);
 		-webkit-overflow-scrolling: touch;
 	}
 
 	.bp-tab-item {
-		@apply shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg border px-3 py-2 text-sm transition-colors;
+		@apply shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors;
 	}
 
 	.bp-tab-item-active {
@@ -170,8 +232,40 @@ button {
 	}
 }
 
-/* BP Main Contact Section */
+/* Generic reusable detail styles.
+   Same visual style as bp-info-* so you can reuse it in other pages. */
+@layer components {
+	.detail-section {
+		@apply text-sm;
+	}
 
+	.detail-grid {
+		@apply grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2 2xl:grid-cols-3;
+	}
+
+	.detail-row {
+		@apply grid grid-cols-1 items-start gap-1 sm:grid-cols-[140px_1fr] sm:gap-3;
+	}
+
+	.detail-label {
+		@apply text-xs font-medium text-gray-900;
+		word-break: break-word;
+	}
+
+	.detail-value {
+		@apply text-xs text-gray-700;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+	}
+
+	.detail-link {
+		@apply cursor-pointer text-xs font-semibold text-[var(--color-brand)] hover:underline;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+	}
+}
+
+/* BP Main Contact Section */
 @layer components {
 	.main-contact-card {
 		@apply mb-4 w-full;
@@ -182,7 +276,7 @@ button {
 	}
 
 	.main-contact-card-header h4 {
-		@apply text-sm font-semibold text-gray-900 sm:text-base;
+		@apply text-xs font-semibold text-gray-900 sm:text-sm;
 	}
 
 	.main-contact-manage {
@@ -202,23 +296,23 @@ button {
 	}
 
 	.main-contact-table thead th {
-		@apply bg-gray-100 px-3 py-2 text-left text-xs font-semibold text-gray-700 sm:text-sm;
+		@apply bg-gray-100 px-3 py-2 text-left text-[11px] font-semibold text-gray-700 sm:text-xs;
 	}
 
 	.main-contact-table tbody td {
-		@apply border-t border-gray-200 px-3 py-2 text-xs text-gray-700 sm:text-sm;
+		@apply border-t border-gray-200 px-3 py-2 text-[11px] text-gray-700 sm:text-xs;
 	}
 
 	.main-contact-empty {
-		@apply py-4 text-center text-sm text-gray-500;
+		@apply py-4 text-center text-xs text-gray-500;
 	}
 
 	.main-contact-action-btn {
-		@apply rounded-md border border-[var(--color-brand-soft)] bg-[var(--color-brand-softest)] px-3 py-1.5 text-xs font-medium text-[var(--color-brand)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
+		@apply rounded-md border border-[var(--color-brand-soft)] bg-[var(--color-brand-softest)] px-3 py-1.5 text-[11px] font-medium text-[var(--color-brand)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
 	}
 
 	.main-contact-list {
-		@apply mt-4 grid md:grid-cols-2 sm:grid-cols-1 gap-4;
+		@apply mt-4 grid gap-4 sm:grid-cols-1 md:grid-cols-2;
 	}
 
 	.main-contact-list-item {
@@ -230,15 +324,15 @@ button {
 	}
 
 	.main-contact-list-name {
-		@apply flex flex-wrap items-center gap-2 text-sm font-semibold text-gray-900;
+		@apply flex flex-wrap items-center gap-2 text-xs font-semibold text-gray-900;
 	}
 
 	.main-contact-default-badge {
-		@apply rounded-full bg-[var(--color-brand-softest)] px-2 py-0.5 text-xs font-medium text-[var(--color-brand)];
+		@apply rounded-full bg-[var(--color-brand-softest)] px-2 py-0.5 text-[10px] font-medium text-[var(--color-brand)];
 	}
 
 	.main-contact-list-meta {
-		@apply mt-1 break-words text-xs text-gray-600 sm:text-sm;
+		@apply mt-1 break-words text-[11px] text-gray-600 sm:text-xs;
 	}
 
 	.main-contact-list-actions {
@@ -246,16 +340,13 @@ button {
 	}
 
 	.main-contact-secondary-btn {
-		@apply rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50;
+		@apply rounded-md border border-gray-300 px-3 py-1.5 text-[11px] font-medium text-gray-700 transition hover:bg-gray-50;
 	}
 
 	.main-contact-danger-btn {
-		@apply rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-100;
+		@apply rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-medium text-red-600 transition hover:bg-red-100;
 	}
 }
-
-/* Address Section */
-
 /* Address Section */
 @layer components {
 	.bp-section-title {
@@ -345,22 +436,189 @@ button {
 	.bigtextArea {
 		min-height: 70px;
 	}
+
+	.bp-radio-fieldset {
+		@apply m-0 border-0 p-0;
+	}
+
 	.bp-radio-group {
 		@apply flex flex-wrap items-center gap-4;
 	}
 
-	/* override FormInput layout for radio only */
 	.bp-radio-input {
 		@apply flex items-center gap-1.5 text-sm text-gray-700;
 	}
 
-	/* target input inside FormInput */
 	.bp-radio-input input {
 		@apply h-3.5 w-3.5 accent-[var(--color-brand)];
 	}
 
-	/* remove default vertical spacing if FormInput adds it */
 	.bp-radio-input label {
 		@apply m-0 p-0;
+	}
+}
+
+/* People Section */
+/* Only needed if you replaced BPPeople.tsx with class-based markup.
+   Values match your old Tailwind styling as closely as possible. */
+@layer components {
+	.bp-people {
+		@apply px-6 py-5;
+	}
+
+	.bp-people-header {
+		@apply mb-4 flex items-center justify-between;
+	}
+
+	.bp-people-title {
+		@apply text-base font-semibold text-zinc-900;
+	}
+
+	.bp-people-description {
+		@apply mt-1 text-sm text-zinc-500;
+	}
+
+	.bp-people-table {
+		@apply overflow-hidden rounded-2xl border border-zinc-200;
+	}
+
+	.bp-people-head {
+		@apply hidden grid-cols-12 border-b border-zinc-200 bg-zinc-50 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:grid;
+	}
+
+	.bp-people-body {
+		@apply divide-y divide-zinc-200 bg-white;
+	}
+
+	.bp-people-row {
+		@apply grid gap-4 px-5 py-4 md:grid-cols-12 md:items-center;
+	}
+
+	.bp-people-user {
+		@apply flex items-center gap-3;
+	}
+
+	.bp-people-avatar {
+		@apply flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-orange-100 to-orange-50 text-sm font-bold text-orange-700;
+	}
+
+	.bp-people-name {
+		@apply font-semibold text-zinc-900;
+	}
+
+	.bp-people-id {
+		@apply text-sm text-zinc-500;
+	}
+
+	.bp-people-role {
+		@apply inline-flex rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700;
+	}
+
+	.bp-people-contact-row {
+		@apply flex items-center gap-2 text-sm text-zinc-600;
+	}
+
+	.bp-people-contact-icon {
+		@apply text-zinc-400;
+	}
+
+	.bp-people-department {
+		@apply text-sm font-medium text-zinc-700;
+	}
+
+	.bp-people-status {
+		@apply inline-flex rounded-full px-3 py-1 text-xs font-semibold;
+	}
+
+	.bp-people-status--active {
+		@apply bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200;
+	}
+
+	.bp-people-status--inactive {
+		@apply bg-zinc-100 text-zinc-600 ring-1 ring-zinc-200;
+	}
+}
+
+/* =====================================================
+   Theme-aware overrides
+   These do not change light UI. They only make dark mode usable.
+===================================================== */
+
+@layer components {
+	[data-theme="dark"] .bp-gen-header-clean {
+		border-color: var(--color-border-default);
+		background-color: var(--color-bg-surface);
+	}
+
+	[data-theme="dark"] .bp-gen-title,
+	[data-theme="dark"] .bp-info-mini-value,
+	[data-theme="dark"] .bp-info-label,
+	[data-theme="dark"] .detail-label,
+	[data-theme="dark"] .main-contact-card-header h4,
+	[data-theme="dark"] .main-contact-list-name,
+	[data-theme="dark"] .bp-section-title,
+	[data-theme="dark"] .bp-address-card-header h5,
+	[data-theme="dark"] .bp-address-info-label,
+	[data-theme="dark"] .bp-people-title,
+	[data-theme="dark"] .bp-people-name {
+		color: var(--color-text-primary);
+	}
+
+	[data-theme="dark"] .bp-gen-subtext,
+	[data-theme="dark"] .bp-status-label,
+	[data-theme="dark"] .bp-info-mini-label,
+	[data-theme="dark"] .bp-info-value,
+	[data-theme="dark"] .detail-value,
+	[data-theme="dark"] .main-contact-list-meta,
+	[data-theme="dark"] .bp-address-info-value,
+	[data-theme="dark"] .bp-people-description,
+	[data-theme="dark"] .bp-people-id,
+	[data-theme="dark"] .bp-people-contact-row,
+	[data-theme="dark"] .bp-people-department {
+		color: var(--color-text-secondary);
+	}
+
+	[data-theme="dark"] .bp-summary-grid,
+	[data-theme="dark"] .bp-info-mini-card,
+	[data-theme="dark"] .main-contact-table thead th,
+	[data-theme="dark"] .bp-people-head,
+	[data-theme="dark"] .bp-people-role {
+		background-color: var(--color-bg-muted);
+		border-color: var(--color-border-default);
+	}
+
+	[data-theme="dark"] .bp-stat-card,
+	[data-theme="dark"] .bp-address-card,
+	[data-theme="dark"] .main-contact-list-item,
+	[data-theme="dark"] .main-contact-table,
+	[data-theme="dark"] .bp-people-table,
+	[data-theme="dark"] .bp-people-body {
+		background-color: var(--color-bg-surface);
+		border-color: var(--color-border-default);
+	}
+
+	[data-theme="dark"] .bp-tab-item-inactive {
+		color: var(--color-text-secondary);
+	}
+
+	[data-theme="dark"] .bp-tab-item-inactive:hover {
+		background-color: var(--color-bg-muted);
+		color: var(--color-text-primary);
+	}
+
+	[data-theme="dark"] .main-contact-table tbody td {
+		border-color: var(--color-border-default);
+		color: var(--color-text-secondary);
+	}
+
+	[data-theme="dark"] .main-contact-secondary-btn {
+		border-color: var(--color-border-default);
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-secondary);
+	}
+
+	[data-theme="dark"] .main-contact-secondary-btn:hover {
+		background-color: var(--color-bg-muted);
+		color: var(--color-text-primary);
 	}
 }

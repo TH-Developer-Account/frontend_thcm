@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ServerAxios } from "../../../../services/ServerAxios";
 
-import WorkflowCreateHeader from "./components/WorkflowCreateHeader";
 import WorkflowCreateMain from "./WorkflowCreateMain";
 import WorkflowCreateSidebar from "./components/WorkflowCreateSidebar";
 import { mapBasics, mapStages } from "../utils/workflow.helpers";
@@ -27,6 +26,7 @@ import { useAuth } from "../../../../context/Auth/useAuth";
 import PageSectionLayout from "../../../../layout/PageSectionLayout";
 import Card from "../../../../components/common/Card";
 import { PageHeader } from "../../../../components/ui/PageHeader";
+import { StepProgress } from "../../../../components/ui/StepProgress";
 
 const WorkflowCreatePage = () => {
 	const { user, workspaceId, isLoading } = useAuth();
@@ -50,7 +50,11 @@ const WorkflowCreatePage = () => {
 	const [basicErrors, setBasicErrors] = useState<WorkflowGenErrors>({});
 	const [stageErrors, setStageErrors] = useState<WorkflowStageErrors[]>([]);
 	const [stageFormError, setStageFormError] = useState<string | null>(null);
-
+	const workflowCreateSteps = [
+		{ id: 1, label: "Workflow basics" },
+		{ id: 2, label: "Approval stages" },
+		{ id: 3, label: "Review & Submit" },
+	];
 	useEffect(() => {
 		if (!id) return;
 
@@ -308,7 +312,12 @@ const WorkflowCreatePage = () => {
 				}}
 			/>
 			<Card>
-				<WorkflowCreateHeader currentStep={currentStep} />
+				<StepProgress
+					steps={workflowCreateSteps}
+					currentStep={currentStep}
+					className="workflow-create-step-progress"
+					ariaLabel="Workflow creation progress"
+				/>
 
 				<div className="workflow-create-page-header">
 					<h2 className="workflow-create-page-title">
