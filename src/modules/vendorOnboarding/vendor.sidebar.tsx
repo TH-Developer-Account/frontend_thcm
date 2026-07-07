@@ -5,6 +5,7 @@ import {
 	Users,
 	User,
 	BriefcaseBusinessIcon,
+	Folder,
 } from "lucide-react";
 
 export const vendorSidebar: SidebarItem[] = [
@@ -19,6 +20,30 @@ export const vendorSidebar: SidebarItem[] = [
 		label: "Vendor Listing",
 		icon: <Users size={18} />,
 		link: "/vendor/listing",
+	},
+	{
+		id: "vendor",
+		label: "Vendor Onboarding",
+		icon: <Folder size={20} />,
+		// permission: {
+		// 	app: "GENERAL_FORMS",
+		// 	module: "VENDOR_ONBOARDING",
+		// 	action: "read",
+		// },
+		children: [
+			{
+				id: "vendorInitiation",
+				label: "Vendor Initiation Form",
+				icon: <Users size={18} />,
+				link: "/vendor/create",
+			},
+			{
+				id: "vendorOnboarding",
+				label: "Vendor Onboarding Form",
+				icon: <Users size={18} />,
+				link: "/vendor/onboard/create",
+			},
+		],
 	},
 	{
 		id: "profiles",
