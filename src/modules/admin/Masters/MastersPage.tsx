@@ -3,10 +3,10 @@ import { MasterSidebar } from "./MasterSidebar";
 import {
 	MasterLineItemTable,
 	type MasterItem,
-} from "../../../../components/ui/MasterLineItemTable";
+} from "../../../components/ui/MasterLineItemTable";
 import { MasterDetailPanel } from "./MasterDetailPanel";
-import { useMasterData } from "../../../../hooks/useMasterData";
-import PageSectionLayout from "../../../../layout/PageSectionLayout";
+import { useMasterData } from "../../../hooks/useMasterData";
+import PageSectionLayout from "../../../layout/PageSectionLayout";
 
 // Map each sidebar master key → your data source key
 const MASTER_KEYS: Record<string, string> = {

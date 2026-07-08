@@ -1,6 +1,7 @@
-import { useState } from "react";
-import Button from "../common/Button";
+import { useState, type KeyboardEvent } from "react";
 import { Edit, Trash } from "lucide-react";
+
+import Button from "../common/Button";
 import FormInput from "../forms/FormInput";
 
 export type MasterItem = {
@@ -39,8 +40,32 @@ export function MasterLineItemTable({
 		budgetAmount: "",
 	});
 
+	const [dirty, setDirty] = useState(false);
+
+	const isBudget = title === "Budget";
+	const canAdd = dirty && Boolean(draft.label?.trim());
+
+	const resetDraft = () => {
+		setDraft({
+			id: "",
+			label: "",
+			code: "",
+			description: "",
+			budgetAmount: "",
+		});
+		setDirty(false);
+	};
+
+	const handleDraftChange = (field: keyof MasterItem, value: string) => {
+		setDraft((previous) => ({
+			...previous,
+			[field]: value,
+		}));
+		setDirty(true);
+	};
+
 	const handleAdd = () => {
-		if (!draft.label?.trim()) return;
+		if (!canAdd) return;
 
 		const newItem: MasterItem = isBudget
 			? {
@@ -56,223 +81,231 @@ export function MasterLineItemTable({
 				};
 
 		onChange([...items, newItem]);
-
-		setDraft({
-			id: "",
-			label: "",
-			code: "",
-			description: "",
-			budgetAmount: "",
-		});
+		resetDraft();
 	};
 
-	const handleDelete = (id: any) => {
+	const handleDelete = (id: string) => {
 		onChange(items.filter((item) => item.id !== id));
 	};
-	const isBudget = title === "Budget";
+
+	const handleEnterAdd = (event: KeyboardEvent<HTMLInputElement>) => {
+		if (event.key === "Enter") {
+			handleAdd();
+		}
+	};
+
+	const emptyColSpan = isBudget ? (isViewer ? 4 : 6) : isViewer ? 3 : 5;
+
 	return (
-		<div className="flex flex-col h-full overflow-hidden bg-white border border-gray-200 rounded-lg">
-			{/* Header */}
-			<div className="px-4 py-3 border-b bg-gray-50 shrink-0">
-				<h3 className="font-semibold text-sm text-gray-700">{title}</h3>
+		<div className="master-line-item-card">
+			<div className="master-line-item-header">
+				<h3 className="master-line-item-title">{title}</h3>
 			</div>
 
-			{/* Scrollable table */}
-			<div className="flex-1 overflow-y-auto scrollbar-sleek">
-				<table className="w-full text-sm">
-					<thead className="bg-gray-50 text-xs text-gray-400 uppercase tracking-wide">
+			<div className="master-line-item-scroll scrollbar-sleek">
+				<table className="master-line-item-table">
+					<thead className="master-line-item-thead">
 						<tr>
-							<th className="px-4 py-3 text-left font-medium w-auto">#</th>
+							<th className="master-line-item-index-col">#</th>
 
-							<th className="px-4 py-3 text-left font-medium">
+							<th className="master-line-item-name-col">
 								{isBudget ? "Budget Code" : nameLabel}
 							</th>
 
 							{isBudget ? (
 								<>
-									<th className="px-4 py-3 text-left font-medium">
+									<th className="master-line-item-description-col">
 										Description
 									</th>
-									<th className="px-4 py-3 text-right font-medium">Amount</th>
+									<th className="master-line-item-amount-col">Amount</th>
 								</>
 							) : (
-								<th className="px-4 py-3 text-left font-medium">Code</th>
+								<th className="master-line-item-code-col">Code</th>
 							)}
 
 							{!isViewer && (
 								<>
-									<th className="px-4 py-3 text-right font-medium">Edit</th>
-									<th className="px-4 py-3 text-right font-medium">Delete</th>
+									<th className="master-line-item-action-col">Edit</th>
+									<th className="master-line-item-action-col">Delete</th>
 								</>
 							)}
 						</tr>
 					</thead>
 
 					<tbody>
-						{items.map((item, index) => {
-							const isSelected = selectedId === item.id;
+						{items.length === 0 ? (
+							<tr>
+								<td colSpan={emptyColSpan} className="master-line-item-empty">
+									No items added yet.
+								</td>
+							</tr>
+						) : (
+							items.map((item, index) => {
+								const isSelected = selectedId === item.id;
 
-							return (
-								<tr
-									key={item.id}
-									onClick={() => onSelect?.(item)}
-									className={`border-t border-gray-100 cursor-pointer text-left
-					${
-						isSelected
-							? "bg-orange-50 border-l-2 border-l-orange-400"
-							: "hover:bg-gray-50 border-l-2 border-l-transparent"
-					}`}
-								>
-									<td className="px-4 py-3 text-xs text-gray-400">
-										{index + 1}
-									</td>
+								return (
+									<tr
+										key={item.id}
+										onClick={() => onSelect?.(item)}
+										className={[
+											"master-line-item-row",
+											isSelected
+												? "master-line-item-row-selected"
+												: "master-line-item-row-default",
+										].join(" ")}
+									>
+										<td className="master-line-item-index-cell">{index + 1}</td>
 
-									{/* Normal: Name | Budget: Budget Code */}
-									<td className="px-4 py-3 text-sm font-medium text-gray-700">
-										{item.label ? item.label : "--"}
-									</td>
+										<td
+											className="master-line-item-primary-cell"
+											title={item.label || "--"}
+										>
+											{item.label ? item.label : "--"}
+										</td>
 
-									{isBudget ? (
-										<>
-											{/* Budget Description */}
-											<td className="px-4 py-3 text-sm text-gray-600">
-												{item.description ? item.description : "--"}
-											</td>
+										{isBudget ? (
+											<>
+												<td
+													className="master-line-item-description-cell"
+													title={item.description || "--"}
+												>
+													{item.description ? item.description : "--"}
+												</td>
 
-											{/* Budget Amount */}
-											<td className="px-4 py-3 text-sm font-semibold text-gray-700 text-right">
-												{item.budgetAmount !== undefined &&
-												item.budgetAmount !== null
-													? Number(item.budgetAmount).toLocaleString("en-IN")
-													: "--"}
-											</td>
-										</>
-									) : (
-										<>
-											{/* Normal Code */}
-											<td className="px-4 py-3 text-sm font-medium text-gray-700">
+												<td className="master-line-item-amount-cell">
+													{item.budgetAmount !== undefined &&
+													item.budgetAmount !== null
+														? Number(item.budgetAmount).toLocaleString("en-IN")
+														: "--"}
+												</td>
+											</>
+										) : (
+											<td
+												className="master-line-item-code-cell"
+												title={item.code || "--"}
+											>
 												{item.code ? item.code : "--"}
 											</td>
-										</>
-									)}
+										)}
 
-									{!isViewer && (
-										<td className="px-4 py-3 text-right">
-											<button
-												onClick={(e) => {
-													e.stopPropagation();
-													onSelect?.(item);
-												}}
-												className="p-1 rounded text-gray-300 hover:text-orange-500 cursor-pointer"
-											>
-												<Edit size={13} />
-											</button>
-										</td>
-									)}
+										{!isViewer && (
+											<td className="master-line-item-action-cell">
+												<Button
+													type="button"
+													size="sm"
+													appearance="icon"
+													variant="outline"
+													Icon={Edit}
+													aria-label={`Edit ${item.label || "item"}`}
+													onClick={(event) => {
+														event.stopPropagation();
+														onSelect?.(item);
+													}}
+												/>
+											</td>
+										)}
 
-									{!isViewer && (
-										<td className="px-4 py-3 text-right">
-											<button
-												onClick={(e) => {
-													e.stopPropagation();
-													handleDelete(item.id);
-												}}
-												className="p-1 rounded text-gray-300 hover:text-red-500 cursor-pointer"
-											>
-												<Trash size={13} />
-											</button>
-										</td>
-									)}
-								</tr>
-							);
-						})}
+										{!isViewer && (
+											<td className="master-line-item-action-cell">
+												<Button
+													type="button"
+													size="sm"
+													appearance="icon"
+													variant="outline"
+													Icon={Trash}
+													aria-label={`Delete ${item.label || "item"}`}
+													onClick={(event) => {
+														event.stopPropagation();
+														handleDelete(item.id);
+													}}
+												/>
+											</td>
+										)}
+									</tr>
+								);
+							})
+						)}
 					</tbody>
 				</table>
 			</div>
 
-			{/* Fixed Add Row */}
 			{!isViewer && (
-				<div className="border-t bg-gray-50 px-4 py-2 flex items-center justify-between gap-3">
-					<span className="text-xs text-gray-400 w-6 mb-2">
-						{items.length + 1}
-					</span>
+				<div className="master-line-item-add-row">
+					<div
+						className={
+							isBudget
+								? "master-line-item-add-grid master-line-item-add-grid-budget"
+								: "master-line-item-add-grid master-line-item-add-grid-default"
+						}
+					>
+						<span className="master-line-item-next-index">
+							{items.length + 1}
+						</span>
 
-					{/* Normal: Name | Budget: Budget Code */}
-					<div className="flex-1">
-						<FormInput
-							name="label"
-							value={draft.label ?? ""}
-							onChange={(e) =>
-								setDraft({
-									...draft,
-									label: e.target.value,
-								})
-							}
-							onKeyDown={(e: React.KeyboardEvent) =>
-								e.key === "Enter" && handleAdd()
-							}
-							placeholder={isBudget ? "Budget Code" : "Name"}
-						/>
-					</div>
-
-					{isBudget ? (
-						<>
-							{/* Budget Description */}
-							<div className="flex-1">
-								<FormInput
-									name="description"
-									value={draft.description ?? ""}
-									onChange={(e) =>
-										setDraft({
-											...draft,
-											description: e.target.value,
-										})
-									}
-									placeholder="Description"
-								/>
-							</div>
-
-							{/* Budget Amount */}
-							<div className="flex-1">
-								<FormInput
-									name="budgetAmount"
-									value={String(draft.budgetAmount ?? "")}
-									onChange={(e) =>
-										setDraft({
-											...draft,
-											budgetAmount: e.target.value,
-										})
-									}
-									onKeyDown={(e: React.KeyboardEvent) =>
-										e.key === "Enter" && handleAdd()
-									}
-									placeholder="Amount"
-								/>
-							</div>
-						</>
-					) : (
-						<div className="flex-1">
+						<div className="master-line-item-field">
 							<FormInput
-								name="code"
-								value={draft.code ?? ""}
-								onChange={(e) =>
-									setDraft({
-										...draft,
-										code: e.target.value,
-									})
+								name="label"
+								value={draft.label ?? ""}
+								onChange={(event) =>
+									handleDraftChange("label", event.target.value)
 								}
-								onKeyDown={(e: React.KeyboardEvent) =>
-									e.key === "Enter" && handleAdd()
-								}
-								placeholder="Code"
+								onKeyDown={handleEnterAdd}
+								placeholder={isBudget ? "Budget Code" : "Name"}
 							/>
 						</div>
-					)}
 
-					<div className="">
-						<Button size="sm" status="brand" onClick={handleAdd}>
-							Add
-						</Button>
+						{isBudget ? (
+							<>
+								<div className="master-line-item-field">
+									<FormInput
+										name="description"
+										value={draft.description ?? ""}
+										onChange={(event) =>
+											handleDraftChange("description", event.target.value)
+										}
+										onKeyDown={handleEnterAdd}
+										placeholder="Description"
+									/>
+								</div>
+
+								<div className="master-line-item-field">
+									<FormInput
+										name="budgetAmount"
+										value={String(draft.budgetAmount ?? "")}
+										onChange={(event) =>
+											handleDraftChange("budgetAmount", event.target.value)
+										}
+										onKeyDown={handleEnterAdd}
+										placeholder="Amount"
+									/>
+								</div>
+							</>
+						) : (
+							<div className="master-line-item-field">
+								<FormInput
+									name="code"
+									value={draft.code ?? ""}
+									onChange={(event) =>
+										handleDraftChange("code", event.target.value)
+									}
+									onKeyDown={handleEnterAdd}
+									placeholder="Code"
+								/>
+							</div>
+						)}
+
+						<div className="master-line-item-add-action">
+							<Button
+								type="button"
+								size="sm"
+								appearance="standard"
+								variant="brand"
+								onClick={handleAdd}
+								disabled={!canAdd}
+							>
+								Add
+							</Button>
+						</div>
 					</div>
 				</div>
 			)}

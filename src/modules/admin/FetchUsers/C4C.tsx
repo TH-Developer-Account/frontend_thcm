@@ -1,6 +1,6 @@
 import React from "react";
 import GenericDataTable from "./GenericTable";
-import { ServerAxios } from "../../../../services/ServerAxios";
+import { ServerAxios } from "../../../services/ServerAxios";
 import { normalizeSapRow, mapHeader, c4cEmployeeColumnMap } from "./utils";
 
 export default function C4CUsers() {
