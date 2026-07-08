@@ -29,14 +29,14 @@ const MainContactManagerCard = ({
 				<div className="main-contact-manage">
 					<div className="main-contact-search">
 						<SearchInput
-							placeholder="Search user"
+							placeholder="Search by name, email or number"
 							aria-label="Search user to assign as main contact"
 							onChange={onSearch}
 							value={search}
 						/>
 					</div>
 
-					<div className="main-contact-table">
+					<div className="main-contact-table" role="region" aria-label="Users">
 						<table>
 							<thead>
 								<tr>
@@ -70,6 +70,11 @@ const MainContactManagerCard = ({
 														size="sm"
 														onClick={() => onAddContact(user)}
 														disabled={alreadyAdded}
+														aria-label={
+															alreadyAdded
+																? `${user.name} is already added as a main contact`
+																: `Add ${user.name} as a main contact`
+														}
 													/>
 												</td>
 											</tr>
@@ -91,13 +96,16 @@ const MainContactManagerCard = ({
 	];
 
 	return (
-		<div className="main-contact-card">
+		<section
+			className="main-contact-card"
+			aria-labelledby="main-contact-management"
+		>
 			<div className="main-contact-card-header">
-				<h4>Main Contact Management</h4>
+				<h4 id="main-contact-management">Main Contact Management</h4>
 			</div>
 
 			<Accordion items={items} />
-		</div>
+		</section>
 	);
 };
 

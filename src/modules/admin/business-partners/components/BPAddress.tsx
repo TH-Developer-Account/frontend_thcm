@@ -6,12 +6,14 @@ import BPAddressListCard from "./BPAddressListCard";
 export type AddressItem = {
 	id: string;
 	label?: string;
+	addressType?: string;
 	address: string;
 	isDefault?: boolean;
 };
 
 const emptyForm = {
 	label: "",
+	addressType: "",
 	address: "",
 };
 
@@ -23,6 +25,7 @@ const BPAddress = () => {
 		{
 			id: "1",
 			label: "Head Office",
+			addressType: "Head Office",
 			address:
 				"342, 2nd Floor, Bandra West Near Linking Road, Mumbai, Maharashtra, India 400050",
 			isDefault: true,
@@ -53,6 +56,7 @@ const BPAddress = () => {
 						? {
 								...address,
 								label: form.label.trim(),
+								addressType: form.addressType,
 								address: form.address.trim(),
 							}
 						: address,
@@ -65,6 +69,7 @@ const BPAddress = () => {
 		const newAddress: AddressItem = {
 			id: crypto.randomUUID(),
 			label: form.label.trim(),
+			addressType: form.addressType,
 			address: form.address.trim(),
 			isDefault: addresses.length === 0,
 		};
@@ -79,6 +84,7 @@ const BPAddress = () => {
 
 		setForm({
 			label: target.label || "",
+			addressType: target.addressType || "",
 			address: target.address,
 		});
 		setEditingId(id);
@@ -114,7 +120,7 @@ const BPAddress = () => {
 
 	return (
 		<div className="bp-gen-content">
-			<div className="bp-address-grid-wrap">
+			<div className="bp-address-layout">
 				<BPAddressFormCard
 					form={form}
 					onChange={handleChange}
@@ -122,25 +128,27 @@ const BPAddress = () => {
 					isEditing={Boolean(editingId)}
 				/>
 
-				{defaultAddress && (
-					<BPAddressListCard
-						title="Default Address"
-						address={defaultAddress}
-						showActions={false}
-					/>
-				)}
+				<div className="bp-address-list-grid">
+					{defaultAddress && (
+						<BPAddressListCard
+							address={defaultAddress}
+							showActions
+							onEdit={() => handleEditAddress(defaultAddress.id)}
+							onRemove={() => handleRemoveAddress(defaultAddress.id)}
+						/>
+					)}
 
-				{otherAddresses.map((address) => (
-					<BPAddressListCard
-						key={address.id}
-						title={address.label || "Address"}
-						address={address}
-						showActions
-						onSetDefault={() => handleSetDefault(address.id)}
-						onEdit={() => handleEditAddress(address.id)}
-						onRemove={() => handleRemoveAddress(address.id)}
-					/>
-				))}
+					{otherAddresses.map((address) => (
+						<BPAddressListCard
+							key={address.id}
+							address={address}
+							showActions
+							onSetDefault={() => handleSetDefault(address.id)}
+							onEdit={() => handleEditAddress(address.id)}
+							onRemove={() => handleRemoveAddress(address.id)}
+						/>
+					))}
+				</div>
 			</div>
 		</div>
 	);

@@ -6,7 +6,6 @@ import Card from "../../../../components/common/Card";
 import type { AddressItem } from "./BPAddress";
 
 type Props = {
-	title: string;
 	address: AddressItem | null;
 	showActions?: boolean;
 	onSetDefault?: () => void;
@@ -17,86 +16,85 @@ type Props = {
 const fallbackValue = "--";
 
 const BPAddressListCard = ({
-	title,
 	address,
 	showActions = false,
 	onSetDefault,
 	onEdit,
 	onRemove,
 }: Props) => {
+	const title =
+		address?.label?.trim() || address?.addressType?.trim() || "Address";
+
 	return (
-		<Card>
-			<div className="bp-address-card-header">
-				<h5>{title}</h5>
-
-				<div className="bp-address-card-header-right">
-					{address?.isDefault && (
+		<div className="bp-address-list-card">
+			<Card
+				title={title}
+				actions={
+					address?.isDefault ? (
 						<span className="bp-address-default-badge">Default</span>
-					)}
-
-					{showActions && address && (
-						<div className="bp-address-header-actions">
+					) : undefined
+				}
+				footer={
+					showActions &&
+					address && (
+						<div className="bp-address-card-footer-actions">
 							{!address.isDefault && (
 								<Button
 									type="button"
 									text="Set Default"
 									appearance="standard"
-									variant="secondary"
+									variant="outline"
 									size="sm"
 									onClick={onSetDefault}
 								/>
 							)}
+							<Button
+								type="button"
+								appearance="standard"
+								variant="outline"
+								Icon={Pencil}
+								size="sm"
+								onClick={onEdit}
+							/>
 
 							<Button
 								type="button"
 								appearance="icon"
-								variant="danger"
+								variant="outline"
 								Icon={Trash}
-								iconSize={15}
+								size="sm"
+								disabled={address.isDefault}
+								isTooltip="Default address cannot be deleted"
 								aria-label={`Remove ${address.label || "address"}`}
 								onClick={onRemove}
 							/>
 						</div>
-					)}
-				</div>
-			</div>
+					)
+				}
+			>
+				{address ? (
+					<div className="bp-address-list-container">
+						<div className="bp-address-info-list">
+							<div className="bp-address-info-item">
+								<p className="bp-address-info-label">Type</p>
+								<p className="bp-address-info-value">
+									{address.addressType || fallbackValue}
+								</p>
+							</div>
 
-			{address ? (
-				<div className="bp-address-list-container">
-					<div className="bp-address-info-list">
-						<div className="bp-address-info-item">
-							<p className="bp-address-info-label">Label</p>
-							<p className="bp-address-info-value">
-								{address.label || fallbackValue}
-							</p>
-						</div>
-
-						<div className="bp-address-info-item">
-							<p className="bp-address-info-label">Address</p>
-							<p className="bp-address-info-value">
-								{address.address || fallbackValue}
-							</p>
+							<div className="bp-address-info-item">
+								<p className="bp-address-info-label">Address</p>
+								<p className="bp-address-info-value bp-address-value-clamp">
+									{address.address || fallbackValue}
+								</p>
+							</div>
 						</div>
 					</div>
-				</div>
-			) : (
-				<p className="bp-address-empty">No address added yet.</p>
-			)}
-
-			{showActions && address && (
-				<div className="bp-address-footer-actions">
-					<Button
-						type="button"
-						appearance="icon"
-						variant="secondary"
-						Icon={Pencil}
-						iconSize={15}
-						aria-label={`Edit ${address.label || "address"}`}
-						onClick={onEdit}
-					/>
-				</div>
-			)}
-		</Card>
+				) : (
+					<p className="bp-address-empty">No address added yet.</p>
+				)}
+			</Card>
+		</div>
 	);
 };
 

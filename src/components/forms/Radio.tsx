@@ -1,15 +1,31 @@
 import { forwardRef, type InputHTMLAttributes } from "react";
 import HelperTooltip from "../common/HelperTooltip";
 
+export type RadioOption = {
+	label: string;
+	value: string;
+	disabled?: boolean;
+};
+
 interface InputProps extends Omit<
 	InputHTMLAttributes<HTMLInputElement>,
-	"onChange"
+	"onChange" | "value"
 > {
 	groupLabel?: string;
+
+	/**
+	 * Preferred API for new usage.
+	 */
+	options?: RadioOption[];
+
+	/**
+	 * Backward-compatible API.
+	 */
 	label1?: string;
 	label2?: string;
 	value1?: string;
 	value2?: string;
+
 	selectedValue?: string;
 	error?: string;
 	helperText?: string;
@@ -20,10 +36,35 @@ interface InputProps extends Omit<
 const joinClassNames = (...classes: Array<string | false | null | undefined>) =>
 	classes.filter(Boolean).join(" ");
 
+const slugify = (value: string): string =>
+	value
+		.trim()
+		.toLowerCase()
+		.replace(/[^a-z0-9]+/g, "-")
+		.replace(/^-+|-+$/g, "");
+
+const getResolvedOptions = ({
+	options,
+	label1,
+	label2,
+	value1 = "option1",
+	value2 = "option2",
+}: Pick<InputProps, "options" | "label1" | "label2" | "value1" | "value2">) => {
+	if (options?.length) {
+		return options;
+	}
+
+	return [
+		label1 ? { label: label1, value: value1 } : null,
+		label2 ? { label: label2, value: value2 } : null,
+	].filter(Boolean) as RadioOption[];
+};
+
 const Radio = forwardRef<HTMLInputElement, InputProps>(
 	(
 		{
 			groupLabel,
+			options,
 			label1,
 			label2,
 			value1 = "option1",
@@ -41,8 +82,18 @@ const Radio = forwardRef<HTMLInputElement, InputProps>(
 		},
 		ref,
 	) => {
+		const resolvedOptions = getResolvedOptions({
+			options,
+			label1,
+			label2,
+			value1,
+			value2,
+		});
+
 		const errorId = name ? `${name}-error` : undefined;
 		const helperId = name ? `${name}-helper` : undefined;
+		const groupId = name ? `${name}-group-label` : undefined;
+
 		const describedBy = error
 			? errorId
 			: helperText && !isTooltip
@@ -59,7 +110,7 @@ const Radio = forwardRef<HTMLInputElement, InputProps>(
 			>
 				{groupLabel ? (
 					<div className="form-label-row">
-						<span className="form-label">
+						<span id={groupId} className="form-label">
 							{groupLabel}
 							{required ? (
 								<span className="form-required" aria-hidden="true">
@@ -67,6 +118,7 @@ const Radio = forwardRef<HTMLInputElement, InputProps>(
 								</span>
 							) : null}
 						</span>
+
 						{helperText && isTooltip && !error ? (
 							<HelperTooltip label={groupLabel} text={helperText} />
 						) : null}
@@ -76,51 +128,46 @@ const Radio = forwardRef<HTMLInputElement, InputProps>(
 				<div
 					className="radio-group-options"
 					role="radiogroup"
-					aria-label={groupLabel}
+					aria-labelledby={groupLabel ? groupId : undefined}
+					aria-label={!groupLabel ? name : undefined}
 					aria-describedby={describedBy}
 				>
-					<label className="form-radio-field">
-						<input
-							ref={ref}
-							id={`${name}-${value1}`}
-							name={name}
-							type="radio"
-							disabled={disabled}
-							required={required}
-							checked={selectedValue === value1}
-							value={value1}
-							onChange={() => onChange?.(value1)}
-							className={joinClassNames(
-								"form-radio-input",
-								error && "form-radio-input-error",
-								className,
-							)}
-							aria-invalid={error ? "true" : undefined}
-							{...props}
-						/>
-						{label1 ? <span className="form-radio-label">{label1}</span> : null}
-					</label>
+					{resolvedOptions.map((option, index) => {
+						const optionId = `${name || "radio"}-${slugify(option.value)}`;
+						const isOptionDisabled = disabled || option.disabled;
 
-					<label className="form-radio-field">
-						<input
-							id={`${name}-${value2}`}
-							name={name}
-							type="radio"
-							disabled={disabled}
-							required={required}
-							checked={selectedValue === value2}
-							value={value2}
-							onChange={() => onChange?.(value2)}
-							className={joinClassNames(
-								"form-radio-input",
-								error && "form-radio-input-error",
-								className,
-							)}
-							aria-invalid={error ? "true" : undefined}
-							{...props}
-						/>
-						{label2 ? <span className="form-radio-label">{label2}</span> : null}
-					</label>
+						return (
+							<label
+								key={option.value}
+								htmlFor={optionId}
+								className={joinClassNames(
+									"form-radio-field",
+									isOptionDisabled && "is-disabled",
+								)}
+							>
+								<input
+									{...props}
+									ref={index === 0 ? ref : undefined}
+									id={optionId}
+									name={name}
+									type="radio"
+									disabled={isOptionDisabled}
+									required={required}
+									checked={selectedValue === option.value}
+									value={option.value}
+									onChange={() => onChange?.(option.value)}
+									className={joinClassNames(
+										"form-radio-input",
+										error && "form-radio-input-error",
+										className,
+									)}
+									aria-invalid={error ? "true" : undefined}
+								/>
+
+								<span className="form-radio-label">{option.label}</span>
+							</label>
+						);
+					})}
 				</div>
 
 				{error ? (
@@ -138,4 +185,5 @@ const Radio = forwardRef<HTMLInputElement, InputProps>(
 );
 
 Radio.displayName = "Radio";
+
 export default Radio;

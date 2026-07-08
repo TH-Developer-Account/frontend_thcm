@@ -67,9 +67,6 @@ const BPMainContact = () => {
 		);
 	}, [search]);
 
-	const defaultContact =
-		contacts.find((contact) => contact.isDefault) ?? contacts[0] ?? null;
-
 	const handleSearch = (value: string) => {
 		setSearch(value);
 	};
@@ -121,7 +118,6 @@ const BPMainContact = () => {
 
 			<MainContactCurrentCard
 				contacts={contacts}
-				defaultContact={defaultContact}
 				fallbackValue={fallbackValue}
 				onSetDefault={handleSetDefault}
 				onRemoveContact={handleRemoveContact}

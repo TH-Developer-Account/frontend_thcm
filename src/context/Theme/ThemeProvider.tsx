@@ -15,9 +15,19 @@ type ThemeProviderProps = {
 
 const THEME_STORAGE_KEY = "thcm-theme";
 
-const getInitialTheme = (): Theme => {
+const getSystemTheme = (): Theme => {
 	if (typeof window === "undefined") {
 		return "light";
+	}
+
+	return window.matchMedia("(prefers-color-scheme: dark)").matches
+		? "dark"
+		: "light";
+};
+
+const getStoredTheme = (): Theme | null => {
+	if (typeof window === "undefined") {
+		return null;
 	}
 
 	const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
@@ -26,31 +36,58 @@ const getInitialTheme = (): Theme => {
 		return storedTheme;
 	}
 
-	return window.matchMedia("(prefers-color-scheme: dark)").matches
-		? "dark"
-		: "light";
+	return null;
+};
+
+const getInitialTheme = (): Theme => {
+	return getStoredTheme() ?? getSystemTheme();
 };
 
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
 	const [theme, setThemeState] = useState<Theme>(getInitialTheme);
+	const [isSystemTheme, setIsSystemTheme] = useState(() => !getStoredTheme());
 
 	useEffect(() => {
 		const root = document.documentElement;
 
 		root.dataset.theme = theme;
 		root.style.colorScheme = theme;
-
-		window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+		root.classList.toggle("dark", theme === "dark");
 	}, [theme]);
 
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+
+		const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+		const handleSystemThemeChange = (event: MediaQueryListEvent) => {
+			if (!isSystemTheme) return;
+
+			setThemeState(event.matches ? "dark" : "light");
+		};
+
+		mediaQuery.addEventListener("change", handleSystemThemeChange);
+
+		return () => {
+			mediaQuery.removeEventListener("change", handleSystemThemeChange);
+		};
+	}, [isSystemTheme]);
+
 	const setTheme = useCallback((nextTheme: Theme) => {
+		window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+		setIsSystemTheme(false);
 		setThemeState(nextTheme);
 	}, []);
 
 	const toggleTheme = useCallback(() => {
-		setThemeState((currentTheme) =>
-			currentTheme === "light" ? "dark" : "light",
-		);
+		setThemeState((currentTheme) => {
+			const nextTheme = currentTheme === "light" ? "dark" : "light";
+
+			window.localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+			setIsSystemTheme(false);
+
+			return nextTheme;
+		});
 	}, []);
 
 	const value = useMemo(
