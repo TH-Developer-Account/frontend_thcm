@@ -24,33 +24,33 @@ const initialFormValues: VendorOnboardingInitiationPayload = {
 	personPhone: "",
 };
 
-const validateVendorInitiationForm = (
-	values: VendorOnboardingInitiationPayload,
-): VendorOnboardingInitiationErrors => {
-	const errors: VendorOnboardingInitiationErrors = {};
+// const validateVendorInitiationForm = (
+// 	values: VendorOnboardingInitiationPayload,
+// ): VendorOnboardingInitiationErrors => {
+// 	const errors: VendorOnboardingInitiationErrors = {};
 
-	if (!values.vendorName.trim()) {
-		errors.vendorName = "Vendor name is required.";
-	}
+// 	if (!values.vendorName.trim()) {
+// 		errors.vendorName = "Vendor name is required.";
+// 	}
 
-	if (!values.vendorEmail.trim()) {
-		errors.vendorEmail = "Vendor email is required.";
-	}
+// 	if (!values.vendorEmail.trim()) {
+// 		errors.vendorEmail = "Vendor email is required.";
+// 	}
 
-	if (!values.vendorPhone.trim()) {
-		errors.vendorPhone = "Vendor phone number is required.";
-	}
+// 	if (!values.vendorPhone.trim()) {
+// 		errors.vendorPhone = "Vendor phone number is required.";
+// 	}
 
-	if (values.vendorEmail && !/^\S+@\S+\.\S+$/.test(values.vendorEmail)) {
-		errors.vendorEmail = "Enter a valid vendor email.";
-	}
+// 	if (values.vendorEmail && !/^\S+@\S+\.\S+$/.test(values.vendorEmail)) {
+// 		errors.vendorEmail = "Enter a valid vendor email.";
+// 	}
 
-	if (values.personEmail && !/^\S+@\S+\.\S+$/.test(values.personEmail)) {
-		errors.personEmail = "Enter a valid contact person email.";
-	}
+// 	if (values.personEmail && !/^\S+@\S+\.\S+$/.test(values.personEmail)) {
+// 		errors.personEmail = "Enter a valid contact person email.";
+// 	}
 
-	return errors;
-};
+// 	return errors;
+// };
 
 const createVendorInitiation = async (
 	payload: VendorOnboardingInitiationPayload,
@@ -189,12 +189,12 @@ export const useVendorOnboardingInitiation = ({
 	};
 
 	const handleSubmit = () => {
-		const validationErrors = validateVendorInitiationForm(values);
+		// const validationErrors = validateVendorInitiationForm(values);
 
-		if (Object.keys(validationErrors).length > 0) {
-			setErrors(validationErrors);
-			return;
-		}
+		// if (Object.keys(validationErrors).length > 0) {
+		// 	setErrors(validationErrors);
+		// 	return;
+		// }
 
 		if (isEditMode && initiationId) {
 			updateMutation.mutate({

@@ -123,6 +123,10 @@ const validateFormOne = (
 ): VendorFormErrors<VendorCreationFormOneValues> => {
 	const errors: VendorFormErrors<VendorCreationFormOneValues> = {};
 
+	if (!values.vendorCode?.trim()) {
+		errors.vendorCode = "Vendor code is required.";
+	}
+
 	if (!values.vendorType?.trim()) {
 		errors.vendorType = "Vendor type is required.";
 	}
@@ -332,19 +336,19 @@ export function useVendorCreationForm({
 
 	const handleSaveFormOne = async () => {
 		try {
-			const errors = validateFormOne(formOneValues);
+			// const errors = validateFormOne(formOneValues);
 
-			if (Object.keys(errors).length > 0) {
-				setFormOneErrors(errors);
+			// if (Object.keys(errors).length > 0) {
+			// 	setFormOneErrors(errors);
 
-				showToast({
-					type: "error",
-					title: "Validation Error",
-					description: "Please complete all required vendor master fields.",
-				});
+			// 	showToast({
+			// 		type: "error",
+			// 		title: "Validation Error",
+			// 		description: "Please complete all required vendor master fields.",
+			// 	});
 
-				return;
-			}
+			// 	return;
+			// }
 
 			if (resolvedVendorRequestId) {
 				await updateFormOneMutation.mutateAsync({
@@ -398,20 +402,20 @@ export function useVendorCreationForm({
 				return;
 			}
 
-			const errors = validateFormTwo(formTwoValues);
+			// const errors = validateFormTwo(formTwoValues);
 
-			if (Object.keys(errors).length > 0) {
-				setFormTwoErrors(errors);
+			// if (Object.keys(errors).length > 0) {
+			// 	setFormTwoErrors(errors);
 
-				showToast({
-					type: "error",
-					title: "Validation Error",
-					description:
-						"Please complete all required finance and compliance fields.",
-				});
+			// 	showToast({
+			// 		type: "error",
+			// 		title: "Validation Error",
+			// 		description:
+			// 			"Please complete all required finance and compliance fields.",
+			// 	});
 
-				return;
-			}
+			// 	return;
+			// }
 
 			if (hasExistingFormTwo) {
 				await updateFormTwoMutation.mutateAsync({

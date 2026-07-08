@@ -46,6 +46,7 @@ const VendorOnboardingInitiationForm = ({
 		<Card>
 			<form
 				className="vendor-onboarding-form"
+				noValidate
 				onSubmit={(event) => {
 					event.preventDefault();
 					handleSubmit();
@@ -89,8 +90,8 @@ const VendorOnboardingInitiationForm = ({
 					/>
 				</div>
 
-				<FormHeader title="Main Contact Info" Icon={LucideBriefcaseBusiness} />
-
+				{/* <FormHeader title="Main Contact Info" Icon={LucideBriefcaseBusiness} /> */}
+				{/* 
 				<div className="vendor-onboarding-form-grid">
 					<FormInput
 						name="personName"
@@ -122,7 +123,7 @@ const VendorOnboardingInitiationForm = ({
 							handleChange("personPhone", event.target.value)
 						}
 					/>
-				</div>
+				</div> */}
 
 				<div className="vendor-onboarding-form-actions">
 					{isEditMode ? (
@@ -157,7 +158,7 @@ const VendorOnboardingInitiationForm = ({
 							size="sm"
 							appearance="standard"
 							variant="outline"
-							disabled={isSubmitting}
+							disabled={isSubmitting || isDeleting}
 							onClick={handleReset}
 						/>
 

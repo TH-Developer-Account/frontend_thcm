@@ -19,7 +19,7 @@
 		--card-subtitle-text: var(--color-text-muted);
 		--card-border: var(--color-border-default);
 		--card-border-subtle: var(--color-border-subtle);
-		--card-border-hover: var(--color-border-hover);
+		--card-border-hover: var(--color-brand-hover);
 		--card-header-bg: var(--color-bg-surface);
 		--card-footer-bg: var(--color-bg-surface);
 		--card-shadow: var(--shadow-xs);

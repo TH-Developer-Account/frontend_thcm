@@ -185,6 +185,7 @@ const VendorCreationFormOne = ({
 						<FormInput
 							name="vendorCode"
 							label="Vendor Code"
+							required
 							value={values.vendorCode ?? ""}
 							error={errors.vendorCode}
 							helperText="Enter only if this is an existing vendor."
