@@ -6,7 +6,7 @@ import type { EpcDetailResponse } from "../../types/epc.types";
 import type { WorkflowComment } from "../../types/workflow.types";
 import type { TableRow } from "../../types/lineItem.types";
 
-import { statusMap } from "../../../../../utils/types";
+import { statusMap } from "../../types/activityplanner.types";
 import { formatDateTime } from "../../../../../utils/format";
 
 import {

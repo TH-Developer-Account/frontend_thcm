@@ -27,7 +27,7 @@ export const marketingSidebar: SidebarItem[] = [
 		id: "epc",
 		label: "Activity Planner",
 		icon: <CalendarDays size={20} />,
-		link: "/marketing/epc",
+		link: "/marketing/activity-planner/epc",
 		permission: {
 			app: "MAP",
 			module: "EPC",
@@ -37,7 +37,7 @@ export const marketingSidebar: SidebarItem[] = [
 			{
 				id: "epc-list",
 				label: "EPC Listing",
-				link: "/marketing/listing",
+				link: "/marketing/activity-planner/listing",
 				icon: <Table size={18} />,
 				permission: {
 					app: "MAP",
@@ -48,7 +48,7 @@ export const marketingSidebar: SidebarItem[] = [
 			{
 				id: "lead-list",
 				label: "Leads Listing",
-				link: "/marketing/leads/listing",
+				link: "/marketing/activity-planner/leads/listing",
 				icon: <Users size={18} />,
 				permission: {
 					app: "MAP",
@@ -59,7 +59,7 @@ export const marketingSidebar: SidebarItem[] = [
 			{
 				id: "file-module",
 				label: "Import/Export Module",
-				link: "/marketing/file-module/listing",
+				link: "/marketing/activity-planner/file-module/listing",
 				icon: <Upload size={18} />,
 				permission: {
 					app: "MAP",

@@ -161,7 +161,7 @@ export function useCrfForm({
 				return;
 			}
 
-			navigate("/marketing/listing");
+			navigate("/marketing/activity-planner/listing");
 		} catch (error: any) {
 			console.error("CRF save failed:", error);
 

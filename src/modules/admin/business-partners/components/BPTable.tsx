@@ -1,6 +1,6 @@
 import React from "react";
 
-import DataTable from "../../../../components/ui/DataTable";
+import DataTable from "../../../../components/ui/tables/DataTable/DataTable";
 import type { BusinessPartner } from "../utils/bp.types";
 
 import { getBusinessPartnerColumns } from "./businessPartner.columns";

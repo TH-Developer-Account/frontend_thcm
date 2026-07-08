@@ -3,7 +3,7 @@ import { X, Save, Database } from "lucide-react";
 
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/forms/FormInput";
-import { type MasterItem } from "../../../components/ui/MasterLineItemTable";
+import { type MasterItem } from "../../../components/ui/tables/LineItemTable/MasterLineItemTable";
 
 interface MasterDetailPanelProps {
 	masterName: string;

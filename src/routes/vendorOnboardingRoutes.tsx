@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import { DashboardPage } from "../modules/marketing/pages/Dashboard/DashboardPage";
+import { DashboardPage } from "../modules/marketing/dashboard/DashboardPage";
 import VendorListingPage from "../modules/vendorOnboarding/pages/VendorListingPage";
 import VendorOnboardingPage from "../modules/vendorOnboarding/pages/VendorOnboardingPage";
 import VendorInitiationPage from "../modules/vendorOnboarding/pages/VendorInitiationPage";

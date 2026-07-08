@@ -10,8 +10,8 @@ import { Modal } from "../../../../components/common/Modal";
 import MultiSelectInput from "../../../../components/forms/MultiSelectInput";
 import { SearchInput } from "../../../../components/forms/SearchInput";
 import type { Option } from "../../../../components/forms/input.types";
-import DataTable from "../../../../components/ui/DataTable";
-import DataTableSkeleton from "../../../../components/ui/DataTableSkeleton";
+import DataTable from "../../../../components/ui/tables/DataTable/DataTable";
+import DataTableSkeleton from "../../../../components/ui/tables/Skeletons/DataTableSkeleton";
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { useAuth } from "../../../../context/Auth/useAuth";
 import { ServerAxios } from "../../../../services/ServerAxios";
@@ -366,6 +366,10 @@ const WorkflowTable = () => {
 						setDeleteModal(null);
 					}
 				}}
+				mode="shell"
+				size="sm"
+				dialogRole="alertdialog"
+				ariaLabel="Delete workflow confirmation"
 			>
 				<Alert
 					variant="warning"

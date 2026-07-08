@@ -4,7 +4,7 @@ import { UserProfilePage } from "../modules/admin/user-profile/UserProfilePage";
 import { ProfileFormPage } from "../modules/admin/user-profile/components/ProfileFormPage";
 import ByDesignPage from "../modules/admin/FetchUsers/ByDesign";
 import C4CPage from "../modules/admin/FetchUsers/C4C";
-import UserProfile from "../components/ui/UserProfile/UserProfile";
+import UserProfile from "../modules/settings/UserProfile/UserProfile";
 import ComingSoon from "../components/ui/ComingSoon";
 import MastersPage from "../modules/admin/Masters/MastersPage";
 import BusinessPartners from "../modules/admin/business-partners/BusinessPartners";

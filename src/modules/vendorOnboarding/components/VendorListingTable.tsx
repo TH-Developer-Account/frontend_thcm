@@ -9,8 +9,8 @@ import {
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
 import { SearchInput } from "../../../components/forms/SearchInput";
-import DataTable from "../../../components/ui/DataTable";
-import DataTableSkeleton from "../../../components/ui/DataTableSkeleton";
+import DataTable from "../../../components/ui/tables/DataTable/DataTable";
+import DataTableSkeleton from "../../../components/ui/tables/Skeletons/DataTableSkeleton";
 import { FilterTabs } from "../../../components/ui/FilterTabs";
 
 import { getVendorListingColumns } from "../utils/vendorListing.columns";

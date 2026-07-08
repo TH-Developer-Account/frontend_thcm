@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import type { ToastInput } from "../../components/common/Toast/toast.types";
+import type { ToastInput } from "../Toast/toast.types";
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 

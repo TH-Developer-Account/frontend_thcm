@@ -3,11 +3,9 @@ import { MoreVertical, Pencil } from "lucide-react";
 
 import { Badge } from "../../../components/common/Badge";
 import Button from "../../../components/common/Button";
-import {
-	ManagementIdentityCell,
-	ManagementTable,
-	type ManagementTableColumn,
-} from "../../../components/ui/tables";
+import ManagementTable from "../../../components/ui/tables/ManagementTable/ManagementTable";
+import { ManagementIdentityCell } from "../../../components/ui/tables/ManagementTable/ManagementTableCells";
+import { type ManagementTableColumn } from "../../../components/ui/tables/ManagementTable/ManagementTable.types";
 import type { TableUser } from "../../../utils/types";
 
 interface UserTableProps {

@@ -12,7 +12,7 @@ import {
 	getRoleOptions,
 	getUserCounts,
 } from "./user-management.utils";
-import { mockUsers } from "../mockUsers";
+import { mockUsers } from "./mockUsers";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import { PageHeader } from "../../../components/ui/PageHeader";
 
@@ -59,6 +59,7 @@ export default function UsersPage({ fetchUsers }: UsersPageProps) {
 					separator: "›",
 				}}
 			/>
+
 			<UserTableLayout
 				users={filteredUsers}
 				activeTab={activeTab}

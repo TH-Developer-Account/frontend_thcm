@@ -1,4 +1,4 @@
-import type { ToastStyle, ToastVariant } from "./common/Toast/toast.types";
+import type { ToastStyle, ToastVariant } from "../context/Toast/toast.types";
 
 const normalizeStyleKey = (value?: string | null) =>
 	String(value ?? "")

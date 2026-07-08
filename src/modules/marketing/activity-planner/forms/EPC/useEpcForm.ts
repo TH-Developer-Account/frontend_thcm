@@ -274,7 +274,7 @@ export function useEpcForm({
 				if (savedEpcId) {
 					navigate(`/marketing/activity-planner/${savedEpcId}`);
 				} else {
-					navigate("/marketing/listing");
+					navigate("/marketing/activity-planner/listing");
 				}
 			} catch (error: any) {
 				console.error("EPC save failed:", error);

@@ -16,7 +16,7 @@ export const actions = [
 		icon: Megaphone,
 		title: "Marketing Activity Planner",
 		description: "Plan, track, and approve marketing events and campaigns.",
-		path: "/marketing/listing",
+		path: "/marketing/activity-planner/listing",
 		appKey: "MAP",
 		isActive: true,
 	},

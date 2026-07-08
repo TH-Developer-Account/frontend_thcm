@@ -5,8 +5,8 @@ import Button from "../../../../../components/common/Button";
 import SelectInput from "../../../../../components/forms/SelectInput";
 import FormInput from "../../../../../components/forms/FormInput";
 import TextareaInput from "../../../../../components/forms/TextareaInput";
-import { FileUploadField } from "../../../../../components/FileUpload/FileUploadField";
-import { validateUploadFile } from "../../../../../components/FileUpload/fileUpload.helpers";
+import { FileUploadField } from "../../../../../components/ui/FileUpload/FileUploadField";
+import { validateUploadFile } from "../../../../../components/ui/FileUpload/fileUpload.helpers";
 import SectionAccordion from "../../../../../components/common/SectionAccordion";
 
 import { useToast } from "../../../../../context/Auth/AuthContext";

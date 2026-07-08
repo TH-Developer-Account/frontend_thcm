@@ -6,8 +6,8 @@ import type { SortingState } from "@tanstack/react-table";
 import Button from "../../../../../components/common/Button";
 import Card from "../../../../../components/common/Card";
 import { SearchInput } from "../../../../../components/forms/SearchInput";
-import DataTable from "../../../../../components/ui/DataTable";
-import DataTableSkeleton from "../../../../../components/ui/DataTableSkeleton";
+import DataTable from "../../../../../components/ui/tables/DataTable/DataTable";
+import DataTableSkeleton from "../../../../../components/ui/tables/Skeletons/DataTableSkeleton";
 import { FilterTabs } from "../../../../../components/ui/FilterTabs";
 import { useAuth } from "../../../../../context/Auth/useAuth";
 import { Can } from "../../../../../context/permissionHelpers";
@@ -86,7 +86,7 @@ const EPCTable = ({
 		() =>
 			getEPCColumns({
 				onLeadCreate: () => {
-					navigate("/marketing/leads/create");
+					navigate("/marketing/activity-planner/leads/create");
 				},
 				currentUserId: user?.id,
 			}),

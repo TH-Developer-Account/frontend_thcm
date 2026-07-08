@@ -89,7 +89,7 @@ const ActivityPlannerPage = () => {
 								},
 								{
 									label: "EPC Listing",
-									href: "/marketing/listing",
+									href: "/marketing/activity-planner/listing",
 								},
 								{
 									label: "Form View",

@@ -3,9 +3,8 @@ import type { ReactNode } from "react";
 
 import { Badge } from "../../../../../components/common/Badge";
 import Card from "../../../../../components/common/Card";
-import DataTable from "../../../../../components/ui/DataTable";
-
-import type { ApprovalTableRow } from "../../../../../utils/types";
+import DataTable from "../../../../../components/ui/tables/DataTable/DataTable";
+import type { ApprovalTableRow } from "../../types/activityplanner.types";
 
 type ApprovalTableVariant = "app" | "pdf";
 

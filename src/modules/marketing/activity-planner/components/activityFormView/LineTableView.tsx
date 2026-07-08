@@ -2,9 +2,9 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Paperclip } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import DataTable from "../../../../../components/ui/DataTable";
+import DataTable from "../../../../../components/ui/tables/DataTable/DataTable";
 
-import { CRF_CATEGORIES } from "../../../constant";
+import { CRF_CATEGORIES } from "../../utils/constant";
 
 import type { ColumnConfig, TableRow } from "../../types/lineItem.types";
 

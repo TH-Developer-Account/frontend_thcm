@@ -4,8 +4,8 @@ import { FileDown, FileUp, List, UserCheck, Users } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
 import Card from "../../../../../components/common/Card";
-import DataTable from "../../../../../components/ui/DataTable";
-import DataTableSkeleton from "../../../../../components/ui/DataTableSkeleton";
+import DataTable from "../../../../../components/ui/tables/DataTable/DataTable";
+import DataTableSkeleton from "../../../../../components/ui/tables/Skeletons/DataTableSkeleton";
 import { FilterTabs } from "../../../../../components/ui/FilterTabs";
 import { ServerAxios } from "../../../../../services/ServerAxios";
 
