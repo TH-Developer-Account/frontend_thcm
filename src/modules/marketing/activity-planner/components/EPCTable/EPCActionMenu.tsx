@@ -5,7 +5,7 @@ import {
 	MenuItems,
 	Portal,
 } from "@headlessui/react";
-import { ChevronDown } from "lucide-react";
+import { EllipsisVertical, UserPlus } from "lucide-react";
 
 import type { EpcListItem } from "../../types/epc.types";
 import Button from "../../../../../components/common/Button";
@@ -18,7 +18,6 @@ type EPCActionMenuProps = {
 
 const getEventName = (row: EpcListItem) => {
 	if (typeof row.event_name === "string") return row.event_name;
-
 	return row.event_title || "--";
 };
 
@@ -28,6 +27,8 @@ export default function EPCActionMenu({
 	canCreateLead,
 }: EPCActionMenuProps) {
 	const handleLead = () => {
+		if (!canCreateLead) return;
+
 		localStorage.setItem(
 			"LeadInfo",
 			JSON.stringify({
@@ -43,44 +44,29 @@ export default function EPCActionMenu({
 	};
 
 	return (
-		<Menu as="div" className="relative inline-block text-left">
+		<Menu as="div" className="epc-action-menu">
 			<MenuButton
-				className="
-					inline-flex items-center justify-center gap-1.5 rounded-md
-					border border-zinc-200 bg-white px-3 py-1.5
-					text-xs font-medium text-zinc-900 shadow-sm transition
-					hover:border-orange-200 hover:bg-orange-50 hover:text-orange-700
-					focus:outline-none
-				"
+				className="epc-action-trigger"
+				aria-label={`Open actions for ${row.proposal_number || "EPC"}`}
 			>
-				<ChevronDown size={14} />
+				<EllipsisVertical size={16} aria-hidden="true" />
 			</MenuButton>
 
 			<Portal>
-				<MenuItems
-					anchor="bottom end"
-					transition
-					className="
-						z-99 mt-1 w-auto origin-top-right
-						rounded-md border border-zinc-100 bg-white p-1 shadow-lg
-						outline-none transition
-						data-closed:scale-95 data-closed:transform data-closed:opacity-0
-						data-enter:duration-100 data-enter:ease-out
-						data-leave:duration-75 data-leave:ease-in
-					"
-				>
+				<MenuItems anchor="bottom end" transition className="epc-action-panel">
 					<MenuItem>
-						<Button
-							type="button"
-							onClick={handleLead}
-							className="
-								flex w-full items-center gap-2 rounded px-3 py-2
-								text-left text-xs font-medium text-zinc-800
-								data-focus:bg-orange-50 data-focus:text-orange-700
-							"
-							disabled={!canCreateLead}
-							text="Create Lead"
-						/>
+						{({ focus }) => (
+							<Button
+								type="button"
+								text="Create Lead"
+								disabled={!canCreateLead}
+								onClick={handleLead}
+								Icon={UserPlus}
+								appearance="transparent"
+								variant="transparent"
+								className={`epc-action-item ${focus ? "epc-action-item-focus" : ""}`}
+							/>
+						)}
 					</MenuItem>
 				</MenuItems>
 			</Portal>

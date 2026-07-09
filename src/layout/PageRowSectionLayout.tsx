@@ -1,43 +1,102 @@
-// PageRowSectionLayout.tsx
-import React from "react";
+import type { CSSProperties, ReactNode } from "react";
+
+type PageRowContentMode = "page-scroll" | "contained";
 
 type PageRowSectionLayoutProps = {
-	header_children: React.ReactNode;
-	children: React.ReactNode;
+	pageHeader?: ReactNode;
+	header_children: ReactNode;
+	children: ReactNode;
 	className?: string;
+	pageHeaderClassName?: string;
 	headerClassName?: string;
+	headerBodyClassName?: string;
 	contentClassName?: string;
+	contentBodyClassName?: string;
 	stickyHeader?: boolean;
 	stickyTop?: string;
+	contentMode?: PageRowContentMode;
 };
 
+const joinClassNames = (
+	...classNames: Array<string | false | null | undefined>
+): string => classNames.filter(Boolean).join(" ");
+
 const PageRowSectionLayout = ({
+	pageHeader,
 	header_children,
 	children,
 	className = "",
+	pageHeaderClassName = "",
 	headerClassName = "",
+	headerBodyClassName = "",
 	contentClassName = "",
+	contentBodyClassName = "",
 	stickyHeader = false,
-	stickyTop = "top-0",
+	stickyTop = "0px",
+	contentMode = "page-scroll",
 }: PageRowSectionLayoutProps) => {
+	const layoutStyle = {
+		"--page-row-sticky-top": stickyTop,
+	} as CSSProperties;
+
 	return (
-		<div className="h-[92dvh] min-h-0 flex flex-col overflow-hidden gap-2 w-full">
-			<div
-				className={`${headerClassName} ${
-					stickyHeader
-						? `sticky ${stickyTop} z-30 bg-white border-b border-zinc-200 shrink-0`
-						: "shrink-0 mt-4"
-				}`}
+		<section
+			className={joinClassNames(
+				"page-row-layout",
+				stickyHeader && "page-row-layout-sticky",
+				contentMode === "contained"
+					? "page-row-layout-contained"
+					: "page-row-layout-page-scroll",
+				className,
+			)}
+			style={layoutStyle}
+		>
+			<header
+				className={joinClassNames("page-row-layout-header", headerClassName)}
 			>
-				<div className="page-stack-section content-box">
-					<div className={className}>{header_children}</div>
+				{pageHeader ? (
+					<div
+						className={joinClassNames(
+							"page-row-layout-page-header",
+							pageHeaderClassName,
+						)}
+					>
+						{pageHeader}
+					</div>
+				) : null}
+
+				<div className="page-row-layout-surface-header">
+					<div
+						className={joinClassNames(
+							"page-row-layout-header-body",
+							headerBodyClassName,
+						)}
+					>
+						{header_children}
+					</div>
+				</div>
+			</header>
+
+			<div className="page-row-layout-surface-content">
+				<div
+					className={joinClassNames(
+						"page-row-layout-content",
+						contentClassName,
+					)}
+				>
+					<div className="page-row-layout-content-inner">
+						<div
+							className={joinClassNames(
+								"page-row-layout-content-body",
+								contentBodyClassName,
+							)}
+						>
+							{children}
+						</div>
+					</div>
 				</div>
 			</div>
-
-			<div className="min-h-0 overflow-y-auto scrollbar-sleek content-box page-stack-section">
-				<div className={`${className} ${contentClassName}`}>{children}</div>
-			</div>
-		</div>
+		</section>
 	);
 };
 

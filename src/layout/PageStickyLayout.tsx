@@ -1,14 +1,19 @@
-import React from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 type PageStickyLayoutProps = {
-	header: React.ReactNode;
-	sidebar?: React.ReactNode;
-	children: React.ReactNode;
+	header: ReactNode;
+	sidebar?: ReactNode;
+	children: ReactNode;
 	className?: string;
 	headerClassName?: string;
 	sidebarClassName?: string;
 	contentClassName?: string;
+	headerOffset?: string;
 };
+
+const joinClassNames = (
+	...classNames: Array<string | false | null | undefined>
+) => classNames.filter(Boolean).join(" ");
 
 const PageStickyLayout = ({
 	header,
@@ -18,33 +23,46 @@ const PageStickyLayout = ({
 	headerClassName = "",
 	sidebarClassName = "",
 	contentClassName = "",
+	headerOffset = "0px",
 }: PageStickyLayoutProps) => {
+	const layoutStyle = {
+		"--page-sticky-header-offset": headerOffset,
+	} as CSSProperties;
+
 	return (
-		<div
-			className={`h-[calc(100vh-80px)] min-h-0 overflow-hidden bg-transparent flex flex-col ${className}`}
+		<section
+			className={joinClassNames("page-sticky-layout", className)}
+			style={layoutStyle}
 		>
-			{/* Header */}
-			<div
-				className={`shrink-0 bg-white border border-zinc-200 rounded-sm z-30 mb-2 ${headerClassName}`}
+			<header
+				className={joinClassNames("page-sticky-layout-header", headerClassName)}
 			>
 				{header}
-			</div>
+			</header>
 
-			{/* Body */}
-			<div className="flex-1 min-h-0 grid grid-cols-[200px_1fr] gap-2 overflow-hidden">
-				<aside
-					className={`min-h-0 overflow-y-auto scrollbar-sleek ${sidebarClassName}`}
-				>
-					{sidebar}
-				</aside>
+			<div className="page-sticky-layout-body">
+				{sidebar ? (
+					<aside
+						className={joinClassNames(
+							"page-sticky-layout-sidebar",
+							"scrollbar-sleek",
+							sidebarClassName,
+						)}
+					>
+						{sidebar}
+					</aside>
+				) : null}
 
 				<main
-					className={`min-h-0 overflow-y-auto scrollbar-sleek ${contentClassName}`}
+					className={joinClassNames(
+						"page-sticky-layout-content",
+						contentClassName,
+					)}
 				>
 					{children}
 				</main>
 			</div>
-		</div>
+		</section>
 	);
 };
 

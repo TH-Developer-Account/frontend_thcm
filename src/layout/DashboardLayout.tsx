@@ -1,24 +1,30 @@
 import { HeaderLayout } from "./HeaderLayout";
-import { SidebarLayout } from "./SidebarLayout";
 import { MainLayout } from "./MainLayout";
-import { type DashboardLayoutProps } from "./layout.types";
+import { SidebarLayout } from "./SidebarLayout";
+import type { DashboardLayoutProps } from "./layout.types";
 
 export const DashboardLayout = ({
 	isSidebarOpen,
 	onToggleSidebar,
+	onCloseSidebar,
 	sidebarItems,
 	header,
 	children,
 }: DashboardLayoutProps) => {
 	return (
 		<div className="app-layout">
-			<HeaderLayout onToggleSidebar={onToggleSidebar}>{header}</HeaderLayout>
+			<HeaderLayout
+				isSidebarOpen={isSidebarOpen}
+				onToggleSidebar={onToggleSidebar}
+			>
+				{header}
+			</HeaderLayout>
 
 			<div className="app-body">
 				<SidebarLayout
 					isOpen={isSidebarOpen}
 					items={sidebarItems}
-					onClose={onToggleSidebar}
+					onClose={onCloseSidebar}
 					onToggleSidebar={onToggleSidebar}
 				/>
 

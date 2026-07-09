@@ -1,8 +1,8 @@
-import { useRef, useState, useEffect } from "react";
-import { Filter, ChevronDown, X } from "lucide-react";
+import { ChevronDown, Filter, X } from "lucide-react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 
 import Button from "../../../../../components/common/Button";
-import Checkbox from "../../../../../components/FormElements/Checkbox";
+import Checkbox from "../../../../../components/forms/Checkbox";
 import type { EpcFilters } from "../../types/epc.types";
 
 type OptionItem = {
@@ -18,12 +18,19 @@ type EpcFilterDropdownProps = {
 	zoneOptions: readonly OptionItem[];
 	eventTypeOptions: readonly OptionItem[];
 	statusOptions: readonly OptionItem[];
+	className?: string;
 };
 
+type FilterArrayKey = "status" | "zone" | "eventType";
+
+const joinClassNames = (
+	...classNames: Array<string | false | null | undefined>
+) => classNames.filter(Boolean).join(" ");
+
 const SectionLabel = ({ label }: { label: string }) => (
-	<p className="text-[10px] font-medium uppercase tracking-wide text-gray-400 px-3 pt-3 pb-1 border-b-zinc-200 border-b">
-		{label}
-	</p>
+	<div className="epc-filter-section-label">
+		<span>{label}</span>
+	</div>
 );
 
 const DateInput = ({
@@ -33,46 +40,72 @@ const DateInput = ({
 }: {
 	label: string;
 	value: string;
-	onChange: (v: string) => void;
-}) => (
-	<div className="flex flex-col gap-1 px-3 py-1">
-		<label className="text-[11px] text-gray-500">{label}</label>
-		<input
-			type="date"
-			value={value}
-			onChange={(e) => onChange(e.target.value)}
-			className="h-6 rounded-md border border-gray-200 px-2 text-sm text-gray-700 focus:outline-none focus:border-brand-primary"
-		/>
-	</div>
-);
+	onChange: (value: string) => void;
+}) => {
+	const inputId = useId();
+
+	return (
+		<div className="epc-filter-date-field">
+			<label htmlFor={inputId} className="epc-filter-date-label">
+				{label}
+			</label>
+
+			<input
+				id={inputId}
+				type="date"
+				value={value}
+				onChange={(event) => onChange(event.target.value)}
+				className="epc-filter-date-input"
+			/>
+		</div>
+	);
+};
 
 const CheckboxList = ({
 	options,
 	selected,
 	onToggle,
-	cols = 2,
+	columns = 2,
 }: {
 	options: readonly OptionItem[];
 	selected: string[];
 	onToggle: (value: string) => void;
-	cols?: 1 | 2;
+	columns?: 1 | 2;
 }) => (
-	<div className={`grid ${cols === 1 ? "grid-cols-1" : "grid-cols-2"} gap-1`}>
-		{options.map((opt) => (
-			<Button
-				key={opt.value}
-				type="button"
-				onClick={() => onToggle(opt.value)}
-				className="w-full flex items-center gap-1 px-3 py-1.5 text-sm text-left text-gray-700 hover:bg-gray-50 transition-colors"
-			>
-				<Checkbox
-					label={opt.label}
-					checked={selected.includes(opt.value)}
-					onChange={() => onToggle(opt.value)}
-					size={14}
-				/>
-			</Button>
-		))}
+	<div
+		className={joinClassNames(
+			"epc-filter-options",
+			columns === 1 ? "epc-filter-options-single" : "epc-filter-options-double",
+		)}
+	>
+		{options.map((option) => {
+			const isSelected = selected.includes(option.value);
+
+			return (
+				<button
+					key={option.value}
+					type="button"
+					role="checkbox"
+					aria-checked={isSelected}
+					className={joinClassNames(
+						"epc-filter-option",
+						isSelected && "epc-filter-option-selected",
+					)}
+					onClick={() => onToggle(option.value)}
+				>
+					<span className="epc-filter-option-checkbox" aria-hidden="true">
+						<Checkbox
+							label=""
+							checked={isSelected}
+							onChange={() => undefined}
+							size={14}
+						/>
+					</span>
+
+					<span className="epc-filter-option-label">{option.label}</span>
+				</button>
+			);
+		})}
 	</div>
 );
 
@@ -84,120 +117,219 @@ export const EpcFilterDropdown = ({
 	zoneOptions,
 	eventTypeOptions,
 	statusOptions,
+	className = "",
 }: EpcFilterDropdownProps) => {
 	const [open, setOpen] = useState(false);
-	const ref = useRef<HTMLDivElement>(null);
+	const containerRef = useRef<HTMLDivElement>(null);
+	const panelId = useId();
 
 	useEffect(() => {
-		const handler = (e: MouseEvent) => {
-			if (ref.current && !ref.current.contains(e.target as Node))
+		const handlePointerDown = (event: PointerEvent) => {
+			if (
+				containerRef.current &&
+				!containerRef.current.contains(event.target as Node)
+			) {
 				setOpen(false);
+			}
 		};
-		document.addEventListener("mousedown", handler);
-		return () => document.removeEventListener("mousedown", handler);
+
+		document.addEventListener("pointerdown", handlePointerDown);
+
+		return () => {
+			document.removeEventListener("pointerdown", handlePointerDown);
+		};
 	}, []);
 
-	const toggleArrayFilter = (
-		key: "status" | "zone" | "eventType",
-		value: string,
-	) => {
-		const current = filters[key];
+	useEffect(() => {
+		if (!open) {
+			return;
+		}
+
+		const handleEscape = (event: globalThis.KeyboardEvent) => {
+			if (event.key === "Escape") {
+				setOpen(false);
+			}
+		};
+
+		document.addEventListener("keydown", handleEscape);
+
+		return () => {
+			document.removeEventListener("keydown", handleEscape);
+		};
+	}, [open]);
+
+	const toggleArrayFilter = (key: FilterArrayKey, value: string) => {
+		const currentValues = filters[key];
+
 		onChange({
-			[key]: current.includes(value)
-				? current.filter((x) => x !== value)
-				: [...current, value],
+			[key]: currentValues.includes(value)
+				? currentValues.filter((currentValue) => currentValue !== value)
+				: [...currentValues, value],
 		});
 	};
 
+	const handleTriggerKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+		if (event.key === "ArrowDown") {
+			event.preventDefault();
+			setOpen(true);
+		}
+	};
+
 	return (
-		<div ref={ref} className="relative">
+		<div
+			ref={containerRef}
+			className={joinClassNames(
+				"epc-filter-dropdown",
+				open && "epc-filter-dropdown-open",
+				className,
+			)}
+		>
 			<Button
+				type="button"
+				appearance="standard"
+				variant="outline"
+				size="sm"
 				Icon={Filter}
 				iconPosition="left"
-				iconSize={"15"}
-				size="sm"
-				status={"outline"}
-				onClick={() => setOpen((o) => !o)}
+				iconSize={15}
+				className="epc-filter-trigger"
+				aria-haspopup="dialog"
+				aria-expanded={open}
+				aria-controls={panelId}
+				onClick={() => setOpen((current) => !current)}
+				onKeyDown={handleTriggerKeyDown}
 			>
-				{activeFilterCount > 0 && (
-					<span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-white text-brand-primary text-[11px] font-semibold">
+				{activeFilterCount > 0 ? (
+					<span
+						className="epc-filter-count"
+						aria-label={`${activeFilterCount} active filters`}
+					>
 						{activeFilterCount}
 					</span>
-				)}
+				) : null}
+
 				<ChevronDown
-					size={13}
-					className={`transition-transform ${open ? "rotate-180" : ""}`}
+					size={14}
+					className={joinClassNames(
+						"epc-filter-trigger-chevron",
+						open && "epc-filter-trigger-chevron-open",
+					)}
+					aria-hidden="true"
 				/>
 			</Button>
 
-			{open && (
-				<div className="absolute right-0 top-[calc(100%+6px)] z-50 w-64 rounded-sm border border-gray-100 bg-white shadow-lg overflow-hidden">
-					{/* Header */}
-					<div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
-						<span className="text-[11px] font-medium uppercase tracking-wide text-gray-400">
-							Filters
-						</span>
-						{activeFilterCount > 0 && (
-							<Button
+			{open ? (
+				<div
+					id={panelId}
+					role="dialog"
+					aria-label="EPC filters"
+					className="epc-filter-panel"
+				>
+					<div className="epc-filter-panel-header">
+						<div className="epc-filter-panel-heading">
+							<Filter size={15} aria-hidden="true" />
+
+							<span>Filters</span>
+						</div>
+
+						<div className="epc-filter-panel-header-actions">
+							{activeFilterCount > 0 ? (
+								<button
+									type="button"
+									className="epc-filter-clear"
+									onClick={onClearAll}
+								>
+									<X size={13} aria-hidden="true" />
+
+									<span>Clear all</span>
+								</button>
+							) : null}
+
+							<button
 								type="button"
-								status="outline"
-								size="sm"
-								onClick={onClearAll}
-								className="flex items-center p-0.5 gap-1 text-[10px] font-medium text-brand-primary "
+								className="epc-filter-close"
+								aria-label="Close filters"
+								onClick={() => setOpen(false)}
 							>
-								<X size={10} />
-								Clear all
-							</Button>
-						)}
+								<X size={16} aria-hidden="true" />
+							</button>
+						</div>
 					</div>
 
-					<div className="max-h-[300px] overflow-y-auto scrollbar-sleek pb-4">
-						{/* Status */}
-						<SectionLabel label="Status" />
-						<CheckboxList
-							options={statusOptions}
-							selected={filters.status}
-							onToggle={(v) => toggleArrayFilter("status", v)}
-						/>
+					<div className="epc-filter-panel-content scrollbar-sleek">
+						<section className="epc-filter-section">
+							<SectionLabel label="Status" />
 
-						{/* Zone */}
-						<SectionLabel label="Zone" />
-						<CheckboxList
-							options={zoneOptions}
-							selected={filters.zone}
-							onToggle={(v) => toggleArrayFilter("zone", v)}
-						/>
+							<CheckboxList
+								options={statusOptions}
+								selected={filters.status}
+								onToggle={(value) => toggleArrayFilter("status", value)}
+							/>
+						</section>
 
-						{/* Event Type */}
-						<SectionLabel label="Event Type" />
-						<CheckboxList
-							cols={1}
-							options={eventTypeOptions}
-							selected={filters.eventType}
-							onToggle={(v) => toggleArrayFilter("eventType", v)}
-						/>
+						<section className="epc-filter-section">
+							<SectionLabel label="Zone" />
 
-						{/* Event Date Range */}
-						<SectionLabel label="Event Date" />
-						<DateInput
-							label="From"
-							value={filters.eventDateFrom}
-							onChange={(v) => onChange({ eventDateFrom: v })}
-						/>
-						<DateInput
-							label="To"
-							value={filters.eventDateTo}
-							onChange={(v) => onChange({ eventDateTo: v })}
-						/>
+							<CheckboxList
+								options={zoneOptions}
+								selected={filters.zone}
+								onToggle={(value) => toggleArrayFilter("zone", value)}
+							/>
+						</section>
 
-						<DateInput
-							label="Created Date"
-							value={filters.createdDate}
-							onChange={(v) => onChange({ createdDate: v })}
-						/>
+						<section className="epc-filter-section">
+							<SectionLabel label="Event type" />
+
+							<CheckboxList
+								columns={1}
+								options={eventTypeOptions}
+								selected={filters.eventType}
+								onToggle={(value) => toggleArrayFilter("eventType", value)}
+							/>
+						</section>
+
+						<section className="epc-filter-section">
+							<SectionLabel label="Event date" />
+
+							<div className="epc-filter-date-grid">
+								<DateInput
+									label="From"
+									value={filters.eventDateFrom}
+									onChange={(value) =>
+										onChange({
+											eventDateFrom: value,
+										})
+									}
+								/>
+
+								<DateInput
+									label="To"
+									value={filters.eventDateTo}
+									onChange={(value) =>
+										onChange({
+											eventDateTo: value,
+										})
+									}
+								/>
+							</div>
+						</section>
+
+						<section className="epc-filter-section">
+							<SectionLabel label="Created date" />
+
+							<DateInput
+								label="Created on"
+								value={filters.createdDate}
+								onChange={(value) =>
+									onChange({
+										createdDate: value,
+									})
+								}
+							/>
+						</section>
 					</div>
 				</div>
-			)}
+			) : null}
 		</div>
 	);
 };

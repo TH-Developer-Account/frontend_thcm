@@ -15,7 +15,6 @@ type BPContactData = {
 type InfoField = {
 	label: string;
 	value?: string;
-	link?: string;
 	isLink?: boolean;
 	tab?: string;
 };
@@ -34,7 +33,6 @@ const BPContact = ({ data, onNavigateTab }: BPContactProps) => {
 		{ label: "Fax", value: data?.fax },
 		{ label: "Mobile Number", value: data?.mobile_number },
 		{ label: "Phone", value: data?.phone },
-
 		{
 			label: "Main Contact Person",
 			value: data?.mainContactPerson,
@@ -49,26 +47,28 @@ const BPContact = ({ data, onNavigateTab }: BPContactProps) => {
 
 	return (
 		<div className="bp-gen-content">
-			<div className="bp-info-grid">
-				{fields.map((field) => (
-					<div key={field.label} className="bp-info-row">
-						<p className="bp-info-label">{field.label}</p>
+			<div className="detail-section">
+				<div className="detail-grid">
+					{fields.map((field) => (
+						<div key={field.label} className="detail-row">
+							<p className="detail-label">{field.label}</p>
 
-						<p className="bp-info-value">
-							{field.isLink && field.value ? (
-								<button
-									type="button"
-									onClick={() => onNavigateTab?.(field.tab!)}
-									className="bp-info-link"
-								>
-									{field.value}
-								</button>
-							) : (
-								field.value || fallbackValue
-							)}
-						</p>
-					</div>
-				))}
+							<p className="detail-value">
+								{field.isLink && field.value ? (
+									<button
+										type="button"
+										onClick={() => field.tab && onNavigateTab?.(field.tab)}
+										className="detail-link"
+									>
+										{field.value}
+									</button>
+								) : (
+									field.value || fallbackValue
+								)}
+							</p>
+						</div>
+					))}
+				</div>
 			</div>
 		</div>
 	);

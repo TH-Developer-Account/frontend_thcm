@@ -1,5 +1,5 @@
 import React from "react";
-import { type ToastProps } from "./Toast/toast.types";
+import { type ToastProps } from "../../context/Toast/toast.types";
 import { toastStyles } from "../styles.constant";
 
 export const Toast: React.FC<ToastProps> = ({
@@ -9,59 +9,40 @@ export const Toast: React.FC<ToastProps> = ({
 	onClose,
 	actionText,
 	onAction,
-	className,
+	className = "",
 }: ToastProps) => {
 	if (!type) return null;
 
 	const styles = toastStyles[type];
 
 	return (
-		<div
-			className={`
-				toast
-				${styles.wrapper}
-				${className}
-			`}
-		>
-			{/* Icon */}
-			<div
-				className={`
-					toast-icon
-					${styles.iconBg}
-				`}
-			>
-				{styles.icon}
+		<div className={`toast ${styles.wrapper} ${className}`}>
+			<div className={`toast-icon ${styles.iconBg}`} aria-hidden="true">
+				<span className="toast-icon-symbol">{styles.icon}</span>
 			</div>
 
-			{/* Content */}
 			<div className="toast-content">
-				<h4
-					className={`
-						toast-title
-						${styles.title}
-					`}
-				>
-					{title}
-				</h4>
+				<h4 className={`toast-title ${styles.title}`}>{title}</h4>
 
-				<p
-					className={`
-						toast-desc
-						${styles.desc}
-					`}
-				>
-					{description}{" "}
-					{actionText && (
-						<button onClick={onAction} className="toast-action">
-							{actionText}
-						</button>
-					)}
-				</p>
+				{description && (
+					<p className={`toast-desc ${styles.desc}`}>
+						{description}{" "}
+						{actionText && (
+							<button type="button" onClick={onAction} className="toast-action">
+								{actionText}
+							</button>
+						)}
+					</p>
+				)}
 			</div>
 
-			{/* Close */}
 			{onClose && (
-				<button onClick={onClose} className="toast-close">
+				<button
+					type="button"
+					onClick={onClose}
+					className="toast-close"
+					aria-label="Close notification"
+				>
 					✕
 				</button>
 			)}

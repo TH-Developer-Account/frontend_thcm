@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ServerAxios } from "../../../../services/ServerAxios";
 
-import WorkflowCreateHeader from "./components/WorkflowCreateHeader";
 import WorkflowCreateMain from "./WorkflowCreateMain";
 import WorkflowCreateSidebar from "./components/WorkflowCreateSidebar";
 import { mapBasics, mapStages } from "../utils/workflow.helpers";
@@ -24,9 +23,10 @@ import type {
 } from "../types/workflow.types";
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { useAuth } from "../../../../context/Auth/useAuth";
-import PageSectionLayout, {
-	PageSection,
-} from "../../../../layout/PageSectionLayout";
+import PageSectionLayout from "../../../../layout/PageSectionLayout";
+import Card from "../../../../components/common/Card";
+import { PageHeader } from "../../../../components/ui/PageHeader";
+import { StepProgress } from "../../../../components/ui/StepProgress";
 
 const WorkflowCreatePage = () => {
 	const { user, workspaceId, isLoading } = useAuth();
@@ -50,7 +50,11 @@ const WorkflowCreatePage = () => {
 	const [basicErrors, setBasicErrors] = useState<WorkflowGenErrors>({});
 	const [stageErrors, setStageErrors] = useState<WorkflowStageErrors[]>([]);
 	const [stageFormError, setStageFormError] = useState<string | null>(null);
-
+	const workflowCreateSteps = [
+		{ id: 1, label: "Workflow basics" },
+		{ id: 2, label: "Approval stages" },
+		{ id: 3, label: "Review & Submit" },
+	];
 	useEffect(() => {
 		if (!id) return;
 
@@ -285,57 +289,76 @@ const WorkflowCreatePage = () => {
 
 	if (isLoading) return null;
 	return (
-		<div className="h-[85dvh] min-h-0 overflow-y-auto scrollbar-sleek">
-			<PageSectionLayout>
-				<PageSection>
-					<div className="workflow-create-page-box scrollbar-sleek">
-						<div className="workflow-create-page">
-							<WorkflowCreateHeader currentStep={currentStep} />
+		<PageSectionLayout>
+			<PageHeader
+				headerText="Workflow Creation"
+				navigation={{
+					variant: "breadcrumbs",
+					ariaLabel: "Vendors listing location",
+					breadcrumbs: [
+						{
+							label: "Home Screen",
+							href: "/",
+						},
+						{
+							label: "Workflows Listing",
+							href: "/admin/workflows",
+						},
+						{
+							label: "Create workflow",
+						},
+					],
+					separator: "›",
+				}}
+			/>
+			<Card>
+				<StepProgress
+					steps={workflowCreateSteps}
+					currentStep={currentStep}
+					className="workflow-create-step-progress"
+					ariaLabel="Workflow creation progress"
+				/>
 
-							<div className="workflow-create-page-header">
-								<h2 className="workflow-create-page-title">
-									{id ? "Update Workflow" : "Create Workflow"}
-								</h2>
-								<p className="workflow-create-page-subtitle">
-									Define who approves what, in which order, and under what
-									conditions.
-								</p>
-							</div>
+				<div className="workflow-create-page-header">
+					<h2 className="workflow-create-page-title">
+						{id ? "Update Workflow" : "Create Workflow"}
+					</h2>
+					<p className="workflow-create-page-subtitle">
+						Define who approves what, in which order, and under what conditions.
+					</p>
+				</div>
 
-							<div className="workflow-create-grid">
-								<WorkflowCreateMain
-									currentStep={currentStep}
-									goNext={handleNext}
-									goBack={handleBack}
-									basics={basics}
-									stages={stages}
-									currentUserId={user?.id || ""}
-									onBasicChange={handleBasicChange}
-									onStageChange={handleStageChange}
-									onToggleStage={toggleStage}
-									onRemoveApprover={removeApprover}
-									onAddApprover={addApprover}
-									onAddStage={addStage}
-									onSubmit={handleSubmit}
-									loading={loading}
-									basicErrors={basicErrors}
-									stageErrors={stageErrors}
-									stageFormError={stageFormError}
-									onClearBasicError={clearBasicError}
-								/>
+				<div className="workflow-create-grid">
+					<WorkflowCreateMain
+						currentStep={currentStep}
+						goNext={handleNext}
+						goBack={handleBack}
+						basics={basics}
+						stages={stages}
+						currentUserId={user?.id || ""}
+						onBasicChange={handleBasicChange}
+						onStageChange={handleStageChange}
+						onToggleStage={toggleStage}
+						onRemoveApprover={removeApprover}
+						onAddApprover={addApprover}
+						onAddStage={addStage}
+						onSubmit={handleSubmit}
+						loading={loading}
+						basicErrors={basicErrors}
+						stageErrors={stageErrors}
+						stageFormError={stageFormError}
+						onClearBasicError={clearBasicError}
+					/>
 
-								<WorkflowCreateSidebar
-									basics={basics}
-									stageCount={stages.length}
-									approverCount={totalApprovers}
-									minApprovers={totalApprovers}
-								/>
-							</div>
-						</div>
-					</div>
-				</PageSection>
-			</PageSectionLayout>
-		</div>
+					<WorkflowCreateSidebar
+						basics={basics}
+						stageCount={stages.length}
+						approverCount={totalApprovers}
+						minApprovers={totalApprovers}
+					/>
+				</div>
+			</Card>
+		</PageSectionLayout>
 	);
 };
 

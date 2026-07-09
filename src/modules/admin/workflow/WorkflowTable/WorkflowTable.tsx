@@ -1,20 +1,68 @@
-import { useCallback, useMemo, useState } from "react";
+import React from "react";
+import axios from "axios";
+import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getWorkflowColumns } from "./workflow.columns";
-import DataTable from "../../../../components/ui/DataTable";
-import { Modal } from "../../../../components/common/Modal";
+
 import { Alert } from "../../../../components/common/Alert";
-import type { WorkflowRow } from "../types/workflow.types";
-import { useWorkflow } from "../context/useWorkflows";
-import { ServerAxios } from "../../../../services/ServerAxios";
-import { WorkflowUserAssignment } from "./WorkflowUserAssignment"; // or your common modal wrapper
+import Button from "../../../../components/common/Button";
+import Card from "../../../../components/common/Card";
+import { Modal } from "../../../../components/common/Modal";
+import MultiSelectInput from "../../../../components/forms/MultiSelectInput";
+import { SearchInput } from "../../../../components/forms/SearchInput";
+import type { Option } from "../../../../components/forms/input.types";
+import DataTable from "../../../../components/ui/tables/DataTable/DataTable";
+import DataTableSkeleton from "../../../../components/ui/tables/Skeletons/DataTableSkeleton";
 import { useToast } from "../../../../context/Auth/AuthContext";
-import { api_routes } from "../constant/workflow.constant";
+import { useAuth } from "../../../../context/Auth/useAuth";
+import { ServerAxios } from "../../../../services/ServerAxios";
+
+import { api_routes, formatApps } from "../constant/workflow.constant";
+import { useWorkflow } from "../context/useWorkflows";
+import type { WorkflowRow } from "../types/workflow.types";
+import type { UserResponse } from "../../user-profile/types/profile.types";
+
+import { getWorkflowColumns } from "./workflow.columns";
+import { WorkflowUserAssignment } from "./WorkflowUserAssignment";
+
+const WORKFLOW_SKELETON_ROWS = 8;
+const WORKFLOW_SKELETON_COLUMNS = 6;
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+	if (axios.isAxiosError(error)) {
+		const responseData = error.response?.data as
+			| {
+					message?: unknown;
+					error?: unknown;
+			  }
+			| undefined;
+
+		if (
+			typeof responseData?.message === "string" &&
+			responseData.message.trim()
+		) {
+			return responseData.message;
+		}
+
+		if (typeof responseData?.error === "string" && responseData.error.trim()) {
+			return responseData.error;
+		}
+	}
+
+	if (error instanceof Error && error.message.trim()) {
+		return error.message;
+	}
+
+	return fallback;
+};
 
 const WorkflowTable = () => {
 	const {
 		data,
 		setData,
+		search,
+		setSearch,
+		filters,
+		setFilters,
 		sorting,
 		setSorting,
 		pageIndex,
@@ -24,138 +72,328 @@ const WorkflowTable = () => {
 		totalPages,
 		loading,
 	} = useWorkflow();
+
+	const { permissions } = useAuth();
+	const { showToast } = useToast();
 	const navigate = useNavigate();
 
-	const [assignModalOpen, setAssignModalOpen] = useState<WorkflowRow | null>(
+	const [users, setUsers] = React.useState<Option[]>([]);
+
+	const [assignModalOpen, setAssignModalOpen] =
+		React.useState<WorkflowRow | null>(null);
+
+	const [deleteModal, setDeleteModal] = React.useState<WorkflowRow | null>(
 		null,
 	);
-	const [deleteModal, setDeleteModal] = useState<WorkflowRow | null>(null);
-	const { showToast } = useToast(); // use your actual toast hook
 
-	const handleAssignUser = async (
-		userIds: string[],
-		workflowId?: string,
-	): Promise<void> => {
-		if (!workflowId) return;
+	const [isAssigningUsers, setIsAssigningUsers] = React.useState(false);
 
-		try {
-			const {
-				data: { message },
-			} = await ServerAxios.post(
-				api_routes.create_assign_users_workflow_template,
-				{
-					userIds,
-					templateId: workflowId,
-				},
-			);
+	const [isDeleting, setIsDeleting] = React.useState(false);
 
-			showToast({
-				type: "success",
-				title: "Success",
-				description: message,
-			});
+	React.useEffect(() => {
+		const controller = new AbortController();
 
-			setAssignModalOpen(null);
-		} catch (error) {
-			console.error("Failed to assign users:", error);
+		const fetchUsers = async (): Promise<void> => {
+			try {
+				const response = await ServerAxios.get("/users", {
+					params: {
+						profile: "all",
+					},
+					signal: controller.signal,
+				});
 
-			showToast({
-				type: "error",
-				title: "Assignment failed",
-				description: "Unable to assign users. Please try again.",
-			});
+				const responseData = response.data;
 
-			throw error;
-		}
-	};
+				const userList = Array.isArray(responseData)
+					? responseData
+					: Array.isArray(responseData?.data)
+						? responseData.data
+						: [];
 
-	const handleEdit = useCallback(
+				const formattedUsers = userList
+					.map((user: UserResponse): Option | null => {
+						if (!user.id) {
+							return null;
+						}
+
+						const fullName = `${user.first_name ?? ""} ${
+							user.last_name ?? ""
+						}`.trim();
+
+						return {
+							value: user.id,
+							label: fullName || "Unnamed user",
+						};
+					})
+					.filter((user: any): user is Option => user !== null);
+
+				setUsers(formattedUsers);
+			} catch (error) {
+				if (axios.isAxiosError(error) && error.code === "ERR_CANCELED") {
+					return;
+				}
+
+				console.error("Failed to fetch users", error);
+			}
+		};
+
+		void fetchUsers();
+
+		return () => {
+			controller.abort();
+		};
+	}, []);
+
+	const apps = React.useMemo(() => formatApps(permissions), [permissions]);
+
+	const handleFilterChange = React.useCallback(
+		({ fieldName, value }: { fieldName?: string; value: Option[] }) => {
+			if (!fieldName) return;
+
+			setFilters((currentFilters) => ({
+				...currentFilters,
+				[fieldName]: value,
+			}));
+
+			setPageIndex(0);
+		},
+		[setFilters, setPageIndex],
+	);
+
+	const handleAssignUser = React.useCallback(
+		async (userIds: string[], workflowId?: string): Promise<void> => {
+			if (!workflowId) {
+				showToast({
+					type: "error",
+					title: "Unable to assign users",
+					description: "A valid workflow ID is required.",
+				});
+
+				return;
+			}
+
+			setIsAssigningUsers(true);
+
+			try {
+				const response = await ServerAxios.post(
+					api_routes.create_assign_users_workflow_template,
+					{
+						userIds,
+						templateId: workflowId,
+					},
+				);
+
+				const message =
+					typeof response.data?.message === "string"
+						? response.data.message
+						: "Users assigned successfully.";
+
+				showToast({
+					type: "success",
+					title: "Users assigned",
+					description: message,
+				});
+
+				setAssignModalOpen(null);
+			} catch (error) {
+				showToast({
+					type: "error",
+					title: "Assignment failed",
+					description: getErrorMessage(
+						error,
+						"Unable to assign users. Please try again.",
+					),
+				});
+			} finally {
+				setIsAssigningUsers(false);
+			}
+		},
+		[showToast],
+	);
+
+	const handleEdit = React.useCallback(
 		(workflow: WorkflowRow) => {
-			navigate(`/admin/edit-workflows/${workflow.id}`);
+			if (!workflow.id) return;
+
+			navigate(
+				`/admin/edit-workflows/${encodeURIComponent(String(workflow.id))}`,
+			);
 		},
 		[navigate],
 	);
 
-	const setDelete = useCallback((workflow: WorkflowRow) => {
+	const handleOpenDelete = React.useCallback((workflow: WorkflowRow) => {
 		setDeleteModal(workflow);
 	}, []);
 
-	const columns = useMemo(
+	const columns = React.useMemo(
 		() =>
 			getWorkflowColumns({
 				onAssign: setAssignModalOpen,
 				onEdit: handleEdit,
-				onDelete: setDelete,
+				onDelete: handleOpenDelete,
 			}),
-		[handleEdit, setDelete],
+		[handleEdit, handleOpenDelete],
 	);
 
-	const handleDelete = async (workflowId: string) => {
-		try {
-			const {
-				data: { message },
-			} = await ServerAxios.delete(`/work-flow/delete/${workflowId}`);
+	const handleDelete = React.useCallback(
+		async (workflowId: string): Promise<void> => {
+			setIsDeleting(true);
 
-			showToast({
-				type: "success",
-				title: "Success",
-				description: message,
-			});
+			try {
+				const response = await ServerAxios.delete(
+					`/work-flow/delete/${encodeURIComponent(workflowId)}`,
+				);
 
-			const filteredTemplates = data.filter((each) => each.id !== workflowId);
-			setData(filteredTemplates);
-		} catch (error) {
-			console.error("Failed to fetch Workflow data", error);
-		} finally {
-			setDeleteModal(null);
-		}
-	};
+				const message =
+					typeof response.data?.message === "string"
+						? response.data.message
+						: "Workflow deleted successfully.";
+
+				setData(data.filter((workflow) => workflow.id !== workflowId));
+
+				showToast({
+					type: "success",
+					title: "Workflow deleted",
+					description: message,
+				});
+
+				setDeleteModal(null);
+			} catch (error) {
+				showToast({
+					type: "error",
+					title: "Unable to delete workflow",
+					description: getErrorMessage(error, "Failed to delete the workflow."),
+				});
+			} finally {
+				setIsDeleting(false);
+			}
+		},
+		[data, setData, showToast],
+	);
 
 	return (
 		<>
-			<DataTable<WorkflowRow>
-				data={data}
-				columns={columns}
-				loading={loading}
-				sorting={sorting}
-				onSortingChange={setSorting}
-				manualSorting
-				manualPagination
-				pageIndex={pageIndex}
-				pageSize={pageSize}
-				pageCount={totalPages}
-				onPageChange={setPageIndex}
-				onPageSizeChange={setPageSize}
-				scrollTargetId="tableScroll"
-				emptyTitle="No EPC records found"
-				emptyDescription="Try adjusting filters or search"
-				className="h-[56vh]"
-			/>
+			<Card
+				secondaryHeader={
+					<>
+						<MultiSelectInput
+							placeholder="Created By"
+							options={users}
+							name="createdBy"
+							value={filters.createdBy}
+							onValueChange={handleFilterChange}
+							isSearchable
+						/>
+						<MultiSelectInput
+							placeholder="Apps"
+							options={apps}
+							name="apps"
+							value={filters.apps}
+							onValueChange={handleFilterChange}
+							isSearchable
+						/>
+						<SearchInput
+							value={search}
+							onChange={(value) => {
+								setSearch(value);
+								setPageIndex(0);
+							}}
+							placeholder="Search workflows"
+							aria-label="Search workflows"
+						/>
+
+						<Button
+							type="button"
+							text="Create Workflow"
+							Icon={Plus}
+							iconPosition="left"
+							iconSize={16}
+							appearance="cta"
+							variant="brand"
+							size="sm"
+							onClick={() => navigate("/admin/create-workflows")}
+						/>
+					</>
+				}
+			>
+				<section aria-label="Workflow records" aria-busy={loading}>
+					{loading ? (
+						<DataTableSkeleton
+							rows={WORKFLOW_SKELETON_ROWS}
+							columns={WORKFLOW_SKELETON_COLUMNS}
+							showPagination
+						/>
+					) : (
+						<DataTable<WorkflowRow>
+							data={data}
+							columns={columns}
+							loading={false}
+							sorting={sorting}
+							onSortingChange={setSorting}
+							manualSorting
+							manualPagination
+							pageIndex={pageIndex}
+							pageSize={pageSize}
+							pageCount={Math.max(totalPages, 1)}
+							onPageChange={setPageIndex}
+							onPageSizeChange={(nextPageSize) => {
+								setPageSize(nextPageSize);
+								setPageIndex(0);
+							}}
+							scrollTargetId="workflow-table-scroll"
+							emptyTitle="No workflows found"
+							emptyDescription="Create a workflow or adjust the current search and filters."
+						/>
+					)}
+				</section>
+			</Card>
 
 			<WorkflowUserAssignment
 				workflow={assignModalOpen}
-				onClose={() => setAssignModalOpen(null)}
+				onClose={() => {
+					if (!isAssigningUsers) {
+						setAssignModalOpen(null);
+					}
+				}}
 				handleAssignUser={handleAssignUser}
 			/>
 
-			{/* delete modal here later */}
-			<Modal open={!!deleteModal} onClose={() => setDeleteModal(null)}>
+			<Modal
+				open={Boolean(deleteModal)}
+				onClose={() => {
+					if (!isDeleting) {
+						setDeleteModal(null);
+					}
+				}}
+				mode="shell"
+				size="sm"
+				dialogRole="alertdialog"
+				ariaLabel="Delete workflow confirmation"
+			>
 				<Alert
 					variant="warning"
-					title="Delete Profile"
-					description={`Are you sure you want to delete "${deleteModal?.name}"?`}
+					title="Delete Workflow"
+					description={`Are you sure you want to delete "${
+						deleteModal?.name ?? "this workflow"
+					}"?`}
 					primaryAction={{
-						label: "Delete",
+						label: isDeleting ? "Deleting..." : "Delete",
 						onClick: () => {
-							if (deleteModal) {
-								handleDelete(deleteModal.id as string);
-								setDeleteModal(null);
+							if (!deleteModal?.id || isDeleting) {
+								return;
 							}
+
+							void handleDelete(String(deleteModal.id));
 						},
 					}}
 					secondaryAction={{
 						label: "Cancel",
-						onClick: () => setDeleteModal(null),
+						onClick: () => {
+							if (!isDeleting) {
+								setDeleteModal(null);
+							}
+						},
 					}}
 				/>
 			</Modal>

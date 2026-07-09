@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 
-import LineItemTable from "../../../../../components/ui/LineItemTable";
+import LineItemTable from "../../../../../components/ui/tables/LineItemTable/LineItemTable";
 import type { LineItemOption } from "../../types/lineItem.types";
 import { OVERHEAD_COLUMNS } from "../../utils/columnPresets";
 

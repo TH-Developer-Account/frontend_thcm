@@ -1,29 +1,99 @@
-import React from "react";
+import type { ComponentType, ReactNode } from "react";
+import {
+	BadgeIndianRupee,
+	Coins,
+	GlobeIcon,
+	Landmark,
+	StoreIcon,
+	UsersIcon,
+	UsersRound,
+	WalletCards,
+} from "lucide-react";
+
+import Card from "../../../../../components/common/Card";
+
 import { formatCurrency } from "../../utils/formatters";
 import type { BudgetItem, ShareInfo } from "../../types/epf.types";
-import { StoreIcon } from "lucide-react";
 
 type BudgetShareProps = {
 	items: BudgetItem[];
 	shareInfo: ShareInfo;
+	internalParticipants?: number;
+	externalParticipants?: number;
 };
 
-const BudgetCard = ({
-	label,
-	children,
-}: {
+type IconComponent = ComponentType<{
+	size?: number;
+	strokeWidth?: number;
+	className?: string;
+	"aria-hidden"?: boolean;
+}>;
+
+type SummaryTone = "info" | "success" | "warning" | "brand" | "neutral";
+
+type SummaryItem = {
 	label: string;
-	children: React.ReactNode;
-}) => {
+	value: ReactNode;
+	Icon: IconComponent;
+	tone?: SummaryTone;
+};
+
+const BUDGET_PRESENTATION: Array<{
+	Icon: IconComponent;
+	tone: SummaryTone;
+}> = [
+	{
+		Icon: Landmark,
+		tone: "success",
+	},
+	{
+		Icon: WalletCards,
+		tone: "warning",
+	},
+	{
+		Icon: Coins,
+		tone: "neutral",
+	},
+	{
+		Icon: BadgeIndianRupee,
+		tone: "neutral",
+	},
+	{
+		Icon: WalletCards,
+		tone: "brand",
+	},
+];
+
+const SummaryCardContent = ({
+	label,
+	value,
+	Icon,
+	tone = "info",
+}: SummaryItem) => {
 	return (
-		<div className="epf-budget-card bg-slate-50 border border-slate-200">
-			<p className="uppercase-label-text">{label}</p>
-			<div className="epf-field-value">{children}</div>
+		<div className="epf-summary-card-content">
+			<span
+				className={`epf-summary-card-icon epf-summary-card-icon-${tone}`}
+				aria-hidden="true"
+			>
+				<Icon size={18} strokeWidth={1.75} />
+			</span>
+
+			<div className="epf-summary-card-copy">
+				<p className="epf-summary-card-label">{label}</p>
+
+				<div className="epf-summary-card-value">{value}</div>
+			</div>
 		</div>
 	);
 };
 
-const BudgetShare = ({ items, shareInfo }: BudgetShareProps) => {
+const BudgetShare = ({
+	items,
+	shareInfo,
+	internalParticipants = 0,
+	externalParticipants = 0,
+}: BudgetShareProps) => {
 	const {
 		dealerName,
 		dealerPercent,
@@ -33,64 +103,129 @@ const BudgetShare = ({ items, shareInfo }: BudgetShareProps) => {
 		eventBudget,
 	} = shareInfo;
 
+	const totalParticipants = internalParticipants + externalParticipants;
+
+	const participantItems: SummaryItem[] = [
+		{
+			label: "Internal",
+			value: internalParticipants,
+			Icon: UsersIcon,
+			tone: "success",
+		},
+		{
+			label: "External",
+			value: externalParticipants,
+			Icon: GlobeIcon,
+			tone: "success",
+		},
+		{
+			label: "Total",
+			value: totalParticipants,
+			Icon: UsersRound,
+			tone: "brand",
+		},
+	];
+
+	const budgetSummaryItems: SummaryItem[] = items.map((item, index) => {
+		const presentation =
+			BUDGET_PRESENTATION[index] ??
+			BUDGET_PRESENTATION[BUDGET_PRESENTATION.length - 1];
+
+		return {
+			label: item.label,
+			value:
+				typeof item.value === "number"
+					? formatCurrency(item.value)
+					: item.value || "--",
+			Icon: presentation.Icon,
+			tone: presentation.tone,
+		};
+	});
+
+	const hasParticipants = internalParticipants > 0 || externalParticipants > 0;
+
 	return (
-		<React.Fragment>
-			<div className="grid grid-cols-5 gap-2 px-1.5 py-1">
-				{items.map((item) => (
-					<BudgetCard key={item.label} label={item.label}>
-						{typeof item.value === "number"
-							? formatCurrency(item.value)
-							: item.value || "--"}
-					</BudgetCard>
+		<div className="epf-budget-summary">
+			{hasParticipants ? (
+				<div
+					className="epf-participant-card-grid"
+					aria-label="Participant summary"
+				>
+					{participantItems.map((item) => (
+						<Card key={item.label} variant="subtle" padding="compact">
+							<SummaryCardContent {...item} />
+						</Card>
+					))}
+				</div>
+			) : null}
+
+			<div className="epf-budget-card-grid">
+				{budgetSummaryItems.map((item) => (
+					<Card key={item.label} variant="subtle" padding="compact">
+						<SummaryCardContent {...item} />
+					</Card>
 				))}
 			</div>
 
-			<div className="grid grid-cols-[1fr_220px] gap-2 px-1.5 py-1">
-				<BudgetCard label="Dealer Name">
-					<div className="flex items-center gap-2">
-						<div className="w-7 h-7 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-							<StoreIcon className="h-3.5 w-3.5 text-blue-500" />
-						</div>
-						{dealerName || "--"}
-					</div>
-				</BudgetCard>
-				<BudgetCard label="Total Event Cost">
-					<span className="text-orange-600 text-lg font-semibold">
-						{formatCurrency(eventBudget) || "--"}
-					</span>
-				</BudgetCard>
+			<div className="epf-dealer-card-grid">
+				<Card variant="default" padding="compact">
+					<SummaryCardContent
+						label="Dealer Name"
+						value={dealerName || "--"}
+						Icon={StoreIcon}
+						tone="info"
+					/>
+				</Card>
+
+				<Card variant="subtle" padding="compact">
+					<SummaryCardContent
+						label="Total Event Cost"
+						value={
+							<span className="epf-event-cost-value">
+								{formatCurrency(eventBudget) || "--"}
+							</span>
+						}
+						Icon={BadgeIndianRupee}
+						tone="brand"
+					/>
+				</Card>
 			</div>
 
-			<div className="rounded-lg px-5 py-3 m-1 bg-slate-50 border border-slate-200">
-				<div className="flex justify-between text-sm mb-2">
+			<div className="epf-share-panel">
+				<div className="epf-share-heading">
 					<div>
 						<span className="uppercase-label-text">Dealer Share</span>
-						<p className="text-slate-800 font-semibold mt-1">
+
+						<p className="epf-share-value">
 							{dealerPercent}% — {formatCurrency(dealerShare)}
 						</p>
 					</div>
 
-					<div className="text-right">
+					<div className="epf-share-heading-end">
 						<span className="uppercase-label-text">Tata Hitachi Share</span>
-						<p className="text-slate-800 font-semibold mt-1">
+
+						<p className="epf-share-value">
 							{tataHitachiPercent}% — {formatCurrency(tataHitachiShare)}
 						</p>
 					</div>
 				</div>
 
-				<div className="epf-share-bar">
-					<div
-						className="epf-share-bar-fill"
-						style={{ width: `${dealerPercent}%` }}
-					/>
-				</div>
+				<progress
+					className="epf-share-progress"
+					value={dealerPercent}
+					max={100}
+					aria-label={`Dealer share ${dealerPercent}%`}
+				>
+					{dealerPercent}%
+				</progress>
 
-				<div className="flex justify-between text-xs text-slate-400 mt-1">
+				<div className="epf-share-footer">
 					<span>Dealer {dealerPercent}%</span>
+
 					<span>Tata Hitachi {tataHitachiPercent}%</span>
 				</div>
 			</div>
-		</React.Fragment>
+		</div>
 	);
 };
 

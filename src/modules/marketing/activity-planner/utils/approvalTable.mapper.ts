@@ -1,7 +1,7 @@
 import {
 	APPROVAL_STATUS,
 	type ApprovalTableRow,
-} from "../../../../utils/types";
+} from "../types/activityplanner.types";
 
 type ActiveWorkflowApproval = {
 	id?: string;

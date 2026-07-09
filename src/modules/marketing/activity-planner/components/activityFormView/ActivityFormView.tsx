@@ -276,32 +276,30 @@ const ActivityFormView = ({
 
 	if (!epcData) {
 		return (
-			<div className="px-6 py-4">
-				<EpcForm
-					mode="create"
-					onSuccess={async (savedEpc) => {
-						const createdEpcId =
-							savedEpc?.id ??
-							savedEpc?.eventProposal?.id ??
-							savedEpc?.epcId ??
-							savedEpc?.epc?.id;
+			<EpcForm
+				mode="create"
+				onSuccess={async (savedEpc) => {
+					const createdEpcId =
+						savedEpc?.id ??
+						savedEpc?.eventProposal?.id ??
+						savedEpc?.epcId ??
+						savedEpc?.epc?.id;
 
-						if (!createdEpcId) {
-							console.error("Created EPC id not found", savedEpc);
-							return;
-						}
+					if (!createdEpcId) {
+						console.error("Created EPC id not found", savedEpc);
+						return;
+					}
 
-						navigate(`/marketing/activity-planner/${createdEpcId}`);
-					}}
-				/>
-			</div>
+					navigate(`/marketing/activity-planner/${createdEpcId}`);
+				}}
+			/>
 		);
 	}
 
 	return (
 		<>
-			<div className="px-6 py-4">
-				<div className="form my-3 text-left text-sm">
+			<div className="px-3 py-2">
+				<div className="form text-left text-sm">
 					<ActivityDetailsSection
 						epcData={epcData}
 						isEditing={editingSection === "epc"}
@@ -394,13 +392,14 @@ const ActivityFormView = ({
 				</div>
 			</div>
 
-			<div className="sticky bottom-0 z-10 flex items-center justify-end gap-3 overflow-visible border-t border-gray-200 bg-white px-4 py-4">
-				{canActOnCurrentStage && (
+			{canActOnCurrentStage && (
+				<div className="sticky bottom-0 z-10 flex items-center justify-end gap-3 overflow-visible border-t border-gray-200 bg-white px-4 py-4">
 					<div className="flex gap-2">
 						<Button
 							type="button"
 							text="Send for Clarification"
-							status="outline"
+							variant="outline"
+							appearance="standard"
 							disabled={!canActOnCurrentStage}
 							onClick={() => openReasonModal("clarify-workflow")}
 						/>
@@ -408,32 +407,34 @@ const ActivityFormView = ({
 						<Button
 							type="button"
 							text="Approve"
-							status="brand"
+							variant="brand"
+							appearance="standard"
 							disabled={!canActOnCurrentStage}
 							onClick={handleApprove}
 						/>
 					</div>
-				)}
-				{permissions.canShowCloseEpcAction && (
-					<Button
-						type="button"
-						text={
-							isEPCClose
-								? "Closing..."
-								: permissions.isClosed
-									? "EPC Closed"
-									: "Close EPC"
-						}
-						status="outline"
-						disabled={isEPCClose || permissions.isClosed}
-						onClick={() => {
-							if (permissions.isClosed || isEPCClose) return;
-							onEPCClose?.();
-						}}
-					/>
-				)}
-			</div>
 
+					{permissions.canShowCloseEpcAction && (
+						<Button
+							type="button"
+							text={
+								isEPCClose
+									? "Closing..."
+									: permissions.isClosed
+										? "EPC Closed"
+										: "Close EPC"
+							}
+							variant="brand"
+							appearance="standard"
+							disabled={isEPCClose || permissions.isClosed}
+							onClick={() => {
+								if (permissions.isClosed || isEPCClose) return;
+								onEPCClose?.();
+							}}
+						/>
+					)}
+				</div>
+			)}
 			{permissions.isClarifiedPending && (
 				<ResubmitFooterAction
 					isPending={permissions.isClarifiedPending}

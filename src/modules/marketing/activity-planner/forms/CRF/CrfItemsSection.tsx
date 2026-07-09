@@ -1,7 +1,7 @@
 import React from "react";
 
-import LineItemTable from "../../../../../components/ui/LineItemTable";
-import { CRF_CATEGORIES } from "../../../constant";
+import LineItemTable from "../../../../../components/ui/tables/LineItemTable/LineItemTable";
+import { CRF_CATEGORIES } from "../../utils/constant";
 import type { CrfProps, LineItemOption } from "../../types/lineItem.types";
 import { ARTWORK_COLUMNS, DEFAULT_COLUMNS } from "../../utils/columnPresets";
 

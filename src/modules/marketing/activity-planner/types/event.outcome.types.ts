@@ -1,4 +1,4 @@
-import type { FileUploadValue } from "../../../../components/FileUpload/fileUpload.types";
+import type { FileUploadValue } from "../../../../components/ui/FileUpload/fileUpload.types";
 import type { WorkflowStage } from "./workflow.types";
 
 export type EventDeviationPayload =

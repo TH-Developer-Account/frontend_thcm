@@ -50,7 +50,7 @@ import {
 import { useEpfBudgetInfoQuery } from "../../queries/useEpfBudgetInfoQuery";
 import type { ApiErrorResponse } from "../../../../../context/context.types";
 import type { AxiosError } from "axios";
-import type { ApprovalTableRow } from "../../../../../utils/types";
+import type { ApprovalTableRow } from "../../types/activityplanner.types";
 
 export type EpfFormMode = "create" | "edit";
 
