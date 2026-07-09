@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import Card from "../../../components/common/Card";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { StepProgress } from "../../../components/ui/StepProgress";
@@ -6,8 +8,15 @@ import VendorCreationFormOne from "../forms/VendorCreationFormOne";
 import VendorCreationFormTwo from "../forms/VendorCreationFormTwo";
 import VendorCreationSummaryForm from "../forms/VendorCreationSummaryForm";
 import { useVendorCreationForm } from "../hooks/useVendorCreationForm";
+import type { VendorViewerRole } from "../types/vendorOnboarding.types";
 
 const VendorOnboardingPage = () => {
+	const [vendorFormFilled, setVendorFormFilled] = useState(false);
+
+	// Replace this with auth-derived role when connected.
+	const viewerRole = "THCM_EMPLOYEE" as VendorViewerRole;
+	// const viewerRole: VendorViewerRole = "EXTERNAL_VENDOR";
+
 	const {
 		vendorOnboardingSteps,
 		currentStep,
@@ -16,6 +25,9 @@ const VendorOnboardingPage = () => {
 		formOneErrors,
 		formTwoErrors,
 		mutationLoading,
+		canEditFormOne,
+		canEditFormTwo,
+		canSubmitVendorForm,
 		canSubmit,
 		canApprove,
 		canClarify,
@@ -23,6 +35,7 @@ const VendorOnboardingPage = () => {
 		handleBack,
 		handleSaveFormOne,
 		handleSaveFormTwo,
+		handleVendorSubmitForm,
 		handleSubmitSummary,
 		handleApprove,
 		handleClarify,
@@ -30,8 +43,15 @@ const VendorOnboardingPage = () => {
 		handleFormOneChange,
 		handleFormTwoChange,
 	} = useVendorCreationForm({
-		role: "THCM_EMPLOYEE",
+		role: viewerRole,
+		onSuccess: () => {
+			if (viewerRole === "EXTERNAL_VENDOR") {
+				setVendorFormFilled(true);
+			}
+		},
 	});
+
+	const isExternalVendor = viewerRole === "EXTERNAL_VENDOR";
 
 	return (
 		<PageSectionLayout>
@@ -50,16 +70,34 @@ const VendorOnboardingPage = () => {
 			/>
 
 			<Card>
-				<StepProgress
-					steps={vendorOnboardingSteps}
-					currentStep={currentStep}
-					className="vendor-onboarding-step-progress"
-					ariaLabel="Vendor onboarding progress"
-				/>
+				{isExternalVendor ? null : (
+					<StepProgress
+						steps={vendorOnboardingSteps}
+						currentStep={currentStep}
+						className="vendor-onboarding-step-progress"
+						ariaLabel="Vendor onboarding progress"
+					/>
+				)}
 
-				{currentStep === 1 ? (
+				{isExternalVendor ? (
 					<VendorCreationFormOne
-						mode="edit"
+						mode={vendorFormFilled ? "view" : "edit"}
+						canEdit={canEditFormOne && !vendorFormFilled}
+						values={formOneValues}
+						errors={formOneErrors}
+						onChange={handleFormOneChange}
+						onSubmit={canSubmitVendorForm ? handleVendorSubmitForm : undefined}
+						loading={mutationLoading}
+						submittedMessage={
+							vendorFormFilled
+								? "Form filled successfully. THCM will review the submitted details."
+								: undefined
+						}
+					/>
+				) : currentStep === 1 ? (
+					<VendorCreationFormOne
+						mode={canEditFormOne ? "edit" : "view"}
+						canEdit={canEditFormOne}
 						values={formOneValues}
 						errors={formOneErrors}
 						onChange={handleFormOneChange}
@@ -68,7 +106,8 @@ const VendorOnboardingPage = () => {
 					/>
 				) : currentStep === 2 ? (
 					<VendorCreationFormTwo
-						mode="edit"
+						mode={canEditFormTwo ? "edit" : "view"}
+						canEdit={canEditFormTwo}
 						values={formTwoValues}
 						errors={formTwoErrors}
 						onChange={handleFormTwoChange}

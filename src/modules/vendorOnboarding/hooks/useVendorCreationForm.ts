@@ -25,16 +25,12 @@ import type {
 } from "../types/vendorOnboarding.types";
 
 const vendorOnboardingSteps = [
-	{ id: 1, label: "Vendor master details" },
-	{ id: 2, label: "Finance & compliance" },
+	{ id: 1, label: "Vendor filled details" },
+	{ id: 2, label: "THCM details" },
 	{ id: 3, label: "Review & Submit" },
 ];
 
 const initialFormOneValues: VendorCreationFormOneValues = {
-	vendorCode: "",
-	vendorType: "",
-	companyCode: "",
-	purchaseOrg: "",
 	vendorName: "",
 	completeAddress: "",
 	msmeVendor: "",
@@ -42,24 +38,41 @@ const initialFormOneValues: VendorCreationFormOneValues = {
 	city: "",
 	pinCode: "",
 	region: "",
-};
 
-const initialFormTwoValues: VendorCreationFormTwoValues = {
 	mobile: "",
 	email: "",
+
 	bank: "",
 	branch: "",
 	ifscCode: "",
 	bankAddress: "",
 	accountNumber: "",
-	paymentTerm: "",
-	tds: "",
+
 	gstin: "",
 	pan: "",
 	entityRegistrationNumber: "",
+
+	gstCertificate: "",
+	panNumber: "",
+	bankCancelledCheque: "",
+	certificateOfIncorporation: "",
+	msmeCertificate: "",
+	ndaCertificate: "",
+};
+
+const initialFormTwoValues: VendorCreationFormTwoValues = {
+	vendorCode: "",
+	vendorType: "",
+	companyCode: "",
+	purchaseOrg: "",
+
+	paymentTerm: "",
+	tds: "",
+
 	vendorCategory: "",
 	materialType: "",
 	materialSubType: "",
+
 	vendorSelfAssessmentObtained: "",
 	ndaObtained: "",
 	gpaObtained: "",
@@ -67,18 +80,14 @@ const initialFormTwoValues: VendorCreationFormTwoValues = {
 	vendorAuditReportPrepared: "",
 	remarks: "",
 	reasonForOnboarding: "",
+
 	proposedByName: "",
 	proposedByDesignation: "",
 	proposedDate: "",
+
 	approvedByName: "",
 	approvedByDesignation: "",
 	approvalDate: "",
-	gstCertificate: "",
-	panNumber: "",
-	bankCancelledCheque: "",
-	certificateOfIncorporation: "",
-	msmeCertificate: "",
-	passportPhotograph: "",
 };
 
 const getErrorMessage = (error: unknown, fallback: string): string => {
@@ -118,101 +127,97 @@ const hasAnyFormValue = <T extends Record<string, unknown>>(
 	});
 };
 
-const validateFormOne = (
-	values: VendorCreationFormOneValues,
-): VendorFormErrors<VendorCreationFormOneValues> => {
-	const errors: VendorFormErrors<VendorCreationFormOneValues> = {};
+// const validateFormOne = (
+// 	values: VendorCreationFormOneValues,
+// ): VendorFormErrors<VendorCreationFormOneValues> => {
+// 	const errors: VendorFormErrors<VendorCreationFormOneValues> = {};
 
-	if (!values.vendorCode?.trim()) {
-		errors.vendorCode = "Vendor code is required.";
-	}
+// 	if (!values.vendorName?.trim()) {
+// 		errors.vendorName = "Vendor name is required.";
+// 	}
 
-	if (!values.vendorType?.trim()) {
-		errors.vendorType = "Vendor type is required.";
-	}
+// 	if (!values.completeAddress?.trim()) {
+// 		errors.completeAddress = "Complete address is required.";
+// 	}
 
-	if (!values.companyCode?.trim()) {
-		errors.companyCode = "Company code is required.";
-	}
+// 	if (!values.msmeVendor?.trim()) {
+// 		errors.msmeVendor = "MSME vendor is required.";
+// 	}
 
-	if (!values.purchaseOrg?.trim()) {
-		errors.purchaseOrg = "Purchase org is required.";
-	}
+// 	if (!values.city?.trim()) {
+// 		errors.city = "City is required.";
+// 	}
 
-	if (!values.vendorName?.trim()) {
-		errors.vendorName = "Vendor name is required.";
-	}
+// 	if (!values.pinCode?.trim()) {
+// 		errors.pinCode = "Pin code is required.";
+// 	}
 
-	if (!values.completeAddress?.trim()) {
-		errors.completeAddress = "Complete address is required.";
-	}
+// 	if (!values.region?.trim()) {
+// 		errors.region = "Region is required.";
+// 	}
 
-	if (!values.msmeVendor?.trim()) {
-		errors.msmeVendor = "MSME vendor is required.";
-	}
+// 	if (!values.mobile?.trim()) {
+// 		errors.mobile = "Mobile number is required.";
+// 	}
 
-	if (!values.city?.trim()) {
-		errors.city = "City is required.";
-	}
+// 	if (!values.email?.trim()) {
+// 		errors.email = "Email is required.";
+// 	}
 
-	if (!values.pinCode?.trim()) {
-		errors.pinCode = "Pin code is required.";
-	}
+// 	if (values.email && !/^\S+@\S+\.\S+$/.test(values.email)) {
+// 		errors.email = "Enter a valid email.";
+// 	}
 
-	if (!values.region?.trim()) {
-		errors.region = "Region is required.";
-	}
+// 	if (!values.bank?.trim()) {
+// 		errors.bank = "Bank name is required.";
+// 	}
 
-	return errors;
-};
+// 	if (!values.branch?.trim()) {
+// 		errors.branch = "Branch is required.";
+// 	}
 
-const validateFormTwo = (
-	values: VendorCreationFormTwoValues,
-): VendorFormErrors<VendorCreationFormTwoValues> => {
-	const errors: VendorFormErrors<VendorCreationFormTwoValues> = {};
+// 	if (!values.ifscCode?.trim()) {
+// 		errors.ifscCode = "IFSC code is required.";
+// 	}
 
-	if (!values.mobile?.trim()) {
-		errors.mobile = "Mobile number is required.";
-	}
+// 	if (!values.accountNumber?.trim()) {
+// 		errors.accountNumber = "Account number is required.";
+// 	}
 
-	if (!values.email?.trim()) {
-		errors.email = "Email is required.";
-	}
+// 	if (!values.gstin?.trim()) {
+// 		errors.gstin = "GSTIN is required.";
+// 	}
 
-	if (!values.bank?.trim()) {
-		errors.bank = "Bank name is required.";
-	}
+// 	if (!values.pan?.trim()) {
+// 		errors.pan = "PAN is required.";
+// 	}
 
-	if (!values.branch?.trim()) {
-		errors.branch = "Branch is required.";
-	}
+// 	return errors;
+// };
 
-	if (!values.ifscCode?.trim()) {
-		errors.ifscCode = "IFSC code is required.";
-	}
+// const validateFormTwo = (
+// 	values: VendorCreationFormTwoValues,
+// ): VendorFormErrors<VendorCreationFormTwoValues> => {
+// 	const errors: VendorFormErrors<VendorCreationFormTwoValues> = {};
 
-	if (!values.accountNumber?.trim()) {
-		errors.accountNumber = "Account number is required.";
-	}
+// 	if (!values.vendorType?.trim()) {
+// 		errors.vendorType = "Vendor type is required.";
+// 	}
 
-	if (!values.gstin?.trim()) {
-		errors.gstin = "GSTIN is required.";
-	}
+// 	if (!values.companyCode?.trim()) {
+// 		errors.companyCode = "Company code is required.";
+// 	}
 
-	if (!values.pan?.trim()) {
-		errors.pan = "PAN is required.";
-	}
+// 	if (!values.purchaseOrg?.trim()) {
+// 		errors.purchaseOrg = "Purchase org is required.";
+// 	}
 
-	if (!values.reasonForOnboarding?.trim()) {
-		errors.reasonForOnboarding = "Reason for onboarding is required.";
-	}
+// 	if (!values.reasonForOnboarding?.trim()) {
+// 		errors.reasonForOnboarding = "Reason for onboarding is required.";
+// 	}
 
-	if (values.email && !/^\S+@\S+\.\S+$/.test(values.email)) {
-		errors.email = "Enter a valid email.";
-	}
-
-	return errors;
-};
+// 	return errors;
+// };
 
 type UseVendorCreationFormParams = {
 	role?: VendorViewerRole;
@@ -296,6 +301,18 @@ export function useVendorCreationForm({
 		detailQuery.data?.partTwo,
 	);
 
+	const isExternalVendor = role === "EXTERNAL_VENDOR";
+	const isThcmEmployee = role === "THCM_EMPLOYEE";
+
+	const canEditFormOne = isExternalVendor || isThcmEmployee;
+	const canEditFormTwo = isThcmEmployee;
+
+	const canSubmitVendorForm = isExternalVendor;
+	const canSubmit = isThcmEmployee;
+	const canApprove = role === "THCM_APPROVER";
+	const canClarify = role === "THCM_APPROVER";
+	const canAcceptAndClose = role === "EXTERNAL_APPROVER";
+
 	const handleNext = () => {
 		setCurrentStep((prev) => Math.min(prev + 1, vendorOnboardingSteps.length));
 	};
@@ -344,7 +361,7 @@ export function useVendorCreationForm({
 			// 	showToast({
 			// 		type: "error",
 			// 		title: "Validation Error",
-			// 		description: "Please complete all required vendor master fields.",
+			// 		description: "Please complete all required vendor fields.",
 			// 	});
 
 			// 	return;
@@ -359,7 +376,7 @@ export function useVendorCreationForm({
 				showToast({
 					type: "success",
 					title: "Success",
-					description: "Vendor master details updated successfully.",
+					description: "Vendor filled details updated successfully.",
 				});
 			} else {
 				const savedData = await createFormOneMutation.mutateAsync({
@@ -371,7 +388,7 @@ export function useVendorCreationForm({
 				showToast({
 					type: "success",
 					title: "Success",
-					description: "Vendor master details submitted successfully.",
+					description: "Vendor filled details saved successfully.",
 				});
 			}
 
@@ -384,8 +401,57 @@ export function useVendorCreationForm({
 				title: "Error",
 				description: getErrorMessage(
 					error,
-					"Failed to save vendor master details.",
+					"Failed to save vendor filled details.",
 				),
+			});
+		}
+	};
+
+	const handleVendorSubmitForm = async () => {
+		try {
+			// const errors = validateFormOne(formOneValues);
+
+			// if (Object.keys(errors).length > 0) {
+			// 	setFormOneErrors(errors);
+
+			// 	showToast({
+			// 		type: "error",
+			// 		title: "Validation Error",
+			// 		description: "Please complete all required vendor fields.",
+			// 	});
+
+			// 	return;
+			// }
+
+			if (resolvedVendorRequestId) {
+				await updateFormOneMutation.mutateAsync({
+					vendorRequestId: resolvedVendorRequestId,
+					payload: formOneValues,
+				});
+			} else {
+				const savedData = await createFormOneMutation.mutateAsync({
+					payload: formOneValues,
+				});
+
+				setCreatedVendorRequestId(savedData.id);
+			}
+
+			showToast({
+				type: "success",
+				title: "Form Filled",
+				description: "Vendor form has been filled successfully.",
+			});
+
+			if (onSuccess) {
+				await onSuccess();
+			}
+		} catch (error: unknown) {
+			console.error("Vendor form submit failed:", error);
+
+			showToast({
+				type: "error",
+				title: "Error",
+				description: getErrorMessage(error, "Failed to submit vendor form."),
 			});
 		}
 	};
@@ -410,8 +476,7 @@ export function useVendorCreationForm({
 			// 	showToast({
 			// 		type: "error",
 			// 		title: "Validation Error",
-			// 		description:
-			// 			"Please complete all required finance and compliance fields.",
+			// 		description: "Please complete all required THCM fields.",
 			// 	});
 
 			// 	return;
@@ -426,7 +491,7 @@ export function useVendorCreationForm({
 				showToast({
 					type: "success",
 					title: "Success",
-					description: "Finance and compliance details updated successfully.",
+					description: "THCM details updated successfully.",
 				});
 			} else {
 				await createFormTwoMutation.mutateAsync({
@@ -437,7 +502,7 @@ export function useVendorCreationForm({
 				showToast({
 					type: "success",
 					title: "Success",
-					description: "Finance and compliance details saved successfully.",
+					description: "THCM details saved successfully.",
 				});
 			}
 
@@ -448,10 +513,7 @@ export function useVendorCreationForm({
 			showToast({
 				type: "error",
 				title: "Error",
-				description: getErrorMessage(
-					error,
-					"Failed to save finance and compliance details.",
-				),
+				description: getErrorMessage(error, "Failed to save THCM details."),
 			});
 		}
 	};
@@ -677,11 +739,6 @@ export function useVendorCreationForm({
 		}
 	};
 
-	const canSubmit = role === "THCM_EMPLOYEE";
-	const canApprove = role === "THCM_APPROVER";
-	const canClarify = role === "THCM_APPROVER";
-	const canAcceptAndClose = role === "EXTERNAL_APPROVER";
-
 	return {
 		vendorOnboardingSteps,
 		currentStep,
@@ -695,6 +752,9 @@ export function useVendorCreationForm({
 		formTwoErrors,
 
 		role,
+		canEditFormOne,
+		canEditFormTwo,
+		canSubmitVendorForm,
 		canSubmit,
 		canApprove,
 		canClarify,
@@ -711,6 +771,7 @@ export function useVendorCreationForm({
 
 		handleSaveFormOne,
 		handleSaveFormTwo,
+		handleVendorSubmitForm,
 		handleSubmitSummary,
 		handleApprove,
 		handleClarify,

@@ -34,10 +34,6 @@ export const vendorOnboardingApi = {
 			id: vendorRequestId,
 			status: "SUBMITTED_BY_VENDOR",
 			partOne: {
-				vendorCode: "VND-1024",
-				vendorType: "PO Based",
-				companyCode: "0080 - BLR",
-				purchaseOrg: "P502 - Indirect Purchase",
 				vendorName: "ABC INDUSTRIAL SUPPLIERS",
 				completeAddress: "Plot 42, Industrial Area, Bengaluru",
 				msmeVendor: "Yes",
@@ -45,8 +41,56 @@ export const vendorOnboardingApi = {
 				city: "Bengaluru",
 				pinCode: "560001",
 				region: "South 1",
+
+				mobile: "9876543210",
+				email: "vendor@example.com",
+
+				bank: "State Bank of India",
+				branch: "Bengaluru Main Branch",
+				ifscCode: "SBIN0000001",
+				bankAddress: "MG Road, Bengaluru",
+				accountNumber: "123456789012",
+
+				gstin: "29ABCDE1234F1Z5",
+				pan: "ABCDE1234F",
+				entityRegistrationNumber: "REG-1024",
+
+				gstCertificate: "Yes",
+				panNumber: "Yes",
+				bankCancelledCheque: "Yes",
+				certificateOfIncorporation: "Yes",
+				msmeCertificate: "Yes",
+				ndaCertificate: "No",
 			},
-			partTwo: {},
+			partTwo: {
+				vendorCode: "VND-1024",
+				vendorType: "PO Based",
+				companyCode: "0080 - BLR",
+				purchaseOrg: "P502 - Indirect Purchase",
+
+				paymentTerm: "30 Days",
+				tds: "194C - Contractors",
+
+				vendorCategory: "Service",
+				materialType: "2 - Indirect",
+				materialSubType: "2 - Non-Proprietary",
+
+				vendorSelfAssessmentObtained: "Yes",
+				ndaObtained: "Yes",
+				gpaObtained: "Yes",
+				relatedPartyToThcm: "No",
+				vendorAuditReportPrepared: "Yes",
+				remarks: "",
+				reasonForOnboarding: "Required for service support.",
+
+				proposedByName: "THCM User",
+				proposedByDesignation: "Manager",
+				proposedDate: "2026-07-08",
+
+				approvedByName: "",
+				approvedByDesignation: "",
+				approvalDate: "",
+			},
 		};
 	},
 

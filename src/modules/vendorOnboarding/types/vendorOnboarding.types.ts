@@ -18,10 +18,6 @@ export type VendorViewerRole =
 	| "EXTERNAL_APPROVER";
 
 export type VendorCreationFormOneValues = {
-	vendorCode?: string;
-	vendorType?: string;
-	companyCode?: string;
-	purchaseOrg?: string;
 	vendorName?: string;
 	completeAddress?: string;
 	msmeVendor?: string;
@@ -29,24 +25,41 @@ export type VendorCreationFormOneValues = {
 	city?: string;
 	pinCode?: string;
 	region?: string;
-};
 
-export type VendorCreationFormTwoValues = {
 	mobile?: string;
 	email?: string;
+
 	bank?: string;
 	branch?: string;
 	ifscCode?: string;
 	bankAddress?: string;
 	accountNumber?: string;
-	paymentTerm?: string;
-	tds?: string;
+
 	gstin?: string;
 	pan?: string;
 	entityRegistrationNumber?: string;
+
+	gstCertificate?: string;
+	panNumber?: string;
+	bankCancelledCheque?: string;
+	certificateOfIncorporation?: string;
+	msmeCertificate?: string;
+	ndaCertificate?: string;
+};
+
+export type VendorCreationFormTwoValues = {
+	vendorCode?: string;
+	vendorType?: string;
+	companyCode?: string;
+	purchaseOrg?: string;
+
+	paymentTerm?: string;
+	tds?: string;
+
 	vendorCategory?: string;
 	materialType?: string;
 	materialSubType?: string;
+
 	vendorSelfAssessmentObtained?: string;
 	ndaObtained?: string;
 	gpaObtained?: string;
@@ -54,18 +67,14 @@ export type VendorCreationFormTwoValues = {
 	vendorAuditReportPrepared?: string;
 	remarks?: string;
 	reasonForOnboarding?: string;
+
 	proposedByName?: string;
 	proposedByDesignation?: string;
 	proposedDate?: string;
+
 	approvedByName?: string;
 	approvedByDesignation?: string;
 	approvalDate?: string;
-	gstCertificate?: string;
-	panNumber?: string;
-	bankCancelledCheque?: string;
-	certificateOfIncorporation?: string;
-	msmeCertificate?: string;
-	passportPhotograph?: string;
 };
 
 export type VendorCreationPayload = {
