@@ -199,11 +199,17 @@
 	===================================================== */
 
 	.approval-flow-table {
-		@apply w-full min-w-0;
+		@apply w-full min-w-0 overflow-auto;
 	}
 
 	.approval-flow-table .data-table-cell {
 		vertical-align: top;
+	}
+	.approval-workflow-content {
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+		overflow-x: auto;
 	}
 
 	/* =====================================================

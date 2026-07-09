@@ -270,6 +270,7 @@ export default function CommentsSection({
 
 				setToEmails([]);
 			} catch (error) {
+				//No workflow has been assigned to this record yet. Comments can be added once a workflow is assigned
 				showToast({
 					type: "error",
 					title: "Error",
