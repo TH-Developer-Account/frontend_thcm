@@ -22,6 +22,9 @@ import type {
 	VendorFormErrors,
 	VendorViewerRole,
 } from "../types/vendorOnboarding.types";
+import { useMutation } from "@tanstack/react-query";
+import { vendorOnboardingApi } from "../api/vendorOnboarding.api";
+import { useAuth } from "../../../context/Auth/useAuth";
 
 const vendorOnboardingSteps = [
 	{ id: 1, label: "Vendor filled details" },
@@ -36,7 +39,7 @@ const initialFormOneValues: VendorCreationFormOneValues = {
 	msmeCertificateAttached: "",
 	city: "",
 	pinCode: "",
-	region: "",
+	state: "",
 
 	mobile: "",
 	email: "",
@@ -230,7 +233,7 @@ export function useVendorCreationForm({
 	const { id } = useParams();
 	const navigate = useNavigate();
 	const { showToast } = useToast();
-
+	const { workspaceId, logout } = useAuth();
 	const vendorRequestId = id;
 
 	const [currentStep, setCurrentStep] = React.useState(1);
@@ -259,7 +262,9 @@ export function useVendorCreationForm({
 
 	const createFormOneMutation = useCreateVendorFormOneMutation();
 	const updateFormOneMutation = useUpdateVendorFormOneMutation();
-
+	const assignWorkflowMutation = useMutation({
+		mutationFn: vendorOnboardingApi.assignWorkflow,
+	});
 	const createFormTwoMutation = useCreateVendorFormTwoMutation();
 	const updateFormTwoMutation = useUpdateVendorFormTwoMutation();
 
@@ -289,6 +294,7 @@ export function useVendorCreationForm({
 		updateFormOneMutation.isPending ||
 		createFormTwoMutation.isPending ||
 		updateFormTwoMutation.isPending ||
+		assignWorkflowMutation.isPending ||
 		submitSummaryMutation.isPending ||
 		approveVendorMutation.isPending ||
 		clarifyVendorMutation.isPending ||
@@ -299,7 +305,7 @@ export function useVendorCreationForm({
 	const hasExistingFormTwo = hasAnyFormValue<VendorCreationFormTwoValues>(
 		detailQuery.data?.partTwo,
 	);
-
+	const TEN_MINUTES = 10 * 60 * 1000;
 	const isExternalVendor = role === "EXTERNAL_VENDOR";
 	const isThcmEmployee = role === "THCM_EMPLOYEE";
 
@@ -311,6 +317,29 @@ export function useVendorCreationForm({
 	const canApprove = role === "THCM_APPROVER";
 	const canClarify = role === "THCM_APPROVER";
 	const canAcceptAndClose = role === "EXTERNAL_APPROVER";
+	const DEALER_CLAIMS_APP_ID = "cc2ce3f6-1924-4d5e-9ef1-ecac0fb0b411";
+	const WORKFLOW_BUDGET = 25000;
+
+	const workflowPayload = {
+		eventProposalId: resolvedVendorRequestId,
+		workspaceId,
+		appId: DEALER_CLAIMS_APP_ID,
+		budget: WORKFLOW_BUDGET,
+	};
+
+	// useEffect(() => {
+	// 	if (user?.role !== "EXTERNAL_VENDOR") {
+	// 		return;
+	// 	}
+
+	// 	const logoutTimer = window.setTimeout(() => {
+	// 		logout();
+	// 	}, TEN_MINUTES);
+
+	// 	return () => {
+	// 		window.clearTimeout(logoutTimer);
+	// 	};
+	// }, [user?.role, logout]);
 
 	const handleNext = () => {
 		setCurrentStep((prev) => Math.min(prev + 1, vendorOnboardingSteps.length));
@@ -486,33 +515,42 @@ export function useVendorCreationForm({
 					vendorRequestId: resolvedVendorRequestId,
 					payload: formTwoValues,
 				});
-
-				showToast({
-					type: "success",
-					title: "Success",
-					description: "THCM details updated successfully.",
-				});
 			} else {
 				await createFormTwoMutation.mutateAsync({
 					vendorRequestId: resolvedVendorRequestId,
 					payload: formTwoValues,
 				});
-
-				showToast({
-					type: "success",
-					title: "Success",
-					description: "THCM details saved successfully.",
-				});
 			}
+
+			console.log("Assign workflow payload:", workflowPayload);
+
+			const workflowResponse =
+				await assignWorkflowMutation.mutateAsync(workflowPayload);
+
+			console.log("Assigned workflow response:", workflowResponse);
+
+			showToast({
+				type: "success",
+				title: "Success",
+				description: hasExistingFormTwo
+					? "THCM details updated and workflow assigned successfully."
+					: "THCM details saved and workflow assigned successfully.",
+			});
 
 			handleNext();
 		} catch (error: unknown) {
-			console.error("Vendor form two save failed:", error);
+			console.error(
+				"Vendor form two save or workflow assignment failed:",
+				error,
+			);
 
 			showToast({
 				type: "error",
 				title: "Error",
-				description: getErrorMessage(error, "Failed to save THCM details."),
+				description: getErrorMessage(
+					error,
+					"Failed to save THCM details or assign the approval workflow.",
+				),
 			});
 		}
 	};

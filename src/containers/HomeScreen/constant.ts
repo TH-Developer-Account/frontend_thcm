@@ -29,6 +29,14 @@ export const actions = [
 		isActive: false,
 	},
 	{
+		icon: FileText,
+		title: "Vendor Onboarding",
+		description: "Submit, review, and process dealer reimbursements.",
+		path: "/vendor/listing",
+		appKey: "DEALER_CLAIMS",
+		isActive: false,
+	},
+	{
 		icon: PackageSearch,
 		title: "Product Selector",
 		description: "Configure and compare machinery specs for customer needs.",
@@ -44,15 +52,16 @@ export const actions = [
 		appKey: "AUDIT",
 		isActive: false,
 	},
-	{
-		icon: UserCheck,
-		title: "Vendor Onboarding",
-		description:
-			"Manage vendor registration, verification, and approval processes.",
-		path: "/",
-		appKey: "VENDOR_ONBOARDING",
-		isActive: false,
-	},
+
+	// {
+	// 	icon: UserCheck,
+	// 	title: "Vendor Onboarding",
+	// 	description:
+	// 		"Manage vendor registration, verification, and approval processes.",
+	// 	path: "/",
+	// 	appKey: "VENDOR_ONBOARDING",
+	// 	isActive: false,
+	// },
 	{
 		icon: UserCheck,
 		title: "Key Account",
@@ -69,14 +78,7 @@ export const actions = [
 		appKey: "CUSTOMER_MASTER_DATA",
 		isActive: false,
 	},
-	{
-		icon: FileText,
-		title: "Dealer Claims",
-		description: "Submit, review, and process dealer reimbursements.",
-		path: "/",
-		appKey: "DEALER_CLAIMS",
-		isActive: false,
-	},
+
 	{
 		icon: Warehouse,
 		title: "Asset Master",

@@ -14,8 +14,8 @@ const VendorOnboardingPage = () => {
 	const [vendorFormFilled, setVendorFormFilled] = useState(false);
 
 	// Replace this with auth-derived role when connected.
-	const viewerRole = "THCM_EMPLOYEE" as VendorViewerRole;
-	// const viewerRole: VendorViewerRole = "EXTERNAL_VENDOR";
+	// const viewerRole = "THCM_EMPLOYEE" as VendorViewerRole;
+	const viewerRole: VendorViewerRole = "EXTERNAL_VENDOR";
 
 	const {
 		vendorOnboardingSteps,

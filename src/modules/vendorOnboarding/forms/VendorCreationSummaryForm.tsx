@@ -17,6 +17,8 @@ import type {
 } from "../types/vendorOnboarding.types";
 import VendorCreationFormOne from "./VendorCreationFormOne";
 import VendorCreationFormTwo from "./VendorCreationFormTwo";
+import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
+import React from "react";
 
 type VendorCreationSummaryFormProps = {
 	formOneValues: VendorCreationFormOneValues;
@@ -53,7 +55,8 @@ const VendorCreationSummaryForm = ({
 	commentsSection,
 }: VendorCreationSummaryFormProps) => {
 	const hasApprovalActions = canApprove || canClarify || canAcceptAndClose;
-
+	const appId = React.useMemo(() => getStoredAppId(), []);
+	console.log("app id", appId);
 	return (
 		<div className="vendor-summary-form">
 			{/* <FormHeader title="Review Vendor Creation Request" Icon={FileCheck2} /> */}

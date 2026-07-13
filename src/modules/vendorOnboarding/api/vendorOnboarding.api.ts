@@ -1,5 +1,6 @@
 // import { ServerAxios } from "../../../services/ServerAxios";
 
+import { ServerAxios } from "../../../services/ServerAxios";
 import type {
 	ClarifyVendorVariables,
 	CommentVendorVariables,
@@ -40,7 +41,7 @@ export const vendorOnboardingApi = {
 				msmeCertificateAttached: "Yes",
 				city: "Bengaluru",
 				pinCode: "560001",
-				region: "South 1",
+				state: "South 1",
 
 				mobile: "9876543210",
 				email: "vendor@example.com",
@@ -340,5 +341,30 @@ export const vendorOnboardingApi = {
 		return {
 			success: true,
 		};
+	},
+
+	assignWorkflow: async (payload: {
+		eventProposalId: string;
+		workspaceId: string | null;
+		appId: string;
+		budget: number;
+	}) => {
+		const {
+			data: { data, message },
+		} = await ServerAxios.post("/soa/assign-workflow", payload);
+
+		return { data, message };
+	},
+
+	previewWorkflow: async (payload: {
+		workspaceId: string | null;
+		appId: string;
+		budget: number;
+	}) => {
+		const {
+			data: { data },
+		} = await ServerAxios.post("/soa/preview-workflow", payload);
+
+		return data;
 	},
 };
