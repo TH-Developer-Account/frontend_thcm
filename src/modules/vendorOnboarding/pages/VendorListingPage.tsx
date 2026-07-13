@@ -1,96 +1,102 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import VendorListingTable from "../components/VendorListingTable";
+import {
+	DUMMY_INITIATION_ROWS,
+	DUMMY_ONBOARDING_ROWS,
+} from "../utils/vendor.constant";
 import type {
+	VendorInitiationListingRow,
 	VendorListingFilter,
-	VendorListingRow,
+	VendorOnboardingListingRow,
 } from "../types/vendorListing.types";
 
-const DUMMY_VENDOR_ROWS: VendorListingRow[] = [
-	{
-		id: "vendor-request-001",
-		vendorCode: "VND-1001",
-		vendorName: "ABC Industrial Suppliers",
-		vendorType: "PO Based",
-		companyCode: "0080 - BLR",
-		region: "South 1",
-		status: "PENDING",
-		createdBy: "External Vendor",
-		createdDate: "2026-07-01",
-	},
-	{
-		id: "vendor-request-002",
-		vendorCode: "VND-1002",
-		vendorName: "Shakti Engineering Works",
-		vendorType: "Non PO Based",
-		companyCode: "0070 - KGP",
-		region: "East",
-		status: "APPROVED",
-		createdBy: "THCM Employee",
-		approvedBy: "Current User",
-		createdDate: "2026-07-02",
-	},
-	{
-		id: "vendor-request-003",
-		vendorCode: "VND-1003",
-		vendorName: "Dharwad Logistics Partner",
-		vendorType: "PO Based",
-		companyCode: "0091 - DWD",
-		region: "Dharwad",
-		status: "PENDING",
-		createdBy: "Current User",
-		createdDate: "2026-07-03",
-	},
-];
-
-const PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 10;
 
 const VendorListingPage = () => {
 	const navigate = useNavigate();
+	const [searchParams, setSearchParams] = useSearchParams();
+
+	const tab = searchParams.get("tab");
+	const initialFilter: VendorListingFilter =
+		tab === "onboarding" ? "onboarding" : "initiation";
 
 	const [selectedFilter, setSelectedFilter] =
-		useState<VendorListingFilter>("pending");
+		useState<VendorListingFilter>(initialFilter);
+
 	const [search, setSearch] = useState("");
 	const [pageIndex, setPageIndex] = useState(0);
-	const [pageSize, setPageSize] = useState(PAGE_SIZE);
+	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
-	const filteredVendors = useMemo(() => {
-		const normalizedSearch = search.trim().toLowerCase();
+	const normalizedSearch = search.trim().toLowerCase();
 
-		return DUMMY_VENDOR_ROWS.filter((vendor) => {
-			const matchesFilter =
-				selectedFilter === "pending"
-					? vendor.status === "PENDING"
-					: selectedFilter === "approvedByMe"
-						? vendor.approvedBy === "Current User"
-						: vendor.createdBy === "Current User";
+	const filteredInitiationVendors = useMemo(() => {
+		return DUMMY_INITIATION_ROWS.filter((vendor) => {
+			if (!normalizedSearch) {
+				return true;
+			}
 
-			const matchesSearch =
-				!normalizedSearch ||
+			return (
 				vendor.vendorName.toLowerCase().includes(normalizedSearch) ||
-				vendor.vendorCode.toLowerCase().includes(normalizedSearch) ||
-				vendor.companyCode.toLowerCase().includes(normalizedSearch) ||
-				vendor.region.toLowerCase().includes(normalizedSearch);
-
-			return matchesFilter && matchesSearch;
+				vendor.vendorEmail.toLowerCase().includes(normalizedSearch) ||
+				vendor.vendorPhone.toLowerCase().includes(normalizedSearch) ||
+				vendor.createdBy?.toLowerCase().includes(normalizedSearch) ||
+				vendor.status?.toLowerCase().includes(normalizedSearch)
+			);
 		});
-	}, [selectedFilter, search]);
+	}, [normalizedSearch]);
 
-	const paginatedVendors = useMemo(() => {
-		const start = pageIndex * pageSize;
-		const end = start + pageSize;
+	const filteredOnboardingVendors = useMemo(() => {
+		return DUMMY_ONBOARDING_ROWS.filter((vendor) => {
+			if (!normalizedSearch) {
+				return true;
+			}
 
-		return filteredVendors.slice(start, end);
-	}, [filteredVendors, pageIndex, pageSize]);
+			return (
+				vendor.vendorName.toLowerCase().includes(normalizedSearch) ||
+				vendor.vendorCode?.toLowerCase().includes(normalizedSearch) ||
+				vendor.vendorType?.toLowerCase().includes(normalizedSearch) ||
+				vendor.companyCode?.toLowerCase().includes(normalizedSearch) ||
+				vendor.region?.toLowerCase().includes(normalizedSearch) ||
+				vendor.createdBy?.toLowerCase().includes(normalizedSearch) ||
+				vendor.status?.toLowerCase().includes(normalizedSearch)
+			);
+		});
+	}, [normalizedSearch]);
 
-	const pageCount = Math.max(1, Math.ceil(filteredVendors.length / pageSize));
+	const paginatedInitiationVendors = useMemo(() => {
+		const startIndex = pageIndex * pageSize;
+		const endIndex = startIndex + pageSize;
+
+		return filteredInitiationVendors.slice(startIndex, endIndex);
+	}, [filteredInitiationVendors, pageIndex, pageSize]);
+
+	const paginatedOnboardingVendors = useMemo(() => {
+		const startIndex = pageIndex * pageSize;
+		const endIndex = startIndex + pageSize;
+
+		return filteredOnboardingVendors.slice(startIndex, endIndex);
+	}, [filteredOnboardingVendors, pageIndex, pageSize]);
+
+	const isInitiationTab = selectedFilter === "initiation";
+
+	const activeRowCount = isInitiationTab
+		? filteredInitiationVendors.length
+		: filteredOnboardingVendors.length;
+
+	const pageCount = Math.max(1, Math.ceil(activeRowCount / pageSize));
 
 	const handleFilterChange = (value: VendorListingFilter) => {
 		setSelectedFilter(value);
 		setPageIndex(0);
+		setSearch("");
+
+		setSearchParams({
+			tab: value === "initiation" ? "initiation" : "onboarding",
+		});
 	};
 
 	const handleSearchChange = (value: string) => {
@@ -103,12 +109,22 @@ const VendorListingPage = () => {
 		setPageIndex(0);
 	};
 
-	const handleViewVendor = (row: VendorListingRow) => {
+	const handleViewInitiation = (row: VendorInitiationListingRow) => {
+		navigate(`/vendor/initiation/${row.id}`);
+	};
+
+	const handleViewOnboarding = (row: VendorOnboardingListingRow) => {
 		navigate(`/vendor/onboarding/${row.id}`);
 	};
 
 	const handleExport = () => {
-		console.log("Export vendor rows:", filteredVendors);
+		if (isInitiationTab) {
+			console.log("Export vendor initiation rows:", filteredInitiationVendors);
+
+			return;
+		}
+
+		console.log("Export vendor onboarding rows:", filteredOnboardingVendors);
 	};
 
 	return (
@@ -137,7 +153,8 @@ const VendorListingPage = () => {
 				onFilterChange={handleFilterChange}
 				search={search}
 				onSearchChange={handleSearchChange}
-				vendors={paginatedVendors}
+				initiationVendors={paginatedInitiationVendors}
+				onboardingVendors={paginatedOnboardingVendors}
 				isLoading={false}
 				isFetching={false}
 				pageIndex={pageIndex}
@@ -146,7 +163,8 @@ const VendorListingPage = () => {
 				onPageChange={setPageIndex}
 				onPageSizeChange={handlePageSizeChange}
 				onExport={handleExport}
-				onView={handleViewVendor}
+				onViewInitiation={handleViewInitiation}
+				onViewOnboarding={handleViewOnboarding}
 			/>
 		</PageSectionLayout>
 	);

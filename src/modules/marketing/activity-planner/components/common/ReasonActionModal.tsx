@@ -59,23 +59,24 @@ export const ReasonActionModal = ({
 		}
 	}, [open]);
 
-	if (!mode) return null;
-
-	const copy = MODAL_COPY[mode];
 	const trimmedReason = reason.trim();
 
-	const handleClose = () => {
+	const handleClose = React.useCallback(() => {
 		if (loading) return;
 
 		setReason("");
 		onClose();
-	};
+	}, [loading, onClose]);
 
-	const handleConfirm = async () => {
+	const handleConfirm = React.useCallback(async () => {
 		if (!trimmedReason || loading) return;
 
 		await onConfirm(trimmedReason);
-	};
+	}, [loading, onConfirm, trimmedReason]);
+
+	if (!mode) return null;
+
+	const copy = MODAL_COPY[mode];
 
 	return (
 		<Modal open={open} title={copy.title} size="md" onClose={handleClose}>
@@ -120,7 +121,7 @@ export const ReasonActionModal = ({
 							variant="brand"
 							size="sm"
 							disabled={!trimmedReason || loading}
-							onClick={handleConfirm}
+							onClick={() => void handleConfirm()}
 						/>
 					</div>
 				</footer>

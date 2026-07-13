@@ -74,13 +74,12 @@ export const EventReportSection = ({
 								e.stopPropagation();
 								onOpenReportBuilder();
 							}}
+							Icon={Pencil}
 							isTooltip={
 								canProposerCreate ? "Create report" : "Edit and resubmit report"
 							}
-						>
-							<Pencil className="h-4 w-4" />
-							{canProposerCreate ? "Create" : "Edit"}
-						</Button>
+							text={canProposerCreate ? "Create" : "Edit"}
+						/>
 					) : canPreview ? (
 						<Button
 							type="button"
@@ -124,10 +123,9 @@ export const EventReportSection = ({
 									? "Validate report"
 									: "Preview report first"
 							}
-						>
-							<CheckCircle2 className="h-4 w-4" />
-							{isValidating ? "Validating..." : "Validate"}
-						</Button>
+							Icon={CheckCircle2}
+							text={isValidating ? "Validating..." : "Validate"}
+						></Button>
 					</div>
 				)}
 
@@ -157,10 +155,9 @@ export const EventReportSection = ({
 									? "Clarify report"
 									: "Preview report first"
 							}
-						>
-							<MessageSquareWarning className="h-4 w-4" />
-							{isClarifying ? "Clarifying..." : "Clarify"}
-						</Button>
+							Icon={MessageSquareWarning}
+							text={isClarifying ? "Clarifying..." : "Clarify"}
+						></Button>
 					</div>
 				)}
 

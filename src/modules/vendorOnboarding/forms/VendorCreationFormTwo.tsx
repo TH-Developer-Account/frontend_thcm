@@ -17,7 +17,7 @@ import type {
 } from "../types/vendorOnboarding.types";
 import TextareaInput from "../../../components/forms/TextareaInput";
 
-type VendorCreationFormTwoProps = {
+export type VendorCreationFormTwoProps = {
 	mode?: VendorFormMode;
 	canEdit?: boolean;
 	values?: VendorCreationFormTwoValues;
@@ -343,14 +343,18 @@ const VendorCreationFormTwo = ({
 			</div>
 			<div className="vendor-form-textarea">
 				{isReadOnly ? (
-					<VendorDetailValue label="Remarks" value={values.remarks} required />
+					<VendorDetailValue
+						label="Nature of Service"
+						value={values.natureOfService}
+						required
+					/>
 				) : (
 					<TextareaInput
-						name="remarks"
-						label="Remarks"
-						value={values.remarks ?? ""}
+						name="natureOfService"
+						label="Nature of Service"
+						value={values.natureOfService ?? ""}
 						required={true}
-						error={errors.remarks}
+						error={errors.natureOfService}
 						helperText="Additional remarks."
 						onChange={(event) => event.target.value}
 					/>
@@ -374,7 +378,7 @@ const VendorCreationFormTwo = ({
 				)}
 			</div>
 
-			<FormHeader title="Proposed By" Icon={FileCheck2} />
+			{/* <FormHeader title="Proposed By" Icon={FileCheck2} />
 
 			<div className="vendor-onboarding-form-grid">
 				{renderInput({
@@ -416,7 +420,7 @@ const VendorCreationFormTwo = ({
 					label: "Approval Date",
 					helperText: "Date of approval.",
 				})}
-			</div>
+			</div> */}
 
 			{isReadOnly ? null : (
 				<div className="vendor-onboarding-form-actions">

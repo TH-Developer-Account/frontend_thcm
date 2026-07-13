@@ -1,21 +1,22 @@
 import type { ReactNode } from "react";
 import Button from "../../../components/common/Button";
-import FormHeader from "../../marketing/activity-planner/components/common/FormHeader";
-import VendorCreationFormOne, {
-	type VendorCreationFormOneValues,
-} from "./VendorCreationFormOne";
-import VendorCreationFormTwo, {
-	type VendorCreationFormTwoValues,
-} from "./VendorCreationFormTwo";
+// import FormHeader from "../../marketing/activity-planner/components/common/FormHeader";
+
 import {
 	ArrowLeft,
 	CheckCircle2,
-	FileCheck2,
+	// FileCheck2,
 	MessageSquareWarning,
 	Save,
 	ShieldCheck,
 	XCircle,
 } from "lucide-react";
+import type {
+	VendorCreationFormTwoValues,
+	VendorCreationFormOneValues,
+} from "../types/vendorOnboarding.types";
+import VendorCreationFormOne from "./VendorCreationFormOne";
+import VendorCreationFormTwo from "./VendorCreationFormTwo";
 
 type VendorCreationSummaryFormProps = {
 	formOneValues: VendorCreationFormOneValues;
@@ -55,7 +56,7 @@ const VendorCreationSummaryForm = ({
 
 	return (
 		<div className="vendor-summary-form">
-			<FormHeader title="Review Vendor Creation Request" Icon={FileCheck2} />
+			{/* <FormHeader title="Review Vendor Creation Request" Icon={FileCheck2} /> */}
 
 			<div className="vendor-summary-intro">
 				<div className="vendor-summary-intro-icon">
@@ -70,13 +71,6 @@ const VendorCreationSummaryForm = ({
 					</p>
 				</div>
 			</div>
-
-			{workflowSection ? (
-				<section className="vendor-summary-block">
-					<h3 className="vendor-summary-block-title">Workflow Details</h3>
-					<div className="vendor-summary-block-body">{workflowSection}</div>
-				</section>
-			) : null}
 
 			<section className="vendor-summary-block">
 				<h3 className="vendor-summary-block-title">Vendor Details</h3>
@@ -99,6 +93,12 @@ const VendorCreationSummaryForm = ({
 				</section>
 			) : null}
 
+			{workflowSection ? (
+				<section className="vendor-summary-block">
+					<h3 className="vendor-summary-block-title">Workflow Details</h3>
+					<div className="vendor-summary-block-body">{workflowSection}</div>
+				</section>
+			) : null}
 			{hasApprovalActions ? (
 				<section className="vendor-approval-panel">
 					<div className="vendor-approval-copy">

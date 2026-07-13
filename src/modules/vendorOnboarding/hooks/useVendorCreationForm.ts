@@ -1,6 +1,5 @@
 import * as React from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
 import { useToast } from "../../../context/Auth/AuthContext";
 import {
 	useAcceptAndCloseVendorMutation,
@@ -553,7 +552,7 @@ export function useVendorCreationForm({
 			}
 
 			console.log("Summary submitted:", savedData);
-			navigate("/vendor/listing");
+			navigate("/vendor/listing?tab=onboarding");
 		} catch (error: unknown) {
 			console.error("Vendor summary submit failed:", error);
 
@@ -724,7 +723,7 @@ export function useVendorCreationForm({
 				description: "Vendor onboarding request deleted successfully.",
 			});
 
-			navigate("/vendor/listing");
+			navigate("/vendor/listing?tab=onboarding");
 		} catch (error: unknown) {
 			console.error("Vendor delete failed:", error);
 

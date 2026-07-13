@@ -25,6 +25,14 @@ const FOCUSABLE_SELECTOR = [
 	"[tabindex]:not([tabindex='-1'])",
 ].join(",");
 
+const isVisibleElement = (element: HTMLElement): boolean => {
+	return (
+		element.offsetWidth > 0 ||
+		element.offsetHeight > 0 ||
+		element.getClientRects().length > 0
+	);
+};
+
 export function Modal({
 	open,
 	title,
@@ -43,6 +51,15 @@ export function Modal({
 }: ModalProps) {
 	const generatedTitleId = React.useId();
 	const modalRef = React.useRef<HTMLDivElement>(null);
+	const onCloseRef = React.useRef(onClose);
+
+	/*
+	 * Keep the latest callback available without making the modal lifecycle
+	 * effect rerun whenever the parent creates a new function reference.
+	 */
+	React.useEffect(() => {
+		onCloseRef.current = onClose;
+	}, [onClose]);
 
 	React.useEffect(() => {
 		if (!open) return;
@@ -55,14 +72,64 @@ export function Modal({
 		const previousOverflow = document.body.style.overflow;
 		document.body.style.overflow = "hidden";
 
+		const getFocusableElements = (): HTMLElement[] => {
+			const modalElement = modalRef.current;
+
+			if (!modalElement) {
+				return [];
+			}
+
+			return Array.from(
+				modalElement.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+			).filter(
+				(element) =>
+					isVisibleElement(element) &&
+					!element.hasAttribute("disabled") &&
+					element.getAttribute("aria-hidden") !== "true",
+			);
+		};
+
 		const focusModal = () => {
 			const modalElement = modalRef.current;
+
 			if (!modalElement) return;
 
-			const focusableElements =
-				modalElement.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+			/*
+			 * React's autoFocus normally focuses the field during mounting.
+			 * This selector also supports explicitly marked initial fields and
+			 * prevents the close button from overriding them.
+			 */
+			const preferredFocusElement =
+				modalElement.querySelector<HTMLElement>(
+					"[data-modal-initial-focus='true']",
+				) ??
+				modalElement.querySelector<HTMLElement>(
+					"textarea[autofocus], input[autofocus], select[autofocus]",
+				);
 
-			const firstFocusableElement = focusableElements[0];
+			if (
+				preferredFocusElement &&
+				isVisibleElement(preferredFocusElement) &&
+				!preferredFocusElement.hasAttribute("disabled")
+			) {
+				preferredFocusElement.focus();
+				return;
+			}
+
+			const activeElement = document.activeElement;
+
+			/*
+			 * Do not replace focus if a child element, such as a React
+			 * autoFocus textarea, already received it while mounting.
+			 */
+			if (
+				activeElement instanceof HTMLElement &&
+				modalElement.contains(activeElement)
+			) {
+				return;
+			}
+
+			const firstFocusableElement = getFocusableElements()[0];
 
 			if (firstFocusableElement) {
 				firstFocusableElement.focus();
@@ -73,27 +140,24 @@ export function Modal({
 		};
 
 		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.key === "Escape" && onClose) {
-				event.preventDefault();
-				onClose();
+			if (event.key === "Escape") {
+				const closeModal = onCloseRef.current;
+
+				if (closeModal) {
+					event.preventDefault();
+					closeModal();
+				}
+
 				return;
 			}
 
 			if (event.key !== "Tab") return;
 
 			const modalElement = modalRef.current;
+
 			if (!modalElement) return;
 
-			const focusableElements = Array.from(
-				modalElement.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
-			).filter((element) => {
-				const isVisible =
-					element.offsetWidth > 0 ||
-					element.offsetHeight > 0 ||
-					element.getClientRects().length > 0;
-
-				return isVisible && !element.hasAttribute("disabled");
-			});
+			const focusableElements = getFocusableElements();
 
 			if (focusableElements.length === 0) {
 				event.preventDefault();
@@ -106,7 +170,10 @@ export function Modal({
 				focusableElements[focusableElements.length - 1];
 
 			if (event.shiftKey) {
-				if (document.activeElement === firstFocusableElement) {
+				if (
+					document.activeElement === firstFocusableElement ||
+					!modalElement.contains(document.activeElement)
+				) {
 					event.preventDefault();
 					lastFocusableElement.focus();
 				}
@@ -114,7 +181,10 @@ export function Modal({
 				return;
 			}
 
-			if (document.activeElement === lastFocusableElement) {
+			if (
+				document.activeElement === lastFocusableElement ||
+				!modalElement.contains(document.activeElement)
+			) {
 				event.preventDefault();
 				firstFocusableElement.focus();
 			}
@@ -122,15 +192,21 @@ export function Modal({
 
 		document.addEventListener("keydown", handleKeyDown);
 
-		const animationFrameId = requestAnimationFrame(focusModal);
+		const animationFrameId = window.requestAnimationFrame(focusModal);
 
 		return () => {
-			cancelAnimationFrame(animationFrameId);
+			window.cancelAnimationFrame(animationFrameId);
 			document.body.style.overflow = previousOverflow;
 			document.removeEventListener("keydown", handleKeyDown);
-			previousActiveElement?.focus();
+
+			if (
+				previousActiveElement &&
+				document.body.contains(previousActiveElement)
+			) {
+				previousActiveElement.focus();
+			}
 		};
-	}, [open, onClose]);
+	}, [open]);
 
 	if (!open) return null;
 
@@ -140,19 +216,21 @@ export function Modal({
 	const hasFooter = !isShellMode && Boolean(footer_children || footer_actions);
 	const labelledBy = title && !isShellMode ? generatedTitleId : undefined;
 
+	const handleOverlayMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+		if (
+			closeOnOverlayClick &&
+			event.target === event.currentTarget &&
+			onCloseRef.current
+		) {
+			onCloseRef.current();
+		}
+	};
+
 	const modalContent = (
 		<div
 			className="modal-overlay"
 			role="presentation"
-			onMouseDown={(event) => {
-				if (
-					closeOnOverlayClick &&
-					event.target === event.currentTarget &&
-					onClose
-				) {
-					onClose();
-				}
-			}}
+			onMouseDown={handleOverlayMouseDown}
 		>
 			<div
 				ref={modalRef}
@@ -189,7 +267,7 @@ export function Modal({
 								<button
 									type="button"
 									className="modal-close-button"
-									onClick={onClose}
+									onClick={() => onCloseRef.current?.()}
 									aria-label="Close dialog"
 								>
 									<X className="modal-close-icon" aria-hidden="true" />

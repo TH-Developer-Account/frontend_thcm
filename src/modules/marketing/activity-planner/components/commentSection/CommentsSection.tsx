@@ -160,7 +160,7 @@ export default function CommentsSection({
 	const [commentsLoading, setCommentsLoading] = React.useState(false);
 	const [toEmails, setToEmails] = React.useState<string[]>([]);
 
-	const listEndRef = React.useRef<HTMLDivElement>(null);
+	const commentsListRef = React.useRef<HTMLDivElement>(null);
 	const isInitialLoad = React.useRef(true);
 
 	React.useEffect(() => {
@@ -199,9 +199,12 @@ export default function CommentsSection({
 			return;
 		}
 
-		listEndRef.current?.scrollIntoView({
+		const container = commentsListRef.current;
+		if (!container) return;
+
+		container.scrollTo({
+			top: container.scrollHeight,
 			behavior: "smooth",
-			block: "nearest",
 		});
 	}, [comments.length]);
 
@@ -317,7 +320,10 @@ export default function CommentsSection({
 							</div>
 						</div>
 					) : (
-						<div className="comments-list scrollbar-sleek">
+						<div
+							className="comments-list scrollbar-sleek"
+							ref={commentsListRef}
+						>
 							{comments.map((comment) => (
 								<CommentCard
 									key={comment.id}
@@ -325,8 +331,6 @@ export default function CommentsSection({
 									isSelf={comment.actor?.id === currentUserId}
 								/>
 							))}
-
-							<div ref={listEndRef} aria-hidden="true" />
 						</div>
 					)}
 				</div>

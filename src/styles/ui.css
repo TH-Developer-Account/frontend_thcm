@@ -9,6 +9,13 @@
 	color: var(--color-icon-brand);
 }
 
+.bottom-buttons-bar-end {
+	@apply flex items-center justify-end gap-4;
+}
+.bottom-buttons-bar-between {
+	@apply flex items-center justify-between gap-4;
+}
+
 @layer components {
 	/* =========================================
 	   COMING SOON PAGE

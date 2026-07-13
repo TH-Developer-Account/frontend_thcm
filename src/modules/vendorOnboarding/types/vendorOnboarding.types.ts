@@ -24,7 +24,7 @@ export type VendorCreationFormOneValues = {
 	msmeCertificateAttached?: string;
 	city?: string;
 	pinCode?: string;
-	region?: string;
+	state?: string;
 
 	mobile?: string;
 	email?: string;
@@ -66,6 +66,7 @@ export type VendorCreationFormTwoValues = {
 	relatedPartyToThcm?: string;
 	vendorAuditReportPrepared?: string;
 	remarks?: string;
+	natureOfService?: string;
 	reasonForOnboarding?: string;
 
 	proposedByName?: string;

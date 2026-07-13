@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 // import { ServerAxios } from "../../../services/ServerAxios";
 
 export type VendorOnboardingInitiationPayload = {
@@ -116,6 +117,7 @@ export const useVendorOnboardingInitiation = ({
 	onUpdateSuccess,
 	onDeleteSuccess,
 }: UseVendorOnboardingInitiationParams = {}) => {
+	const navigate = useNavigate();
 	const [values, setValues] = useState<VendorOnboardingInitiationPayload>({
 		...initialFormValues,
 		...initialValues,
@@ -130,6 +132,7 @@ export const useVendorOnboardingInitiation = ({
 		onSuccess: (response) => {
 			console.log("Submit success:", response);
 			onSubmitSuccess?.();
+			navigate("/vendor/listing?tab=initiation");
 		},
 		onError: (error) => {
 			console.error("Submit failed:", error);

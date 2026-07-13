@@ -1,22 +1,20 @@
-import { useMemo, useState } from "react";
-import {
-	FileDown,
-	ListChecks,
-	ShieldCheck,
-	UserRoundCheck,
-} from "lucide-react";
-
+import { useCallback, useMemo, useState } from "react";
+import { FileDown } from "lucide-react";
+import { VENDOR_FILTER_TABS } from "../utils/vendor.constant";
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
 import { SearchInput } from "../../../components/forms/SearchInput";
+import { FilterTabs } from "../../../components/ui/FilterTabs";
 import DataTable from "../../../components/ui/tables/DataTable/DataTable";
 import DataTableSkeleton from "../../../components/ui/tables/Skeletons/DataTableSkeleton";
-import { FilterTabs } from "../../../components/ui/FilterTabs";
 
-import { getVendorListingColumns } from "../utils/vendorListing.columns";
+import { getVendorInitiationColumns } from "../utils/vendorListing.columns";
+import { getVendorOnboardingColumns } from "../utils/vendorOnboardingListing.columns";
+
 import type {
+	VendorInitiationListingRow,
+	VendorOnboardingListingRow,
 	VendorListingFilter,
-	VendorListingRow,
 } from "../types/vendorListing.types";
 
 type VendorListingTableProps = {
@@ -26,7 +24,8 @@ type VendorListingTableProps = {
 	search: string;
 	onSearchChange: (value: string) => void;
 
-	vendors: VendorListingRow[];
+	initiationVendors?: VendorInitiationListingRow[];
+	onboardingVendors?: VendorOnboardingListingRow[];
 
 	isLoading?: boolean;
 	isFetching?: boolean;
@@ -39,29 +38,10 @@ type VendorListingTableProps = {
 	onPageSizeChange: (pageSize: number) => void;
 
 	onExport: () => void;
-	onView: (row: VendorListingRow) => void;
-};
 
-const VENDOR_FILTER_TABS = [
-	{
-		value: "pending",
-		label: "Pending",
-		tooltipLabel: "Vendor requests pending for action",
-		Icon: ListChecks,
-	},
-	{
-		value: "approvedByMe",
-		label: "Approved By Me",
-		tooltipLabel: "Vendor requests approved by me",
-		Icon: ShieldCheck,
-	},
-	{
-		value: "createdByMe",
-		label: "Created By Me",
-		tooltipLabel: "Vendor requests created by me",
-		Icon: UserRoundCheck,
-	},
-] as const;
+	onViewInitiation: (row: VendorInitiationListingRow) => void;
+	onViewOnboarding: (row: VendorOnboardingListingRow) => void;
+};
 
 const SKELETON_ROW_COUNT = 8;
 
@@ -72,7 +52,8 @@ export default function VendorListingTable({
 	search,
 	onSearchChange,
 
-	vendors,
+	initiationVendors = [],
+	onboardingVendors = [],
 
 	isLoading = false,
 	isFetching = false,
@@ -85,64 +66,121 @@ export default function VendorListingTable({
 	onPageSizeChange,
 
 	onExport,
-	onView,
-}: VendorListingTableProps) {
-	const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-	const visibleIds = useMemo(
-		() => vendors.map((vendor) => vendor.id),
-		[vendors],
+	onViewInitiation,
+	onViewOnboarding,
+}: VendorListingTableProps) {
+	const [selectedInitiationIds, setSelectedInitiationIds] = useState<string[]>(
+		[],
 	);
 
-	const isAllSelected =
-		visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
+	const [selectedOnboardingIds, setSelectedOnboardingIds] = useState<string[]>(
+		[],
+	);
 
-	const handleToggleRow = (id: string) => {
-		setSelectedIds((prev) =>
-			prev.includes(id)
-				? prev.filter((selectedId) => selectedId !== id)
-				: [...prev, id],
+	const isInitiationTab = selectedFilter === "initiation";
+
+	const initiationVisibleIds = useMemo(
+		() => initiationVendors.map((vendor) => vendor.id),
+		[initiationVendors],
+	);
+
+	const onboardingVisibleIds = useMemo(
+		() => onboardingVendors.map((vendor) => vendor.id),
+		[onboardingVendors],
+	);
+
+	const areAllInitiationsSelected =
+		initiationVisibleIds.length > 0 &&
+		initiationVisibleIds.every((id) => selectedInitiationIds.includes(id));
+
+	const areAllOnboardingSelected =
+		onboardingVisibleIds.length > 0 &&
+		onboardingVisibleIds.every((id) => selectedOnboardingIds.includes(id));
+
+	const handleToggleInitiationRow = useCallback((id: string) => {
+		setSelectedInitiationIds((currentIds) =>
+			currentIds.includes(id)
+				? currentIds.filter((selectedId) => selectedId !== id)
+				: [...currentIds, id],
 		);
-	};
+	}, []);
 
-	const handleToggleAll = () => {
-		setSelectedIds((prev) => {
-			const allSelected =
-				visibleIds.length > 0 && visibleIds.every((id) => prev.includes(id));
+	const handleToggleAllInitiations = useCallback(() => {
+		setSelectedInitiationIds((currentIds) => {
+			const allVisibleRowsSelected =
+				initiationVisibleIds.length > 0 &&
+				initiationVisibleIds.every((id) => currentIds.includes(id));
 
-			if (allSelected) {
-				return prev.filter((id) => !visibleIds.includes(id));
+			if (allVisibleRowsSelected) {
+				return currentIds.filter((id) => !initiationVisibleIds.includes(id));
 			}
 
-			return Array.from(new Set([...prev, ...visibleIds]));
+			return Array.from(new Set([...currentIds, ...initiationVisibleIds]));
 		});
-	};
+	}, [initiationVisibleIds]);
 
-	const columns = useMemo(
+	const handleToggleOnboardingRow = useCallback((id: string) => {
+		setSelectedOnboardingIds((currentIds) =>
+			currentIds.includes(id)
+				? currentIds.filter((selectedId) => selectedId !== id)
+				: [...currentIds, id],
+		);
+	}, []);
+
+	const handleToggleAllOnboarding = useCallback(() => {
+		setSelectedOnboardingIds((currentIds) => {
+			const allVisibleRowsSelected =
+				onboardingVisibleIds.length > 0 &&
+				onboardingVisibleIds.every((id) => currentIds.includes(id));
+
+			if (allVisibleRowsSelected) {
+				return currentIds.filter((id) => !onboardingVisibleIds.includes(id));
+			}
+
+			return Array.from(new Set([...currentIds, ...onboardingVisibleIds]));
+		});
+	}, [onboardingVisibleIds]);
+
+	const initiationColumns = useMemo(
 		() =>
-			getVendorListingColumns({
-				selectedIds,
-				onToggleRow: handleToggleRow,
-				onToggleAll: handleToggleAll,
-				isAllSelected,
-				onView,
+			getVendorInitiationColumns({
+				selectedIds: selectedInitiationIds,
+				onToggleRow: handleToggleInitiationRow,
+				onToggleAll: handleToggleAllInitiations,
+				isAllSelected: areAllInitiationsSelected,
+				onView: onViewInitiation,
 			}),
-		[selectedIds, isAllSelected, onView],
+		[
+			selectedInitiationIds,
+			handleToggleInitiationRow,
+			handleToggleAllInitiations,
+			areAllInitiationsSelected,
+			onViewInitiation,
+		],
 	);
 
-	const emptyTitle =
-		selectedFilter === "approvedByMe"
-			? "No vendors approved by you"
-			: selectedFilter === "createdByMe"
-				? "No vendors created by you"
-				: "No pending vendors found";
+	const onboardingColumns = useMemo(
+		() =>
+			getVendorOnboardingColumns({
+				selectedIds: selectedOnboardingIds,
+				onToggleRow: handleToggleOnboardingRow,
+				onToggleAll: handleToggleAllOnboarding,
+				isAllSelected: areAllOnboardingSelected,
+				onView: onViewOnboarding,
+			}),
+		[
+			selectedOnboardingIds,
+			handleToggleOnboardingRow,
+			handleToggleAllOnboarding,
+			areAllOnboardingSelected,
+			onViewOnboarding,
+		],
+	);
 
-	const emptyDescription =
-		selectedFilter === "approvedByMe"
-			? "Approved vendor requests will appear here."
-			: selectedFilter === "createdByMe"
-				? "Vendor requests created by you will appear here."
-				: "Pending vendor requests will appear here.";
+	const activeColumnCount = isInitiationTab
+		? initiationColumns.length
+		: onboardingColumns.length;
 
 	return (
 		<Card
@@ -162,7 +200,11 @@ export default function VendorListingTable({
 					<SearchInput
 						value={search}
 						onChange={onSearchChange}
-						placeholder="Search vendors"
+						placeholder={
+							isInitiationTab
+								? "Search vendor initiation requests"
+								: "Search vendor onboarding records"
+						}
 					/>
 
 					<Button
@@ -188,22 +230,36 @@ export default function VendorListingTable({
 					{isLoading ? (
 						<DataTableSkeleton
 							rows={SKELETON_ROW_COUNT}
-							columns={columns.length}
+							columns={activeColumnCount}
 							showPagination
 						/>
-					) : (
-						<DataTable<VendorListingRow>
-							data={vendors}
-							columns={columns}
+					) : isInitiationTab ? (
+						<DataTable<VendorInitiationListingRow>
+							data={initiationVendors}
+							columns={initiationColumns}
 							manualPagination
 							pageIndex={pageIndex}
 							pageSize={pageSize}
 							pageCount={pageCount}
 							onPageChange={onPageChange}
 							onPageSizeChange={onPageSizeChange}
-							emptyTitle={emptyTitle}
-							emptyDescription={emptyDescription}
-							scrollTargetId="tableScroll"
+							emptyTitle="No vendor initiation requests found"
+							emptyDescription="Vendor initiation form entries will appear here."
+							scrollTargetId="vendor-initiation-table-scroll"
+						/>
+					) : (
+						<DataTable<VendorOnboardingListingRow>
+							data={onboardingVendors}
+							columns={onboardingColumns}
+							manualPagination
+							pageIndex={pageIndex}
+							pageSize={pageSize}
+							pageCount={pageCount}
+							onPageChange={onPageChange}
+							onPageSizeChange={onPageSizeChange}
+							emptyTitle="No vendor onboarding records found"
+							emptyDescription="Vendor onboarding records will appear here."
+							scrollTargetId="vendor-onboarding-table-scroll"
 						/>
 					)}
 				</div>

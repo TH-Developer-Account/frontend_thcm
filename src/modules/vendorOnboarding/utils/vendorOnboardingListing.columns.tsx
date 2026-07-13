@@ -2,26 +2,24 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Eye } from "lucide-react";
 
 import Button from "../../../components/common/Button";
-import type { VendorInitiationListingRow } from "../types/vendorListing.types";
+import type { VendorOnboardingListingRow } from "../types/vendorListing.types";
 
-type VendorInitiationColumnsParams = {
+type VendorOnboardingColumnsParams = {
 	selectedIds: string[];
 	onToggleRow: (id: string) => void;
 	onToggleAll: () => void;
 	isAllSelected: boolean;
-	onView: (row: VendorInitiationListingRow) => void;
+	onView: (row: VendorOnboardingListingRow) => void;
 };
 
-type VendorInitiationStatus = NonNullable<VendorInitiationListingRow["status"]>;
+type VendorStatus = NonNullable<VendorOnboardingListingRow["status"]>;
 
-const VENDOR_INITIATION_STATUS_CONFIG: Partial<
-	Record<
-		VendorInitiationStatus,
-		{
-			label: string;
-			className: string;
-		}
-	>
+const VENDOR_STATUS_CONFIG: Record<
+	VendorStatus,
+	{
+		label: string;
+		className: string;
+	}
 > = {
 	PENDING: {
 		label: "Pending",
@@ -42,7 +40,7 @@ const VENDOR_INITIATION_STATUS_CONFIG: Partial<
 };
 
 const getVendorStatusConfig = (
-	status: VendorInitiationListingRow["status"],
+	status: VendorOnboardingListingRow["status"],
 ) => {
 	if (!status) {
 		return {
@@ -52,7 +50,7 @@ const getVendorStatusConfig = (
 	}
 
 	return (
-		VENDOR_INITIATION_STATUS_CONFIG[status] ?? {
+		VENDOR_STATUS_CONFIG[status] ?? {
 			label: status,
 			className: "vendor-listing-status-inactive",
 		}
@@ -62,31 +60,13 @@ const getVendorStatusConfig = (
 const renderCellValue = (value: string | null | undefined): string =>
 	value?.trim() || "—";
 
-const formatDate = (value: string | null | undefined): string => {
-	if (!value) {
-		return "—";
-	}
-
-	const date = new Date(value);
-
-	if (Number.isNaN(date.getTime())) {
-		return value;
-	}
-
-	return new Intl.DateTimeFormat("en-IN", {
-		day: "2-digit",
-		month: "short",
-		year: "numeric",
-	}).format(date);
-};
-
-export const getVendorInitiationColumns = ({
+export const getVendorOnboardingColumns = ({
 	selectedIds,
 	onToggleRow,
 	onToggleAll,
 	isAllSelected,
 	onView,
-}: VendorInitiationColumnsParams): ColumnDef<VendorInitiationListingRow>[] => [
+}: VendorOnboardingColumnsParams): ColumnDef<VendorOnboardingListingRow>[] => [
 	{
 		id: "select",
 		header: () => (
@@ -95,7 +75,7 @@ export const getVendorInitiationColumns = ({
 				className="vendor-listing-checkbox"
 				checked={isAllSelected}
 				onChange={onToggleAll}
-				aria-label="Select all vendor initiation records"
+				aria-label="Select all vendor onboarding records"
 			/>
 		),
 		cell: ({ row }) => {
@@ -116,37 +96,40 @@ export const getVendorInitiationColumns = ({
 		size: 44,
 	},
 	{
-		accessorKey: "vendorName",
-		header: "Vendor Name",
+		accessorKey: "vendorCode",
+		header: "Vendor Code",
 		cell: ({ row }) => (
-			<span className="vendor-listing-title">
-				{renderCellValue(row.original.vendorName)}
+			<span className="vendor-listing-code">
+				{renderCellValue(row.original.vendorCode)}
 			</span>
 		),
 	},
 	{
-		accessorKey: "vendorEmail",
-		header: "Vendor Email",
+		accessorKey: "vendorName",
+		header: "Vendor Name",
 		cell: ({ row }) => (
-			<a
-				className="vendor-listing-link"
-				href={`mailto:${row.original.vendorEmail}`}
-			>
-				{renderCellValue(row.original.vendorEmail)}
-			</a>
+			<div className="vendor-listing-identity">
+				<span className="vendor-listing-title">
+					{renderCellValue(row.original.vendorName)}
+				</span>
+
+				{row.original.vendorType ? (
+					<span className="vendor-listing-subtitle">
+						{row.original.vendorType}
+					</span>
+				) : null}
+			</div>
 		),
 	},
 	{
-		accessorKey: "vendorPhone",
-		header: "Vendor Phone",
-		cell: ({ row }) => (
-			<a
-				className="vendor-listing-link"
-				href={`tel:${row.original.vendorPhone}`}
-			>
-				{renderCellValue(row.original.vendorPhone)}
-			</a>
-		),
+		accessorKey: "companyCode",
+		header: "Company Code",
+		cell: ({ row }) => renderCellValue(row.original.companyCode),
+	},
+	{
+		accessorKey: "region",
+		header: "Region",
+		cell: ({ row }) => renderCellValue(row.original.region),
 	},
 	{
 		accessorKey: "createdBy",
@@ -154,9 +137,9 @@ export const getVendorInitiationColumns = ({
 		cell: ({ row }) => renderCellValue(row.original.createdBy),
 	},
 	{
-		accessorKey: "createdAt",
+		accessorKey: "createdDate",
 		header: "Created Date",
-		cell: ({ row }) => formatDate(row.original.createdAt),
+		cell: ({ row }) => renderCellValue(row.original.createdDate),
 	},
 	{
 		accessorKey: "status",

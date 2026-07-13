@@ -1,4 +1,5 @@
 import { FILE_UPLOAD_LIMITS } from "./fileUpload.constants";
+
 import type {
 	FileUploadError,
 	FileUploadKind,
@@ -8,11 +9,14 @@ import type {
 
 export function getFileExtension(fileName: string): string {
 	const parts = fileName.split(".");
+
 	return parts.length > 1 ? (parts.pop()?.toLowerCase() ?? "") : "";
 }
 
 export function formatFileSize(bytes: number): string {
-	if (!bytes) return "0 KB";
+	if (!bytes) {
+		return "0 KB";
+	}
 
 	const kb = bytes / 1024;
 	const mb = kb / 1024;
@@ -52,6 +56,7 @@ export function createFileUploadValue(file: File): FileUploadValue {
 		extension: getFileExtension(file.name),
 		sizeLabel: formatFileSize(file.size),
 		isLocal: true,
+		caption: "",
 	};
 }
 
@@ -61,6 +66,7 @@ export function createRemoteFileUploadValue(params: {
 	name: string;
 	type?: string;
 	size?: number;
+	caption?: string;
 }): RemoteFileUploadValue {
 	return {
 		id: params.id,
@@ -72,11 +78,14 @@ export function createRemoteFileUploadValue(params: {
 		extension: getFileExtension(params.name),
 		sizeLabel: params.size ? formatFileSize(params.size) : "",
 		isLocal: false,
+		caption: params.caption ?? "",
 	};
 }
 
 export function revokeFilePreview(value?: FileUploadValue | null): void {
-	if (!value?.isLocal || !value.url) return;
+	if (!value?.isLocal || !value.url) {
+		return;
+	}
 
 	URL.revokeObjectURL(value.url);
 }

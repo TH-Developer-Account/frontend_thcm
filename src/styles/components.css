@@ -964,17 +964,18 @@
 	===================================================== */
 
 	.ui-card-footer {
+		@apply mt-4;
 		display: flex;
 		min-height: var(--control-height-md);
 		align-items: center;
 		justify-content: flex-end;
 		gap: var(--space-2);
-
+		width: 100%;
 		padding: var(--space-2) var(--space-4);
 
 		border-top: var(--border-width-default) solid var(--color-border-subtle);
 
-		background-color: var(--color-bg-surface-subtle);
+		/* background-color: var(--color-bg-surface-subtle); */
 	}
 
 	/* =====================================================
@@ -1973,7 +1974,7 @@
 		min-width: 0;
 		flex: 0 0 auto;
 		align-items: center;
-		justify-content: space-between;
+		justify-content: flex-end;
 		gap: var(--space-3);
 
 		padding: var(--space-3);
@@ -1985,11 +1986,7 @@
 	}
 
 	.modal-footer-actions {
-		display: flex;
-		min-width: 0;
-		align-items: center;
-		justify-content: flex-end;
-		gap: var(--space-2);
+		@apply flex items-center justify-end gap-4 min-w-0;
 	}
 
 	.modal-footer-hint {
@@ -2086,7 +2083,7 @@
 
 		.modal-footer-actions {
 			width: 100%;
-			justify-content: stretch;
+			justify-content: space-between;
 		}
 
 		.modal-footer-actions .button-wrapper {
@@ -6414,34 +6411,77 @@ PAGE NAVIGATION
 	}
 
 	/* =====================================================
-	   STICKY HEADER APPEARANCE
+	   RESPONSIVE SCROLL AND STICKY HEADER BEHAVIOUR
+
+	   Below 1024px:
+	   - the complete page follows normal document flow
+	   - the page header, planner summary and form scroll together
+
+	   From 1024px:
+	   - the existing sticky planner header behaviour is enabled
 	===================================================== */
 
-	.page-row-layout-sticky.activity-planner-layout .page-row-layout-header {
-		background-color: var(--app-bg);
+	@media (max-width: 1023px) {
+		.page-row-layout-sticky.activity-planner-layout {
+			height: auto;
+			min-height: 0;
+			overflow: visible;
+		}
+
+		.page-row-layout-sticky.activity-planner-layout .page-row-layout-header {
+			position: static;
+			top: auto;
+			z-index: auto;
+		}
+
+		.page-row-layout-sticky.activity-planner-layout
+			.page-row-layout-header::after {
+			display: none;
+		}
+
+		.page-row-layout-sticky.activity-planner-layout .page-row-layout-content,
+		.page-row-layout-sticky.activity-planner-layout
+			.page-row-layout-content-inner,
+		.page-row-layout-sticky.activity-planner-layout
+			.activity-planner-layout-content,
+		.page-row-layout-sticky.activity-planner-layout
+			.activity-planner-layout-content-body {
+			height: auto;
+			max-height: none;
+			overflow: visible;
+		}
 	}
 
-	/*
-	 * Keep the opaque padding below the sticky planner header.
-	 * This hides form content while it scrolls underneath.
-	 */
-	.page-row-layout-sticky.activity-planner-layout
-		.page-row-layout-header::after {
-		height: var(--space-3);
-		background-color: var(--color-bg-surface);
-		border-color: var(--color-border-default);
-		border-left: var(--border-width-default) solid var(--color-border-default);
-		border-right: var(--border-width-default) solid var(--color-border-default);
-		border-bottom: var(--border-width-default) solid var(--color-border-default);
-	}
+	@media (min-width: 1024px) {
+		.page-row-layout-sticky.activity-planner-layout .page-row-layout-header {
+			position: sticky;
+			top: 0;
+			z-index: var(--z-sticky);
+			background-color: var(--app-bg);
+		}
 
-	/*
-	 * The planner header belongs to the same surface as the form,
-	 * so it should not have an independent shadow.
-	 */
-	.page-row-layout-sticky.activity-planner-layout
-		.page-row-layout-surface-header {
-		box-shadow: none;
+		/*
+		 * Keep an opaque continuation below the sticky summary so
+		 * form content cannot show through while scrolling underneath.
+		 */
+		.page-row-layout-sticky.activity-planner-layout
+			.page-row-layout-header::after {
+			display: block;
+			height: var(--space-3);
+
+			border-right: var(--border-width-default) solid
+				var(--color-border-default);
+			border-bottom: var(--border-width-default) solid
+				var(--color-border-default);
+			border-left: var(--border-width-default) solid var(--color-border-default);
+
+			background-color: var(--color-bg-surface);
+		}
+
+		.page-row-layout-sticky.activity-planner-layout
+			.page-row-layout-surface-header {
+			box-shadow: none;
+		}
 	}
 
 	/* =====================================================
@@ -6466,11 +6506,6 @@ PAGE NAVIGATION
 		.activity-planner-summary-main,
 		.activity-planner-summary-meta {
 			padding-inline: var(--space-3);
-		}
-
-		.page-row-layout-sticky.activity-planner-layout
-			.page-row-layout-header::after {
-			height: var(--space-2);
 		}
 	}
 
@@ -6562,11 +6597,6 @@ PAGE NAVIGATION
 		.activity-planner-summary-label,
 		.activity-planner-summary-value {
 			font-size: var(--font-size-2xs);
-		}
-
-		.page-row-layout-sticky.activity-planner-layout
-			.page-row-layout-header::after {
-			height: var(--space-2);
 		}
 	}
 
@@ -7752,22 +7782,133 @@ PAGE NAVIGATION
 	   PREVIEW
 	===================================================== */
 
-	.file-upload-preview {
-		position: relative;
+	/* =====================================================
+   COMPACT FILE PREVIEW
+===================================================== */
 
+	.file-upload-preview {
+		width: 100%;
+		min-width: 0;
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-sm);
+
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-primary);
+	}
+
+	.file-upload-preview-body {
 		display: flex;
 		width: 100%;
 		min-width: 0;
-		min-height: 6.25rem;
+		align-items: center;
+		gap: var(--space-3);
+
+		padding: var(--space-2);
+	}
+
+	.file-upload-preview-thumbnail {
+		position: relative;
+
+		display: flex;
+		width: var(--control-height-lg);
+		height: var(--control-height-lg);
+		flex: 0 0 auto;
 		align-items: center;
 		justify-content: center;
 		overflow: hidden;
 
 		border: var(--border-width-default) solid var(--color-border-default);
-		border-radius: var(--radius-sm);
+		border-radius: var(--radius-xs);
 
 		background-color: var(--color-bg-surface-subtle);
+	}
+
+	.file-upload-preview-image-content {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.file-upload-document-icon {
+		display: inline-flex;
+		width: 100%;
+		height: 100%;
+		align-items: center;
+		justify-content: center;
+
+		background-color: var(--color-bg-surface-subtle);
+		color: var(--color-icon-secondary);
+	}
+
+	.file-upload-document-icon svg {
+		width: 1.125rem;
+		height: 1.125rem;
+		stroke-width: 1.75;
+	}
+
+	.file-upload-document-copy {
+		display: flex;
+		min-width: 0;
+		flex: 1;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.file-upload-file-name {
+		min-width: 0;
+		margin: 0;
+		overflow: hidden;
+
 		color: var(--color-text-primary);
+
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.file-upload-file-meta {
+		margin: 0;
+
+		color: var(--color-text-muted);
+
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+	}
+
+	.file-upload-preview-actions {
+		display: flex;
+		flex: 0 0 auto;
+		align-items: center;
+		gap: var(--space-1);
+	}
+
+	.file-upload-preview-actions .button-base {
+		box-shadow: none;
+	}
+
+	@media (max-width: 640px) {
+		.file-upload-preview-body {
+			align-items: flex-start;
+			flex-wrap: wrap;
+		}
+
+		.file-upload-document-copy {
+			padding-top: var(--space-1);
+		}
+
+		.file-upload-preview-actions {
+			width: 100%;
+			justify-content: flex-end;
+
+			padding-top: var(--space-1);
+			border-top: var(--border-width-default) solid var(--color-border-default);
+		}
 	}
 
 	.file-upload-document-preview {
@@ -7926,6 +8067,117 @@ PAGE NAVIGATION
 	}
 
 	/* =====================================================
+	   PHOTO CAPTION
+	===================================================== */
+
+	.file-upload-caption-field {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-1);
+
+		margin-top: var(--space-2);
+	}
+
+	.file-upload-caption-label {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-0-5);
+
+		margin: 0;
+
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+	}
+
+	.file-upload-caption-input {
+		display: block;
+		width: 100%;
+		min-width: 0;
+		min-height: 3.75rem;
+		resize: vertical;
+
+		padding: var(--space-2) var(--space-3);
+
+		border: var(--border-width-default) solid var(--color-input-border);
+		border-radius: var(--radius-sm);
+
+		background-color: var(--color-input-bg);
+		color: var(--color-input-text);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+
+		transition:
+			background-color var(--duration-fast) var(--ease-standard),
+			border-color var(--duration-fast) var(--ease-standard),
+			box-shadow var(--duration-fast) var(--ease-standard);
+	}
+
+	.file-upload-caption-input::placeholder {
+		color: var(--color-input-placeholder);
+	}
+
+	.file-upload-caption-input:hover:not(:disabled):not([readonly]) {
+		border-color: var(--color-input-border-hover);
+	}
+
+	.file-upload-caption-input:focus-visible {
+		border-color: var(--color-input-border-focus);
+		outline: none;
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.file-upload-caption-input:disabled {
+		cursor: not-allowed;
+		background-color: var(--color-input-bg-disabled);
+		color: var(--color-input-text-disabled);
+		opacity: var(--opacity-disabled);
+	}
+
+	.file-upload-caption-input[readonly] {
+		cursor: default;
+		background-color: var(--color-bg-surface-subtle);
+		color: var(--color-text-secondary);
+	}
+
+	.file-upload-caption-input[aria-invalid="true"] {
+		border-color: var(--color-error);
+	}
+
+	.file-upload-caption-meta {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--space-2);
+
+		color: var(--color-text-muted);
+
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+	}
+
+	.file-upload-caption-meta span:first-child {
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+
+	.file-upload-caption-meta span:last-child {
+		flex: 0 0 auto;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+
+	/* =====================================================
 	   MOBILE
 	===================================================== */
 
@@ -7947,6 +8199,10 @@ PAGE NAVIGATION
 			padding: var(--space-3);
 			padding-right: calc(var(--control-height-sm) * 2 + var(--space-5));
 		}
+
+		.file-upload-caption-input {
+			min-height: 4rem;
+		}
 	}
 
 	/* =====================================================
@@ -7955,7 +8211,8 @@ PAGE NAVIGATION
 
 	@media (prefers-reduced-motion: reduce) {
 		.file-upload-empty,
-		.file-upload-preview-image-content {
+		.file-upload-preview-image-content,
+		.file-upload-caption-input {
 			transition-duration: 0.01ms;
 		}
 
@@ -7964,7 +8221,6 @@ PAGE NAVIGATION
 		}
 	}
 }
-
 /* =====================================================
    MIGRATED GENERIC STATE STYLES
 ===================================================== */
