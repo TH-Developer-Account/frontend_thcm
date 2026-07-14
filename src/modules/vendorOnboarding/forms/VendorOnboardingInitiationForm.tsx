@@ -4,7 +4,6 @@ import {
 	RefreshCcw,
 	Save,
 	Send,
-	Trash2,
 	X,
 } from "lucide-react";
 
@@ -27,7 +26,6 @@ type VendorOnboardingInitiationFormProps = {
 	onCancel?: () => void;
 	onBack?: () => void;
 	onSuccess?: () => void | Promise<void>;
-	onDeleteSuccess?: () => void | Promise<void>;
 };
 
 const VendorOnboardingInitiationForm = ({
@@ -37,7 +35,6 @@ const VendorOnboardingInitiationForm = ({
 	onCancel,
 	onBack,
 	onSuccess,
-	onDeleteSuccess,
 }: VendorOnboardingInitiationFormProps) => {
 	const resolvedMode: VendorInitiationFormMode =
 		mode ?? (initiationId ? "edit" : "create");
@@ -50,26 +47,15 @@ const VendorOnboardingInitiationForm = ({
 		errors,
 		isDirty,
 		isSubmitting,
-		isDeleting,
 		handleChange,
 		handleReset,
 		handleSubmit,
-		handleDelete,
 	} = useVendorOnboardingInitiation({
 		initiationId,
 		initialValues,
 		onSubmitSuccess: onSuccess,
 		onUpdateSuccess: onSuccess,
-		onDeleteSuccess,
 	});
-
-	const handleFormSubmit = () => {
-		if (isViewMode) {
-			return;
-		}
-
-		handleSubmit();
-	};
 
 	const handleCancel = () => {
 		if (onCancel) {
@@ -87,7 +73,10 @@ const VendorOnboardingInitiationForm = ({
 				noValidate
 				onSubmit={(event) => {
 					event.preventDefault();
-					handleFormSubmit();
+
+					if (!isViewMode) {
+						handleSubmit();
+					}
 				}}
 			>
 				<FormHeader
@@ -115,87 +104,31 @@ const VendorOnboardingInitiationForm = ({
 					/>
 
 					<FormInput
-						name="vendorEmail"
+						name="email"
 						label="Vendor Email"
 						type="email"
-						value={values.vendorEmail}
+						value={values.email}
 						required={!isViewMode}
 						readOnly={isViewMode}
-						error={isViewMode ? undefined : errors.vendorEmail}
+						error={isViewMode ? undefined : errors.email}
 						helperText={isViewMode ? undefined : "Enter the vendor email"}
 						autoComplete="email"
-						onChange={(event) =>
-							handleChange("vendorEmail", event.target.value)
-						}
+						onChange={(event) => handleChange("email", event.target.value)}
 					/>
 
 					<FormInput
-						name="vendorPhone"
+						name="mobile"
 						label="Vendor Phone Number"
 						type="tel"
-						value={values.vendorPhone}
+						value={values.mobile}
 						required={!isViewMode}
 						readOnly={isViewMode}
-						error={isViewMode ? undefined : errors.vendorPhone}
+						error={isViewMode ? undefined : errors.mobile}
 						helperText={
 							isViewMode ? undefined : "Enter the vendor phone number"
 						}
 						autoComplete="tel"
-						onChange={(event) =>
-							handleChange("vendorPhone", event.target.value)
-						}
-					/>
-				</div>
-
-				<FormHeader title="Contact Person" Icon={LucideBriefcaseBusiness} />
-
-				<div className="vendor-onboarding-form-grid">
-					<FormInput
-						name="personName"
-						label="Contact Person Name"
-						value={values.personName}
-						required={!isViewMode}
-						readOnly={isViewMode}
-						error={isViewMode ? undefined : errors.personName}
-						helperText={
-							isViewMode ? undefined : "Enter the contact person's name"
-						}
-						autoComplete="name"
-						onChange={(event) => handleChange("personName", event.target.value)}
-					/>
-
-					<FormInput
-						name="personEmail"
-						label="Contact Person Email"
-						type="email"
-						value={values.personEmail}
-						required={!isViewMode}
-						readOnly={isViewMode}
-						error={isViewMode ? undefined : errors.personEmail}
-						helperText={
-							isViewMode ? undefined : "Enter the contact person's email"
-						}
-						autoComplete="email"
-						onChange={(event) =>
-							handleChange("personEmail", event.target.value)
-						}
-					/>
-
-					<FormInput
-						name="personPhone"
-						label="Contact Person Phone Number"
-						type="tel"
-						value={values.personPhone}
-						required={!isViewMode}
-						readOnly={isViewMode}
-						error={isViewMode ? undefined : errors.personPhone}
-						helperText={
-							isViewMode ? undefined : "Enter the contact person's phone number"
-						}
-						autoComplete="tel"
-						onChange={(event) =>
-							handleChange("personPhone", event.target.value)
-						}
+						onChange={(event) => handleChange("mobile", event.target.value)}
 					/>
 				</div>
 
@@ -211,18 +144,6 @@ const VendorOnboardingInitiationForm = ({
 							variant="outline"
 							onClick={onBack}
 						/>
-					) : isEditMode ? (
-						<Button
-							type="button"
-							text={isDeleting ? "Deleting..." : "Delete"}
-							Icon={Trash2}
-							iconPosition="left"
-							size="sm"
-							appearance="standard"
-							variant="danger"
-							disabled={isDeleting || isSubmitting}
-							onClick={handleDelete}
-						/>
 					) : (
 						<Button
 							type="button"
@@ -237,7 +158,7 @@ const VendorOnboardingInitiationForm = ({
 						/>
 					)}
 
-					{isViewMode ? null : (
+					{!isViewMode && (
 						<div className="vendor-onboarding-form-actions-end">
 							<Button
 								type="button"
@@ -247,7 +168,7 @@ const VendorOnboardingInitiationForm = ({
 								size="sm"
 								appearance="standard"
 								variant="outline"
-								disabled={!isDirty || isSubmitting || isDeleting}
+								disabled={!isDirty || isSubmitting}
 								onClick={handleReset}
 							/>
 
@@ -267,7 +188,7 @@ const VendorOnboardingInitiationForm = ({
 								size="sm"
 								appearance="standard"
 								variant="brand"
-								disabled={isSubmitting || isDeleting}
+								disabled={isSubmitting}
 							/>
 						</div>
 					)}
