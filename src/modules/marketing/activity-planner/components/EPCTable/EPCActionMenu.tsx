@@ -1,14 +1,11 @@
-import {
-	Menu,
-	MenuButton,
-	MenuItem,
-	MenuItems,
-	Portal,
-} from "@headlessui/react";
-import { EllipsisVertical, UserPlus } from "lucide-react";
+import { UserPlus, Users } from "lucide-react";
+
+import ActionMenu, {
+	type ActionMenuItem,
+} from "../../../../../components/common/ActionMenu";
 
 import type { EpcListItem } from "../../types/epc.types";
-import Button from "../../../../../components/common/Button";
+import { useNavigate } from "react-router-dom";
 
 type EPCActionMenuProps = {
 	row: EpcListItem;
@@ -16,60 +13,76 @@ type EPCActionMenuProps = {
 	canCreateLead?: boolean;
 };
 
-const getEventName = (row: EpcListItem) => {
-	if (typeof row.event_name === "string") return row.event_name;
+const getEventName = (row: EpcListItem): string => {
+	if (typeof row.event_name === "string") {
+		return row.event_name;
+	}
+
 	return row.event_title || "--";
 };
 
-export default function EPCActionMenu({
+const EPCActionMenu = ({
 	row,
 	onLeadCreate,
-	canCreateLead,
-}: EPCActionMenuProps) {
-	const handleLead = () => {
-		if (!canCreateLead) return;
+	canCreateLead = false,
+}: EPCActionMenuProps) => {
+	const rowLabel = row.proposal_number || getEventName(row);
+	const navigate = useNavigate();
+	const actions: ActionMenuItem<EpcListItem>[] = [
+		{
+			id: "create-lead",
+			label: "Create Lead",
+			Icon: UserPlus,
+			disabled: !canCreateLead,
+			ariaLabel: `Create lead for ${rowLabel}`,
+			onClick: (selectedRow) => {
+				localStorage.setItem(
+					"LeadInfo",
+					JSON.stringify({
+						epcId: selectedRow.id,
+						proposalNumber: selectedRow.proposal_number || "",
+						eventName: getEventName(selectedRow),
+						location: selectedRow.location || "",
+						status: selectedRow.status || "",
+					}),
+				);
 
-		localStorage.setItem(
-			"LeadInfo",
-			JSON.stringify({
-				epcId: row.id,
-				proposalNumber: row.proposal_number || "",
-				eventName: getEventName(row),
-				location: row.location || "",
-				status: row.status || "",
-			}),
-		);
+				onLeadCreate?.(selectedRow);
+			},
+		},
+		{
+			id: "view-lead-listing",
+			label: "View all leads",
+			Icon: Users,
+			ariaLabel: `View all leads for ${rowLabel}`,
+			onClick: (selectedRow) => {
+				const leadInfo = {
+					epcId: selectedRow.id,
+					proposalNumber: selectedRow.proposal_number || "",
+					eventName: getEventName(selectedRow),
+					location: selectedRow.location || "",
+					status: selectedRow.status || "",
+				};
 
-		onLeadCreate?.(row);
-	};
+				localStorage.setItem("LeadInfo", JSON.stringify(leadInfo));
+
+				navigate("/marketing/activity-planner/leads/view", {
+					state: {
+						mode: "view",
+						leadInfo,
+					},
+				});
+			},
+		},
+	];
 
 	return (
-		<Menu as="div" className="epc-action-menu">
-			<MenuButton
-				className="epc-action-trigger"
-				aria-label={`Open actions for ${row.proposal_number || "EPC"}`}
-			>
-				<EllipsisVertical size={16} aria-hidden="true" />
-			</MenuButton>
-
-			<Portal>
-				<MenuItems anchor="bottom end" transition className="epc-action-panel">
-					<MenuItem>
-						{({ focus }) => (
-							<Button
-								type="button"
-								text="Create Lead"
-								disabled={!canCreateLead}
-								onClick={handleLead}
-								Icon={UserPlus}
-								appearance="transparent"
-								variant="transparent"
-								className={`epc-action-item ${focus ? "epc-action-item-focus" : ""}`}
-							/>
-						)}
-					</MenuItem>
-				</MenuItems>
-			</Portal>
-		</Menu>
+		<ActionMenu<EpcListItem>
+			row={row}
+			actions={actions}
+			ariaLabel={`Open actions for ${rowLabel}`}
+		/>
 	);
-}
+};
+
+export default EPCActionMenu;

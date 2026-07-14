@@ -13,8 +13,8 @@ import type { VendorViewerRole } from "../types/vendorOnboarding.types";
 const VendorOnboardingPage = () => {
 	const [vendorFormFilled, setVendorFormFilled] = useState(false);
 
-	// Replace this with auth-derived role when connected.
-	// const viewerRole = "THCM_EMPLOYEE" as VendorViewerRole;
+	// Replace this with the authenticated user's actual role.
+	//"EXTERNAL_VENDOR" | "THCM_EMPLOYEE" | "THCM_APPROVER" | "EXTERNAL_APPROVER"
 	const viewerRole: VendorViewerRole = "EXTERNAL_VENDOR";
 
 	const {
@@ -61,9 +61,17 @@ const VendorOnboardingPage = () => {
 					variant: "breadcrumbs",
 					ariaLabel: "Vendor Onboarding Form",
 					breadcrumbs: [
-						{ label: "Home Screen", href: "/" },
-						{ label: "Vendors Listing", href: "/vendor/listing" },
-						{ label: "Vendor Onboarding Form" },
+						{
+							label: "Home Screen",
+							href: "/",
+						},
+						{
+							label: "Vendors Listing",
+							href: "/vendor/listing",
+						},
+						{
+							label: "Vendor Onboarding Form",
+						},
 					],
 					separator: "›",
 				}}

@@ -1,6 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 // import { ServerAxios } from "../../../services/ServerAxios";
 
 export type VendorOnboardingInitiationPayload = {
@@ -42,6 +41,18 @@ const initialFormValues: VendorOnboardingInitiationPayload = {
 // 		errors.vendorPhone = "Vendor phone number is required.";
 // 	}
 
+// 	if (!values.personName.trim()) {
+// 		errors.personName = "Contact person name is required.";
+// 	}
+
+// 	if (!values.personEmail.trim()) {
+// 		errors.personEmail = "Contact person email is required.";
+// 	}
+
+// 	if (!values.personPhone.trim()) {
+// 		errors.personPhone = "Contact person phone number is required.";
+// 	}
+
 // 	if (values.vendorEmail && !/^\S+@\S+\.\S+$/.test(values.vendorEmail)) {
 // 		errors.vendorEmail = "Enter a valid vendor email.";
 // 	}
@@ -58,8 +69,11 @@ const createVendorInitiation = async (
 ) => {
 	console.log("CREATE vendor onboarding initiation:", payload);
 
-	// API ready version:
-	// const { data } = await ServerAxios.post("/vendor-onboarding/initiation", payload);
+	// API-ready version:
+	// const { data } = await ServerAxios.post(
+	// 	"/vendor-onboarding/initiation",
+	// 	payload,
+	// );
 	// return data;
 
 	return {
@@ -74,7 +88,7 @@ const updateVendorInitiation = async (
 ) => {
 	console.log("UPDATE vendor onboarding initiation:", payload);
 
-	// API ready version:
+	// API-ready version:
 	// const { data } = await ServerAxios.put(
 	// 	`/vendor-onboarding/initiation/${payload.id}`,
 	// 	payload,
@@ -91,8 +105,10 @@ const updateVendorInitiation = async (
 const deleteVendorInitiation = async (id: string) => {
 	console.log("DELETE vendor onboarding initiation:", id);
 
-	// API ready version:
-	// const { data } = await ServerAxios.delete(`/vendor-onboarding/initiation/${id}`);
+	// API-ready version:
+	// const { data } = await ServerAxios.delete(
+	// 	`/vendor-onboarding/initiation/${id}`,
+	// );
 	// return data;
 
 	return {
@@ -105,9 +121,9 @@ const deleteVendorInitiation = async (id: string) => {
 type UseVendorOnboardingInitiationParams = {
 	initialValues?: Partial<VendorOnboardingInitiationPayload>;
 	initiationId?: string;
-	onSubmitSuccess?: () => void;
-	onUpdateSuccess?: () => void;
-	onDeleteSuccess?: () => void;
+	onSubmitSuccess?: () => void | Promise<void>;
+	onUpdateSuccess?: () => void | Promise<void>;
+	onDeleteSuccess?: () => void | Promise<void>;
 };
 
 export const useVendorOnboardingInitiation = ({
@@ -117,22 +133,32 @@ export const useVendorOnboardingInitiation = ({
 	onUpdateSuccess,
 	onDeleteSuccess,
 }: UseVendorOnboardingInitiationParams = {}) => {
-	const navigate = useNavigate();
-	const [values, setValues] = useState<VendorOnboardingInitiationPayload>({
-		...initialFormValues,
-		...initialValues,
-	});
+	const resolvedInitialValues = useMemo<VendorOnboardingInitiationPayload>(
+		() => ({
+			...initialFormValues,
+			...initialValues,
+		}),
+		[initialValues],
+	);
+
+	const [values, setValues] = useState<VendorOnboardingInitiationPayload>(
+		resolvedInitialValues,
+	);
 
 	const [errors, setErrors] = useState<VendorOnboardingInitiationErrors>({});
 
 	const isEditMode = Boolean(initiationId);
 
+	useEffect(() => {
+		setValues(resolvedInitialValues);
+		setErrors({});
+	}, [resolvedInitialValues]);
+
 	const submitMutation = useMutation({
 		mutationFn: createVendorInitiation,
-		onSuccess: (response) => {
+		onSuccess: async (response) => {
 			console.log("Submit success:", response);
-			onSubmitSuccess?.();
-			navigate("/vendor/listing?tab=initiation");
+			await onSubmitSuccess?.();
 		},
 		onError: (error) => {
 			console.error("Submit failed:", error);
@@ -141,9 +167,9 @@ export const useVendorOnboardingInitiation = ({
 
 	const updateMutation = useMutation({
 		mutationFn: updateVendorInitiation,
-		onSuccess: (response) => {
+		onSuccess: async (response) => {
 			console.log("Update success:", response);
-			onUpdateSuccess?.();
+			await onUpdateSuccess?.();
 		},
 		onError: (error) => {
 			console.error("Update failed:", error);
@@ -152,9 +178,9 @@ export const useVendorOnboardingInitiation = ({
 
 	const deleteMutation = useMutation({
 		mutationFn: deleteVendorInitiation,
-		onSuccess: (response) => {
+		onSuccess: async (response) => {
 			console.log("Delete success:", response);
-			onDeleteSuccess?.();
+			await onDeleteSuccess?.();
 		},
 		onError: (error) => {
 			console.error("Delete failed:", error);
@@ -164,34 +190,42 @@ export const useVendorOnboardingInitiation = ({
 	const isSubmitting = submitMutation.isPending || updateMutation.isPending;
 	const isDeleting = deleteMutation.isPending;
 
-	const isDirty = useMemo(() => {
-		return JSON.stringify(values) !== JSON.stringify(initialFormValues);
-	}, [values]);
+	const isDirty = useMemo(
+		() => JSON.stringify(values) !== JSON.stringify(resolvedInitialValues),
+		[resolvedInitialValues, values],
+	);
 
 	const handleChange = <K extends keyof VendorOnboardingInitiationPayload>(
 		key: K,
 		value: VendorOnboardingInitiationPayload[K],
 	) => {
-		setValues((prev) => ({
-			...prev,
+		setValues((currentValues) => ({
+			...currentValues,
 			[key]: value,
 		}));
 
-		setErrors((prev) => ({
-			...prev,
-			[key]: "",
-		}));
+		setErrors((currentErrors) => {
+			if (!currentErrors[key]) {
+				return currentErrors;
+			}
+
+			return {
+				...currentErrors,
+				[key]: undefined,
+			};
+		});
 	};
 
 	const handleReset = () => {
-		setValues({
-			...initialFormValues,
-			...initialValues,
-		});
+		setValues(resolvedInitialValues);
 		setErrors({});
 	};
 
 	const handleSubmit = () => {
+		if (isSubmitting || isDeleting) {
+			return;
+		}
+
 		// const validationErrors = validateVendorInitiationForm(values);
 
 		// if (Object.keys(validationErrors).length > 0) {
@@ -204,6 +238,7 @@ export const useVendorOnboardingInitiation = ({
 				id: initiationId,
 				...values,
 			});
+
 			return;
 		}
 
@@ -213,6 +248,10 @@ export const useVendorOnboardingInitiation = ({
 	const handleDelete = () => {
 		if (!initiationId) {
 			console.warn("Delete skipped: initiationId is missing.");
+			return;
+		}
+
+		if (isDeleting || isSubmitting) {
 			return;
 		}
 

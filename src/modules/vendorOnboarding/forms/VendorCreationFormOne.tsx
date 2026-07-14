@@ -35,14 +35,14 @@ import Card from "../../../components/common/Card";
 type VendorCreationFormOneProps = {
 	mode?: VendorFormMode;
 	canEdit?: boolean;
-	values?: VendorCreationFormOneValues;
+	values: VendorCreationFormOneValues;
+	errors: VendorFormErrors<VendorCreationFormOneValues>;
 	onChange?: <K extends keyof VendorCreationFormOneValues>(
 		key: K,
 		value: VendorCreationFormOneValues[K],
 	) => void;
 	onNext?: () => void;
 	onSubmit?: () => void;
-	errors?: VendorFormErrors<VendorCreationFormOneValues>;
 	loading?: boolean;
 	submittedMessage?: string;
 };
@@ -556,7 +556,7 @@ const VendorCreationFormOne = ({
 							<div className="vendor-enclosure-upload-card" key={slot.name}>
 								<FileUploadField
 									value={uploadedFile}
-									onChange={(fileValue: any) =>
+									onChange={(fileValue: FileUploadValue | null) =>
 										handleEnclosureChange(slot.name, fileValue)
 									}
 									kind="document"

@@ -1,26 +1,28 @@
 import type { ReactNode } from "react";
-import Button from "../../../components/common/Button";
-// import FormHeader from "../../marketing/activity-planner/components/common/FormHeader";
-
+import React from "react";
 import {
 	ArrowLeft,
 	CheckCircle2,
-	// FileCheck2,
 	MessageSquareWarning,
 	Save,
 	ShieldCheck,
 	XCircle,
 } from "lucide-react";
+
+import Button from "../../../components/common/Button";
+import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
 import type {
-	VendorCreationFormTwoValues,
 	VendorCreationFormOneValues,
+	VendorCreationFormTwoValues,
 } from "../types/vendorOnboarding.types";
 import VendorCreationFormOne from "./VendorCreationFormOne";
 import VendorCreationFormTwo from "./VendorCreationFormTwo";
-import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
-import React from "react";
+
+type VendorCreationSummaryMode = "edit" | "view";
 
 type VendorCreationSummaryFormProps = {
+	mode?: VendorCreationSummaryMode;
+
 	formOneValues: VendorCreationFormOneValues;
 	formTwoValues: VendorCreationFormTwoValues;
 
@@ -40,6 +42,7 @@ type VendorCreationSummaryFormProps = {
 };
 
 const VendorCreationSummaryForm = ({
+	mode = "edit",
 	formOneValues,
 	formTwoValues,
 	onBack,
@@ -54,44 +57,79 @@ const VendorCreationSummaryForm = ({
 	workflowSection,
 	commentsSection,
 }: VendorCreationSummaryFormProps) => {
-	const hasApprovalActions = canApprove || canClarify || canAcceptAndClose;
+	const isViewMode = mode === "view";
+
+	const showSubmitAction =
+		!isViewMode && canSubmit && typeof onSubmit === "function";
+
+	const showApproveAction = canApprove && typeof onApprove === "function";
+
+	const showClarifyAction = canClarify && typeof onClarify === "function";
+
+	const showAcceptAndCloseAction =
+		canAcceptAndClose && typeof onAcceptAndClose === "function";
+
+	const hasApprovalActions =
+		showApproveAction || showClarifyAction || showAcceptAndCloseAction;
+
 	const appId = React.useMemo(() => getStoredAppId(), []);
+
 	console.log("app id", appId);
+
 	return (
 		<div className="vendor-summary-form">
-			{/* <FormHeader title="Review Vendor Creation Request" Icon={FileCheck2} /> */}
+			{/* {isViewMode ? (
+				<div className="vendor-summary-intro">
+					<div className="vendor-summary-intro-icon">
+						<ShieldCheck size={18} aria-hidden="true" />
+					</div>
 
-			<div className="vendor-summary-intro">
-				<div className="vendor-summary-intro-icon">
-					<ShieldCheck size={18} aria-hidden="true" />
-				</div>
+					<div className="vendor-summary-intro-copy">
+						<h2 className="vendor-summary-title">
+							{isViewMode
+								? "Vendor onboarding details"
+								: "Final review before action"}
+						</h2>
 
-				<div className="vendor-summary-intro-copy">
-					<h2 className="vendor-summary-title">Final review before action</h2>
-					<p className="vendor-summary-description">
-						Review vendor master, finance, compliance, workflow and comments
-						before submitting, approving, clarifying, or closing the request.
-					</p>
+						<p className="vendor-summary-description">
+							{isViewMode
+								? "Review vendor master, finance, compliance, workflow, and comments."
+								: "Review vendor master, finance, compliance, workflow and comments before submitting, approving, clarifying, or closing the request."}
+						</p>
+					</div>
 				</div>
-			</div>
+			) : null} */}
 
 			<section className="vendor-summary-block">
 				<h3 className="vendor-summary-block-title">Vendor Details</h3>
+
 				<div className="vendor-summary-block-body">
-					<VendorCreationFormOne mode="view" values={formOneValues} />
+					<VendorCreationFormOne
+						mode="view"
+						canEdit={false}
+						values={formOneValues}
+						errors={{}}
+					/>
 				</div>
 			</section>
 
 			<section className="vendor-summary-block">
 				<h3 className="vendor-summary-block-title">Finance & Compliance</h3>
+
 				<div className="vendor-summary-block-body">
-					<VendorCreationFormTwo mode="view" values={formTwoValues} />
+					<VendorCreationFormTwo
+						mode="view"
+						canEdit={false}
+						values={formTwoValues}
+						errors={{}}
+					/>
 				</div>
 			</section>
 
 			{commentsSection ? (
 				<section className="vendor-summary-block">
 					<h3 className="vendor-summary-block-title">Comments</h3>
+
 					<div className="vendor-summary-block-body">{commentsSection}</div>
 				</section>
 			) : null}
@@ -99,21 +137,23 @@ const VendorCreationSummaryForm = ({
 			{workflowSection ? (
 				<section className="vendor-summary-block">
 					<h3 className="vendor-summary-block-title">Workflow Details</h3>
+
 					<div className="vendor-summary-block-body">{workflowSection}</div>
 				</section>
 			) : null}
+
 			{hasApprovalActions ? (
 				<section className="vendor-approval-panel">
 					<div className="vendor-approval-copy">
 						<h3 className="vendor-approval-title">Approval action</h3>
+
 						<p className="vendor-approval-description">
-							THCM approver can approve or request clarification. External user
-							can review, comment, accept and close the request.
+							Review the request and perform the available workflow action.
 						</p>
 					</div>
 
 					<div className="vendor-approval-actions">
-						{canClarify ? (
+						{showClarifyAction ? (
 							<Button
 								type="button"
 								text="Clarify"
@@ -125,7 +165,7 @@ const VendorCreationSummaryForm = ({
 							/>
 						) : null}
 
-						{canApprove ? (
+						{showApproveAction ? (
 							<Button
 								type="button"
 								text="Approve"
@@ -137,7 +177,7 @@ const VendorCreationSummaryForm = ({
 							/>
 						) : null}
 
-						{canAcceptAndClose ? (
+						{showAcceptAndCloseAction ? (
 							<Button
 								type="button"
 								text="Accept & Close"
@@ -169,7 +209,7 @@ const VendorCreationSummaryForm = ({
 				)}
 
 				<div className="vendor-onboarding-form-actions-end">
-					{canSubmit ? (
+					{showSubmitAction ? (
 						<Button
 							type="button"
 							text="Submit"

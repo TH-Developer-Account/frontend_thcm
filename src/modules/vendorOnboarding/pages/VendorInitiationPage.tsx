@@ -1,15 +1,38 @@
+import { useNavigate, useParams } from "react-router-dom";
+
 import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
-import VendorOnboardingInitiationForm from "../forms/VendorOnboardingInitiationForm";
+import VendorOnboardingInitiationForm, {
+	type VendorInitiationFormMode,
+} from "../forms/VendorOnboardingInitiationForm";
 
-const VendorInitiationPage = () => {
+type VendorInitiationPageProps = {
+	mode?: VendorInitiationFormMode;
+};
+
+const VendorInitiationPage = ({
+	mode = "create",
+}: VendorInitiationPageProps) => {
+	const navigate = useNavigate();
+	const { initiationId } = useParams<{ initiationId: string }>();
+
+	const isViewMode = mode === "view";
+
+	const handleBackToListing = () => {
+		navigate("/vendor/listing?tab=initiation");
+	};
+
 	return (
 		<PageSectionLayout>
 			<PageHeader
-				headerText="Vendor Initiation Form"
+				headerText={
+					isViewMode ? "Vendor Initiation Details" : "Vendor Initiation Form"
+				}
 				navigation={{
 					variant: "breadcrumbs",
-					ariaLabel: "Vendor Initiation Form",
+					ariaLabel: isViewMode
+						? "Vendor Initiation Details"
+						: "Vendor Initiation Form",
 					breadcrumbs: [
 						{
 							label: "Home Screen",
@@ -17,17 +40,25 @@ const VendorInitiationPage = () => {
 						},
 						{
 							label: "Vendors Listing",
-							href: "/vendor/listing",
+							href: "/vendor/listing?tab=initiation",
 						},
 						{
-							label: "Vendor Onboarding Form",
+							label: isViewMode
+								? "Vendor Initiation Details"
+								: "Vendor Initiation Form",
 						},
 					],
 					separator: "›",
 				}}
 			/>
 
-			<VendorOnboardingInitiationForm />
+			<VendorOnboardingInitiationForm
+				initiationId={initiationId}
+				mode={mode}
+				onCancel={handleBackToListing}
+				onSuccess={handleBackToListing}
+				onDeleteSuccess={handleBackToListing}
+			/>
 		</PageSectionLayout>
 	);
 };

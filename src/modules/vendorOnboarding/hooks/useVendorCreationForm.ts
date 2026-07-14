@@ -24,7 +24,7 @@ import type {
 } from "../types/vendorOnboarding.types";
 import { useMutation } from "@tanstack/react-query";
 import { vendorOnboardingApi } from "../api/vendorOnboarding.api";
-import { useAuth } from "../../../context/Auth/useAuth";
+// import { useAuth } from "../../../context/Auth/useAuth";
 
 const vendorOnboardingSteps = [
 	{ id: 1, label: "Vendor filled details" },
@@ -223,18 +223,26 @@ const hasAnyFormValue = <T extends Record<string, unknown>>(
 
 type UseVendorCreationFormParams = {
 	role?: VendorViewerRole;
+	vendorRequestId?: string;
 	onSuccess?: () => void | Promise<void>;
 };
 
 export function useVendorCreationForm({
 	role = "THCM_EMPLOYEE",
+	vendorRequestId: providedVendorRequestId,
 	onSuccess,
 }: UseVendorCreationFormParams = {}) {
-	const { id } = useParams();
+	const routeParams = useParams<{
+		id?: string;
+		onboardingId?: string;
+	}>();
+
 	const navigate = useNavigate();
 	const { showToast } = useToast();
-	const { workspaceId, logout } = useAuth();
-	const vendorRequestId = id;
+	// const { workspaceId } = useAuth();
+
+	const vendorRequestId =
+		providedVendorRequestId ?? routeParams.onboardingId ?? routeParams.id;
 
 	const [currentStep, setCurrentStep] = React.useState(1);
 	const [createdVendorRequestId, setCreatedVendorRequestId] = React.useState<
@@ -305,7 +313,7 @@ export function useVendorCreationForm({
 	const hasExistingFormTwo = hasAnyFormValue<VendorCreationFormTwoValues>(
 		detailQuery.data?.partTwo,
 	);
-	const TEN_MINUTES = 10 * 60 * 1000;
+	// const TEN_MINUTES = 10 * 60 * 1000;
 	const isExternalVendor = role === "EXTERNAL_VENDOR";
 	const isThcmEmployee = role === "THCM_EMPLOYEE";
 
@@ -317,15 +325,15 @@ export function useVendorCreationForm({
 	const canApprove = role === "THCM_APPROVER";
 	const canClarify = role === "THCM_APPROVER";
 	const canAcceptAndClose = role === "EXTERNAL_APPROVER";
-	const DEALER_CLAIMS_APP_ID = "cc2ce3f6-1924-4d5e-9ef1-ecac0fb0b411";
-	const WORKFLOW_BUDGET = 25000;
+	// const DEALER_CLAIMS_APP_ID = "cc2ce3f6-1924-4d5e-9ef1-ecac0fb0b411";
+	// const WORKFLOW_BUDGET = 25000;
 
-	const workflowPayload = {
-		eventProposalId: resolvedVendorRequestId,
-		workspaceId,
-		appId: DEALER_CLAIMS_APP_ID,
-		budget: WORKFLOW_BUDGET,
-	};
+	// const workflowPayload = {
+	// 	eventProposalId: resolvedVendorRequestId,
+	// 	workspaceId,
+	// 	appId: DEALER_CLAIMS_APP_ID,
+	// 	budget: WORKFLOW_BUDGET,
+	// };
 
 	// useEffect(() => {
 	// 	if (user?.role !== "EXTERNAL_VENDOR") {
@@ -522,12 +530,12 @@ export function useVendorCreationForm({
 				});
 			}
 
-			console.log("Assign workflow payload:", workflowPayload);
+			// console.log("Assign workflow payload:", workflowPayload);
 
-			const workflowResponse =
-				await assignWorkflowMutation.mutateAsync(workflowPayload);
+			// const workflowResponse =
+			// 	await assignWorkflowMutation.mutateAsync(workflowPayload);
 
-			console.log("Assigned workflow response:", workflowResponse);
+			// console.log("Assigned workflow response:", workflowResponse);
 
 			showToast({
 				type: "success",
@@ -584,13 +592,13 @@ export function useVendorCreationForm({
 				description: "Vendor onboarding request submitted successfully.",
 			});
 
+			navigate("/vendor/listing?tab=onboarding");
 			if (onSuccess) {
 				await onSuccess();
 				return;
 			}
 
 			console.log("Summary submitted:", savedData);
-			navigate("/vendor/listing?tab=onboarding");
 		} catch (error: unknown) {
 			console.error("Vendor summary submit failed:", error);
 

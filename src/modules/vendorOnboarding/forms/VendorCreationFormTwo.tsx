@@ -356,7 +356,9 @@ const VendorCreationFormTwo = ({
 						required={true}
 						error={errors.natureOfService}
 						helperText="Additional remarks."
-						onChange={(event) => event.target.value}
+						onChange={(event) =>
+							onChange?.("natureOfService", event.target.value)
+						}
 					/>
 				)}
 				{isReadOnly ? (
@@ -373,7 +375,9 @@ const VendorCreationFormTwo = ({
 						required={true}
 						error={errors.reasonForOnboarding}
 						helperText="Additional remarks."
-						onChange={(event) => event.target.value}
+						onChange={(event) =>
+							onChange?.("reasonForOnboarding", event.target.value)
+						}
 					/>
 				)}
 			</div>
