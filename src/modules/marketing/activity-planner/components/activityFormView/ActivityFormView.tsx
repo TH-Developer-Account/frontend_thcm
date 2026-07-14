@@ -402,7 +402,7 @@ const ActivityFormView = ({
             <Button
               type="button"
               text="Send for Clarification"
-              status="outline"
+              variant="outline"
               disabled={!canActOnCurrentStage}
               onClick={() => openReasonModal("clarify-workflow")}
             />
@@ -410,7 +410,7 @@ const ActivityFormView = ({
             <Button
               type="button"
               text="Approve"
-              status="brand"
+              variant="brand"
               disabled={!canActOnCurrentStage}
               onClick={handleApprove}
             />
@@ -426,7 +426,7 @@ const ActivityFormView = ({
                   ? "EPC Closed"
                   : "Close EPC"
             }
-            status="outline"
+            variant="outline"
             disabled={isEPCClose || permissions.isClosed}
             onClick={() => {
               if (permissions.isClosed || isEPCClose) return;
@@ -435,6 +435,58 @@ const ActivityFormView = ({
           />
         )}
       </div>
+      {canActOnCurrentStage && (
+        <div className="sticky bottom-0 z-10 flex items-center justify-end gap-3 overflow-visible border-t border-gray-200 bg-white px-4 py-4">
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              text="Send for Clarification"
+              variant="outline"
+              appearance="standard"
+              disabled={!canActOnCurrentStage}
+              onClick={() => openReasonModal("clarify-workflow")}
+            />
+
+            <Button
+              type="button"
+              text="Approve"
+              variant="brand"
+              appearance="standard"
+              disabled={!canActOnCurrentStage}
+              onClick={handleApprove}
+            />
+          </div>
+
+          {permissions.canShowCloseEpcAction && (
+            <Button
+              type="button"
+              text={
+                isEPCClose
+                  ? "Closing..."
+                  : permissions.isClosed
+                    ? "EPC Closed"
+                    : "Close EPC"
+              }
+              variant="brand"
+              appearance="standard"
+              disabled={isEPCClose || permissions.isClosed}
+              onClick={() => {
+                if (permissions.isClosed || isEPCClose) return;
+                onEPCClose?.();
+              }}
+            />
+          )}
+        </div>
+      )}
+      {permissions.isClarifiedPending && (
+        <ResubmitFooterAction
+          isPending={permissions.isClarifiedPending}
+          isSubmitting={isSubmittingClarifiedUpdate}
+          canSubmit={permissions.canSubmitClarifiedUpdate}
+          onSubmit={onSubmitClarifiedUpdate}
+          tooltip="Submit clarified changes"
+        />
+      )}
 
       {permissions.isClarifiedPending && (
         <ResubmitFooterAction

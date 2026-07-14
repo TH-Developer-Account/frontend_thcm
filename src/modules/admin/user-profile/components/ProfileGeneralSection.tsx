@@ -1,9 +1,10 @@
 import React from "react";
 import Button from "../../../../components/common/Button";
-import FormInput from "../../../../components/FormElements/FormInput";
-import TextareaInput from "../../../../components/FormElements/TextareaInput";
+import FormInput from "../../../../components/forms/FormInput";
+import TextareaInput from "../../../../components/forms/TextareaInput";
 import type { Profile } from "../types/profile.types";
 import { ArrowRight } from "lucide-react";
+import Card from "../../../../components/common/Card";
 
 interface Props {
 	form: Profile;
@@ -22,9 +23,10 @@ const ProfileGeneralSection: React.FC<Props> = ({
 	handleChange,
 	onPermission,
 	onCancel,
+	isEditing,
 }) => {
 	return (
-		<div className="p-6 bg-white shadow-sm border-zinc-200 border rounded-xl h-full">
+		<Card title={isEditing ? `Editing: ${form?.name}` : "New User Profile"}>
 			<FormInput
 				name="name"
 				label="Profile Name"
@@ -32,6 +34,7 @@ const ProfileGeneralSection: React.FC<Props> = ({
 				onChange={handleChange}
 				placeholder="e.g. Sales Manager, HR Executive"
 				required
+				className="mb-2"
 			/>
 
 			<TextareaInput
@@ -42,8 +45,14 @@ const ProfileGeneralSection: React.FC<Props> = ({
 				placeholder="Briefly describe what this profile can access and do..."
 			/>
 
-			<div className="flex justify-end gap-3 mt-6">
-				<Button text="Cancel" status="brand" onClick={onCancel} />
+			<div className="flex justify-end gap-3 mt-4">
+				<Button
+					text="Cancel"
+					type="submit"
+					appearance="cta"
+					variant="outline"
+					onClick={onCancel}
+				/>
 
 				<Button
 					onClick={onPermission}
@@ -51,10 +60,12 @@ const ProfileGeneralSection: React.FC<Props> = ({
 					iconPosition="right"
 					text="Continue to Permissions"
 					disabled={!form.name.trim()}
-					status="brand"
+					type="submit"
+					appearance="cta"
+					variant="brand"
 				/>
 			</div>
-		</div>
+		</Card>
 	);
 };
 

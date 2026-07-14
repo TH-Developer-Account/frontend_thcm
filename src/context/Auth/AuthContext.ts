@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import type { ToastInput } from "../../components/common/Toast/toast.types";
+import type { ToastInput } from "../Toast/toast.types";
 
 // ── Interfaces ────────────────────────────────────────────────────────────────
 
@@ -11,6 +11,7 @@ export interface User {
 	last_name: string;
 	phone_number: string;
 	role?: "ADMIN" | "DEALER" | "EMPLOYEE" | undefined;
+	profile_image?: string;
 }
 
 export interface ToastContextType {

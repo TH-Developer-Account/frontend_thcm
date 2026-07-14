@@ -1,12 +1,19 @@
 import React, { type ForwardRefRenderFunction } from "react";
-import { Smile, Type, Send, ChevronUp } from "lucide-react";
+import { ChevronUp, Send, Smile, Type } from "lucide-react";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
+
+import Avatar from "../../../../../components/common/Avatar";
+import Button from "../../../../../components/common/Button";
+import HelperTooltip from "../../../../../components/common/HelperTooltip";
+import TextareaInput from "../../../../../components/forms/TextareaInput";
+
 import { useRichInput } from "../../hooks/useRichInput";
 import { EMOJIS, FORMAT_ACTIONS } from "../../utils/constants";
 import type { RichTextareaProps } from "../../types/workflow.types";
-import TextareaInput from "../../../../../components/FormElements/TextareaInput";
-import HelperTooltip from "../../../../../components/common/HelperTooltip";
-import Avatar from "../../../../../components/common/Avatar";
+
+const joinClassNames = (
+	...classNames: Array<string | false | null | undefined>
+): string => classNames.filter(Boolean).join(" ");
 
 const RichTextarea: ForwardRefRenderFunction<
 	HTMLTextAreaElement,
@@ -25,7 +32,7 @@ const RichTextarea: ForwardRefRenderFunction<
 		isTooltip = true,
 		maxLength = 1000,
 		autoFocus,
-		rows = 3,
+		rows = 2,
 		onChange,
 		onKeyDown,
 		mentionableUsers = [],
@@ -41,8 +48,11 @@ const RichTextarea: ForwardRefRenderFunction<
 	ref,
 ) => {
 	const errorId = name ? `${name}-error` : undefined;
+
 	const internalRef = React.useRef<HTMLTextAreaElement>(null);
-	const taRef = (ref ?? internalRef) as React.RefObject<HTMLTextAreaElement>;
+
+	const textareaRef = (ref ??
+		internalRef) as React.RefObject<HTMLTextAreaElement>;
 
 	const {
 		containerRef,
@@ -56,39 +66,52 @@ const RichTextarea: ForwardRefRenderFunction<
 		applyFormat,
 	} = useRichInput({
 		value,
-		taRef,
+		taRef: textareaRef,
 		mentionableUsers,
 		onMentionInsert,
 		onFileAttach,
 		onChange,
 	});
 
+	const isSubmitDisabled = !hasRealContent || disabled || submitting;
+
+	const handleMenuItemClick = (action: string) => {
+		if (action === "mention") {
+			insertAtCursor("@");
+		} else {
+			onMenuAction?.(action);
+		}
+
+		setPopup(null);
+	};
+
 	return (
-		<div className="form-field">
-			{label && (
+		<div className="form-field rich-textarea-field">
+			{label ? (
 				<div className="form-label-row">
 					<label htmlFor={name} className="form-label">
 						{label}
-						{required && <span className="form-required"> *</span>}
+
+						{required ? <span className="form-required"> *</span> : null}
 					</label>
-					{helperText && isTooltip && !error && (
-						<HelperTooltip label={label ?? ""} text={helperText} />
-					)}
+
+					{helperText && isTooltip && !error ? (
+						<HelperTooltip label={label} text={helperText} />
+					) : null}
 				</div>
-			)}
+			) : null}
 
 			<div
 				ref={containerRef}
-				className={`
-					form-input-wrapper relative flex flex-col rounded-xl border border-zinc-200 bg-white
-					focus-within:border-zinc-400 focus-within:ring-2 focus-within:ring-zinc-100 transition-all
-					${error ? "border-red-400" : ""}
-					${disabled ? "opacity-60 pointer-events-none" : ""}
-				`}
+				className={joinClassNames(
+					"rich-textarea",
+					error && "rich-textarea-error",
+					disabled && "rich-textarea-disabled",
+				)}
 			>
 				<TextareaInput
 					id={name}
-					ref={taRef}
+					ref={textareaRef}
 					name={name}
 					autoFocus={autoFocus}
 					placeholder={placeholder}
@@ -96,207 +119,226 @@ const RichTextarea: ForwardRefRenderFunction<
 					disabled={disabled}
 					maxLength={maxLength}
 					rows={rows}
-					aria-invalid={!!error}
+					aria-invalid={Boolean(error)}
 					aria-describedby={error ? errorId : undefined}
 					onChange={handleChange}
-					onKeyDown={(e) => {
-						if (e.key === "Escape") setPopup(null);
-						onKeyDown?.(e);
+					onKeyDown={(event) => {
+						if (event.key === "Escape") {
+							setPopup(null);
+						}
+
+						onKeyDown?.(event);
 					}}
-					className={`
-						w-full resize-none rounded-t-xl bg-transparent px-3.5 pt-3 pb-1.5
-						text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:ring-0
-						border-none min-h-[70px] max-h-[180px] overflow-y-auto
-						${error ? "form-input-error" : ""}
-						${disabled ? "form-input-disabled" : ""}
-						${className}
-					`}
+					className={joinClassNames(
+						"rich-textarea-control",
+						error && "form-input-error",
+						disabled && "form-input-disabled",
+						className,
+					)}
 				/>
 
-				{/* MENTION PICKER */}
-				{mentionOpen && filteredMentions.length > 0 && (
-					<div className="absolute bottom-full left-0 z-50 mb-1 w-56 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
+				{mentionOpen && filteredMentions.length > 0 ? (
+					<div
+						className="rich-textarea-popover rich-textarea-mention-popover"
+						role="listbox"
+						aria-label="Mention a user"
+					>
 						{filteredMentions.map((user) => (
 							<button
 								key={user.id}
 								type="button"
-								onMouseDown={(e) => {
-									e.preventDefault();
+								className="rich-textarea-menu-item"
+								onMouseDown={(event) => {
+									event.preventDefault();
 									insertMention(user);
 								}}
-								className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-zinc-50"
+								role="option"
+								aria-selected="false"
 							>
 								<Avatar
 									firstName={user.first_name}
 									lastName={user.last_name}
 									size="sm"
 								/>
-								<span>
+
+								<span className="rich-textarea-menu-label">
 									{user.first_name} {user.last_name}
 								</span>
 							</button>
 						))}
 					</div>
-				)}
+				) : null}
 
-				{/* TOOLBAR */}
-				<div className="flex items-center px-2 pb-2 pt-1 gap-2 border-t border-t-zinc-200">
-					{/* LEFT */}
-					<div className="flex flex-1 items-center gap-0.5">
-						{/* EMOJI */}
-						<div className="relative">
-							<button
+				<div className="rich-textarea-toolbar">
+					<div className="rich-textarea-toolbar-start">
+						<div className="rich-textarea-tool-group">
+							<Button
 								type="button"
-								title="Emoji"
+								appearance="icon"
+								variant="secondary"
+								size="sm"
+								Icon={Smile}
+								aria-label="Insert emoji"
+								aria-expanded={popup === "emoji"}
 								onClick={() =>
-									setPopup((p) => (p === "emoji" ? null : "emoji"))
+									setPopup((current) => (current === "emoji" ? null : "emoji"))
 								}
-								className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition-colors"
-							>
-								<Smile size={15} />
-							</button>
-							{popup === "emoji" && (
-								<div className="absolute bottom-full left-0 z-50 mb-1 grid grid-cols-8 gap-0.5 rounded-xl border border-zinc-200 bg-white p-2 shadow-lg w-[220px]">
+							/>
+
+							{popup === "emoji" ? (
+								<div className="rich-textarea-popover rich-textarea-emoji-popover">
 									{EMOJIS.map((emoji) => (
 										<button
 											key={emoji}
 											type="button"
-											onMouseDown={(e) => {
-												e.preventDefault();
+											className="rich-textarea-emoji"
+											onMouseDown={(event) => {
+												event.preventDefault();
+
 												insertAtCursor(emoji);
+
 												setPopup(null);
 											}}
-											className="flex h-7 w-7 items-center justify-center rounded-md text-base hover:bg-zinc-100 transition-colors"
+											aria-label={`Insert ${emoji}`}
 										>
 											{emoji}
 										</button>
 									))}
 								</div>
-							)}
+							) : null}
 						</div>
-						<div className="mx-1 h-4 w-px bg-zinc-200" />
-						{/* FORMAT */}
-						<div className="relative">
-							<button
+
+						<span className="rich-textarea-divider" aria-hidden="true" />
+
+						<div className="rich-textarea-tool-group">
+							<Button
 								type="button"
-								title="Formatting"
+								appearance="icon"
+								variant="secondary"
+								size="sm"
+								Icon={Type}
+								aria-label="Formatting options"
+								aria-expanded={popup === "format"}
 								onClick={() =>
-									setPopup((p) => (p === "format" ? null : "format"))
+									setPopup((current) =>
+										current === "format" ? null : "format",
+									)
 								}
-								className="flex h-7 w-7 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 transition-colors"
-							>
-								<Type size={15} />
-							</button>
-							{popup === "format" && (
-								<div className="absolute bottom-full left-0 z-50 mb-1 flex items-center gap-0.5 rounded-xl border border-zinc-200 bg-white p-1.5 shadow-lg">
+							/>
+
+							{popup === "format" ? (
+								<div className="rich-textarea-popover rich-textarea-format-popover">
 									{FORMAT_ACTIONS.map(({ icon: Icon, fmt, title }) => (
-										<button
+										<Button
 											key={fmt}
 											type="button"
-											title={title}
-											onMouseDown={(e) => {
-												e.preventDefault();
+											appearance="icon"
+											variant="secondary"
+											size="sm"
+											Icon={Icon}
+											aria-label={title}
+											onMouseDown={(event) => {
+												event.preventDefault();
 												applyFormat(fmt);
 											}}
-											className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 transition-colors"
-										>
-											<Icon size={14} />
-										</button>
+										/>
 									))}
 								</div>
-							)}
+							) : null}
 						</div>
 					</div>
 
-					{/* RIGHT */}
-					<div className="flex items-center gap-2">
-						<span className="text-[11px] text-zinc-400 tabular-nums">
+					<div className="rich-textarea-toolbar-end">
+						<span className="rich-textarea-counter">
 							{(value ?? "").length} / {maxLength}
 						</span>
 
-						{/* SPLIT BUTTON */}
-						{(onSubmit || menuItems.length > 0) && (
-							<div className="relative">
-								<div
-									className="flex items-stretch rounded-lg overflow-hidden"
-									style={{ background: "#E85D2F" }}
-								>
-									{onSubmit && (
-										<button
-											type="button"
-											disabled={!hasRealContent || disabled || submitting}
-											onClick={onSubmit}
-											className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white transition-opacity disabled:opacity-50 disabled:cursor-not-allowed hover:enabled:brightness-110"
-										>
-											<Send size={11} />
-											{submitting ? "Saving..." : submitText}
-										</button>
-									)}
+						{onSubmit || menuItems.length > 0 ? (
+							<div className="rich-textarea-submit-group">
+								{onSubmit ? (
+									<Button
+										type="button"
+										appearance="standard"
+										variant="brand"
+										size="sm"
+										Icon={Send}
+										text={submitting ? "Saving..." : submitText}
+										disabled={isSubmitDisabled}
+										loading={submitting}
+										onClick={onSubmit}
+										className="rich-textarea-submit"
+									/>
+								) : null}
 
-									{onSubmit && menuItems.length > 0 && (
-										<div className="w-px self-stretch bg-white/30" />
-									)}
-
-									{menuItems.length > 0 && (
-										<button
-											type="button"
-											aria-label="More options"
-											aria-expanded={popup === "menu"}
-											aria-haspopup="menu"
-											onClick={() =>
-												setPopup((p) => (p === "menu" ? null : "menu"))
-											}
-											className={`flex items-center justify-center px-2 text-white hover:enabled:brightness-110 transition-all ${popup === "menu" ? "rotate-180" : ""}`}
-										>
-											<ChevronUp size={13} />
-										</button>
-									)}
-								</div>
-
-								{popup === "menu" && (
-									<div className="absolute bottom-full right-0 z-50 mb-1 w-52 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg">
-										{menuItems.length > 0 && (
-											<div className="border-b border-zinc-100 py-1">
-												{menuItems.map(({ icon: Icon, label, action }) => (
-													<button
-														key={action}
-														type="button"
-														onClick={() => {
-															if (action === "mention") {
-																insertAtCursor("@");
-															} else {
-																onMenuAction?.(action);
-															}
-															setPopup(null);
-														}}
-														className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-zinc-50"
-													>
-														<Icon size={14} className="text-zinc-400" />
-														{label}
-													</button>
-												))}
-											</div>
+								{menuItems.length > 0 ? (
+									<Button
+										type="button"
+										appearance="icon"
+										variant="brand"
+										size="sm"
+										Icon={ChevronUp}
+										aria-label="More comment options"
+										aria-expanded={popup === "menu"}
+										aria-haspopup="menu"
+										active={popup === "menu"}
+										onClick={() =>
+											setPopup((current) =>
+												current === "menu" ? null : "menu",
+											)
+										}
+										className={joinClassNames(
+											"rich-textarea-menu-trigger",
+											popup === "menu" && "rich-textarea-menu-trigger-open",
 										)}
+									/>
+								) : null}
+
+								{popup === "menu" && menuItems.length > 0 ? (
+									<div
+										className="rich-textarea-popover rich-textarea-action-popover"
+										role="menu"
+									>
+										{menuItems.map(({ icon: Icon, label, action }) => (
+											<button
+												key={action}
+												type="button"
+												className="rich-textarea-menu-item"
+												onClick={() => handleMenuItemClick(action)}
+												role="menuitem"
+											>
+												<Icon size={14} aria-hidden="true" />
+
+												<span className="rich-textarea-menu-label">
+													{label}
+												</span>
+											</button>
+										))}
 									</div>
-								)}
+								) : null}
 							</div>
-						)}
+						) : null}
 					</div>
 				</div>
 
-				{error && <ExclamationCircleIcon className="form-error-icon" />}
+				{error ? (
+					<ExclamationCircleIcon
+						className="form-error-icon"
+						aria-hidden="true"
+					/>
+				) : null}
 			</div>
 
-			{error && (
+			{error ? (
 				<p id={errorId} className="form-error-text">
 					{error}
 				</p>
-			)}
+			) : null}
 		</div>
 	);
 };
 
 const RichTextareaInput = React.forwardRef(RichTextarea);
+
 RichTextareaInput.displayName = "RichTextareaInput";
 
 export default RichTextareaInput;

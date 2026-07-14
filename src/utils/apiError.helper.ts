@@ -1,6 +1,6 @@
 // src/utils/apiError.ts
 
-import type { ToastInput } from "../components/common/Toast/toast.types";
+import type { ToastInput } from "../context/Toast/toast.types";
 
 export type ApiErrorResponse = {
 	success?: boolean;

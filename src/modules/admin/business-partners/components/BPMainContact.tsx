@@ -1,7 +1,9 @@
 import React from "react";
-import MainContactManagerCard from "./MainContactManagerCard";
+
 import type { MainContact, User } from "../utils/bp.types";
+
 import MainContactCurrentCard from "./MainContactCurrentCard";
+import MainContactManagerCard from "./MainContactManagerCard";
 
 const availableUsers: User[] = [
 	{
@@ -50,17 +52,20 @@ const BPMainContact = () => {
 		},
 	]);
 
-	const filteredUsers = availableUsers.filter((user) => {
-		const query = search.toLowerCase();
-		return (
-			user.name.toLowerCase().includes(query) ||
-			user.email.toLowerCase().includes(query) ||
-			user.number.toLowerCase().includes(query)
-		);
-	});
+	const filteredUsers = React.useMemo(() => {
+		const query = search.trim().toLowerCase();
 
-	const defaultContact =
-		contacts.find((contact) => contact.isDefault) ?? contacts[0] ?? null;
+		if (!query) {
+			return availableUsers;
+		}
+
+		return availableUsers.filter(
+			(user) =>
+				user.name.toLowerCase().includes(query) ||
+				user.email.toLowerCase().includes(query) ||
+				user.number.toLowerCase().includes(query),
+		);
+	}, [search]);
 
 	const handleSearch = (value: string) => {
 		setSearch(value);
@@ -113,7 +118,6 @@ const BPMainContact = () => {
 
 			<MainContactCurrentCard
 				contacts={contacts}
-				defaultContact={defaultContact}
 				fallbackValue={fallbackValue}
 				onSetDefault={handleSetDefault}
 				onRemoveContact={handleRemoveContact}

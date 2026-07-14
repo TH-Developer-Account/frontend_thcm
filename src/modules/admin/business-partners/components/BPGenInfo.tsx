@@ -1,5 +1,8 @@
-import { Badge } from "../../../../components/common/Badge";
 import { Building2, Hash, MapPinned, Phone, UserRound } from "lucide-react";
+
+import { Badge } from "../../../../components/common/Badge";
+import Card from "../../../../components/common/Card";
+
 import BPCards from "./BPCards";
 
 type BPGeneralInfoProps = {
@@ -13,13 +16,15 @@ type BPGeneralInfoProps = {
 	title?: string;
 };
 
+const fallbackValue = "--";
+
 const BPGeneralInfo = ({
 	name,
-	// number,
-	// mainContactPerson,
-	// mainContactNumber,
-	// code,
-	// zone,
+	number,
+	mainContactPerson,
+	mainContactNumber,
+	code,
+	zone,
 	status = "Active",
 	title,
 }: BPGeneralInfoProps) => {
@@ -28,36 +33,36 @@ const BPGeneralInfo = ({
 	const generalInfoCards = [
 		{
 			label: "Code",
-			value: "JDE-204",
+			value: code || "JDE-204",
 			icon: Hash,
-			iconClassName: "bg-amber-50 text-amber-600",
+			iconTone: "brand" as const,
 		},
 		{
 			label: "Zone",
-			value: "South",
+			value: zone || fallbackValue,
 			icon: MapPinned,
-			iconClassName: "bg-rose-50 text-rose-600",
+			iconTone: "neutral" as const,
 		},
 		{
 			label: "BP Number",
-			value: "BP-10248",
+			value: number || "BP-10248",
 			icon: Phone,
-			iconClassName: "bg-emerald-50 text-emerald-600",
+			iconTone: "neutral" as const,
 		},
 		{
 			label: "Main Contact",
-			value: "John Doe",
+			value: mainContactPerson || mainContactNumber || fallbackValue,
 			icon: UserRound,
-			iconClassName: "bg-violet-50 text-violet-600",
+			iconTone: "neutral" as const,
 		},
 	];
 
 	return (
-		<div className="bp-gen-info content-box no-padding w-full">
-			<div className="bp-gen-header bp-gen-header-clean">
+		<Card padding="none" variant="default">
+			<div className="bp-gen-header-clean">
 				<div className="bp-gen-header-left">
 					<div className="bp-gen-title-row">
-						<div className="bp-gen-title-icon">
+						<div className="bp-gen-title-icon" aria-hidden="true">
 							<Building2 size={18} />
 						</div>
 
@@ -73,27 +78,9 @@ const BPGeneralInfo = ({
 					<Badge status="Approved">{status}</Badge>
 				</div>
 			</div>
-			<BPCards
-				items={generalInfoCards}
-				columnsClassName="sm:grid-cols-2 xl:grid-cols-4"
-			/>
-			{/* <div className="bp-gen-content">
-				<div className="bp-general-info-cards">
-					{infoCards.map((item) => (
-						<div key={item.label} className="bp-info-mini-card">
-							<div className={`bp-info-mini-icon ${item.iconClass}`}>
-								{item.icon}
-							</div>
 
-							<div className="bp-info-mini-content">
-								<p className="bp-info-mini-label">{item.label}</p>
-								<p className="bp-info-mini-value">{item.value}</p>
-							</div>
-						</div>
-					))}
-				</div>
-			</div> */}
-		</div>
+			<BPCards items={generalInfoCards} />
+		</Card>
 	);
 };
 

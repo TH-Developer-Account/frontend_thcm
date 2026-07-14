@@ -1,0 +1,91 @@
+@reference "tailwindcss";
+
+@layer components {
+	.user-management-panel {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-direction: column;
+		overflow: hidden;
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-lg);
+
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-primary);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.user-management-toolbar {
+		display: grid;
+		width: 100%;
+		min-width: 0;
+		grid-template-columns: minmax(11rem, 15rem) minmax(16rem, 1fr) auto;
+		align-items: center;
+		gap: var(--space-3);
+
+		padding: var(--space-4) var(--space-5);
+		border-bottom: var(--border-width-default) solid var(--color-border-subtle);
+	}
+
+	.user-management-role-filter,
+	.user-management-search {
+		min-width: 0;
+	}
+
+	.user-management-toolbar-end {
+		display: inline-flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--space-2);
+	}
+
+	.user-management-selected-count {
+		color: var(--color-text-muted);
+		font-size: var(--font-size-xs);
+		white-space: nowrap;
+	}
+
+	.user-management-error {
+		margin: var(--space-3) var(--space-5) 0;
+		padding: var(--space-2) var(--space-3);
+		border: var(--border-width-default) solid var(--color-warning-border);
+		border-radius: var(--radius-sm);
+		background-color: var(--color-warning-bg);
+		color: var(--color-warning);
+		font-size: var(--font-size-xs);
+	}
+
+	.user-management-panel > .management-table-shell {
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+
+	@media (max-width: 900px) {
+		.user-management-toolbar {
+			grid-template-columns: minmax(11rem, 15rem) minmax(0, 1fr);
+		}
+
+		.user-management-toolbar-end {
+			grid-column: 1 / -1;
+			justify-content: flex-end;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.user-management-toolbar {
+			grid-template-columns: minmax(0, 1fr);
+			padding: var(--space-3);
+		}
+
+		.user-management-toolbar-end {
+			grid-column: 1;
+			justify-content: space-between;
+		}
+
+		.user-management-error {
+			margin-inline: var(--space-3);
+		}
+	}
+}

@@ -11,6 +11,8 @@ import MainContentWrapper from "../layout/MainContentWrapper";
 import MarketingRoutes from "./marketingRoutes";
 import AdminRoutes from "./adminRoutes";
 import ProtectedRoute from "./ProtectedRoute";
+import HomeLayout from "../layout/HomeLayout";
+import VendorOnboardingRoutes from "./vendorOnboardingRoutes";
 
 export default function AppRoutes() {
 	return (
@@ -22,14 +24,16 @@ export default function AppRoutes() {
 				<Route path="/forgot-password" element={<ForgotPasswordPage />} />
 				<Route path="/reset-password/:token" element={<ResetPasswordPage />} />
 
-				<Route
-					path="/"
-					element={
-						<ProtectedRoute>
-							<HomeScreen />
-						</ProtectedRoute>
-					}
-				/>
+				<Route element={<HomeLayout />}>
+					<Route
+						index
+						element={
+							<ProtectedRoute>
+								<HomeScreen />
+							</ProtectedRoute>
+						}
+					/>
+				</Route>
 
 				<Route path="/forbidden" element={<ForbiddenPage />} />
 
@@ -37,6 +41,7 @@ export default function AppRoutes() {
 				<Route element={<MainContentWrapper />}>
 					<Route path="/marketing/*" element={<MarketingRoutes />} />
 					<Route path="/admin/*" element={<AdminRoutes />} />
+					<Route path="/vendor/*" element={<VendorOnboardingRoutes />} />
 				</Route>
 			</Routes>
 		</SessionTimeoutProvider>

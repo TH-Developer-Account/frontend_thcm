@@ -1,10 +1,13 @@
 import type { ColumnDef } from "@tanstack/react-table";
+import { CalendarDays, MapPin } from "lucide-react";
 import { NavLink } from "react-router-dom";
+
 import { Badge } from "../../../../../components/common/Badge";
-import type { EpcListItem } from "../../types/epc.types";
-import EPCActionMenu from "./EPCActionMenu";
-import { formatDate } from "../../utils/formatters";
 import { trimText } from "../../../../../utils/format";
+import type { EpcListItem } from "../../types/epc.types";
+import { formatDate } from "../../utils/formatters";
+
+import EPCActionMenu from "./EPCActionMenu";
 
 type EpcColumnActions = {
 	onLeadCreate?: (row: EpcListItem) => void;
@@ -33,13 +36,10 @@ const hasEventStarted = (eventFromDate?: string | null) => {
 	return today >= startDate;
 };
 
-const canCreateLead = (row: EpcListItem) => {
-	return (
-		row.status?.toUpperCase() === "APPROVED" ||
-		(row.status?.toUpperCase() === "CONDUCTED" &&
-			hasEventStarted(row.event_from_date))
-	);
-};
+const canCreateLead = (row: EpcListItem) =>
+	row.status?.toUpperCase() === "APPROVED" ||
+	(row.status?.toUpperCase() === "CONDUCTED" &&
+		hasEventStarted(row.event_from_date));
 
 export const getEPCColumns = ({
 	onLeadCreate,
@@ -47,54 +47,70 @@ export const getEPCColumns = ({
 	{
 		accessorKey: "proposal_number",
 		header: "EPC No",
-		cell: ({ row }) => {
-			const epcId = row.original.id;
-			return (
-				<NavLink
-					to={`/marketing/activity-planner/${epcId}`}
-					className="text-blue-600 underline"
-				>
-					<span className="font-medium">
-						{row.original.proposal_number || "--"}
-					</span>
-				</NavLink>
-			);
+		meta: {
+			headerClassName: "epc-column-number",
+			cellClassName: "epc-column-number",
 		},
+		cell: ({ row }) => (
+			<NavLink
+				to={`/marketing/activity-planner/${row.original.id}`}
+				className="epc-number-link"
+			>
+				{row.original.proposal_number || "--"}
+			</NavLink>
+		),
 	},
 	{
 		accessorKey: "event_name",
-		header: "Event Name",
+		header: "Event",
+		meta: {
+			headerClassName: "epc-column-event",
+			cellClassName: "epc-column-event",
+		},
 		cell: ({ row }) => (
-			<span className="font-medium">{getEventName(row.original)}</span>
+			<div className="epc-event-cell">
+				<span className="epc-event-name">{getEventName(row.original)}</span>
+				{row.original.location ? (
+					<span className="epc-event-meta">
+						<MapPin size={12} aria-hidden="true" />
+						{trimText(row.original.location, 60)}
+					</span>
+				) : null}
+			</div>
 		),
 	},
 	{
 		accessorKey: "created_by",
 		header: "Created By",
+		meta: {
+			headerClassName: "epc-column-owner",
+			cellClassName: "epc-column-owner",
+		},
 		cell: ({ row }) => (
-			<span className="font-medium">{getCreatedByName(row.original)}</span>
+			<span className="epc-cell-primary">{getCreatedByName(row.original)}</span>
 		),
 	},
 	{
 		accessorKey: "status",
 		header: "Status",
+		meta: {
+			headerClassName: "epc-column-status",
+			cellClassName: "epc-column-status",
+		},
 		cell: ({ row }) => <Badge status={row.original.status} />,
 	},
-	{
-		accessorKey: "location",
-		header: "Location",
-		cell: ({ row }) => (
-			<span className="font-medium max-w-sm wrap-break-word whitespace-pre-wrap">
-				{trimText(row.original?.location, 20) || "--"}
-			</span>
-		),
-	},
+
 	{
 		accessorKey: "created_at",
-		header: "Created At",
+		header: "Created",
+		meta: {
+			headerClassName: "epc-column-date",
+			cellClassName: "epc-column-date",
+		},
 		cell: ({ row }) => (
-			<span className="font-medium">
-				{formatDate(row.original?.created_at) || "--"}
+			<span className="epc-date-cell">
+				<CalendarDays size={12} aria-hidden="true" />
+				{formatDate(row.original.created_at) || "--"}
 			</span>
 		),
 	},
@@ -102,12 +118,16 @@ export const getEPCColumns = ({
 		id: "action",
 		header: "Actions",
 		enableSorting: false,
+		meta: {
+			headerClassName: "epc-column-actions",
+			cellClassName: "epc-column-actions",
+			align: "right",
+		},
 		cell: ({ row }) => (
 			<EPCActionMenu
 				row={row.original}
 				onLeadCreate={onLeadCreate}
 				canCreateLead={canCreateLead(row.original)}
-				// canCreateLead={canCreateLead(row.original, currentUserId)}
 			/>
 		),
 	},

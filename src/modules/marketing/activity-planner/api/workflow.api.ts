@@ -38,7 +38,7 @@ export const workflowApi = {
 	getComments: async (epcId: string) => {
 		const {
 			data: { data },
-		} = await ServerAxios.get(`/comment/${epcId}`);
+		} = await ServerAxios.get(`/comment/EVENT_PROPOSAL/${epcId}/activity`);
 
 		return data;
 	},
@@ -64,7 +64,10 @@ export const workflowApi = {
 	}) => {
 		const {
 			data: { data, message },
-		} = await ServerAxios.post("/comment/creator-comment", payload);
+		} = await ServerAxios.post(
+			`/comment/EVENT_PROPOSAL/${payload.epcId}/creator-comment`,
+			payload,
+		);
 
 		return { data, message };
 	},

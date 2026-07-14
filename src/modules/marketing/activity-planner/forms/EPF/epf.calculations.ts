@@ -60,3 +60,30 @@ export const calculateBudgetShares = (
 		tataHitachiPoAmount: tataHitachiShare,
 	};
 };
+
+export const EPF_QUOTATION_THRESHOLD = 25_000;
+export const EPF_OVERHEAD_CATEGORY = "EVENT_OVERHEAD";
+
+const hasLineItemQuotation = (item: LineItemOption): boolean => {
+	return Boolean(
+		item.quotationFile || item.quotationFileUrl || item.quotationFileName,
+	);
+};
+
+export const getOverheadItemsMissingQuotation = (
+	items: LineItemOption[],
+): LineItemOption[] => {
+	return items.filter((item) => {
+		const category = item.category ?? EPF_OVERHEAD_CATEGORY;
+
+		if (category !== EPF_OVERHEAD_CATEGORY) {
+			return false;
+		}
+
+		const lineItemTotal = Number(item.rate || 0) * Number(item.quantity || 0);
+
+		return (
+			lineItemTotal > EPF_QUOTATION_THRESHOLD && !hasLineItemQuotation(item)
+		);
+	});
+};

@@ -16,9 +16,8 @@ export function Badge({ children, status, variant, text }: BadgeProps) {
 	const normalizedStatus = normalizeStatus(status);
 	const normalizedVariant = normalizeStatus(resolvedVariant);
 
-	const styleClass =
-		resolveStatusStyle({ status: normalizedStatus }) ||
-		resolveVariantStyle({ variant: normalizedVariant });
+	const styleClass = resolveStatusStyle({ status: normalizedStatus });
+	const variantClass = resolveVariantStyle({ variant: normalizedVariant });
 
-	return <span className={`badge ${styleClass}`}>{label}</span>;
+	return <span className={`badge ${styleClass} ${variantClass}`}>{label}</span>;
 }

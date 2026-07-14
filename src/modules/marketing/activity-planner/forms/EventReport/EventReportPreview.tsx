@@ -165,21 +165,22 @@ const EventReportPreview = ({
 			title="PDF Preview"
 			onClose={onClose}
 			size="xl"
-			className="content-box"
-			header_children={
-				<Button
-					type="button"
-					text={downloading ? "Generating PDF..." : "Download PDF"}
-					Icon={Download}
-					iconPosition="right"
-					onClick={handleDownload}
-					status="brand"
-					size="sm"
-					disabled={!report || loading || downloading}
-				/>
-			}
+			// header_children={
+			// 	<Button
+			// 		type="button"
+			// 		text={downloading ? "Generating PDF..." : "Download PDF"}
+			// 		Icon={Download}
+			// 		iconPosition="left"
+			// 		iconSize={14}
+			// 		appearance="cta"
+			// 		variant="brand"
+			// 		size="sm"
+			// 		onClick={handleDownload}
+			// 		disabled={!report || loading}
+			// 	/>
+			// }
 		>
-			<div className="max-h-[90vh] overflow-y-auto scrollbar-sleek">
+			<div>
 				{!loading && !hasData ? (
 					<div className="flex min-h-[500px] flex-col items-center justify-center px-6 text-center">
 						<CheckCircle2

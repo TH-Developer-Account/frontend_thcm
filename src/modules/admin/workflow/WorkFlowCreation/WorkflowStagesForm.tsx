@@ -1,13 +1,14 @@
 import React from "react";
-import { Plus } from "lucide-react";
-import UserAsyncSelect from "../../../../components/FormElements/AsyncSelect";
+import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
+import UserAsyncSelect from "../../../../components/forms/AsyncSelect";
 import Avatar from "../../../../components/common/Avatar";
 import type {
 	WorkflowStage,
 	Approver,
 	WorkflowStageErrors,
 } from "../types/workflow.types";
-import FormInput from "../../../../components/FormElements/FormInput";
+import FormInput from "../../../../components/forms/FormInput";
+import Button from "../../../../components/common/Button";
 
 type Props = {
 	stages: WorkflowStage[];
@@ -232,21 +233,26 @@ const WorkflowStagesForm = ({
 			</button>
 
 			<div className="mt-4 flex justify-between">
-				<button
-					type="button"
-					className="workflow-create-secondary-btn"
+				<Button
 					onClick={onBack}
-				>
-					Back
-				</button>
-
-				<button
 					type="button"
-					className="workflow-create-primary-btn"
+					text="Back"
+					Icon={ArrowLeft}
+					iconPosition="left"
+					appearance="standard"
+					variant="outline"
+					size="sm"
+				/>
+				<Button
 					onClick={onSubmit}
-				>
-					Next
-				</button>
+					type="button"
+					text="Next"
+					Icon={ArrowRight}
+					iconPosition="right"
+					appearance="standard"
+					size="sm"
+					variant="brand"
+				/>
 			</div>
 		</div>
 	);

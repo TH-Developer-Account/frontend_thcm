@@ -23,29 +23,53 @@ const getDaysCount = (fromDate?: string | null, toDate?: string | null) => {
 	return `${diffDays} ${diffDays === 1 ? "day" : "days"}`;
 };
 
+const getDateTimeValue = (value?: string | null) => {
+	if (!value) return undefined;
+
+	const date = new Date(value);
+
+	if (Number.isNaN(date.getTime())) return undefined;
+
+	return date.toISOString();
+};
+
 const DateRangeSection = ({ fromDate, toDate }: DateRangeProps) => {
+	const duration = getDaysCount(fromDate, toDate);
+
 	return (
 		<div className="date-range-card">
 			<div className="date-range-content">
 				<div className="date-range-side date-range-side-left">
-					<p className="date-range-label">FROM</p>
-					<p className="date-range-value">{formatDate(fromDate)}</p>
+					<span className="date-range-label">From</span>
+
+					<time
+						className="date-range-value"
+						dateTime={getDateTimeValue(fromDate)}
+					>
+						{formatDate(fromDate)}
+					</time>
 				</div>
 
-				<div className="date-range-center">
-					<div className="date-range-line-wrap">
-						<div className="date-range-line" />
-						<div className="date-range-arrow" />
+				<div className="date-range-center" aria-label={`Duration: ${duration}`}>
+					<div className="date-range-line-wrap" aria-hidden="true">
+						<span className="date-range-start-dot" />
+						<span className="date-range-line" />
+						<span className="date-range-line-progress" />
+						<span className="date-range-arrow" />
 
-						<div className="date-range-pill">
-							{getDaysCount(fromDate, toDate)}
-						</div>
+						<span className="date-range-pill">{duration}</span>
 					</div>
 				</div>
 
 				<div className="date-range-side date-range-side-right">
-					<p className="date-range-label">TO</p>
-					<p className="date-range-value">{formatDate(toDate)}</p>
+					<span className="date-range-label">To</span>
+
+					<time
+						className="date-range-value"
+						dateTime={getDateTimeValue(toDate)}
+					>
+						{formatDate(toDate)}
+					</time>
 				</div>
 			</div>
 		</div>

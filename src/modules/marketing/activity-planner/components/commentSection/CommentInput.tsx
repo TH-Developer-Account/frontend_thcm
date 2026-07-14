@@ -1,14 +1,20 @@
 import React from "react";
 import { AtSign, MessageCircle } from "lucide-react";
+
 import type { CommentUser } from "./CommentsSection";
 import RichTextareaInput from "../common/RichTextareaInput";
 
-// ============================
-//  Menu items
-// ============================
 const COMMENT_MENU_ITEMS = [
-	{ icon: AtSign, label: "Mention someone", action: "mention" },
-	{ icon: MessageCircle, label: "Chat", action: "submit" },
+	{
+		icon: AtSign,
+		label: "Mention someone",
+		action: "mention",
+	},
+	{
+		icon: MessageCircle,
+		label: "Send comment",
+		action: "submit",
+	},
 ];
 
 type CommentInputProps = {
@@ -25,8 +31,8 @@ type CommentInputProps = {
 const CommentInput = React.memo(function CommentInput({
 	placeholder = "Write a comment...",
 	submitText = "Send",
-	disabled,
-	autoFocus,
+	disabled = false,
+	autoFocus = false,
 	initialValue = "",
 	onSubmit,
 	mentionableUsers = [],
@@ -34,16 +40,24 @@ const CommentInput = React.memo(function CommentInput({
 }: CommentInputProps) {
 	const [value, setValue] = React.useState(initialValue);
 	const [submitting, setSubmitting] = React.useState(false);
+
 	const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
-	const hasRealContent = value.replace(/@\w+(\s\w+)?/g, "").trim().length > 0;
+	const hasRealContent = React.useMemo(
+		() => value.replace(/@\w+(\s\w+)?/g, "").trim().length > 0,
+		[value],
+	);
 
 	const handleSubmit = React.useCallback(async () => {
-		if (submitting || disabled || !hasRealContent) return;
+		if (submitting || disabled || !hasRealContent) {
+			return;
+		}
 
 		try {
 			setSubmitting(true);
+
 			await onSubmit(value.trim());
+
 			setValue("");
 		} finally {
 			setSubmitting(false);
@@ -52,16 +66,11 @@ const CommentInput = React.memo(function CommentInput({
 
 	const handleMenuAction = React.useCallback(
 		(action: string) => {
-			if (action === "submit") void handleSubmit();
+			if (action === "submit") {
+				void handleSubmit();
+			}
 		},
 		[handleSubmit],
-	);
-
-	const handleMentionInsert = React.useCallback(
-		(user: CommentUser) => {
-			onMentionInsert?.(user);
-		},
-		[onMentionInsert],
 	);
 
 	return (
@@ -73,11 +82,11 @@ const CommentInput = React.memo(function CommentInput({
 			disabled={disabled || submitting}
 			placeholder={placeholder}
 			mentionableUsers={mentionableUsers}
-			onMentionInsert={handleMentionInsert}
-			onChange={(e) => setValue(e.target.value)}
-			onKeyDown={(e) => {
-				if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-					e.preventDefault();
+			onMentionInsert={onMentionInsert}
+			onChange={(event) => setValue(event.target.value)}
+			onKeyDown={(event) => {
+				if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+					event.preventDefault();
 					void handleSubmit();
 				}
 			}}

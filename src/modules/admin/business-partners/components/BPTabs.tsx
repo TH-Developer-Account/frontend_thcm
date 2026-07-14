@@ -1,35 +1,38 @@
 import { useState } from "react";
+
+import BPAddress from "./BPAddress";
 import BPContact from "./BPContact";
+import BPMainContact from "./BPMainContact";
 import BPOrganization from "./BPOrganization";
 import BPPeople from "./BPPeople";
-import BPAddress from "./BPAddress";
-import BPMainContact from "./BPMainContact";
 
 const bpTabs = ["Contact", "Organization", "Address", "Main Contact", "People"];
 
 export const BPTabs = () => {
 	const [activeTab, setActiveTab] = useState("Contact");
-	// const sampleMainContact = {
-	// 	name: "John Doe",
-	// 	email: "john.doe@joedeengineers.com",
-	// 	number: "+91 9876543210",
-	// 	address: "342, Bandra West, Mumbai",
-	// 	status: "Active",
-	// };
+
 	return (
 		<>
-			{/* Tabs */}
-			<div className="bp-tabs">
+			<div
+				className="bp-tabs"
+				role="tablist"
+				aria-label="Business partner details"
+			>
 				{bpTabs.map((tab) => {
 					const isActive = activeTab === tab;
+					const tabId = `bp-tab-${tab.toLowerCase().replace(/\s+/g, "-")}`;
+					const panelId = `${tabId}-panel`;
 
 					return (
 						<button
 							key={tab}
+							id={tabId}
+							type="button"
+							role="tab"
+							aria-selected={isActive}
+							aria-controls={panelId}
 							onClick={() => setActiveTab(tab)}
-							className={`bp-tab-item ${
-								isActive ? "bp-tab-item-active" : "bp-tab-item-inactive"
-							}`}
+							className={`bp-tab-item ${isActive ? "bp-tab-item-active" : ""}`}
 						>
 							<span className="bp-tab-label">{tab}</span>
 						</button>
@@ -37,8 +40,12 @@ export const BPTabs = () => {
 				})}
 			</div>
 
-			{/* Content */}
-			<div className="bp-tab-content">
+			<div
+				id={`bp-tab-${activeTab.toLowerCase().replace(/\s+/g, "-")}-panel`}
+				className="bp-tab-content"
+				role="tabpanel"
+				aria-labelledby={`bp-tab-${activeTab.toLowerCase().replace(/\s+/g, "-")}`}
+			>
 				{activeTab === "Contact" && (
 					<BPContact
 						onNavigateTab={(tab) => setActiveTab(tab)}
@@ -56,6 +63,7 @@ export const BPTabs = () => {
 						}}
 					/>
 				)}
+
 				{activeTab === "Organization" && (
 					<BPOrganization
 						data={{
@@ -75,6 +83,7 @@ export const BPTabs = () => {
 						}}
 					/>
 				)}
+
 				{activeTab === "Address" && <BPAddress />}
 				{activeTab === "Main Contact" && <BPMainContact />}
 				{activeTab === "People" && <BPPeople />}
@@ -82,4 +91,5 @@ export const BPTabs = () => {
 		</>
 	);
 };
+
 export default BPTabs;

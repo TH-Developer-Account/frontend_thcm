@@ -1,98 +1,133 @@
-import React, { useState } from "react";
+import { useState, type ChangeEvent, type FormEvent } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+
+import Button from "../../../components/common/Button";
+import FormInput from "../../../components/forms/FormInput";
+import OtpInput from "../../../components/forms/OtpInput";
+import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { API_BASE_URL, ServerAxios } from "../../../services/ServerAxios";
-import Button from "../../../components/common/Button";
-import FormInput from "../../../components/FormElements/FormInput";
-import OtpInput from "../../../components/FormElements/OtpInput";
 import { MOBILE_REGEX, api_routes } from "../../Login/constant";
-import { useToast } from "../../../context/Auth/AuthContext";
-// import { PhoneInput } from "react-international-phone";
-import "react-international-phone/style.css";
 
 type MobileStep = "enterMobile" | "verifyOtp";
 
+type MobileLoginState = {
+	loading: boolean;
+	mobile: string;
+	otp: string;
+	error: string;
+};
+
 const MobileLoginForm = () => {
-	const { setUser } = useAuth();
 	const navigate = useNavigate();
+	const { setUser } = useAuth();
+	const { showToast } = useToast();
+
 	const [mobileStep, setMobileStep] = useState<MobileStep>("enterMobile");
-	const [isResendOtp, setIsResendOtp] = useState(false);
+
 	const [otpTimerActive, setOtpTimerActive] = useState(true);
+
 	const [secondsLeft, setSecondsLeft] = useState(30);
-	const [state, setState] = useState({
+
+	const [state, setState] = useState<MobileLoginState>({
 		loading: false,
 		mobile: "",
 		otp: "",
 		error: "",
-		otpTimer: "",
 	});
-	const { showToast } = useToast();
 
-	const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setState((prev) => ({
-			...prev,
-			mobile: e.target.value,
-			error: "", // clear error when user types
+	const getErrorMessage = (error: unknown, fallback: string) => {
+		if (axios.isAxiosError(error)) {
+			return error.response?.data?.message || error.message || fallback;
+		}
+
+		if (error instanceof Error) {
+			return error.message;
+		}
+
+		return fallback;
+	};
+
+	const handleMobileChange = (event: ChangeEvent<HTMLInputElement>) => {
+		setState((current) => ({
+			...current,
+			mobile: event.target.value.replace(/\D/g, ""),
+			error: "",
 		}));
 	};
 
 	const handleOtpChange = (value: string) => {
-		setState((prev) => ({ ...prev, otp: value }));
+		setState((current) => ({
+			...current,
+			otp: value,
+			error: "",
+		}));
 	};
 
-	const handleContinue = async (e: React.MouseEvent<HTMLButtonElement>) => {
-		e.preventDefault();
+	const sendOtp = async () => {
 		if (!MOBILE_REGEX.test(state.mobile)) {
-			setState((prev) => ({
-				...prev,
+			setState((current) => ({
+				...current,
 				error: "Enter a valid 10-digit mobile number",
 			}));
-			return;
+
+			return false;
 		}
+
+		setState((current) => ({
+			...current,
+			loading: true,
+			error: "",
+		}));
+
 		try {
-			setState((prev) => ({ ...prev, loading: true }));
 			await ServerAxios.post(`${API_BASE_URL}${api_routes.send_otp}`, {
 				phone_number: state.mobile,
 			});
+
 			setMobileStep("verifyOtp");
+
 			showToast({
 				type: "success",
-				title: "Success",
-				description: "OTP sent successfully",
+				title: "OTP sent",
+				description: "A verification code was sent to your mobile number.",
 			});
-		} catch (err: unknown) {
-			console.error("OTP verification error:", err);
 
-			let message = "User not found";
-
-			if (axios.isAxiosError(err)) {
-				// API responded with an error message
-				message =
-					err.response?.data?.message || err.message || "Something went wrong";
-			} else if (err instanceof Error) {
-				message = err.message;
-			}
-
+			return true;
+		} catch (error: unknown) {
 			showToast({
 				type: "error",
-				title: "Error",
-				description: message,
+				title: "Unable to send OTP",
+				description: getErrorMessage(error, "User not found"),
 			});
+
+			return false;
 		} finally {
-			setState((prev) => ({ ...prev, loading: false }));
+			setState((current) => ({
+				...current,
+				loading: false,
+			}));
 		}
 	};
-	const handleVerifyOtp = async (e: React.MouseEvent<HTMLButtonElement>) => {
-		e.preventDefault();
 
+	const verifyOtp = async () => {
 		if (state.otp.length !== 6) {
-			setState((prev) => ({ ...prev, error: "Enter valid OTP" }));
+			setState((current) => ({
+				...current,
+				error: "Enter the complete 6-digit OTP",
+			}));
+
 			return;
 		}
 
+		setState((current) => ({
+			...current,
+			loading: true,
+			error: "",
+		}));
+
 		try {
-			setState((prev) => ({ ...prev, loading: true }));
 			const response = await ServerAxios.post(
 				`${API_BASE_URL}${api_routes.verify_otp}`,
 				{
@@ -102,227 +137,151 @@ const MobileLoginForm = () => {
 			);
 
 			const { user, accessToken } = response.data;
+
 			localStorage.setItem("authToken", accessToken);
+
 			setUser(user);
 			navigate("/");
+
 			showToast({
 				type: "success",
-				title: "Success",
-				description: "Logged in successfully",
+				title: "Signed in",
+				description: "You have logged in successfully.",
 			});
-		} catch (err: unknown) {
-			console.error("OTP verification error:", err);
-
-			let message = "Invalid OTP";
-
-			if (axios.isAxiosError(err)) {
-				// API responded with an error message
-				message =
-					err.response?.data?.message || err.message || "Something went wrong";
-			} else if (err instanceof Error) {
-				message = err.message;
-			}
-
+		} catch (error: unknown) {
 			showToast({
 				type: "error",
-				title: "Error",
-				description: message,
+				title: "Verification failed",
+				description: getErrorMessage(error, "Invalid OTP"),
 			});
 		} finally {
-			setState((prev) => ({ ...prev, loading: false }));
-		}
-	};
-
-	// Resend OTP Functionality
-	const handleResendOTP = async (e: React.MouseEvent<HTMLButtonElement>) => {
-		e.preventDefault();
-		setIsResendOtp(true);
-		if (!MOBILE_REGEX.test(state.mobile)) {
-			setState((prev) => ({
-				...prev,
-				error: "Enter a valid 10-digit mobile number",
+			setState((current) => ({
+				...current,
+				loading: false,
 			}));
-			return;
-		}
-		try {
-			setState((prev) => ({ ...prev, loading: true }));
-			await ServerAxios.post(`${API_BASE_URL}${api_routes.send_otp}`, {
-				phone_number: state.mobile,
-			});
-			setMobileStep("verifyOtp");
-			showToast({
-				type: "success",
-				title: "Success",
-				description: "OTP sent successfully",
-			});
-		} catch (err: unknown) {
-			console.error("OTP verification error:", err);
-
-			let message = "User not found";
-
-			if (axios.isAxiosError(err)) {
-				// API responded with an error message
-				message =
-					err.response?.data?.message || err.message || "Something went wrong";
-			} else if (err instanceof Error) {
-				message = err.message;
-			}
-
-			showToast({
-				type: "error",
-				title: "Error",
-				description: message,
-			});
-		} finally {
-			setState((prev) => ({ ...prev, loading: false }));
 		}
 	};
 
-	const handleVerifyResendOtp = async (
-		e: React.MouseEvent<HTMLButtonElement>,
-	) => {
-		e.preventDefault();
-		if (state.otp.length !== 6) {
-			setState((prev) => ({ ...prev, error: "Enter valid OTP" }));
-			return;
-		}
+	const handleMobileSubmit = async (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		await sendOtp();
+	};
 
-		try {
-			setState((prev) => ({ ...prev, loading: true }));
-			const response = await ServerAxios.post(
-				`${API_BASE_URL}${api_routes.verify_otp}`,
-				{
-					phone_number: state.mobile,
-					otp: state.otp,
-				},
-			);
+	const handleOtpSubmit = async (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		await verifyOtp();
+	};
 
-			const { user, accessToken } = response.data;
-			localStorage.setItem("authToken", accessToken);
-			setUser(user);
-			navigate("/");
-			showToast({
-				type: "success",
-				title: "Success",
-				description: "Logged in successfully",
-			});
-		} catch (err: unknown) {
-			console.error("OTP verification error:", err);
+	const handleResendOtp = async () => {
+		if (otpTimerActive || state.loading) return;
 
-			let message = "Invalid OTP";
+		const sent = await sendOtp();
 
-			if (axios.isAxiosError(err)) {
-				// API responded with an error message
-				message =
-					err.response?.data?.message || err.message || "Something went wrong";
-			} else if (err instanceof Error) {
-				message = err.message;
-			}
-
-			showToast({
-				type: "error",
-				title: "Error",
-				description: message,
-			});
-		} finally {
-			setState((prev) => ({ ...prev, loading: false }));
+		if (sent) {
+			setState((current) => ({
+				...current,
+				otp: "",
+			}));
 		}
 	};
-	console.log("state", state);
+
+	const handleChangeMobile = () => {
+		setMobileStep("enterMobile");
+
+		setState({
+			loading: false,
+			mobile: "",
+			otp: "",
+			error: "",
+		});
+	};
+
+	if (mobileStep === "verifyOtp") {
+		return (
+			<form className="auth-form" onSubmit={handleOtpSubmit}>
+				<div className="auth-otp-intro">
+					<p className="auth-otp-label">Verification code</p>
+
+					<p className="auth-otp-description">
+						Enter the code sent to <strong>{state.mobile}</strong>
+					</p>
+				</div>
+
+				<OtpInput
+					length={6}
+					onChange={handleOtpChange}
+					onTimerChange={(seconds, active) => {
+						setSecondsLeft(seconds);
+						setOtpTimerActive(active);
+					}}
+				/>
+
+				{state.error ? (
+					<p className="auth-form-error" role="alert">
+						{state.error}
+					</p>
+				) : null}
+
+				<Button
+					type="submit"
+					appearance="cta"
+					variant="brand"
+					text={state.loading ? "Verifying..." : "Verify OTP"}
+					disabled={state.loading || state.otp.length !== 6}
+					fullWidth
+				/>
+
+				<div className="auth-inline-actions">
+					<button
+						type="button"
+						className="auth-text-button"
+						onClick={handleResendOtp}
+						disabled={otpTimerActive || state.loading}
+					>
+						{otpTimerActive ? `Resend in ${secondsLeft}s` : "Resend OTP"}
+					</button>
+
+					<button
+						type="button"
+						className="auth-text-button"
+						onClick={handleChangeMobile}
+					>
+						Change mobile number
+					</button>
+				</div>
+			</form>
+		);
+	}
+
 	return (
-		<React.Fragment>
-			{mobileStep === "enterMobile" && (
-				<form className="space-y-4">
-					<FormInput
-						name="mobile"
-						label="Mobile Number"
-						placeholder="Enter your mobile number"
-						value={state.mobile}
-						onChange={handleMobileChange}
-						error={state.error}
-						required
-						type="mobile"
-					/>
-					{/* <PhoneInput
-						defaultCountry="ua"
-						value={state.mobile}
-						onChange={(e) => console.log("eeeeee",e)}
-					/> */}
-					<Button
-						text="Continue"
-						disabled={!MOBILE_REGEX.test(state.mobile)}
-						onClick={handleContinue}
-						fullWidth
-						status="brand"
-					/>
-				</form>
-			)}
+		<form className="auth-form" onSubmit={handleMobileSubmit} noValidate>
+			<FormInput
+				name="mobile"
+				label="Mobile number"
+				type="tel"
+				inputMode="numeric"
+				autoComplete="tel"
+				placeholder="Enter 10-digit mobile number"
+				value={state.mobile}
+				onChange={handleMobileChange}
+				error={state.error}
+				required
+			/>
 
-			{mobileStep === "verifyOtp" && (
-				<form className="space-y-4">
-					<div className="text-sm text-gray-600">
-						Enter the OTP sent to{" "}
-						<span className="font-semibold">{state.mobile}</span>
-					</div>
+			<p className="auth-field-helper">
+				A one-time password will be sent to your registered mobile number.
+			</p>
 
-					<OtpInput
-						length={6}
-						onChange={handleOtpChange}
-						onTimerChange={(seconds, active) => {
-							setSecondsLeft(seconds);
-							setOtpTimerActive(active);
-						}}
-					/>
-
-					{isResendOtp ? (
-						<Button
-							text="Verify OTP"
-							onClick={handleVerifyResendOtp}
-							fullWidth
-							status="brand"
-						/>
-					) : (
-						<Button
-							text="Verify OTP"
-							onClick={handleVerifyOtp}
-							fullWidth
-							status="brand"
-						/>
-					)}
-					<div className="">
-						<span className="text-xs">
-							Didn't recieve a code?{" "}
-							<button
-								type="button"
-								className="text-xs  hover:underline text-center cursor-pointer mb-1 brand"
-								onClick={handleResendOTP}
-								disabled={otpTimerActive}
-							>
-								{otpTimerActive ? `Resend in ${secondsLeft}s` : "Resend OTP"}
-							</button>
-						</span>
-
-						<br />
-						<button
-							type="button"
-							className="text-sm  hover:underline text-center cursor-pointer mt-0 brand"
-							onClick={() => {
-								setMobileStep("enterMobile");
-								setState((prev) => ({
-									...prev,
-									mobile: "",
-									otp: "",
-									error: "",
-									otpTimer: "",
-								}));
-							}}
-						>
-							Change mobile number
-						</button>
-					</div>
-				</form>
-			)}
-		</React.Fragment>
+			<Button
+				text={state.loading ? "Sending OTP..." : "Continue"}
+				disabled={state.loading || !MOBILE_REGEX.test(state.mobile)}
+				fullWidth
+				type="submit"
+				appearance="cta"
+				variant="brand"
+			/>
+		</form>
 	);
 };
+
 export default MobileLoginForm;

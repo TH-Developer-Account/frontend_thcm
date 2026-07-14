@@ -1,9 +1,12 @@
 import React from "react";
-import Checkbox from "../../../../components/FormElements/Checkbox";
-import { SearchInput } from "../../../../components/FormElements/SearchInput";
-import { Badge } from "../../../../components/common/Badge";
-import type { WorkspacePayload } from "../types/profile.types";
+import { ArrowLeft, ChevronDown } from "lucide-react";
+
+import Checkbox from "../../../../components/forms/Checkbox";
+import { SearchInput } from "../../../../components/forms/SearchInput";
 import Button from "../../../../components/common/Button";
+import Card from "../../../../components/common/Card";
+
+import type { WorkspacePayload } from "../types/profile.types";
 
 type Permission = {
 	read: boolean;
@@ -11,6 +14,7 @@ type Permission = {
 };
 
 type PermState = Record<string, Record<string, Permission>>;
+
 interface Module {
 	key: string;
 	name: string;
@@ -33,21 +37,25 @@ interface Props {
 	setSearch: (v: string) => void;
 	setCollapsed: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 
-	// appState: (app: string) => { all: boolean; some: boolean };
 	appActionState: (
 		app: string,
 		action: Action,
 	) => { all: boolean; some: boolean };
 
-	// modState: (app: string, mod: string) => { all: boolean; some: boolean };
-
 	toggleAppAll: (app: string) => void;
 	toggleAppAction: (app: string, action: Action) => void;
-	// toggleModule: (app: string, mod: string) => void;
 	togglePerm: (app: string, mod: string, action: Action) => void;
+
 	onSavePermissions: (data: WorkspacePayload) => void;
 	isLoading: boolean;
+	goBack: () => void;
 }
+
+const ACTIONS: Action[] = ["read", "write"];
+
+const joinClassNames = (
+	...classNames: Array<string | false | null | undefined>
+) => classNames.filter(Boolean).join(" ");
 
 export default function PermissionMatrix({
 	filteredApps,
@@ -62,6 +70,7 @@ export default function PermissionMatrix({
 	toggleAppAction,
 	togglePerm,
 	onSavePermissions,
+	goBack,
 }: Props) {
 	const collectPermissions = () => {
 		const permissions: WorkspacePayload = [];
@@ -90,182 +99,347 @@ export default function PermissionMatrix({
 	};
 
 	return (
-		<div className="bg-gradient-to-b from-white to-slate-50 rounded-2xl border border-slate-200 overflow-hidden shadow-md">
-			{/* HEADER */}
-			<div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-slate-200 bg-slate-50/70 backdrop-blur-sm">
-				<div>
-					<Badge variant="primary">03</Badge>
-					<span className="text-sm font-semibold text-slate-800 flex-1 ml-2">
-						Permissions Matrix
-					</span>
-				</div>
-
-				<div className="relative">
+		<Card
+			title="Permissions Matrix"
+			actions={
+				<div className="w-full min-w-0 sm:w-72">
 					<SearchInput
 						value={search}
 						onChange={(value) => setSearch(value)}
 						placeholder="Search modules..."
 					/>
 				</div>
-			</div>
-
-			{/* COLUMN HEADER */}
-			<div className="grid grid-cols-[1fr_88px_88px] border-b border-slate-200 bg-slate-50">
-				<div className="px-6 py-2.5 text-[10px] font-bold text-slate-600 uppercase tracking-wider">
-					App / Module
-				</div>
-
-				<div className="flex items-center justify-center text-[10px]  text-black font-bold  tracking-wide border-l border-slate-200">
-					Read
-				</div>
-
-				<div className="flex items-center justify-center text-[10px]  text-black font-bold tracking-wide border-l border-slate-200">
-					Write
-				</div>
-			</div>
-
-			{/* BODY */}
-			<div className="max-h-[560px] overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
-				{filteredApps.map((app) => {
-					const isCollapsed = collapsed[app.key];
-					return (
-						<div
-							key={app.key}
-							className="border-b border-slate-100 last:border-none"
-						>
-							{/* APP ROW */}
-							<div className="grid grid-cols-[1fr_88px_88px] bg-slate-50/60 hover:bg-slate-50 transition">
-								<div
-									className="flex items-center gap-3 px-6 py-3 cursor-pointer"
-									onClick={() =>
-										setCollapsed((c) => ({
-											...c,
-											[app.key]: !c[app.key],
-										}))
-									}
-								>
-									<span
-										className={`text-slate-400 text-sm transition-transform duration-200 ${
-											isCollapsed ? "-rotate-90" : ""
-										}`}
-									>
-										▾
-									</span>
-
-									<div className="w-8 h-8 rounded-md bg-slate-200 flex items-center justify-center text-xs font-semibold text-slate-600 shadow-sm">
-										{app.key.slice(0, 2)}
-									</div>
-
-									<div className="leading-tight">
-										<div className="text-sm font-semibold text-slate-800">
-											{app.name}
-										</div>
-
-										<div className="text-[11px] text-slate-400">
-											{app.key} · {app.modules.length} modules
-										</div>
-									</div>
-
-									<div
-										onClick={(e) => {
-											e.stopPropagation();
-											toggleAppAll(app.key);
-										}}
-										className="ml-auto"
-									>
-										{/* <Checkbox
-                      checked={as.all}
-                      indeterminate={as.some}
-                      onChange={() => toggleAppAll(app.key)}
-                    /> */}
-										<p className="text-xs">Select All</p>
-									</div>
-								</div>
-
-								{/* APP ACTIONS */}
-								{(["read", "write"] as Action[]).map((action) => {
-									const aas = appActionState(app.key, action);
-
-									return (
-										<div
-											key={action}
-											className="flex items-center justify-center  border-l border-slate-200 cursor-pointer hover:bg-white transition"
-											onClick={() => toggleAppAction(app.key, action)}
-										>
-											<Checkbox
-												checked={aas.all}
-												indeterminate={aas.some}
-												onChange={() => toggleAppAction(app.key, action)}
-											/>
-										</div>
-									);
-								})}
+			}
+		>
+			<div className="permission-matrix">
+				{/* DESKTOP / TABLET MATRIX */}
+				<div className="permission-matrix-table-shell scrollbar-sleek">
+					<div className="permission-matrix-table">
+						<div className="permission-matrix-header">
+							<div className="permission-matrix-header-cell permission-matrix-header-main">
+								App / Module
 							</div>
 
-							{/* MODULE ROWS */}
-							{!isCollapsed &&
-								app.modules.map((mod, modIdx) => {
-									// const ms = modState(app.key, mod.key);
+							<div className="permission-matrix-header-cell permission-matrix-action-cell">
+								Read
+							</div>
 
-									return (
-										<div
-											key={mod.key}
-											className={`grid grid-cols-[1fr_88px_88px] ${
-												modIdx % 2 === 0 ? "bg-white" : "bg-slate-50/40"
-											} hover:bg-slate-50 transition`}
-										>
-											<div className="flex items-center gap-3 pl-14 pr-5 py-2.5">
-												<div className="w-[2px] h-6 bg-slate-200 rounded"></div>
-												<div className="leading-tight">
-													<div className="text-sm font-medium text-slate-700">
-														{mod.name}
-													</div>
+							<div className="permission-matrix-header-cell permission-matrix-action-cell">
+								Write
+							</div>
+						</div>
 
-													<div className="text-[10px] text-slate-400 font-mono">
-														{mod.key}
-													</div>
-												</div>
+						<div className="permission-matrix-body">
+							{filteredApps.map((app) => {
+								const isCollapsed = collapsed[app.key];
+
+								return (
+									<section
+										key={app.key}
+										className="permission-matrix-group"
+										aria-labelledby={`permission-app-${app.key}`}
+									>
+										{/* APP ROW */}
+										<div className="permission-matrix-app-row">
+											<div className="permission-matrix-app-main-cell">
+												<button
+													type="button"
+													className="permission-matrix-app-trigger"
+													onClick={() =>
+														setCollapsed((current) => ({
+															...current,
+															[app.key]: !current[app.key],
+														}))
+													}
+													aria-expanded={!isCollapsed}
+													aria-controls={`permission-modules-${app.key}`}
+												>
+													<ChevronDown
+														size={16}
+														aria-hidden="true"
+														className={joinClassNames(
+															"permission-matrix-chevron",
+															isCollapsed &&
+																"permission-matrix-chevron-collapsed",
+														)}
+													/>
+
+													<span className="permission-matrix-app-avatar">
+														{app.key.slice(0, 2).toUpperCase()}
+													</span>
+
+													<span className="permission-matrix-app-copy">
+														<span
+															id={`permission-app-${app.key}`}
+															className="permission-matrix-app-name"
+														>
+															{app.name}
+														</span>
+
+														<span className="permission-matrix-app-meta">
+															{app.key} · {app.modules.length} modules
+														</span>
+													</span>
+												</button>
+
+												<Button
+													type="button"
+													text="Select All"
+													appearance="ghost"
+													variant="secondary"
+													size="sm"
+													onClick={() => toggleAppAll(app.key)}
+												/>
 											</div>
 
 											{(["read", "write"] as Action[]).map((action) => {
-												const on =
-													permState?.[app.key]?.[mod.key]?.[action] ?? false;
+												const state = appActionState(app.key, action);
 
 												return (
 													<div
 														key={action}
-														className="flex items-center justify-center border-l border-slate-200 hover:bg-white transition"
+														className="permission-matrix-action-cell permission-matrix-app-action"
 													>
 														<Checkbox
-															checked={on}
-															onChange={() =>
-																togglePerm(app.key, mod.key, action)
-															}
+															checked={state.all}
+															indeterminate={state.some}
+															onChange={() => toggleAppAction(app.key, action)}
 														/>
 													</div>
 												);
 											})}
 										</div>
-									);
-								})}
-						</div>
-					);
-				})}
 
-				{filteredApps.length === 0 && (
-					<div className="p-12 text-center text-slate-400 text-sm">
-						No modules match "{search}"
+										{/* MODULE ROWS */}
+										{!isCollapsed && (
+											<div
+												id={`permission-modules-${app.key}`}
+												className="permission-matrix-modules"
+											>
+												{app.modules.map((mod, modIdx) => (
+													<div
+														key={mod.key}
+														className={joinClassNames(
+															"permission-matrix-module-row",
+															modIdx % 2 === 0 &&
+																"permission-matrix-module-row-even",
+														)}
+													>
+														<div className="permission-matrix-module-main">
+															<span
+																className="permission-matrix-module-rail"
+																aria-hidden="true"
+															/>
+
+															<span className="permission-matrix-module-copy">
+																<span className="permission-matrix-module-name">
+																	{mod.name}
+																</span>
+
+																<span className="permission-matrix-module-key">
+																	{mod.key}
+																</span>
+															</span>
+														</div>
+
+														{(["read", "write"] as Action[]).map((action) => {
+															const checked =
+																permState?.[app.key]?.[mod.key]?.[action] ??
+																false;
+
+															return (
+																<div
+																	key={action}
+																	className="permission-matrix-action-cell permission-matrix-module-action"
+																>
+																	<Checkbox
+																		checked={checked}
+																		onChange={() =>
+																			togglePerm(app.key, mod.key, action)
+																		}
+																	/>
+																</div>
+															);
+														})}
+													</div>
+												))}
+											</div>
+										)}
+									</section>
+								);
+							})}
+
+							{filteredApps.length === 0 && (
+								<div className="permission-matrix-empty">
+									No modules match “{search}”
+								</div>
+							)}
+						</div>
 					</div>
-				)}
+				</div>
+
+				{/* MOBILE CARD VIEW */}
+				<div className="permission-matrix-mobile-list">
+					{filteredApps.map((app) => {
+						const isCollapsed = collapsed[app.key];
+
+						return (
+							<section
+								key={app.key}
+								className="permission-matrix-mobile-card"
+								aria-labelledby={`permission-mobile-app-${app.key}`}
+							>
+								<div className="permission-matrix-mobile-app">
+									<button
+										type="button"
+										className="permission-matrix-mobile-trigger"
+										onClick={() =>
+											setCollapsed((current) => ({
+												...current,
+												[app.key]: !current[app.key],
+											}))
+										}
+										aria-expanded={!isCollapsed}
+										aria-controls={`permission-mobile-modules-${app.key}`}
+									>
+										<ChevronDown
+											size={16}
+											aria-hidden="true"
+											className={joinClassNames(
+												"permission-matrix-chevron",
+												isCollapsed && "permission-matrix-chevron-collapsed",
+											)}
+										/>
+
+										<span className="permission-matrix-app-avatar">
+											{app.key.slice(0, 2).toUpperCase()}
+										</span>
+
+										<span className="permission-matrix-app-copy">
+											<span
+												id={`permission-mobile-app-${app.key}`}
+												className="permission-matrix-app-name"
+											>
+												{app.name}
+											</span>
+
+											<span className="permission-matrix-app-meta">
+												{app.key} · {app.modules.length} modules
+											</span>
+										</span>
+									</button>
+
+									<Button
+										type="button"
+										text="Select All"
+										appearance="ghost"
+										variant="secondary"
+										size="sm"
+										onClick={() => toggleAppAll(app.key)}
+									/>
+								</div>
+
+								<div className="permission-matrix-mobile-app-actions">
+									{ACTIONS.map((action) => {
+										const state = appActionState(app.key, action);
+
+										return (
+											<label
+												key={action}
+												className="permission-matrix-mobile-check-row"
+											>
+												<span>{action}</span>
+
+												<Checkbox
+													checked={state.all}
+													indeterminate={state.some}
+													onChange={() => toggleAppAction(app.key, action)}
+												/>
+											</label>
+										);
+									})}
+								</div>
+
+								{!isCollapsed && (
+									<div
+										id={`permission-mobile-modules-${app.key}`}
+										className="permission-matrix-mobile-modules"
+									>
+										{app.modules.map((mod) => (
+											<div
+												key={mod.key}
+												className="permission-matrix-mobile-module"
+											>
+												<div className="permission-matrix-module-copy">
+													<span className="permission-matrix-module-name">
+														{mod.name}
+													</span>
+
+													<span className="permission-matrix-module-key">
+														{mod.key}
+													</span>
+												</div>
+
+												<div className="permission-matrix-mobile-module-actions">
+													{ACTIONS.map((action) => {
+														const checked =
+															permState?.[app.key]?.[mod.key]?.[action] ??
+															false;
+
+														return (
+															<label
+																key={action}
+																className="permission-matrix-mobile-check-row permission-matrix-mobile-check-row-compact"
+															>
+																<span>{action}</span>
+
+																<Checkbox
+																	checked={checked}
+																	onChange={() =>
+																		togglePerm(app.key, mod.key, action)
+																	}
+																/>
+															</label>
+														);
+													})}
+												</div>
+											</div>
+										))}
+									</div>
+								)}
+							</section>
+						);
+					})}
+
+					{filteredApps.length === 0 && (
+						<div className="permission-matrix-empty">
+							No modules match “{search}”
+						</div>
+					)}
+				</div>
+
+				<div className="permission-matrix-footer">
+					<Button
+						text="Back"
+						type="button"
+						onClick={goBack}
+						Icon={ArrowLeft}
+						appearance="ghost"
+						variant="secondary"
+						size="sm"
+					/>
+
+					<Button
+						disabled={isLoading}
+						onClick={collectPermissions}
+						text={isLoading ? "Saving..." : "Save Permissions"}
+						type="button"
+						appearance="standard"
+						variant="brand"
+						size="sm"
+					/>
+				</div>
 			</div>
-			<div className="flex justify-end gap-3 px-6 py-4 border-t border-slate-200 bg-white">
-				<Button
-					disabled={isLoading}
-					onClick={collectPermissions}
-					text="Save Permissions"
-					status="brand"
-				/>
-			</div>
-		</div>
+		</Card>
 	);
 }

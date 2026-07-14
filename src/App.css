@@ -1,39 +1,15 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap");
-
-h1 {
-	font-size: 3.2em;
-	line-height: 1.1;
+/* Application-root styles only. Design tokens belong in src/styles. */
+.app-root {
+	width: 100%;
+	min-width: 0;
+	min-height: 100dvh;
+	background-color: var(--app-bg);
+	color: var(--app-text);
 }
 
-.form-head {
-	h2 {
-		font-size: 1.5rem;
-	}
-	p {
-		font-size: 0.8rem;
-		color: #6b7280;
-		margin: 0;
-		font-family: sans-serif;
-	}
-}
-h1,
-h2,
-h3 {
-	font-family: var(--font-sans);
-}
-
-button:focus,
-button:focus-visible {
-	outline: none;
-}
-
-@media (prefers-color-scheme: light) {
-	body {
-		color: #000;
-	}
-}
-@media (prefers-color-scheme: dark) {
-	body {
-		color: #000;
-	}
+.app-container {
+	width: 100%;
+	min-width: 0;
+	max-width: var(--content-max-width);
+	margin-inline: auto;
 }

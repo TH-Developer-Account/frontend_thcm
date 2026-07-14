@@ -1,46 +1,34 @@
-// ─────────────────────────────────────────────
-//  THEME TOGGLE COMPONENT
+import { Moon, Sun } from "lucide-react";
 
-import { useTheme } from "../../providers/ThemeContext";
+import { useTheme } from "../../context/Theme/useTheme";
 
-// ─────────────────────────────────────────────
 export const ThemeToggle = () => {
-	const { theme, toggleTheme } = useTheme();
-	const isDark = theme === "dark";
+	const { isDark, toggleTheme } = useTheme();
+
+	const label = isDark ? "Switch to light theme" : "Switch to dark theme";
+
 	return (
-		<div
-			className="flex items-center gap-2"
-			title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+		<button
+			type="button"
+			role="switch"
+			aria-checked={isDark}
+			aria-label={label}
+			title={label}
+			data-theme-state={isDark ? "dark" : "light"}
+			className="app-theme-switch"
+			onClick={toggleTheme}
 		>
-			<span
-				style={{
-					fontSize: 13,
-					opacity: isDark ? 0.4 : 1,
-					transition: "opacity 0.3s",
-					color: "#f59e0b",
-				}}
-			>
-				☀
-			</span>
-			<button
-				onClick={toggleTheme}
-				className={`tt-track ${isDark ? "dark" : "light"}`}
-				aria-label="Toggle theme"
-			>
-				<span className={`tt-thumb ${isDark ? "dark" : "light"}`}>
-					{isDark ? "🌙" : "☀️"}
+			<span className="app-theme-switch__track" aria-hidden="true">
+				<span className="app-theme-switch__icon app-theme-switch__icon--sun">
+					<Sun size={14} />
 				</span>
-			</button>
-			<span
-				style={{
-					fontSize: 13,
-					opacity: isDark ? 1 : 0.4,
-					transition: "opacity 0.3s",
-					color: "#6366f1",
-				}}
-			>
-				🌙
+
+				<span className="app-theme-switch__icon app-theme-switch__icon--moon">
+					<Moon size={14} />
+				</span>
+
+				<span className="app-theme-switch__thumb" />
 			</span>
-		</div>
+		</button>
 	);
 };

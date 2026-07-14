@@ -1,10 +1,10 @@
 import { Banknote, HandCoins, ShieldCheck, Users, Wallet } from "lucide-react";
 import Button from "../../../../../components/common/Button";
-import FormInput from "../../../../../components/FormElements/FormInput";
+import FormInput from "../../../../../components/forms/FormInput";
 import ApprovalTable from "../../components/activityFormView/ApprovalTable";
 import type { EpfFormValues } from "../../types/epf.types";
 import FormHeader from "../../components/common/FormHeader";
-import type { ApprovalTableRow } from "../../../../../utils/types";
+import type { ApprovalTableRow } from "../../types/activityplanner.types";
 
 type EpfFormInfoProps = {
 	values: EpfFormValues;
@@ -26,8 +26,8 @@ export default function EpfFormFields({
 	handlePreviewWorkflow,
 }: EpfFormInfoProps) {
 	return (
-		<div className="grid grid-cols-1 gap-4 lg:grid-cols-[9fr_3fr]">
-			<div className="space-y-4 text-left text-xs lg:text-sm">
+		<div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,9fr)_minmax(260px,3fr)]">
+			<div className="min-w-0 space-y-4 text-left text-xs lg:text-sm">
 				<div className=" bg-white pb-3">
 					<FormHeader title="Participants" Icon={Users} />
 
@@ -133,14 +133,15 @@ export default function EpfFormFields({
 					</div>
 				</div>
 
-				<div className=" bg-white pb-3">
-					<div className="flex items-center justify-between gap-3 pr-3">
+				<div className="bg-white pb-3">
+					<div className="flex flex-wrap items-center justify-between gap-3 pr-3">
 						<FormHeader title="Approval Workflow" Icon={ShieldCheck} />
 
 						<Button
 							type="button"
 							text={previewLoading ? "Loading..." : "Display Approval Flow"}
-							status="brand"
+							appearance="standard"
+							variant="brand"
 							onClick={handlePreviewWorkflow}
 							size="sm"
 							disabled={previewLoading}
@@ -148,8 +149,10 @@ export default function EpfFormFields({
 					</div>
 
 					{Array.isArray(previewRows) && previewRows.length > 0 ? (
-						<div className="px-3">
-							<ApprovalTable data={previewRows} />
+						<div className="min-w-0 overflow-hidden px-3 py-2">
+							<div className="approval-workflow-content max-w-full overflow-x-auto">
+								<ApprovalTable data={previewRows} />
+							</div>
 						</div>
 					) : (
 						<p className="px-3 text-xs text-[var(--color-text-muted)]">

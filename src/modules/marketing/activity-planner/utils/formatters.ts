@@ -190,7 +190,6 @@ export const mapBudgetShareInfo = (data: BudgetShareInput) => {
 		shareInfo,
 	};
 };
-
 export const normalizeApiStatus = (status?: string | null) =>
 	String(status ?? "")
 		.trim()
@@ -205,13 +204,23 @@ export const getStatusConfig = (status?: string | null) => {
 export const getStatusLabel = (
 	status?: string | null,
 ): StatusLabel | string => {
-	return getStatusConfig(status)?.label ?? String(status ?? "--");
+	const normalized = normalizeApiStatus(status);
+
+	if (!normalized) return "--";
+
+	return (
+		getStatusConfig(normalized)?.label ??
+		normalized
+			.toLowerCase()
+			.split("_")
+			.filter(Boolean)
+			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+			.join(" ")
+	);
 };
 
-export const getStatusVariant = (
-	status?: string | null,
-): StatusVariant | undefined => {
-	return getStatusConfig(status)?.variant;
+export const getStatusVariant = (status?: string | null): StatusVariant => {
+	return getStatusConfig(status)?.variant ?? "warning";
 };
 
 export const getStatusOptions = () =>

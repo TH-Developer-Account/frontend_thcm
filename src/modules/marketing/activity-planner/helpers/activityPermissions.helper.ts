@@ -198,12 +198,7 @@ export const getActivityPermissions = ({
 
 		canCreateCrf: isProposer && isExistingEpc && !isClosed && !epcData?.crf,
 
-		canCreateEpf:
-			isProposer &&
-			isExistingEpc &&
-			!isClosed &&
-			Boolean(epcData?.crf) &&
-			!epcData?.epf,
+		canCreateEpf: isProposer && isExistingEpc && !isClosed && !epcData?.epf,
 
 		// report permissions
 		canCreateReport,

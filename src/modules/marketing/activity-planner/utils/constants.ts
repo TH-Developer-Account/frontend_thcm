@@ -1,8 +1,14 @@
-import type { ThreeWayOption } from "../../../../components/common/ThreeWayToggle";
-
-import { Bold, Italic, Code, List } from "lucide-react";
+import {
+	Bold,
+	Italic,
+	Code,
+	List,
+	type LucideIcon,
+	ClipboardList,
+	ClipboardCheck,
+	ListFilter,
+} from "lucide-react";
 import type { FormatType } from "../types/workflow.types";
-import type React from "react";
 import type { EpcFilters } from "../types/epc.types";
 import {
 	createActivityActionOptions,
@@ -52,26 +58,31 @@ export const status = {
 	CLOSED: "Closed",
 } as const;
 
-export type EpcListFilter = "createdByMe" | "pendingOnMe" | "approvedByMe";
+export type EpcListFilter = "pendingOnMe" | "createdByMe" | "approvedByMe";
 
 export const epcListFilterOptions = [
 	{
 		value: "pendingOnMe",
 		label: "Pending on me",
+		shortLabel: "Pending",
+		tooltipLabel: "View EPC requests created by me",
+		Icon: ClipboardList,
 	},
 	{
 		value: "createdByMe",
 		label: "Created by me",
+		shortLabel: "Created",
+		tooltipLabel: "View EPC requests created by me",
+		Icon: ClipboardCheck,
 	},
 	{
 		value: "approvedByMe",
-		label: "Approvals by me",
+		label: "Approved by me",
+		shortLabel: "Approved",
+		tooltipLabel: "View EPC requests approved by me",
+		Icon: ListFilter,
 	},
-] as const satisfies readonly [
-	ThreeWayOption<EpcListFilter>,
-	ThreeWayOption<EpcListFilter>,
-	ThreeWayOption<EpcListFilter>,
-];
+] as const;
 
 export const EMOJIS = [
 	"👍",
@@ -105,17 +116,18 @@ export const EMOJIS = [
 	"⏰",
 	"📅",
 ];
-
-export const FORMAT_ACTIONS: {
-	icon: React.ElementType;
+type FormatAction = {
+	icon: LucideIcon;
 	fmt: FormatType;
 	title: string;
-}[] = [
+};
+
+export const FORMAT_ACTIONS = [
 	{ icon: Bold, fmt: "bold", title: "Bold" },
 	{ icon: Italic, fmt: "italic", title: "Italic" },
 	{ icon: Code, fmt: "code", title: "Inline code" },
 	{ icon: List, fmt: "bullet", title: "Bullet list" },
-];
+] satisfies FormatAction[];
 
 export const FORMAT_WRAP: Record<FormatType, (sel: string) => string> = {
 	bold: (sel) => (sel ? `**${sel}**` : "****"),

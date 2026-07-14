@@ -1,13 +1,17 @@
 import React from "react";
 import { MessageCircle } from "lucide-react";
-import { useToast } from "../../../../../context/Auth/AuthContext";
+
 import Avatar from "../../../../../components/common/Avatar";
-import Section from "../common/Section";
+import SectionAccordion from "../../../../../components/common/SectionAccordion";
+import { useToast } from "../../../../../context/Auth/AuthContext";
 import { formatDateTime } from "../../../../../utils/format";
+
 import { workflowApi } from "../../api/workflow.api";
-import CommentInput from "./CommentInput";
-import "../../../marketing.styles.css";
 import { getAuditMessage } from "../../helpers/activityLogMessage.helper";
+
+import CommentInput from "./CommentInput";
+
+import "../../../marketing.styles.css";
 
 export type MentionableUserInput = {
 	id: string;
@@ -49,72 +53,97 @@ type CommentsSectionProps = {
 	currentUserId?: string;
 };
 
-const CommentCard = React.memo(function CommentCard({
-	comment,
-	ref,
-	level = 0,
-	isSelf = false,
-}: {
+type CommentCardProps = {
 	comment: CommentItem;
 	level?: number;
-	ref?: React.Ref<HTMLDivElement>;
 	isSelf?: boolean;
-}) {
+};
+
+const getCommentAuthorName = (comment: CommentItem): string => {
+	const name = `${comment.actor?.first_name ?? ""} ${
+		comment.actor?.last_name ?? ""
+	}`.trim();
+
+	return name || "Unknown user";
+};
+
+const CommentCard = React.memo(function CommentCard({
+	comment,
+	level = 0,
+	isSelf = false,
+}: CommentCardProps) {
 	const isAuditLog = comment.entryType === "ACTIVITY_LOG";
 
-	return (
-		<div className={`comment-card ${level > 0 ? "comment-reply-card" : ""}`}>
-			{isAuditLog ? (
-				<div className="comment-auditMessage">
+	if (isAuditLog) {
+		return (
+			<div
+				className={["comment-card", level > 0 && "comment-reply-card"]
+					.filter(Boolean)
+					.join(" ")}
+			>
+				<div className="comment-audit-message">
 					<span>{getAuditMessage(comment)}</span>
 				</div>
-			) : (
-				<div
-					className={`comment-main ${isSelf ? "comment-main--self" : ""}`}
-					ref={ref}
-				>
-					{!isSelf && (
-						<Avatar
-							firstName={comment.actor?.first_name}
-							lastName={comment.actor?.last_name}
-							size="sm"
-						/>
-					)}
+			</div>
+		);
+	}
 
-					<div className="comment-content">
-						<div
-							className={`comment-bubble ${isSelf ? "comment-bubble--self" : ""}`}
-						>
-							<div className="comment-meta">
-								{!isSelf ? (
-									<p className="comment-author">
-										{`${comment.actor?.first_name ?? ""} ${comment.actor?.last_name ?? ""}`.trim()}
-									</p>
-								) : (
-									<p className="comment-author">
-										{`${comment.actor?.first_name ?? ""} ${comment.actor?.last_name ?? ""}`.trim()}
-									</p>
-								)}
-								<span className="comment-submeta">
-									{formatDateTime(comment.createdAt)}
-								</span>
-							</div>
-							<p className="comment-text">{comment.message}</p>
+	return (
+		<article
+			className={[
+				"comment-card",
+				level > 0 && "comment-reply-card",
+				isSelf && "comment-card-self",
+			]
+				.filter(Boolean)
+				.join(" ")}
+		>
+			<div
+				className={["comment-main", isSelf && "comment-main-self"]
+					.filter(Boolean)
+					.join(" ")}
+			>
+				<Avatar
+					firstName={comment.actor?.first_name}
+					lastName={comment.actor?.last_name}
+					size="sm"
+				/>
+
+				<div className="comment-content">
+					<div
+						className={["comment-bubble", isSelf && "comment-bubble-self"]
+							.filter(Boolean)
+							.join(" ")}
+					>
+						<div className="comment-meta">
+							<p className="comment-author">{getCommentAuthorName(comment)}</p>
+
+							<time className="comment-submeta" dateTime={comment.createdAt}>
+								{formatDateTime(comment.createdAt)}
+							</time>
 						</div>
-					</div>
 
-					{isSelf && (
-						<Avatar
-							firstName={comment.actor?.first_name}
-							lastName={comment.actor?.last_name}
-							size="sm"
-						/>
-					)}
+						<p className="comment-text">{comment.message}</p>
+					</div>
 				</div>
-			)}
-		</div>
+			</div>
+
+			{comment.replies?.length ? (
+				<div className="comment-replies">
+					{comment.replies.map((reply) => (
+						<CommentCard
+							key={reply.id}
+							comment={reply}
+							level={level + 1}
+							isSelf={isSelf}
+						/>
+					))}
+				</div>
+			) : null}
+		</article>
 	);
 });
+
 export default function CommentsSection({
 	epcId,
 	approvalId,
@@ -131,7 +160,7 @@ export default function CommentsSection({
 	const [commentsLoading, setCommentsLoading] = React.useState(false);
 	const [toEmails, setToEmails] = React.useState<string[]>([]);
 
-	const listEndRef = React.useRef<HTMLDivElement>(null);
+	const commentsListRef = React.useRef<HTMLDivElement>(null);
 	const isInitialLoad = React.useRef(true);
 
 	React.useEffect(() => {
@@ -140,16 +169,24 @@ export default function CommentsSection({
 		const fetchAllComments = async () => {
 			try {
 				setCommentsLoading(true);
+
 				const data = await workflowApi.getComments(epcId);
-				if (!cancelled) setComments(data);
-			} catch (err) {
-				console.error(err);
+
+				if (!cancelled) {
+					setComments(data);
+				}
+			} catch (error) {
+				console.error(error);
 			} finally {
-				if (!cancelled) setCommentsLoading(false);
+				if (!cancelled) {
+					setCommentsLoading(false);
+				}
 			}
 		};
 
-		if (epcId) void fetchAllComments();
+		if (epcId) {
+			void fetchAllComments();
+		}
 
 		return () => {
 			cancelled = true;
@@ -162,14 +199,22 @@ export default function CommentsSection({
 			return;
 		}
 
-		listEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+		const container = commentsListRef.current;
+		if (!container) return;
+
+		container.scrollTo({
+			top: container.scrollHeight,
+			behavior: "smooth",
+		});
 	}, [comments.length]);
 
 	const handleMentionInsert = React.useCallback((user: CommentUser) => {
 		if (!user.email) return;
 
-		setToEmails((prev) =>
-			prev.includes(user.email!) ? prev : [...prev, user.email!],
+		setToEmails((currentEmails) =>
+			currentEmails.includes(user.email!)
+				? currentEmails
+				: [...currentEmails, user.email!],
 		);
 	}, []);
 
@@ -182,21 +227,24 @@ export default function CommentsSection({
 						title: "Not allowed",
 						description: "You are not assigned to this approval stage",
 					});
+
 					return;
 				}
+
+				const cc = ccEmails.filter((email) => !toEmails.includes(email));
 
 				const response = approvalId
 					? await workflowApi.createApprovalComment({
 							approvalId,
 							message: text,
 							to: toEmails,
-							cc: ccEmails.filter((email) => !toEmails.includes(email)),
+							cc,
 						})
 					: await workflowApi.createCreatorComment({
 							epcId,
 							message: text,
 							to: toEmails,
-							cc: ccEmails.filter((email) => !toEmails.includes(email)),
+							cc,
 						});
 
 				showToast({
@@ -206,8 +254,9 @@ export default function CommentsSection({
 				});
 
 				const data = response.data;
-				setComments((prev) => [
-					...prev,
+
+				setComments((currentComments) => [
+					...currentComments,
 					{
 						id: data.id,
 						message: data.message,
@@ -221,14 +270,16 @@ export default function CommentsSection({
 						},
 					},
 				]);
+
 				setToEmails([]);
-			} catch (err) {
+			} catch (error) {
+				//No workflow has been assigned to this record yet. Comments can be added once a workflow is assigned
 				showToast({
 					type: "error",
 					title: "Error",
 					description:
-						err instanceof Error
-							? err.message
+						error instanceof Error
+							? error.message
 							: "Error while adding the comment",
 				});
 			}
@@ -236,43 +287,57 @@ export default function CommentsSection({
 		[approvalId, ccEmails, epcId, isProposer, showToast, toEmails],
 	);
 
+	const commentCountLabel = `${comments.length} ${
+		comments.length === 1 ? "comment" : "comments"
+	}`;
+
 	return (
-		<Section title="Comment Section">
-			<section className="comments-section mb-2">
-				<div className="flex flex-row justify-end bg-zinc-100">
-					<p className="comments-subtitle">
-						{comments.length} {comments.length === 1 ? "comment" : "comments"}
-					</p>
+		<SectionAccordion title="Comment Section">
+			<section className="comments-section" aria-label="Comments and activity">
+				<header className="comments-summary">
+					<span className="comments-subtitle">{commentCountLabel}</span>
+				</header>
+
+				<div className="comments-body">
+					{commentsLoading ? (
+						<div
+							className="comments-loading"
+							aria-label="Loading comments"
+							aria-live="polite"
+						>
+							<div />
+							<div />
+							<div />
+						</div>
+					) : comments.length === 0 ? (
+						<div className="comments-empty">
+							<MessageCircle size={20} aria-hidden="true" />
+
+							<div className="comments-empty-copy">
+								<p>No comments yet</p>
+
+								<span>Start the discussion by adding the first comment.</span>
+							</div>
+						</div>
+					) : (
+						<div
+							className="comments-list scrollbar-sleek"
+							ref={commentsListRef}
+						>
+							{comments.map((comment) => (
+								<CommentCard
+									key={comment.id}
+									comment={comment}
+									isSelf={comment.actor?.id === currentUserId}
+								/>
+							))}
+						</div>
+					)}
 				</div>
 
-				{commentsLoading ? (
-					<div className="comments-loading">
-						<div />
-						<div />
-						<div />
-					</div>
-				) : comments.length === 0 ? (
-					<div className="comments-empty">
-						<MessageCircle size={24} />
-						<p>No comments yet</p>
-						<span>Start the discussion by adding the first comment.</span>
-					</div>
-				) : (
-					<div className="comments-list scrollbar-sleek">
-						{comments.map((comment) => (
-							<CommentCard
-								key={comment.id}
-								comment={comment}
-								isSelf={comment.actor?.id === currentUserId}
-								ref={listEndRef}
-							/>
-						))}
-					</div>
-				)}
-
-				<div className="comments-create light-blue-bg-header">
-					{!canComment && (
-						<div className="comments-create-input" ref={listEndRef}>
+				{!canComment ? (
+					<footer className="comments-create">
+						<div className="comments-create-input">
 							<CommentInput
 								disabled={commentsLoading}
 								onSubmit={handleCreate}
@@ -280,9 +345,9 @@ export default function CommentsSection({
 								onMentionInsert={handleMentionInsert}
 							/>
 						</div>
-					)}
-				</div>
+					</footer>
+				) : null}
 			</section>
-		</Section>
+		</SectionAccordion>
 	);
 }

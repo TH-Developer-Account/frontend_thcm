@@ -1,16 +1,17 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import type { SingleValue } from "react-select";
 import { useAuth } from "../../../../context/Auth/useAuth";
-import FormInput from "../../../../components/FormElements/FormInput";
-import TextareaInput from "../../../../components/FormElements/TextareaInput";
-import SelectInput from "../../../../components/FormElements/SelectInput";
-import Radio from "../../../../components/FormElements/Radio";
-import type { Option } from "../../../../components/FormElements/input.types";
+import FormInput from "../../../../components/forms/FormInput";
+import TextareaInput from "../../../../components/forms/TextareaInput";
+import SelectInput from "../../../../components/forms/SelectInput";
+import Radio from "../../../../components/forms/Radio";
+import type { Option } from "../../../../components/forms/input.types";
 import type {
 	WorkflowBasics,
 	WorkflowGenErrors,
 } from "../types/workflow.types";
 import { budgetCategories, formatApps } from "../constant/workflow.constant";
+import Button from "../../../../components/common/Button";
 
 export type WorkflowGenProps = {
 	basics: WorkflowBasics;
@@ -31,10 +32,8 @@ const WorkFlowGenForm = ({
 	onNext,
 }: WorkflowGenProps) => {
 	const { permissions } = useAuth();
-	const navigate = useNavigate();
 	const { id } = useParams();
 	const apps = formatApps(permissions);
-	console.log("Data", basics);
 
 	const selectedAppLabel =
 		apps.find((opt: Option) => opt.value === basics.app)?.label || "";
@@ -138,21 +137,23 @@ const WorkFlowGenForm = ({
 			</div>
 
 			<div className="mt-4 flex justify-between">
-				<button
+				<Button
 					type="button"
-					className="workflow-create-secondary-btn"
-					onClick={() => navigate("/admin/workflows")}
-				>
-					Back
-				</button>
-
-				<button
-					type="button"
-					className="workflow-create-primary-btn"
+					direction="back"
+					text="Back"
+					appearance="standard"
+					variant="outline"
+					size="sm"
+				/>
+				<Button
 					onClick={onNext}
-				>
-					Next
-				</button>
+					type="button"
+					direction="forward"
+					text="Next"
+					appearance="standard"
+					size="sm"
+					variant="brand"
+				/>
 			</div>
 		</>
 	);

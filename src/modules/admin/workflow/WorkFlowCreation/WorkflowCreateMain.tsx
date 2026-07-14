@@ -1,4 +1,4 @@
-import { FileText, Plus } from "lucide-react";
+import { ArrowLeft, FileText, Plus } from "lucide-react";
 import WorkFlowGenForm from "./WorkFlowGenForm";
 import WorkflowStagesForm from "./WorkflowStagesForm";
 import WorkflowViewForm from "./WorkflowViewForm";
@@ -7,6 +7,7 @@ import type {
 	WorkflowGenErrors,
 	WorkflowStageErrors,
 } from "../types/workflow.types";
+import Button from "../../../../components/common/Button";
 
 type Props = WorkFlowProps & {
 	basicErrors: WorkflowGenErrors;
@@ -94,22 +95,25 @@ const WorkflowCreateMain = ({
 					<WorkflowViewForm basics={basics} stages={stages} />
 
 					<div className="mt-4 flex justify-between">
-						<button
-							type="button"
-							className="workflow-create-secondary-btn"
+						<Button
 							onClick={goBack}
-						>
-							Back
-						</button>
-
-						<button
 							type="button"
-							className="workflow-create-primary-btn"
+							text="Back"
+							Icon={ArrowLeft}
+							iconPosition="left"
+							appearance="standard"
+							variant="outline"
+							size="sm"
+						/>
+						<Button
 							onClick={onSubmit}
 							disabled={loading}
-						>
-							{loading ? "Saving..." : "Save workflow"}
-						</button>
+							type="button"
+							text={loading ? "Saving..." : "Save workflow"}
+							appearance="standard"
+							variant="brand"
+							size="sm"
+						/>
 					</div>
 				</>
 			)}
