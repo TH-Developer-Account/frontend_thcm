@@ -1,346 +1,144 @@
-// import { ServerAxios } from "../../../services/ServerAxios";
-
 import { ServerAxios } from "../../../services/ServerAxios";
+
 import type {
-	ClarifyVendorVariables,
-	CommentVendorVariables,
 	CreateVendorFormOneVariables,
 	CreateVendorFormTwoVariables,
-	DeleteVendorVariables,
 	SubmitVendorSummaryVariables,
 	UpdateVendorFormOneVariables,
 	UpdateVendorFormTwoVariables,
 	VendorOnboardingResponse,
 } from "../types/vendorOnboarding.types";
 
-const mockDelay = async () => {
-	await new Promise((resolve) => window.setTimeout(resolve, 300));
+const VENDOR_URL = "/vendor-onboarding";
+const PUBLIC_VENDOR_URL = "/public/vendor-onboarding";
+
+export type VendorOnboardingInitiationPayload = {
+	vendorName: string;
+	email: string;
+	mobile: string;
 };
 
 export const vendorOnboardingApi = {
-	getById: async (
-		vendorRequestId: string,
-	): Promise<VendorOnboardingResponse> => {
-		console.log("GET vendor onboarding by id:", vendorRequestId);
-
-		await mockDelay();
-
-		// API-ready version:
-		// const {
-		// 	data: { data },
-		// } = await ServerAxios.get(`/vendor-onboarding/${vendorRequestId}`);
-		// return data;
-
-		return {
-			id: vendorRequestId,
-			status: "SUBMITTED_BY_VENDOR",
-			partOne: {
-				vendorName: "ABC INDUSTRIAL SUPPLIERS",
-				completeAddress: "Plot 42, Industrial Area, Bengaluru",
-				msmeVendor: "Yes",
-				msmeCertificateAttached: "Yes",
-				city: "Bengaluru",
-				pinCode: "560001",
-				state: "South 1",
-
-				mobile: "9876543210",
-				email: "vendor@example.com",
-
-				bank: "State Bank of India",
-				branch: "Bengaluru Main Branch",
-				ifscCode: "SBIN0000001",
-				bankAddress: "MG Road, Bengaluru",
-				accountNumber: "123456789012",
-
-				gstin: "29ABCDE1234F1Z5",
-				pan: "ABCDE1234F",
-				entityRegistrationNumber: "REG-1024",
-
-				gstCertificate: "Yes",
-				panNumber: "Yes",
-				bankCancelledCheque: "Yes",
-				certificateOfIncorporation: "Yes",
-				msmeCertificate: "Yes",
-				ndaCertificate: "No",
-			},
-			partTwo: {
-				vendorCode: "VND-1024",
-				vendorType: "PO Based",
-				companyCode: "0080 - BLR",
-				purchaseOrg: "P502 - Indirect Purchase",
-
-				paymentTerm: "30 Days",
-				tds: "194C - Contractors",
-
-				vendorCategory: "Service",
-				materialType: "2 - Indirect",
-				materialSubType: "2 - Non-Proprietary",
-
-				vendorSelfAssessmentObtained: "Yes",
-				ndaObtained: "Yes",
-				gpaObtained: "Yes",
-				relatedPartyToThcm: "No",
-				vendorAuditReportPrepared: "Yes",
-				remarks: "",
-				reasonForOnboarding: "Required for service support.",
-
-				proposedByName: "THCM User",
-				proposedByDesignation: "Manager",
-				proposedDate: "2026-07-08",
-
-				approvedByName: "",
-				approvedByDesignation: "",
-				approvalDate: "",
-			},
-		};
-	},
-
+	// POST /vendor-onboarding
 	createFormOne: async ({
 		payload,
 	}: CreateVendorFormOneVariables): Promise<VendorOnboardingResponse> => {
-		console.log("CREATE vendor form one:", payload);
+		const {
+			data: { data },
+		} = await ServerAxios.post(VENDOR_URL, payload);
 
-		await mockDelay();
-
-		// API-ready version:
-		// const {
-		// 	data: { data },
-		// } = await ServerAxios.post("/vendor-onboarding/form-one", payload);
-		// return data;
-
-		return {
-			id: crypto.randomUUID(),
-			status: "SUBMITTED_BY_VENDOR",
-			partOne: payload,
-			partTwo: {},
-		};
+		return data;
 	},
 
+	// PATCH /vendor-onboarding/:id
 	updateFormOne: async ({
 		vendorRequestId,
 		payload,
 	}: UpdateVendorFormOneVariables): Promise<VendorOnboardingResponse> => {
-		console.log("UPDATE vendor form one:", {
-			vendorRequestId,
-			payload,
-		});
+		const {
+			data: { data },
+		} = await ServerAxios.patch(`${VENDOR_URL}/${vendorRequestId}`, payload);
 
-		await mockDelay();
-
-		// API-ready version:
-		// const {
-		// 	data: { data },
-		// } = await ServerAxios.put(
-		// 	`/vendor-onboarding/${vendorRequestId}/form-one`,
-		// 	payload,
-		// );
-		// return data;
-
-		return {
-			id: vendorRequestId,
-			status: "SUBMITTED_BY_VENDOR",
-			partOne: payload,
-			partTwo: {},
-		};
+		return data;
 	},
 
+	// Form Two also uses PATCH /vendor-onboarding/:id
 	createFormTwo: async ({
 		vendorRequestId,
 		payload,
 	}: CreateVendorFormTwoVariables): Promise<VendorOnboardingResponse> => {
-		console.log("CREATE vendor form two:", {
-			vendorRequestId,
-			payload,
-		});
+		const {
+			data: { data },
+		} = await ServerAxios.patch(`${VENDOR_URL}/${vendorRequestId}`, payload);
 
-		await mockDelay();
-
-		// API-ready version:
-		// const {
-		// 	data: { data },
-		// } = await ServerAxios.post(
-		// 	`/vendor-onboarding/${vendorRequestId}/form-two`,
-		// 	payload,
-		// );
-		// return data;
-
-		return {
-			id: vendorRequestId,
-			status: "THCM_REVIEW_IN_PROGRESS",
-			partOne: {},
-			partTwo: payload,
-		};
+		return data;
 	},
 
+	// PATCH /vendor-onboarding/:id
 	updateFormTwo: async ({
 		vendorRequestId,
 		payload,
 	}: UpdateVendorFormTwoVariables): Promise<VendorOnboardingResponse> => {
-		console.log("UPDATE vendor form two:", {
-			vendorRequestId,
-			payload,
-		});
+		const {
+			data: { data },
+		} = await ServerAxios.patch(`${VENDOR_URL}/${vendorRequestId}`, payload);
 
-		await mockDelay();
-
-		// API-ready version:
-		// const {
-		// 	data: { data },
-		// } = await ServerAxios.put(
-		// 	`/vendor-onboarding/${vendorRequestId}/form-two`,
-		// 	payload,
-		// );
-		// return data;
-
-		return {
-			id: vendorRequestId,
-			status: "THCM_REVIEW_IN_PROGRESS",
-			partOne: {},
-			partTwo: payload,
-		};
+		return data;
 	},
 
+	// POST /vendor-onboarding/:id/resend-link
+	resendVendorLink: async (
+		vendorRequestId: string,
+	): Promise<VendorOnboardingResponse> => {
+		const {
+			data: { data },
+		} = await ServerAxios.post(`${VENDOR_URL}/${vendorRequestId}/resend-link`);
+
+		return data;
+	},
+
+	// POST /vendor-onboarding/:id/send-for-approval
+	sendForApproval: async (
+		vendorRequestId: string,
+	): Promise<VendorOnboardingResponse> => {
+		const {
+			data: { data },
+		} = await ServerAxios.post(
+			`${VENDOR_URL}/${vendorRequestId}/send-for-approval`,
+		);
+
+		return data;
+	},
+
+	// Existing summary method can call the same approval route
 	submitSummary: async ({
 		vendorRequestId,
 		payload,
 	}: SubmitVendorSummaryVariables): Promise<VendorOnboardingResponse> => {
-		console.log("SUBMIT vendor summary:", {
-			vendorRequestId,
-			payload,
-		});
+		await ServerAxios.patch(`${VENDOR_URL}/${vendorRequestId}`, payload);
 
-		await mockDelay();
+		const {
+			data: { data },
+		} = await ServerAxios.post(
+			`${VENDOR_URL}/${vendorRequestId}/send-for-approval`,
+		);
 
-		// API-ready version:
-		// const {
-		// 	data: { data },
-		// } = await ServerAxios.post(
-		// 	`/vendor-onboarding/${vendorRequestId}/submit`,
-		// 	payload,
-		// );
-		// return data;
-
-		return {
-			id: vendorRequestId,
-			status: "THCM_SUBMITTED",
-			partOne: payload.partOne,
-			partTwo: payload.partTwo,
-		};
+		return data;
 	},
 
-	approve: async (
-		vendorRequestId: string,
-	): Promise<VendorOnboardingResponse> => {
-		console.log("APPROVE vendor onboarding:", vendorRequestId);
-
-		await mockDelay();
-
-		// API-ready version:
-		// const {
-		// 	data: { data },
-		// } = await ServerAxios.post(`/vendor-onboarding/${vendorRequestId}/approve`);
-		// return data;
-
-		return {
-			id: vendorRequestId,
-			status: "THCM_APPROVED",
-			partOne: {},
-			partTwo: {},
-		};
-	},
-
-	clarify: async ({
-		vendorRequestId,
-		payload,
-	}: ClarifyVendorVariables): Promise<VendorOnboardingResponse> => {
-		console.log("CLARIFY vendor onboarding:", {
-			vendorRequestId,
-			payload,
-		});
-
-		await mockDelay();
-
-		// API-ready version:
-		// const {
-		// 	data: { data },
-		// } = await ServerAxios.post(
-		// 	`/vendor-onboarding/${vendorRequestId}/clarify`,
-		// 	payload,
-		// );
-		// return data;
-
-		return {
-			id: vendorRequestId,
-			status: "THCM_CLARIFICATION_REQUESTED",
-			partOne: {},
-			partTwo: {},
-		};
-	},
-
+	// POST /vendor-onboarding/:id/close
 	acceptAndClose: async (
 		vendorRequestId: string,
 	): Promise<VendorOnboardingResponse> => {
-		console.log("ACCEPT AND CLOSE vendor onboarding:", vendorRequestId);
+		const {
+			data: { data },
+		} = await ServerAxios.post(`${VENDOR_URL}/${vendorRequestId}/close`);
 
-		await mockDelay();
-
-		// API-ready version:
-		// const {
-		// 	data: { data },
-		// } = await ServerAxios.post(
-		// 	`/vendor-onboarding/${vendorRequestId}/accept-close`,
-		// );
-		// return data;
-
-		return {
-			id: vendorRequestId,
-			status: "CLOSED",
-			partOne: {},
-			partTwo: {},
-		};
+		return data;
 	},
 
-	addComment: async ({
-		vendorRequestId,
-		payload,
-	}: CommentVendorVariables): Promise<{ success: boolean }> => {
-		console.log("ADD vendor onboarding comment:", {
-			vendorRequestId,
-			payload,
-		});
+	// GET /public/vendor-onboarding/:token
+	getByToken: async (token: string): Promise<VendorOnboardingResponse> => {
+		const {
+			data: { data },
+		} = await ServerAxios.get(`${PUBLIC_VENDOR_URL}/${token}`);
 
-		await mockDelay();
-
-		// API-ready version:
-		// const {
-		// 	data: { data },
-		// } = await ServerAxios.post(
-		// 	`/vendor-onboarding/${vendorRequestId}/comments`,
-		// 	payload,
-		// );
-		// return data;
-
-		return {
-			success: true,
-		};
+		return data;
 	},
 
-	delete: async ({
-		vendorRequestId,
-	}: DeleteVendorVariables): Promise<{ success: boolean }> => {
-		console.log("DELETE vendor onboarding:", vendorRequestId);
+	// POST /public/vendor-onboarding/:token/submit
+	submitVendorForm: async (
+		token: string,
+		formData: FormData,
+	): Promise<VendorOnboardingResponse> => {
+		const {
+			data: { data },
+		} = await ServerAxios.post(
+			`${PUBLIC_VENDOR_URL}/${token}/submit`,
+			formData,
+		);
 
-		await mockDelay();
-
-		// API-ready version:
-		// const {
-		// 	data: { data },
-		// } = await ServerAxios.delete(`/vendor-onboarding/${vendorRequestId}`);
-		// return data;
-
-		return {
-			success: true,
-		};
+		return data;
 	},
 
 	assignWorkflow: async (payload: {
@@ -364,6 +162,27 @@ export const vendorOnboardingApi = {
 		const {
 			data: { data },
 		} = await ServerAxios.post("/soa/preview-workflow", payload);
+
+		return data;
+	},
+	createInitiation: async (payload: VendorOnboardingInitiationPayload) => {
+		const {
+			data: { data },
+		} = await ServerAxios.post("/vendor-onboarding", payload);
+
+		return data;
+	},
+
+	updateInitiation: async ({
+		id,
+		payload,
+	}: {
+		id: string;
+		payload: VendorOnboardingInitiationPayload;
+	}) => {
+		const {
+			data: { data },
+		} = await ServerAxios.patch(`/vendor-onboarding/${id}`, payload);
 
 		return data;
 	},
