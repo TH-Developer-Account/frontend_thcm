@@ -1,173 +1,98 @@
-import { useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import VendorListingTable from "../components/VendorListingTable";
+import { useVendorListing } from "../hooks/useVendorListing";
 import {
-	DUMMY_INITIATION_ROWS,
-	DUMMY_ONBOARDING_ROWS,
-} from "../utils/vendor.constant";
+  toInitiationRow,
+  toOnboardingRow,
+} from "../utils/vendorListingRowMapper";
 import type {
-	VendorInitiationListingRow,
-	VendorListingFilter,
-	VendorOnboardingListingRow,
+  VendorInitiationListingRow,
+  VendorOnboardingListingRow,
 } from "../types/vendorListing.types";
 
-const DEFAULT_PAGE_SIZE = 10;
-
 const VendorListingPage = () => {
-	const navigate = useNavigate();
-	const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-	const tab = searchParams.get("tab");
-	const initialFilter: VendorListingFilter =
-		tab === "onboarding" ? "onboarding" : "initiation";
+  const {
+    tab,
+    search,
+    pageIndex,
+    pageSize,
+    pageCount,
+    rows,
+    isLoading,
+    isFetching,
+    handleTabChange,
+    handleSearchChange,
+    handlePageSizeChange,
+    setPageIndex,
+  } = useVendorListing();
 
-	const [selectedFilter, setSelectedFilter] =
-		useState<VendorListingFilter>(initialFilter);
+  const isInitiationTab = tab === "initiation";
 
-	const [search, setSearch] = useState("");
-	const [pageIndex, setPageIndex] = useState(0);
-	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  // The backend already scoped `rows` to the active tab — this only reshapes
+  // field names/adds the two placeholder nulls the table's types expect.
+  const rowsForTable = useMemo(
+    () =>
+      isInitiationTab ? rows.map(toInitiationRow) : rows.map(toOnboardingRow),
+    [isInitiationTab, rows],
+  );
 
-	const normalizedSearch = search.trim().toLowerCase();
+  const handleViewRow = (
+    row: VendorInitiationListingRow | VendorOnboardingListingRow,
+  ) => {
+    const path =
+      tab === "initiation" ? "/vendor/initiation" : "/vendor/onboarding";
+    navigate(`${path}/${row.id}`);
+  };
 
-	const filteredInitiationVendors = useMemo(() => {
-		return DUMMY_INITIATION_ROWS.filter((vendor) => {
-			if (!normalizedSearch) {
-				return true;
-			}
+  const handleExport = () => {
+    console.log(`Export vendor ${tab} rows:`, rows);
+  };
 
-			return (
-				vendor.vendorName.toLowerCase().includes(normalizedSearch) ||
-				vendor.vendorEmail.toLowerCase().includes(normalizedSearch) ||
-				vendor.vendorPhone.toLowerCase().includes(normalizedSearch) ||
-				vendor.createdBy?.toLowerCase().includes(normalizedSearch) ||
-				vendor.status?.toLowerCase().includes(normalizedSearch)
-			);
-		});
-	}, [normalizedSearch]);
+  return (
+    <PageSectionLayout>
+      <PageHeader
+        headerText="Vendors Listing"
+        navigation={{
+          variant: "breadcrumbs",
+          ariaLabel: "Vendors listing location",
+          breadcrumbs: [
+            {
+              label: "Home Screen",
+              href: "/",
+            },
+            {
+              label: "Vendors Listing",
+              href: "/vendor/listing",
+            },
+          ],
+          separator: "›",
+        }}
+      />
 
-	const filteredOnboardingVendors = useMemo(() => {
-		return DUMMY_ONBOARDING_ROWS.filter((vendor) => {
-			if (!normalizedSearch) {
-				return true;
-			}
-
-			return (
-				vendor.vendorName.toLowerCase().includes(normalizedSearch) ||
-				vendor.vendorCode?.toLowerCase().includes(normalizedSearch) ||
-				vendor.vendorType?.toLowerCase().includes(normalizedSearch) ||
-				vendor.companyCode?.toLowerCase().includes(normalizedSearch) ||
-				vendor.region?.toLowerCase().includes(normalizedSearch) ||
-				vendor.createdBy?.toLowerCase().includes(normalizedSearch) ||
-				vendor.status?.toLowerCase().includes(normalizedSearch)
-			);
-		});
-	}, [normalizedSearch]);
-
-	const paginatedInitiationVendors = useMemo(() => {
-		const startIndex = pageIndex * pageSize;
-		const endIndex = startIndex + pageSize;
-
-		return filteredInitiationVendors.slice(startIndex, endIndex);
-	}, [filteredInitiationVendors, pageIndex, pageSize]);
-
-	const paginatedOnboardingVendors = useMemo(() => {
-		const startIndex = pageIndex * pageSize;
-		const endIndex = startIndex + pageSize;
-
-		return filteredOnboardingVendors.slice(startIndex, endIndex);
-	}, [filteredOnboardingVendors, pageIndex, pageSize]);
-
-	const isInitiationTab = selectedFilter === "initiation";
-
-	const activeRowCount = isInitiationTab
-		? filteredInitiationVendors.length
-		: filteredOnboardingVendors.length;
-
-	const pageCount = Math.max(1, Math.ceil(activeRowCount / pageSize));
-
-	const handleFilterChange = (value: VendorListingFilter) => {
-		setSelectedFilter(value);
-		setPageIndex(0);
-		setSearch("");
-
-		setSearchParams({
-			tab: value === "initiation" ? "initiation" : "onboarding",
-		});
-	};
-
-	const handleSearchChange = (value: string) => {
-		setSearch(value);
-		setPageIndex(0);
-	};
-
-	const handlePageSizeChange = (value: number) => {
-		setPageSize(value);
-		setPageIndex(0);
-	};
-
-	const handleViewInitiation = (row: VendorInitiationListingRow) => {
-		navigate(`/vendor/initiation/${row.id}`);
-	};
-
-	const handleViewOnboarding = (row: VendorOnboardingListingRow) => {
-		navigate(`/vendor/onboarding/${row.id}`);
-	};
-
-	const handleExport = () => {
-		if (isInitiationTab) {
-			console.log("Export vendor initiation rows:", filteredInitiationVendors);
-
-			return;
-		}
-
-		console.log("Export vendor onboarding rows:", filteredOnboardingVendors);
-	};
-
-	return (
-		<PageSectionLayout>
-			<PageHeader
-				headerText="Vendors Listing"
-				navigation={{
-					variant: "breadcrumbs",
-					ariaLabel: "Vendors listing location",
-					breadcrumbs: [
-						{
-							label: "Home Screen",
-							href: "/",
-						},
-						{
-							label: "Vendors Listing",
-							href: "/vendor/listing",
-						},
-					],
-					separator: "›",
-				}}
-			/>
-
-			<VendorListingTable
-				selectedFilter={selectedFilter}
-				onFilterChange={handleFilterChange}
-				search={search}
-				onSearchChange={handleSearchChange}
-				initiationVendors={paginatedInitiationVendors}
-				onboardingVendors={paginatedOnboardingVendors}
-				isLoading={false}
-				isFetching={false}
-				pageIndex={pageIndex}
-				pageSize={pageSize}
-				pageCount={pageCount}
-				onPageChange={setPageIndex}
-				onPageSizeChange={handlePageSizeChange}
-				onExport={handleExport}
-				onViewInitiation={handleViewInitiation}
-				onViewOnboarding={handleViewOnboarding}
-			/>
-		</PageSectionLayout>
-	);
+      <VendorListingTable
+        selectedFilter={tab}
+        onFilterChange={handleTabChange}
+        search={search}
+        onSearchChange={handleSearchChange}
+        rows={rowsForTable}
+        isLoading={isLoading}
+        isFetching={isFetching}
+        pageIndex={pageIndex}
+        pageSize={pageSize}
+        pageCount={pageCount}
+        onPageChange={setPageIndex}
+        onPageSizeChange={handlePageSizeChange}
+        onExport={handleExport}
+        onViewRow={handleViewRow}
+      />
+    </PageSectionLayout>
+  );
 };
 
 export default VendorListingPage;
