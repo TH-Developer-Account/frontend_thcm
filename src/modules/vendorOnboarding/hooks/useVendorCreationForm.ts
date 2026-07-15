@@ -1,25 +1,27 @@
 import * as React from "react";
-import { useMutation } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { useToast } from "../../../context/Auth/AuthContext";
-import { useAuth } from "../../../context/Auth/useAuth";
-
-import { vendorOnboardingApi } from "../api/vendorOnboarding.api";
+import type { VendorCreationFormOneSubmission } from "../forms/VendorCreationFormOne";
 
 import {
 	useAcceptAndCloseVendorMutation,
 	useCreateVendorFormOneMutation,
+	usePublicVendorSessionQuery,
+	useSubmitPublicVendorFormMutation,
 	useSubmitVendorSummaryMutation,
 	useUpdateVendorFormOneMutation,
 	useUpdateVendorFormTwoMutation,
+	useVendorOnboardingDetailQuery,
 } from "../queries/useVendorMutations";
 
-import type {
-	VendorCreationFormOneValues,
-	VendorCreationFormTwoValues,
-	VendorFormErrors,
-	VendorViewerRole,
+import {
+	VENDOR_DOCUMENT_FIELDS,
+	type VendorCreationFormOneValues,
+	type VendorCreationFormTwoValues,
+	type VendorDocumentType,
+	type VendorFormErrors,
+	type VendorViewerRole,
 } from "../types/vendorOnboarding.types";
 
 const vendorOnboardingSteps = [
@@ -77,6 +79,7 @@ const initialFormTwoValues: VendorCreationFormTwoValues = {
 	relatedPartyToThcm: "",
 	vendorAuditReportPrepared: "",
 	remarks: "",
+	natureOfService: "",
 	reasonForOnboarding: "",
 
 	proposedByName: "",
@@ -111,15 +114,92 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
 	return fallback;
 };
 
+const appendTextField = (
+	formData: FormData,
+	fieldName: string,
+	value?: string,
+): void => {
+	formData.append(fieldName, value?.trim() ?? "");
+};
+
+const convertYesNoToBooleanString = (value?: string): "true" | "false" => {
+	const normalizedValue = value?.trim().toLowerCase();
+
+	return normalizedValue === "yes" || normalizedValue === "true"
+		? "true"
+		: "false";
+};
+
+const buildPublicVendorFormData = (
+	values: VendorCreationFormOneValues,
+	submission: VendorCreationFormOneSubmission,
+): FormData => {
+	const formData = new FormData();
+
+	appendTextField(formData, "vendorName", values.vendorName);
+	appendTextField(formData, "state", values.state);
+	appendTextField(formData, "city", values.city);
+	appendTextField(formData, "pinCode", values.pinCode);
+	appendTextField(formData, "address", values.completeAddress);
+	appendTextField(formData, "mobile", values.mobile);
+	appendTextField(formData, "email", values.email);
+
+	formData.append("msmeVendor", convertYesNoToBooleanString(values.msmeVendor));
+
+	formData.append(
+		"msmeCertAttached",
+		convertYesNoToBooleanString(values.msmeCertificateAttached),
+	);
+
+	appendTextField(formData, "bankName", values.bank);
+	appendTextField(formData, "bankBranch", values.branch);
+	appendTextField(formData, "ifscCode", values.ifscCode);
+	appendTextField(formData, "bankAddress", values.bankAddress);
+	appendTextField(formData, "accountNumber", values.accountNumber);
+	appendTextField(formData, "gstin", values.gstin);
+	appendTextField(formData, "pan", values.pan);
+	appendTextField(formData, "entityRegNo", values.entityRegistrationNumber);
+
+	formData.append("dpdpConsent", String(submission.dpdpConsent));
+
+	submission.enclosureUploads.forEach(({ documentType, value }) => {
+		if (!(value?.file instanceof File)) {
+			return;
+		}
+
+		formData.append(documentType, value.file, value.name || value.file.name);
+	});
+
+	return formData;
+};
+
+const getMissingPublicDocuments = (
+	submission: VendorCreationFormOneSubmission,
+): VendorDocumentType[] => {
+	return VENDOR_DOCUMENT_FIELDS.filter((field) => field.required)
+		.filter((field) => {
+			const upload = submission.enclosureUploads.find(
+				(item) => item.documentType === field.documentType,
+			);
+
+			return !(upload?.value?.file instanceof File);
+		})
+		.map((field) => field.documentType);
+};
+
 type UseVendorCreationFormParams = {
 	role?: VendorViewerRole;
 	vendorRequestId?: string;
+	token?: string;
+	isPublicForm?: boolean;
 	onSuccess?: () => void | Promise<void>;
 };
 
 export function useVendorCreationForm({
 	role = "THCM_EMPLOYEE",
 	vendorRequestId: providedVendorRequestId,
+	token = "",
+	isPublicForm = false,
 	onSuccess,
 }: UseVendorCreationFormParams = {}) {
 	const routeParams = useParams<{
@@ -129,7 +209,8 @@ export function useVendorCreationForm({
 
 	const navigate = useNavigate();
 	const { showToast } = useToast();
-	const { workspaceId } = useAuth();
+
+	const normalizedToken = token.trim();
 
 	const vendorRequestId =
 		providedVendorRequestId ?? routeParams.onboardingId ?? routeParams.id;
@@ -155,7 +236,25 @@ export function useVendorCreationForm({
 	>({});
 
 	const resolvedVendorRequestId =
-		vendorRequestId || createdVendorRequestId || "";
+		vendorRequestId ||
+		createdVendorRequestId ||
+		"021b54a9-f7c9-444a-8d60-703def2c0e94";
+
+	const publicVendorSessionQuery = usePublicVendorSessionQuery(
+		normalizedToken,
+		isPublicForm && normalizedToken.length > 0,
+	);
+
+	const internalVendorQuery = useVendorOnboardingDetailQuery(
+		resolvedVendorRequestId,
+		!isPublicForm && Boolean(resolvedVendorRequestId),
+	);
+	const isPublicVendor = isPublicForm && role === "EXTERNAL_VENDOR";
+	const isInternalThcmUser = !isPublicForm && role === "THCM_EMPLOYEE";
+
+	const canEditFormOne = isPublicVendor || isInternalThcmUser;
+
+	const canEditFormTwo = isInternalThcmUser;
 
 	const createFormOneMutation = useCreateVendorFormOneMutation();
 
@@ -167,35 +266,72 @@ export function useVendorCreationForm({
 
 	const acceptAndCloseVendorMutation = useAcceptAndCloseVendorMutation();
 
-	const assignWorkflowMutation = useMutation({
-		mutationFn: vendorOnboardingApi.assignWorkflow,
-	});
+	const publicVendorSubmitMutation = useSubmitPublicVendorFormMutation();
+
+	React.useEffect(() => {
+		if (!isPublicForm || !publicVendorSessionQuery.data) {
+			return;
+		}
+
+		const sessionData = publicVendorSessionQuery.data;
+
+		const initialPublicValues = sessionData.partOne ?? {};
+
+		setFormOneValues((previousValues) => ({
+			...previousValues,
+			...initialPublicValues,
+
+			vendorName:
+				initialPublicValues.vendorName ||
+				sessionData.vendorName ||
+				previousValues.vendorName ||
+				"",
+
+			email:
+				initialPublicValues.email ||
+				sessionData.email ||
+				previousValues.email ||
+				"",
+
+			mobile:
+				initialPublicValues.mobile ||
+				sessionData.mobile ||
+				previousValues.mobile ||
+				"",
+		}));
+	}, [isPublicForm, publicVendorSessionQuery.data]);
+
+	React.useEffect(() => {
+		if (isPublicForm || !internalVendorQuery.data) {
+			return;
+		}
+
+		setFormOneValues({
+			...initialFormOneValues,
+			...(internalVendorQuery.data.partOne ?? {}),
+		});
+
+		setFormTwoValues({
+			...initialFormTwoValues,
+			...(internalVendorQuery.data.partTwo ?? {}),
+		});
+	}, [isPublicForm, internalVendorQuery.data]);
 
 	const mutationLoading =
+		publicVendorSubmitMutation.isPending ||
 		createFormOneMutation.isPending ||
 		updateFormOneMutation.isPending ||
 		updateFormTwoMutation.isPending ||
 		submitSummaryMutation.isPending ||
-		assignWorkflowMutation.isPending ||
 		acceptAndCloseVendorMutation.isPending;
 
-	const isExternalVendor = role === "EXTERNAL_VENDOR";
-	const isThcmEmployee = role === "THCM_EMPLOYEE";
-
-	const canEditFormOne = isExternalVendor || isThcmEmployee;
-
-	const canEditFormTwo = isThcmEmployee;
-	const canSubmitVendorForm = isExternalVendor;
-	const canSubmit = isThcmEmployee;
+	const canSubmitVendorForm = isPublicVendor;
+	const canSubmit = isInternalThcmUser;
 
 	const canApprove = false;
 	const canClarify = false;
 
 	const canAcceptAndClose = role === "EXTERNAL_APPROVER";
-
-	const DEALER_CLAIMS_APP_ID = "cc2ce3f6-1924-4d5e-9ef1-ecac0fb0b411";
-
-	const WORKFLOW_BUDGET = 25000;
 
 	const handleNext = () => {
 		setCurrentStep((previousStep) =>
@@ -279,9 +415,51 @@ export function useVendorCreationForm({
 		}
 	};
 
-	const handleVendorSubmitForm = async () => {
+	const handleVendorSubmitForm = async (
+		submission?: VendorCreationFormOneSubmission,
+	) => {
 		try {
-			if (resolvedVendorRequestId) {
+			if (isPublicForm) {
+				if (!normalizedToken) {
+					showToast({
+						type: "error",
+						title: "Invalid Link",
+						description: "The vendor onboarding session code is missing.",
+					});
+
+					return;
+				}
+
+				if (!submission?.dpdpConsent) {
+					showToast({
+						type: "error",
+						title: "Consent Required",
+						description:
+							"Please accept the Data Privacy Notice before submitting.",
+					});
+
+					return;
+				}
+
+				const missingDocuments = getMissingPublicDocuments(submission);
+
+				if (missingDocuments.length > 0) {
+					showToast({
+						type: "error",
+						title: "Documents Required",
+						description: `Please upload: ${missingDocuments.join(", ")}`,
+					});
+
+					return;
+				}
+
+				const formData = buildPublicVendorFormData(formOneValues, submission);
+
+				await publicVendorSubmitMutation.mutateAsync({
+					token: normalizedToken,
+					formData,
+				});
+			} else if (resolvedVendorRequestId) {
 				await updateFormOneMutation.mutateAsync({
 					vendorRequestId: resolvedVendorRequestId,
 					payload: formOneValues,
@@ -329,33 +507,20 @@ export function useVendorCreationForm({
 				payload: formTwoValues,
 			});
 
-			await assignWorkflowMutation.mutateAsync({
-				eventProposalId: resolvedVendorRequestId,
-				workspaceId,
-				appId: DEALER_CLAIMS_APP_ID,
-				budget: WORKFLOW_BUDGET,
-			});
-
 			showToast({
 				type: "success",
 				title: "Success",
-				description: "THCM details saved and workflow assigned successfully.",
+				description: "THCM details saved successfully.",
 			});
 
 			handleNext();
 		} catch (error: unknown) {
-			console.error(
-				"Vendor form two save or workflow assignment failed:",
-				error,
-			);
+			console.error("Vendor form two save failed:", error);
 
 			showToast({
 				type: "error",
 				title: "Error",
-				description: getErrorMessage(
-					error,
-					"Failed to save THCM details or assign the approval workflow.",
-				),
+				description: getErrorMessage(error, "Failed to save THCM details."),
 			});
 		}
 	};
@@ -374,11 +539,6 @@ export function useVendorCreationForm({
 
 			await submitSummaryMutation.mutateAsync({
 				vendorRequestId: resolvedVendorRequestId,
-				payload: {
-					partOne: formOneValues,
-					partTwo: formTwoValues,
-					status: "THCM_SUBMITTED",
-				},
 			});
 
 			showToast({
@@ -469,8 +629,16 @@ export function useVendorCreationForm({
 		canClarify,
 		canAcceptAndClose,
 
-		isLoading: false,
-		isError: false,
+		isLoading: isPublicForm
+			? publicVendorSessionQuery.isLoading
+			: internalVendorQuery.isLoading,
+
+		isError: isPublicForm
+			? publicVendorSessionQuery.isError
+			: internalVendorQuery.isError,
+
+		publicSessionError: publicVendorSessionQuery.error,
+
 		mutationLoading,
 
 		handleNext,

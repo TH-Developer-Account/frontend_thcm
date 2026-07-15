@@ -11,7 +11,7 @@ export type CardProps = Omit<
 	title?: ReactNode;
 	subtitle?: ReactNode;
 	actions?: ReactNode;
-
+	size?: "default" | "small" | "medium" | "large";
 	secondaryHeader?: ReactNode;
 	children?: ReactNode;
 	footer?: ReactNode;
@@ -41,6 +41,7 @@ export default function Card({
 	actions,
 	secondaryHeader,
 	children,
+	size,
 	footer,
 	variant = "default",
 	padding = "default",
@@ -66,6 +67,7 @@ export default function Card({
 		<Component
 			className={joinClassNames(
 				"ui-card",
+				`ui-card-${size}`,
 				`ui-card-${variant}`,
 				`ui-card-layout-${layout}`,
 				disabled && "ui-card-disabled",

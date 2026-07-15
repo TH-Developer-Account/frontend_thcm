@@ -1,9 +1,9 @@
 import { Route, Routes } from "react-router-dom";
 
+import VendorOnboardingFormView from "./components/VendorOnboardingFormView";
 import VendorInitiationPage from "./pages/VendorInitiationPage";
 import VendorListingPage from "./pages/VendorListingPage";
 import VendorOnboardingPage from "./pages/VendorOnboardingPage";
-import VendorOnboardingFormView from "./components/VendorOnboardingFormView";
 
 const VendorRoutes = () => {
 	return (

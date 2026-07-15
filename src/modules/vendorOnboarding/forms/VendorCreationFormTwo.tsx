@@ -220,7 +220,10 @@ const VendorCreationFormTwo = ({
 	};
 
 	return (
-		<form className="vendor-onboarding-form">
+		<form
+			className="vendor-onboarding-form"
+			onSubmit={(event) => event.preventDefault()}
+		>
 			<FormHeader title="THCM Vendor Master Details" Icon={FileCheck2} />
 
 			<div className="vendor-onboarding-form-grid">

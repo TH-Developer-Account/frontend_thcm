@@ -1,16 +1,13 @@
 import type { ReactNode } from "react";
-import React from "react";
 import {
 	ArrowLeft,
 	CheckCircle2,
 	MessageSquareWarning,
 	Save,
-	ShieldCheck,
 	XCircle,
 } from "lucide-react";
 
 import Button from "../../../components/common/Button";
-import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
 import type {
 	VendorCreationFormOneValues,
 	VendorCreationFormTwoValues,
@@ -71,10 +68,6 @@ const VendorCreationSummaryForm = ({
 
 	const hasApprovalActions =
 		showApproveAction || showClarifyAction || showAcceptAndCloseAction;
-
-	const appId = React.useMemo(() => getStoredAppId(), []);
-
-	console.log("app id", appId);
 
 	return (
 		<div className="vendor-summary-form">
