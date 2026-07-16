@@ -1,5 +1,6 @@
 import * as React from "react";
 import {
+	ArrowLeft,
 	Banknote,
 	Building2,
 	CheckCircle2,
@@ -77,6 +78,7 @@ type VendorCreationFormOneProps = {
 	) => void;
 
 	onNext?: () => void;
+	onBack?: () => void;
 
 	onSubmit?: (
 		submission: VendorCreationFormOneSubmission,
@@ -222,6 +224,7 @@ const VendorCreationFormOne = ({
 	values = {},
 	onChange,
 	onNext,
+	onBack,
 	onSubmit,
 	errors = {},
 	initialDocuments = EMPTY_VENDOR_DOCUMENTS,
@@ -252,14 +255,26 @@ const VendorCreationFormOne = ({
 	const documentsKey = React.useMemo(
 		() =>
 			initialDocuments
-				.map((document) => `${document.id}:${document.fileUrl}`)
+				.map(
+					(document) =>
+						`${document.id}:${document.documentType}:${document.fileUrl}`,
+				)
+				.sort()
 				.join("|"),
 		[initialDocuments],
 	);
 
+	const syncedDocumentsKeyRef = React.useRef("");
+
 	React.useEffect(() => {
+		if (syncedDocumentsKeyRef.current === documentsKey) {
+			return;
+		}
+
+		syncedDocumentsKeyRef.current = documentsKey;
+
 		setEnclosureUploads(createInitialEnclosureUploads(initialDocuments));
-	}, [documentsKey]);
+	}, [documentsKey, initialDocuments]);
 
 	const renderInput = <K extends keyof VendorCreationFormOneValues>({
 		name,
@@ -429,8 +444,9 @@ const VendorCreationFormOne = ({
 	};
 
 	const handleReset = () => {
-		setEnclosureUploads(createInitialEnclosureUploads(initialDocuments));
+		syncedDocumentsKeyRef.current = documentsKey;
 
+		setEnclosureUploads(createInitialEnclosureUploads(initialDocuments));
 		setEnclosureErrors({});
 		setHasAcceptedDpdp(false);
 		setHasConfirmedDpdp(false);
@@ -471,7 +487,6 @@ const VendorCreationFormOne = ({
 				isReadOnly ? (
 					onNext ? (
 						<div className="vendor-onboarding-form-actions">
-							<div />
 							<Button
 								type="button"
 								text={actionText || "Next"}
@@ -524,32 +539,43 @@ const VendorCreationFormOne = ({
 						<div className="bottom-buttons-bar-between">
 							<Button
 								type="button"
-								text="Reset"
-								Icon={RefreshCcw}
+								text={"Back"}
 								size="sm"
 								appearance="standard"
 								variant="outline"
+								onClick={onBack}
 								disabled={loading}
-								onClick={handleReset}
+								Icon={ArrowLeft}
 							/>
-
-							<Button
-								type="button"
-								text={
-									loading
-										? onSubmit
-											? "Submitting..."
-											: "Saving..."
-										: actionText ||
-											(onSubmit ? "Submit Form" : "Save & Proceed")
-								}
-								size="sm"
-								appearance="standard"
-								variant="brand"
-								Icon={Save}
-								onClick={handleFormAction}
-								disabled={loading || (requireDpdpConsent && !hasAcceptedDpdp)}
-							/>
+							<div className="bottom-buttons-bar-between">
+								<Button
+									type="button"
+									text="Reset"
+									Icon={RefreshCcw}
+									size="sm"
+									appearance="standard"
+									variant="outline"
+									disabled={loading}
+									onClick={handleReset}
+								/>
+								<Button
+									type="button"
+									text={
+										loading
+											? onSubmit
+												? "Submitting..."
+												: "Saving..."
+											: actionText ||
+												(onSubmit ? "Submit Form" : "Save & Proceed")
+									}
+									size="sm"
+									appearance="standard"
+									variant="brand"
+									Icon={Save}
+									onClick={handleFormAction}
+									disabled={loading || (requireDpdpConsent && !hasAcceptedDpdp)}
+								/>
+							</div>
 						</div>
 					</div>
 				)
@@ -758,7 +784,7 @@ const VendorCreationFormOne = ({
 									heightClassName="vendor-enclosure-upload-height"
 									className="vendor-enclosure-upload-field"
 									inputName={field.documentType}
-									showActions={false}
+									showActions={true}
 								/>
 
 								<div className="vendor-enclosure-upload-footer">
@@ -827,39 +853,49 @@ const VendorCreationFormOne = ({
 							</div>
 
 							<div className="vendor-file-preview-modal-body">
-								{isImageUpload(previewFile) ? (
-									<img
-										src={previewFile.url}
-										alt={previewFile.name}
-										className="vendor-file-preview-image"
-									/>
-								) : isPdfUpload(previewFile) ? (
-									<iframe
-										src={previewFile.url}
-										title={previewFile.name}
-										className="vendor-file-preview-frame"
-									/>
-								) : (
-									<div className="vendor-file-preview-fallback">
-										<p>Preview is not available for this file type.</p>
-
-										<Button
-											type="button"
-											text="Open File"
-											Icon={Eye}
-											size="sm"
-											appearance="standard"
-											variant="secondary"
-											onClick={() =>
-												window.open(
-													previewFile.url,
-													"_blank",
-													"noopener,noreferrer",
-												)
-											}
+								<div className="vendor-file-preview-modal-body">
+									{isImageUpload(previewFile) ? (
+										<img
+											src={previewFile.url}
+											alt={previewFile.name}
+											className="vendor-file-preview-image"
+											onError={(event) => {
+												event.currentTarget.style.display = "none";
+											}}
 										/>
-									</div>
-								)}
+									) : isPdfUpload(previewFile) ? (
+										<object
+											data={previewFile.url}
+											type="application/pdf"
+											className="vendor-file-preview-frame"
+											aria-label={previewFile.name}
+										>
+											<div className="vendor-file-preview-fallback">
+												<p>PDF preview is unavailable.</p>
+
+												<Button
+													type="button"
+													text="Open PDF"
+													Icon={Eye}
+													size="sm"
+													appearance="standard"
+													variant="secondary"
+													onClick={() =>
+														window.open(
+															previewFile.url,
+															"_blank",
+															"noopener,noreferrer",
+														)
+													}
+												/>
+											</div>
+										</object>
+									) : (
+										<div className="vendor-file-preview-fallback">
+											<p>Preview is not available for this file type.</p>
+										</div>
+									)}
+								</div>
 							</div>
 						</div>
 					</div>

@@ -1,8 +1,9 @@
-import type { ReactNode } from "react";
+import { type ReactNode } from "react";
 import {
 	ArrowLeft,
 	CheckCircle2,
 	MessageSquareWarning,
+	RefreshCcw,
 	Save,
 	XCircle,
 } from "lucide-react";
@@ -13,8 +14,10 @@ import type {
 	VendorCreationFormTwoValues,
 	VendorOnboardingDocument,
 } from "../types/vendorOnboarding.types";
+import ApprovalWorkflowTableContent from "../../../components/ui/workflow/ApprovalWorkflowTableContent";
 import VendorCreationFormOne from "./VendorCreationFormOne";
 import VendorCreationFormTwo from "./VendorCreationFormTwo";
+import type { ApprovalStageLike } from "../../../components/ui/workflow/approvalWorkflow.types";
 
 type VendorCreationSummaryMode = "edit" | "view";
 
@@ -26,19 +29,22 @@ type VendorCreationSummaryFormProps = {
 	formOneValues: VendorCreationFormOneValues;
 	formTwoValues: VendorCreationFormTwoValues;
 	formOneDocuments?: VendorOnboardingDocument[];
+
 	onBack?: () => void;
 	onSubmit?: () => void;
 	onApprove?: () => void;
 	onClarify?: () => void;
 	onAcceptAndClose?: () => void;
+	onFetchWorkflow?: () => void | Promise<void>;
 
 	canSubmit?: boolean;
 	canApprove?: boolean;
 	canClarify?: boolean;
 	canAcceptAndClose?: boolean;
 
-	workflowSection?: ReactNode;
+	workflowStages?: readonly ApprovalStageLike[];
 	commentsSection?: ReactNode;
+	workflowLoading?: boolean;
 };
 
 const VendorCreationSummaryForm = ({
@@ -51,12 +57,14 @@ const VendorCreationSummaryForm = ({
 	onApprove,
 	onClarify,
 	onAcceptAndClose,
+	onFetchWorkflow,
 	canSubmit = false,
 	canApprove = false,
 	canClarify = false,
 	canAcceptAndClose = false,
-	workflowSection,
+	workflowStages = [],
 	commentsSection,
+	workflowLoading = false,
 }: VendorCreationSummaryFormProps) => {
 	const isViewMode = mode === "view";
 
@@ -64,11 +72,15 @@ const VendorCreationSummaryForm = ({
 		!isViewMode && canSubmit && typeof onSubmit === "function";
 
 	const showApproveAction = canApprove && typeof onApprove === "function";
-
 	const showClarifyAction = canClarify && typeof onClarify === "function";
 
 	const showAcceptAndCloseAction =
 		canAcceptAndClose && typeof onAcceptAndClose === "function";
+
+	const hasWorkflow = workflowStages.length > 0;
+
+	const showWorkflowBlock =
+		hasWorkflow || typeof onFetchWorkflow === "function";
 
 	const hasApprovalActions =
 		showApproveAction || showClarifyAction || showAcceptAndCloseAction;
@@ -84,6 +96,7 @@ const VendorCreationSummaryForm = ({
 				requireDocuments={false}
 				requireDpdpConsent={false}
 			/>
+
 			<VendorCreationFormTwo
 				mode="view"
 				canEdit={false}
@@ -99,11 +112,47 @@ const VendorCreationSummaryForm = ({
 				</section>
 			) : null}
 
-			{workflowSection ? (
+			{showWorkflowBlock ? (
 				<section className="vendor-summary-block">
-					<h3 className="vendor-summary-block-title">Workflow Details</h3>
+					<div className="vendor-summary-block-header">
+						{!hasWorkflow && typeof onFetchWorkflow === "function" ? (
+							<Button
+								type="button"
+								text={
+									workflowLoading ? "Fetching workflow..." : "Fetch workflow"
+								}
+								Icon={RefreshCcw}
+								size="sm"
+								appearance="standard"
+								variant="outline"
+								disabled={workflowLoading}
+								onClick={() => {
+									void onFetchWorkflow();
+								}}
+							/>
+						) : null}
+					</div>
 
-					<div className="vendor-summary-block-body">{workflowSection}</div>
+					{hasWorkflow ? (
+						<div className="vendor-summary-block-body">
+							<ApprovalWorkflowTableContent
+								stages={workflowStages}
+								showEmptyState={!onFetchWorkflow}
+							/>
+						</div>
+					) : (
+						<div className="vendor-summary-block-body">
+							<div className="approval-workflow-empty">
+								<p className="approval-workflow-empty-title">
+									No approval workflow assigned
+								</p>
+
+								<p className="approval-workflow-empty-description">
+									Fetch the applicable workflow to generate the approval stages.
+								</p>
+							</div>
+						</div>
+					)}
 				</section>
 			) : null}
 

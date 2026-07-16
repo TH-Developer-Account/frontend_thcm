@@ -222,7 +222,6 @@ const VendorCreationFormTwo = ({
 
 	return (
 		<Card
-			className={isReadOnly ? "mt-4" : ""}
 			footer={
 				isReadOnly ? null : (
 					<div className="vendor-onboarding-form-actions">

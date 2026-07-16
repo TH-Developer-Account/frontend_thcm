@@ -1,4 +1,5 @@
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
+import type { ApprovalStageLike } from "../../../components/ui/workflow/approvalWorkflow.types";
 
 export type VendorFormMode = "edit" | "view";
 
@@ -118,7 +119,7 @@ export type VendorOnboardingResponse = {
 	documents: VendorOnboardingDocument[];
 	createdAt?: string;
 	updatedAt?: string;
-	activeWorkflow?: unknown;
+	activeWorkflow?: VendorActiveWorkflow;
 };
 
 export type VendorFormErrors<T> = Partial<Record<keyof T, string>>;
@@ -255,7 +256,32 @@ export type VendorOnboardingRawResponse = {
 	onboardingReason: string | null;
 	remarks?: string | null;
 	documents?: VendorOnboardingRawDocument[];
-	activeWorkflow?: unknown;
+	activeWorkflow?: VendorActiveWorkflow;
 	created_at?: string;
 	updated_at?: string;
+};
+
+export type VendorActiveWorkflow = {
+	id: string;
+	templateId: string;
+	workspaceId: string;
+	iteration: number;
+	isActive: boolean;
+	workflowType: string;
+	status: string;
+	currentStage: number;
+	appId: string;
+	subjectType: string;
+	subjectId: string;
+	created_at: string;
+	updated_at: string;
+
+	template?: {
+		id: string;
+		name: string;
+		description?: string | null;
+		metaData_1?: string | null;
+	} | null;
+
+	stages: ApprovalStageLike[];
 };

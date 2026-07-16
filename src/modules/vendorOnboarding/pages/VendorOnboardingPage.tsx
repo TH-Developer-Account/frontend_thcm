@@ -29,6 +29,9 @@ const VendorOnboardingPage = () => {
 		Boolean(form.status) &&
 		form.status === "IN_REVIEW";
 
+	const handleBackToView = () => {
+		<Navigate to={`/vendor/onboarding/${onboardingId}/view`} replace />;
+	};
 	if (shouldRedirectToView) {
 		return <Navigate to={`/vendor/onboarding/${onboardingId}/view`} replace />;
 	}
@@ -86,6 +89,7 @@ const VendorOnboardingPage = () => {
 									isExistingRequest ? form.handleNext : form.handleSaveFormOne
 								}
 								loading={form.mutationLoading}
+								onBack={handleBackToView}
 							/>
 						) : form.currentStep === 2 ? (
 							<VendorCreationFormTwo
@@ -95,7 +99,7 @@ const VendorOnboardingPage = () => {
 								errors={form.formTwoErrors}
 								onChange={form.handleFormTwoChange}
 								onBack={form.handleBack}
-								onNext={form.handleSaveFormTwo}
+								onNext={form.handleNext}
 								loading={form.mutationLoading}
 							/>
 						) : (
@@ -104,8 +108,11 @@ const VendorOnboardingPage = () => {
 								formTwoValues={form.formTwoValues}
 								formOneDocuments={form.formOneDocuments}
 								onBack={form.handleBack}
-								onSubmit={form.handleSubmitSummary}
+								onSubmit={form.handleSaveFormTwo}
 								canSubmit={form.canSubmit}
+								onFetchWorkflow={form.handleFetchWorkflow}
+								workflowStages={form.workflowStages}
+								workflowLoading={form.workflowLoading}
 							/>
 						)}
 					</>

@@ -82,28 +82,3 @@ export interface PaginationProps {
 	onPageChange: (page: number) => void;
 	onPageSizeChange: (size: number) => void;
 }
-
-export type ApprovalTableApproverRow = {
-	id: string;
-	name: string;
-	email: string;
-	minApprovals?: string | number | null;
-	status?: string | null;
-};
-
-export type ApprovalTableRow = {
-	id: string;
-	stageOrder: number;
-	stageName: string;
-	strategy: string;
-	minApprovals?: string | number | null;
-	totalApprovers?: string | number | null;
-	status?: string | null;
-
-	// old compatibility
-	name?: string;
-	email?: string;
-
-	// new display format
-	approvers?: ApprovalTableApproverRow[];
-};

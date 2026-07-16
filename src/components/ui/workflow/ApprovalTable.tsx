@@ -1,10 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 
-import { Badge } from "../../../../../components/common/Badge";
-import Card from "../../../../../components/common/Card";
-import DataTable from "../../../../../components/ui/tables/DataTable/DataTable";
-import type { ApprovalTableRow } from "../../types/activityplanner.types";
+import { Badge } from "../../common/Badge";
+import Card from "../../common/Card";
+import DataTable from "../tables/DataTable/DataTable";
+import type { ApprovalTableRow } from "./approvalWorkflow.types";
 
 type ApprovalTableVariant = "app" | "pdf";
 

@@ -33,7 +33,7 @@ export const actions = [
 		title: "Vendor Onboarding",
 		description: "Submit, review, and process dealer reimbursements.",
 		path: "/vendor/listing",
-		appKey: "DEALER_CLAIMS",
+		appKey: "VENDOR_ONBOARDING",
 		isActive: false,
 	},
 	{

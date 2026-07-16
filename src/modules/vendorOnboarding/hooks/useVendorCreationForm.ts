@@ -1,6 +1,6 @@
-import * as React from "react";
+import React, { useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-
+import type { ApprovalStageLike } from "../../../components/ui/workflow/approvalWorkflow.types";
 import { useToast } from "../../../context/Auth/AuthContext";
 import type { VendorCreationFormOneSubmission } from "../forms/VendorCreationFormOne";
 import {
@@ -24,6 +24,9 @@ import {
 	type VendorFormErrors,
 	type VendorViewerRole,
 } from "../types/vendorOnboarding.types";
+import { useAuth } from "../../../context/Auth/useAuth";
+import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
+import { vendorOnboardingApi } from "../api/vendorOnboarding.api";
 
 export const vendorOnboardingSteps = [
 	{ id: 1, label: "Vendor filled details" },
@@ -109,7 +112,8 @@ export function useVendorCreationForm({
 	}>();
 	const navigate = useNavigate();
 	const { showToast } = useToast();
-
+	const { workspaceId } = useAuth();
+	const appId = React.useMemo(() => getStoredAppId(), []);
 	const routeVendorId =
 		providedVendorRequestId ??
 		params.onboardingId ??
@@ -190,6 +194,10 @@ export function useVendorCreationForm({
 		isPublicForm,
 		vendorRequestId,
 	]);
+	const workflowStages = React.useMemo<readonly ApprovalStageLike[]>(
+		() => detailQuery.data?.activeWorkflow?.stages ?? [],
+		[detailQuery.data?.activeWorkflow?.stages],
+	);
 
 	const next = React.useCallback(() => {
 		setCurrentStep((step) => Math.min(step + 1, vendorOnboardingSteps.length));
@@ -314,6 +322,30 @@ export function useVendorCreationForm({
 		navigate("/vendor/listing?tab=onboarding");
 	};
 
+	const refetchVendorDetail = detailQuery.refetch;
+
+	const handleFetchWorkflow = useCallback(async () => {
+		if (!workspaceId || !appId || !vendorRequestId) {
+			return;
+		}
+
+		try {
+			const response = await vendorOnboardingApi.assignWorkflow({
+				workspaceId,
+				appId,
+				subjectType: "VENDOR_ONBOARDING",
+				subjectId: vendorRequestId,
+				criteria: {},
+			});
+
+			console.log("Vendor workflow assigned:", response);
+
+			await refetchVendorDetail();
+		} catch (error) {
+			console.error("Workflow assignment failed:", error);
+		}
+	}, [workspaceId, appId, vendorRequestId, refetchVendorDetail]);
+
 	const mutationLoading =
 		createMutation.isPending ||
 		updateMutation.isPending ||
@@ -356,5 +388,10 @@ export function useVendorCreationForm({
 		handleApprove: async () => undefined,
 		handleClarify: async () => undefined,
 		handleAcceptAndClose: acceptAndClose,
+		handleFetchWorkflow,
+
+		activeWorkflow: detailQuery.data?.activeWorkflow ?? null,
+		workflowStages,
+		workflowLoading: detailQuery.isFetching,
 	};
 }

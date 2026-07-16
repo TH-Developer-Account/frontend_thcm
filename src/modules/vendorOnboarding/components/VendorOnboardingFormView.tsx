@@ -35,6 +35,9 @@ const VendorOnboardingReadOnlyView = ({
 		handleApprove,
 		handleClarify,
 		handleAcceptAndClose,
+		handleFetchWorkflow,
+		workflowStages,
+		workflowLoading,
 	} = useVendorCreationForm({
 		role: viewerRole,
 		vendorRequestId: onboardingId,
@@ -154,11 +157,9 @@ const VendorOnboardingReadOnlyView = ({
 					canApprove={canApprove}
 					canClarify={canClarify}
 					canAcceptAndClose={canAcceptAndClose}
-					workflowSection={
-						<div className="vendor-summary-placeholder">
-							Workflow details will render here.
-						</div>
-					}
+					onFetchWorkflow={handleFetchWorkflow}
+					workflowStages={workflowStages}
+					workflowLoading={workflowLoading}
 					commentsSection={
 						<div className="vendor-summary-placeholder">
 							Comments section will render here.
