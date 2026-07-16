@@ -35,31 +35,19 @@ export const useVendorOnboardingInitiation = ({
 }: UseVendorOnboardingInitiationParams = {}) => {
 	const navigate = useNavigate();
 
-	const resolvedInitialValues = useMemo<VendorOnboardingInitiationPayload>(
-		() => ({
-			...initialFormValues,
-			...initialValues,
-		}),
-		[initialValues],
-	);
-
-	const [values, setValues] = useState<VendorOnboardingInitiationPayload>(
-		resolvedInitialValues,
-	);
+	const [values, setValues] = useState<VendorOnboardingInitiationPayload>({
+		...initialFormValues,
+		...initialValues,
+	});
 
 	const [errors, setErrors] = useState<VendorOnboardingInitiationErrors>({});
 
 	const isEditMode = Boolean(initiationId);
 
-	useEffect(() => {
-		setValues(resolvedInitialValues);
-		setErrors({});
-	}, [resolvedInitialValues]);
-
 	const submitMutation = useMutation({
 		mutationFn: vendorOnboardingApi.createInitiation,
-		onSuccess: async () => {
-			await onSubmitSuccess?.();
+		onSuccess: () => {
+			onSubmitSuccess?.();
 			navigate("/vendor/listing?tab=initiation");
 		},
 		onError: (error) => {
@@ -69,8 +57,8 @@ export const useVendorOnboardingInitiation = ({
 
 	const updateMutation = useMutation({
 		mutationFn: vendorOnboardingApi.updateInitiation,
-		onSuccess: async () => {
-			await onUpdateSuccess?.();
+		onSuccess: () => {
+			onUpdateSuccess?.();
 			navigate("/vendor/listing?tab=initiation");
 		},
 		onError: (error) => {
@@ -80,36 +68,40 @@ export const useVendorOnboardingInitiation = ({
 
 	const isSubmitting = submitMutation.isPending || updateMutation.isPending;
 
-	const isDirty = useMemo(
-		() => JSON.stringify(values) !== JSON.stringify(resolvedInitialValues),
-		[values, resolvedInitialValues],
-	);
+	const isDirty = useMemo(() => {
+		const originalValues = {
+			...initialFormValues,
+			...initialValues,
+		};
+
+		return JSON.stringify(values) !== JSON.stringify(originalValues);
+	}, [values, initialValues]);
 
 	const handleChange = <K extends keyof VendorOnboardingInitiationPayload>(
 		key: K,
 		value: VendorOnboardingInitiationPayload[K],
 	) => {
-		setValues((currentValues) => ({
-			...currentValues,
+		setValues((previousValues) => ({
+			...previousValues,
 			[key]: value,
 		}));
 
-		setErrors((currentErrors) => ({
-			...currentErrors,
+		setErrors((previousErrors) => ({
+			...previousErrors,
 			[key]: "",
 		}));
 	};
 
 	const handleReset = () => {
-		setValues(resolvedInitialValues);
+		setValues({
+			...initialFormValues,
+			...initialValues,
+		});
+
 		setErrors({});
 	};
 
 	const handleSubmit = () => {
-		if (isSubmitting) {
-			return;
-		}
-
 		if (isEditMode && initiationId) {
 			updateMutation.mutate({
 				id: initiationId,
@@ -128,11 +120,9 @@ export const useVendorOnboardingInitiation = ({
 		isEditMode,
 		isDirty,
 		isSubmitting,
-
 		handleChange,
 		handleReset,
 		handleSubmit,
-
 		submitMutation,
 		updateMutation,
 	};

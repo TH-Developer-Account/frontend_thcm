@@ -127,7 +127,7 @@ export type UpdateVendorFormTwoVariables = {
 
 export type SubmitVendorSummaryVariables = {
 	vendorRequestId: string;
-	payload?: VendorCreationPayload;
+	payload: VendorCreationPayload;
 };
 
 export type DeleteVendorVariables = {
