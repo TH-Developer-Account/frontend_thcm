@@ -50,6 +50,9 @@ export default function LeadCreatePage() {
 	const routeMode = location.state?.mode as "create" | "view" | undefined;
 	const isViewMode = routeMode === "view";
 
+	const pageTitle = isViewMode ? "Marketing Leads" : "Leads Entry";
+	const currentBreadcrumb = isViewMode ? "View leads" : "Create lead";
+
 	const [leadInfo] = React.useState<LeadInfo | null>(
 		() => routeLeadInfo || getStoredLeadInfo(),
 	);
@@ -273,10 +276,10 @@ export default function LeadCreatePage() {
 	return (
 		<PageSectionLayout>
 			<PageHeader
-				headerText="Leads Entry"
+				headerText={pageTitle}
 				navigation={{
 					variant: "breadcrumbs",
-					ariaLabel: "Leads Import/Create",
+					ariaLabel: isViewMode ? "View EPC leads" : "Create or import leads",
 					breadcrumbs: [
 						{
 							label: "Home Screen",
@@ -286,54 +289,77 @@ export default function LeadCreatePage() {
 							label: "Leads listing",
 							href: "/marketing/activity-planner/leads/listing",
 						},
-						{ label: "Create lead" },
+						{
+							label: currentBreadcrumb,
+						},
 					],
 					separator: "›",
 				}}
 			/>
 			<Card
 				className="leads-content-box"
-				title="Selected EPC Reference"
+				title={leadInfo.eventName}
 				actions={
-					<>
-						<Button
-							type="button"
-							onClick={downloadLeadImportTemplate}
-							size="sm"
-							appearance="standard"
-							variant="outline"
-							Icon={Download}
-							text={"Download Template"}
-						/>
-						{!isViewMode && (
-							<div className="flex justify-end">
-								<Button
-									type="button"
-									text="Import"
-									Icon={FileUp}
-									size="sm"
-									appearance="standard"
-									variant="brand"
-									onClick={handleOpenImportModal}
-								/>
-							</div>
-						)}
-					</>
+					!isViewMode ? (
+						<>
+							<Button
+								type="button"
+								onClick={downloadLeadImportTemplate}
+								size="sm"
+								appearance="standard"
+								variant="outline"
+								Icon={Download}
+								text="Download Template"
+							/>
+
+							<Button
+								type="button"
+								text="Import"
+								Icon={FileUp}
+								size="sm"
+								appearance="standard"
+								variant="brand"
+								onClick={handleOpenImportModal}
+							/>
+						</>
+					) : undefined
 				}
 			>
-				<div className="leads-section-body">
-					<SectionAccordion
-						title="Leads Entry"
-						className="mt-2 text-right"
-						action={
-							<p className="leads-reference-label uppercase-label-text">
-								Total Leads:{" "}
-								<span className="leads-reference-total">
-									{savedLeads.length}
-								</span>
-							</p>
-						}
-					>
+				{!isViewMode ? (
+					<div className="leads-section-body">
+						<SectionAccordion
+							title="Leads Entry"
+							className="mt-2 text-right"
+							action={
+								<p className="leads-reference-label uppercase-label-text">
+									Total Leads:{" "}
+									<span className="leads-reference-total">
+										{savedLeads.length}
+									</span>
+								</p>
+							}
+						>
+							<LeadReferenceSummary leadInfo={leadInfo} />
+
+							<LeadEntryTable
+								items={items}
+								savedLeads={savedLeads}
+								loading={isLoading}
+								editingLeadId={editingLeadId}
+								savingRowId={savingRowId}
+								deletingId={deletingId}
+								errors={errors}
+								isViewMode={isViewMode}
+								onChange={handleChange}
+								onSaveRow={handleSaveRow}
+								onEditLead={handleEditLead}
+								onCancelEdit={handleCancelEdit}
+								onDeleteLead={handleDeleteLead}
+							/>
+						</SectionAccordion>
+					</div>
+				) : (
+					<>
 						<LeadReferenceSummary leadInfo={leadInfo} />
 
 						<LeadEntryTable
@@ -351,75 +377,77 @@ export default function LeadCreatePage() {
 							onCancelEdit={handleCancelEdit}
 							onDeleteLead={handleDeleteLead}
 						/>
-					</SectionAccordion>
-				</div>
+					</>
+				)}
 			</Card>
 
-			<Modal
-				open={isImportModalOpen}
-				title="Import Leads"
-				size="md"
-				onClose={handleCloseImportModal}
-				footer_actions={
-					<>
-						<Button
-							type="button"
-							text="Cancel"
-							Icon={X}
-							appearance="standard"
-							variant="outline"
-							size="sm"
-							onClick={handleCloseImportModal}
-							disabled={isImporting}
-						/>
-						<Button
-							type="button"
-							text={isImporting ? "Importing..." : "Save"}
-							Icon={Save}
-							appearance="standard"
-							variant="brand"
-							size="sm"
-							onClick={handleImportFile}
-							disabled={!importFile?.file || isImporting}
-						/>
-					</>
-				}
-			>
-				<div className="p-5 flex flex-col gap-4">
-					{/* Format hint */}
-					<div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-						<div className="flex items-center justify-between mb-2">
-							<p className="text-xs font-medium text-zinc-600 uppercase tracking-wide">
-								Expected Format
-							</p>
+			{!isViewMode ? (
+				<Modal
+					open={isImportModalOpen}
+					title="Import Leads"
+					size="md"
+					onClose={handleCloseImportModal}
+					footer_actions={
+						<>
 							<Button
 								type="button"
-								onClick={downloadLeadImportTemplate}
-								size="sm"
+								text="Cancel"
+								Icon={X}
 								appearance="standard"
 								variant="outline"
-								Icon={Download}
-								text={"Download Template"}
+								size="sm"
+								onClick={handleCloseImportModal}
+								disabled={isImporting}
 							/>
+
+							<Button
+								type="button"
+								text={isImporting ? "Importing..." : "Save"}
+								Icon={Save}
+								appearance="standard"
+								variant="brand"
+								size="sm"
+								onClick={handleImportFile}
+								disabled={!importFile?.file || isImporting}
+							/>
+						</>
+					}
+				>
+					<div className="flex flex-col gap-4 p-5">
+						<div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+							<div className="mb-2 flex items-center justify-between">
+								<p className="text-xs font-medium uppercase tracking-wide text-zinc-600">
+									Expected Format
+								</p>
+
+								<Button
+									type="button"
+									onClick={downloadLeadImportTemplate}
+									size="sm"
+									appearance="standard"
+									variant="outline"
+									Icon={Download}
+									text="Download Template"
+								/>
+							</div>
+
+							<LeadExcelPreview />
 						</div>
 
-						<LeadExcelPreview />
+						<FileUploadField
+							value={importFile}
+							onChange={handleImportFileChange}
+							kind="spreadsheet"
+							label="Upload Excel File"
+							description="Supported formats: XLSX, XLS and CSV"
+							required
+							error={importFileError}
+							disabled={isImporting}
+							heightClassName="h-[100px]"
+						/>
 					</div>
-
-					{/* File upload */}
-					<FileUploadField
-						value={importFile}
-						onChange={handleImportFileChange}
-						kind="spreadsheet"
-						label="Upload Excel File"
-						description="Supported formats: XLSX, XLS and CSV"
-						required
-						error={importFileError}
-						disabled={isImporting}
-						heightClassName="h-[100px]"
-					/>
-				</div>
-			</Modal>
+				</Modal>
+			) : null}
 		</PageSectionLayout>
 	);
 }

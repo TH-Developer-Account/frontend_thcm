@@ -1,15 +1,4 @@
 import * as React from "react";
-import Button from "../../../components/common/Button";
-import FormInput from "../../../components/forms/FormInput";
-import SelectInput from "../../../components/forms/SelectInput";
-import TextareaInput from "../../../components/forms/TextareaInput";
-import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
-import {
-	isImageUpload,
-	isPdfUpload,
-} from "../../../components/ui/FileUpload/fileUpload.helpers";
-import FormHeader from "../../marketing/activity-planner/components/common/FormHeader";
-import { Modal } from "../../../components/common/Modal";
 import {
 	Banknote,
 	Building2,
@@ -23,46 +12,79 @@ import {
 	ShieldCheck,
 	X,
 } from "lucide-react";
-import type {
-	VendorCreationFormOneValues,
-	VendorFormErrors,
-	VendorFormMode,
-} from "../types/vendorOnboarding.types";
-import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
-import { STATES } from "../utils/vendor.constant";
-import Card from "../../../components/common/Card";
 
-type VendorCreationFormOneProps = {
-	mode?: VendorFormMode;
-	canEdit?: boolean;
-	values?: VendorCreationFormOneValues;
-	onChange?: <K extends keyof VendorCreationFormOneValues>(
-		key: K,
-		value: VendorCreationFormOneValues[K],
-	) => void;
-	onNext?: () => void;
-	onSubmit?: () => void;
-	errors?: VendorFormErrors<VendorCreationFormOneValues>;
-	loading?: boolean;
-	submittedMessage?: string;
-};
+import Button from "../../../components/common/Button";
+import Card from "../../../components/common/Card";
+import { Modal } from "../../../components/common/Modal";
+import FormInput from "../../../components/forms/FormInput";
+import SelectInput from "../../../components/forms/SelectInput";
+import TextareaInput from "../../../components/forms/TextareaInput";
+
+import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
+import {
+	isImageUpload,
+	isPdfUpload,
+} from "../../../components/ui/FileUpload/fileUpload.helpers";
+import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
+
+import FormHeader from "../../marketing/activity-planner/components/common/FormHeader";
+
+import {
+	VENDOR_DOCUMENT_FIELDS,
+	type VendorCreationFormOneValues,
+	type VendorDocumentField,
+	type VendorDocumentType,
+	type VendorEnclosureStatusKey,
+	type VendorFormErrors,
+	type VendorFormMode,
+} from "../types/vendorOnboarding.types";
+
+import { STATES } from "../utils/vendor.constant";
 
 type SelectOption = {
 	label: string;
 	value: string;
 };
 
-type VendorEnclosureStatusKey =
-	| "gstCertificate"
-	| "panNumber"
-	| "bankCancelledCheque"
-	| "certificateOfIncorporation"
-	| "msmeCertificate"
-	| "ndaCertificate";
+export type VendorEnclosureUploadItem = {
+	statusKey: VendorEnclosureStatusKey;
+	documentType: VendorDocumentType;
+	value: FileUploadValue | null;
+};
 
-type VendorEnclosureUploadValues = Partial<
-	Record<VendorEnclosureStatusKey, FileUploadValue | null>
->;
+export type VendorCreationFormOneSubmission = {
+	dpdpConsent: true;
+	enclosureUploads: VendorEnclosureUploadItem[];
+};
+
+type VendorCreationFormOneProps = {
+	mode?: VendorFormMode;
+	canEdit?: boolean;
+
+	values: VendorCreationFormOneValues;
+
+	errors: VendorFormErrors<VendorCreationFormOneValues>;
+
+	onChange?: <K extends keyof VendorCreationFormOneValues>(
+		key: K,
+		value: VendorCreationFormOneValues[K],
+	) => void;
+
+	onNext?: () => void;
+
+	onSubmit?: (
+		submission: VendorCreationFormOneSubmission,
+	) => void | Promise<void>;
+
+	loading?: boolean;
+	submittedMessage?: string;
+};
+
+type VendorDetailValueProps = {
+	label: string;
+	value?: string;
+	required?: boolean;
+};
 
 const toSelectOptions = (values: string[]): SelectOption[] =>
 	values.map((value) => ({
@@ -81,48 +103,12 @@ const getDisplayValue = (value?: string): string =>
 
 const yesNoOptions = toSelectOptions(["Yes", "No"]);
 
-const vendorEnclosureUploadSlots: Array<{
-	name: VendorEnclosureStatusKey;
-	label: string;
-	description: string;
-}> = [
-	{
-		name: "gstCertificate",
-		label: "GST Certificate",
-		description: "PDF / image / DOC",
-	},
-	{
-		name: "panNumber",
-		label: "PAN Document",
-		description: "PDF / image / DOC",
-	},
-	{
-		name: "bankCancelledCheque",
-		label: "Cancelled Cheque",
-		description: "PDF / image / DOC",
-	},
-	{
-		name: "certificateOfIncorporation",
-		label: "Incorporation Certificate",
-		description: "PDF / image / DOC",
-	},
-	{
-		name: "msmeCertificate",
-		label: "MSME Certificate",
-		description: "PDF / image / DOC",
-	},
-	{
-		name: "ndaCertificate",
-		label: "NDA Certificate",
-		description: "PDF / image / DOC",
-	},
-];
-
-type VendorDetailValueProps = {
-	label: string;
-	value?: string;
-	required?: boolean;
-};
+const createInitialEnclosureUploads = (): VendorEnclosureUploadItem[] =>
+	VENDOR_DOCUMENT_FIELDS.map((field) => ({
+		statusKey: field.statusKey,
+		documentType: field.documentType,
+		value: null,
+	}));
 
 const VendorDetailValue = ({
 	label,
@@ -140,6 +126,7 @@ const VendorDetailValue = ({
 				) : null}
 				:
 			</div>
+
 			<div className="vendor-detail-value">{getDisplayValue(value)}</div>
 		</div>
 	);
@@ -158,12 +145,18 @@ const VendorCreationFormOne = ({
 }: VendorCreationFormOneProps) => {
 	const isReadOnly = mode === "view" || !canEdit;
 
-	const [enclosureUploads, setEnclosureUploads] =
-		React.useState<VendorEnclosureUploadValues>({});
+	const [enclosureUploads, setEnclosureUploads] = React.useState<
+		VendorEnclosureUploadItem[]
+	>(createInitialEnclosureUploads);
+
+	const [enclosureErrors, setEnclosureErrors] = React.useState<
+		Partial<Record<VendorEnclosureStatusKey, string>>
+	>({});
 
 	const [previewFile, setPreviewFile] = React.useState<FileUploadValue | null>(
 		null,
 	);
+
 	const [isDpdpModalOpen, setIsDpdpModalOpen] = React.useState(false);
 	const [hasAcceptedDpdp, setHasAcceptedDpdp] = React.useState(false);
 	const [hasConfirmedDpdp, setHasConfirmedDpdp] = React.useState(false);
@@ -239,27 +232,74 @@ const VendorCreationFormOne = ({
 		);
 	};
 
-	const handleEnclosureChange = (
-		name: VendorEnclosureStatusKey,
-		fileValue: FileUploadValue | null,
-	) => {
-		setEnclosureUploads((previous) => ({
-			...previous,
-			[name]: fileValue,
-		}));
+	const getEnclosureFile = React.useCallback(
+		(documentType: VendorDocumentType): FileUploadValue | null => {
+			return (
+				enclosureUploads.find((upload) => upload.documentType === documentType)
+					?.value ?? null
+			);
+		},
+		[enclosureUploads],
+	);
 
-		onChange?.(name, fileValue ? "Yes" : "No");
-	};
-	const openDpdpModal = () => {
+	const handleEnclosureChange = React.useCallback(
+		(field: VendorDocumentField, nextValue: FileUploadValue | null) => {
+			setEnclosureUploads((previousUploads) =>
+				previousUploads.map((upload) =>
+					upload.documentType === field.documentType
+						? {
+								...upload,
+								value: nextValue,
+							}
+						: upload,
+				),
+			);
+
+			setEnclosureErrors((previousErrors) => {
+				const nextErrors = { ...previousErrors };
+
+				delete nextErrors[field.statusKey];
+
+				return nextErrors;
+			});
+
+			onChange?.(field.statusKey, nextValue ? "Yes" : "No");
+		},
+		[onChange],
+	);
+
+	const validateEnclosures = React.useCallback((): boolean => {
+		const nextErrors: Partial<Record<VendorEnclosureStatusKey, string>> = {};
+
+		VENDOR_DOCUMENT_FIELDS.forEach((field) => {
+			if (!field.required) {
+				return;
+			}
+
+			const upload = enclosureUploads.find(
+				(item) => item.documentType === field.documentType,
+			);
+
+			if (!(upload?.value?.file instanceof File)) {
+				nextErrors[field.statusKey] = `${field.label} is required.`;
+			}
+		});
+
+		setEnclosureErrors(nextErrors);
+
+		return Object.keys(nextErrors).length === 0;
+	}, [enclosureUploads]);
+
+	const openDpdpModal = React.useCallback(() => {
 		setHasConfirmedDpdp(hasAcceptedDpdp);
 		setDpdpError("");
 		setIsDpdpModalOpen(true);
-	};
+	}, [hasAcceptedDpdp]);
 
-	const closeDpdpModal = () => {
+	const closeDpdpModal = React.useCallback(() => {
 		setIsDpdpModalOpen(false);
 		setHasConfirmedDpdp(false);
-	};
+	}, []);
 
 	const handleDpdpConsentChange = (
 		event: React.ChangeEvent<HTMLInputElement>,
@@ -284,21 +324,46 @@ const VendorCreationFormOne = ({
 		setIsDpdpModalOpen(false);
 	};
 
+	const handleReset = () => {
+		setEnclosureUploads(createInitialEnclosureUploads());
+		setEnclosureErrors({});
+		setHasAcceptedDpdp(false);
+		setHasConfirmedDpdp(false);
+		setDpdpError("");
+		setPreviewFile(null);
+	};
+
 	const handleFormAction = () => {
+		const enclosuresValid = validateEnclosures();
+
 		if (!hasAcceptedDpdp) {
 			setDpdpError(
 				"Please review and accept the Data Privacy Notice before continuing.",
 			);
+
 			setIsDpdpModalOpen(true);
 			return;
 		}
 
-		(onSubmit ?? onNext)?.();
+		if (!enclosuresValid) {
+			return;
+		}
+
+		if (onSubmit) {
+			void onSubmit({
+				dpdpConsent: true,
+				enclosureUploads,
+			});
+
+			return;
+		}
+
+		onNext?.();
 	};
+	console.log("form one values ---", values);
+
 	return (
 		<Card
-			variant="flat"
-			padding="none"
 			footer={
 				isReadOnly ? null : (
 					<div className="w-full">
@@ -345,6 +410,7 @@ const VendorCreationFormOne = ({
 								appearance="standard"
 								variant="outline"
 								disabled={loading}
+								onClick={handleReset}
 							/>
 
 							<Button
@@ -370,10 +436,14 @@ const VendorCreationFormOne = ({
 				)
 			}
 		>
-			<form className="vendor-onboarding-form">
+			<form
+				className="vendor-onboarding-form"
+				onSubmit={(event) => event.preventDefault()}
+			>
 				{submittedMessage ? (
 					<div className="vendor-onboarding-form-message">
 						<CheckCircle2 aria-hidden="true" size={18} />
+
 						<span>{submittedMessage}</span>
 					</div>
 				) : null}
@@ -388,7 +458,6 @@ const VendorCreationFormOne = ({
 						{renderInput({
 							name: "vendorName",
 							label: "Name Of Vendor",
-							required: false,
 							helperText: "Enter vendor name in capital letters.",
 						})}
 
@@ -546,35 +615,40 @@ const VendorCreationFormOne = ({
 				<FormHeader title="Attachments / Enclosures" Icon={ShieldCheck} />
 
 				<div className="vendor-enclosure-upload-grid">
-					{vendorEnclosureUploadSlots.map((slot) => {
-						const uploadedFile = enclosureUploads[slot.name] ?? null;
-						const uploadStatus = uploadedFile
-							? "Yes"
-							: values[slot.name] || "No";
+					{VENDOR_DOCUMENT_FIELDS.map((field) => {
+						const uploadedFile = getEnclosureFile(field.documentType);
+
+						const isUploaded =
+							uploadedFile?.file instanceof File && Boolean(uploadedFile.url);
 
 						return (
-							<div className="vendor-enclosure-upload-card" key={slot.name}>
+							<div
+								className="vendor-enclosure-upload-card"
+								key={field.documentType}
+							>
 								<FileUploadField
 									value={uploadedFile}
-									onChange={(fileValue: any) =>
-										handleEnclosureChange(slot.name, fileValue)
+									onChange={(nextValue) =>
+										handleEnclosureChange(field, nextValue)
 									}
 									kind="document"
-									label={slot.label}
-									description={slot.description}
+									label={field.label}
+									description={field.description}
+									required={field.required}
+									error={enclosureErrors[field.statusKey]}
 									readonly={isReadOnly}
 									disabled={loading}
 									heightClassName="vendor-enclosure-upload-height"
-									className="vendor-enclosure-upload-field "
-									inputName={slot.name}
+									className="vendor-enclosure-upload-field"
+									inputName={field.documentType}
 								/>
 
 								<div className="vendor-enclosure-upload-footer">
 									<span
 										className="vendor-enclosure-upload-status"
-										data-uploaded={uploadStatus === "Yes"}
+										data-uploaded={isUploaded}
 									>
-										{uploadStatus === "Yes" ? "Uploaded" : "Not uploaded"}
+										{isUploaded ? "Uploaded" : "Not uploaded"}
 									</span>
 
 									<Button
@@ -584,8 +658,12 @@ const VendorCreationFormOne = ({
 										size="sm"
 										appearance="ghost"
 										variant="secondary"
-										onClick={() => setPreviewFile(uploadedFile)}
-										disabled={!uploadedFile}
+										onClick={() => {
+											if (uploadedFile?.url) {
+												setPreviewFile(uploadedFile);
+											}
+										}}
+										disabled={!uploadedFile?.url}
 									/>
 								</div>
 							</div>
@@ -654,7 +732,13 @@ const VendorCreationFormOne = ({
 											size="sm"
 											appearance="standard"
 											variant="secondary"
-											onClick={() => window.open(previewFile.url, "_blank")}
+											onClick={() =>
+												window.open(
+													previewFile.url,
+													"_blank",
+													"noopener,noreferrer",
+												)
+											}
 										/>
 									</div>
 								)}
@@ -662,6 +746,7 @@ const VendorCreationFormOne = ({
 						</div>
 					</div>
 				) : null}
+
 				<Modal
 					open={isDpdpModalOpen}
 					title="Data Privacy Notice"

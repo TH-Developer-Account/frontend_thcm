@@ -115,20 +115,19 @@ export const getEPCColumns = ({
 		),
 	},
 	{
-		id: "action",
+		id: "actions",
 		header: "Actions",
 		enableSorting: false,
-		meta: {
-			headerClassName: "epc-column-actions",
-			cellClassName: "epc-column-actions",
-			align: "right",
+		cell: ({ row }) => {
+			const epc = row.original;
+
+			return (
+				<EPCActionMenu
+					row={epc}
+					canCreateLead={canCreateLead(epc)}
+					onLeadCreate={onLeadCreate}
+				/>
+			);
 		},
-		cell: ({ row }) => (
-			<EPCActionMenu
-				row={row.original}
-				onLeadCreate={onLeadCreate}
-				canCreateLead={canCreateLead(row.original)}
-			/>
-		),
 	},
 ];

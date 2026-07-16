@@ -1,29 +1,23 @@
-// src/routes/AppRoutes.jsx
-import { Routes, Route } from "react-router-dom";
-// import ProtectedRoute from "./ProtectedRoute";
-import HomeScreen from "../containers/HomeScreen/index";
-import LoginPage from "../containers/Login/pages/LoginPage";
-import ForbiddenPage from "../Forbidden";
-import { ResetPasswordPage } from "../containers/Login/pages/ResestPasswordPage";
-import { ForgotPasswordPage } from "../containers/Login/pages/ForgotPasswordPage";
-import { SessionTimeoutProvider } from "../context/SessionTimeOut/SessionTimeoutProvider";
-import MainContentWrapper from "../layout/MainContentWrapper";
-import MarketingRoutes from "./marketingRoutes";
-import AdminRoutes from "./adminRoutes";
-import ProtectedRoute from "./ProtectedRoute";
-import HomeLayout from "../layout/HomeLayout";
-import VendorOnboardingRoutes from "./vendorOnboardingRoutes";
+import { Route, Routes } from "react-router-dom";
 
-export default function AppRoutes() {
+import ForbiddenPage from "../Forbidden";
+import HomeScreen from "../containers/HomeScreen";
+import { ForgotPasswordPage } from "../containers/Login/pages/ForgotPasswordPage";
+import LoginPage from "../containers/Login/pages/LoginPage";
+import { ResetPasswordPage } from "../containers/Login/pages/ResestPasswordPage";
+import { SessionTimeoutProvider } from "../context/SessionTimeOut/SessionTimeoutProvider";
+import HomeLayout from "../layout/HomeLayout";
+import MainContentWrapper from "../layout/MainContentWrapper";
+import VendorRoutes from "../modules/vendorOnboarding/VendorRoutes";
+import VendorOnboardingPublicPage from "../modules/vendorOnboarding/pages/VendorOnboardingPublicPage";
+import AdminRoutes from "./adminRoutes";
+import MarketingRoutes from "./marketingRoutes";
+import ProtectedRoute from "./ProtectedRoute";
+
+const AuthenticatedRoutes = () => {
 	return (
 		<SessionTimeoutProvider>
 			<Routes>
-				{/* Public Routes */}
-				<Route path="/login" element={<LoginPage />} />
-				<Route path="/reset-password" element={<ResetPasswordPage />} />
-				<Route path="/forgot-password" element={<ForgotPasswordPage />} />
-				<Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-
 				<Route element={<HomeLayout />}>
 					<Route
 						index
@@ -35,15 +29,39 @@ export default function AppRoutes() {
 					/>
 				</Route>
 
-				<Route path="/forbidden" element={<ForbiddenPage />} />
-
-				{/* Dashboard Layout Route */}
 				<Route element={<MainContentWrapper />}>
 					<Route path="/marketing/*" element={<MarketingRoutes />} />
 					<Route path="/admin/*" element={<AdminRoutes />} />
-					<Route path="/vendor/*" element={<VendorOnboardingRoutes />} />
+					<Route path="/vendor/*" element={<VendorRoutes />} />
 				</Route>
 			</Routes>
 		</SessionTimeoutProvider>
+	);
+};
+
+export default function AppRoutes() {
+	return (
+		<Routes>
+			<Route path="/login" element={<LoginPage />} />
+
+			<Route path="/reset-password" element={<ResetPasswordPage />} />
+
+			<Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+
+			<Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+			<Route path="/vendor-form/invalid-link" element={<ForbiddenPage />} />
+
+			<Route
+				path="/vendor-form/:token"
+				element={<VendorOnboardingPublicPage />}
+			/>
+
+			<Route path="/vendor-form" element={<VendorOnboardingPublicPage />} />
+
+			<Route path="/forbidden" element={<ForbiddenPage />} />
+
+			<Route path="/*" element={<AuthenticatedRoutes />} />
+		</Routes>
 	);
 }

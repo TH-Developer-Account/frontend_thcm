@@ -1,18 +1,19 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { FileDown, List, UserCheck, Users } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import Button from "../../../../components/common/Button";
 import Card from "../../../../components/common/Card";
 import { SearchInput } from "../../../../components/forms/SearchInput";
+import { FilterTabs } from "../../../../components/ui/FilterTabs";
 import DataTable from "../../../../components/ui/tables/DataTable/DataTable";
 import DataTableSkeleton from "../../../../components/ui/tables/Skeletons/DataTableSkeleton";
-import { FilterTabs } from "../../../../components/ui/FilterTabs";
 
 import {
 	getGroupedLeadColumns,
 	getLeadCustomerColumns,
 } from "../columns/leadCustomerColumns";
-import type { LeadEventGroup, LeadRow } from "../types/leads.types";
+import type { LeadEventGroup, LeadInfo, LeadRow } from "../types/leads.types";
 
 export type LeadListFilter = "all" | "grouped" | "assigned";
 
@@ -63,6 +64,18 @@ const LEAD_FILTER_TABS = [
 
 const SKELETON_ROW_COUNT = 8;
 
+const buildLeadInfo = (group: LeadEventGroup): LeadInfo => ({
+	epcId: group.epcId,
+	proposalNumber: group.proposalNumber || "",
+	eventName: group.event_name || "",
+	location: group.location || "",
+	status: group.status || "",
+});
+
+const storeLeadInfo = (leadInfo: LeadInfo) => {
+	localStorage.setItem("LeadInfo", JSON.stringify(leadInfo));
+};
+
 export default function LeadsTable({
 	selectedFilter,
 	onFilterChange,
@@ -85,9 +98,56 @@ export default function LeadsTable({
 
 	onExport,
 }: LeadsTableProps) {
+	const navigate = useNavigate();
+
+	const handleViewLeads = useCallback(
+		(group: LeadEventGroup) => {
+			const leadInfo = buildLeadInfo(group);
+
+			storeLeadInfo(leadInfo);
+
+			navigate("/marketing/activity-planner/leads/view", {
+				state: {
+					mode: "view",
+					leadInfo,
+				},
+			});
+		},
+		[navigate],
+	);
+
+	const handleCreateLead = useCallback(
+		(group: LeadEventGroup) => {
+			const leadInfo = buildLeadInfo(group);
+
+			storeLeadInfo(leadInfo);
+
+			navigate("/marketing/activity-planner/leads/create", {
+				state: {
+					mode: "create",
+					leadInfo,
+				},
+			});
+		},
+		[navigate],
+	);
+
+	const canCreateLead = useCallback(
+		(group: LeadEventGroup) => group.status === "APPROVED",
+		[],
+	);
+
 	const leadColumns = useMemo(() => getLeadCustomerColumns(), []);
 
-	const groupedLeadColumns = useMemo(() => getGroupedLeadColumns(), []);
+	const groupedLeadColumns = useMemo(
+		() =>
+			getGroupedLeadColumns({
+				onViewLeads: handleViewLeads,
+				onCreateLead: handleCreateLead,
+				canCreateLead,
+			}),
+		[canCreateLead, handleCreateLead, handleViewLeads],
+	);
 
 	const isGroupedView = selectedFilter === "grouped";
 
@@ -100,6 +160,11 @@ export default function LeadsTable({
 	const skeletonColumnCount = isGroupedView
 		? groupedLeadColumns.length
 		: leadColumns.length;
+
+	const emptyTitle =
+		selectedFilter === "assigned"
+			? "No assigned leads found"
+			: "No leads found";
 
 	const emptyDescription =
 		selectedFilter === "assigned"
@@ -177,11 +242,7 @@ export default function LeadsTable({
 							pageCount={pageCount}
 							onPageChange={onPageChange}
 							onPageSizeChange={onPageSizeChange}
-							emptyTitle={
-								selectedFilter === "assigned"
-									? "No assigned leads found"
-									: "No leads found"
-							}
+							emptyTitle={emptyTitle}
 							emptyDescription={emptyDescription}
 							scrollTargetId="tableScroll"
 						/>

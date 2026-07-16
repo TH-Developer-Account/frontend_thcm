@@ -220,7 +220,10 @@ const VendorCreationFormTwo = ({
 	};
 
 	return (
-		<form className="vendor-onboarding-form">
+		<form
+			className="vendor-onboarding-form"
+			onSubmit={(event) => event.preventDefault()}
+		>
 			<FormHeader title="THCM Vendor Master Details" Icon={FileCheck2} />
 
 			<div className="vendor-onboarding-form-grid">
@@ -356,7 +359,9 @@ const VendorCreationFormTwo = ({
 						required={true}
 						error={errors.natureOfService}
 						helperText="Additional remarks."
-						onChange={(event) => event.target.value}
+						onChange={(event) =>
+							onChange?.("natureOfService", event.target.value)
+						}
 					/>
 				)}
 				{isReadOnly ? (
@@ -373,7 +378,9 @@ const VendorCreationFormTwo = ({
 						required={true}
 						error={errors.reasonForOnboarding}
 						helperText="Additional remarks."
-						onChange={(event) => event.target.value}
+						onChange={(event) =>
+							onChange?.("reasonForOnboarding", event.target.value)
+						}
 					/>
 				)}
 			</div>

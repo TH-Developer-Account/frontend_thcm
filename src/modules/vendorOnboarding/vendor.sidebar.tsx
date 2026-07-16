@@ -15,12 +15,7 @@ export const vendorSidebar: SidebarItem[] = [
 		icon: <Home size={18} />,
 		link: "/vendor/dashboard",
 	},
-	{
-		id: "users",
-		label: "Vendor Listing",
-		icon: <Users size={18} />,
-		link: "/vendor/listing",
-	},
+
 	{
 		id: "vendor",
 		label: "Vendor Onboarding",
@@ -31,6 +26,12 @@ export const vendorSidebar: SidebarItem[] = [
 		// 	action: "read",
 		// },
 		children: [
+			{
+				id: "users",
+				label: "Vendor Listing",
+				icon: <Users size={18} />,
+				link: "/vendor/listing",
+			},
 			{
 				id: "vendorInitiation",
 				label: "Vendor Initiation Form",

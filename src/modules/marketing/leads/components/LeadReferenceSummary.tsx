@@ -12,7 +12,7 @@ export const LeadReferenceSummary = ({
 			label: "EPC No",
 			value: leadInfo.proposalNumber || leadInfo.epcId || "--",
 		},
-		{ label: "Event Name", value: leadInfo.eventName || "--" },
+		// { label: "Event Name", value: leadInfo.eventName || "--" },
 		{ label: "Location", value: leadInfo.location || "--" },
 	];
 

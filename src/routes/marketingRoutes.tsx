@@ -25,7 +25,7 @@ export default function MarketingRoutes() {
 				path="/activity-planner/leads/create"
 				element={<LeadCreatePage />}
 			/>
-
+			<Route path="/activity-planner/leads/view" element={<LeadCreatePage />} />
 			<Route path="/profile" element={<UserProfile />} />
 			<Route path="/test" element={<TestPage />} />
 			<Route

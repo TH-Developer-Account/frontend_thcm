@@ -1,4 +1,5 @@
 import {
+	ArrowLeft,
 	LucideBriefcaseBusiness,
 	RefreshCcw,
 	Save,
@@ -11,32 +12,59 @@ import Card from "../../../components/common/Card";
 import FormInput from "../../../components/forms/FormInput";
 import FormHeader from "../../marketing/activity-planner/components/common/FormHeader";
 
-import { useVendorOnboardingInitiation } from "../hooks/useVendorOnboardingInitiation";
+import {
+	useVendorOnboardingInitiation,
+	type VendorOnboardingInitiationPayload,
+} from "../hooks/useVendorOnboardingInitiation";
+
+export type VendorInitiationFormMode = "create" | "edit" | "view";
 
 type VendorOnboardingInitiationFormProps = {
 	initiationId?: string;
+	mode?: VendorInitiationFormMode;
+	initialValues?: Partial<VendorOnboardingInitiationPayload>;
 	onCancel?: () => void;
-	onSuccess?: () => void;
+	onBack?: () => void;
+	onSuccess?: () => void | Promise<void>;
 };
 
 const VendorOnboardingInitiationForm = ({
 	initiationId,
+	mode,
+	initialValues,
 	onCancel,
+	onBack,
 	onSuccess,
 }: VendorOnboardingInitiationFormProps) => {
+	const resolvedMode: VendorInitiationFormMode =
+		mode ?? (initiationId ? "edit" : "create");
+
+	const isViewMode = resolvedMode === "view";
+	const isEditMode = resolvedMode === "edit";
+
 	const {
 		values,
 		errors,
-		isEditMode,
+		isDirty,
 		isSubmitting,
 		handleChange,
 		handleReset,
 		handleSubmit,
 	} = useVendorOnboardingInitiation({
 		initiationId,
+		initialValues,
 		onSubmitSuccess: onSuccess,
 		onUpdateSuccess: onSuccess,
 	});
+
+	const handleCancel = () => {
+		if (onCancel) {
+			onCancel();
+			return;
+		}
+
+		onBack?.();
+	};
 
 	return (
 		<Card>
@@ -45,90 +73,125 @@ const VendorOnboardingInitiationForm = ({
 				noValidate
 				onSubmit={(event) => {
 					event.preventDefault();
-					handleSubmit();
+
+					if (!isViewMode) {
+						handleSubmit();
+					}
 				}}
 			>
-				<FormHeader title="Vendor Info" Icon={LucideBriefcaseBusiness} />
+				<FormHeader
+					title={
+						isViewMode
+							? "Vendor Initiation Details"
+							: isEditMode
+								? "Edit Vendor Initiation"
+								: "Vendor Info"
+					}
+					Icon={LucideBriefcaseBusiness}
+				/>
 
 				<div className="vendor-onboarding-form-grid">
 					<FormInput
 						name="vendorName"
 						label="Vendor Name"
 						value={values.vendorName}
-						required
-						error={errors.vendorName}
-						helperText="Vendor name"
+						required={!isViewMode}
+						readOnly={isViewMode}
+						error={isViewMode ? undefined : errors.vendorName}
+						helperText={isViewMode ? undefined : "Enter the vendor name"}
 						autoComplete="organization"
 						onChange={(event) => handleChange("vendorName", event.target.value)}
 					/>
 
 					<FormInput
-						name="vendorEmail"
+						name="email"
 						label="Vendor Email"
 						type="email"
 						value={values.email}
-						required
-						error={errors.email}
-						helperText="Vendor email"
+						required={!isViewMode}
+						readOnly={isViewMode}
+						error={isViewMode ? undefined : errors.email}
+						helperText={isViewMode ? undefined : "Enter the vendor email"}
 						autoComplete="email"
 						onChange={(event) => handleChange("email", event.target.value)}
 					/>
 
 					<FormInput
-						name="vendorPhone"
+						name="mobile"
 						label="Vendor Phone Number"
 						type="tel"
 						value={values.mobile}
-						required
-						error={errors.mobile}
-						helperText="Vendor phone number"
+						required={!isViewMode}
+						readOnly={isViewMode}
+						error={isViewMode ? undefined : errors.mobile}
+						helperText={
+							isViewMode ? undefined : "Enter the vendor phone number"
+						}
 						autoComplete="tel"
 						onChange={(event) => handleChange("mobile", event.target.value)}
 					/>
 				</div>
 
 				<div className="vendor-onboarding-form-actions">
-					<Button
-						type="button"
-						text="Cancel"
-						size="sm"
-						Icon={X}
-						appearance="standard"
-						variant="outline"
-						disabled={isSubmitting}
-						onClick={onCancel}
-					/>
-
-					<div className="vendor-onboarding-form-actions-end">
+					{isViewMode ? (
 						<Button
 							type="button"
-							text="Reset"
-							Icon={RefreshCcw}
+							text="Back to Listing"
+							Icon={ArrowLeft}
+							iconPosition="left"
+							size="sm"
+							appearance="standard"
+							variant="outline"
+							onClick={onBack}
+						/>
+					) : (
+						<Button
+							type="button"
+							text="Cancel"
+							Icon={X}
+							iconPosition="left"
 							size="sm"
 							appearance="standard"
 							variant="outline"
 							disabled={isSubmitting}
-							onClick={handleReset}
+							onClick={handleCancel}
 						/>
+					)}
 
-						<Button
-							type="submit"
-							text={
-								isSubmitting
-									? isEditMode
-										? "Updating..."
-										: "Submitting..."
-									: isEditMode
-										? "Update"
-										: "Submit"
-							}
-							size="sm"
-							appearance="standard"
-							variant="brand"
-							Icon={isEditMode ? Save : Send}
-							disabled={isSubmitting}
-						/>
-					</div>
+					{!isViewMode && (
+						<div className="vendor-onboarding-form-actions-end">
+							<Button
+								type="button"
+								text="Reset"
+								Icon={RefreshCcw}
+								iconPosition="left"
+								size="sm"
+								appearance="standard"
+								variant="outline"
+								disabled={!isDirty || isSubmitting}
+								onClick={handleReset}
+							/>
+
+							<Button
+								type="submit"
+								text={
+									isSubmitting
+										? isEditMode
+											? "Updating..."
+											: "Submitting..."
+										: isEditMode
+											? "Update"
+											: "Submit"
+								}
+								Icon={isEditMode ? Save : Send}
+								iconPosition="left"
+								size="sm"
+								appearance="standard"
+								variant="brand"
+								disabled={isSubmitting}
+							/>
+						</div>
+					)}
 				</div>
 			</form>
 		</Card>
