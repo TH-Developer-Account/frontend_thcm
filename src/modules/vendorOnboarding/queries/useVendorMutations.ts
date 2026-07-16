@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { vendorOnboardingApi } from "../api/vendorOnboarding.api";
+import type { VendorOnboardingResponse } from "../types/vendorOnboarding.types";
 
 export const vendorOnboardingKeys = {
 	all: ["vendor-onboarding"] as const,
@@ -25,7 +26,7 @@ export function useVendorOnboardingDetailQuery(
 	vendorRequestId: string,
 	enabled = true,
 ) {
-	return useQuery({
+	return useQuery<VendorOnboardingResponse>({
 		queryKey: vendorOnboardingKeys.detail(vendorRequestId),
 		queryFn: () => vendorOnboardingApi.getById(vendorRequestId),
 		enabled: enabled && Boolean(vendorRequestId),

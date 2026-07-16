@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import ApprovalTable from "../../components/activityFormView/ApprovalTable";
+import ApprovalTable from "../../../../../components/ui/workflow/ApprovalTable";
 
 import type { EpcDetailResponse } from "../../types/epc.types";
 import type { WorkflowComment } from "../../types/workflow.types";

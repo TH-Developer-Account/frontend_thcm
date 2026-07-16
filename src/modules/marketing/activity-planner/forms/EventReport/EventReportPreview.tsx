@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import html2pdf from "html2pdf.js";
 
-import Button from "../../../../../components/common/Button";
 import { Modal } from "../../../../../components/common/Modal";
 
 import { formatDate } from "../../utils/formatters";
@@ -17,6 +16,7 @@ import { mapReportToPreviewImages } from "./eventReport.mapper";
 import { getEventReportPreviewState } from "./eventReport.logic";
 
 import type { PreviewProps } from "../../types/event.report.types";
+import Button from "../../../../../components/common/Button";
 
 type SkeletonProps = {
 	className?: string;
@@ -165,20 +165,20 @@ const EventReportPreview = ({
 			title="PDF Preview"
 			onClose={onClose}
 			size="xl"
-			// header_children={
-			// 	<Button
-			// 		type="button"
-			// 		text={downloading ? "Generating PDF..." : "Download PDF"}
-			// 		Icon={Download}
-			// 		iconPosition="left"
-			// 		iconSize={14}
-			// 		appearance="cta"
-			// 		variant="brand"
-			// 		size="sm"
-			// 		onClick={handleDownload}
-			// 		disabled={!report || loading}
-			// 	/>
-			// }
+			header_children={
+				<Button
+					type="button"
+					text={downloading ? "Generating PDF..." : "Download PDF"}
+					Icon={Download}
+					iconPosition="left"
+					iconSize={14}
+					appearance="cta"
+					variant="brand"
+					size="sm"
+					onClick={handleDownload}
+					disabled={!report || loading}
+				/>
+			}
 		>
 			<div>
 				{!loading && !hasData ? (

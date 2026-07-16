@@ -64,7 +64,6 @@ const VendorOnboardingPublicPage = () => {
 		formOneValues,
 		formOneErrors,
 		mutationLoading,
-		canEditFormOne,
 		isLoading,
 		isError,
 		handleFormOneChange,
@@ -170,7 +169,7 @@ const VendorOnboardingPublicPage = () => {
 		<PublicPagesLayout>
 			<VendorCreationFormOne
 				mode="edit"
-				canEdit={canEditFormOne}
+				canEdit
 				values={formOneValues}
 				errors={formOneErrors}
 				onChange={handleFormOneChange}

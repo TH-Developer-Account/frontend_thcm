@@ -57,7 +57,7 @@ const VendorInitiationPage = ({
 				mode={mode}
 				onCancel={handleBackToListing}
 				onSuccess={handleBackToListing}
-				onDeleteSuccess={handleBackToListing}
+				onBack={handleBackToListing}
 			/>
 		</PageSectionLayout>
 	);

@@ -9,7 +9,7 @@
 
 	.vendor-onboarding-form,
 	.vendor-summary-form {
-		display: flex;
+		@apply flex gap-4;
 		width: 100%;
 		min-width: 0;
 		flex-direction: column;
@@ -177,8 +177,6 @@
 	}
 
 	.vendor-summary-block {
-		margin: var(--space-3) var(--space-4);
-
 		overflow: hidden;
 
 		border: var(--border-width-default) solid var(--color-border-default);

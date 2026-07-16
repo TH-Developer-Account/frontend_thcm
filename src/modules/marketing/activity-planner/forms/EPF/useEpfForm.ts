@@ -303,10 +303,13 @@ export const useEpfForm = ({
 		if (!epcId || !workspaceId || !appId) return;
 
 		await workflowApi.assignWorkflow({
-			eventProposalId: epcId,
+			subjectType: "EVENT_PROPOSAL",
+			subjectId: epcId,
 			workspaceId,
 			appId,
-			budget: eventCost,
+			criteria: {
+				budget: eventCost,
+			},
 		});
 	}, [appId, epcId, eventCost, workspaceId]);
 
@@ -478,9 +481,12 @@ export const useEpfForm = ({
 			setPreviewLoading(true);
 
 			const response = await workflowApi.previewWorkflow({
+				subjectType: "EVENT_PROPOSAL",
 				workspaceId,
 				appId,
-				budget: Number(eventCost),
+				criteria: {
+					budget: Number(eventCost),
+				},
 			});
 
 			const rows = mapWorkflowStagesToApprovalRows(response?.stages ?? [], {

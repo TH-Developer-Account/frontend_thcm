@@ -166,10 +166,11 @@ export const vendorOnboardingApi = {
 		return data;
 	},
 	assignWorkflow: async (payload: {
-		eventProposalId: string;
-		workspaceId: string | null;
+		subjectType: string;
+		subjectId: string;
+		workspaceId: string;
 		appId: string;
-		budget: number;
+		criteria: Record<string, unknown>;
 	}) => {
 		const {
 			data: { data, message },
@@ -179,9 +180,10 @@ export const vendorOnboardingApi = {
 	},
 
 	previewWorkflow: async (payload: {
-		workspaceId: string | null;
+		subjectType: string;
+		workspaceId: string;
 		appId: string;
-		budget: number;
+		criteria: Record<string, unknown>;
 	}) => {
 		const {
 			data: { data },

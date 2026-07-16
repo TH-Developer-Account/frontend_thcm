@@ -3,10 +3,11 @@ import type { EventDeviationPayload } from "../types/event.outcome.types";
 
 export const workflowApi = {
 	assignWorkflow: async (payload: {
-		eventProposalId: string;
+		subjectType: string;
+		subjectId: string;
 		workspaceId: string;
 		appId: string;
-		budget: number;
+		criteria: Record<string, unknown>;
 	}) => {
 		const {
 			data: { data, message },
@@ -16,9 +17,10 @@ export const workflowApi = {
 	},
 
 	previewWorkflow: async (payload: {
+		subjectType: string;
 		workspaceId: string;
 		appId: string;
-		budget: number;
+		criteria: Record<string, unknown>;
 	}) => {
 		const {
 			data: { data },
