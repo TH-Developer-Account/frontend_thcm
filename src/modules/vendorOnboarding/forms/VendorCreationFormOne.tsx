@@ -37,9 +37,12 @@ import {
 	type VendorEnclosureStatusKey,
 	type VendorFormErrors,
 	type VendorFormMode,
+	type VendorOnboardingDocument,
 } from "../types/vendorOnboarding.types";
 
 import { STATES } from "../utils/vendor.constant";
+
+const EMPTY_VENDOR_DOCUMENTS: VendorOnboardingDocument[] = [];
 
 type SelectOption = {
 	label: string;
@@ -62,8 +65,11 @@ type VendorCreationFormOneProps = {
 	canEdit?: boolean;
 
 	values: VendorCreationFormOneValues;
-
 	errors: VendorFormErrors<VendorCreationFormOneValues>;
+
+	initialDocuments?: VendorOnboardingDocument[];
+	requireDocuments?: boolean;
+	requireDpdpConsent?: boolean;
 
 	onChange?: <K extends keyof VendorCreationFormOneValues>(
 		key: K,
@@ -78,8 +84,8 @@ type VendorCreationFormOneProps = {
 
 	loading?: boolean;
 	submittedMessage?: string;
+	actionText?: string;
 };
-
 type VendorDetailValueProps = {
 	label: string;
 	value?: string;
@@ -103,12 +109,90 @@ const getDisplayValue = (value?: string): string =>
 
 const yesNoOptions = toSelectOptions(["Yes", "No"]);
 
-const createInitialEnclosureUploads = (): VendorEnclosureUploadItem[] =>
-	VENDOR_DOCUMENT_FIELDS.map((field) => ({
-		statusKey: field.statusKey,
-		documentType: field.documentType,
-		value: null,
-	}));
+const getFileNameFromUrl = (
+	fileUrl: string,
+	documentType: VendorDocumentType,
+): string => {
+	try {
+		const url = new URL(fileUrl);
+		const fileName = url.pathname.split("/").pop();
+
+		return fileName || documentType;
+	} catch {
+		return fileUrl.split("/").pop() || documentType;
+	}
+};
+
+const getFileExtension = (fileName: string): string =>
+	fileName.split(".").pop()?.toLowerCase() ?? "";
+
+const getMimeType = (fileName: string): string => {
+	const extension = getFileExtension(fileName);
+
+	switch (extension) {
+		case "pdf":
+			return "application/pdf";
+
+		case "jpg":
+		case "jpeg":
+			return "image/jpeg";
+
+		case "png":
+			return "image/png";
+
+		case "webp":
+			return "image/webp";
+
+		case "doc":
+			return "application/msword";
+
+		case "docx":
+			return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+		default:
+			return "";
+	}
+};
+
+const createInitialEnclosureUploads = (
+	initialDocuments: VendorOnboardingDocument[] = [],
+): VendorEnclosureUploadItem[] =>
+	VENDOR_DOCUMENT_FIELDS.map((field) => {
+		const document = initialDocuments.find(
+			(item) => item.documentType === field.documentType,
+		);
+
+		if (!document) {
+			return {
+				statusKey: field.statusKey,
+				documentType: field.documentType,
+				value: null,
+			};
+		}
+
+		const fileName =
+			document.fileName ||
+			getFileNameFromUrl(document.fileUrl, document.documentType);
+
+		return {
+			statusKey: field.statusKey,
+			documentType: field.documentType,
+
+			value: {
+				id: document.id,
+				file: null,
+				url: document.fileUrl,
+				name: fileName,
+				type: document.mimeType || getMimeType(fileName),
+				size: document.size ?? 0,
+				extension: getFileExtension(fileName),
+				sizeLabel: document.size
+					? `${(document.size / 1024).toFixed(1)} KB`
+					: "",
+				isLocal: false,
+			},
+		};
+	});
 
 const VendorDetailValue = ({
 	label,
@@ -140,14 +224,18 @@ const VendorCreationFormOne = ({
 	onNext,
 	onSubmit,
 	errors = {},
+	initialDocuments = EMPTY_VENDOR_DOCUMENTS,
+	requireDocuments = true,
+	requireDpdpConsent = true,
 	loading = false,
 	submittedMessage,
+	actionText,
 }: VendorCreationFormOneProps) => {
 	const isReadOnly = mode === "view" || !canEdit;
 
 	const [enclosureUploads, setEnclosureUploads] = React.useState<
 		VendorEnclosureUploadItem[]
-	>(createInitialEnclosureUploads);
+	>(() => createInitialEnclosureUploads(initialDocuments));
 
 	const [enclosureErrors, setEnclosureErrors] = React.useState<
 		Partial<Record<VendorEnclosureStatusKey, string>>
@@ -161,6 +249,17 @@ const VendorCreationFormOne = ({
 	const [hasAcceptedDpdp, setHasAcceptedDpdp] = React.useState(false);
 	const [hasConfirmedDpdp, setHasConfirmedDpdp] = React.useState(false);
 	const [dpdpError, setDpdpError] = React.useState("");
+	const documentsKey = React.useMemo(
+		() =>
+			initialDocuments
+				.map((document) => `${document.id}:${document.fileUrl}`)
+				.join("|"),
+		[initialDocuments],
+	);
+
+	React.useEffect(() => {
+		setEnclosureUploads(createInitialEnclosureUploads(initialDocuments));
+	}, [documentsKey]);
 
 	const renderInput = <K extends keyof VendorCreationFormOneValues>({
 		name,
@@ -269,6 +368,11 @@ const VendorCreationFormOne = ({
 	);
 
 	const validateEnclosures = React.useCallback((): boolean => {
+		if (!requireDocuments) {
+			setEnclosureErrors({});
+			return true;
+		}
+
 		const nextErrors: Partial<Record<VendorEnclosureStatusKey, string>> = {};
 
 		VENDOR_DOCUMENT_FIELDS.forEach((field) => {
@@ -288,7 +392,7 @@ const VendorCreationFormOne = ({
 		setEnclosureErrors(nextErrors);
 
 		return Object.keys(nextErrors).length === 0;
-	}, [enclosureUploads]);
+	}, [enclosureUploads, requireDocuments]);
 
 	const openDpdpModal = React.useCallback(() => {
 		setHasConfirmedDpdp(hasAcceptedDpdp);
@@ -325,27 +429,27 @@ const VendorCreationFormOne = ({
 	};
 
 	const handleReset = () => {
-		setEnclosureUploads(createInitialEnclosureUploads());
+		setEnclosureUploads(createInitialEnclosureUploads(initialDocuments));
+
 		setEnclosureErrors({});
 		setHasAcceptedDpdp(false);
 		setHasConfirmedDpdp(false);
 		setDpdpError("");
 		setPreviewFile(null);
 	};
-
 	const handleFormAction = () => {
 		const enclosuresValid = validateEnclosures();
 
-		if (!hasAcceptedDpdp) {
+		if (!enclosuresValid) {
+			return;
+		}
+
+		if (requireDpdpConsent && !hasAcceptedDpdp) {
 			setDpdpError(
 				"Please review and accept the Data Privacy Notice before continuing.",
 			);
 
 			setIsDpdpModalOpen(true);
-			return;
-		}
-
-		if (!enclosuresValid) {
 			return;
 		}
 
@@ -360,46 +464,62 @@ const VendorCreationFormOne = ({
 
 		onNext?.();
 	};
-	console.log("form one values ---", values);
 
 	return (
 		<Card
 			footer={
-				isReadOnly ? null : (
-					<div className="w-full">
-						<div className="vendor-dpdp-consent">
-							<label className="vendor-dpdp-consent-control">
-								<input
-									type="checkbox"
-									name="dpdpConsent"
-									checked={hasAcceptedDpdp}
-									disabled={loading}
-									onChange={handleDpdpConsentChange}
-								/>
-
-								<span>
-									I have read and agree to the{" "}
-									<button
-										type="button"
-										className="vendor-dpdp-consent-link"
-										disabled={loading}
-										onClick={(event) => {
-											event.preventDefault();
-											openDpdpModal();
-										}}
-									>
-										Digital Personal Data Protection Act (DPDP Act)
-									</button>
-									.
-								</span>
-							</label>
-
-							{dpdpError ? (
-								<p className="vendor-dpdp-consent-error" role="alert">
-									{dpdpError}
-								</p>
-							) : null}
+				isReadOnly ? (
+					onNext ? (
+						<div className="vendor-onboarding-form-actions">
+							<div />
+							<Button
+								type="button"
+								text={actionText || "Next"}
+								size="sm"
+								appearance="standard"
+								variant="brand"
+								onClick={onNext}
+								disabled={loading}
+							/>
 						</div>
+					) : null
+				) : (
+					<div className="w-full">
+						{requireDpdpConsent ? (
+							<div className="vendor-dpdp-consent">
+								<label className="vendor-dpdp-consent-control">
+									<input
+										type="checkbox"
+										name="dpdpConsent"
+										checked={hasAcceptedDpdp}
+										disabled={loading}
+										onChange={handleDpdpConsentChange}
+									/>
+
+									<span>
+										I have read and agree to the{" "}
+										<button
+											type="button"
+											className="vendor-dpdp-consent-link"
+											disabled={loading}
+											onClick={(event) => {
+												event.preventDefault();
+												openDpdpModal();
+											}}
+										>
+											Digital Personal Data Protection Act
+										</button>
+										.
+									</span>
+								</label>
+
+								{dpdpError ? (
+									<p className="vendor-dpdp-consent-error" role="alert">
+										{dpdpError}
+									</p>
+								) : null}
+							</div>
+						) : null}
 
 						<div className="bottom-buttons-bar-between">
 							<Button
@@ -420,16 +540,15 @@ const VendorCreationFormOne = ({
 										? onSubmit
 											? "Submitting..."
 											: "Saving..."
-										: onSubmit
-											? "Submit Form"
-											: "Save & Proceed"
+										: actionText ||
+											(onSubmit ? "Submit Form" : "Save & Proceed")
 								}
 								size="sm"
 								appearance="standard"
 								variant="brand"
 								Icon={Save}
 								onClick={handleFormAction}
-								disabled={loading || !hasAcceptedDpdp}
+								disabled={loading || (requireDpdpConsent && !hasAcceptedDpdp)}
 							/>
 						</div>
 					</div>
@@ -617,9 +736,7 @@ const VendorCreationFormOne = ({
 				<div className="vendor-enclosure-upload-grid">
 					{VENDOR_DOCUMENT_FIELDS.map((field) => {
 						const uploadedFile = getEnclosureFile(field.documentType);
-
-						const isUploaded =
-							uploadedFile?.file instanceof File && Boolean(uploadedFile.url);
+						const isUploaded = Boolean(uploadedFile?.url);
 
 						return (
 							<div
@@ -634,13 +751,14 @@ const VendorCreationFormOne = ({
 									kind="document"
 									label={field.label}
 									description={field.description}
-									required={field.required}
+									required={requireDocuments && field.required}
 									error={enclosureErrors[field.statusKey]}
 									readonly={isReadOnly}
 									disabled={loading}
 									heightClassName="vendor-enclosure-upload-height"
 									className="vendor-enclosure-upload-field"
 									inputName={field.documentType}
+									showActions={false}
 								/>
 
 								<div className="vendor-enclosure-upload-footer">

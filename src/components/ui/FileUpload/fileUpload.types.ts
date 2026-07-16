@@ -53,7 +53,7 @@ export type FileUploadFieldProps = {
 	heightClassName?: string;
 	className?: string;
 	inputName?: string;
-
+	showActions?: boolean;
 	/**
 	 * Displays a caption field after an image has been uploaded.
 	 */

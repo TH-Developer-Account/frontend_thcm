@@ -1,4 +1,4 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import Button from "../../../components/common/Button";
@@ -13,20 +13,22 @@ type VendorOnboardingFormViewProps = {
 	viewerRole?: VendorViewerRole;
 };
 
-const VendorOnboardingFormView = ({
-	viewerRole = "THCM_EMPLOYEE",
-}: VendorOnboardingFormViewProps) => {
+const VendorOnboardingReadOnlyView = ({
+	viewerRole,
+	onboardingId,
+}: {
+	viewerRole: VendorViewerRole;
+	onboardingId: string;
+}) => {
 	const navigate = useNavigate();
-
-	const { onboardingId } = useParams<{
-		onboardingId: string;
-	}>();
 
 	const {
 		formOneValues,
 		formTwoValues,
+		formOneDocuments,
 		isLoading,
 		isError,
+		status,
 		canApprove,
 		canClarify,
 		canAcceptAndClose,
@@ -36,7 +38,10 @@ const VendorOnboardingFormView = ({
 	} = useVendorCreationForm({
 		role: viewerRole,
 		vendorRequestId: onboardingId,
+		isPublicForm: false,
 	});
+
+	const canEdit = viewerRole === "THCM_EMPLOYEE" && status !== "IN_REVIEW";
 
 	const handleBackToListing = () => {
 		navigate("/vendor/listing?tab=onboarding");
@@ -60,34 +65,6 @@ const VendorOnboardingFormView = ({
 		],
 		separator: "›",
 	};
-
-	if (!onboardingId) {
-		return (
-			<PageSectionLayout>
-				<PageHeader
-					headerText="Vendor Onboarding Details"
-					navigation={pageNavigation}
-				/>
-
-				<Card>
-					<div className="vendor-onboarding-view-state" role="alert">
-						<p>Vendor onboarding request ID was not found.</p>
-
-						<Button
-							type="button"
-							text="Back to Listing"
-							Icon={ArrowLeft}
-							iconPosition="left"
-							size="sm"
-							appearance="standard"
-							variant="outline"
-							onClick={handleBackToListing}
-						/>
-					</div>
-				</Card>
-			</PageSectionLayout>
-		);
-	}
 
 	if (isLoading) {
 		return (
@@ -145,14 +122,33 @@ const VendorOnboardingFormView = ({
 				navigation={pageNavigation}
 			/>
 
-			<Card className="vendor-onboarding-view-section">
+			<Card
+				className="vendor-onboarding-view-section"
+				title={"Vendor Form View"}
+				actions={
+					canEdit ? (
+						<div className="vendor-onboarding-view-actions">
+							<Button
+								type="button"
+								text="Edit"
+								size="sm"
+								Icon={Pencil}
+								appearance="standard"
+								variant="brand"
+								onClick={() => navigate(`/vendor/onboarding/${onboardingId}`)}
+							/>
+						</div>
+					) : undefined
+				}
+			>
 				<VendorCreationSummaryForm
 					mode="view"
 					formOneValues={formOneValues}
 					formTwoValues={formTwoValues}
+					formOneDocuments={formOneDocuments}
 					onBack={handleBackToListing}
 					onApprove={handleApprove}
-					onClarify={() => handleClarify("Clarification required.")}
+					onClarify={handleClarify}
 					onAcceptAndClose={handleAcceptAndClose}
 					canSubmit={false}
 					canApprove={canApprove}
@@ -171,6 +167,35 @@ const VendorOnboardingFormView = ({
 				/>
 			</Card>
 		</PageSectionLayout>
+	);
+};
+
+const VendorOnboardingFormView = ({
+	viewerRole = "THCM_EMPLOYEE",
+}: VendorOnboardingFormViewProps) => {
+	const { onboardingId } = useParams<{
+		onboardingId?: string;
+	}>();
+
+	if (!onboardingId) {
+		return (
+			<PageSectionLayout>
+				<PageHeader headerText="Vendor Onboarding Details" />
+
+				<Card>
+					<div className="vendor-onboarding-view-state" role="alert">
+						Vendor onboarding request ID was not found.
+					</div>
+				</Card>
+			</PageSectionLayout>
+		);
+	}
+
+	return (
+		<VendorOnboardingReadOnlyView
+			viewerRole={viewerRole}
+			onboardingId={onboardingId}
+		/>
 	);
 };
 

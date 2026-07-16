@@ -3,18 +3,19 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { useToast } from "../../../context/Auth/AuthContext";
 import type { VendorCreationFormOneSubmission } from "../forms/VendorCreationFormOne";
-
 import {
 	useAcceptAndCloseVendorMutation,
-	useCreateVendorFormOneMutation,
+	useCreateVendorMutation,
 	usePublicVendorSessionQuery,
 	useSubmitPublicVendorFormMutation,
-	useSubmitVendorSummaryMutation,
-	useUpdateVendorFormOneMutation,
-	useUpdateVendorFormTwoMutation,
+	useSubmitVendorMutation,
+	useUpdateVendorMutation,
 	useVendorOnboardingDetailQuery,
 } from "../queries/useVendorMutations";
-
+import {
+	buildThcmUpdatePayload,
+	buildVendorUpdatePayload,
+} from "../utils/vendor.onboarding.helper";
 import {
 	VENDOR_DOCUMENT_FIELDS,
 	type VendorCreationFormOneValues,
@@ -24,72 +25,14 @@ import {
 	type VendorViewerRole,
 } from "../types/vendorOnboarding.types";
 
-const vendorOnboardingSteps = [
+export const vendorOnboardingSteps = [
 	{ id: 1, label: "Vendor filled details" },
 	{ id: 2, label: "THCM details" },
 	{ id: 3, label: "Review & Submit" },
 ];
 
-const initialFormOneValues: VendorCreationFormOneValues = {
-	vendorName: "",
-	completeAddress: "",
-	msmeVendor: "",
-	msmeCertificateAttached: "",
-	city: "",
-	pinCode: "",
-	state: "",
-
-	mobile: "",
-	email: "",
-
-	bank: "",
-	branch: "",
-	ifscCode: "",
-	bankAddress: "",
-	accountNumber: "",
-
-	gstin: "",
-	pan: "",
-	entityRegistrationNumber: "",
-
-	gstCertificate: "",
-	panNumber: "",
-	bankCancelledCheque: "",
-	certificateOfIncorporation: "",
-	msmeCertificate: "",
-	ndaCertificate: "",
-};
-
-const initialFormTwoValues: VendorCreationFormTwoValues = {
-	vendorCode: "",
-	vendorType: "",
-	companyCode: "",
-	purchaseOrg: "",
-
-	paymentTerm: "",
-	tds: "",
-
-	vendorCategory: "",
-	materialType: "",
-	materialSubType: "",
-
-	vendorSelfAssessmentObtained: "",
-	ndaObtained: "",
-	gpaObtained: "",
-	relatedPartyToThcm: "",
-	vendorAuditReportPrepared: "",
-	remarks: "",
-	natureOfService: "",
-	reasonForOnboarding: "",
-
-	proposedByName: "",
-	proposedByDesignation: "",
-	proposedDate: "",
-
-	approvedByName: "",
-	approvedByDesignation: "",
-	approvalDate: "",
-};
+const EMPTY_FORM_ONE: VendorCreationFormOneValues = {};
+const EMPTY_FORM_TWO: VendorCreationFormTwoValues = {};
 
 const getErrorMessage = (error: unknown, fallback: string): string => {
 	if (
@@ -106,86 +49,43 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
 	) {
 		return error.response.data.message;
 	}
-
-	if (error instanceof Error) {
-		return error.message;
-	}
-
-	return fallback;
+	return error instanceof Error ? error.message : fallback;
 };
 
-const appendTextField = (
-	formData: FormData,
-	fieldName: string,
-	value?: string,
-): void => {
-	formData.append(fieldName, value?.trim() ?? "");
-};
-
-const convertYesNoToBooleanString = (value?: string): "true" | "false" => {
-	const normalizedValue = value?.trim().toLowerCase();
-
-	return normalizedValue === "yes" || normalizedValue === "true"
-		? "true"
-		: "false";
-};
-
-const buildPublicVendorFormData = (
+const buildPublicFormData = (
 	values: VendorCreationFormOneValues,
 	submission: VendorCreationFormOneSubmission,
-): FormData => {
+) => {
 	const formData = new FormData();
+	const payload = buildVendorUpdatePayload(values);
 
-	appendTextField(formData, "vendorName", values.vendorName);
-	appendTextField(formData, "state", values.state);
-	appendTextField(formData, "city", values.city);
-	appendTextField(formData, "pinCode", values.pinCode);
-	appendTextField(formData, "address", values.completeAddress);
-	appendTextField(formData, "mobile", values.mobile);
-	appendTextField(formData, "email", values.email);
-
-	formData.append("msmeVendor", convertYesNoToBooleanString(values.msmeVendor));
-
-	formData.append(
-		"msmeCertAttached",
-		convertYesNoToBooleanString(values.msmeCertificateAttached),
-	);
-
-	appendTextField(formData, "bankName", values.bank);
-	appendTextField(formData, "bankBranch", values.branch);
-	appendTextField(formData, "ifscCode", values.ifscCode);
-	appendTextField(formData, "bankAddress", values.bankAddress);
-	appendTextField(formData, "accountNumber", values.accountNumber);
-	appendTextField(formData, "gstin", values.gstin);
-	appendTextField(formData, "pan", values.pan);
-	appendTextField(formData, "entityRegNo", values.entityRegistrationNumber);
-
-	formData.append("dpdpConsent", String(submission.dpdpConsent));
+	Object.entries(payload).forEach(([key, value]) => {
+		formData.append(key, value === null ? "" : String(value));
+	});
+	formData.append("dpdpConsent", "true");
 
 	submission.enclosureUploads.forEach(({ documentType, value }) => {
-		if (!(value?.file instanceof File)) {
-			return;
+		if (value?.file instanceof File) {
+			formData.append(documentType, value.file, value.name || value.file.name);
 		}
-
-		formData.append(documentType, value.file, value.name || value.file.name);
 	});
 
 	return formData;
 };
 
-const getMissingPublicDocuments = (
+const getMissingDocuments = (
 	submission: VendorCreationFormOneSubmission,
-): VendorDocumentType[] => {
-	return VENDOR_DOCUMENT_FIELDS.filter((field) => field.required)
-		.filter((field) => {
-			const upload = submission.enclosureUploads.find(
-				(item) => item.documentType === field.documentType,
-			);
-
-			return !(upload?.value?.file instanceof File);
-		})
+): VendorDocumentType[] =>
+	VENDOR_DOCUMENT_FIELDS.filter((field) => field.required)
+		.filter(
+			(field) =>
+				!submission.enclosureUploads.some(
+					(item) =>
+						item.documentType === field.documentType &&
+						item.value?.file instanceof File,
+				),
+		)
 		.map((field) => field.documentType);
-};
 
 type UseVendorCreationFormParams = {
 	role?: VendorViewerRole;
@@ -202,321 +102,154 @@ export function useVendorCreationForm({
 	isPublicForm = false,
 	onSuccess,
 }: UseVendorCreationFormParams = {}) {
-	const routeParams = useParams<{
+	const params = useParams<{
 		id?: string;
 		onboardingId?: string;
+		vendorRequestId?: string;
 	}>();
-
 	const navigate = useNavigate();
 	const { showToast } = useToast();
 
+	const routeVendorId =
+		providedVendorRequestId ??
+		params.onboardingId ??
+		params.vendorRequestId ??
+		params.id ??
+		"";
 	const normalizedToken = token.trim();
 
-	const vendorRequestId =
-		providedVendorRequestId ?? routeParams.onboardingId ?? routeParams.id;
-
 	const [currentStep, setCurrentStep] = React.useState(1);
-
-	const [createdVendorRequestId, setCreatedVendorRequestId] = React.useState<
-		string | null
-	>(null);
-
+	const [createdVendorId, setCreatedVendorId] = React.useState("");
 	const [formOneValues, setFormOneValues] =
-		React.useState<VendorCreationFormOneValues>(initialFormOneValues);
-
+		React.useState<VendorCreationFormOneValues>(EMPTY_FORM_ONE);
 	const [formTwoValues, setFormTwoValues] =
-		React.useState<VendorCreationFormTwoValues>(initialFormTwoValues);
-
+		React.useState<VendorCreationFormTwoValues>(EMPTY_FORM_TWO);
 	const [formOneErrors, setFormOneErrors] = React.useState<
 		VendorFormErrors<VendorCreationFormOneValues>
 	>({});
-
 	const [formTwoErrors, setFormTwoErrors] = React.useState<
 		VendorFormErrors<VendorCreationFormTwoValues>
 	>({});
 
-	const resolvedVendorRequestId =
-		vendorRequestId ||
-		createdVendorRequestId ||
-		"021b54a9-f7c9-444a-8d60-703def2c0e94";
-
-	const publicVendorSessionQuery = usePublicVendorSessionQuery(
-		normalizedToken,
-		isPublicForm && normalizedToken.length > 0,
-	);
-
-	const internalVendorQuery = useVendorOnboardingDetailQuery(
-		resolvedVendorRequestId,
-		!isPublicForm && Boolean(resolvedVendorRequestId),
-	);
+	const vendorRequestId = routeVendorId || createdVendorId;
+	const isInternal = !isPublicForm && role === "THCM_EMPLOYEE";
 	const isPublicVendor = isPublicForm && role === "EXTERNAL_VENDOR";
-	const isInternalThcmUser = !isPublicForm && role === "THCM_EMPLOYEE";
 
-	const canEditFormOne = isPublicVendor || isInternalThcmUser;
+	const detailQuery = useVendorOnboardingDetailQuery(
+		vendorRequestId,
+		!isPublicForm,
+	);
+	const publicQuery = usePublicVendorSessionQuery(
+		normalizedToken,
+		isPublicForm,
+	);
 
-	const canEditFormTwo = isInternalThcmUser;
+	const createMutation = useCreateVendorMutation();
+	const updateMutation = useUpdateVendorMutation();
+	const submitMutation = useSubmitVendorMutation();
+	const closeMutation = useAcceptAndCloseVendorMutation();
+	const publicSubmitMutation = useSubmitPublicVendorFormMutation();
 
-	const createFormOneMutation = useCreateVendorFormOneMutation();
-
-	const updateFormOneMutation = useUpdateVendorFormOneMutation();
-
-	const updateFormTwoMutation = useUpdateVendorFormTwoMutation();
-
-	const submitSummaryMutation = useSubmitVendorSummaryMutation();
-
-	const acceptAndCloseVendorMutation = useAcceptAndCloseVendorMutation();
-
-	const publicVendorSubmitMutation = useSubmitPublicVendorFormMutation();
-
+	const publicInitKeyRef = React.useRef("");
 	React.useEffect(() => {
-		if (!isPublicForm || !publicVendorSessionQuery.data) {
-			return;
-		}
+		const data = publicQuery.data;
+		if (!isPublicForm || !data) return;
 
-		const sessionData = publicVendorSessionQuery.data;
+		const key = `${normalizedToken}:${publicQuery.dataUpdatedAt}`;
+		if (publicInitKeyRef.current === key) return;
+		publicInitKeyRef.current = key;
 
-		const initialPublicValues = sessionData.partOne ?? {};
-
-		setFormOneValues((previousValues) => ({
-			...previousValues,
-			...initialPublicValues,
-
-			vendorName:
-				initialPublicValues.vendorName ||
-				sessionData.vendorName ||
-				previousValues.vendorName ||
-				"",
-
-			email:
-				initialPublicValues.email ||
-				sessionData.email ||
-				previousValues.email ||
-				"",
-
-			mobile:
-				initialPublicValues.mobile ||
-				sessionData.mobile ||
-				previousValues.mobile ||
-				"",
-		}));
-	}, [isPublicForm, publicVendorSessionQuery.data]);
-
-	React.useEffect(() => {
-		if (isPublicForm || !internalVendorQuery.data) {
-			return;
-		}
-
+		const partOne = data.partOne ?? {};
 		setFormOneValues({
-			...initialFormOneValues,
-			...(internalVendorQuery.data.partOne ?? {}),
+			...partOne,
+			vendorName: partOne.vendorName || data.vendorName || "",
+			email: partOne.email || data.email || "",
+			mobile: partOne.mobile || data.mobile || "",
 		});
+	}, [
+		isPublicForm,
+		normalizedToken,
+		publicQuery.data,
+		publicQuery.dataUpdatedAt,
+	]);
 
-		setFormTwoValues({
-			...initialFormTwoValues,
-			...(internalVendorQuery.data.partTwo ?? {}),
-		});
-	}, [isPublicForm, internalVendorQuery.data]);
+	const detailInitKeyRef = React.useRef("");
+	React.useEffect(() => {
+		const data = detailQuery.data;
+		if (isPublicForm || !data) return;
 
-	const mutationLoading =
-		publicVendorSubmitMutation.isPending ||
-		createFormOneMutation.isPending ||
-		updateFormOneMutation.isPending ||
-		updateFormTwoMutation.isPending ||
-		submitSummaryMutation.isPending ||
-		acceptAndCloseVendorMutation.isPending;
+		const key = `${vendorRequestId}:${detailQuery.dataUpdatedAt}`;
+		if (detailInitKeyRef.current === key) return;
+		detailInitKeyRef.current = key;
 
-	const canSubmitVendorForm = isPublicVendor;
-	const canSubmit = isInternalThcmUser;
+		setFormOneValues(data.partOne);
+		setFormTwoValues(data.partTwo);
+	}, [
+		detailQuery.data,
+		detailQuery.dataUpdatedAt,
+		isPublicForm,
+		vendorRequestId,
+	]);
 
-	const canApprove = false;
-	const canClarify = false;
+	const next = React.useCallback(() => {
+		setCurrentStep((step) => Math.min(step + 1, vendorOnboardingSteps.length));
+	}, []);
+	const back = React.useCallback(() => {
+		setCurrentStep((step) => Math.max(step - 1, 1));
+	}, []);
 
-	const canAcceptAndClose = role === "EXTERNAL_APPROVER";
+	const changeFormOne = React.useCallback(
+		<K extends keyof VendorCreationFormOneValues>(
+			key: K,
+			value: VendorCreationFormOneValues[K],
+		) => {
+			setFormOneValues((current) => ({ ...current, [key]: value }));
+			setFormOneErrors((current) => ({ ...current, [key]: "" }));
+		},
+		[],
+	);
 
-	const handleNext = () => {
-		setCurrentStep((previousStep) =>
-			Math.min(previousStep + 1, vendorOnboardingSteps.length),
-		);
-	};
+	const changeFormTwo = React.useCallback(
+		<K extends keyof VendorCreationFormTwoValues>(
+			key: K,
+			value: VendorCreationFormTwoValues[K],
+		) => {
+			setFormTwoValues((current) => ({ ...current, [key]: value }));
+			setFormTwoErrors((current) => ({ ...current, [key]: "" }));
+		},
+		[],
+	);
 
-	const handleBack = () => {
-		setCurrentStep((previousStep) => Math.max(previousStep - 1, 1));
-	};
-
-	const handleFormOneChange = <K extends keyof VendorCreationFormOneValues>(
-		key: K,
-		value: VendorCreationFormOneValues[K],
-	) => {
-		setFormOneValues((previousValues) => ({
-			...previousValues,
-			[key]: value,
-		}));
-
-		setFormOneErrors((previousErrors) => ({
-			...previousErrors,
-			[key]: "",
-		}));
-	};
-
-	const handleFormTwoChange = <K extends keyof VendorCreationFormTwoValues>(
-		key: K,
-		value: VendorCreationFormTwoValues[K],
-	) => {
-		setFormTwoValues((previousValues) => ({
-			...previousValues,
-			[key]: value,
-		}));
-
-		setFormTwoErrors((previousErrors) => ({
-			...previousErrors,
-			[key]: "",
-		}));
-	};
-
-	const handleSaveFormOne = async () => {
+	const saveVendorDetails = async () => {
 		try {
-			if (resolvedVendorRequestId) {
-				await updateFormOneMutation.mutateAsync({
-					vendorRequestId: resolvedVendorRequestId,
-					payload: formOneValues,
-				});
-
-				showToast({
-					type: "success",
-					title: "Success",
-					description: "Vendor filled details updated successfully.",
+			if (vendorRequestId) {
+				await updateMutation.mutateAsync({
+					vendorRequestId,
+					payload: buildVendorUpdatePayload(formOneValues),
 				});
 			} else {
-				const savedData = await createFormOneMutation.mutateAsync({
-					payload: formOneValues,
-				});
-
-				setCreatedVendorRequestId(savedData.id);
-
-				showToast({
-					type: "success",
-					title: "Success",
-					description: "Vendor filled details saved successfully.",
-				});
+				const created = await createMutation.mutateAsync(formOneValues);
+				setCreatedVendorId(created.id);
 			}
-
-			handleNext();
-		} catch (error: unknown) {
-			console.error("Vendor form one save failed:", error);
-
+			next();
+		} catch (error) {
 			showToast({
 				type: "error",
 				title: "Error",
-				description: getErrorMessage(
-					error,
-					"Failed to save vendor filled details.",
-				),
+				description: getErrorMessage(error, "Failed to save vendor details."),
 			});
 		}
 	};
 
-	const handleVendorSubmitForm = async (
-		submission?: VendorCreationFormOneSubmission,
-	) => {
+	const saveThcmDetails = async () => {
+		if (!vendorRequestId) return;
 		try {
-			if (isPublicForm) {
-				if (!normalizedToken) {
-					showToast({
-						type: "error",
-						title: "Invalid Link",
-						description: "The vendor onboarding session code is missing.",
-					});
-
-					return;
-				}
-
-				if (!submission?.dpdpConsent) {
-					showToast({
-						type: "error",
-						title: "Consent Required",
-						description:
-							"Please accept the Data Privacy Notice before submitting.",
-					});
-
-					return;
-				}
-
-				const missingDocuments = getMissingPublicDocuments(submission);
-
-				if (missingDocuments.length > 0) {
-					showToast({
-						type: "error",
-						title: "Documents Required",
-						description: `Please upload: ${missingDocuments.join(", ")}`,
-					});
-
-					return;
-				}
-
-				const formData = buildPublicVendorFormData(formOneValues, submission);
-
-				await publicVendorSubmitMutation.mutateAsync({
-					token: normalizedToken,
-					formData,
-				});
-			} else if (resolvedVendorRequestId) {
-				await updateFormOneMutation.mutateAsync({
-					vendorRequestId: resolvedVendorRequestId,
-					payload: formOneValues,
-				});
-			} else {
-				const savedData = await createFormOneMutation.mutateAsync({
-					payload: formOneValues,
-				});
-
-				setCreatedVendorRequestId(savedData.id);
-			}
-
-			showToast({
-				type: "success",
-				title: "Form Filled",
-				description: "Vendor form has been filled successfully.",
+			await updateMutation.mutateAsync({
+				vendorRequestId,
+				payload: buildThcmUpdatePayload(formTwoValues),
 			});
-
-			await onSuccess?.();
-		} catch (error: unknown) {
-			console.error("Vendor form submit failed:", error);
-
-			showToast({
-				type: "error",
-				title: "Error",
-				description: getErrorMessage(error, "Failed to submit vendor form."),
-			});
-		}
-	};
-
-	const handleSaveFormTwo = async () => {
-		try {
-			if (!resolvedVendorRequestId) {
-				showToast({
-					type: "error",
-					title: "Error",
-					description: "Vendor request ID not found.",
-				});
-
-				return;
-			}
-
-			await updateFormTwoMutation.mutateAsync({
-				vendorRequestId: resolvedVendorRequestId,
-				payload: formTwoValues,
-			});
-
-			showToast({
-				type: "success",
-				title: "Success",
-				description: "THCM details saved successfully.",
-			});
-
-			handleNext();
-		} catch (error: unknown) {
-			console.error("Vendor form two save failed:", error);
-
+			next();
+		} catch (error) {
 			showToast({
 				type: "error",
 				title: "Error",
@@ -525,132 +258,103 @@ export function useVendorCreationForm({
 		}
 	};
 
-	const handleSubmitSummary = async () => {
+	const submitVendor = async () => {
+		if (!vendorRequestId) return;
 		try {
-			if (!resolvedVendorRequestId) {
-				showToast({
-					type: "error",
-					title: "Error",
-					description: "Vendor request ID not found.",
-				});
-
-				return;
-			}
-
-			await submitSummaryMutation.mutateAsync({
-				vendorRequestId: resolvedVendorRequestId,
-			});
-
+			await submitMutation.mutateAsync(vendorRequestId);
 			showToast({
 				type: "success",
-				title: "Success",
-				description: "Vendor onboarding request submitted successfully.",
+				title: "Submitted",
+				description: "Vendor onboarding submitted successfully.",
 			});
-
-			if (onSuccess) {
-				await onSuccess();
-				return;
-			}
-
-			navigate("/vendor/listing?tab=onboarding");
-		} catch (error: unknown) {
-			console.error("Vendor summary submit failed:", error);
-
+			if (onSuccess) await onSuccess();
+			else navigate("/vendor/listing?tab=onboarding");
+		} catch (error) {
 			showToast({
 				type: "error",
 				title: "Error",
-				description: getErrorMessage(
-					error,
-					"Failed to submit vendor onboarding request.",
-				),
+				description: getErrorMessage(error, "Failed to submit onboarding."),
 			});
 		}
 	};
 
-	const handleAcceptAndClose = async () => {
-		try {
-			if (!resolvedVendorRequestId) {
-				showToast({
-					type: "error",
-					title: "Error",
-					description: "Vendor request ID not found.",
-				});
-
-				return;
-			}
-
-			await acceptAndCloseVendorMutation.mutateAsync(resolvedVendorRequestId);
-
+	const submitPublicVendor = async (
+		submission?: VendorCreationFormOneSubmission,
+	) => {
+		if (!submission || !normalizedToken) return;
+		const missing = getMissingDocuments(submission);
+		if (!submission.dpdpConsent || missing.length) {
 			showToast({
-				type: "success",
-				title: "Success",
-				description: "Vendor onboarding request accepted and closed.",
+				type: "error",
+				title: "Required information missing",
+				description: missing.length
+					? `Please upload: ${missing.join(", ")}`
+					: "Please accept the Data Privacy Notice.",
 			});
-
-			if (onSuccess) {
-				await onSuccess();
-				return;
-			}
-
-			navigate("/vendor/listing?tab=onboarding");
-		} catch (error: unknown) {
-			console.error("Vendor close failed:", error);
-
+			return;
+		}
+		try {
+			await publicSubmitMutation.mutateAsync({
+				token: normalizedToken,
+				formData: buildPublicFormData(formOneValues, submission),
+			});
+			await onSuccess?.();
+		} catch (error) {
 			showToast({
 				type: "error",
 				title: "Error",
-				description: getErrorMessage(
-					error,
-					"Failed to close vendor onboarding request.",
-				),
+				description: getErrorMessage(error, "Failed to submit vendor form."),
 			});
 		}
 	};
+
+	const acceptAndClose = async () => {
+		if (!vendorRequestId) return;
+		await closeMutation.mutateAsync(vendorRequestId);
+		navigate("/vendor/listing?tab=onboarding");
+	};
+
+	const mutationLoading =
+		createMutation.isPending ||
+		updateMutation.isPending ||
+		submitMutation.isPending ||
+		closeMutation.isPending ||
+		publicSubmitMutation.isPending;
 
 	return {
 		vendorOnboardingSteps,
-
 		currentStep,
 		setCurrentStep,
-
-		vendorRequestId: resolvedVendorRequestId,
-
+		vendorRequestId,
 		formOneValues,
 		formTwoValues,
+		formOneDocuments: detailQuery.data?.documents ?? [],
 		formOneErrors,
 		formTwoErrors,
-
 		role,
-		canEditFormOne,
-		canEditFormTwo,
-		canSubmitVendorForm,
-		canSubmit,
-		canApprove,
-		canClarify,
-		canAcceptAndClose,
-
-		isLoading: isPublicForm
-			? publicVendorSessionQuery.isLoading
-			: internalVendorQuery.isLoading,
-
-		isError: isPublicForm
-			? publicVendorSessionQuery.isError
-			: internalVendorQuery.isError,
-
-		publicSessionError: publicVendorSessionQuery.error,
-
+		canEditFormOne: isInternal,
+		canEditFormTwo: isInternal,
+		canSubmitVendorForm: isPublicVendor,
+		canSubmit: isInternal,
+		canApprove: role === "THCM_APPROVER",
+		canClarify: role === "THCM_APPROVER",
+		canAcceptAndClose: role === "EXTERNAL_APPROVER",
+		isLoading: isPublicForm ? publicQuery.isLoading : detailQuery.isLoading,
+		isError: isPublicForm ? publicQuery.isError : detailQuery.isError,
+		publicSessionError: publicQuery.error,
 		mutationLoading,
+		status: detailQuery.data?.status,
 
-		handleNext,
-		handleBack,
-
-		handleFormOneChange,
-		handleFormTwoChange,
-
-		handleSaveFormOne,
-		handleSaveFormTwo,
-		handleVendorSubmitForm,
-		handleSubmitSummary,
-		handleAcceptAndClose,
+		handleNext: next,
+		handleBack: back,
+		handleFormOneChange: changeFormOne,
+		handleFormTwoChange: changeFormTwo,
+		handleSaveFormOne: saveVendorDetails,
+		handleSaveFormTwo: saveThcmDetails,
+		handleVendorSubmitForm: submitPublicVendor,
+		handleSubmitSummary: submitVendor,
+		handleApprove: async () => undefined,
+		handleClarify: async () => undefined,
+		handleAcceptAndClose: acceptAndClose,
 	};
 }

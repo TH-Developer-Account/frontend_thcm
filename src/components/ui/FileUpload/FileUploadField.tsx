@@ -270,6 +270,7 @@ type PreviewCardProps = {
 	disabled: boolean;
 	onReplace: (event?: React.MouseEvent) => void;
 	onRemove: (event?: React.MouseEvent) => void;
+	showActions?: boolean;
 };
 
 const FileUploadPreviewCard = React.memo(
@@ -280,6 +281,7 @@ const FileUploadPreviewCard = React.memo(
 		disabled,
 		onReplace,
 		onRemove,
+		showActions = false,
 	}: PreviewCardProps) => {
 		const showImagePreview = isImageUpload(value);
 		const showPdfPreview = isPdfUpload(value);
@@ -343,42 +345,44 @@ const FileUploadPreviewCard = React.memo(
 						</p>
 					</div>
 
-					<div className="file-upload-preview-actions">
-						{!readonly && !disabled ? (
+					{showActions && (
+						<div className="file-upload-preview-actions">
+							{!readonly && !disabled ? (
+								<Button
+									type="button"
+									appearance="icon"
+									variant="secondary"
+									size="sm"
+									Icon={RefreshCw}
+									aria-label="Replace file"
+									onClick={onReplace}
+								/>
+							) : null}
+
 							<Button
 								type="button"
 								appearance="icon"
 								variant="secondary"
 								size="sm"
-								Icon={RefreshCw}
-								aria-label="Replace file"
-								onClick={onReplace}
+								Icon={Eye}
+								aria-label={`View ${value.name}`}
+								onClick={handleView}
+								disabled={!value.url}
 							/>
-						) : null}
 
-						<Button
-							type="button"
-							appearance="icon"
-							variant="secondary"
-							size="sm"
-							Icon={Eye}
-							aria-label={`View ${value.name}`}
-							onClick={handleView}
-							disabled={!value.url}
-						/>
-
-						{!readonly && !disabled ? (
-							<Button
-								type="button"
-								appearance="icon"
-								variant="secondary"
-								size="sm"
-								Icon={Trash2}
-								aria-label="Remove file"
-								onClick={onRemove}
-							/>
-						) : null}
-					</div>
+							{!readonly && !disabled ? (
+								<Button
+									type="button"
+									appearance="icon"
+									variant="secondary"
+									size="sm"
+									Icon={Trash2}
+									aria-label="Remove file"
+									onClick={onRemove}
+								/>
+							) : null}
+						</div>
+					)}
 				</div>
 			</div>
 		);
