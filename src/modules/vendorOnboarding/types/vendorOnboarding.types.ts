@@ -4,8 +4,10 @@ export type VendorFormMode = "edit" | "view";
 
 export type VendorOnboardingStatus =
 	| "DRAFT"
-	| "SUBMITTED_BY_VENDOR"
-	| "THCM_REVIEW_IN_PROGRESS"
+	| "AWAITING_VENDOR"
+	| "VENDOR_SUBMITTED"
+	| "IN_REVIEW"
+	| "IN_PROGRESS"
 	| "THCM_SUBMITTED"
 	| "THCM_CLARIFICATION_REQUESTED"
 	| "THCM_APPROVED"
@@ -27,20 +29,16 @@ export type VendorCreationFormOneValues = {
 	city?: string;
 	pinCode?: string;
 	state?: string;
-
 	mobile?: string;
 	email?: string;
-
 	bank?: string;
 	branch?: string;
 	ifscCode?: string;
 	bankAddress?: string;
 	accountNumber?: string;
-
 	gstin?: string;
 	pan?: string;
 	entityRegistrationNumber?: string;
-
 	gstCertificate?: string;
 	panNumber?: string;
 	bankCancelledCheque?: string;
@@ -54,14 +52,11 @@ export type VendorCreationFormTwoValues = {
 	vendorType?: string;
 	companyCode?: string;
 	purchaseOrg?: string;
-
 	paymentTerm?: string;
 	tds?: string;
-
 	vendorCategory?: string;
 	materialType?: string;
 	materialSubType?: string;
-
 	vendorSelfAssessmentObtained?: string;
 	ndaObtained?: string;
 	gpaObtained?: string;
@@ -70,29 +65,49 @@ export type VendorCreationFormTwoValues = {
 	remarks?: string;
 	natureOfService?: string;
 	reasonForOnboarding?: string;
-
 	proposedByName?: string;
 	proposedByDesignation?: string;
 	proposedDate?: string;
-
 	approvedByName?: string;
 	approvedByDesignation?: string;
 	approvalDate?: string;
 };
 
-export type VendorCreationPayload = {
-	partOne: VendorCreationFormOneValues;
-	partTwo: VendorCreationFormTwoValues;
-	status?: VendorOnboardingStatus;
-};
-
-export type VendorClarificationPayload = {
-	reason: string;
-	comment?: string;
-};
-
-export type VendorCommentPayload = {
-	comment: string;
+export type VendorUpdatePayload = {
+	vendorName?: string | null;
+	state?: string | null;
+	city?: string | null;
+	pinCode?: string | null;
+	address?: string | null;
+	mobile?: string | null;
+	email?: string | null;
+	msmeVendor?: boolean | null;
+	msmeCertAttached?: boolean | null;
+	bankName?: string | null;
+	bankBranch?: string | null;
+	ifscCode?: string | null;
+	bankAddress?: string | null;
+	accountNumber?: string | null;
+	gstin?: string | null;
+	pan?: string | null;
+	entityRegNo?: string | null;
+	vendorCode?: string | null;
+	vendorType?: string | null;
+	companyCode?: string | null;
+	purchaseOrg?: string | null;
+	paymentTerm?: string | null;
+	tds?: string | null;
+	vendorCategory?: string | null;
+	materialType?: string | null;
+	materialSubType?: string | null;
+	selfAssessmentObtained?: boolean | null;
+	ndaObtained?: boolean | null;
+	gpaObtained?: boolean | null;
+	isRelatedParty?: boolean | null;
+	vendorAuditReportPrepared?: boolean | null;
+	natureOfService?: string | null;
+	onboardingReason?: string | null;
+	remarks?: string | null;
 };
 
 export type VendorOnboardingResponse = {
@@ -100,48 +115,22 @@ export type VendorOnboardingResponse = {
 	status: VendorOnboardingStatus;
 	partOne: VendorCreationFormOneValues;
 	partTwo: VendorCreationFormTwoValues;
-	documents?: VendorOnboardingDocument[];
+	documents: VendorOnboardingDocument[];
 	createdAt?: string;
 	updatedAt?: string;
+	activeWorkflow?: unknown;
 };
+
 export type VendorFormErrors<T> = Partial<Record<keyof T, string>>;
 
-export type CreateVendorFormOneVariables = {
-	payload: VendorCreationFormOneValues;
+export type UpdateVendorVariables = {
+	vendorRequestId: string;
+	payload: VendorUpdatePayload;
 };
 
-export type UpdateVendorFormOneVariables = {
-	vendorRequestId: string;
-	payload: VendorCreationFormOneValues;
-};
-
-export type CreateVendorFormTwoVariables = {
-	vendorRequestId: string;
-	payload: VendorCreationFormTwoValues;
-};
-
-export type UpdateVendorFormTwoVariables = {
-	vendorRequestId: string;
-	payload: VendorCreationFormTwoValues;
-};
-
-export type SubmitVendorSummaryVariables = {
-	vendorRequestId: string;
-	payload: VendorCreationPayload;
-};
-
-export type DeleteVendorVariables = {
-	vendorRequestId: string;
-};
-
-export type ClarifyVendorVariables = {
-	vendorRequestId: string;
-	payload: VendorClarificationPayload;
-};
-
-export type CommentVendorVariables = {
-	vendorRequestId: string;
-	payload: VendorCommentPayload;
+export type VendorClarificationPayload = {
+	reason: string;
+	comment?: string;
 };
 
 export type VendorEnclosureStatusKey =
@@ -199,7 +188,6 @@ export const VENDOR_DOCUMENT_FIELDS = [
 
 export type VendorDocumentType =
 	(typeof VENDOR_DOCUMENT_FIELDS)[number]["documentType"];
-
 export type VendorDocumentField = (typeof VENDOR_DOCUMENT_FIELDS)[number];
 
 export type VendorDocumentUpload = {
@@ -208,11 +196,66 @@ export type VendorDocumentUpload = {
 	value: FileUploadValue | null;
 	error?: string;
 };
+
 export type VendorOnboardingDocument = {
 	id: string;
 	documentType: VendorDocumentType;
-	fileName?: string;
+	fileName: string;
 	fileUrl: string;
 	mimeType?: string;
 	size?: number;
+};
+
+export type VendorOnboardingRawDocument = {
+	id: string;
+	onboardingId: string;
+	documentType: VendorDocumentType;
+	s3Key: string;
+	fileUrl: string;
+	uploadedAt: string;
+};
+
+export type VendorOnboardingRawResponse = {
+	id: string;
+	workspaceId: string;
+	initiatedById: string;
+	status: VendorOnboardingStatus;
+	vendorName: string | null;
+	state: string | null;
+	city: string | null;
+	pinCode: string | null;
+	address: string | null;
+	mobile: string | null;
+	email: string | null;
+	msmeVendor: boolean | null;
+	msmeCertAttached: boolean | null;
+	bankName: string | null;
+	bankBranch: string | null;
+	ifscCode: string | null;
+	bankAddress: string | null;
+	accountNumber: string | null;
+	gstin: string | null;
+	pan: string | null;
+	entityRegNo: string | null;
+	vendorCode: string | null;
+	vendorType: string | null;
+	companyCode: string | null;
+	purchaseOrg: string | null;
+	paymentTerm: string | null;
+	tds: string | null;
+	vendorCategory: string | null;
+	materialType: string | null;
+	materialSubType: string | null;
+	selfAssessmentObtained: boolean | null;
+	ndaObtained: boolean | null;
+	gpaObtained: boolean | null;
+	isRelatedParty: boolean | null;
+	vendorAuditReportPrepared: boolean | null;
+	natureOfService: string | null;
+	onboardingReason: string | null;
+	remarks?: string | null;
+	documents?: VendorOnboardingRawDocument[];
+	activeWorkflow?: unknown;
+	created_at?: string;
+	updated_at?: string;
 };

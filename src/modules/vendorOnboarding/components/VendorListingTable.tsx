@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { FileDown } from "lucide-react";
+import type { ColumnDef } from "@tanstack/react-table";
+
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
 import { SearchInput } from "../../../components/forms/SearchInput";
@@ -11,7 +13,6 @@ import { VENDOR_FILTER_TABS } from "../utils/vendor.constant";
 import { getVendorInitiationColumns } from "../utils/vendorListing.columns";
 import { getVendorOnboardingColumns } from "../utils/vendorOnboardingListing.columns";
 
-import type { ColumnDef } from "@tanstack/react-table";
 import type {
 	VendorInitiationListingRow,
 	VendorOnboardingListingRow,
@@ -46,30 +47,22 @@ type VendorListingTableProps = {
 	onViewRow: (row: VendorListingDisplayRow) => void;
 };
 
-// const DEFAULT_PAGE_SIZE = 10;
 const SKELETON_ROW_COUNT = 8;
 
 export default function VendorListingTable({
 	selectedFilter,
 	onFilterChange,
-
 	search,
 	onSearchChange,
-
 	rows = [],
-
 	isLoading = false,
 	isFetching = false,
-
 	pageIndex,
 	pageSize,
 	pageCount,
-
 	onPageChange,
 	onPageSizeChange,
-
 	onExport,
-
 	onViewRow,
 }: VendorListingTableProps) {
 	const isInitiationTab = selectedFilter === "initiation";
@@ -77,7 +70,7 @@ export default function VendorListingTable({
 	const initiationColumns = useMemo(
 		() =>
 			getVendorInitiationColumns({
-				onView: onViewRow as (row: VendorInitiationListingRow) => void,
+				onView: (row: VendorInitiationListingRow) => onViewRow(row),
 			}),
 		[onViewRow],
 	);
@@ -85,14 +78,18 @@ export default function VendorListingTable({
 	const onboardingColumns = useMemo(
 		() =>
 			getVendorOnboardingColumns({
-				onView: onViewRow as (row: VendorOnboardingListingRow) => void,
+				onView: (row: VendorOnboardingListingRow) => onViewRow(row),
 			}),
 		[onViewRow],
 	);
 
-	const columns = (isInitiationTab
-		? initiationColumns
-		: onboardingColumns) as unknown as ColumnDef<VendorListingDisplayRow>[];
+	const columns = useMemo(
+		() =>
+			(isInitiationTab
+				? initiationColumns
+				: onboardingColumns) as unknown as ColumnDef<VendorListingDisplayRow>[],
+		[initiationColumns, isInitiationTab, onboardingColumns],
+	);
 
 	return (
 		<Card

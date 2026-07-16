@@ -1,17 +1,15 @@
 import { ServerAxios } from "../../../services/ServerAxios";
 
 import type {
-	CreateVendorFormOneVariables,
-	CreateVendorFormTwoVariables,
-	SubmitVendorSummaryVariables,
-	UpdateVendorFormOneVariables,
-	UpdateVendorFormTwoVariables,
+	UpdateVendorVariables,
 	VendorCreationFormOneValues,
+	VendorOnboardingRawResponse,
 	VendorOnboardingResponse,
 } from "../types/vendorOnboarding.types";
+import { normalizeVendorOnboardingResponse } from "../utils/vendor.onboarding.helper";
 
 const VENDOR_URL = "/vendor-onboarding";
-const PUBLIC_VENDOR_URL = "/vendor-onboarding/public";
+const PUBLIC_VENDOR_URL = `${VENDOR_URL}/public`;
 
 export type VendorOnboardingInitiationPayload = {
 	vendorName: string;
@@ -60,109 +58,49 @@ export type PublicVendorSessionResponse = {
 	partOne?: VendorCreationFormOneValues;
 };
 
-export type PublicVendorFormSubmissionResponse = {
-	message: string;
-};
-
 export const vendorOnboardingApi = {
-	// GET /vendor-onboarding/:id
-	// Renamed from the previous "getVendorOnboardingList" — this fetches a single
-	// vendor request by id, it was never a list method despite the old name.
-	getVendorOnboardingById: async ({
-		vendorRequestId,
-	}: UpdateVendorFormTwoVariables): Promise<VendorOnboardingResponse> => {
-		const {
-			data: { data },
-		} = await ServerAxios.get(`${VENDOR_URL}/${vendorRequestId}`);
-
-		return data;
-	},
-
-	// GET /vendor-onboarding/:id
 	getById: async (
 		vendorRequestId: string,
 	): Promise<VendorOnboardingResponse> => {
 		const {
 			data: { data },
-		} = await ServerAxios.get(`${VENDOR_URL}/${vendorRequestId}`);
+		} = await ServerAxios.get<{
+			success: boolean;
+			data: VendorOnboardingRawResponse;
+		}>(`${VENDOR_URL}/${vendorRequestId}`);
 
-		return data;
+		return normalizeVendorOnboardingResponse(data);
 	},
-	// GET /vendor-onboarding?tab=&search=&pageIndex=&pageSize=
+
 	listVendorOnboardings: async (
 		params: VendorListingParams,
 	): Promise<VendorListingResponse> => {
 		const {
 			data: { data },
 		} = await ServerAxios.get(VENDOR_URL, { params });
-
 		return data;
 	},
 
-	// POST /vendor-onboarding
-	createFormOne: async ({
-		payload,
-	}: CreateVendorFormOneVariables): Promise<VendorOnboardingResponse> => {
+	create: async (
+		payload: VendorCreationFormOneValues,
+	): Promise<VendorOnboardingResponse> => {
 		const {
 			data: { data },
 		} = await ServerAxios.post(VENDOR_URL, payload);
-
 		return data;
 	},
 
-	// PATCH /vendor-onboarding/:id
-	updateFormOne: async ({
+	update: async ({
 		vendorRequestId,
 		payload,
-	}: UpdateVendorFormOneVariables): Promise<VendorOnboardingResponse> => {
+	}: UpdateVendorVariables): Promise<VendorOnboardingResponse> => {
 		const {
 			data: { data },
 		} = await ServerAxios.patch(`${VENDOR_URL}/${vendorRequestId}`, payload);
 		return data;
 	},
-	// Form Two also uses PATCH /vendor-onboarding/:id
-	createFormTwo: async ({
-		vendorRequestId,
-		payload,
-	}: CreateVendorFormTwoVariables): Promise<VendorOnboardingResponse> => {
-		const {
-			data: { data },
-		} = await ServerAxios.patch(`${VENDOR_URL}/${vendorRequestId}`, payload);
 
-		return data;
-	},
-
-	// PATCH /vendor-onboarding/:id
-	updateFormTwo: async ({
-		vendorRequestId,
-		payload,
-	}: UpdateVendorFormTwoVariables): Promise<VendorOnboardingResponse> => {
-		const {
-			data: { data },
-		} = await ServerAxios.patch(`${VENDOR_URL}/${vendorRequestId}`, payload);
-
-		return data;
-	},
-
-	// Final submission starts the workflow. Form One and Form Two are already saved.
-	// submitSummary: async ({
-	// 	vendorRequestId,
-	// }: SubmitVendorSummaryVariables): Promise<VendorOnboardingResponse> => {
-	// 	return vendorOnboardingApi.sendForApproval(vendorRequestId);
-	// },
-	// POST /vendor-onboarding/:id/resend-link
-	resendVendorLink: async (
-		vendorRequestId: string,
-	): Promise<VendorOnboardingResponse> => {
-		const {
-			data: { data },
-		} = await ServerAxios.post(`${VENDOR_URL}/${vendorRequestId}/resend-link`);
-
-		return data;
-	},
-
-	// POST /vendor-onboarding/:id/send-for-approval
-	sendForApproval: async (
+	submit: async (
 		vendorRequestId: string,
 	): Promise<VendorOnboardingResponse> => {
 		const {
@@ -170,90 +108,63 @@ export const vendorOnboardingApi = {
 		} = await ServerAxios.post(
 			`${VENDOR_URL}/${vendorRequestId}/send-for-approval`,
 		);
-
 		return data;
 	},
 
-	// Existing summary method can call the same approval route
-	submitSummary: async ({
-		vendorRequestId,
-		payload,
-	}: SubmitVendorSummaryVariables): Promise<VendorOnboardingResponse> => {
-		await ServerAxios.patch(`${VENDOR_URL}/${vendorRequestId}`, payload);
-
-		const {
-			data: { data },
-		} = await ServerAxios.post(
-			`${VENDOR_URL}/${vendorRequestId}/send-for-approval`,
-		);
-
-		return data;
-	},
-
-	// POST /vendor-onboarding/:id/close
 	acceptAndClose: async (
 		vendorRequestId: string,
 	): Promise<VendorOnboardingResponse> => {
 		const {
 			data: { data },
 		} = await ServerAxios.post(`${VENDOR_URL}/${vendorRequestId}/close`);
-
 		return data;
 	},
-	// POST /vendor-onboarding/public/:token/submit
-	submitVendorForm: async (
-		token: string,
-		formData: FormData,
-	): Promise<PublicVendorFormSubmissionResponse> => {
-		const encodedToken = encodeURIComponent(token);
 
-		const {
-			data: { message },
-		} = await ServerAxios.post<{
-			success: boolean;
-			message: string;
-		}>(`${PUBLIC_VENDOR_URL}/${encodedToken}/submit`, formData);
-
-		return {
-			message,
-		};
-	},
-	// GET /vendor-onboarding/public/:token
 	getByToken: async (token: string): Promise<PublicVendorSessionResponse> => {
-		const encodedToken = encodeURIComponent(token);
-
 		const {
 			data: { data },
-		} = await ServerAxios.get<{
-			success: boolean;
-			data: PublicVendorSessionResponse;
-		}>(`${PUBLIC_VENDOR_URL}/${encodedToken}`);
+		} = await ServerAxios.get(
+			`${PUBLIC_VENDOR_URL}/${encodeURIComponent(token)}`,
+		);
 		return data;
 	},
-	// GET /public/vendor-onboarding/:token
-	// getByToken: async (token: string): Promise<VendorOnboardingResponse> => {
-	// 	const {
-	// 		data: { data },
-	// 	} = await ServerAxios.get(`${PUBLIC_VENDOR_URL}/${token}`);
 
-	// 	return data;
-	// },
+	submitPublic: async (token: string, formData: FormData): Promise<string> => {
+		const {
+			data: { message },
+		} = await ServerAxios.post(
+			`${PUBLIC_VENDOR_URL}/${encodeURIComponent(token)}/submit`,
+			formData,
+		);
+		return message;
+	},
 
-	// POST /public/vendor-onboarding/:token/submit
-	// submitVendorForm: async (
-	// 	token: string,
-	// 	formData: FormData,
-	// ): Promise<VendorOnboardingResponse> => {
-	// 	const {
-	// 		data: { data },
-	// 	} = await ServerAxios.post(
-	// 		`${PUBLIC_VENDOR_URL}/${token}/submit`,
-	// 		formData,
-	// 	);
+	resendVendorLink: async (vendorRequestId: string) => {
+		const {
+			data: { data },
+		} = await ServerAxios.post(`${VENDOR_URL}/${vendorRequestId}/resend-link`);
+		return data;
+	},
 
-	// 	return data;
-	// },
+	createInitiation: async (payload: VendorOnboardingInitiationPayload) => {
+		const {
+			data: { data },
+		} = await ServerAxios.post(VENDOR_URL, payload);
+		return data;
+	},
 
+	updateInitiation: async ({
+		id,
+		payload,
+	}: {
+		id: string;
+		payload: VendorOnboardingInitiationPayload;
+	}) => {
+		const {
+			data: { data },
+		} = await ServerAxios.patch(`${VENDOR_URL}/${id}`, payload);
+		return data;
+	},
 	assignWorkflow: async (payload: {
 		eventProposalId: string;
 		workspaceId: string | null;
@@ -275,26 +186,6 @@ export const vendorOnboardingApi = {
 		const {
 			data: { data },
 		} = await ServerAxios.post("/soa/preview-workflow", payload);
-
-		return data;
-	},
-	createInitiation: async (payload: VendorOnboardingInitiationPayload) => {
-		const {
-			data: { data },
-		} = await ServerAxios.post(VENDOR_URL, payload);
-		return data;
-	},
-
-	updateInitiation: async ({
-		id,
-		payload,
-	}: {
-		id: string;
-		payload: VendorOnboardingInitiationPayload;
-	}) => {
-		const {
-			data: { data },
-		} = await ServerAxios.patch(`/vendor-onboarding/${id}`, payload);
 
 		return data;
 	},

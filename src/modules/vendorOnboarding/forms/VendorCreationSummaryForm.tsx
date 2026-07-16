@@ -11,18 +11,21 @@ import Button from "../../../components/common/Button";
 import type {
 	VendorCreationFormOneValues,
 	VendorCreationFormTwoValues,
+	VendorOnboardingDocument,
 } from "../types/vendorOnboarding.types";
 import VendorCreationFormOne from "./VendorCreationFormOne";
 import VendorCreationFormTwo from "./VendorCreationFormTwo";
 
 type VendorCreationSummaryMode = "edit" | "view";
 
+const EMPTY_DOCUMENTS: VendorOnboardingDocument[] = [];
+
 type VendorCreationSummaryFormProps = {
 	mode?: VendorCreationSummaryMode;
 
 	formOneValues: VendorCreationFormOneValues;
 	formTwoValues: VendorCreationFormTwoValues;
-
+	formOneDocuments?: VendorOnboardingDocument[];
 	onBack?: () => void;
 	onSubmit?: () => void;
 	onApprove?: () => void;
@@ -42,6 +45,7 @@ const VendorCreationSummaryForm = ({
 	mode = "edit",
 	formOneValues,
 	formTwoValues,
+	formOneDocuments = EMPTY_DOCUMENTS,
 	onBack,
 	onSubmit,
 	onApprove,
@@ -71,53 +75,21 @@ const VendorCreationSummaryForm = ({
 
 	return (
 		<div className="vendor-summary-form">
-			{/* {isViewMode ? (
-				<div className="vendor-summary-intro">
-					<div className="vendor-summary-intro-icon">
-						<ShieldCheck size={18} aria-hidden="true" />
-					</div>
-
-					<div className="vendor-summary-intro-copy">
-						<h2 className="vendor-summary-title">
-							{isViewMode
-								? "Vendor onboarding details"
-								: "Final review before action"}
-						</h2>
-
-						<p className="vendor-summary-description">
-							{isViewMode
-								? "Review vendor master, finance, compliance, workflow, and comments."
-								: "Review vendor master, finance, compliance, workflow and comments before submitting, approving, clarifying, or closing the request."}
-						</p>
-					</div>
-				</div>
-			) : null} */}
-
-			<section className="vendor-summary-block">
-				<h3 className="vendor-summary-block-title">Vendor Details</h3>
-
-				<div className="vendor-summary-block-body">
-					<VendorCreationFormOne
-						mode="view"
-						canEdit={false}
-						values={formOneValues}
-						errors={{}}
-					/>
-				</div>
-			</section>
-
-			<section className="vendor-summary-block">
-				<h3 className="vendor-summary-block-title">Finance & Compliance</h3>
-
-				<div className="vendor-summary-block-body">
-					<VendorCreationFormTwo
-						mode="view"
-						canEdit={false}
-						values={formTwoValues}
-						errors={{}}
-					/>
-				</div>
-			</section>
+			<VendorCreationFormOne
+				mode="view"
+				canEdit={false}
+				values={formOneValues}
+				errors={{}}
+				initialDocuments={formOneDocuments}
+				requireDocuments={false}
+				requireDpdpConsent={false}
+			/>
+			<VendorCreationFormTwo
+				mode="view"
+				canEdit={false}
+				values={formTwoValues}
+				errors={{}}
+			/>
 
 			{commentsSection ? (
 				<section className="vendor-summary-block">

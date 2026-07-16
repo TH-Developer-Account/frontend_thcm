@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { PageHeader } from "../../../components/ui/PageHeader";
@@ -9,12 +9,20 @@ import {
 	toInitiationRow,
 	toOnboardingRow,
 } from "../utils/vendorListingRowMapper";
+
 import type {
 	VendorInitiationListingRow,
 	VendorOnboardingListingRow,
 } from "../types/vendorListing.types";
+import type { VendorViewerRole } from "../types/vendorOnboarding.types";
 
-const VendorListingPage = () => {
+type VendorListingPageProps = {
+	viewerRole?: VendorViewerRole;
+};
+
+const VendorListingPage = ({
+	viewerRole = "THCM_EMPLOYEE",
+}: VendorListingPageProps) => {
 	const navigate = useNavigate();
 
 	const {
@@ -34,25 +42,42 @@ const VendorListingPage = () => {
 
 	const isInitiationTab = tab === "initiation";
 
-	// The backend already scoped `rows` to the active tab — this only reshapes
-	// field names/adds the two placeholder nulls the table's types expect.
 	const rowsForTable = useMemo(
 		() =>
 			isInitiationTab ? rows.map(toInitiationRow) : rows.map(toOnboardingRow),
 		[isInitiationTab, rows],
 	);
 
-	const handleViewRow = (
-		row: VendorInitiationListingRow | VendorOnboardingListingRow,
-	) => {
-		const path =
-			tab === "initiation" ? "/vendor/initiation" : "/vendor/onboarding";
-		navigate(`${path}/${row.id}`);
-	};
+	const handleViewRow = useCallback(
+		(row: VendorInitiationListingRow | VendorOnboardingListingRow) => {
+			if (tab === "initiation") {
+				navigate(`/vendor/initiation/${row.id}`);
+				return;
+			}
 
-	const handleExport = () => {
+			// const isThcmEmployee = viewerRole === "THCM_EMPLOYEE";
+
+			// if (isThcmEmployee) {
+			// 	/*
+			// 	 * Existing onboarding request:
+			// 	 * open editable stepper with prepopulated values.
+			// 	 */
+			// 	navigate(`/vendor/onboarding/${row.id}`);
+			// 	return;
+			// }
+
+			/*
+			 * Approver/viewer route:
+			 * open read-only summary and workflow actions.
+			 */
+			navigate(`/vendor/onboarding/${row.id}/view`);
+		},
+		[navigate, tab, viewerRole],
+	);
+
+	const handleExport = useCallback(() => {
 		console.log(`Export vendor ${tab} rows:`, rows);
-	};
+	}, [rows, tab]);
 
 	return (
 		<PageSectionLayout>

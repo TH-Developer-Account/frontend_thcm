@@ -17,10 +17,15 @@ const VendorRoutes = () => {
 				element={<VendorInitiationPage mode="view" />}
 			/>
 
-			<Route path="onboard/create" element={<VendorOnboardingPage />} />
+			<Route path="/onboarding/create" element={<VendorOnboardingPage />} />
 
 			<Route
-				path="onboarding/:onboardingId"
+				path="/onboarding/:onboardingId"
+				element={<VendorOnboardingPage />}
+			/>
+
+			<Route
+				path="/onboarding/:onboardingId/view"
 				element={<VendorOnboardingFormView />}
 			/>
 		</Routes>
