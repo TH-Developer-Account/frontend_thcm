@@ -154,14 +154,16 @@ export default function CommentsSection({
 	const [toEmails, setToEmails] = React.useState<string[]>([]);
 	const commentsListRef = React.useRef<HTMLDivElement>(null);
 	const hasLoadedRef = React.useRef(false);
+	const onCommentsChangeRef = React.useRef(onCommentsChange);
 
-	const replaceComments = React.useCallback(
-		(nextComments: CommentItem[]) => {
-			setComments(nextComments);
-			onCommentsChange?.(nextComments);
-		},
-		[onCommentsChange],
-	);
+	React.useEffect(() => {
+		onCommentsChangeRef.current = onCommentsChange;
+	}, [onCommentsChange]);
+
+	const replaceComments = React.useCallback((nextComments: CommentItem[]) => {
+		setComments(nextComments);
+		onCommentsChangeRef.current?.(nextComments);
+	}, []);
 
 	React.useEffect(() => {
 		let cancelled = false;
@@ -222,8 +224,11 @@ export default function CommentsSection({
 					payload: { message, to, cc },
 				});
 
-				const nextComments = [...comments, response.data];
-				replaceComments(nextComments);
+				setComments((currentComments) => {
+					const nextComments = [...currentComments, response.data];
+					onCommentsChangeRef.current?.(nextComments);
+					return nextComments;
+				});
 				setToEmails([]);
 				showToast({
 					type: "success",
@@ -242,17 +247,7 @@ export default function CommentsSection({
 				throw error;
 			}
 		},
-		[
-			api,
-			approvalId,
-			ccEmails,
-			comments,
-			replaceComments,
-			showToast,
-			subjectId,
-			subjectType,
-			toEmails,
-		],
+		[api, approvalId, ccEmails, showToast, subjectId, subjectType, toEmails],
 	);
 
 	const commentCountLabel = `${comments.length} ${comments.length === 1 ? "comment" : "comments"}`;

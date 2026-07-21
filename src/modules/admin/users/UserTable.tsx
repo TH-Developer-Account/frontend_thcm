@@ -6,7 +6,7 @@ import Button from "../../../components/common/Button";
 import ManagementTable from "../../../components/ui/tables/ManagementTable/ManagementTable";
 import { ManagementIdentityCell } from "../../../components/ui/tables/ManagementTable/ManagementTableCells";
 import { type ManagementTableColumn } from "../../../components/ui/tables/ManagementTable/ManagementTable.types";
-import type { TableUser } from "../../../utils/types";
+import type { TableUser } from "../../../types/common.types";
 
 interface UserTableProps {
 	users: TableUser[];

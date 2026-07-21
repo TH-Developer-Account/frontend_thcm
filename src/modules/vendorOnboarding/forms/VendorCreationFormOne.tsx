@@ -28,7 +28,7 @@ import {
 } from "../../../components/ui/FileUpload/fileUpload.helpers";
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 
-import FormHeader from "../../marketing/activity-planner/components/common/FormHeader";
+import FormHeader from "../../../components/ui/FormHeader";
 
 import {
 	VENDOR_DOCUMENT_FIELDS,
@@ -685,6 +685,19 @@ const VendorCreationFormOne = ({
 						mode={fieldMode}
 						name="accountNumber"
 						label="A/C No."
+						value={values.accountNumber ?? ""}
+						required
+						inputMode="numeric"
+						error={errors.accountNumber}
+						helperText="Vendor bank account number."
+						onChange={(event) =>
+							onChange?.("accountNumber", event.target.value)
+						}
+					/>
+					<FormInput
+						mode={fieldMode}
+						name="accountNumber"
+						label="Confirm A/C No."
 						value={values.accountNumber ?? ""}
 						required
 						inputMode="numeric"

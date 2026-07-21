@@ -45,13 +45,13 @@ export const VENDOR_INITIATION_FILTER_TABS = [
 		tooltipLabel: "View vendor onboarding approvals pending on me",
 		Icon: Clock3,
 	},
-	{
-		value: "approvedByMe",
-		label: "Approved by me",
-		shortLabel: "Approved",
-		tooltipLabel: "View vendor onboarding requests approved by me",
-		Icon: CheckCircle2,
-	},
+	// {
+	// 	value: "approvedByMe",
+	// 	label: "Approved by me",
+	// 	shortLabel: "Approved",
+	// 	tooltipLabel: "View vendor onboarding requests approved by me",
+	// 	Icon: CheckCircle2,
+	// },
 ] as const satisfies ReadonlyArray<{
 	value: VendorListingFilter;
 	label: string;

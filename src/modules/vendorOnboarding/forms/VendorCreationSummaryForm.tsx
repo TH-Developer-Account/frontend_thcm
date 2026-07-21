@@ -7,8 +7,10 @@ import type { ApprovalStageLike } from "../../../components/ui/workflow/approval
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 
-import { workflowApi } from "../../marketing/activity-planner/api/workflow.api";
-import { ReasonActionModal } from "../../marketing/activity-planner/components/common/ReasonActionModal";
+import {
+	ReasonActionModal,
+	type ReasonActionMode,
+} from "../../../components/ui/ReasonActionModal";
 import {
 	getCurrentApprovalStage,
 	getIsUserInCurrentStage,
@@ -22,6 +24,7 @@ import type {
 
 import VendorCreationFormOne from "./VendorCreationFormOne";
 import VendorCreationFormTwo from "./VendorCreationFormTwo";
+import { workflowApi } from "../../../api/workflow.api";
 
 type VendorCreationSummaryMode = "edit" | "view";
 
@@ -62,7 +65,7 @@ type VendorCreationSummaryFormProps = {
 };
 
 type ReasonModalState = {
-	mode: "clarify-workflow" | null;
+	mode: ReasonActionMode | null;
 	loading: boolean;
 };
 

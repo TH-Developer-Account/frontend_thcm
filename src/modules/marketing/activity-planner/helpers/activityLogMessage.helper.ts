@@ -2,9 +2,8 @@ import { formatDateTime } from "../../../../utils/format";
 
 export type AuditComment = {
 	action?: string | null;
-	metadata?: {
-		reason?: string | null;
-	};
+	reason?: string | null;
+	metadata?: Record<string, unknown> | null;
 	stageName?: string | null;
 	actor?: {
 		first_name?: string | null;
@@ -22,7 +21,10 @@ export const getActorName = (comment: AuditComment) => {
 export const getAuditMessage = (comment: AuditComment) => {
 	const actorName = getActorName(comment) || "Someone";
 	const action = comment.action?.toUpperCase();
-	const reason = comment.metadata?.reason?.trim();
+	const metadataReason = comment.metadata?.reason;
+	const reason =
+		(typeof metadataReason === "string" ? metadataReason.trim() : "") ||
+		comment.reason?.trim();
 	const stageName = comment.stageName;
 	const timeStamp = formatDateTime(comment.createdAt);
 

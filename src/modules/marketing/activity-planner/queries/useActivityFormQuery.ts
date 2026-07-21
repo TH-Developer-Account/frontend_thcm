@@ -3,12 +3,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { commentApi, commentKeys } from "../../../../components/ui/comments";
 import { eventOutcomeApi } from "../api/event.outcome.api";
 import { eventReportApi } from "../api/eventReport.api";
-import { workflowApi } from "../api/workflow.api";
 import { epcKeys } from "./epc.keys";
 import type {
 	EventDeviationPayload,
 	EventOutcomePayload,
 } from "../types/event.outcome.types";
+import { workflowApi } from "../../../../api/workflow.api";
 
 const EVENT_PROPOSAL_SUBJECT_TYPE = "EVENT_PROPOSAL";
 

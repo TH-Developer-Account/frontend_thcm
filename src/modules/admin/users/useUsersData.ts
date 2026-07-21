@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import type { TableUser } from "../../../utils/types";
+import type { TableUser } from "../../../types/common.types";
 import type { FetchUsers } from "./user-management.types";
 
 type UseUsersDataOptions = {

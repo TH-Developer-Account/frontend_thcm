@@ -10,7 +10,7 @@ import {
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
 import FormInput from "../../../components/forms/FormInput";
-import FormHeader from "../../marketing/activity-planner/components/common/FormHeader";
+import FormHeader from "../../../components/ui/FormHeader";
 
 import { useVendorOnboardingInitiation } from "../hooks/useVendorOnboardingInitiation";
 import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";

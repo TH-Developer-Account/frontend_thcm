@@ -42,7 +42,6 @@ import {
 	getStoredEpcInfo,
 } from "../../helpers/localstorage";
 
-import { workflowApi } from "../../api/workflow.api";
 import {
 	useCreateEpfMutation,
 	useUpdateEpfMutation,
@@ -51,7 +50,8 @@ import {
 import { useEpfBudgetInfoQuery } from "../../queries/useEpfBudgetInfoQuery";
 import type { ApiErrorResponse } from "../../../../../context/context.types";
 import type { AxiosError } from "axios";
-import type { ApprovalTableRow } from "../../types/activityplanner.types";
+import { workflowApi } from "../../../../../api/workflow.api";
+import type { ApprovalTableRow } from "../../../../../components/ui/workflow/approvalWorkflow.types";
 
 export type EpfFormMode = "create" | "edit";
 

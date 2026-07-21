@@ -1,4 +1,4 @@
-import { type TableUser } from "../../../utils/types";
+import { type TableUser } from "../../../types/common.types";
 
 export const mockUsers: TableUser[] = [
 	{

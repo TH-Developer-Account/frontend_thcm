@@ -1,5 +1,5 @@
-import { ServerAxios } from "../../../../services/ServerAxios";
-import type { EventDeviationPayload } from "../types/event.outcome.types";
+import { ServerAxios } from "../services/ServerAxios";
+import type { EventDeviationPayload } from "../types/common.types";
 
 export const workflowApi = {
 	assignWorkflow: async (payload: {

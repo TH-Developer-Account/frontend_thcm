@@ -13,7 +13,7 @@ import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
 
-import FormHeader from "../../marketing/activity-planner/components/common/FormHeader";
+import FormHeader from "../../../components/ui/FormHeader";
 
 import type {
 	VendorCreationFormTwoValues,

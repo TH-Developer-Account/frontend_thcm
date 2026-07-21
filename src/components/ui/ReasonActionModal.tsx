@@ -1,12 +1,16 @@
-// components/common/ReasonActionModal.tsx
-
 import React from "react";
 
-import Button from "../../../../../components/common/Button";
-import { Modal } from "../../../../../components/common/Modal";
-import TextareaInput from "../../../../../components/forms/TextareaInput";
+import Button from "../common/Button";
+import { Modal } from "../common/Modal";
+import TextareaInput from "../forms/TextareaInput";
+import {
+	REASON_ACTION_MODAL_COPY,
+	REASON_ACTION_MODAL_LABEL,
+	REASON_ACTION_MODAL_SHORTCUT_HINT,
+	type ReasonActionMode,
+} from "../../utils/constant";
 
-export type ReasonActionMode = "clarify-workflow" | "clarify-report";
+export type { ReasonActionMode } from "../../utils/constant";
 
 type ReasonActionModalProps = {
 	open: boolean;
@@ -14,34 +18,6 @@ type ReasonActionModalProps = {
 	loading?: boolean;
 	onClose: () => void;
 	onConfirm: (reason: string) => void | Promise<void>;
-};
-
-type ReasonActionCopy = {
-	title: string;
-	description: string;
-	placeholder: string;
-	confirmText: string;
-	loadingText: string;
-};
-
-const MODAL_COPY: Record<ReasonActionMode, ReasonActionCopy> = {
-	"clarify-workflow": {
-		title: "Send for Clarification",
-		description:
-			"This will send the EPC back to the proposer. The proposer can update the EPC, CRF, or EPF and resubmit the workflow.",
-		placeholder: "Example: Please update the budget breakup before approval.",
-		confirmText: "Send Clarification",
-		loadingText: "Sending...",
-	},
-	"clarify-report": {
-		title: "Clarify Report",
-		description:
-			"This will send only the event report back to the proposer for correction. It will not restart the EPC approval workflow.",
-		placeholder:
-			"Example: Please correct the event photos and leads generated.",
-		confirmText: "Clarify Report",
-		loadingText: "Sending...",
-	},
 };
 
 export const ReasonActionModal = ({
@@ -76,7 +52,7 @@ export const ReasonActionModal = ({
 
 	if (!mode) return null;
 
-	const copy = MODAL_COPY[mode];
+	const copy = REASON_ACTION_MODAL_COPY[mode];
 
 	return (
 		<Modal open={open} title={copy.title} size="md" onClose={handleClose}>
@@ -85,7 +61,7 @@ export const ReasonActionModal = ({
 
 				<TextareaInput
 					name="reason"
-					label="Reason"
+					label={REASON_ACTION_MODAL_LABEL}
 					value={reason}
 					placeholder={copy.placeholder}
 					rows={4}
@@ -101,7 +77,9 @@ export const ReasonActionModal = ({
 				/>
 
 				<footer className="modal-footer">
-					<span className="modal-footer-hint">Ctrl + Enter to submit</span>
+					<span className="modal-footer-hint">
+						{REASON_ACTION_MODAL_SHORTCUT_HINT}
+					</span>
 
 					<div className="modal-footer-actions">
 						<Button
