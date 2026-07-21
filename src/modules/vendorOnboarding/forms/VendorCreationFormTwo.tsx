@@ -1,7 +1,3 @@
-import Button from "../../../components/common/Button";
-import FormInput from "../../../components/forms/FormInput";
-import SelectInput from "../../../components/forms/SelectInput";
-import FormHeader from "../../marketing/activity-planner/components/common/FormHeader";
 import {
 	ArrowLeft,
 	ArrowRight,
@@ -10,26 +6,40 @@ import {
 	RefreshCcw,
 	ShieldCheck,
 } from "lucide-react";
+
+import Button from "../../../components/common/Button";
+import Card from "../../../components/common/Card";
+import FormInput from "../../../components/forms/FormInput";
+import SelectInput from "../../../components/forms/SelectInput";
+import TextareaInput from "../../../components/forms/TextareaInput";
+
+import FormHeader from "../../marketing/activity-planner/components/common/FormHeader";
+
 import type {
 	VendorCreationFormTwoValues,
 	VendorFormErrors,
 	VendorFormMode,
 } from "../types/vendorOnboarding.types";
-import TextareaInput from "../../../components/forms/TextareaInput";
-import Card from "../../../components/common/Card";
 
 export type VendorCreationFormTwoProps = {
 	mode?: VendorFormMode;
 	canEdit?: boolean;
+	canEditVendorCode?: boolean;
+
 	values?: VendorCreationFormTwoValues;
+
 	onChange?: <K extends keyof VendorCreationFormTwoValues>(
 		key: K,
 		value: VendorCreationFormTwoValues[K],
 	) => void;
+
 	onBack?: () => void;
 	onNext?: () => void;
+
 	errors?: VendorFormErrors<VendorCreationFormTwoValues>;
+
 	loading?: boolean;
+	vendorCodeLoading?: boolean;
 };
 
 type SelectOption = {
@@ -48,9 +58,6 @@ const getSelectedOption = (
 	value?: string,
 ): SelectOption | null =>
 	options.find((option) => option.value === value) ?? null;
-
-const getDisplayValue = (value?: string): string =>
-	value && value.trim().length > 0 ? value : "--";
 
 const vendorTypeOptions = toSelectOptions([
 	"PO Based",
@@ -107,118 +114,23 @@ const materialSubTypeOptions = toSelectOptions([
 
 const yesNoOptions = toSelectOptions(["Yes", "No"]);
 
-type VendorDetailValueProps = {
-	label: string;
-	value?: string;
-	required?: boolean;
-};
-
-const VendorDetailValue = ({
-	label,
-	value,
-	required = false,
-}: VendorDetailValueProps) => {
-	return (
-		<div className="vendor-detail-field">
-			<div className="vendor-detail-label">
-				{label}
-				{required ? (
-					<span className="vendor-detail-required" aria-hidden="true">
-						*
-					</span>
-				) : null}
-				:
-			</div>
-			<div className="vendor-detail-value">{getDisplayValue(value)}</div>
-		</div>
-	);
-};
-
 const VendorCreationFormTwo = ({
 	mode = "edit",
 	canEdit = true,
+	canEditVendorCode = false,
 	values = {},
 	onChange,
 	onBack,
 	onNext,
 	errors = {},
 	loading = false,
+	vendorCodeLoading = false,
 }: VendorCreationFormTwoProps) => {
 	const isReadOnly = mode === "view" || !canEdit;
 
-	const renderInput = <K extends keyof VendorCreationFormTwoValues>({
-		name,
-		label,
-		required,
-		helperText,
-	}: {
-		name: K;
-		label: string;
-		required?: boolean;
-		helperText?: string;
-	}) => {
-		if (isReadOnly) {
-			return (
-				<VendorDetailValue
-					label={label}
-					value={values[name]}
-					required={required}
-				/>
-			);
-		}
+	const fieldMode: VendorFormMode = isReadOnly ? "view" : "edit";
 
-		return (
-			<FormInput
-				name={String(name)}
-				label={label}
-				value={values[name] ?? ""}
-				required={required}
-				error={errors[name]}
-				helperText={helperText}
-				onChange={(event) => onChange?.(name, event.target.value)}
-			/>
-		);
-	};
-
-	const renderSelect = <K extends keyof VendorCreationFormTwoValues>({
-		name,
-		label,
-		options,
-		required,
-		helperText,
-		placeholder = "Select option",
-	}: {
-		name: K;
-		label: string;
-		options: SelectOption[];
-		required?: boolean;
-		helperText?: string;
-		placeholder?: string;
-	}) => {
-		if (isReadOnly) {
-			return (
-				<VendorDetailValue
-					label={label}
-					value={values[name]}
-					required={required}
-				/>
-			);
-		}
-
-		return (
-			<SelectInput
-				name={String(name)}
-				label={label}
-				placeholder={placeholder}
-				options={options}
-				value={getSelectedOption(options, values[name])}
-				required={required}
-				error={errors[name]}
-				helperText={helperText}
-				onChange={(option) => onChange?.(name, option?.value ?? "")}
-			/>
-		);
-	};
+	const vendorCodeMode: VendorFormMode = canEditVendorCode ? "edit" : "view";
 
 	return (
 		<Card
@@ -271,163 +183,249 @@ const VendorCreationFormTwo = ({
 				<FormHeader title="THCM Vendor Master Details" Icon={FileCheck2} />
 
 				<div className="vendor-onboarding-form-grid">
-					{renderInput({
-						name: "vendorCode",
-						label: "Vendor Code",
-						helperText: "Enter only if this is an existing vendor.",
-					})}
+					<FormInput
+						mode={vendorCodeMode}
+						name="vendorCode"
+						label="Vendor Code"
+						value={values.vendorCode ?? ""}
+						error={canEditVendorCode ? errors.vendorCode : undefined}
+						helperText={
+							canEditVendorCode ? "Enter or update the vendor code." : undefined
+						}
+						disabled={vendorCodeLoading}
+						onChange={(event) => {
+							if (!canEditVendorCode) {
+								return;
+							}
 
-					{renderSelect({
-						name: "vendorType",
-						label: "Vendor Type",
-						options: vendorTypeOptions,
-						required: true,
-						placeholder: "Select vendor type",
-						helperText:
-							"Choose whether the vendor is PO based, non-PO based, or not applicable.",
-					})}
+							onChange?.("vendorCode", event.target.value);
+						}}
+					/>
 
-					{renderSelect({
-						name: "companyCode",
-						label: "Company Code",
-						options: companyCodeOptions,
-						required: true,
-						placeholder: "Select company code",
-						helperText: "Select the applicable THCM company code.",
-					})}
+					<SelectInput
+						mode={fieldMode}
+						name="vendorType"
+						label="Vendor Type"
+						placeholder="Select vendor type"
+						options={vendorTypeOptions}
+						value={getSelectedOption(vendorTypeOptions, values.vendorType)}
+						required
+						error={errors.vendorType}
+						helperText="Choose whether the vendor is PO based, non-PO based, or not applicable."
+						onChange={(option) => onChange?.("vendorType", option?.value ?? "")}
+					/>
 
-					{renderSelect({
-						name: "purchaseOrg",
-						label: "Purchase Org",
-						options: purchaseOrgOptions,
-						required: true,
-						placeholder: "Select purchase organization",
-						helperText:
-							"Select the purchase organization applicable to this vendor.",
-					})}
+					<SelectInput
+						mode={fieldMode}
+						name="companyCode"
+						label="Company Code"
+						placeholder="Select company code"
+						options={companyCodeOptions}
+						value={getSelectedOption(companyCodeOptions, values.companyCode)}
+						required
+						error={errors.companyCode}
+						helperText="Select the applicable THCM company code."
+						onChange={(option) =>
+							onChange?.("companyCode", option?.value ?? "")
+						}
+					/>
+
+					<SelectInput
+						mode={fieldMode}
+						name="purchaseOrg"
+						label="Purchase Org"
+						placeholder="Select purchase organization"
+						options={purchaseOrgOptions}
+						value={getSelectedOption(purchaseOrgOptions, values.purchaseOrg)}
+						required
+						error={errors.purchaseOrg}
+						helperText="Select the purchase organization applicable to this vendor."
+						onChange={(option) =>
+							onChange?.("purchaseOrg", option?.value ?? "")
+						}
+					/>
 				</div>
 
 				<FormHeader title="Finance & Tax Classification" Icon={Banknote} />
 
 				<div className="vendor-onboarding-form-grid">
-					{renderInput({
-						name: "paymentTerm",
-						label: "Payment Term",
-						helperText: "Payment terms applicable to this vendor.",
-					})}
+					<FormInput
+						mode={fieldMode}
+						name="paymentTerm"
+						label="Payment Term"
+						value={values.paymentTerm ?? ""}
+						error={errors.paymentTerm}
+						helperText="Payment terms applicable to this vendor."
+						onChange={(event) => onChange?.("paymentTerm", event.target.value)}
+					/>
 
-					{renderSelect({
-						name: "tds",
-						label: "TDS",
-						options: tdsOptions,
-						placeholder: "Select TDS",
-						helperText: "Select the applicable TDS section.",
-					})}
+					<SelectInput
+						mode={fieldMode}
+						name="tds"
+						label="TDS"
+						placeholder="Select TDS"
+						options={tdsOptions}
+						value={getSelectedOption(tdsOptions, values.tds)}
+						error={errors.tds}
+						helperText="Select the applicable TDS section."
+						onChange={(option) => onChange?.("tds", option?.value ?? "")}
+					/>
 
-					{renderSelect({
-						name: "vendorCategory",
-						label: "Vendor Category",
-						options: vendorCategoryOptions,
-						placeholder: "Select vendor category",
-						helperText: "Select the category applicable to this vendor.",
-					})}
+					<SelectInput
+						mode={fieldMode}
+						name="vendorCategory"
+						label="Vendor Category"
+						placeholder="Select vendor category"
+						options={vendorCategoryOptions}
+						value={getSelectedOption(
+							vendorCategoryOptions,
+							values.vendorCategory,
+						)}
+						error={errors.vendorCategory}
+						helperText="Select the category applicable to this vendor."
+						onChange={(option) =>
+							onChange?.("vendorCategory", option?.value ?? "")
+						}
+					/>
 
-					{renderSelect({
-						name: "materialType",
-						label: "Material Type",
-						options: materialTypeOptions,
-						placeholder: "Select material type",
-						helperText: "Select direct, indirect, or not applicable.",
-					})}
+					<SelectInput
+						mode={fieldMode}
+						name="materialType"
+						label="Material Type"
+						placeholder="Select material type"
+						options={materialTypeOptions}
+						value={getSelectedOption(materialTypeOptions, values.materialType)}
+						error={errors.materialType}
+						helperText="Select direct, indirect, or not applicable."
+						onChange={(option) =>
+							onChange?.("materialType", option?.value ?? "")
+						}
+					/>
 
-					{renderSelect({
-						name: "materialSubType",
-						label: "Material Sub Type",
-						options: materialSubTypeOptions,
-						placeholder: "Select material sub type",
-						helperText:
-							"Select proprietary, non-proprietary, or not applicable.",
-					})}
+					<SelectInput
+						mode={fieldMode}
+						name="materialSubType"
+						label="Material Sub Type"
+						placeholder="Select material sub type"
+						options={materialSubTypeOptions}
+						value={getSelectedOption(
+							materialSubTypeOptions,
+							values.materialSubType,
+						)}
+						error={errors.materialSubType}
+						helperText="Select proprietary, non-proprietary, or not applicable."
+						onChange={(option) =>
+							onChange?.("materialSubType", option?.value ?? "")
+						}
+					/>
 				</div>
 
 				<FormHeader title="Compliance Declarations" Icon={ShieldCheck} />
 
 				<div className="vendor-onboarding-form-grid">
-					{renderSelect({
-						name: "vendorSelfAssessmentObtained",
-						label: "Vendor Self Assessment Form Obtained?",
-						options: yesNoOptions,
-						helperText:
-							"Confirm whether vendor self assessment form is obtained.",
-					})}
+					<SelectInput
+						mode={fieldMode}
+						name="vendorSelfAssessmentObtained"
+						label="Vendor Self Assessment Form Obtained?"
+						placeholder="Select option"
+						options={yesNoOptions}
+						value={getSelectedOption(
+							yesNoOptions,
+							values.vendorSelfAssessmentObtained,
+						)}
+						error={errors.vendorSelfAssessmentObtained}
+						helperText="Confirm whether vendor self assessment form is obtained."
+						onChange={(option) =>
+							onChange?.("vendorSelfAssessmentObtained", option?.value ?? "")
+						}
+					/>
 
-					{renderSelect({
-						name: "ndaObtained",
-						label: "Non-Disclosure Undertaking Obtained?",
-						options: yesNoOptions,
-						helperText: "Confirm whether NDA is obtained.",
-					})}
+					<SelectInput
+						mode={fieldMode}
+						name="ndaObtained"
+						label="Non-Disclosure Undertaking Obtained?"
+						placeholder="Select option"
+						options={yesNoOptions}
+						value={getSelectedOption(yesNoOptions, values.ndaObtained)}
+						error={errors.ndaObtained}
+						helperText="Confirm whether NDA is obtained."
+						onChange={(option) =>
+							onChange?.("ndaObtained", option?.value ?? "")
+						}
+					/>
 
-					{renderSelect({
-						name: "gpaObtained",
-						label: "General Purpose Agreement Obtained?",
-						options: yesNoOptions,
-						helperText: "Confirm whether GPA is obtained.",
-					})}
+					<SelectInput
+						mode={fieldMode}
+						name="gpaObtained"
+						label="General Purpose Agreement Obtained?"
+						placeholder="Select option"
+						options={yesNoOptions}
+						value={getSelectedOption(yesNoOptions, values.gpaObtained)}
+						error={errors.gpaObtained}
+						helperText="Confirm whether GPA is obtained."
+						onChange={(option) =>
+							onChange?.("gpaObtained", option?.value ?? "")
+						}
+					/>
 
-					{renderSelect({
-						name: "relatedPartyToThcm",
-						label: "Is it Related Party to THCM?",
-						options: yesNoOptions,
-						helperText: "Confirm whether vendor is a related party to THCM.",
-					})}
+					<SelectInput
+						mode={fieldMode}
+						name="relatedPartyToThcm"
+						label="Is it Related Party to THCM?"
+						placeholder="Select option"
+						options={yesNoOptions}
+						value={getSelectedOption(yesNoOptions, values.relatedPartyToThcm)}
+						error={errors.relatedPartyToThcm}
+						helperText="Confirm whether vendor is a related party to THCM."
+						onChange={(option) =>
+							onChange?.("relatedPartyToThcm", option?.value ?? "")
+						}
+					/>
 
-					{renderSelect({
-						name: "vendorAuditReportPrepared",
-						label: "Vendor Audit Report Prepared?",
-						options: yesNoOptions,
-						helperText: "Confirm whether vendor audit report is prepared.",
-					})}
+					<SelectInput
+						mode={fieldMode}
+						name="vendorAuditReportPrepared"
+						label="Vendor Audit Report Prepared?"
+						placeholder="Select option"
+						options={yesNoOptions}
+						value={getSelectedOption(
+							yesNoOptions,
+							values.vendorAuditReportPrepared,
+						)}
+						error={errors.vendorAuditReportPrepared}
+						helperText="Confirm whether vendor audit report is prepared."
+						onChange={(option) =>
+							onChange?.("vendorAuditReportPrepared", option?.value ?? "")
+						}
+					/>
 				</div>
+
 				<div className="vendor-form-textarea">
-					{isReadOnly ? (
-						<VendorDetailValue
-							label="Nature of Service"
-							value={values.natureOfService}
-							required
-						/>
-					) : (
-						<TextareaInput
-							name="natureOfService"
-							label="Nature of Service"
-							value={values.natureOfService ?? ""}
-							required={true}
-							error={errors.natureOfService}
-							helperText="Additional remarks."
-							onChange={(event) =>
-								onChange?.("natureOfService", event.target.value)
-							}
-						/>
-					)}
-					{isReadOnly ? (
-						<VendorDetailValue
-							label="Reason for Onboarding of Vendor"
-							value={values.reasonForOnboarding}
-							required
-						/>
-					) : (
-						<TextareaInput
-							name="reasonForOnboarding"
-							label="Reason for Onboarding of Vendor"
-							value={values.reasonForOnboarding ?? ""}
-							required={true}
-							error={errors.reasonForOnboarding}
-							helperText="Additional remarks."
-							onChange={(event) =>
-								onChange?.("reasonForOnboarding", event.target.value)
-							}
-						/>
-					)}
+					<TextareaInput
+						mode={fieldMode}
+						name="natureOfService"
+						label="Nature of Service"
+						value={values.natureOfService ?? ""}
+						required
+						error={errors.natureOfService}
+						helperText="Describe the nature of services provided by the vendor."
+						onChange={(event) =>
+							onChange?.("natureOfService", event.target.value)
+						}
+					/>
+
+					<TextareaInput
+						mode={fieldMode}
+						name="reasonForOnboarding"
+						label="Reason for Onboarding of Vendor"
+						value={values.reasonForOnboarding ?? ""}
+						required
+						error={errors.reasonForOnboarding}
+						helperText="Explain why this vendor is being onboarded."
+						onChange={(event) =>
+							onChange?.("reasonForOnboarding", event.target.value)
+						}
+					/>
 				</div>
 			</form>
 		</Card>

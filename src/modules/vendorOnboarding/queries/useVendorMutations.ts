@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { vendorOnboardingApi } from "../api/vendorOnboarding.api";
+import {
+	vendorInitationApi,
+	vendorOnboardingApi,
+} from "../api/vendorOnboarding.api";
 import type { VendorOnboardingResponse } from "../types/vendorOnboarding.types";
+import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";
 
 export const vendorOnboardingKeys = {
 	all: ["vendor-onboarding"] as const,
@@ -29,6 +33,20 @@ export function useVendorOnboardingDetailQuery(
 	return useQuery<VendorOnboardingResponse>({
 		queryKey: vendorOnboardingKeys.detail(vendorRequestId),
 		queryFn: () => vendorOnboardingApi.getById(vendorRequestId),
+		enabled: enabled && Boolean(vendorRequestId),
+		retry: false,
+		staleTime: 30_000,
+		refetchOnWindowFocus: false,
+	});
+}
+
+export function useVendorInitiationDetailQuery(
+	vendorRequestId: string,
+	enabled = true,
+) {
+	return useQuery<VendorOnboardingInitiationPayload>({
+		queryKey: vendorOnboardingKeys.detail(vendorRequestId),
+		queryFn: () => vendorInitationApi.getById(vendorRequestId),
 		enabled: enabled && Boolean(vendorRequestId),
 		retry: false,
 		staleTime: 30_000,
@@ -91,3 +109,10 @@ export function useSubmitPublicVendorFormMutation() {
 		onSuccess: () => invalidateVendor(queryClient),
 	});
 }
+
+export const useSubmitClarifiedUpdatedFormMutation = () => {
+	return useMutation({
+		mutationFn: (workflowId: string) =>
+			vendorOnboardingApi.activateFirstStage(workflowId),
+	});
+};

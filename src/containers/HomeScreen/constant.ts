@@ -32,7 +32,7 @@ export const actions = [
 		icon: FileText,
 		title: "Vendor Onboarding",
 		description: "Submit, review, and process dealer reimbursements.",
-		path: "/vendor/listing",
+		path: "/vendor/onboarding/listing",
 		appKey: "VENDOR_ONBOARDING",
 		isActive: false,
 	},

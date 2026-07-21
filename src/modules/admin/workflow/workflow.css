@@ -662,4 +662,39 @@
 		font-weight: 500;
 		display: inline-block;
 	}
+	.workflow-approver-external-check {
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: center;
+		gap: var(--space-2, 0.5rem);
+		color: var(--color-text-secondary, var(--color-iron));
+		font-size: var(--font-size-sm, 0.875rem);
+		font-weight: 500;
+		cursor: pointer;
+	}
+
+	.workflow-approver-external-check input {
+		width: 1rem;
+		height: 1rem;
+		flex-shrink: 0;
+		accent-color: var(--color-brand-orange);
+		cursor: pointer;
+	}
+
+	.workflow-approver-external-check input:focus-visible {
+		outline: 2px solid var(--color-focus-ring, var(--color-brand-orange));
+		outline-offset: 2px;
+	}
+
+	@media (max-width: 639px) {
+		.workflow-approver-row {
+			flex-wrap: wrap;
+		}
+
+		.workflow-approver-external-check {
+			order: 3;
+			width: 100%;
+			padding-left: 2.75rem;
+		}
+	}
 }

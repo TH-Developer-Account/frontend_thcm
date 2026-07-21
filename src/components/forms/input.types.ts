@@ -1,12 +1,30 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
 import React, { type TextareaHTMLAttributes } from "react";
 
+export type FormFieldMode = "edit" | "view";
+
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	label?: string;
 	error?: string;
 	helperText?: string;
-	leftIcon?: ReactNode;
-	rightIcon?: ReactNode;
+	isTooltip?: boolean;
+
+	/**
+	 * "edit" renders the native input.
+	 * "view" renders a formatted read-only value.
+	 */
+	mode?: FormFieldMode;
+
+	/**
+	 * Optional display value used only in view mode.
+	 * Useful for formatted dates, currency, mapped codes, etc.
+	 */
+	readOnlyValue?: ReactNode;
+
+	/**
+	 * Value shown when view mode has no usable value.
+	 */
+	emptyReadOnlyValue?: ReactNode;
 }
 
 export interface CheckboxProps {
@@ -48,12 +66,21 @@ export type SearchBoxProps = {
 };
 
 export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
-	name: string;
 	label?: string;
-	placeholder?: string;
-	value?: string;
 	error?: string;
-	className?: string;
 	helperText?: string;
 	isTooltip?: boolean;
+
+	mode?: FormFieldMode;
+
+	/**
+	 * Optional formatted content displayed in view mode.
+	 * When omitted, the textarea value is displayed.
+	 */
+	readOnlyValue?: ReactNode;
+
+	/**
+	 * Fallback displayed when the view-mode value is empty.
+	 */
+	emptyReadOnlyValue?: ReactNode;
 }

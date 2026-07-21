@@ -10,6 +10,7 @@ export type VendorOnboardingStatus =
 	| "IN_REVIEW"
 	| "IN_PROGRESS"
 	| "THCM_SUBMITTED"
+	| "APPROVED"
 	| "THCM_CLARIFICATION_REQUESTED"
 	| "THCM_APPROVED"
 	| "EXTERNAL_REVIEW_PENDING"
@@ -185,6 +186,13 @@ export const VENDOR_DOCUMENT_FIELDS = [
 		description: "Upload the signed NDA certificate.",
 		required: true,
 	},
+	// {
+	// 	statusKey: "other",
+	// 	documentType: "OTHER",
+	// 	label: "Additional Documnets",
+	// 	description: "Upload if any additional documents",
+	// 	required: true,
+	// },
 ] as const;
 
 export type VendorDocumentType =
@@ -259,6 +267,7 @@ export type VendorOnboardingRawResponse = {
 	activeWorkflow?: VendorActiveWorkflow;
 	created_at?: string;
 	updated_at?: string;
+	referenceNumber?: string;
 };
 
 export type VendorActiveWorkflow = {

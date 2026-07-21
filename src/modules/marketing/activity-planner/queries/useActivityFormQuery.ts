@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import { commentApi, commentKeys } from "../../../../components/ui/comments";
 import { eventOutcomeApi } from "../api/event.outcome.api";
 import { eventReportApi } from "../api/eventReport.api";
 import { workflowApi } from "../api/workflow.api";
@@ -8,17 +10,20 @@ import type {
 	EventOutcomePayload,
 } from "../types/event.outcome.types";
 
-export const activityCommentKeys = {
-	all: ["activity-comments"] as const,
-	byEpcId: (epcId?: string | null) =>
-		[...activityCommentKeys.all, epcId ?? ""] as const,
-};
+const EVENT_PROPOSAL_SUBJECT_TYPE = "EVENT_PROPOSAL";
 
-export const useActivityCommentsQuery = (epcId?: string | null) => {
+export const useActivityCommentsQuery = (
+	epcId?: string | null,
+	enabled = true,
+) => {
 	return useQuery({
-		queryKey: activityCommentKeys.byEpcId(epcId),
-		queryFn: () => workflowApi.getComments(epcId!),
-		enabled: Boolean(epcId),
+		queryKey: commentKeys.activity(EVENT_PROPOSAL_SUBJECT_TYPE, epcId),
+		queryFn: () =>
+			commentApi.getActivity({
+				subjectType: EVENT_PROPOSAL_SUBJECT_TYPE,
+				subjectId: epcId!,
+			}),
+		enabled: Boolean(epcId) && enabled,
 		staleTime: 15 * 1000,
 	});
 };
@@ -88,7 +93,10 @@ export function useSubmitEventReportMutation() {
 			});
 
 			queryClient.invalidateQueries({
-				queryKey: activityCommentKeys.byEpcId(variables.epcId),
+				queryKey: commentKeys.activity(
+					EVENT_PROPOSAL_SUBJECT_TYPE,
+					variables.epcId,
+				),
 			});
 		},
 	});
@@ -108,6 +116,13 @@ export function useValidateEventReportMutation() {
 
 			queryClient.invalidateQueries({
 				queryKey: eventReportKeys.detail(variables.epcId),
+			});
+
+			queryClient.invalidateQueries({
+				queryKey: commentKeys.activity(
+					EVENT_PROPOSAL_SUBJECT_TYPE,
+					variables.epcId,
+				),
 			});
 		},
 	});
@@ -133,6 +148,13 @@ export function useClarifyEventReportMutation() {
 
 			queryClient.invalidateQueries({
 				queryKey: eventReportKeys.detail(variables.epcId),
+			});
+
+			queryClient.invalidateQueries({
+				queryKey: commentKeys.activity(
+					EVENT_PROPOSAL_SUBJECT_TYPE,
+					variables.epcId,
+				),
 			});
 		},
 	});

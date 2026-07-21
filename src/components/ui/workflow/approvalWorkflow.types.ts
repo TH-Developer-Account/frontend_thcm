@@ -1,3 +1,5 @@
+import type { ApiDateString } from "../../../modules/marketing/activity-planner/types/epc.types";
+
 export type ApprovalTableApproverRow = {
 	id: string;
 	name: string;
@@ -62,7 +64,37 @@ export type ApprovalStageLike = {
 	approvals?: ActiveWorkflowApprovalLike[];
 	approvers?: PreviewWorkflowApproverLike[];
 };
-
+export type ApprovalWorkflowStage = {
+	id: string;
+	workflowId: string;
+	stageOrder: number;
+	iteration: number;
+	isCurrentIteration: boolean;
+	strategy: "ALL" | "ANY" | "SOME" | "QUORUM";
+	minApprovals: number | null;
+	startedAt: ApiDateString | null;
+	dueAt: ApiDateString | null;
+	escalatedTo: string | null;
+	status: "PENDING" | "IN_PROGRESS" | "APPROVED" | "REJECTED";
+	approvals: EpcWorkflowApproval[];
+	stageName?: string;
+	name?: string;
+};
+export type EpcWorkflowApproval = {
+	id: string;
+	stageId: string;
+	approverId: string;
+	status: "PENDING" | "APPROVED" | "REJECTED";
+	actedAt: ApiDateString | null;
+	reason: string | null;
+	approver: {
+		id: string;
+		first_name: string;
+		last_name: string;
+		email?: string;
+	};
+	comments: unknown[];
+};
 export type MapWorkflowStagesOptions = {
 	showOnlyCurrentStageStatus?: boolean;
 };

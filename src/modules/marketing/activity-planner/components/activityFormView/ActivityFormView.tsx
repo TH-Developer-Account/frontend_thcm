@@ -5,7 +5,6 @@ import EpcForm from "../../forms/EPC/EpcForm";
 import ActivityDetailsSection from "../activityFormView/ActivityDetailsSection";
 import CrfSection from "../../forms/CRF/CrfSection";
 import EpfSection from "../../forms/EPF/EpfSection";
-import CommentsSection from "../commentSection/CommentsSection";
 import ApprovalWorkflowSection from "../../../../../components/ui/workflow/ApprovalWorkflowSection";
 
 import type { EpcDetailResponse } from "../../types/epc.types";
@@ -28,6 +27,7 @@ import {
 import ResubmitFooterAction from "./ResubmitFooterAction";
 import { ReasonActionModal } from "../common/ReasonActionModal";
 import type { ActivityPermissions } from "../../helpers/activityPermissions.helper";
+import CommentsSection from "../commentSection/CommentsSection";
 
 type EditingSection = "epc" | "crf" | "epf" | null;
 type ReasonModalState = {

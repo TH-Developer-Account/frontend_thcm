@@ -3,8 +3,8 @@ import ApprovalWorkflowTableContent from "./ApprovalWorkflowTableContent";
 import type { ApprovalStageLike } from "./approvalWorkflow.types";
 
 type ApprovalWorkflowSectionProps = {
-	stages: readonly ApprovalStageLike[];
-	deviationPreviewStages?: readonly ApprovalStageLike[];
+	stages: ApprovalStageLike[];
+	deviationPreviewStages?: ApprovalStageLike[];
 };
 
 const ApprovalWorkflowSection = ({

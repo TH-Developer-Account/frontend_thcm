@@ -15,11 +15,6 @@ export type FileUploadValue = {
 	extension: string;
 	sizeLabel: string;
 	isLocal: boolean;
-
-	/**
-	 * Optional user-entered description for uploaded images.
-	 * This can be submitted with report image metadata.
-	 */
 	caption?: string;
 };
 
@@ -36,12 +31,16 @@ export type FileUploadError = string | null;
 export type FileUploadChangeMeta = {
 	action: "add" | "replace" | "remove" | "update";
 	previousValue?: FileUploadValue | null;
+	affectedValue?: FileUploadValue | null;
 };
 
-export type FileUploadFieldProps = {
-	value: FileUploadValue | null;
-	onChange: (value: FileUploadValue | null, meta: FileUploadChangeMeta) => void;
+export type MultipleFileUploadChangeMeta = {
+	action: "add" | "replace" | "remove" | "update";
+	previousValue?: FileUploadValue[];
+	affectedValue?: FileUploadValue | null;
+};
 
+type FileUploadSharedProps = {
 	kind?: FileUploadKind;
 	label?: string;
 	description?: string;
@@ -49,23 +48,33 @@ export type FileUploadFieldProps = {
 	error?: string;
 	disabled?: boolean;
 	readonly?: boolean;
-
 	heightClassName?: string;
 	className?: string;
 	inputName?: string;
 	showActions?: boolean;
-	/**
-	 * Displays a caption field after an image has been uploaded.
-	 */
 	enableCaption?: boolean;
-
-	/**
-	 * Marks the caption as mandatory.
-	 * Validation should still be performed by the parent form.
-	 */
 	captionRequired?: boolean;
-
 	captionLabel?: string;
 	captionPlaceholder?: string;
 	captionError?: string;
+	maxFiles?: number;
 };
+
+export type SingleFileUploadFieldProps = FileUploadSharedProps & {
+	multiple?: false;
+	value: FileUploadValue | null;
+	onChange: (value: FileUploadValue | null, meta: FileUploadChangeMeta) => void;
+};
+
+export type MultipleFileUploadFieldProps = FileUploadSharedProps & {
+	multiple: true;
+	value: FileUploadValue[];
+	onChange: (
+		value: FileUploadValue[],
+		meta: MultipleFileUploadChangeMeta,
+	) => void;
+};
+
+export type FileUploadFieldProps =
+	| SingleFileUploadFieldProps
+	| MultipleFileUploadFieldProps;

@@ -21,7 +21,7 @@ export const buildWorkflowPayload = (
 		appId: basics.app,
 		workspaceId,
 		isActive: basics.isActive,
-		description: basics.description,
+		description: basics.description.trim(),
 		metaData_1: basics.category || "",
 		metaData_2: "",
 		metaData_3: "",
@@ -29,10 +29,18 @@ export const buildWorkflowPayload = (
 			const isQuorum = stage.strategy === "SOME";
 
 			const baseStage = {
-				name: stage.name,
+				name: stage.name.trim(),
 				stageOrder: stage.stageOrder,
 				strategy: stage.strategy,
-				approverIds: stage.approvers.map((approver) => approver.userId),
+				approverIds: stage.approvers.map((approver) => ({
+					userId: approver.userId,
+					name: [approver.user.first_name, approver.user.last_name]
+						.filter(Boolean)
+						.join(" ")
+						.trim(),
+					email: approver.user.email,
+					isExternalApprover: approver.isExternalApprover,
+				})),
 			};
 
 			if (isQuorum) {
@@ -244,7 +252,7 @@ export const mapBasics = (data: any) => ({
 	metaData_2: data?.metaData_2 ?? "",
 	metaData_3: data?.metaData_3 ?? "",
 });
-export const mapStages = (stages: any[] = []) => {
+export const mapStages = (stages: any[] = []): WorkflowStage[] => {
 	return stages
 		.slice()
 		.sort((a, b) => Number(a.stageOrder) - Number(b.stageOrder))
@@ -253,22 +261,20 @@ export const mapStages = (stages: any[] = []) => {
 			name: stage?.name ?? `Stage ${index + 1}`,
 			stageOrder: stage?.stageOrder ?? index + 1,
 			strategy: stage?.strategy ?? "ANY",
-			minApprovals:
-				stage?.strategy === "SOME"
-					? Number(stage?.minApprovals ?? 1)
-					: Number(stage?.minApprovals ?? 1),
+			minApprovals: Number(stage?.minApprovals ?? 1),
 			isExpanded: true,
 			approvers:
 				stage?.approvers?.map((approver: any) => ({
 					id: approver?.id ?? approver?.userId ?? approver?.user?.id,
-					stageId: approver?.stageId ?? stage?.id,
-					userId: approver?.userId ?? approver?.user?.id,
+					stageId: approver?.stageId ?? stage?.id ?? "",
+					userId: approver?.userId ?? approver?.user?.id ?? "",
 					user: {
 						id: approver?.user?.id ?? approver?.userId ?? "",
-						first_name: approver?.user?.first_name ?? "",
-						last_name: approver?.user?.last_name ?? "",
-						email: approver?.user?.email ?? "",
+						first_name: approver?.user?.first_name ?? approver?.firstName ?? "",
+						last_name: approver?.user?.last_name ?? approver?.lastName ?? "",
+						email: approver?.user?.email ?? approver?.email ?? "",
 					},
+					isExternalApprover: Boolean(approver?.isExternalApprover),
 				})) ?? [],
 		}));
 };
