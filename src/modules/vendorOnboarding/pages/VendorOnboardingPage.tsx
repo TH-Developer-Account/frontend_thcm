@@ -89,7 +89,7 @@ const VendorOnboardingPage = () => {
 									isExistingRequest ? form.handleNext : form.handleSaveFormOne
 								}
 								loading={form.mutationLoading}
-								onBack={handleBackToView}
+								onBack={isExistingRequest ? handleBackToView : undefined}
 							/>
 						) : form.currentStep === 2 ? (
 							<VendorCreationFormTwo

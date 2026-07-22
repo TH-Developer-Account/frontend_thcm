@@ -260,7 +260,7 @@ const VendorCreationSummaryForm = ({
 
 			{showWorkflowBlock ? (
 				<section className="vendor-summary-block">
-					<div className="vendor-summary-block-header">
+					<div>
 						{!hasWorkflow && typeof onFetchWorkflow === "function" ? (
 							<>
 								<span>Click the button to start the workflow</span>
@@ -285,12 +285,10 @@ const VendorCreationSummaryForm = ({
 					</div>
 
 					{hasWorkflow ? (
-						<div className="vendor-summary-block-body">
-							<ApprovalWorkflowTableContent
-								stages={workflowStages}
-								showEmptyState={!onFetchWorkflow}
-							/>
-						</div>
+						<ApprovalWorkflowTableContent
+							stages={workflowStages}
+							showEmptyState={!onFetchWorkflow}
+						/>
 					) : (
 						<div className="vendor-summary-block-body">
 							<div className="approval-workflow-empty">

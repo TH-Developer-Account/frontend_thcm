@@ -7763,6 +7763,7 @@ PAGE NAVIGATION
 		border-radius: var(--radius-card, 8px);
 		background: var(--color-surface, var(--color-clean-white));
 		box-shadow: var(--shadow-resting, 0 1px 2px rgba(0, 0, 0, 0.04));
+		@apply px-1.5;
 	}
 
 	.file-upload-preview-body {
@@ -7770,7 +7771,7 @@ PAGE NAVIGATION
 		grid-template-columns: auto minmax(0, 1fr) auto;
 		align-items: center;
 		gap: var(--space-3, 0.75rem);
-		min-height: 4.25rem;
+		min-height: 2.25rem;
 		padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
 	}
 
@@ -7851,7 +7852,67 @@ PAGE NAVIGATION
 		color: var(--color-text-secondary, var(--color-slate));
 	}
 
+	.file-upload-preview-modal .modal-body {
+		display: flex;
+		min-height: 0;
+		padding: 0;
+		overflow: hidden;
+	}
+
+	.file-upload-preview-modal-content {
+		display: flex;
+		width: 100%;
+		min-height: min(70dvh, 42rem);
+		align-items: center;
+		justify-content: center;
+		background: var(--color-bg-subtle, var(--color-fog));
+	}
+
+	.file-upload-preview-modal-image {
+		display: block;
+		max-width: 100%;
+		max-height: min(70dvh, 42rem);
+		object-fit: contain;
+	}
+
+	.file-upload-preview-modal-frame {
+		width: 100%;
+		height: min(70dvh, 42rem);
+		border: 0;
+		background: var(--color-bg-surface, white);
+	}
+
+	.file-upload-preview-modal-fallback {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-direction: column;
+		gap: var(--space-3, 0.75rem);
+		padding: var(--space-6, 1.5rem);
+		color: var(--color-text-secondary, var(--color-slate));
+		text-align: center;
+	}
+
+	.file-upload-preview-modal-fallback svg {
+		width: 2rem;
+		height: 2rem;
+	}
+
+	.file-upload-preview-modal-link {
+		color: var(--color-text-link, var(--color-brand));
+		font-weight: var(--font-weight-medium, 500);
+		text-decoration: underline;
+		text-underline-offset: 0.2em;
+	}
+
 	@media (max-width: 479px) {
+		.file-upload-preview-modal-content {
+			min-height: 60dvh;
+		}
+
+		.file-upload-preview-modal-frame {
+			height: 60dvh;
+		}
 		.file-upload-preview-body {
 			grid-template-columns: auto minmax(0, 1fr);
 		}

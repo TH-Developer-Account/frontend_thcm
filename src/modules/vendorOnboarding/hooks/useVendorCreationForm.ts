@@ -47,6 +47,28 @@ export const vendorOnboardingSteps = [
 const EMPTY_FORM_ONE: VendorCreationFormOneValues = {};
 const EMPTY_FORM_TWO: VendorCreationFormTwoValues = {};
 
+const REQUIRED_FORM_ONE_FIELDS: Partial<
+	Record<keyof VendorCreationFormOneValues, string>
+> = {
+	state: "State is required.",
+	city: "City is required.",
+	pinCode: "Pin Code is required.",
+	completeAddress: "Complete Address is required.",
+	mobile: "Mobile is required.",
+	email: "E-mail is required.",
+	bank: "Bank is required.",
+	branch: "Branch is required.",
+	ifscCode: "IFSC Code is required.",
+	accountNumber: "A/C No. is required.",
+	confirmAccountNumber: "Confirm A/C No. is required.",
+	gstin: "GSTIN is required.",
+	pan: "PAN is required.",
+	msmeVendor: "MSME Vendor is required.",
+};
+
+const isEmptyFormValue = (value: unknown): boolean =>
+	typeof value === "string" ? value.trim().length === 0 : value == null;
+
 type UseVendorCreationFormParams = {
 	role?: VendorViewerRole;
 	vendorRequestId?: string;
@@ -87,7 +109,6 @@ const getPreviewStages = (preview: unknown): ApprovalStageLike[] => {
 const EDITABLE_STATUSES: readonly VendorOnboardingStatus[] = [
 	"DRAFT",
 	"VENDOR_SUBMITTED",
-	"THCM_CLARIFICATION_REQUESTED",
 	"IN_REVIEW",
 ];
 
@@ -179,6 +200,24 @@ export function useVendorCreationForm({
 		[activeWorkflow?.stages],
 	);
 
+	const hasPendingClarifiedApproval = React.useMemo(() => {
+		if (!activeWorkflow || activeWorkflow.iteration <= 1) {
+			return false;
+		}
+
+		return assignedWorkflowStages.some((stage) => {
+			const isCurrentPendingStage =
+				stage.isCurrentIteration === true &&
+				stage.status?.toUpperCase() === "PENDING";
+
+			const hasPendingApproval = stage.approvals?.some(
+				(approval) => approval.status?.toUpperCase() === "PENDING",
+			);
+
+			return isCurrentPendingStage && hasPendingApproval;
+		});
+	}, [activeWorkflow, assignedWorkflowStages]);
+
 	type ActiveApprovalWithApprover = {
 		status?: string | null;
 		approver?: {
@@ -249,7 +288,7 @@ export function useVendorCreationForm({
 		return assignedWorkflowStages;
 	}, [assignedWorkflowStages, currentStep, previewWorkflowStages]);
 
-	const isResubmission = status === "THCM_CLARIFICATION_REQUESTED";
+	const isResubmission = hasPendingClarifiedApproval;
 
 	const canEditMainForm =
 		isThcmProposer && Boolean(status && EDITABLE_STATUSES.includes(status));
@@ -361,18 +400,42 @@ export function useVendorCreationForm({
 
 	const changeFormOne = React.useCallback(
 		<K extends keyof VendorCreationFormOneValues>(
-			key: K,
+			field: K,
 			value: VendorCreationFormOneValues[K],
 		) => {
-			setFormOneValues((current) => ({
-				...current,
-				[key]: value,
-			}));
+			setFormOneValues((current) => {
+				const nextValues = {
+					...current,
+					[field]: value,
+				};
 
-			setFormOneErrors((current) => ({
-				...current,
-				[key]: "",
-			}));
+				const accountNumber = nextValues.accountNumber?.trim() ?? "";
+
+				const confirmAccountNumber =
+					nextValues.confirmAccountNumber?.trim() ?? "";
+
+				setFormOneErrors((currentErrors) => {
+					const nextErrors = {
+						...currentErrors,
+						[field]:
+							REQUIRED_FORM_ONE_FIELDS[field] && isEmptyFormValue(value)
+								? REQUIRED_FORM_ONE_FIELDS[field]
+								: undefined,
+					};
+
+					if (field === "accountNumber" || field === "confirmAccountNumber") {
+						nextErrors.confirmAccountNumber = !confirmAccountNumber
+							? REQUIRED_FORM_ONE_FIELDS.confirmAccountNumber
+							: confirmAccountNumber !== accountNumber
+								? "Account numbers do not match."
+								: undefined;
+					}
+
+					return nextErrors;
+				});
+
+				return nextValues;
+			});
 		},
 		[],
 	);
@@ -617,6 +680,12 @@ export function useVendorCreationForm({
 
 	const submitForApproval = React.useCallback(async () => {
 		if (!vendorRequestId) {
+			showToast({
+				type: "error",
+				title: "Submission failed",
+				description: "Vendor onboarding ID is missing.",
+			});
+
 			return;
 		}
 
@@ -631,19 +700,21 @@ export function useVendorCreationForm({
 			return;
 		}
 
-		const wasClarificationResubmission = isResubmission;
-		if (wasClarificationResubmission && !workflowId) {
+		const shouldActivateClarifiedWorkflow = hasPendingClarifiedApproval;
+
+		if (shouldActivateClarifiedWorkflow && !workflowId) {
 			showToast({
 				type: "error",
 				title: "Workflow unavailable",
 				description:
-					"No active workflow was found for this clarification resubmission.",
+					"A pending clarified approval was found, but its workflow ID is missing.",
 			});
 
 			return;
 		}
 
 		try {
+			// 1. Save the updated form.
 			await updateMutation.mutateAsync({
 				vendorRequestId,
 				payload: buildVendorOnboardingUpdatePayload(
@@ -652,22 +723,24 @@ export function useVendorCreationForm({
 				),
 			});
 
-			if (wasClarificationResubmission) {
-				await submitClarifiedMutation.mutateAsync(workflowId as string);
-			} else {
-				await submitMutation.mutateAsync(vendorRequestId);
+			// 2. Submit the form for approval.
+			await submitMutation.mutateAsync(vendorRequestId);
+
+			// 3. Activate the first stage of the clarified workflow iteration.
+			if (shouldActivateClarifiedWorkflow && workflowId) {
+				await submitClarifiedMutation.mutateAsync(workflowId);
 			}
 
 			await detailQuery.refetch();
 
 			showToast({
 				type: "success",
-				title: wasClarificationResubmission
+				title: shouldActivateClarifiedWorkflow
 					? "Resubmitted successfully"
 					: "Submitted successfully",
-				description: wasClarificationResubmission
-					? "All vendor details were saved and the onboarding request was resubmitted successfully."
-					: "All vendor details were saved and the onboarding request was submitted successfully.",
+				description: shouldActivateClarifiedWorkflow
+					? "The updated form was submitted and the first approval stage was activated."
+					: "The vendor onboarding request was submitted for approval.",
 			});
 
 			if (onSuccess) {
@@ -675,13 +748,19 @@ export function useVendorCreationForm({
 			} else {
 				navigate("/vendor/onboarding/listing?tab=onboarding");
 			}
-		} catch (error) {
+		} catch (error: unknown) {
+			console.error("Vendor onboarding submission failed:", error);
+
 			showToast({
 				type: "error",
-				title: "Submission failed",
+				title: shouldActivateClarifiedWorkflow
+					? "Resubmission failed"
+					: "Submission failed",
 				description: getErrorMessage(
 					error,
-					"Unable to save and submit the vendor onboarding request.",
+					shouldActivateClarifiedWorkflow
+						? "The form could not be resubmitted or its first approval stage could not be activated."
+						: "Unable to submit the vendor onboarding request.",
 				),
 			});
 		}
@@ -689,16 +768,16 @@ export function useVendorCreationForm({
 		detailQuery,
 		formOneValues,
 		formTwoValues,
-		isResubmission,
+		hasPendingClarifiedApproval,
 		navigate,
-		submitClarifiedMutation,
 		onSuccess,
-		workflowId,
 		previewWorkflowStages.length,
 		showToast,
+		submitClarifiedMutation,
 		submitMutation,
 		updateMutation,
 		vendorRequestId,
+		workflowId,
 	]);
 
 	/*
@@ -908,7 +987,7 @@ export function useVendorCreationForm({
 		user,
 		status,
 
-		canEditFormOne: canEditMainForm,
+		canEditFormOne: isThcmProposer || canEditMainForm,
 		canEditFormTwo: canEditMainForm,
 		canEditMainForm,
 

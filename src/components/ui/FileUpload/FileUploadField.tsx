@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import Button from "../../common/Button";
+import { Modal } from "../../common/Modal";
 
 import type {
 	FileUploadFieldProps,
@@ -67,6 +68,8 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 	const [selectionError, setSelectionError] = React.useState<string | null>(
 		null,
 	);
+	const [previewValue, setPreviewValue] =
+		React.useState<FileUploadValue | null>(null);
 
 	const inputId = React.useId();
 	const errorId = `${inputId}-error`;
@@ -291,7 +294,7 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 		<div
 			className={joinClassNames("form-field", "file-upload-field", className)}
 		>
-			{label ? (
+			{label && values.length > 0 ? (
 				<div className="form-label-row">
 					<label htmlFor={inputId} className="form-label">
 						{label}
@@ -304,7 +307,9 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 						</span>
 					) : null}
 				</div>
-			) : null}
+			) : (
+				<div className="py-2.5"></div>
+			)}
 
 			<input
 				id={inputId}
@@ -321,7 +326,7 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 			/>
 
 			{values.length > 0 ? (
-				<div className="file-upload-list">
+				<div className="file-upload-list flex flex-col gap-2">
 					{values.map((item, index) => (
 						<FileUploadPreviewCard
 							key={getValueId(item)}
@@ -337,6 +342,7 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 							captionPlaceholder={captionPlaceholder}
 							captionError={captionError}
 							onCaptionChange={handleCaptionChange}
+							onPreview={() => setPreviewValue(item)}
 							onReplace={(event) => openFilePicker(event, item)}
 							onRemove={(event) => handleRemove(item, event)}
 						/>
@@ -345,7 +351,7 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 					{isMultiple && canAddMore && !readonly ? (
 						<button
 							type="button"
-							className="file-upload-add-more"
+							className="file-upload-add-more flex min-h-10 w-full items-center justify-between rounded-lg border border-dashed border-slate-300 px-3 text-xs font-medium text-slate-700 transition-colors hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-60"
 							disabled={disabled}
 							onClick={(event) => openFilePicker(event)}
 						>
@@ -357,6 +363,7 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 			) : (
 				<FileUploadEmptyState
 					label={label}
+					required={required}
 					description={description}
 					heightClassName={heightClassName}
 					disabled={disabled || readonly}
@@ -370,6 +377,11 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 					{renderedError}
 				</p>
 			) : null}
+
+			<FileUploadPreviewModal
+				value={previewValue}
+				onClose={() => setPreviewValue(null)}
+			/>
 		</div>
 	);
 });
@@ -389,6 +401,7 @@ type PreviewCardProps = {
 	captionPlaceholder: string;
 	captionError?: string;
 	onCaptionChange: (value: FileUploadValue, caption: string) => void;
+	onPreview: () => void;
 	onReplace: (event?: React.MouseEvent) => void;
 	onRemove: (event?: React.MouseEvent) => void;
 };
@@ -407,6 +420,7 @@ const FileUploadPreviewCard = React.memo(
 		captionPlaceholder,
 		captionError,
 		onCaptionChange,
+		onPreview,
 		onReplace,
 		onRemove,
 	}: PreviewCardProps) => {
@@ -414,28 +428,17 @@ const FileUploadPreviewCard = React.memo(
 		const showPdfPreview = isPdfUpload(value);
 		const captionId = React.useId();
 
-		const handleView = React.useCallback(
-			(event?: React.MouseEvent) => {
-				event?.preventDefault();
-				event?.stopPropagation();
-
-				if (value.url) {
-					window.open(value.url, "_blank", "noopener,noreferrer");
-				}
-			},
-			[value.url],
-		);
-
 		return (
 			<div
 				className={joinClassNames(
 					"file-upload-preview",
+					"overflow-hidden rounded-lg border border-slate-200 bg-white",
 					showImagePreview && "file-upload-preview-image",
 					heightClassName,
 				)}
 			>
-				<div className="file-upload-preview-body">
-					<div className="file-upload-preview-thumbnail">
+				<div className="file-upload-preview-body flex min-h-12 items-center gap-2 px-2.5 py-1.5">
+					<div className="file-upload-preview-thumbnail flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-slate-100 text-slate-600">
 						{showImagePreview ? (
 							<img
 								src={value.url}
@@ -454,7 +457,7 @@ const FileUploadPreviewCard = React.memo(
 						)}
 					</div>
 
-					<div className="file-upload-document-copy">
+					<div className="file-upload-document-copy min-w-0 flex-1">
 						<p className="file-upload-file-name" title={value.name}>
 							{value.name}
 						</p>
@@ -467,46 +470,48 @@ const FileUploadPreviewCard = React.memo(
 							{value.sizeLabel ? ` · ${value.sizeLabel}` : ""}
 						</p>
 					</div>
-
-					{showActions ? (
-						<div className="file-upload-preview-actions">
-							{!readonly && !disabled ? (
-								<Button
-									type="button"
-									appearance="icon"
-									variant="secondary"
-									size="sm"
-									Icon={RefreshCw}
-									aria-label={`Replace ${value.name}`}
-									onClick={onReplace}
-								/>
-							) : null}
-
+				</div>
+				{showActions ? (
+					<div className="file-upload-preview-actions ml-auto flex shrink-0 items-center gap-1">
+						{!readonly && !disabled ? (
 							<Button
 								type="button"
 								appearance="icon"
 								variant="secondary"
 								size="sm"
-								Icon={Eye}
-								aria-label={`View ${value.name}`}
-								onClick={handleView}
-								disabled={!value.url}
+								Icon={RefreshCw}
+								aria-label={`Replace ${value.name}`}
+								onClick={onReplace}
 							/>
+						) : null}
 
-							{!readonly && !disabled ? (
-								<Button
-									type="button"
-									appearance="icon"
-									variant="secondary"
-									size="sm"
-									Icon={Trash2}
-									aria-label={`Remove ${value.name}`}
-									onClick={onRemove}
-								/>
-							) : null}
-						</div>
-					) : null}
-				</div>
+						<button
+							type="button"
+							className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 px-2 text-xs font-medium text-slate-700 transition-colors hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-50"
+							aria-label={`Preview ${value.name}`}
+							onClick={(event) => {
+								event.preventDefault();
+								event.stopPropagation();
+								onPreview();
+							}}
+							disabled={!value.url}
+						>
+							<Eye className="size-3.5" aria-hidden="true" />
+						</button>
+
+						{!readonly && !disabled ? (
+							<Button
+								type="button"
+								appearance="icon"
+								variant="secondary"
+								size="sm"
+								Icon={Trash2}
+								aria-label={`Remove ${value.name}`}
+								onClick={onRemove}
+							/>
+						) : null}
+					</div>
+				) : null}
 
 				{enableCaption && showImagePreview ? (
 					<div className="file-upload-caption-field">
@@ -550,8 +555,64 @@ const FileUploadPreviewCard = React.memo(
 
 FileUploadPreviewCard.displayName = "FileUploadPreviewCard";
 
+type FileUploadPreviewModalProps = {
+	value: FileUploadValue | null;
+	onClose: () => void;
+};
+
+const FileUploadPreviewModal = ({
+	value,
+	onClose,
+}: FileUploadPreviewModalProps) => {
+	const canPreviewImage = value ? isImageUpload(value) : false;
+	const canPreviewPdf = value ? isPdfUpload(value) : false;
+
+	return (
+		<Modal
+			open={Boolean(value)}
+			title={value?.name ?? "File preview"}
+			size="xl"
+			className="file-upload-preview-modal"
+			onClose={onClose}
+			ariaLabel="Uploaded file preview"
+		>
+			{value ? (
+				<div className="file-upload-preview-modal-content">
+					{canPreviewImage ? (
+						<img
+							src={value.url}
+							alt={value.caption?.trim() || value.name}
+							className="file-upload-preview-modal-image"
+						/>
+					) : canPreviewPdf ? (
+						<iframe
+							src={value.url}
+							title={value.name}
+							className="file-upload-preview-modal-frame"
+						/>
+					) : (
+						<div className="file-upload-preview-modal-fallback">
+							<FileText aria-hidden="true" />
+							<p>This file type cannot be previewed in the browser.</p>
+							<a
+								href={value.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="file-upload-preview-modal-link"
+							>
+								Open file
+							</a>
+						</div>
+					)}
+				</div>
+			) : null}
+		</Modal>
+	);
+};
+
 type EmptyStateProps = {
 	label: string;
+	required: boolean;
 	description?: string;
 	heightClassName: string;
 	disabled: boolean;
@@ -562,6 +623,7 @@ type EmptyStateProps = {
 const FileUploadEmptyState = React.memo(
 	({
 		label,
+		required,
 		description,
 		heightClassName,
 		disabled,
@@ -572,18 +634,24 @@ const FileUploadEmptyState = React.memo(
 			type="button"
 			disabled={disabled}
 			onClick={onClick}
-			className={joinClassNames("file-upload-empty", heightClassName)}
+			className={joinClassNames(
+				"file-upload-empty flex min-h-12 w-full items-center justify-between gap-3 rounded-lg border border-dashed border-slate-300 bg-white px-2.5 py-1.5 text-left transition-colors hover:border-brand disabled:cursor-not-allowed disabled:opacity-60",
+				heightClassName,
+			)}
 		>
-			<span className="file-upload-empty-copy">
-				<span className="file-upload-empty-title">{label}</span>
-				<span className="file-upload-empty-description">
+			<span className="file-upload-empty-copy min-w-0">
+				<span className="file-upload-empty-title block truncate text-xs font-normal text-slate-900">
+					{label}
+					{required ? <span className="form-required"> *</span> : null}
+				</span>
+				<span className="file-upload-empty-description sr-only">
 					{description ??
 						(multiple ? "Select one or more files" : "Select a file to upload")}
 				</span>
 			</span>
 
-			<span className="file-upload-empty-icon">
-				<Upload aria-hidden="true" />
+			<span className="file-upload-empty-icon flex size-8 shrink-0 items-center justify-center rounded-md bg-slate-50 text-slate-600">
+				<Upload className="size-4" aria-hidden="true" />
 			</span>
 		</button>
 	),

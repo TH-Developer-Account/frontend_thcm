@@ -38,6 +38,7 @@ export type VendorCreationFormOneValues = {
 	ifscCode?: string;
 	bankAddress?: string;
 	accountNumber?: string;
+	confirmAccountNumber?: string;
 	gstin?: string;
 	pan?: string;
 	entityRegistrationNumber?: string;
@@ -90,6 +91,7 @@ export type VendorUpdatePayload = {
 	ifscCode?: string | null;
 	bankAddress?: string | null;
 	accountNumber?: string | null;
+	confirmAccountNumber?: string | null;
 	gstin?: string | null;
 	pan?: string | null;
 	entityRegNo?: string | null;
@@ -243,6 +245,7 @@ export type VendorOnboardingRawResponse = {
 	ifscCode: string | null;
 	bankAddress: string | null;
 	accountNumber: string | null;
+	confirmAccountNumber?: string | null;
 	gstin: string | null;
 	pan: string | null;
 	entityRegNo: string | null;

@@ -4,14 +4,12 @@ import {
 	Banknote,
 	Building2,
 	CheckCircle2,
-	Eye,
 	FileCheck2,
 	Landmark,
 	LucideBriefcaseBusiness,
 	RefreshCcw,
 	Save,
 	ShieldCheck,
-	X,
 } from "lucide-react";
 
 import Button from "../../../components/common/Button";
@@ -22,10 +20,6 @@ import SelectInput from "../../../components/forms/SelectInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
 
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
-import {
-	isImageUpload,
-	isPdfUpload,
-} from "../../../components/ui/FileUpload/fileUpload.helpers";
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 
 import FormHeader from "../../../components/ui/FormHeader";
@@ -215,10 +209,6 @@ const VendorCreationFormOne = ({
 		Partial<Record<VendorEnclosureStatusKey, string>>
 	>({});
 
-	const [previewFile, setPreviewFile] = React.useState<FileUploadValue | null>(
-		null,
-	);
-
 	const [isDpdpModalOpen, setIsDpdpModalOpen] = React.useState(false);
 	const [hasAcceptedDpdp, setHasAcceptedDpdp] = React.useState(false);
 	const [hasConfirmedDpdp, setHasConfirmedDpdp] = React.useState(false);
@@ -255,6 +245,49 @@ const VendorCreationFormOne = ({
 		[enclosureUploads],
 	);
 
+	const isEnclosureRequired = React.useCallback(
+		(field: VendorDocumentField): boolean => {
+			if (!requireDocuments) {
+				return false;
+			}
+
+			if (field.statusKey === "msmeCertificateAttached") {
+				return (
+					values.msmeVendor === "Yes" &&
+					values.msmeCertificateAttached === "Yes"
+				);
+			}
+
+			return field.required;
+		},
+		[requireDocuments, values.msmeCertificateAttached, values.msmeVendor],
+	);
+
+	React.useEffect(() => {
+		const msmeField = VENDOR_DOCUMENT_FIELDS.find(
+			(field) => field.statusKey === "msmeCertificateAttached",
+		);
+
+		if (!msmeField) {
+			return;
+		}
+
+		const certificate = getEnclosureFile(msmeField.documentType);
+		const hasCertificate = Boolean(certificate?.file || certificate?.url);
+
+		setEnclosureErrors((previousErrors) => {
+			const nextErrors = { ...previousErrors };
+
+			if (isEnclosureRequired(msmeField) && !hasCertificate) {
+				nextErrors[msmeField.statusKey] = `${msmeField.label} is required.`;
+			} else {
+				delete nextErrors[msmeField.statusKey];
+			}
+
+			return nextErrors;
+		});
+	}, [getEnclosureFile, isEnclosureRequired]);
+
 	const handleEnclosureChange = React.useCallback(
 		(field: VendorDocumentField, nextValue: FileUploadValue | null) => {
 			setEnclosureUploads((previousUploads) =>
@@ -271,14 +304,18 @@ const VendorCreationFormOne = ({
 			setEnclosureErrors((previousErrors) => {
 				const nextErrors = { ...previousErrors };
 
-				delete nextErrors[field.statusKey];
+				if (!nextValue && isEnclosureRequired(field)) {
+					nextErrors[field.statusKey] = `${field.label} is required.`;
+				} else {
+					delete nextErrors[field.statusKey];
+				}
 
 				return nextErrors;
 			});
 
 			onChange?.(field.statusKey, nextValue ? "Yes" : "No");
 		},
-		[onChange],
+		[isEnclosureRequired, onChange],
 	);
 
 	const validateEnclosures = React.useCallback((): boolean => {
@@ -290,7 +327,7 @@ const VendorCreationFormOne = ({
 		const nextErrors: Partial<Record<VendorEnclosureStatusKey, string>> = {};
 
 		VENDOR_DOCUMENT_FIELDS.forEach((field) => {
-			if (!field.required) {
+			if (!isEnclosureRequired(field)) {
 				return;
 			}
 
@@ -310,7 +347,7 @@ const VendorCreationFormOne = ({
 		setEnclosureErrors(nextErrors);
 
 		return Object.keys(nextErrors).length === 0;
-	}, [enclosureUploads, requireDocuments]);
+	}, [enclosureUploads, isEnclosureRequired, requireDocuments]);
 
 	const openDpdpModal = React.useCallback(() => {
 		setHasConfirmedDpdp(hasAcceptedDpdp);
@@ -354,7 +391,6 @@ const VendorCreationFormOne = ({
 		setHasAcceptedDpdp(false);
 		setHasConfirmedDpdp(false);
 		setDpdpError("");
-		setPreviewFile(null);
 	};
 
 	const handleFormAction = () => {
@@ -601,40 +637,6 @@ const VendorCreationFormOne = ({
 					/>
 				</div>
 
-				<FormHeader title="MSME Details" Icon={Building2} />
-
-				<div className="vendor-onboarding-form-grid">
-					<SelectInput
-						mode={fieldMode}
-						name="msmeVendor"
-						label="MSME Vendor"
-						placeholder="Select option"
-						options={yesNoOptions}
-						value={getSelectedOption(yesNoOptions, values.msmeVendor)}
-						required
-						error={errors.msmeVendor}
-						helperText="Select whether this vendor is registered under MSME."
-						onChange={(option) => onChange?.("msmeVendor", option?.value ?? "")}
-					/>
-
-					<SelectInput
-						mode={fieldMode}
-						name="msmeCertificateAttached"
-						label={'If "Yes", Certificate Attached?'}
-						placeholder="Select option"
-						options={yesNoOptions}
-						value={getSelectedOption(
-							yesNoOptions,
-							values.msmeCertificateAttached,
-						)}
-						error={errors.msmeCertificateAttached}
-						helperText="Confirm whether MSME certificate is attached."
-						onChange={(option) =>
-							onChange?.("msmeCertificateAttached", option?.value ?? "")
-						}
-					/>
-				</div>
-
 				<FormHeader title="Bank Details" Icon={Landmark} />
 
 				<div className="vendor-onboarding-form-grid">
@@ -680,7 +682,6 @@ const VendorCreationFormOne = ({
 						helperText="Bank branch address."
 						onChange={(event) => onChange?.("bankAddress", event.target.value)}
 					/>
-
 					<FormInput
 						mode={fieldMode}
 						name="accountNumber"
@@ -690,22 +691,25 @@ const VendorCreationFormOne = ({
 						inputMode="numeric"
 						error={errors.accountNumber}
 						helperText="Vendor bank account number."
-						onChange={(event) =>
-							onChange?.("accountNumber", event.target.value)
-						}
+						onChange={(event) => {
+							const value = event.target.value.replace(/\D/g, "");
+							onChange?.("accountNumber", value);
+						}}
 					/>
+
 					<FormInput
 						mode={fieldMode}
-						name="accountNumber"
+						name="confirmAccountNumber"
 						label="Confirm A/C No."
-						value={values.accountNumber ?? ""}
+						value={values.confirmAccountNumber ?? ""}
 						required
 						inputMode="numeric"
-						error={errors.accountNumber}
-						helperText="Vendor bank account number."
-						onChange={(event) =>
-							onChange?.("accountNumber", event.target.value)
-						}
+						error={errors.confirmAccountNumber}
+						helperText="Re-enter the bank account number."
+						onChange={(event) => {
+							const value = event.target.value.replace(/\D/g, "");
+							onChange?.("confirmAccountNumber", value);
+						}}
 					/>
 				</div>
 
@@ -746,145 +750,70 @@ const VendorCreationFormOne = ({
 						}
 					/>
 				</div>
+				<FormHeader title="MSME Details" Icon={Building2} />
 
+				<div className="vendor-onboarding-form-grid">
+					<SelectInput
+						mode={fieldMode}
+						name="msmeVendor"
+						label="MSME Vendor"
+						placeholder="Select option"
+						options={yesNoOptions}
+						value={getSelectedOption(yesNoOptions, values.msmeVendor)}
+						required
+						error={errors.msmeVendor}
+						helperText="Select whether this vendor is registered under MSME."
+						onChange={(option) => onChange?.("msmeVendor", option?.value ?? "")}
+					/>
+
+					{values.msmeVendor === "Yes" ? (
+						<SelectInput
+							mode={fieldMode}
+							name="msmeCertificateAttached"
+							label={'If "Yes", Certificate Attached?'}
+							placeholder="Select option"
+							options={yesNoOptions}
+							value={getSelectedOption(
+								yesNoOptions,
+								values.msmeCertificateAttached,
+							)}
+							required
+							error={errors.msmeCertificateAttached}
+							helperText="Confirm whether MSME certificate is attached."
+							onChange={(option) =>
+								onChange?.("msmeCertificateAttached", option?.value ?? "")
+							}
+						/>
+					) : null}
+				</div>
 				<FormHeader title="Attachments / Enclosures" Icon={ShieldCheck} />
 
 				<div className="vendor-enclosure-upload-grid">
 					{VENDOR_DOCUMENT_FIELDS.map((field) => {
 						const uploadedFile = getEnclosureFile(field.documentType);
-						const isUploaded = Boolean(uploadedFile?.url);
 
 						return (
-							<div
-								className="vendor-enclosure-upload-card"
+							<FileUploadField
 								key={field.documentType}
-							>
-								<FileUploadField
-									value={uploadedFile}
-									onChange={(nextValue) =>
-										handleEnclosureChange(field, nextValue)
-									}
-									kind="document"
-									label={field.label}
-									description={field.description}
-									required={requireDocuments && field.required}
-									error={enclosureErrors[field.statusKey]}
-									readonly={isReadOnly}
-									disabled={loading}
-									heightClassName="vendor-enclosure-upload-height"
-									className="vendor-enclosure-upload-field"
-									inputName={field.documentType}
-									showActions
-								/>
-
-								<div className="vendor-enclosure-upload-footer">
-									<span
-										className="vendor-enclosure-upload-status"
-										data-uploaded={isUploaded}
-									>
-										{isUploaded ? "Uploaded" : "Not uploaded"}
-									</span>
-
-									<Button
-										type="button"
-										text="View"
-										Icon={Eye}
-										size="sm"
-										appearance="ghost"
-										variant="secondary"
-										onClick={() => {
-											if (uploadedFile?.url) {
-												setPreviewFile(uploadedFile);
-											}
-										}}
-										disabled={!uploadedFile?.url}
-									/>
-								</div>
-							</div>
+								value={uploadedFile}
+								onChange={(nextValue) =>
+									handleEnclosureChange(field, nextValue)
+								}
+								kind="document"
+								label={field.label}
+								description={field.description}
+								required={isEnclosureRequired(field)}
+								error={enclosureErrors[field.statusKey]}
+								readonly={isReadOnly}
+								disabled={loading}
+								heightClassName="vendor-enclosure-upload-height"
+								className="vendor-enclosure-upload-field"
+								inputName={field.documentType}
+								showActions
+							/>
 						);
 					})}
 				</div>
-
-				{previewFile ? (
-					<div
-						className="vendor-file-preview-modal-overlay"
-						role="presentation"
-						onMouseDown={() => setPreviewFile(null)}
-					>
-						<div
-							className="vendor-file-preview-modal"
-							role="dialog"
-							aria-modal="true"
-							aria-label="Uploaded file preview"
-							onMouseDown={(event) => event.stopPropagation()}
-						>
-							<div className="vendor-file-preview-modal-header">
-								<div className="vendor-file-preview-modal-title-wrap">
-									<h3 className="vendor-file-preview-modal-title">
-										{previewFile.name}
-									</h3>
-
-									<p className="vendor-file-preview-modal-meta">
-										{previewFile.sizeLabel ||
-											previewFile.type ||
-											"Uploaded file"}
-									</p>
-								</div>
-
-								<Button
-									type="button"
-									appearance="icon"
-									variant="secondary"
-									size="sm"
-									Icon={X}
-									aria-label="Close file preview"
-									onClick={() => setPreviewFile(null)}
-								/>
-							</div>
-
-							<div className="vendor-file-preview-modal-body">
-								{isImageUpload(previewFile) ? (
-									<img
-										src={previewFile.url}
-										alt={previewFile.name}
-										className="vendor-file-preview-image"
-									/>
-								) : isPdfUpload(previewFile) ? (
-									<object
-										data={previewFile.url}
-										type="application/pdf"
-										className="vendor-file-preview-frame"
-										aria-label={previewFile.name}
-									>
-										<div className="vendor-file-preview-fallback">
-											<p>PDF preview is unavailable.</p>
-
-											<Button
-												type="button"
-												text="Open PDF"
-												Icon={Eye}
-												size="sm"
-												appearance="standard"
-												variant="secondary"
-												onClick={() =>
-													window.open(
-														previewFile.url,
-														"_blank",
-														"noopener,noreferrer",
-													)
-												}
-											/>
-										</div>
-									</object>
-								) : (
-									<div className="vendor-file-preview-fallback">
-										<p>Preview is not available for this file type.</p>
-									</div>
-								)}
-							</div>
-						</div>
-					</div>
-				) : null}
 
 				<Modal
 					open={isDpdpModalOpen}
