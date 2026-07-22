@@ -6,18 +6,18 @@ import type {
 	VendorOnboardingRawResponse,
 	VendorOnboardingResponse,
 } from "../types/vendorOnboarding.types";
-import { normalizeVendorOnboardingResponse } from "../utils/vendor.onboarding.helper";
+import { normalizeVendorOnboardingResponse } from "../helpers/vendor.onboarding.helper";
+import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";
 
 const VENDOR_URL = "/vendor-onboarding";
 const PUBLIC_VENDOR_URL = `${VENDOR_URL}/public`;
 
-export type VendorOnboardingInitiationPayload = {
-	vendorName: string;
-	email: string;
-	mobile: string;
-};
-
-export type VendorListingTab = "initiation" | "onboarding";
+export type VendorListingTab =
+	| "onboarding"
+	| "initiation"
+	| "pendingOnMe"
+	| "approvedByMe"
+	| "createdByMe";
 
 export type VendorListingParams = {
 	tab: VendorListingTab;
@@ -41,6 +41,7 @@ export type VendorListingRow = {
 		first_name: string;
 		last_name: string;
 	};
+	referenceNumber?: string;
 };
 
 export type VendorListingResponse = {
@@ -146,25 +147,6 @@ export const vendorOnboardingApi = {
 		return data;
 	},
 
-	createInitiation: async (payload: VendorOnboardingInitiationPayload) => {
-		const {
-			data: { data },
-		} = await ServerAxios.post(VENDOR_URL, payload);
-		return data;
-	},
-
-	updateInitiation: async ({
-		id,
-		payload,
-	}: {
-		id: string;
-		payload: VendorOnboardingInitiationPayload;
-	}) => {
-		const {
-			data: { data },
-		} = await ServerAxios.patch(`${VENDOR_URL}/${id}`, payload);
-		return data;
-	},
 	assignWorkflow: async (payload: {
 		subjectType: string;
 		subjectId: string;
@@ -189,6 +171,50 @@ export const vendorOnboardingApi = {
 			data: { data },
 		} = await ServerAxios.post("/soa/preview-workflow", payload);
 
+		return data;
+	},
+
+	activateFirstStage: async (workflowId: string) => {
+		const {
+			data: { data, message },
+		} = await ServerAxios.post(`/soa/stages/activate-first-stage`, {
+			workflowId,
+		});
+
+		return { data, message };
+	},
+};
+
+export const vendorInitationApi = {
+	getById: async (
+		vendorRequestId: string,
+	): Promise<VendorOnboardingInitiationPayload> => {
+		const {
+			data: { data },
+		} = await ServerAxios.get<{
+			success: boolean;
+			data: VendorOnboardingInitiationPayload;
+		}>(`${VENDOR_URL}/${vendorRequestId}`);
+
+		return data;
+	},
+	createInitiation: async (payload: VendorOnboardingInitiationPayload) => {
+		const {
+			data: { data },
+		} = await ServerAxios.post(VENDOR_URL, payload);
+		return data;
+	},
+
+	updateInitiation: async ({
+		id,
+		payload,
+	}: {
+		id: string;
+		payload: VendorOnboardingInitiationPayload;
+	}) => {
+		const {
+			data: { data },
+		} = await ServerAxios.patch(`${VENDOR_URL}/${id}`, payload);
 		return data;
 	},
 };

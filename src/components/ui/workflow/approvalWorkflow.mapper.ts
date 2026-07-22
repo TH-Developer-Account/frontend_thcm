@@ -132,7 +132,7 @@ const shouldRenderStageStatus = (stage: ApprovalStageLike): boolean => {
 };
 
 export const mapWorkflowStagesToApprovalRows = (
-	stages: readonly ApprovalStageLike[] = [],
+	stages: ApprovalStageLike[] = [],
 	options: MapWorkflowStagesOptions = {},
 ): ApprovalTableRow[] => {
 	const showOnlyCurrentStageStatus = options.showOnlyCurrentStageStatus ?? true;

@@ -26,3 +26,10 @@ export type ApiErrorResponse = {
 	message: string;
 	errors?: Record<string, string[]>;
 };
+
+export type EventDeviationPayload =
+	| {
+			status: string;
+			reason: string;
+	  }
+	| FormData;

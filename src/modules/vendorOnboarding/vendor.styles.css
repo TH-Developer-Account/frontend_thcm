@@ -9,34 +9,120 @@
 
 	.vendor-onboarding-form,
 	.vendor-summary-form {
-		@apply flex gap-4;
+		display: flex;
 		width: 100%;
 		min-width: 0;
 		flex-direction: column;
+		gap: var(--space-4);
 
 		background-color: var(--color-bg-surface);
 		color: var(--color-text-primary);
 	}
+
+	/*
+	 * Form One:
+	 * Basic information fields + address textarea.
+	 *
+	 * Desktop:
+	 * - field grid takes approximately two-thirds
+	 * - address takes approximately one-third
+	 */
 	.vendor-onboarding-form-grid-parent {
-		@apply grid grid-cols-1 gap-4 w-full;
+		display: grid;
+		width: 100%;
+		min-width: 0;
+		grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
+		align-items: stretch;
+		gap: var(--space-4);
+
 		padding: var(--space-3) var(--space-4) var(--space-4);
 	}
+
+	.vendor-onboarding-form-grid-parent > * {
+		min-width: 0;
+	}
+
+	/*
+	 * Four compact fields inside the left side of Form One.
+	 */
 	.vendor-onboarding-form-grid-child {
-		@apply grid grid-cols-4 gap-4;
+		display: grid;
+		width: 100%;
+		min-width: 0;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		align-content: start;
+		gap: var(--space-4);
 	}
-	.vendor-form-textarea {
-		@apply flex justify-between items-center gap-4;
-		padding: var(--space-3) var(--space-4) var(--space-4);
-	}
+
+	/*
+	 * Standard form sections.
+	 *
+	 * Desktop: 3 columns
+	 * Tablet: 2 columns
+	 * Mobile: 1 column
+	 */
 	.vendor-onboarding-form-grid {
 		display: grid;
 		width: 100%;
 		min-width: 0;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
+		align-items: start;
 		gap: var(--space-4);
 
 		padding: var(--space-3) var(--space-4) var(--space-4);
 	}
+
+	.vendor-onboarding-form-grid > *,
+	.vendor-onboarding-form-grid-child > *,
+	.vendor-form-textarea > * {
+		min-width: 0;
+	}
+
+	/*
+	 * Form Two long text fields.
+	 */
+	.vendor-form-textarea {
+		display: grid;
+		width: 100%;
+		min-width: 0;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		align-items: start;
+		gap: var(--space-4);
+
+		padding: var(--space-3) var(--space-4) var(--space-4);
+	}
+
+	/*
+	 * Ensure textareas use the entire available grid column.
+	 */
+	.vendor-form-textarea .form-field,
+	.vendor-onboarding-form-grid-parent .form-field {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.vendor-form-textarea .form-textarea,
+	.vendor-onboarding-form-grid-parent .form-textarea {
+		width: 100%;
+		min-width: 0;
+		resize: vertical;
+	}
+
+	/*
+	 * Read-only multiline values should fill their grid cell.
+	 */
+	.form-readonly-value-multiline {
+		width: 100%;
+		min-width: 0;
+		min-height: 5rem;
+		align-items: flex-start;
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+
+	/* =====================================================
+	   FORM ACTIONS
+	===================================================== */
 
 	.vendor-onboarding-form-actions {
 		display: flex;
@@ -62,11 +148,59 @@
 		gap: var(--space-2);
 	}
 
+	/*
+	 * Covers the action class used in Form One.
+	 */
+	.bottom-buttons-bar-between {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
+
+	.bottom-buttons-bar-between > .bottom-buttons-bar-between {
+		width: auto;
+		justify-content: flex-end;
+	}
+
 	/* =====================================================
-	   READONLY DETAIL FIELD
-	   Label:value view matching form grid rhythm
+	   READ-ONLY FIELD
 	===================================================== */
 
+	.form-readonly-field {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.form-readonly-value {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		min-height: var(--control-height-md);
+		align-items: center;
+
+		padding: var(--space-2) var(--space-3);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-sm);
+
+		background-color: var(--color-bg-surface-subtle);
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-normal);
+
+		overflow-wrap: anywhere;
+		word-break: break-word;
+	}
+
+	/*
+	 * Legacy classes can remain temporarily while other forms migrate to
+	 * the shared ReadOnlyField component.
+	 */
 	.vendor-detail-field {
 		display: grid;
 		width: 100%;
@@ -177,6 +311,7 @@
 	}
 
 	.vendor-summary-block {
+		min-width: 0;
 		overflow: hidden;
 
 		border: var(--border-width-default) solid var(--color-border-default);
@@ -187,6 +322,10 @@
 		box-shadow: var(--shadow-xs);
 	}
 
+	.vendor-summary-block-header {
+		padding: var(--space-2);
+		@apply flex justify-between items-center;
+	}
 	.vendor-summary-block-title {
 		margin: 0;
 		padding: var(--space-2) var(--space-3);
@@ -203,6 +342,7 @@
 	}
 
 	.vendor-summary-block-body {
+		width: 100%;
 		min-width: 0;
 		background-color: var(--color-bg-surface);
 	}
@@ -255,6 +395,20 @@
 	}
 
 	/* =====================================================
+	   LAPTOP / SMALL DESKTOP
+	===================================================== */
+
+	@media (max-width: 1199px) {
+		.vendor-onboarding-form-grid-parent {
+			grid-template-columns: minmax(0, 1.5fr) minmax(15rem, 1fr);
+		}
+
+		.vendor-onboarding-form-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	/* =====================================================
 	   TABLET
 	===================================================== */
 
@@ -263,9 +417,21 @@
 			margin-bottom: var(--space-4);
 		}
 
-		.vendor-onboarding-form-grid {
+		.vendor-onboarding-form-grid-parent {
+			grid-template-columns: minmax(0, 1fr);
+			gap: var(--space-3);
+			padding-inline: var(--space-3);
+		}
+
+		.vendor-onboarding-form-grid-child {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: var(--space-4);
+			gap: var(--space-3);
+		}
+
+		.vendor-onboarding-form-grid,
+		.vendor-form-textarea {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: var(--space-3);
 			padding-inline: var(--space-3);
 		}
 
@@ -289,11 +455,27 @@
 			margin-bottom: var(--space-3);
 		}
 
-		.vendor-onboarding-form-grid {
+		.vendor-onboarding-form,
+		.vendor-summary-form {
+			gap: var(--space-3);
+		}
+
+		.vendor-onboarding-form-grid-parent,
+		.vendor-onboarding-form-grid,
+		.vendor-onboarding-form-grid-child,
+		.vendor-form-textarea {
 			grid-template-columns: minmax(0, 1fr);
 			gap: var(--space-3);
+		}
 
+		.vendor-onboarding-form-grid-parent,
+		.vendor-onboarding-form-grid,
+		.vendor-form-textarea {
 			padding: var(--space-3);
+		}
+
+		.vendor-onboarding-form-grid-child {
+			padding: 0;
 		}
 
 		.vendor-onboarding-form-actions {
@@ -310,9 +492,30 @@
 			gap: var(--space-2);
 		}
 
-		.vendor-onboarding-form-actions .button-wrapper,
-		.vendor-onboarding-form-actions .button-base {
+		.bottom-buttons-bar-between {
+			align-items: stretch;
+			flex-direction: column-reverse;
+		}
+
+		.bottom-buttons-bar-between > .bottom-buttons-bar-between {
 			width: 100%;
+			flex-direction: column-reverse;
+		}
+
+		.vendor-onboarding-form-actions .button-wrapper,
+		.vendor-onboarding-form-actions .button-base,
+		.bottom-buttons-bar-between .button-wrapper,
+		.bottom-buttons-bar-between .button-base {
+			width: 100%;
+		}
+
+		.form-readonly-value {
+			min-height: auto;
+			padding: var(--space-2);
+		}
+
+		.form-readonly-value-multiline {
+			min-height: 4.5rem;
 		}
 
 		.vendor-detail-field {
@@ -366,7 +569,9 @@
 	===================================================== */
 
 	@media (max-width: 380px) {
-		.vendor-onboarding-form-grid {
+		.vendor-onboarding-form-grid-parent,
+		.vendor-onboarding-form-grid,
+		.vendor-form-textarea {
 			padding-inline: var(--space-2);
 		}
 

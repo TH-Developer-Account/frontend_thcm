@@ -4,14 +4,12 @@ import {
 	Banknote,
 	Building2,
 	CheckCircle2,
-	Eye,
 	FileCheck2,
 	Landmark,
 	LucideBriefcaseBusiness,
 	RefreshCcw,
 	Save,
 	ShieldCheck,
-	X,
 } from "lucide-react";
 
 import Button from "../../../components/common/Button";
@@ -22,13 +20,9 @@ import SelectInput from "../../../components/forms/SelectInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
 
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
-import {
-	isImageUpload,
-	isPdfUpload,
-} from "../../../components/ui/FileUpload/fileUpload.helpers";
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 
-import FormHeader from "../../marketing/activity-planner/components/common/FormHeader";
+import FormHeader from "../../../components/ui/FormHeader";
 
 import {
 	VENDOR_DOCUMENT_FIELDS,
@@ -88,11 +82,6 @@ type VendorCreationFormOneProps = {
 	submittedMessage?: string;
 	actionText?: string;
 };
-type VendorDetailValueProps = {
-	label: string;
-	value?: string;
-	required?: boolean;
-};
 
 const toSelectOptions = (values: string[]): SelectOption[] =>
 	values.map((value) => ({
@@ -105,9 +94,6 @@ const getSelectedOption = (
 	value?: string,
 ): SelectOption | null =>
 	options.find((option) => option.value === value) ?? null;
-
-const getDisplayValue = (value?: string): string =>
-	value && value.trim().length > 0 ? value : "--";
 
 const yesNoOptions = toSelectOptions(["Yes", "No"]);
 
@@ -196,37 +182,15 @@ const createInitialEnclosureUploads = (
 		};
 	});
 
-const VendorDetailValue = ({
-	label,
-	value,
-	required = false,
-}: VendorDetailValueProps) => {
-	return (
-		<div className="vendor-detail-field">
-			<div className="vendor-detail-label">
-				{label}
-				{required ? (
-					<span className="vendor-detail-required" aria-hidden="true">
-						*
-					</span>
-				) : null}
-				:
-			</div>
-
-			<div className="vendor-detail-value">{getDisplayValue(value)}</div>
-		</div>
-	);
-};
-
 const VendorCreationFormOne = ({
 	mode = "edit",
 	canEdit = true,
-	values = {},
+	values,
 	onChange,
 	onNext,
 	onBack,
 	onSubmit,
-	errors = {},
+	errors,
 	initialDocuments = EMPTY_VENDOR_DOCUMENTS,
 	requireDocuments = true,
 	requireDpdpConsent = true,
@@ -235,6 +199,7 @@ const VendorCreationFormOne = ({
 	actionText,
 }: VendorCreationFormOneProps) => {
 	const isReadOnly = mode === "view" || !canEdit;
+	const fieldMode: VendorFormMode = isReadOnly ? "view" : "edit";
 
 	const [enclosureUploads, setEnclosureUploads] = React.useState<
 		VendorEnclosureUploadItem[]
@@ -244,14 +209,11 @@ const VendorCreationFormOne = ({
 		Partial<Record<VendorEnclosureStatusKey, string>>
 	>({});
 
-	const [previewFile, setPreviewFile] = React.useState<FileUploadValue | null>(
-		null,
-	);
-
 	const [isDpdpModalOpen, setIsDpdpModalOpen] = React.useState(false);
 	const [hasAcceptedDpdp, setHasAcceptedDpdp] = React.useState(false);
 	const [hasConfirmedDpdp, setHasConfirmedDpdp] = React.useState(false);
 	const [dpdpError, setDpdpError] = React.useState("");
+
 	const documentsKey = React.useMemo(
 		() =>
 			initialDocuments
@@ -276,85 +238,55 @@ const VendorCreationFormOne = ({
 		setEnclosureUploads(createInitialEnclosureUploads(initialDocuments));
 	}, [documentsKey, initialDocuments]);
 
-	const renderInput = <K extends keyof VendorCreationFormOneValues>({
-		name,
-		label,
-		required,
-		helperText,
-	}: {
-		name: K;
-		label: string;
-		required?: boolean;
-		helperText?: string;
-	}) => {
-		if (isReadOnly) {
-			return (
-				<VendorDetailValue
-					label={label}
-					value={values[name]}
-					required={required}
-				/>
-			);
-		}
-
-		return (
-			<FormInput
-				name={String(name)}
-				label={label}
-				value={values[name] ?? ""}
-				required={required}
-				error={errors[name]}
-				helperText={helperText}
-				onChange={(event) => onChange?.(name, event.target.value)}
-			/>
-		);
-	};
-
-	const renderYesNo = <K extends keyof VendorCreationFormOneValues>({
-		name,
-		label,
-		required,
-		helperText,
-	}: {
-		name: K;
-		label: string;
-		required?: boolean;
-		helperText?: string;
-	}) => {
-		if (isReadOnly) {
-			return (
-				<VendorDetailValue
-					label={label}
-					value={values[name]}
-					required={required}
-				/>
-			);
-		}
-
-		return (
-			<SelectInput
-				name={String(name)}
-				label={label}
-				placeholder="Select option"
-				options={yesNoOptions}
-				value={getSelectedOption(yesNoOptions, values[name])}
-				required={required}
-				error={errors[name]}
-				helperText={helperText}
-				onChange={(option) => onChange?.(name, option?.value ?? "")}
-			/>
-		);
-	};
-
 	const getEnclosureFile = React.useCallback(
-		(documentType: VendorDocumentType): FileUploadValue | null => {
-			return (
-				enclosureUploads.find((upload) => upload.documentType === documentType)
-					?.value ?? null
-			);
-		},
+		(documentType: VendorDocumentType): FileUploadValue | null =>
+			enclosureUploads.find((upload) => upload.documentType === documentType)
+				?.value ?? null,
 		[enclosureUploads],
 	);
+
+	const isEnclosureRequired = React.useCallback(
+		(field: VendorDocumentField): boolean => {
+			if (!requireDocuments) {
+				return false;
+			}
+
+			if (field.statusKey === "msmeCertificateAttached") {
+				return (
+					values.msmeVendor === "Yes" &&
+					values.msmeCertificateAttached === "Yes"
+				);
+			}
+
+			return field.required;
+		},
+		[requireDocuments, values.msmeCertificateAttached, values.msmeVendor],
+	);
+
+	React.useEffect(() => {
+		const msmeField = VENDOR_DOCUMENT_FIELDS.find(
+			(field) => field.statusKey === "msmeCertificateAttached",
+		);
+
+		if (!msmeField) {
+			return;
+		}
+
+		const certificate = getEnclosureFile(msmeField.documentType);
+		const hasCertificate = Boolean(certificate?.file || certificate?.url);
+
+		setEnclosureErrors((previousErrors) => {
+			const nextErrors = { ...previousErrors };
+
+			if (isEnclosureRequired(msmeField) && !hasCertificate) {
+				nextErrors[msmeField.statusKey] = `${msmeField.label} is required.`;
+			} else {
+				delete nextErrors[msmeField.statusKey];
+			}
+
+			return nextErrors;
+		});
+	}, [getEnclosureFile, isEnclosureRequired]);
 
 	const handleEnclosureChange = React.useCallback(
 		(field: VendorDocumentField, nextValue: FileUploadValue | null) => {
@@ -372,14 +304,18 @@ const VendorCreationFormOne = ({
 			setEnclosureErrors((previousErrors) => {
 				const nextErrors = { ...previousErrors };
 
-				delete nextErrors[field.statusKey];
+				if (!nextValue && isEnclosureRequired(field)) {
+					nextErrors[field.statusKey] = `${field.label} is required.`;
+				} else {
+					delete nextErrors[field.statusKey];
+				}
 
 				return nextErrors;
 			});
 
 			onChange?.(field.statusKey, nextValue ? "Yes" : "No");
 		},
-		[onChange],
+		[isEnclosureRequired, onChange],
 	);
 
 	const validateEnclosures = React.useCallback((): boolean => {
@@ -391,7 +327,7 @@ const VendorCreationFormOne = ({
 		const nextErrors: Partial<Record<VendorEnclosureStatusKey, string>> = {};
 
 		VENDOR_DOCUMENT_FIELDS.forEach((field) => {
-			if (!field.required) {
+			if (!isEnclosureRequired(field)) {
 				return;
 			}
 
@@ -399,7 +335,11 @@ const VendorCreationFormOne = ({
 				(item) => item.documentType === field.documentType,
 			);
 
-			if (!(upload?.value?.file instanceof File)) {
+			const hasUploadedFile = Boolean(
+				upload?.value?.file || upload?.value?.url,
+			);
+
+			if (!hasUploadedFile) {
 				nextErrors[field.statusKey] = `${field.label} is required.`;
 			}
 		});
@@ -407,7 +347,7 @@ const VendorCreationFormOne = ({
 		setEnclosureErrors(nextErrors);
 
 		return Object.keys(nextErrors).length === 0;
-	}, [enclosureUploads, requireDocuments]);
+	}, [enclosureUploads, isEnclosureRequired, requireDocuments]);
 
 	const openDpdpModal = React.useCallback(() => {
 		setHasConfirmedDpdp(hasAcceptedDpdp);
@@ -451,8 +391,8 @@ const VendorCreationFormOne = ({
 		setHasAcceptedDpdp(false);
 		setHasConfirmedDpdp(false);
 		setDpdpError("");
-		setPreviewFile(null);
 	};
+
 	const handleFormAction = () => {
 		const enclosuresValid = validateEnclosures();
 
@@ -539,7 +479,7 @@ const VendorCreationFormOne = ({
 						<div className="bottom-buttons-bar-between">
 							<Button
 								type="button"
-								text={"Back"}
+								text="Back"
 								size="sm"
 								appearance="standard"
 								variant="outline"
@@ -547,6 +487,7 @@ const VendorCreationFormOne = ({
 								disabled={loading}
 								Icon={ArrowLeft}
 							/>
+
 							<div className="bottom-buttons-bar-between">
 								<Button
 									type="button"
@@ -558,6 +499,7 @@ const VendorCreationFormOne = ({
 									disabled={loading}
 									onClick={handleReset}
 								/>
+
 								<Button
 									type="button"
 									text={
@@ -600,306 +542,278 @@ const VendorCreationFormOne = ({
 
 				<div className="vendor-onboarding-form-grid-parent">
 					<div className="vendor-onboarding-form-grid-child">
-						{renderInput({
-							name: "vendorName",
-							label: "Name Of Vendor",
-							helperText: "Enter vendor name in capital letters.",
-						})}
+						<FormInput
+							mode={fieldMode}
+							name="vendorName"
+							label="Name Of Vendor"
+							value={values.vendorName ?? ""}
+							error={errors.vendorName}
+							helperText="Enter vendor name in capital letters."
+							onChange={(event) => onChange?.("vendorName", event.target.value)}
+						/>
 
-						{isReadOnly ? (
-							<VendorDetailValue label="State" value={values.state} required />
-						) : (
-							<SelectInput
-								name="state"
-								label="State"
-								placeholder="Select state"
-								options={STATES}
-								value={getSelectedOption(STATES, values.state)}
-								required
-								error={errors.state}
-								helperText="Select the applicable vendor state."
-								onChange={(option) => onChange?.("state", option?.value ?? "")}
-							/>
-						)}
+						<SelectInput
+							mode={fieldMode}
+							name="state"
+							label="State"
+							placeholder="Select state"
+							options={STATES}
+							value={getSelectedOption(STATES, values.state)}
+							required
+							error={errors.state}
+							helperText="Select the applicable vendor state."
+							onChange={(option) => onChange?.("state", option?.value ?? "")}
+						/>
 
-						{renderInput({
-							name: "city",
-							label: "City",
-							required: true,
-							helperText: "Vendor city.",
-						})}
+						<FormInput
+							mode={fieldMode}
+							name="city"
+							label="City"
+							value={values.city ?? ""}
+							required
+							error={errors.city}
+							helperText="Vendor city."
+							onChange={(event) => onChange?.("city", event.target.value)}
+						/>
 
-						{renderInput({
-							name: "pinCode",
-							label: "Pin Code",
-							required: true,
-							helperText: "Vendor location pin code.",
-						})}
+						<FormInput
+							mode={fieldMode}
+							name="pinCode"
+							label="Pin Code"
+							value={values.pinCode ?? ""}
+							required
+							inputMode="numeric"
+							error={errors.pinCode}
+							helperText="Vendor location pin code."
+							onChange={(event) => onChange?.("pinCode", event.target.value)}
+						/>
 					</div>
 
 					<div>
-						{isReadOnly ? (
-							<VendorDetailValue
-								label="Complete Address"
-								value={values.completeAddress}
-								required
-							/>
-						) : (
-							<TextareaInput
-								name="completeAddress"
-								label="Complete Address"
-								value={values.completeAddress ?? ""}
-								required
-								error={errors.completeAddress}
-								helperText="Registered or communication address."
-								onChange={(event) =>
-									onChange?.("completeAddress", event.target.value)
-								}
-							/>
-						)}
+						<TextareaInput
+							mode={fieldMode}
+							name="completeAddress"
+							label="Complete Address"
+							value={values.completeAddress ?? ""}
+							required
+							error={errors.completeAddress}
+							helperText="Registered or communication address."
+							onChange={(event) =>
+								onChange?.("completeAddress", event.target.value)
+							}
+							rows={4}
+						/>
 					</div>
 				</div>
 
 				<FormHeader title="Contact Information" Icon={FileCheck2} />
 
 				<div className="vendor-onboarding-form-grid">
-					{renderInput({
-						name: "mobile",
-						label: "Mobile",
-						required: true,
-						helperText: "Vendor mobile number.",
-					})}
+					<FormInput
+						mode={fieldMode}
+						name="mobile"
+						label="Mobile"
+						type="tel"
+						inputMode="tel"
+						autoComplete="tel"
+						value={values.mobile ?? ""}
+						required
+						error={errors.mobile}
+						helperText="Vendor mobile number."
+						onChange={(event) => onChange?.("mobile", event.target.value)}
+					/>
 
-					{renderInput({
-						name: "email",
-						label: "E-mail",
-						required: true,
-						helperText: "Vendor email address.",
-					})}
-				</div>
-
-				<FormHeader title="MSME Details" Icon={Building2} />
-
-				<div className="vendor-onboarding-form-grid">
-					{renderYesNo({
-						name: "msmeVendor",
-						label: "MSME Vendor",
-						required: true,
-						helperText: "Select whether this vendor is registered under MSME.",
-					})}
-
-					{renderYesNo({
-						name: "msmeCertificateAttached",
-						label: 'If "Yes", Certificate Attached?',
-						helperText: "Confirm whether MSME certificate is attached.",
-					})}
+					<FormInput
+						mode={fieldMode}
+						name="email"
+						label="E-mail"
+						type="email"
+						autoComplete="email"
+						value={values.email ?? ""}
+						required
+						error={errors.email}
+						helperText="Vendor email address."
+						onChange={(event) => onChange?.("email", event.target.value)}
+					/>
 				</div>
 
 				<FormHeader title="Bank Details" Icon={Landmark} />
 
 				<div className="vendor-onboarding-form-grid">
-					{renderInput({
-						name: "bank",
-						label: "Bank",
-						required: true,
-						helperText: "Bank name.",
-					})}
+					<FormInput
+						mode={fieldMode}
+						name="bank"
+						label="Bank"
+						value={values.bank ?? ""}
+						required
+						error={errors.bank}
+						helperText="Bank name."
+						onChange={(event) => onChange?.("bank", event.target.value)}
+					/>
 
-					{renderInput({
-						name: "branch",
-						label: "Branch",
-						required: true,
-						helperText: "Bank branch.",
-					})}
+					<FormInput
+						mode={fieldMode}
+						name="branch"
+						label="Branch"
+						value={values.branch ?? ""}
+						required
+						error={errors.branch}
+						helperText="Bank branch."
+						onChange={(event) => onChange?.("branch", event.target.value)}
+					/>
 
-					{renderInput({
-						name: "ifscCode",
-						label: "IFSC Code",
-						required: true,
-						helperText: "Bank IFSC code.",
-					})}
+					<FormInput
+						mode={fieldMode}
+						name="ifscCode"
+						label="IFSC Code"
+						value={values.ifscCode ?? ""}
+						required
+						error={errors.ifscCode}
+						helperText="Bank IFSC code."
+						onChange={(event) => onChange?.("ifscCode", event.target.value)}
+					/>
 
-					{renderInput({
-						name: "bankAddress",
-						label: "Address",
-						helperText: "Bank branch address.",
-					})}
+					<FormInput
+						mode={fieldMode}
+						name="bankAddress"
+						label="Address"
+						value={values.bankAddress ?? ""}
+						error={errors.bankAddress}
+						helperText="Bank branch address."
+						onChange={(event) => onChange?.("bankAddress", event.target.value)}
+					/>
+					<FormInput
+						mode={fieldMode}
+						name="accountNumber"
+						label="A/C No."
+						value={values.accountNumber ?? ""}
+						required
+						inputMode="numeric"
+						error={errors.accountNumber}
+						helperText="Vendor bank account number."
+						onChange={(event) => {
+							const value = event.target.value.replace(/\D/g, "");
+							onChange?.("accountNumber", value);
+						}}
+					/>
 
-					{renderInput({
-						name: "accountNumber",
-						label: "A/C No.",
-						required: true,
-						helperText: "Vendor bank account number.",
-					})}
+					<FormInput
+						mode={fieldMode}
+						name="confirmAccountNumber"
+						label="Confirm A/C No."
+						value={values.confirmAccountNumber ?? ""}
+						required
+						inputMode="numeric"
+						error={errors.confirmAccountNumber}
+						helperText="Re-enter the bank account number."
+						onChange={(event) => {
+							const value = event.target.value.replace(/\D/g, "");
+							onChange?.("confirmAccountNumber", value);
+						}}
+					/>
 				</div>
 
 				<FormHeader title="Tax Details" Icon={Banknote} />
 
 				<div className="vendor-onboarding-form-grid">
-					{renderInput({
-						name: "gstin",
-						label: "GSTIN",
-						required: true,
-						helperText: "GST identification number.",
-					})}
+					<FormInput
+						mode={fieldMode}
+						name="gstin"
+						label="GSTIN"
+						value={values.gstin ?? ""}
+						required
+						error={errors.gstin}
+						helperText="GST identification number."
+						onChange={(event) => onChange?.("gstin", event.target.value)}
+					/>
 
-					{renderInput({
-						name: "pan",
-						label: "PAN",
-						required: true,
-						helperText: "Permanent account number.",
-					})}
+					<FormInput
+						mode={fieldMode}
+						name="pan"
+						label="PAN"
+						value={values.pan ?? ""}
+						required
+						error={errors.pan}
+						helperText="Permanent account number."
+						onChange={(event) => onChange?.("pan", event.target.value)}
+					/>
 
-					{renderInput({
-						name: "entityRegistrationNumber",
-						label: "Entity Reg. No.",
-						helperText: "Entity registration number, if applicable.",
-					})}
+					<FormInput
+						mode={fieldMode}
+						name="entityRegistrationNumber"
+						label="Entity Reg. No."
+						value={values.entityRegistrationNumber ?? ""}
+						error={errors.entityRegistrationNumber}
+						helperText="Entity registration number, if applicable."
+						onChange={(event) =>
+							onChange?.("entityRegistrationNumber", event.target.value)
+						}
+					/>
 				</div>
+				<FormHeader title="MSME Details" Icon={Building2} />
 
+				<div className="vendor-onboarding-form-grid">
+					<SelectInput
+						mode={fieldMode}
+						name="msmeVendor"
+						label="MSME Vendor"
+						placeholder="Select option"
+						options={yesNoOptions}
+						value={getSelectedOption(yesNoOptions, values.msmeVendor)}
+						required
+						error={errors.msmeVendor}
+						helperText="Select whether this vendor is registered under MSME."
+						onChange={(option) => onChange?.("msmeVendor", option?.value ?? "")}
+					/>
+
+					{values.msmeVendor === "Yes" ? (
+						<SelectInput
+							mode={fieldMode}
+							name="msmeCertificateAttached"
+							label={'If "Yes", Certificate Attached?'}
+							placeholder="Select option"
+							options={yesNoOptions}
+							value={getSelectedOption(
+								yesNoOptions,
+								values.msmeCertificateAttached,
+							)}
+							required
+							error={errors.msmeCertificateAttached}
+							helperText="Confirm whether MSME certificate is attached."
+							onChange={(option) =>
+								onChange?.("msmeCertificateAttached", option?.value ?? "")
+							}
+						/>
+					) : null}
+				</div>
 				<FormHeader title="Attachments / Enclosures" Icon={ShieldCheck} />
 
 				<div className="vendor-enclosure-upload-grid">
 					{VENDOR_DOCUMENT_FIELDS.map((field) => {
 						const uploadedFile = getEnclosureFile(field.documentType);
-						const isUploaded = Boolean(uploadedFile?.url);
 
 						return (
-							<div
-								className="vendor-enclosure-upload-card"
+							<FileUploadField
 								key={field.documentType}
-							>
-								<FileUploadField
-									value={uploadedFile}
-									onChange={(nextValue) =>
-										handleEnclosureChange(field, nextValue)
-									}
-									kind="document"
-									label={field.label}
-									description={field.description}
-									required={requireDocuments && field.required}
-									error={enclosureErrors[field.statusKey]}
-									readonly={isReadOnly}
-									disabled={loading}
-									heightClassName="vendor-enclosure-upload-height"
-									className="vendor-enclosure-upload-field"
-									inputName={field.documentType}
-									showActions={true}
-								/>
-
-								<div className="vendor-enclosure-upload-footer">
-									<span
-										className="vendor-enclosure-upload-status"
-										data-uploaded={isUploaded}
-									>
-										{isUploaded ? "Uploaded" : "Not uploaded"}
-									</span>
-
-									<Button
-										type="button"
-										text="View"
-										Icon={Eye}
-										size="sm"
-										appearance="ghost"
-										variant="secondary"
-										onClick={() => {
-											if (uploadedFile?.url) {
-												setPreviewFile(uploadedFile);
-											}
-										}}
-										disabled={!uploadedFile?.url}
-									/>
-								</div>
-							</div>
+								value={uploadedFile}
+								onChange={(nextValue) =>
+									handleEnclosureChange(field, nextValue)
+								}
+								kind="document"
+								label={field.label}
+								description={field.description}
+								required={isEnclosureRequired(field)}
+								error={enclosureErrors[field.statusKey]}
+								readonly={isReadOnly}
+								disabled={loading}
+								heightClassName="vendor-enclosure-upload-height"
+								className="vendor-enclosure-upload-field"
+								inputName={field.documentType}
+								showActions
+							/>
 						);
 					})}
 				</div>
-
-				{previewFile ? (
-					<div
-						className="vendor-file-preview-modal-overlay"
-						role="presentation"
-						onMouseDown={() => setPreviewFile(null)}
-					>
-						<div
-							className="vendor-file-preview-modal"
-							role="dialog"
-							aria-modal="true"
-							aria-label="Uploaded file preview"
-							onMouseDown={(event) => event.stopPropagation()}
-						>
-							<div className="vendor-file-preview-modal-header">
-								<div className="vendor-file-preview-modal-title-wrap">
-									<h3 className="vendor-file-preview-modal-title">
-										{previewFile.name}
-									</h3>
-
-									<p className="vendor-file-preview-modal-meta">
-										{previewFile.sizeLabel ||
-											previewFile.type ||
-											"Uploaded file"}
-									</p>
-								</div>
-
-								<Button
-									type="button"
-									appearance="icon"
-									variant="secondary"
-									size="sm"
-									Icon={X}
-									aria-label="Close file preview"
-									onClick={() => setPreviewFile(null)}
-								/>
-							</div>
-
-							<div className="vendor-file-preview-modal-body">
-								<div className="vendor-file-preview-modal-body">
-									{isImageUpload(previewFile) ? (
-										<img
-											src={previewFile.url}
-											alt={previewFile.name}
-											className="vendor-file-preview-image"
-											onError={(event) => {
-												event.currentTarget.style.display = "none";
-											}}
-										/>
-									) : isPdfUpload(previewFile) ? (
-										<object
-											data={previewFile.url}
-											type="application/pdf"
-											className="vendor-file-preview-frame"
-											aria-label={previewFile.name}
-										>
-											<div className="vendor-file-preview-fallback">
-												<p>PDF preview is unavailable.</p>
-
-												<Button
-													type="button"
-													text="Open PDF"
-													Icon={Eye}
-													size="sm"
-													appearance="standard"
-													variant="secondary"
-													onClick={() =>
-														window.open(
-															previewFile.url,
-															"_blank",
-															"noopener,noreferrer",
-														)
-													}
-												/>
-											</div>
-										</object>
-									) : (
-										<div className="vendor-file-preview-fallback">
-											<p>Preview is not available for this file type.</p>
-										</div>
-									)}
-								</div>
-							</div>
-						</div>
-					</div>
-				) : null}
 
 				<Modal
 					open={isDpdpModalOpen}

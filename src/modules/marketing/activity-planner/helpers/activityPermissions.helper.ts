@@ -76,15 +76,7 @@ export const getActivityPermissions = ({
 	const reportValidatorId = report?.validatorId;
 	const isProposer = Boolean(userId && epcData?.created_by_id === userId);
 	const isValidator = Boolean(reportValidatorId === userId);
-	console.log(
-		"isvalidator8",
-		isValidator,
-		"proposer",
-		isProposer,
-		"report id",
-		report,
-		reportValidatorId,
-	);
+
 	const isClosed = CLOSED_STATUSES.includes(status);
 	const isFormLocked = LOCKED_FORM_STATUSES.includes(status);
 	const isFormReopened = FORM_EDIT_REOPEN_STATUSES.includes(status);

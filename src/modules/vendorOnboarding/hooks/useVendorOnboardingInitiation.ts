@@ -1,14 +1,11 @@
+import * as React from "react";
 import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
-import { vendorOnboardingApi } from "../api/vendorOnboarding.api";
-
-export type VendorOnboardingInitiationPayload = {
-	vendorName: string;
-	email: string;
-	mobile: string;
-};
+import { vendorInitationApi } from "../api/vendorOnboarding.api";
+import { useVendorInitiationDetailQuery } from "../queries/useVendorMutations";
+import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";
 
 export type VendorOnboardingInitiationErrors = Partial<
 	Record<keyof VendorOnboardingInitiationPayload, string>
@@ -18,37 +15,93 @@ const initialFormValues: VendorOnboardingInitiationPayload = {
 	vendorName: "",
 	email: "",
 	mobile: "",
+	status: "",
 };
 
 type UseVendorOnboardingInitiationParams = {
 	initialValues?: Partial<VendorOnboardingInitiationPayload>;
 	initiationId?: string;
+	shouldFetchDetails?: boolean;
 	onSubmitSuccess?: () => void | Promise<void>;
 	onUpdateSuccess?: () => void | Promise<void>;
 };
+const mapInitiationDetailsToForm = (
+	response: VendorOnboardingInitiationPayload | null | undefined,
+): VendorOnboardingInitiationPayload => ({
+	vendorName: response?.vendorName ?? "",
+	email: response?.email ?? "",
+	mobile: response?.mobile ?? "",
+	status: response?.status ?? "Pending",
+});
 
 export const useVendorOnboardingInitiation = ({
 	initialValues,
 	initiationId,
+	shouldFetchDetails = false,
 	onSubmitSuccess,
 	onUpdateSuccess,
 }: UseVendorOnboardingInitiationParams = {}) => {
 	const navigate = useNavigate();
 
-	const [values, setValues] = useState<VendorOnboardingInitiationPayload>({
-		...initialFormValues,
-		...initialValues,
-	});
+	const params = useParams<{
+		id?: string;
+		onboardingId?: string;
+		vendorRequestId?: string;
+	}>();
+
+	const routeVendorId =
+		params.onboardingId ?? params.vendorRequestId ?? params.id ?? "";
+
+	const resolvedInitiationId = initiationId ?? routeVendorId;
+
+	const initialResolvedValues = useMemo(
+		() => ({
+			...initialFormValues,
+			...initialValues,
+		}),
+		[initialValues],
+	);
+
+	const [values, setValues] = useState<VendorOnboardingInitiationPayload>(
+		initialResolvedValues,
+	);
+
+	const [originalValues, setOriginalValues] =
+		useState<VendorOnboardingInitiationPayload>(initialResolvedValues);
 
 	const [errors, setErrors] = useState<VendorOnboardingInitiationErrors>({});
 
 	const isEditMode = Boolean(initiationId);
 
+	const detailQuery = useVendorInitiationDetailQuery(
+		shouldFetchDetails ? resolvedInitiationId : "",
+	);
+
+	React.useEffect(() => {
+		if (!shouldFetchDetails || !detailQuery.data) {
+			return;
+		}
+		const mappedValues = mapInitiationDetailsToForm(detailQuery.data);
+
+		setValues(mappedValues);
+		setOriginalValues(mappedValues);
+		setErrors({});
+	}, [detailQuery.data, shouldFetchDetails]);
+
+	React.useEffect(() => {
+		if (shouldFetchDetails) {
+			return;
+		}
+
+		setValues(initialResolvedValues);
+		setOriginalValues(initialResolvedValues);
+	}, [initialResolvedValues, shouldFetchDetails]);
+
 	const submitMutation = useMutation({
-		mutationFn: vendorOnboardingApi.createInitiation,
-		onSuccess: () => {
-			onSubmitSuccess?.();
-			navigate("/vendor/listing?tab=initiation");
+		mutationFn: vendorInitationApi.createInitiation,
+		onSuccess: async () => {
+			await onSubmitSuccess?.();
+			navigate("/vendor/initiation/listing");
 		},
 		onError: (error) => {
 			console.error("Vendor initiation submit failed:", error);
@@ -56,10 +109,10 @@ export const useVendorOnboardingInitiation = ({
 	});
 
 	const updateMutation = useMutation({
-		mutationFn: vendorOnboardingApi.updateInitiation,
-		onSuccess: () => {
-			onUpdateSuccess?.();
-			navigate("/vendor/listing?tab=initiation");
+		mutationFn: vendorInitationApi.updateInitiation,
+		onSuccess: async () => {
+			await onUpdateSuccess?.();
+			navigate("/vendor/initiation/listing");
 		},
 		onError: (error) => {
 			console.error("Vendor initiation update failed:", error);
@@ -68,14 +121,10 @@ export const useVendorOnboardingInitiation = ({
 
 	const isSubmitting = submitMutation.isPending || updateMutation.isPending;
 
-	const isDirty = useMemo(() => {
-		const originalValues = {
-			...initialFormValues,
-			...initialValues,
-		};
-
-		return JSON.stringify(values) !== JSON.stringify(originalValues);
-	}, [values, initialValues]);
+	const isDirty = useMemo(
+		() => JSON.stringify(values) !== JSON.stringify(originalValues),
+		[originalValues, values],
+	);
 
 	const handleChange = <K extends keyof VendorOnboardingInitiationPayload>(
 		key: K,
@@ -88,23 +137,19 @@ export const useVendorOnboardingInitiation = ({
 
 		setErrors((previousErrors) => ({
 			...previousErrors,
-			[key]: "",
+			[key]: undefined,
 		}));
 	};
 
 	const handleReset = () => {
-		setValues({
-			...initialFormValues,
-			...initialValues,
-		});
-
+		setValues(originalValues);
 		setErrors({});
 	};
 
 	const handleSubmit = () => {
-		if (isEditMode && initiationId) {
+		if (isEditMode && resolvedInitiationId) {
 			updateMutation.mutate({
-				id: initiationId,
+				id: resolvedInitiationId,
 				payload: values,
 			});
 
@@ -117,12 +162,20 @@ export const useVendorOnboardingInitiation = ({
 	return {
 		values,
 		errors,
+
 		isEditMode,
 		isDirty,
 		isSubmitting,
+
+		isDetailLoading: detailQuery.isLoading,
+		isDetailFetching: detailQuery.isFetching,
+		isDetailError: detailQuery.isError,
+		detailError: detailQuery.error,
+
 		handleChange,
 		handleReset,
 		handleSubmit,
+
 		submitMutation,
 		updateMutation,
 	};

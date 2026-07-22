@@ -5,8 +5,8 @@ import { mapWorkflowStagesToApprovalRows } from "./approvalWorkflow.mapper";
 import type { ApprovalStageLike } from "./approvalWorkflow.types";
 
 type ApprovalWorkflowTableContentProps = {
-	stages: readonly ApprovalStageLike[];
-	deviationPreviewStages?: readonly ApprovalStageLike[];
+	stages: ApprovalStageLike[];
+	deviationPreviewStages?: ApprovalStageLike[];
 	showEmptyState?: boolean;
 };
 

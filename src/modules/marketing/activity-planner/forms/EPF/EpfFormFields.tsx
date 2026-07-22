@@ -3,7 +3,7 @@ import Button from "../../../../../components/common/Button";
 import FormInput from "../../../../../components/forms/FormInput";
 import ApprovalTable from "../../../../../components/ui/workflow/ApprovalTable";
 import type { EpfFormValues } from "../../types/epf.types";
-import FormHeader from "../../components/common/FormHeader";
+import FormHeader from "../../../../../components/ui/FormHeader";
 import type { ApprovalTableRow } from "../../types/activityplanner.types";
 
 type EpfFormInfoProps = {

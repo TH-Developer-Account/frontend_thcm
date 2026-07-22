@@ -1,78 +1,65 @@
 import React from "react";
 import { MessageCircle } from "lucide-react";
 
-import Avatar from "../../../../../components/common/Avatar";
-import SectionAccordion from "../../../../../components/common/SectionAccordion";
-import { useToast } from "../../../../../context/Auth/AuthContext";
-import { formatDateTime } from "../../../../../utils/format";
+import Avatar from "../../common/Avatar";
+import SectionAccordion from "../../common/SectionAccordion";
+import { useToast } from "../../../context/Auth/AuthContext";
+import { formatDateTime } from "../../../utils/format";
 
-import { workflowApi } from "../../api/workflow.api";
-import { getAuditMessage } from "../../helpers/activityLogMessage.helper";
-
+import { commentApi } from "./comment.api";
 import CommentInput from "./CommentInput";
+import type {
+	CommentApiAdapter,
+	CommentItem,
+	CommentUser,
+} from "./comment.types";
 
-import "../../../marketing.styles.css";
+import "./comments.css";
 
-export type MentionableUserInput = {
-	id: string;
-	first_name?: string | null;
-	last_name?: string | null;
-	email?: string | null;
-	avatarUrl?: string | null;
-};
-
-export type CommentUser = {
-	id: string;
-	first_name: string;
-	last_name: string;
-	avatarUrl?: string;
-	email?: string;
-};
-
-export type CommentItem = {
-	id: string;
-	message: string;
-	actor: CommentUser;
-	createdAt: string;
-	updatedAt?: string;
-	replies?: CommentItem[];
-	entryType?: string;
-	reason?: string;
-	action?: string;
-	stageName?: string;
-};
-
-type CommentsSectionProps = {
-	epcId: string;
+export type CommentsSectionProps = {
+	subjectType: string;
+	subjectId: string;
 	approvalId?: string | null;
-	isProposer?: boolean;
 	mentionableUsers?: CommentUser[];
 	ccEmails?: string[];
-	refreshKey?: number;
+	refreshKey?: string | number;
 	canComment?: boolean;
 	currentUserId?: string;
+	title?: string;
+	emptyTitle?: string;
+	emptyDescription?: string;
+	api?: CommentApiAdapter;
+	formatAuditMessage?: (comment: CommentItem) => React.ReactNode;
+	onCommentsChange?: (comments: CommentItem[]) => void;
 };
 
 type CommentCardProps = {
 	comment: CommentItem;
+	currentUserId?: string;
 	level?: number;
-	isSelf?: boolean;
+	formatAuditMessage?: (comment: CommentItem) => React.ReactNode;
 };
 
 const getCommentAuthorName = (comment: CommentItem): string => {
-	const name = `${comment.actor?.first_name ?? ""} ${
-		comment.actor?.last_name ?? ""
-	}`.trim();
-
+	const name =
+		`${comment.actor?.first_name ?? ""} ${comment.actor?.last_name ?? ""}`.trim();
 	return name || "Unknown user";
 };
 
+const getDefaultAuditMessage = (comment: CommentItem): React.ReactNode =>
+	comment.message || comment.reason || comment.action || "Activity updated";
+
+const normalizeEmailList = (emails: string[]) =>
+	Array.from(new Set(emails.map((email) => email.trim()).filter(Boolean)));
+
 const CommentCard = React.memo(function CommentCard({
 	comment,
+	currentUserId,
 	level = 0,
-	isSelf = false,
+	formatAuditMessage,
 }: CommentCardProps) {
 	const isAuditLog = comment.entryType === "ACTIVITY_LOG";
+	const isSelf = comment.actor?.id === currentUserId;
 
 	if (isAuditLog) {
 		return (
@@ -82,7 +69,9 @@ const CommentCard = React.memo(function CommentCard({
 					.join(" ")}
 			>
 				<div className="comment-audit-message">
-					<span>{getAuditMessage(comment)}</span>
+					<span>
+						{formatAuditMessage?.(comment) ?? getDefaultAuditMessage(comment)}
+					</span>
 				</div>
 			</div>
 		);
@@ -108,7 +97,6 @@ const CommentCard = React.memo(function CommentCard({
 					lastName={comment.actor?.last_name}
 					size="sm"
 				/>
-
 				<div className="comment-content">
 					<div
 						className={["comment-bubble", isSelf && "comment-bubble-self"]
@@ -117,12 +105,10 @@ const CommentCard = React.memo(function CommentCard({
 					>
 						<div className="comment-meta">
 							<p className="comment-author">{getCommentAuthorName(comment)}</p>
-
 							<time className="comment-submeta" dateTime={comment.createdAt}>
 								{formatDateTime(comment.createdAt)}
 							</time>
 						</div>
-
 						<p className="comment-text">{comment.message}</p>
 					</div>
 				</div>
@@ -134,8 +120,9 @@ const CommentCard = React.memo(function CommentCard({
 						<CommentCard
 							key={reply.id}
 							comment={reply}
+							currentUserId={currentUserId}
 							level={level + 1}
-							isSelf={isSelf}
+							formatAuditMessage={formatAuditMessage}
 						/>
 					))}
 				</div>
@@ -145,135 +132,110 @@ const CommentCard = React.memo(function CommentCard({
 });
 
 export default function CommentsSection({
-	epcId,
+	subjectType,
+	subjectId,
 	approvalId,
-	isProposer = false,
 	mentionableUsers = [],
 	ccEmails = [],
 	refreshKey = 0,
-	canComment,
+	canComment = true,
 	currentUserId,
+	title = "Comments & activity",
+	emptyTitle = "No comments yet",
+	emptyDescription = "Start the discussion by adding the first comment.",
+	api = commentApi,
+	formatAuditMessage,
+	onCommentsChange,
 }: CommentsSectionProps) {
 	const { showToast } = useToast();
-
 	const [comments, setComments] = React.useState<CommentItem[]>([]);
 	const [commentsLoading, setCommentsLoading] = React.useState(false);
+	const [loadError, setLoadError] = React.useState<string | null>(null);
 	const [toEmails, setToEmails] = React.useState<string[]>([]);
-
 	const commentsListRef = React.useRef<HTMLDivElement>(null);
-	const isInitialLoad = React.useRef(true);
+	const hasLoadedRef = React.useRef(false);
+	const onCommentsChangeRef = React.useRef(onCommentsChange);
+
+	React.useEffect(() => {
+		onCommentsChangeRef.current = onCommentsChange;
+	}, [onCommentsChange]);
+
+	const replaceComments = React.useCallback((nextComments: CommentItem[]) => {
+		setComments(nextComments);
+		onCommentsChangeRef.current?.(nextComments);
+	}, []);
 
 	React.useEffect(() => {
 		let cancelled = false;
 
-		const fetchAllComments = async () => {
+		const fetchComments = async () => {
 			try {
 				setCommentsLoading(true);
-
-				const data = await workflowApi.getComments(epcId);
-
-				if (!cancelled) {
-					setComments(data);
-				}
+				setLoadError(null);
+				const data = await api.getActivity({ subjectType, subjectId });
+				if (!cancelled) replaceComments(data);
 			} catch (error) {
-				console.error(error);
-			} finally {
 				if (!cancelled) {
-					setCommentsLoading(false);
+					setLoadError(
+						error instanceof Error ? error.message : "Unable to load comments",
+					);
 				}
+			} finally {
+				if (!cancelled) setCommentsLoading(false);
 			}
 		};
 
-		if (epcId) {
-			void fetchAllComments();
-		}
+		if (subjectType && subjectId) void fetchComments();
 
 		return () => {
 			cancelled = true;
 		};
-	}, [epcId, refreshKey]);
+	}, [api, refreshKey, replaceComments, subjectId, subjectType]);
 
 	React.useEffect(() => {
-		if (isInitialLoad.current) {
-			isInitialLoad.current = false;
+		if (!hasLoadedRef.current) {
+			hasLoadedRef.current = true;
 			return;
 		}
 
-		const container = commentsListRef.current;
-		if (!container) return;
-
-		container.scrollTo({
-			top: container.scrollHeight,
+		commentsListRef.current?.scrollTo({
+			top: commentsListRef.current.scrollHeight,
 			behavior: "smooth",
 		});
 	}, [comments.length]);
 
 	const handleMentionInsert = React.useCallback((user: CommentUser) => {
 		if (!user.email) return;
-
-		setToEmails((currentEmails) =>
-			currentEmails.includes(user.email!)
-				? currentEmails
-				: [...currentEmails, user.email!],
-		);
+		setToEmails((current) => normalizeEmailList([...current, user.email!]));
 	}, []);
 
 	const handleCreate = React.useCallback(
-		async (text: string) => {
+		async (message: string) => {
+			const to = normalizeEmailList(toEmails);
+			const cc = normalizeEmailList(ccEmails).filter(
+				(email) => !to.includes(email),
+			);
+
 			try {
-				if (!approvalId && !isProposer) {
-					showToast({
-						type: "error",
-						title: "Not allowed",
-						description: "You are not assigned to this approval stage",
-					});
+				const response = await api.createComment({
+					subjectType,
+					subjectId,
+					approvalId,
+					payload: { message, to, cc },
+				});
 
-					return;
-				}
-
-				const cc = ccEmails.filter((email) => !toEmails.includes(email));
-
-				const response = approvalId
-					? await workflowApi.createApprovalComment({
-							approvalId,
-							message: text,
-							to: toEmails,
-							cc,
-						})
-					: await workflowApi.createCreatorComment({
-							epcId,
-							message: text,
-							to: toEmails,
-							cc,
-						});
-
+				setComments((currentComments) => {
+					const nextComments = [...currentComments, response.data];
+					onCommentsChangeRef.current?.(nextComments);
+					return nextComments;
+				});
+				setToEmails([]);
 				showToast({
 					type: "success",
 					title: "Success",
 					description: response.message,
 				});
-
-				const data = response.data;
-
-				setComments((currentComments) => [
-					...currentComments,
-					{
-						id: data.id,
-						message: data.message,
-						entryType: data.entryType ?? "CREATOR_COMMENT",
-						createdAt: data.createdAt,
-						updatedAt: data.updatedAt,
-						actor: {
-							id: data.user.id,
-							first_name: data.user.first_name,
-							last_name: data.user.last_name,
-						},
-					},
-				]);
-
-				setToEmails([]);
 			} catch (error) {
-				//No workflow has been assigned to this record yet. Comments can be added once a workflow is assigned
 				showToast({
 					type: "error",
 					title: "Error",
@@ -282,22 +244,20 @@ export default function CommentsSection({
 							? error.message
 							: "Error while adding the comment",
 				});
+				throw error;
 			}
 		},
-		[approvalId, ccEmails, epcId, isProposer, showToast, toEmails],
+		[api, approvalId, ccEmails, showToast, subjectId, subjectType, toEmails],
 	);
 
-	const commentCountLabel = `${comments.length} ${
-		comments.length === 1 ? "comment" : "comments"
-	}`;
+	const commentCountLabel = `${comments.length} ${comments.length === 1 ? "comment" : "comments"}`;
 
 	return (
-		<SectionAccordion title="Comment Section">
-			<section className="comments-section" aria-label="Comments and activity">
+		<SectionAccordion title={title}>
+			<section className="comments-section" aria-label={title}>
 				<header className="comments-summary">
 					<span className="comments-subtitle">{commentCountLabel}</span>
 				</header>
-
 				<div className="comments-body">
 					{commentsLoading ? (
 						<div
@@ -309,14 +269,17 @@ export default function CommentsSection({
 							<div />
 							<div />
 						</div>
+					) : loadError ? (
+						<div className="comments-error" role="alert">
+							<p>Unable to load comments</p>
+							<span>{loadError}</span>
+						</div>
 					) : comments.length === 0 ? (
 						<div className="comments-empty">
 							<MessageCircle size={20} aria-hidden="true" />
-
 							<div className="comments-empty-copy">
-								<p>No comments yet</p>
-
-								<span>Start the discussion by adding the first comment.</span>
+								<p>{emptyTitle}</p>
+								<span>{emptyDescription}</span>
 							</div>
 						</div>
 					) : (
@@ -328,18 +291,19 @@ export default function CommentsSection({
 								<CommentCard
 									key={comment.id}
 									comment={comment}
-									isSelf={comment.actor?.id === currentUserId}
+									currentUserId={currentUserId}
+									formatAuditMessage={formatAuditMessage}
 								/>
 							))}
 						</div>
 					)}
 				</div>
 
-				{!canComment ? (
+				{canComment ? (
 					<footer className="comments-create">
 						<div className="comments-create-input">
 							<CommentInput
-								disabled={commentsLoading}
+								disabled={commentsLoading || Boolean(loadError)}
 								onSubmit={handleCreate}
 								mentionableUsers={mentionableUsers}
 								onMentionInsert={handleMentionInsert}
@@ -351,3 +315,9 @@ export default function CommentsSection({
 		</SectionAccordion>
 	);
 }
+
+export type {
+	CommentItem,
+	CommentUser,
+	MentionableUserInput,
+} from "./comment.types";

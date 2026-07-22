@@ -10,7 +10,7 @@ import {
 	getEpcRegionName,
 	getEpcVerticalName,
 } from "../../utils/formatters";
-import DateRangeSection from "./DateRangeSection";
+import DateRangeSection from "../../../../../components/ui/DateRangeSection";
 import { useState } from "react";
 import SectionAccordion from "../../../../../components/common/SectionAccordion";
 

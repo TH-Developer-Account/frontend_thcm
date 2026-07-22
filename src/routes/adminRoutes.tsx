@@ -5,7 +5,6 @@ import { ProfileFormPage } from "../modules/admin/user-profile/components/Profil
 import ByDesignPage from "../modules/admin/FetchUsers/ByDesign";
 import C4CPage from "../modules/admin/FetchUsers/C4C";
 import UserProfile from "../modules/settings/UserProfile/UserProfile";
-import ComingSoon from "../components/ui/ComingSoon";
 import MastersPage from "../modules/admin/Masters/MastersPage";
 import BusinessPartners from "../modules/admin/business-partners/BusinessPartners";
 import BusinessPartnerView from "../modules/admin/business-partners/BusinessPartnerView";
@@ -15,9 +14,7 @@ import WorkflowCreatePage from "../modules/admin/workflow/WorkFlowCreation/Workf
 export default function AdminRoutes() {
 	return (
 		<Routes>
-			<Route path="dashboard" element={<ComingSoon />} />
 			<Route path="users" element={<UsersPage />} />
-			<Route path="department" element={<ComingSoon />} />
 			<Route
 				path="masters"
 				element={
@@ -35,7 +32,6 @@ export default function AdminRoutes() {
 			<Route path="/profiles/create" element={<ProfileFormPage />} />
 			<Route path="/profiles/:id/edit" element={<ProfileFormPage />} />
 			<Route path="user_profiles" element={<UserProfilePage />} />
-			<Route path="dealers" element={<ComingSoon />} />
 			<Route path="workflows" element={<WorkflowPage />} />
 			<Route path="/create-workflows" element={<WorkflowCreatePage />} />
 			<Route path="edit-workflows/:id" element={<WorkflowCreatePage />} />

@@ -15,6 +15,7 @@ export const toInitiationRow = (
 	initiatedBy: row.initiatedBy,
 	created_at: row.created_at,
 	status: row.status as VendorTableStatus,
+	referenceNumber: row.referenceNumber,
 });
 
 export const toOnboardingRow = (
@@ -31,4 +32,5 @@ export const toOnboardingRow = (
 	createdDate: row.created_at,
 	updatedAt: row.updated_at,
 	status: row.status as VendorTableStatus,
+	referenceNumber: row.referenceNumber,
 });

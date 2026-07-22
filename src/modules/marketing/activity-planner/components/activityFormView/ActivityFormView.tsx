@@ -5,7 +5,6 @@ import EpcForm from "../../forms/EPC/EpcForm";
 import ActivityDetailsSection from "../activityFormView/ActivityDetailsSection";
 import CrfSection from "../../forms/CRF/CrfSection";
 import EpfSection from "../../forms/EPF/EpfSection";
-import CommentsSection from "../commentSection/CommentsSection";
 import ApprovalWorkflowSection from "../../../../../components/ui/workflow/ApprovalWorkflowSection";
 
 import type { EpcDetailResponse } from "../../types/epc.types";
@@ -17,7 +16,7 @@ import { useAuth } from "../../../../../context/Auth/useAuth";
 import { getStoredAppId } from "../../helpers/localstorage";
 import type { EventReportDetail } from "../../types/event.report.types";
 import { useToast } from "../../../../../context/Auth/AuthContext";
-import { workflowApi } from "../../api/workflow.api";
+import { workflowApi } from "../../../../../api/workflow.api";
 import {
 	getApprovalIdForUser,
 	getApprovedStageCcEmails,
@@ -26,8 +25,11 @@ import {
 	getIsUserInCurrentStage,
 } from "../../helpers/approvalWorkflow.helpers";
 import ResubmitFooterAction from "./ResubmitFooterAction";
-import { ReasonActionModal } from "../common/ReasonActionModal";
+import { ReasonActionModal } from "../../../../../components/ui/ReasonActionModal";
 import type { ActivityPermissions } from "../../helpers/activityPermissions.helper";
+import { CommentsSection } from "../../../../../components/ui/comments";
+import { activityPlannerCommentApi } from "../../api/activityPlannerComment.adapter";
+import { getAuditMessage } from "../../helpers/activityLogMessage.helper";
 
 type EditingSection = "epc" | "crf" | "epf" | null;
 type ReasonModalState = {
@@ -165,6 +167,8 @@ const ActivityFormView = ({
 		() => getApprovedStageCcEmails(workflowStages),
 		[workflowStages],
 	);
+	const canComment =
+		!permissions.isClosed && (permissions.isProposer || Boolean(approvalId));
 
 	const reasonMode = reasonModal.mode;
 	const currentStageId = currentStage?.id ?? "";
@@ -350,14 +354,17 @@ const ActivityFormView = ({
 							/>
 
 							<CommentsSection
-								epcId={epcData.id}
+								subjectType="EPC"
+								subjectId={epcData.id}
 								currentUserId={user?.id}
 								approvalId={approvalId}
-								isProposer={permissions.isProposer}
 								mentionableUsers={mentionableUsers}
 								ccEmails={ccEmails}
 								refreshKey={commentsRefreshKey}
-								canComment={permissions.isClosed}
+								canComment={canComment}
+								api={activityPlannerCommentApi}
+								formatAuditMessage={getAuditMessage}
+								title="Comment Section"
 							/>
 						</>
 					)}
@@ -438,16 +445,6 @@ const ActivityFormView = ({
 					)}
 				</div>
 			)}
-			{permissions.isClarifiedPending && (
-				<ResubmitFooterAction
-					isPending={permissions.isClarifiedPending}
-					isSubmitting={isSubmittingClarifiedUpdate}
-					canSubmit={permissions.canSubmitClarifiedUpdate}
-					onSubmit={onSubmitClarifiedUpdate}
-					tooltip="Submit clarified changes"
-				/>
-			)}
-
 			{permissions.isClarifiedPending && (
 				<ResubmitFooterAction
 					isPending={permissions.isClarifiedPending}

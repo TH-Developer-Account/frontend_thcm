@@ -27,7 +27,7 @@ const VendorOnboardingPage = () => {
 		!form.isLoading &&
 		!form.isError &&
 		Boolean(form.status) &&
-		form.status === "IN_REVIEW";
+		form.status === "APPROVED";
 
 	const handleBackToView = () => {
 		<Navigate to={`/vendor/onboarding/${onboardingId}/view`} replace />;
@@ -50,7 +50,7 @@ const VendorOnboardingPage = () => {
 						},
 						{
 							label: "Vendors Listing",
-							href: "/vendor/listing?tab=onboarding",
+							href: "/vendor/onboarding/listing?tab=onboarding",
 						},
 						{
 							label: "Vendor Onboarding Form",
@@ -89,7 +89,7 @@ const VendorOnboardingPage = () => {
 									isExistingRequest ? form.handleNext : form.handleSaveFormOne
 								}
 								loading={form.mutationLoading}
-								onBack={handleBackToView}
+								onBack={isExistingRequest ? handleBackToView : undefined}
 							/>
 						) : form.currentStep === 2 ? (
 							<VendorCreationFormTwo
@@ -99,7 +99,7 @@ const VendorOnboardingPage = () => {
 								errors={form.formTwoErrors}
 								onChange={form.handleFormTwoChange}
 								onBack={form.handleBack}
-								onNext={form.handleNext}
+								onNext={form.handleSaveFormTwo}
 								loading={form.mutationLoading}
 							/>
 						) : (
@@ -108,9 +108,8 @@ const VendorOnboardingPage = () => {
 								formTwoValues={form.formTwoValues}
 								formOneDocuments={form.formOneDocuments}
 								onBack={form.handleBack}
-								onSubmit={form.handleSaveFormTwo}
 								canSubmit={form.canSubmit}
-								onFetchWorkflow={form.handleFetchWorkflow}
+								onSubmit={form.handleSubmitSummary}
 								workflowStages={form.workflowStages}
 								workflowLoading={form.workflowLoading}
 							/>

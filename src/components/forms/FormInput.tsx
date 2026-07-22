@@ -4,19 +4,15 @@ import {
 	useMemo,
 	useState,
 	type InputHTMLAttributes,
+	type ReactNode,
 } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 
 import HelperTooltip from "../common/HelperTooltip";
+import ReadOnlyField from "./ReadOnlyField";
 import { PasswordPolicy } from "../../containers/Login/constant";
-
-interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-	label?: string;
-	error?: string;
-	helperText?: string;
-	isTooltip?: boolean;
-}
+import type { InputProps } from "./input.types";
 
 const joinClassNames = (
 	...classes: Array<string | false | null | undefined>
@@ -27,6 +23,33 @@ const getTodayDate = (): string => {
 	const timezoneOffset = now.getTimezoneOffset() * 60_000;
 
 	return new Date(now.getTime() - timezoneOffset).toISOString().split("T")[0];
+};
+
+const getDefaultReadOnlyValue = ({
+	type,
+	value,
+}: {
+	type: InputHTMLAttributes<HTMLInputElement>["type"];
+	value: InputHTMLAttributes<HTMLInputElement>["value"];
+}): ReactNode => {
+	if (
+		value === undefined ||
+		value === null ||
+		value === "" ||
+		(Array.isArray(value) && value.length === 0)
+	) {
+		return undefined;
+	}
+
+	if (type === "password") {
+		return "••••••••";
+	}
+
+	if (Array.isArray(value)) {
+		return value.join(", ");
+	}
+
+	return String(value);
 };
 
 const FormInput = forwardRef<HTMLInputElement, InputProps>(
@@ -45,6 +68,9 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 			placeholder,
 			isTooltip = true,
 			min,
+			mode = "edit",
+			readOnlyValue,
+			emptyReadOnlyValue = "--",
 			...nativeInputProps
 		},
 		ref,
@@ -56,6 +82,7 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 		const errorId = `${inputId}-error`;
 		const helperId = `${inputId}-helper`;
 
+		const isViewMode = mode === "view";
 		const isPassword = type === "password";
 		const isRadio = type === "radio";
 		const resolvedInputType = isPassword && showPassword ? "text" : type;
@@ -80,6 +107,26 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 		const togglePasswordVisibility = () => {
 			setShowPassword((previous) => !previous);
 		};
+
+		if (isViewMode) {
+			return (
+				<ReadOnlyField
+					label={label}
+					value={
+						readOnlyValue ??
+						getDefaultReadOnlyValue({
+							type,
+							value,
+						})
+					}
+					required={required}
+					helperText={helperText}
+					isTooltip={isTooltip}
+					emptyValue={emptyReadOnlyValue}
+					className={className}
+				/>
+			);
+		}
 
 		if (isRadio) {
 			return (

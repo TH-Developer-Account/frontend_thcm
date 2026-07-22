@@ -1,9 +1,13 @@
-import type {
-	VendorCreationFormOneValues,
-	VendorCreationFormTwoValues,
-	VendorOnboardingRawResponse,
-	VendorOnboardingResponse,
-	VendorUpdatePayload,
+import type { VendorCreationFormOneSubmission } from "../forms/VendorCreationFormOne";
+import type { VendorListingFilter } from "../types/vendorListing.types";
+import {
+	VENDOR_DOCUMENT_FIELDS,
+	type VendorCreationFormOneValues,
+	type VendorCreationFormTwoValues,
+	type VendorDocumentType,
+	type VendorOnboardingRawResponse,
+	type VendorOnboardingResponse,
+	type VendorUpdatePayload,
 } from "../types/vendorOnboarding.types";
 
 export const toYesNo = (value: boolean | string | null | undefined): string => {
@@ -91,6 +95,14 @@ export const buildThcmUpdatePayload = (
 	remarks: toNullableString(values.remarks),
 });
 
+export const buildVendorOnboardingUpdatePayload = (
+	formOneValues: VendorCreationFormOneValues,
+	formTwoValues: VendorCreationFormTwoValues,
+): VendorUpdatePayload => ({
+	...buildVendorUpdatePayload(formOneValues),
+	...buildThcmUpdatePayload(formTwoValues),
+});
+
 export const normalizeVendorOnboardingResponse = (
 	raw: VendorOnboardingRawResponse,
 ): VendorOnboardingResponse => {
@@ -160,4 +172,163 @@ export const normalizeVendorOnboardingResponse = (
 		createdAt: raw.created_at,
 		updatedAt: raw.updated_at,
 	};
+};
+
+export const buildPublicFormData = (
+	values: VendorCreationFormOneValues,
+	submission: VendorCreationFormOneSubmission,
+) => {
+	const formData = new FormData();
+	const payload = buildVendorUpdatePayload(values);
+
+	Object.entries(payload).forEach(([key, value]) => {
+		formData.append(key, value === null ? "" : String(value));
+	});
+	formData.append("dpdpConsent", "true");
+
+	submission.enclosureUploads.forEach(({ documentType, value }) => {
+		if (value?.file instanceof File) {
+			formData.append(documentType, value.file, value.name || value.file.name);
+		}
+	});
+
+	return formData;
+};
+export const buildVendorCodeUpdatePayload = (
+	vendorCode?: string,
+): VendorUpdatePayload => ({
+	vendorCode: vendorCode?.trim() || null,
+});
+
+export const getErrorMessage = (error: unknown, fallback: string): string => {
+	if (
+		typeof error === "object" &&
+		error !== null &&
+		"response" in error &&
+		typeof error.response === "object" &&
+		error.response !== null &&
+		"data" in error.response &&
+		typeof error.response.data === "object" &&
+		error.response.data !== null &&
+		"message" in error.response.data &&
+		typeof error.response.data.message === "string"
+	) {
+		return error.response.data.message;
+	}
+	return error instanceof Error ? error.message : fallback;
+};
+
+export const getMissingDocuments = (
+	submission: VendorCreationFormOneSubmission,
+): VendorDocumentType[] =>
+	VENDOR_DOCUMENT_FIELDS.filter((field) => field.required)
+		.filter(
+			(field) =>
+				!submission.enclosureUploads.some(
+					(item) =>
+						item.documentType === field.documentType &&
+						item.value?.file instanceof File,
+				),
+		)
+		.map((field) => field.documentType);
+
+export const getOnboardingSearchPlaceholder = (
+	filter: VendorListingFilter,
+): string => {
+	switch (filter) {
+		case "createdByMe":
+			return "Search vendor requests created by me";
+
+		case "pendingOnMe":
+			return "Search approvals pending on me";
+
+		case "approvedByMe":
+			return "Search vendor requests approved by me";
+
+		default:
+			return "Search vendor onboarding records";
+	}
+};
+export const getInitiationSearchPlaceholder = (
+	filter: VendorListingFilter,
+): string => {
+	switch (filter) {
+		case "createdByMe":
+			return "Search initiation requests created by me";
+
+		case "pendingOnMe":
+			return "Search initiation requests pending on me";
+
+		case "approvedByMe":
+			return "Search initiation requests approved by me";
+		default:
+			return "No vendor initiation requests found";
+	}
+};
+
+export const getInitiationEmptyContent = (
+	filter: VendorListingFilter,
+): {
+	title: string;
+	description: string;
+} => {
+	switch (filter) {
+		case "createdByMe":
+			return {
+				title: "No initiation requests created by you",
+				description: "Vendor initiation requests you create will appear here.",
+			};
+
+		case "pendingOnMe":
+			return {
+				title: "No initiation requests are pending on you",
+				description:
+					"Vendor initiation requests requiring your action will appear here.",
+			};
+
+		case "approvedByMe":
+			return {
+				title: "No initiation requests approved by you",
+				description: "Vendor initiation requests you approve will appear here.",
+			};
+		default:
+			return {
+				title: "No vendor initiation requests found",
+				description: "Vendor initiation form entries will appear here.",
+			};
+	}
+};
+
+export const getOnboardingEmptyContent = (
+	filter: VendorListingFilter,
+): {
+	title: string;
+	description: string;
+} => {
+	switch (filter) {
+		case "createdByMe":
+			return {
+				title: "No vendor requests created by you",
+				description: "Vendor onboarding requests you create will appear here.",
+			};
+
+		case "pendingOnMe":
+			return {
+				title: "No approvals are pending on you",
+				description:
+					"Vendor onboarding requests requiring your approval will appear here.",
+			};
+
+		case "approvedByMe":
+			return {
+				title: "No vendor requests approved by you",
+				description: "Vendor onboarding requests you approve will appear here.",
+			};
+
+		default:
+			return {
+				title: "No vendor onboarding records found",
+				description: "Vendor onboarding records will appear here.",
+			};
+	}
 };

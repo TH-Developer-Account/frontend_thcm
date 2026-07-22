@@ -1,5 +1,5 @@
-import { ServerAxios } from "../../../../services/ServerAxios";
-import type { EventDeviationPayload } from "../types/event.outcome.types";
+import { ServerAxios } from "../services/ServerAxios";
+import type { EventDeviationPayload } from "../types/common.types";
 
 export const workflowApi = {
 	assignWorkflow: async (payload: {
@@ -33,43 +33,6 @@ export const workflowApi = {
 		const {
 			data: { data, message },
 		} = await ServerAxios.post(`/soa/stages/${stageId}/approve`);
-
-		return { data, message };
-	},
-
-	getComments: async (epcId: string) => {
-		const {
-			data: { data },
-		} = await ServerAxios.get(`/comment/EVENT_PROPOSAL/${epcId}/activity`);
-
-		return data;
-	},
-
-	createApprovalComment: async (payload: {
-		approvalId: string;
-		message: string;
-		to?: string[];
-		cc?: string[];
-	}) => {
-		const {
-			data: { data, message },
-		} = await ServerAxios.post("/comment", payload);
-
-		return { data, message };
-	},
-
-	createCreatorComment: async (payload: {
-		epcId: string;
-		message: string;
-		to?: string[];
-		cc?: string[];
-	}) => {
-		const {
-			data: { data, message },
-		} = await ServerAxios.post(
-			`/comment/EVENT_PROPOSAL/${payload.epcId}/creator-comment`,
-			payload,
-		);
 
 		return { data, message };
 	},
@@ -121,6 +84,43 @@ export const workflowApi = {
 		const {
 			data: { data, message },
 		} = await ServerAxios.post(`/soa/stages/trigger-deviation`, payload);
+
+		return { data, message };
+	},
+
+	getComments: async (epcId: string) => {
+		const {
+			data: { data },
+		} = await ServerAxios.get(`/comment/EVENT_PROPOSAL/${epcId}/activity`);
+
+		return data;
+	},
+
+	createApprovalComment: async (payload: {
+		approvalId: string;
+		message: string;
+		to?: string[];
+		cc?: string[];
+	}) => {
+		const {
+			data: { data, message },
+		} = await ServerAxios.post("/comment", payload);
+
+		return { data, message };
+	},
+
+	createCreatorComment: async (payload: {
+		epcId: string;
+		message: string;
+		to?: string[];
+		cc?: string[];
+	}) => {
+		const {
+			data: { data, message },
+		} = await ServerAxios.post(
+			`/comment/EVENT_PROPOSAL/${payload.epcId}/creator-comment`,
+			payload,
+		);
 
 		return { data, message };
 	},

@@ -10,6 +10,7 @@ export type VendorOnboardingStatus =
 	| "IN_REVIEW"
 	| "IN_PROGRESS"
 	| "THCM_SUBMITTED"
+	| "APPROVED"
 	| "THCM_CLARIFICATION_REQUESTED"
 	| "THCM_APPROVED"
 	| "EXTERNAL_REVIEW_PENDING"
@@ -37,6 +38,7 @@ export type VendorCreationFormOneValues = {
 	ifscCode?: string;
 	bankAddress?: string;
 	accountNumber?: string;
+	confirmAccountNumber?: string;
 	gstin?: string;
 	pan?: string;
 	entityRegistrationNumber?: string;
@@ -89,6 +91,7 @@ export type VendorUpdatePayload = {
 	ifscCode?: string | null;
 	bankAddress?: string | null;
 	accountNumber?: string | null;
+	confirmAccountNumber?: string | null;
 	gstin?: string | null;
 	pan?: string | null;
 	entityRegNo?: string | null;
@@ -185,6 +188,13 @@ export const VENDOR_DOCUMENT_FIELDS = [
 		description: "Upload the signed NDA certificate.",
 		required: true,
 	},
+	// {
+	// 	statusKey: "other",
+	// 	documentType: "OTHER",
+	// 	label: "Additional Documnets",
+	// 	description: "Upload if any additional documents",
+	// 	required: true,
+	// },
 ] as const;
 
 export type VendorDocumentType =
@@ -235,6 +245,7 @@ export type VendorOnboardingRawResponse = {
 	ifscCode: string | null;
 	bankAddress: string | null;
 	accountNumber: string | null;
+	confirmAccountNumber?: string | null;
 	gstin: string | null;
 	pan: string | null;
 	entityRegNo: string | null;
@@ -259,6 +270,7 @@ export type VendorOnboardingRawResponse = {
 	activeWorkflow?: VendorActiveWorkflow;
 	created_at?: string;
 	updated_at?: string;
+	referenceNumber?: string;
 };
 
 export type VendorActiveWorkflow = {

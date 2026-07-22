@@ -1,14 +1,16 @@
 import React from "react";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
+
 import UserAsyncSelect from "../../../../components/forms/AsyncSelect";
 import Avatar from "../../../../components/common/Avatar";
+import FormInput from "../../../../components/forms/FormInput";
+import Button from "../../../../components/common/Button";
+
 import type {
 	WorkflowStage,
 	Approver,
 	WorkflowStageErrors,
 } from "../types/workflow.types";
-import FormInput from "../../../../components/forms/FormInput";
-import Button from "../../../../components/common/Button";
 
 type Props = {
 	stages: WorkflowStage[];
@@ -40,8 +42,23 @@ const WorkflowStagesForm = ({
 	onAddStage,
 	onSubmit,
 }: Props) => {
-	console.log("Rendering WorkflowStagesForm with stages:", stages);
-	console.log("Stage errors:", errors);
+	const handleExternalApproverChange = (
+		stage: WorkflowStage,
+		approverId: string,
+		isExternalApprover: boolean,
+	) => {
+		const updatedApprovers = stage.approvers.map((approver) =>
+			approver.id === approverId
+				? {
+						...approver,
+						isExternalApprover,
+					}
+				: approver,
+		);
+
+		onStageChange(stage.id, "approvers", updatedApprovers);
+	};
+
 	return (
 		<div>
 			<div className="workflow-stage-list">
@@ -71,6 +88,8 @@ const WorkflowStagesForm = ({
 									<button
 										type="button"
 										className="workflow-stage-header"
+										aria-expanded={Boolean(stage.isExpanded)}
+										aria-controls={`workflow-stage-body-${stage.id}`}
 										onClick={() => onToggleStage(stage.id)}
 									>
 										<div
@@ -83,6 +102,7 @@ const WorkflowStagesForm = ({
 
 										<div className="workflow-stage-header-content">
 											<div className="workflow-stage-title">{stage.name}</div>
+
 											<div className="workflow-stage-meta">
 												{stage.approvers.length} approver
 												{stage.approvers.length === 1 ? "" : "s"}
@@ -94,6 +114,7 @@ const WorkflowStagesForm = ({
 										</span>
 
 										<span
+											aria-hidden="true"
 											className={`workflow-stage-chevron ${
 												stage.isExpanded ? "workflow-stage-chevron-open" : ""
 											}`}
@@ -103,14 +124,17 @@ const WorkflowStagesForm = ({
 									</button>
 
 									{stage.isExpanded && (
-										<div className="workflow-stage-body">
+										<div
+											id={`workflow-stage-body-${stage.id}`}
+											className="workflow-stage-body"
+										>
 											<div className="workflow-create-field-row workflow-create-field-row-3">
 												<FormInput
 													name={`stage-name-${stage.id}`}
 													label="Stage name"
 													value={stage.name}
-													onChange={(e) =>
-														onStageChange(stage.id, "name", e.target.value)
+													onChange={(event) =>
+														onStageChange(stage.id, "name", event.target.value)
 													}
 													error={stageError.name}
 												/>
@@ -124,30 +148,38 @@ const WorkflowStagesForm = ({
 														className="w-[25%]"
 														max={stage.approvers.length}
 														value={stage.minApprovals ?? 0}
-														onChange={(e) =>
+														onChange={(event) => {
+															const requestedValue = Number(event.target.value);
+
+															const nextValue = Math.min(
+																stage.approvers.length || 1,
+																Math.max(1, requestedValue),
+															);
+
 															onStageChange(
 																stage.id,
 																"minApprovals",
-																Math.min(
-																	stage.approvers.length || 1,
-																	Math.max(1, Number(e.target.value)),
-																),
-															)
-														}
+																nextValue,
+															);
+														}}
 														error={stageError.minApprovals}
 													/>
+
 													<p className="workflow-approvers-length-text">
 														/{stage.approvers.length}
 													</p>
 												</div>
 											</div>
+
 											<div className="workflow-approver-list">
 												{stage.approvers.map((approver) => {
 													const firstName = approver.user?.first_name ?? "";
 													const lastName = approver.user?.last_name ?? "";
-													console.log("Rendering approver:", stage);
+
 													const fullName =
 														`${firstName} ${lastName}`.trim() || "Unnamed User";
+
+													const checkboxId = `external-approver-${stage.id}-${approver.id}`;
 
 													return (
 														<div
@@ -168,27 +200,52 @@ const WorkflowStagesForm = ({
 																<div className="workflow-approver-name">
 																	{fullName}
 																</div>
+
 																<div className="workflow-approver-role">
 																	{approver.user?.email ?? "--"}
 																</div>
 															</div>
 
+															<label
+																htmlFor={checkboxId}
+																className="workflow-approver-external-check"
+															>
+																<input
+																	id={checkboxId}
+																	type="checkbox"
+																	checked={approver.isExternalApprover ?? false}
+																	onChange={(event) =>
+																		handleExternalApproverChange(
+																			stage,
+																			approver.id,
+																			event.target.checked,
+																		)
+																	}
+																/>
+
+																<span>External approver</span>
+															</label>
+
 															<button
 																type="button"
 																className="workflow-remove-btn"
+																aria-label={`Remove ${fullName} from stage ${stage.stageOrder}`}
 																onClick={() =>
 																	onRemoveApprover(stage.id, approver.id)
 																}
 															>
-																×
+																<span aria-hidden="true">×</span>
 															</button>
 														</div>
 													);
 												})}
 											</div>
+
 											<UserAsyncSelect
 												label="Approvers"
-												excludedUserIds={stage.approvers.map((a) => a.userId)}
+												excludedUserIds={stage.approvers.map(
+													(approver) => approver.userId,
+												)}
 												onChange={(selected) => {
 													if (!selected) return;
 
@@ -202,9 +259,11 @@ const WorkflowStagesForm = ({
 															last_name: selected.lastName ?? "",
 															email: selected.email ?? "",
 														},
+														isExternalApprover: false,
 													});
 												}}
 											/>
+
 											{(stageError.approvers || stageError.minApprovals) && (
 												<p className="form-error-text text-md text-left mt-2">
 													{stageError.minApprovals
@@ -228,7 +287,7 @@ const WorkflowStagesForm = ({
 				className="workflow-add-stage-btn"
 				onClick={onAddStage}
 			>
-				<Plus size={14} />
+				<Plus size={14} aria-hidden="true" />
 				Add another stage
 			</button>
 
@@ -243,6 +302,7 @@ const WorkflowStagesForm = ({
 					variant="outline"
 					size="sm"
 				/>
+
 				<Button
 					onClick={onSubmit}
 					type="button"

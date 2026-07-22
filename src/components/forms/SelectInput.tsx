@@ -1,9 +1,11 @@
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import Select from "react-select";
-import type { GroupBase, Props } from "react-select";
+import type { GroupBase, Props, SingleValue } from "react-select";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 
 import HelperTooltip from "../common/HelperTooltip";
+import ReadOnlyField from "./ReadOnlyField";
+import type { FormFieldMode } from "./FormInput";
 
 export interface BaseOption {
 	label: string;
@@ -20,11 +22,34 @@ interface SelectInputProps<T extends BaseOption> extends Props<
 	helperText?: string;
 	isTooltip?: boolean;
 	required?: boolean;
+	mode?: FormFieldMode;
+
+	/**
+	 * Overrides the automatically resolved option label in view mode.
+	 */
+	readOnlyValue?: ReactNode;
+
+	/**
+	 * Value displayed when no option is selected in view mode.
+	 */
+	emptyReadOnlyValue?: ReactNode;
 }
 
 const joinClassNames = (
 	...classes: Array<string | false | null | undefined>
 ): string => classes.filter(Boolean).join(" ");
+
+const isBaseOption = <T extends BaseOption>(value: unknown): value is T => {
+	if (!value || typeof value !== "object") {
+		return false;
+	}
+
+	const candidate = value as Partial<BaseOption>;
+
+	return (
+		typeof candidate.label === "string" && typeof candidate.value === "string"
+	);
+};
 
 export default function SelectInput<T extends BaseOption>({
 	label,
@@ -32,6 +57,9 @@ export default function SelectInput<T extends BaseOption>({
 	helperText,
 	isTooltip = true,
 	required = false,
+	mode = "edit",
+	readOnlyValue,
+	emptyReadOnlyValue = "--",
 
 	id,
 	inputId,
@@ -42,6 +70,10 @@ export default function SelectInput<T extends BaseOption>({
 	menuPortalTarget,
 	menuPosition = "fixed",
 	menuPlacement = "auto",
+
+	value,
+	defaultValue,
+	getOptionLabel,
 
 	...selectProps
 }: SelectInputProps<T>) {
@@ -66,6 +98,30 @@ export default function SelectInput<T extends BaseOption>({
 			: typeof document !== "undefined"
 				? document.body
 				: undefined;
+
+	if (mode === "view") {
+		const selectedOption = (value ?? defaultValue) as SingleValue<T>;
+
+		const resolvedReadOnlyValue =
+			readOnlyValue ??
+			(isBaseOption<T>(selectedOption)
+				? getOptionLabel
+					? getOptionLabel(selectedOption)
+					: selectedOption.label
+				: undefined);
+
+		return (
+			<ReadOnlyField
+				label={label}
+				value={resolvedReadOnlyValue}
+				required={required}
+				helperText={helperText}
+				isTooltip={isTooltip}
+				emptyValue={emptyReadOnlyValue}
+				className={className}
+			/>
+		);
+	}
 
 	return (
 		<div
@@ -100,6 +156,9 @@ export default function SelectInput<T extends BaseOption>({
 					id={id}
 					inputId={resolvedInputId}
 					name={name}
+					value={value}
+					defaultValue={defaultValue}
+					getOptionLabel={getOptionLabel}
 					required={required}
 					isDisabled={isDisabled}
 					unstyled

@@ -1,10 +1,36 @@
-import React, { useId, type ForwardRefRenderFunction } from "react";
+import React, {
+	useId,
+	type ForwardRefRenderFunction,
+	type ReactNode,
+} from "react";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
+
 import HelperTooltip from "../common/HelperTooltip";
+import ReadOnlyField from "./ReadOnlyField";
 import type { TextareaProps } from "./input.types";
 
-const joinClassNames = (...classes: Array<string | false | null | undefined>) =>
-	classes.filter(Boolean).join(" ");
+const joinClassNames = (
+	...classes: Array<string | false | null | undefined>
+): string => classes.filter(Boolean).join(" ");
+
+const resolveReadOnlyValue = (
+	readOnlyValue: ReactNode,
+	value: TextareaProps["value"],
+): ReactNode => {
+	if (readOnlyValue !== undefined && readOnlyValue !== null) {
+		return readOnlyValue;
+	}
+
+	if (value === undefined || value === null) {
+		return undefined;
+	}
+
+	if (Array.isArray(value)) {
+		return value.join(", ");
+	}
+
+	return String(value);
+};
 
 const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 	{
@@ -15,24 +41,44 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 		value,
 		error,
 		className = "",
-		required,
-		disabled,
+		required = false,
+		disabled = false,
 		helperText,
 		isTooltip = true,
+		mode = "edit",
+		readOnlyValue,
+		emptyReadOnlyValue = "--",
 		...otherProps
 	},
 	ref,
 ) => {
 	const generatedId = useId();
+
 	const textareaId = id ?? name ?? `textarea-${generatedId}`;
 	const errorId = `${textareaId}-error`;
 	const helperId = `${textareaId}-helper`;
+
 	const describedBy = [
 		error ? errorId : undefined,
 		helperText && !isTooltip ? helperId : undefined,
 	]
 		.filter(Boolean)
 		.join(" ");
+
+	if (mode === "view") {
+		return (
+			<ReadOnlyField
+				label={label}
+				value={resolveReadOnlyValue(readOnlyValue, value)}
+				required={required}
+				helperText={helperText}
+				isTooltip={isTooltip}
+				emptyValue={emptyReadOnlyValue}
+				className={className}
+				valueClassName="form-readonly-value-multiline"
+			/>
+		);
+	}
 
 	return (
 		<div
@@ -46,12 +92,14 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 				<div className="form-label-row">
 					<label htmlFor={textareaId} className="form-label">
 						{label}
+
 						{required ? (
 							<span className="form-required" aria-hidden="true">
 								*
 							</span>
 						) : null}
 					</label>
+
 					{helperText && isTooltip && !error ? (
 						<HelperTooltip label={label} text={helperText} />
 					) : null}
@@ -71,6 +119,7 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 					maxLength={otherProps.maxLength ?? 500}
 					aria-invalid={error ? "true" : undefined}
 					aria-describedby={describedBy || undefined}
+					aria-errormessage={error ? errorId : undefined}
 					className={joinClassNames(
 						"form-textarea",
 						error && "form-input-error",
@@ -78,6 +127,7 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 						className,
 					)}
 				/>
+
 				{error ? (
 					<ExclamationCircleIcon
 						aria-hidden="true"
@@ -100,5 +150,7 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 };
 
 const TextareaInput = React.forwardRef(Textarea);
+
 TextareaInput.displayName = "TextareaInput";
+
 export default TextareaInput;

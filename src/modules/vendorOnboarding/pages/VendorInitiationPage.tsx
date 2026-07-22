@@ -10,16 +10,14 @@ type VendorInitiationPageProps = {
 	mode?: VendorInitiationFormMode;
 };
 
-const VendorInitiationPage = ({
-	mode = "create",
-}: VendorInitiationPageProps) => {
+const VendorInitiationPage = ({ mode }: VendorInitiationPageProps) => {
 	const navigate = useNavigate();
 	const { initiationId } = useParams<{ initiationId: string }>();
 
 	const isViewMode = mode === "view";
 
 	const handleBackToListing = () => {
-		navigate("/vendor/listing?tab=initiation");
+		navigate("/vendor/initiation/listing?tab=initiation");
 	};
 
 	return (
@@ -40,7 +38,7 @@ const VendorInitiationPage = ({
 						},
 						{
 							label: "Vendors Listing",
-							href: "/vendor/listing?tab=initiation",
+							href: "/vendor/initiation/listing?tab=initiation",
 						},
 						{
 							label: isViewMode

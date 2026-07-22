@@ -10,12 +10,11 @@ import {
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
 import FormInput from "../../../components/forms/FormInput";
-import FormHeader from "../../marketing/activity-planner/components/common/FormHeader";
+import FormHeader from "../../../components/ui/FormHeader";
 
-import {
-	useVendorOnboardingInitiation,
-	type VendorOnboardingInitiationPayload,
-} from "../hooks/useVendorOnboardingInitiation";
+import { useVendorOnboardingInitiation } from "../hooks/useVendorOnboardingInitiation";
+import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";
+import { Badge } from "../../../components/common/Badge";
 
 export type VendorInitiationFormMode = "create" | "edit" | "view";
 
@@ -26,6 +25,7 @@ type VendorOnboardingInitiationFormProps = {
 	onCancel?: () => void;
 	onBack?: () => void;
 	onSuccess?: () => void | Promise<void>;
+	isTriggerEmail?: boolean;
 };
 
 const VendorOnboardingInitiationForm = ({
@@ -41,18 +41,21 @@ const VendorOnboardingInitiationForm = ({
 
 	const isViewMode = resolvedMode === "view";
 	const isEditMode = resolvedMode === "edit";
+	const fieldMode: VendorInitiationFormMode = isViewMode ? "view" : "edit";
 
 	const {
 		values,
 		errors,
 		isDirty,
 		isSubmitting,
+		isDetailLoading,
 		handleChange,
 		handleReset,
 		handleSubmit,
 	} = useVendorOnboardingInitiation({
 		initiationId,
 		initialValues,
+		shouldFetchDetails: isViewMode || isEditMode,
 		onSubmitSuccess: onSuccess,
 		onUpdateSuccess: onSuccess,
 	});
@@ -65,7 +68,6 @@ const VendorOnboardingInitiationForm = ({
 
 		onBack?.();
 	};
-
 	return (
 		<Card>
 			<form
@@ -79,24 +81,28 @@ const VendorOnboardingInitiationForm = ({
 					}
 				}}
 			>
-				<FormHeader
-					title={
-						isViewMode
-							? "Vendor Initiation Details"
-							: isEditMode
-								? "Edit Vendor Initiation"
-								: "Vendor Info"
-					}
-					Icon={LucideBriefcaseBusiness}
-				/>
-
+				<div className="flex justify-between items-center">
+					<FormHeader
+						title={
+							isViewMode
+								? "Vendor Initiation Details"
+								: isEditMode
+									? "Edit Vendor Initiation"
+									: "Vendor Info"
+						}
+						Icon={LucideBriefcaseBusiness}
+					/>
+					<Badge status={values.status} />
+				</div>
 				<div className="vendor-onboarding-form-grid">
 					<FormInput
 						name="vendorName"
 						label="Vendor Name"
+						mode={fieldMode}
 						value={values.vendorName}
 						required={!isViewMode}
 						readOnly={isViewMode}
+						disabled={isDetailLoading}
 						error={isViewMode ? undefined : errors.vendorName}
 						helperText={isViewMode ? undefined : "Enter the vendor name"}
 						autoComplete="organization"
@@ -107,9 +113,11 @@ const VendorOnboardingInitiationForm = ({
 						name="email"
 						label="Vendor Email"
 						type="email"
+						mode={fieldMode}
 						value={values.email}
 						required={!isViewMode}
 						readOnly={isViewMode}
+						disabled={isDetailLoading}
 						error={isViewMode ? undefined : errors.email}
 						helperText={isViewMode ? undefined : "Enter the vendor email"}
 						autoComplete="email"
@@ -120,8 +128,10 @@ const VendorOnboardingInitiationForm = ({
 						name="mobile"
 						label="Vendor Phone Number"
 						type="tel"
+						mode={fieldMode}
 						value={values.mobile}
 						required={!isViewMode}
+						disabled={isDetailLoading}
 						readOnly={isViewMode}
 						error={isViewMode ? undefined : errors.mobile}
 						helperText={
@@ -131,7 +141,6 @@ const VendorOnboardingInitiationForm = ({
 						onChange={(event) => handleChange("mobile", event.target.value)}
 					/>
 				</div>
-
 				<div className="vendor-onboarding-form-actions">
 					{isViewMode ? (
 						<Button
@@ -192,6 +201,18 @@ const VendorOnboardingInitiationForm = ({
 							/>
 						</div>
 					)}
+					{values.status === "AWAITING_VENDOR" ? (
+						<Button
+							type="submit"
+							text="Re-Trigger Email"
+							Icon={Send}
+							iconPosition="left"
+							size="sm"
+							appearance="standard"
+							variant="brand"
+							disabled={isSubmitting}
+						/>
+					) : null}
 				</div>
 			</form>
 		</Card>

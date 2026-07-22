@@ -4,22 +4,27 @@ import { useNavigate, useParams } from "react-router-dom";
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
 import { PageHeader } from "../../../components/ui/PageHeader";
+import { useAuth } from "../../../context/Auth/useAuth";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
+
 import VendorCreationSummaryForm from "../forms/VendorCreationSummaryForm";
 import { useVendorCreationForm } from "../hooks/useVendorCreationForm";
 import type { VendorViewerRole } from "../types/vendorOnboarding.types";
+import VendorCommentSection from "./VendorCommentSection";
 
 type VendorOnboardingFormViewProps = {
 	viewerRole?: VendorViewerRole;
 };
 
+type VendorOnboardingReadOnlyViewProps = {
+	viewerRole: VendorViewerRole;
+	onboardingId: string;
+};
+
 const VendorOnboardingReadOnlyView = ({
 	viewerRole,
 	onboardingId,
-}: {
-	viewerRole: VendorViewerRole;
-	onboardingId: string;
-}) => {
+}: VendorOnboardingReadOnlyViewProps) => {
 	const navigate = useNavigate();
 
 	const {
@@ -28,26 +33,33 @@ const VendorOnboardingReadOnlyView = ({
 		formOneDocuments,
 		isLoading,
 		isError,
-		status,
 		canApprove,
 		canClarify,
+		canEditMainForm,
 		canAcceptAndClose,
 		handleApprove,
 		handleClarify,
 		handleAcceptAndClose,
-		handleFetchWorkflow,
 		workflowStages,
 		workflowLoading,
+		user,
+		canEditVendorCode,
+		canSaveVendorCode,
+		vendorCodeLoading,
+		handleSaveVendorCode,
+		handleFormTwoChange,
 	} = useVendorCreationForm({
 		role: viewerRole,
 		vendorRequestId: onboardingId,
 		isPublicForm: false,
 	});
 
-	const canEdit = viewerRole === "THCM_EMPLOYEE" && status !== "IN_REVIEW";
-
 	const handleBackToListing = () => {
-		navigate("/vendor/listing?tab=onboarding");
+		navigate("/vendor/onboarding/listing?tab=onboarding");
+	};
+
+	const handleEdit = () => {
+		navigate(`/vendor/onboarding/${onboardingId}`);
 	};
 
 	const pageNavigation = {
@@ -60,7 +72,7 @@ const VendorOnboardingReadOnlyView = ({
 			},
 			{
 				label: "Vendors Listing",
-				href: "/vendor/listing?tab=onboarding",
+				href: "/vendor/onboarding/listing?tab=onboarding",
 			},
 			{
 				label: "Vendor Onboarding Details",
@@ -127,9 +139,9 @@ const VendorOnboardingReadOnlyView = ({
 
 			<Card
 				className="vendor-onboarding-view-section"
-				title={"Vendor Form View"}
+				title="Vendor Form View"
 				actions={
-					canEdit ? (
+					canEditMainForm ? (
 						<div className="vendor-onboarding-view-actions">
 							<Button
 								type="button"
@@ -138,7 +150,7 @@ const VendorOnboardingReadOnlyView = ({
 								Icon={Pencil}
 								appearance="standard"
 								variant="brand"
-								onClick={() => navigate(`/vendor/onboarding/${onboardingId}`)}
+								onClick={handleEdit}
 							/>
 						</div>
 					) : undefined
@@ -149,6 +161,10 @@ const VendorOnboardingReadOnlyView = ({
 					formOneValues={formOneValues}
 					formTwoValues={formTwoValues}
 					formOneDocuments={formOneDocuments}
+					canEditVendorCode={canEditVendorCode}
+					canSaveVendorCode={canSaveVendorCode}
+					vendorCodeLoading={vendorCodeLoading}
+					onSaveVendorCode={handleSaveVendorCode}
 					onBack={handleBackToListing}
 					onApprove={handleApprove}
 					onClarify={handleClarify}
@@ -157,13 +173,15 @@ const VendorOnboardingReadOnlyView = ({
 					canApprove={canApprove}
 					canClarify={canClarify}
 					canAcceptAndClose={canAcceptAndClose}
-					onFetchWorkflow={handleFetchWorkflow}
 					workflowStages={workflowStages}
 					workflowLoading={workflowLoading}
+					onFormTwoChange={handleFormTwoChange}
 					commentsSection={
-						<div className="vendor-summary-placeholder">
-							Comments section will render here.
-						</div>
+						<VendorCommentSection
+							onboardingId={onboardingId}
+							workflow={workflowStages}
+							creator={user}
+						/>
 					}
 				/>
 			</Card>
@@ -171,12 +189,35 @@ const VendorOnboardingReadOnlyView = ({
 	);
 };
 
+const getVendorViewerRole = (
+	userRole: string | undefined,
+): VendorViewerRole => {
+	switch (userRole) {
+		case "THCM_APPROVER":
+			return "THCM_APPROVER";
+
+		case "EXTERNAL_APPROVER":
+			return "EXTERNAL_APPROVER";
+
+		case "EXTERNAL_VENDOR":
+			return "EXTERNAL_VENDOR";
+
+		case "THCM_EMPLOYEE":
+		default:
+			return "THCM_EMPLOYEE";
+	}
+};
+
 const VendorOnboardingFormView = ({
-	viewerRole = "THCM_EMPLOYEE",
+	viewerRole,
 }: VendorOnboardingFormViewProps) => {
+	const { user } = useAuth();
+
 	const { onboardingId } = useParams<{
 		onboardingId?: string;
 	}>();
+
+	const resolvedViewerRole = viewerRole ?? getVendorViewerRole(user?.role);
 
 	if (!onboardingId) {
 		return (
@@ -194,7 +235,7 @@ const VendorOnboardingFormView = ({
 
 	return (
 		<VendorOnboardingReadOnlyView
-			viewerRole={viewerRole}
+			viewerRole={resolvedViewerRole}
 			onboardingId={onboardingId}
 		/>
 	);

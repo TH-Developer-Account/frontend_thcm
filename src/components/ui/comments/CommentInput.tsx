@@ -1,21 +1,8 @@
 import React from "react";
-import { AtSign, MessageCircle } from "lucide-react";
 
-import type { CommentUser } from "./CommentsSection";
-import RichTextareaInput from "../common/RichTextareaInput";
-
-const COMMENT_MENU_ITEMS = [
-	{
-		icon: AtSign,
-		label: "Mention someone",
-		action: "mention",
-	},
-	{
-		icon: MessageCircle,
-		label: "Send comment",
-		action: "submit",
-	},
-];
+import { COMMENT_MENU_ITEMS } from "./comment.constants";
+import type { CommentUser } from "./comment.types";
+import RichTextareaInput from "./RichTextareaInput";
 
 type CommentInputProps = {
 	placeholder?: string;
@@ -23,6 +10,7 @@ type CommentInputProps = {
 	disabled?: boolean;
 	autoFocus?: boolean;
 	initialValue?: string;
+	maxLength?: number;
 	onSubmit: (value: string) => Promise<void>;
 	mentionableUsers?: CommentUser[];
 	onMentionInsert?: (user: CommentUser) => void;
@@ -34,44 +22,31 @@ const CommentInput = React.memo(function CommentInput({
 	disabled = false,
 	autoFocus = false,
 	initialValue = "",
+	maxLength = 1000,
 	onSubmit,
 	mentionableUsers = [],
 	onMentionInsert,
 }: CommentInputProps) {
 	const [value, setValue] = React.useState(initialValue);
 	const [submitting, setSubmitting] = React.useState(false);
-
 	const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+	const hasRealContent = value.trim().length > 0;
 
-	const hasRealContent = React.useMemo(
-		() => value.replace(/@\w+(\s\w+)?/g, "").trim().length > 0,
-		[value],
-	);
+	React.useEffect(() => {
+		setValue(initialValue);
+	}, [initialValue]);
 
 	const handleSubmit = React.useCallback(async () => {
-		if (submitting || disabled || !hasRealContent) {
-			return;
-		}
+		if (submitting || disabled || !hasRealContent) return;
 
 		try {
 			setSubmitting(true);
-
 			await onSubmit(value.trim());
-
 			setValue("");
 		} finally {
 			setSubmitting(false);
 		}
 	}, [disabled, hasRealContent, onSubmit, submitting, value]);
-
-	const handleMenuAction = React.useCallback(
-		(action: string) => {
-			if (action === "submit") {
-				void handleSubmit();
-			}
-		},
-		[handleSubmit],
-	);
 
 	return (
 		<RichTextareaInput
@@ -81,6 +56,7 @@ const CommentInput = React.memo(function CommentInput({
 			value={value}
 			disabled={disabled || submitting}
 			placeholder={placeholder}
+			maxLength={maxLength}
 			mentionableUsers={mentionableUsers}
 			onMentionInsert={onMentionInsert}
 			onChange={(event) => setValue(event.target.value)}
@@ -95,7 +71,9 @@ const CommentInput = React.memo(function CommentInput({
 			hasRealContent={hasRealContent}
 			onSubmit={handleSubmit}
 			menuItems={COMMENT_MENU_ITEMS}
-			onMenuAction={handleMenuAction}
+			onMenuAction={(action) => {
+				if (action === "submit") void handleSubmit();
+			}}
 		/>
 	);
 });
