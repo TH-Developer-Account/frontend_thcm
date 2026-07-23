@@ -342,20 +342,6 @@ const VendorCreationFormTwo = ({
 
 					<SelectInput
 						mode={fieldMode}
-						name="ndaObtained"
-						label="Non-Disclosure Undertaking Obtained?"
-						placeholder="Select option"
-						options={yesNoOptions}
-						value={getSelectedOption(yesNoOptions, values.ndaObtained)}
-						error={errors.ndaObtained}
-						helperText="Confirm whether NDA is obtained."
-						onChange={(option) =>
-							onChange?.("ndaObtained", option?.value ?? "")
-						}
-					/>
-
-					<SelectInput
-						mode={fieldMode}
 						name="gpaObtained"
 						label="General Purpose Agreement Obtained?"
 						placeholder="Select option"

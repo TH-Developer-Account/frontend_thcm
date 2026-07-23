@@ -116,3 +116,15 @@ export const useSubmitClarifiedUpdatedFormMutation = () => {
 			vendorOnboardingApi.activateFirstStage(workflowId),
 	});
 };
+
+export function useSendBackToVendorMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (vendorRequestId: string) =>
+			vendorOnboardingApi.sendBackToVendor(vendorRequestId),
+
+		onSuccess: (_data, vendorRequestId) =>
+			invalidateVendor(queryClient, vendorRequestId),
+	});
+}

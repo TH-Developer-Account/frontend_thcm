@@ -67,6 +67,7 @@ export const buildVendorUpdatePayload = (
 	gstin: toNullableString(values.gstin),
 	pan: toNullableString(values.pan),
 	entityRegNo: toNullableString(values.entityRegistrationNumber),
+	ndaObtained: toNullableBoolean(values.ndaObtained),
 });
 
 export const buildThcmUpdatePayload = (
@@ -84,7 +85,7 @@ export const buildThcmUpdatePayload = (
 	selfAssessmentObtained: toNullableBoolean(
 		values.vendorSelfAssessmentObtained,
 	),
-	ndaObtained: toNullableBoolean(values.ndaObtained),
+	// ndaObtained: toNullableBoolean(values.ndaObtained),
 	gpaObtained: toNullableBoolean(values.gpaObtained),
 	isRelatedParty: toNullableBoolean(values.relatedPartyToThcm),
 	vendorAuditReportPrepared: toNullableBoolean(
@@ -147,6 +148,7 @@ export const normalizeVendorOnboardingResponse = (
 			certificateOfIncorporation: hasDocument("INCORPORATION_CERTIFICATE"),
 			msmeCertificate: hasDocument("MSME_CERTIFICATE"),
 			ndaCertificate: hasDocument("NDA_CERTIFICATE"),
+			ndaObtained: toYesNo(raw.ndaObtained),
 		},
 		partTwo: {
 			vendorCode: raw.vendorCode ?? "",
@@ -159,7 +161,6 @@ export const normalizeVendorOnboardingResponse = (
 			materialType: raw.materialType ?? "",
 			materialSubType: raw.materialSubType ?? "",
 			vendorSelfAssessmentObtained: toYesNo(raw.selfAssessmentObtained),
-			ndaObtained: toYesNo(raw.ndaObtained),
 			gpaObtained: toYesNo(raw.gpaObtained),
 			relatedPartyToThcm: toYesNo(raw.isRelatedParty),
 			vendorAuditReportPrepared: toYesNo(raw.vendorAuditReportPrepared),

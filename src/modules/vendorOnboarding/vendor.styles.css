@@ -394,6 +394,12 @@
 		gap: var(--space-2);
 	}
 
+	.vendor-onboarding-msme-section {
+		@apply grid grid-cols-2 gap-4;
+	}
+	.padding {
+		padding: var(--space-3) var(--space-4) var(--space-4);
+	}
 	/* =====================================================
 	   LAPTOP / SMALL DESKTOP
 	===================================================== */
@@ -599,7 +605,7 @@
 	.vendor-enclosure-upload-grid {
 		display: grid;
 		grid-template-columns: repeat(1, minmax(0, 1fr));
-		gap: var(--space-3);
+		gap: var(--space-1);
 	}
 
 	.vendor-enclosure-upload-card {

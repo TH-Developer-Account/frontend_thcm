@@ -49,19 +49,19 @@ const formatLabel = (value?: string | null): string => {
 		.join(" ");
 };
 
-const getUserDisplayName = (
-	user?: VendorCommentApprovalUser | null,
-	fallback = "User",
-): string => {
-	if (!user) return fallback;
+// const getUserDisplayName = (
+// 	user?: VendorCommentApprovalUser | null,
+// 	fallback = "User",
+// ): string => {
+// 	if (!user) return fallback;
 
-	const fullName = [user.first_name, user.last_name]
-		.filter(Boolean)
-		.join(" ")
-		.trim();
+// 	const fullName = [user.first_name, user.last_name]
+// 		.filter(Boolean)
+// 		.join(" ")
+// 		.trim();
 
-	return fullName || user.email || fallback;
-};
+// 	return fullName || user.email || fallback;
+// };
 
 const toCommentUser = (
 	user?: VendorCommentApprovalUser | null,

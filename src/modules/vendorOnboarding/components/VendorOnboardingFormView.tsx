@@ -8,9 +8,13 @@ import { useAuth } from "../../../context/Auth/useAuth";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 
 import VendorCreationSummaryForm from "../forms/VendorCreationSummaryForm";
-import { useVendorCreationForm } from "../hooks/useVendorCreationForm";
+import {
+	VendorCreationFormProvider,
+	useVendorCreationForm,
+} from "../hooks/useVendorCreationForm";
 import type { VendorViewerRole } from "../types/vendorOnboarding.types";
 import VendorCommentSection from "./VendorCommentSection";
+import { useVendorOnboardingInitiation } from "../hooks/useVendorOnboardingInitiation";
 
 type VendorOnboardingFormViewProps = {
 	viewerRole?: VendorViewerRole;
@@ -27,33 +31,13 @@ const VendorOnboardingReadOnlyView = ({
 }: VendorOnboardingReadOnlyViewProps) => {
 	const navigate = useNavigate();
 
-	const {
-		formOneValues,
-		formTwoValues,
-		formOneDocuments,
-		isLoading,
-		isError,
-		canApprove,
-		canClarify,
-		canEditMainForm,
-		canAcceptAndClose,
-		handleApprove,
-		handleClarify,
-		handleAcceptAndClose,
-		workflowStages,
-		workflowLoading,
-		user,
-		canEditVendorCode,
-		canSaveVendorCode,
-		vendorCodeLoading,
-		handleSaveVendorCode,
-		handleFormTwoChange,
-	} = useVendorCreationForm({
+	const form = useVendorCreationForm({
 		role: viewerRole,
 		vendorRequestId: onboardingId,
 		isPublicForm: false,
 	});
-
+	const { isLoading, isError, canEditMainForm, workflowStages, user } = form;
+	const { handleSendBackToVendor } = useVendorOnboardingInitiation();
 	const handleBackToListing = () => {
 		navigate("/vendor/onboarding/listing?tab=onboarding");
 	};
@@ -137,54 +121,40 @@ const VendorOnboardingReadOnlyView = ({
 				navigation={pageNavigation}
 			/>
 
-			<Card
-				className="vendor-onboarding-view-section"
-				title="Vendor Form View"
-				actions={
-					canEditMainForm ? (
-						<div className="vendor-onboarding-view-actions">
-							<Button
-								type="button"
-								text="Edit"
-								size="sm"
-								Icon={Pencil}
-								appearance="standard"
-								variant="brand"
-								onClick={handleEdit}
-							/>
-						</div>
-					) : undefined
-				}
-			>
-				<VendorCreationSummaryForm
-					mode="view"
-					formOneValues={formOneValues}
-					formTwoValues={formTwoValues}
-					formOneDocuments={formOneDocuments}
-					canEditVendorCode={canEditVendorCode}
-					canSaveVendorCode={canSaveVendorCode}
-					vendorCodeLoading={vendorCodeLoading}
-					onSaveVendorCode={handleSaveVendorCode}
-					onBack={handleBackToListing}
-					onApprove={handleApprove}
-					onClarify={handleClarify}
-					onAcceptAndClose={handleAcceptAndClose}
-					canSubmit={false}
-					canApprove={canApprove}
-					canClarify={canClarify}
-					canAcceptAndClose={canAcceptAndClose}
-					workflowStages={workflowStages}
-					workflowLoading={workflowLoading}
-					onFormTwoChange={handleFormTwoChange}
-					commentsSection={
-						<VendorCommentSection
-							onboardingId={onboardingId}
-							workflow={workflowStages}
-							creator={user}
-						/>
+			<VendorCreationFormProvider value={form}>
+				<Card
+					className="vendor-onboarding-view-section"
+					title="Vendor Form View"
+					actions={
+						canEditMainForm ? (
+							<div className="vendor-onboarding-view-actions">
+								<Button
+									type="button"
+									text="Edit"
+									size="sm"
+									Icon={Pencil}
+									appearance="standard"
+									variant="brand"
+									onClick={handleEdit}
+								/>
+							</div>
+						) : undefined
 					}
-				/>
-			</Card>
+				>
+					<VendorCreationSummaryForm
+						mode="view"
+						onBack={handleBackToListing}
+						onHandleSendBackVendor={handleSendBackToVendor}
+						commentsSection={
+							<VendorCommentSection
+								onboardingId={onboardingId}
+								workflow={workflowStages}
+								creator={user}
+							/>
+						}
+					/>
+				</Card>
+			</VendorCreationFormProvider>
 		</PageSectionLayout>
 	);
 };

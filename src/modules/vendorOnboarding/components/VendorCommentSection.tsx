@@ -15,7 +15,7 @@ import type { User } from "../../../components/ui/comments/comment.types";
 
 type VendorCommentSectionProps = {
 	onboardingId?: string | null;
-	workflow?: readonly ApprovalStageLike[];
+	workflow?: ApprovalStageLike[];
 
 	creator?: User | null;
 

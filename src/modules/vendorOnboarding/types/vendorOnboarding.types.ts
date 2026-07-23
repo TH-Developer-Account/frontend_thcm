@@ -48,6 +48,7 @@ export type VendorCreationFormOneValues = {
 	certificateOfIncorporation?: string;
 	msmeCertificate?: string;
 	ndaCertificate?: string;
+	ndaObtained?: string;
 };
 
 export type VendorCreationFormTwoValues = {
@@ -130,6 +131,8 @@ export type VendorFormErrors<T> = Partial<Record<keyof T, string>>;
 export type UpdateVendorVariables = {
 	vendorRequestId: string;
 	payload: VendorUpdatePayload;
+	workspaceId?: string;
+	appId?: string;
 };
 
 export type VendorClarificationPayload = {

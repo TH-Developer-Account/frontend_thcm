@@ -1,4 +1,3 @@
-import * as React from "react";
 import {
 	ArrowLeft,
 	Banknote,
@@ -20,20 +19,25 @@ import SelectInput from "../../../components/forms/SelectInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
 
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
-import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 
 import FormHeader from "../../../components/ui/FormHeader";
 
 import {
 	VENDOR_DOCUMENT_FIELDS,
 	type VendorCreationFormOneValues,
-	type VendorDocumentField,
-	type VendorDocumentType,
-	type VendorEnclosureStatusKey,
 	type VendorFormErrors,
 	type VendorFormMode,
 	type VendorOnboardingDocument,
 } from "../types/vendorOnboarding.types";
+import {
+	useVendorCreationFormOneController,
+	type VendorCreationFormOneSubmission,
+} from "../hooks/useVendorCreationForm";
+
+export type {
+	VendorCreationFormOneSubmission,
+	VendorEnclosureUploadItem,
+} from "../hooks/useVendorCreationForm";
 
 import { STATES } from "../utils/vendor.constant";
 
@@ -42,17 +46,6 @@ const EMPTY_VENDOR_DOCUMENTS: VendorOnboardingDocument[] = [];
 type SelectOption = {
 	label: string;
 	value: string;
-};
-
-export type VendorEnclosureUploadItem = {
-	statusKey: VendorEnclosureStatusKey;
-	documentType: VendorDocumentType;
-	value: FileUploadValue | null;
-};
-
-export type VendorCreationFormOneSubmission = {
-	dpdpConsent: true;
-	enclosureUploads: VendorEnclosureUploadItem[];
 };
 
 type VendorCreationFormOneProps = {
@@ -97,91 +90,6 @@ const getSelectedOption = (
 
 const yesNoOptions = toSelectOptions(["Yes", "No"]);
 
-const getFileNameFromUrl = (
-	fileUrl: string,
-	documentType: VendorDocumentType,
-): string => {
-	try {
-		const url = new URL(fileUrl);
-		const fileName = url.pathname.split("/").pop();
-
-		return fileName || documentType;
-	} catch {
-		return fileUrl.split("/").pop() || documentType;
-	}
-};
-
-const getFileExtension = (fileName: string): string =>
-	fileName.split(".").pop()?.toLowerCase() ?? "";
-
-const getMimeType = (fileName: string): string => {
-	const extension = getFileExtension(fileName);
-
-	switch (extension) {
-		case "pdf":
-			return "application/pdf";
-
-		case "jpg":
-		case "jpeg":
-			return "image/jpeg";
-
-		case "png":
-			return "image/png";
-
-		case "webp":
-			return "image/webp";
-
-		case "doc":
-			return "application/msword";
-
-		case "docx":
-			return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-
-		default:
-			return "";
-	}
-};
-
-const createInitialEnclosureUploads = (
-	initialDocuments: VendorOnboardingDocument[] = [],
-): VendorEnclosureUploadItem[] =>
-	VENDOR_DOCUMENT_FIELDS.map((field) => {
-		const document = initialDocuments.find(
-			(item) => item.documentType === field.documentType,
-		);
-
-		if (!document) {
-			return {
-				statusKey: field.statusKey,
-				documentType: field.documentType,
-				value: null,
-			};
-		}
-
-		const fileName =
-			document.fileName ||
-			getFileNameFromUrl(document.fileUrl, document.documentType);
-
-		return {
-			statusKey: field.statusKey,
-			documentType: field.documentType,
-
-			value: {
-				id: document.id,
-				file: null,
-				url: document.fileUrl,
-				name: fileName,
-				type: document.mimeType || getMimeType(fileName),
-				size: document.size ?? 0,
-				extension: getFileExtension(fileName),
-				sizeLabel: document.size
-					? `${(document.size / 1024).toFixed(1)} KB`
-					: "",
-				isLocal: false,
-			},
-		};
-	});
-
 const VendorCreationFormOne = ({
 	mode = "edit",
 	canEdit = true,
@@ -201,225 +109,32 @@ const VendorCreationFormOne = ({
 	const isReadOnly = mode === "view" || !canEdit;
 	const fieldMode: VendorFormMode = isReadOnly ? "view" : "edit";
 
-	const [enclosureUploads, setEnclosureUploads] = React.useState<
-		VendorEnclosureUploadItem[]
-	>(() => createInitialEnclosureUploads(initialDocuments));
-
-	const [enclosureErrors, setEnclosureErrors] = React.useState<
-		Partial<Record<VendorEnclosureStatusKey, string>>
-	>({});
-
-	const [isDpdpModalOpen, setIsDpdpModalOpen] = React.useState(false);
-	const [hasAcceptedDpdp, setHasAcceptedDpdp] = React.useState(false);
-	const [hasConfirmedDpdp, setHasConfirmedDpdp] = React.useState(false);
-	const [dpdpError, setDpdpError] = React.useState("");
-
-	const documentsKey = React.useMemo(
-		() =>
-			initialDocuments
-				.map(
-					(document) =>
-						`${document.id}:${document.documentType}:${document.fileUrl}`,
-				)
-				.sort()
-				.join("|"),
-		[initialDocuments],
-	);
-
-	const syncedDocumentsKeyRef = React.useRef("");
-
-	React.useEffect(() => {
-		if (syncedDocumentsKeyRef.current === documentsKey) {
-			return;
-		}
-
-		syncedDocumentsKeyRef.current = documentsKey;
-
-		setEnclosureUploads(createInitialEnclosureUploads(initialDocuments));
-	}, [documentsKey, initialDocuments]);
-
-	const getEnclosureFile = React.useCallback(
-		(documentType: VendorDocumentType): FileUploadValue | null =>
-			enclosureUploads.find((upload) => upload.documentType === documentType)
-				?.value ?? null,
-		[enclosureUploads],
-	);
-
-	const isEnclosureRequired = React.useCallback(
-		(field: VendorDocumentField): boolean => {
-			if (!requireDocuments) {
-				return false;
-			}
-
-			if (field.statusKey === "msmeCertificateAttached") {
-				return (
-					values.msmeVendor === "Yes" &&
-					values.msmeCertificateAttached === "Yes"
-				);
-			}
-
-			return field.required;
-		},
-		[requireDocuments, values.msmeCertificateAttached, values.msmeVendor],
-	);
-
-	React.useEffect(() => {
-		const msmeField = VENDOR_DOCUMENT_FIELDS.find(
-			(field) => field.statusKey === "msmeCertificateAttached",
-		);
-
-		if (!msmeField) {
-			return;
-		}
-
-		const certificate = getEnclosureFile(msmeField.documentType);
-		const hasCertificate = Boolean(certificate?.file || certificate?.url);
-
-		setEnclosureErrors((previousErrors) => {
-			const nextErrors = { ...previousErrors };
-
-			if (isEnclosureRequired(msmeField) && !hasCertificate) {
-				nextErrors[msmeField.statusKey] = `${msmeField.label} is required.`;
-			} else {
-				delete nextErrors[msmeField.statusKey];
-			}
-
-			return nextErrors;
-		});
-	}, [getEnclosureFile, isEnclosureRequired]);
-
-	const handleEnclosureChange = React.useCallback(
-		(field: VendorDocumentField, nextValue: FileUploadValue | null) => {
-			setEnclosureUploads((previousUploads) =>
-				previousUploads.map((upload) =>
-					upload.documentType === field.documentType
-						? {
-								...upload,
-								value: nextValue,
-							}
-						: upload,
-				),
-			);
-
-			setEnclosureErrors((previousErrors) => {
-				const nextErrors = { ...previousErrors };
-
-				if (!nextValue && isEnclosureRequired(field)) {
-					nextErrors[field.statusKey] = `${field.label} is required.`;
-				} else {
-					delete nextErrors[field.statusKey];
-				}
-
-				return nextErrors;
-			});
-
-			onChange?.(field.statusKey, nextValue ? "Yes" : "No");
-		},
-		[isEnclosureRequired, onChange],
-	);
-
-	const validateEnclosures = React.useCallback((): boolean => {
-		if (!requireDocuments) {
-			setEnclosureErrors({});
-			return true;
-		}
-
-		const nextErrors: Partial<Record<VendorEnclosureStatusKey, string>> = {};
-
-		VENDOR_DOCUMENT_FIELDS.forEach((field) => {
-			if (!isEnclosureRequired(field)) {
-				return;
-			}
-
-			const upload = enclosureUploads.find(
-				(item) => item.documentType === field.documentType,
-			);
-
-			const hasUploadedFile = Boolean(
-				upload?.value?.file || upload?.value?.url,
-			);
-
-			if (!hasUploadedFile) {
-				nextErrors[field.statusKey] = `${field.label} is required.`;
-			}
-		});
-
-		setEnclosureErrors(nextErrors);
-
-		return Object.keys(nextErrors).length === 0;
-	}, [enclosureUploads, isEnclosureRequired, requireDocuments]);
-
-	const openDpdpModal = React.useCallback(() => {
-		setHasConfirmedDpdp(hasAcceptedDpdp);
-		setDpdpError("");
-		setIsDpdpModalOpen(true);
-	}, [hasAcceptedDpdp]);
-
-	const closeDpdpModal = React.useCallback(() => {
-		setIsDpdpModalOpen(false);
-		setHasConfirmedDpdp(false);
-	}, []);
-
-	const handleDpdpConsentChange = (
-		event: React.ChangeEvent<HTMLInputElement>,
-	) => {
-		if (event.target.checked) {
-			openDpdpModal();
-			return;
-		}
-
-		setHasAcceptedDpdp(false);
-		setHasConfirmedDpdp(false);
-		setDpdpError("");
-	};
-
-	const handleAcceptDpdpTerms = () => {
-		if (!hasConfirmedDpdp) {
-			return;
-		}
-
-		setHasAcceptedDpdp(true);
-		setDpdpError("");
-		setIsDpdpModalOpen(false);
-	};
-
-	const handleReset = () => {
-		syncedDocumentsKeyRef.current = documentsKey;
-
-		setEnclosureUploads(createInitialEnclosureUploads(initialDocuments));
-		setEnclosureErrors({});
-		setHasAcceptedDpdp(false);
-		setHasConfirmedDpdp(false);
-		setDpdpError("");
-	};
-
-	const handleFormAction = () => {
-		const enclosuresValid = validateEnclosures();
-
-		if (!enclosuresValid) {
-			return;
-		}
-
-		if (requireDpdpConsent && !hasAcceptedDpdp) {
-			setDpdpError(
-				"Please review and accept the Data Privacy Notice before continuing.",
-			);
-
-			setIsDpdpModalOpen(true);
-			return;
-		}
-
-		if (onSubmit) {
-			void onSubmit({
-				dpdpConsent: true,
-				enclosureUploads,
-			});
-
-			return;
-		}
-
-		onNext?.();
-	};
+	const {
+		enclosureErrors,
+		isDpdpModalOpen,
+		hasAcceptedDpdp,
+		hasConfirmedDpdp,
+		dpdpError,
+		hasNdaCertificate,
+		getEnclosureFile,
+		isEnclosureRequired,
+		handleEnclosureChange,
+		openDpdpModal,
+		closeDpdpModal,
+		handleDpdpConsentChange,
+		handleAcceptDpdpTerms,
+		handleReset,
+		handleFormAction,
+		setHasConfirmedDpdp,
+	} = useVendorCreationFormOneController({
+		values,
+		initialDocuments,
+		requireDocuments,
+		requireDpdpConsent,
+		onChange,
+		onNext,
+		onSubmit,
+	});
 
 	return (
 		<Card
@@ -750,41 +465,72 @@ const VendorCreationFormOne = ({
 						}
 					/>
 				</div>
-				<FormHeader title="MSME Details" Icon={Building2} />
+				<div className="vendor-onboarding-msme-section">
+					<div>
+						<FormHeader title="MSME Details" Icon={Building2} />
+						<div className="vendor-onboarding-msme-section padding">
+							<SelectInput
+								mode={fieldMode}
+								name="msmeVendor"
+								label="MSME Vendor"
+								placeholder="Select option"
+								options={yesNoOptions}
+								value={getSelectedOption(yesNoOptions, values.msmeVendor)}
+								required
+								error={errors.msmeVendor}
+								helperText="Select whether this vendor is registered under MSME."
+								onChange={(option) =>
+									onChange?.("msmeVendor", option?.value ?? "")
+								}
+							/>
 
-				<div className="vendor-onboarding-form-grid">
-					<SelectInput
-						mode={fieldMode}
-						name="msmeVendor"
-						label="MSME Vendor"
-						placeholder="Select option"
-						options={yesNoOptions}
-						value={getSelectedOption(yesNoOptions, values.msmeVendor)}
-						required
-						error={errors.msmeVendor}
-						helperText="Select whether this vendor is registered under MSME."
-						onChange={(option) => onChange?.("msmeVendor", option?.value ?? "")}
-					/>
-
-					{values.msmeVendor === "Yes" ? (
-						<SelectInput
-							mode={fieldMode}
-							name="msmeCertificateAttached"
-							label={'If "Yes", Certificate Attached?'}
-							placeholder="Select option"
-							options={yesNoOptions}
-							value={getSelectedOption(
-								yesNoOptions,
-								values.msmeCertificateAttached,
-							)}
-							required
-							error={errors.msmeCertificateAttached}
-							helperText="Confirm whether MSME certificate is attached."
-							onChange={(option) =>
-								onChange?.("msmeCertificateAttached", option?.value ?? "")
-							}
-						/>
-					) : null}
+							{values.msmeVendor === "Yes" ? (
+								<SelectInput
+									mode={fieldMode}
+									name="msmeCertificateAttached"
+									label={'If "Yes", Certificate Attached?'}
+									placeholder="Select option"
+									options={yesNoOptions}
+									value={getSelectedOption(
+										yesNoOptions,
+										values.msmeCertificateAttached,
+									)}
+									required
+									error={errors.msmeCertificateAttached}
+									helperText="Confirm whether MSME certificate is attached."
+									onChange={(option) =>
+										onChange?.("msmeCertificateAttached", option?.value ?? "")
+									}
+								/>
+							) : null}
+						</div>
+					</div>
+					<div>
+						<FormHeader title="NDA Section" Icon={Building2} />
+						<div className="vendor-onboarding-msme-section padding">
+							<SelectInput
+								mode={fieldMode}
+								name="ndaObtained"
+								label="Non-Disclosure Undertaking Obtained?"
+								placeholder="Select option"
+								options={yesNoOptions}
+								value={getSelectedOption(
+									yesNoOptions,
+									hasNdaCertificate ? "Yes" : values.ndaObtained,
+								)}
+								isDisabled={hasNdaCertificate}
+								error={errors.ndaObtained}
+								helperText={
+									hasNdaCertificate
+										? "NDA is marked as obtained because the certificate is attached."
+										: "Confirm whether NDA is obtained."
+								}
+								onChange={(option) =>
+									onChange?.("ndaObtained", option?.value ?? "")
+								}
+							/>
+						</div>
+					</div>
 				</div>
 				<FormHeader title="Attachments / Enclosures" Icon={ShieldCheck} />
 

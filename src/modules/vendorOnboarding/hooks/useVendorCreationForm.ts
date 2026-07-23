@@ -1,14 +1,20 @@
-import React from "react";
+import React, { type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import type { ApprovalStageLike } from "../../../components/ui/workflow/approvalWorkflow.types";
+import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
+import type { ReasonActionMode } from "../../../components/ui/ReasonActionModal";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
+import { workflowApi } from "../../../api/workflow.api";
 
 import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
 
 import { vendorOnboardingApi } from "../api/vendorOnboarding.api";
-import type { VendorCreationFormOneSubmission } from "../forms/VendorCreationFormOne";
+import {
+	getCurrentApprovalStage,
+	getIsUserInCurrentStage,
+} from "../../marketing/activity-planner/helpers/approvalWorkflow.helpers";
 import {
 	buildPublicFormData,
 	buildVendorOnboardingUpdatePayload,
@@ -29,14 +35,15 @@ import {
 import type {
 	VendorCreationFormOneValues,
 	VendorCreationFormTwoValues,
+	VendorDocumentField,
+	VendorDocumentType,
+	VendorEnclosureStatusKey,
 	VendorFormErrors,
+	VendorOnboardingDocument,
 	VendorOnboardingStatus,
 	VendorViewerRole,
 } from "../types/vendorOnboarding.types";
-import {
-	showApiErrorToast,
-	showSuccessToast,
-} from "../../../utils/apiError.helper";
+import { VENDOR_DOCUMENT_FIELDS } from "../types/vendorOnboarding.types";
 
 export const vendorOnboardingSteps = [
 	{ id: 1, label: "Vendor filled details" },
@@ -46,6 +53,17 @@ export const vendorOnboardingSteps = [
 
 const EMPTY_FORM_ONE: VendorCreationFormOneValues = {};
 const EMPTY_FORM_TWO: VendorCreationFormTwoValues = {};
+
+export type VendorEnclosureUploadItem = {
+	statusKey: VendorEnclosureStatusKey;
+	documentType: VendorDocumentType;
+	value: FileUploadValue | null;
+};
+
+export type VendorCreationFormOneSubmission = {
+	dpdpConsent: true;
+	enclosureUploads: VendorEnclosureUploadItem[];
+};
 
 const REQUIRED_FORM_ONE_FIELDS: Partial<
 	Record<keyof VendorCreationFormOneValues, string>
@@ -64,6 +82,7 @@ const REQUIRED_FORM_ONE_FIELDS: Partial<
 	gstin: "GSTIN is required.",
 	pan: "PAN is required.",
 	msmeVendor: "MSME Vendor is required.",
+	ndaCertificate: "NDA Certificate is required.",
 };
 
 const isEmptyFormValue = (value: unknown): boolean =>
@@ -111,6 +130,419 @@ const EDITABLE_STATUSES: readonly VendorOnboardingStatus[] = [
 	"VENDOR_SUBMITTED",
 	"IN_REVIEW",
 ];
+
+const getFileNameFromUrl = (
+	fileUrl: string,
+	documentType: VendorDocumentType,
+): string => {
+	try {
+		const fileName = new URL(fileUrl).pathname.split("/").pop();
+		return fileName || documentType;
+	} catch {
+		return fileUrl.split("/").pop() || documentType;
+	}
+};
+
+const getFileExtension = (fileName: string): string =>
+	fileName.split(".").pop()?.toLowerCase() ?? "";
+
+const getMimeType = (fileName: string): string => {
+	const mimeTypes: Record<string, string> = {
+		pdf: "application/pdf",
+		jpg: "image/jpeg",
+		jpeg: "image/jpeg",
+		png: "image/png",
+		webp: "image/webp",
+		doc: "application/msword",
+		docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+	};
+
+	return mimeTypes[getFileExtension(fileName)] ?? "";
+};
+
+const createInitialEnclosureUploads = (
+	initialDocuments: VendorOnboardingDocument[] = [],
+): VendorEnclosureUploadItem[] =>
+	VENDOR_DOCUMENT_FIELDS.map((field) => {
+		const document = initialDocuments.find(
+			(item) => item.documentType === field.documentType,
+		);
+
+		if (!document) {
+			return {
+				statusKey: field.statusKey,
+				documentType: field.documentType,
+				value: null,
+			};
+		}
+
+		const fileName =
+			document.fileName ||
+			getFileNameFromUrl(document.fileUrl, document.documentType);
+
+		return {
+			statusKey: field.statusKey,
+			documentType: field.documentType,
+			value: {
+				id: document.id,
+				file: null,
+				url: document.fileUrl,
+				name: fileName,
+				type: document.mimeType || getMimeType(fileName),
+				size: document.size ?? 0,
+				extension: getFileExtension(fileName),
+				sizeLabel: document.size
+					? `${(document.size / 1024).toFixed(1)} KB`
+					: "",
+				isLocal: false,
+			},
+		};
+	});
+
+type UseVendorCreationFormOneControllerParams = {
+	values: VendorCreationFormOneValues;
+	initialDocuments: VendorOnboardingDocument[];
+	requireDocuments: boolean;
+	requireDpdpConsent: boolean;
+	onChange?: <K extends keyof VendorCreationFormOneValues>(
+		key: K,
+		value: VendorCreationFormOneValues[K],
+	) => void;
+	onNext?: () => void;
+	onSubmit?: (
+		submission: VendorCreationFormOneSubmission,
+	) => void | Promise<void>;
+};
+
+export function useVendorCreationFormOneController({
+	values,
+	initialDocuments,
+	requireDocuments,
+	requireDpdpConsent,
+	onChange,
+	onNext,
+	onSubmit,
+}: UseVendorCreationFormOneControllerParams) {
+	const [enclosureUploads, setEnclosureUploads] = React.useState<
+		VendorEnclosureUploadItem[]
+	>(() => createInitialEnclosureUploads(initialDocuments));
+	const [enclosureErrors, setEnclosureErrors] = React.useState<
+		Partial<Record<VendorEnclosureStatusKey, string>>
+	>({});
+	const [isDpdpModalOpen, setIsDpdpModalOpen] = React.useState(false);
+	const [hasAcceptedDpdp, setHasAcceptedDpdp] = React.useState(false);
+	const [hasConfirmedDpdp, setHasConfirmedDpdp] = React.useState(false);
+	const [dpdpError, setDpdpError] = React.useState("");
+
+	const documentsKey = React.useMemo(
+		() =>
+			initialDocuments
+				.map(
+					(document) =>
+						`${document.id}:${document.documentType}:${document.fileUrl}`,
+				)
+				.sort()
+				.join("|"),
+		[initialDocuments],
+	);
+	const syncedDocumentsKeyRef = React.useRef("");
+
+	React.useEffect(() => {
+		if (syncedDocumentsKeyRef.current === documentsKey) return;
+		syncedDocumentsKeyRef.current = documentsKey;
+		setEnclosureUploads(createInitialEnclosureUploads(initialDocuments));
+	}, [documentsKey, initialDocuments]);
+
+	const getEnclosureFile = React.useCallback(
+		(documentType: VendorDocumentType): FileUploadValue | null =>
+			enclosureUploads.find((upload) => upload.documentType === documentType)
+				?.value ?? null,
+		[enclosureUploads],
+	);
+
+	const hasNdaCertificate = React.useMemo(() => {
+		const field = VENDOR_DOCUMENT_FIELDS.find(
+			(item) => item.statusKey === "ndaCertificate",
+		);
+		const certificate = field ? getEnclosureFile(field.documentType) : null;
+		return Boolean(certificate?.file || certificate?.url);
+	}, [getEnclosureFile]);
+
+	React.useEffect(() => {
+		if (hasNdaCertificate && values.ndaObtained !== "Yes") {
+			onChange?.("ndaObtained", "Yes");
+		}
+	}, [hasNdaCertificate, onChange, values.ndaObtained]);
+
+	const isEnclosureRequired = React.useCallback(
+		(field: VendorDocumentField): boolean => {
+			if (!requireDocuments) return false;
+			if (field.statusKey === "msmeCertificateAttached") {
+				return (
+					values.msmeVendor === "Yes" &&
+					values.msmeCertificateAttached === "Yes"
+				);
+			}
+			return field.required;
+		},
+		[requireDocuments, values.msmeCertificateAttached, values.msmeVendor],
+	);
+
+	React.useEffect(() => {
+		const field = VENDOR_DOCUMENT_FIELDS.find(
+			(item) => item.statusKey === "msmeCertificateAttached",
+		);
+		if (!field) return;
+
+		const certificate = getEnclosureFile(field.documentType);
+		const hasCertificate = Boolean(certificate?.file || certificate?.url);
+
+		setEnclosureErrors((current) => {
+			const next = { ...current };
+			if (isEnclosureRequired(field) && !hasCertificate) {
+				next[field.statusKey] = `${field.label} is required.`;
+			} else {
+				delete next[field.statusKey];
+			}
+			return next;
+		});
+	}, [getEnclosureFile, isEnclosureRequired]);
+
+	const handleEnclosureChange = React.useCallback(
+		(field: VendorDocumentField, nextValue: FileUploadValue | null) => {
+			setEnclosureUploads((current) =>
+				current.map((upload) =>
+					upload.documentType === field.documentType
+						? { ...upload, value: nextValue }
+						: upload,
+				),
+			);
+			setEnclosureErrors((current) => {
+				const next = { ...current };
+				if (!nextValue && isEnclosureRequired(field)) {
+					next[field.statusKey] = `${field.label} is required.`;
+				} else {
+					delete next[field.statusKey];
+				}
+				return next;
+			});
+
+			onChange?.(field.statusKey, nextValue ? "Yes" : "No");
+			if (field.statusKey === "ndaCertificate" && nextValue) {
+				onChange?.("ndaObtained", "Yes");
+			}
+		},
+		[isEnclosureRequired, onChange],
+	);
+
+	const validateEnclosures = React.useCallback((): boolean => {
+		if (!requireDocuments) {
+			setEnclosureErrors({});
+			return true;
+		}
+
+		const nextErrors: Partial<Record<VendorEnclosureStatusKey, string>> = {};
+		VENDOR_DOCUMENT_FIELDS.forEach((field) => {
+			if (!isEnclosureRequired(field)) return;
+			const upload = enclosureUploads.find(
+				(item) => item.documentType === field.documentType,
+			);
+			if (!upload?.value?.file && !upload?.value?.url) {
+				nextErrors[field.statusKey] = `${field.label} is required.`;
+			}
+		});
+		setEnclosureErrors(nextErrors);
+		return Object.keys(nextErrors).length === 0;
+	}, [enclosureUploads, isEnclosureRequired, requireDocuments]);
+
+	const openDpdpModal = React.useCallback(() => {
+		setHasConfirmedDpdp(hasAcceptedDpdp);
+		setDpdpError("");
+		setIsDpdpModalOpen(true);
+	}, [hasAcceptedDpdp]);
+
+	const closeDpdpModal = React.useCallback(() => {
+		setIsDpdpModalOpen(false);
+		setHasConfirmedDpdp(false);
+	}, []);
+
+	const handleDpdpConsentChange = React.useCallback(
+		(event: React.ChangeEvent<HTMLInputElement>) => {
+			if (event.target.checked) {
+				openDpdpModal();
+				return;
+			}
+			setHasAcceptedDpdp(false);
+			setHasConfirmedDpdp(false);
+			setDpdpError("");
+		},
+		[openDpdpModal],
+	);
+
+	const handleAcceptDpdpTerms = React.useCallback(() => {
+		if (!hasConfirmedDpdp) return;
+		setHasAcceptedDpdp(true);
+		setDpdpError("");
+		setIsDpdpModalOpen(false);
+	}, [hasConfirmedDpdp]);
+
+	const handleReset = React.useCallback(() => {
+		syncedDocumentsKeyRef.current = documentsKey;
+		setEnclosureUploads(createInitialEnclosureUploads(initialDocuments));
+		setEnclosureErrors({});
+		setHasAcceptedDpdp(false);
+		setHasConfirmedDpdp(false);
+		setDpdpError("");
+	}, [documentsKey, initialDocuments]);
+
+	const handleFormAction = React.useCallback(() => {
+		if (!validateEnclosures()) return;
+		if (requireDpdpConsent && !hasAcceptedDpdp) {
+			setDpdpError(
+				"Please review and accept the Data Privacy Notice before continuing.",
+			);
+			setIsDpdpModalOpen(true);
+			return;
+		}
+		if (onSubmit) {
+			void onSubmit({ dpdpConsent: true, enclosureUploads });
+			return;
+		}
+		onNext?.();
+	}, [
+		enclosureUploads,
+		hasAcceptedDpdp,
+		onNext,
+		onSubmit,
+		requireDpdpConsent,
+		validateEnclosures,
+	]);
+
+	return {
+		enclosureErrors,
+		isDpdpModalOpen,
+		hasAcceptedDpdp,
+		hasConfirmedDpdp,
+		dpdpError,
+		hasNdaCertificate,
+		getEnclosureFile,
+		isEnclosureRequired,
+		handleEnclosureChange,
+		openDpdpModal,
+		closeDpdpModal,
+		handleDpdpConsentChange,
+		handleAcceptDpdpTerms,
+		handleReset,
+		handleFormAction,
+		setHasConfirmedDpdp,
+	};
+}
+
+type UseVendorCreationSummaryControllerParams = {
+	workflowStages: readonly ApprovalStageLike[];
+	onApprove?: () => void;
+	onClarify?: () => void;
+	onSaveVendorCode?: () => void | Promise<boolean>;
+};
+
+export function useVendorCreationSummaryController({
+	workflowStages,
+	onApprove,
+	onClarify,
+	onSaveVendorCode,
+}: UseVendorCreationSummaryControllerParams) {
+	const { user } = useAuth();
+	const { showToast } = useToast();
+	const [reasonModal, setReasonModal] = React.useState<{
+		mode: ReasonActionMode | null;
+		loading: boolean;
+	}>({ mode: null, loading: false });
+
+	const currentStage = React.useMemo(
+		() => getCurrentApprovalStage(workflowStages),
+		[workflowStages],
+	);
+	const isUserInCurrentStage = React.useMemo(
+		() => getIsUserInCurrentStage(workflowStages, user?.id),
+		[workflowStages, user?.id],
+	);
+
+	const openReasonModal = React.useCallback(() => {
+		setReasonModal({ mode: "clarify-workflow", loading: false });
+	}, []);
+	const closeReasonModal = React.useCallback(() => {
+		setReasonModal({ mode: null, loading: false });
+	}, []);
+
+	const currentStageId = currentStage?.id;
+
+	const handleApprove = React.useCallback(async () => {
+		if (!currentStageId) return;
+		try {
+			const { message } = await workflowApi.approveStage(currentStageId);
+			showToast({ type: "success", title: "Success", description: message });
+			onApprove?.();
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "Error",
+				description:
+					error instanceof Error ? error.message : "Error while approving.",
+			});
+		}
+	}, [currentStageId, onApprove, showToast]);
+
+	const handleReasonConfirm = React.useCallback(
+		async (reason: string) => {
+			if (!currentStageId) {
+				showToast({
+					type: "error",
+					title: "Not allowed",
+					description: "No active approval stage found.",
+				});
+				return;
+			}
+
+			try {
+				setReasonModal((current) => ({ ...current, loading: true }));
+				const { message } = await workflowApi.clarifyStage(
+					currentStageId,
+					reason,
+				);
+				showToast({ type: "success", title: "Success", description: message });
+				closeReasonModal();
+				onClarify?.();
+			} catch (error) {
+				showToast({
+					type: "error",
+					title: "Error",
+					description:
+						error instanceof Error
+							? error.message
+							: "Unable to complete this action.",
+				});
+			} finally {
+				setReasonModal((current) => ({ ...current, loading: false }));
+			}
+		},
+		[closeReasonModal, currentStageId, onClarify, showToast],
+	);
+
+	const handleVendorCodeSave = React.useCallback(() => {
+		if (onSaveVendorCode) void onSaveVendorCode();
+	}, [onSaveVendorCode]);
+
+	return {
+		reasonModal,
+		currentStage,
+		canActOnCurrentStage: Boolean(currentStage && isUserInCurrentStage),
+		openReasonModal,
+		closeReasonModal,
+		handleApprove,
+		handleReasonConfirm,
+		handleVendorCodeSave,
+	};
+}
 
 export function useVendorCreationForm({
 	role = "THCM_EMPLOYEE",
@@ -206,15 +638,11 @@ export function useVendorCreationForm({
 		}
 
 		return assignedWorkflowStages.some((stage) => {
-			const isCurrentPendingStage =
-				stage.isCurrentIteration === true &&
-				stage.status?.toUpperCase() === "PENDING";
-
 			const hasPendingApproval = stage.approvals?.some(
 				(approval) => approval.status?.toUpperCase() === "PENDING",
 			);
 
-			return isCurrentPendingStage && hasPendingApproval;
+			return stage.isCurrentIteration === true && hasPendingApproval;
 		});
 	}, [activeWorkflow, assignedWorkflowStages]);
 
@@ -529,8 +957,6 @@ export function useVendorCreationForm({
 				),
 			});
 
-			await assignVendorWorkflow();
-
 			setPreviewWorkflowStages([]);
 			setWorkflowPreviewError("");
 
@@ -539,10 +965,7 @@ export function useVendorCreationForm({
 			showToast({
 				type: "error",
 				title: "Unable to continue",
-				description: getErrorMessage(
-					error,
-					"Failed to save THCM details or assign the workflow.",
-				),
+				description: getErrorMessage(error, "Failed to save THCM details."),
 			});
 		} finally {
 			setIsAssigningWorkflow(false);
@@ -723,10 +1146,16 @@ export function useVendorCreationForm({
 				),
 			});
 
-			// 2. Submit the form for approval.
+			// 2. A normal submission gets a workflow only at final submit.
+			// Clarified resubmissions reuse their existing workflow iteration.
+			if (!shouldActivateClarifiedWorkflow) {
+				await assignVendorWorkflow();
+			}
+
+			// 3. Submit the form for approval.
 			await submitMutation.mutateAsync(vendorRequestId);
 
-			// 3. Activate the first stage of the clarified workflow iteration.
+			// 4. Activate the first stage of the clarified workflow iteration.
 			if (shouldActivateClarifiedWorkflow && workflowId) {
 				await submitClarifiedMutation.mutateAsync(workflowId);
 			}
@@ -766,6 +1195,7 @@ export function useVendorCreationForm({
 		}
 	}, [
 		detailQuery,
+		assignVendorWorkflow,
 		formOneValues,
 		formTwoValues,
 		hasPendingClarifiedApproval,
@@ -787,8 +1217,12 @@ export function useVendorCreationForm({
 	*/
 
 	const saveVendorCode = React.useCallback(async (): Promise<boolean> => {
-		if (!vendorRequestId) {
-			return false;
+		if (!workspaceId || !appId || !vendorRequestId) {
+			showToast({
+				type: "error",
+				title: "Permission denied",
+				description: "Workspace Id is not provided.",
+			});
 		}
 
 		if (!canEditVendorCode) {
@@ -822,6 +1256,8 @@ export function useVendorCreationForm({
 
 			await updateMutation.mutateAsync({
 				vendorRequestId,
+				workspaceId,
+				appId,
 				payload: {
 					vendorCode,
 				},
@@ -933,35 +1369,6 @@ export function useVendorCreationForm({
 		}
 	};
 
-	/*
-	|--------------------------------------------------------------------------
-	| Workflow activate first stage
-	|--------------------------------------------------------------------------
-	*/
-	const submitClarifiedUpdate = async () => {
-		if (!workflowId) {
-			showApiErrorToast(showToast, "No active workflow found.");
-			return;
-		}
-
-		try {
-			await updateMutation.mutateAsync({
-				vendorRequestId,
-				payload: buildVendorOnboardingUpdatePayload(
-					formOneValues,
-					formTwoValues,
-				),
-			});
-
-			await submitClarifiedMutation.mutateAsync(workflowId);
-			await detailQuery.refetch();
-
-			showSuccessToast(showToast, "Updated form submitted successfully.");
-		} catch (error: unknown) {
-			showApiErrorToast(showToast, `Failed to submit updated form ${error}.`);
-		}
-	};
-
 	const mutationLoading =
 		createMutation.isPending ||
 		updateMutation.isPending ||
@@ -998,10 +1405,9 @@ export function useVendorCreationForm({
 
 		canSubmitVendorForm: isPublicVendor,
 		canSubmit: isInternal,
-
 		canApprove,
 		canClarify,
-
+		canSendBackToVendor: isThcmProposer,
 		canAcceptAndClose: role === "EXTERNAL_APPROVER",
 
 		isLoading: isPublicForm ? publicQuery.isLoading : detailQuery.isLoading,
@@ -1025,12 +1431,15 @@ export function useVendorCreationForm({
 		handleVendorSubmitForm: submitPublicVendor,
 		handleSubmitSummary: submitForApproval,
 
-		handleApprove: async () => undefined,
-		handleClarify: async () => undefined,
+		handleApprove: async () => {
+			await detailQuery.refetch();
+		},
+		handleClarify: async () => {
+			await detailQuery.refetch();
+		},
 		handleAcceptAndClose: acceptAndClose,
 
 		handleSaveVendorCode: saveVendorCode,
-		handleClarifiedUpdate: submitClarifiedUpdate,
 		handlePreviewWorkflow,
 		handleFetchWorkflow: handlePreviewWorkflow,
 
@@ -1047,4 +1456,39 @@ export function useVendorCreationForm({
 
 		creator: detailQuery.data,
 	};
+}
+
+export type VendorCreationFormController = ReturnType<
+	typeof useVendorCreationForm
+>;
+
+const VendorCreationFormContext =
+	React.createContext<VendorCreationFormController | null>(null);
+
+export function VendorCreationFormProvider({
+	value,
+	children,
+}: {
+	value: VendorCreationFormController;
+	children: ReactNode;
+}) {
+	return React.createElement(
+		VendorCreationFormContext.Provider,
+		{ value },
+		children,
+	);
+}
+
+export function useVendorCreationFormContext(): VendorCreationFormController {
+	const value = React.useContext(VendorCreationFormContext);
+	if (!value) {
+		throw new Error(
+			"useVendorCreationFormContext must be used inside VendorCreationFormProvider.",
+		);
+	}
+	return value;
+}
+
+export function useOptionalVendorCreationFormContext() {
+	return React.useContext(VendorCreationFormContext);
 }
