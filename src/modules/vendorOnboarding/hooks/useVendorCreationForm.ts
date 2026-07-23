@@ -12,9 +12,10 @@ import { getStoredAppId } from "../../marketing/activity-planner/helpers/localst
 
 import { vendorOnboardingApi } from "../api/vendorOnboarding.api";
 import {
+	// getApprovalIdForUser,
 	getCurrentApprovalStage,
 	getIsUserInCurrentStage,
-} from "../../marketing/activity-planner/helpers/approvalWorkflow.helpers";
+} from "../../../components/ui/workflow/approvalWorkflow.helpers";
 import {
 	buildPublicFormData,
 	buildVendorOnboardingUpdatePayload,
@@ -82,7 +83,6 @@ const REQUIRED_FORM_ONE_FIELDS: Partial<
 	gstin: "GSTIN is required.",
 	pan: "PAN is required.",
 	msmeVendor: "MSME Vendor is required.",
-	ndaCertificate: "NDA Certificate is required.",
 };
 
 const isEmptyFormValue = (value: unknown): boolean =>
@@ -250,7 +250,12 @@ export function useVendorCreationFormOneController({
 	React.useEffect(() => {
 		if (syncedDocumentsKeyRef.current === documentsKey) return;
 		syncedDocumentsKeyRef.current = documentsKey;
-		setEnclosureUploads(createInitialEnclosureUploads(initialDocuments));
+
+		const syncDocuments = window.setTimeout(() => {
+			setEnclosureUploads(createInitialEnclosureUploads(initialDocuments));
+		}, 0);
+
+		return () => window.clearTimeout(syncDocuments);
 	}, [documentsKey, initialDocuments]);
 
 	const getEnclosureFile = React.useCallback(
@@ -260,53 +265,26 @@ export function useVendorCreationFormOneController({
 		[enclosureUploads],
 	);
 
-	const hasNdaCertificate = React.useMemo(() => {
-		const field = VENDOR_DOCUMENT_FIELDS.find(
-			(item) => item.statusKey === "ndaCertificate",
-		);
-		const certificate = field ? getEnclosureFile(field.documentType) : null;
-		return Boolean(certificate?.file || certificate?.url);
-	}, [getEnclosureFile]);
-
-	React.useEffect(() => {
-		if (hasNdaCertificate && values.ndaObtained !== "Yes") {
-			onChange?.("ndaObtained", "Yes");
-		}
-	}, [hasNdaCertificate, onChange, values.ndaObtained]);
-
 	const isEnclosureRequired = React.useCallback(
 		(field: VendorDocumentField): boolean => {
 			if (!requireDocuments) return false;
-			if (field.statusKey === "msmeCertificateAttached") {
-				return (
-					values.msmeVendor === "Yes" &&
-					values.msmeCertificateAttached === "Yes"
-				);
+
+			switch (field.statusKey) {
+				case "msmeCertificate":
+					return values.msmeVendor === "Yes";
+
+				case "ndaCertificate":
+					return values.ndaObtained === "Yes";
+
+				case "otherAttachment":
+					return false;
+
+				default:
+					return field.required;
 			}
-			return field.required;
 		},
-		[requireDocuments, values.msmeCertificateAttached, values.msmeVendor],
+		[requireDocuments, values.msmeVendor, values.ndaObtained],
 	);
-
-	React.useEffect(() => {
-		const field = VENDOR_DOCUMENT_FIELDS.find(
-			(item) => item.statusKey === "msmeCertificateAttached",
-		);
-		if (!field) return;
-
-		const certificate = getEnclosureFile(field.documentType);
-		const hasCertificate = Boolean(certificate?.file || certificate?.url);
-
-		setEnclosureErrors((current) => {
-			const next = { ...current };
-			if (isEnclosureRequired(field) && !hasCertificate) {
-				next[field.statusKey] = `${field.label} is required.`;
-			} else {
-				delete next[field.statusKey];
-			}
-			return next;
-		});
-	}, [getEnclosureFile, isEnclosureRequired]);
 
 	const handleEnclosureChange = React.useCallback(
 		(field: VendorDocumentField, nextValue: FileUploadValue | null) => {
@@ -327,12 +305,32 @@ export function useVendorCreationFormOneController({
 				return next;
 			});
 
-			onChange?.(field.statusKey, nextValue ? "Yes" : "No");
-			if (field.statusKey === "ndaCertificate" && nextValue) {
-				onChange?.("ndaObtained", "Yes");
+			if (field.statusKey === "msmeCertificate") {
+				onChange?.("msmeCertificateAttached", nextValue ? "Yes" : "No");
 			}
 		},
 		[isEnclosureRequired, onChange],
+	);
+
+	const handleConditionalFieldChange = React.useCallback(
+		(key: "msmeVendor" | "ndaObtained", value: string) => {
+			onChange?.(key, value);
+
+			setEnclosureErrors((current) => {
+				const next = { ...current };
+
+				if (key === "msmeVendor" && value !== "Yes") {
+					delete next.msmeCertificate;
+				}
+
+				if (key === "ndaObtained" && value !== "Yes") {
+					delete next.ndaCertificate;
+				}
+
+				return next;
+			});
+		},
+		[onChange],
 	);
 
 	const validateEnclosures = React.useCallback((): boolean => {
@@ -424,10 +422,10 @@ export function useVendorCreationFormOneController({
 		hasAcceptedDpdp,
 		hasConfirmedDpdp,
 		dpdpError,
-		hasNdaCertificate,
 		getEnclosureFile,
 		isEnclosureRequired,
 		handleEnclosureChange,
+		handleConditionalFieldChange,
 		openDpdpModal,
 		closeDpdpModal,
 		handleDpdpConsentChange,
@@ -1217,13 +1215,13 @@ export function useVendorCreationForm({
 	*/
 
 	const saveVendorCode = React.useCallback(async (): Promise<boolean> => {
-		if (!workspaceId || !appId || !vendorRequestId) {
-			showToast({
-				type: "error",
-				title: "Permission denied",
-				description: "Workspace Id is not provided.",
-			});
-		}
+		// if (!workspaceId || !appId || !vendorRequestId) {
+		// 	showToast({
+		// 		type: "error",
+		// 		title: "Permission denied",
+		// 		description: "Workspace Id is not provided.",
+		// 	});
+		// }
 
 		if (!canEditVendorCode) {
 			showToast({
@@ -1256,8 +1254,6 @@ export function useVendorCreationForm({
 
 			await updateMutation.mutateAsync({
 				vendorRequestId,
-				workspaceId,
-				appId,
 				payload: {
 					vendorCode,
 				},

@@ -115,10 +115,10 @@ const VendorCreationFormOne = ({
 		hasAcceptedDpdp,
 		hasConfirmedDpdp,
 		dpdpError,
-		hasNdaCertificate,
 		getEnclosureFile,
 		isEnclosureRequired,
 		handleEnclosureChange,
+		handleConditionalFieldChange,
 		openDpdpModal,
 		closeDpdpModal,
 		handleDpdpConsentChange,
@@ -229,6 +229,7 @@ const VendorCreationFormOne = ({
 									appearance="standard"
 									variant="brand"
 									Icon={Save}
+									isTooltip="Please accept the consent form to submit."
 									onClick={handleFormAction}
 									disabled={loading || (requireDpdpConsent && !hasAcceptedDpdp)}
 								/>
@@ -465,77 +466,15 @@ const VendorCreationFormOne = ({
 						}
 					/>
 				</div>
-				<div className="vendor-onboarding-msme-section">
-					<div>
-						<FormHeader title="MSME Details" Icon={Building2} />
-						<div className="vendor-onboarding-msme-section padding">
-							<SelectInput
-								mode={fieldMode}
-								name="msmeVendor"
-								label="MSME Vendor"
-								placeholder="Select option"
-								options={yesNoOptions}
-								value={getSelectedOption(yesNoOptions, values.msmeVendor)}
-								required
-								error={errors.msmeVendor}
-								helperText="Select whether this vendor is registered under MSME."
-								onChange={(option) =>
-									onChange?.("msmeVendor", option?.value ?? "")
-								}
-							/>
 
-							{values.msmeVendor === "Yes" ? (
-								<SelectInput
-									mode={fieldMode}
-									name="msmeCertificateAttached"
-									label={'If "Yes", Certificate Attached?'}
-									placeholder="Select option"
-									options={yesNoOptions}
-									value={getSelectedOption(
-										yesNoOptions,
-										values.msmeCertificateAttached,
-									)}
-									required
-									error={errors.msmeCertificateAttached}
-									helperText="Confirm whether MSME certificate is attached."
-									onChange={(option) =>
-										onChange?.("msmeCertificateAttached", option?.value ?? "")
-									}
-								/>
-							) : null}
-						</div>
-					</div>
-					<div>
-						<FormHeader title="NDA Section" Icon={Building2} />
-						<div className="vendor-onboarding-msme-section padding">
-							<SelectInput
-								mode={fieldMode}
-								name="ndaObtained"
-								label="Non-Disclosure Undertaking Obtained?"
-								placeholder="Select option"
-								options={yesNoOptions}
-								value={getSelectedOption(
-									yesNoOptions,
-									hasNdaCertificate ? "Yes" : values.ndaObtained,
-								)}
-								isDisabled={hasNdaCertificate}
-								error={errors.ndaObtained}
-								helperText={
-									hasNdaCertificate
-										? "NDA is marked as obtained because the certificate is attached."
-										: "Confirm whether NDA is obtained."
-								}
-								onChange={(option) =>
-									onChange?.("ndaObtained", option?.value ?? "")
-								}
-							/>
-						</div>
-					</div>
-				</div>
 				<FormHeader title="Attachments / Enclosures" Icon={ShieldCheck} />
 
 				<div className="vendor-enclosure-upload-grid">
-					{VENDOR_DOCUMENT_FIELDS.map((field) => {
+					{VENDOR_DOCUMENT_FIELDS.filter(
+						(field) =>
+							field.documentType !== "MSME_CERTIFICATE" &&
+							field.documentType !== "NDA_CERTIFICATE",
+					).map((field) => {
 						const uploadedFile = getEnclosureFile(field.documentType);
 
 						return (
@@ -560,7 +499,103 @@ const VendorCreationFormOne = ({
 						);
 					})}
 				</div>
+				<div className="vendor-onboarding-msme-section">
+					<div>
+						<FormHeader title="MSME Details" Icon={Building2} />
+						<div className="vendor-onboarding-msme-section padding">
+							<SelectInput
+								mode={fieldMode}
+								name="msmeVendor"
+								label="MSME Vendor"
+								placeholder="Select option"
+								options={yesNoOptions}
+								value={getSelectedOption(yesNoOptions, values.msmeVendor)}
+								required
+								error={errors.msmeVendor}
+								helperText="Select whether this vendor is registered under MSME."
+								onChange={(option) =>
+									handleConditionalFieldChange(
+										"msmeVendor",
+										option?.value ?? "",
+									)
+								}
+							/>
 
+							{values.msmeVendor === "Yes" ? (
+								<FileUploadField
+									value={getEnclosureFile("MSME_CERTIFICATE")}
+									onChange={(nextValue) => {
+										const field = VENDOR_DOCUMENT_FIELDS.find(
+											(item) => item.documentType === "MSME_CERTIFICATE",
+										);
+
+										if (field) {
+											handleEnclosureChange(field, nextValue);
+										}
+									}}
+									kind="document"
+									label="MSME Certificate"
+									description="Upload the MSME registration certificate."
+									required
+									error={enclosureErrors.msmeCertificate}
+									readonly={isReadOnly}
+									disabled={loading}
+									heightClassName="vendor-enclosure-upload-height"
+									className="vendor-enclosure-upload-field"
+									inputName="MSME_CERTIFICATE"
+									showActions
+								/>
+							) : null}
+						</div>
+					</div>
+					<div>
+						<FormHeader title="NDA Section" Icon={Building2} />
+						<div className="vendor-onboarding-msme-section padding">
+							<SelectInput
+								mode={fieldMode}
+								name="ndaObtained"
+								label="Non-Disclosure Undertaking Obtained?"
+								placeholder="Select option"
+								options={yesNoOptions}
+								value={getSelectedOption(yesNoOptions, values.ndaObtained)}
+								error={errors.ndaObtained}
+								helperText="Confirm whether NDA is obtained."
+								onChange={(option) =>
+									handleConditionalFieldChange(
+										"ndaObtained",
+										option?.value ?? "",
+									)
+								}
+							/>
+
+							{values.ndaObtained === "Yes" ? (
+								<FileUploadField
+									value={getEnclosureFile("NDA_CERTIFICATE")}
+									onChange={(nextValue) => {
+										const field = VENDOR_DOCUMENT_FIELDS.find(
+											(item) => item.documentType === "NDA_CERTIFICATE",
+										);
+
+										if (field) {
+											handleEnclosureChange(field, nextValue);
+										}
+									}}
+									kind="document"
+									label="NDA Certificate"
+									description="Upload the signed NDA certificate."
+									required
+									error={enclosureErrors.ndaCertificate}
+									readonly={isReadOnly}
+									disabled={loading}
+									heightClassName="vendor-enclosure-upload-height"
+									className="vendor-enclosure-upload-field"
+									inputName="NDA_CERTIFICATE"
+									showActions
+								/>
+							) : null}
+						</div>
+					</div>
+				</div>
 				<Modal
 					open={isDpdpModalOpen}
 					title="Data Privacy Notice"

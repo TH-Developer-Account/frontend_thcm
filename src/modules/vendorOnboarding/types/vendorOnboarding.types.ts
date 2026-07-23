@@ -146,7 +146,8 @@ export type VendorEnclosureStatusKey =
 	| "bankCancelledCheque"
 	| "certificateOfIncorporation"
 	| "msmeCertificate"
-	| "ndaCertificate";
+	| "ndaCertificate"
+	| "otherAttachment";
 
 export const VENDOR_DOCUMENT_FIELDS = [
 	{
@@ -181,27 +182,28 @@ export const VENDOR_DOCUMENT_FIELDS = [
 		statusKey: "msmeCertificate",
 		documentType: "MSME_CERTIFICATE",
 		label: "MSME Certificate",
-		description: "Upload the MSME registration certificate.",
-		required: true,
+		description: "Required when the vendor is registered under MSME.",
+		required: false,
 	},
 	{
 		statusKey: "ndaCertificate",
 		documentType: "NDA_CERTIFICATE",
 		label: "NDA Certificate",
-		description: "Upload the signed NDA certificate.",
-		required: true,
+		description: "Required when NDA has been obtained.",
+		required: false,
 	},
-	// {
-	// 	statusKey: "other",
-	// 	documentType: "OTHER",
-	// 	label: "Additional Documnets",
-	// 	description: "Upload if any additional documents",
-	// 	required: true,
-	// },
+	{
+		statusKey: "otherAttachment",
+		documentType: "OTHER",
+		label: "Other Attachment",
+		description: "Upload any additional supporting document.",
+		required: false,
+	},
 ] as const;
 
 export type VendorDocumentType =
 	(typeof VENDOR_DOCUMENT_FIELDS)[number]["documentType"];
+
 export type VendorDocumentField = (typeof VENDOR_DOCUMENT_FIELDS)[number];
 
 export type VendorDocumentUpload = {

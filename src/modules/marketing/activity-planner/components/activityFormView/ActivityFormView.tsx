@@ -17,13 +17,12 @@ import { getStoredAppId } from "../../helpers/localstorage";
 import type { EventReportDetail } from "../../types/event.report.types";
 import { useToast } from "../../../../../context/Auth/AuthContext";
 import { workflowApi } from "../../../../../api/workflow.api";
+
+import { getWorkflowCommentContext } from "../../../../../components/ui/comments/comments.helper";
 import {
-	getApprovalIdForUser,
-	getApprovedStageCcEmails,
-	getMentionableUsersFromStages,
 	getCurrentApprovalStage,
 	getIsUserInCurrentStage,
-} from "../../helpers/approvalWorkflow.helpers";
+} from "../../../../../components/ui/workflow/approvalWorkflow.helpers";
 import ResubmitFooterAction from "./ResubmitFooterAction";
 import { ReasonActionModal } from "../../../../../components/ui/ReasonActionModal";
 import type { ActivityPermissions } from "../../helpers/activityPermissions.helper";
@@ -133,8 +132,6 @@ const ActivityFormView = ({
 
 	const activeWorkflow = epcData?.activeWorkflow ?? null;
 
-	console.log({ epcData, activeWorkflow });
-
 	const workflowStages = React.useMemo(
 		() => activeWorkflow?.stages ?? [],
 		[activeWorkflow?.stages],
@@ -154,21 +151,17 @@ const ActivityFormView = ({
 
 	const canActOnCurrentStage = Boolean(currentStage && isUserInCurrentStage);
 
-	const approvalId = React.useMemo(
-		() => getApprovalIdForUser(workflowStages, userId),
-		[workflowStages, userId],
+	const commentContext = React.useMemo(
+		() =>
+			getWorkflowCommentContext({
+				stages: workflowStages,
+				userId,
+				creator: epcData?.created_by,
+			}),
+		[workflowStages, userId, epcData?.created_by],
 	);
 
-	const mentionableUsers = React.useMemo(
-		() => getMentionableUsersFromStages(workflowStages, epcData?.created_by),
-		[workflowStages, epcData?.created_by],
-	);
-	const ccEmails = React.useMemo(
-		() => getApprovedStageCcEmails(workflowStages),
-		[workflowStages],
-	);
-	const canComment =
-		!permissions.isClosed && (permissions.isProposer || Boolean(approvalId));
+	const canComment = !permissions.isClosed && commentContext.canComment;
 
 	const reasonMode = reasonModal.mode;
 	const currentStageId = currentStage?.id ?? "";
@@ -357,9 +350,9 @@ const ActivityFormView = ({
 								subjectType="EPC"
 								subjectId={epcData.id}
 								currentUserId={user?.id}
-								approvalId={approvalId}
-								mentionableUsers={mentionableUsers}
-								ccEmails={ccEmails}
+								approvalId={commentContext.approvalId}
+								mentionableUsers={commentContext.mentionableUsers}
+								ccEmails={commentContext.ccEmails}
 								refreshKey={commentsRefreshKey}
 								canComment={canComment}
 								api={activityPlannerCommentApi}

@@ -13,17 +13,20 @@ import { useClarifiedResubmission } from "./useClarifiedResubmission";
 import { useDeviationResubmission } from "./useDeviationResubmission";
 import type { EventReportDetail } from "../types/event.report.types";
 import { getStoredAppId } from "../helpers/localstorage";
-import { getActivityPermissions } from "../helpers/activityPermissions.helper";
+import {
+	getActivityPermissions,
+	REPORT_ELIGIBLE_STATUSES,
+} from "../helpers/activityPermissions.helper";
 
 const normalizeReportForView = (
-	report: EventReportDetail | any | null | undefined,
+	report: EventReportDetail | null | undefined,
 ): EventReportDetail | null => {
 	if (!report) return null;
 
 	return {
 		...report,
 		images:
-			report.images?.map((image: any) => ({
+			report.images?.map((image) => ({
 				...image,
 				url: image.url ?? image.fileUrl ?? "",
 			})) ?? [],
@@ -41,7 +44,19 @@ export const useActivityPlanner = (id: string | undefined) => {
 		refetch,
 	} = useEpcDetailQuery(id);
 
-	const reportQuery = useEventReportQuery(id, Boolean(id) && Boolean(epcData));
+	const normalizedEpcStatus = String(epcData?.status ?? "")
+		.trim()
+		.toUpperCase();
+
+	const canHaveEventReport =
+		Boolean(epcData?.report?.id) ||
+		REPORT_ELIGIBLE_STATUSES.has(normalizedEpcStatus);
+
+	const reportQuery = useEventReportQuery(
+		id,
+		Boolean(id) && canHaveEventReport,
+	);
+
 	const reportData = React.useMemo(
 		() => normalizeReportForView(reportQuery.data ?? epcData?.report ?? null),
 		[reportQuery.data, epcData?.report],
