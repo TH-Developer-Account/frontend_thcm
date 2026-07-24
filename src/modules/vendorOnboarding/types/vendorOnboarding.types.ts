@@ -62,7 +62,6 @@ export type VendorCreationFormTwoValues = {
 	materialType?: string;
 	materialSubType?: string;
 	vendorSelfAssessmentObtained?: string;
-	ndaObtained?: string;
 	gpaObtained?: string;
 	relatedPartyToThcm?: string;
 	vendorAuditReportPrepared?: string;
@@ -194,7 +193,7 @@ export const VENDOR_DOCUMENT_FIELDS = [
 	},
 	{
 		statusKey: "otherAttachment",
-		documentType: "OTHER",
+		documentType: "ADDITIONAL_DOC_1",
 		label: "Other Attachment",
 		description: "Upload any additional supporting document.",
 		required: false,
@@ -218,6 +217,7 @@ export type VendorOnboardingDocument = {
 	documentType: VendorDocumentType;
 	fileName: string;
 	fileUrl: string;
+	caption?: string | null;
 	mimeType?: string;
 	size?: number;
 };
@@ -228,6 +228,7 @@ export type VendorOnboardingRawDocument = {
 	documentType: VendorDocumentType;
 	s3Key: string;
 	fileUrl: string;
+	caption?: string | null;
 	uploadedAt: string;
 };
 

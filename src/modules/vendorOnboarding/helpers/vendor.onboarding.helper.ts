@@ -1,4 +1,8 @@
-import type { VendorCreationFormOneSubmission } from "../forms/VendorCreationFormOne";
+import type {
+	VendorCreationFormOneDraftSubmission,
+	VendorCreationFormOneSubmission,
+	VendorEnclosureUploadItem,
+} from "../hooks/useVendorCreationForm";
 import type { VendorListingFilter } from "../types/vendorListing.types";
 import {
 	VENDOR_DOCUMENT_FIELDS,
@@ -9,6 +13,10 @@ import {
 	type VendorOnboardingResponse,
 	type VendorUpdatePayload,
 } from "../types/vendorOnboarding.types";
+import {
+	getFileNameFromUrl,
+	getMimeTypeFromFileName,
+} from "../../../components/ui/FileUpload/fileUpload.helpers";
 
 export const toYesNo = (value: boolean | string | null | undefined): string => {
 	if (typeof value === "boolean") return value ? "Yes" : "No";
@@ -30,22 +38,6 @@ export const toNullableBoolean = (
 
 const toNullableString = (value?: string): string | null =>
 	value?.trim() || null;
-
-const getFileName = (documentType: string, s3Key?: string): string =>
-	s3Key?.split("/").pop() || documentType;
-
-const getMimeType = (fileName: string): string => {
-	const extension = fileName.split(".").pop()?.toLowerCase();
-	if (extension === "pdf") return "application/pdf";
-	if (extension === "jpg" || extension === "jpeg") return "image/jpeg";
-	if (extension === "png") return "image/png";
-	if (extension === "webp") return "image/webp";
-	if (extension === "doc") return "application/msword";
-	if (extension === "docx") {
-		return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-	}
-	return "";
-};
 
 export const buildVendorUpdatePayload = (
 	values: VendorCreationFormOneValues,
@@ -85,7 +77,6 @@ export const buildThcmUpdatePayload = (
 	selfAssessmentObtained: toNullableBoolean(
 		values.vendorSelfAssessmentObtained,
 	),
-	// ndaObtained: toNullableBoolean(values.ndaObtained),
 	gpaObtained: toNullableBoolean(values.gpaObtained),
 	isRelatedParty: toNullableBoolean(values.relatedPartyToThcm),
 	vendorAuditReportPrepared: toNullableBoolean(
@@ -108,13 +99,17 @@ export const normalizeVendorOnboardingResponse = (
 	raw: VendorOnboardingRawResponse,
 ): VendorOnboardingResponse => {
 	const documents = (raw.documents ?? []).map((document) => {
-		const fileName = getFileName(document.documentType, document.s3Key);
+		const fileName = getFileNameFromUrl(
+			document.s3Key || document.fileUrl,
+			document.documentType,
+		);
+
 		return {
 			id: document.id,
 			documentType: document.documentType,
 			fileName,
 			fileUrl: document.fileUrl,
-			mimeType: getMimeType(fileName),
+			mimeType: getMimeTypeFromFileName(fileName),
 		};
 	});
 
@@ -148,7 +143,9 @@ export const normalizeVendorOnboardingResponse = (
 			certificateOfIncorporation: hasDocument("INCORPORATION_CERTIFICATE"),
 			msmeCertificate: hasDocument("MSME_CERTIFICATE"),
 			ndaCertificate: hasDocument("NDA_CERTIFICATE"),
-			ndaObtained: toYesNo(raw.ndaObtained),
+			ndaObtained: hasDocument("NDA_CERTIFICATE")
+				? toYesNo(true)
+				: toYesNo(raw.ndaObtained),
 		},
 		partTwo: {
 			vendorCode: raw.vendorCode ?? "",
@@ -177,7 +174,10 @@ export const normalizeVendorOnboardingResponse = (
 
 export const buildPublicFormData = (
 	values: VendorCreationFormOneValues,
-	submission: VendorCreationFormOneSubmission,
+	submission:
+		| VendorCreationFormOneSubmission
+		| VendorCreationFormOneDraftSubmission,
+	submitType: "DRAFT" | "SUBMIT", // NEW
 ) => {
 	const formData = new FormData();
 	const payload = buildVendorUpdatePayload(values);
@@ -185,13 +185,21 @@ export const buildPublicFormData = (
 	Object.entries(payload).forEach(([key, value]) => {
 		formData.append(key, value === null ? "" : String(value));
 	});
-	formData.append("dpdpConsent", "true");
 
-	submission.enclosureUploads.forEach(({ documentType, value }) => {
-		if (value?.file instanceof File) {
-			formData.append(documentType, value.file, value.name || value.file.name);
-		}
-	});
+	formData.append("submitType", submitType); // NEW
+	formData.append("dpdpConsent", String(submission.dpdpConsent));
+
+	submission.enclosureUploads.forEach(
+		({ documentType, value }: VendorEnclosureUploadItem) => {
+			if (value?.file instanceof File) {
+				formData.append(
+					documentType,
+					value.file,
+					value.name || value.file.name,
+				);
+			}
+		},
+	);
 
 	return formData;
 };

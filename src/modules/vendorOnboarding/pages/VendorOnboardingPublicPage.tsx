@@ -68,6 +68,7 @@ const VendorOnboardingPublicPage = () => {
 		isError,
 		handleFormOneChange,
 		handleVendorSubmitForm,
+		handleVendorDraftSubmitForm,
 	} = useVendorCreationForm({
 		role: "EXTERNAL_VENDOR",
 		isPublicForm: true,
@@ -174,6 +175,7 @@ const VendorOnboardingPublicPage = () => {
 				errors={formOneErrors}
 				onChange={handleFormOneChange}
 				onSubmit={handleVendorSubmitForm}
+				onSaveDraft={handleVendorDraftSubmitForm}
 				loading={mutationLoading}
 			/>
 		</PublicPagesLayout>

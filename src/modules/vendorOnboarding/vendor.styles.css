@@ -13,7 +13,7 @@
 		width: 100%;
 		min-width: 0;
 		flex-direction: column;
-		gap: var(--space-4);
+		gap: var(--space-2);
 
 		background-color: var(--color-bg-surface);
 		color: var(--color-text-primary);
@@ -399,6 +399,27 @@
 	}
 	.padding {
 		padding: var(--space-3) var(--space-4) var(--space-4);
+	}
+	@layer components {
+		.vendor-compliance-grid {
+			@apply grid grid-cols-1 items-start gap-4 xl:grid-cols-2;
+		}
+
+		.vendor-compliance-card {
+			@apply min-w-0  bg-white p-4;
+		}
+
+		.vendor-compliance-card-grid {
+			@apply grid min-w-0 grid-cols-1 items-start gap-4;
+		}
+
+		.vendor-compliance-upload {
+			@apply min-w-0;
+		}
+
+		.vendor-compliance-upload-height {
+			@apply min-h-[6rem];
+		}
 	}
 	/* =====================================================
 	   LAPTOP / SMALL DESKTOP

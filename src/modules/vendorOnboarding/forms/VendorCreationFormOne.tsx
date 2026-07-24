@@ -1,9 +1,9 @@
 import {
 	ArrowLeft,
 	Banknote,
-	Building2,
 	CheckCircle2,
 	FileCheck2,
+	FilePenLine,
 	Landmark,
 	LucideBriefcaseBusiness,
 	RefreshCcw,
@@ -30,8 +30,10 @@ import {
 	type VendorOnboardingDocument,
 } from "../types/vendorOnboarding.types";
 import {
+	useOptionalVendorCreationFormContext,
 	useVendorCreationFormOneController,
 	type VendorCreationFormOneSubmission,
+	type VendorCreationFormOneDraftSubmission,
 } from "../hooks/useVendorCreationForm";
 
 export type {
@@ -70,6 +72,10 @@ type VendorCreationFormOneProps = {
 	onSubmit?: (
 		submission: VendorCreationFormOneSubmission,
 	) => void | Promise<void>;
+	onSaveDraft?: (
+		// NEW
+		submission: VendorCreationFormOneDraftSubmission,
+	) => void | Promise<void>;
 
 	loading?: boolean;
 	submittedMessage?: string;
@@ -98,6 +104,7 @@ const VendorCreationFormOne = ({
 	onNext,
 	onBack,
 	onSubmit,
+	onSaveDraft,
 	errors,
 	initialDocuments = EMPTY_VENDOR_DOCUMENTS,
 	requireDocuments = true,
@@ -106,6 +113,10 @@ const VendorCreationFormOne = ({
 	submittedMessage,
 	actionText,
 }: VendorCreationFormOneProps) => {
+	const formContext = useOptionalVendorCreationFormContext();
+	const resolvedOnSaveDraft =
+		onSaveDraft ?? formContext?.handleVendorDraftSubmitForm;
+
 	const isReadOnly = mode === "view" || !canEdit;
 	const fieldMode: VendorFormMode = isReadOnly ? "view" : "edit";
 
@@ -116,14 +127,17 @@ const VendorCreationFormOne = ({
 		hasConfirmedDpdp,
 		dpdpError,
 		getEnclosureFile,
+		getEnclosureFiles,
 		isEnclosureRequired,
 		handleEnclosureChange,
+		handleEnclosureFilesChange,
 		handleConditionalFieldChange,
 		openDpdpModal,
 		closeDpdpModal,
 		handleDpdpConsentChange,
 		handleAcceptDpdpTerms,
 		handleReset,
+		handleSaveDraft,
 		handleFormAction,
 		setHasConfirmedDpdp,
 	} = useVendorCreationFormOneController({
@@ -134,6 +148,7 @@ const VendorCreationFormOne = ({
 		onChange,
 		onNext,
 		onSubmit,
+		onSaveDraft: resolvedOnSaveDraft,
 	});
 
 	return (
@@ -214,7 +229,16 @@ const VendorCreationFormOne = ({
 									disabled={loading}
 									onClick={handleReset}
 								/>
-
+								<Button
+									type="button"
+									text="Save as Draft"
+									Icon={FilePenLine}
+									size="sm"
+									appearance="standard"
+									variant="outline"
+									disabled={loading}
+									onClick={handleSaveDraft}
+								/>
 								<Button
 									type="button"
 									text={
@@ -475,9 +499,34 @@ const VendorCreationFormOne = ({
 							field.documentType !== "MSME_CERTIFICATE" &&
 							field.documentType !== "NDA_CERTIFICATE",
 					).map((field) => {
+						const isOtherAttachment = field.documentType === "ADDITIONAL_DOC_1";
 						const uploadedFile = getEnclosureFile(field.documentType);
 
-						return (
+						return isOtherAttachment ? (
+							<FileUploadField
+								key={field.documentType}
+								multiple
+								value={getEnclosureFiles(field.documentType)}
+								onChange={(nextValues) =>
+									handleEnclosureFilesChange(field, nextValues)
+								}
+								maxFiles={10}
+								kind="document"
+								label={field.label}
+								description={field.description}
+								required={isEnclosureRequired(field)}
+								error={enclosureErrors[field.statusKey]}
+								readonly={isReadOnly}
+								disabled={loading}
+								heightClassName="vendor-enclosure-upload-height"
+								className="vendor-enclosure-upload-field"
+								inputName={field.documentType}
+								showActions
+								// enableCaption
+								// captionLabel="Document caption"
+								// captionPlaceholder="Enter a short description for this document"
+							/>
+						) : (
 							<FileUploadField
 								key={field.documentType}
 								value={uploadedFile}
@@ -495,105 +544,117 @@ const VendorCreationFormOne = ({
 								className="vendor-enclosure-upload-field"
 								inputName={field.documentType}
 								showActions
+								// enableCaption
+								// captionLabel="Document caption"
+								// captionPlaceholder="Enter a short description for this document"
 							/>
 						);
 					})}
 				</div>
-				<div className="vendor-onboarding-msme-section">
-					<div>
-						<FormHeader title="MSME Details" Icon={Building2} />
-						<div className="vendor-onboarding-msme-section padding">
-							<SelectInput
-								mode={fieldMode}
-								name="msmeVendor"
-								label="MSME Vendor"
-								placeholder="Select option"
-								options={yesNoOptions}
-								value={getSelectedOption(yesNoOptions, values.msmeVendor)}
-								required
-								error={errors.msmeVendor}
-								helperText="Select whether this vendor is registered under MSME."
-								onChange={(option) =>
-									handleConditionalFieldChange(
-										"msmeVendor",
-										option?.value ?? "",
-									)
-								}
-							/>
+				<div>
+					<FormHeader title="Compliance Documents" Icon={FileCheck2} />
 
-							{values.msmeVendor === "Yes" ? (
-								<FileUploadField
-									value={getEnclosureFile("MSME_CERTIFICATE")}
-									onChange={(nextValue) => {
-										const field = VENDOR_DOCUMENT_FIELDS.find(
-											(item) => item.documentType === "MSME_CERTIFICATE",
-										);
-
-										if (field) {
-											handleEnclosureChange(field, nextValue);
-										}
-									}}
-									kind="document"
-									label="MSME Certificate"
-									description="Upload the MSME registration certificate."
+					<div className="vendor-compliance-grid">
+						<section className="vendor-compliance-card">
+							<div className="vendor-compliance-card-grid">
+								<SelectInput
+									mode={fieldMode}
+									name="msmeVendor"
+									label="MSME Vendor"
+									placeholder="Select option"
+									options={yesNoOptions}
+									value={getSelectedOption(yesNoOptions, values.msmeVendor)}
 									required
-									error={enclosureErrors.msmeCertificate}
-									readonly={isReadOnly}
-									disabled={loading}
-									heightClassName="vendor-enclosure-upload-height"
-									className="vendor-enclosure-upload-field"
-									inputName="MSME_CERTIFICATE"
-									showActions
+									error={errors.msmeVendor}
+									helperText="Select whether this vendor is registered under MSME."
+									onChange={(option) =>
+										handleConditionalFieldChange(
+											"msmeVendor",
+											option?.value ?? "",
+										)
+									}
 								/>
-							) : null}
-						</div>
-					</div>
-					<div>
-						<FormHeader title="NDA Section" Icon={Building2} />
-						<div className="vendor-onboarding-msme-section padding">
-							<SelectInput
-								mode={fieldMode}
-								name="ndaObtained"
-								label="Non-Disclosure Undertaking Obtained?"
-								placeholder="Select option"
-								options={yesNoOptions}
-								value={getSelectedOption(yesNoOptions, values.ndaObtained)}
-								error={errors.ndaObtained}
-								helperText="Confirm whether NDA is obtained."
-								onChange={(option) =>
-									handleConditionalFieldChange(
-										"ndaObtained",
-										option?.value ?? "",
-									)
-								}
-							/>
 
-							{values.ndaObtained === "Yes" ? (
-								<FileUploadField
-									value={getEnclosureFile("NDA_CERTIFICATE")}
-									onChange={(nextValue) => {
-										const field = VENDOR_DOCUMENT_FIELDS.find(
-											(item) => item.documentType === "NDA_CERTIFICATE",
-										);
+								{values.msmeVendor === "Yes" ? (
+									<FileUploadField
+										value={getEnclosureFile("MSME_CERTIFICATE")}
+										onChange={(nextValue) => {
+											const field = VENDOR_DOCUMENT_FIELDS.find(
+												(item) => item.documentType === "MSME_CERTIFICATE",
+											);
 
-										if (field) {
-											handleEnclosureChange(field, nextValue);
-										}
-									}}
-									kind="document"
-									label="NDA Certificate"
-									description="Upload the signed NDA certificate."
-									required
-									error={enclosureErrors.ndaCertificate}
-									readonly={isReadOnly}
-									disabled={loading}
-									heightClassName="vendor-enclosure-upload-height"
-									className="vendor-enclosure-upload-field"
-									inputName="NDA_CERTIFICATE"
-									showActions
+											if (field) {
+												handleEnclosureChange(field, nextValue);
+											}
+										}}
+										kind="document"
+										label="MSME Certificate"
+										description="Upload the MSME registration certificate."
+										required
+										error={enclosureErrors.msmeCertificate}
+										readonly={isReadOnly}
+										disabled={loading}
+										heightClassName="vendor-compliance-upload-height"
+										className="vendor-compliance-upload"
+										inputName="MSME_CERTIFICATE"
+										showActions
+										// enableCaption
+										// captionLabel="Document caption"
+										// captionPlaceholder="Enter a short description for this document"
+									/>
+								) : null}
+							</div>
+						</section>
+
+						<section className="vendor-compliance-card">
+							<div className="vendor-compliance-card-grid">
+								<SelectInput
+									mode={fieldMode}
+									name="ndaObtained"
+									label="Non-Disclosure Undertaking Obtained?"
+									placeholder="Select option"
+									options={yesNoOptions}
+									value={getSelectedOption(yesNoOptions, values.ndaObtained)}
+									error={errors.ndaObtained}
+									helperText="Confirm whether NDA is obtained."
+									onChange={(option) =>
+										handleConditionalFieldChange(
+											"ndaObtained",
+											option?.value ?? "",
+										)
+									}
 								/>
-							) : null}
-						</div>
+
+								{values.ndaObtained === "Yes" ? (
+									<FileUploadField
+										value={getEnclosureFile("NDA_CERTIFICATE")}
+										onChange={(nextValue) => {
+											const field = VENDOR_DOCUMENT_FIELDS.find(
+												(item) => item.documentType === "NDA_CERTIFICATE",
+											);
+
+											if (field) {
+												handleEnclosureChange(field, nextValue);
+											}
+										}}
+										kind="document"
+										label="NDA Certificate"
+										description="Upload the signed NDA certificate."
+										required
+										error={enclosureErrors.ndaCertificate}
+										readonly={isReadOnly}
+										disabled={loading}
+										heightClassName="vendor-compliance-upload-height"
+										className="vendor-compliance-upload"
+										inputName="NDA_CERTIFICATE"
+										showActions
+										// enableCaption
+										// captionLabel="Document caption"
+										// captionPlaceholder="Enter a short description for this document"
+									/>
+								) : null}
+							</div>
+						</section>
 					</div>
 				</div>
 				<Modal

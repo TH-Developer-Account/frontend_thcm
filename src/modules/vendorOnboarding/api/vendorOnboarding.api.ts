@@ -3,6 +3,7 @@ import { ServerAxios } from "../../../services/ServerAxios";
 import type {
 	UpdateVendorVariables,
 	VendorCreationFormOneValues,
+	VendorOnboardingDocument,
 	VendorOnboardingRawResponse,
 	VendorOnboardingResponse,
 } from "../types/vendorOnboarding.types";
@@ -57,6 +58,7 @@ export type PublicVendorSessionResponse = {
 	email?: string;
 	mobile?: string;
 	partOne?: VendorCreationFormOneValues;
+	documents?: VendorOnboardingDocument[];
 };
 
 export const vendorOnboardingApi = {
@@ -140,7 +142,18 @@ export const vendorOnboardingApi = {
 		);
 		return message;
 	},
-
+	draftSubmitPublic: async (
+		token: string,
+		formData: FormData,
+	): Promise<string> => {
+		const {
+			data: { message },
+		} = await ServerAxios.patch(
+			`${PUBLIC_VENDOR_URL}/${encodeURIComponent(token)}/draft`,
+			formData,
+		);
+		return message;
+	},
 	resendVendorLink: async (vendorRequestId: string) => {
 		const {
 			data: { data },

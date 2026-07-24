@@ -110,6 +110,14 @@ export function useSubmitPublicVendorFormMutation() {
 	});
 }
 
+export function useDraftSubmitPublicVendorFormMutation() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({ token, formData }: { token: string; formData: FormData }) =>
+			vendorOnboardingApi.draftSubmitPublic(token, formData),
+		onSuccess: () => invalidateVendor(queryClient),
+	});
+}
 export const useSubmitClarifiedUpdatedFormMutation = () => {
 	return useMutation({
 		mutationFn: (workflowId: string) =>

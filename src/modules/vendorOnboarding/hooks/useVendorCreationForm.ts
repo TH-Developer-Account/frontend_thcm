@@ -9,7 +9,7 @@ import { useAuth } from "../../../context/Auth/useAuth";
 import { workflowApi } from "../../../api/workflow.api";
 
 import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
-
+import { createRemoteFileUploadValue } from "../../../components/ui/FileUpload/fileUpload.helpers";
 import { vendorOnboardingApi } from "../api/vendorOnboarding.api";
 import {
 	// getApprovalIdForUser,
@@ -26,6 +26,7 @@ import {
 import {
 	useAcceptAndCloseVendorMutation,
 	useCreateVendorMutation,
+	useDraftSubmitPublicVendorFormMutation,
 	usePublicVendorSessionQuery,
 	useSubmitClarifiedUpdatedFormMutation,
 	useSubmitPublicVendorFormMutation,
@@ -65,7 +66,10 @@ export type VendorCreationFormOneSubmission = {
 	dpdpConsent: true;
 	enclosureUploads: VendorEnclosureUploadItem[];
 };
-
+export type VendorCreationFormOneDraftSubmission = {
+	dpdpConsent: boolean;
+	enclosureUploads: VendorEnclosureUploadItem[];
+};
 const REQUIRED_FORM_ONE_FIELDS: Partial<
 	Record<keyof VendorCreationFormOneValues, string>
 > = {
@@ -102,6 +106,18 @@ type WorkflowPreviewResponse = {
 		stages?: ApprovalStageLike[];
 	};
 };
+const createVendorDocumentUploadValue = (
+	document: VendorOnboardingDocument,
+): FileUploadValue =>
+	createRemoteFileUploadValue({
+		id: document.id,
+		url: document.fileUrl,
+		name: document.fileName,
+		type: document.mimeType,
+		size: document.size,
+		caption: document.caption,
+		fallbackName: document.documentType,
+	});
 
 const getPreviewStages = (preview: unknown): ApprovalStageLike[] => {
 	if (Array.isArray(preview)) {
@@ -131,39 +147,16 @@ const EDITABLE_STATUSES: readonly VendorOnboardingStatus[] = [
 	"IN_REVIEW",
 ];
 
-const getFileNameFromUrl = (
-	fileUrl: string,
-	documentType: VendorDocumentType,
-): string => {
-	try {
-		const fileName = new URL(fileUrl).pathname.split("/").pop();
-		return fileName || documentType;
-	} catch {
-		return fileUrl.split("/").pop() || documentType;
-	}
-};
-
-const getFileExtension = (fileName: string): string =>
-	fileName.split(".").pop()?.toLowerCase() ?? "";
-
-const getMimeType = (fileName: string): string => {
-	const mimeTypes: Record<string, string> = {
-		pdf: "application/pdf",
-		jpg: "image/jpeg",
-		jpeg: "image/jpeg",
-		png: "image/png",
-		webp: "image/webp",
-		doc: "application/msword",
-		docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-	};
-
-	return mimeTypes[getFileExtension(fileName)] ?? "";
-};
+const getDocumentCaption = (document: VendorOnboardingDocument): string =>
+	(document as VendorOnboardingDocument & { caption?: string | null })
+		.caption ?? "";
 
 const createInitialEnclosureUploads = (
 	initialDocuments: VendorOnboardingDocument[] = [],
-): VendorEnclosureUploadItem[] =>
-	VENDOR_DOCUMENT_FIELDS.map((field) => {
+): VendorEnclosureUploadItem[] => {
+	const singleDocumentUploads = VENDOR_DOCUMENT_FIELDS.filter(
+		(field) => field.documentType !== "ADDITIONAL_DOC_1",
+	).map((field) => {
 		const document = initialDocuments.find(
 			(item) => item.documentType === field.documentType,
 		);
@@ -176,28 +169,28 @@ const createInitialEnclosureUploads = (
 			};
 		}
 
-		const fileName =
-			document.fileName ||
-			getFileNameFromUrl(document.fileUrl, document.documentType);
-
 		return {
 			statusKey: field.statusKey,
 			documentType: field.documentType,
-			value: {
-				id: document.id,
-				file: null,
-				url: document.fileUrl,
-				name: fileName,
-				type: document.mimeType || getMimeType(fileName),
-				size: document.size ?? 0,
-				extension: getFileExtension(fileName),
-				sizeLabel: document.size
-					? `${(document.size / 1024).toFixed(1)} KB`
-					: "",
-				isLocal: false,
-			},
+			value: createVendorDocumentUploadValue(document),
 		};
 	});
+
+	const otherField = VENDOR_DOCUMENT_FIELDS.find(
+		(field) => field.documentType === "ADDITIONAL_DOC_1",
+	);
+	const otherUploads: VendorEnclosureUploadItem[] = otherField
+		? initialDocuments
+				.filter((document) => document.documentType === "ADDITIONAL_DOC_1")
+				.map((document) => ({
+					statusKey: otherField.statusKey,
+					documentType: otherField.documentType,
+					value: createVendorDocumentUploadValue(document),
+				}))
+		: [];
+
+	return [...singleDocumentUploads, ...otherUploads];
+};
 
 type UseVendorCreationFormOneControllerParams = {
 	values: VendorCreationFormOneValues;
@@ -212,6 +205,9 @@ type UseVendorCreationFormOneControllerParams = {
 	onSubmit?: (
 		submission: VendorCreationFormOneSubmission,
 	) => void | Promise<void>;
+	onSaveDraft?: (
+		submission: VendorCreationFormOneDraftSubmission,
+	) => void | Promise<void>;
 };
 
 export function useVendorCreationFormOneController({
@@ -222,6 +218,7 @@ export function useVendorCreationFormOneController({
 	onChange,
 	onNext,
 	onSubmit,
+	onSaveDraft,
 }: UseVendorCreationFormOneControllerParams) {
 	const [enclosureUploads, setEnclosureUploads] = React.useState<
 		VendorEnclosureUploadItem[]
@@ -239,7 +236,7 @@ export function useVendorCreationFormOneController({
 			initialDocuments
 				.map(
 					(document) =>
-						`${document.id}:${document.documentType}:${document.fileUrl}`,
+						`${document.id}:${document.documentType}:${document.fileUrl}:${getDocumentCaption(document)}`,
 				)
 				.sort()
 				.join("|"),
@@ -262,6 +259,14 @@ export function useVendorCreationFormOneController({
 		(documentType: VendorDocumentType): FileUploadValue | null =>
 			enclosureUploads.find((upload) => upload.documentType === documentType)
 				?.value ?? null,
+		[enclosureUploads],
+	);
+
+	const getEnclosureFiles = React.useCallback(
+		(documentType: VendorDocumentType): FileUploadValue[] =>
+			enclosureUploads
+				.filter((upload) => upload.documentType === documentType)
+				.flatMap((upload) => (upload.value ? [upload.value] : [])),
 		[enclosureUploads],
 	);
 
@@ -310,6 +315,32 @@ export function useVendorCreationFormOneController({
 			}
 		},
 		[isEnclosureRequired, onChange],
+	);
+
+	const handleEnclosureFilesChange = React.useCallback(
+		(field: VendorDocumentField, nextValues: FileUploadValue[]) => {
+			setEnclosureUploads((current) => [
+				...current.filter(
+					(upload) => upload.documentType !== field.documentType,
+				),
+				...nextValues.map((value) => ({
+					statusKey: field.statusKey,
+					documentType: field.documentType,
+					value,
+				})),
+			]);
+
+			setEnclosureErrors((current) => {
+				const next = { ...current };
+				if (nextValues.length === 0 && isEnclosureRequired(field)) {
+					next[field.statusKey] = `${field.label} is required.`;
+				} else {
+					delete next[field.statusKey];
+				}
+				return next;
+			});
+		},
+		[isEnclosureRequired],
 	);
 
 	const handleConditionalFieldChange = React.useCallback(
@@ -415,6 +446,21 @@ export function useVendorCreationFormOneController({
 		requireDpdpConsent,
 		validateEnclosures,
 	]);
+	const handleSaveDraft = React.useCallback(() => {
+		console.log("Draft button/controller clicked", {
+			hasOnSaveDraft: typeof onSaveDraft === "function",
+		});
+
+		if (!onSaveDraft) {
+			console.error("onSaveDraft was not provided to Form One controller");
+			return;
+		}
+
+		void onSaveDraft({
+			dpdpConsent: hasAcceptedDpdp,
+			enclosureUploads,
+		});
+	}, [onSaveDraft, hasAcceptedDpdp, enclosureUploads]);
 
 	return {
 		enclosureErrors,
@@ -423,8 +469,10 @@ export function useVendorCreationFormOneController({
 		hasConfirmedDpdp,
 		dpdpError,
 		getEnclosureFile,
+		getEnclosureFiles,
 		isEnclosureRequired,
 		handleEnclosureChange,
+		handleEnclosureFilesChange,
 		handleConditionalFieldChange,
 		openDpdpModal,
 		closeDpdpModal,
@@ -432,6 +480,7 @@ export function useVendorCreationFormOneController({
 		handleAcceptDpdpTerms,
 		handleReset,
 		handleFormAction,
+		handleSaveDraft,
 		setHasConfirmedDpdp,
 	};
 }
@@ -619,6 +668,7 @@ export function useVendorCreationForm({
 	const submitMutation = useSubmitVendorMutation();
 	const closeMutation = useAcceptAndCloseVendorMutation();
 	const publicSubmitMutation = useSubmitPublicVendorFormMutation();
+	const publicDraftSubmitMutation = useDraftSubmitPublicVendorFormMutation();
 	const submitClarifiedMutation = useSubmitClarifiedUpdatedFormMutation();
 
 	const status = detailQuery.data?.status;
@@ -969,7 +1019,39 @@ export function useVendorCreationForm({
 			setIsAssigningWorkflow(false);
 		}
 	};
+	/*
+	|--------------------------------------------------------------------------
+	| Public vendor draft version submission
+	|--------------------------------------------------------------------------
+	*/
 
+	const submitDraftPublicVendor = async (
+		submission?: VendorCreationFormOneDraftSubmission,
+	) => {
+		console.log("CLicked draft");
+		if (!submission || !normalizedToken) return;
+
+		try {
+			await publicDraftSubmitMutation.mutateAsync({
+				token: normalizedToken,
+				formData: buildPublicFormData(formOneValues, submission, "DRAFT"),
+			});
+
+			showToast({
+				type: "success",
+				title: "Draft saved",
+				description: "Your vendor details were saved successfully.",
+			});
+
+			await publicQuery.refetch();
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "Unable to save draft",
+				description: getErrorMessage(error, "Failed to save draft."),
+			});
+		}
+	};
 	/*
 	|--------------------------------------------------------------------------
 	| Public vendor submission
@@ -1001,7 +1083,7 @@ export function useVendorCreationForm({
 		try {
 			await publicSubmitMutation.mutateAsync({
 				token: normalizedToken,
-				formData: buildPublicFormData(formOneValues, submission),
+				formData: buildPublicFormData(formOneValues, submission, "SUBMIT"),
 			});
 
 			await onSuccess?.();
@@ -1371,6 +1453,7 @@ export function useVendorCreationForm({
 		submitMutation.isPending ||
 		closeMutation.isPending ||
 		publicSubmitMutation.isPending ||
+		publicDraftSubmitMutation.isPending ||
 		submitClarifiedMutation.isPending ||
 		isAssigningWorkflow;
 
@@ -1382,9 +1465,11 @@ export function useVendorCreationForm({
 		vendorRequestId,
 		formOneValues,
 		formTwoValues,
-		formOneDocuments: detailQuery.data?.documents ?? [],
 		formOneErrors,
 		formTwoErrors,
+		formOneDocuments: isPublicForm
+			? (publicQuery.data?.documents ?? [])
+			: (detailQuery.data?.documents ?? []),
 
 		role,
 		user,
@@ -1412,6 +1497,8 @@ export function useVendorCreationForm({
 
 		publicSessionError: publicQuery.error,
 
+		vendorDraftLoading: publicDraftSubmitMutation.isPending,
+
 		mutationLoading,
 		isResubmission,
 
@@ -1426,6 +1513,7 @@ export function useVendorCreationForm({
 
 		handleVendorSubmitForm: submitPublicVendor,
 		handleSubmitSummary: submitForApproval,
+		handleVendorDraftSubmitForm: submitDraftPublicVendor,
 
 		handleApprove: async () => {
 			await detailQuery.refetch();
