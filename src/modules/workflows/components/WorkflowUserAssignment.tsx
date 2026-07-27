@@ -1,10 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Modal } from "../../../../components/common/Modal";
-import Button from "../../../../components/common/Button";
-import { mapUser, type User } from "../../user-profile/types/profile.types";
-import { ServerAxios } from "../../../../services/ServerAxios";
-import Avatar from "../../../../components/common/Avatar";
-import { SearchInput } from "../../../../components/forms/SearchInput";
+import { Modal } from "../../../components/common/Modal";
+import Button from "../../../components/common/Button";
+import {
+	mapUser,
+	type User,
+} from "../../admin/user-profile/types/profile.types";
+import { ServerAxios } from "../../../services/ServerAxios";
+import Avatar from "../../../components/common/Avatar";
+import { SearchInput } from "../../../components/forms/SearchInput";
 import type { WorkflowRow } from "../types/workflow.types";
 
 type AssignProps = {

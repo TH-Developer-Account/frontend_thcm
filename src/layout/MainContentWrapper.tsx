@@ -7,6 +7,7 @@ import { adminSidebar } from "../modules/admin/admin.sidebar";
 import { marketingSidebar } from "../modules/marketing/marketing.sidebar";
 import { DashboardLayout } from "./DashboardLayout";
 import { vendorSidebar } from "../modules/vendorOnboarding/vendor.sidebar";
+import { workflowSidebar } from "../modules/workflows/utils/workflow.sidebar";
 
 const MOBILE_SIDEBAR_QUERY = "(max-width: 767px)";
 
@@ -56,6 +57,9 @@ export default function MainContentWrapper() {
 		}
 		if (path.startsWith("/vendor")) {
 			return vendorSidebar;
+		}
+		if (path.startsWith("/workflow")) {
+			return workflowSidebar;
 		}
 
 		return [];

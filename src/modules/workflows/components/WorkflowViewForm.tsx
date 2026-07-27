@@ -1,6 +1,6 @@
-import { capitalize } from "../../../../utils/format";
+import { capitalize } from "../../../utils/format";
 import type { WorkflowBasics, WorkflowStage } from "../types/workflow.types";
-import WorkflowApproverCards from "./components/WorkflowApproverCards";
+import WorkflowApproverCards from "./WorkflowApproverCards";
 
 type WorkflowViewFormProps = {
 	basics: WorkflowBasics;

@@ -13,6 +13,7 @@ import VendorOnboardingPublicPage from "../modules/vendorOnboarding/pages/Vendor
 import AdminRoutes from "./adminRoutes";
 import MarketingRoutes from "./marketingRoutes";
 import ProtectedRoute from "./ProtectedRoute";
+import WorkflowRoutes from "./workflowRoutes";
 
 const AuthenticatedRoutes = () => {
 	return (
@@ -33,6 +34,7 @@ const AuthenticatedRoutes = () => {
 					<Route path="/marketing/*" element={<MarketingRoutes />} />
 					<Route path="/admin/*" element={<AdminRoutes />} />
 					<Route path="/vendor/*" element={<VendorRoutes />} />
+					<Route path="/workflow/*" element={<WorkflowRoutes />} />
 				</Route>
 			</Routes>
 		</SessionTimeoutProvider>

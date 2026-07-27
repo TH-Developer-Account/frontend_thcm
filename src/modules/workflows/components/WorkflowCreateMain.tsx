@@ -6,8 +6,8 @@ import type {
 	WorkFlowProps,
 	WorkflowGenErrors,
 	WorkflowStageErrors,
-} from "../types/workflow.types";
-import Button from "../../../../components/common/Button";
+} from "../../workflows/types/workflow.types";
+import Button from "../../../components/common/Button";
 
 type Props = WorkFlowProps & {
 	basicErrors: WorkflowGenErrors;

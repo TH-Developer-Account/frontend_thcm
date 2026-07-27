@@ -1,7 +1,7 @@
 import { createContext } from "react";
 import type { SortingState } from "@tanstack/react-table";
 import type { WorkflowCard } from "../types/workflow.types";
-import type { Option } from "../../../../components/forms/input.types";
+import type { Option } from "../../../components/forms/input.types";
 
 export interface WorkflowContextValue {
 	data: WorkflowCard[];

@@ -2,14 +2,6 @@
 @import "../../../styles/color.css";
 
 @layer components {
-	.workflow-page {
-		/* @apply space-y-5; */
-	}
-
-	.workflow-section {
-		/* @apply rounded-sm border border-zinc-200 bg-white shadow-sm; */
-	}
-
 	.workflow-section-header {
 		@apply flex flex-col gap-4  px-5 py-2 lg:flex-row lg:items-center lg:justify-between;
 	}

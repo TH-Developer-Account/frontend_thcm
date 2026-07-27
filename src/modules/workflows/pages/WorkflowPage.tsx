@@ -1,8 +1,8 @@
 import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 
-import { WorkflowProvider } from "./context/WorkflowProvider";
-import WorkflowTable from "./WorkflowTable/WorkflowTable";
+import { WorkflowProvider } from "../context/WorkflowProvider";
+import WorkflowTable from "../components/WorkflowTable";
 
 const WorkflowPage = () => {
 	return (

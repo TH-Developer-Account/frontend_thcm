@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ServerAxios } from "../../../../services/ServerAxios";
+import { ServerAxios } from "../../../services/ServerAxios";
 
-import WorkflowCreateMain from "./WorkflowCreateMain";
-import WorkflowCreateSidebar from "./components/WorkflowCreateSidebar";
+import WorkflowCreateMain from "../components/WorkflowCreateMain";
+import WorkflowCreateSidebar from "../components/WorkflowCreateSidebar";
 import { mapBasics, mapStages } from "../utils/workflow.helpers";
 import { api_routes } from "../constant/workflow.constant";
 import {
@@ -21,12 +21,12 @@ import type {
 	WorkflowStage,
 	WorkflowStageErrors,
 } from "../types/workflow.types";
-import { useToast } from "../../../../context/Auth/AuthContext";
-import { useAuth } from "../../../../context/Auth/useAuth";
-import PageSectionLayout from "../../../../layout/PageSectionLayout";
-import Card from "../../../../components/common/Card";
-import { PageHeader } from "../../../../components/ui/PageHeader";
-import { StepProgress } from "../../../../components/ui/StepProgress";
+import { useToast } from "../../../context/Auth/AuthContext";
+import { useAuth } from "../../../context/Auth/useAuth";
+import PageSectionLayout from "../../../layout/PageSectionLayout";
+import Card from "../../../components/common/Card";
+import { PageHeader } from "../../../components/ui/PageHeader";
+import { StepProgress } from "../../../components/ui/StepProgress";
 
 const WorkflowCreatePage = () => {
 	const { user, workspaceId, isLoading } = useAuth();
@@ -272,7 +272,7 @@ const WorkflowCreatePage = () => {
 				title: "Success",
 				description: data?.message || "Workflow saved successfully",
 			});
-			navigate(`/admin/workflows`);
+			navigate(`/workflow/listing`);
 		} catch (error: unknown) {
 			const message =
 				error instanceof Error ? error.message : "Failed to save workflow";
@@ -302,7 +302,7 @@ const WorkflowCreatePage = () => {
 						},
 						{
 							label: "Workflows Listing",
-							href: "/admin/workflows",
+							href: "/workflow/listing",
 						},
 						{
 							label: "Create workflow",

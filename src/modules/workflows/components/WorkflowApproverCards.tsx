@@ -1,4 +1,4 @@
-import type { WorkflowStage } from "../../types/workflow.types";
+import type { WorkflowStage } from "../../../../workflows/types/workflow.types";
 
 type Props = {
 	stages: WorkflowStage[];

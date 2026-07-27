@@ -3,11 +3,11 @@ import { api_routes } from "../constant/workflow.constant";
 import type { ReactNode } from "react";
 import type { SortingState } from "@tanstack/react-table";
 import type { WorkflowCard } from "../types/workflow.types";
-import { ServerAxios } from "../../../../services/ServerAxios";
+import { ServerAxios } from "../../../services/ServerAxios";
 import { WorkflowContext } from "./useWorkflowContextValue";
-import { useDebounce } from "../../../../hooks/useDebounce";
+import { useDebounce } from "../../../hooks/useDebounce";
 import { mapWorkflows } from "../utils/workflow.helpers";
-import type { Option } from "../../../../components/forms/input.types";
+import type { Option } from "../../../components/forms/input.types";
 
 interface WFProviderProps {
 	children: ReactNode;

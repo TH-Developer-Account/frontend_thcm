@@ -1,4 +1,4 @@
-import type { WorkflowBasics } from "../../types/workflow.types";
+import type { WorkflowBasics } from "../../../../workflows/types/workflow.types";
 
 type Props = {
 	stageCount: number;
