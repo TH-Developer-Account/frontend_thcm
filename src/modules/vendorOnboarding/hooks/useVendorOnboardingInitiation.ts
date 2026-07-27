@@ -4,8 +4,13 @@ import { useMutation } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { vendorInitationApi } from "../api/vendorOnboarding.api";
-import { useVendorInitiationDetailQuery } from "../queries/useVendorMutations";
+import {
+	useSendBackToVendorMutation,
+	useVendorInitiationDetailQuery,
+} from "../queries/useVendorMutations";
 import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";
+import { showSuccessToast } from "../../../utils/apiError.helper";
+import { useToast } from "../../../context/Auth/AuthContext";
 
 export type VendorOnboardingInitiationErrors = Partial<
 	Record<keyof VendorOnboardingInitiationPayload, string>
@@ -42,7 +47,7 @@ export const useVendorOnboardingInitiation = ({
 	onUpdateSuccess,
 }: UseVendorOnboardingInitiationParams = {}) => {
 	const navigate = useNavigate();
-
+	const { showToast } = useToast();
 	const params = useParams<{
 		id?: string;
 		onboardingId?: string;
@@ -159,6 +164,35 @@ export const useVendorOnboardingInitiation = ({
 		submitMutation.mutate(values);
 	};
 
+	/*
+	|--------------------------------------------------------------------------
+	| Send back to vendor 
+	|--------------------------------------------------------------------------
+	*/
+	const sendBackToVendorMutation = useSendBackToVendorMutation();
+
+	const handleSendBackToVendor = async () => {
+		if (!resolvedInitiationId) return;
+
+		try {
+			await sendBackToVendorMutation.mutateAsync(resolvedInitiationId);
+
+			showSuccessToast(
+				showToast,
+				"The form was sent back to the vendor successfully.",
+			);
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "Unable to send back",
+				description:
+					error instanceof Error
+						? error.message
+						: "Failed to send the form back to the vendor.",
+			});
+		}
+	};
+
 	return {
 		values,
 		errors,
@@ -175,7 +209,7 @@ export const useVendorOnboardingInitiation = ({
 		handleChange,
 		handleReset,
 		handleSubmit,
-
+		handleSendBackToVendor,
 		submitMutation,
 		updateMutation,
 	};

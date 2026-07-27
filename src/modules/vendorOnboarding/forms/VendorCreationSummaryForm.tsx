@@ -1,20 +1,11 @@
-import React, { type ReactNode } from "react";
-import { ArrowLeft, RefreshCcw, Save } from "lucide-react";
+import type { ReactNode } from "react";
+import { ArrowLeft, RefreshCcw, Save, Send } from "lucide-react";
 
 import Button from "../../../components/common/Button";
 import ApprovalWorkflowTableContent from "../../../components/ui/workflow/ApprovalWorkflowTableContent";
 import type { ApprovalStageLike } from "../../../components/ui/workflow/approvalWorkflow.types";
-import { useToast } from "../../../context/Auth/AuthContext";
-import { useAuth } from "../../../context/Auth/useAuth";
 
-import {
-	ReasonActionModal,
-	type ReasonActionMode,
-} from "../../../components/ui/ReasonActionModal";
-import {
-	getCurrentApprovalStage,
-	getIsUserInCurrentStage,
-} from "../../marketing/activity-planner/helpers/approvalWorkflow.helpers";
+import { ReasonActionModal } from "../../../components/ui/ReasonActionModal";
 
 import type {
 	VendorCreationFormOneValues,
@@ -24,7 +15,10 @@ import type {
 
 import VendorCreationFormOne from "./VendorCreationFormOne";
 import VendorCreationFormTwo from "./VendorCreationFormTwo";
-import { workflowApi } from "../../../api/workflow.api";
+import {
+	useOptionalVendorCreationFormContext,
+	useVendorCreationSummaryController,
+} from "../hooks/useVendorCreationForm";
 
 type VendorCreationSummaryMode = "edit" | "view";
 
@@ -33,8 +27,8 @@ const EMPTY_DOCUMENTS: VendorOnboardingDocument[] = [];
 type VendorCreationSummaryFormProps = {
 	mode?: VendorCreationSummaryMode;
 
-	formOneValues: VendorCreationFormOneValues;
-	formTwoValues: VendorCreationFormTwoValues;
+	formOneValues?: VendorCreationFormOneValues;
+	formTwoValues?: VendorCreationFormTwoValues;
 	formOneDocuments?: VendorOnboardingDocument[];
 
 	onFormTwoChange?: <K extends keyof VendorCreationFormTwoValues>(
@@ -48,7 +42,9 @@ type VendorCreationSummaryFormProps = {
 	onClarify?: () => void;
 	onAcceptAndClose?: () => void;
 	onFetchWorkflow?: () => void | Promise<void>;
+	onHandleSendBackVendor?: () => void | Promise<void>;
 
+	canSendBackToVendor?: boolean;
 	canSubmit?: boolean;
 	canApprove?: boolean;
 	canClarify?: boolean;
@@ -64,15 +60,10 @@ type VendorCreationSummaryFormProps = {
 	workflowLoading?: boolean;
 };
 
-type ReasonModalState = {
-	mode: ReasonActionMode | null;
-	loading: boolean;
-};
-
 const VendorCreationSummaryForm = ({
 	mode = "edit",
-	formOneValues,
-	formTwoValues,
+	formOneValues: formOneValuesProp,
+	formTwoValues: formTwoValuesProp,
 	formOneDocuments = EMPTY_DOCUMENTS,
 	onFormTwoChange,
 	onBack,
@@ -81,156 +72,94 @@ const VendorCreationSummaryForm = ({
 	onClarify,
 	onAcceptAndClose,
 	onFetchWorkflow,
-	canSubmit = false,
-	canApprove = false,
-	canClarify = false,
-	canAcceptAndClose = false,
-	canEditVendorCode = false,
-	canSaveVendorCode = false,
-	vendorCodeLoading = false,
+	onHandleSendBackVendor,
+	canSendBackToVendor,
+	canSubmit,
+	canApprove,
+	canClarify,
+	canAcceptAndClose,
+	canEditVendorCode,
+	canSaveVendorCode,
+	vendorCodeLoading,
 	onSaveVendorCode,
 	workflowStages = [],
 	commentsSection,
-	workflowLoading = false,
+	workflowLoading,
 }: VendorCreationSummaryFormProps) => {
+	const formContext = useOptionalVendorCreationFormContext();
+	const formOneValues = formOneValuesProp ?? formContext?.formOneValues ?? {};
+	const formTwoValues = formTwoValuesProp ?? formContext?.formTwoValues ?? {};
+	const resolvedDocuments =
+		formOneDocuments.length > 0
+			? formOneDocuments
+			: (formContext?.formOneDocuments ?? EMPTY_DOCUMENTS);
+	const resolvedWorkflowStages =
+		workflowStages.length > 0
+			? workflowStages
+			: (formContext?.workflowStages ?? []);
+	const resolvedFormTwoChange =
+		onFormTwoChange ?? formContext?.handleFormTwoChange;
+	const resolvedOnBack = onBack ?? formContext?.handleBack;
+	const resolvedOnSubmit = onSubmit ?? formContext?.handleSubmitSummary;
+	const resolvedOnApprove = onApprove ?? formContext?.handleApprove;
+	const resolvedOnClarify = onClarify ?? formContext?.handleClarify;
+	const resolvedOnAcceptAndClose =
+		onAcceptAndClose ?? formContext?.handleAcceptAndClose;
+	const resolvedOnFetchWorkflow =
+		onFetchWorkflow ?? formContext?.handleFetchWorkflow;
+	const resolvedOnSaveVendorCode =
+		onSaveVendorCode ?? formContext?.handleSaveVendorCode;
+	const resolvedCanSubmit = canSubmit ?? formContext?.canSubmit ?? false;
+	const resolvedCanApprove = canApprove ?? formContext?.canApprove ?? false;
+	const resolvedCanClarify = canClarify ?? formContext?.canClarify ?? false;
+	const resolvedCanAcceptAndClose =
+		canAcceptAndClose ?? formContext?.canAcceptAndClose ?? false;
+	const resolvedCanEditVendorCode =
+		canEditVendorCode ?? formContext?.canEditVendorCode ?? false;
+	const resolvedCanSaveVendorCode =
+		canSaveVendorCode ?? formContext?.canSaveVendorCode ?? false;
+	const resolvedVendorCodeLoading =
+		vendorCodeLoading ?? formContext?.vendorCodeLoading ?? false;
+	const resolvedWorkflowLoading =
+		workflowLoading ?? formContext?.workflowLoading ?? false;
+
 	const isViewMode = mode === "view";
-
-	const { user } = useAuth();
-	const { showToast } = useToast();
-
-	const [reasonModal, setReasonModal] = React.useState<ReasonModalState>({
-		mode: null,
-		loading: false,
+	const {
+		reasonModal,
+		canActOnCurrentStage,
+		openReasonModal,
+		closeReasonModal,
+		handleApprove,
+		handleReasonConfirm,
+		handleVendorCodeSave,
+	} = useVendorCreationSummaryController({
+		workflowStages: resolvedWorkflowStages,
+		onApprove: resolvedOnApprove,
+		onClarify: resolvedOnClarify,
+		onSaveVendorCode: resolvedOnSaveVendorCode,
 	});
 
-	const userId = user?.id;
-
-	const openReasonModal = React.useCallback(() => {
-		setReasonModal({
-			mode: "clarify-workflow",
-			loading: false,
-		});
-	}, []);
-
-	const closeReasonModal = React.useCallback(() => {
-		setReasonModal({
-			mode: null,
-			loading: false,
-		});
-	}, []);
-
 	const showSubmitAction =
-		!isViewMode && canSubmit && typeof onSubmit === "function";
+		!isViewMode && resolvedCanSubmit && typeof resolvedOnSubmit === "function";
 
-	const showApproveAction = canApprove;
+	const showApproveAction = resolvedCanApprove;
 
-	const showClarifyAction = canClarify && typeof onClarify === "function";
+	const showClarifyAction =
+		resolvedCanClarify && typeof resolvedOnClarify === "function";
 
 	const showAcceptAndCloseAction =
-		canAcceptAndClose && typeof onAcceptAndClose === "function";
+		resolvedCanAcceptAndClose && typeof resolvedOnAcceptAndClose === "function";
 
-	const currentStage = React.useMemo(
-		() => getCurrentApprovalStage(workflowStages),
-		[workflowStages],
-	);
+	const showSendBackAction =
+		canSendBackToVendor ?? formContext?.canSendBackToVendor ?? false;
 
-	const hasWorkflow = workflowStages.length > 0;
+	const hasWorkflow = resolvedWorkflowStages.length > 0;
 
 	const showWorkflowBlock =
-		hasWorkflow || typeof onFetchWorkflow === "function";
+		hasWorkflow || typeof resolvedOnFetchWorkflow === "function";
 
 	const hasApprovalActions =
 		showApproveAction || showClarifyAction || showAcceptAndCloseAction;
-
-	const isUserInCurrentStage = React.useMemo(
-		() => getIsUserInCurrentStage(workflowStages, userId),
-		[workflowStages, userId],
-	);
-
-	const canActOnCurrentStage = Boolean(currentStage && isUserInCurrentStage);
-
-	const handleApprove = React.useCallback(async () => {
-		if (!currentStage?.id) {
-			return;
-		}
-
-		try {
-			const { message } = await workflowApi.approveStage(currentStage.id);
-
-			showToast({
-				type: "success",
-				title: "Success",
-				description: message,
-			});
-
-			onApprove?.();
-		} catch (error) {
-			showToast({
-				type: "error",
-				title: "Error",
-				description:
-					error instanceof Error ? error.message : "Error while approving.",
-			});
-		}
-	}, [currentStage?.id, onApprove, showToast]);
-
-	const handleReasonConfirm = React.useCallback(
-		async (reason: string) => {
-			if (!currentStage?.id) {
-				showToast({
-					type: "error",
-					title: "Not allowed",
-					description: "No active approval stage found.",
-				});
-
-				return;
-			}
-
-			try {
-				setReasonModal((current) => ({
-					...current,
-					loading: true,
-				}));
-
-				const { message } = await workflowApi.clarifyStage(
-					currentStage.id,
-					reason,
-				);
-
-				showToast({
-					type: "success",
-					title: "Success",
-					description: message,
-				});
-
-				closeReasonModal();
-				onClarify?.();
-			} catch (error) {
-				showToast({
-					type: "error",
-					title: "Error",
-					description:
-						error instanceof Error
-							? error.message
-							: "Unable to complete this action.",
-				});
-			} finally {
-				setReasonModal((current) => ({
-					...current,
-					loading: false,
-				}));
-			}
-		},
-		[closeReasonModal, currentStage?.id, onClarify, showToast],
-	);
-
-	const handleVendorCodeSave = React.useCallback(() => {
-		if (!onSaveVendorCode) {
-			return;
-		}
-
-		void onSaveVendorCode();
-	}, [onSaveVendorCode]);
 
 	return (
 		<div className="vendor-summary-form">
@@ -239,7 +168,7 @@ const VendorCreationSummaryForm = ({
 				canEdit={false}
 				values={formOneValues}
 				errors={{}}
-				initialDocuments={formOneDocuments}
+				initialDocuments={resolvedDocuments}
 				requireDocuments={false}
 				requireDpdpConsent={false}
 			/>
@@ -247,11 +176,11 @@ const VendorCreationSummaryForm = ({
 			<VendorCreationFormTwo
 				mode="view"
 				canEdit={false}
-				canEditVendorCode={canEditVendorCode}
+				canEditVendorCode={resolvedCanEditVendorCode}
 				values={formTwoValues}
 				errors={{}}
-				onChange={onFormTwoChange}
-				vendorCodeLoading={vendorCodeLoading}
+				onChange={resolvedFormTwoChange}
+				vendorCodeLoading={resolvedVendorCodeLoading}
 			/>
 
 			{commentsSection ? (
@@ -261,23 +190,25 @@ const VendorCreationSummaryForm = ({
 			{showWorkflowBlock ? (
 				<section className="vendor-summary-block">
 					<div>
-						{!hasWorkflow && typeof onFetchWorkflow === "function" ? (
+						{!hasWorkflow && typeof resolvedOnFetchWorkflow === "function" ? (
 							<>
 								<span>Click the button to start the workflow</span>
 
 								<Button
 									type="button"
 									text={
-										workflowLoading ? "Fetching workflow..." : "Fetch workflow"
+										resolvedWorkflowLoading
+											? "Fetching workflow..."
+											: "Fetch workflow"
 									}
 									Icon={RefreshCcw}
 									size="sm"
 									appearance="standard"
 									variant="outline"
 									isTooltip="Click the button to start the workflow"
-									disabled={workflowLoading}
+									disabled={resolvedWorkflowLoading}
 									onClick={() => {
-										void onFetchWorkflow();
+										void resolvedOnFetchWorkflow();
 									}}
 								/>
 							</>
@@ -286,8 +217,8 @@ const VendorCreationSummaryForm = ({
 
 					{hasWorkflow ? (
 						<ApprovalWorkflowTableContent
-							stages={workflowStages}
-							showEmptyState={!onFetchWorkflow}
+							stages={resolvedWorkflowStages}
+							showEmptyState={!resolvedOnFetchWorkflow}
 						/>
 					) : (
 						<div className="vendor-summary-block-body">
@@ -319,7 +250,7 @@ const VendorCreationSummaryForm = ({
 
 			<div className="vendor-onboarding-form-actions">
 				<div className="vendor-approval-actions">
-					{onBack ? (
+					{resolvedOnBack ? (
 						<Button
 							type="button"
 							text="Back"
@@ -328,16 +259,18 @@ const VendorCreationSummaryForm = ({
 							iconPosition="left"
 							appearance="standard"
 							variant="outline"
-							onClick={onBack}
+							onClick={resolvedOnBack}
 						/>
 					) : null}
 				</div>
 
 				<div className="vendor-onboarding-form-actions-end">
-					{canEditVendorCode ? (
+					{resolvedCanEditVendorCode ? (
 						<Button
 							type="button"
-							text={vendorCodeLoading ? "Updating..." : "Update Vendor Code"}
+							text={
+								resolvedVendorCodeLoading ? "Updating..." : "Update Vendor Code"
+							}
 							Icon={Save}
 							iconPosition="left"
 							size="sm"
@@ -345,9 +278,9 @@ const VendorCreationSummaryForm = ({
 							variant="outline"
 							onClick={handleVendorCodeSave}
 							disabled={
-								!canSaveVendorCode ||
-								vendorCodeLoading ||
-								typeof onSaveVendorCode !== "function"
+								!resolvedCanSaveVendorCode ||
+								resolvedVendorCodeLoading ||
+								typeof resolvedOnSaveVendorCode !== "function"
 							}
 						/>
 					) : null}
@@ -372,7 +305,7 @@ const VendorCreationSummaryForm = ({
 									size="sm"
 									appearance="standard"
 									variant="brand"
-									disabled={reasonModal.loading || vendorCodeLoading}
+									disabled={reasonModal.loading || resolvedVendorCodeLoading}
 									onClick={() => {
 										void handleApprove();
 									}}
@@ -380,7 +313,6 @@ const VendorCreationSummaryForm = ({
 							) : null}
 						</>
 					) : null}
-
 					{showAcceptAndCloseAction ? (
 						<Button
 							type="button"
@@ -388,11 +320,10 @@ const VendorCreationSummaryForm = ({
 							size="sm"
 							appearance="standard"
 							variant="brand"
-							disabled={vendorCodeLoading}
-							onClick={onAcceptAndClose}
+							disabled={resolvedVendorCodeLoading}
+							onClick={resolvedOnAcceptAndClose}
 						/>
 					) : null}
-
 					{showSubmitAction ? (
 						<Button
 							type="button"
@@ -401,7 +332,19 @@ const VendorCreationSummaryForm = ({
 							appearance="standard"
 							variant="brand"
 							Icon={Save}
-							onClick={onSubmit}
+							onClick={resolvedOnSubmit}
+						/>
+					) : null}
+					{!canActOnCurrentStage && showSendBackAction ? (
+						<Button
+							type="button"
+							text="Send Back to Vendor"
+							size="sm"
+							// disabled
+							appearance="standard"
+							variant="outline"
+							Icon={Send}
+							onClick={onHandleSendBackVendor}
 						/>
 					) : null}
 				</div>

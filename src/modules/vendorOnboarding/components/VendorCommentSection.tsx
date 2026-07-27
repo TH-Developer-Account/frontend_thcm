@@ -7,11 +7,10 @@ import {
 import { useAuth } from "../../../context/Auth/useAuth";
 import type { ApprovalStageLike } from "../../marketing/activity-planner/utils/approvalTable.mapper";
 
-import {
-	getVendorAuditMessage,
-	getVendorCommentContext,
-} from "../helpers/vendorComment.helper";
+import { getVendorAuditMessage } from "../helpers/vendorComment.helper";
+
 import type { User } from "../../../components/ui/comments/comment.types";
+import { getWorkflowCommentContext } from "../../../components/ui/comments/comments.helper";
 
 type VendorCommentSectionProps = {
 	onboardingId?: string | null;
@@ -43,7 +42,7 @@ const VendorCommentSection = ({
 
 	const commentContext = React.useMemo(
 		() =>
-			getVendorCommentContext({
+			getWorkflowCommentContext({
 				stages: workflow,
 				userId: user?.id,
 				creator: resolvedCreator,

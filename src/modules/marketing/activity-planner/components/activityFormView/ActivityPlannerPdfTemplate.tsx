@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import ApprovalTable from "../../../../../components/ui/workflow/ApprovalTable";
 
 import type { EpcDetailResponse } from "../../types/epc.types";
-import type { WorkflowComment } from "../../types/workflow.types";
 import type { TableRow } from "../../types/lineItem.types";
 
 import { statusMap } from "../../types/activityplanner.types";
@@ -22,11 +21,12 @@ import { getAuditMessage } from "../../helpers/activityLogMessage.helper";
 import { mapCrfLineItemsToTableRows } from "../../forms/CRF/crf.mapper";
 import { mapEpfLineItemsToTableRows } from "../../forms/EPF/epf.mapper";
 import { mapWorkflowStagesToApprovalRows } from "../../utils/approvalTable.mapper";
+import type { CommentItem } from "../../../../../components/ui/comments";
 
 type Props = {
 	epcData?: EpcDetailResponse | null;
 	createdBy?: string;
-	workflowEntries?: WorkflowComment[];
+	workflowEntries?: CommentItem[];
 };
 
 type InfoItem = {
@@ -90,7 +90,7 @@ const getGrandTotal = (items: TableRow[] = []): number => {
 	return items.reduce((sum, item) => sum + getLineItemTotal(item), 0);
 };
 
-const getActorName = (entry: WorkflowComment): string => {
+const getActorName = (entry: CommentItem): string => {
 	const name = [entry.actor?.first_name, entry.actor?.last_name]
 		.filter(Boolean)
 		.join(" ")
@@ -99,9 +99,7 @@ const getActorName = (entry: WorkflowComment): string => {
 	return name || entry.actor?.email || "--";
 };
 
-const sortWorkflowEntries = (
-	entries: WorkflowComment[] = [],
-): WorkflowComment[] => {
+const sortWorkflowEntries = (entries: CommentItem[] = []): CommentItem[] => {
 	return [...entries].sort(
 		(firstEntry, secondEntry) =>
 			new Date(firstEntry.createdAt ?? 0).getTime() -
@@ -260,7 +258,7 @@ const LineItemsTable = ({
 const PdfCommentsAndAuditTrail = ({
 	entries = [],
 }: {
-	entries?: WorkflowComment[];
+	entries?: CommentItem[];
 }) => {
 	const sortedEntries = sortWorkflowEntries(entries);
 

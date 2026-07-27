@@ -44,7 +44,14 @@ const REPORT_EDITABLE_STATUSES = [
 	"REPORT_CLARIFICATION_REQUESTED",
 	"CLARIFY_REPORT",
 ];
-
+export const REPORT_ELIGIBLE_STATUSES = new Set([
+	"CONDUCTED",
+	"REPORT_SUBMITTED",
+	"CLARIFY_REPORT",
+	"VALIDATED",
+	"DEVIATION_IN_PROGRESS",
+	"CLOSED",
+]);
 const hasDeviationData = (epcData?: EpcDetailResponse | null) => {
 	return Boolean(
 		epcData?.deviationAmount ||

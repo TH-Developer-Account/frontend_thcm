@@ -31,10 +31,12 @@ export type WorkflowPersonLike = {
 	lastName?: string | null;
 	name?: string | null;
 	email?: string | null;
+	avatarUrl?: string | null;
 };
 
 export type ActiveWorkflowApprovalLike = {
 	id?: string;
+	approverId?: string;
 	status?: string | null;
 	approver?: WorkflowPersonLike | null;
 	user?: WorkflowPersonLike | null;
@@ -64,6 +66,23 @@ export type ApprovalStageLike = {
 	approvals?: ActiveWorkflowApprovalLike[];
 	approvers?: PreviewWorkflowApproverLike[];
 };
+export type WorkflowStage = {
+	id: string;
+	workflowId: string;
+	stageOrder: number;
+	iteration: number;
+	isCurrentIteration: boolean;
+	strategy: "ALL" | "ANY" | "SOME" | "QUORUM";
+	minApprovals: number | null;
+	startedAt: ApiDateString | null;
+	dueAt: ApiDateString | null;
+	escalatedTo: string | null;
+	status: "PENDING" | "IN_PROGRESS" | "APPROVED" | "REJECTED";
+	approvals: EpcWorkflowApproval[];
+	stageName?: string;
+	name?: string;
+};
+
 export type ApprovalWorkflowStage = {
 	id: string;
 	workflowId: string;
@@ -97,4 +116,12 @@ export type EpcWorkflowApproval = {
 };
 export type MapWorkflowStagesOptions = {
 	showOnlyCurrentStageStatus?: boolean;
+};
+
+export type ApprovalLike = {
+	id?: string;
+	approverId?: string | null;
+	status?: string | null;
+	approver?: WorkflowPersonLike | null;
+	user?: WorkflowPersonLike | null;
 };

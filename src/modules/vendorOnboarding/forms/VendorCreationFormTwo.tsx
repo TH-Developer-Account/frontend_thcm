@@ -4,6 +4,7 @@ import {
 	Banknote,
 	FileCheck2,
 	RefreshCcw,
+	Save,
 	ShieldCheck,
 } from "lucide-react";
 
@@ -20,6 +21,7 @@ import type {
 	VendorFormErrors,
 	VendorFormMode,
 } from "../types/vendorOnboarding.types";
+import { useOptionalVendorCreationFormContext } from "../hooks/useVendorCreationForm";
 
 export type VendorCreationFormTwoProps = {
 	mode?: VendorFormMode;
@@ -35,6 +37,7 @@ export type VendorCreationFormTwoProps = {
 
 	onBack?: () => void;
 	onNext?: () => void;
+	onSaveDraft?: () => void;
 
 	errors?: VendorFormErrors<VendorCreationFormTwoValues>;
 
@@ -118,14 +121,25 @@ const VendorCreationFormTwo = ({
 	mode = "edit",
 	canEdit = true,
 	canEditVendorCode = false,
-	values = {},
-	onChange,
-	onBack,
-	onNext,
-	errors = {},
-	loading = false,
-	vendorCodeLoading = false,
+	values: valuesProp,
+	onChange: onChangeProp,
+	onBack: onBackProp,
+	onNext: onNextProp,
+	onSaveDraft: onSaveDraftProp,
+	errors: errorsProp,
+	loading: loadingProp = false,
+	vendorCodeLoading: vendorCodeLoadingProp = false,
 }: VendorCreationFormTwoProps) => {
+	const formContext = useOptionalVendorCreationFormContext();
+	const values = valuesProp ?? formContext?.formTwoValues ?? {};
+	const errors = errorsProp ?? formContext?.formTwoErrors ?? {};
+	const onChange = onChangeProp ?? formContext?.handleFormTwoChange;
+	const onBack = onBackProp ?? formContext?.handleBack;
+	const onNext = onNextProp ?? formContext?.handleSaveFormTwo;
+	const onSaveDraft = onSaveDraftProp ?? formContext?.handleSaveFormTwoDraft;
+	const loading = loadingProp || formContext?.mutationLoading || false;
+	const vendorCodeLoading =
+		vendorCodeLoadingProp || formContext?.vendorCodeLoading || false;
 	const isReadOnly = mode === "view" || !canEdit;
 
 	const fieldMode: VendorFormMode = isReadOnly ? "view" : "edit";
@@ -158,6 +172,17 @@ const VendorCreationFormTwo = ({
 								appearance="standard"
 								variant="outline"
 								disabled={loading}
+							/>
+
+							<Button
+								type="button"
+								text={loading ? "Saving..." : "Save as Draft"}
+								Icon={Save}
+								size="sm"
+								appearance="standard"
+								variant="outline"
+								onClick={onSaveDraft}
+								disabled={loading || !onSaveDraft}
 							/>
 
 							<Button
@@ -337,20 +362,6 @@ const VendorCreationFormTwo = ({
 						helperText="Confirm whether vendor self assessment form is obtained."
 						onChange={(option) =>
 							onChange?.("vendorSelfAssessmentObtained", option?.value ?? "")
-						}
-					/>
-
-					<SelectInput
-						mode={fieldMode}
-						name="ndaObtained"
-						label="Non-Disclosure Undertaking Obtained?"
-						placeholder="Select option"
-						options={yesNoOptions}
-						value={getSelectedOption(yesNoOptions, values.ndaObtained)}
-						error={errors.ndaObtained}
-						helperText="Confirm whether NDA is obtained."
-						onChange={(option) =>
-							onChange?.("ndaObtained", option?.value ?? "")
 						}
 					/>
 

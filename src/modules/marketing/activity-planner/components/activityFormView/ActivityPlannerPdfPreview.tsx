@@ -8,13 +8,13 @@ import { Modal } from "../../../../../components/common/Modal";
 import ActivityPlannerPdfTemplate from "./ActivityPlannerPdfTemplate";
 
 import type { EpcDetailResponse } from "../../types/epc.types";
-import type { WorkflowComment } from "../../types/workflow.types";
+import type { CommentItem } from "../../../../../components/ui/comments";
 
 type ActivityPlannerPdfPreviewProps = {
 	open: boolean;
 	epcData?: EpcDetailResponse | null;
 	createdBy?: string;
-	workflowEntries?: WorkflowComment[];
+	workflowEntries?: CommentItem[];
 	onClose: () => void;
 };
 

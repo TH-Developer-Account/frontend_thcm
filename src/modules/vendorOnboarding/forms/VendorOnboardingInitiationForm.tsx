@@ -60,6 +60,7 @@ const VendorOnboardingInitiationForm = ({
 		onUpdateSuccess: onSuccess,
 	});
 
+	const canRetriggerEmail = isViewMode && values.status === "AWAITING_VENDOR";
 	const handleCancel = () => {
 		if (onCancel) {
 			onCancel();
@@ -76,8 +77,8 @@ const VendorOnboardingInitiationForm = ({
 				onSubmit={(event) => {
 					event.preventDefault();
 
-					if (!isViewMode) {
-						handleSubmit();
+					if (!isViewMode || canRetriggerEmail) {
+						void handleSubmit();
 					}
 				}}
 			>
@@ -201,18 +202,18 @@ const VendorOnboardingInitiationForm = ({
 							/>
 						</div>
 					)}
-					{values.status === "AWAITING_VENDOR" ? (
+					{canRetriggerEmail && (
 						<Button
 							type="submit"
-							text="Re-Trigger Email"
+							text={isSubmitting ? "Sending..." : "Re-Trigger Email"}
 							Icon={Send}
 							iconPosition="left"
 							size="sm"
 							appearance="standard"
 							variant="brand"
-							disabled={isSubmitting}
+							disabled={isSubmitting || isDetailLoading}
 						/>
-					) : null}
+					)}
 				</div>
 			</form>
 		</Card>

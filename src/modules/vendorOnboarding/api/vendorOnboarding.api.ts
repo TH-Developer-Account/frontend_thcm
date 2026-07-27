@@ -3,6 +3,7 @@ import { ServerAxios } from "../../../services/ServerAxios";
 import type {
 	UpdateVendorVariables,
 	VendorCreationFormOneValues,
+	VendorOnboardingDocument,
 	VendorOnboardingRawResponse,
 	VendorOnboardingResponse,
 } from "../types/vendorOnboarding.types";
@@ -57,6 +58,7 @@ export type PublicVendorSessionResponse = {
 	email?: string;
 	mobile?: string;
 	partOne?: VendorCreationFormOneValues;
+	documents?: VendorOnboardingDocument[];
 };
 
 export const vendorOnboardingApi = {
@@ -98,6 +100,7 @@ export const vendorOnboardingApi = {
 		const {
 			data: { data },
 		} = await ServerAxios.patch(`${VENDOR_URL}/${vendorRequestId}`, payload);
+
 		return data;
 	},
 
@@ -139,7 +142,18 @@ export const vendorOnboardingApi = {
 		);
 		return message;
 	},
-
+	draftSubmitPublic: async (
+		token: string,
+		formData: FormData,
+	): Promise<string> => {
+		const {
+			data: { message },
+		} = await ServerAxios.patch(
+			`${PUBLIC_VENDOR_URL}/${encodeURIComponent(token)}/draft`,
+			formData,
+		);
+		return message;
+	},
 	resendVendorLink: async (vendorRequestId: string) => {
 		const {
 			data: { data },
@@ -147,6 +161,14 @@ export const vendorOnboardingApi = {
 		return data;
 	},
 
+	sendBackToVendor: async (vendorRequestId: string) => {
+		const {
+			data: { data },
+		} = await ServerAxios.post(
+			`${VENDOR_URL}/${vendorRequestId}/send-back-to-vendor`,
+		);
+		return data;
+	},
 	assignWorkflow: async (payload: {
 		subjectType: string;
 		subjectId: string;

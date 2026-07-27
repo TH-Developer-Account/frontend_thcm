@@ -27,6 +27,7 @@ import {
 	revokeFilePreview,
 	validateUploadFile,
 } from "./fileUpload.helpers";
+import FormInput from "../../forms/FormInput";
 
 const joinClassNames = (
 	...classNames: Array<string | false | null | undefined>
@@ -292,9 +293,14 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 
 	return (
 		<div
-			className={joinClassNames("form-field", "file-upload-field", className)}
+			className={joinClassNames(
+				"form-field",
+				"file-upload-field",
+				isMultiple && "file-upload-field--multiple",
+				className,
+			)}
 		>
-			{label && values.length > 0 ? (
+			{label ? (
 				<div className="form-label-row">
 					<label htmlFor={inputId} className="form-label">
 						{label}
@@ -307,9 +313,7 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 						</span>
 					) : null}
 				</div>
-			) : (
-				<div className="py-2.5"></div>
-			)}
+			) : null}
 
 			<input
 				id={inputId}
@@ -326,7 +330,12 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 			/>
 
 			{values.length > 0 ? (
-				<div className="file-upload-list flex flex-col gap-2">
+				<div
+					className={joinClassNames(
+						"file-upload-list",
+						isMultiple ? "file-upload-list--grid" : "flex flex-col gap-2",
+					)}
+				>
 					{values.map((item, index) => (
 						<FileUploadPreviewCard
 							key={getValueId(item)}
@@ -437,7 +446,7 @@ const FileUploadPreviewCard = React.memo(
 					heightClassName,
 				)}
 			>
-				<div className="file-upload-preview-body flex min-h-12 items-center gap-2 px-2.5 py-1.5">
+				<div className="file-upload-preview-body flex min-h-8 items-center gap-2 px-2.5 py-1.5">
 					<div className="file-upload-preview-thumbnail flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-slate-100 text-slate-600">
 						{showImagePreview ? (
 							<img
@@ -466,7 +475,7 @@ const FileUploadPreviewCard = React.memo(
 								? "Image"
 								: showPdfPreview
 									? "PDF document"
-									: value.type || "Uploaded file"}
+									: "Uploaded file"}
 							{value.sizeLabel ? ` · ${value.sizeLabel}` : ""}
 						</p>
 					</div>
@@ -521,26 +530,24 @@ const FileUploadPreviewCard = React.memo(
 								<span className="form-required"> *</span>
 							) : null}
 						</label>
-						<textarea
+						<FormInput
 							id={captionId}
 							name={`file-caption-${index}`}
-							rows={2}
 							value={value.caption ?? ""}
 							placeholder={captionPlaceholder}
 							disabled={disabled}
 							readOnly={readonly}
 							required={captionRequired}
-							maxLength={500}
 							className="file-upload-caption-input"
 							aria-invalid={Boolean(captionError)}
 							onChange={(event) => onCaptionChange(value, event.target.value)}
 						/>
-						<div className="file-upload-caption-meta">
-							<span>
+						{/* <div className="file-upload-caption-meta">
+							{/* <span>
 								Use a short description suitable for the final report.
 							</span>
 							<span>{value.caption?.length ?? 0}/500</span>
-						</div>
+						</div> */}
 						{captionError ? (
 							<p className="form-error-text" role="alert">
 								{captionError}
@@ -622,8 +629,8 @@ type EmptyStateProps = {
 
 const FileUploadEmptyState = React.memo(
 	({
-		label,
-		required,
+		// label,
+		// required,
 		description,
 		heightClassName,
 		disabled,
@@ -641,8 +648,8 @@ const FileUploadEmptyState = React.memo(
 		>
 			<span className="file-upload-empty-copy min-w-0">
 				<span className="file-upload-empty-title block truncate text-xs font-normal text-slate-900">
-					{label}
-					{required ? <span className="form-required"> *</span> : null}
+					Upload file
+					{/* {required ? <span className="form-required"> *</span> : null} */}
 				</span>
 				<span className="file-upload-empty-description sr-only">
 					{description ??

@@ -110,9 +110,29 @@ export function useSubmitPublicVendorFormMutation() {
 	});
 }
 
+export function useDraftSubmitPublicVendorFormMutation() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({ token, formData }: { token: string; formData: FormData }) =>
+			vendorOnboardingApi.draftSubmitPublic(token, formData),
+		onSuccess: () => invalidateVendor(queryClient),
+	});
+}
 export const useSubmitClarifiedUpdatedFormMutation = () => {
 	return useMutation({
 		mutationFn: (workflowId: string) =>
 			vendorOnboardingApi.activateFirstStage(workflowId),
 	});
 };
+
+export function useSendBackToVendorMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (vendorRequestId: string) =>
+			vendorOnboardingApi.sendBackToVendor(vendorRequestId),
+
+		onSuccess: (_data, vendorRequestId) =>
+			invalidateVendor(queryClient, vendorRequestId),
+	});
+}

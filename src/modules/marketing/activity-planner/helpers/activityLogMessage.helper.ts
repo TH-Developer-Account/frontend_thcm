@@ -1,24 +1,13 @@
+import type { CommentItem } from "../../../../components/ui/comments";
 import { formatDateTime } from "../../../../utils/format";
 
-export type AuditComment = {
-	action?: string | null;
-	reason?: string | null;
-	metadata?: Record<string, unknown> | null;
-	stageName?: string | null;
-	actor?: {
-		first_name?: string | null;
-		last_name?: string | null;
-	};
-	createdAt: string;
-};
-
-export const getActorName = (comment: AuditComment) => {
+export const getActorName = (comment: CommentItem) => {
 	return [comment.actor?.first_name, comment.actor?.last_name]
 		.filter(Boolean)
 		.join(" ");
 };
 
-export const getAuditMessage = (comment: AuditComment) => {
+export const getAuditMessage = (comment: CommentItem) => {
 	const actorName = getActorName(comment) || "Someone";
 	const action = comment.action?.toUpperCase();
 	const metadataReason = comment.metadata?.reason;
