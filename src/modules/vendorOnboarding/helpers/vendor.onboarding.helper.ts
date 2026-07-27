@@ -169,6 +169,7 @@ export const normalizeVendorOnboardingResponse = (
 		activeWorkflow: raw.activeWorkflow,
 		createdAt: raw.created_at,
 		updatedAt: raw.updated_at,
+		referenceNumber: raw.referenceNumber,
 	};
 };
 

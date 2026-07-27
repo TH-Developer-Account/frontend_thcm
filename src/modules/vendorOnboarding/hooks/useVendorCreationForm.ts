@@ -712,6 +712,7 @@ export function useVendorCreationForm({
 	const submitClarifiedMutation = useSubmitClarifiedUpdatedFormMutation();
 
 	const status = detailQuery.data?.status;
+	const referenceNumber = detailQuery.data?.referenceNumber;
 	const activeWorkflow = detailQuery.data?.activeWorkflow ?? null;
 	const workflowId = activeWorkflow?.id ?? null;
 
@@ -1533,6 +1534,7 @@ export function useVendorCreationForm({
 		role,
 		user,
 		status,
+		referenceNumber,
 
 		canEditFormOne: isThcmProposer || canEditMainForm,
 		canEditFormTwo: canEditMainForm,

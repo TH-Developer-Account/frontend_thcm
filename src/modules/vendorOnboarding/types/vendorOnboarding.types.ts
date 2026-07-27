@@ -117,6 +117,7 @@ export type VendorUpdatePayload = {
 export type VendorOnboardingResponse = {
 	id: string;
 	status: VendorOnboardingStatus;
+	referenceNumber: string | undefined;
 	partOne: VendorCreationFormOneValues;
 	partTwo: VendorCreationFormTwoValues;
 	documents: VendorOnboardingDocument[];
