@@ -99,6 +99,7 @@ const VendorCreationSummaryForm = ({
 			: (formContext?.workflowStages ?? []);
 	const resolvedFormTwoChange =
 		onFormTwoChange ?? formContext?.handleFormTwoChange;
+	const resolvedOnBack = onBack ?? formContext?.handleBack;
 	const resolvedOnSubmit = onSubmit ?? formContext?.handleSubmitSummary;
 	const resolvedOnApprove = onApprove ?? formContext?.handleApprove;
 	const resolvedOnClarify = onClarify ?? formContext?.handleClarify;
@@ -249,7 +250,7 @@ const VendorCreationSummaryForm = ({
 
 			<div className="vendor-onboarding-form-actions">
 				<div className="vendor-approval-actions">
-					{onBack ? (
+					{resolvedOnBack ? (
 						<Button
 							type="button"
 							text="Back"
@@ -258,7 +259,7 @@ const VendorCreationSummaryForm = ({
 							iconPosition="left"
 							appearance="standard"
 							variant="outline"
-							onClick={onBack}
+							onClick={resolvedOnBack}
 						/>
 					) : null}
 				</div>

@@ -10,7 +10,10 @@ import { workflowApi } from "../../../api/workflow.api";
 
 import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
 import { createRemoteFileUploadValue } from "../../../components/ui/FileUpload/fileUpload.helpers";
-import { vendorOnboardingApi } from "../api/vendorOnboarding.api";
+import {
+	vendorOnboardingApi,
+	type PublicVendorSessionResponse,
+} from "../api/vendorOnboarding.api";
 import {
 	// getApprovalIdForUser,
 	getCurrentApprovalStage,
@@ -87,6 +90,34 @@ const REQUIRED_FORM_ONE_FIELDS: Partial<
 	gstin: "GSTIN is required.",
 	pan: "PAN is required.",
 	msmeVendor: "MSME Vendor is required.",
+};
+
+const EMPTY_FORM_ONE_VALUES: VendorCreationFormOneValues = {
+	vendorName: "",
+	completeAddress: "",
+	state: "",
+	city: "",
+	pinCode: "",
+	mobile: "",
+	email: "",
+	msmeVendor: "",
+	msmeCertificateAttached: "",
+	ndaObtained: "",
+};
+
+const normalizePublicFormOneValues = (
+	data: PublicVendorSessionResponse,
+): VendorCreationFormOneValues => {
+	const source =
+		data.partOne && Object.keys(data.partOne).length > 0 ? data.partOne : data;
+
+	return {
+		...EMPTY_FORM_ONE_VALUES,
+		...source,
+		vendorName: source.vendorName ?? data.vendorName ?? "",
+		email: source.email ?? data.email ?? "",
+		mobile: source.mobile ?? data.mobile ?? "",
+	};
 };
 
 const isEmptyFormValue = (value: unknown): boolean =>
@@ -254,7 +285,6 @@ export function useVendorCreationFormOneController({
 
 		return () => window.clearTimeout(syncDocuments);
 	}, [documentsKey, initialDocuments]);
-
 	const getEnclosureFile = React.useCallback(
 		(documentType: VendorDocumentType): FileUploadValue | null =>
 			enclosureUploads.find((upload) => upload.documentType === documentType)
@@ -447,14 +477,7 @@ export function useVendorCreationFormOneController({
 		validateEnclosures,
 	]);
 	const handleSaveDraft = React.useCallback(() => {
-		console.log("Draft button/controller clicked", {
-			hasOnSaveDraft: typeof onSaveDraft === "function",
-		});
-
-		if (!onSaveDraft) {
-			console.error("onSaveDraft was not provided to Form One controller");
-			return;
-		}
+		if (!onSaveDraft) return;
 
 		void onSaveDraft({
 			dpdpConsent: hasAcceptedDpdp,
@@ -622,8 +645,8 @@ export function useVendorCreationForm({
 	const [currentStep, setCurrentStep] = React.useState(1);
 	const [createdVendorId, setCreatedVendorId] = React.useState("");
 
-	const [formOneValues, setFormOneValues] =
-		React.useState<VendorCreationFormOneValues>(EMPTY_FORM_ONE);
+	const [formOneValuesState, setFormOneValues] =
+		React.useState<VendorCreationFormOneValues | null>(null);
 
 	const [formTwoValues, setFormTwoValues] =
 		React.useState<VendorCreationFormTwoValues>(EMPTY_FORM_TWO);
@@ -662,6 +685,23 @@ export function useVendorCreationForm({
 		normalizedToken,
 		isPublicForm,
 	);
+
+	const publicFormInitialValues = React.useMemo(
+		() =>
+			publicQuery.data
+				? normalizePublicFormOneValues(publicQuery.data)
+				: EMPTY_FORM_ONE,
+		[publicQuery.data],
+	);
+
+	/*
+	 * Public query data remains the source of truth until the first edit.
+	 * The first change copies the complete query-backed form into local state,
+	 * after which query refetches cannot overwrite the user's edits.
+	 */
+	const formOneValues =
+		formOneValuesState ??
+		(isPublicForm ? publicFormInitialValues : EMPTY_FORM_ONE);
 
 	const createMutation = useCreateVendorMutation();
 	const updateMutation = useUpdateVendorMutation();
@@ -786,44 +826,6 @@ export function useVendorCreationForm({
 
 	/*
 	|--------------------------------------------------------------------------
-	| Initialize public vendor form
-	|--------------------------------------------------------------------------
-	*/
-
-	const publicInitKeyRef = React.useRef("");
-
-	React.useEffect(() => {
-		const data = publicQuery.data;
-
-		if (!isPublicForm || !data) {
-			return;
-		}
-
-		const key = `${normalizedToken}:${publicQuery.dataUpdatedAt}`;
-
-		if (publicInitKeyRef.current === key) {
-			return;
-		}
-
-		publicInitKeyRef.current = key;
-
-		const partOne = data.partOne ?? {};
-
-		setFormOneValues({
-			...partOne,
-			vendorName: partOne.vendorName || data.vendorName || "",
-			email: partOne.email || data.email || "",
-			mobile: partOne.mobile || data.mobile || "",
-		});
-	}, [
-		isPublicForm,
-		normalizedToken,
-		publicQuery.data,
-		publicQuery.dataUpdatedAt,
-	]);
-
-	/*
-	|--------------------------------------------------------------------------
 	| Initialize internal vendor form
 	|--------------------------------------------------------------------------
 	*/
@@ -845,7 +847,7 @@ export function useVendorCreationForm({
 
 		detailInitKeyRef.current = key;
 
-		setFormOneValues(data.partOne ?? {});
+		setFormOneValues(data.partOne ?? EMPTY_FORM_ONE);
 		setFormTwoValues(data.partTwo ?? {});
 	}, [
 		detailQuery.data,
@@ -881,7 +883,7 @@ export function useVendorCreationForm({
 		) => {
 			setFormOneValues((current) => {
 				const nextValues = {
-					...current,
+					...(current ?? formOneValues),
 					[field]: value,
 				};
 
@@ -913,7 +915,7 @@ export function useVendorCreationForm({
 				return nextValues;
 			});
 		},
-		[],
+		[formOneValues],
 	);
 
 	const changeFormTwo = React.useCallback(
@@ -959,6 +961,36 @@ export function useVendorCreationForm({
 				type: "error",
 				title: "Error",
 				description: getErrorMessage(error, "Failed to save vendor details."),
+			});
+		}
+	};
+
+	const saveVendorDetailsDraft = async () => {
+		try {
+			if (vendorRequestId) {
+				await updateMutation.mutateAsync({
+					vendorRequestId,
+					payload: buildVendorUpdatePayload(formOneValues),
+				});
+			} else {
+				const created = await createMutation.mutateAsync(formOneValues);
+
+				setCreatedVendorId(created.id);
+			}
+
+			showToast({
+				type: "success",
+				title: "Draft saved",
+				description: "The vendor onboarding draft was saved successfully.",
+			});
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "Unable to save draft",
+				description: getErrorMessage(
+					error,
+					"Failed to save the vendor onboarding draft.",
+				),
 			});
 		}
 	};
@@ -1019,6 +1051,34 @@ export function useVendorCreationForm({
 			setIsAssigningWorkflow(false);
 		}
 	};
+
+	const saveThcmDetailsDraft = async () => {
+		if (!vendorRequestId) {
+			return;
+		}
+
+		try {
+			await updateMutation.mutateAsync({
+				vendorRequestId,
+				payload: buildVendorOnboardingUpdatePayload(
+					formOneValues,
+					formTwoValues,
+				),
+			});
+
+			showToast({
+				type: "success",
+				title: "Draft saved",
+				description: "The THCM details were saved as a draft.",
+			});
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "Unable to save draft",
+				description: getErrorMessage(error, "Failed to save THCM details."),
+			});
+		}
+	};
 	/*
 	|--------------------------------------------------------------------------
 	| Public vendor draft version submission
@@ -1028,7 +1088,6 @@ export function useVendorCreationForm({
 	const submitDraftPublicVendor = async (
 		submission?: VendorCreationFormOneDraftSubmission,
 	) => {
-		console.log("CLicked draft");
 		if (!submission || !normalizedToken) return;
 
 		try {
@@ -1509,7 +1568,9 @@ export function useVendorCreationForm({
 		handleFormTwoChange: changeFormTwo,
 
 		handleSaveFormOne: saveVendorDetails,
+		handleSaveFormOneDraft: saveVendorDetailsDraft,
 		handleSaveFormTwo: saveThcmDetails,
+		handleSaveFormTwoDraft: saveThcmDetailsDraft,
 
 		handleVendorSubmitForm: submitPublicVendor,
 		handleSubmitSummary: submitForApproval,

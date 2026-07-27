@@ -54,8 +54,8 @@ type VendorCreationFormOneProps = {
 	mode?: VendorFormMode;
 	canEdit?: boolean;
 
-	values: VendorCreationFormOneValues;
-	errors: VendorFormErrors<VendorCreationFormOneValues>;
+	values?: VendorCreationFormOneValues;
+	errors?: VendorFormErrors<VendorCreationFormOneValues>;
 
 	initialDocuments?: VendorOnboardingDocument[];
 	requireDocuments?: boolean;
@@ -99,23 +99,44 @@ const yesNoOptions = toSelectOptions(["Yes", "No"]);
 const VendorCreationFormOne = ({
 	mode = "edit",
 	canEdit = true,
-	values,
+	values: valuesProp,
 	onChange,
 	onNext,
 	onBack,
 	onSubmit,
 	onSaveDraft,
-	errors,
-	initialDocuments = EMPTY_VENDOR_DOCUMENTS,
+	errors: errorsProp,
+	initialDocuments: initialDocumentsProp,
 	requireDocuments = true,
-	requireDpdpConsent = true,
-	loading = false,
+	requireDpdpConsent = false,
+	loading: loadingProp = false,
 	submittedMessage,
 	actionText,
 }: VendorCreationFormOneProps) => {
 	const formContext = useOptionalVendorCreationFormContext();
+	const values = valuesProp ?? formContext?.formOneValues ?? {};
+	const errors = errorsProp ?? formContext?.formOneErrors ?? {};
+	const initialDocuments =
+		initialDocumentsProp ??
+		formContext?.formOneDocuments ??
+		EMPTY_VENDOR_DOCUMENTS;
+	const resolvedOnChange = onChange ?? formContext?.handleFormOneChange;
+	const resolvedOnNext = onNext;
+	const resolvedOnBack = onBack ?? formContext?.handleBack;
+	const resolvedOnSubmit =
+		onSubmit ??
+		(formContext?.canSubmitVendorForm
+			? formContext.handleVendorSubmitForm
+			: undefined);
+
 	const resolvedOnSaveDraft =
-		onSaveDraft ?? formContext?.handleVendorDraftSubmitForm;
+		onSaveDraft ??
+		(formContext?.canSubmitVendorForm
+			? formContext.handleVendorDraftSubmitForm
+			: formContext?.canSubmit
+				? formContext.handleSaveFormOneDraft
+				: undefined);
+	const loading = loadingProp || formContext?.mutationLoading || false;
 
 	const isReadOnly = mode === "view" || !canEdit;
 	const fieldMode: VendorFormMode = isReadOnly ? "view" : "edit";
@@ -145,9 +166,9 @@ const VendorCreationFormOne = ({
 		initialDocuments,
 		requireDocuments,
 		requireDpdpConsent,
-		onChange,
-		onNext,
-		onSubmit,
+		onChange: resolvedOnChange,
+		onNext: resolvedOnNext,
+		onSubmit: resolvedOnSubmit,
 		onSaveDraft: resolvedOnSaveDraft,
 	});
 
@@ -155,7 +176,7 @@ const VendorCreationFormOne = ({
 		<Card
 			footer={
 				isReadOnly ? (
-					onNext ? (
+					resolvedOnNext ? (
 						<div className="vendor-onboarding-form-actions">
 							<Button
 								type="button"
@@ -163,7 +184,7 @@ const VendorCreationFormOne = ({
 								size="sm"
 								appearance="standard"
 								variant="brand"
-								onClick={onNext}
+								onClick={resolvedOnNext}
 								disabled={loading}
 							/>
 						</div>
@@ -213,7 +234,7 @@ const VendorCreationFormOne = ({
 								size="sm"
 								appearance="standard"
 								variant="outline"
-								onClick={onBack}
+								onClick={resolvedOnBack}
 								disabled={loading}
 								Icon={ArrowLeft}
 							/>
@@ -229,31 +250,37 @@ const VendorCreationFormOne = ({
 									disabled={loading}
 									onClick={handleReset}
 								/>
-								<Button
-									type="button"
-									text="Save as Draft"
-									Icon={FilePenLine}
-									size="sm"
-									appearance="standard"
-									variant="outline"
-									disabled={loading}
-									onClick={handleSaveDraft}
-								/>
+								{resolvedOnSaveDraft ? (
+									<Button
+										type="button"
+										text="Save as Draft"
+										Icon={FilePenLine}
+										size="sm"
+										appearance="standard"
+										variant="outline"
+										disabled={loading}
+										onClick={handleSaveDraft}
+									/>
+								) : null}
 								<Button
 									type="button"
 									text={
 										loading
-											? onSubmit
+											? resolvedOnSubmit
 												? "Submitting..."
 												: "Saving..."
 											: actionText ||
-												(onSubmit ? "Submit Form" : "Save & Proceed")
+												(resolvedOnSubmit ? "Submit Form" : "Save & Proceed")
 									}
 									size="sm"
 									appearance="standard"
 									variant="brand"
 									Icon={Save}
-									isTooltip="Please accept the consent form to submit."
+									isTooltip={
+										requireDpdpConsent
+											? "Please accept the consent form to submit."
+											: undefined
+									}
 									onClick={handleFormAction}
 									disabled={loading || (requireDpdpConsent && !hasAcceptedDpdp)}
 								/>
@@ -289,7 +316,9 @@ const VendorCreationFormOne = ({
 							value={values.vendorName ?? ""}
 							error={errors.vendorName}
 							helperText="Enter vendor name in capital letters."
-							onChange={(event) => onChange?.("vendorName", event.target.value)}
+							onChange={(event) =>
+								resolvedOnChange?.("vendorName", event.target.value)
+							}
 						/>
 
 						<SelectInput
@@ -302,7 +331,9 @@ const VendorCreationFormOne = ({
 							required
 							error={errors.state}
 							helperText="Select the applicable vendor state."
-							onChange={(option) => onChange?.("state", option?.value ?? "")}
+							onChange={(option) =>
+								resolvedOnChange?.("state", option?.value ?? "")
+							}
 						/>
 
 						<FormInput
@@ -313,7 +344,9 @@ const VendorCreationFormOne = ({
 							required
 							error={errors.city}
 							helperText="Vendor city."
-							onChange={(event) => onChange?.("city", event.target.value)}
+							onChange={(event) =>
+								resolvedOnChange?.("city", event.target.value)
+							}
 						/>
 
 						<FormInput
@@ -325,7 +358,9 @@ const VendorCreationFormOne = ({
 							inputMode="numeric"
 							error={errors.pinCode}
 							helperText="Vendor location pin code."
-							onChange={(event) => onChange?.("pinCode", event.target.value)}
+							onChange={(event) =>
+								resolvedOnChange?.("pinCode", event.target.value)
+							}
 						/>
 					</div>
 
@@ -339,7 +374,7 @@ const VendorCreationFormOne = ({
 							error={errors.completeAddress}
 							helperText="Registered or communication address."
 							onChange={(event) =>
-								onChange?.("completeAddress", event.target.value)
+								resolvedOnChange?.("completeAddress", event.target.value)
 							}
 							rows={4}
 						/>
@@ -360,7 +395,9 @@ const VendorCreationFormOne = ({
 						required
 						error={errors.mobile}
 						helperText="Vendor mobile number."
-						onChange={(event) => onChange?.("mobile", event.target.value)}
+						onChange={(event) =>
+							resolvedOnChange?.("mobile", event.target.value)
+						}
 					/>
 
 					<FormInput
@@ -373,7 +410,9 @@ const VendorCreationFormOne = ({
 						required
 						error={errors.email}
 						helperText="Vendor email address."
-						onChange={(event) => onChange?.("email", event.target.value)}
+						onChange={(event) =>
+							resolvedOnChange?.("email", event.target.value)
+						}
 					/>
 				</div>
 
@@ -388,7 +427,7 @@ const VendorCreationFormOne = ({
 						required
 						error={errors.bank}
 						helperText="Bank name."
-						onChange={(event) => onChange?.("bank", event.target.value)}
+						onChange={(event) => resolvedOnChange?.("bank", event.target.value)}
 					/>
 
 					<FormInput
@@ -399,7 +438,9 @@ const VendorCreationFormOne = ({
 						required
 						error={errors.branch}
 						helperText="Bank branch."
-						onChange={(event) => onChange?.("branch", event.target.value)}
+						onChange={(event) =>
+							resolvedOnChange?.("branch", event.target.value)
+						}
 					/>
 
 					<FormInput
@@ -410,7 +451,9 @@ const VendorCreationFormOne = ({
 						required
 						error={errors.ifscCode}
 						helperText="Bank IFSC code."
-						onChange={(event) => onChange?.("ifscCode", event.target.value)}
+						onChange={(event) =>
+							resolvedOnChange?.("ifscCode", event.target.value)
+						}
 					/>
 
 					<FormInput
@@ -420,7 +463,9 @@ const VendorCreationFormOne = ({
 						value={values.bankAddress ?? ""}
 						error={errors.bankAddress}
 						helperText="Bank branch address."
-						onChange={(event) => onChange?.("bankAddress", event.target.value)}
+						onChange={(event) =>
+							resolvedOnChange?.("bankAddress", event.target.value)
+						}
 					/>
 					<FormInput
 						mode={fieldMode}
@@ -433,7 +478,7 @@ const VendorCreationFormOne = ({
 						helperText="Vendor bank account number."
 						onChange={(event) => {
 							const value = event.target.value.replace(/\D/g, "");
-							onChange?.("accountNumber", value);
+							resolvedOnChange?.("accountNumber", value);
 						}}
 					/>
 
@@ -448,7 +493,7 @@ const VendorCreationFormOne = ({
 						helperText="Re-enter the bank account number."
 						onChange={(event) => {
 							const value = event.target.value.replace(/\D/g, "");
-							onChange?.("confirmAccountNumber", value);
+							resolvedOnChange?.("confirmAccountNumber", value);
 						}}
 					/>
 				</div>
@@ -464,7 +509,9 @@ const VendorCreationFormOne = ({
 						required
 						error={errors.gstin}
 						helperText="GST identification number."
-						onChange={(event) => onChange?.("gstin", event.target.value)}
+						onChange={(event) =>
+							resolvedOnChange?.("gstin", event.target.value)
+						}
 					/>
 
 					<FormInput
@@ -475,7 +522,7 @@ const VendorCreationFormOne = ({
 						required
 						error={errors.pan}
 						helperText="Permanent account number."
-						onChange={(event) => onChange?.("pan", event.target.value)}
+						onChange={(event) => resolvedOnChange?.("pan", event.target.value)}
 					/>
 
 					<FormInput
@@ -486,7 +533,7 @@ const VendorCreationFormOne = ({
 						error={errors.entityRegistrationNumber}
 						helperText="Entity registration number, if applicable."
 						onChange={(event) =>
-							onChange?.("entityRegistrationNumber", event.target.value)
+							resolvedOnChange?.("entityRegistrationNumber", event.target.value)
 						}
 					/>
 				</div>
