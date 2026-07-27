@@ -374,7 +374,7 @@
 	}
 
 	.action-card:hover:not(:disabled) {
-		border-color: var(--home-card-border-hover);
+		border-color: var(--color-brand);
 		background-color: var(--home-card-hover-bg);
 		box-shadow: none;
 		transform: none;
@@ -569,7 +569,7 @@
 	}
 
 	[data-theme="dark"] .action-card:hover:not(:disabled) {
-		border-color: var(--home-card-border-hover);
+		border-color: var(--color-brand);
 
 		background:
 			linear-gradient(var(--home-card-hover-tint), var(--home-card-hover-tint)),
