@@ -20,7 +20,7 @@
 
 /* Existing feature styles. Keep until each module is migrated. */
 @import "./components/forms/input.css";
-@import "./modules/admin/workflow/workflow.css";
+@import "./modules/workflows/utils/workflow.css";
 @import "./modules/admin/business-partners/bp.css";
 @import "./modules/marketing/marketing.styles.css";
 @import "./styles/user-management.css";
