@@ -1,17 +1,17 @@
 import { useParams } from "react-router-dom";
 import type { SingleValue } from "react-select";
-import { useAuth } from "../../../../context/Auth/useAuth";
-import FormInput from "../../../../components/forms/FormInput";
-import TextareaInput from "../../../../components/forms/TextareaInput";
-import SelectInput from "../../../../components/forms/SelectInput";
-import Radio from "../../../../components/forms/Radio";
-import type { Option } from "../../../../components/forms/input.types";
+import { useAuth } from "../../../context/Auth/useAuth";
+import FormInput from "../../../components/forms/FormInput";
+import TextareaInput from "../../../components/forms/TextareaInput";
+import SelectInput from "../../../components/forms/SelectInput";
+import Radio from "../../../components/forms/Radio";
+import type { Option } from "../../../components/forms/input.types";
 import type {
 	WorkflowBasics,
 	WorkflowGenErrors,
-} from "../types/workflow.types";
+} from "../../workflows/types/workflow.types";
 import { budgetCategories, formatApps } from "../constant/workflow.constant";
-import Button from "../../../../components/common/Button";
+import Button from "../../../components/common/Button";
 
 export type WorkflowGenProps = {
 	basics: WorkflowBasics;

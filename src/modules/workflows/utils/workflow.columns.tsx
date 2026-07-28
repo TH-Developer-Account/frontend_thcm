@@ -2,8 +2,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import moment from "moment-timezone";
 import { Edit, Trash, UserPlus } from "lucide-react";
 import type { WorkflowRow } from "../types/workflow.types";
-import { Badge } from "../../../../components/common/Badge";
-import Button from "../../../../components/common/Button";
+import { Badge } from "../../../components/common/Badge";
+import Button from "../../../components/common/Button";
 
 type WorkflowColumnActions = {
 	onAssign: (row: WorkflowRow) => void;

@@ -187,7 +187,7 @@ export const LeadEntryTable = ({
 						return (
 							<div
 								key={item.id}
-								className="grid min-w-0 grid-cols-1 gap-3 rounded-md border p-3 md:grid-cols-2 xl:grid-cols-[1.1fr_1.2fr_1fr_1.2fr_auto]"
+								className="grid min-w-0 grid-cols-1 gap-3 rounded-md  p-3 md:grid-cols-2 xl:grid-cols-[1.1fr_1.2fr_1fr_1.2fr_auto]"
 							>
 								<FormInput
 									value={item.leadName}

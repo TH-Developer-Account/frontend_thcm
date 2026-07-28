@@ -3,26 +3,28 @@ import axios from "axios";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import { Alert } from "../../../../components/common/Alert";
-import Button from "../../../../components/common/Button";
-import Card from "../../../../components/common/Card";
-import { Modal } from "../../../../components/common/Modal";
-import MultiSelectInput from "../../../../components/forms/MultiSelectInput";
-import { SearchInput } from "../../../../components/forms/SearchInput";
-import type { Option } from "../../../../components/forms/input.types";
-import DataTable from "../../../../components/ui/tables/DataTable/DataTable";
-import DataTableSkeleton from "../../../../components/ui/tables/Skeletons/DataTableSkeleton";
-import { useToast } from "../../../../context/Auth/AuthContext";
-import { useAuth } from "../../../../context/Auth/useAuth";
-import { ServerAxios } from "../../../../services/ServerAxios";
+import { Alert } from "../../../components/common/Alert";
+import Button from "../../../components/common/Button";
+import Card from "../../../components/common/Card";
+import { Modal } from "../../../components/common/Modal";
+import MultiSelectInput from "../../../components/forms/MultiSelectInput";
+import { SearchInput } from "../../../components/forms/SearchInput";
+import type { Option } from "../../../components/forms/input.types";
+import DataTable from "../../../components/ui/tables/DataTable/DataTable";
+import DataTableSkeleton from "../../../components/ui/tables/Skeletons/DataTableSkeleton";
+import { useToast } from "../../../context/Auth/AuthContext";
+import { useAuth } from "../../../context/Auth/useAuth";
+import { ServerAxios } from "../../../services/ServerAxios";
 
 import { api_routes, formatApps } from "../constant/workflow.constant";
 import { useWorkflow } from "../context/useWorkflows";
 import type { WorkflowRow } from "../types/workflow.types";
-import type { UserResponse } from "../../user-profile/types/profile.types";
+import type { UserResponse } from "../../admin/user-profile/types/profile.types";
 
-import { getWorkflowColumns } from "./workflow.columns";
+import { workflowListFilterOptions } from "../constant/workflow.constant";
+import { getWorkflowColumns } from "../utils/workflow.columns";
 import { WorkflowUserAssignment } from "./WorkflowUserAssignment";
+import { FilterTabs } from "../../../components/ui/FilterTabs";
 
 const WORKFLOW_SKELETON_ROWS = 8;
 const WORKFLOW_SKELETON_COLUMNS = 6;
@@ -54,8 +56,15 @@ const getErrorMessage = (error: unknown, fallback: string): string => {
 
 	return fallback;
 };
-
-const WorkflowTable = () => {
+type WorkflowFilter = "ALL" | "ASSIGNED_TO_ME" | "CREATED_BY_ME";
+type WorkflowTableProps = {
+	selectedFilter: WorkflowFilter;
+	onFilterChange: (value: WorkflowFilter) => void;
+};
+const WorkflowTable = ({
+	selectedFilter,
+	onFilterChange,
+}: WorkflowTableProps) => {
 	const {
 		data,
 		setData,
@@ -143,7 +152,16 @@ const WorkflowTable = () => {
 			controller.abort();
 		};
 	}, []);
-
+	const filterTabs = React.useMemo(
+		() =>
+			workflowListFilterOptions.map((option) => ({
+				value: option.value,
+				label: option.label,
+				tooltipLabel: option.tooltipLabel,
+				Icon: option.Icon,
+			})),
+		[],
+	);
 	const apps = React.useMemo(() => formatApps(permissions), [permissions]);
 
 	const handleFilterChange = React.useCallback(
@@ -216,7 +234,7 @@ const WorkflowTable = () => {
 			if (!workflow.id) return;
 
 			navigate(
-				`/admin/edit-workflows/${encodeURIComponent(String(workflow.id))}`,
+				`/workflow/edit-workflows/${encodeURIComponent(String(workflow.id))}`,
 			);
 		},
 		[navigate],
@@ -275,6 +293,15 @@ const WorkflowTable = () => {
 	return (
 		<>
 			<Card
+				title={
+					<FilterTabs
+						ariaLabel="Filter Workflow listings"
+						items={filterTabs}
+						value={selectedFilter}
+						onChange={onFilterChange}
+						className="border-b-none px-0 py-0"
+					/>
+				}
 				secondaryHeader={
 					<>
 						<MultiSelectInput
@@ -312,7 +339,7 @@ const WorkflowTable = () => {
 							appearance="cta"
 							variant="brand"
 							size="sm"
-							onClick={() => navigate("/admin/create-workflows")}
+							onClick={() => navigate("/workflow/create-workflows")}
 						/>
 					</>
 				}

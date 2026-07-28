@@ -1,10 +1,10 @@
 import React from "react";
 import { ArrowLeft, ArrowRight, Plus } from "lucide-react";
 
-import UserAsyncSelect from "../../../../components/forms/AsyncSelect";
-import Avatar from "../../../../components/common/Avatar";
-import FormInput from "../../../../components/forms/FormInput";
-import Button from "../../../../components/common/Button";
+import UserAsyncSelect from "../../../components/forms/AsyncSelect";
+import Avatar from "../../../components/common/Avatar";
+import FormInput from "../../../components/forms/FormInput";
+import Button from "../../../components/common/Button";
 
 import type {
 	WorkflowStage,

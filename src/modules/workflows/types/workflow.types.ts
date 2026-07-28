@@ -176,3 +176,25 @@ export type SubmitWorkflowResult = {
 
 export type WorkflowGenErrors = Partial<Record<keyof WorkflowBasics, string>>;
 export type WorkflowStageErrors = Partial<Record<keyof WorkflowStage, string>>;
+
+// workflow.types.ts
+
+export type DynamicWorkflowFilter = "CREATED_BY_ME" | "ASSIGNED_TO_ME" | "ALL";
+export type DynamicWorkflowStatus = "ACTIVE" | "DRAFT" | "INACTIVE";
+
+export interface DynamicWorkflowTableItem {
+	id: string;
+	name: string;
+	description?: string;
+	stageCount: number;
+	approverCount: number;
+	createdBy: {
+		id: string;
+		name: string;
+		email?: string;
+		avatar?: string;
+	};
+	relationship: DynamicWorkflowFilter;
+	status: DynamicWorkflowStatus;
+	updatedAt: string;
+}

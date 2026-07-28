@@ -37,6 +37,15 @@ export const actions = [
 		isActive: false,
 	},
 	{
+		icon: UserCheck,
+		title: "Workflows",
+		description:
+			"Manage vendor registration, verification, and approval processes.",
+		path: "/workflow/listing",
+		appKey: "WORKFLOW",
+		isActive: false,
+	},
+	{
 		icon: PackageSearch,
 		title: "Product Selector",
 		description: "Configure and compare machinery specs for customer needs.",
@@ -53,15 +62,6 @@ export const actions = [
 		isActive: false,
 	},
 
-	// {
-	// 	icon: UserCheck,
-	// 	title: "Vendor Onboarding",
-	// 	description:
-	// 		"Manage vendor registration, verification, and approval processes.",
-	// 	path: "/",
-	// 	appKey: "VENDOR_ONBOARDING",
-	// 	isActive: false,
-	// },
 	{
 		icon: UserCheck,
 		title: "Key Account",

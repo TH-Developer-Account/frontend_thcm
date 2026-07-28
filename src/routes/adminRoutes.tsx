@@ -8,8 +8,6 @@ import UserProfile from "../modules/settings/UserProfile/UserProfile";
 import MastersPage from "../modules/admin/Masters/MastersPage";
 import BusinessPartners from "../modules/admin/business-partners/BusinessPartners";
 import BusinessPartnerView from "../modules/admin/business-partners/BusinessPartnerView";
-import WorkflowPage from "../modules/admin/workflow/WorkflowPage";
-import WorkflowCreatePage from "../modules/admin/workflow/WorkFlowCreation/WorkflowCreatePage";
 
 export default function AdminRoutes() {
 	return (
@@ -32,9 +30,6 @@ export default function AdminRoutes() {
 			<Route path="/profiles/create" element={<ProfileFormPage />} />
 			<Route path="/profiles/:id/edit" element={<ProfileFormPage />} />
 			<Route path="user_profiles" element={<UserProfilePage />} />
-			<Route path="workflows" element={<WorkflowPage />} />
-			<Route path="/create-workflows" element={<WorkflowCreatePage />} />
-			<Route path="edit-workflows/:id" element={<WorkflowCreatePage />} />
 		</Routes>
 	);
 }
