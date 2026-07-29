@@ -206,11 +206,40 @@ const createInitialState = (
 		options.initialStages?.map((stage, index) => {
 			const stageId = createStageId();
 
+			// Supports older initial-stage data containing `approver`
+			const legacyApprover = (
+				stage as WorkflowStage & {
+					approver?: WorkflowUser;
+				}
+			).approver;
+
+			const approvers = Array.isArray(stage.approvers)
+				? stage.approvers
+				: legacyApprover
+					? [
+							{
+								id: legacyApprover.id,
+								stageId,
+								user: { ...legacyApprover },
+								isExternalApprover: false,
+							},
+						]
+					: [];
+
+			const minApprovals = Math.min(
+				Math.max(stage.minApprovals ?? 1, 1),
+				approvers.length || 1,
+			);
+
 			return {
 				...stage,
 				id: stageId,
+				name: stage.name || `Stage ${index + 1}`,
 				stageOrder: index + 1,
-				approvers: stage.approvers.map((approver) => ({
+				minApprovals,
+				strategy:
+					stage.strategy ?? deriveStrategy(minApprovals, approvers.length),
+				approvers: approvers.map((approver) => ({
 					...approver,
 					stageId,
 					user: { ...approver.user },

@@ -14,6 +14,9 @@ type AssignProps = {
 	onClose: () => void;
 };
 
+const isUserCreatedWorkflow = (workflow: WorkflowRow | null): boolean =>
+	workflow?.workflowType?.toUpperCase() === "USERCREATED";
+
 export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 	workflow,
 	onClose,
@@ -50,7 +53,7 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 	};
 
 	useEffect(() => {
-		if (!workflow?.id) return;
+		if (!workflow?.id || isUserCreatedWorkflow(workflow)) return;
 
 		const loadUsers = async () => {
 			try {
@@ -68,7 +71,13 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 	}, [workflow]);
 
 	const handleSubmit = async (): Promise<void> => {
-		if (!workflow?.id || assignMutation.loading) return;
+		if (
+			!workflow?.id ||
+			isUserCreatedWorkflow(workflow) ||
+			assignMutation.loading
+		) {
+			return;
+		}
 
 		try {
 			const response = (await assignMutation.mutateAsync(
@@ -92,6 +101,8 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 			});
 		}
 	};
+
+	if (isUserCreatedWorkflow(workflow)) return null;
 
 	return (
 		<Modal

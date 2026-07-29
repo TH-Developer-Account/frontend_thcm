@@ -1,366 +1,262 @@
-import { useEffect, useRef, useState } from "react";
-import {
-	ArrowDown,
-	ArrowUp,
-	GitBranch,
-	Plus,
-	Search,
-	Trash2,
-	UserRound,
-} from "lucide-react";
+import { useState } from "react";
 
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
 import FormInput from "../../../components/forms/FormInput";
-import { useWorkflowBuilder } from "../context/useWorkflowBuilder";
 import type {
+	SaveMode,
+	WorkflowApprover,
 	WorkflowBuilderPayload,
-	WorkflowBuilderOptions,
 	WorkflowExecutionMode,
 	WorkflowStage,
-	WorkflowUser,
+	WorkflowStageErrors,
 } from "../types/types";
-import { getFullName } from "../utils/user";
+import {
+	addStageApprover,
+	removeStageApprover,
+	toggleStageExpanded,
+	updateStageField,
+	validateWorkflow,
+} from "../utils/workflow.helpers";
+import "../utils/workflow.css";
+import WorkflowStagesForm from "./WorkflowStagesForm";
 
 export interface WorkflowTemplateBuilderProps {
 	sourceRecordRef: string;
 	initialStages?: WorkflowStage[];
 	initialFlowType?: WorkflowExecutionMode;
 	initialSaveAsTemplate?: boolean;
-	searchApprovers: (query: string) => Promise<WorkflowUser[]>;
 	onAttach: (payload: WorkflowBuilderPayload) => void | Promise<void>;
 	onCancel?: () => void;
 	title?: string;
 	disabled?: boolean;
 }
 
+const createStageId = (): string =>
+	typeof crypto !== "undefined" && "randomUUID" in crypto
+		? crypto.randomUUID()
+		: `stage-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
 export function WorkflowTemplateBuilder({
 	sourceRecordRef,
-	initialStages,
+	initialStages = [],
 	initialFlowType = "SEQUENTIAL",
 	initialSaveAsTemplate = false,
-	searchApprovers,
 	onAttach,
 	onCancel,
-	title = "Build approval workflow",
+	title = "Customise approval workflow",
 	disabled = false,
 }: WorkflowTemplateBuilderProps) {
-	const options: WorkflowBuilderOptions = {
-		initialStages,
-		initialFlowType,
-		initialSaveAsTemplate,
-	};
-	const {
-		state,
-		addStage,
-		removeStage,
-		renameStage,
-		moveStage,
-		setFlowType,
-		setSaveAsTemplate,
-		setTemplateName,
-		isValid,
-		buildPayload,
-	} = useWorkflowBuilder(options);
+	const [step, setStep] = useState<"stages" | "usage">("stages");
+	const [stages, setStages] = useState<WorkflowStage[]>(() =>
+		initialStages.map((stage, index) => {
+			const stageId = stage.id || createStageId();
 
-	const [query, setQuery] = useState("");
-	const [results, setResults] = useState<WorkflowUser[]>([]);
-	const [selectedApprover, setSelectedApprover] = useState<WorkflowUser | null>(
-		null,
+			return {
+				...stage,
+				id: stageId,
+				stageOrder: index + 1,
+				isExpanded: index === 0,
+				approvers: Array.isArray(stage.approvers)
+					? stage.approvers.map((approver) => ({
+							...approver,
+							stageId,
+							user: { ...approver.user },
+						}))
+					: [],
+			};
+		}),
 	);
-	const [stageNameDraft, setStageNameDraft] = useState("");
-	const [searching, setSearching] = useState(false);
-	const [attaching, setAttaching] = useState(false);
-	const [searchError, setSearchError] = useState("");
-	const requestIdRef = useRef(0);
+	const [saveMode, setSaveMode] = useState<SaveMode>(
+		initialSaveAsTemplate ? "template" : "once",
+	);
+	const [templateName, setTemplateName] = useState("");
+	const [stageErrors, setStageErrors] = useState<WorkflowStageErrors[]>([]);
+	const [stageFormError, setStageFormError] = useState<string | null>(null);
+	const [saving, setSaving] = useState(false);
 
-	useEffect(() => {
-		const searchTerm = query.trim();
-		if (searchTerm.length < 2 || selectedApprover) {
-			setResults([]);
-			setSearching(false);
-			return;
-		}
-
-		const requestId = ++requestIdRef.current;
-		const timeoutId = window.setTimeout(async () => {
-			setSearching(true);
-			setSearchError("");
-			try {
-				const found = await searchApprovers(searchTerm);
-				if (requestId === requestIdRef.current) setResults(found);
-			} catch {
-				if (requestId === requestIdRef.current) {
-					setResults([]);
-					setSearchError("Could not load approvers. Please try again.");
-				}
-			} finally {
-				if (requestId === requestIdRef.current) setSearching(false);
-			}
-		}, 350);
-
-		return () => window.clearTimeout(timeoutId);
-	}, [query, selectedApprover, searchApprovers]);
+	const handleStageChange = <K extends keyof WorkflowStage>(
+		stageId: string,
+		key: K,
+		value: WorkflowStage[K],
+	) => {
+		setStages((current) => updateStageField(current, stageId, key, value));
+	};
 
 	const handleAddStage = () => {
-		if (!selectedApprover) return;
-		addStage(
-			selectedApprover,
-			stageNameDraft.trim() || `Stage ${state.stages.length + 1}`,
+		setStages((current) => [
+			...current.map((stage) => ({ ...stage, isExpanded: false })),
+			{
+				id: createStageId(),
+				stageOrder: current.length + 1,
+				name: `Stage ${current.length + 1}`,
+				strategy: "ANY",
+				minApprovals: 1,
+				approvers: [],
+				isExpanded: true,
+			},
+		]);
+	};
+
+	const handleContinue = () => {
+		const validation = validateWorkflow(stages);
+		setStageErrors(validation.stageErrors);
+		setStageFormError(validation.formError ?? null);
+
+		const hasStageErrors = validation.stageErrors.some(
+			(stageError) => Object.keys(stageError).length > 0,
 		);
-		setSelectedApprover(null);
-		setQuery("");
-		setStageNameDraft("");
+		if (validation.formError || hasStageErrors) return;
+
+		setStep("usage");
 	};
 
 	const handleAttach = async () => {
-		if (!isValid || attaching || disabled) return;
-		setAttaching(true);
+		if (
+			saving ||
+			disabled ||
+			(saveMode === "template" && !templateName.trim())
+		) {
+			return;
+		}
+
+		setSaving(true);
 		try {
-			await onAttach(buildPayload(sourceRecordRef));
+			await onAttach({
+				sourceRecordRef,
+				flowType: initialFlowType,
+				saveAsTemplate: saveMode === "template",
+				templateName: saveMode === "template" ? templateName.trim() : undefined,
+				stages: stages.map(
+					({ name, stageOrder, strategy, minApprovals, approvers }) => ({
+						name: name.trim(),
+						stageOrder,
+						strategy,
+						minApprovals,
+						approvers,
+					}),
+				),
+			});
 		} finally {
-			setAttaching(false);
+			setSaving(false);
 		}
 	};
 
+	if (step === "stages") {
+		return (
+			<Card title={title}>
+				<WorkflowStagesForm
+					stages={stages}
+					errors={stageErrors}
+					formError={stageFormError}
+					currentUserId=""
+					onStageChange={handleStageChange}
+					onToggleStage={(stageId) =>
+						setStages((current) => toggleStageExpanded(current, stageId))
+					}
+					onRemoveApprover={(stageId, approverId) =>
+						setStages((current) =>
+							removeStageApprover(current, stageId, approverId),
+						)
+					}
+					onAddApprover={(stageId, approver: WorkflowApprover) =>
+						setStages((current) => addStageApprover(current, stageId, approver))
+					}
+					onBack={() => onCancel?.()}
+					onSubmit={handleContinue}
+					onAddStage={handleAddStage}
+				/>
+			</Card>
+		);
+	}
+
 	return (
-		<Card className="workflow-builder">
-			<div className="workflow-builder-header">
-				<div className="workflow-builder-heading">
-					<div className="workflow-entry-icon" aria-hidden="true">
-						<GitBranch size={18} />
-					</div>
-					<div>
-						<h3>{title}</h3>
-						<p>Add approvers in the order this request should be reviewed.</p>
-					</div>
-				</div>
-				<span className="workflow-builder-count">
-					{state.stages.length} stage{state.stages.length === 1 ? "" : "s"}
-				</span>
-			</div>
-
-			<div className="workflow-builder-add">
-				<div className="workflow-approver-search">
-					<FormInput
-						label="Approver"
-						value={query}
-						onChange={(event) => {
-							const value = event.target.value;
-							setQuery(value);
-							if (selectedApprover && getFullName(selectedApprover) !== value) {
-								setSelectedApprover(null);
-							}
-						}}
-						placeholder="Search by name or email"
-						disabled={disabled}
-					/>
-					<Search className="workflow-approver-search-icon" size={15} />
-					{searching ? (
-						<span className="workflow-search-status" role="status">
-							Searching…
-						</span>
-					) : null}
-					{results.length > 0 ? (
-						<ul className="workflow-search-results" role="listbox">
-							{results.map((approver) => (
-								<li key={approver.id}>
-									<button
-										type="button"
-										role="option"
-										aria-selected={selectedApprover?.id === approver.id}
-										onClick={() => {
-											setSelectedApprover(approver);
-											setQuery(getFullName(approver));
-											setResults([]);
-										}}
-									>
-										<span className="workflow-search-avatar">
-											<UserRound size={14} />
-										</span>
-										<span>
-											<strong>{getFullName(approver)}</strong>
-											<small>{approver.email}</small>
-										</span>
-									</button>
-								</li>
-							))}
-						</ul>
-					) : null}
-					{searchError ? (
-						<p className="workflow-field-error" role="alert">
-							{searchError}
-						</p>
-					) : null}
-				</div>
-
-				<FormInput
-					label="Stage name"
-					value={stageNameDraft}
-					onChange={(event) => setStageNameDraft(event.target.value)}
-					placeholder={`Stage ${state.stages.length + 1}`}
-					disabled={disabled}
-				/>
-				<Button
-					type="button"
-					onClick={handleAddStage}
-					disabled={!selectedApprover || disabled}
-					className="workflow-add-stage-action"
-					Icon={Plus}
-					text="Add Stage"
-				/>
-			</div>
-			{/* <WorkflowStagesForm /> */}
-			{state.stages.length === 0 ? (
-				<div className="workflow-builder-empty">
-					<GitBranch size={22} aria-hidden="true" />
-					<p>No approval stages added yet.</p>
-					<span>Search for an approver above to begin.</span>
-				</div>
-			) : (
-				<ol className="workflow-builder-stage-list">
-					{state.stages.map((stage, index) => (
-						<li className="workflow-builder-stage" key={stage.id}>
-							<span className="workflow-builder-stage-number">{index + 1}</span>
-							<div className="workflow-builder-stage-fields">
-								<FormInput
-									label="Stage name"
-									value={stage.name}
-									onChange={(event) =>
-										renameStage(stage.id, event.target.value)
-									}
-									disabled={disabled}
-								/>
-								<div className="workflow-builder-approver">
-									<span className="workflow-search-avatar">
-										<UserRound size={14} />
-									</span>
-									<span>
-										<strong>
-											{stage.approvers
-												.map((approver) => getFullName(approver.user))
-												.join(", ")}
-										</strong>
-										<small>
-											{stage.approvers
-												.map((approver) => approver.user.email)
-												.filter(Boolean)
-												.join(", ")}
-										</small>
-									</span>
-								</div>
-							</div>
-							<div className="workflow-builder-stage-actions">
-								<Button
-									type="button"
-									appearance="standard"
-									variant="outline"
-									onClick={() => moveStage(stage.id, "up")}
-									disabled={disabled || index === 0}
-									aria-label={`Move ${stage.name} up`}
-									Icon={ArrowUp}
-								/>
-								<Button
-									type="button"
-									appearance="standard"
-									variant="outline"
-									onClick={() => moveStage(stage.id, "down")}
-									disabled={disabled || index === state.stages.length - 1}
-									aria-label={`Move ${stage.name} down`}
-									Icon={ArrowDown}
-								/>
-								<Button
-									type="button"
-									appearance="standard"
-									variant="outline"
-									onClick={() => removeStage(stage.id)}
-									disabled={disabled}
-									aria-label={`Remove ${stage.name}`}
-									Icon={Trash2}
-								/>
-							</div>
-						</li>
-					))}
-				</ol>
-			)}
-
-			<div className="workflow-builder-settings">
-				<fieldset>
-					<legend>Approval order</legend>
-					<div className="workflow-segmented-control">
-						{(["SEQUENTIAL", "PARALLEL"] as const).map((flowType) => (
-							<button
-								key={flowType}
-								type="button"
-								className={
-									state.flowType === flowType
-										? "workflow-segment workflow-segment--active"
-										: "workflow-segment"
-								}
-								aria-pressed={state.flowType === flowType}
-								onClick={() => setFlowType(flowType)}
-								disabled={disabled}
-							>
-								{flowType === "SEQUENTIAL" ? "Sequential" : "Parallel"}
-							</button>
-						))}
-					</div>
-					<p>
-						{state.flowType === "SEQUENTIAL"
-							? "Stages are reviewed one after another."
-							: "All stages can review at the same time."}
+		<Card title={title}>
+			<div className="workflow-customise-panel">
+				<div>
+					<p className="workflow-customise-title">
+						How should your customised version be used?
 					</p>
-				</fieldset>
+					<p className="workflow-customise-copy">
+						The original workflow will remain unchanged.
+					</p>
+				</div>
 
-				<label className="workflow-template-toggle">
-					<input
-						type="checkbox"
-						checked={state.saveAsTemplate}
-						onChange={(event) => setSaveAsTemplate(event.target.checked)}
-						disabled={disabled}
-					/>
-					<span>
-						<strong>Save as reusable template</strong>
-						<small>Make this workflow available for future forms.</small>
-					</span>
-				</label>
-			</div>
+				<div className="workflow-save-options">
+					<label
+						className={
+							saveMode === "once"
+								? "workflow-save-option workflow-save-option--active"
+								: "workflow-save-option"
+						}
+					>
+						<input
+							type="radio"
+							name="custom-workflow-save-mode"
+							checked={saveMode === "once"}
+							onChange={() => setSaveMode("once")}
+							disabled={disabled || saving}
+						/>
+						<span>
+							<strong>Use once</strong>
+							<small>Only for this form</small>
+						</span>
+					</label>
 
-			{state.saveAsTemplate ? (
-				<div className="workflow-template-name">
+					<label
+						className={
+							saveMode === "template"
+								? "workflow-save-option workflow-save-option--active"
+								: "workflow-save-option"
+						}
+					>
+						<input
+							type="radio"
+							name="custom-workflow-save-mode"
+							checked={saveMode === "template"}
+							onChange={() => setSaveMode("template")}
+							disabled={disabled || saving}
+						/>
+						<span>
+							<strong>Save as template</strong>
+							<small>Reuse in other forms</small>
+						</span>
+					</label>
+				</div>
+
+				{saveMode === "template" ? (
 					<FormInput
 						label="Template name"
-						value={state.templateName}
+						value={templateName}
 						onChange={(event) => setTemplateName(event.target.value)}
-						placeholder="Enter a clear, reusable name"
+						placeholder="Enter a name for your workflow"
 						required
-						disabled={disabled}
+						disabled={disabled || saving}
 					/>
-				</div>
-			) : null}
+				) : null}
 
-			<div className="workflow-builder-footer">
-				<p>
-					{!isValid && state.stages.length > 0
-						? "Complete all stage names and the template name, if enabled."
-						: "The attached workflow is snapshotted for this form."}
-				</p>
-				<div>
-					{onCancel ? (
-						<Button
-							type="button"
-							appearance="standard"
-							variant="outline"
-							onClick={onCancel}
-							disabled={attaching}
-							text="Cancel"
-						/>
-					) : null}
+				<div className="workflow-form-actions">
 					<Button
 						type="button"
+						text="Back"
+						appearance="standard"
+						variant="outline"
+						size="sm"
+						onClick={() => setStep("stages")}
+						disabled={saving}
+					/>
+					<Button
+						type="button"
+						text={saving ? "Saving..." : "Continue"}
+						appearance="standard"
+						variant="brand"
+						size="sm"
 						onClick={handleAttach}
-						disabled={!isValid || attaching || disabled}
-						text={attaching ? "Attaching…" : "Attach workflow"}
+						disabled={
+							disabled ||
+							saving ||
+							(saveMode === "template" && !templateName.trim())
+						}
 					/>
 				</div>
 			</div>

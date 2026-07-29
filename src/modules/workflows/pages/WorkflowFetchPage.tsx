@@ -1,23 +1,27 @@
 import { useCallback, useEffect, useState } from "react";
 
+import { workflowApi } from "../api/workflow.api";
 import { WorkflowEntrySection } from "../components/WorkflowEntrySection";
 import { WorkflowTemplateBuilder } from "../components/WorkflowTemplateBuilder";
-import { workflowApi } from "../api/workflow.api";
 import { useAttachWorkflowMutation } from "../context/useWorkflowMutations";
-
 import type {
+	CreateWorkflowPayload,
 	SaveMode,
+	WorkflowBuilderPayload,
+	WorkflowExecutionMode,
 	WorkflowSummary,
-	WorkflowStage,
-} from "../types/workflow.types";
-import type { WorkflowBuilderPayload, WorkflowUser } from "../types/types";
+	WorkflowTemplate,
+} from "../types/types";
+import { getFullName } from "../utils/user";
+import { mapStages } from "../utils/workflow.helpers";
 
 type ScreenState =
 	| { view: "entry" }
 	| {
 			view: "builder";
-			initialStages?: WorkflowStage[];
-			initialSaveAsTemplate?: boolean;
+			sourceWorkflow: WorkflowTemplate;
+			initialFlowType: WorkflowExecutionMode;
+			initialSaveAsTemplate: boolean;
 	  };
 
 export type WorkflowFetchPageProps = {
@@ -26,15 +30,57 @@ export type WorkflowFetchPageProps = {
 	onWorkflowAttached?: () => void;
 };
 
-const createLocalStageId = (): string =>
-	typeof crypto !== "undefined" && "randomUUID" in crypto
-		? crypto.randomUUID()
-		: `stage-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const getCreatedWorkflowId = (value: unknown): string | null => {
+	let current = value;
 
-/**
- * Reusable workflow attachment component.
- * The parent supplies only record identity; data fetching and mutations stay here.
- */
+	for (let depth = 0; depth < 3; depth += 1) {
+		if (
+			typeof current !== "object" ||
+			current === null ||
+			Array.isArray(current)
+		) {
+			return null;
+		}
+
+		const record = current as Record<string, unknown>;
+		const id = record.id ?? record.workflowId ?? record.templateId;
+		if (typeof id === "string" || typeof id === "number") {
+			return String(id);
+		}
+
+		current = record.data ?? record.workflow;
+	}
+
+	return null;
+};
+
+const buildCustomTemplatePayload = (
+	source: WorkflowTemplate,
+	payload: WorkflowBuilderPayload,
+): CreateWorkflowPayload => ({
+	name: payload.templateName?.trim() || `${source.name} - Custom`,
+	workspaceId: source.workspaceId ?? "",
+	isActive: true,
+	appId: source.appId,
+	description: source.description ?? "",
+	metaData_1: source.metaData_1 ?? "",
+	metaData_2: source.metaData_2 ?? "",
+	metaData_3: source.metaData_3 ?? "",
+	stages: payload.stages.map((stage) => ({
+		name: stage.name.trim(),
+		stageOrder: stage.stageOrder,
+		strategy: stage.strategy,
+		minApprovals:
+			stage.strategy === "SOME" ? Number(stage.minApprovals) || 1 : undefined,
+		approverIds: stage.approvers.map((approver) => ({
+			userId: approver.user.id,
+			name: getFullName(approver.user),
+			email: approver.user.email?.trim() ?? "",
+			isExternalApprover: approver.isExternalApprover,
+		})),
+	})),
+});
+
 export function WorkflowFetchPage({
 	sourceRecordRef,
 	recordType,
@@ -48,17 +94,20 @@ export function WorkflowFetchPage({
 		[],
 	);
 	const [loading, setLoading] = useState(true);
+	const [customising, setCustomising] = useState(false);
 	const [error, setError] = useState<unknown>(null);
 	const attachMutation = useAttachWorkflowMutation();
 
-	const loadWorkflows = useCallback(async () => {
+	const loadWorkflows = useCallback(async (): Promise<void> => {
 		setLoading(true);
 		setError(null);
+
 		try {
 			const [created, assigned] = await Promise.all([
 				workflowApi.listReusable("created", recordType),
 				workflowApi.listReusable("assigned", recordType),
 			]);
+
 			setCreatedWorkflows(created);
 			setAssignedWorkflows(assigned);
 		} catch (nextError) {
@@ -72,55 +121,70 @@ export function WorkflowFetchPage({
 		void loadWorkflows();
 	}, [loadWorkflows]);
 
-	const handleAttach = async (workflow: WorkflowSummary) => {
+	const handleAttach = async (workflow: WorkflowSummary): Promise<void> => {
 		await attachMutation.mutateAsync({
 			recordRef: sourceRecordRef,
 			recordType,
 			workflowId: workflow.id,
 		});
+
 		onWorkflowAttached?.();
 	};
 
 	const handleEditAndAttach = async (
 		workflow: WorkflowSummary,
 		saveMode: SaveMode,
-	) => {
-		const stages = await workflowApi.getBuilderStages(workflow.id);
-
-		setScreen({
-			view: "builder",
-			initialStages: stages.map(
-				(stage, index): WorkflowStage => ({
-					id: createLocalStageId(),
-					stageOrder: index + 1,
-					name: stage.stageName,
-					strategy: stage.strategy ?? "ANY",
-					approvers: [...stage.approver],
-					minApprovals:
-						stage.minApprovals ?? Math.max(stage.approver.length, 1),
-					isExpanded: true,
-				}),
-			),
-			initialSaveAsTemplate: saveMode === "template",
-		});
+	): Promise<void> => {
+		setCustomising(true);
+		try {
+			const sourceWorkflow = await workflowApi.getById(workflow.id);
+			setScreen({
+				view: "builder",
+				sourceWorkflow,
+				initialFlowType: workflow.flowType,
+				initialSaveAsTemplate: saveMode === "template",
+			});
+		} finally {
+			setCustomising(false);
+		}
 	};
 
-	const handleSearchApprovers = (query: string): Promise<WorkflowUser[]> =>
-		workflowApi.searchApprovers(query, recordType);
+	const handleBuilderAttach = async (
+		payload: WorkflowBuilderPayload,
+	): Promise<void> => {
+		if (screen.view !== "builder") return;
 
-	const handleBuilderAttach = async (payload: WorkflowBuilderPayload) => {
-		await attachMutation.mutateAsync({
-			recordRef: sourceRecordRef,
-			recordType,
-			stages: payload.stages.map((stage, index) => ({
-				order: index + 1,
-				name: stage.name,
-				approverId: stage.approver.id,
-			})),
-			flowType: payload.flowType,
-			saveAsTemplate: payload.saveAsTemplate,
-			templateName: payload.templateName,
-		});
+		if (payload.saveAsTemplate) {
+			const created = await workflowApi.createUser(
+				buildCustomTemplatePayload(screen.sourceWorkflow, payload),
+			);
+			const workflowId = getCreatedWorkflowId(created);
+
+			if (!workflowId) {
+				throw new Error("The user workflow was created without an id.");
+			}
+
+			await attachMutation.mutateAsync({
+				recordRef: sourceRecordRef,
+				recordType,
+				workflowId,
+			});
+		} else {
+			await attachMutation.mutateAsync({
+				recordRef: sourceRecordRef,
+				recordType,
+				stages: payload.stages.flatMap((stage) =>
+					stage.approvers.map((approver) => ({
+						order: stage.stageOrder,
+						name: stage.name,
+						approverId: approver.user.id,
+					})),
+				),
+				flowType: payload.flowType,
+				saveAsTemplate: false,
+			});
+		}
+
 		onWorkflowAttached?.();
 	};
 
@@ -143,21 +207,24 @@ export function WorkflowFetchPage({
 		return (
 			<WorkflowTemplateBuilder
 				sourceRecordRef={sourceRecordRef}
-				initialStages={screen.initialStages}
+				initialStages={mapStages(screen.sourceWorkflow.stages)}
+				initialFlowType={screen.initialFlowType}
 				initialSaveAsTemplate={screen.initialSaveAsTemplate}
-				searchApprovers={handleSearchApprovers}
 				onAttach={handleBuilderAttach}
 				onCancel={() => setScreen({ view: "entry" })}
+				disabled={attachMutation.loading}
 			/>
 		);
 	}
 
 	return (
 		<WorkflowEntrySection
+			sourceRecordRef={sourceRecordRef}
 			createdWorkflows={createdWorkflows}
 			assignedWorkflows={assignedWorkflows}
 			onAttach={handleAttach}
 			onEditAndAttach={handleEditAndAttach}
+			disabled={attachMutation.loading || customising}
 		/>
 	);
 }

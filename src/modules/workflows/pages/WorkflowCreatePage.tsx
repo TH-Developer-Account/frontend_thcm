@@ -1,23 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import WorkflowCreateMain from "../components/WorkflowCreateMain";
 import WorkflowCreateSidebar from "../components/WorkflowCreateSidebar";
+import { mapBasics, mapStages } from "../utils/workflow.helpers";
 import {
-	mapBasics,
-	mapStages,
-	getDefaultMapStages,
 	buildWorkflowPayload,
 	toggleStageExpanded,
 	updateStageField,
 	validateWorkflow,
 	validateWorkflowBasics,
+	getDefaultMapStages,
 } from "../utils/workflow.helpers";
 import { budgetCategories, formatApps } from "../constant/workflow.constant";
 
 import type {
-	WorkflowApprover,
 	WorkflowBasics,
+	WorkflowApprover,
 	WorkflowGenErrors,
 	WorkflowStage,
 	WorkflowStageErrors,
@@ -35,12 +34,19 @@ const WorkflowCreatePage = () => {
 	const { user, workspaceId, isLoading, permissions } = useAuth();
 	const { showToast } = useToast();
 	const { id } = useParams();
+	const location = useLocation();
 	const navigate = useNavigate();
+	const isUserCreatedWorkflow =
+		!id &&
+		(location.state as { workflowType?: string } | null)?.workflowType ===
+			"USERCREATED";
 
 	const [currentStep, setCurrentStep] = useState(1);
 	const [loadingWorkflow, setLoadingWorkflow] = useState(false);
+	const [savingUserWorkflow, setSavingUserWorkflow] = useState(false);
 	const saveMutation = useSaveWorkflowMutation();
-	const loading = loadingWorkflow || saveMutation.loading;
+	const loading = loadingWorkflow || savingUserWorkflow || saveMutation.loading;
+
 	const [basics, setBasics] = useState<WorkflowBasics>({
 		name: "",
 		app: "",
@@ -268,7 +274,13 @@ const WorkflowCreatePage = () => {
 
 		try {
 			const payload = buildWorkflowPayload(basics, stages, workspaceId);
-			const data = (await saveMutation.mutateAsync(id, payload)) as {
+			setSavingUserWorkflow(isUserCreatedWorkflow);
+
+			const data = (
+				isUserCreatedWorkflow
+					? await workflowApi.createUser(payload)
+					: await saveMutation.mutateAsync(id, payload)
+			) as {
 				message?: string;
 			};
 
@@ -284,6 +296,8 @@ const WorkflowCreatePage = () => {
 				title: "Error",
 				description: getWorkflowErrorMessage(error, "Failed to save workflow"),
 			});
+		} finally {
+			setSavingUserWorkflow(false);
 		}
 	};
 

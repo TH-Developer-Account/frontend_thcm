@@ -1,7 +1,3 @@
-import { Plus } from "lucide-react";
-
-import Button from "../../../components/common/Button";
-import Card from "../../../components/common/Card";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import { useParams } from "react-router-dom";
@@ -46,32 +42,17 @@ const DynamicWorkflow = ({
 				}}
 			/>
 
-			<Card
-				title="Fetch all my workflows"
-				actions={
-					<Button
-						type="button"
-						text="Fetch"
-						size="sm"
-						Icon={Plus}
-						iconPosition="left"
-						appearance="ghost"
-						variant="outline"
-					/>
-				}
-			>
-				{resolvedRecordRef ? (
-					<WorkflowFetchPage
-						sourceRecordRef={resolvedRecordRef}
-						recordType={recordType}
-						onWorkflowAttached={onWorkflowAttached}
-					/>
-				) : (
-					<div role="alert">
-						A source record is required to attach a workflow.
-					</div>
-				)}
-			</Card>
+			{resolvedRecordRef ? (
+				<WorkflowFetchPage
+					sourceRecordRef={resolvedRecordRef}
+					recordType={recordType}
+					onWorkflowAttached={onWorkflowAttached}
+				/>
+			) : (
+				<div role="alert">
+					A source record is required to attach a workflow.
+				</div>
+			)}
 		</PageSectionLayout>
 	);
 };

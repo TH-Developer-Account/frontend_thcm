@@ -50,6 +50,8 @@ export type WorkflowApproverPayload = {
 	isExternalApprover: boolean;
 };
 
+export type WorkflowType = "USERCREATED";
+
 export type CreateWorkflowPayload = {
 	name: string;
 	workspaceId: string;
@@ -66,6 +68,7 @@ export type CreateWorkflowPayload = {
 		approverIds: WorkflowApproverPayload[];
 		minApprovals?: number;
 	}>;
+	workflowType?: WorkflowType;
 };
 
 export type WorkflowApp = {
@@ -98,6 +101,7 @@ export type WorkflowTemplate = {
 	createdBy: WorkflowUser;
 	updatedBy: WorkflowUser;
 	workflowUsers: WorkflowTemplateUser[];
+	workflowType?: WorkflowType | string;
 };
 
 export type WorkflowRow = {
@@ -109,6 +113,7 @@ export type WorkflowRow = {
 	lastUpdated: ApiDateString;
 	updatedBy: string;
 	workflowUsers: Array<Pick<WorkflowUser, "id">>;
+	workflowType?: WorkflowType | string;
 };
 
 export type WorkflowSummary = {

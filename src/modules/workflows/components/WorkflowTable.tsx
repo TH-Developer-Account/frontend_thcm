@@ -15,7 +15,7 @@ import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { formatApps } from "../constant/workflow.constant";
 import { useWorkflow } from "../context/useWorkflows";
-import type { WorkflowRow } from "../types/workflow.types";
+import type { WorkflowRow } from "../types/types";
 import { workflowListFilterOptions } from "../constant/workflow.constant";
 import { getWorkflowColumns } from "../utils/workflow.columns";
 import { WorkflowUserAssignment } from "./WorkflowUserAssignment";
@@ -31,6 +31,10 @@ type WorkflowTableProps = {
 	selectedFilter?: WorkflowFilter;
 	onFilterChange?: (value: WorkflowFilter) => void;
 };
+
+const isUserCreatedWorkflow = (workflow: WorkflowRow | null): boolean =>
+	workflow?.workflowType?.toUpperCase() === "USERCREATED";
+
 const WorkflowTable = ({
 	selectedFilter: selectedFilterProp,
 	onFilterChange,
@@ -123,14 +127,19 @@ const WorkflowTable = ({
 		setDeleteModal(workflow);
 	}, []);
 
+	const handleOpenAssignment = React.useCallback((workflow: WorkflowRow) => {
+		if (isUserCreatedWorkflow(workflow)) return;
+		setAssignModalOpen(workflow);
+	}, []);
+
 	const columns = React.useMemo(
 		() =>
 			getWorkflowColumns({
-				onAssign: setAssignModalOpen,
+				onAssign: handleOpenAssignment,
 				onEdit: handleEdit,
 				onDelete: handleOpenDelete,
 			}),
-		[handleEdit, handleOpenDelete],
+		[handleEdit, handleOpenAssignment, handleOpenDelete],
 	);
 
 	const handleDelete = React.useCallback(
@@ -254,10 +263,12 @@ const WorkflowTable = ({
 				</section>
 			</Card>
 
-			<WorkflowUserAssignment
-				workflow={assignModalOpen}
-				onClose={() => setAssignModalOpen(null)}
-			/>
+			{assignModalOpen && !isUserCreatedWorkflow(assignModalOpen) ? (
+				<WorkflowUserAssignment
+					workflow={assignModalOpen}
+					onClose={() => setAssignModalOpen(null)}
+				/>
+			) : null}
 
 			<Modal
 				open={Boolean(deleteModal)}

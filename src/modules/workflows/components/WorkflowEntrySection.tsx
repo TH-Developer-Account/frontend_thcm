@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { GitBranch, LibraryBig, Plus, Sparkles } from "lucide-react";
 
 import Button from "../../../components/common/Button";
@@ -9,6 +9,7 @@ import type {
 	WorkflowFilter,
 	WorkflowSummary,
 } from "../types/types";
+import "../utils/workflow.css";
 import { WorkflowFetchList } from "./WorkflowFetchList";
 import { useNavigate } from "react-router-dom";
 import { SearchInput } from "../../../components/forms/SearchInput";
@@ -29,6 +30,20 @@ export interface WorkflowEntrySectionProps {
 	loading?: boolean;
 }
 
+const filterWorkflows = (
+	workflows: WorkflowSummary[],
+	search: string,
+): WorkflowSummary[] => {
+	const keyword = search.trim().toLowerCase();
+	if (!keyword) return workflows;
+
+	return workflows.filter((workflow) =>
+		`${workflow.name} ${workflow.description ?? ""}`
+			.toLowerCase()
+			.includes(keyword),
+	);
+};
+
 export function WorkflowEntrySection({
 	sourceRecordRef,
 	createdWorkflows,
@@ -44,18 +59,26 @@ export function WorkflowEntrySection({
 	const navigate = useNavigate();
 	const [mode, setMode] = useState<EntryMode>("idle");
 	const [filter, setFilter] = useState<WorkflowFilter>("created");
-	const [editingId, setEditingId] = useState<string | null>(null);
-	const [saveModes, setSaveModes] = useState<Record<string, SaveMode>>({});
 	const [search, setSearch] = useState<string>("");
 
 	const selectMode = (nextMode: EntryMode) => {
 		setMode(nextMode);
-		setEditingId(null);
 	};
 
 	const handleNavigatetoWorkflowCreate = () => {
-		navigate("/workflow/create-workflows");
+		navigate("/workflow/create-workflows", {
+			state: { workflowType: "USERCREATED" },
+		});
 	};
+
+	const filteredCreatedWorkflows = useMemo(
+		() => filterWorkflows(createdWorkflows, search),
+		[createdWorkflows, search],
+	);
+	const filteredAssignedWorkflows = useMemo(
+		() => filterWorkflows(assignedWorkflows, search),
+		[assignedWorkflows, search],
+	);
 	return (
 		<Card
 			className="workflow-entry-card"
@@ -135,25 +158,17 @@ export function WorkflowEntrySection({
 						<SearchInput
 							value={search}
 							onChange={setSearch}
-							placeholder="Search users..."
+							placeholder="Search workflows..."
 						/>
 					</div>
 					<WorkflowFetchList
 						filter={filter}
 						onFilterChange={setFilter}
-						createdWorkflows={createdWorkflows}
-						assignedWorkflows={assignedWorkflows}
-						editingId={editingId}
-						onToggleEdit={(id) =>
-							setEditingId((current) => (current === id ? null : id))
-						}
-						getSaveMode={(id) => saveModes[id] ?? "once"}
-						onSetSaveMode={(id, saveMode) =>
-							setSaveModes((current) => ({ ...current, [id]: saveMode }))
-						}
+						createdWorkflows={filteredCreatedWorkflows}
+						assignedWorkflows={filteredAssignedWorkflows}
 						onAttach={onAttach}
-						onContinueEdit={onEditAndAttach}
 						disabled={disabled}
+						onCustomise={(workflow) => onEditAndAttach(workflow, "once")}
 						loading={loading}
 					/>
 				</>

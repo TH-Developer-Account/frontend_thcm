@@ -171,6 +171,7 @@ export const mapWorkflowRows = (workflows: WorkflowTemplate[]): WorkflowRow[] =>
 		workflowUsers: workflow.workflowUsers.map(({ user }) => ({
 			id: user.id,
 		})),
+		workflowType: workflow.workflowType,
 	}));
 export const mapBasics = (data: any) => ({
 	id: data?.id ?? "",
@@ -199,11 +200,18 @@ export const mapStages = (stages: any[] = []): WorkflowStage[] => {
 				stage?.approvers?.map((approver: any) => ({
 					id: approver?.id ?? approver?.userId ?? approver?.user?.id,
 					stageId: approver?.stageId ?? stage?.id ?? "",
-					userId: approver?.userId ?? approver?.user?.id ?? "",
 					user: {
 						id: approver?.user?.id ?? approver?.userId ?? "",
-						first_name: approver?.user?.first_name ?? approver?.firstName ?? "",
-						last_name: approver?.user?.last_name ?? approver?.lastName ?? "",
+						firstName:
+							approver?.user?.firstName ??
+							approver?.user?.first_name ??
+							approver?.firstName ??
+							"",
+						lastName:
+							approver?.user?.lastName ??
+							approver?.user?.last_name ??
+							approver?.lastName ??
+							"",
 						email: approver?.user?.email ?? approver?.email ?? "",
 					},
 					isExternalApprover: Boolean(approver?.isExternalApprover),
