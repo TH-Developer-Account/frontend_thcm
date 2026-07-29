@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Modal } from "../../../components/common/Modal";
 import Button from "../../../components/common/Button";
-import type { User } from "../../admin/user-profile/types/profile.types";
 import Avatar from "../../../components/common/Avatar";
 import { SearchInput } from "../../../components/forms/SearchInput";
-import type { WorkflowRow } from "../types/workflow.types";
+import type { WorkflowRow, WorkflowUser } from "../types/types";
 import { workflowApi, getWorkflowErrorMessage } from "../api/workflow.api";
 import { useAssignWorkflowUsersMutation } from "../context/useWorkflowMutations";
 import { useToast } from "../../../context/Auth/AuthContext";
+import { getFullName } from "../utils/user";
 
 type AssignProps = {
 	workflow: WorkflowRow | null;
@@ -18,7 +18,7 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 	workflow,
 	onClose,
 }) => {
-	const [users, setUsers] = useState<User[]>([]);
+	const [users, setUsers] = useState<WorkflowUser[]>([]);
 	const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState<string>("");
@@ -31,8 +31,7 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 		if (!keyword) return users;
 
 		return users.filter((user) => {
-			const fullName =
-				`${user.firstName ?? ""} ${user.lastName ?? ""}`.toLowerCase();
+			const fullName = getFullName(user).toLowerCase();
 			const email = (user.email ?? "").toLowerCase();
 			const phone = (user.phone ?? "").toLowerCase();
 
@@ -118,63 +117,64 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 				</>
 			}
 		>
-			<div className="relative mb-4">
-				<SearchInput value={search} onChange={setSearch} />
+			<div className="workflow-assignment-search">
+				<SearchInput
+					value={search}
+					onChange={setSearch}
+					placeholder="Search users..."
+				/>
 			</div>
 
-			<div className="space-y-2 overflow-y-auto scrollbar-sleek p-4 flex-1">
+			<div className="workflow-assignment-list">
 				{loading ? (
-					<p className="text-sm text-gray-400">Loading users...</p>
+					<p className="workflow-assignment-empty">Loading users...</p>
 				) : filteredUsers.length === 0 ? (
-					<p className="text-sm text-gray-400">No users found.</p>
+					<p className="workflow-assignment-empty">No users found.</p>
 				) : (
 					filteredUsers.map((user) => {
 						const selected = selectedUsers.includes(user.id);
 
 						return (
-							<div
+							<button
+								type="button"
 								key={user.id}
 								onClick={() => toggleUser(user.id)}
-								className={`flex items-center text-left justify-between gap-3 p-3 rounded-xl border cursor-pointer transition-all duration-150 ${
-									selected
-										? "bg-amber-500/5 border-amber-500/30"
-										: "bg-gray-100/40 border-gray-200 hover:border-gray-300 hover:bg-gray-100"
+								className={`workflow-assignment-row ${
+									selected ? "workflow-assignment-row--selected" : ""
 								}`}
 							>
 								<div>
 									<Avatar firstName={user.firstName} lastName={user.lastName} />
 								</div>
 
-								<div className="min-w-0 flex-1">
-									<p className="text-sm font-semibold truncate">
-										{user.firstName} {user.lastName}
+								<div className="workflow-assignment-name">
+									<p className="workflow-assignment-primary">
+										{getFullName(user)}
 									</p>
 								</div>
 
-								<div className="flex-1 min-w-0">
-									<p className="text-xs text-gray-500 truncate">
+								<div className="workflow-assignment-detail">
+									<p className="workflow-assignment-secondary">
 										{user.email ?? "--"}
 									</p>
 								</div>
 
-								<div className="flex-1 min-w-0">
-									<p className="text-xs text-gray-500 truncate">
+								<div className="workflow-assignment-detail">
+									<p className="workflow-assignment-secondary">
 										{user.phone ?? "--"}
 									</p>
 								</div>
 
 								<div
-									className={`w-5 h-5 rounded-md border flex items-center justify-center ${
-										selected
-											? "bg-amber-500 border-amber-500"
-											: "border-gray-300"
+									className={`workflow-assignment-check ${
+										selected ? "workflow-assignment-check--selected" : ""
 									}`}
 								>
 									{selected && (
-										<span className="text-white text-xs font-bold">✓</span>
+										<span className="workflow-assignment-checkmark">✓</span>
 									)}
 								</div>
-							</div>
+							</button>
 						);
 					})
 				)}

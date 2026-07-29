@@ -2,6 +2,7 @@
 
 import type { EpcDetailResponse } from "../types/epc.types";
 import type { EventReportDetail } from "../types/event.report.types";
+import { normalizeWorkflowStatus } from "../../../workflows/utils/status";
 import {
 	hasFormUpdateAfterIssue,
 	hasUnresolvedClarificationInComments,
@@ -13,10 +14,11 @@ import {
 
 export type ActivityEditSection = "epc" | "crf" | "epf" | "report";
 
-const normalizeStatus = (status?: string | null) =>
-	String(status ?? "")
-		.trim()
-		.toUpperCase();
+const ACTIVITY_FORM_UPDATE_ACTIONS = [
+	"EPC_UPDATED",
+	"EPF_UPDATED",
+	"CRF_UPDATED",
+] as const;
 
 const CLOSED_STATUSES = ["CLOSED", "EPC_CLOSED"];
 
@@ -76,8 +78,8 @@ export const getActivityPermissions = ({
 	workflowEntries = [],
 	hasValidatorPreviewed = false,
 }: GetActivityPermissionsArgs) => {
-	const status = normalizeStatus(epcData?.status);
-	const reportStatus = normalizeStatus(report?.status);
+	const status = normalizeWorkflowStatus(epcData?.status);
+	const reportStatus = normalizeWorkflowStatus(report?.status);
 
 	const isExistingEpc = Boolean(epcData?.id);
 	const reportValidatorId = report?.validatorId;
@@ -111,11 +113,13 @@ export const getActivityPermissions = ({
 	const hasClarificationFormUpdate = hasFormUpdateAfterIssue(
 		workflowEntries,
 		"CLARIFICATION",
+		ACTIVITY_FORM_UPDATE_ACTIONS,
 	);
 
 	const hasDeviationFormUpdate = hasFormUpdateAfterIssue(
 		workflowEntries,
 		"DEVIATION",
+		ACTIVITY_FORM_UPDATE_ACTIONS,
 	);
 
 	const canEditNormalForm =

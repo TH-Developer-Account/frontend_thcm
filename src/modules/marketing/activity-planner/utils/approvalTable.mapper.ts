@@ -1,9 +1,9 @@
 export {
 	getApprovalStrategyLabel,
 	mapWorkflowStagesToApprovalRows,
-} from "../../../../components/ui/workflow/approvalWorkflow.mapper";
+} from "../../../workflows";
 
 export type {
 	ApprovalStageLike,
 	MapWorkflowStagesOptions,
-} from "../../../../components/ui/workflow/approvalWorkflow.types";
+} from "../../../workflows";

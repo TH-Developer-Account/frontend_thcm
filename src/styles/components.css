@@ -1172,7 +1172,7 @@
 
 	.ui-card-accordion-trigger:focus-visible {
 		border-radius: var(--radius-sm);
-		outline: 2px solid var(--color-brand-orange);
+		outline: 2px solid var(--color-brand);
 		outline-offset: 3px;
 	}
 
@@ -7769,7 +7769,7 @@ PAGE NAVIGATION
 
 	.file-upload-empty:focus-visible,
 	.file-upload-add-more:focus-visible {
-		outline: 2px solid var(--color-focus-ring, var(--color-brand-orange));
+		outline: 2px solid var(--color-focus-ring, var(--color-brand));
 		outline-offset: 2px;
 	}
 
@@ -8623,12 +8623,12 @@ PAGE NAVIGATION
 	.action-menu-item:hover,
 	.action-menu-item-focus {
 		background-color: var(--color-bg-surface-hover);
-		color: var(--color-brand-orange);
+		color: var(--color-brand);
 	}
 
 	.action-menu-item:hover svg,
 	.action-menu-item-focus svg {
-		color: var(--color-brand-orange);
+		color: var(--color-brand);
 	}
 
 	.action-menu-item:disabled,

@@ -1,11 +1,7 @@
 import { GitFork, Paperclip, Pencil, Plus, Users } from "lucide-react";
 
 import Button from "../../../components/common/Button";
-import type {
-	SaveMode,
-	WorkflowFilter,
-	WorkflowSummary,
-} from "../types/workflow.types";
+import type { SaveMode, WorkflowFilter, WorkflowSummary } from "../types/types";
 
 interface WorkflowFetchListProps {
 	filter: WorkflowFilter;

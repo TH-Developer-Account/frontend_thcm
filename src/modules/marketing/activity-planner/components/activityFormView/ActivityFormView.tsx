@@ -5,13 +5,11 @@ import EpcForm from "../../forms/EPC/EpcForm";
 import ActivityDetailsSection from "../activityFormView/ActivityDetailsSection";
 import CrfSection from "../../forms/CRF/CrfSection";
 import EpfSection from "../../forms/EPF/EpfSection";
-import ApprovalWorkflowSection from "../../../../../components/ui/workflow/ApprovalWorkflowSection";
 
 import type { EpcDetailResponse } from "../../types/epc.types";
 import { EventOutcome } from "../../forms/EventOutcome/EventOutcome";
 import { EventReportSection } from "../../forms/EventReport/EventReportSection";
 import Button from "../../../../../components/common/Button";
-import type { WorkflowStage } from "../../types/workflow.types";
 import { useAuth } from "../../../../../context/Auth/useAuth";
 import { getStoredAppId } from "../../helpers/localstorage";
 import type { EventReportDetail } from "../../types/event.report.types";
@@ -19,17 +17,56 @@ import { useToast } from "../../../../../context/Auth/AuthContext";
 import { workflowApi } from "../../../../../api/workflow.api";
 
 import { getWorkflowCommentContext } from "../../../../../components/ui/comments/comments.helper";
-import {
-	getCurrentApprovalStage,
-	getIsUserInCurrentStage,
-} from "../../../../../components/ui/workflow/approvalWorkflow.helpers";
+
 import ResubmitFooterAction from "./ResubmitFooterAction";
 import { ReasonActionModal } from "../../../../../components/ui/ReasonActionModal";
 import type { ActivityPermissions } from "../../helpers/activityPermissions.helper";
 import { CommentsSection } from "../../../../../components/ui/comments";
 import { activityPlannerCommentApi } from "../../api/activityPlannerComment.adapter";
 import { getAuditMessage } from "../../helpers/activityLogMessage.helper";
+import {
+	ApprovalWorkflowSection,
+	getCurrentApprovalStage,
+	getIsUserInCurrentStage,
+} from "../../../../workflows";
+import type {
+	ApprovalStageLike,
+	WorkflowApprovalLike,
+	WorkflowUser,
+} from "../../../../workflows";
+import type {
+	WorkflowApproval,
+	WorkflowStage,
+} from "../../types/workflow.types";
 
+const mapEpcWorkflowUser = (approval: WorkflowApproval): WorkflowUser => ({
+	id: approval.approver.id || approval.approverId,
+	firstName: approval.approver.first_name?.trim() ?? "",
+	lastName: approval.approver.last_name?.trim() ?? "",
+	email: approval.approver.email?.trim() || undefined,
+});
+
+const mapEpcWorkflowApproval = (
+	approval: WorkflowApproval,
+): WorkflowApprovalLike => ({
+	id: approval.id,
+	approverId: approval.approverId,
+	status: approval.status,
+	approver: mapEpcWorkflowUser(approval),
+});
+
+const mapEpcWorkflowStage = (stage: WorkflowStage): ApprovalStageLike => ({
+	id: stage.id,
+	workflowId: stage.workflowId,
+	stageOrder: stage.stageOrder,
+	stageName: stage.stageName,
+	name: stage.name,
+	strategy: stage.strategy,
+	minApprovals: stage.minApprovals,
+	status: stage.status,
+	isCurrentIteration: stage.isCurrentIteration,
+	approvals: stage.approvals.map(mapEpcWorkflowApproval),
+});
 type EditingSection = "epc" | "crf" | "epf" | null;
 type ReasonModalState = {
 	mode: "clarify-workflow" | "clarify-report" | null;
@@ -91,7 +128,7 @@ const ActivityFormView = ({
 	const appId = React.useMemo(() => getStoredAppId(), []);
 
 	const [deviationPreviewStages, setDeviationPreviewStages] = React.useState<
-		WorkflowStage[]
+		ApprovalStageLike[]
 	>([]);
 
 	const [commentsRefreshKey, setCommentsRefreshKey] = React.useState(0);
@@ -129,14 +166,18 @@ const ActivityFormView = ({
 		await onRefresh();
 		refreshComments();
 	}, [onRefresh, refreshComments]);
-
+	const handleDeviationPreviewSuccess = React.useCallback(
+		(stages: WorkflowStage[]) => {
+			setDeviationPreviewStages(stages.map(mapEpcWorkflowStage));
+		},
+		[],
+	);
 	const activeWorkflow = epcData?.activeWorkflow ?? null;
 
-	const workflowStages = React.useMemo(
-		() => activeWorkflow?.stages ?? [],
+	const workflowStages = React.useMemo<ApprovalStageLike[]>(
+		() => (activeWorkflow?.stages ?? []).map(mapEpcWorkflowStage),
 		[activeWorkflow?.stages],
 	);
-
 	const eventStatus = epcData?.status ?? "unknown";
 	const userId = user?.id as string | undefined;
 	const currentStage = React.useMemo(
@@ -343,7 +384,17 @@ const ActivityFormView = ({
 						<>
 							<ApprovalWorkflowSection
 								stages={workflowStages}
-								deviationPreviewStages={deviationPreviewStages}
+								additionalFlows={
+									deviationPreviewStages.length > 0
+										? [
+												{
+													key: "deviation",
+													title: "Deviation Approval Flow",
+													stages: deviationPreviewStages,
+												},
+											]
+										: []
+								}
 							/>
 
 							<CommentsSection
@@ -389,7 +440,7 @@ const ActivityFormView = ({
 							workspaceId={workspaceId ?? undefined}
 							appId={appId ?? undefined}
 							onSuccess={handleSuccess}
-							onDeviationPreviewSuccess={setDeviationPreviewStages}
+							onDeviationPreviewSuccess={handleDeviationPreviewSuccess}
 						/>
 					)}
 				</div>

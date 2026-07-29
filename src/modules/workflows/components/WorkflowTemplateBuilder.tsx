@@ -14,20 +14,20 @@ import Card from "../../../components/common/Card";
 import FormInput from "../../../components/forms/FormInput";
 import { useWorkflowBuilder } from "../context/useWorkflowBuilder";
 import type {
-	Approver,
-	FlowType,
 	WorkflowBuilderPayload,
 	WorkflowBuilderOptions,
+	WorkflowExecutionMode,
 	WorkflowStage,
-} from "../context/useWorkflowBuilder";
-import "../utils/workflow.css";
+	WorkflowUser,
+} from "../types/types";
+import { getFullName } from "../utils/user";
 
 export interface WorkflowTemplateBuilderProps {
 	sourceRecordRef: string;
 	initialStages?: WorkflowStage[];
-	initialFlowType?: FlowType;
+	initialFlowType?: WorkflowExecutionMode;
 	initialSaveAsTemplate?: boolean;
-	searchApprovers: (query: string) => Promise<Approver[]>;
+	searchApprovers: (query: string) => Promise<WorkflowUser[]>;
 	onAttach: (payload: WorkflowBuilderPayload) => void | Promise<void>;
 	onCancel?: () => void;
 	title?: string;
@@ -64,8 +64,8 @@ export function WorkflowTemplateBuilder({
 	} = useWorkflowBuilder(options);
 
 	const [query, setQuery] = useState("");
-	const [results, setResults] = useState<Approver[]>([]);
-	const [selectedApprover, setSelectedApprover] = useState<Approver | null>(
+	const [results, setResults] = useState<WorkflowUser[]>([]);
+	const [selectedApprover, setSelectedApprover] = useState<WorkflowUser | null>(
 		null,
 	);
 	const [stageNameDraft, setStageNameDraft] = useState("");
@@ -148,7 +148,9 @@ export function WorkflowTemplateBuilder({
 						onChange={(event) => {
 							const value = event.target.value;
 							setQuery(value);
-							if (selectedApprover?.name !== value) setSelectedApprover(null);
+							if (selectedApprover && getFullName(selectedApprover) !== value) {
+								setSelectedApprover(null);
+							}
 						}}
 						placeholder="Search by name or email"
 						disabled={disabled}
@@ -169,7 +171,7 @@ export function WorkflowTemplateBuilder({
 										aria-selected={selectedApprover?.id === approver.id}
 										onClick={() => {
 											setSelectedApprover(approver);
-											setQuery(approver.name);
+											setQuery(getFullName(approver));
 											setResults([]);
 										}}
 									>
@@ -177,7 +179,7 @@ export function WorkflowTemplateBuilder({
 											<UserRound size={14} />
 										</span>
 										<span>
-											<strong>{approver.name}</strong>
+											<strong>{getFullName(approver)}</strong>
 											<small>{approver.email}</small>
 										</span>
 									</button>
@@ -208,7 +210,7 @@ export function WorkflowTemplateBuilder({
 					text="Add Stage"
 				/>
 			</div>
-
+			{/* <WorkflowStagesForm /> */}
 			{state.stages.length === 0 ? (
 				<div className="workflow-builder-empty">
 					<GitBranch size={22} aria-hidden="true" />
@@ -234,8 +236,17 @@ export function WorkflowTemplateBuilder({
 										<UserRound size={14} />
 									</span>
 									<span>
-										<strong>{stage.approver.name}</strong>
-										<small>{stage.approver.email}</small>
+										<strong>
+											{stage.approvers
+												.map((approver) => getFullName(approver.user))
+												.join(", ")}
+										</strong>
+										<small>
+											{stage.approvers
+												.map((approver) => approver.user.email)
+												.filter(Boolean)
+												.join(", ")}
+										</small>
 									</span>
 								</div>
 							</div>

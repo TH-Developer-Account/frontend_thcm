@@ -2,8 +2,7 @@ import type { ReactNode } from "react";
 import { ArrowLeft, RefreshCcw, Save, Send } from "lucide-react";
 
 import Button from "../../../components/common/Button";
-import ApprovalWorkflowTableContent from "../../../components/ui/workflow/ApprovalWorkflowTableContent";
-import type { ApprovalStageLike } from "../../../components/ui/workflow/approvalWorkflow.types";
+import { ApprovalWorkflowTableContent } from "../../workflows/components/ApprovalWorkflowTableContent";
 
 import { ReasonActionModal } from "../../../components/ui/ReasonActionModal";
 
@@ -19,6 +18,7 @@ import {
 	useOptionalVendorCreationFormContext,
 	useVendorCreationSummaryController,
 } from "../hooks/useVendorCreationForm";
+import type { ApprovalStageLike } from "../../workflows/types/types";
 
 type VendorCreationSummaryMode = "edit" | "view";
 
@@ -55,7 +55,7 @@ type VendorCreationSummaryFormProps = {
 	vendorCodeLoading?: boolean;
 	onSaveVendorCode?: () => void | Promise<boolean>;
 
-	workflowStages?: readonly ApprovalStageLike[];
+	workflowStages?: ApprovalStageLike[];
 	commentsSection?: ReactNode;
 	workflowLoading?: boolean;
 };

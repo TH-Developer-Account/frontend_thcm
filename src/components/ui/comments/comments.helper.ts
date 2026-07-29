@@ -1,19 +1,15 @@
 import type { CommentUser, MentionableUserInput } from "./comment.types";
 
-import type {
-	ApprovalStageLike,
-	WorkflowPersonLike,
-} from "../workflow/approvalWorkflow.types";
-
 import {
 	getApprovalIdForUser,
 	getApprovalUser,
 	getIsUserInCurrentStage,
 	normalizeWorkflowStatus,
-} from "../workflow/approvalWorkflow.helpers";
+	type ApprovalStageLike,
+} from "../../../modules/workflows";
 
 const toCommentUser = (
-	user?: WorkflowPersonLike | MentionableUserInput | null,
+	user?: MentionableUserInput | null,
 	fallbackName = "User",
 ): CommentUser | null => {
 	if (!user?.id) return null;

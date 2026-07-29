@@ -8,9 +8,10 @@ import Button from "../../../components/common/Button";
 
 import type {
 	WorkflowStage,
-	Approver,
+	WorkflowApprover,
 	WorkflowStageErrors,
-} from "../types/workflow.types";
+} from "../types/types";
+import { getFullName } from "../utils/user";
 
 type Props = {
 	stages: WorkflowStage[];
@@ -24,7 +25,7 @@ type Props = {
 	) => void;
 	onToggleStage: (stageId: string) => void;
 	onRemoveApprover: (stageId: string, approverId: string) => void;
-	onAddApprover: (stageId: string, approver: Approver) => void;
+	onAddApprover: (stageId: string, approver: WorkflowApprover) => void;
 	onBack: () => void;
 	onSubmit: () => void;
 	onAddStage: () => void;
@@ -65,7 +66,9 @@ const WorkflowStagesForm = ({
 				{stages.length === 0 ? (
 					<div className="workflow-empty-state">
 						{formError ? (
-							<p className="form-error-text text-md text-center">{formError}</p>
+							<p className="workflow-form-error form-error-text  workflow-form-error--center">
+								{formError}
+							</p>
 						) : (
 							<>
 								No stages added yet. Click <strong>Add another stage</strong> to
@@ -173,11 +176,10 @@ const WorkflowStagesForm = ({
 
 											<div className="workflow-approver-list">
 												{stage.approvers.map((approver) => {
-													const firstName = approver.user?.first_name ?? "";
-													const lastName = approver.user?.last_name ?? "";
+													const firstName = approver.user?.firstName ?? "";
+													const lastName = approver.user?.lastName ?? "";
 
-													const fullName =
-														`${firstName} ${lastName}`.trim() || "Unnamed User";
+													const fullName = getFullName(approver.user);
 
 													const checkboxId = `external-approver-${stage.id}-${approver.id}`;
 
@@ -244,7 +246,7 @@ const WorkflowStagesForm = ({
 											<UserAsyncSelect
 												label="Approvers"
 												excludedUserIds={stage.approvers.map(
-													(approver) => approver.userId,
+													(approver) => approver.user.id,
 												)}
 												onChange={(selected) => {
 													if (!selected) return;
@@ -252,11 +254,10 @@ const WorkflowStagesForm = ({
 													onAddApprover(stage.id, {
 														id: selected.value,
 														stageId: stage.id,
-														userId: selected.value,
 														user: {
 															id: selected.value,
-															first_name: selected.firstName ?? "",
-															last_name: selected.lastName ?? "",
+															firstName: selected.firstName ?? "",
+															lastName: selected.lastName ?? "",
 															email: selected.email ?? "",
 														},
 														isExternalApprover: false,
@@ -265,7 +266,7 @@ const WorkflowStagesForm = ({
 											/>
 
 											{(stageError.approvers || stageError.minApprovals) && (
-												<p className="form-error-text text-md text-left mt-2">
+												<p className="workflow-form-error workflow-form-error--left">
 													{stageError.minApprovals
 														? `Please ensure you have at least ${minApprovals} approver${
 																minApprovals > 1 ? "s" : ""
@@ -291,7 +292,7 @@ const WorkflowStagesForm = ({
 				Add another stage
 			</button>
 
-			<div className="mt-4 flex justify-between">
+			<div className="workflow-form-actions">
 				<Button
 					onClick={onBack}
 					type="button"

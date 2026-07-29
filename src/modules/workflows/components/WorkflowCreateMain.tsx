@@ -1,4 +1,4 @@
-import { ArrowLeft, FileText, Plus } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import WorkFlowGenForm from "./WorkFlowGenForm";
 import WorkflowStagesForm from "./WorkflowStagesForm";
 import WorkflowViewForm from "./WorkflowViewForm";
@@ -8,7 +8,7 @@ import type {
 	WorkflowGenErrors,
 	WorkFlowProps,
 	WorkflowStageErrors,
-} from "../types/workflow.types";
+} from "../types/types";
 
 type Props = WorkFlowProps & {
 	basicErrors: WorkflowGenErrors;
@@ -36,35 +36,13 @@ const WorkflowCreateMain = ({
 	stageErrors,
 	stageFormError,
 	onClearBasicError,
+	appOptions,
+	categoryOptions,
+	showCategory,
+	showStatus,
 }: Props) => {
-	const title =
-		currentStep === 1
-			? "Workflow basics"
-			: currentStep === 2
-				? "Approval stages"
-				: "Review & Submit";
-
-	const icon = currentStep === 2 ? <Plus size={14} /> : <FileText size={14} />;
-
-	const iconClass =
-		currentStep === 2
-			? "workflow-create-card-icon-violet"
-			: "workflow-create-card-icon-orange";
-
 	return (
-		<div className="">
-			<div className="workflow-create-card-title">
-				<div className={`workflow-create-card-icon ${iconClass}`}>{icon}</div>
-
-				{title}
-
-				{currentStep === 2 && (
-					<span className="workflow-create-card-title-meta">
-						{stages.length} stages configured
-					</span>
-				)}
-			</div>
-
+		<div className="w-full">
 			{currentStep === 1 && (
 				<WorkFlowGenForm
 					basics={basics}
@@ -72,6 +50,11 @@ const WorkflowCreateMain = ({
 					onBasicChange={onBasicChange}
 					onClearError={onClearBasicError}
 					onNext={goNext}
+					onBack={goBack}
+					appOptions={appOptions}
+					categoryOptions={categoryOptions}
+					showCategory={showCategory}
+					showStatus={showStatus}
 				/>
 			)}
 
@@ -95,7 +78,7 @@ const WorkflowCreateMain = ({
 				<>
 					<WorkflowViewForm basics={basics} stages={stages} />
 
-					<div className="mt-4 flex justify-between">
+					<div className="workflow-form-actions">
 						<Button
 							onClick={goBack}
 							type="button"

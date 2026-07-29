@@ -229,7 +229,7 @@ export interface DynamicWorkflowTableItem {
 	metaData_2?: string;
 	metaData_3?: string;
 
-	stages: DynamicWorkflowStage[];
+	stages?: DynamicWorkflowStage[];
 }
 export interface WorkflowSummary {
 	id: string;

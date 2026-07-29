@@ -1,17 +1,7 @@
 import { useCallback, useState } from "react";
-import type {
-	EntryMode,
-	SaveMode,
-	WorkflowFilter,
-} from "../types/workflow.types";
 
-/**
- * Pure UI state for the entry section: which top-level mode is picked
- * (fetch / create), which filter chip is active, which row's inline
- * editor is open, and what save mode each row has chosen. The workflow
- * data itself (fetched list, attach/edit mutations) stays owned by
- * whatever page renders WorkflowEntrySection.
- */
+import type { EntryMode, SaveMode, WorkflowFilter } from "../types/types";
+
 export function useWorkflowEntry() {
 	const [mode, setMode] = useState<EntryMode>("idle");
 	const [filter, setFilter] = useState<WorkflowFilter>("created");

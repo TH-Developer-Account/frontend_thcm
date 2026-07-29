@@ -1,7 +1,6 @@
 import React, { type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import type { ApprovalStageLike } from "../../../components/ui/workflow/approvalWorkflow.types";
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 import type { ReasonActionMode } from "../../../components/ui/ReasonActionModal";
 import { useToast } from "../../../context/Auth/AuthContext";
@@ -14,11 +13,7 @@ import {
 	vendorOnboardingApi,
 	type PublicVendorSessionResponse,
 } from "../api/vendorOnboarding.api";
-import {
-	// getApprovalIdForUser,
-	getCurrentApprovalStage,
-	getIsUserInCurrentStage,
-} from "../../../components/ui/workflow/approvalWorkflow.helpers";
+
 import {
 	buildPublicFormData,
 	buildVendorOnboardingUpdatePayload,
@@ -49,6 +44,11 @@ import type {
 	VendorViewerRole,
 } from "../types/vendorOnboarding.types";
 import { VENDOR_DOCUMENT_FIELDS } from "../types/vendorOnboarding.types";
+import type { ApprovalStageLike } from "../../workflows/types/types";
+import {
+	getCurrentApprovalStage,
+	getIsUserInCurrentStage,
+} from "../../workflows";
 
 export const vendorOnboardingSteps = [
 	{ id: 1, label: "Vendor filled details" },
@@ -509,7 +509,7 @@ export function useVendorCreationFormOneController({
 }
 
 type UseVendorCreationSummaryControllerParams = {
-	workflowStages: readonly ApprovalStageLike[];
+	workflowStages: ApprovalStageLike[];
 	onApprove?: () => void;
 	onClarify?: () => void;
 	onSaveVendorCode?: () => void | Promise<boolean>;

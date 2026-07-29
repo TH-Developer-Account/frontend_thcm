@@ -1,7 +1,10 @@
 import { useCallback, useState } from "react";
 
-import { workflowApi, type AttachWorkflowInput } from "../api/workflow.api";
-import type { CreateWorkflowPayload } from "../types/workflow.types";
+import { workflowApi } from "../api/workflow.api";
+import type {
+	AttachWorkflowInput,
+	CreateWorkflowPayload,
+} from "../types/types";
 
 type MutationState = {
 	loading: boolean;
@@ -16,6 +19,7 @@ const useMutationState = () => {
 
 	const run = useCallback(async <T>(request: () => Promise<T>): Promise<T> => {
 		setState({ loading: true, error: null });
+
 		try {
 			return await request();
 		} catch (error) {
@@ -38,6 +42,7 @@ export const useSaveWorkflowMutation = () => {
 			),
 		[mutation.run],
 	);
+
 	return { ...mutation, mutateAsync };
 };
 
@@ -47,6 +52,7 @@ export const useDeleteWorkflowMutation = () => {
 		(id: string) => mutation.run(() => workflowApi.remove(id)),
 		[mutation.run],
 	);
+
 	return { ...mutation, mutateAsync };
 };
 
@@ -57,6 +63,7 @@ export const useAssignWorkflowUsersMutation = () => {
 			mutation.run(() => workflowApi.assignUsers(templateId, userIds)),
 		[mutation.run],
 	);
+
 	return { ...mutation, mutateAsync };
 };
 
@@ -67,5 +74,6 @@ export const useAttachWorkflowMutation = () => {
 			mutation.run(() => workflowApi.attach(input)),
 		[mutation.run],
 	);
+
 	return { ...mutation, mutateAsync };
 };

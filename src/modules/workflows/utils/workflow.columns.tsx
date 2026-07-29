@@ -1,9 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import moment from "moment-timezone";
 import { Edit, Trash, UserPlus } from "lucide-react";
-import type { WorkflowRow } from "../types/workflow.types";
+
 import { Badge } from "../../../components/common/Badge";
 import Button from "../../../components/common/Button";
+import type { WorkflowRow } from "../types/types";
 
 type WorkflowColumnActions = {
 	onAssign: (row: WorkflowRow) => void;
@@ -19,30 +20,22 @@ export const getWorkflowColumns = ({
 	{
 		accessorKey: "name",
 		header: "Workflow Name",
-		cell: ({ row }) => {
-			return (
-				<div>
-					<div className="font-medium">{row.original.name}</div>
-				</div>
-			);
-		},
-	},
-	{
-		accessorKey: "app_name",
-		header: "App Name",
 		cell: ({ row }) => (
-			<div>
-				<div className="font-medium">{row.original.app_name}</div>
-			</div>
+			<div className="workflow-table-primary">{row.original.name}</div>
 		),
 	},
 	{
-		accessorKey: "created_by",
+		accessorKey: "appName",
+		header: "App Name",
+		cell: ({ row }) => (
+			<div className="workflow-table-primary">{row.original.appName}</div>
+		),
+	},
+	{
+		accessorKey: "createdBy",
 		header: "Created By",
 		cell: ({ row }) => (
-			<div>
-				<div className="font-medium">{row.original.created_by}</div>
-			</div>
+			<div className="workflow-table-primary">{row.original.createdBy}</div>
 		),
 	},
 	{
@@ -55,60 +48,51 @@ export const getWorkflowColumns = ({
 		),
 	},
 	{
-		accessorKey: "last_updated",
+		accessorKey: "lastUpdated",
 		header: "Last Updated",
 		cell: ({ row }) => (
-			<div>
-				<div className="font-medium">
-					{moment(row.original.last_updated).format("L")}
-				</div>
+			<div className="workflow-table-primary">
+				{moment(row.original.lastUpdated).format("L")}
 			</div>
 		),
 	},
 	{
-		accessorKey: "updated_by",
+		accessorKey: "updatedBy",
 		header: "Updated By",
 		cell: ({ row }) => (
-			<div>
-				<div className="font-medium">{row.original.updated_by}</div>
-			</div>
+			<div className="workflow-table-primary">{row.original.updatedBy}</div>
 		),
 	},
 	{
 		id: "actions",
 		header: "Actions",
-		cell: ({ row }) => {
-			const workflow = row.original;
-			return (
-				<div className="flex flex-row justify-start gap-2">
-					<Button
-						size="sm"
-						appearance="icon"
-						variant="secondary"
-						onClick={() => onAssign(workflow)}
-						Icon={UserPlus}
-						isTooltip="Assign Users"
-					/>
-
-					<Button
-						type="button"
-						onClick={() => onEdit(workflow)}
-						Icon={Edit}
-						appearance="icon"
-						variant="secondary"
-						isTooltip="Edit"
-					/>
-
-					<Button
-						type="button"
-						onClick={() => onDelete(workflow)}
-						Icon={Trash}
-						appearance="icon"
-						variant="secondary"
-						isTooltip="Delete"
-					/>
-				</div>
-			);
-		},
+		cell: ({ row }) => (
+			<div className="workflow-table-actions">
+				<Button
+					size="sm"
+					appearance="icon"
+					variant="secondary"
+					onClick={() => onAssign(row.original)}
+					Icon={UserPlus}
+					isTooltip="Assign Users"
+				/>
+				<Button
+					type="button"
+					onClick={() => onEdit(row.original)}
+					Icon={Edit}
+					appearance="icon"
+					variant="secondary"
+					isTooltip="Edit"
+				/>
+				<Button
+					type="button"
+					onClick={() => onDelete(row.original)}
+					Icon={Trash}
+					appearance="icon"
+					variant="secondary"
+					isTooltip="Delete"
+				/>
+			</div>
+		),
 	},
 ];

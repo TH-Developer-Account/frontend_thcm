@@ -4,12 +4,13 @@ import { WorkflowEntrySection } from "../components/WorkflowEntrySection";
 import { WorkflowTemplateBuilder } from "../components/WorkflowTemplateBuilder";
 import { workflowApi } from "../api/workflow.api";
 import { useAttachWorkflowMutation } from "../context/useWorkflowMutations";
+
 import type {
-	Approver,
-	WorkflowBuilderPayload,
+	SaveMode,
+	WorkflowSummary,
 	WorkflowStage,
-} from "../context/useWorkflowBuilder";
-import type { SaveMode, WorkflowSummary } from "../types/workflow.types";
+} from "../types/workflow.types";
+import type { WorkflowBuilderPayload, WorkflowUser } from "../types/types";
 
 type ScreenState =
 	| { view: "entry" }
@@ -85,18 +86,26 @@ export function WorkflowFetchPage({
 		saveMode: SaveMode,
 	) => {
 		const stages = await workflowApi.getBuilderStages(workflow.id);
+
 		setScreen({
 			view: "builder",
-			initialStages: stages.map((stage) => ({
-				id: createLocalStageId(),
-				name: stage.stageName,
-				approver: { ...stage.approver },
-			})),
+			initialStages: stages.map(
+				(stage, index): WorkflowStage => ({
+					id: createLocalStageId(),
+					stageOrder: index + 1,
+					name: stage.stageName,
+					strategy: stage.strategy ?? "ANY",
+					approvers: [...stage.approver],
+					minApprovals:
+						stage.minApprovals ?? Math.max(stage.approver.length, 1),
+					isExpanded: true,
+				}),
+			),
 			initialSaveAsTemplate: saveMode === "template",
 		});
 	};
 
-	const handleSearchApprovers = (query: string): Promise<Approver[]> =>
+	const handleSearchApprovers = (query: string): Promise<WorkflowUser[]> =>
 		workflowApi.searchApprovers(query, recordType);
 
 	const handleBuilderAttach = async (payload: WorkflowBuilderPayload) => {
@@ -145,12 +154,10 @@ export function WorkflowFetchPage({
 
 	return (
 		<WorkflowEntrySection
-			sourceRecordRef={sourceRecordRef}
 			createdWorkflows={createdWorkflows}
 			assignedWorkflows={assignedWorkflows}
 			onAttach={handleAttach}
 			onEditAndAttach={handleEditAndAttach}
-			onCreateNew={() => setScreen({ view: "builder" })}
 		/>
 	);
 }

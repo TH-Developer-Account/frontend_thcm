@@ -1,4 +1,6 @@
-import type { WorkflowStage } from "../types/workflow.types";
+import type { WorkflowStage } from "../types/types";
+import { getStrategyLabel } from "../utils/strategy";
+import { getFullName } from "../utils/user";
 
 type Props = {
 	stages: WorkflowStage[];
@@ -21,7 +23,7 @@ const WorkflowApproverCards = ({ stages }: Props) => {
 					{stages.length === 0 ? (
 						<tr className="workflow-approval-row">
 							<td
-								className="workflow-approval-td workflow-approval-name text-center"
+								className="workflow-approval-td workflow-approval-name workflow-cell-center"
 								colSpan={3}
 							>
 								No stages added yet.
@@ -32,9 +34,7 @@ const WorkflowApproverCards = ({ stages }: Props) => {
 							.filter((stage) => stage.approvers?.length > 0)
 							.map((stage) => {
 								const approverNames = stage.approvers
-									.map((approver) =>
-										`${approver.user.first_name} ${approver.user.last_name}`.trim(),
-									)
+									.map((approver) => getFullName(approver.user))
 									.join(", ");
 
 								return (
@@ -45,7 +45,10 @@ const WorkflowApproverCards = ({ stages }: Props) => {
 
 										<td className="workflow-approval-td">
 											<span className="workflow-create-badge">
-												{stage.approvers.length > 1 ? "Parallel" : "Sequential"}
+												{getStrategyLabel(
+													stage.strategy,
+													stage.approvers.length,
+												)}
 											</span>
 										</td>
 
@@ -58,7 +61,7 @@ const WorkflowApproverCards = ({ stages }: Props) => {
 					) : (
 						<tr className="workflow-approval-row">
 							<td
-								className="workflow-approval-td workflow-approval-name text-center"
+								className="workflow-approval-td workflow-approval-name workflow-cell-center"
 								colSpan={3}
 							>
 								No Approvers added, Navigate to the{" "}

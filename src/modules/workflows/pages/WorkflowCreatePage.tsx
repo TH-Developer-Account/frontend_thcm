@@ -3,22 +3,25 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import WorkflowCreateMain from "../components/WorkflowCreateMain";
 import WorkflowCreateSidebar from "../components/WorkflowCreateSidebar";
-import { mapBasics, mapStages } from "../utils/workflow.helpers";
 import {
+	mapBasics,
+	mapStages,
+	getDefaultMapStages,
 	buildWorkflowPayload,
 	toggleStageExpanded,
 	updateStageField,
 	validateWorkflow,
 	validateWorkflowBasics,
-	getDefaultMapStages,
 } from "../utils/workflow.helpers";
+import { budgetCategories, formatApps } from "../constant/workflow.constant";
+
 import type {
-	Approver,
+	WorkflowApprover,
 	WorkflowBasics,
 	WorkflowGenErrors,
 	WorkflowStage,
 	WorkflowStageErrors,
-} from "../types/workflow.types";
+} from "../types/types";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
@@ -29,7 +32,7 @@ import { getWorkflowErrorMessage, workflowApi } from "../api/workflow.api";
 import { useSaveWorkflowMutation } from "../context/useWorkflowMutations";
 
 const WorkflowCreatePage = () => {
-	const { user, workspaceId, isLoading } = useAuth();
+	const { user, workspaceId, isLoading, permissions } = useAuth();
 	const { showToast } = useToast();
 	const { id } = useParams();
 	const navigate = useNavigate();
@@ -38,7 +41,6 @@ const WorkflowCreatePage = () => {
 	const [loadingWorkflow, setLoadingWorkflow] = useState(false);
 	const saveMutation = useSaveWorkflowMutation();
 	const loading = loadingWorkflow || saveMutation.loading;
-
 	const [basics, setBasics] = useState<WorkflowBasics>({
 		name: "",
 		app: "",
@@ -86,6 +88,15 @@ const WorkflowCreatePage = () => {
 		() => stages.reduce((sum, stage) => sum + stage.approvers.length, 0),
 		[stages],
 	);
+
+	const appOptions = useMemo(
+		() => formatApps(permissions ?? []),
+		[permissions],
+	);
+
+	const showCategory = basics.appDesc === "Marketing Activity Planner";
+
+	const showStatus = Boolean(id);
 
 	const handleBasicChange = <K extends keyof WorkflowBasics>(
 		key: K,
@@ -167,7 +178,7 @@ const WorkflowCreatePage = () => {
 		);
 	};
 
-	const addApprover = (stageId: string, approver: Approver) => {
+	const addApprover = (stageId: string, approver: WorkflowApprover) => {
 		setStages((prev) =>
 			prev.map((stage) => {
 				if (stage.id !== stageId) return stage;
@@ -294,7 +305,7 @@ const WorkflowCreatePage = () => {
 							href: "/workflow/listing",
 						},
 						{
-							label: "Create workflow",
+							label: id ? "Update Workflow" : "Create Workflow",
 						},
 					],
 					separator: "›",
@@ -307,15 +318,6 @@ const WorkflowCreatePage = () => {
 					className="workflow-create-step-progress"
 					ariaLabel="Workflow creation progress"
 				/>
-
-				<div className="workflow-create-page-header">
-					<h2 className="workflow-create-page-title">
-						{id ? "Update Workflow" : "Create Workflow"}
-					</h2>
-					<p className="workflow-create-page-subtitle">
-						Define who approves what, in which order, and under what conditions.
-					</p>
-				</div>
 
 				<div className="workflow-create-grid">
 					<WorkflowCreateMain
@@ -337,6 +339,10 @@ const WorkflowCreatePage = () => {
 						stageErrors={stageErrors}
 						stageFormError={stageFormError}
 						onClearBasicError={clearBasicError}
+						appOptions={appOptions}
+						categoryOptions={budgetCategories}
+						showCategory={showCategory}
+						showStatus={showStatus}
 					/>
 
 					<WorkflowCreateSidebar

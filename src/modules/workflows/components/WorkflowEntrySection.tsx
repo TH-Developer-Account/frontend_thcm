@@ -8,9 +8,10 @@ import type {
 	SaveMode,
 	WorkflowFilter,
 	WorkflowSummary,
-} from "../types/workflow.types";
-import "../utils/workflow.css";
+} from "../types/types";
 import { WorkflowFetchList } from "./WorkflowFetchList";
+import { useNavigate } from "react-router-dom";
+import { SearchInput } from "../../../components/forms/SearchInput";
 
 export interface WorkflowEntrySectionProps {
 	sourceRecordRef?: string;
@@ -21,7 +22,6 @@ export interface WorkflowEntrySectionProps {
 		workflow: WorkflowSummary,
 		saveMode: SaveMode,
 	) => void | Promise<void>;
-	onCreateNew: () => void | Promise<void>;
 	title?: string;
 	description?: string;
 	required?: boolean;
@@ -35,23 +35,27 @@ export function WorkflowEntrySection({
 	assignedWorkflows,
 	onAttach,
 	onEditAndAttach,
-	onCreateNew,
 	title = "Approval workflow",
 	description = "Choose an existing workflow or build one for this request.",
 	required = true,
 	disabled = false,
 	loading = false,
 }: WorkflowEntrySectionProps) {
+	const navigate = useNavigate();
 	const [mode, setMode] = useState<EntryMode>("idle");
 	const [filter, setFilter] = useState<WorkflowFilter>("created");
 	const [editingId, setEditingId] = useState<string | null>(null);
 	const [saveModes, setSaveModes] = useState<Record<string, SaveMode>>({});
+	const [search, setSearch] = useState<string>("");
 
 	const selectMode = (nextMode: EntryMode) => {
 		setMode(nextMode);
 		setEditingId(null);
 	};
 
+	const handleNavigatetoWorkflowCreate = () => {
+		navigate("/workflow/create-workflows");
+	};
 	return (
 		<Card
 			className="workflow-entry-card"
@@ -117,24 +121,42 @@ export function WorkflowEntrySection({
 			</div>
 
 			{mode === "fetch" ? (
-				<WorkflowFetchList
-					filter={filter}
-					onFilterChange={setFilter}
-					createdWorkflows={createdWorkflows}
-					assignedWorkflows={assignedWorkflows}
-					editingId={editingId}
-					onToggleEdit={(id) =>
-						setEditingId((current) => (current === id ? null : id))
-					}
-					getSaveMode={(id) => saveModes[id] ?? "once"}
-					onSetSaveMode={(id, saveMode) =>
-						setSaveModes((current) => ({ ...current, [id]: saveMode }))
-					}
-					onAttach={onAttach}
-					onContinueEdit={onEditAndAttach}
-					disabled={disabled}
-					loading={loading}
-				/>
+				<>
+					<div className="workflow-entry-create">
+						<div>
+							<p className="workflow-entry-create-title w-full">
+								Search all your workflows
+							</p>
+							{/* <p className="workflow-entry-create-copy">
+								Add, rename and reorder approval stages. You can attach it once
+								or save it as a reusable template.
+							</p> */}
+						</div>
+						<SearchInput
+							value={search}
+							onChange={setSearch}
+							placeholder="Search users..."
+						/>
+					</div>
+					<WorkflowFetchList
+						filter={filter}
+						onFilterChange={setFilter}
+						createdWorkflows={createdWorkflows}
+						assignedWorkflows={assignedWorkflows}
+						editingId={editingId}
+						onToggleEdit={(id) =>
+							setEditingId((current) => (current === id ? null : id))
+						}
+						getSaveMode={(id) => saveModes[id] ?? "once"}
+						onSetSaveMode={(id, saveMode) =>
+							setSaveModes((current) => ({ ...current, [id]: saveMode }))
+						}
+						onAttach={onAttach}
+						onContinueEdit={onEditAndAttach}
+						disabled={disabled}
+						loading={loading}
+					/>
+				</>
 			) : null}
 
 			{mode === "create" ? (
@@ -150,7 +172,7 @@ export function WorkflowEntrySection({
 					</div>
 					<Button
 						type="button"
-						onClick={onCreateNew}
+						onClick={handleNavigatetoWorkflowCreate}
 						disabled={disabled || loading}
 						Icon={Plus}
 						text="Open builder"
