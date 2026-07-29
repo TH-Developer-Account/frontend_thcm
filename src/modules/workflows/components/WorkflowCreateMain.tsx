@@ -2,12 +2,13 @@ import { ArrowLeft, FileText, Plus } from "lucide-react";
 import WorkFlowGenForm from "./WorkFlowGenForm";
 import WorkflowStagesForm from "./WorkflowStagesForm";
 import WorkflowViewForm from "./WorkflowViewForm";
-import type {
-	WorkFlowProps,
-	WorkflowGenErrors,
-	WorkflowStageErrors,
-} from "../../workflows/types/workflow.types";
+
 import Button from "../../../components/common/Button";
+import type {
+	WorkflowGenErrors,
+	WorkFlowProps,
+	WorkflowStageErrors,
+} from "../types/workflow.types";
 
 type Props = WorkFlowProps & {
 	basicErrors: WorkflowGenErrors;

@@ -1,34 +1,29 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Modal } from "../../../components/common/Modal";
 import Button from "../../../components/common/Button";
-import {
-	mapUser,
-	type User,
-} from "../../admin/user-profile/types/profile.types";
-import { ServerAxios } from "../../../services/ServerAxios";
+import type { User } from "../../admin/user-profile/types/profile.types";
 import Avatar from "../../../components/common/Avatar";
 import { SearchInput } from "../../../components/forms/SearchInput";
 import type { WorkflowRow } from "../types/workflow.types";
+import { workflowApi, getWorkflowErrorMessage } from "../api/workflow.api";
+import { useAssignWorkflowUsersMutation } from "../context/useWorkflowMutations";
+import { useToast } from "../../../context/Auth/AuthContext";
 
 type AssignProps = {
 	workflow: WorkflowRow | null;
 	onClose: () => void;
-	handleAssignUser: (
-		userIds: string[],
-		workflowId: string | undefined,
-	) => Promise<void>;
 };
 
 export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 	workflow,
 	onClose,
-	handleAssignUser,
 }) => {
 	const [users, setUsers] = useState<User[]>([]);
 	const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState<string>("");
-	const [submitting, setSubmitting] = useState(false);
+	const assignMutation = useAssignWorkflowUsersMutation();
+	const { showToast } = useToast();
 
 	const filteredUsers = useMemo(() => {
 		const keyword = search.trim().toLowerCase();
@@ -61,9 +56,7 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 		const loadUsers = async () => {
 			try {
 				setLoading(true);
-				const { data } = await ServerAxios.get("/users");
-				const mappedUsers: User[] = data.map(mapUser);
-				setUsers(mappedUsers);
+				setUsers(await workflowApi.getUsers());
 				setSelectedUsers(workflow.workflowUsers?.map((each) => each.id) ?? []);
 			} catch (err) {
 				console.error("Failed to fetch users", err);
@@ -76,13 +69,28 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 	}, [workflow]);
 
 	const handleSubmit = async (): Promise<void> => {
-		if (!workflow?.id || submitting) return;
+		if (!workflow?.id || assignMutation.loading) return;
 
 		try {
-			setSubmitting(true);
-			await handleAssignUser(selectedUsers, workflow.id);
-		} finally {
-			setSubmitting(false);
+			const response = (await assignMutation.mutateAsync(
+				workflow.id,
+				selectedUsers,
+			)) as { message?: string };
+			showToast({
+				type: "success",
+				title: "Users assigned",
+				description: response?.message ?? "Users assigned successfully.",
+			});
+			onClose();
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "Assignment failed",
+				description: getWorkflowErrorMessage(
+					error,
+					"Unable to assign users. Please try again.",
+				),
+			});
 		}
 	};
 
@@ -101,11 +109,11 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 						variant="outline"
 					/>
 					<Button
-						text={submitting ? "Assigning..." : "Assign Users"}
+						text={assignMutation.loading ? "Assigning..." : "Assign Users"}
 						appearance="standard"
 						variant="brand"
 						onClick={handleSubmit}
-						disabled={!workflow?.id || submitting}
+						disabled={!workflow?.id || assignMutation.loading}
 					/>
 				</>
 			}

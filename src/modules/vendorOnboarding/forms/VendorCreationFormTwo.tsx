@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 
 import Button from "../../../components/common/Button";
-import Card from "../../../components/common/Card";
 import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
@@ -147,60 +146,7 @@ const VendorCreationFormTwo = ({
 	const vendorCodeMode: VendorFormMode = canEditVendorCode ? "edit" : "view";
 
 	return (
-		<Card
-			footer={
-				isReadOnly ? null : (
-					<div className="vendor-onboarding-form-actions">
-						<Button
-							type="button"
-							text="Back"
-							size="sm"
-							Icon={ArrowLeft}
-							iconPosition="left"
-							appearance="ghost"
-							variant="secondary"
-							onClick={onBack}
-							disabled={loading}
-						/>
-
-						<div className="vendor-onboarding-form-actions-end">
-							<Button
-								type="button"
-								text="Reset"
-								Icon={RefreshCcw}
-								size="sm"
-								appearance="standard"
-								variant="outline"
-								disabled={loading}
-							/>
-
-							<Button
-								type="button"
-								text={loading ? "Saving..." : "Save as Draft"}
-								Icon={Save}
-								size="sm"
-								appearance="standard"
-								variant="outline"
-								onClick={onSaveDraft}
-								disabled={loading || !onSaveDraft}
-							/>
-
-							<Button
-								type="button"
-								text={loading ? "Saving..." : "Save & Proceed"}
-								size="sm"
-								Icon={ArrowRight}
-								iconPosition="right"
-								appearance="standard"
-								variant="brand"
-								onClick={onNext}
-								disabled={loading}
-							/>
-						</div>
-					</div>
-				)
-			}
-		>
+		<>
 			<form
 				className="vendor-onboarding-form"
 				onSubmit={(event) => event.preventDefault()}
@@ -438,8 +384,58 @@ const VendorCreationFormTwo = ({
 						}
 					/>
 				</div>
+				{isReadOnly ? null : (
+					<div className="vendor-onboarding-form-actions">
+						<Button
+							type="button"
+							text="Back"
+							size="sm"
+							Icon={ArrowLeft}
+							iconPosition="left"
+							appearance="ghost"
+							variant="secondary"
+							onClick={onBack}
+							disabled={loading}
+						/>
+
+						<div className="vendor-onboarding-form-actions-end">
+							<Button
+								type="button"
+								text="Reset"
+								Icon={RefreshCcw}
+								size="sm"
+								appearance="standard"
+								variant="outline"
+								disabled={loading}
+							/>
+
+							<Button
+								type="button"
+								text={loading ? "Saving..." : "Save as Draft"}
+								Icon={Save}
+								size="sm"
+								appearance="standard"
+								variant="outline"
+								onClick={onSaveDraft}
+								disabled={loading || !onSaveDraft}
+							/>
+
+							<Button
+								type="button"
+								text={loading ? "Saving..." : "Save & Proceed"}
+								size="sm"
+								Icon={ArrowRight}
+								iconPosition="right"
+								appearance="standard"
+								variant="brand"
+								onClick={onNext}
+								disabled={loading}
+							/>
+						</div>
+					</div>
+				)}
 			</form>
-		</Card>
+		</>
 	);
 };
 

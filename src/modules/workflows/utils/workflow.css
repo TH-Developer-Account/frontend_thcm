@@ -690,3 +690,946 @@
 		}
 	}
 }
+
+@layer components {
+	.wf-callout {
+		@apply rounded-2xl border p-5;
+		background-color: rgb(194 84 15 / 0.05);
+		border-color: rgb(194 84 15 / 0.3);
+	}
+
+	.wf-callout-header {
+		@apply mb-4 flex items-start gap-3;
+	}
+
+	.wf-callout-icon {
+		@apply flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg font-semibold text-[#C2540F];
+		background-color: rgb(194 84 15 / 0.14);
+	}
+
+	.wf-callout-title {
+		@apply text-[15px] font-semibold text-neutral-900;
+	}
+
+	.wf-callout-subtitle {
+		@apply mt-0.5 text-[13px] text-neutral-500;
+	}
+
+	.wf-choice-row {
+		@apply flex gap-3;
+	}
+
+	.wf-choice-card {
+		@apply flex-1 rounded-lg border border-neutral-200 bg-white p-3.5 text-left transition-colors hover:border-[#C2540F];
+	}
+
+	.wf-choice-card--selected {
+		@apply border-[#C2540F];
+		background-color: rgb(194 84 15 / 0.05);
+	}
+
+	.wf-choice-title {
+		@apply mt-2 text-[13px] font-medium text-neutral-900;
+	}
+
+	.wf-choice-desc {
+		@apply mt-0.5 text-xs text-neutral-500;
+	}
+
+	.wf-fetch-panel {
+		@apply mt-4;
+	}
+
+	.wf-chip-row {
+		@apply mb-2.5 flex gap-2;
+	}
+
+	.wf-chip {
+		@apply rounded-md border border-neutral-200 bg-white px-2.5 py-1 text-xs text-neutral-600;
+	}
+
+	.wf-chip--active {
+		@apply border-[#C2540F] text-[#C2540F];
+		background-color: rgb(194 84 15 / 0.12);
+	}
+
+	.wf-empty {
+		@apply py-4 text-center text-xs text-neutral-400;
+	}
+
+	.wf-row {
+		@apply mb-1.5 flex items-center justify-between rounded-lg border border-neutral-200 bg-white px-3 py-2.5;
+	}
+
+	.wf-row-name {
+		@apply text-[13px] font-medium text-neutral-900;
+	}
+
+	.wf-row-meta {
+		@apply mt-0.5 text-[11px] text-neutral-500;
+	}
+
+	.wf-row-actions {
+		@apply flex gap-1.5;
+	}
+
+	.wf-btn-primary {
+		@apply rounded-md border-none bg-[#C2540F] px-3 py-1.5 text-xs font-medium text-white;
+	}
+
+	.wf-btn-secondary {
+		@apply rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-xs text-neutral-700;
+	}
+
+	.wf-edit-panel {
+		@apply mb-1.5 rounded-lg border border-neutral-200 px-3 py-2.5;
+		background-color: rgb(194 84 15 / 0.04);
+	}
+
+	.wf-edit-label {
+		@apply mb-2 text-xs text-neutral-500;
+	}
+
+	.wf-save-mode-row {
+		@apply mb-2.5 flex gap-1.5;
+	}
+
+	.wf-create-panel {
+		@apply mt-4 rounded-lg border border-dashed border-neutral-300 p-3.5 text-center;
+	}
+
+	.wf-create-title {
+		@apply text-[13px] text-neutral-900;
+	}
+
+	.wf-create-desc {
+		@apply mb-2.5 text-xs text-neutral-500;
+	}
+}
+
+/*
+  Falls back to sensible literal values so this renders standalone, but every
+  color reads from a CSS custom property first — alias these to whatever
+  color.css already defines (e.g. --color-brand could just be your existing
+  --color-accent-orange) instead of duplicating the token set.
+*/
+
+.root {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.searchRow {
+	display: flex;
+	gap: 8px;
+	align-items: flex-start;
+}
+
+.searchField {
+	position: relative;
+	flex: 1.4;
+}
+
+.input,
+.stageNameInput,
+.templateNameInput,
+.stageNameField {
+	width: 100%;
+	height: 36px;
+	padding: 0 10px;
+	border: 1px solid var(--color-border, #d9d9d9);
+	border-radius: 6px;
+	background: var(--color-surface, #ffffff);
+	color: var(--color-text-primary, #1a1a1a);
+	font-size: 13px;
+}
+
+.input:focus,
+.stageNameInput:focus,
+.templateNameInput:focus,
+.stageNameField:focus {
+	outline: none;
+	border-color: var(--color-brand, #d2600f);
+	box-shadow: 0 0 0 2px var(--color-brand-tint, rgba(210, 96, 15, 0.15));
+}
+
+.stageNameInput {
+	flex: 1;
+}
+
+.searchHint {
+	position: absolute;
+	top: 40px;
+	left: 0;
+	font-size: 11px;
+	color: var(--color-text-secondary, #6b6b6b);
+}
+
+.resultsList {
+	position: absolute;
+	z-index: 10;
+	top: 40px;
+	left: 0;
+	right: 0;
+	margin: 0;
+	padding: 4px;
+	list-style: none;
+	background: var(--color-surface, #ffffff);
+	border: 1px solid var(--color-border, #d9d9d9);
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	max-height: 200px;
+	overflow-y: auto;
+}
+
+.resultItem {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	padding: 6px 8px;
+	border: none;
+	background: none;
+	text-align: left;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+.resultItem:hover {
+	background: var(--color-surface-hover, #f5f5f5);
+}
+
+.resultName {
+	font-size: 13px;
+	color: var(--color-text-primary, #1a1a1a);
+}
+
+.resultEmail {
+	font-size: 11px;
+	color: var(--color-text-secondary, #6b6b6b);
+}
+
+.addButton {
+	width: 36px;
+	height: 36px;
+	border-radius: 6px;
+	border: 1px solid var(--color-border, #d9d9d9);
+	background: var(--color-surface, #ffffff);
+	color: var(--color-text-primary, #1a1a1a);
+	font-size: 16px;
+	cursor: pointer;
+}
+
+.addButton:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.emptyState {
+	font-size: 12px;
+	color: var(--color-text-muted, #9a9a9a);
+	text-align: center;
+	padding: 16px 0;
+	margin: 0;
+}
+
+.stageList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+.stageRow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 0;
+	border-bottom: 1px solid var(--color-border, #eaeaea);
+}
+
+.stageIndex {
+	width: 20px;
+	height: 20px;
+	flex-shrink: 0;
+	border-radius: 50%;
+	background: var(--color-surface-hover, #f5f5f5);
+	color: var(--color-text-secondary, #6b6b6b);
+	font-size: 11px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.stageNameField {
+	flex: 1;
+}
+
+.stageApprover {
+	flex: 1;
+	font-size: 13px;
+	color: var(--color-text-secondary, #6b6b6b);
+}
+
+.stageActions {
+	display: flex;
+	gap: 4px;
+}
+
+.iconButton {
+	width: 26px;
+	height: 26px;
+	border: 1px solid var(--color-border, #d9d9d9);
+	border-radius: 4px;
+	background: var(--color-surface, #ffffff);
+	color: var(--color-text-secondary, #6b6b6b);
+	font-size: 11px;
+	cursor: pointer;
+}
+
+.iconButton:disabled {
+	opacity: 0.3;
+	cursor: not-allowed;
+}
+
+.flowRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.flowLabel {
+	font-size: 12px;
+	color: var(--color-text-secondary, #6b6b6b);
+}
+
+.segmented {
+	display: flex;
+	gap: 6px;
+}
+
+.segment,
+.segmentActive {
+	font-size: 12px;
+	padding: 6px 12px;
+	border-radius: 6px;
+	border: 1px solid var(--color-border, #d9d9d9);
+	background: var(--color-surface, #ffffff);
+	color: var(--color-text-secondary, #6b6b6b);
+	cursor: pointer;
+}
+
+.segmentActive {
+	background: var(--color-brand-tint, rgba(210, 96, 15, 0.12));
+	color: var(--color-brand, #d2600f);
+	border-color: var(--color-brand, #d2600f);
+}
+
+.checkboxRow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	color: var(--color-text-primary, #1a1a1a);
+}
+
+.footer {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.cancelButton {
+	height: 36px;
+	padding: 0 14px;
+	border-radius: 6px;
+	border: 1px solid var(--color-border, #d9d9d9);
+	background: var(--color-surface, #ffffff);
+	color: var(--color-text-primary, #1a1a1a);
+	font-size: 13px;
+	cursor: pointer;
+}
+
+.attachButton {
+	height: 36px;
+	padding: 0 16px;
+	border-radius: 6px;
+	border: none;
+	background: var(--color-brand, #d2600f);
+	color: #ffffff;
+	font-size: 13px;
+	font-weight: 500;
+	cursor: pointer;
+}
+
+.attachButton:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.validationHint {
+	font-size: 11px;
+	color: var(--color-text-secondary, #6b6b6b);
+	margin: -8px 0 0;
+}
+
+/* Reusable workflow field -------------------------------------------------- */
+
+.workflow-entry-card,
+.workflow-builder {
+	border: 0.5px solid var(--color-border, var(--color-ash));
+	border-radius: var(--radius-card, 8px);
+	background: var(--color-surface, var(--color-clean-white));
+	box-shadow: var(--shadow-sm);
+	color: var(--color-text, var(--color-iron));
+	overflow: visible;
+}
+
+.workflow-entry-heading,
+.workflow-builder-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: flex-start;
+	gap: var(--space-3, 12px);
+	padding: var(--space-4, 16px);
+	border-bottom: 0.5px solid var(--color-border, var(--color-ash));
+}
+
+.workflow-entry-heading-copy,
+.workflow-fetch-copy,
+.workflow-builder-heading > div:last-child {
+	min-width: 0;
+}
+
+.workflow-entry-heading,
+.workflow-builder-heading,
+.workflow-entry-title-row,
+.workflow-fetch-row-main,
+.workflow-fetch-actions,
+.workflow-fetch-copy p,
+.workflow-customise-panel,
+.workflow-save-options,
+.workflow-builder-footer,
+.workflow-builder-footer > div,
+.workflow-builder-stage-actions,
+.workflow-template-toggle,
+.workflow-builder-approver,
+.workflow-search-results button {
+	display: flex;
+	align-items: center;
+}
+
+.workflow-entry-icon {
+	display: grid;
+	width: 34px;
+	height: 34px;
+	flex: 0 0 34px;
+	place-items: center;
+	border-radius: var(--radius-control, 6px);
+	background: var(--color-orange-50);
+	color: var(--color-brand-orange);
+}
+
+.workflow-entry-title-row {
+	gap: var(--space-2, 8px);
+}
+
+.workflow-entry-title,
+.workflow-builder-heading h3,
+.workflow-fetch-copy h4,
+.workflow-customise-title,
+.workflow-entry-create-title {
+	margin: 0;
+	color: var(--color-heading, var(--color-iron-dark));
+	font-weight: 600;
+}
+
+.workflow-entry-title,
+.workflow-builder-heading h3 {
+	font-size: var(--font-size-base, 16px);
+}
+
+.workflow-entry-required,
+.workflow-builder-count {
+	border-radius: var(--radius-chip, 4px);
+	padding: 2px 6px;
+	background: var(--color-draft-bg);
+	color: var(--color-draft-text);
+	font-size: var(--font-size-xs, 11px);
+	font-weight: 600;
+}
+
+.workflow-entry-description,
+.workflow-builder-heading p,
+.workflow-fetch-copy p,
+.workflow-customise-copy,
+.workflow-entry-create-copy,
+.workflow-builder-settings p,
+.workflow-builder-footer > p {
+	margin: 3px 0 0;
+	color: var(--color-muted, var(--color-slate));
+	font-size: var(--font-size-xs, 12px);
+	line-height: 1.45;
+}
+
+.workflow-entry-reference {
+	color: var(--color-text, var(--color-iron));
+}
+
+.workflow-entry-options {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--space-3, 12px);
+	padding: var(--space-4, 16px);
+}
+
+.workflow-entry-option {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--space-3, 12px);
+	min-width: 0;
+	padding: var(--space-3, 12px);
+	border: 0.5px solid var(--color-border, var(--color-ash));
+	border-radius: var(--radius-card, 8px);
+	background: var(--color-surface, var(--color-clean-white));
+	color: var(--color-muted, var(--color-slate));
+	text-align: left;
+	transition:
+		border-color var(--transition-fast),
+		background-color var(--transition-fast);
+}
+
+.workflow-entry-option:hover:not(:disabled) {
+	border-color: var(--color-steel-blue);
+}
+
+.workflow-entry-option--active {
+	border-color: var(--color-brand-orange);
+	background: var(--color-orange-50);
+	color: var(--color-brand-orange);
+}
+
+.workflow-entry-option span {
+	display: grid;
+	min-width: 0;
+	gap: 3px;
+}
+
+.workflow-entry-option strong {
+	color: var(--color-heading, var(--color-iron-dark));
+	font-size: var(--font-size-sm, 13px);
+}
+
+.workflow-entry-option small,
+.workflow-save-option small,
+.workflow-template-toggle small,
+.workflow-builder-approver small,
+.workflow-search-results small {
+	color: var(--color-muted, var(--color-slate));
+	font-size: var(--font-size-xs, 11px);
+}
+
+.workflow-fetch-panel,
+.workflow-entry-create {
+	margin: 0 var(--space-4, 16px) var(--space-4, 16px);
+	border: 0.5px solid var(--color-border, var(--color-ash));
+	border-radius: var(--radius-card, 8px);
+	background: var(--color-subtle-surface, var(--color-fog));
+}
+
+.workflow-filter-tabs {
+	display: flex;
+	gap: var(--space-1, 4px);
+	padding: var(--space-2, 8px);
+	border-bottom: 0.5px solid var(--color-border, var(--color-ash));
+	overflow-x: auto;
+}
+
+.workflow-filter-tab,
+.workflow-segment {
+	border: 0;
+	border-radius: var(--radius-control, 6px);
+	background: transparent;
+	color: var(--color-muted, var(--color-slate));
+	font-size: var(--font-size-xs, 12px);
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+.workflow-filter-tab {
+	padding: 7px 10px;
+}
+
+.workflow-filter-tab span {
+	margin-left: 4px;
+}
+
+.workflow-filter-tab--active,
+.workflow-segment--active {
+	background: var(--color-surface, var(--color-clean-white));
+	color: var(--color-brand-orange);
+	box-shadow: var(--shadow-sm);
+}
+
+.workflow-fetch-list {
+	display: grid;
+	gap: var(--space-2, 8px);
+	padding: var(--space-2, 8px);
+}
+
+.workflow-fetch-item {
+	border: 0.5px solid var(--color-border, var(--color-ash));
+	border-radius: var(--radius-control, 6px);
+	background: var(--color-surface, var(--color-clean-white));
+}
+
+.workflow-fetch-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3, 12px);
+	padding: var(--space-3, 12px);
+}
+
+.workflow-fetch-row-main {
+	min-width: 0;
+	gap: var(--space-3, 12px);
+}
+
+.workflow-fetch-item-icon,
+.workflow-search-avatar {
+	display: grid;
+	flex: 0 0 auto;
+	place-items: center;
+	border-radius: var(--radius-control, 6px);
+	background: var(--color-subtle-surface, var(--color-fog));
+	color: var(--color-iron);
+}
+
+.workflow-fetch-item-icon {
+	width: 30px;
+	height: 30px;
+}
+
+.workflow-search-avatar {
+	width: 28px;
+	height: 28px;
+}
+
+.workflow-fetch-copy h4 {
+	overflow: hidden;
+	font-size: var(--font-size-sm, 13px);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.workflow-fetch-copy p,
+.workflow-fetch-actions,
+.workflow-builder-stage-actions,
+.workflow-builder-footer > div {
+	gap: var(--space-2, 8px);
+}
+
+.workflow-fetch-copy p span {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+}
+
+.workflow-customise-panel {
+	justify-content: space-between;
+	gap: var(--space-4, 16px);
+	padding: var(--space-3, 12px);
+	border-top: 0.5px solid var(--color-border, var(--color-ash));
+	background: var(--color-subtle-surface, var(--color-fog));
+}
+
+.workflow-customise-title,
+.workflow-entry-create-title {
+	font-size: var(--font-size-xs, 12px);
+}
+
+.workflow-save-options {
+	gap: var(--space-2, 8px);
+}
+
+.workflow-save-option {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--space-2, 8px);
+	padding: 8px 10px;
+	border: 0.5px solid var(--color-border, var(--color-ash));
+	border-radius: var(--radius-control, 6px);
+	background: var(--color-surface, var(--color-clean-white));
+}
+
+.workflow-save-option--active {
+	border-color: var(--color-brand-orange);
+}
+
+.workflow-save-option span,
+.workflow-template-toggle span,
+.workflow-builder-approver > span:last-child,
+.workflow-search-results button > span:last-child {
+	display: grid;
+}
+
+.workflow-save-option strong,
+.workflow-template-toggle strong,
+.workflow-builder-approver strong,
+.workflow-search-results strong {
+	color: var(--color-heading, var(--color-iron-dark));
+	font-size: var(--font-size-xs, 12px);
+}
+
+.workflow-fetch-empty,
+.workflow-builder-empty {
+	display: grid;
+	place-items: center;
+	gap: 4px;
+	padding: var(--space-6, 24px);
+	color: var(--color-muted, var(--color-slate));
+	text-align: center;
+}
+
+.workflow-fetch-empty p,
+.workflow-builder-empty p,
+.workflow-builder-empty span {
+	margin: 0;
+	font-size: var(--font-size-xs, 12px);
+}
+
+.workflow-entry-create {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-4, 16px);
+	padding: var(--space-4, 16px);
+}
+
+.workflow-builder-heading {
+	gap: var(--space-3, 12px);
+}
+
+.workflow-builder-add {
+	display: grid;
+	grid-template-columns: minmax(0, 1.4fr) minmax(180px, 0.8fr) auto;
+	align-items: end;
+	gap: var(--space-3, 12px);
+	padding: var(--space-4, 16px);
+}
+
+.workflow-approver-search {
+	position: relative;
+	min-width: 0;
+}
+
+.workflow-approver-search-icon {
+	position: absolute;
+	right: 10px;
+	top: 34px;
+	color: var(--color-muted, var(--color-slate));
+	pointer-events: none;
+}
+
+.workflow-search-status {
+	position: absolute;
+	top: calc(100% + 4px);
+	left: 0;
+	color: var(--color-muted, var(--color-slate));
+	font-size: var(--font-size-xs, 11px);
+}
+
+.workflow-search-results {
+	position: absolute;
+	z-index: var(--z-dropdown, 20);
+	top: calc(100% + 4px);
+	right: 0;
+	left: 0;
+	max-height: 220px;
+	margin: 0;
+	padding: 4px;
+	border: 0.5px solid var(--color-border, var(--color-ash));
+	border-radius: var(--radius-control, 6px);
+	background: var(--color-surface, var(--color-clean-white));
+	box-shadow: var(--shadow-md);
+	list-style: none;
+	overflow-y: auto;
+}
+
+.workflow-search-results button {
+	width: 100%;
+	gap: var(--space-2, 8px);
+	padding: 8px;
+	border: 0;
+	border-radius: var(--radius-chip, 4px);
+	background: transparent;
+	text-align: left;
+}
+
+.workflow-search-results button:hover {
+	background: var(--color-subtle-surface, var(--color-fog));
+}
+
+.workflow-field-error {
+	margin: 4px 0 0;
+	color: var(--color-rejected-text);
+	font-size: var(--font-size-xs, 11px);
+}
+
+.workflow-builder-stage-list {
+	display: grid;
+	gap: var(--space-2, 8px);
+	margin: 0;
+	padding: 0 var(--space-4, 16px) var(--space-4, 16px);
+	list-style: none;
+}
+
+.workflow-builder-stage {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	align-items: center;
+	gap: var(--space-3, 12px);
+	padding: var(--space-3, 12px);
+	border: 0.5px solid var(--color-border, var(--color-ash));
+	border-radius: var(--radius-control, 6px);
+	background: var(--color-subtle-surface, var(--color-fog));
+}
+
+.workflow-builder-stage-number {
+	display: grid;
+	width: 26px;
+	height: 26px;
+	place-items: center;
+	border-radius: 50%;
+	background: var(--color-iron-dark);
+	color: var(--color-clean-white);
+	font-size: var(--font-size-xs, 11px);
+	font-weight: 600;
+}
+
+.workflow-builder-stage-fields {
+	display: grid;
+	grid-template-columns: minmax(160px, 0.8fr) minmax(220px, 1fr);
+	align-items: end;
+	gap: var(--space-3, 12px);
+}
+
+.workflow-builder-approver {
+	min-height: 38px;
+	gap: var(--space-2, 8px);
+	padding: 5px 9px;
+	border: 0.5px solid var(--color-border, var(--color-ash));
+	border-radius: var(--radius-control, 6px);
+	background: var(--color-surface, var(--color-clean-white));
+}
+
+.workflow-remove-stage {
+	color: var(--color-rejected-text);
+}
+
+.workflow-builder-settings {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--space-4, 16px);
+	padding: var(--space-4, 16px);
+	border-top: 0.5px solid var(--color-border, var(--color-ash));
+}
+
+.workflow-builder-settings fieldset {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.workflow-builder-settings legend {
+	margin-bottom: 7px;
+	color: var(--color-heading, var(--color-iron-dark));
+	font-size: var(--font-size-xs, 12px);
+	font-weight: 600;
+}
+
+.workflow-segmented-control {
+	display: inline-flex;
+	gap: 3px;
+	padding: 3px;
+	border: 0.5px solid var(--color-border, var(--color-ash));
+	border-radius: var(--radius-control, 6px);
+	background: var(--color-subtle-surface, var(--color-fog));
+}
+
+.workflow-segment {
+	padding: 7px 10px;
+}
+
+.workflow-template-toggle {
+	align-items: flex-start;
+	gap: var(--space-2, 8px);
+	padding: var(--space-3, 12px);
+	border: 0.5px solid var(--color-border, var(--color-ash));
+	border-radius: var(--radius-control, 6px);
+	background: var(--color-subtle-surface, var(--color-fog));
+}
+
+.workflow-template-toggle input,
+.workflow-save-option input {
+	accent-color: var(--color-brand-orange);
+}
+
+.workflow-template-name {
+	max-width: 520px;
+	padding: 0 var(--space-4, 16px) var(--space-4, 16px);
+}
+
+.workflow-builder-footer {
+	justify-content: space-between;
+	gap: var(--space-4, 16px);
+	padding: var(--space-3, 12px) var(--space-4, 16px);
+	border-top: 0.5px solid var(--color-border, var(--color-ash));
+}
+
+.workflow-builder-footer > p {
+	margin: 0;
+}
+
+@media (max-width: 767px) {
+	.workflow-entry-options,
+	.workflow-builder-settings {
+		grid-template-columns: 1fr;
+	}
+
+	.workflow-entry-create,
+	.workflow-fetch-row,
+	.workflow-customise-panel,
+	.workflow-builder-footer {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.workflow-fetch-actions,
+	.workflow-save-options,
+	.workflow-builder-footer > div {
+		width: 100%;
+		flex-wrap: wrap;
+	}
+
+	.workflow-fetch-actions > *,
+	.workflow-builder-footer > div > * {
+		flex: 1;
+	}
+
+	.workflow-builder-add,
+	.workflow-builder-stage,
+	.workflow-builder-stage-fields {
+		grid-template-columns: 1fr;
+	}
+
+	.workflow-builder-stage-number {
+		display: none;
+	}
+
+	.workflow-builder-stage-actions {
+		justify-content: flex-end;
+	}
+}

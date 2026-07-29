@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 
 import Button from "../../../components/common/Button";
-import Card from "../../../components/common/Card";
 import { Modal } from "../../../components/common/Modal";
 import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
@@ -173,123 +172,7 @@ const VendorCreationFormOne = ({
 	});
 
 	return (
-		<Card
-			footer={
-				isReadOnly ? (
-					resolvedOnNext ? (
-						<div className="vendor-onboarding-form-actions">
-							<Button
-								type="button"
-								text={actionText || "Next"}
-								size="sm"
-								appearance="standard"
-								variant="brand"
-								onClick={resolvedOnNext}
-								disabled={loading}
-							/>
-						</div>
-					) : null
-				) : (
-					<div className="w-full">
-						{requireDpdpConsent ? (
-							<div className="vendor-dpdp-consent">
-								<label className="vendor-dpdp-consent-control">
-									<input
-										type="checkbox"
-										name="dpdpConsent"
-										checked={hasAcceptedDpdp}
-										disabled={loading}
-										onChange={handleDpdpConsentChange}
-									/>
-
-									<span>
-										I have read and agree to the{" "}
-										<button
-											type="button"
-											className="vendor-dpdp-consent-link"
-											disabled={loading}
-											onClick={(event) => {
-												event.preventDefault();
-												openDpdpModal();
-											}}
-										>
-											Digital Personal Data Protection Act
-										</button>
-										.
-									</span>
-								</label>
-
-								{dpdpError ? (
-									<p className="vendor-dpdp-consent-error" role="alert">
-										{dpdpError}
-									</p>
-								) : null}
-							</div>
-						) : null}
-
-						<div className="bottom-buttons-bar-between">
-							<Button
-								type="button"
-								text="Back"
-								size="sm"
-								appearance="standard"
-								variant="outline"
-								onClick={resolvedOnBack}
-								disabled={loading}
-								Icon={ArrowLeft}
-							/>
-
-							<div className="bottom-buttons-bar-between">
-								<Button
-									type="button"
-									text="Reset"
-									Icon={RefreshCcw}
-									size="sm"
-									appearance="standard"
-									variant="outline"
-									disabled={loading}
-									onClick={handleReset}
-								/>
-								{resolvedOnSaveDraft ? (
-									<Button
-										type="button"
-										text="Save as Draft"
-										Icon={FilePenLine}
-										size="sm"
-										appearance="standard"
-										variant="outline"
-										disabled={loading}
-										onClick={handleSaveDraft}
-									/>
-								) : null}
-								<Button
-									type="button"
-									text={
-										loading
-											? resolvedOnSubmit
-												? "Submitting..."
-												: "Saving..."
-											: actionText ||
-												(resolvedOnSubmit ? "Submit Form" : "Save & Proceed")
-									}
-									size="sm"
-									appearance="standard"
-									variant="brand"
-									Icon={Save}
-									isTooltip={
-										requireDpdpConsent
-											? "Please accept the consent form to submit."
-											: undefined
-									}
-									onClick={handleFormAction}
-									disabled={loading || (requireDpdpConsent && !hasAcceptedDpdp)}
-								/>
-							</div>
-						</div>
-					</div>
-				)
-			}
-		>
+		<>
 			<form
 				className="vendor-onboarding-form"
 				onSubmit={(event) => event.preventDefault()}
@@ -820,8 +703,121 @@ const VendorCreationFormOne = ({
 						</label>
 					</div>
 				</Modal>
+				{isReadOnly ? (
+					resolvedOnNext ? (
+						<div className="vendor-onboarding-form-actions">
+							<Button
+								type="button"
+								text={actionText || "Next"}
+								size="sm"
+								appearance="standard"
+								variant="brand"
+								onClick={resolvedOnNext}
+								disabled={loading}
+							/>
+						</div>
+					) : null
+				) : (
+					<div className="w-full">
+						{requireDpdpConsent ? (
+							<div className="vendor-dpdp-consent">
+								<label className="vendor-dpdp-consent-control">
+									<input
+										type="checkbox"
+										name="dpdpConsent"
+										checked={hasAcceptedDpdp}
+										disabled={loading}
+										onChange={handleDpdpConsentChange}
+									/>
+
+									<span>
+										I have read and agree to the{" "}
+										<button
+											type="button"
+											className="vendor-dpdp-consent-link"
+											disabled={loading}
+											onClick={(event) => {
+												event.preventDefault();
+												openDpdpModal();
+											}}
+										>
+											Digital Personal Data Protection Act
+										</button>
+										.
+									</span>
+								</label>
+
+								{dpdpError ? (
+									<p className="vendor-dpdp-consent-error" role="alert">
+										{dpdpError}
+									</p>
+								) : null}
+							</div>
+						) : null}
+
+						<div className="bottom-buttons-bar-between">
+							<Button
+								type="button"
+								text="Back"
+								size="sm"
+								appearance="standard"
+								variant="outline"
+								onClick={resolvedOnBack}
+								disabled={loading}
+								Icon={ArrowLeft}
+							/>
+
+							<div className="bottom-buttons-bar-between">
+								<Button
+									type="button"
+									text="Reset"
+									Icon={RefreshCcw}
+									size="sm"
+									appearance="standard"
+									variant="outline"
+									disabled={loading}
+									onClick={handleReset}
+								/>
+								{resolvedOnSaveDraft ? (
+									<Button
+										type="button"
+										text="Save as Draft"
+										Icon={FilePenLine}
+										size="sm"
+										appearance="standard"
+										variant="outline"
+										disabled={loading}
+										onClick={handleSaveDraft}
+									/>
+								) : null}
+								<Button
+									type="button"
+									text={
+										loading
+											? resolvedOnSubmit
+												? "Submitting..."
+												: "Saving..."
+											: actionText ||
+												(resolvedOnSubmit ? "Submit Form" : "Save & Proceed")
+									}
+									size="sm"
+									appearance="standard"
+									variant="brand"
+									Icon={Save}
+									isTooltip={
+										requireDpdpConsent
+											? "Please accept the consent form to submit."
+											: undefined
+									}
+									onClick={handleFormAction}
+									disabled={loading || (requireDpdpConsent && !hasAcceptedDpdp)}
+								/>
+							</div>
+						</div>
+					</div>
+				)}
 			</form>
-		</Card>
+		</>
 	);
 };
 

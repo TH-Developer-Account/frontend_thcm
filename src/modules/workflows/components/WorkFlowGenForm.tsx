@@ -9,7 +9,7 @@ import type { Option } from "../../../components/forms/input.types";
 import type {
 	WorkflowBasics,
 	WorkflowGenErrors,
-} from "../../workflows/types/workflow.types";
+} from "../types/workflow.types";
 import { budgetCategories, formatApps } from "../constant/workflow.constant";
 import Button from "../../../components/common/Button";
 

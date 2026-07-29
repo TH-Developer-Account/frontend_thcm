@@ -1,5 +1,4 @@
 import React from "react";
-import axios from "axios";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -14,57 +13,31 @@ import DataTable from "../../../components/ui/tables/DataTable/DataTable";
 import DataTableSkeleton from "../../../components/ui/tables/Skeletons/DataTableSkeleton";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
-import { ServerAxios } from "../../../services/ServerAxios";
-
-import { api_routes, formatApps } from "../constant/workflow.constant";
+import { formatApps } from "../constant/workflow.constant";
 import { useWorkflow } from "../context/useWorkflows";
 import type { WorkflowRow } from "../types/workflow.types";
-import type { UserResponse } from "../../admin/user-profile/types/profile.types";
-
 import { workflowListFilterOptions } from "../constant/workflow.constant";
 import { getWorkflowColumns } from "../utils/workflow.columns";
 import { WorkflowUserAssignment } from "./WorkflowUserAssignment";
 import { FilterTabs } from "../../../components/ui/FilterTabs";
+import { getWorkflowErrorMessage } from "../api/workflow.api";
+import { useDeleteWorkflowMutation } from "../context/useWorkflowMutations";
 
 const WORKFLOW_SKELETON_ROWS = 8;
 const WORKFLOW_SKELETON_COLUMNS = 6;
 
-const getErrorMessage = (error: unknown, fallback: string): string => {
-	if (axios.isAxiosError(error)) {
-		const responseData = error.response?.data as
-			| {
-					message?: unknown;
-					error?: unknown;
-			  }
-			| undefined;
-
-		if (
-			typeof responseData?.message === "string" &&
-			responseData.message.trim()
-		) {
-			return responseData.message;
-		}
-
-		if (typeof responseData?.error === "string" && responseData.error.trim()) {
-			return responseData.error;
-		}
-	}
-
-	if (error instanceof Error && error.message.trim()) {
-		return error.message;
-	}
-
-	return fallback;
-};
 type WorkflowFilter = "ALL" | "ASSIGNED_TO_ME" | "CREATED_BY_ME";
 type WorkflowTableProps = {
-	selectedFilter: WorkflowFilter;
-	onFilterChange: (value: WorkflowFilter) => void;
+	selectedFilter?: WorkflowFilter;
+	onFilterChange?: (value: WorkflowFilter) => void;
 };
 const WorkflowTable = ({
-	selectedFilter,
+	selectedFilter: selectedFilterProp,
 	onFilterChange,
 }: WorkflowTableProps) => {
+	const [localFilter, setLocalFilter] = React.useState<WorkflowFilter>("ALL");
+	const selectedFilter = selectedFilterProp ?? localFilter;
+	const handleListFilterChange = onFilterChange ?? setLocalFilter;
 	const {
 		data,
 		setData,
@@ -95,62 +68,19 @@ const WorkflowTable = ({
 		null,
 	);
 
-	const [isAssigningUsers, setIsAssigningUsers] = React.useState(false);
-
-	const [isDeleting, setIsDeleting] = React.useState(false);
+	const deleteMutation = useDeleteWorkflowMutation();
 
 	React.useEffect(() => {
-		const controller = new AbortController();
-
 		const fetchUsers = async (): Promise<void> => {
 			try {
-				const response = await ServerAxios.get("/users", {
-					params: {
-						profile: "all",
-					},
-					signal: controller.signal,
-				});
-
-				const responseData = response.data;
-
-				const userList = Array.isArray(responseData)
-					? responseData
-					: Array.isArray(responseData?.data)
-						? responseData.data
-						: [];
-
-				const formattedUsers = userList
-					.map((user: UserResponse): Option | null => {
-						if (!user.id) {
-							return null;
-						}
-
-						const fullName = `${user.first_name ?? ""} ${
-							user.last_name ?? ""
-						}`.trim();
-
-						return {
-							value: user.id,
-							label: fullName || "Unnamed user",
-						};
-					})
-					.filter((user: any): user is Option => user !== null);
-
-				setUsers(formattedUsers);
+				const { workflowApi } = await import("../api/workflow.api");
+				setUsers(await workflowApi.getUserOptions());
 			} catch (error) {
-				if (axios.isAxiosError(error) && error.code === "ERR_CANCELED") {
-					return;
-				}
-
 				console.error("Failed to fetch users", error);
 			}
 		};
 
 		void fetchUsers();
-
-		return () => {
-			controller.abort();
-		};
 	}, []);
 	const filterTabs = React.useMemo(
 		() =>
@@ -176,57 +106,6 @@ const WorkflowTable = ({
 			setPageIndex(0);
 		},
 		[setFilters, setPageIndex],
-	);
-
-	const handleAssignUser = React.useCallback(
-		async (userIds: string[], workflowId?: string): Promise<void> => {
-			if (!workflowId) {
-				showToast({
-					type: "error",
-					title: "Unable to assign users",
-					description: "A valid workflow ID is required.",
-				});
-
-				return;
-			}
-
-			setIsAssigningUsers(true);
-
-			try {
-				const response = await ServerAxios.post(
-					api_routes.create_assign_users_workflow_template,
-					{
-						userIds,
-						templateId: workflowId,
-					},
-				);
-
-				const message =
-					typeof response.data?.message === "string"
-						? response.data.message
-						: "Users assigned successfully.";
-
-				showToast({
-					type: "success",
-					title: "Users assigned",
-					description: message,
-				});
-
-				setAssignModalOpen(null);
-			} catch (error) {
-				showToast({
-					type: "error",
-					title: "Assignment failed",
-					description: getErrorMessage(
-						error,
-						"Unable to assign users. Please try again.",
-					),
-				});
-			} finally {
-				setIsAssigningUsers(false);
-			}
-		},
-		[showToast],
 	);
 
 	const handleEdit = React.useCallback(
@@ -256,16 +135,14 @@ const WorkflowTable = ({
 
 	const handleDelete = React.useCallback(
 		async (workflowId: string): Promise<void> => {
-			setIsDeleting(true);
-
 			try {
-				const response = await ServerAxios.delete(
-					`/work-flow/delete/${encodeURIComponent(workflowId)}`,
-				);
+				const response = (await deleteMutation.mutateAsync(workflowId)) as {
+					message?: string;
+				};
 
 				const message =
-					typeof response.data?.message === "string"
-						? response.data.message
+					typeof response?.message === "string"
+						? response.message
 						: "Workflow deleted successfully.";
 
 				setData(data.filter((workflow) => workflow.id !== workflowId));
@@ -281,13 +158,14 @@ const WorkflowTable = ({
 				showToast({
 					type: "error",
 					title: "Unable to delete workflow",
-					description: getErrorMessage(error, "Failed to delete the workflow."),
+					description: getWorkflowErrorMessage(
+						error,
+						"Failed to delete the workflow.",
+					),
 				});
-			} finally {
-				setIsDeleting(false);
 			}
 		},
-		[data, setData, showToast],
+		[data, deleteMutation, setData, showToast],
 	);
 
 	return (
@@ -298,7 +176,7 @@ const WorkflowTable = ({
 						ariaLabel="Filter Workflow listings"
 						items={filterTabs}
 						value={selectedFilter}
-						onChange={onFilterChange}
+						onChange={handleListFilterChange}
 						className="border-b-none px-0 py-0"
 					/>
 				}
@@ -378,18 +256,13 @@ const WorkflowTable = ({
 
 			<WorkflowUserAssignment
 				workflow={assignModalOpen}
-				onClose={() => {
-					if (!isAssigningUsers) {
-						setAssignModalOpen(null);
-					}
-				}}
-				handleAssignUser={handleAssignUser}
+				onClose={() => setAssignModalOpen(null)}
 			/>
 
 			<Modal
 				open={Boolean(deleteModal)}
 				onClose={() => {
-					if (!isDeleting) {
+					if (!deleteMutation.loading) {
 						setDeleteModal(null);
 					}
 				}}
@@ -405,9 +278,9 @@ const WorkflowTable = ({
 						deleteModal?.name ?? "this workflow"
 					}"?`}
 					primaryAction={{
-						label: isDeleting ? "Deleting..." : "Delete",
+						label: deleteMutation.loading ? "Deleting..." : "Delete",
 						onClick: () => {
-							if (!deleteModal?.id || isDeleting) {
+							if (!deleteModal?.id || deleteMutation.loading) {
 								return;
 							}
 
@@ -417,7 +290,7 @@ const WorkflowTable = ({
 					secondaryAction={{
 						label: "Cancel",
 						onClick: () => {
-							if (!isDeleting) {
+							if (!deleteMutation.loading) {
 								setDeleteModal(null);
 							}
 						},
