@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ArrowLeft, RefreshCcw, Save, Send } from "lucide-react";
+import { ArrowLeft, CircleCheck, RefreshCcw, Save, Send } from "lucide-react";
 
 import Button from "../../../components/common/Button";
 import { ApprovalWorkflowTableContent } from "../../workflows/components/ApprovalWorkflowTableContent";
@@ -157,6 +157,7 @@ const VendorCreationSummaryForm = ({
 
 	const showWorkflowBlock =
 		hasWorkflow || typeof resolvedOnFetchWorkflow === "function";
+	// const isThcmProposer =
 
 	const hasApprovalActions =
 		showApproveAction || showClarifyAction || showAcceptAndCloseAction;
@@ -318,6 +319,7 @@ const VendorCreationSummaryForm = ({
 							type="button"
 							text="Accept and Close"
 							size="sm"
+							Icon={CircleCheck}
 							appearance="standard"
 							variant="brand"
 							disabled={resolvedVendorCodeLoading}
@@ -340,7 +342,7 @@ const VendorCreationSummaryForm = ({
 							type="button"
 							text="Send Back to Vendor"
 							size="sm"
-							// disabled
+							disabled={!showSendBackAction}
 							appearance="standard"
 							variant="outline"
 							Icon={Send}

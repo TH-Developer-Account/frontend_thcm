@@ -6,7 +6,6 @@ import type { ReasonActionMode } from "../../../components/ui/ReasonActionModal"
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { workflowApi } from "../../../api/workflow.api";
-import { getWorkflowApproverData } from "../../workflows/utils/workflow.helpers";
 import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
 import { createRemoteFileUploadValue } from "../../../components/ui/FileUpload/fileUpload.helpers";
 import {
@@ -49,6 +48,7 @@ import {
 	getCurrentApprovalStage,
 	getIsUserInCurrentStage,
 } from "../../workflows";
+import { getMentionableUsersFromStages } from "../../../components/ui/comments/comments.helper";
 
 export const vendorOnboardingSteps = [
 	{ id: 1, label: "Vendor filled details" },
@@ -674,7 +674,6 @@ export function useVendorCreationForm({
 	const isInternal = !isPublicForm && role === "THCM_EMPLOYEE";
 	const isPublicVendor = isPublicForm && role === "EXTERNAL_VENDOR";
 	const isThcmProposer = role === "THCM_EMPLOYEE";
-	const isTcsApprover = role === "EXTERNAL_APPROVER";
 
 	const detailQuery = useVendorOnboardingDetailQuery(
 		vendorRequestId,
@@ -737,10 +736,10 @@ export function useVendorCreationForm({
 
 	type ActiveApprovalWithApprover = {
 		status?: string | null;
+		isExternalApprover?: boolean;
 		approver?: {
 			id?: string | null;
 			email?: string | null;
-			isExternalApprover?: boolean;
 		} | null;
 	};
 
@@ -752,19 +751,16 @@ export function useVendorCreationForm({
 			stage.stageOrder === currentWorkflowStageOrder &&
 			stage.status?.toUpperCase() === "IN_PROGRESS",
 	);
-
+	// const isProposer =
+	// 	Boolean(user?.id) && user.id === detailQuery.data?.createdBy;
 	const currentUserId = String(user?.id ?? "").trim();
 	const currentUserEmail = String(user?.email ?? "")
 		.trim()
 		.toLowerCase();
 
-	const isCurrentStageApprover = Boolean(
-		currentStage?.approvals?.some((approval) => {
+	const currentUserApproval = React.useMemo(() => {
+		return currentStage?.approvals?.find((approval) => {
 			const currentApproval = approval as ActiveApprovalWithApprover;
-
-			if (currentApproval.status?.toUpperCase() !== "PENDING") {
-				return false;
-			}
 
 			const approverId = String(currentApproval.approver?.id ?? "").trim();
 
@@ -783,19 +779,40 @@ export function useVendorCreationForm({
 				currentUserEmail === approverEmail;
 
 			return matchesById || matchesByEmail;
-		}),
+		}) as ActiveApprovalWithApprover | undefined;
+	}, [currentStage?.approvals, currentUserEmail, currentUserId]);
+
+	const isCurrentStageApprover =
+		currentUserApproval?.status?.toUpperCase() === "PENDING";
+
+	const isExternalApprover = currentUserApproval?.isExternalApprover ?? false;
+
+	const workflowApprovers = React.useMemo(
+		() => getMentionableUsersFromStages(assignedWorkflowStages),
+		[assignedWorkflowStages],
 	);
 
-	// const canApprove =
-	// 	activeWorkflow?.isActive === true &&
-	// 	activeWorkflow.status?.toUpperCase() === "IN_PROGRESS" &&
-	// 	isCurrentStageApprover;
-	const workflowApproverData = React.useMemo(
-		() => getWorkflowApproverData(activeWorkflow, user),
-		[activeWorkflow, user?.email, user?.id],
-	);
+	const wasWorkflowApprover = React.useMemo(() => {
+		return workflowApprovers.some((approver) => {
+			const approverId = String(approver.id ?? "").trim();
 
-	const { canActNow: canApprove, isExternalApprover } = workflowApproverData;
+			const approverEmail = String(approver.email ?? "")
+				.trim()
+				.toLowerCase();
+
+			const matchesById =
+				Boolean(currentUserId) &&
+				Boolean(approverId) &&
+				currentUserId === approverId;
+
+			const matchesByEmail =
+				Boolean(currentUserEmail) &&
+				Boolean(approverEmail) &&
+				currentUserEmail === approverEmail;
+
+			return matchesById || matchesByEmail;
+		});
+	}, [currentUserEmail, currentUserId, workflowApprovers]);
 
 	type VendorUpdatePayload = Parameters<
 		typeof updateMutation.mutateAsync
@@ -817,6 +834,12 @@ export function useVendorCreationForm({
 		[updateMutation, vendorRequestId],
 	);
 
+	// const isApprover = activeWorkflow?.
+	const canApprove =
+		activeWorkflow?.isActive === true &&
+		activeWorkflow.status?.toUpperCase() === "IN_PROGRESS" &&
+		isCurrentStageApprover;
+
 	const canClarify = canApprove;
 
 	const hasAssignedWorkflow = Boolean(
@@ -836,7 +859,8 @@ export function useVendorCreationForm({
 	const canEditMainForm =
 		isThcmProposer && Boolean(status && EDITABLE_STATUSES.includes(status));
 
-	const canEditVendorCode = !isPublicForm && (isThcmProposer || isTcsApprover);
+	const canEditVendorCode =
+		!isPublicForm && (isThcmProposer || isExternalApprover);
 
 	const normalizedVendorCode = formTwoValues.vendorCode?.trim() ?? "";
 
@@ -972,10 +996,7 @@ export function useVendorCreationForm({
 	const saveVendorDetails = async () => {
 		try {
 			if (vendorRequestId) {
-				await updateMutation.mutateAsync({
-					vendorRequestId,
-					payload: buildVendorUpdatePayload(formOneValues),
-				});
+				await handleSaveVendorUpdate(buildVendorUpdatePayload(formOneValues));
 			} else {
 				const created = await createMutation.mutateAsync(formOneValues);
 
@@ -995,10 +1016,7 @@ export function useVendorCreationForm({
 	const saveVendorDetailsDraft = async () => {
 		try {
 			if (vendorRequestId) {
-				await updateMutation.mutateAsync({
-					vendorRequestId,
-					payload: buildVendorUpdatePayload(formOneValues),
-				});
+				await handleSaveVendorUpdate(buildVendorUpdatePayload(formOneValues));
 			} else {
 				const created = await createMutation.mutateAsync(formOneValues);
 
@@ -1056,13 +1074,9 @@ export function useVendorCreationForm({
 		try {
 			setIsAssigningWorkflow(true);
 
-			await updateMutation.mutateAsync({
-				vendorRequestId,
-				payload: buildVendorOnboardingUpdatePayload(
-					formOneValues,
-					formTwoValues,
-				),
-			});
+			await handleSaveVendorUpdate(
+				buildVendorOnboardingUpdatePayload(formOneValues, formTwoValues),
+			);
 
 			setPreviewWorkflowStages([]);
 			setWorkflowPreviewError("");
@@ -1085,13 +1099,9 @@ export function useVendorCreationForm({
 		}
 
 		try {
-			await updateMutation.mutateAsync({
-				vendorRequestId,
-				payload: buildVendorOnboardingUpdatePayload(
-					formOneValues,
-					formTwoValues,
-				),
-			});
+			await handleSaveVendorUpdate(
+				buildVendorOnboardingUpdatePayload(formOneValues, formTwoValues),
+			);
 
 			showToast({
 				type: "success",
@@ -1289,32 +1299,17 @@ export function useVendorCreationForm({
 			return;
 		}
 
-		const shouldActivateClarifiedWorkflow = hasPendingClarifiedApproval;
-
-		if (shouldActivateClarifiedWorkflow && !workflowId) {
-			showToast({
-				type: "error",
-				title: "Workflow unavailable",
-				description:
-					"A pending clarified approval was found, but its workflow ID is missing.",
-			});
-
-			return;
-		}
+		const isClarifiedResubmission = hasPendingClarifiedApproval;
 
 		try {
-			// 1. Save the updated form.
-			await updateMutation.mutateAsync({
-				vendorRequestId,
-				payload: buildVendorOnboardingUpdatePayload(
-					formOneValues,
-					formTwoValues,
-				),
-			});
+			// After the vendor's one-time submission, all form changes use update.
+			await handleSaveVendorUpdate(
+				buildVendorOnboardingUpdatePayload(formOneValues, formTwoValues),
+			);
 
-			// 2. A normal submission gets a workflow only at final submit.
-			// Clarified resubmissions reuse their existing workflow iteration.
-			if (!shouldActivateClarifiedWorkflow) {
+			// Only the first THCM completion needs a workflow assignment.
+			// Clarification changes keep the already assigned workflow.
+			if (!isClarifiedResubmission) {
 				await assignVendorWorkflow();
 			}
 
@@ -1322,7 +1317,7 @@ export function useVendorCreationForm({
 			await submitMutation.mutateAsync(vendorRequestId);
 
 			// 4. Activate the first stage of the clarified workflow iteration.
-			if (shouldActivateClarifiedWorkflow && workflowId) {
+			if (isClarifiedResubmission && workflowId) {
 				await submitClarifiedMutation.mutateAsync(workflowId);
 			}
 
@@ -1330,12 +1325,12 @@ export function useVendorCreationForm({
 
 			showToast({
 				type: "success",
-				title: shouldActivateClarifiedWorkflow
+				title: isClarifiedResubmission
 					? "Resubmitted successfully"
 					: "Submitted successfully",
-				description: shouldActivateClarifiedWorkflow
-					? "The updated form was submitted and the first approval stage was activated."
-					: "The vendor onboarding request was submitted for approval.",
+				description: isClarifiedResubmission
+					? "The clarified vendor details were updated successfully."
+					: "The THCM details were updated and the approval workflow was assigned.",
 			});
 
 			if (onSuccess) {
@@ -1348,13 +1343,13 @@ export function useVendorCreationForm({
 
 			showToast({
 				type: "error",
-				title: shouldActivateClarifiedWorkflow
+				title: isClarifiedResubmission
 					? "Resubmission failed"
 					: "Submission failed",
 				description: getErrorMessage(
 					error,
-					shouldActivateClarifiedWorkflow
-						? "The form could not be resubmitted or its first approval stage could not be activated."
+					isClarifiedResubmission
+						? "The clarified vendor details could not be updated."
 						: "Unable to submit the vendor onboarding request.",
 				),
 			});
@@ -1364,6 +1359,7 @@ export function useVendorCreationForm({
 		assignVendorWorkflow,
 		formOneValues,
 		formTwoValues,
+		handleSaveVendorUpdate,
 		hasPendingClarifiedApproval,
 		navigate,
 		onSuccess,
@@ -1371,7 +1367,6 @@ export function useVendorCreationForm({
 		showToast,
 		submitClarifiedMutation,
 		submitMutation,
-		updateMutation,
 		vendorRequestId,
 		workflowId,
 	]);
@@ -1420,11 +1415,9 @@ export function useVendorCreationForm({
 		try {
 			setIsSavingVendorCode(true);
 
-			await updateMutation.mutateAsync({
-				vendorRequestId,
-				payload: {
-					vendorCode,
-				},
+			await handleSaveVendorUpdate({
+				vendorCode,
+				isExternalApprover,
 			});
 
 			setFormTwoValues((current) => ({
@@ -1494,10 +1487,10 @@ export function useVendorCreationForm({
 		canEditVendorCode,
 		detailQuery,
 		formTwoValues.vendorCode,
+		handleSaveVendorUpdate,
+		isExternalApprover,
 		isVendorCodeDirty,
 		showToast,
-		updateMutation,
-		vendorRequestId,
 	]);
 
 	/*
@@ -1567,6 +1560,8 @@ export function useVendorCreationForm({
 		canEditMainForm,
 
 		canEditVendorCode,
+		isThcmProposer,
+		isExternalApprover,
 		canSaveVendorCode,
 		isVendorCodeDirty,
 		vendorCodeLoading: isSavingVendorCode,
@@ -1575,8 +1570,9 @@ export function useVendorCreationForm({
 		canSubmit: isInternal,
 		canApprove,
 		canClarify,
-		canSendBackToVendor: isThcmProposer,
-		canAcceptAndClose: role === "EXTERNAL_APPROVER",
+		canSendBackToVendor:
+			isThcmProposer && detailQuery.data?.status === "IN_REVIEW",
+		canAcceptAndClose: detailQuery.data?.status === "APPROVED" && canApprove,
 
 		isLoading: isPublicForm ? publicQuery.isLoading : detailQuery.isLoading,
 
@@ -1617,7 +1613,6 @@ export function useVendorCreationForm({
 		handleFetchWorkflow: handlePreviewWorkflow,
 
 		activeWorkflow,
-		workflowApproverData,
 		workflowStages,
 		assignedWorkflowStages,
 		previewWorkflowStages,
