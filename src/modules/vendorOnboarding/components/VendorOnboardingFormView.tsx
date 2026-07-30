@@ -163,7 +163,7 @@ const VendorOnboardingReadOnlyView = ({
 					className="vendor-onboarding-view-section"
 					title="Vendor Form View"
 					actions={
-						<div className="vendor-onboarding-view-actions">
+						<>
 							<Button
 								type="button"
 								text={isDownloading ? "Exporting…" : "Export"}
@@ -176,7 +176,6 @@ const VendorOnboardingReadOnlyView = ({
 								onClick={handleExport}
 								disabled={isDownloading}
 							/>
-
 							{canEditMainForm ? (
 								<Button
 									type="button"
@@ -188,7 +187,7 @@ const VendorOnboardingReadOnlyView = ({
 									onClick={handleEdit}
 								/>
 							) : null}
-						</div>
+						</>
 					}
 				>
 					<VendorCreationSummaryForm

@@ -133,6 +133,7 @@ export type UpdateVendorVariables = {
 	payload: VendorUpdatePayload;
 	workspaceId?: string;
 	appId?: string;
+	isExternalApprover?: boolean;
 };
 
 export type VendorClarificationPayload = {
