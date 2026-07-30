@@ -310,3 +310,24 @@ export type WorkflowActivityEntry = {
 	workflowId?: string | null;
 	createdAt?: ApiDateString | null;
 };
+
+export type WorkflowTemplateReference = Pick<
+	WorkflowTemplate,
+	"id" | "name" | "description"
+>;
+
+export type ActiveWorkflow = {
+	id: string;
+	templateId: string;
+	workspaceId: string;
+	eventProposalId: string;
+	iteration: number;
+	isActive: boolean;
+	workflowType: "STANDARD";
+	status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
+	currentStage: number;
+	created_at: ApiDateString;
+	updated_at: ApiDateString;
+	template: WorkflowTemplateReference;
+	stages: ApprovalWorkflowStage[];
+};

@@ -36,11 +36,16 @@ export { default as WorkflowViewForm } from "./components/WorkflowViewForm";
 export { default as WorkFlowGenForm } from "./components/WorkFlowGenForm";
 
 export {
-	getApprovalIdForUser,
 	getApprovalUser,
-	getCanActOnCurrentStage,
-	getCurrentApprovalStage,
-	getIsUserInCurrentStage,
+	getWorkflowApproverData,
+	isSameWorkflowUser,
+} from "./utils/approvalWorkflow.helpers";
+
+export type {
+	ActiveWorkflowLike,
+	ApprovalStageLike,
+	WorkflowApprovalLike,
+	WorkflowUserIdentity,
 } from "./utils/approvalWorkflow.helpers";
 export {
 	getApprovalStrategyLabel,

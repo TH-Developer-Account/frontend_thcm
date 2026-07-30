@@ -26,18 +26,16 @@ import { activityPlannerCommentApi } from "../../api/activityPlannerComment.adap
 import { getAuditMessage } from "../../helpers/activityLogMessage.helper";
 import {
 	ApprovalWorkflowSection,
-	getCurrentApprovalStage,
-	getIsUserInCurrentStage,
+	getWorkflowApproverData,
+	type ActiveWorkflowLike,
+	type WorkflowApprovalLike,
+	type WorkflowUser,
+	type WorkflowUserIdentity,
 } from "../../../../workflows";
-import type {
-	ApprovalStageLike,
-	WorkflowApprovalLike,
-	WorkflowUser,
-} from "../../../../workflows";
-import type {
-	WorkflowApproval,
-	WorkflowStage,
-} from "../../types/workflow.types";
+
+import type { ApprovalStageLike } from "../../../../workflows/types/types";
+
+import type { WorkflowStage } from "../../types/workflow.types";
 
 const mapEpcWorkflowUser = (approval: WorkflowApproval): WorkflowUser => ({
 	id: approval.approver.id || approval.approverId,
@@ -178,28 +176,50 @@ const ActivityFormView = ({
 		() => (activeWorkflow?.stages ?? []).map(mapEpcWorkflowStage),
 		[activeWorkflow?.stages],
 	);
+
+	const mappedActiveWorkflow =
+		React.useMemo<ActiveWorkflowLike<ApprovalStageLike> | null>(
+			() =>
+				activeWorkflow
+					? {
+							id: activeWorkflow.id,
+							iteration: activeWorkflow.iteration,
+							isActive: activeWorkflow.isActive,
+							status: activeWorkflow.status,
+							currentStage: activeWorkflow.currentStage,
+							stages: workflowStages,
+						}
+					: null,
+			[activeWorkflow, workflowStages],
+		);
+
+	const currentWorkflowUser = React.useMemo<WorkflowUserIdentity | null>(
+		() =>
+			user?.id || user?.email
+				? {
+						id: user?.id ?? null,
+						email: user?.email ?? null,
+					}
+				: null,
+		[user?.id, user?.email],
+	);
+
+	const workflowData = React.useMemo(
+		() => getWorkflowApproverData(mappedActiveWorkflow, currentWorkflowUser),
+		[mappedActiveWorkflow, currentWorkflowUser],
+	);
+
 	const eventStatus = epcData?.status ?? "unknown";
-	const userId = user?.id as string | undefined;
-	const currentStage = React.useMemo(
-		() => getCurrentApprovalStage(workflowStages),
-		[workflowStages],
-	);
-
-	const isUserInCurrentStage = React.useMemo(
-		() => getIsUserInCurrentStage(workflowStages, userId),
-		[workflowStages, userId],
-	);
-
-	const canActOnCurrentStage = Boolean(currentStage && isUserInCurrentStage);
+	const { currentStage, canActNow: canActOnCurrentStage } = workflowData;
 
 	const commentContext = React.useMemo(
 		() =>
 			getWorkflowCommentContext({
-				stages: workflowStages,
-				userId,
+				activeWorkflow: mappedActiveWorkflow,
+				currentUser: currentWorkflowUser,
 				creator: epcData?.created_by,
 			}),
-		[workflowStages, userId, epcData?.created_by],
+		[mappedActiveWorkflow, currentWorkflowUser, epcData?.created_by],
 	);
 
 	const canComment = !permissions.isClosed && commentContext.canComment;

@@ -44,11 +44,7 @@ import type {
 } from "../types/vendorOnboarding.types";
 import { VENDOR_DOCUMENT_FIELDS } from "../types/vendorOnboarding.types";
 import type { ApprovalStageLike } from "../../workflows/types/types";
-import {
-	getCurrentApprovalStage,
-	getIsUserInCurrentStage,
-} from "../../workflows";
-import { getMentionableUsersFromStages } from "../../../components/ui/comments/comments.helper";
+import { getWorkflowApproverData } from "../../workflows/utils/approvalWorkflow.helpers";
 
 export const vendorOnboardingSteps = [
 	{ id: 1, label: "Vendor filled details" },
@@ -528,14 +524,21 @@ export function useVendorCreationSummaryController({
 		loading: boolean;
 	}>({ mode: null, loading: false });
 
-	const currentStage = React.useMemo(
-		() => getCurrentApprovalStage(workflowStages),
-		[workflowStages],
+	const workflowApproverData = React.useMemo(
+		() =>
+			getWorkflowApproverData(
+				{
+					isActive: true,
+					status: "IN_PROGRESS",
+					stages: workflowStages,
+				},
+				user,
+			),
+		[workflowStages, user?.email, user?.id, user],
 	);
-	const isUserInCurrentStage = React.useMemo(
-		() => getIsUserInCurrentStage(workflowStages, user?.id),
-		[workflowStages, user?.id],
-	);
+
+	const { currentStage, canActNow, isCurrentStageApprover } =
+		workflowApproverData;
 
 	const openReasonModal = React.useCallback(() => {
 		setReasonModal({ mode: "clarify-workflow", loading: false });
@@ -605,7 +608,7 @@ export function useVendorCreationSummaryController({
 	return {
 		reasonModal,
 		currentStage,
-		canActOnCurrentStage: Boolean(currentStage && isUserInCurrentStage),
+		canActOnCurrentStage: canActNow && Boolean(isCurrentStageApprover),
 		openReasonModal,
 		closeReasonModal,
 		handleApprove,
@@ -734,85 +737,13 @@ export function useVendorCreationForm({
 		});
 	}, [activeWorkflow, assignedWorkflowStages]);
 
-	type ActiveApprovalWithApprover = {
-		status?: string | null;
-		isExternalApprover?: boolean;
-		approver?: {
-			id?: string | null;
-			email?: string | null;
-		} | null;
-	};
-
-	const currentWorkflowStageOrder = activeWorkflow?.currentStage;
-
-	const currentStage = assignedWorkflowStages.find(
-		(stage) =>
-			stage.isCurrentIteration === true &&
-			stage.stageOrder === currentWorkflowStageOrder &&
-			stage.status?.toUpperCase() === "IN_PROGRESS",
-	);
-	// const isProposer =
-	// 	Boolean(user?.id) && user.id === detailQuery.data?.createdBy;
-	const currentUserId = String(user?.id ?? "").trim();
-	const currentUserEmail = String(user?.email ?? "")
-		.trim()
-		.toLowerCase();
-
-	const currentUserApproval = React.useMemo(() => {
-		return currentStage?.approvals?.find((approval) => {
-			const currentApproval = approval as ActiveApprovalWithApprover;
-
-			const approverId = String(currentApproval.approver?.id ?? "").trim();
-
-			const approverEmail = String(currentApproval.approver?.email ?? "")
-				.trim()
-				.toLowerCase();
-
-			const matchesById =
-				Boolean(currentUserId) &&
-				Boolean(approverId) &&
-				currentUserId === approverId;
-
-			const matchesByEmail =
-				Boolean(currentUserEmail) &&
-				Boolean(approverEmail) &&
-				currentUserEmail === approverEmail;
-
-			return matchesById || matchesByEmail;
-		}) as ActiveApprovalWithApprover | undefined;
-	}, [currentStage?.approvals, currentUserEmail, currentUserId]);
-
-	const isCurrentStageApprover =
-		currentUserApproval?.status?.toUpperCase() === "PENDING";
-
-	const isExternalApprover = currentUserApproval?.isExternalApprover ?? false;
-
-	const workflowApprovers = React.useMemo(
-		() => getMentionableUsersFromStages(assignedWorkflowStages),
-		[assignedWorkflowStages],
+	const workflowApproverData = React.useMemo(
+		() => getWorkflowApproverData(activeWorkflow, user),
+		[activeWorkflow, user?.email, user?.id],
 	);
 
-	const wasWorkflowApprover = React.useMemo(() => {
-		return workflowApprovers.some((approver) => {
-			const approverId = String(approver.id ?? "").trim();
-
-			const approverEmail = String(approver.email ?? "")
-				.trim()
-				.toLowerCase();
-
-			const matchesById =
-				Boolean(currentUserId) &&
-				Boolean(approverId) &&
-				currentUserId === approverId;
-
-			const matchesByEmail =
-				Boolean(currentUserEmail) &&
-				Boolean(approverEmail) &&
-				currentUserEmail === approverEmail;
-
-			return matchesById || matchesByEmail;
-		});
-	}, [currentUserEmail, currentUserId, workflowApprovers]);
+	const { canActNow, isExternalApprover, mentionableUsers } =
+		workflowApproverData;
 
 	type VendorUpdatePayload = Parameters<
 		typeof updateMutation.mutateAsync
@@ -835,10 +766,7 @@ export function useVendorCreationForm({
 	);
 
 	// const isApprover = activeWorkflow?.
-	const canApprove =
-		activeWorkflow?.isActive === true &&
-		activeWorkflow.status?.toUpperCase() === "IN_PROGRESS" &&
-		isCurrentStageApprover;
+	const canApprove = canActNow;
 
 	const canClarify = canApprove;
 
@@ -1613,6 +1541,8 @@ export function useVendorCreationForm({
 		handleFetchWorkflow: handlePreviewWorkflow,
 
 		activeWorkflow,
+		workflowApproverData,
+		mentionableUsers,
 		workflowStages,
 		assignedWorkflowStages,
 		previewWorkflowStages,
