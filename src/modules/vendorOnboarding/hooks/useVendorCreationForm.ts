@@ -6,7 +6,7 @@ import type { ReasonActionMode } from "../../../components/ui/ReasonActionModal"
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { workflowApi } from "../../../api/workflow.api";
-
+import { getWorkflowApproverData } from "../../workflows/utils/workflow.helpers";
 import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
 import { createRemoteFileUploadValue } from "../../../components/ui/FileUpload/fileUpload.helpers";
 import {
@@ -786,10 +786,36 @@ export function useVendorCreationForm({
 		}),
 	);
 
-	const canApprove =
-		activeWorkflow?.isActive === true &&
-		activeWorkflow.status?.toUpperCase() === "IN_PROGRESS" &&
-		isCurrentStageApprover;
+	// const canApprove =
+	// 	activeWorkflow?.isActive === true &&
+	// 	activeWorkflow.status?.toUpperCase() === "IN_PROGRESS" &&
+	// 	isCurrentStageApprover;
+	const workflowApproverData = React.useMemo(
+		() => getWorkflowApproverData(activeWorkflow, user),
+		[activeWorkflow, user?.email, user?.id],
+	);
+
+	const { canActNow: canApprove, isExternalApprover } = workflowApproverData;
+
+	type VendorUpdatePayload = Parameters<
+		typeof updateMutation.mutateAsync
+	>[0]["payload"] & {
+		isExternalApprover?: boolean;
+	};
+
+	const handleSaveVendorUpdate = React.useCallback(
+		async (payload: VendorUpdatePayload) => {
+			if (!vendorRequestId) {
+				throw new Error("Vendor onboarding ID is missing.");
+			}
+
+			return updateMutation.mutateAsync({
+				vendorRequestId,
+				payload,
+			});
+		},
+		[updateMutation, vendorRequestId],
+	);
 
 	const canClarify = canApprove;
 
@@ -1591,6 +1617,7 @@ export function useVendorCreationForm({
 		handleFetchWorkflow: handlePreviewWorkflow,
 
 		activeWorkflow,
+		workflowApproverData,
 		workflowStages,
 		assignedWorkflowStages,
 		previewWorkflowStages,
