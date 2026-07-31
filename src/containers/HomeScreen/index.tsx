@@ -4,7 +4,7 @@ import ActionCard from "./components/Card";
 import { actions } from "./constant";
 
 export default function HomeScreen() {
-  const { canReadApp, permissions, adminApps, isSuperAdmin } = useAuth();
+  const { canReadApp, permissions } = useAuth();
 
   // WORKFLOW is deliberately excluded from the permission filter — the
   // backend has no permission gate on workflow actions at all (anyone can
