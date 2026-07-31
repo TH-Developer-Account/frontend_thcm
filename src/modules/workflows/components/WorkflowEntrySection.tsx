@@ -1,18 +1,20 @@
 import { useMemo, useState } from "react";
-import { GitBranch, LibraryBig, Plus, Sparkles } from "lucide-react";
-
-import Button from "../../../components/common/Button";
+import { GitBranch, LibraryBig, Sparkles } from "lucide-react";
 import Card from "../../../components/common/Card";
 import type {
 	EntryMode,
 	SaveMode,
 	WorkflowFilter,
 	WorkflowSummary,
+	WorkflowStage,
+	WorkflowApprover,
+	WorkflowStageErrors,
 } from "../types/types";
+
 import "../utils/workflow.css";
 import { WorkflowFetchList } from "./WorkflowFetchList";
-import { useNavigate } from "react-router-dom";
 import { SearchInput } from "../../../components/forms/SearchInput";
+import WorkflowStagesForm from "./WorkflowStagesForm";
 
 export interface WorkflowEntrySectionProps {
 	sourceRecordRef?: string;
@@ -56,19 +58,97 @@ export function WorkflowEntrySection({
 	disabled = false,
 	loading = false,
 }: WorkflowEntrySectionProps) {
-	const navigate = useNavigate();
 	const [mode, setMode] = useState<EntryMode>("idle");
 	const [filter, setFilter] = useState<WorkflowFilter>("created");
 	const [search, setSearch] = useState<string>("");
+	const [stages, setStages] = useState<WorkflowStage[]>([]);
 
-	const selectMode = (nextMode: EntryMode) => {
-		setMode(nextMode);
+	const [errors, setErrors] = useState<WorkflowStageErrors[]>([]);
+	const [formError, setFormError] = useState<string | null>(null);
+
+	const currentUserId = "user-123";
+
+	const handleStageChange = <K extends keyof WorkflowStage>(
+		stageId: string,
+		key: K,
+		value: WorkflowStage[K],
+	) => {
+		setStages((prev) =>
+			prev.map((stage) =>
+				stage.id === stageId
+					? {
+							...stage,
+							[key]: value,
+						}
+					: stage,
+			),
+		);
 	};
 
-	const handleNavigatetoWorkflowCreate = () => {
-		navigate("/workflow/create-workflows", {
-			state: { workflowType: "USERCREATED" },
-		});
+	const handleToggleStage = (stageId: string) => {
+		setStages((prev) =>
+			prev.map((stage) =>
+				stage.id === stageId
+					? {
+							...stage,
+							isExpanded: !stage.isExpanded,
+						}
+					: stage,
+			),
+		);
+	};
+
+	const handleAddApprover = (stageId: string, approver: WorkflowApprover) => {
+		setStages((prev) =>
+			prev.map((stage) =>
+				stage.id === stageId
+					? {
+							...stage,
+							approvers: [...stage.approvers, approver],
+						}
+					: stage,
+			),
+		);
+	};
+
+	const handleRemoveApprover = (stageId: string, approverId: string) => {
+		setStages((prev) =>
+			prev.map((stage) =>
+				stage.id === stageId
+					? {
+							...stage,
+							approvers: stage.approvers.filter((a) => a.id !== approverId),
+						}
+					: stage,
+			),
+		);
+	};
+
+	const handleAddStage = () => {
+		setStages((prev) => [
+			...prev,
+			{
+				id: crypto.randomUUID(),
+				stageOrder: prev.length + 1,
+				name: `Stage ${prev.length + 1}`,
+				minApprovals: 1,
+				approvers: [],
+				isExpanded: true,
+			},
+		]);
+	};
+
+	const handleBack = () => {
+		console.log("Back clicked");
+	};
+
+	const handleSubmit = () => {
+		console.log("Workflow", stages);
+
+		// validate and submit API
+	};
+	const selectMode = (nextMode: EntryMode) => {
+		setMode(nextMode);
 	};
 
 	const filteredCreatedWorkflows = useMemo(
@@ -175,24 +255,19 @@ export function WorkflowEntrySection({
 			) : null}
 
 			{mode === "create" ? (
-				<div className="workflow-entry-create">
-					<div>
-						<p className="workflow-entry-create-title">
-							Build a custom workflow
-						</p>
-						<p className="workflow-entry-create-copy">
-							Add, rename and reorder approval stages. You can attach it once or
-							save it as a reusable template.
-						</p>
-					</div>
-					<Button
-						type="button"
-						onClick={handleNavigatetoWorkflowCreate}
-						disabled={disabled || loading}
-						Icon={Plus}
-						text="Open builder"
-						appearance="standard"
-						variant="brand"
+				<div className="py-4">
+					<WorkflowStagesForm
+						stages={stages}
+						errors={errors}
+						formError={formError}
+						currentUserId={currentUserId}
+						onStageChange={handleStageChange}
+						onToggleStage={handleToggleStage}
+						onRemoveApprover={handleRemoveApprover}
+						onAddApprover={handleAddApprover}
+						onBack={handleBack}
+						onAddStage={handleAddStage}
+						onSubmit={handleSubmit}
 					/>
 				</div>
 			) : null}

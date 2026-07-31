@@ -1,10 +1,11 @@
 import { Route, Routes } from "react-router-dom";
 
-import VendorOnboardingFormView from "./components/VendorOnboardingFormView";
-import VendorInitiationPage from "./pages/VendorInitiationPage";
-import VendorOnboardingPage from "./pages/VendorOnboardingPage";
-import VendorInitiationListingPage from "./pages/VendorInitiationListingPage";
-import VendorOnboardingListingPage from "./pages/VendorOnboardingListingPage";
+import VendorOnboardingFormView from "../modules/vendorOnboarding/components/VendorOnboardingFormView";
+import VendorInitiationPage from "../modules/vendorOnboarding/pages/VendorInitiationPage";
+import VendorOnboardingPage from "../modules/vendorOnboarding/pages/VendorOnboardingPage";
+import VendorInitiationListingPage from "../modules/vendorOnboarding/pages/VendorInitiationListingPage";
+import VendorOnboardingListingPage from "../modules/vendorOnboarding/pages/VendorOnboardingListingPage";
+import VendorDashboardPage from "../modules/vendorOnboarding/pages/VendorDashboardPage";
 
 const VendorRoutes = () => {
 	return (
@@ -13,6 +14,7 @@ const VendorRoutes = () => {
 				path="onboarding/listing"
 				element={<VendorOnboardingListingPage />}
 			/>
+			<Route path="dashboard" element={<VendorDashboardPage />} />
 			<Route
 				path="initiation/listing"
 				element={<VendorInitiationListingPage />}

@@ -1,11 +1,17 @@
 import type { ReactNode } from "react";
-import { ArrowLeft, CircleCheck, RefreshCcw, Save, Send } from "lucide-react";
+import {
+	ArrowLeft,
+	CircleCheck,
+	ClipboardClock,
+	Save,
+	Send,
+} from "lucide-react";
 
 import Button from "../../../components/common/Button";
 import { ApprovalWorkflowTableContent } from "../../workflows/components/ApprovalWorkflowTableContent";
 
+import { VendorCodeRequiredModal } from "../components/VendorCodeRequiredModal";
 import { ReasonActionModal } from "../../../components/ui/ReasonActionModal";
-
 import type {
 	VendorCreationFormOneValues,
 	VendorCreationFormTwoValues,
@@ -19,6 +25,7 @@ import {
 	useVendorCreationSummaryController,
 } from "../hooks/useVendorCreationForm";
 import type { ApprovalStageLike } from "../../workflows/types/types";
+import { CardEmpty } from "../../../components/ui/CardSkeleton";
 
 type VendorCreationSummaryMode = "edit" | "view";
 
@@ -40,10 +47,10 @@ type VendorCreationSummaryFormProps = {
 	onSubmit?: () => void;
 	onApprove?: () => void;
 	onClarify?: () => void;
-	onAcceptAndClose?: () => void;
 	onFetchWorkflow?: () => void | Promise<void>;
 	onHandleSendBackVendor?: () => void | Promise<void>;
-
+	onAcceptAndClose?: () => void | Promise<void>;
+	onSaveVendorCode?: (code?: string) => void | Promise<boolean>;
 	canSendBackToVendor?: boolean;
 	canSubmit?: boolean;
 	canApprove?: boolean;
@@ -53,7 +60,6 @@ type VendorCreationSummaryFormProps = {
 	canEditVendorCode?: boolean;
 	canSaveVendorCode?: boolean;
 	vendorCodeLoading?: boolean;
-	onSaveVendorCode?: () => void | Promise<boolean>;
 
 	workflowStages?: ApprovalStageLike[];
 	commentsSection?: ReactNode;
@@ -84,7 +90,6 @@ const VendorCreationSummaryForm = ({
 	onSaveVendorCode,
 	workflowStages = [],
 	commentsSection,
-	workflowLoading,
 }: VendorCreationSummaryFormProps) => {
 	const formContext = useOptionalVendorCreationFormContext();
 	const formOneValues = formOneValuesProp ?? formContext?.formOneValues ?? {};
@@ -120,23 +125,27 @@ const VendorCreationSummaryForm = ({
 		canSaveVendorCode ?? formContext?.canSaveVendorCode ?? false;
 	const resolvedVendorCodeLoading =
 		vendorCodeLoading ?? formContext?.vendorCodeLoading ?? false;
-	const resolvedWorkflowLoading =
-		workflowLoading ?? formContext?.workflowLoading ?? false;
 
 	const isViewMode = mode === "view";
 	const {
 		reasonModal,
 		canActOnCurrentStage,
+		// requiresVendorCodeToApprove,
+		vendorCodeModal,
 		openReasonModal,
 		closeReasonModal,
+		closeVendorCodeModal,
 		handleApprove,
+		handleVendorCodeModalConfirm,
 		handleReasonConfirm,
 		handleVendorCodeSave,
 	} = useVendorCreationSummaryController({
 		workflowStages: resolvedWorkflowStages,
+		vendorCode: formTwoValues.vendorCode,
 		onApprove: resolvedOnApprove,
 		onClarify: resolvedOnClarify,
 		onSaveVendorCode: resolvedOnSaveVendorCode,
+		onAcceptAndClose: resolvedOnAcceptAndClose,
 	});
 
 	const showSubmitAction =
@@ -185,54 +194,24 @@ const VendorCreationSummaryForm = ({
 			/>
 
 			{commentsSection ? (
-				<div className="vendor-summary-block-body">{commentsSection}</div>
+				<section className="vendor-summary-block-body">
+					{commentsSection}
+				</section>
 			) : null}
 
 			{showWorkflowBlock ? (
-				<section className="vendor-summary-block">
-					<div>
-						{!hasWorkflow && typeof resolvedOnFetchWorkflow === "function" ? (
-							<>
-								<span>Click the button to start the workflow</span>
-
-								<Button
-									type="button"
-									text={
-										resolvedWorkflowLoading
-											? "Fetching workflow..."
-											: "Fetch workflow"
-									}
-									Icon={RefreshCcw}
-									size="sm"
-									appearance="standard"
-									variant="outline"
-									isTooltip="Click the button to start the workflow"
-									disabled={resolvedWorkflowLoading}
-									onClick={() => {
-										void resolvedOnFetchWorkflow();
-									}}
-								/>
-							</>
-						) : null}
-					</div>
-
+				<section className="vendor-summary-block-body">
 					{hasWorkflow ? (
 						<ApprovalWorkflowTableContent
 							stages={resolvedWorkflowStages}
 							showEmptyState={!resolvedOnFetchWorkflow}
 						/>
 					) : (
-						<div className="vendor-summary-block-body">
-							<div className="approval-workflow-empty">
-								<p className="approval-workflow-empty-title">
-									No approval workflow assigned
-								</p>
-
-								<p className="approval-workflow-empty-description">
-									Fetch the applicable workflow to generate the approval stages.
-								</p>
-							</div>
-						</div>
+						<CardEmpty
+							title="No approval workflow assigned"
+							description="Fetch the applicable workflow to generate the approval stages."
+							Icon={ClipboardClock}
+						/>
 					)}
 				</section>
 			) : null}
@@ -358,6 +337,12 @@ const VendorCreationSummaryForm = ({
 				loading={reasonModal.loading}
 				onClose={closeReasonModal}
 				onConfirm={handleReasonConfirm}
+			/>
+			<VendorCodeRequiredModal
+				open={vendorCodeModal.open}
+				loading={vendorCodeModal.loading}
+				onClose={closeVendorCodeModal}
+				onConfirm={handleVendorCodeModalConfirm}
 			/>
 		</div>
 	);

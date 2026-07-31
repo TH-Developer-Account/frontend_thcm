@@ -35,6 +35,7 @@ import type { ApprovalStageLike } from "../../../../workflows/types/types";
 
 import type { WorkflowStage } from "../../types/workflow.types";
 import { mapEpcWorkflowStage } from "../../../../workflows/utils/approvalWorkflow.mapper";
+import SectionAccordion from "../../../../../components/common/SectionAccordion";
 
 type EditingSection = "epc" | "crf" | "epf" | null;
 type ReasonModalState = {
@@ -387,20 +388,20 @@ const ActivityFormView = ({
 										: []
 								}
 							/>
-
-							<CommentsSection
-								subjectType="EPC"
-								subjectId={epcData.id}
-								currentUserId={user?.id}
-								approvalId={commentContext.approvalId}
-								mentionableUsers={commentContext.mentionableUsers}
-								ccEmails={commentContext.ccEmails}
-								refreshKey={commentsRefreshKey}
-								canComment={canComment}
-								api={activityPlannerCommentApi}
-								formatAuditMessage={getAuditMessage}
-								title="Comment Section"
-							/>
+							<SectionAccordion title="Comment Section">
+								<CommentsSection
+									subjectType="EPC"
+									subjectId={epcData.id}
+									currentUserId={user?.id}
+									approvalId={commentContext.approvalId}
+									mentionableUsers={commentContext.mentionableUsers}
+									ccEmails={commentContext.ccEmails}
+									refreshKey={commentsRefreshKey}
+									canComment={canComment}
+									api={activityPlannerCommentApi}
+									formatAuditMessage={getAuditMessage}
+								/>
+							</SectionAccordion>
 						</>
 					)}
 

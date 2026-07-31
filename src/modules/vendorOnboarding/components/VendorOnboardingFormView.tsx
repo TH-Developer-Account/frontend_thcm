@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, FileDown, Pencil } from "lucide-react";
+import { ArrowLeft, CircleX, FileDown, LoaderIcon, Pencil } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import Button from "../../../components/common/Button";
@@ -18,6 +18,7 @@ import {
 import type { VendorViewerRole } from "../types/vendorOnboarding.types";
 import VendorCommentSection from "./VendorCommentSection";
 import { useVendorOnboardingInitiation } from "../hooks/useVendorOnboardingInitiation";
+import { CardEmpty } from "../../../components/ui/CardSkeleton";
 
 type VendorOnboardingFormViewProps = {
 	viewerRole?: VendorViewerRole;
@@ -110,15 +111,10 @@ const VendorOnboardingReadOnlyView = ({
 					navigation={pageNavigation}
 				/>
 
-				<Card>
-					<div
-						className="vendor-onboarding-view-state"
-						role="status"
-						aria-live="polite"
-					>
-						Loading vendor onboarding details...
-					</div>
-				</Card>
+				<CardEmpty
+					title="Loading vendor onboarding details..."
+					Icon={LoaderIcon}
+				/>
 			</PageSectionLayout>
 		);
 	}
@@ -131,22 +127,10 @@ const VendorOnboardingReadOnlyView = ({
 					navigation={pageNavigation}
 				/>
 
-				<Card>
-					<div className="vendor-onboarding-view-state" role="alert">
-						<p>Unable to load the vendor onboarding details.</p>
-
-						<Button
-							type="button"
-							text="Back to Listing"
-							Icon={ArrowLeft}
-							iconPosition="left"
-							size="sm"
-							appearance="standard"
-							variant="outline"
-							onClick={handleBackToListing}
-						/>
-					</div>
-				</Card>
+				<CardEmpty
+					title="Unable to load the vendor onboarding details."
+					Icon={CircleX}
+				/>
 			</PageSectionLayout>
 		);
 	}

@@ -3,6 +3,8 @@ import { useMemo } from "react";
 import type { ApprovalStageLike } from "../types/types";
 import { mapWorkflowStagesToApprovalRows } from "../utils/approvalWorkflow.mapper";
 import { ApprovalTable } from "./ApprovalTable";
+import { CardEmpty } from "../../../components/ui/CardSkeleton";
+import { SearchX } from "lucide-react";
 
 export type ApprovalWorkflowTableContentProps = {
 	stages: ApprovalStageLike[];
@@ -50,14 +52,11 @@ export const ApprovalWorkflowTableContent = ({
 		if (!showEmptyState) return null;
 
 		return (
-			<div className="approval-workflow-empty">
-				<p className="approval-workflow-empty-title">
-					No approval flow available
-				</p>
-				<p className="approval-workflow-empty-description">
-					The approval workflow will appear here after it has been generated.
-				</p>
-			</div>
+			<CardEmpty
+				title="No approval flow available"
+				description="The approval workflow will appear here after it has been generated."
+				Icon={SearchX}
+			/>
 		);
 	}
 

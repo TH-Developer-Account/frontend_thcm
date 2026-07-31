@@ -508,16 +508,20 @@ export function useVendorCreationFormOneController({
 
 type UseVendorCreationSummaryControllerParams = {
 	workflowStages: ApprovalStageLike[];
+	vendorCode?: string;
 	onApprove?: () => void;
 	onClarify?: () => void;
-	onSaveVendorCode?: () => void | Promise<boolean>;
+	onSaveVendorCode?: (code?: string) => void | Promise<boolean>;
+	onAcceptAndClose?: () => void | Promise<void>;
 };
 
 export function useVendorCreationSummaryController({
 	workflowStages,
+	vendorCode,
 	onApprove,
 	onClarify,
 	onSaveVendorCode,
+	onAcceptAndClose,
 }: UseVendorCreationSummaryControllerParams) {
 	const { user } = useAuth();
 	const { showToast } = useToast();
@@ -525,6 +529,11 @@ export function useVendorCreationSummaryController({
 		mode: ReasonActionMode | null;
 		loading: boolean;
 	}>({ mode: null, loading: false });
+
+	const [vendorCodeModal, setVendorCodeModal] = React.useState<{
+		open: boolean;
+		loading: boolean;
+	}>({ open: false, loading: false });
 
 	const workflowApproverData = React.useMemo(
 		() =>
@@ -539,8 +548,24 @@ export function useVendorCreationSummaryController({
 		[workflowStages, user?.email, user?.id, user],
 	);
 
-	const { currentStage, canActNow, isCurrentStageApprover } =
-		workflowApproverData;
+	const {
+		currentStage,
+		canActNow,
+		isCurrentStageApprover,
+		isExternalApprover,
+	} = workflowApproverData;
+
+	// Assumes workflowStages is already ordered — last entry is the closing stage.
+	const isFinalStage = Boolean(
+		currentStage &&
+		workflowStages.length > 0 &&
+		workflowStages[workflowStages.length - 1]?.id === currentStage.id,
+	);
+
+	// The final-stage external (TCS) approver must set the Vendor Code before
+	// approving; their approval also closes the request in the same action.
+	const requiresVendorCodeToApprove =
+		isFinalStage && Boolean(isExternalApprover);
 
 	const openReasonModal = React.useCallback(() => {
 		setReasonModal({ mode: "clarify-workflow", loading: false });
@@ -551,12 +576,16 @@ export function useVendorCreationSummaryController({
 
 	const currentStageId = currentStage?.id;
 
-	const handleApprove = React.useCallback(async () => {
+	const approveCurrentStage = React.useCallback(async () => {
 		if (!currentStageId) return;
 		try {
 			const { message } = await workflowApi.approveStage(currentStageId);
 			showToast({ type: "success", title: "Success", description: message });
 			onApprove?.();
+
+			if (requiresVendorCodeToApprove) {
+				await onAcceptAndClose?.();
+			}
 		} catch (error) {
 			showToast({
 				type: "error",
@@ -565,7 +594,54 @@ export function useVendorCreationSummaryController({
 					error instanceof Error ? error.message : "Error while approving.",
 			});
 		}
-	}, [currentStageId, onApprove, showToast]);
+	}, [
+		currentStageId,
+		onAcceptAndClose,
+		onApprove,
+		requiresVendorCodeToApprove,
+		showToast,
+	]);
+
+	const openVendorCodeModal = React.useCallback(() => {
+		setVendorCodeModal({ open: true, loading: false });
+	}, []);
+	const closeVendorCodeModal = React.useCallback(() => {
+		setVendorCodeModal({ open: false, loading: false });
+	}, []);
+
+	const handleApprove = React.useCallback(async () => {
+		if (requiresVendorCodeToApprove && !vendorCode?.trim()) {
+			openVendorCodeModal();
+			return;
+		}
+		await approveCurrentStage();
+	}, [
+		approveCurrentStage,
+		openVendorCodeModal,
+		requiresVendorCodeToApprove,
+		vendorCode,
+	]);
+
+	const handleVendorCodeModalConfirm = React.useCallback(
+		async (code: string) => {
+			const trimmed = code.trim();
+			if (!trimmed) return;
+
+			setVendorCodeModal({ open: true, loading: true });
+			try {
+				const saved = await onSaveVendorCode?.(trimmed);
+				if (saved === false) {
+					setVendorCodeModal({ open: true, loading: false });
+					return;
+				}
+				setVendorCodeModal({ open: false, loading: false });
+				await approveCurrentStage();
+			} catch {
+				setVendorCodeModal({ open: true, loading: false });
+			}
+		},
+		[approveCurrentStage, onSaveVendorCode],
+	);
 
 	const handleReasonConfirm = React.useCallback(
 		async (reason: string) => {
@@ -577,7 +653,6 @@ export function useVendorCreationSummaryController({
 				});
 				return;
 			}
-
 			try {
 				setReasonModal((current) => ({ ...current, loading: true }));
 				const { message } = await workflowApi.clarifyStage(
@@ -611,9 +686,13 @@ export function useVendorCreationSummaryController({
 		reasonModal,
 		currentStage,
 		canActOnCurrentStage: canActNow && Boolean(isCurrentStageApprover),
+		requiresVendorCodeToApprove,
+		vendorCodeModal,
 		openReasonModal,
 		closeReasonModal,
+		closeVendorCodeModal,
 		handleApprove,
+		handleVendorCodeModalConfirm,
 		handleReasonConfirm,
 		handleVendorCodeSave,
 	};
@@ -1307,121 +1386,116 @@ export function useVendorCreationForm({
 	|--------------------------------------------------------------------------
 	*/
 
-	const saveVendorCode = React.useCallback(async (): Promise<boolean> => {
-		// if (!workspaceId || !appId || !vendorRequestId) {
-		// 	showToast({
-		// 		type: "error",
-		// 		title: "Permission denied",
-		// 		description: "Workspace Id is not provided.",
-		// 	});
-		// }
-
-		if (!canEditVendorCode) {
-			showToast({
-				type: "error",
-				title: "Permission denied",
-				description:
-					"You are not allowed to update the Vendor Code at this workflow stage.",
-			});
-
-			return false;
-		}
-
-		const vendorCode = formTwoValues.vendorCode?.trim() ?? "";
-
-		if (!vendorCode) {
-			setFormTwoErrors((current) => ({
-				...current,
-				vendorCode: "Vendor Code is required.",
-			}));
-
-			return false;
-		}
-
-		if (!isVendorCodeDirty) {
-			return true;
-		}
-
-		try {
-			setIsSavingVendorCode(true);
-
-			await handleSaveVendorUpdate({
-				vendorCode,
-				isExternalApprover,
-			});
-
-			setFormTwoValues((current) => ({
-				...current,
-				vendorCode,
-			}));
-
-			setFormTwoErrors((current) => ({
-				...current,
-				vendorCode: "",
-			}));
-
-			await detailQuery.refetch();
-
-			showToast({
-				type: "success",
-				title: "Vendor code updated",
-				description: "The Vendor Code was updated successfully.",
-			});
-
-			return true;
-		} catch (error) {
-			const responseStatus = (
-				error as {
-					response?: {
-						status?: number;
-					};
-				}
-			).response?.status;
-
-			if (responseStatus === 401) {
-				showToast({
-					type: "error",
-					title: "Authentication error",
-					description:
-						"The server rejected your authentication token. Please check the request authorization header.",
-				});
-
-				return false;
-			}
-
-			if (responseStatus === 403) {
+	const saveVendorCode = React.useCallback(
+		async (codeOverride?: string): Promise<boolean> => {
+			if (!canEditVendorCode) {
 				showToast({
 					type: "error",
 					title: "Permission denied",
 					description:
-						"The server does not allow this approver to update the Vendor Code.",
+						"You are not allowed to update the Vendor Code at this workflow stage.",
 				});
-
 				return false;
 			}
 
-			showToast({
-				type: "error",
-				title: "Unable to update vendor code",
-				description: getErrorMessage(
-					error,
-					"Failed to update the Vendor Code.",
-				),
-			});
+			const vendorCode =
+				(codeOverride ?? formTwoValues.vendorCode)?.trim() ?? "";
 
-			return false;
-		} finally {
-			setIsSavingVendorCode(false);
-		}
-	}, [
-		canEditVendorCode,
-		detailQuery,
-		formTwoValues.vendorCode,
-		handleSaveVendorUpdate,
-		isExternalApprover,
-		isVendorCodeDirty,
-		showToast,
-	]);
+			if (!vendorCode) {
+				setFormTwoErrors((current) => ({
+					...current,
+					vendorCode: "Vendor Code is required.",
+				}));
+				return false;
+			}
+
+			// When a codeOverride is passed (modal flow), check dirtiness against
+			// the saved value directly rather than relying on state that may not
+			// have flushed yet.
+			const isDirty =
+				codeOverride !== undefined
+					? vendorCode !== savedVendorCode
+					: isVendorCodeDirty;
+
+			if (!isDirty) {
+				return true;
+			}
+
+			try {
+				setIsSavingVendorCode(true);
+
+				await handleSaveVendorUpdate({
+					vendorCode,
+					isExternalApprover,
+				});
+
+				setFormTwoValues((current) => ({
+					...current,
+					vendorCode,
+				}));
+
+				setFormTwoErrors((current) => ({
+					...current,
+					vendorCode: "",
+				}));
+
+				await detailQuery.refetch();
+
+				showToast({
+					type: "success",
+					title: "Vendor code updated",
+					description: "The Vendor Code was updated successfully.",
+				});
+
+				return true;
+			} catch (error) {
+				const responseStatus = (error as { response?: { status?: number } })
+					.response?.status;
+
+				if (responseStatus === 401) {
+					showToast({
+						type: "error",
+						title: "Authentication error",
+						description:
+							"The server rejected your authentication token. Please check the request authorization header.",
+					});
+					return false;
+				}
+
+				if (responseStatus === 403) {
+					showToast({
+						type: "error",
+						title: "Permission denied",
+						description:
+							"The server does not allow this approver to update the Vendor Code.",
+					});
+					return false;
+				}
+
+				showToast({
+					type: "error",
+					title: "Unable to update vendor code",
+					description: getErrorMessage(
+						error,
+						"Failed to update the Vendor Code.",
+					),
+				});
+				return false;
+			} finally {
+				setIsSavingVendorCode(false);
+			}
+		},
+		[
+			canEditVendorCode,
+			detailQuery,
+			formTwoValues.vendorCode,
+			handleSaveVendorUpdate,
+			isExternalApprover,
+			isVendorCodeDirty,
+			savedVendorCode,
+			showToast,
+		],
+	);
 
 	/*
 	|--------------------------------------------------------------------------

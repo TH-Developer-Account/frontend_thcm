@@ -368,7 +368,7 @@
 	===================================================== */
 
 	.approval-workflow-empty {
-		@apply flex min-h-32 flex-col items-center
+		@apply flex min-h-20 flex-col items-center
 			justify-center gap-1 text-center;
 
 		padding: var(--space-5);

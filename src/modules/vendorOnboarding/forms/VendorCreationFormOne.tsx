@@ -10,7 +10,7 @@ import {
 	Save,
 	ShieldCheck,
 } from "lucide-react";
-
+import type { ClipboardEvent } from "react";
 import Button from "../../../components/common/Button";
 import { Modal } from "../../../components/common/Modal";
 import FormInput from "../../../components/forms/FormInput";
@@ -92,6 +92,10 @@ const getSelectedOption = (
 	value?: string,
 ): SelectOption | null =>
 	options.find((option) => option.value === value) ?? null;
+
+const blockClipboardEvent = (event: ClipboardEvent<HTMLInputElement>) => {
+	event.preventDefault();
+};
 
 const yesNoOptions = toSelectOptions(["Yes", "No"]);
 
@@ -363,6 +367,10 @@ const VendorCreationFormOne = ({
 							const value = event.target.value.replace(/\D/g, "");
 							resolvedOnChange?.("accountNumber", value);
 						}}
+						onPaste={blockClipboardEvent}
+						onCopy={blockClipboardEvent}
+						onCut={blockClipboardEvent}
+						autoComplete="off"
 					/>
 
 					<FormInput
@@ -379,6 +387,10 @@ const VendorCreationFormOne = ({
 							const value = event.target.value.replace(/\D/g, "");
 							resolvedOnChange?.("confirmAccountNumber", value);
 						}}
+						onPaste={blockClipboardEvent}
+						onCopy={blockClipboardEvent}
+						onCut={blockClipboardEvent}
+						autoComplete="off"
 					/>
 				</div>
 
