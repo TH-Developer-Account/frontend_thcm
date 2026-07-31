@@ -1,5 +1,5 @@
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
-import type { ApprovalStageLike } from "../../../components/ui/workflow/approvalWorkflow.types";
+import type { ApprovalStageLike } from "../../workflows";
 
 export type VendorFormMode = "edit" | "view";
 

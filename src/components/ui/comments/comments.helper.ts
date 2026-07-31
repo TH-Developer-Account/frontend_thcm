@@ -1,139 +1,147 @@
 import type { CommentUser, MentionableUserInput } from "./comment.types";
 
-import type {
-	ApprovalStageLike,
-	WorkflowPersonLike,
-} from "../workflow/approvalWorkflow.types";
-
 import {
-	getApprovalIdForUser,
-	getApprovalUser,
-	getIsUserInCurrentStage,
+	getWorkflowApproverData,
+	isSameWorkflowUser,
 	normalizeWorkflowStatus,
-} from "../workflow/approvalWorkflow.helpers";
+	type ActiveWorkflowLike,
+	type WorkflowUserIdentity,
+} from "../../../modules/workflows";
+
+type WorkflowMentionUser = WorkflowUserIdentity & {
+	avatarUrl?: string | null;
+};
 
 const toCommentUser = (
-	user?: WorkflowPersonLike | MentionableUserInput | null,
-	fallbackName = "User",
+	user?: WorkflowMentionUser | null,
+	fallbackName = "Approver",
 ): CommentUser | null => {
 	if (!user?.id) return null;
 
 	return {
 		id: user.id,
-		first_name: user.first_name?.trim() || fallbackName,
-		last_name: user.last_name?.trim() || "",
+		first_name:
+			user.first_name?.trim() ||
+			user.firstName?.trim() ||
+			user.name?.trim() ||
+			fallbackName,
+		last_name: user.last_name?.trim() || user.lastName?.trim() || "",
 		email: user.email?.trim() || undefined,
 		avatarUrl: user.avatarUrl ?? undefined,
 	};
 };
 
-export const getMentionableUsersFromStages = (
-	stages: readonly ApprovalStageLike[] = [],
-	creator?: MentionableUserInput | null,
-	additionalUsers: readonly MentionableUserInput[] = [],
-	creatorFallbackName = "Creator",
+/**
+ * Returns every unique workflow approver as a mentionable user.
+ *
+ * This includes users from:
+ * - Previous workflow iterations
+ * - Past stages
+ * - Current stage
+ * - Future stages
+ */
+export const getMentionableUsersFromWorkflow = (
+	activeWorkflow?: ActiveWorkflowLike | null,
 ): CommentUser[] => {
-	const seenUserIds = new Set<string>();
-	const users: CommentUser[] = [];
+	const { mentionableUsers } = getWorkflowApproverData(activeWorkflow);
 
-	const addUser = (
-		user?: WorkflowPersonLike | MentionableUserInput | null,
-		fallbackName = "User",
-	) => {
-		const normalizedUser = toCommentUser(user, fallbackName);
-
-		if (!normalizedUser || seenUserIds.has(normalizedUser.id)) {
-			return;
-		}
-
-		seenUserIds.add(normalizedUser.id);
-		users.push(normalizedUser);
-	};
-
-	addUser(creator, creatorFallbackName);
-
-	stages.forEach((stage) => {
-		stage.approvals?.forEach((approval) => {
-			addUser(getApprovalUser(approval), "Approver");
-		});
-	});
-
-	additionalUsers.forEach((user) => {
-		addUser(user);
-	});
-
-	return users;
+	return mentionableUsers
+		.map((user) => toCommentUser(user as WorkflowMentionUser, "Approver"))
+		.filter((user): user is CommentUser => user !== null);
 };
 
+/**
+ * Returns email addresses of users belonging to approved stages.
+ */
 export const getApprovedStageCcEmails = (
-	stages: readonly ApprovalStageLike[] = [],
+	activeWorkflow?: ActiveWorkflowLike | null,
 ): string[] => {
+	const { pastApprovals } = getWorkflowApproverData(activeWorkflow);
 	const emails = new Set<string>();
 
-	stages.forEach((stage) => {
+	pastApprovals.forEach(({ stage, user }) => {
 		if (normalizeWorkflowStatus(stage.status) !== "APPROVED") {
 			return;
 		}
 
-		stage.approvals?.forEach((approval) => {
-			const email = getApprovalUser(approval)?.email?.trim();
+		const email = user?.email?.trim();
 
-			if (email) {
-				emails.add(email);
-			}
-		});
+		if (email) {
+			emails.add(email);
+		}
 	});
 
 	return [...emails];
 };
 
 export const getCanCommentOnWorkflow = ({
-	stages,
-	userId,
-	creatorId,
+	activeWorkflow,
+	currentUser,
+	creator,
 }: {
-	stages: readonly ApprovalStageLike[];
-	userId?: string | null;
-	creatorId?: string | null;
+	activeWorkflow?: ActiveWorkflowLike | null;
+	currentUser?: WorkflowUserIdentity | null;
+	creator?: MentionableUserInput | null;
 }): boolean => {
-	if (!userId) return false;
+	if (!currentUser?.id && !currentUser?.email) {
+		return false;
+	}
 
-	const isCreator = Boolean(creatorId && userId === creatorId);
-	const isCurrentApprover = getIsUserInCurrentStage(stages, userId);
+	const workflowData = getWorkflowApproverData(activeWorkflow, currentUser);
 
-	return isCreator || isCurrentApprover;
+	const isCreator = isSameWorkflowUser(creator, currentUser);
+
+	return isCreator || workflowData.isCurrentStageApprover;
 };
 
 export const getWorkflowCommentContext = ({
-	stages,
-	userId,
+	activeWorkflow,
+	currentUser,
 	creator,
-	additionalUsers = [],
-	creatorFallbackName = "Creator",
 }: {
-	stages: readonly ApprovalStageLike[];
-	userId?: string | null;
+	activeWorkflow?: ActiveWorkflowLike | null;
+	currentUser?: WorkflowUserIdentity | null;
 	creator?: MentionableUserInput | null;
-	additionalUsers?: readonly MentionableUserInput[];
-	creatorFallbackName?: string;
 }) => {
-	const approvalId = getApprovalIdForUser(stages, userId);
+	const workflowData = getWorkflowApproverData(activeWorkflow, currentUser);
 
-	const isCreator = Boolean(userId && creator?.id && userId === creator.id);
+	const isCreator = isSameWorkflowUser(creator, currentUser);
 
-	const isCurrentApprover = Boolean(approvalId);
+	const mentionableUsers = workflowData.mentionableUsers
+		.map((user) => toCommentUser(user as WorkflowMentionUser, "Approver"))
+		.filter((user): user is CommentUser => user !== null);
+
+	const ccEmails = new Set<string>();
+
+	workflowData.pastApprovals.forEach(({ stage, user }) => {
+		if (normalizeWorkflowStatus(stage.status) !== "APPROVED") {
+			return;
+		}
+
+		const email = user?.email?.trim();
+
+		if (email) {
+			ccEmails.add(email);
+		}
+	});
 
 	return {
-		approvalId,
+		// Equivalent to the old getApprovalIdForUser().
+		approvalId: workflowData.currentUserApproval?.id ?? null,
+
 		isCreator,
-		isCurrentApprover,
-		canComment: isCreator || isCurrentApprover,
-		mentionableUsers: getMentionableUsersFromStages(
-			stages,
-			creator,
-			additionalUsers,
-			creatorFallbackName,
-		),
-		ccEmails: getApprovedStageCcEmails(stages),
+
+		// Equivalent to the old getIsUserInCurrentStage().
+		isCurrentApprover: workflowData.isCurrentStageApprover,
+
+		canComment: isCreator || workflowData.isCurrentStageApprover,
+
+		// Every unique approver from the complete workflow.
+		mentionableUsers,
+
+		ccEmails: [...ccEmails],
+
+		// Expose the complete data for other comment permissions/UI.
+		workflowData,
 	};
 };

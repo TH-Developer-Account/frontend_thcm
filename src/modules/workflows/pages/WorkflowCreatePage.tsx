@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ServerAxios } from "../../../services/ServerAxios";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import WorkflowCreateMain from "../components/WorkflowCreateMain";
 import WorkflowCreateSidebar from "../components/WorkflowCreateSidebar";
 import { mapBasics, mapStages } from "../utils/workflow.helpers";
-import { api_routes } from "../constant/workflow.constant";
 import {
 	buildWorkflowPayload,
 	toggleStageExpanded,
@@ -14,28 +12,40 @@ import {
 	validateWorkflowBasics,
 	getDefaultMapStages,
 } from "../utils/workflow.helpers";
+import { budgetCategories, formatApps } from "../constant/workflow.constant";
+
 import type {
-	Approver,
 	WorkflowBasics,
+	WorkflowApprover,
 	WorkflowGenErrors,
 	WorkflowStage,
 	WorkflowStageErrors,
-} from "../types/workflow.types";
+} from "../types/types";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import Card from "../../../components/common/Card";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { StepProgress } from "../../../components/ui/StepProgress";
+import { getWorkflowErrorMessage, workflowApi } from "../api/workflow.api";
+import { useSaveWorkflowMutation } from "../context/useWorkflowMutations";
 
 const WorkflowCreatePage = () => {
-	const { user, workspaceId, isLoading } = useAuth();
+	const { user, workspaceId, isLoading, permissions } = useAuth();
 	const { showToast } = useToast();
 	const { id } = useParams();
+	const location = useLocation();
 	const navigate = useNavigate();
+	const isUserCreatedWorkflow =
+		!id &&
+		(location.state as { workflowType?: string } | null)?.workflowType ===
+			"USERCREATED";
 
 	const [currentStep, setCurrentStep] = useState(1);
-	const [loading, setLoading] = useState(false);
+	const [loadingWorkflow, setLoadingWorkflow] = useState(false);
+	const [savingUserWorkflow, setSavingUserWorkflow] = useState(false);
+	const saveMutation = useSaveWorkflowMutation();
+	const loading = loadingWorkflow || savingUserWorkflow || saveMutation.loading;
 
 	const [basics, setBasics] = useState<WorkflowBasics>({
 		name: "",
@@ -60,15 +70,11 @@ const WorkflowCreatePage = () => {
 
 		const fetchWorkflow = async () => {
 			try {
-				setLoading(true);
-
-				const response = await ServerAxios.get(`/work-flow/${id}`);
-
-				const workflow =
-					response.data?.data?.data ?? response.data?.data ?? response.data;
+				setLoadingWorkflow(true);
+				const workflow = await workflowApi.getById(id);
 
 				if (!workflow?.id) {
-					console.error("Workflow data not found:", response.data);
+					console.error("Workflow data not found for id:", id);
 					return;
 				}
 
@@ -77,7 +83,7 @@ const WorkflowCreatePage = () => {
 			} catch (error) {
 				console.error("Failed to fetch workflow", error);
 			} finally {
-				setLoading(false);
+				setLoadingWorkflow(false);
 			}
 		};
 
@@ -88,6 +94,15 @@ const WorkflowCreatePage = () => {
 		() => stages.reduce((sum, stage) => sum + stage.approvers.length, 0),
 		[stages],
 	);
+
+	const appOptions = useMemo(
+		() => formatApps(permissions ?? []),
+		[permissions],
+	);
+
+	const showCategory = basics.appDesc === "Marketing Activity Planner";
+
+	const showStatus = Boolean(id);
 
 	const handleBasicChange = <K extends keyof WorkflowBasics>(
 		key: K,
@@ -169,7 +184,7 @@ const WorkflowCreatePage = () => {
 		);
 	};
 
-	const addApprover = (stageId: string, approver: Approver) => {
+	const addApprover = (stageId: string, approver: WorkflowApprover) => {
 		setStages((prev) =>
 			prev.map((stage) => {
 				if (stage.id !== stageId) return stage;
@@ -258,14 +273,16 @@ const WorkflowCreatePage = () => {
 		}
 
 		try {
-			setLoading(true);
-
 			const payload = buildWorkflowPayload(basics, stages, workspaceId);
+			setSavingUserWorkflow(isUserCreatedWorkflow);
 
-			const { data } = await ServerAxios.post(
-				id ? `/work-flow/update/${id}` : api_routes.create_workflow_api_route,
-				payload,
-			);
+			const data = (
+				isUserCreatedWorkflow
+					? await workflowApi.createUser(payload)
+					: await saveMutation.mutateAsync(id, payload)
+			) as {
+				message?: string;
+			};
 
 			showToast({
 				type: "success",
@@ -274,16 +291,13 @@ const WorkflowCreatePage = () => {
 			});
 			navigate(`/workflow/listing`);
 		} catch (error: unknown) {
-			const message =
-				error instanceof Error ? error.message : "Failed to save workflow";
-
 			showToast({
 				type: "error",
 				title: "Error",
-				description: message,
+				description: getWorkflowErrorMessage(error, "Failed to save workflow"),
 			});
 		} finally {
-			setLoading(false);
+			setSavingUserWorkflow(false);
 		}
 	};
 
@@ -305,7 +319,7 @@ const WorkflowCreatePage = () => {
 							href: "/workflow/listing",
 						},
 						{
-							label: "Create workflow",
+							label: id ? "Update Workflow" : "Create Workflow",
 						},
 					],
 					separator: "›",
@@ -318,15 +332,6 @@ const WorkflowCreatePage = () => {
 					className="workflow-create-step-progress"
 					ariaLabel="Workflow creation progress"
 				/>
-
-				<div className="workflow-create-page-header">
-					<h2 className="workflow-create-page-title">
-						{id ? "Update Workflow" : "Create Workflow"}
-					</h2>
-					<p className="workflow-create-page-subtitle">
-						Define who approves what, in which order, and under what conditions.
-					</p>
-				</div>
 
 				<div className="workflow-create-grid">
 					<WorkflowCreateMain
@@ -348,6 +353,10 @@ const WorkflowCreatePage = () => {
 						stageErrors={stageErrors}
 						stageFormError={stageFormError}
 						onClearBasicError={clearBasicError}
+						appOptions={appOptions}
+						categoryOptions={budgetCategories}
+						showCategory={showCategory}
+						showStatus={showStatus}
 					/>
 
 					<WorkflowCreateSidebar

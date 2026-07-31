@@ -1,114 +1,61 @@
 import type {
 	CreateWorkflowPayload,
 	WorkflowBasics,
-	WorkflowStage,
-	WorkflowCard,
-	WorkFlowTemplate,
-	ApprovalRule,
-	StrategyType,
-	Approver,
 	WorkflowGenErrors,
+	WorkflowRow,
+	WorkflowStage,
 	WorkflowStageErrors,
-} from "../types/workflow.types";
+	WorkflowTemplate,
+} from "../types/types";
+import { deriveStrategy } from "./strategy";
+import { getFullName } from "./user";
 
 export const buildWorkflowPayload = (
 	basics: WorkflowBasics,
 	stages: WorkflowStage[],
 	workspaceId: string,
-): CreateWorkflowPayload => {
-	return {
-		name: basics.name.trim(),
-		appId: basics.app,
-		workspaceId,
-		isActive: basics.isActive,
-		description: basics.description.trim(),
-		metaData_1: basics.category || "",
-		metaData_2: "",
-		metaData_3: "",
-		stages: stages.map((stage) => {
-			const isQuorum = stage.strategy === "SOME";
+): CreateWorkflowPayload => ({
+	name: basics.name.trim(),
+	appId: basics.app,
+	workspaceId,
+	isActive: basics.isActive,
+	description: basics.description.trim(),
+	metaData_1: basics.category || "",
+	metaData_2: "",
+	metaData_3: "",
+	stages: stages.map((stage) => {
+		const baseStage = {
+			name: stage.name.trim(),
+			stageOrder: stage.stageOrder,
+			strategy: stage.strategy,
+			approverIds: stage.approvers.map((approver) => ({
+				userId: approver.user.id,
+				name: getFullName(approver.user),
+				email: approver.user.email?.trim() ?? "",
+				isExternalApprover: approver.isExternalApprover,
+			})),
+		};
 
-			const baseStage = {
-				name: stage.name.trim(),
-				stageOrder: stage.stageOrder,
-				strategy: stage.strategy,
-				approverIds: stage.approvers.map((approver) => ({
-					userId: approver.userId,
-					name: [approver.user.first_name, approver.user.last_name]
-						.filter(Boolean)
-						.join(" ")
-						.trim(),
-					email: approver.user.email,
-					isExternalApprover: approver.isExternalApprover,
-				})),
-			};
-
-			if (isQuorum) {
-				return {
+		return stage.strategy === "SOME"
+			? {
 					...baseStage,
 					minApprovals: Number(stage.minApprovals) || 1,
-				};
-			}
-
-			return baseStage;
-		}),
-	};
-};
+				}
+			: baseStage;
+	}),
+});
 
 export const validateWorkflowBasics = (
 	basics: WorkflowBasics,
 ): WorkflowGenErrors => {
 	const errors: WorkflowGenErrors = {};
 
-	if (!basics.name.trim()) {
-		errors.name = "Workflow name is required";
-	}
-
-	if (!basics.app.trim()) {
-		errors.app = "App is required";
-	}
-
-	// only add if description is required
-	// if (!basics.description.trim()) {
-	// 	errors.description = "Description is required";
-	// }
+	if (!basics.name.trim()) errors.name = "Workflow name is required";
+	if (!basics.app.trim()) errors.app = "App is required";
 
 	return errors;
 };
 
-// export const validateWorkflow = (
-// 	stages: WorkflowStage[],
-// ): {
-// 	formError?: string;
-// 	stageErrors: WorkflowStageErrors[];
-// } => {
-// 	const stageErrors: WorkflowStageErrors[] = stages.map(() => ({}));
-
-// 	stages.forEach((stage, index) => {
-// 		if (!stage.approvers.length) {
-// 			stageErrors[index].approvers =
-// 				`Stage ${stage.stageOrder} must have at least one approver`;
-// 		}
-
-// 		if (stage.strategy === "SOME") {
-// 			const quorum = Number(stage.minApprovals || 0);
-
-// 			if (quorum < 1) {
-// 				stageErrors[index].minApprovals =
-// 					`Stage ${stage.stageOrder} must have at least 1 approver`;
-// 			}
-
-// 			if (quorum > stage.approvers.length) {
-// 				stageErrors[index].minApprovals =
-// 					`Stage ${stage.stageOrder} quorum cannot exceed approver count`;
-// 			}
-// 		}
-// 	});
-
-// 	return {
-// 		stageErrors,
-// 	};
-// };
 export const validateWorkflow = (
 	stages: WorkflowStage[],
 ): {
@@ -149,97 +96,83 @@ export const validateWorkflow = (
 		}
 	});
 
-	return {
-		formError: undefined,
-		stageErrors,
-	};
+	return { stageErrors };
 };
-function deriveStrategy(
-	minApprovals: unknown,
-	totalApprovers: number,
-): StrategyType {
-	if (minApprovals === 1) return "ANY";
-	if (minApprovals === totalApprovers) return "ALL";
-	return "SOME";
-}
 
 export const updateStageField = <K extends keyof WorkflowStage>(
 	stages: WorkflowStage[],
 	stageId: string,
 	key: K,
 	value: WorkflowStage[K],
-): WorkflowStage[] => {
-	let strategy = "ALL" as ApprovalRule;
+): WorkflowStage[] =>
+	stages.map((stage) => {
+		if (stage.id !== stageId) return stage;
 
-	return stages.map((stage) => {
-		if (key === "minApprovals") {
-			strategy = deriveStrategy(value, stage.approvers.length) as ApprovalRule;
+		if (key !== "minApprovals") {
+			return { ...stage, [key]: value };
 		}
-		return stage.id === stageId ? { ...stage, [key]: value, strategy } : stage;
+
+		const minApprovals = Number(value);
+		return {
+			...stage,
+			minApprovals,
+			strategy: deriveStrategy(minApprovals, stage.approvers.length),
+		};
 	});
-};
 
 export const toggleStageExpanded = (
 	stages: WorkflowStage[],
 	stageId: string,
-): WorkflowStage[] => {
-	return stages.map((stage) =>
+): WorkflowStage[] =>
+	stages.map((stage) =>
 		stage.id === stageId ? { ...stage, isExpanded: !stage.isExpanded } : stage,
 	);
-};
 
 export const removeStageApprover = (
 	stages: WorkflowStage[],
 	stageId: string,
 	approverId: string,
-): WorkflowStage[] => {
-	return stages.map((stage) =>
-		stage.id === stageId
-			? {
-					...stage,
-					approvers: stage.approvers.filter((a) => a.id !== approverId),
-				}
-			: stage,
-	);
-};
+): WorkflowStage[] =>
+	stages.map((stage) => {
+		if (stage.id !== stageId) return stage;
+
+		const approvers = stage.approvers.filter(
+			(approver) => approver.id !== approverId,
+		);
+
+		return {
+			...stage,
+			approvers,
+			minApprovals: Math.min(stage.minApprovals ?? 1, approvers.length || 1),
+		};
+	});
 
 export const addStageApprover = (
 	stages: WorkflowStage[],
 	stageId: string,
-	approver: Approver,
-): WorkflowStage[] => {
-	return stages.map((stage) => {
-		if (stage.id !== stageId) return stage;
+	approver: WorkflowStage["approvers"][number],
+): WorkflowStage[] =>
+	stages.map((stage) =>
+		stage.id !== stageId ||
+		stage.approvers.some((item) => item.user.id === approver.user.id)
+			? stage
+			: { ...stage, approvers: [...stage.approvers, approver] },
+	);
 
-		const alreadyExists = stage.approvers.some((a) => a.id === approver.id);
-		if (alreadyExists) return stage;
-
-		return {
-			...stage,
-			approvers: [...stage.approvers, approver],
-		};
-	});
-};
-
-export const mapWorkflows = (data: WorkFlowTemplate[]): WorkflowCard[] => {
-	return data.map((workflow) => ({
+export const mapWorkflowRows = (workflows: WorkflowTemplate[]): WorkflowRow[] =>
+	workflows.map((workflow) => ({
 		id: workflow.id,
 		name: workflow.name,
-		app_name: workflow.app?.name || "",
-		created_by: workflow.created_by
-			? `${workflow.created_by.first_name} ${workflow.created_by.last_name}`
-			: "",
+		appName: workflow.app?.name || "",
+		createdBy: getFullName(workflow.createdBy, ""),
 		isActive: workflow.isActive,
-		last_updated: workflow.updated_at,
-		updated_by: workflow.updated_by
-			? `${workflow.updated_by.first_name} ${workflow.updated_by.last_name}`
-			: "",
-		workflowUsers: workflow.workFlowUsers.map((each) => ({
-			id: each.user.id,
+		lastUpdated: workflow.updatedAt,
+		updatedBy: getFullName(workflow.updatedBy, ""),
+		workflowUsers: workflow.workflowUsers.map(({ user }) => ({
+			id: user.id,
 		})),
+		workflowType: workflow.workflowType,
 	}));
-};
-
 export const mapBasics = (data: any) => ({
 	id: data?.id ?? "",
 	name: data?.name ?? "",
@@ -252,7 +185,7 @@ export const mapBasics = (data: any) => ({
 	metaData_2: data?.metaData_2 ?? "",
 	metaData_3: data?.metaData_3 ?? "",
 });
-export const mapStages = (stages: any[] = []): WorkflowStage[] => {
+export const mapStages = (stages: WorkflowStage[] = []): WorkflowStage[] => {
 	return stages
 		.slice()
 		.sort((a, b) => Number(a.stageOrder) - Number(b.stageOrder))
@@ -267,18 +200,24 @@ export const mapStages = (stages: any[] = []): WorkflowStage[] => {
 				stage?.approvers?.map((approver: any) => ({
 					id: approver?.id ?? approver?.userId ?? approver?.user?.id,
 					stageId: approver?.stageId ?? stage?.id ?? "",
-					userId: approver?.userId ?? approver?.user?.id ?? "",
 					user: {
 						id: approver?.user?.id ?? approver?.userId ?? "",
-						first_name: approver?.user?.first_name ?? approver?.firstName ?? "",
-						last_name: approver?.user?.last_name ?? approver?.lastName ?? "",
+						firstName:
+							approver?.user?.firstName ??
+							approver?.user?.first_name ??
+							approver?.firstName ??
+							"",
+						lastName:
+							approver?.user?.lastName ??
+							approver?.user?.last_name ??
+							approver?.lastName ??
+							"",
 						email: approver?.user?.email ?? approver?.email ?? "",
 					},
 					isExternalApprover: Boolean(approver?.isExternalApprover),
 				})) ?? [],
 		}));
 };
-
 export const getDefaultMapStages = (): WorkflowStage[] => [
 	{
 		id: "stage-1",

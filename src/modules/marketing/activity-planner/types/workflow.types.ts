@@ -1,4 +1,3 @@
-import type { EpcWorkflowApproval, EpcWorkflowStage } from "./epc.types";
+import type { ApprovalWorkflowStage } from "../../../workflows";
 
-export type WorkflowStage = EpcWorkflowStage;
-export type WorkflowApproval = EpcWorkflowApproval;
+export type WorkflowStage = ApprovalWorkflowStage;

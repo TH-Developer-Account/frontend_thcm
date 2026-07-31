@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
 
-import ApprovalTable from "../../../../../components/ui/workflow/ApprovalTable";
-
 import type { EpcDetailResponse } from "../../types/epc.types";
 import type { TableRow } from "../../types/lineItem.types";
 
@@ -22,6 +20,7 @@ import { mapCrfLineItemsToTableRows } from "../../forms/CRF/crf.mapper";
 import { mapEpfLineItemsToTableRows } from "../../forms/EPF/epf.mapper";
 import { mapWorkflowStagesToApprovalRows } from "../../utils/approvalTable.mapper";
 import type { CommentItem } from "../../../../../components/ui/comments";
+import { ApprovalTable } from "../../../../workflows";
 
 type Props = {
 	epcData?: EpcDetailResponse | null;

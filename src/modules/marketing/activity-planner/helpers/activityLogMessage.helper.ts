@@ -1,5 +1,6 @@
 import type { CommentItem } from "../../../../components/ui/comments";
 import { formatDateTime } from "../../../../utils/format";
+import { normalizeWorkflowStatus } from "../../../workflows/utils/status";
 
 export const getActorName = (comment: CommentItem) => {
 	return [comment.actor?.first_name, comment.actor?.last_name]
@@ -9,7 +10,7 @@ export const getActorName = (comment: CommentItem) => {
 
 export const getAuditMessage = (comment: CommentItem) => {
 	const actorName = getActorName(comment) || "Someone";
-	const action = comment.action?.toUpperCase();
+	const action = normalizeWorkflowStatus(comment.action);
 	const metadataReason = comment.metadata?.reason;
 	const reason =
 		(typeof metadataReason === "string" ? metadataReason.trim() : "") ||

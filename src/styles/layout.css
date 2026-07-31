@@ -2979,7 +2979,7 @@
 		width: 6px;
 		height: 6px;
 		border-radius: 50%;
-		background: var(--color-brand-orange);
+		background: var(--color-brand);
 	}
 
 	.public-page-introduction {
@@ -3055,7 +3055,7 @@
 		flex-shrink: 0;
 		margin-top: 2px;
 		border: 2px solid var(--color-border);
-		border-top-color: var(--color-brand-orange);
+		border-top-color: var(--color-brand);
 		border-radius: 50%;
 		animation: public-page-spin 700ms linear infinite;
 	}

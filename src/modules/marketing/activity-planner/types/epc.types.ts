@@ -1,4 +1,5 @@
-import type { CommentUser } from "../components/commentSection/CommentsSection";
+import type { CommentUser } from "../../../../components/ui/comments";
+import type { ActiveWorkflow } from "../../../workflows";
 import type { ApiStatus } from "../utils/status";
 
 export type ApprovalApiStatus = ApiStatus;
@@ -134,7 +135,7 @@ export type EpcDetailResponse = EpcDeviationInfo & {
 
 	epf?: EpcDetailEpf | null;
 	crf?: EpcDetailCrf | null;
-	activeWorkflow?: EpcActiveWorkflow | null;
+	activeWorkflow?: ActiveWorkflow | null;
 	report?: Report | null;
 };
 
@@ -227,45 +228,6 @@ export type EpcLineItem = {
 		description?: string;
 		category?: string;
 	};
-};
-
-export type EpcActiveWorkflow = {
-	id: string;
-	templateId: string;
-	workspaceId: string;
-	eventProposalId: string;
-	iteration: number;
-	isActive: boolean;
-	workflowType: "STANDARD";
-	status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
-	currentStage: number;
-	created_at: ApiDateString;
-	updated_at: ApiDateString;
-	template: EpcWorkflowTemplate;
-	stages: EpcWorkflowStage[];
-};
-
-export type EpcWorkflowTemplate = {
-	id: string;
-	name: string;
-	description: string;
-};
-
-export type EpcWorkflowStage = {
-	id: string;
-	workflowId: string;
-	stageOrder: number;
-	iteration: number;
-	isCurrentIteration: boolean;
-	strategy: "ALL" | "ANY" | "SOME" | "QUORUM";
-	minApprovals: number | null;
-	startedAt: ApiDateString | null;
-	dueAt: ApiDateString | null;
-	escalatedTo: string | null;
-	status: "PENDING" | "IN_PROGRESS" | "APPROVED" | "REJECTED";
-	approvals: EpcWorkflowApproval[];
-	stageName?: string;
-	name?: string;
 };
 
 export type EpcWorkflowApproval = {

@@ -1,44 +1,23 @@
-import React, { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
-import Button from "../../../components/common/Button";
-import Card from "../../../components/common/Card";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
-import type {
-	DynamicWorkflowFilter,
-	DynamicWorkflowTableItem,
-} from "../types/workflow.types";
-import { DYNAMIC_WORKFLOW_TABLE_DATA } from "../constant/workflow.constant";
-import { DynamicWorkflowTable } from "../components/DynamicWorkflowTable";
+import { useParams } from "react-router-dom";
 
-const DynamicWorkflow = () => {
-	const navigate = useNavigate();
-	const [filter, setFilter] = useState<DynamicWorkflowFilter>("ALL");
+import { WorkflowFetchPage } from "./WorkflowFetchPage";
 
-	const workflows = useMemo(() => {
-		if (filter === "ALL") {
-			return DYNAMIC_WORKFLOW_TABLE_DATA;
-		}
+type DynamicWorkflowProps = {
+	sourceRecordRef?: string;
+	recordType?: string;
+	onWorkflowAttached?: () => void;
+};
 
-		return DYNAMIC_WORKFLOW_TABLE_DATA.filter(
-			(workflow) => workflow.relationship === filter,
-		);
-	}, [filter]);
-
-	const handleEdit = (workflow: DynamicWorkflowTableItem) => {
-		navigate(`/workflows/${workflow.id}/edit`);
-	};
-
-	const handleAttach = (workflow: DynamicWorkflowTableItem) => {
-		/*
-		 * Open your workflow preview/customization drawer or modal.
-		 *
-		 * setSelectedWorkflow(workflow);
-		 * setIsAttachDrawerOpen(true);
-		 */
-		console.log("Attach workflow:", workflow);
-	};
+const DynamicWorkflow = ({
+	sourceRecordRef,
+	recordType = "VENDOR_ONBOARDING",
+	onWorkflowAttached,
+}: DynamicWorkflowProps) => {
+	const { recordRef } = useParams<{ recordRef?: string }>();
+	// const resolvedRecordRef = sourceRecordRef ?? recordRef;
+	const resolvedRecordRef = "11100992282";
 	return (
 		<PageSectionLayout>
 			<PageHeader
@@ -63,57 +42,19 @@ const DynamicWorkflow = () => {
 				}}
 			/>
 
-			<Card
-				title={"Fetch all my workflows"}
-				actions={
-					<Button
-						type="button"
-						text="Fetch"
-						size="sm"
-						Icon={Plus}
-						iconPosition="left"
-						appearance="ghost"
-						variant="outline"
-						// onClick={onBack}
-						// disabled={loading}
-					/>
-				}
-			>
-				<DynamicWorkflowTable
-					workflows={workflows}
-					onEdit={handleEdit}
-					onAttach={handleAttach}
+			{resolvedRecordRef ? (
+				<WorkflowFetchPage
+					sourceRecordRef={resolvedRecordRef}
+					recordType={recordType}
+					onWorkflowAttached={onWorkflowAttached}
 				/>
-			</Card>
+			) : (
+				<div role="alert">
+					A source record is required to attach a workflow.
+				</div>
+			)}
 		</PageSectionLayout>
 	);
 };
 
 export default DynamicWorkflow;
-{
-	/* <div className="grid min-w-0 grid-cols-1 gap-3 rounded-md  p-3 md:grid-cols-2 xl:grid-cols-[1.1fr_1.2fr_1fr_1.2fr_auto]">
-    <FormInput placeholder="Enter lead name" required />
-
-    <FormInput type="email" placeholder="Enter email" />
-
-    <FormInput type="mobile" placeholder="Enter phone number" />
-
-    <FormInput placeholder="Enter remarks" />
-
-    <div className="flex items-end gap-1.5">
-        <Button
-            type="button"
-            appearance="icon"
-            variant="outline"
-            size="sm"
-        />
-
-        <Button
-            type="button"
-            appearance="icon"
-            variant="outline"
-            size="sm"
-        />
-    </div>
-</div> */
-}

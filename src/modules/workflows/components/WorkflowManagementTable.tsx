@@ -13,10 +13,10 @@ import DataTable from "../../../components/ui/tables/DataTable/DataTable";
 import DataTableSkeleton from "../../../components/ui/tables/Skeletons/DataTableSkeleton";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
-import { formatApps } from "../constant/workflow.constant";
+import { formatApps } from "../utils/workflow.constants";
 import { useWorkflow } from "../context/useWorkflows";
-import type { WorkflowRow } from "../types/types";
-import { workflowListFilterOptions } from "../constant/workflow.constant";
+import type { WorkflowListScope, WorkflowRow } from "../types/types";
+import { workflowListFilterOptions } from "../utils/workflow.constants";
 import { getWorkflowColumns } from "../utils/workflow.columns";
 import { WorkflowUserAssignment } from "./WorkflowUserAssignment";
 import { FilterTabs } from "../../../components/ui/FilterTabs";
@@ -26,20 +26,16 @@ import { useDeleteWorkflowMutation } from "../context/useWorkflowMutations";
 const WORKFLOW_SKELETON_ROWS = 8;
 const WORKFLOW_SKELETON_COLUMNS = 6;
 
-type WorkflowFilter = "ALL" | "ASSIGNED_TO_ME" | "CREATED_BY_ME";
 type WorkflowTableProps = {
-	selectedFilter?: WorkflowFilter;
-	onFilterChange?: (value: WorkflowFilter) => void;
+	selectedFilter?: WorkflowListScope;
+	onFilterChange?: (value: WorkflowListScope) => void;
 };
-
-const isUserCreatedWorkflow = (workflow: WorkflowRow | null): boolean =>
-	workflow?.workflowType?.toUpperCase() === "USERCREATED";
-
-const WorkflowTable = ({
+export const WorkflowManagementTable = ({
 	selectedFilter: selectedFilterProp,
 	onFilterChange,
 }: WorkflowTableProps) => {
-	const [localFilter, setLocalFilter] = React.useState<WorkflowFilter>("ALL");
+	const [localFilter, setLocalFilter] =
+		React.useState<WorkflowListScope>("ALL");
 	const selectedFilter = selectedFilterProp ?? localFilter;
 	const handleListFilterChange = onFilterChange ?? setLocalFilter;
 	const {
@@ -127,19 +123,14 @@ const WorkflowTable = ({
 		setDeleteModal(workflow);
 	}, []);
 
-	const handleOpenAssignment = React.useCallback((workflow: WorkflowRow) => {
-		if (isUserCreatedWorkflow(workflow)) return;
-		setAssignModalOpen(workflow);
-	}, []);
-
 	const columns = React.useMemo(
 		() =>
 			getWorkflowColumns({
-				onAssign: handleOpenAssignment,
+				onAssign: setAssignModalOpen,
 				onEdit: handleEdit,
 				onDelete: handleOpenDelete,
 			}),
-		[handleEdit, handleOpenAssignment, handleOpenDelete],
+		[handleEdit, handleOpenDelete],
 	);
 
 	const handleDelete = React.useCallback(
@@ -186,7 +177,7 @@ const WorkflowTable = ({
 						items={filterTabs}
 						value={selectedFilter}
 						onChange={handleListFilterChange}
-						className="border-b-none px-0 py-0"
+						className="workflow-filter-tabs-reset"
 					/>
 				}
 				secondaryHeader={
@@ -263,12 +254,10 @@ const WorkflowTable = ({
 				</section>
 			</Card>
 
-			{assignModalOpen && !isUserCreatedWorkflow(assignModalOpen) ? (
-				<WorkflowUserAssignment
-					workflow={assignModalOpen}
-					onClose={() => setAssignModalOpen(null)}
-				/>
-			) : null}
+			<WorkflowUserAssignment
+				workflow={assignModalOpen}
+				onClose={() => setAssignModalOpen(null)}
+			/>
 
 			<Modal
 				open={Boolean(deleteModal)}
@@ -311,5 +300,3 @@ const WorkflowTable = ({
 		</>
 	);
 };
-
-export default WorkflowTable;

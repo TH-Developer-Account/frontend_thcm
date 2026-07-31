@@ -1151,6 +1151,68 @@
 			animation: none;
 		}
 	}
+	.ui-card-accordion-trigger {
+		display: flex;
+		flex: 1;
+		min-width: 0;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+		padding: 0;
+		border: 0;
+		background: transparent;
+		color: inherit;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.ui-card-accordion-trigger:disabled {
+		cursor: not-allowed;
+	}
+
+	.ui-card-accordion-trigger:focus-visible {
+		border-radius: var(--radius-sm);
+		outline: 2px solid var(--color-brand);
+		outline-offset: 3px;
+	}
+
+	.ui-card-accordion-icon {
+		flex: 0 0 auto;
+		color: var(--color-slate);
+		transition: transform var(--transition-fast);
+	}
+
+	.ui-card-accordion-expanded .ui-card-accordion-icon {
+		transform: rotate(180deg);
+	}
+	.ui-card-accordion .ui-card-title {
+		display: flex;
+		min-width: 0;
+		align-items: center;
+	}
+
+	.ui-card-accordion .ui-card-title::before {
+		display: inline-block;
+		width: var(--border-width-strong);
+		height: 0.875rem;
+		margin-right: var(--space-2);
+		flex: 0 0 auto;
+
+		background-color: var(--section-accordion-accent);
+
+		content: "";
+	}
+
+	.ui-card-accordion-icon {
+		flex: 0 0 auto;
+		color: var(--color-icon-brand);
+		transition: transform var(--transition-fast);
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.ui-card-accordion-icon {
+			transition: none;
+		}
+	}
 }
 
 /* =====================================================
@@ -7707,7 +7769,7 @@ PAGE NAVIGATION
 
 	.file-upload-empty:focus-visible,
 	.file-upload-add-more:focus-visible {
-		outline: 2px solid var(--color-focus-ring, var(--color-brand-orange));
+		outline: 2px solid var(--color-focus-ring, var(--color-brand));
 		outline-offset: 2px;
 	}
 
@@ -8561,12 +8623,12 @@ PAGE NAVIGATION
 	.action-menu-item:hover,
 	.action-menu-item-focus {
 		background-color: var(--color-bg-surface-hover);
-		color: var(--color-brand-orange);
+		color: var(--color-brand);
 	}
 
 	.action-menu-item:hover svg,
 	.action-menu-item-focus svg {
-		color: var(--color-brand-orange);
+		color: var(--color-brand);
 	}
 
 	.action-menu-item:disabled,

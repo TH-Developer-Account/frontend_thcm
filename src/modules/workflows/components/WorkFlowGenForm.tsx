@@ -1,16 +1,13 @@
-import { useParams } from "react-router-dom";
 import type { SingleValue } from "react-select";
-import { useAuth } from "../../../context/Auth/useAuth";
 import FormInput from "../../../components/forms/FormInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import Radio from "../../../components/forms/Radio";
-import type { Option } from "../../../components/forms/input.types";
 import type {
 	WorkflowBasics,
 	WorkflowGenErrors,
-} from "../../workflows/types/workflow.types";
-import { budgetCategories, formatApps } from "../constant/workflow.constant";
+	WorkflowSelectOption,
+} from "../types/types";
 import Button from "../../../components/common/Button";
 
 export type WorkflowGenProps = {
@@ -22,6 +19,11 @@ export type WorkflowGenProps = {
 	) => void;
 	onClearError: (key: keyof WorkflowGenErrors) => void;
 	onNext: () => void;
+	onBack?: () => void;
+	appOptions: WorkflowSelectOption[];
+	categoryOptions?: WorkflowSelectOption[];
+	showCategory?: boolean;
+	showStatus?: boolean;
 };
 
 const WorkFlowGenForm = ({
@@ -30,133 +32,128 @@ const WorkFlowGenForm = ({
 	onBasicChange,
 	onClearError,
 	onNext,
-}: WorkflowGenProps) => {
-	const { permissions } = useAuth();
-	const { id } = useParams();
-	const apps = formatApps(permissions);
+	onBack,
+	appOptions,
+	categoryOptions = [],
+	showCategory = false,
+	showStatus = false,
+}: WorkflowGenProps) => (
+	<>
+		<div
+			className={`workflow-create-field-row ${
+				showCategory
+					? "workflow-create-field-row-3"
+					: "workflow-create-field-row-2"
+			}`}
+		>
+			<FormInput
+				name="name"
+				label="Workflow name"
+				value={basics.name}
+				onChange={(e) => {
+					onBasicChange("name", e.target.value);
+					onClearError("name");
+				}}
+				error={errors.name}
+				placeholder="e.g. Standard Approval"
+				helperText="Used to identify this workflow across modules"
+				required
+			/>
 
-	const selectedAppLabel =
-		apps.find((opt: Option) => opt.value === basics.app)?.label || "";
+			<SelectInput
+				name="app"
+				label="App"
+				value={appOptions.find((option) => option.value === basics.app) || null}
+				options={appOptions}
+				onChange={(v: SingleValue<WorkflowSelectOption>) => {
+					onBasicChange("app", v?.value || "");
+					onBasicChange("appDesc", v?.label || "");
 
-	const showCategory = selectedAppLabel === "Marketing Activity Planner";
+					if (!showCategory) {
+						onBasicChange("category", "");
+						onClearError("category");
+					}
 
-	return (
-		<>
-			<div
-				className={`workflow-create-field-row ${
-					showCategory
-						? "workflow-create-field-row-3"
-						: "workflow-create-field-row-2"
-				}`}
-			>
-				<FormInput
-					name="name"
-					label="Workflow name"
-					value={basics.name}
-					onChange={(e) => {
-						onBasicChange("name", e.target.value);
-						onClearError("name");
-					}}
-					error={errors.name}
-					placeholder="e.g. Standard EPC Approval"
-					helperText="Used to identify this workflow across modules"
-					required
-				/>
+					onClearError("app");
+				}}
+				error={errors.app}
+				helperText="For which App this workflow is being created"
+				required
+			/>
 
+			{showCategory && (
 				<SelectInput
-					name="app"
-					label="App"
-					value={apps.find((opt: Option) => opt.value === basics.app) || null}
-					options={apps}
-					onChange={(v: SingleValue<Option>) => {
-						onBasicChange("app", v?.value || "");
-						onBasicChange("appDesc", v?.label || "");
-
-						if (v?.label !== "Marketing Activity Planner") {
-							onBasicChange("category", "");
-							onClearError("category");
-						}
-
-						onClearError("app");
+					name="category"
+					label="Category"
+					value={
+						categoryOptions.find(
+							(option) => option.value === basics.category,
+						) || null
+					}
+					options={categoryOptions}
+					onChange={(v: SingleValue<WorkflowSelectOption>) => {
+						onBasicChange("category", v?.value || "");
+						onClearError("category");
 					}}
-					error={errors.app}
-					helperText="For which App this workflow is being created"
+					error={errors.category}
+					helperText="For which Category this workflow is being created"
 					required
 				/>
-
-				{showCategory && (
-					<SelectInput
-						name="category"
-						label="Category"
-						value={
-							budgetCategories.find(
-								(opt: Option) => opt.value === basics.category,
-							) || null
-						}
-						options={budgetCategories}
-						onChange={(v: SingleValue<Option>) => {
-							onBasicChange("category", v?.value || "");
-							onClearError("category");
-						}}
-						error={errors.category}
-						helperText="For which Category this workflow is being created"
-						required
-					/>
-				)}
-			</div>
-
-			{id && (
-				<div className="workflow-create-field-row workflow-create-field-row-2">
-					<Radio
-						name="status"
-						groupLabel="Status"
-						label1="Active"
-						label2="Inactive"
-						value1="true"
-						value2="false"
-						selectedValue={String(basics.isActive)}
-						onChange={(value) => onBasicChange("isActive", value === "true")}
-					/>
-				</div>
 			)}
+		</div>
 
-			<div className="workflow-create-field-row">
-				<TextareaInput
-					name="description"
-					label="Description"
-					className="workflow-create-textarea"
-					rows={2}
-					draggable="false"
-					value={basics.description}
-					onChange={(e) => {
-						onBasicChange("description", e.target.value);
-						onClearError("description");
-					}}
-					error={errors.description}
+		{showStatus && (
+			<div className="workflow-create-field-row workflow-create-field-row-2">
+				<Radio
+					name="status"
+					groupLabel="Status"
+					label1="Active"
+					label2="Inactive"
+					value1="true"
+					value2="false"
+					selectedValue={String(basics.isActive)}
+					onChange={(value) => onBasicChange("isActive", value === "true")}
 				/>
 			</div>
+		)}
 
-			<div className="mt-4 flex justify-between">
-				<Button
-					type="button"
-					direction="back"
-					text="Back"
-					appearance="standard"
-					variant="outline"
-					size="sm"
-				/>
-				<Button
-					onClick={onNext}
-					type="button"
-					direction="forward"
-					text="Next"
-					appearance="standard"
-					size="sm"
-					variant="brand"
-				/>
-			</div>
-		</>
-	);
-};
+		<div className="workflow-create-field-row">
+			<TextareaInput
+				name="description"
+				label="Description"
+				className="workflow-create-textarea"
+				rows={2}
+				draggable="false"
+				value={basics.description}
+				onChange={(e) => {
+					onBasicChange("description", e.target.value);
+					onClearError("description");
+				}}
+				error={errors.description}
+			/>
+		</div>
+
+		<div className="workflow-form-actions">
+			<Button
+				type="button"
+				direction="back"
+				text="Back"
+				appearance="standard"
+				variant="outline"
+				size="sm"
+				onClick={onBack}
+			/>
+			<Button
+				onClick={onNext}
+				type="button"
+				direction="forward"
+				text="Next"
+				appearance="standard"
+				size="sm"
+				variant="brand"
+			/>
+		</div>
+	</>
+);
 
 export default WorkFlowGenForm;

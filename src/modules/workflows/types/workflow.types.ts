@@ -180,7 +180,25 @@ export type WorkflowStageErrors = Partial<Record<keyof WorkflowStage, string>>;
 // workflow.types.ts
 
 export type DynamicWorkflowFilter = "CREATED_BY_ME" | "ASSIGNED_TO_ME" | "ALL";
+
 export type DynamicWorkflowStatus = "ACTIVE" | "DRAFT" | "INACTIVE";
+
+export type DynamicWorkflowStageApprover = {
+	id: string;
+	name: string;
+	email?: string;
+	avatar?: string;
+	isExternalApprover?: boolean;
+};
+
+export type DynamicWorkflowStage = {
+	id: string;
+	name: string;
+	stageOrder: number;
+	strategy: ApprovalRule;
+	minApprovals?: number | null;
+	approvers: DynamicWorkflowStageApprover[];
+};
 
 export interface DynamicWorkflowTableItem {
 	id: string;
@@ -188,13 +206,41 @@ export interface DynamicWorkflowTableItem {
 	description?: string;
 	stageCount: number;
 	approverCount: number;
+
 	createdBy: {
 		id: string;
 		name: string;
 		email?: string;
 		avatar?: string;
 	};
+
 	relationship: DynamicWorkflowFilter;
 	status: DynamicWorkflowStatus;
 	updatedAt: string;
+
+	app?: {
+		id: string;
+		key: string;
+		name: string;
+	};
+
+	isActive?: boolean;
+	metaData_1?: string;
+	metaData_2?: string;
+	metaData_3?: string;
+
+	stages?: DynamicWorkflowStage[];
 }
+export interface WorkflowSummary {
+	id: string;
+	name: string;
+	stageCount: number;
+	flowType: "SEQUENTIAL" | "PARALLEL";
+	description?: string;
+	approverCount?: number;
+	updatedAt?: string;
+}
+
+export type WorkflowFilter = "created" | "assigned";
+export type SaveMode = "template" | "once";
+export type EntryMode = "idle" | "fetch" | "create";

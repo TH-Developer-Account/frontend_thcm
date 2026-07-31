@@ -1,4 +1,5 @@
-import type { EpcDetailResponse, EpcWorkflowStage } from "../types/epc.types";
+import type { ApprovalWorkflowStage } from "../../../workflows";
+import type { EpcDetailResponse } from "../types/epc.types";
 
 export const isNonEmptyString = (value: unknown): value is string => {
 	return typeof value === "string" && value.trim().length > 0;
@@ -24,12 +25,12 @@ export const hasEpf = (
 	return Boolean(epcData?.epf?.id);
 };
 
-export const isCurrentWorkflowStage = (stage: EpcWorkflowStage) => {
+export const isCurrentWorkflowStage = (stage: ApprovalWorkflowStage) => {
 	return stage.status === "IN_PROGRESS" && stage.isCurrentIteration;
 };
 
 export const isUserStageApprover = (
-	stage: EpcWorkflowStage | undefined,
+	stage: ApprovalWorkflowStage | undefined,
 	userId?: string | null,
 ) => {
 	if (!stage || !userId) return false;
@@ -41,7 +42,7 @@ export const isUserStageApprover = (
 };
 
 export const getApprovalIdForUser = (
-	stage: EpcWorkflowStage | undefined,
+	stage: ApprovalWorkflowStage | undefined,
 	userId?: string | null,
 ) => {
 	if (!stage || !userId) return null;

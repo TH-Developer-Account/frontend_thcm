@@ -127,15 +127,17 @@ const VendorOnboardingPublicPage = () => {
 
 	return (
 		<PublicPagesLayout>
-			<VendorCreationFormProvider value={form}>
-				<VendorCreationFormOne
-					mode="edit"
-					canEdit
-					requireDpdpConsent
-					onSubmit={form.handleVendorSubmitForm}
-					onSaveDraft={form.handleVendorDraftSubmitForm}
-				/>
-			</VendorCreationFormProvider>
+			<Card>
+				<VendorCreationFormProvider value={form}>
+					<VendorCreationFormOne
+						mode="edit"
+						canEdit
+						requireDpdpConsent
+						onSubmit={form.handleVendorSubmitForm}
+						onSaveDraft={form.handleVendorDraftSubmitForm}
+					/>
+				</VendorCreationFormProvider>
+			</Card>
 		</PublicPagesLayout>
 	);
 };
