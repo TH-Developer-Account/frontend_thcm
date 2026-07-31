@@ -6,8 +6,6 @@ import { actions } from "./constant";
 export default function HomeScreen() {
   const { canReadApp, permissions, adminApps, isSuperAdmin } = useAuth();
 
-  console.log({ adminApps, isSuperAdmin });
-
   // WORKFLOW is deliberately excluded from the permission filter — the
   // backend has no permission gate on workflow actions at all (anyone can
   // create/run their own workflow), so it's always visible, unlike every
