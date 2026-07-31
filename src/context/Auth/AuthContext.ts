@@ -26,12 +26,15 @@ export type PermissionAction = "read" | "write";
 //   - MODULE scope: access to one specific module (moduleKey set)
 //   - APP scope:    "admin of this whole app" — moduleKey is absent, since
 //                    it covers every module under that app implicitly
+// Mirrors the backend's ResolvedPermission exactly — appId/appName are
+// always present, moduleKey only for MODULE-scope rows.
 export interface Permission {
   action: PermissionAction;
   scope: "MODULE" | "APP";
   appKey: string;
+  appId: string;
+  appName: string;
   moduleKey?: string; // present only when scope === "MODULE"
-  appId?: string;
 }
 
 // ── Updated AuthContextType ───────────────────────────────────────────────────
