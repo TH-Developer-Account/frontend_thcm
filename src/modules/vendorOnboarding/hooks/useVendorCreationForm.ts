@@ -43,8 +43,10 @@ import type {
 	VendorViewerRole,
 } from "../types/vendorOnboarding.types";
 import { VENDOR_DOCUMENT_FIELDS } from "../types/vendorOnboarding.types";
-import type { ApprovalStageLike } from "../../workflows/types/types";
-import { getWorkflowApproverData } from "../../workflows/utils/approvalWorkflow.helpers";
+import {
+	getWorkflowApproverData,
+	type ApprovalStageLike,
+} from "../../workflows/utils/approvalWorkflow.helpers";
 
 export const vendorOnboardingSteps = [
 	{ id: 1, label: "Vendor filled details" },

@@ -256,7 +256,7 @@ export type WorkflowPreviewApproverLike = {
 };
 
 export type ApprovalStageLike = {
-	id?: string;
+	id?: string | null;
 	workflowId?: string;
 	stageOrder: number;
 	stageName?: string | null;

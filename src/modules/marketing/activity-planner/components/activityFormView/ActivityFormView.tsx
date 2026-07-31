@@ -28,43 +28,14 @@ import {
 	ApprovalWorkflowSection,
 	getWorkflowApproverData,
 	type ActiveWorkflowLike,
-	type WorkflowApprovalLike,
-	type WorkflowUser,
 	type WorkflowUserIdentity,
 } from "../../../../workflows";
 
 import type { ApprovalStageLike } from "../../../../workflows/types/types";
 
 import type { WorkflowStage } from "../../types/workflow.types";
+import { mapEpcWorkflowStage } from "../../../../workflows/utils/approvalWorkflow.mapper";
 
-const mapEpcWorkflowUser = (approval: WorkflowApproval): WorkflowUser => ({
-	id: approval.approver.id || approval.approverId,
-	firstName: approval.approver.first_name?.trim() ?? "",
-	lastName: approval.approver.last_name?.trim() ?? "",
-	email: approval.approver.email?.trim() || undefined,
-});
-
-const mapEpcWorkflowApproval = (
-	approval: WorkflowApproval,
-): WorkflowApprovalLike => ({
-	id: approval.id,
-	approverId: approval.approverId,
-	status: approval.status,
-	approver: mapEpcWorkflowUser(approval),
-});
-
-const mapEpcWorkflowStage = (stage: WorkflowStage): ApprovalStageLike => ({
-	id: stage.id,
-	workflowId: stage.workflowId,
-	stageOrder: stage.stageOrder,
-	stageName: stage.stageName,
-	name: stage.name,
-	strategy: stage.strategy,
-	minApprovals: stage.minApprovals,
-	status: stage.status,
-	isCurrentIteration: stage.isCurrentIteration,
-	approvals: stage.approvals.map(mapEpcWorkflowApproval),
-});
 type EditingSection = "epc" | "crf" | "epf" | null;
 type ReasonModalState = {
 	mode: "clarify-workflow" | "clarify-report" | null;

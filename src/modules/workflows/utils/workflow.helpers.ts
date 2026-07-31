@@ -185,7 +185,7 @@ export const mapBasics = (data: any) => ({
 	metaData_2: data?.metaData_2 ?? "",
 	metaData_3: data?.metaData_3 ?? "",
 });
-export const mapStages = (stages: any[] = []): WorkflowStage[] => {
+export const mapStages = (stages: WorkflowStage[] = []): WorkflowStage[] => {
 	return stages
 		.slice()
 		.sort((a, b) => Number(a.stageOrder) - Number(b.stageOrder))

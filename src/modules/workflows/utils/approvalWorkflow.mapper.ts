@@ -3,9 +3,11 @@ import type {
 	ApprovalStageLike,
 	ApprovalTableApproverRow,
 	ApprovalTableRow,
+	ApprovalWorkflowStage,
 	MapWorkflowStagesOptions,
 	WorkflowApprovalLike,
 	WorkflowPreviewApproverLike,
+	WorkflowUser,
 } from "../types/types";
 import { normalizeWorkflowStatus } from "./status";
 import { deriveStrategy, getStrategyLabel } from "./strategy";
@@ -143,3 +145,34 @@ export const mapWorkflowStagesToApprovalRows = (
 		};
 	});
 };
+
+export const mapEpcWorkflowUser = (approval: any): WorkflowUser => ({
+	id: approval.approver.id || approval.approverId,
+	firstName: approval.approver.first_name?.trim() ?? "",
+	lastName: approval.approver.last_name?.trim() ?? "",
+	email: approval.approver.email?.trim() || undefined,
+});
+
+export const mapEpcWorkflowApproval = (
+	approval: any,
+): WorkflowApprovalLike => ({
+	id: approval.id,
+	approverId: approval.approverId,
+	status: approval.status,
+	approver: mapEpcWorkflowUser(approval),
+});
+
+export const mapEpcWorkflowStage = (
+	stage: ApprovalWorkflowStage,
+): ApprovalStageLike => ({
+	id: stage.id,
+	workflowId: stage.workflowId,
+	stageOrder: stage.stageOrder,
+	stageName: stage.stageName,
+	name: stage.name,
+	strategy: stage.strategy,
+	minApprovals: stage.minApprovals,
+	status: stage.status,
+	isCurrentIteration: stage.isCurrentIteration,
+	approvals: stage.approvals.map(mapEpcWorkflowApproval),
+});

@@ -369,6 +369,7 @@ const VendorCreationFormOne = ({
 						mode={fieldMode}
 						name="confirmAccountNumber"
 						label="Confirm A/C No."
+						id="no-paste"
 						value={values.confirmAccountNumber ?? ""}
 						required
 						inputMode="numeric"
