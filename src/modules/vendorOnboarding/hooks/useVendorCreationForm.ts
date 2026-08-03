@@ -755,9 +755,8 @@ export function useVendorCreationForm({
 
 	const vendorRequestId = routeVendorId || createdVendorId;
 
-	const isInternal = !isPublicForm && role === "THCM_EMPLOYEE";
-	const isPublicVendor = isPublicForm && role === "EXTERNAL_VENDOR";
-	const isThcmProposer = role === "THCM_EMPLOYEE";
+	const isInternal = !isPublicForm;
+	const isPublicVendor = isPublicForm;
 
 	const detailQuery = useVendorOnboardingDetailQuery(
 		vendorRequestId,
@@ -798,7 +797,7 @@ export function useVendorCreationForm({
 	const referenceNumber = detailQuery.data?.referenceNumber;
 	const activeWorkflow = detailQuery.data?.activeWorkflow ?? null;
 	const workflowId = activeWorkflow?.id ?? null;
-
+	const isThcmProposer = user?.id === detailQuery.data?.initiatedById;
 	const assignedWorkflowStages = React.useMemo<ApprovalStageLike[]>(
 		() => activeWorkflow?.stages ?? [],
 		[activeWorkflow?.stages],

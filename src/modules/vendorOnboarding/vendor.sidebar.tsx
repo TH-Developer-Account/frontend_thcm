@@ -44,12 +44,12 @@ export const vendorSidebar: SidebarItem[] = [
 				icon: <Users size={18} />,
 				link: "/vendor/initiation/create",
 			},
-			{
-				id: "vendorOnboardingForm",
-				label: "Vendor Onboarding Form",
-				icon: <Users size={18} />,
-				link: "/vendor/onboarding/create",
-			},
+			// {
+			// 	id: "vendorOnboardingForm",
+			// 	label: "Vendor Onboarding Form",
+			// 	icon: <Users size={18} />,
+			// 	link: "/vendor/onboarding/create",
+			// },
 		],
 	},
 	{

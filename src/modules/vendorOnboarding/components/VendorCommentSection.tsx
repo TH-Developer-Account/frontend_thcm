@@ -43,11 +43,11 @@ const VendorCommentSection = ({
 	const commentContext = React.useMemo(
 		() =>
 			getWorkflowCommentContext({
-				stages: workflow,
-				userId: user?.id,
+				activeWorkflow: { stages: workflow },
+				currentUser: user,
 				creator: resolvedCreator,
 			}),
-		[workflow, user?.id, resolvedCreator],
+		[workflow, user, resolvedCreator],
 	);
 
 	if (!onboardingId) {

@@ -124,6 +124,7 @@ export type VendorOnboardingResponse = {
 	createdAt?: string;
 	updatedAt?: string;
 	activeWorkflow?: VendorActiveWorkflow;
+	initiatedById?: string;
 };
 
 export type VendorFormErrors<T> = Partial<Record<keyof T, string>>;
@@ -237,7 +238,7 @@ export type VendorOnboardingRawDocument = {
 export type VendorOnboardingRawResponse = {
 	id: string;
 	workspaceId: string;
-	initiatedById: string;
+	initiatedById?: string;
 	status: VendorOnboardingStatus;
 	vendorName: string | null;
 	state: string | null;

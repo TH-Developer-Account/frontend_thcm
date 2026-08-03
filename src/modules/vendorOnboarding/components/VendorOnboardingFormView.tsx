@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, CircleX, FileDown, LoaderIcon, Pencil } from "lucide-react";
+import { CircleX, FileDown, LoaderIcon, Pencil } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import Button from "../../../components/common/Button";

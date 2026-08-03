@@ -98,10 +98,15 @@ const VendorCreationSummaryForm = ({
 		formOneDocuments.length > 0
 			? formOneDocuments
 			: (formContext?.formOneDocuments ?? EMPTY_DOCUMENTS);
-	const resolvedWorkflowStages =
-		workflowStages.length > 0
+
+	const resolvedWorkflowStages = (
+		workflowStages && workflowStages.length > 0
 			? workflowStages
-			: (formContext?.workflowStages ?? []);
+			: (formContext?.workflowStages ?? [])
+	).map((stage) => ({
+		...stage,
+		approvals: stage.approvals ? [...stage.approvals] : undefined,
+	}));
 	const resolvedFormTwoChange =
 		onFormTwoChange ?? formContext?.handleFormTwoChange;
 	const resolvedOnBack = onBack ?? formContext?.handleBack;
@@ -131,6 +136,7 @@ const VendorCreationSummaryForm = ({
 		reasonModal,
 		canActOnCurrentStage,
 		// requiresVendorCodeToApprove,
+		// isThcmProposer,
 		vendorCodeModal,
 		openReasonModal,
 		closeReasonModal,
@@ -166,7 +172,6 @@ const VendorCreationSummaryForm = ({
 
 	const showWorkflowBlock =
 		hasWorkflow || typeof resolvedOnFetchWorkflow === "function";
-	// const isThcmProposer =
 
 	const hasApprovalActions =
 		showApproveAction || showClarifyAction || showAcceptAndCloseAction;
