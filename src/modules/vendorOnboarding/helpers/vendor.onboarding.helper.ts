@@ -46,7 +46,7 @@ export const buildVendorUpdatePayload = (
 	state: toNullableString(values.state),
 	city: toNullableString(values.city),
 	pinCode: toNullableString(values.pinCode),
-	address: toNullableString(values.completeAddress),
+	address: toNullableString(values.address),
 	mobile: toNullableString(values.mobile),
 	email: toNullableString(values.email),
 	msmeVendor: toNullableBoolean(values.msmeVendor),
@@ -121,7 +121,7 @@ export const normalizeVendorOnboardingResponse = (
 		status: raw.status,
 		partOne: {
 			vendorName: raw.vendorName ?? "",
-			completeAddress: raw.address ?? "",
+			address: raw.address ?? "",
 			msmeVendor: toYesNo(raw.msmeVendor),
 			msmeCertificateAttached: toYesNo(raw.msmeCertAttached),
 			city: raw.city ?? "",

@@ -1,41 +1,25 @@
-import PageSectionLayout from "../../../layout/PageSectionLayout";
 import { PageHeader } from "../../../components/ui/PageHeader";
-import Card from "../../../components/common/Card";
+import PageSectionLayout from "../../../layout/PageSectionLayout";
+import VendorDashboard from "../components/VendorDashboard";
 
 const VendorDashboardPage = () => {
 	return (
 		<PageSectionLayout>
 			<PageHeader
-				headerText="Dashboard"
+				headerText="Vendor Dashboard"
 				navigation={{
 					variant: "breadcrumbs",
-					ariaLabel: "Dashboard",
-
+					ariaLabel: "Vendor dashboard breadcrumb",
 					breadcrumbs: [
-						{
-							label: "Home Screen",
-							href: "/",
-						},
-						{
-							label: "Vendors Listing",
-							href: "/vendor/dashboard",
-						},
-						{
-							label: "Vendor Dashboard Page",
-						},
+						{ label: "Home Screen", href: "/" },
+						{ label: "Vendors", href: "/vendor/dashboard" },
+						{ label: "Dashboard" },
 					],
 					separator: "›",
 				}}
 			/>
-			<Card>
-				<div className="grid grid-cols-4 gap-4">
-					<Card>Initiate Vendor</Card>
-					<Card>Initiate Vendor</Card>
-					<Card>Initiate Vendor</Card>
-					<Card>Initiate Vendor</Card>
-					<Card>Initiate Vendor</Card>
-				</div>
-			</Card>
+
+			<VendorDashboard />
 		</PageSectionLayout>
 	);
 };

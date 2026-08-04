@@ -1089,7 +1089,7 @@ REACT SELECT CONTAINER
 	}
 
 	.react-select-container-error .react-select__indicators {
-		margin-right: var(--space-6);
+		/* margin-right: var(--space-6); */
 	}
 
 	/* =====================================================

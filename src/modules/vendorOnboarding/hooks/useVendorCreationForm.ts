@@ -83,7 +83,7 @@ const REQUIRED_FORM_ONE_FIELDS: Partial<
 	state: "State is required.",
 	city: "City is required.",
 	pinCode: "Pin Code is required.",
-	completeAddress: "Complete Address is required.",
+	address: "Complete Address is required.",
 	mobile: "Mobile is required.",
 	email: "E-mail is required.",
 	bank: "Bank is required.",
@@ -98,7 +98,7 @@ const REQUIRED_FORM_ONE_FIELDS: Partial<
 
 const EMPTY_FORM_ONE_VALUES: VendorCreationFormOneValues = {
 	vendorName: "",
-	completeAddress: "",
+	address: "",
 	state: "",
 	city: "",
 	pinCode: "",
@@ -928,8 +928,7 @@ export function useVendorCreationForm({
 	const canEditMainForm =
 		isThcmProposer && Boolean(status && EDITABLE_STATUSES.includes(status));
 
-	const canEditVendorCode =
-		!isPublicForm && (isThcmProposer || isExternalApprover);
+	const canEditVendorCode = !isPublicForm && isExternalApprover;
 
 	const normalizedVendorCode = formTwoValues.vendorCode?.trim() ?? "";
 

@@ -25,7 +25,7 @@ export type VendorViewerRole =
 
 export type VendorCreationFormOneValues = {
 	vendorName?: string;
-	completeAddress?: string;
+	address?: string;
 	msmeVendor?: string;
 	msmeCertificateAttached?: string;
 	city?: string;

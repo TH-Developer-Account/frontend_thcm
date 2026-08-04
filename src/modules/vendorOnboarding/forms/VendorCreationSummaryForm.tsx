@@ -58,7 +58,6 @@ type VendorCreationSummaryFormProps = {
 	canAcceptAndClose?: boolean;
 
 	canEditVendorCode?: boolean;
-	canSaveVendorCode?: boolean;
 	vendorCodeLoading?: boolean;
 
 	workflowStages?: ApprovalStageLike[];
@@ -84,12 +83,10 @@ const VendorCreationSummaryForm = ({
 	canClarify,
 	canAcceptAndClose,
 	canEditVendorCode,
-	canSaveVendorCode,
 	vendorCodeLoading,
 	onSaveVendorCode,
 	workflowStages = [],
 	commentsSection,
-	workflowSection,
 }: VendorCreationSummaryFormProps) => {
 	const formContext = useOptionalVendorCreationFormContext();
 	const formOneValues = formOneValuesProp ?? formContext?.formOneValues ?? {};
@@ -124,8 +121,6 @@ const VendorCreationSummaryForm = ({
 		canAcceptAndClose ?? formContext?.canAcceptAndClose ?? false;
 	const resolvedCanEditVendorCode =
 		canEditVendorCode ?? formContext?.canEditVendorCode ?? false;
-	const resolvedCanSaveVendorCode =
-		canSaveVendorCode ?? formContext?.canSaveVendorCode ?? false;
 	const resolvedVendorCodeLoading =
 		vendorCodeLoading ?? formContext?.vendorCodeLoading ?? false;
 
@@ -142,7 +137,6 @@ const VendorCreationSummaryForm = ({
 		handleApprove,
 		handleVendorCodeModalConfirm,
 		handleReasonConfirm,
-		handleVendorCodeSave,
 	} = useVendorCreationSummaryController({
 		workflowStages: resolvedWorkflowStages,
 		vendorCode: formTwoValues.vendorCode,
@@ -242,25 +236,6 @@ const VendorCreationSummaryForm = ({
 				</div>
 
 				<div className="vendor-onboarding-form-actions-end">
-					{resolvedCanEditVendorCode ? (
-						<Button
-							type="button"
-							text={
-								resolvedVendorCodeLoading ? "Updating..." : "Update Vendor Code"
-							}
-							Icon={Save}
-							iconPosition="left"
-							size="sm"
-							appearance="standard"
-							variant="outline"
-							onClick={handleVendorCodeSave}
-							disabled={
-								!resolvedCanSaveVendorCode ||
-								resolvedVendorCodeLoading ||
-								typeof resolvedOnSaveVendorCode !== "function"
-							}
-						/>
-					) : null}
 					{canActOnCurrentStage ? (
 						<>
 							{showClarifyAction ? (

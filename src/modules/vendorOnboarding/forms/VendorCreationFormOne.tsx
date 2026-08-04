@@ -16,7 +16,10 @@ import { Modal } from "../../../components/common/Modal";
 import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
-
+import {
+	getCitiesByState,
+	getCityOption,
+} from "../helpers/vendorLocation.helpers";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
 
 import FormHeader from "../../../components/ui/FormHeader";
@@ -34,13 +37,12 @@ import {
 	type VendorCreationFormOneSubmission,
 	type VendorCreationFormOneDraftSubmission,
 } from "../hooks/useVendorCreationForm";
+import { STATES } from "../utils/vendor.location.constant";
 
 export type {
 	VendorCreationFormOneSubmission,
 	VendorEnclosureUploadItem,
 } from "../hooks/useVendorCreationForm";
-
-import { STATES } from "../utils/vendor.constant";
 
 const EMPTY_VENDOR_DOCUMENTS: VendorOnboardingDocument[] = [];
 
@@ -208,7 +210,7 @@ const VendorCreationFormOne = ({
 							}
 						/>
 
-						<SelectInput
+						{/* <SelectInput
 							mode={fieldMode}
 							name="state"
 							label="State"
@@ -221,9 +223,48 @@ const VendorCreationFormOne = ({
 							onChange={(option) =>
 								resolvedOnChange?.("state", option?.value ?? "")
 							}
+						/> */}
+						<SelectInput
+							mode={fieldMode}
+							name="state"
+							label="State"
+							placeholder="Select state"
+							options={STATES}
+							value={getSelectedOption(STATES, values.state)}
+							required
+							error={errors.state}
+							helperText="Select the applicable vendor state."
+							onChange={(option) => {
+								const nextState = option?.value ?? "";
+								resolvedOnChange?.("state", nextState);
+								if (values.city && nextState) {
+									const stillValid = getCitiesByState(nextState).some(
+										(c) => c.city === values.city,
+									);
+									if (!stillValid) resolvedOnChange?.("city", "");
+								}
+							}}
 						/>
 
-						<FormInput
+						<SelectInput
+							mode={fieldMode}
+							name="city"
+							label="City"
+							placeholder="Select city"
+							options={getCitiesByState(values.state)}
+							value={getCityOption(values.state, values.city)}
+							required
+							error={errors.city}
+							helperText="Vendor city."
+							onChange={(option) => {
+								resolvedOnChange?.("city", option?.city ?? "");
+								if (option?.state && option.state !== values.state) {
+									resolvedOnChange?.("state", option.state);
+								}
+							}}
+						/>
+
+						{/* <FormInput
 							mode={fieldMode}
 							name="city"
 							label="City"
@@ -234,7 +275,7 @@ const VendorCreationFormOne = ({
 							onChange={(event) =>
 								resolvedOnChange?.("city", event.target.value)
 							}
-						/>
+						/> */}
 
 						<FormInput
 							mode={fieldMode}
@@ -254,14 +295,14 @@ const VendorCreationFormOne = ({
 					<div>
 						<TextareaInput
 							mode={fieldMode}
-							name="completeAddress"
+							name="address"
 							label="Complete Address"
-							value={values.completeAddress ?? ""}
+							value={values.address ?? ""}
 							required
-							error={errors.completeAddress}
+							error={errors.address}
 							helperText="Registered or communication address."
 							onChange={(event) =>
-								resolvedOnChange?.("completeAddress", event.target.value)
+								resolvedOnChange?.("address", event.target.value)
 							}
 							rows={4}
 						/>
