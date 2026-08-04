@@ -171,7 +171,7 @@ export function WorkflowTemplateBuilder({
 	}
 
 	return (
-		<Card title={title}>
+		<Card>
 			<div className="workflow-customise-panel">
 				<div>
 					<p className="workflow-customise-title">

@@ -8,308 +8,305 @@ import Card from "../../../components/common/Card";
 import { Modal } from "../../../components/common/Modal";
 import MultiSelectInput from "../../../components/forms/MultiSelectInput";
 import { SearchInput } from "../../../components/forms/SearchInput";
-import type { Option } from "../../../components/forms/input.types";
+import { FilterTabs } from "../../../components/ui/FilterTabs";
 import DataTable from "../../../components/ui/tables/DataTable/DataTable";
 import DataTableSkeleton from "../../../components/ui/tables/Skeletons/DataTableSkeleton";
 import { useToast } from "../../../context/Auth/AuthContext";
-import { useAuth } from "../../../context/Auth/useAuth";
-import { formatApps } from "../constant/workflow.constant";
-import { useWorkflow } from "../context/useWorkflows";
-import type { WorkflowRow } from "../types/types";
+
+import { getWorkflowErrorMessage } from "../api/workflow.api";
 import { workflowListFilterOptions } from "../constant/workflow.constant";
+import { useDeleteWorkflowMutation } from "../context/useWorkflowMutations";
+import { useWorkflowListingPage } from "../hooks/useWorkflowListingPage";
+import type { WorkflowListScope, WorkflowRow } from "../types/types";
 import { getWorkflowColumns } from "../utils/workflow.columns";
 import { WorkflowUserAssignment } from "./WorkflowUserAssignment";
-import { FilterTabs } from "../../../components/ui/FilterTabs";
-import { getWorkflowErrorMessage } from "../api/workflow.api";
-import { useDeleteWorkflowMutation } from "../context/useWorkflowMutations";
 
 const WORKFLOW_SKELETON_ROWS = 8;
-const WORKFLOW_SKELETON_COLUMNS = 6;
-
-type WorkflowFilter = "ALL" | "ASSIGNED_TO_ME" | "CREATED_BY_ME";
-type WorkflowTableProps = {
-  selectedFilter?: WorkflowFilter;
-  onFilterChange?: (value: WorkflowFilter) => void;
-};
+const WORKFLOW_SKELETON_COLUMNS = 7;
 
 const isUserCreatedWorkflow = (workflow: WorkflowRow | null): boolean =>
-  workflow?.ownerType === "USER";
+	workflow?.ownerType === "USER" || workflow?.workflowType === "USERCREATED";
 
-const WorkflowTable = ({
-  selectedFilter: selectedFilterProp,
-  onFilterChange,
-}: WorkflowTableProps) => {
-  const [localFilter, setLocalFilter] = React.useState<WorkflowFilter>("ALL");
-  const selectedFilter = selectedFilterProp ?? localFilter;
-  const handleListFilterChange = onFilterChange ?? setLocalFilter;
-  const {
-    data,
-    setData,
-    search,
-    setSearch,
-    filters,
-    setFilters,
-    sorting,
-    setSorting,
-    pageIndex,
-    pageSize,
-    setPageIndex,
-    setPageSize,
-    totalPages,
-    loading,
-  } = useWorkflow();
+const getDeleteResponseMessage = (response: unknown): string => {
+	if (
+		typeof response !== "object" ||
+		response === null ||
+		Array.isArray(response)
+	) {
+		return "Workflow deleted successfully.";
+	}
 
-  const { permissions } = useAuth();
-  const { showToast } = useToast();
-  const navigate = useNavigate();
+	const record = response as Record<string, unknown>;
 
-  const [users, setUsers] = React.useState<Option[]>([]);
+	if (typeof record.message === "string") {
+		return record.message;
+	}
 
-  const [assignModalOpen, setAssignModalOpen] =
-    React.useState<WorkflowRow | null>(null);
+	if (
+		typeof record.data === "object" &&
+		record.data !== null &&
+		!Array.isArray(record.data)
+	) {
+		const data = record.data as Record<string, unknown>;
 
-  const [deleteModal, setDeleteModal] = React.useState<WorkflowRow | null>(
-    null,
-  );
+		if (typeof data.message === "string") {
+			return data.message;
+		}
+	}
 
-  const deleteMutation = useDeleteWorkflowMutation();
+	return "Workflow deleted successfully.";
+};
 
-  React.useEffect(() => {
-    const fetchUsers = async (): Promise<void> => {
-      try {
-        const { workflowApi } = await import("../api/workflow.api");
-        setUsers(await workflowApi.getUserOptions());
-      } catch (error) {
-        console.error("Failed to fetch users", error);
-      }
-    };
+const WorkflowTable = () => {
+	const {
+		data,
+		loading,
 
-    void fetchUsers();
-  }, []);
-  const filterTabs = React.useMemo(
-    () =>
-      workflowListFilterOptions.map((option) => ({
-        value: option.value,
-        label: option.label,
-        tooltipLabel: option.tooltipLabel,
-        Icon: option.Icon,
-      })),
-    [],
-  );
-  const apps = React.useMemo(() => formatApps(permissions), [permissions]);
+		users,
+		appOptions,
 
-  const handleFilterChange = React.useCallback(
-    ({ fieldName, value }: { fieldName?: string; value: Option[] }) => {
-      if (!fieldName) return;
+		searchInput,
+		setSearchInput,
 
-      setFilters((currentFilters) => ({
-        ...currentFilters,
-        [fieldName]: value,
-      }));
+		selectedFilter,
+		handleFilterChange,
 
-      setPageIndex(0);
-    },
-    [setFilters, setPageIndex],
-  );
+		filters,
+		handleAdvancedFilterChange,
 
-  const handleEdit = React.useCallback(
-    (workflow: WorkflowRow) => {
-      if (!workflow.id) return;
+		sorting,
+		setSorting,
 
-      navigate(
-        `/workflow/edit-workflows/${encodeURIComponent(String(workflow.id))}`,
-      );
-    },
-    [navigate],
-  );
+		pageIndex,
+		pageSize,
+		pageCount,
 
-  const handleOpenDelete = React.useCallback((workflow: WorkflowRow) => {
-    setDeleteModal(workflow);
-  }, []);
+		handlePageChange,
+		handlePageSizeChange,
 
-  const handleOpenAssignment = React.useCallback((workflow: WorkflowRow) => {
-    if (isUserCreatedWorkflow(workflow)) return;
-    setAssignModalOpen(workflow);
-  }, []);
+		removeWorkflowFromList,
+	} = useWorkflowListingPage();
 
-  const columns = React.useMemo(
-    () =>
-      getWorkflowColumns({
-        onAssign: handleOpenAssignment,
-        onEdit: handleEdit,
-        onDelete: handleOpenDelete,
-      }),
-    [handleEdit, handleOpenAssignment, handleOpenDelete],
-  );
+	const { showToast } = useToast();
+	const navigate = useNavigate();
 
-  const handleDelete = React.useCallback(
-    async (workflowId: string): Promise<void> => {
-      try {
-        const response = (await deleteMutation.mutateAsync(workflowId)) as {
-          message?: string;
-        };
+	const [assignModalOpen, setAssignModalOpen] =
+		React.useState<WorkflowRow | null>(null);
 
-        const message =
-          typeof response?.message === "string"
-            ? response.message
-            : "Workflow deleted successfully.";
+	const [deleteModal, setDeleteModal] = React.useState<WorkflowRow | null>(
+		null,
+	);
 
-        setData(data.filter((workflow) => workflow.id !== workflowId));
+	const deleteMutation = useDeleteWorkflowMutation();
 
-        showToast({
-          type: "success",
-          title: "Workflow deleted",
-          description: message,
-        });
+	const filterTabs = React.useMemo(
+		() =>
+			workflowListFilterOptions.map((option) => ({
+				value: option.value,
+				label: option.label,
+				tooltipLabel: option.tooltipLabel,
+				Icon: option.Icon,
+			})),
+		[],
+	);
 
-        setDeleteModal(null);
-      } catch (error) {
-        showToast({
-          type: "error",
-          title: "Unable to delete workflow",
-          description: getWorkflowErrorMessage(
-            error,
-            "Failed to delete the workflow.",
-          ),
-        });
-      }
-    },
-    [data, deleteMutation, setData, showToast],
-  );
+	const handleListFilterChange = React.useCallback(
+		(value: WorkflowListScope) => {
+			handleFilterChange(value);
+		},
+		[handleFilterChange],
+	);
 
-  return (
-    <>
-      <Card
-        title={
-          <FilterTabs
-            ariaLabel="Filter Workflow listings"
-            items={filterTabs}
-            value={selectedFilter}
-            onChange={handleListFilterChange}
-            className="border-b-none px-0 py-0"
-          />
-        }
-        secondaryHeader={
-          <>
-            <MultiSelectInput
-              placeholder="Created By"
-              options={users}
-              name="createdBy"
-              value={filters.createdBy}
-              onValueChange={handleFilterChange}
-              isSearchable
-            />
-            <MultiSelectInput
-              placeholder="Apps"
-              options={apps}
-              name="apps"
-              value={filters.apps}
-              onValueChange={handleFilterChange}
-              isSearchable
-            />
-            <SearchInput
-              value={search}
-              onChange={(value) => {
-                setSearch(value);
-                setPageIndex(0);
-              }}
-              placeholder="Search workflows"
-              aria-label="Search workflows"
-            />
+	const handleEdit = React.useCallback(
+		(workflow: WorkflowRow) => {
+			if (!workflow.id) return;
 
-            <Button
-              type="button"
-              text="Create Workflow"
-              Icon={Plus}
-              iconPosition="left"
-              iconSize={16}
-              appearance="cta"
-              variant="brand"
-              size="sm"
-              onClick={() => navigate("/workflow/create-workflows")}
-            />
-          </>
-        }
-      >
-        <section aria-label="Workflow records" aria-busy={loading}>
-          {loading ? (
-            <DataTableSkeleton
-              rows={WORKFLOW_SKELETON_ROWS}
-              columns={WORKFLOW_SKELETON_COLUMNS}
-              showPagination
-            />
-          ) : (
-            <DataTable<WorkflowRow>
-              data={data}
-              columns={columns}
-              loading={false}
-              sorting={sorting}
-              onSortingChange={setSorting}
-              manualSorting
-              manualPagination
-              pageIndex={pageIndex}
-              pageSize={pageSize}
-              pageCount={Math.max(totalPages, 1)}
-              onPageChange={setPageIndex}
-              onPageSizeChange={(nextPageSize) => {
-                setPageSize(nextPageSize);
-                setPageIndex(0);
-              }}
-              scrollTargetId="workflow-table-scroll"
-              emptyTitle="No workflows found"
-              emptyDescription="Create a workflow or adjust the current search and filters."
-            />
-          )}
-        </section>
-      </Card>
+			navigate(
+				`/workflow/edit-workflows/${encodeURIComponent(String(workflow.id))}`,
+			);
+		},
+		[navigate],
+	);
 
-      {assignModalOpen && !isUserCreatedWorkflow(assignModalOpen) ? (
-        <WorkflowUserAssignment
-          workflow={assignModalOpen}
-          onClose={() => setAssignModalOpen(null)}
-        />
-      ) : null}
+	const handleOpenAssignment = React.useCallback((workflow: WorkflowRow) => {
+		if (isUserCreatedWorkflow(workflow)) {
+			return;
+		}
 
-      <Modal
-        open={Boolean(deleteModal)}
-        onClose={() => {
-          if (!deleteMutation.loading) {
-            setDeleteModal(null);
-          }
-        }}
-        mode="shell"
-        size="sm"
-        dialogRole="alertdialog"
-        ariaLabel="Delete workflow confirmation"
-      >
-        <Alert
-          variant="warning"
-          title="Delete Workflow"
-          description={`Are you sure you want to delete "${
-            deleteModal?.name ?? "this workflow"
-          }"?`}
-          primaryAction={{
-            label: deleteMutation.loading ? "Deleting..." : "Delete",
-            onClick: () => {
-              if (!deleteModal?.id || deleteMutation.loading) {
-                return;
-              }
+		setAssignModalOpen(workflow);
+	}, []);
 
-              void handleDelete(String(deleteModal.id));
-            },
-          }}
-          secondaryAction={{
-            label: "Cancel",
-            onClick: () => {
-              if (!deleteMutation.loading) {
-                setDeleteModal(null);
-              }
-            },
-          }}
-        />
-      </Modal>
-    </>
-  );
+	const handleOpenDelete = React.useCallback((workflow: WorkflowRow) => {
+		setDeleteModal(workflow);
+	}, []);
+
+	const columns = React.useMemo(
+		() =>
+			getWorkflowColumns({
+				onAssign: handleOpenAssignment,
+				onEdit: handleEdit,
+				onDelete: handleOpenDelete,
+			}),
+		[handleEdit, handleOpenAssignment, handleOpenDelete],
+	);
+
+	const handleDelete = React.useCallback(
+		async (workflowId: string): Promise<void> => {
+			try {
+				const response = await deleteMutation.mutateAsync(workflowId);
+
+				removeWorkflowFromList(workflowId);
+
+				showToast({
+					type: "success",
+					title: "Workflow deleted",
+					description: getDeleteResponseMessage(response),
+				});
+
+				setDeleteModal(null);
+			} catch (error) {
+				showToast({
+					type: "error",
+					title: "Unable to delete workflow",
+					description: getWorkflowErrorMessage(
+						error,
+						"Failed to delete the workflow.",
+					),
+				});
+			}
+		},
+		[deleteMutation, removeWorkflowFromList, showToast],
+	);
+
+	return (
+		<>
+			<Card
+				title={
+					<FilterTabs
+						ariaLabel="Filter workflow listings"
+						items={filterTabs}
+						value={selectedFilter}
+						onChange={handleListFilterChange}
+						className="border-b-none px-0 py-0"
+					/>
+				}
+				secondaryHeader={
+					<>
+						<MultiSelectInput
+							placeholder="Created By"
+							options={users}
+							name="createdBy"
+							value={filters.createdBy ?? []}
+							onValueChange={handleAdvancedFilterChange}
+							isSearchable
+						/>
+
+						<MultiSelectInput
+							placeholder="Apps"
+							options={appOptions}
+							name="apps"
+							value={filters.apps ?? []}
+							onValueChange={handleAdvancedFilterChange}
+							isSearchable
+						/>
+
+						<SearchInput
+							value={searchInput}
+							onChange={setSearchInput}
+							placeholder="Search workflows"
+							aria-label="Search workflows"
+						/>
+
+						<Button
+							type="button"
+							text="Create Workflow"
+							Icon={Plus}
+							iconPosition="left"
+							iconSize={16}
+							appearance="cta"
+							variant="brand"
+							size="sm"
+							onClick={() => navigate("/workflow/create-workflows")}
+						/>
+					</>
+				}
+			>
+				<section aria-label="Workflow records" aria-busy={loading}>
+					{loading ? (
+						<DataTableSkeleton
+							rows={WORKFLOW_SKELETON_ROWS}
+							columns={WORKFLOW_SKELETON_COLUMNS}
+							showPagination
+						/>
+					) : (
+						<DataTable<WorkflowRow>
+							data={data}
+							columns={columns}
+							loading={false}
+							sorting={sorting}
+							onSortingChange={setSorting}
+							manualSorting
+							manualPagination
+							pageIndex={pageIndex}
+							pageSize={pageSize}
+							pageCount={pageCount}
+							onPageChange={handlePageChange}
+							onPageSizeChange={handlePageSizeChange}
+							scrollTargetId="workflow-table-scroll"
+							emptyTitle="No workflows found"
+							emptyDescription="Create a workflow or adjust the current search and filters."
+						/>
+					)}
+				</section>
+			</Card>
+
+			{assignModalOpen && !isUserCreatedWorkflow(assignModalOpen) ? (
+				<WorkflowUserAssignment
+					workflow={assignModalOpen}
+					onClose={() => setAssignModalOpen(null)}
+				/>
+			) : null}
+
+			<Modal
+				open={Boolean(deleteModal)}
+				onClose={() => {
+					if (!deleteMutation.loading) {
+						setDeleteModal(null);
+					}
+				}}
+				mode="shell"
+				size="sm"
+				dialogRole="alertdialog"
+				ariaLabel="Delete workflow confirmation"
+			>
+				<Alert
+					variant="warning"
+					title="Delete Workflow"
+					description={`Are you sure you want to delete "${
+						deleteModal?.name ?? "this workflow"
+					}"?`}
+					primaryAction={{
+						label: deleteMutation.loading ? "Deleting..." : "Delete",
+						onClick: () => {
+							if (!deleteModal?.id || deleteMutation.loading) {
+								return;
+							}
+
+							void handleDelete(String(deleteModal.id));
+						},
+					}}
+					secondaryAction={{
+						label: "Cancel",
+						onClick: () => {
+							if (!deleteMutation.loading) {
+								setDeleteModal(null);
+							}
+						},
+					}}
+				/>
+			</Modal>
+		</>
+	);
 };
 
 export default WorkflowTable;

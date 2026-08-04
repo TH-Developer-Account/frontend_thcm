@@ -11,6 +11,7 @@ import {
 	VendorCreationFormProvider,
 	useVendorCreationForm,
 } from "../hooks/useVendorCreationForm";
+import VendorWorkflowSection from "../components/VendorWorkflowSection";
 
 const VendorOnboardingPage = () => {
 	const { onboardingId } = useParams<{
@@ -79,7 +80,6 @@ const VendorOnboardingPage = () => {
 								className="vendor-onboarding-step-progress"
 								ariaLabel="Vendor onboarding progress"
 							/>
-
 							{form.currentStep === 1 ? (
 								<VendorCreationFormOne
 									mode={form.canEditFormOne ? "edit" : "view"}
@@ -92,8 +92,26 @@ const VendorOnboardingPage = () => {
 								/>
 							) : form.currentStep === 2 ? (
 								<VendorCreationFormTwo mode="edit" canEdit />
+							) : form.currentStep === 3 ? (
+								<VendorWorkflowSection
+									sourceRecordRef={form.vendorRequestId}
+									recordType="VENDOR_ONBOARDING"
+									selectedWorkflow={form.pendingWorkflowSelection}
+									onWorkflowSelected={(selection) => {
+										form.setPendingWorkflowSelection(selection);
+									}}
+									onClearWorkflow={() => {
+										form.setPendingWorkflowSelection(null);
+									}}
+									onBack={form.handleBack}
+									onNext={form.handleNext}
+								/>
 							) : (
-								<VendorCreationSummaryForm />
+								<VendorCreationSummaryForm
+									mode="edit"
+									canSubmit={form.canSubmit || form.isThcmProposer}
+									onSubmit={form.handleSubmitSummary}
+								/>
 							)}
 						</>
 					</VendorCreationFormProvider>
