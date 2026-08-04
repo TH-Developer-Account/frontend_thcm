@@ -60,7 +60,12 @@ export type PublicVendorSessionResponse = {
 	partOne?: VendorCreationFormOneValues;
 	documents?: VendorOnboardingDocument[];
 };
+export type VendorPdfType = "VENDOR_ONBOARDING";
 
+type VendorPdfUrlResponse = {
+	success: boolean;
+	url: string;
+};
 /**
  * Vendor-only endpoints live here. Workflow preview, assignment, approval,
  * clarification, activation, instance and history calls are intentionally
@@ -174,6 +179,29 @@ export const vendorOnboardingApi = {
 			`${VENDOR_URL}/${vendorRequestId}/send-back-to-vendor`,
 		);
 		return data;
+	},
+	getPublicPdf: async (pdfToken: string): Promise<Blob> => {
+		const response = await ServerAxios.get<Blob>(
+			`${PUBLIC_VENDOR_URL}/pdf/${encodeURIComponent(pdfToken)}`,
+			{
+				responseType: "blob",
+			},
+		);
+
+		return response.data;
+	},
+
+	getPdfUrl: async (
+		type: VendorPdfType,
+		vendorRequestId: string,
+	): Promise<string> => {
+		const {
+			data: { url },
+		} = await ServerAxios.get<VendorPdfUrlResponse>(
+			`/pdf/${type}/${encodeURIComponent(vendorRequestId)}/url`,
+		);
+
+		return url;
 	},
 };
 

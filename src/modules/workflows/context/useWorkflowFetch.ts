@@ -36,6 +36,15 @@ export type UseWorkflowFetchOptions = {
 	onWorkflowAttached?: () => void;
 };
 
+type BuildWorkflowPayloadOptions = {
+	payload: WorkflowBuilderPayload;
+	source?: WorkflowTemplate;
+	workspaceId: string;
+	appId: string;
+	name: string;
+	isReusable: boolean;
+};
+
 const getCreatedWorkflowId = (value: unknown): string | null => {
 	let current = value;
 
@@ -61,15 +70,15 @@ const getCreatedWorkflowId = (value: unknown): string | null => {
 	return null;
 };
 
-const buildTemplatePayload = (
-	payload: WorkflowBuilderPayload,
-	source: WorkflowTemplate | undefined,
-	workspaceId: string,
-	appId: string,
-): CreateWorkflowPayload => ({
-	name:
-		payload.templateName?.trim() ||
-		(source ? `${source.name} - Custom` : "Custom approval workflow"),
+const buildWorkflowPayload = ({
+	payload,
+	source,
+	workspaceId,
+	appId,
+	name,
+	isReusable,
+}: BuildWorkflowPayloadOptions): CreateWorkflowPayload => ({
+	name,
 	workspaceId: source?.workspaceId ?? workspaceId,
 	isActive: true,
 	appId: source?.appId ?? appId,
@@ -77,7 +86,7 @@ const buildTemplatePayload = (
 	metaData_1: source?.metaData_1 ?? "",
 	metaData_2: source?.metaData_2 ?? "",
 	metaData_3: source?.metaData_3 ?? "",
-	isReusable: true,
+	isReusable,
 	stages: payload.stages.map((stage) => ({
 		name: stage.name.trim(),
 		stageOrder: stage.stageOrder,
@@ -104,10 +113,15 @@ export function useWorkflowFetch({
 	const workspaceId = authWorkspaceId ?? "";
 	const appId = useMemo(() => getStoredAppId() ?? "", []);
 
-	const [screen, setScreen] = useState<ScreenState>({ view: "entry" });
+	const [screen, setScreen] = useState<ScreenState>({
+		view: "entry",
+	});
+
 	const [workflows, setWorkflows] = useState<WorkflowSummary[]>([]);
+
 	const [selectedFilter, setSelectedFilter] =
 		useState<WorkflowListScope>("CREATED_BY_ME");
+
 	const [loading, setLoading] = useState(true);
 	const [customising, setCustomising] = useState(false);
 	const [error, setError] = useState<unknown>(null);
@@ -235,6 +249,7 @@ export function useWorkflowFetch({
 
 			try {
 				const sourceWorkflow = await workflowApi.getById(workflow.id);
+
 				const previewStages = mapStages(sourceWorkflow.stages);
 
 				if (previewStages.length === 0) {
@@ -300,61 +315,70 @@ export function useWorkflowFetch({
 
 	const handleBuilderAttach = useCallback(
 		async (payload: WorkflowBuilderPayload): Promise<void> => {
-			if (screen.view !== "builder") return;
-
-			if (payload.saveAsTemplate) {
-				const templateWorkspaceId =
-					screen.sourceWorkflow?.workspaceId ?? workspaceId;
-				const templateAppId = screen.sourceWorkflow?.appId ?? appId;
-
-				if (!templateWorkspaceId || !templateAppId) {
-					throw new Error(
-						"Workspace or application information is required to save this workflow as a template.",
-					);
-				}
-
-				const created = await workflowApi.createUser(
-					buildTemplatePayload(
-						payload,
-						screen.sourceWorkflow,
-						templateWorkspaceId,
-						templateAppId,
-					),
-				);
-
-				const workflowId = getCreatedWorkflowId(created);
-
-				if (!workflowId) {
-					throw new Error("The user workflow was created without an id.");
-				}
-
-				await completeSelection({
-					key: `workflow:${workflowId}`,
-					name: payload.templateName?.trim() || "Custom approval workflow",
-					previewStages: payload.stages,
-					attachInput: {
-						workflowId,
-					},
-				});
-
+			if (screen.view !== "builder") {
 				return;
 			}
 
+			const sourceWorkflow = screen.sourceWorkflow;
+
+			const resolvedWorkspaceId = sourceWorkflow?.workspaceId ?? workspaceId;
+
+			const resolvedAppId = sourceWorkflow?.appId ?? appId;
+
+			if (!resolvedWorkspaceId || !resolvedAppId) {
+				throw new Error(
+					"Workspace or application information is required to create this workflow.",
+				);
+			}
+
+			const isReusable = payload.saveAsTemplate;
+
+			const workflowName = isReusable
+				? payload.templateName?.trim()
+				: `One-time workflow - ${sourceRecordRef}`;
+
+			if (!workflowName) {
+				throw new Error("A workflow name is required.");
+			}
+
+			/*
+			 * Both modes create a workflow first:
+			 *
+			 * Use once:
+			 * - Generated name
+			 * - isReusable: false
+			 *
+			 * Save as template:
+			 * - User-entered name
+			 * - isReusable: true
+			 */
+			const created = await workflowApi.createUser(
+				buildWorkflowPayload({
+					payload,
+					source: sourceWorkflow,
+					workspaceId: resolvedWorkspaceId,
+					appId: resolvedAppId,
+					name: workflowName,
+					isReusable,
+				}),
+			);
+
+			const workflowId = getCreatedWorkflowId(created);
+
+			if (!workflowId) {
+				throw new Error("The workflow was created without an id.");
+			}
+
 			await completeSelection({
-				key: `custom:${Date.now()}`,
-				name:
-					payload.templateName?.trim() ||
-					screen.sourceWorkflow?.name ||
-					"Custom approval workflow",
+				key: `workflow:${workflowId}`,
+				name: workflowName,
 				previewStages: payload.stages,
 				attachInput: {
-					stages: payload.stages,
-					flowType: payload.flowType,
-					saveAsTemplate: false,
+					workflowId,
 				},
 			});
 		},
-		[appId, completeSelection, screen, workspaceId],
+		[appId, completeSelection, screen, sourceRecordRef, workspaceId],
 	);
 
 	const initialStages = useMemo(

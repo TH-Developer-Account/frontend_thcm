@@ -8,7 +8,10 @@ import { useAuth } from "../../../context/Auth/useAuth";
 import type { ActivateFirstStageEdit } from "../../workflows/api/workflow.api";
 import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
 import { createRemoteFileUploadValue } from "../../../components/ui/FileUpload/fileUpload.helpers";
-import type { PublicVendorSessionResponse } from "../api/vendorOnboarding.api";
+import {
+	vendorOnboardingApi,
+	type PublicVendorSessionResponse,
+} from "../api/vendorOnboarding.api";
 import type {
 	PendingWorkflowSelection,
 	WorkflowStage,
@@ -143,7 +146,6 @@ const getCreatedById = (createdBy: unknown): string => {
 };
 
 type UseVendorCreationFormParams = {
-	role?: VendorViewerRole;
 	vendorRequestId?: string;
 	token?: string;
 	isPublicForm?: boolean;
@@ -725,7 +727,6 @@ export function useVendorCreationSummaryController({
 }
 
 export function useVendorCreationForm({
-	role = "THCM_EMPLOYEE",
 	vendorRequestId: providedVendorRequestId,
 	token = "",
 	isPublicForm = false,
@@ -772,6 +773,11 @@ export function useVendorCreationForm({
 		React.useState<PendingWorkflowSelection | null>(null);
 
 	const [isSavingVendorCode, setIsSavingVendorCode] = React.useState(false);
+
+	const [pdfPreviewOpen, setPdfPreviewOpen] = React.useState(false);
+	const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
+	const [isPreparingPdf, setIsPreparingPdf] = React.useState(false);
+	const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
 
 	const vendorRequestId = routeVendorId;
 
@@ -883,8 +889,12 @@ export function useVendorCreationForm({
 		[activeWorkflow, user?.email, user?.id],
 	);
 
-	const { canActNow, isExternalApprover, mentionableUsers } =
-		workflowApproverData;
+	const {
+		canActNow,
+		isExternalApprover,
+		mentionableUsers,
+		isCurrentStageApprover,
+	} = workflowApproverData;
 
 	type VendorUpdatePayload = Parameters<
 		typeof updateMutation.mutateAsync
@@ -906,8 +916,11 @@ export function useVendorCreationForm({
 		[updateMutation, vendorRequestId],
 	);
 
-	// const isApprover = activeWorkflow?.
-	const canApprove = canActNow;
+	const isApprover = Boolean(isCurrentStageApprover);
+
+	const isTcsApprover = isApprover && Boolean(isExternalApprover);
+
+	const canApprove = canActNow && isApprover;
 
 	const canClarify = canApprove;
 
@@ -1423,10 +1436,6 @@ export function useVendorCreationForm({
 				}));
 				return false;
 			}
-
-			// When a codeOverride is passed (modal flow), check dirtiness against
-			// the saved value directly rather than relying on state that may not
-			// have flushed yet.
 			const isDirty =
 				codeOverride !== undefined
 					? vendorCode !== savedVendorCode
@@ -1545,6 +1554,94 @@ export function useVendorCreationForm({
 		}
 	};
 
+	/*
+	|--------------------------------------------------------------------------
+	| PDF download
+	|--------------------------------------------------------------------------
+	*/
+	const handleViewPdf = React.useCallback(async () => {
+		if (!vendorRequestId || isPreparingPdf) return;
+
+		setIsPreparingPdf(true);
+
+		try {
+			const url = await vendorOnboardingApi.getPdfUrl(
+				"VENDOR_ONBOARDING",
+				vendorRequestId,
+			);
+
+			setPdfUrl(url);
+			setPdfPreviewOpen(true);
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "PDF preview failed",
+				description: getErrorMessage(
+					error,
+					"Unable to prepare the vendor details PDF.",
+				),
+			});
+		} finally {
+			setIsPreparingPdf(false);
+		}
+	}, [isPreparingPdf, showToast, vendorRequestId]);
+
+	const closePdfPreview = React.useCallback(() => {
+		setPdfPreviewOpen(false);
+	}, []);
+
+	const handleDownloadPdf = React.useCallback(async () => {
+		if (!vendorRequestId || isDownloadingPdf) return;
+
+		setIsDownloadingPdf(true);
+
+		try {
+			const url =
+				pdfUrl ??
+				(await vendorOnboardingApi.getPdfUrl(
+					"VENDOR_ONBOARDING",
+					vendorRequestId,
+				));
+
+			setPdfUrl(url);
+
+			const response = await fetch(url);
+
+			if (!response.ok) {
+				throw new Error("Failed to download PDF.");
+			}
+
+			const pdfBlob = await response.blob();
+			const blobUrl = window.URL.createObjectURL(
+				new Blob([pdfBlob], { type: "application/pdf" }),
+			);
+
+			const link = document.createElement("a");
+
+			link.href = blobUrl;
+			link.download = `vendor-details-${
+				referenceNumber?.trim() || vendorRequestId
+			}.pdf`;
+
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+
+			window.URL.revokeObjectURL(blobUrl);
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "PDF download failed",
+				description: getErrorMessage(
+					error,
+					"Unable to download the vendor details PDF.",
+				),
+			});
+		} finally {
+			setIsDownloadingPdf(false);
+		}
+	}, [isDownloadingPdf, pdfUrl, referenceNumber, showToast, vendorRequestId]);
+
 	const mutationLoading =
 		updateMutation.isPending ||
 		submitMutation.isPending ||
@@ -1570,7 +1667,6 @@ export function useVendorCreationForm({
 			? (publicQuery.data?.documents ?? [])
 			: (detailQuery.data?.documents ?? []),
 
-		role,
 		user,
 		status,
 		referenceNumber,
@@ -1581,6 +1677,7 @@ export function useVendorCreationForm({
 
 		canEditVendorCode,
 		isThcmProposer,
+		isTcsApprover,
 		isExternalApprover,
 		canSaveVendorCode,
 		isVendorCodeDirty,
@@ -1606,12 +1703,18 @@ export function useVendorCreationForm({
 		mutationLoading,
 		isResubmission,
 
-		// Stage editing on resubmit (proposer only, only during a pending
-		// clarified iteration) — see the block above hasAssignedWorkflow.
 		canEditStagesOnResubmit,
 		stageEdits,
 		setStageEdits,
 		hasPendingClarifiedApproval,
+
+		pdfUrl,
+		pdfPreviewOpen,
+		isPreparingPdf,
+		isDownloadingPdf,
+		handleViewPdf,
+		handleDownloadPdf,
+		closePdfPreview,
 
 		handleNext: next,
 		handleBack: back,

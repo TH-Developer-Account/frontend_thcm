@@ -123,7 +123,6 @@ const VendorCreationSummaryForm = ({
 		canEditVendorCode ?? formContext?.canEditVendorCode ?? false;
 	const resolvedVendorCodeLoading =
 		vendorCodeLoading ?? formContext?.vendorCodeLoading ?? false;
-
 	const isViewMode = mode === "view";
 	const {
 		reasonModal,
@@ -221,7 +220,7 @@ const VendorCreationSummaryForm = ({
 			) : null}
 			<div className="vendor-onboarding-form-actions">
 				<div className="vendor-approval-actions">
-					{resolvedOnBack ? (
+					{resolvedOnBack && (
 						<Button
 							type="button"
 							text="Back"
@@ -232,7 +231,7 @@ const VendorCreationSummaryForm = ({
 							variant="outline"
 							onClick={resolvedOnBack}
 						/>
-					) : null}
+					)}
 				</div>
 
 				<div className="vendor-onboarding-form-actions-end">

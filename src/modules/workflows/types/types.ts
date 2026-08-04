@@ -261,7 +261,9 @@ export type WorkflowRow = {
 	/**
 	 * @deprecated Use ownerType.
 	 */
-	workflowType?: WorkflowType | string;
+	created_by_id?: string;
+	updated_by_id?: string;
+	appId?: string;
 };
 
 export type WorkflowSummary = {

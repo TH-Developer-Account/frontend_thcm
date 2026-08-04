@@ -129,4 +129,7 @@ export const mapWorkflowRows = (
 
 		ownerType: workflow.ownerType,
 		workflowType: workflow.workflowType,
+		created_by_id: workflow.createdBy?.id,
+		updated_by_id: workflow.updatedBy?.id,
+		appId: workflow.appId,
 	}));

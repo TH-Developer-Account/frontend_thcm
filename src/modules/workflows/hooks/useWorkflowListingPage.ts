@@ -65,7 +65,7 @@ const createSelectedOptions = (
 	);
 
 export const useWorkflowListingPage = () => {
-	const { permissions } = useAuth();
+	const { permissions, user } = useAuth();
 
 	const [searchParams, setSearchParams] = useSearchParams();
 
@@ -207,11 +207,13 @@ export const useWorkflowListingPage = () => {
 				return;
 			}
 
-			const rows = mapWorkflowRows(response.data);
-
-			console.log("Workflow API templates:", response.data.length);
-
-			console.log("Workflow table rows:", rows.length);
+			const rows = mapWorkflowRows(response.data).map((workflow) => ({
+				...workflow,
+				ownerType:
+					user?.id === workflow.created_by_id
+						? ("USER" as const)
+						: ("ADMIN" as const),
+			}));
 
 			setData(rows);
 			setTotalPages(response.meta.totalPages);
@@ -239,6 +241,7 @@ export const useWorkflowListingPage = () => {
 		sortBy,
 		sortOrder,
 		urlSearch,
+		user?.id,
 	]);
 
 	useEffect(() => {

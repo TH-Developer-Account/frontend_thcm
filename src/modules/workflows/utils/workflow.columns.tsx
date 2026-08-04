@@ -21,17 +21,11 @@ const formatWorkflowDate = (value: WorkflowRow["lastUpdated"]): string => {
 	return date.isValid() ? date.format("L") : "—";
 };
 
-/**
- * Only application/admin templates can be assigned to other users.
- *
- * USER templates are automatically owned by their creator and do not need
- * user assignment.
- *
- * Unknown ownerType values are treated safely as non-assignable until the
- * backend returns the field.
- */
 const canAssignUsers = (workflow: WorkflowRow): boolean =>
 	workflow.ownerType === "ADMIN";
+
+const canEditWorkflow = (workflow: WorkflowRow): boolean =>
+	workflow.ownerType === "USER";
 
 export const getWorkflowColumns = ({
 	onAssign,
@@ -97,6 +91,7 @@ export const getWorkflowColumns = ({
 		cell: ({ row }) => {
 			const workflow = row.original;
 			const showAssignUsers = canAssignUsers(workflow);
+			const showEditDeleteButton = canEditWorkflow(workflow);
 
 			return (
 				<div className="workflow-table-actions">
@@ -111,26 +106,28 @@ export const getWorkflowColumns = ({
 							isTooltip="Assign Users"
 						/>
 					)}
-
-					<Button
-						type="button"
-						size="sm"
-						appearance="icon"
-						variant="secondary"
-						onClick={() => onEdit(workflow)}
-						Icon={Edit}
-						isTooltip="Edit"
-					/>
-
-					<Button
-						type="button"
-						size="sm"
-						appearance="icon"
-						variant="secondary"
-						onClick={() => onDelete(workflow)}
-						Icon={Trash}
-						isTooltip="Delete"
-					/>
+					{showEditDeleteButton && (
+						<>
+							<Button
+								type="button"
+								size="sm"
+								appearance="icon"
+								variant="secondary"
+								onClick={() => onEdit(workflow)}
+								Icon={Edit}
+								isTooltip="Edit"
+							/>
+							<Button
+								type="button"
+								size="sm"
+								appearance="icon"
+								variant="secondary"
+								onClick={() => onDelete(workflow)}
+								Icon={Trash}
+								isTooltip="Delete"
+							/>
+						</>
+					)}
 				</div>
 			);
 		},
