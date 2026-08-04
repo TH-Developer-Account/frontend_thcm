@@ -63,7 +63,7 @@ type VendorCreationSummaryFormProps = {
 
 	workflowStages?: ApprovalStageLike[];
 	commentsSection?: ReactNode;
-	workflowLoading?: boolean;
+	workflowSection?: ReactNode;
 };
 
 const VendorCreationSummaryForm = ({
@@ -77,7 +77,6 @@ const VendorCreationSummaryForm = ({
 	onApprove,
 	onClarify,
 	onAcceptAndClose,
-	onFetchWorkflow,
 	onHandleSendBackVendor,
 	canSendBackToVendor,
 	canSubmit,
@@ -90,6 +89,7 @@ const VendorCreationSummaryForm = ({
 	onSaveVendorCode,
 	workflowStages = [],
 	commentsSection,
+	workflowSection,
 }: VendorCreationSummaryFormProps) => {
 	const formContext = useOptionalVendorCreationFormContext();
 	const formOneValues = formOneValuesProp ?? formContext?.formOneValues ?? {};
@@ -115,8 +115,6 @@ const VendorCreationSummaryForm = ({
 	const resolvedOnClarify = onClarify ?? formContext?.handleClarify;
 	const resolvedOnAcceptAndClose =
 		onAcceptAndClose ?? formContext?.handleAcceptAndClose;
-	const resolvedOnFetchWorkflow =
-		onFetchWorkflow ?? formContext?.handleFetchWorkflow;
 	const resolvedOnSaveVendorCode =
 		onSaveVendorCode ?? formContext?.handleSaveVendorCode;
 	const resolvedCanSubmit = canSubmit ?? formContext?.canSubmit ?? false;
@@ -170,9 +168,6 @@ const VendorCreationSummaryForm = ({
 
 	const hasWorkflow = resolvedWorkflowStages.length > 0;
 
-	const showWorkflowBlock =
-		hasWorkflow || typeof resolvedOnFetchWorkflow === "function";
-
 	const hasApprovalActions =
 		showApproveAction || showClarifyAction || showAcceptAndCloseAction;
 
@@ -187,7 +182,6 @@ const VendorCreationSummaryForm = ({
 				requireDocuments={false}
 				requireDpdpConsent={false}
 			/>
-
 			<VendorCreationFormTwo
 				mode="view"
 				canEdit={false}
@@ -197,19 +191,18 @@ const VendorCreationSummaryForm = ({
 				onChange={resolvedFormTwoChange}
 				vendorCodeLoading={resolvedVendorCodeLoading}
 			/>
-
 			{commentsSection ? (
 				<section className="vendor-summary-block-body">
 					{commentsSection}
 				</section>
 			) : null}
 
-			{showWorkflowBlock ? (
+			{hasWorkflow ? (
 				<section className="vendor-summary-block-body">
 					{hasWorkflow ? (
 						<ApprovalWorkflowTableContent
 							stages={resolvedWorkflowStages}
-							showEmptyState={!resolvedOnFetchWorkflow}
+							showEmptyState={!hasWorkflow}
 						/>
 					) : (
 						<CardEmpty
@@ -232,7 +225,6 @@ const VendorCreationSummaryForm = ({
 					</div>
 				</section>
 			) : null}
-
 			<div className="vendor-onboarding-form-actions">
 				<div className="vendor-approval-actions">
 					{resolvedOnBack ? (
@@ -310,17 +302,6 @@ const VendorCreationSummaryForm = ({
 							onClick={resolvedOnAcceptAndClose}
 						/>
 					) : null}
-					{showSubmitAction ? (
-						<Button
-							type="button"
-							text="Submit"
-							size="sm"
-							appearance="standard"
-							variant="brand"
-							Icon={Save}
-							onClick={resolvedOnSubmit}
-						/>
-					) : null}
 					{!canActOnCurrentStage && showSendBackAction ? (
 						<Button
 							type="button"
@@ -333,9 +314,19 @@ const VendorCreationSummaryForm = ({
 							onClick={onHandleSendBackVendor}
 						/>
 					) : null}
+					{showSubmitAction ? (
+						<Button
+							type="button"
+							text="Final Submit"
+							size="sm"
+							appearance="standard"
+							variant="brand"
+							Icon={Save}
+							onClick={resolvedOnSubmit}
+						/>
+					) : null}
 				</div>
 			</div>
-
 			<ReasonActionModal
 				open={Boolean(reasonModal.mode)}
 				mode={reasonModal.mode}

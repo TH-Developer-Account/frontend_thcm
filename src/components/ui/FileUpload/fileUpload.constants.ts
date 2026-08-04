@@ -55,4 +55,10 @@ export const FILE_UPLOAD_LIMITS: Record<
 		extensions: [],
 		label: "file",
 	},
+	vendorDocument: {
+		maxSize: 5 * 1024 * 1024,
+		mimeTypes: ["application/pdf", "image/jpeg", "image/png", "image/webp"],
+		extensions: ["pdf", "jpg", "jpeg", "png", "webp"],
+		label: "PDF, JPG, JPEG, PNG, or WEBP files",
+	},
 };

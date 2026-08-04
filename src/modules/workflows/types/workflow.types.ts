@@ -67,6 +67,14 @@ export type CreateWorkflowPayload = {
 	metaData_1: string;
 	metaData_2: string;
 	metaData_3: string;
+	// "APP" only takes effect if the caller actually administers this app
+	// (canManageApp) — the backend independently re-verifies this, it's not
+	// trusted from the payload. "USER" is always allowed. Omit to default
+	// to "USER" server-side.
+	scope?: "APP" | "USER";
+	// Maps directly to SaveMode: "template" → true, "once" → false.
+	// Defaults to true (reusable) server-side if omitted.
+	isReusable?: boolean;
 	stages: {
 		name: string;
 		stageOrder: number;
@@ -152,6 +160,12 @@ export type WorkFlowTemplate = {
 	metaData_1: string;
 	metaData_2: string;
 	metaData_3: string;
+	// "ADMIN" = created via scope: "APP" by an eligible app admin, assignable
+	// to others via workFlowUsers. "USER" = personal, self-assigned only.
+	ownerType: "ADMIN" | "USER";
+	// false = ad-hoc/one-off (SaveMode "once") — hidden from reusable
+	// template listings, auto-deactivated once its single instance finishes.
+	isReusable: boolean;
 	created_at: string; // ISO date
 	updated_at: string; // ISO date
 	stages: Stage[];
@@ -177,60 +191,6 @@ export type SubmitWorkflowResult = {
 export type WorkflowGenErrors = Partial<Record<keyof WorkflowBasics, string>>;
 export type WorkflowStageErrors = Partial<Record<keyof WorkflowStage, string>>;
 
-// workflow.types.ts
-
-export type DynamicWorkflowFilter = "CREATED_BY_ME" | "ASSIGNED_TO_ME" | "ALL";
-
-export type DynamicWorkflowStatus = "ACTIVE" | "DRAFT" | "INACTIVE";
-
-export type DynamicWorkflowStageApprover = {
-	id: string;
-	name: string;
-	email?: string;
-	avatar?: string;
-	isExternalApprover?: boolean;
-};
-
-export type DynamicWorkflowStage = {
-	id: string;
-	name: string;
-	stageOrder: number;
-	strategy: ApprovalRule;
-	minApprovals?: number | null;
-	approvers: DynamicWorkflowStageApprover[];
-};
-
-export interface DynamicWorkflowTableItem {
-	id: string;
-	name: string;
-	description?: string;
-	stageCount: number;
-	approverCount: number;
-
-	createdBy: {
-		id: string;
-		name: string;
-		email?: string;
-		avatar?: string;
-	};
-
-	relationship: DynamicWorkflowFilter;
-	status: DynamicWorkflowStatus;
-	updatedAt: string;
-
-	app?: {
-		id: string;
-		key: string;
-		name: string;
-	};
-
-	isActive?: boolean;
-	metaData_1?: string;
-	metaData_2?: string;
-	metaData_3?: string;
-
-	stages?: DynamicWorkflowStage[];
-}
 export interface WorkflowSummary {
 	id: string;
 	name: string;

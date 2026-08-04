@@ -5,13 +5,14 @@ import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUplo
 import type { ReasonActionMode } from "../../../components/ui/ReasonActionModal";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
-import { workflowApi } from "../../../api/workflow.api";
+import type { ActivateFirstStageEdit } from "../../workflows/api/workflow.api";
 import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
 import { createRemoteFileUploadValue } from "../../../components/ui/FileUpload/fileUpload.helpers";
-import {
-	vendorOnboardingApi,
-	type PublicVendorSessionResponse,
-} from "../api/vendorOnboarding.api";
+import type { PublicVendorSessionResponse } from "../api/vendorOnboarding.api";
+import type {
+	PendingWorkflowSelection,
+	WorkflowStage,
+} from "../../workflows/types/types";
 
 import {
 	buildPublicFormData,
@@ -22,10 +23,8 @@ import {
 } from "../helpers/vendor.onboarding.helper";
 import {
 	useAcceptAndCloseVendorMutation,
-	useCreateVendorMutation,
 	useDraftSubmitPublicVendorFormMutation,
 	usePublicVendorSessionQuery,
-	useSubmitClarifiedUpdatedFormMutation,
 	useSubmitPublicVendorFormMutation,
 	useSubmitVendorMutation,
 	useUpdateVendorMutation,
@@ -47,11 +46,18 @@ import {
 	getWorkflowApproverData,
 	type ApprovalStageLike,
 } from "../../workflows/utils/approvalWorkflow.helpers";
+import {
+	useActivateFirstStageMutation,
+	useApproveWorkflowStageMutation,
+	useAssignWorkflowMutation,
+	useClarifyWorkflowStageMutation,
+} from "../../workflows/context/useWorkflowMutations";
 
 export const vendorOnboardingSteps = [
 	{ id: 1, label: "Vendor filled details" },
 	{ id: 2, label: "THCM details" },
-	{ id: 3, label: "Review & Submit" },
+	{ id: 3, label: "Workflow" },
+	{ id: 4, label: "Review & Submit" },
 ];
 
 const EMPTY_FORM_ONE: VendorCreationFormOneValues = {};
@@ -121,6 +127,21 @@ const normalizePublicFormOneValues = (
 const isEmptyFormValue = (value: unknown): boolean =>
 	typeof value === "string" ? value.trim().length === 0 : value == null;
 
+const getCreatedById = (createdBy: unknown): string => {
+	if (typeof createdBy === "string") return createdBy;
+
+	if (
+		typeof createdBy === "object" &&
+		createdBy !== null &&
+		"id" in createdBy &&
+		typeof createdBy.id === "string"
+	) {
+		return createdBy.id;
+	}
+
+	return "";
+};
+
 type UseVendorCreationFormParams = {
 	role?: VendorViewerRole;
 	vendorRequestId?: string;
@@ -129,12 +150,6 @@ type UseVendorCreationFormParams = {
 	onSuccess?: () => void | Promise<void>;
 };
 
-type WorkflowPreviewResponse = {
-	stages?: ApprovalStageLike[];
-	workflow?: {
-		stages?: ApprovalStageLike[];
-	};
-};
 const createVendorDocumentUploadValue = (
 	document: VendorOnboardingDocument,
 ): FileUploadValue =>
@@ -148,27 +163,29 @@ const createVendorDocumentUploadValue = (
 		fallbackName: document.documentType,
 	});
 
-const getPreviewStages = (preview: unknown): ApprovalStageLike[] => {
-	if (Array.isArray(preview)) {
-		return preview as ApprovalStageLike[];
-	}
+// ─────────────────────────────────────────────────────────────────────────────
+// mapStageEditsForApi
+//
+// Converts the FE's rich WorkflowStage[] (used by WorkflowStagesForm, with
+// full approver objects) into the backend contract activateFirstStage
+// actually expects — {stageOrder, strategy, minApprovals, approvers}.
+// Same conversion shape used elsewhere (e.g. buildCustomTemplatePayload in
+// the workflows feature) for consistency.
+// ─────────────────────────────────────────────────────────────────────────────
 
-	if (!preview || typeof preview !== "object") {
-		return [];
-	}
-
-	const response = preview as WorkflowPreviewResponse;
-
-	if (Array.isArray(response.stages)) {
-		return response.stages;
-	}
-
-	if (Array.isArray(response.workflow?.stages)) {
-		return response.workflow.stages;
-	}
-
-	return [];
-};
+const mapStageEditsForApi = (
+	stages: WorkflowStage[],
+): ActivateFirstStageEdit[] =>
+	stages.map((stage) => ({
+		stageOrder: stage.stageOrder,
+		strategy: stage.strategy,
+		minApprovals:
+			stage.strategy === "SOME" ? Number(stage.minApprovals) || 1 : undefined,
+		approvers: stage.approvers.map((approver) => ({
+			approverId: approver.user.id,
+			isExternalApprover: approver.isExternalApprover,
+		})),
+	}));
 
 const EDITABLE_STATUSES: readonly VendorOnboardingStatus[] = [
 	"DRAFT",
@@ -525,6 +542,8 @@ export function useVendorCreationSummaryController({
 }: UseVendorCreationSummaryControllerParams) {
 	const { user } = useAuth();
 	const { showToast } = useToast();
+	const approveStageMutation = useApproveWorkflowStageMutation();
+	const clarifyStageMutation = useClarifyWorkflowStageMutation();
 	const [reasonModal, setReasonModal] = React.useState<{
 		mode: ReasonActionMode | null;
 		loading: boolean;
@@ -579,7 +598,8 @@ export function useVendorCreationSummaryController({
 	const approveCurrentStage = React.useCallback(async () => {
 		if (!currentStageId) return;
 		try {
-			const { message } = await workflowApi.approveStage(currentStageId);
+			const { message } =
+				await approveStageMutation.mutateAsync(currentStageId);
 			showToast({ type: "success", title: "Success", description: message });
 			onApprove?.();
 
@@ -590,8 +610,7 @@ export function useVendorCreationSummaryController({
 			showToast({
 				type: "error",
 				title: "Error",
-				description:
-					error instanceof Error ? error.message : "Error while approving.",
+				description: getErrorMessage(error, "Error while approving."),
 			});
 		}
 	}, [
@@ -600,8 +619,8 @@ export function useVendorCreationSummaryController({
 		onApprove,
 		requiresVendorCodeToApprove,
 		showToast,
+		approveStageMutation,
 	]);
-
 	const openVendorCodeModal = React.useCallback(() => {
 		setVendorCodeModal({ open: true, loading: false });
 	}, []);
@@ -655,27 +674,33 @@ export function useVendorCreationSummaryController({
 			}
 			try {
 				setReasonModal((current) => ({ ...current, loading: true }));
-				const { message } = await workflowApi.clarifyStage(
+				const { message } = await clarifyStageMutation.mutateAsync(
 					currentStageId,
 					reason,
 				);
 				showToast({ type: "success", title: "Success", description: message });
 				closeReasonModal();
-				onClarify?.();
+				await onClarify?.();
 			} catch (error) {
 				showToast({
 					type: "error",
 					title: "Error",
-					description:
-						error instanceof Error
-							? error.message
-							: "Unable to complete this action.",
+					description: getErrorMessage(
+						error,
+						"Unable to complete this action.",
+					),
 				});
 			} finally {
 				setReasonModal((current) => ({ ...current, loading: false }));
 			}
 		},
-		[closeReasonModal, currentStageId, onClarify, showToast],
+		[
+			clarifyStageMutation,
+			closeReasonModal,
+			currentStageId,
+			onClarify,
+			showToast,
+		],
 	);
 
 	const handleVendorCodeSave = React.useCallback(() => {
@@ -688,6 +713,7 @@ export function useVendorCreationSummaryController({
 		canActOnCurrentStage: canActNow && Boolean(isCurrentStageApprover),
 		requiresVendorCodeToApprove,
 		vendorCodeModal,
+		approveLoading: approveStageMutation.loading,
 		openReasonModal,
 		closeReasonModal,
 		closeVendorCodeModal,
@@ -727,7 +753,6 @@ export function useVendorCreationForm({
 	const normalizedToken = token.trim();
 
 	const [currentStep, setCurrentStep] = React.useState(1);
-	const [createdVendorId, setCreatedVendorId] = React.useState("");
 
 	const [formOneValuesState, setFormOneValues] =
 		React.useState<VendorCreationFormOneValues | null>(null);
@@ -743,20 +768,19 @@ export function useVendorCreationForm({
 		VendorFormErrors<VendorCreationFormTwoValues>
 	>({});
 
-	const [previewWorkflowStages, setPreviewWorkflowStages] = React.useState<
-		ApprovalStageLike[]
-	>([]);
-
-	const [isAssigningWorkflow, setIsAssigningWorkflow] = React.useState(false);
-	const [isPreviewingWorkflow, setIsPreviewingWorkflow] = React.useState(false);
-	const [workflowPreviewError, setWorkflowPreviewError] = React.useState("");
+	const [pendingWorkflowSelection, setPendingWorkflowSelection] =
+		React.useState<PendingWorkflowSelection | null>(null);
 
 	const [isSavingVendorCode, setIsSavingVendorCode] = React.useState(false);
 
-	const vendorRequestId = routeVendorId || createdVendorId;
+	const vendorRequestId = routeVendorId;
 
-	const isInternal = !isPublicForm;
+	React.useEffect(() => {
+		setPendingWorkflowSelection(null);
+	}, [vendorRequestId]);
+
 	const isPublicVendor = isPublicForm;
+	const isThcmEmployee = !isPublicForm;
 
 	const detailQuery = useVendorOnboardingDetailQuery(
 		vendorRequestId,
@@ -785,19 +809,26 @@ export function useVendorCreationForm({
 		formOneValuesState ??
 		(isPublicForm ? publicFormInitialValues : EMPTY_FORM_ONE);
 
-	const createMutation = useCreateVendorMutation();
 	const updateMutation = useUpdateVendorMutation();
 	const submitMutation = useSubmitVendorMutation();
 	const closeMutation = useAcceptAndCloseVendorMutation();
 	const publicSubmitMutation = useSubmitPublicVendorFormMutation();
 	const publicDraftSubmitMutation = useDraftSubmitPublicVendorFormMutation();
-	const submitClarifiedMutation = useSubmitClarifiedUpdatedFormMutation();
+	const { mutateAsync: assignWorkflow, loading: assignWorkflowLoading } =
+		useAssignWorkflowMutation();
+	const {
+		mutateAsync: activateFirstStage,
+		loading: activateFirstStageLoading,
+	} = useActivateFirstStageMutation();
 
 	const status = detailQuery.data?.status;
 	const referenceNumber = detailQuery.data?.referenceNumber;
 	const activeWorkflow = detailQuery.data?.activeWorkflow ?? null;
 	const workflowId = activeWorkflow?.id ?? null;
-	const isThcmProposer = user?.id === detailQuery.data?.initiatedById;
+	const createdById = getCreatedById(detailQuery.data?.initiatedById);
+	const isThcmProposer =
+		isThcmEmployee && Boolean(user?.id) && createdById === user?.id;
+
 	const assignedWorkflowStages = React.useMemo<ApprovalStageLike[]>(
 		() => activeWorkflow?.stages ?? [],
 		[activeWorkflow?.stages],
@@ -816,6 +847,36 @@ export function useVendorCreationForm({
 			return stage.isCurrentIteration === true && hasPendingApproval;
 		});
 	}, [activeWorkflow, assignedWorkflowStages]);
+
+	/*
+	|--------------------------------------------------------------------------
+	| Stage edits — proposer may edit stages/approvers when resubmitting
+	| after a clarification (never during initial submission or as an
+	| approver). null = resubmit unchanged; a real array = the proposer's
+	| edited stage list, sent as stageEdits to activateFirstStage.
+	|--------------------------------------------------------------------------
+	*/
+
+	const [stageEdits, setStageEditsState] = React.useState<
+		WorkflowStage[] | null
+	>(null);
+
+	const canEditStagesOnResubmit = isThcmProposer && hasPendingClarifiedApproval;
+
+	// Reset any in-progress edit whenever a new clarify cycle starts (or ends)
+	// — stale edits from a previous iteration should never leak into a
+	// different one.
+	React.useEffect(() => {
+		setStageEditsState(null);
+	}, [workflowId, activeWorkflow?.iteration]);
+
+	const setStageEdits = React.useCallback(
+		(nextStages: WorkflowStage[] | null) => {
+			if (!canEditStagesOnResubmit) return;
+			setStageEditsState(nextStages);
+		},
+		[canEditStagesOnResubmit],
+	);
 
 	const workflowApproverData = React.useMemo(
 		() => getWorkflowApproverData(activeWorkflow, user),
@@ -855,12 +916,12 @@ export function useVendorCreationForm({
 	);
 
 	const workflowStages = React.useMemo<ApprovalStageLike[]>(() => {
-		if (currentStep === 3 && previewWorkflowStages.length > 0) {
-			return previewWorkflowStages;
+		if ((currentStep === 3 || currentStep === 4) && pendingWorkflowSelection) {
+			return pendingWorkflowSelection.previewStages;
 		}
 
 		return assignedWorkflowStages;
-	}, [assignedWorkflowStages, currentStep, previewWorkflowStages]);
+	}, [assignedWorkflowStages, currentStep, pendingWorkflowSelection]);
 
 	const isResubmission = hasPendingClarifiedApproval;
 
@@ -1002,14 +1063,17 @@ export function useVendorCreationForm({
 	*/
 
 	const saveVendorDetails = async () => {
-		try {
-			if (vendorRequestId) {
-				await handleSaveVendorUpdate(buildVendorUpdatePayload(formOneValues));
-			} else {
-				const created = await createMutation.mutateAsync(formOneValues);
+		if (!vendorRequestId) {
+			showToast({
+				type: "error",
+				title: "Unable to continue",
+				description: "Vendor onboarding ID is missing.",
+			});
+			return;
+		}
 
-				setCreatedVendorId(created.id);
-			}
+		try {
+			await handleSaveVendorUpdate(buildVendorUpdatePayload(formOneValues));
 
 			next();
 		} catch (error) {
@@ -1022,14 +1086,17 @@ export function useVendorCreationForm({
 	};
 
 	const saveVendorDetailsDraft = async () => {
-		try {
-			if (vendorRequestId) {
-				await handleSaveVendorUpdate(buildVendorUpdatePayload(formOneValues));
-			} else {
-				const created = await createMutation.mutateAsync(formOneValues);
+		if (!vendorRequestId) {
+			showToast({
+				type: "error",
+				title: "Unable to save draft",
+				description: "Vendor onboarding ID is missing.",
+			});
+			return;
+		}
 
-				setCreatedVendorId(created.id);
-			}
+		try {
+			await handleSaveVendorUpdate(buildVendorUpdatePayload(formOneValues));
 
 			showToast({
 				type: "success",
@@ -1048,46 +1115,15 @@ export function useVendorCreationForm({
 		}
 	};
 
-	/*
-	|--------------------------------------------------------------------------
-	| Assign workflow
-	|--------------------------------------------------------------------------
-	*/
-
-	const assignVendorWorkflow = React.useCallback(async (): Promise<void> => {
-		if (!workspaceId || !appId || !vendorRequestId) {
-			throw new Error(
-				"Workspace, application, or vendor request information is missing.",
-			);
-		}
-
-		if (hasAssignedWorkflow) {
-			return;
-		}
-
-		await vendorOnboardingApi.assignWorkflow({
-			workspaceId,
-			appId,
-			subjectType: "VENDOR_ONBOARDING",
-			subjectId: vendorRequestId,
-			criteria: {},
-		});
-	}, [appId, hasAssignedWorkflow, vendorRequestId, workspaceId]);
-
 	const saveThcmDetails = async () => {
 		if (!vendorRequestId) {
 			return;
 		}
 
 		try {
-			setIsAssigningWorkflow(true);
-
 			await handleSaveVendorUpdate(
 				buildVendorOnboardingUpdatePayload(formOneValues, formTwoValues),
 			);
-
-			setPreviewWorkflowStages([]);
-			setWorkflowPreviewError("");
 
 			next();
 		} catch (error) {
@@ -1096,8 +1132,6 @@ export function useVendorCreationForm({
 				title: "Unable to continue",
 				description: getErrorMessage(error, "Failed to save THCM details."),
 			});
-		} finally {
-			setIsAssigningWorkflow(false);
 		}
 	};
 
@@ -1202,85 +1236,6 @@ export function useVendorCreationForm({
 
 	/*
 	|--------------------------------------------------------------------------
-	| Workflow preview
-	|--------------------------------------------------------------------------
-	*/
-
-	const handlePreviewWorkflow =
-		React.useCallback(async (): Promise<boolean> => {
-			if (!workspaceId || !appId) {
-				setWorkflowPreviewError(
-					"Workspace or application information is missing.",
-				);
-
-				return false;
-			}
-
-			try {
-				setIsPreviewingWorkflow(true);
-				setWorkflowPreviewError("");
-
-				const preview = await vendorOnboardingApi.previewWorkflow({
-					workspaceId,
-					appId,
-					subjectType: "VENDOR_ONBOARDING",
-					criteria: {},
-				});
-
-				const stages = getPreviewStages(preview);
-
-				setPreviewWorkflowStages(stages);
-
-				if (stages.length === 0) {
-					setWorkflowPreviewError(
-						"No approval workflow matches this vendor onboarding request.",
-					);
-
-					return false;
-				}
-
-				return true;
-			} catch (error) {
-				setPreviewWorkflowStages([]);
-
-				setWorkflowPreviewError(
-					getErrorMessage(error, "Unable to preview the approval workflow."),
-				);
-
-				return false;
-			} finally {
-				setIsPreviewingWorkflow(false);
-			}
-		}, [appId, workspaceId]);
-
-	const workflowPreviewStartedRef = React.useRef(false);
-
-	React.useEffect(() => {
-		if (currentStep !== 3) {
-			workflowPreviewStartedRef.current = false;
-			return;
-		}
-
-		if (
-			isPublicForm ||
-			previewWorkflowStages.length > 0 ||
-			workflowPreviewStartedRef.current
-		) {
-			return;
-		}
-
-		workflowPreviewStartedRef.current = true;
-
-		void handlePreviewWorkflow();
-	}, [
-		currentStep,
-		handlePreviewWorkflow,
-		isPublicForm,
-		previewWorkflowStages.length,
-	]);
-
-	/*
-	|--------------------------------------------------------------------------
 	| Summary submission
 	|--------------------------------------------------------------------------
 	*/
@@ -1296,40 +1251,91 @@ export function useVendorCreationForm({
 			return;
 		}
 
-		if (previewWorkflowStages.length === 0) {
+		const isClarifiedResubmission = hasPendingClarifiedApproval;
+		const selectedWorkflowCriteria =
+			pendingWorkflowSelection?.attachInput ?? null;
+		const hasPendingWorkflowSelection = Boolean(selectedWorkflowCriteria);
+		const isReplacingWorkflow = Boolean(
+			isClarifiedResubmission && hasPendingWorkflowSelection,
+		);
+		const shouldAssignSelectedWorkflow = Boolean(
+			hasPendingWorkflowSelection &&
+			(!hasAssignedWorkflow || isReplacingWorkflow),
+		);
+
+		if (
+			!isClarifiedResubmission &&
+			!hasAssignedWorkflow &&
+			!hasPendingWorkflowSelection
+		) {
 			showToast({
 				type: "error",
-				title: "Workflow preview required",
+				title: "Workflow required",
 				description:
-					"The approval workflow preview is unavailable. Return to Form Two and open the Summary again.",
+					"Return to the Workflow step and select an approval workflow.",
 			});
 
 			return;
 		}
 
-		const isClarifiedResubmission = hasPendingClarifiedApproval;
+		if (
+			isClarifiedResubmission &&
+			!hasPendingWorkflowSelection &&
+			!workflowId
+		) {
+			showToast({
+				type: "error",
+				title: "Workflow required",
+				description:
+					"The active workflow is unavailable. Return to the Workflow step and select a workflow.",
+			});
+
+			return;
+		}
+
+		if (shouldAssignSelectedWorkflow && (!workspaceId || !appId)) {
+			showToast({
+				type: "error",
+				title: "Workflow assignment failed",
+				description:
+					"Workspace or application information is missing. Please refresh and try again.",
+			});
+
+			return;
+		}
 
 		try {
-			// After the vendor's one-time submission, all form changes use update.
-			await handleSaveVendorUpdate(
-				buildVendorOnboardingUpdatePayload(formOneValues, formTwoValues),
-			);
+			// A selected workflow is assigned for the initial submission or when
+			// the proposer explicitly replaces the active workflow during a
+			// clarification. Assignment starts Stage 1, so the newly assigned
+			// workflow must not be activated a second time below.
+			if (shouldAssignSelectedWorkflow && selectedWorkflowCriteria) {
+				if (!workspaceId || !appId) {
+					throw new Error("Workspace or application information is missing.");
+				}
 
-			// Only the first THCM completion needs a workflow assignment.
-			// Clarification changes keep the already assigned workflow.
-			if (!isClarifiedResubmission) {
-				await assignVendorWorkflow();
+				await assignWorkflow({
+					subjectType: "VENDOR_ONBOARDING",
+					subjectId: vendorRequestId,
+					workspaceId,
+					appId,
+					criteria: { ...selectedWorkflowCriteria },
+				});
 			}
 
-			// 3. Submit the form for approval.
 			await submitMutation.mutateAsync(vendorRequestId);
 
-			// 4. Activate the first stage of the clarified workflow iteration.
-			if (isClarifiedResubmission && workflowId) {
-				await submitClarifiedMutation.mutateAsync(workflowId);
+			// If no replacement was selected, continue the existing active
+			// workflow and optionally apply the proposer's stage edits.
+			if (isClarifiedResubmission && !isReplacingWorkflow && workflowId) {
+				await activateFirstStage({
+					workflowId,
+					stageEdits: stageEdits ? mapStageEditsForApi(stageEdits) : undefined,
+				});
 			}
 
 			await detailQuery.refetch();
+			setPendingWorkflowSelection(null);
 
 			showToast({
 				type: "success",
@@ -1337,7 +1343,9 @@ export function useVendorCreationForm({
 					? "Resubmitted successfully"
 					: "Submitted successfully",
 				description: isClarifiedResubmission
-					? "The clarified vendor details were updated successfully."
+					? isReplacingWorkflow
+						? "The clarified vendor details were updated and the replacement workflow was assigned."
+						: "The clarified vendor details were updated and the active workflow was continued."
 					: "The THCM details were updated and the approval workflow was assigned.",
 			});
 
@@ -1348,6 +1356,14 @@ export function useVendorCreationForm({
 			}
 		} catch (error: unknown) {
 			console.error("Vendor onboarding submission failed:", error);
+
+			// Assignment and vendor submission are separate requests. Refetch so
+			// a successful assignment is detected before the user retries.
+			try {
+				await detailQuery.refetch();
+			} catch {
+				// Preserve the original submission error shown below.
+			}
 
 			showToast({
 				type: "error",
@@ -1363,20 +1379,21 @@ export function useVendorCreationForm({
 			});
 		}
 	}, [
+		activateFirstStage,
+		appId,
+		assignWorkflow,
 		detailQuery,
-		assignVendorWorkflow,
-		formOneValues,
-		formTwoValues,
-		handleSaveVendorUpdate,
+		hasAssignedWorkflow,
 		hasPendingClarifiedApproval,
 		navigate,
 		onSuccess,
-		previewWorkflowStages.length,
+		pendingWorkflowSelection,
 		showToast,
-		submitClarifiedMutation,
+		stageEdits,
 		submitMutation,
 		vendorRequestId,
 		workflowId,
+		workspaceId,
 	]);
 
 	/*
@@ -1530,19 +1547,20 @@ export function useVendorCreationForm({
 	};
 
 	const mutationLoading =
-		createMutation.isPending ||
 		updateMutation.isPending ||
 		submitMutation.isPending ||
 		closeMutation.isPending ||
 		publicSubmitMutation.isPending ||
 		publicDraftSubmitMutation.isPending ||
-		submitClarifiedMutation.isPending ||
-		isAssigningWorkflow;
+		assignWorkflowLoading ||
+		activateFirstStageLoading;
 
 	return {
 		vendorOnboardingSteps,
 		currentStep,
 		setCurrentStep,
+		workspaceId,
+		appId,
 
 		vendorRequestId,
 		formOneValues,
@@ -1558,7 +1576,7 @@ export function useVendorCreationForm({
 		status,
 		referenceNumber,
 
-		canEditFormOne: isThcmProposer || canEditMainForm,
+		canEditFormOne: canEditMainForm,
 		canEditFormTwo: canEditMainForm,
 		canEditMainForm,
 
@@ -1570,12 +1588,13 @@ export function useVendorCreationForm({
 		vendorCodeLoading: isSavingVendorCode,
 
 		canSubmitVendorForm: isPublicVendor,
-		canSubmit: isInternal,
+		canSubmit: canEditMainForm,
 		canApprove,
 		canClarify,
 		canSendBackToVendor:
 			isThcmProposer && detailQuery.data?.status === "IN_REVIEW",
-		canAcceptAndClose: detailQuery.data?.status === "APPROVED" && canApprove,
+		canAcceptAndClose:
+			detailQuery.data?.status === "APPROVED" && role === "EXTERNAL_APPROVER",
 
 		isLoading: isPublicForm ? publicQuery.isLoading : detailQuery.isLoading,
 
@@ -1587,6 +1606,13 @@ export function useVendorCreationForm({
 
 		mutationLoading,
 		isResubmission,
+
+		// Stage editing on resubmit (proposer only, only during a pending
+		// clarified iteration) — see the block above hasAssignedWorkflow.
+		canEditStagesOnResubmit,
+		stageEdits,
+		setStageEdits,
+		hasPendingClarifiedApproval,
 
 		handleNext: next,
 		handleBack: back,
@@ -1612,21 +1638,20 @@ export function useVendorCreationForm({
 		handleAcceptAndClose: acceptAndClose,
 
 		handleSaveVendorCode: saveVendorCode,
-		handlePreviewWorkflow,
-		handleFetchWorkflow: handlePreviewWorkflow,
 
 		activeWorkflow,
 		workflowApproverData,
 		mentionableUsers,
 		workflowStages,
 		assignedWorkflowStages,
-		previewWorkflowStages,
+		pendingWorkflowSelection,
+		setPendingWorkflowSelection,
 		hasAssignedWorkflow,
 
 		workflowLoading:
-			isAssigningWorkflow || isPreviewingWorkflow || detailQuery.isFetching,
-
-		workflowPreviewError,
+			assignWorkflowLoading ||
+			activateFirstStageLoading ||
+			detailQuery.isFetching,
 
 		creator: detailQuery.data,
 	};

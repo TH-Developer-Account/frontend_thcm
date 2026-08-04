@@ -7,7 +7,7 @@ import { useDebounce } from "../../../hooks/useDebounce";
 import { workflowApi } from "../api/workflow.api";
 import type { WorkflowRow } from "../types/types";
 import { mapWorkflowRows } from "../utils/workflow.helpers";
-import { WorkflowContext } from "./workflow.context";
+import { WorkflowContext, type WorkflowListScope } from "./workflow.context";
 
 interface WorkflowProviderProps {
 	children: ReactNode;
@@ -23,35 +23,46 @@ const transformFilters = (
 export function WorkflowProvider({ children }: WorkflowProviderProps) {
 	const [data, setData] = useState<WorkflowRow[]>([]);
 	const [loading, setLoading] = useState(false);
+
 	const [search, setSearch] = useState("");
+	const [scope, setScope] = useState<WorkflowListScope>("ALL");
+
 	const [pageIndex, setPageIndex] = useState(0);
 	const [pageSize, setPageSize] = useState(25);
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [filters, setFilters] = useState<Record<string, Option[]>>({});
 	const [totalPages, setTotalPages] = useState(0);
+
 	const debouncedSearch = useDebounce(search, 500);
 
 	const fetchWorkflowList = useCallback(async () => {
 		try {
 			setLoading(true);
+
 			const sort = sorting[0];
+
 			const response = await workflowApi.list({
 				page: pageIndex + 1,
 				pageSize,
-				search: debouncedSearch,
+				search: debouncedSearch || undefined,
 				sortBy: sort?.id,
-				sortOrder: sort?.desc ? "desc" : "asc",
+				sortOrder: sort ? (sort.desc ? "desc" : "asc") : undefined,
 				filters: transformFilters(filters),
+				scope,
 			});
 
-			setData(mapWorkflowRows(response.data));
-			setTotalPages(response.meta.totalPages);
+			const rows = Array.isArray(response.data) ? response.data : [];
+
+			setData(mapWorkflowRows(rows));
+			setTotalPages(response.meta?.totalPages ?? 0);
 		} catch (error) {
 			console.error("Failed to fetch workflow data", error);
+			setData([]);
+			setTotalPages(0);
 		} finally {
 			setLoading(false);
 		}
-	}, [debouncedSearch, filters, pageIndex, pageSize, sorting]);
+	}, [debouncedSearch, filters, pageIndex, pageSize, scope, sorting]);
 
 	useEffect(() => {
 		void fetchWorkflowList();
@@ -63,17 +74,25 @@ export function WorkflowProvider({ children }: WorkflowProviderProps) {
 				data,
 				setData,
 				loading,
+
 				search,
+				setSearch,
+
+				scope,
+				setScope,
+
 				pageIndex,
 				pageSize,
 				totalPages,
-				sorting,
-				setSearch,
-				setSorting,
 				setPageIndex,
 				setPageSize,
+
+				sorting,
+				setSorting,
+
 				filters,
 				setFilters,
+
 				refetch: fetchWorkflowList,
 			}}
 		>

@@ -1,0 +1,391 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+import { useAuth } from "../../../context/Auth/useAuth";
+import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
+import { workflowApi } from "../api/workflow.api";
+import { useAttachWorkflowMutation } from "../context/useWorkflowMutations";
+import type {
+	AttachWorkflowInput,
+	CreateWorkflowPayload,
+	PendingWorkflowSelection,
+	SaveMode,
+	WorkflowBuilderPayload,
+	WorkflowExecutionMode,
+	WorkflowListScope,
+	WorkflowSummary,
+	WorkflowTemplate,
+} from "../types/types";
+import { getFullName } from "../utils/user";
+import { mapStages } from "../utils/workflow.helpers";
+
+type ScreenState =
+	| { view: "entry" }
+	| {
+			view: "builder";
+			sourceWorkflow?: WorkflowTemplate;
+			initialFlowType: WorkflowExecutionMode;
+			initialSaveAsTemplate: boolean;
+	  };
+
+export type UseWorkflowFetchOptions = {
+	sourceRecordRef: string;
+	recordType: string;
+	onWorkflowSelected?: (
+		selection: PendingWorkflowSelection,
+	) => void | Promise<void>;
+	onWorkflowAttached?: () => void;
+};
+
+const getCreatedWorkflowId = (value: unknown): string | null => {
+	let current = value;
+
+	for (let depth = 0; depth < 3; depth += 1) {
+		if (
+			typeof current !== "object" ||
+			current === null ||
+			Array.isArray(current)
+		) {
+			return null;
+		}
+
+		const record = current as Record<string, unknown>;
+		const id = record.id ?? record.workflowId ?? record.templateId;
+
+		if (typeof id === "string" || typeof id === "number") {
+			return String(id);
+		}
+
+		current = record.data ?? record.workflow;
+	}
+
+	return null;
+};
+
+const buildTemplatePayload = (
+	payload: WorkflowBuilderPayload,
+	source: WorkflowTemplate | undefined,
+	workspaceId: string,
+	appId: string,
+): CreateWorkflowPayload => ({
+	name:
+		payload.templateName?.trim() ||
+		(source ? `${source.name} - Custom` : "Custom approval workflow"),
+	workspaceId: source?.workspaceId ?? workspaceId,
+	isActive: true,
+	appId: source?.appId ?? appId,
+	description: source?.description ?? "",
+	metaData_1: source?.metaData_1 ?? "",
+	metaData_2: source?.metaData_2 ?? "",
+	metaData_3: source?.metaData_3 ?? "",
+	isReusable: true,
+	stages: payload.stages.map((stage) => ({
+		name: stage.name.trim(),
+		stageOrder: stage.stageOrder,
+		strategy: stage.strategy,
+		minApprovals:
+			stage.strategy === "SOME" ? Number(stage.minApprovals) || 1 : undefined,
+		approverIds: stage.approvers.map((approver) => ({
+			userId: approver.user.id,
+			name: getFullName(approver.user),
+			email: approver.user.email?.trim() ?? "",
+			isExternalApprover: approver.isExternalApprover,
+		})),
+	})),
+});
+
+export function useWorkflowFetch({
+	sourceRecordRef,
+	recordType,
+	onWorkflowSelected,
+	onWorkflowAttached,
+}: UseWorkflowFetchOptions) {
+	const { workspaceId: authWorkspaceId } = useAuth();
+
+	const workspaceId = authWorkspaceId ?? "";
+	const appId = useMemo(() => getStoredAppId() ?? "", []);
+
+	const [screen, setScreen] = useState<ScreenState>({ view: "entry" });
+	const [workflows, setWorkflows] = useState<WorkflowSummary[]>([]);
+	const [selectedFilter, setSelectedFilter] =
+		useState<WorkflowListScope>("CREATED_BY_ME");
+	const [loading, setLoading] = useState(true);
+	const [customising, setCustomising] = useState(false);
+	const [error, setError] = useState<unknown>(null);
+
+	const attachMutation = useAttachWorkflowMutation();
+
+	const ensureAssignmentContext = useCallback((): void => {
+		if (!sourceRecordRef.trim()) {
+			throw new Error("A source record is required to assign a workflow.");
+		}
+
+		if (!workspaceId || !appId) {
+			throw new Error(
+				"Workspace and application information are required to assign a workflow.",
+			);
+		}
+	}, [appId, sourceRecordRef, workspaceId]);
+
+	const loadWorkflows = useCallback(async (): Promise<void> => {
+		setLoading(true);
+		setError(null);
+
+		try {
+			let result: WorkflowSummary[];
+
+			switch (selectedFilter) {
+				case "ASSIGNED_TO_ME": {
+					result = await workflowApi.listReusable("assigned", recordType);
+					break;
+				}
+
+				case "ALL": {
+					const [created, assigned] = await Promise.all([
+						workflowApi.listReusable("created", recordType),
+						workflowApi.listReusable("assigned", recordType),
+					]);
+
+					const uniqueWorkflows = new Map<string, WorkflowSummary>();
+
+					[...created, ...assigned].forEach((workflow) => {
+						uniqueWorkflows.set(workflow.id, workflow);
+					});
+
+					result = Array.from(uniqueWorkflows.values());
+					break;
+				}
+
+				case "CREATED_BY_ME":
+				default: {
+					result = await workflowApi.listReusable("created", recordType);
+					break;
+				}
+			}
+
+			setWorkflows(result);
+		} catch (nextError) {
+			setWorkflows([]);
+			setError(nextError);
+		} finally {
+			setLoading(false);
+		}
+	}, [recordType, selectedFilter]);
+
+	const handleFilterChange = useCallback(
+		(nextFilter: WorkflowListScope): void => {
+			setSelectedFilter(nextFilter);
+		},
+		[],
+	);
+
+	useEffect(() => {
+		void loadWorkflows();
+	}, [loadWorkflows]);
+
+	const completeSelection = useCallback(
+		async (selection: PendingWorkflowSelection): Promise<void> => {
+			if (onWorkflowSelected) {
+				await onWorkflowSelected(selection);
+				return;
+			}
+
+			ensureAssignmentContext();
+
+			const input: AttachWorkflowInput = {
+				...selection.attachInput,
+				recordRef: sourceRecordRef,
+				recordType,
+				workspaceId,
+				appId,
+			};
+
+			await attachMutation.mutateAsync(input);
+			onWorkflowAttached?.();
+		},
+		[
+			appId,
+			attachMutation,
+			ensureAssignmentContext,
+			onWorkflowAttached,
+			onWorkflowSelected,
+			recordType,
+			sourceRecordRef,
+			workspaceId,
+		],
+	);
+
+	const handleAttach = useCallback(
+		async (workflow: WorkflowSummary): Promise<void> => {
+			if (!onWorkflowSelected) {
+				ensureAssignmentContext();
+
+				await attachMutation.mutateAsync({
+					recordRef: sourceRecordRef,
+					recordType,
+					workspaceId,
+					appId,
+					workflowId: workflow.id,
+				});
+
+				onWorkflowAttached?.();
+				return;
+			}
+
+			setCustomising(true);
+
+			try {
+				const sourceWorkflow = await workflowApi.getById(workflow.id);
+				const previewStages = mapStages(sourceWorkflow.stages);
+
+				if (previewStages.length === 0) {
+					throw new Error("The selected workflow does not contain any stages.");
+				}
+
+				await completeSelection({
+					key: `workflow:${workflow.id}`,
+					name: workflow.name,
+					previewStages,
+					attachInput: {
+						workflowId: workflow.id,
+					},
+				});
+			} finally {
+				setCustomising(false);
+			}
+		},
+		[
+			appId,
+			attachMutation,
+			completeSelection,
+			ensureAssignmentContext,
+			onWorkflowAttached,
+			onWorkflowSelected,
+			recordType,
+			sourceRecordRef,
+			workspaceId,
+		],
+	);
+
+	const handleEditAndAttach = useCallback(
+		async (workflow: WorkflowSummary, saveMode: SaveMode): Promise<void> => {
+			setCustomising(true);
+
+			try {
+				const sourceWorkflow = await workflowApi.getById(workflow.id);
+
+				setScreen({
+					view: "builder",
+					sourceWorkflow,
+					initialFlowType: workflow.flowType,
+					initialSaveAsTemplate: saveMode === "template",
+				});
+			} finally {
+				setCustomising(false);
+			}
+		},
+		[],
+	);
+
+	const handleCreate = useCallback((): void => {
+		setScreen({
+			view: "builder",
+			initialFlowType: "SEQUENTIAL",
+			initialSaveAsTemplate: false,
+		});
+	}, []);
+
+	const handleCancel = useCallback((): void => {
+		setScreen({ view: "entry" });
+	}, []);
+
+	const handleBuilderAttach = useCallback(
+		async (payload: WorkflowBuilderPayload): Promise<void> => {
+			if (screen.view !== "builder") return;
+
+			if (payload.saveAsTemplate) {
+				const templateWorkspaceId =
+					screen.sourceWorkflow?.workspaceId ?? workspaceId;
+				const templateAppId = screen.sourceWorkflow?.appId ?? appId;
+
+				if (!templateWorkspaceId || !templateAppId) {
+					throw new Error(
+						"Workspace or application information is required to save this workflow as a template.",
+					);
+				}
+
+				const created = await workflowApi.createUser(
+					buildTemplatePayload(
+						payload,
+						screen.sourceWorkflow,
+						templateWorkspaceId,
+						templateAppId,
+					),
+				);
+
+				const workflowId = getCreatedWorkflowId(created);
+
+				if (!workflowId) {
+					throw new Error("The user workflow was created without an id.");
+				}
+
+				await completeSelection({
+					key: `workflow:${workflowId}`,
+					name: payload.templateName?.trim() || "Custom approval workflow",
+					previewStages: payload.stages,
+					attachInput: {
+						workflowId,
+					},
+				});
+
+				return;
+			}
+
+			await completeSelection({
+				key: `custom:${Date.now()}`,
+				name:
+					payload.templateName?.trim() ||
+					screen.sourceWorkflow?.name ||
+					"Custom approval workflow",
+				previewStages: payload.stages,
+				attachInput: {
+					stages: payload.stages,
+					flowType: payload.flowType,
+					saveAsTemplate: false,
+				},
+			});
+		},
+		[appId, completeSelection, screen, workspaceId],
+	);
+
+	const initialStages = useMemo(
+		() =>
+			screen.view === "builder" && screen.sourceWorkflow
+				? mapStages(screen.sourceWorkflow.stages)
+				: [],
+		[screen],
+	);
+
+	const builderTitle =
+		screen.view === "builder" && screen.sourceWorkflow
+			? "Customise approval workflow"
+			: "Create approval workflow";
+
+	return {
+		screen,
+		workflows,
+		selectedFilter,
+		loading,
+		customising,
+		error,
+		attaching: attachMutation.loading,
+		initialStages,
+		builderTitle,
+		loadWorkflows,
+		handleFilterChange,
+		handleAttach,
+		handleEditAndAttach,
+		handleCreate,
+		handleCancel,
+		handleBuilderAttach,
+	};
+}

@@ -2,6 +2,7 @@ import axios from "axios";
 
 import type { Option } from "../../../components/forms/input.types";
 import { ServerAxios } from "../../../services/ServerAxios";
+import type { EventDeviationPayload } from "../../../types/common.types";
 import type {
 	User,
 	UserResponse,
@@ -9,8 +10,8 @@ import type {
 import { mapUser } from "../../admin/user-profile/types/profile.types";
 import { api_routes } from "../constant/workflow.constant";
 import type {
+	AttachWorkflowInput,
 	CreateWorkflowPayload,
-	WorkflowExecutionMode,
 	WorkflowStage,
 	WorkflowSummary,
 	WorkflowTemplate,
@@ -18,51 +19,72 @@ import type {
 } from "../types/types";
 import { mapStages } from "../utils/workflow.helpers";
 
+export type { AttachWorkflowInput } from "../types/types";
+import type {
+	WorkflowListApiResponse,
+	WorkflowListParams,
+	WorkflowListResponse,
+} from "../types/types";
+import { normalizeWorkflowTemplates } from "../utils/workflow-list.helpers";
+
 const WORKFLOW_URL = "/work-flow";
+
+const createEmptyMeta = (
+	params: WorkflowListParams,
+): WorkflowListResponse["meta"] => ({
+	total: 0,
+	page: params.page,
+	limit: params.pageSize,
+	totalPages: 0,
+});
+const WORKFLOW_TEMPLATE_URL = "/work-flow";
+const WORKFLOW_RUNTIME_URL = "/soa";
 const USERS_URL = "/users";
-const ATTACH_WORKFLOW_URL = `${WORKFLOW_URL}/attach`;
 
-/**
- * Scope used by the reusable-workflow selector.
- * These values are intentionally kept separate from WorkflowListScope because
- * the two endpoints currently use different query contracts.
- */
 export type WorkflowScope = "created" | "assigned";
-
-/**
- * Scope used by the paginated workflow-management listing.
- */
 export type WorkflowListScope = "ALL" | "ASSIGNED_TO_ME" | "CREATED_BY_ME";
+export type WorkflowSubjectType = "EVENT_PROPOSAL" | "VENDOR_ONBOARDING";
 
-export type WorkflowListParams = {
-	page: number;
-	pageSize: number;
-	search?: string;
-	sortBy?: string;
-	sortOrder?: "asc" | "desc";
-	filters?: Record<string, string[]>;
-	scope?: WorkflowListScope;
-};
-
-export type WorkflowListResponse = {
-	data: WorkflowTemplate[];
-	meta: {
-		totalPages: number;
-	};
-};
-
-export type AttachWorkflowInput = {
-	recordRef: string;
-	recordType: string;
+export type WorkflowCriteria = Record<string, unknown> & {
 	workflowId?: string;
-	stages?: Array<{
-		order: number;
-		name: string;
+};
+
+export type AssignWorkflowPayload = {
+	subjectType: WorkflowSubjectType;
+	subjectId: string;
+	workspaceId: string;
+	appId: string;
+	criteria: WorkflowCriteria;
+};
+
+export type PreviewWorkflowPayload = Omit<AssignWorkflowPayload, "subjectId">;
+
+export type ActivateFirstStageEdit = {
+	stageOrder: number;
+	strategy: "ALL" | "ANY" | "SOME";
+	minApprovals?: number;
+	approvers: Array<{
 		approverId: string;
+		isExternalApprover: boolean;
 	}>;
-	flowType?: WorkflowExecutionMode;
-	saveAsTemplate?: boolean;
-	templateName?: string;
+};
+
+export type ActivateFirstStagePayload = {
+	workflowId: string;
+	stageEdits?: ActivateFirstStageEdit[];
+};
+
+export type TriggerDeviationPayload = {
+	eventProposalId: string;
+	workspaceId: string;
+	appId: string;
+	newBudget: string | number;
+};
+
+type ApiEnvelope<T> = {
+	success?: boolean;
+	data: T;
+	message?: string;
 };
 
 type ReusableWorkflowApiItem = {
@@ -89,10 +111,6 @@ type ApproverApiItem = {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
 	typeof value === "object" && value !== null && !Array.isArray(value);
 
-/**
- * Supports the response shapes currently used by ServerAxios endpoints:
- * T, { data: T }, and { data: { data: T } }.
- */
 const unwrapData = <T>(value: unknown): T => {
 	let current = value;
 
@@ -104,6 +122,15 @@ const unwrapData = <T>(value: unknown): T => {
 	return current as T;
 };
 
+const unwrapEnvelope = <T>(value: unknown): ApiEnvelope<T> => {
+	const envelope = value as ApiEnvelope<T>;
+	return {
+		success: envelope.success,
+		data: envelope.data,
+		message: envelope.message,
+	};
+};
+
 const normalizeWorkflowList = (value: unknown): WorkflowListResponse => {
 	if (Array.isArray(value)) {
 		return {
@@ -112,12 +139,7 @@ const normalizeWorkflowList = (value: unknown): WorkflowListResponse => {
 		};
 	}
 
-	if (!isRecord(value)) {
-		return {
-			data: [],
-			meta: { totalPages: 0 },
-		};
-	}
+	if (!isRecord(value)) return { data: [], meta: { totalPages: 0 } };
 
 	const nested = value.data;
 	const payload =
@@ -139,9 +161,7 @@ const normalizeWorkflowList = (value: unknown): WorkflowListResponse => {
 
 	return {
 		data: rows as WorkflowTemplate[],
-		meta: {
-			totalPages: Number.isFinite(totalPages) ? totalPages : 0,
-		},
+		meta: { totalPages: Number.isFinite(totalPages) ? totalPages : 0 },
 	};
 };
 
@@ -157,9 +177,23 @@ const createWorkflow = async (payload: CreateWorkflowPayload) => {
 		api_routes.create_workflow_api_route,
 		payload,
 	);
-
 	return response.data;
 };
+
+const createAttachCriteria = (
+	input: Pick<
+		AttachWorkflowInput,
+		"workflowId" | "stages" | "flowType" | "saveAsTemplate" | "templateName"
+	>,
+): WorkflowCriteria => ({
+	...(input.workflowId ? { workflowId: input.workflowId } : {}),
+	...(input.stages ? { stages: input.stages } : {}),
+	...(input.flowType ? { flowType: input.flowType } : {}),
+	...(input.saveAsTemplate !== undefined
+		? { saveAsTemplate: input.saveAsTemplate }
+		: {}),
+	...(input.templateName ? { templateName: input.templateName } : {}),
+});
 
 export const getWorkflowErrorMessage = (
 	error: unknown,
@@ -167,31 +201,18 @@ export const getWorkflowErrorMessage = (
 ): string => {
 	if (axios.isAxiosError(error)) {
 		const response = error.response?.data;
-
 		if (isRecord(response)) {
-			const message = response.message;
-			const responseError = response.error;
-
-			if (typeof message === "string" && message.trim()) {
-				return message;
-			}
-
-			if (typeof responseError === "string" && responseError.trim()) {
-				return responseError;
-			}
-
-			if (isRecord(response.data)) {
-				const nestedMessage = response.data.message;
-				const nestedError = response.data.error;
-
-				if (typeof nestedMessage === "string" && nestedMessage.trim()) {
-					return nestedMessage;
-				}
-
-				if (typeof nestedError === "string" && nestedError.trim()) {
-					return nestedError;
-				}
-			}
+			const candidates = [
+				response.message,
+				response.error,
+				isRecord(response.data) ? response.data.message : undefined,
+				isRecord(response.data) ? response.data.error : undefined,
+			];
+			const message = candidates.find(
+				(value): value is string =>
+					typeof value === "string" && value.trim().length > 0,
+			);
+			if (message) return message;
 		}
 	}
 
@@ -200,7 +221,73 @@ export const getWorkflowErrorMessage = (
 		: fallback;
 };
 
+/**
+ * Fetches and normalizes the workflow-management listing.
+ *
+ * The backend listing response uses snake-case fields. This API function
+ * converts them into the normalized WorkflowTemplate format before the data
+ * reaches the listing hook or table.
+ */
+export const getWorkflowList = async (
+	params: WorkflowListParams,
+): Promise<WorkflowListResponse> => {
+	const { page, pageSize, search, sortBy, sortOrder, filters, scope } = params;
+
+	const response = await ServerAxios.get<WorkflowListApiResponse>(
+		WORKFLOW_URL,
+		{
+			params: {
+				page,
+
+				/*
+				 * The backend uses `limit`. This was confirmed by the
+				 * response returning limit: 10 when pageSize: 25 was sent.
+				 */
+				limit: pageSize,
+
+				...(search?.trim() ? { search: search.trim() } : {}),
+
+				...(sortBy ? { sortBy } : {}),
+				...(sortOrder ? { sortOrder } : {}),
+				...(scope ? { scope } : {}),
+
+				filters: JSON.stringify({
+					createdBy: filters?.createdBy ?? [],
+					apps: filters?.apps ?? [],
+				}),
+			},
+		},
+	);
+
+	const body = response.data;
+
+	if (!body || !Array.isArray(body.data)) {
+		console.error("Unexpected workflow listing response:", body);
+
+		return {
+			data: [],
+			meta: createEmptyMeta(params),
+		};
+	}
+
+	return {
+		data: normalizeWorkflowTemplates(body.data),
+
+		meta: {
+			total: body.meta?.total ?? body.data.length,
+			page: body.meta?.page ?? page,
+			limit: body.meta?.limit ?? pageSize,
+			totalPages: body.meta?.totalPages ?? (body.data.length > 0 ? 1 : 0),
+		},
+	};
+};
+
+export const workflowListApi = {
+	list: getWorkflowList,
+};
+
 export const workflowApi = {
+	// Workflow template management
 	list: async (params: WorkflowListParams): Promise<WorkflowListResponse> => {
 		const response = await ServerAxios.get(
 			api_routes.get_all_workflow_api_route,
@@ -211,40 +298,33 @@ export const workflowApi = {
 				},
 			},
 		);
-
 		return normalizeWorkflowList(response.data);
 	},
 
 	getById: async (id: string): Promise<WorkflowTemplate> => {
 		const response = await ServerAxios.get(
-			`${WORKFLOW_URL}/${encodeURIComponent(id)}`,
+			`${WORKFLOW_TEMPLATE_URL}/${encodeURIComponent(id)}`,
 		);
-
 		return unwrapData<WorkflowTemplate>(response.data);
 	},
 
 	create: createWorkflow,
 
 	createUser: async (payload: CreateWorkflowPayload) =>
-		createWorkflow({
-			...payload,
-			workflowType: "USERCREATED",
-		}),
+		createWorkflow({ ...payload, scope: "USER" }),
 
 	update: async (id: string, payload: CreateWorkflowPayload) => {
 		const response = await ServerAxios.post(
-			`${WORKFLOW_URL}/update/${encodeURIComponent(id)}`,
+			`${WORKFLOW_TEMPLATE_URL}/update/${encodeURIComponent(id)}`,
 			payload,
 		);
-
 		return response.data;
 	},
 
 	remove: async (id: string) => {
 		const response = await ServerAxios.delete(
-			`${WORKFLOW_URL}/delete/${encodeURIComponent(id)}`,
+			`${WORKFLOW_TEMPLATE_URL}/delete/${encodeURIComponent(id)}`,
 		);
-
 		return response.data;
 	},
 
@@ -253,7 +333,6 @@ export const workflowApi = {
 			api_routes.create_assign_users_workflow_template,
 			{ templateId, userIds },
 		);
-
 		return response.data;
 	},
 
@@ -262,13 +341,11 @@ export const workflowApi = {
 			params: { profile: "all" },
 		});
 		const rawUsers = unwrapData<UserResponse[]>(response.data);
-
 		return (Array.isArray(rawUsers) ? rawUsers : []).map(mapUser);
 	},
 
 	getUserOptions: async (): Promise<Option[]> => {
 		const users = await workflowApi.getUsers();
-
 		return users.map((user) => ({
 			value: user.id,
 			label:
@@ -283,9 +360,7 @@ export const workflowApi = {
 	): Promise<WorkflowSummary[]> => {
 		const response = await ServerAxios.get(
 			api_routes.get_all_workflow_api_route,
-			{
-				params: { scope, module },
-			},
+			{ params: { scope, module } },
 		);
 		const rawWorkflows = unwrapData<ReusableWorkflowApiItem[]>(response.data);
 
@@ -302,7 +377,6 @@ export const workflowApi = {
 
 	getBuilderStages: async (id: string): Promise<WorkflowStage[]> => {
 		const workflow = await workflowApi.getById(id);
-
 		return mapStages(workflow.stages);
 	},
 
@@ -311,17 +385,13 @@ export const workflowApi = {
 		module: string,
 	): Promise<WorkflowUser[]> => {
 		const response = await ServerAxios.get(USERS_URL, {
-			params: {
-				search: query.trim(),
-				module,
-			},
+			params: { search: query.trim(), module },
 		});
 		const rawUsers = unwrapData<ApproverApiItem[]>(response.data);
 
 		return (Array.isArray(rawUsers) ? rawUsers : []).map((user) => {
 			const name = getApproverName(user);
 			const [firstName = "", ...lastNameParts] = name.split(" ");
-
 			return {
 				id: String(user.id),
 				firstName,
@@ -332,7 +402,134 @@ export const workflowApi = {
 		});
 	},
 
-	attach: async (input: AttachWorkflowInput): Promise<void> => {
-		await ServerAxios.post(ATTACH_WORKFLOW_URL, input);
+	// Runtime workflow operations
+	assignWorkflow: async (payload: AssignWorkflowPayload) => {
+		const response = await ServerAxios.post<ApiEnvelope<unknown>>(
+			`${WORKFLOW_RUNTIME_URL}/assign-workflow`,
+			payload,
+		);
+		return unwrapEnvelope<unknown>(response.data);
+	},
+
+	previewWorkflow: async (payload: PreviewWorkflowPayload) => {
+		const response = await ServerAxios.post<ApiEnvelope<WorkflowTemplate>>(
+			`${WORKFLOW_RUNTIME_URL}/preview-workflow`,
+			payload,
+		);
+		return unwrapEnvelope<WorkflowTemplate>(response.data).data;
+	},
+
+	attach: async (input: AttachWorkflowInput) =>
+		workflowApi.assignWorkflow({
+			subjectType: input.recordType as WorkflowSubjectType,
+			subjectId: input.recordRef,
+			workspaceId: input.workspaceId,
+			appId: input.appId,
+			criteria: createAttachCriteria(input),
+		}),
+
+	previewAttachment: async (input: AttachWorkflowInput) =>
+		workflowApi.previewWorkflow({
+			subjectType: input.recordType as WorkflowSubjectType,
+			workspaceId: input.workspaceId,
+			appId: input.appId,
+			criteria: createAttachCriteria(input),
+		}),
+
+	approveStage: async (stageId: string) => {
+		const response = await ServerAxios.post<ApiEnvelope<unknown>>(
+			`${WORKFLOW_RUNTIME_URL}/stages/${encodeURIComponent(stageId)}/approve`,
+		);
+		return unwrapEnvelope<unknown>(response.data);
+	},
+
+	clarifyStage: async (stageId: string, reason: string) => {
+		const response = await ServerAxios.post<ApiEnvelope<unknown>>(
+			`${WORKFLOW_RUNTIME_URL}/stages/${encodeURIComponent(stageId)}/clarify`,
+			{ reason },
+		);
+		return unwrapEnvelope<unknown>(response.data);
+	},
+
+	activateFirstStage: async ({
+		workflowId,
+		stageEdits,
+	}: ActivateFirstStagePayload) => {
+		const response = await ServerAxios.post<ApiEnvelope<unknown>>(
+			`${WORKFLOW_RUNTIME_URL}/stages/activate-first-stage`,
+			{
+				workflowId,
+				...(stageEdits?.length ? { stageEdits } : {}),
+			},
+		);
+		return unwrapEnvelope<unknown>(response.data);
+	},
+
+	triggerDeviation: async (payload: TriggerDeviationPayload) => {
+		const response = await ServerAxios.post<ApiEnvelope<unknown>>(
+			`${WORKFLOW_RUNTIME_URL}/stages/trigger-deviation`,
+			payload,
+		);
+		return unwrapEnvelope<unknown>(response.data);
+	},
+
+	getInstance: async <T = unknown>(id: string): Promise<T> => {
+		const response = await ServerAxios.get<ApiEnvelope<T>>(
+			`${WORKFLOW_RUNTIME_URL}/workflow-instance/${encodeURIComponent(id)}`,
+		);
+		return unwrapEnvelope<T>(response.data).data;
+	},
+
+	getHistory: async <T = unknown>(id: string): Promise<T> => {
+		const response = await ServerAxios.get<ApiEnvelope<T>>(
+			`${WORKFLOW_RUNTIME_URL}/workflow-instance/${encodeURIComponent(id)}/history`,
+		);
+		return unwrapEnvelope<T>(response.data).data;
+	},
+
+	// EPC-specific workflow helpers retained here so there is no second workflow API.
+	initiateDeviation: async (epcId: string, payload: EventDeviationPayload) => {
+		const isFormData = payload instanceof FormData;
+		const response = await ServerAxios.post(
+			`/epc/${encodeURIComponent(epcId)}/initiate-deviation`,
+			payload,
+			isFormData
+				? { headers: { "Content-Type": "multipart/form-data" } }
+				: undefined,
+		);
+		return response.data;
+	},
+
+	getComments: async (epcId: string) => {
+		const response = await ServerAxios.get(
+			`/comment/EVENT_PROPOSAL/${encodeURIComponent(epcId)}/activity`,
+		);
+		return unwrapData<unknown>(response.data);
+	},
+
+	createApprovalComment: async (payload: {
+		approvalId: string;
+		message: string;
+		to?: string[];
+		cc?: string[];
+	}) => {
+		const response = await ServerAxios.post<ApiEnvelope<unknown>>(
+			"/comment",
+			payload,
+		);
+		return unwrapEnvelope<unknown>(response.data);
+	},
+
+	createCreatorComment: async (payload: {
+		epcId: string;
+		message: string;
+		to?: string[];
+		cc?: string[];
+	}) => {
+		const response = await ServerAxios.post<ApiEnvelope<unknown>>(
+			`/comment/EVENT_PROPOSAL/${encodeURIComponent(payload.epcId)}/creator-comment`,
+			payload,
+		);
+		return unwrapEnvelope<unknown>(response.data);
 	},
 };

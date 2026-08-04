@@ -1,30 +1,28 @@
 import { useMemo, useState } from "react";
-import { GitBranch, LibraryBig, Sparkles } from "lucide-react";
-import Card from "../../../components/common/Card";
+import { LibraryBig, Sparkles } from "lucide-react";
+
+import { SearchInput } from "../../../components/forms/SearchInput";
+
 import type {
 	EntryMode,
 	SaveMode,
-	WorkflowFilter,
+	WorkflowListScope,
 	WorkflowSummary,
-	WorkflowStage,
-	WorkflowApprover,
-	WorkflowStageErrors,
 } from "../types/types";
-
 import "../utils/workflow.css";
 import { WorkflowFetchList } from "./WorkflowFetchList";
-import { SearchInput } from "../../../components/forms/SearchInput";
-import WorkflowStagesForm from "./WorkflowStagesForm";
 
 export interface WorkflowEntrySectionProps {
 	sourceRecordRef?: string;
-	createdWorkflows: WorkflowSummary[];
-	assignedWorkflows: WorkflowSummary[];
+	workflows: WorkflowSummary[];
+	selectedFilter: WorkflowListScope;
+	onFilterChange: (filter: WorkflowListScope) => void;
 	onAttach: (workflow: WorkflowSummary) => void | Promise<void>;
 	onEditAndAttach: (
 		workflow: WorkflowSummary,
 		saveMode: SaveMode,
 	) => void | Promise<void>;
+	onCreate: () => void;
 	title?: string;
 	description?: string;
 	required?: boolean;
@@ -37,7 +35,10 @@ const filterWorkflows = (
 	search: string,
 ): WorkflowSummary[] => {
 	const keyword = search.trim().toLowerCase();
-	if (!keyword) return workflows;
+
+	if (!keyword) {
+		return workflows;
+	}
 
 	return workflows.filter((workflow) =>
 		`${workflow.name} ${workflow.description ?? ""}`
@@ -47,146 +48,36 @@ const filterWorkflows = (
 };
 
 export function WorkflowEntrySection({
-	sourceRecordRef,
-	createdWorkflows,
-	assignedWorkflows,
+	workflows,
+	selectedFilter,
+	onFilterChange,
 	onAttach,
 	onEditAndAttach,
-	title = "Approval workflow",
-	description = "Choose an existing workflow or build one for this request.",
-	required = true,
+	onCreate,
 	disabled = false,
 	loading = false,
 }: WorkflowEntrySectionProps) {
 	const [mode, setMode] = useState<EntryMode>("idle");
-	const [filter, setFilter] = useState<WorkflowFilter>("created");
-	const [search, setSearch] = useState<string>("");
-	const [stages, setStages] = useState<WorkflowStage[]>([]);
+	const [search, setSearch] = useState("");
 
-	const [errors, setErrors] = useState<WorkflowStageErrors[]>([]);
-	const [formError, setFormError] = useState<string | null>(null);
-
-	const currentUserId = "user-123";
-
-	const handleStageChange = <K extends keyof WorkflowStage>(
-		stageId: string,
-		key: K,
-		value: WorkflowStage[K],
-	) => {
-		setStages((prev) =>
-			prev.map((stage) =>
-				stage.id === stageId
-					? {
-							...stage,
-							[key]: value,
-						}
-					: stage,
-			),
-		);
-	};
-
-	const handleToggleStage = (stageId: string) => {
-		setStages((prev) =>
-			prev.map((stage) =>
-				stage.id === stageId
-					? {
-							...stage,
-							isExpanded: !stage.isExpanded,
-						}
-					: stage,
-			),
-		);
-	};
-
-	const handleAddApprover = (stageId: string, approver: WorkflowApprover) => {
-		setStages((prev) =>
-			prev.map((stage) =>
-				stage.id === stageId
-					? {
-							...stage,
-							approvers: [...stage.approvers, approver],
-						}
-					: stage,
-			),
-		);
-	};
-
-	const handleRemoveApprover = (stageId: string, approverId: string) => {
-		setStages((prev) =>
-			prev.map((stage) =>
-				stage.id === stageId
-					? {
-							...stage,
-							approvers: stage.approvers.filter((a) => a.id !== approverId),
-						}
-					: stage,
-			),
-		);
-	};
-
-	const handleAddStage = () => {
-		setStages((prev) => [
-			...prev,
-			{
-				id: crypto.randomUUID(),
-				stageOrder: prev.length + 1,
-				name: `Stage ${prev.length + 1}`,
-				minApprovals: 1,
-				approvers: [],
-				isExpanded: true,
-			},
-		]);
-	};
-
-	const handleBack = () => {
-		console.log("Back clicked");
-	};
-
-	const handleSubmit = () => {
-		console.log("Workflow", stages);
-
-		// validate and submit API
-	};
-	const selectMode = (nextMode: EntryMode) => {
-		setMode(nextMode);
-	};
-
-	const filteredCreatedWorkflows = useMemo(
-		() => filterWorkflows(createdWorkflows, search),
-		[createdWorkflows, search],
+	const filteredWorkflows = useMemo(
+		() => filterWorkflows(workflows, search),
+		[workflows, search],
 	);
-	const filteredAssignedWorkflows = useMemo(
-		() => filterWorkflows(assignedWorkflows, search),
-		[assignedWorkflows, search],
-	);
+
+	const handleUseExisting = () => {
+		setMode("fetch");
+	};
+
+	const handleCreate = () => {
+		setMode("create");
+		onCreate();
+	};
+
 	return (
-		<Card
-			className="workflow-entry-card"
-			title={
-				<div className="workflow-entry-heading">
-					<GitBranch size={18} />
-					<div className="workflow-entry-heading-copy">
-						<div className="workflow-entry-title-row">
-							<h3 className="workflow-entry-title">{title}</h3>
-						</div>
-						<p className="workflow-entry-description">
-							{description}
-							{sourceRecordRef ? (
-								<span className="workflow-entry-reference">
-									{" "}
-									Reference: {sourceRecordRef}
-								</span>
-							) : null}
-						</p>
-					</div>
-					{required ? (
-						<span className="workflow-entry-required">Required</span>
-					) : null}
-				</div>
-			}
-		>
+		<div>
 			<div
-				className="workflow-entry-options"
+				className="workflow-entry-options mb-4"
 				role="group"
 				aria-label="Workflow source"
 			>
@@ -195,11 +86,12 @@ export function WorkflowEntrySection({
 					className={`workflow-entry-option${
 						mode === "fetch" ? " workflow-entry-option--active" : ""
 					}`}
-					onClick={() => selectMode("fetch")}
-					disabled={disabled}
+					onClick={handleUseExisting}
+					disabled={disabled || loading}
 					aria-pressed={mode === "fetch"}
 				>
 					<LibraryBig size={18} aria-hidden="true" />
+
 					<span>
 						<strong>Use existing</strong>
 						<small>Reuse or customise an available workflow</small>
@@ -211,11 +103,12 @@ export function WorkflowEntrySection({
 					className={`workflow-entry-option${
 						mode === "create" ? " workflow-entry-option--active" : ""
 					}`}
-					onClick={() => selectMode("create")}
-					disabled={disabled}
+					onClick={handleCreate}
+					disabled={disabled || loading}
 					aria-pressed={mode === "create"}
 				>
 					<Sparkles size={18} aria-hidden="true" />
+
 					<span>
 						<strong>Create new</strong>
 						<small>Build stages and select approvers</small>
@@ -225,52 +118,25 @@ export function WorkflowEntrySection({
 
 			{mode === "fetch" ? (
 				<>
-					<div className="workflow-entry-create">
-						<div>
-							<p className="workflow-entry-create-title w-full">
-								Search all your workflows
-							</p>
-							{/* <p className="workflow-entry-create-copy">
-								Add, rename and reorder approval stages. You can attach it once
-								or save it as a reusable template.
-							</p> */}
-						</div>
-						<SearchInput
-							value={search}
-							onChange={setSearch}
-							placeholder="Search workflows..."
-						/>
-					</div>
+					<SearchInput
+						value={search}
+						onChange={setSearch}
+						placeholder="Search workflows..."
+						aria-label="Search available workflows"
+						className="w-full"
+					/>
+
 					<WorkflowFetchList
-						filter={filter}
-						onFilterChange={setFilter}
-						createdWorkflows={filteredCreatedWorkflows}
-						assignedWorkflows={filteredAssignedWorkflows}
+						filter={selectedFilter}
+						onFilterChange={onFilterChange}
+						workflows={filteredWorkflows}
 						onAttach={onAttach}
-						disabled={disabled}
 						onCustomise={(workflow) => onEditAndAttach(workflow, "once")}
+						disabled={disabled}
 						loading={loading}
 					/>
 				</>
 			) : null}
-
-			{mode === "create" ? (
-				<div className="py-4">
-					<WorkflowStagesForm
-						stages={stages}
-						errors={errors}
-						formError={formError}
-						currentUserId={currentUserId}
-						onStageChange={handleStageChange}
-						onToggleStage={handleToggleStage}
-						onRemoveApprover={handleRemoveApprover}
-						onAddApprover={handleAddApprover}
-						onBack={handleBack}
-						onAddStage={handleAddStage}
-						onSubmit={handleSubmit}
-					/>
-				</div>
-			) : null}
-		</Card>
+		</div>
 	);
 }

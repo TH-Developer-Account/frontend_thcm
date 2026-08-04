@@ -454,7 +454,7 @@ const VendorCreationFormOne = ({
 									handleEnclosureFilesChange(field, nextValues)
 								}
 								maxFiles={10}
-								kind="document"
+								kind="vendorDocument"
 								label={field.label}
 								description={field.description}
 								required={isEnclosureRequired(field)}
@@ -476,7 +476,7 @@ const VendorCreationFormOne = ({
 								onChange={(nextValue) =>
 									handleEnclosureChange(field, nextValue)
 								}
-								kind="document"
+								kind="vendorDocument"
 								label={field.label}
 								description={field.description}
 								required={isEnclosureRequired(field)}
@@ -530,7 +530,7 @@ const VendorCreationFormOne = ({
 												handleEnclosureChange(field, nextValue);
 											}
 										}}
-										kind="document"
+										kind="vendorDocument"
 										label="MSME Certificate"
 										description="Upload the MSME registration certificate."
 										required
@@ -580,7 +580,7 @@ const VendorCreationFormOne = ({
 												handleEnclosureChange(field, nextValue);
 											}
 										}}
-										kind="document"
+										kind="vendorDocument"
 										label="NDA Certificate"
 										description="Upload the signed NDA certificate."
 										required

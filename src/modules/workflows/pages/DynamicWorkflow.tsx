@@ -1,60 +1,60 @@
 import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
-import { useParams } from "react-router-dom";
 
 import { WorkflowFetchPage } from "./WorkflowFetchPage";
 
 type DynamicWorkflowProps = {
-	sourceRecordRef?: string;
-	recordType?: string;
-	onWorkflowAttached?: () => void;
+  // Required — this component is rendered by a parent page (e.g. a Vendor
+  // Onboarding or EPC detail view) that already knows the real record's
+  // id and type. There's no standalone route for this component, so
+  // there's no URL param to fall back to.
+  sourceRecordRef: string;
+  recordType: string;
+  onWorkflowAttached?: () => void;
 };
 
 const DynamicWorkflow = ({
-	sourceRecordRef,
-	recordType = "VENDOR_ONBOARDING",
-	onWorkflowAttached,
+  sourceRecordRef = "123",
+  recordType,
+  onWorkflowAttached,
 }: DynamicWorkflowProps) => {
-	const { recordRef } = useParams<{ recordRef?: string }>();
-	// const resolvedRecordRef = sourceRecordRef ?? recordRef;
-	const resolvedRecordRef = "11100992282";
-	return (
-		<PageSectionLayout>
-			<PageHeader
-				headerText="Workflow Onboarding Form"
-				navigation={{
-					variant: "breadcrumbs",
-					ariaLabel: "Workflow Onboarding Form",
-					breadcrumbs: [
-						{
-							label: "Home Screen",
-							href: "/",
-						},
-						{
-							label: "Workflow Listing",
-							href: "/workflow/listing",
-						},
-						{
-							label: "Workflow Onboarding Form",
-						},
-					],
-					separator: "›",
-				}}
-			/>
+  return (
+    <PageSectionLayout>
+      <PageHeader
+        headerText="Workflow Onboarding Form"
+        navigation={{
+          variant: "breadcrumbs",
+          ariaLabel: "Workflow Onboarding Form",
+          breadcrumbs: [
+            {
+              label: "Home Screen",
+              href: "/",
+            },
+            {
+              label: "Workflow Listing",
+              href: "/workflow/listing",
+            },
+            {
+              label: "Workflow Onboarding Form",
+            },
+          ],
+          separator: "›",
+        }}
+      />
 
-			{resolvedRecordRef ? (
-				<WorkflowFetchPage
-					sourceRecordRef={resolvedRecordRef}
-					recordType={recordType}
-					onWorkflowAttached={onWorkflowAttached}
-				/>
-			) : (
-				<div role="alert">
-					A source record is required to attach a workflow.
-				</div>
-			)}
-		</PageSectionLayout>
-	);
+      {sourceRecordRef ? (
+        <WorkflowFetchPage
+          sourceRecordRef={sourceRecordRef}
+          recordType={recordType}
+          onWorkflowAttached={onWorkflowAttached}
+        />
+      ) : (
+        <div role="alert">
+          A source record is required to attach a workflow.
+        </div>
+      )}
+    </PageSectionLayout>
+  );
 };
 
 export default DynamicWorkflow;

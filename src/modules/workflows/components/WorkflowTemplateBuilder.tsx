@@ -3,6 +3,7 @@ import { useState } from "react";
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
 import FormInput from "../../../components/forms/FormInput";
+
 import type {
 	SaveMode,
 	WorkflowApprover,
@@ -11,6 +12,7 @@ import type {
 	WorkflowStage,
 	WorkflowStageErrors,
 } from "../types/types";
+
 import {
 	addStageApprover,
 	removeStageApprover,
@@ -18,6 +20,7 @@ import {
 	updateStageField,
 	validateWorkflow,
 } from "../utils/workflow.helpers";
+
 import "../utils/workflow.css";
 import WorkflowStagesForm from "./WorkflowStagesForm";
 
@@ -48,6 +51,7 @@ export function WorkflowTemplateBuilder({
 	disabled = false,
 }: WorkflowTemplateBuilderProps) {
 	const [step, setStep] = useState<"stages" | "usage">("stages");
+
 	const [stages, setStages] = useState<WorkflowStage[]>(() =>
 		initialStages.map((stage, index) => {
 			const stageId = stage.id || createStageId();
@@ -61,18 +65,25 @@ export function WorkflowTemplateBuilder({
 					? stage.approvers.map((approver) => ({
 							...approver,
 							stageId,
-							user: { ...approver.user },
+							user: {
+								...approver.user,
+							},
 						}))
 					: [],
 			};
 		}),
 	);
+
 	const [saveMode, setSaveMode] = useState<SaveMode>(
 		initialSaveAsTemplate ? "template" : "once",
 	);
+
 	const [templateName, setTemplateName] = useState("");
+
 	const [stageErrors, setStageErrors] = useState<WorkflowStageErrors[]>([]);
+
 	const [stageFormError, setStageFormError] = useState<string | null>(null);
+
 	const [saving, setSaving] = useState(false);
 
 	const handleStageChange = <K extends keyof WorkflowStage>(
@@ -85,7 +96,10 @@ export function WorkflowTemplateBuilder({
 
 	const handleAddStage = () => {
 		setStages((current) => [
-			...current.map((stage) => ({ ...stage, isExpanded: false })),
+			...current.map((stage) => ({
+				...stage,
+				isExpanded: false,
+			})),
 			{
 				id: createStageId(),
 				stageOrder: current.length + 1,
@@ -100,13 +114,17 @@ export function WorkflowTemplateBuilder({
 
 	const handleContinue = () => {
 		const validation = validateWorkflow(stages);
+
 		setStageErrors(validation.stageErrors);
 		setStageFormError(validation.formError ?? null);
 
 		const hasStageErrors = validation.stageErrors.some(
 			(stageError) => Object.keys(stageError).length > 0,
 		);
-		if (validation.formError || hasStageErrors) return;
+
+		if (validation.formError || hasStageErrors) {
+			return;
+		}
 
 		setStep("usage");
 	};
@@ -121,6 +139,7 @@ export function WorkflowTemplateBuilder({
 		}
 
 		setSaving(true);
+
 		try {
 			await onAttach({
 				sourceRecordRef,
@@ -173,22 +192,25 @@ export function WorkflowTemplateBuilder({
 	return (
 		<Card title={title}>
 			<div className="workflow-customise-panel">
-				<div>
+				<div className="workflow-customise-header">
 					<p className="workflow-customise-title">
-						How should your customised version be used?
+						How should this customised workflow be used?
 					</p>
+
 					<p className="workflow-customise-copy">
 						The original workflow will remain unchanged.
 					</p>
 				</div>
 
-				<div className="workflow-save-options">
+				<div
+					className="workflow-save-options"
+					role="radiogroup"
+					aria-label="Workflow usage"
+				>
 					<label
-						className={
-							saveMode === "once"
-								? "workflow-save-option workflow-save-option--active"
-								: "workflow-save-option"
-						}
+						className={`workflow-save-option ${
+							saveMode === "once" ? "workflow-save-option--active" : ""
+						}`}
 					>
 						<input
 							type="radio"
@@ -197,18 +219,17 @@ export function WorkflowTemplateBuilder({
 							onChange={() => setSaveMode("once")}
 							disabled={disabled || saving}
 						/>
+
 						<span>
 							<strong>Use once</strong>
-							<small>Only for this form</small>
+							<small>Use only for this vendor onboarding form.</small>
 						</span>
 					</label>
 
 					<label
-						className={
-							saveMode === "template"
-								? "workflow-save-option workflow-save-option--active"
-								: "workflow-save-option"
-						}
+						className={`workflow-save-option ${
+							saveMode === "template" ? "workflow-save-option--active" : ""
+						}`}
 					>
 						<input
 							type="radio"
@@ -217,37 +238,51 @@ export function WorkflowTemplateBuilder({
 							onChange={() => setSaveMode("template")}
 							disabled={disabled || saving}
 						/>
+
 						<span>
 							<strong>Save as template</strong>
-							<small>Reuse in other forms</small>
+							<small>Save and reuse this workflow in other forms.</small>
 						</span>
 					</label>
 				</div>
 
-				{saveMode === "template" ? (
-					<FormInput
-						label="Template name"
-						value={templateName}
-						onChange={(event) => setTemplateName(event.target.value)}
-						placeholder="Enter a name for your workflow"
-						required
-						disabled={disabled || saving}
-					/>
-				) : null}
+				{saveMode === "template" && (
+					<div className="workflow-customise-name">
+						<FormInput
+							name="templateName"
+							label="Template name"
+							value={templateName}
+							onChange={(event) => setTemplateName(event.target.value)}
+							placeholder="Enter a name for your workflow"
+							helperText="Use a clear name so you can identify this workflow later."
+							required
+							disabled={disabled || saving}
+						/>
+					</div>
+				)}
 
-				<div className="workflow-form-actions">
+				<div className="workflow-customise-actions">
 					<Button
 						type="button"
-						text="Back"
+						text="Back to stages"
+						direction="back"
 						appearance="standard"
 						variant="outline"
 						size="sm"
 						onClick={() => setStep("stages")}
 						disabled={saving}
 					/>
+
 					<Button
 						type="button"
-						text={saving ? "Saving..." : "Continue"}
+						text={
+							saving
+								? "Saving..."
+								: saveMode === "template"
+									? "Save and use workflow"
+									: "Use workflow"
+						}
+						direction="forward"
 						appearance="standard"
 						variant="brand"
 						size="sm"

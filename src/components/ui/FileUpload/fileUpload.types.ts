@@ -3,7 +3,8 @@ export type FileUploadKind =
 	| "pdf"
 	| "document"
 	| "spreadsheet"
-	| "any";
+	| "any"
+	| "vendorDocument";
 
 export type FileUploadValue = {
 	id?: string;
