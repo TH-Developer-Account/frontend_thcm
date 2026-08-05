@@ -5,7 +5,7 @@ import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 
 import HelperTooltip from "../common/HelperTooltip";
 import ReadOnlyField from "./ReadOnlyField";
-import type { FormFieldMode } from "./FormInput";
+import type { FormFieldMode } from "./input.types";
 
 export interface BaseOption {
 	label: string;

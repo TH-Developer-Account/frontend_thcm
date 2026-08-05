@@ -210,20 +210,6 @@ const VendorCreationFormOne = ({
 							}
 						/>
 
-						{/* <SelectInput
-							mode={fieldMode}
-							name="state"
-							label="State"
-							placeholder="Select state"
-							options={STATES}
-							value={getSelectedOption(STATES, values.state)}
-							required
-							error={errors.state}
-							helperText="Select the applicable vendor state."
-							onChange={(option) =>
-								resolvedOnChange?.("state", option?.value ?? "")
-							}
-						/> */}
 						<SelectInput
 							mode={fieldMode}
 							name="state"
@@ -263,19 +249,6 @@ const VendorCreationFormOne = ({
 								}
 							}}
 						/>
-
-						{/* <FormInput
-							mode={fieldMode}
-							name="city"
-							label="City"
-							value={values.city ?? ""}
-							required
-							error={errors.city}
-							helperText="Vendor city."
-							onChange={(event) =>
-								resolvedOnChange?.("city", event.target.value)
-							}
-						/> */}
 
 						<FormInput
 							mode={fieldMode}

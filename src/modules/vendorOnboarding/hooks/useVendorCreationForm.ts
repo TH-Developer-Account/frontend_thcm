@@ -42,7 +42,6 @@ import type {
 	VendorFormErrors,
 	VendorOnboardingDocument,
 	VendorOnboardingStatus,
-	VendorViewerRole,
 } from "../types/vendorOnboarding.types";
 import { VENDOR_DOCUMENT_FIELDS } from "../types/vendorOnboarding.types";
 import {
@@ -1690,7 +1689,7 @@ export function useVendorCreationForm({
 		canSendBackToVendor:
 			isThcmProposer && detailQuery.data?.status === "IN_REVIEW",
 		canAcceptAndClose:
-			detailQuery.data?.status === "APPROVED" && role === "EXTERNAL_APPROVER",
+			detailQuery.data?.status === "APPROVED" && isExternalApprover,
 
 		isLoading: isPublicForm ? publicQuery.isLoading : detailQuery.isLoading,
 
