@@ -1330,7 +1330,7 @@ REACT SELECT CONTAINER
 ===================================================== */
 @layer components {
 	.checkbox-field-row {
-		@apply flex min-w-0 items-start;
+		@apply flex min-w-0 items-center;
 		gap: var(--space-2);
 	}
 	.checkbox-control {

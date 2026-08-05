@@ -23,7 +23,6 @@ const VendorOnboardingPage = () => {
 	const navigate = useNavigate();
 
 	const form = useVendorCreationForm({
-		role: "THCM_EMPLOYEE",
 		vendorRequestId: onboardingId,
 		isPublicForm: false,
 	});

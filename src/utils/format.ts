@@ -125,6 +125,14 @@ export const toPrismaDateTime = (date?: string | Date | null) => {
 	return new Date(`${date}T00:00:00.000Z`).toISOString();
 };
 
+export const toDateRange = (from?: string | null, to?: string | null) => {
+	if (!from && !to) return undefined;
+
+	return {
+		from: from ? new Date(from) : undefined,
+		to: to ? new Date(to) : undefined,
+	};
+};
 /* =========================
    CURRENCY
 ========================= */

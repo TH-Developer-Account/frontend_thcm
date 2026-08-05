@@ -292,7 +292,7 @@ export default function DatePickerInput({
 								onClick={handleApply}
 								disabled={!canApply}
 								text="Apply"
-								status="brand"
+								variant="brand"
 								className="px-2 py-1 text-[10px]"
 							/>
 						</div>
