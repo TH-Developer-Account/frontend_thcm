@@ -33,8 +33,8 @@ export type VendorCreationFormOneValues = {
 	state?: string;
 	mobile?: string;
 	email?: string;
-	bank?: string;
-	branch?: string;
+	bankName?: string;
+	bankBranch?: string;
 	ifscCode?: string;
 	bankAddress?: string;
 	accountNumber?: string;

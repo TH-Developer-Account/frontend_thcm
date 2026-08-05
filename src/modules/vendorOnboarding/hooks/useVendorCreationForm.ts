@@ -393,6 +393,23 @@ export function useVendorCreationFormOneController({
 		(key: "msmeVendor" | "ndaObtained", value: string) => {
 			onChange?.(key, value);
 
+			const conditionalDocumentType: VendorDocumentType =
+				key === "msmeVendor" ? "MSME_CERTIFICATE" : "NDA_CERTIFICATE";
+
+			if (value !== "Yes") {
+				setEnclosureUploads((current) =>
+					current.map((upload) =>
+						upload.documentType === conditionalDocumentType
+							? { ...upload, value: null }
+							: upload,
+					),
+				);
+
+				if (key === "msmeVendor") {
+					onChange?.("msmeCertificateAttached", "No");
+				}
+			}
+
 			setEnclosureErrors((current) => {
 				const next = { ...current };
 
@@ -1213,17 +1230,22 @@ export function useVendorCreationForm({
 		if (!submission || !normalizedToken) {
 			return;
 		}
+		const missing = getMissingDocuments(submission, formOneValues);
 
-		const missing = getMissingDocuments(submission);
-
-		if (!submission.dpdpConsent || missing.length > 0) {
+		if (!submission.dpdpConsent) {
 			showToast({
 				type: "error",
 				title: "Required information missing",
-				description:
-					missing.length > 0
-						? `Please upload: ${missing.join(", ")}`
-						: "Please accept the Data Privacy Notice.",
+				description: "Please accept the Data Privacy Notice.",
+			});
+
+			return;
+		}
+		if (missing.length > 0) {
+			showToast({
+				type: "error",
+				title: "Required information missing",
+				description: `Please upload: ${missing.join(", ")}`,
 			});
 
 			return;

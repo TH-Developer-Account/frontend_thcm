@@ -322,25 +322,27 @@ const VendorCreationFormOne = ({
 				<div className="vendor-onboarding-form-grid">
 					<FormInput
 						mode={fieldMode}
-						name="bank"
+						name="bankName"
 						label="Bank"
-						value={values.bank ?? ""}
+						value={values.bankName ?? ""}
 						required
-						error={errors.bank}
+						error={errors.bankName}
 						helperText="Bank name."
-						onChange={(event) => resolvedOnChange?.("bank", event.target.value)}
+						onChange={(event) =>
+							resolvedOnChange?.("bankName", event.target.value)
+						}
 					/>
 
 					<FormInput
 						mode={fieldMode}
-						name="branch"
+						name="bankBranch"
 						label="Branch"
-						value={values.branch ?? ""}
+						value={values.bankBranch ?? ""}
 						required
-						error={errors.branch}
+						error={errors.bankBranch}
 						helperText="Bank branch."
 						onChange={(event) =>
-							resolvedOnChange?.("branch", event.target.value)
+							resolvedOnChange?.("bankBranch", event.target.value)
 						}
 					/>
 
@@ -392,7 +394,7 @@ const VendorCreationFormOne = ({
 						name="confirmAccountNumber"
 						label="Confirm A/C No."
 						id="no-paste"
-						value={values.confirmAccountNumber ?? ""}
+						value={values.confirmAccountNumber || values.accountNumber || ""}
 						required
 						inputMode="numeric"
 						error={errors.confirmAccountNumber}

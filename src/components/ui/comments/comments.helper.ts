@@ -107,9 +107,31 @@ export const getWorkflowCommentContext = ({
 
 	const isCreator = isSameWorkflowUser(creator, currentUser);
 
-	const mentionableUsers = workflowData.mentionableUsers
-		.map((user) => toCommentUser(user as WorkflowMentionUser, "Approver"))
-		.filter((user): user is CommentUser => user !== null);
+	const mentionableUsersMap = new Map<string, CommentUser>();
+
+	const addMentionableUser = (
+		user?: WorkflowMentionUser | MentionableUserInput | null,
+		fallbackName = "Approver",
+	) => {
+		const commentUser = toCommentUser(
+			user as WorkflowMentionUser,
+			fallbackName,
+		);
+
+		if (!commentUser) {
+			return;
+		}
+
+		mentionableUsersMap.set(commentUser.id, commentUser);
+	};
+
+	// Add every workflow approver
+	workflowData.mentionableUsers.forEach((user) => {
+		addMentionableUser(user as WorkflowMentionUser, "Approver");
+	});
+
+	// Add creator
+	addMentionableUser(creator, "Creator");
 
 	const ccEmails = new Set<string>();
 
@@ -126,22 +148,18 @@ export const getWorkflowCommentContext = ({
 	});
 
 	return {
-		// Equivalent to the old getApprovalIdForUser().
 		approvalId: workflowData.currentUserApproval?.id ?? null,
 
 		isCreator,
 
-		// Equivalent to the old getIsUserInCurrentStage().
 		isCurrentApprover: workflowData.isCurrentStageApprover,
 
 		canComment: isCreator || workflowData.isCurrentStageApprover,
 
-		// Every unique approver from the complete workflow.
-		mentionableUsers,
+		mentionableUsers: [...mentionableUsersMap.values()],
 
 		ccEmails: [...ccEmails],
 
-		// Expose the complete data for other comment permissions/UI.
 		workflowData,
 	};
 };

@@ -51,8 +51,8 @@ export const buildVendorUpdatePayload = (
 	email: toNullableString(values.email),
 	msmeVendor: toNullableBoolean(values.msmeVendor),
 	msmeCertAttached: toNullableBoolean(values.msmeCertificateAttached),
-	bankName: toNullableString(values.bank),
-	bankBranch: toNullableString(values.branch),
+	bankName: toNullableString(values.bankName),
+	bankBranch: toNullableString(values.bankBranch),
 	ifscCode: toNullableString(values.ifscCode),
 	bankAddress: toNullableString(values.bankAddress),
 	accountNumber: toNullableString(values.accountNumber),
@@ -113,8 +113,11 @@ export const normalizeVendorOnboardingResponse = (
 		};
 	});
 
-	const hasDocument = (type: string) =>
-		documents.some((document) => document.documentType === type) ? "Yes" : "No";
+	const hasDocument = (type: VendorDocumentType): boolean =>
+		documents.some((document) => document.documentType === type);
+
+	const getDocumentStatus = (type: VendorDocumentType): string =>
+		toYesNo(hasDocument(type));
 
 	return {
 		id: raw.id,
@@ -129,22 +132,24 @@ export const normalizeVendorOnboardingResponse = (
 			state: raw.state ?? "",
 			mobile: raw.mobile ?? "",
 			email: raw.email ?? "",
-			bank: raw.bankName ?? "",
-			branch: raw.bankBranch ?? "",
+			bankName: raw.bankName ?? "",
+			bankBranch: raw.bankBranch ?? "",
 			ifscCode: raw.ifscCode ?? "",
 			bankAddress: raw.bankAddress ?? "",
 			accountNumber: raw.accountNumber ?? "",
 			gstin: raw.gstin ?? "",
 			pan: raw.pan ?? "",
 			entityRegistrationNumber: raw.entityRegNo ?? "",
-			gstCertificate: hasDocument("GST_CERTIFICATE"),
-			panNumber: hasDocument("PAN_DOCUMENT"),
-			bankCancelledCheque: hasDocument("CANCELLED_CHEQUE"),
-			certificateOfIncorporation: hasDocument("INCORPORATION_CERTIFICATE"),
-			msmeCertificate: hasDocument("MSME_CERTIFICATE"),
-			ndaCertificate: hasDocument("NDA_CERTIFICATE"),
+			gstCertificate: getDocumentStatus("GST_CERTIFICATE"),
+			panNumber: getDocumentStatus("PAN_DOCUMENT"),
+			bankCancelledCheque: getDocumentStatus("CANCELLED_CHEQUE"),
+			certificateOfIncorporation: getDocumentStatus(
+				"INCORPORATION_CERTIFICATE",
+			),
+			msmeCertificate: getDocumentStatus("MSME_CERTIFICATE"),
+			ndaCertificate: getDocumentStatus("NDA_CERTIFICATE"),
 			ndaObtained: hasDocument("NDA_CERTIFICATE")
-				? toYesNo(true)
+				? "Yes"
 				: toYesNo(raw.ndaObtained),
 		},
 		partTwo: {
@@ -231,17 +236,33 @@ export const getErrorMessage = (error: unknown, fallback: string): string => {
 
 export const getMissingDocuments = (
 	submission: VendorCreationFormOneSubmission,
-): VendorDocumentType[] =>
-	VENDOR_DOCUMENT_FIELDS.filter((field) => field.required)
-		.filter(
-			(field) =>
-				!submission.enclosureUploads.some(
-					(item) =>
-						item.documentType === field.documentType &&
-						item.value?.file instanceof File,
-				),
-		)
-		.map((field) => field.documentType);
+	values: VendorCreationFormOneValues,
+	requireDocuments = true,
+): string[] => {
+	if (!requireDocuments) {
+		return [];
+	}
+
+	const uploadedDocumentTypes = new Set(
+		submission.enclosureUploads
+			.filter((upload) => Boolean(upload.value?.file || upload.value?.url))
+			.map((upload) => upload.documentType),
+	);
+
+	return VENDOR_DOCUMENT_FIELDS.filter((field) => {
+		if (field.documentType === "MSME_CERTIFICATE") {
+			return values.msmeVendor === "Yes";
+		}
+
+		if (field.documentType === "NDA_CERTIFICATE") {
+			return values.ndaObtained === "Yes";
+		}
+
+		return field.required;
+	})
+		.filter((field) => !uploadedDocumentTypes.has(field.documentType))
+		.map((field) => field.label);
+};
 
 export const getOnboardingSearchPlaceholder = (
 	filter: VendorListingFilter,
