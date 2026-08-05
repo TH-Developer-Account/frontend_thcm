@@ -54,6 +54,7 @@ import {
 	useAssignWorkflowMutation,
 	useClarifyWorkflowStageMutation,
 } from "../../workflows/context/useWorkflowMutations";
+import type { MentionableUserInput } from "../../../components/ui/comments";
 
 export const vendorOnboardingSteps = [
 	{ id: 1, label: "Vendor filled details" },
@@ -905,12 +906,8 @@ export function useVendorCreationForm({
 		[activeWorkflow, user?.email, user?.id],
 	);
 
-	const {
-		canActNow,
-		isExternalApprover,
-		mentionableUsers,
-		isCurrentStageApprover,
-	} = workflowApproverData;
+	const { canActNow, isExternalApprover, isCurrentStageApprover } =
+		workflowApproverData;
 
 	type VendorUpdatePayload = Parameters<
 		typeof updateMutation.mutateAsync
@@ -1663,6 +1660,22 @@ export function useVendorCreationForm({
 		}
 	}, [isDownloadingPdf, pdfUrl, referenceNumber, showToast, vendorRequestId]);
 
+	const creator = React.useMemo<MentionableUserInput | null>(() => {
+		const createdBy = detailQuery.data?.createdBy;
+
+		if (!createdBy?.id) {
+			return null;
+		}
+
+		return {
+			id: createdBy.id,
+			first_name: createdBy.first_name,
+			last_name: createdBy.last_name,
+			email: createdBy.email,
+			avatarUrl: createdBy.avatarUrl,
+		};
+	}, [detailQuery.data?.createdBy]);
+
 	const mutationLoading =
 		updateMutation.isPending ||
 		submitMutation.isPending ||
@@ -1764,7 +1777,6 @@ export function useVendorCreationForm({
 
 		activeWorkflow,
 		workflowApproverData,
-		mentionableUsers,
 		workflowStages,
 		assignedWorkflowStages,
 		pendingWorkflowSelection,
@@ -1776,7 +1788,8 @@ export function useVendorCreationForm({
 			activateFirstStageLoading ||
 			detailQuery.isFetching,
 
-		creator: detailQuery.data,
+		creator: creator,
+		vendorDetail: detailQuery.data,
 	};
 }
 

@@ -51,18 +51,14 @@ const VendorOnboardingReadOnlyView = ({
 		isError,
 		canEditMainForm,
 		workflowStages,
-		user,
 		creator,
-
+		vendorDetail,
 		pdfUrl,
 		pdfPreviewOpen,
-		// isPreparingPdf,
 		isDownloadingPdf,
-		// handleViewPdf,
 		handleDownloadPdf,
 		closePdfPreview,
 	} = form;
-
 	const { handleSendBackToVendor } = useVendorOnboardingInitiation();
 
 	const handleBackToListing = () => {
@@ -82,7 +78,8 @@ const VendorOnboardingReadOnlyView = ({
 				{ responseType: "blob" },
 			);
 
-			const referenceNumber = creator?.referenceNumber?.trim() || onboardingId;
+			const referenceNumber =
+				vendorDetail?.referenceNumber?.trim() || onboardingId;
 
 			const blobUrl = window.URL.createObjectURL(response.data as Blob);
 
@@ -106,7 +103,6 @@ const VendorOnboardingReadOnlyView = ({
 			setIsExportingExcel(false);
 		}
 	};
-
 	const actions: ActionMenuItem<string>[] = [
 		// {
 		// 	id: "view-pdf",
@@ -216,7 +212,7 @@ const VendorOnboardingReadOnlyView = ({
 							<VendorCommentSection
 								onboardingId={onboardingId}
 								workflow={workflowStages}
-								creator={user}
+								creator={creator}
 							/>
 						}
 					/>

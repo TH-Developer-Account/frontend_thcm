@@ -394,7 +394,7 @@ const VendorCreationFormOne = ({
 						name="confirmAccountNumber"
 						label="Confirm A/C No."
 						id="no-paste"
-						value={values.confirmAccountNumber || values.accountNumber || ""}
+						value={values.confirmAccountNumber || ""}
 						required
 						inputMode="numeric"
 						error={errors.confirmAccountNumber}
