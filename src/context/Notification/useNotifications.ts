@@ -41,7 +41,7 @@ export type NotificationType =
 
 export type Notification = {
   id: string;
-  type: NotificationType;
+  type: string;
   title: string;
   body: string;
   link: string | null;
