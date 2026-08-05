@@ -3,6 +3,7 @@ import {
 	Database,
 	FileText,
 	HatGlasses,
+	Hospital,
 	Megaphone,
 	MonitorCog,
 	PackageSearch,
@@ -43,6 +44,14 @@ export const actions = [
 			"Manage vendor registration, verification, and approval processes.",
 		path: "/workflow/listing",
 		appKey: "WORKFLOW",
+		isActive: false,
+	},
+	{
+		icon: Hospital,
+		title: "Medical Forms",
+		description: "Configure and compare machinery specs for customer needs.",
+		path: "/medical-claim/form/create",
+		appKey: "MEDICAL",
 		isActive: false,
 	},
 	{

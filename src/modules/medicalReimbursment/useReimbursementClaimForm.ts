@@ -1,57 +1,51 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import {
-	EMPTY_REIMBURSEMENT_CLAIM_VALUES,
-	type ReimbursementClaimCategoryTotals,
+	EMPTY_CLAIM_ATTACHMENTS,
+	type ApprovalStage,
+	type ClaimHeadKey,
+	type ReimbursementClaimAttachments,
 	type ReimbursementClaimFormErrors,
 	type ReimbursementClaimFormValues,
 	type ReimbursementClaimSubmission,
 } from "./reimbursementClaim.types";
+import type { FileUploadValue } from "../../components/ui/FileUpload/fileUpload.types";
 
-const AMOUNT_FIELDS: Array<keyof ReimbursementClaimFormValues> = [
-	"medicalAdvanceAmount",
-	"companySettledAmount",
-	"visitFeePerVisit",
-	"doctorMedicineAmount",
-	"injectionInvestigationAmount",
-	"ecgXrayOtherAmount",
-	"lensCost",
-	"frameCost",
-	"healthCheckupAmount",
-	"excessHospitalizationAmount",
-	"officeVisitFeesAmount",
-	"officeMedicalAmount",
-	"officeOphthalmicAmount",
-	"officeHealthCheckupAmount",
-	"officeExcessHospitalizationAmount",
-	"passedAmount",
-];
+const EMPTY_VALUES: ReimbursementClaimFormValues = {
+	location: "",
+	employeeName: "",
+	ticketNumberOrGrade: "",
+	patientName: "",
+	relationshipWithEmployee: "",
+	medicalAdvanceAmount: "",
+	companySettledAmount: "",
+	descriptionOfIllness: "",
+	numberOfVisits: "",
+	visitFeePerVisit: "",
+	doctorMedicineAmount: "",
+	injectionInvestigationAmount: "",
+	ecgXrayOtherAmount: "",
+	lensCost: "",
+	frameCost: "",
+	patientAge: "",
+	lastHealthCheckupDate: "",
+	healthCheckupAmount: "",
+	excessHospitalizationAmount: "",
+	declarationAccepted: false,
+	employeeSignature: "",
+	claimDate: "",
+	officeReference: "",
+	officeVisitFeesAmount: "",
+	officeMedicalAmount: "",
+	officeOphthalmicAmount: "",
+	officeHealthCheckupAmount: "",
+	officeExcessHospitalizationAmount: "",
+	passedBy: "",
+	passedAmount: "",
+	passedDate: "",
+};
 
-const CLAIM_TOTAL_INPUT_FIELDS = new Set<keyof ReimbursementClaimFormValues>([
-	"numberOfVisits",
-	"visitFeePerVisit",
-	"doctorMedicineAmount",
-	"injectionInvestigationAmount",
-	"ecgXrayOtherAmount",
-	"lensCost",
-	"frameCost",
-	"healthCheckupAmount",
-	"excessHospitalizationAmount",
-]);
-
-const REQUIRED_TEXT_FIELDS: Array<
-	keyof Pick<
-		ReimbursementClaimFormValues,
-		| "location"
-		| "employeeName"
-		| "ticketNumberOrGrade"
-		| "patientName"
-		| "relationshipWithEmployee"
-		| "descriptionOfIllness"
-		| "employeeSignature"
-		| "claimDate"
-	>
-> = [
+const REQUIRED_FIELDS: Array<keyof ReimbursementClaimFormValues> = [
 	"location",
 	"employeeName",
 	"ticketNumberOrGrade",
@@ -61,252 +55,207 @@ const REQUIRED_TEXT_FIELDS: Array<
 	"employeeSignature",
 	"claimDate",
 ];
+export function deriveClaimStatusLabel(stages: ApprovalStage[]): string {
+	if (!stages.length) return "Draft";
+	if (stages.some((stage) => stage.status === "rejected")) return "Rejected";
+	if (stages.every((stage) => stage.status === "approved")) return "Approved";
+	if (stages.some((stage) => stage.status === "clarification_requested"))
+		return "Clarification Requested";
+	return "Pending Approval";
+}
+export function sanitizeAmountInput(raw: string): string {
+	const cleaned = raw.replace(/[^0-9.]/g, "");
+	const firstDot = cleaned.indexOf(".");
+	if (firstDot === -1) return cleaned;
 
-const REQUIRED_FIELD_MESSAGES: Partial<
-	Record<keyof ReimbursementClaimFormValues, string>
-> = {
-	location: "Location is required.",
-	employeeName: "Employee name is required.",
-	ticketNumberOrGrade: "Ticket number or grade is required.",
-	patientName: "Patient name is required.",
-	relationshipWithEmployee: "Relationship with employee is required.",
-	descriptionOfIllness: "Please describe the illness or treatment.",
-	employeeSignature: "Type the employee name as the signature.",
-	claimDate: "Claim date is required.",
+	const whole = cleaned.slice(0, firstDot);
+	const fraction = cleaned
+		.slice(firstDot + 1)
+		.replace(/\./g, "")
+		.slice(0, 2);
+	return `${whole}.${fraction}`;
+}
+
+export function sanitizeWholeNumberInput(raw: string): string {
+	return raw.replace(/[^0-9]/g, "");
+}
+
+const toNumber = (raw: string): number => {
+	const parsed = parseFloat(raw);
+	return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const toNumber = (value: string): number => {
-	const parsedValue = Number.parseFloat(value);
-	return Number.isFinite(parsedValue) ? parsedValue : 0;
-};
-
-export const sanitizeAmountInput = (value: string): string => {
-	const sanitizedValue = value.replace(/[^\d.]/g, "");
-	const [whole = "", ...decimalParts] = sanitizedValue.split(".");
-
-	if (decimalParts.length === 0) return whole;
-
-	return `${whole}.${decimalParts.join("").slice(0, 2)}`;
-};
-
-export const sanitizeWholeNumberInput = (value: string): string =>
-	value.replace(/\D/g, "");
-
-export const getReimbursementClaimCategoryTotals = (
-	values: ReimbursementClaimFormValues,
-): ReimbursementClaimCategoryTotals => ({
-	visitFees:
-		toNumber(values.numberOfVisits) * toNumber(values.visitFeePerVisit),
-	medical:
-		toNumber(values.doctorMedicineAmount) +
-		toNumber(values.injectionInvestigationAmount) +
-		toNumber(values.ecgXrayOtherAmount),
-	ophthalmic: toNumber(values.lensCost) + toNumber(values.frameCost),
-	healthCheckup: toNumber(values.healthCheckupAmount),
-	excessHospitalization: toNumber(values.excessHospitalizationAmount),
-});
-
-export const getReimbursementClaimTotal = (
-	categoryTotals: ReimbursementClaimCategoryTotals,
-): number =>
-	Object.values(categoryTotals).reduce((total, amount) => total + amount, 0);
-
-export const getOfficeApprovedTotal = (
-	values: ReimbursementClaimFormValues,
-): number =>
-	[
-		values.officeVisitFeesAmount,
-		values.officeMedicalAmount,
-		values.officeOphthalmicAmount,
-		values.officeHealthCheckupAmount,
-		values.officeExcessHospitalizationAmount,
-	].reduce((total, amount) => total + toNumber(amount), 0);
-
-export const validateReimbursementClaim = (
-	values: ReimbursementClaimFormValues,
-	claimedTotal: number,
-): ReimbursementClaimFormErrors => {
-	const nextErrors: ReimbursementClaimFormErrors = {};
-
-	REQUIRED_TEXT_FIELDS.forEach((field) => {
-		if (!values[field].trim()) {
-			nextErrors[field] = REQUIRED_FIELD_MESSAGES[field];
-		}
-	});
-
-	AMOUNT_FIELDS.forEach((field) => {
-		const value = values[field];
-
-		if (typeof value === "string" && value && toNumber(value) < 0) {
-			nextErrors[field] = "Amount cannot be negative.";
-		}
-	});
-
-	const hasVisitCount = Boolean(values.numberOfVisits);
-	const hasVisitFee = Boolean(values.visitFeePerVisit);
-
-	if (hasVisitCount !== hasVisitFee) {
-		if (!hasVisitCount) {
-			nextErrors.numberOfVisits = "Enter the number of visits.";
-		}
-
-		if (!hasVisitFee) {
-			nextErrors.visitFeePerVisit = "Enter the fee per visit.";
-		}
-	}
-
-	if (values.healthCheckupAmount && !values.patientAge.trim()) {
-		nextErrors.patientAge =
-			"Patient age is required for an executive health check-up claim.";
-	}
-
-	if (values.healthCheckupAmount && !values.lastHealthCheckupDate) {
-		nextErrors.lastHealthCheckupDate = "Last health check-up date is required.";
-	}
-
-	if (claimedTotal <= 0) {
-		nextErrors.claimedTotal = "Enter at least one claim amount.";
-	}
-
-	if (!values.declarationAccepted) {
-		nextErrors.declarationAccepted =
-			"Please accept the declaration before submitting.";
-	}
-
-	return nextErrors;
-};
-
-interface UseReimbursementClaimFormOptions {
+interface UseReimbursementClaimFormArgs {
 	initialValues?: Partial<ReimbursementClaimFormValues>;
+	initialAttachments?: Partial<ReimbursementClaimAttachments>;
 	onSubmit?: (submission: ReimbursementClaimSubmission) => void | Promise<void>;
 	onSaveDraft?: (
 		submission: ReimbursementClaimSubmission,
 	) => void | Promise<void>;
 }
 
-export const useReimbursementClaimForm = ({
+export function useReimbursementClaimForm({
 	initialValues,
+	initialAttachments,
 	onSubmit,
 	onSaveDraft,
-}: UseReimbursementClaimFormOptions = {}) => {
-	const getInitialValues = (): ReimbursementClaimFormValues => ({
-		...EMPTY_REIMBURSEMENT_CLAIM_VALUES,
+}: UseReimbursementClaimFormArgs) {
+	const [values, setValues] = useState<ReimbursementClaimFormValues>({
+		...EMPTY_VALUES,
 		...initialValues,
 	});
-
-	const [values, setValues] =
-		useState<ReimbursementClaimFormValues>(getInitialValues);
-	const [errors, setErrors] = useState<ReimbursementClaimFormErrors>({});
-	const [loadingAction, setLoadingAction] = useState<"submit" | "draft" | null>(
-		null,
+	const [attachments, setAttachments] = useState<ReimbursementClaimAttachments>(
+		{
+			...EMPTY_CLAIM_ATTACHMENTS,
+			...initialAttachments,
+		},
 	);
-	const [mutationError, setMutationError] = useState("");
+	const [errors, setErrors] = useState<ReimbursementClaimFormErrors>({});
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [isSavingDraft, setIsSavingDraft] = useState(false);
+	const [mutationError, setMutationError] = useState<string | null>(null);
 
 	const categoryTotals = useMemo(
-		() => getReimbursementClaimCategoryTotals(values),
+		() => ({
+			visitFees:
+				toNumber(values.numberOfVisits) * toNumber(values.visitFeePerVisit),
+			medical:
+				toNumber(values.doctorMedicineAmount) +
+				toNumber(values.injectionInvestigationAmount) +
+				toNumber(values.ecgXrayOtherAmount),
+			ophthalmic: toNumber(values.lensCost) + toNumber(values.frameCost),
+		}),
 		[values],
 	);
+
 	const claimedTotal = useMemo(
-		() => getReimbursementClaimTotal(categoryTotals),
-		[categoryTotals],
+		() =>
+			categoryTotals.visitFees +
+			categoryTotals.medical +
+			categoryTotals.ophthalmic +
+			toNumber(values.healthCheckupAmount) +
+			toNumber(values.excessHospitalizationAmount),
+		[
+			categoryTotals,
+			values.healthCheckupAmount,
+			values.excessHospitalizationAmount,
+		],
 	);
+
 	const officeApprovedTotal = useMemo(
-		() => getOfficeApprovedTotal(values),
-		[values],
+		() =>
+			toNumber(values.officeVisitFeesAmount) +
+			toNumber(values.officeMedicalAmount) +
+			toNumber(values.officeOphthalmicAmount) +
+			toNumber(values.officeHealthCheckupAmount) +
+			toNumber(values.officeExcessHospitalizationAmount),
+		[
+			values.officeVisitFeesAmount,
+			values.officeMedicalAmount,
+			values.officeOphthalmicAmount,
+			values.officeHealthCheckupAmount,
+			values.officeExcessHospitalizationAmount,
+		],
 	);
 
-	const handleChange = <K extends keyof ReimbursementClaimFormValues>(
-		field: K,
-		value: ReimbursementClaimFormValues[K],
-	): void => {
-		setValues((currentValues) => ({
-			...currentValues,
-			[field]: value,
-		}));
-		setErrors((currentErrors) => {
-			const shouldClearFieldError = Boolean(currentErrors[field]);
-			const shouldClearTotalError =
-				CLAIM_TOTAL_INPUT_FIELDS.has(field) &&
-				Boolean(currentErrors.claimedTotal);
+	const handleChange = useCallback(
+		(field: keyof ReimbursementClaimFormValues, value: string | boolean) => {
+			setValues((prev) => ({ ...prev, [field]: value }));
+			setErrors((prev) =>
+				prev[field] ? { ...prev, [field]: undefined } : prev,
+			);
+		},
+		[],
+	);
 
-			if (!shouldClearFieldError && !shouldClearTotalError) {
-				return currentErrors;
+	const handleAttachmentsChange = useCallback(
+		(head: ClaimHeadKey, nextFiles: FileUploadValue[]) => {
+			setAttachments((prev) => ({ ...prev, [head]: nextFiles }));
+		},
+		[],
+	);
+
+	const validate = useCallback((): ReimbursementClaimFormErrors => {
+		const nextErrors: ReimbursementClaimFormErrors = {};
+
+		REQUIRED_FIELDS.forEach((field) => {
+			if (!String(values[field]).trim()) {
+				nextErrors[field] = "This field is required.";
 			}
-
-			const nextErrors = { ...currentErrors };
-			delete nextErrors[field];
-			if (shouldClearTotalError) delete nextErrors.claimedTotal;
-			return nextErrors;
 		});
 
-		if (mutationError) setMutationError("");
-	};
+		if (!values.declarationAccepted) {
+			nextErrors.declarationAccepted =
+				"Please accept the declaration to continue.";
+		}
 
-	const createSubmission = (): ReimbursementClaimSubmission => ({
-		values,
-		categoryTotals,
-		claimedTotal,
-		officeApprovedTotal,
-	});
+		if (claimedTotal <= 0) {
+			nextErrors.claimedTotal =
+				"Add at least one claimable amount before submitting.";
+		}
 
-	const handleSubmit = async (): Promise<void> => {
-		if (!onSubmit || loadingAction) return;
+		return nextErrors;
+	}, [values, claimedTotal]);
 
-		const nextErrors = validateReimbursementClaim(values, claimedTotal);
+	const handleSubmit = useCallback(async () => {
+		console.log("Submitting reimbursement claim form with values:", values);
+		const nextErrors = validate();
 		setErrors(nextErrors);
-
 		if (Object.keys(nextErrors).length > 0) return;
 
-		setLoadingAction("submit");
-		setMutationError("");
-
+		setMutationError(null);
+		setIsSubmitting(true);
 		try {
-			await onSubmit(createSubmission());
-		} catch {
+			await onSubmit?.({ values, attachments });
+		} catch (error) {
 			setMutationError(
-				"Unable to submit the reimbursement claim. Please try again.",
+				error instanceof Error
+					? error.message
+					: "Something went wrong while submitting the claim.",
 			);
 		} finally {
-			setLoadingAction(null);
+			setIsSubmitting(false);
 		}
-	};
+	}, [validate, onSubmit, values, attachments]);
 
-	const handleSaveDraft = async (): Promise<void> => {
-		if (!onSaveDraft || loadingAction) return;
-
-		setLoadingAction("draft");
-		setMutationError("");
-
+	const handleSaveDraft = useCallback(async () => {
+		setMutationError(null);
+		setIsSavingDraft(true);
 		try {
-			await onSaveDraft(createSubmission());
-		} catch {
+			await onSaveDraft?.({ values, attachments });
+		} catch (error) {
 			setMutationError(
-				"Unable to save the reimbursement claim draft. Please try again.",
+				error instanceof Error
+					? error.message
+					: "Something went wrong while saving the draft.",
 			);
 		} finally {
-			setLoadingAction(null);
+			setIsSavingDraft(false);
 		}
-	};
+	}, [onSaveDraft, values, attachments]);
 
-	const handleReset = (): void => {
-		setValues(getInitialValues());
+	const handleReset = useCallback(() => {
+		setValues({ ...EMPTY_VALUES, ...initialValues });
+		setAttachments({ ...EMPTY_CLAIM_ATTACHMENTS, ...initialAttachments });
 		setErrors({});
-		setMutationError("");
-	};
+		setMutationError(null);
+	}, [initialValues, initialAttachments]);
 
 	return {
 		values,
+		attachments,
 		errors,
 		categoryTotals,
 		claimedTotal,
 		officeApprovedTotal,
-		isLoading: loadingAction !== null,
-		isSubmitting: loadingAction === "submit",
-		isSavingDraft: loadingAction === "draft",
+		isLoading: isSubmitting || isSavingDraft,
+		isSubmitting,
+		isSavingDraft,
 		mutationError,
 		handleChange,
+		handleAttachmentsChange,
 		handleSubmit,
 		handleSaveDraft,
 		handleReset,
 	};
-};
+}
