@@ -8,62 +8,87 @@ import Card from "../../../components/common/Card";
 import { Modal } from "../../../components/common/Modal";
 import MultiSelectInput from "../../../components/forms/MultiSelectInput";
 import { SearchInput } from "../../../components/forms/SearchInput";
-import type { Option } from "../../../components/forms/input.types";
+import { FilterTabs } from "../../../components/ui/FilterTabs";
 import DataTable from "../../../components/ui/tables/DataTable/DataTable";
 import DataTableSkeleton from "../../../components/ui/tables/Skeletons/DataTableSkeleton";
 import { useToast } from "../../../context/Auth/AuthContext";
-import { useAuth } from "../../../context/Auth/useAuth";
-import { formatApps } from "../constant/workflow.constant";
-import { useWorkflow } from "../context/useWorkflows";
-import type { WorkflowRow } from "../types/types";
+
+import { getWorkflowErrorMessage } from "../api/workflow.api";
 import { workflowListFilterOptions } from "../constant/workflow.constant";
+import { useDeleteWorkflowMutation } from "../context/useWorkflowMutations";
+import { useWorkflowListingPage } from "../hooks/useWorkflowListingPage";
+import type { WorkflowListScope, WorkflowRow } from "../types/types";
 import { getWorkflowColumns } from "../utils/workflow.columns";
 import { WorkflowUserAssignment } from "./WorkflowUserAssignment";
-import { FilterTabs } from "../../../components/ui/FilterTabs";
-import { getWorkflowErrorMessage } from "../api/workflow.api";
-import { useDeleteWorkflowMutation } from "../context/useWorkflowMutations";
 
 const WORKFLOW_SKELETON_ROWS = 8;
-const WORKFLOW_SKELETON_COLUMNS = 6;
-
-type WorkflowFilter = "ALL" | "ASSIGNED_TO_ME" | "CREATED_BY_ME";
-type WorkflowTableProps = {
-	selectedFilter?: WorkflowFilter;
-	onFilterChange?: (value: WorkflowFilter) => void;
-};
+const WORKFLOW_SKELETON_COLUMNS = 7;
 
 const isUserCreatedWorkflow = (workflow: WorkflowRow | null): boolean =>
-	workflow?.workflowType?.toUpperCase() === "USERCREATED";
+	workflow?.ownerType === "USER" || workflow?.ownerType === "ADMIN";
 
-const WorkflowTable = ({
-	selectedFilter: selectedFilterProp,
-	onFilterChange,
-}: WorkflowTableProps) => {
-	const [localFilter, setLocalFilter] = React.useState<WorkflowFilter>("ALL");
-	const selectedFilter = selectedFilterProp ?? localFilter;
-	const handleListFilterChange = onFilterChange ?? setLocalFilter;
+const getDeleteResponseMessage = (response: unknown): string => {
+	if (
+		typeof response !== "object" ||
+		response === null ||
+		Array.isArray(response)
+	) {
+		return "Workflow deleted successfully.";
+	}
+
+	const record = response as Record<string, unknown>;
+
+	if (typeof record.message === "string") {
+		return record.message;
+	}
+
+	if (
+		typeof record.data === "object" &&
+		record.data !== null &&
+		!Array.isArray(record.data)
+	) {
+		const data = record.data as Record<string, unknown>;
+
+		if (typeof data.message === "string") {
+			return data.message;
+		}
+	}
+
+	return "Workflow deleted successfully.";
+};
+
+const WorkflowTable = () => {
 	const {
 		data,
-		setData,
-		search,
-		setSearch,
+		loading,
+
+		users,
+		appOptions,
+
+		searchInput,
+		setSearchInput,
+
+		selectedFilter,
+		handleFilterChange,
+
 		filters,
-		setFilters,
+		handleAdvancedFilterChange,
+
 		sorting,
 		setSorting,
+
 		pageIndex,
 		pageSize,
-		setPageIndex,
-		setPageSize,
-		totalPages,
-		loading,
-	} = useWorkflow();
+		pageCount,
 
-	const { permissions } = useAuth();
+		handlePageChange,
+		handlePageSizeChange,
+
+		removeWorkflowFromList,
+	} = useWorkflowListingPage();
+
 	const { showToast } = useToast();
 	const navigate = useNavigate();
-
-	const [users, setUsers] = React.useState<Option[]>([]);
 
 	const [assignModalOpen, setAssignModalOpen] =
 		React.useState<WorkflowRow | null>(null);
@@ -74,18 +99,6 @@ const WorkflowTable = ({
 
 	const deleteMutation = useDeleteWorkflowMutation();
 
-	React.useEffect(() => {
-		const fetchUsers = async (): Promise<void> => {
-			try {
-				const { workflowApi } = await import("../api/workflow.api");
-				setUsers(await workflowApi.getUserOptions());
-			} catch (error) {
-				console.error("Failed to fetch users", error);
-			}
-		};
-
-		void fetchUsers();
-	}, []);
 	const filterTabs = React.useMemo(
 		() =>
 			workflowListFilterOptions.map((option) => ({
@@ -96,20 +109,12 @@ const WorkflowTable = ({
 			})),
 		[],
 	);
-	const apps = React.useMemo(() => formatApps(permissions), [permissions]);
 
-	const handleFilterChange = React.useCallback(
-		({ fieldName, value }: { fieldName?: string; value: Option[] }) => {
-			if (!fieldName) return;
-
-			setFilters((currentFilters) => ({
-				...currentFilters,
-				[fieldName]: value,
-			}));
-
-			setPageIndex(0);
+	const handleListFilterChange = React.useCallback(
+		(value: WorkflowListScope) => {
+			handleFilterChange(value);
 		},
-		[setFilters, setPageIndex],
+		[handleFilterChange],
 	);
 
 	const handleEdit = React.useCallback(
@@ -123,13 +128,16 @@ const WorkflowTable = ({
 		[navigate],
 	);
 
-	const handleOpenDelete = React.useCallback((workflow: WorkflowRow) => {
-		setDeleteModal(workflow);
+	const handleOpenAssignment = React.useCallback((workflow: WorkflowRow) => {
+		if (isUserCreatedWorkflow(workflow)) {
+			return;
+		}
+
+		setAssignModalOpen(workflow);
 	}, []);
 
-	const handleOpenAssignment = React.useCallback((workflow: WorkflowRow) => {
-		if (isUserCreatedWorkflow(workflow)) return;
-		setAssignModalOpen(workflow);
+	const handleOpenDelete = React.useCallback((workflow: WorkflowRow) => {
+		setDeleteModal(workflow);
 	}, []);
 
 	const columns = React.useMemo(
@@ -145,21 +153,14 @@ const WorkflowTable = ({
 	const handleDelete = React.useCallback(
 		async (workflowId: string): Promise<void> => {
 			try {
-				const response = (await deleteMutation.mutateAsync(workflowId)) as {
-					message?: string;
-				};
+				const response = await deleteMutation.mutateAsync(workflowId);
 
-				const message =
-					typeof response?.message === "string"
-						? response.message
-						: "Workflow deleted successfully.";
-
-				setData(data.filter((workflow) => workflow.id !== workflowId));
+				removeWorkflowFromList(workflowId);
 
 				showToast({
 					type: "success",
 					title: "Workflow deleted",
-					description: message,
+					description: getDeleteResponseMessage(response),
 				});
 
 				setDeleteModal(null);
@@ -174,7 +175,7 @@ const WorkflowTable = ({
 				});
 			}
 		},
-		[data, deleteMutation, setData, showToast],
+		[deleteMutation, removeWorkflowFromList, showToast],
 	);
 
 	return (
@@ -182,7 +183,7 @@ const WorkflowTable = ({
 			<Card
 				title={
 					<FilterTabs
-						ariaLabel="Filter Workflow listings"
+						ariaLabel="Filter workflow listings"
 						items={filterTabs}
 						value={selectedFilter}
 						onChange={handleListFilterChange}
@@ -195,24 +196,23 @@ const WorkflowTable = ({
 							placeholder="Created By"
 							options={users}
 							name="createdBy"
-							value={filters.createdBy}
-							onValueChange={handleFilterChange}
+							value={filters.createdBy ?? []}
+							onValueChange={handleAdvancedFilterChange}
 							isSearchable
 						/>
+
 						<MultiSelectInput
 							placeholder="Apps"
-							options={apps}
+							options={appOptions}
 							name="apps"
-							value={filters.apps}
-							onValueChange={handleFilterChange}
+							value={filters.apps ?? []}
+							onValueChange={handleAdvancedFilterChange}
 							isSearchable
 						/>
+
 						<SearchInput
-							value={search}
-							onChange={(value) => {
-								setSearch(value);
-								setPageIndex(0);
-							}}
+							value={searchInput}
+							onChange={setSearchInput}
 							placeholder="Search workflows"
 							aria-label="Search workflows"
 						/>
@@ -249,12 +249,9 @@ const WorkflowTable = ({
 							manualPagination
 							pageIndex={pageIndex}
 							pageSize={pageSize}
-							pageCount={Math.max(totalPages, 1)}
-							onPageChange={setPageIndex}
-							onPageSizeChange={(nextPageSize) => {
-								setPageSize(nextPageSize);
-								setPageIndex(0);
-							}}
+							pageCount={pageCount}
+							onPageChange={handlePageChange}
+							onPageSizeChange={handlePageSizeChange}
 							scrollTargetId="workflow-table-scroll"
 							emptyTitle="No workflows found"
 							emptyDescription="Create a workflow or adjust the current search and filters."

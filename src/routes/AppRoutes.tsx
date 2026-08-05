@@ -8,7 +8,7 @@ import { ResetPasswordPage } from "../containers/Login/pages/ResestPasswordPage"
 import { SessionTimeoutProvider } from "../context/SessionTimeOut/SessionTimeoutProvider";
 import HomeLayout from "../layout/HomeLayout";
 import MainContentWrapper from "../layout/MainContentWrapper";
-import VendorRoutes from "../modules/vendorOnboarding/VendorRoutes";
+import VendorRoutes from "./VendorRoutes";
 import VendorOnboardingPublicPage from "../modules/vendorOnboarding/pages/VendorOnboardingPublicPage";
 import AdminRoutes from "./adminRoutes";
 import MarketingRoutes from "./marketingRoutes";

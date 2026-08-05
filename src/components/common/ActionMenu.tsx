@@ -27,6 +27,7 @@ type ActionMenuProps<TData> = {
 	ariaLabel: string;
 	triggerIcon?: LucideIcon;
 	triggerIconSize?: number;
+	triggerLabel?: string;
 	className?: string;
 	panelClassName?: string;
 };
@@ -41,6 +42,7 @@ const ActionMenu = <TData,>({
 	ariaLabel,
 	triggerIcon: TriggerIcon = EllipsisVertical,
 	triggerIconSize = 16,
+	triggerLabel,
 	className,
 	panelClassName,
 }: ActionMenuProps<TData>) => {
@@ -54,9 +56,13 @@ const ActionMenu = <TData,>({
 		<Menu as="div" className={joinClassNames("action-menu", className)}>
 			<MenuButton
 				type="button"
-				className="action-menu-trigger"
+				className={joinClassNames(
+					"action-menu-trigger",
+					triggerLabel && "action-menu-trigger-labeled",
+				)}
 				aria-label={ariaLabel}
 			>
+				{triggerLabel ? <span>{triggerLabel}</span> : null}
 				<TriggerIcon size={triggerIconSize} aria-hidden="true" />
 			</MenuButton>
 
@@ -83,11 +89,9 @@ const ActionMenu = <TData,>({
 											action.className,
 										)}
 										onClick={() => {
-											if (action.disabled) {
-												return;
+											if (!action.disabled) {
+												action.onClick(row);
 											}
-
-											action.onClick(row);
 										}}
 									>
 										{ItemIcon ? (

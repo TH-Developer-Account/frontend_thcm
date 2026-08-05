@@ -4,9 +4,12 @@ import Card from "../../../components/common/Card";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { StepProgress } from "../../../components/ui/StepProgress";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
+
+import VendorWorkflowSection from "../components/VendorWorkflowSection";
 import VendorCreationFormOne from "../forms/VendorCreationFormOne";
 import VendorCreationFormTwo from "../forms/VendorCreationFormTwo";
 import VendorCreationSummaryForm from "../forms/VendorCreationSummaryForm";
+
 import {
 	VendorCreationFormProvider,
 	useVendorCreationForm,
@@ -16,6 +19,7 @@ const VendorOnboardingPage = () => {
 	const { onboardingId } = useParams<{
 		onboardingId?: string;
 	}>();
+
 	const navigate = useNavigate();
 
 	const form = useVendorCreationForm({
@@ -30,13 +34,14 @@ const VendorOnboardingPage = () => {
 		isExistingRequest &&
 		!form.isLoading &&
 		!form.isError &&
-		Boolean(form.status) &&
 		form.status === "APPROVED";
 
 	const handleBackToView = () => {
 		if (!onboardingId) return;
+
 		navigate(`/vendor/onboarding/${onboardingId}/view`, { replace: true });
 	};
+
 	if (shouldRedirectToView) {
 		return <Navigate to={`/vendor/onboarding/${onboardingId}/view`} replace />;
 	}
@@ -72,30 +77,48 @@ const VendorOnboardingPage = () => {
 					<div role="alert">Unable to load vendor onboarding details.</div>
 				) : (
 					<VendorCreationFormProvider value={form}>
-						<>
-							<StepProgress
-								steps={form.vendorOnboardingSteps}
-								currentStep={form.currentStep}
-								className="vendor-onboarding-step-progress"
-								ariaLabel="Vendor onboarding progress"
-							/>
+						<StepProgress
+							steps={form.vendorOnboardingSteps}
+							currentStep={form.currentStep}
+							className="vendor-onboarding-step-progress"
+							ariaLabel="Vendor onboarding progress"
+						/>
 
-							{form.currentStep === 1 ? (
-								<VendorCreationFormOne
-									mode={form.canEditFormOne ? "edit" : "view"}
-									canEdit={form.canEditFormOne}
-									requireDocuments={!isExistingRequest}
-									requireDpdpConsent={false}
-									actionText={isExistingRequest ? "Next" : "Save & Proceed"}
-									onNext={form.handleSaveFormOne}
-									onBack={isExistingRequest ? handleBackToView : undefined}
-								/>
-							) : form.currentStep === 2 ? (
-								<VendorCreationFormTwo mode="edit" canEdit />
-							) : (
-								<VendorCreationSummaryForm />
-							)}
-						</>
+						{form.currentStep === 1 ? (
+							<VendorCreationFormOne
+								mode={form.canEditFormOne ? "edit" : "view"}
+								canEdit={form.canEditFormOne}
+								requireDocuments={!isExistingRequest}
+								requireDpdpConsent={false}
+								actionText={isExistingRequest ? "Next" : "Save & Proceed"}
+								onNext={form.handleSaveFormOne}
+								onBack={isExistingRequest ? handleBackToView : undefined}
+							/>
+						) : form.currentStep === 2 ? (
+							<VendorCreationFormTwo mode="edit" canEdit />
+						) : form.currentStep === 3 ? (
+							<VendorWorkflowSection
+								sourceRecordRef={form.vendorRequestId}
+								recordType="VENDOR_ONBOARDING"
+								selectedWorkflow={form.pendingWorkflowSelection}
+								activeWorkflow={form.activeWorkflow}
+								isClarificationResubmission={form.hasPendingClarifiedApproval}
+								onWorkflowSelected={(selection) => {
+									form.setPendingWorkflowSelection(selection);
+								}}
+								onClearWorkflow={() => {
+									form.setPendingWorkflowSelection(null);
+								}}
+								onBack={form.handleBack}
+								onNext={form.handleNext}
+							/>
+						) : (
+							<VendorCreationSummaryForm
+								mode="edit"
+								canSubmit={form.canSubmit || form.isThcmProposer}
+								onSubmit={form.handleSubmitSummary}
+							/>
+						)}
 					</VendorCreationFormProvider>
 				)}
 			</Card>

@@ -1,12 +1,23 @@
 import { useState } from "react";
-import { ArrowLeft, FileDown, Pencil } from "lucide-react";
+import {
+	CircleX,
+	FileDown,
+	FileSpreadsheet,
+	LoaderIcon,
+	Pencil,
+	// ScanEye,
+} from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import ActionMenu, {
+	type ActionMenuItem,
+} from "../../../components/common/ActionMenu";
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
+import { Modal } from "../../../components/common/Modal";
+import { CardEmpty } from "../../../components/ui/CardSkeleton";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { useToast } from "../../../context/Auth/AuthContext";
-import { useAuth } from "../../../context/Auth/useAuth";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import { ServerAxios } from "../../../services/ServerAxios";
 
@@ -15,34 +26,43 @@ import {
 	VendorCreationFormProvider,
 	useVendorCreationForm,
 } from "../hooks/useVendorCreationForm";
-import type { VendorViewerRole } from "../types/vendorOnboarding.types";
-import VendorCommentSection from "./VendorCommentSection";
 import { useVendorOnboardingInitiation } from "../hooks/useVendorOnboardingInitiation";
-
-type VendorOnboardingFormViewProps = {
-	viewerRole?: VendorViewerRole;
-};
+import VendorCommentSection from "./VendorCommentSection";
 
 type VendorOnboardingReadOnlyViewProps = {
-	viewerRole: VendorViewerRole;
 	onboardingId: string;
 };
 
 const VendorOnboardingReadOnlyView = ({
-	viewerRole,
 	onboardingId,
 }: VendorOnboardingReadOnlyViewProps) => {
 	const navigate = useNavigate();
 	const { showToast } = useToast();
-	const [isDownloading, setIsDownloading] = useState(false);
+
+	const [isExportingExcel, setIsExportingExcel] = useState(false);
 
 	const form = useVendorCreationForm({
-		role: viewerRole,
 		vendorRequestId: onboardingId,
 		isPublicForm: false,
 	});
-	const { isLoading, isError, canEditMainForm, workflowStages, user, creator } =
-		form;
+
+	const {
+		isLoading,
+		isError,
+		canEditMainForm,
+		workflowStages,
+		user,
+		creator,
+
+		pdfUrl,
+		pdfPreviewOpen,
+		// isPreparingPdf,
+		isDownloadingPdf,
+		// handleViewPdf,
+		handleDownloadPdf,
+		closePdfPreview,
+	} = form;
+
 	const { handleSendBackToVendor } = useVendorOnboardingInitiation();
 
 	const handleBackToListing = () => {
@@ -54,7 +74,7 @@ const VendorOnboardingReadOnlyView = ({
 	};
 
 	const handleExport = async () => {
-		setIsDownloading(true);
+		setIsExportingExcel(true);
 
 		try {
 			const response = await ServerAxios.get(
@@ -63,14 +83,18 @@ const VendorOnboardingReadOnlyView = ({
 			);
 
 			const referenceNumber = creator?.referenceNumber?.trim() || onboardingId;
+
 			const blobUrl = window.URL.createObjectURL(response.data as Blob);
+
 			const link = document.createElement("a");
 
 			link.href = blobUrl;
 			link.download = `vendor-onboarding-${referenceNumber}.xlsx`;
+
 			document.body.appendChild(link);
 			link.click();
 			link.remove();
+
 			window.URL.revokeObjectURL(blobUrl);
 		} catch {
 			showToast({
@@ -79,9 +103,40 @@ const VendorOnboardingReadOnlyView = ({
 				description: "Failed to download the Excel file.",
 			});
 		} finally {
-			setIsDownloading(false);
+			setIsExportingExcel(false);
 		}
 	};
+
+	const actions: ActionMenuItem<string>[] = [
+		// {
+		// 	id: "view-pdf",
+		// 	label: isPreparingPdf ? "Preparing PDF…" : "View PDF",
+		// 	Icon: ScanEye,
+		// 	onClick: handleViewPdf,
+		// 	disabled: isPreparingPdf || isDownloadingPdf,
+		// },
+		{
+			id: "download-pdf",
+			label: isDownloadingPdf ? "Downloading…" : "Download PDF",
+			Icon: FileDown,
+			onClick: handleDownloadPdf,
+			disabled: !pdfUrl || isDownloadingPdf,
+		},
+		{
+			id: "export-excel",
+			label: isExportingExcel ? "Exporting…" : "Export Excel",
+			Icon: FileSpreadsheet,
+			onClick: handleExport,
+			disabled: isExportingExcel,
+		},
+		{
+			id: "edit",
+			label: "Edit",
+			Icon: Pencil,
+			onClick: handleEdit,
+			hidden: !canEditMainForm,
+		},
+	];
 
 	const pageNavigation = {
 		variant: "breadcrumbs" as const,
@@ -110,15 +165,10 @@ const VendorOnboardingReadOnlyView = ({
 					navigation={pageNavigation}
 				/>
 
-				<Card>
-					<div
-						className="vendor-onboarding-view-state"
-						role="status"
-						aria-live="polite"
-					>
-						Loading vendor onboarding details...
-					</div>
-				</Card>
+				<CardEmpty
+					title="Loading vendor onboarding details..."
+					Icon={LoaderIcon}
+				/>
 			</PageSectionLayout>
 		);
 	}
@@ -131,22 +181,10 @@ const VendorOnboardingReadOnlyView = ({
 					navigation={pageNavigation}
 				/>
 
-				<Card>
-					<div className="vendor-onboarding-view-state" role="alert">
-						<p>Unable to load the vendor onboarding details.</p>
-
-						<Button
-							type="button"
-							text="Back to Listing"
-							Icon={ArrowLeft}
-							iconPosition="left"
-							size="sm"
-							appearance="standard"
-							variant="outline"
-							onClick={handleBackToListing}
-						/>
-					</div>
-				</Card>
+				<CardEmpty
+					title="Unable to load the vendor onboarding details."
+					Icon={CircleX}
+				/>
 			</PageSectionLayout>
 		);
 	}
@@ -163,31 +201,11 @@ const VendorOnboardingReadOnlyView = ({
 					className="vendor-onboarding-view-section"
 					title="Vendor Form View"
 					actions={
-						<>
-							<Button
-								type="button"
-								text={isDownloading ? "Exporting…" : "Export"}
-								Icon={FileDown}
-								iconPosition="left"
-								iconSize={16}
-								appearance="cta"
-								variant="brand"
-								size="sm"
-								onClick={handleExport}
-								disabled={isDownloading}
-							/>
-							{canEditMainForm ? (
-								<Button
-									type="button"
-									text="Edit"
-									size="sm"
-									Icon={Pencil}
-									appearance="standard"
-									variant="brand"
-									onClick={handleEdit}
-								/>
-							) : null}
-						</>
+						<ActionMenu
+							row={onboardingId}
+							actions={actions}
+							ariaLabel="Vendor onboarding actions"
+						/>
 					}
 				>
 					<VendorCreationSummaryForm
@@ -204,39 +222,60 @@ const VendorOnboardingReadOnlyView = ({
 					/>
 				</Card>
 			</VendorCreationFormProvider>
+
+			<Modal
+				open={pdfPreviewOpen}
+				title="Vendor Details PDF"
+				size="xl"
+				onClose={closePdfPreview}
+				footer_actions={
+					<>
+						<Button
+							type="button"
+							text="Close"
+							size="sm"
+							appearance="standard"
+							variant="outline"
+							onClick={closePdfPreview}
+						/>
+
+						<Button
+							type="button"
+							text={isDownloadingPdf ? "Downloading…" : "Download PDF"}
+							Icon={FileDown}
+							iconPosition="left"
+							size="sm"
+							appearance="standard"
+							variant="brand"
+							disabled={!pdfUrl || isDownloadingPdf}
+							onClick={handleDownloadPdf}
+						/>
+					</>
+				}
+			>
+				{pdfUrl ? (
+					<iframe
+						src={pdfUrl}
+						title="Vendor details PDF preview"
+						className="h-[70vh] w-full rounded-md border border-gray-200"
+					/>
+				) : (
+					<div
+						className="flex h-[70vh] items-center justify-center"
+						role="status"
+					>
+						Preparing PDF preview...
+					</div>
+				)}
+			</Modal>
 		</PageSectionLayout>
 	);
 };
 
-const getVendorViewerRole = (
-	userRole: string | undefined,
-): VendorViewerRole => {
-	switch (userRole) {
-		case "THCM_APPROVER":
-			return "THCM_APPROVER";
-
-		case "EXTERNAL_APPROVER":
-			return "EXTERNAL_APPROVER";
-
-		case "EXTERNAL_VENDOR":
-			return "EXTERNAL_VENDOR";
-
-		case "THCM_EMPLOYEE":
-		default:
-			return "THCM_EMPLOYEE";
-	}
-};
-
-const VendorOnboardingFormView = ({
-	viewerRole,
-}: VendorOnboardingFormViewProps) => {
-	const { user } = useAuth();
-
+const VendorOnboardingFormView = () => {
 	const { onboardingId } = useParams<{
 		onboardingId?: string;
 	}>();
-
-	const resolvedViewerRole = viewerRole ?? getVendorViewerRole(user?.role);
 
 	if (!onboardingId) {
 		return (
@@ -252,12 +291,7 @@ const VendorOnboardingFormView = ({
 		);
 	}
 
-	return (
-		<VendorOnboardingReadOnlyView
-			viewerRole={resolvedViewerRole}
-			onboardingId={onboardingId}
-		/>
-	);
+	return <VendorOnboardingReadOnlyView onboardingId={onboardingId} />;
 };
 
 export default VendorOnboardingFormView;

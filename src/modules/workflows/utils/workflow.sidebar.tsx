@@ -8,10 +8,4 @@ export const workflowSidebar: SidebarItem[] = [
 		icon: <BriefcaseBusinessIcon size={18} />,
 		link: "/workflow/listing",
 	},
-	{
-		id: "dynamicWorkflow",
-		label: "Dynamic Workflow",
-		icon: <BriefcaseBusinessIcon size={18} />,
-		link: "/workflow/dynamic-create",
-	},
 ];

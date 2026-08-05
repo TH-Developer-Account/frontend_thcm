@@ -10,13 +10,16 @@ import {
 	Save,
 	ShieldCheck,
 } from "lucide-react";
-
+import type { ClipboardEvent } from "react";
 import Button from "../../../components/common/Button";
 import { Modal } from "../../../components/common/Modal";
 import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
-
+import {
+	getCitiesByState,
+	getCityOption,
+} from "../helpers/vendorLocation.helpers";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
 
 import FormHeader from "../../../components/ui/FormHeader";
@@ -34,13 +37,12 @@ import {
 	type VendorCreationFormOneSubmission,
 	type VendorCreationFormOneDraftSubmission,
 } from "../hooks/useVendorCreationForm";
+import { STATES } from "../utils/vendor.location.constant";
 
 export type {
 	VendorCreationFormOneSubmission,
 	VendorEnclosureUploadItem,
 } from "../hooks/useVendorCreationForm";
-
-import { STATES } from "../utils/vendor.constant";
 
 const EMPTY_VENDOR_DOCUMENTS: VendorOnboardingDocument[] = [];
 
@@ -92,6 +94,10 @@ const getSelectedOption = (
 	value?: string,
 ): SelectOption | null =>
 	options.find((option) => option.value === value) ?? null;
+
+const blockClipboardEvent = (event: ClipboardEvent<HTMLInputElement>) => {
+	event.preventDefault();
+};
 
 const yesNoOptions = toSelectOptions(["Yes", "No"]);
 
@@ -214,22 +220,34 @@ const VendorCreationFormOne = ({
 							required
 							error={errors.state}
 							helperText="Select the applicable vendor state."
-							onChange={(option) =>
-								resolvedOnChange?.("state", option?.value ?? "")
-							}
+							onChange={(option) => {
+								const nextState = option?.value ?? "";
+								resolvedOnChange?.("state", nextState);
+								if (values.city && nextState) {
+									const stillValid = getCitiesByState(nextState).some(
+										(c) => c.city === values.city,
+									);
+									if (!stillValid) resolvedOnChange?.("city", "");
+								}
+							}}
 						/>
 
-						<FormInput
+						<SelectInput
 							mode={fieldMode}
 							name="city"
 							label="City"
-							value={values.city ?? ""}
+							placeholder="Select city"
+							options={getCitiesByState(values.state)}
+							value={getCityOption(values.state, values.city)}
 							required
 							error={errors.city}
 							helperText="Vendor city."
-							onChange={(event) =>
-								resolvedOnChange?.("city", event.target.value)
-							}
+							onChange={(option) => {
+								resolvedOnChange?.("city", option?.city ?? "");
+								if (option?.state && option.state !== values.state) {
+									resolvedOnChange?.("state", option.state);
+								}
+							}}
 						/>
 
 						<FormInput
@@ -250,14 +268,14 @@ const VendorCreationFormOne = ({
 					<div>
 						<TextareaInput
 							mode={fieldMode}
-							name="completeAddress"
+							name="address"
 							label="Complete Address"
-							value={values.completeAddress ?? ""}
+							value={values.address ?? ""}
 							required
-							error={errors.completeAddress}
+							error={errors.address}
 							helperText="Registered or communication address."
 							onChange={(event) =>
-								resolvedOnChange?.("completeAddress", event.target.value)
+								resolvedOnChange?.("address", event.target.value)
 							}
 							rows={4}
 						/>
@@ -363,6 +381,10 @@ const VendorCreationFormOne = ({
 							const value = event.target.value.replace(/\D/g, "");
 							resolvedOnChange?.("accountNumber", value);
 						}}
+						onPaste={blockClipboardEvent}
+						onCopy={blockClipboardEvent}
+						onCut={blockClipboardEvent}
+						autoComplete="off"
 					/>
 
 					<FormInput
@@ -379,6 +401,10 @@ const VendorCreationFormOne = ({
 							const value = event.target.value.replace(/\D/g, "");
 							resolvedOnChange?.("confirmAccountNumber", value);
 						}}
+						onPaste={blockClipboardEvent}
+						onCopy={blockClipboardEvent}
+						onCut={blockClipboardEvent}
+						autoComplete="off"
 					/>
 				</div>
 
@@ -442,7 +468,7 @@ const VendorCreationFormOne = ({
 									handleEnclosureFilesChange(field, nextValues)
 								}
 								maxFiles={10}
-								kind="document"
+								kind="vendorDocument"
 								label={field.label}
 								description={field.description}
 								required={isEnclosureRequired(field)}
@@ -464,7 +490,7 @@ const VendorCreationFormOne = ({
 								onChange={(nextValue) =>
 									handleEnclosureChange(field, nextValue)
 								}
-								kind="document"
+								kind="vendorDocument"
 								label={field.label}
 								description={field.description}
 								required={isEnclosureRequired(field)}
@@ -518,7 +544,7 @@ const VendorCreationFormOne = ({
 												handleEnclosureChange(field, nextValue);
 											}
 										}}
-										kind="document"
+										kind="vendorDocument"
 										label="MSME Certificate"
 										description="Upload the MSME registration certificate."
 										required
@@ -568,7 +594,7 @@ const VendorCreationFormOne = ({
 												handleEnclosureChange(field, nextValue);
 											}
 										}}
-										kind="document"
+										kind="vendorDocument"
 										label="NDA Certificate"
 										description="Upload the signed NDA certificate."
 										required

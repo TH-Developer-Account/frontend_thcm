@@ -159,19 +159,15 @@ export function validateUploadFile(
 ): FileUploadError {
 	const config = FILE_UPLOAD_LIMITS[kind];
 	const extension = getFileExtension(file.name);
+	const mimeType = file.type.toLowerCase();
 
-	const hasMimeRestrictions = config.mimeTypes.length > 0;
-	const hasExtensionRestrictions = Boolean(config.extensions?.length);
+	const validMimeType = config.mimeTypes.includes(mimeType);
+	const validExtension = Boolean(config.extensions?.includes(extension));
 
-	const validMimeType =
-		!hasMimeRestrictions || config.mimeTypes.includes(file.type);
+	// Use the extension only when the browser does not provide a MIME type.
+	const isSupported = mimeType ? validMimeType : validExtension;
 
-	const validExtension =
-		!hasExtensionRestrictions ||
-		Boolean(config.extensions?.includes(extension));
-
-	// Some browsers provide an empty MIME type, so extension is also checked.
-	if (!validMimeType && !validExtension) {
+	if (!isSupported) {
 		return `"${file.name}" is not supported. Use ${config.label}.`;
 	}
 

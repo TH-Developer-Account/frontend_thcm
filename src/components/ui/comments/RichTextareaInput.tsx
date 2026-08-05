@@ -32,7 +32,7 @@ const RichTextarea: ForwardRefRenderFunction<
 		isTooltip = true,
 		maxLength = 1000,
 		autoFocus,
-		rows = 2,
+		rows = 1,
 		onChange,
 		onKeyDown,
 		mentionableUsers = [],
@@ -49,7 +49,8 @@ const RichTextarea: ForwardRefRenderFunction<
 ) => {
 	const errorId = error ? `${name}-error` : undefined;
 	const internalRef = React.useRef<HTMLTextAreaElement>(null);
-	const textareaRef = (forwardedRef ?? internalRef) as React.RefObject<HTMLTextAreaElement | null>;
+	const textareaRef = (forwardedRef ??
+		internalRef) as React.RefObject<HTMLTextAreaElement | null>;
 
 	const {
 		containerRef,
@@ -86,7 +87,8 @@ const RichTextarea: ForwardRefRenderFunction<
 			{label ? (
 				<div className="form-label-row">
 					<label htmlFor={name} className="form-label">
-						{label}{required ? <span className="form-required"> *</span> : null}
+						{label}
+						{required ? <span className="form-required"> *</span> : null}
 					</label>
 					{helperText && isTooltip && !error ? (
 						<HelperTooltip label={label} text={helperText} />
@@ -128,7 +130,11 @@ const RichTextarea: ForwardRefRenderFunction<
 				/>
 
 				{mentionOpen && filteredMentions.length > 0 ? (
-					<div className="rich-textarea-popover rich-textarea-mention-popover" role="listbox" aria-label="Mention a user">
+					<div
+						className="rich-textarea-popover rich-textarea-mention-popover"
+						role="listbox"
+						aria-label="Mention a user"
+					>
 						{filteredMentions.map((user) => (
 							<button
 								key={user.id}
@@ -141,8 +147,14 @@ const RichTextarea: ForwardRefRenderFunction<
 								role="option"
 								aria-selected="false"
 							>
-								<Avatar firstName={user.first_name} lastName={user.last_name} size="sm" />
-								<span className="rich-textarea-menu-label">{user.first_name} {user.last_name}</span>
+								<Avatar
+									firstName={user.first_name}
+									lastName={user.last_name}
+									size="sm"
+								/>
+								<span className="rich-textarea-menu-label">
+									{user.first_name} {user.last_name}
+								</span>
 							</button>
 						))}
 					</div>
@@ -151,11 +163,34 @@ const RichTextarea: ForwardRefRenderFunction<
 				<div className="rich-textarea-toolbar">
 					<div className="rich-textarea-toolbar-start">
 						<div className="rich-textarea-tool-group">
-							<Button type="button" appearance="icon" variant="secondary" size="sm" Icon={Smile} aria-label="Insert emoji" aria-expanded={popup === "emoji"} onClick={() => setPopup((current) => current === "emoji" ? null : "emoji")} />
+							<Button
+								type="button"
+								appearance="icon"
+								variant="secondary"
+								size="sm"
+								Icon={Smile}
+								aria-label="Insert emoji"
+								aria-expanded={popup === "emoji"}
+								onClick={() =>
+									setPopup((current) => (current === "emoji" ? null : "emoji"))
+								}
+							/>
 							{popup === "emoji" ? (
 								<div className="rich-textarea-popover rich-textarea-emoji-popover">
 									{COMMENT_EMOJIS.map((emoji) => (
-										<button key={emoji} type="button" className="rich-textarea-emoji" onMouseDown={(event) => { event.preventDefault(); insertAtCursor(emoji); setPopup(null); }} aria-label={`Insert ${emoji}`}>{emoji}</button>
+										<button
+											key={emoji}
+											type="button"
+											className="rich-textarea-emoji"
+											onMouseDown={(event) => {
+												event.preventDefault();
+												insertAtCursor(emoji);
+												setPopup(null);
+											}}
+											aria-label={`Insert ${emoji}`}
+										>
+											{emoji}
+										</button>
 									))}
 								</div>
 							) : null}
@@ -164,11 +199,36 @@ const RichTextarea: ForwardRefRenderFunction<
 						<span className="rich-textarea-divider" aria-hidden="true" />
 
 						<div className="rich-textarea-tool-group">
-							<Button type="button" appearance="icon" variant="secondary" size="sm" Icon={Type} aria-label="Formatting options" aria-expanded={popup === "format"} onClick={() => setPopup((current) => current === "format" ? null : "format")} />
+							<Button
+								type="button"
+								appearance="icon"
+								variant="secondary"
+								size="sm"
+								Icon={Type}
+								aria-label="Formatting options"
+								aria-expanded={popup === "format"}
+								onClick={() =>
+									setPopup((current) =>
+										current === "format" ? null : "format",
+									)
+								}
+							/>
 							{popup === "format" ? (
 								<div className="rich-textarea-popover rich-textarea-format-popover">
 									{COMMENT_FORMAT_ACTIONS.map(({ icon: Icon, fmt, title }) => (
-										<Button key={fmt} type="button" appearance="icon" variant="secondary" size="sm" Icon={Icon} aria-label={title} onMouseDown={(event) => { event.preventDefault(); applyFormat(fmt); }} />
+										<Button
+											key={fmt}
+											type="button"
+											appearance="icon"
+											variant="secondary"
+											size="sm"
+											Icon={Icon}
+											aria-label={title}
+											onMouseDown={(event) => {
+												event.preventDefault();
+												applyFormat(fmt);
+											}}
+										/>
 									))}
 								</div>
 							) : null}
@@ -176,16 +236,68 @@ const RichTextarea: ForwardRefRenderFunction<
 					</div>
 
 					<div className="rich-textarea-toolbar-end">
-						<span className="rich-textarea-counter">{value.length} / {maxLength}</span>
+						<span className="rich-textarea-counter">
+							{value.length} / {maxLength}
+						</span>
 						{onSubmit || menuItems.length > 0 ? (
 							<div className="rich-textarea-submit-group">
-								{onSubmit ? <Button type="button" appearance="standard" variant="brand" size="sm" Icon={Send} text={submitting ? "Saving..." : submitText} disabled={isSubmitDisabled} loading={submitting} onClick={onSubmit} className="rich-textarea-submit" /> : null}
-								{menuItems.length > 0 ? <Button type="button" appearance="icon" variant="brand" size="sm" Icon={ChevronUp} aria-label="More comment options" aria-expanded={popup === "menu"} aria-haspopup="menu" active={popup === "menu"} onClick={() => setPopup((current) => current === "menu" ? null : "menu")} className={joinClassNames("rich-textarea-menu-trigger", popup === "menu" && "rich-textarea-menu-trigger-open")} /> : null}
+								{onSubmit ? (
+									<Button
+										type="button"
+										appearance="standard"
+										variant="brand"
+										size="sm"
+										Icon={Send}
+										text={submitting ? "Saving..." : submitText}
+										disabled={isSubmitDisabled}
+										loading={submitting}
+										onClick={onSubmit}
+										className="rich-textarea-submit"
+									/>
+								) : null}
+								{menuItems.length > 0 ? (
+									<Button
+										type="button"
+										appearance="icon"
+										variant="brand"
+										size="sm"
+										Icon={ChevronUp}
+										aria-label="More comment options"
+										aria-expanded={popup === "menu"}
+										aria-haspopup="menu"
+										active={popup === "menu"}
+										onClick={() =>
+											setPopup((current) =>
+												current === "menu" ? null : "menu",
+											)
+										}
+										className={joinClassNames(
+											"rich-textarea-menu-trigger",
+											popup === "menu" && "rich-textarea-menu-trigger-open",
+										)}
+									/>
+								) : null}
 								{popup === "menu" && menuItems.length > 0 ? (
-									<div className="rich-textarea-popover rich-textarea-action-popover" role="menu">
-										{menuItems.map(({ icon: Icon, label: itemLabel, action }) => (
-											<button key={action} type="button" className="rich-textarea-menu-item" onClick={() => handleMenuItemClick(action)} role="menuitem"><Icon size={14} aria-hidden="true" /><span className="rich-textarea-menu-label">{itemLabel}</span></button>
-										))}
+									<div
+										className="rich-textarea-popover rich-textarea-action-popover"
+										role="menu"
+									>
+										{menuItems.map(
+											({ icon: Icon, label: itemLabel, action }) => (
+												<button
+													key={action}
+													type="button"
+													className="rich-textarea-menu-item"
+													onClick={() => handleMenuItemClick(action)}
+													role="menuitem"
+												>
+													<Icon size={14} aria-hidden="true" />
+													<span className="rich-textarea-menu-label">
+														{itemLabel}
+													</span>
+												</button>
+											),
+										)}
 									</div>
 								) : null}
 							</div>
@@ -193,10 +305,19 @@ const RichTextarea: ForwardRefRenderFunction<
 					</div>
 				</div>
 
-				{error ? <ExclamationCircleIcon className="form-error-icon" aria-hidden="true" /> : null}
+				{error ? (
+					<ExclamationCircleIcon
+						className="form-error-icon"
+						aria-hidden="true"
+					/>
+				) : null}
 			</div>
 
-			{error ? <p id={errorId} className="form-error-text">{error}</p> : null}
+			{error ? (
+				<p id={errorId} className="form-error-text">
+					{error}
+				</p>
+			) : null}
 		</div>
 	);
 };

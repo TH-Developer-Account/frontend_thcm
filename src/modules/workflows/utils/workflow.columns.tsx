@@ -4,13 +4,28 @@ import { Edit, Trash, UserPlus } from "lucide-react";
 
 import { Badge } from "../../../components/common/Badge";
 import Button from "../../../components/common/Button";
+
 import type { WorkflowRow } from "../types/types";
 
 type WorkflowColumnActions = {
-	onAssign: (row: WorkflowRow) => void;
-	onEdit: (row: WorkflowRow) => void;
-	onDelete: (row: WorkflowRow) => void;
+	onAssign: (workflow: WorkflowRow) => void;
+	onEdit: (workflow: WorkflowRow) => void;
+	onDelete: (workflow: WorkflowRow) => void;
 };
+
+const formatWorkflowDate = (value: WorkflowRow["lastUpdated"]): string => {
+	if (!value) return "—";
+
+	const date = moment(value);
+
+	return date.isValid() ? date.format("L") : "—";
+};
+
+const canAssignUsers = (workflow: WorkflowRow): boolean =>
+	workflow.ownerType === "ADMIN";
+
+const canEditWorkflow = (workflow: WorkflowRow): boolean =>
+	workflow.ownerType === "USER";
 
 export const getWorkflowColumns = ({
 	onAssign,
@@ -21,21 +36,25 @@ export const getWorkflowColumns = ({
 		accessorKey: "name",
 		header: "Workflow Name",
 		cell: ({ row }) => (
-			<div className="workflow-table-primary">{row.original.name}</div>
+			<div className="workflow-table-primary">{row.original.name || "—"}</div>
 		),
 	},
 	{
 		accessorKey: "appName",
 		header: "App Name",
 		cell: ({ row }) => (
-			<div className="workflow-table-primary">{row.original.appName}</div>
+			<div className="workflow-table-primary">
+				{row.original.appName || "—"}
+			</div>
 		),
 	},
 	{
 		accessorKey: "createdBy",
 		header: "Created By",
 		cell: ({ row }) => (
-			<div className="workflow-table-primary">{row.original.createdBy}</div>
+			<div className="workflow-table-primary">
+				{row.original.createdBy || "—"}
+			</div>
 		),
 	},
 	{
@@ -52,7 +71,7 @@ export const getWorkflowColumns = ({
 		header: "Last Updated",
 		cell: ({ row }) => (
 			<div className="workflow-table-primary">
-				{moment(row.original.lastUpdated).format("L")}
+				{formatWorkflowDate(row.original.lastUpdated)}
 			</div>
 		),
 	},
@@ -60,39 +79,57 @@ export const getWorkflowColumns = ({
 		accessorKey: "updatedBy",
 		header: "Updated By",
 		cell: ({ row }) => (
-			<div className="workflow-table-primary">{row.original.updatedBy}</div>
+			<div className="workflow-table-primary">
+				{row.original.updatedBy || "—"}
+			</div>
 		),
 	},
 	{
 		id: "actions",
 		header: "Actions",
-		cell: ({ row }) => (
-			<div className="workflow-table-actions">
-				<Button
-					size="sm"
-					appearance="icon"
-					variant="secondary"
-					onClick={() => onAssign(row.original)}
-					Icon={UserPlus}
-					isTooltip="Assign Users"
-				/>
-				<Button
-					type="button"
-					onClick={() => onEdit(row.original)}
-					Icon={Edit}
-					appearance="icon"
-					variant="secondary"
-					isTooltip="Edit"
-				/>
-				<Button
-					type="button"
-					onClick={() => onDelete(row.original)}
-					Icon={Trash}
-					appearance="icon"
-					variant="secondary"
-					isTooltip="Delete"
-				/>
-			</div>
-		),
+		enableSorting: false,
+		cell: ({ row }) => {
+			const workflow = row.original;
+			const showAssignUsers = canAssignUsers(workflow);
+			const showEditDeleteButton = canEditWorkflow(workflow);
+
+			return (
+				<div className="workflow-table-actions">
+					{showAssignUsers && (
+						<Button
+							type="button"
+							size="sm"
+							appearance="icon"
+							variant="secondary"
+							onClick={() => onAssign(workflow)}
+							Icon={UserPlus}
+							isTooltip="Assign Users"
+						/>
+					)}
+					{showEditDeleteButton && (
+						<>
+							<Button
+								type="button"
+								size="sm"
+								appearance="icon"
+								variant="secondary"
+								onClick={() => onEdit(workflow)}
+								Icon={Edit}
+								isTooltip="Edit"
+							/>
+							<Button
+								type="button"
+								size="sm"
+								appearance="icon"
+								variant="secondary"
+								onClick={() => onDelete(workflow)}
+								Icon={Trash}
+								isTooltip="Delete"
+							/>
+						</>
+					)}
+				</div>
+			);
+		},
 	},
 ];

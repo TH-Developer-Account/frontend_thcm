@@ -2,7 +2,6 @@ import React from "react";
 import { MessageCircle } from "lucide-react";
 
 import Avatar from "../../common/Avatar";
-import SectionAccordion from "../../common/SectionAccordion";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { formatDateTime } from "../../../utils/format";
 
@@ -15,6 +14,7 @@ import type {
 } from "./comment.types";
 
 import "./comments.css";
+import { CardEmpty, CardSkeleton } from "../CardSkeleton";
 
 export type CommentsSectionProps = {
 	subjectType: string;
@@ -253,36 +253,31 @@ export default function CommentsSection({
 	const commentCountLabel = `${comments.length} ${comments.length === 1 ? "comment" : "comments"}`;
 
 	return (
-		<SectionAccordion title={title}>
-			<section className="comments-section" aria-label={title}>
-				<header className="comments-summary">
-					<span className="comments-subtitle">{commentCountLabel}</span>
-				</header>
-				<div className="comments-body">
-					{commentsLoading ? (
-						<div
-							className="comments-loading"
-							aria-label="Loading comments"
-							aria-live="polite"
-						>
-							<div />
-							<div />
-							<div />
-						</div>
-					) : loadError ? (
-						<div className="comments-error" role="alert">
-							<p>Unable to load comments</p>
-							<span>{loadError}</span>
-						</div>
-					) : comments.length === 0 ? (
-						<div className="comments-empty">
-							<MessageCircle size={20} aria-hidden="true" />
-							<div className="comments-empty-copy">
-								<p>{emptyTitle}</p>
-								<span>{emptyDescription}</span>
-							</div>
-						</div>
-					) : (
+		<section aria-label={title}>
+			<div className="comments-body">
+				{commentsLoading ? (
+					<CardSkeleton />
+				) : loadError ? (
+					<CardEmpty
+						title="Unable to load comments"
+						description={loadError}
+						Icon={MessageCircle}
+						iconSize={20}
+					/>
+				) : comments.length === 0 ? (
+					<CardEmpty
+						title={emptyTitle}
+						description={emptyDescription}
+						Icon={MessageCircle}
+						iconSize={20}
+					/>
+				) : (
+					<div className="comments-section">
+						{comments.length === 0 ? null : (
+							<header className="comments-summary">
+								<span className="comments-subtitle">{commentCountLabel}</span>
+							</header>
+						)}
 						<div
 							className="comments-list scrollbar-sleek"
 							ref={commentsListRef}
@@ -296,23 +291,23 @@ export default function CommentsSection({
 								/>
 							))}
 						</div>
-					)}
-				</div>
+					</div>
+				)}
+			</div>
 
-				{canComment ? (
-					<footer className="comments-create">
-						<div className="comments-create-input">
-							<CommentInput
-								disabled={commentsLoading || Boolean(loadError)}
-								onSubmit={handleCreate}
-								mentionableUsers={mentionableUsers}
-								onMentionInsert={handleMentionInsert}
-							/>
-						</div>
-					</footer>
-				) : null}
-			</section>
-		</SectionAccordion>
+			{canComment ? (
+				<footer className="comments-create">
+					<div className="comments-create-input">
+						<CommentInput
+							disabled={commentsLoading || Boolean(loadError)}
+							onSubmit={handleCreate}
+							mentionableUsers={mentionableUsers}
+							onMentionInsert={handleMentionInsert}
+						/>
+					</div>
+				</footer>
+			) : null}
+		</section>
 	);
 }
 

@@ -10,7 +10,11 @@ export type {
 	ApprovalRule,
 	WorkflowExecutionMode,
 	WorkflowUser,
+	WorkflowApprovalLike,
+	ApprovalStageLike,
 } from "./shared.types";
+
+export type WorkflowOwnerType = "ADMIN" | "USER";
 
 export type WorkflowApprover = {
 	id: string;
@@ -41,6 +45,12 @@ export type WorkflowBasics = {
 	category?: string;
 	isActive: boolean;
 	description: string;
+
+	/**
+	 * APP is available only when the caller can administer the selected app.
+	 * USER creates a personal workflow owned by the current user.
+	 */
+	scope?: "APP" | "USER";
 };
 
 export type WorkflowApproverPayload = {
@@ -61,6 +71,7 @@ export type CreateWorkflowPayload = {
 	metaData_1: string;
 	metaData_2: string;
 	metaData_3: string;
+
 	stages: Array<{
 		name: string;
 		stageOrder: number;
@@ -68,6 +79,23 @@ export type CreateWorkflowPayload = {
 		approverIds: WorkflowApproverPayload[];
 		minApprovals?: number;
 	}>;
+
+	/**
+	 * APP creates an admin/application template.
+	 * USER creates a personal template.
+	 */
+	scope?: "APP" | "USER";
+
+	/**
+	 * True creates a reusable template.
+	 * False creates an ad-hoc, one-time workflow.
+	 */
+	isReusable?: boolean;
+
+	/**
+	 * @deprecated The backend does not persist this field.
+	 * Use scope instead.
+	 */
 	workflowType?: WorkflowType;
 };
 
@@ -76,6 +104,99 @@ export type WorkflowApp = {
 	key: string;
 	name: string;
 };
+
+/* -------------------------------------------------------------------------- */
+/* Raw workflow-listing API types                                              */
+/* -------------------------------------------------------------------------- */
+
+export type WorkflowListPersonApi = {
+	id?: string;
+	first_name?: string;
+	last_name?: string;
+	email?: string;
+};
+
+export type WorkflowListApproverApi = {
+	id: string;
+	stageId: string;
+	userId: string;
+	isExternalApprover: boolean;
+	user: WorkflowUser;
+};
+
+export type WorkflowListStageApi = {
+	id: string;
+	name: string;
+	templateId: string;
+	stageOrder: number;
+	strategy: ApprovalRule;
+
+	/**
+	 * The listing endpoint returns null for strategies that do not require
+	 * an explicit minimum.
+	 */
+	minApprovals: number | null;
+
+	approvers: WorkflowListApproverApi[];
+};
+
+export type WorkflowTemplateUserApi = {
+	id: string;
+	templateId: string;
+	userId: string;
+	created_at: ApiDateString;
+	user: WorkflowUser;
+};
+
+/**
+ * Exact workflow shape returned by GET /work-flow.
+ *
+ * This type intentionally keeps the backend's snake-case property names.
+ * The API layer converts it into WorkflowTemplate.
+ */
+export type WorkflowTemplateApi = {
+	id: string;
+	name: string;
+	description: string;
+	workspaceId: string;
+	isActive: boolean;
+	appId: string;
+
+	metaData_1: string;
+	metaData_2: string;
+	metaData_3: string;
+
+	created_by_id: string;
+	updated_by_id: string;
+	created_at: ApiDateString;
+	updated_at: ApiDateString;
+
+	stages: WorkflowListStageApi[];
+	app: WorkflowApp;
+
+	created_by: WorkflowListPersonApi;
+	updated_by: WorkflowListPersonApi;
+
+	/**
+	 * Notice the capital F: this matches the current backend response.
+	 */
+	workFlowUsers: WorkflowTemplateUserApi[];
+
+	/**
+	 * These are optional until the backend returns them from GET /work-flow.
+	 */
+	ownerType?: WorkflowOwnerType;
+	isReusable?: boolean;
+
+	/**
+	 * @deprecated Use ownerType.
+	 */
+	workflowType?: WorkflowType | string;
+};
+
+/* -------------------------------------------------------------------------- */
+/* Normalized frontend workflow types                                          */
+/* -------------------------------------------------------------------------- */
 
 export type WorkflowTemplateUser = {
 	id: string;
@@ -91,16 +212,38 @@ export type WorkflowTemplate = {
 	isActive: boolean;
 	appId: string;
 	workspaceId?: string;
+
 	metaData_1: string;
 	metaData_2: string;
 	metaData_3: string;
+
 	createdAt: ApiDateString;
 	updatedAt: ApiDateString;
+
 	stages: WorkflowStage[];
 	app: WorkflowApp;
+
 	createdBy: WorkflowUser;
 	updatedBy: WorkflowUser;
+
 	workflowUsers: WorkflowTemplateUser[];
+
+	/**
+	 * ADMIN is an app-level template that can be assigned to other users.
+	 * USER is a personal template owned by its creator.
+	 *
+	 * Optional until the listing endpoint returns this field.
+	 */
+	ownerType?: WorkflowOwnerType;
+
+	/**
+	 * Optional until the listing endpoint returns this field.
+	 */
+	isReusable?: boolean;
+
+	/**
+	 * @deprecated Use ownerType.
+	 */
 	workflowType?: WorkflowType | string;
 };
 
@@ -113,7 +256,14 @@ export type WorkflowRow = {
 	lastUpdated: ApiDateString;
 	updatedBy: string;
 	workflowUsers: Array<Pick<WorkflowUser, "id">>;
-	workflowType?: WorkflowType | string;
+	ownerType?: WorkflowOwnerType;
+
+	/**
+	 * @deprecated Use ownerType.
+	 */
+	created_by_id?: string;
+	updated_by_id?: string;
+	appId?: string;
 };
 
 export type WorkflowSummary = {
@@ -126,7 +276,12 @@ export type WorkflowSummary = {
 	updatedAt?: ApiDateString;
 };
 
+/* -------------------------------------------------------------------------- */
+/* Workflow listing                                                            */
+/* -------------------------------------------------------------------------- */
+
 export type WorkflowScope = "created" | "assigned";
+
 export type WorkflowListScope = "ALL" | "ASSIGNED_TO_ME" | "CREATED_BY_ME";
 
 export type WorkflowListParams = {
@@ -139,12 +294,32 @@ export type WorkflowListParams = {
 	scope?: WorkflowListScope;
 };
 
+export type WorkflowListMeta = {
+	total: number;
+	page: number;
+	limit: number;
+	totalPages: number;
+};
+
+/**
+ * Raw response returned by GET /work-flow.
+ */
+export type WorkflowListApiResponse = {
+	data: WorkflowTemplateApi[];
+	meta: WorkflowListMeta;
+};
+
+/**
+ * Normalized response returned by workflowApi.list().
+ */
 export type WorkflowListResponse = {
 	data: WorkflowTemplate[];
-	meta: {
-		totalPages: number;
-	};
+	meta: WorkflowListMeta;
 };
+
+/* -------------------------------------------------------------------------- */
+/* Workflow builder                                                            */
+/* -------------------------------------------------------------------------- */
 
 export type WorkflowBuilderPayload = {
 	stages: Array<{
@@ -154,6 +329,7 @@ export type WorkflowBuilderPayload = {
 		minApprovals: number;
 		approvers: WorkflowApprover[];
 	}>;
+
 	flowType: WorkflowExecutionMode;
 	saveAsTemplate: boolean;
 	templateName?: string;
@@ -181,18 +357,24 @@ export type WorkFlowProps = {
 	basics: WorkflowBasics;
 	stages: WorkflowStage[];
 	currentUserId: string;
+
 	onBasicChange: <K extends keyof WorkflowBasics>(
 		key: K,
 		value: WorkflowBasics[K],
 	) => void;
+
 	onStageChange: <K extends keyof WorkflowStage>(
 		stageId: string,
 		key: K,
 		value: WorkflowStage[K],
 	) => void;
+
 	onToggleStage: (stageId: string) => void;
+
 	onRemoveApprover: (stageId: string, approverId: string) => void;
+
 	onAddApprover: (stageId: string, approver: WorkflowApprover) => void;
+
 	onSubmit: () => void;
 	loading?: boolean;
 	onAddStage: () => void;
@@ -202,9 +384,11 @@ export type WorkFlowProps = {
 	showStatus?: boolean;
 };
 
-export type AttachWorkflowInput = {
-	recordRef: string;
-	recordType: string;
+/* -------------------------------------------------------------------------- */
+/* Workflow attachment                                                         */
+/* -------------------------------------------------------------------------- */
+
+export type WorkflowAttachCriteria = {
 	workflowId?: string;
 	stages?: WorkflowBuilderPayload["stages"];
 	flowType?: WorkflowExecutionMode;
@@ -212,12 +396,35 @@ export type AttachWorkflowInput = {
 	templateName?: string;
 };
 
+export type AttachWorkflowInput = WorkflowAttachCriteria & {
+	recordRef: string;
+	recordType: string;
+	workspaceId: string;
+	appId: string;
+};
+
+export type PendingWorkflowSelection = {
+	key: string;
+	name: string;
+	previewStages: WorkflowStage[];
+	attachInput: WorkflowAttachCriteria;
+};
+
+/* -------------------------------------------------------------------------- */
+/* Validation                                                                  */
+/* -------------------------------------------------------------------------- */
+
 export type WorkflowGenErrors = Partial<Record<keyof WorkflowBasics, string>>;
+
 export type WorkflowStageErrors = Partial<Record<keyof WorkflowStage, string>>;
 
 export type WorkflowFilter = "created" | "assigned";
 export type SaveMode = "template" | "once";
 export type EntryMode = "idle" | "fetch" | "create";
+
+/* -------------------------------------------------------------------------- */
+/* Approval workflow                                                           */
+/* -------------------------------------------------------------------------- */
 
 export type ApprovalTableApproverRow = {
 	id: string;
@@ -238,35 +445,6 @@ export type ApprovalTableRow = {
 	name?: string;
 	email?: string;
 	approvers?: ApprovalTableApproverRow[];
-};
-
-export type WorkflowApprovalLike = {
-	id?: string;
-	approverId?: string | null;
-	status?: string | null;
-	approver?: WorkflowUser | null;
-	user?: WorkflowUser | null;
-};
-
-export type WorkflowPreviewApproverLike = {
-	id?: string;
-	status?: string | null;
-	user?: WorkflowUser | null;
-	approver?: WorkflowUser | null;
-};
-
-export type ApprovalStageLike = {
-	id?: string | null;
-	workflowId?: string;
-	stageOrder: number;
-	stageName?: string | null;
-	name?: string | null;
-	strategy?: ApprovalRule | "QUORUM" | string | null;
-	minApprovals?: number | string | null;
-	status?: string | null;
-	isCurrentIteration?: boolean | null;
-	approvals?: WorkflowApprovalLike[];
-	approvers?: WorkflowPreviewApproverLike[];
 };
 
 export type WorkflowApproval = {

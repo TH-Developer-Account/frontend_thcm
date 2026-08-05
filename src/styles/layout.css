@@ -2919,7 +2919,7 @@
 		align-items: center;
 		display: flex;
 		flex-direction: column;
-		max-width: var(--layout-content-max-width, 1080px);
+		max-width: var(--layout-content-max-width, 1200px);
 		margin-inline: auto;
 		margin: 2rem auto;
 	}

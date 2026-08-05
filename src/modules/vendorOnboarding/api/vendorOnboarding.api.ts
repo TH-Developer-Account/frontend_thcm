@@ -1,5 +1,7 @@
 import { ServerAxios } from "../../../services/ServerAxios";
 
+import { normalizeVendorOnboardingResponse } from "../helpers/vendor.onboarding.helper";
+import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";
 import type {
 	UpdateVendorVariables,
 	VendorCreationFormOneValues,
@@ -7,8 +9,6 @@ import type {
 	VendorOnboardingRawResponse,
 	VendorOnboardingResponse,
 } from "../types/vendorOnboarding.types";
-import { normalizeVendorOnboardingResponse } from "../helpers/vendor.onboarding.helper";
-import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";
 
 const VENDOR_URL = "/vendor-onboarding";
 const PUBLIC_VENDOR_URL = `${VENDOR_URL}/public`;
@@ -60,7 +60,17 @@ export type PublicVendorSessionResponse = {
 	partOne?: VendorCreationFormOneValues;
 	documents?: VendorOnboardingDocument[];
 };
+export type VendorPdfType = "VENDOR_ONBOARDING";
 
+type VendorPdfUrlResponse = {
+	success: boolean;
+	url: string;
+};
+/**
+ * Vendor-only endpoints live here. Workflow preview, assignment, approval,
+ * clarification, activation, instance and history calls are intentionally
+ * owned by modules/workflows/api/workflow.api.ts.
+ */
 export const vendorOnboardingApi = {
 	getById: async (
 		vendorRequestId: string,
@@ -100,7 +110,6 @@ export const vendorOnboardingApi = {
 		const {
 			data: { data },
 		} = await ServerAxios.patch(`${VENDOR_URL}/${vendorRequestId}`, payload);
-
 		return data;
 	},
 
@@ -142,6 +151,7 @@ export const vendorOnboardingApi = {
 		);
 		return message;
 	},
+
 	draftSubmitPublic: async (
 		token: string,
 		formData: FormData,
@@ -154,6 +164,7 @@ export const vendorOnboardingApi = {
 		);
 		return message;
 	},
+
 	resendVendorLink: async (vendorRequestId: string) => {
 		const {
 			data: { data },
@@ -169,41 +180,28 @@ export const vendorOnboardingApi = {
 		);
 		return data;
 	},
-	assignWorkflow: async (payload: {
-		subjectType: string;
-		subjectId: string;
-		workspaceId: string;
-		appId: string;
-		criteria: Record<string, unknown>;
-	}) => {
-		const {
-			data: { data, message },
-		} = await ServerAxios.post("/soa/assign-workflow", payload);
+	getPublicPdf: async (pdfToken: string): Promise<Blob> => {
+		const response = await ServerAxios.get<Blob>(
+			`${PUBLIC_VENDOR_URL}/pdf/${encodeURIComponent(pdfToken)}`,
+			{
+				responseType: "blob",
+			},
+		);
 
-		return { data, message };
+		return response.data;
 	},
 
-	previewWorkflow: async (payload: {
-		subjectType: string;
-		workspaceId: string;
-		appId: string;
-		criteria: Record<string, unknown>;
-	}) => {
+	getPdfUrl: async (
+		type: VendorPdfType,
+		vendorRequestId: string,
+	): Promise<string> => {
 		const {
-			data: { data },
-		} = await ServerAxios.post("/soa/preview-workflow", payload);
+			data: { url },
+		} = await ServerAxios.get<VendorPdfUrlResponse>(
+			`/pdf/${type}/${encodeURIComponent(vendorRequestId)}/url`,
+		);
 
-		return data;
-	},
-
-	activateFirstStage: async (workflowId: string) => {
-		const {
-			data: { data, message },
-		} = await ServerAxios.post(`/soa/stages/activate-first-stage`, {
-			workflowId,
-		});
-
-		return { data, message };
+		return url;
 	},
 };
 
@@ -217,9 +215,9 @@ export const vendorInitationApi = {
 			success: boolean;
 			data: VendorOnboardingInitiationPayload;
 		}>(`${VENDOR_URL}/${vendorRequestId}`);
-
 		return data;
 	},
+
 	createInitiation: async (payload: VendorOnboardingInitiationPayload) => {
 		const {
 			data: { data },

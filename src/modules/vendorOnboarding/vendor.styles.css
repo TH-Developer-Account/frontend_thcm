@@ -13,7 +13,7 @@
 		width: 100%;
 		min-width: 0;
 		flex-direction: column;
-		gap: var(--space-2);
+		gap: var(--space-4);
 
 		background-color: var(--color-bg-surface);
 		color: var(--color-text-primary);
@@ -345,6 +345,7 @@
 		width: 100%;
 		min-width: 0;
 		background-color: var(--color-bg-surface);
+		@apply px-4;
 	}
 
 	.vendor-summary-block-body .vendor-onboarding-form-actions {
@@ -1084,5 +1085,186 @@
 		font-size: var(--font-size-xs);
 		line-height: var(--line-height-normal);
 		cursor: pointer;
+	}
+}
+
+/* -------------------------------------------------------------------------- */
+/* Vendor workflow section                                                     */
+/* -------------------------------------------------------------------------- */
+.vendor-workflow-selection-note {
+	display: block;
+	margin-top: var(--space-1);
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-xs);
+	font-weight: 400;
+	line-height: 1.4;
+}
+.vendor-workflow-section {
+	display: grid;
+	gap: var(--space-4);
+	width: 100%;
+	min-width: 0;
+}
+
+.vendor-workflow-content,
+.vendor-workflow-preview,
+.vendor-workflow-picker {
+	display: grid;
+	gap: var(--space-3);
+	min-width: 0;
+}
+
+.vendor-workflow-selection {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-4);
+	padding: var(--space-3) var(--space-4);
+	border: 1px solid var(--color-border);
+	border-radius: var(--card-radius);
+	background: var(--color-surface);
+}
+
+.vendor-workflow-selection-main {
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+	min-width: 0;
+}
+
+.vendor-workflow-selection-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 2rem;
+	flex: none;
+	border-radius: 50%;
+	background: color-mix(in srgb, var(--color-brand) 8%, transparent);
+	color: var(--color-brand);
+}
+
+.vendor-workflow-selection-copy {
+	display: grid;
+	gap: var(--space-1);
+	min-width: 0;
+}
+
+.vendor-workflow-selection-copy span {
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-xs);
+}
+
+.vendor-workflow-selection-copy strong {
+	overflow: hidden;
+	color: var(--color-text-primary);
+	font-size: var(--font-size-sm);
+	font-weight: 600;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.vendor-workflow-table {
+	min-width: 0;
+	overflow-x: auto;
+	border-radius: var(--card-radius);
+}
+
+.vendor-workflow-empty {
+	padding: var(--space-5);
+	border: 1px dashed var(--color-border);
+	border-radius: var(--card-radius);
+	background: var(--color-page-bg);
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-sm);
+	text-align: center;
+}
+
+.vendor-workflow-navigation {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	padding-top: var(--space-4);
+	border-top: 1px solid var(--color-border);
+}
+
+.vendor-onboarding-form-actions-end {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+}
+
+@media (max-width: 767px) {
+	.workflow-save-options {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.workflow-customise-actions,
+	.vendor-workflow-selection,
+	.vendor-workflow-navigation {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.workflow-customise-actions > *,
+	.vendor-workflow-selection > button,
+	.vendor-workflow-navigation > button,
+	.vendor-onboarding-form-actions-end,
+	.vendor-onboarding-form-actions-end > button {
+		width: 100%;
+	}
+
+	.vendor-onboarding-form-actions-end {
+		display: grid;
+	}
+
+	.vendor-workflow-selection-copy strong {
+		white-space: normal;
+	}
+}
+.vendor-workflow-existing-option {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-4);
+	padding: var(--space-3) var(--space-4);
+	border: 1px solid var(--color-border);
+	border-radius: var(--card-radius);
+	background: var(--color-page-bg);
+}
+
+.vendor-workflow-existing-option > div {
+	display: grid;
+	gap: var(--space-1);
+	min-width: 0;
+}
+
+.vendor-workflow-existing-option strong {
+	color: var(--color-text-primary);
+	font-size: var(--font-size-sm);
+	font-weight: 600;
+}
+
+.vendor-workflow-existing-option span {
+	overflow: hidden;
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-xs);
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+	.vendor-workflow-existing-option {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	.vendor-workflow-existing-option > button {
+		width: 100%;
+	}
+
+	.vendor-workflow-existing-option span {
+		white-space: normal;
 	}
 }
