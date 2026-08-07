@@ -1,23 +1,23 @@
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import {
-	Activity,
 	ArrowLeft,
 	BadgeIndianRupee,
 	Building2,
 	CheckCircle2,
-	Eye,
 	FilePenLine,
-	HeartPulse,
-	ReceiptText,
+	Plus,
 	RefreshCcw,
 	Save,
 	Stethoscope,
+	Trash2,
+	Upload,
 	UserRound,
 } from "lucide-react";
 
 import Button from "../../components/common/Button";
 import Card from "../../components/common/Card";
 import FormInput from "../../components/forms/FormInput";
+import SelectInput from "../../components/forms/SelectInput";
 import TextareaInput from "../../components/forms/TextareaInput";
 import FormHeader from "../../components/ui/FormHeader";
 
@@ -36,10 +36,79 @@ import type {
 	ReimbursementClaimFormValues,
 	ReimbursementClaimSubmission,
 } from "./reimbursementClaim.types";
-import { FileUploadField } from "../../components/ui/FileUpload/FileUploadField";
 import Checkbox from "../../components/forms/Checkbox";
 import { useNavigate } from "react-router-dom";
-import DatePickerInput from "../../components/common/DatePickerInput";
+import { useToast } from "../../context/Auth/AuthContext";
+
+type ClaimHead =
+	| "VISIT_FEES"
+	| "MEDICINES_INVESTIGATIONS"
+	| "OPHTHALMIC_TREATMENT"
+	| "EXECUTIVE_HEALTH_CHECKUP"
+	| "EXCESS_HOSPITALISATION";
+
+type ClaimLineItem = {
+	id: string;
+	claimHead: ClaimHead | "";
+	billNumber: string;
+	billName: string;
+	name: string;
+	billDate: string;
+	amount: string;
+	file: File | null;
+};
+
+type CoverageType = "SELF" | "SPOUSE" | "BOTH" | "";
+
+const CLAIM_HEAD_OPTIONS: Array<{ label: string; value: ClaimHead }> = [
+	{ label: "A. Visit Fees", value: "VISIT_FEES" },
+	{
+		label: "B. Medicines and Investigations",
+		value: "MEDICINES_INVESTIGATIONS",
+	},
+	{ label: "C. Ophthalmic Treatment", value: "OPHTHALMIC_TREATMENT" },
+	{
+		label: "D. Executive Health Check-up",
+		value: "EXECUTIVE_HEALTH_CHECKUP",
+	},
+	{
+		label: "E. Excess Hospitalisation Claims",
+		value: "EXCESS_HOSPITALISATION",
+	},
+];
+
+// TODO: replace with the real grade → annual eligibility table.
+const GRADE_OPTIONS: Array<{
+	label: string;
+	value: string;
+	eligibility: number;
+}> = [
+	{ label: "M1", value: "M1", eligibility: 25000 },
+	{ label: "M2", value: "M2", eligibility: 35000 },
+	{ label: "M3", value: "M3", eligibility: 45000 },
+	{ label: "M4", value: "M4", eligibility: 60000 },
+	{ label: "M5", value: "M5", eligibility: 75000 },
+	{ label: "E1", value: "E1", eligibility: 100000 },
+	{ label: "E2", value: "E2", eligibility: 125000 },
+	{ label: "E3", value: "E3", eligibility: 150000 },
+];
+
+const COVERAGE_OPTIONS: Array<{ label: string; value: CoverageType }> = [
+	{ label: "Self", value: "SELF" },
+	{ label: "Spouse", value: "SPOUSE" },
+	{ label: "Both", value: "BOTH" },
+];
+
+const createLineItem = (): ClaimLineItem => ({
+	id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
+	claimHead: "",
+	billNumber: "",
+	billName: "",
+	name: "",
+	billDate: "",
+	amount: "",
+	file: null,
+});
 
 interface ReimbursementClaimFormProps {
 	mode?: ReimbursementClaimFormMode;
@@ -91,13 +160,78 @@ const ReimbursementClaimForm = ({
 	canApprove = false,
 	onApprovalAction,
 }: ReimbursementClaimFormProps) => {
+	const navigate = useNavigate();
+	const { showToast } = useToast();
+	const [lineItems, setLineItems] = useState<ClaimLineItem[]>([]);
+
+	// --- New local fields (not yet part of the shared form hook/types) ---
+	const [ticketNumber, setTicketNumber] = useState("");
+	const [grade, setGrade] = useState("");
+	const [coverageType, setCoverageType] = useState<CoverageType>("");
+	const [spouseName, setSpouseName] = useState("");
+
+	const selectedGrade = GRADE_OPTIONS.find((option) => option.value === grade);
+	const totalAmountEligible = selectedGrade?.eligibility ?? 0;
+
+	const lineItemsTotal = useMemo(
+		() =>
+			lineItems.reduce((total, item) => total + (Number(item.amount) || 0), 0),
+		[lineItems],
+	);
+
+	const withLineItems = (submission: ReimbursementClaimSubmission) => ({
+		...submission,
+		ticketNumber,
+		grade,
+		coverageType,
+		spouseName:
+			coverageType === "SELF" || coverageType === "" ? "" : spouseName,
+		totalAmountEligible,
+		lineItems: lineItems.map((item) => ({
+			...item,
+			file: item.file,
+			fileName: item.file?.name ?? null,
+		})),
+		lineItemsTotal,
+	});
+
+	const submitWithFeedback = async (
+		action: "submit" | "draft",
+		submission: ReimbursementClaimSubmission,
+	) => {
+		const payload = withLineItems(submission);
+		console.log(`[Medical Claim] ${action} payload`, payload);
+
+		try {
+			if (action === "submit") await onSubmit?.(payload);
+			else await onSaveDraft?.(payload);
+
+			showToast({
+				type: "success",
+				title: "Success",
+				description:
+					action === "submit"
+						? "Medical claim submitted successfully."
+						: "Medical claim draft saved successfully.",
+			});
+		} catch (error) {
+			console.error(`[Medical Claim] ${action} failed`, error, payload);
+			showToast({
+				type: "error",
+				title: "Error",
+				description:
+					action === "submit"
+						? "Unable to submit the medical claim. Please try again."
+						: "Unable to save the medical claim draft. Please try again.",
+			});
+			throw error;
+		}
+	};
+
 	const {
 		values,
 		attachments,
 		errors,
-		categoryTotals,
-		claimedTotal,
-		officeApprovedTotal,
 		isLoading,
 		isSubmitting,
 		isSavingDraft,
@@ -110,27 +244,91 @@ const ReimbursementClaimForm = ({
 	} = useReimbursementClaimForm({
 		initialValues,
 		initialAttachments,
-		onSubmit,
-		onSaveDraft,
+		onSubmit: onSubmit
+			? (submission) => submitWithFeedback("submit", submission)
+			: undefined,
+		onSaveDraft: onSaveDraft
+			? (submission) => submitWithFeedback("draft", submission)
+			: undefined,
 	});
 
-	const navigate = useNavigate();
-	const [selectedDate, setSelectedDate] = useState<Date | undefined>();
+	useEffect(() => {
+		const totalFor = (head: ClaimHead) =>
+			lineItems
+				.filter((item) => item.claimHead === head)
+				.reduce((total, item) => total + (Number(item.amount) || 0), 0)
+				.toFixed(2);
+
+		handleChange(
+			"numberOfVisits",
+			lineItems.some((item) => item.claimHead === "VISIT_FEES") ? "1" : "",
+		);
+		handleChange("visitFeePerVisit", totalFor("VISIT_FEES"));
+		handleChange("doctorMedicineAmount", totalFor("MEDICINES_INVESTIGATIONS"));
+		handleChange("injectionInvestigationAmount", "0.00");
+		handleChange("ecgXrayOtherAmount", "0.00");
+		handleChange("lensCost", totalFor("OPHTHALMIC_TREATMENT"));
+		handleChange("frameCost", "0.00");
+		handleChange("healthCheckupAmount", totalFor("EXECUTIVE_HEALTH_CHECKUP"));
+		handleChange(
+			"excessHospitalizationAmount",
+			totalFor("EXCESS_HOSPITALISATION"),
+		);
+	}, [lineItems]);
+
+	const updateLineItem = <K extends keyof ClaimLineItem>(
+		id: string,
+		field: K,
+		value: ClaimLineItem[K],
+	) => {
+		setLineItems((current) =>
+			current.map((item) =>
+				item.id === id ? { ...item, [field]: value } : item,
+			),
+		);
+	};
+
+	const handleApprovalWithFeedback = async (
+		stageId: string,
+		action: ApprovalActionType,
+		comment: string,
+	) => {
+		const payload = { stageId, action, comment };
+		console.log("[Medical Claim] approval action payload", payload);
+
+		try {
+			await onApprovalAction?.(stageId, action, comment);
+			showToast({
+				type: "success",
+				title: "Success",
+				description: "Approval action completed successfully.",
+			});
+		} catch (error) {
+			console.error("[Medical Claim] approval action failed", error, payload);
+			showToast({
+				type: "error",
+				title: "Error",
+				description:
+					"Unable to complete the approval action. Please try again.",
+			});
+			throw error;
+		}
+	};
 	const isReadOnly = mode === "view" || !canEdit;
 	const fieldMode: ReimbursementClaimFormMode = isReadOnly ? "view" : "edit";
 	const officeFieldMode: ReimbursementClaimFormMode =
 		mode === "view" || !canEditOfficeUse ? "view" : "edit";
 
-	const amountChange =
-		(field: keyof ReimbursementClaimFormValues) =>
-		(event: ChangeEvent<HTMLInputElement>): void => {
-			handleChange(field, sanitizeAmountInput(event.target.value));
-		};
-
 	const wholeNumberChange =
 		(field: keyof ReimbursementClaimFormValues) =>
 		(event: ChangeEvent<HTMLInputElement>): void => {
 			handleChange(field, sanitizeWholeNumberInput(event.target.value));
+		};
+
+	const amountChange =
+		(field: keyof ReimbursementClaimFormValues) =>
+		(event: ChangeEvent<HTMLInputElement>): void => {
+			handleChange(field, sanitizeAmountInput(event.target.value));
 		};
 
 	const hasActions = !isReadOnly && Boolean(onSubmit || onSaveDraft || onBack);
@@ -141,6 +339,46 @@ const ReimbursementClaimForm = ({
 			replace: true,
 		});
 	};
+
+	const resetAll = () => {
+		handleReset();
+		setLineItems([]);
+		setTicketNumber("");
+		setGrade("");
+		setCoverageType("");
+		setSpouseName("");
+	};
+
+	const draftSubmitActions = (
+		// !isReadOnly && (onSaveDraft || onSubmit) ? (
+		<div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+			{/* {onSaveDraft ? ( */}
+			<Button
+				type="button"
+				text={isSavingDraft ? "Saving..." : "Save as Draft"}
+				Icon={FilePenLine}
+				size="sm"
+				appearance="standard"
+				variant="outline"
+				disabled={isLoading}
+				onClick={handleSaveDraft}
+			/>
+			{/* ) : null} */}
+			{/* {onSubmit ? ( */}
+			<Button
+				type="button"
+				text={isSubmitting ? "Submitting..." : actionText}
+				Icon={Save}
+				size="sm"
+				appearance="standard"
+				variant="brand"
+				disabled={isLoading}
+				onClick={handleSubmit}
+			/>
+			{/* ) : null} */}
+		</div>
+	);
+	// ) : null;
 
 	return (
 		<Card
@@ -204,7 +442,7 @@ const ReimbursementClaimForm = ({
 								appearance="standard"
 								variant="outline"
 								disabled={isLoading}
-								onClick={handleReset}
+								onClick={resetAll}
 							/>
 
 							{onSaveDraft ? (
@@ -266,15 +504,40 @@ const ReimbursementClaimForm = ({
 				<div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
 					<FormInput
 						mode={fieldMode}
-						name="ticketNumberOrGrade"
-						label="Ticket Number / Grade"
-						value={values.ticketNumberOrGrade}
+						name="ticketNumber"
+						label="Ticket Number"
+						value={ticketNumber}
 						required
-						error={errors.ticketNumberOrGrade}
 						onChange={(event: ChangeEvent<HTMLInputElement>) =>
-							handleChange("ticketNumberOrGrade", event.target.value)
+							setTicketNumber(event.target.value)
 						}
 					/>
+
+					<SelectInput
+						mode={fieldMode}
+						name="grade"
+						label="Grade"
+						placeholder="Select grade"
+						options={GRADE_OPTIONS.map(({ label, value }) => ({
+							label,
+							value,
+						}))}
+						value={
+							GRADE_OPTIONS.find((option) => option.value === grade)
+								? { label: grade, value: grade }
+								: null
+						}
+						onChange={(option) => setGrade((option?.value as string) ?? "")}
+					/>
+
+					<FormInput
+						mode="view"
+						name="totalAmountEligible"
+						label="Total Amount Eligible"
+						value={currencyFormatter.format(totalAmountEligible)}
+						helperText="Calculated automatically from grade."
+					/>
+
 					<FormInput
 						mode={fieldMode}
 						name="employeeName"
@@ -300,6 +563,7 @@ const ReimbursementClaimForm = ({
 							handleChange("location", event.target.value)
 						}
 					/>
+
 					<FormInput
 						mode={fieldMode}
 						name="patientName"
@@ -311,367 +575,240 @@ const ReimbursementClaimForm = ({
 							handleChange("patientName", event.target.value)
 						}
 					/>
-
-					<FormInput
-						mode={fieldMode}
-						name="relationshipWithEmployee"
-						label="Relationship with Employee"
-						value={values.relationshipWithEmployee}
-						required
-						error={errors.relationshipWithEmployee}
-						helperText="For example: Self, spouse, child or dependent."
-						onChange={(event: ChangeEvent<HTMLInputElement>) =>
-							handleChange("relationshipWithEmployee", event.target.value)
-						}
-					/>
 				</div>
+
+				<div className="flex flex-col gap-2">
+					<span className="text-sm font-medium text-iron-dark">
+						Claim Covers
+					</span>
+					<div className="flex flex-wrap gap-4">
+						{COVERAGE_OPTIONS.map((option) => (
+							<label
+								key={option.value}
+								className="flex items-center gap-2 text-sm text-iron"
+							>
+								<input
+									type="radio"
+									name="coverageType"
+									value={option.value}
+									checked={coverageType === option.value}
+									disabled={isReadOnly}
+									onChange={() => setCoverageType(option.value)}
+								/>
+								{option.label}
+							</label>
+						))}
+					</div>
+				</div>
+
+				{coverageType === "SPOUSE" || coverageType === "BOTH" ? (
+					<div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+						<FormInput
+							mode={fieldMode}
+							name="spouseName"
+							label="Spouse Name"
+							value={spouseName}
+							required
+							onChange={(event: ChangeEvent<HTMLInputElement>) =>
+								setSpouseName(event.target.value)
+							}
+						/>
+					</div>
+				) : null}
 
 				<FormHeader title="Domiciliary Details" Icon={Building2} />
 
 				<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
 					<FormInput
-						mode={fieldMode}
+						mode="view"
 						name="medicalAdvanceAmount"
 						label="Medical Advance Taken"
-						placeholder="0.00"
-						type="number"
-						value={values.medicalAdvanceAmount}
-						inputMode="decimal"
-						error={errors.medicalAdvanceAmount}
-						helperText="Enter amount in rupees, if applicable."
-						onChange={amountChange("medicalAdvanceAmount")}
+						value={currencyFormatter.format(
+							Number(values.medicalAdvanceAmount || 0),
+						)}
+						helperText="Read-only — pulled from records."
 					/>
 
 					<FormInput
-						mode={fieldMode}
+						mode="view"
 						name="companySettledAmount"
 						label="Amount Already Settled This Calendar Year"
-						value={values.companySettledAmount}
-						inputMode="decimal"
-						placeholder="0.00"
-						type="number"
-						error={errors.companySettledAmount}
-						helperText="Enter amount in rupees, if applicable."
-						onChange={amountChange("companySettledAmount")}
+						value={currencyFormatter.format(
+							Number(values.companySettledAmount || 0),
+						)}
+						helperText="Read-only — pulled from records."
 					/>
 				</div>
 
-				<TextareaInput
-					mode={fieldMode}
-					name="descriptionOfIllness"
-					label="Description of Illness / Treatment"
-					value={values.descriptionOfIllness}
-					required
-					error={errors.descriptionOfIllness}
-					helperText="Include the illness, treatment and relevant medical context."
-					rows={4}
-					onChange={(event: ChangeEvent<HTMLTextAreaElement>) =>
-						handleChange("descriptionOfIllness", event.target.value)
-					}
-				/>
-
 				<FormHeader title="Claim Heads" Icon={Stethoscope} />
 
-				<Card
-					title={
-						<div className="flex items-center gap-2">
-							<Stethoscope
-								size={18}
-								className="text-brand"
-								aria-hidden="true"
-							/>
-							<span>A. Visit Fees</span>
-						</div>
-					}
-					secondaryHeader={
-						<p className="text-sm text-muted">
-							Claimed amount:{" "}
-							<span className="font-semibold text-iron-dark">
-								{currencyFormatter.format(categoryTotals.visitFees)}
-							</span>
-						</p>
-					}
+				<section
+					className="flex flex-col gap-3"
+					aria-label="Claim bill entries"
 				>
-					<div className="flex flex-col gap-4">
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-							<FormInput
-								mode={fieldMode}
-								name="numberOfVisits"
-								label="Number of Visits"
-								value={values.numberOfVisits}
-								inputMode="numeric"
-								error={errors.numberOfVisits}
-								helperText="Include visits to a dispensary."
-								onChange={wholeNumberChange("numberOfVisits")}
-							/>
-
-							<FormInput
-								mode={fieldMode}
-								name="visitFeePerVisit"
-								label="Fee per Visit"
-								value={values.visitFeePerVisit}
-								inputMode="decimal"
-								error={errors.visitFeePerVisit}
-								helperText="Amount in rupees."
-								onChange={amountChange("visitFeePerVisit")}
-							/>
-
-							<FormInput
-								mode="view"
-								name="visitFeesClaimedTotal"
-								label="Amount Claimed"
-								value={currencyFormatter.format(categoryTotals.visitFees)}
-								helperText="Calculated from visits × fee per visit."
-							/>
+					<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+						<div>
+							<h2 className="text-sm font-semibold text-iron-dark">
+								Bill line items
+							</h2>
+							<p className="text-xs text-muted">
+								Add one entry for every receipt or bill being claimed.
+							</p>
 						</div>
-
-						<FileUploadField
-							kind="document"
-							multiple
-							label="Consultation Receipts"
-							// helperText="Attach receipts for each visit, including dispensary visits."
-							value={attachments.visitFees}
-							readonly={isReadOnly}
-							onChange={(files) => handleAttachmentsChange("visitFees", files)}
-						/>
-					</div>
-				</Card>
-
-				<Card
-					title={
-						<div className="flex items-center gap-2">
-							<Activity size={18} className="text-brand" aria-hidden="true" />
-							<span>B. Medicines and Investigations</span>
-						</div>
-					}
-					secondaryHeader={
-						<p className="text-sm text-muted">
-							Claimed amount:{" "}
-							<span className="font-semibold text-iron-dark">
-								{currencyFormatter.format(categoryTotals.medical)}
-							</span>
-						</p>
-					}
-				>
-					<div className="flex flex-col gap-4">
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-							<FormInput
-								mode={fieldMode}
-								name="doctorMedicineAmount"
-								label="Medicines Prescribed by Doctor"
-								value={values.doctorMedicineAmount}
-								inputMode="decimal"
-								error={errors.doctorMedicineAmount}
-								helperText="Amount in rupees."
-								onChange={amountChange("doctorMedicineAmount")}
-							/>
-
-							<FormInput
-								mode={fieldMode}
-								name="injectionInvestigationAmount"
-								label="Injections / Investigations"
-								value={values.injectionInvestigationAmount}
-								inputMode="decimal"
-								error={errors.injectionInvestigationAmount}
-								helperText="Amount in rupees."
-								onChange={amountChange("injectionInvestigationAmount")}
-							/>
-
-							<FormInput
-								mode={fieldMode}
-								name="ecgXrayOtherAmount"
-								label="ECG / X-Ray / Other"
-								value={values.ecgXrayOtherAmount}
-								inputMode="decimal"
-								error={errors.ecgXrayOtherAmount}
-								helperText="Amount in rupees."
-								onChange={amountChange("ecgXrayOtherAmount")}
-							/>
-
-							<FormInput
-								mode="view"
-								name="medicalClaimedTotal"
-								label="Amount Claimed"
-								value={currencyFormatter.format(categoryTotals.medical)}
-							/>
-						</div>
-
-						<FileUploadField
-							kind="document"
-							multiple
-							label="Pharmacy Bills and Investigation Reports"
-							value={attachments.medical}
-							readonly={isReadOnly}
-							onChange={(files) => handleAttachmentsChange("medical", files)}
-						/>
-					</div>
-				</Card>
-
-				<Card
-					title={
-						<div className="flex items-center gap-2">
-							<Eye size={18} className="text-brand" aria-hidden="true" />
-							<span>C. Ophthalmic Treatment</span>
-						</div>
-					}
-					secondaryHeader={
-						<p className="text-sm text-muted">
-							Claimed amount:{" "}
-							<span className="font-semibold text-iron-dark">
-								{currencyFormatter.format(categoryTotals.ophthalmic)}
-							</span>
-						</p>
-					}
-				>
-					<div className="flex flex-col gap-4">
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-							<FormInput
-								mode={fieldMode}
-								name="lensCost"
-								label="Cost of Lenses"
-								value={values.lensCost}
-								inputMode="decimal"
-								error={errors.lensCost}
-								onChange={amountChange("lensCost")}
-							/>
-
-							<FormInput
-								mode={fieldMode}
-								name="frameCost"
-								label="Cost of Frame"
-								value={values.frameCost}
-								inputMode="decimal"
-								error={errors.frameCost}
-								onChange={amountChange("frameCost")}
-							/>
-
-							<FormInput
-								mode="view"
-								name="ophthalmicClaimedTotal"
-								label="Amount Claimed"
-								value={currencyFormatter.format(categoryTotals.ophthalmic)}
-							/>
-						</div>
-
-						<FileUploadField
-							kind="document"
-							multiple
-							label="Optician Invoice and Prescription"
-							// helperText="As permitted by company policy."
-							value={attachments.ophthalmic}
-							readonly={isReadOnly}
-							onChange={(files) => handleAttachmentsChange("ophthalmic", files)}
-						/>
-					</div>
-				</Card>
-
-				<Card
-					title={
-						<div className="flex items-center gap-2">
-							<HeartPulse size={18} className="text-brand" aria-hidden="true" />
-							<span>D. Executive Health Check-up</span>
-						</div>
-					}
-				>
-					<div className="flex flex-col gap-4">
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-							<FormInput
-								mode={fieldMode}
-								name="patientAge"
-								label="Age"
-								value={values.patientAge}
-								inputMode="numeric"
-								error={errors.patientAge}
-								onChange={wholeNumberChange("patientAge")}
-							/>
-							{/* 
-							<FormInput
-								mode={fieldMode}
-								type="date"
-								name="lastHealthCheckupDate"
-								label="Last Health Check-up Date"
-								value={values.lastHealthCheckupDate}
-								error={errors.lastHealthCheckupDate}
-								onChange={(event: ChangeEvent<HTMLInputElement>) =>
-									handleChange("lastHealthCheckupDate", event.target.value)
+						{!isReadOnly ? (
+							<Button
+								type="button"
+								text="New Entry"
+								Icon={Plus}
+								size="sm"
+								appearance="standard"
+								variant="outline"
+								onClick={() =>
+									setLineItems((current) => [...current, createLineItem()])
 								}
-							/> */}
-							<DatePickerInput
-								mode="single"
-								label="Last Health Check-up Date"
-								value={selectedDate}
-								disablePast
-								onChange={(nextValue) => {
-									setSelectedDate(
-										nextValue instanceof Date ? nextValue : undefined,
-									);
-								}}
 							/>
-
-							<FormInput
-								mode={fieldMode}
-								name="healthCheckupAmount"
-								label="Amount Claimed"
-								value={values.healthCheckupAmount}
-								inputMode="decimal"
-								error={errors.healthCheckupAmount}
-								helperText="As permitted by company policy."
-								onChange={amountChange("healthCheckupAmount")}
-							/>
-						</div>
-
-						<FileUploadField
-							kind="document"
-							multiple
-							label="Health Check-up Report"
-							value={attachments.healthCheckup}
-							readonly={isReadOnly}
-							onChange={(files) =>
-								handleAttachmentsChange("healthCheckup", files)
-							}
-						/>
+						) : null}
 					</div>
-				</Card>
 
-				<Card
-					title={
-						<div className="flex items-center gap-2">
-							<ReceiptText
-								size={18}
-								className="text-brand"
-								aria-hidden="true"
-							/>
-							<span>E. Excess Hospitalisation Claims</span>
+					{lineItems.length === 0 ? (
+						<div className="rounded-md border border-dashed border-border px-4 py-6 text-center text-sm text-muted">
+							No bill entries added. Select{" "}
+							<span className="font-medium">New Entry</span> to begin.
 						</div>
-					}
-				>
-					<div className="flex flex-col gap-4">
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-							<FormInput
-								mode={fieldMode}
-								name="excessHospitalizationAmount"
-								label="Amount Claimed"
-								value={values.excessHospitalizationAmount}
-								inputMode="decimal"
-								error={errors.excessHospitalizationAmount}
-								helperText="Enter only the eligible excess amount."
-								onChange={amountChange("excessHospitalizationAmount")}
-							/>
+					) : (
+						<div className="overflow-x-auto rounded-md">
+							<div className="min-w-[1180px]">
+								{lineItems.map((item, index) => (
+									<div
+										key={item.id}
+										className="grid grid-cols-[210px_130px_190px_170px_150px_140px_170px_48px] items-center gap-3 border-b border-border px-3 py-3 last:border-b-0"
+									>
+										<SelectInput
+											mode={fieldMode}
+											name={`claimHead-${item.id}`}
+											label={`Claim head ${index + 1}`}
+											placeholder="Select head"
+											options={CLAIM_HEAD_OPTIONS}
+											value={
+												CLAIM_HEAD_OPTIONS.find(
+													(option) => option.value === item.claimHead,
+												) ?? null
+											}
+											onChange={(option) =>
+												updateLineItem(
+													item.id,
+													"claimHead",
+													(option?.value as ClaimHead) ?? "",
+												)
+											}
+										/>
+										<FormInput
+											mode={fieldMode}
+											name={`billNumber-${item.id}`}
+											label="Bill number"
+											value={item.billNumber}
+											placeholder="Bill no."
+											onChange={(event: ChangeEvent<HTMLInputElement>) =>
+												updateLineItem(
+													item.id,
+													"billNumber",
+													event.target.value,
+												)
+											}
+										/>
+										<FormInput
+											mode={fieldMode}
+											name={`billName-${item.id}`}
+											label="Receipt or bill name"
+											value={item.billName}
+											placeholder="Bill name"
+											onChange={(event: ChangeEvent<HTMLInputElement>) =>
+												updateLineItem(item.id, "billName", event.target.value)
+											}
+										/>
+										<FormInput
+											mode={fieldMode}
+											name={`name-${item.id}`}
+											label="Name"
+											value={item.name}
+											placeholder="Name"
+											onChange={(event: ChangeEvent<HTMLInputElement>) =>
+												updateLineItem(item.id, "name", event.target.value)
+											}
+										/>
+										<FormInput
+											mode={fieldMode}
+											type="date"
+											name={`billDate-${item.id}`}
+											label="Bill date"
+											value={item.billDate}
+											onChange={(event: ChangeEvent<HTMLInputElement>) =>
+												updateLineItem(item.id, "billDate", event.target.value)
+											}
+										/>
+										<FormInput
+											mode={fieldMode}
+											name={`amount-${item.id}`}
+											label="Amount"
+											inputMode="decimal"
+											value={item.amount}
+											placeholder="0.00"
+											onChange={(event: ChangeEvent<HTMLInputElement>) =>
+												updateLineItem(
+													item.id,
+													"amount",
+													sanitizeAmountInput(event.target.value),
+												)
+											}
+										/>
+										<div className="min-w-0">
+											<input
+												id={`bill-file-${item.id}`}
+												className="sr-only"
+												type="file"
+												accept=".pdf,.png,.jpg,.jpeg"
+												disabled={isReadOnly}
+												onChange={(event) =>
+													updateLineItem(
+														item.id,
+														"file",
+														event.target.files?.[0] ?? null,
+													)
+												}
+											/>
+											<label
+												htmlFor={`bill-file-${item.id}`}
+												className="flex h-10 cursor-pointer items-center gap-2 rounded-md border border-border px-3 text-xs text-iron hover:border-brand"
+											>
+												<Upload size={15} className="shrink-0" />
+												<span className="truncate" title={item.file?.name}>
+													{item.file?.name ?? "Upload bill"}
+												</span>
+											</label>
+										</div>
+										{!isReadOnly ? (
+											<button
+												type="button"
+												className="flex h-10 w-10 items-center justify-center rounded-md text-rejected hover:bg-rejected/10"
+												aria-label={`Remove bill entry ${index + 1}`}
+												onClick={() =>
+													setLineItems((current) =>
+														current.filter((entry) => entry.id !== item.id),
+													)
+												}
+											>
+												<Trash2 size={17} />
+											</button>
+										) : (
+											<span />
+										)}
+									</div>
+								))}
+							</div>
 						</div>
-
-						<FileUploadField
-							kind="document"
-							multiple
-							label="Discharge Summary and Hospital Bills"
-							value={attachments.excessHospitalization}
-							readonly={isReadOnly}
-							onChange={(files) =>
-								handleAttachmentsChange("excessHospitalization", files)
-							}
-						/>
-					</div>
-				</Card>
-
+					)}
+				</section>
+				{draftSubmitActions}
 				<Card>
 					<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
 						<div>
@@ -683,11 +820,8 @@ const ReimbursementClaimForm = ({
 							</p>
 						</div>
 
-						<output
-							className="text-xl font-semibold text-iron-dark"
-							htmlFor="numberOfVisits visitFeePerVisit doctorMedicineAmount injectionInvestigationAmount ecgXrayOtherAmount lensCost frameCost healthCheckupAmount excessHospitalizationAmount"
-						>
-							{currencyFormatter.format(claimedTotal)}
+						<output className="text-xl font-semibold text-iron-dark">
+							{currencyFormatter.format(lineItemsTotal)}
 						</output>
 					</div>
 
@@ -751,17 +885,6 @@ const ReimbursementClaimForm = ({
 								handleChange("claimDate", event.target.value)
 							}
 						/>
-						<DatePickerInput
-							mode="single"
-							label="Last Health Check-up Date"
-							value={selectedDate}
-							disablePast
-							onChange={(nextValue) => {
-								setSelectedDate(
-									nextValue instanceof Date ? nextValue : undefined,
-								);
-							}}
-						/>
 					</div>
 				</div>
 
@@ -771,7 +894,9 @@ const ReimbursementClaimForm = ({
 						<ApprovalSection
 							stages={approvalStages}
 							canApprove={canApprove}
-							onAction={onApprovalAction}
+							onAction={
+								onApprovalAction ? handleApprovalWithFeedback : undefined
+							}
 						/>
 					</fieldset>
 				) : null}
@@ -859,9 +984,6 @@ const ReimbursementClaimForm = ({
 								value={values.passedAmount}
 								inputMode="decimal"
 								error={errors.passedAmount}
-								helperText={`Category total: ${currencyFormatter.format(
-									officeApprovedTotal,
-								)}`}
 								onChange={amountChange("passedAmount")}
 							/>
 

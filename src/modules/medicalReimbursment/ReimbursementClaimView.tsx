@@ -6,6 +6,7 @@ import {
 	CheckCircle2,
 	Eye,
 	HeartPulse,
+	MessageCircleQuestion,
 	ReceiptText,
 	Stethoscope,
 	UserRound,
@@ -28,7 +29,6 @@ import type {
 	ReimbursementClaimFormValues,
 } from "./reimbursementClaim.types";
 import { deriveClaimStatusLabel } from "./useReimbursementClaimForm";
-// import { FileUploadField } from "../../components/ui/FileUpload/FileUploadField";
 
 const currencyFormatter = new Intl.NumberFormat("en-IN", {
 	style: "currency",
@@ -40,7 +40,19 @@ const currencyFormatter = new Intl.NumberFormat("en-IN", {
 // Sample / prefilled data — replace with the values fetched for a given claim
 // ---------------------------------------------------------------------------
 
-const prefilledValues: ReimbursementClaimFormValues = {
+const prefilledValues: ReimbursementClaimFormValues & {
+	ticketNumber?: string;
+	grade?: string;
+	totalAmountEligible?: number;
+	coverageType?: "SELF" | "SPOUSE" | "BOTH" | "";
+	spouseName?: string;
+} = {
+	ticketNumber: "E-4521",
+	grade: "M2",
+	totalAmountEligible: 35000,
+	coverageType: "SPOUSE",
+	spouseName: "Sunita Kulkarni",
+
 	ticketNumberOrGrade: "E-4521 / M2",
 	employeeName: "Ramesh Kulkarni",
 	location: "Bengaluru",
@@ -82,20 +94,6 @@ const prefilledValues: ReimbursementClaimFormValues = {
 	passedAmount: "11050",
 	passedDate: "2026-07-31",
 };
-
-// const prefilledAttachments: ReimbursementClaimAttachments = {
-// 	visitFees: [
-// 		{ id: "1", name: "consultation_receipt_01.pdf" } as never,
-// 		{ id: "2", name: "consultation_receipt_02.pdf" } as never,
-// 	],
-// 	medical: [
-// 		{ id: "3", name: "pharmacy_bill_mar.png" } as never,
-// 		{ id: "4", name: "mri_investigation_report.pdf" } as never,
-// 	],
-// 	ophthalmic: [],
-// 	healthCheckup: [],
-// 	excessHospitalization: [],
-// };
 
 const prefilledApprovalStages: ApprovalStage[] = [
 	{
@@ -142,6 +140,11 @@ const statusMeta: Record<
 		label: "Rejected",
 		icon: XCircle,
 		className: "bg-red-50 text-rejected border-red-200",
+	},
+	clarify: {
+		label: "Clarification Requested",
+		icon: MessageCircleQuestion,
+		className: "bg-amber-50 text-amber-700 border-amber-200",
 	},
 	pending: {
 		label: "Pending",
@@ -233,7 +236,7 @@ const ApprovalTable = ({
 			</div>
 
 			{canApprove && pendingStageId ? (
-				<div className="flex flex-col gap-2 rounded-md border border-border p-3 sm:flex-row sm:items-center sm:justify-between">
+				<div className="flex flex-col gap-2  p-3 sm:flex-row sm:items-center sm:justify-between">
 					<p className="text-sm text-iron">
 						This claim is awaiting your action at the current stage.
 					</p>
@@ -246,6 +249,15 @@ const ApprovalTable = ({
 							appearance="standard"
 							variant="outline"
 							onClick={() => onAction?.(pendingStageId, "reject", "")}
+						/>
+						<Button
+							type="button"
+							text="Clarify"
+							Icon={MessageCircleQuestion}
+							size="sm"
+							appearance="standard"
+							variant="outline"
+							onClick={() => onAction?.(pendingStageId, "clarify", "")}
 						/>
 						<Button
 							type="button"
@@ -268,7 +280,7 @@ const ApprovalTable = ({
 // ---------------------------------------------------------------------------
 
 interface ReimbursementClaimViewProps {
-	values?: ReimbursementClaimFormValues;
+	values?: typeof prefilledValues;
 	attachments?: ReimbursementClaimAttachments;
 	approvalStages?: ApprovalStage[];
 	canApprove?: boolean;
@@ -284,7 +296,6 @@ interface ReimbursementClaimViewProps {
 
 const ReimbursementClaimView = ({
 	values = prefilledValues,
-	// attachments = prefilledAttachments,
 	approvalStages = prefilledApprovalStages,
 	canApprove = true,
 	onApprovalAction,
@@ -311,6 +322,12 @@ const ReimbursementClaimView = ({
 	const pendingStage = approvalStages.find(
 		(stage) => (stage as unknown as { status: string }).status === "pending",
 	) as unknown as { id: string } | undefined;
+
+	const coverageLabel: Record<string, string> = {
+		SELF: "Self",
+		SPOUSE: "Spouse",
+		BOTH: "Self and Spouse",
+	};
 
 	return (
 		<Card
@@ -387,9 +404,23 @@ const ReimbursementClaimView = ({
 				<div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
 					<FormInput
 						mode="view"
-						name="ticketNumberOrGrade"
-						label="Ticket Number / Grade"
-						value={values.ticketNumberOrGrade}
+						name="ticketNumber"
+						label="Ticket Number"
+						value={values.ticketNumber}
+					/>
+					<FormInput
+						mode="view"
+						name="grade"
+						label="Grade"
+						value={values.grade}
+					/>
+					<FormInput
+						mode="view"
+						name="totalAmountEligible"
+						label="Total Amount Eligible"
+						value={currencyFormatter.format(
+							Number(values.totalAmountEligible || 0),
+						)}
 					/>
 					<FormInput
 						mode="view"
@@ -411,10 +442,21 @@ const ReimbursementClaimView = ({
 					/>
 					<FormInput
 						mode="view"
-						name="relationshipWithEmployee"
-						label="Relationship with Employee"
-						value={values.relationshipWithEmployee}
+						name="coverageType"
+						label="Claim Covers"
+						value={
+							values.coverageType ? coverageLabel[values.coverageType] : "—"
+						}
 					/>
+					{values.coverageType === "SPOUSE" ||
+					values.coverageType === "BOTH" ? (
+						<FormInput
+							mode="view"
+							name="spouseName"
+							label="Spouse Name"
+							value={values.spouseName}
+						/>
+					) : null}
 				</div>
 
 				<FormHeader title="Domiciliary Details" Icon={Building2} />
@@ -468,38 +510,27 @@ const ReimbursementClaimView = ({
 						</p>
 					}
 				>
-					<div className="flex flex-col gap-4">
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-							<FormInput
-								mode="view"
-								name="numberOfVisits"
-								label="Number of Visits"
-								value={values.numberOfVisits}
-							/>
-							<FormInput
-								mode="view"
-								name="visitFeePerVisit"
-								label="Fee per Visit"
-								value={currencyFormatter.format(
-									Number(values.visitFeePerVisit || 0),
-								)}
-							/>
-							<FormInput
-								mode="view"
-								name="visitFeesClaimedTotal"
-								label="Amount Claimed"
-								value={currencyFormatter.format(visitFeesTotal)}
-							/>
-						</div>
-
-						{/* <FileUploadField
-							kind="document"
-							multiple
-							label="Consultation Receipts"
-							value={attachments.visitFees}
-							readonly
-							onChange={() => undefined}
-						/> */}
+					<div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+						<FormInput
+							mode="view"
+							name="numberOfVisits"
+							label="Number of Visits"
+							value={values.numberOfVisits}
+						/>
+						<FormInput
+							mode="view"
+							name="visitFeePerVisit"
+							label="Fee per Visit"
+							value={currencyFormatter.format(
+								Number(values.visitFeePerVisit || 0),
+							)}
+						/>
+						<FormInput
+							mode="view"
+							name="visitFeesClaimedTotal"
+							label="Amount Claimed"
+							value={currencyFormatter.format(visitFeesTotal)}
+						/>
 					</div>
 				</Card>
 
@@ -519,48 +550,37 @@ const ReimbursementClaimView = ({
 						</p>
 					}
 				>
-					<div className="flex flex-col gap-4">
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-							<FormInput
-								mode="view"
-								name="doctorMedicineAmount"
-								label="Medicines Prescribed by Doctor"
-								value={currencyFormatter.format(
-									Number(values.doctorMedicineAmount || 0),
-								)}
-							/>
-							<FormInput
-								mode="view"
-								name="injectionInvestigationAmount"
-								label="Injections / Investigations"
-								value={currencyFormatter.format(
-									Number(values.injectionInvestigationAmount || 0),
-								)}
-							/>
-							<FormInput
-								mode="view"
-								name="ecgXrayOtherAmount"
-								label="ECG / X-Ray / Other"
-								value={currencyFormatter.format(
-									Number(values.ecgXrayOtherAmount || 0),
-								)}
-							/>
-							<FormInput
-								mode="view"
-								name="medicalClaimedTotal"
-								label="Amount Claimed"
-								value={currencyFormatter.format(medicalTotal)}
-							/>
-						</div>
-
-						{/* <FileUploadField
-							kind="document"
-							multiple
-							label="Pharmacy Bills and Investigation Reports"
-							value={attachments.medical}
-							readonly
-							onChange={() => undefined}
-						/> */}
+					<div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+						<FormInput
+							mode="view"
+							name="doctorMedicineAmount"
+							label="Medicines Prescribed by Doctor"
+							value={currencyFormatter.format(
+								Number(values.doctorMedicineAmount || 0),
+							)}
+						/>
+						<FormInput
+							mode="view"
+							name="injectionInvestigationAmount"
+							label="Injections / Investigations"
+							value={currencyFormatter.format(
+								Number(values.injectionInvestigationAmount || 0),
+							)}
+						/>
+						<FormInput
+							mode="view"
+							name="ecgXrayOtherAmount"
+							label="ECG / X-Ray / Other"
+							value={currencyFormatter.format(
+								Number(values.ecgXrayOtherAmount || 0),
+							)}
+						/>
+						<FormInput
+							mode="view"
+							name="medicalClaimedTotal"
+							label="Amount Claimed"
+							value={currencyFormatter.format(medicalTotal)}
+						/>
 					</div>
 				</Card>
 
@@ -580,36 +600,25 @@ const ReimbursementClaimView = ({
 						</p>
 					}
 				>
-					<div className="flex flex-col gap-4">
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-							<FormInput
-								mode="view"
-								name="lensCost"
-								label="Cost of Lenses"
-								value={currencyFormatter.format(Number(values.lensCost || 0))}
-							/>
-							<FormInput
-								mode="view"
-								name="frameCost"
-								label="Cost of Frame"
-								value={currencyFormatter.format(Number(values.frameCost || 0))}
-							/>
-							<FormInput
-								mode="view"
-								name="ophthalmicClaimedTotal"
-								label="Amount Claimed"
-								value={currencyFormatter.format(ophthalmicTotal)}
-							/>
-						</div>
-
-						{/* <FileUploadField
-							kind="document"
-							multiple
-							label="Optician Invoice and Prescription"
-							value={attachments.ophthalmic}
-							readonly
-							onChange={() => undefined}
-						/> */}
+					<div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+						<FormInput
+							mode="view"
+							name="lensCost"
+							label="Cost of Lenses"
+							value={currencyFormatter.format(Number(values.lensCost || 0))}
+						/>
+						<FormInput
+							mode="view"
+							name="frameCost"
+							label="Cost of Frame"
+							value={currencyFormatter.format(Number(values.frameCost || 0))}
+						/>
+						<FormInput
+							mode="view"
+							name="ophthalmicClaimedTotal"
+							label="Amount Claimed"
+							value={currencyFormatter.format(ophthalmicTotal)}
+						/>
 					</div>
 				</Card>
 
@@ -621,39 +630,21 @@ const ReimbursementClaimView = ({
 						</div>
 					}
 				>
-					<div className="flex flex-col gap-4">
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-							<FormInput
-								mode="view"
-								name="patientAge"
-								label="Age"
-								value={values.patientAge}
-							/>
-							<FormInput
-								mode="view"
-								type="date"
-								name="lastHealthCheckupDate"
-								label="Last Health Check-up Date"
-								value={values.lastHealthCheckupDate}
-							/>
-							<FormInput
-								mode="view"
-								name="healthCheckupAmount"
-								label="Amount Claimed"
-								value={currencyFormatter.format(
-									Number(values.healthCheckupAmount || 0),
-								)}
-							/>
-						</div>
-
-						{/* <FileUploadField
-							kind="document"
-							multiple
-							label="Health Check-up Report"
-							value={attachments.healthCheckup}
-							readonly
-							onChange={() => undefined}
-						/> */}
+					<div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+						<FormInput
+							mode="view"
+							name="patientAge"
+							label="Age"
+							value={values.patientAge}
+						/>
+						<FormInput
+							mode="view"
+							name="healthCheckupAmount"
+							label="Amount Claimed"
+							value={currencyFormatter.format(
+								Number(values.healthCheckupAmount || 0),
+							)}
+						/>
 					</div>
 				</Card>
 
@@ -669,26 +660,15 @@ const ReimbursementClaimView = ({
 						</div>
 					}
 				>
-					<div className="flex flex-col gap-4">
-						<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-							<FormInput
-								mode="view"
-								name="excessHospitalizationAmount"
-								label="Amount Claimed"
-								value={currencyFormatter.format(
-									Number(values.excessHospitalizationAmount || 0),
-								)}
-							/>
-						</div>
-
-						{/* <FileUploadField
-							kind="document"
-							multiple
-							label="Discharge Summary and Hospital Bills"
-							value={attachments.excessHospitalization}
-							readonly
-							onChange={() => undefined}
-						/> */}
+					<div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+						<FormInput
+							mode="view"
+							name="excessHospitalizationAmount"
+							label="Amount Claimed"
+							value={currencyFormatter.format(
+								Number(values.excessHospitalizationAmount || 0),
+							)}
+						/>
 					</div>
 				</Card>
 
@@ -759,7 +739,7 @@ const ReimbursementClaimView = ({
 					</div>
 				</fieldset>
 
-				<fieldset className="min-w-0">
+				{/* <fieldset className="min-w-0">
 					<legend className="sr-only">For Office Use</legend>
 					<FormHeader title="For Office Use" Icon={Building2} />
 
@@ -830,7 +810,7 @@ const ReimbursementClaimView = ({
 							value={values.passedDate}
 						/>
 					</div>
-				</fieldset>
+				</fieldset> */}
 			</div>
 		</Card>
 	);
