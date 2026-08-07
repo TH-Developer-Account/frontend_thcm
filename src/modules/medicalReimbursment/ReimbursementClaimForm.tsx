@@ -1,16 +1,13 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useMemo, useState, type ChangeEvent } from "react";
 import {
 	ArrowLeft,
 	BadgeIndianRupee,
 	Building2,
 	CheckCircle2,
 	FilePenLine,
-	Plus,
 	RefreshCcw,
 	Save,
 	Stethoscope,
-	Trash2,
-	Upload,
 	UserRound,
 } from "lucide-react";
 
@@ -18,19 +15,23 @@ import Button from "../../components/common/Button";
 import Card from "../../components/common/Card";
 import FormInput from "../../components/forms/FormInput";
 import SelectInput from "../../components/forms/SelectInput";
-import TextareaInput from "../../components/forms/TextareaInput";
 import FormHeader from "../../components/ui/FormHeader";
 
 import ApprovalSection from "./ApprovalSection";
 import {
 	sanitizeAmountInput,
-	sanitizeWholeNumberInput,
+	// sanitizeWholeNumberInput,
 	useReimbursementClaimForm,
 	deriveClaimStatusLabel,
 } from "./useReimbursementClaimForm";
 import type {
 	ApprovalActionType,
 	ApprovalStage,
+	ClaimHead,
+	ClaimHeadFormRow,
+	ClaimHeadRow,
+	ClaimHeadValidationErrors,
+	PatientType,
 	ReimbursementClaimAttachments,
 	ReimbursementClaimFormMode,
 	ReimbursementClaimFormValues,
@@ -39,43 +40,10 @@ import type {
 import Checkbox from "../../components/forms/Checkbox";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../../context/Auth/AuthContext";
-
-type ClaimHead =
-	| "VISIT_FEES"
-	| "MEDICINES_INVESTIGATIONS"
-	| "OPHTHALMIC_TREATMENT"
-	| "EXECUTIVE_HEALTH_CHECKUP"
-	| "EXCESS_HOSPITALISATION";
-
-type ClaimLineItem = {
-	id: string;
-	claimHead: ClaimHead | "";
-	billNumber: string;
-	billName: string;
-	name: string;
-	billDate: string;
-	amount: string;
-	file: File | null;
-};
+import ClaimHeadEntryTable from "./ClaimHeadEntryTable";
+import { createClaimHeadRow } from "./claimHead.helpers";
 
 type CoverageType = "SELF" | "SPOUSE" | "BOTH" | "";
-
-const CLAIM_HEAD_OPTIONS: Array<{ label: string; value: ClaimHead }> = [
-	{ label: "A. Visit Fees", value: "VISIT_FEES" },
-	{
-		label: "B. Medicines and Investigations",
-		value: "MEDICINES_INVESTIGATIONS",
-	},
-	{ label: "C. Ophthalmic Treatment", value: "OPHTHALMIC_TREATMENT" },
-	{
-		label: "D. Executive Health Check-up",
-		value: "EXECUTIVE_HEALTH_CHECKUP",
-	},
-	{
-		label: "E. Excess Hospitalisation Claims",
-		value: "EXCESS_HOSPITALISATION",
-	},
-];
 
 // TODO: replace with the real grade → annual eligibility table.
 const GRADE_OPTIONS: Array<{
@@ -98,17 +66,6 @@ const COVERAGE_OPTIONS: Array<{ label: string; value: CoverageType }> = [
 	{ label: "Spouse", value: "SPOUSE" },
 	{ label: "Both", value: "BOTH" },
 ];
-
-const createLineItem = (): ClaimLineItem => ({
-	id: globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`,
-	claimHead: "",
-	billNumber: "",
-	billName: "",
-	name: "",
-	billDate: "",
-	amount: "",
-	file: null,
-});
 
 interface ReimbursementClaimFormProps {
 	mode?: ReimbursementClaimFormMode;
@@ -162,9 +119,16 @@ const ReimbursementClaimForm = ({
 }: ReimbursementClaimFormProps) => {
 	const navigate = useNavigate();
 	const { showToast } = useToast();
-	const [lineItems, setLineItems] = useState<ClaimLineItem[]>([]);
 
-	// --- New local fields (not yet part of the shared form hook/types) ---
+	const [claimRows, setClaimRows] = useState<ClaimHeadFormRow[]>([
+		createClaimHeadRow(),
+	]);
+	const [savedClaims, setSavedClaims] = useState<ClaimHeadRow[]>([]);
+	const [editingClaimId, setEditingClaimId] = useState<string | null>(null);
+	const [savingClaimId, setSavingClaimId] = useState<string | null>(null);
+	const [deletingClaimId, setDeletingClaimId] = useState<string | null>(null);
+	const [claimErrors, setClaimErrors] = useState<ClaimHeadValidationErrors>({});
+
 	const [ticketNumber, setTicketNumber] = useState("");
 	const [grade, setGrade] = useState("");
 	const [coverageType, setCoverageType] = useState<CoverageType>("");
@@ -175,8 +139,11 @@ const ReimbursementClaimForm = ({
 
 	const lineItemsTotal = useMemo(
 		() =>
-			lineItems.reduce((total, item) => total + (Number(item.amount) || 0), 0),
-		[lineItems],
+			savedClaims.reduce(
+				(total, item) => total + (Number(item.amount) || 0),
+				0,
+			),
+		[savedClaims],
 	);
 
 	const withLineItems = (submission: ReimbursementClaimSubmission) => ({
@@ -187,10 +154,9 @@ const ReimbursementClaimForm = ({
 		spouseName:
 			coverageType === "SELF" || coverageType === "" ? "" : spouseName,
 		totalAmountEligible,
-		lineItems: lineItems.map((item) => ({
+		lineItems: savedClaims.map((item) => ({
 			...item,
-			file: item.file,
-			fileName: item.file?.name ?? null,
+			fileName: item.file?.name ?? item.fileName ?? null,
 		})),
 		lineItemsTotal,
 	});
@@ -230,14 +196,12 @@ const ReimbursementClaimForm = ({
 
 	const {
 		values,
-		attachments,
 		errors,
 		isLoading,
 		isSubmitting,
 		isSavingDraft,
 		mutationError,
 		handleChange,
-		handleAttachmentsChange,
 		handleSubmit,
 		handleSaveDraft,
 		handleReset,
@@ -252,40 +216,129 @@ const ReimbursementClaimForm = ({
 			: undefined,
 	});
 
-	useEffect(() => {
-		const totalFor = (head: ClaimHead) =>
-			lineItems
-				.filter((item) => item.claimHead === head)
-				.reduce((total, item) => total + (Number(item.amount) || 0), 0)
-				.toFixed(2);
+	const isReadOnly = mode === "view" || !canEdit;
+	const fieldMode: ReimbursementClaimFormMode = isReadOnly ? "view" : "edit";
+	const officeFieldMode: ReimbursementClaimFormMode =
+		mode === "view" || !canEditOfficeUse ? "view" : "edit";
 
-		handleChange(
-			"numberOfVisits",
-			lineItems.some((item) => item.claimHead === "VISIT_FEES") ? "1" : "",
-		);
-		handleChange("visitFeePerVisit", totalFor("VISIT_FEES"));
-		handleChange("doctorMedicineAmount", totalFor("MEDICINES_INVESTIGATIONS"));
-		handleChange("injectionInvestigationAmount", "0.00");
-		handleChange("ecgXrayOtherAmount", "0.00");
-		handleChange("lensCost", totalFor("OPHTHALMIC_TREATMENT"));
-		handleChange("frameCost", "0.00");
-		handleChange("healthCheckupAmount", totalFor("EXECUTIVE_HEALTH_CHECKUP"));
-		handleChange(
-			"excessHospitalizationAmount",
-			totalFor("EXCESS_HOSPITALISATION"),
-		);
-	}, [lineItems]);
+	const amountChange =
+		(field: keyof ReimbursementClaimFormValues) =>
+		(event: ChangeEvent<HTMLInputElement>): void => {
+			handleChange(field, sanitizeAmountInput(event.target.value));
+		};
 
-	const updateLineItem = <K extends keyof ClaimLineItem>(
-		id: string,
-		field: K,
-		value: ClaimLineItem[K],
+	const hasActions = !isReadOnly && Boolean(onSubmit || onSaveDraft || onBack);
+	const claimStatusLabel = deriveClaimStatusLabel(approvalStages);
+
+	const handleBackToView = () => {
+		navigate("/medical-claim/form/view", {
+			replace: true,
+		});
+	};
+
+	const handleClaimChange = (
+		rowId: string,
+		field: keyof Omit<ClaimHeadFormRow, "id">,
+		value: unknown,
 	) => {
-		setLineItems((current) =>
-			current.map((item) =>
-				item.id === id ? { ...item, [field]: value } : item,
+		setClaimRows((current) =>
+			current.map((row) =>
+				row.id === rowId
+					? {
+							...row,
+							[field]: value,
+						}
+					: row,
 			),
 		);
+
+		// Clear validation for the field just edited
+		setClaimErrors((current) => {
+			const next = { ...current };
+			delete next[`${field}-${rowId}`];
+			return next;
+		});
+	};
+
+	const validateClaim = (row: ClaimHeadFormRow): ClaimHeadValidationErrors => {
+		const validation: ClaimHeadValidationErrors = {};
+
+		if (!row.claimHead)
+			validation[`claimHead-${row.id}`] = "Claim head is required.";
+
+		if (!row.billNumber.trim())
+			validation[`billNumber-${row.id}`] = "Bill number is required.";
+
+		if (!row.billName.trim())
+			validation[`billName-${row.id}`] = "Bill name is required.";
+
+		if (!row.patient) validation[`patient-${row.id}`] = "Select patient.";
+
+		if (!row.billDate)
+			validation[`billDate-${row.id}`] = "Bill date is required.";
+
+		if (!row.amount) validation[`amount-${row.id}`] = "Amount is required.";
+
+		if (!row.file) validation[`file-${row.id}`] = "Attachment is required.";
+
+		return validation;
+	};
+
+	const handleSaveClaim = (row: ClaimHeadFormRow) => {
+		const validation = validateClaim(row);
+
+		if (Object.keys(validation).length) {
+			setClaimErrors(validation);
+			return;
+		}
+
+		setSavingClaimId(row.id);
+
+		const savedRow: ClaimHeadRow = {
+			...row,
+			claimHead: row.claimHead as ClaimHead,
+			patient: row.patient as PatientType,
+			fileName: row.file?.name,
+		};
+
+		if (editingClaimId) {
+			setSavedClaims((current) =>
+				current.map((claim) =>
+					claim.id === editingClaimId ? savedRow : claim,
+				),
+			);
+			setEditingClaimId(null);
+		} else {
+			setSavedClaims((current) => [...current, savedRow]);
+		}
+
+		setClaimRows([createClaimHeadRow()]);
+		setClaimErrors({});
+		setSavingClaimId(null);
+	};
+
+	const handleEditClaim = (claim: ClaimHeadRow) => {
+		setEditingClaimId(claim.id);
+		setClaimRows([{ ...claim }]);
+	};
+
+	const handleDeleteClaim = (id: string) => {
+		setDeletingClaimId(id);
+
+		setSavedClaims((current) => current.filter((claim) => claim.id !== id));
+
+		if (editingClaimId === id) {
+			setEditingClaimId(null);
+			setClaimRows([createClaimHeadRow()]);
+		}
+
+		setDeletingClaimId(null);
+	};
+
+	const handleCancelClaimEdit = () => {
+		setEditingClaimId(null);
+		setClaimErrors({});
+		setClaimRows([createClaimHeadRow()]);
 	};
 
 	const handleApprovalWithFeedback = async (
@@ -314,71 +367,18 @@ const ReimbursementClaimForm = ({
 			throw error;
 		}
 	};
-	const isReadOnly = mode === "view" || !canEdit;
-	const fieldMode: ReimbursementClaimFormMode = isReadOnly ? "view" : "edit";
-	const officeFieldMode: ReimbursementClaimFormMode =
-		mode === "view" || !canEditOfficeUse ? "view" : "edit";
-
-	const wholeNumberChange =
-		(field: keyof ReimbursementClaimFormValues) =>
-		(event: ChangeEvent<HTMLInputElement>): void => {
-			handleChange(field, sanitizeWholeNumberInput(event.target.value));
-		};
-
-	const amountChange =
-		(field: keyof ReimbursementClaimFormValues) =>
-		(event: ChangeEvent<HTMLInputElement>): void => {
-			handleChange(field, sanitizeAmountInput(event.target.value));
-		};
-
-	const hasActions = !isReadOnly && Boolean(onSubmit || onSaveDraft || onBack);
-	const claimStatusLabel = deriveClaimStatusLabel(approvalStages);
-
-	const handleBackToView = () => {
-		navigate("/medical-claim/form/view", {
-			replace: true,
-		});
-	};
 
 	const resetAll = () => {
 		handleReset();
-		setLineItems([]);
+		setClaimRows([createClaimHeadRow()]);
+		setSavedClaims([]);
+		setEditingClaimId(null);
+		setClaimErrors({});
 		setTicketNumber("");
 		setGrade("");
 		setCoverageType("");
 		setSpouseName("");
 	};
-
-	const draftSubmitActions = (
-		// !isReadOnly && (onSaveDraft || onSubmit) ? (
-		<div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-			{/* {onSaveDraft ? ( */}
-			<Button
-				type="button"
-				text={isSavingDraft ? "Saving..." : "Save as Draft"}
-				Icon={FilePenLine}
-				size="sm"
-				appearance="standard"
-				variant="outline"
-				disabled={isLoading}
-				onClick={handleSaveDraft}
-			/>
-			{/* ) : null} */}
-			{/* {onSubmit ? ( */}
-			<Button
-				type="button"
-				text={isSubmitting ? "Submitting..." : actionText}
-				Icon={Save}
-				size="sm"
-				appearance="standard"
-				variant="brand"
-				disabled={isLoading}
-				onClick={handleSubmit}
-			/>
-			{/* ) : null} */}
-		</div>
-	);
-	// ) : null;
 
 	return (
 		<Card
@@ -642,173 +642,22 @@ const ReimbursementClaimForm = ({
 
 				<FormHeader title="Claim Heads" Icon={Stethoscope} />
 
-				<section
-					className="flex flex-col gap-3"
-					aria-label="Claim bill entries"
-				>
-					<div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-						<div>
-							<h2 className="text-sm font-semibold text-iron-dark">
-								Bill line items
-							</h2>
-							<p className="text-xs text-muted">
-								Add one entry for every receipt or bill being claimed.
-							</p>
-						</div>
-						{!isReadOnly ? (
-							<Button
-								type="button"
-								text="New Entry"
-								Icon={Plus}
-								size="sm"
-								appearance="standard"
-								variant="outline"
-								onClick={() =>
-									setLineItems((current) => [...current, createLineItem()])
-								}
-							/>
-						) : null}
-					</div>
+				<ClaimHeadEntryTable
+					items={claimRows}
+					savedItems={savedClaims}
+					loading={false}
+					editingId={editingClaimId}
+					savingId={savingClaimId}
+					deletingId={deletingClaimId}
+					errors={claimErrors}
+					isViewMode={isReadOnly}
+					onChange={handleClaimChange}
+					onSaveRow={handleSaveClaim}
+					onEditRow={handleEditClaim}
+					onCancelEdit={handleCancelClaimEdit}
+					onDeleteRow={handleDeleteClaim}
+				/>
 
-					{lineItems.length === 0 ? (
-						<div className="rounded-md border border-dashed border-border px-4 py-6 text-center text-sm text-muted">
-							No bill entries added. Select{" "}
-							<span className="font-medium">New Entry</span> to begin.
-						</div>
-					) : (
-						<div className="overflow-x-auto rounded-md">
-							<div className="min-w-[1180px]">
-								{lineItems.map((item, index) => (
-									<div
-										key={item.id}
-										className="grid grid-cols-[210px_130px_190px_170px_150px_140px_170px_48px] items-center gap-3 border-b border-border px-3 py-3 last:border-b-0"
-									>
-										<SelectInput
-											mode={fieldMode}
-											name={`claimHead-${item.id}`}
-											label={`Claim head ${index + 1}`}
-											placeholder="Select head"
-											options={CLAIM_HEAD_OPTIONS}
-											value={
-												CLAIM_HEAD_OPTIONS.find(
-													(option) => option.value === item.claimHead,
-												) ?? null
-											}
-											onChange={(option) =>
-												updateLineItem(
-													item.id,
-													"claimHead",
-													(option?.value as ClaimHead) ?? "",
-												)
-											}
-										/>
-										<FormInput
-											mode={fieldMode}
-											name={`billNumber-${item.id}`}
-											label="Bill number"
-											value={item.billNumber}
-											placeholder="Bill no."
-											onChange={(event: ChangeEvent<HTMLInputElement>) =>
-												updateLineItem(
-													item.id,
-													"billNumber",
-													event.target.value,
-												)
-											}
-										/>
-										<FormInput
-											mode={fieldMode}
-											name={`billName-${item.id}`}
-											label="Receipt or bill name"
-											value={item.billName}
-											placeholder="Bill name"
-											onChange={(event: ChangeEvent<HTMLInputElement>) =>
-												updateLineItem(item.id, "billName", event.target.value)
-											}
-										/>
-										<FormInput
-											mode={fieldMode}
-											name={`name-${item.id}`}
-											label="Name"
-											value={item.name}
-											placeholder="Name"
-											onChange={(event: ChangeEvent<HTMLInputElement>) =>
-												updateLineItem(item.id, "name", event.target.value)
-											}
-										/>
-										<FormInput
-											mode={fieldMode}
-											type="date"
-											name={`billDate-${item.id}`}
-											label="Bill date"
-											value={item.billDate}
-											onChange={(event: ChangeEvent<HTMLInputElement>) =>
-												updateLineItem(item.id, "billDate", event.target.value)
-											}
-										/>
-										<FormInput
-											mode={fieldMode}
-											name={`amount-${item.id}`}
-											label="Amount"
-											inputMode="decimal"
-											value={item.amount}
-											placeholder="0.00"
-											onChange={(event: ChangeEvent<HTMLInputElement>) =>
-												updateLineItem(
-													item.id,
-													"amount",
-													sanitizeAmountInput(event.target.value),
-												)
-											}
-										/>
-										<div className="min-w-0">
-											<input
-												id={`bill-file-${item.id}`}
-												className="sr-only"
-												type="file"
-												accept=".pdf,.png,.jpg,.jpeg"
-												disabled={isReadOnly}
-												onChange={(event) =>
-													updateLineItem(
-														item.id,
-														"file",
-														event.target.files?.[0] ?? null,
-													)
-												}
-											/>
-											<label
-												htmlFor={`bill-file-${item.id}`}
-												className="flex h-10 cursor-pointer items-center gap-2 rounded-md border border-border px-3 text-xs text-iron hover:border-brand"
-											>
-												<Upload size={15} className="shrink-0" />
-												<span className="truncate" title={item.file?.name}>
-													{item.file?.name ?? "Upload bill"}
-												</span>
-											</label>
-										</div>
-										{!isReadOnly ? (
-											<button
-												type="button"
-												className="flex h-10 w-10 items-center justify-center rounded-md text-rejected hover:bg-rejected/10"
-												aria-label={`Remove bill entry ${index + 1}`}
-												onClick={() =>
-													setLineItems((current) =>
-														current.filter((entry) => entry.id !== item.id),
-													)
-												}
-											>
-												<Trash2 size={17} />
-											</button>
-										) : (
-											<span />
-										)}
-									</div>
-								))}
-							</div>
-						</div>
-					)}
-				</section>
-				{draftSubmitActions}
 				<Card>
 					<div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
 						<div>
@@ -831,6 +680,7 @@ const ReimbursementClaimForm = ({
 						</p>
 					) : null}
 				</Card>
+
 				<hr />
 				<FormHeader title="Declaration and Signature" Icon={BadgeIndianRupee} />
 

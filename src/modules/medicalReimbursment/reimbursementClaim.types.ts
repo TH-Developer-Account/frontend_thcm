@@ -98,3 +98,52 @@ export interface ApprovalStage {
 }
 
 export type ApprovalActionType = "approve" | "reject" | "request_clarification";
+
+export type ClaimHead =
+	| "VISIT_FEES"
+	| "MEDICINES_INVESTIGATIONS"
+	| "OPHTHALMIC_TREATMENT"
+	| "EXECUTIVE_HEALTH_CHECKUP"
+	| "EXCESS_HOSPITALISATION";
+
+export type PatientType = "SELF" | "SPOUSE";
+
+export interface ClaimHeadFormRow {
+	id: string;
+
+	claimHead: ClaimHead | "";
+
+	billNumber: string;
+
+	billName: string;
+
+	patient: PatientType | "";
+
+	billDate: string;
+
+	amount: string;
+
+	file: File | null;
+}
+
+export interface ClaimHeadRow {
+	id: string;
+
+	claimHead: ClaimHead;
+
+	billNumber: string;
+
+	billName: string;
+
+	patient: PatientType;
+
+	billDate: string;
+
+	amount: string;
+
+	file: File | null;
+
+	fileName?: string;
+}
+
+export type ClaimHeadValidationErrors = Record<string, string>;
