@@ -33,8 +33,8 @@ export type VendorCreationFormOneValues = {
 	state?: string;
 	mobile?: string;
 	email?: string;
-	bank?: string;
-	branch?: string;
+	bankName?: string;
+	bankBranch?: string;
 	ifscCode?: string;
 	bankAddress?: string;
 	accountNumber?: string;
@@ -113,7 +113,13 @@ export type VendorUpdatePayload = {
 	onboardingReason?: string | null;
 	remarks?: string | null;
 };
-
+export type VendorCreatedBy = {
+	id: string;
+	first_name: string;
+	last_name: string;
+	email: string;
+	avatarUrl?: string | null;
+};
 export type VendorOnboardingResponse = {
 	id: string;
 	status: VendorOnboardingStatus;
@@ -125,6 +131,7 @@ export type VendorOnboardingResponse = {
 	updatedAt?: string;
 	activeWorkflow?: VendorActiveWorkflow;
 	initiatedById?: string;
+	createdBy?: VendorCreatedBy | null;
 };
 
 export type VendorFormErrors<T> = Partial<Record<keyof T, string>>;

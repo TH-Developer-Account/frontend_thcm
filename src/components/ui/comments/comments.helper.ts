@@ -9,66 +9,184 @@ import {
 } from "../../../modules/workflows";
 
 type WorkflowMentionUser = WorkflowUserIdentity & {
+	_id?: string;
+	userId?: string;
+
 	avatarUrl?: string | null;
+	avatar_url?: string | null;
+
+	user?: WorkflowMentionUser | null;
+	approver?: WorkflowMentionUser | null;
+	createdBy?: WorkflowMentionUser | null;
 };
 
+type WorkflowCommentContextParams = {
+	activeWorkflow?: ActiveWorkflowLike | null;
+	currentUser?: WorkflowUserIdentity | null;
+	creator?: MentionableUserInput | null;
+
+	/**
+	 * Optional externally provided values are merged with
+	 * the values derived from the workflow.
+	 */
+	mentionableUsers?: readonly CommentUser[];
+	ccEmails?: readonly string[];
+
+	/**
+	 * Optional overrides.
+	 */
+	approvalId?: string | null;
+	canComment?: boolean;
+};
+
+const resolveMentionUser = (
+	input?: WorkflowMentionUser | MentionableUserInput | null,
+): WorkflowMentionUser | null => {
+	if (!input) {
+		return null;
+	}
+
+	const user = input as WorkflowMentionUser;
+
+	return user.user ?? user.approver ?? user.createdBy ?? user;
+};
+
+const getUserId = (user: WorkflowMentionUser): string =>
+	user.id?.trim() || user.userId?.trim() || user._id?.trim() || "";
+
 const toCommentUser = (
-	user?: WorkflowMentionUser | null,
-	fallbackName = "Approver",
+	input?: WorkflowMentionUser | MentionableUserInput | null,
+	fallbackName = "User",
 ): CommentUser | null => {
-	if (!user?.id) return null;
+	const user = resolveMentionUser(input);
+
+	if (!user) {
+		return null;
+	}
+
+	const id = getUserId(user);
+
+	if (!id) {
+		return null;
+	}
 
 	return {
-		id: user.id,
+		id,
+
 		first_name:
 			user.first_name?.trim() ||
 			user.firstName?.trim() ||
 			user.name?.trim() ||
 			fallbackName,
+
 		last_name: user.last_name?.trim() || user.lastName?.trim() || "",
+
 		email: user.email?.trim() || undefined,
-		avatarUrl: user.avatarUrl ?? undefined,
+
+		avatarUrl: user.avatarUrl ?? user.avatar_url ?? undefined,
 	};
 };
 
-/**
- * Returns every unique workflow approver as a mentionable user.
- *
- * This includes users from:
- * - Previous workflow iterations
- * - Past stages
- * - Current stage
- * - Future stages
- */
-export const getMentionableUsersFromWorkflow = (
-	activeWorkflow?: ActiveWorkflowLike | null,
-): CommentUser[] => {
-	const { mentionableUsers } = getWorkflowApproverData(activeWorkflow);
+const getMentionUserKey = (user: CommentUser): string =>
+	user.id?.trim() || user.email?.trim().toLowerCase() || "";
 
-	return mentionableUsers
-		.map((user) => toCommentUser(user as WorkflowMentionUser, "Approver"))
-		.filter((user): user is CommentUser => user !== null);
+const addMentionableUser = (
+	users: Map<string, CommentUser>,
+	input?: WorkflowMentionUser | MentionableUserInput | null,
+	fallbackName = "User",
+) => {
+	const commentUser = toCommentUser(input, fallbackName);
+
+	if (!commentUser) {
+		return;
+	}
+
+	const key = getMentionUserKey(commentUser);
+
+	if (!key) {
+		return;
+	}
+
+	const existingUser = users.get(key);
+
+	users.set(key, {
+		...existingUser,
+		...commentUser,
+
+		/*
+		 * Preserve existing valid information when the newly added
+		 * version of the user contains empty fields.
+		 */
+		first_name:
+			commentUser.first_name?.trim() ||
+			existingUser?.first_name ||
+			fallbackName,
+
+		last_name: commentUser.last_name?.trim() || existingUser?.last_name || "",
+
+		email: commentUser.email?.trim() || existingUser?.email,
+
+		avatarUrl: commentUser.avatarUrl ?? existingUser?.avatarUrl,
+	});
+};
+
+const addCcEmail = (emails: Set<string>, email?: string | null) => {
+	const normalizedEmail = email?.trim().toLowerCase();
+
+	if (normalizedEmail) {
+		emails.add(normalizedEmail);
+	}
 };
 
 /**
- * Returns email addresses of users belonging to approved stages.
+ * Returns every workflow approver and the proposer.
+ *
+ * The returned list is not based on the currently logged-in user.
+ * Therefore, every permitted commenter receives the same mention list.
+ */
+export const getMentionableUsersFromWorkflow = (
+	activeWorkflow?: ActiveWorkflowLike | null,
+	creator?: MentionableUserInput | null,
+	additionalUsers?: readonly CommentUser[],
+): CommentUser[] => {
+	const workflowData = getWorkflowApproverData(activeWorkflow);
+
+	const users = new Map<string, CommentUser>();
+
+	workflowData.mentionableUsers.forEach((user) => {
+		addMentionableUser(users, user as WorkflowMentionUser, "Approver");
+	});
+
+	addMentionableUser(users, creator, "Proposer");
+
+	additionalUsers?.forEach((user) => {
+		addMentionableUser(users, user as WorkflowMentionUser, "User");
+	});
+
+	return [...users.values()];
+};
+
+/**
+ * Returns unique CC email addresses from approved stages.
  */
 export const getApprovedStageCcEmails = (
 	activeWorkflow?: ActiveWorkflowLike | null,
+	additionalEmails?: readonly string[],
 ): string[] => {
-	const { pastApprovals } = getWorkflowApproverData(activeWorkflow);
+	const workflowData = getWorkflowApproverData(activeWorkflow);
+
 	const emails = new Set<string>();
 
-	pastApprovals.forEach(({ stage, user }) => {
+	workflowData.pastApprovals.forEach(({ stage, user }) => {
 		if (normalizeWorkflowStatus(stage.status) !== "APPROVED") {
 			return;
 		}
 
-		const email = user?.email?.trim();
+		addCcEmail(emails, user?.email);
+	});
 
-		if (email) {
-			emails.add(email);
-		}
+	additionalEmails?.forEach((email) => {
+		addCcEmail(emails, email);
 	});
 
 	return [...emails];
@@ -78,11 +196,10 @@ export const getCanCommentOnWorkflow = ({
 	activeWorkflow,
 	currentUser,
 	creator,
-}: {
-	activeWorkflow?: ActiveWorkflowLike | null;
-	currentUser?: WorkflowUserIdentity | null;
-	creator?: MentionableUserInput | null;
-}): boolean => {
+}: Pick<
+	WorkflowCommentContextParams,
+	"activeWorkflow" | "currentUser" | "creator"
+>): boolean => {
 	if (!currentUser?.id && !currentUser?.email) {
 		return false;
 	}
@@ -94,54 +211,49 @@ export const getCanCommentOnWorkflow = ({
 	return isCreator || workflowData.isCurrentStageApprover;
 };
 
+/**
+ * Single source of truth for all workflow-comment data.
+ *
+ * Components should use the returned values directly.
+ */
 export const getWorkflowCommentContext = ({
 	activeWorkflow,
 	currentUser,
 	creator,
-}: {
-	activeWorkflow?: ActiveWorkflowLike | null;
-	currentUser?: WorkflowUserIdentity | null;
-	creator?: MentionableUserInput | null;
-}) => {
+	mentionableUsers,
+	ccEmails,
+	approvalId,
+	canComment,
+}: WorkflowCommentContextParams) => {
 	const workflowData = getWorkflowApproverData(activeWorkflow, currentUser);
 
 	const isCreator = isSameWorkflowUser(creator, currentUser);
 
-	const mentionableUsers = workflowData.mentionableUsers
-		.map((user) => toCommentUser(user as WorkflowMentionUser, "Approver"))
-		.filter((user): user is CommentUser => user !== null);
-
-	const ccEmails = new Set<string>();
-
-	workflowData.pastApprovals.forEach(({ stage, user }) => {
-		if (normalizeWorkflowStatus(stage.status) !== "APPROVED") {
-			return;
-		}
-
-		const email = user?.email?.trim();
-
-		if (email) {
-			ccEmails.add(email);
-		}
-	});
+	const derivedCanComment =
+		Boolean(currentUser?.id || currentUser?.email) ||
+		isCreator ||
+		workflowData.isCurrentStageApprover;
 
 	return {
-		// Equivalent to the old getApprovalIdForUser().
-		approvalId: workflowData.currentUserApproval?.id ?? null,
+		approvalId:
+			approvalId !== undefined
+				? approvalId
+				: (workflowData.currentUserApproval?.id ?? null),
 
 		isCreator,
 
-		// Equivalent to the old getIsUserInCurrentStage().
 		isCurrentApprover: workflowData.isCurrentStageApprover,
 
-		canComment: isCreator || workflowData.isCurrentStageApprover,
+		canComment: canComment !== undefined ? canComment : derivedCanComment,
 
-		// Every unique approver from the complete workflow.
-		mentionableUsers,
+		mentionableUsers: getMentionableUsersFromWorkflow(
+			activeWorkflow,
+			creator,
+			mentionableUsers,
+		),
 
-		ccEmails: [...ccEmails],
+		ccEmails: getApprovedStageCcEmails(activeWorkflow, ccEmails),
 
-		// Expose the complete data for other comment permissions/UI.
 		workflowData,
 	};
 };

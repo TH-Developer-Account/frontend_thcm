@@ -1,28 +1,17 @@
 import React from "react";
 
-import {
-	CommentsSection,
-	type CommentUser,
-} from "../../../components/ui/comments";
+import { CommentsSection } from "../../../components/ui/comments";
+import type { MentionableUserInput } from "../../../components/ui/comments/comment.types";
+import { getWorkflowCommentContext } from "../../../components/ui/comments/comments.helper";
 import { useAuth } from "../../../context/Auth/useAuth";
 import type { ApprovalStageLike } from "../../marketing/activity-planner/utils/approvalTable.mapper";
 
 import { getVendorAuditMessage } from "../helpers/vendorComment.helper";
 
-import type { User } from "../../../components/ui/comments/comment.types";
-import { getWorkflowCommentContext } from "../../../components/ui/comments/comments.helper";
-
 type VendorCommentSectionProps = {
 	onboardingId?: string | null;
 	workflow?: readonly ApprovalStageLike[];
-
-	creator?: User | null;
-
-	approvalId?: string | null;
-	canComment?: boolean;
-	mentionableUsers?: CommentUser[];
-	ccEmails?: string[];
-
+	creator?: MentionableUserInput | null;
 	title?: string;
 };
 
@@ -30,49 +19,34 @@ const VendorCommentSection = ({
 	onboardingId,
 	workflow = [],
 	creator,
-	approvalId,
-	canComment,
-	mentionableUsers,
-	ccEmails,
 	title = "Comments and activity",
 }: VendorCommentSectionProps) => {
 	const { user } = useAuth();
 
-	const resolvedCreator = creator ?? user ?? undefined;
-
 	const commentContext = React.useMemo(
 		() =>
 			getWorkflowCommentContext({
-				activeWorkflow: { stages: workflow },
+				activeWorkflow: {
+					stages: workflow,
+				},
 				currentUser: user,
-				creator: resolvedCreator,
+				creator,
 			}),
-		[workflow, user, resolvedCreator],
+		[workflow, user, creator],
 	);
 
 	if (!onboardingId) {
 		return null;
 	}
 
-	const resolvedApprovalId =
-		approvalId !== undefined ? approvalId : commentContext.approvalId;
-
-	const resolvedCanComment =
-		canComment !== undefined ? canComment : commentContext.canComment;
-
-	const resolvedMentionableUsers =
-		mentionableUsers ?? commentContext.mentionableUsers;
-
-	const resolvedCcEmails = ccEmails ?? commentContext.ccEmails;
-
 	return (
 		<CommentsSection
 			subjectType="VENDOR_ONBOARDING"
 			subjectId={onboardingId}
-			approvalId={resolvedApprovalId}
-			canComment={resolvedCanComment}
-			mentionableUsers={resolvedMentionableUsers}
-			ccEmails={resolvedCcEmails}
+			approvalId={commentContext.approvalId}
+			canComment={commentContext.canComment}
+			mentionableUsers={commentContext.mentionableUsers}
+			ccEmails={commentContext.ccEmails}
 			currentUserId={user?.id}
 			formatAuditMessage={getVendorAuditMessage}
 			title={title}
