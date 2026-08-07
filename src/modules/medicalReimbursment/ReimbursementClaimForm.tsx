@@ -272,7 +272,7 @@ const ReimbursementClaimForm = ({
 		if (!row.billName.trim())
 			validation[`billName-${row.id}`] = "Bill name is required.";
 
-		if (!row.patient) validation[`patient-${row.id}`] = "Select patient.";
+		// if (!row.patient) validation[`patient-${row.id}`] = "Select patient.";
 
 		if (!row.billDate)
 			validation[`billDate-${row.id}`] = "Bill date is required.";
@@ -285,9 +285,13 @@ const ReimbursementClaimForm = ({
 	};
 
 	const handleSaveClaim = (row: ClaimHeadFormRow) => {
+		console.log("Saving row:", row);
+
 		const validation = validateClaim(row);
 
-		if (Object.keys(validation).length) {
+		console.log("Validation:", validation);
+
+		if (Object.keys(validation).length > 0) {
 			setClaimErrors(validation);
 			return;
 		}
@@ -416,63 +420,63 @@ const ReimbursementClaimForm = ({
 				</>
 			}
 			footer={
-				hasActions ? (
-					<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-						<div>
-							{onBack ? (
-								<Button
-									type="button"
-									text="Back"
-									Icon={ArrowLeft}
-									size="sm"
-									appearance="standard"
-									variant="outline"
-									disabled={isLoading}
-									onClick={onBack}
-								/>
-							) : null}
-						</div>
-
-						<div className="flex flex-col gap-2 sm:flex-row">
+				// hasActions ? (
+				<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+					<div>
+						{onBack ? (
 							<Button
 								type="button"
-								text="Reset"
-								Icon={RefreshCcw}
+								text="Back"
+								Icon={ArrowLeft}
 								size="sm"
 								appearance="standard"
 								variant="outline"
 								disabled={isLoading}
-								onClick={resetAll}
+								onClick={onBack}
 							/>
-
-							{onSaveDraft ? (
-								<Button
-									type="button"
-									text={isSavingDraft ? "Saving..." : "Save as Draft"}
-									Icon={FilePenLine}
-									size="sm"
-									appearance="standard"
-									variant="outline"
-									disabled={isLoading}
-									onClick={handleSaveDraft}
-								/>
-							) : null}
-
-							{onSubmit ? (
-								<Button
-									type="button"
-									text={isSubmitting ? "Submitting..." : actionText}
-									Icon={Save}
-									size="sm"
-									appearance="standard"
-									variant="brand"
-									disabled={isLoading}
-									onClick={handleSubmit}
-								/>
-							) : null}
-						</div>
+						) : null}
 					</div>
-				) : null
+
+					<div className="flex flex-col gap-2 sm:flex-row">
+						<Button
+							type="button"
+							text="Reset"
+							Icon={RefreshCcw}
+							size="sm"
+							appearance="standard"
+							variant="outline"
+							disabled={isLoading}
+							onClick={resetAll}
+						/>
+
+						{/* {onSaveDraft ? ( */}
+						<Button
+							type="button"
+							text={isSavingDraft ? "Saving..." : "Save as Draft"}
+							Icon={FilePenLine}
+							size="sm"
+							appearance="standard"
+							variant="outline"
+							disabled={isLoading}
+							onClick={handleSaveDraft}
+						/>
+						{/* ) : null} */}
+
+						{/* {onSubmit ? ( */}
+						<Button
+							type="button"
+							text={isSubmitting ? "Submitting..." : actionText}
+							Icon={Save}
+							size="sm"
+							appearance="standard"
+							variant="brand"
+							disabled={isLoading}
+							onClick={handleSubmit}
+						/>
+						{/* ) : null} */}
+					</div>
+				</div>
+				// ) : null
 			}
 		>
 			<form
