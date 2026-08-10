@@ -3,6 +3,7 @@ import { useGuestAuth } from "../context/Auth/useGuestAuth";
 
 export default function GuestLayout() {
   const { guest, logout } = useGuestAuth();
+  console.log({ guest });
 
   return (
     <div className="guest-layout">

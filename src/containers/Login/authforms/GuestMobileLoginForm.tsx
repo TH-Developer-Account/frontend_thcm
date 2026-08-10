@@ -51,7 +51,7 @@ const GuestMobileLoginForm = () => {
     setLoading(true);
     try {
       await verifyOtp(mobile, otp);
-      navigate("/guest/vendor-onboarding/mine");
+      navigate("/guest/vendor-onboarding");
     } catch {
       // toast already shown by GuestAuthProvider
     } finally {

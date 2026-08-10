@@ -52,7 +52,7 @@ const GuestEmailLoginForm = () => {
     setLoading(true);
     try {
       await loginWithPassword(formData.email.trim(), formData.password);
-      navigate("/guest/vendor-onboarding/mine");
+      navigate("/guest/vendor-onboarding");
     } catch {
       // toast already shown by GuestAuthProvider
     } finally {

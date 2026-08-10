@@ -1,5 +1,5 @@
 import { Route, Routes } from "react-router-dom";
-import GuestVendorSubmissionsListing from "../modules/vendorOnboarding/components/GuestVendorSubmissionListing";
+import GuestVendorSubmissionsListing from "../modules/guest/GuestVendorSubmissionListing";
 // import VendorSubmissionDetailPage — pending VendorOnboardingFormView review
 
 const GuestRoutes = () => {
