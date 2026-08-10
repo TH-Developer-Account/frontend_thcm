@@ -1287,46 +1287,157 @@ export function useVendorCreationForm({
 		}
 
 		const isClarifiedResubmission = hasPendingClarifiedApproval;
-		const selectedWorkflowCriteria =
-			pendingWorkflowSelection?.attachInput ?? null;
 		const hasPendingWorkflowSelection = Boolean(pendingWorkflowSelection);
 
-		// "existing" = attach an existing template unmodified -> newTemplateId only.
-		// "customized" / "new" = user edited stages or built a new template ->
-		// stageEdits carries the full resulting stage list; newTemplateId is
-		// dropped since the backend rejects sending both together, and stageEdits
-		// is a full replacement list anyway (see mapStageEditsForApi), not a diff.
+		const selectedWorkflowCriteria =
+			pendingWorkflowSelection?.attachInput ?? null;
+
 		const selectionMode = pendingWorkflowSelection?.mode ?? null;
 
-		const newTemplateId =
-			selectionMode === "existing"
-				? (pendingWorkflowSelection?.attachInput.workflowId ?? null)
-				: null;
+		/*
+		 * Workflow selection semantics:
+		 *
+		 * existing
+		 *   → Attach an existing template without changes
+		 *   → activate-first-stage(newTemplateId)
+		 *
+		 * customized
+		 *   → Existing template was edited
+		 *   → Use Once: activate-first-stage(stageEdits)
+		 *   → Save as Template: template must first be persisted, then
+		 *      activate-first-stage(newTemplateId)
+		 *
+		 * new
+		 *   → New workflow was built
+		 *   → Use Once: activate-first-stage(stageEdits)
+		 *   → Save as Template: template must first be persisted, then
+		 *      activate-first-stage(newTemplateId)
+		 *
+		 * The backend explicitly treats stageEdits and newTemplateId as
+		 * mutually exclusive.
+		 */
+
+		const saveAsTemplate =
+			pendingWorkflowSelection?.attachInput.saveAsTemplate === true;
+
+		const selectedTemplateId =
+			pendingWorkflowSelection?.attachInput?.workflowId ?? null;
 
 		const resubmitStageEdits =
 			selectionMode === "customized" || selectionMode === "new"
-				? mapStageEditsForApi(pendingWorkflowSelection!.previewStages)
+				? mapStageEditsForApi(pendingWorkflowSelection?.previewStages ?? [])
 				: !hasPendingWorkflowSelection && stageEdits
 					? mapStageEditsForApi(stageEdits)
 					: undefined;
 
-		// Only the very first submission (no active workflow yet) goes through
-		// assignWorkflow, which creates the ActiveWorkflow instance. Every
-		// resubmission — swapping in a different/new template or editing the
-		// current one in place — goes through activateFirstStage against that
-		// SAME instance. workflowId is always activeWorkflow.id.
+		/*
+		 * Only a completely fresh form gets assignWorkflow.
+		 *
+		 * Once a workflow instance exists, clarification resubmission must
+		 * operate on that SAME workflowId through activateFirstStage.
+		 */
+		const shouldAssignSelectedWorkflow =
+			!hasAssignedWorkflow && !isClarifiedResubmission;
 
-		const shouldAssignSelectedWorkflow = Boolean(!hasAssignedWorkflow);
+		/*
+		 * Build the activate-first-stage payload explicitly.
+		 *
+		 * IMPORTANT:
+		 * - newTemplateId = an already-persisted reusable template
+		 * - stageEdits = a one-off/customized stage configuration
+		 * - never send both
+		 */
+		const buildActivationPayload = () => {
+			if (!activeWorkflowId) {
+				throw new Error(
+					"Active workflow ID is missing for workflow resubmission.",
+				);
+			}
 
-		// ---------------------------------------------------------------------
-		// 	Validation
-		// ---------------------------------------------------------------------
+			// ---------------------------------------------------------------
+			// Clarified resubmission with NO workflow changes
+			// ---------------------------------------------------------------
+			if (!hasPendingWorkflowSelection) {
+				return {
+					workflowId: activeWorkflowId,
+				};
+			}
 
-		if (
-			!isClarifiedResubmission &&
-			!hasAssignedWorkflow &&
-			!hasPendingWorkflowSelection
-		) {
+			// ---------------------------------------------------------------
+			// Existing → Attach
+			//
+			// Existing template is selected without customization.
+			// Backend expects newTemplateId.
+			// ---------------------------------------------------------------
+			if (selectionMode === "existing") {
+				if (!selectedTemplateId) {
+					throw new Error("Selected workflow template ID is missing.");
+				}
+
+				return {
+					workflowId: activeWorkflowId,
+					newTemplateId: selectedTemplateId,
+				};
+			}
+
+			// ---------------------------------------------------------------
+			// Existing → Customize → Save as Template
+			// Create New → Save as Template
+			//
+			// These are only valid if the UI has already persisted the
+			// customized/new template and attachInput.workflowId contains
+			// that persisted template ID.
+			//
+			// activate-first-stage itself does NOT create a reusable template.
+			// ---------------------------------------------------------------
+			if (saveAsTemplate) {
+				if (!selectedTemplateId) {
+					throw new Error(
+						"Workflow template must be saved before it can be attached.",
+					);
+				}
+
+				return {
+					workflowId: activeWorkflowId,
+					newTemplateId: selectedTemplateId,
+				};
+			}
+
+			// ---------------------------------------------------------------
+			// Existing → Customize → Use Once
+			// Create New → Use Once
+			//
+			// Both are represented by the complete stage configuration.
+			// Do NOT send newTemplateId.
+			// ---------------------------------------------------------------
+			if (selectionMode === "customized" || selectionMode === "new") {
+				if (!resubmitStageEdits?.length) {
+					throw new Error("Workflow stage configuration is missing.");
+				}
+
+				return {
+					workflowId: activeWorkflowId,
+					stageEdits: resubmitStageEdits,
+				};
+			}
+
+			// ---------------------------------------------------------------
+			// Defensive fallback:
+			// activate the existing draft without replacing the workflow.
+			// ---------------------------------------------------------------
+			return {
+				workflowId: activeWorkflowId,
+			};
+		};
+
+		// -----------------------------------------------------------------
+		// Validation
+		// -----------------------------------------------------------------
+
+		/*
+		 * Fresh submission requires a workflow selection.
+		 */
+		if (shouldAssignSelectedWorkflow && !hasPendingWorkflowSelection) {
 			showToast({
 				type: "error",
 				title: "Workflow required",
@@ -1336,11 +1447,13 @@ export function useVendorCreationForm({
 			return;
 		}
 
-		if (
-			isClarifiedResubmission &&
-			!shouldAssignSelectedWorkflow &&
-			!activeWorkflowId
-		) {
+		/*
+		 * Any clarified resubmission must have the existing WorkflowInstance.
+		 *
+		 * Clarification does NOT create a new WorkflowInstance. The existing
+		 * workflow is reused and activateFirstStage operates on it.
+		 */
+		if (isClarifiedResubmission && !activeWorkflowId) {
 			showToast({
 				type: "error",
 				title: "Workflow required",
@@ -1350,6 +1463,9 @@ export function useVendorCreationForm({
 			return;
 		}
 
+		/*
+		 * Fresh assignWorkflow requires workspace/app context.
+		 */
 		if (shouldAssignSelectedWorkflow && (!workspaceId || !appId)) {
 			showToast({
 				type: "error",
@@ -1361,35 +1477,55 @@ export function useVendorCreationForm({
 		}
 
 		try {
-			// -----------------------------------------------------------------
-			// Case 1
-			// Fresh submission
-			// -----------------------------------------------------------------
-
+			// =============================================================
+			// CASE 1
+			// Fresh Form → Assign Workflow
+			// =============================================================
 			if (shouldAssignSelectedWorkflow) {
-				if (!isClarifiedResubmission) {
-					if (!workspaceId || !appId) {
-						throw new Error("Workspace or application information is missing.");
-					}
-
-					await assignWorkflow({
-						subjectType: "VENDOR_ONBOARDING",
-						subjectId: vendorRequestId,
-						workspaceId,
-						appId,
-						criteria: { ...selectedWorkflowCriteria },
-					});
+				if (!workspaceId || !appId) {
+					throw new Error("Workspace or application information is missing.");
 				}
-			}
-			// -----------------------------------------------------------------
-			// Clarification resubmission
-			// -----------------------------------------------------------------
-			else if (isClarifiedResubmission) {
-				await activateFirstStage({
-					workflowId: activeWorkflowId,
-					...(newTemplateId ? { newTemplateId } : {}),
-					...(resubmitStageEdits ? { stageEdits: resubmitStageEdits } : {}),
+
+				await assignWorkflow({
+					subjectType: "VENDOR_ONBOARDING",
+					subjectId: vendorRequestId,
+					workspaceId,
+					appId,
+					criteria: {
+						...selectedWorkflowCriteria,
+					},
 				});
+			}
+
+			// =============================================================
+			// CASES 2–6
+			// Existing Workflow / Clarified Resubmission
+			//
+			// NEVER call assignWorkflow here.
+			// Always operate on the existing WorkflowInstance.
+			// =============================================================
+			else if (isClarifiedResubmission) {
+				const activationPayload = buildActivationPayload();
+
+				console.debug(
+					"[Vendor Onboarding] activate-first-stage payload:",
+					activationPayload,
+				);
+
+				await activateFirstStage(activationPayload);
+			}
+
+			// =============================================================
+			// Defensive guard
+			//
+			// This prevents the old bug where:
+			// hasAssignedWorkflow=false + clarified=true
+			// silently did nothing and showed success.
+			// =============================================================
+			else {
+				throw new Error(
+					"Workflow submission state is invalid. No workflow action was performed.",
+				);
 			}
 
 			await detailQuery.refetch();
@@ -1402,7 +1538,11 @@ export function useVendorCreationForm({
 					: "Submitted successfully",
 				description: isClarifiedResubmission
 					? hasPendingWorkflowSelection
-						? "The clarified vendor details were updated and the replacement workflow was applied."
+						? saveAsTemplate
+							? "The clarified vendor details were updated and the saved workflow template was applied."
+							: selectionMode === "existing"
+								? "The clarified vendor details were updated and the selected workflow was applied."
+								: "The clarified vendor details were updated and the customized workflow was applied."
 						: "The clarified vendor details were updated and the active workflow was continued."
 					: "The THCM details were updated and the approval workflow was assigned.",
 			});
@@ -1414,11 +1554,13 @@ export function useVendorCreationForm({
 			}
 		} catch (error: unknown) {
 			console.error("Vendor onboarding submission failed:", error);
+
 			try {
 				await detailQuery.refetch();
 			} catch {
 				// Preserve the original submission error shown below.
 			}
+
 			showToast({
 				type: "error",
 				title: isClarifiedResubmission
