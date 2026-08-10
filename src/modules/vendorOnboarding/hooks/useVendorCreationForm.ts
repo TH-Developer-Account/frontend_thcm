@@ -62,11 +62,7 @@ export const vendorOnboardingSteps = [
 	{ id: 3, label: "Workflow" },
 	{ id: 4, label: "Review & Submit" },
 ];
-enum ClarifyAction {
-	NONE,
-	REPLACE_TEMPLATE,
-	EDIT_CURRENT_WORKFLOW,
-}
+
 const EMPTY_FORM_ONE: VendorCreationFormOneValues = {};
 const EMPTY_FORM_TWO: VendorCreationFormTwoValues = {};
 
@@ -1268,13 +1264,18 @@ export function useVendorCreationForm({
 		}
 	};
 
-	
-
 	/*
 	|--------------------------------------------------------------------------
 	| Summary submission
 	|--------------------------------------------------------------------------
 	*/
+
+	/*
+|--------------------------------------------------------------------------
+| Summary submission
+|--------------------------------------------------------------------------
+*/
+
 	const submitForApproval = React.useCallback(async () => {
 		if (!vendorRequestId) {
 			showToast({
@@ -1288,33 +1289,38 @@ export function useVendorCreationForm({
 		const isClarifiedResubmission = hasPendingClarifiedApproval;
 		const selectedWorkflowCriteria =
 			pendingWorkflowSelection?.attachInput ?? null;
-		const newSelectedWorkflowTemplateId =
-			pendingWorkflowSelection?.attachInput.workflowId ?? null;
-		console.log(newSelectedWorkflowTemplateId, "newSelectedWorkflowTemplateId");
-		console.log(pendingWorkflowSelection, "pendingWorkflowSelection");
 		const hasPendingWorkflowSelection = Boolean(pendingWorkflowSelection);
+
+		// "existing" = attach an existing template unmodified -> newTemplateId only.
+		// "customized" / "new" = user edited stages or built a new template ->
+		// stageEdits carries the full resulting stage list; newTemplateId is
+		// dropped since the backend rejects sending both together, and stageEdits
+		// is a full replacement list anyway (see mapStageEditsForApi), not a diff.
+		const selectionMode = pendingWorkflowSelection?.mode ?? null;
+
+		const newTemplateId =
+			selectionMode === "existing"
+				? (pendingWorkflowSelection?.attachInput.workflowId ?? null)
+				: null;
+
+		const resubmitStageEdits =
+			selectionMode === "customized" || selectionMode === "new"
+				? mapStageEditsForApi(pendingWorkflowSelection!.previewStages)
+				: !hasPendingWorkflowSelection && stageEdits
+					? mapStageEditsForApi(stageEdits)
+					: undefined;
 
 		// Only the very first submission (no active workflow yet) goes through
 		// assignWorkflow, which creates the ActiveWorkflow instance. Every
 		// resubmission — swapping in a different/new template or editing the
 		// current one in place — goes through activateFirstStage against that
-		// SAME instance. workflowId is always activeWorkflow.id; a swapped-in
-		// template's stages travel as stageEdits, never as a different workflowId
-		// (activate-first-stage 404s on a template id — it only resolves instance ids).
-		// Only the very first submission (no active workflow yet) goes through
-		// assignWorkflow. Every resubmission path — replacing or continuing —
-		// goes through activateFirstStage instead.
+		// SAME instance. workflowId is always activeWorkflow.id.
 
-	
 		const shouldAssignSelectedWorkflow = Boolean(!hasAssignedWorkflow);
 
-		// A newly picked/created template's stages win over an in-place edit of
-		// the current workflow's own stages.
-		const resubmitStageEdits = pendingWorkflowSelection
-			? mapStageEditsForApi(pendingWorkflowSelection.previewStages)
-			: stageEdits
-				? mapStageEditsForApi(stageEdits)
-				: undefined;
+		// ---------------------------------------------------------------------
+		// 	Validation
+		// ---------------------------------------------------------------------
 
 		if (
 			!isClarifiedResubmission &&
@@ -1355,25 +1361,17 @@ export function useVendorCreationForm({
 		}
 
 		try {
-			
+			// -----------------------------------------------------------------
+			// Case 1
+			// Fresh submission
+			// -----------------------------------------------------------------
+
 			if (shouldAssignSelectedWorkflow) {
-				// Case 1 — fresh submission, nothing assigned yet.
-				if (!workspaceId || !appId) {
-					throw new Error("Workspace or application information is missing.");
-				}
-				await assignWorkflow({
-					subjectType: "VENDOR_ONBOARDING",
-					subjectId: vendorRequestId,
-					workspaceId,
-					appId,
-					criteria: { ...selectedWorkflowCriteria },
-				});
-			} else if (isClarifiedResubmission) {
-				if (shouldAssignSelectedWorkflow) {
-					// Case 1 — fresh submission, nothing assigned yet.
+				if (!isClarifiedResubmission) {
 					if (!workspaceId || !appId) {
 						throw new Error("Workspace or application information is missing.");
 					}
+
 					await assignWorkflow({
 						subjectType: "VENDOR_ONBOARDING",
 						subjectId: vendorRequestId,
@@ -1381,17 +1379,17 @@ export function useVendorCreationForm({
 						appId,
 						criteria: { ...selectedWorkflowCriteria },
 					});
-				} else if (
-					(isClarifiedResubmission && activeWorkflowId) ||
-					newSelectedWorkflowTemplateId
-				) {
-					// Cases 2/3/4/5/6 — always activate the SAME ActiveWorkflow instance.
-					await activateFirstStage({
-						workflowId: activeWorkflowId,
-						stageEdits: resubmitStageEdits,
-						newTemplateId: newSelectedWorkflowTemplateId,
-					});
 				}
+			}
+			// -----------------------------------------------------------------
+			// Clarification resubmission
+			// -----------------------------------------------------------------
+			else if (isClarifiedResubmission) {
+				await activateFirstStage({
+					workflowId: activeWorkflowId,
+					...(newTemplateId ? { newTemplateId } : {}),
+					...(resubmitStageEdits ? { stageEdits: resubmitStageEdits } : {}),
+				});
 			}
 
 			await detailQuery.refetch();
@@ -1410,7 +1408,7 @@ export function useVendorCreationForm({
 			});
 
 			if (onSuccess) {
-				// await onSuccess();
+				await onSuccess();
 			} else {
 				navigate("/vendor/onboarding/listing?tab=onboarding");
 			}
@@ -1434,7 +1432,7 @@ export function useVendorCreationForm({
 				),
 			});
 		}
-	};, [
+	}, [
 		activateFirstStage,
 		appId,
 		assignWorkflow,
