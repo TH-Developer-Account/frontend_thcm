@@ -1265,17 +1265,10 @@ export function useVendorCreationForm({
 	};
 
 	/*
-	|--------------------------------------------------------------------------
-	| Summary submission
-	|--------------------------------------------------------------------------
-	*/
-
-	/*
 |--------------------------------------------------------------------------
 | Summary submission
 |--------------------------------------------------------------------------
 */
-
 	const submitForApproval = React.useCallback(async () => {
 		if (!vendorRequestId) {
 			showToast({
@@ -1292,43 +1285,36 @@ export function useVendorCreationForm({
 		const selectedWorkflowCriteria =
 			pendingWorkflowSelection?.attachInput ?? null;
 
-		const selectionMode = pendingWorkflowSelection?.mode ?? null;
-
-		/*
-		 * Workflow selection semantics:
-		 *
-		 * existing
-		 *   → Attach an existing template without changes
-		 *   → activate-first-stage(newTemplateId)
-		 *
-		 * customized
-		 *   → Existing template was edited
-		 *   → Use Once: activate-first-stage(stageEdits)
-		 *   → Save as Template: template must first be persisted, then
-		 *      activate-first-stage(newTemplateId)
-		 *
-		 * new
-		 *   → New workflow was built
-		 *   → Use Once: activate-first-stage(stageEdits)
-		 *   → Save as Template: template must first be persisted, then
-		 *      activate-first-stage(newTemplateId)
-		 *
-		 * The backend explicitly treats stageEdits and newTemplateId as
-		 * mutually exclusive.
-		 */
-
-		const saveAsTemplate =
-			pendingWorkflowSelection?.attachInput.saveAsTemplate === true;
-
 		const selectedTemplateId =
 			pendingWorkflowSelection?.attachInput?.workflowId ?? null;
 
+		/*
+		 * Workflow payload rule (entry-point based, not selection-mode based):
+		 *
+		 * "Edit current workflow" (direct edit of the ACTIVE workflow's
+		 * stages, no selection flow involved)
+		 *   → stageEdits + workflowId
+		 *   → this is the ONLY path that ever sends stageEdits
+		 *
+		 * "Change current workflow" (any pendingWorkflowSelection outcome —
+		 * existing/attach, existing/customize, or create-new, regardless of
+		 * use-once vs save-as-template)
+		 *   → newTemplateId + workflowId
+		 *   → the selection UI is responsible for persisting a real
+		 *     template first, so attachInput.workflowId is always a real,
+		 *     already-saved template id by the time we get here
+		 *
+		 * The backend treats stageEdits and newTemplateId as mutually
+		 * exclusive — never send both.
+		 */
+
+		// stageEdits ONLY comes from the direct "Edit current workflow" path
+		// (hook-level stageEdits state, set via setStageEdits). It's never
+		// derived from pendingWorkflowSelection anymore.
 		const resubmitStageEdits =
-			selectionMode === "customized" || selectionMode === "new"
-				? mapStageEditsForApi(pendingWorkflowSelection?.previewStages ?? [])
-				: !hasPendingWorkflowSelection && stageEdits
-					? mapStageEditsForApi(stageEdits)
-					: undefined;
+			!hasPendingWorkflowSelection && stageEdits
+				? mapStageEditsForApi(stageEdits)
+				: undefined;
 
 		/*
 		 * Only a completely fresh form gets assignWorkflow.
@@ -1343,8 +1329,11 @@ export function useVendorCreationForm({
 		 * Build the activate-first-stage payload explicitly.
 		 *
 		 * IMPORTANT:
-		 * - newTemplateId = an already-persisted reusable template
-		 * - stageEdits = a one-off/customized stage configuration
+		 * - stageEdits  = direct edit of the active workflow ("Edit current
+		 *                 workflow"), no pendingWorkflowSelection involved
+		 * - newTemplateId = any "Change current workflow" outcome (existing
+		 *                 attach, existing customize, or create new) —
+		 *                 always resolves to a persisted template id
 		 * - never send both
 		 */
 		const buildActivationPayload = () => {
@@ -1355,78 +1344,36 @@ export function useVendorCreationForm({
 			}
 
 			// ---------------------------------------------------------------
-			// Clarified resubmission with NO workflow changes
+			// "Edit current workflow" — direct edit of the active workflow's
+			// stages. No selection flow involved. Only place stageEdits is
+			// ever sent.
 			// ---------------------------------------------------------------
 			if (!hasPendingWorkflowSelection) {
-				return {
-					workflowId: activeWorkflowId,
-				};
-			}
-
-			// ---------------------------------------------------------------
-			// Existing → Attach
-			//
-			// Existing template is selected without customization.
-			// Backend expects newTemplateId.
-			// ---------------------------------------------------------------
-			if (selectionMode === "existing") {
-				if (!selectedTemplateId) {
-					throw new Error("Selected workflow template ID is missing.");
+				if (resubmitStageEdits?.length) {
+					return {
+						workflowId: activeWorkflowId,
+						stageEdits: resubmitStageEdits,
+					};
 				}
 
+				// Clarified resubmission with no workflow changes at all.
 				return {
 					workflowId: activeWorkflowId,
-					newTemplateId: selectedTemplateId,
 				};
 			}
 
 			// ---------------------------------------------------------------
-			// Existing → Customize → Save as Template
-			// Create New → Save as Template
-			//
-			// These are only valid if the UI has already persisted the
-			// customized/new template and attachInput.workflowId contains
-			// that persisted template ID.
-			//
-			// activate-first-stage itself does NOT create a reusable template.
+			// "Change current workflow" — existing/attach, existing/customize,
+			// or create-new. All of these resolve to a persisted template id
+			// by the time submission happens.
 			// ---------------------------------------------------------------
-			if (saveAsTemplate) {
-				if (!selectedTemplateId) {
-					throw new Error(
-						"Workflow template must be saved before it can be attached.",
-					);
-				}
-
-				return {
-					workflowId: activeWorkflowId,
-					newTemplateId: selectedTemplateId,
-				};
+			if (!selectedTemplateId) {
+				throw new Error("Selected workflow template ID is missing.");
 			}
 
-			// ---------------------------------------------------------------
-			// Existing → Customize → Use Once
-			// Create New → Use Once
-			//
-			// Both are represented by the complete stage configuration.
-			// Do NOT send newTemplateId.
-			// ---------------------------------------------------------------
-			if (selectionMode === "customized" || selectionMode === "new") {
-				if (!resubmitStageEdits?.length) {
-					throw new Error("Workflow stage configuration is missing.");
-				}
-
-				return {
-					workflowId: activeWorkflowId,
-					stageEdits: resubmitStageEdits,
-				};
-			}
-
-			// ---------------------------------------------------------------
-			// Defensive fallback:
-			// activate the existing draft without replacing the workflow.
-			// ---------------------------------------------------------------
 			return {
 				workflowId: activeWorkflowId,
+				newTemplateId: selectedTemplateId,
 			};
 		};
 
@@ -1530,6 +1477,7 @@ export function useVendorCreationForm({
 
 			await detailQuery.refetch();
 			setPendingWorkflowSelection(null);
+			setStageEdits(null);
 
 			showToast({
 				type: "success",
@@ -1538,12 +1486,10 @@ export function useVendorCreationForm({
 					: "Submitted successfully",
 				description: isClarifiedResubmission
 					? hasPendingWorkflowSelection
-						? saveAsTemplate
-							? "The clarified vendor details were updated and the saved workflow template was applied."
-							: selectionMode === "existing"
-								? "The clarified vendor details were updated and the selected workflow was applied."
-								: "The clarified vendor details were updated and the customized workflow was applied."
-						: "The clarified vendor details were updated and the active workflow was continued."
+						? "The clarified vendor details were updated and the selected workflow was applied."
+						: resubmitStageEdits?.length
+							? "The clarified vendor details were updated and the current workflow's stages were changed."
+							: "The clarified vendor details were updated and the active workflow was continued."
 					: "The THCM details were updated and the approval workflow was assigned.",
 			});
 
@@ -1586,6 +1532,7 @@ export function useVendorCreationForm({
 		pendingWorkflowSelection,
 		showToast,
 		stageEdits,
+		setStageEdits,
 		vendorRequestId,
 		activeWorkflowId,
 		workspaceId,

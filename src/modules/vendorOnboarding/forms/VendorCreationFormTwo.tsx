@@ -154,25 +154,28 @@ const VendorCreationFormTwo = ({
 				<FormHeader title="THCM Vendor Master Details" Icon={FileCheck2} />
 
 				<div className="vendor-onboarding-form-grid">
-					<FormInput
-						mode={vendorCodeMode}
-						name="vendorCode"
-						label="Vendor Code"
-						value={values.vendorCode ?? ""}
-						error={canEditVendorCode ? errors.vendorCode : undefined}
-						helperText={
-							canEditVendorCode ? "Enter or update the vendor code." : undefined
-						}
-						disabled={vendorCodeLoading}
-						onChange={(event) => {
-							if (!canEditVendorCode) {
-								return;
+					{values.vendorCode ? (
+						<FormInput
+							mode={vendorCodeMode}
+							name="vendorCode"
+							label="Vendor Code"
+							value={values.vendorCode ?? ""}
+							error={canEditVendorCode ? errors.vendorCode : undefined}
+							helperText={
+								canEditVendorCode
+									? "Enter or update the vendor code."
+									: undefined
 							}
+							disabled={vendorCodeLoading}
+							onChange={(event) => {
+								if (!canEditVendorCode) {
+									return;
+								}
 
-							onChange?.("vendorCode", event.target.value);
-						}}
-					/>
-
+								onChange?.("vendorCode", event.target.value);
+							}}
+						/>
+					) : null}
 					<SelectInput
 						mode={fieldMode}
 						name="vendorType"

@@ -202,6 +202,7 @@ const VendorOnboardingReadOnlyView = ({
 							actions={actions}
 							ariaLabel="Vendor onboarding actions"
 							triggerLabel="Actions"
+							triggerVariant="brand"
 						/>
 					}
 				>
