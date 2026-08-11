@@ -70,7 +70,8 @@ export type ActivateFirstStageEdit = {
 };
 
 export type ActivateFirstStagePayload = {
-	workflowId: string;
+	workflowId: string | null;
+	newTemplateId?: string | null;
 	stageEdits?: ActivateFirstStageEdit[];
 };
 
@@ -454,11 +455,13 @@ export const workflowApi = {
 	activateFirstStage: async ({
 		workflowId,
 		stageEdits,
+		newTemplateId,
 	}: ActivateFirstStagePayload) => {
 		const response = await ServerAxios.post<ApiEnvelope<unknown>>(
 			`${WORKFLOW_RUNTIME_URL}/stages/activate-first-stage`,
 			{
 				workflowId,
+				newTemplateId,
 				...(stageEdits?.length ? { stageEdits } : {}),
 			},
 		);

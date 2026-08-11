@@ -201,6 +201,8 @@ const VendorOnboardingReadOnlyView = ({
 							row={onboardingId}
 							actions={actions}
 							ariaLabel="Vendor onboarding actions"
+							triggerLabel="Actions"
+							triggerVariant="brand"
 						/>
 					}
 				>

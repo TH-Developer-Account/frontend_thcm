@@ -25,10 +25,14 @@ type ActionMenuProps<TData> = {
 	row: TData;
 	actions: ActionMenuItem<TData>[];
 	ariaLabel: string;
+
 	triggerIcon?: LucideIcon;
 	triggerIconSize?: number;
 	triggerLabel?: string;
+	triggerVariant?: "default" | "brand" | "secondary" | "outline" | "ghost";
+
 	className?: string;
+	triggerClassName?: string;
 	panelClassName?: string;
 };
 
@@ -43,7 +47,9 @@ const ActionMenu = <TData,>({
 	triggerIcon: TriggerIcon = EllipsisVertical,
 	triggerIconSize = 16,
 	triggerLabel,
+	triggerVariant,
 	className,
+	triggerClassName,
 	panelClassName,
 }: ActionMenuProps<TData>) => {
 	const visibleActions = actions.filter((action) => !action.hidden);
@@ -59,10 +65,15 @@ const ActionMenu = <TData,>({
 				className={joinClassNames(
 					"action-menu-trigger",
 					triggerLabel && "action-menu-trigger-labeled",
+					triggerVariant && `action-menu-trigger-${triggerVariant}`,
+					triggerClassName,
 				)}
 				aria-label={ariaLabel}
 			>
-				{triggerLabel ? <span>{triggerLabel}</span> : null}
+				{triggerLabel ? (
+					<span className="action-menu-trigger-label">{triggerLabel}</span>
+				) : null}
+
 				<TriggerIcon size={triggerIconSize} aria-hidden="true" />
 			</MenuButton>
 
