@@ -29,7 +29,7 @@ const GuestVendorOnboardingFormPage = ({
 	const form = useGuestVendorOnboardingForm(id);
 
 	const handleBack = () => {
-		navigate(`/guest/vendor-onboarding/${id}`);
+		navigate(`/guest/medical-claim/form/create/${id}`);
 	};
 
 	const handleSubmit = async (submission: VendorCreationFormOneSubmission) => {
@@ -43,7 +43,7 @@ const GuestVendorOnboardingFormPage = ({
 					result.message || "Your vendor information has been updated.",
 			});
 
-			navigate(`/guest/vendor-onboarding/${id}`, {
+			navigate(`/guest/medical-claim/form/create/${id}`, {
 				replace: true,
 			});
 		} catch (error) {
@@ -64,7 +64,7 @@ const GuestVendorOnboardingFormPage = ({
 		breadcrumbs: [
 			{
 				label: "Vendor Onboarding",
-				href: "/guest/vendor-onboarding",
+				href: "/guest/medical-claim/form/create",
 			},
 			{
 				label: mode === "edit" ? "Edit Vendor Details" : "Vendor Details",
@@ -110,7 +110,7 @@ const GuestVendorOnboardingFormPage = ({
 	 * allow guest changes.
 	 */
 	if (mode === "edit" && !form.canEdit) {
-		return <Navigate to={`/guest/vendor-onboarding/${id}`} replace />;
+		return <Navigate to={`/guest/medical-claim/form/create/${id}`} replace />;
 	}
 
 	return (

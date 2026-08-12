@@ -32,7 +32,7 @@ function Header() {
 	return (
 		<div className="home-header-content">
 			<NavLink
-				to={isGuestRoute ? "/guest/vendor-onboarding" : "/"}
+				to={isGuestRoute ? "/guest/medical-claim/form/create" : "/"}
 				className="home-brand"
 				aria-label="Go to home"
 			>

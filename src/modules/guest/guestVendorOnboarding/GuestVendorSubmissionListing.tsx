@@ -30,14 +30,14 @@ export default function VendorSubmissionsListingPage() {
 
 	const handleView = useCallback(
 		(row: VendorOnboardingListingRow) => {
-			navigate(`/guest/vendor-onboarding/${row.id}`);
+			navigate(`/guest/medical-claim/form/create/${row.id}`);
 		},
 		[navigate],
 	);
 
 	const handleEdit = useCallback(
 		(row: VendorOnboardingListingRow) => {
-			navigate(`/guest/vendor-onboarding/${row.id}/edit`);
+			navigate(`/guest/medical-claim/form/create/${row.id}/edit`);
 		},
 		[navigate],
 	);
@@ -47,7 +47,7 @@ export default function VendorSubmissionsListingPage() {
 			getVendorOnboardingColumns({
 				onView: handleView,
 				onEdit: handleEdit,
-				getViewPath: (row) => `/guest/vendor-onboarding/${row.id}`,
+				getViewPath: (row) => `/guest/medical-claim/form/create/${row.id}`,
 				canEdit: canGuestEdit,
 			}),
 		[canGuestEdit, handleEdit, handleView],

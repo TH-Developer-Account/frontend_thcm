@@ -7,27 +7,19 @@ import HomeScreen from "../containers/HomeScreen";
 import { ForgotPasswordPage } from "../containers/Login/pages/ForgotPasswordPage";
 import LoginPage from "../containers/Login/pages/LoginPage";
 import { ResetPasswordPage } from "../containers/Login/pages/ResestPasswordPage";
-import GuestLoginPage from "../containers/Login/pages/GuestLoginPage";
-
-import { GuestAuthProvider } from "../context/Auth/guestAuthProvider";
 import { SessionTimeoutProvider } from "../context/SessionTimeOut/SessionTimeoutProvider";
 
 import HomeLayout from "../layout/HomeLayout";
 import MainContentWrapper from "../layout/MainContentWrapper";
 
 import AdminRoutes from "./adminRoutes";
-import GuestProtectedRoute from "./GuestProtectedRoutes";
-import GuestRoutes from "./guestRoutes";
 import MarketingRoutes from "./marketingRoutes";
 import MedicalRoutes from "./medicalRoutes";
 import ProtectedRoute from "./ProtectedRoute";
 import VendorRoutes from "./VendorRoutes";
 import WorkflowRoutes from "./workflowRoutes";
-import GuestLayoutWrapper from "../layout/GuestLayoutWrapper";
 import VendorOnboardingPublicPage from "../modules/guest/guestVendorOnboarding/VendorOnboardingPublicPage";
-
-// VendorOnboardingPublicPage import removed — superseded by
-// GuestVendorOnboardingFormPage under the guest-authenticated tree.
+import { GuestRoutesWrapper } from "./guestRoutes";
 
 const AuthenticatedRoutes = () => {
 	return (
@@ -56,31 +48,6 @@ const AuthenticatedRoutes = () => {
 	);
 };
 
-const GuestRoutesWrapper = () => {
-	return (
-		<GuestAuthProvider>
-			<Routes>
-				{/* The ONLY unauthenticated guest route now. */}
-				<Route path="login" element={<GuestLoginPage />} />
-
-				{/* Everything vendor-facing — listing AND the form itself —
-				    lives behind guest auth. There is no public form route
-				    anymore; a vendor rep must log in first. */}
-				<Route
-					path="/*"
-					element={
-						<GuestProtectedRoute>
-							<GuestLayoutWrapper />
-						</GuestProtectedRoute>
-					}
-				>
-					<Route path="*" element={<GuestRoutes />} />
-				</Route>
-			</Routes>
-		</GuestAuthProvider>
-	);
-};
-
 export default function AppRoutes() {
 	return (
 		<Routes>
@@ -91,7 +58,6 @@ export default function AppRoutes() {
 
 			<Route path="/forbidden" element={<ForbiddenPage />} />
 
-			{/* GUEST AREA — replaces the old public /vendor-form routes entirely */}
 			<Route path="/guest/*" element={<GuestRoutesWrapper />} />
 			<Route path="/vendor-form/invalid-link" element={<ForbiddenPage />} />
 

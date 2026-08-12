@@ -7,6 +7,6 @@ export const guestSidebar: SidebarItem[] = [
 		id: "guest-vendor-onboarding",
 		label: "My Submissions",
 		icon: <Folder size={18} />,
-		link: "/guest/vendor-onboarding",
+		link: "/guest/medical-claim/form/create",
 	},
 ];
