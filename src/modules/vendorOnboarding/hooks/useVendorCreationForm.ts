@@ -795,6 +795,7 @@ export function useVendorCreationForm({
 	const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
 	const [isPreparingPdf, setIsPreparingPdf] = React.useState(false);
 	const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
+	const [originalAccountNumber, setOriginalAccountNumber] = React.useState("");
 
 	const vendorRequestId = routeVendorId;
 
@@ -994,6 +995,7 @@ export function useVendorCreationForm({
 
 		setFormOneValues(data.partOne ?? EMPTY_FORM_ONE);
 		setFormTwoValues(data.partTwo ?? {});
+		setOriginalAccountNumber((data.partOne?.accountNumber ?? "").trim());
 	}, [
 		detailQuery.data,
 		detailQuery.dataUpdatedAt,
@@ -1027,15 +1029,19 @@ export function useVendorCreationForm({
 			value: VendorCreationFormOneValues[K],
 		) => {
 			setFormOneValues((current) => {
-				const nextValues = {
-					...(current ?? formOneValues),
-					[field]: value,
-				};
+				const nextValues = { ...(current ?? formOneValues), [field]: value };
 
 				const accountNumber = nextValues.accountNumber?.trim() ?? "";
-
 				const confirmAccountNumber =
 					nextValues.confirmAccountNumber?.trim() ?? "";
+
+				// Confirm is only meaningful when the number is new (no saved
+				// value yet) or is actively being changed from what's on file.
+				// Backend never returns confirmAccountNumber, so on a plain
+				// reload it will always be blank — that's expected, not an error.
+				const isAccountNumberChanged = accountNumber !== originalAccountNumber;
+				const confirmRequired =
+					!originalAccountNumber || isAccountNumberChanged;
 
 				setFormOneErrors((currentErrors) => {
 					const nextErrors = {
@@ -1047,11 +1053,13 @@ export function useVendorCreationForm({
 					};
 
 					if (field === "accountNumber" || field === "confirmAccountNumber") {
-						nextErrors.confirmAccountNumber = !confirmAccountNumber
-							? REQUIRED_FORM_ONE_FIELDS.confirmAccountNumber
-							: confirmAccountNumber !== accountNumber
-								? "Account numbers do not match."
-								: undefined;
+						nextErrors.confirmAccountNumber = !confirmRequired
+							? undefined
+							: !confirmAccountNumber
+								? REQUIRED_FORM_ONE_FIELDS.confirmAccountNumber
+								: confirmAccountNumber !== accountNumber
+									? "Account numbers do not match."
+									: undefined;
 					}
 
 					return nextErrors;
@@ -1060,7 +1068,7 @@ export function useVendorCreationForm({
 				return nextValues;
 			});
 		},
-		[formOneValues],
+		[formOneValues, originalAccountNumber],
 	);
 
 	const changeFormTwo = React.useCallback(
@@ -1808,6 +1816,7 @@ export function useVendorCreationForm({
 		formOneValues,
 		formTwoValues,
 		formOneErrors,
+		originalAccountNumber,
 		formTwoErrors,
 		formOneDocuments: isPublicForm
 			? (publicQuery.data?.documents ?? [])

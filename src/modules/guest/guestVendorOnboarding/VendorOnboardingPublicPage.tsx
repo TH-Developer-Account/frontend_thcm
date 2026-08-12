@@ -4,10 +4,7 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import Card from "../../../components/common/Card";
 import PublicPagesLayout from "../../../layout/PublicPagesLayout";
 import VendorCreationFormOne from "../../vendorOnboarding/forms/VendorCreationFormOne";
-import {
-	VendorCreationFormProvider,
-	useVendorCreationForm,
-} from "../../vendorOnboarding/hooks/useVendorCreationForm";
+import { usePublicVendorOnboardingForm } from "./usePublicVendorOnboardingForm";
 
 const PUBLIC_VENDOR_SESSION_KEY = "vendor-onboarding-session-code";
 const PUBLIC_SESSION_END_DELAY_MS = 2500;
@@ -46,10 +43,9 @@ const VendorOnboardingPublicPage = () => {
 		if (normalizedToken) saveSessionCode(normalizedToken);
 	}, [normalizedToken]);
 
-	const form = useVendorCreationForm({
-		isPublicForm: true,
+	const form = usePublicVendorOnboardingForm({
 		token: resolvedToken,
-		onSuccess: () => setSubmitted(true),
+		onSubmitted: () => setSubmitted(true),
 	});
 
 	React.useEffect(() => {
@@ -127,15 +123,19 @@ const VendorOnboardingPublicPage = () => {
 	return (
 		<PublicPagesLayout>
 			<Card>
-				<VendorCreationFormProvider value={form}>
-					<VendorCreationFormOne
-						mode="edit"
-						canEdit
-						requireDpdpConsent
-						onSubmit={form.handleVendorSubmitForm}
-						onSaveDraft={form.handleVendorDraftSubmitForm}
-					/>
-				</VendorCreationFormProvider>
+				<VendorCreationFormOne
+					mode="edit"
+					canEdit
+					values={form.formOneValues}
+					errors={form.formOneErrors}
+					initialDocuments={form.documents}
+					requireDocuments
+					requireDpdpConsent
+					loading={form.mutationLoading}
+					onChange={form.handleFormOneChange}
+					onSubmit={form.handleSubmit}
+					onSaveDraft={form.handleSaveDraft}
+				/>
 			</Card>
 		</PublicPagesLayout>
 	);

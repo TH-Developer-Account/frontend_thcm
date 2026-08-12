@@ -1,3 +1,5 @@
+import type { VendorOnboardingStatus } from "./vendorOnboarding.types";
+
 export type VendorListingFilter =
 	| "createdByMe"
 	| "pendingOnMe"
@@ -8,12 +10,6 @@ export type VendorListingFilter =
 // Matches the actual VendorOnboarding.status values used by the backend
 // (vendorOnboarding_controller.ts / schema.prisma default), not the
 // previous placeholder set which never matched real data.
-export type VendorTableStatus =
-	| "AWAITING_VENDOR"
-	| "VENDOR_SUBMITTED"
-	| "IN_REVIEW"
-	| "IN_PROGRESS"
-	| "CLOSED";
 
 export type VendorInitiationListingRow = {
 	id: string;
@@ -25,7 +21,7 @@ export type VendorInitiationListingRow = {
 		last_name: string;
 	};
 	created_at?: string | null;
-	status?: VendorTableStatus;
+	status?: VendorOnboardingStatus;
 	referenceNumber?: string;
 };
 
@@ -45,7 +41,7 @@ export type VendorOnboardingListingRow = {
 	createdDate?: string | null;
 	updatedAt?: string | null;
 
-	status?: VendorTableStatus | null;
+	status?: VendorOnboardingStatus;
 	referenceNumber?: string;
 };
 

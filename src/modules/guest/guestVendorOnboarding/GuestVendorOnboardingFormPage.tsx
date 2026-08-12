@@ -13,7 +13,6 @@ import VendorCreationFormOne, {
 } from "../../vendorOnboarding/forms/VendorCreationFormOne";
 import VendorCreationFormTwo from "../../vendorOnboarding/forms/VendorCreationFormTwo";
 import { useGuestVendorOnboardingForm } from "./useGuestVendorOnboardingForm";
-import { getErrorMessage } from "../../vendorOnboarding/helpers/vendor.onboarding.helper";
 
 type GuestVendorOnboardingFormPageProps = {
 	mode?: "view" | "edit";
@@ -33,29 +32,18 @@ const GuestVendorOnboardingFormPage = ({
 	};
 
 	const handleSubmit = async (submission: VendorCreationFormOneSubmission) => {
-		try {
-			const result = await form.submitFormOne(submission);
+		const result = await form.handleSubmit(submission);
+		if (!result) return;
 
-			showToast({
-				type: "success",
-				title: "Vendor form submitted",
-				description:
-					result.message || "Your vendor information has been updated.",
-			});
+		showToast({
+			type: "success",
+			title: "Vendor form submitted",
+			description:
+				result.message || "Your vendor information has been updated.",
+		});
 
-			navigate(`/guest/vendor-onboarding/${id}`, {
-				replace: true,
-			});
-		} catch (error) {
-			showToast({
-				type: "error",
-				title: "Submission failed",
-				description: getErrorMessage(
-					error,
-					"Unable to submit your vendor form.",
-				),
-			});
-		}
+		// Guests return to the listing to continue tracking progress.
+		navigate("/guest/vendor-onboarding", { replace: true });
 	};
 
 	const navigation = {
