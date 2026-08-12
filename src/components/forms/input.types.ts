@@ -25,6 +25,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	 * Value shown when view mode has no usable value.
 	 */
 	emptyReadOnlyValue?: ReactNode;
+	success?: boolean;
 }
 
 export interface CheckboxProps {
@@ -36,6 +37,7 @@ export interface CheckboxProps {
 	className?: string;
 	style?: React.CSSProperties;
 	onChange?: (checked: boolean) => void;
+	success?: boolean;
 }
 
 export interface Option {
@@ -62,6 +64,7 @@ export type SearchBoxProps = {
 	disabled?: boolean;
 	className?: string;
 	containerClassName?: string;
+	success?: boolean;
 	// rightElement?: React.ReactNode; // for filters / buttons
 };
 
@@ -72,7 +75,7 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
 	isTooltip?: boolean;
 
 	mode?: FormFieldMode;
-
+	success?: boolean;
 	/**
 	 * Optional formatted content displayed in view mode.
 	 * When omitted, the textarea value is displayed.

@@ -308,15 +308,15 @@ FORM CONTAINER AND LAYOUT
 	   VALID PASSWORD STATE
 	===================================================== */
 
-	.form-input-valid {
+	.form-input-success {
 		border-color: var(--color-success);
 	}
 
-	.form-input-valid:hover:not(:disabled) {
+	.form-input-success:hover:not(:disabled) {
 		border-color: var(--color-success-hover);
 	}
 
-	.form-input-valid:focus {
+	.form-input-vsuccessalid:focus {
 		border-color: var(--color-success);
 		box-shadow: none;
 	}

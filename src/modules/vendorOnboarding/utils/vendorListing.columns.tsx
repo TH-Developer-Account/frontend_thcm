@@ -32,6 +32,7 @@ const formatDate = (value: string | null | undefined): string => {
 
 export const getVendorInitiationColumns = ({
 	onView,
+	basePath = "/vendor/initiation",
 }: VendorInitiationColumnsParams): ColumnDef<VendorInitiationListingRow>[] => [
 	{
 		accessorKey: "referenceNumber",
@@ -42,7 +43,7 @@ export const getVendorInitiationColumns = ({
 		},
 		cell: ({ row }) => (
 			<NavLink
-				to={`/vendor/initiation/${row.original.id}/view`}
+				to={`${basePath}/${row.original.id}/view`}
 				className="epc-number-link"
 			>
 				{row.original.referenceNumber || "--"}

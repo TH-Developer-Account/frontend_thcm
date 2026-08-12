@@ -31,6 +31,7 @@ type UserAsyncSelectProps = {
 	label?: string;
 	helperText?: string;
 	className?: string;
+	success?: boolean;
 };
 
 const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
@@ -45,6 +46,7 @@ const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 	isClearable = true,
 	isDisabled = false,
 	required = false,
+	success,
 	className = "",
 }) => {
 	const generatedId = useId();
@@ -187,6 +189,7 @@ const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 				className={[
 					"react-select-container",
 					error ? "react-select-container-error" : "",
+					success && !error && "react-select-container-success",
 				]
 					.filter(Boolean)
 					.join(" ")}

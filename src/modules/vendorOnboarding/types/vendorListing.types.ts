@@ -45,16 +45,24 @@ export type VendorOnboardingListingRow = {
 	createdDate?: string | null;
 	updatedAt?: string | null;
 
-	status?: VendorTableStatus;
+	status?: VendorTableStatus | null;
 	referenceNumber?: string;
 };
 
 export type VendorInitiationColumnsParams = {
 	onView: (row: VendorInitiationListingRow) => void;
+	basePath?: string;
 };
 
 export type VendorOnboardingColumnsParams = {
 	onView: (row: VendorOnboardingListingRow) => void;
+	onEdit?: (row: VendorOnboardingListingRow) => void;
+
+	basePath?: string;
+
+	getViewPath?: (row: VendorOnboardingListingRow) => string;
+
+	canEdit?: (row: VendorOnboardingListingRow) => boolean;
 };
 export type VendorOnboardingInitiationPayload = {
 	vendorName: string;

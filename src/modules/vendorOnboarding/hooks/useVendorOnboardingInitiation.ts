@@ -9,7 +9,10 @@ import {
 	useVendorInitiationDetailQuery,
 } from "../queries/useVendorMutations";
 import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";
-import { showSuccessToast } from "../../../utils/apiError.helper";
+import {
+	showApiErrorToast,
+	showSuccessToast,
+} from "../../../utils/apiError.helper";
 import { useToast } from "../../../context/Auth/AuthContext";
 
 export type VendorOnboardingInitiationErrors = Partial<
@@ -107,9 +110,15 @@ export const useVendorOnboardingInitiation = ({
 		onSuccess: async () => {
 			await onSubmitSuccess?.();
 			navigate("/vendor/initiation/listing");
+			showSuccessToast(
+				showToast,
+				"The Vendor initiation was submitted successfully.",
+				"Submitted successfully",
+			);
 		},
 		onError: (error) => {
 			console.error("Vendor initiation submit failed:", error);
+			showApiErrorToast(showToast, error, "Vendor initiation submit failed");
 		},
 	});
 

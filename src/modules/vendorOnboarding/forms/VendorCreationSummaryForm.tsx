@@ -157,7 +157,9 @@ const VendorCreationSummaryForm = ({
 		resolvedCanAcceptAndClose && typeof resolvedOnAcceptAndClose === "function";
 
 	const showSendBackAction =
-		canSendBackToVendor ?? formContext?.canSendBackToVendor ?? false;
+		(formContext?.hasPendingClarifiedApproval && canSendBackToVendor) ??
+		formContext?.canSendBackToVendor ??
+		false;
 
 	const hasWorkflow = resolvedWorkflowStages.length > 0;
 
@@ -276,7 +278,7 @@ const VendorCreationSummaryForm = ({
 							onClick={resolvedOnAcceptAndClose}
 						/>
 					) : null}
-					{!canActOnCurrentStage && showSendBackAction ? (
+					{showSendBackAction ? (
 						<Button
 							type="button"
 							text="Send Back to Vendor"

@@ -3,6 +3,7 @@ import Select from "react-select";
 import type { Props, GroupBase, MultiValue } from "react-select";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 import type { Option } from "./input.types";
+import { CircleCheck } from "lucide-react";
 
 interface MultiSelectProps extends Props<Option, true, GroupBase<Option>> {
 	label?: string;
@@ -11,6 +12,7 @@ interface MultiSelectProps extends Props<Option, true, GroupBase<Option>> {
 	name?: string;
 	onValueChange?: (data: { fieldName?: string; value: Option[] }) => void;
 	value: Option[];
+	success?: boolean;
 }
 
 const joinClassNames = (...classes: Array<string | false | null | undefined>) =>
@@ -23,6 +25,7 @@ export default function MultiSelectInput({
 	maxMenuHeight = 200,
 	name,
 	inputId,
+	success,
 	isDisabled = false,
 	required = false,
 	...props
@@ -73,6 +76,7 @@ export default function MultiSelectInput({
 						"react-select-container",
 						error && "react-select-container-error",
 						className,
+						success && !error && "react-select-container-success",
 					)}
 					onChange={handleChange}
 					menuPortalTarget={
@@ -88,6 +92,11 @@ export default function MultiSelectInput({
 					<ExclamationCircleIcon
 						aria-hidden="true"
 						className="form-error-icon select-error-icon"
+					/>
+				) : success ? (
+					<CircleCheck
+						aria-hidden="true"
+						className="form-success-icon select-success-icon"
 					/>
 				) : null}
 			</div>
