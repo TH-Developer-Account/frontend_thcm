@@ -268,10 +268,10 @@ export function useVendorCreationFormOneController({
 	onSubmit,
 	onSaveDraft,
 }: UseVendorCreationFormOneControllerParams) {
-	const [enclosureUploads, setEnclosureUploads] = React.useState<
+	const [enclosureUploads, setEnclosureUploads] = React.useState
 		VendorEnclosureUploadItem[]
 	>(() => createInitialEnclosureUploads(initialDocuments));
-	const [enclosureErrors, setEnclosureErrors] = React.useState<
+	const [enclosureErrors, setEnclosureErrors] = React.useState
 		Partial<Record<VendorEnclosureStatusKey, string>>
 	>({});
 	const [isDpdpModalOpen, setIsDpdpModalOpen] = React.useState(false);
@@ -593,15 +593,12 @@ export function useVendorCreationSummaryController({
 		isExternalApprover,
 	} = workflowApproverData;
 
-	// Assumes workflowStages is already ordered — last entry is the closing stage.
 	const isFinalStage = Boolean(
 		currentStage &&
 		workflowStages.length > 0 &&
 		workflowStages[workflowStages.length - 1]?.id === currentStage.id,
 	);
 
-	// The final-stage external (TCS) approver must set the Vendor Code before
-	// approving; their approval also closes the request in the same action.
 	const requiresVendorCodeToApprove =
 		isFinalStage && Boolean(isExternalApprover);
 
@@ -778,11 +775,11 @@ export function useVendorCreationForm({
 	const [formTwoValues, setFormTwoValues] =
 		React.useState<VendorCreationFormTwoValues>(EMPTY_FORM_TWO);
 
-	const [formOneErrors, setFormOneErrors] = React.useState<
+	const [formOneErrors, setFormOneErrors] = React.useState
 		VendorFormErrors<VendorCreationFormOneValues>
 	>({});
 
-	const [formTwoErrors, setFormTwoErrors] = React.useState<
+	const [formTwoErrors, setFormTwoErrors] = React.useState
 		VendorFormErrors<VendorCreationFormTwoValues>
 	>({});
 
@@ -824,11 +821,6 @@ export function useVendorCreationForm({
 		[publicQuery.data],
 	);
 
-	/*
-	 * Public query data remains the source of truth until the first edit.
-	 * The first change copies the complete query-backed form into local state,
-	 * after which query refetches cannot overwrite the user's edits.
-	 */
 	const formOneValues =
 		formOneValuesState ??
 		(isPublicForm ? publicFormInitialValues : EMPTY_FORM_ONE);
@@ -881,15 +873,12 @@ export function useVendorCreationForm({
 	|--------------------------------------------------------------------------
 	*/
 
-	const [stageEdits, setStageEditsState] = React.useState<
+	const [stageEdits, setStageEditsState] = React.useState
 		WorkflowStage[] | null
 	>(null);
 
 	const canEditStagesOnResubmit = isThcmProposer && hasPendingClarifiedApproval;
 
-	// Reset any in-progress edit whenever a new clarify cycle starts (or ends)
-	// — stale edits from a previous iteration should never leak into a
-	// different one.
 	React.useEffect(() => {
 		setStageEditsState(null);
 	}, [activeWorkflowId, activeWorkflow?.iteration]);
@@ -910,7 +899,7 @@ export function useVendorCreationForm({
 	const { canActNow, isExternalApprover, isCurrentStageApprover } =
 		workflowApproverData;
 
-	type VendorUpdatePayload = Parameters<
+	type VendorUpdatePayload = Parameters
 		typeof updateMutation.mutateAsync
 	>[0]["payload"] & {
 		isExternalApprover?: boolean;
@@ -970,12 +959,6 @@ export function useVendorCreationForm({
 		isVendorCodeDirty &&
 		!isSavingVendorCode;
 
-	/*
-	|--------------------------------------------------------------------------
-	| Initialize internal vendor form
-	|--------------------------------------------------------------------------
-	*/
-
 	const detailInitKeyRef = React.useRef("");
 
 	React.useEffect(() => {
@@ -1003,12 +986,6 @@ export function useVendorCreationForm({
 		vendorRequestId,
 	]);
 
-	/*
-	|--------------------------------------------------------------------------
-	| Step navigation
-	|--------------------------------------------------------------------------
-	*/
-
 	const next = React.useCallback(() => {
 		setCurrentStep((step) => Math.min(step + 1, vendorOnboardingSteps.length));
 	}, []);
@@ -1016,12 +993,6 @@ export function useVendorCreationForm({
 	const back = React.useCallback(() => {
 		setCurrentStep((step) => Math.max(step - 1, 1));
 	}, []);
-
-	/*
-	|--------------------------------------------------------------------------
-	| Form changes
-	|--------------------------------------------------------------------------
-	*/
 
 	const changeFormOne = React.useCallback(
 		<K extends keyof VendorCreationFormOneValues>(
@@ -1035,8 +1006,6 @@ export function useVendorCreationForm({
 				const confirmAccountNumber =
 					nextValues.confirmAccountNumber?.trim() ?? "";
 
-				// The backend does not return confirmAccountNumber. Require it only
-				// for a new account number or when the saved number is changed.
 				const isAccountNumberChanged = accountNumber !== originalAccountNumber;
 				const confirmRequired =
 					!originalAccountNumber || isAccountNumberChanged;
@@ -1086,12 +1055,6 @@ export function useVendorCreationForm({
 		},
 		[],
 	);
-
-	/*
-	|--------------------------------------------------------------------------
-	| Save Form One
-	|--------------------------------------------------------------------------
-	*/
 
 	const saveVendorDetails = async () => {
 		if (!vendorRequestId) {
@@ -1189,11 +1152,6 @@ export function useVendorCreationForm({
 			});
 		}
 	};
-	/*
-	|--------------------------------------------------------------------------
-	| Public vendor draft version submission
-	|--------------------------------------------------------------------------
-	*/
 
 	const submitDraftPublicVendor = async (
 		submission?: VendorCreationFormOneDraftSubmission,
@@ -1221,11 +1179,6 @@ export function useVendorCreationForm({
 			});
 		}
 	};
-	/*
-	|--------------------------------------------------------------------------
-	| Public vendor submission
-	|--------------------------------------------------------------------------
-	*/
 
 	const submitPublicVendor = async (
 		submission?: VendorCreationFormOneSubmission,
@@ -1271,10 +1224,20 @@ export function useVendorCreationForm({
 	};
 
 	/*
-|--------------------------------------------------------------------------
-| Summary submission
-|--------------------------------------------------------------------------
-*/
+	|--------------------------------------------------------------------------
+	| Summary submission
+	|--------------------------------------------------------------------------
+	|
+	| submitMutation runs ONCE, unconditionally, before any assign/activate
+	| branching — both for a fresh assignment and for every clarified
+	| resubmission path. This is safe against the backend's status guard:
+	| clarifyStageController always resets VENDOR_ONBOARDING status back to
+	| IN_REVIEW (see getClarifyResetStatus), which is exactly the precondition
+	| sendForApproval requires before it will run. Do not move this call
+	| inside either branch below or duplicate it — it must run exactly once
+	| per submitForApproval call, ahead of everything else.
+	|--------------------------------------------------------------------------
+	*/
 	const submitForApproval = React.useCallback(async () => {
 		if (!vendorRequestId) {
 			showToast({
@@ -1294,54 +1257,14 @@ export function useVendorCreationForm({
 		const selectedTemplateId =
 			pendingWorkflowSelection?.attachInput?.workflowId ?? null;
 
-		/*
-		 * Workflow payload rule (entry-point based, not selection-mode based):
-		 *
-		 * "Edit current workflow" (direct edit of the ACTIVE workflow's
-		 * stages, no selection flow involved)
-		 *   → stageEdits + workflowId
-		 *   → this is the ONLY path that ever sends stageEdits
-		 *
-		 * "Change current workflow" (any pendingWorkflowSelection outcome —
-		 * existing/attach, existing/customize, or create-new, regardless of
-		 * use-once vs save-as-template)
-		 *   → newTemplateId + workflowId
-		 *   → the selection UI is responsible for persisting a real
-		 *     template first, so attachInput.workflowId is always a real,
-		 *     already-saved template id by the time we get here
-		 *
-		 * The backend treats stageEdits and newTemplateId as mutually
-		 * exclusive — never send both.
-		 */
-
-		// stageEdits ONLY comes from the direct "Edit current workflow" path
-		// (hook-level stageEdits state, set via setStageEdits). It's never
-		// derived from pendingWorkflowSelection anymore.
 		const resubmitStageEdits =
 			!hasPendingWorkflowSelection && stageEdits
 				? mapStageEditsForApi(stageEdits)
 				: undefined;
 
-		/*
-		 * Only a completely fresh form gets assignWorkflow.
-		 *
-		 * Once a workflow instance exists, clarification resubmission must
-		 * operate on that SAME workflowId through activateFirstStage.
-		 */
 		const shouldAssignSelectedWorkflow =
 			!hasAssignedWorkflow && !isClarifiedResubmission;
 
-		/*
-		 * Build the activate-first-stage payload explicitly.
-		 *
-		 * IMPORTANT:
-		 * - stageEdits  = direct edit of the active workflow ("Edit current
-		 *                 workflow"), no pendingWorkflowSelection involved
-		 * - newTemplateId = any "Change current workflow" outcome (existing
-		 *                 attach, existing customize, or create new) —
-		 *                 always resolves to a persisted template id
-		 * - never send both
-		 */
 		const buildActivationPayload = () => {
 			if (!activeWorkflowId) {
 				throw new Error(
@@ -1349,11 +1272,6 @@ export function useVendorCreationForm({
 				);
 			}
 
-			// ---------------------------------------------------------------
-			// "Edit current workflow" — direct edit of the active workflow's
-			// stages. No selection flow involved. Only place stageEdits is
-			// ever sent.
-			// ---------------------------------------------------------------
 			if (!hasPendingWorkflowSelection) {
 				if (resubmitStageEdits?.length) {
 					return {
@@ -1362,17 +1280,11 @@ export function useVendorCreationForm({
 					};
 				}
 
-				// Clarified resubmission with no workflow changes at all.
 				return {
 					workflowId: activeWorkflowId,
 				};
 			}
 
-			// ---------------------------------------------------------------
-			// "Change current workflow" — existing/attach, existing/customize,
-			// or create-new. All of these resolve to a persisted template id
-			// by the time submission happens.
-			// ---------------------------------------------------------------
 			if (!selectedTemplateId) {
 				throw new Error("Selected workflow template ID is missing.");
 			}
@@ -1383,13 +1295,6 @@ export function useVendorCreationForm({
 			};
 		};
 
-		// -----------------------------------------------------------------
-		// Validation
-		// -----------------------------------------------------------------
-
-		/*
-		 * Fresh submission requires a workflow selection.
-		 */
 		if (shouldAssignSelectedWorkflow && !hasPendingWorkflowSelection) {
 			showToast({
 				type: "error",
@@ -1400,12 +1305,6 @@ export function useVendorCreationForm({
 			return;
 		}
 
-		/*
-		 * Any clarified resubmission must have the existing WorkflowInstance.
-		 *
-		 * Clarification does NOT create a new WorkflowInstance. The existing
-		 * workflow is reused and activateFirstStage operates on it.
-		 */
 		if (isClarifiedResubmission && !activeWorkflowId) {
 			showToast({
 				type: "error",
@@ -1416,9 +1315,6 @@ export function useVendorCreationForm({
 			return;
 		}
 
-		/*
-		 * Fresh assignWorkflow requires workspace/app context.
-		 */
 		if (shouldAssignSelectedWorkflow && (!workspaceId || !appId)) {
 			showToast({
 				type: "error",
@@ -1430,10 +1326,9 @@ export function useVendorCreationForm({
 		}
 
 		try {
-			// =============================================================
-			// CASE 1
-			// Fresh Form → Assign Workflow
-			// =============================================================
+			// Runs once, before any branch below — see block comment above.
+			await submitMutation.mutateAsync(vendorRequestId);
+
 			if (shouldAssignSelectedWorkflow) {
 				if (!workspaceId || !appId) {
 					throw new Error("Workspace or application information is missing.");
@@ -1448,16 +1343,7 @@ export function useVendorCreationForm({
 						...selectedWorkflowCriteria,
 					},
 				});
-			}
-
-			// =============================================================
-			// CASES 2–6
-			// Existing Workflow / Clarified Resubmission
-			//
-			// NEVER call assignWorkflow here.
-			// Always operate on the existing WorkflowInstance.
-			// =============================================================
-			else if (isClarifiedResubmission) {
+			} else if (isClarifiedResubmission) {
 				const activationPayload = buildActivationPayload();
 
 				console.debug(
@@ -1466,16 +1352,7 @@ export function useVendorCreationForm({
 				);
 
 				await activateFirstStage(activationPayload);
-			}
-
-			// =============================================================
-			// Defensive guard
-			//
-			// This prevents the old bug where:
-			// hasAssignedWorkflow=false + clarified=true
-			// silently did nothing and showed success.
-			// =============================================================
-			else {
+			} else {
 				throw new Error(
 					"Workflow submission state is invalid. No workflow action was performed.",
 				);
@@ -1539,16 +1416,11 @@ export function useVendorCreationForm({
 		showToast,
 		stageEdits,
 		setStageEdits,
+		submitMutation,
 		vendorRequestId,
 		activeWorkflowId,
 		workspaceId,
 	]);
-
-	/*
-	|--------------------------------------------------------------------------
-	| Vendor code update
-	|--------------------------------------------------------------------------
-	*/
 
 	const saveVendorCode = React.useCallback(
 		async (codeOverride?: string): Promise<boolean> => {
@@ -1657,12 +1529,6 @@ export function useVendorCreationForm({
 		],
 	);
 
-	/*
-	|--------------------------------------------------------------------------
-	| Close onboarding
-	|--------------------------------------------------------------------------
-	*/
-
 	const acceptAndClose = async () => {
 		if (!vendorRequestId) {
 			return;
@@ -1690,11 +1556,6 @@ export function useVendorCreationForm({
 		}
 	};
 
-	/*
-	|--------------------------------------------------------------------------
-	| PDF download
-	|--------------------------------------------------------------------------
-	*/
 	const handleViewPdf = React.useCallback(async () => {
 		if (!vendorRequestId || isPreparingPdf) return;
 
@@ -1912,7 +1773,7 @@ export function useVendorCreationForm({
 	};
 }
 
-export type VendorCreationFormController = ReturnType<
+export type VendorCreationFormController = ReturnType
 	typeof useVendorCreationForm
 >;
 
