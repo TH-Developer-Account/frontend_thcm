@@ -268,10 +268,10 @@ export function useVendorCreationFormOneController({
 	onSubmit,
 	onSaveDraft,
 }: UseVendorCreationFormOneControllerParams) {
-	const [enclosureUploads, setEnclosureUploads] = React.useState
+	const [enclosureUploads, setEnclosureUploads] = React.useState<
 		VendorEnclosureUploadItem[]
 	>(() => createInitialEnclosureUploads(initialDocuments));
-	const [enclosureErrors, setEnclosureErrors] = React.useState
+	const [enclosureErrors, setEnclosureErrors] = React.useState<
 		Partial<Record<VendorEnclosureStatusKey, string>>
 	>({});
 	const [isDpdpModalOpen, setIsDpdpModalOpen] = React.useState(false);
@@ -775,11 +775,11 @@ export function useVendorCreationForm({
 	const [formTwoValues, setFormTwoValues] =
 		React.useState<VendorCreationFormTwoValues>(EMPTY_FORM_TWO);
 
-	const [formOneErrors, setFormOneErrors] = React.useState
+	const [formOneErrors, setFormOneErrors] = React.useState<
 		VendorFormErrors<VendorCreationFormOneValues>
 	>({});
 
-	const [formTwoErrors, setFormTwoErrors] = React.useState
+	const [formTwoErrors, setFormTwoErrors] = React.useState<
 		VendorFormErrors<VendorCreationFormTwoValues>
 	>({});
 
@@ -873,7 +873,7 @@ export function useVendorCreationForm({
 	|--------------------------------------------------------------------------
 	*/
 
-	const [stageEdits, setStageEditsState] = React.useState
+	const [stageEdits, setStageEditsState] = React.useState<
 		WorkflowStage[] | null
 	>(null);
 
@@ -899,7 +899,7 @@ export function useVendorCreationForm({
 	const { canActNow, isExternalApprover, isCurrentStageApprover } =
 		workflowApproverData;
 
-	type VendorUpdatePayload = Parameters
+	type VendorUpdatePayload = Parameters<
 		typeof updateMutation.mutateAsync
 	>[0]["payload"] & {
 		isExternalApprover?: boolean;
@@ -1773,7 +1773,7 @@ export function useVendorCreationForm({
 	};
 }
 
-export type VendorCreationFormController = ReturnType
+export type VendorCreationFormController = ReturnType<
 	typeof useVendorCreationForm
 >;
 
