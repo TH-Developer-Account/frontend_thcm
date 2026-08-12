@@ -110,6 +110,10 @@ const VendorOnboardingPage = () => {
 								}}
 								onBack={form.handleBack}
 								onNext={form.handleNext}
+								canEditActiveWorkflow={form.canEditStagesOnResubmit}
+								stageEdits={form.stageEdits}
+								onStageEditsChange={form.setStageEdits}
+								currentUserId={form.user?.id ?? ""}
 							/>
 						) : (
 							<VendorCreationSummaryForm

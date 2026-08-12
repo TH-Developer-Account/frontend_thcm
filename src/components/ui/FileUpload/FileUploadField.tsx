@@ -444,9 +444,10 @@ const FileUploadPreviewCard = React.memo(
 					"overflow-hidden rounded-lg border border-slate-200 bg-white",
 					showImagePreview && "file-upload-preview-image",
 					heightClassName,
+					readonly && "flex",
 				)}
 			>
-				<div className="file-upload-preview-body flex min-h-8 items-center gap-2 px-2.5 py-1.5">
+				<div className="file-upload-preview-body flex min-h-2 items-center gap-2 px-2.5 py-1.5">
 					<div className="file-upload-preview-thumbnail flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-slate-100 text-slate-600">
 						{showImagePreview ? (
 							<img

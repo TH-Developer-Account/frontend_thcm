@@ -1,6 +1,5 @@
-import { useCallback, useMemo } from "react";
-import { FileDown, Plus, type LucideIcon } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useMemo } from "react";
+import { FileDown, type LucideIcon } from "lucide-react";
 
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
@@ -76,8 +75,6 @@ type VendorListingTableProps =
 const SKELETON_ROW_COUNT = 8;
 
 export default function VendorListingTable(props: VendorListingTableProps) {
-	const navigate = useNavigate();
-
 	const {
 		selectedFilter,
 		onFilterChange,
@@ -141,14 +138,6 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 		? getInitiationEmptyContent(selectedFilter)
 		: getOnboardingEmptyContent(selectedFilter);
 
-	const handleCreate = useCallback(() => {
-		navigate(
-			isInitiationListing
-				? "/vendor/initiation/create"
-				: "/vendor/onboarding/create",
-		);
-	}, [isInitiationListing, navigate]);
-
 	return (
 		<Card
 			className="vendor-listing-card"
@@ -166,25 +155,12 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 					className="border-b-none px-0 py-0"
 				/>
 			}
-			actions={
-				<Button
-					type="button"
-					text={isInitiationListing ? "Create Initiation" : "Create Onboarding"}
-					Icon={Plus}
-					iconPosition="left"
-					iconSize={16}
-					appearance="cta"
-					variant="brand"
-					size="sm"
-					onClick={handleCreate}
-				/>
-			}
 			secondaryHeader={
 				<>
 					<SearchInput
 						value={search}
 						onChange={onSearchChange}
-						placeholder={searchPlaceholder}
+						placeholder={`${searchPlaceholder} by name`}
 					/>
 
 					<Button

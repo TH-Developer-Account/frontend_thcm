@@ -49,6 +49,7 @@ export type VendorCreationFormOneValues = {
 	msmeCertificate?: string;
 	ndaCertificate?: string;
 	ndaObtained?: string;
+	referenceNumber?: string | undefined;
 };
 
 export type VendorCreationFormTwoValues = {

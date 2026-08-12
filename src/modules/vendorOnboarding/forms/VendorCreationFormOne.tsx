@@ -145,6 +145,11 @@ const VendorCreationFormOne = ({
 
 	const isReadOnly = mode === "view" || !canEdit;
 	const fieldMode: VendorFormMode = isReadOnly ? "view" : "edit";
+	const isAccountNumberChanged =
+		(values.accountNumber?.trim() ?? "") !==
+		(formContext?.originalAccountNumber ?? "");
+	const confirmRequired =
+		!formContext?.originalAccountNumber || isAccountNumberChanged;
 
 	const {
 		enclosureErrors,
@@ -204,12 +209,52 @@ const VendorCreationFormOne = ({
 							label="Name Of Vendor"
 							value={values.vendorName ?? ""}
 							error={errors.vendorName}
+							success={
+								fieldMode === "edit" &&
+								!errors.vendorName &&
+								Boolean(values.vendorName)
+							}
 							helperText="Enter vendor name in capital letters."
 							onChange={(event) =>
 								resolvedOnChange?.("vendorName", event.target.value)
 							}
 						/>
+						<FormInput
+							mode={fieldMode}
+							name="mobile"
+							label="Mobile"
+							type="tel"
+							inputMode="tel"
+							autoComplete="tel"
+							value={values.mobile ?? ""}
+							success={
+								fieldMode === "edit" && !errors.mobile && Boolean(values.mobile)
+							}
+							required
+							error={errors.mobile}
+							helperText="Vendor mobile number."
+							onChange={(event) =>
+								resolvedOnChange?.("mobile", event.target.value)
+							}
+						/>
 
+						<FormInput
+							mode={fieldMode}
+							name="email"
+							label="E-mail"
+							type="email"
+							autoComplete="email"
+							value={values.email ?? ""}
+							success={
+								fieldMode === "edit" && !errors.email && Boolean(values.email)
+							}
+							required
+							error={errors.email}
+							helperText="Vendor email address."
+							onChange={(event) =>
+								resolvedOnChange?.("email", event.target.value)
+							}
+						/>
 						<SelectInput
 							mode={fieldMode}
 							name="state"
@@ -219,6 +264,9 @@ const VendorCreationFormOne = ({
 							value={getSelectedOption(STATES, values.state)}
 							required
 							error={errors.state}
+							success={
+								fieldMode === "edit" && !errors.state && Boolean(values.state)
+							}
 							helperText="Select the applicable vendor state."
 							onChange={(option) => {
 								const nextState = option?.value ?? "";
@@ -237,6 +285,9 @@ const VendorCreationFormOne = ({
 							name="city"
 							label="City"
 							placeholder="Select city"
+							success={
+								fieldMode === "edit" && !errors.city && Boolean(values.city)
+							}
 							options={getCitiesByState(values.state)}
 							value={getCityOption(values.state, values.city)}
 							required
@@ -256,6 +307,11 @@ const VendorCreationFormOne = ({
 							label="Pin Code"
 							value={values.pinCode ?? ""}
 							required
+							success={
+								fieldMode === "edit" &&
+								!errors.pinCode &&
+								Boolean(values.pinCode)
+							}
 							inputMode="numeric"
 							error={errors.pinCode}
 							helperText="Vendor location pin code."
@@ -271,6 +327,11 @@ const VendorCreationFormOne = ({
 							name="address"
 							label="Complete Address"
 							value={values.address ?? ""}
+							success={
+								fieldMode === "edit" &&
+								!errors.address &&
+								Boolean(values.address)
+							}
 							required
 							error={errors.address}
 							helperText="Registered or communication address."
@@ -282,41 +343,6 @@ const VendorCreationFormOne = ({
 					</div>
 				</div>
 
-				<FormHeader title="Contact Information" Icon={FileCheck2} />
-
-				<div className="vendor-onboarding-form-grid">
-					<FormInput
-						mode={fieldMode}
-						name="mobile"
-						label="Mobile"
-						type="tel"
-						inputMode="tel"
-						autoComplete="tel"
-						value={values.mobile ?? ""}
-						required
-						error={errors.mobile}
-						helperText="Vendor mobile number."
-						onChange={(event) =>
-							resolvedOnChange?.("mobile", event.target.value)
-						}
-					/>
-
-					<FormInput
-						mode={fieldMode}
-						name="email"
-						label="E-mail"
-						type="email"
-						autoComplete="email"
-						value={values.email ?? ""}
-						required
-						error={errors.email}
-						helperText="Vendor email address."
-						onChange={(event) =>
-							resolvedOnChange?.("email", event.target.value)
-						}
-					/>
-				</div>
-
 				<FormHeader title="Bank Details" Icon={Landmark} />
 
 				<div className="vendor-onboarding-form-grid">
@@ -325,6 +351,11 @@ const VendorCreationFormOne = ({
 						name="bankName"
 						label="Bank"
 						value={values.bankName ?? ""}
+						success={
+							fieldMode === "edit" &&
+							!errors.bankName &&
+							Boolean(values.bankName)
+						}
 						required
 						error={errors.bankName}
 						helperText="Bank name."
@@ -339,6 +370,11 @@ const VendorCreationFormOne = ({
 						label="Branch"
 						value={values.bankBranch ?? ""}
 						required
+						success={
+							fieldMode === "edit" &&
+							!errors.bankBranch &&
+							Boolean(values.bankBranch)
+						}
 						error={errors.bankBranch}
 						helperText="Bank branch."
 						onChange={(event) =>
@@ -352,6 +388,11 @@ const VendorCreationFormOne = ({
 						label="IFSC Code"
 						value={values.ifscCode ?? ""}
 						required
+						success={
+							fieldMode === "edit" &&
+							!errors.ifscCode &&
+							Boolean(values.ifscCode)
+						}
 						error={errors.ifscCode}
 						helperText="Bank IFSC code."
 						onChange={(event) =>
@@ -365,6 +406,11 @@ const VendorCreationFormOne = ({
 						label="Address"
 						value={values.bankAddress ?? ""}
 						error={errors.bankAddress}
+						success={
+							fieldMode === "edit" &&
+							!errors.bankAddress &&
+							Boolean(values.bankAddress)
+						}
 						helperText="Bank branch address."
 						onChange={(event) =>
 							resolvedOnChange?.("bankAddress", event.target.value)
@@ -378,6 +424,11 @@ const VendorCreationFormOne = ({
 						required
 						inputMode="numeric"
 						error={errors.accountNumber}
+						success={
+							fieldMode === "edit" &&
+							!errors.accountNumber &&
+							Boolean(values.accountNumber)
+						}
 						helperText="Vendor bank account number."
 						onChange={(event) => {
 							const value = event.target.value.replace(/\D/g, "");
@@ -388,26 +439,34 @@ const VendorCreationFormOne = ({
 						onCut={blockClipboardEvent}
 						autoComplete="off"
 					/>
-
-					<FormInput
-						mode={fieldMode}
-						name="confirmAccountNumber"
-						label="Confirm A/C No."
-						id="no-paste"
-						value={values.confirmAccountNumber || ""}
-						required
-						inputMode="numeric"
-						error={errors.confirmAccountNumber}
-						helperText="Re-enter the bank account number."
-						onChange={(event) => {
-							const value = event.target.value.replace(/\D/g, "");
-							resolvedOnChange?.("confirmAccountNumber", value);
-						}}
-						onPaste={blockClipboardEvent}
-						onCopy={blockClipboardEvent}
-						onCut={blockClipboardEvent}
-						autoComplete="off"
-					/>
+					{confirmRequired ? (
+						<FormInput
+							mode={fieldMode}
+							name="confirmAccountNumber"
+							label="Confirm Account Number"
+							value={values.confirmAccountNumber || ""}
+							required={confirmRequired}
+							error={errors.confirmAccountNumber}
+							success={
+								fieldMode === "edit" &&
+								!errors.confirmAccountNumber &&
+								Boolean(values.confirmAccountNumber)
+							}
+							helperText={
+								confirmRequired
+									? "Re-enter the bank account number."
+									: "Only needed if you're changing the account number above."
+							}
+							onChange={(event) => {
+								const value = event.target.value.replace(/\D/g, "");
+								resolvedOnChange?.("confirmAccountNumber", value);
+							}}
+							onPaste={blockClipboardEvent}
+							onCopy={blockClipboardEvent}
+							onCut={blockClipboardEvent}
+							autoComplete="off"
+						/>
+					) : null}
 				</div>
 
 				<FormHeader title="Tax Details" Icon={Banknote} />
@@ -418,6 +477,9 @@ const VendorCreationFormOne = ({
 						name="gstin"
 						label="GSTIN"
 						value={values.gstin ?? ""}
+						success={
+							fieldMode === "edit" && !errors.gstin && Boolean(values.gstin)
+						}
 						required
 						error={errors.gstin}
 						helperText="GST identification number."
@@ -431,6 +493,7 @@ const VendorCreationFormOne = ({
 						name="pan"
 						label="PAN"
 						value={values.pan ?? ""}
+						success={fieldMode === "edit" && !errors.pan && Boolean(values.pan)}
 						required
 						error={errors.pan}
 						helperText="Permanent account number."
@@ -442,6 +505,11 @@ const VendorCreationFormOne = ({
 						name="entityRegistrationNumber"
 						label="Entity Reg. No."
 						value={values.entityRegistrationNumber ?? ""}
+						success={
+							fieldMode === "edit" &&
+							!errors.entityRegistrationNumber &&
+							Boolean(values.entityRegistrationNumber)
+						}
 						error={errors.entityRegistrationNumber}
 						helperText="Entity registration number, if applicable."
 						onChange={(event) =>

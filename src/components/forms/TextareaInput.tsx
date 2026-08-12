@@ -8,6 +8,7 @@ import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 import HelperTooltip from "../common/HelperTooltip";
 import ReadOnlyField from "./ReadOnlyField";
 import type { TextareaProps } from "./input.types";
+import { CircleCheck } from "lucide-react";
 
 const joinClassNames = (
 	...classes: Array<string | false | null | undefined>
@@ -47,6 +48,7 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 		isTooltip = true,
 		mode = "edit",
 		readOnlyValue,
+		success,
 		emptyReadOnlyValue = "--",
 		...otherProps
 	},
@@ -125,6 +127,7 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 						error && "form-input-error",
 						disabled && "form-input-disabled",
 						className,
+						success && !error && "form-input-success",
 					)}
 				/>
 
@@ -137,9 +140,9 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 			</div>
 
 			{error ? (
-				<p id={errorId} className="form-error-text" role="alert">
-					{error}
-				</p>
+				<ExclamationCircleIcon aria-hidden="true" className="form-error-icon" />
+			) : success ? (
+				<CircleCheck aria-hidden="true" className="form-success-icon" />
 			) : helperText && !isTooltip ? (
 				<p id={helperId} className="form-helper-text">
 					{helperText}

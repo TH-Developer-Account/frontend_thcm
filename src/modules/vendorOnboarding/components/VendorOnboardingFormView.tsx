@@ -28,6 +28,7 @@ import {
 } from "../hooks/useVendorCreationForm";
 import { useVendorOnboardingInitiation } from "../hooks/useVendorOnboardingInitiation";
 import VendorCommentSection from "./VendorCommentSection";
+import { Badge } from "../../../components/common/Badge";
 
 type VendorOnboardingReadOnlyViewProps = {
 	onboardingId: string;
@@ -147,7 +148,7 @@ const VendorOnboardingReadOnlyView = ({
 				href: "/vendor/onboarding/listing?tab=onboarding",
 			},
 			{
-				label: "Vendor Onboarding Details",
+				label: "Vendor Form View",
 			},
 		],
 		separator: "›",
@@ -195,12 +196,27 @@ const VendorOnboardingReadOnlyView = ({
 			<VendorCreationFormProvider value={form}>
 				<Card
 					className="vendor-onboarding-view-section"
-					title="Vendor Form View"
+					title={
+						<p>
+							<span className="mr-2 text-sm ">Reference No:</span>
+							{form.referenceNumber}
+						</p>
+					}
+					secondaryHeader={
+						<p>
+							<span className="mr-2 text-sm">Status:</span>
+							{form.status ? <Badge status={form.status} /> : null}
+						</p>
+					}
+					secondaryHeaderClassName=" py-0"
 					actions={
 						<ActionMenu
+							size="xs"
 							row={onboardingId}
 							actions={actions}
 							ariaLabel="Vendor onboarding actions"
+							triggerLabel="Actions"
+							triggerVariant="brand"
 						/>
 					}
 				>

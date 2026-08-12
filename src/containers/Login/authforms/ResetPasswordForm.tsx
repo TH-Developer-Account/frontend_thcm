@@ -172,6 +172,7 @@ const ResetPasswordForm = () => {
 							value={state.oldPassword}
 							onChange={handleChange}
 							error={state.errors.oldPassword}
+							success={Boolean(state.oldPassword) && !state.errors.oldPassword}
 							autoComplete="current-password"
 							required
 						/>
@@ -191,11 +192,12 @@ const ResetPasswordForm = () => {
 							}))
 						}
 						error={state.errors.newPassword}
+						success={isPasswordValid}
 						autoComplete="new-password"
 						required
 					/>
 
-					{state.showPolicy ? (
+					{!isPasswordValid && state.showPolicy ? (
 						<ul className="auth-password-policy">
 							{PasswordPolicy.map((rule) => {
 								const passed = rule.test(state.newPassword);
@@ -230,9 +232,19 @@ const ResetPasswordForm = () => {
 						value={state.confirmPassword}
 						onChange={handleChange}
 						error={state.errors.confirmPassword}
+						success={
+							state.confirmPassword.length > 0 &&
+							state.confirmPassword === state.newPassword
+						}
 						autoComplete="new-password"
 						required
 					/>
+					{state.confirmPassword.length > 0 &&
+						state.confirmPassword !== state.newPassword && (
+							<div className="auth-form-error" role="alert">
+								<p>Passwords do not match</p>
+							</div>
+						)}
 				</div>
 
 				{state.errors.general ? (

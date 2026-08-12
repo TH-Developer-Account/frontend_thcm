@@ -260,6 +260,7 @@ export function useWorkflowFetch({
 					key: `workflow:${workflow.id}`,
 					name: workflow.name,
 					previewStages,
+					mode: "existing",
 					attachInput: {
 						workflowId: workflow.id,
 					},
@@ -374,6 +375,7 @@ export function useWorkflowFetch({
 				key: `workflow:${workflowId}`,
 				name: workflowName,
 				previewStages: payload.stages,
+				mode: sourceWorkflow ? "customized" : "new",
 				attachInput: {
 					workflowId,
 				},

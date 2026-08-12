@@ -6,6 +6,7 @@ import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 import HelperTooltip from "../common/HelperTooltip";
 import ReadOnlyField from "./ReadOnlyField";
 import type { FormFieldMode } from "./input.types";
+import { CircleCheck } from "lucide-react";
 
 export interface BaseOption {
 	label: string;
@@ -23,6 +24,7 @@ interface SelectInputProps<T extends BaseOption> extends Props<
 	isTooltip?: boolean;
 	required?: boolean;
 	mode?: FormFieldMode;
+	success?: boolean;
 
 	/**
 	 * Overrides the automatically resolved option label in view mode.
@@ -64,6 +66,7 @@ export default function SelectInput<T extends BaseOption>({
 	id,
 	inputId,
 	name,
+	success,
 	className = "",
 	isDisabled = false,
 
@@ -168,6 +171,7 @@ export default function SelectInput<T extends BaseOption>({
 						error && "react-select-container-error",
 						isDisabled && "react-select-container-disabled",
 						className,
+						success && !error && "react-select-container-success",
 					)}
 					menuPortalTarget={resolvedPortalTarget}
 					menuPosition={menuPosition}
@@ -182,6 +186,11 @@ export default function SelectInput<T extends BaseOption>({
 					<ExclamationCircleIcon
 						aria-hidden="true"
 						className="form-error-icon select-error-icon"
+					/>
+				) : success ? (
+					<CircleCheck
+						aria-hidden="true"
+						className="form-success-icon select-success-icon"
 					/>
 				) : null}
 			</div>

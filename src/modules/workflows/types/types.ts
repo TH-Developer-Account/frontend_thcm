@@ -24,7 +24,7 @@ export type WorkflowApprover = {
 };
 
 export type WorkflowStage = {
-	id: string;
+	id?: string;
 	stageOrder: number;
 	name: string;
 	strategy: ApprovalRule;
@@ -409,6 +409,7 @@ export type PendingWorkflowSelection = {
 	previewStages: WorkflowStage[];
 	attachInput: WorkflowAttachCriteria;
 	isEditedExistingWorkflow: boolean; // NEW
+	mode?: string;
 };
 
 /* -------------------------------------------------------------------------- */

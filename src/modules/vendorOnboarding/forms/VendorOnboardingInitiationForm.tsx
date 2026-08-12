@@ -104,6 +104,9 @@ const VendorOnboardingInitiationForm = ({
 						required={!isViewMode}
 						readOnly={isViewMode}
 						disabled={isDetailLoading}
+						success={
+							!isViewMode && !errors.vendorName && Boolean(values.vendorName)
+						}
 						error={isViewMode ? undefined : errors.vendorName}
 						helperText={isViewMode ? undefined : "Enter the vendor name"}
 						autoComplete="organization"
@@ -119,6 +122,7 @@ const VendorOnboardingInitiationForm = ({
 						required={!isViewMode}
 						readOnly={isViewMode}
 						disabled={isDetailLoading}
+						success={!isViewMode && !errors.email && Boolean(values.email)}
 						error={isViewMode ? undefined : errors.email}
 						helperText={isViewMode ? undefined : "Enter the vendor email"}
 						autoComplete="email"
@@ -134,6 +138,7 @@ const VendorOnboardingInitiationForm = ({
 						required={!isViewMode}
 						disabled={isDetailLoading}
 						readOnly={isViewMode}
+						success={!isViewMode && !errors.mobile && Boolean(values.mobile)}
 						error={isViewMode ? undefined : errors.mobile}
 						helperText={
 							isViewMode ? undefined : "Enter the vendor phone number"

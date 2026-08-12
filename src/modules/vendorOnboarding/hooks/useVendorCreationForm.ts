@@ -795,6 +795,7 @@ export function useVendorCreationForm({
 	const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
 	const [isPreparingPdf, setIsPreparingPdf] = React.useState(false);
 	const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
+	const [originalAccountNumber, setOriginalAccountNumber] = React.useState("");
 
 	const vendorRequestId = routeVendorId;
 
@@ -847,7 +848,7 @@ export function useVendorCreationForm({
 	const status = detailQuery.data?.status;
 	const referenceNumber = detailQuery.data?.referenceNumber;
 	const activeWorkflow = detailQuery.data?.activeWorkflow ?? null;
-	const workflowId = activeWorkflow?.id ?? null;
+	const activeWorkflowId = activeWorkflow?.id ?? null;
 	const createdById = getCreatedById(detailQuery.data?.initiatedById);
 	const isThcmProposer =
 		isThcmEmployee && Boolean(user?.id) && createdById === user?.id;
@@ -891,7 +892,7 @@ export function useVendorCreationForm({
 	// different one.
 	React.useEffect(() => {
 		setStageEditsState(null);
-	}, [workflowId, activeWorkflow?.iteration]);
+	}, [activeWorkflowId, activeWorkflow?.iteration]);
 
 	const setStageEdits = React.useCallback(
 		(nextStages: WorkflowStage[] | null) => {
@@ -994,6 +995,7 @@ export function useVendorCreationForm({
 
 		setFormOneValues(data.partOne ?? EMPTY_FORM_ONE);
 		setFormTwoValues(data.partTwo ?? {});
+		setOriginalAccountNumber((data.partOne?.accountNumber ?? "").trim());
 	}, [
 		detailQuery.data,
 		detailQuery.dataUpdatedAt,
@@ -1027,15 +1029,17 @@ export function useVendorCreationForm({
 			value: VendorCreationFormOneValues[K],
 		) => {
 			setFormOneValues((current) => {
-				const nextValues = {
-					...(current ?? formOneValues),
-					[field]: value,
-				};
+				const nextValues = { ...(current ?? formOneValues), [field]: value };
 
 				const accountNumber = nextValues.accountNumber?.trim() ?? "";
-
 				const confirmAccountNumber =
 					nextValues.confirmAccountNumber?.trim() ?? "";
+
+				// The backend does not return confirmAccountNumber. Require it only
+				// for a new account number or when the saved number is changed.
+				const isAccountNumberChanged = accountNumber !== originalAccountNumber;
+				const confirmRequired =
+					!originalAccountNumber || isAccountNumberChanged;
 
 				setFormOneErrors((currentErrors) => {
 					const nextErrors = {
@@ -1047,11 +1051,13 @@ export function useVendorCreationForm({
 					};
 
 					if (field === "accountNumber" || field === "confirmAccountNumber") {
-						nextErrors.confirmAccountNumber = !confirmAccountNumber
-							? REQUIRED_FORM_ONE_FIELDS.confirmAccountNumber
-							: confirmAccountNumber !== accountNumber
-								? "Account numbers do not match."
-								: undefined;
+						nextErrors.confirmAccountNumber = !confirmRequired
+							? undefined
+							: !confirmAccountNumber
+								? REQUIRED_FORM_ONE_FIELDS.confirmAccountNumber
+								: confirmAccountNumber !== accountNumber
+									? "Account numbers do not match."
+									: undefined;
 					}
 
 					return nextErrors;
@@ -1060,7 +1066,7 @@ export function useVendorCreationForm({
 				return nextValues;
 			});
 		},
-		[formOneValues],
+		[formOneValues, originalAccountNumber],
 	);
 
 	const changeFormTwo = React.useCallback(
@@ -1265,11 +1271,10 @@ export function useVendorCreationForm({
 	};
 
 	/*
-	|--------------------------------------------------------------------------
-	| Summary submission
-	|--------------------------------------------------------------------------
-	*/
-
+|--------------------------------------------------------------------------
+| Summary submission
+|--------------------------------------------------------------------------
+*/
 	const submitForApproval = React.useCallback(async () => {
 		if (!vendorRequestId) {
 			showToast({
@@ -1281,24 +1286,111 @@ export function useVendorCreationForm({
 		}
 
 		const isClarifiedResubmission = hasPendingClarifiedApproval;
+		const hasPendingWorkflowSelection = Boolean(pendingWorkflowSelection);
 
-		const selectedWorkflowId =
-			pendingWorkflowSelection?.attachInput.workflowId ?? null;
-		const hasPendingWorkflowSelection = Boolean(selectedWorkflowId);
+		const selectedWorkflowCriteria =
+			pendingWorkflowSelection?.attachInput ?? null;
 
-		// Only true for a genuinely fresh form that has never had a workflow
-		// attached. Every other path — including clarify with a builder
-		// selection — uses activateFirstStage, never assignWorkflow.
-		const isFreshWorkflowAssignment =
-			!isClarifiedResubmission &&
-			!hasAssignedWorkflow &&
-			hasPendingWorkflowSelection;
+		const selectedTemplateId =
+			pendingWorkflowSelection?.attachInput?.workflowId ?? null;
 
-		if (
-			!isClarifiedResubmission &&
-			!hasAssignedWorkflow &&
-			!hasPendingWorkflowSelection
-		) {
+		/*
+		 * Workflow payload rule (entry-point based, not selection-mode based):
+		 *
+		 * "Edit current workflow" (direct edit of the ACTIVE workflow's
+		 * stages, no selection flow involved)
+		 *   → stageEdits + workflowId
+		 *   → this is the ONLY path that ever sends stageEdits
+		 *
+		 * "Change current workflow" (any pendingWorkflowSelection outcome —
+		 * existing/attach, existing/customize, or create-new, regardless of
+		 * use-once vs save-as-template)
+		 *   → newTemplateId + workflowId
+		 *   → the selection UI is responsible for persisting a real
+		 *     template first, so attachInput.workflowId is always a real,
+		 *     already-saved template id by the time we get here
+		 *
+		 * The backend treats stageEdits and newTemplateId as mutually
+		 * exclusive — never send both.
+		 */
+
+		// stageEdits ONLY comes from the direct "Edit current workflow" path
+		// (hook-level stageEdits state, set via setStageEdits). It's never
+		// derived from pendingWorkflowSelection anymore.
+		const resubmitStageEdits =
+			!hasPendingWorkflowSelection && stageEdits
+				? mapStageEditsForApi(stageEdits)
+				: undefined;
+
+		/*
+		 * Only a completely fresh form gets assignWorkflow.
+		 *
+		 * Once a workflow instance exists, clarification resubmission must
+		 * operate on that SAME workflowId through activateFirstStage.
+		 */
+		const shouldAssignSelectedWorkflow =
+			!hasAssignedWorkflow && !isClarifiedResubmission;
+
+		/*
+		 * Build the activate-first-stage payload explicitly.
+		 *
+		 * IMPORTANT:
+		 * - stageEdits  = direct edit of the active workflow ("Edit current
+		 *                 workflow"), no pendingWorkflowSelection involved
+		 * - newTemplateId = any "Change current workflow" outcome (existing
+		 *                 attach, existing customize, or create new) —
+		 *                 always resolves to a persisted template id
+		 * - never send both
+		 */
+		const buildActivationPayload = () => {
+			if (!activeWorkflowId) {
+				throw new Error(
+					"Active workflow ID is missing for workflow resubmission.",
+				);
+			}
+
+			// ---------------------------------------------------------------
+			// "Edit current workflow" — direct edit of the active workflow's
+			// stages. No selection flow involved. Only place stageEdits is
+			// ever sent.
+			// ---------------------------------------------------------------
+			if (!hasPendingWorkflowSelection) {
+				if (resubmitStageEdits?.length) {
+					return {
+						workflowId: activeWorkflowId,
+						stageEdits: resubmitStageEdits,
+					};
+				}
+
+				// Clarified resubmission with no workflow changes at all.
+				return {
+					workflowId: activeWorkflowId,
+				};
+			}
+
+			// ---------------------------------------------------------------
+			// "Change current workflow" — existing/attach, existing/customize,
+			// or create-new. All of these resolve to a persisted template id
+			// by the time submission happens.
+			// ---------------------------------------------------------------
+			if (!selectedTemplateId) {
+				throw new Error("Selected workflow template ID is missing.");
+			}
+
+			return {
+				workflowId: activeWorkflowId,
+				newTemplateId: selectedTemplateId,
+			};
+		};
+
+		// -----------------------------------------------------------------
+		// Validation
+		// -----------------------------------------------------------------
+
+		/*
+		 * Fresh submission requires a workflow selection.
+		 */
+		if (shouldAssignSelectedWorkflow && !hasPendingWorkflowSelection) {
 			showToast({
 				type: "error",
 				title: "Workflow required",
@@ -1308,25 +1400,26 @@ export function useVendorCreationForm({
 			return;
 		}
 
-		// Workflow to activate on resubmission: the freshly created one if the
-		// builder was used this round (edit-existing or new template — both
-		// call createUser in handleBuilderAttach), otherwise the existing
-		// active workflow, continued as-is.
-		const clarificationWorkflowId = hasPendingWorkflowSelection
-			? selectedWorkflowId
-			: workflowId;
-
-		if (isClarifiedResubmission && !clarificationWorkflowId) {
+		/*
+		 * Any clarified resubmission must have the existing WorkflowInstance.
+		 *
+		 * Clarification does NOT create a new WorkflowInstance. The existing
+		 * workflow is reused and activateFirstStage operates on it.
+		 */
+		if (isClarifiedResubmission && !activeWorkflowId) {
 			showToast({
 				type: "error",
 				title: "Workflow required",
 				description:
-					"The workflow is unavailable. Return to the Workflow step and select a workflow.",
+					"The active workflow is unavailable. Return to the Workflow step and select a workflow.",
 			});
 			return;
 		}
 
-		if (isFreshWorkflowAssignment && (!workspaceId || !appId)) {
+		/*
+		 * Fresh assignWorkflow requires workspace/app context.
+		 */
+		if (shouldAssignSelectedWorkflow && (!workspaceId || !appId)) {
 			showToast({
 				type: "error",
 				title: "Workflow assignment failed",
@@ -1337,8 +1430,11 @@ export function useVendorCreationForm({
 		}
 
 		try {
-			// Assign workflow only once: fresh form, nothing ever attached.
-			if (isFreshWorkflowAssignment && selectedWorkflowId) {
+			// =============================================================
+			// CASE 1
+			// Fresh Form → Assign Workflow
+			// =============================================================
+			if (shouldAssignSelectedWorkflow) {
 				if (!workspaceId || !appId) {
 					throw new Error("Workspace or application information is missing.");
 				}
@@ -1348,41 +1444,46 @@ export function useVendorCreationForm({
 					subjectId: vendorRequestId,
 					workspaceId,
 					appId,
-					criteria: { workflowId: selectedWorkflowId },
+					criteria: {
+						...selectedWorkflowCriteria,
+					},
 				});
 			}
 
-			await submitMutation.mutateAsync(vendorRequestId);
+			// =============================================================
+			// CASES 2–6
+			// Existing Workflow / Clarified Resubmission
+			//
+			// NEVER call assignWorkflow here.
+			// Always operate on the existing WorkflowInstance.
+			// =============================================================
+			else if (isClarifiedResubmission) {
+				const activationPayload = buildActivationPayload();
 
-			// Every other case activates — assignWorkflow never runs here.
-			if (isClarifiedResubmission && clarificationWorkflowId) {
-				if (hasPendingWorkflowSelection) {
-					// Builder was used this round. createUser already ran in
-					// handleBuilderAttach. Edited-existing sends the edited
-					// stages as stageEdits against the new record; a
-					// brand-new template has nothing to diff, so no
-					// stageEdits are sent.
-					await activateFirstStage({
-						workflowId: clarificationWorkflowId,
-						stageEdits: pendingWorkflowSelection?.isEditedExistingWorkflow
-							? mapStageEditsForApi(pendingWorkflowSelection.previewStages)
-							: undefined,
-					});
-				} else {
-					// No builder interaction — continue the active workflow,
-					// applying any edits from the inline resubmit-stage editor.
-					await activateFirstStage({
-						workflowId: clarificationWorkflowId,
-						stageEdits: stageEdits
-							? mapStageEditsForApi(stageEdits)
-							: undefined,
-					});
-				}
+				console.debug(
+					"[Vendor Onboarding] activate-first-stage payload:",
+					activationPayload,
+				);
+
+				await activateFirstStage(activationPayload);
+			}
+
+			// =============================================================
+			// Defensive guard
+			//
+			// This prevents the old bug where:
+			// hasAssignedWorkflow=false + clarified=true
+			// silently did nothing and showed success.
+			// =============================================================
+			else {
+				throw new Error(
+					"Workflow submission state is invalid. No workflow action was performed.",
+				);
 			}
 
 			await detailQuery.refetch();
 			setPendingWorkflowSelection(null);
-			setStageEditsState(null);
+			setStageEdits(null);
 
 			showToast({
 				type: "success",
@@ -1391,8 +1492,10 @@ export function useVendorCreationForm({
 					: "Submitted successfully",
 				description: isClarifiedResubmission
 					? hasPendingWorkflowSelection
-						? "The clarified vendor details were updated and the selected workflow was activated."
-						: "The clarified vendor details were updated and the active workflow was continued."
+						? "The clarified vendor details were updated and the selected workflow was applied."
+						: resubmitStageEdits?.length
+							? "The clarified vendor details were updated and the current workflow's stages were changed."
+							: "The clarified vendor details were updated and the active workflow was continued."
 					: "The THCM details were updated and the approval workflow was assigned.",
 			});
 
@@ -1435,9 +1538,9 @@ export function useVendorCreationForm({
 		pendingWorkflowSelection,
 		showToast,
 		stageEdits,
-		submitMutation,
+		setStageEdits,
 		vendorRequestId,
-		workflowId,
+		activeWorkflowId,
 		workspaceId,
 	]);
 
@@ -1711,6 +1814,7 @@ export function useVendorCreationForm({
 		formOneValues,
 		formTwoValues,
 		formOneErrors,
+		originalAccountNumber,
 		formTwoErrors,
 		formOneDocuments: isPublicForm
 			? (publicQuery.data?.documents ?? [])
