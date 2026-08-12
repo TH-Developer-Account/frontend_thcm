@@ -408,6 +408,7 @@ export type PendingWorkflowSelection = {
 	name: string;
 	previewStages: WorkflowStage[];
 	attachInput: WorkflowAttachCriteria;
+	isEditedExistingWorkflow: boolean; // NEW
 };
 
 /* -------------------------------------------------------------------------- */

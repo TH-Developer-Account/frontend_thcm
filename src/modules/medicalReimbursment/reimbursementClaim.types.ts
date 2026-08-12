@@ -97,7 +97,7 @@ export interface ApprovalStage {
 	actedOn?: string;
 }
 
-export type ApprovalActionType = "approve" | "reject" | "request_clarification";
+export type ApprovalActionType = "approve" | "reject" | "clarify";
 
 export type ClaimHead =
 	| "VISIT_FEES"

@@ -263,6 +263,7 @@ export function useWorkflowFetch({
 					attachInput: {
 						workflowId: workflow.id,
 					},
+					isEditedExistingWorkflow: false,
 				});
 			} finally {
 				setCustomising(false);
@@ -376,6 +377,7 @@ export function useWorkflowFetch({
 				attachInput: {
 					workflowId,
 				},
+				isEditedExistingWorkflow: Boolean(sourceWorkflow),
 			});
 		},
 		[appId, completeSelection, screen, sourceRecordRef, workspaceId],

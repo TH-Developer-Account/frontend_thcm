@@ -89,8 +89,8 @@ const REQUIRED_FORM_ONE_FIELDS: Partial<
 	address: "Complete Address is required.",
 	mobile: "Mobile is required.",
 	email: "E-mail is required.",
-	bank: "Bank is required.",
-	branch: "Branch is required.",
+	bankName: "Bank is required.",
+	bankBranch: "Branch is required.",
 	ifscCode: "IFSC Code is required.",
 	accountNumber: "A/C No. is required.",
 	confirmAccountNumber: "Confirm A/C No. is required.",
@@ -1277,21 +1277,22 @@ export function useVendorCreationForm({
 				title: "Submission failed",
 				description: "Vendor onboarding ID is missing.",
 			});
-
 			return;
 		}
 
 		const isClarifiedResubmission = hasPendingClarifiedApproval;
-		const selectedWorkflowCriteria =
-			pendingWorkflowSelection?.attachInput ?? null;
-		const hasPendingWorkflowSelection = Boolean(selectedWorkflowCriteria);
-		const isReplacingWorkflow = Boolean(
-			isClarifiedResubmission && hasPendingWorkflowSelection,
-		);
-		const shouldAssignSelectedWorkflow = Boolean(
-			hasPendingWorkflowSelection &&
-			(!hasAssignedWorkflow || isReplacingWorkflow),
-		);
+
+		const selectedWorkflowId =
+			pendingWorkflowSelection?.attachInput.workflowId ?? null;
+		const hasPendingWorkflowSelection = Boolean(selectedWorkflowId);
+
+		// Only true for a genuinely fresh form that has never had a workflow
+		// attached. Every other path — including clarify with a builder
+		// selection — uses activateFirstStage, never assignWorkflow.
+		const isFreshWorkflowAssignment =
+			!isClarifiedResubmission &&
+			!hasAssignedWorkflow &&
+			hasPendingWorkflowSelection;
 
 		if (
 			!isClarifiedResubmission &&
@@ -1304,42 +1305,40 @@ export function useVendorCreationForm({
 				description:
 					"Return to the Workflow step and select an approval workflow.",
 			});
-
 			return;
 		}
 
-		if (
-			isClarifiedResubmission &&
-			!hasPendingWorkflowSelection &&
-			!workflowId
-		) {
+		// Workflow to activate on resubmission: the freshly created one if the
+		// builder was used this round (edit-existing or new template — both
+		// call createUser in handleBuilderAttach), otherwise the existing
+		// active workflow, continued as-is.
+		const clarificationWorkflowId = hasPendingWorkflowSelection
+			? selectedWorkflowId
+			: workflowId;
+
+		if (isClarifiedResubmission && !clarificationWorkflowId) {
 			showToast({
 				type: "error",
 				title: "Workflow required",
 				description:
-					"The active workflow is unavailable. Return to the Workflow step and select a workflow.",
+					"The workflow is unavailable. Return to the Workflow step and select a workflow.",
 			});
-
 			return;
 		}
 
-		if (shouldAssignSelectedWorkflow && (!workspaceId || !appId)) {
+		if (isFreshWorkflowAssignment && (!workspaceId || !appId)) {
 			showToast({
 				type: "error",
 				title: "Workflow assignment failed",
 				description:
 					"Workspace or application information is missing. Please refresh and try again.",
 			});
-
 			return;
 		}
 
 		try {
-			// A selected workflow is assigned for the initial submission or when
-			// the proposer explicitly replaces the active workflow during a
-			// clarification. Assignment starts Stage 1, so the newly assigned
-			// workflow must not be activated a second time below.
-			if (shouldAssignSelectedWorkflow && selectedWorkflowCriteria) {
+			// Assign workflow only once: fresh form, nothing ever attached.
+			if (isFreshWorkflowAssignment && selectedWorkflowId) {
 				if (!workspaceId || !appId) {
 					throw new Error("Workspace or application information is missing.");
 				}
@@ -1349,23 +1348,41 @@ export function useVendorCreationForm({
 					subjectId: vendorRequestId,
 					workspaceId,
 					appId,
-					criteria: { ...selectedWorkflowCriteria },
+					criteria: { workflowId: selectedWorkflowId },
 				});
 			}
 
 			await submitMutation.mutateAsync(vendorRequestId);
 
-			// If no replacement was selected, continue the existing active
-			// workflow and optionally apply the proposer's stage edits.
-			if (isClarifiedResubmission && !isReplacingWorkflow && workflowId) {
-				await activateFirstStage({
-					workflowId,
-					stageEdits: stageEdits ? mapStageEditsForApi(stageEdits) : undefined,
-				});
+			// Every other case activates — assignWorkflow never runs here.
+			if (isClarifiedResubmission && clarificationWorkflowId) {
+				if (hasPendingWorkflowSelection) {
+					// Builder was used this round. createUser already ran in
+					// handleBuilderAttach. Edited-existing sends the edited
+					// stages as stageEdits against the new record; a
+					// brand-new template has nothing to diff, so no
+					// stageEdits are sent.
+					await activateFirstStage({
+						workflowId: clarificationWorkflowId,
+						stageEdits: pendingWorkflowSelection?.isEditedExistingWorkflow
+							? mapStageEditsForApi(pendingWorkflowSelection.previewStages)
+							: undefined,
+					});
+				} else {
+					// No builder interaction — continue the active workflow,
+					// applying any edits from the inline resubmit-stage editor.
+					await activateFirstStage({
+						workflowId: clarificationWorkflowId,
+						stageEdits: stageEdits
+							? mapStageEditsForApi(stageEdits)
+							: undefined,
+					});
+				}
 			}
 
 			await detailQuery.refetch();
 			setPendingWorkflowSelection(null);
+			setStageEditsState(null);
 
 			showToast({
 				type: "success",
@@ -1373,8 +1390,8 @@ export function useVendorCreationForm({
 					? "Resubmitted successfully"
 					: "Submitted successfully",
 				description: isClarifiedResubmission
-					? isReplacingWorkflow
-						? "The clarified vendor details were updated and the replacement workflow was assigned."
+					? hasPendingWorkflowSelection
+						? "The clarified vendor details were updated and the selected workflow was activated."
 						: "The clarified vendor details were updated and the active workflow was continued."
 					: "The THCM details were updated and the approval workflow was assigned.",
 			});
@@ -1387,8 +1404,6 @@ export function useVendorCreationForm({
 		} catch (error: unknown) {
 			console.error("Vendor onboarding submission failed:", error);
 
-			// Assignment and vendor submission are separate requests. Refetch so
-			// a successful assignment is detected before the user retries.
 			try {
 				await detailQuery.refetch();
 			} catch {
