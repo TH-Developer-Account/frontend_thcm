@@ -2,7 +2,7 @@ import { useCallback, useState, useSyncExternalStore } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
 import { DashboardLayout } from "./DashboardLayout";
-import { guestSidebar } from "../modules/guest/guestVendorOnboarding/GuestSidebar";
+import { guestSidebar } from "../modules/guest/GuestSidebar";
 import Header from "../components/ui/Header";
 
 const MOBILE_SIDEBAR_QUERY = "(max-width: 767px)";

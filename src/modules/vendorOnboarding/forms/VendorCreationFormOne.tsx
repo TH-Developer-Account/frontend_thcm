@@ -16,6 +16,7 @@ import { Modal } from "../../../components/common/Modal";
 import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
+import { toYesNo } from "../helpers/vendor.onboarding.helper";
 import {
 	getCitiesByState,
 	getCityOption,
@@ -120,6 +121,7 @@ const VendorCreationFormOne = ({
 }: VendorCreationFormOneProps) => {
 	const formContext = useOptionalVendorCreationFormContext();
 	const values = valuesProp ?? formContext?.formOneValues ?? {};
+	console.log("values ==>", values);
 	const errors = errorsProp ?? formContext?.formOneErrors ?? {};
 	const initialDocuments =
 		initialDocumentsProp ??
@@ -150,7 +152,12 @@ const VendorCreationFormOne = ({
 		(formContext?.originalAccountNumber ?? "");
 	const confirmRequired =
 		!formContext?.originalAccountNumber || isAccountNumberChanged;
-
+	const maskAccountNumber = (value?: string): string | undefined => {
+		const digits = (value ?? "").replace(/\D/g, "");
+		if (!digits) return undefined;
+		if (digits.length <= 6) return digits;
+		return `${digits.slice(0, 6)}***`;
+	};
 	const {
 		enclosureErrors,
 		isDpdpModalOpen,
@@ -423,6 +430,7 @@ const VendorCreationFormOne = ({
 						value={values.accountNumber ?? ""}
 						required
 						inputMode="numeric"
+						readOnlyValue={maskAccountNumber(values.accountNumber)}
 						error={errors.accountNumber}
 						success={
 							fieldMode === "edit" &&
@@ -439,12 +447,13 @@ const VendorCreationFormOne = ({
 						onCut={blockClipboardEvent}
 						autoComplete="off"
 					/>
-					{confirmRequired ? (
+					{!isReadOnly && confirmRequired ? (
 						<FormInput
 							mode={fieldMode}
 							name="confirmAccountNumber"
 							label="Confirm Account Number"
 							value={values.confirmAccountNumber || ""}
+							readOnlyValue={maskAccountNumber(values.confirmAccountNumber)}
 							required={confirmRequired}
 							error={errors.confirmAccountNumber}
 							success={
@@ -481,13 +490,13 @@ const VendorCreationFormOne = ({
 							fieldMode === "edit" && !errors.gstin && Boolean(values.gstin)
 						}
 						required
+						maxLength={15}
 						error={errors.gstin}
 						helperText="GST identification number."
 						onChange={(event) =>
-							resolvedOnChange?.("gstin", event.target.value)
+							resolvedOnChange?.("gstin", event.target.value.toUpperCase())
 						}
 					/>
-
 					<FormInput
 						mode={fieldMode}
 						name="pan"
@@ -495,25 +504,28 @@ const VendorCreationFormOne = ({
 						value={values.pan ?? ""}
 						success={fieldMode === "edit" && !errors.pan && Boolean(values.pan)}
 						required
+						maxLength={10}
+						onChange={(event) =>
+							resolvedOnChange?.("pan", event.target.value.toUpperCase())
+						}
 						error={errors.pan}
 						helperText="Permanent account number."
-						onChange={(event) => resolvedOnChange?.("pan", event.target.value)}
 					/>
 
 					<FormInput
 						mode={fieldMode}
-						name="entityRegistrationNumber"
+						name="entityRegNo"
 						label="Entity Reg. No."
-						value={values.entityRegistrationNumber ?? ""}
+						value={values.entityRegNo}
 						success={
 							fieldMode === "edit" &&
-							!errors.entityRegistrationNumber &&
-							Boolean(values.entityRegistrationNumber)
+							!errors.entityRegNo &&
+							Boolean(values.entityRegNo)
 						}
-						error={errors.entityRegistrationNumber}
+						error={errors.entityRegNo}
 						helperText="Entity registration number, if applicable."
 						onChange={(event) =>
-							resolvedOnChange?.("entityRegistrationNumber", event.target.value)
+							resolvedOnChange?.("entityRegNo", event.target.value)
 						}
 					/>
 				</div>
@@ -526,7 +538,9 @@ const VendorCreationFormOne = ({
 							field.documentType !== "MSME_CERTIFICATE" &&
 							field.documentType !== "NDA_CERTIFICATE",
 					).map((field) => {
-						const isOtherAttachment = field.documentType === "ADDITIONAL_DOC_1";
+						const isOtherAttachment =
+							field.documentType === "ADDITIONAL_DOC_1" ||
+							field.documentType === "ADDITIONAL_DOC_2";
 						const uploadedFile = getEnclosureFile(field.documentType);
 
 						return isOtherAttachment ? (
@@ -590,7 +604,10 @@ const VendorCreationFormOne = ({
 									label="MSME Vendor"
 									placeholder="Select option"
 									options={yesNoOptions}
-									value={getSelectedOption(yesNoOptions, values.msmeVendor)}
+									value={getSelectedOption(
+										yesNoOptions,
+										toYesNo(values.msmeVendor),
+									)}
 									required
 									error={errors.msmeVendor}
 									helperText="Select whether this vendor is registered under MSME."
@@ -641,7 +658,10 @@ const VendorCreationFormOne = ({
 									label="Non-Disclosure Undertaking Obtained?"
 									placeholder="Select option"
 									options={yesNoOptions}
-									value={getSelectedOption(yesNoOptions, values.ndaObtained)}
+									value={getSelectedOption(
+										yesNoOptions,
+										toYesNo(values.ndaObtained),
+									)}
 									error={errors.ndaObtained}
 									helperText="Confirm whether NDA is obtained."
 									onChange={(option) =>

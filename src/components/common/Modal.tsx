@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 
 import type { ModalProps } from "./common.types";
+import Button from "./Button";
 
 const joinClassNames = (
 	...classNames: Array<string | false | null | undefined>
@@ -263,16 +264,17 @@ export function Modal({
 						</div>
 
 						{onClose ? (
-							<div className="modal-header-actions">
-								<button
-									type="button"
-									className="modal-close-button"
-									onClick={() => onCloseRef.current?.()}
-									aria-label="Close dialog"
-								>
-									<X className="modal-close-icon" aria-hidden="true" />
-								</button>
-							</div>
+							<Button
+								type="button"
+								onClick={() => onCloseRef.current?.()}
+								aria-label="Close dialog"
+								appearance="icon"
+								variant="brand"
+								iconPosition="right"
+								Icon={X}
+								iconSize={20}
+								size="sm"
+							></Button>
 						) : null}
 					</header>
 				) : null}

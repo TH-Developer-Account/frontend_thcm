@@ -41,7 +41,7 @@ export type VendorCreationFormOneValues = {
 	confirmAccountNumber?: string;
 	gstin?: string;
 	pan?: string;
-	entityRegistrationNumber?: string;
+	entityRegNo?: string;
 	gstCertificate?: string;
 	panNumber?: string;
 	bankCancelledCheque?: string;
@@ -205,6 +205,13 @@ export const VENDOR_DOCUMENT_FIELDS = [
 	{
 		statusKey: "otherAttachment",
 		documentType: "ADDITIONAL_DOC_1",
+		label: "Other Attachment",
+		description: "Upload any additional supporting document.",
+		required: false,
+	},
+	{
+		statusKey: "otherAttachment",
+		documentType: "ADDITIONAL_DOC_2",
 		label: "Other Attachment",
 		description: "Upload any additional supporting document.",
 		required: false,

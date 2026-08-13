@@ -34,6 +34,7 @@ export interface ReimbursementClaimFormValues {
 	passedBy: string;
 	passedAmount: string;
 	passedDate: string;
+	ticketNumber: string;
 }
 
 export type ReimbursementClaimFormErrors = Partial<

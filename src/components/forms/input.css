@@ -21,7 +21,7 @@ FORM CONTAINER AND LAYOUT
 	}
 
 	.form-field {
-		@apply flex w-full min-w-0 flex-col;
+		@apply flex w-full min-w-0 flex-col relative;
 
 		gap: var(--space-1-5);
 	}
@@ -130,6 +130,7 @@ FORM CONTAINER AND LAYOUT
 		left: 50%;
 		bottom: calc(100% + var(--space-2));
 		z-index: var(--z-overlay);
+		z-index: 999;
 
 		width: max-content;
 		max-width: 14rem;

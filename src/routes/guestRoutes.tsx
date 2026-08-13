@@ -7,6 +7,7 @@ import GuestProtectedRoute from "./GuestProtectedRoutes";
 import GuestLayoutWrapper from "../layout/GuestLayoutWrapper";
 import ReimbursementClaimPublicPage from "../modules/medicalReimbursment/ReimbursmentClaimPublicPage";
 import ReimbursementPage from "../modules/medicalReimbursment/ReimbursementPage";
+import ReimbursementClaimListingPage from "../modules/guest/guestMedicalForms/ReimbursementClaimListingPage";
 
 export const GuestRoutesWrapper = () => {
 	return (
@@ -51,9 +52,10 @@ const GuestRoutes = () => {
 				element={<GuestVendorOnboardingFormPage mode="edit" />}
 			/> */}
 			<Route
-				path="medical-claim/form/create"
-				element={<ReimbursementClaimPublicPage />}
+				path="medical-claim/listing"
+				element={<ReimbursementClaimListingPage />}
 			/>
+			<Route path="medical-claim/form/create" element={<ReimbursementPage />} />
 			<Route path="medical-claim/form/view" element={<ReimbursementPage />} />
 		</Routes>
 	);

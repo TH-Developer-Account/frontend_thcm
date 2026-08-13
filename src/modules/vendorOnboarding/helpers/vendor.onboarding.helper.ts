@@ -58,7 +58,7 @@ export const buildVendorUpdatePayload = (
 	accountNumber: toNullableString(values.accountNumber),
 	gstin: toNullableString(values.gstin),
 	pan: toNullableString(values.pan),
-	entityRegNo: toNullableString(values.entityRegistrationNumber),
+	entityRegNo: toNullableString(values.entityRegNo),
 	ndaObtained: toNullableBoolean(values.ndaObtained),
 });
 
@@ -139,7 +139,7 @@ export const normalizeVendorOnboardingResponse = (
 			accountNumber: raw.accountNumber ?? "",
 			gstin: raw.gstin ?? "",
 			pan: raw.pan ?? "",
-			entityRegistrationNumber: raw.entityRegNo ?? "",
+			entityRegNo: raw.entityRegNo ?? "",
 			gstCertificate: getDocumentStatus("GST_CERTIFICATE"),
 			panNumber: getDocumentStatus("PAN_DOCUMENT"),
 			bankCancelledCheque: getDocumentStatus("CANCELLED_CHEQUE"),
@@ -363,4 +363,29 @@ export const getOnboardingEmptyContent = (
 				description: "Vendor onboarding records will appear here.",
 			};
 	}
+};
+
+export const ACCOUNT_NUMBER_REGEX = /^\d{9,18}$/;
+export const GSTIN_REGEX =
+	/^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+export const PAN_REGEX = /^[A-Z]{5}\d{4}[A-Z]{1}$/;
+
+export const FORMAT_VALIDATORS: Partial<
+	Record<
+		keyof VendorCreationFormOneValues,
+		(value: string) => string | undefined
+	>
+> = {
+	accountNumber: (value) =>
+		ACCOUNT_NUMBER_REGEX.test(value)
+			? undefined
+			: "Account number must be 9-18 digits.",
+	gstin: (value) =>
+		GSTIN_REGEX.test(value.toUpperCase())
+			? undefined
+			: "Enter a valid GSTIN, e.g. 22AAAAA0000A1Z5.",
+	pan: (value) =>
+		PAN_REGEX.test(value.toUpperCase())
+			? undefined
+			: "Enter a valid PAN, e.g. AAAAA9999A.",
 };

@@ -18,11 +18,14 @@ import type {
 } from "../../workflows/types/types";
 
 import {
+	ACCOUNT_NUMBER_REGEX,
 	buildPublicFormData,
 	buildVendorOnboardingUpdatePayload,
 	buildVendorUpdatePayload,
+	FORMAT_VALIDATORS,
 	getErrorMessage,
 	getMissingDocuments,
+	toYesNo,
 } from "../helpers/vendor.onboarding.helper";
 import {
 	useAcceptAndCloseVendorMutation,
@@ -115,8 +118,12 @@ const EMPTY_FORM_ONE_VALUES: VendorCreationFormOneValues = {
 const normalizePublicFormOneValues = (
 	data: PublicVendorSessionResponse,
 ): VendorCreationFormOneValues => {
-	const source =
-		data.partOne && Object.keys(data.partOne).length > 0 ? data.partOne : data;
+	const source = (
+		data.partOne && Object.keys(data.partOne).length > 0 ? data.partOne : data
+	) as VendorCreationFormOneValues & {
+		msmeVendor?: boolean | string | null;
+		ndaObtained?: boolean | string | null;
+	};
 
 	return {
 		...EMPTY_FORM_ONE_VALUES,
@@ -124,6 +131,8 @@ const normalizePublicFormOneValues = (
 		vendorName: source.vendorName ?? data.vendorName ?? "",
 		email: source.email ?? data.email ?? "",
 		mobile: source.mobile ?? data.mobile ?? "",
+		msmeVendor: toYesNo(source.msmeVendor),
+		ndaObtained: toYesNo(source.ndaObtained),
 	};
 };
 
@@ -323,10 +332,10 @@ export function useVendorCreationFormOneController({
 
 			switch (field.statusKey) {
 				case "msmeCertificate":
-					return values.msmeVendor === "Yes";
+					return toYesNo(values.msmeVendor) === "Yes";
 
 				case "ndaCertificate":
-					return values.ndaObtained === "Yes";
+					return toYesNo(values.ndaObtained) === "Yes";
 
 				case "otherAttachment":
 					return false;
@@ -1011,22 +1020,38 @@ export function useVendorCreationForm({
 					!originalAccountNumber || isAccountNumberChanged;
 
 				setFormOneErrors((currentErrors) => {
+					const requiredError =
+						REQUIRED_FORM_ONE_FIELDS[field] && isEmptyFormValue(value)
+							? REQUIRED_FORM_ONE_FIELDS[field]
+							: undefined;
+
+					const trimmedValue =
+						typeof value === "string" ? value.trim() : undefined;
+					const formatValidator = FORMAT_VALIDATORS[field];
+					const formatError =
+						!requiredError && formatValidator && trimmedValue
+							? formatValidator(trimmedValue)
+							: undefined;
+
 					const nextErrors = {
 						...currentErrors,
-						[field]:
-							REQUIRED_FORM_ONE_FIELDS[field] && isEmptyFormValue(value)
-								? REQUIRED_FORM_ONE_FIELDS[field]
-								: undefined,
+						[field]: requiredError ?? formatError,
 					};
 
 					if (field === "accountNumber" || field === "confirmAccountNumber") {
-						nextErrors.confirmAccountNumber = !confirmRequired
-							? undefined
-							: !confirmAccountNumber
-								? REQUIRED_FORM_ONE_FIELDS.confirmAccountNumber
-								: confirmAccountNumber !== accountNumber
-									? "Account numbers do not match."
-									: undefined;
+						let confirmError: string | undefined;
+
+						if (confirmRequired) {
+							if (!confirmAccountNumber) {
+								confirmError = REQUIRED_FORM_ONE_FIELDS.confirmAccountNumber;
+							} else if (!ACCOUNT_NUMBER_REGEX.test(confirmAccountNumber)) {
+								confirmError = "Account number must be 9-18 digits.";
+							} else if (confirmAccountNumber !== accountNumber) {
+								confirmError = "Account numbers do not match.";
+							}
+						}
+
+						nextErrors.confirmAccountNumber = confirmError;
 					}
 
 					return nextErrors;

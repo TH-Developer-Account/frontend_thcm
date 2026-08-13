@@ -29,7 +29,7 @@ export default function FormHeader({
 					/>
 				)}
 
-				<h3 className="truncate text-[13px] font-semibold tracking-tight text-[var(--color-brand)]">
+				<h3 className="truncate text-sm font-semibold tracking-tight text-[var(--color-brand)]">
 					{title}
 				</h3>
 			</div>
