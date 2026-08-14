@@ -25,7 +25,7 @@ const WORKFLOW_SKELETON_ROWS = 8;
 const WORKFLOW_SKELETON_COLUMNS = 7;
 
 const isUserCreatedWorkflow = (workflow: WorkflowRow | null): boolean =>
-	workflow?.ownerType === "USER" || workflow?.ownerType === "ADMIN";
+	workflow?.ownerType === "USER";
 
 const getDeleteResponseMessage = (response: unknown): string => {
 	if (
