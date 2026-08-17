@@ -1,3 +1,4 @@
+import type { MentionableUserInput } from "../../../components/ui/comments";
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 import type { ApprovalStageLike } from "../../workflows";
 
@@ -114,13 +115,7 @@ export type VendorUpdatePayload = {
 	onboardingReason?: string | null;
 	remarks?: string | null;
 };
-export type VendorCreatedBy = {
-	id: string;
-	first_name: string;
-	last_name: string;
-	email: string;
-	avatarUrl?: string | null;
-};
+
 export type VendorOnboardingResponse = {
 	id: string;
 	status: VendorOnboardingStatus;
@@ -132,7 +127,7 @@ export type VendorOnboardingResponse = {
 	updatedAt?: string;
 	activeWorkflow?: VendorActiveWorkflow;
 	initiatedById?: string;
-	createdBy?: VendorCreatedBy | null;
+	createdBy?: MentionableUserInput | null;
 };
 
 export type VendorFormErrors<T> = Partial<Record<keyof T, string>>;
@@ -288,6 +283,7 @@ export type VendorOnboardingRawResponse = {
 	created_at?: string;
 	updated_at?: string;
 	referenceNumber?: string;
+	created_by?: MentionableUserInput | null;
 };
 
 export type VendorActiveWorkflow = {

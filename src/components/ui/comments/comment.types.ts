@@ -8,6 +8,7 @@ export type MentionableUserInput = {
 	last_name?: string | null;
 	email?: string | null;
 	avatarUrl?: string | null;
+	phone_number?: string;
 };
 export interface User {
 	id: string;

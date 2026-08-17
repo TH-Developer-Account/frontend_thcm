@@ -1779,8 +1779,12 @@ export function useVendorCreationForm({
 	}, [isDownloadingPdf, pdfUrl, referenceNumber, showToast, vendorRequestId]);
 
 	const creator = React.useMemo<MentionableUserInput | null>(() => {
-		const createdBy = detailQuery.data?.createdBy;
-
+		const detail = detailQuery.data as
+			| (typeof detailQuery.data & {
+					created_by?: MentionableUserInput | null;
+			  })
+			| undefined;
+		const createdBy = detail?.created_by ?? detail?.createdBy;
 		if (!createdBy?.id) {
 			return null;
 		}
@@ -1792,8 +1796,8 @@ export function useVendorCreationForm({
 			email: createdBy.email,
 			avatarUrl: createdBy.avatarUrl,
 		};
-	}, [detailQuery.data?.createdBy]);
-
+	}, [detailQuery.data]);
+	console.log("creator", creator);
 	const mutationLoading =
 		updateMutation.isPending ||
 		submitMutation.isPending ||

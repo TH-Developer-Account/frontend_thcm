@@ -11,17 +11,18 @@ import { getVendorAuditMessage } from "../helpers/vendorComment.helper";
 type VendorCommentSectionProps = {
 	onboardingId?: string | null;
 	workflow?: readonly ApprovalStageLike[];
-	creator?: MentionableUserInput | null;
+	createdBy?: MentionableUserInput | null;
 	title?: string;
 };
 
 const VendorCommentSection = ({
 	onboardingId,
 	workflow = [],
-	creator,
+	createdBy,
 	title = "Comments and activity",
 }: VendorCommentSectionProps) => {
 	const { user } = useAuth();
+	const requestCreator = createdBy ?? null;
 
 	const commentContext = React.useMemo(
 		() =>
@@ -30,15 +31,14 @@ const VendorCommentSection = ({
 					stages: workflow,
 				},
 				currentUser: user,
-				creator,
+				creator: requestCreator,
 			}),
-		[workflow, user, creator],
+		[workflow, user, requestCreator],
 	);
 
 	if (!onboardingId) {
 		return null;
 	}
-
 	return (
 		<CommentsSection
 			subjectType="VENDOR_ONBOARDING"

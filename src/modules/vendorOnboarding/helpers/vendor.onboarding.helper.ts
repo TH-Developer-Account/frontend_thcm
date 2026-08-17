@@ -182,6 +182,7 @@ export const normalizeVendorOnboardingResponse = (
 		updatedAt: raw.updated_at,
 		referenceNumber: raw.referenceNumber,
 		initiatedById: raw.initiatedById,
+		createdBy: raw.created_by ?? null,
 	};
 };
 

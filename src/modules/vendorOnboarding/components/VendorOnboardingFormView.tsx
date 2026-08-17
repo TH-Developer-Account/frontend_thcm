@@ -134,6 +134,7 @@ const VendorOnboardingReadOnlyView = ({
 			hidden: !canEditMainForm,
 		},
 	];
+	console.log("creator", creator);
 
 	const pageNavigation = {
 		variant: "breadcrumbs" as const,
@@ -238,7 +239,7 @@ const VendorOnboardingReadOnlyView = ({
 							<VendorCommentSection
 								onboardingId={onboardingId}
 								workflow={workflowStages}
-								creator={creator}
+								createdBy={creator}
 							/>
 						}
 					/>
