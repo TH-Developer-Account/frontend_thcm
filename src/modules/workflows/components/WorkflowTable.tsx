@@ -24,9 +24,6 @@ import { WorkflowUserAssignment } from "./WorkflowUserAssignment";
 const WORKFLOW_SKELETON_ROWS = 8;
 const WORKFLOW_SKELETON_COLUMNS = 7;
 
-const isUserCreatedWorkflow = (workflow: WorkflowRow | null): boolean =>
-	workflow?.ownerType === "USER";
-
 const getDeleteResponseMessage = (response: unknown): string => {
 	if (
 		typeof response !== "object" ||
@@ -129,10 +126,6 @@ const WorkflowTable = () => {
 	);
 
 	const handleOpenAssignment = React.useCallback((workflow: WorkflowRow) => {
-		if (isUserCreatedWorkflow(workflow)) {
-			return;
-		}
-
 		setAssignModalOpen(workflow);
 	}, []);
 
@@ -260,7 +253,7 @@ const WorkflowTable = () => {
 				</section>
 			</Card>
 
-			{assignModalOpen && !isUserCreatedWorkflow(assignModalOpen) ? (
+			{assignModalOpen ? (
 				<WorkflowUserAssignment
 					workflow={assignModalOpen}
 					onClose={() => setAssignModalOpen(null)}
