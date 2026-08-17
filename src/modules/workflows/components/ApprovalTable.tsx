@@ -79,14 +79,14 @@ const renderApproverEmails = (row: ApprovalTableRow) =>
 		),
 	);
 
-const renderMinimumApprovals = (row: ApprovalTableRow) =>
-	renderValueStack(
-		(row.approvers ?? []).map((approver) => ({
-			key: String(approver.id),
-			content: approver.minApprovals ?? "--",
-		})),
-		<span className="approval-table-count">{row.minApprovals ?? "--"}</span>,
-	);
+// const renderMinimumApprovals = (row: ApprovalTableRow) =>
+// 	renderValueStack(
+// 		(row.approvers ?? []).map((approver) => ({
+// 			key: String(approver.id),
+// 			content: approver.minApprovals ?? "--",
+// 		})),
+// 		<span className="approval-table-count">{row.minApprovals ?? "--"}</span>,
+// 	);
 
 const renderStatuses = (row: ApprovalTableRow) => {
 	const approvers = row.approvers ?? [];
@@ -166,6 +166,17 @@ const APPROVAL_COLUMNS: ColumnDef<ApprovalTableRow>[] = [
 			</span>
 		),
 	},
+	// {
+	// 	id: "minimum",
+	// 	header: "Min",
+	// 	enableSorting: false,
+	// 	meta: {
+	// 		align: "center",
+	// 		headerClassName: "approval-table-column-count",
+	// 		cellClassName: "approval-table-column-count",
+	// 	},
+	// 	cell: ({ row }) => renderMinimumApprovals(row.original),
+	// },
 	{
 		id: "minimum",
 		header: "Min",
@@ -175,7 +186,11 @@ const APPROVAL_COLUMNS: ColumnDef<ApprovalTableRow>[] = [
 			headerClassName: "approval-table-column-count",
 			cellClassName: "approval-table-column-count",
 		},
-		cell: ({ row }) => renderMinimumApprovals(row.original),
+		cell: ({ row }) => (
+			<span className="approval-table-count">
+				{row.original.minApprovals ?? "--"}
+			</span>
+		),
 	},
 	{
 		id: "total",
@@ -247,13 +262,14 @@ const ApprovalPdfTable = ({ data }: { data: ApprovalTableRow[] }) => {
 									: row.email || "--"}
 							</td>
 							<td>{row.strategy || "--"}</td>
-							<td>
+							{/* <td>
 								{approvers.length
 									? approvers
 											.map((approver) => approver.minApprovals ?? "--")
 											.join(", ")
 									: (row.minApprovals ?? "--")}
-							</td>
+							</td> */}
+							<td>{row.minApprovals ?? "--"}</td>
 							<td>{row.totalApprovers ?? "--"}</td>
 							<td>
 								{approvers.length

@@ -34,144 +34,144 @@ import { onTokenRefreshed } from "../../services/tokenEvents"; // adjust relativ
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type NotificationType =
-  | "APPROVAL_PENDING"
-  | "APPROVAL_DECISION"
-  | "REPORT_STATUS"
-  | "GENERIC";
+	| "APPROVAL_PENDING"
+	| "APPROVAL_DECISION"
+	| "REPORT_STATUS"
+	| "GENERIC";
 
 export type Notification = {
-  id: string;
-  type: string;
-  title: string;
-  body: string;
-  link: string | null;
-  metadata: { appKey?: string; [key: string]: unknown } | null;
-  isRead: boolean;
-  createdAt: string;
+	id: string;
+	type: string;
+	title: string;
+	body: string;
+	link: string | null;
+	metadata: { appKey?: string; [key: string]: unknown } | null;
+	isRead: boolean;
+	createdAt: string;
 };
 
 // Relative path — used with ServerAxios, whose baseURL already includes /api/v1
 const NOTIFICATIONS_PATH = "/notifications";
 
 export function useNotifications() {
-  const { user } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [isConnected, setIsConnected] = useState(false);
-  const eventSourceRef = useRef<EventSource | null>(null);
+	const { user } = useAuth();
+	const [notifications, setNotifications] = useState<Notification[]>([]);
+	const [unreadCount, setUnreadCount] = useState(0);
+	const [isConnected, setIsConnected] = useState(false);
+	const eventSourceRef = useRef<EventSource | null>(null);
 
-  // ── Initial load ────────────────────────────────────────────────────────
-  const fetchNotifications = useCallback(async () => {
-    const { data } = await ServerAxios.get(NOTIFICATIONS_PATH);
-    setNotifications(data.data);
-  }, []);
+	// ── Initial load ────────────────────────────────────────────────────────
+	const fetchNotifications = useCallback(async () => {
+		const { data } = await ServerAxios.get(NOTIFICATIONS_PATH);
+		setNotifications(data.data);
+	}, []);
 
-  const fetchUnreadCount = useCallback(async () => {
-    const { data } = await ServerAxios.get(
-      `${NOTIFICATIONS_PATH}/unread-count`,
-    );
-    setUnreadCount(data.data.count);
-  }, []);
+	const fetchUnreadCount = useCallback(async () => {
+		const { data } = await ServerAxios.get(
+			`${NOTIFICATIONS_PATH}/unread-count`,
+		);
+		setUnreadCount(data.data.count);
+	}, []);
 
-  useEffect(() => {
-    if (!user?.id) return;
-    fetchNotifications();
-    fetchUnreadCount();
-  }, [user?.id, fetchNotifications, fetchUnreadCount]);
+	useEffect(() => {
+		if (!user?.id) return;
+		fetchNotifications();
+		fetchUnreadCount();
+	}, [user?.id, fetchNotifications, fetchUnreadCount]);
 
-  // ── SSE connection ──────────────────────────────────────────────────────
-  // connect() is a stable ref-held function (not re-created per render) so
-  // both the mount effect and the token-refresh subscription can call the
-  // exact same connection logic without duplicating it (DRY).
-  const connectRef = useRef<() => void>(() => {});
+	// ── SSE connection ──────────────────────────────────────────────────────
+	// connect() is a stable ref-held function (not re-created per render) so
+	// both the mount effect and the token-refresh subscription can call the
+	// exact same connection logic without duplicating it (DRY).
+	const connectRef = useRef<() => void>(() => {});
 
-  useEffect(() => {
-    if (!user?.id) return;
+	useEffect(() => {
+		if (!user?.id) return;
 
-    function openConnection() {
-      const token = localStorage.getItem("authToken");
-      console.log({ token });
-      if (!token) return;
+		function openConnection() {
+			const token = localStorage.getItem("authToken");
+			// console.log({ token });
+			if (!token) return;
 
-      // Tear down any existing connection before opening a new one —
-      // matters when this runs from the token-refresh path, where an old
-      // (soon-to-be-stale) connection may still be open.
-      eventSourceRef.current?.close();
+			// Tear down any existing connection before opening a new one —
+			// matters when this runs from the token-refresh path, where an old
+			// (soon-to-be-stale) connection may still be open.
+			eventSourceRef.current?.close();
 
-      // Token in query string — EventSource has no header API, so this is
-      // the only way to authenticate this connection. Full API_BASE_URL is
-      // required here (unlike ServerAxios calls elsewhere) — EventSource
-      // has no baseURL concept.
-      const source = new EventSource(
-        `${API_BASE_URL}${NOTIFICATIONS_PATH}/stream?token=${encodeURIComponent(token)}`,
-      );
-      eventSourceRef.current = source;
+			// Token in query string — EventSource has no header API, so this is
+			// the only way to authenticate this connection. Full API_BASE_URL is
+			// required here (unlike ServerAxios calls elsewhere) — EventSource
+			// has no baseURL concept.
+			const source = new EventSource(
+				`${API_BASE_URL}${NOTIFICATIONS_PATH}/stream?token=${encodeURIComponent(token)}`,
+			);
+			eventSourceRef.current = source;
 
-      source.onopen = () => setIsConnected(true);
+			source.onopen = () => setIsConnected(true);
 
-      source.onmessage = (event) => {
-        const incoming: Notification = JSON.parse(event.data);
-        console.log("[SSE] Incoming notification:", incoming);
-        setNotifications((prev) => [incoming, ...prev]);
-        setUnreadCount((prev) => prev + 1);
-      };
+			source.onmessage = (event) => {
+				const incoming: Notification = JSON.parse(event.data);
+				console.log("[SSE] Incoming notification:", incoming);
+				setNotifications((prev) => [incoming, ...prev]);
+				setUnreadCount((prev) => prev + 1);
+			};
 
-      source.onerror = () => {
-        setIsConnected(false);
-        // readyState 2 (CLOSED) means the browser gave up retrying —
-        // typically after repeated failures, e.g. an expired token that
-        // never got refreshed via the token-refresh path. Reconnect once
-        // with whatever token is currently in localStorage rather than
-        // leaving the stream dead for the rest of the session.
-        if (source.readyState === EventSource.CLOSED) {
-          openConnection();
-        }
-        // readyState 0 (CONNECTING) means the browser is already retrying
-        // on its own — no action needed.
-      };
-    }
+			source.onerror = () => {
+				setIsConnected(false);
+				// readyState 2 (CLOSED) means the browser gave up retrying —
+				// typically after repeated failures, e.g. an expired token that
+				// never got refreshed via the token-refresh path. Reconnect once
+				// with whatever token is currently in localStorage rather than
+				// leaving the stream dead for the rest of the session.
+				if (source.readyState === EventSource.CLOSED) {
+					openConnection();
+				}
+				// readyState 0 (CONNECTING) means the browser is already retrying
+				// on its own — no action needed.
+			};
+		}
 
-    connectRef.current = openConnection;
-    openConnection();
+		connectRef.current = openConnection;
+		openConnection();
 
-    return () => {
-      eventSourceRef.current?.close();
-      eventSourceRef.current = null;
-    };
-  }, [user?.id]);
+		return () => {
+			eventSourceRef.current?.close();
+			eventSourceRef.current = null;
+		};
+	}, [user?.id]);
 
-  // Reopen the connection with a fresh token whenever ServerAxios's
-  // interceptor successfully refreshes it — closes the fix for the stale-
-  // token-on-reconnect gap described in tokenEvents.ts.
-  useEffect(() => {
-    return onTokenRefreshed(() => {
-      connectRef.current();
-    });
-  }, []);
+	// Reopen the connection with a fresh token whenever ServerAxios's
+	// interceptor successfully refreshes it — closes the fix for the stale-
+	// token-on-reconnect gap described in tokenEvents.ts.
+	useEffect(() => {
+		return onTokenRefreshed(() => {
+			connectRef.current();
+		});
+	}, []);
 
-  // ── Mutations ───────────────────────────────────────────────────────────
-  const markAsRead = useCallback(async (notificationId: string) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n)),
-    );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
+	// ── Mutations ───────────────────────────────────────────────────────────
+	const markAsRead = useCallback(async (notificationId: string) => {
+		setNotifications((prev) =>
+			prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n)),
+		);
+		setUnreadCount((prev) => Math.max(0, prev - 1));
 
-    await ServerAxios.patch(`${NOTIFICATIONS_PATH}/${notificationId}/read`);
-  }, []);
+		await ServerAxios.patch(`${NOTIFICATIONS_PATH}/${notificationId}/read`);
+	}, []);
 
-  const markAllAsRead = useCallback(async () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    setUnreadCount(0);
+	const markAllAsRead = useCallback(async () => {
+		setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+		setUnreadCount(0);
 
-    await ServerAxios.patch(`${NOTIFICATIONS_PATH}/read-all`);
-  }, []);
+		await ServerAxios.patch(`${NOTIFICATIONS_PATH}/read-all`);
+	}, []);
 
-  return {
-    notifications,
-    unreadCount,
-    isConnected,
-    markAsRead,
-    markAllAsRead,
-    refetch: fetchNotifications,
-  };
+	return {
+		notifications,
+		unreadCount,
+		isConnected,
+		markAsRead,
+		markAllAsRead,
+		refetch: fetchNotifications,
+	};
 }

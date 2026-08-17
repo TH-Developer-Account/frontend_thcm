@@ -48,10 +48,10 @@ const VendorOnboardingPage = () => {
 	return (
 		<PageSectionLayout>
 			<PageHeader
-				headerText="Vendor Onboarding Form"
+				headerText="Domestic Vendor Onboarding Form"
 				navigation={{
 					variant: "breadcrumbs",
-					ariaLabel: "Vendor Onboarding Form",
+					ariaLabel: "Domestic Vendor Onboarding Form",
 					breadcrumbs: [
 						{
 							label: "Home Screen",
@@ -62,7 +62,7 @@ const VendorOnboardingPage = () => {
 							href: "/vendor/onboarding/listing?tab=onboarding",
 						},
 						{
-							label: "Vendor Onboarding Form",
+							label: "Domestic Vendor Onboarding Form",
 						},
 					],
 					separator: "›",

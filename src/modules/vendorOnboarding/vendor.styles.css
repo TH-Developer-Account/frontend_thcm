@@ -1180,6 +1180,16 @@
 	text-align: center;
 }
 
+.vendor-workflow-save-template {
+	display: grid;
+	gap: 0.75rem;
+	margin-top: 0.875rem;
+	border: 1px solid #e5e7eb;
+	border-radius: 0.5rem;
+	background: #fafafa;
+	padding: 0.875rem;
+}
+
 .vendor-workflow-navigation {
 	display: flex;
 	align-items: center;
@@ -1233,11 +1243,11 @@
 	border-radius: var(--card-radius);
 	background: var(--color-page-bg);
 }
-
-.vendor-workflow-existing-option > div {
-	display: grid;
-	gap: var(--space-1);
-	min-width: 0;
+.vendor-workflow-exiting-title {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	justify-content: space-between;
 }
 
 .vendor-workflow-existing-option strong {

@@ -209,13 +209,6 @@ export const VENDOR_DOCUMENT_FIELDS = [
 		description: "Upload any additional supporting document.",
 		required: false,
 	},
-	{
-		statusKey: "otherAttachment",
-		documentType: "ADDITIONAL_DOC_2",
-		label: "Other Attachment",
-		description: "Upload any additional supporting document.",
-		required: false,
-	},
 ] as const;
 
 export type VendorDocumentType =

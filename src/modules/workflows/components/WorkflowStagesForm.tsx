@@ -10,8 +10,26 @@ import type {
 	WorkflowStage,
 	WorkflowApprover,
 	WorkflowStageErrors,
+	WorkflowSelectOption,
 } from "../types/types";
 import { getFullName } from "../utils/user";
+import type { SingleValue } from "react-select";
+import SelectInput from "../../../components/forms/SelectInput";
+
+const STAGE_NAME_OPTIONS: WorkflowSelectOption[] = [
+	{
+		value: "Recommender",
+		label: "Recommender",
+	},
+	{
+		value: "Checker",
+		label: "Checker",
+	},
+	{
+		value: "Approver",
+		label: "Approver",
+	},
+];
 
 type Props = {
 	stages: WorkflowStage[];
@@ -43,6 +61,14 @@ const WorkflowStagesForm = ({
 	onAddStage,
 	onSubmit,
 }: Props) => {
+	// A stage's error paragraph only renders while it's expanded (see
+	// workflow-stage-body below). If a collapsed stage has an error, it was
+	// previously invisible — the user had no idea why "Next" wasn't moving
+	// forward. hasStageError(index) lets us surface that on the collapsed
+	// header instead.
+	const hasStageError = (index: number): boolean =>
+		Object.keys(errors[index] || {}).length > 0;
+
 	const handleExternalApproverChange = (
 		stage: WorkflowStage,
 		approverId: string,
@@ -116,6 +142,16 @@ const WorkflowStagesForm = ({
 											Step {stage.stageOrder}
 										</span>
 
+										{!stage.isExpanded && hasStageError(index) && (
+											<span
+												className="workflow-stage-error-badge"
+												role="alert"
+												title="This stage has an error — expand it to fix"
+											>
+												!
+											</span>
+										)}
+
 										<span
 											aria-hidden="true"
 											className={`workflow-stage-chevron ${
@@ -132,7 +168,7 @@ const WorkflowStagesForm = ({
 											className="workflow-stage-body"
 										>
 											<div className="workflow-create-field-row workflow-create-field-row-3">
-												<FormInput
+												{/* <FormInput
 													name={`stage-name-${stage.id}`}
 													label="Stage name"
 													value={stage.name}
@@ -140,6 +176,28 @@ const WorkflowStagesForm = ({
 														onStageChange(stage.id, "name", event.target.value)
 													}
 													error={stageError.name}
+												/> */}
+												<SelectInput
+													name={`stage-name-${stage.id}`}
+													label="Stage name"
+													value={
+														STAGE_NAME_OPTIONS.find(
+															(option) => option.value === stage.name,
+														) ?? null
+													}
+													options={STAGE_NAME_OPTIONS}
+													onChange={(
+														option: SingleValue<WorkflowSelectOption>,
+													) => {
+														onStageChange(
+															stage.id,
+															"name",
+															option?.value ?? "",
+														);
+													}}
+													error={stageError.name}
+													placeholder="Select stage name"
+													required
 												/>
 
 												<div className="relative">

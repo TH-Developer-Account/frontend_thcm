@@ -64,6 +64,7 @@ export interface MedicalClaimInitiationPayload {
 	employeeName: string;
 	email: string;
 	mobile: string;
+	ticketNumber: string;
 }
 
 export interface MedicalClaimDetail extends MedicalClaimListItem {

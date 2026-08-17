@@ -3,7 +3,6 @@ import { ServerAxios } from "../../services/ServerAxios";
 import type {
 	MedicalClaimDetail,
 	MedicalClaimInitiationPayload,
-	MedicalClaimListingApiResponse,
 	MedicalClaimListingParams,
 	MedicalClaimListingResult,
 	MedicalClaimListItem,

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { FileDown, type LucideIcon } from "lucide-react";
+import { FileDown, Plus, type LucideIcon } from "lucide-react";
 
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
@@ -54,6 +54,7 @@ type VendorListingCommonProps = {
 	onPageSizeChange: (pageSize: number) => void;
 
 	onExport: () => void;
+	isExporting?: boolean;
 };
 
 type VendorInitiationListingTableProps = VendorListingCommonProps & {
@@ -88,6 +89,7 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 		onPageChange,
 		onPageSizeChange,
 		onExport,
+		isExporting,
 	} = props;
 
 	const isInitiationListing = props.listingType === "initiation";
@@ -155,7 +157,18 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 					className="border-b-none px-0 py-0"
 				/>
 			}
-			secondaryHeader={
+			// actions={
+			// 	<Button
+			// 		path="/vendor/initiation/create"
+			// 		text="Create Onboarding"
+			// 		appearance="standard"
+			// 		variant="brand"
+			// 		Icon={Plus}
+			// 		size="sm"
+			// 		iconSize={18}
+			// 	/>
+			// }
+			actions={
 				<>
 					<SearchInput
 						value={search}
@@ -165,7 +178,7 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 
 					<Button
 						type="button"
-						text="Export"
+						text={isExporting ? "Exporting..." : "Export"}
 						Icon={FileDown}
 						iconPosition="left"
 						iconSize={16}

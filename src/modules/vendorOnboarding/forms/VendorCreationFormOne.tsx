@@ -16,15 +16,15 @@ import { Modal } from "../../../components/common/Modal";
 import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
-import { toYesNo } from "../helpers/vendor.onboarding.helper";
-import {
-	getCitiesByState,
-	getCityOption,
-} from "../helpers/vendorLocation.helpers";
+import { getCitiesByState } from "../helpers/vendorLocation.helpers";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
 
 import FormHeader from "../../../components/ui/FormHeader";
-
+import {
+	getAccountNumberConfirmState,
+	validateConfirmAccountNumber,
+	toYesNo,
+} from "../helpers/vendor.onboarding.helper";
 import {
 	VENDOR_DOCUMENT_FIELDS,
 	type VendorCreationFormOneValues,
@@ -121,7 +121,6 @@ const VendorCreationFormOne = ({
 }: VendorCreationFormOneProps) => {
 	const formContext = useOptionalVendorCreationFormContext();
 	const values = valuesProp ?? formContext?.formOneValues ?? {};
-	console.log("values ==>", values);
 	const errors = errorsProp ?? formContext?.formOneErrors ?? {};
 	const initialDocuments =
 		initialDocumentsProp ??
@@ -147,11 +146,49 @@ const VendorCreationFormOne = ({
 
 	const isReadOnly = mode === "view" || !canEdit;
 	const fieldMode: VendorFormMode = isReadOnly ? "view" : "edit";
-	const isAccountNumberChanged =
-		(values.accountNumber?.trim() ?? "") !==
-		(formContext?.originalAccountNumber ?? "");
+
+	/*
+	 * The backend does not return confirmAccountNumber.
+	 *
+	 * View/read-only mode:
+	 *   Show the account number as the confirmation value.
+	 *
+	 * Edit mode without account-number changes:
+	 *   Show the account number as the confirmation value.
+	 *
+	 * Edit mode after account-number change:
+	 *   Let the user enter confirmAccountNumber.
+	 */
+	const accountConfirmationState = getAccountNumberConfirmState(
+		values,
+		formContext?.originalAccountNumber ?? "",
+	);
+
+	const { accountNumber, confirmAccountNumber } = accountConfirmationState;
+
+	// Confirmation is validated only when the form is editable.
 	const confirmRequired =
-		!formContext?.originalAccountNumber || isAccountNumberChanged;
+		!isReadOnly && accountConfirmationState.confirmRequired;
+
+	// The backend does not return confirmAccountNumber.
+	// Use accountNumber when viewing or when it has not changed.
+	const confirmAccountValue = confirmRequired
+		? confirmAccountNumber
+		: accountNumber;
+
+	const confirmAccountError = confirmRequired
+		? (errors.confirmAccountNumber ??
+			validateConfirmAccountNumber(
+				values,
+				formContext?.originalAccountNumber ?? "",
+			))
+		: undefined;
+
+	const doAccountNumbersMatch =
+		confirmRequired &&
+		Boolean(confirmAccountNumber) &&
+		confirmAccountNumber === accountNumber;
+
 	const maskAccountNumber = (value?: string): string | undefined => {
 		const digits = (value ?? "").replace(/\D/g, "");
 		if (!digits) return undefined;
@@ -287,10 +324,10 @@ const VendorCreationFormOne = ({
 							}}
 						/>
 
-						<SelectInput
+						{/* <SelectInput
 							mode={fieldMode}
 							name="city"
-							label="City"
+							label="City/ Town"
 							placeholder="Select city"
 							success={
 								fieldMode === "edit" && !errors.city && Boolean(values.city)
@@ -306,6 +343,22 @@ const VendorCreationFormOne = ({
 									resolvedOnChange?.("state", option.state);
 								}
 							}}
+						/> */}
+						<FormInput
+							mode={fieldMode}
+							name="city"
+							label="City/ Town"
+							placeholder="Select city"
+							value={values.city ?? ""}
+							required
+							success={
+								fieldMode === "edit" && !errors.city && Boolean(values.city)
+							}
+							error={errors.city}
+							helperText="Vendor city."
+							onChange={(event) =>
+								resolvedOnChange?.("city", event.target.value)
+							}
 						/>
 
 						<FormInput
@@ -427,13 +480,14 @@ const VendorCreationFormOne = ({
 						mode={fieldMode}
 						name="accountNumber"
 						label="A/C No."
+						type="password"
 						value={values.accountNumber ?? ""}
+						readOnlyValue={maskAccountNumber(values.accountNumber)}
 						required
 						inputMode="numeric"
-						readOnlyValue={maskAccountNumber(values.accountNumber)}
 						error={errors.accountNumber}
 						success={
-							fieldMode === "edit" &&
+							!isReadOnly &&
 							!errors.accountNumber &&
 							Boolean(values.accountNumber)
 						}
@@ -447,35 +501,33 @@ const VendorCreationFormOne = ({
 						onCut={blockClipboardEvent}
 						autoComplete="off"
 					/>
-					{!isReadOnly && confirmRequired ? (
-						<FormInput
-							mode={fieldMode}
-							name="confirmAccountNumber"
-							label="Confirm Account Number"
-							value={values.confirmAccountNumber || ""}
-							readOnlyValue={maskAccountNumber(values.confirmAccountNumber)}
-							required={confirmRequired}
-							error={errors.confirmAccountNumber}
-							success={
-								fieldMode === "edit" &&
-								!errors.confirmAccountNumber &&
-								Boolean(values.confirmAccountNumber)
-							}
-							helperText={
-								confirmRequired
-									? "Re-enter the bank account number."
-									: "Only needed if you're changing the account number above."
-							}
-							onChange={(event) => {
-								const value = event.target.value.replace(/\D/g, "");
-								resolvedOnChange?.("confirmAccountNumber", value);
-							}}
-							onPaste={blockClipboardEvent}
-							onCopy={blockClipboardEvent}
-							onCut={blockClipboardEvent}
-							autoComplete="off"
-						/>
-					) : null}
+
+					<FormInput
+						mode={fieldMode}
+						name="confirmAccountNumber"
+						label="Confirm Account Number"
+						type="password"
+						value={values.confirmAccountNumber ?? ""}
+						readOnlyValue={maskAccountNumber(values.confirmAccountNumber)}
+						required
+						inputMode="numeric"
+						error={errors.confirmAccountNumber}
+						success={
+							!isReadOnly &&
+							!errors.confirmAccountNumber &&
+							Boolean(values.confirmAccountNumber) &&
+							values.confirmAccountNumber === values.accountNumber
+						}
+						helperText="Re-enter the bank account number."
+						onChange={(event) => {
+							const value = event.target.value.replace(/\D/g, "");
+							resolvedOnChange?.("confirmAccountNumber", value);
+						}}
+						onPaste={blockClipboardEvent}
+						onCopy={blockClipboardEvent}
+						onCut={blockClipboardEvent}
+						autoComplete="off"
+					/>
 				</div>
 
 				<FormHeader title="Tax Details" Icon={Banknote} />
@@ -538,9 +590,7 @@ const VendorCreationFormOne = ({
 							field.documentType !== "MSME_CERTIFICATE" &&
 							field.documentType !== "NDA_CERTIFICATE",
 					).map((field) => {
-						const isOtherAttachment =
-							field.documentType === "ADDITIONAL_DOC_1" ||
-							field.documentType === "ADDITIONAL_DOC_2";
+						const isOtherAttachment = field.documentType === "ADDITIONAL_DOC_1";
 						const uploadedFile = getEnclosureFile(field.documentType);
 
 						return isOtherAttachment ? (

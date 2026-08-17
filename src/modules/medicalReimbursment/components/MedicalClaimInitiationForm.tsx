@@ -87,7 +87,7 @@ const MedicalClaimInitiationForm = ({
 					</p>
 				) : null}
 
-				<div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 px-2.5">
+				<div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-4 px-2.5">
 					<FormInput
 						name="employeeName"
 						label="Employee Name"
@@ -102,7 +102,7 @@ const MedicalClaimInitiationForm = ({
 							handleChange("employeeName", event.target.value)
 						}
 					/>
-					{/* <FormInput
+					<FormInput
 						name="ticketNumber"
 						label="Ticket Number"
 						mode={fieldMode}
@@ -114,7 +114,7 @@ const MedicalClaimInitiationForm = ({
 						onChange={(event) =>
 							handleChange("ticketNumber", event.target.value)
 						}
-					/> */}
+					/>
 					<FormInput
 						name="email"
 						label="Employee Email"

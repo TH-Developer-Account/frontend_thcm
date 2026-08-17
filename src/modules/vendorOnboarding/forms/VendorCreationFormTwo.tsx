@@ -21,6 +21,17 @@ import type {
 	VendorFormMode,
 } from "../types/vendorOnboarding.types";
 import { useOptionalVendorCreationFormContext } from "../hooks/useVendorCreationForm";
+import type { Option } from "../../../components/forms/input.types";
+import {
+	companyCodeOptions,
+	materialSubTypeOptions,
+	materialTypeOptions,
+	paymentTermOptions,
+	purchaseOrgOptions,
+	tdsOptions,
+	vendorCategoryOptions,
+	vendorTypeOptions,
+} from "../utils/vendor.constant";
 
 export type VendorCreationFormTwoProps = {
 	mode?: VendorFormMode;
@@ -44,75 +55,14 @@ export type VendorCreationFormTwoProps = {
 	vendorCodeLoading?: boolean;
 };
 
-type SelectOption = {
-	label: string;
-	value: string;
-};
-
-const toSelectOptions = (values: string[]): SelectOption[] =>
+const toSelectOptions = (values: string[]): Option[] =>
 	values.map((value) => ({
 		label: value,
 		value,
 	}));
 
-const getSelectedOption = (
-	options: SelectOption[],
-	value?: string,
-): SelectOption | null =>
+const getSelectedOption = (options: Option[], value?: string): Option | null =>
 	options.find((option) => option.value === value) ?? null;
-
-const vendorTypeOptions = toSelectOptions([
-	"PO Based",
-	"Non PO Based",
-	"Not Applicable",
-]);
-
-const companyCodeOptions = toSelectOptions([
-	"0050 - JSR",
-	"0070 - KGP",
-	"0080 - BLR",
-	"0091 - DWD",
-	"Extension",
-]);
-
-const purchaseOrgOptions = toSelectOptions([
-	"P501 - Direct Purchase",
-	"P502 - Indirect Purchase",
-	"P503 - Capital Purchase",
-	"P504 - External Purchase",
-	"P505 - Stock Transport",
-	"P506 - Spare Part Purchase",
-	"Not Applicable",
-]);
-
-const tdsOptions = toSelectOptions([
-	"194J - Professional Fee",
-	"194A - Interest",
-	"194C - Contractors",
-	"194I - Rent",
-	"194H - Commission",
-	"Not Applicable",
-]);
-
-const vendorCategoryOptions = toSelectOptions([
-	"Material",
-	"Parts",
-	"Service",
-	"Capital",
-	"Not Applicable",
-]);
-
-const materialTypeOptions = toSelectOptions([
-	"1 - Direct",
-	"2 - Indirect",
-	"Not Applicable",
-]);
-
-const materialSubTypeOptions = toSelectOptions([
-	"1 - Proprietary",
-	"2 - Non-Proprietary",
-	"Not Applicable",
-]);
 
 const yesNoOptions = toSelectOptions(["Yes", "No"]);
 
@@ -238,21 +188,24 @@ const VendorCreationFormTwo = ({
 				<FormHeader title="Finance & Tax Classification" Icon={Banknote} />
 
 				<div className="vendor-onboarding-form-grid">
-					<FormInput
+					<SelectInput
 						mode={fieldMode}
 						name="paymentTerm"
 						label="Payment Term"
-						value={values.paymentTerm ?? ""}
-						error={errors.paymentTerm}
+						placeholder="Select Payment Term"
+						options={paymentTermOptions}
+						value={getSelectedOption(paymentTermOptions, values.paymentTerm)}
 						success={
 							fieldMode === "edit" &&
 							!errors.paymentTerm &&
 							Boolean(values.paymentTerm)
 						}
-						helperText="Payment terms applicable to this vendor."
-						onChange={(event) => onChange?.("paymentTerm", event.target.value)}
+						error={errors.paymentTerm}
+						helperText="Select proprietary, non-proprietary, or not applicable."
+						onChange={(option) =>
+							onChange?.("paymentTerm", option?.value ?? "")
+						}
 					/>
-
 					<SelectInput
 						mode={fieldMode}
 						name="tds"

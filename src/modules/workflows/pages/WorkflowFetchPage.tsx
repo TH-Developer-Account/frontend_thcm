@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 import { WorkflowEntrySection } from "../components/WorkflowEntrySection";
 import { WorkflowTemplateBuilder } from "../components/WorkflowTemplateBuilder";
 import {
@@ -5,9 +7,14 @@ import {
 	type UseWorkflowFetchOptions,
 } from "../context/useWorkflowFetch";
 
-export type WorkflowFetchPageProps = UseWorkflowFetchOptions;
+export type WorkflowFetchPageProps = UseWorkflowFetchOptions & {
+	onScreenChange?: (view: "list" | "builder") => void;
+};
 
-export function WorkflowFetchPage(props: WorkflowFetchPageProps) {
+export function WorkflowFetchPage({
+	onScreenChange,
+	...props
+}: WorkflowFetchPageProps) {
 	const {
 		screen,
 		workflows,
@@ -21,11 +28,19 @@ export function WorkflowFetchPage(props: WorkflowFetchPageProps) {
 		loadWorkflows,
 		handleFilterChange,
 		handleAttach,
-		handleEditAndAttach,
 		handleCreate,
 		handleCancel,
 		handleBuilderAttach,
+		expandedWorkflowId,
+		loadingWorkflowId,
+		workflowDetails,
+		workflowDetailErrors,
+		handleToggleWorkflow,
 	} = useWorkflowFetch(props);
+
+	useEffect(() => {
+		onScreenChange?.(screen.view === "builder" ? "builder" : "list");
+	}, [screen.view, onScreenChange]);
 
 	if (error) {
 		return (
@@ -65,7 +80,11 @@ export function WorkflowFetchPage(props: WorkflowFetchPageProps) {
 			selectedFilter={selectedFilter}
 			onFilterChange={handleFilterChange}
 			onAttach={handleAttach}
-			onEditAndAttach={handleEditAndAttach}
+			expandedWorkflowId={expandedWorkflowId}
+			loadingWorkflowId={loadingWorkflowId}
+			workflowDetails={workflowDetails}
+			workflowDetailErrors={workflowDetailErrors}
+			onToggleWorkflow={handleToggleWorkflow}
 			onCreate={handleCreate}
 			disabled={attaching || customising}
 			loading={loading}

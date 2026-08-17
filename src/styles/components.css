@@ -1053,7 +1053,10 @@
 		.ui-card-header {
 			padding-inline: var(--space-3);
 		}
-
+		.ui-card-header {
+			align-items: stretch;
+			flex-direction: column;
+		}
 		.ui-card-secondary-header {
 			padding-inline: var(--space-3);
 		}

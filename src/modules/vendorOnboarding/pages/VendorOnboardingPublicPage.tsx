@@ -47,7 +47,6 @@ const VendorOnboardingPublicPage = () => {
 	}, [normalizedToken]);
 
 	const form = useVendorCreationForm({
-		role: "EXTERNAL_VENDOR",
 		isPublicForm: true,
 		token: resolvedToken,
 		onSuccess: () => setSubmitted(true),

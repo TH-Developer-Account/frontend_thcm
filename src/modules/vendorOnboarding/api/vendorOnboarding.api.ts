@@ -203,6 +203,13 @@ export const vendorOnboardingApi = {
 
 		return url;
 	},
+	exportListing: async (params: VendorListingParams): Promise<Blob> => {
+		const response = await ServerAxios.get<Blob>(`${VENDOR_URL}/export`, {
+			params,
+			responseType: "blob",
+		});
+		return response.data;
+	},
 };
 
 export const vendorInitationApi = {

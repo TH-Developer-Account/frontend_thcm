@@ -125,8 +125,80 @@ export function useWorkflowFetch({
 	const [loading, setLoading] = useState(true);
 	const [customising, setCustomising] = useState(false);
 	const [error, setError] = useState<unknown>(null);
+	const [expandedWorkflowId, setExpandedWorkflowId] = useState<string | null>(
+		null,
+	);
+	const [loadingWorkflowId, setLoadingWorkflowId] = useState<string | null>(
+		null,
+	);
+	const [workflowDetails, setWorkflowDetails] = useState<
+		Record<string, WorkflowTemplate>
+	>({});
+	const [workflowDetailErrors, setWorkflowDetailErrors] = useState<
+		Record<string, string>
+	>({});
 
 	const attachMutation = useAttachWorkflowMutation();
+
+	const getWorkflowDetail = useCallback(
+		async (workflowId: string): Promise<WorkflowTemplate> => {
+			const cached = workflowDetails[workflowId];
+			if (cached) return cached;
+
+			setLoadingWorkflowId(workflowId);
+			setWorkflowDetailErrors((current) => {
+				const next = { ...current };
+				delete next[workflowId];
+				return next;
+			});
+
+			try {
+				const detail = await workflowApi.getById(workflowId);
+				const normalizedDetail: WorkflowTemplate = {
+					...detail,
+					stages: mapStages(detail.stages),
+				};
+				setWorkflowDetails((current) => ({
+					...current,
+					[workflowId]: normalizedDetail,
+				}));
+				return normalizedDetail;
+			} catch (nextError) {
+				setWorkflowDetailErrors((current) => ({
+					...current,
+					[workflowId]:
+						nextError instanceof Error
+							? nextError.message
+							: "Unable to load workflow stages.",
+				}));
+				throw nextError;
+			} finally {
+				setLoadingWorkflowId((current) =>
+					current === workflowId ? null : current,
+				);
+			}
+		},
+		[workflowDetails],
+	);
+
+	const handleToggleWorkflow = useCallback(
+		async (workflowId: string): Promise<void> => {
+			if (expandedWorkflowId === workflowId) {
+				setExpandedWorkflowId(null);
+				return;
+			}
+
+			setExpandedWorkflowId(workflowId);
+			if (!workflowDetails[workflowId]) {
+				try {
+					await getWorkflowDetail(workflowId);
+				} catch {
+					// The expanded row renders its own scoped error and can be retried.
+				}
+			}
+		},
+		[expandedWorkflowId, getWorkflowDetail, workflowDetails],
+	);
 
 	const ensureAssignmentContext = useCallback((): void => {
 		if (!sourceRecordRef.trim()) {
@@ -187,6 +259,7 @@ export function useWorkflowFetch({
 
 	const handleFilterChange = useCallback(
 		(nextFilter: WorkflowListScope): void => {
+			setExpandedWorkflowId(null);
 			setSelectedFilter(nextFilter);
 		},
 		[],
@@ -248,7 +321,7 @@ export function useWorkflowFetch({
 			setCustomising(true);
 
 			try {
-				const sourceWorkflow = await workflowApi.getById(workflow.id);
+				const sourceWorkflow = await getWorkflowDetail(workflow.id);
 
 				const previewStages = mapStages(sourceWorkflow.stages);
 
@@ -280,6 +353,7 @@ export function useWorkflowFetch({
 			recordType,
 			sourceRecordRef,
 			workspaceId,
+			getWorkflowDetail,
 		],
 	);
 
@@ -288,7 +362,7 @@ export function useWorkflowFetch({
 			setCustomising(true);
 
 			try {
-				const sourceWorkflow = await workflowApi.getById(workflow.id);
+				const sourceWorkflow = await getWorkflowDetail(workflow.id);
 
 				setScreen({
 					view: "builder",
@@ -300,7 +374,7 @@ export function useWorkflowFetch({
 				setCustomising(false);
 			}
 		},
-		[],
+		[getWorkflowDetail],
 	);
 
 	const handleCreate = useCallback((): void => {
@@ -405,11 +479,16 @@ export function useWorkflowFetch({
 		loading,
 		customising,
 		error,
+		expandedWorkflowId,
+		loadingWorkflowId,
+		workflowDetails,
+		workflowDetailErrors,
 		attaching: attachMutation.loading,
 		initialStages,
 		builderTitle,
 		loadWorkflows,
 		handleFilterChange,
+		handleToggleWorkflow,
 		handleAttach,
 		handleEditAndAttach,
 		handleCreate,

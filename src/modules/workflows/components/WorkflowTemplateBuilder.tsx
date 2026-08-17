@@ -5,7 +5,6 @@ import Card from "../../../components/common/Card";
 import FormInput from "../../../components/forms/FormInput";
 
 import type {
-	SaveMode,
 	WorkflowApprover,
 	WorkflowBuilderPayload,
 	WorkflowExecutionMode,
@@ -24,8 +23,24 @@ import {
 import "../utils/workflow.css";
 import WorkflowStagesForm from "./WorkflowStagesForm";
 
+// ─────────────────────────────────────────────────────────────────────────
+// NOTE: `WorkflowBuilderPayload` (types/types.ts) doesn't yet declare
+// `referenceNumber`. This local type extends it so the vendor-tagged save
+// (see handleAttach) stays type-safe without needing to touch the shared
+// types file here. Once `referenceNumber?: string` is added to
+// `WorkflowBuilderPayload` directly, this local type can be removed.
+// ─────────────────────────────────────────────────────────────────────────
+type WorkflowBuilderPayloadWithVendorRef = WorkflowBuilderPayload & {
+	referenceNumber?: string;
+};
+
 export interface WorkflowTemplateBuilderProps {
 	sourceRecordRef: string;
+	// Vendor's reference number (e.g. from useVendorCreationForm's
+	// `referenceNumber`). Used to tag the saved workflow when the user
+	// doesn't opt into naming it as a reusable template — see
+	// handleAttach / the "Save as template" checkbox below.
+	referenceNumber?: string;
 	initialStages?: WorkflowStage[];
 	initialFlowType?: WorkflowExecutionMode;
 	initialSaveAsTemplate?: boolean;
@@ -42,6 +57,7 @@ const createStageId = (): string =>
 
 export function WorkflowTemplateBuilder({
 	sourceRecordRef,
+	referenceNumber,
 	initialStages = [],
 	initialFlowType = "SEQUENTIAL",
 	initialSaveAsTemplate = false,
@@ -74,8 +90,17 @@ export function WorkflowTemplateBuilder({
 		}),
 	);
 
-	const [saveMode, setSaveMode] = useState<SaveMode>(
-		initialSaveAsTemplate ? "template" : "once",
+	// ─────────────────────────────────────────────────────────────────────
+	// Replaces the old "once" / "template" radio group (see the commented
+	// block further down) with a single checkbox:
+	//   - checked   → save as a named, reusable template
+	//   - unchecked → still save the workflow, but tag it with the vendor's
+	//                 referenceNumber instead of a custom name, so it can be
+	//                 found again for this vendor later (replaces the old
+	//                 ephemeral "use once" behaviour).
+	// ─────────────────────────────────────────────────────────────────────
+	const [saveAsTemplate, setSaveAsTemplate] = useState<boolean>(
+		initialSaveAsTemplate,
 	);
 
 	const [templateName, setTemplateName] = useState("");
@@ -123,6 +148,21 @@ export function WorkflowTemplateBuilder({
 		);
 
 		if (validation.formError || hasStageErrors) {
+			if (hasStageErrors) {
+				// WorkflowStagesForm only renders a stage's error paragraph
+				// while that stage is expanded. Without this, an error on a
+				// collapsed stage (anything past the first) was invisible —
+				// "Next" would just silently refuse to advance with no
+				// visible reason why.
+				setStages((current) =>
+					current.map((stage, index) =>
+						Object.keys(validation.stageErrors[index] || {}).length > 0
+							? { ...stage, isExpanded: true }
+							: stage,
+					),
+				);
+			}
+
 			return;
 		}
 
@@ -130,22 +170,18 @@ export function WorkflowTemplateBuilder({
 	};
 
 	const handleAttach = async () => {
-		if (
-			saving ||
-			disabled ||
-			(saveMode === "template" && !templateName.trim())
-		) {
+		if (saving || disabled || (saveAsTemplate && !templateName.trim())) {
 			return;
 		}
 
 		setSaving(true);
 
 		try {
-			await onAttach({
+			const payload: WorkflowBuilderPayloadWithVendorRef = {
 				sourceRecordRef,
 				flowType: initialFlowType,
-				saveAsTemplate: saveMode === "template",
-				templateName: saveMode === "template" ? templateName.trim() : undefined,
+				saveAsTemplate,
+				templateName: saveAsTemplate ? templateName.trim() : undefined,
 				stages: stages.map(
 					({ name, stageOrder, strategy, minApprovals, approvers }) => ({
 						name: name.trim(),
@@ -155,7 +191,16 @@ export function WorkflowTemplateBuilder({
 						approvers,
 					}),
 				),
-			});
+			};
+
+			if (!saveAsTemplate) {
+				// Vendor format — tag the saved workflow with the vendor's
+				// reference number so it isn't lost, even though it wasn't
+				// saved as a named reusable template.
+				payload.referenceNumber = referenceNumber ?? sourceRecordRef;
+			}
+
+			await onAttach(payload);
 		} finally {
 			setSaving(false);
 		}
@@ -202,6 +247,11 @@ export function WorkflowTemplateBuilder({
 					</p>
 				</div>
 
+				{/*
+					Old "once" / "template" radio group — replaced by the "Save as
+					template" checkbox below. Left here (commented, not deleted) as
+					a reference in case the three-way choice needs to come back.
+
 				<div
 					className="workflow-save-options"
 					role="radiogroup"
@@ -245,8 +295,38 @@ export function WorkflowTemplateBuilder({
 						</span>
 					</label>
 				</div>
+				*/}
 
-				{saveMode === "template" && (
+				<div
+					className="workflow-save-options"
+					role="group"
+					aria-label="Workflow usage"
+				>
+					<label
+						className={`workflow-save-option ${
+							saveAsTemplate ? "workflow-save-option--active" : ""
+						}`}
+					>
+						<input
+							type="checkbox"
+							name="custom-workflow-save-as-template"
+							checked={saveAsTemplate}
+							onChange={(event) => setSaveAsTemplate(event.target.checked)}
+							disabled={disabled || saving}
+						/>
+
+						<span>
+							<strong>Save as template</strong>
+							<small>
+								{saveAsTemplate
+									? "Save and reuse this workflow in other forms."
+									: "Keep this workflow with this vendor's record so you can reuse it later for the same vendor."}
+							</small>
+						</span>
+					</label>
+				</div>
+
+				{saveAsTemplate && (
 					<div className="workflow-customise-name">
 						<FormInput
 							name="templateName"
@@ -278,7 +358,7 @@ export function WorkflowTemplateBuilder({
 						text={
 							saving
 								? "Saving..."
-								: saveMode === "template"
+								: saveAsTemplate
 									? "Save and use workflow"
 									: "Use workflow"
 						}
@@ -288,9 +368,7 @@ export function WorkflowTemplateBuilder({
 						size="sm"
 						onClick={handleAttach}
 						disabled={
-							disabled ||
-							saving ||
-							(saveMode === "template" && !templateName.trim())
+							disabled || saving || (saveAsTemplate && !templateName.trim())
 						}
 					/>
 				</div>

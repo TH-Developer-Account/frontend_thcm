@@ -28,7 +28,7 @@ import {
 } from "../hooks/useVendorCreationForm";
 import { useVendorOnboardingInitiation } from "../hooks/useVendorOnboardingInitiation";
 import VendorCommentSection from "./VendorCommentSection";
-import { Badge } from "../../../components/common/Badge";
+// import { Badge } from "../../../components/common/Badge";
 
 type VendorOnboardingReadOnlyViewProps = {
 	onboardingId: string;
@@ -185,40 +185,50 @@ const VendorOnboardingReadOnlyView = ({
 			</PageSectionLayout>
 		);
 	}
-
+	const referenceNumber = form.referenceNumber;
 	return (
 		<PageSectionLayout>
 			<PageHeader
-				headerText="Vendor Onboarding Details"
-				navigation={pageNavigation}
+				headerText={`${referenceNumber} / ${form.status}`}
+				// navigation={pageNavigation}
+				headerChildren={
+					<ActionMenu
+						size="xs"
+						row={onboardingId}
+						actions={actions}
+						ariaLabel="Vendor onboarding actions"
+						triggerLabel="Actions"
+						triggerVariant="brand"
+					/>
+				}
 			/>
 
 			<VendorCreationFormProvider value={form}>
 				<Card
 					className="vendor-onboarding-view-section"
-					title={
-						<p>
-							<span className="mr-2 text-sm ">Reference No:</span>
-							{form.referenceNumber}
-						</p>
-					}
-					secondaryHeader={
-						<p>
-							<span className="mr-2 text-sm">Status:</span>
-							{form.status ? <Badge status={form.status} /> : null}
-						</p>
-					}
-					secondaryHeaderClassName=" py-0"
-					actions={
-						<ActionMenu
-							size="xs"
-							row={onboardingId}
-							actions={actions}
-							ariaLabel="Vendor onboarding actions"
-							triggerLabel="Actions"
-							triggerVariant="brand"
-						/>
-					}
+					// title={
+					// 	<p>
+					// 		<span className="mr-2 text-sm ">Reference No:</span>
+					// 		{form.referenceNumber}
+					// 	</p>
+					// }
+					// secondaryHeader={
+					// 	<p>
+					// 		<span className="mr-2 text-sm">Status:</span>
+					// 		{form.status ? <Badge status={form.status} /> : null}
+					// 	</p>
+					// }
+					// secondaryHeaderClassName=" py-0"
+					// actions={
+					// 	<ActionMenu
+					// 		size="xs"
+					// 		row={onboardingId}
+					// 		actions={actions}
+					// 		ariaLabel="Vendor onboarding actions"
+					// 		triggerLabel="Actions"
+					// 		triggerVariant="brand"
+					// 	/>
+					// }
 				>
 					<VendorCreationSummaryForm
 						mode="view"

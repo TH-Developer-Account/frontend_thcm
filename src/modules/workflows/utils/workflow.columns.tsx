@@ -21,12 +21,6 @@ const formatWorkflowDate = (value: WorkflowRow["lastUpdated"]): string => {
 	return date.isValid() ? date.format("L") : "—";
 };
 
-const canAssignUsers = (workflow: WorkflowRow): boolean =>
-	workflow.ownerType === "ADMIN";
-
-const canEditWorkflow = (workflow: WorkflowRow): boolean =>
-	workflow.ownerType === "USER";
-
 export const getWorkflowColumns = ({
 	onAssign,
 	onEdit,
@@ -90,44 +84,40 @@ export const getWorkflowColumns = ({
 		enableSorting: false,
 		cell: ({ row }) => {
 			const workflow = row.original;
-			const showAssignUsers = canAssignUsers(workflow);
-			const showEditDeleteButton = canEditWorkflow(workflow);
 
 			return (
 				<div className="workflow-table-actions">
-					{showAssignUsers && (
+					<Button
+						type="button"
+						size="sm"
+						appearance="icon"
+						variant="secondary"
+						onClick={() => onAssign(workflow)}
+						Icon={UserPlus}
+						isTooltip="Assign Users"
+					/>
+
+					<>
 						<Button
 							type="button"
 							size="sm"
 							appearance="icon"
 							variant="secondary"
-							onClick={() => onAssign(workflow)}
-							Icon={UserPlus}
-							isTooltip="Assign Users"
+							onClick={() => onEdit(workflow)}
+							Icon={Edit}
+							isTooltip="Edit"
 						/>
-					)}
-					{showEditDeleteButton && (
-						<>
-							<Button
-								type="button"
-								size="sm"
-								appearance="icon"
-								variant="secondary"
-								onClick={() => onEdit(workflow)}
-								Icon={Edit}
-								isTooltip="Edit"
-							/>
-							<Button
-								type="button"
-								size="sm"
-								appearance="icon"
-								variant="secondary"
-								onClick={() => onDelete(workflow)}
-								Icon={Trash}
-								isTooltip="Delete"
-							/>
-						</>
-					)}
+
+						<Button
+							type="button"
+							size="sm"
+							appearance="icon"
+							variant="secondary"
+							onClick={() => onDelete(workflow)}
+							Icon={Trash}
+							isTooltip="Delete"
+						/>
+					</>
 				</div>
 			);
 		},

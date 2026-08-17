@@ -109,7 +109,7 @@ export const useVendorOnboardingInitiation = ({
 		mutationFn: vendorInitationApi.createInitiation,
 		onSuccess: async () => {
 			await onSubmitSuccess?.();
-			navigate("/vendor/initiation/listing");
+			navigate("/vendor/onboarding/listing");
 			showSuccessToast(
 				showToast,
 				"The Vendor initiation was submitted successfully.",
@@ -126,7 +126,7 @@ export const useVendorOnboardingInitiation = ({
 		mutationFn: vendorInitationApi.updateInitiation,
 		onSuccess: async () => {
 			await onUpdateSuccess?.();
-			navigate("/vendor/initiation/listing");
+			navigate("/vendor/onboarding/listing");
 		},
 		onError: (error) => {
 			console.error("Vendor initiation update failed:", error);

@@ -9,6 +9,7 @@ import {
 	type VendorCreationFormOneValues,
 	type VendorCreationFormTwoValues,
 	type VendorDocumentType,
+	type VendorFormErrors, // ADDED
 	type VendorOnboardingRawResponse,
 	type VendorOnboardingResponse,
 	type VendorUpdatePayload,
@@ -56,6 +57,10 @@ export const buildVendorUpdatePayload = (
 	ifscCode: toNullableString(values.ifscCode),
 	bankAddress: toNullableString(values.bankAddress),
 	accountNumber: toNullableString(values.accountNumber),
+	// NOTE: confirmAccountNumber is intentionally NOT included here.
+	// It is a frontend-only validation field — the backend has no such
+	// column and must never receive it. If you're adding a new field to
+	// this payload, don't reflexively include confirmAccountNumber too.
 	gstin: toNullableString(values.gstin),
 	pan: toNullableString(values.pan),
 	entityRegNo: toNullableString(values.entityRegNo),
@@ -137,6 +142,7 @@ export const normalizeVendorOnboardingResponse = (
 			ifscCode: raw.ifscCode ?? "",
 			bankAddress: raw.bankAddress ?? "",
 			accountNumber: raw.accountNumber ?? "",
+			confirmAccountNumber: raw.accountNumber ?? "",
 			gstin: raw.gstin ?? "",
 			pan: raw.pan ?? "",
 			entityRegNo: raw.entityRegNo ?? "",
@@ -365,10 +371,10 @@ export const getOnboardingEmptyContent = (
 	}
 };
 
-export const ACCOUNT_NUMBER_REGEX = /^\d{9,18}$/;
+export const ACCOUNT_NUMBER_REGEX = /^[A-Za-z0-9]{9,34}$/;
+export const PAN_REGEX = /^[A-Z]{5}\d{4}[A-Z]$/;
 export const GSTIN_REGEX =
-	/^\d{2}[A-Z]{5}\d{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
-export const PAN_REGEX = /^[A-Z]{5}\d{4}[A-Z]{1}$/;
+	/^(?:0[1-9]|[12]\d|3[0-8])[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 
 export const FORMAT_VALIDATORS: Partial<
 	Record<
@@ -377,9 +383,9 @@ export const FORMAT_VALIDATORS: Partial<
 	>
 > = {
 	accountNumber: (value) =>
-		ACCOUNT_NUMBER_REGEX.test(value)
+		ACCOUNT_NUMBER_REGEX.test(value.toUpperCase())
 			? undefined
-			: "Account number must be 9-18 digits.",
+			: "Account number must be 9-34 alphanumeric characters.",
 	gstin: (value) =>
 		GSTIN_REGEX.test(value.toUpperCase())
 			? undefined
@@ -388,4 +394,148 @@ export const FORMAT_VALIDATORS: Partial<
 		PAN_REGEX.test(value.toUpperCase())
 			? undefined
 			: "Enter a valid PAN, e.g. AAAAA9999A.",
+};
+export const getGstinPanMatchStatus = (
+	gstin: string,
+	pan: string,
+): "valid" | "mismatch" | "incomplete" => {
+	const normalizedGstin = gstin.trim().toUpperCase();
+	const normalizedPan = pan.trim().toUpperCase();
+
+	if (!GSTIN_REGEX.test(normalizedGstin) || !PAN_REGEX.test(normalizedPan)) {
+		return "incomplete";
+	}
+
+	return normalizedGstin.slice(2, 12) === normalizedPan ? "valid" : "mismatch";
+};
+
+export const REQUIRED_FORM_ONE_FIELDS: Partial<
+	Record<keyof VendorCreationFormOneValues, string>
+> = {
+	state: "State is required.",
+	city: "City is required.",
+	pinCode: "Pin Code is required.",
+	address: "Complete Address is required.",
+	mobile: "Mobile is required.",
+	email: "E-mail is required.",
+	bankName: "Bank is required.",
+	bankBranch: "Branch is required.",
+	ifscCode: "IFSC Code is required.",
+	accountNumber: "A/C No. is required.",
+	confirmAccountNumber: "Confirm A/C No. is required.",
+	gstin: "GSTIN is required.",
+	pan: "PAN is required.",
+	msmeVendor: "MSME Vendor is required.",
+};
+
+// ── MOVED here from useVendorCreationForm.ts ──
+export const isEmptyFormValue = (value: unknown): boolean =>
+	typeof value === "string" ? value.trim().length === 0 : value == null;
+
+// ── NEW: normalizes an account number the same way everywhere it's read ──
+export const normalizeAccountNumber = (value?: string | null): string =>
+	value?.trim().toUpperCase() ?? "";
+
+// ── NEW: single source of truth for "does confirm need to be shown/checked" ──
+export type AccountNumberConfirmState = {
+	accountNumber: string;
+	confirmAccountNumber: string;
+	isAccountNumberChanged: boolean;
+	confirmRequired: boolean;
+};
+
+export const getAccountNumberConfirmState = (
+	values: Pick<
+		VendorCreationFormOneValues,
+		"accountNumber" | "confirmAccountNumber"
+	>,
+	originalAccountNumber: string,
+): AccountNumberConfirmState => {
+	const accountNumber = normalizeAccountNumber(values.accountNumber);
+	const confirmAccountNumber = normalizeAccountNumber(
+		values.confirmAccountNumber,
+	);
+	const isAccountNumberChanged = accountNumber !== originalAccountNumber;
+	// No original value at all (new record) → always require confirm.
+	// Otherwise only require it once the vendor actually edits the number.
+	const confirmRequired = !originalAccountNumber || isAccountNumberChanged;
+
+	return {
+		accountNumber,
+		confirmAccountNumber,
+		isAccountNumberChanged,
+		confirmRequired,
+	};
+};
+
+// ── NEW: validates ONLY confirmAccountNumber, given current values ──
+export const validateConfirmAccountNumber = (
+	values: Pick<
+		VendorCreationFormOneValues,
+		"accountNumber" | "confirmAccountNumber"
+	>,
+	originalAccountNumber: string,
+): string | undefined => {
+	const { accountNumber, confirmAccountNumber, confirmRequired } =
+		getAccountNumberConfirmState(values, originalAccountNumber);
+
+	if (!confirmRequired) return undefined;
+
+	if (!confirmAccountNumber) {
+		return REQUIRED_FORM_ONE_FIELDS.confirmAccountNumber;
+	}
+	if (!ACCOUNT_NUMBER_REGEX.test(confirmAccountNumber)) {
+		return FORMAT_VALIDATORS.accountNumber?.(confirmAccountNumber);
+	}
+	if (confirmAccountNumber !== accountNumber) {
+		return "Account numbers do not match.";
+	}
+	return undefined;
+};
+
+// ── NEW: validates ONE field (required + format), used on every keystroke ── //
+
+export const validateFormOneField = <
+	K extends keyof VendorCreationFormOneValues,
+>(
+	field: K,
+	value: VendorCreationFormOneValues[K],
+): string | undefined => {
+	if (REQUIRED_FORM_ONE_FIELDS[field] && isEmptyFormValue(value)) {
+		return REQUIRED_FORM_ONE_FIELDS[field];
+	}
+
+	const trimmedValue = typeof value === "string" ? value.trim() : undefined;
+	const formatValidator = FORMAT_VALIDATORS[field];
+
+	return formatValidator && trimmedValue
+		? formatValidator(trimmedValue)
+		: undefined;
+};
+
+// ── NEW: full submit-time gate — checks every required/format field AND
+// confirmAccountNumber. Used right before save/submit, not on every keystroke. ──
+export const validateFormOneForSubmit = (
+	values: VendorCreationFormOneValues,
+	originalAccountNumber: string,
+): VendorFormErrors<VendorCreationFormOneValues> => {
+	const errors: VendorFormErrors<VendorCreationFormOneValues> = {};
+
+	(
+		Object.keys(REQUIRED_FORM_ONE_FIELDS) as Array<
+			keyof VendorCreationFormOneValues
+		>
+	).forEach((field) => {
+		if (field === "confirmAccountNumber") return; // handled separately below
+		const error = validateFormOneField(field, values[field]);
+		if (error) errors[field] = error;
+	});
+
+	const confirmError = validateConfirmAccountNumber(
+		values,
+		originalAccountNumber,
+	);
+	if (confirmError) errors.confirmAccountNumber = confirmError;
+
+	return errors;
 };

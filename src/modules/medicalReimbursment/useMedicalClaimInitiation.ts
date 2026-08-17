@@ -24,6 +24,7 @@ const EMPTY_VALUES: MedicalClaimInitiationValues = {
 	mobile: "",
 	status: undefined,
 	referenceNumber: "",
+	ticketNumber: "",
 };
 
 type UseMedicalClaimInitiationArgs = {
@@ -39,6 +40,7 @@ const mapDetailToForm = (
 	employeeName: response?.employeeName ?? "",
 	email: response?.email ?? "",
 	mobile: response?.mobile ?? "",
+	ticketNumber: response?.ticketNumber ?? "",
 	// status: response?.status,
 	// referenceNumber: response?.referenceNumber ?? "",
 });
@@ -116,6 +118,7 @@ export const useMedicalClaimInitiation = ({
 				employeeName: values.employeeName.trim(),
 				email: values.email.trim(),
 				mobile: values.mobile.trim(),
+				ticketNumber: values.ticketNumber.trim(),
 			},
 			{
 				onSuccess: async () => {

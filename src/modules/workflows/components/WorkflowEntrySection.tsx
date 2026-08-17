@@ -1,13 +1,11 @@
 import { useMemo, useState } from "react";
-import { LibraryBig, Sparkles } from "lucide-react";
 
 import { SearchInput } from "../../../components/forms/SearchInput";
 
 import type {
-	EntryMode,
-	SaveMode,
 	WorkflowListScope,
 	WorkflowSummary,
+	WorkflowTemplate,
 } from "../types/types";
 import "../utils/workflow.css";
 import { WorkflowFetchList } from "./WorkflowFetchList";
@@ -15,14 +13,15 @@ import { WorkflowFetchList } from "./WorkflowFetchList";
 export interface WorkflowEntrySectionProps {
 	sourceRecordRef?: string;
 	workflows: WorkflowSummary[];
+	expandedWorkflowId: string | null;
+	loadingWorkflowId: string | null;
+	workflowDetails: Record<string, WorkflowTemplate>;
+	workflowDetailErrors: Record<string, string>;
 	selectedFilter: WorkflowListScope;
 	onFilterChange: (filter: WorkflowListScope) => void;
+	onToggleWorkflow: (workflowId: string) => void | Promise<void>;
 	onAttach: (workflow: WorkflowSummary) => void | Promise<void>;
-	onEditAndAttach: (
-		workflow: WorkflowSummary,
-		saveMode: SaveMode,
-	) => void | Promise<void>;
-	onCreate: () => void;
+	onCreate?: () => void;
 	title?: string;
 	description?: string;
 	required?: boolean;
@@ -49,15 +48,17 @@ const filterWorkflows = (
 
 export function WorkflowEntrySection({
 	workflows,
+	expandedWorkflowId,
+	loadingWorkflowId,
+	workflowDetails,
+	workflowDetailErrors,
 	selectedFilter,
 	onFilterChange,
+	onToggleWorkflow,
 	onAttach,
-	onEditAndAttach,
-	onCreate,
 	disabled = false,
 	loading = false,
 }: WorkflowEntrySectionProps) {
-	const [mode, setMode] = useState<EntryMode>("idle");
 	const [search, setSearch] = useState("");
 
 	const filteredWorkflows = useMemo(
@@ -65,78 +66,29 @@ export function WorkflowEntrySection({
 		[workflows, search],
 	);
 
-	const handleUseExisting = () => {
-		setMode("fetch");
-	};
-
-	const handleCreate = () => {
-		setMode("create");
-		onCreate();
-	};
-
 	return (
 		<div>
-			<div
-				className="workflow-entry-options mb-4"
-				role="group"
-				aria-label="Workflow source"
-			>
-				<button
-					type="button"
-					className={`workflow-entry-option${
-						mode === "fetch" ? " workflow-entry-option--active" : ""
-					}`}
-					onClick={handleUseExisting}
-					disabled={disabled || loading}
-					aria-pressed={mode === "fetch"}
-				>
-					<LibraryBig size={18} aria-hidden="true" />
+			<SearchInput
+				value={search}
+				onChange={setSearch}
+				placeholder="Search workflows..."
+				aria-label="Search available workflows"
+				className="w-full "
+			/>
 
-					<span>
-						<strong>Use existing</strong>
-						<small>Reuse or customise an available workflow</small>
-					</span>
-				</button>
-
-				<button
-					type="button"
-					className={`workflow-entry-option${
-						mode === "create" ? " workflow-entry-option--active" : ""
-					}`}
-					onClick={handleCreate}
-					disabled={disabled || loading}
-					aria-pressed={mode === "create"}
-				>
-					<Sparkles size={18} aria-hidden="true" />
-
-					<span>
-						<strong>Create new</strong>
-						<small>Build stages and select approvers</small>
-					</span>
-				</button>
-			</div>
-
-			{mode === "fetch" ? (
-				<>
-					<SearchInput
-						value={search}
-						onChange={setSearch}
-						placeholder="Search workflows..."
-						aria-label="Search available workflows"
-						className="w-full"
-					/>
-
-					<WorkflowFetchList
-						filter={selectedFilter}
-						onFilterChange={onFilterChange}
-						workflows={filteredWorkflows}
-						onAttach={onAttach}
-						onCustomise={(workflow) => onEditAndAttach(workflow, "once")}
-						disabled={disabled}
-						loading={loading}
-					/>
-				</>
-			) : null}
+			<WorkflowFetchList
+				filter={selectedFilter}
+				onFilterChange={onFilterChange}
+				workflows={filteredWorkflows}
+				expandedWorkflowId={expandedWorkflowId}
+				loadingWorkflowId={loadingWorkflowId}
+				workflowDetails={workflowDetails}
+				workflowDetailErrors={workflowDetailErrors}
+				onToggleWorkflow={onToggleWorkflow}
+				onAttach={onAttach}
+				disabled={disabled}
+				loading={loading}
+			/>
 		</div>
 	);
 }

@@ -4,8 +4,9 @@ export type MedicalClaimInitiationFormMode = "create" | "view";
 
 export interface MedicalClaimInitiationPayload {
 	employeeName: string;
-	email: string | null;
-	mobile: string | null;
+	email: string;
+	mobile: string;
+	ticketNumber: string;
 }
 
 export interface MedicalClaimInitiationValues extends MedicalClaimInitiationPayload {
