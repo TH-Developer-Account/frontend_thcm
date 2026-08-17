@@ -90,7 +90,6 @@ export function useNotifications() {
 
     function openConnection() {
       const token = localStorage.getItem("authToken");
-      console.log({ token });
       if (!token) return;
 
       // Tear down any existing connection before opening a new one —
