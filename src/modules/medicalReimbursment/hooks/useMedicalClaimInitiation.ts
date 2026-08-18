@@ -2,21 +2,22 @@ import * as React from "react";
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { useToast } from "../../context/Auth/AuthContext";
+import { useToast } from "../../../context/Auth/AuthContext";
 import {
 	showApiErrorToast,
 	showSuccessToast,
-} from "../../utils/apiError.helper";
+} from "../../../utils/apiError.helper";
 import {
 	useInitiateMedicalClaimMutation,
 	useMedicalClaimDetailQuery,
 	useResendMedicalClaimLinkMutation,
-} from "./useMedicalClaimMutations";
+} from "../hooks/useMedicalClaimMutations";
 import type {
 	MedicalClaimInitiationErrors,
 	MedicalClaimInitiationPayload,
 	MedicalClaimInitiationValues,
-} from "./medicalClaimInitiation.types";
+} from "../types/medicalClaimInitiation.types";
+import type { MedicalClaimDetail } from "../types/medicalClaimListing.types";
 
 const EMPTY_VALUES: MedicalClaimInitiationValues = {
 	employeeName: "",
@@ -35,7 +36,11 @@ type UseMedicalClaimInitiationArgs = {
 };
 
 const mapDetailToForm = (
-	response: Partial<MedicalClaimInitiationValues> | null | undefined,
+	response:
+		| Partial<MedicalClaimInitiationValues>
+		| MedicalClaimDetail
+		| null
+		| undefined,
 ): MedicalClaimInitiationValues => ({
 	employeeName: response?.employeeName ?? "",
 	email: response?.email ?? "",
@@ -128,7 +133,7 @@ export const useMedicalClaimInitiation = ({
 						"The medical claim was initiated and the access link was sent successfully.",
 						"Submitted successfully",
 					);
-					navigate("/medical-claim/listing");
+					navigate("/medi-claim/listing");
 				},
 				onError: (error) =>
 					showApiErrorToast(

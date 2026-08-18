@@ -8,7 +8,8 @@ import type {
 	UpdateReimbursementClaimVariables,
 } from "./reimbursementClaim.types";
 
-const CLAIM_URL = "/medical-reimbursement";
+const GUEST_URL = "/medi-claim/guest";
+const CLAIM_URL = "/medi-claim/guest";
 const PUBLIC_CLAIM_URL = `${CLAIM_URL}/public`;
 
 const unwrap = <T>(response: { data: T | { data: T } }): T => {
@@ -88,6 +89,15 @@ export const reimbursementClaimApi = {
 			`${PUBLIC_CLAIM_URL}/session/${sessionCode}/submit`,
 			formData,
 		);
+		return unwrap(response);
+	},
+};
+
+export const guestReimburseClaimApi = {
+	guestList: async (
+		params: ReimbursementClaimListParams,
+	): Promise<ReimbursementClaimListResponse> => {
+		const response = await ServerAxios.get(GUEST_URL, { params });
 		return unwrap(response);
 	},
 };

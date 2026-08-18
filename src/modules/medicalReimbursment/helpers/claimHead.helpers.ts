@@ -1,4 +1,4 @@
-import type { ClaimHeadFormRow } from "./reimbursementClaim.types";
+import type { ClaimHeadFormRow } from "../types/reimbursementClaim.types";
 
 export const createClaimHeadRow = (): ClaimHeadFormRow => ({
 	id: crypto.randomUUID(),
@@ -14,6 +14,10 @@ export const createClaimHeadRow = (): ClaimHeadFormRow => ({
 	billDate: "",
 
 	amount: "",
+
+	approvedAmount: "",
+
+	approvalStatus: "PENDING",
 
 	file: null,
 });

@@ -5,8 +5,8 @@ import GuestLoginPage from "../containers/Login/pages/GuestLoginPage";
 import { GuestAuthProvider } from "../context/Auth/guestAuthProvider";
 import GuestProtectedRoute from "./GuestProtectedRoutes";
 import GuestLayoutWrapper from "../layout/GuestLayoutWrapper";
-import ReimbursementClaimPublicPage from "../modules/medicalReimbursment/ReimbursmentClaimPublicPage";
-import ReimbursementPage from "../modules/medicalReimbursment/ReimbursementPage";
+import ReimbursementClaimPublicPage from "../modules/medicalReimbursment/pages/ReimbursmentClaimPublicPage";
+import ReimbursementPage from "../modules/medicalReimbursment/pages/ReimbursementPage";
 import ReimbursementClaimListingPage from "../modules/guest/guestMedicalForms/ReimbursementClaimListingPage";
 
 export const GuestRoutesWrapper = () => {
@@ -52,11 +52,11 @@ const GuestRoutes = () => {
 				element={<GuestVendorOnboardingFormPage mode="edit" />}
 			/> */}
 			<Route
-				path="medical-claim/listing"
+				path="medi-claim/listing"
 				element={<ReimbursementClaimListingPage />}
 			/>
-			<Route path="medical-claim/form/create" element={<ReimbursementPage />} />
-			<Route path="medical-claim/form/view" element={<ReimbursementPage />} />
+			<Route path="medi-claim/create" element={<ReimbursementPage />} />
+			<Route path="medi-claim/view" element={<ReimbursementPage />} />
 		</Routes>
 	);
 };

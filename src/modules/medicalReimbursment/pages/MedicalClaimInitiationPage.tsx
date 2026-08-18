@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import MedicalClaimInitiationForm from "../components/MedicalClaimInitiationForm";
-import type { MedicalClaimInitiationFormMode } from "../medicalClaimInitiation.types";
+import type { MedicalClaimInitiationFormMode } from "../types/medicalClaimInitiation.types";
 
 type MedicalClaimInitiationPageProps = {
 	mode?: MedicalClaimInitiationFormMode;
@@ -22,7 +22,7 @@ const MedicalClaimInitiationPage = ({
 		: "Medical Claim Initiation Form";
 
 	const handleBackToListing = () => {
-		navigate("/medical-claim/form/listing?tab=claims");
+		navigate("/medi-claim/listing?tab=claims");
 	};
 
 	return (
@@ -39,7 +39,7 @@ const MedicalClaimInitiationPage = ({
 						},
 						{
 							label: "Medical Reimbursement Claims",
-							href: "/medical-claim/form/listing?tab=claims",
+							href: "/medi-claim/listing?tab=claims",
 						},
 						{
 							label: pageTitle,

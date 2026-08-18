@@ -1,4 +1,8 @@
-export type MedicalClaimListingTab = "claims" | "pendingOnMe" | "approvedByMe";
+export type MedicalClaimListingTab =
+	| "initiation"
+	| "claims"
+	| "pendingOnMe"
+	| "approvedByMe";
 
 export type MedicalClaimStatus =
 	| "AWAITING_EX_EMPLOYEE"
@@ -67,8 +71,31 @@ export interface MedicalClaimInitiationPayload {
 	ticketNumber: string;
 }
 
+export interface MedicalClaimBill {
+	id: string;
+	claimHead: string;
+	billNo?: string | null;
+	billName?: string | null;
+	billDate?: string | null;
+	amount?: number | string | null;
+	s3Key?: string | null;
+	fileName?: string | null;
+	fileUrl?: string | null;
+	approvedAmount?: number | string | null;
+	approvalStatus?: "PENDING" | "APPROVED";
+}
+
 export interface MedicalClaimDetail extends MedicalClaimListItem {
-	[key: string]: unknown;
+	guestId?: string | null;
+	patientName?: string | null;
+	claimCover?: "SELF" | "SPOUSE" | "BOTH" | null;
+	spouseName?: string | null;
+	medicalAdvanceTaken?: number | string | null;
+	alreadySettled?: number | string | null;
+	declarationAcceptedAt?: string | null;
+	signatureName?: string | null;
+	signatureDate?: string | null;
+	bills?: MedicalClaimBill[];
 }
 
 export interface MedicalClaimMutationResponse {

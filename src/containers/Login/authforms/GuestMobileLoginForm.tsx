@@ -51,7 +51,7 @@ const GuestMobileLoginForm = () => {
 		setLoading(true);
 		try {
 			await verifyOtp(mobile, otp);
-			navigate("/guest/medical-claim/form/create");
+			navigate("/guest/medi-claim/create");
 		} catch {
 			// toast already shown by GuestAuthProvider
 		} finally {

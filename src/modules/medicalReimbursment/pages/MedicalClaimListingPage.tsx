@@ -1,12 +1,12 @@
 import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
-import MedicalClaimListingTable from "./MedicalClaimListingTable";
-import { useMedicalClaimListing } from "./useMedicalClaimListing";
-import type { MedicalClaimListingRow } from "./medicalClaimListing.types";
-import { toMedicalClaimListingRow } from "./medicalClaimListing.mapper";
-import PageSectionLayout from "../../layout/PageSectionLayout";
-import { PageHeader } from "../../components/ui/PageHeader";
+import MedicalClaimListingTable from "../components/MedicalClaimListingTable";
+import { useMedicalClaimListing } from "../hooks/useMedicalClaimListing";
+import type { MedicalClaimListingRow } from "../types/medicalClaimListing.types";
+import { toMedicalClaimListingRow } from "../helpers/medicalClaimListing.mapper";
+import PageSectionLayout from "../../../layout/PageSectionLayout";
+import { PageHeader } from "../../../components/ui/PageHeader";
 
 const MedicalClaimListingPage = () => {
 	const navigate = useNavigate();
@@ -23,7 +23,7 @@ const MedicalClaimListingPage = () => {
 		handleSearchChange,
 		handlePageSizeChange,
 		setPageIndex,
-	} = useMedicalClaimListing({ initialTab: "pendingOnMe" });
+	} = useMedicalClaimListing({ initialTab: "claims" });
 
 	const rowsForTable = useMemo(
 		() => rows.map(toMedicalClaimListingRow),
@@ -32,9 +32,16 @@ const MedicalClaimListingPage = () => {
 
 	const handleViewRow = useCallback(
 		(row: MedicalClaimListingRow) => {
-			navigate(`/medical-claim/form/${row.id}/view`);
+			navigate(`/medi-claim/${row.id}/view`, {
+				state: {
+					actorRole:
+						tab === "pendingOnMe" || tab === "approvedByMe"
+							? "approver"
+							: "creator",
+				},
+			});
 		},
-		[navigate],
+		[navigate, tab],
 	);
 
 	return (

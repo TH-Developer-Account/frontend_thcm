@@ -1,5 +1,5 @@
 import React, { type ForwardRefRenderFunction } from "react";
-import { ChevronUp, Send, Smile, Type } from "lucide-react";
+import { ChevronUp, Send, Smile } from "lucide-react";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 
 import Avatar from "../../common/Avatar";
@@ -7,7 +7,7 @@ import Button from "../../common/Button";
 import HelperTooltip from "../../common/HelperTooltip";
 import TextareaInput from "../../forms/TextareaInput";
 
-import { COMMENT_EMOJIS, COMMENT_FORMAT_ACTIONS } from "./comment.constants";
+import { COMMENT_EMOJIS } from "./comment.constants";
 import type { RichTextareaProps } from "./richTextarea.types";
 import { useRichInput } from "./useRichInput";
 
@@ -61,7 +61,6 @@ const RichTextarea: ForwardRefRenderFunction<
 		handleChange,
 		insertAtCursor,
 		insertMention,
-		applyFormat,
 	} = useRichInput({
 		value,
 		textareaRef,
@@ -191,44 +190,6 @@ const RichTextarea: ForwardRefRenderFunction<
 										>
 											{emoji}
 										</button>
-									))}
-								</div>
-							) : null}
-						</div>
-
-						<span className="rich-textarea-divider" aria-hidden="true" />
-
-						<div className="rich-textarea-tool-group">
-							<Button
-								type="button"
-								appearance="icon"
-								variant="secondary"
-								size="sm"
-								Icon={Type}
-								aria-label="Formatting options"
-								aria-expanded={popup === "format"}
-								onClick={() =>
-									setPopup((current) =>
-										current === "format" ? null : "format",
-									)
-								}
-							/>
-							{popup === "format" ? (
-								<div className="rich-textarea-popover rich-textarea-format-popover">
-									{COMMENT_FORMAT_ACTIONS.map(({ icon: Icon, fmt, title }) => (
-										<Button
-											key={fmt}
-											type="button"
-											appearance="icon"
-											variant="secondary"
-											size="sm"
-											Icon={Icon}
-											aria-label={title}
-											onMouseDown={(event) => {
-												event.preventDefault();
-												applyFormat(fmt);
-											}}
-										/>
 									))}
 								</div>
 							) : null}

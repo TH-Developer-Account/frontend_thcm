@@ -20,6 +20,7 @@ import VendorRoutes from "./VendorRoutes";
 import WorkflowRoutes from "./workflowRoutes";
 import VendorOnboardingPublicPage from "../modules/guest/guestVendorOnboarding/VendorOnboardingPublicPage";
 import { GuestRoutesWrapper } from "./guestRoutes";
+import ReimbursementClaimPublicPage from "../modules/medicalReimbursment/pages/ReimbursmentClaimPublicPage";
 
 const AuthenticatedRoutes = () => {
 	return (
@@ -41,7 +42,7 @@ const AuthenticatedRoutes = () => {
 					<Route path="/admin/*" element={<AdminRoutes />} />
 					<Route path="/vendor/*" element={<VendorRoutes />} />
 					<Route path="/workflow/*" element={<WorkflowRoutes />} />
-					<Route path="/medical-claim/*" element={<MedicalRoutes />} />
+					<Route path="/medi-claim/*" element={<MedicalRoutes />} />
 				</Route>
 			</Routes>
 		</SessionTimeoutProvider>
@@ -67,6 +68,11 @@ export default function AppRoutes() {
 			/>
 
 			<Route path="/vendor-form" element={<VendorOnboardingPublicPage />} />
+
+			<Route
+				path="/medical-claim-form/:token?"
+				element={<ReimbursementClaimPublicPage />}
+			/>
 
 			<Route path="/forbidden" element={<ForbiddenPage />} />
 

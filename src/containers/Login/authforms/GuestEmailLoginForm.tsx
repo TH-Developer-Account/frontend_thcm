@@ -52,7 +52,7 @@ const GuestEmailLoginForm = () => {
 		setLoading(true);
 		try {
 			await loginWithPassword(formData.email.trim(), formData.password);
-			navigate("/guest/medical-claim/form/create");
+			navigate("/guest/medi-claim/create");
 		} catch {
 			// toast already shown by GuestAuthProvider
 		} finally {

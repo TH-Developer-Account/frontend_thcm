@@ -3,8 +3,7 @@ import { Navigate, useLocation, useParams } from "react-router-dom";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import { useReimbursementClaimDetailQuery } from "./useReimbursementClaimQueries";
-import ReimbursementClaimForm from "../../medicalReimbursment/ReimbursementClaimForm";
-import ReimbursementClaimView from "../../medicalReimbursment/ReimbursementClaimView";
+import ReimbursementClaimForm from "../../medicalReimbursment/components/ReimbursementClaimForm";
 
 const ReimbursementPage = () => {
 	const { pathname } = useLocation();
@@ -17,7 +16,7 @@ const ReimbursementPage = () => {
 	);
 
 	if (!isCreateRoute && !claimId) {
-		return <Navigate to="/medical-claim/listing" replace />;
+		return <Navigate to="/medi-claim/listing" replace />;
 	}
 
 	if (!isCreateRoute && claimQuery.isLoading) {
@@ -34,7 +33,7 @@ const ReimbursementPage = () => {
 		claimQuery.data?.status === "CLARIFICATION_REQUESTED";
 
 	if (!isViewRoute && !canEdit && claimId) {
-		return <Navigate to={`/medical-claim/form/${claimId}/view`} replace />;
+		return <Navigate to={`/medi-claim/${claimId}/view`} replace />;
 	}
 
 	return (
@@ -48,7 +47,7 @@ const ReimbursementPage = () => {
 						{ label: "Home Screen", href: "/" },
 						{
 							label: "Medical Reimbursement Forms",
-							href: "/medical-claim/listing",
+							href: "/medi-claim/listing",
 						},
 						{ label: "Medical Reimbursement Form" },
 					],
@@ -56,16 +55,10 @@ const ReimbursementPage = () => {
 				}}
 			/>
 
-			{isViewRoute ? (
-				<ReimbursementClaimView
-				// claim={claimQuery.data!}
-				/>
-			) : (
-				<ReimbursementClaimForm
-					mode={isCreateRoute ? "edit" : "view"}
-					// claim={claimQuery.data}
-				/>
-			)}
+			<ReimbursementClaimForm
+				mode={!isViewRoute && isCreateRoute ? "edit" : "view"}
+				// claim={claimQuery.data}
+			/>
 		</PageSectionLayout>
 	);
 };

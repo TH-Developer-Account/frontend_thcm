@@ -322,7 +322,7 @@ export default function DatePickerInput({
 					aria-invalid={!!error}
 					aria-describedby={error ? errorId : undefined}
 					className={`
-						form-input flex h-8 w-full items-center justify-between rounded-md px-2 text-[11px]
+						form-input flex  w-full items-center justify-between  
 						${error ? "form-input-error" : ""}
 						${disabled ? "form-input-disabled" : ""}
 					`}

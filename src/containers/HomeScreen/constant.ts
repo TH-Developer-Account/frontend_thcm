@@ -50,8 +50,8 @@ export const actions = [
 		icon: Hospital,
 		title: "Medical Forms",
 		description: "Configure and compare machinery specs for customer needs.",
-		path: "/medical-claim/form/create",
-		appKey: "MEDICAL",
+		path: "/medi-claim/create",
+		appKey: "MEDICAL_CLAIM",
 		isActive: false,
 	},
 	{

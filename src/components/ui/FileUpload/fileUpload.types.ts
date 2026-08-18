@@ -4,7 +4,8 @@ export type FileUploadKind =
 	| "document"
 	| "spreadsheet"
 	| "any"
-	| "vendorDocument";
+	| "vendorDocument"
+	| "mediclaimDocument";
 
 export type FileUploadValue = {
 	id?: string;

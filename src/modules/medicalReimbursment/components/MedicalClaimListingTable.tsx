@@ -1,17 +1,17 @@
 import { useMemo } from "react";
 
-import Card from "../../components/common/Card";
-import { SearchInput } from "../../components/forms/SearchInput";
-import { FilterTabs } from "../../components/ui/FilterTabs";
-import DataTable from "../../components/ui/tables/DataTable/DataTable";
-import DataTableSkeleton from "../../components/ui/tables/Skeletons/DataTableSkeleton";
+import Card from "../../../components/common/Card";
+import { SearchInput } from "../../../components/forms/SearchInput";
+import { FilterTabs } from "../../../components/ui/FilterTabs";
+import DataTable from "../../../components/ui/tables/DataTable/DataTable";
+import DataTableSkeleton from "../../../components/ui/tables/Skeletons/DataTableSkeleton";
 
 import type {
 	MedicalClaimListingRow,
 	MedicalClaimListingTab,
-} from "./medicalClaimListing.types";
-import { MEDICAL_CLAIM_LISTING_FILTER_TABS } from "./medicalClaimListing.constants";
-import { getMedicalClaimListingColumns } from "./medicalClaimListing.columns";
+} from "../types/medicalClaimListing.types";
+import { MEDICAL_CLAIM_LISTING_FILTER_TABS } from "../utils/medicalClaimListing.constants";
+import { getMedicalClaimListingColumns } from "../utils/medicalClaimListing.columns";
 
 interface MedicalClaimListingTableProps {
 	selectedFilter: MedicalClaimListingTab;

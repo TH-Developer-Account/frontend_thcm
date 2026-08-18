@@ -276,6 +276,12 @@ export type WorkflowSummary = {
 	updatedAt?: ApiDateString;
 };
 
+export type WorkflowModuleListParams = {
+	appId: string;
+	appKey: string;
+	moduleKey: string;
+	scope: "MODULE" | "USER" | "ALL";
+};
 /* -------------------------------------------------------------------------- */
 /* Workflow listing                                                            */
 /* -------------------------------------------------------------------------- */

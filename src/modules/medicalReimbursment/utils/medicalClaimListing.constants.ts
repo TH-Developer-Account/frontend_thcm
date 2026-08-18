@@ -1,6 +1,6 @@
 import { CheckCircle2, Clock3, ShieldCheck } from "lucide-react";
 
-import type { MedicalClaimListingTab } from "./medicalClaimListing.types";
+import type { MedicalClaimListingTab } from "../types/medicalClaimListing.types";
 
 export const MEDICAL_CLAIM_LISTING_FILTER_TABS = [
 	{

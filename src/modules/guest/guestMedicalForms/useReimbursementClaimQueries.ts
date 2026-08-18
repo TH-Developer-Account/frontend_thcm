@@ -4,7 +4,7 @@ import { reimbursementClaimApi } from "./reimbursementClaim.api";
 import type { ReimbursementClaimListParams } from "./reimbursementClaim.types";
 
 export const reimbursementClaimKeys = {
-	all: ["medical-reimbursement"] as const,
+	all: ["medi-claim"] as const,
 	lists: () => [...reimbursementClaimKeys.all, "list"] as const,
 	list: (params: ReimbursementClaimListParams) =>
 		[...reimbursementClaimKeys.lists(), params] as const,
@@ -54,4 +54,3 @@ export const usePublicClaimSessionQuery = (
 		refetchOnWindowFocus: false,
 	});
 };
-

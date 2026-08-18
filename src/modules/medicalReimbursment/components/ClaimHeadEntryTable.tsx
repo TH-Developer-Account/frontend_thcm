@@ -1,22 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Pencil, Plus, RotateCcw, Save, Trash2, Upload } from "lucide-react";
+import {
+	CheckCircle2,
+	Pencil,
+	Plus,
+	RotateCcw,
+	Save,
+	Trash2,
+} from "lucide-react";
 
-import Button from "../../components/common/Button";
-import FormInput from "../../components/forms/FormInput";
-import SelectInput from "../../components/forms/SelectInput";
+import Button from "../../../components/common/Button";
+import FormInput from "../../../components/forms/FormInput";
+import SelectInput from "../../../components/forms/SelectInput";
 
-import DataTable from "../..//components/ui/tables/DataTable/DataTable";
-import DataTableSkeleton from "../../components/ui/tables/Skeletons/DataTableSkeleton";
+import DataTable from "../../../components/ui/tables/DataTable/DataTable";
+import DataTableSkeleton from "../../../components/ui/tables/Skeletons/DataTableSkeleton";
 
-import { CLAIM_HEAD_OPTIONS, PATIENT_OPTIONS } from "./claimHead.constants";
+import { CLAIM_HEAD_OPTIONS } from "../utils/claimHead.constants";
 
 import type {
 	ClaimHeadFormRow,
 	ClaimHeadRow,
 	ClaimHeadValidationErrors,
 	ClaimHead,
-} from "./reimbursementClaim.types";
+	ReimbursementClaimActor,
+} from "../types/reimbursementClaim.types";
+import DatePickerInput from "../../../components/common/DatePickerInput";
+import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
+import { formatDate } from "../../../utils/format";
 
 type ClaimHeadEntryTableProps = {
 	items: ClaimHeadFormRow[];
@@ -30,8 +41,12 @@ type ClaimHeadEntryTableProps = {
 	savingId?: string | null;
 
 	deletingId?: string | null;
+	approvingId?: string | null;
 
 	isViewMode?: boolean;
+	actorRole?: ReimbursementClaimActor;
+	canApproveLineItems?: boolean;
+	canEditClaimRows?: boolean;
 
 	errors: ClaimHeadValidationErrors;
 
@@ -48,6 +63,8 @@ type ClaimHeadEntryTableProps = {
 	onCancelEdit: () => void;
 
 	onDeleteRow: (id: string) => void;
+	onApprovedAmountChange: (id: string, value: string) => void;
+	onApproveRow: (id: string) => void | Promise<void>;
 };
 
 const DEFAULT_PAGE_SIZE = 5;
@@ -61,13 +78,19 @@ export const ClaimHeadEntryTable = ({
 	editingId,
 	savingId,
 	deletingId,
+	approvingId,
 	isViewMode = false,
+	actorRole = "creator",
+	canApproveLineItems = false,
+	canEditClaimRows = false,
 	errors,
 	onChange,
 	onSaveRow,
 	onEditRow,
 	onCancelEdit,
 	onDeleteRow,
+	onApprovedAmountChange,
+	onApproveRow,
 }: ClaimHeadEntryTableProps) => {
 	const [pageIndex, setPageIndex] = useState(0);
 
@@ -90,8 +113,22 @@ export const ClaimHeadEntryTable = ({
 
 		setPageIndex(0);
 	};
+	const toDatePickerValue = (value?: string): Date | undefined => {
+		if (!value) return undefined;
 
+		const date = new Date(value.includes("T") ? value : `${value}T00:00:00`);
+
+		return Number.isNaN(date.getTime()) ? undefined : date;
+	};
+	const toDateString = (date: Date): string => {
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, "0");
+		const day = String(date.getDate()).padStart(2, "0");
+
+		return `${year}-${month}-${day}`;
+	};
 	const columns = useMemo<ColumnDef<ClaimHeadRow>[]>(() => {
+		const showsApprovalAmounts = actorRole !== "creator";
 		const tableColumns: ColumnDef<ClaimHeadRow>[] = [
 			{
 				id: "serialNumber",
@@ -132,7 +169,7 @@ export const ClaimHeadEntryTable = ({
 			},
 			{
 				accessorKey: "billName",
-				header: "Bill Name",
+				header: "Bill Description",
 				cell: ({ row }) => {
 					const value = row.original.billName || "--";
 
@@ -143,29 +180,29 @@ export const ClaimHeadEntryTable = ({
 					);
 				},
 			},
-			{
-				accessorKey: "patient",
-				header: "Patient",
-				cell: ({ row }) => {
-					const option = PATIENT_OPTIONS.find(
-						(item) => item.value === row.original.patient,
-					);
+			// {
+			// 	accessorKey: "patient",
+			// 	header: "Patient",
+			// 	cell: ({ row }) => {
+			// 		const option = PATIENT_OPTIONS.find(
+			// 			(item) => item.value === row.original.patient,
+			// 		);
 
-					return option?.label ?? "--";
-				},
-			},
+			// 		return option?.label ?? "--";
+			// 	},
+			// },
 			{
 				accessorKey: "billDate",
 				header: "Bill Date",
 				cell: ({ row }) => (
 					<span className="whitespace-nowrap">
-						{row.original.billDate || "--"}
+						{formatDate(row.original.billDate)}
 					</span>
 				),
 			},
 			{
 				accessorKey: "amount",
-				header: "Amount",
+				header: "Claimed Amount",
 				cell: ({ row }) => {
 					const amount = Number(row.original.amount || 0);
 
@@ -183,8 +220,19 @@ export const ClaimHeadEntryTable = ({
 				cell: ({ row }) => {
 					const fileName =
 						row.original.fileName ?? row.original.file?.name ?? "--";
+					const fileUrl = row.original.attachment?.url;
 
-					return (
+					return fileUrl ? (
+						<a
+							className="block max-w-52 truncate text-brand underline-offset-2 hover:underline"
+							href={fileUrl}
+							target="_blank"
+							rel="noreferrer"
+							title={`Open ${fileName}`}
+						>
+							{fileName}
+						</a>
+					) : (
 						<span
 							className="block max-w-52 truncate text-brand"
 							title={fileName}
@@ -196,7 +244,37 @@ export const ClaimHeadEntryTable = ({
 			},
 		];
 
-		if (!isViewMode) {
+		if (showsApprovalAmounts) {
+			tableColumns.push({
+				id: "approvedAmount",
+				header: "Approved Claim Amount",
+				enableSorting: false,
+				cell: ({ row }) => {
+					const claim = row.original;
+					const isApproving = approvingId === claim.id;
+					return (
+						<div className="min-w-40">
+							<FormInput
+								value={claim.approvedAmount || claim.amount}
+								inputMode="decimal"
+								disabled={
+									loading ||
+									isApproving ||
+									!canApproveLineItems ||
+									claim.approvalStatus === "APPROVED"
+								}
+								onChange={(event) =>
+									onApprovedAmountChange(claim.id, event.target.value)
+								}
+								error={errors[`approvedAmount-${claim.id}`]}
+							/>
+						</div>
+					);
+				},
+			});
+		}
+
+		if (canEditClaimRows && !isViewMode) {
 			tableColumns.push({
 				id: "actions",
 				header: "Actions",
@@ -234,8 +312,57 @@ export const ClaimHeadEntryTable = ({
 			});
 		}
 
+		if (actorRole === "approver") {
+			tableColumns.push({
+				id: "approvalAction",
+				header: "Action",
+				enableSorting: false,
+				cell: ({ row }) => {
+					const claim = row.original;
+					const approved = claim.approvalStatus === "APPROVED";
+					const isApproving = approvingId === claim.id;
+					return (
+						<Button
+							type="button"
+							text={
+								approved ? "Approved" : isApproving ? "Approving..." : "Approve"
+							}
+							Icon={CheckCircle2}
+							appearance="standard"
+							variant={approved ? "outline" : "brand"}
+							size="sm"
+							disabled={
+								loading || approved || isApproving || !canApproveLineItems
+							}
+							onClick={() => void onApproveRow(claim.id)}
+							aria-label={
+								canApproveLineItems
+									? `Approve claim line ${claim.billNumber}`
+									: "Line-item approval action is not configured"
+							}
+						/>
+					);
+				},
+			});
+		}
+
 		return tableColumns;
-	}, [pageIndex, pageSize, deletingId, isViewMode, onDeleteRow, onEditRow]);
+	}, [
+		actorRole,
+		approvingId,
+		canApproveLineItems,
+		canEditClaimRows,
+		deletingId,
+		errors,
+		isViewMode,
+		loading,
+		onApproveRow,
+		onApprovedAmountChange,
+		onDeleteRow,
+		onEditRow,
+		pageIndex,
+		pageSize,
+	]);
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -245,9 +372,10 @@ export const ClaimHeadEntryTable = ({
 				</p>
 			) : null}
 
-			{!isViewMode
+			{canEditClaimRows && !isViewMode
 				? items.map((item, index) => {
 						const isSaving = savingId === item.id;
+						const isEditing = editingId === item.id;
 
 						return (
 							<div
@@ -256,6 +384,7 @@ export const ClaimHeadEntryTable = ({
 							>
 								<SelectInput
 									placeholder="Claim Head"
+									label="Claim Head"
 									options={CLAIM_HEAD_OPTIONS}
 									value={
 										CLAIM_HEAD_OPTIONS.find(
@@ -274,6 +403,7 @@ export const ClaimHeadEntryTable = ({
 
 								<FormInput
 									value={item.billNumber}
+									label="Bill Number"
 									placeholder="Bill Number"
 									onChange={(event) =>
 										onChange(item.id, "billNumber", event.target.value)
@@ -283,85 +413,67 @@ export const ClaimHeadEntryTable = ({
 
 								<FormInput
 									value={item.billName}
-									placeholder="Bill Name"
+									placeholder="Bill Description"
+									label="Bill Description"
 									onChange={(event) =>
 										onChange(item.id, "billName", event.target.value)
 									}
 									error={errors[`billName-${item.id}`]}
 								/>
 
-								{/* <SelectInput
-									placeholder="Patient"
-									options={PATIENT_OPTIONS}
-									value={
-										PATIENT_OPTIONS.find(
-											(option) => option.value === item.patient,
-										) ?? null
-									}
-									onChange={(option) =>
-										onChange(item.id, "patient", option?.value ?? "")
-									}
-									error={errors[`patient-${item.id}`]}
-								/> */}
-
-								<FormInput
-									type="date"
-									value={item.billDate}
-									onChange={(event) =>
-										onChange(item.id, "billDate", event.target.value)
-									}
+								<DatePickerInput
+									label="Date"
+									mode="single"
+									value={toDatePickerValue(item.billDate)}
+									onChange={(nextValue) => {
+										if (nextValue instanceof Date) {
+											onChange(item.id, "billDate", toDateString(nextValue));
+										}
+									}}
 									error={errors[`billDate-${item.id}`]}
+									placeholder="Bill Date"
+									toDate={new Date()}
 								/>
 
 								<FormInput
 									value={item.amount}
+									label="Amount"
 									inputMode="decimal"
 									placeholder="0.00"
 									onChange={(event) =>
-										onChange(item.id, "amount", event.target.value)
+										onChange(
+											item.id,
+											"amount",
+											event.target.value.replace(/[^0-9.]/g, ""),
+										)
 									}
 									error={errors[`amount-${item.id}`]}
 								/>
 
-								<div className="min-w-0">
-									<input
-										id={`attachment-${item.id}`}
-										type="file"
-										className="sr-only"
-										accept=".pdf,.png,.jpg,.jpeg"
-										onChange={(event) =>
-											onChange(item.id, "file", event.target.files?.[0] ?? null)
-										}
-									/>
+								<FileUploadField
+									label="Upload bill"
+									kind="mediclaimDocument"
+									value={item.attachment ?? null}
+									onChange={(nextValue) => {
+										onChange(item.id, "attachment", nextValue);
+										onChange(item.id, "file", nextValue?.file ?? null);
+									}}
+									error={errors[`file-${item.id}`]}
+									disabled={isSaving}
+									inputName={`attachment-${item.id}`}
+									showActions
+								/>
 
-									<label
-										htmlFor={`attachment-${item.id}`}
-										className="flex h-10 cursor-pointer items-center gap-2 rounded-md border border-border px-3 text-sm hover:border-brand"
-									>
-										<Upload size={16} />
-
-										<span className="truncate" title={item.file?.name}>
-											{item.file?.name ?? "Upload Attachment"}
-										</span>
-									</label>
-
-									{errors[`file-${item.id}`] && (
-										<p className="mt-1 text-xs text-rejected">
-											{errors[`file-${item.id}`]}
-										</p>
-									)}
-								</div>
-
-								<div className="flex items-end gap-1.5">
+								<div className="flex items-end gap-1.5 sm:mt-5 mt-1">
 									<Button
 										type="button"
-										Icon={editingId ? Save : Plus}
+										Icon={isEditing ? Save : Plus}
 										appearance="icon"
 										variant="outline"
 										size="sm"
 										disabled={isSaving}
 										onClick={() => onSaveRow(item, index)}
-										aria-label={editingId ? "Update Claim" : "Add Claim"}
+										aria-label={isEditing ? "Update Claim" : "Add Claim"}
 									/>
 
 									<Button
@@ -388,7 +500,15 @@ export const ClaimHeadEntryTable = ({
 				{loading ? (
 					<DataTableSkeleton
 						rows={SKELETON_ROWS}
-						columns={isViewMode ? 8 : 9}
+						columns={
+							actorRole === "approver"
+								? 9
+								: actorRole === "externalApprover"
+									? 8
+									: isViewMode
+										? 7
+										: 8
+						}
 						showPagination
 					/>
 				) : (

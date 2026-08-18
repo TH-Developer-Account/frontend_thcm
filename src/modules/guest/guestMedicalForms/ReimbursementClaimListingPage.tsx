@@ -49,7 +49,7 @@ const ReimbursementClaimListingPage = () => {
 		const editable = ["DRAFT", "CLARIFICATION_REQUESTED"].includes(
 			claim.status,
 		);
-		navigate(`/medical-claim/form/${claim.id}/${editable ? "edit" : "view"}`);
+		navigate(`/medi-claim/guest/${claim.id}/${editable ? "edit" : "view"}`);
 	};
 
 	return (
@@ -80,7 +80,7 @@ const ReimbursementClaimListingPage = () => {
 							</Button>
 						))}
 					</div>
-					<Button onClick={() => navigate("/medical-claim/form/create")}>
+					<Button onClick={() => navigate("/medi-claim/create")}>
 						New claim
 					</Button>
 				</div>

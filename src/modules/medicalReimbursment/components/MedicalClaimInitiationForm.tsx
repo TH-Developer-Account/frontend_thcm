@@ -5,11 +5,11 @@ import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
 import FormInput from "../../../components/forms/FormInput";
 import FormHeader from "../../../components/ui/FormHeader";
-import { useMedicalClaimInitiation } from "../useMedicalClaimInitiation";
+import { useMedicalClaimInitiation } from "../hooks/useMedicalClaimInitiation";
 import type {
 	MedicalClaimInitiationFormMode,
 	MedicalClaimInitiationValues,
-} from "../medicalClaimInitiation.types";
+} from "../types/medicalClaimInitiation.types";
 
 type MedicalClaimInitiationFormProps = {
 	claimId?: string;

@@ -1,8 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Eye } from "lucide-react";
 
-import Button from "../../components/common/Button";
-import type { MedicalClaimListingRow } from "./medicalClaimListing.types";
+import Button from "../../../components/common/Button";
+import type { MedicalClaimListingRow } from "../types/medicalClaimListing.types";
+import { NavLink } from "react-router-dom";
+import { Badge } from "../../../components/common/Badge";
 
 const currencyFormatter = new Intl.NumberFormat("en-IN", {
 	style: "currency",
@@ -26,7 +28,22 @@ export const getMedicalClaimListingColumns = ({
 }: {
 	onView: (row: MedicalClaimListingRow) => void;
 }): ColumnDef<MedicalClaimListingRow>[] => [
-	{ accessorKey: "referenceNumber", header: "Reference No." },
+	{
+		accessorKey: "referenceNumber",
+		header: "Reference Number",
+		meta: {
+			headerClassName: "vendor-reference-number",
+			cellClassName: "vendor-reference-number",
+		},
+		cell: ({ row }) => (
+			<NavLink
+				to={`/medi-claim/${row.original.id}/view`}
+				className="epc-number-link"
+			>
+				{row.original.referenceNumber || "--"}
+			</NavLink>
+		),
+	},
 	{ accessorKey: "employeeName", header: "Employee Name" },
 	{ accessorKey: "ticketNumber", header: "Ticket No." },
 	{ accessorKey: "grade", header: "Grade" },
@@ -38,11 +55,7 @@ export const getMedicalClaimListingColumns = ({
 	{
 		accessorKey: "statusLabel",
 		header: "Status",
-		cell: ({ row }) => (
-			<span className="inline-flex rounded-full border px-2.5 py-1 text-xs font-medium">
-				{row.original.statusLabel}
-			</span>
-		),
+		cell: ({ row }) => <Badge status={row.original.statusLabel} />,
 	},
 	{
 		accessorKey: "createdAt",

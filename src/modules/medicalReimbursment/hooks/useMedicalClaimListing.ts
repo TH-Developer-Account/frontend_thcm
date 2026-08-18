@@ -2,11 +2,12 @@ import * as React from "react";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { medicalClaimApi } from "./medicalClaim.api";
+import { medicalClaimApi } from "../api/medicalClaim.api";
+import { medicalClaimKeys } from "../hooks/useMedicalClaimMutations";
 import type {
 	MedicalClaimListingParams,
 	MedicalClaimListingTab,
-} from "./medicalClaimListing.types";
+} from "../types/medicalClaimListing.types";
 
 const DEFAULT_PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 400;
@@ -30,7 +31,7 @@ type UseMedicalClaimListingParams = {
 };
 
 export const useMedicalClaimListing = ({
-	initialTab = "pendingOnMe",
+	initialTab = "claims",
 }: UseMedicalClaimListingParams = {}) => {
 	const [tab, setTab] = useState<MedicalClaimListingTab>(initialTab);
 	const [search, setSearch] = useState("");
@@ -49,7 +50,7 @@ export const useMedicalClaimListing = ({
 	);
 
 	const listingQuery = useQuery({
-		queryKey: ["medical-claim-list", queryParams],
+		queryKey: [...medicalClaimKeys.lists(), queryParams],
 		queryFn: () => medicalClaimApi.listMedicalClaims(queryParams),
 		placeholderData: (previousData) => previousData,
 	});

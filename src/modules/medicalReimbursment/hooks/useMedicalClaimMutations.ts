@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { medicalClaimApi } from "./medicalClaim.api";
+import { medicalClaimApi } from "../api/medicalClaim.api";
 
 export const medicalClaimKeys = {
 	all: ["medical-claims"] as const,
@@ -69,6 +69,36 @@ export function useCloseMedicalClaimMutation() {
 	});
 }
 
+export function useUpdateMedicalClaimMutation() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			claimId,
+			formData,
+		}: {
+			claimId: string;
+			formData: FormData;
+		}) => medicalClaimApi.update(claimId, formData),
+		onSuccess: (_data, variables) =>
+			invalidateMedicalClaims(queryClient, variables.claimId),
+	});
+}
+
+export function useApproveMedicalClaimLineItemMutation() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: ({
+			claimId,
+			lineItem,
+		}: {
+			claimId: string;
+			lineItem: Parameters<typeof medicalClaimApi.approveLineItem>[1];
+		}) => medicalClaimApi.approveLineItem(claimId, lineItem),
+		onSuccess: (_data, variables) =>
+			invalidateMedicalClaims(queryClient, variables.claimId),
+	});
+}
+
 export function usePublicMedicalClaimQuery(token: string, enabled = true) {
 	const normalizedToken = token.trim();
 	return useQuery({
@@ -97,9 +127,11 @@ export function useSubmitPublicMedicalClaimMutation() {
 
 export function useSavePublicMedicalClaimDraftMutation() {
 	const queryClient = useQueryClient();
+
 	return useMutation({
 		mutationFn: ({ token, formData }: { token: string; formData: FormData }) =>
 			medicalClaimApi.savePublicDraft(token, formData),
+
 		onSuccess: (_data, variables) => {
 			void queryClient.invalidateQueries({
 				queryKey: medicalClaimKeys.publicSession(variables.token.trim()),

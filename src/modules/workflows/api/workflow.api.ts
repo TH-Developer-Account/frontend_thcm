@@ -12,6 +12,7 @@ import { api_routes } from "../constant/workflow.constant";
 import type {
 	AttachWorkflowInput,
 	CreateWorkflowPayload,
+	WorkflowModuleListParams,
 	WorkflowStage,
 	WorkflowSummary,
 	WorkflowTemplate,
@@ -43,7 +44,10 @@ const USERS_URL = "/users";
 
 export type WorkflowScope = "created" | "assigned";
 export type WorkflowListScope = "ALL" | "ASSIGNED_TO_ME" | "CREATED_BY_ME";
-export type WorkflowSubjectType = "EVENT_PROPOSAL" | "VENDOR_ONBOARDING";
+export type WorkflowSubjectType =
+	| "EVENT_PROPOSAL"
+	| "VENDOR_ONBOARDING"
+	| "MEDICAL_CLAIM";
 
 export type WorkflowCriteria = Record<string, unknown> & {
 	workflowId?: string;
@@ -283,6 +287,22 @@ export const getWorkflowList = async (
 	};
 };
 
+/**
+ * Maps a raw reusable-workflow API item to the normalized WorkflowSummary shape.
+ * Shared by listReusable and listForModule so the mapping logic lives in one place.
+ */
+const mapReusableWorkflowItem = (
+	item: ReusableWorkflowApiItem,
+): WorkflowSummary => ({
+	id: String(item.id),
+	name: item.name?.trim() || "Unnamed workflow",
+	description: item.description,
+	stageCount: Number(item.stageCount ?? item.stages?.length ?? 0),
+	approverCount: Number(item.approverCount ?? 0),
+	flowType: item.flowType ?? "SEQUENTIAL",
+	updatedAt: item.updatedAt ?? item.updated_at,
+});
+
 export const workflowListApi = {
 	list: getWorkflowList,
 };
@@ -354,7 +374,6 @@ export const workflowApi = {
 				"Unnamed user",
 		}));
 	},
-
 	listReusable: async (
 		scope: WorkflowScope,
 		module: string,
@@ -364,16 +383,34 @@ export const workflowApi = {
 			{ params: { scope, module } },
 		);
 		const rawWorkflows = unwrapData<ReusableWorkflowApiItem[]>(response.data);
+		return (Array.isArray(rawWorkflows) ? rawWorkflows : []).map(
+			mapReusableWorkflowItem,
+		);
+	},
 
-		return (Array.isArray(rawWorkflows) ? rawWorkflows : []).map((item) => ({
-			id: String(item.id),
-			name: item.name?.trim() || "Unnamed workflow",
-			description: item.description,
-			stageCount: Number(item.stageCount ?? item.stages?.length ?? 0),
-			approverCount: Number(item.approverCount ?? 0),
-			flowType: item.flowType ?? "SEQUENTIAL",
-			updatedAt: item.updatedAt ?? item.updated_at,
-		}));
+	/**
+	 * Fetches workflows assigned to the current user for a given app + module
+	 * (e.g. Medical Claim Initiation). Used by modules like medi-claim that only
+	 * support admin-assigned workflows — no on-the-fly attach/build here.
+	 */
+	listForModule: async (
+		params: WorkflowModuleListParams,
+	): Promise<WorkflowSummary[]> => {
+		const response = await ServerAxios.get(
+			api_routes.get_all_workflow_api_route,
+			{
+				params: {
+					appId: params.appId,
+					appKey: params.appKey,
+					moduleKey: params.moduleKey,
+					scope: params.scope,
+				},
+			},
+		);
+		const rawWorkflows = unwrapData<ReusableWorkflowApiItem[]>(response.data);
+		return (Array.isArray(rawWorkflows) ? rawWorkflows : []).map(
+			mapReusableWorkflowItem,
+		);
 	},
 
 	getBuilderStages: async (id: string): Promise<WorkflowStage[]> => {

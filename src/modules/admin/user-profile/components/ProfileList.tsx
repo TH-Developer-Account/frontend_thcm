@@ -147,6 +147,7 @@ const ProfileList = ({
 		[profiles],
 	);
 
+	console.log("profile data", tableData);
 	return (
 		<>
 			<Card

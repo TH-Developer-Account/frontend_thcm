@@ -1,4 +1,4 @@
-import type { ClaimHead } from "./reimbursementClaim.types";
+import type { ClaimHead } from "../types/reimbursementClaim.types";
 
 export const CLAIM_HEAD_OPTIONS: Array<{
 	label: string;
