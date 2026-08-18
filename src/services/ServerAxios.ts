@@ -1,7 +1,8 @@
 // src/api/axios.ts
 import axios from "axios";
+import { emitTokenRefreshed } from "./tokenEvents";
 
-export const API_BASE_URL = "http://localhost:8000/api/v1";
+export const API_BASE_URL = "http://localhost:9000/api/v1";
 
 export const ServerAxios = axios.create({
   baseURL: API_BASE_URL,
@@ -54,7 +55,7 @@ ServerAxios.interceptors.response.use(
 
       try {
         // Call refresh endpoint (sends httpOnly cookie automatically)
-        const { data } = await axios.post(
+        const { data } = await ServerAxios.post(
           `${API_BASE_URL}/auth/refresh`,
           {},
           { withCredentials: true },
@@ -62,6 +63,8 @@ ServerAxios.interceptors.response.use(
 
         const newAccessToken = data.accessToken;
         localStorage.setItem("authToken", newAccessToken);
+
+        emitTokenRefreshed(newAccessToken);
 
         isRefreshing = false;
         onRefreshed(newAccessToken);

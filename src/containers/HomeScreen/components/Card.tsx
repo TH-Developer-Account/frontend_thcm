@@ -1,40 +1,57 @@
 import type { ReactNode } from "react";
+import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-
 interface ActionCardProps {
-  icon: ReactNode;
-  title: string;
-  description: string;
-  subText: string;
-  path: string;
+	icon: ReactNode;
+	title: string;
+	description: string;
+	path: string;
+	appId: string;
+	isActive?: boolean;
+	disabled?: boolean;
 }
 
 function ActionCard({
-  icon,
-  title,
-  description,
-  subText,
-  path,
+	icon,
+	title,
+	description,
+	path,
+	appId,
+	isActive = false,
+	disabled = false,
 }: ActionCardProps) {
-  const navigate = useNavigate();
-  return (
-    <div
-      className="
-      bg-white rounded-xl shadow-md p-6 sm:p-8 text-center
-      hover:shadow-lg transition
-      cursor-pointer
-    "
-      onClick={() => navigate(path)}
-    >
-      <div className="flex justify-center mb-4">{icon}</div>
+	const navigate = useNavigate();
 
-      <h3 className="text-base sm:text-lg font-semibold mb-2">{title}</h3>
+	const handleNavigate = () => {
+		if (disabled) return;
+		localStorage.setItem("appId", appId);
+		navigate(path);
+	};
 
-      <p className="text-sm text-gray-600 mb-3">{description}</p>
+	return (
+		<button
+			type="button"
+			aria-label={`Open ${title}`}
+			disabled={disabled}
+			onClick={handleNavigate}
+			className={`action-card${isActive ? " action-card-active" : ""}`}
+		>
+			{isActive ? <span className="action-card-badge">Active</span> : null}
 
-      <p className="text-sm text-gray-500">{subText}</p>
-    </div>
-  );
+			<span aria-hidden="true" className="action-card-icon">
+				{icon}
+			</span>
+
+			<span className="action-card-copy">
+				<span className="action-card-title">{title}</span>
+				<span className="action-card-description">{description}</span>
+			</span>
+
+			<span aria-hidden="true" className="action-card-arrow">
+				<ArrowRight />
+			</span>
+		</button>
+	);
 }
 
 export default ActionCard;

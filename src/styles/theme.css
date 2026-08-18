@@ -1,0 +1,192 @@
+@reference "tailwindcss";
+
+/* Non-colour design primitives. */
+@layer base {
+	:root {
+		--space-0: 0;
+		--space-0-5: 0.125rem;
+		--space-1: 0.25rem;
+		--space-1-5: 0.375rem;
+		--space-2: 0.5rem;
+		--space-2-5: 0.625rem;
+		--space-3: 0.75rem;
+		--space-3-5: 0.875rem;
+		--space-4: 1rem;
+		--space-5: 1.25rem;
+		--space-6: 1.5rem;
+		--space-7: 1.75rem;
+		--space-8: 2rem;
+		--space-10: 2.5rem;
+		--space-12: 3rem;
+		--space-16: 4rem;
+
+		--content-max-width: 100%;
+		--header-height: 4rem;
+		--sidebar-width: 18rem;
+		--sidebar-collapsed-width: 5rem;
+		--sidebar-mobile-width: min(18rem, 86vw);
+		--sidebar-item-height: 2.75rem;
+		--sidebar-item-padding-inline: var(--space-3);
+		--sidebar-icon-size: 1.25rem;
+		--sidebar-transition-duration: 220ms;
+		--sidebar-transition-easing: cubic-bezier(0.2, 0, 0, 1);
+
+		--border-width-hairline: 0.5px;
+		--border-width-default: 1px;
+		--border-width-strong: 2px;
+		--border-width-stronger: 4px;
+		--border-width-bold: 6px;
+
+		--radius-none: 0;
+		--radius-xs: 0.25rem;
+		--radius-sm: 0.375rem;
+		--radius-md: 0.5rem;
+		--radius-lg: 0.75rem;
+		--radius-xl: 1rem;
+		--radius-2xl: 1.25rem;
+		--radius-full: 9999px;
+		--form-radius: var(--radius-md);
+		--card-radius: var(--radius-lg);
+		--button-radius: var(--radius-md);
+		--badge-radius: var(--radius-full);
+		--chip-radius: var(--radius-full);
+
+		--shadow-xs: 0 1px 2px rgb(15 23 42 / 4%);
+		--shadow-sm: 0 1px 3px rgb(15 23 42 / 7%), 0 1px 2px rgb(15 23 42 / 5%);
+		--shadow-md: 0 4px 12px rgb(15 23 42 / 8%);
+		--shadow-lg: 0 12px 28px rgb(15 23 42 / 12%);
+		--shadow-xl: 0 20px 44px rgb(15 23 42 / 16%);
+		--shadow-overlay: 0 24px 60px rgb(15 23 42 / 24%);
+		--shadow-focus-brand: 0 0 0 3px rgb(243 90 0 / 18%);
+		--shadow-focus-error: 0 0 0 3px rgb(220 38 38 / 16%);
+		--shadow-focus-success: 0 0 0 3px rgb(21 128 61 / 16%);
+
+		--control-height-xs: 1.75rem;
+		--control-height-sm: 2.125rem;
+		--control-height-md: 2.5rem;
+		--control-height-lg: 2.75rem;
+		--control-height-xl: 3rem;
+
+		--duration-instant: 50ms;
+		--duration-fast: 120ms;
+		--duration-normal: 200ms;
+		--duration-slow: 300ms;
+		--ease-standard: cubic-bezier(0.2, 0, 0, 1);
+		--ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+		--ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+
+		--z-below: -1;
+		--z-base: 0;
+		--z-raised: 10;
+		--z-sticky: 20;
+		--z-header: 30;
+		--z-overlay: 50;
+		--z-sidebar: 40;
+		--z-popover: 60;
+		--z-modal: 70;
+		--z-toast: 80;
+
+		--layout-card-gap: var(--space-4);
+		--layout-card-padding: var(--space-4);
+		--layout-section-gap: var(--space-5);
+		--page-row-layout-gap: var(--space-2);
+		--page-row-section-padding: var(--space-3);
+		--page-row-mobile-section-padding: var(--space-2);
+		--page-row-section-radius: var(--radius-lg);
+		--page-row-section-shadow: var(--shadow-xs);
+		--page-row-content-padding-bottom: var(--space-4);
+		--page-row-sticky-offset: 0px;
+		--page-row-sticky-top: var(--page-row-sticky-offset);
+		--page-row-mobile-gap: var(--space-1);
+		--page-row-mobile-content-padding-bottom: var(--space-3);
+
+		--page-section-max-width: var(--content-max-width);
+
+		--page-section-padding-inline-mobile: var(--space-3);
+		--page-section-padding-inline-tablet: var(--space-4);
+		--page-section-padding-inline-desktop: var(--space-4);
+
+		--page-section-padding-top-mobile: var(--space-3);
+		--page-section-padding-bottom-mobile: var(--space-4);
+
+		--page-section-padding-top-tablet: var(--space-4);
+		--page-section-padding-bottom-tablet: var(--space-5);
+
+		--page-section-padding-top-desktop: var(--space-5);
+		--page-section-padding-bottom-desktop: var(--space-6);
+
+		--page-section-content-gap: var(--layout-section-gap);
+
+		--page-header-title-size: var(--font-size-xl);
+		--page-header-title-line-height: var(--line-height-tight);
+		--page-header-title-tracking: var(--tracking-title);
+		--page-header-subtitle-size: var(--font-size-sm);
+		--page-header-meta-size: var(--font-size-xs);
+		--page-header-mobile-title-size: var(--font-size-lg);
+
+		--page-padding-inline-mobile: var(--space-3);
+		--page-padding-inline-tablet: var(--space-5);
+		--page-padding-inline-desktop: var(--space-6);
+		--page-padding-inline-wide: var(--space-8);
+		--page-padding-block-mobile: var(--space-3);
+		--page-padding-block-tablet: var(--space-4);
+		--page-padding-block-desktop: var(--space-5);
+		--page-section-gap-mobile: var(--space-4);
+		--page-section-gap-tablet: var(--space-5);
+		--page-section-gap-desktop: var(--space-6);
+		--page-heading-gap: var(--space-1);
+		--page-header-gap-mobile: var(--space-3);
+		--page-header-gap-desktop: var(--space-4);
+		--page-header-actions-gap: var(--space-2);
+
+		--panel-padding-mobile: var(--space-3);
+		--panel-padding-tablet: var(--space-4);
+		--panel-padding-desktop: var(--space-5);
+		--card-padding-mobile: var(--space-3);
+		--card-padding-desktop: var(--space-4);
+		--card-content-gap: var(--space-3);
+		--card-header-gap: var(--space-1);
+		--card-action-gap: var(--space-2);
+		--form-section-gap: var(--space-5);
+		--form-row-gap: var(--space-4);
+		--form-field-gap: var(--space-1);
+		--form-grid-column-gap: var(--space-4);
+		--form-grid-row-gap: var(--space-3);
+		--form-action-gap: var(--space-2);
+		--table-cell-padding-inline: var(--space-3);
+		--table-cell-padding-block: var(--space-2-5);
+		--table-header-padding-block: var(--space-2-5);
+		--table-toolbar-gap: var(--space-3);
+		--table-footer-padding: var(--space-3);
+		--toolbar-gap: var(--space-2);
+		--toolbar-group-gap: var(--space-1);
+		--toolbar-padding: var(--space-3);
+		--detail-grid-gap: var(--space-3);
+		--detail-item-gap: var(--space-1);
+		--list-item-gap: var(--space-2);
+		--modal-header-padding-inline: var(--space-5);
+		--modal-header-padding-block: var(--space-4);
+		--modal-body-padding: var(--space-5);
+		--modal-footer-padding: var(--space-4) var(--space-5);
+
+		--action-card-min-height: 7rem;
+		--action-card-padding-inline: var(--space-5);
+		--action-card-padding-block: var(--space-5);
+		--action-card-content-gap: var(--space-3);
+		--home-header-height: 5rem;
+		--home-context-height: 3.25rem;
+		--home-logo-height: 2.25rem;
+		--home-logo-height-mobile: 1.75rem;
+		--home-logo-max-width: 24rem;
+		--home-logo-max-width-mobile: 14rem;
+		--module-card-min-height: 14rem;
+		--module-card-padding-inline: var(--space-6);
+		--module-card-padding-block: var(--space-8);
+		--epc-topbar-gap: var(--space-3);
+		--epc-topbar-control-gap: var(--space-2);
+		--epc-topbar-search-width: 18rem;
+		--epc-topbar-toggle-width: 20rem;
+		--epc-topbar-mobile-gap: var(--space-2);
+		--epc-topbar-mobile-search-width: 100%;
+	}
+}

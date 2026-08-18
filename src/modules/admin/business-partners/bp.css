@@ -1,0 +1,743 @@
+@reference "tailwindcss";
+@import "../../../styles/color.css";
+
+/* Common styles for Business Partners module */
+
+button {
+	cursor: pointer;
+}
+
+.brand-text h3 {
+	@apply text-(--color-brand) text-lg font-semibold sm:text-xl md:text-2xl;
+}
+
+.no-padding {
+	@apply px-0 pb-0;
+}
+
+/* BP Listing Page */
+@layer components {
+	.bp-container,
+	.bp-box,
+	.middle-box {
+		@apply w-full max-w-full min-w-0;
+	}
+
+	.bp-listing-card {
+		@apply w-full min-w-0;
+	}
+
+	.bp-listing-toolbar {
+		@apply flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between;
+	}
+
+	.bp-listing-search {
+		@apply w-full min-w-0 sm:max-w-sm;
+	}
+
+	.bp-listing-action {
+		@apply w-full sm:w-auto;
+	}
+
+	.top-box {
+		@apply grid w-full grid-cols-1 gap-2 text-left sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8;
+	}
+
+	.top-box input,
+	.top-box select,
+	.top-box button {
+		@apply w-full text-xs sm:text-sm;
+	}
+}
+
+/* BP View Page */
+@layer components {
+	.bp-view-container {
+		@apply flex h-full w-full min-w-0 flex-col items-start justify-center gap-2;
+	}
+
+	.bp-view-tabs-card {
+		@apply w-full min-w-0;
+	}
+
+	.bp-gen-header-clean {
+		@apply flex w-full min-w-0 flex-col gap-3 border-b border-zinc-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5;
+	}
+
+	.bp-gen-header-left {
+		@apply min-w-0;
+	}
+
+	.bp-gen-title-row {
+		@apply flex items-center gap-3;
+	}
+
+	.bp-gen-title-icon {
+		@apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-[#f35a00];
+	}
+
+	.bp-gen-title-wrap {
+		@apply min-w-0;
+	}
+
+	.bp-gen-title {
+		@apply min-w-0 break-words text-lg font-semibold leading-tight text-zinc-900 sm:text-xl md:text-2xl;
+	}
+
+	.bp-gen-subtext {
+		@apply mt-1 text-xs text-zinc-400 sm:text-sm;
+	}
+
+	.bp-header-status {
+		@apply flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end;
+	}
+
+	.bp-status-label {
+		@apply text-xs font-medium text-zinc-500 sm:text-sm;
+	}
+
+	.bp-gen-content {
+		@apply p-3 sm:p-4;
+	}
+
+	.bp-general-info-cards {
+		@apply grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-5;
+	}
+
+	.bp-info-mini-card {
+		@apply flex items-start gap-3 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-3.5;
+	}
+
+	.bp-info-mini-icon {
+		@apply flex h-9 w-9 shrink-0 items-center justify-center rounded-xl;
+	}
+
+	.bp-info-mini-content {
+		@apply min-w-0;
+	}
+
+	.bp-info-mini-label {
+		@apply text-[11px] font-medium uppercase tracking-wide text-zinc-500;
+	}
+
+	.bp-info-mini-value {
+		@apply mt-1 break-words text-sm font-semibold leading-5 text-zinc-900;
+	}
+
+	.input-b {
+		border-bottom: 1px solid black;
+		outline: none;
+	}
+}
+
+/* BP Summary Cards */
+/* Added only to support the updated BPCards.tsx class names.
+   Visual values are matched to the old inline BPCards UI. */
+@layer components {
+	.bp-summary-grid {
+		@apply grid gap-3 border-b border-zinc-200 bg-zinc-50/70 px-4 py-4 sm:grid-cols-2 xl:grid-cols-4;
+	}
+
+	.bp-stat-card {
+		@apply rounded-xl border border-zinc-200 bg-white px-3 py-2.5 flex items-center justify-between;
+	}
+
+	.bp-stat-card-inner {
+		@apply flex items-start justify-start flex-col;
+	}
+
+	.bp-stat-content {
+		@apply min-w-0;
+	}
+
+	.bp-stat-label {
+		@apply text-[10px] font-medium uppercase tracking-wide text-zinc-400;
+	}
+
+	.bp-stat-value {
+		@apply mt-0.5 truncate text-sm font-medium text-zinc-800;
+	}
+
+	.bp-stat-icon {
+		@apply rounded-md bg-zinc-100 p-1.5 text-zinc-500;
+	}
+
+	.bp-stat-icon--brand,
+	.bp-stat-icon--neutral,
+	.bp-stat-icon--info,
+	.bp-stat-icon--success,
+	.bp-stat-icon--warning {
+		@apply bg-zinc-100 text-zinc-500;
+	}
+}
+
+/* BP Tabs */
+@layer components {
+	.bp-tabs {
+		@apply mb-2 flex w-full min-w-0 flex-nowrap gap-2 overflow-x-auto border-b p-2 font-medium;
+		border-color: var(--color-brand);
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.bp-tab-item {
+		@apply shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors;
+	}
+
+	.bp-tab-item-active {
+		@apply border-[var(--color-brand-soft)] bg-[var(--color-brand-softest)] text-[var(--color-brand)];
+	}
+
+	.bp-tab-item-inactive {
+		@apply border-transparent text-gray-600 hover:bg-gray-100;
+	}
+
+	.bp-tab-label {
+		@apply text-left text-xs sm:text-sm;
+	}
+
+	.bp-tab-content {
+		@apply mt-2 w-full min-w-0;
+	}
+}
+
+/* BP Contact / Info Sections */
+@layer components {
+	.bp-general-info {
+		@apply text-sm;
+	}
+
+	.bp-info-grid {
+		@apply grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2 2xl:grid-cols-3;
+	}
+
+	.bp-info-row {
+		@apply grid grid-cols-1 items-start gap-1 sm:grid-cols-[140px_1fr] sm:gap-3;
+	}
+
+	.bp-info-label {
+		@apply text-xs font-semibold text-gray-900;
+		word-break: break-word;
+	}
+
+	.bp-info-value {
+		@apply text-xs text-gray-700;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+	}
+
+	.bp-info-link {
+		@apply cursor-pointer text-xs font-semibold text-[var(--color-brand)] hover:underline;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+	}
+}
+
+/* Generic reusable detail styles.
+   Same visual style as bp-info-* so you can reuse it in other pages. */
+@layer components {
+	.detail-section {
+		@apply text-sm;
+	}
+
+	.detail-grid {
+		@apply grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2 2xl:grid-cols-3;
+	}
+
+	.detail-row {
+		@apply grid grid-cols-1 items-start gap-1 sm:grid-cols-[140px_1fr] sm:gap-3;
+	}
+
+	.detail-label {
+		@apply text-xs font-medium text-gray-900 mb-2;
+		word-break: break-word;
+	}
+
+	.detail-value {
+		@apply text-xs text-gray-700;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+	}
+
+	.detail-link {
+		@apply cursor-pointer text-xs font-semibold text-[var(--color-brand)] hover:underline;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+	}
+}
+
+/* BP Main Contact Section */
+
+@layer components {
+	.main-contact-card {
+		@apply mb-4 w-full min-w-0;
+	}
+
+	.main-contact-card-header {
+		@apply mb-3 flex min-w-0 items-center justify-between gap-2;
+	}
+
+	.main-contact-card-header h4 {
+		@apply m-0 text-xs font-medium sm:text-sm;
+		color: var(--color-text-primary);
+	}
+
+	.main-contact-manage {
+		@apply w-full min-w-0;
+	}
+
+	.main-contact-search {
+		@apply mb-3 w-full min-w-0 sm:max-w-sm;
+	}
+
+	.main-contact-table {
+		@apply w-full min-w-0 overflow-x-auto rounded-sm;
+		border: var(--border-width-default) solid var(--color-border-default);
+		background-color: var(--color-bg-surface);
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.main-contact-table table {
+		@apply w-full min-w-[42rem] border-collapse;
+	}
+
+	.main-contact-table thead th {
+		@apply px-3 py-2 text-left text-[11px] font-medium sm:text-xs;
+		border-bottom: var(--border-width-default) solid var(--color-border-default);
+		background-color: var(--color-bg-muted);
+		color: var(--color-text-primary);
+		white-space: nowrap;
+	}
+
+	.main-contact-table tbody td {
+		@apply px-3 py-2 text-[11px] sm:text-xs;
+		border-top: var(--border-width-default) solid
+			var(--color-border-subtle, var(--color-border-default));
+		color: var(--color-text-secondary);
+		vertical-align: middle;
+		overflow-wrap: anywhere;
+		word-break: break-word;
+	}
+
+	.main-contact-table tbody tr {
+		transition:
+			background-color 160ms ease,
+			color 160ms ease;
+	}
+
+	.main-contact-table tbody tr:hover {
+		background-color: var(--color-bg-muted);
+	}
+
+	.main-contact-empty {
+		@apply py-4 text-center text-xs;
+		color: var(--color-text-muted);
+	}
+
+	.main-contact-empty-state {
+		@apply m-0 rounded-sm px-3 py-4 text-xs;
+		border: var(--border-width-default) dashed var(--color-border-default);
+		background-color: var(--color-bg-muted);
+		color: var(--color-text-muted);
+	}
+
+	.main-contact-list {
+		@apply grid w-full min-w-0 grid-cols-2 gap-3;
+	}
+
+	.main-contact-list-item {
+		@apply flex min-w-0 flex-col gap-3 rounded-sm p-3 sm:flex-row sm:items-start sm:justify-between;
+		border: var(--border-width-default) solid var(--color-border-default);
+		background-color: var(--color-bg-surface);
+		transition:
+			border-color 160ms ease,
+			background-color 160ms ease,
+			box-shadow 160ms ease;
+	}
+	.main-contact-list-item:hover {
+		border-color: var(--color-border-strong, var(--color-input-border));
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs, none);
+	}
+
+	.main-contact-list-info {
+		@apply min-w-0 flex-1;
+	}
+
+	.main-contact-list-name-row {
+		@apply flex min-w-0 flex-wrap items-center gap-2;
+	}
+
+	.main-contact-list-name {
+		@apply m-0 min-w-0 break-words text-xs font-medium sm:text-sm;
+		color: var(--color-text-primary);
+	}
+
+	.main-contact-default-badge {
+		@apply inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-medium;
+		border: var(--border-width-default) solid var(--color-brand-soft);
+		background-color: var(--color-brand-softest);
+		color: var(--color-brand);
+	}
+
+	.main-contact-list-meta-grid {
+		@apply mt-3 grid min-w-0 grid-cols-1 gap-x-5 gap-y-2 sm:grid-cols-3;
+	}
+
+	.main-contact-list-meta {
+		@apply m-0 grid min-w-0 grid-cols-1 gap-0.5 text-[11px] sm:text-xs;
+		color: var(--color-text-secondary);
+	}
+
+	.main-contact-list-meta span {
+		@apply font-medium;
+		color: var(--color-text-muted);
+	}
+
+	.main-contact-list-meta strong {
+		@apply font-normal;
+		color: var(--color-text-secondary);
+		overflow-wrap: anywhere;
+		word-break: break-word;
+	}
+
+	.main-contact-list-actions {
+		@apply flex shrink-0 flex-wrap items-center justify-end gap-2 sm:min-w-max;
+	}
+
+	@media (max-width: 639px) {
+		.main-contact-list-actions {
+			@apply justify-stretch;
+		}
+
+		.main-contact-list-actions > button {
+			@apply flex-1;
+		}
+
+		.main-contact-table table {
+			@apply min-w-[38rem];
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.main-contact-table tbody tr,
+		.main-contact-list-item {
+			transition: none;
+		}
+	}
+}
+
+/* Address Section */
+@layer components {
+	.bp-section-title {
+		@apply mb-4 text-base font-medium sm:text-lg;
+		color: var(--color-text-primary);
+	}
+
+	.bp-address-layout {
+		@apply flex w-full min-w-0 flex-col gap-3;
+	}
+
+	.bp-address-form-card {
+		@apply w-full min-w-0;
+	}
+
+	.bp-address-form-card .ui-card {
+		@apply w-full min-w-0;
+	}
+
+	.bp-address-form-card .ui-card-body {
+		@apply p-0;
+	}
+
+	.bp-address-form {
+		@apply grid w-full min-w-0 grid-cols-1 items-start gap-3 p-3 md:grid-cols-2 md:gap-4;
+	}
+
+	.bp-address-form-row {
+		@apply grid w-full min-w-0 grid-cols-1 gap-3 md:col-span-2 md:grid-cols-2 md:gap-4;
+	}
+
+	.bp-address-field {
+		@apply min-w-0 text-xs;
+	}
+
+	.bp-address-textarea-field {
+		@apply min-w-0 md:col-span-2;
+	}
+
+	.bp-address-textarea-field .bigtextArea {
+		min-height: 4.5rem;
+	}
+
+	.bp-address-field {
+		@apply min-w-0 text-xs;
+	}
+
+	.bp-address-type-field .radio-group {
+		@apply min-w-0;
+	}
+
+	.bp-address-type-field .radio-group-options {
+		@apply flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2;
+	}
+
+	.bp-address-type-field .form-radio-field {
+		@apply min-w-max;
+	}
+
+	.bp-address-type-field .form-label-row {
+		@apply mb-2;
+	}
+
+	.bp-address-textarea-field .bigtextArea {
+		min-height: 2rem;
+	}
+
+	.bp-address-list-grid {
+		@apply grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4;
+		grid-auto-rows: 1fr;
+	}
+
+	.bp-address-list-card {
+		@apply min-w-0;
+	}
+
+	.bp-address-list-card .ui-card {
+		@apply h-full min-w-0;
+	}
+
+	.bp-address-list-card .ui-card-body {
+		@apply flex min-h-0 flex-1 flex-col;
+	}
+
+	.bp-address-card-header-right {
+		@apply flex flex-wrap items-center justify-end gap-2;
+	}
+
+	.bp-address-header-actions,
+	.bp-address-actions,
+	.bp-address-card-footer-actions {
+		@apply flex w-full flex-wrap items-center justify-end gap-2;
+	}
+
+	.bp-address-default-badge {
+		@apply inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-medium;
+		border: var(--border-width-default) solid var(--color-brand-soft);
+		background-color: var(--color-brand-softest);
+		color: var(--color-brand);
+	}
+
+	.bp-address-list-container {
+		@apply flex h-full w-full min-w-0 flex-col gap-2;
+	}
+
+	.bp-address-info-list {
+		@apply flex min-w-0 flex-col gap-2;
+	}
+
+	.bp-address-info-item {
+		@apply grid grid-cols-1 gap-1 sm:grid-cols-[4.5rem_1fr] sm:gap-3;
+	}
+
+	.bp-address-info-label {
+		@apply m-0 text-xs font-medium;
+		color: var(--color-text-primary);
+	}
+
+	.bp-address-info-value {
+		@apply m-0 text-xs leading-5;
+		color: var(--color-text-secondary);
+		overflow-wrap: anywhere;
+		word-break: break-word;
+	}
+
+	.bp-address-value-clamp {
+		display: -webkit-box;
+		overflow: hidden;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 3;
+	}
+
+	.bp-address-empty {
+		@apply m-0 text-xs;
+		color: var(--color-text-muted);
+	}
+
+	@media (max-width: 767px) {
+		.bp-address-form {
+			@apply gap-3 p-3;
+		}
+
+		.bp-address-textarea-field .bigtextArea {
+			min-height: 4.5rem;
+		}
+	}
+
+	@media (max-width: 639px) {
+		.bp-address-card-footer-actions {
+			@apply justify-stretch;
+		}
+
+		.bp-address-card-footer-actions > button {
+			@apply flex-1;
+		}
+
+		.bp-address-list-grid {
+			grid-auto-rows: auto;
+		}
+	}
+}
+
+/* People Section */
+/* Only needed if you replaced BPPeople.tsx with class-based markup.
+   Values match your old Tailwind styling as closely as possible. */
+@layer components {
+	.bp-people {
+		@apply px-6 py-5;
+	}
+
+	.bp-people-header {
+		@apply mb-4 flex items-center justify-between;
+	}
+
+	.bp-people-title {
+		@apply text-base font-semibold text-zinc-900;
+	}
+
+	.bp-people-description {
+		@apply mt-1 text-sm text-zinc-500;
+	}
+
+	.bp-people-table {
+		@apply overflow-hidden rounded-2xl border border-zinc-200;
+	}
+
+	.bp-people-head {
+		@apply hidden grid-cols-12 border-b border-zinc-200 bg-zinc-50 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:grid;
+	}
+
+	.bp-people-body {
+		@apply divide-y divide-zinc-200 bg-white;
+	}
+
+	.bp-people-row {
+		@apply grid gap-4 px-5 py-4 md:grid-cols-12 md:items-center;
+	}
+
+	.bp-people-user {
+		@apply flex items-center gap-3;
+	}
+
+	.bp-people-avatar {
+		@apply flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-orange-100 to-orange-50 text-sm font-bold text-orange-700;
+	}
+
+	.bp-people-name {
+		@apply font-semibold text-zinc-900;
+	}
+
+	.bp-people-id {
+		@apply text-sm text-zinc-500;
+	}
+
+	.bp-people-role {
+		@apply inline-flex rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700;
+	}
+
+	.bp-people-contact-row {
+		@apply flex items-center gap-2 text-sm text-zinc-600;
+	}
+
+	.bp-people-contact-icon {
+		@apply text-zinc-400;
+	}
+
+	.bp-people-department {
+		@apply text-sm font-medium text-zinc-700;
+	}
+
+	.bp-people-status {
+		@apply inline-flex rounded-full px-3 py-1 text-xs font-semibold;
+	}
+
+	.bp-people-status--active {
+		@apply bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200;
+	}
+
+	.bp-people-status--inactive {
+		@apply bg-zinc-100 text-zinc-600 ring-1 ring-zinc-200;
+	}
+}
+
+/* =====================================================
+   Theme-aware overrides
+   These do not change light UI. They only make dark mode usable.
+===================================================== */
+
+@layer components {
+	[data-theme="dark"] .bp-gen-header-clean {
+		border-color: var(--color-border-default);
+		background-color: var(--color-bg-surface);
+	}
+
+	[data-theme="dark"] .bp-gen-title,
+	[data-theme="dark"] .bp-info-mini-value,
+	[data-theme="dark"] .bp-info-label,
+	[data-theme="dark"] .detail-label,
+	[data-theme="dark"] .main-contact-card-header h4,
+	[data-theme="dark"] .main-contact-list-name,
+	[data-theme="dark"] .bp-section-title,
+	[data-theme="dark"] .bp-address-card-header h5,
+	[data-theme="dark"] .bp-address-info-label,
+	[data-theme="dark"] .bp-people-title,
+	[data-theme="dark"] .bp-people-name {
+		color: var(--color-text-primary);
+	}
+
+	[data-theme="dark"] .bp-gen-subtext,
+	[data-theme="dark"] .bp-status-label,
+	[data-theme="dark"] .bp-info-mini-label,
+	[data-theme="dark"] .bp-info-value,
+	[data-theme="dark"] .detail-value,
+	[data-theme="dark"] .main-contact-list-meta,
+	[data-theme="dark"] .bp-address-info-value,
+	[data-theme="dark"] .bp-people-description,
+	[data-theme="dark"] .bp-people-id,
+	[data-theme="dark"] .bp-people-contact-row,
+	[data-theme="dark"] .bp-people-department {
+		color: var(--color-text-secondary);
+	}
+
+	[data-theme="dark"] .bp-summary-grid,
+	[data-theme="dark"] .bp-info-mini-card,
+	[data-theme="dark"] .main-contact-table thead th,
+	[data-theme="dark"] .bp-people-head,
+	[data-theme="dark"] .bp-people-role {
+		background-color: var(--color-bg-muted);
+		border-color: var(--color-border-default);
+	}
+
+	[data-theme="dark"] .bp-stat-card,
+	[data-theme="dark"] .bp-address-card,
+	[data-theme="dark"] .main-contact-list-item,
+	[data-theme="dark"] .main-contact-table,
+	[data-theme="dark"] .bp-people-table,
+	[data-theme="dark"] .bp-people-body {
+		background-color: var(--color-bg-surface);
+		border-color: var(--color-border-default);
+	}
+
+	[data-theme="dark"] .bp-tab-item-inactive {
+		color: var(--color-text-secondary);
+	}
+
+	[data-theme="dark"] .bp-tab-item-inactive:hover {
+		background-color: var(--color-bg-muted);
+		color: var(--color-text-primary);
+	}
+
+	[data-theme="dark"] .main-contact-table tbody td {
+		border-color: var(--color-border-default);
+		color: var(--color-text-secondary);
+	}
+}

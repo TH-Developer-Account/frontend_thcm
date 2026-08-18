@@ -1,23 +1,23 @@
-interface BadgeProps {
-    children: React.ReactNode
-    variant?: "primary" | "success" | "warning" | "danger" | "disable"
-  }
-  
-  export function Badge({ children, variant = "primary" }: BadgeProps) {
-    const styles = {
-      primary: "bg-blue-300 text-blue-700",
-      success: "bg-green-300 text-green-700",
-      warning: "bg-yellow-300 text-yellow-700",
-      danger: "bg-red-300 text-red-700",
-      disable: "bg-gray-300 text-gray-700"
-    }
-  
-    return (
-      <span
-        className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${styles[variant]}`}
-      >
-        {children}
-      </span>
-    )
-  }
-  
+import {
+	getStatusLabel,
+	getStatusVariant,
+} from "../../modules/marketing/activity-planner/utils/formatters";
+import { resolveStatusStyle, resolveVariantStyle } from "../styles.constant";
+import type { BadgeProps } from "./common.types";
+
+const normalizeStatus = (status?: string | null) =>
+	status?.toLowerCase().trim() ?? "";
+
+export function Badge({ children, status, variant, text }: BadgeProps) {
+	const label = text ?? children ?? getStatusLabel(status);
+
+	const resolvedVariant = variant ?? getStatusVariant(status);
+
+	const normalizedStatus = normalizeStatus(status);
+	const normalizedVariant = normalizeStatus(resolvedVariant);
+
+	const styleClass = resolveStatusStyle({ status: normalizedStatus });
+	const variantClass = resolveVariantStyle({ variant: normalizedVariant });
+
+	return <span className={`badge ${styleClass} ${variantClass}`}>{label}</span>;
+}

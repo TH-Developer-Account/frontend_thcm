@@ -1,58 +1,15 @@
-/* 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-} */
-
-a {
-  font-weight: 600;
-  color: #f35a00;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #f35a00;
+/* Application-root styles only. Design tokens belong in src/styles. */
+.app-root {
+	width: 100%;
+	min-width: 0;
+	min-height: 100dvh;
+	background-color: var(--app-bg);
+	color: var(--app-text);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-.form-head{
-
-  h2{
-    font-size: 1.5rem;
-  }
-  p{
-    font-size: 0.8rem;
-    color: #6b7280;
-    margin: 0;
-    font-family: sans-serif;
-  }
-} 
-h1,h2,h3{
-  font-family: sans-serif !important;
-}
-
-button:hover {
-  border-color: #f35a00;
-}
-button:focus,
-button:focus-visible {
-  outline: none;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #f35a00;
-  }
-}
-input {
-  border-color:#d1d5db;
+.app-container {
+	width: 100%;
+	min-width: 0;
+	max-width: var(--content-max-width);
+	margin-inline: auto;
 }

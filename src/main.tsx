@@ -4,17 +4,28 @@ import { BrowserRouter } from "react-router-dom";
 
 import "./index.css";
 import "./App.css";
-import App from "./App.tsx";
-import { AuthProvider } from "./context/AuthProvider.tsx";
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <div className="container">
-          <App />
-        </div>
-      </AuthProvider>
-    </BrowserRouter>
-  </StrictMode>,
+import App from "./App.tsx";
+import ToastProvider from "./context/Toast/ToastProvider.tsx";
+import { AuthProvider } from "./context/Auth/AuthProvider.tsx";
+import { ThemeProvider } from "./context/Theme/ThemeProvider.tsx";
+
+const rootElement = document.getElementById("root");
+
+if (!rootElement) {
+	throw new Error('Root element with id "root" was not found.');
+}
+
+createRoot(rootElement).render(
+	<StrictMode>
+		<BrowserRouter>
+			<ThemeProvider>
+				<ToastProvider>
+					<AuthProvider>
+						<App />
+					</AuthProvider>
+				</ToastProvider>
+			</ThemeProvider>
+		</BrowserRouter>
+	</StrictMode>,
 );

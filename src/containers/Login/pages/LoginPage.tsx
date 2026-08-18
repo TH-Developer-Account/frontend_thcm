@@ -1,66 +1,71 @@
-import { AuthLayout } from "../../../layout/AuthLayout";
 import { useState } from "react";
+
+import { AuthLayout } from "../../../layout/AuthLayout";
 import EmailLoginForm from "../authforms/EmailLoginForm";
 import MobileLoginForm from "../authforms/MobileLoginForm";
 
-type Tab = "email" | "mobile";
+type LoginTab = "email" | "mobile";
 
 const LoginPage = () => {
-  const [activeTab, setActiveTab] = useState<Tab>("email");
-  const handleTabChange = (tab: Tab) => {
-    setActiveTab(tab);
-  };
+	const [activeTab, setActiveTab] = useState<LoginTab>("email");
 
-  return (
-    <AuthLayout>
-      {/* Logo */}
-      <div className="logos flex justify-center items-center mb-8">
-        <img
-          src="/th-brand-logo.png"
-          alt="logo"
-          className="text-center w-[120px]"
-        />
-      </div>
+	return (
+		<AuthLayout
+			eyebrow="Secure access"
+			title="Control every operation from one system"
+			description="Access marketing, administration, master data, dealer, and service workflows from a unified enterprise platform."
+		>
+			<header className="auth-form-header">
+				<div className="auth-mobile-logo">
+					<img src="/th-brand-logo.png" alt="Tata Hitachi" />
+				</div>
 
-      {/* Tabs */}
-      <div className="flex mb-6 border-b border-gray-200">
-        <button
-          className={`flex-1 py-2 font-bold text-sm  transition-colors duration-00 ease-in-out cursor-pointer ${
-            activeTab === "email"
-              ? "text-gray-900 border-b-2 border-[#f35a00]"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-          onClick={() => handleTabChange("email")}
-        >
-          Email
-        </button>
-        <button
-          className={`flex-1 py-2 font-bold text-sm transition-colors duration-200 ease-in-out cursor-pointer ${
-            activeTab === "mobile"
-              ? "text-gray-900 border-b-2 border-[#f35a00]"
-              : "text-gray-500 hover:text-gray-700"
-          }`}
-          onClick={() => handleTabChange("mobile")}
-        >
-          Mobile
-        </button>
-      </div>
+				<p className="auth-form-eyebrow">Welcome back</p>
 
-      {/* Email Login Form */}
-      {activeTab === "email" && <EmailLoginForm />}
+				<h2 className="auth-form-title">Sign in to your account</h2>
 
-      {/* Mobile Login Form */}
-      {activeTab === "mobile" && <MobileLoginForm />}
+				<p className="auth-form-description">
+					Enter your registered credentials to continue.
+				</p>
+			</header>
 
-      {/* Sign Up Link */}
-      <p className="text-sm text-gray-500 text-center mt-2">
-        Don’t have an account?{" "}
-        <a href="#" className="text-blue-600 hover:underline">
-          Sign up
-        </a>
-      </p>
-    </AuthLayout>
-  );
+			<div className="auth-tabs" role="tablist" aria-label="Login method">
+				<button
+					type="button"
+					role="tab"
+					aria-selected={activeTab === "email"}
+					className={[
+						"auth-tab",
+						activeTab === "email" ? "auth-tab-active" : "",
+					]
+						.filter(Boolean)
+						.join(" ")}
+					onClick={() => setActiveTab("email")}
+				>
+					Email
+				</button>
+
+				<button
+					type="button"
+					role="tab"
+					aria-selected={activeTab === "mobile"}
+					className={[
+						"auth-tab",
+						activeTab === "mobile" ? "auth-tab-active" : "",
+					]
+						.filter(Boolean)
+						.join(" ")}
+					onClick={() => setActiveTab("mobile")}
+				>
+					Mobile
+				</button>
+			</div>
+
+			<div className="auth-tab-panel">
+				{activeTab === "email" ? <EmailLoginForm /> : <MobileLoginForm />}
+			</div>
+		</AuthLayout>
+	);
 };
 
 export default LoginPage;

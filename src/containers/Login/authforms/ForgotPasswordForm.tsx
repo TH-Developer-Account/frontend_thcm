@@ -1,135 +1,198 @@
-import { useState } from "react";
-import { ServerAxios } from "../../../services/ServerAxios";
-import Button from "../../../components/common/Button";
-import FormInput from "../../../components/FormElements/FormInput";
-import { EMAIL_REGEX } from "../constant";
-import { api_routes } from "../constant";
+import {
+	useState,
+	type ChangeEvent,
+	type FocusEvent,
+	type FormEvent,
+} from "react";
+import { Link } from "react-router-dom";
+import { CheckCircle2 } from "lucide-react";
 
-type Errors = {
-  email?: string;
+import Button from "../../../components/common/Button";
+import FormInput from "../../../components/forms/FormInput";
+import { useToast } from "../../../context/Auth/AuthContext";
+import { ServerAxios } from "../../../services/ServerAxios";
+import { EMAIL_REGEX, api_routes } from "../constant";
+
+type ForgotPasswordErrors = {
+	email?: string;
+};
+
+type ForgotPasswordState = {
+	email: string;
+	loading: boolean;
+	submitted: boolean;
 };
 
 const ForgotPasswordForm = () => {
-  const [state, setState] = useState({
-    email: "",
-    loading: false,
-    errors: {} as Errors,
-    showSendMailStatus: false,
-  });
+	const { showToast } = useToast();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setState((prev) => ({ ...prev, [name]: value }));
-    setState((prev) => {
-      if (!prev.errors[name as keyof Errors]) return prev; // nothing to clear
+	const [state, setState] = useState<ForgotPasswordState>({
+		email: "",
+		loading: false,
+		submitted: false,
+	});
 
-      const newErrors = { ...prev.errors };
-      delete newErrors[name as keyof Errors];
-      return { ...prev, errors: newErrors };
-    });
-  };
+	const [errors, setErrors] = useState<ForgotPasswordErrors>({});
 
-  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    setState((prev) => ({ ...prev, loading: true }));
-    try {
-      // API Route is defined in constant.ts
-      const response = await ServerAxios.post(
-        api_routes.forgot_password_api_route,
-        {
-          email: state.email,
-        },
-      );
-      setState((prev) => ({ ...prev, showSendMailStatus: true }));
-      console.log("Success:", response.data);
-    } catch (error: unknown) {
-      console.error(" error:", error);
-    } finally {
-      setState((prev) => ({ ...prev, loading: false }));
-    }
-  };
+	const validateForm = () => {
+		const nextErrors: ForgotPasswordErrors = {};
 
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+		if (!state.email.trim()) {
+			nextErrors.email = "Email is required";
+		} else if (!EMAIL_REGEX.test(state.email.trim())) {
+			nextErrors.email = "Enter a valid email address";
+		}
 
-    setState((prev) => {
-      const newErrors = { ...prev.errors };
+		setErrors(nextErrors);
 
-      if (name === "email") {
-        if (!value) {
-          newErrors.email = "Please fill in the email field";
-        } else if (!EMAIL_REGEX.test(value)) {
-          newErrors.email = "Invalid email format";
-        } else {
-          delete newErrors.email;
-        }
-      }
+		return Object.keys(nextErrors).length === 0;
+	};
 
-      return {
-        ...prev,
-        errors: newErrors,
-      };
-    });
-  };
+	const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+		setState((current) => ({
+			...current,
+			email: event.target.value,
+		}));
 
-  return (
-    <>
-      {!state.showSendMailStatus ? (
-        <form className="space-y-4">
-          <div className="form-head mb-4">
-            {/* Logo */}
-            <div className="logos flex justify-center items-center mb-4">
-              <img
-                src="src\assets\sendlink.png"
-                alt="logo"
-                className="text-center w-[100px]"
-              />
-            </div>
-            <h2 className=" text-xl md:text-xl font-semibold tracking-tight text-gray-900">
-              Forgot your Password?
-            </h2>
-            <p className="">Please enter your email</p>
-          </div>
-          <FormInput
-            name="email"
-            label="Email"
-            placeholder="john@mail.com"
-            value={state.email}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            error={state.errors?.email}
-          />
+		setErrors({});
+	};
 
-          <Button
-            text="Send Reset Link"
-            onClick={handleSubmit}
-            disabled={state.loading}
-          />
-        </form>
-      ) : (
-        <form className="space-y-4">
-          <div className="form-head mb-4">
-            {/* Logo */}
-            <div className="logos flex justify-center items-center mb-4">
-              <img
-                src="src\assets\mailsent.png"
-                alt="logo"
-                className="text-center w-[120px]"
-              />
-            </div>
-            <h2 className=" text-xl md:text-xl font-semibold tracking-tight text-gray-900">
-              Check your Email
-            </h2>
-            <p className="">
-              A link has been sent to your email, please check.
-            </p>
-            <a href="/login">
-              <Button text="Back to login" className="mt-6" />
-            </a>
-          </div>
-        </form>
-      )}
-    </>
-  );
+	const handleBlur = (event: FocusEvent<HTMLInputElement>) => {
+		const value = event.target.value.trim();
+
+		if (!value) {
+			setErrors({
+				email: "Email is required",
+			});
+		} else if (!EMAIL_REGEX.test(value)) {
+			setErrors({
+				email: "Enter a valid email address",
+			});
+		} else {
+			setErrors({});
+		}
+	};
+
+	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+
+		if (!validateForm()) return;
+
+		setState((current) => ({
+			...current,
+			loading: true,
+		}));
+
+		try {
+			const response = await ServerAxios.post(
+				api_routes.forgot_password_api_route,
+				{
+					email: state.email.trim(),
+				},
+			);
+
+			setState((current) => ({
+				...current,
+				submitted: true,
+			}));
+
+			showToast({
+				type: "success",
+				title: "Reset link sent",
+				description:
+					response.data.message ||
+					"If the email exists, a password reset link has been sent.",
+			});
+		} catch (error: unknown) {
+			const message =
+				error instanceof Error
+					? error.message
+					: "Unable to send the password reset link.";
+
+			showToast({
+				type: "error",
+				title: "Request failed",
+				description: message,
+			});
+		} finally {
+			setState((current) => ({
+				...current,
+				loading: false,
+			}));
+		}
+	};
+
+	if (state.submitted) {
+		return (
+			<div className="auth-result">
+				<div className="auth-result-icon">
+					<CheckCircle2 aria-hidden="true" size={28} strokeWidth={1.75} />
+				</div>
+
+				<header className="auth-form-header">
+					<p className="auth-form-eyebrow">Request accepted</p>
+
+					<h2 className="auth-form-title">Check your email</h2>
+
+					<p className="auth-form-description">
+						If an account is registered for <strong>{state.email}</strong>, a
+						password reset link has been sent.
+					</p>
+				</header>
+
+				<Link to="/login" className="auth-primary-link">
+					Back to sign in
+				</Link>
+			</div>
+		);
+	}
+
+	return (
+		<>
+			<header className="auth-form-header">
+				<div className="auth-mobile-logo">
+					<img src="/th-brand-logo.png" alt="Tata Hitachi" />
+				</div>
+
+				<p className="auth-form-eyebrow">Password recovery</p>
+
+				<h2 className="auth-form-title">Forgot your password?</h2>
+
+				<p className="auth-form-description">
+					Enter your registered email address and we will send you a secure
+					reset link.
+				</p>
+			</header>
+
+			<form className="auth-form" onSubmit={handleSubmit} noValidate>
+				<FormInput
+					name="email"
+					type="email"
+					label="Email address"
+					placeholder="name@company.com"
+					value={state.email}
+					onChange={handleChange}
+					onBlur={handleBlur}
+					error={errors.email}
+					autoComplete="email"
+					required
+				/>
+
+				<Button
+					type="submit"
+					appearance="cta"
+					variant="brand"
+					text={state.loading ? "Sending link..." : "Send reset link"}
+					disabled={state.loading}
+					fullWidth
+				/>
+
+				<Link to="/login" className="auth-secondary-link">
+					Back to sign in
+				</Link>
+			</form>
+		</>
+	);
 };
+
 export default ForgotPasswordForm;

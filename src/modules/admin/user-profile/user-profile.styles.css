@@ -1,0 +1,383 @@
+@layer components {
+	@layer components {
+		.permission-matrix-table-shell {
+			@apply hidden min-w-0 overflow-auto md:block;
+
+			max-height: min(62dvh, 35rem);
+			border-top: var(--border-width-default) solid var(--color-border-default);
+		}
+
+		.permission-matrix-table {
+			@apply min-w-[42rem];
+		}
+
+		.permission-matrix-header,
+		.permission-matrix-app-row,
+		.permission-matrix-module-row {
+			@apply grid min-w-0;
+
+			grid-template-columns: minmax(18rem, 1fr) 5.5rem 5.5rem;
+		}
+
+		.permission-matrix-header {
+			@apply sticky top-0 z-10;
+
+			background-color: var(--color-table-header-bg);
+			color: var(--color-table-header-text);
+			border-bottom: var(--border-width-default) solid var(--color-table-border);
+		}
+
+		.permission-matrix-header-cell {
+			@apply flex min-w-0 items-center px-4 py-2 uppercase;
+
+			font-family: var(--font-mono);
+			font-size: var(--font-size-2xs);
+			font-weight: var(--font-weight-medium);
+			letter-spacing: var(--tracking-wide);
+		}
+
+		.permission-matrix-header-main {
+			@apply justify-start;
+		}
+
+		.permission-matrix-action-cell {
+			@apply flex items-center justify-center;
+
+			border-left: var(--border-width-default) solid var(--color-table-border);
+		}
+
+		.permission-matrix-group {
+			border-bottom: var(--border-width-default) solid
+				var(--color-border-subtle);
+		}
+
+		.permission-matrix-group:last-child {
+			border-bottom: 0;
+		}
+
+		.permission-matrix-app-row {
+			background-color: var(--color-bg-surface-subtle);
+			border-bottom: var(--border-width-default) solid
+				var(--color-border-subtle);
+		}
+
+		.permission-matrix-app-main-cell {
+			@apply flex min-w-0 items-center justify-between gap-3 px-4 py-3;
+		}
+
+		.permission-matrix-app-trigger {
+			@apply flex min-w-0 flex-1 items-center gap-3 text-left;
+
+			border: 0;
+			background: transparent;
+			color: var(--color-text-primary);
+		}
+
+		.permission-matrix-app-trigger:focus-visible {
+			@apply outline-none;
+
+			box-shadow: var(--shadow-focus-brand);
+		}
+
+		.permission-matrix-chevron {
+			@apply shrink-0 transition-transform;
+
+			color: var(--color-icon-secondary);
+		}
+
+		.permission-matrix-chevron-collapsed {
+			@apply -rotate-90;
+		}
+
+		.permission-matrix-app-avatar {
+			@apply inline-flex h-8 w-8 shrink-0 items-center justify-center uppercase;
+
+			border: var(--border-width-default) solid var(--color-border-default);
+			border-radius: var(--radius-xs);
+			background-color: var(--color-bg-surface);
+			color: var(--color-icon-secondary);
+			font-family: var(--font-mono);
+			font-size: var(--font-size-2xs);
+			font-weight: var(--font-weight-medium);
+			letter-spacing: var(--tracking-wide);
+		}
+
+		.permission-matrix-app-copy,
+		.permission-matrix-module-copy {
+			@apply flex min-w-0 flex-col;
+		}
+
+		.permission-matrix-app-name,
+		.permission-matrix-module-name {
+			@apply truncate;
+
+			color: var(--color-text-primary);
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-medium);
+			line-height: var(--line-height-tight);
+		}
+
+		.permission-matrix-app-meta,
+		.permission-matrix-module-key {
+			@apply truncate;
+
+			color: var(--color-text-muted);
+			font-family: var(--font-mono);
+			font-size: var(--font-size-2xs);
+			line-height: var(--line-height-tight);
+		}
+
+		.permission-matrix-app-action {
+			background-color: var(--color-bg-surface-subtle);
+		}
+
+		.permission-matrix-module-row {
+			background-color: var(--color-bg-surface);
+		}
+
+		.permission-matrix-module-row-even {
+			background-color: var(--color-table-striped);
+		}
+
+		.permission-matrix-module-row:hover,
+		.permission-matrix-app-row:hover {
+			background-color: var(--color-bg-surface-hover);
+		}
+
+		.permission-matrix-module-main {
+			@apply flex min-w-0 items-center gap-3 px-4 py-2.5 pl-12;
+		}
+
+		.permission-matrix-module-rail {
+			@apply h-6 w-0.5 shrink-0;
+
+			border-radius: var(--radius-full);
+			background-color: var(--color-border-strong);
+		}
+
+		.permission-matrix-empty {
+			@apply flex min-h-36 items-center justify-center px-4 py-8 text-center;
+
+			color: var(--color-text-muted);
+			font-size: var(--font-size-sm);
+		}
+	}
+
+	.permission-matrix-empty {
+		@apply flex min-h-36 items-center justify-center px-4 py-8 text-center;
+
+		color: var(--color-text-muted);
+		font-size: var(--font-size-sm);
+	}
+
+	.permission-matrix-mobile-list {
+		@apply flex flex-col gap-3 p-3 md:hidden;
+	}
+
+	.permission-matrix-mobile-card {
+		@apply min-w-0 overflow-hidden border;
+
+		border-color: var(--color-border-default);
+		border-radius: var(--radius-md);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.permission-matrix-mobile-app {
+		@apply flex min-w-0 items-start justify-between gap-3 p-3;
+
+		background-color: var(--color-bg-surface-subtle);
+		border-bottom: var(--border-width-default) solid var(--color-border-subtle);
+	}
+
+	.permission-matrix-mobile-trigger {
+		@apply flex-1;
+	}
+
+	.permission-matrix-mobile-app-actions,
+	.permission-matrix-mobile-module-actions {
+		@apply grid grid-cols-2 gap-2;
+	}
+
+	.permission-matrix-mobile-app-actions {
+		@apply p-3;
+
+		border-bottom: var(--border-width-default) solid var(--color-border-subtle);
+	}
+
+	.permission-matrix-mobile-modules {
+		@apply flex flex-col;
+	}
+
+	.permission-matrix-mobile-module {
+		@apply flex min-w-0 flex-col gap-3 p-3;
+
+		border-top: var(--border-width-default) solid var(--color-border-subtle);
+	}
+
+	.permission-matrix-mobile-module:first-child {
+		border-top: 0;
+	}
+
+	.permission-matrix-mobile-check-row {
+		@apply flex min-w-0 items-center justify-between gap-3 border px-3 py-2 capitalize;
+
+		border-color: var(--color-border-default);
+		border-radius: var(--radius-xs);
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.permission-matrix-mobile-check-row-compact {
+		@apply py-1.5;
+	}
+
+	.permission-matrix-footer {
+		@apply flex shrink-0 flex-col-reverse gap-2 border-t p-3 sm:flex-row sm:items-center sm:justify-between sm:px-4;
+
+		border-color: var(--color-border-default);
+		background-color: var(--color-bg-surface);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.permission-matrix-chevron {
+			transition-duration: 0.01ms;
+		}
+	}
+}
+@layer components {
+	.assign-users {
+		@apply flex min-h-0 flex-col gap-3;
+	}
+
+	.assign-users-toolbar {
+		@apply flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between;
+	}
+
+	.assign-users-search {
+		@apply min-w-0 flex-1 sm:max-w-sm;
+	}
+
+	.assign-users-count {
+		@apply inline-flex w-fit items-center gap-1 border px-2.5 py-1;
+
+		border-color: var(--color-border-default);
+		border-radius: var(--radius-xs);
+		background-color: var(--color-bg-surface-subtle);
+		color: var(--color-text-muted);
+		font-family: var(--font-mono);
+		font-size: var(--font-size-2xs);
+		letter-spacing: var(--tracking-wide);
+		text-transform: uppercase;
+	}
+
+	.assign-users-count span {
+		color: var(--color-text-brand);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.assign-users-list {
+		@apply flex min-h-0 flex-col gap-2 overflow-y-auto pr-1;
+
+		max-height: min(58dvh, 32rem);
+	}
+
+	.assign-user-row {
+		@apply grid min-w-0 cursor-pointer items-center gap-3 border px-3 py-2.5 transition;
+
+		grid-template-columns: auto minmax(0, 1.1fr) minmax(0, 1fr) minmax(
+				7rem,
+				0.6fr
+			) auto;
+
+		border-color: var(--color-border-default);
+		border-radius: var(--radius-sm);
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-primary);
+	}
+
+	.assign-user-row:hover {
+		border-color: var(--color-border-hover);
+		background-color: var(--color-bg-surface-hover);
+	}
+
+	.assign-user-row:focus-within {
+		border-color: var(--color-border-brand);
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.assign-user-row-selected {
+		border-color: var(--color-brand-soft);
+		background-color: var(--color-brand-subtle);
+	}
+
+	.assign-user-avatar {
+		@apply shrink-0;
+	}
+
+	.assign-user-main,
+	.assign-user-meta {
+		@apply min-w-0 truncate;
+	}
+
+	.assign-user-main {
+		@apply flex flex-col;
+	}
+
+	.assign-user-name {
+		@apply truncate;
+
+		color: var(--color-text-primary);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+	}
+
+	.assign-user-meta,
+	.assign-user-mobile-meta {
+		color: var(--color-text-muted);
+		font-size: var(--font-size-xs);
+		line-height: var(--line-height-tight);
+	}
+
+	.assign-user-mobile-meta {
+		@apply hidden truncate;
+	}
+
+	.assign-user-check {
+		@apply flex shrink-0 items-center justify-center;
+	}
+
+	.assign-users-state {
+		@apply flex min-h-32 items-center justify-center border px-4 py-8 text-center;
+
+		border-color: var(--color-border-default);
+		border-radius: var(--radius-sm);
+		background-color: var(--color-bg-surface-subtle);
+		color: var(--color-text-muted);
+		font-size: var(--font-size-sm);
+	}
+
+	@media (max-width: 767px) {
+		.assign-users-list {
+			max-height: min(62dvh, 34rem);
+		}
+
+		.assign-user-row {
+			grid-template-columns: auto minmax(0, 1fr) auto;
+			gap: var(--space-2);
+			padding: var(--space-2);
+		}
+
+		.assign-user-email,
+		.assign-user-phone {
+			display: none;
+		}
+
+		.assign-user-mobile-meta {
+			@apply block;
+		}
+	}
+}
