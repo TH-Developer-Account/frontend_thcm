@@ -1,15 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
 	CheckCircle2,
+	Eye,
+	FileText,
 	Pencil,
 	Plus,
 	RotateCcw,
 	Save,
 	Trash2,
+	XCircle,
 } from "lucide-react";
 
 import Button from "../../../components/common/Button";
+import { Modal } from "../../../components/common/Modal";
 import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
 
@@ -25,6 +29,14 @@ import type {
 	ClaimHead,
 	ReimbursementClaimActor,
 } from "../types/reimbursementClaim.types";
+
+import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
+
+import {
+	isImageUpload,
+	isPdfUpload,
+} from "../../../components/ui/FileUpload/fileUpload.helpers";
+
 import DatePickerInput from "../../../components/common/DatePickerInput";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
 import { formatDate } from "../../../utils/format";
@@ -41,11 +53,13 @@ type ClaimHeadEntryTableProps = {
 	savingId?: string | null;
 
 	deletingId?: string | null;
-	approvingId?: string | null;
 
 	isViewMode?: boolean;
+
 	actorRole?: ReimbursementClaimActor;
+
 	canApproveLineItems?: boolean;
+
 	canEditClaimRows?: boolean;
 
 	errors: ClaimHeadValidationErrors;
@@ -63,13 +77,21 @@ type ClaimHeadEntryTableProps = {
 	onCancelEdit: () => void;
 
 	onDeleteRow: (id: string) => void;
+
 	onApprovedAmountChange: (id: string, value: string) => void;
-	onApproveRow: (id: string) => void | Promise<void>;
+
+	onToggleLineItemStatus: (id: string) => void;
+
+	onRemarksChange: (id: string, value: string) => void;
+
+	lineItemRemarks: Record<string, string>;
 };
 
 const DEFAULT_PAGE_SIZE = 5;
 
 const SKELETON_ROWS = 5;
+
+type PreviewTarget = FileUploadValue;
 
 export const ClaimHeadEntryTable = ({
 	items,
@@ -78,7 +100,6 @@ export const ClaimHeadEntryTable = ({
 	editingId,
 	savingId,
 	deletingId,
-	approvingId,
 	isViewMode = false,
 	actorRole = "creator",
 	canApproveLineItems = false,
@@ -89,12 +110,18 @@ export const ClaimHeadEntryTable = ({
 	onEditRow,
 	onCancelEdit,
 	onDeleteRow,
+	onToggleLineItemStatus,
+	onRemarksChange,
+	lineItemRemarks,
 	onApprovedAmountChange,
-	onApproveRow,
 }: ClaimHeadEntryTableProps) => {
 	const [pageIndex, setPageIndex] = useState(0);
 
 	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+
+	const [previewTarget, setPreviewTarget] = useState<PreviewTarget | null>(
+		null,
+	);
 
 	const pageCount = Math.max(1, Math.ceil(savedItems.length / pageSize));
 
@@ -102,43 +129,77 @@ export const ClaimHeadEntryTable = ({
 		setPageIndex((current) => Math.min(current, pageCount - 1));
 	}, [pageCount]);
 
-	const paginatedItems = useMemo(() => {
-		const start = pageIndex * pageSize;
-
-		return savedItems.slice(start, start + pageSize);
-	}, [savedItems, pageIndex, pageSize]);
-
 	const handlePageSizeChange = (nextPageSize: number) => {
 		setPageSize(nextPageSize);
-
 		setPageIndex(0);
 	};
+
 	const toDatePickerValue = (value?: string): Date | undefined => {
-		if (!value) return undefined;
+		if (!value) {
+			return undefined;
+		}
 
 		const date = new Date(value.includes("T") ? value : `${value}T00:00:00`);
 
 		return Number.isNaN(date.getTime()) ? undefined : date;
 	};
+
 	const toDateString = (date: Date): string => {
 		const year = date.getFullYear();
+
 		const month = String(date.getMonth() + 1).padStart(2, "0");
+
 		const day = String(date.getDate()).padStart(2, "0");
 
 		return `${year}-${month}-${day}`;
 	};
+
 	const columns = useMemo<ColumnDef<ClaimHeadRow>[]>(() => {
-		const showsApprovalAmounts = actorRole !== "creator";
+		const showsReviewColumn = actorRole === "approver";
+
+		const showsApprovalAmounts = actorRole === "approver";
+
 		const tableColumns: ColumnDef<ClaimHeadRow>[] = [
 			{
-				id: "serialNumber",
-				header: "S.No",
+				id: "flag",
+
+				header: "",
+
 				enableSorting: false,
+
+				cell: ({ row }) => {
+					if (!showsReviewColumn) {
+						return null;
+					}
+
+					const isApproved = row.original.approvalStatus === "APPROVED";
+
+					return (
+						<span
+							aria-hidden="true"
+							className={`block h-full min-h-6 w-1 rounded-full ${
+								isApproved ? "bg-approved" : "bg-rejected"
+							}`}
+						/>
+					);
+				},
+			},
+
+			{
+				id: "serialNumber",
+
+				header: "S.No",
+
+				enableSorting: false,
+
 				cell: ({ row }) => pageIndex * pageSize + row.index + 1,
 			},
+
 			{
 				accessorKey: "claimHead",
+
 				header: "Claim Head",
+
 				cell: ({ row }) => {
 					const option = CLAIM_HEAD_OPTIONS.find(
 						(item) => item.value === row.original.claimHead,
@@ -154,9 +215,12 @@ export const ClaimHeadEntryTable = ({
 					);
 				},
 			},
+
 			{
 				accessorKey: "billNumber",
+
 				header: "Bill No.",
+
 				cell: ({ row }) => {
 					const value = row.original.billNumber || "--";
 
@@ -167,9 +231,12 @@ export const ClaimHeadEntryTable = ({
 					);
 				},
 			},
+
 			{
 				accessorKey: "billName",
+
 				header: "Bill Description",
+
 				cell: ({ row }) => {
 					const value = row.original.billName || "--";
 
@@ -180,29 +247,24 @@ export const ClaimHeadEntryTable = ({
 					);
 				},
 			},
-			// {
-			// 	accessorKey: "patient",
-			// 	header: "Patient",
-			// 	cell: ({ row }) => {
-			// 		const option = PATIENT_OPTIONS.find(
-			// 			(item) => item.value === row.original.patient,
-			// 		);
 
-			// 		return option?.label ?? "--";
-			// 	},
-			// },
 			{
 				accessorKey: "billDate",
+
 				header: "Bill Date",
+
 				cell: ({ row }) => (
 					<span className="whitespace-nowrap">
 						{formatDate(row.original.billDate)}
 					</span>
 				),
 			},
+
 			{
 				accessorKey: "amount",
+
 				header: "Claimed Amount",
+
 				cell: ({ row }) => {
 					const amount = Number(row.original.amount || 0);
 
@@ -213,32 +275,64 @@ export const ClaimHeadEntryTable = ({
 					);
 				},
 			},
+
 			{
 				accessorKey: "fileName",
-				header: "Attachment",
-				enableSorting: false,
-				cell: ({ row }) => {
-					const fileName =
-						row.original.fileName ?? row.original.file?.name ?? "--";
-					const fileUrl = row.original.attachment?.url;
 
-					return fileUrl ? (
-						<a
-							className="block max-w-52 truncate text-brand underline-offset-2 hover:underline"
-							href={fileUrl}
-							target="_blank"
-							rel="noreferrer"
-							title={`Open ${fileName}`}
-						>
-							{fileName}
-						</a>
-					) : (
-						<span
-							className="block max-w-52 truncate text-brand"
-							title={fileName}
-						>
-							{fileName}
-						</span>
+				header: "Attachment",
+
+				enableSorting: false,
+
+				cell: ({ row }) => {
+					const claim = row.original;
+
+					/**
+					 * `attachment` is the normalized source
+					 * for both local and remote files.
+					 */
+					const attachment = claim.attachment;
+
+					const fileName = claim.fileName ?? attachment?.name ?? "--";
+
+					if (!attachment?.url || fileName === "--") {
+						return (
+							<span
+								className="block max-w-52 truncate text-iron"
+								title={fileName}
+							>
+								{fileName}
+							</span>
+						);
+					}
+
+					const openPreview = (event: MouseEvent) => {
+						event.preventDefault();
+						event.stopPropagation();
+
+						setPreviewTarget(attachment);
+					};
+
+					return (
+						<div className="flex max-w-52 items-center gap-1.5">
+							<button
+								type="button"
+								className="min-w-0 flex-1 truncate text-left text-brand underline-offset-2 hover:underline"
+								title={`View ${fileName}`}
+								onClick={openPreview}
+							>
+								<span className="truncate">{fileName}</span>
+							</button>
+
+							<button
+								type="button"
+								className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-600 transition-colors hover:border-brand hover:text-brand"
+								title={`View ${fileName}`}
+								aria-label={`View ${fileName}`}
+								onClick={openPreview}
+							>
+								<Eye className="size-3.5" aria-hidden="true" />
+							</button>
+						</div>
 					);
 				},
 			},
@@ -247,11 +341,14 @@ export const ClaimHeadEntryTable = ({
 		if (showsApprovalAmounts) {
 			tableColumns.push({
 				id: "approvedAmount",
+
 				header: "Approved Claim Amount",
+
 				enableSorting: false,
+
 				cell: ({ row }) => {
 					const claim = row.original;
-					const isApproving = approvingId === claim.id;
+
 					return (
 						<div className="min-w-40">
 							<FormInput
@@ -259,7 +356,6 @@ export const ClaimHeadEntryTable = ({
 								inputMode="decimal"
 								disabled={
 									loading ||
-									isApproving ||
 									!canApproveLineItems ||
 									claim.approvalStatus === "APPROVED"
 								}
@@ -274,11 +370,92 @@ export const ClaimHeadEntryTable = ({
 			});
 		}
 
+		if (showsReviewColumn) {
+			tableColumns.push({
+				id: "remarks",
+
+				header: "Remarks",
+
+				enableSorting: false,
+
+				cell: ({ row }) => {
+					const claim = row.original;
+
+					const isApproved = claim.approvalStatus === "APPROVED";
+
+					const disabled = loading || !canApproveLineItems;
+
+					return !isApproved ? (
+						<FormInput
+							placeholder="Remarks (optional)"
+							value={lineItemRemarks[claim.id] ?? ""}
+							disabled={disabled}
+							onChange={(event) =>
+								onRemarksChange(claim.id, event.target.value)
+							}
+							aria-label={`Remarks for bill ${claim.billNumber}`}
+						/>
+					) : null;
+				},
+			});
+		}
+
+		if (showsReviewColumn) {
+			tableColumns.push({
+				id: "review",
+
+				header: "Actions",
+
+				enableSorting: false,
+
+				cell: ({ row }) => {
+					const claim = row.original;
+
+					const isApproved = claim.approvalStatus === "APPROVED";
+
+					const disabled = loading || !canApproveLineItems;
+
+					return (
+						<div className="flex flex-col gap-1.5">
+							<div className="flex items-center gap-1.5">
+								<Button
+									type="button"
+									text="OK"
+									Icon={CheckCircle2}
+									appearance="standard"
+									variant={isApproved ? "brand" : "outline"}
+									size="sm"
+									disabled={disabled || isApproved}
+									onClick={() => onToggleLineItemStatus(claim.id)}
+									aria-label={`Mark bill ${claim.billNumber} as OK`}
+								/>
+
+								<Button
+									type="button"
+									text="Cancel"
+									Icon={XCircle}
+									appearance="standard"
+									variant={!isApproved ? "brand" : "outline"}
+									size="sm"
+									disabled={disabled || !isApproved}
+									onClick={() => onToggleLineItemStatus(claim.id)}
+									aria-label={`Mark bill ${claim.billNumber} as not OK`}
+								/>
+							</div>
+						</div>
+					);
+				},
+			});
+		}
+
 		if (canEditClaimRows && !isViewMode) {
 			tableColumns.push({
 				id: "actions",
+
 				header: "Actions",
+
 				enableSorting: false,
+
 				cell: ({ row }) => {
 					const claim = row.original;
 
@@ -312,57 +489,28 @@ export const ClaimHeadEntryTable = ({
 			});
 		}
 
-		if (actorRole === "approver") {
-			tableColumns.push({
-				id: "approvalAction",
-				header: "Action",
-				enableSorting: false,
-				cell: ({ row }) => {
-					const claim = row.original;
-					const approved = claim.approvalStatus === "APPROVED";
-					const isApproving = approvingId === claim.id;
-					return (
-						<Button
-							type="button"
-							text={
-								approved ? "Approved" : isApproving ? "Approving..." : "Approve"
-							}
-							Icon={CheckCircle2}
-							appearance="standard"
-							variant={approved ? "outline" : "brand"}
-							size="sm"
-							disabled={
-								loading || approved || isApproving || !canApproveLineItems
-							}
-							onClick={() => void onApproveRow(claim.id)}
-							aria-label={
-								canApproveLineItems
-									? `Approve claim line ${claim.billNumber}`
-									: "Line-item approval action is not configured"
-							}
-						/>
-					);
-				},
-			});
-		}
-
 		return tableColumns;
 	}, [
 		actorRole,
-		approvingId,
 		canApproveLineItems,
 		canEditClaimRows,
 		deletingId,
 		errors,
 		isViewMode,
+		lineItemRemarks,
 		loading,
-		onApproveRow,
 		onApprovedAmountChange,
 		onDeleteRow,
 		onEditRow,
+		onRemarksChange,
+		onToggleLineItemStatus,
 		pageIndex,
 		pageSize,
 	]);
+
+	const isImagePreview = previewTarget ? isImageUpload(previewTarget) : false;
+
+	const isPdfPreview = previewTarget ? isPdfUpload(previewTarget) : false;
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -375,12 +523,13 @@ export const ClaimHeadEntryTable = ({
 			{canEditClaimRows && !isViewMode
 				? items.map((item, index) => {
 						const isSaving = savingId === item.id;
+
 						const isEditing = editingId === item.id;
 
 						return (
 							<div
 								key={item.id}
-								className="grid grid-cols-1 gap-3 items-center bg-page p-4 xl:grid-cols-7"
+								className="grid grid-cols-1 items-center gap-3 bg-page p-4 xl:grid-cols-7"
 							>
 								<SelectInput
 									placeholder="Claim Head"
@@ -456,6 +605,7 @@ export const ClaimHeadEntryTable = ({
 									value={item.attachment ?? null}
 									onChange={(nextValue) => {
 										onChange(item.id, "attachment", nextValue);
+
 										onChange(item.id, "file", nextValue?.file ?? null);
 									}}
 									error={errors[`file-${item.id}`]}
@@ -464,7 +614,7 @@ export const ClaimHeadEntryTable = ({
 									showActions
 								/>
 
-								<div className="flex items-end gap-1.5 sm:mt-5 mt-1">
+								<div className="mt-1 flex items-end gap-1.5 sm:mt-5">
 									<Button
 										type="button"
 										Icon={isEditing ? Save : Plus}
@@ -502,23 +652,23 @@ export const ClaimHeadEntryTable = ({
 						rows={SKELETON_ROWS}
 						columns={
 							actorRole === "approver"
-								? 9
+								? 10
 								: actorRole === "externalApprover"
 									? 8
 									: isViewMode
-										? 7
-										: 8
+										? 8
+										: 9
 						}
 						showPagination
 					/>
 				) : (
 					<div className="max-h-[500px] min-w-0 overflow-auto scrollbar-sleek px-4">
 						<DataTable<ClaimHeadRow>
-							data={paginatedItems}
+							data={savedItems}
 							columns={columns}
-							// manualPagination
-							// pageIndex={pageIndex}
-							// pageSize={pageSize}
+							enablePagination
+							pageIndex={pageIndex}
+							pageSize={pageSize}
 							pageCount={pageCount}
 							onPageChange={setPageIndex}
 							onPageSizeChange={handlePageSizeChange}
@@ -533,6 +683,48 @@ export const ClaimHeadEntryTable = ({
 					</div>
 				)}
 			</section>
+
+			<Modal
+				open={Boolean(previewTarget)}
+				title={previewTarget?.name ?? "File preview"}
+				size="xl"
+				className="file-upload-preview-modal"
+				onClose={() => setPreviewTarget(null)}
+				ariaLabel="Claim bill attachment preview"
+			>
+				{previewTarget ? (
+					<div className="file-upload-preview-modal-content">
+						{isImagePreview ? (
+							<img
+								src={previewTarget.url}
+								alt={previewTarget.name}
+								className="file-upload-preview-modal-image"
+							/>
+						) : isPdfPreview ? (
+							<iframe
+								src={previewTarget.url}
+								title={previewTarget.name}
+								className="file-upload-preview-modal-frame"
+							/>
+						) : (
+							<div className="file-upload-preview-modal-fallback">
+								<FileText aria-hidden="true" />
+
+								<p>This file type cannot be previewed in the browser.</p>
+
+								<a
+									href={previewTarget.url}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="file-upload-preview-modal-link"
+								>
+									Open file
+								</a>
+							</div>
+						)}
+					</div>
+				) : null}
+			</Modal>
 		</div>
 	);
 };

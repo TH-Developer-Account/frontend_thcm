@@ -27,6 +27,7 @@ import FormHeader from "../../../components/ui/FormHeader";
 import { ReasonActionModal } from "../../../components/ui/ReasonActionModal";
 // import HelperTooltip from "../../../components/common/HelperTooltip";
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
+import DatePickerInput from "../../../components/common/DatePickerInput";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { createClaimHeadRow } from "../helpers/claimHead.helpers";
 import {
@@ -78,6 +79,19 @@ const currencyFormatter = new Intl.NumberFormat("en-IN", {
 	maximumFractionDigits: 2,
 });
 
+const toDatePickerValue = (value?: string): Date | undefined => {
+	if (!value) return undefined;
+	const date = new Date(value.includes("T") ? value : `${value}T00:00:00`);
+	return Number.isNaN(date.getTime()) ? undefined : date;
+};
+
+const toDateString = (date: Date): string => {
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
+};
+
 interface ReimbursementClaimFormProps {
 	mode?: ReimbursementClaimFormMode;
 	canEdit?: boolean;
@@ -102,6 +116,7 @@ interface ReimbursementClaimFormProps {
 	approvalActionLoading?: boolean;
 	onApproveStage?: () => void | Promise<void>;
 	onClarifyStage?: (reason: string) => void | Promise<void>;
+
 	onLineItemApprove?: (lineItem: ClaimHeadRow) => void | Promise<void>;
 }
 
@@ -127,7 +142,7 @@ const ReimbursementClaimForm = ({
 	approvalActionLoading = false,
 	onApproveStage,
 	onClarifyStage,
-	onLineItemApprove,
+	// onLineItemApprove,
 }: ReimbursementClaimFormProps) => {
 	const { showToast } = useToast();
 	const [claimRows, setClaimRows] = useState<ClaimHeadFormRow[]>([
@@ -139,10 +154,17 @@ const ReimbursementClaimForm = ({
 	const [editingClaimId, setEditingClaimId] = useState<string | null>(null);
 	const [savingClaimId, setSavingClaimId] = useState<string | null>(null);
 	const [deletingClaimId, setDeletingClaimId] = useState<string | null>(null);
-	const [approvingClaimId, setApprovingClaimId] = useState<string | null>(null);
 	const [claimErrors, setClaimErrors] = useState<ClaimHeadValidationErrors>({});
 	const [clarifyModalOpen, setClarifyModalOpen] = useState(false);
 	const [clarifyLoading, setClarifyLoading] = useState(false);
+
+	// ── Line-item review state (demo-only, frontend-local) ────────────────
+	// Non-mandatory remarks per line item, keyed by claim id. Only rendered
+	// and editable while that item's approvalStatus !== "APPROVED".
+	const [lineItemRemarks, setLineItemRemarks] = useState<
+		Record<string, string>
+	>({});
+
 	const initialLineItemsKey = useMemo(
 		() =>
 			JSON.stringify(
@@ -169,6 +191,7 @@ const ReimbursementClaimForm = ({
 		setClaimRows([createClaimHeadRow()]);
 		setEditingClaimId(null);
 		setClaimErrors({});
+		setLineItemRemarks({});
 	}, [initialLineItems, initialLineItemsKey]);
 
 	const totalAmountEligible = useMemo(() => {
@@ -186,7 +209,7 @@ const ReimbursementClaimForm = ({
 			),
 		[savedClaims],
 	);
-
+	console.log("mode", mode);
 	const buildSubmission = useCallback(
 		(
 			values: ReimbursementClaimFormValues,
@@ -205,10 +228,14 @@ const ReimbursementClaimForm = ({
 							: values.spouseName,
 				},
 				attachments,
-				lineItems: savedClaims.map(({ attachment: _attachment, ...item }) => ({
-					...item,
-					fileName: item.file?.name ?? item.fileName ?? null,
-				})),
+				lineItems: savedClaims.map((item) => {
+					// eslint-disable-next-line @typescript-eslint/no-unused-vars
+					const { attachment: _attachment, ...rest } = item;
+					return {
+						...rest,
+						fileName: item.file?.name ?? item.fileName ?? null,
+					};
+				}),
 				totalAmountEligible: eligibility,
 				lineItemsTotal,
 			};
@@ -290,13 +317,16 @@ const ReimbursementClaimForm = ({
 	);
 	const resolvedEligibleAmount =
 		selectedGrade?.eligibility ?? totalAmountEligible;
-	const isApprover = actorRole === "approver";
 	const isReadOnly =
 		mode === "view" || !canEdit || actorRole === "externalApprover";
 	const canEditClaimForm = !isReadOnly;
 	const fieldMode: ReimbursementClaimFormMode = isReadOnly ? "view" : "edit";
 	const claimStatusLabel =
 		statusLabel ?? deriveClaimStatusLabel(approvalStages);
+
+	// Approver may review line items whenever they're in a position to act on
+	// this stage — same condition the final Approve button already uses.
+	const canReviewLineItems = canApprove;
 
 	const clearClaimError = (key: string) => {
 		setClaimErrors((current) => {
@@ -383,6 +413,7 @@ const ReimbursementClaimForm = ({
 			fileName: row.file?.name ?? row.fileName ?? null,
 			approvedAmount: row.approvedAmount || row.amount,
 			approvalStatus: row.approvalStatus || "PENDING",
+			billDate: row.billDate ?? "",
 		};
 
 		setSavedClaims((current) =>
@@ -411,6 +442,12 @@ const ReimbursementClaimForm = ({
 			setEditingClaimId(null);
 			setClaimRows([createClaimHeadRow()]);
 		}
+		setLineItemRemarks((current) => {
+			if (!(id in current)) return current;
+			const next = { ...current };
+			delete next[id];
+			return next;
+		});
 		setDeletingClaimId(null);
 	};
 
@@ -421,7 +458,7 @@ const ReimbursementClaimForm = ({
 	};
 
 	const handleApprovedAmountChange = (id: string, rawValue: string) => {
-		if (!isApprover || !onLineItemApprove) return;
+		if (!canReviewLineItems) return;
 		const approvedAmount = sanitizeAmountInput(rawValue);
 		setSavedClaims((current) =>
 			current.map((claim) =>
@@ -431,54 +468,42 @@ const ReimbursementClaimForm = ({
 		clearClaimError(`approvedAmount-${id}`);
 	};
 
-	const handleApproveClaim = async (id: string) => {
-		if (!isApprover || !onLineItemApprove) return;
-		const claim = savedClaims.find((item) => item.id === id);
-		if (!claim || claim.approvalStatus === "APPROVED") return;
-
-		const claimedAmount = Number(claim.amount);
-		const approvedAmount = Number(claim.approvedAmount || claim.amount);
-		if (
-			!Number.isFinite(approvedAmount) ||
-			approvedAmount < 0 ||
-			approvedAmount > claimedAmount
-		) {
-			setClaimErrors((current) => ({
-				...current,
-				[`approvedAmount-${id}`]:
-					"Approved amount must be between zero and the claimed amount.",
-			}));
-			return;
-		}
-
-		const approvedClaim: ClaimHeadRow = {
-			...claim,
-			approvedAmount: approvedAmount.toFixed(2),
-			approvalStatus: "APPROVED",
-		};
-
-		try {
-			setApprovingClaimId(id);
-			await onLineItemApprove(approvedClaim);
-			setSavedClaims((current) =>
-				current.map((item) => (item.id === id ? approvedClaim : item)),
-			);
-			showToast({
-				type: "success",
-				title: "Line item approved",
-				description: "The approved claim amount has been saved.",
-			});
-		} catch (error) {
-			showToast({
-				type: "error",
-				title: "Approval failed",
-				description: "Unable to approve this line item. Please try again.",
-			});
-			throw error;
-		} finally {
-			setApprovingClaimId(null);
-		}
+	const handleToggleLineItemStatus = (id: string) => {
+		if (!canReviewLineItems) return;
+		setSavedClaims((current) =>
+			current.map((claim) =>
+				claim.id === id
+					? {
+							...claim,
+							approvalStatus:
+								claim.approvalStatus === "APPROVED" ? "PENDING" : "APPROVED",
+						}
+					: claim,
+			),
+		);
 	};
+
+	const handleRemarksChange = (id: string, value: string) => {
+		if (!canReviewLineItems) return;
+		setLineItemRemarks((current) => ({ ...current, [id]: value }));
+	};
+
+	const buildClarifyReasonPrefix = useCallback((): string => {
+		const flagged = savedClaims.filter(
+			(item) => item.approvalStatus !== "APPROVED",
+		);
+		if (flagged.length === 0) return "";
+
+		const lines = flagged.map((item) => {
+			const label = item.billNumber
+				? `Bill ${item.billNumber}`
+				: item.billName || item.claimHead;
+			const remark = lineItemRemarks[item.id]?.trim();
+			return remark ? `• ${label}: ${remark}` : `• ${label}: Not approved`;
+		});
+
+		return `Flagged line items:\n${lines.join("\n")}`;
+	}, [lineItemRemarks, savedClaims]);
 
 	const handleClarifyConfirm = async (reason: string) => {
 		if (!onClarifyStage) return;
@@ -491,31 +516,31 @@ const ReimbursementClaimForm = ({
 		}
 	};
 
-	const allLineItemsApproved =
-		savedClaims.length > 0 &&
-		savedClaims.every((item) => item.approvalStatus === "APPROVED");
-	const canCompleteStage =
-		canApprove && (isExternalApprover || allLineItemsApproved);
+	// Final-approve is only enabled once every line item has been marked OK
+	// (✓). External approvers have no line items to review, so they're
+	// exempt from this gate — same as before.
+
+	// const allLineItemsApproved =
+	// 	savedClaims.length > 0 &&
+	// 	savedClaims.every((item) => item.approvalStatus === "APPROVED");
+
+	const canCompleteStage = canApprove;
+	// && (isExternalApprover || allLineItemsApproved);
 
 	const resetAll = () => {
 		handleReset();
 		setClaimRows([createClaimHeadRow()]);
 		setSavedClaims(initialLineItems.map((item) => ({ ...item })));
 		setEditingClaimId(null);
-		setApprovingClaimId(null);
 		setClaimErrors({});
+		setLineItemRemarks({});
 	};
-
 	return (
 		<>
 			<Card
 				title={
 					<span className="inline-flex items-center gap-1 text-xl font-semibold tracking-tight text-iron-dark">
 						Non-Hospitalisation Claim Form
-						{/* <HelperTooltip
-						label="i"
-						text="Complete the employee and treatment details, then attach the supporting document for every claim line item."
-					/> */}
 					</span>
 				}
 				actions={<Badge status={claimStatusLabel} />}
@@ -765,10 +790,11 @@ const ReimbursementClaimForm = ({
 							onCancelEdit={handleCancelClaimEdit}
 							onDeleteRow={handleDeleteClaim}
 							onApprovedAmountChange={handleApprovedAmountChange}
-							onApproveRow={handleApproveClaim}
-							canApproveLineItems={canApprove && Boolean(onLineItemApprove)}
+							onToggleLineItemStatus={handleToggleLineItemStatus}
+							onRemarksChange={handleRemarksChange}
+							lineItemRemarks={lineItemRemarks}
+							canApproveLineItems={canReviewLineItems}
 							canEditClaimRows={canEditClaimForm}
-							approvingId={approvingClaimId}
 						/>
 					</section>
 
@@ -801,17 +827,19 @@ const ReimbursementClaimForm = ({
 									</p>
 								) : null}
 								<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-									<FormInput
-										mode={fieldMode}
-										type="date"
-										name="claimDate"
+									<DatePickerInput
 										label="Date"
-										value={values.claimDate}
-										required
+										mode="single"
+										value={toDatePickerValue(values.claimDate)}
+										onChange={(nextValue) => {
+											if (nextValue instanceof Date) {
+												handleChange("claimDate", toDateString(nextValue));
+											}
+										}}
 										error={errors.claimDate}
-										onChange={(event: ChangeEvent<HTMLInputElement>) =>
-											handleChange("claimDate", event.target.value)
-										}
+										placeholder="Date"
+										disabled={isReadOnly}
+										toDate={new Date()}
 									/>
 								</div>
 							</div>
@@ -826,6 +854,7 @@ const ReimbursementClaimForm = ({
 				open={clarifyModalOpen}
 				mode="clarify-workflow"
 				loading={clarifyLoading}
+				defaultReason={buildClarifyReasonPrefix()}
 				onClose={() => setClarifyModalOpen(false)}
 				onConfirm={handleClarifyConfirm}
 			/>

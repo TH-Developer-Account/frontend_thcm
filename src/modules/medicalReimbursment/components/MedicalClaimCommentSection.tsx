@@ -7,6 +7,7 @@ import { useAuth } from "../../../context/Auth/useAuth";
 import type { ApprovalStageLike } from "../../workflows/types/types";
 import FormHeader from "../../../components/ui/FormHeader";
 import { ClipboardClock } from "lucide-react";
+import { getMedicalAuditMessage } from "../helpers/medicalClaimListing.mapper";
 
 type MedicalClaimCommentSectionProps = {
 	claimId?: string | null;
@@ -47,6 +48,7 @@ const MedicalClaimCommentSection = ({
 				ccEmails={commentContext.ccEmails}
 				currentUserId={user?.id}
 				title={title}
+				formatAuditMessage={getMedicalAuditMessage}
 				emptyTitle="No medical claim activity yet"
 				emptyDescription="Comments and workflow activity will appear here."
 			/>

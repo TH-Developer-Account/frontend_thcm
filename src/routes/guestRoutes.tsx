@@ -8,6 +8,7 @@ import GuestLayoutWrapper from "../layout/GuestLayoutWrapper";
 import ReimbursementClaimPublicPage from "../modules/medicalReimbursment/pages/ReimbursmentClaimPublicPage";
 import ReimbursementPage from "../modules/medicalReimbursment/pages/ReimbursementPage";
 import ReimbursementClaimListingPage from "../modules/guest/guestMedicalForms/ReimbursementClaimListingPage";
+import GuestReimbursementPage from "../modules/guest/guestMedicalForms/GuestReimbursementPage";
 
 export const GuestRoutesWrapper = () => {
 	return (
@@ -42,23 +43,25 @@ const GuestRoutes = () => {
 				element={<ReimbursementClaimPublicPage />}
 			/>
 
-			{/* <Route
-				path="vendor-onboarding/:id"
-				element={<GuestVendorOnboardingFormPage mode="view" />}
-			/> */}
-
-			{/* <Route
-				path="vendor-onboarding/:id/edit"
-				element={<GuestVendorOnboardingFormPage mode="edit" />}
-			/> */}
 			<Route
 				path="medi-claim/listing"
 				element={<ReimbursementClaimListingPage />}
 			/>
-			<Route path="medi-claim/create" element={<ReimbursementPage />} />
-			<Route path="medi-claim/view" element={<ReimbursementPage />} />
+
+			<Route
+				path="medi-claim/create"
+				element={<ReimbursementPage mode="edit" />}
+			/>
+
+			<Route
+				path="medi-claim/:claimId/view"
+				element={<GuestReimbursementPage mode="view" />}
+			/>
+
+			<Route
+				path="medi-claim/:claimId/edit"
+				element={<GuestReimbursementPage mode="edit" />}
+			/>
 		</Routes>
 	);
 };
-
-export default GuestRoutes;

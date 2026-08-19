@@ -1,4 +1,4 @@
-import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
+import type { ClaimHeadRow } from "../../medicalReimbursment/types/reimbursementClaim.types";
 
 export type ReimbursementClaimMode = "create" | "edit" | "view";
 
@@ -33,18 +33,6 @@ export type ClaimantDetails = {
 	spouseName?: string;
 };
 
-export type ReimbursementClaimLineItem = {
-	id?: string;
-	clientId: string;
-	claimHead: ClaimHeadKey;
-	billNumber: string;
-	billName: string;
-	patientName: string;
-	billDate: string;
-	amount: number;
-	attachment: FileUploadValue | null;
-};
-
 export type ReimbursementEligibility = {
 	medicalAdvanceTaken: number;
 	amountSettledThisCalendarYear: number;
@@ -53,7 +41,7 @@ export type ReimbursementEligibility = {
 };
 
 export type ReimbursementClaimFormValues = ClaimantDetails & {
-	claimItems: ReimbursementClaimLineItem[];
+	claimItems: ClaimHeadRow[];
 	remarks: string;
 };
 
@@ -62,7 +50,7 @@ export type ReimbursementClaimPayload = Omit<
 	ReimbursementClaimFormValues,
 	"claimItems"
 > & {
-	claimItems: Array<Omit<ReimbursementClaimLineItem, "attachment">>;
+	claimItems: Array<Omit<ClaimHeadRow, "attachment">>;
 };
 
 export type ReimbursementClaimCreatedBy = {

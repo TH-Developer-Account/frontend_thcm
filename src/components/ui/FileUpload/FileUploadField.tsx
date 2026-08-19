@@ -14,6 +14,7 @@ import { Modal } from "../../common/Modal";
 
 import type {
 	FileUploadFieldProps,
+	FileUploadPreviewVariant,
 	FileUploadValue,
 	MultipleFileUploadFieldProps,
 	SingleFileUploadFieldProps,
@@ -49,6 +50,7 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 		className = "",
 		inputName,
 		showActions = true,
+		previewVariant = "card",
 		enableCaption = false,
 		captionRequired = false,
 		captionLabel = "Photo caption",
@@ -333,7 +335,11 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 				<div
 					className={joinClassNames(
 						"file-upload-list",
-						isMultiple ? "file-upload-list--grid" : "flex flex-col gap-2",
+						previewVariant === "line"
+							? "flex flex-col gap-1.5"
+							: isMultiple
+								? "file-upload-list--grid"
+								: "flex flex-col gap-2",
 					)}
 				>
 					{values.map((item, index) => (
@@ -341,6 +347,7 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 							key={getValueId(item)}
 							value={item}
 							index={index}
+							variant={previewVariant}
 							heightClassName={heightClassName}
 							readonly={readonly}
 							disabled={disabled}
@@ -400,6 +407,7 @@ FileUploadField.displayName = "FileUploadField";
 type PreviewCardProps = {
 	value: FileUploadValue;
 	index: number;
+	variant: FileUploadPreviewVariant;
 	heightClassName: string;
 	readonly: boolean;
 	disabled: boolean;
@@ -419,6 +427,7 @@ const FileUploadPreviewCard = React.memo(
 	({
 		value,
 		index,
+		variant,
 		heightClassName,
 		readonly,
 		disabled,
@@ -436,6 +445,68 @@ const FileUploadPreviewCard = React.memo(
 		const showImagePreview = isImageUpload(value);
 		const showPdfPreview = isPdfUpload(value);
 		const captionId = React.useId();
+
+		if (variant === "line") {
+			return (
+				<div className="file-upload-preview-line flex items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-3 py-2">
+					<button
+						type="button"
+						className="file-upload-line-name min-w-0 flex-1 truncate text-left text-xs font-medium text-slate-900 hover:text-brand hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+						title={value.name}
+						disabled={!value.url}
+						onClick={(event) => {
+							event.preventDefault();
+							event.stopPropagation();
+							onPreview();
+						}}
+					>
+						{value.name}
+					</button>
+
+					{showActions ? (
+						<div className="file-upload-preview-actions ml-auto flex shrink-0 items-center gap-1">
+							{!readonly && !disabled ? (
+								<Button
+									type="button"
+									appearance="icon"
+									variant="secondary"
+									size="sm"
+									Icon={RefreshCw}
+									aria-label={`Replace ${value.name}`}
+									onClick={onReplace}
+								/>
+							) : null}
+
+							<button
+								type="button"
+								className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 px-2 text-xs font-medium text-slate-700 transition-colors hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-50"
+								aria-label={`Preview ${value.name}`}
+								onClick={(event) => {
+									event.preventDefault();
+									event.stopPropagation();
+									onPreview();
+								}}
+								disabled={!value.url}
+							>
+								<Eye className="size-3.5" aria-hidden="true" />
+							</button>
+
+							{!readonly && !disabled ? (
+								<Button
+									type="button"
+									appearance="icon"
+									variant="secondary"
+									size="sm"
+									Icon={Trash2}
+									aria-label={`Remove ${value.name}`}
+									onClick={onRemove}
+								/>
+							) : null}
+						</div>
+					) : null}
+				</div>
+			);
+		}
 
 		return (
 			<div
@@ -543,12 +614,6 @@ const FileUploadPreviewCard = React.memo(
 							aria-invalid={Boolean(captionError)}
 							onChange={(event) => onCaptionChange(value, event.target.value)}
 						/>
-						{/* <div className="file-upload-caption-meta">
-							{/* <span>
-								Use a short description suitable for the final report.
-							</span>
-							<span>{value.caption?.length ?? 0}/500</span>
-						</div> */}
 						{captionError ? (
 							<p className="form-error-text" role="alert">
 								{captionError}
@@ -650,7 +715,6 @@ const FileUploadEmptyState = React.memo(
 			<span className="file-upload-empty-copy min-w-0">
 				<span className="file-upload-empty-title block truncate text-xs font-normal text-slate-900">
 					Upload file
-					{/* {required ? <span className="form-required"> *</span> : null} */}
 				</span>
 				<span className="file-upload-empty-description sr-only">
 					{description ??

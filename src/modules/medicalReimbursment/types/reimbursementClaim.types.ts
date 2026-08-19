@@ -81,23 +81,45 @@ export type ClaimHead =
 export type PatientType = "SELF" | "SPOUSE";
 export type LineItemApprovalStatus = "PENDING" | "APPROVED";
 
-interface ClaimHeadRowBase {
+export interface ClaimHeadRowBase {
 	id: string;
+
 	billNumber: string;
+
 	billName: string;
+
 	patient?: PatientType | "";
+
 	billDate: string | undefined;
+
 	amount: string;
+
+	/**
+	 * Local file selected by the user while creating/editing a row.
+	 *
+	 * This should NOT contain an S3 key or remote URL.
+	 */
 	file: File | null;
+
+	/**
+	 * Normalized file representation used by the UI.
+	 *
+	 * Can represent both:
+	 * - locally selected files
+	 * - remotely stored files
+	 */
 	attachment?: FileUploadValue | null;
+
 	fileName?: string | null;
+
 	approvedAmount?: string;
+
 	approvalStatus?: LineItemApprovalStatus;
 }
 
 export interface ClaimHeadRow extends ClaimHeadRowBase {
 	claimHead: ClaimHead;
-	// patient: PatientType;
+
 	billDate: string;
 }
 

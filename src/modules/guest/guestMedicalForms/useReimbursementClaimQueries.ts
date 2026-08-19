@@ -1,6 +1,9 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
-import { reimbursementClaimApi } from "./reimbursementClaim.api";
+import {
+	guestReimburseClaimApi,
+	reimbursementClaimApi,
+} from "./reimbursementClaim.api";
 import type { ReimbursementClaimListParams } from "./reimbursementClaim.types";
 
 export const reimbursementClaimKeys = {
@@ -8,6 +11,9 @@ export const reimbursementClaimKeys = {
 	lists: () => [...reimbursementClaimKeys.all, "list"] as const,
 	list: (params: ReimbursementClaimListParams) =>
 		[...reimbursementClaimKeys.lists(), params] as const,
+	guestLists: () => [...reimbursementClaimKeys.all, "guest-list"] as const,
+	guestDetail: (claimId: string) =>
+		[...reimbursementClaimKeys.all, "guest-detail", claimId] as const,
 	details: () => [...reimbursementClaimKeys.all, "detail"] as const,
 	detail: (claimId: string) =>
 		[...reimbursementClaimKeys.details(), claimId] as const,
@@ -20,25 +26,25 @@ export const useReimbursementClaimListQuery = (
 ) =>
 	useQuery({
 		queryKey: reimbursementClaimKeys.list(params),
-		queryFn: () => reimbursementClaimApi.list(params),
+		queryFn: () => guestReimburseClaimApi.guestList(params),
 		placeholderData: keepPreviousData,
 		staleTime: 30_000,
 		refetchOnWindowFocus: false,
 	});
 
-export const useReimbursementClaimDetailQuery = (
+export function useGuestReimbursementClaimDetailQuery(
 	claimId: string,
 	enabled = true,
-) =>
-	useQuery({
-		queryKey: reimbursementClaimKeys.detail(claimId),
-		queryFn: () => reimbursementClaimApi.getById(claimId),
+) {
+	return useQuery({
+		queryKey: reimbursementClaimKeys.guestDetail(claimId),
+		queryFn: () => guestReimburseClaimApi.guestGetById(claimId),
 		enabled: enabled && Boolean(claimId),
 		retry: false,
 		staleTime: 30_000,
 		refetchOnWindowFocus: false,
 	});
-
+}
 export const usePublicClaimSessionQuery = (
 	sessionCode: string,
 	enabled = true,

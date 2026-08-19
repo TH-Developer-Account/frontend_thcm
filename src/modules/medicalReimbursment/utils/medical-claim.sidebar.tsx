@@ -4,26 +4,14 @@ import type { SidebarItem } from "../../../layout/layout.types";
 export const medicalClaimSidebar: SidebarItem[] = [
 	{
 		id: "form-listing",
-		label: "Medical Re-imbursement Listing",
+		label: " Listing",
 		icon: <BriefcaseMedical size={18} />,
 		link: "/medi-claim/listing",
 	},
 	{
 		id: "form-initiation-create",
-		label: "Medical Re-imbursement Create",
+		label: "Initiate Create",
 		icon: <BriefcaseMedical size={18} />,
 		link: "/medi-claim/initiation/create",
-	},
-	{
-		id: "form-create",
-		label: "Medical Re-imbursement Form Create",
-		icon: <BriefcaseMedical size={18} />,
-		link: "/medi-claim/create",
-	},
-	{
-		id: "form-view",
-		label: "Medical Re-imbursement Form View",
-		icon: <BriefcaseMedical size={18} />,
-		link: "/medi-claim/view",
 	},
 ];

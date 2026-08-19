@@ -39,9 +39,11 @@ type MedicalClaimViewDetail = MedicalClaimDetail & {
 	initiatedBy?: MentionableUserInput | null;
 };
 
+type MedicalClaimContext = "internal" | "guest";
+
 type UseMedicalClaimViewArgs = {
 	claimId: string;
-	isGuestRoute?: boolean;
+	context?: MedicalClaimContext;
 };
 
 const GUEST_EDITABLE_STATUSES = new Set([
@@ -79,6 +81,7 @@ const buildMedicalClaimFormData = (
 	);
 
 	const files: File[] = [];
+
 	const bills = submission.lineItems.map((item) => ({
 		id: item.id,
 		claimHead: item.claimHead,
@@ -90,7 +93,9 @@ const buildMedicalClaimFormData = (
 	}));
 
 	formData.append("bills", JSON.stringify(bills));
+
 	files.forEach((file) => formData.append("billAttachments", file, file.name));
+
 	return formData;
 };
 
@@ -99,45 +104,65 @@ const getClaimCreator = (
 ): MentionableUserInput | null => {
 	const creator =
 		detail?.created_by ?? detail?.createdBy ?? detail?.initiatedBy;
+
 	return creator?.id ? creator : null;
 };
 
 export function useMedicalClaimView({
 	claimId,
-	isGuestRoute = false,
+	context = "internal",
 }: UseMedicalClaimViewArgs) {
 	const { user } = useAuth();
 	const { showToast } = useToast();
-
+	const isGuestRoute = context === "guest";
+	/*
+	 * Query selection is based on the route context supplied to the hook.
+	 * No pathname inspection happens here.
+	 */
 	const internalQuery = useMedicalClaimDetailQuery(claimId, !isGuestRoute);
+
 	const guestQuery = useGuestMedicalClaimDetailQuery(claimId, isGuestRoute);
+
 	const guestResubmitMutation = useResubmitGuestMedicalClaimMutation();
+
 	const lineItemMutation = useApproveMedicalClaimLineItemMutation();
+
 	const approveStageMutation = useApproveWorkflowStageMutation();
+
 	const clarifyStageMutation = useClarifyWorkflowStageMutation();
 
 	const detail = (isGuestRoute ? guestQuery.data : internalQuery.data) as
 		| MedicalClaimViewDetail
 		| undefined;
+
 	const activeWorkflow = detail?.activeWorkflow ?? null;
 
 	const workflowData = React.useMemo(
 		() => getWorkflowApproverData(activeWorkflow, user),
 		[activeWorkflow, user],
 	);
+
 	const workflowStages = workflowData.stages;
+
 	const creator = React.useMemo(() => getClaimCreator(detail), [detail]);
 
 	const isCurrentApprover = workflowData.isCurrentStageApprover;
+
 	const isExternalApprover =
 		workflowData.isExternalApprover || workflowData.wasExternalApprover;
+
 	const isCurrentInternalApprover = isCurrentApprover && !isExternalApprover;
+
 	const canActNow = isCurrentInternalApprover && workflowData.canActNow;
+
 	const normalizedStatus = detail?.status?.toUpperCase() ?? "";
 
-	// The medical-claim flow has no separate internal proposer permission.
-	// Guest/external claimants edit the form; internal workflow users only act
-	// through their current approval entry.
+	/*
+	 * --------------------------------------------------------------------------
+	 * Actor
+	 * --------------------------------------------------------------------------
+	 */
+
 	const actorRole: ReimbursementClaimActor = isGuestRoute
 		? "creator"
 		: isExternalApprover
@@ -146,19 +171,50 @@ export function useMedicalClaimView({
 				? "approver"
 				: "creator";
 
+	/*
+	 * --------------------------------------------------------------------------
+	 * Permissions
+	 * --------------------------------------------------------------------------
+	 *
+	 * No pathname-based permission logic.
+	 *
+	 * The route only tells us whether this is the guest/external flow.
+	 * The actual edit permission is determined from the claim state.
+	 */
+
 	const canEdit = isGuestRoute && GUEST_EDITABLE_STATUSES.has(normalizedStatus);
+
 	const canApprove = !isGuestRoute && canActNow;
+
 	const canApproveLineItems = canApprove;
+
 	const canClarify = canApprove;
+
+	/*
+	 * --------------------------------------------------------------------------
+	 * Form mode / action
+	 * --------------------------------------------------------------------------
+	 */
+
+	const mode = canEdit ? "edit" : "view";
+
+	const actionText = isGuestRoute ? "Resubmit Claim" : "Save Changes";
+
+	/*
+	 * --------------------------------------------------------------------------
+	 * Comments
+	 * --------------------------------------------------------------------------
+	 */
 
 	const workflowCommentContext = React.useMemo(
 		() =>
 			getWorkflowCommentContext({
 				activeWorkflow,
 				currentUser: user,
-				// No proposer role exists in this module. Comment users come from
-				// the workflow approvals themselves.
+
+				// No proposer role exists in this module.
 				creator: null,
+
 				canComment:
 					!isGuestRoute && !isExternalApprover && isCurrentInternalApprover,
 			}),
@@ -171,19 +227,40 @@ export function useMedicalClaimView({
 		],
 	);
 
+	/*
+	 * --------------------------------------------------------------------------
+	 * Initial form data
+	 * --------------------------------------------------------------------------
+	 */
+
 	const initialValues = React.useMemo(
 		() => (detail ? toMedicalClaimFormValues(detail) : undefined),
 		[detail],
 	);
+
 	const initialLineItems = React.useMemo(
 		() => (detail ? toMedicalClaimLineItems(detail) : []),
 		[detail],
 	);
+	/*
+	 * --------------------------------------------------------------------------
+	 * Refresh
+	 * --------------------------------------------------------------------------
+	 */
 
 	const refresh = React.useCallback(async () => {
-		if (isGuestRoute) await guestQuery.refetch();
-		else await internalQuery.refetch();
+		if (isGuestRoute) {
+			await guestQuery.refetch();
+		} else {
+			await internalQuery.refetch();
+		}
 	}, [guestQuery.refetch, internalQuery.refetch, isGuestRoute]);
+
+	/*
+	 * --------------------------------------------------------------------------
+	 * Claim submission
+	 * --------------------------------------------------------------------------
+	 */
 
 	const saveClaim = React.useCallback(
 		async (submission: ReimbursementClaimSubmission) => {
@@ -192,10 +269,20 @@ export function useMedicalClaimView({
 			}
 
 			const formData = buildMedicalClaimFormData(submission);
-			await guestResubmitMutation.mutateAsync({ claimId, formData });
+
+			await guestResubmitMutation.mutateAsync({
+				claimId,
+				formData,
+			});
 		},
 		[canEdit, claimId, guestResubmitMutation],
 	);
+
+	/*
+	 * --------------------------------------------------------------------------
+	 * Line item approval
+	 * --------------------------------------------------------------------------
+	 */
 
 	const approveLineItem = React.useCallback(
 		async (lineItem: ClaimHeadRow) => {
@@ -204,22 +291,36 @@ export function useMedicalClaimView({
 					"Only the current internal workflow approver can approve claim line items.",
 				);
 			}
-			await lineItemMutation.mutateAsync({ claimId, lineItem });
+
+			await lineItemMutation.mutateAsync({
+				claimId,
+				lineItem,
+			});
 		},
 		[canApproveLineItems, claimId, lineItemMutation],
 	);
 
+	/*
+	 * --------------------------------------------------------------------------
+	 * Workflow approval
+	 * --------------------------------------------------------------------------
+	 */
+
 	const approveCurrentStage = React.useCallback(async () => {
 		if (!canApprove) return;
+
 		const stageId = workflowData.currentStage?.id;
+
 		if (!stageId) return;
 
 		const response = await approveStageMutation.mutateAsync(stageId);
+
 		showToast({
 			type: "success",
 			title: "Claim approved",
 			description: response.message,
 		});
+
 		await refresh();
 	}, [
 		approveStageMutation,
@@ -229,18 +330,28 @@ export function useMedicalClaimView({
 		workflowData.currentStage?.id,
 	]);
 
+	/*
+	 * --------------------------------------------------------------------------
+	 * Workflow clarification
+	 * --------------------------------------------------------------------------
+	 */
+
 	const clarifyCurrentStage = React.useCallback(
 		async (reason: string) => {
 			if (!canClarify) return;
+
 			const stageId = workflowData.currentStage?.id;
+
 			if (!stageId) return;
 
 			const response = await clarifyStageMutation.mutateAsync(stageId, reason);
+
 			showToast({
 				type: "success",
 				title: "Clarification requested",
 				description: response.message,
 			});
+
 			await refresh();
 		},
 		[
@@ -254,16 +365,27 @@ export function useMedicalClaimView({
 
 	return {
 		detail,
+
 		isLoading: isGuestRoute ? guestQuery.isLoading : internalQuery.isLoading,
+
 		isError: isGuestRoute ? guestQuery.isError : internalQuery.isError,
+
+		// Form
+		mode,
+		actionText,
 		initialValues,
 		initialLineItems,
+
+		// Context
 		activeWorkflow,
 		workflowStages,
 		workflowData,
 		workflowCommentContext,
 		creator,
 		actorRole,
+		isGuestRoute,
+
+		// Permissions
 		canEdit,
 		canComment: workflowCommentContext.canComment,
 		canShowCommentSection:
@@ -272,9 +394,14 @@ export function useMedicalClaimView({
 		canClarify,
 		canApproveLineItems,
 		isExternalApprover,
+
+		// Loading
 		isSaving: guestResubmitMutation.isPending,
+
 		isWorkflowActionLoading:
 			approveStageMutation.loading || clarifyStageMutation.loading,
+
+		// Actions
 		saveClaim,
 		approveLineItem,
 		approveCurrentStage,

@@ -12,6 +12,8 @@ import type {
 } from "../types/medicalClaimListing.types";
 import { MEDICAL_CLAIM_LISTING_FILTER_TABS } from "../utils/medicalClaimListing.constants";
 import { getMedicalClaimListingColumns } from "../utils/medicalClaimListing.columns";
+import Button from "../../../components/common/Button";
+import { FileDown } from "lucide-react";
 
 interface MedicalClaimListingTableProps {
 	selectedFilter: MedicalClaimListingTab;
@@ -27,6 +29,8 @@ interface MedicalClaimListingTableProps {
 	onPageChange: (pageIndex: number) => void;
 	onPageSizeChange: (pageSize: number) => void;
 	onViewRow: (row: MedicalClaimListingRow) => void;
+	onExport: () => void;
+	isExporting?: boolean;
 }
 
 const SKELETON_ROW_COUNT = 8;
@@ -45,6 +49,8 @@ export default function MedicalClaimListingTable({
 	onPageChange,
 	onPageSizeChange,
 	onViewRow,
+	onExport,
+	isExporting,
 }: MedicalClaimListingTableProps) {
 	const columns = useMemo(
 		() => getMedicalClaimListingColumns({ onView: onViewRow }),
@@ -62,6 +68,19 @@ export default function MedicalClaimListingTable({
 					value={selectedFilter}
 					onChange={onFilterChange}
 					className="border-b-none px-0 py-0"
+				/>
+			}
+			actions={
+				<Button
+					type="button"
+					text={isExporting ? "Exporting..." : "Export"}
+					Icon={FileDown}
+					iconPosition="left"
+					iconSize={16}
+					appearance="standard"
+					variant="outline"
+					size="sm"
+					onClick={onExport}
 				/>
 			}
 			secondaryHeader={

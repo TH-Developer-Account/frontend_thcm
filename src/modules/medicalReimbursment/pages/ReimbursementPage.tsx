@@ -1,17 +1,23 @@
 import type { ReactNode } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import Card from "../../../components/common/Card";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import MedicalClaimCommentSection from "../components/MedicalClaimCommentSection";
-import MedicalClaimWorkflowSection from "../components/MedicalClaimWorkflowSection";
 import ReimbursementClaimForm from "../components/ReimbursementClaimForm";
 import { useMedicalClaimView } from "../hooks/useMedicalClaimView";
+import { ClipboardClock } from "lucide-react";
+import { CardEmpty } from "../../../components/ui/CardSkeleton";
+import { ApprovalWorkflowTableContent } from "../../workflows";
 
-const ReimbursementPage = () => {
+type ReimbursementPageProps = {
+	mode?: "view" | "edit";
+};
+
+const ReimbursementPage = ({ mode = "edit" }: ReimbursementPageProps) => {
 	const navigate = useNavigate();
-	const location = useLocation();
+
 	const {
 		claimId = "",
 		medicalClaimId = "",
@@ -21,16 +27,17 @@ const ReimbursementPage = () => {
 		medicalClaimId?: string;
 		id?: string;
 	}>();
+
 	const resolvedClaimId = claimId || medicalClaimId || id;
-	const isViewRoute = location.pathname.endsWith("/view");
-	const isGuestRoute = location.pathname.includes("/guest/");
+
 	const isExistingClaim = Boolean(resolvedClaimId);
+
 	const claimView = useMedicalClaimView({
 		claimId: resolvedClaimId,
-		isGuestRoute,
 	});
 
 	let content: ReactNode;
+
 	if (isExistingClaim && claimView.isLoading) {
 		content = (
 			<Card padding="spacious">
@@ -48,8 +55,8 @@ const ReimbursementPage = () => {
 	} else {
 		content = (
 			<ReimbursementClaimForm
-				mode={isViewRoute ? "view" : "edit"}
-				canEdit={!isViewRoute && claimView.canEdit}
+				mode={mode}
+				canEdit={claimView.canEdit}
 				actorRole={claimView.actorRole}
 				initialValues={claimView.initialValues}
 				initialLineItems={claimView.initialLineItems}
@@ -63,10 +70,8 @@ const ReimbursementPage = () => {
 				onLineItemApprove={
 					claimView.canApproveLineItems ? claimView.approveLineItem : undefined
 				}
-				onSubmit={
-					!isViewRoute && claimView.canEdit ? claimView.saveClaim : undefined
-				}
-				actionText={isGuestRoute ? "Resubmit Claim" : "Save Changes"}
+				onSubmit={claimView.canEdit ? claimView.saveClaim : undefined}
+				actionText="Save Changes"
 				commentsSection={
 					claimView.canComment && claimView.workflowStages ? (
 						<MedicalClaimCommentSection
@@ -77,12 +82,22 @@ const ReimbursementPage = () => {
 					) : null
 				}
 				workflowSection={
-					<MedicalClaimWorkflowSection
-						claimId={resolvedClaimId}
-						criteria={{}}
-						initialStages={claimView.workflowStages}
-						showPreviewAction={!isGuestRoute}
-					/>
+					claimView.workflowStages.length > 0 ? (
+						<ApprovalWorkflowTableContent
+							stages={claimView.workflowStages}
+							showEmptyState={false}
+						/>
+					) : (
+						<CardEmpty
+							title={
+								claimView.workflowStages === undefined
+									? "No approval workflow assigned"
+									: "No applicable workflow found"
+							}
+							description={"No workflow stages are available for this claim."}
+							Icon={ClipboardClock}
+						/>
+					)
 				}
 				onBack={() => navigate(-1)}
 			/>
@@ -97,12 +112,17 @@ const ReimbursementPage = () => {
 					variant: "breadcrumbs",
 					ariaLabel: "Medical Reimbursement Form",
 					breadcrumbs: [
-						{ label: "Home Screen", href: "/" },
+						{
+							label: "Home Screen",
+							href: "/",
+						},
 						{
 							label: "Medical Reimbursement Forms",
 							href: "/medi-claim/create",
 						},
-						{ label: "Medical Reimbursement Form" },
+						{
+							label: "Medical Reimbursement Form",
+						},
 					],
 					separator: "›",
 				}}

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { medicalClaimApi } from "../api/medicalClaim.api";
+import { guestReimburseClaimApi } from "../../guest/guestMedicalForms/reimbursementClaim.api";
 
 export const medicalClaimKeys = {
 	all: ["medical-claims"] as const,
@@ -172,7 +173,7 @@ export function useResubmitGuestMedicalClaimMutation() {
 		}: {
 			claimId: string;
 			formData: FormData;
-		}) => medicalClaimApi.resubmitGuest(claimId, formData),
+		}) => guestReimburseClaimApi.resubmitGuest(claimId, formData),
 		onSuccess: (_data, variables) =>
 			invalidateMedicalClaims(queryClient, variables.claimId),
 	});

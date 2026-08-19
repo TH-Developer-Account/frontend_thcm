@@ -81,6 +81,15 @@ export interface MedicalClaimBill {
 	s3Key?: string | null;
 	fileName?: string | null;
 	fileUrl?: string | null;
+	/**
+	 * Same fields the vendor onboarding flow gets on every document
+	 * (mimeType, size) and feeds straight into createRemoteFileUploadValue.
+	 * Optional here because not every backend response for a bill includes
+	 * them yet (see toMedicalClaimLineItems — falls back to filename-based
+	 * type detection when mimeType is absent).
+	 */
+	mimeType?: string | null;
+	size?: number | string | null;
 	approvedAmount?: number | string | null;
 	approvalStatus?: "PENDING" | "APPROVED";
 }

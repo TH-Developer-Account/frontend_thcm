@@ -6,6 +6,7 @@ import type {
 	MedicalClaimListingApiResponse,
 	MedicalClaimListingParams,
 	MedicalClaimListingResult,
+	MedicalClaimListingTab,
 	MedicalClaimListItem,
 	MedicalClaimMutationResponse,
 } from "../types/medicalClaimListing.types";
@@ -24,7 +25,19 @@ type ApiMessageResponse = {
 	success: boolean;
 	message: string;
 };
+export type PdfType = "MEDICAL_CLAIM";
 
+type PdfUrlResponse = {
+	success: boolean;
+	url: string;
+};
+
+export type ExportListingParams = {
+	tab: MedicalClaimListingTab;
+	search?: string;
+	pageIndex: number;
+	pageSize: number;
+};
 /**
  * Medical-claim-only endpoints live here. Workflow preview, assignment,
  * approval, clarification, activation, instance, and history calls belong to
@@ -194,18 +207,40 @@ export const medicalClaimApi = {
 
 		return data;
 	},
-
-	resubmitGuest: async (
-		claimId: string,
-		formData: FormData,
-	): Promise<MedicalClaimDetail> => {
-		const {
-			data: { data },
-		} = await ServerAxios.patch<ApiDataResponse<MedicalClaimDetail>>(
-			`${GUEST_MEDICAL_CLAIM_URL}/${encodeURIComponent(claimId)}/resubmit`,
-			formData,
+	getPublicPdf: async (pdfToken: string): Promise<Blob> => {
+		const response = await ServerAxios.get<Blob>(
+			`${PUBLIC_MEDICAL_CLAIM_URL}/pdf/${encodeURIComponent(pdfToken)}`,
+			{
+				responseType: "blob",
+			},
 		);
 
-		return data;
+		return response.data;
+	},
+
+	getPdfUrl: async (
+		type: PdfType,
+		vendorRequestId: string,
+	): Promise<string> => {
+		const {
+			data: { url },
+		} = await ServerAxios.get<PdfUrlResponse>(
+			`/pdf/${type}/${encodeURIComponent(vendorRequestId)}/url`,
+		);
+
+		return url;
+	},
+	exportListing: async (
+		// claimId: string,
+		params: ExportListingParams,
+	): Promise<Blob> => {
+		const response = await ServerAxios.get<Blob>(
+			`${MEDICAL_CLAIM_URL}/export`,
+			{
+				params,
+				responseType: "blob",
+			},
+		);
+		return response.data;
 	},
 };

@@ -8,9 +8,13 @@ export default function MedicalRoutes() {
 	return (
 		<Routes>
 			<Route path="/listing" element={<MedicalClaimListingPage />} />
-			<Route path="/:id/view" element={<ReimbursementPage />} />
-			<Route path="/create" element={<ReimbursementPage />} />
-			<Route path="/view" element={<ReimbursementPage />} />
+
+			<Route path="/:id/view" element={<ReimbursementPage mode="view" />} />
+
+			<Route path="/create" element={<ReimbursementPage mode="edit" />} />
+
+			<Route path="/view" element={<ReimbursementPage mode="view" />} />
+
 			<Route
 				path="initiation/listing"
 				element={<MedicalClaimInitiationForm />}
@@ -25,6 +29,7 @@ export default function MedicalRoutes() {
 				path="initiation/:initiationId"
 				element={<MedicalClaimInitiationForm />}
 			/>
+
 			<Route
 				path="initiation/:initiationId/view"
 				element={<MedicalClaimInitiationForm mode="view" />}

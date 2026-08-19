@@ -4,6 +4,7 @@ import type {
 	MedicalClaimListingRow,
 	MedicalClaimStatus,
 } from "../types/medicalClaimListing.types";
+
 import type {
 	ClaimHead,
 	ClaimHeadRow,
@@ -11,7 +12,15 @@ import type {
 	PatientType,
 	ReimbursementClaimFormValues,
 } from "../types/reimbursementClaim.types";
-import { createRemoteFileUploadValue } from "../../../components/ui/FileUpload/fileUpload.helpers";
+
+import {
+	createRemoteFileUploadValue,
+	getFileNameFromUrl,
+	getMimeTypeFromFileName,
+} from "../../../components/ui/FileUpload/fileUpload.helpers";
+
+import { getAuditMessage } from "../../../components/ui/comments/comments.helper";
+import type { CommentItem } from "../../../components/ui/comments";
 
 const STATUS_LABELS: Record<MedicalClaimStatus, string> = {
 	AWAITING_EX_EMPLOYEE: "Awaiting employee",
@@ -25,6 +34,7 @@ const STATUS_LABELS: Record<MedicalClaimStatus, string> = {
 
 const toNumber = (value: number | string | null | undefined): number => {
 	const parsed = Number(value);
+
 	return Number.isFinite(parsed) ? parsed : 0;
 };
 
@@ -44,9 +54,6 @@ export const toMedicalClaimListingRow = (
 
 const toDateInputValue = (value?: string | null): string =>
 	value ? value.slice(0, 10) : "";
-
-const getFileName = (s3Key?: string | null): string | null =>
-	s3Key?.split(/[\\/]/).pop() || null;
 
 export const toMedicalClaimFormValues = (
 	claim: MedicalClaimDetail,
@@ -71,28 +78,101 @@ export const toMedicalClaimLineItems = (
 	const defaultPatient: PatientType =
 		claim.claimCover === "SPOUSE" ? "SPOUSE" : "SELF";
 
-	return (claim.bills ?? []).map((bill) => {
-		const fileName = bill.fileName ?? getFileName(bill.s3Key);
+	return (claim.bills ?? []).map((bill): ClaimHeadRow => {
+		/**
+		 * Backend may provide either:
+		 *
+		 * - fileName
+		 * - s3Key
+		 * - fileUrl
+		 *
+		 * We always derive a stable display filename first.
+		 */
+		const fileName =
+			bill.fileName ??
+			getFileNameFromUrl(bill.s3Key || bill.fileUrl || "", bill.claimHead);
+
+		/**
+		 * Derive MIME type from the filename.
+		 *
+		 * We don't rely on the backend to provide mimeType.
+		 */
+		const mimeType = getMimeTypeFromFileName(fileName);
+
+		/**
+		 * Remote attachment used by the UI.
+		 *
+		 * This is the important part:
+		 *
+		 * attachment.url → actual preview URL
+		 * attachment.name → displayed filename
+		 *
+		 * The S3 key should NOT be assigned to `file`.
+		 */
+		const attachment = bill.fileUrl
+			? createRemoteFileUploadValue({
+					id: bill.id,
+					url: bill.fileUrl,
+					name: fileName,
+					type: mimeType,
+					size: bill.size != null ? Number(bill.size) : undefined,
+					fallbackName: fileName,
+				})
+			: null;
+
 		return {
 			id: bill.id,
+
 			claimHead: bill.claimHead as ClaimHead,
+
 			billNumber: bill.billNo ?? "",
+
 			billName: bill.billName ?? "",
+
 			patient: defaultPatient,
+
 			billDate: toDateInputValue(bill.billDate),
+
 			amount: String(bill.amount ?? ""),
+
+			/**
+			 * Saved backend files are remote.
+			 *
+			 * Do NOT assign bill.s3Key here because `file`
+			 * represents a browser File object.
+			 */
 			file: null,
+
 			fileName,
-			attachment: bill.fileUrl
-				? createRemoteFileUploadValue({
-						id: bill.id,
-						url: bill.fileUrl,
-						name: fileName ?? null,
-						fallbackName: fileName ?? "Medical claim bill",
-					})
-				: null,
+
+			attachment,
+
 			approvedAmount: String(bill.approvedAmount ?? bill.amount ?? ""),
+
 			approvalStatus: bill.approvalStatus ?? "PENDING",
 		};
+	});
+};
+
+export const getMedicalAuditMessage = (entry: CommentItem): string => {
+	return getAuditMessage(entry, {
+		entityName: "medical claim",
+
+		actionMessages: {
+			MEDICAL_CLAIM_INITIATED: ({ actorName }) =>
+				`${actorName} initiated the medical claim.`,
+
+			MEDICAL_CLAIM_SUBMITTED: ({ actorName }) =>
+				`${actorName} submitted the medical claim.`,
+
+			MEDICAL_CLAIM_RESUBMITTED: ({ actorName }) =>
+				`${actorName} resubmitted the medical claim.`,
+
+			MEDICAL_CLAIM_SENT_FOR_APPROVAL: ({ actorName }) =>
+				`${actorName} sent the medical claim for approval.`,
+
+			MEDICAL_CLAIM_CLOSED: ({ actorName }) =>
+				`${actorName} closed the medical claim.`,
+		},
 	});
 };
