@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  useNotifications,
-  type Notification,
-} from "../../context/Notification/useNotifications"; // adjust path to match your structure
+import { useNotificationsContext } from "../../context/Notification/NotificationsProvider";
+import type { Notification } from "../../context/Notification/useNotifications";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NotificationBell.tsx
@@ -69,7 +67,7 @@ function NotificationItem({
 
 export default function NotificationBell() {
   const { notifications, unreadCount, markAsRead, markAllAsRead } =
-    useNotifications();
+    useNotificationsContext();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();

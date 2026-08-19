@@ -1,49 +1,49 @@
 import { ServerAxios } from "../../../../services/ServerAxios";
-import { type EventReportDetail } from "../types/event.report.types";
+import { type EventReportDetail } from "../forms/EventReport/eventReport.types";
 
 export const eventReportApi = {
-	getByEpcId: async (epcId: string): Promise<EventReportDetail | null> => {
-		const {
-			data: { data },
-		} = await ServerAxios.get(`/report/${epcId}`);
+  getByEpcId: async (epcId: string): Promise<EventReportDetail | null> => {
+    const {
+      data: { data },
+    } = await ServerAxios.get(`/report/${epcId}`);
 
-		return data ?? null;
-	},
+    return data ?? null;
+  },
 
-	submit: async (epcId: string, payload: FormData) => {
-		const {
-			data: { data },
-		} = await ServerAxios.post(`/report/${epcId}/submit`, payload, {
-			headers: { "Content-Type": "multipart/form-data" },
-		});
+  submit: async (epcId: string, payload: FormData) => {
+    const {
+      data: { data },
+    } = await ServerAxios.post(`/report/${epcId}/submit`, payload, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
 
-		return data;
-	},
+    return data;
+  },
 
-	resubmit: async (epcId: string, payload: FormData) => {
-		const {
-			data: { data },
-		} = await ServerAxios.post(`/report/${epcId}/resubmit`, payload, {
-			headers: { "Content-Type": "multipart/form-data" },
-		});
+  resubmit: async (epcId: string, payload: FormData) => {
+    const {
+      data: { data },
+    } = await ServerAxios.post(`/report/${epcId}/resubmit`, payload, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
 
-		return data;
-	},
+    return data;
+  },
 
-	validateReport: async (reportId: string) => {
-		const {
-			data: { data },
-		} = await ServerAxios.post(`/report/${reportId}/validate`);
+  validateReport: async (reportId: string) => {
+    const {
+      data: { data },
+    } = await ServerAxios.post(`/report/${reportId}/validate`);
 
-		return data;
-	},
-	clarifyReport: async (reportId: string, reason: string) => {
-		const {
-			data: { data },
-		} = await ServerAxios.post(`/report/${reportId}/clarify`, {
-			reason,
-		});
+    return data;
+  },
+  clarifyReport: async (reportId: string, reason: string) => {
+    const {
+      data: { data },
+    } = await ServerAxios.post(`/report/${reportId}/clarify`, {
+      reason,
+    });
 
-		return data;
-	},
+    return data;
+  },
 };

@@ -1,49 +1,61 @@
 import * as XLSX from "xlsx";
 
-type TemplateColumn = {
-	header: string;
-	example: string;
-	width?: number;
-};
+import {
+  FIELD_LABELS,
+  FIELD_TEMPLATE_META,
+  orderFields,
+  REQUIRED_FIELDS,
+} from "../helpers/lead.fieldConfig";
+import type { LeadFormFieldKey } from "../types/leads.types";
 
-const LEAD_IMPORT_COLUMNS: TemplateColumn[] = [
-	{ header: "Name", example: "John Doe", width: 28 },
-	{ header: "Email", example: "xyz@gmail.com", width: 24 },
-	{ header: "Phone", example: "****9876", width: 22 },
-	{ header: "Notes", example: "Cold", width: 28 },
-];
+// ─────────────────────────────────────────────────────────────────────────────
+// Builds and downloads a lead-import Excel template scoped to the current
+// event's variant — Import Data + Field Guide sheets, matching the original
+// two-sheet structure, but columns now driven by `fields` instead of a
+// fixed 4-column set. Header labels match FIELD_LABELS, and column order
+// matches orderFields — the same source LeadExcelPreview and LeadEntryTable
+// read from, so the downloaded template, the animated preview, and the
+// entry form never disagree on column order or naming.
+// ─────────────────────────────────────────────────────────────────────────────
 
-const FIELD_GUIDE_COLUMNS: string[][] = [
-	["Field", "Format", "Required", "Notes"],
-	["Name", "Text", "Yes", "Full name of the lead"],
-	["Email", "Email", "Yes", "Must be a valid email address"],
-	["Phone", "Text", "No", "10-digit number"],
-	["Notes", "Text", "No", "E.g. Cold, Warm, Hot, Sure Shot"],
-];
+export function downloadLeadImportTemplate(fields: LeadFormFieldKey[]) {
+  const orderedFields = orderFields(fields);
+  const wb = XLSX.utils.book_new();
 
-export function downloadLeadImportTemplate() {
-	const wb = XLSX.utils.book_new();
+  // ── Sheet 1: Import Data ──────────────────────────────────
+  const headers = orderedFields.map((field) => FIELD_LABELS[field]);
+  const examples = orderedFields.map(
+    (field) => FIELD_TEMPLATE_META[field].example,
+  );
 
-	// ── Sheet 1: Import Data ──────────────────────────────────
-	const headers = LEAD_IMPORT_COLUMNS.map((c) => c.header);
-	const examples = LEAD_IMPORT_COLUMNS.map((c) => c.example);
+  const ws = XLSX.utils.aoa_to_sheet([headers, examples]);
+  ws["!cols"] = orderedFields.map((field) => ({
+    wch: FIELD_TEMPLATE_META[field].width,
+  }));
 
-	const ws = XLSX.utils.aoa_to_sheet([headers, examples]);
-	ws["!cols"] = LEAD_IMPORT_COLUMNS.map((c) => ({ wch: c.width ?? 20 }));
+  XLSX.utils.book_append_sheet(wb, ws, "Import Data");
 
-	XLSX.utils.book_append_sheet(wb, ws, "Import Data");
+  // ── Sheet 2: Field Guide ──────────────────────────────────
+  const guideRows: string[][] = [
+    ["Field", "Format", "Required", "Notes"],
+    ...orderedFields.map((field) => [
+      FIELD_LABELS[field],
+      FIELD_TEMPLATE_META[field].format,
+      REQUIRED_FIELDS.includes(field) ? "Yes" : "No",
+      FIELD_TEMPLATE_META[field].notes,
+    ]),
+  ];
 
-	// ── Sheet 2: Field Guide ──────────────────────────────────
-	const wsGuide = XLSX.utils.aoa_to_sheet(FIELD_GUIDE_COLUMNS);
-	wsGuide["!cols"] = [
-		{ wch: 22 }, // Field
-		{ wch: 12 }, // Format
-		{ wch: 12 }, // Required
-		{ wch: 40 }, // Notes
-	];
+  const wsGuide = XLSX.utils.aoa_to_sheet(guideRows);
+  wsGuide["!cols"] = [
+    { wch: 22 }, // Field
+    { wch: 18 }, // Format
+    { wch: 12 }, // Required
+    { wch: 40 }, // Notes
+  ];
 
-	XLSX.utils.book_append_sheet(wb, wsGuide, "Field Guide");
+  XLSX.utils.book_append_sheet(wb, wsGuide, "Field Guide");
 
-	// ── Download ──────────────────────────────────────────────
-	XLSX.writeFile(wb, "lead-import-template.xlsx");
+  // ── Download ──────────────────────────────────────────────
+  XLSX.writeFile(wb, "lead-import-template.xlsx");
 }
