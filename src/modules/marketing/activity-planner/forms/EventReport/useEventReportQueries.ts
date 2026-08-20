@@ -1,8 +1,9 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { eventReportApi } from "./eventReport.api";
+import type { ReportListingParams } from "./eventReport.types";
 
 const REPORT_STALE_TIME = 30 * 1000;
-const FORM_CONFIG_STALE_TIME = 10 * 60 * 1000; // derived from event type, effectively static
+const FORM_CONFIG_STALE_TIME = 10 * 60 * 1000;
 
 export const eventReportKeys = {
   all: ["event-report"] as const,
@@ -10,6 +11,8 @@ export const eventReportKeys = {
     [...eventReportKeys.all, "epc", epcId ?? ""] as const,
   formConfig: (epcId?: string | null) =>
     [...eventReportKeys.all, "form-config", epcId ?? ""] as const,
+  listing: (params?: Record<string, unknown>) =>
+    [...eventReportKeys.all, "listing", params ?? {}] as const,
 };
 
 export const useEventReportFormConfigQuery = (epcId?: string | null) => {
@@ -28,6 +31,16 @@ export const useEventReportQuery = (epcId?: string | null) => {
     queryFn: () => eventReportApi.getReport(epcId ?? ""),
     enabled: Boolean(epcId),
     staleTime: REPORT_STALE_TIME,
+    placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
+  });
+};
+
+export const useReportListingQuery = (params: ReportListingParams) => {
+  return useQuery({
+    queryKey: eventReportKeys.listing(params),
+    queryFn: () => eventReportApi.getListing(params),
+    staleTime: 30 * 1000,
     placeholderData: keepPreviousData,
     refetchOnWindowFocus: false,
   });

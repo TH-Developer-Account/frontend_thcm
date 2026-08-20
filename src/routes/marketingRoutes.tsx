@@ -7,6 +7,7 @@ import LeadCreatePage from "../modules/marketing/leads/pages/LeadCreatePage";
 import MachineStudyEntryPage from "../modules/marketing/machine-study/MachineStudyEntryPage";
 import EpcListingPage from "../modules/marketing/activity-planner/pages/EpcListingPage";
 import FilesModule from "../modules/marketing/activity-planner/pages/FilesModule";
+import ReportListingPage from "../modules/marketing/activity-planner/forms/EventReport/listing/reportListingPage";
 import { TestPage } from "../containers/Login/pages/TestPage";
 
 export default function MarketingRoutes() {
@@ -21,6 +22,10 @@ export default function MarketingRoutes() {
       <Route
         path="/activity-planner/file-module/listing"
         element={<FilesModule />}
+      />
+      <Route
+        path="/activity-planner/reports/listing"
+        element={<ReportListingPage />}
       />
       <Route
         path="/activity-planner/leads/create"

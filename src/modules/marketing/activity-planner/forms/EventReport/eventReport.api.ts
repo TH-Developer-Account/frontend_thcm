@@ -4,6 +4,10 @@ import type {
   EventReportFormConfig,
   ResubmitReportPayload,
   SubmitReportPayload,
+  ReportListingParams,
+  ReportListingResult,
+  ReportListingRow,
+  ReportListingPagination,
 } from "./eventReport.types";
 
 type ApiEnvelope<T> = { success: boolean; data: T };
@@ -79,5 +83,20 @@ export const eventReportApi = {
       buildResubmitFormData(payload),
       { headers: { "Content-Type": "multipart/form-data" } },
     );
+  },
+
+  getListing: async (
+    params: ReportListingParams,
+  ): Promise<ReportListingResult> => {
+    const response = await ServerAxios.get<
+      ApiEnvelope<ReportListingRow[]> & {
+        pagination: ReportListingPagination;
+      }
+    >("/report/listing", { params });
+
+    return {
+      data: response.data.data,
+      pagination: response.data.pagination,
+    };
   },
 };

@@ -77,3 +77,39 @@ export type ResubmitReportPayload = {
   captions: string[];
   eventHighlights?: string;
 };
+
+export type ReportListingRow = {
+  id: string;
+  status: ReportStatus;
+  submittedAt: string;
+  resubmittedAt: string | null;
+  validatedAt: string | null;
+  hasPdf: boolean;
+  epc: {
+    id: string;
+    proposal_number: string;
+    location: string | null;
+    event_name: { title: string } | null;
+    created_by: { id: string; first_name: string; last_name: string } | null;
+  };
+  validator: { id: string; first_name: string; last_name: string } | null;
+};
+
+export type ReportListingParams = {
+  page: number;
+  pageSize: number;
+  status?: ReportStatus;
+  search?: string;
+};
+
+export type ReportListingPagination = {
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+export type ReportListingResult = {
+  data: ReportListingRow[];
+  pagination: ReportListingPagination;
+};

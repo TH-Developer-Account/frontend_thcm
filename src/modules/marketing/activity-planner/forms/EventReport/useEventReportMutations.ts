@@ -33,3 +33,16 @@ export const useResubmitReportMutation = () => {
     },
   });
 };
+
+export const useDownloadReportMutation = () => {
+  return useMutation({
+    mutationFn: async (epcId: string) => {
+      const report = await eventReportApi.getReport(epcId);
+      if (!report?.pdfUrl) {
+        throw new Error("This report's PDF isn't available yet.");
+      }
+      window.open(report.pdfUrl, "_blank", "noopener,noreferrer");
+      return report;
+    },
+  });
+};
