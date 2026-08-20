@@ -26,25 +26,7 @@ export interface ReimbursementClaimFormValues {
 	descriptionOfIllness?: string;
 	numberOfVisits?: string;
 	visitFeePerVisit?: string;
-	doctorMedicineAmount?: string;
-	injectionInvestigationAmount?: string;
-	ecgXrayOtherAmount?: string;
-	lensCost?: string;
-	frameCost?: string;
-	patientAge?: string;
-	lastHealthCheckupDate?: string;
-	healthCheckupAmount?: string;
-	excessHospitalizationAmount?: string;
 	employeeSignature?: string;
-	officeReference?: string;
-	officeVisitFeesAmount?: string;
-	officeMedicalAmount?: string;
-	officeOphthalmicAmount?: string;
-	officeHealthCheckupAmount?: string;
-	officeExcessHospitalizationAmount?: string;
-	passedBy?: string;
-	passedAmount?: string;
-	passedDate?: string;
 }
 
 export type ReimbursementClaimFormErrors = Partial<
@@ -112,7 +94,7 @@ export interface ClaimHeadRowBase {
 
 	fileName?: string | null;
 
-	approvedAmount?: string;
+	approvedClaimAmount?: string;
 
 	approvalStatus?: LineItemApprovalStatus;
 }

@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-// import Card from "../components/common/Card";
 
 type PublicPagesLayoutProps = {
 	children: ReactNode;

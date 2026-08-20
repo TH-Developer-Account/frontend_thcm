@@ -9,6 +9,14 @@ import HelperTooltip from "./HelperTooltip";
 
 type PickerMode = "single" | "range";
 
+type DropdownPosition = {
+	top: number;
+	left: number;
+	visibility: "hidden" | "visible";
+};
+
+const VIEWPORT_GAP = 8;
+
 type DatePickerInputProps = {
 	label?: string;
 	mode?: PickerMode;
@@ -104,7 +112,11 @@ export default function DatePickerInput({
 	toDate,
 }: DatePickerInputProps) {
 	const [open, setOpen] = useState(false);
-	const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+	const [dropdownPos, setDropdownPos] = useState<DropdownPosition>({
+		top: 0,
+		left: 0,
+		visibility: "hidden",
+	});
 
 	const [internalValue, setInternalValue] = useState<
 		Date | DateRange | undefined
@@ -116,6 +128,7 @@ export default function DatePickerInput({
 
 	const wrapperRef = useRef<HTMLDivElement>(null);
 	const buttonRef = useRef<HTMLButtonElement>(null);
+	const dropdownRef = useRef<HTMLDivElement>(null);
 
 	const effectiveFromDate = disablePast ? (fromDate ?? new Date()) : fromDate;
 
@@ -156,12 +169,11 @@ export default function DatePickerInput({
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			const target = event.target as Node;
-			const portalEl = document.getElementById("date-picker-portal");
 
 			if (
 				wrapperRef.current &&
 				!wrapperRef.current.contains(target) &&
-				!portalEl?.contains(target)
+				!dropdownRef.current?.contains(target)
 			) {
 				setOpen(false);
 				setDraftValue(selectedValue);
@@ -172,38 +184,51 @@ export default function DatePickerInput({
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [selectedValue]);
 
-	// Keep portal anchored on scroll/resize
+	// Keep the fixed portal inside the viewport and flip it above the input
+	// when there is not enough room below.
 	useEffect(() => {
 		if (!open) return;
 
 		const updatePos = () => {
-			if (buttonRef.current) {
-				const rect = buttonRef.current.getBoundingClientRect();
-				setDropdownPos({
-					top: rect.bottom + window.scrollY - 4,
-					left: rect.left + window.scrollX,
-				});
-			}
+			const button = buttonRef.current;
+			const dropdown = dropdownRef.current;
+			if (!button || !dropdown) return;
+
+			const buttonRect = button.getBoundingClientRect();
+			const dropdownRect = dropdown.getBoundingClientRect();
+			const maxLeft = Math.max(
+				VIEWPORT_GAP,
+				window.innerWidth - dropdownRect.width - VIEWPORT_GAP,
+			);
+			const left = Math.min(Math.max(buttonRect.left, VIEWPORT_GAP), maxLeft);
+			const fitsBelow =
+				buttonRect.bottom + VIEWPORT_GAP + dropdownRect.height <=
+				window.innerHeight;
+			const top = fitsBelow
+				? buttonRect.bottom + VIEWPORT_GAP
+				: Math.max(
+						VIEWPORT_GAP,
+						buttonRect.top - dropdownRect.height - VIEWPORT_GAP,
+					);
+
+			setDropdownPos({ top, left, visibility: "visible" });
 		};
+
+		const animationFrame = window.requestAnimationFrame(updatePos);
 
 		window.addEventListener("scroll", updatePos, true);
 		window.addEventListener("resize", updatePos);
 		return () => {
+			window.cancelAnimationFrame(animationFrame);
 			window.removeEventListener("scroll", updatePos, true);
 			window.removeEventListener("resize", updatePos);
 		};
-	}, [open]);
+	}, [finalNumberOfMonths, mode, open]);
 
 	const handleOpen = () => {
 		if (disabled) return;
 
-		if (buttonRef.current) {
-			const rect = buttonRef.current.getBoundingClientRect();
-			setDropdownPos({
-				top: rect.bottom + window.scrollY - 4,
-				left: rect.left + window.scrollX,
-			});
-		}
+		setDropdownPos((current) => ({ ...current, visibility: "hidden" }));
 
 		setDraftValue(selectedValue);
 		setOpen(true);
@@ -235,13 +260,16 @@ export default function DatePickerInput({
 		open && !disabled
 			? createPortal(
 					<div
+						ref={dropdownRef}
 						id="date-picker-portal"
 						style={{
 							top: dropdownPos.top,
 							left: dropdownPos.left,
-							transform: "translateY(-70%)",
+							visibility: dropdownPos.visibility,
+							maxWidth: `calc(100vw - ${VIEWPORT_GAP * 2}px)`,
+							maxHeight: `calc(100dvh - ${VIEWPORT_GAP * 2}px)`,
 						}}
-						className="fixed z-9 rounded-lg border border-gray-200 bg-white p-1.5 shadow-lg"
+						className="fixed z-[9999] overflow-auto rounded-lg border border-gray-200 bg-white p-1.5 shadow-lg"
 					>
 						{mode === "single" ? (
 							<DayPicker

@@ -49,7 +49,9 @@ import type {
 	ReimbursementClaimFormValues,
 	ReimbursementClaimSubmission,
 } from "../types/reimbursementClaim.types";
-import ClaimHeadEntryTable from "./ClaimHeadEntryTable";
+import ClaimHeadEntryTable, {
+	type ApprovedBillAmountPayload,
+} from "./ClaimHeadEntryTable";
 import { Badge } from "../../../components/common/Badge";
 
 const GRADE_OPTIONS: Array<{
@@ -117,7 +119,9 @@ interface ReimbursementClaimFormProps {
 	onApproveStage?: () => void | Promise<void>;
 	onClarifyStage?: (reason: string) => void | Promise<void>;
 
-	onLineItemApprove?: (lineItem: ClaimHeadRow) => void | Promise<void>;
+	onLineItemApprove?: (
+		payload: ApprovedBillAmountPayload,
+	) => void | Promise<void>;
 }
 
 const ReimbursementClaimForm = ({
@@ -142,7 +146,7 @@ const ReimbursementClaimForm = ({
 	approvalActionLoading = false,
 	onApproveStage,
 	onClarifyStage,
-	// onLineItemApprove,
+	onLineItemApprove,
 }: ReimbursementClaimFormProps) => {
 	const { showToast } = useToast();
 	const [claimRows, setClaimRows] = useState<ClaimHeadFormRow[]>([
@@ -176,7 +180,7 @@ const ReimbursementClaimForm = ({
 					billDate: item.billDate,
 					amount: item.amount,
 					fileName: item.fileName,
-					approvedAmount: item.approvedAmount,
+					approvedClaimAmount: item.approvedClaimAmount,
 					approvalStatus: item.approvalStatus,
 				})),
 			),
@@ -209,7 +213,6 @@ const ReimbursementClaimForm = ({
 			),
 		[savedClaims],
 	);
-	console.log("mode", mode);
 	const buildSubmission = useCallback(
 		(
 			values: ReimbursementClaimFormValues,
@@ -328,165 +331,192 @@ const ReimbursementClaimForm = ({
 	// this stage — same condition the final Approve button already uses.
 	const canReviewLineItems = canApprove;
 
-	const clearClaimError = (key: string) => {
+	const clearClaimError = useCallback((key: string) => {
 		setClaimErrors((current) => {
 			if (!current[key]) return current;
 			const next = { ...current };
 			delete next[key];
 			return next;
 		});
-	};
+	}, []);
 
-	const handleClaimChange = (
-		rowId: string,
-		field: keyof Omit<ClaimHeadFormRow, "id">,
-		value: unknown,
-	) => {
-		setClaimRows((current) =>
-			current.map((row) => {
-				if (row.id !== rowId) return row;
-				if (field === "attachment") {
-					const attachment = value as FileUploadValue | null;
-					return {
-						...row,
-						attachment,
-						file: attachment?.file ?? null,
-						fileName:
-							attachment?.file?.name ??
-							attachment?.name ??
-							row.fileName ??
-							null,
-					};
-				}
-				return { ...row, [field]: value };
-			}),
-		);
-		clearClaimError(`${field}-${rowId}`);
-	};
+	const handleClaimChange = useCallback(
+		(
+			rowId: string,
+			field: keyof Omit<ClaimHeadFormRow, "id">,
+			value: unknown,
+		) => {
+			setClaimRows((current) =>
+				current.map((row) => {
+					if (row.id !== rowId) return row;
+					if (field === "attachment") {
+						const attachment = value as FileUploadValue | null;
+						return {
+							...row,
+							attachment,
+							file: attachment?.file ?? null,
+							fileName:
+								attachment?.file?.name ??
+								attachment?.name ??
+								row.fileName ??
+								null,
+						};
+					}
+					return { ...row, [field]: value };
+				}),
+			);
+			clearClaimError(`${field}-${rowId}`);
+		},
+		[clearClaimError],
+	);
 
-	const validateClaim = (row: ClaimHeadFormRow): ClaimHeadValidationErrors => {
-		const validation: ClaimHeadValidationErrors = {};
-		if (!row.claimHead) {
-			validation[`claimHead-${row.id}`] = "Claim head is required.";
-		}
-		if (!row.billNumber.trim()) {
-			validation[`billNumber-${row.id}`] = "Bill number is required.";
-		}
-		if (!row.billName.trim()) {
-			validation[`billName-${row.id}`] = "Bill name is required.";
-		}
+	const validateClaim = useCallback(
+		(row: ClaimHeadFormRow): ClaimHeadValidationErrors => {
+			const validation: ClaimHeadValidationErrors = {};
+			if (!row.claimHead) {
+				validation[`claimHead-${row.id}`] = "Claim head is required.";
+			}
+			if (!row.billNumber.trim()) {
+				validation[`billNumber-${row.id}`] = "Bill number is required.";
+			}
+			if (!row.billName.trim()) {
+				validation[`billName-${row.id}`] = "Bill name is required.";
+			}
 
-		if (!row.billDate) {
-			validation[`billDate-${row.id}`] = "Bill date is required.";
-		}
-		if (!row.amount || Number(row.amount) <= 0) {
-			validation[`amount-${row.id}`] = "Enter an amount greater than zero.";
-		}
-		if (
-			!row.attachment?.file &&
-			!row.attachment?.url &&
-			!row.file &&
-			!row.fileName
-		) {
-			validation[`file-${row.id}`] = "Attachment is required.";
-		}
-		return validation;
-	};
+			if (!row.billDate) {
+				validation[`billDate-${row.id}`] = "Bill date is required.";
+			}
+			if (!row.amount || Number(row.amount) <= 0) {
+				validation[`amount-${row.id}`] = "Amount is required";
+			}
+			if (
+				!row.attachment?.file &&
+				!row.attachment?.url &&
+				!row.file &&
+				!row.fileName
+			) {
+				validation[`file-${row.id}`] = "Attachment is required.";
+			}
+			return validation;
+		},
+		[],
+	);
 
-	const handleSaveClaim = (row: ClaimHeadFormRow) => {
-		const validation = validateClaim(row);
-		if (Object.keys(validation).length > 0) {
-			setClaimErrors(validation);
-			showToast({
-				type: "error",
-				title: "Complete the claim entry",
-				description:
-					"Fill all required fields and upload one supporting document before adding the entry.",
-			});
-			return;
-		}
+	const handleSaveClaim = useCallback(
+		(row: ClaimHeadFormRow) => {
+			const validation = validateClaim(row);
+			if (Object.keys(validation).length > 0) {
+				setClaimErrors(validation);
+				showToast({
+					type: "error",
+					title: "Complete the claim entry",
+					description:
+						"Fill all required fields and upload one supporting document before adding the entry.",
+				});
+				return;
+			}
 
-		setSavingClaimId(row.id);
-		const savedRow: ClaimHeadRow = {
-			...row,
-			claimHead: row.claimHead as ClaimHead,
-			fileName: row.file?.name ?? row.fileName ?? null,
-			approvedAmount: row.approvedAmount || row.amount,
-			approvalStatus: row.approvalStatus || "PENDING",
-			billDate: row.billDate ?? "",
-		};
+			setSavingClaimId(row.id);
+			const savedRow: ClaimHeadRow = {
+				...row,
+				claimHead: row.claimHead as ClaimHead,
+				fileName: row.file?.name ?? row.fileName ?? null,
+				approvedClaimAmount: row.approvedClaimAmount || row.amount,
+				approvalStatus: row.approvalStatus || "PENDING",
+				billDate: row.billDate ?? "",
+			};
 
-		setSavedClaims((current) =>
-			editingClaimId
-				? current.map((item) => (item.id === editingClaimId ? savedRow : item))
-				: [...current, savedRow],
-		);
-		setEditingClaimId(null);
-		setClaimRows([createClaimHeadRow()]);
-		setClaimErrors({});
-		setSavingClaimId(null);
-	};
-
-	const handleEditClaim = (claim: ClaimHeadRow) => {
-		if (!canEditClaimForm) return;
-		setEditingClaimId(claim.id);
-		setClaimRows([{ ...claim }]);
-		setClaimErrors({});
-	};
-
-	const handleDeleteClaim = (id: string) => {
-		if (!canEditClaimForm) return;
-		setDeletingClaimId(id);
-		setSavedClaims((current) => current.filter((claim) => claim.id !== id));
-		if (editingClaimId === id) {
+			setSavedClaims((current) =>
+				editingClaimId
+					? current.map((item) =>
+							item.id === editingClaimId ? savedRow : item,
+						)
+					: [...current, savedRow],
+			);
 			setEditingClaimId(null);
 			setClaimRows([createClaimHeadRow()]);
-		}
-		setLineItemRemarks((current) => {
-			if (!(id in current)) return current;
-			const next = { ...current };
-			delete next[id];
-			return next;
-		});
-		setDeletingClaimId(null);
-	};
+			setClaimErrors({});
+			setSavingClaimId(null);
+		},
+		[editingClaimId, showToast, validateClaim],
+	);
 
-	const handleCancelClaimEdit = () => {
+	const handleEditClaim = useCallback(
+		(claim: ClaimHeadRow) => {
+			if (!canEditClaimForm) return;
+			setEditingClaimId(claim.id);
+			setClaimRows([{ ...claim }]);
+			setClaimErrors({});
+		},
+		[canEditClaimForm],
+	);
+
+	const handleDeleteClaim = useCallback(
+		(id: string) => {
+			if (!canEditClaimForm) return;
+			setDeletingClaimId(id);
+			setSavedClaims((current) => current.filter((claim) => claim.id !== id));
+			setEditingClaimId((current) => {
+				if (current !== id) return current;
+				setClaimRows([createClaimHeadRow()]);
+				return null;
+			});
+			setLineItemRemarks((current) => {
+				if (!(id in current)) return current;
+				const next = { ...current };
+				delete next[id];
+				return next;
+			});
+			setDeletingClaimId(null);
+		},
+		[canEditClaimForm],
+	);
+
+	const handleCancelClaimEdit = useCallback(() => {
 		setEditingClaimId(null);
 		setClaimErrors({});
 		setClaimRows([createClaimHeadRow()]);
-	};
+	}, []);
 
-	const handleApprovedAmountChange = (id: string, rawValue: string) => {
-		if (!canReviewLineItems) return;
-		const approvedAmount = sanitizeAmountInput(rawValue);
-		setSavedClaims((current) =>
-			current.map((claim) =>
-				claim.id === id ? { ...claim, approvedAmount } : claim,
-			),
-		);
-		clearClaimError(`approvedAmount-${id}`);
-	};
+	const handleApprovedAmountChange = useCallback(
+		(id: string, rawValue: string) => {
+			if (!canReviewLineItems) return;
+			const approvedClaimAmount = sanitizeAmountInput(rawValue);
+			setSavedClaims((current) =>
+				current.map((claim) =>
+					claim.id === id ? { ...claim, approvedClaimAmount } : claim,
+				),
+			);
+			clearClaimError(`approvedClaimAmount-${id}`);
+		},
+		[canReviewLineItems, clearClaimError],
+	);
 
-	const handleToggleLineItemStatus = (id: string) => {
-		if (!canReviewLineItems) return;
-		setSavedClaims((current) =>
-			current.map((claim) =>
-				claim.id === id
-					? {
-							...claim,
-							approvalStatus:
-								claim.approvalStatus === "APPROVED" ? "PENDING" : "APPROVED",
-						}
-					: claim,
-			),
-		);
-	};
+	const handleToggleLineItemStatus = useCallback(
+		(id: string) => {
+			if (!canReviewLineItems) return;
+			setSavedClaims((current) =>
+				current.map((claim) =>
+					claim.id === id
+						? {
+								...claim,
+								approvalStatus:
+									claim.approvalStatus === "APPROVED" ? "PENDING" : "APPROVED",
+							}
+						: claim,
+				),
+			);
+		},
+		[canReviewLineItems],
+	);
 
-	const handleRemarksChange = (id: string, value: string) => {
-		if (!canReviewLineItems) return;
-		setLineItemRemarks((current) => ({ ...current, [id]: value }));
-	};
+	const handleRemarksChange = useCallback(
+		(id: string, value: string) => {
+			if (!canReviewLineItems) return;
+			setLineItemRemarks((current) => ({ ...current, [id]: value }));
+		},
+		[canReviewLineItems],
+	);
 
 	const buildClarifyReasonPrefix = useCallback((): string => {
 		const flagged = savedClaims.filter(
@@ -520,12 +550,12 @@ const ReimbursementClaimForm = ({
 	// (✓). External approvers have no line items to review, so they're
 	// exempt from this gate — same as before.
 
-	// const allLineItemsApproved =
-	// 	savedClaims.length > 0 &&
-	// 	savedClaims.every((item) => item.approvalStatus === "APPROVED");
+	const allLineItemsApproved =
+		savedClaims.length > 0 &&
+		savedClaims.every((item) => item.approvalStatus === "APPROVED");
 
-	const canCompleteStage = canApprove;
-	// && (isExternalApprover || allLineItemsApproved);
+	const canCompleteStage =
+		canApprove && (isExternalApprover || allLineItemsApproved);
 
 	const resetAll = () => {
 		handleReset();
@@ -620,6 +650,7 @@ const ReimbursementClaimForm = ({
 										size="sm"
 										appearance="standard"
 										variant="brand"
+										isTooltip="Please approve all line items to approve this form"
 										disabled={approvalActionLoading || !canCompleteStage}
 										onClick={() => void onApproveStage()}
 									/>
@@ -791,6 +822,7 @@ const ReimbursementClaimForm = ({
 							onDeleteRow={handleDeleteClaim}
 							onApprovedAmountChange={handleApprovedAmountChange}
 							onToggleLineItemStatus={handleToggleLineItemStatus}
+							onApproveLineItem={onLineItemApprove}
 							onRemarksChange={handleRemarksChange}
 							lineItemRemarks={lineItemRemarks}
 							canApproveLineItems={canReviewLineItems}
@@ -826,7 +858,7 @@ const ReimbursementClaimForm = ({
 										{errors.declarationAccepted}
 									</p>
 								) : null}
-								<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
+								<div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 relative">
 									<DatePickerInput
 										label="Date"
 										mode="single"

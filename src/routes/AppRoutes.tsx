@@ -70,7 +70,7 @@ export default function AppRoutes() {
 			<Route path="/vendor-form" element={<VendorOnboardingPublicPage />} />
 
 			<Route
-				path="/medical-claim-form/:token?"
+				path="/medical-claim-form/:token"
 				element={<ReimbursementClaimPublicPage />}
 			/>
 

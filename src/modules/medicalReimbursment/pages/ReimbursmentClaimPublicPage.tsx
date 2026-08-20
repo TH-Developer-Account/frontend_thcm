@@ -90,7 +90,7 @@ type PublicBillShape = {
 	mimeType?: string | null;
 	fileSize?: number | null;
 	s3Key?: string | null;
-	approvedAmount?: string | number | null;
+	approvedClaimAmount?: string | number | null;
 	approvalStatus?: ClaimHeadRow["approvalStatus"] | null;
 };
 
@@ -142,7 +142,7 @@ const mapPublicBillToLineItem = (
 					fallbackName: fileName,
 				})
 			: null,
-		approvedAmount: String(bill.approvedAmount ?? bill.amount ?? ""),
+		approvedClaimAmount: String(bill.approvedClaimAmount ?? bill.amount ?? ""),
 		approvalStatus: bill.approvalStatus ?? "PENDING",
 	} as ClaimHeadRow;
 };
@@ -156,7 +156,9 @@ const mapPublicLineItem = (
 			...item,
 			billDate: toDateInputValue(item.billDate),
 			amount: String(item.amount ?? ""),
-			approvedAmount: String(item.approvedAmount ?? item.amount ?? ""),
+			approvedClaimAmount: String(
+				item.approvedClaimAmount ?? item.amount ?? "",
+			),
 			approvalStatus: item.approvalStatus ?? "PENDING",
 		} as ClaimHeadRow;
 	}
@@ -345,7 +347,6 @@ const ReimbursementClaimPublicPage = ({
 		if (!submitted) return;
 		const timerId = window.setTimeout(() => {
 			clearSessionCode();
-			navigate("/medical-claim/submitted", { replace: true });
 		}, PUBLIC_SESSION_END_DELAY_MS);
 		return () => window.clearTimeout(timerId);
 	}, [navigate, submitted]);
@@ -461,6 +462,7 @@ const ReimbursementClaimPublicPage = ({
 	return (
 		<PublicPagesLayout>
 			<ReimbursementClaimForm
+				mode="edit"
 				initialValues={resolvedInitialValues}
 				initialLineItems={resolvedInitialLineItems}
 				actionText="Submit Claim"

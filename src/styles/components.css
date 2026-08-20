@@ -7542,7 +7542,7 @@ PAGE NAVIGATION
 		left: 0;
 
 		display: grid;
-		width: 13rem;
+		width: 16rem;
 		grid-template-columns: repeat(8, minmax(0, 1fr));
 		gap: var(--space-0-5);
 
@@ -7618,8 +7618,8 @@ PAGE NAVIGATION
 
 	.rich-textarea-emoji {
 		display: inline-flex;
-		width: var(--control-height-sm);
-		height: var(--control-height-sm);
+		width: var(--control-height-lg);
+		height: var(--control-height-lg);
 		align-items: center;
 		justify-content: center;
 
@@ -7629,7 +7629,7 @@ PAGE NAVIGATION
 
 		background-color: transparent;
 
-		font-size: var(--font-size-base);
+		font-size: var(--font-size-lg);
 		line-height: 1;
 
 		cursor: pointer;

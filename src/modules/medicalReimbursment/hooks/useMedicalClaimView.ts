@@ -114,6 +114,7 @@ export function useMedicalClaimView({
 }: UseMedicalClaimViewArgs) {
 	const { user } = useAuth();
 	const { showToast } = useToast();
+
 	const isGuestRoute = context === "guest";
 	/*
 	 * Query selection is based on the route context supplied to the hook.

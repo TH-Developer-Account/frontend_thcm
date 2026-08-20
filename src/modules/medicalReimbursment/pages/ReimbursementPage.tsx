@@ -37,7 +37,6 @@ const ReimbursementPage = ({ mode = "edit" }: ReimbursementPageProps) => {
 	});
 
 	let content: ReactNode;
-
 	if (isExistingClaim && claimView.isLoading) {
 		content = (
 			<Card padding="spacious">

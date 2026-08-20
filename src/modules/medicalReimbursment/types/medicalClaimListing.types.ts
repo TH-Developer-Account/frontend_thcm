@@ -90,7 +90,7 @@ export interface MedicalClaimBill {
 	 */
 	mimeType?: string | null;
 	size?: number | string | null;
-	approvedAmount?: number | string | null;
+	approvedClaimAmount?: number | string | null;
 	approvalStatus?: "PENDING" | "APPROVED";
 }
 

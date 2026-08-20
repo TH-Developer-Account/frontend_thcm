@@ -15,7 +15,7 @@ export const createClaimHeadRow = (): ClaimHeadFormRow => ({
 
 	amount: "",
 
-	approvedAmount: "",
+	approvedClaimAmount: "",
 
 	approvalStatus: "PENDING",
 

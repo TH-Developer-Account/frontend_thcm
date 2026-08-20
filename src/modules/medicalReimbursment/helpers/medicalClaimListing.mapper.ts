@@ -147,7 +147,9 @@ export const toMedicalClaimLineItems = (
 
 			attachment,
 
-			approvedAmount: String(bill.approvedAmount ?? bill.amount ?? ""),
+			approvedClaimAmount: String(
+				bill.approvedClaimAmount ?? bill.amount ?? "",
+			),
 
 			approvalStatus: bill.approvalStatus ?? "PENDING",
 		};

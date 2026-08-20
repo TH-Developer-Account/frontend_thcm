@@ -177,7 +177,7 @@ const RichTextarea: ForwardRefRenderFunction<
 							{popup === "emoji" ? (
 								<div className="rich-textarea-popover rich-textarea-emoji-popover">
 									{COMMENT_EMOJIS.map((emoji) => (
-										<button
+										<Button
 											key={emoji}
 											type="button"
 											className="rich-textarea-emoji"
@@ -189,7 +189,7 @@ const RichTextarea: ForwardRefRenderFunction<
 											aria-label={`Insert ${emoji}`}
 										>
 											{emoji}
-										</button>
+										</Button>
 									))}
 								</div>
 							) : null}

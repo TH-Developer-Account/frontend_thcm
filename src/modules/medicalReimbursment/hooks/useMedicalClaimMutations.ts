@@ -33,14 +33,21 @@ const invalidateMedicalClaims = (
 	}
 };
 
+const DETAIL_QUERY_CACHE_OPTIONS = {
+	staleTime: Infinity,
+	gcTime: Infinity,
+	refetchOnMount: false,
+	refetchOnWindowFocus: false,
+	refetchOnReconnect: false,
+} as const;
+
 export function useMedicalClaimDetailQuery(claimId: string, enabled = true) {
 	return useQuery({
 		queryKey: medicalClaimKeys.detail(claimId),
 		queryFn: () => medicalClaimApi.getById(claimId),
 		enabled: enabled && Boolean(claimId),
 		retry: false,
-		staleTime: 30_000,
-		refetchOnWindowFocus: false,
+		...DETAIL_QUERY_CACHE_OPTIONS,
 	});
 }
 
@@ -107,8 +114,7 @@ export function usePublicMedicalClaimQuery(token: string, enabled = true) {
 		queryFn: () => medicalClaimApi.getPublicByToken(normalizedToken),
 		enabled: enabled && Boolean(normalizedToken),
 		retry: false,
-		staleTime: 30_000,
-		refetchOnWindowFocus: false,
+		...DETAIL_QUERY_CACHE_OPTIONS,
 	});
 }
 
@@ -159,8 +165,7 @@ export function useGuestMedicalClaimDetailQuery(
 		queryFn: () => medicalClaimApi.getGuestById(claimId),
 		enabled: enabled && Boolean(claimId),
 		retry: false,
-		staleTime: 30_000,
-		refetchOnWindowFocus: false,
+		...DETAIL_QUERY_CACHE_OPTIONS,
 	});
 }
 

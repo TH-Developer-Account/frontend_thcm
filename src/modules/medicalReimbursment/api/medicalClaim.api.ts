@@ -193,15 +193,19 @@ export const medicalClaimApi = {
 	/** Persists a proposer-approved amount for one bill. */
 	approveLineItem: async (
 		claimId: string,
-		lineItem: Pick<ClaimHeadRow, "id" | "approvedAmount" | "approvalStatus">,
+		lineItem: Pick<ClaimHeadRow, "id" | "approvedClaimAmount">,
 	): Promise<ClaimHeadRow> => {
 		const {
 			data: { data },
 		} = await ServerAxios.patch<ApiDataResponse<ClaimHeadRow>>(
-			`${MEDICAL_CLAIM_URL}/${encodeURIComponent(claimId)}/bills/${encodeURIComponent(lineItem.id)}/approval`,
+			`${MEDICAL_CLAIM_URL}/${encodeURIComponent(claimId)}/bills/approved-amounts`,
 			{
-				approvedAmount: Number(lineItem.approvedAmount),
-				approvalStatus: lineItem.approvalStatus ?? "APPROVED",
+				bills: [
+					{
+						billId: lineItem.id,
+						approvedClaimAmount: Number(lineItem.approvedClaimAmount),
+					},
+				],
 			},
 		);
 

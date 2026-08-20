@@ -72,7 +72,6 @@ const GuestReimbursementPage = ({
 	}
 
 	const claim = guestClaim.detail;
-
 	return (
 		<PageSectionLayout>
 			<PageHeader
