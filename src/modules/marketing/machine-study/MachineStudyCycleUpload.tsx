@@ -8,11 +8,13 @@ import type { CycleImportResult } from "./machineStudy.types";
 type MachineStudyCycleUploadProps = {
   studyId: string | undefined; // undefined until the header's been saved at least once
   existingCycleCount: number;
+  onUploaded: () => void;
 };
 
 const MachineStudyCycleUpload = ({
   studyId,
   existingCycleCount,
+  onUploaded,
 }: MachineStudyCycleUploadProps) => {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const uploadMutation = useUploadMachineStudyCyclesMutation();
@@ -32,6 +34,7 @@ const MachineStudyCycleUpload = ({
       setError(null);
       const result = await uploadMutation.mutateAsync({ id: studyId, file });
       setLastResult(result);
+      onUploaded();
     } catch (err: any) {
       setError(
         err?.response?.data?.message ||

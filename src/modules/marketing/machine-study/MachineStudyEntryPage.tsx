@@ -118,6 +118,7 @@ export default function MachineStudyEntryPage() {
       <MachineStudyCycleUpload
         studyId={tataHitachiStudy?.id}
         existingCycleCount={tataHitachiStudy?._count?.cycles ?? 0}
+        onUploaded={refetchStudies}
       />
     </div>
   );
@@ -143,6 +144,7 @@ export default function MachineStudyEntryPage() {
           <MachineStudyCycleUpload
             studyId={tataHitachiStudy?.id}
             existingCycleCount={tataHitachiStudy?._count?.cycles ?? 0}
+            onUploaded={refetchStudies}
           />
         </div>
       ) : (
@@ -156,6 +158,7 @@ export default function MachineStudyEntryPage() {
           <MachineStudyCycleUpload
             studyId={competitionStudy?.id}
             existingCycleCount={competitionStudy?._count?.cycles ?? 0}
+            onUploaded={refetchStudies}
           />
         </div>
       )}

@@ -11,6 +11,11 @@ const FUEL_TYPE_OPTIONS: BaseOption[] = [
   { value: "ELECTRIC", label: "Electric" },
 ];
 
+const AC_STATUS_OPTIONS: BaseOption[] = [
+  { value: "ON", label: "On" },
+  { value: "OFF", label: "Off" },
+];
+
 type MachineStudyHeaderFormProps = {
   epcId: string;
   isCompetitorMachine: boolean;
@@ -130,12 +135,18 @@ const MachineStudyHeaderForm = ({
             handleChange("bucketVolumeCuM", e.target.value)
           }
         />
-        <FormInput
+        <SelectInput
           label="AC Status"
-          value={form.acStatus}
           required
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            handleChange("acStatus", e.target.value)
+          options={AC_STATUS_OPTIONS}
+          value={
+            AC_STATUS_OPTIONS.find((o) => o.value === form.acStatus) ?? null
+          }
+          onChange={(option) =>
+            handleChange(
+              "acStatus",
+              ((option as BaseOption | null)?.value as any) ?? "",
+            )
           }
         />
         <FormInput
