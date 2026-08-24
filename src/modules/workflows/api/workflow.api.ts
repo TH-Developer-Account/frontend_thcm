@@ -19,6 +19,7 @@ import type {
   WorkflowUser,
 } from "../types/types";
 import { mapStages } from "../utils/workflow.helpers";
+import type { WorkflowScope } from "../types/types";
 
 export type { AttachWorkflowInput } from "../types/types";
 import type {
@@ -42,8 +43,6 @@ const WORKFLOW_TEMPLATE_URL = "/work-flow";
 const WORKFLOW_RUNTIME_URL = "/soa";
 const USERS_URL = "/users";
 
-export type WorkflowScope = "created" | "assigned";
-export type WorkflowListScope = "ALL" | "ASSIGNED_TO_ME" | "CREATED_BY_ME";
 export type WorkflowSubjectType =
   | "EVENT_PROPOSAL"
   | "VENDOR_ONBOARDING"
@@ -133,6 +132,62 @@ const unwrapEnvelope = <T>(value: unknown): ApiEnvelope<T> => {
     success: envelope.success,
     data: envelope.data,
     message: envelope.message,
+  };
+};
+
+const normalizeWorkflowList = (value: unknown): WorkflowListResponse => {
+  if (Array.isArray(value)) {
+    return {
+      data: value as WorkflowTemplate[],
+      meta: {
+        total: value.length,
+        page: 1,
+        limit: value.length,
+        totalPages: value.length > 0 ? 1 : 0,
+      },
+    };
+  }
+
+  if (!isRecord(value)) {
+    return { data: [], meta: { total: 0, page: 1, limit: 0, totalPages: 0 } };
+  }
+
+  const nested = value.data;
+  const payload =
+    isRecord(nested) &&
+    (Array.isArray(nested.data) ||
+      Array.isArray(nested.rows) ||
+      isRecord(nested.meta))
+      ? nested
+      : value;
+
+  const rows = Array.isArray(payload.data)
+    ? payload.data
+    : Array.isArray(payload.rows)
+      ? payload.rows
+      : [];
+  const meta = isRecord(payload.meta) ? payload.meta : {};
+
+  const rawTotalPages = meta.totalPages ?? meta.total_pages;
+  const totalPages = Number(rawTotalPages ?? (rows.length > 0 ? 1 : 0));
+
+  const rawTotal = meta.total ?? meta.total_count;
+  const total = Number(rawTotal ?? rows.length);
+
+  const rawPage = meta.page ?? meta.current_page;
+  const page = Number(rawPage ?? 1);
+
+  const rawLimit = meta.limit ?? meta.pageSize ?? meta.page_size;
+  const limit = Number(rawLimit ?? rows.length);
+
+  return {
+    data: rows as WorkflowTemplate[],
+    meta: {
+      total: Number.isFinite(total) ? total : 0,
+      page: Number.isFinite(page) ? page : 1,
+      limit: Number.isFinite(limit) ? limit : 0,
+      totalPages: Number.isFinite(totalPages) ? totalPages : 0,
+    },
   };
 };
 
@@ -274,6 +329,23 @@ export const workflowListApi = {
 };
 
 export const workflowApi = {
+  // Workflow template management
+  list: async (params: WorkflowListParams): Promise<WorkflowListResponse> => {
+    const { pageSize, ...rest } = params;
+
+    const response = await ServerAxios.get(
+      api_routes.get_all_workflow_api_route,
+      {
+        params: {
+          ...rest,
+          limit: pageSize,
+          filters: JSON.stringify(params.filters ?? {}),
+        },
+      },
+    );
+    return normalizeWorkflowList(response.data);
+  },
+
   getById: async (id: string): Promise<WorkflowTemplate> => {
     const response = await ServerAxios.get(
       `${WORKFLOW_TEMPLATE_URL}/${encodeURIComponent(id)}`,
