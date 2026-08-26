@@ -449,7 +449,7 @@ const VendorCreationSummaryForm = ({
 				}
 				// subtitle="Review the complete request before taking the final action."
 				sections={sections}
-				padding="none"
+				padding="compact"
 				footer={footer}
 			/>
 
