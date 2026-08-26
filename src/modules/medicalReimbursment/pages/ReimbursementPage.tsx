@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import Card from "../../../components/common/Card";
-import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import MedicalClaimCommentSection from "../components/MedicalClaimCommentSection";
 import ReimbursementClaimForm from "../components/ReimbursementClaimForm";
@@ -54,6 +53,7 @@ const ReimbursementPage = ({ mode = "edit" }: ReimbursementPageProps) => {
 	} else {
 		content = (
 			<ReimbursementClaimForm
+				referenceNumber={claimView.referenceNumber}
 				mode={mode}
 				canEdit={claimView.canEdit}
 				actorRole={claimView.actorRole}
@@ -105,27 +105,27 @@ const ReimbursementPage = ({ mode = "edit" }: ReimbursementPageProps) => {
 
 	return (
 		<PageSectionLayout>
-			<PageHeader
-				headerText="Medical Reimbursement Form"
-				navigation={{
-					variant: "breadcrumbs",
-					ariaLabel: "Medical Reimbursement Form",
-					breadcrumbs: [
-						{
-							label: "Home Screen",
-							href: "/",
-						},
-						{
-							label: "Medical Reimbursement Forms",
-							href: "/medi-claim/create",
-						},
-						{
-							label: "Medical Reimbursement Form",
-						},
-					],
-					separator: "›",
-				}}
-			/>
+			{/* <PageHeader
+					headerText="Medical Reimbursement Form"
+					navigation={{
+						variant: "breadcrumbs",
+						ariaLabel: "Medical Reimbursement Form",
+						breadcrumbs: [
+							{
+								label: "Home Screen",
+								href: "/",
+							},
+							{
+								label: "Medical Reimbursement Forms",
+								href: "/medi-claim/create",
+							},
+							{
+								label: "Medical Reimbursement Form",
+							},
+						],
+						separator: "›",
+					}}
+				/> */}
 
 			{content}
 		</PageSectionLayout>

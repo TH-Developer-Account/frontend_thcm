@@ -80,6 +80,7 @@ const DRAFT_REQUIRED_FIELDS: Array<keyof ReimbursementClaimFormValues> = [
 export type ApprovedBillAmountPayload = ClaimHeadRow;
 
 export interface UseReimbursementClaimFormArgs {
+	referenceNumber?: string;
 	mode?: ReimbursementClaimFormMode;
 	canEdit?: boolean;
 	actorRole?: ReimbursementClaimActor;
@@ -188,6 +189,7 @@ export function useReimbursementClaimForm({
 	onApproveStage,
 	onClarifyStage,
 	onLineItemApprove,
+	referenceNumber,
 }: UseReimbursementClaimFormArgs) {
 	const { showToast } = useToast();
 	const [values, setValues] = useState<ReimbursementClaimFormValues>({
@@ -681,6 +683,7 @@ export function useReimbursementClaimForm({
 	return {
 		values,
 		attachments,
+		referenceNumber,
 		errors,
 		claimRows,
 		savedClaims,

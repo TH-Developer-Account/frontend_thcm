@@ -18,9 +18,9 @@ import MedicalRoutes from "./medicalRoutes";
 import ProtectedRoute from "./ProtectedRoute";
 import VendorRoutes from "./VendorRoutes";
 import WorkflowRoutes from "./workflowRoutes";
-import VendorOnboardingPublicPage from "../modules/guest/guestVendorOnboarding/VendorOnboardingPublicPage";
 import { GuestRoutesWrapper } from "./guestRoutes";
 import ReimbursementClaimPublicPage from "../modules/medicalReimbursment/pages/ReimbursmentClaimPublicPage";
+import VendorOnboardingPublicPage from "../modules/vendorOnboarding/pages/VendorOnboardingPublicPage";
 
 const AuthenticatedRoutes = () => {
 	return (

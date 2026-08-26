@@ -378,6 +378,7 @@ export function useMedicalClaimView({
 
 		// Form
 		mode,
+		referenceNumber: detail?.referenceNumber,
 		actionText,
 		initialValues,
 		initialLineItems,

@@ -126,7 +126,7 @@ const VendorOnboardingPublicPage = () => {
 
 	return (
 		<PublicPagesLayout>
-			<Card>
+			<Card title="Domestic Vendor Onboarding Form">
 				<VendorCreationFormProvider value={form}>
 					<VendorCreationFormOne
 						mode="edit"

@@ -7,6 +7,7 @@ import SelectInput from "../../../components/forms/SelectInput";
 
 import SimpleViewTable, {
 	type SimpleTableColumn,
+	type SimpleTableWidthUnits,
 } from "../../../components/ui/tables/SimpleViewTable";
 
 import { CLAIM_HEAD_OPTIONS } from "../utils/claimHead.constants";
@@ -29,10 +30,23 @@ import {
 
 const SKELETON_ROWS = 5;
 
+const formatCurrency = (amount: number) =>
+	`₹ ${amount.toLocaleString("en-IN", {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	})}`;
+
+const sumAmounts = (
+	rows: ClaimHeadRow[],
+	accessor: (row: ClaimHeadRow) => string | number | null | undefined,
+) => rows.reduce((total, row) => total + Number(accessor(row) || 0), 0);
+
 type TableColumnDefinition<T> = {
 	id?: string;
 	accessorKey?: string;
 	header: ReactNode;
+	widthUnits?: SimpleTableWidthUnits;
+	minWidth?: number;
 	enableSorting?: boolean;
 	cell: (context: { row: { original: T; index: number } }) => ReactNode;
 };
@@ -67,34 +81,34 @@ export const ClaimHeadEntryTable = () => {
 		const showsApprovalAmounts = actorRole === "approver";
 
 		const tableColumns: TableColumnDefinition<ClaimHeadRow>[] = [
-			{
-				id: "flag",
+			// {
+			// 	id: "flag",
+			// 	minWidth: 24,
 
-				header: "",
+			// 	header: "",
 
-				enableSorting: false,
+			// 	enableSorting: false,
 
-				cell: ({ row }) => {
-					if (!showsReviewColumn) {
-						return null;
-					}
+			// 	cell: ({ row }) => {
+			// 		if (!showsReviewColumn) {
+			// 			return null;
+			// 		}
 
-					const isApproved = row.original.approvalStatus === "APPROVED";
+			// 		const isApproved = row.original.approvalStatus === "APPROVED";
 
-					return (
-						<span
-							aria-hidden="true"
-							className={`block h-full min-h-6 w-1 rounded-full ${
-								isApproved ? "bg-approved" : "bg-rejected"
-							}`}
-						/>
-					);
-				},
-			},
+			// 		return (
+			// 			<span
+			// 				aria-hidden="true"
+			// 				className={`block h-full min-h-6 w-1 rounded-full ${
+			// 					isApproved ? "bg-approved" : "bg-rejected"
+			// 				}`}
+			// 			/>
+			// 		);
+			// 	},
+			// },
 
 			{
 				id: "serialNumber",
-
 				header: "S.No",
 
 				enableSorting: false,
@@ -104,6 +118,7 @@ export const ClaimHeadEntryTable = () => {
 
 			{
 				accessorKey: "claimHead",
+				widthUnits: 1,
 
 				header: "Claim Head",
 
@@ -141,6 +156,7 @@ export const ClaimHeadEntryTable = () => {
 
 			{
 				accessorKey: "billName",
+				widthUnits: 1,
 
 				header: "Bill Description",
 
@@ -168,24 +184,9 @@ export const ClaimHeadEntryTable = () => {
 			},
 
 			{
-				accessorKey: "amount",
-
-				header: "Claimed Amount",
-
-				cell: ({ row }) => {
-					const amount = Number(row.original.amount || 0);
-
-					return (
-						<span className="font-medium">
-							₹ {amount.toLocaleString("en-IN")}
-						</span>
-					);
-				},
-			},
-
-			{
 				accessorKey: "fileName",
 				header: "Attachment",
+				widthUnits: 2,
 				enableSorting: false,
 
 				cell: ({ row }) => {
@@ -196,7 +197,7 @@ export const ClaimHeadEntryTable = () => {
 					}
 
 					return (
-						<div className="min-w-52">
+						<div className="min-w-0">
 							<FileUploadField
 								label=""
 								kind="mediclaimDocument"
@@ -211,13 +212,28 @@ export const ClaimHeadEntryTable = () => {
 					);
 				},
 			},
+			{
+				accessorKey: "amount",
+
+				header: "Claimed Amount",
+
+				cell: ({ row }) => {
+					const amount = Number(row.original.amount || 0);
+
+					return (
+						<span className="font-medium">
+							₹ {amount.toLocaleString("en-IN")}
+						</span>
+					);
+				},
+			},
 		];
 
 		if (showsApprovalAmounts) {
 			tableColumns.push({
 				id: "approvedClaimAmount",
 
-				header: "Approved Claim Amount",
+				header: "Approved Amount",
 
 				enableSorting: false,
 
@@ -225,7 +241,7 @@ export const ClaimHeadEntryTable = () => {
 					const claim = row.original;
 
 					return (
-						<div className="min-w-40">
+						<div className="min-w-10 w-[60%]">
 							<FormInput
 								value={claim.approvedClaimAmount}
 								inputMode="decimal"
@@ -244,44 +260,11 @@ export const ClaimHeadEntryTable = () => {
 				},
 			});
 		}
-
-		// if (showsReviewColumn) {
-		// 	tableColumns.push({
-		// 		id: "remarks",
-
-		// 		header: "Remarks",
-
-		// 		enableSorting: false,
-
-		// 		cell: ({ row }) => {
-		// 			const claim = row.original;
-
-		// 			const isApproved = claim.approvalStatus === "APPROVED";
-
-		// 			const isApproving = approvingId === claim.id;
-
-		// 			const disabled = loading || isApproving || !canApproveLineItems;
-
-		// 			return !isApproved ? (
-		// 				<FormInput
-		// 					placeholder="Remarks (optional)"
-		// 					value={lineItemRemarks[claim.id] ?? ""}
-		// 					disabled={disabled}
-		// 					onChange={(event) =>
-		// 						onRemarksChange(claim.id, event.target.value)
-		// 					}
-		// 					aria-label={`Remarks for bill ${claim.billNumber}`}
-		// 				/>
-		// 			) : null;
-		// 		},
-		// 	});
-		// }
-
 		if (showsReviewColumn) {
 			tableColumns.push({
 				id: "review",
 
-				header: "Actions",
+				header: "Approve",
 
 				enableSorting: false,
 
@@ -295,8 +278,8 @@ export const ClaimHeadEntryTable = () => {
 					const disabled = loading || isApproving || !canApproveLineItems;
 
 					return (
-						<div className="flex flex-col gap-1.5">
-							<div className="flex items-center gap-1.5">
+						<div className="flex flex-col gap-1.5 justify-center text-center">
+							<div className="flex items-center gap-1.5 justify-center text-center">
 								<Checkbox
 									name={`bill-approved-${claim.id}`}
 									checked={isApproved || isApproving}
@@ -314,6 +297,37 @@ export const ClaimHeadEntryTable = () => {
 							</div>
 						</div>
 					);
+				},
+			});
+		}
+		if (showsReviewColumn) {
+			tableColumns.push({
+				id: "remarks",
+
+				header: "Remarks",
+				widthUnits: 2,
+				enableSorting: false,
+
+				cell: ({ row }) => {
+					const claim = row.original;
+
+					const isApproved = claim.approvalStatus === "APPROVED";
+
+					const isApproving = approvingId === claim.id;
+
+					const disabled = loading || isApproving || !canApproveLineItems;
+
+					return !isApproved ? (
+						<FormInput
+							placeholder="Remarks (optional)"
+							// value={lineItemRemarks[claim.id] ?? ""}
+							disabled={disabled}
+							// onChange={(event) =>
+							// 	onRemarksChange(claim.id, event.target.value)
+							// }
+							aria-label={`Remarks for bill ${claim.billNumber}`}
+						/>
+					) : null;
 				},
 			});
 		}
@@ -381,8 +395,21 @@ export const ClaimHeadEntryTable = () => {
 			columns.map((column, columnIndex) => ({
 				key: column.id ?? column.accessorKey ?? `column-${columnIndex}`,
 				header: column.header,
+				widthUnits: column.widthUnits,
+				minWidth: column.minWidth,
 				render: (item, index) =>
 					column.cell({ row: { original: item, index } }),
+				footer:
+					column.accessorKey === "claimHead"
+						? "Total"
+						: column.accessorKey === "amount"
+							? (rows) => formatCurrency(sumAmounts(rows, (row) => row.amount))
+							: column.id === "approvedClaimAmount"
+								? (rows) =>
+										formatCurrency(
+											sumAmounts(rows, (row) => row.approvedClaimAmount),
+										)
+								: undefined,
 			})),
 		[columns],
 	);
@@ -520,7 +547,7 @@ export const ClaimHeadEntryTable = () => {
 				aria-label="Saved Claim Heads"
 				aria-busy={loading}
 			>
-				<div className="min-w-0 px-4">
+				<div className="min-w-0">
 					<SimpleViewTable<ClaimHeadRow>
 						data={savedClaims}
 						columns={simpleColumns}

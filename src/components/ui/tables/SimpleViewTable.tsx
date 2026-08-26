@@ -74,7 +74,19 @@ import { Modal } from "../../common/Modal";
 // ---------------------------------------------------------------------------
 
 export type SimpleTableAlign = "left" | "center" | "right";
-
+export type SimpleTableWidthUnits =
+	| 1
+	| 2
+	| 3
+	| 4
+	| 5
+	| 6
+	| 7
+	| 8
+	| 9
+	| 10
+	| 11
+	| 12;
 export interface SimpleTableColumn<T> {
 	/** Unique key for this column (used as the React key). */
 	key: string;
@@ -82,8 +94,14 @@ export interface SimpleTableColumn<T> {
 	align?: SimpleTableAlign;
 	/** e.g. "120px" or "20%" — passed straight to the <col> width. */
 	width?: string;
+	/** Relative width compared with the other columns. Defaults to 1. */
+	widthUnits?: SimpleTableWidthUnits;
+	/** Minimum width in pixels before horizontal scrolling is enabled. */
+	minWidth?: number;
 	className?: string;
 	render: (item: T, index: number) => ReactNode;
+	/** Optional footer content. Receives the complete displayed data set. */
+	footer?: ReactNode | ((data: T[]) => ReactNode);
 }
 
 export interface SimpleTableFile {
@@ -95,6 +113,7 @@ export interface SimpleTableFile {
 export interface SimpleTableFileColumn<T> {
 	header?: ReactNode;
 	width?: string;
+	minWidth?: number;
 	/** Return the file to show for this row, or null/undefined for "--". */
 	accessor: (item: T) => SimpleTableFile | null | undefined;
 }
@@ -137,6 +156,8 @@ export interface SimpleTableProps<T> {
 
 	/** Scroll container max-height. Defaults to 420px. */
 	maxHeight?: string;
+	/** Default minimum width, in pixels, for columns without minWidth. */
+	defaultColumnMinWidth?: number;
 	className?: string;
 	ariaLabel?: string;
 }
@@ -201,6 +222,7 @@ export default function SimpleViewTable<T>({
 	title,
 	headerActions,
 	maxHeight = "420px",
+	defaultColumnMinWidth = 96,
 	className = "",
 	ariaLabel = "Table",
 }: SimpleTableProps<T>) {
@@ -261,11 +283,24 @@ export default function SimpleViewTable<T>({
 	const isPdfPreview = previewTarget ? isPdfFile(previewTarget) : false;
 
 	const hasActions = Boolean(actions?.length);
+	const hasFooter = columns.some((column) => column.footer !== undefined);
 	const columnCount =
 		columns.length +
 		(selectable ? 1 : 0) +
 		(fileColumn ? 1 : 0) +
 		(hasActions ? 1 : 0);
+	const totalWidthUnits = columns.reduce(
+		(total, column) => total + (column.widthUnits ?? 1),
+		0,
+	);
+	const tableMinWidth =
+		columns.reduce(
+			(total, column) => total + (column.minWidth ?? defaultColumnMinWidth),
+			0,
+		) +
+		(selectable ? 40 : 0) +
+		(fileColumn ? (fileColumn.minWidth ?? defaultColumnMinWidth) : 0) +
+		(hasActions ? defaultColumnMinWidth : 0);
 
 	return (
 		<div
@@ -291,11 +326,31 @@ export default function SimpleViewTable<T>({
 				aria-label={ariaLabel}
 				tabIndex={0}
 			>
-				<table className="w-full min-w-max border-collapse text-sm">
-					<thead className="sticky top-0 z-10 bg-white shadow-[inset_0_-1px_0_theme(colors.slate.200)]">
+				<table
+					className="w-full table-fixed border-collapse text-sm"
+					style={{ minWidth: `${tableMinWidth}px` }}
+				>
+					<colgroup>
+						{selectable ? <col className="w-10" /> : null}
+
+						{columns.map((column) => (
+							<col
+								key={column.key}
+								style={{
+									width:
+										column.width ??
+										`${((column.widthUnits ?? 1) / totalWidthUnits) * 100}%`,
+								}}
+							/>
+						))}
+
+						{fileColumn ? <col style={{ width: fileColumn.width }} /> : null}
+						{hasActions ? <col /> : null}
+					</colgroup>
+					<thead className="sticky top-0 z-10  bg-slate-50 shadow-[inset_0_-1px_0_theme(colors.slate.200)]">
 						<tr>
 							{selectable ? (
-								<th className="w-10 px-3 py-2 text-left">
+								<th className="w-10 px-3 py-2 text-left text-slate-800">
 									<input
 										ref={headerCheckboxRef}
 										type="checkbox"
@@ -475,6 +530,34 @@ export default function SimpleViewTable<T>({
 							})
 						)}
 					</tbody>
+
+					{!loading && data.length > 0 && hasFooter ? (
+						<tfoot className="sticky bottom-0 z-10 bg-slate-50 shadow-[inset_0_1px_0_theme(colors.slate.200)]">
+							<tr>
+								{selectable ? <td className="px-3 py-3" /> : null}
+
+								{columns.map((column) => (
+									<td
+										key={column.key}
+										className={[
+											"px-3 py-3 font-semibold text-slate-800",
+											getAlignClass(column.align),
+											column.className,
+										]
+											.filter(Boolean)
+											.join(" ")}
+									>
+										{typeof column.footer === "function"
+											? column.footer(data)
+											: column.footer}
+									</td>
+								))}
+
+								{fileColumn ? <td className="px-3 py-3" /> : null}
+								{hasActions ? <td className="px-3 py-3" /> : null}
+							</tr>
+						</tfoot>
+					) : null}
 				</table>
 			</div>
 

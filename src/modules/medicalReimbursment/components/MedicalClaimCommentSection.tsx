@@ -5,8 +5,6 @@ import type { MentionableUserInput } from "../../../components/ui/comments/comme
 import { getWorkflowCommentContext } from "../../../components/ui/comments/comments.helper";
 import { useAuth } from "../../../context/Auth/useAuth";
 import type { ApprovalStageLike } from "../../workflows/types/types";
-import FormHeader from "../../../components/ui/FormHeader";
-import { ClipboardClock } from "lucide-react";
 import { getMedicalAuditMessage } from "../helpers/medicalClaimListing.mapper";
 
 type MedicalClaimCommentSectionProps = {
@@ -38,7 +36,6 @@ const MedicalClaimCommentSection = ({
 
 	return (
 		<div className="px-4">
-			<FormHeader title="Comment Section" Icon={ClipboardClock} />
 			<CommentsSection
 				subjectType="MEDICAL_CLAIM"
 				subjectId={claimId}
