@@ -48,31 +48,26 @@ const VendorOnboardingListingPage = () => {
 	const handleExport = useCallback(async () => {
 		setIsExporting(true);
 		try {
-			const blob = await vendorOnboardingApi.exportListing({
+			await vendorOnboardingApi.enqueueBulkExport({
 				tab,
 				search: search || undefined,
-				pageIndex: 0,
-				pageSize, // or a dedicated "export all matching filter" param if your backend supports it
 			});
 
-			const blobUrl = window.URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = blobUrl;
-			link.download = `vendor-${tab}-${new Date().toISOString().slice(0, 10)}.xlsx`;
-			document.body.appendChild(link);
-			link.click();
-			link.remove();
-			window.URL.revokeObjectURL(blobUrl);
+			showToast({
+				type: "success",
+				title: "Export started",
+				description: "We'll notify you when it's ready to download.",
+			});
 		} catch (error) {
 			showToast({
 				type: "error",
 				title: "Export failed",
-				description: "Failed to export vendor records.",
+				description: "Failed to start vendor export.",
 			});
 		} finally {
 			setIsExporting(false);
 		}
-	}, [tab, search, pageSize, showToast]);
+	}, [tab, search, showToast, navigate]);
 
 	return (
 		<PageSectionLayout>

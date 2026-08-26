@@ -50,7 +50,7 @@ const encodePathSegment = (value: string): string =>
 
 const normalizeUser = (user?: ApiCommentUser | null): CommentUser => ({
 	id: user?.id ?? "unknown",
-	first_name: user?.first_name?.trim() || "Unknown",
+	first_name: user?.first_name?.trim() || "",
 	last_name: user?.last_name?.trim() || "user",
 	email: user?.email ?? undefined,
 	avatarUrl: user?.avatarUrl ?? undefined,
