@@ -96,9 +96,13 @@
 	width: max-content;
 	border-radius: var(--radius-xs);
 	background: color-mix(in srgb, var(--color-brand) 5%, transparent);
-	color: var(--color-brand);
 	font-size: var(--font-size-xs);
 	font-weight: 600;
+	border-color: var(--color-brand);
+	background-color: var(--color-brand-subtle);
+	color: var(--color-brand-active);
+	box-shadow: var(--shadow-xs);
+	border-width: var(--border-width-default);
 }
 
 .workflow-entry-required,

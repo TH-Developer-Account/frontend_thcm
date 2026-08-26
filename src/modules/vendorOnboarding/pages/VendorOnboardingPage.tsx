@@ -33,7 +33,7 @@ const VendorOnboardingPage = () => {
 		isExistingRequest &&
 		!form.isLoading &&
 		!form.isError &&
-		form.status === "APPROVED";
+		form.formStatus === "APPROVED";
 
 	const handleBackToView = () => {
 		if (!onboardingId) return;

@@ -9,6 +9,7 @@ import type {
 	VendorOnboardingColumnsParams,
 	VendorOnboardingListingRow,
 } from "../types/vendorListing.types";
+import { formatDateTime24 } from "../../../utils/format";
 
 const renderCellValue = (value: string | null | undefined): string =>
 	value?.trim() || "—";
@@ -48,23 +49,23 @@ export const getVendorOnboardingColumns = ({
 					{renderCellValue(row.original.vendorName)}
 				</span>
 
-				{row.original.vendorType ? (
+				{row.original.referenceName ? (
 					<span className="vendor-listing-subtitle">
-						{row.original.vendorType}
+						{row.original.referenceName ?? "Test"}
 					</span>
 				) : null}
 			</div>
 		),
 	},
 	{
-		accessorKey: "companyCode",
-		header: "Company Code",
-		cell: ({ row }) => renderCellValue(row.original.companyCode),
+		accessorKey: "vendorEmail",
+		header: "Vendor Email",
+		cell: ({ row }) => renderCellValue(row.original.email),
 	},
 	{
-		accessorKey: "vendorType",
-		header: "Vendor Type",
-		cell: ({ row }) => renderCellValue(row.original.vendorType),
+		accessorKey: "vendorPhone",
+		header: "Vendor Contact",
+		cell: ({ row }) => renderCellValue(row.original.mobile),
 	},
 	{
 		accessorKey: "createdBy",
@@ -82,7 +83,8 @@ export const getVendorOnboardingColumns = ({
 	{
 		accessorKey: "createdDate",
 		header: "Created Date",
-		cell: ({ row }) => renderCellValue(row.original.createdDate),
+		cell: ({ row }) =>
+			renderCellValue(formatDateTime24(row.original.createdDate)),
 	},
 	{
 		accessorKey: "status",

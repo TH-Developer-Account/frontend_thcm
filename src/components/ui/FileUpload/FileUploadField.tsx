@@ -29,6 +29,7 @@ import {
 	validateUploadFile,
 } from "./fileUpload.helpers";
 import FormInput from "../../forms/FormInput";
+import HelperTooltip from "../../common/HelperTooltip";
 
 const joinClassNames = (
 	...classNames: Array<string | false | null | undefined>
@@ -41,6 +42,7 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 	const {
 		kind = "document",
 		label = "Upload File",
+		tooltip,
 		description,
 		required = false,
 		error,
@@ -308,7 +310,9 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 						{label}
 						{required ? <span className="form-required"> *</span> : null}
 					</label>
-
+					{tooltip && !error ? (
+						<HelperTooltip label={label} text={tooltip} />
+					) : null}
 					{isMultiple && maxFiles ? (
 						<span className="file-upload-count">
 							{values.length}/{maxFiles}
@@ -561,14 +565,16 @@ const FileUploadPreviewCard = React.memo(
 								variant="secondary"
 								size="sm"
 								Icon={RefreshCw}
+								iconSize={18}
 								aria-label={`Replace ${value.name}`}
 								onClick={onReplace}
 							/>
 						) : null}
 
-						<button
+						<Button
 							type="button"
-							className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 px-2 text-xs font-medium text-slate-700 transition-colors hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-50"
+							appearance="icon"
+							variant="secondary"
 							aria-label={`Preview ${value.name}`}
 							onClick={(event) => {
 								event.preventDefault();
@@ -576,9 +582,11 @@ const FileUploadPreviewCard = React.memo(
 								onPreview();
 							}}
 							disabled={!value.url}
-						>
-							<Eye className="size-3.5" aria-hidden="true" />
-						</button>
+							Icon={Eye}
+							iconSize={18}
+							size="sm"
+							aria-hidden="true"
+						/>
 
 						{!readonly && !disabled ? (
 							<Button
@@ -587,6 +595,7 @@ const FileUploadPreviewCard = React.memo(
 								variant="secondary"
 								size="sm"
 								Icon={Trash2}
+								iconSize={18}
 								aria-label={`Remove ${value.name}`}
 								onClick={onRemove}
 							/>

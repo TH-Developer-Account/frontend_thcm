@@ -67,15 +67,15 @@ export type VendorCreationFormTwoValues = {
 	gpaObtained?: string;
 	relatedPartyToThcm?: string;
 	vendorAuditReportPrepared?: string;
-	remarks?: string;
+	// remarks?: string;
 	natureOfService?: string;
 	reasonForOnboarding?: string;
-	proposedByName?: string;
-	proposedByDesignation?: string;
-	proposedDate?: string;
-	approvedByName?: string;
-	approvedByDesignation?: string;
-	approvalDate?: string;
+	// proposedByName?: string;
+	// proposedByDesignation?: string;
+	// proposedDate?: string;
+	// approvedByName?: string;
+	// approvedByDesignation?: string;
+	// approvalDate?: string;
 };
 
 export type VendorUpdatePayload = {

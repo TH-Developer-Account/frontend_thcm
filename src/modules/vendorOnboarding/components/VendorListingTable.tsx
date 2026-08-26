@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { FileDown, Plus, type LucideIcon } from "lucide-react";
+import { FileDown, type LucideIcon } from "lucide-react";
 
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
@@ -11,19 +11,12 @@ import DataTableSkeleton from "../../../components/ui/tables/Skeletons/DataTable
 import {
 	getOnboardingEmptyContent,
 	getOnboardingSearchPlaceholder,
-	getInitiationSearchPlaceholder,
-	getInitiationEmptyContent,
 } from "../helpers/vendor.onboarding.helper";
 import type {
-	VendorInitiationListingRow,
 	VendorListingFilter,
 	VendorOnboardingListingRow,
 } from "../types/vendorListing.types";
-import {
-	VENDOR_INITIATION_FILTER_TABS,
-	VENDOR_ONBOARDING_FILTER_TABS,
-} from "../utils/vendor.constant";
-import { getVendorInitiationColumns } from "../utils/vendorListing.columns";
+import { VENDOR_ONBOARDING_FILTER_TABS } from "../utils/vendor.constant";
 import { getVendorOnboardingColumns } from "../utils/vendorOnboardingListing.columns";
 
 export type VendorListingFilterTab = {
@@ -57,21 +50,13 @@ type VendorListingCommonProps = {
 	isExporting?: boolean;
 };
 
-type VendorInitiationListingTableProps = VendorListingCommonProps & {
-	listingType: "initiation";
-	rows?: VendorInitiationListingRow[];
-	onViewRow: (row: VendorInitiationListingRow) => void;
-};
-
 type VendorOnboardingListingTableProps = VendorListingCommonProps & {
 	listingType: "onboarding";
 	rows?: VendorOnboardingListingRow[];
 	onViewRow: (row: VendorOnboardingListingRow) => void;
 };
 
-type VendorListingTableProps =
-	| VendorInitiationListingTableProps
-	| VendorOnboardingListingTableProps;
+type VendorListingTableProps = VendorOnboardingListingTableProps;
 
 const SKELETON_ROW_COUNT = 8;
 
@@ -92,14 +77,7 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 		isExporting,
 	} = props;
 
-	const isInitiationListing = props.listingType === "initiation";
-
-	const resolvedFilterTabs =
-		props.filterTabs ??
-		(isInitiationListing
-			? VENDOR_INITIATION_FILTER_TABS
-			: VENDOR_ONBOARDING_FILTER_TABS);
-
+	const resolvedFilterTabs = VENDOR_ONBOARDING_FILTER_TABS;
 	const normalizedFilterTabs = useMemo(
 		() =>
 			resolvedFilterTabs.map((option) => ({
@@ -112,16 +90,6 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 		[resolvedFilterTabs],
 	);
 
-	const initiationColumns = useMemo(() => {
-		if (props.listingType !== "initiation") {
-			return [];
-		}
-
-		return getVendorInitiationColumns({
-			onView: props.onViewRow,
-		});
-	}, [props.listingType, props.onViewRow]);
-
 	const onboardingColumns = useMemo(() => {
 		if (props.listingType !== "onboarding") {
 			return [];
@@ -132,13 +100,9 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 		});
 	}, [props.listingType, props.onViewRow]);
 
-	const searchPlaceholder = isInitiationListing
-		? getInitiationSearchPlaceholder(selectedFilter)
-		: getOnboardingSearchPlaceholder(selectedFilter);
+	const searchPlaceholder = getOnboardingSearchPlaceholder(selectedFilter);
 
-	const emptyContent = isInitiationListing
-		? getInitiationEmptyContent(selectedFilter)
-		: getOnboardingEmptyContent(selectedFilter);
+	const emptyContent = getOnboardingEmptyContent(selectedFilter);
 
 	return (
 		<Card
@@ -146,28 +110,13 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 			title={
 				<FilterTabs
 					id={`${props.listingType}-vendor-listing-filter-tabs`}
-					ariaLabel={
-						isInitiationListing
-							? "Filter vendor initiation listings"
-							: "Filter vendor onboarding listings"
-					}
+					ariaLabel={"Filter vendor onboarding listings"}
 					items={normalizedFilterTabs}
 					value={selectedFilter}
 					onChange={onFilterChange}
 					className="border-b-none px-0 py-0"
 				/>
 			}
-			// actions={
-			// 	<Button
-			// 		path="/vendor/initiation/create"
-			// 		text="Create Onboarding"
-			// 		appearance="standard"
-			// 		variant="brand"
-			// 		Icon={Plus}
-			// 		size="sm"
-			// 		iconSize={18}
-			// 	/>
-			// }
 			actions={
 				<>
 					<SearchInput
@@ -198,27 +147,8 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 				{isLoading ? (
 					<DataTableSkeleton
 						rows={SKELETON_ROW_COUNT}
-						columns={
-							isInitiationListing
-								? initiationColumns.length
-								: onboardingColumns.length
-						}
+						columns={onboardingColumns.length}
 						showPagination
-					/>
-				) : props.listingType === "initiation" ? (
-					<DataTable<VendorInitiationListingRow>
-						data={props.rows ?? []}
-						columns={initiationColumns}
-						loading={false}
-						manualPagination
-						pageIndex={pageIndex}
-						pageSize={pageSize}
-						pageCount={pageCount}
-						onPageChange={onPageChange}
-						onPageSizeChange={onPageSizeChange}
-						scrollTargetId={`vendor-initiation-${selectedFilter}-table-scroll`}
-						emptyTitle={emptyContent.title}
-						emptyDescription={emptyContent.description}
 					/>
 				) : (
 					<DataTable<VendorOnboardingListingRow>

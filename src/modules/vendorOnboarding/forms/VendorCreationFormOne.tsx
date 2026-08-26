@@ -1,14 +1,9 @@
 import {
 	ArrowLeft,
-	Banknote,
 	CheckCircle2,
-	FileCheck2,
 	FilePenLine,
-	Landmark,
-	LucideBriefcaseBusiness,
 	RefreshCcw,
 	Save,
-	ShieldCheck,
 } from "lucide-react";
 import type { ClipboardEvent } from "react";
 import Button from "../../../components/common/Button";
@@ -19,10 +14,9 @@ import TextareaInput from "../../../components/forms/TextareaInput";
 import { getCitiesByState } from "../helpers/vendorLocation.helpers";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
 
-import FormHeader from "../../../components/ui/FormHeader";
 import {
-	getAccountNumberConfirmState,
-	validateConfirmAccountNumber,
+	// getAccountNumberConfirmState,
+	// validateConfirmAccountNumber,
 	toYesNo,
 } from "../helpers/vendor.onboarding.helper";
 import {
@@ -147,47 +141,35 @@ const VendorCreationFormOne = ({
 	const isReadOnly = mode === "view" || !canEdit;
 	const fieldMode: VendorFormMode = isReadOnly ? "view" : "edit";
 
-	/*
-	 * The backend does not return confirmAccountNumber.
-	 *
-	 * View/read-only mode:
-	 *   Show the account number as the confirmation value.
-	 *
-	 * Edit mode without account-number changes:
-	 *   Show the account number as the confirmation value.
-	 *
-	 * Edit mode after account-number change:
-	 *   Let the user enter confirmAccountNumber.
-	 */
-	const accountConfirmationState = getAccountNumberConfirmState(
-		values,
-		formContext?.originalAccountNumber ?? "",
-	);
+	// const accountConfirmationState = getAccountNumberConfirmState(
+	// 	values,
+	// 	formContext?.originalAccountNumber ?? "",
+	// );
 
-	const { accountNumber, confirmAccountNumber } = accountConfirmationState;
+	// const { accountNumber, confirmAccountNumber } = accountConfirmationState;
 
-	// Confirmation is validated only when the form is editable.
-	const confirmRequired =
-		!isReadOnly && accountConfirmationState.confirmRequired;
+	// // Confirmation is validated only when the form is editable.
+	// const confirmRequired =
+	// 	!isReadOnly && accountConfirmationState.confirmRequired;
 
 	// The backend does not return confirmAccountNumber.
 	// Use accountNumber when viewing or when it has not changed.
-	const confirmAccountValue = confirmRequired
-		? confirmAccountNumber
-		: accountNumber;
+	// const confirmAccountValue = confirmRequired
+	// 	? confirmAccountNumber
+	// 	: accountNumber;
 
-	const confirmAccountError = confirmRequired
-		? (errors.confirmAccountNumber ??
-			validateConfirmAccountNumber(
-				values,
-				formContext?.originalAccountNumber ?? "",
-			))
-		: undefined;
+	// const confirmAccountError = confirmRequired
+	// 	? (errors.confirmAccountNumber ??
+	// 		validateConfirmAccountNumber(
+	// 			values,
+	// 			formContext?.originalAccountNumber ?? "",
+	// 		))
+	// 	: undefined;
 
-	const doAccountNumbersMatch =
-		confirmRequired &&
-		Boolean(confirmAccountNumber) &&
-		confirmAccountNumber === accountNumber;
+	// const doAccountNumbersMatch =
+	// 	confirmRequired &&
+	// 	Boolean(confirmAccountNumber) &&
+	// 	confirmAccountNumber === accountNumber;
 
 	const maskAccountNumber = (value?: string): string | undefined => {
 		const digits = (value ?? "").replace(/\D/g, "");
@@ -239,11 +221,6 @@ const VendorCreationFormOne = ({
 						<span>{submittedMessage}</span>
 					</div>
 				) : null}
-
-				<FormHeader
-					title="Vendor Basic Information"
-					Icon={LucideBriefcaseBusiness}
-				/>
 
 				<div className="vendor-onboarding-form-grid-parent">
 					<div className="vendor-onboarding-form-grid-child">
@@ -403,8 +380,6 @@ const VendorCreationFormOne = ({
 					</div>
 				</div>
 
-				<FormHeader title="Bank Details" Icon={Landmark} />
-
 				<div className="vendor-onboarding-form-grid">
 					<FormInput
 						mode={fieldMode}
@@ -530,8 +505,6 @@ const VendorCreationFormOne = ({
 					/>
 				</div>
 
-				<FormHeader title="Tax Details" Icon={Banknote} />
-
 				<div className="vendor-onboarding-form-grid">
 					<FormInput
 						mode={fieldMode}
@@ -582,8 +555,6 @@ const VendorCreationFormOne = ({
 					/>
 				</div>
 
-				<FormHeader title="Attachments / Enclosures" Icon={ShieldCheck} />
-
 				<div className="vendor-enclosure-upload-grid">
 					{VENDOR_DOCUMENT_FIELDS.filter(
 						(field) =>
@@ -609,6 +580,7 @@ const VendorCreationFormOne = ({
 								error={enclosureErrors[field.statusKey]}
 								readonly={isReadOnly}
 								disabled={loading}
+								tooltip="Mandatory"
 								heightClassName="vendor-enclosure-upload-height"
 								className="vendor-enclosure-upload-field"
 								inputName={field.documentType}
@@ -632,6 +604,7 @@ const VendorCreationFormOne = ({
 								error={enclosureErrors[field.statusKey]}
 								readonly={isReadOnly}
 								disabled={loading}
+								tooltip="Mandatory"
 								heightClassName="vendor-enclosure-upload-height"
 								className="vendor-enclosure-upload-field"
 								inputName={field.documentType}
@@ -644,8 +617,6 @@ const VendorCreationFormOne = ({
 					})}
 				</div>
 				<div>
-					<FormHeader title="Compliance Documents" Icon={FileCheck2} />
-
 					<div className="vendor-compliance-grid">
 						<section className="vendor-compliance-card">
 							<div className="vendor-compliance-card-grid">
@@ -693,6 +664,7 @@ const VendorCreationFormOne = ({
 										className="vendor-compliance-upload"
 										inputName="MSME_CERTIFICATE"
 										showActions
+										tooltip="Mandatory"
 										// enableCaption
 										// captionLabel="Document caption"
 										// captionPlaceholder="Enter a short description for this document"
@@ -746,6 +718,7 @@ const VendorCreationFormOne = ({
 										className="vendor-compliance-upload"
 										inputName="NDA_CERTIFICATE"
 										showActions
+										tooltip="Mandatory"
 										// enableCaption
 										// captionLabel="Document caption"
 										// captionPlaceholder="Enter a short description for this document"

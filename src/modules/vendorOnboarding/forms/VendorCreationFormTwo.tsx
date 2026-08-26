@@ -1,19 +1,9 @@
-import {
-	ArrowLeft,
-	ArrowRight,
-	Banknote,
-	FileCheck2,
-	RefreshCcw,
-	Save,
-	ShieldCheck,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, RefreshCcw, Save } from "lucide-react";
 
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
-
-import FormHeader from "../../../components/ui/FormHeader";
 
 import type {
 	VendorCreationFormTwoValues,
@@ -101,8 +91,6 @@ const VendorCreationFormTwo = ({
 				className="vendor-onboarding-form"
 				onSubmit={(event) => event.preventDefault()}
 			>
-				<FormHeader title="THCM Vendor Master Details" Icon={FileCheck2} />
-
 				<div className="vendor-onboarding-form-grid">
 					{values.vendorCode ? (
 						<FormInput
@@ -184,8 +172,6 @@ const VendorCreationFormTwo = ({
 						}
 					/>
 				</div>
-
-				<FormHeader title="Finance & Tax Classification" Icon={Banknote} />
 
 				<div className="vendor-onboarding-form-grid">
 					<SelectInput
@@ -282,8 +268,6 @@ const VendorCreationFormTwo = ({
 						}
 					/>
 				</div>
-
-				<FormHeader title="Compliance Declarations" Icon={ShieldCheck} />
 
 				<div className="vendor-onboarding-form-grid">
 					<SelectInput
@@ -414,8 +398,8 @@ const VendorCreationFormTwo = ({
 							size="sm"
 							Icon={ArrowLeft}
 							iconPosition="left"
-							appearance="ghost"
-							variant="secondary"
+							appearance="standard"
+							variant="outline"
 							onClick={onBack}
 							disabled={loading}
 						/>

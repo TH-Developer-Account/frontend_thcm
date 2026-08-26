@@ -484,15 +484,15 @@ const VendorWorkflowSection = ({
 									<CheckCircle2 size={18} aria-hidden="true" />
 								</span>
 
-								<div>
+								<div className="flex gap-2">
 									<span>
 										{isEditingWorkflow
 											? isEditingSelectedWorkflow
-												? "Editing selected workflow"
-												: "Editing current workflow"
+												? "Editing selected workflow -"
+												: "Editing workflow -"
 											: shouldUseActiveWorkflow
-												? "Current active workflow: "
-												: "New selected workflow: "}
+												? "Current workflow -"
+												: "New workflow: "}
 									</span>
 
 									<strong>{workflowName}</strong>
@@ -528,7 +528,7 @@ const VendorWorkflowSection = ({
 									{canEditActiveWorkflow && shouldUseActiveWorkflow && (
 										<Button
 											type="button"
-											text="Edit current workflow"
+											text="Edit workflow"
 											size="sm"
 											Icon={Pencil}
 											iconPosition="left"
@@ -540,7 +540,7 @@ const VendorWorkflowSection = ({
 									{!shouldUseActiveWorkflow && selectedWorkflow && (
 										<Button
 											type="button"
-											text="Edit selected workflow"
+											text="Edit workflow"
 											size="sm"
 											Icon={Pencil}
 											iconPosition="left"
@@ -551,7 +551,7 @@ const VendorWorkflowSection = ({
 									)}
 									<Button
 										type="button"
-										text="Change current workflow"
+										text="Reattach workflow"
 										size="sm"
 										Icon={RefreshCcw}
 										iconPosition="left"
@@ -643,8 +643,8 @@ const VendorWorkflowSection = ({
 									<span className="vendor-workflow-selection-icon">
 										<CheckCircle2 size={18} aria-hidden="true" />
 									</span>
-									<div>
-										<span>Current active workflow: </span>
+									<div className="flex gap-2">
+										<span>Current workflow -</span>
 
 										<strong>
 											{activeWorkflow?.template?.name ||

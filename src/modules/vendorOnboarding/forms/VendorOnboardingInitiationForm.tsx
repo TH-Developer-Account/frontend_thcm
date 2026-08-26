@@ -93,12 +93,12 @@ const VendorOnboardingInitiationForm = ({
 						}
 						Icon={LucideBriefcaseBusiness}
 					/>
-					<Badge status={values.status} />
+					{values.status ? <Badge status={values.status} /> : null}
 				</div>
 				<div className="vendor-onboarding-form-grid">
 					<FormInput
 						name="vendorName"
-						label="Vendor Name"
+						label="Vendor initiated for"
 						mode={fieldMode}
 						value={values.vendorName}
 						required={!isViewMode}

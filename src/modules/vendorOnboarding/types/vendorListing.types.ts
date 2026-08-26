@@ -15,24 +15,11 @@ export type VendorTableStatus =
 	| "IN_PROGRESS"
 	| "CLOSED";
 
-export type VendorInitiationListingRow = {
+export type VendorOnboardingListingRow = {
 	id: string;
 	vendorName: string;
 	email: string;
 	mobile: string;
-	initiatedBy: {
-		first_name: string;
-		last_name: string;
-	};
-	created_at?: string | null;
-	status?: VendorTableStatus;
-	referenceNumber?: string;
-};
-
-export type VendorOnboardingListingRow = {
-	id: string;
-	vendorName: string;
-
 	vendorCode?: string | null;
 	vendorType?: string | null;
 	companyCode?: string | null;
@@ -47,11 +34,7 @@ export type VendorOnboardingListingRow = {
 
 	status?: VendorTableStatus | null;
 	referenceNumber?: string;
-};
-
-export type VendorInitiationColumnsParams = {
-	onView: (row: VendorInitiationListingRow) => void;
-	basePath?: string;
+	referenceName?: string;
 };
 
 export type VendorOnboardingColumnsParams = {
@@ -66,6 +49,7 @@ export type VendorOnboardingColumnsParams = {
 };
 export type VendorOnboardingInitiationPayload = {
 	vendorName: string;
+	referenceName?: string;
 	email: string;
 	mobile: string;
 	status?: string;

@@ -73,20 +73,6 @@ const VendorOnboardingListingPage = () => {
 		<PageSectionLayout>
 			<PageHeader
 				headerText="Vendor Onboarding"
-				// navigation={{
-				// 	variant: "breadcrumbs",
-				// 	ariaLabel: "Vendor onboarding listing location",
-				// 	breadcrumbs: [
-				// 		{
-				// 			label: "Home Screen",
-				// 			href: "/",
-				// 		},
-				// 		{
-				// 			label: "Vendor Onboarding",
-				// 		},
-				// 	],
-				// 	separator: "›",
-				// }}
 				headerChildren={
 					<Button
 						path="/vendor/initiation/create"

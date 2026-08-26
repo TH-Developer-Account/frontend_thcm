@@ -53,6 +53,7 @@ export type FileUploadPreviewVariant = "card" | "line";
 type FileUploadSharedProps = {
 	kind?: FileUploadKind;
 	label?: string;
+	tooltip?: string;
 	description?: string;
 	required?: boolean;
 	error?: string;
