@@ -69,12 +69,12 @@ const VendorOnboardingPage = () => {
 				}}
 			/>
 
-			<Card>
-				{form.isLoading ? (
-					<div role="status">Loading vendor onboarding details...</div>
-				) : form.isError ? (
-					<div role="alert">Unable to load vendor onboarding details.</div>
-				) : (
+			{form.isLoading ? (
+				<div role="status">Loading vendor onboarding details...</div>
+			) : form.isError ? (
+				<div role="alert">Unable to load vendor onboarding details.</div>
+			) : (
+				<Card>
 					<VendorCreationFormProvider value={form}>
 						<StepProgress
 							steps={form.vendorOnboardingSteps}
@@ -123,8 +123,8 @@ const VendorOnboardingPage = () => {
 							/>
 						)}
 					</VendorCreationFormProvider>
-				)}
-			</Card>
+				</Card>
+			)}
 		</PageSectionLayout>
 	);
 };

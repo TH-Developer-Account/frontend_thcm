@@ -112,7 +112,26 @@ const VendorOnboardingInitiationForm = ({
 						autoComplete="organization"
 						onChange={(event) => handleChange("vendorName", event.target.value)}
 					/>
-
+					<FormInput
+						name="referenceName"
+						label="Vendor initiated for"
+						mode={fieldMode}
+						value={values.referenceName}
+						required={!isViewMode}
+						readOnly={isViewMode}
+						disabled={isDetailLoading}
+						success={
+							!isViewMode &&
+							!errors.referenceName &&
+							Boolean(values.referenceName)
+						}
+						error={isViewMode ? undefined : errors.referenceName}
+						helperText={isViewMode ? undefined : "Enter the vendor name"}
+						autoComplete="organization"
+						onChange={(event) =>
+							handleChange("referenceName", event.target.value)
+						}
+					/>
 					<FormInput
 						name="email"
 						label="Vendor Email"

@@ -55,6 +55,7 @@ export type VendorListingResponse = {
 export type PublicVendorSessionResponse = {
 	id: string;
 	vendorName: string;
+	referenceName?: string;
 	email?: string;
 	mobile?: string;
 	partOne?: VendorCreationFormOneValues;

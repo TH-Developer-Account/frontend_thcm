@@ -194,6 +194,22 @@ const VendorCreationFormOne = ({
 					<div className="vendor-onboarding-form-grid-child">
 						<FormInput
 							mode={fieldMode}
+							name="referenceName"
+							label="Vendor Reference Name"
+							value={values.referenceName ?? ""}
+							error={errors.referenceName}
+							success={
+								fieldMode === "edit" &&
+								!errors.referenceName &&
+								Boolean(values.referenceName)
+							}
+							helperText="Enter vendor name in capital letters."
+							onChange={(event) =>
+								resolvedOnChange?.("referenceName", event.target.value)
+							}
+						/>
+						<FormInput
+							mode={fieldMode}
 							name="vendorName"
 							label="Name Of Vendor"
 							value={values.vendorName ?? ""}

@@ -10,6 +10,7 @@ import {
 	Pencil,
 	Save,
 	Send,
+	ArrowLeft,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -93,7 +94,7 @@ const VendorCreationSummaryForm = ({
 	formTwoErrors: formTwoErrorsProp,
 	formOneDocuments = EMPTY_DOCUMENTS,
 	onFormTwoChange,
-	// onBack,
+	onBack,
 	onSubmit,
 	onApprove,
 	onClarify,
@@ -138,7 +139,7 @@ const VendorCreationSummaryForm = ({
 
 	const resolvedFormTwoChange =
 		onFormTwoChange ?? formContext?.handleFormTwoChange;
-	// const resolvedOnBack = onBack ?? formContext?.handleBack;
+	const resolvedOnBack = onBack ?? formContext?.handleBack;
 	const resolvedOnSubmit = onSubmit ?? formContext?.handleSubmitSummary;
 	const resolvedOnApprove = onApprove ?? formContext?.handleApprove;
 	const resolvedOnClarify = onClarify ?? formContext?.handleClarify;
@@ -270,7 +271,8 @@ const VendorCreationSummaryForm = ({
 		(canActOnCurrentStage && (showApproveAction || showClarifyAction)) ||
 		showSendBackAction ||
 		showAcceptAndCloseAction;
-
+	const showButtons =
+		showSendBackAction || showSubmitAction || hasApprovalActions;
 	const sections: CardSection[] = [
 		{
 			id: "vendor-submitted-details",
@@ -343,8 +345,17 @@ const VendorCreationSummaryForm = ({
 		},
 	];
 
-	const footer = hasApprovalActions && (
-		<div className="vendor-onboarding-form-actions">
+	const footer = showButtons && (
+		<div className="vendor-onboarding-form-actions flex justify-between">
+			<Button
+				type="button"
+				text="Back"
+				size="sm"
+				appearance="standard"
+				variant="outline"
+				Icon={ArrowLeft}
+				onClick={resolvedOnBack}
+			/>{" "}
 			<div className="vendor-onboarding-form-actions-end">
 				{canActOnCurrentStage && showClarifyAction ? (
 					<Button
@@ -357,7 +368,6 @@ const VendorCreationSummaryForm = ({
 						onClick={openReasonModal}
 					/>
 				) : null}
-
 				{canActOnCurrentStage && showApproveAction ? (
 					<Button
 						type="button"
@@ -369,7 +379,6 @@ const VendorCreationSummaryForm = ({
 						onClick={() => void handleApprove()}
 					/>
 				) : null}
-
 				{showAcceptAndCloseAction ? (
 					<Button
 						type="button"
@@ -382,7 +391,6 @@ const VendorCreationSummaryForm = ({
 						onClick={() => void resolvedOnAcceptAndClose?.()}
 					/>
 				) : null}
-
 				{showSendBackAction ? (
 					<Button
 						type="button"
@@ -395,7 +403,6 @@ const VendorCreationSummaryForm = ({
 						onClick={() => void onHandleSendBackVendor?.()}
 					/>
 				) : null}
-
 				{showSubmitAction ? (
 					<Button
 						type="button"
@@ -416,13 +423,18 @@ const VendorCreationSummaryForm = ({
 		<div className="vendor-summary-form">
 			<Card
 				title={
-					<div className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight text-iron-dark">
-						<NavigateButton direction="back" />
-						<span>Vendor Onboarding Summary</span>
-						<span>/ {formContext?.referenceNumber} /</span>
-						<Badge status={formContext?.formStatus} />
-					</div>
+					isViewMode ? (
+						<div className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight text-iron-dark">
+							<NavigateButton direction="back" />
+							<span>Vendor Onboarding Summary</span>
+							<span>/ {formContext?.referenceNumber} /</span>
+							<Badge status={formContext?.formStatus} />
+						</div>
+					) : (
+						"Form Summary"
+					)
 				}
+				className={!isViewMode ? "border-none" : ""}
 				actions={
 					isViewMode && onboardingId ? (
 						<ActionMenu

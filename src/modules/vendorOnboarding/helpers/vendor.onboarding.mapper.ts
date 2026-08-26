@@ -94,6 +94,7 @@ export const normalizePublicFormOneValues = (
 		...EMPTY_FORM_ONE_VALUES,
 		...source,
 		vendorName: source.vendorName ?? data.vendorName ?? "",
+		referenceName: source.referenceName ?? data.referenceName ?? "",
 		email: source.email ?? data.email ?? "",
 		mobile: source.mobile ?? data.mobile ?? "",
 		msmeVendor: toYesNo(source.msmeVendor),
@@ -237,6 +238,7 @@ export const buildVendorUpdatePayload = (
 	pan: toNullableString(values.pan),
 	entityRegNo: toNullableString(values.entityRegNo),
 	ndaObtained: toNullableBoolean(values.ndaObtained),
+	referenceName: toNullableString(values.referenceName),
 });
 
 export const buildThcmUpdatePayload = (
@@ -311,6 +313,7 @@ export const normalizeVendorOnboardingResponse = (
 		status: raw.status,
 		partOne: {
 			vendorName: raw.vendorName ?? "",
+			referenceName: raw.referenceName ?? "",
 			address: raw.address ?? "",
 			msmeVendor: toYesNo(raw.msmeVendor),
 			msmeCertificateAttached: toYesNo(raw.msmeCertAttached),
