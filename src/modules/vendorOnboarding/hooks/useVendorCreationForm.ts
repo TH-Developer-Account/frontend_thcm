@@ -1642,6 +1642,7 @@ export function useVendorCreationForm({
 		formOneErrors,
 		originalAccountNumber,
 		formTwoErrors,
+		validateFormOneBeforeSubmit,
 		formOneDocuments: isPublicForm
 			? (publicQuery.data?.documents ?? [])
 			: (detailQuery.data?.documents ?? []),

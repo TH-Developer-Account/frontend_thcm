@@ -14,11 +14,7 @@ import TextareaInput from "../../../components/forms/TextareaInput";
 import { getCitiesByState } from "../helpers/vendorLocation.helpers";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
 
-import {
-	// getAccountNumberConfirmState,
-	// validateConfirmAccountNumber,
-	toYesNo,
-} from "../helpers/vendor.onboarding.helper";
+import { toYesNo } from "../helpers/vendor.onboarding.helper";
 import {
 	VENDOR_DOCUMENT_FIELDS,
 	type VendorCreationFormOneValues,
@@ -69,7 +65,6 @@ type VendorCreationFormOneProps = {
 		submission: VendorCreationFormOneSubmission,
 	) => void | Promise<void>;
 	onSaveDraft?: (
-		// NEW
 		submission: VendorCreationFormOneDraftSubmission,
 	) => void | Promise<void>;
 
@@ -141,36 +136,6 @@ const VendorCreationFormOne = ({
 	const isReadOnly = mode === "view" || !canEdit;
 	const fieldMode: VendorFormMode = isReadOnly ? "view" : "edit";
 
-	// const accountConfirmationState = getAccountNumberConfirmState(
-	// 	values,
-	// 	formContext?.originalAccountNumber ?? "",
-	// );
-
-	// const { accountNumber, confirmAccountNumber } = accountConfirmationState;
-
-	// // Confirmation is validated only when the form is editable.
-	// const confirmRequired =
-	// 	!isReadOnly && accountConfirmationState.confirmRequired;
-
-	// The backend does not return confirmAccountNumber.
-	// Use accountNumber when viewing or when it has not changed.
-	// const confirmAccountValue = confirmRequired
-	// 	? confirmAccountNumber
-	// 	: accountNumber;
-
-	// const confirmAccountError = confirmRequired
-	// 	? (errors.confirmAccountNumber ??
-	// 		validateConfirmAccountNumber(
-	// 			values,
-	// 			formContext?.originalAccountNumber ?? "",
-	// 		))
-	// 	: undefined;
-
-	// const doAccountNumbersMatch =
-	// 	confirmRequired &&
-	// 	Boolean(confirmAccountNumber) &&
-	// 	confirmAccountNumber === accountNumber;
-
 	const maskAccountNumber = (value?: string): string | undefined => {
 		const digits = (value ?? "").replace(/\D/g, "");
 		if (!digits) return undefined;
@@ -202,6 +167,9 @@ const VendorCreationFormOne = ({
 		initialDocuments,
 		requireDocuments,
 		requireDpdpConsent,
+		// Field validation runs before enclosure/file validation inside
+		// handleFormAction, so an empty submit surfaces field errors first.
+		validateFields: formContext?.validateFormOneBeforeSubmit,
 		onChange: resolvedOnChange,
 		onNext: resolvedOnNext,
 		onSubmit: resolvedOnSubmit,
@@ -301,26 +269,6 @@ const VendorCreationFormOne = ({
 							}}
 						/>
 
-						{/* <SelectInput
-							mode={fieldMode}
-							name="city"
-							label="City/ Town"
-							placeholder="Select city"
-							success={
-								fieldMode === "edit" && !errors.city && Boolean(values.city)
-							}
-							options={getCitiesByState(values.state)}
-							value={getCityOption(values.state, values.city)}
-							required
-							error={errors.city}
-							helperText="Vendor city."
-							onChange={(option) => {
-								resolvedOnChange?.("city", option?.city ?? "");
-								if (option?.state && option.state !== values.state) {
-									resolvedOnChange?.("state", option.state);
-								}
-							}}
-						/> */}
 						<FormInput
 							mode={fieldMode}
 							name="city"
@@ -586,9 +534,6 @@ const VendorCreationFormOne = ({
 								inputName={field.documentType}
 								showActions
 								previewVariant="line"
-								// enableCaption
-								// captionLabel="Document caption"
-								// captionPlaceholder="Enter a short description for this document"
 							/>
 						) : (
 							<FileUploadField
@@ -609,9 +554,6 @@ const VendorCreationFormOne = ({
 								className="vendor-enclosure-upload-field"
 								inputName={field.documentType}
 								showActions
-								// enableCaption
-								// captionLabel="Document caption"
-								// captionPlaceholder="Enter a short description for this document"
 							/>
 						);
 					})}
@@ -665,9 +607,6 @@ const VendorCreationFormOne = ({
 										inputName="MSME_CERTIFICATE"
 										showActions
 										tooltip="Mandatory"
-										// enableCaption
-										// captionLabel="Document caption"
-										// captionPlaceholder="Enter a short description for this document"
 									/>
 								) : null}
 							</div>
@@ -719,9 +658,6 @@ const VendorCreationFormOne = ({
 										inputName="NDA_CERTIFICATE"
 										showActions
 										tooltip="Mandatory"
-										// enableCaption
-										// captionLabel="Document caption"
-										// captionPlaceholder="Enter a short description for this document"
 									/>
 								) : null}
 							</div>
