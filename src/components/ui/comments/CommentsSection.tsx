@@ -1,4 +1,5 @@
 import React from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageCircle } from "lucide-react";
 
 import Avatar from "../../common/Avatar";
@@ -38,6 +39,14 @@ type CommentCardProps = {
 	currentUserId?: string;
 	level?: number;
 	formatAuditMessage?: (comment: CommentItem) => React.ReactNode;
+};
+
+const commentsKeys = {
+	activity: (
+		subjectType: string,
+		subjectId: string,
+		refreshKey: string | number,
+	) => ["comments", "activity", subjectType, subjectId, refreshKey] as const,
 };
 
 const getCommentAuthorName = (comment: CommentItem): string => {
@@ -148,9 +157,7 @@ export default function CommentsSection({
 	onCommentsChange,
 }: CommentsSectionProps) {
 	const { showToast } = useToast();
-	const [comments, setComments] = React.useState<CommentItem[]>([]);
-	const [commentsLoading, setCommentsLoading] = React.useState(false);
-	const [loadError, setLoadError] = React.useState<string | null>(null);
+	const queryClient = useQueryClient();
 	const [toEmails, setToEmails] = React.useState<string[]>([]);
 	const commentsListRef = React.useRef<HTMLDivElement>(null);
 	const hasLoadedRef = React.useRef(false);
@@ -160,37 +167,34 @@ export default function CommentsSection({
 		onCommentsChangeRef.current = onCommentsChange;
 	}, [onCommentsChange]);
 
-	const replaceComments = React.useCallback((nextComments: CommentItem[]) => {
-		setComments(nextComments);
-		onCommentsChangeRef.current?.(nextComments);
-	}, []);
+	const queryKey = React.useMemo(
+		() => commentsKeys.activity(subjectType, subjectId, refreshKey),
+		[refreshKey, subjectId, subjectType],
+	);
+
+	const {
+		data: comments = [],
+		isLoading: commentsLoading,
+		error,
+	} = useQuery({
+		queryKey,
+		queryFn: () => api.getActivity({ subjectType, subjectId }),
+		enabled: Boolean(subjectType && subjectId),
+		staleTime: Infinity,
+		refetchOnMount: false,
+		refetchOnWindowFocus: false,
+		refetchOnReconnect: false,
+	});
+
+	const loadError = error
+		? error instanceof Error
+			? error.message
+			: "Unable to load comments"
+		: null;
 
 	React.useEffect(() => {
-		let cancelled = false;
-
-		const fetchComments = async () => {
-			try {
-				setCommentsLoading(true);
-				setLoadError(null);
-				const data = await api.getActivity({ subjectType, subjectId });
-				if (!cancelled) replaceComments(data);
-			} catch (error) {
-				if (!cancelled) {
-					setLoadError(
-						error instanceof Error ? error.message : "Unable to load comments",
-					);
-				}
-			} finally {
-				if (!cancelled) setCommentsLoading(false);
-			}
-		};
-
-		if (subjectType && subjectId) void fetchComments();
-
-		return () => {
-			cancelled = true;
-		};
-	}, [api, refreshKey, replaceComments, subjectId, subjectType]);
+		onCommentsChangeRef.current?.(comments);
+	}, [comments]);
 
 	React.useEffect(() => {
 		if (!hasLoadedRef.current) {
@@ -224,33 +228,44 @@ export default function CommentsSection({
 					payload: { message, to, cc },
 				});
 
-				setComments((currentComments) => {
-					const nextComments = [...currentComments, response.data];
-					onCommentsChangeRef.current?.(nextComments);
-					return nextComments;
-				});
+				queryClient.setQueryData<CommentItem[]>(queryKey, (current = []) => [
+					...current,
+					response.data,
+				]);
 				setToEmails([]);
 				showToast({
 					type: "success",
 					title: "Success",
 					description: response.message,
 				});
-			} catch (error) {
+			} catch (createError) {
 				showToast({
 					type: "error",
 					title: "Error",
 					description:
-						error instanceof Error
-							? error.message
+						createError instanceof Error
+							? createError.message
 							: "Error while adding the comment",
 				});
-				throw error;
+				throw createError;
 			}
 		},
-		[api, approvalId, ccEmails, showToast, subjectId, subjectType, toEmails],
+		[
+			api,
+			approvalId,
+			ccEmails,
+			queryClient,
+			queryKey,
+			showToast,
+			subjectId,
+			subjectType,
+			toEmails,
+		],
 	);
 
-	const commentCountLabel = `${comments.length} ${comments.length === 1 ? "comment" : "comments"}`;
+	const commentCountLabel = `${comments.length} ${
+		comments.length === 1 ? "comment" : "comments"
+	}`;
 
 	return (
 		<section aria-label={title}>
@@ -273,11 +288,9 @@ export default function CommentsSection({
 					/>
 				) : (
 					<div className="comments-section">
-						{comments.length === 0 ? null : (
-							<header className="comments-summary">
-								<span className="comments-subtitle">{commentCountLabel}</span>
-							</header>
-						)}
+						<header className="comments-summary">
+							<span className="comments-subtitle">{commentCountLabel}</span>
+						</header>
 						<div
 							className="comments-list scrollbar-sleek"
 							ref={commentsListRef}

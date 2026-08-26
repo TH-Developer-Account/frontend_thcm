@@ -13,18 +13,12 @@ import type {
 import type { ClaimHeadRow } from "../types/reimbursementClaim.types";
 
 const MEDICAL_CLAIM_URL = "/medi-claim";
-const PUBLIC_MEDICAL_CLAIM_URL = `${MEDICAL_CLAIM_URL}/public`;
-const GUEST_MEDICAL_CLAIM_URL = `${MEDICAL_CLAIM_URL}/guest`;
 
 type ApiDataResponse<T> = {
 	success: boolean;
 	data: T;
 };
 
-type ApiMessageResponse = {
-	success: boolean;
-	message: string;
-};
 export type PdfType = "MEDICAL_CLAIM";
 
 type PdfUrlResponse = {
@@ -120,61 +114,6 @@ export const medicalClaimApi = {
 		return data;
 	},
 
-	getPublicByToken: async (token: string): Promise<MedicalClaimDetail> => {
-		const {
-			data: { data },
-		} = await ServerAxios.get<ApiDataResponse<MedicalClaimDetail>>(
-			`${PUBLIC_MEDICAL_CLAIM_URL}/${encodeURIComponent(token)}`,
-		);
-
-		return data;
-	},
-
-	submitPublic: async (token: string, formData: FormData): Promise<string> => {
-		const {
-			data: { message },
-		} = await ServerAxios.post<ApiMessageResponse>(
-			`${PUBLIC_MEDICAL_CLAIM_URL}/${encodeURIComponent(token)}/submit`,
-			formData,
-		);
-
-		return message;
-	},
-
-	savePublicDraft: async (
-		token: string,
-		formData: FormData,
-	): Promise<string> => {
-		const {
-			data: { message },
-		} = await ServerAxios.patch<ApiMessageResponse>(
-			`${PUBLIC_MEDICAL_CLAIM_URL}/${encodeURIComponent(token)}/draft`,
-			formData,
-		);
-
-		return message;
-	},
-
-	listGuestClaims: async (): Promise<MedicalClaimListItem[]> => {
-		const {
-			data: { data },
-		} = await ServerAxios.get<ApiDataResponse<MedicalClaimListItem[]>>(
-			GUEST_MEDICAL_CLAIM_URL,
-		);
-
-		return data;
-	},
-
-	getGuestById: async (claimId: string): Promise<MedicalClaimDetail> => {
-		const {
-			data: { data },
-		} = await ServerAxios.get<ApiDataResponse<MedicalClaimDetail>>(
-			`${GUEST_MEDICAL_CLAIM_URL}/${encodeURIComponent(claimId)}`,
-		);
-
-		return data;
-	},
-
 	/** Saves corrections made by the THCM proposer before taking an action. */
 	update: async (
 		claimId: string,
@@ -210,16 +149,6 @@ export const medicalClaimApi = {
 		);
 
 		return data;
-	},
-	getPublicPdf: async (pdfToken: string): Promise<Blob> => {
-		const response = await ServerAxios.get<Blob>(
-			`${PUBLIC_MEDICAL_CLAIM_URL}/pdf/${encodeURIComponent(pdfToken)}`,
-			{
-				responseType: "blob",
-			},
-		);
-
-		return response.data;
 	},
 
 	getPdfUrl: async (

@@ -6,7 +6,6 @@ import { GuestAuthProvider } from "../context/Auth/guestAuthProvider";
 import GuestProtectedRoute from "./GuestProtectedRoutes";
 import GuestLayoutWrapper from "../layout/GuestLayoutWrapper";
 import ReimbursementClaimPublicPage from "../modules/medicalReimbursment/pages/ReimbursmentClaimPublicPage";
-import ReimbursementPage from "../modules/medicalReimbursment/pages/ReimbursementPage";
 import ReimbursementClaimListingPage from "../modules/guest/guestMedicalForms/ReimbursementClaimListingPage";
 import GuestReimbursementPage from "../modules/guest/guestMedicalForms/GuestReimbursementPage";
 
@@ -48,20 +47,9 @@ const GuestRoutes = () => {
 				element={<ReimbursementClaimListingPage />}
 			/>
 
-			<Route
-				path="medi-claim/create"
-				element={<ReimbursementPage mode="edit" />}
-			/>
+			<Route path="medi-claim/create" element={<GuestReimbursementPage />} />
 
-			<Route
-				path="medi-claim/:claimId/view"
-				element={<GuestReimbursementPage mode="view" />}
-			/>
-
-			<Route
-				path="medi-claim/:claimId/edit"
-				element={<GuestReimbursementPage mode="edit" />}
-			/>
+			<Route path="medi-claim/:claimId" element={<GuestReimbursementPage />} />
 		</Routes>
 	);
 };

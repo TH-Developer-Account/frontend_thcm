@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Pencil, Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 
 import Button from "../../../components/common/Button";
@@ -12,88 +12,20 @@ import SimpleViewTable, {
 import { CLAIM_HEAD_OPTIONS } from "../utils/claimHead.constants";
 
 import type {
-	ClaimHeadFormRow,
-	ClaimHeadRow,
-	ClaimHeadValidationErrors,
 	ClaimHead,
-	ReimbursementClaimActor,
+	ClaimHeadRow,
 } from "../types/reimbursementClaim.types";
-
-import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
-import { createRemoteFileUploadValue } from "../../../components/ui/FileUpload/fileUpload.helpers";
 
 import DatePickerInput from "../../../components/common/DatePickerInput";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
 import { formatDate } from "../../../utils/format";
 import Checkbox from "../../../components/forms/Checkbox";
-
-export type MedicalClaimBill = {
-	id: string;
-	claimId?: string;
-	claimHead: ClaimHead;
-	billNo?: string | null;
-	billNumber?: string | null;
-	billName?: string | null;
-	billDate?: string | null;
-	amount?: string | number | null;
-	approvedClaimAmount?: string | number | null;
-	approvalStatus?: ClaimHeadRow["approvalStatus"];
-	s3Key?: string | null;
-	fileName?: string | null;
-	fileUrl?: string | null;
-	attachmentUrl?: string | null;
-	mimeType?: string | null;
-	fileSize?: number | null;
-	attachment?: FileUploadValue | null;
-};
-
-type ClaimHeadEntryTableProps = {
-	items: ClaimHeadFormRow[];
-
-	savedItems: Array<ClaimHeadRow | MedicalClaimBill>;
-
-	loading?: boolean;
-
-	editingId?: string | null;
-
-	savingId?: string | null;
-
-	deletingId?: string | null;
-
-	isViewMode?: boolean;
-
-	actorRole?: ReimbursementClaimActor;
-
-	canApproveLineItems?: boolean;
-
-	canEditClaimRows?: boolean;
-
-	errors: ClaimHeadValidationErrors;
-
-	onChange: (
-		rowId: string,
-		field: keyof Omit<ClaimHeadFormRow, "id">,
-		value: unknown,
-	) => void;
-
-	onSaveRow: (row: ClaimHeadFormRow, index: number) => void;
-
-	onEditRow: (row: ClaimHeadRow) => void;
-
-	onCancelEdit: () => void;
-
-	onDeleteRow: (id: string) => void;
-
-	onApprovedAmountChange: (id: string, value: string) => void;
-
-	onToggleLineItemStatus: (id: string) => void;
-
-	onApproveLineItem?: (lineItem: ClaimHeadRow) => void | Promise<void>;
-
-	onRemarksChange: (id: string, value: string) => void;
-
-	lineItemRemarks: Record<string, string>;
-};
+import {
+	sanitizeAmountInput,
+	toDatePickerValue,
+	toDateString,
+	useReimbursementClaimFormContext,
+} from "../hooks/useReimbursementClaimForm";
 
 const SKELETON_ROWS = 5;
 
@@ -105,122 +37,29 @@ type TableColumnDefinition<T> = {
 	cell: (context: { row: { original: T; index: number } }) => ReactNode;
 };
 
-const getFileNameFromKey = (key?: string | null): string | null => {
-	if (!key) return null;
-	const fileName = key.split("/").pop()?.trim();
-	return fileName || null;
-};
-
-const createMedicalClaimBillUploadValue = (
-	bill: MedicalClaimBill,
-): FileUploadValue | null => {
-	const fileUrl = bill.fileUrl ?? bill.attachmentUrl;
-	if (!fileUrl) return null;
-
-	const fileName =
-		bill.fileName ?? getFileNameFromKey(bill.s3Key) ?? "Medical claim bill";
-
-	return createRemoteFileUploadValue({
-		id: bill.id,
-		url: fileUrl,
-		name: fileName,
-		type: bill.mimeType,
-		size: bill.fileSize,
-		fallbackName: fileName,
-	});
-};
-
-const normalizeSavedClaim = (
-	item: ClaimHeadRow | MedicalClaimBill,
-): ClaimHeadRow => {
-	const bill = item as MedicalClaimBill;
-	const amount = String(bill.amount ?? "");
-
-	return {
-		...item,
-		id: bill.id,
-		claimHead: bill.claimHead,
-		billNumber: bill.billNumber ?? bill.billNo ?? "",
-		billName: bill.billName ?? "",
-		billDate: bill.billDate ?? "",
-		amount,
-		file: "file" in item ? item.file : null,
-		fileName: bill.fileName ?? getFileNameFromKey(bill.s3Key) ?? "Attachment",
-		attachment: bill.attachment ?? createMedicalClaimBillUploadValue(bill),
-		approvedClaimAmount: String(bill.approvedClaimAmount ?? amount),
-		approvalStatus: bill.approvalStatus ?? "PENDING",
-	} as ClaimHeadRow;
-};
-
-export const ClaimHeadEntryTable = ({
-	items,
-	savedItems,
-	loading = false,
-	editingId,
-	savingId,
-	deletingId,
-	isViewMode = false,
-	actorRole = "creator",
-	canApproveLineItems = false,
-	canEditClaimRows = false,
-	errors,
-	onChange,
-	onSaveRow,
-	onEditRow,
-	onCancelEdit,
-	onDeleteRow,
-	onToggleLineItemStatus,
-	onApproveLineItem,
-	// onRemarksChange,
-	// lineItemRemarks,
-	onApprovedAmountChange,
-}: ClaimHeadEntryTableProps) => {
-	const [approvingId, setApprovingId] = useState<string | null>(null);
-	const normalizedSavedItems = useMemo(
-		() => savedItems.map(normalizeSavedClaim),
-		[savedItems],
-	);
-
-	const handleApproveLineItem = useCallback(
-		async (claim: ClaimHeadRow) => {
-			if (!onApproveLineItem) {
-				onToggleLineItemStatus(claim.id);
-				return;
-			}
-
-			try {
-				setApprovingId(claim.id);
-				await onApproveLineItem({
-					...claim,
-					// approvalStatus: "APPROVED",
-				});
-				onToggleLineItemStatus(claim.id);
-			} finally {
-				setApprovingId(null);
-			}
-		},
-		[onApproveLineItem, onToggleLineItemStatus],
-	);
-
-	const toDatePickerValue = (value?: string): Date | undefined => {
-		if (!value) {
-			return undefined;
-		}
-
-		const date = new Date(value.includes("T") ? value : `${value}T00:00:00`);
-
-		return Number.isNaN(date.getTime()) ? undefined : date;
-	};
-
-	const toDateString = (date: Date): string => {
-		const year = date.getFullYear();
-
-		const month = String(date.getMonth() + 1).padStart(2, "0");
-
-		const day = String(date.getDate()).padStart(2, "0");
-
-		return `${year}-${month}-${day}`;
-	};
+export const ClaimHeadEntryTable = () => {
+	const {
+		claimRows: items,
+		savedClaims,
+		isLoading: loading,
+		editingClaimId: editingId,
+		savingClaimId: savingId,
+		deletingClaimId: deletingId,
+		approvingClaimId: approvingId,
+		isReadOnly: isViewMode,
+		actorRole,
+		canReviewLineItems: canApproveLineItems,
+		canEditClaimForm: canEditClaimRows,
+		claimErrors: errors,
+		handleClaimChange: onChange,
+		handleSaveClaim: onSaveRow,
+		handleEditClaim: onEditRow,
+		handleCancelClaimEdit: onCancelEdit,
+		handleDeleteClaim: onDeleteRow,
+		handleApprovedAmountChange: onApprovedAmountChange,
+		handleToggleLineItemStatus: onToggleLineItemStatus,
+		handleApproveLineItem,
+	} = useReimbursementClaimFormContext();
 
 	const columns = useMemo<TableColumnDefinition<ClaimHeadRow>[]>(() => {
 		const showsReviewColumn = actorRole === "approver";
@@ -529,14 +368,11 @@ export const ClaimHeadEntryTable = ({
 		deletingId,
 		errors,
 		isViewMode,
-		// lineItemRemarks,
 		loading,
 		onApprovedAmountChange,
-		// onApproveLineItem,
 		onDeleteRow,
 		onEditRow,
 		handleApproveLineItem,
-		// onRemarksChange,
 		onToggleLineItemStatus,
 	]);
 
@@ -560,7 +396,7 @@ export const ClaimHeadEntryTable = ({
 			) : null}
 
 			{canEditClaimRows && !isViewMode
-				? items.map((item, index) => {
+				? items.map((item) => {
 						const isSaving = savingId === item.id;
 
 						const isEditing = editingId === item.id;
@@ -632,7 +468,7 @@ export const ClaimHeadEntryTable = ({
 										onChange(
 											item.id,
 											"amount",
-											event.target.value.replace(/[^0-9.]/g, ""),
+											sanitizeAmountInput(event.target.value),
 										)
 									}
 									error={errors[`amount-${item.id}`]}
@@ -642,11 +478,9 @@ export const ClaimHeadEntryTable = ({
 									label="Upload bill"
 									kind="mediclaimDocument"
 									value={item.attachment ?? null}
-									onChange={(nextValue) => {
-										onChange(item.id, "attachment", nextValue);
-
-										onChange(item.id, "file", nextValue?.file ?? null);
-									}}
+									onChange={(nextValue) =>
+										onChange(item.id, "attachment", nextValue)
+									}
 									error={errors[`file-${item.id}`]}
 									disabled={isSaving}
 									inputName={`attachment-${item.id}`}
@@ -661,7 +495,7 @@ export const ClaimHeadEntryTable = ({
 										variant="outline"
 										size="sm"
 										disabled={isSaving}
-										onClick={() => onSaveRow(item, index)}
+										onClick={() => onSaveRow(item)}
 										aria-label={isEditing ? "Update Claim" : "Add Claim"}
 									/>
 
@@ -688,7 +522,7 @@ export const ClaimHeadEntryTable = ({
 			>
 				<div className="min-w-0 px-4">
 					<SimpleViewTable<ClaimHeadRow>
-						data={normalizedSavedItems}
+						data={savedClaims}
 						columns={simpleColumns}
 						getRowId={(claim) => claim.id}
 						loading={loading}

@@ -1,8 +1,11 @@
 import { useCallback, useMemo } from "react";
 
-import { useGuestReimbursementClaimDetailQuery } from "./useReimbursementClaimQueries";
+import {
+	useGuestReimbursementClaimDetailQuery,
+	useResubmitGuestMedicalClaimMutation,
+} from "./useReimbursementClaimQueries";
 
-import { useResubmitGuestMedicalClaimMutation } from "../../medicalReimbursment/hooks/useMedicalClaimMutations";
+import { useSubmitPublicMedicalClaimMutation } from "../../medicalReimbursment/hooks/useMedicalClaimMutations";
 
 import {
 	toMedicalClaimFormValues,
@@ -11,84 +14,51 @@ import {
 
 import type { ReimbursementClaimSubmission } from "../../medicalReimbursment/types/reimbursementClaim.types";
 
-const EDITABLE_STATUSES = new Set(["DRAFT", "CLARIFICATION_REQUESTED"]);
-
-const appendText = (
-	formData: FormData,
-	name: string,
-	value: string | number | boolean | null | undefined,
-) => {
-	if (value !== undefined && value !== null) {
-		formData.append(name, String(value));
-	}
-};
-
-const buildMedicalClaimFormData = (
-	submission: ReimbursementClaimSubmission,
-): FormData => {
-	const { values } = submission;
-	const formData = new FormData();
-
-	appendText(formData, "grade", values.grade);
-	appendText(formData, "location", values.location);
-	appendText(formData, "claimCover", values.coverageType);
-	appendText(formData, "spouseName", values.spouseName);
-	appendText(formData, "signatureDate", values.claimDate);
-	appendText(formData, "declarationAccepted", values.declarationAccepted);
-	appendText(
-		formData,
-		"signatureName",
-		values.employeeSignature?.trim() || values.employeeName.trim(),
-	);
-
-	const files: File[] = [];
-
-	const bills = submission.lineItems.map((item) => ({
-		id: item.id,
-		claimHead: item.claimHead,
-		billNo: item.billNumber.trim(),
-		billName: item.billName.trim(),
-		billDate: item.billDate || undefined,
-		amount: Number(item.amount) || 0,
-		attachmentIndex: item.file ? files.push(item.file) - 1 : null,
-	}));
-
-	formData.append("bills", JSON.stringify(bills));
-
-	files.forEach((file) => {
-		formData.append("billAttachments", file, file.name);
-	});
-
-	return formData;
-};
+import {
+	buildMedicalClaimFormData,
+	GUEST_EDITABLE_STATUSES,
+} from "../../medicalReimbursment/helpers/reimbursementClaimForm.helper";
 
 export interface GuestReimbursementClaimAccess {
 	canView: boolean;
 	canEdit: boolean;
+	canCreate: boolean;
 	canResubmit: boolean;
 }
 
-export function useGuestMedicalClaimView(claimId: string) {
+export function useGuestMedicalClaimView(claimId = "") {
+	const isCreateMode = !claimId;
+
 	const detailQuery = useGuestReimbursementClaimDetailQuery(
 		claimId,
-		Boolean(claimId),
+		!isCreateMode,
 	);
 
+	const createMutation = useSubmitPublicMedicalClaimMutation();
 	const resubmitMutation = useResubmitGuestMedicalClaimMutation();
 
 	const detail = detailQuery.data;
 
 	const access = useMemo<GuestReimbursementClaimAccess>(() => {
-		const normalizedStatus = detail?.status?.toUpperCase() ?? "";
+		if (isCreateMode) {
+			return {
+				canView: true,
+				canEdit: true,
+				canCreate: true,
+				canResubmit: false,
+			};
+		}
 
-		const canEdit = EDITABLE_STATUSES.has(normalizedStatus);
+		const normalizedStatus = detail?.status?.toUpperCase() ?? "";
+		const canEdit = GUEST_EDITABLE_STATUSES.has(normalizedStatus);
 
 		return {
 			canView: Boolean(detail),
 			canEdit,
+			canCreate: false,
 			canResubmit: canEdit,
 		};
-	}, [detail]);
+	}, [detail, isCreateMode]);
 
 	const initialValues = useMemo(
 		() => (detail ? toMedicalClaimFormValues(detail) : undefined),
@@ -100,40 +70,52 @@ export function useGuestMedicalClaimView(claimId: string) {
 		[detail],
 	);
 
-	const resubmitClaim = useCallback(
+	const submitClaim = useCallback(
 		async (submission: ReimbursementClaimSubmission) => {
+			const formData = await buildMedicalClaimFormData(submission);
+
+			if (isCreateMode) {
+				await createMutation.mutateAsync({ formData });
+				return;
+			}
+
 			if (!access.canResubmit) {
 				throw new Error("This claim cannot be edited or resubmitted.");
 			}
-
-			const formData = buildMedicalClaimFormData(submission);
 
 			await resubmitMutation.mutateAsync({
 				claimId,
 				formData,
 			});
 		},
-		[access.canResubmit, claimId, resubmitMutation],
+		[
+			access.canResubmit,
+			claimId,
+			createMutation,
+			isCreateMode,
+			resubmitMutation,
+		],
 	);
 
 	return {
 		detail,
+		isCreateMode,
 
-		isLoading: detailQuery.isLoading,
-		isError: detailQuery.isError,
+		isLoading: !isCreateMode && detailQuery.isLoading,
+		isError: !isCreateMode && detailQuery.isError,
 
 		initialValues,
 		initialLineItems,
 
 		access,
-
 		canView: access.canView,
 		canEdit: access.canEdit,
+		canCreate: access.canCreate,
 		canResubmit: access.canResubmit,
 
-		isSaving: resubmitMutation.isPending,
+		isSaving: createMutation.isPending || resubmitMutation.isPending,
 
-		resubmitClaim,
+		submitClaim,
 
 		refetch: detailQuery.refetch,
 	};

@@ -1,5 +1,5 @@
 // modules/guest/GuestSidebar.tsx
-import { File, Folder } from "lucide-react";
+import { Folder } from "lucide-react";
 import type { SidebarItem } from "../../layout/layout.types";
 
 export const guestSidebar: SidebarItem[] = [
@@ -8,11 +8,5 @@ export const guestSidebar: SidebarItem[] = [
 		label: "Forms Listing",
 		icon: <Folder size={18} />,
 		link: "/guest/medi-claim/listing",
-	},
-	{
-		id: "guest-medical-claim-form",
-		label: "Reimbursement Claim Form",
-		icon: <File size={18} />,
-		link: "/guest/medi-claim/create",
 	},
 ];

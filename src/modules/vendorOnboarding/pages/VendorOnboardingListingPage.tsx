@@ -95,7 +95,7 @@ const VendorOnboardingListingPage = () => {
 				headerChildren={
 					<Button
 						path="/vendor/initiation/create"
-						text="Create Onboarding"
+						text="Initiate Onboarding"
 						appearance="standard"
 						variant="brand"
 						Icon={Plus}

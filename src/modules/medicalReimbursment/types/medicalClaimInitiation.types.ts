@@ -1,5 +1,3 @@
-import type { MedicalClaimStatus } from "./medicalClaimListing.types";
-
 export type MedicalClaimInitiationFormMode = "create" | "view";
 
 export interface MedicalClaimInitiationPayload {
@@ -10,7 +8,7 @@ export interface MedicalClaimInitiationPayload {
 }
 
 export interface MedicalClaimInitiationValues extends MedicalClaimInitiationPayload {
-	status?: MedicalClaimStatus;
+	status?: string;
 	referenceNumber?: string;
 }
 

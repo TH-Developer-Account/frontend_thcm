@@ -26,6 +26,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	 */
 	emptyReadOnlyValue?: ReactNode;
 	success?: boolean;
+	invalidRadio?: string;
 }
 
 export interface CheckboxProps {

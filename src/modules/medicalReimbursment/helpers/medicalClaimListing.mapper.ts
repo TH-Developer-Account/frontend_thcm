@@ -2,7 +2,6 @@ import type {
 	MedicalClaimDetail,
 	MedicalClaimListItem,
 	MedicalClaimListingRow,
-	MedicalClaimStatus,
 } from "../types/medicalClaimListing.types";
 
 import type {
@@ -22,16 +21,6 @@ import {
 import { getAuditMessage } from "../../../components/ui/comments/comments.helper";
 import type { CommentItem } from "../../../components/ui/comments";
 
-const STATUS_LABELS: Record<MedicalClaimStatus, string> = {
-	AWAITING_EX_EMPLOYEE: "Awaiting employee",
-	DRAFT: "Draft",
-	IN_PROGRESS: "In progress",
-	CLARIFICATION_REQUESTED: "Clarification requested",
-	APPROVED: "Approved",
-	REJECTED: "Rejected",
-	CLOSED: "Closed",
-};
-
 const toNumber = (value: number | string | null | undefined): number => {
 	const parsed = Number(value);
 
@@ -47,8 +36,7 @@ export const toMedicalClaimListingRow = (
 	ticketNumber: claim.ticketNumber?.trim() || "—",
 	grade: claim.grade?.trim() || "—",
 	totalClaimed: toNumber(claim.totalClaimed),
-	status: claim.status,
-	statusLabel: STATUS_LABELS[claim.status] ?? claim.status,
+	status: claim.status || "--",
 	createdAt: claim.created_at,
 });
 
@@ -89,8 +77,7 @@ export const toMedicalClaimLineItems = (
 		 * We always derive a stable display filename first.
 		 */
 		const fileName =
-			bill.fileName ??
-			getFileNameFromUrl(bill.s3Key || bill.fileUrl || "", bill.claimHead);
+			bill.fileName ?? getFileNameFromUrl(bill.s3Key || bill.fileUrl || "");
 
 		/**
 		 * Derive MIME type from the filename.

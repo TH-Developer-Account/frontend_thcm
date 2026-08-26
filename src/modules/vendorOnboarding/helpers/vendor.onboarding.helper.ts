@@ -427,6 +427,7 @@ export const REQUIRED_FORM_ONE_FIELDS: Partial<
 	gstin: "GSTIN is required.",
 	pan: "PAN is required.",
 	msmeVendor: "MSME Vendor is required.",
+	bankAddress: "Mandatory*",
 };
 
 // ── MOVED here from useVendorCreationForm.ts ──

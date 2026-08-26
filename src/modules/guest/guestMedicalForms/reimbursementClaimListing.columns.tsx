@@ -44,11 +44,8 @@ const canEditClaim = (claim: ReimbursementClaimListItem): boolean => {
 	return EDITABLE_STATUSES.has(normalizeStatus(claim.status));
 };
 
-const getClaimRoute = (claim: ReimbursementClaimListItem): string => {
-	const mode = canEditClaim(claim) ? "edit" : "view";
-
-	return `/guest/medi-claim/${claim.id}/${mode}`;
-};
+const getClaimRoute = (claim: ReimbursementClaimListItem): string =>
+	`/guest/medi-claim/${claim.id}`;
 
 export const getReimbursementClaimListingColumns = ({
 	onView,

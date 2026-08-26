@@ -37,7 +37,7 @@ type ApiCommentItem = {
 	action?: string | null;
 	stageName?: string | null;
 	metadata?: CommentItem["metadata"];
-
+	actorName?: string;
 	actor?: ApiCommentUser | null;
 	user?: ApiCommentUser | null;
 	replies?: ApiCommentItem[] | null;
@@ -66,7 +66,7 @@ const normalizeComment = (comment: ApiCommentItem): CommentItem => ({
 	action: comment.action ?? undefined,
 	stageName: comment.stageName ?? undefined,
 	metadata: comment.metadata,
-	actor: normalizeUser(comment.actor ?? comment.user),
+	actor: normalizeUser(comment.actor ?? comment.user) || comment.actorName,
 	replies: comment.replies?.map(normalizeComment) ?? undefined,
 });
 

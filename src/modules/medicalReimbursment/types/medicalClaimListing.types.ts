@@ -4,15 +4,6 @@ export type MedicalClaimListingTab =
 	| "pendingOnMe"
 	| "approvedByMe";
 
-export type MedicalClaimStatus =
-	| "AWAITING_EX_EMPLOYEE"
-	| "DRAFT"
-	| "IN_PROGRESS"
-	| "CLARIFICATION_REQUESTED"
-	| "APPROVED"
-	| "REJECTED"
-	| "CLOSED";
-
 export interface MedicalClaimListItem {
 	id: string;
 	referenceNumber: string;
@@ -22,7 +13,7 @@ export interface MedicalClaimListItem {
 	email?: string | null;
 	grade?: string | null;
 	location?: string | null;
-	status: MedicalClaimStatus;
+	status: string;
 	totalClaimed?: number | string | null;
 	eligibleAmount?: number | string | null;
 	submittedAt?: string | null;
@@ -37,8 +28,7 @@ export interface MedicalClaimListingRow {
 	ticketNumber: string;
 	grade: string;
 	totalClaimed: number;
-	status: MedicalClaimStatus;
-	statusLabel: string;
+	status: string;
 	createdAt: string;
 }
 

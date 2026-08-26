@@ -613,6 +613,7 @@ const VendorCreationFormOne = ({
 								className="vendor-enclosure-upload-field"
 								inputName={field.documentType}
 								showActions
+								previewVariant="line"
 								// enableCaption
 								// captionLabel="Document caption"
 								// captionPlaceholder="Enter a short description for this document"

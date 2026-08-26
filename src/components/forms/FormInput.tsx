@@ -69,6 +69,7 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 			min,
 			mode = "edit",
 			success,
+			invalidRadio,
 			readOnlyValue,
 			emptyReadOnlyValue = "--",
 			...nativeInputProps
@@ -140,11 +141,12 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 							required={required}
 							aria-invalid={error ? "true" : undefined}
 							aria-describedby={error ? errorId : undefined}
-							className={joinClassNames(
+							className={[
 								"form-radio-input",
-								error && "form-radio-input-error",
-								className,
-							)}
+								invalidRadio && "form-radio-input-error",
+							]
+								.filter(Boolean)
+								.join(" ")}
 						/>
 
 						{label ? (
@@ -159,16 +161,6 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 							</span>
 						) : null}
 					</label>
-
-					{error ? (
-						<p
-							id={errorId}
-							className="form-error-text form-radio-error-text"
-							role="alert"
-						>
-							{error}
-						</p>
-					) : null}
 				</div>
 			);
 		}

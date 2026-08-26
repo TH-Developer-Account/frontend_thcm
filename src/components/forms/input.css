@@ -516,7 +516,26 @@ FORM CONTAINER AND LAYOUT
 	}
 
 	.form-radio-input-error {
+		border-width: var(--border-width-strong);
 		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+	}
+
+	.form-radio-input-error:hover:not(:disabled) {
+		border-color: var(--color-error-hover);
+		background-color: var(--color-error-bg);
+	}
+
+	.form-radio-input-error:focus-visible {
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+		box-shadow: none;
+	}
+
+	.form-radio-input-error:checked {
+		border-width: 0.25rem;
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
 	}
 
 	.form-radio-input:disabled {
@@ -545,7 +564,9 @@ FORM CONTAINER AND LAYOUT
 	.form-radio-error-text {
 		padding-left: calc(1rem + var(--space-2));
 	}
-
+	.radio-group.has-error .radio-group-label {
+		color: var(--color-error);
+	}
 	.radio-group {
 		@apply flex flex-col;
 
@@ -635,6 +656,18 @@ FORM CONTAINER AND LAYOUT
 	.form-field-soft .form-native-select:focus {
 		border-color: var(--color-input-border-focus);
 		background-color: var(--color-input-bg);
+	}
+
+	.form-field-soft .form-native-select.form-input-error,
+	.form-field-soft .form-native-select.form-input-error:hover:not(:disabled),
+	.form-field-soft .form-native-select.form-input-error:focus {
+		border-width: var(--border-width-strong);
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+	}
+
+	.form-field-soft .form-native-select.form-input-error:hover:not(:disabled) {
+		border-color: var(--color-error-hover);
 	}
 
 	/* =====================================================
@@ -763,17 +796,26 @@ REACT SELECT CONTAINER
 	/* Keep error icon clear of the indicators. */
 	.react-select-container-error .react-select__control {
 		padding-right: var(--space-8);
+		border-width: var(--border-width-strong);
 		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
 	}
 
 	.react-select-container-error
 		.react-select__control:hover:not(.react-select__control--is-disabled) {
 		border-color: var(--color-error-hover);
+		background-color: var(--color-error-bg);
 	}
 
 	.react-select-container-error .react-select__control--is-focused {
 		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
 		box-shadow: none;
+	}
+
+	.react-select-container-error .react-select__placeholder {
+		color: var(--color-error);
+		opacity: 0.65;
 	}
 	/* Keep error icon clear of the indicators. */
 	.react-select-container-success .react-select__control {
@@ -1166,6 +1208,12 @@ REACT SELECT CONTAINER
 		cursor: not-allowed;
 	}
 
+	.react-select-container-error .react-select__control--is-disabled {
+		border-width: var(--border-width-default);
+		border-color: var(--color-border-disabled);
+		background-color: var(--color-input-bg-disabled);
+	}
+
 	.select-field.is-disabled {
 		opacity: 0.85;
 	}
@@ -1237,6 +1285,11 @@ REACT SELECT CONTAINER
 @layer components {
 	.checkbox {
 		@apply flex shrink-0 items-center justify-center transition-all duration-150;
+
+		border-width: var(--border-width-default);
+		border-color: var(--color-input-border);
+		background-color: var(--color-input-bg);
+		box-sizing: border-box;
 	}
 
 	.checkbox-disabled {
@@ -1245,6 +1298,40 @@ REACT SELECT CONTAINER
 
 	.checkbox-enabled {
 		@apply cursor-pointer;
+	}
+
+	.checkbox-enabled:hover {
+		border-color: var(--color-input-border-hover);
+	}
+
+	.checkbox-enabled:focus-visible {
+		outline: none;
+		border-color: var(--color-input-border-hover);
+		box-shadow: none;
+	}
+
+	.checkbox-error {
+		border-width: var(--border-width-strong);
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+	}
+
+	.checkbox-error.checkbox-enabled:hover {
+		border-color: var(--color-error-hover);
+		background-color: var(--color-error-bg);
+	}
+	.checkbox-field.has-error:not(.is-disabled) .form-radio-label {
+		color: var(--color-error);
+	}
+	.checkbox-error.checkbox-enabled:focus-visible {
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+	}
+
+	.checkbox-error.checkbox-disabled {
+		border-width: var(--border-width-default);
+		border-color: var(--color-border-disabled);
+		background-color: var(--color-input-bg-disabled);
 	}
 
 	.checkbox-icon {
@@ -1484,7 +1571,23 @@ REACT SELECT CONTAINER
 		cursor: not-allowed;
 	}
 	.checkbox-field.has-error .checkbox-control {
+		border-width: var(--border-width-strong);
 		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+	}
+	.checkbox-field.has-error .checkbox-control:hover:not(:disabled) {
+		border-color: var(--color-error-hover);
+		background-color: var(--color-error-bg);
+	}
+	.checkbox-field.has-error .checkbox-control:focus-visible {
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+		box-shadow: none;
+	}
+	.checkbox-field.has-error .checkbox-control:disabled {
+		border-width: var(--border-width-default);
+		border-color: var(--color-border-disabled);
+		background-color: var(--color-input-bg-disabled);
 	}
 }
 

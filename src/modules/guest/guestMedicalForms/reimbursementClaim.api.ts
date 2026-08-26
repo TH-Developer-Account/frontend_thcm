@@ -1,110 +1,29 @@
 import { GuestAxios } from "../../../services/GuestAxios";
 import { ServerAxios } from "../../../services/ServerAxios";
+
 import type { MedicalClaimDetail } from "../../medicalReimbursment/types/medicalClaimListing.types";
 
 import type {
 	ClaimFor,
-	PublicClaimSessionResponse,
 	ReimbursementClaimListItem,
 	ReimbursementClaimListParams,
 	ReimbursementClaimListResponse,
-	ReimbursementClaimResponse,
-	UpdateReimbursementClaimVariables,
 } from "./reimbursementClaim.types";
 
 const CLAIM_URL = "/medi-claim";
 const GUEST_URL = `${CLAIM_URL}/guest`;
-const PUBLIC_CLAIM_URL = `${CLAIM_URL}/public`;
+const PUBLIC_URL = `${CLAIM_URL}/public`;
 
-const unwrap = <T>(response: { data: T | { data: T } }): T => {
-	const body = response.data;
-	return typeof body === "object" && body !== null && "data" in body
-		? (body as { data: T }).data
-		: (body as T);
+type ApiDataResponse<T> = {
+	success: boolean;
+	data: T;
 };
 
-export const reimbursementClaimApi = {
-	list: async (
-		params: ReimbursementClaimListParams,
-	): Promise<ReimbursementClaimListResponse> => {
-		const response = await ServerAxios.get(CLAIM_URL, { params });
-		return unwrap(response);
-	},
-
-	getById: async (claimId: string): Promise<ReimbursementClaimResponse> => {
-		const response = await ServerAxios.get(`${CLAIM_URL}/${claimId}`);
-		return unwrap(response);
-	},
-
-	createDraft: async (
-		formData: FormData,
-	): Promise<ReimbursementClaimResponse> => {
-		const response = await ServerAxios.post(CLAIM_URL, formData);
-		return unwrap(response);
-	},
-
-	update: async ({
-		claimId,
-		formData,
-	}: UpdateReimbursementClaimVariables): Promise<ReimbursementClaimResponse> => {
-		const response = await ServerAxios.patch(
-			`${CLAIM_URL}/${claimId}`,
-			formData,
-		);
-
-		return unwrap(response);
-	},
-
-	submit: async (claimId: string): Promise<ReimbursementClaimResponse> => {
-		const response = await ServerAxios.post(`${CLAIM_URL}/${claimId}/submit`);
-
-		return unwrap(response);
-	},
-
-	getPublicSession: async (
-		sessionCode: string,
-	): Promise<PublicClaimSessionResponse> => {
-		const response = await ServerAxios.get(
-			`${PUBLIC_CLAIM_URL}/session/${sessionCode}`,
-		);
-
-		return unwrap(response);
-	},
-
-	savePublicDraft: async ({
-		sessionCode,
-		formData,
-	}: {
-		sessionCode: string;
-		formData: FormData;
-	}): Promise<ReimbursementClaimResponse> => {
-		const response = await ServerAxios.post(
-			`${PUBLIC_CLAIM_URL}/session/${sessionCode}/draft`,
-			formData,
-		);
-
-		return unwrap(response);
-	},
-
-	submitPublic: async ({
-		sessionCode,
-		formData,
-	}: {
-		sessionCode: string;
-		formData: FormData;
-	}): Promise<ReimbursementClaimResponse> => {
-		const response = await ServerAxios.post(
-			`${PUBLIC_CLAIM_URL}/session/${sessionCode}/submit`,
-			formData,
-		);
-
-		return unwrap(response);
-	},
+type ApiMessageResponse = {
+	success: boolean;
+	message: string;
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-// Raw shape of a single row as actually returned by GET /medi-claim/guest.
-// ─────────────────────────────────────────────────────────────────────────
 type RawGuestMedicalClaimRow = {
 	id: string;
 	referenceNumber: string;
@@ -117,12 +36,6 @@ type RawGuestMedicalClaimRow = {
 	updated_at?: string | null;
 };
 
-// GET /medi-claim/guest responds with a flat, unpaginated array — unlike the
-// internal listing endpoint, there is no total/page_index/page_size in the
-// response body. This maps each raw row into the ReimbursementClaimListItem
-// shape the listing table binds to, and paginates client-side using the
-// params that were requested, since the backend doesn't paginate this
-// endpoint at all.
 const mapGuestListResponse = (
 	rawRows: RawGuestMedicalClaimRow[],
 	params: ReimbursementClaimListParams,
@@ -130,7 +43,7 @@ const mapGuestListResponse = (
 	const items: ReimbursementClaimListItem[] = rawRows.map((row) => ({
 		id: row.id,
 		claimNumber: row.referenceNumber,
-		status: row.status as unknown as ReimbursementClaimListItem["status"],
+		status: row.status as ReimbursementClaimListItem["status"],
 		totalClaimAmount: Number(row.totalClaimed ?? 0),
 		createdBy: null,
 		createdAt: row.created_at,
@@ -153,18 +66,14 @@ const mapGuestListResponse = (
 		totalPages: Math.max(1, Math.ceil(total / pageSize)),
 	};
 };
-type ApiDataResponse<T> = {
-	success: boolean;
-	data: T;
-};
+
 export const guestReimburseClaimApi = {
 	guestList: async (
 		params: ReimbursementClaimListParams,
 	): Promise<ReimbursementClaimListResponse> => {
-		const response = await GuestAxios.get<{
-			success: boolean;
-			data: RawGuestMedicalClaimRow[];
-		}>(GUEST_URL, {
+		const response = await GuestAxios.get<
+			ApiDataResponse<RawGuestMedicalClaimRow[]>
+		>(GUEST_URL, {
 			params: {
 				tab: params.tab,
 				search: params.search,
@@ -181,37 +90,73 @@ export const guestReimburseClaimApi = {
 	},
 
 	guestGetById: async (claimId: string): Promise<MedicalClaimDetail> => {
-		const response = await GuestAxios.get(`${GUEST_URL}/${claimId}`);
+		const response = await GuestAxios.get<ApiDataResponse<MedicalClaimDetail>>(
+			`${GUEST_URL}/${encodeURIComponent(claimId)}`,
+		);
 
-		return unwrap(response);
+		return response.data.data;
 	},
 
-	guestResubmit: async ({
-		claimId,
-		formData,
-	}: {
-		claimId: string;
-		formData: FormData;
-	}): Promise<ReimbursementClaimResponse> => {
-		const response = await GuestAxios.patch(
-			`${GUEST_URL}/${claimId}/resubmit`,
+	createGuest: async (formData: FormData): Promise<MedicalClaimDetail> => {
+		const response = await GuestAxios.post<ApiDataResponse<MedicalClaimDetail>>(
+			GUEST_URL,
 			formData,
 		);
 
-		return unwrap(response);
+		return response.data.data;
 	},
 
 	resubmitGuest: async (
 		claimId: string,
 		formData: FormData,
 	): Promise<MedicalClaimDetail> => {
-		const {
-			data: { data },
-		} = await GuestAxios.patch<ApiDataResponse<MedicalClaimDetail>>(
-			`${GUEST_URL}/${encodeURIComponent(claimId)}/resubmit`,
+		const response = await GuestAxios.patch<
+			ApiDataResponse<MedicalClaimDetail>
+		>(`${GUEST_URL}/${encodeURIComponent(claimId)}/resubmit`, formData);
+
+		return response.data.data;
+	},
+};
+
+/**
+ * Public claim endpoints use a link/session token and do not require a
+ * guest-authenticated Axios client.
+ */
+export const publicReimburseClaimApi = {
+	getByToken: async (token: string): Promise<MedicalClaimDetail> => {
+		const response = await ServerAxios.get<ApiDataResponse<MedicalClaimDetail>>(
+			`${PUBLIC_URL}/${encodeURIComponent(token)}`,
+		);
+
+		return response.data.data;
+	},
+
+	submit: async (token: string, formData: FormData): Promise<string> => {
+		const response = await ServerAxios.post<ApiMessageResponse>(
+			`${PUBLIC_URL}/${encodeURIComponent(token)}/submit`,
 			formData,
 		);
 
-		return data;
+		return response.data.message;
+	},
+
+	saveDraft: async (token: string, formData: FormData): Promise<string> => {
+		const response = await ServerAxios.patch<ApiMessageResponse>(
+			`${PUBLIC_URL}/${encodeURIComponent(token)}/draft`,
+			formData,
+		);
+
+		return response.data.message;
+	},
+
+	getPdf: async (pdfToken: string): Promise<Blob> => {
+		const response = await ServerAxios.get<Blob>(
+			`${PUBLIC_URL}/pdf/${encodeURIComponent(pdfToken)}`,
+			{
+				responseType: "blob",
+			},
+		);
+
+		return response.data;
 	},
 };

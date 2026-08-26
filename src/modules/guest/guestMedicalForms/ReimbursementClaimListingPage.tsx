@@ -8,6 +8,8 @@ import ReimbursementClaimListingTable from "./ReimbursementClaimListingTable";
 import { useReimbursementClaimListing } from "./useReimbursementClaimListing";
 
 import type { ReimbursementClaimListItem } from "./reimbursementClaim.types";
+import Button from "../../../components/common/Button";
+import { Plus } from "lucide-react";
 
 const ReimbursementClaimListingPage = () => {
 	const navigate = useNavigate();
@@ -33,33 +35,27 @@ const ReimbursementClaimListingPage = () => {
 
 	const handleViewRow = useCallback(
 		(row: ReimbursementClaimListItem) => {
-			const editable = ["DRAFT", "CLARIFICATION_REQUESTED"].includes(
-				row.status,
-			);
-
-			navigate(`/guest/medi-claim/${row.id}/${editable ? "edit" : "view"}`);
+			navigate(`/guest/medi-claim/${row.id}`);
 		},
 		[navigate],
 	);
+	const handleCreateNew = () => {
+		navigate(`/guest/medi-claim/create`);
+	};
 
 	return (
 		<PageSectionLayout>
 			<PageHeader
 				headerText="Medical Reimbursement Forms"
-				navigation={{
-					variant: "breadcrumbs",
-					ariaLabel: "Medical reimbursement forms",
-					breadcrumbs: [
-						{
-							label: "Home Screen",
-							href: "/",
-						},
-						{
-							label: "Medical Reimbursement Forms",
-						},
-					],
-					separator: "›",
-				}}
+				headerChildren={
+					<Button
+						text="Create New"
+						appearance="standard"
+						variant="brand"
+						Icon={Plus}
+						onClick={handleCreateNew}
+					/>
+				}
 			/>
 
 			<ReimbursementClaimListingTable

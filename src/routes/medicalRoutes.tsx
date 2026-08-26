@@ -11,8 +11,6 @@ export default function MedicalRoutes() {
 
 			<Route path="/:id/view" element={<ReimbursementPage mode="view" />} />
 
-			<Route path="/create" element={<ReimbursementPage mode="edit" />} />
-
 			<Route path="/view" element={<ReimbursementPage mode="view" />} />
 
 			<Route

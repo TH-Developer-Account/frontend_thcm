@@ -24,10 +24,12 @@ import type {
 } from "../types/reimbursementClaim.types";
 import {
 	useApproveMedicalClaimLineItemMutation,
-	useGuestMedicalClaimDetailQuery,
 	useMedicalClaimDetailQuery,
-	useResubmitGuestMedicalClaimMutation,
 } from "./useMedicalClaimMutations";
+import {
+	useGuestReimbursementClaimDetailQuery,
+	useResubmitGuestMedicalClaimMutation,
+} from "../../guest/guestMedicalForms/useReimbursementClaimQueries";
 import { getWorkflowCommentContext } from "../../../components/ui/comments/comments.helper";
 
 type MedicalClaimViewDetail = MedicalClaimDetail & {
@@ -122,7 +124,10 @@ export function useMedicalClaimView({
 	 */
 	const internalQuery = useMedicalClaimDetailQuery(claimId, !isGuestRoute);
 
-	const guestQuery = useGuestMedicalClaimDetailQuery(claimId, isGuestRoute);
+	const guestQuery = useGuestReimbursementClaimDetailQuery(
+		claimId,
+		isGuestRoute,
+	);
 
 	const guestResubmitMutation = useResubmitGuestMedicalClaimMutation();
 

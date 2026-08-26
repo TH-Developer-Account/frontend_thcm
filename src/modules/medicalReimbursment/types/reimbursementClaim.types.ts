@@ -109,7 +109,7 @@ export interface ClaimHeadFormRow extends ClaimHeadRowBase {
 	claimHead: ClaimHead | "";
 }
 
-export type ClaimHeadSubmissionRow = Omit<ClaimHeadRow, "attachment">;
+export type ClaimHeadSubmissionRow = ClaimHeadRow;
 
 export interface ReimbursementClaimSubmission {
 	values: ReimbursementClaimFormValues;
@@ -119,38 +119,13 @@ export interface ReimbursementClaimSubmission {
 	lineItemsTotal: number;
 }
 
-export type ApprovalStageStatus =
-	| "pending"
-	| "in_review"
-	| "approved"
-	| "rejected"
-	| "clarification_requested";
-
 export interface ApprovalStage {
 	id: string;
 	stageName?: string;
 	approverName: string;
-	status: ApprovalStageStatus;
+	status: string;
 	comment?: string;
 	actedOn?: string;
 }
 
-export type ApprovalActionType =
-	| "approve"
-	| "reject"
-	| "clarify"
-	| "request_clarification";
-
 export type ClaimHeadValidationErrors = Record<string, string>;
-
-// const createEmptyClaimRow = (): ClaimHeadFormRow => ({
-// 	id: crypto.randomUUID(),
-// 	claimHead: "",
-// 	billNumber: "",
-// 	billName: "",
-// 	patient: "",
-// 	billDate: "",
-// 	amount: "",
-// 	file: null,
-// 	attachment: null,
-// });

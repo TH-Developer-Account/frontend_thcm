@@ -53,9 +53,9 @@ export const getMedicalClaimListingColumns = ({
 		cell: ({ row }) => currencyFormatter.format(row.original.totalClaimed),
 	},
 	{
-		accessorKey: "statusLabel",
+		accessorKey: "status",
 		header: "Status",
-		cell: ({ row }) => <Badge status={row.original.statusLabel} />,
+		cell: ({ row }) => <Badge status={row.original.status} />,
 	},
 	{
 		accessorKey: "createdAt",
