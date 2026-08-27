@@ -10,12 +10,13 @@ import { useGuestMedicalClaimView } from "./useGuestReimbursementClaimAccess";
 
 const GuestReimbursementPage = () => {
 	const navigate = useNavigate();
-	const { claimId = "" } = useParams<{ claimId?: string }>();
+	const { claimId: routeClaimId = "" } = useParams<{ claimId?: string }>();
+	const claimId = routeClaimId === "create" ? "" : routeClaimId;
 
 	const guestClaim = useGuestMedicalClaimView(claimId);
 	const isCreateMode = guestClaim.isCreateMode;
 
-	if (!isCreateMode && guestClaim.isLoading) {
+	if (guestClaim.isLoading) {
 		return (
 			<PageSectionLayout>
 				<Card padding="spacious">
@@ -64,6 +65,7 @@ const GuestReimbursementPage = () => {
 			/>
 
 			<ReimbursementClaimForm
+				referenceNumber={guestClaim.referenceNumber}
 				mode={guestClaim.canEdit ? "edit" : "view"}
 				onSubmit={guestClaim.canEdit ? guestClaim.submitClaim : undefined}
 				initialValues={guestClaim.initialValues}

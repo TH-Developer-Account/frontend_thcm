@@ -93,6 +93,25 @@ export const getReimbursementClaimListingColumns = ({
 	},
 
 	{
+		accessorKey: "totalApprovedAmount",
+		header: "Approved Amount",
+		cell: ({ row }) =>
+			currencyFormatter.format(row.original.totalApprovedAmount),
+	},
+
+	{
+		accessorKey: "isApproved",
+		header: "Approved",
+		cell: ({ row }) => (row.original.isApproved ? "Yes" : "No"),
+	},
+
+	{
+		accessorKey: "remarks",
+		header: "Remarks",
+		cell: ({ row }) => row.original.remarks || "—",
+	},
+
+	{
 		accessorKey: "status",
 		header: "Status",
 		cell: ({ row }) => <Badge status={row.original.status} />,

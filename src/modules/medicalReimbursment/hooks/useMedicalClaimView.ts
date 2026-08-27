@@ -3,6 +3,7 @@ import * as React from "react";
 import type { MentionableUserInput } from "../../../components/ui/comments";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
+import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import {
 	useApproveWorkflowStageMutation,
 	useClarifyWorkflowStageMutation,
@@ -25,6 +26,8 @@ import type {
 import {
 	useApproveMedicalClaimLineItemMutation,
 	useMedicalClaimDetailQuery,
+	useMedicalClaimPdfUrlMutation,
+	useExportMedicalClaimMutation,
 } from "./useMedicalClaimMutations";
 import {
 	useGuestReimbursementClaimDetailQuery,
@@ -136,6 +139,16 @@ export function useMedicalClaimView({
 	const approveStageMutation = useApproveWorkflowStageMutation();
 
 	const clarifyStageMutation = useClarifyWorkflowStageMutation();
+
+	// --- PDF (view/download) + Excel export ---
+	const pdfUrlMutation = useMedicalClaimPdfUrlMutation();
+	const exportClaimMutation = useExportMedicalClaimMutation();
+	const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
+	// Tracks which PDF button triggered the shared mutation, so "view" and
+	// "download" loading states don't light up together.
+	const [pdfAction, setPdfAction] = React.useState<"view" | "download" | null>(
+		null,
+	);
 
 	const detail = (isGuestRoute ? guestQuery.data : internalQuery.data) as
 		| MedicalClaimViewDetail
@@ -369,6 +382,117 @@ export function useMedicalClaimView({
 		],
 	);
 
+	/*
+	 * --------------------------------------------------------------------------
+	 * Excel export (single claim)
+	 * --------------------------------------------------------------------------
+	 */
+
+	const detailReferenceNumber = detail?.referenceNumber;
+
+	const handleExport = React.useCallback(async () => {
+		if (!claimId) return;
+
+		let blobUrl: string | undefined;
+		let downloadLink: HTMLAnchorElement | undefined;
+
+		try {
+			const blob = await exportClaimMutation.mutateAsync(claimId);
+
+			blobUrl = window.URL.createObjectURL(blob);
+			downloadLink = document.createElement("a");
+			downloadLink.href = blobUrl;
+			downloadLink.download = `medical-claim-${detailReferenceNumber ?? claimId}.xlsx`;
+
+			document.body.appendChild(downloadLink);
+			downloadLink.click();
+		} catch {
+			showToast({
+				type: "error",
+				title: "Request failed",
+				description: "Failed to download the Excel file.",
+			});
+		} finally {
+			if (blobUrl) window.URL.revokeObjectURL(blobUrl);
+			downloadLink?.remove();
+		}
+	}, [claimId, detailReferenceNumber, exportClaimMutation, showToast]);
+
+	/*
+	 * --------------------------------------------------------------------------
+	 * PDF view
+	 * --------------------------------------------------------------------------
+	 */
+
+	const handleViewPdf = React.useCallback(async () => {
+		if (!claimId) return;
+
+		setPdfAction("view");
+		try {
+			const url = await pdfUrlMutation.mutateAsync({ claimId });
+			setPdfUrl(url);
+			// open your pdf preview modal here, e.g. setPdfPreviewOpen(true)
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "PDF preview failed",
+				description: getApiErrorMessage(
+					error,
+					"Unable to prepare the claim PDF.",
+				),
+			});
+		} finally {
+			setPdfAction(null);
+		}
+	}, [claimId, pdfUrlMutation, showToast]);
+
+	/*
+	 * --------------------------------------------------------------------------
+	 * PDF download
+	 * --------------------------------------------------------------------------
+	 */
+
+	const handleDownloadPdf = React.useCallback(async () => {
+		if (!claimId) return;
+
+		setPdfAction("download");
+		try {
+			const url = pdfUrl ?? (await pdfUrlMutation.mutateAsync({ claimId }));
+			setPdfUrl(url);
+
+			const response = await fetch(url);
+			if (!response.ok) throw new Error("Failed to download PDF.");
+
+			const pdfBlob = await response.blob();
+			const blobUrl = window.URL.createObjectURL(
+				new Blob([pdfBlob], { type: "application/pdf" }),
+			);
+
+			const link = document.createElement("a");
+			link.href = blobUrl;
+			link.download = `medical-claim-${detailReferenceNumber ?? claimId}.pdf`;
+			document.body.appendChild(link);
+			link.click();
+			link.remove();
+
+			window.URL.revokeObjectURL(blobUrl);
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "PDF download failed",
+				description: getApiErrorMessage(
+					error,
+					"Unable to download the claim PDF.",
+				),
+			});
+		} finally {
+			setPdfAction(null);
+		}
+	}, [claimId, detailReferenceNumber, pdfUrl, pdfUrlMutation, showToast]);
+
+	const isPreparingPdf = pdfUrlMutation.isPending && pdfAction === "view";
+	const isDownloadingPdf = pdfUrlMutation.isPending && pdfAction === "download";
+
 	return {
 		detail,
 
@@ -413,5 +537,15 @@ export function useMedicalClaimView({
 		approveLineItem,
 		approveCurrentStage,
 		clarifyCurrentStage,
+
+		// PDF + export
+		claimId,
+		pdfUrl,
+		isPreparingPdf,
+		isDownloadingPdf,
+		handleViewPdf,
+		handleDownloadPdf,
+		isExportingExcel: exportClaimMutation.isPending,
+		handleExport,
 	};
 }

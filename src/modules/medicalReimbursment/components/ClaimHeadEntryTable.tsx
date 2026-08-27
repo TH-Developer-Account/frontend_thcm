@@ -61,7 +61,6 @@ export const ClaimHeadEntryTable = () => {
 		deletingClaimId: deletingId,
 		approvingClaimId: approvingId,
 		isReadOnly: isViewMode,
-		actorRole,
 		canReviewLineItems: canApproveLineItems,
 		canEditClaimForm: canEditClaimRows,
 		claimErrors: errors,
@@ -73,40 +72,11 @@ export const ClaimHeadEntryTable = () => {
 		handleApprovedAmountChange: onApprovedAmountChange,
 		handleToggleLineItemStatus: onToggleLineItemStatus,
 		handleApproveLineItem,
+		handleRemarksChange: onRemarksChange,
 	} = useReimbursementClaimFormContext();
 
 	const columns = useMemo<TableColumnDefinition<ClaimHeadRow>[]>(() => {
-		const showsReviewColumn = actorRole === "approver";
-
-		const showsApprovalAmounts = actorRole === "approver";
-
 		const tableColumns: TableColumnDefinition<ClaimHeadRow>[] = [
-			// {
-			// 	id: "flag",
-			// 	minWidth: 24,
-
-			// 	header: "",
-
-			// 	enableSorting: false,
-
-			// 	cell: ({ row }) => {
-			// 		if (!showsReviewColumn) {
-			// 			return null;
-			// 		}
-
-			// 		const isApproved = row.original.approvalStatus === "APPROVED";
-
-			// 		return (
-			// 			<span
-			// 				aria-hidden="true"
-			// 				className={`block h-full min-h-6 w-1 rounded-full ${
-			// 					isApproved ? "bg-approved" : "bg-rejected"
-			// 				}`}
-			// 			/>
-			// 		);
-			// 	},
-			// },
-
 			{
 				id: "serialNumber",
 				header: "S.No",
@@ -229,108 +199,101 @@ export const ClaimHeadEntryTable = () => {
 			},
 		];
 
-		if (showsApprovalAmounts) {
-			tableColumns.push({
-				id: "approvedClaimAmount",
+		tableColumns.push({
+			id: "approvedClaimAmount",
 
-				header: "Approved Amount",
+			header: "Approved Amount",
 
-				enableSorting: false,
+			enableSorting: false,
 
-				cell: ({ row }) => {
-					const claim = row.original;
+			cell: ({ row }) => {
+				const claim = row.original;
 
-					return (
-						<div className="min-w-10 w-[60%]">
-							<FormInput
-								value={claim.approvedClaimAmount}
-								inputMode="decimal"
-								disabled={
-									loading ||
-									!canApproveLineItems ||
-									claim.approvalStatus === "APPROVED"
-								}
-								onChange={(event) =>
-									onApprovedAmountChange(claim.id, event.target.value)
-								}
-								error={errors[`approvedClaimAmount-${claim.id}`]}
+				const isApproved = claim.approvalStatus === "APPROVED";
+
+				return (
+					<div className="min-w-10">
+						<FormInput
+							value={claim.approvedClaimAmount ?? claim.amount}
+							inputMode="decimal"
+							disabled={loading || !canApproveLineItems || isApproved}
+							onChange={(event) =>
+								onApprovedAmountChange(claim.id, event.target.value)
+							}
+							error={errors[`approvedClaimAmount-${claim.id}`]}
+						/>
+					</div>
+				);
+			},
+		});
+
+		tableColumns.push({
+			id: "review",
+
+			header: "Approved",
+
+			enableSorting: false,
+
+			cell: ({ row }) => {
+				const claim = row.original;
+
+				const isApproved = claim.approvalStatus === "APPROVED";
+
+				const isApproving = approvingId === claim.id;
+
+				const disabled = loading || isApproving || !canApproveLineItems;
+
+				return (
+					<div className="flex flex-col gap-1.5 justify-center text-center">
+						<div className="flex items-center gap-1.5 justify-center text-center">
+							<Checkbox
+								name={`bill-approved-${claim.id}`}
+								checked={isApproved || isApproving}
+								disabled={disabled}
+								onChange={(checked) => {
+									if (checked) {
+										void handleApproveLineItem(claim);
+										return;
+									}
+									onToggleLineItemStatus(claim.id);
+								}}
+								label={isApproved ? "Approved" : "Approve"}
+								size={30}
 							/>
 						</div>
-					);
-				},
-			});
-		}
-		if (showsReviewColumn) {
-			tableColumns.push({
-				id: "review",
+					</div>
+				);
+			},
+		});
 
-				header: "Approve",
+		tableColumns.push({
+			id: "remarks",
 
-				enableSorting: false,
+			header: "Remarks",
+			widthUnits: 2,
+			enableSorting: false,
 
-				cell: ({ row }) => {
-					const claim = row.original;
+			cell: ({ row }) => {
+				const claim = row.original;
 
-					const isApproved = claim.approvalStatus === "APPROVED";
+				const isApproved = claim.approvalStatus === "APPROVED";
 
-					const isApproving = approvingId === claim.id;
+				const isApproving = approvingId === claim.id;
 
-					const disabled = loading || isApproving || !canApproveLineItems;
+				const disabled =
+					loading || isApproving || !canApproveLineItems || isApproved;
 
-					return (
-						<div className="flex flex-col gap-1.5 justify-center text-center">
-							<div className="flex items-center gap-1.5 justify-center text-center">
-								<Checkbox
-									name={`bill-approved-${claim.id}`}
-									checked={isApproved || isApproving}
-									disabled={disabled || isApproving}
-									onChange={(checked) => {
-										if (checked) {
-											void handleApproveLineItem(claim);
-											return;
-										}
-
-										onToggleLineItemStatus(claim.id);
-									}}
-									size={30}
-								/>
-							</div>
-						</div>
-					);
-				},
-			});
-		}
-		if (showsReviewColumn) {
-			tableColumns.push({
-				id: "remarks",
-
-				header: "Remarks",
-				widthUnits: 2,
-				enableSorting: false,
-
-				cell: ({ row }) => {
-					const claim = row.original;
-
-					const isApproved = claim.approvalStatus === "APPROVED";
-
-					const isApproving = approvingId === claim.id;
-
-					const disabled = loading || isApproving || !canApproveLineItems;
-
-					return !isApproved ? (
-						<FormInput
-							placeholder="Remarks (optional)"
-							// value={lineItemRemarks[claim.id] ?? ""}
-							disabled={disabled}
-							// onChange={(event) =>
-							// 	onRemarksChange(claim.id, event.target.value)
-							// }
-							aria-label={`Remarks for bill ${claim.billNumber}`}
-						/>
-					) : null;
-				},
-			});
-		}
+				return (
+					<FormInput
+						placeholder="Remarks (optional)"
+						value={claim.remarks ?? ""}
+						disabled={disabled}
+						onChange={(event) => onRemarksChange(claim.id, event.target.value)}
+						aria-label={`Remarks for bill ${claim.billNumber}`}
+					/>
+				);
+			},
+		});
 
 		if (canEditClaimRows && !isViewMode) {
 			tableColumns.push({
@@ -375,7 +338,6 @@ export const ClaimHeadEntryTable = () => {
 
 		return tableColumns;
 	}, [
-		actorRole,
 		approvingId,
 		canApproveLineItems,
 		canEditClaimRows,
@@ -388,6 +350,7 @@ export const ClaimHeadEntryTable = () => {
 		onEditRow,
 		handleApproveLineItem,
 		onToggleLineItemStatus,
+		onRemarksChange,
 	]);
 
 	const simpleColumns = useMemo<SimpleTableColumn<ClaimHeadRow>[]>(

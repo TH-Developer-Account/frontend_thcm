@@ -134,11 +134,13 @@ export const toMedicalClaimLineItems = (
 
 			attachment,
 
-			approvedClaimAmount: String(
-				bill.approvedClaimAmount ?? bill.amount ?? "",
-			),
+			approvedClaimAmount:
+				bill.approvedClaimAmount != null
+					? String(bill.approvedClaimAmount)
+					: null,
 
-			approvalStatus: bill.approvalStatus ?? "PENDING",
+			approvalStatus: bill.approvedClaimAmount != null ? "APPROVED" : "PENDING",
+			remarks: bill.remarks ?? null,
 		};
 	});
 };

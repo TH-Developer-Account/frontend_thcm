@@ -14,12 +14,20 @@ import { MEDICAL_CLAIM_LISTING_FILTER_TABS } from "../utils/medicalClaimListing.
 import { getMedicalClaimListingColumns } from "../utils/medicalClaimListing.columns";
 import Button from "../../../components/common/Button";
 import { FileDown } from "lucide-react";
+import {
+	MEDICAL_CLAIM_STATUS_OPTIONS,
+	type MedicalClaimStatusFilter,
+} from "../hooks/useMedicalClaimListing";
+import SelectInput from "../../../components/forms/SelectInput";
+import type { Option } from "../../../components/forms/input.types";
 
 interface MedicalClaimListingTableProps {
 	selectedFilter: MedicalClaimListingTab;
 	onFilterChange: (value: MedicalClaimListingTab) => void;
 	search: string;
 	onSearchChange: (value: string) => void;
+	status: MedicalClaimStatusFilter;
+	onStatusChange: (value: MedicalClaimStatusFilter) => void;
 	rows: MedicalClaimListingRow[];
 	isLoading?: boolean;
 	isFetching?: boolean;
@@ -40,6 +48,8 @@ export default function MedicalClaimListingTable({
 	onFilterChange,
 	search,
 	onSearchChange,
+	status,
+	onStatusChange,
 	rows,
 	isLoading = false,
 	isFetching = false,
@@ -56,7 +66,6 @@ export default function MedicalClaimListingTable({
 		() => getMedicalClaimListingColumns({ onView: onViewRow }),
 		[onViewRow],
 	);
-
 	return (
 		<Card
 			className="medical-claim-listing-card"
@@ -71,24 +80,40 @@ export default function MedicalClaimListingTable({
 				/>
 			}
 			actions={
-				<Button
-					type="button"
-					text={isExporting ? "Exporting..." : "Export"}
-					Icon={FileDown}
-					iconPosition="left"
-					iconSize={16}
-					appearance="standard"
-					variant="outline"
-					size="sm"
-					onClick={onExport}
-				/>
-			}
-			secondaryHeader={
-				<SearchInput
-					value={search}
-					onChange={onSearchChange}
-					placeholder="Search by employee, reference, ticket, email or mobile"
-				/>
+				<div className="flex gap-4">
+					<SearchInput
+						value={search}
+						onChange={onSearchChange}
+						placeholder="Search by employee, reference, ticket, email or mobile"
+					/>
+
+					<SelectInput<Option>
+						inputId="medical-claim-status-filter"
+						aria-label="Filter by status"
+						className="medical-claim-status-select"
+						options={MEDICAL_CLAIM_STATUS_OPTIONS}
+						value={
+							MEDICAL_CLAIM_STATUS_OPTIONS.find(
+								(option) => option.value === status,
+							) ?? null
+						}
+						onChange={(option) =>
+							onStatusChange((option?.value ?? "") as MedicalClaimStatusFilter)
+						}
+						isSearchable={false}
+					/>
+					<Button
+						type="button"
+						text={isExporting ? "Exporting..." : "Export"}
+						Icon={FileDown}
+						iconPosition="left"
+						iconSize={16}
+						appearance="standard"
+						variant="outline"
+						size="sm"
+						onClick={onExport}
+					/>
+				</div>
 			}
 		>
 			<section

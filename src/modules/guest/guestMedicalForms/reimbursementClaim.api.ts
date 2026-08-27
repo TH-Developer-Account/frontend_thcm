@@ -32,26 +32,47 @@ type RawGuestMedicalClaimRow = {
 	status: string;
 	claimCover?: "SELF" | "SPOUSE" | "BOTH" | null;
 	totalClaimed?: number | string | null;
+	totalApproved?: number | string | null;
+	totalApprovedAmount?: number | string | null;
+	approvedClaimAmount?: number | string | null;
+	isApproved?: boolean | null;
+	remarks?: string | null;
 	created_at: string;
 	updated_at?: string | null;
 };
-
+type PdfUrlResponse = {
+	success: boolean;
+	url: string;
+};
 const mapGuestListResponse = (
 	rawRows: RawGuestMedicalClaimRow[],
 	params: ReimbursementClaimListParams,
 ): ReimbursementClaimListResponse => {
-	const items: ReimbursementClaimListItem[] = rawRows.map((row) => ({
-		id: row.id,
-		claimNumber: row.referenceNumber,
-		status: row.status as ReimbursementClaimListItem["status"],
-		totalClaimAmount: Number(row.totalClaimed ?? 0),
-		createdBy: null,
-		createdAt: row.created_at,
-		updatedAt: row.updated_at ?? row.created_at,
-		employeeName: row.employeeName,
-		ticketNumber: row.ticketNumber ?? "",
-		claimFor: (row.claimCover ?? "SELF") as ClaimFor,
-	}));
+	const items: ReimbursementClaimListItem[] = rawRows.map((row) => {
+		const normalizedStatus = row.status.trim().toUpperCase();
+		const approvedAmount = Number(
+			row.totalApprovedAmount ??
+				row.totalApproved ??
+				row.approvedClaimAmount ??
+				0,
+		);
+
+		return {
+			id: row.id,
+			claimNumber: row.referenceNumber,
+			status: row.status as ReimbursementClaimListItem["status"],
+			totalClaimAmount: Number(row.totalClaimed ?? 0),
+			createdBy: null,
+			createdAt: row.created_at,
+			updatedAt: row.updated_at ?? row.created_at,
+			employeeName: row.employeeName,
+			ticketNumber: row.ticketNumber ?? "",
+			claimFor: (row.claimCover ?? "SELF") as ClaimFor,
+			totalApprovedAmount: Number.isFinite(approvedAmount) ? approvedAmount : 0,
+			isApproved: row.isApproved ?? normalizedStatus === "APPROVED",
+			remarks: row.remarks?.trim() || "",
+		};
+	});
 
 	const total = items.length;
 	const pageSize = params.pageSize || total || 1;
@@ -115,6 +136,15 @@ export const guestReimburseClaimApi = {
 		>(`${GUEST_URL}/${encodeURIComponent(claimId)}/resubmit`, formData);
 
 		return response.data.data;
+	},
+	// ⚠️ Endpoint path guessed to match the pattern used elsewhere
+	// (/pdf/{type}/{id}/url). Confirm the real guest PDF route with backend.
+	getPdfUrl: async (claimId: string): Promise<string> => {
+		const response = await GuestAxios.get<PdfUrlResponse>(
+			`${GUEST_URL}/${encodeURIComponent(claimId)}/pdf/url`,
+		);
+
+		return response.data.url;
 	},
 };
 

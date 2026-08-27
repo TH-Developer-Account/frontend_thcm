@@ -74,7 +74,7 @@ const ReimbursementClaimListingTable = ({
 				{isLoading ? (
 					<DataTableSkeleton
 						rows={SKELETON_ROW_COUNT}
-						columns={8}
+						columns={11}
 						showPagination
 					/>
 				) : (

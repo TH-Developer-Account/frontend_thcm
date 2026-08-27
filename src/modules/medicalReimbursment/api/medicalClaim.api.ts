@@ -31,6 +31,7 @@ export type ExportListingParams = {
 	search?: string;
 	pageIndex: number;
 	pageSize: number;
+	// status?: MedicalClaimStatusFilter; // uncomment once backend supports status filtering on export
 };
 /**
  * Medical-claim-only endpoints live here. Workflow preview, assignment,
@@ -49,6 +50,11 @@ export const medicalClaimApi = {
 				search: params.search,
 				page_index: params.pageIndex,
 				page_size: params.pageSize,
+				// Status filtering is currently done on the frontend
+				// (see useMedicalClaimListing). Once the backend accepts a
+				// status filter, add `status` to MedicalClaimListingParams
+				// and uncomment this:
+				// status: params.status !== "all" ? params.status : undefined,
 			},
 		});
 
@@ -132,7 +138,7 @@ export const medicalClaimApi = {
 	/** Persists a proposer-approved amount for one bill. */
 	approveLineItem: async (
 		claimId: string,
-		lineItem: Pick<ClaimHeadRow, "id" | "approvedClaimAmount">,
+		lineItem: Pick<ClaimHeadRow, "id" | "approvedClaimAmount" | "remarks">,
 	): Promise<ClaimHeadRow> => {
 		const {
 			data: { data },
@@ -143,6 +149,7 @@ export const medicalClaimApi = {
 					{
 						billId: lineItem.id,
 						approvedClaimAmount: Number(lineItem.approvedClaimAmount),
+						remarks: lineItem.remarks,
 					},
 				],
 			},
@@ -173,6 +180,13 @@ export const medicalClaimApi = {
 				params,
 				responseType: "blob",
 			},
+		);
+		return response.data;
+	},
+	exportOne: async (claimId: string): Promise<Blob> => {
+		const response = await ServerAxios.get<Blob>(
+			`${MEDICAL_CLAIM_URL}/${encodeURIComponent(claimId)}/export`,
+			{ responseType: "blob" },
 		);
 		return response.data;
 	},

@@ -19,6 +19,8 @@ type CheckboxProps = {
 	onChange?: (checked: boolean) => void;
 };
 
+const MUTED_COLOR = "var(--color-border-muted, #c7c7c7)";
+
 const Checkbox: React.FC<CheckboxProps> = ({
 	name,
 	label,
@@ -39,9 +41,12 @@ const Checkbox: React.FC<CheckboxProps> = ({
 	const checkboxId = name || `checkbox-${generatedId}`;
 	const errorId = `${checkboxId}-error`;
 	const hasError = Boolean(error);
+	const isSelected = checked || indeterminate;
 
 	const toggleChecked = () => {
-		if (!disabled) onChange?.(!checked);
+		if (!disabled) {
+			onChange?.(!checked);
+		}
 	};
 
 	const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -53,11 +58,33 @@ const Checkbox: React.FC<CheckboxProps> = ({
 		}
 	};
 
+	const borderColor = hasError
+		? "var(--color-error)"
+		: isSelected
+			? color
+			: disabled
+				? MUTED_COLOR
+				: undefined;
+
+	const backgroundColor = hasError
+		? "var(--color-error-bg)"
+		: checked
+			? color
+			: indeterminate
+				? `${color}22`
+				: undefined;
+
+	const iconColor = hasError ? "var(--color-error)" : checked ? "#fff" : color;
 	return (
 		<div
-			className={`form-field checkbox-field ${disabled ? "is-disabled" : ""} ${
-				hasError ? "has-error" : ""
-			}`}
+			className={[
+				"form-field",
+				"checkbox-field",
+				disabled ? "is-disabled" : "",
+				hasError ? "has-error" : "",
+			]
+				.filter(Boolean)
+				.join(" ")}
 		>
 			<div className="checkbox-field-row">
 				<div
@@ -83,30 +110,19 @@ const Checkbox: React.FC<CheckboxProps> = ({
 						width: size,
 						height: size,
 						borderRadius: 4,
-						borderColor: disabled
-							? undefined
-							: hasError
-								? "var(--color-error)"
-								: checked || indeterminate
-									? color
-									: undefined,
-						background: disabled
-							? undefined
-							: hasError
-								? "var(--color-error-bg)"
-								: checked
-									? color
-									: indeterminate
-										? `${color}22`
-										: undefined,
-						boxShadow: checked && !hasError ? `0 1px 6px ${color}44` : "none",
+						borderColor,
+						backgroundColor,
+						boxShadow:
+							checked && !hasError && !disabled
+								? `0 1px 6px ${color}44`
+								: "none",
 					}}
 				>
 					{checked ? (
 						<span
 							className="checkbox-icon"
 							style={{
-								color: hasError ? "var(--color-error)" : "#fff",
+								color: iconColor,
 								fontSize: size * 0.6,
 							}}
 						>
@@ -118,7 +134,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
 						<span
 							className="checkbox-icon"
 							style={{
-								color: hasError ? "var(--color-error)" : color,
+								color: iconColor,
 								fontSize: size * 0.65,
 							}}
 						>
@@ -129,8 +145,13 @@ const Checkbox: React.FC<CheckboxProps> = ({
 
 				{label ? (
 					<div className="form-label-row">
-						<label className="form-radio-label" onClick={toggleChecked}>
+						<label
+							htmlFor={checkboxId}
+							className="form-radio-label"
+							onClick={toggleChecked}
+						>
 							{label}
+
 							{required ? <span className="form-required"> *</span> : null}
 						</label>
 

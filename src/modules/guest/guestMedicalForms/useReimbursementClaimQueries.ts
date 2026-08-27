@@ -94,3 +94,10 @@ export function useResubmitGuestMedicalClaimMutation() {
 		},
 	});
 }
+
+export function useGuestMedicalClaimPdfUrlMutation() {
+	return useMutation({
+		mutationFn: ({ claimId }: { claimId: string }) =>
+			guestReimburseClaimApi.getPdfUrl(claimId),
+	});
+}

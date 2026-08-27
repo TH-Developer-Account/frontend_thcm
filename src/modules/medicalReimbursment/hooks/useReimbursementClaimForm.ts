@@ -163,6 +163,7 @@ const getLineItemsKey = (items: ClaimHeadRow[]): string =>
 			attachmentUrl: item.attachment?.url,
 			approvedClaimAmount: item.approvedClaimAmount,
 			approvalStatus: item.approvalStatus,
+			remarks: item.remarks,
 		})),
 	);
 
@@ -214,9 +215,7 @@ export function useReimbursementClaimForm({
 	const [savingClaimId, setSavingClaimId] = useState<string | null>(null);
 	const [deletingClaimId, setDeletingClaimId] = useState<string | null>(null);
 	const [approvingClaimId, setApprovingClaimId] = useState<string | null>(null);
-	const [lineItemRemarks, setLineItemRemarks] = useState<
-		Record<string, string>
-	>({});
+
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isSavingDraft, setIsSavingDraft] = useState(false);
 	const [mutationError, setMutationError] = useState<string | null>(null);
@@ -266,7 +265,6 @@ export function useReimbursementClaimForm({
 		setClaimRows([createClaimHeadRow()]);
 		setEditingClaimId(null);
 		setClaimErrors({});
-		setLineItemRemarks({});
 	}, [initialLineItems, initialLineItemsKey]);
 
 	const selectedGrade = useMemo(
@@ -386,8 +384,9 @@ export function useReimbursementClaimForm({
 				claimHead: row.claimHead as ClaimHead,
 				fileName:
 					row.file?.name ?? row.attachment?.name ?? row.fileName ?? null,
-				approvedClaimAmount: row.approvedClaimAmount || row.amount,
+				approvedClaimAmount: row.approvedClaimAmount ?? "",
 				approvalStatus: row.approvalStatus || "PENDING",
+				remarks: row.remarks ?? "",
 				billDate: row.billDate ?? "",
 			};
 			setSavedClaims((current) =>
@@ -425,12 +424,7 @@ export function useReimbursementClaimForm({
 				setClaimRows([createClaimHeadRow()]);
 				return null;
 			});
-			setLineItemRemarks((current) => {
-				if (!(id in current)) return current;
-				const next = { ...current };
-				delete next[id];
-				return next;
-			});
+
 			setDeletingClaimId(null);
 		},
 		[canEditClaimForm],
@@ -484,17 +478,27 @@ export function useReimbursementClaimForm({
 			try {
 				await onLineItemApprove(claim);
 				handleToggleLineItemStatus(claim.id);
+			} catch (error) {
+				const message =
+					error instanceof Error
+						? error.message
+						: "Unable to approve this line item. Please try again.";
+				showToast({ type: "error", title: "Error", description: message });
 			} finally {
 				setApprovingClaimId(null);
 			}
 		},
-		[handleToggleLineItemStatus, onLineItemApprove],
+		[handleToggleLineItemStatus, onLineItemApprove, showToast],
 	);
 
 	const handleRemarksChange = useCallback(
 		(id: string, value: string) => {
 			if (!canReviewLineItems) return;
-			setLineItemRemarks((current) => ({ ...current, [id]: value }));
+			setSavedClaims((current) =>
+				current.map((claim) =>
+					claim.id === id ? { ...claim, remarks: value } : claim,
+				),
+			);
 		},
 		[canReviewLineItems],
 	);
@@ -540,7 +544,6 @@ export function useReimbursementClaimForm({
 	}, [values]);
 
 	const handleSubmit = useCallback(async () => {
-		console.log("==================>", "internal");
 		const nextErrors = validateForm();
 		setErrors(nextErrors);
 		if (Object.keys(nextErrors).length > 0) return;
@@ -642,11 +645,11 @@ export function useReimbursementClaimForm({
 			const label = item.billNumber
 				? `Bill ${item.billNumber}`
 				: item.billName || item.claimHead;
-			const remark = lineItemRemarks[item.id]?.trim();
+			const remark = item.remarks?.trim();
 			return remark ? `• ${label}: ${remark}` : `• ${label}: Not approved`;
 		});
 		return `Flagged line items:\n${lines.join("\n")}`;
-	}, [lineItemRemarks, savedClaims]);
+	}, [savedClaims]);
 
 	const handleClarifyConfirm = useCallback(
 		async (reason: string) => {
@@ -675,7 +678,6 @@ export function useReimbursementClaimForm({
 		setSavedClaims(initialLineItems.map((item) => ({ ...item })));
 		setEditingClaimId(null);
 		setClaimErrors({});
-		setLineItemRemarks({});
 		setErrors({});
 		setMutationError(null);
 	}, [initialAttachments, initialLineItems, initialValues]);
@@ -692,7 +694,6 @@ export function useReimbursementClaimForm({
 		savingClaimId,
 		deletingClaimId,
 		approvingClaimId,
-		lineItemRemarks,
 		isLoading,
 		isSubmitting,
 		isSavingDraft,

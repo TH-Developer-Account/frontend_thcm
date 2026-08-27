@@ -101,6 +101,9 @@ export type ReimbursementClaimListItem = Pick<
 	employeeName: string;
 	ticketNumber: string;
 	claimFor: ClaimFor;
+	totalApprovedAmount: number;
+	isApproved: boolean;
+	remarks: string;
 };
 
 export type ReimbursementClaimListResponse = {

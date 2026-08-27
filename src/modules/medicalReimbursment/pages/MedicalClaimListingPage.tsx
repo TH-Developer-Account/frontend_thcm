@@ -16,6 +16,7 @@ const MedicalClaimListingPage = () => {
 	const {
 		tab,
 		search,
+		status,
 		pageIndex,
 		pageSize,
 		pageCount,
@@ -24,6 +25,7 @@ const MedicalClaimListingPage = () => {
 		isFetching,
 		handleTabChange,
 		handleSearchChange,
+		handleStatusChange,
 		handlePageSizeChange,
 		setPageIndex,
 	} = useMedicalClaimListing({ initialTab: "claims" });
@@ -40,6 +42,7 @@ const MedicalClaimListingPage = () => {
 				search: search || undefined,
 				pageIndex: 0,
 				pageSize, // or a dedicated "export all matching filter" param if your backend supports it
+				// status: status !== "all" ? status : undefined, // uncomment once backend supports status filtering
 			});
 
 			const blobUrl = window.URL.createObjectURL(blob);
@@ -95,6 +98,8 @@ const MedicalClaimListingPage = () => {
 				onFilterChange={handleTabChange}
 				search={search}
 				onSearchChange={handleSearchChange}
+				status={status}
+				onStatusChange={handleStatusChange}
 				rows={rowsForTable}
 				isLoading={isLoading}
 				isFetching={isFetching}

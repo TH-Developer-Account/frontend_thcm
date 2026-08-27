@@ -1,9 +1,11 @@
-import React, { type ChangeEvent } from "react";
+import { type ChangeEvent } from "react";
 import {
 	ArrowLeft,
 	BadgeIndianRupee,
 	CheckCircle2,
+	FileDown,
 	FilePenLine,
+	FileSpreadsheet,
 	GitBranch,
 	MessageSquareText,
 	RefreshCcw,
@@ -33,10 +35,37 @@ import {
 } from "../hooks/useReimbursementClaimForm";
 import ClaimHeadEntryTable from "./ClaimHeadEntryTable";
 import NavigateButton from "../../../components/common/NavigateButton";
+import type { ActionMenuItem } from "../../../components/common/ActionMenu";
+import ActionMenu from "../../../components/common/ActionMenu";
 
-export type ReimbursementClaimFormProps = UseReimbursementClaimFormArgs;
+export type ReimbursementClaimFormProps = UseReimbursementClaimFormArgs & {
+	claimId?: string;
+	isExportingExcel?: boolean;
+	handleExport?: () => void | Promise<void>;
+	isPreparingPdf?: boolean;
+	isDownloadingPdf?: boolean;
+	handleViewPdf?: () => void | Promise<void>;
+	handleDownloadPdf?: () => void | Promise<void>;
+};
 
-const ReimbursementClaimFormContent = () => {
+type ReimbursementClaimFormContentProps = {
+	claimId?: string;
+	isExportingExcel?: boolean;
+	handleExport?: () => void | Promise<void>;
+	isPreparingPdf?: boolean;
+	isDownloadingPdf?: boolean;
+	handleViewPdf?: () => void | Promise<void>;
+	handleDownloadPdf?: () => void | Promise<void>;
+};
+
+const ReimbursementClaimFormContent = ({
+	claimId,
+	isExportingExcel,
+	handleExport,
+	isPreparingPdf,
+	isDownloadingPdf,
+	handleDownloadPdf,
+}: ReimbursementClaimFormContentProps) => {
 	const {
 		values,
 		errors,
@@ -77,6 +106,7 @@ const ReimbursementClaimFormContent = () => {
 		handleClarifyConfirm,
 		handleApproveStage,
 	} = useReimbursementClaimFormContext();
+
 	const sections: CardSection[] = [
 		{
 			id: "employee-details",
@@ -85,14 +115,15 @@ const ReimbursementClaimFormContent = () => {
 			Icon: UserRound,
 			defaultExpanded: true,
 			children: (
-				<div className="grid grid-cols-1 gap-3 px-4.5 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
+				<div className="grid grid-cols-1 gap-3 px-4.5 items-center sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-5">
 					<FormInput
 						mode={fieldMode}
 						name="ticketNumber"
 						label="Ticket Number"
 						value={values.ticketNumber}
 						error={errors.ticketNumber}
-						disabled={isReadOnly}
+						// disabled={isReadOnly}
+						helperText="Ticket Number from grade."
 						required
 						onChange={(event: ChangeEvent<HTMLInputElement>) =>
 							handleChange("ticketNumber", event.target.value)
@@ -116,16 +147,25 @@ const ReimbursementClaimFormContent = () => {
 						onChange={(option) => handleChange("grade", option?.value ?? "")}
 					/>
 					<FormInput
-						mode="view"
+						mode={fieldMode}
 						name="totalAmountEligible"
 						label="Total Amount Eligible"
 						value={currencyFormatter.format(resolvedEligibleAmount)}
 						helperText="Calculated automatically from grade."
 					/>
 					<FormInput
-						mode="view"
+						mode={fieldMode}
 						name="companySettledAmount"
 						label="Amount Settled This Year"
+						value={currencyFormatter.format(
+							Number(values.companySettledAmount || 0),
+						)}
+						helperText="Read-only — pulled from records."
+					/>
+					<FormInput
+						mode={fieldMode}
+						name="companyRemainingAmount"
+						label="Amount Remaining This Year"
 						value={currencyFormatter.format(
 							Number(values.companySettledAmount || 0),
 						)}
@@ -168,7 +208,6 @@ const ReimbursementClaimFormContent = () => {
 						name="employeeName"
 						label="Name of Employee"
 						value={values.employeeName}
-						disabled
 						required
 						error={errors.employeeName}
 						onChange={(event: ChangeEvent<HTMLInputElement>) =>
@@ -286,6 +325,23 @@ const ReimbursementClaimFormContent = () => {
 				]
 			: []),
 	];
+	const showButtons = canEditClaimForm || canApprove || canClarify;
+	const claimActions: ActionMenuItem<string>[] = [
+		{
+			id: "download-pdf",
+			label: isDownloadingPdf ? "Downloading…" : "Download PDF",
+			Icon: FileDown,
+			onClick: () => void handleDownloadPdf?.(),
+			disabled: isDownloadingPdf || isPreparingPdf,
+		},
+		{
+			id: "export-excel",
+			label: isExportingExcel ? "Exporting…" : "Export Excel",
+			Icon: FileSpreadsheet,
+			onClick: () => void handleExport?.(),
+			disabled: isExportingExcel,
+		},
+	];
 	return (
 		<>
 			<form
@@ -297,95 +353,109 @@ const ReimbursementClaimFormContent = () => {
 					title={
 						<div className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight text-iron-dark">
 							<NavigateButton direction="back" />
-							<span>Medical Claim Form</span>
-							<span>/ {referenceNumber} /</span>
+							<span>Medical Claim Form </span>
+							{referenceNumber ? <span>/ {referenceNumber} /</span> : null}
 							<Badge status={claimStatusLabel} />
 						</div>
 					}
+					actions={
+						claimId ? (
+							<ActionMenu
+								size="xs"
+								row={claimId}
+								actions={claimActions}
+								ariaLabel="Reimbursement claim actions"
+								triggerLabel="Actions"
+								triggerVariant="brand"
+							/>
+						) : null
+					}
 					footer={
-						<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-							<div>
-								{onBack ? (
-									<Button
-										type="button"
-										text="Back"
-										Icon={ArrowLeft}
-										size="sm"
-										appearance="standard"
-										variant="outline"
-										disabled={isLoading}
-										onClick={onBack}
-									/>
+						showButtons && (
+							<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+								<div>
+									{onBack ? (
+										<Button
+											type="button"
+											text="Back"
+											Icon={ArrowLeft}
+											size="sm"
+											appearance="standard"
+											variant="outline"
+											disabled={isLoading}
+											onClick={onBack}
+										/>
+									) : null}
+								</div>
+
+								{canEditClaimForm ? (
+									<div className="flex flex-col gap-2 sm:flex-row">
+										<Button
+											type="button"
+											text="Reset"
+											Icon={RefreshCcw}
+											size="sm"
+											appearance="standard"
+											variant="outline"
+											disabled={isLoading}
+											onClick={handleReset}
+										/>
+										{hasSaveDraftAction ? (
+											<Button
+												type="button"
+												text={isSavingDraft ? "Saving..." : "Save as Draft"}
+												Icon={FilePenLine}
+												size="sm"
+												appearance="standard"
+												variant="outline"
+												disabled={isLoading}
+												onClick={handleSaveDraft}
+											/>
+										) : null}
+										{hasSubmitAction ? (
+											<Button
+												type="button"
+												text={isSubmitting ? "Submitting..." : actionText}
+												Icon={Save}
+												size="sm"
+												appearance="standard"
+												variant="brand"
+												disabled={isLoading}
+												onClick={handleSubmit}
+											/>
+										) : null}
+									</div>
+								) : null}
+
+								{canApprove || canClarify ? (
+									<div className="flex flex-col gap-2 sm:flex-row">
+										{canClarify && hasClarifyStageAction ? (
+											<Button
+												type="button"
+												text="Send for Clarification"
+												size="sm"
+												appearance="standard"
+												variant="outline"
+												disabled={approvalActionLoading}
+												onClick={() => setClarifyModalOpen(true)}
+											/>
+										) : null}
+										{canApprove && hasApproveStageAction ? (
+											<Button
+												type="button"
+												text={isExternalApprover ? "OK and Close" : "Approve"}
+												size="sm"
+												appearance="standard"
+												variant="brand"
+												isTooltip="Please approve all line items to approve this form"
+												disabled={approvalActionLoading || !canCompleteStage}
+												onClick={() => void handleApproveStage?.()}
+											/>
+										) : null}
+									</div>
 								) : null}
 							</div>
-
-							{canEditClaimForm ? (
-								<div className="flex flex-col gap-2 sm:flex-row">
-									<Button
-										type="button"
-										text="Reset"
-										Icon={RefreshCcw}
-										size="sm"
-										appearance="standard"
-										variant="outline"
-										disabled={isLoading}
-										onClick={handleReset}
-									/>
-									{hasSaveDraftAction ? (
-										<Button
-											type="button"
-											text={isSavingDraft ? "Saving..." : "Save as Draft"}
-											Icon={FilePenLine}
-											size="sm"
-											appearance="standard"
-											variant="outline"
-											disabled={isLoading}
-											onClick={handleSaveDraft}
-										/>
-									) : null}
-									{hasSubmitAction ? (
-										<Button
-											type="button"
-											text={isSubmitting ? "Submitting..." : actionText}
-											Icon={Save}
-											size="sm"
-											appearance="standard"
-											variant="brand"
-											disabled={isLoading}
-											onClick={handleSubmit}
-										/>
-									) : null}
-								</div>
-							) : null}
-
-							{canApprove || canClarify ? (
-								<div className="flex flex-col gap-2 sm:flex-row">
-									{canClarify && hasClarifyStageAction ? (
-										<Button
-											type="button"
-											text="Send for Clarification"
-											size="sm"
-											appearance="standard"
-											variant="outline"
-											disabled={approvalActionLoading}
-											onClick={() => setClarifyModalOpen(true)}
-										/>
-									) : null}
-									{canApprove && hasApproveStageAction ? (
-										<Button
-											type="button"
-											text={isExternalApprover ? "OK and Close" : "Approve"}
-											size="sm"
-											appearance="standard"
-											variant="brand"
-											isTooltip="Please approve all line items to approve this form"
-											disabled={approvalActionLoading || !canCompleteStage}
-											onClick={() => void handleApproveStage?.()}
-										/>
-									) : null}
-								</div>
-							) : null}
-						</div>
+						)
 					}
 					secondaryHeader={
 						submittedMessage ? (
@@ -420,11 +490,30 @@ const ReimbursementClaimFormContent = () => {
 };
 
 const ReimbursementClaimForm = (props: ReimbursementClaimFormProps) => {
-	const controller = useReimbursementClaimForm(props);
+	const {
+		claimId,
+		isExportingExcel,
+		handleExport,
+		isPreparingPdf,
+		isDownloadingPdf,
+		handleViewPdf,
+		handleDownloadPdf,
+		...formArgs
+	} = props;
+
+	const controller = useReimbursementClaimForm(formArgs);
 
 	return (
 		<ReimbursementClaimFormContext.Provider value={controller}>
-			<ReimbursementClaimFormContent />
+			<ReimbursementClaimFormContent
+				claimId={claimId}
+				isExportingExcel={isExportingExcel}
+				handleExport={handleExport}
+				isPreparingPdf={isPreparingPdf}
+				isDownloadingPdf={isDownloadingPdf}
+				handleViewPdf={handleViewPdf}
+				handleDownloadPdf={handleDownloadPdf}
+			/>
 		</ReimbursementClaimFormContext.Provider>
 	);
 };

@@ -5,7 +5,10 @@ import {
 	type QueryClient,
 } from "@tanstack/react-query";
 
-import { medicalClaimApi } from "../api/medicalClaim.api";
+import {
+	medicalClaimApi,
+	type ExportListingParams,
+} from "../api/medicalClaim.api";
 
 import { publicReimburseClaimApi } from "../../guest/guestMedicalForms/reimbursementClaim.api";
 
@@ -55,13 +58,8 @@ export function useMedicalClaimDetailQuery(claimId: string, enabled = true) {
 }
 
 export function useInitiateMedicalClaimMutation() {
-	const queryClient = useQueryClient();
-
 	return useMutation({
 		mutationFn: medicalClaimApi.initiate,
-		onSuccess: () => {
-			invalidateMedicalClaims(queryClient);
-		},
 	});
 }
 
@@ -104,17 +102,14 @@ export function useUpdateMedicalClaimMutation() {
 				medicalClaimKeys.detail(variables.claimId),
 				updatedClaim,
 			);
-
-			void queryClient.invalidateQueries({
-				queryKey: medicalClaimKeys.lists(),
-			});
 		},
 	});
 }
 
+/**
+ * Persists one bill's approved amount + remarks.
+ */
 export function useApproveMedicalClaimLineItemMutation() {
-	const queryClient = useQueryClient();
-
 	return useMutation({
 		mutationFn: ({
 			claimId,
@@ -123,10 +118,6 @@ export function useApproveMedicalClaimLineItemMutation() {
 			claimId: string;
 			lineItem: Parameters<typeof medicalClaimApi.approveLineItem>[1];
 		}) => medicalClaimApi.approveLineItem(claimId, lineItem),
-
-		onSuccess: (_data, variables) => {
-			invalidateMedicalClaims(queryClient, variables.claimId);
-		},
 	});
 }
 
@@ -150,13 +141,9 @@ export function useSubmitPublicMedicalClaimMutation() {
 			publicReimburseClaimApi.submit(token, formData),
 
 		onSuccess: (_data, variables) => {
-			const normalizedToken = variables.token.trim();
-
 			void queryClient.invalidateQueries({
-				queryKey: medicalClaimKeys.publicSession(normalizedToken),
+				queryKey: medicalClaimKeys.publicSession(variables.token.trim()),
 			});
-
-			invalidateMedicalClaims(queryClient);
 		},
 	});
 }
@@ -173,5 +160,23 @@ export function useSavePublicMedicalClaimDraftMutation() {
 				queryKey: medicalClaimKeys.publicSession(variables.token.trim()),
 			});
 		},
+	});
+}
+export function useMedicalClaimPdfUrlMutation() {
+	return useMutation({
+		mutationFn: ({ claimId }: { claimId: string }) =>
+			medicalClaimApi.getPdfUrl("MEDICAL_CLAIM", claimId),
+	});
+}
+
+export function useExportMedicalClaimListingMutation() {
+	return useMutation({
+		mutationFn: (params: ExportListingParams) =>
+			medicalClaimApi.exportListing(params),
+	});
+}
+export function useExportMedicalClaimMutation() {
+	return useMutation({
+		mutationFn: (claimId: string) => medicalClaimApi.exportOne(claimId),
 	});
 }

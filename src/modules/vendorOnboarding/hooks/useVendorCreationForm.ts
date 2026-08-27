@@ -714,6 +714,7 @@ export function useVendorCreationForm({
 
 	const status = detailQuery.data?.status;
 	const referenceNumber = detailQuery.data?.referenceNumber;
+	const referenceName = detailQuery.data?.partOne?.referenceName;
 	const activeWorkflow = detailQuery.data?.activeWorkflow ?? null;
 	const activeWorkflowId = activeWorkflow?.id ?? null;
 	const createdById = getCreatedById(detailQuery.data?.initiatedById);
@@ -1650,6 +1651,7 @@ export function useVendorCreationForm({
 		user,
 		formStatus: status,
 		referenceNumber,
+		referenceName,
 
 		canEditFormOne: canEditMainForm,
 		canEditFormTwo: canEditMainForm,

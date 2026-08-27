@@ -427,7 +427,14 @@ const VendorCreationSummaryForm = ({
 						<div className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight text-iron-dark">
 							<NavigateButton direction="back" />
 							<span>Vendor Onboarding Summary</span>
-							<span>/ {formContext?.referenceNumber} /</span>
+							{formContext?.referenceNumber && (
+								<span>/ {formContext?.referenceNumber} /</span>
+							)}
+							{formContext?.referenceName ? (
+								<span>/ {formContext?.referenceName} /</span>
+							) : (
+								"Reference Name /"
+							)}
 							<Badge status={formContext?.formStatus} />
 						</div>
 					) : (

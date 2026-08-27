@@ -757,8 +757,8 @@ REACT SELECT CONTAINER
 	.react-select__control {
 		@apply flex w-full min-w-0 items-center border outline-none;
 
-		height: var(--control-height-md) !important;
-		min-height: var(--control-height-md) !important;
+		height: var(--control-height-sm) !important;
+		min-height: var(--control-height-sm) !important;
 		box-sizing: border-box;
 
 		border-width: var(--border-width-default);
@@ -1287,13 +1287,14 @@ REACT SELECT CONTAINER
 		@apply flex shrink-0 items-center justify-center transition-all duration-150;
 
 		border-width: var(--border-width-default);
-		border-color: var(--color-input-border);
+		border-color: var(--color-brand);
 		background-color: var(--color-input-bg);
 		box-sizing: border-box;
 	}
 
 	.checkbox-disabled {
-		@apply cursor-not-allowed opacity-60;
+		@apply cursor-not-allowed;
+		opacity: 1;
 	}
 
 	.checkbox-enabled {
@@ -1320,9 +1321,11 @@ REACT SELECT CONTAINER
 		border-color: var(--color-error-hover);
 		background-color: var(--color-error-bg);
 	}
+
 	.checkbox-field.has-error:not(.is-disabled) .form-radio-label {
 		color: var(--color-error);
 	}
+
 	.checkbox-error.checkbox-enabled:focus-visible {
 		border-color: var(--color-error);
 		background-color: var(--color-error-bg);
@@ -1330,13 +1333,12 @@ REACT SELECT CONTAINER
 
 	.checkbox-error.checkbox-disabled {
 		border-width: var(--border-width-default);
-		border-color: var(--color-border-disabled);
-		background-color: var(--color-input-bg-disabled);
 	}
 
 	.checkbox-icon {
 		@apply font-bold leading-none;
 	}
+
 	.checkbox-field-row {
 		display: flex;
 		align-items: center;

@@ -94,9 +94,10 @@ export interface ClaimHeadRowBase {
 
 	fileName?: string | null;
 
-	approvedClaimAmount?: string;
+	approvedClaimAmount?: string | null;
 
 	approvalStatus?: LineItemApprovalStatus;
+	remarks?: string | null;
 }
 
 export interface ClaimHeadRow extends ClaimHeadRowBase {

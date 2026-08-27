@@ -92,6 +92,7 @@ type PublicBillShape = {
 	s3Key?: string | null;
 	approvedClaimAmount?: string | number | null;
 	approvalStatus?: ClaimHeadRow["approvalStatus"] | null;
+	remarks?: string | null;
 };
 
 const toDateInputValue = (value: string | Date | null | undefined): string => {
@@ -144,6 +145,7 @@ const mapPublicBillToLineItem = (
 			: null,
 		approvedClaimAmount: String(bill.approvedClaimAmount ?? bill.amount ?? ""),
 		approvalStatus: bill.approvalStatus ?? "PENDING",
+		remarks: bill.remarks ?? "",
 	} as ClaimHeadRow;
 };
 
@@ -160,6 +162,7 @@ const mapPublicLineItem = (
 				item.approvedClaimAmount ?? item.amount ?? "",
 			),
 			approvalStatus: item.approvalStatus ?? "PENDING",
+			remarks: item.remarks ?? "",
 		} as ClaimHeadRow;
 	}
 	return mapPublicBillToLineItem(item, index);

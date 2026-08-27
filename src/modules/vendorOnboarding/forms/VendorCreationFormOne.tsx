@@ -137,11 +137,19 @@ const VendorCreationFormOne = ({
 	const fieldMode: VendorFormMode = isReadOnly ? "view" : "edit";
 
 	const maskAccountNumber = (value?: string): string | undefined => {
-		const digits = (value ?? "").replace(/\D/g, "");
-		if (!digits) return undefined;
-		if (digits.length <= 6) return digits;
-		return `${digits.slice(0, 6)}***`;
+		const accountNumber = (value ?? "").trim();
+		if (!accountNumber) return undefined;
+
+		const visibleCharacters = accountNumber.slice(-4);
+		const maskedCharacters = "*".repeat(
+			Math.max(0, accountNumber.length - visibleCharacters.length),
+		);
+
+		return `${maskedCharacters}${visibleCharacters}`;
 	};
+
+	const sanitizeAccountNumber = (value: string): string =>
+		value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
 	const {
 		enclosureErrors,
 		isDpdpModalOpen,
@@ -192,7 +200,7 @@ const VendorCreationFormOne = ({
 
 				<div className="vendor-onboarding-form-grid-parent">
 					<div className="vendor-onboarding-form-grid-child">
-						<FormInput
+						{/* <FormInput
 							mode={fieldMode}
 							name="referenceName"
 							label="Vendor Reference Name"
@@ -207,7 +215,7 @@ const VendorCreationFormOne = ({
 							onChange={(event) =>
 								resolvedOnChange?.("referenceName", event.target.value)
 							}
-						/>
+						/> */}
 						<FormInput
 							mode={fieldMode}
 							name="vendorName"
@@ -423,7 +431,7 @@ const VendorCreationFormOne = ({
 						value={values.accountNumber ?? ""}
 						readOnlyValue={maskAccountNumber(values.accountNumber)}
 						required
-						inputMode="numeric"
+						inputMode="text"
 						error={errors.accountNumber}
 						success={
 							!isReadOnly &&
@@ -432,7 +440,7 @@ const VendorCreationFormOne = ({
 						}
 						helperText="Vendor bank account number."
 						onChange={(event) => {
-							const value = event.target.value.replace(/\D/g, "");
+							const value = sanitizeAccountNumber(event.target.value);
 							resolvedOnChange?.("accountNumber", value);
 						}}
 						onPaste={blockClipboardEvent}
@@ -449,7 +457,7 @@ const VendorCreationFormOne = ({
 						value={values.confirmAccountNumber ?? ""}
 						readOnlyValue={maskAccountNumber(values.confirmAccountNumber)}
 						required
-						inputMode="numeric"
+						inputMode="text"
 						error={errors.confirmAccountNumber}
 						success={
 							!isReadOnly &&
@@ -459,7 +467,7 @@ const VendorCreationFormOne = ({
 						}
 						helperText="Re-enter the bank account number."
 						onChange={(event) => {
-							const value = event.target.value.replace(/\D/g, "");
+							const value = sanitizeAccountNumber(event.target.value);
 							resolvedOnChange?.("confirmAccountNumber", value);
 						}}
 						onPaste={blockClipboardEvent}

@@ -15,6 +15,7 @@ export const createClaimHeadRow = (): ClaimHeadFormRow => ({
 	approvalStatus: "PENDING",
 	file: null,
 	attachment: null,
+	remarks: "",
 });
 
 export const GUEST_EDITABLE_STATUSES = new Set([
@@ -24,16 +25,25 @@ export const GUEST_EDITABLE_STATUSES = new Set([
 	"THCM_CLARIFICATION_REQUESTED",
 ]);
 
-const appendText = (
+export const appendText = (
 	formData: FormData,
 	name: string,
 	value: string | number | boolean | null | undefined,
-) => {
-	if (value !== undefined && value !== null) {
-		formData.append(name, String(value));
-	}
+): void => {
+	if (value === undefined || value === null) return;
+	formData.append(name, String(value));
 };
 
+export const appendNonBlankText = (
+	formData: FormData,
+	name: string,
+	value: string | number | null | undefined,
+): void => {
+	if (value === undefined || value === null || String(value).trim() === "") {
+		return;
+	}
+	formData.append(name, String(value));
+};
 export const buildMedicalClaimFormData = (
 	submission: ReimbursementClaimSubmission,
 ): FormData => {

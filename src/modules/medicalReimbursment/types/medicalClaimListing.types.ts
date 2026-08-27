@@ -82,6 +82,7 @@ export interface MedicalClaimBill {
 	size?: number | string | null;
 	approvedClaimAmount?: number | string | null;
 	approvalStatus?: "PENDING" | "APPROVED";
+	remarks?: string | null;
 }
 
 export interface MedicalClaimDetail extends MedicalClaimListItem {

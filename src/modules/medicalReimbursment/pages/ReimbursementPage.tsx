@@ -53,6 +53,13 @@ const ReimbursementPage = ({ mode = "edit" }: ReimbursementPageProps) => {
 	} else {
 		content = (
 			<ReimbursementClaimForm
+				claimId={resolvedClaimId}
+				isExportingExcel={claimView.isExportingExcel}
+				handleExport={claimView.handleExport}
+				isPreparingPdf={claimView.isPreparingPdf}
+				isDownloadingPdf={claimView.isDownloadingPdf}
+				handleViewPdf={claimView.handleViewPdf}
+				handleDownloadPdf={claimView.handleDownloadPdf}
 				referenceNumber={claimView.referenceNumber}
 				mode={mode}
 				canEdit={claimView.canEdit}
