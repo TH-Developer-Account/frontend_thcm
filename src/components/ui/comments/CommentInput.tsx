@@ -1,6 +1,5 @@
 import React from "react";
 
-import { COMMENT_MENU_ITEMS } from "./comment.constants";
 import type { CommentUser } from "./comment.types";
 import RichTextareaInput from "./RichTextareaInput";
 
@@ -70,10 +69,6 @@ const CommentInput = React.memo(function CommentInput({
 			submitting={submitting}
 			hasRealContent={hasRealContent}
 			onSubmit={handleSubmit}
-			menuItems={COMMENT_MENU_ITEMS}
-			onMenuAction={(action) => {
-				if (action === "submit") void handleSubmit();
-			}}
 		/>
 	);
 });

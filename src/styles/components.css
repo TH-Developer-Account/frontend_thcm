@@ -1269,7 +1269,6 @@
 
 		border: var(--border-width-default) solid var(--color-border-subtle);
 		border-radius: var(--radius-sm);
-
 		background-color: var(--color-bg-surface);
 	}
 
@@ -1381,7 +1380,7 @@
 	}
 
 	.ui-card-section-body {
-		padding: var(--space-3);
+		padding: var(--space-4) var(--space-8);
 	}
 
 	@media (max-width: 767px) {
@@ -7179,7 +7178,7 @@ PAGE NAVIGATION
 		flex-direction: column;
 		overflow: hidden;
 
-		border: var(--border-width-default) solid var(--comment-panel-border);
+		border: var(--border-width-default) solid var(--color-neutral-300);
 		border-radius: var(--radius-md);
 
 		background-color: var(--comment-panel-bg);
@@ -7200,7 +7199,7 @@ PAGE NAVIGATION
 		border-bottom: var(--border-width-default) solid
 			var(--comment-panel-divider);
 
-		background-color: var(--comment-header-bg);
+		background-color: var(--color-neutral-100);
 	}
 
 	.comments-subtitle {
@@ -7523,11 +7522,11 @@ PAGE NAVIGATION
 		font-size: var(--font-size-xs);
 		line-height: var(--line-height-normal);
 	}
-
-	/* =====================================================
-	   RICH TEXTAREA SHELL
-	===================================================== */
-
+}
+/* =====================================================
+	RICH TEXTAREA SHELL
+ ===================================================== */
+@layer components {
 	.rich-textarea-field {
 		width: 100%;
 		min-width: 0;
@@ -7535,11 +7534,6 @@ PAGE NAVIGATION
 
 	.rich-textarea {
 		position: relative;
-
-		display: flex;
-		width: 100%;
-		min-width: 0;
-		flex-direction: column;
 
 		border: var(--border-width-default) solid var(--color-input-border);
 		border-radius: var(--radius-sm);
@@ -7579,23 +7573,62 @@ PAGE NAVIGATION
 	}
 
 	/* =====================================================
-	   TEXTAREA
-	===================================================== */
+	SINGLE-LINE ROW
+	emoji --> textarea (fills space) --> mention --> send
+ ===================================================== */
+
+	.rich-textarea-row {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		align-items: flex-end;
+		gap: var(--space-1-5);
+
+		padding: var(--space-1-5);
+
+		background-color: var(--color-neutral-100);
+	}
+
+	.rich-textarea-input-wrap {
+		position: relative;
+
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+
+		border-radius: var(--radius-sm);
+		background-color: var(--color-bg-surface);
+	}
+
+	.rich-textarea-row .rich-textarea-tool-group,
+	.rich-textarea-row > .button-wrapper,
+	.rich-textarea-row > .rich-textarea-submit {
+		flex: 0 0 auto;
+	}
+
+	.rich-textarea-row .form-error-icon {
+		flex: 0 0 auto;
+		align-self: center;
+	}
+
+	/* =====================================================
+	TEXTAREA
+ ===================================================== */
 
 	.rich-textarea-control,
 	.rich-textarea .rich-textarea-control {
 		width: 100%;
 		min-width: 0;
-		min-height: 2.5rem;
-		max-height: 10rem;
-		resize: vertical;
+		min-height: var(--control-height-md);
+		max-height: 8rem;
+		resize: none;
 		overflow-y: auto;
 
 		margin: 0;
 		padding: var(--space-2) var(--space-3);
 
 		border: 0;
-		border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+		border-radius: var(--radius-sm);
 
 		background-color: transparent;
 		color: var(--color-input-text);
@@ -7621,36 +7654,8 @@ PAGE NAVIGATION
 	}
 
 	/* =====================================================
-	   TOOLBAR
-	===================================================== */
-
-	.rich-textarea-toolbar {
-		display: flex;
-		width: 100%;
-		min-width: 0;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2);
-
-		padding: var(--space-1-5) var(--space-2);
-
-		border-top: var(--border-width-default) solid var(--color-border-subtle);
-
-		background-color: var(--comment-toolbar-bg);
-	}
-
-	.rich-textarea-toolbar-start,
-	.rich-textarea-toolbar-end {
-		display: flex;
-		min-width: 0;
-		align-items: center;
-		gap: var(--space-1);
-	}
-
-	.rich-textarea-toolbar-end {
-		margin-left: auto;
-	}
+	TOOL GROUPS (emoji / mention) AND COUNTER
+ ===================================================== */
 
 	.rich-textarea-tool-group {
 		position: relative;
@@ -7658,56 +7663,31 @@ PAGE NAVIGATION
 		align-items: center;
 	}
 
-	.rich-textarea-divider {
-		width: var(--border-width-default);
-		height: var(--space-4);
-		flex: 0 0 auto;
-
-		margin-inline: var(--space-0-5);
-
-		background-color: var(--color-border-subtle);
+	.rich-textarea-mention-trigger {
+		width: 7.5rem;
+		min-width: 7.5rem;
+		justify-content: center;
+		white-space: nowrap;
 	}
 
 	.rich-textarea-counter {
+		display: block;
+
+		margin-top: var(--space-1);
+		padding-inline: var(--space-1);
+
 		color: var(--color-text-muted);
 
 		font-size: var(--font-size-2xs);
 		font-variant-numeric: tabular-nums;
 		line-height: 1;
+		text-align: right;
 		white-space: nowrap;
 	}
 
-	.rich-textarea-submit-group {
-		position: relative;
-
-		display: inline-flex;
-		align-items: stretch;
-	}
-
-	.rich-textarea-submit-group > .button-wrapper:not(:first-child) .button-base {
-		border-left-color: var(--color-brand-active);
-		border-top-left-radius: 0;
-		border-bottom-left-radius: 0;
-	}
-
-	.rich-textarea-submit-group
-		> .button-wrapper:first-child:not(:last-child)
-		.button-base {
-		border-top-right-radius: 0;
-		border-bottom-right-radius: 0;
-	}
-
-	.rich-textarea-menu-trigger svg {
-		transition: transform var(--duration-fast) var(--ease-standard);
-	}
-
-	.rich-textarea-menu-trigger-open svg {
-		transform: rotate(180deg);
-	}
-
 	/* =====================================================
-	   POPOVERS
-	===================================================== */
+	POPOVERS
+ ===================================================== */
 
 	.rich-textarea-popover {
 		position: absolute;
@@ -7732,6 +7712,11 @@ PAGE NAVIGATION
 		padding: var(--space-1);
 	}
 
+	.rich-textarea-tool-group:last-of-type .rich-textarea-mention-popover {
+		right: 0;
+		left: auto;
+	}
+
 	.rich-textarea-emoji-popover {
 		left: 0;
 
@@ -7741,25 +7726,6 @@ PAGE NAVIGATION
 		gap: var(--space-0-5);
 
 		padding: var(--space-2);
-	}
-
-	.rich-textarea-format-popover {
-		left: 0;
-
-		display: flex;
-		align-items: center;
-		gap: var(--space-0-5);
-
-		padding: var(--space-1);
-	}
-
-	.rich-textarea-action-popover {
-		right: 0;
-
-		width: 13rem;
-		overflow: hidden;
-
-		padding: var(--space-1);
 	}
 
 	.rich-textarea-menu-item {
@@ -7861,22 +7827,13 @@ PAGE NAVIGATION
 			padding: var(--space-2);
 		}
 
-		.rich-textarea-toolbar {
-			align-items: stretch;
-		}
-
-		.rich-textarea-toolbar-end {
-			width: 100%;
-			justify-content: space-between;
-			margin-left: 0;
+		.rich-textarea-row {
+			gap: var(--space-1);
+			padding: var(--space-1);
 		}
 
 		.rich-textarea-mention-popover {
 			width: min(16rem, calc(100vw - var(--space-6)));
-		}
-
-		.rich-textarea-action-popover {
-			right: 0;
 		}
 	}
 

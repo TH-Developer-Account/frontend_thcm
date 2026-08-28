@@ -46,7 +46,8 @@ export function useRichInput({
 		};
 
 		window.addEventListener("pointerdown", handleOutsidePointerDown);
-		return () => window.removeEventListener("pointerdown", handleOutsidePointerDown);
+		return () =>
+			window.removeEventListener("pointerdown", handleOutsidePointerDown);
 	}, []);
 
 	React.useEffect(() => {
@@ -124,7 +125,27 @@ export function useRichInput({
 		},
 		[onMentionInsert, textareaRef, value],
 	);
+	const insertMentionAtCursor = React.useCallback(
+		(user: CommentUser) => {
+			const textarea = textareaRef.current;
+			if (!textarea) return;
 
+			const start = textarea.selectionStart ?? value.length;
+			const end = textarea.selectionEnd ?? value.length;
+			const mention = `@${user.first_name} ${user.last_name}`.trim();
+			const nextValue = `${value.slice(0, start)}${mention} ${value.slice(end)}`;
+
+			setNativeValue(textarea, nextValue);
+			onMentionInsert?.(user);
+
+			requestAnimationFrame(() => {
+				const cursorPos = start + mention.length + 1;
+				textarea.selectionStart = textarea.selectionEnd = cursorPos;
+				textarea.focus();
+			});
+		},
+		[onMentionInsert, textareaRef, value],
+	);
 	const applyFormat = React.useCallback(
 		(format: FormatType) => {
 			const textarea = textareaRef.current;
@@ -171,6 +192,7 @@ export function useRichInput({
 		handleChange,
 		insertAtCursor,
 		insertMention,
+		insertMentionAtCursor,
 		applyFormat,
 		handleAttach,
 	};
