@@ -34,7 +34,7 @@ export type VendorOnboardingListingRow = {
 
 	status?: VendorTableStatus | null;
 	referenceNumber?: string;
-	referenceName?: string;
+	vendorReferenceName?: string;
 };
 
 export type VendorOnboardingColumnsParams = {
@@ -49,7 +49,7 @@ export type VendorOnboardingColumnsParams = {
 };
 export type VendorOnboardingInitiationPayload = {
 	vendorName: string;
-	referenceName?: string;
+	vendorReferenceName?: string;
 	email: string;
 	mobile: string;
 	status?: string;

@@ -80,8 +80,9 @@ export interface MedicalClaimBill {
 	 */
 	mimeType?: string | null;
 	size?: number | string | null;
-	approvedClaimAmount?: number | string | null;
+	approvedClaimAmount?: string;
 	approvalStatus?: "PENDING" | "APPROVED";
+	approved: boolean;
 	remarks?: string | null;
 }
 
@@ -95,7 +96,7 @@ export interface MedicalClaimDetail extends MedicalClaimListItem {
 	declarationAcceptedAt?: string | null;
 	signatureName?: string | null;
 	signatureDate?: string | null;
-	bills?: MedicalClaimBill[];
+	bills: MedicalClaimBill[];
 }
 
 export interface MedicalClaimMutationResponse {
@@ -103,3 +104,34 @@ export interface MedicalClaimMutationResponse {
 	message?: string;
 	data?: MedicalClaimDetail;
 }
+export type MedicalClaimExportFormat = "xlsx" | "csv";
+
+export type ExportListingParams = {
+	tab: MedicalClaimListingTab;
+	search?: string;
+	format?: MedicalClaimExportFormat;
+};
+
+export type MedicalClaimExportQueueResponse = {
+	success: boolean;
+	message: string;
+	jobId: string;
+	logId: string;
+	pollUrl: string;
+};
+
+export type MedicalClaimExportJobStatus =
+	| "waiting"
+	| "active"
+	| "delayed"
+	| "prioritized"
+	| "completed"
+	| "failed";
+
+export type MedicalClaimExportStatusResponse = {
+	success: boolean;
+	jobId: string;
+	status: MedicalClaimExportJobStatus;
+	downloadUrl: string | null;
+	failedReason?: string;
+};

@@ -1,3 +1,4 @@
+import { medicalClaimApi } from "../api/medicalClaim.api";
 import type {
 	ClaimHeadFormRow,
 	ReimbursementClaimSubmission,
@@ -86,4 +87,38 @@ export const buildMedicalClaimFormData = (
 	});
 
 	return formData;
+};
+
+const EXPORT_POLL_INTERVAL_MS = 2_000;
+const EXPORT_POLL_TIMEOUT_MS = 2 * 60 * 1_000;
+
+const wait = (duration: number) =>
+	new Promise<void>((resolve) => {
+		window.setTimeout(resolve, duration);
+	});
+
+export const waitForMedicalClaimExport = async (
+	jobId: string,
+): Promise<string> => {
+	const startedAt = Date.now();
+
+	while (Date.now() - startedAt < EXPORT_POLL_TIMEOUT_MS) {
+		const result = await medicalClaimApi.getListingExportStatus(jobId);
+
+		if (result.status === "completed") {
+			if (!result.downloadUrl) {
+				throw new Error("Export completed, but no download URL was returned.");
+			}
+
+			return result.downloadUrl;
+		}
+
+		if (result.status === "failed") {
+			throw new Error(result.failedReason || "Medical claim export failed.");
+		}
+
+		await wait(EXPORT_POLL_INTERVAL_MS);
+	}
+
+	throw new Error("Medical claim export timed out.");
 };

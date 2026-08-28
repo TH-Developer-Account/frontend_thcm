@@ -1,58 +1,75 @@
-import React from "react";
+import * as React from "react";
 
-import { CommentsSection } from "../../../components/ui/comments";
-import type { MentionableUserInput } from "../../../components/ui/comments/comment.types";
-import { getWorkflowCommentContext } from "../../../components/ui/comments/comments.helper";
+import SectionAccordion from "../../../components/common/SectionAccordion";
+import { AuditLogSection } from "../../../components/ui/audit";
+import {
+	CommentsSection,
+	getWorkflowCommentContext,
+	type MentionableUserInput,
+} from "../../../components/ui/comments";
 import { useAuth } from "../../../context/Auth/useAuth";
-import type { ApprovalStageLike } from "../../marketing/activity-planner/utils/approvalTable.mapper";
-
-import { getVendorAuditMessage } from "../helpers/vendorComment.helper";
+import type { ApprovalStageLike } from "../../workflows/types/types";
 
 type VendorCommentSectionProps = {
 	onboardingId?: string | null;
 	workflow?: readonly ApprovalStageLike[];
 	createdBy?: MentionableUserInput | null;
-	title?: string;
+	refreshKey?: string | number;
+	canComment?: boolean;
 };
 
 const VendorCommentSection = ({
 	onboardingId,
 	workflow = [],
 	createdBy,
-	title = "Comments and activity",
+	refreshKey = 0,
+	canComment: canCommentOverride,
 }: VendorCommentSectionProps) => {
 	const { user } = useAuth();
-	const requestCreator = createdBy ?? null;
 
 	const commentContext = React.useMemo(
 		() =>
 			getWorkflowCommentContext({
 				activeWorkflow: {
-					stages: workflow,
+					stages: [...workflow],
 				},
 				currentUser: user,
-				creator: requestCreator,
+				creator: createdBy ?? null,
+				canComment: canCommentOverride,
 			}),
-		[workflow, user, requestCreator],
+		[canCommentOverride, createdBy, user, workflow],
 	);
 
-	if (!onboardingId) {
-		return null;
-	}
+	if (!onboardingId) return null;
+
 	return (
-		<CommentsSection
-			subjectType="VENDOR_ONBOARDING"
-			subjectId={onboardingId}
-			approvalId={commentContext.approvalId}
-			canComment={commentContext.canComment}
-			mentionableUsers={commentContext.mentionableUsers}
-			ccEmails={commentContext.ccEmails}
-			currentUserId={user?.id}
-			formatAuditMessage={getVendorAuditMessage}
-			title={title}
-			emptyTitle="No vendor activity yet"
-			emptyDescription="Comments and workflow activity will appear here."
-		/>
+		<>
+			<SectionAccordion title="Comment Section">
+				<CommentsSection
+					subjectType="VENDOR_ONBOARDING"
+					subjectId={onboardingId}
+					approvalId={commentContext.approvalId}
+					canComment={commentContext.canComment}
+					mentionableUsers={commentContext.mentionableUsers}
+					ccEmails={commentContext.ccEmails}
+					currentUserId={user?.id}
+					refreshKey={refreshKey}
+					emptyTitle="No comments yet"
+					emptyDescription="Comments about this vendor request will appear here."
+				/>
+			</SectionAccordion>
+
+			<SectionAccordion title="Activity Log">
+				<AuditLogSection
+					subjectType="VENDOR_ONBOARDING"
+					subjectId={onboardingId}
+					entityName="vendor onboarding request"
+					refreshKey={refreshKey}
+					emptyTitle="No vendor activity yet"
+					emptyDescription="Vendor onboarding activity will appear here."
+				/>
+			</SectionAccordion>
+		</>
 	);
 };
 

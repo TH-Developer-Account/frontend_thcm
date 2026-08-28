@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { commentApi, commentKeys } from "../../../../components/ui/comments";
+import { auditApi, auditKeys } from "../../../../components/ui/audit";
 import { eventOutcomeApi } from "../api/event.outcome.api";
 import { eventReportApi } from "../api/eventReport.api";
 import { epcKeys } from "./epc.keys";
@@ -17,9 +18,25 @@ export const useActivityCommentsQuery = (
 	enabled = true,
 ) => {
 	return useQuery({
-		queryKey: commentKeys.activity(EVENT_PROPOSAL_SUBJECT_TYPE, epcId),
+		queryKey: commentKeys.list(EVENT_PROPOSAL_SUBJECT_TYPE, epcId),
 		queryFn: () =>
-			commentApi.getActivity({
+			commentApi.getComments({
+				subjectType: EVENT_PROPOSAL_SUBJECT_TYPE,
+				subjectId: epcId!,
+			}),
+		enabled: Boolean(epcId) && enabled,
+		staleTime: 15 * 1000,
+	});
+};
+
+export const useActivityAuditLogQuery = (
+	epcId?: string | null,
+	enabled = true,
+) => {
+	return useQuery({
+		queryKey: auditKeys.log(EVENT_PROPOSAL_SUBJECT_TYPE, epcId),
+		queryFn: () =>
+			auditApi.getAuditLog({
 				subjectType: EVENT_PROPOSAL_SUBJECT_TYPE,
 				subjectId: epcId!,
 			}),
@@ -66,6 +83,19 @@ export function useEventReportQuery(epcId?: string | null, enabled = true) {
 	});
 }
 
+const invalidateActivityFeeds = (
+	queryClient: ReturnType<typeof useQueryClient>,
+	epcId: string,
+) => {
+	queryClient.invalidateQueries({
+		queryKey: commentKeys.list(EVENT_PROPOSAL_SUBJECT_TYPE, epcId),
+	});
+
+	queryClient.invalidateQueries({
+		queryKey: auditKeys.log(EVENT_PROPOSAL_SUBJECT_TYPE, epcId),
+	});
+};
+
 export function useSubmitEventReportMutation() {
 	const queryClient = useQueryClient();
 
@@ -92,12 +122,7 @@ export function useSubmitEventReportMutation() {
 				queryKey: eventReportKeys.detail(variables.epcId),
 			});
 
-			queryClient.invalidateQueries({
-				queryKey: commentKeys.activity(
-					EVENT_PROPOSAL_SUBJECT_TYPE,
-					variables.epcId,
-				),
-			});
+			invalidateActivityFeeds(queryClient, variables.epcId);
 		},
 	});
 }
@@ -118,12 +143,7 @@ export function useValidateEventReportMutation() {
 				queryKey: eventReportKeys.detail(variables.epcId),
 			});
 
-			queryClient.invalidateQueries({
-				queryKey: commentKeys.activity(
-					EVENT_PROPOSAL_SUBJECT_TYPE,
-					variables.epcId,
-				),
-			});
+			invalidateActivityFeeds(queryClient, variables.epcId);
 		},
 	});
 }
@@ -150,12 +170,7 @@ export function useClarifyEventReportMutation() {
 				queryKey: eventReportKeys.detail(variables.epcId),
 			});
 
-			queryClient.invalidateQueries({
-				queryKey: commentKeys.activity(
-					EVENT_PROPOSAL_SUBJECT_TYPE,
-					variables.epcId,
-				),
-			});
+			invalidateActivityFeeds(queryClient, variables.epcId);
 		},
 	});
 }

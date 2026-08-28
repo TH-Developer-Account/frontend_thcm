@@ -1,55 +1,75 @@
 import * as React from "react";
 
-import { CommentsSection } from "../../../components/ui/comments";
-import type { MentionableUserInput } from "../../../components/ui/comments/comment.types";
-import { getWorkflowCommentContext } from "../../../components/ui/comments/comments.helper";
+import SectionAccordion from "../../../components/common/SectionAccordion";
+import { AuditLogSection } from "../../../components/ui/audit";
+import {
+	CommentsSection,
+	getWorkflowCommentContext,
+	type MentionableUserInput,
+} from "../../../components/ui/comments";
 import { useAuth } from "../../../context/Auth/useAuth";
 import type { ApprovalStageLike } from "../../workflows/types/types";
-import { getMedicalAuditMessage } from "../helpers/medicalClaimListing.mapper";
 
 type MedicalClaimCommentSectionProps = {
 	claimId?: string | null;
 	workflow?: readonly ApprovalStageLike[];
 	createdBy?: MentionableUserInput | null;
-	title?: string;
+	refreshKey?: string | number;
+	canComment?: boolean;
 };
 
-/** Keeps comment permissions and mentions aligned with the active workflow. */
 const MedicalClaimCommentSection = ({
 	claimId,
 	workflow = [],
 	createdBy,
-	title = "Comments and activity",
+	refreshKey = 0,
+	canComment: canCommentOverride,
 }: MedicalClaimCommentSectionProps) => {
 	const { user } = useAuth();
+
 	const commentContext = React.useMemo(
 		() =>
 			getWorkflowCommentContext({
-				activeWorkflow: { stages: workflow },
+				activeWorkflow: {
+					stages: [...workflow],
+				},
 				currentUser: user,
 				creator: createdBy ?? null,
+				canComment: canCommentOverride,
 			}),
-		[createdBy, user, workflow],
+		[canCommentOverride, createdBy, user, workflow],
 	);
 
 	if (!claimId) return null;
 
 	return (
-		<div className="px-4">
-			<CommentsSection
-				subjectType="MEDICAL_CLAIM"
-				subjectId={claimId}
-				approvalId={commentContext.approvalId}
-				canComment={commentContext.canComment}
-				mentionableUsers={commentContext.mentionableUsers}
-				ccEmails={commentContext.ccEmails}
-				currentUserId={user?.id}
-				title={title}
-				formatAuditMessage={getMedicalAuditMessage}
-				emptyTitle="No medical claim activity yet"
-				emptyDescription="Comments and workflow activity will appear here."
-			/>
-		</div>
+		<>
+			<SectionAccordion title="Comment Section">
+				<CommentsSection
+					subjectType="MEDICAL_CLAIM"
+					subjectId={claimId}
+					approvalId={commentContext.approvalId}
+					canComment={commentContext.canComment}
+					mentionableUsers={commentContext.mentionableUsers}
+					ccEmails={commentContext.ccEmails}
+					currentUserId={user?.id}
+					refreshKey={refreshKey}
+					emptyTitle="No comments yet"
+					emptyDescription="Comments about this medical claim will appear here."
+				/>
+			</SectionAccordion>
+
+			<SectionAccordion title="Activity Log">
+				<AuditLogSection
+					subjectType="MEDICAL_CLAIM"
+					subjectId={claimId}
+					entityName="medical claim"
+					refreshKey={refreshKey}
+					emptyTitle="No medical claim activity yet"
+					emptyDescription="Medical claim activity will appear here."
+				/>
+			</SectionAccordion>
+		</>
 	);
 };
 

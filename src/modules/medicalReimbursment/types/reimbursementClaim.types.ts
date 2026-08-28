@@ -98,6 +98,7 @@ export interface ClaimHeadRowBase {
 
 	approvalStatus?: LineItemApprovalStatus;
 	remarks?: string | null;
+	approved?: boolean;
 }
 
 export interface ClaimHeadRow extends ClaimHeadRowBase {

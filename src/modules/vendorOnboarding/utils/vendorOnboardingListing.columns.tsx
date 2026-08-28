@@ -49,9 +49,9 @@ export const getVendorOnboardingColumns = ({
 					{renderCellValue(row.original.vendorName)}
 				</span>
 
-				{row.original.referenceName ? (
+				{row.original.vendorReferenceName ? (
 					<span className="vendor-listing-subtitle">
-						{row.original.referenceName ?? "Test"}
+						{row.original.vendorReferenceName ?? "Test"}
 					</span>
 				) : null}
 			</div>

@@ -7,6 +7,7 @@ import { useToast } from "../../../context/Auth/AuthContext";
 import { formatDateTime } from "../../../utils/format";
 
 import { commentApi } from "./comment.api";
+import { commentKeys } from "./comment.keys";
 import CommentInput from "./CommentInput";
 import type {
 	CommentApiAdapter,
@@ -30,7 +31,6 @@ export type CommentsSectionProps = {
 	emptyTitle?: string;
 	emptyDescription?: string;
 	api?: CommentApiAdapter;
-	formatAuditMessage?: (comment: CommentItem) => React.ReactNode;
 	onCommentsChange?: (comments: CommentItem[]) => void;
 };
 
@@ -38,15 +38,6 @@ type CommentCardProps = {
 	comment: CommentItem;
 	currentUserId?: string;
 	level?: number;
-	formatAuditMessage?: (comment: CommentItem) => React.ReactNode;
-};
-
-const commentsKeys = {
-	activity: (
-		subjectType: string,
-		subjectId: string,
-		refreshKey: string | number,
-	) => ["comments", "activity", subjectType, subjectId, refreshKey] as const,
 };
 
 const getCommentAuthorName = (comment: CommentItem): string => {
@@ -55,9 +46,6 @@ const getCommentAuthorName = (comment: CommentItem): string => {
 	return name || "Unknown user";
 };
 
-const getDefaultAuditMessage = (comment: CommentItem): React.ReactNode =>
-	comment.message || comment.reason || comment.action || "Activity updated";
-
 const normalizeEmailList = (emails: string[]) =>
 	Array.from(new Set(emails.map((email) => email.trim()).filter(Boolean)));
 
@@ -65,26 +53,8 @@ const CommentCard = React.memo(function CommentCard({
 	comment,
 	currentUserId,
 	level = 0,
-	formatAuditMessage,
 }: CommentCardProps) {
-	const isAuditLog = comment.entryType === "ACTIVITY_LOG";
 	const isSelf = comment.actor?.id === currentUserId;
-
-	if (isAuditLog) {
-		return (
-			<div
-				className={["comment-card", level > 0 && "comment-reply-card"]
-					.filter(Boolean)
-					.join(" ")}
-			>
-				<div className="comment-audit-message">
-					<span>
-						{formatAuditMessage?.(comment) ?? getDefaultAuditMessage(comment)}
-					</span>
-				</div>
-			</div>
-		);
-	}
 
 	return (
 		<article
@@ -131,7 +101,6 @@ const CommentCard = React.memo(function CommentCard({
 							comment={reply}
 							currentUserId={currentUserId}
 							level={level + 1}
-							formatAuditMessage={formatAuditMessage}
 						/>
 					))}
 				</div>
@@ -149,11 +118,10 @@ export default function CommentsSection({
 	refreshKey = 0,
 	canComment = true,
 	currentUserId,
-	title = "Comments & activity",
+	title = "Comments",
 	emptyTitle = "No comments yet",
 	emptyDescription = "Start the discussion by adding the first comment.",
 	api = commentApi,
-	formatAuditMessage,
 	onCommentsChange,
 }: CommentsSectionProps) {
 	const { showToast } = useToast();
@@ -168,7 +136,7 @@ export default function CommentsSection({
 	}, [onCommentsChange]);
 
 	const queryKey = React.useMemo(
-		() => commentsKeys.activity(subjectType, subjectId, refreshKey),
+		() => [...commentKeys.list(subjectType, subjectId), refreshKey] as const,
 		[refreshKey, subjectId, subjectType],
 	);
 
@@ -178,7 +146,7 @@ export default function CommentsSection({
 		error,
 	} = useQuery({
 		queryKey,
-		queryFn: () => api.getActivity({ subjectType, subjectId }),
+		queryFn: () => api.getComments({ subjectType, subjectId }),
 		enabled: Boolean(subjectType && subjectId),
 		staleTime: Infinity,
 		refetchOnMount: false,
@@ -300,7 +268,6 @@ export default function CommentsSection({
 									key={comment.id}
 									comment={comment}
 									currentUserId={currentUserId}
-									formatAuditMessage={formatAuditMessage}
 								/>
 							))}
 						</div>

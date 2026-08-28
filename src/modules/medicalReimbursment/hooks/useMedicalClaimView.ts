@@ -28,6 +28,7 @@ import {
 	useMedicalClaimDetailQuery,
 	useMedicalClaimPdfUrlMutation,
 	useExportMedicalClaimMutation,
+	useSaveMedicalClaimLineItemRemarksMutation,
 } from "./useMedicalClaimMutations";
 import {
 	useGuestReimbursementClaimDetailQuery,
@@ -135,6 +136,7 @@ export function useMedicalClaimView({
 	const guestResubmitMutation = useResubmitGuestMedicalClaimMutation();
 
 	const lineItemMutation = useApproveMedicalClaimLineItemMutation();
+	const lineItemRemarksMutation = useSaveMedicalClaimLineItemRemarksMutation();
 
 	const approveStageMutation = useApproveWorkflowStageMutation();
 
@@ -319,6 +321,22 @@ export function useMedicalClaimView({
 		[canApproveLineItems, claimId, lineItemMutation],
 	);
 
+	const saveLineItemRemarks = React.useCallback(
+		async (lineItem: ClaimHeadRow) => {
+			if (!canApproveLineItems) {
+				throw new Error(
+					"Only the current internal workflow approver can update remarks.",
+				);
+			}
+
+			await lineItemRemarksMutation.mutateAsync({
+				claimId,
+				lineItem,
+			});
+		},
+		[canApproveLineItems, claimId, lineItemRemarksMutation],
+	);
+
 	/*
 	 * --------------------------------------------------------------------------
 	 * Workflow approval
@@ -456,39 +474,32 @@ export function useMedicalClaimView({
 		if (!claimId) return;
 
 		setPdfAction("download");
+
 		try {
-			const url = pdfUrl ?? (await pdfUrlMutation.mutateAsync({ claimId }));
-			setPdfUrl(url);
-
-			const response = await fetch(url);
-			if (!response.ok) throw new Error("Failed to download PDF.");
-
-			const pdfBlob = await response.blob();
-			const blobUrl = window.URL.createObjectURL(
-				new Blob([pdfBlob], { type: "application/pdf" }),
-			);
+			const url = await pdfUrlMutation.mutateAsync({
+				claimId,
+			});
 
 			const link = document.createElement("a");
-			link.href = blobUrl;
+
+			link.href = url;
 			link.download = `medical-claim-${detailReferenceNumber ?? claimId}.pdf`;
+			link.target = "_blank";
+			link.rel = "noopener noreferrer";
+
 			document.body.appendChild(link);
 			link.click();
 			link.remove();
-
-			window.URL.revokeObjectURL(blobUrl);
-		} catch (error) {
+		} catch {
 			showToast({
 				type: "error",
-				title: "PDF download failed",
-				description: getApiErrorMessage(
-					error,
-					"Unable to download the claim PDF.",
-				),
+				title: "Download failed",
+				description: "Failed to download the medical claim PDF.",
 			});
 		} finally {
 			setPdfAction(null);
 		}
-	}, [claimId, detailReferenceNumber, pdfUrl, pdfUrlMutation, showToast]);
+	}, [claimId, detailReferenceNumber, pdfUrlMutation, showToast]);
 
 	const isPreparingPdf = pdfUrlMutation.isPending && pdfAction === "view";
 	const isDownloadingPdf = pdfUrlMutation.isPending && pdfAction === "download";
@@ -535,6 +546,7 @@ export function useMedicalClaimView({
 		// Actions
 		saveClaim,
 		approveLineItem,
+		saveLineItemRemarks,
 		approveCurrentStage,
 		clarifyCurrentStage,
 

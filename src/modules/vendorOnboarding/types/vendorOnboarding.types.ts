@@ -26,7 +26,7 @@ export type VendorViewerRole =
 
 export type VendorCreationFormOneValues = {
 	vendorName?: string;
-	referenceName?: string;
+	vendorReferenceName?: string;
 	address?: string;
 	msmeVendor?: string;
 	msmeCertificateAttached?: string;
@@ -81,7 +81,7 @@ export type VendorCreationFormTwoValues = {
 
 export type VendorUpdatePayload = {
 	vendorName?: string | null;
-	referenceName?: string | null;
+	vendorReferenceName?: string | null;
 	state?: string | null;
 	city?: string | null;
 	pinCode?: string | null;
@@ -246,7 +246,7 @@ export type VendorOnboardingRawResponse = {
 	initiatedById?: string;
 	status: VendorOnboardingStatus;
 	vendorName: string | null;
-	referenceName: string | null;
+	vendorReferenceName: string | null;
 	state: string | null;
 	city: string | null;
 	pinCode: string | null;

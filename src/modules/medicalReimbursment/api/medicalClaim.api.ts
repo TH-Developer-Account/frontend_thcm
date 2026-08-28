@@ -1,15 +1,23 @@
 import { ServerAxios } from "../../../services/ServerAxios";
 
 import type {
+	ExportListingParams,
 	MedicalClaimDetail,
+	MedicalClaimExportQueueResponse,
+	MedicalClaimExportStatusResponse,
 	MedicalClaimInitiationPayload,
 	MedicalClaimListingApiResponse,
 	MedicalClaimListingParams,
 	MedicalClaimListingResult,
-	MedicalClaimListingTab,
 	MedicalClaimListItem,
 	MedicalClaimMutationResponse,
 } from "../types/medicalClaimListing.types";
+import type {
+	MedicalClaimInitiationImportPayload,
+	BulkMedicalClaimInitiationPayload,
+	BulkMedicalClaimInitiationResponse,
+	MedicalClaimInitiationImportResponse,
+} from "../types/medicalClaimInitiation.types";
 import type { ClaimHeadRow } from "../types/reimbursementClaim.types";
 
 const MEDICAL_CLAIM_URL = "/medi-claim";
@@ -26,13 +34,6 @@ type PdfUrlResponse = {
 	url: string;
 };
 
-export type ExportListingParams = {
-	tab: MedicalClaimListingTab;
-	search?: string;
-	pageIndex: number;
-	pageSize: number;
-	// status?: MedicalClaimStatusFilter; // uncomment once backend supports status filtering on export
-};
 /**
  * Medical-claim-only endpoints live here. Workflow preview, assignment,
  * approval, clarification, activation, instance, and history calls belong to
@@ -97,7 +98,32 @@ export const medicalClaimApi = {
 
 		return data;
 	},
+	importInitiations: async (
+		payload: MedicalClaimInitiationImportPayload,
+	): Promise<MedicalClaimInitiationImportResponse> => {
+		const { data: response } =
+			await ServerAxios.post<MedicalClaimInitiationImportResponse>(
+				"/import/leads",
+				payload,
+				{
+					headers: {
+						"Content-Type": "multipart/form-data",
+					},
+				},
+			);
 
+		return response;
+	},
+	initiateImportedEmployees: async (
+		payload: BulkMedicalClaimInitiationPayload,
+	): Promise<BulkMedicalClaimInitiationResponse> => {
+		const { data } = await ServerAxios.post<BulkMedicalClaimInitiationResponse>(
+			"/medi-claim/initiate/bulk",
+			payload,
+		);
+
+		return data;
+	},
 	resendLink: async (
 		claimId: string,
 	): Promise<MedicalClaimMutationResponse> => {
@@ -135,14 +161,12 @@ export const medicalClaimApi = {
 		return data;
 	},
 
-	/** Persists a proposer-approved amount for one bill. */
+	/** Persists a proposer-approved amount for one bill. Backend returns no row — caller updates cache from variables. */
 	approveLineItem: async (
 		claimId: string,
 		lineItem: Pick<ClaimHeadRow, "id" | "approvedClaimAmount" | "remarks">,
-	): Promise<ClaimHeadRow> => {
-		const {
-			data: { data },
-		} = await ServerAxios.patch<ApiDataResponse<ClaimHeadRow>>(
+	): Promise<void> => {
+		await ServerAxios.patch(
 			`${MEDICAL_CLAIM_URL}/${encodeURIComponent(claimId)}/bills/approved-amounts`,
 			{
 				bills: [
@@ -154,40 +178,71 @@ export const medicalClaimApi = {
 				],
 			},
 		);
-
-		return data;
 	},
 
-	getPdfUrl: async (
-		type: PdfType,
-		vendorRequestId: string,
-	): Promise<string> => {
+	/** Persists remarks for one bill. Backend returns no row — caller updates cache from variables. */
+	saveLineItemRemarks: async (
+		claimId: string,
+		lineItem: Pick<ClaimHeadRow, "id" | "remarks">,
+	): Promise<void> => {
+		await ServerAxios.patch(
+			`${MEDICAL_CLAIM_URL}/${encodeURIComponent(claimId)}/bills/remarks`,
+			{
+				bills: [{ billId: lineItem.id, remarks: lineItem.remarks }],
+			},
+		);
+	},
+
+	getPdfUrl: async (type: PdfType, claimId: string): Promise<string> => {
 		const {
 			data: { url },
 		} = await ServerAxios.get<PdfUrlResponse>(
-			`/pdf/${type}/${encodeURIComponent(vendorRequestId)}/url`,
+			`/pdf/${type}/${encodeURIComponent(claimId)}/url`,
 		);
 
 		return url;
 	},
-	exportListing: async (
-		// claimId: string,
+	enqueueListingExport: async (
 		params: ExportListingParams,
-	): Promise<Blob> => {
-		const response = await ServerAxios.get<Blob>(
+	): Promise<MedicalClaimExportQueueResponse> => {
+		const { data } = await ServerAxios.post<MedicalClaimExportQueueResponse>(
 			`${MEDICAL_CLAIM_URL}/export`,
 			{
-				params,
+				tab: params.tab,
+				search: params.search?.trim() ?? "",
+				format: params.format ?? "xlsx",
+			},
+		);
+
+		return data;
+	},
+
+	getListingExportStatus: async (
+		jobId: string,
+	): Promise<MedicalClaimExportStatusResponse> => {
+		const { data } = await ServerAxios.get<MedicalClaimExportStatusResponse>(
+			`${MEDICAL_CLAIM_URL}/export/status/${encodeURIComponent(jobId)}`,
+		);
+
+		return data;
+	},
+
+	downloadExportFile: async (downloadUrl: string): Promise<Blob> => {
+		const { data } = await ServerAxios.get<Blob>(downloadUrl, {
+			responseType: "blob",
+		});
+
+		return data;
+	},
+
+	exportOne: async (claimId: string): Promise<Blob> => {
+		const { data } = await ServerAxios.get<Blob>(
+			`${MEDICAL_CLAIM_URL}/export/${encodeURIComponent(claimId)}`,
+			{
 				responseType: "blob",
 			},
 		);
-		return response.data;
-	},
-	exportOne: async (claimId: string): Promise<Blob> => {
-		const response = await ServerAxios.get<Blob>(
-			`${MEDICAL_CLAIM_URL}/${encodeURIComponent(claimId)}/export`,
-			{ responseType: "blob" },
-		);
-		return response.data;
+
+		return data;
 	},
 };

@@ -22,8 +22,11 @@ import ResubmitFooterAction from "./ResubmitFooterAction";
 import { ReasonActionModal } from "../../../../../components/ui/ReasonActionModal";
 import type { ActivityPermissions } from "../../helpers/activityPermissions.helper";
 import { CommentsSection } from "../../../../../components/ui/comments";
-import { activityPlannerCommentApi } from "../../api/activityPlannerComment.adapter";
-import { getAuditMessage } from "../../helpers/activityLogMessage.helper";
+import { AuditLogSection } from "../../../../../components/ui/audit";
+import {
+	activityPlannerCommentApi,
+	activityPlannerAuditApi,
+} from "../../api/activityPlannerComment.adapter";
 import {
 	ApprovalWorkflowSection,
 	getWorkflowApproverData,
@@ -399,7 +402,15 @@ const ActivityFormView = ({
 									refreshKey={commentsRefreshKey}
 									canComment={canComment}
 									api={activityPlannerCommentApi}
-									formatAuditMessage={getAuditMessage}
+								/>
+							</SectionAccordion>
+							<SectionAccordion title="Activity Log">
+								<AuditLogSection
+									subjectType="EVENT_PROPOSAL"
+									subjectId={epcData.id}
+									entityName="event proposal"
+									refreshKey={commentsRefreshKey}
+									api={activityPlannerAuditApi}
 								/>
 							</SectionAccordion>
 						</>

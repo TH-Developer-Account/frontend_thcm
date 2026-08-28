@@ -339,7 +339,7 @@ const ReimbursementClaimFormContent = ({
 			label: isExportingExcel ? "Exporting…" : "Export Excel",
 			Icon: FileSpreadsheet,
 			onClick: () => void handleExport?.(),
-			disabled: isExportingExcel,
+			disabled: isExportingExcel || !handleExport,
 		},
 	];
 	return (

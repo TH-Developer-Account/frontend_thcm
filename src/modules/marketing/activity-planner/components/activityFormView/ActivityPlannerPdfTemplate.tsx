@@ -15,17 +15,19 @@ import {
 	getEpcVerticalName,
 } from "../../utils/formatters";
 
-import { getAuditMessage } from "../../helpers/activityLogMessage.helper";
+import { getAuditMessage } from "../../../../../components/ui/audit";
 import { mapCrfLineItemsToTableRows } from "../../forms/CRF/crf.mapper";
 import { mapEpfLineItemsToTableRows } from "../../forms/EPF/epf.mapper";
 import { mapWorkflowStagesToApprovalRows } from "../../utils/approvalTable.mapper";
 import type { CommentItem } from "../../../../../components/ui/comments";
+import type { AuditLogEntry } from "../../../../../components/ui/audit";
 import { ApprovalTable } from "../../../../workflows";
 
 type Props = {
 	epcData?: EpcDetailResponse | null;
 	createdBy?: string;
-	workflowEntries?: CommentItem[];
+	comments?: CommentItem[];
+	auditEntries?: AuditLogEntry[];
 };
 
 type InfoItem = {
@@ -89,20 +91,46 @@ const getGrandTotal = (items: TableRow[] = []): number => {
 	return items.reduce((sum, item) => sum + getLineItemTotal(item), 0);
 };
 
-const getActorName = (entry: CommentItem): string => {
-	const name = [entry.actor?.first_name, entry.actor?.last_name]
+const getActorName = (
+	actor?: { first_name?: string; last_name?: string; email?: string } | null,
+): string => {
+	const name = [actor?.first_name, actor?.last_name]
 		.filter(Boolean)
 		.join(" ")
 		.trim();
 
-	return name || entry.actor?.email || "--";
+	return name || actor?.email || "--";
 };
 
-const sortWorkflowEntries = (entries: CommentItem[] = []): CommentItem[] => {
-	return [...entries].sort(
-		(firstEntry, secondEntry) =>
-			new Date(firstEntry.createdAt ?? 0).getTime() -
-			new Date(secondEntry.createdAt ?? 0).getTime(),
+// ─────────────────────────────────────────────────────────────────────────
+// PDF timeline entry — comments and audit rows merge-sorted for display.
+// Backend/API now keep them separate; this local union exists only so the
+// PDF's single chronological list can render both kinds.
+// ─────────────────────────────────────────────────────────────────────────
+type TimelineEntry =
+	| { kind: "COMMENT"; createdAt: string; comment: CommentItem }
+	| { kind: "AUDIT"; createdAt: string; audit: AuditLogEntry };
+
+const buildTimeline = (
+	comments: CommentItem[] = [],
+	auditEntries: AuditLogEntry[] = [],
+): TimelineEntry[] => {
+	const commentEntries: TimelineEntry[] = comments.map((comment) => ({
+		kind: "COMMENT",
+		createdAt: comment.createdAt,
+		comment,
+	}));
+
+	const auditTimelineEntries: TimelineEntry[] = auditEntries.map((audit) => ({
+		kind: "AUDIT",
+		createdAt: audit.createdAt,
+		audit,
+	}));
+
+	return [...commentEntries, ...auditTimelineEntries].sort(
+		(a, b) =>
+			new Date(a.createdAt ?? 0).getTime() -
+			new Date(b.createdAt ?? 0).getTime(),
 	);
 };
 
@@ -255,13 +283,15 @@ const LineItemsTable = ({
 };
 
 const PdfCommentsAndAuditTrail = ({
-	entries = [],
+	comments = [],
+	auditEntries = [],
 }: {
-	entries?: CommentItem[];
+	comments?: CommentItem[];
+	auditEntries?: AuditLogEntry[];
 }) => {
-	const sortedEntries = sortWorkflowEntries(entries);
+	const timeline = buildTimeline(comments, auditEntries);
 
-	if (!sortedEntries.length) {
+	if (!timeline.length) {
 		return (
 			<p className="pdf-empty">No comments or audit messages available.</p>
 		);
@@ -269,31 +299,40 @@ const PdfCommentsAndAuditTrail = ({
 
 	return (
 		<div className="pdf-audit-list">
-			{sortedEntries.map((entry, index) => {
-				const isAuditLog = entry.entryType === "ACTIVITY_LOG";
+			{timeline.map((entry, index) => {
+				const key =
+					entry.kind === "COMMENT"
+						? entry.comment.id
+						: (entry.audit.id ?? `audit-${entry.createdAt}-${index}`);
 
 				return (
 					<div
-						key={entry.id || `${entry.entryType}-${entry.createdAt}-${index}`}
+						key={key || `${entry.kind}-${entry.createdAt}-${index}`}
 						className="pdf-audit-item"
 					>
 						<div className="pdf-audit-dot" aria-hidden="true" />
 
 						<div className="pdf-audit-content">
-							{isAuditLog ? (
-								<p className="pdf-audit-message">{getAuditMessage(entry)}</p>
+							{entry.kind === "AUDIT" ? (
+								<p className="pdf-audit-message">
+									{getAuditMessage(entry.audit, {
+										entityName: "event proposal",
+									})}
+								</p>
 							) : (
 								<>
 									<div className="pdf-audit-meta">
-										<strong>{getActorName(entry)}</strong>
+										<strong>{getActorName(entry.comment.actor)}</strong>
 
 										<span>
-											{entry.createdAt ? formatDateTime(entry.createdAt) : "--"}
+											{entry.comment.createdAt
+												? formatDateTime(entry.comment.createdAt)
+												: "--"}
 										</span>
 									</div>
 
 									<p className="pdf-comment-message">
-										{entry.message || entry.reason || "--"}
+										{entry.comment.message || "--"}
 									</p>
 								</>
 							)}
@@ -308,7 +347,8 @@ const PdfCommentsAndAuditTrail = ({
 const ActivityPlannerPdfTemplate = ({
 	epcData,
 	createdBy,
-	workflowEntries = [],
+	comments = [],
+	auditEntries = [],
 }: Props) => {
 	if (!epcData) {
 		return (
@@ -505,7 +545,10 @@ const ActivityPlannerPdfTemplate = ({
 			</PdfSection>
 
 			<PdfSection title="Comments & Audit Trail">
-				<PdfCommentsAndAuditTrail entries={workflowEntries} />
+				<PdfCommentsAndAuditTrail
+					comments={comments}
+					auditEntries={auditEntries}
+				/>
 			</PdfSection>
 		</div>
 	);

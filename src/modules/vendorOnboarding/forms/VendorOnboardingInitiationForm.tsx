@@ -97,8 +97,28 @@ const VendorOnboardingInitiationForm = ({
 				</div>
 				<div className="vendor-onboarding-form-grid">
 					<FormInput
-						name="vendorName"
+						name="vendorReferenceName"
 						label="Vendor initiated for"
+						mode={fieldMode}
+						value={values.vendorReferenceName}
+						required={!isViewMode}
+						readOnly={isViewMode}
+						disabled={isDetailLoading}
+						success={
+							!isViewMode &&
+							!errors.vendorReferenceName &&
+							Boolean(values.vendorReferenceName)
+						}
+						error={isViewMode ? undefined : errors.vendorReferenceName}
+						helperText={isViewMode ? undefined : "Enter the vendor name"}
+						autoComplete="organization"
+						onChange={(event) =>
+							handleChange("vendorReferenceName", event.target.value)
+						}
+					/>
+					{/* <FormInput
+						name="vendorName"
+						label="Vendor Name"
 						mode={fieldMode}
 						value={values.vendorName}
 						required={!isViewMode}
@@ -111,27 +131,7 @@ const VendorOnboardingInitiationForm = ({
 						helperText={isViewMode ? undefined : "Enter the vendor name"}
 						autoComplete="organization"
 						onChange={(event) => handleChange("vendorName", event.target.value)}
-					/>
-					<FormInput
-						name="referenceName"
-						label="Vendor initiated for"
-						mode={fieldMode}
-						value={values.referenceName}
-						required={!isViewMode}
-						readOnly={isViewMode}
-						disabled={isDetailLoading}
-						success={
-							!isViewMode &&
-							!errors.referenceName &&
-							Boolean(values.referenceName)
-						}
-						error={isViewMode ? undefined : errors.referenceName}
-						helperText={isViewMode ? undefined : "Enter the vendor name"}
-						autoComplete="organization"
-						onChange={(event) =>
-							handleChange("referenceName", event.target.value)
-						}
-					/>
+					/> */}
 					<FormInput
 						name="email"
 						label="Vendor Email"

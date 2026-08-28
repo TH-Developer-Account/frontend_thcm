@@ -13,12 +13,48 @@ import {
 	useResendMedicalClaimLinkMutation,
 } from "../hooks/useMedicalClaimMutations";
 import type {
+	ImportedMedicalClaimInitiationApiRow,
 	MedicalClaimInitiationErrors,
 	MedicalClaimInitiationPayload,
 	MedicalClaimInitiationValues,
 } from "../types/medicalClaimInitiation.types";
 import type { MedicalClaimDetail } from "../types/medicalClaimListing.types";
+import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
+import type {
+	BulkMedicalClaimInitiationPayload,
+	ImportedMedicalClaimInitiationRow,
+} from "../types/medicalClaimInitiation.types";
+import {
+	useBulkMedicalClaimInitiationMutation,
+	useImportMedicalClaimInitiationsMutation,
+} from "./useMedicalClaimMutations";
 
+const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
+	if (typeof error === "object" && error !== null && "response" in error) {
+		const response = error.response as {
+			data?: {
+				message?: string;
+			};
+		};
+
+		if (response.data?.message) {
+			return response.data.message;
+		}
+	}
+
+	return fallbackMessage;
+};
+
+const createImportedRowId = (
+	index: number,
+	email: string,
+	mobile: string,
+): string => `${email}-${mobile}-${index}`;
+
+type UseMedicalClaimInitiationImportOptions = {
+	onImportSuccess?: (rows: ImportedMedicalClaimInitiationRow[]) => void;
+	onInitiateSuccess?: () => void | Promise<void>;
+};
 const EMPTY_VALUES: MedicalClaimInitiationValues = {
 	employeeName: "",
 	email: "",
@@ -183,3 +219,153 @@ export const useMedicalClaimInitiation = ({
 		resendLinkMutation,
 	};
 };
+
+export function useMedicalClaimInitiationImport({
+	onImportSuccess,
+	onInitiateSuccess,
+}: UseMedicalClaimInitiationImportOptions = {}) {
+	const [isImportModalOpen, setIsImportModalOpen] = React.useState(false);
+	const [importFile, setImportFile] = React.useState<FileUploadValue | null>(
+		null,
+	);
+	const [importFileError, setImportFileError] = React.useState<string>();
+	const [initiateAllError, setInitiateAllError] = React.useState<string>();
+	const [importedRows, setImportedRows] = React.useState<
+		ImportedMedicalClaimInitiationRow[]
+	>([]);
+
+	const importMutation = useImportMedicalClaimInitiationsMutation();
+	const bulkInitiationMutation = useBulkMedicalClaimInitiationMutation();
+
+	const openImportModal = React.useCallback(() => {
+		setImportFile(null);
+		setImportFileError(undefined);
+		setIsImportModalOpen(true);
+	}, []);
+
+	const closeImportModal = React.useCallback(() => {
+		if (importMutation.isPending) return;
+
+		setIsImportModalOpen(false);
+		setImportFile(null);
+		setImportFileError(undefined);
+	}, [importMutation.isPending]);
+
+	const handleImportFileChange = React.useCallback(
+		(value: FileUploadValue | null) => {
+			setImportFile(value);
+			setImportFileError(undefined);
+		},
+		[],
+	);
+
+	const handleImportFile = React.useCallback(async () => {
+		const selectedFile = importFile?.file;
+
+		if (!selectedFile) {
+			setImportFileError("Please select an Excel file.");
+			return;
+		}
+
+		const formData = new FormData();
+		formData.append("file", selectedFile);
+
+		try {
+			setImportFileError(undefined);
+			setInitiateAllError(undefined);
+
+			const response = await importMutation.mutateAsync(formData);
+			const rows: ImportedMedicalClaimInitiationRow[] = (
+				response.data ?? []
+			).map(
+				(
+					row: ImportedMedicalClaimInitiationApiRow,
+					index: number,
+				): ImportedMedicalClaimInitiationRow => ({
+					rowId: createImportedRowId(index, row.email, row.mobile),
+					employeeName: row.employeeName,
+					grade: row.grade,
+					email: row.email,
+					mobile: row.mobile,
+				}),
+			);
+
+			if (rows.length === 0) {
+				setImportFileError(
+					"No valid employee records were found in the selected file.",
+				);
+				return;
+			}
+
+			setImportedRows(rows);
+			setIsImportModalOpen(false);
+			setImportFile(null);
+
+			onImportSuccess?.(rows);
+		} catch (error) {
+			setImportFileError(
+				getErrorMessage(
+					error,
+					"Unable to import the selected file. Please check the template and try again.",
+				),
+			);
+		}
+	}, [importFile?.file, importMutation, onImportSuccess]);
+
+	const handleInitiateAll = React.useCallback(async () => {
+		if (importedRows.length === 0) {
+			setInitiateAllError("There are no imported employees to initiate.");
+			return;
+		}
+
+		const payload: BulkMedicalClaimInitiationPayload = {
+			employees: importedRows.map(({ employeeName, grade, email, mobile }) => ({
+				employeeName,
+				grade,
+				email,
+				mobile,
+			})),
+		};
+
+		try {
+			setInitiateAllError(undefined);
+
+			await bulkInitiationMutation.mutateAsync(payload);
+
+			setImportedRows([]);
+			await onInitiateSuccess?.();
+		} catch (error) {
+			setInitiateAllError(
+				getErrorMessage(
+					error,
+					"Unable to initiate the imported medical claims. Please try again.",
+				),
+			);
+		}
+	}, [bulkInitiationMutation, importedRows, onInitiateSuccess]);
+
+	const clearImportedRows = React.useCallback(() => {
+		if (bulkInitiationMutation.isPending) return;
+
+		setImportedRows([]);
+		setInitiateAllError(undefined);
+	}, [bulkInitiationMutation.isPending]);
+
+	return {
+		isImportModalOpen,
+		importFile,
+		importFileError,
+		importedRows,
+		initiateAllError,
+
+		isImporting: importMutation.isPending,
+		isInitiatingAll: bulkInitiationMutation.isPending,
+
+		openImportModal,
+		closeImportModal,
+		handleImportFileChange,
+		handleImportFile,
+		handleInitiateAll,
+		clearImportedRows,
+	};
+}

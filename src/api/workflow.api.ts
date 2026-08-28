@@ -88,40 +88,40 @@ export const workflowApi = {
 		return { data, message };
 	},
 
-	getComments: async (epcId: string) => {
-		const {
-			data: { data },
-		} = await ServerAxios.get(`/comment/EVENT_PROPOSAL/${epcId}/activity`);
+	// getComments: async (epcId: string) => {
+	// 	const {
+	// 		data: { data },
+	// 	} = await ServerAxios.get(`/comment/EVENT_PROPOSAL/${epcId}/activity`);
 
-		return data;
-	},
+	// 	return data;
+	// },
 
-	createApprovalComment: async (payload: {
-		approvalId: string;
-		message: string;
-		to?: string[];
-		cc?: string[];
-	}) => {
-		const {
-			data: { data, message },
-		} = await ServerAxios.post("/comment", payload);
+	// createApprovalComment: async (payload: {
+	// 	approvalId: string;
+	// 	message: string;
+	// 	to?: string[];
+	// 	cc?: string[];
+	// }) => {
+	// 	const {
+	// 		data: { data, message },
+	// 	} = await ServerAxios.post("/comment", payload);
 
-		return { data, message };
-	},
+	// 	return { data, message };
+	// },
 
-	createCreatorComment: async (payload: {
-		epcId: string;
-		message: string;
-		to?: string[];
-		cc?: string[];
-	}) => {
-		const {
-			data: { data, message },
-		} = await ServerAxios.post(
-			`/comment/EVENT_PROPOSAL/${payload.epcId}/creator-comment`,
-			payload,
-		);
+	// createCreatorComment: async (payload: {
+	// 	epcId: string;
+	// 	message: string;
+	// 	to?: string[];
+	// 	cc?: string[];
+	// }) => {
+	// 	const {
+	// 		data: { data, message },
+	// 	} = await ServerAxios.post(
+	// 		`/comment/EVENT_PROPOSAL/${payload.epcId}/creator-comment`,
+	// 		payload,
+	// 	);
 
-		return { data, message };
-	},
+	// 	return { data, message };
+	// },
 };

@@ -107,6 +107,9 @@ export interface UseReimbursementClaimFormArgs {
 	onLineItemApprove?: (
 		payload: ApprovedBillAmountPayload,
 	) => void | Promise<void>;
+	onLineItemRemarksSave?: (
+		payload: ApprovedBillAmountPayload,
+	) => void | Promise<void>;
 }
 
 export function deriveClaimStatusLabel(stages: ApprovalStage[]): string {
@@ -191,6 +194,7 @@ export function useReimbursementClaimForm({
 	onClarifyStage,
 	onLineItemApprove,
 	referenceNumber,
+	onLineItemRemarksSave,
 }: UseReimbursementClaimFormArgs) {
 	const { showToast } = useToast();
 	const [values, setValues] = useState<ReimbursementClaimFormValues>({
@@ -215,7 +219,7 @@ export function useReimbursementClaimForm({
 	const [savingClaimId, setSavingClaimId] = useState<string | null>(null);
 	const [deletingClaimId, setDeletingClaimId] = useState<string | null>(null);
 	const [approvingClaimId, setApprovingClaimId] = useState<string | null>(null);
-
+	const [savingRemarksId, setSavingRemarksId] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isSavingDraft, setIsSavingDraft] = useState(false);
 	const [mutationError, setMutationError] = useState<string | null>(null);
@@ -474,16 +478,33 @@ export function useReimbursementClaimForm({
 				handleToggleLineItemStatus(claim.id);
 				return;
 			}
+
 			setApprovingClaimId(claim.id);
+
 			try {
 				await onLineItemApprove(claim);
-				handleToggleLineItemStatus(claim.id);
+
+				setSavedClaims((current) =>
+					current.map((item) =>
+						item.id === claim.id
+							? {
+									...item,
+									approvalStatus: "APPROVED",
+								}
+							: item,
+					),
+				);
 			} catch (error) {
 				const message =
 					error instanceof Error
 						? error.message
 						: "Unable to approve this line item. Please try again.";
-				showToast({ type: "error", title: "Error", description: message });
+
+				showToast({
+					type: "error",
+					title: "Error",
+					description: message,
+				});
 			} finally {
 				setApprovingClaimId(null);
 			}
@@ -499,8 +520,76 @@ export function useReimbursementClaimForm({
 					claim.id === id ? { ...claim, remarks: value } : claim,
 				),
 			);
+			clearClaimError(`remarks-${id}`);
 		},
-		[canReviewLineItems],
+		[canReviewLineItems, clearClaimError],
+	);
+
+	const handleSaveRemarks = useCallback(
+		async (claimId: string) => {
+			if (!canReviewLineItems || !onLineItemRemarksSave) return;
+
+			const claim = savedClaims.find((item) => item.id === claimId);
+
+			if (!claim || claim.approvalStatus === "APPROVED") return;
+
+			const trimmedRemarks = claim.remarks?.trim() ?? "";
+
+			if (!trimmedRemarks) {
+				setClaimErrors((current) => ({
+					...current,
+					[`remarks-${claimId}`]: "Remarks are required.",
+				}));
+				return;
+			}
+
+			clearClaimError(`remarks-${claimId}`);
+			setSavingRemarksId(claimId);
+
+			try {
+				await onLineItemRemarksSave({
+					...claim,
+					remarks: trimmedRemarks,
+				});
+
+				setSavedClaims((current) =>
+					current.map((item) =>
+						item.id === claimId
+							? {
+									...item,
+									remarks: trimmedRemarks,
+								}
+							: item,
+					),
+				);
+
+				showToast({
+					type: "success",
+					title: "Remarks saved",
+					description: "The bill remarks have been updated.",
+				});
+			} catch (error) {
+				const message =
+					error instanceof Error
+						? error.message
+						: "Unable to save remarks. Please try again.";
+
+				showToast({
+					type: "error",
+					title: "Unable to save remarks",
+					description: message,
+				});
+			} finally {
+				setSavingRemarksId(null);
+			}
+		},
+		[
+			canReviewLineItems,
+			clearClaimError,
+			onLineItemRemarksSave,
+			savedClaims,
+			showToast,
+		],
 	);
 
 	const buildSubmission = useCallback(
@@ -721,6 +810,10 @@ export function useReimbursementClaimForm({
 		actionText,
 		commentsSection,
 		workflowSection,
+		handleRemarksChange,
+		handleSaveRemarks,
+		savingRemarksId,
+		hasLineItemRemarksSaveAction: Boolean(onLineItemRemarksSave),
 		hasSubmitAction: Boolean(onSubmit),
 		hasSaveDraftAction: Boolean(onSaveDraft),
 		hasApproveStageAction: Boolean(onApproveStage),

@@ -215,7 +215,10 @@ const VendorCreationSummaryForm = ({
 			label: formContext?.isDownloadingPdf ? "Downloading…" : "Download PDF",
 			Icon: FileDown,
 			onClick: () => void formContext?.handleDownloadPdf?.(),
-			disabled: !formContext?.pdfUrl || Boolean(formContext?.isDownloadingPdf),
+			disabled:
+				!onboardingId ||
+				!formContext?.handleDownloadPdf ||
+				Boolean(formContext?.isDownloadingPdf),
 		},
 		{
 			id: "export-excel",
@@ -310,6 +313,30 @@ const VendorCreationSummaryForm = ({
 				/>
 			),
 		},
+		{
+			id: "approval-workflow",
+			title: "Approval Workflow",
+			// subtitle: "Review the assigned approval stages and their current status.",
+			Icon: ClipboardClock,
+			defaultExpanded: true,
+			children:
+				workflowSection ??
+				(resolvedWorkflowStages.length > 0 ? (
+					<div className="px-4">
+						{" "}
+						<ApprovalWorkflowTableContent
+							stages={resolvedWorkflowStages}
+							showEmptyState={false}
+						/>
+					</div>
+				) : (
+					<CardEmpty
+						title="No approval workflow assigned"
+						description="Select an approval workflow before submitting the request."
+						Icon={ClipboardClock}
+					/>
+				)),
+		},
 		...(commentsSection
 			? [
 					{
@@ -322,27 +349,6 @@ const VendorCreationSummaryForm = ({
 					} satisfies CardSection,
 				]
 			: []),
-		{
-			id: "approval-workflow",
-			title: "Approval Workflow",
-			// subtitle: "Review the assigned approval stages and their current status.",
-			Icon: ClipboardClock,
-			defaultExpanded: true,
-			children:
-				workflowSection ??
-				(resolvedWorkflowStages.length > 0 ? (
-					<ApprovalWorkflowTableContent
-						stages={resolvedWorkflowStages}
-						showEmptyState={false}
-					/>
-				) : (
-					<CardEmpty
-						title="No approval workflow assigned"
-						description="Select an approval workflow before submitting the request."
-						Icon={ClipboardClock}
-					/>
-				)),
-		},
 	];
 
 	const footer = showButtons && (
@@ -430,8 +436,8 @@ const VendorCreationSummaryForm = ({
 							{formContext?.referenceNumber && (
 								<span>/ {formContext?.referenceNumber} /</span>
 							)}
-							{formContext?.referenceName ? (
-								<span>/ {formContext?.referenceName} /</span>
+							{formContext?.vendorReferenceName ? (
+								<span> {formContext?.vendorReferenceName} /</span>
 							) : (
 								"Reference Name /"
 							)}

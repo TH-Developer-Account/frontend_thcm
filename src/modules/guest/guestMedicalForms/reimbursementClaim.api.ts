@@ -120,7 +120,7 @@ export const guestReimburseClaimApi = {
 
 	createGuest: async (formData: FormData): Promise<MedicalClaimDetail> => {
 		const response = await GuestAxios.post<ApiDataResponse<MedicalClaimDetail>>(
-			GUEST_URL,
+			`${GUEST_URL}/submit`,
 			formData,
 		);
 

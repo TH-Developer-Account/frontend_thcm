@@ -17,9 +17,10 @@ import {
 	getFileNameFromUrl,
 	getMimeTypeFromFileName,
 } from "../../../components/ui/FileUpload/fileUpload.helpers";
-
-import { getAuditMessage } from "../../../components/ui/comments/comments.helper";
-import type { CommentItem } from "../../../components/ui/comments";
+import {
+	getAuditMessage,
+	type AuditLogEntry,
+} from "../../../components/ui/audit";
 
 const toNumber = (value: number | string | null | undefined): number => {
 	const parsed = Number(value);
@@ -67,35 +68,11 @@ export const toMedicalClaimLineItems = (
 		claim.claimCover === "SPOUSE" ? "SPOUSE" : "SELF";
 
 	return (claim.bills ?? []).map((bill): ClaimHeadRow => {
-		/**
-		 * Backend may provide either:
-		 *
-		 * - fileName
-		 * - s3Key
-		 * - fileUrl
-		 *
-		 * We always derive a stable display filename first.
-		 */
 		const fileName =
 			bill.fileName ?? getFileNameFromUrl(bill.s3Key || bill.fileUrl || "");
 
-		/**
-		 * Derive MIME type from the filename.
-		 *
-		 * We don't rely on the backend to provide mimeType.
-		 */
 		const mimeType = getMimeTypeFromFileName(fileName);
 
-		/**
-		 * Remote attachment used by the UI.
-		 *
-		 * This is the important part:
-		 *
-		 * attachment.url → actual preview URL
-		 * attachment.name → displayed filename
-		 *
-		 * The S3 key should NOT be assigned to `file`.
-		 */
 		const attachment = bill.fileUrl
 			? createRemoteFileUploadValue({
 					id: bill.id,
@@ -134,18 +111,15 @@ export const toMedicalClaimLineItems = (
 
 			attachment,
 
-			approvedClaimAmount:
-				bill.approvedClaimAmount != null
-					? String(bill.approvedClaimAmount)
-					: null,
+			approvedClaimAmount: bill.approvedClaimAmount ?? "",
 
-			approvalStatus: bill.approvedClaimAmount != null ? "APPROVED" : "PENDING",
 			remarks: bill.remarks ?? null,
+			approvalStatus: bill.approved ? "APPROVED" : "PENDING",
 		};
 	});
 };
 
-export const getMedicalAuditMessage = (entry: CommentItem): string => {
+export const getMedicalAuditMessage = (entry: AuditLogEntry): string => {
 	return getAuditMessage(entry, {
 		entityName: "medical claim",
 

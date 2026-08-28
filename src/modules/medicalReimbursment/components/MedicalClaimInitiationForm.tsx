@@ -1,16 +1,32 @@
-import { ArrowLeft, HeartPulse, RefreshCcw, Send, X } from "lucide-react";
+import {
+	ArrowLeft,
+	Download,
+	FileUp,
+	HeartPulse,
+	RefreshCcw,
+	Save,
+	Send,
+	X,
+} from "lucide-react";
 
 import { Badge } from "../../../components/common/Badge";
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
 import FormInput from "../../../components/forms/FormInput";
 import FormHeader from "../../../components/ui/FormHeader";
-import { useMedicalClaimInitiation } from "../hooks/useMedicalClaimInitiation";
+import {
+	useMedicalClaimInitiation,
+	useMedicalClaimInitiationImport,
+} from "../hooks/useMedicalClaimInitiation";
 import type {
 	MedicalClaimInitiationFormMode,
 	MedicalClaimInitiationValues,
 } from "../types/medicalClaimInitiation.types";
-
+import { Modal } from "../../../components/common/Modal";
+import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
+import { MedicalClaimInitiationExcelPreview } from "../components/MedicalClaimInitiationExcelPreview";
+import { downloadMedicalClaimInitiationTemplate } from "../helpers/generateMedicalClaimInitiationTemplate";
+import { ImportedMedicalClaimInitiationTable } from "../components/ImportedMedicalClaimInitiationTable";
 type MedicalClaimInitiationFormProps = {
 	claimId?: string;
 	mode?: MedicalClaimInitiationFormMode;
@@ -50,14 +66,72 @@ const MedicalClaimInitiationForm = ({
 		shouldFetchDetails: isViewMode,
 		onSubmitSuccess: onSuccess,
 	});
+	const {
+		isImportModalOpen,
+		importFile,
+		importFileError,
+		importedRows,
+		initiateAllError,
+		isImporting,
+		isInitiatingAll,
+		openImportModal,
+		closeImportModal,
+		handleImportFileChange,
+		handleImportFile,
+		handleInitiateAll,
+		clearImportedRows,
+	} = useMedicalClaimInitiationImport({
+		onImportSuccess: (rows) => {
+			console.log("Imported employees:", rows);
+		},
 
+		onInitiateSuccess: async () => {
+			await onSuccess?.();
+		},
+	});
 	const canResendLink =
 		isViewMode && values.status === "AWAITING_EX_EMPLOYEE" && Boolean(claimId);
 
 	const handleCancel = () => (onCancel ? onCancel() : onBack?.());
 
 	return (
-		<Card>
+		<Card
+			title={
+				<FormHeader
+					title={
+						isViewMode
+							? "Medical Claim Initiation Details"
+							: "Initiate Medical Claim"
+					}
+					Icon={HeartPulse}
+				/>
+			}
+			actions={
+				!isViewMode ? (
+					<>
+						<Button
+							type="button"
+							onClick={downloadMedicalClaimInitiationTemplate}
+							size="sm"
+							appearance="standard"
+							variant="outline"
+							Icon={Download}
+							text="Download Template"
+						/>
+
+						<Button
+							type="button"
+							onClick={openImportModal}
+							size="sm"
+							appearance="standard"
+							variant="brand"
+							Icon={FileUp}
+							text="Import Excel"
+						/>
+					</>
+				) : undefined
+			}
+		>
 			<form
 				className="medical-claim-initiation-form"
 				noValidate
@@ -67,14 +141,6 @@ const MedicalClaimInitiationForm = ({
 				}}
 			>
 				<div className="flex items-center justify-between gap-3">
-					<FormHeader
-						title={
-							isViewMode
-								? "Medical Claim Initiation Details"
-								: "Initiate Medical Claim"
-						}
-						Icon={HeartPulse}
-					/>
 					{values.status ? <Badge status={values.status} /> : null}
 				</div>
 
@@ -205,6 +271,85 @@ const MedicalClaimInitiationForm = ({
 					</div>
 				</div>
 			</form>
+			{!isViewMode ? (
+				<ImportedMedicalClaimInitiationTable
+					rows={importedRows}
+					error={initiateAllError}
+					isInitiating={isInitiatingAll}
+					onClear={clearImportedRows}
+					onInitiateAll={() => void handleInitiateAll()}
+				/>
+			) : null}
+			<Modal
+				open={isImportModalOpen}
+				title="Import Medical Claim Initiations"
+				size="xl"
+				onClose={closeImportModal}
+				footer_actions={
+					<>
+						<Button
+							type="button"
+							text="Cancel"
+							Icon={X}
+							appearance="standard"
+							variant="outline"
+							size="sm"
+							onClick={closeImportModal}
+							disabled={isImporting}
+						/>
+
+						<Button
+							type="button"
+							text={isImporting ? "Importing..." : "Import"}
+							Icon={Save}
+							appearance="standard"
+							variant="brand"
+							size="sm"
+							onClick={() => void handleImportFile()}
+							disabled={!importFile?.file || isImporting}
+						/>
+					</>
+				}
+			>
+				<div className="flex flex-col gap-4 p-5">
+					<div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+						<div className="mb-3 flex items-center justify-between gap-3">
+							<div>
+								<p className="text-xs font-medium uppercase tracking-wide text-zinc-600">
+									Expected format
+								</p>
+
+								<p className="mt-1 text-xs text-zinc-500">
+									Do not rename or remove any template columns.
+								</p>
+							</div>
+
+							<Button
+								type="button"
+								onClick={downloadMedicalClaimInitiationTemplate}
+								size="sm"
+								appearance="standard"
+								variant="outline"
+								Icon={Download}
+								text="Download Template"
+							/>
+						</div>
+
+						<MedicalClaimInitiationExcelPreview />
+					</div>
+
+					<FileUploadField
+						value={importFile}
+						onChange={handleImportFileChange}
+						kind="spreadsheet"
+						label="Upload Excel File"
+						description="Supported formats: XLSX, XLS and CSV"
+						required
+						error={importFileError}
+						disabled={isImporting}
+					/>
+				</div>
+			</Modal>
 		</Card>
 	);
 };

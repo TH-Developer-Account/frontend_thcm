@@ -58,8 +58,8 @@ const ReimbursementPage = ({ mode = "edit" }: ReimbursementPageProps) => {
 				handleExport={claimView.handleExport}
 				isPreparingPdf={claimView.isPreparingPdf}
 				isDownloadingPdf={claimView.isDownloadingPdf}
-				handleViewPdf={claimView.handleViewPdf}
 				handleDownloadPdf={claimView.handleDownloadPdf}
+				handleViewPdf={claimView.handleViewPdf}
 				referenceNumber={claimView.referenceNumber}
 				mode={mode}
 				canEdit={claimView.canEdit}
@@ -76,6 +76,7 @@ const ReimbursementPage = ({ mode = "edit" }: ReimbursementPageProps) => {
 				onLineItemApprove={
 					claimView.canApproveLineItems ? claimView.approveLineItem : undefined
 				}
+				onLineItemRemarksSave={claimView.saveLineItemRemarks}
 				onSubmit={claimView.canEdit ? claimView.saveClaim : undefined}
 				actionText="Save Changes"
 				commentsSection={

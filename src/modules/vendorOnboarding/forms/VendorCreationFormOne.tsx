@@ -202,18 +202,18 @@ const VendorCreationFormOne = ({
 					<div className="vendor-onboarding-form-grid-child">
 						{/* <FormInput
 							mode={fieldMode}
-							name="referenceName"
+							name="vendorReferenceName"
 							label="Vendor Reference Name"
-							value={values.referenceName ?? ""}
-							error={errors.referenceName}
+							value={values.vendorReferenceName ?? ""}
+							error={errors.vendorReferenceName}
 							success={
 								fieldMode === "edit" &&
-								!errors.referenceName &&
-								Boolean(values.referenceName)
+								!errors.vendorReferenceName &&
+								Boolean(values.vendorReferenceName)
 							}
 							helperText="Enter vendor name in capital letters."
 							onChange={(event) =>
-								resolvedOnChange?.("referenceName", event.target.value)
+								resolvedOnChange?.("vendorReferenceName", event.target.value)
 							}
 						/> */}
 						<FormInput
@@ -352,131 +352,135 @@ const VendorCreationFormOne = ({
 					</div>
 				</div>
 
-				<div className="vendor-onboarding-form-grid">
-					<FormInput
-						mode={fieldMode}
-						name="bankName"
-						label="Bank"
-						value={values.bankName ?? ""}
-						success={
-							fieldMode === "edit" &&
-							!errors.bankName &&
-							Boolean(values.bankName)
-						}
-						required
-						error={errors.bankName}
-						helperText="Bank name."
-						onChange={(event) =>
-							resolvedOnChange?.("bankName", event.target.value)
-						}
-					/>
+				<div className="vendor-onboarding-form-grid-parent">
+					<div className="vendor-onboarding-form-grid-child">
+						<FormInput
+							mode={fieldMode}
+							name="bankName"
+							label="Bank"
+							value={values.bankName ?? ""}
+							success={
+								fieldMode === "edit" &&
+								!errors.bankName &&
+								Boolean(values.bankName)
+							}
+							required
+							error={errors.bankName}
+							helperText="Bank name."
+							onChange={(event) =>
+								resolvedOnChange?.("bankName", event.target.value)
+							}
+						/>
 
-					<FormInput
-						mode={fieldMode}
-						name="bankBranch"
-						label="Branch"
-						value={values.bankBranch ?? ""}
-						required
-						success={
-							fieldMode === "edit" &&
-							!errors.bankBranch &&
-							Boolean(values.bankBranch)
-						}
-						error={errors.bankBranch}
-						helperText="Bank branch."
-						onChange={(event) =>
-							resolvedOnChange?.("bankBranch", event.target.value)
-						}
-					/>
+						<FormInput
+							mode={fieldMode}
+							name="bankBranch"
+							label="Branch"
+							value={values.bankBranch ?? ""}
+							required
+							success={
+								fieldMode === "edit" &&
+								!errors.bankBranch &&
+								Boolean(values.bankBranch)
+							}
+							error={errors.bankBranch}
+							helperText="Bank branch."
+							onChange={(event) =>
+								resolvedOnChange?.("bankBranch", event.target.value)
+							}
+						/>
 
-					<FormInput
-						mode={fieldMode}
-						name="ifscCode"
-						label="IFSC Code"
-						value={values.ifscCode ?? ""}
-						required
-						success={
-							fieldMode === "edit" &&
-							!errors.ifscCode &&
-							Boolean(values.ifscCode)
-						}
-						error={errors.ifscCode}
-						helperText="Bank IFSC code."
-						onChange={(event) =>
-							resolvedOnChange?.("ifscCode", event.target.value)
-						}
-					/>
+						<FormInput
+							mode={fieldMode}
+							name="ifscCode"
+							label="IFSC Code"
+							value={values.ifscCode ?? ""}
+							required
+							success={
+								fieldMode === "edit" &&
+								!errors.ifscCode &&
+								Boolean(values.ifscCode)
+							}
+							error={errors.ifscCode}
+							helperText="Bank IFSC code."
+							onChange={(event) =>
+								resolvedOnChange?.("ifscCode", event.target.value)
+							}
+						/>
 
-					<FormInput
-						mode={fieldMode}
-						name="bankAddress"
-						label="Address"
-						value={values.bankAddress ?? ""}
-						error={errors.bankAddress}
-						success={
-							fieldMode === "edit" &&
-							!errors.bankAddress &&
-							Boolean(values.bankAddress)
-						}
-						helperText="Bank branch address."
-						onChange={(event) =>
-							resolvedOnChange?.("bankAddress", event.target.value)
-						}
-					/>
-					<FormInput
-						mode={fieldMode}
-						name="accountNumber"
-						label="A/C No."
-						type="password"
-						value={values.accountNumber ?? ""}
-						readOnlyValue={maskAccountNumber(values.accountNumber)}
-						required
-						inputMode="text"
-						error={errors.accountNumber}
-						success={
-							!isReadOnly &&
-							!errors.accountNumber &&
-							Boolean(values.accountNumber)
-						}
-						helperText="Vendor bank account number."
-						onChange={(event) => {
-							const value = sanitizeAccountNumber(event.target.value);
-							resolvedOnChange?.("accountNumber", value);
-						}}
-						onPaste={blockClipboardEvent}
-						onCopy={blockClipboardEvent}
-						onCut={blockClipboardEvent}
-						autoComplete="off"
-					/>
+						<FormInput
+							mode={fieldMode}
+							name="accountNumber"
+							label="A/C No."
+							type="password"
+							value={values.accountNumber ?? ""}
+							readOnlyValue={maskAccountNumber(values.accountNumber)}
+							required
+							inputMode="text"
+							error={errors.accountNumber}
+							success={
+								!isReadOnly &&
+								!errors.accountNumber &&
+								Boolean(values.accountNumber)
+							}
+							helperText="Vendor bank account number."
+							onChange={(event) => {
+								const value = sanitizeAccountNumber(event.target.value);
+								resolvedOnChange?.("accountNumber", value);
+							}}
+							onPaste={blockClipboardEvent}
+							onCopy={blockClipboardEvent}
+							onCut={blockClipboardEvent}
+							autoComplete="off"
+						/>
 
-					<FormInput
-						mode={fieldMode}
-						name="confirmAccountNumber"
-						label="Confirm Account Number"
-						type="password"
-						value={values.confirmAccountNumber ?? ""}
-						readOnlyValue={maskAccountNumber(values.confirmAccountNumber)}
-						required
-						inputMode="text"
-						error={errors.confirmAccountNumber}
-						success={
-							!isReadOnly &&
-							!errors.confirmAccountNumber &&
-							Boolean(values.confirmAccountNumber) &&
-							values.confirmAccountNumber === values.accountNumber
-						}
-						helperText="Re-enter the bank account number."
-						onChange={(event) => {
-							const value = sanitizeAccountNumber(event.target.value);
-							resolvedOnChange?.("confirmAccountNumber", value);
-						}}
-						onPaste={blockClipboardEvent}
-						onCopy={blockClipboardEvent}
-						onCut={blockClipboardEvent}
-						autoComplete="off"
-					/>
+						<FormInput
+							mode={fieldMode}
+							name="confirmAccountNumber"
+							label="Confirm Account Number"
+							type="password"
+							value={values.confirmAccountNumber ?? ""}
+							readOnlyValue={maskAccountNumber(values.confirmAccountNumber)}
+							required
+							inputMode="text"
+							error={errors.confirmAccountNumber}
+							success={
+								!isReadOnly &&
+								!errors.confirmAccountNumber &&
+								Boolean(values.confirmAccountNumber) &&
+								values.confirmAccountNumber === values.accountNumber
+							}
+							helperText="Re-enter the bank account number."
+							onChange={(event) => {
+								const value = sanitizeAccountNumber(event.target.value);
+								resolvedOnChange?.("confirmAccountNumber", value);
+							}}
+							onPaste={blockClipboardEvent}
+							onCopy={blockClipboardEvent}
+							onCut={blockClipboardEvent}
+							autoComplete="off"
+						/>
+					</div>
+					<div>
+						<TextareaInput
+							mode={fieldMode}
+							name="bankAddress"
+							label="Address"
+							value={values.bankAddress ?? ""}
+							error={errors.bankAddress}
+							success={
+								fieldMode === "edit" &&
+								!errors.bankAddress &&
+								Boolean(values.bankAddress)
+							}
+							rows={4}
+							helperText="Bank branch address."
+							onChange={(event) =>
+								resolvedOnChange?.("bankAddress", event.target.value)
+							}
+						/>
+					</div>
 				</div>
-
 				<div className="vendor-onboarding-form-grid">
 					<FormInput
 						mode={fieldMode}

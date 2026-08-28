@@ -21,7 +21,7 @@ export type VendorOnboardingInitiationErrors = Partial<
 
 const initialFormValues: VendorOnboardingInitiationPayload = {
 	vendorName: "",
-	referenceName: "",
+	vendorReferenceName: "",
 	email: "",
 	mobile: "",
 	status: "",
@@ -38,7 +38,7 @@ const mapInitiationDetailsToForm = (
 	response: VendorOnboardingInitiationPayload | null | undefined,
 ): VendorOnboardingInitiationPayload => ({
 	vendorName: response?.vendorName ?? "",
-	referenceName: response?.referenceName ?? "",
+	vendorReferenceName: response?.vendorReferenceName ?? "",
 	email: response?.email ?? "",
 	mobile: response?.mobile ?? "",
 	status: response?.status ?? "Pending",

@@ -714,7 +714,7 @@ export function useVendorCreationForm({
 
 	const status = detailQuery.data?.status;
 	const referenceNumber = detailQuery.data?.referenceNumber;
-	const referenceName = detailQuery.data?.partOne?.referenceName;
+	const vendorReferenceName = detailQuery.data?.partOne?.vendorReferenceName;
 	const activeWorkflow = detailQuery.data?.activeWorkflow ?? null;
 	const activeWorkflowId = activeWorkflow?.id ?? null;
 	const createdById = getCreatedById(detailQuery.data?.initiatedById);
@@ -1565,37 +1565,22 @@ export function useVendorCreationForm({
 
 			setPdfUrl(url);
 
-			const response = await fetch(url);
-
-			if (!response.ok) {
-				throw new Error("Failed to download PDF.");
-			}
-
-			const pdfBlob = await response.blob();
-			const blobUrl = window.URL.createObjectURL(
-				new Blob([pdfBlob], { type: "application/pdf" }),
-			);
-
 			const link = document.createElement("a");
 
-			link.href = blobUrl;
+			link.href = url;
 			link.download = `vendor-details-${
 				referenceNumber?.trim() || vendorRequestId
 			}.pdf`;
+			link.rel = "noopener noreferrer";
 
 			document.body.appendChild(link);
 			link.click();
 			link.remove();
-
-			window.URL.revokeObjectURL(blobUrl);
-		} catch (error) {
+		} catch {
 			showToast({
 				type: "error",
 				title: "PDF download failed",
-				description: getErrorMessage(
-					error,
-					"Unable to download the vendor details PDF.",
-				),
+				description: "Unable to download the vendor details PDF.",
 			});
 		} finally {
 			setIsDownloadingPdf(false);
@@ -1651,7 +1636,7 @@ export function useVendorCreationForm({
 		user,
 		formStatus: status,
 		referenceNumber,
-		referenceName,
+		vendorReferenceName,
 
 		canEditFormOne: canEditMainForm,
 		canEditFormTwo: canEditMainForm,

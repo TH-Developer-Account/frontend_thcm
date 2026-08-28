@@ -1,8 +1,8 @@
-import type {
-	CommentItem,
-	MentionableUserInput,
-} from "../../../components/ui/comments";
-import { getAuditMessage } from "../../../components/ui/comments/comments.helper";
+import {
+	getAuditMessage,
+	type AuditLogEntry,
+} from "../../../components/ui/audit";
+import type { MentionableUserInput } from "../../../components/ui/comments";
 
 export type VendorCommentApprovalUser = MentionableUserInput;
 
@@ -21,7 +21,7 @@ export type VendorCommentWorkflowStage = {
 	approvals?: readonly VendorCommentApproval[] | null;
 };
 
-export const getVendorAuditMessage = (entry: CommentItem): string => {
+export const getVendorAuditMessage = (entry: AuditLogEntry): string => {
 	return getAuditMessage(entry, {
 		entityName: "vendor onboarding request",
 

@@ -73,6 +73,8 @@ export const ClaimHeadEntryTable = () => {
 		handleToggleLineItemStatus: onToggleLineItemStatus,
 		handleApproveLineItem,
 		handleRemarksChange: onRemarksChange,
+		handleSaveRemarks,
+		savingRemarksId,
 	} = useReimbursementClaimFormContext();
 
 	const columns = useMemo<TableColumnDefinition<ClaimHeadRow>[]>(() => {
@@ -268,29 +270,49 @@ export const ClaimHeadEntryTable = () => {
 
 		tableColumns.push({
 			id: "remarks",
-
 			header: "Remarks",
 			widthUnits: 2,
 			enableSorting: false,
-
 			cell: ({ row }) => {
 				const claim = row.original;
-
 				const isApproved = claim.approvalStatus === "APPROVED";
-
 				const isApproving = approvingId === claim.id;
+				const isSavingRemarks = savingRemarksId === claim.id;
 
 				const disabled =
-					loading || isApproving || !canApproveLineItems || isApproved;
+					loading ||
+					isApproving ||
+					!canApproveLineItems ||
+					isApproved ||
+					isSavingRemarks;
+
+				const hasRemarks = Boolean(claim.remarks?.trim());
 
 				return (
-					<FormInput
-						placeholder="Remarks (optional)"
-						value={claim.remarks ?? ""}
-						disabled={disabled}
-						onChange={(event) => onRemarksChange(claim.id, event.target.value)}
-						aria-label={`Remarks for bill ${claim.billNumber}`}
-					/>
+					<div className="flex min-w-56 items-start gap-2">
+						<div className="min-w-0 flex-1">
+							<FormInput
+								placeholder="Enter remarks"
+								value={claim.remarks ?? ""}
+								disabled={disabled}
+								onChange={(event) =>
+									onRemarksChange(claim.id, event.target.value)
+								}
+								error={errors[`remarks-${claim.id}`]}
+								aria-label={`Remarks for bill ${claim.billNumber}`}
+							/>
+						</div>
+
+						<Button
+							type="button"
+							appearance="icon"
+							Icon={Save}
+							disabled={disabled || !hasRemarks}
+							loading={isSavingRemarks}
+							onClick={() => void handleSaveRemarks(claim.id)}
+							title="Save remarks"
+						/>
+					</div>
 				);
 			},
 		});
@@ -351,6 +373,8 @@ export const ClaimHeadEntryTable = () => {
 		handleApproveLineItem,
 		onToggleLineItemStatus,
 		onRemarksChange,
+		handleSaveRemarks,
+		savingRemarksId,
 	]);
 
 	const simpleColumns = useMemo<SimpleTableColumn<ClaimHeadRow>[]>(

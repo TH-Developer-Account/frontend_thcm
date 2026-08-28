@@ -104,7 +104,7 @@ export default function MedicalClaimListingTable({
 					/>
 					<Button
 						type="button"
-						text={isExporting ? "Exporting..." : "Export"}
+						text={isExporting ? "Preparing export..." : "Export"}
 						Icon={FileDown}
 						iconPosition="left"
 						iconSize={16}
@@ -112,6 +112,7 @@ export default function MedicalClaimListingTable({
 						variant="outline"
 						size="sm"
 						onClick={onExport}
+						disabled={isExporting || rows.length === 0}
 					/>
 				</div>
 			}

@@ -9,6 +9,8 @@ import PageSectionLayout from "../../../layout/PageSectionLayout";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { medicalClaimApi } from "../api/medicalClaim.api";
 import { useToast } from "../../../context/Auth/AuthContext";
+import { getApiErrorMessage } from "../../../utils/apiError.helper";
+import { waitForMedicalClaimExport } from "../helpers/reimbursementClaimForm.helper";
 
 const MedicalClaimListingPage = () => {
 	const { showToast } = useToast();
@@ -36,33 +38,56 @@ const MedicalClaimListingPage = () => {
 	);
 	const handleExport = useCallback(async () => {
 		setIsExporting(true);
+
+		let blobUrl: string | null = null;
+		let downloadLink: HTMLAnchorElement | null = null;
+
 		try {
-			const blob = await medicalClaimApi.exportListing({
+			const queuedExport = await medicalClaimApi.enqueueListingExport({
 				tab,
-				search: search || undefined,
-				pageIndex: 0,
-				pageSize, // or a dedicated "export all matching filter" param if your backend supports it
-				// status: status !== "all" ? status : undefined, // uncomment once backend supports status filtering
+				search: search.trim() || undefined,
+				format: "xlsx",
 			});
 
-			const blobUrl = window.URL.createObjectURL(blob);
-			const link = document.createElement("a");
-			link.href = blobUrl;
-			link.download = `mediClaim-${tab}-${new Date().toISOString().slice(0, 10)}.xlsx`;
-			document.body.appendChild(link);
-			link.click();
-			link.remove();
-			window.URL.revokeObjectURL(blobUrl);
+			const downloadUrl = await waitForMedicalClaimExport(queuedExport.jobId);
+
+			const blob = await medicalClaimApi.downloadExportFile(downloadUrl);
+
+			blobUrl = window.URL.createObjectURL(blob);
+
+			downloadLink = document.createElement("a");
+			downloadLink.href = blobUrl;
+			downloadLink.download = `medical-claims-${tab}-${new Date()
+				.toISOString()
+				.slice(0, 10)}.xlsx`;
+
+			document.body.appendChild(downloadLink);
+			downloadLink.click();
+
+			showToast({
+				type: "success",
+				title: "Export completed",
+				description: "Medical claim records were exported successfully.",
+			});
 		} catch (error) {
 			showToast({
 				type: "error",
 				title: "Export failed",
-				description: "Failed to export medi-claim records.",
+				description: getApiErrorMessage(
+					error,
+					"Failed to export medical claim records.",
+				),
 			});
 		} finally {
+			downloadLink?.remove();
+
+			if (blobUrl) {
+				window.URL.revokeObjectURL(blobUrl);
+			}
+
 			setIsExporting(false);
 		}
-	}, [tab, search, pageSize, showToast]);
+	}, [search, showToast, tab]);
 
 	const handleViewRow = useCallback(
 		(row: MedicalClaimListingRow) => {

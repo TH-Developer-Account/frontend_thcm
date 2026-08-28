@@ -5,13 +5,13 @@ import {
 	type QueryClient,
 } from "@tanstack/react-query";
 
-import {
-	medicalClaimApi,
-	type ExportListingParams,
-} from "../api/medicalClaim.api";
-
+import { medicalClaimApi } from "../api/medicalClaim.api";
 import { publicReimburseClaimApi } from "../../guest/guestMedicalForms/reimbursementClaim.api";
-
+import type { BulkMedicalClaimInitiationPayload } from "../types/medicalClaimInitiation.types";
+import type {
+	ExportListingParams,
+	MedicalClaimDetail,
+} from "../types/medicalClaimListing.types";
 export const medicalClaimKeys = {
 	all: ["medical-claims"] as const,
 
@@ -62,6 +62,26 @@ export function useInitiateMedicalClaimMutation() {
 		mutationFn: medicalClaimApi.initiate,
 	});
 }
+export const useImportMedicalClaimInitiationsMutation = () => {
+	return useMutation({
+		mutationFn: (payload: FormData) =>
+			medicalClaimApi.importInitiations(payload),
+	});
+};
+export const useBulkMedicalClaimInitiationMutation = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (payload: BulkMedicalClaimInitiationPayload) =>
+			medicalClaimApi.initiateImportedEmployees(payload),
+
+		onSuccess: async () => {
+			await queryClient.invalidateQueries({
+				queryKey: medicalClaimKeys.lists(),
+			});
+		},
+	});
+};
 
 export function useResendMedicalClaimLinkMutation() {
 	const queryClient = useQueryClient();
@@ -103,21 +123,6 @@ export function useUpdateMedicalClaimMutation() {
 				updatedClaim,
 			);
 		},
-	});
-}
-
-/**
- * Persists one bill's approved amount + remarks.
- */
-export function useApproveMedicalClaimLineItemMutation() {
-	return useMutation({
-		mutationFn: ({
-			claimId,
-			lineItem,
-		}: {
-			claimId: string;
-			lineItem: Parameters<typeof medicalClaimApi.approveLineItem>[1];
-		}) => medicalClaimApi.approveLineItem(claimId, lineItem),
 	});
 }
 
@@ -172,11 +177,89 @@ export function useMedicalClaimPdfUrlMutation() {
 export function useExportMedicalClaimListingMutation() {
 	return useMutation({
 		mutationFn: (params: ExportListingParams) =>
-			medicalClaimApi.exportListing(params),
+			medicalClaimApi.enqueueListingExport(params),
 	});
 }
+
 export function useExportMedicalClaimMutation() {
 	return useMutation({
 		mutationFn: (claimId: string) => medicalClaimApi.exportOne(claimId),
+	});
+}
+
+/**
+ * Persists one bill's approved amount + remarks. Backend returns no body,
+ * so we patch the cached claim detail from the mutation variables directly.
+ */
+export function useApproveMedicalClaimLineItemMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({
+			claimId,
+			lineItem,
+		}: {
+			claimId: string;
+			lineItem: Parameters<typeof medicalClaimApi.approveLineItem>[1];
+		}) => medicalClaimApi.approveLineItem(claimId, lineItem),
+
+		onSuccess: (_data, variables) => {
+			queryClient.setQueryData<MedicalClaimDetail>(
+				medicalClaimKeys.detail(variables.claimId),
+				(current) => {
+					if (!current) return current;
+					return {
+						...current,
+						bills: current.bills.map((bill) =>
+							bill.id === variables.lineItem.id
+								? {
+										...bill,
+										approved: true,
+										approvedClaimAmount: String(
+											variables.lineItem.approvedClaimAmount,
+										),
+										remarks: variables.lineItem.remarks ?? bill.remarks,
+									}
+								: bill,
+						),
+					};
+				},
+			);
+		},
+	});
+}
+
+/**
+ * Persists one bill's remarks (flagged/not-approved rows). Backend returns
+ * no body, so we patch the cache from variables directly.
+ */
+export function useSaveMedicalClaimLineItemRemarksMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({
+			claimId,
+			lineItem,
+		}: {
+			claimId: string;
+			lineItem: Parameters<typeof medicalClaimApi.saveLineItemRemarks>[1];
+		}) => medicalClaimApi.saveLineItemRemarks(claimId, lineItem),
+
+		onSuccess: (_data, variables) => {
+			queryClient.setQueryData<MedicalClaimDetail>(
+				medicalClaimKeys.detail(variables.claimId),
+				(current) => {
+					if (!current) return current;
+					return {
+						...current,
+						bills: current.bills.map((bill) =>
+							bill.id === variables.lineItem.id
+								? { ...bill, remarks: variables.lineItem.remarks ?? null }
+								: bill,
+						),
+					};
+				},
+			);
+		},
 	});
 }
