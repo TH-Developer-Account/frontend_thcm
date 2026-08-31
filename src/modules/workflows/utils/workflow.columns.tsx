@@ -84,7 +84,6 @@ export const getWorkflowColumns = ({
 		enableSorting: false,
 		cell: ({ row }) => {
 			const workflow = row.original;
-
 			return (
 				<div className="workflow-table-actions">
 					<Button
@@ -96,7 +95,6 @@ export const getWorkflowColumns = ({
 						Icon={UserPlus}
 						isTooltip="Assign Users"
 					/>
-
 					<>
 						<Button
 							type="button"
@@ -107,7 +105,6 @@ export const getWorkflowColumns = ({
 							Icon={Edit}
 							isTooltip="Edit"
 						/>
-
 						<Button
 							type="button"
 							size="sm"
