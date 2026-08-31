@@ -1,6 +1,6 @@
 import { ServerAxios } from "../../../services/ServerAxios";
 
-import { normalizeVendorOnboardingResponse } from "../helpers/vendor.onboarding.helper";
+import { normalizeVendorOnboardingResponse } from "../helpers/vendor.onboarding.mapper";
 import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";
 import type {
 	UpdateVendorVariables,
@@ -55,6 +55,7 @@ export type VendorListingResponse = {
 export type PublicVendorSessionResponse = {
 	id: string;
 	vendorName: string;
+	vendorReferenceName?: string;
 	email?: string;
 	mobile?: string;
 	partOne?: VendorCreationFormOneValues;
@@ -202,6 +203,18 @@ export const vendorOnboardingApi = {
 		);
 
 		return url;
+	},
+	enqueueBulkExport: async (
+		params: Pick<VendorListingParams, "tab" | "search"> & {
+			format?: "csv" | "xlsx";
+		},
+	): Promise<{ jobId: string; logId: string }> => {
+		const { data } = await ServerAxios.post<{
+			success: boolean;
+			jobId: string;
+			logId: string;
+		}>(`${VENDOR_URL}/export/bulk`, params);
+		return { jobId: data.jobId, logId: data.logId };
 	},
 };
 

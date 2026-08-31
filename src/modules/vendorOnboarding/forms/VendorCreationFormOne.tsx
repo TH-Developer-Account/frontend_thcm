@@ -1,14 +1,9 @@
 import {
 	ArrowLeft,
-	Banknote,
 	CheckCircle2,
-	FileCheck2,
 	FilePenLine,
-	Landmark,
-	LucideBriefcaseBusiness,
 	RefreshCcw,
 	Save,
-	ShieldCheck,
 } from "lucide-react";
 import type { ClipboardEvent } from "react";
 import Button from "../../../components/common/Button";
@@ -16,14 +11,10 @@ import { Modal } from "../../../components/common/Modal";
 import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
-import {
-	getCitiesByState,
-	getCityOption,
-} from "../helpers/vendorLocation.helpers";
+import { getCitiesByState } from "../helpers/vendorLocation.helpers";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
 
-import FormHeader from "../../../components/ui/FormHeader";
-
+import { toYesNo } from "../helpers/vendor.onboarding.helper";
 import {
 	VENDOR_DOCUMENT_FIELDS,
 	type VendorCreationFormOneValues,
@@ -74,7 +65,6 @@ type VendorCreationFormOneProps = {
 		submission: VendorCreationFormOneSubmission,
 	) => void | Promise<void>;
 	onSaveDraft?: (
-		// NEW
 		submission: VendorCreationFormOneDraftSubmission,
 	) => void | Promise<void>;
 
@@ -146,6 +136,20 @@ const VendorCreationFormOne = ({
 	const isReadOnly = mode === "view" || !canEdit;
 	const fieldMode: VendorFormMode = isReadOnly ? "view" : "edit";
 
+	const maskAccountNumber = (value?: string): string | undefined => {
+		const accountNumber = (value ?? "").trim();
+		if (!accountNumber) return undefined;
+
+		const visibleCharacters = accountNumber.slice(-4);
+		const maskedCharacters = "*".repeat(
+			Math.max(0, accountNumber.length - visibleCharacters.length),
+		);
+
+		return `${maskedCharacters}${visibleCharacters}`;
+	};
+
+	const sanitizeAccountNumber = (value: string): string =>
+		value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
 	const {
 		enclosureErrors,
 		isDpdpModalOpen,
@@ -171,6 +175,9 @@ const VendorCreationFormOne = ({
 		initialDocuments,
 		requireDocuments,
 		requireDpdpConsent,
+		// Field validation runs before enclosure/file validation inside
+		// handleFormAction, so an empty submit surfaces field errors first.
+		validateFields: formContext?.validateFormOneBeforeSubmit,
 		onChange: resolvedOnChange,
 		onNext: resolvedOnNext,
 		onSubmit: resolvedOnSubmit,
@@ -191,25 +198,76 @@ const VendorCreationFormOne = ({
 					</div>
 				) : null}
 
-				<FormHeader
-					title="Vendor Basic Information"
-					Icon={LucideBriefcaseBusiness}
-				/>
-
 				<div className="vendor-onboarding-form-grid-parent">
 					<div className="vendor-onboarding-form-grid-child">
+						{/* <FormInput
+							mode={fieldMode}
+							name="vendorReferenceName"
+							label="Vendor Reference Name"
+							value={values.vendorReferenceName ?? ""}
+							error={errors.vendorReferenceName}
+							success={
+								fieldMode === "edit" &&
+								!errors.vendorReferenceName &&
+								Boolean(values.vendorReferenceName)
+							}
+							helperText="Enter vendor name in capital letters."
+							onChange={(event) =>
+								resolvedOnChange?.("vendorReferenceName", event.target.value)
+							}
+						/> */}
 						<FormInput
 							mode={fieldMode}
 							name="vendorName"
 							label="Name Of Vendor"
 							value={values.vendorName ?? ""}
 							error={errors.vendorName}
+							success={
+								fieldMode === "edit" &&
+								!errors.vendorName &&
+								Boolean(values.vendorName)
+							}
 							helperText="Enter vendor name in capital letters."
 							onChange={(event) =>
 								resolvedOnChange?.("vendorName", event.target.value)
 							}
 						/>
+						<FormInput
+							mode={fieldMode}
+							name="mobile"
+							label="Mobile"
+							type="tel"
+							inputMode="tel"
+							autoComplete="tel"
+							value={values.mobile ?? ""}
+							success={
+								fieldMode === "edit" && !errors.mobile && Boolean(values.mobile)
+							}
+							required
+							error={errors.mobile}
+							helperText="Vendor mobile number."
+							onChange={(event) =>
+								resolvedOnChange?.("mobile", event.target.value)
+							}
+						/>
 
+						<FormInput
+							mode={fieldMode}
+							name="email"
+							label="E-mail"
+							type="email"
+							autoComplete="email"
+							value={values.email ?? ""}
+							success={
+								fieldMode === "edit" && !errors.email && Boolean(values.email)
+							}
+							required
+							error={errors.email}
+							helperText="Vendor email address."
+							onChange={(event) =>
+								resolvedOnChange?.("email", event.target.value)
+							}
+						/>
 						<SelectInput
 							mode={fieldMode}
 							name="state"
@@ -219,6 +277,9 @@ const VendorCreationFormOne = ({
 							value={getSelectedOption(STATES, values.state)}
 							required
 							error={errors.state}
+							success={
+								fieldMode === "edit" && !errors.state && Boolean(values.state)
+							}
 							helperText="Select the applicable vendor state."
 							onChange={(option) => {
 								const nextState = option?.value ?? "";
@@ -232,22 +293,21 @@ const VendorCreationFormOne = ({
 							}}
 						/>
 
-						<SelectInput
+						<FormInput
 							mode={fieldMode}
 							name="city"
-							label="City"
+							label="City/ Town"
 							placeholder="Select city"
-							options={getCitiesByState(values.state)}
-							value={getCityOption(values.state, values.city)}
+							value={values.city ?? ""}
 							required
+							success={
+								fieldMode === "edit" && !errors.city && Boolean(values.city)
+							}
 							error={errors.city}
 							helperText="Vendor city."
-							onChange={(option) => {
-								resolvedOnChange?.("city", option?.city ?? "");
-								if (option?.state && option.state !== values.state) {
-									resolvedOnChange?.("state", option.state);
-								}
-							}}
+							onChange={(event) =>
+								resolvedOnChange?.("city", event.target.value)
+							}
 						/>
 
 						<FormInput
@@ -256,6 +316,11 @@ const VendorCreationFormOne = ({
 							label="Pin Code"
 							value={values.pinCode ?? ""}
 							required
+							success={
+								fieldMode === "edit" &&
+								!errors.pinCode &&
+								Boolean(values.pinCode)
+							}
 							inputMode="numeric"
 							error={errors.pinCode}
 							helperText="Vendor location pin code."
@@ -271,6 +336,11 @@ const VendorCreationFormOne = ({
 							name="address"
 							label="Complete Address"
 							value={values.address ?? ""}
+							success={
+								fieldMode === "edit" &&
+								!errors.address &&
+								Boolean(values.address)
+							}
 							required
 							error={errors.address}
 							helperText="Registered or communication address."
@@ -282,175 +352,184 @@ const VendorCreationFormOne = ({
 					</div>
 				</div>
 
-				<FormHeader title="Contact Information" Icon={FileCheck2} />
+				<div className="vendor-onboarding-form-grid-parent">
+					<div className="vendor-onboarding-form-grid-child">
+						<FormInput
+							mode={fieldMode}
+							name="bankName"
+							label="Bank"
+							value={values.bankName ?? ""}
+							success={
+								fieldMode === "edit" &&
+								!errors.bankName &&
+								Boolean(values.bankName)
+							}
+							required
+							error={errors.bankName}
+							helperText="Bank name."
+							onChange={(event) =>
+								resolvedOnChange?.("bankName", event.target.value)
+							}
+						/>
 
-				<div className="vendor-onboarding-form-grid">
-					<FormInput
-						mode={fieldMode}
-						name="mobile"
-						label="Mobile"
-						type="tel"
-						inputMode="tel"
-						autoComplete="tel"
-						value={values.mobile ?? ""}
-						required
-						error={errors.mobile}
-						helperText="Vendor mobile number."
-						onChange={(event) =>
-							resolvedOnChange?.("mobile", event.target.value)
-						}
-					/>
+						<FormInput
+							mode={fieldMode}
+							name="bankBranch"
+							label="Branch"
+							value={values.bankBranch ?? ""}
+							required
+							success={
+								fieldMode === "edit" &&
+								!errors.bankBranch &&
+								Boolean(values.bankBranch)
+							}
+							error={errors.bankBranch}
+							helperText="Bank branch."
+							onChange={(event) =>
+								resolvedOnChange?.("bankBranch", event.target.value)
+							}
+						/>
 
-					<FormInput
-						mode={fieldMode}
-						name="email"
-						label="E-mail"
-						type="email"
-						autoComplete="email"
-						value={values.email ?? ""}
-						required
-						error={errors.email}
-						helperText="Vendor email address."
-						onChange={(event) =>
-							resolvedOnChange?.("email", event.target.value)
-						}
-					/>
+						<FormInput
+							mode={fieldMode}
+							name="ifscCode"
+							label="IFSC Code"
+							value={values.ifscCode ?? ""}
+							required
+							success={
+								fieldMode === "edit" &&
+								!errors.ifscCode &&
+								Boolean(values.ifscCode)
+							}
+							error={errors.ifscCode}
+							helperText="Bank IFSC code."
+							onChange={(event) =>
+								resolvedOnChange?.("ifscCode", event.target.value)
+							}
+						/>
+
+						<FormInput
+							mode={fieldMode}
+							name="accountNumber"
+							label="A/C No."
+							type="password"
+							value={values.accountNumber ?? ""}
+							readOnlyValue={maskAccountNumber(values.accountNumber)}
+							required
+							inputMode="text"
+							error={errors.accountNumber}
+							success={
+								!isReadOnly &&
+								!errors.accountNumber &&
+								Boolean(values.accountNumber)
+							}
+							helperText="Vendor bank account number."
+							onChange={(event) => {
+								const value = sanitizeAccountNumber(event.target.value);
+								resolvedOnChange?.("accountNumber", value);
+							}}
+							onPaste={blockClipboardEvent}
+							onCopy={blockClipboardEvent}
+							onCut={blockClipboardEvent}
+							autoComplete="off"
+						/>
+
+						<FormInput
+							mode={fieldMode}
+							name="confirmAccountNumber"
+							label="Confirm Account Number"
+							type="password"
+							value={values.confirmAccountNumber ?? ""}
+							readOnlyValue={maskAccountNumber(values.confirmAccountNumber)}
+							required
+							inputMode="text"
+							error={errors.confirmAccountNumber}
+							success={
+								!isReadOnly &&
+								!errors.confirmAccountNumber &&
+								Boolean(values.confirmAccountNumber) &&
+								values.confirmAccountNumber === values.accountNumber
+							}
+							helperText="Re-enter the bank account number."
+							onChange={(event) => {
+								const value = sanitizeAccountNumber(event.target.value);
+								resolvedOnChange?.("confirmAccountNumber", value);
+							}}
+							onPaste={blockClipboardEvent}
+							onCopy={blockClipboardEvent}
+							onCut={blockClipboardEvent}
+							autoComplete="off"
+						/>
+					</div>
+					<div>
+						<TextareaInput
+							mode={fieldMode}
+							name="bankAddress"
+							label="Address"
+							value={values.bankAddress ?? ""}
+							error={errors.bankAddress}
+							success={
+								fieldMode === "edit" &&
+								!errors.bankAddress &&
+								Boolean(values.bankAddress)
+							}
+							rows={4}
+							helperText="Bank branch address."
+							onChange={(event) =>
+								resolvedOnChange?.("bankAddress", event.target.value)
+							}
+						/>
+					</div>
 				</div>
-
-				<FormHeader title="Bank Details" Icon={Landmark} />
-
-				<div className="vendor-onboarding-form-grid">
-					<FormInput
-						mode={fieldMode}
-						name="bankName"
-						label="Bank"
-						value={values.bankName ?? ""}
-						required
-						error={errors.bankName}
-						helperText="Bank name."
-						onChange={(event) =>
-							resolvedOnChange?.("bankName", event.target.value)
-						}
-					/>
-
-					<FormInput
-						mode={fieldMode}
-						name="bankBranch"
-						label="Branch"
-						value={values.bankBranch ?? ""}
-						required
-						error={errors.bankBranch}
-						helperText="Bank branch."
-						onChange={(event) =>
-							resolvedOnChange?.("bankBranch", event.target.value)
-						}
-					/>
-
-					<FormInput
-						mode={fieldMode}
-						name="ifscCode"
-						label="IFSC Code"
-						value={values.ifscCode ?? ""}
-						required
-						error={errors.ifscCode}
-						helperText="Bank IFSC code."
-						onChange={(event) =>
-							resolvedOnChange?.("ifscCode", event.target.value)
-						}
-					/>
-
-					<FormInput
-						mode={fieldMode}
-						name="bankAddress"
-						label="Address"
-						value={values.bankAddress ?? ""}
-						error={errors.bankAddress}
-						helperText="Bank branch address."
-						onChange={(event) =>
-							resolvedOnChange?.("bankAddress", event.target.value)
-						}
-					/>
-					<FormInput
-						mode={fieldMode}
-						name="accountNumber"
-						label="A/C No."
-						value={values.accountNumber ?? ""}
-						required
-						inputMode="numeric"
-						error={errors.accountNumber}
-						helperText="Vendor bank account number."
-						onChange={(event) => {
-							const value = event.target.value.replace(/\D/g, "");
-							resolvedOnChange?.("accountNumber", value);
-						}}
-						onPaste={blockClipboardEvent}
-						onCopy={blockClipboardEvent}
-						onCut={blockClipboardEvent}
-						autoComplete="off"
-					/>
-
-					<FormInput
-						mode={fieldMode}
-						name="confirmAccountNumber"
-						label="Confirm A/C No."
-						id="no-paste"
-						value={values.confirmAccountNumber || ""}
-						required
-						inputMode="numeric"
-						error={errors.confirmAccountNumber}
-						helperText="Re-enter the bank account number."
-						onChange={(event) => {
-							const value = event.target.value.replace(/\D/g, "");
-							resolvedOnChange?.("confirmAccountNumber", value);
-						}}
-						onPaste={blockClipboardEvent}
-						onCopy={blockClipboardEvent}
-						onCut={blockClipboardEvent}
-						autoComplete="off"
-					/>
-				</div>
-
-				<FormHeader title="Tax Details" Icon={Banknote} />
-
 				<div className="vendor-onboarding-form-grid">
 					<FormInput
 						mode={fieldMode}
 						name="gstin"
 						label="GSTIN"
 						value={values.gstin ?? ""}
+						success={
+							fieldMode === "edit" && !errors.gstin && Boolean(values.gstin)
+						}
 						required
+						maxLength={15}
 						error={errors.gstin}
 						helperText="GST identification number."
 						onChange={(event) =>
-							resolvedOnChange?.("gstin", event.target.value)
+							resolvedOnChange?.("gstin", event.target.value.toUpperCase())
 						}
 					/>
-
 					<FormInput
 						mode={fieldMode}
 						name="pan"
 						label="PAN"
 						value={values.pan ?? ""}
+						success={fieldMode === "edit" && !errors.pan && Boolean(values.pan)}
 						required
+						maxLength={10}
+						onChange={(event) =>
+							resolvedOnChange?.("pan", event.target.value.toUpperCase())
+						}
 						error={errors.pan}
 						helperText="Permanent account number."
-						onChange={(event) => resolvedOnChange?.("pan", event.target.value)}
 					/>
 
 					<FormInput
 						mode={fieldMode}
-						name="entityRegistrationNumber"
+						name="entityRegNo"
 						label="Entity Reg. No."
-						value={values.entityRegistrationNumber ?? ""}
-						error={errors.entityRegistrationNumber}
+						value={values.entityRegNo}
+						success={
+							fieldMode === "edit" &&
+							!errors.entityRegNo &&
+							Boolean(values.entityRegNo)
+						}
+						error={errors.entityRegNo}
 						helperText="Entity registration number, if applicable."
 						onChange={(event) =>
-							resolvedOnChange?.("entityRegistrationNumber", event.target.value)
+							resolvedOnChange?.("entityRegNo", event.target.value)
 						}
 					/>
 				</div>
-
-				<FormHeader title="Attachments / Enclosures" Icon={ShieldCheck} />
 
 				<div className="vendor-enclosure-upload-grid">
 					{VENDOR_DOCUMENT_FIELDS.filter(
@@ -477,13 +556,12 @@ const VendorCreationFormOne = ({
 								error={enclosureErrors[field.statusKey]}
 								readonly={isReadOnly}
 								disabled={loading}
+								tooltip="Mandatory"
 								heightClassName="vendor-enclosure-upload-height"
 								className="vendor-enclosure-upload-field"
 								inputName={field.documentType}
 								showActions
-								// enableCaption
-								// captionLabel="Document caption"
-								// captionPlaceholder="Enter a short description for this document"
+								previewVariant="line"
 							/>
 						) : (
 							<FileUploadField
@@ -499,20 +577,16 @@ const VendorCreationFormOne = ({
 								error={enclosureErrors[field.statusKey]}
 								readonly={isReadOnly}
 								disabled={loading}
+								tooltip="Mandatory"
 								heightClassName="vendor-enclosure-upload-height"
 								className="vendor-enclosure-upload-field"
 								inputName={field.documentType}
 								showActions
-								// enableCaption
-								// captionLabel="Document caption"
-								// captionPlaceholder="Enter a short description for this document"
 							/>
 						);
 					})}
 				</div>
 				<div>
-					<FormHeader title="Compliance Documents" Icon={FileCheck2} />
-
 					<div className="vendor-compliance-grid">
 						<section className="vendor-compliance-card">
 							<div className="vendor-compliance-card-grid">
@@ -522,7 +596,10 @@ const VendorCreationFormOne = ({
 									label="MSME Vendor"
 									placeholder="Select option"
 									options={yesNoOptions}
-									value={getSelectedOption(yesNoOptions, values.msmeVendor)}
+									value={getSelectedOption(
+										yesNoOptions,
+										toYesNo(values.msmeVendor),
+									)}
 									required
 									error={errors.msmeVendor}
 									helperText="Select whether this vendor is registered under MSME."
@@ -557,9 +634,7 @@ const VendorCreationFormOne = ({
 										className="vendor-compliance-upload"
 										inputName="MSME_CERTIFICATE"
 										showActions
-										// enableCaption
-										// captionLabel="Document caption"
-										// captionPlaceholder="Enter a short description for this document"
+										tooltip="Mandatory"
 									/>
 								) : null}
 							</div>
@@ -573,7 +648,10 @@ const VendorCreationFormOne = ({
 									label="Non-Disclosure Undertaking Obtained?"
 									placeholder="Select option"
 									options={yesNoOptions}
-									value={getSelectedOption(yesNoOptions, values.ndaObtained)}
+									value={getSelectedOption(
+										yesNoOptions,
+										toYesNo(values.ndaObtained),
+									)}
 									error={errors.ndaObtained}
 									helperText="Confirm whether NDA is obtained."
 									onChange={(option) =>
@@ -607,9 +685,7 @@ const VendorCreationFormOne = ({
 										className="vendor-compliance-upload"
 										inputName="NDA_CERTIFICATE"
 										showActions
-										// enableCaption
-										// captionLabel="Document caption"
-										// captionPlaceholder="Enter a short description for this document"
+										tooltip="Mandatory"
 									/>
 								) : null}
 							</div>

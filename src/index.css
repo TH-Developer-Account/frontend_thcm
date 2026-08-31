@@ -2,6 +2,8 @@
 
 @import "tailwindcss";
 
+@import "./styles/globals.css";
+
 /* Foundation: variables before consumers. */
 @import "./styles/color.css";
 @import "./styles/theme.css";
@@ -9,7 +11,6 @@
 @import "./styles/token.css";
 
 /* Global system. */
-@import "./styles/globals.css";
 @import "./styles/layout.css";
 @import "./styles/ui.css";
 @import "./styles/form.css";

@@ -1,9 +1,9 @@
 import type React from "react";
 
-import type { CommentMenuAction, CommentUser } from "./comment.types";
+import type { CommentUser } from "./comment.types";
 
 export type FormatType = "bold" | "italic" | "code" | "bullet";
-export type PopupState = "emoji" | "format" | "menu" | null;
+export type PopupState = "emoji" | "mentionList" | null;
 
 export type RichTextareaProps = {
 	name: string;
@@ -28,6 +28,4 @@ export type RichTextareaProps = {
 	submitting?: boolean;
 	hasRealContent?: boolean;
 	onSubmit?: () => void;
-	menuItems?: CommentMenuAction[];
-	onMenuAction?: (action: string) => void;
 };

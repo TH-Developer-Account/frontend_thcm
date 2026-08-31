@@ -93,10 +93,30 @@ const VendorOnboardingInitiationForm = ({
 						}
 						Icon={LucideBriefcaseBusiness}
 					/>
-					<Badge status={values.status} />
+					{values.status ? <Badge status={values.status} /> : null}
 				</div>
 				<div className="vendor-onboarding-form-grid">
 					<FormInput
+						name="vendorReferenceName"
+						label="Vendor initiated for"
+						mode={fieldMode}
+						value={values.vendorReferenceName}
+						required={!isViewMode}
+						readOnly={isViewMode}
+						disabled={isDetailLoading}
+						success={
+							!isViewMode &&
+							!errors.vendorReferenceName &&
+							Boolean(values.vendorReferenceName)
+						}
+						error={isViewMode ? undefined : errors.vendorReferenceName}
+						helperText={isViewMode ? undefined : "Enter the vendor name"}
+						autoComplete="organization"
+						onChange={(event) =>
+							handleChange("vendorReferenceName", event.target.value)
+						}
+					/>
+					{/* <FormInput
 						name="vendorName"
 						label="Vendor Name"
 						mode={fieldMode}
@@ -104,12 +124,14 @@ const VendorOnboardingInitiationForm = ({
 						required={!isViewMode}
 						readOnly={isViewMode}
 						disabled={isDetailLoading}
+						success={
+							!isViewMode && !errors.vendorName && Boolean(values.vendorName)
+						}
 						error={isViewMode ? undefined : errors.vendorName}
 						helperText={isViewMode ? undefined : "Enter the vendor name"}
 						autoComplete="organization"
 						onChange={(event) => handleChange("vendorName", event.target.value)}
-					/>
-
+					/> */}
 					<FormInput
 						name="email"
 						label="Vendor Email"
@@ -119,6 +141,7 @@ const VendorOnboardingInitiationForm = ({
 						required={!isViewMode}
 						readOnly={isViewMode}
 						disabled={isDetailLoading}
+						success={!isViewMode && !errors.email && Boolean(values.email)}
 						error={isViewMode ? undefined : errors.email}
 						helperText={isViewMode ? undefined : "Enter the vendor email"}
 						autoComplete="email"
@@ -134,6 +157,7 @@ const VendorOnboardingInitiationForm = ({
 						required={!isViewMode}
 						disabled={isDetailLoading}
 						readOnly={isViewMode}
+						success={!isViewMode && !errors.mobile && Boolean(values.mobile)}
 						error={isViewMode ? undefined : errors.mobile}
 						helperText={
 							isViewMode ? undefined : "Enter the vendor phone number"

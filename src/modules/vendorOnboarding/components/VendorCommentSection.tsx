@@ -1,25 +1,27 @@
-import React from "react";
+import * as React from "react";
 
-import { CommentsSection } from "../../../components/ui/comments";
-import type { MentionableUserInput } from "../../../components/ui/comments/comment.types";
-import { getWorkflowCommentContext } from "../../../components/ui/comments/comments.helper";
+import {
+	CommentsSection,
+	getWorkflowCommentContext,
+	type MentionableUserInput,
+} from "../../../components/ui/comments";
 import { useAuth } from "../../../context/Auth/useAuth";
-import type { ApprovalStageLike } from "../../marketing/activity-planner/utils/approvalTable.mapper";
-
-import { getVendorAuditMessage } from "../helpers/vendorComment.helper";
+import type { ApprovalStageLike } from "../../workflows/types/types";
 
 type VendorCommentSectionProps = {
 	onboardingId?: string | null;
 	workflow?: readonly ApprovalStageLike[];
-	creator?: MentionableUserInput | null;
-	title?: string;
+	createdBy?: MentionableUserInput | null;
+	refreshKey?: string | number;
+	canComment?: boolean;
 };
 
 const VendorCommentSection = ({
 	onboardingId,
 	workflow = [],
-	creator,
-	title = "Comments and activity",
+	createdBy,
+	refreshKey = 0,
+	canComment: canCommentOverride,
 }: VendorCommentSectionProps) => {
 	const { user } = useAuth();
 
@@ -27,32 +29,32 @@ const VendorCommentSection = ({
 		() =>
 			getWorkflowCommentContext({
 				activeWorkflow: {
-					stages: workflow,
+					stages: [...workflow],
 				},
 				currentUser: user,
-				creator,
+				creator: createdBy ?? null,
+				canComment: canCommentOverride,
 			}),
-		[workflow, user, creator],
+		[canCommentOverride, createdBy, user, workflow],
 	);
 
-	if (!onboardingId) {
-		return null;
-	}
+	if (!onboardingId) return null;
 
 	return (
-		<CommentsSection
-			subjectType="VENDOR_ONBOARDING"
-			subjectId={onboardingId}
-			approvalId={commentContext.approvalId}
-			canComment={commentContext.canComment}
-			mentionableUsers={commentContext.mentionableUsers}
-			ccEmails={commentContext.ccEmails}
-			currentUserId={user?.id}
-			formatAuditMessage={getVendorAuditMessage}
-			title={title}
-			emptyTitle="No vendor activity yet"
-			emptyDescription="Comments and workflow activity will appear here."
-		/>
+		<>
+			<CommentsSection
+				subjectType="VENDOR_ONBOARDING"
+				subjectId={onboardingId}
+				approvalId={commentContext.approvalId}
+				canComment={commentContext.canComment}
+				mentionableUsers={commentContext.mentionableUsers}
+				ccEmails={commentContext.ccEmails}
+				currentUserId={user?.id}
+				refreshKey={refreshKey}
+				emptyTitle="No comments yet"
+				emptyDescription="Comments about this vendor request will appear here."
+			/>
+		</>
 	);
 };
 

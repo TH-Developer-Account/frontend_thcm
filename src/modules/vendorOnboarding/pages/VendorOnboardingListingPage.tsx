@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { PageHeader } from "../../../components/ui/PageHeader";
@@ -9,10 +9,16 @@ import { useVendorListing } from "../hooks/useVendorListing";
 import type { VendorOnboardingListingRow } from "../types/vendorListing.types";
 import { VENDOR_ONBOARDING_FILTER_TABS } from "../utils/vendor.constant";
 import { toOnboardingRow } from "../utils/vendorListingRowMapper";
+import { useToast } from "../../../context/Auth/AuthContext";
+import { vendorOnboardingApi } from "../api/vendorOnboarding.api";
+import Button from "../../../components/common/Button";
+import { Plus } from "lucide-react";
 
 const VendorOnboardingListingPage = () => {
 	const navigate = useNavigate();
+	const { showToast } = useToast();
 
+	const [isExporting, setIsExporting] = useState(false);
 	const {
 		tab,
 		search,
@@ -39,28 +45,45 @@ const VendorOnboardingListingPage = () => {
 		[navigate],
 	);
 
-	const handleExport = useCallback(() => {
-		console.log(`Export vendor ${tab} rows:`, rows);
-	}, [rows, tab]);
+	const handleExport = useCallback(async () => {
+		setIsExporting(true);
+		try {
+			await vendorOnboardingApi.enqueueBulkExport({
+				tab,
+				search: search || undefined,
+			});
+
+			showToast({
+				type: "success",
+				title: "Export started",
+				description: "We'll notify you when it's ready to download.",
+			});
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "Export failed",
+				description: "Failed to start vendor export.",
+			});
+		} finally {
+			setIsExporting(false);
+		}
+	}, [tab, search, showToast, navigate]);
 
 	return (
 		<PageSectionLayout>
 			<PageHeader
 				headerText="Vendor Onboarding"
-				navigation={{
-					variant: "breadcrumbs",
-					ariaLabel: "Vendor onboarding listing location",
-					breadcrumbs: [
-						{
-							label: "Home Screen",
-							href: "/",
-						},
-						{
-							label: "Vendor Onboarding",
-						},
-					],
-					separator: "›",
-				}}
+				headerChildren={
+					<Button
+						path="/vendor/initiation/create"
+						text="Initiate Onboarding"
+						appearance="standard"
+						variant="brand"
+						Icon={Plus}
+						size="sm"
+						iconSize={18}
+					/>
+				}
 			/>
 
 			<VendorListingTable
@@ -80,6 +103,7 @@ const VendorOnboardingListingPage = () => {
 				onPageSizeChange={handlePageSizeChange}
 				onExport={handleExport}
 				onViewRow={handleViewRow}
+				isExporting={isExporting}
 			/>
 		</PageSectionLayout>
 	);

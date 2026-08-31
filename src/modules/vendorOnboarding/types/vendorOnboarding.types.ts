@@ -1,3 +1,4 @@
+import type { MentionableUserInput } from "../../../components/ui/comments";
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 import type { ApprovalStageLike } from "../../workflows";
 
@@ -25,6 +26,7 @@ export type VendorViewerRole =
 
 export type VendorCreationFormOneValues = {
 	vendorName?: string;
+	vendorReferenceName?: string;
 	address?: string;
 	msmeVendor?: string;
 	msmeCertificateAttached?: string;
@@ -41,7 +43,7 @@ export type VendorCreationFormOneValues = {
 	confirmAccountNumber?: string;
 	gstin?: string;
 	pan?: string;
-	entityRegistrationNumber?: string;
+	entityRegNo?: string;
 	gstCertificate?: string;
 	panNumber?: string;
 	bankCancelledCheque?: string;
@@ -49,6 +51,7 @@ export type VendorCreationFormOneValues = {
 	msmeCertificate?: string;
 	ndaCertificate?: string;
 	ndaObtained?: string;
+	referenceNumber?: string | undefined;
 };
 
 export type VendorCreationFormTwoValues = {
@@ -65,19 +68,20 @@ export type VendorCreationFormTwoValues = {
 	gpaObtained?: string;
 	relatedPartyToThcm?: string;
 	vendorAuditReportPrepared?: string;
-	remarks?: string;
+	// remarks?: string;
 	natureOfService?: string;
 	reasonForOnboarding?: string;
-	proposedByName?: string;
-	proposedByDesignation?: string;
-	proposedDate?: string;
-	approvedByName?: string;
-	approvedByDesignation?: string;
-	approvalDate?: string;
+	// proposedByName?: string;
+	// proposedByDesignation?: string;
+	// proposedDate?: string;
+	// approvedByName?: string;
+	// approvedByDesignation?: string;
+	// approvalDate?: string;
 };
 
 export type VendorUpdatePayload = {
 	vendorName?: string | null;
+	vendorReferenceName?: string | null;
 	state?: string | null;
 	city?: string | null;
 	pinCode?: string | null;
@@ -113,13 +117,7 @@ export type VendorUpdatePayload = {
 	onboardingReason?: string | null;
 	remarks?: string | null;
 };
-export type VendorCreatedBy = {
-	id: string;
-	first_name: string;
-	last_name: string;
-	email: string;
-	avatarUrl?: string | null;
-};
+
 export type VendorOnboardingResponse = {
 	id: string;
 	status: VendorOnboardingStatus;
@@ -131,7 +129,7 @@ export type VendorOnboardingResponse = {
 	updatedAt?: string;
 	activeWorkflow?: VendorActiveWorkflow;
 	initiatedById?: string;
-	createdBy?: VendorCreatedBy | null;
+	createdBy?: MentionableUserInput | null;
 };
 
 export type VendorFormErrors<T> = Partial<Record<keyof T, string>>;
@@ -248,6 +246,7 @@ export type VendorOnboardingRawResponse = {
 	initiatedById?: string;
 	status: VendorOnboardingStatus;
 	vendorName: string | null;
+	vendorReferenceName: string | null;
 	state: string | null;
 	city: string | null;
 	pinCode: string | null;
@@ -287,6 +286,7 @@ export type VendorOnboardingRawResponse = {
 	created_at?: string;
 	updated_at?: string;
 	referenceNumber?: string;
+	created_by?: MentionableUserInput | null;
 };
 
 export type VendorActiveWorkflow = {

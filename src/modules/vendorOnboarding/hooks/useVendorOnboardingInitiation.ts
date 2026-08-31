@@ -9,7 +9,10 @@ import {
 	useVendorInitiationDetailQuery,
 } from "../queries/useVendorMutations";
 import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";
-import { showSuccessToast } from "../../../utils/apiError.helper";
+import {
+	showApiErrorToast,
+	showSuccessToast,
+} from "../../../utils/apiError.helper";
 import { useToast } from "../../../context/Auth/AuthContext";
 
 export type VendorOnboardingInitiationErrors = Partial<
@@ -18,6 +21,7 @@ export type VendorOnboardingInitiationErrors = Partial<
 
 const initialFormValues: VendorOnboardingInitiationPayload = {
 	vendorName: "",
+	vendorReferenceName: "",
 	email: "",
 	mobile: "",
 	status: "",
@@ -34,6 +38,7 @@ const mapInitiationDetailsToForm = (
 	response: VendorOnboardingInitiationPayload | null | undefined,
 ): VendorOnboardingInitiationPayload => ({
 	vendorName: response?.vendorName ?? "",
+	vendorReferenceName: response?.vendorReferenceName ?? "",
 	email: response?.email ?? "",
 	mobile: response?.mobile ?? "",
 	status: response?.status ?? "Pending",
@@ -106,10 +111,16 @@ export const useVendorOnboardingInitiation = ({
 		mutationFn: vendorInitationApi.createInitiation,
 		onSuccess: async () => {
 			await onSubmitSuccess?.();
-			navigate("/vendor/initiation/listing");
+			navigate("/vendor/onboarding/listing");
+			showSuccessToast(
+				showToast,
+				"The Vendor initiation was submitted successfully.",
+				"Submitted successfully",
+			);
 		},
 		onError: (error) => {
 			console.error("Vendor initiation submit failed:", error);
+			showApiErrorToast(showToast, error, "Vendor initiation submit failed");
 		},
 	});
 
@@ -117,7 +128,7 @@ export const useVendorOnboardingInitiation = ({
 		mutationFn: vendorInitationApi.updateInitiation,
 		onSuccess: async () => {
 			await onUpdateSuccess?.();
-			navigate("/vendor/initiation/listing");
+			navigate("/vendor/onboarding/listing");
 		},
 		onError: (error) => {
 			console.error("Vendor initiation update failed:", error);

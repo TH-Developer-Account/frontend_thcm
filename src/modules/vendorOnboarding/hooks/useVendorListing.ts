@@ -7,6 +7,7 @@ import type {
 	VendorListingParams,
 	VendorListingTab,
 } from "../api/vendorOnboarding.api";
+import { vendorOnboardingKeys } from "../queries/useVendorMutations";
 
 const DEFAULT_PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 400;
@@ -50,9 +51,11 @@ export const useVendorListing = ({ initialTab }: UseVendorListingParams) => {
 	);
 
 	const listingQuery = useQuery({
-		queryKey: ["vendor-onboarding-list", queryParams],
+		queryKey: [...vendorOnboardingKeys.lists(), queryParams],
 		queryFn: () => vendorOnboardingApi.listVendorOnboardings(queryParams),
 		placeholderData: (previousData) => previousData,
+		staleTime: 30_000,
+		refetchOnWindowFocus: false,
 	});
 
 	const totalCount = listingQuery.data?.totalCount ?? 0;

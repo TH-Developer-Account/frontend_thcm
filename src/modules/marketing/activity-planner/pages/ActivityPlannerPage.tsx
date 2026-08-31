@@ -1,21 +1,24 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-
+import { lazy, Suspense } from "react";
 import Loader from "../../../../components/ui/Loader";
 import { PageHeader } from "../../../../components/ui/PageHeader";
 import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
 import ActivityFormView from "../components/activityFormView/ActivityFormView";
 import ActivityPlannerHeader from "../components/activityFormView/ActivityPlannerHeader";
-import ActivityPlannerPdfPreview from "../components/activityFormView/ActivityPlannerPdfPreview";
-import EventReportPreview from "../forms/EventReport/EventReportPreview";
 import EventReportTemplate from "../forms/EventReport/EventReportTemplate";
 import { useActivityPlanner } from "../hooks/useActivityPlanner";
 
+const ActivityPlannerPdfPreview = lazy(
+	() => import("../components/activityFormView/ActivityPlannerPdfPreview"),
+);
+const EventReportPreview = lazy(
+	() => import("../forms/EventReport/EventReportPreview"),
+);
 type PageView = "form" | "report-builder" | "report-preview";
 
 const ActivityPlannerPage = () => {
 	const { id } = useParams<{ id: string }>();
-
 	const {
 		epcData,
 		workflowEntries,
@@ -150,23 +153,27 @@ const ActivityPlannerPage = () => {
 					/>
 				)}
 			</PageRowSectionLayout>
-
-			<ActivityPlannerPdfPreview
-				open={isPreviewOpen}
-				epcData={epcData ?? null}
-				createdBy={proposerName}
-				workflowEntries={workflowEntries}
-				onClose={() => setIsPreviewOpen(false)}
-			/>
-
+			{isPreviewOpen ? (
+				<Suspense fallback={null}>
+					<ActivityPlannerPdfPreview
+						open={isPreviewOpen}
+						epcData={epcData ?? null}
+						createdBy={proposerName}
+						workflowEntries={workflowEntries}
+						onClose={() => setIsPreviewOpen(false)}
+					/>
+				</Suspense>
+			) : null}
 			{pageView === "report-preview" ? (
-				<EventReportPreview
-					open
-					onClose={closeReportPreview}
-					epcData={epcData ?? null}
-					report={reportData}
-					loading={reportQuery.isLoading || reportQuery.isFetching}
-				/>
+				<Suspense fallback={null}>
+					<EventReportPreview
+						open
+						onClose={closeReportPreview}
+						epcData={epcData ?? null}
+						report={reportData}
+						loading={reportQuery.isLoading || reportQuery.isFetching}
+					/>
+				</Suspense>
 			) : null}
 		</>
 	);

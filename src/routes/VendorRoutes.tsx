@@ -1,47 +1,49 @@
+import { Suspense, lazy } from "react";
 import { Route, Routes } from "react-router-dom";
+import FullScreenLoader from "./FullScreenLoader";
 
-import VendorOnboardingFormView from "../modules/vendorOnboarding/components/VendorOnboardingFormView";
-import VendorInitiationPage from "../modules/vendorOnboarding/pages/VendorInitiationPage";
-import VendorOnboardingPage from "../modules/vendorOnboarding/pages/VendorOnboardingPage";
-import VendorInitiationListingPage from "../modules/vendorOnboarding/pages/VendorInitiationListingPage";
-import VendorOnboardingListingPage from "../modules/vendorOnboarding/pages/VendorOnboardingListingPage";
-import VendorDashboardPage from "../modules/vendorOnboarding/pages/VendorDashboardPage";
+const VendorOnboardingFormView = lazy(
+	() =>
+		import("../modules/vendorOnboarding/components/VendorOnboardingFormView"),
+);
+const VendorInitiationPage = lazy(
+	() => import("../modules/vendorOnboarding/pages/VendorInitiationPage"),
+);
+const VendorOnboardingPage = lazy(
+	() => import("../modules/vendorOnboarding/pages/VendorOnboardingPage"),
+);
+const VendorOnboardingListingPage = lazy(
+	() => import("../modules/vendorOnboarding/pages/VendorOnboardingListingPage"),
+);
+const VendorDashboardPage = lazy(
+	() => import("../modules/vendorOnboarding/pages/VendorDashboardPage"),
+);
 
 const VendorRoutes = () => {
 	return (
-		<Routes>
-			<Route
-				path="onboarding/listing"
-				element={<VendorOnboardingListingPage />}
-			/>
-			<Route path="dashboard" element={<VendorDashboardPage />} />
-			<Route
-				path="initiation/listing"
-				element={<VendorInitiationListingPage />}
-			/>
+		<Suspense fallback={<FullScreenLoader />}>
+			<Routes>
+				<Route
+					path="onboarding/listing"
+					element={<VendorOnboardingListingPage />}
+				/>
+				<Route path="dashboard" element={<VendorDashboardPage />} />
 
-			<Route path="initiation/create" element={<VendorInitiationPage />} />
+				<Route path="initiation/create" element={<VendorInitiationPage />} />
 
-			<Route
-				path="initiation/:initiationId"
-				element={<VendorInitiationPage />}
-			/>
-			<Route
-				path="initiation/:initiationId/view"
-				element={<VendorInitiationPage mode="view" />}
-			/>
-			<Route path="/onboarding/create" element={<VendorOnboardingPage />} />
+				<Route path="/onboarding/create" element={<VendorOnboardingPage />} />
 
-			<Route
-				path="/onboarding/:onboardingId"
-				element={<VendorOnboardingPage />}
-			/>
+				<Route
+					path="/onboarding/:onboardingId"
+					element={<VendorOnboardingPage />}
+				/>
 
-			<Route
-				path="/onboarding/:onboardingId/view"
-				element={<VendorOnboardingFormView />}
-			/>
-		</Routes>
+				<Route
+					path="/onboarding/:onboardingId/view"
+					element={<VendorOnboardingFormView />}
+				/>
+			</Routes>
+		</Suspense>
 	);
 };
 

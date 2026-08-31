@@ -33,7 +33,7 @@ const VendorOnboardingPage = () => {
 		isExistingRequest &&
 		!form.isLoading &&
 		!form.isError &&
-		form.status === "APPROVED";
+		form.formStatus === "APPROVED";
 
 	const handleBackToView = () => {
 		if (!onboardingId) return;
@@ -48,10 +48,10 @@ const VendorOnboardingPage = () => {
 	return (
 		<PageSectionLayout>
 			<PageHeader
-				headerText="Vendor Onboarding Form"
+				headerText="Domestic Vendor Onboarding Form"
 				navigation={{
 					variant: "breadcrumbs",
-					ariaLabel: "Vendor Onboarding Form",
+					ariaLabel: "Domestic Vendor Onboarding Form",
 					breadcrumbs: [
 						{
 							label: "Home Screen",
@@ -62,19 +62,19 @@ const VendorOnboardingPage = () => {
 							href: "/vendor/onboarding/listing?tab=onboarding",
 						},
 						{
-							label: "Vendor Onboarding Form",
+							label: "Domestic Vendor Onboarding Form",
 						},
 					],
 					separator: "›",
 				}}
 			/>
 
-			<Card>
-				{form.isLoading ? (
-					<div role="status">Loading vendor onboarding details...</div>
-				) : form.isError ? (
-					<div role="alert">Unable to load vendor onboarding details.</div>
-				) : (
+			{form.isLoading ? (
+				<div role="status">Loading vendor onboarding details...</div>
+			) : form.isError ? (
+				<div role="alert">Unable to load vendor onboarding details.</div>
+			) : (
+				<Card>
 					<VendorCreationFormProvider value={form}>
 						<StepProgress
 							steps={form.vendorOnboardingSteps}
@@ -123,8 +123,8 @@ const VendorOnboardingPage = () => {
 							/>
 						)}
 					</VendorCreationFormProvider>
-				)}
-			</Card>
+				</Card>
+			)}
 		</PageSectionLayout>
 	);
 };

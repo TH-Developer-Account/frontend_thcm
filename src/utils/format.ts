@@ -82,6 +82,24 @@ export function formatDate(date?: string | Date) {
 /**
  * 26 Feb 2026, 3:45 PM
  */
+
+export function formatDateTime24(date?: string | Date | null) {
+	if (!date) return "";
+
+	const d = new Date(date);
+
+	if (Number.isNaN(d.getTime())) return "";
+
+	return d.toLocaleString("en-IN", {
+		day: "2-digit",
+		month: "2-digit",
+		year: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
+		hour12: false,
+	});
+}
 export function formatDateTime(date?: string | Date) {
 	if (!date) return "";
 

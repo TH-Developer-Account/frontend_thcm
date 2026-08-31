@@ -61,4 +61,10 @@ export const FILE_UPLOAD_LIMITS: Record<
 		extensions: ["pdf", "jpg", "jpeg", "png", "webp"],
 		label: "PDF, JPG, JPEG, PNG, or WEBP files",
 	},
+	mediclaimDocument: {
+		maxSize: 5 * 1024 * 1024,
+		mimeTypes: ["application/pdf", "image/jpeg", "image/png"],
+		extensions: ["pdf", "jpg", "jpeg", "png"],
+		label: "PDF, JPG, JPEG, PNG, or WEBP files",
+	},
 };

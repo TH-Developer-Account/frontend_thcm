@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-// import Card from "../components/common/Card";
 
 type PublicPagesLayoutProps = {
 	children: ReactNode;
@@ -21,13 +20,13 @@ export const PublicPagesLayout = ({
 						<img src="/lo.jpg" alt="logo" />
 					</div>
 
-					<span className="public-page-security">
+					{/* <span className="public-page-security">
 						<span
 							aria-hidden="true"
 							className="public-page-security-indicator"
 						/>
 						Secure portal
-					</span>
+					</span> */}
 				</div>
 			</header>
 			<main className="public-page">

@@ -31,13 +31,7 @@ type ApiCommentItem = {
 	message?: string | null;
 	createdAt: string;
 	updatedAt?: string | null;
-
-	entryType?: CommentItem["entryType"];
-	reason?: string | null;
-	action?: string | null;
-	stageName?: string | null;
-	metadata?: CommentItem["metadata"];
-
+	actorName?: string;
 	actor?: ApiCommentUser | null;
 	user?: ApiCommentUser | null;
 	replies?: ApiCommentItem[] | null;
@@ -50,7 +44,7 @@ const encodePathSegment = (value: string): string =>
 
 const normalizeUser = (user?: ApiCommentUser | null): CommentUser => ({
 	id: user?.id ?? "unknown",
-	first_name: user?.first_name?.trim() || "Unknown",
+	first_name: user?.first_name?.trim() || "",
 	last_name: user?.last_name?.trim() || "user",
 	email: user?.email ?? undefined,
 	avatarUrl: user?.avatarUrl ?? undefined,
@@ -61,12 +55,7 @@ const normalizeComment = (comment: ApiCommentItem): CommentItem => ({
 	message: comment.message ?? "",
 	createdAt: comment.createdAt,
 	updatedAt: comment.updatedAt ?? undefined,
-	entryType: comment.entryType,
-	reason: comment.reason ?? undefined,
-	action: comment.action ?? undefined,
-	stageName: comment.stageName ?? undefined,
-	metadata: comment.metadata,
-	actor: normalizeUser(comment.actor ?? comment.user),
+	actor: normalizeUser(comment.actor ?? comment.user) || comment.actorName,
 	replies: comment.replies?.map(normalizeComment) ?? undefined,
 });
 
@@ -93,14 +82,14 @@ const normalizePayload = (
 });
 
 export const commentApi: CommentApiAdapter = {
-	getActivity: async ({ subjectType, subjectId }) => {
+	getComments: async ({ subjectType, subjectId }) => {
 		validateSubject(subjectType, subjectId);
 
 		const type = encodePathSegment(String(subjectType));
 		const id = encodePathSegment(subjectId);
 
 		const response = await ServerAxios.get<ApiEnvelope<ApiCommentItem[]>>(
-			`${COMMENT_BASE_URL}/${type}/${id}/activity`,
+			`${COMMENT_BASE_URL}/${type}/${id}/comments`,
 		);
 
 		const entries = Array.isArray(response.data.data) ? response.data.data : [];

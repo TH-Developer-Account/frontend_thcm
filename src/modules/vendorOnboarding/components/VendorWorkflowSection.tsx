@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 
 import Button from "../../../components/common/Button";
+import Checkbox from "../../../components/forms/Checkbox";
+import FormInput from "../../../components/forms/FormInput";
 import { ApprovalWorkflowTableContent } from "../../workflows";
 import { WorkflowFetchPage } from "../../workflows/pages/WorkflowFetchPage";
 import WorkflowStagesForm from "../../workflows/components/WorkflowStagesForm"; // adjust path if different
@@ -21,6 +23,7 @@ import type {
 } from "../../workflows/types/types";
 
 import type { VendorActiveWorkflow } from "../types/vendorOnboarding.types";
+import { validateWorkflow } from "../../workflows/utils/workflow.helpers"; // adjust path if different
 
 type WorkflowSource = "active" | "selection";
 
@@ -181,6 +184,25 @@ const VendorWorkflowSection = ({
 	// workflow" always exits this mode.
 	const [isEditingCurrentWorkflow, setIsEditingCurrentWorkflow] =
 		useState(false);
+	const [selectedEditStages, setSelectedEditStages] = useState<
+		WorkflowStage[] | null
+	>(null);
+
+	// ─────────────────────────────────────────────────────────────────────
+	// "Use existing → Customise" — WorkflowFetchPage internally switches
+	// between its "list" screen (WorkflowEntrySection, no footer of its
+	// own) and its "builder" screen (WorkflowTemplateBuilder, which always
+	// renders its own footer — WorkflowStagesForm's Back/Next on the
+	// stages step, or the Back-to-stages/Save actions on the usage step).
+	//
+	// Without tracking this, the outer footer below (Back/Next for this
+	// whole vendor-workflow step) stays visible at the same time as the
+	// builder's own footer, producing two footers. This mirrors how
+	// `isEditingCurrentWorkflow` already suppresses the outer footer for
+	// the "edit current workflow" path.
+	// ─────────────────────────────────────────────────────────────────────
+	const [isCustomisingExistingWorkflow, setIsCustomisingExistingWorkflow] =
+		useState(false);
 
 	const [stageErrors, setStageErrors] = useState<WorkflowStageErrors[]>([]);
 	const [stageFormError, setStageFormError] = useState<string | null>(null);
@@ -221,6 +243,9 @@ const VendorWorkflowSection = ({
 
 	const showWorkflowPreview =
 		shouldUseActiveWorkflow || Boolean(selectedWorkflow);
+	const isEditingSelectedWorkflow = selectedEditStages !== null;
+	const isEditingWorkflow =
+		isEditingCurrentWorkflow || isEditingSelectedWorkflow;
 
 	// Every mutation goes through this so parent's stageEdits (the payload
 	// source of truth) and local render state never drift apart.
@@ -231,6 +256,12 @@ const VendorWorkflowSection = ({
 		onStageEditsChange(next);
 	};
 
+	const updateSelectedStages = (
+		updater: (prev: WorkflowStage[]) => WorkflowStage[],
+	) => {
+		setSelectedEditStages((current) => updater(current ?? []));
+	};
+
 	// ── "Change current workflow" → go pick/build a different one ──────────
 	const handleChangeWorkflow = () => {
 		/*
@@ -238,6 +269,7 @@ const VendorWorkflowSection = ({
 		 * modify the active workflow.
 		 */
 		setIsEditingCurrentWorkflow(false);
+		setSelectedEditStages(null);
 		onStageEditsChange(null);
 		onClearWorkflow();
 		setWorkflowSource("selection");
@@ -249,25 +281,111 @@ const VendorWorkflowSection = ({
 		// path, kept entirely separate from the attach/selection flow.
 		onClearWorkflow();
 		setWorkflowSource("active");
+		setStageErrors([]);
 		setStageFormError(null);
 		onStageEditsChange(mapActiveStagesToEditable(activeWorkflowStages));
 		setIsEditingCurrentWorkflow(true);
 	};
 
+	const handleEditSelectedWorkflow = () => {
+		if (!selectedWorkflow) return;
+
+		setStageErrors([]);
+		setStageFormError(null);
+		setSelectedEditStages(
+			selectedWorkflow.previewStages.map((stage, index) => ({
+				...stage,
+				stageOrder: index + 1,
+				isExpanded: index === 0,
+				approvers: stage.approvers.map((approver) => ({
+					...approver,
+					user: { ...approver.user },
+				})),
+			})),
+		);
+	};
+
+	const handleCancelEditSelectedWorkflow = () => {
+		setSelectedEditStages(null);
+		setStageErrors([]);
+		setStageFormError(null);
+	};
+
+	const handleConfirmEditSelectedWorkflow = async () => {
+		if (!selectedWorkflow || !selectedEditStages) return;
+
+		const validation = validateWorkflow(selectedEditStages);
+		setStageErrors(validation.stageErrors);
+		setStageFormError(validation.formError ?? null);
+
+		const hasStageErrors = validation.stageErrors.some(
+			(stageError) => Object.keys(stageError).length > 0,
+		);
+
+		if (validation.formError || hasStageErrors) {
+			if (hasStageErrors) {
+				setSelectedEditStages((current) =>
+					(current ?? []).map((stage, index) =>
+						Object.keys(validation.stageErrors[index] || {}).length > 0
+							? { ...stage, isExpanded: true }
+							: stage,
+					),
+				);
+			}
+			return;
+		}
+
+		await onWorkflowSelected({
+			...selectedWorkflow,
+			previewStages: selectedEditStages,
+			isEditedExistingWorkflow: true,
+			saveAsTemplate: selectedWorkflow.saveAsTemplate ?? false,
+		});
+		setSelectedEditStages(null);
+	};
+
 	// Cancel — discard in-progress edits, return to the read-only preview.
 	const handleCancelEditCurrentWorkflow = () => {
 		setIsEditingCurrentWorkflow(false);
+		setStageErrors([]);
+		setStageFormError(null);
 		onStageEditsChange(null);
 	};
 
-	// Confirm — edits already synced live via updateStages; just collapse
-	// back to the preview. Submission itself happens later via the outer
-	// form's "Next"/"Submit" action.
+	// Confirm — edits already synced live via updateStages. Previously this
+	// only checked "is the list non-empty", so per-stage problems (missing
+	// approvers, invalid minApprovals, etc.) were never surfaced and never
+	// blocked continuing. Now runs the same `validateWorkflow` check the
+	// "customise" builder flow (WorkflowTemplateBuilder.handleContinue)
+	// already uses, so both paths behave consistently.
 	const handleConfirmEditCurrentWorkflow = () => {
-		if (!stageEdits?.length) {
-			setStageFormError("Add at least one stage before continuing.");
+		const validation = validateWorkflow(stageEdits ?? []);
+
+		setStageErrors(validation.stageErrors);
+		setStageFormError(validation.formError ?? null);
+
+		const hasStageErrors = validation.stageErrors.some(
+			(stageError) => Object.keys(stageError).length > 0,
+		);
+
+		if (validation.formError || hasStageErrors) {
+			if (hasStageErrors) {
+				// Same reasoning as WorkflowTemplateBuilder.handleContinue —
+				// WorkflowStagesForm only shows a stage's error while it's
+				// expanded, so a collapsed stage's error would otherwise be
+				// invisible and "Confirm" would appear to silently do nothing.
+				onStageEditsChange(
+					(stageEdits ?? []).map((stage, index) =>
+						Object.keys(validation.stageErrors[index] || {}).length > 0
+							? { ...stage, isExpanded: true }
+							: stage,
+					),
+				);
+			}
+
 			return;
 		}
+
 		setIsEditingCurrentWorkflow(false);
 	};
 
@@ -294,22 +412,26 @@ const VendorWorkflowSection = ({
 		key: K,
 		value: WorkflowStage[K],
 	) => void = (stageId, key, value) => {
-		updateStages((prev) =>
-			prev.map((s) => (s.id === stageId ? { ...s, [key]: value } : s)),
-		);
+		const updater = (prev: WorkflowStage[]) =>
+			prev.map((s) => (s.id === stageId ? { ...s, [key]: value } : s));
+
+		if (isEditingSelectedWorkflow) updateSelectedStages(updater);
+		else updateStages(updater);
 	};
 
 	const handleToggleStage = (stageId: string) => {
 		// UI-only (expand/collapse) — doesn't need to touch parent state.
-		onStageEditsChange(
-			(stageEdits ?? []).map((s) =>
+		const updater = (stages: WorkflowStage[]) =>
+			stages.map((s) =>
 				s.id === stageId ? { ...s, isExpanded: !s.isExpanded } : s,
-			),
-		);
+			);
+
+		if (isEditingSelectedWorkflow) updateSelectedStages(updater);
+		else updateStages(updater);
 	};
 
 	const handleRemoveApprover = (stageId: string, approverId: string) => {
-		updateStages((prev) =>
+		const updater = (prev: WorkflowStage[]) =>
 			prev.map((s) =>
 				s.id === stageId
 					? {
@@ -317,20 +439,24 @@ const VendorWorkflowSection = ({
 							approvers: s.approvers.filter((a) => a.id !== approverId),
 						}
 					: s,
-			),
-		);
+			);
+
+		if (isEditingSelectedWorkflow) updateSelectedStages(updater);
+		else updateStages(updater);
 	};
 
 	const handleAddApprover = (stageId: string, approver: WorkflowApprover) => {
-		updateStages((prev) =>
+		const updater = (prev: WorkflowStage[]) =>
 			prev.map((s) =>
 				s.id === stageId ? { ...s, approvers: [...s.approvers, approver] } : s,
-			),
-		);
+			);
+
+		if (isEditingSelectedWorkflow) updateSelectedStages(updater);
+		else updateStages(updater);
 	};
 
 	const handleAddStage = () => {
-		updateStages((prev) => [
+		const updater = (prev: WorkflowStage[]) => [
 			...prev,
 			{
 				id: `new-stage-${Date.now()}`,
@@ -341,7 +467,10 @@ const VendorWorkflowSection = ({
 				isExpanded: true,
 				approvers: [],
 			} as WorkflowStage,
-		]);
+		];
+
+		if (isEditingSelectedWorkflow) updateSelectedStages(updater);
+		else updateStages(updater);
 	};
 
 	return (
@@ -355,30 +484,33 @@ const VendorWorkflowSection = ({
 									<CheckCircle2 size={18} aria-hidden="true" />
 								</span>
 
-								<div className="vendor-workflow-selection-copy">
+								<div className="flex gap-2">
 									<span>
-										{isEditingCurrentWorkflow
-											? "Editing current workflow"
+										{isEditingWorkflow
+											? isEditingSelectedWorkflow
+												? "Editing selected workflow -"
+												: "Editing workflow -"
 											: shouldUseActiveWorkflow
-												? "Current active workflow"
-												: "New selected workflow"}
+												? "Current workflow -"
+												: "New workflow: "}
 									</span>
 
 									<strong>{workflowName}</strong>
 
-									{isEditingCurrentWorkflow && (
+									{/* {isEditingWorkflow && (
 										<small className="vendor-workflow-selection-note">
-											Changes apply directly to the active workflow's stages
-											when resubmitted.
+											{isEditingSelectedWorkflow
+												? "Review and confirm the stages, then choose whether to save the changes as a reusable template."
+												: "Changes apply to the active workflow's stages when resubmitted."}
 										</small>
-									)}
+									)} */}
 
-									{!isEditingCurrentWorkflow && shouldUseActiveWorkflow && (
+									{/* {!isEditingCurrentWorkflow && shouldUseActiveWorkflow && (
 										<small className="vendor-workflow-selection-note">
 											Continue with this workflow, edit its stages, or select a
 											different one for resubmission.
 										</small>
-									)}
+									)} */}
 
 									{!isEditingCurrentWorkflow &&
 										!shouldUseActiveWorkflow &&
@@ -391,12 +523,12 @@ const VendorWorkflowSection = ({
 								</div>
 							</div>
 
-							{!isEditingCurrentWorkflow && (
+							{!isEditingWorkflow && (
 								<div className="gap-2 flex">
 									{canEditActiveWorkflow && shouldUseActiveWorkflow && (
 										<Button
 											type="button"
-											text="Edit current workflow"
+											text="Edit workflow"
 											size="sm"
 											Icon={Pencil}
 											iconPosition="left"
@@ -405,9 +537,21 @@ const VendorWorkflowSection = ({
 											onClick={handleEditCurrentWorkflow}
 										/>
 									)}
+									{!shouldUseActiveWorkflow && selectedWorkflow && (
+										<Button
+											type="button"
+											text="Edit workflow"
+											size="sm"
+											Icon={Pencil}
+											iconPosition="left"
+											appearance="standard"
+											variant="outline"
+											onClick={handleEditSelectedWorkflow}
+										/>
+									)}
 									<Button
 										type="button"
-										text="Change current workflow"
+										text="Reattach workflow"
 										size="sm"
 										Icon={RefreshCcw}
 										iconPosition="left"
@@ -420,9 +564,13 @@ const VendorWorkflowSection = ({
 						</div>
 
 						<div className="vendor-workflow-table">
-							{isEditingCurrentWorkflow ? (
+							{isEditingWorkflow ? (
 								<WorkflowStagesForm
-									stages={stageEdits ?? []}
+									stages={
+										isEditingSelectedWorkflow
+											? (selectedEditStages ?? [])
+											: (stageEdits ?? [])
+									}
 									errors={stageErrors}
 									formError={stageFormError}
 									currentUserId={currentUserId}
@@ -431,28 +579,78 @@ const VendorWorkflowSection = ({
 									onRemoveApprover={handleRemoveApprover}
 									onAddApprover={handleAddApprover}
 									onAddStage={handleAddStage}
-									onBack={handleCancelEditCurrentWorkflow}
-									onSubmit={handleConfirmEditCurrentWorkflow}
+									onBack={
+										isEditingSelectedWorkflow
+											? handleCancelEditSelectedWorkflow
+											: handleCancelEditCurrentWorkflow
+									}
+									onSubmit={
+										isEditingSelectedWorkflow
+											? () => void handleConfirmEditSelectedWorkflow()
+											: handleConfirmEditCurrentWorkflow
+									}
 								/>
 							) : (
-								<ApprovalWorkflowTableContent
-									stages={previewStages}
-									showEmptyState
-								/>
+								<>
+									<ApprovalWorkflowTableContent
+										stages={previewStages}
+										showEmptyState
+									/>
+
+									{selectedWorkflow?.isEditedExistingWorkflow && (
+										<div className="vendor-workflow-save-template">
+											<Checkbox
+												name="save-edited-workflow-as-template"
+												label="Save these changes as a reusable template"
+												checked={selectedWorkflow.saveAsTemplate ?? false}
+												onChange={(checked) =>
+													void onWorkflowSelected({
+														...selectedWorkflow,
+														saveAsTemplate: checked,
+														templateName: checked
+															? selectedWorkflow.templateName
+															: undefined,
+													})
+												}
+											/>
+
+											{selectedWorkflow.saveAsTemplate && (
+												<FormInput
+													name="editedWorkflowTemplateName"
+													label="Template name"
+													value={selectedWorkflow.templateName ?? ""}
+													onChange={(event) =>
+														void onWorkflowSelected({
+															...selectedWorkflow,
+															templateName: event.target.value,
+														})
+													}
+													placeholder="Enter a template name"
+													required
+												/>
+											)}
+										</div>
+									)}
+								</>
 							)}
 						</div>
 					</div>
 				) : sourceRecordRef ? (
 					<div className="vendor-workflow-picker">
 						{canUseActiveWorkflow && (
-							<div className="vendor-workflow-existing-option">
-								<div>
-									<strong>Current active workflow</strong>
-
-									<span>
-										{activeWorkflow?.template?.name ||
-											"Active approval workflow"}
+							<div className="vendor-workflow-selection">
+								<div className="vendor-workflow-selection-main">
+									<span className="vendor-workflow-selection-icon">
+										<CheckCircle2 size={18} aria-hidden="true" />
 									</span>
+									<div className="flex gap-2">
+										<span>Current workflow -</span>
+
+										<strong>
+											{activeWorkflow?.template?.name ||
+												"Active approval workflow"}
+										</strong>
+									</div>
 								</div>
 
 								<Button
@@ -472,6 +670,9 @@ const VendorWorkflowSection = ({
 							sourceRecordRef={sourceRecordRef}
 							recordType={recordType}
 							onWorkflowSelected={handleWorkflowSelected}
+							onScreenChange={(view) =>
+								setIsCustomisingExistingWorkflow(view === "builder")
+							}
 						/>
 					</div>
 				) : (
@@ -481,7 +682,7 @@ const VendorWorkflowSection = ({
 				)}
 			</div>
 
-			{!isEditingCurrentWorkflow && (
+			{!isEditingWorkflow && !isCustomisingExistingWorkflow && (
 				<div className="vendor-onboarding-form-actions vendor-workflow-navigation">
 					<Button
 						type="button"
@@ -502,7 +703,14 @@ const VendorWorkflowSection = ({
 							appearance="standard"
 							variant="brand"
 							onClick={onNext}
-							disabled={!sourceRecordRef || !hasWorkflow}
+							disabled={
+								!sourceRecordRef ||
+								!hasWorkflow ||
+								Boolean(
+									selectedWorkflow?.saveAsTemplate &&
+									!selectedWorkflow.templateName?.trim(),
+								)
+							}
 						/>
 					</div>
 				</div>

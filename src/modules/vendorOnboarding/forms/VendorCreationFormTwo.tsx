@@ -1,19 +1,9 @@
-import {
-	ArrowLeft,
-	ArrowRight,
-	Banknote,
-	FileCheck2,
-	RefreshCcw,
-	Save,
-	ShieldCheck,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, RefreshCcw, Save } from "lucide-react";
 
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
-
-import FormHeader from "../../../components/ui/FormHeader";
 
 import type {
 	VendorCreationFormTwoValues,
@@ -21,6 +11,17 @@ import type {
 	VendorFormMode,
 } from "../types/vendorOnboarding.types";
 import { useOptionalVendorCreationFormContext } from "../hooks/useVendorCreationForm";
+import type { Option } from "../../../components/forms/input.types";
+import {
+	companyCodeOptions,
+	materialSubTypeOptions,
+	materialTypeOptions,
+	paymentTermOptions,
+	purchaseOrgOptions,
+	tdsOptions,
+	vendorCategoryOptions,
+	vendorTypeOptions,
+} from "../utils/vendor.constant";
 
 export type VendorCreationFormTwoProps = {
 	mode?: VendorFormMode;
@@ -44,75 +45,14 @@ export type VendorCreationFormTwoProps = {
 	vendorCodeLoading?: boolean;
 };
 
-type SelectOption = {
-	label: string;
-	value: string;
-};
-
-const toSelectOptions = (values: string[]): SelectOption[] =>
+const toSelectOptions = (values: string[]): Option[] =>
 	values.map((value) => ({
 		label: value,
 		value,
 	}));
 
-const getSelectedOption = (
-	options: SelectOption[],
-	value?: string,
-): SelectOption | null =>
+const getSelectedOption = (options: Option[], value?: string): Option | null =>
 	options.find((option) => option.value === value) ?? null;
-
-const vendorTypeOptions = toSelectOptions([
-	"PO Based",
-	"Non PO Based",
-	"Not Applicable",
-]);
-
-const companyCodeOptions = toSelectOptions([
-	"0050 - JSR",
-	"0070 - KGP",
-	"0080 - BLR",
-	"0091 - DWD",
-	"Extension",
-]);
-
-const purchaseOrgOptions = toSelectOptions([
-	"P501 - Direct Purchase",
-	"P502 - Indirect Purchase",
-	"P503 - Capital Purchase",
-	"P504 - External Purchase",
-	"P505 - Stock Transport",
-	"P506 - Spare Part Purchase",
-	"Not Applicable",
-]);
-
-const tdsOptions = toSelectOptions([
-	"194J - Professional Fee",
-	"194A - Interest",
-	"194C - Contractors",
-	"194I - Rent",
-	"194H - Commission",
-	"Not Applicable",
-]);
-
-const vendorCategoryOptions = toSelectOptions([
-	"Material",
-	"Parts",
-	"Service",
-	"Capital",
-	"Not Applicable",
-]);
-
-const materialTypeOptions = toSelectOptions([
-	"1 - Direct",
-	"2 - Indirect",
-	"Not Applicable",
-]);
-
-const materialSubTypeOptions = toSelectOptions([
-	"1 - Proprietary",
-	"2 - Non-Proprietary",
-	"Not Applicable",
-]);
 
 const yesNoOptions = toSelectOptions(["Yes", "No"]);
 
@@ -151,8 +91,6 @@ const VendorCreationFormTwo = ({
 				className="vendor-onboarding-form"
 				onSubmit={(event) => event.preventDefault()}
 			>
-				<FormHeader title="THCM Vendor Master Details" Icon={FileCheck2} />
-
 				<div className="vendor-onboarding-form-grid">
 					{values.vendorCode ? (
 						<FormInput
@@ -180,6 +118,11 @@ const VendorCreationFormTwo = ({
 						mode={fieldMode}
 						name="vendorType"
 						label="Vendor Type"
+						success={
+							fieldMode === "edit" &&
+							!errors.vendorType &&
+							Boolean(values.vendorType)
+						}
 						placeholder="Select vendor type"
 						options={vendorTypeOptions}
 						value={getSelectedOption(vendorTypeOptions, values.vendorType)}
@@ -198,6 +141,11 @@ const VendorCreationFormTwo = ({
 						value={getSelectedOption(companyCodeOptions, values.companyCode)}
 						required
 						error={errors.companyCode}
+						success={
+							fieldMode === "edit" &&
+							!errors.companyCode &&
+							Boolean(values.companyCode)
+						}
 						helperText="Select the applicable THCM company code."
 						onChange={(option) =>
 							onChange?.("companyCode", option?.value ?? "")
@@ -213,6 +161,11 @@ const VendorCreationFormTwo = ({
 						value={getSelectedOption(purchaseOrgOptions, values.purchaseOrg)}
 						required
 						error={errors.purchaseOrg}
+						success={
+							fieldMode === "edit" &&
+							!errors.purchaseOrg &&
+							Boolean(values.purchaseOrg)
+						}
 						helperText="Select the purchase organization applicable to this vendor."
 						onChange={(option) =>
 							onChange?.("purchaseOrg", option?.value ?? "")
@@ -220,19 +173,25 @@ const VendorCreationFormTwo = ({
 					/>
 				</div>
 
-				<FormHeader title="Finance & Tax Classification" Icon={Banknote} />
-
 				<div className="vendor-onboarding-form-grid">
-					<FormInput
+					<SelectInput
 						mode={fieldMode}
 						name="paymentTerm"
 						label="Payment Term"
-						value={values.paymentTerm ?? ""}
+						placeholder="Select Payment Term"
+						options={paymentTermOptions}
+						value={getSelectedOption(paymentTermOptions, values.paymentTerm)}
+						success={
+							fieldMode === "edit" &&
+							!errors.paymentTerm &&
+							Boolean(values.paymentTerm)
+						}
 						error={errors.paymentTerm}
-						helperText="Payment terms applicable to this vendor."
-						onChange={(event) => onChange?.("paymentTerm", event.target.value)}
+						helperText="Select proprietary, non-proprietary, or not applicable."
+						onChange={(option) =>
+							onChange?.("paymentTerm", option?.value ?? "")
+						}
 					/>
-
 					<SelectInput
 						mode={fieldMode}
 						name="tds"
@@ -241,6 +200,7 @@ const VendorCreationFormTwo = ({
 						options={tdsOptions}
 						value={getSelectedOption(tdsOptions, values.tds)}
 						error={errors.tds}
+						success={fieldMode === "edit" && !errors.tds && Boolean(values.tds)}
 						helperText="Select the applicable TDS section."
 						onChange={(option) => onChange?.("tds", option?.value ?? "")}
 					/>
@@ -255,6 +215,11 @@ const VendorCreationFormTwo = ({
 							vendorCategoryOptions,
 							values.vendorCategory,
 						)}
+						success={
+							fieldMode === "edit" &&
+							!errors.vendorCategory &&
+							Boolean(values.vendorCategory)
+						}
 						error={errors.vendorCategory}
 						helperText="Select the category applicable to this vendor."
 						onChange={(option) =>
@@ -270,6 +235,11 @@ const VendorCreationFormTwo = ({
 						options={materialTypeOptions}
 						value={getSelectedOption(materialTypeOptions, values.materialType)}
 						error={errors.materialType}
+						success={
+							fieldMode === "edit" &&
+							!errors.materialType &&
+							Boolean(values.materialType)
+						}
 						helperText="Select direct, indirect, or not applicable."
 						onChange={(option) =>
 							onChange?.("materialType", option?.value ?? "")
@@ -286,6 +256,11 @@ const VendorCreationFormTwo = ({
 							materialSubTypeOptions,
 							values.materialSubType,
 						)}
+						success={
+							fieldMode === "edit" &&
+							!errors.materialSubType &&
+							Boolean(values.materialSubType)
+						}
 						error={errors.materialSubType}
 						helperText="Select proprietary, non-proprietary, or not applicable."
 						onChange={(option) =>
@@ -293,8 +268,6 @@ const VendorCreationFormTwo = ({
 						}
 					/>
 				</div>
-
-				<FormHeader title="Compliance Declarations" Icon={ShieldCheck} />
 
 				<div className="vendor-onboarding-form-grid">
 					<SelectInput
@@ -307,6 +280,11 @@ const VendorCreationFormTwo = ({
 							yesNoOptions,
 							values.vendorSelfAssessmentObtained,
 						)}
+						success={
+							fieldMode === "edit" &&
+							!errors.vendorSelfAssessmentObtained &&
+							Boolean(values.vendorSelfAssessmentObtained)
+						}
 						error={errors.vendorSelfAssessmentObtained}
 						helperText="Confirm whether vendor self assessment form is obtained."
 						onChange={(option) =>
@@ -322,6 +300,11 @@ const VendorCreationFormTwo = ({
 						options={yesNoOptions}
 						value={getSelectedOption(yesNoOptions, values.gpaObtained)}
 						error={errors.gpaObtained}
+						success={
+							fieldMode === "edit" &&
+							!errors.gpaObtained &&
+							Boolean(values.gpaObtained)
+						}
 						helperText="Confirm whether GPA is obtained."
 						onChange={(option) =>
 							onChange?.("gpaObtained", option?.value ?? "")
@@ -336,6 +319,11 @@ const VendorCreationFormTwo = ({
 						options={yesNoOptions}
 						value={getSelectedOption(yesNoOptions, values.relatedPartyToThcm)}
 						error={errors.relatedPartyToThcm}
+						success={
+							fieldMode === "edit" &&
+							!errors.relatedPartyToThcm &&
+							Boolean(values.relatedPartyToThcm)
+						}
 						helperText="Confirm whether vendor is a related party to THCM."
 						onChange={(option) =>
 							onChange?.("relatedPartyToThcm", option?.value ?? "")
@@ -352,6 +340,11 @@ const VendorCreationFormTwo = ({
 							yesNoOptions,
 							values.vendorAuditReportPrepared,
 						)}
+						success={
+							fieldMode === "edit" &&
+							!errors.vendorAuditReportPrepared &&
+							Boolean(values.vendorAuditReportPrepared)
+						}
 						error={errors.vendorAuditReportPrepared}
 						helperText="Confirm whether vendor audit report is prepared."
 						onChange={(option) =>
@@ -368,6 +361,11 @@ const VendorCreationFormTwo = ({
 						value={values.natureOfService ?? ""}
 						required
 						error={errors.natureOfService}
+						success={
+							fieldMode === "edit" &&
+							!errors.natureOfService &&
+							Boolean(values.natureOfService)
+						}
 						helperText="Describe the nature of services provided by the vendor."
 						onChange={(event) =>
 							onChange?.("natureOfService", event.target.value)
@@ -381,6 +379,11 @@ const VendorCreationFormTwo = ({
 						value={values.reasonForOnboarding ?? ""}
 						required
 						error={errors.reasonForOnboarding}
+						success={
+							fieldMode === "edit" &&
+							!errors.reasonForOnboarding &&
+							Boolean(values.reasonForOnboarding)
+						}
 						helperText="Explain why this vendor is being onboarded."
 						onChange={(event) =>
 							onChange?.("reasonForOnboarding", event.target.value)
@@ -395,8 +398,8 @@ const VendorCreationFormTwo = ({
 							size="sm"
 							Icon={ArrowLeft}
 							iconPosition="left"
-							appearance="ghost"
-							variant="secondary"
+							appearance="standard"
+							variant="outline"
 							onClick={onBack}
 							disabled={loading}
 						/>

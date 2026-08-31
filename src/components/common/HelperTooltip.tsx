@@ -18,7 +18,7 @@ export default function HelperTooltip({
 				className="form-helper-btn"
 				aria-label={`Help for ${label}`}
 			>
-				<Info size={11} strokeWidth={2.4} />
+				<Info size={16} strokeWidth={2.5} />
 			</button>
 
 			<span className="form-helper-tooltip " role="tooltip">

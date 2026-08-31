@@ -4,7 +4,8 @@ export type FileUploadKind =
 	| "document"
 	| "spreadsheet"
 	| "any"
-	| "vendorDocument";
+	| "vendorDocument"
+	| "mediclaimDocument";
 
 export type FileUploadValue = {
 	id?: string;
@@ -41,9 +42,18 @@ export type MultipleFileUploadChangeMeta = {
 	affectedValue?: FileUploadValue | null;
 };
 
+/**
+ * "card" (default) — existing thumbnail + name + meta layout.
+ * "line" — compact single row: file name only (click opens the preview
+ * modal) plus the same optional actions (replace/preview/remove), gated by
+ * `showActions` as before. No thumbnail, no size/type meta text.
+ */
+export type FileUploadPreviewVariant = "card" | "line";
+
 type FileUploadSharedProps = {
 	kind?: FileUploadKind;
 	label?: string;
+	tooltip?: string;
 	description?: string;
 	required?: boolean;
 	error?: string;
@@ -53,6 +63,7 @@ type FileUploadSharedProps = {
 	className?: string;
 	inputName?: string;
 	showActions?: boolean;
+	previewVariant?: FileUploadPreviewVariant;
 	enableCaption?: boolean;
 	captionRequired?: boolean;
 	captionLabel?: string;

@@ -27,7 +27,6 @@ function ActionCard({
 		localStorage.setItem("appId", appId);
 		navigate(path);
 	};
-
 	return (
 		<button
 			type="button"

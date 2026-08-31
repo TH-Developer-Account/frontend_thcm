@@ -5,8 +5,7 @@ import type { SortingState } from "@tanstack/react-table";
 import type { Option } from "../../../components/forms/input.types";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { useDebounce } from "../../../hooks/useDebounce";
-
-import { workflowListApi } from "../api/workflow.api";
+import { workflowApi, workflowListApi } from "../api/workflow.api";
 import { formatApps } from "../constant/workflow.constant";
 import type { WorkflowListScope, WorkflowRow } from "../types/types";
 import { mapWorkflowRows } from "../utils/workflow-list.helpers";
@@ -158,8 +157,6 @@ export const useWorkflowListingPage = () => {
 
 		const fetchUsers = async (): Promise<void> => {
 			try {
-				const { workflowApi } = await import("../api/workflow.api");
-
 				const options = await workflowApi.getUserOptions();
 
 				if (!active) return;

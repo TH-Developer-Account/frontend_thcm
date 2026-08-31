@@ -5,9 +5,9 @@ import {
 	MenuItems,
 	Portal,
 } from "@headlessui/react";
-import { EllipsisVertical } from "lucide-react";
+import { EllipsisVertical, type LucideIcon } from "lucide-react";
 
-import type { LucideIcon } from "lucide-react";
+export type ActionMenuSize = "xs" | "sm" | "md" | "lg";
 
 export type ActionMenuItem<TData> = {
 	id: string;
@@ -26,6 +26,7 @@ type ActionMenuProps<TData> = {
 	actions: ActionMenuItem<TData>[];
 	ariaLabel: string;
 
+	size?: ActionMenuSize;
 	triggerIcon?: LucideIcon;
 	triggerIconSize?: number;
 	triggerLabel?: string;
@@ -40,14 +41,22 @@ const joinClassNames = (
 	...classNames: Array<string | false | null | undefined>
 ): string => classNames.filter(Boolean).join(" ");
 
+const DEFAULT_ICON_SIZE: Record<ActionMenuSize, number> = {
+	xs: 14,
+	sm: 16,
+	md: 18,
+	lg: 20,
+};
+
 const ActionMenu = <TData,>({
 	row,
 	actions,
 	ariaLabel,
+	size = "sm",
 	triggerIcon: TriggerIcon = EllipsisVertical,
-	triggerIconSize = 16,
+	triggerIconSize,
 	triggerLabel,
-	triggerVariant,
+	triggerVariant = "default",
 	className,
 	triggerClassName,
 	panelClassName,
@@ -58,14 +67,24 @@ const ActionMenu = <TData,>({
 		return null;
 	}
 
+	const resolvedIconSize = triggerIconSize ?? DEFAULT_ICON_SIZE[size];
+
 	return (
-		<Menu as="div" className={joinClassNames("action-menu", className)}>
+		<Menu
+			as="div"
+			className={joinClassNames(
+				"action-menu",
+				`action-menu-${size}`,
+				className,
+			)}
+		>
 			<MenuButton
 				type="button"
 				className={joinClassNames(
 					"action-menu-trigger",
+					`action-menu-trigger-${size}`,
 					triggerLabel && "action-menu-trigger-labeled",
-					triggerVariant && `action-menu-trigger-${triggerVariant}`,
+					`action-menu-trigger-${triggerVariant}`,
 					triggerClassName,
 				)}
 				aria-label={ariaLabel}
@@ -74,14 +93,18 @@ const ActionMenu = <TData,>({
 					<span className="action-menu-trigger-label">{triggerLabel}</span>
 				) : null}
 
-				<TriggerIcon size={triggerIconSize} aria-hidden="true" />
+				<TriggerIcon size={resolvedIconSize} aria-hidden="true" />
 			</MenuButton>
 
 			<Portal>
 				<MenuItems
 					anchor="bottom end"
 					transition
-					className={joinClassNames("action-menu-panel", panelClassName)}
+					className={joinClassNames(
+						"action-menu-panel",
+						`action-menu-panel-${size}`,
+						panelClassName,
+					)}
 				>
 					{visibleActions.map((action) => {
 						const ItemIcon = action.Icon;
@@ -95,6 +118,7 @@ const ActionMenu = <TData,>({
 										aria-label={action.ariaLabel ?? action.label}
 										className={joinClassNames(
 											"action-menu-item",
+											`action-menu-item-${size}`,
 											focus && "action-menu-item-focus",
 											action.variant === "danger" && "action-menu-item-danger",
 											action.className,
@@ -105,9 +129,7 @@ const ActionMenu = <TData,>({
 											}
 										}}
 									>
-										{ItemIcon ? (
-											<ItemIcon size={14} aria-hidden="true" />
-										) : null}
+										{ItemIcon ? <ItemIcon aria-hidden="true" /> : null}
 
 										<span>{action.label}</span>
 									</button>

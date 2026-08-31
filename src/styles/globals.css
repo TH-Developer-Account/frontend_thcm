@@ -1,6 +1,23 @@
 @reference "tailwindcss";
 
 @layer base {
+	/*
+	 * Application density
+	 * -------------------
+	 * The design system and Tailwind utilities in this application are primarily
+	 * rem-based. Reducing the root size gives the complete UI a compact density
+	 * without scaling the viewport itself.
+	 *
+	 * Keeping the viewport at its real size is important: percentage widths,
+	 * 100dvh layouts, fixed headers, sidebars, overlays and portals continue to
+	 * fill the screen and do not leave an unused white strip.
+	 */
+	html {
+		font-size: 70%;
+		text-size-adjust: 100%;
+		-webkit-text-size-adjust: 100%;
+	}
+
 	*,
 	*::before,
 	*::after {
@@ -21,12 +38,16 @@
 
 	body {
 		margin: 0;
+		width: 100%;
 		min-height: 100dvh;
+		overflow-x: clip;
 		background-color: var(--color-bg-page);
 		color: var(--color-text-primary);
 	}
 
 	#root {
+		width: 100%;
+		min-width: 0;
 		min-height: 100dvh;
 		isolation: isolate;
 	}

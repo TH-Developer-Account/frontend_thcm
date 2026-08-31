@@ -2,7 +2,7 @@ import type {
 	ManagementAvatarGroupProps,
 	ManagementIdentityCellProps,
 	ManagementValueCellProps,
-} from "./ManagementTable/ManagementTable.types";
+} from "./ManagementTable.types";
 
 const joinClassNames = (
 	...classNames: Array<string | false | null | undefined>

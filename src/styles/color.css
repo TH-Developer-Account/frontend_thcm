@@ -40,6 +40,7 @@
 		--color-iron-dark: #111827;
 
 		/* Feedback primitives */
+		--color-green-soft: #fafffb;
 		--color-green-50: #ecfdf3;
 		--color-green-600: #15803d;
 		--color-green-700: #166534;
@@ -116,6 +117,7 @@
 		/* Feedback */
 		--color-success: var(--color-green-600);
 		--color-success-hover: var(--color-green-700);
+		--color-success-bg-soft: var(--color-green-soft);
 		--color-success-bg: var(--color-green-50);
 		--color-success-border: #bbf7d0;
 		--color-warning: var(--color-amber-600);

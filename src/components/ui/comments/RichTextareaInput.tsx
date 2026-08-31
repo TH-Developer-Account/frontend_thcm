@@ -1,5 +1,5 @@
 import React, { type ForwardRefRenderFunction } from "react";
-import { ChevronUp, Send, Smile, Type } from "lucide-react";
+import { AtSign, Send, Smile } from "lucide-react";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 
 import Avatar from "../../common/Avatar";
@@ -7,7 +7,7 @@ import Button from "../../common/Button";
 import HelperTooltip from "../../common/HelperTooltip";
 import TextareaInput from "../../forms/TextareaInput";
 
-import { COMMENT_EMOJIS, COMMENT_FORMAT_ACTIONS } from "./comment.constants";
+import { COMMENT_EMOJIS } from "./comment.constants";
 import type { RichTextareaProps } from "./richTextarea.types";
 import { useRichInput } from "./useRichInput";
 
@@ -42,8 +42,6 @@ const RichTextarea: ForwardRefRenderFunction<
 		submitting = false,
 		hasRealContent = false,
 		onSubmit,
-		menuItems = [],
-		onMenuAction,
 	},
 	forwardedRef,
 ) => {
@@ -60,8 +58,8 @@ const RichTextarea: ForwardRefRenderFunction<
 		filteredMentions,
 		handleChange,
 		insertAtCursor,
+		insertMentionAtCursor,
 		insertMention,
-		applyFormat,
 	} = useRichInput({
 		value,
 		textareaRef,
@@ -72,15 +70,6 @@ const RichTextarea: ForwardRefRenderFunction<
 	});
 
 	const isSubmitDisabled = !hasRealContent || disabled || submitting;
-
-	const handleMenuItemClick = (action: string) => {
-		if (action === "mention") {
-			insertAtCursor("@");
-		} else {
-			onMenuAction?.(action);
-		}
-		setPopup(null);
-	};
 
 	return (
 		<div className="form-field rich-textarea-field">
@@ -100,210 +89,173 @@ const RichTextarea: ForwardRefRenderFunction<
 				ref={containerRef}
 				className={joinClassNames(
 					"rich-textarea",
+					"rich-textarea-row",
 					error && "rich-textarea-error",
 					disabled && "rich-textarea-disabled",
 				)}
 			>
-				<TextareaInput
-					id={name}
-					ref={textareaRef}
-					name={name}
-					autoFocus={autoFocus}
-					placeholder={placeholder}
-					value={value}
-					disabled={disabled}
-					maxLength={maxLength}
-					rows={rows}
-					aria-invalid={Boolean(error)}
-					aria-describedby={errorId}
-					onChange={handleChange}
-					onKeyDown={(event) => {
-						if (event.key === "Escape") setPopup(null);
-						onKeyDown?.(event);
-					}}
-					className={joinClassNames(
-						"rich-textarea-control",
-						error && "form-input-error",
-						disabled && "form-input-disabled",
-						className,
-					)}
-				/>
-
-				{mentionOpen && filteredMentions.length > 0 ? (
-					<div
-						className="rich-textarea-popover rich-textarea-mention-popover"
-						role="listbox"
-						aria-label="Mention a user"
-					>
-						{filteredMentions.map((user) => (
-							<button
-								key={user.id}
-								type="button"
-								className="rich-textarea-menu-item"
-								onMouseDown={(event) => {
-									event.preventDefault();
-									insertMention(user);
-								}}
-								role="option"
-								aria-selected="false"
-							>
-								<Avatar
-									firstName={user.first_name}
-									lastName={user.last_name}
-									size="sm"
-								/>
-								<span className="rich-textarea-menu-label">
-									{user.first_name} {user.last_name}
-								</span>
-							</button>
-						))}
-					</div>
-				) : null}
-
-				<div className="rich-textarea-toolbar">
-					<div className="rich-textarea-toolbar-start">
-						<div className="rich-textarea-tool-group">
-							<Button
-								type="button"
-								appearance="icon"
-								variant="secondary"
-								size="sm"
-								Icon={Smile}
-								aria-label="Insert emoji"
-								aria-expanded={popup === "emoji"}
-								onClick={() =>
-									setPopup((current) => (current === "emoji" ? null : "emoji"))
-								}
-							/>
-							{popup === "emoji" ? (
-								<div className="rich-textarea-popover rich-textarea-emoji-popover">
-									{COMMENT_EMOJIS.map((emoji) => (
-										<button
-											key={emoji}
-											type="button"
-											className="rich-textarea-emoji"
-											onMouseDown={(event) => {
-												event.preventDefault();
-												insertAtCursor(emoji);
-												setPopup(null);
-											}}
-											aria-label={`Insert ${emoji}`}
-										>
-											{emoji}
-										</button>
-									))}
-								</div>
-							) : null}
+				<div className="rich-textarea-tool-group">
+					<Button
+						type="button"
+						appearance="icon"
+						variant="secondary"
+						size="sm"
+						Icon={Smile}
+						aria-label="Insert emoji"
+						aria-expanded={popup === "emoji"}
+						onClick={() =>
+							setPopup((current) => (current === "emoji" ? null : "emoji"))
+						}
+					/>
+					{popup === "emoji" ? (
+						<div className="rich-textarea-popover rich-textarea-emoji-popover">
+							{COMMENT_EMOJIS.map((emoji) => (
+								<Button
+									key={emoji}
+									type="button"
+									className="rich-textarea-emoji"
+									onMouseDown={(event) => {
+										event.preventDefault();
+										insertAtCursor(emoji);
+										setPopup(null);
+									}}
+									aria-label={`Insert ${emoji}`}
+								>
+									{emoji}
+								</Button>
+							))}
 						</div>
-
-						<span className="rich-textarea-divider" aria-hidden="true" />
-
-						<div className="rich-textarea-tool-group">
-							<Button
-								type="button"
-								appearance="icon"
-								variant="secondary"
-								size="sm"
-								Icon={Type}
-								aria-label="Formatting options"
-								aria-expanded={popup === "format"}
-								onClick={() =>
-									setPopup((current) =>
-										current === "format" ? null : "format",
-									)
-								}
-							/>
-							{popup === "format" ? (
-								<div className="rich-textarea-popover rich-textarea-format-popover">
-									{COMMENT_FORMAT_ACTIONS.map(({ icon: Icon, fmt, title }) => (
-										<Button
-											key={fmt}
-											type="button"
-											appearance="icon"
-											variant="secondary"
-											size="sm"
-											Icon={Icon}
-											aria-label={title}
-											onMouseDown={(event) => {
-												event.preventDefault();
-												applyFormat(fmt);
-											}}
-										/>
-									))}
-								</div>
-							) : null}
-						</div>
-					</div>
-
-					<div className="rich-textarea-toolbar-end">
-						<span className="rich-textarea-counter">
-							{value.length} / {maxLength}
-						</span>
-						{onSubmit || menuItems.length > 0 ? (
-							<div className="rich-textarea-submit-group">
-								{onSubmit ? (
-									<Button
-										type="button"
-										appearance="standard"
-										variant="brand"
-										size="sm"
-										Icon={Send}
-										text={submitting ? "Saving..." : submitText}
-										disabled={isSubmitDisabled}
-										loading={submitting}
-										onClick={onSubmit}
-										className="rich-textarea-submit"
-									/>
-								) : null}
-								{menuItems.length > 0 ? (
-									<Button
-										type="button"
-										appearance="icon"
-										variant="brand"
-										size="sm"
-										Icon={ChevronUp}
-										aria-label="More comment options"
-										aria-expanded={popup === "menu"}
-										aria-haspopup="menu"
-										active={popup === "menu"}
-										onClick={() =>
-											setPopup((current) =>
-												current === "menu" ? null : "menu",
-											)
-										}
-										className={joinClassNames(
-											"rich-textarea-menu-trigger",
-											popup === "menu" && "rich-textarea-menu-trigger-open",
-										)}
-									/>
-								) : null}
-								{popup === "menu" && menuItems.length > 0 ? (
-									<div
-										className="rich-textarea-popover rich-textarea-action-popover"
-										role="menu"
-									>
-										{menuItems.map(
-											({ icon: Icon, label: itemLabel, action }) => (
-												<button
-													key={action}
-													type="button"
-													className="rich-textarea-menu-item"
-													onClick={() => handleMenuItemClick(action)}
-													role="menuitem"
-												>
-													<Icon size={14} aria-hidden="true" />
-													<span className="rich-textarea-menu-label">
-														{itemLabel}
-													</span>
-												</button>
-											),
-										)}
-									</div>
-								) : null}
-							</div>
-						) : null}
-					</div>
+					) : null}
 				</div>
+
+				<div className="rich-textarea-input-wrap">
+					<TextareaInput
+						id={name}
+						ref={textareaRef}
+						name={name}
+						autoFocus={autoFocus}
+						placeholder={placeholder}
+						value={value}
+						disabled={disabled}
+						maxLength={maxLength}
+						rows={rows}
+						aria-invalid={Boolean(error)}
+						aria-describedby={errorId}
+						onChange={handleChange}
+						onKeyDown={(event) => {
+							if (event.key === "Escape") setPopup(null);
+							onKeyDown?.(event);
+						}}
+						className={joinClassNames(
+							"rich-textarea-control",
+							error && "form-input-error",
+							disabled && "form-input-disabled",
+							className,
+						)}
+					/>
+
+					{mentionOpen && filteredMentions.length > 0 ? (
+						<div
+							className="rich-textarea-popover rich-textarea-mention-popover"
+							role="listbox"
+							aria-label="Mention a user"
+						>
+							{filteredMentions.map((user) => (
+								<button
+									key={user.id}
+									type="button"
+									className="rich-textarea-menu-item"
+									onMouseDown={(event) => {
+										event.preventDefault();
+										insertMention(user);
+									}}
+									role="option"
+									aria-selected="false"
+								>
+									<Avatar
+										firstName={user.first_name}
+										lastName={user.last_name}
+										size="sm"
+									/>
+									<span className="rich-textarea-menu-label">
+										{user.first_name} {user.last_name}
+									</span>
+								</button>
+							))}
+						</div>
+					) : null}
+				</div>
+
+				<div className="rich-textarea-tool-group">
+					<Button
+						type="button"
+						appearance="standard"
+						variant="outline"
+						size="sm"
+						text="Mention"
+						Icon={AtSign}
+						aria-label="Mention someone"
+						aria-expanded={popup === "mentionList"}
+						className="rich-textarea-mention-trigger"
+						onClick={() =>
+							setPopup((current) =>
+								current === "mentionList" ? null : "mentionList",
+							)
+						}
+					/>
+					{popup === "mentionList" ? (
+						<div
+							className="rich-textarea-popover rich-textarea-mention-popover"
+							role="listbox"
+							aria-label="Mention a user"
+						>
+							{mentionableUsers.length > 0 ? (
+								mentionableUsers.map((user) => (
+									<button
+										key={user.id}
+										type="button"
+										className="rich-textarea-menu-item"
+										onMouseDown={(event) => {
+											event.preventDefault();
+											insertMentionAtCursor(user);
+											setPopup(null);
+										}}
+										role="option"
+										aria-selected="false"
+									>
+										<Avatar
+											firstName={user.first_name}
+											lastName={user.last_name}
+											size="sm"
+										/>
+										<span className="rich-textarea-menu-label">
+											{user.first_name} {user.last_name}
+										</span>
+									</button>
+								))
+							) : (
+								<div className="rich-textarea-menu-item" aria-disabled="true">
+									<span className="rich-textarea-menu-label">
+										No users to mention
+									</span>
+								</div>
+							)}
+						</div>
+					) : null}
+				</div>
+
+				<Button
+					type="button"
+					appearance="standard"
+					variant="brand"
+					size="sm"
+					Icon={Send}
+					text={submitting ? "Saving..." : submitText}
+					disabled={isSubmitDisabled}
+					loading={submitting}
+					onClick={onSubmit}
+					className="rich-textarea-submit"
+				/>
 
 				{error ? (
 					<ExclamationCircleIcon
@@ -318,6 +270,10 @@ const RichTextarea: ForwardRefRenderFunction<
 					{error}
 				</p>
 			) : null}
+
+			<span className="rich-textarea-counter">
+				{value.length} / {maxLength}
+			</span>
 		</div>
 	);
 };

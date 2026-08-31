@@ -16,3 +16,9 @@ export type {
 	CommentUser,
 	MentionableUserInput,
 } from "./comment.types";
+export {
+	getApprovedStageCcEmails,
+	getCanCommentOnWorkflow,
+	getMentionableUsersFromWorkflow,
+	getWorkflowCommentContext,
+} from "./comments.helper";

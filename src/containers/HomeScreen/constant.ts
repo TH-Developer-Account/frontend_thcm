@@ -1,15 +1,9 @@
 import {
-	ClipboardCheck,
-	Database,
 	FileText,
-	HatGlasses,
 	Hospital,
 	Megaphone,
 	MonitorCog,
-	PackageSearch,
-	ScrollText,
 	UserCheck,
-	Warehouse,
 } from "lucide-react";
 
 export const actions = [
@@ -21,20 +15,22 @@ export const actions = [
 		appKey: "MAP",
 		isActive: true,
 	},
-	{
-		icon: MonitorCog,
-		title: "Administrator",
-		description: "System config, user roles, and access management.",
-		path: "/admin/users",
-		appKey: "ADMIN",
-		isActive: false,
-	},
+
 	{
 		icon: FileText,
 		title: "Vendor Onboarding",
 		description: "Submit, review, and process dealer reimbursements.",
 		path: "/vendor/onboarding/listing",
 		appKey: "VENDOR_ONBOARDING",
+		isActive: false,
+	},
+
+	{
+		icon: Hospital,
+		title: "Medical Forms",
+		description: "Configure and compare machinery specs for customer needs.",
+		path: "/medi-claim/listing",
+		appKey: "MEDICAL_CLAIM",
 		isActive: false,
 	},
 	{
@@ -47,69 +43,11 @@ export const actions = [
 		isActive: false,
 	},
 	{
-		icon: Hospital,
-		title: "Medical Forms",
-		description: "Configure and compare machinery specs for customer needs.",
-		path: "/medical-claim/form/create",
-		appKey: "MEDICAL",
-		isActive: false,
-	},
-	{
-		icon: PackageSearch,
-		title: "Product Selector",
-		description: "Configure and compare machinery specs for customer needs.",
-		path: "/",
-		appKey: "PRODUCT_SELECTOR",
-		isActive: false,
-	},
-	{
-		icon: ClipboardCheck,
-		title: "Audit",
-		description: "Conduct audits and compliance checks.",
-		path: "/",
-		appKey: "AUDIT",
-		isActive: false,
-	},
-
-	{
-		icon: UserCheck,
-		title: "Key Account",
-		description: "Manage strategic accounts and relationship data.",
-		path: "/",
-		appKey: "KEY_ACCOUNT",
-		isActive: false,
-	},
-	{
-		icon: Database,
-		title: "Customer Master Data",
-		description: "Centralised customer records, segments, and profiles.",
-		path: "/",
-		appKey: "CUSTOMER_MASTER_DATA",
-		isActive: false,
-	},
-
-	{
-		icon: Warehouse,
-		title: "Asset Master",
-		description: "Track and manage machinery and equipment inventory.",
-		path: "/",
-		appKey: "ASSET_MASTER",
-		isActive: false,
-	},
-	{
-		icon: HatGlasses,
-		title: "MSI",
-		description: "Market share intelligence and competitive analysis.",
-		path: "/",
-		appKey: "MSI",
-		isActive: false,
-	},
-	{
-		icon: ScrollText,
-		title: "ASC",
-		description: "After-sales and service centre operations.",
-		path: "/",
-		appKey: "ASC",
+		icon: MonitorCog,
+		title: "Administrator",
+		description: "System config, user roles, and access management.",
+		path: "/admin/users",
+		appKey: "ADMIN",
 		isActive: false,
 	},
 ] as const;

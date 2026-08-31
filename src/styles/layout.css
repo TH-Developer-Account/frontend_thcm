@@ -2919,7 +2919,7 @@
 		align-items: center;
 		display: flex;
 		flex-direction: column;
-		max-width: var(--layout-content-max-width, 1200px);
+		max-width: var(--layout-content-max-width, 1400px);
 		margin-inline: auto;
 		margin: 2rem auto;
 	}
@@ -2943,7 +2943,7 @@
 	.public-page-brand {
 		display: flex;
 		align-items: center;
-		max-width: var(--layout-content-max-width, 1200px);
+		max-width: var(--layout-content-max-width, 1400px);
 		justify-content: space-between;
 		margin-inline: auto;
 		gap: 16px;

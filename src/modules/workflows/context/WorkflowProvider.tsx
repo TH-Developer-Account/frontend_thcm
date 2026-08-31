@@ -10,93 +10,93 @@ import { mapWorkflowRows } from "../utils/workflow.helpers";
 import { WorkflowContext, type WorkflowListScope } from "./workflow.context";
 
 interface WorkflowProviderProps {
-	children: ReactNode;
+  children: ReactNode;
 }
 
 const transformFilters = (
-	filters: Record<string, Option[]>,
+  filters: Record<string, Option[]>,
 ): Record<string, string[]> => ({
-	createdBy: (filters.createdBy ?? []).map((option) => option.value),
-	apps: (filters.apps ?? []).map((option) => option.value),
+  createdBy: (filters.createdBy ?? []).map((option) => option.value),
+  apps: (filters.apps ?? []).map((option) => option.value),
 });
 
 export function WorkflowProvider({ children }: WorkflowProviderProps) {
-	const [data, setData] = useState<WorkflowRow[]>([]);
-	const [loading, setLoading] = useState(false);
+  const [data, setData] = useState<WorkflowRow[]>([]);
+  const [loading, setLoading] = useState(false);
 
-	const [search, setSearch] = useState("");
-	const [scope, setScope] = useState<WorkflowListScope>("ALL");
+  const [search, setSearch] = useState("");
+  const [scope, setScope] = useState<WorkflowListScope>("ALL");
 
-	const [pageIndex, setPageIndex] = useState(0);
-	const [pageSize, setPageSize] = useState(25);
-	const [sorting, setSorting] = useState<SortingState>([]);
-	const [filters, setFilters] = useState<Record<string, Option[]>>({});
-	const [totalPages, setTotalPages] = useState(0);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [filters, setFilters] = useState<Record<string, Option[]>>({});
+  const [totalPages, setTotalPages] = useState(0);
 
-	const debouncedSearch = useDebounce(search, 500);
+  const debouncedSearch = useDebounce(search, 500);
 
-	const fetchWorkflowList = useCallback(async () => {
-		try {
-			setLoading(true);
+  const fetchWorkflowList = useCallback(async () => {
+    try {
+      setLoading(true);
 
-			const sort = sorting[0];
+      const sort = sorting[0];
 
-			const response = await workflowApi.list({
-				page: pageIndex + 1,
-				pageSize,
-				search: debouncedSearch || undefined,
-				sortBy: sort?.id,
-				sortOrder: sort ? (sort.desc ? "desc" : "asc") : undefined,
-				filters: transformFilters(filters),
-				scope,
-			});
+      const response = await workflowApi.list({
+        page: pageIndex + 1,
+        pageSize,
+        search: debouncedSearch || undefined,
+        sortBy: sort?.id,
+        sortOrder: sort ? (sort.desc ? "desc" : "asc") : undefined,
+        filters: transformFilters(filters),
+        scope,
+      });
 
-			const rows = Array.isArray(response.data) ? response.data : [];
+      const rows = Array.isArray(response.data) ? response.data : [];
 
-			setData(mapWorkflowRows(rows));
-			setTotalPages(response.meta?.totalPages ?? 0);
-		} catch (error) {
-			console.error("Failed to fetch workflow data", error);
-			setData([]);
-			setTotalPages(0);
-		} finally {
-			setLoading(false);
-		}
-	}, [debouncedSearch, filters, pageIndex, pageSize, scope, sorting]);
+      setData(mapWorkflowRows(rows));
+      setTotalPages(response.meta?.totalPages ?? 0);
+    } catch (error) {
+      console.error("Failed to fetch workflow data", error);
+      setData([]);
+      setTotalPages(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedSearch, filters, pageIndex, pageSize, scope, sorting]);
 
-	useEffect(() => {
-		void fetchWorkflowList();
-	}, [fetchWorkflowList]);
+  useEffect(() => {
+    void fetchWorkflowList();
+  }, [fetchWorkflowList]);
 
-	return (
-		<WorkflowContext.Provider
-			value={{
-				data,
-				setData,
-				loading,
+  return (
+    <WorkflowContext.Provider
+      value={{
+        data,
+        setData,
+        loading,
 
-				search,
-				setSearch,
+        search,
+        setSearch,
 
-				scope,
-				setScope,
+        scope,
+        setScope,
 
-				pageIndex,
-				pageSize,
-				totalPages,
-				setPageIndex,
-				setPageSize,
+        pageIndex,
+        pageSize,
+        totalPages,
+        setPageIndex,
+        setPageSize,
 
-				sorting,
-				setSorting,
+        sorting,
+        setSorting,
 
-				filters,
-				setFilters,
+        filters,
+        setFilters,
 
-				refetch: fetchWorkflowList,
-			}}
-		>
-			{children}
-		</WorkflowContext.Provider>
-	);
+        refetch: fetchWorkflowList,
+      }}
+    >
+      {children}
+    </WorkflowContext.Provider>
+  );
 }

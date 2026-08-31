@@ -8,6 +8,7 @@ export type MentionableUserInput = {
 	last_name?: string | null;
 	email?: string | null;
 	avatarUrl?: string | null;
+	phone_number?: string;
 };
 export interface User {
 	id: string;
@@ -24,6 +25,7 @@ export type CommentUser = {
 	last_name: string;
 	avatarUrl?: string;
 	email?: string;
+	role?: string;
 };
 
 export type CommentItem = {
@@ -33,11 +35,6 @@ export type CommentItem = {
 	createdAt: string;
 	updatedAt?: string;
 	replies?: CommentItem[];
-	entryType?: string;
-	reason?: string;
-	action?: string;
-	stageName?: string;
-	metadata?: Record<string, unknown> | null;
 };
 
 export type CommentMenuAction = {
@@ -58,7 +55,7 @@ export type CommentCreateResult = {
 };
 
 export type CommentApiAdapter = {
-	getActivity: (params: {
+	getComments: (params: {
 		subjectType: CommentSubjectType;
 		subjectId: string;
 	}) => Promise<CommentItem[]>;

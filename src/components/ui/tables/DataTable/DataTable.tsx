@@ -78,6 +78,13 @@ const getMinWidthClass = (minWidth: DataTableMinWidth): string => {
 	return `data-table-min-${minWidth}`;
 };
 
+// Stable, module-level empty array. Passing `sorting ?? []` inline would
+// create a brand-new array reference on every render, which forces
+// TanStack Table's fully-controlled `sorting` state to look "changed" on
+// every render — triggering a full sort + row-model rebuild every time,
+// even when nothing about sorting actually changed.
+const EMPTY_SORTING: SortingState = [];
+
 function DataTable<T extends object>({
 	data,
 	columns,
@@ -137,7 +144,7 @@ function DataTable<T extends object>({
 		getRowId,
 
 		state: {
-			sorting: sorting ?? [],
+			sorting: sorting ?? EMPTY_SORTING,
 			...(!manualPagination && shouldUsePagination
 				? {
 						pagination: internalPagination,

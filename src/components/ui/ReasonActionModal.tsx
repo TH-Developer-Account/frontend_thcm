@@ -16,6 +16,14 @@ type ReasonActionModalProps = {
 	open: boolean;
 	mode: ReasonActionMode | null;
 	loading?: boolean;
+	/**
+	 * Optional text to pre-fill the reason textarea with whenever the modal
+	 * opens (e.g. a caller-generated summary the person can review and edit
+	 * before confirming). Only applied at the moment `open` flips to true —
+	 * changes to this value while the modal is already open won't fight
+	 * what the person is typing.
+	 */
+	defaultReason?: string;
 	onClose: () => void;
 	onConfirm: (reason: string) => void | Promise<void>;
 };
@@ -24,15 +32,20 @@ export const ReasonActionModal = ({
 	open,
 	mode,
 	loading = false,
+	defaultReason = "",
 	onClose,
 	onConfirm,
 }: ReasonActionModalProps) => {
 	const [reason, setReason] = React.useState("");
 
+	// Seed the textarea from defaultReason only on the open transition, and
+	// clear it on close. defaultReason is intentionally excluded from the
+	// dependency array — if it were included, every re-render of the parent
+	// that recomputes a new defaultReason (e.g. as the person edits other
+	// fields) would stomp over what they've typed into this textarea.
+	// eslint-disable-next-line react-hooks/exhaustive-deps
 	React.useEffect(() => {
-		if (!open) {
-			setReason("");
-		}
+		setReason(open ? defaultReason : "");
 	}, [open]);
 
 	const trimmedReason = reason.trim();

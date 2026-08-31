@@ -73,6 +73,13 @@ export function useNotifications() {
     setUnreadCount(data.data.count);
   }, []);
 
+  const downloadExportFile = useCallback(async (logId: string) => {
+    const { data } = await ServerAxios.get(`/import-export-logs/${logId}/file`);
+    const link = document.createElement("a");
+    link.href = data.url;
+    link.click();
+  }, []);
+
   useEffect(() => {
     if (!user?.id) return;
     fetchNotifications();
@@ -90,7 +97,7 @@ export function useNotifications() {
 
     function openConnection() {
       const token = localStorage.getItem("authToken");
-      console.log({ token });
+      // console.log({ token });
       if (!token) return;
 
       // Tear down any existing connection before opening a new one —
@@ -172,6 +179,7 @@ export function useNotifications() {
     isConnected,
     markAsRead,
     markAllAsRead,
+    downloadExportFile,
     refetch: fetchNotifications,
   };
 }

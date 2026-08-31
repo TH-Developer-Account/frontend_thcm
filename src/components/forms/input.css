@@ -1,5 +1,4 @@
 @reference "tailwindcss";
-@import "../../styles/color.css";
 
 /* =====================================================
 FORM CONTAINER AND LAYOUT
@@ -22,7 +21,7 @@ FORM CONTAINER AND LAYOUT
 	}
 
 	.form-field {
-		@apply flex w-full min-w-0 flex-col;
+		@apply flex w-full min-w-0 flex-col relative;
 
 		gap: var(--space-1-5);
 	}
@@ -131,6 +130,7 @@ FORM CONTAINER AND LAYOUT
 		left: 50%;
 		bottom: calc(100% + var(--space-2));
 		z-index: var(--z-overlay);
+		z-index: 999;
 
 		width: max-content;
 		max-width: 14rem;
@@ -219,8 +219,8 @@ FORM CONTAINER AND LAYOUT
 	.form-input,
 	.form-date,
 	.form-native-select {
-		height: var(--control-height-md);
-		min-height: var(--control-height-md);
+		height: var(--control-height-sm);
+		min-height: var(--control-height-xs);
 		padding-block: 0;
 		padding-inline: var(--space-2);
 		box-sizing: border-box;
@@ -287,8 +287,9 @@ FORM CONTAINER AND LAYOUT
 	.form-textarea.form-input-error,
 	.form-date.form-input-error,
 	.form-native-select.form-input-error {
+		border-width: var(--border-width-strong);
 		border-color: var(--color-error);
-		background-color: var(--color-input-bg);
+		background-color: var(--color-error-bg);
 	}
 
 	.form-input-error::placeholder {
@@ -306,22 +307,83 @@ FORM CONTAINER AND LAYOUT
 	}
 
 	/* =====================================================
-	   VALID PASSWORD STATE
+	   SUCCESS / VALID STATE
+	   Border alone isn't enough for low-vision or colour-weak
+	   users — pair it with a tinted background and a checkmark
+	   icon (see .form-success-icon) so the state reads even
+	   without relying on the exact hue.
 	===================================================== */
 
-	.form-input-valid {
-		border-color: var(--color-success);
+	.form-input-success {
+		border-width: var(--border-width-default);
+		/* border-color: var(--color-success); */
+		background-color: var(--color-success-bg-soft);
+		padding-right: var(--space-8);
 	}
 
-	.form-input-valid:hover:not(:disabled) {
+	.form-input-success:hover:not(:disabled) {
 		border-color: var(--color-success-hover);
+		background-color: var(--color-success-bg-soft);
 	}
 
-	.form-input-valid:focus {
+	.form-input-success:focus {
 		border-color: var(--color-success);
-		box-shadow: none;
+		background-color: var(--color-success-bg-soft);
 	}
 
+	.form-success-icon {
+		@apply pointer-events-none absolute h-4 w-4;
+
+		top: 50%;
+		right: var(--space-3);
+
+		color: var(--color-success);
+		transform: translateY(-50%);
+	}
+
+	.form-success-text {
+		@apply m-0 text-left;
+
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-tight);
+
+		color: var(--color-success);
+	}
+	/* Browser autofill / saved values */
+	.form-input-success:-webkit-autofill {
+		-webkit-box-shadow: 0 0 0 1000px var(--color-success-bg-soft) inset;
+	}
+	.form-input-success:-webkit-autofill:hover:not(:disabled) {
+		border-color: var(--color-success-hover);
+		background-color: var(--color-success-bg-soft);
+	}
+	.form-input-success:-webkit-autofill:focus,
+	.form-input-success:-webkit-autofill:active {
+		border-color: var(--color-success);
+		-webkit-box-shadow: 0 0 0 1000px var(--color-success-bg-soft) inset;
+	}
+
+	/* Space for both the status icon and password visibility button */
+	.form-input-with-status-and-toggle {
+		padding-right: var(--space-16);
+	}
+
+	/* Move validation status left when the password toggle is present */
+	.form-input-wrapper.has-password-toggle.has-status-icon .form-error-icon,
+	.form-input-wrapper.has-password-toggle.has-status-icon .form-success-icon {
+		right: var(--space-12);
+	}
+
+	/* Keep the clickable password toggle above decorative icons */
+	.form-icon-right {
+		z-index: 1;
+	}
 	/* =====================================================
 	   DISABLED STATE
 	===================================================== */
@@ -420,8 +482,8 @@ FORM CONTAINER AND LAYOUT
 	.form-radio-input {
 		@apply m-0 shrink-0 appearance-none border;
 
-		width: 1rem;
-		height: 1rem;
+		width: 0.8rem;
+		height: 0.8rem;
 
 		border-width: var(--border-width-default);
 		border-color: var(--color-input-border);
@@ -454,7 +516,26 @@ FORM CONTAINER AND LAYOUT
 	}
 
 	.form-radio-input-error {
+		border-width: var(--border-width-strong);
 		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+	}
+
+	.form-radio-input-error:hover:not(:disabled) {
+		border-color: var(--color-error-hover);
+		background-color: var(--color-error-bg);
+	}
+
+	.form-radio-input-error:focus-visible {
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+		box-shadow: none;
+	}
+
+	.form-radio-input-error:checked {
+		border-width: 0.25rem;
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
 	}
 
 	.form-radio-input:disabled {
@@ -483,7 +564,9 @@ FORM CONTAINER AND LAYOUT
 	.form-radio-error-text {
 		padding-left: calc(1rem + var(--space-2));
 	}
-
+	.radio-group.has-error .radio-group-label {
+		color: var(--color-error);
+	}
 	.radio-group {
 		@apply flex flex-col;
 
@@ -575,6 +658,18 @@ FORM CONTAINER AND LAYOUT
 		background-color: var(--color-input-bg);
 	}
 
+	.form-field-soft .form-native-select.form-input-error,
+	.form-field-soft .form-native-select.form-input-error:hover:not(:disabled),
+	.form-field-soft .form-native-select.form-input-error:focus {
+		border-width: var(--border-width-strong);
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+	}
+
+	.form-field-soft .form-native-select.form-input-error:hover:not(:disabled) {
+		border-color: var(--color-error-hover);
+	}
+
 	/* =====================================================
 	   COMPACT VARIANT
 	===================================================== */
@@ -662,8 +757,8 @@ REACT SELECT CONTAINER
 	.react-select__control {
 		@apply flex w-full min-w-0 items-center border outline-none;
 
-		height: var(--control-height-md) !important;
-		min-height: var(--control-height-md) !important;
+		height: var(--control-height-sm) !important;
+		min-height: var(--control-height-sm) !important;
 		box-sizing: border-box;
 
 		border-width: var(--border-width-default);
@@ -701,19 +796,61 @@ REACT SELECT CONTAINER
 	/* Keep error icon clear of the indicators. */
 	.react-select-container-error .react-select__control {
 		padding-right: var(--space-8);
+		border-width: var(--border-width-strong);
 		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
 	}
 
 	.react-select-container-error
 		.react-select__control:hover:not(.react-select__control--is-disabled) {
 		border-color: var(--color-error-hover);
+		background-color: var(--color-error-bg);
 	}
 
 	.react-select-container-error .react-select__control--is-focused {
 		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
 		box-shadow: none;
 	}
 
+	.react-select-container-error .react-select__placeholder {
+		color: var(--color-error);
+		opacity: 0.65;
+	}
+	/* Keep error icon clear of the indicators. */
+	.react-select-container-success .react-select__control {
+		padding-right: var(--space-8);
+		border-width: var(--border-width-default);
+		/* border-color: var(--color-success); */
+		background-color: var(--color-success-bg-soft);
+	}
+
+	.react-select-container-success
+		.react-select__control:hover:not(.react-select__control--is-disabled) {
+		border-color: var(--color-success-hover);
+		background-color: var(--color-success-bg-soft);
+	}
+
+	.react-select-container-success .react-select__control--is-focused {
+		border-color: var(--color-success);
+		box-shadow: none;
+	}
+	/* Browser autofill / saved values */
+	.react-select-container-success:-webkit-autofill {
+		-webkit-box-shadow: 0 0 0 1000px var(--color-success-bg-soft) inset;
+	}
+	.react-select-container-success:-webkit-autofill
+		.react-select__control:hover:not(.react-select__control--is-disabled) {
+		border-color: var(--color-success-hover);
+		background-color: var(--color-success-bg-soft);
+	}
+	.react-select-container-success
+		.react-select__control--is-focused:-webkit-autofill:focus,
+	.react-select-container-success
+		.react-select__control--is-focused:-webkit-autofill:active {
+		border-color: var(--color-success);
+		-webkit-box-shadow: 0 0 0 1000px var(--color-success-bg-soft) inset;
+	}
 	/* =====================================================
 	   VALUE CONTAINER
 	===================================================== */
@@ -1071,6 +1208,12 @@ REACT SELECT CONTAINER
 		cursor: not-allowed;
 	}
 
+	.react-select-container-error .react-select__control--is-disabled {
+		border-width: var(--border-width-default);
+		border-color: var(--color-border-disabled);
+		background-color: var(--color-input-bg-disabled);
+	}
+
 	.select-field.is-disabled {
 		opacity: 0.85;
 	}
@@ -1142,19 +1285,60 @@ REACT SELECT CONTAINER
 @layer components {
 	.checkbox {
 		@apply flex shrink-0 items-center justify-center transition-all duration-150;
+
+		border-width: var(--border-width-default);
+		border-color: var(--color-brand);
+		background-color: var(--color-input-bg);
+		box-sizing: border-box;
 	}
 
 	.checkbox-disabled {
-		@apply cursor-not-allowed opacity-60;
+		@apply cursor-not-allowed;
+		opacity: 1;
 	}
 
 	.checkbox-enabled {
 		@apply cursor-pointer;
 	}
 
+	.checkbox-enabled:hover {
+		border-color: var(--color-input-border-hover);
+	}
+
+	.checkbox-enabled:focus-visible {
+		outline: none;
+		border-color: var(--color-input-border-hover);
+		box-shadow: none;
+	}
+
+	.checkbox-error {
+		border-width: var(--border-width-strong);
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+	}
+
+	.checkbox-error.checkbox-enabled:hover {
+		border-color: var(--color-error-hover);
+		background-color: var(--color-error-bg);
+	}
+
+	.checkbox-field.has-error:not(.is-disabled) .form-radio-label {
+		color: var(--color-error);
+	}
+
+	.checkbox-error.checkbox-enabled:focus-visible {
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+	}
+
+	.checkbox-error.checkbox-disabled {
+		border-width: var(--border-width-default);
+	}
+
 	.checkbox-icon {
 		@apply font-bold leading-none;
 	}
+
 	.checkbox-field-row {
 		display: flex;
 		align-items: center;
@@ -1389,7 +1573,23 @@ REACT SELECT CONTAINER
 		cursor: not-allowed;
 	}
 	.checkbox-field.has-error .checkbox-control {
+		border-width: var(--border-width-strong);
 		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+	}
+	.checkbox-field.has-error .checkbox-control:hover:not(:disabled) {
+		border-color: var(--color-error-hover);
+		background-color: var(--color-error-bg);
+	}
+	.checkbox-field.has-error .checkbox-control:focus-visible {
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+		box-shadow: none;
+	}
+	.checkbox-field.has-error .checkbox-control:disabled {
+		border-width: var(--border-width-default);
+		border-color: var(--color-border-disabled);
+		background-color: var(--color-input-bg-disabled);
 	}
 }
 
@@ -1502,6 +1702,101 @@ OTP INPUT
 	@media (prefers-reduced-motion: reduce) {
 		.otp-input {
 			transition-duration: 0.01ms;
+		}
+	}
+}
+
+/* =====================================================
+FORM READONLY INPUT
+===================================================== */
+/* =====================================================
+   FORM READONLY INPUT
+===================================================== */
+
+@layer components {
+	.form-readonly-field {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.form-readonly-value {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		height: var(--control-height-xs);
+		min-height: var(--control-height-xs);
+		max-height: var(--control-height-xs);
+		align-items: center;
+
+		padding: var(--space-2) var(--space-3);
+
+		overflow-x: hidden;
+		overflow-y: auto;
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-sm);
+
+		background-color: var(--color-bg-surface-subtle);
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+
+		overflow-wrap: anywhere;
+		word-break: break-word;
+		white-space: pre-wrap;
+
+		scrollbar-width: thin;
+		scrollbar-color: var(--color-border-hover) transparent;
+	}
+
+	.form-readonly-value::-webkit-scrollbar {
+		width: 0.375rem;
+		height: 0.375rem;
+	}
+
+	.form-readonly-value::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.form-readonly-value::-webkit-scrollbar-thumb {
+		border-radius: var(--radius-full);
+		background-color: var(--color-border-hover);
+	}
+
+	.form-readonly-value::-webkit-scrollbar-thumb:hover {
+		background-color: var(--color-text-muted);
+	}
+
+	/*
+	 * Used by TextareaInput in view mode.
+	 * Keeps the textarea-sized field stable and scrollable.
+	 */
+	.form-readonly-value-multiline {
+		height: 7.5rem;
+		min-height: 6rem;
+		max-height: 10rem;
+		align-items: flex-start !important;
+		overflow-y: auto;
+	}
+
+	.form-readonly-value:empty::before {
+		content: "--";
+		color: var(--color-text-secondary);
+	}
+
+	@media (max-width: 639px) {
+		.form-readonly-value {
+			height: var(--control-height-md);
+			min-height: var(--control-height-md);
+			max-height: var(--control-height-md);
+		}
+
+		.form-readonly-value-multiline {
+			height: 5rem;
+			min-height: 5rem;
+			max-height: 5rem;
 		}
 	}
 }

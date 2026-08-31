@@ -5,25 +5,41 @@ import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUplo
 import type { ReasonActionMode } from "../../../components/ui/ReasonActionModal";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
-import type { ActivateFirstStageEdit } from "../../workflows/api/workflow.api";
+import { workflowApi } from "../../workflows/api/workflow.api";
 import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
-import { createRemoteFileUploadValue } from "../../../components/ui/FileUpload/fileUpload.helpers";
-import {
-	vendorOnboardingApi,
-	type PublicVendorSessionResponse,
-} from "../api/vendorOnboarding.api";
+import { vendorOnboardingApi } from "../api/vendorOnboarding.api";
 import type {
 	PendingWorkflowSelection,
 	WorkflowStage,
 } from "../../workflows/types/types";
 
+import { getErrorMessage, toYesNo } from "../helpers/vendor.onboarding.helper";
 import {
 	buildPublicFormData,
 	buildVendorOnboardingUpdatePayload,
-	buildVendorUpdatePayload,
-	getErrorMessage,
+	getCreatedById,
+	getCreatedWorkflowId,
+	mapStageEditsForApi,
+	normalizePublicFormOneValues,
+	createInitialEnclosureUploads,
+	getDocumentCaption,
+	type VendorCreationFormOneDraftSubmission,
+	type VendorCreationFormOneSubmission,
+	type VendorEnclosureUploadItem,
+} from "../helpers/vendor.onboarding.mapper";
+import {
+	EDITABLE_STATUSES,
+	MANDATORY_ERROR,
+	extractPanFromGstin,
 	getMissingDocuments,
-} from "../helpers/vendor.onboarding.helper";
+	normalizeAccountNumber,
+	normalizeMandatoryErrors,
+	validateConfirmAccountNumber,
+	validateFormOneField,
+	validateFormOneForSubmit,
+	validateMandatoryValues,
+	validatePanForForm,
+} from "../helpers/vendor.onboarding.validations";
 import {
 	useAcceptAndCloseVendorMutation,
 	useDraftSubmitPublicVendorFormMutation,
@@ -41,7 +57,6 @@ import type {
 	VendorEnclosureStatusKey,
 	VendorFormErrors,
 	VendorOnboardingDocument,
-	VendorOnboardingStatus,
 } from "../types/vendorOnboarding.types";
 import { VENDOR_DOCUMENT_FIELDS } from "../types/vendorOnboarding.types";
 import {
@@ -66,83 +81,10 @@ export const vendorOnboardingSteps = [
 const EMPTY_FORM_ONE: VendorCreationFormOneValues = {};
 const EMPTY_FORM_TWO: VendorCreationFormTwoValues = {};
 
-export type VendorEnclosureUploadItem = {
-	statusKey: VendorEnclosureStatusKey;
-	documentType: VendorDocumentType;
-	value: FileUploadValue | null;
-};
-
-export type VendorCreationFormOneSubmission = {
-	dpdpConsent: true;
-	enclosureUploads: VendorEnclosureUploadItem[];
-};
-export type VendorCreationFormOneDraftSubmission = {
-	dpdpConsent: boolean;
-	enclosureUploads: VendorEnclosureUploadItem[];
-};
-const REQUIRED_FORM_ONE_FIELDS: Partial<
-	Record<keyof VendorCreationFormOneValues, string>
-> = {
-	state: "State is required.",
-	city: "City is required.",
-	pinCode: "Pin Code is required.",
-	address: "Complete Address is required.",
-	mobile: "Mobile is required.",
-	email: "E-mail is required.",
-	bankName: "Bank is required.",
-	bankBranch: "Branch is required.",
-	ifscCode: "IFSC Code is required.",
-	accountNumber: "A/C No. is required.",
-	confirmAccountNumber: "Confirm A/C No. is required.",
-	gstin: "GSTIN is required.",
-	pan: "PAN is required.",
-	msmeVendor: "MSME Vendor is required.",
-};
-
-const EMPTY_FORM_ONE_VALUES: VendorCreationFormOneValues = {
-	vendorName: "",
-	address: "",
-	state: "",
-	city: "",
-	pinCode: "",
-	mobile: "",
-	email: "",
-	msmeVendor: "",
-	msmeCertificateAttached: "",
-	ndaObtained: "",
-};
-
-const normalizePublicFormOneValues = (
-	data: PublicVendorSessionResponse,
-): VendorCreationFormOneValues => {
-	const source =
-		data.partOne && Object.keys(data.partOne).length > 0 ? data.partOne : data;
-
-	return {
-		...EMPTY_FORM_ONE_VALUES,
-		...source,
-		vendorName: source.vendorName ?? data.vendorName ?? "",
-		email: source.email ?? data.email ?? "",
-		mobile: source.mobile ?? data.mobile ?? "",
-	};
-};
-
-const isEmptyFormValue = (value: unknown): boolean =>
-	typeof value === "string" ? value.trim().length === 0 : value == null;
-
-const getCreatedById = (createdBy: unknown): string => {
-	if (typeof createdBy === "string") return createdBy;
-
-	if (
-		typeof createdBy === "object" &&
-		createdBy !== null &&
-		"id" in createdBy &&
-		typeof createdBy.id === "string"
-	) {
-		return createdBy.id;
-	}
-
-	return "";
+export type {
+	VendorEnclosureUploadItem,
+	VendorCreationFormOneSubmission,
+	VendorCreationFormOneDraftSubmission,
 };
 
 type UseVendorCreationFormParams = {
@@ -150,94 +92,6 @@ type UseVendorCreationFormParams = {
 	token?: string;
 	isPublicForm?: boolean;
 	onSuccess?: () => void | Promise<void>;
-};
-
-const createVendorDocumentUploadValue = (
-	document: VendorOnboardingDocument,
-): FileUploadValue =>
-	createRemoteFileUploadValue({
-		id: document.id,
-		url: document.fileUrl,
-		name: document.fileName,
-		type: document.mimeType,
-		size: document.size,
-		caption: document.caption,
-		fallbackName: document.documentType,
-	});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// mapStageEditsForApi
-//
-// Converts the FE's rich WorkflowStage[] (used by WorkflowStagesForm, with
-// full approver objects) into the backend contract activateFirstStage
-// actually expects — {stageOrder, strategy, minApprovals, approvers}.
-// Same conversion shape used elsewhere (e.g. buildCustomTemplatePayload in
-// the workflows feature) for consistency.
-// ─────────────────────────────────────────────────────────────────────────────
-
-const mapStageEditsForApi = (
-	stages: WorkflowStage[],
-): ActivateFirstStageEdit[] =>
-	stages.map((stage) => ({
-		stageOrder: stage.stageOrder,
-		strategy: stage.strategy,
-		minApprovals:
-			stage.strategy === "SOME" ? Number(stage.minApprovals) || 1 : undefined,
-		approvers: stage.approvers.map((approver) => ({
-			approverId: approver.user.id,
-			isExternalApprover: approver.isExternalApprover,
-		})),
-	}));
-
-const EDITABLE_STATUSES: readonly VendorOnboardingStatus[] = [
-	"DRAFT",
-	"VENDOR_SUBMITTED",
-	"IN_REVIEW",
-];
-
-const getDocumentCaption = (document: VendorOnboardingDocument): string =>
-	(document as VendorOnboardingDocument & { caption?: string | null })
-		.caption ?? "";
-
-const createInitialEnclosureUploads = (
-	initialDocuments: VendorOnboardingDocument[] = [],
-): VendorEnclosureUploadItem[] => {
-	const singleDocumentUploads = VENDOR_DOCUMENT_FIELDS.filter(
-		(field) => field.documentType !== "ADDITIONAL_DOC_1",
-	).map((field) => {
-		const document = initialDocuments.find(
-			(item) => item.documentType === field.documentType,
-		);
-
-		if (!document) {
-			return {
-				statusKey: field.statusKey,
-				documentType: field.documentType,
-				value: null,
-			};
-		}
-
-		return {
-			statusKey: field.statusKey,
-			documentType: field.documentType,
-			value: createVendorDocumentUploadValue(document),
-		};
-	});
-
-	const otherField = VENDOR_DOCUMENT_FIELDS.find(
-		(field) => field.documentType === "ADDITIONAL_DOC_1",
-	);
-	const otherUploads: VendorEnclosureUploadItem[] = otherField
-		? initialDocuments
-				.filter((document) => document.documentType === "ADDITIONAL_DOC_1")
-				.map((document) => ({
-					statusKey: otherField.statusKey,
-					documentType: otherField.documentType,
-					value: createVendorDocumentUploadValue(document),
-				}))
-		: [];
-
-	return [...singleDocumentUploads, ...otherUploads];
 };
 
 type UseVendorCreationFormOneControllerParams = {
@@ -249,6 +103,12 @@ type UseVendorCreationFormOneControllerParams = {
 		key: K,
 		value: VendorCreationFormOneValues[K],
 	) => void;
+	// Runs form-field validation (e.g. validateFormOneBeforeSubmit) and
+	// returns whether it passed. Checked before enclosures/DPDP so field
+	// errors are what the vendor sees first on an empty submit, not file
+	// errors. Optional only for callers that don't have field-level
+	// validation to run (fields are assumed valid if omitted).
+	validateFields?: () => boolean;
 	onNext?: () => void;
 	onSubmit?: (
 		submission: VendorCreationFormOneSubmission,
@@ -264,6 +124,7 @@ export function useVendorCreationFormOneController({
 	requireDocuments,
 	requireDpdpConsent,
 	onChange,
+	validateFields,
 	onNext,
 	onSubmit,
 	onSaveDraft,
@@ -323,10 +184,10 @@ export function useVendorCreationFormOneController({
 
 			switch (field.statusKey) {
 				case "msmeCertificate":
-					return values.msmeVendor === "Yes";
+					return toYesNo(values.msmeVendor) === "Yes";
 
 				case "ndaCertificate":
-					return values.ndaObtained === "Yes";
+					return toYesNo(values.ndaObtained) === "Yes";
 
 				case "otherAttachment":
 					return false;
@@ -350,7 +211,7 @@ export function useVendorCreationFormOneController({
 			setEnclosureErrors((current) => {
 				const next = { ...current };
 				if (!nextValue && isEnclosureRequired(field)) {
-					next[field.statusKey] = `${field.label} is required.`;
+					next[field.statusKey] = MANDATORY_ERROR;
 				} else {
 					delete next[field.statusKey];
 				}
@@ -380,7 +241,7 @@ export function useVendorCreationFormOneController({
 			setEnclosureErrors((current) => {
 				const next = { ...current };
 				if (nextValues.length === 0 && isEnclosureRequired(field)) {
-					next[field.statusKey] = `${field.label} is required.`;
+					next[field.statusKey] = MANDATORY_ERROR;
 				} else {
 					delete next[field.statusKey];
 				}
@@ -394,7 +255,7 @@ export function useVendorCreationFormOneController({
 		(key: "msmeVendor" | "ndaObtained", value: string) => {
 			onChange?.(key, value);
 
-			const conditionalDocumentType: VendorDocumentType =
+			const conditionalDocumentType =
 				key === "msmeVendor" ? "MSME_CERTIFICATE" : "NDA_CERTIFICATE";
 
 			if (value !== "Yes") {
@@ -441,7 +302,7 @@ export function useVendorCreationFormOneController({
 				(item) => item.documentType === field.documentType,
 			);
 			if (!upload?.value?.file && !upload?.value?.url) {
-				nextErrors[field.statusKey] = `${field.label} is required.`;
+				nextErrors[field.statusKey] = MANDATORY_ERROR;
 			}
 		});
 		setEnclosureErrors(nextErrors);
@@ -489,11 +350,10 @@ export function useVendorCreationFormOneController({
 	}, [documentsKey, initialDocuments]);
 
 	const handleFormAction = React.useCallback(() => {
+		if (validateFields && !validateFields()) return;
 		if (!validateEnclosures()) return;
 		if (requireDpdpConsent && !hasAcceptedDpdp) {
-			setDpdpError(
-				"Please review and accept the Data Privacy Notice before continuing.",
-			);
+			setDpdpError(MANDATORY_ERROR);
 			setIsDpdpModalOpen(true);
 			return;
 		}
@@ -509,6 +369,7 @@ export function useVendorCreationFormOneController({
 		onSubmit,
 		requireDpdpConsent,
 		validateEnclosures,
+		validateFields,
 	]);
 	const handleSaveDraft = React.useCallback(() => {
 		if (!onSaveDraft) return;
@@ -593,15 +454,12 @@ export function useVendorCreationSummaryController({
 		isExternalApprover,
 	} = workflowApproverData;
 
-	// Assumes workflowStages is already ordered — last entry is the closing stage.
 	const isFinalStage = Boolean(
 		currentStage &&
 		workflowStages.length > 0 &&
 		workflowStages[workflowStages.length - 1]?.id === currentStage.id,
 	);
 
-	// The final-stage external (TCS) approver must set the Vendor Code before
-	// approving; their approval also closes the request in the same action.
 	const requiresVendorCodeToApprove =
 		isFinalStage && Boolean(isExternalApprover);
 
@@ -786,7 +644,7 @@ export function useVendorCreationForm({
 		VendorFormErrors<VendorCreationFormTwoValues>
 	>({});
 
-	const [pendingWorkflowSelection, setPendingWorkflowSelection] =
+	const [pendingWorkflowSelection, setPendingWorkflowSelectionState] =
 		React.useState<PendingWorkflowSelection | null>(null);
 
 	const [isSavingVendorCode, setIsSavingVendorCode] = React.useState(false);
@@ -795,12 +653,27 @@ export function useVendorCreationForm({
 	const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
 	const [isPreparingPdf, setIsPreparingPdf] = React.useState(false);
 	const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
+	const [originalAccountNumber, setOriginalAccountNumber] = React.useState("");
+	const submissionInFlightRef = React.useRef(false);
+	const workflowPreparedRef = React.useRef(false);
+	const vendorUpdateCompletedRef = React.useRef(false);
+	const preparedTemplateIdRef = React.useRef<string | null>(null);
+
+	const setPendingWorkflowSelection = React.useCallback(
+		(selection: PendingWorkflowSelection | null) => {
+			workflowPreparedRef.current = false;
+			vendorUpdateCompletedRef.current = false;
+			preparedTemplateIdRef.current = null;
+			setPendingWorkflowSelectionState(selection);
+		},
+		[],
+	);
 
 	const vendorRequestId = routeVendorId;
 
 	React.useEffect(() => {
 		setPendingWorkflowSelection(null);
-	}, [vendorRequestId]);
+	}, [setPendingWorkflowSelection, vendorRequestId]);
 
 	const isPublicVendor = isPublicForm;
 	const isThcmEmployee = !isPublicForm;
@@ -823,11 +696,6 @@ export function useVendorCreationForm({
 		[publicQuery.data],
 	);
 
-	/*
-	 * Public query data remains the source of truth until the first edit.
-	 * The first change copies the complete query-backed form into local state,
-	 * after which query refetches cannot overwrite the user's edits.
-	 */
 	const formOneValues =
 		formOneValuesState ??
 		(isPublicForm ? publicFormInitialValues : EMPTY_FORM_ONE);
@@ -846,6 +714,7 @@ export function useVendorCreationForm({
 
 	const status = detailQuery.data?.status;
 	const referenceNumber = detailQuery.data?.referenceNumber;
+	const vendorReferenceName = detailQuery.data?.partOne?.vendorReferenceName;
 	const activeWorkflow = detailQuery.data?.activeWorkflow ?? null;
 	const activeWorkflowId = activeWorkflow?.id ?? null;
 	const createdById = getCreatedById(detailQuery.data?.initiatedById);
@@ -886,9 +755,6 @@ export function useVendorCreationForm({
 
 	const canEditStagesOnResubmit = isThcmProposer && hasPendingClarifiedApproval;
 
-	// Reset any in-progress edit whenever a new clarify cycle starts (or ends)
-	// — stale edits from a previous iteration should never leak into a
-	// different one.
 	React.useEffect(() => {
 		setStageEditsState(null);
 	}, [activeWorkflowId, activeWorkflow?.iteration]);
@@ -896,6 +762,9 @@ export function useVendorCreationForm({
 	const setStageEdits = React.useCallback(
 		(nextStages: WorkflowStage[] | null) => {
 			if (!canEditStagesOnResubmit) return;
+			workflowPreparedRef.current = false;
+			vendorUpdateCompletedRef.current = false;
+			preparedTemplateIdRef.current = null;
 			setStageEditsState(nextStages);
 		},
 		[canEditStagesOnResubmit],
@@ -969,13 +838,8 @@ export function useVendorCreationForm({
 		isVendorCodeDirty &&
 		!isSavingVendorCode;
 
-	/*
-	|--------------------------------------------------------------------------
-	| Initialize internal vendor form
-	|--------------------------------------------------------------------------
-	*/
-
 	const detailInitKeyRef = React.useRef("");
+	const stepInitVendorIdRef = React.useRef("");
 
 	React.useEffect(() => {
 		const data = detailQuery.data;
@@ -994,18 +858,20 @@ export function useVendorCreationForm({
 
 		setFormOneValues(data.partOne ?? EMPTY_FORM_ONE);
 		setFormTwoValues(data.partTwo ?? {});
+		setOriginalAccountNumber(
+			normalizeAccountNumber(data.partOne?.accountNumber),
+		);
+
+		if (stepInitVendorIdRef.current !== vendorRequestId) {
+			stepInitVendorIdRef.current = vendorRequestId;
+			setCurrentStep(EDITABLE_STATUSES.includes(data.status) ? 1 : 4);
+		}
 	}, [
 		detailQuery.data,
 		detailQuery.dataUpdatedAt,
 		isPublicForm,
 		vendorRequestId,
 	]);
-
-	/*
-	|--------------------------------------------------------------------------
-	| Step navigation
-	|--------------------------------------------------------------------------
-	*/
 
 	const next = React.useCallback(() => {
 		setCurrentStep((step) => Math.min(step + 1, vendorOnboardingSteps.length));
@@ -1015,43 +881,57 @@ export function useVendorCreationForm({
 		setCurrentStep((step) => Math.max(step - 1, 1));
 	}, []);
 
-	/*
-	|--------------------------------------------------------------------------
-	| Form changes
-	|--------------------------------------------------------------------------
-	*/
+	const validateFormOneBeforeSubmit = React.useCallback((): boolean => {
+		const errors = normalizeMandatoryErrors(
+			validateFormOneForSubmit(formOneValues, originalAccountNumber),
+		);
+		setFormOneErrors(errors);
+		return Object.keys(errors).length === 0;
+	}, [formOneValues, originalAccountNumber]);
+
+	const validateFormTwoBeforeSubmit = React.useCallback((): boolean => {
+		const errors = validateMandatoryValues(formTwoValues);
+		setFormTwoErrors(errors);
+		return Object.keys(errors).length === 0;
+	}, [formTwoValues]);
 
 	const changeFormOne = React.useCallback(
 		<K extends keyof VendorCreationFormOneValues>(
 			field: K,
 			value: VendorCreationFormOneValues[K],
 		) => {
+			vendorUpdateCompletedRef.current = false;
 			setFormOneValues((current) => {
-				const nextValues = {
-					...(current ?? formOneValues),
-					[field]: value,
-				};
+				let nextValues = { ...(current ?? formOneValues), [field]: value };
 
-				const accountNumber = nextValues.accountNumber?.trim() ?? "";
-
-				const confirmAccountNumber =
-					nextValues.confirmAccountNumber?.trim() ?? "";
+				// Auto-fill PAN once enough of the GSTIN has been typed for its
+				// embedded PAN segment to be trustworthy. The vendor can still
+				// overwrite it afterwards — this only fills, never locks it.
+				if (field === "gstin") {
+					const derivedPan = extractPanFromGstin(String(value ?? ""));
+					if (derivedPan) {
+						nextValues = { ...nextValues, pan: derivedPan };
+					}
+				}
 
 				setFormOneErrors((currentErrors) => {
 					const nextErrors = {
 						...currentErrors,
-						[field]:
-							REQUIRED_FORM_ONE_FIELDS[field] && isEmptyFormValue(value)
-								? REQUIRED_FORM_ONE_FIELDS[field]
-								: undefined,
+						[field]: validateFormOneField(field, value),
 					};
 
+					// Either field changing can affect confirm-required/match state.
 					if (field === "accountNumber" || field === "confirmAccountNumber") {
-						nextErrors.confirmAccountNumber = !confirmAccountNumber
-							? REQUIRED_FORM_ONE_FIELDS.confirmAccountNumber
-							: confirmAccountNumber !== accountNumber
-								? "Account numbers do not match."
-								: undefined;
+						nextErrors.confirmAccountNumber = validateConfirmAccountNumber(
+							nextValues,
+							originalAccountNumber,
+						);
+					}
+
+					// GSTIN and PAN are cross-validated against each other, so a
+					// change to either re-checks PAN (required + format + match).
+					if (field === "gstin" || field === "pan") {
+						nextErrors.pan = validatePanForForm(nextValues);
 					}
 
 					return nextErrors;
@@ -1060,7 +940,7 @@ export function useVendorCreationForm({
 				return nextValues;
 			});
 		},
-		[formOneValues],
+		[formOneValues, originalAccountNumber],
 	);
 
 	const changeFormTwo = React.useCallback(
@@ -1068,6 +948,7 @@ export function useVendorCreationForm({
 			key: K,
 			value: VendorCreationFormTwoValues[K],
 		) => {
+			vendorUpdateCompletedRef.current = false;
 			setFormTwoValues((current) => ({
 				...current,
 				[key]: value,
@@ -1081,12 +962,6 @@ export function useVendorCreationForm({
 		[],
 	);
 
-	/*
-	|--------------------------------------------------------------------------
-	| Save Form One
-	|--------------------------------------------------------------------------
-	*/
-
 	const saveVendorDetails = async () => {
 		if (!vendorRequestId) {
 			showToast({
@@ -1096,10 +971,15 @@ export function useVendorCreationForm({
 			});
 			return;
 		}
-
+		if (!validateFormOneBeforeSubmit()) {
+			showToast({
+				type: "error",
+				title: "Please fix the highlighted fields",
+				description: "Some vendor details are missing or invalid.",
+			});
+			return;
+		}
 		try {
-			await handleSaveVendorUpdate(buildVendorUpdatePayload(formOneValues));
-
 			next();
 		} catch (error) {
 			showToast({
@@ -1110,84 +990,24 @@ export function useVendorCreationForm({
 		}
 	};
 
-	const saveVendorDetailsDraft = async () => {
-		if (!vendorRequestId) {
-			showToast({
-				type: "error",
-				title: "Unable to save draft",
-				description: "Vendor onboarding ID is missing.",
-			});
-			return;
-		}
-
-		try {
-			await handleSaveVendorUpdate(buildVendorUpdatePayload(formOneValues));
-
-			showToast({
-				type: "success",
-				title: "Draft saved",
-				description: "The vendor onboarding draft was saved successfully.",
-			});
-		} catch (error) {
-			showToast({
-				type: "error",
-				title: "Unable to save draft",
-				description: getErrorMessage(
-					error,
-					"Failed to save the vendor onboarding draft.",
-				),
-			});
-		}
-	};
-
 	const saveThcmDetails = async () => {
 		if (!vendorRequestId) {
 			return;
 		}
 
-		try {
-			await handleSaveVendorUpdate(
-				buildVendorOnboardingUpdatePayload(formOneValues, formTwoValues),
-			);
-
-			next();
-		} catch (error) {
+		if (!validateFormTwoBeforeSubmit()) {
 			showToast({
 				type: "error",
-				title: "Unable to continue",
-				description: getErrorMessage(error, "Failed to save THCM details."),
+				title: "Please fix the highlighted fields",
+				description: "All THCM details are mandatory.",
 			});
-		}
-	};
-
-	const saveThcmDetailsDraft = async () => {
-		if (!vendorRequestId) {
 			return;
 		}
 
-		try {
-			await handleSaveVendorUpdate(
-				buildVendorOnboardingUpdatePayload(formOneValues, formTwoValues),
-			);
-
-			showToast({
-				type: "success",
-				title: "Draft saved",
-				description: "The THCM details were saved as a draft.",
-			});
-		} catch (error) {
-			showToast({
-				type: "error",
-				title: "Unable to save draft",
-				description: getErrorMessage(error, "Failed to save THCM details."),
-			});
-		}
+		// Internal step navigation does not persist. The complete payload is
+		// updated once at the final submission boundary.
+		next();
 	};
-	/*
-	|--------------------------------------------------------------------------
-	| Public vendor draft version submission
-	|--------------------------------------------------------------------------
-	*/
 
 	const submitDraftPublicVendor = async (
 		submission?: VendorCreationFormOneDraftSubmission,
@@ -1215,16 +1035,19 @@ export function useVendorCreationForm({
 			});
 		}
 	};
-	/*
-	|--------------------------------------------------------------------------
-	| Public vendor submission
-	|--------------------------------------------------------------------------
-	*/
 
 	const submitPublicVendor = async (
 		submission?: VendorCreationFormOneSubmission,
 	) => {
 		if (!submission || !normalizedToken) {
+			return;
+		}
+		if (!validateFormOneBeforeSubmit()) {
+			showToast({
+				type: "error",
+				title: "Please fix the highlighted fields",
+				description: "Some vendor details are missing or invalid.",
+			});
 			return;
 		}
 		const missing = getMissingDocuments(submission, formOneValues);
@@ -1265,16 +1088,38 @@ export function useVendorCreationForm({
 	};
 
 	/*
-|--------------------------------------------------------------------------
-| Summary submission
-|--------------------------------------------------------------------------
-*/
+	|--------------------------------------------------------------------------
+	| Summary submission — strict order
+	|--------------------------------------------------------------------------
+	| 1. Validate and update the complete vendor payload exactly once.
+	| 2. Assign a workflow (fresh form) or activate it (clarification).
+	| 3. Send the record for approval.
+	|
+	| No detail refetch is needed between these operations. The status already
+	| tells us whether this is the THCM user's first submission.
+	|--------------------------------------------------------------------------
+	*/
 	const submitForApproval = React.useCallback(async () => {
+		if (submissionInFlightRef.current) return;
+
 		if (!vendorRequestId) {
 			showToast({
 				type: "error",
 				title: "Submission failed",
 				description: "Vendor onboarding ID is missing.",
+			});
+			return;
+		}
+
+		const isFormOneValid = validateFormOneBeforeSubmit();
+		const isFormTwoValid = validateFormTwoBeforeSubmit();
+
+		if (!isFormOneValid || !isFormTwoValid) {
+			setCurrentStep(isFormOneValid ? 2 : 1);
+			showToast({
+				type: "error",
+				title: "Please fix the highlighted fields",
+				description: "All form fields are mandatory.",
 			});
 			return;
 		}
@@ -1285,57 +1130,21 @@ export function useVendorCreationForm({
 		const selectedWorkflowCriteria =
 			pendingWorkflowSelection?.attachInput ?? null;
 
-		const selectedTemplateId =
+		let selectedTemplateId =
 			pendingWorkflowSelection?.attachInput?.workflowId ?? null;
 
-		/*
-		 * Workflow payload rule (entry-point based, not selection-mode based):
-		 *
-		 * "Edit current workflow" (direct edit of the ACTIVE workflow's
-		 * stages, no selection flow involved)
-		 *   → stageEdits + workflowId
-		 *   → this is the ONLY path that ever sends stageEdits
-		 *
-		 * "Change current workflow" (any pendingWorkflowSelection outcome —
-		 * existing/attach, existing/customize, or create-new, regardless of
-		 * use-once vs save-as-template)
-		 *   → newTemplateId + workflowId
-		 *   → the selection UI is responsible for persisting a real
-		 *     template first, so attachInput.workflowId is always a real,
-		 *     already-saved template id by the time we get here
-		 *
-		 * The backend treats stageEdits and newTemplateId as mutually
-		 * exclusive — never send both.
-		 */
+		const shouldCreateEditedTemplate = Boolean(
+			pendingWorkflowSelection?.isEditedExistingWorkflow,
+		);
 
-		// stageEdits ONLY comes from the direct "Edit current workflow" path
-		// (hook-level stageEdits state, set via setStageEdits). It's never
-		// derived from pendingWorkflowSelection anymore.
 		const resubmitStageEdits =
 			!hasPendingWorkflowSelection && stageEdits
 				? mapStageEditsForApi(stageEdits)
 				: undefined;
 
-		/*
-		 * Only a completely fresh form gets assignWorkflow.
-		 *
-		 * Once a workflow instance exists, clarification resubmission must
-		 * operate on that SAME workflowId through activateFirstStage.
-		 */
 		const shouldAssignSelectedWorkflow =
 			!hasAssignedWorkflow && !isClarifiedResubmission;
 
-		/*
-		 * Build the activate-first-stage payload explicitly.
-		 *
-		 * IMPORTANT:
-		 * - stageEdits  = direct edit of the active workflow ("Edit current
-		 *                 workflow"), no pendingWorkflowSelection involved
-		 * - newTemplateId = any "Change current workflow" outcome (existing
-		 *                 attach, existing customize, or create new) —
-		 *                 always resolves to a persisted template id
-		 * - never send both
-		 */
 		const buildActivationPayload = () => {
 			if (!activeWorkflowId) {
 				throw new Error(
@@ -1343,11 +1152,6 @@ export function useVendorCreationForm({
 				);
 			}
 
-			// ---------------------------------------------------------------
-			// "Edit current workflow" — direct edit of the active workflow's
-			// stages. No selection flow involved. Only place stageEdits is
-			// ever sent.
-			// ---------------------------------------------------------------
 			if (!hasPendingWorkflowSelection) {
 				if (resubmitStageEdits?.length) {
 					return {
@@ -1356,17 +1160,11 @@ export function useVendorCreationForm({
 					};
 				}
 
-				// Clarified resubmission with no workflow changes at all.
 				return {
 					workflowId: activeWorkflowId,
 				};
 			}
 
-			// ---------------------------------------------------------------
-			// "Change current workflow" — existing/attach, existing/customize,
-			// or create-new. All of these resolve to a persisted template id
-			// by the time submission happens.
-			// ---------------------------------------------------------------
 			if (!selectedTemplateId) {
 				throw new Error("Selected workflow template ID is missing.");
 			}
@@ -1377,13 +1175,6 @@ export function useVendorCreationForm({
 			};
 		};
 
-		// -----------------------------------------------------------------
-		// Validation
-		// -----------------------------------------------------------------
-
-		/*
-		 * Fresh submission requires a workflow selection.
-		 */
 		if (shouldAssignSelectedWorkflow && !hasPendingWorkflowSelection) {
 			showToast({
 				type: "error",
@@ -1394,12 +1185,6 @@ export function useVendorCreationForm({
 			return;
 		}
 
-		/*
-		 * Any clarified resubmission must have the existing WorkflowInstance.
-		 *
-		 * Clarification does NOT create a new WorkflowInstance. The existing
-		 * workflow is reused and activateFirstStage operates on it.
-		 */
 		if (isClarifiedResubmission && !activeWorkflowId) {
 			showToast({
 				type: "error",
@@ -1410,9 +1195,6 @@ export function useVendorCreationForm({
 			return;
 		}
 
-		/*
-		 * Fresh assignWorkflow requires workspace/app context.
-		 */
 		if (shouldAssignSelectedWorkflow && (!workspaceId || !appId)) {
 			showToast({
 				type: "error",
@@ -1423,12 +1205,89 @@ export function useVendorCreationForm({
 			return;
 		}
 
+		if (
+			pendingWorkflowSelection?.saveAsTemplate &&
+			!pendingWorkflowSelection.templateName?.trim()
+		) {
+			showToast({
+				type: "error",
+				title: "Template name required",
+				description: "Enter a name for the edited workflow template.",
+			});
+			return;
+		}
+
+		submissionInFlightRef.current = true;
+
 		try {
-			// =============================================================
-			// CASE 1
-			// Fresh Form → Assign Workflow
-			// =============================================================
-			if (shouldAssignSelectedWorkflow) {
+			// The THCM form is persisted once, before any workflow operation.
+			if (!vendorUpdateCompletedRef.current) {
+				await handleSaveVendorUpdate(
+					buildVendorOnboardingUpdatePayload(formOneValues, formTwoValues),
+				);
+				vendorUpdateCompletedRef.current = true;
+			}
+
+			if (shouldCreateEditedTemplate && pendingWorkflowSelection) {
+				if (preparedTemplateIdRef.current) {
+					selectedTemplateId = preparedTemplateIdRef.current;
+				} else {
+					if (!workspaceId || !appId) {
+						throw new Error("Workspace or application information is missing.");
+					}
+
+					const templateName = pendingWorkflowSelection.saveAsTemplate
+						? pendingWorkflowSelection.templateName?.trim()
+						: `Vendor workflow - ${referenceNumber ?? vendorRequestId}`;
+
+					if (!templateName) {
+						throw new Error("A workflow template name is required.");
+					}
+
+					const created = await workflowApi.createUser({
+						name: templateName,
+						workspaceId,
+						appId,
+						isActive: true,
+						isReusable: pendingWorkflowSelection.saveAsTemplate ?? false,
+						description: "",
+						metaData_1: "",
+						metaData_2: "",
+						metaData_3: "",
+						stages: pendingWorkflowSelection.previewStages.map((stage) => ({
+							name: stage.name.trim(),
+							stageOrder: stage.stageOrder,
+							strategy: stage.strategy,
+							minApprovals:
+								stage.strategy === "SOME"
+									? Number(stage.minApprovals) || 1
+									: undefined,
+							approverIds: stage.approvers.map((approver) => ({
+								userId: approver.user.id,
+								name:
+									[approver.user.firstName, approver.user.lastName]
+										.filter(Boolean)
+										.join(" ") ||
+									approver.user.email?.trim() ||
+									"Unnamed user",
+								email: approver.user.email?.trim() ?? "",
+								isExternalApprover: approver.isExternalApprover,
+							})),
+						})),
+					});
+
+					selectedTemplateId = getCreatedWorkflowId(created);
+					if (!selectedTemplateId) {
+						throw new Error("The edited workflow was created without an id.");
+					}
+					preparedTemplateIdRef.current = selectedTemplateId;
+				}
+			}
+
+			if (workflowPreparedRef.current) {
+				// A previous attempt prepared the workflow but failed later in the
+				// chain. Do not assign/activate it a second time.
+			} else if (shouldAssignSelectedWorkflow) {
 				if (!workspaceId || !appId) {
 					throw new Error("Workspace or application information is missing.");
 				}
@@ -1440,42 +1299,27 @@ export function useVendorCreationForm({
 					appId,
 					criteria: {
 						...selectedWorkflowCriteria,
+						workflowId: selectedTemplateId ?? undefined,
 					},
 				});
-			}
-
-			// =============================================================
-			// CASES 2–6
-			// Existing Workflow / Clarified Resubmission
-			//
-			// NEVER call assignWorkflow here.
-			// Always operate on the existing WorkflowInstance.
-			// =============================================================
-			else if (isClarifiedResubmission) {
+				workflowPreparedRef.current = true;
+			} else if (isClarifiedResubmission) {
 				const activationPayload = buildActivationPayload();
 
-				console.debug(
-					"[Vendor Onboarding] activate-first-stage payload:",
-					activationPayload,
-				);
-
 				await activateFirstStage(activationPayload);
-			}
-
-			// =============================================================
-			// Defensive guard
-			//
-			// This prevents the old bug where:
-			// hasAssignedWorkflow=false + clarified=true
-			// silently did nothing and showed success.
-			// =============================================================
-			else {
+				workflowPreparedRef.current = true;
+			} else {
 				throw new Error(
 					"Workflow submission state is invalid. No workflow action was performed.",
 				);
 			}
 
-			await detailQuery.refetch();
+			// Status advances only after the update and workflow preparation succeed.
+			await submitMutation.mutateAsync(vendorRequestId);
+			workflowPreparedRef.current = false;
+			vendorUpdateCompletedRef.current = false;
+			preparedTemplateIdRef.current = null;
+
 			setPendingWorkflowSelection(null);
 			setStageEdits(null);
 
@@ -1501,12 +1345,6 @@ export function useVendorCreationForm({
 		} catch (error: unknown) {
 			console.error("Vendor onboarding submission failed:", error);
 
-			try {
-				await detailQuery.refetch();
-			} catch {
-				// Preserve the original submission error shown below.
-			}
-
 			showToast({
 				type: "error",
 				title: isClarifiedResubmission
@@ -1519,30 +1357,33 @@ export function useVendorCreationForm({
 						: "Unable to submit the vendor onboarding request.",
 				),
 			});
+		} finally {
+			submissionInFlightRef.current = false;
 		}
 	}, [
 		activateFirstStage,
 		appId,
 		assignWorkflow,
-		detailQuery,
 		hasAssignedWorkflow,
 		hasPendingClarifiedApproval,
+		handleSaveVendorUpdate,
+		formOneValues,
+		formTwoValues,
+		referenceNumber,
 		navigate,
 		onSuccess,
 		pendingWorkflowSelection,
 		showToast,
 		stageEdits,
 		setStageEdits,
+		submitMutation,
 		vendorRequestId,
 		activeWorkflowId,
 		workspaceId,
+		setPendingWorkflowSelection,
+		validateFormOneBeforeSubmit,
+		validateFormTwoBeforeSubmit,
 	]);
-
-	/*
-	|--------------------------------------------------------------------------
-	| Vendor code update
-	|--------------------------------------------------------------------------
-	*/
 
 	const saveVendorCode = React.useCallback(
 		async (codeOverride?: string): Promise<boolean> => {
@@ -1562,7 +1403,7 @@ export function useVendorCreationForm({
 			if (!vendorCode) {
 				setFormTwoErrors((current) => ({
 					...current,
-					vendorCode: "Vendor Code is required.",
+					vendorCode: MANDATORY_ERROR,
 				}));
 				return false;
 			}
@@ -1651,12 +1492,6 @@ export function useVendorCreationForm({
 		],
 	);
 
-	/*
-	|--------------------------------------------------------------------------
-	| Close onboarding
-	|--------------------------------------------------------------------------
-	*/
-
 	const acceptAndClose = async () => {
 		if (!vendorRequestId) {
 			return;
@@ -1684,11 +1519,6 @@ export function useVendorCreationForm({
 		}
 	};
 
-	/*
-	|--------------------------------------------------------------------------
-	| PDF download
-	|--------------------------------------------------------------------------
-	*/
 	const handleViewPdf = React.useCallback(async () => {
 		if (!vendorRequestId || isPreparingPdf) return;
 
@@ -1735,37 +1565,22 @@ export function useVendorCreationForm({
 
 			setPdfUrl(url);
 
-			const response = await fetch(url);
-
-			if (!response.ok) {
-				throw new Error("Failed to download PDF.");
-			}
-
-			const pdfBlob = await response.blob();
-			const blobUrl = window.URL.createObjectURL(
-				new Blob([pdfBlob], { type: "application/pdf" }),
-			);
-
 			const link = document.createElement("a");
 
-			link.href = blobUrl;
+			link.href = url;
 			link.download = `vendor-details-${
 				referenceNumber?.trim() || vendorRequestId
 			}.pdf`;
+			link.rel = "noopener noreferrer";
 
 			document.body.appendChild(link);
 			link.click();
 			link.remove();
-
-			window.URL.revokeObjectURL(blobUrl);
-		} catch (error) {
+		} catch {
 			showToast({
 				type: "error",
 				title: "PDF download failed",
-				description: getErrorMessage(
-					error,
-					"Unable to download the vendor details PDF.",
-				),
+				description: "Unable to download the vendor details PDF.",
 			});
 		} finally {
 			setIsDownloadingPdf(false);
@@ -1773,8 +1588,12 @@ export function useVendorCreationForm({
 	}, [isDownloadingPdf, pdfUrl, referenceNumber, showToast, vendorRequestId]);
 
 	const creator = React.useMemo<MentionableUserInput | null>(() => {
-		const createdBy = detailQuery.data?.createdBy;
-
+		const detail = detailQuery.data as
+			| (typeof detailQuery.data & {
+					created_by?: MentionableUserInput | null;
+			  })
+			| undefined;
+		const createdBy = detail?.created_by ?? detail?.createdBy;
 		if (!createdBy?.id) {
 			return null;
 		}
@@ -1786,8 +1605,7 @@ export function useVendorCreationForm({
 			email: createdBy.email,
 			avatarUrl: createdBy.avatarUrl,
 		};
-	}, [detailQuery.data?.createdBy]);
-
+	}, [detailQuery.data]);
 	const mutationLoading =
 		updateMutation.isPending ||
 		submitMutation.isPending ||
@@ -1808,14 +1626,17 @@ export function useVendorCreationForm({
 		formOneValues,
 		formTwoValues,
 		formOneErrors,
+		originalAccountNumber,
 		formTwoErrors,
+		validateFormOneBeforeSubmit,
 		formOneDocuments: isPublicForm
 			? (publicQuery.data?.documents ?? [])
 			: (detailQuery.data?.documents ?? []),
 
 		user,
-		status,
+		formStatus: status,
 		referenceNumber,
+		vendorReferenceName,
 
 		canEditFormOne: canEditMainForm,
 		canEditFormTwo: canEditMainForm,
@@ -1830,6 +1651,7 @@ export function useVendorCreationForm({
 		vendorCodeLoading: isSavingVendorCode,
 
 		canSubmitVendorForm: isPublicVendor,
+		canSaveDraft: isPublicForm,
 		canSubmit: canEditMainForm,
 		canApprove,
 		canClarify,
@@ -1869,9 +1691,9 @@ export function useVendorCreationForm({
 		handleFormTwoChange: changeFormTwo,
 
 		handleSaveFormOne: saveVendorDetails,
-		handleSaveFormOneDraft: saveVendorDetailsDraft,
+		handleSaveFormOneDraft: isPublicForm ? submitDraftPublicVendor : undefined,
 		handleSaveFormTwo: saveThcmDetails,
-		handleSaveFormTwoDraft: saveThcmDetailsDraft,
+		handleSaveFormTwoDraft: undefined,
 
 		handleVendorSubmitForm: submitPublicVendor,
 		handleSubmitSummary: submitForApproval,

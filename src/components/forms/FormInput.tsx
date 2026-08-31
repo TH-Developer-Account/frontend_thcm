@@ -1,7 +1,6 @@
 import {
 	forwardRef,
 	useId,
-	useMemo,
 	useState,
 	type InputHTMLAttributes,
 	type ReactNode,
@@ -11,8 +10,8 @@ import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 
 import HelperTooltip from "../common/HelperTooltip";
 import ReadOnlyField from "./ReadOnlyField";
-import { PasswordPolicy } from "../../containers/Login/constant";
 import type { InputProps } from "./input.types";
+import { CircleCheck } from "lucide-react";
 
 const joinClassNames = (
 	...classes: Array<string | false | null | undefined>
@@ -69,6 +68,8 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 			isTooltip = true,
 			min,
 			mode = "edit",
+			success,
+			invalidRadio,
 			readOnlyValue,
 			emptyReadOnlyValue = "--",
 			...nativeInputProps
@@ -86,14 +87,6 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 		const isPassword = type === "password";
 		const isRadio = type === "radio";
 		const resolvedInputType = isPassword && showPassword ? "text" : type;
-
-		const passwordIsValid = useMemo(() => {
-			if (!isPassword || typeof value !== "string" || value.length === 0) {
-				return false;
-			}
-
-			return PasswordPolicy.every((rule) => rule.test(value));
-		}, [isPassword, value]);
 
 		const describedBy = [
 			error ? errorId : undefined,
@@ -148,11 +141,12 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 							required={required}
 							aria-invalid={error ? "true" : undefined}
 							aria-describedby={error ? errorId : undefined}
-							className={joinClassNames(
+							className={[
 								"form-radio-input",
-								error && "form-radio-input-error",
-								className,
-							)}
+								invalidRadio && "form-radio-input-error",
+							]
+								.filter(Boolean)
+								.join(" ")}
 						/>
 
 						{label ? (
@@ -167,16 +161,6 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 							</span>
 						) : null}
 					</label>
-
-					{error ? (
-						<p
-							id={errorId}
-							className="form-error-text form-radio-error-text"
-							role="alert"
-						>
-							{error}
-						</p>
-					) : null}
 				</div>
 			);
 		}
@@ -187,7 +171,7 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 					"form-field",
 					disabled && "is-disabled",
 					error && "has-error",
-					passwordIsValid && !error && "is-valid",
+					success && !error && "is-valid",
 				)}
 			>
 				{label ? (
@@ -208,7 +192,13 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 					</div>
 				) : null}
 
-				<div className="form-input-wrapper">
+				<div
+					className={joinClassNames(
+						"form-input-wrapper",
+						isPassword && "has-password-toggle",
+						(error || success) && "has-status-icon",
+					)}
+				>
 					<input
 						{...nativeInputProps}
 						ref={ref}
@@ -224,10 +214,13 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 						aria-describedby={describedBy || undefined}
 						className={joinClassNames(
 							"form-input",
-							(error || isPassword) && "form-input-with-icon",
+							(error || success || isPassword) && "form-input-with-icon",
+							isPassword &&
+								(error || success) &&
+								"form-input-with-status-and-toggle",
 							error && "form-input-error",
+							success && !error && "form-input-success",
 							disabled && "form-input-disabled",
-							passwordIsValid && !error && "form-input-valid",
 							className,
 						)}
 					/>
@@ -237,9 +230,11 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 							aria-hidden="true"
 							className="form-error-icon"
 						/>
+					) : success ? (
+						<CircleCheck aria-hidden="true" className="form-success-icon" />
 					) : null}
 
-					{isPassword && !error ? (
+					{isPassword ? (
 						<button
 							type="button"
 							className="form-icon-right"

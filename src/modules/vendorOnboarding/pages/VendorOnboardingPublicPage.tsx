@@ -47,7 +47,6 @@ const VendorOnboardingPublicPage = () => {
 	}, [normalizedToken]);
 
 	const form = useVendorCreationForm({
-		role: "EXTERNAL_VENDOR",
 		isPublicForm: true,
 		token: resolvedToken,
 		onSuccess: () => setSubmitted(true),
@@ -127,7 +126,7 @@ const VendorOnboardingPublicPage = () => {
 
 	return (
 		<PublicPagesLayout>
-			<Card>
+			<Card title="Domestic Vendor Onboarding Form">
 				<VendorCreationFormProvider value={form}>
 					<VendorCreationFormOne
 						mode="edit"

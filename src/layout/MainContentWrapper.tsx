@@ -8,7 +8,8 @@ import { marketingSidebar } from "../modules/marketing/marketing.sidebar";
 import { DashboardLayout } from "./DashboardLayout";
 import { vendorSidebar } from "../modules/vendorOnboarding/vendor.sidebar";
 import { workflowSidebar } from "../modules/workflows/utils/workflow.sidebar";
-import { medicalClaimSidebar } from "../modules/medicalReimbursment/medical-claim.sidebar";
+import { medicalClaimSidebar } from "../modules/medicalReimbursment/utils/medical-claim.sidebar";
+import { guestSidebar } from "../modules/guest/GuestSidebar";
 
 const MOBILE_SIDEBAR_QUERY = "(max-width: 767px)";
 
@@ -62,8 +63,11 @@ export default function MainContentWrapper() {
 		if (path.startsWith("/workflow")) {
 			return workflowSidebar;
 		}
-		if (path.startsWith("/medical-claim")) {
+		if (path.startsWith("/medi-claim")) {
 			return medicalClaimSidebar;
+		}
+		if (path.startsWith("/guest")) {
+			return guestSidebar;
 		}
 
 		return [];
