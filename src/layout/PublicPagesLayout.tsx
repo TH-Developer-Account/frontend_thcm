@@ -13,27 +13,23 @@ export const PublicPagesLayout = ({
 	children,
 }: PublicPagesLayoutProps) => {
 	return (
-		<div>
-			<header className="bg-white header-public">
+		<div className="public-pages-layout">
+			<header className="header-public bg-white">
 				<div className="public-page-brand">
-					<div className="home-brand">
-						<img src="/lo.jpg" alt="logo" />
-					</div>
-
-					{/* <span className="public-page-security">
-						<span
-							aria-hidden="true"
-							className="public-page-security-indicator"
-						/>
-						Secure portal
-					</span> */}
+					<a className="home-brand" href="/" aria-label="Tata Hitachi home">
+						<img src="/lo.jpg" alt="Tata Hitachi" />
+					</a>
 				</div>
 			</header>
+
 			<main className="public-page">
-				<section className={joinClassNames("public-page-content", className)}>
-					{children}
-				</section>
+				<div className="public-page-container">
+					<section className={joinClassNames("public-page-content", className)}>
+						{children}
+					</section>
+				</div>
 			</main>
+
 			<footer className="public-page-footer bg-white">
 				Tata Hitachi Construction Machinery
 			</footer>

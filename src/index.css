@@ -11,16 +11,14 @@
 @import "./styles/token.css";
 
 /* Global system. */
+@import "./styles/input.css";
 @import "./styles/layout.css";
 @import "./styles/ui.css";
-@import "./styles/form.css";
 @import "./styles/components.css";
 @import "./styles/home.css";
-@import "./styles/form.css";
 @import "./styles/table.css";
 
 /* Existing feature styles. Keep until each module is migrated. */
-@import "./components/forms/input.css";
 @import "./modules/workflows/utils/workflow.css";
 @import "./modules/admin/business-partners/bp.css";
 @import "./modules/marketing/marketing.styles.css";

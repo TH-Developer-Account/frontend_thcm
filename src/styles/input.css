@@ -21,7 +21,7 @@ FORM CONTAINER AND LAYOUT
 	}
 
 	.form-field {
-		@apply flex w-full min-w-0 flex-col;
+		@apply flex w-full min-w-0 flex-col relative;
 
 		gap: var(--space-1-5);
 	}
@@ -130,6 +130,7 @@ FORM CONTAINER AND LAYOUT
 		left: 50%;
 		bottom: calc(100% + var(--space-2));
 		z-index: var(--z-overlay);
+		z-index: 999;
 
 		width: max-content;
 		max-width: 14rem;
@@ -218,8 +219,8 @@ FORM CONTAINER AND LAYOUT
 	.form-input,
 	.form-date,
 	.form-native-select {
-		height: var(--control-height-md);
-		min-height: var(--control-height-md);
+		height: var(--control-height-sm);
+		min-height: var(--control-height-xs);
 		padding-block: 0;
 		padding-inline: var(--space-2);
 		box-sizing: border-box;
@@ -286,8 +287,9 @@ FORM CONTAINER AND LAYOUT
 	.form-textarea.form-input-error,
 	.form-date.form-input-error,
 	.form-native-select.form-input-error {
+		border-width: var(--border-width-strong);
 		border-color: var(--color-error);
-		background-color: var(--color-input-bg);
+		background-color: var(--color-error-bg);
 	}
 
 	.form-input-error::placeholder {
@@ -305,22 +307,83 @@ FORM CONTAINER AND LAYOUT
 	}
 
 	/* =====================================================
-	   VALID PASSWORD STATE
+	   SUCCESS / VALID STATE
+	   Border alone isn't enough for low-vision or colour-weak
+	   users — pair it with a tinted background and a checkmark
+	   icon (see .form-success-icon) so the state reads even
+	   without relying on the exact hue.
 	===================================================== */
 
 	.form-input-success {
-		border-color: var(--color-success);
+		border-width: var(--border-width-default);
+		/* border-color: var(--color-success); */
+		background-color: var(--color-success-bg-soft);
+		padding-right: var(--space-8);
 	}
 
 	.form-input-success:hover:not(:disabled) {
 		border-color: var(--color-success-hover);
+		background-color: var(--color-success-bg-soft);
 	}
 
-	.form-input-vsuccessalid:focus {
+	.form-input-success:focus {
 		border-color: var(--color-success);
-		box-shadow: none;
+		background-color: var(--color-success-bg-soft);
 	}
 
+	.form-success-icon {
+		@apply pointer-events-none absolute h-4 w-4;
+
+		top: 50%;
+		right: var(--space-3);
+
+		color: var(--color-success);
+		transform: translateY(-50%);
+	}
+
+	.form-success-text {
+		@apply m-0 text-left;
+
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-tight);
+
+		color: var(--color-success);
+	}
+	/* Browser autofill / saved values */
+	.form-input-success:-webkit-autofill {
+		-webkit-box-shadow: 0 0 0 1000px var(--color-success-bg-soft) inset;
+	}
+	.form-input-success:-webkit-autofill:hover:not(:disabled) {
+		border-color: var(--color-success-hover);
+		background-color: var(--color-success-bg-soft);
+	}
+	.form-input-success:-webkit-autofill:focus,
+	.form-input-success:-webkit-autofill:active {
+		border-color: var(--color-success);
+		-webkit-box-shadow: 0 0 0 1000px var(--color-success-bg-soft) inset;
+	}
+
+	/* Space for both the status icon and password visibility button */
+	.form-input-with-status-and-toggle {
+		padding-right: var(--space-16);
+	}
+
+	/* Move validation status left when the password toggle is present */
+	.form-input-wrapper.has-password-toggle.has-status-icon .form-error-icon,
+	.form-input-wrapper.has-password-toggle.has-status-icon .form-success-icon {
+		right: var(--space-12);
+	}
+
+	/* Keep the clickable password toggle above decorative icons */
+	.form-icon-right {
+		z-index: 1;
+	}
 	/* =====================================================
 	   DISABLED STATE
 	===================================================== */
@@ -402,7 +465,6 @@ FORM CONTAINER AND LAYOUT
 	/* =====================================================
 	   RADIO
 	===================================================== */
-
 	.form-radio-group-item {
 		@apply flex flex-col;
 
@@ -416,18 +478,53 @@ FORM CONTAINER AND LAYOUT
 		cursor: pointer;
 	}
 
+	.radio-group {
+		@apply flex flex-col;
+
+		gap: var(--space-2);
+	}
+
+	.radio-group-options {
+		@apply flex flex-wrap items-center;
+
+		gap: var(--space-4);
+	}
+
+	.radio-group-label {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+		color: var(--color-text-secondary);
+	}
+
+	.radio-group.has-error .radio-group-label {
+		color: var(--color-error);
+	}
+
+	.form-radio-label {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-tight);
+		color: var(--color-text-secondary);
+	}
+
+	.form-radio-error-text {
+		padding-left: calc(1rem + var(--space-2));
+	}
+
 	.form-radio-input {
 		@apply m-0 shrink-0 appearance-none border;
 
-		width: 1rem;
-		height: 1rem;
+		width: 1.3rem;
+		height: 1.3rem;
 
 		border-width: var(--border-width-default);
 		border-color: var(--color-input-border);
 		border-radius: var(--radius-full);
 
 		background-color: var(--color-input-bg);
-
 		cursor: pointer;
 
 		transition:
@@ -437,71 +534,74 @@ FORM CONTAINER AND LAYOUT
 	}
 
 	.form-radio-input:hover:not(:disabled) {
-		border-color: var(--color-input-border-hover);
+		border-color: var(--color-brand);
 	}
 
 	.form-radio-input:checked {
-		border-width: 0.25rem;
 		border-color: var(--color-brand);
-		background-color: var(--color-input-bg);
+		background-color: var(--color-brand);
+
+		/* Brand centre surrounded by a white inner ring */
+		box-shadow: inset 0 0 0 0.15rem var(--color-clean-white);
 	}
 
 	.form-radio-input:focus-visible {
 		outline: none;
 		border-color: var(--color-brand);
-		box-shadow: inset 0 -2px 0 var(--color-brand);
+		box-shadow:
+			inset 0 0 0 0.18rem var(--color-clean-white),
+			0 0 0 2px var(--color-brand-subtle);
 	}
 
 	.form-radio-input-error {
+		border-width: var(--border-width-strong);
 		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+	}
+
+	.form-radio-input-error:hover:not(:disabled) {
+		border-color: var(--color-error-hover);
+	}
+
+	.form-radio-input-error:checked {
+		border-color: var(--color-error);
+		background-color: var(--color-error);
+		box-shadow: inset 0 0 0 0.18rem var(--color-clean-white);
 	}
 
 	.form-radio-input:disabled {
+		opacity: 1;
 		cursor: not-allowed;
 		border-color: var(--color-border-disabled);
 		background-color: var(--color-input-bg-disabled);
+		box-shadow: none;
 	}
 
-	.form-radio-label {
-		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-tight);
+	/* Preserve selected styling in read-only mode */
+	.form-radio-input:disabled:checked {
+		border-color: var(--color-brand);
+		background-color: var(--color-brand);
+		box-shadow: inset 0 0 0 0.18rem var(--color-clean-white);
+	}
 
+	.radio-group.is-disabled {
+		opacity: 1;
+	}
+
+	.radio-group.is-disabled .form-radio-field {
+		cursor: default;
+	}
+
+	.radio-group.is-disabled .form-radio-label {
 		color: var(--color-text-secondary);
+		cursor: default;
 	}
 
-	.form-radio-group-item.is-disabled .form-radio-field {
-		cursor: not-allowed;
-	}
-
-	.form-radio-group-item.is-disabled .form-radio-label {
-		color: var(--color-text-disabled);
-	}
-
-	.form-radio-error-text {
-		padding-left: calc(1rem + var(--space-2));
-	}
-
-	.radio-group {
-		@apply flex flex-col;
-
-		gap: var(--space-2);
-	}
-
-	.radio-group-label {
-		font-family: var(--font-sans);
-		font-size: var(--font-size-sm);
+	.radio-group.is-disabled
+		.form-radio-field:has(.form-radio-input:checked)
+		.form-radio-label {
+		color: var(--color-text-primary);
 		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-tight);
-
-		color: var(--color-text-secondary);
-	}
-
-	.radio-group-options {
-		@apply flex flex-wrap items-center;
-
-		gap: var(--space-4);
 	}
 
 	/* =====================================================
@@ -572,6 +672,18 @@ FORM CONTAINER AND LAYOUT
 	.form-field-soft .form-native-select:focus {
 		border-color: var(--color-input-border-focus);
 		background-color: var(--color-input-bg);
+	}
+
+	.form-field-soft .form-native-select.form-input-error,
+	.form-field-soft .form-native-select.form-input-error:hover:not(:disabled),
+	.form-field-soft .form-native-select.form-input-error:focus {
+		border-width: var(--border-width-strong);
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+	}
+
+	.form-field-soft .form-native-select.form-input-error:hover:not(:disabled) {
+		border-color: var(--color-error-hover);
 	}
 
 	/* =====================================================
@@ -661,8 +773,8 @@ REACT SELECT CONTAINER
 	.react-select__control {
 		@apply flex w-full min-w-0 items-center border outline-none;
 
-		height: var(--control-height-md) !important;
-		min-height: var(--control-height-md) !important;
+		height: var(--control-height-sm) !important;
+		min-height: var(--control-height-sm) !important;
 		box-sizing: border-box;
 
 		border-width: var(--border-width-default);
@@ -700,19 +812,61 @@ REACT SELECT CONTAINER
 	/* Keep error icon clear of the indicators. */
 	.react-select-container-error .react-select__control {
 		padding-right: var(--space-8);
+		border-width: var(--border-width-strong);
 		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
 	}
 
 	.react-select-container-error
 		.react-select__control:hover:not(.react-select__control--is-disabled) {
 		border-color: var(--color-error-hover);
+		background-color: var(--color-error-bg);
 	}
 
 	.react-select-container-error .react-select__control--is-focused {
 		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
 		box-shadow: none;
 	}
 
+	.react-select-container-error .react-select__placeholder {
+		color: var(--color-error);
+		opacity: 0.65;
+	}
+	/* Keep error icon clear of the indicators. */
+	.react-select-container-success .react-select__control {
+		padding-right: var(--space-8);
+		border-width: var(--border-width-default);
+		/* border-color: var(--color-success); */
+		background-color: var(--color-success-bg-soft);
+	}
+
+	.react-select-container-success
+		.react-select__control:hover:not(.react-select__control--is-disabled) {
+		border-color: var(--color-success-hover);
+		background-color: var(--color-success-bg-soft);
+	}
+
+	.react-select-container-success .react-select__control--is-focused {
+		border-color: var(--color-success);
+		box-shadow: none;
+	}
+	/* Browser autofill / saved values */
+	.react-select-container-success:-webkit-autofill {
+		-webkit-box-shadow: 0 0 0 1000px var(--color-success-bg-soft) inset;
+	}
+	.react-select-container-success:-webkit-autofill
+		.react-select__control:hover:not(.react-select__control--is-disabled) {
+		border-color: var(--color-success-hover);
+		background-color: var(--color-success-bg-soft);
+	}
+	.react-select-container-success
+		.react-select__control--is-focused:-webkit-autofill:focus,
+	.react-select-container-success
+		.react-select__control--is-focused:-webkit-autofill:active {
+		border-color: var(--color-success);
+		-webkit-box-shadow: 0 0 0 1000px var(--color-success-bg-soft) inset;
+	}
 	/* =====================================================
 	   VALUE CONTAINER
 	===================================================== */
@@ -1070,6 +1224,12 @@ REACT SELECT CONTAINER
 		cursor: not-allowed;
 	}
 
+	.react-select-container-error .react-select__control--is-disabled {
+		border-width: var(--border-width-default);
+		border-color: var(--color-border-disabled);
+		background-color: var(--color-input-bg-disabled);
+	}
+
 	.select-field.is-disabled {
 		opacity: 0.85;
 	}
@@ -1141,19 +1301,60 @@ REACT SELECT CONTAINER
 @layer components {
 	.checkbox {
 		@apply flex shrink-0 items-center justify-center transition-all duration-150;
+
+		border-width: var(--border-width-default);
+		border-color: var(--color-brand);
+		background-color: var(--color-input-bg);
+		box-sizing: border-box;
 	}
 
 	.checkbox-disabled {
-		@apply cursor-not-allowed opacity-60;
+		@apply cursor-not-allowed;
+		opacity: 1;
 	}
 
 	.checkbox-enabled {
 		@apply cursor-pointer;
 	}
 
+	.checkbox-enabled:hover {
+		border-color: var(--color-input-border-hover);
+	}
+
+	.checkbox-enabled:focus-visible {
+		outline: none;
+		border-color: var(--color-input-border-hover);
+		box-shadow: none;
+	}
+
+	.checkbox-error {
+		border-width: var(--border-width-strong);
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+	}
+
+	.checkbox-error.checkbox-enabled:hover {
+		border-color: var(--color-error-hover);
+		background-color: var(--color-error-bg);
+	}
+
+	.checkbox-field.has-error:not(.is-disabled) .form-radio-label {
+		color: var(--color-error);
+	}
+
+	.checkbox-error.checkbox-enabled:focus-visible {
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+	}
+
+	.checkbox-error.checkbox-disabled {
+		border-width: var(--border-width-default);
+	}
+
 	.checkbox-icon {
 		@apply font-bold leading-none;
 	}
+
 	.checkbox-field-row {
 		display: flex;
 		align-items: center;
@@ -1388,7 +1589,23 @@ REACT SELECT CONTAINER
 		cursor: not-allowed;
 	}
 	.checkbox-field.has-error .checkbox-control {
+		border-width: var(--border-width-strong);
 		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+	}
+	.checkbox-field.has-error .checkbox-control:hover:not(:disabled) {
+		border-color: var(--color-error-hover);
+		background-color: var(--color-error-bg);
+	}
+	.checkbox-field.has-error .checkbox-control:focus-visible {
+		border-color: var(--color-error);
+		background-color: var(--color-error-bg);
+		box-shadow: none;
+	}
+	.checkbox-field.has-error .checkbox-control:disabled {
+		border-width: var(--border-width-default);
+		border-color: var(--color-border-disabled);
+		background-color: var(--color-input-bg-disabled);
 	}
 }
 
@@ -1522,9 +1739,9 @@ FORM READONLY INPUT
 		display: flex;
 		width: 100%;
 		min-width: 0;
-		height: var(--control-height-md);
-		min-height: var(--control-height-md);
-		max-height: var(--control-height-md);
+		height: var(--control-height-xs);
+		min-height: var(--control-height-xs);
+		max-height: var(--control-height-xs);
 		align-items: center;
 
 		padding: var(--space-2) var(--space-3);

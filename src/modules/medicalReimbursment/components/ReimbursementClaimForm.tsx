@@ -20,6 +20,7 @@ import Card, { type CardSection } from "../../../components/common/Card";
 import DatePickerInput from "../../../components/common/DatePickerInput";
 import Checkbox from "../../../components/forms/Checkbox";
 import FormInput from "../../../components/forms/FormInput";
+import Radio from "../../../components/forms/Radio";
 import SelectInput from "../../../components/forms/SelectInput";
 import { ReasonActionModal } from "../../../components/ui/ReasonActionModal";
 import {
@@ -183,27 +184,21 @@ const ReimbursementClaimFormContent = ({
 			defaultExpanded: true,
 			children: (
 				<div className="grid grid-cols-1 items-center gap-3 px-4.5 sm:grid-cols-2 xl:grid-cols-4">
-					<div className="flex flex-col gap-2">
-						<div className="flex flex-wrap gap-4 px-2.5">
-							{COVERAGE_OPTIONS.map((option) => (
-								<FormInput
-									key={option.value}
-									id={`coverage-${option.value}`}
-									type="radio"
-									label={option.label}
-									name="coverageType"
-									value={option.value}
-									checked={values.coverageType === option.value}
-									disabled={isReadOnly}
-									onChange={() => handleChange("coverageType", option.value)}
-									invalidRadio={errors.coverageType}
-								/>
-							))}
-						</div>
-						{errors.coverageType ? (
-							<p className="form-error-text">{errors.coverageType}</p>
-						) : null}
-					</div>
+					<Radio
+						groupLabel="Coverage Type"
+						name="coverageType"
+						options={COVERAGE_OPTIONS}
+						selectedValue={values.coverageType}
+						disabled={isReadOnly}
+						error={errors.coverageType}
+						required
+						onChange={(value) =>
+							handleChange(
+								"coverageType",
+								value as (typeof COVERAGE_OPTIONS)[number]["value"],
+							)
+						}
+					/>
 					<FormInput
 						mode={fieldMode}
 						name="employeeName"
