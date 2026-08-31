@@ -303,6 +303,17 @@ const ReimbursementClaimFormContent = ({
 					},
 				]
 			: []),
+		...(workflowSection
+			? [
+					{
+						id: "approval-workflow",
+						title: "Approval Workflow",
+						Icon: GitBranch,
+						defaultExpanded: true,
+						children: workflowSection,
+					},
+				]
+			: []),
 		...(commentsSection
 			? [
 					{
@@ -322,17 +333,6 @@ const ReimbursementClaimFormContent = ({
 						Icon: MessageSquareText,
 						defaultExpanded: true,
 						children: auditSection,
-					},
-				]
-			: []),
-		...(workflowSection
-			? [
-					{
-						id: "approval-workflow",
-						title: "Approval Workflow",
-						Icon: GitBranch,
-						defaultExpanded: true,
-						children: workflowSection,
 					},
 				]
 			: []),
