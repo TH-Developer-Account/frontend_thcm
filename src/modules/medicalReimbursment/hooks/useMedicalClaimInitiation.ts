@@ -275,9 +275,8 @@ export function useMedicalClaimInitiationImport({
 			setInitiateAllError(undefined);
 
 			const response = await importMutation.mutateAsync(formData);
-			const rows: ImportedMedicalClaimInitiationRow[] = (
-				response.data ?? []
-			).map(
+			const rows = Array.isArray(response) ? response : [];
+			rows.map(
 				(
 					row: ImportedMedicalClaimInitiationApiRow,
 					index: number,

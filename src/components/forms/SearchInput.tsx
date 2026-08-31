@@ -1,4 +1,4 @@
-import React, { forwardRef } from "react";
+import { forwardRef } from "react";
 import { Search } from "lucide-react";
 import type { SearchBoxProps } from "./input.types";
 

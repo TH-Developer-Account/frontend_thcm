@@ -97,7 +97,7 @@ const waitForDocumentResources = async (
 
 	await new Promise<void>((resolve) => {
 		requestAnimationFrame(() => {
-			requestAnimationFrame(resolve);
+			requestAnimationFrame(() => resolve());
 		});
 	});
 };
@@ -314,7 +314,6 @@ const ActivityPlannerPdfPreview = ({
 						<ActivityPlannerPdfTemplate
 							epcData={epcData}
 							createdBy={createdBy}
-							workflowEntries={workflowEntries}
 						/>
 					</div>
 				</div>

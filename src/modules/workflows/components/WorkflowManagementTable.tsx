@@ -20,7 +20,7 @@ import { workflowListFilterOptions } from "../utils/workflow.constants";
 import { getWorkflowColumns } from "../utils/workflow.columns";
 import { WorkflowUserAssignment } from "./WorkflowUserAssignment";
 import { FilterTabs } from "../../../components/ui/FilterTabs";
-import { getWorkflowErrorMessage } from "../api/workflow.api";
+import { getWorkflowErrorMessage, workflowApi } from "../api/workflow.api";
 import { useDeleteWorkflowMutation } from "../context/useWorkflowMutations";
 
 const WORKFLOW_SKELETON_ROWS = 8;
@@ -73,7 +73,6 @@ export const WorkflowManagementTable = ({
 	React.useEffect(() => {
 		const fetchUsers = async (): Promise<void> => {
 			try {
-				const { workflowApi } = await import("../api/workflow.api");
 				setUsers(await workflowApi.getUserOptions());
 			} catch (error) {
 				console.error("Failed to fetch users", error);
@@ -82,6 +81,7 @@ export const WorkflowManagementTable = ({
 
 		void fetchUsers();
 	}, []);
+
 	const filterTabs = React.useMemo(
 		() =>
 			workflowListFilterOptions.map((option) => ({

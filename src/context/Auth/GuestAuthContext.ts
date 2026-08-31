@@ -8,6 +8,7 @@ export interface Guest {
 	last_name?: string;
 	firstName?: string;
 	lastName?: string;
+	phone_number?: string;
 }
 
 export interface GuestAuthContextType {

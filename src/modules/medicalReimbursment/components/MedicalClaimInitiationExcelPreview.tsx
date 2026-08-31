@@ -1,5 +1,3 @@
-import * as React from "react";
-
 const COLUMNS = [
 	{ label: "Employee Name", required: true },
 	{ label: "Grade", required: true },

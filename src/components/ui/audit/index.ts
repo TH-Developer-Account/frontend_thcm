@@ -9,5 +9,10 @@ export {
 	formatAuditTimestamp,
 	normalizeAuditAction,
 } from "./audit.helper";
-export type { AuditApiAdapter, AuditLogEntry, AuditUser } from "./audit.types";
-export type { AuditMessageOptions, AuditMessageContext } from "./audit.helper";
+export type {
+	AuditApiAdapter,
+	AuditLogEntry,
+	AuditUser,
+	AuditMessageOptions,
+	AuditMessageContext,
+} from "./audit.types";

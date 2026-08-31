@@ -138,7 +138,7 @@ const mapPublicBillToLineItem = (
 					id: String(bill.id ?? `bill-${index + 1}`),
 					url: fileUrl,
 					name: fileName,
-					type: bill.mimeType,
+					type: bill.mimeType ?? undefined,
 					size: bill.fileSize,
 					fallbackName: fileName,
 				})
