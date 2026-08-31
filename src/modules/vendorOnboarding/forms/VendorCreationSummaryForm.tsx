@@ -82,6 +82,7 @@ type VendorCreationSummaryFormProps = {
 
 	workflowStages?: ApprovalStageLike[];
 	commentsSection?: ReactNode;
+	auditSection?: ReactNode;
 	workflowSection?: ReactNode;
 };
 
@@ -111,6 +112,7 @@ const VendorCreationSummaryForm = ({
 	onSaveVendorCode,
 	workflowStages = [],
 	commentsSection,
+	auditSection,
 	workflowSection,
 }: VendorCreationSummaryFormProps) => {
 	const navigate = useNavigate();
@@ -341,11 +343,23 @@ const VendorCreationSummaryForm = ({
 			? [
 					{
 						id: "comments-and-activity",
-						title: "Comments & Activity",
+						title: "Chat Section",
 						// subtitle: "Review the discussion and audit history.",
 						Icon: MessageSquareText,
 						defaultExpanded: true,
 						children: commentsSection,
+					} satisfies CardSection,
+				]
+			: []),
+		...(auditSection
+			? [
+					{
+						id: "audit",
+						title: "Audit Section",
+						// subtitle: "Review the discussion and audit history.",
+						Icon: MessageSquareText,
+						defaultExpanded: true,
+						children: auditSection,
 					} satisfies CardSection,
 				]
 			: []),

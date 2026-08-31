@@ -20,7 +20,7 @@ import {
 } from "../hooks/useVendorCreationForm";
 import { useVendorOnboardingInitiation } from "../hooks/useVendorOnboardingInitiation";
 import VendorCommentSection from "./VendorCommentSection";
-// import { Badge } from "../../../components/common/Badge";
+import { AuditLogSection } from "../../../components/ui/audit";
 
 type VendorOnboardingReadOnlyViewProps = {
 	onboardingId: string;
@@ -116,6 +116,16 @@ const VendorOnboardingReadOnlyView = ({
 							onboardingId={onboardingId}
 							workflow={workflowStages}
 							createdBy={creator}
+						/>
+					}
+					auditSection={
+						<AuditLogSection
+							subjectType="VENDOR_ONBOARDING"
+							subjectId={onboardingId}
+							entityName="vendor onboarding request"
+							// refreshKey={refreshKey}
+							emptyTitle="No vendor activity yet"
+							emptyDescription="Vendor onboarding activity will appear here."
 						/>
 					}
 				/>

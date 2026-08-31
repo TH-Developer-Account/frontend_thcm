@@ -317,8 +317,8 @@ const ReimbursementClaimFormContent = ({
 		...(commentsSection
 			? [
 					{
-						id: "comments",
-						title: "Comments",
+						id: "chat",
+						title: "Chat Section",
 						Icon: MessageSquareText,
 						defaultExpanded: true,
 						children: commentsSection,

@@ -1,7 +1,5 @@
 import * as React from "react";
 
-import SectionAccordion from "../../../components/common/SectionAccordion";
-import { AuditLogSection } from "../../../components/ui/audit";
 import {
 	CommentsSection,
 	getWorkflowCommentContext,
@@ -44,31 +42,18 @@ const VendorCommentSection = ({
 
 	return (
 		<>
-			<SectionAccordion title="Comment Section">
-				<CommentsSection
-					subjectType="VENDOR_ONBOARDING"
-					subjectId={onboardingId}
-					approvalId={commentContext.approvalId}
-					canComment={commentContext.canComment}
-					mentionableUsers={commentContext.mentionableUsers}
-					ccEmails={commentContext.ccEmails}
-					currentUserId={user?.id}
-					refreshKey={refreshKey}
-					emptyTitle="No comments yet"
-					emptyDescription="Comments about this vendor request will appear here."
-				/>
-			</SectionAccordion>
-
-			<SectionAccordion title="Activity Log">
-				<AuditLogSection
-					subjectType="VENDOR_ONBOARDING"
-					subjectId={onboardingId}
-					entityName="vendor onboarding request"
-					refreshKey={refreshKey}
-					emptyTitle="No vendor activity yet"
-					emptyDescription="Vendor onboarding activity will appear here."
-				/>
-			</SectionAccordion>
+			<CommentsSection
+				subjectType="VENDOR_ONBOARDING"
+				subjectId={onboardingId}
+				approvalId={commentContext.approvalId}
+				canComment={commentContext.canComment}
+				mentionableUsers={commentContext.mentionableUsers}
+				ccEmails={commentContext.ccEmails}
+				currentUserId={user?.id}
+				refreshKey={refreshKey}
+				emptyTitle="No comments yet"
+				emptyDescription="Comments about this vendor request will appear here."
+			/>
 		</>
 	);
 };

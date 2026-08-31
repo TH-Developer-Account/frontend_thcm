@@ -118,7 +118,7 @@ export default function CommentsSection({
 	refreshKey = 0,
 	canComment = true,
 	currentUserId,
-	title = "Comments",
+	title = "Chat Section",
 	emptyTitle = "No comments yet",
 	emptyDescription = "Start the discussion by adding the first comment.",
 	api = commentApi,

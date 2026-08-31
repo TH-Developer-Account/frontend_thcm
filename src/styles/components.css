@@ -7375,7 +7375,7 @@ PAGE NAVIGATION
 
 	.comment-audit-content {
 		display: inline-flex;
-		max-width: min(90%, 44rem);
+		max-width: 100%;
 		min-width: 0;
 		flex-direction: row;
 		align-items: center;
