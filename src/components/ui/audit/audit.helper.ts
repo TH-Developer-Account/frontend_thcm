@@ -1,62 +1,51 @@
-import type { AuditLogEntry } from "./audit.types";
-
-export type AuditMessageOptions = {
-	/**
-	 * Entity being acted on.
-	 * Example: "vendor onboarding request", "medical claim", "event report"
-	 */
-	entityName: string;
-
-	/**
-	 * Optional custom action messages.
-	 * Useful when a module has special wording.
-	 */
-	actionMessages?: Record<
-		string,
-		string | ((context: AuditMessageContext) => string)
-	>;
-
-	/**
-	 * Optional timestamp formatter.
-	 */
-	formatTimestamp?: (date: string) => string;
-
-	/**
-	 * Whether to include the timestamp in the returned message.
-	 */
-	includeTimestamp?: boolean;
-};
-
-export type AuditMessageContext = {
-	entry: AuditLogEntry;
-	actorName: string;
-	action: string;
-	stageName?: string;
-	reason?: string;
-	stageSuffix: string;
-	reasonSuffix: string;
-	entityName: string;
-};
-
-type AuditMetadata = {
-	reason?: string | null;
-	status?: string | null;
-	remarks?: string | null;
-	comment?: string | null;
-	previousStatus?: string | null;
-	currentStatus?: string | null;
-	[key: string]: unknown;
-};
+import {
+	NORMALIZED_AUDIT_ACTIONS,
+	type AuditAction,
+	type AuditLogEntry,
+	type AuditMessageContext,
+	type AuditMessageOptions,
+	type AuditMetadata,
+	type NormalizedAuditAction,
+} from "./audit.types";
 
 /* -------------------------------------------------------------------------- */
-/* Helpers                                                                    */
+/* Action normalization                                                       */
 /* -------------------------------------------------------------------------- */
 
-export const normalizeAuditAction = (value?: string | null): string => {
-	return String(value ?? "")
+const SORTED_NORMALIZED_ACTIONS = [...NORMALIZED_AUDIT_ACTIONS].sort(
+	(first, second) => second.length - first.length,
+);
+
+const isNormalizedAuditAction = (
+	value: string,
+): value is NormalizedAuditAction =>
+	NORMALIZED_AUDIT_ACTIONS.some((action) => action === value);
+
+export const normalizeAuditAction = (
+	value?: AuditAction | null,
+): NormalizedAuditAction | string => {
+	const normalizedValue = String(value ?? "")
 		.trim()
 		.toUpperCase();
+
+	if (!normalizedValue) {
+		return "";
+	}
+
+	if (isNormalizedAuditAction(normalizedValue)) {
+		return normalizedValue;
+	}
+
+	const matchedAction = SORTED_NORMALIZED_ACTIONS.find((action) =>
+		normalizedValue.endsWith(`_${action}`),
+	);
+
+	return matchedAction ?? normalizedValue;
 };
+
+/* -------------------------------------------------------------------------- */
+/* Formatting helpers                                                         */
+/* -------------------------------------------------------------------------- */
 
 export const formatAuditLabel = (value?: string | null): string => {
 	const normalized = String(value ?? "").trim();
@@ -94,7 +83,13 @@ export const getAuditReason = (entry: AuditLogEntry): string | undefined => {
 };
 
 export const formatAuditTimestamp = (date: string): string => {
-	return new Date(date).toLocaleString("en-IN", {
+	const parsedDate = new Date(date);
+
+	if (Number.isNaN(parsedDate.getTime())) {
+		return "";
+	}
+
+	return parsedDate.toLocaleString("en-IN", {
 		day: "2-digit",
 		month: "short",
 		year: "numeric",
@@ -105,59 +100,73 @@ export const formatAuditTimestamp = (date: string): string => {
 };
 
 /* -------------------------------------------------------------------------- */
-/* Default audit messages                                                     */
+/* Default messages                                                           */
 /* -------------------------------------------------------------------------- */
 
 const getDefaultAuditMessage = (context: AuditMessageContext): string => {
-	const { actorName, action, stageSuffix, reasonSuffix, entityName } = context;
+	const { action, stageSuffix, reasonSuffix, entityName } = context;
 
 	switch (action) {
 		case "CREATED":
+			return `Created the ${entityName}`;
+
 		case "INITIATED":
-			return `${actorName} initiated the ${entityName}.`;
+			return `Initiated the ${entityName}`;
 
 		case "UPDATED":
-			return `${actorName} updated the ${entityName}.`;
+			return `Updated the ${entityName}`;
 
 		case "SUBMITTED":
-			return `${actorName} submitted the ${entityName}.`;
+			return `Submitted the ${entityName}`;
+
+		case "RESUBMITTED":
+			return `Resubmitted the ${entityName}`;
 
 		case "SENT_FOR_APPROVAL":
-			return `${actorName} sent the ${entityName} for approval.`;
+			return `Sent the ${entityName} for approval`;
+
+		case "CONDUCTED":
+			return `Marked the ${entityName} as conducted`;
+
+		case "CANCELLED":
+			return `Cancelled the ${entityName}`;
+
+		case "VALIDATED":
+			return `Validated the ${entityName}`;
 
 		case "APPROVED":
-			return `${actorName} approved the ${entityName}${stageSuffix}.`;
+			return `Approved the ${entityName}${stageSuffix}`;
 
 		case "REJECTED":
-			return `${actorName} rejected the ${entityName}${stageSuffix}${reasonSuffix}.`;
+			return `Rejected the ${entityName}${stageSuffix}${reasonSuffix}`;
 
 		case "CLARIFY":
 		case "CLARIFICATION_REQUESTED":
-			return `${actorName} requested clarification${stageSuffix}${reasonSuffix}.`;
+			return `Requested clarification for the ${entityName}${stageSuffix}${reasonSuffix}`;
 
-		case "RESUBMITTED":
-			return `${actorName} resubmitted the ${entityName}.`;
+		case "DEVIATION_RAISED":
+			return `Raised a deviation for the ${entityName}${stageSuffix}${reasonSuffix}`;
 
 		case "ACCEPTED":
-			return `${actorName} accepted the ${entityName}${stageSuffix}.`;
+			return `Accepted the ${entityName}${stageSuffix}`;
 
 		case "CLOSED":
-			return `${actorName} closed the ${entityName}.`;
+			return `Closed the ${entityName}`;
 
 		case "WORKFLOW_ASSIGNED":
-			return `${actorName} assigned an approval workflow.`;
+			return `Assigned an approval workflow to the ${entityName}`;
 
 		case "WORKFLOW_STARTED":
-			return `${actorName} started the approval workflow.`;
+			return `Started the approval workflow for the ${entityName}`;
 
 		default: {
 			const actionLabel = formatAuditLabel(action);
 
 			if (actionLabel) {
-				return `${actorName} performed “${actionLabel}”${stageSuffix}${reasonSuffix}.`;
+				return `Performed “${actionLabel}”${stageSuffix}${reasonSuffix}`;
 			}
 
-			return `${actorName} updated the ${entityName}.`;
+			return `Updated the ${entityName}`;
 		}
 	}
 };
@@ -175,21 +184,23 @@ export const getAuditMessage = (
 		actionMessages = {},
 		formatTimestamp = formatAuditTimestamp,
 		includeTimestamp = true,
+		includeActor = true,
 	} = options;
 
+	const rawAction = entry.action;
+	const action = normalizeAuditAction(rawAction);
 	const actorName = getAuditActorName(entry);
-	const action = normalizeAuditAction(entry.action);
 	const stageName = entry.stageName?.trim() || undefined;
 	const reason = getAuditReason(entry);
 
 	const stageSuffix = stageName ? ` at ${stageName}` : "";
-
 	const reasonSuffix = reason ? ` — ${reason}` : "";
 
 	const context: AuditMessageContext = {
 		entry,
 		actorName,
 		action,
+		rawAction,
 		stageName,
 		reason,
 		stageSuffix,
@@ -197,16 +208,22 @@ export const getAuditMessage = (
 		entityName,
 	};
 
-	const customMessage = actionMessages[action];
+	const customMessage = actionMessages[rawAction] ?? actionMessages[action];
 
-	const message =
+	const actionMessage =
 		typeof customMessage === "function"
 			? customMessage(context)
 			: (customMessage ?? getDefaultAuditMessage(context));
+
+	const message = includeActor
+		? `${actorName} · ${actionMessage}`
+		: actionMessage;
 
 	if (!includeTimestamp || !entry.createdAt) {
 		return message;
 	}
 
-	return `${message} (${formatTimestamp(entry.createdAt)})`;
+	const timestamp = formatTimestamp(entry.createdAt);
+
+	return timestamp ? `${message} · ${timestamp}` : message;
 };

@@ -1,6 +1,9 @@
 import * as React from "react";
 
-import type { MentionableUserInput } from "../../../components/ui/comments";
+import {
+	getWorkflowCommentContext,
+	type MentionableUserInput,
+} from "../../../components/ui/comments";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
@@ -21,6 +24,7 @@ import type { MedicalClaimDetail } from "../types/medicalClaimListing.types";
 import type {
 	ClaimHeadRow,
 	ReimbursementClaimActor,
+	ReimbursementClaimFormMode,
 	ReimbursementClaimSubmission,
 } from "../types/reimbursementClaim.types";
 import {
@@ -34,7 +38,6 @@ import {
 	useGuestReimbursementClaimDetailQuery,
 	useResubmitGuestMedicalClaimMutation,
 } from "../../guest/guestMedicalForms/useReimbursementClaimQueries";
-import { getWorkflowCommentContext } from "../../../components/ui/comments/comments.helper";
 
 type MedicalClaimViewDetail = MedicalClaimDetail & {
 	status?: string | null;
@@ -217,7 +220,7 @@ export function useMedicalClaimView({
 	 * --------------------------------------------------------------------------
 	 */
 
-	const mode = canEdit ? "edit" : "view";
+	const mode: ReimbursementClaimFormMode = canEdit ? "edit" : "view";
 
 	const actionText = isGuestRoute ? "Resubmit Claim" : "Save Changes";
 
@@ -227,20 +230,18 @@ export function useMedicalClaimView({
 	 * --------------------------------------------------------------------------
 	 */
 
-	const workflowCommentContext = React.useMemo(
+	const commentContext = React.useMemo(
 		() =>
 			getWorkflowCommentContext({
 				activeWorkflow,
 				currentUser: user,
-
-				// No proposer role exists in this module.
-				creator: null,
-
+				creator,
 				canComment:
 					!isGuestRoute && !isExternalApprover && isCurrentInternalApprover,
 			}),
 		[
 			activeWorkflow,
+			creator,
 			isCurrentInternalApprover,
 			isExternalApprover,
 			isGuestRoute,
@@ -522,16 +523,16 @@ export function useMedicalClaimView({
 		activeWorkflow,
 		workflowStages,
 		workflowData,
-		workflowCommentContext,
+		commentContext,
+		currentUserId: user?.id,
 		creator,
 		actorRole,
 		isGuestRoute,
 
 		// Permissions
 		canEdit,
-		canComment: workflowCommentContext.canComment,
-		canShowCommentSection:
-			Boolean(activeWorkflow) && workflowCommentContext.canComment,
+		canComment: commentContext.canComment,
+		canShowCommentSection: Boolean(activeWorkflow) && commentContext.canComment,
 		canApprove,
 		canClarify,
 		canApproveLineItems,

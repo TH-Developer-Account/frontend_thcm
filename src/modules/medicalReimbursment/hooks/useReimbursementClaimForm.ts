@@ -100,6 +100,7 @@ export interface UseReimbursementClaimFormArgs {
 	canClarify?: boolean;
 	isExternalApprover?: boolean;
 	commentsSection?: ReactNode;
+	auditSection?: ReactNode;
 	workflowSection?: ReactNode;
 	approvalActionLoading?: boolean;
 	onApproveStage?: () => void | Promise<void>;
@@ -188,6 +189,7 @@ export function useReimbursementClaimForm({
 	canClarify = false,
 	isExternalApprover = false,
 	commentsSection,
+	auditSection,
 	workflowSection,
 	approvalActionLoading = false,
 	onApproveStage,
@@ -809,6 +811,7 @@ export function useReimbursementClaimForm({
 		submittedMessage,
 		actionText,
 		commentsSection,
+		auditSection,
 		workflowSection,
 		handleRemarksChange,
 		handleSaveRemarks,
@@ -827,7 +830,6 @@ export function useReimbursementClaimForm({
 		handleApprovedAmountChange,
 		handleToggleLineItemStatus,
 		handleApproveLineItem,
-		handleRemarksChange,
 		handleSubmit,
 		handleSaveDraft,
 		handleReset,

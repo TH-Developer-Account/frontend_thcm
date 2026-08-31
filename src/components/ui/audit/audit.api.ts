@@ -1,30 +1,13 @@
 import { ServerAxios } from "../../../services/ServerAxios";
 
-import type { AuditApiAdapter, AuditLogEntry, AuditUser } from "./audit.types";
-
-type ApiEnvelope<T> = {
-	success?: boolean;
-	data: T;
-	subjectType?: string;
-	subjectId?: string;
-	totalEntries?: number;
-};
-
-type ApiAuditUser = {
-	id: string;
-	first_name?: string | null;
-	last_name?: string | null;
-	email?: string | null;
-};
-
-type ApiAuditLogEntry = {
-	id: string;
-	action: string;
-	metadata?: Record<string, unknown> | null;
-	actor?: ApiAuditUser | null;
-	stageName?: string | null;
-	createdAt: string;
-};
+import type {
+	ApiAuditLogEntry,
+	ApiAuditUser,
+	ApiEnvelope,
+	AuditApiAdapter,
+	AuditLogEntry,
+	AuditUser,
+} from "./audit.types";
 
 const AUDIT_BASE_URL = "/comment";
 
@@ -34,11 +17,19 @@ const encodePathSegment = (value: string): string =>
 const normalizeActor = (actor?: ApiAuditUser | null): AuditUser | null => {
 	if (!actor) return null;
 
+	const providedName = actor.name?.trim();
+	const nameParts = providedName?.split(/\s+/) ?? [];
+
+	const firstName = actor.first_name?.trim() || nameParts[0] || "";
+
+	const lastName =
+		actor.last_name?.trim() || nameParts.slice(1).join(" ") || "";
+
 	return {
 		id: actor.id,
-		first_name: actor.first_name?.trim() || "",
-		last_name: actor.last_name?.trim() || "user",
-		email: actor.email ?? undefined,
+		first_name: firstName,
+		last_name: lastName,
+		email: actor.email?.trim() || undefined,
 	};
 };
 
@@ -47,12 +38,12 @@ const normalizeAuditEntry = (entry: ApiAuditLogEntry): AuditLogEntry => ({
 	action: entry.action,
 	metadata: entry.metadata ?? null,
 	actor: normalizeActor(entry.actor),
-	stageName: entry.stageName ?? undefined,
+	stageName: entry.stageName?.trim() || undefined,
 	createdAt: entry.createdAt,
 });
 
 const validateSubject = (subjectType: string, subjectId: string): void => {
-	if (!String(subjectType).trim()) {
+	if (!subjectType.trim()) {
 		throw new Error("Audit subject type is required");
 	}
 
@@ -65,7 +56,7 @@ export const auditApi: AuditApiAdapter = {
 	getAuditLog: async ({ subjectType, subjectId }) => {
 		validateSubject(subjectType, subjectId);
 
-		const type = encodePathSegment(String(subjectType));
+		const type = encodePathSegment(subjectType);
 		const id = encodePathSegment(subjectId);
 
 		const response = await ServerAxios.get<ApiEnvelope<ApiAuditLogEntry[]>>(

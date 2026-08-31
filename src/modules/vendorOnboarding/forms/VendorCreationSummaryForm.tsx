@@ -212,7 +212,7 @@ const VendorCreationSummaryForm = ({
 	const summaryActions: ActionMenuItem<string>[] = [
 		{
 			id: "download-pdf",
-			label: formContext?.isDownloadingPdf ? "Downloading…" : "Download PDF",
+			label: formContext?.isDownloadingPdf ? "Downloading…" : "PDF",
 			Icon: FileDown,
 			onClick: () => void formContext?.handleDownloadPdf?.(),
 			disabled:
@@ -222,7 +222,7 @@ const VendorCreationSummaryForm = ({
 		},
 		{
 			id: "export-excel",
-			label: isExportingExcel ? "Exporting…" : "Export Excel",
+			label: isExportingExcel ? "Exporting…" : "Excel",
 			Icon: FileSpreadsheet,
 			onClick: () => void handleExport(),
 			disabled: !onboardingId || isExportingExcel,
@@ -455,7 +455,7 @@ const VendorCreationSummaryForm = ({
 							row={onboardingId}
 							actions={summaryActions}
 							ariaLabel="Vendor onboarding actions"
-							triggerLabel="Actions"
+							triggerLabel="Export"
 							triggerVariant="brand"
 						/>
 					) : null

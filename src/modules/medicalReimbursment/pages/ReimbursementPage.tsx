@@ -1,20 +1,26 @@
 import type { ReactNode } from "react";
+import { ClipboardClock } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import Card from "../../../components/common/Card";
+import { CardEmpty } from "../../../components/ui/CardSkeleton";
+import { AuditLogSection } from "../../../components/ui/audit";
+import { CommentsSection } from "../../../components/ui/comments";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
-import MedicalClaimCommentSection from "../components/MedicalClaimCommentSection";
+import { ApprovalWorkflowTableContent } from "../../workflows";
 import ReimbursementClaimForm from "../components/ReimbursementClaimForm";
 import { useMedicalClaimView } from "../hooks/useMedicalClaimView";
-import { ClipboardClock } from "lucide-react";
-import { CardEmpty } from "../../../components/ui/CardSkeleton";
-import { ApprovalWorkflowTableContent } from "../../workflows";
+import type { ReimbursementClaimFormMode } from "../types/reimbursementClaim.types";
 
 type ReimbursementPageProps = {
-	mode?: "view" | "edit";
+	mode?: ReimbursementClaimFormMode;
+	refreshKey?: string | number;
 };
 
-const ReimbursementPage = ({ mode = "edit" }: ReimbursementPageProps) => {
+const ReimbursementPage = ({
+	mode,
+	refreshKey = 0,
+}: ReimbursementPageProps) => {
 	const navigate = useNavigate();
 
 	const {
@@ -28,7 +34,6 @@ const ReimbursementPage = ({ mode = "edit" }: ReimbursementPageProps) => {
 	}>();
 
 	const resolvedClaimId = claimId || medicalClaimId || id;
-
 	const isExistingClaim = Boolean(resolvedClaimId);
 
 	const claimView = useMedicalClaimView({
@@ -36,13 +41,22 @@ const ReimbursementPage = ({ mode = "edit" }: ReimbursementPageProps) => {
 	});
 
 	let content: ReactNode;
-	if (isExistingClaim && claimView.isLoading) {
+
+	if (!isExistingClaim) {
+		content = (
+			<Card padding="spacious">
+				<p className="text-sm text-rejected" role="alert">
+					Medical claim ID is missing.
+				</p>
+			</Card>
+		);
+	} else if (claimView.isLoading) {
 		content = (
 			<Card padding="spacious">
 				<p role="status">Loading medical claim…</p>
 			</Card>
 		);
-	} else if (isExistingClaim && claimView.isError) {
+	} else if (claimView.isError) {
 		content = (
 			<Card padding="spacious">
 				<p className="text-sm text-rejected" role="alert">
@@ -54,19 +68,19 @@ const ReimbursementPage = ({ mode = "edit" }: ReimbursementPageProps) => {
 		content = (
 			<ReimbursementClaimForm
 				claimId={resolvedClaimId}
+				referenceNumber={claimView.referenceNumber}
+				mode={mode ?? claimView.mode}
+				canEdit={claimView.canEdit}
+				actorRole={claimView.actorRole}
+				initialValues={claimView.initialValues}
+				initialLineItems={claimView.initialLineItems}
+				statusLabel={claimView.detail?.status ?? undefined}
 				isExportingExcel={claimView.isExportingExcel}
 				handleExport={claimView.handleExport}
 				isPreparingPdf={claimView.isPreparingPdf}
 				isDownloadingPdf={claimView.isDownloadingPdf}
 				handleDownloadPdf={claimView.handleDownloadPdf}
 				handleViewPdf={claimView.handleViewPdf}
-				referenceNumber={claimView.referenceNumber}
-				mode={mode}
-				canEdit={claimView.canEdit}
-				actorRole={claimView.actorRole}
-				initialValues={claimView.initialValues}
-				initialLineItems={claimView.initialLineItems}
-				statusLabel={claimView.detail?.status ?? undefined}
 				canApprove={claimView.canApprove}
 				canClarify={claimView.canClarify}
 				isExternalApprover={claimView.isExternalApprover}
@@ -76,17 +90,38 @@ const ReimbursementPage = ({ mode = "edit" }: ReimbursementPageProps) => {
 				onLineItemApprove={
 					claimView.canApproveLineItems ? claimView.approveLineItem : undefined
 				}
-				onLineItemRemarksSave={claimView.saveLineItemRemarks}
+				onLineItemRemarksSave={
+					claimView.canApproveLineItems
+						? claimView.saveLineItemRemarks
+						: undefined
+				}
 				onSubmit={claimView.canEdit ? claimView.saveClaim : undefined}
-				actionText="Save Changes"
+				actionText={claimView.actionText}
 				commentsSection={
-					claimView.canComment && claimView.workflowStages ? (
-						<MedicalClaimCommentSection
-							claimId={resolvedClaimId}
-							workflow={claimView.workflowStages}
-							createdBy={claimView.creator}
+					claimView.canShowCommentSection ? (
+						<CommentsSection
+							subjectType="MEDICAL_CLAIM"
+							subjectId={resolvedClaimId}
+							approvalId={claimView.commentContext.approvalId}
+							canComment={claimView.commentContext.canComment}
+							mentionableUsers={claimView.commentContext.mentionableUsers}
+							ccEmails={claimView.commentContext.ccEmails}
+							currentUserId={claimView.currentUserId}
+							refreshKey={refreshKey}
+							emptyTitle="No comments yet"
+							emptyDescription="Comments about this medical claim will appear here."
 						/>
 					) : null
+				}
+				auditSection={
+					<AuditLogSection
+						subjectType="MEDICAL_CLAIM"
+						subjectId={resolvedClaimId}
+						entityName="medical claim"
+						refreshKey={refreshKey}
+						emptyTitle="No medical claim activity yet"
+						emptyDescription="Medical claim activity will appear here."
+					/>
 				}
 				workflowSection={
 					claimView.workflowStages.length > 0 ? (
@@ -96,12 +131,8 @@ const ReimbursementPage = ({ mode = "edit" }: ReimbursementPageProps) => {
 						/>
 					) : (
 						<CardEmpty
-							title={
-								claimView.workflowStages === undefined
-									? "No approval workflow assigned"
-									: "No applicable workflow found"
-							}
-							description={"No workflow stages are available for this claim."}
+							title="No applicable workflow found"
+							description="No workflow stages are available for this claim."
 							Icon={ClipboardClock}
 						/>
 					)
@@ -111,33 +142,7 @@ const ReimbursementPage = ({ mode = "edit" }: ReimbursementPageProps) => {
 		);
 	}
 
-	return (
-		<PageSectionLayout>
-			{/* <PageHeader
-					headerText="Medical Reimbursement Form"
-					navigation={{
-						variant: "breadcrumbs",
-						ariaLabel: "Medical Reimbursement Form",
-						breadcrumbs: [
-							{
-								label: "Home Screen",
-								href: "/",
-							},
-							{
-								label: "Medical Reimbursement Forms",
-								href: "/medi-claim/create",
-							},
-							{
-								label: "Medical Reimbursement Form",
-							},
-						],
-						separator: "›",
-					}}
-				/> */}
-
-			{content}
-		</PageSectionLayout>
-	);
+	return <PageSectionLayout>{content}</PageSectionLayout>;
 };
 
 export default ReimbursementPage;

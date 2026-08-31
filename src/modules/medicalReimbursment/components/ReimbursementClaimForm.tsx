@@ -90,6 +90,7 @@ const ReimbursementClaimFormContent = ({
 		submittedMessage,
 		actionText,
 		commentsSection,
+		auditSection,
 		workflowSection,
 		hasSubmitAction,
 		hasSaveDraftAction,
@@ -313,6 +314,17 @@ const ReimbursementClaimFormContent = ({
 					},
 				]
 			: []),
+		...(auditSection
+			? [
+					{
+						id: "audit",
+						title: "Audit Messages",
+						Icon: MessageSquareText,
+						defaultExpanded: true,
+						children: auditSection,
+					},
+				]
+			: []),
 		...(workflowSection
 			? [
 					{
@@ -329,14 +341,14 @@ const ReimbursementClaimFormContent = ({
 	const claimActions: ActionMenuItem<string>[] = [
 		{
 			id: "download-pdf",
-			label: isDownloadingPdf ? "Downloading…" : "Download PDF",
+			label: isDownloadingPdf ? "Downloading…" : "PDF",
 			Icon: FileDown,
 			onClick: () => void handleDownloadPdf?.(),
 			disabled: isDownloadingPdf || isPreparingPdf,
 		},
 		{
 			id: "export-excel",
-			label: isExportingExcel ? "Exporting…" : "Export Excel",
+			label: isExportingExcel ? "Exporting…" : "Excel",
 			Icon: FileSpreadsheet,
 			onClick: () => void handleExport?.(),
 			disabled: isExportingExcel || !handleExport,
@@ -365,7 +377,7 @@ const ReimbursementClaimFormContent = ({
 								row={claimId}
 								actions={claimActions}
 								ariaLabel="Reimbursement claim actions"
-								triggerLabel="Actions"
+								triggerLabel="Export"
 								triggerVariant="brand"
 							/>
 						) : null
