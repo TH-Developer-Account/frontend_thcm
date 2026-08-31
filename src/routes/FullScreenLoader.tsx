@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 
-import gif1 from "../../assets/wheel-loader.gif";
-import gif2 from "../../assets/excavator.gif";
-import gif3 from "../../assets/backhoe-loader.gif";
+import gif1 from "../assets/wheel-loader.gif";
+import gif2 from "../assets/excavator.gif";
+import gif3 from "../assets/backhoe-loader.gif";
 
 const gifs = [gif1, gif2, gif3];
 

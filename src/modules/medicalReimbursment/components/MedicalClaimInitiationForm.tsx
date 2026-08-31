@@ -25,8 +25,8 @@ import type {
 import { Modal } from "../../../components/common/Modal";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
 import { MedicalClaimInitiationExcelPreview } from "../components/MedicalClaimInitiationExcelPreview";
-import { downloadMedicalClaimInitiationTemplate } from "../helpers/generateMedicalClaimInitiationTemplate";
 import { ImportedMedicalClaimInitiationTable } from "../components/ImportedMedicalClaimInitiationTable";
+
 type MedicalClaimInitiationFormProps = {
 	claimId?: string;
 	mode?: MedicalClaimInitiationFormMode;
@@ -34,6 +34,12 @@ type MedicalClaimInitiationFormProps = {
 	onCancel?: () => void;
 	onBack?: () => void;
 	onSuccess?: () => void | Promise<void>;
+};
+
+const handleDownloadTemplate = (): void => {
+	void import("../helpers/generateMedicalClaimInitiationTemplate").then(
+		(module) => module.downloadMedicalClaimInitiationTemplate(),
+	);
 };
 
 const MedicalClaimInitiationForm = ({
@@ -111,7 +117,7 @@ const MedicalClaimInitiationForm = ({
 					<>
 						<Button
 							type="button"
-							onClick={downloadMedicalClaimInitiationTemplate}
+							onClick={handleDownloadTemplate}
 							size="sm"
 							appearance="standard"
 							variant="outline"
@@ -326,7 +332,7 @@ const MedicalClaimInitiationForm = ({
 
 							<Button
 								type="button"
-								onClick={downloadMedicalClaimInitiationTemplate}
+								onClick={handleDownloadTemplate}
 								size="sm"
 								appearance="standard"
 								variant="outline"
