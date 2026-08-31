@@ -87,7 +87,8 @@
 
 	html {
 		font-family: var(--font-sans);
-		font-size: 16px;
+		/* Keep this aligned with the compact root density in globals.css. */
+		font-size: 70%;
 		font-synthesis: none;
 		text-rendering: optimizeLegibility;
 		-webkit-font-smoothing: antialiased;
