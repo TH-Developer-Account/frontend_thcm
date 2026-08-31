@@ -588,76 +588,80 @@ button {
 	}
 }
 
-/* People Section */
-/* Only needed if you replaced BPPeople.tsx with class-based markup.
-   Values match your old Tailwind styling as closely as possible. */
+/* =====================================================
+   BP PEOPLE VIEW TABLE
+===================================================== */
+
 @layer components {
 	.bp-people {
-		@apply px-6 py-5;
+		@apply px-5 py-4;
 	}
 
 	.bp-people-header {
-		@apply mb-4 flex items-center justify-between;
+		@apply mb-3;
 	}
 
 	.bp-people-title {
-		@apply text-base font-semibold text-zinc-900;
+		@apply text-sm font-semibold text-zinc-900;
 	}
 
 	.bp-people-description {
-		@apply mt-1 text-sm text-zinc-500;
-	}
-
-	.bp-people-table {
-		@apply overflow-hidden rounded-2xl border border-zinc-200;
-	}
-
-	.bp-people-head {
-		@apply hidden grid-cols-12 border-b border-zinc-200 bg-zinc-50 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 md:grid;
-	}
-
-	.bp-people-body {
-		@apply divide-y divide-zinc-200 bg-white;
-	}
-
-	.bp-people-row {
-		@apply grid gap-4 px-5 py-4 md:grid-cols-12 md:items-center;
+		@apply mt-0.5 text-xs text-zinc-500;
 	}
 
 	.bp-people-user {
-		@apply flex items-center gap-3;
+		@apply flex min-w-0 items-center gap-2;
 	}
 
 	.bp-people-avatar {
-		@apply flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-orange-100 to-orange-50 text-sm font-bold text-orange-700;
+		@apply flex h-8 w-8 shrink-0 items-center justify-center rounded-full
+			bg-orange-50 text-xs font-semibold text-orange-700 ring-1 ring-orange-200;
+	}
+
+	.bp-people-user-copy {
+		@apply min-w-0;
 	}
 
 	.bp-people-name {
-		@apply font-semibold text-zinc-900;
+		@apply truncate text-sm font-medium text-zinc-900;
 	}
 
 	.bp-people-id {
-		@apply text-sm text-zinc-500;
+		@apply truncate text-xs text-zinc-500;
+	}
+
+	.bp-people-role-details {
+		@apply flex min-w-0 flex-col items-start gap-1;
 	}
 
 	.bp-people-role {
-		@apply inline-flex rounded-full border border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-medium text-zinc-700;
-	}
-
-	.bp-people-contact-row {
-		@apply flex items-center gap-2 text-sm text-zinc-600;
-	}
-
-	.bp-people-contact-icon {
-		@apply text-zinc-400;
+		@apply inline-flex max-w-full truncate rounded-full border border-zinc-200
+			bg-zinc-50 px-2 py-0.5 text-xs font-medium text-zinc-700;
 	}
 
 	.bp-people-department {
-		@apply text-sm font-medium text-zinc-700;
+		@apply truncate text-xs text-zinc-500;
+	}
+
+	.bp-people-contact-list {
+		@apply flex min-w-0 flex-col gap-1;
+	}
+
+	.bp-people-contact-row {
+		@apply flex min-w-0 items-center gap-1.5 text-xs text-zinc-600
+			no-underline hover:text-orange-600;
+	}
+
+	.bp-people-contact-icon {
+		@apply shrink-0 text-zinc-400;
+	}
+
+	.bp-people-contact {
+		@apply truncate;
 	}
 
 	.bp-people-status {
-		@apply inline-flex rounded-full px-3 py-1 text-xs font-semibold;
+		@apply inline-flex rounded-full px-2 py-0.5 text-xs font-semibold;
 	}
 
 	.bp-people-status--active {
@@ -667,8 +671,19 @@ button {
 	.bp-people-status--inactive {
 		@apply bg-zinc-100 text-zinc-600 ring-1 ring-zinc-200;
 	}
-}
 
+	[data-theme="dark"] .bp-people-title,
+	[data-theme="dark"] .bp-people-name {
+		color: var(--color-text-primary);
+	}
+
+	[data-theme="dark"] .bp-people-description,
+	[data-theme="dark"] .bp-people-id,
+	[data-theme="dark"] .bp-people-department,
+	[data-theme="dark"] .bp-people-contact-row {
+		color: var(--color-text-secondary);
+	}
+}
 /* =====================================================
    Theme-aware overrides
    These do not change light UI. They only make dark mode usable.

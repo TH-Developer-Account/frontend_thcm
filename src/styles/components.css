@@ -894,7 +894,7 @@
 		align-items: center;
 		justify-content: flex-end;
 		gap: var(--space-2);
-		margin-bottom: var(--space-2);
+		/* margin-bottom: var(--space-2); */
 	}
 
 	/* =====================================================
@@ -5111,39 +5111,54 @@
 		}
 	}
 }
+
 /* =====================================================
-EPC FILTER DROPDOWN
+   GENERIC FILTER DROPDOWN
 ===================================================== */
 
 @layer components {
-	.epc-filter-dropdown {
+	.filter-dropdown {
 		position: relative;
 		display: inline-flex;
 		min-width: 0;
 		flex: 0 0 auto;
 	}
 
-	/* =====================================================
-	   TRIGGER
-	===================================================== */
+	/* Trigger */
 
-	.epc-filter-trigger.button-base {
+	.filter-dropdown-trigger.button-base {
 		min-width: max-content;
 		justify-content: flex-start;
 		gap: var(--space-2);
 
+		border-color: var(--color-border-default);
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-primary);
+
 		white-space: nowrap;
 	}
 
-	.epc-filter-trigger-label {
-		min-width: 0;
-		overflow: hidden;
-
-		text-overflow: ellipsis;
-		white-space: nowrap;
+	.filter-dropdown-trigger.button-base:hover:not(:disabled) {
+		border-color: var(--color-border-hover);
+		background-color: var(--color-bg-surface-hover);
+		color: var(--color-text-primary);
 	}
 
-	.epc-filter-count {
+	.filter-dropdown-trigger.button-base:focus-visible {
+		border-color: var(--color-input-border-focus);
+		outline: none;
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.filter-dropdown-trigger.button-base svg {
+		color: var(--color-icon-secondary);
+	}
+
+	.filter-dropdown-trigger.button-base:hover:not(:disabled) svg {
+		color: var(--color-icon-primary);
+	}
+
+	.filter-dropdown-count {
 		display: inline-flex;
 		min-width: 1.125rem;
 		height: 1.125rem;
@@ -5163,23 +5178,20 @@ EPC FILTER DROPDOWN
 		line-height: 1;
 	}
 
-	.epc-filter-trigger-chevron {
+	.filter-dropdown-trigger-chevron {
 		flex-shrink: 0;
-
 		color: var(--color-icon-secondary);
 
 		transition: transform var(--duration-normal) var(--ease-standard);
 	}
 
-	.epc-filter-trigger-chevron-open {
+	.filter-dropdown-trigger-chevron-open {
 		transform: rotate(180deg);
 	}
 
-	/* =====================================================
-	   PANEL
-	===================================================== */
+	/* Panel */
 
-	.epc-filter-panel {
+	.filter-dropdown-panel {
 		position: absolute;
 		top: calc(100% + var(--space-2));
 		right: 0;
@@ -5188,8 +5200,8 @@ EPC FILTER DROPDOWN
 		display: flex;
 		width: min(24rem, calc(100vw - var(--space-6)));
 		max-height: min(34rem, calc(100dvh - 8rem));
-		flex-direction: column;
 		overflow: hidden;
+		flex-direction: column;
 
 		border: var(--border-width-default) solid var(--color-border-default);
 		border-radius: var(--radius-lg);
@@ -5199,11 +5211,9 @@ EPC FILTER DROPDOWN
 		box-shadow: var(--shadow-overlay);
 	}
 
-	/* =====================================================
-	   PANEL HEADER
-	===================================================== */
+	/* Header */
 
-	.epc-filter-panel-header {
+	.filter-dropdown-panel-header {
 		display: flex;
 		min-height: var(--control-height-lg);
 		flex: 0 0 auto;
@@ -5218,7 +5228,7 @@ EPC FILTER DROPDOWN
 		background-color: var(--color-bg-surface);
 	}
 
-	.epc-filter-panel-heading {
+	.filter-dropdown-panel-heading {
 		display: inline-flex;
 		min-width: 0;
 		align-items: center;
@@ -5230,20 +5240,20 @@ EPC FILTER DROPDOWN
 		font-weight: var(--font-weight-medium);
 	}
 
-	.epc-filter-panel-heading svg {
+	.filter-dropdown-panel-heading svg {
 		flex-shrink: 0;
 		color: var(--color-icon-secondary);
 	}
 
-	.epc-filter-panel-header-actions {
+	.filter-dropdown-panel-header-actions {
 		display: inline-flex;
 		flex: 0 0 auto;
 		align-items: center;
 		gap: var(--space-1);
 	}
 
-	.epc-filter-clear,
-	.epc-filter-close {
+	.filter-dropdown-clear,
+	.filter-dropdown-close {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -5259,9 +5269,9 @@ EPC FILTER DROPDOWN
 			color var(--duration-fast) var(--ease-standard);
 	}
 
-	.epc-filter-clear {
-		gap: var(--space-1);
+	.filter-dropdown-clear {
 		min-height: var(--control-height-sm);
+		gap: var(--space-1);
 
 		padding-inline: var(--space-2);
 
@@ -5272,13 +5282,13 @@ EPC FILTER DROPDOWN
 		font-weight: var(--font-weight-medium);
 	}
 
-	.epc-filter-clear:hover {
+	.filter-dropdown-clear:hover {
 		border-color: var(--color-border-default);
 		background-color: var(--color-bg-surface-hover);
 		color: var(--color-text-primary);
 	}
 
-	.epc-filter-close {
+	.filter-dropdown-close {
 		width: var(--control-height-sm);
 		height: var(--control-height-sm);
 
@@ -5288,23 +5298,21 @@ EPC FILTER DROPDOWN
 		color: var(--color-icon-secondary);
 	}
 
-	.epc-filter-close:hover {
+	.filter-dropdown-close:hover {
 		border-color: var(--color-border-default);
 		background-color: var(--color-bg-surface-hover);
 		color: var(--color-icon-primary);
 	}
 
-	.epc-filter-clear:focus-visible,
-	.epc-filter-close:focus-visible {
+	.filter-dropdown-clear:focus-visible,
+	.filter-dropdown-close:focus-visible {
 		outline: none;
 		box-shadow: var(--shadow-focus-brand);
 	}
 
-	/* =====================================================
-	   SCROLLABLE PANEL CONTENT
-	===================================================== */
+	/* Scrollable content */
 
-	.epc-filter-panel-content {
+	.filter-dropdown-panel-content {
 		min-height: 0;
 		flex: 1 1 auto;
 		overflow-x: hidden;
@@ -5316,21 +5324,19 @@ EPC FILTER DROPDOWN
 		scrollbar-gutter: stable;
 	}
 
-	/* =====================================================
-	   FILTER SECTION
-	===================================================== */
+	/* Sections */
 
-	.epc-filter-section {
+	.filter-dropdown-section {
 		display: flex;
 		min-width: 0;
 		flex-direction: column;
 	}
 
-	.epc-filter-section + .epc-filter-section {
+	.filter-dropdown-section + .filter-dropdown-section {
 		border-top: var(--border-width-default) solid var(--color-border-subtle);
 	}
 
-	.epc-filter-section-label {
+	.filter-dropdown-section-label {
 		display: flex;
 		width: 100%;
 		min-width: 0;
@@ -5348,11 +5354,9 @@ EPC FILTER DROPDOWN
 		text-transform: uppercase;
 	}
 
-	/* =====================================================
-	   CHECKBOX OPTIONS
-	===================================================== */
+	/* Checkbox options */
 
-	.epc-filter-options {
+	.filter-dropdown-options {
 		display: grid;
 		min-width: 0;
 		gap: var(--space-1);
@@ -5360,15 +5364,15 @@ EPC FILTER DROPDOWN
 		padding: 0 var(--space-2) var(--space-3);
 	}
 
-	.epc-filter-options-double {
+	.filter-dropdown-options-double {
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 
-	.epc-filter-options-single {
+	.filter-dropdown-options-single {
 		grid-template-columns: minmax(0, 1fr);
 	}
 
-	.epc-filter-option {
+	.filter-dropdown-option {
 		display: flex;
 		width: 100%;
 		min-width: 0;
@@ -5399,29 +5403,29 @@ EPC FILTER DROPDOWN
 			color var(--duration-fast) var(--ease-standard);
 	}
 
-	.epc-filter-option:hover {
+	.filter-dropdown-option:hover {
 		border-color: var(--color-border-default);
 		background-color: var(--color-bg-surface-hover);
 		color: var(--color-text-primary);
 	}
 
-	.epc-filter-option-selected {
+	.filter-dropdown-option-selected {
 		border-color: var(--color-brand-soft);
 		background-color: var(--color-brand-subtle);
 		color: var(--color-text-primary);
 	}
 
-	.epc-filter-option-selected:hover {
+	.filter-dropdown-option-selected:hover {
 		border-color: var(--color-brand-soft);
 		background-color: var(--color-brand-subtle);
 	}
 
-	.epc-filter-option:focus-visible {
+	.filter-dropdown-option:focus-visible {
 		outline: none;
 		box-shadow: var(--shadow-focus-brand);
 	}
 
-	.epc-filter-option-checkbox {
+	.filter-dropdown-option-checkbox {
 		display: inline-flex;
 		flex: 0 0 auto;
 		align-items: center;
@@ -5430,11 +5434,11 @@ EPC FILTER DROPDOWN
 		pointer-events: none;
 	}
 
-	.epc-filter-option-checkbox * {
+	.filter-dropdown-option-checkbox * {
 		pointer-events: none;
 	}
 
-	.epc-filter-option-label {
+	.filter-dropdown-option-label {
 		min-width: 0;
 		flex: 1 1 auto;
 		overflow: hidden;
@@ -5445,11 +5449,9 @@ EPC FILTER DROPDOWN
 		overflow-wrap: anywhere;
 	}
 
-	/* =====================================================
-	   DATE FIELDS
-	===================================================== */
+	/* Date fields */
 
-	.epc-filter-date-grid {
+	.filter-dropdown-date-grid {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: var(--space-2);
@@ -5458,7 +5460,7 @@ EPC FILTER DROPDOWN
 		padding-bottom: var(--space-3);
 	}
 
-	.epc-filter-date-field {
+	.filter-dropdown-date-field {
 		display: flex;
 		min-width: 0;
 		flex-direction: column;
@@ -5467,11 +5469,11 @@ EPC FILTER DROPDOWN
 		padding: 0 var(--space-3) var(--space-3);
 	}
 
-	.epc-filter-date-grid .epc-filter-date-field {
+	.filter-dropdown-date-grid .filter-dropdown-date-field {
 		padding: 0;
 	}
 
-	.epc-filter-date-label {
+	.filter-dropdown-date-label {
 		color: var(--color-text-secondary);
 
 		font-size: var(--font-size-xs);
@@ -5480,23 +5482,23 @@ EPC FILTER DROPDOWN
 		text-align: left;
 	}
 
-	.epc-filter-date-input {
+	.filter-dropdown-date-input {
 		width: 100%;
 		min-width: 0;
 		min-height: var(--control-height-sm);
 
 		padding-inline: var(--space-2);
 
-		border: var(--border-width-default) solid var(--color-border-default);
+		border: var(--border-width-default) solid var(--color-input-border);
 		border-radius: var(--radius-sm);
 
-		background-color: var(--color-bg-input);
-		color: var(--color-text-primary);
+		background-color: var(--color-input-bg);
+		color: var(--color-input-text);
 
 		font-family: var(--font-sans);
 		font-size: var(--font-size-sm);
 
-		color-scheme: light dark;
+		color-scheme: light;
 
 		transition:
 			border-color var(--duration-fast) var(--ease-standard),
@@ -5504,35 +5506,54 @@ EPC FILTER DROPDOWN
 			background-color var(--duration-fast) var(--ease-standard);
 	}
 
-	.epc-filter-date-input:hover {
+	.filter-dropdown-date-input:hover {
 		border-color: var(--color-border-hover);
 	}
 
-	.epc-filter-date-input:focus {
+	.filter-dropdown-date-input:focus {
 		outline: none;
-		border-color: var(--color-border-brand);
+		border-color: var(--color-input-border-focus);
 		box-shadow: var(--shadow-focus-brand);
 	}
 
-	/* =====================================================
-	   MOBILE
-	===================================================== */
+	[data-theme="dark"] .filter-dropdown-date-input {
+		color-scheme: dark;
+	}
+
+	/* Allow dropdown panels to escape a Card while open */
+	.ui-card:has(.filter-dropdown-open) {
+		overflow: visible;
+	}
+
+	.ui-card:has(.filter-dropdown-open) .ui-card-secondary-header {
+		position: relative;
+		z-index: var(--z-popover);
+	}
+
+	.filter-dropdown-open {
+		z-index: var(--z-popover);
+	}
+
+	.filter-dropdown-panel {
+		z-index: var(--z-popover);
+	}
+	/* Mobile */
 
 	@media (max-width: 767px) {
-		.epc-filter-dropdown {
+		.filter-dropdown {
 			width: 100%;
 		}
 
-		.epc-filter-trigger.button-base {
+		.filter-dropdown-trigger.button-base {
 			width: 100%;
 			justify-content: flex-start;
 		}
 
-		.epc-filter-trigger-chevron {
+		.filter-dropdown-trigger-chevron {
 			margin-left: auto;
 		}
 
-		.epc-filter-panel {
+		.filter-dropdown-panel {
 			position: fixed;
 			top: auto;
 			right: var(--space-3);
@@ -5546,459 +5567,37 @@ EPC FILTER DROPDOWN
 			border-radius: var(--radius-lg);
 		}
 
-		.epc-filter-options-double {
+		.filter-dropdown-options-double {
 			grid-template-columns: minmax(0, 1fr);
 		}
 
-		.epc-filter-date-grid {
+		.filter-dropdown-date-grid {
 			grid-template-columns: minmax(0, 1fr);
 		}
 	}
 
-	/* =====================================================
-	   VERY SMALL MOBILE
-	===================================================== */
-
 	@media (max-width: 380px) {
-		.epc-filter-panel {
+		.filter-dropdown-panel {
 			right: var(--space-2);
 			bottom: var(--space-2);
 			left: var(--space-2);
 		}
 
-		.epc-filter-panel-header {
+		.filter-dropdown-panel-header {
 			padding-inline: var(--space-2);
 		}
 	}
 
-	/* =====================================================
-	   REDUCED MOTION
-	===================================================== */
-
 	@media (prefers-reduced-motion: reduce) {
-		.epc-filter-trigger-chevron,
-		.epc-filter-option,
-		.epc-filter-clear,
-		.epc-filter-close {
+		.filter-dropdown-trigger-chevron,
+		.filter-dropdown-option,
+		.filter-dropdown-clear,
+		.filter-dropdown-close {
 			transition-duration: 0.01ms;
 		}
 	}
 }
 
-/* =====================================================
-EPC FILTER — THEME OVERRIDES
-Only declarations not already covered by base styles
-===================================================== */
-@layer components {
-	/* Trigger inherits its structure from Button */
-	.epc-filter-trigger.button-base {
-		border-color: var(--epc-topbar-control-border);
-		background-color: var(--epc-topbar-control-bg);
-		color: var(--epc-topbar-control-text);
-	}
-
-	.epc-filter-trigger.button-base:hover:not(:disabled) {
-		border-color: var(--epc-topbar-control-border-hover);
-		background-color: var(--epc-topbar-control-bg-hover);
-		color: var(--epc-topbar-control-text-hover);
-	}
-
-	.epc-filter-trigger.button-base:focus-visible {
-		border-color: var(--color-input-border-focus);
-		outline: none;
-		box-shadow: var(--shadow-focus-brand);
-	}
-
-	.epc-filter-trigger.button-base svg {
-		color: var(--epc-topbar-icon);
-	}
-
-	.epc-filter-trigger.button-base:hover:not(:disabled) svg {
-		color: var(--epc-topbar-icon-hover);
-	}
-
-	/* Use EPC topbar semantic aliases for the count */
-	.epc-filter-count {
-		border-color: var(--epc-topbar-count-border);
-		background-color: var(--epc-topbar-count-bg);
-		color: var(--epc-topbar-count-text);
-	}
-
-	.epc-filter-trigger-chevron {
-		color: var(--epc-topbar-icon);
-	}
-
-	/* Date input theme correction */
-	.epc-filter-date-input {
-		border-color: var(--color-input-border);
-		background-color: var(--color-input-bg);
-		color: var(--color-input-text);
-		color-scheme: light;
-	}
-
-	[data-theme="dark"] .epc-filter-date-input {
-		color-scheme: dark;
-	}
-}
-
-@layer components {
-	.epc-topbar {
-		display: grid;
-		width: 100%;
-		min-width: 0;
-		grid-template-columns:
-			minmax(16rem, 1fr)
-			minmax(13rem, 17rem)
-			auto;
-		align-items: center;
-		gap: var(--space-3);
-
-		background-color: var(--epc-topbar-bg);
-		color: var(--epc-topbar-text);
-	}
-
-	/* =====================================================
-	   FILTER TABS
-	===================================================== */
-
-	.epc-topbar-tabs {
-		width: 100%;
-		min-width: 0;
-		overflow: hidden;
-	}
-
-	.epc-topbar-tabs .filter-tabs {
-		width: 100%;
-		min-width: 0;
-		gap: var(--space-4);
-		overflow-x: auto;
-		overflow-y: hidden;
-
-		padding: 0;
-		border-bottom: var(--border-width-default) solid var(--color-border-subtle);
-
-		scrollbar-width: none;
-		overscroll-behavior-inline: contain;
-		-webkit-overflow-scrolling: touch;
-	}
-
-	.epc-topbar-tabs .filter-tabs::-webkit-scrollbar {
-		display: none;
-	}
-
-	.epc-topbar-tabs .filter-tab {
-		min-height: var(--control-height-md);
-		gap: var(--space-2);
-
-		padding: 0 var(--space-1) var(--space-2);
-
-		font-size: var(--font-size-xs);
-		white-space: nowrap;
-	}
-
-	.epc-topbar-tabs .filter-tab-icon {
-		width: 0.95rem;
-		height: 0.95rem;
-		flex: 0 0 auto;
-	}
-
-	.epc-topbar-tabs .filter-tab-label {
-		max-width: 10rem;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	/* =====================================================
-	   SEARCH
-	===================================================== */
-
-	.epc-topbar-search {
-		width: 100%;
-		min-width: 0;
-	}
-
-	.epc-topbar-search > * {
-		width: 100%;
-		min-width: 0;
-		max-width: none;
-	}
-
-	.epc-topbar-search .search-input-control {
-		width: 100%;
-		height: var(--control-height-md);
-		min-height: var(--control-height-md);
-
-		border-color: var(--epc-topbar-control-border);
-		background-color: var(--epc-topbar-control-bg);
-		color: var(--epc-topbar-control-text);
-		box-shadow: none;
-	}
-
-	.epc-topbar-search .search-input-control:hover:not(.is-disabled) {
-		border-color: var(--epc-topbar-control-border-hover);
-		background-color: var(--epc-topbar-control-bg-hover);
-		box-shadow: none;
-	}
-
-	.epc-topbar-search .search-input-control:focus-within:not(.is-disabled) {
-		border-color: var(--color-input-border-hover);
-		background-color: var(--epc-topbar-control-bg);
-		outline: none;
-		box-shadow: none;
-	}
-
-	.epc-topbar-search .search-input-field {
-		height: 100%;
-		min-height: 0;
-
-		border: 0;
-		outline: none;
-		background-color: transparent;
-		color: var(--epc-topbar-control-text);
-		box-shadow: none;
-
-		font-size: var(--font-size-xs);
-	}
-
-	.epc-topbar-search .search-input-field:hover,
-	.epc-topbar-search .search-input-field:focus,
-	.epc-topbar-search .search-input-field:focus-visible {
-		border: 0;
-		outline: none;
-		background-color: transparent;
-		box-shadow: none;
-	}
-
-	.epc-topbar-search .search-input-field::placeholder {
-		color: var(--epc-topbar-control-placeholder);
-	}
-
-	.epc-topbar-search .search-input-icon {
-		color: var(--epc-topbar-icon);
-	}
-
-	.epc-topbar-search
-		.search-input-control:hover:not(.is-disabled)
-		.search-input-icon,
-	.epc-topbar-search
-		.search-input-control:focus-within:not(.is-disabled)
-		.search-input-icon {
-		color: var(--color-icon-primary);
-	}
-
-	/* =====================================================
-	   ACTIONS
-	===================================================== */
-
-	.epc-topbar-actions {
-		display: inline-flex;
-		width: auto;
-		min-width: 0;
-		flex: 0 0 auto;
-		align-items: center;
-		justify-content: flex-end;
-		gap: var(--space-2);
-	}
-
-	.epc-topbar-actions > * {
-		min-width: 0;
-		flex: 0 0 auto;
-	}
-
-	.epc-topbar-create {
-		min-height: var(--control-height-sm);
-		flex: 0 0 auto;
-
-		padding-inline: var(--space-3);
-
-		font-size: var(--font-size-xs);
-		white-space: nowrap;
-	}
-
-	/* =====================================================
-	   TABLET
-	   Tabs occupy first row.
-	   Search and actions share second row.
-	===================================================== */
-
-	@media (min-width: 640px) and (max-width: 1023px) {
-		.epc-topbar {
-			grid-template-columns: minmax(12rem, 1fr) auto;
-			gap: var(--space-3);
-		}
-
-		.epc-topbar-tabs {
-			grid-column: 1 / -1;
-			grid-row: 1;
-		}
-
-		.epc-topbar-search {
-			grid-column: 1;
-			grid-row: 2;
-		}
-
-		.epc-topbar-actions {
-			grid-column: 2;
-			grid-row: 2;
-		}
-
-		.epc-topbar-tabs .filter-tabs {
-			gap: var(--space-4);
-		}
-
-		.epc-topbar-tabs .filter-tab {
-			min-height: var(--control-height-sm);
-			padding-bottom: var(--space-2);
-		}
-	}
-
-	/* =====================================================
-	   MOBILE
-	   Tabs first, search second, actions third.
-	===================================================== */
-
-	@media (max-width: 639px) {
-		.epc-topbar {
-			grid-template-columns: minmax(0, 1fr);
-			align-items: stretch;
-			gap: var(--space-2);
-		}
-
-		.epc-topbar-tabs,
-		.epc-topbar-search,
-		.epc-topbar-actions {
-			grid-column: 1;
-			width: 100%;
-			min-width: 0;
-		}
-
-		.epc-topbar-tabs {
-			grid-row: 1;
-		}
-
-		.epc-topbar-search {
-			grid-row: 2;
-		}
-
-		.epc-topbar-actions {
-			grid-row: 3;
-			display: grid;
-			grid-template-columns: auto minmax(0, 1fr);
-			align-items: center;
-			gap: var(--space-2);
-		}
-
-		.epc-topbar-tabs .filter-tabs {
-			gap: var(--space-3);
-		}
-
-		.epc-topbar-tabs .filter-tab {
-			min-height: 2rem;
-			gap: var(--space-1);
-
-			padding-inline: 0;
-			padding-bottom: var(--space-2);
-
-			font-size: var(--font-size-2xs);
-		}
-
-		.epc-topbar-tabs .filter-tab-icon {
-			width: 0.85rem;
-			height: 0.85rem;
-		}
-
-		.epc-topbar-tabs .filter-tab-label {
-			max-width: 7rem;
-		}
-
-		.epc-topbar-tabs .filter-tab .badge {
-			min-height: 1rem;
-			padding-inline: var(--space-1);
-
-			font-size: var(--font-size-2xs);
-		}
-
-		.epc-topbar-search .search-input-control {
-			height: var(--control-height-sm);
-			min-height: var(--control-height-sm);
-		}
-
-		.epc-topbar-search .search-input-field {
-			font-size: var(--font-size-2xs);
-		}
-
-		.epc-topbar-search .search-input-icon {
-			width: 0.9rem;
-			height: 0.9rem;
-		}
-
-		.epc-topbar-create {
-			width: 100%;
-			min-height: var(--control-height-sm);
-			justify-content: center;
-
-			padding-inline: var(--space-2);
-
-			font-size: var(--font-size-2xs);
-		}
-	}
-
-	/* =====================================================
-	   SMALL MOBILE
-	   Keep tabs compact and horizontally scrollable.
-	   Stack actions only when width is very limited.
-	===================================================== */
-
-	@media (max-width: 479px) {
-		.epc-topbar-tabs .filter-tabs {
-			gap: var(--space-3);
-		}
-
-		.epc-topbar-tabs .filter-tab {
-			min-height: 1.875rem;
-			gap: var(--space-1);
-
-			font-size: var(--font-size-2xs);
-		}
-
-		.epc-topbar-tabs .filter-tab-label {
-			max-width: 5.5rem;
-		}
-
-		.epc-topbar-actions {
-			grid-template-columns: minmax(0, 1fr);
-		}
-
-		.epc-topbar-actions > * {
-			width: 100%;
-			min-width: 0;
-		}
-
-		.epc-topbar-create {
-			width: 100%;
-		}
-	}
-
-	/* =====================================================
-	   VERY SMALL MOBILE
-	   Use icons and labels without badge crowding.
-	===================================================== */
-
-	@media (max-width: 359px) {
-		.epc-topbar-tabs .filter-tab {
-			gap: var(--space-1);
-		}
-
-		.epc-topbar-tabs .filter-tab-label {
-			max-width: 4.75rem;
-		}
-
-		.epc-topbar-tabs .filter-tab .badge {
-			display: none;
-		}
-	}
-}
 /* =====================================================
 PAGE NAVIGATION
 ===================================================== */

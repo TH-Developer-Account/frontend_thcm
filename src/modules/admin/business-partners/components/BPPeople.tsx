@@ -1,6 +1,20 @@
 import { Mail, Phone } from "lucide-react";
+import type { SimpleTableColumn } from "../../../../components/ui/tables/SimpleViewTable";
+import SimpleViewTable from "../../../../components/ui/tables/SimpleViewTable";
 
-const organizationUsers = [
+type OrganizationUserStatus = "Active" | "Inactive";
+
+type OrganizationUser = {
+	id: number;
+	name: string;
+	role: string;
+	email: string;
+	phone: string;
+	department: string;
+	status: OrganizationUserStatus;
+};
+
+const organizationUsers: OrganizationUser[] = [
 	{
 		id: 1,
 		name: "Ananya Sharma",
@@ -39,7 +53,7 @@ const organizationUsers = [
 	},
 ];
 
-const getInitials = (name: string) =>
+const getInitials = (name: string): string =>
 	name
 		.trim()
 		.split(/\s+/)
@@ -48,88 +62,116 @@ const getInitials = (name: string) =>
 		.join("")
 		.toUpperCase();
 
+const columns: SimpleTableColumn<OrganizationUser>[] = [
+	{
+		key: "user",
+		header: "User",
+		widthUnits: 3,
+		minWidth: 190,
+		render: (user) => (
+			<div className="bp-people-user">
+				<div className="bp-people-avatar" aria-hidden="true">
+					{getInitials(user.name)}
+				</div>
+
+				<div className="bp-people-user-copy">
+					<p className="bp-people-name">{user.name}</p>
+					<p className="bp-people-id">Employee ID #{user.id}</p>
+				</div>
+			</div>
+		),
+	},
+	{
+		key: "role",
+		header: "Role / Department",
+		widthUnits: 2,
+		minWidth: 150,
+		render: (user) => (
+			<div className="bp-people-role-details">
+				<span className="bp-people-role">{user.role}</span>
+				<span className="bp-people-department">{user.department}</span>
+			</div>
+		),
+	},
+	{
+		key: "contact",
+		header: "Contact",
+		widthUnits: 4,
+		minWidth: 230,
+		render: (user) => (
+			<div className="bp-people-contact-list">
+				<a
+					href={`mailto:${user.email}`}
+					className="bp-people-contact-row"
+					title={user.email}
+				>
+					<Mail
+						size={13}
+						className="bp-people-contact-icon"
+						aria-hidden="true"
+					/>
+
+					<span className="bp-people-contact">{user.email}</span>
+				</a>
+
+				<a
+					href={`tel:${user.phone.replace(/\s+/g, "")}`}
+					className="bp-people-contact-row"
+				>
+					<Phone
+						size={13}
+						className="bp-people-contact-icon"
+						aria-hidden="true"
+					/>
+
+					<span className="bp-people-contact">{user.phone}</span>
+				</a>
+			</div>
+		),
+	},
+	{
+		key: "status",
+		header: "Status",
+		widthUnits: 1,
+		minWidth: 100,
+		render: (user) => (
+			<span
+				className={`bp-people-status ${
+					user.status === "Active"
+						? "bp-people-status--active"
+						: "bp-people-status--inactive"
+				}`}
+			>
+				{user.status}
+			</span>
+		),
+	},
+];
+
 const BPPeople = () => {
 	return (
 		<div className="bp-people">
 			<div className="bp-people-header">
-				<h3 className="bp-people-title">User Directory</h3>
-				<p className="bp-people-description">
-					View and manage all organization members in one place.
-				</p>
-			</div>
+				<div>
+					<h3 className="bp-people-title">User Directory</h3>
 
-			<div className="bp-people-table">
-				<div className="bp-people-head">
-					<div className="col-span-3">User</div>
-					<div className="col-span-2">Role</div>
-					<div className="col-span-3">Contact</div>
-					<div className="col-span-2">Department</div>
-					<div className="col-span-2">Status</div>
-				</div>
-
-				<div className="bp-people-body">
-					{organizationUsers.map((user) => {
-						const isActive = user.status === "Active";
-
-						return (
-							<div key={user.id} className="bp-people-row">
-								<div className="md:col-span-3">
-									<div className="bp-people-user">
-										<div className="bp-people-avatar" aria-hidden="true">
-											{getInitials(user.name)}
-										</div>
-
-										<div className="min-w-0">
-											<p className="bp-people-name">{user.name}</p>
-											<p className="bp-people-id">Employee ID #{user.id}</p>
-										</div>
-									</div>
-								</div>
-
-								<div className="md:col-span-2">
-									<span className="bp-people-role">{user.role}</span>
-								</div>
-
-								<div className="space-y-1 md:col-span-3">
-									<div className="bp-people-contact-row">
-										<Mail
-											size={14}
-											className="bp-people-contact-icon"
-											aria-hidden="true"
-										/>
-										<span className="bp-people-contact">{user.email}</span>
-									</div>
-
-									<div className="bp-people-contact-row">
-										<Phone
-											size={14}
-											className="bp-people-contact-icon"
-											aria-hidden="true"
-										/>
-										<span className="bp-people-contact">{user.phone}</span>
-									</div>
-								</div>
-
-								<div className="md:col-span-2">
-									<p className="bp-people-department">{user.department}</p>
-								</div>
-
-								<div className="md:col-span-2">
-									<span
-										className={`bp-people-status ${
-											isActive
-												? "bp-people-status--active"
-												: "bp-people-status--inactive"
-										}`}
-									>
-										{user.status}
-									</span>
-								</div>
-							</div>
-						);
-					})}
+					<p className="bp-people-description">
+						View and manage all organization members in one place.
+					</p>
 				</div>
 			</div>
+
+			<SimpleViewTable<OrganizationUser>
+				data={organizationUsers}
+				columns={columns}
+				getRowId={(user) => String(user.id)}
+				maxHeight="360px"
+				defaultColumnMinWidth={100}
+				className="bp-people-view-table"
+				ariaLabel="Organization user directory"
+				emptyTitle="No organization members found"
+				emptyDescription="No users have been added to this organization."
+			/>
 		</div>
 	);
 };
