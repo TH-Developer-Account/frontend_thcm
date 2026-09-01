@@ -61,6 +61,8 @@ export const EMPTY_REIMBURSEMENT_CLAIM_VALUES: ReimbursementClaimFormValues = {
 	companySettledAmount: "",
 	declarationAccepted: false,
 	claimDate: "",
+	medicalAdvanceAmount: "",
+	employeeSignature: "",
 };
 
 const REQUIRED_FIELDS: Array<keyof ReimbursementClaimFormValues> = [

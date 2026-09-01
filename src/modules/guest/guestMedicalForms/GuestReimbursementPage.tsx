@@ -73,6 +73,8 @@ const GuestReimbursementPage = () => {
 				canEdit={guestClaim.canEdit}
 				statusLabel={guestClaim.detail?.status}
 				actionText={isCreateMode ? "Submit Claim" : "Resubmit Claim"}
+				statusBanner={guestClaim.statusBanner ?? undefined}
+				showAlertBanner={guestClaim.showAlertBanner}
 				onBack={() => navigate(-1)}
 			/>
 		</PageSectionLayout>

@@ -1,9 +1,15 @@
 import * as React from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { medicalClaimApi } from "../api/medicalClaim.api";
 import { medicalClaimKeys } from "../hooks/useMedicalClaimMutations";
+import {
+	pollExportJob,
+	type ExportState,
+} from "../../../utils/exportJob.helper";
+import { getApiErrorMessage } from "../../../utils/apiError.helper";
+import { useToast } from "../../../context/Auth/AuthContext";
 import type {
 	MedicalClaimListingParams,
 	MedicalClaimListingTab,
@@ -11,6 +17,7 @@ import type {
 
 const DEFAULT_PAGE_SIZE = 10;
 const COMPLETE_LIST_PAGE_SIZE = 10_000;
+const DELAYED_THRESHOLD_MS = 4000;
 
 export type MedicalClaimStatusFilter =
 	| "all"
@@ -41,11 +48,20 @@ type UseMedicalClaimListingParams = {
 export const useMedicalClaimListing = ({
 	initialTab = "claims",
 }: UseMedicalClaimListingParams = {}) => {
+	const { showToast } = useToast();
+
 	const [tab, setTab] = useState<MedicalClaimListingTab>(initialTab);
 	const [search, setSearch] = useState("");
 	const [status, setStatus] = useState<MedicalClaimStatusFilter>("all");
 	const [pageIndex, setPageIndex] = useState(0);
 	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+	const [exportState, setExportState] = useState<ExportState>({
+		status: "idle",
+	});
+
+	// Guards against double-fire (rapid clicks, re-renders) independent of
+	// React state's async commit timing.
+	const isExportingRef = useRef(false);
 
 	/**
 	 * The tab is sent to the backend, but search, status and pagination
@@ -149,6 +165,52 @@ export const useMedicalClaimListing = ({
 		setPageIndex(0);
 	}, []);
 
+	const handleExport = React.useCallback(async () => {
+		if (isExportingRef.current) return;
+		isExportingRef.current = true;
+		setExportState({ status: "pending" });
+
+		const delayedTimer = setTimeout(() => {
+			setExportState((prev) =>
+				prev.status === "pending" ? { status: "delayed" } : prev,
+			);
+		}, DELAYED_THRESHOLD_MS);
+
+		try {
+			const queuedExport = await medicalClaimApi.enqueueListingExport({
+				tab,
+				search: search.trim() || undefined,
+				format: "xlsx",
+			});
+
+			const downloadUrl = await pollExportJob(
+				medicalClaimApi.getExportStatus,
+				queuedExport.jobId,
+			);
+
+			clearTimeout(delayedTimer);
+			setExportState({ status: "ready", downloadUrl });
+		} catch (error) {
+			clearTimeout(delayedTimer);
+			const message = getApiErrorMessage(
+				error,
+				"Failed to export medical claim records.",
+			);
+			setExportState({ status: "error", message });
+			showToast({
+				type: "error",
+				title: "Export failed",
+				description: message,
+			});
+		} finally {
+			isExportingRef.current = false;
+		}
+	}, [search, showToast, tab]);
+
+	const dismissExport = React.useCallback(() => {
+		setExportState({ status: "idle" });
+	}, []);
+
 	return {
 		tab,
 		search,
@@ -163,6 +225,9 @@ export const useMedicalClaimListing = ({
 		isFetching: listingQuery.isFetching,
 		isError: listingQuery.isError,
 		error: listingQuery.error,
+		isExporting:
+			exportState.status === "pending" || exportState.status === "delayed",
+		exportState,
 
 		refetch: listingQuery.refetch,
 
@@ -170,6 +235,8 @@ export const useMedicalClaimListing = ({
 		handleSearchChange,
 		handleStatusChange,
 		handlePageSizeChange,
+		handleExport,
+		dismissExport,
 		setPageIndex,
 	};
 };

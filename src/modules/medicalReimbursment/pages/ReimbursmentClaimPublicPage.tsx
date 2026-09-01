@@ -64,7 +64,6 @@ export type MedicalClaimFormSource = {
 	ticketNumber?: string | null;
 	grade?: string | null;
 	location?: string | null;
-	patientName?: string | null;
 	claimCover?: CoverageType | null;
 	spouseName?: string | null;
 	medicalAdvanceTaken?: string | number | null;
@@ -179,7 +178,6 @@ const mapMedicalClaimValues = (
 			ticketNumber: claim.ticketNumber ?? "",
 			grade: claim.grade ?? "",
 			location: claim.location ?? "",
-			patientName: claim.patientName ?? "",
 			coverageType: claim.claimCover ?? "",
 			spouseName: claim.spouseName ?? "",
 			medicalAdvanceAmount: String(claim.medicalAdvanceTaken ?? ""),
@@ -215,12 +213,12 @@ const appendNonBlankText = (
 	formData.append(name, String(value));
 };
 
-const resolvePatientName = (values: ReimbursementClaimFormValues): string => {
-	const explicitPatientName = values.patientName?.trim();
-	if (explicitPatientName) return explicitPatientName;
-	if (values.coverageType === "SPOUSE") return values.spouseName.trim();
-	return values.employeeName.trim();
-};
+// const resolvePatientName = (values: ReimbursementClaimFormValues): string => {
+// 	const explicitPatientName = values.patientName?.trim();
+// 	if (explicitPatientName) return explicitPatientName;
+// 	if (values.coverageType === "SPOUSE") return values.spouseName.trim();
+// 	return values.employeeName.trim();
+// };
 
 const appendClaimFields = (
 	formData: FormData,
@@ -230,7 +228,7 @@ const appendClaimFields = (
 	const { values } = submission;
 	appendText(formData, "grade", values.grade);
 	appendText(formData, "location", values.location);
-	appendText(formData, "patientName", resolvePatientName(values));
+	// appendText(formData, "patientName", resolvePatientName(values));
 	appendText(formData, "claimCover", values.coverageType);
 	appendText(formData, "spouseName", values.spouseName);
 	appendNonBlankText(

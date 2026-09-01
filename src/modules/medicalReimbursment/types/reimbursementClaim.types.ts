@@ -17,15 +17,7 @@ export interface ReimbursementClaimFormValues {
 	companySettledAmount: string;
 	declarationAccepted: boolean;
 	claimDate: string;
-
-	/** Legacy response fields retained as optional for backward compatibility. */
-	ticketNumberOrGrade?: string;
-	patientName?: string;
-	relationshipWithEmployee?: string;
 	medicalAdvanceAmount?: string;
-	descriptionOfIllness?: string;
-	numberOfVisits?: string;
-	visitFeePerVisit?: string;
 	employeeSignature?: string;
 }
 

@@ -2,6 +2,7 @@ import {
 	ArrowLeft,
 	CheckCircle2,
 	FilePenLine,
+	Plus,
 	RefreshCcw,
 	Save,
 } from "lucide-react";
@@ -16,7 +17,6 @@ import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadFie
 
 import { toYesNo } from "../helpers/vendor.onboarding.helper";
 import {
-	VENDOR_DOCUMENT_FIELDS,
 	type VendorCreationFormOneValues,
 	type VendorFormErrors,
 	type VendorFormMode,
@@ -157,10 +157,12 @@ const VendorCreationFormOne = ({
 		hasConfirmedDpdp,
 		dpdpError,
 		getEnclosureFile,
-		getEnclosureFiles,
+		visibleDocumentFields,
+		canAddMoreDocuments,
+		handleAddMoreDocument,
 		isEnclosureRequired,
 		handleEnclosureChange,
-		handleEnclosureFilesChange,
+		handleEnclosureTypeChange,
 		handleConditionalFieldChange,
 		openDpdpModal,
 		closeDpdpModal,
@@ -175,6 +177,7 @@ const VendorCreationFormOne = ({
 		initialDocuments,
 		requireDocuments,
 		requireDpdpConsent,
+		isReadOnly,
 		// Field validation runs before enclosure/file validation inside
 		// handleFormAction, so an empty submit surfaces field errors first.
 		validateFields: formContext?.validateFormOneBeforeSubmit,
@@ -200,22 +203,6 @@ const VendorCreationFormOne = ({
 
 				<div className="vendor-onboarding-form-grid-parent">
 					<div className="vendor-onboarding-form-grid-child">
-						{/* <FormInput
-							mode={fieldMode}
-							name="vendorReferenceName"
-							label="Vendor Reference Name"
-							value={values.vendorReferenceName ?? ""}
-							error={errors.vendorReferenceName}
-							success={
-								fieldMode === "edit" &&
-								!errors.vendorReferenceName &&
-								Boolean(values.vendorReferenceName)
-							}
-							helperText="Enter vendor name in capital letters."
-							onChange={(event) =>
-								resolvedOnChange?.("vendorReferenceName", event.target.value)
-							}
-						/> */}
 						<FormInput
 							mode={fieldMode}
 							name="vendorName"
@@ -532,38 +519,10 @@ const VendorCreationFormOne = ({
 				</div>
 
 				<div className="vendor-enclosure-upload-grid">
-					{VENDOR_DOCUMENT_FIELDS.filter(
-						(field) =>
-							field.documentType !== "MSME_CERTIFICATE" &&
-							field.documentType !== "NDA_CERTIFICATE",
-					).map((field) => {
-						const isOtherAttachment = field.documentType === "ADDITIONAL_DOC_1";
+					{visibleDocumentFields.map((field) => {
 						const uploadedFile = getEnclosureFile(field.documentType);
 
-						return isOtherAttachment ? (
-							<FileUploadField
-								key={field.documentType}
-								multiple
-								value={getEnclosureFiles(field.documentType)}
-								onChange={(nextValues) =>
-									handleEnclosureFilesChange(field, nextValues)
-								}
-								maxFiles={10}
-								kind="vendorDocument"
-								label={field.label}
-								description={field.description}
-								required={isEnclosureRequired(field)}
-								error={enclosureErrors[field.statusKey]}
-								readonly={isReadOnly}
-								disabled={loading}
-								tooltip="Mandatory"
-								heightClassName="vendor-enclosure-upload-height"
-								className="vendor-enclosure-upload-field"
-								inputName={field.documentType}
-								showActions
-								previewVariant="line"
-							/>
-						) : (
+						return (
 							<FileUploadField
 								key={field.documentType}
 								value={uploadedFile}
@@ -577,7 +536,7 @@ const VendorCreationFormOne = ({
 								error={enclosureErrors[field.statusKey]}
 								readonly={isReadOnly}
 								disabled={loading}
-								tooltip="Mandatory"
+								tooltip={field.required ? "Mandatory" : undefined}
 								heightClassName="vendor-enclosure-upload-height"
 								className="vendor-enclosure-upload-field"
 								inputName={field.documentType}
@@ -586,6 +545,20 @@ const VendorCreationFormOne = ({
 						);
 					})}
 				</div>
+				{canAddMoreDocuments ? (
+					<div className="flex justify-end">
+						<Button
+							type="button"
+							text="Add More"
+							Icon={Plus}
+							size="sm"
+							appearance="standard"
+							variant="outline"
+							disabled={loading}
+							onClick={handleAddMoreDocument}
+						/>
+					</div>
+				) : null}
 				<div>
 					<div className="vendor-compliance-grid">
 						<section className="vendor-compliance-card">
@@ -614,15 +587,9 @@ const VendorCreationFormOne = ({
 								{values.msmeVendor === "Yes" ? (
 									<FileUploadField
 										value={getEnclosureFile("MSME_CERTIFICATE")}
-										onChange={(nextValue) => {
-											const field = VENDOR_DOCUMENT_FIELDS.find(
-												(item) => item.documentType === "MSME_CERTIFICATE",
-											);
-
-											if (field) {
-												handleEnclosureChange(field, nextValue);
-											}
-										}}
+										onChange={(nextValue) =>
+											handleEnclosureTypeChange("MSME_CERTIFICATE", nextValue)
+										}
 										kind="vendorDocument"
 										label="MSME Certificate"
 										description="Upload the MSME registration certificate."
@@ -665,15 +632,9 @@ const VendorCreationFormOne = ({
 								{values.ndaObtained === "Yes" ? (
 									<FileUploadField
 										value={getEnclosureFile("NDA_CERTIFICATE")}
-										onChange={(nextValue) => {
-											const field = VENDOR_DOCUMENT_FIELDS.find(
-												(item) => item.documentType === "NDA_CERTIFICATE",
-											);
-
-											if (field) {
-												handleEnclosureChange(field, nextValue);
-											}
-										}}
+										onChange={(nextValue) =>
+											handleEnclosureTypeChange("NDA_CERTIFICATE", nextValue)
+										}
 										kind="vendorDocument"
 										label="NDA Certificate"
 										description="Upload the signed NDA certificate."

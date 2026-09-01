@@ -128,10 +128,8 @@ export const createVendorDocumentUploadValue = (
 
 export const createInitialEnclosureUploads = (
 	initialDocuments: VendorOnboardingDocument[] = [],
-): VendorEnclosureUploadItem[] => {
-	const singleDocumentUploads = VENDOR_DOCUMENT_FIELDS.filter(
-		(field) => field.documentType !== "ADDITIONAL_DOC_1",
-	).map((field) => {
+): VendorEnclosureUploadItem[] =>
+	VENDOR_DOCUMENT_FIELDS.map((field) => {
 		const document = initialDocuments.find(
 			(item) => item.documentType === field.documentType,
 		);
@@ -150,22 +148,6 @@ export const createInitialEnclosureUploads = (
 			value: createVendorDocumentUploadValue(document),
 		};
 	});
-
-	const otherField = VENDOR_DOCUMENT_FIELDS.find(
-		(field) => field.documentType === "ADDITIONAL_DOC_1",
-	);
-	const otherUploads: VendorEnclosureUploadItem[] = otherField
-		? initialDocuments
-				.filter((document) => document.documentType === "ADDITIONAL_DOC_1")
-				.map((document) => ({
-					statusKey: otherField.statusKey,
-					documentType: otherField.documentType,
-					value: createVendorDocumentUploadValue(document),
-				}))
-		: [];
-
-	return [...singleDocumentUploads, ...otherUploads];
-};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Workflow payload mapping

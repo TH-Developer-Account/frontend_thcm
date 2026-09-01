@@ -175,6 +175,9 @@ export type AlertCardProps = {
 	description?: string;
 	primaryAction?: AlertAction;
 	secondaryAction?: AlertAction;
+	dismissible?: boolean;
+	autoHideMs?: number;
+	onDismiss?: () => void;
 };
 export interface AccordionItem {
 	id: string;

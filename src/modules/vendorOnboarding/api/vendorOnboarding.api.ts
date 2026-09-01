@@ -9,9 +9,11 @@ import type {
 	VendorOnboardingRawResponse,
 	VendorOnboardingResponse,
 } from "../types/vendorOnboarding.types";
+import { createExportApi } from "../../../api/common.api";
 
 const VENDOR_URL = "/vendor-onboarding";
 const PUBLIC_VENDOR_URL = `${VENDOR_URL}/public`;
+const vendorExportApi = createExportApi(`${VENDOR_URL}/export`);
 
 export type VendorListingTab =
 	| "onboarding"
@@ -204,18 +206,14 @@ export const vendorOnboardingApi = {
 
 		return url;
 	},
-	enqueueBulkExport: async (
+	enqueueBulkExport: (
 		params: Pick<VendorListingParams, "tab" | "search"> & {
 			format?: "csv" | "xlsx";
 		},
-	): Promise<{ jobId: string; logId: string }> => {
-		const { data } = await ServerAxios.post<{
-			success: boolean;
-			jobId: string;
-			logId: string;
-		}>(`${VENDOR_URL}/export/bulk`, params);
-		return { jobId: data.jobId, logId: data.logId };
-	},
+	) => vendorExportApi.enqueueBulkExport(params),
+
+	getExportStatus: vendorExportApi.getExportStatusVendor,
+	downloadExportFile: vendorExportApi.downloadExportFile,
 };
 
 export const vendorInitationApi = {

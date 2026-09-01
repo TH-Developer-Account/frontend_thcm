@@ -81,6 +81,33 @@ export const vendorOnboardingSteps = [
 const EMPTY_FORM_ONE: VendorCreationFormOneValues = {};
 const EMPTY_FORM_TWO: VendorCreationFormTwoValues = {};
 
+const ADDITIONAL_DOCUMENT_FIELDS = VENDOR_DOCUMENT_FIELDS.filter((field) =>
+	field.documentType.startsWith("ADDITIONAL_DOC_"),
+);
+
+const STANDARD_DOCUMENT_FIELDS = VENDOR_DOCUMENT_FIELDS.filter(
+	(field) =>
+		field.documentType !== "MSME_CERTIFICATE" &&
+		field.documentType !== "NDA_CERTIFICATE" &&
+		!field.documentType.startsWith("ADDITIONAL_DOC_"),
+);
+
+const getInitialAdditionalDocumentCount = (
+	documents: VendorOnboardingDocument[],
+): number =>
+	Math.max(
+		1,
+		ADDITIONAL_DOCUMENT_FIELDS.reduce(
+			(highestVisibleIndex, field, index) =>
+				documents.some(
+					(document) => document.documentType === field.documentType,
+				)
+					? index + 1
+					: highestVisibleIndex,
+			0,
+		),
+	);
+
 export type {
 	VendorEnclosureUploadItem,
 	VendorCreationFormOneSubmission,
@@ -99,6 +126,7 @@ type UseVendorCreationFormOneControllerParams = {
 	initialDocuments: VendorOnboardingDocument[];
 	requireDocuments: boolean;
 	requireDpdpConsent: boolean;
+	isReadOnly: boolean;
 	onChange?: <K extends keyof VendorCreationFormOneValues>(
 		key: K,
 		value: VendorCreationFormOneValues[K],
@@ -123,6 +151,7 @@ export function useVendorCreationFormOneController({
 	initialDocuments,
 	requireDocuments,
 	requireDpdpConsent,
+	isReadOnly,
 	onChange,
 	validateFields,
 	onNext,
@@ -139,6 +168,8 @@ export function useVendorCreationFormOneController({
 	const [hasAcceptedDpdp, setHasAcceptedDpdp] = React.useState(false);
 	const [hasConfirmedDpdp, setHasConfirmedDpdp] = React.useState(false);
 	const [dpdpError, setDpdpError] = React.useState("");
+	const [visibleAdditionalDocumentCount, setVisibleAdditionalDocumentCount] =
+		React.useState(() => getInitialAdditionalDocumentCount(initialDocuments));
 
 	const documentsKey = React.useMemo(
 		() =>
@@ -159,6 +190,9 @@ export function useVendorCreationFormOneController({
 
 		const syncDocuments = window.setTimeout(() => {
 			setEnclosureUploads(createInitialEnclosureUploads(initialDocuments));
+			setVisibleAdditionalDocumentCount(
+				getInitialAdditionalDocumentCount(initialDocuments),
+			);
 		}, 0);
 
 		return () => window.clearTimeout(syncDocuments);
@@ -170,13 +204,31 @@ export function useVendorCreationFormOneController({
 		[enclosureUploads],
 	);
 
-	const getEnclosureFiles = React.useCallback(
-		(documentType: VendorDocumentType): FileUploadValue[] =>
-			enclosureUploads
-				.filter((upload) => upload.documentType === documentType)
-				.flatMap((upload) => (upload.value ? [upload.value] : [])),
-		[enclosureUploads],
+	const visibleDocumentFields = React.useMemo(
+		() => [
+			...STANDARD_DOCUMENT_FIELDS,
+			...(isReadOnly
+				? ADDITIONAL_DOCUMENT_FIELDS.filter((field) =>
+						enclosureUploads.some(
+							(upload) =>
+								upload.documentType === field.documentType &&
+								Boolean(upload.value),
+						),
+					)
+				: ADDITIONAL_DOCUMENT_FIELDS.slice(0, visibleAdditionalDocumentCount)),
+		],
+		[enclosureUploads, isReadOnly, visibleAdditionalDocumentCount],
 	);
+
+	const canAddMoreDocuments =
+		!isReadOnly &&
+		visibleAdditionalDocumentCount < ADDITIONAL_DOCUMENT_FIELDS.length;
+
+	const handleAddMoreDocument = React.useCallback(() => {
+		setVisibleAdditionalDocumentCount((current) =>
+			Math.min(current + 1, ADDITIONAL_DOCUMENT_FIELDS.length),
+		);
+	}, []);
 
 	const isEnclosureRequired = React.useCallback(
 		(field: VendorDocumentField): boolean => {
@@ -188,9 +240,6 @@ export function useVendorCreationFormOneController({
 
 				case "ndaCertificate":
 					return toYesNo(values.ndaObtained) === "Yes";
-
-				case "otherAttachment":
-					return false;
 
 				default:
 					return field.required;
@@ -225,30 +274,17 @@ export function useVendorCreationFormOneController({
 		[isEnclosureRequired, onChange],
 	);
 
-	const handleEnclosureFilesChange = React.useCallback(
-		(field: VendorDocumentField, nextValues: FileUploadValue[]) => {
-			setEnclosureUploads((current) => [
-				...current.filter(
-					(upload) => upload.documentType !== field.documentType,
-				),
-				...nextValues.map((value) => ({
-					statusKey: field.statusKey,
-					documentType: field.documentType,
-					value,
-				})),
-			]);
+	const handleEnclosureTypeChange = React.useCallback(
+		(documentType: VendorDocumentType, nextValue: FileUploadValue | null) => {
+			const field = VENDOR_DOCUMENT_FIELDS.find(
+				(item) => item.documentType === documentType,
+			);
 
-			setEnclosureErrors((current) => {
-				const next = { ...current };
-				if (nextValues.length === 0 && isEnclosureRequired(field)) {
-					next[field.statusKey] = MANDATORY_ERROR;
-				} else {
-					delete next[field.statusKey];
-				}
-				return next;
-			});
+			if (field) {
+				handleEnclosureChange(field, nextValue);
+			}
 		},
-		[isEnclosureRequired],
+		[handleEnclosureChange],
 	);
 
 	const handleConditionalFieldChange = React.useCallback(
@@ -343,6 +379,9 @@ export function useVendorCreationFormOneController({
 	const handleReset = React.useCallback(() => {
 		syncedDocumentsKeyRef.current = documentsKey;
 		setEnclosureUploads(createInitialEnclosureUploads(initialDocuments));
+		setVisibleAdditionalDocumentCount(
+			getInitialAdditionalDocumentCount(initialDocuments),
+		);
 		setEnclosureErrors({});
 		setHasAcceptedDpdp(false);
 		setHasConfirmedDpdp(false);
@@ -387,10 +426,12 @@ export function useVendorCreationFormOneController({
 		hasConfirmedDpdp,
 		dpdpError,
 		getEnclosureFile,
-		getEnclosureFiles,
+		visibleDocumentFields,
+		canAddMoreDocuments,
+		handleAddMoreDocument,
 		isEnclosureRequired,
 		handleEnclosureChange,
-		handleEnclosureFilesChange,
+		handleEnclosureTypeChange,
 		handleConditionalFieldChange,
 		openDpdpModal,
 		closeDpdpModal,

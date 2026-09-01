@@ -1,5 +1,8 @@
+import { useEffect, useState } from "react";
 import { styles } from "../styles.constant";
 import type { AlertCardProps } from "./common.types";
+import Button from "./Button";
+import { X } from "lucide-react";
 
 const joinClassNames = (
 	...classNames: Array<string | false | null | undefined>
@@ -12,11 +15,36 @@ export function Alert({
 	description,
 	primaryAction,
 	secondaryAction,
+	dismissible = false,
+	autoHideMs,
+	onDismiss,
 }: AlertCardProps) {
 	const { icon, iconBg } = styles[variant];
+	const [isVisible, setIsVisible] = useState(true);
 
 	const isBanner = type === "banner";
 	const hasActions = Boolean(primaryAction || secondaryAction);
+
+	const handleDismiss = () => {
+		setIsVisible(false);
+		onDismiss?.();
+	};
+
+	// Auto-hide after `autoHideMs`, if provided. Re-arms whenever the alert's
+	// identity (title+description+autoHideMs) changes, so a fresh status
+	// change restarts the timer instead of inheriting the previous one.
+	useEffect(() => {
+		if (!autoHideMs) return;
+
+		const timer = window.setTimeout(() => {
+			setIsVisible(false);
+			onDismiss?.();
+		}, autoHideMs);
+
+		return () => window.clearTimeout(timer);
+	}, [autoHideMs, title, description, onDismiss]);
+
+	if (!isVisible) return null;
 
 	return (
 		<div
@@ -67,6 +95,18 @@ export function Alert({
 						</button>
 					) : null}
 				</div>
+			) : null}
+
+			{dismissible ? (
+				<Button
+					type="button"
+					onClick={handleDismiss}
+					aria-label="Dismiss"
+					className="alert-dismiss"
+					appearance="icon"
+					variant="transparent"
+					Icon={X}
+				/>
 			) : null}
 		</div>
 	);
