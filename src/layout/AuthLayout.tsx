@@ -14,7 +14,7 @@ type AuthLayoutProps = {
 export const AuthLayout = ({
   children,
   className,
-  imageSrc = "/auth-machinery.jpg",
+  //   imageSrc = "/auth-machinery.jpg",
   eyebrow = "Enterprise access",
   title = "Built for demanding operations",
   description = "Secure access to Tata Hitachi enterprise applications, workflows, and operational tools.",
