@@ -1,4 +1,5 @@
 import { ServerAxios } from "../../../services/ServerAxios";
+import { PublicAxios } from "../../../services/PublicAxios";
 
 import { normalizeVendorOnboardingResponse } from "../helpers/vendor.onboarding.mapper";
 import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";
@@ -139,7 +140,7 @@ export const vendorOnboardingApi = {
 	getByToken: async (token: string): Promise<PublicVendorSessionResponse> => {
 		const {
 			data: { data },
-		} = await ServerAxios.get(
+		} = await PublicAxios.get(
 			`${PUBLIC_VENDOR_URL}/${encodeURIComponent(token)}`,
 		);
 		return data;
@@ -148,7 +149,7 @@ export const vendorOnboardingApi = {
 	submitPublic: async (token: string, formData: FormData): Promise<string> => {
 		const {
 			data: { message },
-		} = await ServerAxios.post(
+		} = await PublicAxios.post(
 			`${PUBLIC_VENDOR_URL}/${encodeURIComponent(token)}/submit`,
 			formData,
 		);
@@ -161,7 +162,7 @@ export const vendorOnboardingApi = {
 	): Promise<string> => {
 		const {
 			data: { message },
-		} = await ServerAxios.patch(
+		} = await PublicAxios.patch(
 			`${PUBLIC_VENDOR_URL}/${encodeURIComponent(token)}/draft`,
 			formData,
 		);
@@ -184,7 +185,7 @@ export const vendorOnboardingApi = {
 		return data;
 	},
 	getPublicPdf: async (pdfToken: string): Promise<Blob> => {
-		const response = await ServerAxios.get<Blob>(
+		const response = await PublicAxios.get<Blob>(
 			`${PUBLIC_VENDOR_URL}/pdf/${encodeURIComponent(pdfToken)}`,
 			{
 				responseType: "blob",

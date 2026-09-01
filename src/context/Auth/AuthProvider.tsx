@@ -222,7 +222,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // ── NEW: clear permissions on logout ─────────────────────────────────
       setPermissions([]);
       setSuperAdmin(false);
-      window.location.href = "/login";
+      window.location.href = "/web/login";
     }
   };
 
