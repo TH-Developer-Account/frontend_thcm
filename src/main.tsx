@@ -13,19 +13,19 @@ import { ThemeProvider } from "./context/Theme/ThemeProvider.tsx";
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {
-	throw new Error('Root element with id "root" was not found.');
+  throw new Error('Root element with id "root" was not found.');
 }
 
 createRoot(rootElement).render(
-	<StrictMode>
-		<BrowserRouter>
-			<ThemeProvider>
-				<ToastProvider>
-					<AuthProvider>
-						<App />
-					</AuthProvider>
-				</ToastProvider>
-			</ThemeProvider>
-		</BrowserRouter>
-	</StrictMode>,
+  <StrictMode>
+    <BrowserRouter basename="/web">
+      <ThemeProvider>
+        <ToastProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </ToastProvider>
+      </ThemeProvider>
+    </BrowserRouter>
+  </StrictMode>,
 );
