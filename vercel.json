@@ -1,8 +1,0 @@
-{
-  "rewrites": [
-    {
-      "source": "/((?!manifest.json|service-worker.js|icons/|screenshots/).*)",
-      "destination": "/index.html"
-    }
-  ]
-}
