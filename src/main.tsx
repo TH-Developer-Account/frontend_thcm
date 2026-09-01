@@ -18,7 +18,7 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <BrowserRouter basename="/web">
+    <BrowserRouter basename="/web/">
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
