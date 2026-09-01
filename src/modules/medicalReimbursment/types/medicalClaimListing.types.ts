@@ -88,7 +88,6 @@ export interface MedicalClaimBill {
 
 export interface MedicalClaimDetail extends MedicalClaimListItem {
 	guestId?: string | null;
-	patientName?: string | null;
 	claimCover?: "SELF" | "SPOUSE" | "BOTH" | null;
 	spouseName?: string | null;
 	medicalAdvanceTaken?: number | string | null;

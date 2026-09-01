@@ -4,7 +4,7 @@ import {
 	LoaderIcon,
 	// ScanEye,
 } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
@@ -103,6 +103,11 @@ const VendorOnboardingReadOnlyView = ({
 			</PageSectionLayout>
 		);
 	}
+
+	if (form.canEditMainForm) {
+		return <Navigate to={`/vendor/onboarding/${onboardingId}`} replace />;
+	}
+
 	return (
 		<PageSectionLayout>
 			<VendorCreationFormProvider value={form}>

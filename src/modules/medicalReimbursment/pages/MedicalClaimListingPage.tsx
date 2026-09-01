@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
 import MedicalClaimListingTable from "../components/MedicalClaimListingTable";
@@ -7,13 +7,10 @@ import type { MedicalClaimListingRow } from "../types/medicalClaimListing.types"
 import { toMedicalClaimListingRow } from "../helpers/medicalClaimListing.mapper";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import { PageHeader } from "../../../components/ui/PageHeader";
-import { medicalClaimApi } from "../api/medicalClaim.api";
-import { useToast } from "../../../context/Auth/AuthContext";
-import { getApiErrorMessage } from "../../../utils/apiError.helper";
-import { waitForMedicalClaimExport } from "../helpers/reimbursementClaimForm.helper";
+import { Alert } from "../../../components/common/Alert";
+import { navigateToDownloadUrl } from "../../../utils/exportJob.helper";
 
 const MedicalClaimListingPage = () => {
-	const { showToast } = useToast();
 	const navigate = useNavigate();
 	const {
 		tab,
@@ -25,69 +22,21 @@ const MedicalClaimListingPage = () => {
 		rows,
 		isLoading,
 		isFetching,
+		isExporting,
+		exportState,
 		handleTabChange,
 		handleSearchChange,
 		handleStatusChange,
 		handlePageSizeChange,
+		handleExport,
+		dismissExport,
 		setPageIndex,
 	} = useMedicalClaimListing({ initialTab: "claims" });
-	const [isExporting, setIsExporting] = useState(false);
+
 	const rowsForTable = useMemo(
 		() => rows.map(toMedicalClaimListingRow),
 		[rows],
 	);
-	const handleExport = useCallback(async () => {
-		setIsExporting(true);
-
-		let blobUrl: string | null = null;
-		let downloadLink: HTMLAnchorElement | null = null;
-
-		try {
-			const queuedExport = await medicalClaimApi.enqueueListingExport({
-				tab,
-				search: search.trim() || undefined,
-				format: "xlsx",
-			});
-
-			const downloadUrl = await waitForMedicalClaimExport(queuedExport.jobId);
-
-			const blob = await medicalClaimApi.downloadExportFile(downloadUrl);
-
-			blobUrl = window.URL.createObjectURL(blob);
-
-			downloadLink = document.createElement("a");
-			downloadLink.href = blobUrl;
-			downloadLink.download = `medical-claims-${tab}-${new Date()
-				.toISOString()
-				.slice(0, 10)}.xlsx`;
-
-			document.body.appendChild(downloadLink);
-			downloadLink.click();
-
-			showToast({
-				type: "success",
-				title: "Export completed",
-				description: "Medical claim records were exported successfully.",
-			});
-		} catch (error) {
-			showToast({
-				type: "error",
-				title: "Export failed",
-				description: getApiErrorMessage(
-					error,
-					"Failed to export medical claim records.",
-				),
-			});
-		} finally {
-			downloadLink?.remove();
-
-			if (blobUrl) {
-				window.URL.revokeObjectURL(blobUrl);
-			}
-
-			setIsExporting(false);
-		}
-	}, [search, showToast, tab]);
 
 	const handleViewRow = useCallback(
 		(row: MedicalClaimListingRow) => {
@@ -117,6 +66,49 @@ const MedicalClaimListingPage = () => {
 					separator: "›",
 				}}
 			/>
+
+			{exportState.status === "delayed" && (
+				<Alert
+					type="banner"
+					variant="info"
+					title="Still exporting…"
+					description="This is taking longer than usual. We'll let you know the moment it's ready."
+				/>
+			)}
+
+			{exportState.status === "ready" && (
+				<Alert
+					type="banner"
+					variant="success"
+					title="Export ready"
+					description="Your medical claims export is ready to download."
+					primaryAction={{
+						label: "Download",
+						onClick: () => navigateToDownloadUrl(exportState.downloadUrl),
+					}}
+					secondaryAction={{
+						label: "Dismiss",
+						onClick: dismissExport,
+					}}
+				/>
+			)}
+
+			{exportState.status === "error" && (
+				<Alert
+					type="banner"
+					variant="error"
+					title="Export failed"
+					description={exportState.message}
+					primaryAction={{
+						label: "Retry",
+						onClick: handleExport,
+					}}
+					secondaryAction={{
+						label: "Dismiss",
+						onClick: dismissExport,
+					}}
+				/>
+			)}
 
 			<MedicalClaimListingTable
 				selectedFilter={tab}

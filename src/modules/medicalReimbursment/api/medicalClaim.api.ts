@@ -1,10 +1,7 @@
 import { ServerAxios } from "../../../services/ServerAxios";
 
 import type {
-	ExportListingParams,
 	MedicalClaimDetail,
-	MedicalClaimExportQueueResponse,
-	MedicalClaimExportStatusResponse,
 	MedicalClaimInitiationPayload,
 	MedicalClaimListingApiResponse,
 	MedicalClaimListingParams,
@@ -19,8 +16,12 @@ import type {
 	MedicalClaimInitiationImportResponse,
 } from "../types/medicalClaimInitiation.types";
 import type { ClaimHeadRow } from "../types/reimbursementClaim.types";
+import { createExportApi } from "../../../api/common.api";
 
 const MEDICAL_CLAIM_URL = "/medi-claim";
+const medicalExportApi = createExportApi(`${MEDICAL_CLAIM_URL}/export`, {
+	enqueuePath: "",
+});
 
 type ApiDataResponse<T> = {
 	success: boolean;
@@ -202,38 +203,21 @@ export const medicalClaimApi = {
 
 		return url;
 	},
-	enqueueListingExport: async (
-		params: ExportListingParams,
-	): Promise<MedicalClaimExportQueueResponse> => {
-		const { data } = await ServerAxios.post<MedicalClaimExportQueueResponse>(
-			`${MEDICAL_CLAIM_URL}/export`,
-			{
-				tab: params.tab,
-				search: params.search?.trim() ?? "",
-				format: params.format ?? "xlsx",
-			},
-		);
 
-		return data;
-	},
+	// getListingExportStatus: async (
+	// 	jobId: string,
+	// ): Promise<MedicalClaimExportStatusResponse> => {
+	// 	const { data } = await ServerAxios.get<MedicalClaimExportStatusResponse>(
+	// 		`${MEDICAL_CLAIM_URL}/export/status/${encodeURIComponent(jobId)}`,
+	// 	);
 
-	getListingExportStatus: async (
-		jobId: string,
-	): Promise<MedicalClaimExportStatusResponse> => {
-		const { data } = await ServerAxios.get<MedicalClaimExportStatusResponse>(
-			`${MEDICAL_CLAIM_URL}/export/status/${encodeURIComponent(jobId)}`,
-		);
-
-		return data;
-	},
-
-	downloadExportFile: async (downloadUrl: string): Promise<Blob> => {
-		const { data } = await ServerAxios.get<Blob>(downloadUrl, {
-			responseType: "blob",
-		});
-
-		return data;
-	},
+	// 	return data;
+	// },
+	// --- Export (shared factory) ---
+	enqueueListingExport: medicalExportApi.enqueueBulkExport,
+	getExportStatus: medicalExportApi.getExportStatus,
+	downloadExportFile: medicalExportApi.downloadExportFile,
+	getListingExportStatus: medicalExportApi.getExportStatus,
 
 	exportOne: async (claimId: string): Promise<Blob> => {
 		const { data } = await ServerAxios.get<Blob>(

@@ -154,7 +154,12 @@ export type VendorEnclosureStatusKey =
 	| "certificateOfIncorporation"
 	| "msmeCertificate"
 	| "ndaCertificate"
-	| "otherAttachment";
+	| "otherAttachment1"
+	| "otherAttachment2"
+	| "otherAttachment3"
+	| "otherAttachment4"
+	| "otherAttachment5"
+	| "otherAttachment6";
 
 export const VENDOR_DOCUMENT_FIELDS = [
 	{
@@ -200,10 +205,45 @@ export const VENDOR_DOCUMENT_FIELDS = [
 		required: false,
 	},
 	{
-		statusKey: "otherAttachment",
+		statusKey: "otherAttachment1",
 		documentType: "ADDITIONAL_DOC_1",
-		label: "Other Attachment",
-		description: "Upload any additional supporting document.",
+		label: "Other Attachment 1",
+		description: "Upload an additional supporting document.",
+		required: false,
+	},
+	{
+		statusKey: "otherAttachment2",
+		documentType: "ADDITIONAL_DOC_2",
+		label: "Other Attachment 2",
+		description: "Upload an additional supporting document.",
+		required: false,
+	},
+	{
+		statusKey: "otherAttachment3",
+		documentType: "ADDITIONAL_DOC_3",
+		label: "Other Attachment 3",
+		description: "Upload an additional supporting document.",
+		required: false,
+	},
+	{
+		statusKey: "otherAttachment4",
+		documentType: "ADDITIONAL_DOC_4",
+		label: "Other Attachment 4",
+		description: "Upload an additional supporting document.",
+		required: false,
+	},
+	{
+		statusKey: "otherAttachment5",
+		documentType: "ADDITIONAL_DOC_5",
+		label: "Other Attachment 5",
+		description: "Upload an additional supporting document.",
+		required: false,
+	},
+	{
+		statusKey: "otherAttachment6",
+		documentType: "ADDITIONAL_DOC_6",
+		label: "Other Attachment 6",
+		description: "Upload an additional supporting document.",
 		required: false,
 	},
 ] as const;

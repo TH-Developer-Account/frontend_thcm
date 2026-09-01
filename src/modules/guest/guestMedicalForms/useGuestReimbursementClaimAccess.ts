@@ -20,6 +20,8 @@ import {
 	GUEST_EDITABLE_STATUSES,
 	appendText,
 } from "../../medicalReimbursment/helpers/reimbursementClaimForm.helper";
+import { getStatusAlertConfig } from "../../../utils/statusAlert.helper";
+
 export interface GuestReimbursementClaimAccess {
 	canView: boolean;
 	canEdit: boolean;
@@ -206,6 +208,18 @@ export function useGuestMedicalClaimView(claimId = "") {
 	const isPreparingPdf = pdfUrlMutation.isPending && pdfAction === "view";
 	const isDownloadingPdf = pdfUrlMutation.isPending && pdfAction === "download";
 
+	// Status banner — guest view only. Not shown in create mode (there's no
+	// status yet), only once an existing claim has a status worth surfacing
+	// (approved/rejected/clarification — see getStatusAlertConfig for which
+	// statuses actually produce a banner vs. return null for "in progress").
+	const statusBanner = useMemo(
+		() =>
+			isCreateMode
+				? null
+				: getStatusAlertConfig(detail?.status, { entityLabel: "claim" }),
+		[detail?.status, isCreateMode],
+	);
+
 	return {
 		detail,
 		isCreateMode,
@@ -233,5 +247,9 @@ export function useGuestMedicalClaimView(claimId = "") {
 		isDownloadingPdf,
 		handleViewPdf,
 		handleDownloadPdf,
+
+		// Status banner — consumed only by the guest page.
+		statusBanner,
+		showAlertBanner: Boolean(statusBanner),
 	};
 }

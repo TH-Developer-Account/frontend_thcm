@@ -1,4 +1,4 @@
-import { type ChangeEvent } from "react";
+import { type ChangeEvent, useState } from "react";
 import {
 	ArrowLeft,
 	BadgeIndianRupee,
@@ -22,7 +22,7 @@ import Checkbox from "../../../components/forms/Checkbox";
 import FormInput from "../../../components/forms/FormInput";
 import Radio from "../../../components/forms/Radio";
 import SelectInput from "../../../components/forms/SelectInput";
-import { ReasonActionModal } from "../../../components/ui/ReasonActionModal";
+import TextareaInput from "../../../components/forms/TextareaInput";
 import {
 	COVERAGE_OPTIONS,
 	GRADE_OPTIONS,
@@ -38,6 +38,14 @@ import ClaimHeadEntryTable from "./ClaimHeadEntryTable";
 import NavigateButton from "../../../components/common/NavigateButton";
 import type { ActionMenuItem } from "../../../components/common/ActionMenu";
 import ActionMenu from "../../../components/common/ActionMenu";
+import { Alert } from "../../../components/common/Alert";
+import type { AlertVariant } from "../../../components/common/common.types";
+
+export type StatusBanner = {
+	variant: AlertVariant;
+	title: string;
+	description: string;
+};
 
 export type ReimbursementClaimFormProps = UseReimbursementClaimFormArgs & {
 	claimId?: string;
@@ -46,6 +54,8 @@ export type ReimbursementClaimFormProps = UseReimbursementClaimFormArgs & {
 	isPreparingPdf?: boolean;
 	isDownloadingPdf?: boolean;
 	handleViewPdf?: () => void | Promise<void>;
+	statusBanner?: StatusBanner;
+	showAlertBanner?: boolean;
 	handleDownloadPdf?: () => void | Promise<void>;
 };
 
@@ -57,7 +67,12 @@ type ReimbursementClaimFormContentProps = {
 	isDownloadingPdf?: boolean;
 	handleViewPdf?: () => void | Promise<void>;
 	handleDownloadPdf?: () => void | Promise<void>;
+	statusBanner?: StatusBanner | null;
 };
+
+// One action can be pending at a time — either sending for clarification
+// or approving. Both share a single inline reason textarea.
+type PendingApprovalAction = "clarify" | "approve" | null;
 
 const ReimbursementClaimFormContent = ({
 	claimId,
@@ -66,6 +81,7 @@ const ReimbursementClaimFormContent = ({
 	isPreparingPdf,
 	isDownloadingPdf,
 	handleDownloadPdf,
+	statusBanner,
 }: ReimbursementClaimFormContentProps) => {
 	const {
 		values,
@@ -101,19 +117,61 @@ const ReimbursementClaimFormContent = ({
 		handleSubmit,
 		handleSaveDraft,
 		handleReset,
-		clarifyModalOpen,
 		clarifyLoading,
-		setClarifyModalOpen,
-		buildClarifyReasonPrefix,
+
+		// buildClarifyReasonPrefix, // commented out per request — user will type their own reason for now, will revisit prefixing later
 		handleClarifyConfirm,
 		handleApproveStage,
 	} = useReimbursementClaimFormContext();
+
+	const [pendingAction, setPendingAction] =
+		useState<PendingApprovalAction>(null);
+	const [reasonText, setReasonText] = useState("");
+	const [reasonError, setReasonError] = useState<string | undefined>();
+
+	const isReasonFlowOpen = pendingAction !== null;
+	const isReasonBusy = clarifyLoading || approvalActionLoading;
+
+	const openReasonFlow = (action: PendingApprovalAction) => {
+		setPendingAction(action);
+		setReasonText("");
+		setReasonError(undefined);
+	};
+
+	const cancelReasonFlow = () => {
+		if (isReasonBusy) return;
+		setPendingAction(null);
+		setReasonText("");
+		setReasonError(undefined);
+	};
+
+	const handleReasonConfirm = async () => {
+		const trimmed = reasonText.trim();
+		if (!trimmed) {
+			setReasonError("A reason is required to continue.");
+			return;
+		}
+
+		if (pendingAction === "clarify") {
+			await handleClarifyConfirm(trimmed);
+		} else if (pendingAction === "approve") {
+			// NOTE: handleApproveStage (onApproveStage) currently takes no
+			// arguments, so the reason isn't forwarded to the API yet — the
+			// hook's onApproveStage signature needs to accept a reason param
+			// for this to be persisted. Flagging this rather than silently
+			// dropping it.
+			await handleApproveStage?.();
+		}
+
+		setPendingAction(null);
+		setReasonText("");
+		setReasonError(undefined);
+	};
 
 	const sections: CardSection[] = [
 		{
 			id: "employee-details",
 			title: "Employee and Patient Details",
-			// subtitle: "Employee information and annual claim eligibility.",
 			Icon: UserRound,
 			defaultExpanded: true,
 			children: (
@@ -124,7 +182,6 @@ const ReimbursementClaimFormContent = ({
 						label="Ticket Number"
 						value={values.ticketNumber}
 						error={errors.ticketNumber}
-						// disabled={isReadOnly}
 						helperText="Ticket Number from grade."
 						required
 						onChange={(event: ChangeEvent<HTMLInputElement>) =>
@@ -179,7 +236,6 @@ const ReimbursementClaimFormContent = ({
 		{
 			id: "coverage-type",
 			title: "Coverage Type",
-			// subtitle: "Select the patient covered by this claim.",
 			Icon: UserRound,
 			defaultExpanded: true,
 			children: (
@@ -241,7 +297,6 @@ const ReimbursementClaimFormContent = ({
 		{
 			id: "claim-heads",
 			title: "Claim Heads",
-			// subtitle: "Add and review the bills included in this claim.",
 			Icon: Stethoscope,
 			actions: (
 				<span className="text-sm font-semibold text-iron-dark">
@@ -349,13 +404,26 @@ const ReimbursementClaimFormContent = ({
 			disabled: isExportingExcel || !handleExport,
 		},
 	];
+
 	return (
 		<>
 			<form
-				className="flex flex-col gap-5"
+				className="flex flex-col gap-2"
 				noValidate
 				onSubmit={(event) => event.preventDefault()}
 			>
+				{statusBanner ? (
+					<Alert
+						key={`${statusBanner.title}-${statusBanner.description ?? ""}`}
+						{...statusBanner}
+						type="banner"
+						variant={statusBanner.variant}
+						title={statusBanner.title}
+						description={statusBanner.description}
+						dismissible
+						autoHideMs={2000}
+					/>
+				) : null}
 				<Card
 					title={
 						<div className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight text-iron-dark">
@@ -379,88 +447,151 @@ const ReimbursementClaimFormContent = ({
 					}
 					footer={
 						showButtons && (
-							<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-								<div>
-									{onBack ? (
-										<Button
-											type="button"
-											text="Back"
-											Icon={ArrowLeft}
-											size="sm"
-											appearance="standard"
-											variant="outline"
-											disabled={isLoading}
-											onClick={onBack}
-										/>
-									) : null}
-								</div>
-
-								{canEditClaimForm ? (
-									<div className="flex flex-col gap-2 sm:flex-row">
-										<Button
-											type="button"
-											text="Reset"
-											Icon={RefreshCcw}
-											size="sm"
-											appearance="standard"
-											variant="outline"
-											disabled={isLoading}
-											onClick={handleReset}
-										/>
-										{hasSaveDraftAction ? (
+							<div className="flex w-full flex-col gap-3">
+								{isReasonFlowOpen ? (
+									// Inline reason flow replaces the approve/clarify button
+									// row in place, so the footer never shows both the
+									// buttons and the textarea at once (avoids layout jumps
+									// / overflow on narrow screens).
+									<div className="flex w-full flex-col gap-2 rounded-md border border-border bg-page p-3 sm:flex-row sm:items-start">
+										<div className="flex-1">
+											<TextareaInput
+												name="approvalReason"
+												label={
+													pendingAction === "clarify"
+														? "Reason for clarification"
+														: "Reason for approval"
+												}
+												value={reasonText}
+												rows={3}
+												autoFocus
+												disabled={isReasonBusy}
+												error={reasonError}
+												placeholder="Enter a reason…"
+												onChange={(event) => {
+													setReasonText(event.target.value);
+													if (reasonError) setReasonError(undefined);
+												}}
+											/>
+										</div>
+										<div className="flex shrink-0 gap-2 sm:pt-6">
 											<Button
 												type="button"
-												text={isSavingDraft ? "Saving..." : "Save as Draft"}
-												Icon={FilePenLine}
+												text="Cancel"
 												size="sm"
 												appearance="standard"
 												variant="outline"
-												disabled={isLoading}
-												onClick={handleSaveDraft}
+												disabled={isReasonBusy}
+												onClick={cancelReasonFlow}
 											/>
-										) : null}
-										{hasSubmitAction ? (
 											<Button
 												type="button"
-												text={isSubmitting ? "Submitting..." : actionText}
-												Icon={Save}
+												text={
+													isReasonBusy
+														? "Submitting…"
+														: pendingAction === "clarify"
+															? "Send"
+															: isExternalApprover
+																? "OK and Close"
+																: "Approve"
+												}
 												size="sm"
 												appearance="standard"
 												variant="brand"
-												disabled={isLoading}
-												onClick={handleSubmit}
+												disabled={isReasonBusy || !reasonText.trim()}
+												onClick={() => void handleReasonConfirm()}
 											/>
-										) : null}
+										</div>
 									</div>
-								) : null}
+								) : (
+									<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+										<div>
+											{onBack ? (
+												<Button
+													type="button"
+													text="Back"
+													Icon={ArrowLeft}
+													size="sm"
+													appearance="standard"
+													variant="outline"
+													disabled={isLoading}
+													onClick={onBack}
+												/>
+											) : null}
+										</div>
 
-								{canApprove || canClarify ? (
-									<div className="flex flex-col gap-2 sm:flex-row">
-										{canClarify && hasClarifyStageAction ? (
-											<Button
-												type="button"
-												text="Send for Clarification"
-												size="sm"
-												appearance="standard"
-												variant="outline"
-												disabled={approvalActionLoading}
-												onClick={() => setClarifyModalOpen(true)}
-											/>
+										{canEditClaimForm ? (
+											<div className="flex flex-col gap-2 sm:flex-row">
+												<Button
+													type="button"
+													text="Reset"
+													Icon={RefreshCcw}
+													size="sm"
+													appearance="standard"
+													variant="outline"
+													disabled={isLoading}
+													onClick={handleReset}
+												/>
+												{hasSaveDraftAction ? (
+													<Button
+														type="button"
+														text={isSavingDraft ? "Saving..." : "Save as Draft"}
+														Icon={FilePenLine}
+														size="sm"
+														appearance="standard"
+														variant="outline"
+														disabled={isLoading}
+														onClick={handleSaveDraft}
+													/>
+												) : null}
+												{hasSubmitAction ? (
+													<Button
+														type="button"
+														text={isSubmitting ? "Submitting..." : actionText}
+														Icon={Save}
+														size="sm"
+														appearance="standard"
+														variant="brand"
+														disabled={isLoading}
+														onClick={handleSubmit}
+													/>
+												) : null}
+											</div>
 										) : null}
-										{canApprove && hasApproveStageAction ? (
-											<Button
-												type="button"
-												text={isExternalApprover ? "OK and Close" : "Approve"}
-												size="sm"
-												appearance="standard"
-												variant="brand"
-												isTooltip="Please approve all line items to approve this form"
-												disabled={approvalActionLoading || !canCompleteStage}
-												onClick={() => void handleApproveStage?.()}
-											/>
+
+										{canApprove || canClarify ? (
+											<div className="flex flex-col gap-2 sm:flex-row">
+												{canClarify && hasClarifyStageAction ? (
+													<Button
+														type="button"
+														text="Send for Clarification"
+														size="sm"
+														appearance="standard"
+														variant="outline"
+														disabled={approvalActionLoading}
+														onClick={() => openReasonFlow("clarify")}
+													/>
+												) : null}
+												{canApprove && hasApproveStageAction ? (
+													<Button
+														type="button"
+														text={
+															isExternalApprover ? "OK and Close" : "Approve"
+														}
+														size="sm"
+														appearance="standard"
+														variant="brand"
+														isTooltip="Please approve all line items to approve this form"
+														disabled={
+															approvalActionLoading || !canCompleteStage
+														}
+														onClick={() => openReasonFlow("approve")}
+													/>
+												) : null}
+											</div>
 										) : null}
 									</div>
-								) : null}
+								)}
 							</div>
 						)
 					}
@@ -483,15 +614,6 @@ const ReimbursementClaimFormContent = ({
 					padding="none"
 				/>
 			</form>
-
-			<ReasonActionModal
-				open={clarifyModalOpen}
-				mode="clarify-workflow"
-				loading={clarifyLoading}
-				defaultReason={buildClarifyReasonPrefix()}
-				onClose={() => setClarifyModalOpen(false)}
-				onConfirm={handleClarifyConfirm}
-			/>
 		</>
 	);
 };
@@ -505,6 +627,8 @@ const ReimbursementClaimForm = (props: ReimbursementClaimFormProps) => {
 		isDownloadingPdf,
 		handleViewPdf,
 		handleDownloadPdf,
+		statusBanner,
+		showAlertBanner,
 		...formArgs
 	} = props;
 
@@ -520,6 +644,7 @@ const ReimbursementClaimForm = (props: ReimbursementClaimFormProps) => {
 				isDownloadingPdf={isDownloadingPdf}
 				handleViewPdf={handleViewPdf}
 				handleDownloadPdf={handleDownloadPdf}
+				statusBanner={showAlertBanner ? statusBanner : null}
 			/>
 		</ReimbursementClaimFormContext.Provider>
 	);

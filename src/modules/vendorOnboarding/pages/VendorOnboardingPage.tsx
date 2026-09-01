@@ -33,12 +33,10 @@ const VendorOnboardingPage = () => {
 		isExistingRequest &&
 		!form.isLoading &&
 		!form.isError &&
-		form.formStatus === "APPROVED";
+		!form.canEditMainForm;
 
-	const handleBackToView = () => {
-		if (!onboardingId) return;
-
-		navigate(`/vendor/onboarding/${onboardingId}/view`, { replace: true });
+	const handleBackToListing = () => {
+		navigate("/vendor/onboarding/listing?tab=onboarding");
 	};
 
 	if (shouldRedirectToView) {
@@ -91,7 +89,7 @@ const VendorOnboardingPage = () => {
 								requireDpdpConsent={false}
 								actionText={isExistingRequest ? "Next" : "Save & Proceed"}
 								onNext={form.handleSaveFormOne}
-								onBack={isExistingRequest ? handleBackToView : undefined}
+								onBack={isExistingRequest ? handleBackToListing : undefined}
 							/>
 						) : form.currentStep === 2 ? (
 							<VendorCreationFormTwo mode="edit" canEdit />

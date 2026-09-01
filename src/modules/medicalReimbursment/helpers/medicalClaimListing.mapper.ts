@@ -51,7 +51,6 @@ export const toMedicalClaimFormValues = (
 	ticketNumber: claim.ticketNumber ?? "",
 	grade: claim.grade ?? "",
 	location: claim.location ?? "",
-	patientName: claim.patientName ?? "",
 	coverageType: (claim.claimCover ?? "") as CoverageType,
 	spouseName: claim.spouseName ?? "",
 	medicalAdvanceAmount: String(claim.medicalAdvanceTaken ?? ""),

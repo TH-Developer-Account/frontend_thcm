@@ -260,7 +260,7 @@ export const ClaimHeadEntryTable = () => {
 									onToggleLineItemStatus(claim.id);
 								}}
 								label={isApproved ? "Approved" : "Approve"}
-								size={30}
+								size={20}
 							/>
 						</div>
 					</div>

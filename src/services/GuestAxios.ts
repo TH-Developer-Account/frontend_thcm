@@ -27,7 +27,7 @@ GuestAxios.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem("guestAuthToken");
-      window.location.href = "/guest/login";
+      window.location.href = "/web/guest/login";
     }
     return Promise.reject(error);
   },

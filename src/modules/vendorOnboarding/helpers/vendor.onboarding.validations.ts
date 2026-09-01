@@ -13,6 +13,7 @@ export const EDITABLE_STATUSES: readonly VendorOnboardingStatus[] = [
 	"DRAFT",
 	"VENDOR_SUBMITTED",
 	"IN_REVIEW",
+	// "AWAITING_VENDOR",
 ];
 
 export const NON_MANDATORY_FIELDS = new Set<keyof VendorCreationFormTwoValues>([
