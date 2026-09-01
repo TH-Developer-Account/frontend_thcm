@@ -2,7 +2,7 @@
   "name": "THCM Marketing Planner",
   "short_name": "THCM",
   "description": "Tata Hitachi Marketing Activity Platform",
-  "start_url": "/",
+  "start_url": "/web/",
   "display": "standalone",
   "background_color": "#F5F5F5",
   "theme_color": "#F97316",
