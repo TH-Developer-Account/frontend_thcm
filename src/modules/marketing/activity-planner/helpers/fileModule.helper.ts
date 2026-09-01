@@ -1,6 +1,8 @@
 import type {
 	FileModuleApiItem,
 	FileModuleListingRow,
+	FileModuleEventGroupRow,
+	FileModuleTriggeredBy,
 } from "../types/fileModule.types";
 
 const asString = (value: unknown, fallback = ""): string => {
@@ -137,4 +139,94 @@ export const mapImportExportResponseToRows = (
 
 		return rows;
 	}, []);
+};
+
+const UNASSIGNED_EVENT_KEY = "unassigned-event";
+
+const getTimestamp = (value: string): number => {
+	const timestamp = Date.parse(value);
+
+	return Number.isFinite(timestamp) ? timestamp : 0;
+};
+
+const getUniqueUsers = (
+	rows: FileModuleListingRow[],
+): FileModuleTriggeredBy[] => {
+	const users = new Map<string, FileModuleTriggeredBy>();
+
+	for (const row of rows) {
+		const user = row.triggeredBy;
+
+		if (!user) continue;
+
+		const key = user.id || user.email || user.fullName;
+
+		if (!users.has(key)) {
+			users.set(key, user);
+		}
+	}
+
+	return Array.from(users.values());
+};
+
+export const groupFileRowsByEvent = (
+	rows: FileModuleListingRow[],
+): FileModuleEventGroupRow[] => {
+	const groups = new Map<string, FileModuleListingRow[]>();
+
+	for (const row of rows) {
+		const groupKey = row.epc?.id || UNASSIGNED_EVENT_KEY;
+		const currentRows = groups.get(groupKey) ?? [];
+
+		currentRows.push(row);
+		groups.set(groupKey, currentRows);
+	}
+
+	return Array.from(groups.entries())
+		.map(([groupKey, groupRows]) => {
+			const sortedLogs = [...groupRows].sort(
+				(first, second) =>
+					getTimestamp(second.createdAt) - getTimestamp(first.createdAt),
+			);
+
+			const latestLog = sortedLogs[0];
+
+			return {
+				id: groupKey,
+				epc: latestLog?.epc ?? null,
+
+				operationCount: groupRows.length,
+				operationTypes: Array.from(new Set(groupRows.map((row) => row.type))),
+
+				totalRecords: groupRows.reduce(
+					(total, row) => total + row.totalRecords,
+					0,
+				),
+
+				successRecords: groupRows.reduce(
+					(total, row) => total + row.successRecords,
+					0,
+				),
+
+				failedRecords: groupRows.reduce(
+					(total, row) => total + row.failedRecords,
+					0,
+				),
+
+				outputFileCount: groupRows.filter((row) => row.hasOutputFile).length,
+
+				errorFileCount: groupRows.filter((row) => row.hasErrorFile).length,
+
+				latestStatus: latestLog?.status ?? "UNKNOWN",
+				latestCreatedAt: latestLog?.createdAt ?? "",
+
+				triggeredBy: getUniqueUsers(groupRows),
+				logs: sortedLogs,
+			};
+		})
+		.sort(
+			(first, second) =>
+				getTimestamp(second.latestCreatedAt) -
+				getTimestamp(first.latestCreatedAt),
+		);
 };

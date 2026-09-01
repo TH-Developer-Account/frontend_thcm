@@ -1,306 +1,365 @@
 import React from "react";
 import type { SingleValue } from "react-select";
 
-import SelectInput from "../../../../../components/FormElements/SelectInput";
-import TextareaInput from "../../../../../components/FormElements/TextareaInput";
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/common/Section";
-import { validateUploadFile } from "../../../../../components/FileUpload/fileUpload.helpers";
-import {
-	eventDeviationOptions,
-	eventOutcomeOptions,
-} from "../../utils/constants";
-import {
-	useEventOutcomeMutation,
-	useEventDeviationMutation,
-} from "../../queries/useActivityFormQuery";
+import SelectInput from "../../../../../components/forms/SelectInput";
+import FormInput from "../../../../../components/forms/FormInput";
+import TextareaInput from "../../../../../components/forms/TextareaInput";
+import { FileUploadField } from "../../../../../components/ui/FileUpload/FileUploadField";
+import { validateUploadFile } from "../../../../../components/ui/FileUpload/fileUpload.helpers";
+import SectionAccordion from "../../../../../components/common/SectionAccordion";
+
 import { useToast } from "../../../../../context/Auth/AuthContext";
-import type { Option } from "../../../../../components/FormElements/input.types";
-import { getEventOutcomeMode } from "../../helpers/eventOutcome.helper";
-import FormInput from "../../../../../components/FormElements/FormInput";
-import type {
-	DeviationInfo,
-	EventOutcomeProps,
-} from "../../types/event.outcome.types";
-import { usePreviewWorkflowMutation } from "../../queries/useEventOutcomeMutation";
 import {
-	showApiErrorToast,
-	showSuccessToast,
+  showApiErrorToast,
+  showSuccessToast,
 } from "../../../../../utils/apiError.helper";
-import { FileUploadField } from "../../../../../components/FileUpload/FileUploadField";
+
+import type { Option } from "../../../../../components/forms/input.types";
+import type {
+  DeviationInfo,
+  EventOutcomeProps,
+} from "../../types/event.outcome.types";
+
+import {
+  eventDeviationOptions,
+  eventOutcomeOptions,
+} from "../../utils/constant";
+
+import { getEventOutcomeMode } from "../../helpers/eventOutcome.helper";
+
+import {
+  useEventDeviationMutation,
+  useEventOutcomeMutation,
+} from "../../queries/useActivityFormQuery";
+
+import { usePreviewWorkflowMutation } from "../../queries/useEventOutcomeMutation";
 
 const initialDeviationInfo: DeviationInfo = {
-	reason: "",
-	deviatedAmount: "",
-	file: null,
+  reason: "",
+  deviatedAmount: "",
+  file: null,
 };
 
 export const EventOutcome = ({
-	eventStatus,
-	epcID,
-	workspaceId,
-	appId,
-	onSuccess,
-	onDeviationPreviewSuccess,
+  eventStatus,
+  epcID,
+  workspaceId,
+  appId,
+  onSuccess,
+  onDeviationPreviewSuccess,
 }: EventOutcomeProps) => {
-	const { showToast } = useToast();
+  const { showToast } = useToast();
 
-	const eventOutcomeMutation = useEventOutcomeMutation();
-	const eventDeviationMutation = useEventDeviationMutation();
+  const eventOutcomeMutation = useEventOutcomeMutation();
+  const eventDeviationMutation = useEventDeviationMutation();
+  const previewWorkflowMutation = usePreviewWorkflowMutation();
 
-	const [selectedOption, setSelectedOption] = React.useState<Option | null>(
-		null,
-	);
+  const [selectedOption, setSelectedOption] = React.useState<Option | null>(
+    null,
+  );
 
-	const [deviationInfo, setDeviationInfo] =
-		React.useState<DeviationInfo>(initialDeviationInfo);
+  const [deviationInfo, setDeviationInfo] =
+    React.useState<DeviationInfo>(initialDeviationInfo);
 
-	const mode = getEventOutcomeMode(eventStatus);
+  const mode = getEventOutcomeMode(eventStatus);
 
-	const isOutcomeMode = mode === "OUTCOME";
-	const isDeviationMode = mode === "DEVIATION_IN_PROGRESS";
-	const isDeviationRequired =
-		isDeviationMode && selectedOption?.value === "REQUIRED";
+  const isOutcomeMode = mode === "OUTCOME";
+  const isDeviationMode = mode === "DEVIATION_IN_PROGRESS";
 
-	const options = isOutcomeMode ? eventOutcomeOptions : eventDeviationOptions;
-	const label = isOutcomeMode ? "Event Outcome" : "Event Deviation";
-	const previewWorkflowMutation = usePreviewWorkflowMutation();
-	const isSubmitting =
-		eventOutcomeMutation.isPending ||
-		eventDeviationMutation.isPending ||
-		previewWorkflowMutation.isPending;
+  const isDeviationRequired =
+    isDeviationMode && selectedOption?.value === "REQUIRED";
 
-	const handleChange = React.useCallback((newValue: SingleValue<Option>) => {
-		setSelectedOption(newValue ?? null);
-		setDeviationInfo(initialDeviationInfo);
-	}, []);
+  const options = isOutcomeMode ? eventOutcomeOptions : eventDeviationOptions;
 
-	const handleDeviationInfoChange = React.useCallback(
-		<K extends keyof DeviationInfo>(field: K, value: DeviationInfo[K]) => {
-			setDeviationInfo((prev) => ({
-				...prev,
-				[field]: value,
-			}));
-		},
-		[],
-	);
+  const label = isOutcomeMode ? "Event Outcome" : "Event Deviation";
 
-	const validateBeforeSubmit = React.useCallback(() => {
-		if (!epcID) {
-			return "EPC ID not found.";
-		}
+  const isSubmitting =
+    eventOutcomeMutation.isPending ||
+    eventDeviationMutation.isPending ||
+    previewWorkflowMutation.isPending;
 
-		if (!selectedOption?.value) {
-			return `Please select ${label.toLowerCase()}.`;
-		}
+  const resetForm = React.useCallback(() => {
+    setSelectedOption(null);
+    setDeviationInfo(initialDeviationInfo);
+  }, []);
 
-		if (isDeviationRequired) {
-			if (!deviationInfo.deviatedAmount.trim()) {
-				return "Please enter deviated amount.";
-			}
+  const handleChange = React.useCallback((newValue: SingleValue<Option>) => {
+    setSelectedOption(newValue ?? null);
+    setDeviationInfo(initialDeviationInfo);
+  }, []);
 
-			if (Number(deviationInfo.deviatedAmount) <= 0) {
-				return "Deviated amount should be greater than 0.";
-			}
+  const handleDeviationInfoChange = React.useCallback(
+    <K extends keyof DeviationInfo>(field: K, value: DeviationInfo[K]) => {
+      setDeviationInfo((current) => ({
+        ...current,
+        [field]: value,
+      }));
+    },
+    [],
+  );
 
-			if (!deviationInfo.reason.trim()) {
-				return "Please enter reason.";
-			}
+  const validateBeforeSubmit = React.useCallback((): string | null => {
+    if (!epcID) {
+      return "EPC ID not found.";
+    }
 
-			if (!deviationInfo.file?.file) {
-				return "Please upload the quotation.";
-			}
+    if (!selectedOption?.value) {
+      return `Please select ${label.toLowerCase()}.`;
+    }
 
-			const fileError = validateUploadFile(deviationInfo.file.file, "pdf");
+    if (isDeviationRequired) {
+      if (!deviationInfo.deviatedAmount.trim()) {
+        return "Please enter deviated amount.";
+      }
 
-			if (fileError) {
-				return fileError;
-			}
-		}
+      const deviatedAmount = Number(deviationInfo.deviatedAmount);
 
-		return null;
-	}, [epcID, selectedOption, label, isDeviationRequired, deviationInfo]);
+      if (!Number.isFinite(deviatedAmount) || deviatedAmount <= 0) {
+        return "Deviated amount should be greater than 0.";
+      }
 
-	const handleSubmit = React.useCallback(async () => {
-		if (!mode) return;
+      if (!deviationInfo.reason.trim()) {
+        return "Please enter reason.";
+      }
 
-		const validationError = validateBeforeSubmit();
+      if (!deviationInfo.file?.file) {
+        return "Please upload the quotation.";
+      }
 
-		if (validationError) {
-			showApiErrorToast(showToast, validationError, validationError);
-			return;
-		}
+      const fileError = validateUploadFile(deviationInfo.file.file, "pdf");
 
-		try {
-			if (isOutcomeMode) {
-				const payload = {
-					status: selectedOption!.value,
-					reason: "",
-				};
+      if (fileError) {
+        return fileError;
+      }
+    }
 
-				await eventOutcomeMutation.mutateAsync({
-					epcId: epcID!,
-					payload,
-				});
-			}
+    return null;
+  }, [deviationInfo, epcID, isDeviationRequired, label, selectedOption]);
 
-			if (isDeviationMode) {
-				if (isDeviationRequired) {
-					const formData = new FormData();
+  const handleSubmit = React.useCallback(async () => {
+    if (!mode) return;
 
-					formData.append("status", selectedOption!.value);
-					formData.append("reason", deviationInfo.reason.trim());
-					formData.append("deviatedAmount", deviationInfo.deviatedAmount);
+    const validationError = validateBeforeSubmit();
 
-					if (deviationInfo.file?.file) {
-						formData.append("file", deviationInfo.file.file);
-					}
+    if (validationError) {
+      showApiErrorToast(showToast, validationError, validationError);
 
-					await eventDeviationMutation.mutateAsync({
-						epcId: epcID!,
-						payload: formData,
-					});
-					if (!workspaceId || !appId) {
-						showApiErrorToast(
-							showToast,
-							"Workspace or application id not found.",
-							"Workspace or application id not found.",
-						);
-						return;
-					}
-					const previewResponse = await previewWorkflowMutation.mutateAsync({
-						workspaceId: workspaceId!,
-						appId: appId!,
-						budget: Number(deviationInfo.deviatedAmount),
-					});
+      return;
+    }
 
-					onDeviationPreviewSuccess?.(previewResponse?.stages ?? []);
-				} else {
-					const payload = {
-						status: selectedOption!.value,
-						reason: "",
-					};
+    try {
+      if (isOutcomeMode) {
+        await eventOutcomeMutation.mutateAsync({
+          epcId: epcID!,
+          payload: {
+            status: selectedOption!.value,
+            reason: "",
+          },
+        });
+      }
 
-					await eventDeviationMutation.mutateAsync({
-						epcId: epcID!,
-						payload,
-					});
-				}
-			}
+      if (isDeviationMode) {
+        if (isDeviationRequired) {
+          const formData = new FormData();
 
-			showSuccessToast(
-				showToast,
-				isOutcomeMode
-					? "Event outcome saved successfully."
-					: "Event deviation saved successfully.",
-			);
+          formData.append("status", selectedOption!.value);
 
-			setSelectedOption(null);
-			setDeviationInfo(initialDeviationInfo);
+          formData.append("reason", deviationInfo.reason.trim());
 
-			await onSuccess?.();
-		} catch (error: unknown) {
-			showApiErrorToast(
-				showToast,
-				error,
-				`Failed to save ${label.toLowerCase()}.`,
-			);
-			setSelectedOption(null);
-			setDeviationInfo(initialDeviationInfo);
-		}
-	}, [
-		mode,
-		validateBeforeSubmit,
-		showToast,
-		isOutcomeMode,
-		isDeviationMode,
-		isDeviationRequired,
-		selectedOption,
-		eventOutcomeMutation,
-		eventDeviationMutation,
-		previewWorkflowMutation,
-		epcID,
-		workspaceId,
-		appId,
-		deviationInfo,
-		label,
-		onSuccess,
-		onDeviationPreviewSuccess,
-	]);
+          formData.append("deviatedAmount", deviationInfo.deviatedAmount);
 
-	if (!mode) return null;
+          if (deviationInfo.file?.file) {
+            formData.append("file", deviationInfo.file.file);
+          }
 
-	return (
-		<Section title="Activity Outcome">
-			<div className="mt-4 px-4 py-2">
-				<div
-					className={`grid grid-cols-2 gap-2  ${isDeviationRequired && "mb-4"}  text-left`}
-				>
-					<SelectInput
-						options={options}
-						label={label}
-						className="mb-2"
-						value={selectedOption}
-						onChange={handleChange}
-					/>
+          await eventDeviationMutation.mutateAsync({
+            epcId: epcID!,
+            payload: formData,
+          });
 
-					{isDeviationRequired && (
-						<>
-							<FormInput
-								label="Deviated Amount"
-								type="number"
-								value={deviationInfo.deviatedAmount}
-								onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-									handleDeviationInfoChange("deviatedAmount", e.target.value)
-								}
-							/>
+          if (!workspaceId || !appId) {
+            showApiErrorToast(
+              showToast,
+              "Workspace or application id not found.",
+              "Workspace or application id not found.",
+            );
 
-							<TextareaInput
-								name="reason"
-								label="Reason"
-								value={deviationInfo.reason}
-								onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
-									handleDeviationInfoChange("reason", e.target.value)
-								}
-								rows={5}
-								helperText="Provide a complete breakdown of the total amount and the deviated amount. For example: Initial Food Amount: ₹1000, Deviated Food Amount: ₹200."
-							/>
+            return;
+          }
 
-							<FileUploadField
-								kind="pdf"
-								label="Quotation Attachment"
-								description="PDF only, up to 10 MB"
-								value={deviationInfo.file}
-								required
-								onChange={(file) => handleDeviationInfoChange("file", file)}
-							/>
-						</>
-					)}
-				</div>
-				<div
-					className={`flex flex-row gap-2 ${isDeviationRequired ? "justify-end" : "justify-start"}`}
-				>
-					<Button
-						type="button"
-						status="brand"
-						size="sm"
-						text={"Reset"}
-						onClick={() => {
-							setDeviationInfo(initialDeviationInfo);
-							setSelectedOption(null);
-						}}
-					/>
-					<Button
-						type="button"
-						onClick={handleSubmit}
-						status="brand"
-						size="sm"
-						disabled={!selectedOption?.value || isSubmitting}
-					>
-						{isSubmitting ? "Saving..." : "Save"}
-					</Button>
-				</div>
-			</div>
-		</Section>
-	);
+          const previewResponse = await previewWorkflowMutation.mutateAsync({
+            subjectType: "EVENT_PROPOSAL",
+            workspaceId,
+            appId,
+            criteria: { budget: Number(deviationInfo.deviatedAmount) },
+          });
+
+          onDeviationPreviewSuccess?.(previewResponse?.stages ?? []);
+        } else {
+          await eventDeviationMutation.mutateAsync({
+            epcId: epcID!,
+            payload: {
+              status: selectedOption!.value,
+              reason: "",
+            },
+          });
+        }
+      }
+
+      showSuccessToast(
+        showToast,
+        isOutcomeMode
+          ? "Event outcome saved successfully."
+          : "Event deviation saved successfully.",
+      );
+
+      resetForm();
+
+      await onSuccess?.();
+    } catch (error: unknown) {
+      showApiErrorToast(
+        showToast,
+        error,
+        `Failed to save ${label.toLowerCase()}.`,
+      );
+
+      resetForm();
+    }
+  }, [
+    appId,
+    deviationInfo,
+    epcID,
+    eventDeviationMutation,
+    eventOutcomeMutation,
+    isDeviationMode,
+    isDeviationRequired,
+    isOutcomeMode,
+    label,
+    mode,
+    onDeviationPreviewSuccess,
+    onSuccess,
+    previewWorkflowMutation,
+    resetForm,
+    selectedOption,
+    showToast,
+    validateBeforeSubmit,
+    workspaceId,
+  ]);
+
+  if (!mode) return null;
+
+  return (
+    <SectionAccordion title="Activity Outcome">
+      <section className="event-outcome" aria-label="Activity outcome">
+        <div className="event-outcome-intro">
+          <div className="event-outcome-intro-copy">
+            <h3 className="event-outcome-title">{label}</h3>
+
+            <p className="event-outcome-description">
+              {isOutcomeMode
+                ? "Record the final outcome of this activity."
+                : "Confirm whether the activity requires a budget deviation."}
+            </p>
+          </div>
+
+          {isDeviationRequired ? (
+            <span className="event-outcome-required-indicator">
+              Additional details required
+            </span>
+          ) : null}
+        </div>
+
+        <div
+          className={[
+            "event-outcome-form-grid",
+            isDeviationRequired && "event-outcome-form-grid-expanded",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        >
+          <div className="event-outcome-field event-outcome-field-selection">
+            <SelectInput
+              name="eventOutcome"
+              options={options}
+              label={label}
+              value={selectedOption}
+              isDisabled={isSubmitting}
+              onChange={handleChange}
+            />
+          </div>
+
+          {isDeviationRequired ? (
+            <>
+              <div className="event-outcome-field event-outcome-field-amount">
+                <FormInput
+                  name="deviatedAmount"
+                  label="Deviated Amount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={deviationInfo.deviatedAmount}
+                  disabled={isSubmitting}
+                  onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                    handleDeviationInfoChange(
+                      "deviatedAmount",
+                      event.target.value,
+                    )
+                  }
+                />
+              </div>
+
+              <div className="event-outcome-field event-outcome-field-reason">
+                <TextareaInput
+                  name="reason"
+                  label="Reason"
+                  value={deviationInfo.reason}
+                  disabled={isSubmitting}
+                  rows={4}
+                  helperText="Provide a complete breakdown of the approved amount and the deviated amount."
+                  onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    handleDeviationInfoChange("reason", event.target.value)
+                  }
+                />
+              </div>
+
+              <div className="event-outcome-field event-outcome-field-upload">
+                <FileUploadField
+                  kind="pdf"
+                  label="Quotation Attachment"
+                  description="Upload one PDF file, up to 10 MB."
+                  value={deviationInfo.file}
+                  required
+                  disabled={isSubmitting}
+                  onChange={(file) => handleDeviationInfoChange("file", file)}
+                />
+              </div>
+            </>
+          ) : null}
+        </div>
+
+        <footer className="event-outcome-actions">
+          <Button
+            type="button"
+            text="Reset"
+            appearance="standard"
+            variant="outline"
+            size="sm"
+            disabled={isSubmitting}
+            onClick={resetForm}
+          />
+
+          <Button
+            type="button"
+            text={isSubmitting ? "Saving..." : "Save"}
+            appearance="standard"
+            variant="brand"
+            size="sm"
+            disabled={!selectedOption?.value || isSubmitting}
+            onClick={handleSubmit}
+          />
+        </footer>
+      </section>
+    </SectionAccordion>
+  );
 };

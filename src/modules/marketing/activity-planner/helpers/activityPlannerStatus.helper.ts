@@ -1,21 +1,11 @@
-export type WorkflowEntry = {
-	entryType?: string | null;
-	action?: string | null;
-	reason?: string | null;
-	message?: string | null;
-	isActiveWorkflow?: boolean | null;
-	workflowId?: string | null;
-	createdAt?: string | null;
-};
+import type { WorkflowActivityEntry } from "../../../workflows/types/types";
+import { normalizeWorkflowStatus } from "../../../workflows/utils/status";
+
+export type WorkflowEntry = WorkflowActivityEntry;
 
 export type WorkflowIssueType = "CLARIFICATION" | "DEVIATION";
 
 // ─── Utils ────────────────────────────────────────────────────────────────────
-
-const normalize = (value: unknown) =>
-	String(value ?? "")
-		.trim()
-		.toUpperCase();
 
 const toTimestamp = (value?: string | null) => {
 	const t = new Date(value ?? 0).getTime();
@@ -23,7 +13,7 @@ const toTimestamp = (value?: string | null) => {
 };
 
 const isActivityLog = (entry: WorkflowEntry): boolean =>
-	normalize(entry.entryType) === "ACTIVITY_LOG";
+	normalizeWorkflowStatus(entry.entryType) === "ACTIVITY_LOG";
 
 const sortByDate = (entries: WorkflowEntry[]): WorkflowEntry[] =>
 	[...entries].sort(
@@ -65,10 +55,10 @@ export const isStatus = (
 	status: string | null | undefined,
 	match: string | string[],
 ): boolean => {
-	const current = normalize(status);
+	const current = normalizeWorkflowStatus(status);
 	return Array.isArray(match)
-		? match.some((s) => normalize(s) === current)
-		: normalize(match) === current;
+		? match.some((value) => normalizeWorkflowStatus(value) === current)
+		: normalizeWorkflowStatus(match) === current;
 };
 
 export const isPendingStatus = (s?: string | null) => isStatus(s, "PENDING");
@@ -78,12 +68,6 @@ export const isReportFlowStatus = (s?: string | null) =>
 	isStatus(s, ["CONDUCTED", "CLARIFY_REPORT", "REPORT_SUBMITTED"]);
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-
-const FORM_UPDATE_ACTIONS = new Set([
-	"EPC_UPDATED",
-	"EPF_UPDATED",
-	"CRF_UPDATED",
-]);
 
 const WORKFLOW_ISSUE_CONFIG = {
 	CLARIFICATION: {
@@ -117,7 +101,7 @@ export const hasUnresolvedWorkflowIssue = (
 	const latestTriggerIndex = findLastMatchingIndex(
 		sorted,
 		(entry: WorkflowEntry) => {
-			const action = normalize(entry.action);
+			const action = normalizeWorkflowStatus(entry.action);
 			const match =
 				isActivityLog(entry) && config.triggerActions.includes(action);
 			return (
@@ -133,22 +117,26 @@ export const hasUnresolvedWorkflowIssue = (
 		.some(
 			(entry) =>
 				isActivityLog(entry) &&
-				config.resolveActions.includes(normalize(entry.action)),
+				config.resolveActions.includes(normalizeWorkflowStatus(entry.action)),
 		);
 };
 
 export const hasFormUpdateAfterIssue = (
 	entries: WorkflowEntry[] = [],
 	issueType: WorkflowIssueType,
+	formUpdateActions: readonly string[] | ReadonlySet<string>,
 ): boolean => {
 	const config = WORKFLOW_ISSUE_CONFIG[issueType];
 	const sorted = sortByDate(entries);
+	const normalizedFormUpdateActions = new Set(
+		Array.from(formUpdateActions, normalizeWorkflowStatus),
+	);
 
 	const latestTriggerIndex = findLastMatchingIndex(
 		sorted,
 		(entry: WorkflowEntry) =>
 			isActivityLog(entry) &&
-			config.triggerActions.includes(normalize(entry.action)),
+			config.triggerActions.includes(normalizeWorkflowStatus(entry.action)),
 	);
 
 	if (latestTriggerIndex === -1) return false;
@@ -158,7 +146,7 @@ export const hasFormUpdateAfterIssue = (
 		.some(
 			(entry) =>
 				isActivityLog(entry) &&
-				FORM_UPDATE_ACTIONS.has(normalize(entry.action)),
+				normalizedFormUpdateActions.has(normalizeWorkflowStatus(entry.action)),
 		);
 };
 

@@ -1,5 +1,11 @@
 import type { LucideIcon } from "lucide-react";
-import type { StatusVariant } from "../../modules/marketing/activity-planner/utils/status";
+import type {
+	ButtonHTMLAttributes,
+	ComponentType,
+	MouseEvent,
+	ReactNode,
+	CSSProperties,
+} from "react";
 
 export interface ToggleProps {
 	checked: boolean;
@@ -32,15 +38,28 @@ export interface PaginationProps {
 	scrollTargetId?: string; // optional container id to scroll
 }
 
+export type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
+
+export type ModalMode = "standard" | "shell";
+
 export type ModalProps = {
 	open: boolean;
-	children: React.ReactNode;
-	title?: string;
-	message?: string;
+	children: ReactNode;
 	onClose?: () => void;
-	size?: "sm" | "md" | "lg" | "xl" | "full";
+
+	title?: string;
+	size?: ModalSize;
+	mode?: ModalMode;
 	className?: string;
-	header_children?: React.ReactNode;
+
+	header_children?: ReactNode;
+	footer_children?: ReactNode;
+	footer_actions?: ReactNode;
+
+	dialogRole?: "dialog" | "alertdialog";
+	ariaLabel?: string;
+	ariaDescribedBy?: string;
+	closeOnOverlayClick?: boolean;
 };
 
 export type CardProps = {
@@ -51,24 +70,65 @@ export type CardProps = {
 	style?: React.CSSProperties;
 };
 
-export type ButtonProps = {
-	text?: string | number;
-	onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
-	type?: "button" | "submit";
-	disabled?: boolean;
-	status?: string;
+export type ButtonAppearance =
+	| "cta"
+	| "standard"
+	| "filter"
+	| "toggle"
+	| "segmented"
+	| "icon"
+	| "ghost"
+	| "switch"
+	| "transparent";
+
+export type ButtonVariant =
+	| "brand"
+	| "iron"
+	| "outline"
+	| "secondary"
+	| "danger"
+	| "success"
+	| "warning"
+	| "transparent";
+
+export type ButtonSize = "sm" | "md" | "lg" | "xl";
+
+export type ButtonIconProps = {
+	size?: string | number;
+	color?: string;
 	className?: string;
-	variant?: string;
-	size?: "sm" | "md" | "lg" | "xl";
-	Icon?: LucideIcon;
-	iconPosition?: "left" | "right";
-	iconColor?: string;
-	fullWidth?: boolean;
-	children?: React.ReactNode;
-	isTooltip?: string;
-	iconSize?: string;
-	path?: string;
+	style?: CSSProperties;
+	"aria-hidden"?: boolean | "true" | "false";
 };
+
+export interface ButtonProps extends Omit<
+	ButtonHTMLAttributes<HTMLButtonElement>,
+	"children"
+> {
+	text?: ReactNode;
+	children?: ReactNode;
+
+	appearance?: ButtonAppearance;
+	variant?: ButtonVariant;
+	size?: ButtonSize;
+
+	active?: boolean;
+	loading?: boolean;
+	fullWidth?: boolean;
+
+	Icon?: ComponentType<ButtonIconProps>;
+	iconPosition?: "left" | "right";
+	iconSize?: number;
+	iconColor?: CSSProperties["color"];
+
+	path?: string;
+	isTooltip?: ReactNode;
+	to?: string;
+	direction?: "back" | "forward";
+	delta?: number;
+
+	onClick?: (event: MouseEvent<HTMLButtonElement>) => void;
+}
 
 export type NavigateDirection = "back" | "forward";
 export type NavigateButtonProps = {
@@ -86,7 +146,7 @@ export type NavigateButtonProps = {
 export interface BadgeProps {
 	children?: React.ReactNode;
 	status?: string | null;
-	variant?: StatusVariant | string | null;
+	variant?: string | null;
 	text?: string;
 }
 
@@ -99,22 +159,26 @@ export interface AvatarProps {
 	isTooltip?: boolean;
 }
 
-export type AlertVariant = "warning" | "info" | "error" | "success";
+export type AlertVariant = "success" | "warning" | "error" | "info";
 
-export interface AlertCardProps {
+export type AlertType = "banner" | "box";
+
+export type AlertAction = {
+	label: string;
+	onClick: () => void;
+};
+
+export type AlertCardProps = {
 	variant: AlertVariant;
+	type?: AlertType;
 	title: string;
-	description: string;
-	primaryAction: {
-		label: string;
-		onClick: () => void;
-	};
-	secondaryAction?: {
-		label: string;
-		onClick: () => void;
-	};
-}
-
+	description?: string;
+	primaryAction?: AlertAction;
+	secondaryAction?: AlertAction;
+	dismissible?: boolean;
+	autoHideMs?: number;
+	onDismiss?: () => void;
+};
 export interface AccordionItem {
 	id: string;
 	title: React.ReactNode;

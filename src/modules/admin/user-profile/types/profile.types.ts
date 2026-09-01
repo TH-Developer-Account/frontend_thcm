@@ -75,8 +75,9 @@ export interface ProfileAccess {
 export type Permission = "read" | "write";
 
 export type WorkspacePermission = {
+  scope: "MODULE" | "APP";
   appKey: string;
-  moduleKey: string;
+  moduleKey?: string; // omit when scope === "APP"
   action: Permission;
   appName?: string;
   appId?: string;
@@ -85,9 +86,13 @@ export type WorkspacePermission = {
 export type WorkspacePayload = WorkspacePermission[];
 
 export interface ApiPermission {
+  scope: "MODULE" | "APP";
   appKey: string;
-  moduleKey: string;
+  moduleKey?: string; // present only when scope === "MODULE"
+  moduleName?: string; // present only when scope === "MODULE"
   action: Permission;
+  appName?: string;
+  appId?: string;
 }
 
 export type PermissionFlags = {

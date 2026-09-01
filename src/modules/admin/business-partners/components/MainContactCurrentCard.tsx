@@ -1,8 +1,12 @@
+import { Trash } from "lucide-react";
+
+import Button from "../../../../components/common/Button";
+
 import type { MainContact } from "../utils/bp.types";
+import Card from "../../../../components/common/Card";
 
 type Props = {
 	contacts: MainContact[];
-	defaultContact: MainContact | null;
 	fallbackValue: string;
 	onSetDefault: (id: string) => void;
 	onRemoveContact: (id: string) => void;
@@ -10,83 +14,81 @@ type Props = {
 
 const MainContactCurrentCard = ({
 	contacts,
-	// defaultContact,
-	// fallbackValue,
+	fallbackValue,
 	onSetDefault,
 	onRemoveContact,
 }: Props) => {
 	return (
-		<div className="main-contact-card ">
+		<section
+			className="main-contact-card"
+			aria-labelledby="current-main-contacts"
+		>
 			<div className="main-contact-card-header">
-				<h4>Current Main Contacts</h4>
+				<h4 id="current-main-contacts">Current Main Contacts</h4>
 			</div>
 
-			{/* {defaultContact ? (
-				<div className="bp-general-info">
-					<div className="general-box">
-						<div className="info-row">
-							<p className="info-label">Default Contact :</p>
-							<p className="info-value">{defaultContact.name}</p>
-						</div>
-						<div className="info-row">
-							<p className="info-label">Email :</p>
-							<p className="info-value">{defaultContact.email}</p>
-						</div>
-						<div className="info-row">
-							<p className="info-label">Number :</p>
-							<p className="info-value">{defaultContact.number}</p>
-						</div>
-						<div className="info-row">
-							<p className="info-label">Department :</p>
-							<p className="info-value">
-								{defaultContact.department || fallbackValue}
-							</p>
-						</div>
-					</div>
-				</div>
-			) : (
-				<p className="info-value">No default contact selected.</p>
-			)} */}
-
-			{contacts.length > 0 && (
+			{contacts.length > 0 ? (
 				<div className="main-contact-list">
 					{contacts.map((contact) => (
-						<div key={contact.id} className="main-contact-list-item">
-							<div className="main-contact-list-info">
-								<p className="main-contact-list-name">
-									{contact.name}
-									{contact.isDefault && (
-										<span className="main-contact-default-badge">Default</span>
+						<Card
+							title={contact.name}
+							actions={
+								contact.isDefault && (
+									<span className="main-contact-default-badge">Default</span>
+								)
+							}
+							footer={
+								<>
+									{!contact.isDefault && (
+										<Button
+											type="button"
+											text="Set Default"
+											appearance="standard"
+											variant="brand"
+											size="sm"
+											onClick={() => onSetDefault(contact.id)}
+										/>
 									)}
-								</p>
-								<p className="main-contact-list-meta">{contact.email}</p>
-								<p className="main-contact-list-meta">{contact.number}</p>
-							</div>
 
-							<div className="main-contact-list-actions">
-								{!contact.isDefault && (
-									<button
+									<Button
 										type="button"
-										className="main-contact-secondary-btn"
-										onClick={() => onSetDefault(contact.id)}
-									>
-										Set as Default
-									</button>
-								)}
+										text="Remove"
+										Icon={Trash}
+										appearance="standard"
+										variant="outline"
+										size="sm"
+										onClick={() => onRemoveContact(contact.id)}
+									/>
+								</>
+							}
+						>
+							<div className="main-contact-list-info">
+								<div className="main-contact-list-name-row"></div>
 
-								<button
-									type="button"
-									className="main-contact-danger-btn"
-									onClick={() => onRemoveContact(contact.id)}
-								>
-									Remove
-								</button>
+								<div className="main-contact-list-meta-grid">
+									<p className="main-contact-list-meta">
+										<span>Email</span>
+										<strong>{contact.email || fallbackValue}</strong>
+									</p>
+
+									<p className="main-contact-list-meta">
+										<span>Number</span>
+										<strong>{contact.number || fallbackValue}</strong>
+									</p>
+
+									<p className="main-contact-list-meta">
+										<span>Department</span>
+										<strong>{contact.department || fallbackValue}</strong>
+									</p>
+								</div>
 							</div>
-						</div>
+						</Card>
 					))}
 				</div>
+			) : (
+				<p className="main-contact-empty-state">No main contacts added.</p>
 			)}
-		</div>
+		</section>
 	);
 };
 

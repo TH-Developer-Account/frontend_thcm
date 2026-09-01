@@ -1,84 +1,121 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../context/Auth/useAuth";
-import Button from "../../../components/common/Button";
-import FormInput from "../../../components/FormElements/FormInput";
-import { EMAIL_REGEX } from "../../Login/constant";
-import { useToast } from "../../../context/Auth/AuthContext";
+import {
+	useState,
+	type ChangeEvent,
+	type FocusEvent,
+	type FormEvent,
+} from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-type Errors = {
+import Button from "../../../components/common/Button";
+import FormInput from "../../../components/forms/FormInput";
+import { useToast } from "../../../context/Auth/AuthContext";
+import { useAuth } from "../../../context/Auth/useAuth";
+import { EMAIL_REGEX } from "../../Login/constant";
+
+type EmailLoginData = {
+	email: string;
+	password: string;
+};
+
+type EmailLoginErrors = {
 	email?: string;
 	password?: string;
 };
 
 const EmailLoginForm = () => {
-	const [formData, setFormData] = useState({
+	const navigate = useNavigate();
+	const { login } = useAuth();
+	const { showToast } = useToast();
+
+	const [formData, setFormData] = useState<EmailLoginData>({
 		email: "",
 		password: "",
 	});
-	const [loading, setLoading] = useState(false);
-	const [errors, setErrors] = useState<Errors>({});
-	const { login } = useAuth();
-	const navigate = useNavigate();
-	const { showToast } = useToast();
-	const validateForm = () => {
-		const newErrors: Errors = {};
 
-		if (!formData.email) {
-			newErrors.email = "Please fill in the email field";
-		} else if (!EMAIL_REGEX.test(formData.email)) {
-			newErrors.email = "Invalid email format";
+	const [errors, setErrors] = useState<EmailLoginErrors>({});
+
+	const [loading, setLoading] = useState(false);
+
+	const validateForm = () => {
+		const nextErrors: EmailLoginErrors = {};
+
+		if (!formData.email.trim()) {
+			nextErrors.email = "Email is required";
+		} else if (!EMAIL_REGEX.test(formData.email.trim())) {
+			nextErrors.email = "Enter a valid email address";
 		}
 
 		if (!formData.password) {
-			newErrors.password = "Please fill in the password field";
+			nextErrors.password = "Password is required";
 		}
 
-		setErrors(newErrors);
+		setErrors(nextErrors);
 
-		// ✅ if no errors, form is valid
-		return Object.keys(newErrors).length === 0;
+		return Object.keys(nextErrors).length === 0;
 	};
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const { name, value } = e.target;
-		setFormData((prev) => ({
-			...prev,
+	const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+		const { name, value } = event.target;
+
+		setFormData((current) => ({
+			...current,
 			[name]: value,
 		}));
 
-		setErrors((prev) => {
-			if (!prev[name as keyof Errors]) return prev;
+		setErrors((current) => ({
+			...current,
+			[name]: undefined,
+		}));
+	};
 
-			const newErrors = { ...prev };
-			delete newErrors[name as keyof Errors];
-			return newErrors;
+	const handleBlur = (event: FocusEvent<HTMLInputElement>) => {
+		const { name, value } = event.target;
+
+		setErrors((current) => {
+			const nextErrors = { ...current };
+
+			if (name === "email") {
+				if (!value.trim()) {
+					nextErrors.email = "Email is required";
+				} else if (!EMAIL_REGEX.test(value.trim())) {
+					nextErrors.email = "Enter a valid email address";
+				} else {
+					delete nextErrors.email;
+				}
+			}
+
+			if (name === "password") {
+				if (!value) {
+					nextErrors.password = "Password is required";
+				} else {
+					delete nextErrors.password;
+				}
+			}
+
+			return nextErrors;
 		});
 	};
 
-	const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
-		e.preventDefault();
-		// 🚫 Stop here if validation fails
+	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+
 		if (!validateForm()) return;
+
 		setLoading(true);
+
 		try {
-			const result = await login(formData.email, formData.password);
-			// ✅ Check if password reset is required
-			if (result.requiresPasswordReset) {
-				navigate("/reset-password");
-			} else {
-				navigate("/");
-			}
-		} catch (err: unknown) {
+			const result = await login(formData.email.trim(), formData.password);
+
+			navigate(result.requiresPasswordReset ? "/reset-password" : "/");
+		} catch (error: unknown) {
 			const message =
-				err instanceof Error
-					? err.message
-					: typeof err === "string"
-						? err
-						: "Invalid OTP";
+				error instanceof Error
+					? error.message
+					: "Unable to sign in. Check your credentials.";
+
 			showToast({
 				type: "error",
-				title: "Error",
+				title: "Sign-in failed",
 				description: message,
 			});
 		} finally {
@@ -86,72 +123,52 @@ const EmailLoginForm = () => {
 		}
 	};
 
-	const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-		const { name, value } = e.target;
-
-		setErrors((prev) => {
-			const newErrors = { ...prev };
-
-			if (name === "email") {
-				if (!value) {
-					newErrors.email = "Please fill in the email field";
-				} else if (!EMAIL_REGEX.test(value)) {
-					newErrors.email = "Invalid email format";
-				} else {
-					delete newErrors.email;
-				}
-			}
-
-			if (name === "password") {
-				if (!value) {
-					newErrors.password = "Please fill in the password field";
-				} else {
-					delete newErrors.password;
-				}
-			}
-
-			return newErrors;
-		});
-	};
-
 	return (
-		<form className="space-y-4">
-			<FormInput
-				name="email"
-				label="Email"
-				type="email"
-				placeholder="john@mail.com"
-				value={formData.email}
-				onChange={handleChange}
-				onBlur={handleBlur}
-				required
-				error={errors?.email}
-			/>
-			<FormInput
-				type="password"
-				name="password"
-				label="Password"
-				value={formData.password}
-				onChange={handleChange}
-				error={errors.password}
-				required
-				placeholder="Enter your password"
-			/>
+		<form className="auth-form" onSubmit={handleSubmit} noValidate>
+			<div className="auth-form-fields">
+				<FormInput
+					name="email"
+					label="Email address"
+					type="email"
+					placeholder="name@company.com"
+					value={formData.email}
+					onChange={handleChange}
+					onBlur={handleBlur}
+					required
+					error={errors.email}
+					autoComplete="email"
+				/>
 
-			<div className="flex justify-end">
-				<a href="/forgot-password" className="text-sm hover:underline ">
+				<FormInput
+					name="password"
+					label="Password"
+					type="password"
+					placeholder="Enter your password"
+					value={formData.password}
+					onChange={handleChange}
+					onBlur={handleBlur}
+					required
+					error={errors.password}
+					autoComplete="current-password"
+				/>
+			</div>
+
+			<div className="auth-form-options">
+				<Link to="/forgot-password" className="auth-text-link">
 					Forgot password?
-				</a>
+				</Link>
 			</div>
 
 			<Button
-				text="Sign In"
-				onClick={handleSubmit}
+				text={loading ? "Signing in..." : "Sign in"}
 				disabled={loading}
 				fullWidth
-				status="brand"
+				type="submit"
+				appearance="cta"
+				variant="brand"
 			/>
 		</form>
 	);
 };
+
 export default EmailLoginForm;

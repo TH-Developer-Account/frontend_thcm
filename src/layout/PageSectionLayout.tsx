@@ -1,28 +1,30 @@
-// PageSectionLayout.tsx
-import React from "react";
+import type { ComponentPropsWithoutRef, ElementType, ReactNode } from "react";
 
-type PageSectionLayoutProps = {
-	children: React.ReactNode;
+type PageSectionLayoutProps<TElement extends ElementType = "section"> = {
+	children: ReactNode;
 	className?: string;
-};
+	as?: TElement;
+} & Omit<ComponentPropsWithoutRef<TElement>, "children" | "className" | "as">;
 
-type PageSectionProps = {
-	children: React.ReactNode;
-	className?: string;
-};
+const joinClassNames = (
+	...classNames: Array<string | false | null | undefined>
+) => classNames.filter(Boolean).join(" ");
 
-const PageSectionLayout = ({
+const PageSectionLayout = <TElement extends ElementType = "section">({
 	children,
 	className = "",
-}: PageSectionLayoutProps) => {
-	return <div className={`page-stack-layout ${className}`}>{children}</div>;
-};
+	as,
+	...restProps
+}: PageSectionLayoutProps<TElement>) => {
+	const Component = as ?? "section";
 
-export const PageSection = ({ children, className = "" }: PageSectionProps) => {
 	return (
-		<div className={`page-stack-section content-box ${className}`}>
-			{children}
-		</div>
+		<Component
+			className={joinClassNames("page-section-layout", className)}
+			{...restProps}
+		>
+			<div className="page-section-layout-inner">{children}</div>
+		</Component>
 	);
 };
 

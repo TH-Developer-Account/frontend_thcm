@@ -1,224 +1,247 @@
-import React, { useState } from "react";
-import { Edit, PlusIcon, Trash, UserPlus } from "lucide-react";
-import { useAuth } from "../../../../context/Auth/useAuth";
-import { ServerAxios } from "../../../../services/ServerAxios";
-import Button from "../../../../components/common/Button";
-import { Modal } from "../../../../components/common/Modal";
+import React from "react";
+import axios from "axios";
+import { Plus } from "lucide-react";
+
 import { Alert } from "../../../../components/common/Alert";
-import type { Profile } from "../types/profile.types";
-import Avatar from "../../../../components/common/Avatar";
-import { SearchInput } from "../../../../components/FormElements/SearchInput";
-import { AssignUsers } from "./AssignUsers";
+import Button from "../../../../components/common/Button";
+import Card from "../../../../components/common/Card";
+import { Modal } from "../../../../components/common/Modal";
+import { SearchInput } from "../../../../components/forms/SearchInput";
+import DataTable from "../../../../components/ui/tables/DataTable/DataTable";
+import DataTableSkeleton from "../../../../components/ui/tables/Skeletons/DataTableSkeleton";
+import { useAuth } from "../../../../context/Auth/useAuth";
 import { useToast } from "../../../../context/Auth/AuthContext";
-import Popover from "../../../../components/common/Popover";
+import { ServerAxios } from "../../../../services/ServerAxios";
+
+import type { Profile } from "../types/profile.types";
+
+import { AssignUsers } from "./AssignUsers";
+import { getProfileColumns } from "../utils/profile.columns";
 
 type ProfileListProps = {
 	profiles: Profile[];
+	search: string;
+	onSearchChange: (value: string) => void;
 	onCreateNew: () => void;
 	onEdit: (profile: Profile) => void;
 	onDelete: (id: string) => void;
-	onEditModal?: (id: string) => void;
-	activeTab?: string;
-	counts?: Record<string, number>;
-	onTabChange?: (tab: string) => void;
-	search: string;
-	onSearchChange: (value: string) => void;
-	// setProfiles: React.Dispatch<React.SetStateAction<Profile[]>>;
+	isLoading?: boolean;
+	isFetching?: boolean;
+	isError?: boolean;
 };
 
-const ProfileList: React.FC<ProfileListProps> = ({
+const PROFILE_SKELETON_ROWS = 8;
+const PROFILE_SKELETON_COLUMNS = 5;
+
+const getErrorMessage = (error: unknown, fallback: string): string => {
+	if (axios.isAxiosError(error)) {
+		const responseData = error.response?.data as
+			| {
+					message?: unknown;
+					error?: unknown;
+			  }
+			| undefined;
+
+		if (
+			typeof responseData?.message === "string" &&
+			responseData.message.trim()
+		) {
+			return responseData.message;
+		}
+
+		if (typeof responseData?.error === "string" && responseData.error.trim()) {
+			return responseData.error;
+		}
+	}
+
+	if (error instanceof Error && error.message.trim()) {
+		return error.message;
+	}
+
+	return fallback;
+};
+
+const ProfileList = ({
 	profiles,
-	onCreateNew,
 	search,
 	onSearchChange,
+	onCreateNew,
 	onEdit,
 	onDelete,
-}) => {
+	isLoading = false,
+	isFetching = false,
+	isError = false,
+}: ProfileListProps) => {
 	const { workspaceId } = useAuth();
 	const { showToast } = useToast();
-	const [deleteModal, setDeleteModal] = useState<Profile | null>(null);
-	const [assignModalOpen, setAssignModalOpen] = useState<Profile | null>(null);
 
-	const handleAssignUser = async (
-		userIds: string[],
-		profileId: string | undefined,
-	): Promise<void> => {
-		try {
-			const {
-				data: { message },
-			} = await ServerAxios.post("/users/assign-profile", {
-				userIds,
-				profileId,
-				workspaceId,
-			});
-			showToast({
-				type: "success",
-				title: "Success",
-				description: message,
-			});
-		} catch (error) {
-			console.error("Failed to assign users:", error);
-		} finally {
-			setAssignModalOpen(null);
-		}
-	};
+	const [deleteModal, setDeleteModal] = React.useState<Profile | null>(null);
 
+	const [assignModalOpen, setAssignModalOpen] = React.useState<Profile | null>(
+		null,
+	);
+
+	const [isAssigningUsers, setIsAssigningUsers] = React.useState(false);
+
+	const handleAssignUser = React.useCallback(
+		async (userIds: string[], profileId: string | undefined): Promise<void> => {
+			if (!profileId) {
+				showToast({
+					type: "error",
+					title: "Unable to assign users",
+					description: "A valid profile ID is required.",
+				});
+
+				return;
+			}
+
+			setIsAssigningUsers(true);
+
+			try {
+				const response = await ServerAxios.post("/users/assign-profile", {
+					userIds,
+					profileId,
+					workspaceId,
+				});
+
+				const message =
+					typeof response.data?.message === "string"
+						? response.data.message
+						: "Users assigned successfully.";
+
+				showToast({
+					type: "success",
+					title: "Users assigned",
+					description: message,
+				});
+
+				setAssignModalOpen(null);
+			} catch (error) {
+				showToast({
+					type: "error",
+					title: "Unable to assign users",
+					description: getErrorMessage(
+						error,
+						"Failed to assign users to this profile.",
+					),
+				});
+			} finally {
+				setIsAssigningUsers(false);
+			}
+		},
+		[showToast, workspaceId],
+	);
+
+	const columns = React.useMemo(
+		() =>
+			getProfileColumns({
+				onAssignUsers: setAssignModalOpen,
+				onEdit,
+				onDelete: setDeleteModal,
+			}),
+		[onEdit],
+	);
+
+	const tableData = React.useMemo(
+		() => (Array.isArray(profiles) ? profiles : []),
+		[profiles],
+	);
+
+	console.log("profile data", tableData);
 	return (
 		<>
-			<div className="max-w-full mx-auto py-3 h-full  min-h-screen">
-				<div className="flex justify-between my-3 px-3">
-					<h2 className="text-2xl">User Profiles</h2>
-					<div className="flex gap-2 items-center">
-						<div className="">
-							<div className="search">
-								<SearchInput
-									placeholder="Search ..."
-									value={search}
-									onChange={onSearchChange}
-								/>
-							</div>
-						</div>
-						<Button
-							status="brand"
-							size="lg"
-							text="New Profile"
-							onClick={onCreateNew}
-							Icon={PlusIcon}
+			<Card
+				className="profile-listing-card"
+				secondaryHeaderClassName="profile-listing-toolbar"
+				secondaryHeader={
+					<>
+						<SearchInput
+							value={search}
+							onChange={onSearchChange}
+							placeholder="Search profiles"
+							aria-label="Search profiles"
 						/>
-					</div>
-				</div>
-				<div className="bg-white rounded-t-2xl mt-2 border border-gray-200 border-b-0 h-full text-gray-600">
-					<div className="grid grid-cols-1  gap-4 mt-4">
-						<div className="bg-white overflow-y-auto scrollbar-sleek ">
-							<table className="w-full text-sm">
-								<thead className="bg-gray-100 ">
-									<tr>
-										<th className="px-6 py-4 text-left">Profile Name</th>
-										<th className="px-6 py-4 text-left">Profile Description</th>
-										<th className="px-6 py-4 text-left">User Count</th>
-										<th className="px-6 py-4 text-left" colSpan={2}>
-											Users
-										</th>
-										<th className="px-6 py-4 text-center">Actions</th>
-									</tr>
-								</thead>
 
-								<tbody>
-									{profiles.map((profile, idx) => (
-										<tr
-											key={profile.id || idx}
-											className="border-t border-b border-gray-200 hover:bg-gray-50 transition text-left "
-										>
-											<td className="px-6 py-4  items-center gap-3">
-												<h3 className="">{profile.name}</h3>
-											</td>
-
-											<td className="px-6 py-4 items-center">
-												<p>{profile.description}</p>
-											</td>
-											<td className="px-6 py-4 items-center text-center">
-												<p>{profile.assignedUserCount}</p>
-											</td>
-											<td
-												className="px-6 py-4 col-span-2 items-center"
-												colSpan={2}
-											>
-												<div className="flex items-center">
-													{profile.users && profile.users.length > 0 ? (
-														<>
-															<div className="flex -space-x-2">
-																{profile.users.slice(0, 3).map((user) => (
-																	<div key={user.id}>
-																		<Avatar
-																			size="sm"
-																			firstName={user.firstName}
-																			lastName={user.lastName}
-																			className="border-2 border-white rounded-full shadow-sm"
-																			isTooltip={true}
-																		/>
-																	</div>
-																))}
-															</div>
-															{profile.users.length > 3 && (
-																<div className="ml-1 text-xs font-medium text-gray-500">
-																	<Popover
-																		placement="bottom-start"
-																		trigger={
-																			<Button
-																				size="sm"
-																				className="text-xs p-0 justify-center bg-transparent"
-																			>
-																				+ {profile.users.length - 3}
-																			</Button>
-																		}
-																	>
-																		<div className="flex flex-col gap-1 bg-white p-2 h-[100px] rounded-md overflow-auto scrollbar-sleek">
-																			{profile.users.map((user) => (
-																				<ul>
-																					<li className="text-xs cursor-pointer hover:bg-zinc-100 px-1.5 py-1.5 rounded-md">
-																						{user.firstName}, {""}
-																						{user.lastName}
-																					</li>
-																				</ul>
-																			))}
-																		</div>
-																	</Popover>
-																</div>
-															)}
-														</>
-													) : (
-														<div className="text-gray-400 text-sm">
-															No Users Assigned.
-														</div>
-													)}
-												</div>
-											</td>
-
-											<td className="px-6 py-4 text-right items-center">
-												<div className="flex gap-2	 justify-end">
-													<Button
-														size="sm"
-														status="primary"
-														onClick={() => setAssignModalOpen(profile)}
-														Icon={UserPlus}
-														isTooltip="Assign Users"
-													/>
-													<Button
-														size="sm"
-														Icon={Edit}
-														variant="primary"
-														onClick={() => onEdit(profile)}
-														isTooltip="Edit"
-													/>
-													<Button
-														size="sm"
-														Icon={Trash}
-														variant="danger"
-														onClick={() => setDeleteModal(profile)}
-														isTooltip="Delete"
-													/>
-												</div>
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
+						<Button
+							type="button"
+							text="New Profile"
+							Icon={Plus}
+							iconPosition="left"
+							iconSize={16}
+							appearance="cta"
+							variant="brand"
+							size="sm"
+							onClick={onCreateNew}
+						/>
+					</>
+				}
+			>
+				<section
+					className="profile-listing-table"
+					aria-label="User profiles"
+					aria-busy={isLoading || isFetching}
+				>
+					{isLoading ? (
+						<DataTableSkeleton
+							rows={PROFILE_SKELETON_ROWS}
+							columns={PROFILE_SKELETON_COLUMNS}
+							showPagination
+						/>
+					) : isError ? (
+						<div className="profile-listing-state">
+							<Alert
+								type="banner"
+								variant="error"
+								title="Unable to load profiles"
+								description="The profile listing could not be retrieved. Refresh the page or try again."
+							/>
 						</div>
-					</div>
-				</div>
-			</div>
-			<Modal open={!!deleteModal} onClose={() => setDeleteModal(null)}>
+					) : (
+						<DataTable<Profile>
+							data={tableData}
+							columns={columns}
+							manualSorting={false}
+							manualPagination={false}
+							scrollTargetId="profile-listing-table-scroll"
+							emptyTitle="No profiles found"
+							emptyDescription={
+								search.trim()
+									? "No profiles match the current search."
+									: "Create a profile to configure permissions and assign users."
+							}
+						/>
+					)}
+
+					{isFetching && !isLoading ? (
+						<span className="sr-only" role="status" aria-live="polite">
+							Refreshing user profiles
+						</span>
+					) : null}
+				</section>
+			</Card>
+
+			<Modal
+				open={Boolean(deleteModal)}
+				onClose={() => setDeleteModal(null)}
+				mode="shell"
+				size="sm"
+				dialogRole="alertdialog"
+				ariaLabel="Delete profile confirmation"
+			>
 				<Alert
+					type="box"
 					variant="warning"
 					title="Delete Profile"
-					description={`Are you sure you want to delete "${deleteModal?.name}"?`}
+					description={`Are you sure you want to delete "${
+						deleteModal?.name ?? "this profile"
+					}"?`}
 					primaryAction={{
 						label: "Delete",
 						onClick: () => {
-							if (deleteModal) {
-								onDelete(deleteModal.id);
-								setDeleteModal(null);
-							}
+							if (!deleteModal) return;
+
+							onDelete(deleteModal.id);
+							setDeleteModal(null);
 						},
 					}}
 					secondaryAction={{
@@ -227,9 +250,14 @@ const ProfileList: React.FC<ProfileListProps> = ({
 					}}
 				/>
 			</Modal>
+
 			<AssignUsers
 				profile={assignModalOpen}
-				onClose={() => setAssignModalOpen(null)}
+				onClose={() => {
+					if (!isAssigningUsers) {
+						setAssignModalOpen(null);
+					}
+				}}
 				handleAssignUser={handleAssignUser}
 			/>
 		</>

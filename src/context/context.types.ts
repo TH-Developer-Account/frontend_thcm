@@ -1,20 +1,12 @@
-import type { User } from "./Auth/AuthContext";
+import type { User, Permission, PermissionAction } from "./Auth/AuthContext";
+
+export type { Permission, PermissionAction };
 
 export type ApiErrorResponse = {
   success: false;
   statusCode: number;
   message: string;
 };
-
-export type PermissionAction = "read" | "write";
-export type ScopeType = "WORKSPACE" | "APP" | "MODULE";
-
-export interface Permission {
-  action: PermissionAction;
-  scopeType: ScopeType;
-  appKey: string;
-  moduleKey: string;
-}
 
 export type LoginSuccessResponse = {
   message: string;
@@ -23,12 +15,7 @@ export type LoginSuccessResponse = {
   accessToken?: string; // may be absent in reset flow
   permissions?: {
     isSuperAdmin: boolean;
-    permissions: Array<{
-      scopeType: ScopeType;
-      appKey: string;
-      moduleKey: string;
-      action: PermissionAction;
-    }>;
+    permissions: Permission[]; // ✅ reuses the canonical type — no more duplicated inline shape
   };
   workspaceId: string;
 };

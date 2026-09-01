@@ -1,9 +1,9 @@
 import { Upload, Send, X } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import FormInput from "../../../../../components/FormElements/FormInput";
-import SelectInput from "../../../../../components/FormElements/SelectInput";
-import TextareaInput from "../../../../../components/FormElements/TextareaInput";
+import FormInput from "../../../../../components/forms/FormInput";
+import SelectInput from "../../../../../components/forms/SelectInput";
+import TextareaInput from "../../../../../components/forms/TextareaInput";
 
 import { OUTCOME_OPTIONS, MAX_IMAGES } from "./constant";
 import type {
@@ -178,24 +178,24 @@ const EventReportTemplate = ({
 
 			<div className="mb-4 flex items-center justify-end gap-3 border-t border-gray-200 bg-white px-1 pt-4">
 				<Button
-					status="outline"
+					appearance="standard"
+					variant="outline"
 					onClick={onBack}
 					disabled={isSubmitting}
 					size="sm"
-				>
-					<X className="h-4 w-4" />
-					Cancel
-				</Button>
+					Icon={X}
+					text="Cancel"
+				/>
 
 				<Button
 					onClick={handleSubmit}
-					status="outline"
+					appearance="standard"
+					variant="brand"
 					size="sm"
 					disabled={!canSubmitReport}
-				>
-					<Send className="h-4 w-4" />
-					{isSubmitting ? "Submitting..." : "Submit Report"}
-				</Button>
+					Icon={Send}
+					text={isSubmitting ? "Submitting..." : "Submit Report"}
+				/>
 			</div>
 		</div>
 	);

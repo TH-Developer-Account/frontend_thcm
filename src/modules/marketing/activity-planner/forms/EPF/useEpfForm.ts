@@ -17,6 +17,7 @@ import {
 	calculateBudgetShares,
 	calculateLineItemsTotal,
 	calculateParticipantsTotal,
+	getOverheadItemsMissingQuotation,
 } from "./epf.calculations";
 
 import {
@@ -41,7 +42,6 @@ import {
 	getStoredEpcInfo,
 } from "../../helpers/localstorage";
 
-import { workflowApi } from "../../api/workflow.api";
 import {
 	useCreateEpfMutation,
 	useUpdateEpfMutation,
@@ -50,7 +50,8 @@ import {
 import { useEpfBudgetInfoQuery } from "../../queries/useEpfBudgetInfoQuery";
 import type { ApiErrorResponse } from "../../../../../context/context.types";
 import type { AxiosError } from "axios";
-import type { ApprovalTableRow } from "../../../../../utils/types";
+import { workflowApi } from "../../../../../api/workflow.api";
+import type { ApprovalTableRow } from "../../../../workflows";
 
 export type EpfFormMode = "create" | "edit";
 
@@ -302,10 +303,13 @@ export const useEpfForm = ({
 		if (!epcId || !workspaceId || !appId) return;
 
 		await workflowApi.assignWorkflow({
-			eventProposalId: epcId,
+			subjectType: "EVENT_PROPOSAL",
+			subjectId: epcId,
 			workspaceId,
 			appId,
-			budget: eventCost,
+			criteria: {
+				budget: eventCost,
+			},
 		});
 	}, [appId, epcId, eventCost, workspaceId]);
 
@@ -334,20 +338,19 @@ export const useEpfForm = ({
 
 					return;
 				}
-				const QUOTATION_THRESHOLD = 25000;
+				if (status === "SUBMITTED") {
+					const overheadItemsMissingQuotation =
+						getOverheadItemsMissingQuotation(costItems);
 
-				const missingQuotation =
-					eventCost > QUOTATION_THRESHOLD &&
-					costItems.some((item) => !item.quotationFile);
-
-				if (missingQuotation) {
-					showToast({
-						type: "error",
-						title: "Quotation Required",
-						description:
-							"Please upload quotation for all event cost overhead items above 25000/-.",
-					});
-					return;
+					if (overheadItemsMissingQuotation.length > 0) {
+						showToast({
+							type: "error",
+							title: "Quotation Required",
+							description:
+								"Upload a quotation for each event cost overhead item above ₹25,000.",
+						});
+						return;
+					}
 				}
 
 				const payloadArgs = {
@@ -478,9 +481,12 @@ export const useEpfForm = ({
 			setPreviewLoading(true);
 
 			const response = await workflowApi.previewWorkflow({
+				subjectType: "EVENT_PROPOSAL",
 				workspaceId,
 				appId,
-				budget: Number(eventCost),
+				criteria: {
+					budget: Number(eventCost),
+				},
 			});
 
 			const rows = mapWorkflowStagesToApprovalRows(response?.stages ?? [], {

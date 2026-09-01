@@ -1,20 +1,24 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-
-import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
+import { lazy, Suspense } from "react";
 import Loader from "../../../../components/ui/Loader";
+import { PageHeader } from "../../../../components/ui/PageHeader";
+import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
 import ActivityFormView from "../components/activityFormView/ActivityFormView";
 import ActivityPlannerHeader from "../components/activityFormView/ActivityPlannerHeader";
-import ActivityPlannerPdfPreview from "../components/activityFormView/ActivityPlannerPdfPreview";
 import EventReportTemplate from "../forms/EventReport/EventReportTemplate";
-import EventReportPreview from "../forms/EventReport/EventReportPreview";
 import { useActivityPlanner } from "../hooks/useActivityPlanner";
 
+const ActivityPlannerPdfPreview = lazy(
+	() => import("../components/activityFormView/ActivityPlannerPdfPreview"),
+);
+const EventReportPreview = lazy(
+	() => import("../forms/EventReport/EventReportPreview"),
+);
 type PageView = "form" | "report-builder" | "report-preview";
 
 const ActivityPlannerPage = () => {
 	const { id } = useParams<{ id: string }>();
-
 	const {
 		epcData,
 		workflowEntries,
@@ -41,7 +45,6 @@ const ActivityPlannerPage = () => {
 
 	const [pageView, setPageView] = React.useState<PageView>("form");
 	const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
-
 	const [editingSection, setEditingSection] = React.useState<
 		"epc" | "crf" | "epf" | null
 	>(null);
@@ -49,6 +52,7 @@ const ActivityPlannerPage = () => {
 	const closeReportPreview = React.useCallback(() => {
 		setPageView("form");
 	}, []);
+
 	const openReportBuilder = React.useCallback(() => {
 		setPageView("report-builder");
 	}, []);
@@ -57,11 +61,47 @@ const ActivityPlannerPage = () => {
 		handleOpenReportPreview();
 		setPageView("report-preview");
 	}, [handleOpenReportPreview]);
-	if (isLoading) return <Loader />;
+
+	if (isLoading) {
+		return <Loader />;
+	}
 
 	return (
 		<>
 			<PageRowSectionLayout
+				contentMode="page-scroll"
+				stickyHeader
+				stickyTop="0px"
+				className="activity-planner-layout"
+				pageHeaderClassName="activity-planner-layout-page-header"
+				headerClassName="activity-planner-layout-header"
+				headerBodyClassName="activity-planner-layout-header-body"
+				contentClassName="activity-planner-layout-content"
+				contentBodyClassName="activity-planner-layout-content-body"
+				pageHeader={
+					<PageHeader
+						headerText="Activity Form View"
+						className="activity-planner-page-header"
+						navigation={{
+							variant: "breadcrumbs",
+							ariaLabel: "Activity planner location",
+							breadcrumbs: [
+								{
+									label: "Home Screen",
+									href: "/",
+								},
+								{
+									label: "EPC Listing",
+									href: "/marketing/activity-planner/listing",
+								},
+								{
+									label: "Form View",
+								},
+							],
+							separator: "›",
+						}}
+					/>
+				}
 				header_children={
 					<ActivityPlannerHeader
 						epcData={epcData ?? null}
@@ -72,7 +112,10 @@ const ActivityPlannerPage = () => {
 				}
 			>
 				{pageView === "report-builder" ? (
-					<div id="event-report-pdf-content" className="bg-white">
+					<div
+						id="event-report-pdf-content"
+						className="activity-planner-report-builder"
+					>
 						<EventReportTemplate
 							epcId={id!}
 							eventCost={epcData?.epf?.eventBudget || 0}
@@ -110,24 +153,28 @@ const ActivityPlannerPage = () => {
 					/>
 				)}
 			</PageRowSectionLayout>
-
-			<ActivityPlannerPdfPreview
-				open={isPreviewOpen}
-				epcData={epcData ?? null}
-				createdBy={proposerName}
-				workflowEntries={workflowEntries}
-				onClose={() => setIsPreviewOpen(false)}
-			/>
-
-			{pageView === "report-preview" && (
-				<EventReportPreview
-					open={true}
-					onClose={closeReportPreview}
-					epcData={epcData ?? null}
-					report={reportData}
-					loading={reportQuery.isLoading || reportQuery.isFetching}
-				/>
-			)}
+			{isPreviewOpen ? (
+				<Suspense fallback={null}>
+					<ActivityPlannerPdfPreview
+						open={isPreviewOpen}
+						epcData={epcData ?? null}
+						createdBy={proposerName}
+						workflowEntries={workflowEntries}
+						onClose={() => setIsPreviewOpen(false)}
+					/>
+				</Suspense>
+			) : null}
+			{pageView === "report-preview" ? (
+				<Suspense fallback={null}>
+					<EventReportPreview
+						open
+						onClose={closeReportPreview}
+						epcData={epcData ?? null}
+						report={reportData}
+						loading={reportQuery.isLoading || reportQuery.isFetching}
+					/>
+				</Suspense>
+			) : null}
 		</>
 	);
 };

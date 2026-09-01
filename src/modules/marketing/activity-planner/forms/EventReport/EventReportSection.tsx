@@ -9,9 +9,9 @@ import {
 } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Section from "../../components/common/Section";
 import { getEventReportSectionState } from "./eventReport.logic";
 import type { EventReportSectionProps } from "../../types/event.report.types";
+import SectionAccordion from "../../../../../components/common/SectionAccordion";
 
 export const EventReportSection = ({
 	report,
@@ -50,7 +50,7 @@ export const EventReportSection = ({
 	if (!shouldShowSection) return null;
 
 	return (
-		<Section title="Activity Report Section">
+		<SectionAccordion title="Activity Report Section">
 			<div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
 				<div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 transition-all hover:border-orange-200 hover:bg-orange-50/30">
 					<div className="flex items-center gap-3">
@@ -68,32 +68,32 @@ export const EventReportSection = ({
 						<Button
 							type="button"
 							size="sm"
-							status="outline"
+							appearance="standard"
+							variant="outline"
 							onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
 								e.stopPropagation();
 								onOpenReportBuilder();
 							}}
+							Icon={Pencil}
 							isTooltip={
 								canProposerCreate ? "Create report" : "Edit and resubmit report"
 							}
-						>
-							<Pencil className="h-4 w-4" />
-							{canProposerCreate ? "Create" : "Edit"}
-						</Button>
+							text={canProposerCreate ? "Create" : "Edit"}
+						/>
 					) : canPreview ? (
 						<Button
 							type="button"
 							size="sm"
-							status="outline"
+							appearance="standard"
+							variant="outline"
 							onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
 								e.stopPropagation();
 								onOpenReportPreview();
 							}}
 							isTooltip="View report"
-						>
-							<Eye className="h-4 w-4" />
-							Preview
-						</Button>
+							Icon={Eye}
+							text="Preview"
+						/>
 					) : null}
 				</div>
 
@@ -111,7 +111,8 @@ export const EventReportSection = ({
 						<Button
 							type="button"
 							size="sm"
-							status="outline"
+							appearance="standard"
+							variant="outline"
 							onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
 								e.stopPropagation();
 								onValidateReport?.();
@@ -122,10 +123,9 @@ export const EventReportSection = ({
 									? "Validate report"
 									: "Preview report first"
 							}
-						>
-							<CheckCircle2 className="h-4 w-4" />
-							{isValidating ? "Validating..." : "Validate"}
-						</Button>
+							Icon={CheckCircle2}
+							text={isValidating ? "Validating..." : "Validate"}
+						></Button>
 					</div>
 				)}
 
@@ -143,7 +143,8 @@ export const EventReportSection = ({
 						<Button
 							type="button"
 							size="sm"
-							status="outline"
+							appearance="standard"
+							variant="outline"
 							onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
 								e.stopPropagation();
 								onClarifyReport?.();
@@ -154,10 +155,9 @@ export const EventReportSection = ({
 									? "Clarify report"
 									: "Preview report first"
 							}
-						>
-							<MessageSquareWarning className="h-4 w-4" />
-							{isClarifying ? "Clarifying..." : "Clarify"}
-						</Button>
+							Icon={MessageSquareWarning}
+							text={isClarifying ? "Clarifying..." : "Clarify"}
+						></Button>
 					</div>
 				)}
 
@@ -190,6 +190,6 @@ export const EventReportSection = ({
 					</div>
 				)}
 			</div>
-		</Section>
+		</SectionAccordion>
 	);
 };

@@ -1,57 +1,32 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap");
 
 @import "tailwindcss";
 
-@import "./styles/theme.css";
-@import "./styles/ui.css";
-@import "./styles/typography.css";
 @import "./styles/globals.css";
+
+/* Foundation: variables before consumers. */
 @import "./styles/color.css";
+@import "./styles/theme.css";
+@import "./styles/typography.css";
 @import "./styles/token.css";
-@import "./styles/form.css";
+
+/* Global system. */
+@import "./styles/input.css";
 @import "./styles/layout.css";
+@import "./styles/ui.css";
 @import "./styles/components.css";
-@import "./components/FormElements/input.css";
-@import "./modules/admin/workflow/workflow.css";
+@import "./styles/home.css";
+@import "./styles/table.css";
+
+/* Existing feature styles. Keep until each module is migrated. */
+@import "./modules/workflows/utils/workflow.css";
 @import "./modules/admin/business-partners/bp.css";
 @import "./modules/marketing/marketing.styles.css";
-
-body {
-	background-color: transparent;
-	font-family: var(--font-sans);
-	margin: 0;
-	padding: 0;
-}
-.container {
-	min-height: 100vh;
-	width: 100%;
-	height: 100%;
-	max-width: 1440px;
-	margin: 0 auto;
-	text-align: center;
-}
-
-/* Mobile (default styles apply here) */
-@media (max-width: 480px) {
-	/* styles for small mobile devices */
-	.authStyles {
-		background-color: #ffffff;
-		transition: 1s;
-	}
-	.authformStyles {
-		border: none;
-		box-shadow: none;
-	}
-	form {
-		font-size: 0.8rem;
-	}
-}
-.header {
-	background-color: #fff;
-	color: rgb(var(--color-text));
-	border-bottom: 2px solid #f35a00;
-}
-
-.aside-br {
-	border-right: 2px solid #f35a00;
-}
+@import "./styles/user-management.css";
+@import "./modules/vendorOnboarding/vendor.styles.css";
+@import "./modules/admin/user-profile/user-profile.styles.css";
+@import "./modules/admin/business-partners/bp.css";
+@import "./modules/admin/Masters/master.styles.css";
+@import "./modules/marketing/leads/styles/leads.css";
+@import "./components/ui/comments/comments.css";
+@import "./modules/workflows/utils/workflow.css";

@@ -1,5 +1,6 @@
 // src/api/axios.ts
 import axios from "axios";
+import { emitTokenRefreshed } from "./tokenEvents";
 
 export const API_BASE_URL = "https://thcmconnect.tatahitachi.co.in/api/v1";
 
@@ -63,6 +64,8 @@ ServerAxios.interceptors.response.use(
         const newAccessToken = data.accessToken;
         localStorage.setItem("authToken", newAccessToken);
 
+        emitTokenRefreshed(newAccessToken);
+
         isRefreshing = false;
         onRefreshed(newAccessToken);
 
@@ -76,7 +79,7 @@ ServerAxios.interceptors.response.use(
 
         // Clear tokens and redirect to login
         localStorage.removeItem("authToken");
-        window.location.href = "/login";
+        window.location.href = "/web/login";
 
         return Promise.reject(refreshError);
       }
@@ -85,7 +88,7 @@ ServerAxios.interceptors.response.use(
     // Handle 403 (revoked/stolen token) - logout immediately
     if (error.response?.status === 403) {
       localStorage.removeItem("authToken");
-      window.location.href = "/login";
+      window.location.href = "/web/login";
     }
 
     return Promise.reject(error);

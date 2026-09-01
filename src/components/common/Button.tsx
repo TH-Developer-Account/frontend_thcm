@@ -1,96 +1,214 @@
 import React from "react";
-import { resolveStatusStyle, resolveVariantStyle } from "../styles.constant";
-import type { ButtonProps } from "./common.types";
+import { ArrowLeft, ArrowRight, LoaderCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
+import type {
+	ButtonAppearance,
+	ButtonProps,
+	ButtonSize,
+	ButtonVariant,
+} from "./common.types";
+
+const APPEARANCE_CLASS_MAP: Record<ButtonAppearance, string> = {
+	/*
+	 * Kept for backward compatibility.
+	 * Industrial geometry is now controlled only by variant="iron".
+	 */
+	cta: "button-standard",
+	standard: "button-standard",
+	filter: "button-filter",
+	toggle: "button-toggle",
+	segmented: "button-segmented",
+	icon: "button-icon",
+	ghost: "button-ghost",
+	switch: "button-switch",
+	transparent: "button-transparent",
+};
+
+const VARIANT_CLASS_MAP: Record<ButtonVariant, string> = {
+	brand: "button-brand",
+	iron: "button-iron",
+	outline: "button-outline",
+	secondary: "button-secondary",
+	danger: "button-danger",
+	success: "button-success",
+	warning: "button-warning",
+	transparent: "button-transparent",
+};
+
+const SIZE_CLASS_MAP: Record<ButtonSize, string> = {
+	sm: "button-sm",
+	md: "button-md",
+	lg: "button-lg",
+	xl: "button-xl",
+};
+
+const joinClassNames = (
+	...classes: Array<string | false | null | undefined>
+): string => classes.filter(Boolean).join(" ");
 
 const Button: React.FC<ButtonProps> = ({
 	text,
-	onClick,
+	children,
+
 	type = "button",
-	disabled = false,
-	variant = "brand",
+	appearance = "standard",
+	variant = "secondary",
 	size = "md",
-	status,
-	className = "",
+
+	active = false,
+	loading = false,
+	disabled = false,
+	fullWidth = false,
+
 	Icon,
 	iconPosition = "left",
-	fullWidth = false,
-	children,
-	iconColor,
-	isTooltip,
 	iconSize,
+	iconColor,
+
 	path,
+	isTooltip,
+	to,
+	direction,
+	delta,
+
+	className = "",
+	onClick,
+	"aria-label": ariaLabel,
+
+	...nativeButtonProps
 }) => {
 	const navigate = useNavigate();
+	const isNavigationButton =
+		typeof delta === "number" ||
+		!!to ||
+		direction === "back" ||
+		direction === "forward";
 
-	const S = {
-		sm: "btn-sm",
-		md: "btn-md",
-		lg: "btn-lg",
-		xl: "btn-xl",
-	};
+	const LeftIcon = isNavigationButton ? ArrowLeft : Icon;
+	const RightIcon = isNavigationButton ? ArrowRight : Icon;
+	const appearanceClass = APPEARANCE_CLASS_MAP[appearance] ?? "button-standard";
 
-	const styleClass = resolveStatusStyle({ status: status || "" });
-	const variantClass = resolveVariantStyle({ variant: variant || "" });
+	const variantClass = VARIANT_CLASS_MAP[variant] ?? "button-secondary";
 
-	const handleAction = (e: React.MouseEvent<HTMLButtonElement>) => {
-		if (disabled) return;
+	const sizeClass = SIZE_CLASS_MAP[size] ?? "button-md";
 
-		if (onClick) {
-			onClick(e);
-			return;
-		}
+	const isDisabled = disabled || loading;
+	const isIconOnly = appearance === "icon";
+	const isIron = variant === "iron";
+
+	const resolvedIconSize =
+		iconSize ?? (size === "sm" ? 14 : size === "xl" ? 20 : 16);
+
+	const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+		if (isDisabled) return;
+
+		onClick?.(event);
+
+		if (event.defaultPrevented) return;
 
 		if (path) {
 			navigate(path);
 		}
-	};
+		if (typeof delta === "number") {
+			navigate(delta);
+			return;
+		}
 
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
-		if (disabled) return;
+		if (to) {
+			navigate(to);
+			return;
+		}
 
-		if (e.key === "Enter" || e.key === " ") {
-			e.preventDefault();
-			e.currentTarget.click();
+		if (direction === "forward") {
+			navigate(1);
+			return;
+		}
+
+		if (direction === "back") {
+			navigate(-1);
 		}
 	};
 
+	const content = children ?? text;
+
+	const supportsPressedState =
+		appearance === "toggle" ||
+		appearance === "filter" ||
+		appearance === "switch" ||
+		appearance === "segmented";
+
+	const iconStyle = iconColor ? { color: iconColor } : undefined;
+
 	return (
-		<div
-			className={`${fullWidth ? "w-full" : "w-auto"} relative inline-flex items-center group shrink-0`}
+		<span
+			className={joinClassNames(
+				"button-wrapper",
+				fullWidth && "button-wrapper-full",
+				appearance === "segmented" && "button-wrapper-segmented",
+			)}
 		>
 			<button
+				{...nativeButtonProps}
 				type={type}
-				onClick={handleAction}
-				onKeyDown={handleKeyDown}
-				disabled={disabled}
-				className={`
-					${fullWidth ? "w-full" : "w-auto"}
-					btn
-					${S[size]}
-					${className}
-					${styleClass || variantClass}
-				`}
+				disabled={isDisabled}
+				aria-label={ariaLabel}
+				aria-busy={loading || undefined}
+				aria-pressed={
+					supportsPressedState ? active : nativeButtonProps["aria-pressed"]
+				}
+				data-active={active ? "true" : "false"}
+				data-loading={loading ? "true" : "false"}
+				data-variant={variant}
+				onClick={handleClick}
+				className={joinClassNames(
+					"button-base",
+					appearanceClass,
+					variantClass,
+					sizeClass,
+					isIron && "button-industrial",
+					active && "is-active",
+					fullWidth && "button-full-width",
+					isIconOnly && "button-icon-only",
+					className,
+				)}
 			>
-				{Icon && iconPosition === "left" && (
-					<Icon size={iconSize ?? 16} color={iconColor} />
-				)}
+				{loading ? (
+					<LoaderCircle
+						aria-hidden="true"
+						className="button-loader"
+						size={resolvedIconSize}
+					/>
+				) : Icon && iconPosition === "left" ? (
+					<Icon
+						aria-hidden="true"
+						className="button-leading-icon"
+						size={resolvedIconSize}
+						style={iconStyle}
+					/>
+				) : null}
+				{direction === "back" && LeftIcon && <LeftIcon size="16" />}
+				{content != null ? (
+					<span className="button-label">{content}</span>
+				) : null}
 
-				{text}
-
-				{Icon && iconPosition === "right" && (
-					<Icon size={iconSize ?? 16} color={iconColor} />
-				)}
-
-				{children ?? null}
+				{!loading && Icon && iconPosition === "right" ? (
+					<Icon
+						aria-hidden="true"
+						className="button-trailing-icon"
+						size={resolvedIconSize}
+						style={iconStyle}
+					/>
+				) : null}
+				{direction === "forward" && RightIcon && <RightIcon size="16" />}
 			</button>
 
 			{isTooltip ? (
-				<span className="btn-tooltip" role="tooltip">
+				<span className="button-tooltip" role="tooltip">
 					{isTooltip}
 				</span>
 			) : null}
-		</div>
+		</span>
 	);
 };
 

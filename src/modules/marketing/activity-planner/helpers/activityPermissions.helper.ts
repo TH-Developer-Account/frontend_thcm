@@ -2,6 +2,7 @@
 
 import type { EpcDetailResponse } from "../types/epc.types";
 import type { EventReportDetail } from "../types/event.report.types";
+import { normalizeWorkflowStatus } from "../../../workflows/utils/status";
 import {
 	hasFormUpdateAfterIssue,
 	hasUnresolvedClarificationInComments,
@@ -13,10 +14,11 @@ import {
 
 export type ActivityEditSection = "epc" | "crf" | "epf" | "report";
 
-const normalizeStatus = (status?: string | null) =>
-	String(status ?? "")
-		.trim()
-		.toUpperCase();
+const ACTIVITY_FORM_UPDATE_ACTIONS = [
+	"EPC_UPDATED",
+	"EPF_UPDATED",
+	"CRF_UPDATED",
+] as const;
 
 const CLOSED_STATUSES = ["CLOSED", "EPC_CLOSED"];
 
@@ -44,7 +46,14 @@ const REPORT_EDITABLE_STATUSES = [
 	"REPORT_CLARIFICATION_REQUESTED",
 	"CLARIFY_REPORT",
 ];
-
+export const REPORT_ELIGIBLE_STATUSES = new Set([
+	"CONDUCTED",
+	"REPORT_SUBMITTED",
+	"CLARIFY_REPORT",
+	"VALIDATED",
+	"DEVIATION_IN_PROGRESS",
+	"CLOSED",
+]);
 const hasDeviationData = (epcData?: EpcDetailResponse | null) => {
 	return Boolean(
 		epcData?.deviationAmount ||
@@ -69,22 +78,14 @@ export const getActivityPermissions = ({
 	workflowEntries = [],
 	hasValidatorPreviewed = false,
 }: GetActivityPermissionsArgs) => {
-	const status = normalizeStatus(epcData?.status);
-	const reportStatus = normalizeStatus(report?.status);
+	const status = normalizeWorkflowStatus(epcData?.status);
+	const reportStatus = normalizeWorkflowStatus(report?.status);
 
 	const isExistingEpc = Boolean(epcData?.id);
 	const reportValidatorId = report?.validatorId;
 	const isProposer = Boolean(userId && epcData?.created_by_id === userId);
 	const isValidator = Boolean(reportValidatorId === userId);
-	console.log(
-		"isvalidator8",
-		isValidator,
-		"proposer",
-		isProposer,
-		"report id",
-		report,
-		reportValidatorId,
-	);
+
 	const isClosed = CLOSED_STATUSES.includes(status);
 	const isFormLocked = LOCKED_FORM_STATUSES.includes(status);
 	const isFormReopened = FORM_EDIT_REOPEN_STATUSES.includes(status);
@@ -112,11 +113,13 @@ export const getActivityPermissions = ({
 	const hasClarificationFormUpdate = hasFormUpdateAfterIssue(
 		workflowEntries,
 		"CLARIFICATION",
+		ACTIVITY_FORM_UPDATE_ACTIONS,
 	);
 
 	const hasDeviationFormUpdate = hasFormUpdateAfterIssue(
 		workflowEntries,
 		"DEVIATION",
+		ACTIVITY_FORM_UPDATE_ACTIONS,
 	);
 
 	const canEditNormalForm =
@@ -198,12 +201,7 @@ export const getActivityPermissions = ({
 
 		canCreateCrf: isProposer && isExistingEpc && !isClosed && !epcData?.crf,
 
-		canCreateEpf:
-			isProposer &&
-			isExistingEpc &&
-			!isClosed &&
-			Boolean(epcData?.crf) &&
-			!epcData?.epf,
+		canCreateEpf: isProposer && isExistingEpc && !isClosed && !epcData?.epf,
 
 		// report permissions
 		canCreateReport,

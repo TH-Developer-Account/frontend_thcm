@@ -1,94 +1,118 @@
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-import { SearchInput } from "../../../../../components/FormElements/SearchInput";
-import { Can } from "../../../../../context/permissionHelpers";
 import Button from "../../../../../components/common/Button";
-import ThreeWayToggle from "../../../../../components/common/ThreeWayToggle";
-import { EpcFilterDropdown } from "./EpcFilterDropdown";
-import {
-	epcListFilterOptions,
-	epcStatusOptions,
-	type EpcListFilter,
-} from "../../utils/constants";
-import type { EpcFilters } from "../../types/epc.types";
-import { clearStoredEpcInfo } from "../../helpers/localstorage";
+import { SearchInput } from "../../../../../components/forms/SearchInput";
+import { FilterTabs } from "../../../../../components/ui/FilterTabs";
+import { Can } from "../../../../../context/permissionHelpers";
 import { useMasterData } from "../../../../../hooks/useMasterData";
 
+import { clearStoredEpcInfo } from "../../helpers/localstorage";
+import type { EpcFilters } from "../../types/epc.types";
+import {
+  epcListFilterOptions,
+  epcStatusOptions,
+  type EpcListFilter,
+} from "../../utils/constant";
+import { EpcFilterDropdown } from "./EpcFilterDropdown";
+
 type EPCTopbarProps = {
-	search: string;
-	onSearchChange: (value: string) => void;
-	selectedFilter: EpcListFilter;
-	onFilterChange: (value: EpcListFilter) => void;
-	filters: EpcFilters;
-	onAdvancedFilterChange: (updated: Partial<EpcFilters>) => void;
-	onClearAllFilters: () => void;
-	activeFilterCount: number;
+  search: string;
+  onSearchChange: (value: string) => void;
+  selectedFilter: EpcListFilter;
+  onFilterChange: (value: EpcListFilter) => void;
+  filters: EpcFilters;
+  onAdvancedFilterChange: (updated: Partial<EpcFilters>) => void;
+  onClearAllFilters: () => void;
+  activeFilterCount: number;
+  className?: string;
 };
 
+const joinClassNames = (
+  ...classNames: Array<string | false | null | undefined>
+): string => classNames.filter(Boolean).join(" ");
+
 const EPCTopbar = ({
-	search,
-	onSearchChange,
-	selectedFilter,
-	onFilterChange,
-	filters,
-	onAdvancedFilterChange,
-	onClearAllFilters,
-	activeFilterCount,
+  search,
+  onSearchChange,
+  selectedFilter,
+  onFilterChange,
+  filters,
+  onAdvancedFilterChange,
+  onClearAllFilters,
+  activeFilterCount,
+  className = "",
 }: EPCTopbarProps) => {
-	const navigate = useNavigate();
-	const { data } = useMasterData();
+  const navigate = useNavigate();
+  const { data } = useMasterData();
 
-	const eventTypeOptions = data?.eventNames ?? [];
-	const zoneOptions = data?.regions ?? [];
+  const eventTypeOptions = data?.eventNames ?? [];
+  const zoneOptions = data?.regions ?? [];
 
-	const handleCreateEpc = () => {
-		clearStoredEpcInfo();
-		navigate("/marketing/activity-planner/create");
-	};
+  const filterTabs = epcListFilterOptions.map((option) => ({
+    value: option.value,
+    label: option.label,
+    tooltipLabel: option.tooltipLabel,
+    Icon: option.Icon,
+  }));
 
-	return (
-		<div className="topbar-section">
-			<header className="py-3 text-black md:px-6">
-				<div className="flex items-center justify-end gap-4">
-					<SearchInput
-						value={search}
-						onChange={onSearchChange}
-						placeholder="Search by event name"
-					/>
+  const handleCreateEpc = () => {
+    clearStoredEpcInfo();
+    navigate("/marketing/activity-planner/create");
+  };
 
-					<ThreeWayToggle
-						options={epcListFilterOptions}
-						value={selectedFilter}
-						onChange={onFilterChange}
-						className="w-[320px]"
-					/>
+  return (
+    <section
+      className={joinClassNames("epc-topbar", className)}
+      aria-label="EPC listing controls"
+    >
+      <div className="epc-topbar-tabs">
+        <FilterTabs
+          id="epc-list-filter-tabs"
+          ariaLabel="Filter EPC listings"
+          items={filterTabs}
+          value={selectedFilter}
+          onChange={onFilterChange}
+          className="border-b-none"
+        />
+      </div>
 
-					<EpcFilterDropdown
-						filters={filters}
-						onChange={onAdvancedFilterChange}
-						onClearAll={onClearAllFilters}
-						activeFilterCount={activeFilterCount}
-						zoneOptions={zoneOptions}
-						eventTypeOptions={eventTypeOptions}
-						statusOptions={epcStatusOptions}
-					/>
+      <div className="epc-topbar-search">
+        <SearchInput
+          value={search}
+          onChange={onSearchChange}
+          placeholder="Search by event name"
+        />
+      </div>
 
-					<Can action="write" app="MAP" module="EPC">
-						<Button
-							Icon={Plus}
-							iconSize="16"
-							iconPosition="left"
-							text="Create EPC"
-							status="brand"
-							size="sm"
-							onClick={handleCreateEpc}
-						/>
-					</Can>
-				</div>
-			</header>
-		</div>
-	);
+      <div className="epc-topbar-actions">
+        <EpcFilterDropdown
+          filters={filters}
+          onChange={onAdvancedFilterChange}
+          onClearAll={onClearAllFilters}
+          activeFilterCount={activeFilterCount}
+          zoneOptions={zoneOptions}
+          eventTypeOptions={eventTypeOptions}
+          statusOptions={epcStatusOptions}
+        />
+
+        <Can action="write" app="MAP" module="EPC">
+          <Button
+            type="button"
+            appearance="cta"
+            variant="brand"
+            size="sm"
+            Icon={Plus}
+            iconSize={16}
+            iconPosition="left"
+            text="Create EPC"
+            className="epc-topbar-create"
+            onClick={handleCreateEpc}
+          />
+        </Can>
+      </div>
+    </section>
+  );
 };
 
 export default EPCTopbar;

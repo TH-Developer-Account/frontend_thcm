@@ -12,47 +12,54 @@ const IDLE_TIMEOUT = 15 * 60 * 1000; // 15 minutes
 const EXEMPTED_PATHS = ["/login", "/reset", "/forgot-password"];
 
 export const SessionTimeoutProvider: React.FC<{
-  children: React.ReactNode;
+	children: React.ReactNode;
 }> = ({ children }) => {
-  const [showModal, setShowModal] = useState(false);
-  const location = useLocation();
-  const { logout } = useAuth();
+	const [showModal, setShowModal] = useState(false);
+	const location = useLocation();
+	const { logout } = useAuth();
 
-  const isExemptedRoute = EXEMPTED_PATHS.some((path) =>
-    location.pathname.startsWith(path),
-  );
+	const isExemptedRoute = EXEMPTED_PATHS.some((path) =>
+		location.pathname.startsWith(path),
+	);
 
-  useIdleTimer({
-    idleTime: IDLE_TIMEOUT,
-    onIdle: () => {
-      if (isExemptedRoute) return;
-      setShowModal(true);
-    },
-  });
+	useIdleTimer({
+		idleTime: IDLE_TIMEOUT,
+		onIdle: () => {
+			if (isExemptedRoute) return;
+			setShowModal(true);
+		},
+	});
 
-  const handleContinue = async () => {
-    setShowModal(false);
-  };
+	const handleContinue = async () => {
+		setShowModal(false);
+	};
 
-  return (
-    <>
-      {children}
+	return (
+		<>
+			{children}
 
-      <Modal open={showModal} onClose={handleContinue}>
-        <Alert
-          variant="info"
-          title="You're idle"
-          description="You have been inactive. Your session will expire soon."
-          primaryAction={{
-            label: "Continue",
-            onClick: handleContinue,
-          }}
-          secondaryAction={{
-            label: "Log out",
-            onClick: logout,
-          }}
-        />
-      </Modal>
-    </>
-  );
+			<Modal
+				open={showModal}
+				onClose={handleContinue}
+				mode="shell"
+				size="sm"
+				dialogRole="alertdialog"
+				ariaLabel="Inactive session confirmation"
+			>
+				<Alert
+					variant="info"
+					title="You're idle"
+					description="You have been inactive. Your session will expire soon."
+					primaryAction={{
+						label: "Continue",
+						onClick: handleContinue,
+					}}
+					secondaryAction={{
+						label: "Log out",
+						onClick: logout,
+					}}
+				/>
+			</Modal>
+		</>
+	);
 };

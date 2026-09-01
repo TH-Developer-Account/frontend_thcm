@@ -1,192 +1,65 @@
-const BPTable = () => {
-	return (
-		<div className="bp-table-container scrollbar-sleek">
-			<table className="w-full">
-				<thead>
-					<tr>
-						<th>Internal ID</th>
-						<th>External ID</th>
-						<th className="col-span-2">Organization Name</th>
-						<th>Region</th>
-						<th>Main Contact</th>
-						<th className="col-span-2">Address</th>
-						<th>Joined On</th>
-					</tr>
-				</thead>
+import React from "react";
 
-				<tbody>
-					<tr>
-						<td className="items-center">94273</td>
-						<td className="items-center">94273</td>
-						<td className="items-center col-span-2">
-							Recon Technologies Pvt. Ltd
-						</td>
-						<td className="items-center">Hyderabad</td>
-						<td className="items-center">John Doe</td>
-						<td className="items-center col-span-2">
-							123 Main St, Anytown, USA
-						</td>
-						<td className="items-center">2023-01-15</td>
-					</tr>
-					<tr>
-						<td className="items-center">94273</td>
-						<td className="items-center">18209</td>
-						<td className="items-center col-span-2">
-							Tricare Services Pvt. Ltd
-						</td>
-						<td className="items-center">Pune</td>
-						<td className="items-center">John Doe</td>
-						<td className="items-center col-span-2">
-							123 Main St, Anytown, USA
-						</td>
-						<td className="items-center">2023-01-15</td>
-					</tr>
-					<tr className="">
-						<td className="items-center">94273</td>
-						<td className="items-center">15812</td>
-						<td className="items-center col-span-2">
-							Joe & De Engineers Pvt. Ltd
-						</td>
-						<td className="items-center">Hyderabad</td>
-						<td className="items-center">John Doe</td>
-						<td className="items-center col-span-2">
-							123 Main St, Anytown, USA
-						</td>
-						<td className="items-center">2023-01-15</td>
-					</tr>
-					<tr className="">
-						<td className="items-center">94273</td>
-						<td className="items-center">15812</td>
-						<td className="items-center col-span-2">
-							Joe & De Engineers Pvt. Ltd
-						</td>
-						<td className="items-center">Hyderabad</td>
-						<td className="items-center">John Doe</td>
-						<td className="items-center col-span-2">
-							123 Main St, Anytown, USA
-						</td>
-						<td className="items-center">2023-01-15</td>
-					</tr>
-					<tr className="">
-						<td className="items-center">94273</td>
-						<td className="items-center">15812</td>
-						<td className="items-center col-span-2">
-							Joe & De Engineers Pvt. Ltd
-						</td>
-						<td className="items-center">Hyderabad</td>
-						<td className="items-center">John Doe</td>
-						<td className="items-center col-span-2">
-							123 Main St, Anytown, USA
-						</td>
-						<td className="items-center">2023-01-15</td>
-					</tr>
-					<tr className="">
-						<td className="items-center">94273</td>
-						<td className="items-center">15812</td>
-						<td className="items-center col-span-2">
-							Joe & De Engineers Pvt. Ltd
-						</td>
-						<td className="items-center">Hyderabad</td>
-						<td className="items-center">John Doe</td>
-						<td className="items-center col-span-2">
-							123 Main St, Anytown, USA
-						</td>
-						<td className="items-center">2023-01-15</td>
-					</tr>
-					<tr className="">
-						<td className="items-center">94273</td>
-						<td className="items-center">15812</td>
-						<td className="items-center col-span-2">
-							Joe & De Engineers Pvt. Ltd
-						</td>
-						<td className="items-center">Hyderabad</td>
-						<td className="items-center">John Doe</td>
-						<td className="items-center col-span-2">
-							123 Main St, Anytown, USA
-						</td>
-						<td className="items-center">2023-01-15</td>
-					</tr>
-					<tr className="">
-						<td className="items-center">94273</td>
-						<td className="items-center">15812</td>
-						<td className="items-center col-span-2">
-							Joe & De Engineers Pvt. Ltd
-						</td>
-						<td className="items-center">Hyderabad</td>
-						<td className="items-center">John Doe</td>
-						<td className="items-center col-span-2">
-							123 Main St, Anytown, USA
-						</td>
-						<td className="items-center">2023-01-15</td>
-					</tr>
-					<tr className="">
-						<td className="items-center">94273</td>
-						<td className="items-center">15812</td>
-						<td className="items-center col-span-2">
-							Joe & De Engineers Pvt. Ltd
-						</td>
-						<td className="items-center">Hyderabad</td>
-						<td className="items-center">John Doe</td>
-						<td className="items-center col-span-2">
-							123 Main St, Anytown, USA
-						</td>
-						<td className="items-center">2023-01-15</td>
-					</tr>
-					<tr className="">
-						<td className="items-center">94273</td>
-						<td className="items-center">15812</td>
-						<td className="items-center col-span-2">
-							Joe & De Engineers Pvt. Ltd
-						</td>
-						<td className="items-center">Hyderabad</td>
-						<td className="items-center">John Doe</td>
-						<td className="items-center col-span-2">
-							123 Main St, Anytown, USA
-						</td>
-						<td className="items-center">2023-01-15</td>
-					</tr>
-					<tr className="">
-						<td className="items-center">94273</td>
-						<td className="items-center">15812</td>
-						<td className="items-center col-span-2">
-							Joe & De Engineers Pvt. Ltd
-						</td>
-						<td className="items-center">Hyderabad</td>
-						<td className="items-center">John Doe</td>
-						<td className="items-center col-span-2">
-							123 Main St, Anytown, USA
-						</td>
-						<td className="items-center">2023-01-15</td>
-					</tr>
-					<tr className="">
-						<td className="items-center">94273</td>
-						<td className="items-center">15812</td>
-						<td className="items-center col-span-2">
-							Joe & De Engineers Pvt. Ltd
-						</td>
-						<td className="items-center">Hyderabad</td>
-						<td className="items-center">John Doe</td>
-						<td className="items-center col-span-2">
-							123 Main St, Anytown, USA
-						</td>
-						<td className="items-center">2023-01-15</td>
-					</tr>
-					<tr className="">
-						<td className="items-center">94273</td>
-						<td className="items-center">15812</td>
-						<td className="items-center col-span-2">
-							Joe & De Engineers Pvt. Ltd
-						</td>
-						<td className="items-center">Hyderabad</td>
-						<td className="items-center">John Doe</td>
-						<td className="items-center col-span-2">
-							123 Main St, Anytown, USA
-						</td>
-						<td className="items-center">2023-01-15</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
+import DataTable from "../../../../components/ui/tables/DataTable/DataTable";
+import type { BusinessPartner } from "../utils/bp.types";
+
+import { getBusinessPartnerColumns } from "./businessPartner.columns";
+
+type BPTableProps = {
+	partners: BusinessPartner[];
+	isLoading?: boolean;
+	isFetching?: boolean;
+	isError?: boolean;
+};
+
+const BPTable = ({
+	partners,
+	isLoading = false,
+	isFetching = false,
+	isError = false,
+}: BPTableProps) => {
+	const columns = React.useMemo(() => getBusinessPartnerColumns(), []);
+
+	const tableData = React.useMemo(
+		() => (Array.isArray(partners) ? partners : []),
+		[partners],
+	);
+
+	if (isError) {
+		return (
+			<div role="alert" className="alert-card">
+				<h2 className="alert-title">Unable to load business partners</h2>
+
+				<p className="alert-description">
+					The business partner listing could not be retrieved. Refresh the page
+					or try again.
+				</p>
+			</div>
+		);
+	}
+
+	return (
+		<section
+			aria-label="Business partner records"
+			aria-busy={isLoading || isFetching}
+		>
+			<DataTable<BusinessPartner>
+				data={tableData}
+				columns={columns}
+				loading={isLoading}
+				manualSorting={false}
+				manualPagination={true}
+				scrollTargetId="business-partner-table-scroll"
+				emptyTitle="No business partners found"
+				emptyDescription="Try adjusting the current search term."
+			/>
+
+			{isFetching && !isLoading ? (
+				<span className="sr-only" role="status" aria-live="polite">
+					Refreshing business partners
+				</span>
+			) : null}
+		</section>
 	);
 };
 

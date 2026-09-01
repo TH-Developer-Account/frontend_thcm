@@ -1,7 +1,7 @@
 import { Eye } from "lucide-react";
-import { PageHeader } from "../../../../../components/ui/PageHeader";
-import Button from "../../../../../components/common/Button";
+
 import { Badge } from "../../../../../components/common/Badge";
+import Button from "../../../../../components/common/Button";
 import type { EpcDetailResponse } from "../../types/epc.types";
 
 type ActivityPlannerHeaderProps = {
@@ -13,58 +13,62 @@ type ActivityPlannerHeaderProps = {
 
 const ActivityPlannerHeader = ({
 	epcData,
-	loading,
+	loading = false,
 	proposerName,
 	onPreview,
 }: ActivityPlannerHeaderProps) => {
-	const title = epcData?.event_name?.title || null;
-	const proposalNo = epcData?.proposal_number || null;
+	const title = epcData?.event_name?.title || "Activity Planning Calendar";
+
+	const proposalNo = epcData?.proposal_number || "--";
+	const status = epcData?.status || "IN_PROGRESS";
+
 	return (
-		<div className="flex flex-row gap-4 justify-between items-start">
-			<PageHeader
-				badgeProps={{
-					text: "Back to Listing",
-					to: "/marketing/listing",
-				}}
-				children={
-					<p className="flex items-center gap-1.5 px-4 text-[12px] leading-4">
-						<span className="uppercase-label-text">Proposer:</span>
-						{proposerName || "--"}
+		<section
+			className="activity-planner-summary"
+			aria-label="Activity planner summary"
+		>
+			<div className="activity-planner-summary-main">
+				<div className="activity-planner-summary-copy">
+					<h2 className="activity-planner-summary-title">{title}</h2>
+
+					<p className="activity-planner-summary-proposal">
+						{proposalNo !== "--" ? `[ ${proposalNo} ]` : "--"}
 					</p>
-				}
-			/>
+				</div>
 
-			<div className="flex justify-between flex-col items-center page-header-section">
-				<h2 className="page-title-section">{title}</h2>
-
-				<p className="page-subtitle">
-					<span className="uppercase-label-text">{proposalNo}</span>
-				</p>
-			</div>
-
-			<div className="flex justify-between items-center page-header-section text-right">
-				<div className="flex flex-col items-end">
-					<p className="flex items-center gap-1.5 mt-1 text-[12px] leading-4">
-						<span className="uppercase-label-text">Status:</span>
-						<Badge status={epcData?.status || "IN_PROGRESS"} />
-					</p>
-
-					<div className="flex flex-row items-end px-2  mt-1">
-						<Button
-							type="button"
-							Icon={Eye}
-							text={"Preview"}
-							size="sm"
-							iconPosition="right"
-							iconColor="orange"
-							onClick={onPreview}
-							className="bg-red-50 border-orange-500 text-orange-500 border px-1 py-0.5 rounded-full"
-							disabled={!epcData || loading}
-						/>
-					</div>
+				<div className="activity-planner-summary-actions">
+					<Button
+						type="button"
+						text="Preview"
+						Icon={Eye}
+						iconPosition="left"
+						iconSize={14}
+						appearance="standard"
+						variant="outline"
+						size="sm"
+						onClick={onPreview}
+						className="activity-planner-preview-button"
+						disabled={!epcData || loading}
+					/>
 				</div>
 			</div>
-		</div>
+
+			<div className="activity-planner-summary-meta">
+				<div className="activity-planner-summary-meta-item">
+					<span className="activity-planner-summary-label">Proposer</span>
+
+					<span className="activity-planner-summary-value">
+						{proposerName || "--"}
+					</span>
+				</div>
+
+				<div className="activity-planner-summary-meta-item activity-planner-summary-status">
+					<span className="activity-planner-summary-label">Status</span>
+
+					<Badge status={status} />
+				</div>
+			</div>
+		</section>
 	);
 };
 

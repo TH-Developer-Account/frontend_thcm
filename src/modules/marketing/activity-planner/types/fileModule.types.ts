@@ -58,6 +58,27 @@ export type FileModuleListingRow = {
 	epc: FileModuleEpc | null;
 };
 
+export type FileModuleEventGroupRow = {
+	id: string;
+	epc: FileModuleEpc | null;
+
+	operationCount: number;
+	operationTypes: string[];
+
+	totalRecords: number;
+	successRecords: number;
+	failedRecords: number;
+
+	outputFileCount: number;
+	errorFileCount: number;
+
+	latestStatus: string;
+	latestCreatedAt: string;
+
+	triggeredBy: FileModuleTriggeredBy[];
+	logs: FileModuleListingRow[];
+};
+
 export type FileDownloadUrlResponse = {
 	success: boolean;
 	url: string;

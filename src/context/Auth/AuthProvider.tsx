@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import axios from "axios";
 import { AuthContext, useToast } from "./AuthContext";
 import type { ReactNode } from "react";
@@ -16,8 +16,9 @@ interface AuthProviderProps {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Pure permission resolver — lives outside the component so it's never
-// recreated. Mirrors the backend hasPermission() function exactly.
+// Pure permission resolvers — live outside the component so they're never
+// recreated. Mirror the backend's userPermission.ts functions exactly:
+// hasPermission() and canManageApp() respectively.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function resolvePermission(
@@ -28,10 +29,32 @@ function resolvePermission(
   moduleKey: string,
 ): boolean {
   if (isSuperAdmin) return true;
-  // Exact match only — no scope hierarchy, no wildcards
-  return permissions.some(
+
+  const hasExactModuleGrant = permissions.some(
     (p) =>
-      p.action === action && p.appKey === appKey && p.moduleKey === moduleKey,
+      p.scope === "MODULE" &&
+      p.action === action &&
+      p.appKey === appKey &&
+      p.moduleKey === moduleKey,
+  );
+  if (hasExactModuleGrant) return true;
+
+  // App-admin fallback — a "write" app-scope grant covers every module
+  // under that app, same as the backend's hasPermission().
+  return permissions.some(
+    (p) => p.scope === "APP" && p.appKey === appKey && p.action === "write",
+  );
+}
+
+function resolveCanManageApp(
+  permissions: Permission[],
+  isSuperAdmin: boolean,
+  appKey: string,
+): boolean {
+  if (isSuperAdmin) return true;
+
+  return permissions.some(
+    (p) => p.scope === "APP" && p.appKey === appKey && p.action === "write",
   );
 }
 
@@ -199,7 +222,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // ── NEW: clear permissions on logout ─────────────────────────────────
       setPermissions([]);
       setSuperAdmin(false);
-      window.location.href = "/login";
+      window.location.href = "/web/login";
     }
   };
 
@@ -211,14 +234,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [permissions, isSuperAdmin],
   );
 
-  // Returns true if user has READ access to any module in the app.
+  // Returns true if user has READ access to any module in the app, OR is
+  // that app's admin (an app-scope write grant implies read — there's no
+  // separate read-only app-scope row, so this needs its own fallback).
   // Used in sidebars to decide whether to show the app tab at all.
   const canReadApp = useCallback(
     (appKey: string) => {
       if (isSuperAdmin) return true;
-      // True if user has READ on at least one module in this app
       return permissions.some(
-        (p) => p.action === "read" && p.appKey === appKey,
+        (p) =>
+          (p.scope === "MODULE" &&
+            p.action === "read" &&
+            p.appKey === appKey) ||
+          (p.scope === "APP" && p.appKey === appKey && p.action === "write"),
       );
     },
     [permissions, isSuperAdmin],
@@ -227,12 +255,34 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const canWriteApp = useCallback(
     (appKey: string) => {
       if (isSuperAdmin) return true;
-      // True if user has WRITE on at least one module in this app
+      // True if user has WRITE on at least one module in this app, OR is
+      // that app's admin (scope APP rows already have appKey + action
+      // "write" set, so this check already covers them without changes).
       return permissions.some(
         (p) => p.action === "write" && p.appKey === appKey,
       );
     },
     [permissions, isSuperAdmin],
+  );
+
+  const canManageApp = useCallback(
+    (appKey: string) => resolveCanManageApp(permissions, isSuperAdmin, appKey),
+    [permissions, isSuperAdmin],
+  );
+
+  // Flat list of appKeys this user administers — recomputed only when
+  // permissions actually change, not on every render or per-call like
+  // canManageApp(). isSuperAdmin isn't folded in here on purpose: a super
+  // admin manages every app, which would mean enumerating every app key
+  // that exists just to populate this array — components that need
+  // "does this user manage app X" should call canManageApp(appKey)
+  // (which DOES account for isSuperAdmin), not adminApps.includes(appKey).
+  const adminApps = useMemo(
+    () =>
+      permissions
+        .filter((p) => p.scope === "APP" && p.action === "write")
+        .map((p) => p.appKey),
+    [permissions],
   );
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -250,9 +300,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // New
         isSuperAdmin,
         permissions,
+        adminApps,
         can,
         canReadApp,
         canWriteApp,
+        canManageApp,
         workspaceId,
       }}
     >

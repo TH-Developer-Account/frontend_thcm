@@ -1,8 +1,14 @@
-import FormInput from "../../../../components/FormElements/FormInput";
-import TextareaInput from "../../../../components/FormElements/TextareaInput";
+import { Plus } from "lucide-react";
+
+import Button from "../../../../components/common/Button";
+import Card from "../../../../components/common/Card";
+import FormInput from "../../../../components/forms/FormInput";
+import Radio, { type RadioOption } from "../../../../components/forms/Radio";
+import TextareaInput from "../../../../components/forms/TextareaInput";
 
 type FormState = {
 	label: string;
+	addressType: string;
 	address: string;
 };
 
@@ -13,78 +19,77 @@ type Props = {
 	isEditing?: boolean;
 };
 
+const addressTypeOptions: RadioOption[] = [
+	{ label: "Head Office", value: "Head Office" },
+	{ label: "Branch Office", value: "Branch Office" },
+	{ label: "Billing Address", value: "Billing Address" },
+	{ label: "Warehouse", value: "Warehouse" },
+];
+
 const BPAddressFormCard = ({
 	form,
 	onChange,
 	onAdd,
 	isEditing = false,
 }: Props) => {
+	const isActionDisabled = !form.address.trim();
+
 	return (
-		<div className="bp-address-card">
-			<div className="bp-address-card-header">
-				<h5>{isEditing ? "Edit Address" : "Add Address"}</h5>
-
-				<button type="button" className="bp-address-add-btn" onClick={onAdd}>
-					{isEditing ? "Update" : "Add"}
-				</button>
-			</div>
-
-			<div className="bp-address-form">
-				<div className="bp-address-field">
-					<p className="bp-info-label">Address Type</p>
-
-					<div className="bp-radio-group">
-						<FormInput
-							type="radio"
-							label="Head Office"
-							name="addressType"
-							value="Head Office"
-							checked={form.label === "Head Office"}
-							onChange={() => onChange("label", "Head Office")}
+		<div className="bp-address-form-card">
+			<Card
+				title={isEditing ? "Edit Address" : "Add Address"}
+				footer={
+					<div className="bp-address-card-footer-actions">
+						<Button
+							type="button"
+							text={isEditing ? "Update Address" : "Add Address"}
+							appearance="standard"
+							variant="brand"
+							size="sm"
+							Icon={Plus}
+							iconPosition="right"
+							onClick={onAdd}
+							disabled={isActionDisabled}
 						/>
+					</div>
+				}
+			>
+				<div className="bp-address-form">
+					<div className="bp-address-form-row">
+						<div className="bp-address-field">
+							<FormInput
+								name="label"
+								label="Address Label"
+								value={form.label}
+								onChange={(event) => onChange("label", event.target.value)}
+								placeholder="Example: Corporate Office"
+							/>
+						</div>
 
-						<FormInput
-							type="radio"
-							label="Branch Office"
-							name="addressType"
-							value="Branch Office"
-							checked={form.label === "Branch Office"}
-							onChange={() => onChange("label", "Branch Office")}
-						/>
+						<div className="bp-address-field bp-address-type-field">
+							<Radio
+								groupLabel="Address Type"
+								name="addressType"
+								options={addressTypeOptions}
+								selectedValue={form.addressType}
+								onChange={(value) => onChange("addressType", value)}
+							/>
+						</div>
+					</div>
 
-						<FormInput
-							type="radio"
-							label="Billing Address"
-							name="addressType"
-							value="Billing Address"
-							checked={form.label === "Billing Address"}
-							onChange={() => onChange("label", "Billing Address")}
-						/>
-
-						<FormInput
-							type="radio"
-							label="Warehouse"
-							name="addressType"
-							value="Warehouse"
-							checked={form.label === "Warehouse"}
-							onChange={() => onChange("label", "Warehouse")}
+					<div className="bp-address-field bp-address-textarea-field">
+						<TextareaInput
+							name="address"
+							label="Address"
+							value={form.address}
+							onChange={(event) => onChange("address", event.target.value)}
+							placeholder="Flat / Building / Street / Area"
+							rows={2}
+							className="bigtextArea"
 						/>
 					</div>
 				</div>
-
-				<div className="bp-address-field">
-					<TextareaInput
-						name="address"
-						label="Address"
-						value={form.address}
-						onChange={(e) => onChange("address", e.target.value)}
-						placeholder="Flat / Building / Street / Area"
-						rows={4}
-						maxLength={100}
-						className="px-1.5 py-1 bigtextArea"
-					/>
-				</div>
-			</div>
+			</Card>
 		</div>
 	);
 };
