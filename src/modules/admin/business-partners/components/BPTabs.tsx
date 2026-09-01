@@ -1,15 +1,24 @@
 import { useState } from "react";
-
+import type { BusinessPartnerViewModel } from "../hooks/useBusinessPartners";
 import BPAddress from "./BPAddress";
 import BPContact from "./BPContact";
 import BPMainContact from "./BPMainContact";
 import BPOrganization from "./BPOrganization";
 import BPPeople from "./BPPeople";
+import BPBranches from "./BPBranches";
 
-const bpTabs = ["Contact", "Organization", "Address", "Main Contact", "People"];
+const bpTabs = [
+	"Contact",
+	"Organization",
+	"Address",
+	"Branches",
+	"Main Contact",
+	"People",
+] as const;
+type BPTab = (typeof bpTabs)[number];
 
-export const BPTabs = () => {
-	const [activeTab, setActiveTab] = useState("Contact");
+export const BPTabs = ({ view }: { view: BusinessPartnerViewModel }) => {
+	const [activeTab, setActiveTab] = useState<BPTab>("Contact");
 
 	return (
 		<>
@@ -21,8 +30,6 @@ export const BPTabs = () => {
 				{bpTabs.map((tab) => {
 					const isActive = activeTab === tab;
 					const tabId = `bp-tab-${tab.toLowerCase().replace(/\s+/g, "-")}`;
-					const panelId = `${tabId}-panel`;
-
 					return (
 						<button
 							key={tab}
@@ -30,7 +37,7 @@ export const BPTabs = () => {
 							type="button"
 							role="tab"
 							aria-selected={isActive}
-							aria-controls={panelId}
+							aria-controls={`${tabId}-panel`}
 							onClick={() => setActiveTab(tab)}
 							className={`bp-tab-item ${isActive ? "bp-tab-item-active" : ""}`}
 						>
@@ -39,57 +46,30 @@ export const BPTabs = () => {
 					);
 				})}
 			</div>
-
 			<div
 				id={`bp-tab-${activeTab.toLowerCase().replace(/\s+/g, "-")}-panel`}
 				className="bp-tab-content"
 				role="tabpanel"
-				aria-labelledby={`bp-tab-${activeTab.toLowerCase().replace(/\s+/g, "-")}`}
 			>
 				{activeTab === "Contact" && (
 					<BPContact
-						onNavigateTab={(tab) => setActiveTab(tab)}
-						data={{
-							name: "Joe & De Engineers Pvt. Ltd",
-							email: "joedeengineers@gmail.com",
-							mobile_number: "+91 9876543210",
-							fax: "",
-							status: "Active",
-							mainContactPerson: "John Doe",
-							mainContactNumber: "+91 9876543210",
-							state: "Maharashtra",
-							city: "Mumbai",
-							country: "India",
+						onNavigateTab={(tab) => {
+							if (bpTabs.includes(tab as BPTab)) setActiveTab(tab as BPTab);
 						}}
+						data={{ ...view.contact, mobile_number: view.contact.mobileNumber }}
 					/>
 				)}
-
 				{activeTab === "Organization" && (
-					<BPOrganization
-						data={{
-							orgName: "Joe & De Engineers Pvt. Ltd",
-							joinedOn: "12 Jan 2022",
-							branches: "8",
-							gstNo: "29ABCDE1234F1Z5",
-							panNo: "ABCDE1234F",
-							registrationNo: "U12345KA2022PTC000111",
-							bpCode: "J80610",
-							zone: "WEST",
-							segment: "Industrial Equipment",
-							category: "Authorized Dealer",
-							partnerType: "Distributor",
-							status: "Active",
-							website: "www.joedeengineers.com",
-						}}
-					/>
+					<BPOrganization data={view.organization} />
 				)}
-
-				{activeTab === "Address" && <BPAddress />}
-				{activeTab === "Main Contact" && <BPMainContact />}
-				{activeTab === "People" && <BPPeople />}
+				{activeTab === "Address" && <BPAddress addresses={view.addresses} />}
+				{activeTab === "Branches" && <BPBranches branches={view.branches} />}
+				{activeTab === "Main Contact" && (
+					<BPMainContact contacts={view.mainContacts} />
+				)}
+				{activeTab === "People" && <BPPeople people={view.people} />}
 			</div>
 		</>
 	);
 };
-
 export default BPTabs;

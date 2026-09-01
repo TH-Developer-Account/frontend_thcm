@@ -1,68 +1,61 @@
 import { ServerAxios } from "../../../services/ServerAxios";
+import { mapBusinessPartnerListItem } from "./utils/businessPartner.mapper.ts";
 import type {
-	ApiDataResponse,
-	BusinessPartner,
-	BusinessPartnerListingApiResponse,
-	BusinessPartnerListingParams,
+	BusinessPartnerDetail,
+	BusinessPartnerListApiItem,
 	BusinessPartnerListingResult,
-	PdfUrlResponse,
 } from "./utils/bp.types";
 
-const BUSINESS_PARTNER_URL = "/bp";
+const API_URL = "/bp";
 
-export type PdfType = "BUSINESS_PARTNERS";
+type ApiDataResponse<T> = { success: boolean; data: T };
+type BusinessPartnerListResponse = {
+	success: boolean;
+	data: BusinessPartnerListApiItem[];
+	total: number;
+	page: number;
+	limit: number;
+	totalPages: number;
+};
+export type BusinessPartnerListingParams = {
+	search?: string;
+	page?: number;
+	limit?: number;
+};
+
+export const businessPartnerKeys = {
+	all: ["business-partners"] as const,
+	list: (params: BusinessPartnerListingParams) =>
+		[...businessPartnerKeys.all, "list", params] as const,
+	detail: (id: string) => [...businessPartnerKeys.all, "detail", id] as const,
+};
 
 export const businessPartnersApi = {
-	listBusinessPartners: async (
+	list: async (
 		params: BusinessPartnerListingParams,
 	): Promise<BusinessPartnerListingResult> => {
-		const response = await ServerAxios.get<
-			BusinessPartnerListingApiResponse | BusinessPartner[]
-		>(BUSINESS_PARTNER_URL, {
-			params: {
-				search: params.search?.trim() || undefined,
-				page_index: params.pageIndex,
-				page_size: params.pageSize,
+		const { data } = await ServerAxios.get<BusinessPartnerListResponse>(
+			API_URL,
+			{
+				params: {
+					search: params.search?.trim() || undefined,
+					page: params.page ?? 1,
+					limit: params.limit ?? 20,
+				},
 			},
-		});
-
-		const body = response.data;
-		const rows = Array.isArray(body) ? body : (body.data ?? []);
-
+		);
 		return {
-			rows,
-			totalCount: Array.isArray(body)
-				? rows.length
-				: (body.total ?? rows.length),
-			pageIndex: Array.isArray(body)
-				? (params.pageIndex ?? null)
-				: (body.page_index ?? params.pageIndex ?? null),
-			pageSize: Array.isArray(body)
-				? (params.pageSize ?? null)
-				: (body.page_size ?? params.pageSize ?? null),
+			rows: data.data.map(mapBusinessPartnerListItem),
+			totalCount: data.total,
+			page: data.page,
+			limit: data.limit,
+			totalPages: data.totalPages,
 		};
 	},
-
-	getById: async (businessPartnerId: string): Promise<BusinessPartner> => {
-		const {
-			data: { data },
-		} = await ServerAxios.get<ApiDataResponse<BusinessPartner>>(
-			`${BUSINESS_PARTNER_URL}/${encodeURIComponent(businessPartnerId)}`,
-		);
-
-		return data;
-	},
-
-	getPdfUrl: async (
-		type: PdfType,
-		businessPartnerId: string,
-	): Promise<string> => {
-		const {
-			data: { url },
-		} = await ServerAxios.get<PdfUrlResponse>(
-			`/pdf/${type}/${encodeURIComponent(businessPartnerId)}/url`,
-		);
-
-		return url;
+	getById: async (id: string): Promise<BusinessPartnerDetail> => {
+		const { data } = await ServerAxios.get<
+			ApiDataResponse<BusinessPartnerDetail>
+		>(`${API_URL}/${encodeURIComponent(id)}`);
+		return data.data;
 	},
 };

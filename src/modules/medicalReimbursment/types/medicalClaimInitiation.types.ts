@@ -16,8 +16,6 @@ export type MedicalClaimInitiationErrors = Partial<
 	Record<keyof MedicalClaimInitiationPayload, string>
 >;
 
-export type MedicalClaimInitiationImportPayload = FormData;
-
 export interface MedicalClaimInitiationImportResponse {
 	success: boolean;
 	message: string;
@@ -27,6 +25,7 @@ export interface MedicalClaimInitiationImportResponse {
 		failedRows: number;
 	};
 }
+
 export interface ImportedMedicalClaimInitiationRow {
 	/**
 	 * Client-side identifier used only by the table.

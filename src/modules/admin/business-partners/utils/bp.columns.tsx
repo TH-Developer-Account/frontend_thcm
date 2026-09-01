@@ -1,76 +1,58 @@
 import type { ColumnDef } from "@tanstack/react-table";
 
-import { formatDate } from "../../../../utils/format";
+import Button from "../../../../components/common/Button";
 import type { BusinessPartner } from "../utils/bp.types";
 
-type BusinessPartnerListingRow = BusinessPartner & {
-	zone?: string;
-	status?: string;
-};
-
-export const getBusinessPartnerColumns = (): ColumnDef<BusinessPartner>[] => [
-	{
-		accessorKey: "internalId",
-		header: "Internal ID",
-		cell: ({ row }) => (
-			<span className="font-medium tabular-nums">
-				{row.original.internalId || "--"}
-			</span>
-		),
-	},
-	{
-		accessorKey: "externalId",
-		header: "External ID",
-		cell: ({ row }) => (
-			<span className="tabular-nums">{row.original.externalId || "--"}</span>
-		),
-	},
+export const getBusinessPartnerColumns = (
+	onView: (partner: BusinessPartner) => void,
+): ColumnDef<BusinessPartner>[] => [
 	{
 		accessorKey: "organizationName",
-		header: "Organization Name",
+		header: "Business Partner",
 		cell: ({ row }) => (
-			<span className="font-medium">
+			<span className="font-medium tabular-nums">
 				{row.original.organizationName || "--"}
 			</span>
 		),
 	},
 	{
-		accessorKey: "region",
-		header: "Zone",
-		cell: ({ row }) => {
-			const partner = row.original as BusinessPartnerListingRow;
-
-			return <span>{partner.zone || partner.region || "--"}</span>;
-		},
+		accessorKey: "internalId",
+		header: "Short Name",
+		cell: ({ row }) => <span>{row.original.internalId || "--"}</span>,
 	},
 	{
-		accessorKey: "mainContact",
-		header: "Main Contact",
-		cell: ({ row }) => <span>{row.original.mainContact || "--"}</span>,
+		accessorKey: "bpType",
+		header: "BP Type",
+		cell: ({ row }) => <span>{row.original.bpType || "--"}</span>,
 	},
 	{
-		accessorKey: "address",
-		header: "Address",
-		cell: ({ row }) => (
-			<span title={row.original.address}>{row.original.address || "--"}</span>
-		),
+		accessorKey: "officeType",
+		header: "Office Type",
+		cell: ({ row }) => <span>{row.original.region || "--"}</span>,
 	},
 	{
-		accessorKey: "joinedOn",
-		header: "Joined On",
-		cell: ({ row }) => (
-			<span className="whitespace-nowrap">
-				{row.original.joinedOn ? formatDate(row.original.joinedOn) : "--"}
-			</span>
-		),
+		accessorKey: "gst",
+		header: "GST",
+		cell: ({ row }) => <span>{row.original.gst || "--"}</span>,
 	},
 	{
-		id: "status",
+		accessorKey: "status",
 		header: "Status",
-		cell: ({ row }) => {
-			const status = (row.original as BusinessPartnerListingRow).status;
-
-			return <span>{status || "--"}</span>;
-		},
+		cell: ({ row }) => <span>{row.original.status}</span>,
+	},
+	{
+		id: "actions",
+		header: "Action",
+		enableSorting: false,
+		cell: ({ row }) => (
+			<Button
+				type="button"
+				text="View"
+				appearance="standard"
+				variant="outline"
+				size="sm"
+				onClick={() => onView(row.original)}
+			/>
+		),
 	},
 ];

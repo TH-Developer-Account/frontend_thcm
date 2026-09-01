@@ -1,4 +1,9 @@
 import React from "react";
+import type {
+	OnChangeFn,
+	PaginationState,
+	SortingState,
+} from "@tanstack/react-table";
 
 import DataTable from "../../../../components/ui/tables/DataTable/DataTable";
 import type { BusinessPartner } from "../utils/bp.types";
@@ -7,6 +12,13 @@ import { getBusinessPartnerColumns } from "./businessPartner.columns";
 
 type BPTableProps = {
 	partners: BusinessPartner[];
+
+	pagination: PaginationState;
+	pageCount: number;
+	onPaginationChange: OnChangeFn<PaginationState>;
+
+	onView: (partner: BusinessPartner) => void;
+
 	isLoading?: boolean;
 	isFetching?: boolean;
 	isError?: boolean;
@@ -14,15 +26,51 @@ type BPTableProps = {
 
 const BPTable = ({
 	partners,
+	pagination,
+	pageCount,
+	onPaginationChange,
+	onView,
 	isLoading = false,
 	isFetching = false,
 	isError = false,
 }: BPTableProps) => {
-	const columns = React.useMemo(() => getBusinessPartnerColumns(), []);
+	const [sorting, setSorting] = React.useState<SortingState>([]);
+
+	const columns = React.useMemo(
+		() => getBusinessPartnerColumns(onView),
+		[onView],
+	);
 
 	const tableData = React.useMemo(
 		() => (Array.isArray(partners) ? partners : []),
 		[partners],
+	);
+
+	const updatePagination = React.useCallback(
+		(updater: React.SetStateAction<PaginationState>) => {
+			onPaginationChange(updater);
+		},
+		[onPaginationChange],
+	);
+
+	const handlePageChange = React.useCallback(
+		(pageIndex: number) => {
+			updatePagination((current) => ({
+				...current,
+				pageIndex,
+			}));
+		},
+		[updatePagination],
+	);
+
+	const handlePageSizeChange = React.useCallback(
+		(pageSize: number) => {
+			updatePagination({
+				pageIndex: 0,
+				pageSize,
+			});
+		},
+		[updatePagination],
 	);
 
 	if (isError) {
@@ -47,8 +95,17 @@ const BPTable = ({
 				data={tableData}
 				columns={columns}
 				loading={isLoading}
+				enableSorting
 				manualSorting={false}
-				manualPagination={true}
+				sorting={sorting}
+				onSortingChange={setSorting}
+				enablePagination
+				manualPagination
+				pageIndex={pagination.pageIndex}
+				pageSize={pagination.pageSize}
+				pageCount={pageCount}
+				onPageChange={handlePageChange}
+				onPageSizeChange={handlePageSizeChange}
 				scrollTargetId="business-partner-table-scroll"
 				emptyTitle="No business partners found"
 				emptyDescription="Try adjusting the current search term."

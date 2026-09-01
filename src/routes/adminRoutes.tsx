@@ -42,7 +42,7 @@ export default function AdminRoutes() {
 
 				<Route path="business-partners" element={<BusinessPartners />} />
 				<Route
-					path="business-partners-view"
+					path="business-partners/:id/view"
 					element={<BusinessPartnerView />}
 				/>
 				<Route path="bydesign" element={<ByDesignPage />} />

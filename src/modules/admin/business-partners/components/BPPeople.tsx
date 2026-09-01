@@ -1,179 +1,106 @@
 import { Mail, Phone } from "lucide-react";
 import type { SimpleTableColumn } from "../../../../components/ui/tables/SimpleViewTable";
 import SimpleViewTable from "../../../../components/ui/tables/SimpleViewTable";
+import type { BPContactViewModel } from "../hooks/useBusinessPartners";
 
-type OrganizationUserStatus = "Active" | "Inactive";
-
-type OrganizationUser = {
-	id: number;
-	name: string;
-	role: string;
-	email: string;
-	phone: string;
-	department: string;
-	status: OrganizationUserStatus;
-};
-
-const organizationUsers: OrganizationUser[] = [
-	{
-		id: 1,
-		name: "Ananya Sharma",
-		role: "Admin",
-		email: "ananya.sharma@company.com",
-		phone: "+91 98765 43210",
-		department: "Operations",
-		status: "Active",
-	},
-	{
-		id: 2,
-		name: "Rahul Verma",
-		role: "Manager",
-		email: "rahul.verma@company.com",
-		phone: "+91 91234 56789",
-		department: "Sales",
-		status: "Active",
-	},
-	{
-		id: 3,
-		name: "Sneha Reddy",
-		role: "Executive",
-		email: "sneha.reddy@company.com",
-		phone: "+91 99887 76655",
-		department: "Marketing",
-		status: "Inactive",
-	},
-	{
-		id: 4,
-		name: "Arjun Nair",
-		role: "Finance Lead",
-		email: "arjun.nair@company.com",
-		phone: "+91 93456 78123",
-		department: "Finance",
-		status: "Active",
-	},
-];
-
-const getInitials = (name: string): string =>
+const getInitials = (name: string) =>
 	name
-		.trim()
 		.split(/\s+/)
 		.slice(0, 2)
-		.map((part) => part.charAt(0))
+		.map((part) => part[0])
 		.join("")
 		.toUpperCase();
 
-const columns: SimpleTableColumn<OrganizationUser>[] = [
+const columns: SimpleTableColumn<BPContactViewModel>[] = [
 	{
 		key: "user",
-		header: "User",
+		header: "Person",
 		widthUnits: 3,
 		minWidth: 190,
-		render: (user) => (
+		render: (person) => (
 			<div className="bp-people-user">
 				<div className="bp-people-avatar" aria-hidden="true">
-					{getInitials(user.name)}
+					{getInitials(person.name)}
 				</div>
-
 				<div className="bp-people-user-copy">
-					<p className="bp-people-name">{user.name}</p>
-					<p className="bp-people-id">Employee ID #{user.id}</p>
+					<p className="bp-people-name">{person.name}</p>
+					<p className="bp-people-id">Contact ID #{person.id.slice(0, 8)}</p>
 				</div>
 			</div>
 		),
 	},
 	{
 		key: "role",
-		header: "Role / Department",
+		header: "Role",
 		widthUnits: 2,
-		minWidth: 150,
-		render: (user) => (
-			<div className="bp-people-role-details">
-				<span className="bp-people-role">{user.role}</span>
-				<span className="bp-people-department">{user.department}</span>
-			</div>
-		),
+		minWidth: 130,
+		render: (person) => <span className="bp-people-role">{person.role}</span>,
 	},
 	{
 		key: "contact",
 		header: "Contact",
 		widthUnits: 4,
 		minWidth: 230,
-		render: (user) => (
+		render: (person) => (
 			<div className="bp-people-contact-list">
-				<a
-					href={`mailto:${user.email}`}
-					className="bp-people-contact-row"
-					title={user.email}
-				>
-					<Mail
-						size={13}
-						className="bp-people-contact-icon"
-						aria-hidden="true"
-					/>
-
-					<span className="bp-people-contact">{user.email}</span>
-				</a>
-
-				<a
-					href={`tel:${user.phone.replace(/\s+/g, "")}`}
-					className="bp-people-contact-row"
-				>
-					<Phone
-						size={13}
-						className="bp-people-contact-icon"
-						aria-hidden="true"
-					/>
-
-					<span className="bp-people-contact">{user.phone}</span>
-				</a>
+				{person.email ? (
+					<a href={`mailto:${person.email}`} className="bp-people-contact-row">
+						<Mail
+							size={13}
+							className="bp-people-contact-icon"
+							aria-hidden="true"
+						/>
+						<span className="bp-people-contact">{person.email}</span>
+					</a>
+				) : (
+					<span>--</span>
+				)}
+				{person.phoneNumber ? (
+					<a
+						href={`tel:${person.phoneNumber.replace(/\s+/g, "")}`}
+						className="bp-people-contact-row"
+					>
+						<Phone
+							size={13}
+							className="bp-people-contact-icon"
+							aria-hidden="true"
+						/>
+						<span className="bp-people-contact">{person.phoneNumber}</span>
+					</a>
+				) : null}
 			</div>
 		),
 	},
 	{
-		key: "status",
-		header: "Status",
-		widthUnits: 1,
-		minWidth: 100,
-		render: (user) => (
-			<span
-				className={`bp-people-status ${
-					user.status === "Active"
-						? "bp-people-status--active"
-						: "bp-people-status--inactive"
-				}`}
-			>
-				{user.status}
-			</span>
-		),
+		key: "pan",
+		header: "PAN",
+		widthUnits: 2,
+		minWidth: 140,
+		render: (person) => <span>{person.panNumber || "--"}</span>,
 	},
 ];
 
-const BPPeople = () => {
-	return (
-		<div className="bp-people">
-			<div className="bp-people-header">
-				<div>
-					<h3 className="bp-people-title">User Directory</h3>
-
-					<p className="bp-people-description">
-						View and manage all organization members in one place.
-					</p>
-				</div>
+const BPPeople = ({ people }: { people: BPContactViewModel[] }) => (
+	<div className="bp-people">
+		<div className="bp-people-header">
+			<div>
+				<h3 className="bp-people-title">People</h3>
+				<p className="bp-people-description">
+					Business partner owners and contacts.
+				</p>
 			</div>
-
-			<SimpleViewTable<OrganizationUser>
-				data={organizationUsers}
-				columns={columns}
-				getRowId={(user) => String(user.id)}
-				maxHeight="360px"
-				defaultColumnMinWidth={100}
-				className="bp-people-view-table"
-				ariaLabel="Organization user directory"
-				emptyTitle="No organization members found"
-				emptyDescription="No users have been added to this organization."
-			/>
 		</div>
-	);
-};
+		<SimpleViewTable
+			data={people}
+			columns={columns}
+			getRowId={(person) => person.id}
+			maxHeight="360px"
+			className="bp-people-view-table"
+			ariaLabel="Business partner people"
+			emptyTitle="No people found"
+			emptyDescription="No contacts are associated with this business partner."
+		/>
+	</div>
+);
 
 export default BPPeople;

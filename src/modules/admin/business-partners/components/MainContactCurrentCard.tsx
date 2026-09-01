@@ -1,23 +1,12 @@
-import { Trash } from "lucide-react";
-
-import Button from "../../../../components/common/Button";
-
-import type { MainContact } from "../utils/bp.types";
 import Card from "../../../../components/common/Card";
+import type { BPContactViewModel } from "../hooks/useBusinessPartners";
 
 type Props = {
-	contacts: MainContact[];
+	contacts: BPContactViewModel[];
 	fallbackValue: string;
-	onSetDefault: (id: string) => void;
-	onRemoveContact: (id: string) => void;
 };
 
-const MainContactCurrentCard = ({
-	contacts,
-	fallbackValue,
-	onSetDefault,
-	onRemoveContact,
-}: Props) => {
+const MainContactCurrentCard = ({ contacts, fallbackValue }: Props) => {
 	return (
 		<section
 			className="main-contact-card"
@@ -33,33 +22,9 @@ const MainContactCurrentCard = ({
 						<Card
 							title={contact.name}
 							actions={
-								contact.isDefault && (
+								contact.isMainContact && (
 									<span className="main-contact-default-badge">Default</span>
 								)
-							}
-							footer={
-								<>
-									{!contact.isDefault && (
-										<Button
-											type="button"
-											text="Set Default"
-											appearance="standard"
-											variant="brand"
-											size="sm"
-											onClick={() => onSetDefault(contact.id)}
-										/>
-									)}
-
-									<Button
-										type="button"
-										text="Remove"
-										Icon={Trash}
-										appearance="standard"
-										variant="outline"
-										size="sm"
-										onClick={() => onRemoveContact(contact.id)}
-									/>
-								</>
 							}
 						>
 							<div className="main-contact-list-info">
@@ -73,12 +38,12 @@ const MainContactCurrentCard = ({
 
 									<p className="main-contact-list-meta">
 										<span>Number</span>
-										<strong>{contact.number || fallbackValue}</strong>
+										<strong>{contact.phoneNumber || fallbackValue}</strong>
 									</p>
 
 									<p className="main-contact-list-meta">
-										<span>Department</span>
-										<strong>{contact.department || fallbackValue}</strong>
+										<span>Role</span>
+										<strong>{contact.role}</strong>
 									</p>
 								</div>
 							</div>

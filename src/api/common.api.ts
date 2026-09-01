@@ -18,6 +18,50 @@ export const budgetApi = {
 	},
 };
 
+export interface ImportJobStatus<TRow = unknown> {
+	success: boolean;
+	status: "waiting" | "active" | "completed" | "failed";
+	rows?: TRow[];
+	failedReason?: string;
+	jobId: string;
+}
+
+export interface EnqueueImportResponse {
+	success: boolean;
+	jobId: string;
+	logId?: string;
+	pollUrl?: string;
+	message?: string;
+}
+
+export function createImportApi<TRow = unknown>(
+	baseUrl: string,
+	options: { enqueuePath?: string; statusPath?: string } = {},
+) {
+	const enqueuePath = options.enqueuePath ?? "";
+	const statusPath = options.statusPath ?? "/status";
+
+	return {
+		enqueueImport: async (
+			formData: FormData,
+		): Promise<EnqueueImportResponse> => {
+			const { data } = await ServerAxios.post<EnqueueImportResponse>(
+				`${baseUrl}${enqueuePath}`,
+				formData,
+				{ headers: { "Content-Type": "multipart/form-data" } },
+			);
+			return data;
+		},
+
+		getImportStatus: async (jobId: string): Promise<ImportJobStatus<TRow>> => {
+			const { data } = await ServerAxios.get<ImportJobStatus<TRow>>(
+				`${baseUrl}${statusPath}/${jobId}`,
+			);
+			return data;
+		},
+	};
+}
+
 export interface ExportJobStatus {
 	success: boolean;
 	status: "waiting" | "active" | "completed" | "failed";

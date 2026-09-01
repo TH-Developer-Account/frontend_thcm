@@ -1,12 +1,17 @@
 import type { ColumnDef } from "@tanstack/react-table";
+import { Eye } from "lucide-react";
 
+import Button from "../../../../components/common/Button";
 import { formatDate } from "../../../../utils/format";
 import type { BusinessPartner } from "../utils/bp.types";
 
-export const getBusinessPartnerColumns = (): ColumnDef<BusinessPartner>[] => [
+export const getBusinessPartnerColumns = (
+	onView: (partner: BusinessPartner) => void,
+): ColumnDef<BusinessPartner>[] => [
 	{
 		accessorKey: "internalId",
 		header: "Internal ID",
+		enableSorting: true,
 		cell: ({ row }) => (
 			<span className="font-medium tabular-nums">
 				{row.original.internalId || "--"}
@@ -16,6 +21,7 @@ export const getBusinessPartnerColumns = (): ColumnDef<BusinessPartner>[] => [
 	{
 		accessorKey: "externalId",
 		header: "External ID",
+		enableSorting: true,
 		cell: ({ row }) => (
 			<span className="tabular-nums">{row.original.externalId || "--"}</span>
 		),
@@ -23,6 +29,7 @@ export const getBusinessPartnerColumns = (): ColumnDef<BusinessPartner>[] => [
 	{
 		accessorKey: "organizationName",
 		header: "Organization Name",
+		enableSorting: true,
 		cell: ({ row }) => (
 			<span className="font-medium">
 				{row.original.organizationName || "--"}
@@ -32,16 +39,19 @@ export const getBusinessPartnerColumns = (): ColumnDef<BusinessPartner>[] => [
 	{
 		accessorKey: "region",
 		header: "Region",
+		enableSorting: true,
 		cell: ({ row }) => <span>{row.original.region || "--"}</span>,
 	},
 	{
 		accessorKey: "mainContact",
 		header: "Main Contact",
+		enableSorting: true,
 		cell: ({ row }) => <span>{row.original.mainContact || "--"}</span>,
 	},
 	{
 		accessorKey: "address",
 		header: "Address",
+		enableSorting: true,
 		cell: ({ row }) => (
 			<span title={row.original.address}>{row.original.address || "--"}</span>
 		),
@@ -49,10 +59,31 @@ export const getBusinessPartnerColumns = (): ColumnDef<BusinessPartner>[] => [
 	{
 		accessorKey: "joinedOn",
 		header: "Joined On",
+		enableSorting: true,
+		sortingFn: "datetime",
 		cell: ({ row }) => (
 			<span className="whitespace-nowrap">
 				{row.original.joinedOn ? formatDate(row.original.joinedOn) : "--"}
 			</span>
+		),
+	},
+	{
+		id: "actions",
+		header: "Action",
+		enableSorting: false,
+		cell: ({ row }) => (
+			<Button
+				type="button"
+				text="View"
+				Icon={Eye}
+				iconPosition="left"
+				iconSize={15}
+				appearance="standard"
+				variant="outline"
+				size="sm"
+				onClick={() => onView(row.original)}
+				aria-label={`View ${row.original.organizationName}`}
+			/>
 		),
 	},
 ];
