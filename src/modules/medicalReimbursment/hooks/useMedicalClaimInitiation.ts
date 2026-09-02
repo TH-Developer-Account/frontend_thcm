@@ -13,21 +13,14 @@ import {
 	useResendMedicalClaimLinkMutation,
 } from "../hooks/useMedicalClaimMutations";
 import type {
-	ImportedMedicalClaimInitiationApiRow,
 	MedicalClaimInitiationErrors,
+	MedicalClaimImportProgress,
 	MedicalClaimInitiationPayload,
 	MedicalClaimInitiationValues,
 } from "../types/medicalClaimInitiation.types";
 import type { MedicalClaimDetail } from "../types/medicalClaimListing.types";
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
-import type {
-	BulkMedicalClaimInitiationPayload,
-	ImportedMedicalClaimInitiationRow,
-} from "../types/medicalClaimInitiation.types";
-import {
-	useBulkMedicalClaimInitiationMutation,
-	useImportMedicalClaimInitiationsMutation,
-} from "./useMedicalClaimMutations";
+import { medicalClaimApi } from "../api/medicalClaim.api";
 
 const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
 	if (typeof error === "object" && error !== null && "response" in error) {
@@ -45,15 +38,8 @@ const getErrorMessage = (error: unknown, fallbackMessage: string): string => {
 	return fallbackMessage;
 };
 
-const createImportedRowId = (
-	index: number,
-	email: string,
-	mobile: string,
-): string => `${email}-${mobile}-${index}`;
-
 type UseMedicalClaimInitiationImportOptions = {
-	onImportSuccess?: (rows: ImportedMedicalClaimInitiationRow[]) => void;
-	onInitiateSuccess?: () => void | Promise<void>;
+	onImportSuccess?: () => void | Promise<void>;
 };
 const EMPTY_VALUES: MedicalClaimInitiationValues = {
 	employeeName: "",
@@ -222,20 +208,17 @@ export const useMedicalClaimInitiation = ({
 
 export function useMedicalClaimInitiationImport({
 	onImportSuccess,
-	onInitiateSuccess,
 }: UseMedicalClaimInitiationImportOptions = {}) {
 	const [isImportModalOpen, setIsImportModalOpen] = React.useState(false);
 	const [importFile, setImportFile] = React.useState<FileUploadValue | null>(
 		null,
 	);
 	const [importFileError, setImportFileError] = React.useState<string>();
-	const [initiateAllError, setInitiateAllError] = React.useState<string>();
-	const [importedRows, setImportedRows] = React.useState<
-		ImportedMedicalClaimInitiationRow[]
-	>([]);
+	const [isImporting, setIsImporting] = React.useState(false);
+	const [progress, setProgress] = React.useState<MedicalClaimImportProgress>();
+	const pollTimerRef = React.useRef<number | undefined>(undefined);
 
-	const importMutation = useImportMedicalClaimInitiationsMutation();
-	const bulkInitiationMutation = useBulkMedicalClaimInitiationMutation();
+	React.useEffect(() => () => window.clearTimeout(pollTimerRef.current), []);
 
 	const openImportModal = React.useCallback(() => {
 		setImportFile(null);
@@ -244,12 +227,12 @@ export function useMedicalClaimInitiationImport({
 	}, []);
 
 	const closeImportModal = React.useCallback(() => {
-		if (importMutation.isPending) return;
+		if (isImporting) return;
 
 		setIsImportModalOpen(false);
 		setImportFile(null);
 		setImportFileError(undefined);
-	}, [importMutation.isPending]);
+	}, [isImporting]);
 
 	const handleImportFileChange = React.useCallback(
 		(value: FileUploadValue | null) => {
@@ -271,37 +254,60 @@ export function useMedicalClaimInitiationImport({
 		formData.append("file", selectedFile);
 
 		try {
+			setIsImporting(true);
 			setImportFileError(undefined);
-			setInitiateAllError(undefined);
+			setProgress({
+				status: "waiting",
+				totalRows: 0,
+				processedRows: 0,
+				failedRows: 0,
+				errors: [],
+			});
 
-			const response = await importMutation.mutateAsync(formData);
-			const rows = Array.isArray(response) ? response : [];
-			rows.map(
-				(
-					row: ImportedMedicalClaimInitiationApiRow,
-					index: number,
-				): ImportedMedicalClaimInitiationRow => ({
-					rowId: createImportedRowId(index, row.email, row.mobile),
-					employeeName: row.employeeName,
-					grade: row.grade,
-					email: row.email,
-					mobile: row.mobile,
-				}),
-			);
-
-			if (rows.length === 0) {
-				setImportFileError(
-					"No valid employee records were found in the selected file.",
-				);
-				return;
-			}
-
-			setImportedRows(rows);
+			const { jobId } = await medicalClaimApi.enqueueInitiationImport(formData);
 			setIsImportModalOpen(false);
 			setImportFile(null);
 
-			onImportSuccess?.(rows);
+			const poll = async (): Promise<void> => {
+				const result = await medicalClaimApi.getInitiationImportStatus(jobId);
+				setProgress({
+					status: result.status,
+					...result.progress,
+					errors: result.errors ?? [],
+					failedReason: result.failedReason,
+				});
+
+				if (result.status === "completed") {
+					setIsImporting(false);
+					await onImportSuccess?.();
+					return;
+				}
+				if (result.status === "failed") {
+					setIsImporting(false);
+					return;
+				}
+				pollTimerRef.current = window.setTimeout(() => {
+					void poll().catch((pollError) => {
+						setIsImporting(false);
+						setProgress((current) =>
+							current
+								? {
+										...current,
+										status: "failed",
+										failedReason: getErrorMessage(
+											pollError,
+											"Unable to retrieve the import status.",
+										),
+									}
+								: current,
+						);
+					});
+				}, 1500);
+			};
+
+			await poll();
 		} catch (error) {
+			setIsImporting(false);
 			setImportFileError(
 				getErrorMessage(
 					error,
@@ -309,62 +315,23 @@ export function useMedicalClaimInitiationImport({
 				),
 			);
 		}
-	}, [importFile?.file, importMutation, onImportSuccess]);
+	}, [importFile?.file, onImportSuccess]);
 
-	const handleInitiateAll = React.useCallback(async () => {
-		if (importedRows.length === 0) {
-			setInitiateAllError("There are no imported employees to initiate.");
-			return;
-		}
-
-		const payload: BulkMedicalClaimInitiationPayload = {
-			employees: importedRows.map(({ employeeName, grade, email, mobile }) => ({
-				employeeName,
-				grade,
-				email,
-				mobile,
-			})),
-		};
-
-		try {
-			setInitiateAllError(undefined);
-
-			await bulkInitiationMutation.mutateAsync(payload);
-
-			setImportedRows([]);
-			await onInitiateSuccess?.();
-		} catch (error) {
-			setInitiateAllError(
-				getErrorMessage(
-					error,
-					"Unable to initiate the imported medical claims. Please try again.",
-				),
-			);
-		}
-	}, [bulkInitiationMutation, importedRows, onInitiateSuccess]);
-
-	const clearImportedRows = React.useCallback(() => {
-		if (bulkInitiationMutation.isPending) return;
-
-		setImportedRows([]);
-		setInitiateAllError(undefined);
-	}, [bulkInitiationMutation.isPending]);
+	const clearProgress = React.useCallback(() => {
+		if (!isImporting) setProgress(undefined);
+	}, [isImporting]);
 
 	return {
 		isImportModalOpen,
 		importFile,
 		importFileError,
-		importedRows,
-		initiateAllError,
-
-		isImporting: importMutation.isPending,
-		isInitiatingAll: bulkInitiationMutation.isPending,
+		progress,
+		isImporting,
 
 		openImportModal,
 		closeImportModal,
 		handleImportFileChange,
 		handleImportFile,
-		handleInitiateAll,
-		clearImportedRows,
+		clearProgress,
 	};
 }

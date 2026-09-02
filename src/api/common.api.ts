@@ -20,7 +20,13 @@ export const budgetApi = {
 
 export interface ImportJobStatus<TRow = unknown> {
 	success: boolean;
-	status: "waiting" | "active" | "completed" | "failed";
+	status: "waiting" | "delayed" | "active" | "completed" | "failed";
+	progress: {
+		totalRows: number;
+		processedRows: number;
+		failedRows: number;
+	};
+	errors: TRow[];
 	rows?: TRow[];
 	failedReason?: string;
 	jobId: string;
@@ -34,12 +40,19 @@ export interface EnqueueImportResponse {
 	message?: string;
 }
 
+type ImportApiOptions = {
+	enqueuePath?: string;
+	statusPath?: string;
+	statusJobIdMode?: "path" | "query";
+};
+
 export function createImportApi<TRow = unknown>(
 	baseUrl: string,
-	options: { enqueuePath?: string; statusPath?: string } = {},
+	options: ImportApiOptions = {},
 ) {
 	const enqueuePath = options.enqueuePath ?? "";
 	const statusPath = options.statusPath ?? "/status";
+	const statusJobIdMode = options.statusJobIdMode ?? "path";
 
 	return {
 		enqueueImport: async (
@@ -48,15 +61,27 @@ export function createImportApi<TRow = unknown>(
 			const { data } = await ServerAxios.post<EnqueueImportResponse>(
 				`${baseUrl}${enqueuePath}`,
 				formData,
-				{ headers: { "Content-Type": "multipart/form-data" } },
 			);
+
 			return data;
 		},
 
 		getImportStatus: async (jobId: string): Promise<ImportJobStatus<TRow>> => {
+			const encodedJobId = encodeURIComponent(jobId);
+
 			const { data } = await ServerAxios.get<ImportJobStatus<TRow>>(
-				`${baseUrl}${statusPath}/${jobId}`,
+				statusJobIdMode === "query"
+					? `${baseUrl}${statusPath}`
+					: `${baseUrl}${statusPath}/${encodedJobId}`,
+				statusJobIdMode === "query"
+					? {
+							params: {
+								jobId,
+							},
+						}
+					: undefined,
 			);
+
 			return data;
 		},
 	};

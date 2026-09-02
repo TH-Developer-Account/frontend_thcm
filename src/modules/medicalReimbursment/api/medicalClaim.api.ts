@@ -9,22 +9,19 @@ import type {
 	MedicalClaimListItem,
 	MedicalClaimMutationResponse,
 } from "../types/medicalClaimListing.types";
-import type {
-	BulkMedicalClaimInitiationPayload,
-	BulkMedicalClaimInitiationResponse,
-} from "../types/medicalClaimInitiation.types";
 import type { ClaimHeadRow } from "../types/reimbursementClaim.types";
 import { createExportApi, createImportApi } from "../../../api/common.api";
-import type { ImportedMedicalClaimInitiationApiRow } from "../types/medicalClaimInitiation.types";
+import type { MedicalClaimImportError } from "../types/medicalClaimInitiation.types";
 
 const MEDICAL_CLAIM_URL = "/medi-claim";
 const medicalExportApi = createExportApi(`${MEDICAL_CLAIM_URL}/export`, {
 	enqueuePath: "",
 });
-const medicalImportApi = createImportApi<ImportedMedicalClaimInitiationApiRow>(
-	"/import",
-	{ enqueuePath: "/medical-claims", statusPath: "/status" },
-);
+const medicalImportApi = createImportApi<MedicalClaimImportError>("/import", {
+	enqueuePath: "/medical-claims",
+	statusPath: "/status/medical-claims",
+	statusJobIdMode: "query",
+});
 
 type ApiDataResponse<T> = {
 	success: boolean;
@@ -103,16 +100,6 @@ export const medicalClaimApi = {
 		return data;
 	},
 
-	initiateImportedEmployees: async (
-		payload: BulkMedicalClaimInitiationPayload,
-	): Promise<BulkMedicalClaimInitiationResponse> => {
-		const { data } = await ServerAxios.post<BulkMedicalClaimInitiationResponse>(
-			"/medi-claim/initiate/bulk",
-			payload,
-		);
-
-		return data;
-	},
 	resendLink: async (
 		claimId: string,
 	): Promise<MedicalClaimMutationResponse> => {

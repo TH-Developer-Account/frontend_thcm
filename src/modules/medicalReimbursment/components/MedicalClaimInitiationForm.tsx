@@ -76,22 +76,15 @@ const MedicalClaimInitiationForm = ({
 		isImportModalOpen,
 		importFile,
 		importFileError,
-		importedRows,
-		initiateAllError,
+		progress,
 		isImporting,
-		isInitiatingAll,
 		openImportModal,
 		closeImportModal,
 		handleImportFileChange,
 		handleImportFile,
-		handleInitiateAll,
-		clearImportedRows,
+		clearProgress,
 	} = useMedicalClaimInitiationImport({
-		onImportSuccess: (rows) => {
-			console.log("Imported employees:", rows);
-		},
-
-		onInitiateSuccess: async () => {
+		onImportSuccess: async () => {
 			await onSuccess?.();
 		},
 	});
@@ -279,11 +272,9 @@ const MedicalClaimInitiationForm = ({
 			</form>
 			{!isViewMode ? (
 				<ImportedMedicalClaimInitiationTable
-					rows={importedRows}
-					error={initiateAllError}
-					isInitiating={isInitiatingAll}
-					onClear={clearImportedRows}
-					onInitiateAll={() => void handleInitiateAll()}
+					progress={progress}
+					isImporting={isImporting}
+					onClear={clearProgress}
 				/>
 			) : null}
 			<Modal

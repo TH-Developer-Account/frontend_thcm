@@ -16,49 +16,18 @@ export type MedicalClaimInitiationErrors = Partial<
 	Record<keyof MedicalClaimInitiationPayload, string>
 >;
 
-export interface MedicalClaimInitiationImportResponse {
-	success: boolean;
-	message: string;
-	data?: {
-		totalRows: number;
-		importedRows: number;
-		failedRows: number;
-	};
-}
+export type MedicalClaimImportError = {
+	row?: number;
+	employeeName?: string;
+	message?: string;
+	error?: string;
+};
 
-export interface ImportedMedicalClaimInitiationRow {
-	/**
-	 * Client-side identifier used only by the table.
-	 * Do not include this in the initiation payload.
-	 */
-	rowId: string;
-	employeeName: string;
-	grade: string;
-	email: string;
-	mobile: string;
-}
-
-export type ImportedMedicalClaimInitiationApiRow = Omit<
-	ImportedMedicalClaimInitiationRow,
-	"rowId"
->;
-
-export interface MedicalClaimInitiationImportResponse {
-	success: boolean;
-	message: string;
-	importedData: ImportedMedicalClaimInitiationApiRow[];
-}
-
-export interface BulkMedicalClaimInitiationPayload {
-	employees: ImportedMedicalClaimInitiationApiRow[];
-}
-
-export interface BulkMedicalClaimInitiationResponse {
-	success: boolean;
-	message: string;
-	data?: {
-		total: number;
-		initiated: number;
-		failed: number;
-	};
-}
+export type MedicalClaimImportProgress = {
+	status: "waiting" | "delayed" | "active" | "completed" | "failed";
+	totalRows: number;
+	processedRows: number;
+	failedRows: number;
+	errors: MedicalClaimImportError[];
+	failedReason?: string;
+};
