@@ -1,7 +1,9 @@
-import { Eye } from "lucide-react";
+import { FileDown, FileSpreadsheet } from "lucide-react";
 
 import { Badge } from "../../../../../components/common/Badge";
-import Button from "../../../../../components/common/Button";
+import ActionMenu, {
+	type ActionMenuItem,
+} from "../../../../../components/common/ActionMenu";
 import type { EpcDetailResponse } from "../../types/epc.types";
 
 type ActivityPlannerHeaderProps = {
@@ -9,18 +11,45 @@ type ActivityPlannerHeaderProps = {
 	proposerName?: string;
 	loading?: boolean;
 	onPreview: () => void;
+
+	isPreparingPdf?: boolean;
+	isDownloadingPdf?: boolean;
+	isExportingExcel?: boolean;
+	onDownloadPdf?: () => void | Promise<void>;
+	onExportExcel?: () => void | Promise<void>;
 };
 
 const ActivityPlannerHeader = ({
 	epcData,
-	loading = false,
 	proposerName,
-	onPreview,
+	isPreparingPdf = false,
+	isDownloadingPdf = false,
+	isExportingExcel = false,
+	onDownloadPdf,
+	onExportExcel,
 }: ActivityPlannerHeaderProps) => {
 	const title = epcData?.event_name?.title || "Activity Planning Calendar";
 
 	const proposalNo = epcData?.proposal_number || "--";
 	const status = epcData?.status || "IN_PROGRESS";
+	const epcId = epcData?.id ?? "";
+
+	const activityActions: ActionMenuItem<string>[] = [
+		{
+			id: "download-pdf",
+			label: isPreparingPdf || isDownloadingPdf ? "Downloading…" : "PDF",
+			Icon: FileDown,
+			onClick: () => void onDownloadPdf?.(),
+			disabled: !onDownloadPdf || isPreparingPdf || isDownloadingPdf,
+		},
+		{
+			id: "export-excel",
+			label: isExportingExcel ? "Exporting…" : "Excel",
+			Icon: FileSpreadsheet,
+			onClick: () => void onExportExcel?.(),
+			disabled: !onExportExcel || isExportingExcel,
+		},
+	];
 
 	return (
 		<section
@@ -37,18 +66,13 @@ const ActivityPlannerHeader = ({
 				</div>
 
 				<div className="activity-planner-summary-actions">
-					<Button
-						type="button"
-						text="Preview"
-						Icon={Eye}
-						iconPosition="left"
-						iconSize={14}
-						appearance="standard"
-						variant="outline"
-						size="sm"
-						onClick={onPreview}
-						className="activity-planner-preview-button"
-						disabled={!epcData || loading}
+					<ActionMenu
+						size="xs"
+						row={epcId}
+						actions={activityActions}
+						ariaLabel="Activity planner export actions"
+						triggerLabel="Export"
+						triggerVariant="brand"
 					/>
 				</div>
 			</div>

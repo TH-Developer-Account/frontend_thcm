@@ -1,6 +1,6 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { useParams } from "react-router-dom";
-import { lazy, Suspense } from "react";
+
 import Loader from "../../../../components/ui/Loader";
 import { PageHeader } from "../../../../components/ui/PageHeader";
 import PageRowSectionLayout from "../../../../layout/PageRowSectionLayout";
@@ -8,49 +8,73 @@ import ActivityFormView from "../components/activityFormView/ActivityFormView";
 import ActivityPlannerHeader from "../components/activityFormView/ActivityPlannerHeader";
 import EventReportTemplate from "../forms/EventReport/EventReportTemplate";
 import { useActivityPlanner } from "../hooks/useActivityPlanner";
+import { Alert } from "../../../../components/common/Alert";
+import { navigateToDownloadUrl } from "../../../../utils/exportJob.helper";
 
 const ActivityPlannerPdfPreview = lazy(
 	() => import("../components/activityFormView/ActivityPlannerPdfPreview"),
 );
+
 const EventReportPreview = lazy(
 	() => import("../forms/EventReport/EventReportPreview"),
 );
+
 type PageView = "form" | "report-builder" | "report-preview";
 
 const ActivityPlannerPage = () => {
 	const { id } = useParams<{ id: string }>();
+
 	const {
 		epcData,
 		workflowEntries,
 		reportData,
 		reportQuery,
 		permissions,
+
 		isLoading,
 		isFetching,
 		proposerName,
 		hasValidatorPreviewed,
+
 		isValidatingReport,
 		isClarifyingReport,
 		isClosingEPC,
+
+		isPreparingPdf,
+		isDownloadingPdf,
+		isExportingExcel,
+		exportState,
+
+		handleDownloadPdf,
+		handleExport,
+		dismissExport,
+
 		handleRefresh,
 		handleOpenReportPreview,
 		handleValidateReport,
 		handleClarifyReport,
+		handleCloseEPC,
+
 		isSubmittingClarifiedUpdate,
 		submitClarifiedUpdate,
 		isSubmittingDeviationUpdate,
 		submitDeviationUpdate,
-		handleCloseEPC,
 	} = useActivityPlanner(id);
 
 	const [pageView, setPageView] = React.useState<PageView>("form");
+
 	const [isPreviewOpen, setIsPreviewOpen] = React.useState(false);
+
 	const [editingSection, setEditingSection] = React.useState<
 		"epc" | "crf" | "epf" | null
 	>(null);
 
 	const closeReportPreview = React.useCallback(() => {
 		setPageView("form");
+	}, []);
+
+	const openActivityPlannerPreview = React.useCallback(() => {
+		setIsPreviewOpen(true);
 	}, []);
 
 	const openReportBuilder = React.useCallback(() => {
@@ -103,12 +127,62 @@ const ActivityPlannerPage = () => {
 					/>
 				}
 				header_children={
-					<ActivityPlannerHeader
-						epcData={epcData ?? null}
-						loading={isFetching}
-						proposerName={proposerName}
-						onPreview={() => setIsPreviewOpen(true)}
-					/>
+					<>
+						{exportState.status === "delayed" ? (
+							<Alert
+								type="banner"
+								variant="info"
+								title="Still exporting…"
+								description="This is taking longer than usual. We'll let you know the moment it's ready."
+							/>
+						) : null}
+
+						{exportState.status === "ready" ? (
+							<Alert
+								type="banner"
+								variant="success"
+								title="Export ready"
+								description="Your activity planner export is ready to download."
+								primaryAction={{
+									label: "Download",
+									onClick: () => navigateToDownloadUrl(exportState.downloadUrl),
+								}}
+								secondaryAction={{
+									label: "Dismiss",
+									onClick: dismissExport,
+								}}
+							/>
+						) : null}
+
+						{exportState.status === "error" ? (
+							<Alert
+								type="banner"
+								variant="error"
+								title="Export failed"
+								description={exportState.message}
+								primaryAction={{
+									label: "Retry",
+									onClick: handleExport,
+								}}
+								secondaryAction={{
+									label: "Dismiss",
+									onClick: dismissExport,
+								}}
+							/>
+						) : null}
+
+						<ActivityPlannerHeader
+							epcData={epcData}
+							proposerName={proposerName}
+							loading={isFetching}
+							onPreview={openActivityPlannerPreview}
+							isPreparingPdf={isPreparingPdf}
+							isDownloadingPdf={isDownloadingPdf}
+							isExportingExcel={isExportingExcel}
+							onDownloadPdf={handleDownloadPdf}
+							onExportExcel={handleExport}
+						/>
+					</>
 				}
 			>
 				{pageView === "report-builder" ? (
@@ -153,10 +227,11 @@ const ActivityPlannerPage = () => {
 					/>
 				)}
 			</PageRowSectionLayout>
+
 			{isPreviewOpen ? (
-				<Suspense fallback={null}>
+				<Suspense fallback={<Loader />}>
 					<ActivityPlannerPdfPreview
-						open={isPreviewOpen}
+						open
 						epcData={epcData ?? null}
 						createdBy={proposerName}
 						workflowEntries={workflowEntries}
@@ -164,8 +239,9 @@ const ActivityPlannerPage = () => {
 					/>
 				</Suspense>
 			) : null}
+
 			{pageView === "report-preview" ? (
-				<Suspense fallback={null}>
+				<Suspense fallback={<Loader />}>
 					<EventReportPreview
 						open
 						onClose={closeReportPreview}

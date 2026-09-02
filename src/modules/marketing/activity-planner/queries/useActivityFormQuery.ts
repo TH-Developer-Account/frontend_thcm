@@ -10,6 +10,7 @@ import type {
 	EventOutcomePayload,
 } from "../types/event.outcome.types";
 import { workflowApi } from "../../../../api/workflow.api";
+import { filesApi } from "../api/file.module.api";
 
 const EVENT_PROPOSAL_SUBJECT_TYPE = "EVENT_PROPOSAL";
 
@@ -174,3 +175,19 @@ export function useClarifyEventReportMutation() {
 		},
 	});
 }
+
+export const useActivityPlannerPdfUrlMutation = () => {
+	return useMutation<string, Error, string>({
+		mutationFn: (epcId: string): Promise<string> => filesApi.getPdfUrl(epcId),
+	});
+};
+
+export const useExportActivityPlannerMutation = () => {
+	return useMutation({
+		mutationFn: () =>
+			filesApi.enqueueExport({
+				format: "xlsx",
+				filters: {},
+			}),
+	});
+};

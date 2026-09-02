@@ -1,22 +1,31 @@
 import React from "react";
-import { useAuth } from "../../../../context/Auth/useAuth";
-import { useEpcDetailQuery } from "../queries/useEpcListQuery";
-import {
-	useActivityCommentsQuery,
-	useClarifyEventReportMutation,
-	useEventReportQuery,
-	useValidateEventReportMutation,
-} from "../queries/useActivityFormQuery";
-import { useCloseEPC } from "../queries/useEventOutcomeMutation";
+
 import { useToast } from "../../../../context/Auth/AuthContext";
-import { useClarifiedResubmission } from "./useClarifiedResubmission";
-import { useDeviationResubmission } from "./useDeviationResubmission";
-import type { EventReportDetail } from "../types/event.report.types";
-import { getStoredAppId } from "../helpers/localstorage";
+import { useAuth } from "../../../../context/Auth/useAuth";
 import {
 	getActivityPermissions,
 	REPORT_ELIGIBLE_STATUSES,
 } from "../helpers/activityPermissions.helper";
+import { getStoredAppId } from "../helpers/localstorage";
+import {
+	useActivityCommentsQuery,
+	useActivityPlannerPdfUrlMutation,
+	useClarifyEventReportMutation,
+	useEventReportQuery,
+	useExportActivityPlannerMutation,
+	useValidateEventReportMutation,
+} from "../queries/useActivityFormQuery";
+import {
+	pollExportJob,
+	type ExportState,
+} from "../../../../utils/exportJob.helper";
+import { getApiErrorMessage } from "../../../../utils/apiError.helper";
+import { useEpcDetailQuery } from "../queries/useEpcListQuery";
+import { useCloseEPC } from "../queries/useEventOutcomeMutation";
+import type { EventReportDetail } from "../types/event.report.types";
+import { useClarifiedResubmission } from "./useClarifiedResubmission";
+import { useDeviationResubmission } from "./useDeviationResubmission";
+import { filesApi } from "../api/file.module.api";
 
 const normalizeReportForView = (
 	report: EventReportDetail | null | undefined,
@@ -33,9 +42,20 @@ const normalizeReportForView = (
 	} as EventReportDetail;
 };
 
+const DELAYED_EXPORT_THRESHOLD_MS = 4000;
+
 export const useActivityPlanner = (id: string | undefined) => {
 	const { user } = useAuth();
 	const { showToast } = useToast();
+
+	const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
+	const [hasValidatorPreviewed, setHasValidatorPreviewed] =
+		React.useState(false);
+	const [exportState, setExportState] = React.useState<ExportState>({
+		status: "idle",
+	});
+
+	const isExportingRef = React.useRef(false);
 
 	const {
 		data: epcData,
@@ -71,13 +91,17 @@ export const useActivityPlanner = (id: string | undefined) => {
 	const validateReportMutation = useValidateEventReportMutation();
 	const clarifyReportMutation = useClarifyEventReportMutation();
 	const closeEPCMutation = useCloseEPC();
+	const pdfUrlMutation = useActivityPlannerPdfUrlMutation();
+	const exportMutation = useExportActivityPlannerMutation();
 
 	const { mutateAsync: validateReport } = validateReportMutation;
 	const { mutateAsync: clarifyReport } = clarifyReportMutation;
 	const { mutateAsync: closeEPC } = closeEPCMutation;
 
-	const [hasValidatorPreviewed, setHasValidatorPreviewed] =
-		React.useState(false);
+	const { mutateAsync: getActivityPlannerPdfUrl, isPending: isPreparingPdf } =
+		pdfUrlMutation;
+
+	const { mutateAsync: exportActivityPlanner } = exportMutation;
 
 	const permissions = React.useMemo(
 		() =>
@@ -114,8 +138,7 @@ export const useActivityPlanner = (id: string | undefined) => {
 			: "--";
 
 	const handleRefresh = React.useCallback(async () => {
-		await refetch();
-		await refetchWorkflowEntries();
+		await Promise.all([refetch(), refetchWorkflowEntries()]);
 	}, [refetch, refetchWorkflowEntries]);
 
 	const handleOpenReportPreview = React.useCallback(() => {
@@ -134,17 +157,30 @@ export const useActivityPlanner = (id: string | undefined) => {
 			return;
 		}
 
-		await validateReport({
-			reportId,
-			epcId,
-		});
+		try {
+			await validateReport({
+				reportId,
+				epcId,
+			});
 
-		showToast({
-			type: "success",
-			title: "Success",
-			description: "Report validated successfully.",
-		});
-	}, [reportId, epcId, validateReport, showToast]);
+			showToast({
+				type: "success",
+				title: "Success",
+				description: "Report validated successfully.",
+			});
+
+			await handleRefresh();
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "Validation failed",
+				description:
+					error instanceof Error
+						? error.message
+						: "Failed to validate the event report.",
+			});
+		}
+	}, [reportId, epcId, validateReport, showToast, handleRefresh]);
 
 	const handleClarifyReport = React.useCallback(
 		async (reason: string) => {
@@ -157,13 +193,32 @@ export const useActivityPlanner = (id: string | undefined) => {
 				return;
 			}
 
-			await clarifyReport({
-				reportId,
-				epcId,
-				reason,
-			});
+			try {
+				await clarifyReport({
+					reportId,
+					epcId,
+					reason,
+				});
+
+				showToast({
+					type: "success",
+					title: "Clarification requested",
+					description: "The event report was sent back for clarification.",
+				});
+
+				await handleRefresh();
+			} catch (error) {
+				showToast({
+					type: "error",
+					title: "Clarification failed",
+					description:
+						error instanceof Error
+							? error.message
+							: "Failed to request clarification.",
+				});
+			}
 		},
-		[reportId, epcId, clarifyReport, showToast],
+		[reportId, epcId, clarifyReport, showToast, handleRefresh],
 	);
 
 	const handleCloseEPC = React.useCallback(async () => {
@@ -171,7 +226,7 @@ export const useActivityPlanner = (id: string | undefined) => {
 			showToast({
 				type: "error",
 				title: "Not allowed",
-				description: "No EPC found",
+				description: "No EPC found.",
 			});
 			return;
 		}
@@ -186,15 +241,110 @@ export const useActivityPlanner = (id: string | undefined) => {
 			});
 
 			await handleRefresh();
-		} catch (err) {
+		} catch (error) {
 			showToast({
 				type: "error",
 				title: "Error",
 				description:
-					err instanceof Error ? err.message : "Failed to close EPC.",
+					error instanceof Error ? error.message : "Failed to close EPC.",
 			});
 		}
 	}, [epcId, closeEPC, showToast, handleRefresh]);
+
+	const pdfFileName = `${epcData?.proposal_number || "activity-planner"}.pdf`;
+
+	const handleDownloadPdf = React.useCallback(async () => {
+		if (!epcId) {
+			showToast({
+				type: "error",
+				title: "Unable to download",
+				description: "Activity planner ID is missing.",
+			});
+			return;
+		}
+
+		setIsDownloadingPdf(true);
+
+		try {
+			const pdfUrl = await getActivityPlannerPdfUrl(epcId);
+
+			const anchor = document.createElement("a");
+			anchor.href = pdfUrl;
+			anchor.download = pdfFileName;
+			anchor.rel = "noopener noreferrer";
+
+			document.body.appendChild(anchor);
+			anchor.click();
+			anchor.remove();
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "Download failed",
+				description:
+					error instanceof Error
+						? error.message
+						: "Unable to download the activity planner PDF.",
+			});
+		} finally {
+			setIsDownloadingPdf(false);
+		}
+	}, [epcId, pdfFileName, getActivityPlannerPdfUrl, showToast]);
+
+	const handleExport = React.useCallback(async () => {
+		if (isExportingRef.current) return;
+
+		isExportingRef.current = true;
+		setExportState({ status: "pending" });
+
+		const delayedTimer = window.setTimeout(() => {
+			setExportState((current) =>
+				current.status === "pending" ? { status: "delayed" } : current,
+			);
+		}, DELAYED_EXPORT_THRESHOLD_MS);
+
+		try {
+			const queuedExport = await exportActivityPlanner();
+
+			const downloadUrl = await pollExportJob(
+				filesApi.getExportStatus,
+				queuedExport.jobId,
+			);
+
+			window.clearTimeout(delayedTimer);
+
+			setExportState({
+				status: "ready",
+				downloadUrl,
+			});
+		} catch (error) {
+			window.clearTimeout(delayedTimer);
+
+			const message = getApiErrorMessage(
+				error,
+				"Failed to export the activity planner.",
+			);
+
+			setExportState({
+				status: "error",
+				message,
+			});
+
+			showToast({
+				type: "error",
+				title: "Export failed",
+				description: message,
+			});
+		} finally {
+			isExportingRef.current = false;
+		}
+	}, [exportActivityPlanner, showToast]);
+
+	const dismissExport = React.useCallback(() => {
+		setExportState({ status: "idle" });
+	}, []);
+
+	const isExportingExcel =
+		exportState.status === "pending" || exportState.status === "delayed";
 
 	const clarifiedResubmission = useClarifiedResubmission({
 		epcData: epcData ?? null,
@@ -221,14 +371,24 @@ export const useActivityPlanner = (id: string | undefined) => {
 
 		isLoading,
 		isFetching,
-		isProposer: permissions.isProposer,
-		isValidator: permissions.isValidator,
+		isProposer,
+		isValidator,
 
 		proposerName,
 		hasValidatorPreviewed,
+
 		isValidatingReport: validateReportMutation.isPending,
 		isClarifyingReport: clarifyReportMutation.isPending,
 		isClosingEPC: closeEPCMutation.isPending,
+
+		isPreparingPdf,
+		isDownloadingPdf,
+		isExportingExcel,
+		exportState,
+
+		handleDownloadPdf,
+		handleExport,
+		dismissExport,
 
 		handleRefresh,
 		handleOpenReportPreview,
