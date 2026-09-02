@@ -1,7 +1,7 @@
 import { ServerAxios } from "../../../../services/ServerAxios";
 import { mapImportExportResponseToRows } from "../helpers/fileModule.helper";
 import type { FileModuleListingRow } from "../types/fileModule.types";
-import { createExportApi } from "../../../../api/common.api";
+import { createExportApi } from "../../../../common/common.api";
 
 type DownloadResponseRecord = {
 	success?: unknown;
@@ -15,7 +15,7 @@ type PdfUrlResponse = {
 	success: boolean;
 	url: string;
 };
-
+export type PdfType = "EVENT_PROPOSAL";
 const activityPlannerExportApi = createExportApi("/export/epc", {
 	enqueuePath: "",
 });
@@ -120,11 +120,11 @@ export const filesApi = {
 		return data;
 	},
 
-	getPdfUrl: async (epcId: string): Promise<string> => {
+	getPdfUrl: async (type: PdfType, claimId: string): Promise<string> => {
 		const {
 			data: { url },
 		} = await ServerAxios.get<PdfUrlResponse>(
-			`/pdf/EPC/${encodeURIComponent(epcId)}/url`,
+			`/pdf/${type}/${encodeURIComponent(claimId)}/url`,
 		);
 
 		return url;

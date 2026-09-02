@@ -162,6 +162,7 @@ const BPAddressFormCard = ({
 
 	return (
 		<Card
+			padding="compact"
 			title={getCardTitle(mode, form)}
 			actions={
 				isDefault ? (

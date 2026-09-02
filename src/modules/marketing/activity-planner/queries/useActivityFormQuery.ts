@@ -1,24 +1,39 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+	useMutation,
+	useQuery,
+	useQueryClient,
+	type QueryClient,
+} from "@tanstack/react-query";
 
-import { commentApi, commentKeys } from "../../../../components/ui/comments";
 import { auditApi, auditKeys } from "../../../../components/ui/audit";
+import { commentApi, commentKeys } from "../../../../components/ui/comments";
+import { workflowApi } from "../../../../common/workflow.api";
 import { eventOutcomeApi } from "../api/event.outcome.api";
 import { eventReportApi } from "../api/eventReport.api";
-import { epcKeys } from "./epc.keys";
+import { filesApi } from "../api/file.module.api";
 import type {
 	EventDeviationPayload,
 	EventOutcomePayload,
 } from "../types/event.outcome.types";
-import { workflowApi } from "../../../../api/workflow.api";
-import { filesApi } from "../api/file.module.api";
+import { epcKeys } from "./epc.keys";
+import { createPdfApi } from "../../../../common/common.api";
 
 const EVENT_PROPOSAL_SUBJECT_TYPE = "EVENT_PROPOSAL";
+const activityPlannerPdfApi =
+	createPdfApi<typeof EVENT_PROPOSAL_SUBJECT_TYPE>();
+
+const stableQueryOptions = {
+	staleTime: Infinity,
+	refetchOnMount: false,
+	refetchOnWindowFocus: false,
+	refetchOnReconnect: false,
+} as const;
 
 export const useActivityCommentsQuery = (
 	epcId?: string | null,
 	enabled = true,
-) => {
-	return useQuery({
+) =>
+	useQuery({
 		queryKey: commentKeys.list(EVENT_PROPOSAL_SUBJECT_TYPE, epcId),
 		queryFn: () =>
 			commentApi.getComments({
@@ -26,15 +41,14 @@ export const useActivityCommentsQuery = (
 				subjectId: epcId!,
 			}),
 		enabled: Boolean(epcId) && enabled,
-		staleTime: 15 * 1000,
+		...stableQueryOptions,
 	});
-};
 
 export const useActivityAuditLogQuery = (
 	epcId?: string | null,
 	enabled = true,
-) => {
-	return useQuery({
+) =>
+	useQuery({
 		queryKey: auditKeys.log(EVENT_PROPOSAL_SUBJECT_TYPE, epcId),
 		queryFn: () =>
 			auditApi.getAuditLog({
@@ -42,12 +56,11 @@ export const useActivityAuditLogQuery = (
 				subjectId: epcId!,
 			}),
 		enabled: Boolean(epcId) && enabled,
-		staleTime: 15 * 1000,
+		...stableQueryOptions,
 	});
-};
 
-export const useEventOutcomeMutation = () => {
-	return useMutation({
+export const useEventOutcomeMutation = () =>
+	useMutation({
 		mutationFn: ({
 			epcId,
 			payload,
@@ -56,7 +69,6 @@ export const useEventOutcomeMutation = () => {
 			payload: EventOutcomePayload;
 		}) => eventOutcomeApi.eventOutcome(epcId, payload),
 	});
-};
 
 export function useEventDeviationMutation() {
 	return useMutation({
@@ -79,22 +91,25 @@ export function useEventReportQuery(epcId?: string | null, enabled = true) {
 		queryKey: eventReportKeys.detail(epcId),
 		queryFn: () => eventReportApi.getByEpcId(epcId!),
 		enabled: Boolean(epcId) && enabled,
-		staleTime: 30 * 1000,
 		retry: false,
+		...stableQueryOptions,
 	});
 }
 
-const invalidateActivityFeeds = (
-	queryClient: ReturnType<typeof useQueryClient>,
+const invalidateActivityData = async (
+	queryClient: QueryClient,
 	epcId: string,
 ) => {
-	queryClient.invalidateQueries({
-		queryKey: commentKeys.list(EVENT_PROPOSAL_SUBJECT_TYPE, epcId),
-	});
-
-	queryClient.invalidateQueries({
-		queryKey: auditKeys.log(EVENT_PROPOSAL_SUBJECT_TYPE, epcId),
-	});
+	await Promise.all([
+		queryClient.invalidateQueries({ queryKey: epcKeys.detail(epcId) }),
+		queryClient.invalidateQueries({ queryKey: eventReportKeys.detail(epcId) }),
+		queryClient.invalidateQueries({
+			queryKey: commentKeys.list(EVENT_PROPOSAL_SUBJECT_TYPE, epcId),
+		}),
+		queryClient.invalidateQueries({
+			queryKey: auditKeys.log(EVENT_PROPOSAL_SUBJECT_TYPE, epcId),
+		}),
+	]);
 };
 
 export function useSubmitEventReportMutation() {
@@ -113,18 +128,8 @@ export function useSubmitEventReportMutation() {
 			isEditMode
 				? eventReportApi.resubmit(epcId, payload)
 				: eventReportApi.submit(epcId, payload),
-
-		onSuccess: (_, variables) => {
-			queryClient.invalidateQueries({
-				queryKey: epcKeys.detail(variables.epcId),
-			});
-
-			queryClient.invalidateQueries({
-				queryKey: eventReportKeys.detail(variables.epcId),
-			});
-
-			invalidateActivityFeeds(queryClient, variables.epcId);
-		},
+		onSuccess: (_, variables) =>
+			invalidateActivityData(queryClient, variables.epcId),
 	});
 }
 
@@ -134,18 +139,8 @@ export function useValidateEventReportMutation() {
 	return useMutation({
 		mutationFn: ({ reportId }: { reportId: string; epcId: string }) =>
 			eventReportApi.validateReport(reportId),
-
-		onSuccess: (_, variables) => {
-			queryClient.invalidateQueries({
-				queryKey: epcKeys.detail(variables.epcId),
-			});
-
-			queryClient.invalidateQueries({
-				queryKey: eventReportKeys.detail(variables.epcId),
-			});
-
-			invalidateActivityFeeds(queryClient, variables.epcId);
-		},
+		onSuccess: (_, variables) =>
+			invalidateActivityData(queryClient, variables.epcId),
 	});
 }
 
@@ -161,33 +156,23 @@ export function useClarifyEventReportMutation() {
 			epcId: string;
 			reason: string;
 		}) => eventReportApi.clarifyReport(reportId, reason),
-
-		onSuccess: (_, variables) => {
-			queryClient.invalidateQueries({
-				queryKey: epcKeys.detail(variables.epcId),
-			});
-
-			queryClient.invalidateQueries({
-				queryKey: eventReportKeys.detail(variables.epcId),
-			});
-
-			invalidateActivityFeeds(queryClient, variables.epcId);
-		},
+		onSuccess: (_, variables) =>
+			invalidateActivityData(queryClient, variables.epcId),
 	});
 }
 
-export const useActivityPlannerPdfUrlMutation = () => {
-	return useMutation<string, Error, string>({
-		mutationFn: (epcId: string): Promise<string> => filesApi.getPdfUrl(epcId),
-	});
-};
-
-export const useExportActivityPlannerMutation = () => {
+export function useActivityPlannerPdfUrlMutation() {
 	return useMutation({
+		mutationFn: ({ epcId }: { epcId: string }) =>
+			activityPlannerPdfApi.getPdfUrl(EVENT_PROPOSAL_SUBJECT_TYPE, epcId),
+	});
+}
+
+export const useExportActivityPlannerMutation = () =>
+	useMutation({
 		mutationFn: () =>
 			filesApi.enqueueExport({
 				format: "xlsx",
 				filters: {},
 			}),
 	});
-};

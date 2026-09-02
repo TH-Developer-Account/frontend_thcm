@@ -73,13 +73,7 @@ export function createImportApi<TRow = unknown>(
 				statusJobIdMode === "query"
 					? `${baseUrl}${statusPath}`
 					: `${baseUrl}${statusPath}/${encodedJobId}`,
-				statusJobIdMode === "query"
-					? {
-							params: {
-								jobId,
-							},
-						}
-					: undefined,
+				statusJobIdMode === "query" ? { params: { jobId } } : undefined,
 			);
 
 			return data;
@@ -125,6 +119,7 @@ export function createExportApi(
 			);
 			return data;
 		},
+
 		getExportStatusVendor: async (jobId: string): Promise<ExportJobStatus> => {
 			const { data } = await ServerAxios.get<ExportJobStatus>(
 				`${baseUrl}/bulk/${jobId}`,
@@ -133,11 +128,43 @@ export function createExportApi(
 		},
 
 		downloadExportFile: async (downloadUrl: string): Promise<Blob> => {
-			const response = await fetch(downloadUrl); // no auth headers, no baseURL
+			const response = await fetch(downloadUrl);
 			if (!response.ok) {
 				throw new Error(`Failed to download export file (${response.status})`);
 			}
 			return response.blob();
+		},
+	};
+}
+
+type PdfUrlResponse = {
+	success?: boolean;
+	url?: string;
+	data?: {
+		url?: string;
+	};
+};
+
+export function createPdfApi<TDocumentType extends string>(baseUrl = "/pdf") {
+	return {
+		getPdfUrl: async (
+			documentType: TDocumentType,
+			documentId: string,
+		): Promise<string> => {
+			const encodedType = encodeURIComponent(documentType);
+			const encodedId = encodeURIComponent(documentId);
+
+			const { data } = await ServerAxios.get<PdfUrlResponse>(
+				`${baseUrl}/${encodedType}/${encodedId}/url`,
+			);
+
+			const url = data.url ?? data.data?.url;
+
+			if (!url) {
+				throw new Error("PDF URL was not returned by the server.");
+			}
+
+			return url;
 		},
 	};
 }

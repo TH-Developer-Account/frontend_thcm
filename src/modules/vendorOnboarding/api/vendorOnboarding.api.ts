@@ -10,7 +10,7 @@ import type {
 	VendorOnboardingRawResponse,
 	VendorOnboardingResponse,
 } from "../types/vendorOnboarding.types";
-import { createExportApi } from "../../../api/common.api";
+import { createExportApi } from "../../../common/common.api";
 
 const VENDOR_URL = "/vendor-onboarding";
 const PUBLIC_VENDOR_URL = `${VENDOR_URL}/public`;

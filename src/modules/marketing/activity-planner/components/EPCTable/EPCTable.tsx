@@ -1,5 +1,5 @@
 import React from "react";
-import { Plus } from "lucide-react";
+import { FileDown, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { SortingState } from "@tanstack/react-table";
 
@@ -53,6 +53,8 @@ type EPCTableProps = {
 
 	onPageChange: (pageIndex: number) => void;
 	onPageSizeChange: (pageSize: number) => void;
+	onExport: () => void;
+	isExporting?: boolean;
 };
 
 const EPC_SKELETON_ROWS = 8;
@@ -77,6 +79,8 @@ const EPCTable = ({
 	pageCount,
 	onPageChange,
 	onPageSizeChange,
+	onExport,
+	isExporting = false,
 }: EPCTableProps) => {
 	const navigate = useNavigate();
 	const { user } = useAuth();
@@ -164,21 +168,19 @@ const EPCTable = ({
 					className="border-b-none px-0 py-0"
 				/>
 			}
-			secondaryHeader={
+			actions={
 				<>
-					<SearchInput
-						value={search}
-						onChange={onSearchChange}
-						placeholder="Search by event name"
-					/>
-					<FilterDropdown<EpcFilters>
-						filters={filters}
-						sections={advancedFilterSections}
-						onChange={onAdvancedFilterChange}
-						onClearAll={onClearAllFilters}
-						activeFilterCount={activeFilterCount}
-						title="Filters"
-						ariaLabel="EPC filters"
+					<Button
+						type="button"
+						text={isExporting ? "Preparing export..." : "Export"}
+						Icon={FileDown}
+						iconSize={16}
+						iconPosition="left"
+						appearance="standard"
+						variant="outline"
+						size="sm"
+						disabled={isExporting || isLoading || data.length === 0}
+						onClick={onExport}
 					/>
 
 					<Can action="write" app="MAP" module="EPC">
@@ -195,6 +197,25 @@ const EPCTable = ({
 							onClick={handleCreateEpc}
 						/>
 					</Can>
+				</>
+			}
+			secondaryHeader={
+				<>
+					<SearchInput
+						value={search}
+						onChange={onSearchChange}
+						placeholder="Search by event name"
+					/>
+
+					<FilterDropdown<EpcFilters>
+						filters={filters}
+						sections={advancedFilterSections}
+						onChange={onAdvancedFilterChange}
+						onClearAll={onClearAllFilters}
+						activeFilterCount={activeFilterCount}
+						title="Filters"
+						ariaLabel="EPC filters"
+					/>
 				</>
 			}
 		>

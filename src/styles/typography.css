@@ -390,7 +390,7 @@
 		gap: var(--space-1);
 	}
 	.detail-label {
-		font-size: var(--font-size-2xs);
+		font-size: var(--font-size-xs);
 		font-weight: 500;
 		letter-spacing: var(--tracking-wide);
 		/* text-transform: uppercase; */
@@ -398,7 +398,7 @@
 	}
 	.detail-value {
 		min-width: 0;
-		font-size: var(--font-size-sm);
+		font-size: var(--font-size-base);
 		color: var(--color-text-primary);
 		overflow-wrap: anywhere;
 	}

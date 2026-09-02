@@ -10,7 +10,7 @@ import type {
 	MedicalClaimMutationResponse,
 } from "../types/medicalClaimListing.types";
 import type { ClaimHeadRow } from "../types/reimbursementClaim.types";
-import { createExportApi, createImportApi } from "../../../api/common.api";
+import { createExportApi, createImportApi } from "../../../common/common.api";
 import type { MedicalClaimImportError } from "../types/medicalClaimInitiation.types";
 
 const MEDICAL_CLAIM_URL = "/medi-claim";
