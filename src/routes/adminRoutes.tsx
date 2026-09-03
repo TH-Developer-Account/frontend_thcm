@@ -1,6 +1,7 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router-dom";
 import FullScreenLoader from "./FullScreenLoader";
+import CreateBusinessPartner from "../modules/admin/business-partners/CreateBusinessPartner";
 
 const UsersPage = lazy(() => import("../modules/admin/users/UsersPage"));
 const UserProfilePage = lazy(() =>
@@ -41,6 +42,10 @@ export default function AdminRoutes() {
 				/>
 
 				<Route path="business-partners" element={<BusinessPartners />} />
+				<Route
+					path="business-partners/create"
+					element={<CreateBusinessPartner />}
+				/>
 				<Route
 					path="business-partners/:id/view"
 					element={<BusinessPartnerView />}

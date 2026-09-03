@@ -2,8 +2,9 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Eye } from "lucide-react";
 
 import Button from "../../../../components/common/Button";
-import { formatDate } from "../../../../utils/format";
+// import { formatDate } from "../../../../utils/format";
 import type { BusinessPartner } from "../utils/bp.types";
+import { Badge } from "../../../../components/common/Badge";
 
 export const getBusinessPartnerColumns = (
 	onView: (partner: BusinessPartner) => void,
@@ -18,14 +19,7 @@ export const getBusinessPartnerColumns = (
 			</span>
 		),
 	},
-	{
-		accessorKey: "externalId",
-		header: "External ID",
-		enableSorting: true,
-		cell: ({ row }) => (
-			<span className="tabular-nums">{row.original.externalId || "--"}</span>
-		),
-	},
+
 	{
 		accessorKey: "organizationName",
 		header: "Organization Name",
@@ -37,10 +31,16 @@ export const getBusinessPartnerColumns = (
 		),
 	},
 	{
-		accessorKey: "region",
-		header: "Region",
+		accessorKey: "bpType",
+		header: "Business Partner Type",
 		enableSorting: true,
-		cell: ({ row }) => <span>{row.original.region || "--"}</span>,
+		cell: ({ row }) => <span>{row.original.bpType || "--"}</span>,
+	},
+	{
+		accessorKey: "officeType",
+		header: "Office Type",
+		enableSorting: true,
+		cell: ({ row }) => <span>{row.original.officeType || "--"}</span>,
 	},
 	{
 		accessorKey: "mainContact",
@@ -56,14 +56,24 @@ export const getBusinessPartnerColumns = (
 			<span title={row.original.address}>{row.original.address || "--"}</span>
 		),
 	},
+	// {
+	// 	accessorKey: "joinedOn",
+	// 	header: "Joined On",
+	// 	enableSorting: true,
+	// 	sortingFn: "datetime",
+	// 	cell: ({ row }) => (
+	// 		<span className="whitespace-nowrap">
+	// 			{row.original.joinedOn ? formatDate(row.original.joinedOn) : "--"}
+	// 		</span>
+	// 	),
+	// },
 	{
-		accessorKey: "joinedOn",
-		header: "Joined On",
+		accessorKey: "status",
+		header: "Status",
 		enableSorting: true,
-		sortingFn: "datetime",
 		cell: ({ row }) => (
 			<span className="whitespace-nowrap">
-				{row.original.joinedOn ? formatDate(row.original.joinedOn) : "--"}
+				<Badge variant={row.original.status}>{row.original.status}</Badge>
 			</span>
 		),
 	},

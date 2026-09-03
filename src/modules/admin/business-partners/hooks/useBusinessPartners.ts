@@ -6,274 +6,41 @@ import {
 } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { ServerAxios } from "../../../../services/ServerAxios";
-
 import type {
-	BusinessPartner,
-	BusinessPartnerAddress,
-	BusinessPartnerBranch,
+	ApiEnvelope,
+	BPAddressFormState,
+	BPAddressViewModel,
 	BusinessPartnerContact,
 	BusinessPartnerDetail,
+	BusinessPartnerListApiResponse,
+	BusinessPartnerListingParams,
 	BusinessPartnerListingResult,
+	BusinessPartnerListItem,
+	CreateBusinessPartnerPayload,
+	UpdateBusinessPartnerPeoplePayload,
+	UpdateBusinessPartnerPayload,
 } from "../utils/bp.types";
+import {
+	mapBusinessPartnerListItem,
+	unwrapData,
+	normalizeListingParams,
+	mapBusinessPartnerView,
+} from "../utils/businessPartner.mapper";
 
 const API_URL = "/bp";
-const DEFAULT_PAGE = 1;
-const DEFAULT_PAGE_SIZE = 20;
 
-export type BusinessPartnerListingParams = {
-	search?: string;
-	status?: string[];
-	zone?: string[];
-	page?: number;
-	limit?: number;
+const EMPTY_ADDRESS_FORM: BPAddressFormState = {
+	label: "",
+	addressType: "",
+	address: "",
 };
 
-export type CreateBusinessPartnerPayload = Omit<
-	BusinessPartnerDetail,
-	"id" | "branches" | "parent"
->;
-
-export type UpdateBusinessPartnerPayload =
-	Partial<CreateBusinessPartnerPayload>;
-
-type ApiEnvelope<T> = {
-	data: T;
-};
-
-type BusinessPartnerListApiResponse = {
-	data?: BusinessPartnerListItem[];
-	rows?: BusinessPartnerListItem[];
-	total?: number;
-	totalCount?: number;
-	page?: number;
-	page_index?: number;
-	limit?: number;
-	page_size?: number;
-	totalPages?: number;
-	total_pages?: number;
-};
-
-type BusinessPartnerListItem = {
-	id: string;
-	bpName: string;
-	bpShortName?: string | null;
-	officeType: BusinessPartnerDetail["officeType"];
-	bpType: string;
-	gst?: string | null;
-	isActive: boolean;
-	internalId?: string | null;
-	externalId?: string | null;
-	organizationName?: string | null;
-	region?: string | null;
-	mainContact?: string | null;
-	address?: string | null;
-	joinedOn?: string | null;
-	status?: "Active" | "Inactive";
-	bpId?: string | null;
-	s4Id?: string | null;
-	vendorId?: string | null;
-};
-
-export type BPAddressViewModel = {
-	id: string;
-	label: string;
-	addressType: string;
-	address: string;
-	city: string;
-	state: string;
-	country: string;
-	pincode: string;
-	region: string;
-	zone: string;
-	branch: string;
-	email: string;
-	phoneNumber: string;
-	website: string;
-	isDefault: boolean;
-};
-
-export type BPContactViewModel = {
-	id: string;
-	name: string;
-	email: string;
-	phoneNumber: string;
-	panNumber: string;
-	role: "Owner" | "Main Contact" | "Contact";
-	isOwner: boolean;
-	isMainContact: boolean;
-};
-
-export type BPBranchViewModel = {
-	id: string;
-	name: string;
-	status: "Active" | "Inactive";
-};
-
-export type BusinessPartnerViewModel = {
-	partner: BusinessPartnerDetail;
-	primaryAddress: BPAddressViewModel | null;
-	primaryContact: BPContactViewModel | null;
-	addresses: BPAddressViewModel[];
-	people: BPContactViewModel[];
-	mainContacts: BPContactViewModel[];
-	branches: BPBranchViewModel[];
-	contact: {
-		name: string;
-		email: string;
-		mobileNumber: string;
-		phone: string;
-		fax: string;
-		status: string;
-		mainContactPerson: string;
-		mainContactNumber: string;
-		state: string;
-		city: string;
-		country: string;
-	};
-	organization: {
-		orgName: string;
-		joinedOn: string;
-		branches: string;
-		gstNo: string;
-		panNo: string;
-		registrationNo: string;
-		bpCode: string;
-		zone: string;
-		segment: string;
-		category: string;
-		partnerType: string;
-		status: string;
-		website: string;
-	};
-};
-
-const text = (value?: string | null): string => value?.trim() ?? "";
-
-const mapAddress = (address: BusinessPartnerAddress): BPAddressViewModel => ({
-	id: address.id,
-	label: address.isDefault
-		? "Default Address"
-		: text(address.branch) || "Address",
-	addressType: text(address.branch) || "Business Address",
-	address: text(address.address),
-	city: text(address.city),
-	state: text(address.state),
-	country: text(address.country),
-	pincode: text(address.pincode),
-	region: text(address.region),
-	zone: text(address.zone),
-	branch: text(address.branch),
-	email: text(address.email),
-	phoneNumber: text(address.phoneNo),
-	website: text(address.website),
-	isDefault: address.isDefault,
-});
-
-const mapContact = (contact: BusinessPartnerContact): BPContactViewModel => ({
-	id: contact.id,
-	name: text(contact.name) || "Unnamed contact",
-	email: text(contact.email),
-	phoneNumber: text(contact.phoneNumber),
-	panNumber: text(contact.panNumber),
-	role: contact.isOwner
-		? "Owner"
-		: contact.isMainContact
-			? "Main Contact"
-			: "Contact",
-	isOwner: contact.isOwner,
-	isMainContact: contact.isMainContact,
-});
-
-const mapBranch = (branch: BusinessPartnerBranch): BPBranchViewModel => ({
-	id: branch.id,
-	name: text(branch.bpName) || "Unnamed branch",
-	status: branch.isActive ? "Active" : "Inactive",
-});
-
-const mapBusinessPartnerView = (
-	partner: BusinessPartnerDetail,
-): BusinessPartnerViewModel => {
-	const addresses = (partner.addresses ?? []).map(mapAddress);
-	const people = (partner.contacts ?? []).map(mapContact);
-	const branches = (partner.branches ?? []).map(mapBranch);
-	const primaryAddress =
-		addresses.find((address) => address.isDefault) ?? addresses[0] ?? null;
-	const primaryContact =
-		people.find((contact) => contact.isMainContact) ?? people[0] ?? null;
-
-	return {
-		partner,
-		primaryAddress,
-		primaryContact,
-		addresses,
-		people,
-		mainContacts: people.filter((contact) => contact.isMainContact),
-		branches,
-		contact: {
-			name: text(partner.legalTradeName) || partner.bpName,
-			email: primaryContact?.email || primaryAddress?.email || "",
-			mobileNumber: primaryContact?.phoneNumber || "",
-			phone: primaryAddress?.phoneNumber || "",
-			fax: "",
-			status: partner.isActive ? "Active" : "Inactive",
-			mainContactPerson: primaryContact?.name || "",
-			mainContactNumber: primaryContact?.phoneNumber || "",
-			state: primaryAddress?.state || "",
-			city: primaryAddress?.city || "",
-			country: primaryAddress?.country || "",
-		},
-		organization: {
-			orgName: text(partner.legalTradeName) || partner.bpName,
-			joinedOn: text(partner.joinedOn),
-			branches: String(branches.length),
-			gstNo: text(partner.gst),
-			panNo: text(partner.panNumber),
-			registrationNo: text(partner.c4cId) || text(partner.bydId),
-			bpCode: text(partner.vendorCode) || text(partner.internalId),
-			zone: primaryAddress?.zone || partner.officeType.replaceAll("_", " "),
-			segment: text(partner.entityType),
-			category: partner.bpType,
-			partnerType: partner.bpType,
-			status: partner.isActive ? "Active" : "Inactive",
-			website: primaryAddress?.website || "",
-		},
-	};
-};
-
-const unwrapData = <T>(value: T | ApiEnvelope<T>): T => {
-	if (typeof value === "object" && value !== null && "data" in value) {
-		return value.data;
-	}
-
-	return value;
-};
-
-const normalizeListingParams = (
-	params: BusinessPartnerListingParams,
-): Required<BusinessPartnerListingParams> => ({
-	search: params.search?.trim() ?? "",
-	status: params.status ?? [],
-	zone: params.zone ?? [],
-	page: Math.max(params.page ?? DEFAULT_PAGE, 1),
-	limit: Math.max(params.limit ?? DEFAULT_PAGE_SIZE, 1),
-});
-
-const mapBusinessPartnerListItem = (
-	item: BusinessPartnerListItem,
-): BusinessPartner => ({
-	id: item.id,
-	internalId: item.internalId ?? item.bpId ?? item.s4Id ?? "",
-	externalId: item.externalId ?? item.vendorId ?? "",
-	organizationName: item.organizationName ?? item.bpName ?? "",
-	region: item.region ?? "",
-	mainContact: item.mainContact ?? "",
-	address: item.address ?? "",
-	joinedOn: item.joinedOn ?? null,
-	officeType: item.officeType,
-	bpType: item.bpType,
-	gst: item.gst ?? "",
-	status: item.status ?? (item.isActive ? "Active" : "Inactive"),
-});
+const BUSINESS_PARTNER_QUERY_OPTIONS = {
+	staleTime: Infinity,
+	refetchOnMount: false,
+	refetchOnWindowFocus: false,
+	refetchOnReconnect: false,
+} as const;
 
 const fetchBusinessPartners = async (
 	params: Required<BusinessPartnerListingParams>,
@@ -345,13 +112,6 @@ export const businessPartnerKeys = {
 	detail: (businessPartnerId: string) =>
 		[...businessPartnerKeys.details(), businessPartnerId] as const,
 };
-
-const BUSINESS_PARTNER_QUERY_OPTIONS = {
-	staleTime: Infinity,
-	refetchOnMount: false,
-	refetchOnWindowFocus: false,
-	refetchOnReconnect: false,
-} as const;
 
 export const useBusinessPartnerListing = (
 	params: BusinessPartnerListingParams = {},
@@ -483,18 +243,6 @@ export const useBusinessPartnerMutations = () => {
 		updateError: updateMutation.error,
 		deleteError: deleteMutation.error,
 	};
-};
-
-export type BPAddressFormState = {
-	label: string;
-	addressType: string;
-	address: string;
-};
-
-const EMPTY_ADDRESS_FORM: BPAddressFormState = {
-	label: "",
-	addressType: "",
-	address: "",
 };
 
 export const useBPAddressManager = (initialAddresses: BPAddressViewModel[]) => {
@@ -639,5 +387,67 @@ export const useBPAddressManager = (initialAddresses: BPAddressViewModel[]) => {
 		handleSetDefault,
 		handleRemoveAddress,
 		resetForm,
+	};
+};
+
+export const useBusinessPartnerPeopleMutations = (
+	businessPartnerId: string,
+) => {
+	const queryClient = useQueryClient();
+
+	const contactsUrl = `${API_URL}/${encodeURIComponent(
+		businessPartnerId,
+	)}/contacts`;
+
+	const refreshBusinessPartner = () =>
+		queryClient.invalidateQueries({
+			queryKey: businessPartnerKeys.detail(businessPartnerId),
+		});
+
+	const addPeopleMutation = useMutation({
+		mutationFn: async (payload: UpdateBusinessPartnerPeoplePayload) => {
+			const response = await ServerAxios.post<
+				BusinessPartnerContact[] | ApiEnvelope<BusinessPartnerContact[]>
+			>(contactsUrl, payload);
+
+			return unwrapData(response.data);
+		},
+		onSuccess: refreshBusinessPartner,
+	});
+
+	const updatePeopleMutation = useMutation({
+		mutationFn: async (payload: UpdateBusinessPartnerPeoplePayload) => {
+			const response = await ServerAxios.patch<
+				BusinessPartnerContact[] | ApiEnvelope<BusinessPartnerContact[]>
+			>(contactsUrl, payload);
+
+			return unwrapData(response.data);
+		},
+		onSuccess: refreshBusinessPartner,
+	});
+
+	const removeContactMutation = useMutation({
+		mutationFn: async (contactId: string) => {
+			await ServerAxios.delete(
+				`${contactsUrl}/${encodeURIComponent(contactId)}`,
+			);
+
+			return contactId;
+		},
+		onSuccess: refreshBusinessPartner,
+	});
+
+	return {
+		addPeople: addPeopleMutation.mutateAsync,
+		updatePeople: updatePeopleMutation.mutateAsync,
+		removeContact: removeContactMutation.mutateAsync,
+
+		isAddingPeople: addPeopleMutation.isPending,
+		isUpdatingPeople: updatePeopleMutation.isPending,
+		isRemovingContact: removeContactMutation.isPending,
+
+		addPeopleError: addPeopleMutation.error,
+		updatePeopleError: updatePeopleMutation.error,
+		removeContactError: removeContactMutation.error,
 	};
 };

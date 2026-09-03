@@ -43,8 +43,16 @@ const addressTypeOptions: SelectOption[] = [
 		value: "Branch Office",
 	},
 	{
+		label: "Plant",
+		value: "Plant",
+	},
+	{
 		label: "Billing Address",
 		value: "Billing Address",
+	},
+	{
+		label: "Shipping Address",
+		value: "Shipping Address",
 	},
 	{
 		label: "Warehouse",

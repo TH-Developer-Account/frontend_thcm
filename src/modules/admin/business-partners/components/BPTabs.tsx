@@ -1,24 +1,34 @@
 import { useState } from "react";
-import type { BusinessPartnerViewModel } from "../hooks/useBusinessPartners";
+
+import type { BusinessPartnerViewModel } from "../utils/bp.types";
+
 import BPAddress from "./BPAddress";
+import BPBranches from "./BPBranches";
 import BPContact from "./BPContact";
-import BPMainContact from "./BPMainContact";
 import BPOrganization from "./BPOrganization";
 import BPPeople from "./BPPeople";
-import BPBranches from "./BPBranches";
 
 const bpTabs = [
 	"Contact",
 	"Organization",
 	"Address",
 	"Branches",
-	"Main Contact",
 	"People",
 ] as const;
+
 type BPTab = (typeof bpTabs)[number];
 
-export const BPTabs = ({ view }: { view: BusinessPartnerViewModel }) => {
+type BPTabsProps = {
+	view: BusinessPartnerViewModel;
+};
+
+const isBPTab = (value: string): value is BPTab =>
+	bpTabs.some((tab) => tab === value);
+
+export const BPTabs = ({ view }: BPTabsProps) => {
 	const [activeTab, setActiveTab] = useState<BPTab>("Contact");
+
+	const activeTabId = `bp-tab-${activeTab.toLowerCase().replace(/\s+/g, "-")}`;
 
 	return (
 		<>
@@ -30,6 +40,7 @@ export const BPTabs = ({ view }: { view: BusinessPartnerViewModel }) => {
 				{bpTabs.map((tab) => {
 					const isActive = activeTab === tab;
 					const tabId = `bp-tab-${tab.toLowerCase().replace(/\s+/g, "-")}`;
+
 					return (
 						<button
 							key={tab}
@@ -38,6 +49,7 @@ export const BPTabs = ({ view }: { view: BusinessPartnerViewModel }) => {
 							role="tab"
 							aria-selected={isActive}
 							aria-controls={`${tabId}-panel`}
+							tabIndex={isActive ? 0 : -1}
 							onClick={() => setActiveTab(tab)}
 							className={`bp-tab-item ${isActive ? "bp-tab-item-active" : ""}`}
 						>
@@ -46,30 +58,45 @@ export const BPTabs = ({ view }: { view: BusinessPartnerViewModel }) => {
 					);
 				})}
 			</div>
+
 			<div
-				id={`bp-tab-${activeTab.toLowerCase().replace(/\s+/g, "-")}-panel`}
+				id={`${activeTabId}-panel`}
+				aria-labelledby={activeTabId}
 				className="bp-tab-content"
 				role="tabpanel"
 			>
 				{activeTab === "Contact" && (
 					<BPContact
-						onNavigateTab={(tab) => {
-							if (bpTabs.includes(tab as BPTab)) setActiveTab(tab as BPTab);
+						data={{
+							...view.contact,
+							mobile_number: view.contact.mobileNumber,
 						}}
-						data={{ ...view.contact, mobile_number: view.contact.mobileNumber }}
+						onNavigateTab={(tab) => {
+							if (isBPTab(tab)) {
+								setActiveTab(tab);
+							}
+						}}
 					/>
 				)}
+
 				{activeTab === "Organization" && (
 					<BPOrganization data={view.organization} />
 				)}
+
 				{activeTab === "Address" && <BPAddress addresses={view.addresses} />}
+
 				{activeTab === "Branches" && <BPBranches branches={view.branches} />}
-				{activeTab === "Main Contact" && (
-					<BPMainContact contacts={view.mainContacts} />
+
+				{activeTab === "People" && (
+					<BPPeople
+						businessPartnerId={view.partner.id}
+						people={view.people}
+						canManage
+					/>
 				)}
-				{activeTab === "People" && <BPPeople people={view.people} />}
 			</div>
 		</>
 	);
 };
+
 export default BPTabs;

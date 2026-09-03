@@ -7,8 +7,7 @@ import type {
 
 import DataTable from "../../../../components/ui/tables/DataTable/DataTable";
 import type { BusinessPartner } from "../utils/bp.types";
-
-import { getBusinessPartnerColumns } from "./businessPartner.columns";
+import { getBusinessPartnerColumns } from "../utils/businessPartner.columns";
 
 type BPTableProps = {
 	partners: BusinessPartner[];

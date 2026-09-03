@@ -7,7 +7,6 @@ import {
 
 import { auditApi, auditKeys } from "../../../../components/ui/audit";
 import { commentApi, commentKeys } from "../../../../components/ui/comments";
-import { workflowApi } from "../../../../common/workflow.api";
 import { eventOutcomeApi } from "../api/event.outcome.api";
 import { eventReportApi } from "../api/eventReport.api";
 import { filesApi } from "../api/file.module.api";
@@ -17,6 +16,7 @@ import type {
 } from "../types/event.outcome.types";
 import { epcKeys } from "./epc.keys";
 import { createPdfApi } from "../../../../common/common.api";
+import { workflowApi } from "../../../workflows";
 
 const EVENT_PROPOSAL_SUBJECT_TYPE = "EVENT_PROPOSAL";
 const activityPlannerPdfApi =

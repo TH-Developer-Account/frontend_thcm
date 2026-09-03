@@ -1,9 +1,6 @@
 import { Building2, Hash, MapPinned, Phone, UserRound } from "lucide-react";
-
 import { Badge } from "../../../../components/common/Badge";
 import Card from "../../../../components/common/Card";
-
-import BPCards from "./BPCards";
 
 type BPGeneralInfoProps = {
 	name?: string;
@@ -16,7 +13,7 @@ type BPGeneralInfoProps = {
 	title?: string;
 };
 
-const fallbackValue = "--";
+const FALLBACK_VALUE = "--";
 
 const BPGeneralInfo = ({
 	name,
@@ -33,29 +30,29 @@ const BPGeneralInfo = ({
 	const generalInfoCards = [
 		{
 			label: "Code",
-			value: code || "JDE-204",
+			value: code || FALLBACK_VALUE,
 			icon: Hash,
-			iconTone: "brand" as const,
+			iconTone: "brand",
 		},
 		{
 			label: "Zone",
-			value: zone || fallbackValue,
+			value: zone || FALLBACK_VALUE,
 			icon: MapPinned,
-			iconTone: "neutral" as const,
+			iconTone: "neutral",
 		},
 		{
 			label: "BP Number",
-			value: number || "BP-10248",
+			value: number || FALLBACK_VALUE,
 			icon: Phone,
-			iconTone: "neutral" as const,
+			iconTone: "neutral",
 		},
 		{
 			label: "Main Contact",
-			value: mainContactPerson || mainContactNumber || fallbackValue,
+			value: mainContactPerson || mainContactNumber || FALLBACK_VALUE,
 			icon: UserRound,
-			iconTone: "neutral" as const,
+			iconTone: "neutral",
 		},
-	];
+	] as const;
 
 	return (
 		<Card padding="none" variant="default">
@@ -68,6 +65,7 @@ const BPGeneralInfo = ({
 
 						<div className="bp-gen-title-wrap">
 							<h3 className="bp-gen-title brand-text">{displayTitle}</h3>
+
 							<p className="bp-gen-subtext">Business Partner Details</p>
 						</div>
 					</div>
@@ -75,11 +73,32 @@ const BPGeneralInfo = ({
 
 				<div className="bp-header-status">
 					<span className="bp-status-label">Status:</span>
+
 					<Badge status="Approved">{status}</Badge>
 				</div>
 			</div>
 
-			<BPCards items={generalInfoCards} />
+			<div className="bp-summary-grid sm:grid-cols-2 xl:grid-cols-4">
+				{generalInfoCards.map((item) => {
+					const Icon = item.icon;
+
+					return (
+						<div key={item.label} className="bp-stat-card">
+							<div className="bp-stat-card-inner">
+								<p className="bp-stat-label">{item.label}</p>
+
+								<h3 className="bp-stat-value" title={String(item.value)}>
+									{item.value}
+								</h3>
+							</div>
+
+							<div className={`bp-stat-icon bp-stat-icon--${item.iconTone}`}>
+								<Icon size={15} aria-hidden="true" />
+							</div>
+						</div>
+					);
+				})}
+			</div>
 		</Card>
 	);
 };

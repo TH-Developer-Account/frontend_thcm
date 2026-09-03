@@ -1,23 +1,4 @@
-type InfoField = {
-	label: string;
-	value?: string;
-};
-
-type BPOrganizationData = {
-	orgName?: string;
-	joinedOn?: string;
-	branches?: string;
-	gstNo?: string;
-	panNo?: string;
-	bpCode?: string;
-	zone?: string;
-	segment?: string;
-	category?: string;
-	partnerType?: string;
-	registrationNo?: string;
-	website?: string;
-	status?: string;
-};
+import type { BPOrganizationData, InfoField } from "../utils/bp.types";
 
 type BPOrganizationProps = {
 	data?: BPOrganizationData;

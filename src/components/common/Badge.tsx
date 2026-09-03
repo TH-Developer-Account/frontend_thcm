@@ -9,7 +9,8 @@ const normalizeStatus = (status?: string | null) =>
 	status?.toLowerCase().trim() ?? "";
 
 export function Badge({ children, status, variant, text }: BadgeProps) {
-	const label = text ?? children ?? getStatusLabel(status);
+	const label =
+		text ?? children ?? getStatusLabel(status) ?? getStatusVariant(variant);
 
 	const resolvedVariant = variant ?? getStatusVariant(status);
 

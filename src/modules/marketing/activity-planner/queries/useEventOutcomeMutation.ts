@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { eventOutcomeApi } from "../api/event.outcome.api";
 import { epcKeys } from "./epc.keys";
-import { workflowApi } from "../../../../common/workflow.api";
+import { workflowApi } from "../../../workflows";
 
 export const usePreviewWorkflowMutation = () => {
 	return useMutation({

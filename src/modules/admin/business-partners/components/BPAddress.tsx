@@ -1,7 +1,5 @@
-import {
-	type BPAddressViewModel,
-	useBPAddressManager,
-} from "../hooks/useBusinessPartners";
+import { useBPAddressManager } from "../hooks/useBusinessPartners";
+import type { BPAddressViewModel } from "../utils/bp.types";
 
 import BPAddressFormCard, {
 	type BPAddressFormState,
@@ -41,43 +39,40 @@ const BPAddress = ({ addresses: initialAddresses }: BPAddressProps) => {
 		<div className="bp-gen-content">
 			<div className="bp-address-layout">
 				<div className="bp-address-list-grid">
-					{addresses.length > 0 ? (
-						addresses.map((address) => {
-							const isCurrentAddress = editingId === address.id;
+					{addresses.map((address) => {
+						const isCurrentAddress = editingId === address.id;
 
-							if (isCurrentAddress) {
-								return (
-									<BPAddressFormCard
-										key={address.id}
-										form={form}
-										mode="edit"
-										isDefault={address.isDefault}
-										onChange={handleChange}
-										onSubmit={handleAddAddress}
-										onCancel={resetForm}
-									/>
-								);
-							}
-
+						if (isCurrentAddress) {
 							return (
 								<BPAddressFormCard
 									key={address.id}
-									form={toAddressForm(address)}
-									mode="view"
+									form={form}
+									mode="edit"
 									isDefault={address.isDefault}
-									onSetDefault={
-										address.isDefault
-											? undefined
-											: () => handleSetDefault(address.id)
-									}
-									onEdit={() => handleEditAddress(address.id)}
-									onRemove={() => handleRemoveAddress(address.id)}
+									onChange={handleChange}
+									onSubmit={handleAddAddress}
+									onCancel={resetForm}
 								/>
 							);
-						})
-					) : (
-						<p className="bp-address-empty">No addresses found.</p>
-					)}
+						}
+
+						return (
+							<BPAddressFormCard
+								key={address.id}
+								form={toAddressForm(address)}
+								mode="view"
+								isDefault={address.isDefault}
+								onSetDefault={
+									address.isDefault
+										? undefined
+										: () => handleSetDefault(address.id)
+								}
+								onEdit={() => handleEditAddress(address.id)}
+								onRemove={() => handleRemoveAddress(address.id)}
+							/>
+						);
+					})}
+
 					{!isEditing && (
 						<BPAddressFormCard
 							form={form}

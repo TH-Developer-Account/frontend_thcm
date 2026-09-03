@@ -8588,24 +8588,25 @@ PAGE NAVIGATION
 	/* =====================================================
 	   OUTLINE VARIANT
 	===================================================== */
-
 	.action-menu-trigger-outline {
 		border-color: var(--color-brand);
-		background-color: var(--color-brand-subtle);
-		color: var(--color-brand-active);
+		background-color: var(--color-bg-surface);
+		color: var(--color-brand);
 		box-shadow: var(--shadow-xs);
 	}
 
 	.action-menu-trigger-outline:hover,
 	.action-menu-trigger-outline[data-open] {
-		border-color: var(--color-brand);
+		border-color: var(--color-brand-active);
 		background-color: var(--color-brand-subtle);
 		color: var(--color-brand-active);
-		box-shadow: var(--shadow-xs);
+		box-shadow: var(--shadow-sm);
 	}
 
 	.action-menu-trigger-outline:active {
+		border-color: var(--color-brand-active);
 		background-color: var(--color-bg-surface-active);
+		box-shadow: none;
 	}
 
 	/* =====================================================
@@ -8874,6 +8875,7 @@ PAGE NAVIGATION
 		}
 	}
 }
+
 @layer {
 	/* =====================================================
 	   EMPTY STATE

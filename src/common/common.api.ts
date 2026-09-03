@@ -1,4 +1,5 @@
 import { ServerAxios } from "../services/ServerAxios";
+import { USERS_URL, type User } from "./common.types";
 
 export const budgetApi = {
 	getBudgetInfo: async (budgetMasterId?: string | null) => {
@@ -165,6 +166,41 @@ export function createPdfApi<TDocumentType extends string>(baseUrl = "/pdf") {
 			}
 
 			return url;
+		},
+	};
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === "object" && value !== null && !Array.isArray(value);
+
+const unwrapData = <T>(value: unknown): T => {
+	let current = value;
+
+	for (let depth = 0; depth < 2; depth += 1) {
+		if (!isRecord(current) || !("data" in current)) break;
+		current = current.data;
+	}
+
+	return current as T;
+};
+
+export const mapUser = (emp: User): User => ({
+	id: emp.id,
+	firstName: emp.firstName,
+	lastName: emp.lastName,
+	email: emp.email,
+	//   jobRole: emp.TJOB_UUID,
+	phone: emp.phone,
+});
+
+export function usersApi() {
+	return {
+		getUsers: async (): Promise<User[]> => {
+			const response = await ServerAxios.get(USERS_URL, {
+				params: { profile: "all" },
+			});
+			const rawUsers = unwrapData<User[]>(response.data);
+			return (Array.isArray(rawUsers) ? rawUsers : []).map(mapUser);
 		},
 	};
 }

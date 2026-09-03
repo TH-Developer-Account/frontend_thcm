@@ -1,6 +1,6 @@
 import type { SimpleTableColumn } from "../../../../components/ui/tables/SimpleViewTable";
 import SimpleViewTable from "../../../../components/ui/tables/SimpleViewTable";
-import type { BPBranchViewModel } from "../hooks/useBusinessPartners";
+import type { BPBranchViewModel } from "../utils/bp.types";
 
 const columns: SimpleTableColumn<BPBranchViewModel>[] = [
 	{
