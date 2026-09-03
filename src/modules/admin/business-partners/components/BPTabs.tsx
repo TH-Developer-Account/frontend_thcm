@@ -1,6 +1,9 @@
 import { useState } from "react";
 
-import type { BusinessPartnerViewModel } from "../utils/bp.types";
+import type {
+	BusinessPartnerPermissions,
+	BusinessPartnerViewModel,
+} from "../utils/bp.types";
 
 import BPAddress from "./BPAddress";
 import BPBranches from "./BPBranches";
@@ -20,12 +23,13 @@ type BPTab = (typeof bpTabs)[number];
 
 type BPTabsProps = {
 	view: BusinessPartnerViewModel;
+	permissions: BusinessPartnerPermissions;
 };
 
 const isBPTab = (value: string): value is BPTab =>
 	bpTabs.some((tab) => tab === value);
 
-export const BPTabs = ({ view }: BPTabsProps) => {
+export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 	const [activeTab, setActiveTab] = useState<BPTab>("Contact");
 
 	const activeTabId = `bp-tab-${activeTab.toLowerCase().replace(/\s+/g, "-")}`;
@@ -39,6 +43,7 @@ export const BPTabs = ({ view }: BPTabsProps) => {
 			>
 				{bpTabs.map((tab) => {
 					const isActive = activeTab === tab;
+
 					const tabId = `bp-tab-${tab.toLowerCase().replace(/\s+/g, "-")}`;
 
 					return (
@@ -83,7 +88,13 @@ export const BPTabs = ({ view }: BPTabsProps) => {
 					<BPOrganization data={view.organization} />
 				)}
 
-				{activeTab === "Address" && <BPAddress addresses={view.addresses} />}
+				{activeTab === "Address" && (
+					<BPAddress
+						businessPartnerId={view.partner.id}
+						addresses={view.addresses}
+						permissions={permissions.address}
+					/>
+				)}
 
 				{activeTab === "Branches" && <BPBranches branches={view.branches} />}
 
@@ -91,7 +102,7 @@ export const BPTabs = ({ view }: BPTabsProps) => {
 					<BPPeople
 						businessPartnerId={view.partner.id}
 						people={view.people}
-						canManage
+						permissions={permissions.people}
 					/>
 				)}
 			</div>

@@ -34,14 +34,6 @@ const columns: SimpleTableColumn<BPBranchViewModel>[] = [
 
 const BPBranches = ({ branches }: { branches: BPBranchViewModel[] }) => (
 	<div className="bp-people">
-		<div className="bp-people-header">
-			<div>
-				<h3 className="bp-people-title">Branches</h3>
-				<p className="bp-people-description">
-					Offices linked to this business partner.
-				</p>
-			</div>
-		</div>
 		<SimpleViewTable
 			data={branches}
 			columns={columns}

@@ -47,6 +47,10 @@ export default function AdminRoutes() {
 					element={<CreateBusinessPartner />}
 				/>
 				<Route
+					path="/business-partners/:businessPartnerId/edit"
+					element={<CreateBusinessPartner />}
+				/>
+				<Route
 					path="business-partners/:id/view"
 					element={<BusinessPartnerView />}
 				/>

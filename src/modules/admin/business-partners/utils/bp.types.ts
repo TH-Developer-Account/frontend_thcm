@@ -1,23 +1,116 @@
 export type BusinessPartnerOfficeType = "HEAD_OFFICE" | "BRANCH_OFFICE";
 
+type SelectOption<T extends string> = {
+	label: string;
+	value: T;
+};
+
+export const BUSINESS_PARTNER_TYPE_OPTIONS: SelectOption<BusinessPartnerType>[] =
+	[
+		{ label: "Dealer", value: "DEALER" },
+		{ label: "Customer", value: "CUSTOMER" },
+		{ label: "Employee", value: "EMPLOYEE" },
+	];
+export const OFFICE_TYPE_OPTIONS: SelectOption<BusinessPartnerOfficeType>[] = [
+	{ label: "Head Office", value: "HEAD_OFFICE" },
+	{ label: "Branch Office", value: "BRANCH_OFFICE" },
+];
+
+export const ENTITY_TYPE_OPTIONS: SelectOption<BusinessPartnerEntityType>[] = [
+	{ label: "Company", value: "COMPANY" },
+	{ label: "Partnership", value: "PARTNERSHIP" },
+	{ label: "Proprietorship", value: "PROPRIETORSHIP" },
+	{ label: "Individual", value: "INDIVIDUAL" },
+	{ label: "Other", value: "OTHER" },
+];
 export type BusinessPartnerStatus = "Active" | "Inactive";
+export type BusinessPartnerType = "DEALER" | "CUSTOMER" | "EMPLOYEE";
+
+export type BusinessPartnerEntityType =
+	| "COMPANY"
+	| "PARTNERSHIP"
+	| "PROPRIETORSHIP"
+	| "INDIVIDUAL"
+	| "OTHER";
+
+export type BPAddressPermissions = {
+	canCreateAddress: boolean;
+	canUpdateAddress: boolean;
+	canDeleteAddress: boolean;
+	canSetDefaultAddress: boolean;
+};
+
+export type BPPeoplePermissions = {
+	canAddPeople: boolean;
+	canSetMainContact: boolean;
+	canRemovePeople: boolean;
+};
+
+export type BusinessPartnerPermissions = {
+	canCreateBusinessPartner: boolean;
+	canUpdateBusinessPartner: boolean;
+	canDeleteBusinessPartner: boolean;
+
+	address: BPAddressPermissions;
+	people: BPPeoplePermissions;
+};
+
+export const DEFAULT_BUSINESS_PARTNER_PERMISSIONS: BusinessPartnerPermissions =
+	{
+		canCreateBusinessPartner: true,
+		canUpdateBusinessPartner: true,
+		canDeleteBusinessPartner: true,
+
+		address: {
+			canCreateAddress: true,
+			canUpdateAddress: true,
+			canDeleteAddress: true,
+			canSetDefaultAddress: true,
+		},
+
+		people: {
+			canAddPeople: true,
+			canSetMainContact: true,
+			canRemovePeople: true,
+		},
+	};
+
+export type BusinessPartnerAddressType =
+	| "HEAD_OFFICE"
+	| "BRANCH_OFFICE"
+	| "PLANT"
+	| "BILLING_ADDRESS"
+	| "SHIPPING_ADDRESS"
+	| "WAREHOUSE";
 
 export type BusinessPartnerAddress = {
 	id: string;
 	businessPartnerId: string;
+	label?: string | null;
+
+	/*
+	 * Keep nullable temporarily if older API rows do not yet
+	 * return addressType. Once the backend always supplies it,
+	 * this can become BusinessPartnerAddressType.
+	 */
+	addressType: BusinessPartnerAddressType | null;
+
 	address: string;
-	city: string | null;
-	state: string | null;
-	country: string | null;
-	pincode: string | null;
-	region: string | null;
+	city?: string | null;
+	state?: string | null;
+	country?: string | null;
+	pincode?: string | null;
+	region?: string | null;
 	zone: string | null;
 	branch: string | null;
-	latitude: number | null;
-	longitude: number | null;
-	email: string | null;
-	phoneNo: string | null;
-	website: string | null;
+
+	latitude?: number | null;
+	longitude?: number | null;
+
+	email?: string | null;
+	phoneNo?: string | null;
+	website?: string | null;
+
 	isDefault: boolean;
 	createdAt: string;
 	updatedAt: string;
@@ -36,6 +129,7 @@ export type BusinessPartnerContact = {
 	createdAt: string;
 	updatedAt: string;
 };
+
 export type BPContactData = {
 	name?: string;
 	email?: string;
@@ -56,6 +150,7 @@ export type InfoField = {
 	isLink?: boolean;
 	tab?: string;
 };
+
 export type BPOrganizationData = {
 	orgName?: string;
 	joinedOn?: string;
@@ -71,6 +166,7 @@ export type BPOrganizationData = {
 	website?: string;
 	status?: string;
 };
+
 export type BusinessPartnerBranch = {
 	id: string;
 	bpName: string;
@@ -101,8 +197,8 @@ export type BusinessPartnerDetail = {
 	legalTradeName: string | null;
 
 	officeType: BusinessPartnerOfficeType;
-	bpType: string;
-	entityType: string | null;
+	bpType: BusinessPartnerType;
+	entityType: BusinessPartnerEntityType | null;
 	vendorCode: string | null;
 
 	isActive: boolean;
@@ -149,14 +245,6 @@ export type BusinessPartnerListingResult = {
 	totalPages: number;
 };
 
-export type CreateBusinessPartnerPayload = Omit<
-	BusinessPartnerDetail,
-	"id" | "branches" | "parent"
->;
-
-export type UpdateBusinessPartnerPayload =
-	Partial<CreateBusinessPartnerPayload>;
-
 export type ApiEnvelope<T> = {
 	data: T;
 };
@@ -189,7 +277,7 @@ export type BusinessPartnerListItem = {
 	mainContact?: string | null;
 	address?: string | null;
 	joinedOn?: string | null;
-	status?: "Active" | "Inactive";
+	status?: BusinessPartnerStatus;
 	bpId?: string | null;
 	s4Id?: string | null;
 	vendorId?: string | null;
@@ -197,31 +285,42 @@ export type BusinessPartnerListItem = {
 
 export type BPAddressViewModel = {
 	id: string;
+	businessPartnerId: string;
+
 	label: string;
-	addressType: string;
+	addressType: BusinessPartnerAddressType;
 	address: string;
-	city: string;
-	state: string;
-	country: string;
-	pincode: string;
-	region: string;
-	zone: string;
-	branch: string;
-	email: string;
-	phoneNumber: string;
-	website: string;
+
+	city?: string;
+	state?: string;
+	country?: string;
+	pincode?: string;
+	region?: string;
+	zone?: string;
+	branch?: string;
+
+	latitude?: number | null;
+	longitude?: number | null;
+
+	email?: string;
+	phoneNumber?: string;
+	website?: string;
+
 	isDefault: boolean;
 };
 
 export type BPContactViewModel = {
 	id: string;
 	userId: string;
+	businessPartnerId: string;
+
 	name: string;
 	email: string;
 	phoneNumber: string;
 	panNumber: string;
-	businessPartnerId: string;
+
 	role: "Owner" | "Main Contact" | "Contact";
+
 	isOwner: boolean;
 	isMainContact: boolean;
 };
@@ -229,13 +328,15 @@ export type BPContactViewModel = {
 export type BPBranchViewModel = {
 	id: string;
 	name: string;
-	status: "Active" | "Inactive";
+	status: BusinessPartnerStatus;
 };
 
 export type BusinessPartnerViewModel = {
 	partner: BusinessPartnerDetail;
+
 	primaryAddress: BPAddressViewModel | null;
 	primaryContact: BPContactViewModel | null;
+
 	addresses: BPAddressViewModel[];
 	people: BPContactViewModel[];
 	mainContacts: BPContactViewModel[];
@@ -274,8 +375,52 @@ export type BusinessPartnerViewModel = {
 
 export type BPAddressFormState = {
 	label: string;
-	addressType: string;
+	addressType: BusinessPartnerAddressType | "";
+
+	/*
+	 * UI-only field. Do not include it in the API payload.
+	 */
+	copyFromAddressId: string;
+
 	address: string;
+	city?: string;
+	state?: string;
+	country?: string;
+	pincode?: string;
+	region?: string;
+	zone?: string;
+	branch?: string;
+
+	latitude?: string;
+	longitude?: string;
+
+	email?: string;
+	phoneNumber?: string;
+	website?: string;
+
+	isDefault: boolean;
+};
+
+export type BusinessPartnerAddressPayload = {
+	addressType: BusinessPartnerAddressType;
+	address: string;
+	label?: string | null;
+	city: string | null;
+	state: string | null;
+	country: string | null;
+	pincode: string | null;
+	region: string | null;
+	zone: string | null;
+	branch: string | null;
+
+	latitude: number | null;
+	longitude: number | null;
+
+	email: string | null;
+	phoneNo: string | null;
+	website: string | null;
+
+	isDefault: boolean;
 };
 
 // BP People Types
@@ -291,3 +436,60 @@ export type RemoveBusinessPartnerContactVariables = {
 	businessPartnerId: string;
 	contactId: string;
 };
+
+export type BusinessPartnerFormState = {
+	internalId: string;
+	vendorId: string;
+	bpId: string;
+	s4Id: string;
+	bydId: string;
+	c4cId: string;
+
+	bpName: string;
+	bpShortName: string;
+	legalTradeName: string;
+
+	gst: string;
+	panNumber: string;
+	vendorCode: string;
+
+	officeType: BusinessPartnerOfficeType | "";
+	bpType: BusinessPartnerType | "";
+	entityType: BusinessPartnerEntityType | "";
+
+	isKeyAccount: boolean;
+	isActive: boolean;
+
+	joinedOn: string;
+	parentId: string;
+};
+
+export type CreateBusinessPartnerPayload = {
+	internalId: string;
+	vendorId: string | null;
+	bpId: string | null;
+	s4Id: string | null;
+	bydId: string | null;
+	c4cId: string | null;
+
+	bpName: string;
+	bpShortName: string | null;
+	legalTradeName: string | null;
+
+	gst: string | null;
+	panNumber: string | null;
+	vendorCode: string | null;
+
+	officeType: BusinessPartnerOfficeType;
+	bpType: BusinessPartnerType;
+	entityType: BusinessPartnerEntityType | null;
+
+	isKeyAccount: boolean;
+	isActive: boolean;
+
+	joinedOn: string | null;
+	parentId: string | null;
+};
+
+export type UpdateBusinessPartnerPayload =
+	Partial<CreateBusinessPartnerPayload>;

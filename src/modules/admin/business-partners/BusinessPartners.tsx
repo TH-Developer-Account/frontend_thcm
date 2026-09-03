@@ -10,7 +10,7 @@ import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 
 import BPTable from "./components/BPTable";
-import { useBusinessPartnerListing } from "./hooks/useBusinessPartners";
+import { useBusinessPartnerListing } from "./hooks/useBusinessPartnerQueries";
 import type { BusinessPartner } from "./utils/bp.types";
 
 const INITIAL_PAGINATION: PaginationState = {

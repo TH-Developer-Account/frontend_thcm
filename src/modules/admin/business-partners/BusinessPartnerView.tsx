@@ -6,7 +6,23 @@ import PageSectionLayout from "../../../layout/PageSectionLayout";
 
 import BPGenInfo from "./components/BPGenInfo";
 import { BPTabs } from "./components/BPTabs";
-import { useBusinessPartnerView } from "./hooks/useBusinessPartners";
+import { useBusinessPartnerView } from "./hooks/useBusinessPartnerQueries";
+
+import type { BusinessPartnerPermissions } from "./utils/bp.types";
+
+const BUSINESS_PARTNER_PERMISSIONS: BusinessPartnerPermissions = {
+	address: {
+		canCreateAddress: true,
+		canUpdateAddress: true,
+		canDeleteAddress: true,
+		canSetDefaultAddress: true,
+	},
+	people: {
+		canAddPeople: true,
+		canSetMainContact: true,
+		canRemovePeople: true,
+	},
+};
 
 const BusinessPartnerView = () => {
 	const { id = "" } = useParams<{ id: string }>();
@@ -28,7 +44,8 @@ const BusinessPartnerView = () => {
 					<h2 className="alert-title">Unable to load business partner</h2>
 
 					<p className="alert-description">
-						The requested business partner could not be retrieved.
+						The requested business The requested business partner could not be
+						retrieved.
 					</p>
 				</div>
 			</PageSectionLayout>
@@ -72,7 +89,7 @@ const BusinessPartnerView = () => {
 				/>
 
 				<Card>
-					<BPTabs view={view} />
+					<BPTabs view={view} permissions={BUSINESS_PARTNER_PERMISSIONS} />
 				</Card>
 			</div>
 		</PageSectionLayout>

@@ -5,22 +5,29 @@ import type { ActionMenuItem } from "../../../../components/common/ActionMenu";
 import { Badge } from "../../../../components/common/Badge";
 import SimpleViewTable from "../../../../components/ui/tables/SimpleViewTable";
 import type { SimpleTableColumn } from "../../../../components/ui/tables/SimpleViewTable";
-import { useBusinessPartnerPeopleMutations } from "../hooks/useBusinessPartners";
-import { mapPeopleToPayload } from "../utils/businessPartner.mapper";
-import type { BPContactViewModel } from "../utils/bp.types";
+
+import { useBPPeopleManager } from "../hooks/useBusinessPartners";
+
+import type {
+	BPContactViewModel,
+	BPPeoplePermissions,
+} from "../utils/bp.types";
 
 type BPPeopleProps = {
 	businessPartnerId: string;
 	people: BPContactViewModel[];
-	canManage?: boolean;
+	permissions: BPPeoplePermissions;
 };
+
 type PeopleColumnOptions = {
-	canManage: boolean;
+	canSetMainContact: boolean;
+	canRemovePeople: boolean;
 	isUpdating: boolean;
 	isRemoving: boolean;
 	onSetMainContact: (person: BPContactViewModel) => void;
 	onRemove: (person: BPContactViewModel) => void;
 };
+
 type RoleBadgeVariant = "success" | "warning" | "info";
 
 const getInitials = (name: string): string =>
@@ -44,15 +51,9 @@ const getRoleBadgeVariant = (person: BPContactViewModel): RoleBadgeVariant => {
 	return "warning";
 };
 
-const getPeoplePriority = (person: BPContactViewModel): number => {
-	if (person.isOwner) return 0;
-	if (person.isMainContact) return 1;
-
-	return 2;
-};
-
 const getColumns = ({
-	canManage,
+	canSetMainContact,
+	canRemovePeople,
 	isUpdating,
 	isRemoving,
 	onSetMainContact,
@@ -157,7 +158,9 @@ const getColumns = ({
 		},
 	];
 
-	if (canManage) {
+	const hasActions = canSetMainContact || canRemovePeople;
+
+	if (hasActions) {
 		columns.push({
 			key: "actions",
 			header: "Actions",
@@ -172,6 +175,7 @@ const getColumns = ({
 							: "Set as main contact",
 						Icon: UserRoundCheck,
 						onClick: onSetMainContact,
+						hidden: !canSetMainContact,
 						disabled: person.isMainContact || isUpdating,
 						ariaLabel: person.isMainContact
 							? `${person.name} is already the main contact`
@@ -182,6 +186,7 @@ const getColumns = ({
 						label: "Remove",
 						Icon: Trash2,
 						onClick: onRemove,
+						hidden: !canRemovePeople,
 						disabled: person.isOwner || isRemoving,
 						variant: "danger",
 						ariaLabel: person.isOwner
@@ -209,33 +214,26 @@ const getColumns = ({
 const BPPeople = ({
 	businessPartnerId,
 	people,
-	canManage = true,
+	permissions,
 }: BPPeopleProps) => {
-	const { updatePeople, removeContact, isUpdatingPeople, isRemovingContact } =
-		useBusinessPartnerPeopleMutations(businessPartnerId);
-
-	const handleSetMainContact = (person: BPContactViewModel) => {
-		const payload = mapPeopleToPayload(people, person.userId);
-
-		void updatePeople(payload);
-	};
-
-	const handleRemoveContact = (person: BPContactViewModel) => {
-		void removeContact(person.id);
-	};
+	const {
+		sortedPeople,
+		handleSetMainContact,
+		handleRemovePerson,
+		isUpdatingPeople,
+		isRemovingContact,
+		canSetMainContact,
+		canRemovePeople,
+	} = useBPPeopleManager(businessPartnerId, people, permissions);
 
 	const columns = getColumns({
-		canManage,
+		canSetMainContact,
+		canRemovePeople,
 		isUpdating: isUpdatingPeople,
 		isRemoving: isRemovingContact,
 		onSetMainContact: handleSetMainContact,
-		onRemove: handleRemoveContact,
+		onRemove: handleRemovePerson,
 	});
-
-	const sortedPeople = [...people].sort(
-		(firstPerson, secondPerson) =>
-			getPeoplePriority(firstPerson) - getPeoplePriority(secondPerson),
-	);
 
 	return (
 		<div className="bp-people">

@@ -1,21 +1,28 @@
-import { useBPAddressManager } from "../hooks/useBusinessPartners";
-import type { BPAddressViewModel } from "../utils/bp.types";
+import { useMemo } from "react";
 
-import BPAddressFormCard, {
-	type BPAddressFormState,
-} from "./BPAddressFormCard";
+import { useBPAddressManager } from "../hooks/useBusinessPartners";
+import {
+	mapAddressToForm,
+	formatAddressType,
+} from "../utils/businessPartner.mapper";
+import type {
+	BPAddressPermissions,
+	BPAddressViewModel,
+} from "../utils/bp.types";
+
+import BPAddressFormCard from "./BPAddressFormCard";
 
 type BPAddressProps = {
+	businessPartnerId: string;
 	addresses: BPAddressViewModel[];
+	permissions: BPAddressPermissions;
 };
 
-const toAddressForm = (address: BPAddressViewModel): BPAddressFormState => ({
-	label: address.label,
-	addressType: address.addressType,
-	address: address.address,
-});
-
-const BPAddress = ({ addresses: initialAddresses }: BPAddressProps) => {
+const BPAddress = ({
+	addresses: initialAddresses,
+	businessPartnerId,
+	permissions,
+}: BPAddressProps) => {
 	const {
 		form,
 		defaultAddress,
@@ -25,15 +32,29 @@ const BPAddress = ({ addresses: initialAddresses }: BPAddressProps) => {
 		handleChange,
 		handleAddAddress,
 		handleEditAddress,
+		handleCopyAddress,
 		handleSetDefault,
 		handleRemoveAddress,
 		resetForm,
-	} = useBPAddressManager(initialAddresses);
+	} = useBPAddressManager(businessPartnerId, initialAddresses, permissions);
 
-	const addresses = [
-		...(defaultAddress ? [defaultAddress] : []),
-		...otherAddresses,
-	];
+	const addresses = useMemo(
+		() => [...(defaultAddress ? [defaultAddress] : []), ...otherAddresses],
+		[defaultAddress, otherAddresses],
+	);
+
+	const copyAddressOptions = useMemo(
+		() =>
+			addresses
+				.filter((address) => address.id !== editingId)
+				.map((address) => ({
+					label: `${
+						address.label || formatAddressType(address.addressType)
+					} — ${address.address}`,
+					value: address.id,
+				})),
+		[addresses, editingId],
+	);
 
 	return (
 		<div className="bp-gen-content">
@@ -49,7 +70,9 @@ const BPAddress = ({ addresses: initialAddresses }: BPAddressProps) => {
 									form={form}
 									mode="edit"
 									isDefault={address.isDefault}
+									copyAddressOptions={copyAddressOptions}
 									onChange={handleChange}
+									onCopyAddress={handleCopyAddress}
 									onSubmit={handleAddAddress}
 									onCancel={resetForm}
 								/>
@@ -59,7 +82,7 @@ const BPAddress = ({ addresses: initialAddresses }: BPAddressProps) => {
 						return (
 							<BPAddressFormCard
 								key={address.id}
-								form={toAddressForm(address)}
+								form={mapAddressToForm(address)}
 								mode="view"
 								isDefault={address.isDefault}
 								onSetDefault={
@@ -77,8 +100,11 @@ const BPAddress = ({ addresses: initialAddresses }: BPAddressProps) => {
 						<BPAddressFormCard
 							form={form}
 							mode="create"
+							copyAddressOptions={copyAddressOptions}
 							onChange={handleChange}
+							onCopyAddress={handleCopyAddress}
 							onSubmit={handleAddAddress}
+							onCancel={resetForm}
 						/>
 					)}
 				</div>

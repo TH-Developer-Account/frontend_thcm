@@ -1790,7 +1790,7 @@ FORM READONLY INPUT
 	 * Keeps the textarea-sized field stable and scrollable.
 	 */
 	.form-readonly-value-multiline {
-		height: 7.5rem;
+		height: 6.3rem;
 		min-height: 6rem;
 		max-height: 10rem;
 		align-items: flex-start !important;

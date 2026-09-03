@@ -1,39 +1,32 @@
-import {
-	keepPreviousData,
-	useMutation,
-	useQuery,
-	useQueryClient,
-} from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
-import { ServerAxios } from "../../../../services/ServerAxios";
-import type {
-	ApiEnvelope,
-	BPAddressFormState,
-	BPAddressViewModel,
-	BusinessPartnerContact,
-	BusinessPartnerDetail,
-	BusinessPartnerListApiResponse,
-	BusinessPartnerListingParams,
-	BusinessPartnerListingResult,
-	BusinessPartnerListItem,
-	CreateBusinessPartnerPayload,
-	UpdateBusinessPartnerPeoplePayload,
-	UpdateBusinessPartnerPayload,
-} from "../utils/bp.types";
+import { useQuery } from "@tanstack/react-query";
+
 import {
-	mapBusinessPartnerListItem,
-	unwrapData,
-	normalizeListingParams,
-	mapBusinessPartnerView,
+	businessPartnerApi,
+	businessPartnerKeys,
+} from "../api/businessPartner.api";
+
+import {
+	useBusinessPartnerAddressMutations,
+	useBusinessPartnerPeopleMutations,
+} from "./useBusinessPartnerMutations";
+
+import {
+	mapAddressFormToPayload,
+	mapAddressToForm,
+	mapPeopleToPayload,
 } from "../utils/businessPartner.mapper";
 
-const API_URL = "/bp";
-
-const EMPTY_ADDRESS_FORM: BPAddressFormState = {
-	label: "",
-	addressType: "",
-	address: "",
-};
+import {
+	DEFAULT_BUSINESS_PARTNER_PERMISSIONS,
+	type BPAddressFormState,
+	type BPAddressPermissions,
+	type BPAddressViewModel,
+	type BPContactViewModel,
+	type BPPeoplePermissions,
+	type BusinessPartnerAddressPayload,
+	type UpdateBusinessPartnerPeoplePayload,
+} from "../utils/bp.types";
 
 const BUSINESS_PARTNER_QUERY_OPTIONS = {
 	staleTime: Infinity,
@@ -42,231 +35,92 @@ const BUSINESS_PARTNER_QUERY_OPTIONS = {
 	refetchOnReconnect: false,
 } as const;
 
-const fetchBusinessPartners = async (
-	params: Required<BusinessPartnerListingParams>,
-): Promise<BusinessPartnerListingResult> => {
-	const response = await ServerAxios.get<
-		BusinessPartnerListApiResponse | BusinessPartnerListItem[]
-	>(API_URL, {
-		params: {
-			search: params.search || undefined,
-			status: params.status.length ? params.status : undefined,
-			zone: params.zone.length ? params.zone : undefined,
-			page: params.page,
-			limit: params.limit,
-		},
-	});
-
-	const body = response.data;
-	const rawRows = Array.isArray(body) ? body : (body.rows ?? body.data ?? []);
-
-	const rows = rawRows.map((item) => mapBusinessPartnerListItem(item));
-
-	const totalCount = Array.isArray(body)
-		? rows.length
-		: (body.totalCount ?? body.total ?? rows.length);
-
-	const page = Array.isArray(body)
-		? params.page
-		: (body.page ?? body.page_index ?? params.page);
-
-	const limit = Array.isArray(body)
-		? params.limit
-		: (body.limit ?? body.page_size ?? params.limit);
-
-	const totalPages = Array.isArray(body)
-		? Math.max(Math.ceil(totalCount / limit), 1)
-		: (body.totalPages ??
-			body.total_pages ??
-			Math.max(Math.ceil(totalCount / limit), 1));
-
-	return {
-		rows,
-		totalCount,
-		page,
-		limit,
-		totalPages,
-	};
-};
-
-const fetchBusinessPartner = async (
-	businessPartnerId: string,
-): Promise<BusinessPartnerDetail> => {
-	const response = await ServerAxios.get<
-		BusinessPartnerDetail | ApiEnvelope<BusinessPartnerDetail>
-	>(`${API_URL}/${encodeURIComponent(businessPartnerId)}`);
-
-	return unwrapData(response.data);
-};
-
-export const businessPartnerKeys = {
-	all: ["business-partners"] as const,
-
-	lists: () => [...businessPartnerKeys.all, "list"] as const,
-
-	list: (params: Required<BusinessPartnerListingParams>) =>
-		[...businessPartnerKeys.lists(), params] as const,
-
-	details: () => [...businessPartnerKeys.all, "detail"] as const,
-
-	detail: (businessPartnerId: string) =>
-		[...businessPartnerKeys.details(), businessPartnerId] as const,
-};
-
-export const useBusinessPartnerListing = (
-	params: BusinessPartnerListingParams = {},
-) => {
-	const normalizedParams = normalizeListingParams(params);
-
-	return useQuery({
-		queryKey: businessPartnerKeys.list(normalizedParams),
-		queryFn: () => fetchBusinessPartners(normalizedParams),
-		placeholderData: keepPreviousData,
-		...BUSINESS_PARTNER_QUERY_OPTIONS,
-	});
-};
+/* Business partner detail query */
 
 export const useBusinessPartner = (businessPartnerId?: string | null) => {
 	const normalizedId = businessPartnerId?.trim() ?? "";
 
 	return useQuery({
 		queryKey: businessPartnerKeys.detail(normalizedId),
-		queryFn: () => fetchBusinessPartner(normalizedId),
+		queryFn: () => businessPartnerApi.getById(normalizedId),
 		enabled: Boolean(normalizedId),
 		...BUSINESS_PARTNER_QUERY_OPTIONS,
 	});
 };
 
-export const useBusinessPartnerView = (businessPartnerId?: string | null) => {
-	const normalizedId = businessPartnerId?.trim() ?? "";
+/* Address logic */
 
-	return useQuery({
-		queryKey: businessPartnerKeys.detail(normalizedId),
-		queryFn: () => fetchBusinessPartner(normalizedId),
-		select: mapBusinessPartnerView,
-		enabled: Boolean(normalizedId),
-		...BUSINESS_PARTNER_QUERY_OPTIONS,
-	});
+const EMPTY_ADDRESS_FORM: BPAddressFormState = {
+	label: "",
+	addressType: "",
+	copyFromAddressId: "",
+
+	address: "",
+	city: "",
+	state: "",
+	country: "",
+	pincode: "",
+	region: "",
+	zone: "",
+	branch: "",
+
+	latitude: "",
+	longitude: "",
+
+	email: "",
+	phoneNumber: "",
+	website: "",
+
+	isDefault: false,
 };
 
-export const useBusinessPartnerMutations = () => {
-	const queryClient = useQueryClient();
-
-	const createMutation = useMutation({
-		mutationFn: async (payload: CreateBusinessPartnerPayload) => {
-			const response = await ServerAxios.post<
-				BusinessPartnerDetail | ApiEnvelope<BusinessPartnerDetail>
-			>(API_URL, payload);
-
-			return unwrapData(response.data);
-		},
-		onSuccess: (createdPartner) => {
-			queryClient.setQueryData(
-				businessPartnerKeys.detail(createdPartner.id),
-				createdPartner,
-			);
-
-			void queryClient.invalidateQueries({
-				queryKey: businessPartnerKeys.lists(),
-			});
-		},
-	});
-
-	const updateMutation = useMutation({
-		mutationFn: async ({
-			businessPartnerId,
-			payload,
-		}: {
-			businessPartnerId: string;
-			payload: UpdateBusinessPartnerPayload;
-		}) => {
-			const response = await ServerAxios.patch<
-				BusinessPartnerDetail | ApiEnvelope<BusinessPartnerDetail>
-			>(`${API_URL}/${encodeURIComponent(businessPartnerId)}`, payload);
-
-			return unwrapData(response.data);
-		},
-		onSuccess: (updatedPartner) => {
-			queryClient.setQueryData(
-				businessPartnerKeys.detail(updatedPartner.id),
-				updatedPartner,
-			);
-
-			void queryClient.invalidateQueries({
-				queryKey: businessPartnerKeys.lists(),
-			});
-		},
-	});
-
-	const deleteMutation = useMutation({
-		mutationFn: async (businessPartnerId: string) => {
-			await ServerAxios.delete(
-				`${API_URL}/${encodeURIComponent(businessPartnerId)}`,
-			);
-
-			return businessPartnerId;
-		},
-		onSuccess: (deletedPartnerId) => {
-			queryClient.removeQueries({
-				queryKey: businessPartnerKeys.detail(deletedPartnerId),
-			});
-
-			void queryClient.invalidateQueries({
-				queryKey: businessPartnerKeys.lists(),
-			});
-		},
-	});
-
-	const refreshBusinessPartners = () =>
-		queryClient.invalidateQueries({
-			queryKey: businessPartnerKeys.lists(),
-		});
-
-	const refreshBusinessPartner = (businessPartnerId: string) =>
-		queryClient.invalidateQueries({
-			queryKey: businessPartnerKeys.detail(businessPartnerId),
-		});
-
-	return {
-		createBusinessPartner: createMutation.mutateAsync,
-		updateBusinessPartner: updateMutation.mutateAsync,
-		deleteBusinessPartner: deleteMutation.mutateAsync,
-
-		refreshBusinessPartners,
-		refreshBusinessPartner,
-
-		isCreating: createMutation.isPending,
-		isUpdating: updateMutation.isPending,
-		isDeleting: deleteMutation.isPending,
-
-		createError: createMutation.error,
-		updateError: updateMutation.error,
-		deleteError: deleteMutation.error,
-	};
-};
-
-export const useBPAddressManager = (initialAddresses: BPAddressViewModel[]) => {
-	const [addresses, setAddresses] = useState<BPAddressViewModel[]>(
-		() => initialAddresses,
-	);
-
-	const [form, setForm] = useState<BPAddressFormState>(EMPTY_ADDRESS_FORM);
+export const useBPAddressManager = (
+	businessPartnerId: string,
+	initialAddresses: BPAddressViewModel[],
+	permissions: BPAddressPermissions = DEFAULT_BUSINESS_PARTNER_PERMISSIONS.address,
+) => {
+	const [form, setForm] = useState<BPAddressFormState>(() => ({
+		...EMPTY_ADDRESS_FORM,
+	}));
 
 	const [editingId, setEditingId] = useState<string | null>(null);
 
+	const {
+		createAddress,
+		updateAddress,
+		deleteAddress,
+		setDefaultAddress,
+
+		isCreatingAddress,
+		isUpdatingAddress,
+		isDeletingAddress,
+		isSettingDefault,
+
+		createAddressError,
+		updateAddressError,
+		deleteAddressError,
+		setDefaultAddressError,
+	} = useBusinessPartnerAddressMutations(businessPartnerId);
+
 	const defaultAddress = useMemo(
 		() =>
-			addresses.find((address) => address.isDefault) ?? addresses[0] ?? null,
-		[addresses],
+			initialAddresses.find((address) => address.isDefault) ??
+			initialAddresses[0] ??
+			null,
+		[initialAddresses],
 	);
 
 	const otherAddresses = useMemo(
-		() => addresses.filter((address) => address.id !== defaultAddress?.id),
-		[addresses, defaultAddress?.id],
+		() =>
+			initialAddresses.filter((address) => address.id !== defaultAddress?.id),
+		[initialAddresses, defaultAddress?.id],
 	);
 
 	const handleChange = useCallback(
-		(key: keyof BPAddressFormState, value: string) => {
+		<K extends keyof BPAddressFormState>(
+			key: K,
+			value: BPAddressFormState[K],
+		) => {
 			setForm((current) => ({
 				...current,
 				[key]: value,
@@ -276,178 +130,306 @@ export const useBPAddressManager = (initialAddresses: BPAddressViewModel[]) => {
 	);
 
 	const resetForm = useCallback(() => {
-		setForm(EMPTY_ADDRESS_FORM);
+		setForm({
+			...EMPTY_ADDRESS_FORM,
+		});
+
 		setEditingId(null);
 	}, []);
 
-	const handleAddAddress = useCallback(() => {
-		const normalizedAddress = form.address.trim();
-
-		if (!normalizedAddress) return;
-
-		if (editingId) {
-			setAddresses((current) =>
-				current.map((address) =>
-					address.id === editingId
-						? {
-								...address,
-								label: form.label.trim(),
-								addressType: form.addressType,
-								address: normalizedAddress,
-							}
-						: address,
-				),
+	const handleCopyAddress = useCallback(
+		(sourceAddressId: string) => {
+			const sourceAddress = initialAddresses.find(
+				(address) => address.id === sourceAddressId,
 			);
 
-			resetForm();
-			return;
-		}
+			if (!sourceAddress) {
+				setForm((current) => ({
+					...current,
+					copyFromAddressId: "",
+				}));
 
-		const newAddress: BPAddressViewModel = {
-			id: crypto.randomUUID(),
-			label: form.label.trim() || "New Address",
-			addressType: form.addressType || "Business Address",
-			address: normalizedAddress,
+				return;
+			}
 
-			city: "",
-			state: "",
-			country: "",
-			pincode: "",
-			region: "",
-			zone: "",
-			branch: "",
-			email: "",
-			phoneNumber: "",
-			website: "",
+			setForm((current) => ({
+				...current,
 
-			isDefault: addresses.length === 0,
-		};
+				label: current.label,
+				addressType: current.addressType,
+				copyFromAddressId: sourceAddressId,
 
-		setAddresses((current) => [...current, newAddress]);
+				address: sourceAddress.address,
+				city: sourceAddress.city ?? "",
+				state: sourceAddress.state ?? "",
+				country: sourceAddress.country ?? "",
+				pincode: sourceAddress.pincode ?? "",
+				region: sourceAddress.region ?? "",
+				zone: sourceAddress.zone ?? "",
+				branch: sourceAddress.branch ?? "",
 
-		resetForm();
-	}, [addresses.length, editingId, form, resetForm]);
+				latitude: sourceAddress.latitude?.toString() ?? "",
+				longitude: sourceAddress.longitude?.toString() ?? "",
+
+				email: sourceAddress.email ?? "",
+				phoneNumber: sourceAddress.phoneNumber ?? "",
+				website: sourceAddress.website ?? "",
+
+				isDefault: false,
+			}));
+		},
+		[initialAddresses],
+	);
 
 	const handleEditAddress = useCallback(
 		(addressId: string) => {
-			const target = addresses.find((address) => address.id === addressId);
+			if (!permissions.canUpdateAddress) {
+				return;
+			}
 
-			if (!target) return;
+			const address = initialAddresses.find((item) => item.id === addressId);
 
-			setForm({
-				label: target.label,
-				addressType: target.addressType,
-				address: target.address,
-			});
+			if (!address) {
+				return;
+			}
 
-			setEditingId(target.id);
+			setForm(mapAddressToForm(address));
+			setEditingId(address.id);
 		},
-		[addresses],
+		[permissions.canUpdateAddress, initialAddresses],
 	);
 
-	const handleSetDefault = useCallback((addressId: string) => {
-		setAddresses((current) =>
-			current.map((address) => ({
-				...address,
-				isDefault: address.id === addressId,
-			})),
-		);
-	}, []);
+	const handleAddAddress = useCallback(async () => {
+		const canSubmit = editingId
+			? permissions.canUpdateAddress
+			: permissions.canCreateAddress;
 
-	const handleRemoveAddress = useCallback(
-		(addressId: string) => {
-			setAddresses((current) => {
-				const target = current.find((address) => address.id === addressId);
+		if (!canSubmit) {
+			return;
+		}
 
-				if (!target || target.isDefault) {
-					return current;
-				}
+		let payload: BusinessPartnerAddressPayload;
 
-				return current.filter((address) => address.id !== addressId);
-			});
+		try {
+			payload = mapAddressFormToPayload(form);
+		} catch {
+			return;
+		}
 
-			if (editingId === addressId) {
-				resetForm();
+		try {
+			if (editingId) {
+				await updateAddress({
+					addressId: editingId,
+					payload,
+				});
+			} else {
+				await createAddress(payload);
+			}
+
+			resetForm();
+		} catch {
+			/*
+			 * The mutation exposes the error.
+			 * Keep the form open for retry.
+			 */
+		}
+	}, [
+		permissions.canCreateAddress,
+		permissions.canUpdateAddress,
+		createAddress,
+		editingId,
+		form,
+		resetForm,
+		updateAddress,
+	]);
+
+	const handleSetDefault = useCallback(
+		async (addressId: string) => {
+			if (!permissions.canSetDefaultAddress) {
+				return;
+			}
+
+			try {
+				await setDefaultAddress(addressId);
+			} catch {
+				// Mutation exposes the error.
 			}
 		},
-		[editingId, resetForm],
+		[permissions.canSetDefaultAddress, setDefaultAddress],
+	);
+
+	const handleRemoveAddress = useCallback(
+		async (addressId: string) => {
+			if (!permissions.canDeleteAddress) {
+				return;
+			}
+
+			const target = initialAddresses.find(
+				(address) => address.id === addressId,
+			);
+
+			if (!target || target.isDefault) {
+				return;
+			}
+
+			try {
+				await deleteAddress(addressId);
+
+				if (editingId === addressId) {
+					resetForm();
+				}
+			} catch {
+				// Mutation exposes the error.
+			}
+		},
+		[
+			permissions.canDeleteAddress,
+			deleteAddress,
+			editingId,
+			initialAddresses,
+			resetForm,
+		],
 	);
 
 	return {
 		form,
-		addresses,
 		defaultAddress,
 		otherAddresses,
 		editingId,
 		isEditing: Boolean(editingId),
 
 		handleChange,
+		handleCopyAddress,
 		handleAddAddress,
 		handleEditAddress,
 		handleSetDefault,
 		handleRemoveAddress,
 		resetForm,
+
+		isSaving: isCreatingAddress || isUpdatingAddress,
+		isDeleting: isDeletingAddress,
+		isSettingDefault,
+
+		createAddressError,
+		updateAddressError,
+		deleteAddressError,
+		setDefaultAddressError,
+
+		canCreateAddress: permissions.canCreateAddress,
+		canUpdateAddress: permissions.canUpdateAddress,
+		canDeleteAddress: permissions.canDeleteAddress,
+		canSetDefaultAddress: permissions.canSetDefaultAddress,
 	};
 };
 
-export const useBusinessPartnerPeopleMutations = (
+/* People logic */
+
+const getPeoplePriority = (person: BPContactViewModel): number => {
+	if (person.isOwner) {
+		return 0;
+	}
+
+	if (person.isMainContact) {
+		return 1;
+	}
+
+	return 2;
+};
+
+export const useBPPeopleManager = (
 	businessPartnerId: string,
+	people: BPContactViewModel[],
+	permissions: BPPeoplePermissions = DEFAULT_BUSINESS_PARTNER_PERMISSIONS.people,
 ) => {
-	const queryClient = useQueryClient();
+	const {
+		addPeople,
+		updatePeople,
+		removeContact,
 
-	const contactsUrl = `${API_URL}/${encodeURIComponent(
-		businessPartnerId,
-	)}/contacts`;
+		isAddingPeople,
+		isUpdatingPeople,
+		isRemovingContact,
 
-	const refreshBusinessPartner = () =>
-		queryClient.invalidateQueries({
-			queryKey: businessPartnerKeys.detail(businessPartnerId),
-		});
+		addPeopleError,
+		updatePeopleError,
+		removeContactError,
+	} = useBusinessPartnerPeopleMutations(businessPartnerId);
 
-	const addPeopleMutation = useMutation({
-		mutationFn: async (payload: UpdateBusinessPartnerPeoplePayload) => {
-			const response = await ServerAxios.post<
-				BusinessPartnerContact[] | ApiEnvelope<BusinessPartnerContact[]>
-			>(contactsUrl, payload);
+	const sortedPeople = useMemo(
+		() =>
+			[...people].sort(
+				(firstPerson, secondPerson) =>
+					getPeoplePriority(firstPerson) - getPeoplePriority(secondPerson),
+			),
+		[people],
+	);
 
-			return unwrapData(response.data);
+	const handleAddPeople = useCallback(
+		async (payload: UpdateBusinessPartnerPeoplePayload) => {
+			if (!permissions.canAddPeople) {
+				return;
+			}
+
+			try {
+				await addPeople(payload);
+			} catch {
+				// Mutation exposes the error.
+			}
 		},
-		onSuccess: refreshBusinessPartner,
-	});
+		[permissions.canAddPeople, addPeople],
+	);
 
-	const updatePeopleMutation = useMutation({
-		mutationFn: async (payload: UpdateBusinessPartnerPeoplePayload) => {
-			const response = await ServerAxios.patch<
-				BusinessPartnerContact[] | ApiEnvelope<BusinessPartnerContact[]>
-			>(contactsUrl, payload);
+	const handleSetMainContact = useCallback(
+		async (person: BPContactViewModel) => {
+			if (!permissions.canSetMainContact || person.isMainContact) {
+				return;
+			}
 
-			return unwrapData(response.data);
+			const payload = mapPeopleToPayload(people, person.userId);
+
+			try {
+				await updatePeople(payload);
+			} catch {
+				// Mutation exposes the error.
+			}
 		},
-		onSuccess: refreshBusinessPartner,
-	});
+		[permissions.canSetMainContact, people, updatePeople],
+	);
 
-	const removeContactMutation = useMutation({
-		mutationFn: async (contactId: string) => {
-			await ServerAxios.delete(
-				`${contactsUrl}/${encodeURIComponent(contactId)}`,
-			);
+	const handleRemovePerson = useCallback(
+		async (person: BPContactViewModel) => {
+			if (!permissions.canRemovePeople || person.isOwner) {
+				return;
+			}
 
-			return contactId;
+			try {
+				await removeContact(person.id);
+			} catch {
+				// Mutation exposes the error.
+			}
 		},
-		onSuccess: refreshBusinessPartner,
-	});
+		[permissions.canRemovePeople, removeContact],
+	);
 
 	return {
-		addPeople: addPeopleMutation.mutateAsync,
-		updatePeople: updatePeopleMutation.mutateAsync,
-		removeContact: removeContactMutation.mutateAsync,
+		sortedPeople,
 
-		isAddingPeople: addPeopleMutation.isPending,
-		isUpdatingPeople: updatePeopleMutation.isPending,
-		isRemovingContact: removeContactMutation.isPending,
+		handleAddPeople,
+		handleSetMainContact,
+		handleRemovePerson,
 
-		addPeopleError: addPeopleMutation.error,
-		updatePeopleError: updatePeopleMutation.error,
-		removeContactError: removeContactMutation.error,
+		isAddingPeople,
+		isUpdatingPeople,
+		isRemovingContact,
+		isPeopleMutationPending:
+			isAddingPeople || isUpdatingPeople || isRemovingContact,
+
+		addPeopleError,
+		updatePeopleError,
+		removeContactError,
+
+		canAddPeople: permissions.canAddPeople,
+		canSetMainContact: permissions.canSetMainContact,
+		canRemovePeople: permissions.canRemovePeople,
 	};
 };

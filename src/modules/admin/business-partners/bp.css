@@ -586,6 +586,43 @@ button {
 			grid-auto-rows: auto;
 		}
 	}
+	@layer components {
+		.bp-master-form {
+			@apply flex w-full flex-col gap-3;
+		}
+
+		.bp-master-form-grid {
+			@apply grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3;
+		}
+
+		.bp-master-form-checks {
+			@apply flex flex-wrap items-center gap-6;
+		}
+
+		.bp-master-form-checks label {
+			@apply flex cursor-pointer items-center gap-2 text-sm font-medium text-zinc-700;
+		}
+
+		.bp-master-form-checks input {
+			@apply h-4 w-4 accent-[var(--color-brand)];
+		}
+
+		.bp-master-form-error {
+			@apply rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700;
+		}
+
+		.bp-master-form-actions {
+			@apply flex flex-col-reverse justify-end gap-2 sm:flex-row;
+		}
+
+		[data-theme="dark"] .bp-master-form-checks label {
+			@apply text-zinc-200;
+		}
+
+		[data-theme="dark"] .bp-master-form-error {
+			@apply border-red-800 bg-red-950/40 text-red-300;
+		}
+	}
 }
 
 /* =====================================================
