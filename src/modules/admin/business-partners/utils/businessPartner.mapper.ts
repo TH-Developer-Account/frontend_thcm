@@ -17,6 +17,7 @@ import type {
 	UpdateBusinessPartnerPeoplePayload,
 	BusinessPartnerFormState,
 	CreateBusinessPartnerPayload,
+	UpdateBusinessPartnerPayload,
 } from "./bp.types";
 
 const DEFAULT_PAGE = 1;
@@ -340,6 +341,13 @@ export const EMPTY_BUSINESS_PARTNER_FORM: BusinessPartnerFormState = {
 
 	joinedOn: "",
 	parentId: "",
+
+	mobileNumber: "",
+	email: "",
+	fax: "",
+	telephone: "",
+	// mainContactName: "",
+	// mainContactNumber: "",
 };
 
 export const mapBusinessPartnerToForm = (
@@ -369,9 +377,21 @@ export const mapBusinessPartnerToForm = (
 
 	joinedOn: partner.joinedOn?.slice(0, 10) ?? "",
 	parentId: cleanText(partner.parentId),
+
+	mobileNumber: cleanText(partner.mobileNumber),
+	email: cleanText(partner.email),
+	fax: cleanText(partner.fax),
+	telephone: cleanText(partner.telephone),
+	// mainContactName: cleanText(partner.mainContactName),
+	// mainContactNumber: cleanText(partner.mainContactNumber),
 });
 
-export const mapBusinessPartnerFormToPayload = (
+/**
+ * GENERAL tab -> POST /bp (first creation only).
+ * Sends the full create payload; organization/tax fields go as null
+ * so the user isn't forced to fill Organization Information up front.
+ */
+export const mapGeneralFormToCreatePayload = (
 	form: BusinessPartnerFormState,
 ): CreateBusinessPartnerPayload => {
 	const internalId = form.internalId.trim();
@@ -393,30 +413,103 @@ export const mapBusinessPartnerFormToPayload = (
 		throw new Error("Business partner type is required");
 	}
 
+	if (form.officeType === "BRANCH_OFFICE" && !form.parentId.trim()) {
+		throw new Error("Parent business partner is required for a branch");
+	}
+
 	return {
 		internalId,
-		vendorId: nullableText(form.vendorId),
-		bpId: nullableText(form.bpId),
-		s4Id: nullableText(form.s4Id),
-		bydId: nullableText(form.bydId),
-		c4cId: nullableText(form.c4cId),
-
 		bpName,
 		bpShortName: nullableText(form.bpShortName),
-		legalTradeName: nullableText(form.legalTradeName),
-
-		gst: nullableText(form.gst)?.toUpperCase() ?? null,
-		panNumber: nullableText(form.panNumber)?.toUpperCase() ?? null,
-		vendorCode: nullableText(form.vendorCode),
-
 		officeType: form.officeType,
 		bpType: form.bpType,
-		entityType: form.entityType || null,
-
 		isKeyAccount: form.isKeyAccount,
 		isActive: form.isActive,
+		parentId: nullableText(form.parentId),
 
-		joinedOn: nullableText(form.joinedOn),
+		vendorId: null,
+		bpId: null,
+		s4Id: null,
+		bydId: null,
+		c4cId: null,
+		legalTradeName: null,
+		gst: null,
+		panNumber: null,
+		vendorCode: null,
+		entityType: null,
+		joinedOn: null,
+
+		mobileNumber: null,
+		email: null,
+		fax: null,
+		telephone: null,
+		// mainContactName: null,
+		// mainContactNumber: null,
+	};
+};
+
+/**
+ * GENERAL tab -> PATCH /bp/:id (editing an existing BP).
+ */
+export const mapGeneralFormToUpdatePayload = (
+	form: BusinessPartnerFormState,
+): UpdateBusinessPartnerPayload => {
+	const internalId = form.internalId.trim();
+	const bpName = form.bpName.trim();
+
+	if (!internalId) throw new Error("Internal ID is required");
+	if (!bpName) throw new Error("Business partner name is required");
+	if (!form.officeType) throw new Error("Office type is required");
+	if (!form.bpType) throw new Error("Business partner type is required");
+
+	if (form.officeType === "BRANCH_OFFICE" && !form.parentId.trim()) {
+		throw new Error("Parent business partner is required for a branch");
+	}
+
+	return {
+		internalId,
+		bpName,
+		bpShortName: nullableText(form.bpShortName),
+		officeType: form.officeType,
+		bpType: form.bpType,
+		isKeyAccount: form.isKeyAccount,
+		isActive: form.isActive,
 		parentId: nullableText(form.parentId),
 	};
 };
+
+/**
+ * ORGANIZATION tab -> PATCH /bp/:id only (never used at creation time).
+ */
+export const mapOrganizationFormToUpdatePayload = (
+	form: BusinessPartnerFormState,
+): UpdateBusinessPartnerPayload => ({
+	vendorId: nullableText(form.vendorId),
+	bpId: nullableText(form.bpId),
+	s4Id: nullableText(form.s4Id),
+	bydId: nullableText(form.bydId),
+	c4cId: nullableText(form.c4cId),
+	legalTradeName: nullableText(form.legalTradeName),
+	gst: nullableText(form.gst)?.toUpperCase() ?? null,
+	panNumber: nullableText(form.panNumber)?.toUpperCase() ?? null,
+	vendorCode: nullableText(form.vendorCode),
+	entityType: form.entityType || null,
+	joinedOn: nullableText(form.joinedOn),
+});
+
+/**
+ * CONTACT tab -> PATCH /bp/:id by default (same pattern as Organization).
+ * If contact info ends up living on a dedicated resource instead,
+ * this is the only function that needs to change — everything above
+ * it (the hook, the form component) stays the same.
+ */
+export const mapContactFormToUpdatePayload = (
+	form: BusinessPartnerFormState,
+): UpdateBusinessPartnerPayload => ({
+	mobileNumber: nullableText(form.mobileNumber),
+	email: nullableText(form.email)?.toLowerCase() ?? null,
+	fax: nullableText(form.fax),
+	telephone: nullableText(form.telephone),
+	// mainContactName: nullableText(form.mainContactName),
+	// mainContactNumber: nullableText(form.mainContactNumber),
+});

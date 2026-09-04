@@ -1,8 +1,24 @@
-import type { BPContactData, InfoField } from "../utils/bp.types";
+import FormInput from "../../../../components/forms/FormInput";
+
+import type {
+	BPContactData,
+	BusinessPartnerFormState,
+	InfoField,
+} from "../utils/bp.types";
 
 type BPContactProps = {
 	data?: BPContactData;
 	onNavigateTab?: (tab: string) => void;
+};
+
+type FormChangeHandler = <K extends keyof BusinessPartnerFormState>(
+	key: K,
+	value: BusinessPartnerFormState[K],
+) => void;
+
+type BPContactFormProps = {
+	form: BusinessPartnerFormState;
+	onChange: FormChangeHandler;
 };
 
 const FALLBACK_VALUE = "--";
@@ -87,5 +103,63 @@ const BPContact = ({ data, onNavigateTab }: BPContactProps) => {
 		</div>
 	);
 };
+
+/**
+ * Editable Contact Information form: mobile, email, fax, telephone.
+ * Main Contact name/number fields are commented out for now — they'll
+ * likely be sourced from the People tab's main-contact selection instead
+ * of free text, so leaving them out until that's decided.
+ */
+export const BPContactForm = ({ form, onChange }: BPContactFormProps) => (
+	<section
+		className="bp-create-form-section"
+		aria-labelledby="contact-information-heading"
+	>
+		<h3 id="contact-information-heading" className="sr-only">
+			Contact Information
+		</h3>
+		<div className="bp-master-form-grid">
+			<FormInput
+				name="mobileNumber"
+				label="Mobile Number"
+				value={form.mobileNumber}
+				onChange={(event) => onChange("mobileNumber", event.target.value)}
+			/>
+			<FormInput
+				name="email"
+				label="Email"
+				type="email"
+				value={form.email}
+				onChange={(event) => onChange("email", event.target.value)}
+			/>
+			<FormInput
+				name="telephone"
+				label="Telephone"
+				value={form.telephone}
+				onChange={(event) => onChange("telephone", event.target.value)}
+			/>
+			<FormInput
+				name="fax"
+				label="Fax"
+				value={form.fax}
+				onChange={(event) => onChange("fax", event.target.value)}
+			/>
+			{/* <FormInput
+				name="mainContactName"
+				label="Main Contact Person"
+				value={form.mainContactName}
+				onChange={(event) => onChange("mainContactName", event.target.value)}
+			/>
+			<FormInput
+				name="mainContactNumber"
+				label="Main Contact Number"
+				value={form.mainContactNumber}
+				onChange={(event) =>
+					onChange("mainContactNumber", event.target.value)
+				}
+			/> */}
+		</div>
+	</section>
+);
 
 export default BPContact;

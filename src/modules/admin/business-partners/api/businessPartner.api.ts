@@ -195,6 +195,7 @@ export const businessPartnerApi = {
 
 		return contactId;
 	},
+
 	create: async (
 		payload: CreateBusinessPartnerPayload,
 	): Promise<BusinessPartnerDetail> => {

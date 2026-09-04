@@ -83,6 +83,14 @@ export type BusinessPartnerAddressType =
 	| "SHIPPING_ADDRESS"
 	| "WAREHOUSE";
 
+export type BPFormTab =
+	| "general"
+	| "organization"
+	| "contact"
+	| "address"
+	| "branches"
+	| "people";
+
 export type BusinessPartnerAddress = {
 	id: string;
 	businessPartnerId: string;
@@ -207,6 +215,14 @@ export type BusinessPartnerDetail = {
 
 	createdAt: string;
 	updatedAt: string;
+
+	// Contact Information
+	mobileNumber: string | null;
+	email: string | null;
+	fax: string | null;
+	telephone: string | null;
+	// mainContactName: string | null;
+	// mainContactNumber: string | null;
 
 	parent: BusinessPartnerParent | null;
 	branches: BusinessPartnerBranch[];
@@ -462,6 +478,14 @@ export type BusinessPartnerFormState = {
 
 	joinedOn: string;
 	parentId: string;
+
+	// Contact Information
+	mobileNumber: string;
+	email: string;
+	fax: string;
+	telephone: string;
+	// mainContactName: string;
+	// mainContactNumber: string;
 };
 
 export type CreateBusinessPartnerPayload = {
@@ -489,7 +513,40 @@ export type CreateBusinessPartnerPayload = {
 
 	joinedOn: string | null;
 	parentId: string | null;
+
+	// Contact Information
+	mobileNumber: string | null;
+	email: string | null;
+	fax: string | null;
+	telephone: string | null;
+	// mainContactName: string | null;
+	// mainContactNumber: string | null;
 };
 
 export type UpdateBusinessPartnerPayload =
 	Partial<CreateBusinessPartnerPayload>;
+
+export type BusinessPartnerGeneralInfoFormState = {
+	internalId?: string;
+	vendorId?: string;
+	bpId?: string;
+	s4Id?: string;
+	bydId?: string;
+	c4cId?: string;
+	bpName: string;
+	bpShortName: string;
+	officeType: BusinessPartnerOfficeType | "";
+	bpType: BusinessPartnerType | "";
+	isKeyAccount: boolean;
+	isActive: boolean;
+	parentId: string;
+};
+
+export type BusinessPartnerOrganizationInfoFormState = {
+	legalTradeName: string;
+	gst: string;
+	panNumber: string;
+	vendorCode: string;
+	entityType: BusinessPartnerEntityType | "";
+	joinedOn: string;
+};

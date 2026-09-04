@@ -48,6 +48,13 @@ button {
 	.top-box button {
 		@apply w-full text-xs sm:text-sm;
 	}
+	.bp-gen-content-actions {
+		@apply mt-2 pb-2 pt-4 flex justify-end items-center;
+		border-top: 1px solid var(--border-color, #e5e7eb);
+	}
+	.bp-branches-add {
+		@apply flex justify-end items-center pb-2;
+	}
 }
 
 /* BP View Page */
@@ -97,7 +104,7 @@ button {
 	}
 
 	.bp-gen-content {
-		@apply p-3 sm:p-4;
+		@apply px-3 sm:px-4 pt-4;
 	}
 
 	.bp-general-info-cards {

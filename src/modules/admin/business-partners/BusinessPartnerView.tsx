@@ -11,12 +11,17 @@ import { useBusinessPartnerView } from "./hooks/useBusinessPartnerQueries";
 import type { BusinessPartnerPermissions } from "./utils/bp.types";
 
 const BUSINESS_PARTNER_PERMISSIONS: BusinessPartnerPermissions = {
+	canCreateBusinessPartner: false,
+	canUpdateBusinessPartner: true,
+	canDeleteBusinessPartner: false,
+
 	address: {
 		canCreateAddress: true,
 		canUpdateAddress: true,
 		canDeleteAddress: true,
 		canSetDefaultAddress: true,
 	},
+
 	people: {
 		canAddPeople: true,
 		canSetMainContact: true,

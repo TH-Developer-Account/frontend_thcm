@@ -9,9 +9,8 @@ import { useBusinessPartnerForm } from "./hooks/useBusinessPartnerForm";
 import { DEFAULT_BUSINESS_PARTNER_PERMISSIONS } from "./utils/bp.types";
 
 const CreateBusinessPartner = () => {
-	const { businessPartnerId } = useParams<{
-		businessPartnerId?: string;
-	}>();
+	// Route param is `:id` — see AdminRoutes. Read it under that name.
+	const { id: businessPartnerId } = useParams<{ id?: string }>();
 
 	const {
 		form,
@@ -19,9 +18,9 @@ const CreateBusinessPartner = () => {
 		isLoading,
 		isError,
 		isSaving,
-		// isFormValid,
 		canSubmit,
 		error,
+		availableTabs,
 		handleChange,
 		handleSubmit,
 		handleCancel,
@@ -56,13 +55,8 @@ const CreateBusinessPartner = () => {
 					variant: "breadcrumbs",
 					ariaLabel: "Business partner form",
 					breadcrumbs: [
-						{
-							label: "Business Partners",
-							href: "/business-partners",
-						},
-						{
-							label: isEditMode ? "Update" : "Create",
-						},
+						{ label: "Business Partners", href: "/business-partners" },
+						{ label: isEditMode ? "Update" : "Create" },
 					],
 					separator: "›",
 				}}
@@ -74,25 +68,10 @@ const CreateBusinessPartner = () => {
 				isSaving={isSaving}
 				canSubmit={canSubmit}
 				error={error}
+				availableTabs={availableTabs}
 				onChange={handleChange}
 				onSubmit={handleSubmit}
 				onCancel={handleCancel}
-				// contactForm={<BPContactForm controller={contactController} />}
-				// addressForm={
-				// 	businessPartnerId ? (
-				// 		<BPAddress businessPartnerId={businessPartnerId} />
-				// 	) : undefined
-				// }
-				// branchesForm={
-				// 	businessPartnerId ? (
-				// 		<BPBranches businessPartnerId={businessPartnerId} />
-				// 	) : undefined
-				// }
-				// peopleForm={
-				// 	businessPartnerId ? (
-				// 		<BPPeople businessPartnerId={businessPartnerId} />
-				// 	) : undefined
-				// }
 			/>
 		</PageSectionLayout>
 	);
