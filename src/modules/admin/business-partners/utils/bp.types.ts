@@ -33,11 +33,31 @@ export type BusinessPartnerEntityType =
 	| "INDIVIDUAL"
 	| "OTHER";
 
+// -----------------------------------------------------------------------------
+// Section-level permissions
+// -----------------------------------------------------------------------------
+
+export type BPGeneralPermissions = {
+	canUpdateGeneral: boolean;
+};
+
+export type BPOrganizationPermissions = {
+	canUpdateOrganization: boolean;
+};
+
+export type BPContactPermissions = {
+	canUpdateContact: boolean;
+};
+
 export type BPAddressPermissions = {
 	canCreateAddress: boolean;
 	canUpdateAddress: boolean;
 	canDeleteAddress: boolean;
 	canSetDefaultAddress: boolean;
+};
+
+export type BPBranchPermissions = {
+	canCreateBranch: boolean;
 };
 
 export type BPPeoplePermissions = {
@@ -51,7 +71,11 @@ export type BusinessPartnerPermissions = {
 	canUpdateBusinessPartner: boolean;
 	canDeleteBusinessPartner: boolean;
 
+	general: BPGeneralPermissions;
+	organization: BPOrganizationPermissions;
+	contact: BPContactPermissions;
 	address: BPAddressPermissions;
+	branches: BPBranchPermissions;
 	people: BPPeoplePermissions;
 };
 
@@ -61,11 +85,27 @@ export const DEFAULT_BUSINESS_PARTNER_PERMISSIONS: BusinessPartnerPermissions =
 		canUpdateBusinessPartner: true,
 		canDeleteBusinessPartner: true,
 
+		general: {
+			canUpdateGeneral: true,
+		},
+
+		organization: {
+			canUpdateOrganization: true,
+		},
+
+		contact: {
+			canUpdateContact: true,
+		},
+
 		address: {
 			canCreateAddress: true,
 			canUpdateAddress: true,
 			canDeleteAddress: true,
 			canSetDefaultAddress: true,
+		},
+
+		branches: {
+			canCreateBranch: true,
 		},
 
 		people: {
@@ -549,4 +589,11 @@ export type BusinessPartnerOrganizationInfoFormState = {
 	vendorCode: string;
 	entityType: BusinessPartnerEntityType | "";
 	joinedOn: string;
+};
+
+export type BPPeopleSelection = {
+	userId: string;
+	name: string;
+	email?: string;
+	isMainContact: boolean;
 };

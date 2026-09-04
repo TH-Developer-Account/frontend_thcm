@@ -8,20 +8,19 @@ import BPGenInfo from "./components/BPGenInfo";
 import { BPTabs } from "./components/BPTabs";
 import { useBusinessPartnerView } from "./hooks/useBusinessPartnerQueries";
 
-import type { BusinessPartnerPermissions } from "./utils/bp.types";
+import {
+	DEFAULT_BUSINESS_PARTNER_PERMISSIONS,
+	type BusinessPartnerPermissions,
+} from "./utils/bp.types";
 
 const BUSINESS_PARTNER_PERMISSIONS: BusinessPartnerPermissions = {
-	canCreateBusinessPartner: false,
-	canUpdateBusinessPartner: true,
-	canDeleteBusinessPartner: false,
-
+	...DEFAULT_BUSINESS_PARTNER_PERMISSIONS,
 	address: {
 		canCreateAddress: true,
 		canUpdateAddress: true,
 		canDeleteAddress: true,
 		canSetDefaultAddress: true,
 	},
-
 	people: {
 		canAddPeople: true,
 		canSetMainContact: true,

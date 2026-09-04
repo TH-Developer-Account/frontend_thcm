@@ -22,6 +22,7 @@ import {
 	type BPAddressFormState,
 	type BPAddressPermissions,
 	type BPAddressViewModel,
+	type BPPeopleSelection,
 	type BPContactViewModel,
 	type BPPeoplePermissions,
 	type BusinessPartnerAddressPayload,
@@ -431,5 +432,107 @@ export const useBPPeopleManager = (
 		canAddPeople: permissions.canAddPeople,
 		canSetMainContact: permissions.canSetMainContact,
 		canRemovePeople: permissions.canRemovePeople,
+	};
+};
+
+export const useBPAddPeopleForm = (
+	businessPartnerId: string,
+	existingPeople: BPContactViewModel[],
+) => {
+	const { addPeople, isAddingPeople, addPeopleError } =
+		useBusinessPartnerPeopleMutations(businessPartnerId);
+
+	const [selected, setSelected] = useState<BPPeopleSelection[]>([]);
+
+	const existingUserIds = useMemo(
+		() => existingPeople.map((person) => person.userId),
+		[existingPeople],
+	);
+
+	// Fed into UserAsyncSelect's excludedUserIds so already-attached people
+	// and people already picked in this session don't show up again.
+	const excludedUserIds = useMemo(
+		() => [...existingUserIds, ...selected.map((entry) => entry.userId)],
+		[existingUserIds, selected],
+	);
+
+	const handleSelectUser = useCallback(
+		(user: { value: string; label: string; email?: string } | null) => {
+			if (!user) return;
+
+			setSelected((current) => {
+				if (current.some((entry) => entry.userId === user.value)) {
+					return current;
+				}
+
+				return [
+					...current,
+					{
+						userId: user.value,
+						name: user.label,
+						email: user.email,
+						isMainContact: false,
+					},
+				];
+			});
+		},
+		[],
+	);
+
+	const handleRemoveSelected = useCallback((userId: string) => {
+		setSelected((current) =>
+			current.filter((entry) => entry.userId !== userId),
+		);
+	}, []);
+
+	// Only one main contact can be picked in a single add — selecting one
+	// clears any previously toggled entry.
+	const handleToggleMainContact = useCallback((userId: string) => {
+		setSelected((current) =>
+			current.map((entry) => ({
+				...entry,
+				isMainContact: entry.userId === userId ? !entry.isMainContact : false,
+			})),
+		);
+	}, []);
+
+	const resetSelection = useCallback(() => {
+		setSelected([]);
+	}, []);
+
+	const buildPayload = useCallback(
+		(): UpdateBusinessPartnerPeoplePayload =>
+			selected.map((entry) => ({
+				userId: entry.userId,
+				isMainContact: entry.isMainContact,
+			})),
+		[selected],
+	);
+
+	const handleSubmit = useCallback(async (): Promise<boolean> => {
+		if (selected.length === 0) return false;
+
+		try {
+			await addPeople(buildPayload());
+			resetSelection();
+			return true;
+		} catch {
+			// Mutation exposes the error via addPeopleError.
+			return false;
+		}
+	}, [selected.length, addPeople, buildPayload, resetSelection]);
+
+	return {
+		selected,
+		excludedUserIds,
+
+		handleSelectUser,
+		handleRemoveSelected,
+		handleToggleMainContact,
+		resetSelection,
+		handleSubmit,
+
+		isSubmitting: isAddingPeople,
+		error: addPeopleError,
 	};
 };

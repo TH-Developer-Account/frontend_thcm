@@ -286,20 +286,7 @@ const BPAddressFormCard = ({
 					required
 				/>
 
-				<div className="bp-address-field bp-address-textarea-field">
-					<TextareaInput
-						name={`address-${mode}`}
-						label="Address"
-						value={form.address}
-						onChange={(event) => handleChange("address", event.target.value)}
-						placeholder="Flat / Building / Street / Area"
-						className="bigtextArea"
-						rows={4}
-						mode={isViewMode ? "view" : "edit"}
-						required
-					/>
-				</div>
-				{/* <FormInput
+				<FormInput
 					name={`city-${mode}`}
 					label="City"
 					value={form.city}
@@ -347,7 +334,7 @@ const BPAddressFormCard = ({
 					mode={isViewMode ? "view" : "edit"}
 				/>
 
-				<FormInput
+				{/* <FormInput
 					name={`branch-${mode}`}
 					label="Branch"
 					value={form.branch}
@@ -361,7 +348,7 @@ const BPAddressFormCard = ({
 					value={form.website}
 					onChange={(event) => handleChange("website", event.target.value)}
 					mode={isViewMode ? "view" : "edit"}
-				/>
+				/> */}
 
 				<FormInput
 					name={`latitude-${mode}`}
@@ -379,7 +366,20 @@ const BPAddressFormCard = ({
 					value={form.longitude}
 					onChange={(event) => handleChange("longitude", event.target.value)}
 					mode={isViewMode ? "view" : "edit"}
-				/> */}
+				/>
+				<div className="bp-address-field bp-address-textarea-field">
+					<TextareaInput
+						name={`address-${mode}`}
+						label="Address"
+						value={form.address}
+						onChange={(event) => handleChange("address", event.target.value)}
+						placeholder="Flat / Building / Street / Area"
+						className="bigtextArea"
+						rows={4}
+						mode={isViewMode ? "view" : "edit"}
+						required
+					/>
+				</div>
 			</div>
 		</Card>
 	);

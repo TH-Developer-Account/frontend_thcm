@@ -1,12 +1,18 @@
-import { Mail, Phone, Trash2, UserRoundCheck } from "lucide-react";
+import { useState } from "react";
+import { Mail, Phone, Trash2, UserRoundCheck, X } from "lucide-react";
 
 import ActionMenu from "../../../../components/common/ActionMenu";
 import type { ActionMenuItem } from "../../../../components/common/ActionMenu";
 import { Badge } from "../../../../components/common/Badge";
+import Button from "../../../../components/common/Button";
 import SimpleViewTable from "../../../../components/ui/tables/SimpleViewTable";
 import type { SimpleTableColumn } from "../../../../components/ui/tables/SimpleViewTable";
+import UserAsyncSelect from "../../../../components/forms/AsyncSelect";
 
-import { useBPPeopleManager } from "../hooks/useBusinessPartners";
+import {
+	useBPAddPeopleForm,
+	useBPPeopleManager,
+} from "../hooks/useBusinessPartners";
 
 import type {
 	BPContactViewModel,
@@ -17,6 +23,11 @@ type BPPeopleProps = {
 	businessPartnerId: string;
 	people: BPContactViewModel[];
 	permissions: BPPeoplePermissions;
+
+	/** Controlled from BPTabs via the "Add People" action row. */
+	isAdding: boolean;
+	onCancelAdd: () => void;
+	onAdded: () => void;
 };
 
 type PeopleColumnOptions = {
@@ -90,6 +101,7 @@ const getColumns = ({
 				</div>
 			),
 		},
+
 		{
 			key: "role",
 			header: "Role",
@@ -101,6 +113,7 @@ const getColumns = ({
 				</Badge>
 			),
 		},
+
 		{
 			key: "contact",
 			header: "Contact",
@@ -142,6 +155,7 @@ const getColumns = ({
 				</div>
 			),
 		},
+
 		{
 			key: "businessPartnerId",
 			header: "Business Partner ID",
@@ -149,6 +163,7 @@ const getColumns = ({
 			minWidth: 190,
 			render: (person) => <span>{person.businessPartnerId || "--"}</span>,
 		},
+
 		{
 			key: "pan",
 			header: "PAN",
@@ -181,6 +196,7 @@ const getColumns = ({
 							? `${person.name} is already the main contact`
 							: `Set ${person.name} as main contact`,
 					},
+
 					{
 						id: "remove-contact",
 						label: "Remove",
@@ -215,6 +231,9 @@ const BPPeople = ({
 	businessPartnerId,
 	people,
 	permissions,
+	isAdding,
+	onCancelAdd,
+	onAdded,
 }: BPPeopleProps) => {
 	const {
 		sortedPeople,
@@ -226,6 +245,24 @@ const BPPeople = ({
 		canRemovePeople,
 	} = useBPPeopleManager(businessPartnerId, people, permissions);
 
+	const {
+		selected,
+		excludedUserIds,
+		handleSelectUser,
+		handleRemoveSelected,
+		handleToggleMainContact,
+		resetSelection,
+		handleSubmit,
+		isSubmitting,
+		error: addPeopleError,
+	} = useBPAddPeopleForm(businessPartnerId, people);
+
+	/**
+	 * UserAsyncSelect keeps its internal search input state.
+	 * Remounting it after a selection clears the previous search text.
+	 */
+	const [selectKey, setSelectKey] = useState(0);
+
 	const columns = getColumns({
 		canSetMainContact,
 		canRemovePeople,
@@ -234,6 +271,19 @@ const BPPeople = ({
 		onSetMainContact: handleSetMainContact,
 		onRemove: handleRemovePerson,
 	});
+
+	const handleCancel = () => {
+		resetSelection();
+		onCancelAdd();
+	};
+
+	const handleAdd = async () => {
+		const succeeded = await handleSubmit();
+
+		if (succeeded) {
+			onAdded();
+		}
+	};
 
 	return (
 		<div className="bp-people">
@@ -247,6 +297,91 @@ const BPPeople = ({
 				emptyTitle="No people found"
 				emptyDescription="No contacts are associated with this business partner."
 			/>
+
+			{isAdding && (
+				<div className="bp-people-add-panel">
+					<UserAsyncSelect
+						key={selectKey}
+						name="add-people-search"
+						label="Search and add people"
+						placeholder="Search by name or email..."
+						excludedUserIds={excludedUserIds}
+						value={null}
+						onChange={(user) => {
+							if (!user) {
+								return;
+							}
+
+							handleSelectUser(user);
+
+							setSelectKey((current) => current + 1);
+						}}
+					/>
+
+					{selected.length > 0 && (
+						<div className="bp-people-selected-list">
+							{selected.map((entry) => (
+								<div key={entry.userId} className="bp-people-selected-chip">
+									<div className="bp-people-avatar" aria-hidden="true">
+										{getInitials(entry.name)}
+									</div>
+
+									<div className="bp-people-user-copy">
+										<p className="bp-people-name">{entry.name}</p>
+
+										<p className="bp-people-id">{entry.email || "--"}</p>
+									</div>
+
+									<label className="bp-people-selected-main-check">
+										<input
+											type="checkbox"
+											checked={entry.isMainContact}
+											onChange={() => handleToggleMainContact(entry.userId)}
+										/>
+
+										<span>Main contact</span>
+									</label>
+
+									<button
+										type="button"
+										className="bp-people-selected-remove"
+										aria-label={`Remove ${entry.name} from selection`}
+										onClick={() => handleRemoveSelected(entry.userId)}
+									>
+										<X size={14} aria-hidden="true" />
+									</button>
+								</div>
+							))}
+						</div>
+					)}
+
+					{addPeopleError && (
+						<p className="bp-master-form-error" role="alert">
+							{addPeopleError instanceof Error
+								? addPeopleError.message
+								: "Unable to add people"}
+						</p>
+					)}
+
+					<div className="bp-master-form-actions">
+						<Button
+							type="button"
+							text="Cancel"
+							variant="secondary"
+							onClick={handleCancel}
+							disabled={isSubmitting}
+						/>
+
+						<Button
+							type="button"
+							text={isSubmitting ? "Adding..." : "Add Selected"}
+							variant="brand"
+							onClick={handleAdd}
+							disabled={selected.length === 0 || isSubmitting}
+						/>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };

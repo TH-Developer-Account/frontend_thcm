@@ -428,7 +428,14 @@ button {
 	}
 
 	.bp-address-form {
-		@apply grid w-full min-w-0 grid-cols-1 items-start gap-3 p-3 md:grid-cols-2 md:gap-4;
+		@apply grid w-full min-w-0 grid-cols-1 items-start gap-3 p-3 sm:grid-cols-2 sm:gap-4;
+		max-height: 22rem;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+
+	.bp-address-textarea-field {
+		@apply min-w-0 sm:col-span-2;
 	}
 
 	.bp-address-form-row {
@@ -437,14 +444,6 @@ button {
 
 	.bp-address-field {
 		@apply min-w-0 text-xs;
-	}
-
-	.bp-address-textarea-field {
-		@apply min-w-0 md:col-span-2;
-	}
-
-	.bp-address-textarea-field .bigtextArea {
-		min-height: 4.5rem;
 	}
 
 	.bp-address-field {
@@ -472,10 +471,24 @@ button {
 	}
 
 	.bp-address-list-grid {
-		@apply grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4;
+		@apply grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-2;
 		grid-auto-rows: 1fr;
 	}
+	/* .bp-address-list-stack {
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+		width: 100%;
+	} */
 
+	.bp-address-empty {
+		padding: 24px;
+		text-align: center;
+		color: var(--text-secondary, #6b7280);
+		font-size: 14px;
+		border: 1px dashed var(--border-color, #d1d5db);
+		border-radius: 8px;
+	}
 	.bp-address-list-card {
 		@apply min-w-0;
 	}
@@ -543,7 +556,12 @@ button {
 
 	@media (max-width: 767px) {
 		.bp-address-form {
-			@apply gap-3 p-3;
+			@apply grid-cols-1 gap-3 p-3;
+			max-height: 26rem;
+		}
+
+		.bp-address-textarea-field {
+			@apply col-span-1;
 		}
 
 		.bp-address-textarea-field .bigtextArea {
@@ -726,6 +744,42 @@ button {
 	.bp-people-view-table tbody tr:has(.bp-main-contact-marker):hover {
 		background-color: var(--color-bg-surface-hover);
 	} */
+}
+
+@layer components {
+	.bp-people-add-panel {
+		@apply mt-3 flex flex-col gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4;
+	}
+
+	.bp-people-selected-list {
+		@apply flex flex-col gap-2;
+	}
+
+	.bp-people-selected-chip {
+		@apply flex flex-wrap items-center gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-2;
+	}
+
+	.bp-people-selected-main-check {
+		@apply ml-auto flex cursor-pointer items-center gap-1.5 text-xs font-medium text-zinc-600 whitespace-nowrap;
+	}
+
+	.bp-people-selected-main-check input {
+		@apply h-3.5 w-3.5 accent-[var(--color-brand)];
+	}
+
+	.bp-people-selected-remove {
+		@apply flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700;
+	}
+
+	[data-theme="dark"] .bp-people-add-panel {
+		background-color: var(--color-bg-muted);
+		border-color: var(--color-border-default);
+	}
+
+	[data-theme="dark"] .bp-people-selected-chip {
+		background-color: var(--color-bg-surface);
+		border-color: var(--color-border-default);
+	}
 }
 @layer components {
 	.bp-create-form-card {

@@ -144,6 +144,7 @@ export const BPContactForm = ({ form, onChange }: BPContactFormProps) => (
 				value={form.fax}
 				onChange={(event) => onChange("fax", event.target.value)}
 			/>
+
 			{/* <FormInput
 				name="mainContactName"
 				label="Main Contact Person"

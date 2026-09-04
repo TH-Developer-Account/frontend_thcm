@@ -1,10 +1,13 @@
 import { useEffect, useRef, useState } from "react";
+import { Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import Button from "../../../../components/common/Button";
 import { FilterTabs } from "../../../../components/ui/FilterTabs";
 
 import {
 	useBusinessPartnerForm,
+	businessPartnerPaths,
 	type DetailFormSection,
 } from "../hooks/useBusinessPartnerForm";
 
@@ -69,9 +72,19 @@ const isContactDataEmpty = (view: BusinessPartnerViewModel): boolean =>
 	!view.partner.fax;
 
 export const BPTabs = ({ view, permissions }: BPTabsProps) => {
+	const navigate = useNavigate();
+
 	const [activeTab, setActiveTab] = useState<BPTab>("general");
 	const activeTabId = `bp-tab-${activeTab}`;
 	const activePanelId = `${activeTabId}-panel`;
+
+	// Controls whether the "Add Address" create form is open — lifted
+	// up here so the trigger button can live next to the other tab
+	// action rows (Edit General/Org/Contact, Add Branch).
+	const [isAddingAddress, setIsAddingAddress] = useState(false);
+
+	// Same lifted pattern for the "Add People" search-and-attach panel.
+	const [isAddingPeople, setIsAddingPeople] = useState(false);
 
 	const detailForm = useBusinessPartnerForm({
 		partner: view.partner,
@@ -102,6 +115,12 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [view]);
+
+	const handleAddBranch = () => {
+		navigate(
+			`${businessPartnerPaths.create()}?parentId=${encodeURIComponent(view.partner.id)}`,
+		);
+	};
 
 	const renderDetailSection = (
 		section: Exclude<DetailFormSection, null>,
@@ -251,26 +270,82 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 					)}
 
 				{activeTab === "address" && (
-					<BPAddress
-						businessPartnerId={view.partner.id}
-						addresses={view.addresses}
-						permissions={permissions.address}
-					/>
+					<div className="bp-gen-content">
+						<BPAddress
+							businessPartnerId={view.partner.id}
+							addresses={view.addresses}
+							permissions={permissions.address}
+							isAdding={isAddingAddress}
+							onCancelAdd={() => setIsAddingAddress(false)}
+							onAdded={() => setIsAddingAddress(false)}
+						/>
+
+						{permissions.address.canCreateAddress && (
+							<div className="bp-gen-content-actions">
+								<Button
+									type="button"
+									text="Add Address"
+									Icon={Plus}
+									iconPosition="left"
+									appearance="standard"
+									variant="outline"
+									size="sm"
+									onClick={() => setIsAddingAddress(true)}
+									disabled={isAddingAddress}
+								/>
+							</div>
+						)}
+					</div>
 				)}
 
 				{activeTab === "branches" && (
-					<BPBranches
-						branches={view.branches}
-						businessPartnerId={view.partner.id}
-					/>
+					<div className="bp-gen-content">
+						<BPBranches branches={view.branches} />
+
+						{permissions.canCreateBusinessPartner && (
+							<div className="bp-gen-content-actions">
+								<Button
+									type="button"
+									text="Add Branch"
+									Icon={Plus}
+									iconPosition="left"
+									appearance="standard"
+									variant="outline"
+									size="sm"
+									onClick={handleAddBranch}
+								/>
+							</div>
+						)}
+					</div>
 				)}
 
 				{activeTab === "people" && (
-					<BPPeople
-						businessPartnerId={view.partner.id}
-						people={view.people}
-						permissions={permissions.people}
-					/>
+					<div className="bp-gen-content">
+						<BPPeople
+							businessPartnerId={view.partner.id}
+							people={view.people}
+							permissions={permissions.people}
+							isAdding={isAddingPeople}
+							onCancelAdd={() => setIsAddingPeople(false)}
+							onAdded={() => setIsAddingPeople(false)}
+						/>
+
+						{permissions.people.canAddPeople && (
+							<div className="bp-gen-content-actions">
+								<Button
+									type="button"
+									text="Add People"
+									Icon={Plus}
+									iconPosition="left"
+									appearance="standard"
+									variant="outline"
+									size="sm"
+									onClick={() => setIsAddingPeople(true)}
+									disabled={isAddingPeople}
+								/>
+							</div>
+						)}
+					</div>
 				)}
 			</div>
 		</>
