@@ -171,35 +171,6 @@ button {
 	}
 }
 
-/* BP Tabs */
-@layer components {
-	.bp-tabs {
-		@apply mb-2 flex w-full min-w-0 flex-nowrap gap-2 overflow-x-auto border-b p-2 font-medium;
-		border-color: var(--color-brand);
-		-webkit-overflow-scrolling: touch;
-	}
-
-	.bp-tab-item {
-		@apply shrink-0 cursor-pointer items-center gap-2 whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors;
-	}
-
-	.bp-tab-item-active {
-		@apply border-[var(--color-brand-soft)] bg-[var(--color-brand-softest)] text-[var(--color-brand)];
-	}
-
-	.bp-tab-item-inactive {
-		@apply border-transparent text-gray-600 hover:bg-gray-100;
-	}
-
-	.bp-tab-label {
-		@apply text-left text-xs sm:text-sm;
-	}
-
-	.bp-tab-content {
-		@apply mt-2 w-full min-w-0;
-	}
-}
-
 /* BP Contact / Info Sections */
 @layer components {
 	.bp-general-info {
@@ -748,6 +719,53 @@ button {
 	.bp-people-view-table tbody tr:has(.bp-main-contact-marker):hover {
 		background-color: var(--color-bg-surface-hover);
 	} */
+}
+@layer components {
+	.bp-create-form-card {
+		@apply w-full min-w-0;
+	}
+
+	.bp-create-form-card .bp-tabs {
+		@apply mb-0;
+	}
+
+	.bp-create-form-panel {
+		@apply w-full min-w-0 px-4 py-5 sm:px-6;
+	}
+
+	.bp-create-form-sections {
+		@apply divide-y divide-gray-200;
+	}
+
+	.bp-create-form-section {
+		@apply py-5 first:pt-0 last:pb-0;
+	}
+
+	.bp-create-form-heading {
+		@apply mb-4;
+	}
+
+	.bp-create-form-heading h3 {
+		@apply text-sm font-semibold text-gray-900;
+	}
+
+	.bp-create-form-heading p {
+		@apply mt-1 text-xs text-gray-500;
+	}
+
+	.bp-create-form-empty {
+		@apply flex min-h-40 items-center justify-center rounded-lg
+			border border-dashed border-gray-300 px-4 text-center
+			text-sm text-gray-500;
+	}
+
+	.bp-create-form-card .bp-master-form-error {
+		@apply mx-4 mb-4 sm:mx-6;
+	}
+
+	.bp-create-form-card .bp-master-form-actions {
+		@apply border-t border-gray-200 px-4 py-4 sm:px-6;
+	}
 }
 /* =====================================================
    Theme-aware overrides

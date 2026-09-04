@@ -1,5 +1,7 @@
 import { useState } from "react";
 
+import { FilterTabs } from "../../../../components/ui/FilterTabs";
+
 import type {
 	BusinessPartnerPermissions,
 	BusinessPartnerViewModel,
@@ -12,14 +14,35 @@ import BPOrganization from "./BPOrganization";
 import BPPeople from "./BPPeople";
 
 const bpTabs = [
-	"Contact",
-	"Organization",
-	"Address",
-	"Branches",
-	"People",
+	{
+		value: "contact",
+		label: "Contact",
+		controlsId: "bp-tab-contact-panel",
+	},
+	{
+		value: "organization",
+		label: "Organization",
+		shortLabel: "Org",
+		controlsId: "bp-tab-organization-panel",
+	},
+	{
+		value: "address",
+		label: "Address",
+		controlsId: "bp-tab-address-panel",
+	},
+	{
+		value: "branches",
+		label: "Branches",
+		controlsId: "bp-tab-branches-panel",
+	},
+	{
+		value: "people",
+		label: "People",
+		controlsId: "bp-tab-people-panel",
+	},
 ] as const;
 
-type BPTab = (typeof bpTabs)[number];
+type BPTab = (typeof bpTabs)[number]["value"];
 
 type BPTabsProps = {
 	view: BusinessPartnerViewModel;
@@ -27,68 +50,53 @@ type BPTabsProps = {
 };
 
 const isBPTab = (value: string): value is BPTab =>
-	bpTabs.some((tab) => tab === value);
+	bpTabs.some((tab) => tab.value === value);
 
 export const BPTabs = ({ view, permissions }: BPTabsProps) => {
-	const [activeTab, setActiveTab] = useState<BPTab>("Contact");
+	const [activeTab, setActiveTab] = useState<BPTab>("contact");
 
-	const activeTabId = `bp-tab-${activeTab.toLowerCase().replace(/\s+/g, "-")}`;
+	const activeTabId = `bp-tab-${activeTab}`;
+	const activePanelId = `${activeTabId}-panel`;
 
 	return (
 		<>
-			<div
-				className="bp-tabs"
-				role="tablist"
-				aria-label="Business partner details"
-			>
-				{bpTabs.map((tab) => {
-					const isActive = activeTab === tab;
-
-					const tabId = `bp-tab-${tab.toLowerCase().replace(/\s+/g, "-")}`;
-
-					return (
-						<button
-							key={tab}
-							id={tabId}
-							type="button"
-							role="tab"
-							aria-selected={isActive}
-							aria-controls={`${tabId}-panel`}
-							tabIndex={isActive ? 0 : -1}
-							onClick={() => setActiveTab(tab)}
-							className={`bp-tab-item ${isActive ? "bp-tab-item-active" : ""}`}
-						>
-							<span className="bp-tab-label">{tab}</span>
-						</button>
-					);
-				})}
-			</div>
+			<FilterTabs
+				id="bp-tab"
+				items={bpTabs}
+				value={activeTab}
+				onChange={setActiveTab}
+				ariaLabel="Business partner details"
+				variant="soft"
+			/>
 
 			<div
-				id={`${activeTabId}-panel`}
+				id={activePanelId}
 				aria-labelledby={activeTabId}
 				className="bp-tab-content"
 				role="tabpanel"
+				tabIndex={0}
 			>
-				{activeTab === "Contact" && (
+				{activeTab === "contact" && (
 					<BPContact
 						data={{
 							...view.contact,
 							mobile_number: view.contact.mobileNumber,
 						}}
 						onNavigateTab={(tab) => {
-							if (isBPTab(tab)) {
-								setActiveTab(tab);
+							const normalizedTab = tab.toLowerCase().replace(/\s+/g, "-");
+
+							if (isBPTab(normalizedTab)) {
+								setActiveTab(normalizedTab);
 							}
 						}}
 					/>
 				)}
 
-				{activeTab === "Organization" && (
+				{activeTab === "organization" && (
 					<BPOrganization data={view.organization} />
 				)}
 
-				{activeTab === "Address" && (
+				{activeTab === "address" && (
 					<BPAddress
 						businessPartnerId={view.partner.id}
 						addresses={view.addresses}
@@ -96,9 +104,9 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 					/>
 				)}
 
-				{activeTab === "Branches" && <BPBranches branches={view.branches} />}
+				{activeTab === "branches" && <BPBranches branches={view.branches} />}
 
-				{activeTab === "People" && (
+				{activeTab === "people" && (
 					<BPPeople
 						businessPartnerId={view.partner.id}
 						people={view.people}

@@ -179,6 +179,7 @@ const WorkflowTable = () => {
 						ariaLabel="Filter workflow listings"
 						items={filterTabs}
 						value={selectedFilter}
+						variant="underline"
 						onChange={handleListFilterChange}
 						className="border-b-none px-0 py-0"
 					/>

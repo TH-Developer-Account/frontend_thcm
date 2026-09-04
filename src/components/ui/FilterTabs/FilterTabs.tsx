@@ -15,6 +15,7 @@ export function FilterTabs<TValue extends string>({
 	ariaLabel,
 	id,
 	className,
+	variant = "underline",
 	showLabels = true,
 	iconSize = 16,
 }: FilterTabsProps<TValue>) {
@@ -101,13 +102,18 @@ export function FilterTabs<TValue extends string>({
 	return (
 		<div
 			id={id}
-			className={joinClassNames("filter-tabs", className)}
+			className={joinClassNames(
+				"filter-tabs",
+				`filter-tabs--${variant}`,
+				className,
+			)}
 			role="tablist"
 			aria-label={ariaLabel}
 		>
 			{items.map((item, index) => {
 				const isActive = value === item.value;
 				const Icon = item.Icon;
+
 				const accessibleLabel =
 					item.tooltipLabel ??
 					(typeof item.label === "string" ? item.label : undefined);

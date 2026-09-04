@@ -77,6 +77,7 @@ export default function MedicalClaimListingTable({
 					value={selectedFilter}
 					onChange={onFilterChange}
 					className="border-b-none px-0 py-0"
+					variant="underline"
 				/>
 			}
 			actions={

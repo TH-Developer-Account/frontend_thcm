@@ -45,6 +45,7 @@ export function UserTableTabs({
 			items={items}
 			value={activeTab}
 			onChange={onChange}
+			variant="underline"
 		/>
 	);
 }

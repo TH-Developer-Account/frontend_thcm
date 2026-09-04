@@ -19,7 +19,7 @@ const CreateBusinessPartner = () => {
 		isLoading,
 		isError,
 		isSaving,
-		isFormValid,
+		// isFormValid,
 		canSubmit,
 		error,
 		handleChange,
@@ -72,11 +72,27 @@ const CreateBusinessPartner = () => {
 				form={form}
 				isEditMode={isEditMode}
 				isSaving={isSaving}
-				canSubmit={canSubmit && isFormValid}
+				canSubmit={canSubmit}
 				error={error}
 				onChange={handleChange}
 				onSubmit={handleSubmit}
 				onCancel={handleCancel}
+				// contactForm={<BPContactForm controller={contactController} />}
+				// addressForm={
+				// 	businessPartnerId ? (
+				// 		<BPAddress businessPartnerId={businessPartnerId} />
+				// 	) : undefined
+				// }
+				// branchesForm={
+				// 	businessPartnerId ? (
+				// 		<BPBranches businessPartnerId={businessPartnerId} />
+				// 	) : undefined
+				// }
+				// peopleForm={
+				// 	businessPartnerId ? (
+				// 		<BPPeople businessPartnerId={businessPartnerId} />
+				// 	) : undefined
+				// }
 			/>
 		</PageSectionLayout>
 	);

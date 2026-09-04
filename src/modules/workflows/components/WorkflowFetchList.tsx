@@ -85,6 +85,7 @@ export function WorkflowFetchList({
 				items={filterTabs}
 				value={filter}
 				onChange={handleFilterChange}
+				variant="underline"
 				className="border-b-none px-0 py-0"
 			/>
 
