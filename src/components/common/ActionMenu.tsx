@@ -5,7 +5,7 @@ import {
 	MenuItems,
 	Portal,
 } from "@headlessui/react";
-import { EllipsisVertical, type LucideIcon } from "lucide-react";
+import { MoreVertical, type LucideIcon } from "lucide-react";
 
 export type ActionMenuSize = "xs" | "sm" | "md" | "lg";
 
@@ -53,7 +53,7 @@ const ActionMenu = <TData,>({
 	actions,
 	ariaLabel,
 	size = "sm",
-	triggerIcon: TriggerIcon = EllipsisVertical,
+	triggerIcon: TriggerIcon = MoreVertical,
 	triggerIconSize,
 	triggerLabel,
 	triggerVariant = "default",
