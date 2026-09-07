@@ -158,6 +158,7 @@ const EPCTable = ({
 
 	return (
 		<Card
+			className="epc-table"
 			title={
 				<FilterTabs
 					id="epc-list-filter-tabs"

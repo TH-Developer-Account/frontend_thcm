@@ -1,67 +1,42 @@
-import Button from "../../../components/common/Button";
+import { useState } from "react";
+
+import EditableCard, {
+	type EditableCardField,
+} from "../../../components/common/EditableCard";
 import Checkbox from "../../../components/forms/Checkbox";
-import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import DatePickerInput from "../../../components/common/DatePickerInput";
-import type { FormEvent } from "react";
+
 import type { UserFormField, UserType } from "./user-management.types";
 import type { UsersController } from "./useUsersData";
-import Card from "../../../components/common/Card";
+
+import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
+import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
+import { Badge } from "../../../components/common/Badge";
+import { Pencil } from "lucide-react";
+import Avatar from "../../../components/common/Avatar";
 
 interface UserFormProps {
 	controller: UsersController;
 }
 
-type TextField = Exclude<
-	UserFormField,
-	"isDefaultContact" | "isActive" | "userType" | "joinedOn"
->;
+type FormValues = UsersController["form"];
 
-type TextFieldConfig = {
-	name: TextField;
+const USER_TYPE_OPTIONS: Array<{
 	label: string;
-	type?: "text" | "email" | "password" | "tel" | "date";
-};
-
-const TEXT_FIELDS: TextFieldConfig[] = [
-	{ name: "employeeCode", label: "Employee Code" },
-	{ name: "firstName", label: "First Name" },
-	{ name: "lastName", label: "Last Name" },
-	{ name: "internalId", label: "Internal ID" },
-	{ name: "bydId", label: "BYD ID" },
-	{ name: "s4Id", label: "S4 ID" },
-	{ name: "tallyId", label: "Tally ID" },
-	{ name: "c4cId", label: "C4C ID" },
-	{ name: "password", label: "Password", type: "password" },
-	{ name: "phoneNumber", label: "Phone Number", type: "tel" },
-	{ name: "email", label: "Email ID", type: "email" },
-	{ name: "region", label: "Region" },
-	{ name: "address", label: "Address" },
-	{ name: "zone", label: "Zone" },
-	{ name: "branch", label: "Branch" },
-	{ name: "department", label: "Department" },
-	{ name: "role", label: "Role" },
-	{ name: "designation", label: "Designation" },
-	{ name: "vertical", label: "Vertical" },
-	{ name: "bpInternalCode", label: "BP Internal Code" },
-	{ name: "managerCode1", label: "Manager Code 1" },
-	{ name: "managerCode2", label: "Manager Code 2" },
-];
-
-const USER_TYPE_OPTIONS: Array<{ label: string; value: UserType }> = [
+	value: UserType;
+}> = [
 	{ label: "Select", value: "Select" },
 	{ label: "THCM Employee", value: "THCM" },
 	{ label: "Dealer", value: "DEALER" },
 	{ label: "Customer", value: "CUSTOMER" },
 ];
 
-// form.joinedOn is stored as a "YYYY-MM-DD" string (see mapUserToForm /
-// mapUserFormToCreatePayload), but DatePickerInput works with real Date
-// objects. These two helpers bridge that boundary.
 const parseJoinedOn = (value: string): Date | undefined => {
 	if (!value) return undefined;
 
 	const parsed = new Date(`${value}T00:00:00`);
+
 	return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 };
 
@@ -83,142 +58,327 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		isCreating,
 		isUpdating,
 		handleFormChange,
-		handleCancelForm,
 		handleSubmitUser,
 	} = controller;
 
 	const isEditMode = pageMode === "edit";
 	const isSaving = isCreating || isUpdating;
 
-	const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
-		void handleSubmitUser();
+	const [profileImage, setProfileImage] = useState<FileUploadValue | null>(
+		null,
+	);
+
+	const basicInfoFields: EditableCardField<FormValues>[] = [
+		{
+			name: "employeeCode",
+			label: "Employee Code",
+		},
+		{
+			name: "firstName",
+			label: "First Name",
+			required: true,
+		},
+		{
+			name: "lastName",
+			label: "Last Name",
+			required: true,
+		},
+		{
+			name: "email",
+			label: "Email ID",
+			type: "email",
+			required: true,
+		},
+		{
+			name: "phoneNumber",
+			label: "Phone Number",
+			type: "tel",
+		},
+		{
+			name: "password",
+			label: "Password",
+			visibleInDisplay: false,
+			placeholder: isEditMode ? "Leave blank to keep unchanged" : undefined,
+		},
+
+		{
+			id: "userType",
+			name: "userType",
+			label: "User Type",
+			displayValue:
+				form.userType && form.userType !== "Select" ? form.userType : "--",
+			render: ({ draft, disabled, setFieldValue }) => (
+				<SelectInput<{ label: string; value: UserType }>
+					inputId="user-type"
+					name="userType"
+					label="User Type"
+					options={USER_TYPE_OPTIONS}
+					value={
+						USER_TYPE_OPTIONS.find(
+							(option) => option.value === draft.userType,
+						) ?? null
+					}
+					isDisabled={disabled}
+					error={fieldErrors.userType}
+					onChange={(option) =>
+						setFieldValue("userType", (option?.value ?? "THCM") as never)
+					}
+				/>
+			),
+		},
+
+		{
+			id: "joinedOn",
+			name: "joinedOn",
+			label: "Joined On",
+			render: ({ draft, disabled, setFieldValue }) => (
+				<DatePickerInput
+					label="Joined On"
+					mode="single"
+					value={parseJoinedOn(draft.joinedOn)}
+					onChange={(nextValue) =>
+						setFieldValue(
+							"joinedOn",
+							formatJoinedOn(
+								nextValue instanceof Date ? nextValue : undefined,
+							) as never,
+						)
+					}
+					placeholder="Select joining date"
+					disabled={disabled}
+					disablePast={!isEditMode}
+					error={fieldErrors.joinedOn}
+				/>
+			),
+		},
+
+		{
+			id: "status-flags",
+			label: "Status",
+			displayValue: (
+				<div className="flex items-center gap-2">
+					<Badge variant={form.isActive ? "success" : "secondary"}>
+						{form.isActive ? "Active" : "Inactive"}
+					</Badge>
+
+					{form.isDefaultContact ? (
+						<Badge variant="info">Default Contact</Badge>
+					) : null}
+				</div>
+			),
+			render: ({ draft, disabled, setFieldValue }) => (
+				<div className="flex items-center gap-4">
+					<Checkbox
+						name="isDefaultContact"
+						label="Default Contact"
+						checked={draft.isDefaultContact}
+						disabled={disabled}
+						onChange={(checked) =>
+							setFieldValue("isDefaultContact", Boolean(checked))
+						}
+					/>
+
+					<Checkbox
+						name="isActive"
+						label="Active"
+						checked={draft.isActive}
+						disabled={disabled}
+						onChange={(checked) => setFieldValue("isActive", Boolean(checked))}
+					/>
+				</div>
+			),
+		},
+	];
+
+	const externalIdFields: EditableCardField<FormValues>[] = [
+		{
+			name: "internalId",
+			label: "Internal ID",
+		},
+		{
+			name: "bydId",
+			label: "BYD ID",
+		},
+		{
+			name: "s4Id",
+			label: "S4 ID",
+		},
+		{
+			name: "tallyId",
+			label: "Tally ID",
+		},
+		{
+			name: "c4cId",
+			label: "C4C ID",
+		},
+		{
+			name: "bpInternalCode",
+			label: "BP Internal Code",
+		},
+	];
+
+	const organizationFields: EditableCardField<FormValues>[] = [
+		{
+			name: "region",
+			label: "Region",
+		},
+		{
+			name: "address",
+			label: "Address",
+		},
+		{
+			name: "zone",
+			label: "Zone",
+		},
+		{
+			name: "branch",
+			label: "Branch",
+		},
+		{
+			name: "department",
+			label: "Department",
+		},
+		{
+			name: "role",
+			label: "Role",
+		},
+		{
+			name: "designation",
+			label: "Designation",
+		},
+		{
+			name: "vertical",
+			label: "Vertical",
+		},
+		{
+			name: "managerCode1",
+			label: "Manager Code 1",
+		},
+		{
+			name: "managerCode2",
+			label: "Manager Code 2",
+		},
+	];
+
+	const saveSection = async (values: FormValues) => {
+		(Object.keys(values) as Array<keyof FormValues>).forEach((key) => {
+			handleFormChange(key as UserFormField, values[key] as never);
+		});
+
+		await handleSubmitUser();
 	};
 
+	const fullName =
+		[form.firstName, form.lastName].filter(Boolean).join(" ") || "New User";
+
+	/*
+	 * Profile header shared by both view and edit modes.
+	 *
+	 * The avatar itself is the image preview.
+	 * FileUploadField is only responsible for selecting
+	 * the image.
+	 */
+	/*
+	 * Avatar-only header used in view mode — no upload UI at all.
+	 */
+	const profileHeader = (
+		<div className="profile-summary">
+			<Avatar
+				firstName={form.firstName}
+				lastName={form.lastName}
+				imageUrl={profileImage?.url ?? ""}
+				size="lg"
+			/>
+
+			<div className="profile-summary-content">
+				<div className="profile-summary-heading">
+					<h3 className="profile-summary-name">{fullName}</h3>
+
+					<span className="">
+						<Badge variant={"info"}>
+							{form.userType !== "Select" ? form.userType : "User"}
+						</Badge>
+					</span>
+				</div>
+			</div>
+		</div>
+	);
+
+	/*
+	 * Edit mode header — same layout as view mode, but the avatar
+	 * circle itself is the upload control (no separate dropzone/preview box).
+	 * The FileUploadField's own input is layered invisibly over the circle.
+	 */
+	const editProfileHeader = (
+		<div className="profile-summary">
+			<div className="profile-summary-avatar profile-summary-avatar-editable">
+				<Avatar
+					firstName={form.firstName}
+					lastName={form.lastName}
+					imageUrl={profileImage?.url ?? ""}
+					size="lg"
+				/>
+
+				<FileUploadField
+					kind="image"
+					multiple={false}
+					value={profileImage}
+					disabled={isSaving}
+					onChange={(nextValue) => setProfileImage(nextValue)}
+					className="profile-summary-avatar-input"
+				/>
+
+				<span className="profile-summary-avatar-edit-badge" aria-hidden="true">
+					<Pencil size={12} />
+				</span>
+			</div>
+
+			<div className="profile-summary-content">
+				<div className="profile-summary-heading">
+					<h3 className="profile-summary-name">{fullName}</h3>
+
+					<span className="profile-summary-role">
+						{form.userType !== "Select" ? form.userType : "User"}
+					</span>
+				</div>
+			</div>
+		</div>
+	);
+
 	return (
-		<Card
-			padding="spacious"
-			// title={
-			// 	<div>
-			// 		<h2 className="text-lg font-semibold text-gray-900">
-			// 			{isEditMode ? "Edit User" : "Create User"}
-			// 		</h2>
-			// 		<p className="text-sm text-gray-500">
-			// 			{isEditMode
-			// 				? "Update the user master information. Leave password blank to keep it unchanged."
-			// 				: "Enter the complete user master information."}
-			// 		</p>
-			// 	</div>
-			// }
-			footer={
-				<div className="flex justify-end gap-2 ">
-					<Button
-						type="button"
-						text="Cancel"
-						variant="outline"
-						disabled={isSaving}
-						onClick={handleCancelForm}
-						size="sm"
-					/>
-					<Button
-						type="submit"
-						text={
-							isSaving
-								? "Saving..."
-								: isEditMode
-									? "Update User"
-									: "Create User"
-						}
-						variant="brand"
-						disabled={isSaving}
-						size="sm"
-						form="user-management-form"
-					/>
-				</div>
-			}
-		>
-			<form
-				id="user-management-form"
-				onSubmit={handleSubmit}
-				className="user-management-form"
-			>
-				<div>
-					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-						{TEXT_FIELDS.map(({ name, label, type = "text" }) => (
-							<FormInput
-								key={name}
-								name={name}
-								label={label}
-								type={type}
-								value={form[name]}
-								// required={name !== "password" || !isEditMode}
-								disabled={isSaving}
-								error={fieldErrors[name]}
-								onChange={(event) => handleFormChange(name, event.target.value)}
-							/>
-						))}
+		<section className="profile-page" aria-labelledby="user-form-title">
+			<div className="profile-page-sections">
+				<EditableCard
+					title="Basic Information"
+					editTitle="Edit Basic Information"
+					value={form}
+					fields={basicInfoFields}
+					saving={isSaving}
+					onSubmit={saveSection}
+					header={profileHeader}
+					editHeader={editProfileHeader}
+				/>
 
-						<DatePickerInput
-							label="Joined On"
-							mode="single"
-							value={parseJoinedOn(form.joinedOn)}
-							onChange={(nextValue) =>
-								handleFormChange(
-									"joinedOn",
-									formatJoinedOn(
-										nextValue instanceof Date ? nextValue : undefined,
-									),
-								)
-							}
-							placeholder="Select joining date"
-							disabled={isSaving}
-							disablePast={!isEditMode}
-							error={fieldErrors.joinedOn}
-						/>
+				<EditableCard
+					title="External System IDs"
+					editTitle="Edit External System IDs"
+					// editSubtitle="Update identifiers used to sync this user across systems."
+					value={form}
+					fields={externalIdFields}
+					saving={isSaving}
+					onSubmit={saveSection}
+				/>
 
-						<SelectInput<{ label: string; value: UserType }>
-							inputId="user-type"
-							name="userType"
-							label="User Type"
-							options={USER_TYPE_OPTIONS}
-							value={
-								USER_TYPE_OPTIONS.find(
-									(option) => option.value === form.userType,
-								) ?? null
-							}
-							isDisabled={isSaving}
-							error={fieldErrors.userType}
-							onChange={(option) =>
-								handleFormChange("userType", option?.value ?? "THCM")
-							}
-						/>
-						<div className="mt-4 items-center flex">
-							<Checkbox
-								name="isDefaultContact"
-								label="Default Contact"
-								checked={form.isDefaultContact}
-								disabled={isSaving}
-								onChange={(checked) =>
-									handleFormChange("isDefaultContact", checked)
-								}
-							/>
-							<Checkbox
-								name="isActive"
-								label="Active"
-								checked={form.isActive}
-								disabled={isSaving}
-								onChange={(checked) => handleFormChange("isActive", checked)}
-							/>
-						</div>
-					</div>
-				</div>
-				{/* 
-				{formError ? (
-					<p className="mt-3 text-sm text-red-600" role="alert">
-						{formError}
-					</p>
-				) : null} */}
-			</form>
-		</Card>
+				<EditableCard
+					title="Organization Details"
+					editTitle="Edit Organization Details"
+					// editSubtitle="Update the user's org placement and reporting lines."
+					value={form}
+					fields={organizationFields}
+					saving={isSaving}
+					onSubmit={saveSection}
+				/>
+			</div>
+		</section>
 	);
 }

@@ -2,8 +2,8 @@ import {
 	useEffect,
 	useId,
 	useState,
-	type FormEvent,
 	type ReactNode,
+	type SubmitEvent,
 } from "react";
 import { Pencil } from "lucide-react";
 
@@ -13,20 +13,21 @@ import FormInput from "../forms/FormInput";
 
 export type EditableCardField<T extends Record<string, unknown>> = {
 	/**
-	 * Optional for display-only fields such as a grouped
-	 * Social Links block.
+	 * Field name used to read/write the value from the form.
+	 *
+	 * Optional for display-only/custom-rendered fields.
 	 */
 	name?: keyof T;
 
 	/**
-	 * Stable identifier for display-only fields.
+	 * Stable identifier for display-only/custom-rendered fields.
 	 */
 	id?: string;
 
 	label: string;
 
 	/**
-	 * Custom content displayed when the card is in view mode.
+	 * Custom content displayed in view mode.
 	 */
 	displayValue?: ReactNode;
 
@@ -41,27 +42,48 @@ export type EditableCardField<T extends Record<string, unknown>> = {
 	span?: 1 | 2 | "full";
 
 	/**
-	 * Legacy edit-mode control.
-	 *
-	 * When false, the field is not rendered in edit mode.
+	 * Whether the field can be edited.
 	 */
 	editable?: boolean;
 
 	/**
-	 * Controls whether the field is rendered in view mode.
+	 * Whether the field is visible in view mode.
 	 */
 	visibleInDisplay?: boolean;
 
 	/**
-	 * Controls whether the field is rendered in edit mode.
+	 * Whether the field is visible in edit mode.
 	 */
 	visibleInEdit?: boolean;
+
+	/**
+	 * Custom edit-mode renderer.
+	 *
+	 * Useful for selects, dates, checkboxes, uploads, etc.
+	 */
+	render?: (params: {
+		draft: T;
+		disabled: boolean;
+		setFieldValue: <K extends keyof T>(name: K, value: T[K]) => void;
+	}) => ReactNode;
 };
 
 export type EditableCardProps<T extends Record<string, unknown>> = {
 	title?: ReactNode;
 	subtitle?: ReactNode;
+
+	/**
+	 * Content displayed above the view-mode fields.
+	 */
 	header?: ReactNode;
+
+	/**
+	 * Content displayed above the edit-mode fields.
+	 *
+	 * Useful when the edit view should preserve the same
+	 * visual header as the display view.
+	 */
+	editHeader?: ReactNode;
 
 	value: T;
 	fields: EditableCardField<T>[];
@@ -76,8 +98,7 @@ export type EditableCardProps<T extends Record<string, unknown>> = {
 	onSubmit: (value: T) => void | Promise<void>;
 
 	/**
-	 * Runs when editing starts, allowing the latest source values
-	 * to populate the form instead of stale local values.
+	 * Allows the parent to provide fresh values when editing starts.
 	 */
 	onEditStart?: () => T;
 
@@ -90,6 +111,7 @@ const joinClassNames = (
 
 const getStringValue = (value: unknown): string => {
 	if (value === null || value === undefined) return "";
+
 	return String(value);
 };
 
@@ -98,6 +120,7 @@ const getFieldKey = <T extends Record<string, unknown>>(
 	index: number,
 ) => {
 	if (field.id) return field.id;
+
 	if (field.name) return String(field.name);
 
 	return `${field.label}-${index}`;
@@ -108,6 +131,7 @@ const getFieldSpanClass = (
 	span?: 1 | 2 | "full",
 ) => {
 	if (span === 2) return `${prefix}-span-2`;
+
 	if (span === "full") return `${prefix}-full`;
 
 	return "";
@@ -117,6 +141,7 @@ export default function EditableCard<T extends Record<string, unknown>>({
 	title,
 	subtitle,
 	header,
+	editHeader,
 	value,
 	fields,
 	editable = true,
@@ -134,8 +159,8 @@ export default function EditableCard<T extends Record<string, unknown>>({
 	const [draft, setDraft] = useState<T>(value);
 
 	/*
-	 * Keep the draft synchronized with external values while the
-	 * card is in view mode. Unsaved edits are not overwritten.
+	 * Keep draft synchronized with external values while
+	 * the card is in view mode.
 	 */
 	useEffect(() => {
 		if (!isEditing) {
@@ -153,24 +178,21 @@ export default function EditableCard<T extends Record<string, unknown>>({
 		setIsEditing(false);
 	};
 
-	const updateField = (name: keyof T, nextValue: string) => {
+	const setFieldValue = <K extends keyof T>(name: K, nextValue: T[K]) => {
 		setDraft((current) => ({
 			...current,
 			[name]: nextValue,
 		}));
 	};
 
-	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+	const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
 		event.preventDefault();
 
 		try {
 			await onSubmit(draft);
 			setIsEditing(false);
 		} catch {
-			/*
-			 * Keep the form open when submission fails.
-			 * The parent mutation should surface the actual error.
-			 */
+			// Keep edit mode open when submission fails.
 		}
 	};
 
@@ -179,18 +201,20 @@ export default function EditableCard<T extends Record<string, unknown>>({
 
 	const editableFields = fields.filter(
 		(field) =>
-			field.name && field.editable !== false && field.visibleInEdit !== false,
+			(field.name || field.render) &&
+			field.editable !== false &&
+			field.visibleInEdit !== false,
 	);
 
 	const displayFields = fields.filter(
 		(field) => field.visibleInDisplay !== false,
 	);
-
 	return (
 		<Card
 			title={cardTitle}
 			subtitle={cardSubtitle}
 			loading={loading}
+			padding="spacious"
 			className={joinClassNames(
 				"editable-card",
 				isEditing && "editable-card-editing",
@@ -206,7 +230,17 @@ export default function EditableCard<T extends Record<string, unknown>>({
 						appearance="standard"
 						variant="outline"
 						onClick={beginEditing}
+						className="mb-2"
 					/>
+				) : null
+			}
+			secondaryHeader={
+				isEditing ? (
+					editHeader ? (
+						<div className="editable-card-custom-header">{editHeader}</div>
+					) : null
+				) : header ? (
+					<div className="editable-card-custom-header">{header}</div>
 				) : null
 			}
 			footer={
@@ -234,56 +268,86 @@ export default function EditableCard<T extends Record<string, unknown>>({
 			}
 		>
 			{isEditing ? (
-				<form
-					id={formId}
-					className="editable-card-form"
-					onSubmit={handleSubmit}
-				>
-					<div className="editable-card-form-grid">
-						{editableFields.map((field, index) => {
-							/*
-							 * Editable fields are filtered to ensure name exists.
-							 */
-							const fieldName = field.name as keyof T;
+				<>
+					<form
+						id={formId}
+						className="editable-card-form"
+						onSubmit={handleSubmit}
+					>
+						<div className="editable-card-value-grid">
+							{editableFields.map((field, index) => {
+								const key = getFieldKey(field, index);
 
-							return (
-								<div
-									key={getFieldKey(field, index)}
-									className={joinClassNames(
-										"editable-card-form-field",
-										getFieldSpanClass("editable-card-form-field", field.span),
-									)}
-								>
-									<FormInput
-										name={String(fieldName)}
-										label={field.label}
-										type={field.type ?? "text"}
-										value={getStringValue(draft[fieldName])}
-										placeholder={field.placeholder}
-										required={field.required}
-										disabled={saving || field.disabled}
-										onChange={(event) =>
-											updateField(fieldName, event.target.value)
-										}
-									/>
-								</div>
-							);
-						})}
-					</div>
-				</form>
+								const spanClass = getFieldSpanClass(
+									"editable-card-form-field",
+									field.span,
+								);
+
+								if (field.render) {
+									return (
+										<div
+											key={key}
+											className={joinClassNames(
+												"editable-card-form-field",
+												spanClass,
+											)}
+										>
+											{field.render({
+												draft,
+												disabled: saving || Boolean(field.disabled),
+												setFieldValue,
+											})}
+										</div>
+									);
+								}
+
+								if (!field.name) return null;
+
+								const fieldName = field.name;
+
+								return (
+									<div
+										key={key}
+										className={joinClassNames(
+											"editable-card-form-field",
+											spanClass,
+										)}
+									>
+										<FormInput
+											name={String(fieldName)}
+											label={field.label}
+											type={field.type ?? "text"}
+											value={getStringValue(draft[fieldName])}
+											placeholder={field.placeholder}
+											required={field.required}
+											disabled={saving || Boolean(field.disabled)}
+											onChange={(event) =>
+												setFieldValue(
+													fieldName,
+													event.target.value as T[typeof fieldName],
+												)
+											}
+										/>
+									</div>
+								);
+							})}
+						</div>
+					</form>
+				</>
 			) : (
 				<>
-					{header ? (
-						<div className="editable-card-custom-header">{header}</div>
-					) : null}
-
-					{displayFields.length ? (
+					{displayFields.length > 0 ? (
 						<div className="editable-card-value-grid">
 							{displayFields.map((field, index) => {
 								const rawValue = field.name ? value[field.name] : undefined;
 
 								const displayValue =
-									field.displayValue ?? getStringValue(rawValue);
+									field.displayValue ??
+									(rawValue !== null &&
+									rawValue !== undefined &&
+									rawValue !== ""
+										? getStringValue(rawValue)
+										: "--");
 
 								return (
 									<div
@@ -298,7 +362,7 @@ export default function EditableCard<T extends Record<string, unknown>>({
 										</span>
 
 										<div className="editable-card-value-content">
-											{displayValue || "--"}
+											{displayValue}
 										</div>
 									</div>
 								);
