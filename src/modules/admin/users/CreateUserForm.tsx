@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Pencil } from "lucide-react";
 
 import EditableCard, {
 	type EditableCardField,
@@ -6,15 +7,20 @@ import EditableCard, {
 import Checkbox from "../../../components/forms/Checkbox";
 import SelectInput from "../../../components/forms/SelectInput";
 import DatePickerInput from "../../../components/common/DatePickerInput";
-
-import type { UserFormField, UserType } from "./user-management.types";
+import Button from "../../../components/common/Button";
+import type {
+	GradeOption,
+	UserFormField,
+	UserType,
+} from "./user-management.types";
 import type { UsersController } from "./useUsersData";
+import { mapUserToForm } from "./user-management.utils";
 
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
 import { Badge } from "../../../components/common/Badge";
-import { Pencil } from "lucide-react";
 import Avatar from "../../../components/common/Avatar";
+import { formatDateOnly } from "../../../utils/format";
 
 interface UserFormProps {
 	controller: UsersController;
@@ -32,22 +38,23 @@ const USER_TYPE_OPTIONS: Array<{
 	{ label: "Customer", value: "CUSTOMER" },
 ];
 
+// TODO: replace with real grade options from API/config once available.
+const GRADE_OPTIONS: GradeOption[] = [
+	{ label: "Select", value: "" },
+	{ label: "M1", value: "M1" },
+	{ label: "M2", value: "M2" },
+	{ label: "M3", value: "M3" },
+	{ label: "E1", value: "E1" },
+	{ label: "E2", value: "E2" },
+	{ label: "E3", value: "E3" },
+];
+
 const parseJoinedOn = (value: string): Date | undefined => {
 	if (!value) return undefined;
 
 	const parsed = new Date(`${value}T00:00:00`);
 
 	return Number.isNaN(parsed.getTime()) ? undefined : parsed;
-};
-
-const formatJoinedOn = (date: Date | undefined): string => {
-	if (!date) return "";
-
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-
-	return `${year}-${month}-${day}`;
 };
 
 export function CreateUserForm({ controller }: UserFormProps) {
@@ -57,56 +64,100 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		fieldErrors,
 		isCreating,
 		isUpdating,
+		selectedUser,
+		isLoadingSelectedUser,
 		handleFormChange,
 		handleSubmitUser,
+		handleStartEdit,
 	} = controller;
 
 	const isEditMode = pageMode === "edit";
+	const isViewMode = pageMode === "view";
+	const isFormMode = pageMode === "create" || pageMode === "edit";
 	const isSaving = isCreating || isUpdating;
+
+	const isReadOnly = isViewMode;
 
 	const [profileImage, setProfileImage] = useState<FileUploadValue | null>(
 		null,
 	);
 
+	const displayValues: FormValues =
+		(isViewMode || isEditMode) && selectedUser
+			? mapUserToForm(selectedUser)
+			: form;
+
+	if ((isViewMode || isEditMode) && isLoadingSelectedUser && !selectedUser) {
+		return (
+			<section className="profile-page" aria-label="User profile">
+				<p>Loading user…</p>
+			</section>
+		);
+	}
+
+	if ((isViewMode || isEditMode) && !isLoadingSelectedUser && !selectedUser) {
+		return (
+			<section className="profile-page" aria-label="User profile">
+				<p>User not found.</p>
+			</section>
+		);
+	}
+
 	const basicInfoFields: EditableCardField<FormValues>[] = [
 		{
 			name: "employeeCode",
 			label: "Employee Code",
+			required: true,
+			error: fieldErrors.employeeCode,
 		},
 		{
 			name: "firstName",
 			label: "First Name",
 			required: true,
+			error: fieldErrors.firstName,
 		},
 		{
 			name: "lastName",
 			label: "Last Name",
 			required: true,
+			error: fieldErrors.lastName,
 		},
 		{
 			name: "email",
 			label: "Email ID",
 			type: "email",
 			required: true,
+			error: fieldErrors.email,
 		},
 		{
 			name: "phoneNumber",
 			label: "Phone Number",
 			type: "tel",
+			required: true,
+			error: fieldErrors.phoneNumber,
 		},
-		{
-			name: "password",
-			label: "Password",
-			visibleInDisplay: false,
-			placeholder: isEditMode ? "Leave blank to keep unchanged" : undefined,
-		},
+		// Password: create only. Not shown in edit or view — an edit-mode
+		// password reset should go through a dedicated "reset password"
+		// action rather than living in this form.
+		...(pageMode === "create"
+			? [
+					{
+						name: "password" as const,
+						label: "Password",
+						visibleInDisplay: false,
+						error: fieldErrors.password,
+					},
+				]
+			: []),
 
 		{
 			id: "userType",
 			name: "userType",
 			label: "User Type",
 			displayValue:
-				form.userType && form.userType !== "Select" ? form.userType : "--",
+				displayValues.userType && displayValues.userType !== "Select"
+					? displayValues.userType
+					: "--",
 			render: ({ draft, disabled, setFieldValue }) => (
 				<SelectInput<{ label: string; value: UserType }>
 					inputId="user-type"
@@ -128,6 +179,29 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		},
 
 		{
+			id: "grade",
+			name: "grade",
+			label: "Grade",
+			displayValue: displayValues.grade || "--",
+			render: ({ draft, disabled, setFieldValue }) => (
+				<SelectInput<GradeOption>
+					inputId="user-grade"
+					name="grade"
+					label="Grade"
+					options={GRADE_OPTIONS}
+					value={
+						GRADE_OPTIONS.find((option) => option.value === draft.grade) ?? null
+					}
+					isDisabled={disabled}
+					error={fieldErrors.grade}
+					onChange={(option) =>
+						setFieldValue("grade", (option?.value ?? "") as never)
+					}
+				/>
+			),
+		},
+
+		{
 			id: "joinedOn",
 			name: "joinedOn",
 			label: "Joined On",
@@ -139,7 +213,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
 					onChange={(nextValue) =>
 						setFieldValue(
 							"joinedOn",
-							formatJoinedOn(
+							formatDateOnly(
 								nextValue instanceof Date ? nextValue : undefined,
 							) as never,
 						)
@@ -152,69 +226,36 @@ export function CreateUserForm({ controller }: UserFormProps) {
 			),
 		},
 
-		{
-			id: "status-flags",
-			label: "Status",
-			displayValue: (
-				<div className="flex items-center gap-2">
-					<Badge variant={form.isActive ? "success" : "secondary"}>
-						{form.isActive ? "Active" : "Inactive"}
-					</Badge>
-
-					{form.isDefaultContact ? (
-						<Badge variant="info">Default Contact</Badge>
-					) : null}
-				</div>
-			),
-			render: ({ draft, disabled, setFieldValue }) => (
-				<div className="flex items-center gap-4">
-					<Checkbox
-						name="isDefaultContact"
-						label="Default Contact"
-						checked={draft.isDefaultContact}
-						disabled={disabled}
-						onChange={(checked) =>
-							setFieldValue("isDefaultContact", Boolean(checked))
-						}
-					/>
-
-					<Checkbox
-						name="isActive"
-						label="Active"
-						checked={draft.isActive}
-						disabled={disabled}
-						onChange={(checked) => setFieldValue("isActive", Boolean(checked))}
-					/>
-				</div>
-			),
-		},
-	];
-
-	const externalIdFields: EditableCardField<FormValues>[] = [
-		{
-			name: "internalId",
-			label: "Internal ID",
-		},
-		{
-			name: "bydId",
-			label: "BYD ID",
-		},
-		{
-			name: "s4Id",
-			label: "S4 ID",
-		},
-		{
-			name: "tallyId",
-			label: "Tally ID",
-		},
-		{
-			name: "c4cId",
-			label: "C4C ID",
-		},
-		{
-			name: "bpInternalCode",
-			label: "BP Internal Code",
-		},
+		...(isEditMode
+			? []
+			: [
+					{
+						id: "status-flags",
+						label: "Status",
+						displayValue: (
+							<div className="flex items-center gap-2">
+								<Badge
+									variant={displayValues.isActive ? "success" : "secondary"}
+								>
+									{displayValues.isActive ? "Active" : "Inactive"}
+								</Badge>
+							</div>
+						),
+						render: ({ draft, disabled, setFieldValue }) => (
+							<div className="flex items-center gap-4">
+								<Checkbox
+									name="isActive"
+									label="Active"
+									checked={draft.isActive}
+									disabled={disabled}
+									onChange={(checked) =>
+										setFieldValue("isActive", Boolean(checked))
+									}
+								/>
+							</div>
+						),
+					} as EditableCardField<FormValues>,
+				]),
 	];
 
 	const organizationFields: EditableCardField<FormValues>[] = [
@@ -258,37 +299,79 @@ export function CreateUserForm({ controller }: UserFormProps) {
 			name: "managerCode2",
 			label: "Manager Code 2",
 		},
+		{
+			name: "bydId",
+			label: "BYD ID",
+		},
+		{
+			name: "s4Id",
+			label: "S4 ID",
+		},
+		{
+			name: "tallyId",
+			label: "Tally ID",
+		},
+		{
+			name: "c4cId",
+			label: "C4C ID",
+		},
 	];
 
-	const saveSection = async (values: FormValues) => {
+	const saveSection = (values: FormValues) => {
 		(Object.keys(values) as Array<keyof FormValues>).forEach((key) => {
 			handleFormChange(key as UserFormField, values[key] as never);
 		});
 
-		await handleSubmitUser();
+		// Pass values directly instead of relying on `form` state having
+		// committed by the time this runs — setState above is async, so
+		// handleSubmitUser() with no args would read the previous render's
+		// (stale) form and could validate/submit against outdated data.
+		return handleSubmitUser(values);
 	};
 
 	const fullName =
-		[form.firstName, form.lastName].filter(Boolean).join(" ") || "New User";
+		[displayValues.firstName, displayValues.lastName]
+			.filter(Boolean)
+			.join(" ") || "New User";
 
-	/*
-	 * Profile header shared by both view and edit modes.
-	 *
-	 * The avatar itself is the image preview.
-	 * FileUploadField is only responsible for selecting
-	 * the image.
-	 */
-	/*
-	 * Avatar-only header used in view mode — no upload UI at all.
-	 */
+	// Single header used for both editing and read-only display. The avatar
+	// upload overlay only shows when the section is actually editable.
 	const profileHeader = (
 		<div className="profile-summary">
-			<Avatar
-				firstName={form.firstName}
-				lastName={form.lastName}
-				imageUrl={profileImage?.url ?? ""}
-				size="lg"
-			/>
+			<div
+				className={
+					isReadOnly
+						? "profile-summary-avatar"
+						: "profile-summary-avatar profile-summary-avatar-editable"
+				}
+			>
+				<Avatar
+					firstName={displayValues.firstName}
+					lastName={displayValues.lastName}
+					imageUrl={profileImage?.url ?? ""}
+					size="lg"
+				/>
+
+				{!isReadOnly ? (
+					<>
+						<FileUploadField
+							kind="image"
+							multiple={false}
+							value={profileImage}
+							disabled={isSaving}
+							onChange={(nextValue) => setProfileImage(nextValue)}
+							className="profile-summary-avatar-input"
+						/>
+
+						<span
+							className="profile-summary-avatar-edit-badge"
+							aria-hidden="true"
+						>
+							<Pencil size={12} />
+						</span>
+					</>
+				) : null}
+			</div>
 
 			<div className="profile-summary-content">
 				<div className="profile-summary-heading">
@@ -296,7 +379,9 @@ export function CreateUserForm({ controller }: UserFormProps) {
 
 					<span className="">
 						<Badge variant={"info"}>
-							{form.userType !== "Select" ? form.userType : "User"}
+							{displayValues.userType !== "Select"
+								? displayValues.userType
+								: "User"}
 						</Badge>
 					</span>
 				</div>
@@ -304,80 +389,51 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		</div>
 	);
 
-	/*
-	 * Edit mode header — same layout as view mode, but the avatar
-	 * circle itself is the upload control (no separate dropzone/preview box).
-	 * The FileUploadField's own input is layered invisibly over the circle.
-	 */
-	const editProfileHeader = (
-		<div className="profile-summary">
-			<div className="profile-summary-avatar profile-summary-avatar-editable">
-				<Avatar
-					firstName={form.firstName}
-					lastName={form.lastName}
-					imageUrl={profileImage?.url ?? ""}
-					size="lg"
-				/>
-
-				<FileUploadField
-					kind="image"
-					multiple={false}
-					value={profileImage}
-					disabled={isSaving}
-					onChange={(nextValue) => setProfileImage(nextValue)}
-					className="profile-summary-avatar-input"
-				/>
-
-				<span className="profile-summary-avatar-edit-badge" aria-hidden="true">
-					<Pencil size={12} />
-				</span>
-			</div>
-
-			<div className="profile-summary-content">
-				<div className="profile-summary-heading">
-					<h3 className="profile-summary-name">{fullName}</h3>
-
-					<span className="profile-summary-role">
-						{form.userType !== "Select" ? form.userType : "User"}
-					</span>
-				</div>
-			</div>
-		</div>
-	);
-
 	return (
-		<section className="profile-page" aria-labelledby="user-form-title">
+		<section className="profile-page" aria-label="User profile">
 			<div className="profile-page-sections">
 				<EditableCard
-					title="Basic Information"
-					editTitle="Edit Basic Information"
-					value={form}
+					key={`basic-${selectedUser?.id ?? "create"}`}
+					value={displayValues}
 					fields={basicInfoFields}
 					saving={isSaving}
 					onSubmit={saveSection}
-					header={profileHeader}
-					editHeader={editProfileHeader}
+					title={profileHeader}
+					className="[&>div:first-child]:border-b-0"
+					editable={!isReadOnly}
+					defaultEditing={isFormMode}
+					titleAction={
+						isViewMode && selectedUser ? (
+							<Button
+								type="button"
+								text="Edit User"
+								Icon={Pencil}
+								iconPosition="left"
+								variant="secondary"
+								size="sm"
+								onClick={() => handleStartEdit(selectedUser)}
+							/>
+						) : undefined
+					}
 				/>
 
-				<EditableCard
-					title="External System IDs"
-					editTitle="Edit External System IDs"
-					// editSubtitle="Update identifiers used to sync this user across systems."
-					value={form}
-					fields={externalIdFields}
-					saving={isSaving}
-					onSubmit={saveSection}
-				/>
-
-				<EditableCard
-					title="Organization Details"
-					editTitle="Edit Organization Details"
-					// editSubtitle="Update the user's org placement and reporting lines."
-					value={form}
-					fields={organizationFields}
-					saving={isSaving}
-					onSubmit={saveSection}
-				/>
+				{/* Organization Details only appears once the user actually exists
+				    — i.e. after Basic Information has been saved once (pageMode
+				    becomes "edit" via the post-create redirect) or when viewing.
+				    Plain "create" mode never had a user id to save this against. */}
+				{pageMode !== "create" ? (
+					<EditableCard
+						key={`organization-${selectedUser?.id ?? "create"}`}
+						title="Organization Details"
+						editTitle="Edit Organization Details"
+						value={displayValues}
+						fields={organizationFields}
+						saving={isSaving}
+						onSubmit={saveSection}
+						editable={!isReadOnly}
+						defaultEditing={isFormMode}
+					/>
+				) : null}
 			</div>
 		</section>
 	);

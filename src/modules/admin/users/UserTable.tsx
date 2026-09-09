@@ -1,6 +1,13 @@
 import { useMemo } from "react";
-import { Eye, MoreVertical, Pencil, Trash } from "lucide-react";
-import { Plus } from "lucide-react";
+import {
+	Eye,
+	Lock,
+	MoreVertical,
+	Pencil,
+	Plus,
+	Trash,
+	Unlock,
+} from "lucide-react";
 
 import ActionMenu from "../../../components/common/ActionMenu";
 import type { ActionMenuItem } from "../../../components/common/ActionMenu";
@@ -49,32 +56,88 @@ type UserRowActionOptions = {
 	onEdit: (user: User) => void;
 	onView: (user: User) => void;
 	onDelete: (user: User) => void;
+	onToggleBlock: (user: User) => void;
 };
 
 const getUserRowActions = (
 	user: User,
-	{ onEdit, onView, onDelete }: UserRowActionOptions,
-): ActionMenuItem<User>[] => [
+	{ onEdit, onView, onDelete, onToggleBlock }: UserRowActionOptions,
+): ActionMenuItem<User>[] => {
+	const isBlocked = user.status === "Blocked";
+
+	return [
+		{
+			id: "edit-user",
+			label: "Edit User",
+			Icon: Pencil,
+			onClick: onEdit,
+			ariaLabel: `Edit ${getUserDisplayName(user)}`,
+		},
+		{
+			id: "view-user",
+			label: "View User",
+			Icon: Eye,
+			onClick: onView,
+			ariaLabel: `View ${getUserDisplayName(user)}`,
+		},
+		{
+			id: "toggle-block-user",
+			label: isBlocked ? "Unblock User" : "Block User",
+			Icon: isBlocked ? Unlock : Lock,
+			onClick: onToggleBlock,
+			ariaLabel: `${isBlocked ? "Unblock" : "Block"} ${getUserDisplayName(user)}`,
+		},
+		{
+			id: "delete-user",
+			label: "Delete User",
+			Icon: Trash,
+			onClick: onDelete,
+			ariaLabel: `Delete ${getUserDisplayName(user)}`,
+		},
+	];
+};
+
+// Bulk actions for the multiselect toolbar menu. `row` here is just the
+// current selectedRowIds array — ActionMenu is generic, so we reuse it
+// rather than building a bespoke dropdown.
+const getBulkActions = ({
+	onActivate,
+	onBlock,
+	onMarkInactive,
+	onDelete,
+}: {
+	onActivate: () => void;
+	onBlock: () => void;
+	onMarkInactive: () => void;
+	onDelete: () => void;
+}): ActionMenuItem<string[]>[] => [
 	{
-		id: "edit-user",
-		label: "Edit User",
-		Icon: Pencil,
-		onClick: onEdit,
-		ariaLabel: `Edit ${getUserDisplayName(user)}`,
+		id: "bulk-activate",
+		label: "Activate Selected",
+		Icon: Unlock,
+		onClick: onActivate,
+		ariaLabel: "Activate selected users",
 	},
 	{
-		id: "view-user",
-		label: "View User",
-		Icon: Eye,
-		onClick: onView,
-		ariaLabel: `View ${getUserDisplayName(user)}`,
+		id: "bulk-block",
+		label: "Block Selected",
+		Icon: Lock,
+		onClick: onBlock,
+		ariaLabel: "Block selected users",
 	},
 	{
-		id: "delete-user",
-		label: "Delete User",
+		id: "bulk-inactive",
+		label: "Mark Selected Inactive",
+		Icon: Lock,
+		onClick: onMarkInactive,
+		ariaLabel: "Mark selected users inactive",
+	},
+	{
+		id: "bulk-delete",
+		label: "Delete Selected",
 		Icon: Trash,
 		onClick: onDelete,
-		ariaLabel: `View ${getUserDisplayName(user)}`,
+		ariaLabel: "Delete selected users",
 	},
 ];
 
@@ -92,12 +155,15 @@ export function UserTable({ controller, onOpenTableOptions }: UserTableProps) {
 		error,
 		setSearch,
 		setSelectedRowIds,
-		setSelectedUser,
 		handleTabChange,
 		handleDeleteUser,
+		handleToggleBlockUser,
+		handleBulkStatusChange,
+		handleBulkDelete,
 		handleRoleChange,
 		handleStartCreate,
 		handleStartEdit,
+		handleStartView,
 	} = controller;
 
 	const tabItems = useMemo(
@@ -175,9 +241,12 @@ export function UserTable({ controller, onOpenTableOptions }: UserTableProps) {
 						row={user}
 						actions={getUserRowActions(user, {
 							onEdit: handleStartEdit,
-							onView: setSelectedUser,
+							onView: handleStartView,
 							onDelete: (target) => {
 								void handleDeleteUser(target.id);
+							},
+							onToggleBlock: (target) => {
+								void handleToggleBlockUser(target);
 							},
 						})}
 						ariaLabel={`Actions for ${getUserDisplayName(user)}`}
@@ -187,8 +256,10 @@ export function UserTable({ controller, onOpenTableOptions }: UserTableProps) {
 				),
 			},
 		],
-		[handleStartEdit, setSelectedUser, handleDeleteUser],
+		[handleStartEdit, handleStartView, handleDeleteUser, handleToggleBlockUser],
 	);
+
+	const hasSelection = selectedRowIds.length > 0;
 
 	return (
 		<section className="user-management-panel" aria-label="User management">
@@ -223,7 +294,7 @@ export function UserTable({ controller, onOpenTableOptions }: UserTableProps) {
 				</div>
 
 				<div className="user-management-toolbar-end">
-					{selectedRowIds.length > 0 ? (
+					{hasSelection ? (
 						<span className="user-management-selected-count">
 							{selectedRowIds.length} selected
 						</span>
@@ -238,15 +309,27 @@ export function UserTable({ controller, onOpenTableOptions }: UserTableProps) {
 						onClick={handleStartCreate}
 					/>
 
-					<Button
-						type="button"
-						appearance="icon"
-						variant="transparent"
-						size="sm"
-						Icon={MoreVertical}
-						aria-label="Open user table options"
-						onClick={onOpenTableOptions}
-					/>
+					{hasSelection ? (
+						<ActionMenu
+							row={selectedRowIds}
+							actions={getBulkActions({
+								onActivate: () => {
+									void handleBulkStatusChange("Active");
+								},
+								onBlock: () => {
+									void handleBulkStatusChange("Blocked");
+								},
+								onMarkInactive: () => {
+									void handleBulkStatusChange("Inactive");
+								},
+								onDelete: () => {
+									void handleBulkDelete();
+								},
+							})}
+							ariaLabel="Bulk actions for selected users"
+							size="md"
+						/>
+					) : null}
 				</div>
 			</div>
 

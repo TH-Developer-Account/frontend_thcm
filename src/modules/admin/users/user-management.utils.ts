@@ -19,8 +19,37 @@ export const USER_STATUS_TABS = [
 	"Inactive",
 ] as const satisfies readonly UserStatusTab[];
 
+export const mapUserToForm = (user: User): UserFormValues => ({
+	bydId: user.bydId,
+	s4Id: user.s4Id,
+	tallyId: user.tallyId,
+	c4cId: user.c4cId,
+	employeeCode: user.employeeCode,
+	firstName: user.firstName,
+	lastName: user.lastName,
+	password: "",
+	phoneNumber: user.phoneNumber,
+	email: user.email,
+	workspaceId: user.workspaceId,
+	region: user.region,
+	address: user.address,
+	zone: user.zone,
+	branch: user.branch,
+	department: user.department,
+	role: user.role,
+	designation: user.designation,
+	vertical: user.vertical,
+	grade: user.grade ?? "",
+	managerCode1: user.managerCode1,
+	managerCode2: user.managerCode2,
+	isDefaultContact: user.isDefaultContact,
+	userType: user.userType,
+	isActive: user.status === "Active",
+	joinedOn: user.joinedOn ? user.joinedOn.slice(0, 10) : "",
+	businessPartnerId: user.businessPartnerId,
+});
+
 export const EMPTY_USER_FORM: UserFormValues = {
-	internalId: "",
 	bydId: "",
 	s4Id: "",
 	tallyId: "",
@@ -31,6 +60,7 @@ export const EMPTY_USER_FORM: UserFormValues = {
 	password: "",
 	phoneNumber: "",
 	email: "",
+	workspaceId: "",
 	region: "",
 	address: "",
 	zone: "",
@@ -39,13 +69,14 @@ export const EMPTY_USER_FORM: UserFormValues = {
 	role: "",
 	designation: "",
 	vertical: "",
-	bpInternalCode: "",
+	grade: "",
 	managerCode1: "",
 	managerCode2: "",
 	isDefaultContact: false,
 	userType: "Select",
 	isActive: true,
 	joinedOn: "",
+	businessPartnerId: "",
 };
 
 const getUserStatus = (user: UserResponse): UserStatus => {
@@ -55,16 +86,16 @@ const getUserStatus = (user: UserResponse): UserStatus => {
 
 export const mapUser = (user: UserResponse): User => ({
 	id: user.id,
-	internalId: user.internal_id ?? "",
-	bydId: user.byd_id ?? "",
-	s4Id: user.s4_id ?? "",
-	tallyId: user.tally_id ?? "",
-	c4cId: user.c4c_id ?? "",
-	employeeCode: user.employee_code ?? "",
+	bydId: user.bydId ?? "",
+	s4Id: user.s4Id ?? "",
+	tallyId: user.tallyId ?? "",
+	c4cId: user.c4cId ?? "",
+	employeeCode: user.employeeCode ?? "",
 	firstName: user.first_name ?? "",
 	lastName: user.last_name ?? "",
 	phoneNumber: user.phone_number ?? "",
 	email: user.email ?? "",
+	workspaceId: user.workspaceUsers?.[0]?.workspaceId ?? "",
 	region: user.region ?? "",
 	address: user.address ?? "",
 	zone: user.zone ?? "",
@@ -73,61 +104,83 @@ export const mapUser = (user: UserResponse): User => ({
 	role: user.role ?? "",
 	designation: user.designation ?? "",
 	vertical: user.vertical ?? "",
-	bpInternalCode: user.bp_internal_code ?? "",
-	managerCode1: user.manager_code_1 ?? "",
-	managerCode2: user.manager_code_2 ?? "",
-	isDefaultContact: Boolean(user.is_default_contact),
+	// grade: user.grade ?? "",
+	managerCode1: user.managerCode1 ?? "",
+	managerCode2: user.managerCode2 ?? "",
+	isDefaultContact: Boolean(user.isDefaultContact),
 	isDefaultLogin: Boolean(user.is_default_login),
-	userType: user.user_type ?? "Select",
+	userType: user.userType ?? "Select",
 	status: getUserStatus(user),
-	joinedOn: user.joined_on ?? "",
+	joinedOn: user.joinedOn ?? "",
+	businessPartnerId: user.businessPartnerId ?? undefined,
+	businessPartner: user.businessPartner ?? null,
 	createdAt: user.created_at,
 	updatedAt: user.updated_at,
 });
 
 export const mapUserFormToCreatePayload = (
 	form: CreateUserInput,
-): CreateUserPayload => ({
-	internal_id: form.internalId.trim(),
-	byd_id: form.bydId.trim(),
-	s4_id: form.s4Id.trim(),
-	tally_id: form.tallyId.trim(),
-	c4c_id: form.c4cId.trim(),
-	employee_code: form.employeeCode.trim(),
-	email: form.email.trim().toLowerCase(),
-	first_name: form.firstName.trim(),
-	last_name: form.lastName.trim(),
-	phone_number: form.phoneNumber.trim(),
-	password: form.password,
-	region: form.region.trim(),
-	address: form.address.trim(),
-	zone: form.zone.trim(),
-	branch: form.branch.trim(),
-	department: form.department.trim(),
-	role: form.role.trim(),
-	designation: form.designation.trim(),
-	vertical: form.vertical.trim(),
-	bp_internal_code: form.bpInternalCode.trim(),
-	manager_code_1: form.managerCode1.trim(),
-	manager_code_2: form.managerCode2.trim(),
-	is_default_contact: form.isDefaultContact,
-	user_type: form.userType,
-	is_active: form.isActive,
-	joined_on: form.joinedOn,
-});
+): CreateUserPayload => {
+	const payload: CreateUserPayload = {
+		first_name: form.firstName.trim(),
+		last_name: form.lastName.trim(),
+		email: form.email.trim().toLowerCase(),
+		phone_number: form.phoneNumber.trim(),
+		workspaceId: form.workspaceId.trim(),
+		employeeCode: form.employeeCode.trim(),
+	};
 
+	const assignText = (
+		key: keyof CreateUserPayload,
+		value: string | undefined,
+	) => {
+		const normalized = value?.trim();
+		if (normalized) {
+			(payload as Record<string, unknown>)[key] = normalized;
+		}
+	};
+
+	assignText("password", form.password);
+	assignText("bydId", form.bydId);
+	assignText("s4Id", form.s4Id);
+	assignText("tallyId", form.tallyId);
+	assignText("c4cId", form.c4cId);
+	assignText("region", form.region);
+	assignText("address", form.address);
+	assignText("zone", form.zone);
+	assignText("branch", form.branch);
+	assignText("department", form.department);
+	assignText("role", form.role);
+	assignText("designation", form.designation);
+	assignText("vertical", form.vertical);
+	// assignText("grade", form.grade);
+	assignText("managerCode1", form.managerCode1);
+	assignText("managerCode2", form.managerCode2);
+	assignText("joinedOn", form.joinedOn);
+	assignText("businessPartnerId", form.businessPartnerId);
+
+	if (form.userType && form.userType !== "Select") {
+		payload.userType = form.userType;
+	}
+	if (form.isActive !== undefined) {
+		payload.is_active = form.isActive;
+	}
+
+	return payload;
+};
+
+// key -> actual Prisma field name (mixed case, not blanket snake_case)
 const USER_UPDATE_FIELD_MAP = {
-	internalId: "internal_id",
-	bydId: "byd_id",
-	s4Id: "s4_id",
-	tallyId: "tally_id",
-	c4cId: "c4c_id",
-	employeeCode: "employee_code",
 	firstName: "first_name",
 	lastName: "last_name",
 	password: "password",
 	phoneNumber: "phone_number",
 	email: "email",
+	employeeCode: "employeeCode",
+	bydId: "bydId",
+	s4Id: "s4Id",
+	tallyId: "tallyId",
+	c4cId: "c4cId",
 	region: "region",
 	address: "address",
 	zone: "zone",
@@ -136,13 +189,13 @@ const USER_UPDATE_FIELD_MAP = {
 	role: "role",
 	designation: "designation",
 	vertical: "vertical",
-	bpInternalCode: "bp_internal_code",
-	managerCode1: "manager_code_1",
-	managerCode2: "manager_code_2",
-	isDefaultContact: "is_default_contact",
-	userType: "user_type",
+	// grade: "grade",
+	managerCode1: "managerCode1",
+	managerCode2: "managerCode2",
+	userType: "userType",
 	isActive: "is_active",
-	joinedOn: "joined_on",
+	joinedOn: "joinedOn",
+	businessPartnerId: "businessPartnerId",
 } as const;
 
 export const mapUserFormToUpdatePayload = (
@@ -152,8 +205,11 @@ export const mapUserFormToUpdatePayload = (
 
 	Object.entries(form).forEach(([key, value]) => {
 		if (value === undefined) return;
+		if (key === "workspaceId") return; // never sent on update — not an updatable field
+		if (key === "password" && String(value).trim().length === 0) return;
 
-		const apiKey = USER_UPDATE_FIELD_MAP[key as keyof UpdateUserInput];
+		const apiKey =
+			USER_UPDATE_FIELD_MAP[key as keyof typeof USER_UPDATE_FIELD_MAP];
 		if (!apiKey) return;
 
 		payload[apiKey] =
@@ -169,35 +225,6 @@ export const mapUserFormToUpdatePayload = (
 
 export const getUserDisplayName = (user: User): string =>
 	[user.firstName, user.lastName].filter(Boolean).join(" ") || "--";
-
-export const mapUserToForm = (user: User): UserFormValues => ({
-	internalId: user.internalId,
-	bydId: user.bydId,
-	s4Id: user.s4Id,
-	tallyId: user.tallyId,
-	c4cId: user.c4cId,
-	employeeCode: user.employeeCode,
-	firstName: user.firstName,
-	lastName: user.lastName,
-	password: "",
-	phoneNumber: user.phoneNumber,
-	email: user.email,
-	region: user.region,
-	address: user.address,
-	zone: user.zone,
-	branch: user.branch,
-	department: user.department,
-	role: user.role,
-	designation: user.designation,
-	vertical: user.vertical,
-	bpInternalCode: user.bpInternalCode,
-	managerCode1: user.managerCode1,
-	managerCode2: user.managerCode2,
-	isDefaultContact: user.isDefaultContact,
-	userType: user.userType,
-	isActive: user.status === "Active",
-	joinedOn: user.joinedOn ? user.joinedOn.slice(0, 10) : "",
-});
 
 export const getUserCounts = (users: User[]): UserCounts => ({
 	All: users.length,

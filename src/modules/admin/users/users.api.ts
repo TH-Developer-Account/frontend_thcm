@@ -18,7 +18,7 @@ import {
 
 export const USER_API_ROUTES = {
 	list: "/users",
-	create: "/users/register",
+	create: "/users",
 	detail: (userId: string) => `/users/${encodeURIComponent(userId)}`,
 	update: (userId: string) => `/users/${encodeURIComponent(userId)}`,
 	delete: (userId: string) => `/users/${encodeURIComponent(userId)}`,

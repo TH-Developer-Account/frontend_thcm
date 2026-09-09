@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMatch, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import type {
@@ -8,8 +9,10 @@ import type {
 	User,
 	UserFormField,
 	UserFormValues,
+	UserMutationResult,
 	UserPageMode,
 	UserRoleOption,
+	UserStatus,
 	UserStatusTab,
 } from "./user-management.types";
 import {
@@ -21,7 +24,7 @@ import {
 } from "./user-management.utils";
 import { userApi } from "./users.api";
 
-import { useToast } from "../../../context/Auth/AuthContext";
+import { useAuth, useToast } from "../../../context/Auth/AuthContext";
 import {
 	showApiErrorToast,
 	showSuccessToast,
@@ -42,65 +45,94 @@ export const USER_QUERY_OPTIONS = {
 	refetchOnReconnect: false,
 } as const;
 
+export const DETAIL_QUERY_CACHE_OPTIONS = {
+	staleTime: Infinity,
+	gcTime: Infinity,
+	refetchOnMount: false,
+	refetchOnWindowFocus: false,
+	refetchOnReconnect: false,
+} as const;
+
 export const useUserDetailQuery = (userId?: string) =>
 	useQuery({
 		queryKey: userKeys.detail(userId ?? ""),
 		queryFn: () => userApi.getUserById(userId as string),
 		enabled: Boolean(userId),
-		...USER_QUERY_OPTIONS,
+		...DETAIL_QUERY_CACHE_OPTIONS,
 	});
 
 const getErrorMessage = (error: unknown): string =>
 	error instanceof Error ? error.message : "Something went wrong.";
 
-const REQUIRED_USER_FIELDS: Array<keyof Omit<UserFormValues, "password">> = [
-	"internalId",
-	"bydId",
-	"s4Id",
-	"tallyId",
-	"c4cId",
-	"employeeCode",
+// NOTE: workspaceId intentionally excluded — it's no longer user-entered.
+// It's sourced from useAuth() at submit time (see handleSubmitUser) since
+// there's no input field for it anywhere in CreateUserForm.
+const REQUIRED_USER_FIELDS: Array<keyof UserFormValues> = [
 	"firstName",
 	"lastName",
 	"phoneNumber",
 	"email",
-	"region",
-	"address",
-	"zone",
-	"branch",
-	"department",
-	"role",
-	"designation",
-	"vertical",
-	"bpInternalCode",
-	"managerCode1",
-	"managerCode2",
-	"userType",
-	"joinedOn",
+	"employeeCode",
 ];
 
 const REQUIRED_FIELD_MESSAGE = "This field is required.";
 
 type FormFieldErrors = Partial<Record<UserFormField, string>>;
 
+const extractCreatedUserId = (
+	response: UserMutationResult | undefined,
+): string | undefined => response?.data?.id ?? response?.user?.id;
+
 export function useUsersData() {
+	const navigate = useNavigate();
+	const { id: userId } = useParams<{ id: string }>();
+
 	const queryClient = useQueryClient();
 	const { showToast } = useToast();
+	const { workspaceId } = useAuth();
 	const [activeTab, setActiveTab] = useState<UserStatusTab>("All");
 	const [search, setSearch] = useState("");
 	const [role, setRole] = useState<UserRoleOption | null>(null);
 	const [selectedRowIds, setSelectedRowIds] = useState<string[]>([]);
-	const [selectedUser, setSelectedUser] = useState<User | null>(null);
-	const [pageMode, setPageMode] = useState<UserPageMode>("list");
 	const [form, setForm] = useState<UserFormValues>(EMPTY_USER_FORM);
 	const [formError, setFormError] = useState<string | null>(null);
 	const [fieldErrors, setFieldErrors] = useState<FormFieldErrors>({});
+
+	// pageMode now derives from the route, not local state:
+	// /admin/users            -> list
+	// /admin/users/create     -> create
+	// /admin/users/:id        -> view
+	// /admin/users/:id/edit   -> edit
+	const isCreateRoute = Boolean(useMatch("/admin/users/create"));
+	const isEditRoute = Boolean(useMatch("/admin/users/:id/edit"));
+
+	// drop the useLocation import/usage — no longer needed for this
+	const pageMode: UserPageMode = isCreateRoute
+		? "create"
+		: isEditRoute
+			? "edit"
+			: userId
+				? "view"
+				: "list";
+
+	// Fetches the routed user for view/edit. Falls back to the already-loaded
+	// list row (if present) while the detail request is in flight, so
+	// navigating from the table doesn't show a blank form/panel.
+	const userDetailQuery = useUserDetailQuery(
+		pageMode === "view" || pageMode === "edit" ? userId : undefined,
+	);
 
 	const usersQuery = useQuery({
 		queryKey: userKeys.list("all"),
 		queryFn: userApi.getUsers,
 		...USER_QUERY_OPTIONS,
 	});
+
+	const users = usersQuery.data ?? [];
+
+	const selectedUser: User | null =
+		userDetailQuery.data ??
+		(userId ? (users.find((user) => user.id === userId) ?? null) : null);
 
 	const invalidateUsers = async () => {
 		await queryClient.invalidateQueries({ queryKey: userKeys.all });
@@ -113,9 +145,11 @@ export function useUsersData() {
 
 	const updateMutation = useMutation({
 		mutationFn: userApi.updateUser,
-		onSuccess: async () => {
-			setSelectedUser(null);
+		onSuccess: async (_data, variables) => {
 			await invalidateUsers();
+			await queryClient.invalidateQueries({
+				queryKey: userKeys.detail(variables.userId),
+			});
 		},
 	});
 
@@ -123,11 +157,11 @@ export function useUsersData() {
 		mutationFn: userApi.deleteUser,
 		onSuccess: async (_data, variables) => {
 			setSelectedRowIds((current) =>
-				current.filter((userId) => userId !== variables.userId),
+				current.filter((id) => id !== variables.userId),
 			);
-			setSelectedUser((current) =>
-				current?.id === variables.userId ? null : current,
-			);
+			if (userId === variables.userId) {
+				navigate("/admin/users");
+			}
 			await invalidateUsers();
 			showSuccessToast(showToast, "User deleted successfully.");
 		},
@@ -138,8 +172,11 @@ export function useUsersData() {
 
 	const statusMutation = useMutation({
 		mutationFn: userApi.updateUserStatus,
-		onSuccess: async (response) => {
+		onSuccess: async (response, variables) => {
 			await invalidateUsers();
+			await queryClient.invalidateQueries({
+				queryKey: userKeys.detail(variables.userId),
+			});
 			showSuccessToast(
 				showToast,
 				response?.message ?? "User status updated successfully.",
@@ -150,7 +187,6 @@ export function useUsersData() {
 		},
 	});
 
-	const users = usersQuery.data ?? [];
 	const counts = useMemo(() => getUserCounts(users), [users]);
 	const roleOptions = useMemo(() => getRoleOptions(users), [users]);
 	const filteredUsers = useMemo(
@@ -176,12 +212,47 @@ export function useUsersData() {
 		return updateMutation.mutateAsync(variables);
 	};
 
-	const handleDeleteUser = async (userId: string) => {
-		await deleteMutation.mutateAsync({ userId });
+	const handleDeleteUser = async (id: string) => {
+		await deleteMutation.mutateAsync({ userId: id });
 	};
 
 	const handleStatusChange = async (variables: UpdateUserStatusVariables) =>
 		statusMutation.mutateAsync(variables);
+
+	// Single-row block/unblock, used from the row action menu.
+	const handleToggleBlockUser = async (user: User) => {
+		const nextStatus: UserStatus =
+			user.status === "Blocked" ? "Active" : "Blocked";
+		await handleStatusChange({ userId: user.id, status: nextStatus });
+	};
+
+	// Bulk actions for the multiselect toolbar menu.
+	const handleBulkStatusChange = async (status: UserStatus) => {
+		if (selectedRowIds.length === 0) return;
+		try {
+			await Promise.all(
+				selectedRowIds.map((id) =>
+					statusMutation.mutateAsync({ userId: id, status }),
+				),
+			);
+			setSelectedRowIds([]);
+			showSuccessToast(showToast, `Selected users updated to ${status}.`);
+		} catch (error) {
+			showApiErrorToast(showToast, error, "Failed to update selected users.");
+		}
+	};
+
+	const handleBulkDelete = async () => {
+		if (selectedRowIds.length === 0) return;
+		try {
+			await Promise.all(
+				selectedRowIds.map((id) => deleteMutation.mutateAsync({ userId: id })),
+			);
+			setSelectedRowIds([]);
+		} catch (error) {
+			showApiErrorToast(showToast, error, "Failed to delete selected users.");
+		}
+	};
 
 	const handleFormChange = <K extends UserFormField>(
 		field: K,
@@ -197,58 +268,78 @@ export function useUsersData() {
 		});
 	};
 
+	// Route-driven navigation. Adjust the "/admin/users" prefix if
+	// AdminRoutes is mounted at a different base path.
 	const handleStartCreate = () => {
-		setSelectedUser(null);
-		setForm(EMPTY_USER_FORM);
+		setForm({ ...EMPTY_USER_FORM });
 		setFormError(null);
 		setFieldErrors({});
-		setPageMode("create");
+		setSelectedRowIds([]);
+		navigate("/admin/users/create");
 	};
+	const handleStartEdit = (user: User) =>
+		navigate(`/admin/users/${user.id}/edit`);
+	const handleStartView = (user: User) => navigate(`/admin/users/${user.id}`);
+	const handleCancelForm = () => navigate("/admin/users");
 
-	const handleStartEdit = (user: User) => {
-		setSelectedUser(user);
-		setForm(mapUserToForm(user));
-		setFormError(null);
-		setFieldErrors({});
-		setPageMode("edit");
-	};
+	// Populate/reset the form whenever the route (and thus pageMode /
+	// selectedUser) changes, instead of doing it inside click handlers.
+	useEffect(() => {
+		if (pageMode === "create") {
+			setForm({ ...EMPTY_USER_FORM });
+			setFormError(null);
+			setFieldErrors({});
+		}
 
-	const handleCancelForm = () => {
-		setSelectedUser(null);
-		setForm(EMPTY_USER_FORM);
-		setFormError(null);
-		setFieldErrors({});
-		setPageMode("list");
-	};
+		if (pageMode === "edit" && selectedUser) {
+			setForm(mapUserToForm(selectedUser));
+			setFormError(null);
+			setFieldErrors({});
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [pageMode, selectedUser?.id]);
 
-	const validateForm = (): FormFieldErrors => {
+	// Takes the values to validate explicitly rather than reading `form`
+	// from closure — callers that just updated form state via setState
+	// would otherwise validate against the *previous* render's values.
+	const validateForm = (values: UserFormValues): FormFieldErrors => {
 		const nextFieldErrors: FormFieldErrors = {};
 
 		REQUIRED_USER_FIELDS.forEach((field) => {
-			const value = form[field];
+			const value = values[field];
 			if (typeof value === "string" && value.trim().length === 0) {
 				nextFieldErrors[field] = REQUIRED_FIELD_MESSAGE;
 			}
 		});
 
-		if (form.userType === "Select") {
-			nextFieldErrors.userType = "Please select a user type.";
-		}
-
-		if (pageMode === "create" && form.password.trim().length === 0) {
-			nextFieldErrors.password = REQUIRED_FIELD_MESSAGE;
+		if (values.email && !/^\S+@\S+\.\S+$/.test(values.email)) {
+			nextFieldErrors.email = "Enter a valid email address.";
 		}
 
 		return nextFieldErrors;
 	};
 
-	const handleSubmitUser = async () => {
-		const nextFieldErrors = validateForm();
+	// `overrideValues` lets callers (EditableCard's onSubmit) pass the just-
+	// edited draft directly, instead of relying on `form` state having
+	// already committed — fixes edit-save silently no-op'ing because it
+	// validated/submitted the previous render's stale form.
+	const handleSubmitUser = async (overrideValues?: UserFormValues) => {
+		const draftValues = overrideValues ?? form;
+
+		// workspaceId is never user-entered — inject the signed-in admin's
+		// workspace here rather than requiring/validating a field that has
+		// no corresponding input anywhere in the form.
+		const values: UserFormValues = {
+			...draftValues,
+			workspaceId: workspaceId ?? draftValues.workspaceId,
+		};
+
+		const nextFieldErrors = validateForm(values);
 
 		if (Object.keys(nextFieldErrors).length > 0) {
 			setFieldErrors(nextFieldErrors);
-			setFormError("Please complete all mandatory fields.");
-			return;
+			setFormError(null);
+			return false;
 		}
 
 		setFieldErrors({});
@@ -258,13 +349,13 @@ export function useUsersData() {
 			let response;
 
 			if (pageMode === "edit" && selectedUser) {
-				const { password, ...values } = form;
+				const { password, ...rest } = values;
 				response = await handleUpdateUser({
 					userId: selectedUser.id,
-					payload: password.trim() ? form : values,
+					payload: password?.trim() ? values : rest,
 				});
 			} else {
-				response = await handleCreateUser(form);
+				response = await handleCreateUser(values);
 			}
 
 			showSuccessToast(
@@ -275,7 +366,22 @@ export function useUsersData() {
 						: "User created successfully."),
 			);
 
-			handleCancelForm();
+			// On create, don't bounce back to the list — move into edit mode for
+			// the just-created user so the Organization Details card becomes
+			// available as a second step. Falls back to the list if the API
+			// response didn't include an id to route to.
+			if (pageMode === "create") {
+				const newUserId = extractCreatedUserId(response);
+				if (newUserId) {
+					navigate(`/admin/users/${newUserId}/edit`);
+				} else {
+					handleCancelForm();
+				}
+			} else {
+				handleCancelForm();
+			}
+
+			return true;
 		} catch (error) {
 			showApiErrorToast(
 				showToast,
@@ -284,7 +390,7 @@ export function useUsersData() {
 					? "Failed to update user."
 					: "Failed to create user.",
 			);
-			setFormError(getErrorMessage(error));
+			return false;
 		}
 	};
 
@@ -304,6 +410,7 @@ export function useUsersData() {
 		fieldErrors,
 		isLoading: usersQuery.isLoading,
 		isFetching: usersQuery.isFetching,
+		isLoadingSelectedUser: userDetailQuery.isLoading,
 		error: usersQuery.error ? getErrorMessage(usersQuery.error) : null,
 		mutationError:
 			createMutation.error ??
@@ -316,16 +423,19 @@ export function useUsersData() {
 		isChangingStatus: statusMutation.isPending,
 		setSearch,
 		setSelectedRowIds,
-		setSelectedUser,
 		handleTabChange,
 		handleRoleChange,
 		handleCreateUser,
 		handleUpdateUser,
 		handleDeleteUser,
 		handleStatusChange,
+		handleToggleBlockUser,
+		handleBulkStatusChange,
+		handleBulkDelete,
 		handleFormChange,
 		handleStartCreate,
 		handleStartEdit,
+		handleStartView,
 		handleCancelForm,
 		handleSubmitUser,
 		refetchUsers: usersQuery.refetch,

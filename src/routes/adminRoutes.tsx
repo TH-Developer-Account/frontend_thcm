@@ -32,6 +32,10 @@ export default function AdminRoutes() {
 		<Suspense fallback={<FullScreenLoader />}>
 			<Routes>
 				<Route path="users" element={<UsersPage />} />
+				<Route path="users/create" element={<UsersPage />} />
+				<Route path="users/:id" element={<UsersPage />} />
+				<Route path="users/:id/edit" element={<UsersPage />} />
+
 				<Route
 					path="masters"
 					element={

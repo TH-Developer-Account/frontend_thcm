@@ -1,12 +1,18 @@
 export type UserType = "Select" | "THCM" | "DEALER" | "CUSTOMER";
 
+export type GradeOption = {
+	label: string;
+	value: string;
+};
+
 export type UserStatus = "Active" | "Inactive" | "Blocked";
 
 export type UserStatusTab = "All" | UserStatus;
 
+// Frontend-facing shape, produced by mapUser(). Casing here is just
+// frontend convention — doesn't need to match Prisma, mapUser() does that translation.
 export type User = {
 	id: string;
-	internalId: string;
 	bydId: string;
 	s4Id: string;
 	tallyId: string;
@@ -16,6 +22,7 @@ export type User = {
 	lastName: string;
 	phoneNumber: string;
 	email: string;
+	workspaceId: string;
 	region: string;
 	address: string;
 	zone: string;
@@ -24,7 +31,7 @@ export type User = {
 	role: string;
 	designation: string;
 	vertical: string;
-	bpInternalCode: string;
+	grade?: string;
 	managerCode1: string;
 	managerCode2: string;
 	isDefaultContact: boolean;
@@ -32,22 +39,33 @@ export type User = {
 	userType: UserType;
 	status: UserStatus;
 	joinedOn: string;
+	businessPartnerId?: string;
+	businessPartner?: {
+		id: string;
+		bpName: string;
+		officeType: string;
+	} | null;
 	createdAt?: string;
 	updatedAt?: string;
 };
 
+// Raw shape as returned by getUsers/getUserById — mirrors their `select`
+// exactly. Only first_name/last_name/email/phone_number/is_active/
+// created_at/updated_at are snake_case in Prisma; everything else is
+// camelCase. Do not blanket-convert this.
 export type UserResponse = {
 	id: string;
-	internal_id?: string | null;
-	byd_id?: string | null;
-	s4_id?: string | null;
-	tally_id?: string | null;
-	c4c_id?: string | null;
-	employee_code?: string | null;
 	first_name: string;
 	last_name: string;
-	phone_number: string;
 	email: string;
+	phone_number: string;
+	is_active: boolean;
+	is_default_login?: boolean | null;
+	employeeCode?: string | null;
+	bydId?: string | null;
+	s4Id?: string | null;
+	tallyId?: string | null;
+	c4cId?: string | null;
 	region?: string | null;
 	address?: string | null;
 	zone?: string | null;
@@ -56,87 +74,101 @@ export type UserResponse = {
 	role?: string | null;
 	designation?: string | null;
 	vertical?: string | null;
-	bp_internal_code?: string | null;
-	manager_code_1?: string | null;
-	manager_code_2?: string | null;
-	is_default_contact?: boolean | null;
-	is_default_login?: boolean | null;
-	user_type?: UserType | null;
-	is_active: boolean;
+	grade?: string | null;
+	managerCode1?: string | null;
+	managerCode2?: string | null;
+	isDefaultContact?: boolean | null;
+	userType?: UserType | null;
+	joinedOn?: string | null;
+	businessPartnerId?: string | null;
+	businessPartner?: {
+		id: string;
+		bpName: string;
+		officeType: string;
+	} | null;
+	workspaceUsers?: Array<{
+		workspaceId: string;
+		isSuperAdmin: boolean;
+	}>;
 	status?: UserStatus;
-	joined_on?: string | null;
-	password?: string;
+	password?: string; // never actually present now that getUsers has a select — kept optional for safety
 	created_at?: string;
 	updated_at?: string;
 };
 
-export type CreateUserInput = {
-	internalId: string;
-	bydId: string;
-	s4Id: string;
-	tallyId: string;
-	c4cId: string;
-	employeeCode: string;
-	firstName: string;
-	lastName: string;
-	password: string;
-	phoneNumber: string;
-	email: string;
-	region: string;
-	address: string;
-	zone: string;
-	branch: string;
-	department: string;
-	role: string;
-	designation: string;
-	vertical: string;
-	bpInternalCode: string;
-	managerCode1: string;
-	managerCode2: string;
-	isDefaultContact: boolean;
-	userType: UserType;
-	isActive: boolean;
-	joinedOn: string;
-};
-
 export type CreateUserPayload = {
-	internal_id: string;
-	byd_id: string;
-	s4_id: string;
-	tally_id: string;
-	c4c_id: string;
-	employee_code: string;
 	first_name: string;
 	last_name: string;
-	password: string;
-	phone_number: string;
 	email: string;
-	region: string;
-	address: string;
-	zone: string;
-	branch: string;
-	department: string;
-	role: string;
-	designation: string;
-	vertical: string;
-	bp_internal_code: string;
-	manager_code_1: string;
-	manager_code_2: string;
-	is_default_contact: boolean;
-	user_type: UserType;
-	is_active: boolean;
-	joined_on: string;
+	phone_number: string;
+	password?: string;
+	workspaceId: string;
+	employeeCode: string;
+	bydId?: string;
+	s4Id?: string;
+	tallyId?: string;
+	c4cId?: string;
+	region?: string;
+	address?: string;
+	zone?: string;
+	branch?: string;
+	department?: string;
+	role?: string;
+	designation?: string;
+	vertical?: string;
+	grade?: string;
+	managerCode1?: string;
+	managerCode2?: string;
+	isDefaultContact?: boolean;
+	userType?: UserType;
+	is_active?: boolean;
+	joinedOn?: string;
+	businessPartnerId?: string;
+};
+
+export type UpdateUserPayload = Partial<Omit<CreateUserPayload, "workspaceId">>;
+
+export type CreateUserInput = {
+	firstName: string;
+	lastName: string;
+	password?: string;
+	phoneNumber: string;
+	email: string;
+	workspaceId: string;
+	employeeCode: string;
+	bydId?: string;
+	s4Id?: string;
+	tallyId?: string;
+	c4cId?: string;
+	region?: string;
+	address?: string;
+	zone?: string;
+	branch?: string;
+	department?: string;
+	role?: string;
+	designation?: string;
+	vertical?: string;
+	grade?: string;
+	managerCode1?: string;
+	managerCode2?: string;
+	isDefaultContact?: boolean;
+	userType?: UserType;
+	isActive?: boolean;
+	joinedOn?: string;
+	businessPartnerId?: string;
 };
 
 export type UpdateUserInput = Partial<CreateUserInput>;
 
-export type UserFormValues = CreateUserInput;
+export type UserFormValues = Required<
+	Omit<CreateUserInput, "businessPartnerId">
+> & {
+	businessPartnerId?: string;
+};
 
 export type UserFormField = keyof UserFormValues;
 
-export type UserPageMode = "list" | "create" | "edit";
-
-export type UpdateUserPayload = Partial<CreateUserPayload>;
+export type UserPageMode = "list" | "create" | "edit" | "view";
 
 export type UpdateUserVariables = {
 	userId: string;

@@ -1517,8 +1517,8 @@
 	.editable-card-form-grid,
 	.editable-card-value-grid {
 		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 1.25rem 1.5rem;
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+		gap: var(--space-4);
 		width: 100%;
 	}
 
@@ -1875,8 +1875,8 @@
 
 	@media (min-width: 1024px) {
 		.editable-card-value-grid {
-			grid-template-columns: repeat(4, minmax(0, 1fr));
-			column-gap: var(--space-6);
+			grid-template-columns: repeat(5, minmax(0, 1fr));
+			column-gap: var(--space-4);
 			row-gap: var(--space-5);
 		}
 
