@@ -124,7 +124,6 @@ export type BusinessPartnerAddressType =
 	| "WAREHOUSE";
 
 export type BPFormTab =
-	| "general"
 	| "organization"
 	| "contact"
 	| "address"
@@ -160,20 +159,6 @@ export type BusinessPartnerAddress = {
 	website?: string | null;
 
 	isDefault: boolean;
-	createdAt: string;
-	updatedAt: string;
-};
-
-export type BusinessPartnerContact = {
-	id: string;
-	businessPartnerId: string;
-	userId: string;
-	name: string;
-	phoneNumber: string | null;
-	email: string | null;
-	panNumber: string | null;
-	isOwner: boolean;
-	isMainContact: boolean;
 	createdAt: string;
 	updatedAt: string;
 };
@@ -365,22 +350,6 @@ export type BPAddressViewModel = {
 	isDefault: boolean;
 };
 
-export type BPContactViewModel = {
-	id: string;
-	userId: string;
-	businessPartnerId: string;
-
-	name: string;
-	email: string;
-	phoneNumber: string;
-	panNumber: string;
-
-	role: "Owner" | "Main Contact" | "Contact";
-
-	isOwner: boolean;
-	isMainContact: boolean;
-};
-
 export type BPBranchViewModel = {
 	id: string;
 	name: string;
@@ -479,14 +448,82 @@ export type BusinessPartnerAddressPayload = {
 	isDefault: boolean;
 };
 
-// BP People Types
+// BP People / Contact Types
 
 export type BusinessPartnerPersonPayload = {
 	userId: string;
 	isMainContact: boolean;
+	isDefault: boolean;
 };
 
 export type UpdateBusinessPartnerPeoplePayload = BusinessPartnerPersonPayload[];
+
+export type BusinessPartnerContact = {
+	id: string;
+	businessPartnerId: string;
+	userId: string;
+	name: string;
+	phoneNumber: string | null;
+	email: string | null;
+	panNumber: string | null;
+
+	isOwner: boolean;
+	isMainContact: boolean;
+	isDefault: boolean;
+
+	createdAt: string;
+	updatedAt: string;
+};
+
+export type BPContactViewModel = {
+	id: string;
+	userId: string;
+	businessPartnerId: string;
+
+	name: string;
+	email: string;
+	phoneNumber: string;
+	panNumber: string;
+
+	role: "Owner" | "Main Contact" | "Contact";
+
+	isOwner: boolean;
+	isMainContact: boolean;
+	isDefault: boolean;
+};
+
+export type BPPeopleSelection = {
+	userId: string;
+	name: string;
+	email: string;
+	isMainContact: boolean;
+	isDefault: boolean;
+};
+
+export type BusinessPartnerGeneralInfoFormState = {
+	internalId?: string;
+	vendorId?: string;
+	bpId?: string;
+	s4Id?: string;
+	bydId?: string;
+	c4cId?: string;
+	bpName: string;
+	bpShortName: string;
+	officeType: BusinessPartnerOfficeType | "";
+	bpType: BusinessPartnerType | "";
+	isKeyAccount: boolean;
+	isActive: boolean;
+	parentId: string;
+};
+
+export type BusinessPartnerOrganizationInfoFormState = {
+	legalTradeName: string;
+	gst: string;
+	panNumber: string;
+	vendorCode: string;
+	entityType: BusinessPartnerEntityType | "";
+	joinedOn: string;
+};
 
 export type RemoveBusinessPartnerContactVariables = {
 	businessPartnerId: string;
@@ -552,48 +589,14 @@ export type CreateBusinessPartnerPayload = {
 	isActive: boolean;
 
 	joinedOn: string | null;
-	parentId: string | null;
 
-	// Contact Information
-	mobileNumber: string | null;
-	email: string | null;
-	fax: string | null;
-	telephone: string | null;
-	// mainContactName: string | null;
-	// mainContactNumber: string | null;
+	parentId?: string | null;
+
+	mobileNumber?: string | null;
+	email?: string | null;
+	fax?: string | null;
+	telephone?: string | null;
 };
 
 export type UpdateBusinessPartnerPayload =
 	Partial<CreateBusinessPartnerPayload>;
-
-export type BusinessPartnerGeneralInfoFormState = {
-	internalId?: string;
-	vendorId?: string;
-	bpId?: string;
-	s4Id?: string;
-	bydId?: string;
-	c4cId?: string;
-	bpName: string;
-	bpShortName: string;
-	officeType: BusinessPartnerOfficeType | "";
-	bpType: BusinessPartnerType | "";
-	isKeyAccount: boolean;
-	isActive: boolean;
-	parentId: string;
-};
-
-export type BusinessPartnerOrganizationInfoFormState = {
-	legalTradeName: string;
-	gst: string;
-	panNumber: string;
-	vendorCode: string;
-	entityType: BusinessPartnerEntityType | "";
-	joinedOn: string;
-};
-
-export type BPPeopleSelection = {
-	userId: string;
-	name: string;
-	email?: string;
-	isMainContact: boolean;
-};

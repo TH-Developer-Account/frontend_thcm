@@ -125,11 +125,6 @@ const BPAddress = ({
 						onCancel={handleCancelAdd}
 					/>
 				)}
-				{addresses.length === 0 && !showCreateForm && (
-					<p className="bp-address-empty">
-						No addresses added yet. Use "Add Address" to create one.
-					</p>
-				)}
 			</div>
 		</div>
 	);

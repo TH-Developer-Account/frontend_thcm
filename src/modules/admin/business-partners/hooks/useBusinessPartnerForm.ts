@@ -21,7 +21,12 @@ import {
 	type BusinessPartnerPermissions,
 } from "../utils/bp.types";
 
-export type DetailFormSection = "general" | "organization" | "contact" | null;
+export type DetailFormSection =
+	| "general"
+	| "organization"
+	| "contact"
+	| "address"
+	| null;
 
 type UseBusinessPartnerFormOptions = {
 	/**
@@ -154,10 +159,7 @@ export const useBusinessPartnerForm = ({
 		if (partner) {
 			return mapBusinessPartnerToForm(partner);
 		}
-
-		return {
-			...EMPTY_BUSINESS_PARTNER_FORM,
-		};
+		return { ...EMPTY_BUSINESS_PARTNER_FORM };
 	});
 
 	const [initializedPartnerId, setInitializedPartnerId] = useState<
@@ -328,7 +330,7 @@ export const useBusinessPartnerForm = ({
 	 *   update only
 	 */
 	const handleSubmit = useCallback(
-		async (section: BPFormTab = "general") => {
+		async (section: BPFormTab = "organization") => {
 			if (isDetailMode || isSaving) {
 				return;
 			}
@@ -341,7 +343,7 @@ export const useBusinessPartnerForm = ({
 				// ---------------------------------------------------------------
 
 				if (!isEditMode) {
-					if (section !== "general") {
+					if (section !== "organization") {
 						throw new Error(
 							"Create the business partner before adding other information",
 						);
@@ -367,7 +369,7 @@ export const useBusinessPartnerForm = ({
 					return;
 				}
 
-				if (section !== "general" && section !== "organization") {
+				if (section !== "organization") {
 					return;
 				}
 
@@ -405,11 +407,10 @@ export const useBusinessPartnerForm = ({
 
 	const startEditing = useCallback(
 		(section: Exclude<DetailFormSection, null>) => {
-			if (!partner) {
-				return;
-			}
-
-			setForm(mapBusinessPartnerToForm(partner));
+			if (!partner) return;
+			const mapped = mapBusinessPartnerToForm(partner);
+			console.log("[startEditing] mapped form:", mapped); // <-- check this
+			setForm(mapped);
 			setEditingSection(section);
 			setValidationError(null);
 		},
@@ -514,7 +515,7 @@ export const useBusinessPartnerForm = ({
 	 * Once editing/viewing an existing BP, the parent can render all tabs.
 	 */
 	const availableTabs = useMemo<BPFormTab[] | undefined>(
-		() => (isEditMode ? undefined : ["general"]),
+		() => (isEditMode ? undefined : ["organization"]),
 		[isEditMode],
 	);
 

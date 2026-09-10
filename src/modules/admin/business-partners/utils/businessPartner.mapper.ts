@@ -74,17 +74,21 @@ export const mapContact = (
 	id: contact.id,
 	userId: contact.userId,
 	businessPartnerId: contact.businessPartnerId,
+
 	name: text(contact.name) || "Unnamed contact",
 	email: text(contact.email),
 	phoneNumber: text(contact.phoneNumber),
 	panNumber: text(contact.panNumber),
+
 	role: contact.isOwner
 		? "Owner"
 		: contact.isMainContact
 			? "Main Contact"
 			: "Contact",
+
 	isOwner: contact.isOwner,
 	isMainContact: contact.isMainContact,
+	isDefault: contact.isDefault,
 });
 
 export const mapBranch = (
@@ -171,16 +175,23 @@ export const mapAddBusinessPartnerContactPayload = (
 	{
 		userId: user.id,
 		isMainContact: false,
+		isDefault: false,
 	},
 ];
 
 export const mapPeopleToPayload = (
 	people: BPContactViewModel[],
-	mainContactUserId: string,
+	mainContactUserId?: string,
+	defaultContactUserId?: string,
 ): UpdateBusinessPartnerPeoplePayload =>
 	people.map((person) => ({
 		userId: person.userId,
-		isMainContact: person.userId === mainContactUserId,
+		isMainContact:
+			person.userId === mainContactUserId ||
+			(!mainContactUserId && person.isMainContact),
+		isDefault:
+			person.userId === defaultContactUserId ||
+			(!defaultContactUserId && person.isDefault),
 	}));
 
 // Address mapping
@@ -425,7 +436,7 @@ export const mapGeneralFormToCreatePayload = (
 		bpType: form.bpType,
 		isKeyAccount: form.isKeyAccount,
 		isActive: form.isActive,
-		parentId: nullableText(form.parentId),
+		// parentId: nullableText(form.parentId),
 
 		vendorId: null,
 		bpId: null,
@@ -439,10 +450,10 @@ export const mapGeneralFormToCreatePayload = (
 		entityType: null,
 		joinedOn: null,
 
-		mobileNumber: null,
-		email: null,
-		fax: null,
-		telephone: null,
+		// mobileNumber: null,
+		// email: null,
+		// fax: null,
+		// telephone: null,
 		// mainContactName: null,
 		// mainContactNumber: null,
 	};

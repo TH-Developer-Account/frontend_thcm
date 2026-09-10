@@ -15,23 +15,22 @@ import type {
 	BusinessPartnerPermissions,
 	BusinessPartnerViewModel,
 } from "../utils/bp.types";
-
+import BPContact, { BPContactForm } from "./BPContact";
 import BPAddress from "./BPAddress";
 import BPBranches from "./BPBranches";
-import BPContact, { BPContactForm } from "./BPContact";
-import { BPGeneralInfoForm } from "./BPGenInfo";
-import BPOrganization, { BPOrganizationForm } from "./BPOrganization";
+// import { BPGeneralInfoForm } from "./BPGenInfo";
+import { BPOrganizationForm } from "./BPOrganization";
 import BPPeople from "./BPPeople";
 
 const bpTabs = [
-	{ value: "general", label: "General", controlsId: "bp-tab-general-panel" },
-	{ value: "contact", label: "Contact", controlsId: "bp-tab-contact-panel" },
+	// { value: "general", label: "General", controlsId: "bp-tab-general-panel" },
 	{
 		value: "organization",
 		label: "Organization",
 		shortLabel: "Org",
 		controlsId: "bp-tab-organization-panel",
 	},
+	{ value: "contact", label: "Contact", controlsId: "bp-tab-contact-panel" },
 	{ value: "address", label: "Address", controlsId: "bp-tab-address-panel" },
 	{
 		value: "branches",
@@ -48,13 +47,14 @@ type BPTabsProps = {
 	permissions: BusinessPartnerPermissions;
 };
 
-const isBPTab = (value: string): value is BPTab =>
-	bpTabs.some((tab) => tab.value === value);
+// const isBPTab = (value: string): value is BPTab =>
+// 	bpTabs.some((tab) => tab.value === value);
 
 const SECTION_LABELS: Record<Exclude<DetailFormSection, null>, string> = {
 	general: "General Information",
 	organization: "Organization Information",
 	contact: "Contact Information",
+	address: "Address Information",
 };
 
 const isOrgDataEmpty = (view: BusinessPartnerViewModel): boolean =>
@@ -74,7 +74,7 @@ const isContactDataEmpty = (view: BusinessPartnerViewModel): boolean =>
 export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 	const navigate = useNavigate();
 
-	const [activeTab, setActiveTab] = useState<BPTab>("general");
+	const [activeTab, setActiveTab] = useState<BPTab>("organization");
 	const activeTabId = `bp-tab-${activeTab}`;
 	const activePanelId = `${activeTabId}-panel`;
 
@@ -82,6 +82,9 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 	// up here so the trigger button can live next to the other tab
 	// action rows (Edit General/Org/Contact, Add Branch).
 	const [isAddingAddress, setIsAddingAddress] = useState(false);
+
+	// Controls the "Add Contact" search-or-manual panel on the Contact tab.
+	const [isAddingContact, setIsAddingContact] = useState(false);
 
 	// Same lifted pattern for the "Add People" search-and-attach panel.
 	const [isAddingPeople, setIsAddingPeople] = useState(false);
@@ -121,7 +124,22 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 			`${businessPartnerPaths.create()}?parentId=${encodeURIComponent(view.partner.id)}`,
 		);
 	};
-
+	const canUpdateSection = (
+		section: Exclude<DetailFormSection, null>,
+	): boolean => {
+		switch (section) {
+			case "general":
+				return permissions.general.canUpdateGeneral;
+			case "organization":
+				return permissions.organization.canUpdateOrganization;
+			case "contact":
+				return permissions.contact.canUpdateContact;
+			case "address":
+				return permissions.address.canUpdateAddress;
+			default:
+				return false;
+		}
+	};
 	const renderDetailSection = (
 		section: Exclude<DetailFormSection, null>,
 		readView: React.ReactNode,
@@ -134,7 +152,7 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 				<div className="bp-gen-content">
 					{readView}
 
-					{permissions.canUpdateBusinessPartner && (
+					{canUpdateSection(section) && (
 						<div className="bp-gen-content-actions">
 							<Button
 								type="button"
@@ -187,7 +205,6 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 			</div>
 		);
 	};
-
 	return (
 		<>
 			<FilterTabs
@@ -206,7 +223,7 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 				role="tabpanel"
 				tabIndex={0}
 			>
-				{activeTab === "general" &&
+				{/* {activeTab === "general" &&
 					renderDetailSection(
 						"general",
 						<div className="detail-section">
@@ -235,34 +252,145 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 							form={detailForm.form}
 							onChange={detailForm.handleChange}
 						/>,
-					)}
+					)} */}
 
-				{activeTab === "contact" &&
-					renderDetailSection(
-						"contact",
-						<BPContact
-							data={{
-								...view.contact,
-								mobile_number: view.contact.mobileNumber,
-							}}
-							onNavigateTab={(tab) => {
-								const normalizedTab = tab.toLowerCase().replace(/\s+/g, "-");
+				{activeTab === "contact" && (
+					<>
+						{renderDetailSection(
+							"contact",
+							<div className="detail-section">
+								<div className="detail-grid">
+									<div className="detail-row">
+										<p className="detail-label">Mobile Number</p>
+										<p className="detail-value">
+											{view.partner.mobileNumber || "--"}
+										</p>
+									</div>
+									<div className="detail-row">
+										<p className="detail-label">Email</p>
+										<p className="detail-value">{view.partner.email || "--"}</p>
+									</div>
+									<div className="detail-row">
+										<p className="detail-label">Telephone</p>
+										<p className="detail-value">
+											{view.partner.telephone || "--"}
+										</p>
+									</div>
+									<div className="detail-row">
+										<p className="detail-label">Fax</p>
+										<p className="detail-value">{view.partner.fax || "--"}</p>
+									</div>
+								</div>
+							</div>,
+							<BPContactForm
+								form={detailForm.form}
+								onChange={detailForm.handleChange}
+							/>,
+						)}
 
-								if (isBPTab(normalizedTab)) {
-									setActiveTab(normalizedTab);
-								}
-							}}
-						/>,
-						<BPContactForm
-							form={detailForm.form}
-							onChange={detailForm.handleChange}
-						/>,
-					)}
+						{/* Separate section: the contacts list (search-existing
+						    or add-manually), independent of whether the
+						    edit-info form above is open. */}
+						<div className="bp-gen-content">
+							<BPContact
+								businessPartnerId={view.partner.id}
+								contacts={view.people}
+								permissions={permissions.people}
+								isAdding={isAddingContact}
+								onCancelAdd={() => setIsAddingContact(false)}
+								onAdded={() => setIsAddingContact(false)}
+							/>
+
+							{permissions.people.canAddPeople && (
+								<div className="bp-gen-content-actions">
+									<Button
+										type="button"
+										text="Add Contact"
+										Icon={Plus}
+										iconPosition="left"
+										appearance="standard"
+										variant="outline"
+										size="sm"
+										onClick={() => setIsAddingContact(true)}
+										disabled={isAddingContact}
+									/>
+								</div>
+							)}
+						</div>
+					</>
+				)}
 
 				{activeTab === "organization" &&
 					renderDetailSection(
 						"organization",
-						<BPOrganization data={view.organization} />,
+						<div className="detail-section">
+							<div className="detail-grid">
+								<div className="detail-row">
+									<p className="detail-label">Legal Trade Name</p>
+									<p className="detail-value">
+										{view.partner.legalTradeName || "--"}
+									</p>
+								</div>
+								<div className="detail-row">
+									<p className="detail-label">Entity Type</p>
+									<p className="detail-value">
+										{view.partner.entityType || "--"}
+									</p>
+								</div>
+								<div className="detail-row">
+									<p className="detail-label">Joined On</p>
+									<p className="detail-value">
+										{view.partner.joinedOn || "--"}
+									</p>
+								</div>
+								<div className="detail-row">
+									<p className="detail-label">Vendor ID</p>
+									<p className="detail-value">
+										{view.partner.vendorId || "--"}
+									</p>
+								</div>
+								<div className="detail-row">
+									<p className="detail-label">Vendor Code</p>
+									<p className="detail-value">
+										{view.partner.vendorCode || "--"}
+									</p>
+								</div>
+								<div className="detail-row">
+									<p className="detail-label">S4 ID</p>
+									<p className="detail-value">{view.partner.s4Id || "--"}</p>
+								</div>
+								<div className="detail-row">
+									<p className="detail-label">BYD ID</p>
+									<p className="detail-value">{view.partner.bydId || "--"}</p>
+								</div>
+								<div className="detail-row">
+									<p className="detail-label">C4C ID</p>
+									<p className="detail-value">{view.partner.c4cId || "--"}</p>
+								</div>
+								<div className="detail-row">
+									<p className="detail-label">GST Number</p>
+									<p className="detail-value">{view.partner.gst || "--"}</p>
+								</div>
+								<div className="detail-row">
+									<p className="detail-label">PAN Number</p>
+									<p className="detail-value">
+										{view.partner.panNumber || "--"}
+									</p>
+								</div>
+								<div className="detail-row">
+									<p className="detail-label">Key Account</p>
+									<p className="detail-value">
+										{view.partner.isKeyAccount ? "Yes" : "No"}
+									</p>
+								</div>
+								<div className="detail-row">
+									<p className="detail-label">Active</p>
+									<p className="detail-value">
+										{view.partner.isActive ? "Yes" : "No"}
+									</p>
+								</div>
+							</div>
+						</div>,
 						<BPOrganizationForm
 							form={detailForm.form}
 							onChange={detailForm.handleChange}
@@ -271,29 +399,61 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 
 				{activeTab === "address" && (
 					<div className="bp-gen-content">
-						<BPAddress
-							businessPartnerId={view.partner.id}
-							addresses={view.addresses}
-							permissions={permissions.address}
-							isAdding={isAddingAddress}
-							onCancelAdd={() => setIsAddingAddress(false)}
-							onAdded={() => setIsAddingAddress(false)}
-						/>
+						{view.addresses.length === 0 && !isAddingAddress ? (
+							<div className="bp-address-empty-state">
+								<div className="bp-address-empty-content">
+									<p className="bp-address-empty-title">
+										No addresses added yet
+									</p>
 
-						{permissions.address.canCreateAddress && (
-							<div className="bp-gen-content-actions">
-								<Button
-									type="button"
-									text="Add Address"
-									Icon={Plus}
-									iconPosition="left"
-									appearance="standard"
-									variant="outline"
-									size="sm"
-									onClick={() => setIsAddingAddress(true)}
-									disabled={isAddingAddress}
-								/>
+									<p className="bp-address-empty-description">
+										Add an address to keep the business partner's location
+										information up to date.
+									</p>
+
+									{permissions.address.canCreateAddress && (
+										<div className="bp-gen-content-actions">
+											<Button
+												type="button"
+												text="Add Address"
+												Icon={Plus}
+												iconPosition="left"
+												appearance="standard"
+												variant="outline"
+												size="sm"
+												onClick={() => setIsAddingAddress(true)}
+											/>
+										</div>
+									)}
+								</div>
 							</div>
+						) : (
+							<>
+								<BPAddress
+									businessPartnerId={view.partner.id}
+									addresses={view.addresses}
+									permissions={permissions.address}
+									isAdding={isAddingAddress}
+									onCancelAdd={() => setIsAddingAddress(false)}
+									onAdded={() => setIsAddingAddress(false)}
+								/>
+
+								{permissions.address.canCreateAddress && (
+									<div className="bp-gen-content-actions">
+										<Button
+											type="button"
+											text="Add Address"
+											Icon={Plus}
+											iconPosition="left"
+											appearance="standard"
+											variant="outline"
+											size="sm"
+											onClick={() => setIsAddingAddress(true)}
+											disabled={isAddingAddress}
+										/>
+									</div>
+								)}
+							</>
 						)}
 					</div>
 				)}

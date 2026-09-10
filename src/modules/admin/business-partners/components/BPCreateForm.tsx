@@ -5,7 +5,7 @@ import Card from "../../../../components/common/Card";
 import { FilterTabs } from "../../../../components/ui/FilterTabs";
 
 import type { BPFormTab, BusinessPartnerFormState } from "../utils/bp.types";
-import { BPGeneralInfoForm } from "./BPGenInfo";
+
 import { BPOrganizationForm } from "./BPOrganization";
 
 type FormTabDef = {
@@ -17,12 +17,6 @@ type FormTabDef = {
 
 const formTabs: FormTabDef[] = [
 	{
-		value: "general",
-		label: "General Information",
-		shortLabel: "General",
-		controlsId: "bp-form-tab-general-panel",
-	},
-	{
 		value: "organization",
 		label: "Organization Information",
 		shortLabel: "Organization",
@@ -30,7 +24,7 @@ const formTabs: FormTabDef[] = [
 	},
 	{
 		value: "contact",
-		label: "Contact & Main Contact",
+		label: "Contact",
 		shortLabel: "Contact",
 		controlsId: "bp-form-tab-contact-panel",
 	},
@@ -51,11 +45,9 @@ const formTabs: FormTabDef[] = [
 	},
 ];
 
-// Tabs whose save button goes through the single /bp create-or-patch flow.
-const BP_RESOURCE_TABS: BPFormTab[] = ["general", "organization"];
+const BP_RESOURCE_TABS: BPFormTab[] = ["organization"];
 
 const SAVE_LABELS: Partial<Record<BPFormTab, string>> = {
-	general: "General Information",
 	organization: "Organization Information",
 };
 
@@ -65,14 +57,16 @@ type BPCreateFormProps = {
 	isSaving: boolean;
 	canSubmit: boolean;
 	error?: string | null;
-	/** When set (pre-creation), only these tabs are shown. */
 	availableTabs?: BPFormTab[];
+
 	onChange: <K extends keyof BusinessPartnerFormState>(
 		key: K,
 		value: BusinessPartnerFormState[K],
 	) => void;
+
 	onSubmit: (section: BPFormTab) => void;
 	onCancel: () => void;
+
 	contactForm?: ReactNode;
 	addressForm?: ReactNode;
 	branchesForm?: ReactNode;
@@ -94,7 +88,8 @@ const BPCreateForm = ({
 	branchesForm,
 	peopleForm,
 }: BPCreateFormProps) => {
-	const [activeTab, setActiveTab] = useState<BPFormTab>("general");
+	const [activeTab, setActiveTab] = useState<BPFormTab>("organization");
+
 	const activeTabId = `bp-form-tab-${activeTab}`;
 	const activePanelId = `${activeTabId}-panel`;
 
@@ -105,19 +100,22 @@ const BPCreateForm = ({
 	const sectionForms: Partial<Record<BPFormTab, ReactNode>> = {
 		contact: contactForm ?? (
 			<div className="bp-create-form-empty">
-				Contact and main contact form will appear here.
+				Contact information will appear here.
 			</div>
 		),
+
 		address: addressForm ?? (
 			<div className="bp-create-form-empty">
 				Create the business partner first to add addresses.
 			</div>
 		),
+
 		branches: branchesForm ?? (
 			<div className="bp-create-form-empty">
 				Create the business partner first to add branches.
 			</div>
 		),
+
 		people: peopleForm ?? (
 			<div className="bp-create-form-empty">
 				Create the business partner first to add people.
@@ -128,18 +126,19 @@ const BPCreateForm = ({
 	const isBpResourceTab = BP_RESOURCE_TABS.includes(activeTab);
 
 	const submitButtonText = isSaving
-		? activeTab === "general" && !isEditMode
-			? "Creating..."
-			: "Saving..."
-		: activeTab === "general" && !isEditMode
-			? "Create Business Partner"
-			: `Save ${SAVE_LABELS[activeTab] ?? ""}`;
+		? "Saving..."
+		: isEditMode
+			? `Save ${SAVE_LABELS[activeTab] ?? ""}`
+			: "Create Business Partner";
 
 	return (
 		<form
 			onSubmit={(event) => {
 				event.preventDefault();
-				if (isBpResourceTab) onSubmit(activeTab);
+
+				if (isBpResourceTab) {
+					onSubmit(activeTab);
+				}
 			}}
 		>
 			<Card
@@ -182,10 +181,6 @@ const BPCreateForm = ({
 						role="tabpanel"
 						tabIndex={0}
 					>
-						{activeTab === "general" && (
-							<BPGeneralInfoForm form={form} onChange={onChange} />
-						)}
-
 						{activeTab === "organization" && (
 							<BPOrganizationForm form={form} onChange={onChange} />
 						)}

@@ -470,8 +470,9 @@ export const useBPAddPeopleForm = (
 					{
 						userId: user.value,
 						name: user.label,
-						email: user.email,
+						email: user.email ?? "",
 						isMainContact: false,
+						isDefault: false,
 					},
 				];
 			});
@@ -505,6 +506,7 @@ export const useBPAddPeopleForm = (
 			selected.map((entry) => ({
 				userId: entry.userId,
 				isMainContact: entry.isMainContact,
+				isDefault: entry.isDefault,
 			})),
 		[selected],
 	);
