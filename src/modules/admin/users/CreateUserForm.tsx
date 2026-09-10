@@ -237,14 +237,13 @@ export function CreateUserForm({ controller }: UserFormProps) {
 			),
 		},
 
-		// Always present so the Active/Inactive badge still shows up in
-		// display mode; only actually editable during create. Status changes
-		// for an existing user go through the dedicated block/unblock action
-		// instead of living in this form.
+		// Show status for an existing user only. New users are active by
+		// default, so creation does not need a status control.
 		{
 			id: "status-flags",
 			label: "Status",
-			visibleInEdit: isCreateMode,
+			visibleInDisplay: isDetailMode,
+			visibleInEdit: isDetailMode,
 			displayValue: (
 				<div className="flex items-center gap-2">
 					<Badge variant={displayValues.isActive ? "success" : "secondary"}>
@@ -253,7 +252,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
 				</div>
 			),
 			render: ({ draft, disabled, setFieldValue }) => (
-				<div>
+				<div className="flex min-h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-4 py-2">
 					<Checkbox
 						name="isActive"
 						label="Active"
@@ -270,58 +269,86 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		{
 			name: "region",
 			label: "Region",
+			required: true,
+			error: fieldErrors.region,
 		},
 		{
 			name: "address",
 			label: "Address",
+			required: true,
+			error: fieldErrors.address,
 		},
 		{
 			name: "zone",
 			label: "Zone",
+			required: true,
+			error: fieldErrors.zone,
 		},
 		{
 			name: "branch",
 			label: "Branch",
+			required: true,
+			error: fieldErrors.branch,
 		},
 		{
 			name: "department",
 			label: "Department",
+			required: true,
+			error: fieldErrors.department,
 		},
 		{
 			name: "role",
 			label: "Role",
+			required: true,
+			error: fieldErrors.role,
 		},
 		{
 			name: "designation",
 			label: "Designation",
+			required: true,
+			error: fieldErrors.designation,
 		},
 		{
 			name: "vertical",
 			label: "Vertical",
+			required: true,
+			error: fieldErrors.vertical,
 		},
 		{
 			name: "managerCode1",
 			label: "Manager Code 1",
+			required: true,
+			error: fieldErrors.managerCode1,
 		},
 		{
 			name: "managerCode2",
 			label: "Manager Code 2",
+			required: true,
+			error: fieldErrors.managerCode2,
 		},
 		{
 			name: "bydId",
 			label: "BYD ID",
+			required: true,
+			error: fieldErrors.bydId,
 		},
 		{
 			name: "s4Id",
 			label: "S4 ID",
+			required: true,
+			error: fieldErrors.s4Id,
 		},
 		{
 			name: "tallyId",
 			label: "Tally ID",
+			required: true,
+			error: fieldErrors.tallyId,
 		},
 		{
 			name: "c4cId",
 			label: "C4C ID",
+			required: true,
+			error: fieldErrors.c4cId,
 		},
 	];
 

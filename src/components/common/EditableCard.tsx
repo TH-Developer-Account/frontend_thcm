@@ -33,13 +33,6 @@ export type EditableCardField<T extends Record<string, unknown>> = {
 };
 
 export type EditableCardProps<T extends Record<string, unknown>> = {
-	/**
-	 * Static content, or a function of the card's current (internal)
-	 * editing state. Use the function form when part of the title needs to
-	 * change appearance while editing — e.g. showing an avatar-upload
-	 * control only while the card is actually in edit mode — since
-	 * isEditing itself is not exposed any other way.
-	 */
 	title?: ReactNode | ((isEditing: boolean) => ReactNode);
 	subtitle?: ReactNode;
 	header?: ReactNode;
@@ -55,14 +48,6 @@ export type EditableCardProps<T extends Record<string, unknown>> = {
 	editSubtitle?: ReactNode;
 	onSubmit: (value: T) => void | boolean | Promise<void | boolean>;
 	onEditStart?: () => T;
-	/**
-	 * Called when the user clicks Cancel while editing (or presses Escape,
-	 * if that's ever wired up). Use this to drive any *route-level*
-	 * behavior — e.g. navigating back to a list or a view page — since
-	 * this component only manages its own local isEditing/draft state and
-	 * has no way to know what "cancel" should mean for the page it's on.
-	 * Optional: if omitted, cancelling just resets local state as before.
-	 */
 	onCancel?: () => void;
 	className?: string;
 };
@@ -140,10 +125,6 @@ export default function EditableCard<T extends Record<string, unknown>>({
 	const cancelEditing = () => {
 		setDraft(value);
 		setIsEditing(false);
-		// Let the parent react to cancellation (e.g. navigate away). This
-		// runs in addition to the local reset above, not instead of it, so
-		// EditableCard keeps working sensibly even if a caller doesn't pass
-		// onCancel.
 		onCancel?.();
 	};
 
@@ -243,6 +224,7 @@ export default function EditableCard<T extends Record<string, unknown>>({
 				<form
 					id={formId}
 					className="editable-card-form"
+					noValidate
 					onSubmit={handleSubmit}
 				>
 					<div className="editable-card-value-grid">
