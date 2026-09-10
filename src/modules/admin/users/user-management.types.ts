@@ -13,6 +13,8 @@ export type UserStatusTab = "All" | UserStatus;
 // frontend convention — doesn't need to match Prisma, mapUser() does that translation.
 export type User = {
 	id: string;
+	/** Persisted profile-image URL returned by the API. */
+	avatar?: string;
 	bydId: string;
 	s4Id: string;
 	tallyId: string;
@@ -55,6 +57,8 @@ export type User = {
 // camelCase. Do not blanket-convert this.
 export type UserResponse = {
 	id: string;
+	/** Persisted profile-image URL returned by the API. */
+	avatar?: string | null;
 	first_name: string;
 	last_name: string;
 	email: string;
@@ -129,6 +133,8 @@ export type CreateUserPayload = {
 export type UpdateUserPayload = Partial<Omit<CreateUserPayload, "workspaceId">>;
 
 export type CreateUserInput = {
+	/** Binary image selected through FileUploadField. */
+	avatar?: File | null;
 	firstName: string;
 	lastName: string;
 	password?: string;
@@ -168,7 +174,7 @@ export type UserFormValues = Required<
 
 export type UserFormField = keyof UserFormValues;
 
-export type UserPageMode = "list" | "create" | "edit" | "view";
+export type UserPageMode = "list" | "create" | "view";
 
 export type UpdateUserVariables = {
 	userId: string;

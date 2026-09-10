@@ -7,7 +7,6 @@ import EditableCard, {
 import Checkbox from "../../../components/forms/Checkbox";
 import SelectInput from "../../../components/forms/SelectInput";
 import DatePickerInput from "../../../components/common/DatePickerInput";
-import Button from "../../../components/common/Button";
 import type {
 	GradeOption,
 	UserFormField,
@@ -66,28 +65,37 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		isUpdating,
 		selectedUser,
 		isLoadingSelectedUser,
+		startInEditMode,
 		handleFormChange,
 		handleSubmitUser,
-		handleStartEdit,
+		handleCancelForm,
 	} = controller;
 
-	const isEditMode = pageMode === "edit";
-	const isViewMode = pageMode === "view";
-	const isFormMode = pageMode === "create" || pageMode === "edit";
+	// "view" is now the single route for both looking at and editing an
+	// existing user — EditableCard owns the actual display/edit toggle
+	// internally. "create" always renders its cards already in edit mode.
+	const isCreateMode = pageMode === "create";
+	const isDetailMode = pageMode === "view";
 	const isSaving = isCreating || isUpdating;
 
-	const isReadOnly = isViewMode;
+	// Cancelling out of "create" should return to the list. Cancelling out
+	// of editing an existing user just drops back to viewing them — which,
+	// since edit/view now share one route, EditableCard already does on its
+	// own by resetting local state. We only need to step in for "create".
+	const handleCancelEditing = () => {
+		if (isCreateMode) {
+			handleCancelForm();
+		}
+	};
 
 	const [profileImage, setProfileImage] = useState<FileUploadValue | null>(
 		null,
 	);
 
 	const displayValues: FormValues =
-		(isViewMode || isEditMode) && selectedUser
-			? mapUserToForm(selectedUser)
-			: form;
+		isDetailMode && selectedUser ? mapUserToForm(selectedUser) : form;
 
-	if ((isViewMode || isEditMode) && isLoadingSelectedUser && !selectedUser) {
+	if (isDetailMode && isLoadingSelectedUser && !selectedUser) {
 		return (
 			<section className="profile-page" aria-label="User profile">
 				<p>Loading user…</p>
@@ -95,7 +103,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		);
 	}
 
-	if ((isViewMode || isEditMode) && !isLoadingSelectedUser && !selectedUser) {
+	if (isDetailMode && !isLoadingSelectedUser && !selectedUser) {
 		return (
 			<section className="profile-page" aria-label="User profile">
 				<p>User not found.</p>
@@ -136,10 +144,10 @@ export function CreateUserForm({ controller }: UserFormProps) {
 			required: true,
 			error: fieldErrors.phoneNumber,
 		},
-		// Password: create only. Not shown in edit or view — an edit-mode
-		// password reset should go through a dedicated "reset password"
-		// action rather than living in this form.
-		...(pageMode === "create"
+		// Password: create only. Not shown for an existing user — an
+		// edit-mode password reset should go through a dedicated "reset
+		// password" action rather than living in this form.
+		...(isCreateMode
 			? [
 					{
 						name: "password" as const,
@@ -220,42 +228,42 @@ export function CreateUserForm({ controller }: UserFormProps) {
 					}
 					placeholder="Select joining date"
 					disabled={disabled}
-					disablePast={!isEditMode}
+					// Only restrict to future dates while creating a brand new
+					// user. Editing an existing user needs to allow their
+					// actual (often past) joining date.
+					disablePast={isCreateMode}
 					error={fieldErrors.joinedOn}
 				/>
 			),
 		},
 
-		...(isEditMode
-			? []
-			: [
-					{
-						id: "status-flags",
-						label: "Status",
-						displayValue: (
-							<div className="flex items-center gap-2">
-								<Badge
-									variant={displayValues.isActive ? "success" : "secondary"}
-								>
-									{displayValues.isActive ? "Active" : "Inactive"}
-								</Badge>
-							</div>
-						),
-						render: ({ draft, disabled, setFieldValue }) => (
-							<div className="flex items-center gap-4">
-								<Checkbox
-									name="isActive"
-									label="Active"
-									checked={draft.isActive}
-									disabled={disabled}
-									onChange={(checked) =>
-										setFieldValue("isActive", Boolean(checked))
-									}
-								/>
-							</div>
-						),
-					} as EditableCardField<FormValues>,
-				]),
+		// Always present so the Active/Inactive badge still shows up in
+		// display mode; only actually editable during create. Status changes
+		// for an existing user go through the dedicated block/unblock action
+		// instead of living in this form.
+		{
+			id: "status-flags",
+			label: "Status",
+			visibleInEdit: isCreateMode,
+			displayValue: (
+				<div className="flex items-center gap-2">
+					<Badge variant={displayValues.isActive ? "success" : "secondary"}>
+						{displayValues.isActive ? "Active" : "Inactive"}
+					</Badge>
+				</div>
+			),
+			render: ({ draft, disabled, setFieldValue }) => (
+				<div>
+					<Checkbox
+						name="isActive"
+						label="Active"
+						checked={draft.isActive}
+						disabled={disabled}
+						onChange={(checked) => setFieldValue("isActive", Boolean(checked))}
+					/>
+				</div>
+			),
+		},
 	];
 
 	const organizationFields: EditableCardField<FormValues>[] = [
@@ -317,16 +325,19 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		},
 	];
 
-	const saveSection = (values: FormValues) => {
-		(Object.keys(values) as Array<keyof FormValues>).forEach((key) => {
-			handleFormChange(key as UserFormField, values[key] as never);
-		});
+	const saveSection = async (values: FormValues) => {
+		const valuesWithAvatar: FormValues = {
+			...values,
+			avatar: profileImage?.file ?? null,
+		};
 
-		// Pass values directly instead of relying on `form` state having
-		// committed by the time this runs — setState above is async, so
-		// handleSubmitUser() with no args would read the previous render's
-		// (stale) form and could validate/submit against outdated data.
-		return handleSubmitUser(values);
+		(Object.keys(valuesWithAvatar) as Array<keyof FormValues>).forEach(
+			(key) => {
+				handleFormChange(key as UserFormField, valuesWithAvatar[key] as never);
+			},
+		);
+
+		return handleSubmitUser(valuesWithAvatar);
 	};
 
 	const fullName =
@@ -334,15 +345,17 @@ export function CreateUserForm({ controller }: UserFormProps) {
 			.filter(Boolean)
 			.join(" ") || "New User";
 
-	// Single header used for both editing and read-only display. The avatar
-	// upload overlay only shows when the section is actually editable.
-	const profileHeader = (
+	// Single header used for both editing and read-only display. `editing`
+	// comes from EditableCard itself (via the function form of `title`),
+	// since that's the only place the current isEditing state actually
+	// lives now that display/edit share one route.
+	const renderProfileHeader = (editing: boolean) => (
 		<div className="profile-summary">
 			<div
 				className={
-					isReadOnly
-						? "profile-summary-avatar"
-						: "profile-summary-avatar profile-summary-avatar-editable"
+					editing
+						? "profile-summary-avatar profile-summary-avatar-editable"
+						: "profile-summary-avatar"
 				}
 			>
 				<Avatar
@@ -352,7 +365,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
 					size="lg"
 				/>
 
-				{!isReadOnly ? (
+				{editing ? (
 					<>
 						<FileUploadField
 							kind="image"
@@ -389,6 +402,12 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		</div>
 	);
 
+	// Create always starts (and stays) in edit mode. On the view route,
+	// EditableCard starts read-only unless the person arrived via the
+	// table's "Edit User" action (startInEditMode), which opens both cards
+	// straight into editing rather than making them click Edit again.
+	const defaultEditing = isCreateMode || startInEditMode;
+
 	return (
 		<section className="profile-page" aria-label="User profile">
 			<div className="profile-page-sections">
@@ -398,30 +417,19 @@ export function CreateUserForm({ controller }: UserFormProps) {
 					fields={basicInfoFields}
 					saving={isSaving}
 					onSubmit={saveSection}
-					title={profileHeader}
+					onCancel={handleCancelEditing}
+					title={renderProfileHeader}
 					className="[&>div:first-child]:border-b-0"
-					editable={!isReadOnly}
-					defaultEditing={isFormMode}
-					titleAction={
-						isViewMode && selectedUser ? (
-							<Button
-								type="button"
-								text="Edit User"
-								Icon={Pencil}
-								iconPosition="left"
-								variant="secondary"
-								size="sm"
-								onClick={() => handleStartEdit(selectedUser)}
-							/>
-						) : undefined
-					}
+					// Only the view route needs its own Edit button — create
+					// is already open for editing with nothing to toggle.
+					editable={isDetailMode}
+					defaultEditing={defaultEditing}
 				/>
 
-				{/* Organization Details only appears once the user actually exists
-				    — i.e. after Basic Information has been saved once (pageMode
-				    becomes "edit" via the post-create redirect) or when viewing.
-				    Plain "create" mode never had a user id to save this against. */}
-				{pageMode !== "create" ? (
+				{/* Organization Details only appears once the user actually
+				    exists (view mode) — plain "create" never had a user id to
+				    save this against yet. */}
+				{!isCreateMode ? (
 					<EditableCard
 						key={`organization-${selectedUser?.id ?? "create"}`}
 						title="Organization Details"
@@ -430,8 +438,9 @@ export function CreateUserForm({ controller }: UserFormProps) {
 						fields={organizationFields}
 						saving={isSaving}
 						onSubmit={saveSection}
-						editable={!isReadOnly}
-						defaultEditing={isFormMode}
+						onCancel={handleCancelEditing}
+						editable={isDetailMode}
+						defaultEditing={defaultEditing}
 					/>
 				) : null}
 			</div>

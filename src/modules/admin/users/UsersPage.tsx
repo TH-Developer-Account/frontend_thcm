@@ -8,7 +8,6 @@ import { useUsersData } from "./useUsersData";
 const PAGE_TITLES: Record<string, string> = {
 	list: "User Management",
 	create: "Create User",
-	edit: "Edit User",
 	view: "User Details",
 };
 

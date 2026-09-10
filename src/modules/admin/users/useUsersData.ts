@@ -1,4 +1,9 @@
-import { useMatch, useNavigate, useParams } from "react-router-dom";
+import {
+	useLocation,
+	useMatch,
+	useNavigate,
+	useParams,
+} from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -101,25 +106,31 @@ export function useUsersData() {
 	// pageMode now derives from the route, not local state:
 	// /admin/users            -> list
 	// /admin/users/create     -> create
-	// /admin/users/:id        -> view
-	// /admin/users/:id/edit   -> edit
+	// /admin/users/:id        -> view (this is now also where editing happens —
+	//                            EditableCard toggles its own display/edit UI,
+	//                            there is no separate "/edit" route anymore)
 	const isCreateRoute = Boolean(useMatch("/admin/users/create"));
-	const isEditRoute = Boolean(useMatch("/admin/users/:id/edit"));
+	const location = useLocation();
 
-	// drop the useLocation import/usage — no longer needed for this
 	const pageMode: UserPageMode = isCreateRoute
 		? "create"
-		: isEditRoute
-			? "edit"
-			: userId
-				? "view"
-				: "list";
+		: userId
+			? "view"
+			: "list";
+
+	// Row actions like "Edit User" in the table still want to land the user
+	// directly in edit mode rather than making them click Edit again once
+	// the page loads. Since there's no dedicated route for that anymore, we
+	// pass it as router state instead — see handleStartEdit below.
+	const startInEditMode =
+		pageMode === "view" &&
+		Boolean((location.state as { openEdit?: boolean } | null)?.openEdit);
 
 	// Fetches the routed user for view/edit. Falls back to the already-loaded
 	// list row (if present) while the detail request is in flight, so
 	// navigating from the table doesn't show a blank form/panel.
 	const userDetailQuery = useUserDetailQuery(
-		pageMode === "view" || pageMode === "edit" ? userId : undefined,
+		pageMode === "view" ? userId : undefined,
 	);
 
 	const usersQuery = useQuery({
@@ -278,7 +289,7 @@ export function useUsersData() {
 		navigate("/admin/users/create");
 	};
 	const handleStartEdit = (user: User) =>
-		navigate(`/admin/users/${user.id}/edit`);
+		navigate(`/admin/users/${user.id}`, { state: { openEdit: true } });
 	const handleStartView = (user: User) => navigate(`/admin/users/${user.id}`);
 	const handleCancelForm = () => navigate("/admin/users");
 
@@ -291,7 +302,7 @@ export function useUsersData() {
 			setFieldErrors({});
 		}
 
-		if (pageMode === "edit" && selectedUser) {
+		if (pageMode === "view" && selectedUser) {
 			setForm(mapUserToForm(selectedUser));
 			setFormError(null);
 			setFieldErrors({});
@@ -348,7 +359,7 @@ export function useUsersData() {
 		try {
 			let response;
 
-			if (pageMode === "edit" && selectedUser) {
+			if (pageMode === "view" && selectedUser) {
 				const { password, ...rest } = values;
 				response = await handleUpdateUser({
 					userId: selectedUser.id,
@@ -361,24 +372,28 @@ export function useUsersData() {
 			showSuccessToast(
 				showToast,
 				response?.message ??
-					(pageMode === "edit"
+					(pageMode === "view"
 						? "User updated successfully."
 						: "User created successfully."),
 			);
 
-			// On create, don't bounce back to the list — move into edit mode for
-			// the just-created user so the Organization Details card becomes
-			// available as a second step. Falls back to the list if the API
-			// response didn't include an id to route to.
+			// On create, don't bounce back to the list — move straight into
+			// viewing (which doubles as editing) the just-created user so the
+			// Organization Details card becomes available as a second step.
+			// Falls back to the list if the API response didn't include an id.
+			//
+			// On view (i.e. updating an existing user), stay put: the API
+			// call already ran above, and EditableCard flips itself back to
+			// display mode on a successful submit — there's no reason to
+			// navigate away, and the other card (if it's also mid-edit)
+			// should be left exactly as it was.
 			if (pageMode === "create") {
 				const newUserId = extractCreatedUserId(response);
 				if (newUserId) {
-					navigate(`/admin/users/${newUserId}/edit`);
+					navigate(`/admin/users/${newUserId}`);
 				} else {
 					handleCancelForm();
 				}
-			} else {
-				handleCancelForm();
 			}
 
 			return true;
@@ -386,7 +401,7 @@ export function useUsersData() {
 			showApiErrorToast(
 				showToast,
 				error,
-				pageMode === "edit"
+				pageMode === "view"
 					? "Failed to update user."
 					: "Failed to create user.",
 			);
@@ -405,6 +420,7 @@ export function useUsersData() {
 		selectedRowIds,
 		selectedUser,
 		pageMode,
+		startInEditMode,
 		form,
 		formError,
 		fieldErrors,

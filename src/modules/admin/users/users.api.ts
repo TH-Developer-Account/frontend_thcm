@@ -49,23 +49,99 @@ export const userApi = {
 	},
 
 	createUser: async (payload: CreateUserInput): Promise<UserMutationResult> => {
+		const jsonPayload = mapUserFormToCreatePayload(payload);
+
+		/*
+		 * TODO: Enable after POST /users supports multipart/form-data.
+		 * The selected avatar is a File, so append it as binary. Do not set the
+		 * Content-Type header manually; the browser must add its boundary.
+		 *
+		 * const formData = new FormData();
+		 * Object.entries(jsonPayload).forEach(([key, value]) => {
+		 *     if (value !== undefined) formData.append(key, String(value));
+		 * });
+		 * if (payload.avatar) formData.append("avatar", payload.avatar);
+		 * const response = await ServerAxios.post(USER_API_ROUTES.create, formData);
+		 */
 		const response = await ServerAxios.post(
 			USER_API_ROUTES.create,
-			mapUserFormToCreatePayload(payload),
+			jsonPayload,
 		);
 		return response.data as UserMutationResult;
 	},
-
 	updateUser: async ({
 		userId,
 		payload,
 	}: UpdateUserVariables): Promise<UserMutationResult> => {
+		const jsonPayload = mapUserFormToUpdatePayload(payload);
+
+		/*
+		 * TODO: Enable when the backend supports avatar uploads.
+		 *
+		 * const formData = new FormData();
+		 *
+		 * Object.entries(jsonPayload).forEach(([key, value]) => {
+		 *     if (value !== undefined && value !== null) {
+		 *         formData.append(key, String(value));
+		 *     }
+		 * });
+		 *
+		 * if (payload.avatar instanceof File) {
+		 *     formData.append("avatar", payload.avatar, payload.avatar.name);
+		 * }
+		 *
+		 * const response = await ServerAxios.patch(
+		 *     USER_API_ROUTES.update(userId),
+		 *     formData,
+		 * );
+		 *
+		 * return response.data as UserMutationResult;
+		 */
+
 		const response = await ServerAxios.patch(
 			USER_API_ROUTES.update(userId),
-			mapUserFormToUpdatePayload(payload),
+			jsonPayload,
 		);
+
 		return response.data as UserMutationResult;
 	},
+	// updateUser: async ({
+	// 	userId,
+	// 	payload,
+	// }: UpdateUserVariables): Promise<UserMutationResult> => {
+	// 	const jsonPayload = mapUserFormToUpdatePayload(payload);
+	// 	const formData = new FormData();
+
+	// 	Object.entries(jsonPayload).forEach(([key, value]) => {
+	// 		if (value !== undefined && value !== null) {
+	// 			formData.append(key, String(value));
+	// 		}
+	// 	});
+
+	// 	if (payload.avatar instanceof File) {
+	// 		formData.append("avatar", payload.avatar, payload.avatar.name);
+	// 	}
+
+	// 	// Temporary debugging only
+	// 	for (const [key, value] of formData.entries()) {
+	// 		if (value instanceof File) {
+	// 			console.log(key, {
+	// 				name: value.name,
+	// 				type: value.type,
+	// 				size: value.size,
+	// 			});
+	// 		} else {
+	// 			console.log(key, value);
+	// 		}
+	// 	}
+
+	// 	const response = await ServerAxios.patch(
+	// 		USER_API_ROUTES.update(userId),
+	// 		formData,
+	// 	);
+
+	// 	return response.data as UserMutationResult;
+	// },
 
 	deleteUser: async ({ userId }: DeleteUserVariables): Promise<void> => {
 		await ServerAxios.delete(USER_API_ROUTES.delete(userId));

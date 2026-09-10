@@ -20,6 +20,8 @@ export const USER_STATUS_TABS = [
 ] as const satisfies readonly UserStatusTab[];
 
 export const mapUserToForm = (user: User): UserFormValues => ({
+	// Existing URL is rendered from user.avatar; this holds only a new file.
+	avatar: null,
 	bydId: user.bydId,
 	s4Id: user.s4Id,
 	tallyId: user.tallyId,
@@ -50,6 +52,7 @@ export const mapUserToForm = (user: User): UserFormValues => ({
 });
 
 export const EMPTY_USER_FORM: UserFormValues = {
+	avatar: null,
 	bydId: "",
 	s4Id: "",
 	tallyId: "",
@@ -86,6 +89,7 @@ const getUserStatus = (user: UserResponse): UserStatus => {
 
 export const mapUser = (user: UserResponse): User => ({
 	id: user.id,
+	avatar: user.avatar ?? "",
 	bydId: user.bydId ?? "",
 	s4Id: user.s4Id ?? "",
 	tallyId: user.tallyId ?? "",
@@ -121,14 +125,14 @@ export const mapUser = (user: UserResponse): User => ({
 export const mapUserFormToCreatePayload = (
 	form: CreateUserInput,
 ): CreateUserPayload => {
-	const payload: CreateUserPayload = {
+	const payload = {
 		first_name: form.firstName.trim(),
 		last_name: form.lastName.trim(),
 		email: form.email.trim().toLowerCase(),
 		phone_number: form.phoneNumber.trim(),
 		workspaceId: form.workspaceId.trim(),
 		employeeCode: form.employeeCode.trim(),
-	};
+	} as CreateUserPayload;
 
 	const assignText = (
 		key: keyof CreateUserPayload,
@@ -153,7 +157,7 @@ export const mapUserFormToCreatePayload = (
 	assignText("role", form.role);
 	assignText("designation", form.designation);
 	assignText("vertical", form.vertical);
-	// assignText("grade", form.grade);
+	// assignText("grade", form.grade); // enable after backend grade support
 	assignText("managerCode1", form.managerCode1);
 	assignText("managerCode2", form.managerCode2);
 	assignText("joinedOn", form.joinedOn);
@@ -162,8 +166,9 @@ export const mapUserFormToCreatePayload = (
 	if (form.userType && form.userType !== "Select") {
 		payload.userType = form.userType;
 	}
+
 	if (form.isActive !== undefined) {
-		payload.is_active = form.isActive;
+		(payload as Record<string, unknown>).is_active = form.isActive;
 	}
 
 	return payload;
@@ -189,7 +194,8 @@ const USER_UPDATE_FIELD_MAP = {
 	role: "role",
 	designation: "designation",
 	vertical: "vertical",
-	// grade: "grade",
+	// grade: "grade", // enable after backend grade support
+	// isDefaultContact: "isDefaultContact", // enable after backend isDefaultContact support
 	managerCode1: "managerCode1",
 	managerCode2: "managerCode2",
 	userType: "userType",
@@ -205,6 +211,7 @@ export const mapUserFormToUpdatePayload = (
 
 	Object.entries(form).forEach(([key, value]) => {
 		if (value === undefined) return;
+		if (key === "avatar") return; // binary file is handled by multipart FormData
 		if (key === "workspaceId") return; // never sent on update — not an updatable field
 		if (key === "password" && String(value).trim().length === 0) return;
 

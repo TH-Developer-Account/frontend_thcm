@@ -33,8 +33,10 @@ export default function AdminRoutes() {
 			<Routes>
 				<Route path="users" element={<UsersPage />} />
 				<Route path="users/create" element={<UsersPage />} />
+				{/* Editing now happens in-place on the detail route via
+				    EditableCard's own Edit/Cancel/Save toggle — there is no
+				    longer a distinct "/edit" page or route. */}
 				<Route path="users/:id" element={<UsersPage />} />
-				<Route path="users/:id/edit" element={<UsersPage />} />
 
 				<Route
 					path="masters"
