@@ -18,7 +18,6 @@ import type {
 	BusinessPartnerFormState,
 	CreateBusinessPartnerPayload,
 	UpdateBusinessPartnerPayload,
-	BusinessPartnerPersonPayload,
 	BPPeopleSelection,
 	BPPersonViewModel,
 } from "./bp.types";
@@ -105,8 +104,14 @@ export const mapPerson = (person: BPPeopleSelection): BPPersonViewModel => ({
 	userId: person.userId,
 	name: text(person.name) || "Unnamed person",
 	email: text(person.email),
+	isOwner: person.isOwner,
 	isMainContact: person.isMainContact,
 	isDefault: person.isDefault,
+	phoneNumber: person.phoneNumber,
+	panNumber: person.panNumber,
+	id: person.id,
+	role: person.role,
+	businessPartnerId: person.businessPartnerId,
 });
 
 /** Maps the API's `people` array into BPPersonViewModel[]. */
@@ -205,18 +210,18 @@ export const mapAddBusinessPartnerContactPayload = (
 ];
 
 export const mapPeopleToPayload = (
-	people: BusinessPartnerPersonPayload[],
+	people: BPPeopleSelection[],
 	mainContactUserId?: string,
 	defaultContactUserId?: string,
 ): UpdateBusinessPartnerPeoplePayload =>
 	people.map((person) => ({
 		userId: person.userId,
-		isMainContact:
-			person.userId === mainContactUserId ||
-			(!mainContactUserId && person.isMainContact),
-		isDefault:
-			person.userId === defaultContactUserId ||
-			(!defaultContactUserId && person.isDefault),
+		isMainContact: mainContactUserId
+			? person.userId === mainContactUserId
+			: person.isMainContact,
+		isDefault: defaultContactUserId
+			? person.userId === defaultContactUserId
+			: person.isDefault,
 	}));
 
 // Address mapping

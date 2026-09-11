@@ -1,13 +1,5 @@
 import { useMemo } from "react";
-import {
-	Eye,
-	Lock,
-	MoreVertical,
-	Pencil,
-	Plus,
-	Trash,
-	Unlock,
-} from "lucide-react";
+import { Eye, Lock, Pencil, Plus, Trash, Unlock } from "lucide-react";
 
 import ActionMenu from "../../../components/common/ActionMenu";
 import type { ActionMenuItem } from "../../../components/common/ActionMenu";
@@ -141,7 +133,7 @@ const getBulkActions = ({
 	},
 ];
 
-export function UserTable({ controller, onOpenTableOptions }: UserTableProps) {
+export function UserTable({ controller }: UserTableProps) {
 	const {
 		filteredUsers,
 		counts,
@@ -294,12 +286,6 @@ export function UserTable({ controller, onOpenTableOptions }: UserTableProps) {
 				</div>
 
 				<div className="user-management-toolbar-end">
-					{hasSelection ? (
-						<span className="user-management-selected-count">
-							{selectedRowIds.length} selected
-						</span>
-					) : null}
-
 					<Button
 						type="button"
 						text="Create User"
@@ -308,7 +294,11 @@ export function UserTable({ controller, onOpenTableOptions }: UserTableProps) {
 						variant="brand"
 						onClick={handleStartCreate}
 					/>
-
+					{hasSelection ? (
+						<span className="user-management-selected-count">
+							{selectedRowIds.length} selected
+						</span>
+					) : null}
 					{hasSelection ? (
 						<ActionMenu
 							row={selectedRowIds}

@@ -462,8 +462,15 @@ export type BPPeopleSelection = {
 	userId: string;
 	name: string;
 	email: string;
+	isOwner: boolean;
 	isMainContact: boolean;
 	isDefault: boolean;
+	id?: string;
+	businessPartnerId: string;
+	phoneNumber?: string;
+	panNumber?: string;
+
+	role?: "Owner" | "Main Contact" | "Contact";
 };
 
 /**
@@ -474,8 +481,15 @@ export type BPPersonViewModel = {
 	userId: string;
 	name: string;
 	email: string;
+	isOwner: boolean;
 	isMainContact: boolean;
 	isDefault: boolean;
+	id?: string;
+	businessPartnerId: string;
+	phoneNumber?: string;
+	panNumber?: string;
+
+	role?: "Owner" | "Main Contact" | "Contact";
 };
 
 export type UpdateBusinessPartnerPeoplePayload = BusinessPartnerPersonPayload[];

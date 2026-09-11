@@ -8,21 +8,17 @@ import Button from "../../../../components/common/Button";
 import SimpleViewTable from "../../../../components/ui/tables/SimpleViewTable";
 import type { SimpleTableColumn } from "../../../../components/ui/tables/SimpleViewTable";
 import UserAsyncSelect from "../../../../components/forms/AsyncSelect";
-
 import {
-	useBPContactsManager,
+	useBPPeopleManager,
 	useBPAddExistingPeopleForm,
 } from "../hooks/useBusinessPartners";
 
-import type {
-	BPContactViewModel,
-	BPPeoplePermissions,
-} from "../utils/bp.types";
+import type { BPPersonViewModel, BPPeoplePermissions } from "../utils/bp.types";
 import { getInitials } from "../../../../utils/format";
 
 type BPPeopleProps = {
 	businessPartnerId: string;
-	people: BPContactViewModel[];
+	people: BPPersonViewModel[];
 	permissions: BPPeoplePermissions;
 
 	/** Controlled from BPTabs via the "Add People" action row. */
@@ -37,13 +33,13 @@ type PeopleColumnOptions = {
 	canRemovePeople: boolean;
 	isUpdating: boolean;
 	isRemoving: boolean;
-	onSetMainContact: (person: BPContactViewModel) => void;
-	onRemove: (person: BPContactViewModel) => void;
+	onSetMainContact: (person: BPPersonViewModel) => void;
+	onRemove: (person: BPPersonViewModel) => void;
 };
 
 type RoleBadgeVariant = "success" | "warning" | "info";
 
-const getRoleBadgeVariant = (person: BPContactViewModel): RoleBadgeVariant => {
+const getRoleBadgeVariant = (person: BPPersonViewModel): RoleBadgeVariant => {
 	if (person.isOwner) {
 		return "success";
 	}
@@ -62,8 +58,8 @@ const getColumns = ({
 	isRemoving,
 	onSetMainContact,
 	onRemove,
-}: PeopleColumnOptions): SimpleTableColumn<BPContactViewModel>[] => {
-	const columns: SimpleTableColumn<BPContactViewModel>[] = [
+}: PeopleColumnOptions): SimpleTableColumn<BPPersonViewModel>[] => {
+	const columns: SimpleTableColumn<BPPersonViewModel>[] = [
 		{
 			key: "user",
 			header: "Person",
@@ -88,7 +84,7 @@ const getColumns = ({
 						</div>
 
 						<p className="bp-people-id">
-							{person.email || `Contact ID: ${person.id.slice(0, 8)}`}
+							{person.email || `Contact ID: ${person.userId.slice(0, 8)}`}
 						</p>
 					</div>
 				</div>
@@ -150,14 +146,6 @@ const getColumns = ({
 		},
 
 		{
-			key: "businessPartnerId",
-			header: "Business Partner ID",
-			widthUnits: 3,
-			minWidth: 190,
-			render: (person) => <span>{person.businessPartnerId || "--"}</span>,
-		},
-
-		{
 			key: "pan",
 			header: "PAN",
 			widthUnits: 2,
@@ -175,7 +163,7 @@ const getColumns = ({
 			widthUnits: 1,
 			minWidth: 80,
 			render: (person) => {
-				const actions: ActionMenuItem<BPContactViewModel>[] = [
+				const actions: ActionMenuItem<BPPersonViewModel>[] = [
 					{
 						id: "set-main-contact",
 						label: person.isMainContact
@@ -237,7 +225,7 @@ const BPPeople = ({
 		isRemovingContact,
 		canSetMainContact,
 		canRemovePeople,
-	} = useBPContactsManager(businessPartnerId, people, permissions);
+	} = useBPPeopleManager(businessPartnerId, people, permissions);
 
 	const {
 		selected,
@@ -281,7 +269,7 @@ const BPPeople = ({
 				<SimpleViewTable
 					data={sortedPeople}
 					columns={columns}
-					getRowId={(person) => person.id}
+					getRowId={(person) => person.id ?? ""}
 					maxHeight="360px"
 					className="bp-people-view-table"
 					ariaLabel="Business partner people"

@@ -24,6 +24,7 @@ import {
 	type BPAddressViewModel,
 	type BPPeopleSelection,
 	type BPContactViewModel,
+	type BPPersonViewModel,
 	type BPPeoplePermissions,
 	type BusinessPartnerAddressPayload,
 	type UpdateBusinessPartnerPeoplePayload,
@@ -324,17 +325,142 @@ export const useBPAddressManager = (
 };
 
 /* -------------------------------------------------------------------------
- * Contacts / People shared logic
+ * Contact tab (BPContact.tsx) — list logic for BPContactViewModel rows.
  *
- * Both the "Contact" tab (BPContact.tsx) and the "People" tab
- * (BPPeople.tsx) render the same underlying list of BP contacts, just
- * with different columns/actions. useBPContactsManager holds the logic
- * shared by both: sorting, setting the main contact, and removing a
- * contact. It does NOT handle adding — see the two add-flow hooks below,
- * one per tab, since each tab adds contacts a different way.
+ * Deliberately NOT shared with useBPPeopleManager below, even though
+ * the two started out structurally similar: contacts carry
+ * contact-specific fields (phone, PAN) and their own add flow (search
+ * existing user OR add manually), and are expected to diverge further
+ * as contact-specific features (e.g. editing manual contacts) are
+ * added. Keeping them separate avoids threading a shared abstraction
+ * through unrelated future changes.
  * ---------------------------------------------------------------------- */
 
-const getPeoplePriority = (person: BPContactViewModel): number => {
+const getContactPriority = (contact: BPContactViewModel): number => {
+	if (contact.isOwner) {
+		return 0;
+	}
+
+	if (contact.isMainContact) {
+		return 1;
+	}
+
+	return 2;
+};
+
+export const useBPContactsManager = (
+	businessPartnerId: string,
+	contacts: BPContactViewModel[],
+	permissions: BPPeoplePermissions = DEFAULT_BUSINESS_PARTNER_PERMISSIONS.people,
+) => {
+	const {
+		updatePeople,
+		removeContact,
+
+		isUpdatingPeople,
+		isRemovingContact,
+
+		updatePeopleError,
+		removeContactError,
+	} = useBusinessPartnerPeopleMutations(businessPartnerId);
+
+	const sortedContacts = useMemo(
+		() =>
+			[...contacts].sort(
+				(firstContact, secondContact) =>
+					getContactPriority(firstContact) - getContactPriority(secondContact),
+			),
+		[contacts],
+	);
+
+	const handleSetMainContact = useCallback(
+		async (contact: BPContactViewModel) => {
+			if (
+				!permissions.canSetMainContact ||
+				contact.isMainContact ||
+				!contact.userId
+			) {
+				return;
+			}
+
+			const linkedPeople: BPPeopleSelection[] = contacts
+				.filter(
+					(
+						currentContact,
+					): currentContact is BPContactViewModel & { userId: string } =>
+						Boolean(currentContact.userId),
+				)
+				.map((currentContact) => ({
+					userId: currentContact.userId,
+					name: currentContact.name,
+					email: currentContact.email ?? "",
+					isOwner: currentContact.isOwner,
+					isMainContact: currentContact.isMainContact,
+					isDefault: currentContact.isDefault,
+					id: currentContact.id,
+					businessPartnerId:
+						currentContact.businessPartnerId ?? businessPartnerId,
+					phoneNumber: currentContact.phoneNumber,
+					panNumber: currentContact.panNumber,
+					role: currentContact.role,
+				}));
+
+			const payload = mapPeopleToPayload(linkedPeople, contact.userId);
+
+			try {
+				await updatePeople(payload);
+			} catch {
+				// Mutation exposes the error.
+			}
+		},
+		[permissions.canSetMainContact, contacts, businessPartnerId, updatePeople],
+	);
+
+	const handleRemoveContact = useCallback(
+		async (contact: BPContactViewModel) => {
+			if (!permissions.canRemovePeople || contact.isOwner) {
+				return;
+			}
+
+			try {
+				await removeContact(contact.id);
+			} catch {
+				// Mutation exposes the error.
+			}
+		},
+		[permissions.canRemovePeople, removeContact],
+	);
+
+	return {
+		sortedContacts,
+
+		handleSetMainContact,
+		handleRemoveContact,
+
+		isUpdatingContacts: isUpdatingPeople,
+		isRemovingContact,
+		isContactsMutationPending: isUpdatingPeople || isRemovingContact,
+
+		updateContactsError: updatePeopleError,
+		removeContactError,
+
+		canSetMainContact: permissions.canSetMainContact,
+		canRemoveContact: permissions.canRemovePeople,
+	};
+};
+
+/* -------------------------------------------------------------------------
+ * People tab (BPPeople.tsx) — list logic for BPPersonViewModel rows.
+ *
+ * Separate from useBPContactsManager above by design: people carry only
+ * userId/name/email/isOwner/isMainContact/isDefault (no phone/PAN), and
+ * the People tab's add flow only ever attaches existing users (see
+ * useBPAddExistingPeopleForm below) — no manual-entry path. Kept apart
+ * so contact-only features (manual entry, editing, phone/PAN fields)
+ * never leak into this hook, and vice versa.
+ * ---------------------------------------------------------------------- */
+
+const getPersonPriority = (person: BPPersonViewModel): number => {
 	if (person.isOwner) {
 		return 0;
 	}
@@ -346,10 +472,9 @@ const getPeoplePriority = (person: BPContactViewModel): number => {
 	return 2;
 };
 
-/** Shared list logic for both the Contact tab and the People tab. */
-export const useBPContactsManager = (
+export const useBPPeopleManager = (
 	businessPartnerId: string,
-	people: BPContactViewModel[],
+	people: BPPersonViewModel[],
 	permissions: BPPeoplePermissions = DEFAULT_BUSINESS_PARTNER_PERMISSIONS.people,
 ) => {
 	const {
@@ -367,13 +492,13 @@ export const useBPContactsManager = (
 		() =>
 			[...people].sort(
 				(firstPerson, secondPerson) =>
-					getPeoplePriority(firstPerson) - getPeoplePriority(secondPerson),
+					getPersonPriority(firstPerson) - getPersonPriority(secondPerson),
 			),
 		[people],
 	);
 
 	const handleSetMainContact = useCallback(
-		async (person: BPContactViewModel) => {
+		async (person: BPPersonViewModel) => {
 			if (!permissions.canSetMainContact || person.isMainContact) {
 				return;
 			}
@@ -390,13 +515,13 @@ export const useBPContactsManager = (
 	);
 
 	const handleRemovePerson = useCallback(
-		async (person: BPContactViewModel) => {
+		async (person: BPPersonViewModel) => {
 			if (!permissions.canRemovePeople || person.isOwner) {
 				return;
 			}
 
 			try {
-				await removeContact(person.id);
+				await removeContact(person.userId);
 			} catch {
 				// Mutation exposes the error.
 			}
@@ -412,7 +537,7 @@ export const useBPContactsManager = (
 
 		isUpdatingPeople,
 		isRemovingContact,
-		isContactsMutationPending: isUpdatingPeople || isRemovingContact,
+		isPeopleMutationPending: isUpdatingPeople || isRemovingContact,
 
 		updatePeopleError,
 		removeContactError,
@@ -422,11 +547,6 @@ export const useBPContactsManager = (
 	};
 };
 
-/** @deprecated Use {@link useBPContactsManager}. Kept as an alias so
- * existing imports don't break during the rename — remove once all call
- * sites (BPContact.tsx, BPPeople.tsx) are updated. */
-export const useBPPeopleManager = useBPContactsManager;
-
 /* -------------------------------------------------------------------------
  * People tab — "Add People" flow (search + attach one or more existing
  * users in a single batch submit). Used only by BPPeople.tsx.
@@ -434,7 +554,7 @@ export const useBPPeopleManager = useBPContactsManager;
 
 export const useBPAddExistingPeopleForm = (
 	businessPartnerId: string,
-	existingPeople: BPContactViewModel[],
+	existingPeople: BPPersonViewModel[],
 ) => {
 	const { addPeople, isAddingPeople, addPeopleError } =
 		useBusinessPartnerPeopleMutations(businessPartnerId);
@@ -466,19 +586,20 @@ export const useBPAddExistingPeopleForm = (
 					return current;
 				}
 
-				return [
-					...current,
-					{
-						userId: user.value,
-						name: user.label,
-						email: user.email ?? "",
-						isMainContact: false,
-						isDefault: false,
-					},
-				];
+				const selectedPerson: BPPeopleSelection = {
+					userId: user.value,
+					name: user.label,
+					email: user.email ?? "",
+					isMainContact: false,
+					isDefault: false,
+					isOwner: false,
+					businessPartnerId,
+				};
+
+				return [...current, selectedPerson];
 			});
 		},
-		[],
+		[businessPartnerId],
 	);
 
 	const handleRemoveSelected = useCallback((userId: string) => {
@@ -539,8 +660,3 @@ export const useBPAddExistingPeopleForm = (
 		error: addPeopleError,
 	};
 };
-
-/** @deprecated Use {@link useBPAddExistingPeopleForm}. Kept as an alias
- * so existing imports don't break during the rename — remove once
- * BPPeople.tsx is updated to import the new name directly. */
-export const useBPAddPeopleForm = useBPAddExistingPeopleForm;

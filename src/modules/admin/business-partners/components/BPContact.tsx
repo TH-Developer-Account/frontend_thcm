@@ -255,13 +255,13 @@ const BPContact = ({
 	onAdded,
 }: BPContactProps) => {
 	const {
-		sortedPeople,
+		sortedContacts,
 		handleSetMainContact,
-		handleRemovePerson,
-		isUpdatingPeople,
+		handleRemoveContact,
+		isUpdatingContacts,
 		isRemovingContact,
 		canSetMainContact,
-		canRemovePeople,
+		canRemoveContact,
 	} = useBPContactsManager(businessPartnerId, contacts, permissions);
 
 	const { addPeople, isAddingPeople, addPeopleError } =
@@ -269,11 +269,11 @@ const BPContact = ({
 
 	const columns = getColumns({
 		canSetMainContact,
-		canRemovePeople,
-		isUpdating: isUpdatingPeople,
+		canRemovePeople: canRemoveContact,
+		isUpdating: isUpdatingContacts,
 		isRemoving: isRemovingContact,
 		onSetMainContact: handleSetMainContact,
-		onRemove: handleRemovePerson,
+		onRemove: handleRemoveContact,
 	});
 
 	/* --- Add Contact panel: search-existing-user OR manual entry --- */
@@ -409,9 +409,9 @@ const BPContact = ({
 
 	return (
 		<div>
-			{!(isAdding && sortedPeople.length === 0) && (
+			{!(isAdding && sortedContacts.length === 0) && (
 				<SimpleViewTable
-					data={sortedPeople}
+					data={sortedContacts}
 					columns={columns}
 					getRowId={(contact) => contact.id}
 					maxHeight="360px"
