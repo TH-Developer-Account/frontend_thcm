@@ -1,3 +1,5 @@
+import type { ZodIssue } from "zod";
+
 import type {
 	CreateUserInput,
 	CreateUserPayload,
@@ -5,12 +7,16 @@ import type {
 	UpdateUserPayload,
 	User,
 	UserCounts,
+	UserFormField,
 	UserFormValues,
+	UserPageMode,
 	UserResponse,
 	UserRoleOption,
 	UserStatus,
 	UserStatusTab,
 } from "./user-management.types";
+
+import { getUserFormSchema } from "./user-management.schema";
 
 export const USER_STATUS_TABS = [
 	"All",
@@ -293,4 +299,47 @@ export const filterUsers = ({
 				searchableContent.includes(normalizedSearch))
 		);
 	});
+};
+
+export type UserFieldErrors = Partial<Record<UserFormField, string>>;
+
+export const validateUserForm = (
+	values: UserFormValues,
+	pageMode: UserPageMode,
+): UserFieldErrors => {
+	const schema = getUserFormSchema(pageMode === "list" ? "create" : pageMode);
+	const result = schema.safeParse(values);
+
+	if (result.success) return {};
+
+	const fieldErrors: UserFieldErrors = {};
+	result.error.issues.forEach((issue: ZodIssue) => {
+		const field = issue.path[0] as UserFormField | undefined;
+		if (!field || fieldErrors[field]) return; // first issue per field only
+		fieldErrors[field] = issue.message;
+	});
+
+	return fieldErrors;
+};
+
+/**
+ * Strips fields from a payload when they're "empty" per a caller-supplied
+ * check — generalizes the ad hoc `password?.trim() ? values : rest`
+ * destructure in useUsersData's handleSubmitUser. Add new write-only /
+ * sensitive fields here instead of hand-rolling another destructure.
+ */
+
+export const stripEmptySensitiveFields = <T extends Record<string, unknown>>(
+	payload: T,
+	fields: Array<keyof T>,
+	isEmpty: (value: unknown) => boolean = (value) =>
+		typeof value !== "string" || value.trim().length === 0,
+): T => {
+	const next = { ...payload };
+	fields.forEach((field) => {
+		if (isEmpty(next[field])) {
+			delete next[field];
+		}
+	});
+	return next;
 };

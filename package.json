@@ -13,6 +13,7 @@
 		"@floating-ui/react": "^0.27.19",
 		"@headlessui/react": "^2.2.9",
 		"@heroicons/react": "^2.2.0",
+		"@hookform/resolvers": "^5.9.1",
 		"@tailwindcss/vite": "^4.1.18",
 		"@tanstack/react-query": "^5.90.21",
 		"@tanstack/react-table": "^8.21.3",
@@ -31,6 +32,7 @@
 		"react-day-picker": "^9.14.0",
 		"react-dom": "19.2.5",
 		"react-export-table-to-excel-xlsx": "^1.0.1",
+		"react-hook-form": "^7.87.0",
 		"react-icons": "^5.5.0",
 		"react-international-phone": "^4.8.0",
 		"react-multi-date-picker": "^4.5.2",
@@ -38,7 +40,8 @@
 		"react-router-dom": "^7.13.0",
 		"react-select": "^5.10.2",
 		"recharts": "^3.7.0",
-		"xlsx": "^0.18.5"
+		"xlsx": "^0.18.5",
+		"zod": "^4.6.2"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.39.1",
