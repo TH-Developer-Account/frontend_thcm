@@ -18,6 +18,9 @@ import type {
 	BusinessPartnerFormState,
 	CreateBusinessPartnerPayload,
 	UpdateBusinessPartnerPayload,
+	BusinessPartnerPersonPayload,
+	BPPeopleSelection,
+	BPPersonViewModel,
 } from "./bp.types";
 
 const DEFAULT_PAGE = 1;
@@ -72,7 +75,7 @@ export const mapContact = (
 	contact: BusinessPartnerContact,
 ): BPContactViewModel => ({
 	id: contact.id,
-	userId: contact.userId,
+	userId: contact.userId ?? null,
 	businessPartnerId: contact.businessPartnerId,
 
 	name: text(contact.name) || "Unnamed contact",
@@ -91,6 +94,26 @@ export const mapContact = (
 	isDefault: contact.isDefault,
 });
 
+/** Maps the API's `contacts` array into BPContactViewModel[]. */
+export const mapContacts = (
+	contacts: BusinessPartnerContact[] | undefined,
+): BPContactViewModel[] => (contacts ?? []).map(mapContact);
+
+/** Maps a single "person" record — a linked user selection, distinct
+ * from a contact (no phone/PAN/isOwner on people). */
+export const mapPerson = (person: BPPeopleSelection): BPPersonViewModel => ({
+	userId: person.userId,
+	name: text(person.name) || "Unnamed person",
+	email: text(person.email),
+	isMainContact: person.isMainContact,
+	isDefault: person.isDefault,
+});
+
+/** Maps the API's `people` array into BPPersonViewModel[]. */
+export const mapPeople = (
+	people: BPPeopleSelection[] | undefined,
+): BPPersonViewModel[] => (people ?? []).map(mapPerson);
+
 export const mapBranch = (
 	branch: BusinessPartnerBranch,
 ): BPBranchViewModel => ({
@@ -103,20 +126,22 @@ export const mapBusinessPartnerView = (
 	partner: BusinessPartnerDetail,
 ): BusinessPartnerViewModel => {
 	const addresses = (partner.addresses ?? []).map(mapAddress);
-	const people = (partner.contacts ?? []).map(mapContact);
+	const contacts = mapContacts(partner.contacts);
+	const people = mapPeople(partner.people);
 	const branches = (partner.branches ?? []).map(mapBranch);
 	const primaryAddress =
 		addresses.find((address) => address.isDefault) ?? addresses[0] ?? null;
 	const primaryContact =
-		people.find((contact) => contact.isMainContact) ?? people[0] ?? null;
+		contacts.find((contact) => contact.isMainContact) ?? contacts[0] ?? null;
 
 	return {
 		partner,
 		primaryAddress,
 		primaryContact,
 		addresses,
+		contacts,
 		people,
-		mainContacts: people.filter((contact) => contact.isMainContact),
+		mainContacts: contacts.filter((contact) => contact.isMainContact),
 		branches,
 		contact: {
 			name: text(partner.legalTradeName) || partner.bpName,
@@ -180,7 +205,7 @@ export const mapAddBusinessPartnerContactPayload = (
 ];
 
 export const mapPeopleToPayload = (
-	people: BPContactViewModel[],
+	people: BusinessPartnerPersonPayload[],
 	mainContactUserId?: string,
 	defaultContactUserId?: string,
 ): UpdateBusinessPartnerPeoplePayload =>

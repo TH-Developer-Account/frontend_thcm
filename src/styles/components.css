@@ -2766,7 +2766,6 @@
 /* =====================================================
    TABS
 ===================================================== */
-
 @layer components {
 	.tabs-bar {
 		@apply flex items-center gap-8 px-6 pt-5;
@@ -2781,12 +2780,41 @@
 	}
 
 	.tab-label-active {
-		color: var(--color-text-primary);
+		color: var(--tabs-bar-color, var(--color-text-primary));
 	}
 
 	.tab-indicator {
 		@apply absolute left-0 -bottom-[1px] w-full h-[2px] rounded-full;
-		background: var(--color-text-primary);
+		background: var(--tabs-bar-color, var(--color-text-primary));
+	}
+
+	/* Soft variant — pill-style active state, similar to
+	   .filter-tabs--soft, for contexts that want a chip instead of an
+	   underline (e.g. the add-contact mode toggle). */
+	.tabs-bar--soft {
+		@apply gap-2 px-0 pt-0;
+	}
+
+	.tabs-bar--soft .tab-item {
+		@apply rounded-lg border px-3 py-2 pb-2;
+		border-color: transparent;
+	}
+
+	.tabs-bar--soft .tab-item:hover {
+		background-color: var(--color-bg-muted);
+	}
+
+	.tabs-bar--soft .tab-label-active {
+		color: var(--tabs-bar-color, var(--color-brand));
+	}
+
+	.tabs-bar--soft .tab-item:has(.tab-label-active) {
+		border-color: var(--tabs-bar-soft-bg, var(--color-brand-softest));
+		background-color: var(--tabs-bar-soft-bg, var(--color-brand-softest));
+	}
+
+	.tabs-bar--soft .tab-indicator {
+		display: none;
 	}
 }
 
@@ -8140,6 +8168,9 @@ PAGE NAVIGATION
 		background-color: transparent;
 	}
 
+	.filter-tabs--none {
+		border-bottom: none;
+	}
 	/* =====================================================
 	Variant: Soft
 	Same styling as the original BP tabs

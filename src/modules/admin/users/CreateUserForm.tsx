@@ -252,7 +252,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
 				</div>
 			),
 			render: ({ draft, disabled, setFieldValue }) => (
-				<div className="flex min-h-11 items-center rounded-lg border border-gray-200 bg-gray-50 px-4 py-2">
+				<div className="flex min-h-11 mt-6 items-center">
 					<Checkbox
 						name="isActive"
 						label="Active"

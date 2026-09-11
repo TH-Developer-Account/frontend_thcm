@@ -1,3 +1,5 @@
+import { Plus } from "lucide-react";
+import Button from "../../../../components/common/Button";
 import type { SimpleTableColumn } from "../../../../components/ui/tables/SimpleViewTable";
 import SimpleViewTable from "../../../../components/ui/tables/SimpleViewTable";
 import type { BPBranchViewModel } from "../utils/bp.types";
@@ -6,22 +8,16 @@ const columns: SimpleTableColumn<BPBranchViewModel>[] = [
 	{
 		key: "name",
 		header: "Branch Name",
-		widthUnits: 4,
-		minWidth: 220,
 		render: (branch) => <span className="font-medium">{branch.name}</span>,
 	},
 	{
 		key: "id",
 		header: "Branch ID",
-		widthUnits: 3,
-		minWidth: 220,
 		render: (branch) => <span className="tabular-nums">{branch.id}</span>,
 	},
 	{
 		key: "status",
 		header: "Status",
-		widthUnits: 1,
-		minWidth: 110,
 		render: (branch) => (
 			<span
 				className={`bp-people-status bp-people-status--${branch.status.toLowerCase()}`}
@@ -32,7 +28,12 @@ const columns: SimpleTableColumn<BPBranchViewModel>[] = [
 	},
 ];
 
-const BPBranches = ({ branches }: { branches: BPBranchViewModel[] }) => (
+type BPBranchesProps = {
+	branches: BPBranchViewModel[];
+	onAddBranch: () => void;
+};
+
+const BPBranches = ({ branches, onAddBranch }: BPBranchesProps) => (
 	<div className="bp-people">
 		<SimpleViewTable
 			data={branches}
@@ -42,6 +43,18 @@ const BPBranches = ({ branches }: { branches: BPBranchViewModel[] }) => (
 			ariaLabel="Business partner branches"
 			emptyTitle="No branches found"
 			emptyDescription="No branches are linked to this business partner."
+			emptyContent={
+				<Button
+					type="button"
+					text="Add Branch"
+					Icon={Plus}
+					iconPosition="left"
+					appearance="standard"
+					variant="outline"
+					size="sm"
+					onClick={onAddBranch}
+				/>
+			}
 		/>
 	</div>
 );

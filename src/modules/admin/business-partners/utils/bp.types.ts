@@ -253,6 +253,7 @@ export type BusinessPartnerDetail = {
 	branches: BusinessPartnerBranch[];
 	addresses: BusinessPartnerAddress[];
 	contacts: BusinessPartnerContact[];
+	people: BPPeopleSelection[];
 };
 
 export type BusinessPartner = {
@@ -363,7 +364,8 @@ export type BusinessPartnerViewModel = {
 	primaryContact: BPContactViewModel | null;
 
 	addresses: BPAddressViewModel[];
-	people: BPContactViewModel[];
+	contacts: BPContactViewModel[];
+	people: BPPersonViewModel[];
 	mainContacts: BPContactViewModel[];
 	branches: BPBranchViewModel[];
 
@@ -456,6 +458,26 @@ export type BusinessPartnerPersonPayload = {
 	isDefault: boolean;
 };
 
+export type BPPeopleSelection = {
+	userId: string;
+	name: string;
+	email: string;
+	isMainContact: boolean;
+	isDefault: boolean;
+};
+
+/**
+ * View-model for a "person" record (linked user, no phone/PAN/isOwner —
+ * that's contact-specific data). Distinct from BPContactViewModel.
+ */
+export type BPPersonViewModel = {
+	userId: string;
+	name: string;
+	email: string;
+	isMainContact: boolean;
+	isDefault: boolean;
+};
+
 export type UpdateBusinessPartnerPeoplePayload = BusinessPartnerPersonPayload[];
 
 export type BusinessPartnerContact = {
@@ -477,7 +499,7 @@ export type BusinessPartnerContact = {
 
 export type BPContactViewModel = {
 	id: string;
-	userId: string;
+	userId?: string;
 	businessPartnerId: string;
 
 	name: string;
@@ -492,13 +514,26 @@ export type BPContactViewModel = {
 	isDefault: boolean;
 };
 
-export type BPPeopleSelection = {
-	userId: string;
+export type BPContactFormState = {
 	name: string;
+	userId?: string;
+	phoneNumber: string;
 	email: string;
+	panNumber: string;
 	isMainContact: boolean;
 	isDefault: boolean;
 };
+export type BPContactPayload = {
+	name: string;
+	userId?: string | null;
+	phoneNumber: string | null;
+	email: string | null;
+	panNumber: string | null;
+	isMainContact: boolean;
+	isDefault: boolean;
+};
+
+export type UpdateBPContactPayload = Partial<BPContactPayload>;
 
 export type BusinessPartnerGeneralInfoFormState = {
 	internalId?: string;

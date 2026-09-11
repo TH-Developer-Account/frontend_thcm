@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Mail, Phone, Trash2, UserRoundCheck, X } from "lucide-react";
+import { Mail, Phone, Plus, Trash2, UserRoundCheck, X } from "lucide-react";
 
 import ActionMenu from "../../../../components/common/ActionMenu";
 import type { ActionMenuItem } from "../../../../components/common/ActionMenu";
@@ -10,14 +10,15 @@ import type { SimpleTableColumn } from "../../../../components/ui/tables/SimpleV
 import UserAsyncSelect from "../../../../components/forms/AsyncSelect";
 
 import {
-	useBPAddPeopleForm,
-	useBPPeopleManager,
+	useBPContactsManager,
+	useBPAddExistingPeopleForm,
 } from "../hooks/useBusinessPartners";
 
 import type {
 	BPContactViewModel,
 	BPPeoplePermissions,
 } from "../utils/bp.types";
+import { getInitials } from "../../../../utils/format";
 
 type BPPeopleProps = {
 	businessPartnerId: string;
@@ -26,6 +27,7 @@ type BPPeopleProps = {
 
 	/** Controlled from BPTabs via the "Add People" action row. */
 	isAdding: boolean;
+	onAddPeople: () => void;
 	onCancelAdd: () => void;
 	onAdded: () => void;
 };
@@ -40,15 +42,6 @@ type PeopleColumnOptions = {
 };
 
 type RoleBadgeVariant = "success" | "warning" | "info";
-
-const getInitials = (name: string): string =>
-	name
-		.trim()
-		.split(/\s+/)
-		.slice(0, 2)
-		.map((part) => part[0])
-		.join("")
-		.toUpperCase();
 
 const getRoleBadgeVariant = (person: BPContactViewModel): RoleBadgeVariant => {
 	if (person.isOwner) {
@@ -232,6 +225,7 @@ const BPPeople = ({
 	people,
 	permissions,
 	isAdding,
+	onAddPeople,
 	onCancelAdd,
 	onAdded,
 }: BPPeopleProps) => {
@@ -243,7 +237,7 @@ const BPPeople = ({
 		isRemovingContact,
 		canSetMainContact,
 		canRemovePeople,
-	} = useBPPeopleManager(businessPartnerId, people, permissions);
+	} = useBPContactsManager(businessPartnerId, people, permissions);
 
 	const {
 		selected,
@@ -255,12 +249,8 @@ const BPPeople = ({
 		handleSubmit,
 		isSubmitting,
 		error: addPeopleError,
-	} = useBPAddPeopleForm(businessPartnerId, people);
+	} = useBPAddExistingPeopleForm(businessPartnerId, people);
 
-	/**
-	 * UserAsyncSelect keeps its internal search input state.
-	 * Remounting it after a selection clears the previous search text.
-	 */
 	const [selectKey, setSelectKey] = useState(0);
 
 	const columns = getColumns({
@@ -287,16 +277,30 @@ const BPPeople = ({
 
 	return (
 		<div className="bp-people">
-			<SimpleViewTable
-				data={sortedPeople}
-				columns={columns}
-				getRowId={(person) => person.id}
-				maxHeight="360px"
-				className="bp-people-view-table"
-				ariaLabel="Business partner people"
-				emptyTitle="No people found"
-				emptyDescription="No contacts are associated with this business partner."
-			/>
+			{!(isAdding && sortedPeople.length === 0) && (
+				<SimpleViewTable
+					data={sortedPeople}
+					columns={columns}
+					getRowId={(person) => person.id}
+					maxHeight="360px"
+					className="bp-people-view-table"
+					ariaLabel="Business partner people"
+					emptyTitle="No people found"
+					emptyDescription="No contacts are associated with this business partner."
+					emptyContent={
+						<Button
+							type="button"
+							text="Add People"
+							Icon={Plus}
+							iconPosition="left"
+							appearance="standard"
+							variant="outline"
+							size="sm"
+							onClick={onAddPeople}
+						/>
+					}
+				/>
+			)}
 
 			{isAdding && (
 				<div className="bp-people-add-panel">
@@ -307,6 +311,7 @@ const BPPeople = ({
 						placeholder="Search by name or email..."
 						excludedUserIds={excludedUserIds}
 						value={null}
+						className="bp-contact-select-input"
 						onChange={(user) => {
 							if (!user) {
 								return;
@@ -363,7 +368,7 @@ const BPPeople = ({
 						</p>
 					)}
 
-					<div className="bp-master-form-actions">
+					<div className="bp-master-form-actions bp-gen-content-actions">
 						<Button
 							type="button"
 							text="Cancel"

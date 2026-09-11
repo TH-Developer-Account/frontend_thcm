@@ -1,20 +1,22 @@
 import { useState } from "react";
-import { Check, Mail, Phone, X } from "lucide-react";
+import { Mail, Phone, Plus, Trash2, UserRoundCheck, X } from "lucide-react";
 
+import ActionMenu from "../../../../components/common/ActionMenu";
+import type { ActionMenuItem } from "../../../../components/common/ActionMenu";
+import TabsBar from "../../../../components/common/TabsBar"; // adjust path to match your project structure
 import Button from "../../../../components/common/Button";
 import FormInput from "../../../../components/forms/FormInput";
 import SimpleViewTable from "../../../../components/ui/tables/SimpleViewTable";
 import type { SimpleTableColumn } from "../../../../components/ui/tables/SimpleViewTable";
 import UserAsyncSelect from "../../../../components/forms/AsyncSelect";
-
-import { useBPPeopleManager } from "../hooks/useBusinessPartners";
+import { useBPContactsManager } from "../hooks/useBusinessPartners";
 import { useBusinessPartnerPeopleMutations } from "../hooks/useBusinessPartnerMutations";
 
 import type {
 	BPContactViewModel,
 	BPPeoplePermissions,
-	BusinessPartnerFormState,
 } from "../utils/bp.types";
+import { Badge } from "../../../../components/common/Badge";
 
 type BPContactProps = {
 	businessPartnerId: string;
@@ -23,6 +25,7 @@ type BPContactProps = {
 
 	/** Controlled from BPTabs via the "Add Contact" action row. */
 	isAdding: boolean;
+	onAddContact: () => void;
 	onCancelAdd: () => void;
 	onAdded: () => void;
 };
@@ -57,6 +60,11 @@ const EMPTY_MANUAL_FORM = {
 	panNumber: "",
 };
 
+const addContactModes = [
+	{ value: "search", label: "Search Existing User" },
+	{ value: "manual", label: "Add Manually" },
+] as const;
+
 const makeLocalId = () =>
 	typeof crypto !== "undefined" && "randomUUID" in crypto
 		? crypto.randomUUID()
@@ -71,6 +79,19 @@ const getInitials = (name: string): string =>
 		.join("")
 		.toUpperCase();
 
+type RoleBadgeVariant = "success" | "warning" | "info";
+const getRoleBadgeVariant = (person: BPContactViewModel): RoleBadgeVariant => {
+	if (person.isOwner) {
+		return "success";
+	}
+
+	if (person.isMainContact) {
+		return "info";
+	}
+
+	return "warning";
+};
+
 const getColumns = ({
 	canSetMainContact,
 	canRemovePeople,
@@ -81,38 +102,49 @@ const getColumns = ({
 }: ContactColumnOptions): SimpleTableColumn<BPContactViewModel>[] => {
 	const columns: SimpleTableColumn<BPContactViewModel>[] = [
 		{
-			key: "id",
-			header: "ID",
-			widthUnits: 2,
-			minWidth: 130,
-			render: (contact) => (
-				<span className="bp-people-id">{contact.id.slice(0, 8)}</span>
-			),
-		},
-
-		{
 			key: "name",
 			header: "Name",
 			widthUnits: 3,
 			minWidth: 190,
 			render: (contact) => (
-				<div className="bp-people-user">
+				<div
+					className={[
+						"bp-people-user",
+						contact.isMainContact && "bp-main-contact-marker",
+					]
+						.filter(Boolean)
+						.join(" ")}
+				>
 					<div className="bp-people-avatar" aria-hidden="true">
 						{getInitials(contact.name)}
 					</div>
 
 					<div className="bp-people-user-copy">
 						<p className="bp-people-name">{contact.name}</p>
+
+						{contact.isMainContact && (
+							<p className="bp-people-id">Default contact</p>
+						)}
 					</div>
 				</div>
 			),
 		},
-
+		{
+			key: "role",
+			header: "Role",
+			widthUnits: 2,
+			minWidth: 130,
+			render: (contact) => (
+				<Badge variant={getRoleBadgeVariant(contact)}>
+					{contact.role || "--"}
+				</Badge>
+			),
+		},
 		{
 			key: "phoneNumber",
 			header: "Phone Number",
-			widthUnits: 2,
-			minWidth: 160,
+			widthUnits: 3,
+			minWidth: 180,
 			render: (contact) =>
 				contact.phoneNumber ? (
 					<a
@@ -124,18 +156,18 @@ const getColumns = ({
 							className="bp-people-contact-icon"
 							aria-hidden="true"
 						/>
+
 						<span className="bp-people-contact">{contact.phoneNumber}</span>
 					</a>
 				) : (
 					<span>--</span>
 				),
 		},
-
 		{
 			key: "email",
-			header: "Email Id",
-			widthUnits: 3,
-			minWidth: 210,
+			header: "Email ID",
+			widthUnits: 4,
+			minWidth: 220,
 			render: (contact) =>
 				contact.email ? (
 					<a href={`mailto:${contact.email}`} className="bp-people-contact-row">
@@ -144,13 +176,13 @@ const getColumns = ({
 							className="bp-people-contact-icon"
 							aria-hidden="true"
 						/>
+
 						<span className="bp-people-contact">{contact.email}</span>
 					</a>
 				) : (
 					<span>--</span>
 				),
 		},
-
 		{
 			key: "pan",
 			header: "PAN Number",
@@ -158,81 +190,55 @@ const getColumns = ({
 			minWidth: 140,
 			render: (contact) => <span>{contact.panNumber || "--"}</span>,
 		},
-
-		{
-			key: "isOwner",
-			header: "Is Owner",
-			widthUnits: 1,
-			minWidth: 100,
-			render: (contact) =>
-				contact.isOwner ? (
-					<Check size={16} aria-label="Owner" />
-				) : (
-					<span>--</span>
-				),
-		},
-
-		{
-			key: "isMainContact",
-			header: "Is Main Contact",
-			widthUnits: 1,
-			minWidth: 130,
-			render: (contact) => {
-				const isMain = contact.isMainContact;
-
-				if (canSetMainContact) {
-					return (
-						<button
-							type="button"
-							className="bp-people-main-toggle"
-							disabled={isMain || isUpdating}
-							onClick={() => onSetMainContact(contact)}
-							aria-label={
-								isMain
-									? `${contact.name} is already the main contact`
-									: `Set ${contact.name} as main contact`
-							}
-						>
-							{isMain ? <Check size={16} aria-hidden="true" /> : "--"}
-						</button>
-					);
-				}
-
-				return isMain ? (
-					<Check size={16} aria-label="Main contact" />
-				) : (
-					<span>--</span>
-				);
-			},
-		},
-
-		{
-			key: "businessPartnerId",
-			header: "BP ID",
-			widthUnits: 3,
-			minWidth: 190,
-			render: (contact) => <span>{contact.businessPartnerId || "--"}</span>,
-		},
 	];
 
-	if (canRemovePeople) {
+	const hasActions = canSetMainContact || canRemovePeople;
+
+	if (hasActions) {
 		columns.push({
 			key: "actions",
-			header: "",
+			header: "Actions",
 			widthUnits: 1,
-			minWidth: 60,
-			render: (contact) =>
-				contact.isOwner ? null : (
-					<button
-						type="button"
-						className="bp-people-selected-remove"
-						aria-label={`Remove ${contact.name} from this business partner`}
-						disabled={isRemoving}
-						onClick={() => onRemove(contact)}
-					>
-						<X size={14} aria-hidden="true" />
-					</button>
-				),
+			minWidth: 80,
+			render: (contact) => {
+				const actions: ActionMenuItem<BPContactViewModel>[] = [
+					{
+						id: "set-default-contact",
+						label: contact.isMainContact
+							? "Current default contact"
+							: "Set as default",
+						Icon: UserRoundCheck,
+						onClick: onSetMainContact,
+						hidden: !canSetMainContact,
+						disabled: contact.isMainContact || isUpdating,
+						ariaLabel: contact.isMainContact
+							? `${contact.name} is already the default contact`
+							: `Set ${contact.name} as the default contact`,
+					},
+					{
+						id: "remove-contact",
+						label: "Remove",
+						Icon: Trash2,
+						onClick: onRemove,
+						hidden: !canRemovePeople,
+						disabled: contact.isOwner || isRemoving,
+						variant: "danger",
+						ariaLabel: contact.isOwner
+							? `${contact.name} is the owner and cannot be removed`
+							: `Remove ${contact.name} from this business partner`,
+					},
+				];
+
+				return (
+					<ActionMenu
+						row={contact}
+						actions={actions}
+						ariaLabel={`Actions for ${contact.name}`}
+						size="sm"
+						triggerVariant="outline"
+					/>
+				);
+			},
 		});
 	}
 
@@ -244,6 +250,7 @@ const BPContact = ({
 	contacts,
 	permissions,
 	isAdding,
+	onAddContact,
 	onCancelAdd,
 	onAdded,
 }: BPContactProps) => {
@@ -255,7 +262,7 @@ const BPContact = ({
 		isRemovingContact,
 		canSetMainContact,
 		canRemovePeople,
-	} = useBPPeopleManager(businessPartnerId, contacts, permissions);
+	} = useBPContactsManager(businessPartnerId, contacts, permissions);
 
 	const { addPeople, isAddingPeople, addPeopleError } =
 		useBusinessPartnerPeopleMutations(businessPartnerId);
@@ -401,49 +408,42 @@ const BPContact = ({
 	};
 
 	return (
-		<div className="bp-people">
-			<SimpleViewTable
-				data={sortedPeople}
-				columns={columns}
-				getRowId={(contact) => contact.id}
-				maxHeight="360px"
-				className="bp-people-view-table"
-				ariaLabel="Business partner contacts"
-				emptyTitle="No contacts found"
-				emptyDescription="No contacts are associated with this business partner."
-			/>
+		<div>
+			{!(isAdding && sortedPeople.length === 0) && (
+				<SimpleViewTable
+					data={sortedPeople}
+					columns={columns}
+					getRowId={(contact) => contact.id}
+					maxHeight="360px"
+					className="bp-people-view-table mb-4"
+					ariaLabel="Business partner contacts"
+					emptyTitle="No contacts found"
+					emptyDescription="No contacts are associated with this business partner."
+					emptyContent={
+						<Button
+							type="button"
+							text="Add Contact"
+							Icon={Plus}
+							iconPosition="left"
+							appearance="standard"
+							variant="outline"
+							size="sm"
+							className="mt-1"
+							onClick={onAddContact}
+						/>
+					}
+				/>
+			)}
 
 			{isAdding && (
 				<div className="bp-people-add-panel">
-					<div className="bp-contact-add-mode-toggle" role="tablist">
-						<button
-							type="button"
-							role="tab"
-							aria-selected={addMode === "search"}
-							className={
-								addMode === "search"
-									? "bp-contact-mode-tab bp-contact-mode-tab-active"
-									: "bp-contact-mode-tab"
-							}
-							onClick={() => setAddMode("search")}
-						>
-							Search Existing User
-						</button>
-
-						<button
-							type="button"
-							role="tab"
-							aria-selected={addMode === "manual"}
-							className={
-								addMode === "manual"
-									? "bp-contact-mode-tab bp-contact-mode-tab-active"
-									: "bp-contact-mode-tab"
-							}
-							onClick={() => setAddMode("manual")}
-						>
-							Add Manually
-						</button>
-					</div>
+					<TabsBar
+						items={addContactModes}
+						active={addMode}
+						onChange={setAddMode}
+						ariaLabel="Add contact method"
+						variant="soft"
+					/>
 
 					{addMode === "search" ? (
 						<UserAsyncSelect
@@ -453,6 +453,7 @@ const BPContact = ({
 							placeholder="Search by name or email..."
 							excludedUserIds={excludedUserIds}
 							value={null}
+							className="bp-contact-select-input"
 							onChange={handleSelectUser}
 						/>
 					) : (
@@ -499,6 +500,7 @@ const BPContact = ({
 								text="Add to list"
 								variant="outline"
 								size="sm"
+								className="mt-6"
 								onClick={handleAddManualEntry}
 								disabled={!manualForm.name.trim()}
 							/>
@@ -551,7 +553,7 @@ const BPContact = ({
 						</p>
 					)}
 
-					<div className="bp-master-form-actions">
+					<div className="bp-master-form-actions bp-gen-content-actions">
 						<Button
 							type="button"
 							text="Cancel"
@@ -573,58 +575,5 @@ const BPContact = ({
 		</div>
 	);
 };
-
-/* Unchanged: edit form for the BP's own contact fields (mobile/email/telephone/fax). */
-type FormChangeHandler = <K extends keyof BusinessPartnerFormState>(
-	key: K,
-	value: BusinessPartnerFormState[K],
-) => void;
-
-type BPContactFormProps = {
-	form: BusinessPartnerFormState;
-	onChange: FormChangeHandler;
-};
-
-export const BPContactForm = ({ form, onChange }: BPContactFormProps) => (
-	<section
-		className="bp-create-form-section"
-		aria-labelledby="contact-information-heading"
-	>
-		<h3 id="contact-information-heading" className="sr-only">
-			Contact Information
-		</h3>
-
-		<div className="bp-master-form-grid">
-			<FormInput
-				name="mobileNumber"
-				label="Mobile Number"
-				value={form.mobileNumber}
-				onChange={(event) => onChange("mobileNumber", event.target.value)}
-			/>
-
-			<FormInput
-				name="email"
-				label="Email"
-				type="email"
-				value={form.email}
-				onChange={(event) => onChange("email", event.target.value)}
-			/>
-
-			<FormInput
-				name="telephone"
-				label="Telephone"
-				value={form.telephone}
-				onChange={(event) => onChange("telephone", event.target.value)}
-			/>
-
-			<FormInput
-				name="fax"
-				label="Fax"
-				value={form.fax}
-				onChange={(event) => onChange("fax", event.target.value)}
-			/>
-		</div>
-	</section>
-);
 
 export default BPContact;

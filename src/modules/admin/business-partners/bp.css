@@ -218,7 +218,7 @@ button {
 	}
 
 	.detail-grid {
-		@apply grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-2 2xl:grid-cols-3;
+		@apply grid grid-cols-1 gap-x-6 gap-y-4 md:grid-cols-3 2xl:grid-cols-3;
 	}
 
 	.detail-row {
@@ -588,7 +588,7 @@ button {
 		}
 
 		.bp-master-form-grid {
-			@apply grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3;
+			@apply grid grid-cols-1 items-center justify-end gap-2 md:grid-cols-3 xl:grid-cols-5;
 		}
 
 		.bp-master-form-checks {
@@ -627,7 +627,7 @@ button {
 
 @layer components {
 	.bp-people {
-		@apply px-5 py-4;
+		@apply pb-2;
 	}
 
 	.bp-people-header {
@@ -728,14 +728,16 @@ button {
 		flex-shrink: 0;
 		padding-inline: var(--space-3);
 	}
-	.bp-address-empty-state {
+	.bp-address-empty-state,
+	.empty-state {
 		width: 100%;
 		border: 1px dotted #e5e7eb;
 		border-radius: 8px;
 		background: #ffffff;
 	}
 
-	.bp-address-empty-content {
+	.bp-address-empty-content,
+	.empty-content {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -744,7 +746,8 @@ button {
 		min-height: 120px;
 	}
 
-	.bp-address-empty-title {
+	.bp-address-empty-title,
+	.empty-title {
 		margin: 0;
 		font-size: 12px;
 		font-weight: 600;
@@ -757,6 +760,7 @@ button {
 		font-size: 10px;
 		line-height: 1.5;
 		color: #9ca3af;
+		text-align: center;
 	}
 
 	.bp-address-empty-state .bp-gen-content-actions {
@@ -783,11 +787,15 @@ button {
 
 @layer components {
 	.bp-people-add-panel {
-		@apply mt-3 flex flex-col gap-3 rounded-xl border border-zinc-200 bg-zinc-50/70 p-4;
+		@apply flex flex-col gap-1;
 	}
 
+	.bp-people-add-panel .bp-contact-select-input,
+	.bp-master-form-grid {
+		@apply py-4 px-6;
+	}
 	.bp-people-selected-list {
-		@apply flex flex-col gap-2;
+		@apply flex flex-col gap-2  px-6;
 	}
 
 	.bp-people-selected-chip {

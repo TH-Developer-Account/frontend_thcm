@@ -18,7 +18,7 @@ export type FilterTabIcon = ComponentType<
 	}
 >;
 
-export type FilterTabVariant = "underline" | "soft";
+export type FilterTabVariant = "underline" | "soft" | "none";
 
 export type FilterTabItem<TValue extends string> = {
 	value: TValue;

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import Button from "../../../../components/common/Button";
@@ -15,7 +15,7 @@ import type {
 	BusinessPartnerPermissions,
 	BusinessPartnerViewModel,
 } from "../utils/bp.types";
-import BPContact, { BPContactForm } from "./BPContact";
+import BPContact from "./BPContact";
 import BPAddress from "./BPAddress";
 import BPBranches from "./BPBranches";
 // import { BPGeneralInfoForm } from "./BPGenInfo";
@@ -159,6 +159,7 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 								text={`Edit ${SECTION_LABELS[section]}`}
 								variant="outline"
 								size="sm"
+								Icon={Pencil}
 								onClick={() => detailForm.startEditing(section)}
 							/>
 						</div>
@@ -255,53 +256,20 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 					)} */}
 
 				{activeTab === "contact" && (
-					<>
-						{renderDetailSection(
-							"contact",
-							<div className="detail-section">
-								<div className="detail-grid">
-									<div className="detail-row">
-										<p className="detail-label">Mobile Number</p>
-										<p className="detail-value">
-											{view.partner.mobileNumber || "--"}
-										</p>
-									</div>
-									<div className="detail-row">
-										<p className="detail-label">Email</p>
-										<p className="detail-value">{view.partner.email || "--"}</p>
-									</div>
-									<div className="detail-row">
-										<p className="detail-label">Telephone</p>
-										<p className="detail-value">
-											{view.partner.telephone || "--"}
-										</p>
-									</div>
-									<div className="detail-row">
-										<p className="detail-label">Fax</p>
-										<p className="detail-value">{view.partner.fax || "--"}</p>
-									</div>
-								</div>
-							</div>,
-							<BPContactForm
-								form={detailForm.form}
-								onChange={detailForm.handleChange}
-							/>,
-						)}
+					<div className="bp-gen-content">
+						<BPContact
+							businessPartnerId={view.partner.id}
+							contacts={view.contacts}
+							permissions={permissions.people}
+							isAdding={isAddingContact}
+							onAddContact={() => setIsAddingContact(true)}
+							onCancelAdd={() => setIsAddingContact(false)}
+							onAdded={() => setIsAddingContact(false)}
+						/>
 
-						{/* Separate section: the contacts list (search-existing
-						    or add-manually), independent of whether the
-						    edit-info form above is open. */}
-						<div className="bp-gen-content">
-							<BPContact
-								businessPartnerId={view.partner.id}
-								contacts={view.people}
-								permissions={permissions.people}
-								isAdding={isAddingContact}
-								onCancelAdd={() => setIsAddingContact(false)}
-								onAdded={() => setIsAddingContact(false)}
-							/>
-
-							{permissions.people.canAddPeople && (
+						{permissions.people.canAddPeople &&
+							view.contacts.length > 0 &&
+							!isAddingContact && (
 								<div className="bp-gen-content-actions">
 									<Button
 										type="button"
@@ -316,8 +284,7 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 									/>
 								</div>
 							)}
-						</div>
-					</>
+					</div>
 				)}
 
 				{activeTab === "organization" &&
@@ -460,22 +427,26 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 
 				{activeTab === "branches" && (
 					<div className="bp-gen-content">
-						<BPBranches branches={view.branches} />
+						<BPBranches
+							branches={view.branches}
+							onAddBranch={handleAddBranch}
+						/>
 
-						{permissions.canCreateBusinessPartner && (
-							<div className="bp-gen-content-actions">
-								<Button
-									type="button"
-									text="Add Branch"
-									Icon={Plus}
-									iconPosition="left"
-									appearance="standard"
-									variant="outline"
-									size="sm"
-									onClick={handleAddBranch}
-								/>
-							</div>
-						)}
+						{permissions.canCreateBusinessPartner &&
+							view.branches.length > 0 && (
+								<div className="bp-gen-content-actions">
+									<Button
+										type="button"
+										text="Add Branch"
+										Icon={Plus}
+										iconPosition="left"
+										appearance="standard"
+										variant="outline"
+										size="sm"
+										onClick={handleAddBranch}
+									/>
+								</div>
+							)}
 					</div>
 				)}
 
@@ -486,25 +457,28 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 							people={view.people}
 							permissions={permissions.people}
 							isAdding={isAddingPeople}
+							onAddPeople={() => setIsAddingPeople(true)}
 							onCancelAdd={() => setIsAddingPeople(false)}
 							onAdded={() => setIsAddingPeople(false)}
 						/>
 
-						{permissions.people.canAddPeople && (
-							<div className="bp-gen-content-actions">
-								<Button
-									type="button"
-									text="Add People"
-									Icon={Plus}
-									iconPosition="left"
-									appearance="standard"
-									variant="outline"
-									size="sm"
-									onClick={() => setIsAddingPeople(true)}
-									disabled={isAddingPeople}
-								/>
-							</div>
-						)}
+						{permissions.people.canAddPeople &&
+							view.people.length > 0 &&
+							!isAddingPeople && (
+								<div className="bp-gen-content-actions">
+									<Button
+										type="button"
+										text="Add People"
+										Icon={Plus}
+										iconPosition="left"
+										appearance="standard"
+										variant="outline"
+										size="sm"
+										onClick={() => setIsAddingPeople(true)}
+										disabled={isAddingPeople}
+									/>
+								</div>
+							)}
 					</div>
 				)}
 			</div>

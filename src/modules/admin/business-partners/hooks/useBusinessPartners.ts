@@ -323,7 +323,16 @@ export const useBPAddressManager = (
 	};
 };
 
-/* People logic */
+/* -------------------------------------------------------------------------
+ * Contacts / People shared logic
+ *
+ * Both the "Contact" tab (BPContact.tsx) and the "People" tab
+ * (BPPeople.tsx) render the same underlying list of BP contacts, just
+ * with different columns/actions. useBPContactsManager holds the logic
+ * shared by both: sorting, setting the main contact, and removing a
+ * contact. It does NOT handle adding — see the two add-flow hooks below,
+ * one per tab, since each tab adds contacts a different way.
+ * ---------------------------------------------------------------------- */
 
 const getPeoplePriority = (person: BPContactViewModel): number => {
 	if (person.isOwner) {
@@ -337,21 +346,19 @@ const getPeoplePriority = (person: BPContactViewModel): number => {
 	return 2;
 };
 
-export const useBPPeopleManager = (
+/** Shared list logic for both the Contact tab and the People tab. */
+export const useBPContactsManager = (
 	businessPartnerId: string,
 	people: BPContactViewModel[],
 	permissions: BPPeoplePermissions = DEFAULT_BUSINESS_PARTNER_PERMISSIONS.people,
 ) => {
 	const {
-		addPeople,
 		updatePeople,
 		removeContact,
 
-		isAddingPeople,
 		isUpdatingPeople,
 		isRemovingContact,
 
-		addPeopleError,
 		updatePeopleError,
 		removeContactError,
 	} = useBusinessPartnerPeopleMutations(businessPartnerId);
@@ -363,21 +370,6 @@ export const useBPPeopleManager = (
 					getPeoplePriority(firstPerson) - getPeoplePriority(secondPerson),
 			),
 		[people],
-	);
-
-	const handleAddPeople = useCallback(
-		async (payload: UpdateBusinessPartnerPeoplePayload) => {
-			if (!permissions.canAddPeople) {
-				return;
-			}
-
-			try {
-				await addPeople(payload);
-			} catch {
-				// Mutation exposes the error.
-			}
-		},
-		[permissions.canAddPeople, addPeople],
 	);
 
 	const handleSetMainContact = useCallback(
@@ -415,27 +407,32 @@ export const useBPPeopleManager = (
 	return {
 		sortedPeople,
 
-		handleAddPeople,
 		handleSetMainContact,
 		handleRemovePerson,
 
-		isAddingPeople,
 		isUpdatingPeople,
 		isRemovingContact,
-		isPeopleMutationPending:
-			isAddingPeople || isUpdatingPeople || isRemovingContact,
+		isContactsMutationPending: isUpdatingPeople || isRemovingContact,
 
-		addPeopleError,
 		updatePeopleError,
 		removeContactError,
 
-		canAddPeople: permissions.canAddPeople,
 		canSetMainContact: permissions.canSetMainContact,
 		canRemovePeople: permissions.canRemovePeople,
 	};
 };
 
-export const useBPAddPeopleForm = (
+/** @deprecated Use {@link useBPContactsManager}. Kept as an alias so
+ * existing imports don't break during the rename — remove once all call
+ * sites (BPContact.tsx, BPPeople.tsx) are updated. */
+export const useBPPeopleManager = useBPContactsManager;
+
+/* -------------------------------------------------------------------------
+ * People tab — "Add People" flow (search + attach one or more existing
+ * users in a single batch submit). Used only by BPPeople.tsx.
+ * ---------------------------------------------------------------------- */
+
+export const useBPAddExistingPeopleForm = (
 	businessPartnerId: string,
 	existingPeople: BPContactViewModel[],
 ) => {
@@ -444,14 +441,18 @@ export const useBPAddPeopleForm = (
 
 	const [selected, setSelected] = useState<BPPeopleSelection[]>([]);
 
-	const existingUserIds = useMemo(
-		() => existingPeople.map((person) => person.userId),
+	const existingUserIds = useMemo<string[]>(
+		() =>
+			existingPeople
+				.map((person) => person.userId)
+				.filter(
+					(userId): userId is string =>
+						typeof userId === "string" && userId.trim().length > 0,
+				),
 		[existingPeople],
 	);
 
-	// Fed into UserAsyncSelect's excludedUserIds so already-attached people
-	// and people already picked in this session don't show up again.
-	const excludedUserIds = useMemo(
+	const excludedUserIds = useMemo<string[]>(
 		() => [...existingUserIds, ...selected.map((entry) => entry.userId)],
 		[existingUserIds, selected],
 	);
@@ -538,3 +539,8 @@ export const useBPAddPeopleForm = (
 		error: addPeopleError,
 	};
 };
+
+/** @deprecated Use {@link useBPAddExistingPeopleForm}. Kept as an alias
+ * so existing imports don't break during the rename — remove once
+ * BPPeople.tsx is updated to import the new name directly. */
+export const useBPAddPeopleForm = useBPAddExistingPeopleForm;
