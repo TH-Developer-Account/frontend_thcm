@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+// useBusinessPartnerForm.ts
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useBusinessPartner } from "./useBusinessPartners";
@@ -20,6 +21,11 @@ import {
 	type BusinessPartnerFormState,
 	type BusinessPartnerPermissions,
 } from "../utils/bp.types";
+import { validateBusinessPartnerForm } from "../utils/businessPartner.schema";
+
+export type BusinessPartnerFieldErrors = ReturnType<
+	typeof validateBusinessPartnerForm
+>;
 
 export type DetailFormSection =
 	| "general"
@@ -28,30 +34,6 @@ export type DetailFormSection =
 	| "address"
 	| null;
 
-type UseBusinessPartnerFormOptions = {
-	/**
-	 * Used by the create/edit page.
-	 *
-	 * - undefined => create mode
-	 * - string => edit mode
-	 */
-	businessPartnerId?: string;
-
-	/**
-	 * Used by the view page.
-	 *
-	 * When provided, the hook works as an inline section editor
-	 * and does not perform navigation or fetching.
-	 */
-	partner?: BusinessPartnerDetail;
-
-	permissions?: BusinessPartnerPermissions;
-};
-
-// -----------------------------------------------------------------------------
-// Routes
-// -----------------------------------------------------------------------------
-
 export const businessPartnerPaths = {
 	list: () => "/admin/business-partners",
 	create: () => "/admin/business-partners/create",
@@ -59,88 +41,53 @@ export const businessPartnerPaths = {
 	edit: (id: string) => `/admin/business-partners/${id}/edit`,
 };
 
-// -----------------------------------------------------------------------------
-// Helpers
-// -----------------------------------------------------------------------------
-
 const getErrorMessage = (error: unknown): string => {
-	if (error instanceof Error) {
-		return error.message;
-	}
-
+	if (error instanceof Error) return error.message;
 	return "Unable to save the business partner";
 };
 
-const isDetailSection = (
-	section: DetailFormSection,
-): section is Exclude<DetailFormSection, null> => Boolean(section);
+// =============================================================================
+// Create / Edit page form
+// =============================================================================
 
-// -----------------------------------------------------------------------------
-// Hook
-// -----------------------------------------------------------------------------
+type UseCreateEditFormOptions = {
+	/** undefined => create mode, string => edit mode */
+	businessPartnerId?: string;
+	permissions?: BusinessPartnerPermissions;
+};
 
-export const useBusinessPartnerForm = ({
+/**
+ * Owns the create/edit page's form only. Does NOT know about the view
+ * page's inline section editor (see useBusinessPartnerSectionEditor below)
+ * — the two used to share one hook via isDetailMode branching through
+ * every function; splitting them means handleSubmit/handleCancel/etc. no
+ * longer need to ask "which page am I in" before deciding what to do.
+ */
+export const useBusinessPartnerCreateEditForm = ({
 	businessPartnerId,
-	partner,
 	permissions = DEFAULT_BUSINESS_PARTNER_PERMISSIONS,
-}: UseBusinessPartnerFormOptions = {}) => {
+}: UseCreateEditFormOptions = {}) => {
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 
-	/**
-	 * ---------------------------------------------------------------------------
-	 * Mode
-	 * ---------------------------------------------------------------------------
-	 *
-	 * Create/Edit page:
-	 *   businessPartnerId is supplied from the route.
-	 *
-	 * View page:
-	 *   partner is supplied by the parent.
-	 *
-	 * partner takes precedence because the view page already has the
-	 * fully loaded business partner.
-	 */
-	const normalizedId = businessPartnerId?.trim() || partner?.id?.trim() || "";
-
-	const isDetailMode = Boolean(partner);
+	const normalizedId = businessPartnerId?.trim() ?? "";
 	const isEditMode = Boolean(normalizedId);
-	const isCreateMode = !isDetailMode && !isEditMode;
+	const isCreateMode = !isEditMode;
 
-	/**
-	 * Create-mode only: a `?parentId=` query param means "create a branch
-	 * office under this parent BP", arrived at via the "Add Branch" action
-	 * on the parent's Branches tab.
-	 */
+	// Create-mode only: a `?parentId=` query param means "create a branch
+	// office under this parent BP", arrived at via the "Add Branch" action.
 	const parentIdFromQuery = isCreateMode
 		? (searchParams.get("parentId")?.trim() ?? "")
 		: "";
 
-	// ---------------------------------------------------------------------------
-	// Query
-	// ---------------------------------------------------------------------------
-
-	/**
-	 * Only fetch when this hook is being used by the create/edit page.
-	 *
-	 * The view page already has `partner`, so it doesn't need another request.
-	 */
 	const partnerQuery = useBusinessPartner(
-		!isDetailMode && isEditMode ? normalizedId : undefined,
+		isEditMode ? normalizedId : undefined,
 	);
 
-	/**
-	 * Create-mode only: fetch the parent BP purely to prefill the form —
-	 * name / short name / legal trade name get copied over but remain
-	 * fully editable afterward.
-	 */
+	// Create-mode only: fetch the parent BP purely to prefill the form.
 	const parentPartnerQuery = useBusinessPartner(
 		isCreateMode && parentIdFromQuery ? parentIdFromQuery : undefined,
 	);
-
-	// ---------------------------------------------------------------------------
-	// Mutations
-	// ---------------------------------------------------------------------------
 
 	const {
 		createBusinessPartner,
@@ -151,118 +98,44 @@ export const useBusinessPartnerForm = ({
 		updateError,
 	} = useBusinessPartnerMutations();
 
-	// ---------------------------------------------------------------------------
-	// Form state
-	// ---------------------------------------------------------------------------
+	const formKey = isEditMode
+		? `edit:${normalizedId}`
+		: `create:${parentIdFromQuery}`;
 
-	const [form, setForm] = useState<BusinessPartnerFormState>(() => {
-		if (partner) {
-			return mapBusinessPartnerToForm(partner);
+	const initialForm = useMemo<BusinessPartnerFormState>(() => {
+		if (partnerQuery.data) {
+			return mapBusinessPartnerToForm(partnerQuery.data);
 		}
-		return { ...EMPTY_BUSINESS_PARTNER_FORM };
-	});
 
-	const [initializedPartnerId, setInitializedPartnerId] = useState<
-		string | null
-	>(null);
+		const parentPartner = parentPartnerQuery.data;
+
+		return {
+			...EMPTY_BUSINESS_PARTNER_FORM,
+			officeType: parentIdFromQuery
+				? "BRANCH_OFFICE"
+				: EMPTY_BUSINESS_PARTNER_FORM.officeType,
+			parentId: parentIdFromQuery,
+			bpName: parentPartner?.bpName ?? "",
+			bpShortName: parentPartner?.bpShortName ?? "",
+			legalTradeName: parentPartner?.legalTradeName ?? "",
+		};
+	}, [parentIdFromQuery, parentPartnerQuery.data, partnerQuery.data]);
+
+	const [formDraft, setFormDraft] = useState<{
+		key: string;
+		values: BusinessPartnerFormState;
+	} | null>(null);
+
+	const form = formDraft?.key === formKey ? formDraft.values : initialForm;
+
+	const [fieldErrors, setFieldErrors] = useState<BusinessPartnerFieldErrors>(
+		{},
+	);
 
 	const [validationError, setValidationError] = useState<string | null>(null);
-
 	const [lastSavedSection, setLastSavedSection] = useState<BPFormTab | null>(
 		null,
 	);
-
-	/**
-	 * Only used by the view page.
-	 *
-	 * null       => read mode
-	 * "general"  => editing general
-	 * "organization" => editing organization
-	 * "contact" => editing contact
-	 */
-	const [editingSection, setEditingSection] = useState<DetailFormSection>(null);
-
-	// ---------------------------------------------------------------------------
-	// Hydrate edit-page form
-	// ---------------------------------------------------------------------------
-
-	useEffect(() => {
-		if (isDetailMode) {
-			return;
-		}
-
-		const fetchedPartner = partnerQuery.data;
-
-		if (!fetchedPartner || initializedPartnerId === fetchedPartner.id) {
-			return;
-		}
-
-		setForm(mapBusinessPartnerToForm(fetchedPartner));
-		setInitializedPartnerId(fetchedPartner.id);
-	}, [isDetailMode, initializedPartnerId, partnerQuery.data]);
-
-	// ---------------------------------------------------------------------------
-	// Create-page branch prefill (from ?parentId=)
-	// ---------------------------------------------------------------------------
-
-	/**
-	 * Pre-select "Branch Office" + parentId as soon as we know we're
-	 * creating a branch, even before the parent BP data has loaded.
-	 */
-	const hasAppliedParentIdFromQuery = useRef(false);
-
-	useEffect(() => {
-		if (!isCreateMode || !parentIdFromQuery) {
-			return;
-		}
-
-		if (hasAppliedParentIdFromQuery.current) {
-			return;
-		}
-
-		hasAppliedParentIdFromQuery.current = true;
-
-		setForm((current) => ({
-			...current,
-			officeType: "BRANCH_OFFICE",
-			parentId: parentIdFromQuery,
-		}));
-	}, [isCreateMode, parentIdFromQuery]);
-
-	/**
-	 * Once the parent BP itself has loaded, copy over its identifying
-	 * info as a starting point. Runs once per parent id, and never
-	 * overwrites a value the user has already typed.
-	 */
-	const hasPrefilledFromParent = useRef<string | null>(null);
-
-	useEffect(() => {
-		const parentPartner = parentPartnerQuery.data;
-
-		if (!isCreateMode || !parentPartner) {
-			return;
-		}
-
-		if (hasPrefilledFromParent.current === parentPartner.id) {
-			return;
-		}
-
-		hasPrefilledFromParent.current = parentPartner.id;
-
-		setForm((current) => ({
-			...current,
-			officeType: "BRANCH_OFFICE",
-			parentId: parentIdFromQuery,
-			bpName: current.bpName || parentPartner.bpName,
-			bpShortName: current.bpShortName || parentPartner.bpShortName || "",
-			legalTradeName:
-				current.legalTradeName || parentPartner.legalTradeName || "",
-		}));
-	}, [isCreateMode, parentIdFromQuery, parentPartnerQuery.data]);
-
-	// ---------------------------------------------------------------------------
-	// Change handler
-	// ---------------------------------------------------------------------------
 
 	const handleChange = useCallback(
 		<K extends keyof BusinessPartnerFormState>(
@@ -270,18 +143,16 @@ export const useBusinessPartnerForm = ({
 			value: BusinessPartnerFormState[K],
 		) => {
 			setValidationError(null);
+			setFieldErrors({});
 
-			setForm((current) => {
+			setFormDraft((currentDraft) => {
+				const current =
+					currentDraft?.key === formKey ? currentDraft.values : initialForm;
 				const next = { ...current, [key]: value };
 
-				/**
-				 * Whenever a parent BP is set, this record is necessarily a
-				 * branch office of that parent — keep officeType in sync
-				 * regardless of whether parentId was typed manually or
-				 * arrived via the "Add Branch" prefill. Scoped to the
-				 * create page only; editing an existing BP's general
-				 * section should not silently reclassify it.
-				 */
+				// Setting a parentId always implies branch office, on create only —
+				// editing an existing BP's general section shouldn't silently
+				// reclassify it.
 				if (
 					isCreateMode &&
 					key === "parentId" &&
@@ -291,15 +162,11 @@ export const useBusinessPartnerForm = ({
 					next.officeType = "BRANCH_OFFICE";
 				}
 
-				return next;
+				return { key: formKey, values: next };
 			});
 		},
-		[isCreateMode],
+		[formKey, initialForm, isCreateMode],
 	);
-
-	// ---------------------------------------------------------------------------
-	// Create/Edit page
-	// ---------------------------------------------------------------------------
 
 	const canSubmit = isEditMode
 		? permissions.canUpdateBusinessPartner
@@ -307,40 +174,25 @@ export const useBusinessPartnerForm = ({
 
 	const isSaving = isCreating || isUpdating;
 
-	const isFormValid = useMemo(
-		() =>
-			Boolean(
-				form.internalId.trim() &&
-				form.bpName.trim() &&
-				form.officeType &&
-				form.bpType &&
-				(form.officeType !== "BRANCH_OFFICE" || form.parentId.trim()),
-			),
+	const validationErrors = useMemo(
+		() => validateBusinessPartnerForm(form),
 		[form],
 	);
+	const isFormValid = Object.keys(validationErrors).length === 0;
 
-	/**
-	 * Handles the continuous form used by the create/edit page.
-	 *
-	 * general:
-	 *   create when new
-	 *   update when editing
-	 *
-	 * organization:
-	 *   update only
-	 */
 	const handleSubmit = useCallback(
 		async (section: BPFormTab = "organization") => {
-			if (isDetailMode || isSaving) {
+			if (isSaving) return;
+
+			if (!isFormValid) {
+				setFieldErrors(validationErrors);
+				setValidationError(null);
 				return;
 			}
 
 			try {
 				setValidationError(null);
-
-				// ---------------------------------------------------------------
-				// Create
-				// ---------------------------------------------------------------
+				setFieldErrors({});
 
 				if (!isEditMode) {
 					if (section !== "organization") {
@@ -350,7 +202,6 @@ export const useBusinessPartnerForm = ({
 					}
 
 					const payload = mapGeneralFormToCreatePayload(form);
-
 					const createdPartner = await createBusinessPartner(payload);
 
 					navigate(businessPartnerPaths.view(createdPartner.id), {
@@ -361,22 +212,9 @@ export const useBusinessPartnerForm = ({
 					return;
 				}
 
-				// ---------------------------------------------------------------
-				// Update
-				// ---------------------------------------------------------------
+				if (!canSubmit || section !== "organization") return;
 
-				if (!canSubmit) {
-					return;
-				}
-
-				if (section !== "organization") {
-					return;
-				}
-
-				const payload =
-					section === "organization"
-						? mapOrganizationFormToUpdatePayload(form)
-						: mapGeneralFormToUpdatePayload(form);
+				const payload = mapOrganizationFormToUpdatePayload(form);
 
 				await updateBusinessPartner({
 					businessPartnerId: normalizedId,
@@ -390,10 +228,11 @@ export const useBusinessPartnerForm = ({
 		},
 		[
 			canSubmit,
+			validationErrors,
 			createBusinessPartner,
 			form,
-			isDetailMode,
 			isEditMode,
+			isFormValid,
 			isSaving,
 			navigate,
 			normalizedId,
@@ -401,16 +240,89 @@ export const useBusinessPartnerForm = ({
 		],
 	);
 
-	// ---------------------------------------------------------------------------
-	// View page — inline section editing
-	// ---------------------------------------------------------------------------
+	const handleCancel = useCallback(() => {
+		if (isEditMode) {
+			navigate(businessPartnerPaths.view(normalizedId));
+			return;
+		}
+		navigate(businessPartnerPaths.list());
+	}, [isEditMode, navigate, normalizedId]);
+
+	const mutationError = isEditMode ? updateError : createError;
+	const error =
+		validationError ?? (mutationError ? getErrorMessage(mutationError) : null);
+
+	// Before a BP exists, only General/Organization is available.
+	const availableTabs = useMemo<BPFormTab[] | undefined>(
+		() => (isEditMode ? undefined : ["organization"]),
+		[isEditMode],
+	);
+
+	return {
+		form,
+		handleChange,
+		fieldErrors,
+		error,
+		isSaving,
+		isEditMode,
+		isLoading: isEditMode && partnerQuery.isLoading,
+		isError: isEditMode && partnerQuery.isError,
+		isFormValid,
+		canSubmit,
+		lastSavedSection,
+		availableTabs,
+		handleSubmit,
+		handleCancel,
+	};
+};
+
+export type BusinessPartnerCreateEditForm = ReturnType<
+	typeof useBusinessPartnerCreateEditForm
+>;
+
+// =============================================================================
+// View page — inline section editor
+// =============================================================================
+
+type UseSectionEditorOptions = {
+	partner: BusinessPartnerDetail;
+	permissions?: BusinessPartnerPermissions;
+};
+
+/**
+ * Owns the view page's per-section (general/organization/contact) inline
+ * edit-in-place UI. Always has `partner` in hand already — no fetching, no
+ * create-mode branch, no parentId prefill logic. This is the entire reason
+ * for the split: BPTabs.tsx never exercised any of the create/edit-page
+ * code above, it just paid for it on every render via shared branching.
+ */
+export const useBusinessPartnerSectionEditor = ({
+	partner,
+	permissions = DEFAULT_BUSINESS_PARTNER_PERMISSIONS,
+}: UseSectionEditorOptions) => {
+	const [form, setForm] = useState<BusinessPartnerFormState>(() =>
+		mapBusinessPartnerToForm(partner),
+	);
+	const [editingSection, setEditingSection] = useState<DetailFormSection>(null);
+	const [validationError, setValidationError] = useState<string | null>(null);
+
+	const { updateBusinessPartner, isUpdating, updateError } =
+		useBusinessPartnerMutations();
+
+	const handleChange = useCallback(
+		<K extends keyof BusinessPartnerFormState>(
+			key: K,
+			value: BusinessPartnerFormState[K],
+		) => {
+			setValidationError(null);
+			setForm((current) => ({ ...current, [key]: value }));
+		},
+		[],
+	);
 
 	const startEditing = useCallback(
 		(section: Exclude<DetailFormSection, null>) => {
-			if (!partner) return;
-			const mapped = mapBusinessPartnerToForm(partner);
-			console.log("[startEditing] mapped form:", mapped); // <-- check this
-			setForm(mapped);
+			setForm(mapBusinessPartnerToForm(partner));
 			setEditingSection(section);
 			setValidationError(null);
 		},
@@ -418,26 +330,14 @@ export const useBusinessPartnerForm = ({
 	);
 
 	const cancelEditing = useCallback(() => {
-		if (!partner) {
-			return;
-		}
-
 		setForm(mapBusinessPartnerToForm(partner));
 		setEditingSection(null);
 		setValidationError(null);
 	}, [partner]);
 
-	/**
-	 * Saves whichever section is currently being edited on the view page.
-	 */
 	const handleSave = useCallback(async () => {
-		if (!partner || !isDetailSection(editingSection)) {
-			return;
-		}
-
-		if (!permissions.canUpdateBusinessPartner) {
-			return;
-		}
+		if (!editingSection) return;
+		if (!permissions.canUpdateBusinessPartner) return;
 
 		try {
 			setValidationError(null);
@@ -449,10 +349,7 @@ export const useBusinessPartnerForm = ({
 						? mapContactFormToUpdatePayload(form)
 						: mapGeneralFormToUpdatePayload(form);
 
-			await updateBusinessPartner({
-				businessPartnerId: partner.id,
-				payload,
-			});
+			await updateBusinessPartner({ businessPartnerId: partner.id, payload });
 
 			setEditingSection(null);
 		} catch (error) {
@@ -461,100 +358,26 @@ export const useBusinessPartnerForm = ({
 	}, [
 		editingSection,
 		form,
-		partner,
+		partner.id,
 		permissions.canUpdateBusinessPartner,
 		updateBusinessPartner,
 	]);
 
-	// ---------------------------------------------------------------------------
-	// Navigation
-	// ---------------------------------------------------------------------------
-
-	const handleCancel = useCallback(() => {
-		/**
-		 * View page:
-		 * cancel only exits the current section's edit mode.
-		 */
-		if (isDetailMode) {
-			cancelEditing();
-			return;
-		}
-
-		/**
-		 * Edit page:
-		 * return to detail page.
-		 */
-		if (isEditMode) {
-			navigate(businessPartnerPaths.view(normalizedId));
-			return;
-		}
-
-		/**
-		 * Create page:
-		 * return to listing.
-		 */
-		navigate(businessPartnerPaths.list());
-	}, [cancelEditing, isDetailMode, isEditMode, navigate, normalizedId]);
-
-	// ---------------------------------------------------------------------------
-	// Errors
-	// ---------------------------------------------------------------------------
-
-	const mutationError = isEditMode ? updateError : createError;
-
 	const error =
-		validationError ?? (mutationError ? getErrorMessage(mutationError) : null);
-
-	// ---------------------------------------------------------------------------
-	// Tabs
-	// ---------------------------------------------------------------------------
-
-	/**
-	 * Before a BP exists, only General is available.
-	 *
-	 * Once editing/viewing an existing BP, the parent can render all tabs.
-	 */
-	const availableTabs = useMemo<BPFormTab[] | undefined>(
-		() => (isEditMode ? undefined : ["organization"]),
-		[isEditMode],
-	);
-
-	// ---------------------------------------------------------------------------
-	// Return
-	// ---------------------------------------------------------------------------
+		validationError ?? (updateError ? getErrorMessage(updateError) : null);
 
 	return {
-		// -----------------------------------------------------------------------
-		// Common form state
-		// -----------------------------------------------------------------------
-
 		form,
 		handleChange,
-		error,
-		isSaving,
-
-		// -----------------------------------------------------------------------
-		// Create/Edit page
-		// -----------------------------------------------------------------------
-
-		isEditMode,
-		isLoading: !isDetailMode && isEditMode && partnerQuery.isLoading,
-		isError: !isDetailMode && isEditMode && partnerQuery.isError,
-		isFormValid,
-		canSubmit,
-		lastSavedSection,
-		availableTabs,
-
-		handleSubmit,
-		handleCancel,
-
-		// -----------------------------------------------------------------------
-		// View page / inline editing
-		// -----------------------------------------------------------------------
-
 		editingSection,
+		isSaving: isUpdating,
+		error,
 		startEditing,
 		cancelEditing,
 		handleSave,
 	};
 };
+
+export type BusinessPartnerSectionEditor = ReturnType<
+	typeof useBusinessPartnerSectionEditor
+>;

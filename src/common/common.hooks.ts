@@ -1,5 +1,5 @@
 // hooks/useBulkAction.ts
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export type BulkActionResult<T> = {
 	succeeded: T[];
@@ -43,4 +43,22 @@ export function useBulkAction<T>() {
 	};
 
 	return { run, isRunning };
+}
+
+// hooks/useDebouncedValue.ts
+
+/**
+ * Returns `value`, but only updates after `delay`ms of no further changes.
+ * Standard debounce for search/filter inputs — see convention #9
+ * ("Debounce standard") in the project conventions doc.
+ */
+export function useDebouncedValue<T>(value: T, delay = 300): T {
+	const [debounced, setDebounced] = useState(value);
+
+	useEffect(() => {
+		const timeout = setTimeout(() => setDebounced(value), delay);
+		return () => clearTimeout(timeout);
+	}, [value, delay]);
+
+	return debounced;
 }

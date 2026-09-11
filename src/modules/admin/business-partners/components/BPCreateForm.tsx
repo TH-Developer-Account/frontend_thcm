@@ -5,8 +5,8 @@ import Card from "../../../../components/common/Card";
 import { FilterTabs } from "../../../../components/ui/FilterTabs";
 
 import type { BPFormTab, BusinessPartnerFormState } from "../utils/bp.types";
-
 import { BPOrganizationForm } from "./BPOrganization";
+import type { BusinessPartnerFieldErrors } from "../utils/businessPartner.schema";
 
 type FormTabDef = {
 	value: BPFormTab;
@@ -57,6 +57,7 @@ type BPCreateFormProps = {
 	isSaving: boolean;
 	canSubmit: boolean;
 	error?: string | null;
+	fieldErrors?: BusinessPartnerFieldErrors;
 	availableTabs?: BPFormTab[];
 
 	onChange: <K extends keyof BusinessPartnerFormState>(
@@ -79,6 +80,7 @@ const BPCreateForm = ({
 	isSaving,
 	canSubmit,
 	error,
+	fieldErrors,
 	availableTabs,
 	onChange,
 	onSubmit,
@@ -182,7 +184,11 @@ const BPCreateForm = ({
 						tabIndex={0}
 					>
 						{activeTab === "organization" && (
-							<BPOrganizationForm form={form} onChange={onChange} />
+							<BPOrganizationForm
+								form={form}
+								fieldErrors={fieldErrors}
+								onChange={onChange}
+							/>
 						)}
 
 						{sectionForms[activeTab]}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useDeferredValue } from "react";
 import type { PaginationState } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -12,11 +12,14 @@ import PageSectionLayout from "../../../layout/PageSectionLayout";
 import BPTable from "./components/BPTable";
 import { useBusinessPartnerListing } from "./hooks/useBusinessPartnerQueries";
 import type { BusinessPartner } from "./utils/bp.types";
+import { useDebouncedValue } from "../../../common/common.hooks";
 
 const INITIAL_PAGINATION: PaginationState = {
 	pageIndex: 0,
 	pageSize: 20,
 };
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 const BusinessPartners = () => {
 	const navigate = useNavigate();
@@ -25,8 +28,15 @@ const BusinessPartners = () => {
 	const [pagination, setPagination] =
 		React.useState<PaginationState>(INITIAL_PAGINATION);
 
+	// Debounced value is what actually drives the query key — typing
+	// itself stays instant, the network request waits ~300ms after the
+	// person stops typing. useDeferredValue on top ensures the table
+	// re-render (once new data lands) never blocks further keystrokes.
+	const debouncedSearch = useDebouncedValue(search, SEARCH_DEBOUNCE_MS);
+	const deferredSearch = useDeferredValue(debouncedSearch);
+
 	const { data, isLoading, isFetching, isError } = useBusinessPartnerListing({
-		search,
+		search: deferredSearch,
 		page: pagination.pageIndex + 1,
 		limit: pagination.pageSize,
 	});

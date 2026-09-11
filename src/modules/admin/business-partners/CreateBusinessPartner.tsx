@@ -5,7 +5,7 @@ import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 
 import BPCreateForm from "./components/BPCreateForm";
-import { useBusinessPartnerForm } from "./hooks/useBusinessPartnerForm";
+import { useBusinessPartnerCreateEditForm } from "./hooks/useBusinessPartnerForm";
 import { DEFAULT_BUSINESS_PARTNER_PERMISSIONS } from "./utils/bp.types";
 
 const CreateBusinessPartner = () => {
@@ -14,6 +14,7 @@ const CreateBusinessPartner = () => {
 
 	const {
 		form,
+		fieldErrors,
 		isEditMode,
 		isLoading,
 		isError,
@@ -24,7 +25,7 @@ const CreateBusinessPartner = () => {
 		handleChange,
 		handleSubmit,
 		handleCancel,
-	} = useBusinessPartnerForm({
+	} = useBusinessPartnerCreateEditForm({
 		businessPartnerId,
 		permissions: DEFAULT_BUSINESS_PARTNER_PERMISSIONS,
 	});
@@ -64,6 +65,7 @@ const CreateBusinessPartner = () => {
 
 			<BPCreateForm
 				form={form}
+				fieldErrors={fieldErrors}
 				isEditMode={isEditMode}
 				isSaving={isSaving}
 				canSubmit={canSubmit}

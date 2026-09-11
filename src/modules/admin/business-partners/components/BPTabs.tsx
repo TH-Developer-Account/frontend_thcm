@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Pencil, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -6,7 +6,7 @@ import Button from "../../../../components/common/Button";
 import { FilterTabs } from "../../../../components/ui/FilterTabs";
 
 import {
-	useBusinessPartnerForm,
+	useBusinessPartnerSectionEditor,
 	businessPartnerPaths,
 	type DetailFormSection,
 } from "../hooks/useBusinessPartnerForm";
@@ -57,14 +57,6 @@ const SECTION_LABELS: Record<Exclude<DetailFormSection, null>, string> = {
 	address: "Address Information",
 };
 
-const isOrgDataEmpty = (view: BusinessPartnerViewModel): boolean =>
-	!view.partner.gst &&
-	!view.partner.panNumber &&
-	!view.partner.legalTradeName &&
-	!view.partner.vendorCode &&
-	!view.partner.entityType &&
-	!view.partner.joinedOn;
-
 const isContactDataEmpty = (view: BusinessPartnerViewModel): boolean =>
 	!view.partner.mobileNumber &&
 	!view.partner.email &&
@@ -74,7 +66,9 @@ const isContactDataEmpty = (view: BusinessPartnerViewModel): boolean =>
 export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 	const navigate = useNavigate();
 
-	const [activeTab, setActiveTab] = useState<BPTab>("organization");
+	const [activeTab, setActiveTab] = useState<BPTab>(() =>
+		isContactDataEmpty(view) ? "contact" : "organization",
+	);
 	const activeTabId = `bp-tab-${activeTab}`;
 	const activePanelId = `${activeTabId}-panel`;
 
@@ -89,35 +83,10 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 	// Same lifted pattern for the "Add People" search-and-attach panel.
 	const [isAddingPeople, setIsAddingPeople] = useState(false);
 
-	const detailForm = useBusinessPartnerForm({
+	const detailForm = useBusinessPartnerSectionEditor({
 		partner: view.partner,
 		permissions,
 	});
-
-	// Auto-open an empty section into edit mode exactly once, on first
-	// load — via a real startEditing() call, so editingSection is
-	// genuinely set and Save works. Never re-fires on later renders,
-	// and never overrides a section the user is actively editing.
-	const hasAutoOpened = useRef(false);
-
-	useEffect(() => {
-		if (hasAutoOpened.current) return;
-		if (detailForm.editingSection !== null) return;
-
-		if (isContactDataEmpty(view)) {
-			console.log("[BPTabs] auto-opening contact (empty data)");
-			detailForm.startEditing("contact");
-			hasAutoOpened.current = true;
-			return;
-		}
-
-		if (isOrgDataEmpty(view)) {
-			console.log("[BPTabs] auto-opening organization (empty data)");
-			detailForm.startEditing("organization");
-			hasAutoOpened.current = true;
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [view]);
 
 	const handleAddBranch = () => {
 		navigate(

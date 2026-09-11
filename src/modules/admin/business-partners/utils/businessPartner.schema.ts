@@ -1,5 +1,16 @@
 import { z } from "zod";
-import type { BusinessPartnerFormState } from "../business-partners/utils/bp.types";
+
+import type { BusinessPartnerFormState } from "./bp.types";
+
+/**
+ * Single source of truth for BP create/edit validation — replaces the
+ * hand-rolled isFormValid boolean in useBusinessPartnerCreateEditForm,
+ * same pattern as user-management.schema.ts for the users module.
+ *
+ * Required-field list here is sourced from what BPOrganizationForm/
+ * BPGenInfo.tsx already mark `required` on FormInput/SelectInput, plus the
+ * conditional parentId rule from the old isFormValid — not invented fresh.
+ */
 
 const requiredString = (label: string) =>
 	z.string().trim().min(1, `${label} is required.`);
@@ -33,6 +44,10 @@ export const businessPartnerFormSchema = z
 		panNumber: optionalString,
 		vendorCode: optionalString,
 
+		// z.enum requires a non-empty value, but the form's initial/empty
+		// state is `""` (see BusinessPartnerFormState) — union with the
+		// literal empty string so the schema accepts the unset state without
+		// weakening the eventual required check below.
 		officeType: z.union([officeTypeEnum, z.literal("")]),
 		bpType: z.union([bpTypeEnum, z.literal("")]),
 		entityType: z.union([entityTypeEnum, z.literal("")]).optional(),
@@ -65,6 +80,18 @@ export const businessPartnerFormSchema = z
 			});
 		}
 
+		// Cross-field: parentId is only required once officeType resolves to
+		// BRANCH_OFFICE — mirrors the old isFormValid's
+		// `form.officeType !== "BRANCH_OFFICE" || form.parentId.trim()` check,
+		// now surfaced as a field-level error instead of a silent boolean.
+		if (values.officeType === "BRANCH_OFFICE" && !values.parentId.trim()) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				path: ["parentId"],
+				message: "Parent Business Partner ID is required for a branch office.",
+			});
+		}
+
 		if (values.email && !/^\S+@\S+\.\S+$/.test(values.email)) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
@@ -78,6 +105,12 @@ export type BusinessPartnerFieldErrors = Partial<
 	Record<keyof BusinessPartnerFormState, string>
 >;
 
+/**
+ * Validates a BusinessPartnerFormState and returns a flat
+ * `{ field: message }` map — same shape convention as validateUserForm in
+ * user-management.utils.ts, so any shared error-banner component works
+ * against both modules without a translation layer.
+ */
 export const validateBusinessPartnerForm = (
 	values: BusinessPartnerFormState,
 ): BusinessPartnerFieldErrors => {
@@ -87,7 +120,7 @@ export const validateBusinessPartnerForm = (
 	const fieldErrors: BusinessPartnerFieldErrors = {};
 	result.error.issues.forEach((issue) => {
 		const field = issue.path[0] as keyof BusinessPartnerFormState | undefined;
-		if (!field || fieldErrors[field]) return;
+		if (!field || fieldErrors[field]) return; // first issue per field only
 		fieldErrors[field] = issue.message;
 	});
 

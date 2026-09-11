@@ -1,6 +1,8 @@
 import FormInput from "../../../../components/forms/FormInput";
 import SelectInput from "../../../../components/forms/SelectInput";
 
+import type { BusinessPartnerFieldErrors } from "../utils/businessPartner.schema";
+
 import type {
 	BusinessPartnerEntityType,
 	BusinessPartnerFormState,
@@ -15,6 +17,7 @@ type FormChangeHandler = <K extends keyof BusinessPartnerFormState>(
 
 type BPOrganizationFormProps = {
 	form: BusinessPartnerFormState;
+	fieldErrors?: BusinessPartnerFieldErrors;
 	onChange: FormChangeHandler;
 };
 
@@ -69,6 +72,7 @@ const ENTITY_TYPE_OPTIONS = [
 
 export const BPOrganizationForm = ({
 	form,
+	fieldErrors = {},
 	onChange,
 }: BPOrganizationFormProps) => (
 	<div className="bp-create-form-sections">
@@ -86,7 +90,7 @@ export const BPOrganizationForm = ({
 					label="Internal ID"
 					value={form.internalId}
 					onChange={(event) => onChange("internalId", event.target.value)}
-					required
+					error={fieldErrors.internalId}
 				/>
 
 				<FormInput
@@ -94,7 +98,7 @@ export const BPOrganizationForm = ({
 					label="Business Partner Name"
 					value={form.bpName}
 					onChange={(event) => onChange("bpName", event.target.value)}
-					required
+					error={fieldErrors.bpName}
 				/>
 
 				<FormInput
@@ -102,6 +106,7 @@ export const BPOrganizationForm = ({
 					label="Short Name"
 					value={form.bpShortName}
 					onChange={(event) => onChange("bpShortName", event.target.value)}
+					error={fieldErrors.bpShortName}
 				/>
 
 				<FormInput
@@ -109,6 +114,7 @@ export const BPOrganizationForm = ({
 					label="Legal Trade Name"
 					value={form.legalTradeName}
 					onChange={(event) => onChange("legalTradeName", event.target.value)}
+					error={fieldErrors.legalTradeName}
 				/>
 
 				<SelectInput
@@ -126,7 +132,7 @@ export const BPOrganizationForm = ({
 							(option?.value ?? "") as BusinessPartnerOfficeType | "",
 						)
 					}
-					required
+					error={fieldErrors.officeType}
 				/>
 
 				<SelectInput
@@ -144,7 +150,7 @@ export const BPOrganizationForm = ({
 							(option?.value ?? "") as BusinessPartnerType | "",
 						)
 					}
-					required
+					error={fieldErrors.bpType}
 				/>
 
 				<SelectInput
@@ -162,6 +168,7 @@ export const BPOrganizationForm = ({
 							(option?.value ?? "") as BusinessPartnerEntityType | "",
 						)
 					}
+					error={fieldErrors.entityType}
 				/>
 
 				<FormInput
@@ -170,6 +177,7 @@ export const BPOrganizationForm = ({
 					type="date"
 					value={form.joinedOn}
 					onChange={(event) => onChange("joinedOn", event.target.value)}
+					error={fieldErrors.joinedOn}
 				/>
 			</div>
 		</section>
