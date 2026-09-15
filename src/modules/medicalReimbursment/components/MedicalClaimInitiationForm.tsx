@@ -26,7 +26,6 @@ import { Modal } from "../../../components/common/Modal";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
 import { MedicalClaimInitiationExcelPreview } from "../components/MedicalClaimInitiationExcelPreview";
 import { ImportedMedicalClaimInitiationTable } from "../components/ImportedMedicalClaimInitiationTable";
-import { GeoCaptureButton } from "../../../components/forms/GeoCaptureButton";
 
 type MedicalClaimInitiationFormProps = {
   claimId?: string;
@@ -220,7 +219,6 @@ const MedicalClaimInitiationForm = ({
               )
             }
           />
-          <GeoCaptureButton />
         </div>
 
         <div className="mt-5 flex items-center justify-between gap-3">
