@@ -174,7 +174,7 @@ export type UserFormValues = Required<
 
 export type UserFormField = keyof UserFormValues;
 
-export type UserPageMode = "list" | "create" | "view";
+export type UserPageMode = "list" | "create" | "view" | "edit";
 
 export type UpdateUserVariables = {
 	userId: string;

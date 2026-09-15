@@ -1,95 +1,88 @@
 import { z } from "zod";
-import type { BusinessPartnerFormState } from "../business-partners/utils/bp.types";
+
+import type { UserPageMode } from "./user-management.types";
 
 const requiredString = (label: string) =>
 	z.string().trim().min(1, `${label} is required.`);
 
-const optionalString = z.string().optional().default("");
+const optionalString = z.string();
 
-export const officeTypeEnum = z.enum(["HEAD_OFFICE", "BRANCH_OFFICE"]);
-export const bpTypeEnum = z.enum(["DEALER", "CUSTOMER", "EMPLOYEE"]);
-export const entityTypeEnum = z.enum([
-	"COMPANY",
-	"PARTNERSHIP",
-	"PROPRIETORSHIP",
-	"INDIVIDUAL",
-	"OTHER",
-]);
+const userTypeSchema = z.enum(["Select", "THCM", "DEALER", "CUSTOMER"]);
 
-export const businessPartnerFormSchema = z
-	.object({
-		internalId: optionalString,
-		vendorId: optionalString,
-		bpId: optionalString,
-		s4Id: optionalString,
-		bydId: optionalString,
-		c4cId: optionalString,
+const baseUserFormShape = {
+	avatar: z.unknown().nullable(),
 
-		bpName: requiredString("Business Partner Name"),
-		bpShortName: optionalString,
-		legalTradeName: optionalString,
+	bydId: optionalString,
+	s4Id: optionalString,
+	tallyId: optionalString,
+	c4cId: optionalString,
 
-		gst: optionalString,
-		panNumber: optionalString,
-		vendorCode: optionalString,
+	employeeCode: optionalString,
 
-		officeType: z.union([officeTypeEnum, z.literal("")]),
-		bpType: z.union([bpTypeEnum, z.literal("")]),
-		entityType: z.union([entityTypeEnum, z.literal("")]).optional(),
+	firstName: requiredString("First name"),
+	lastName: requiredString("Last name"),
 
-		isKeyAccount: z.boolean().default(false),
-		isActive: z.boolean().default(true),
+	password: optionalString,
 
-		joinedOn: optionalString,
-		parentId: optionalString,
+	phoneNumber: z
+		.string()
+		.trim()
+		.refine(
+			(value) => value === "" || /^[6-9]\d{9}$/.test(value),
+			"Enter a valid 10-digit phone number.",
+		),
 
-		mobileNumber: optionalString,
-		email: optionalString,
-		fax: optionalString,
-		telephone: optionalString,
-	})
-	.superRefine((values, ctx) => {
-		if (!values.officeType) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				path: ["officeType"],
-				message: "Office Type is required.",
-			});
-		}
+	email: z
+		.string()
+		.trim()
+		.min(1, "Email is required.")
+		.email("Enter a valid email address."),
 
-		if (!values.bpType) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				path: ["bpType"],
-				message: "Business Partner Type is required.",
-			});
-		}
+	workspaceId: optionalString,
 
-		if (values.email && !/^\S+@\S+\.\S+$/.test(values.email)) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				path: ["email"],
-				message: "Enter a valid email address.",
-			});
-		}
-	});
+	region: optionalString,
+	address: optionalString,
+	zone: optionalString,
+	branch: optionalString,
+	department: optionalString,
+	role: optionalString,
+	designation: optionalString,
+	vertical: optionalString,
+	grade: optionalString,
 
-export type BusinessPartnerFieldErrors = Partial<
-	Record<keyof BusinessPartnerFormState, string>
->;
+	managerCode1: optionalString,
+	managerCode2: optionalString,
 
-export const validateBusinessPartnerForm = (
-	values: BusinessPartnerFormState,
-): BusinessPartnerFieldErrors => {
-	const result = businessPartnerFormSchema.safeParse(values);
-	if (result.success) return {};
+	isDefaultContact: z.boolean(),
+	isActive: z.boolean(),
 
-	const fieldErrors: BusinessPartnerFieldErrors = {};
-	result.error.issues.forEach((issue) => {
-		const field = issue.path[0] as keyof BusinessPartnerFormState | undefined;
-		if (!field || fieldErrors[field]) return;
-		fieldErrors[field] = issue.message;
-	});
-
-	return fieldErrors;
+	userType: userTypeSchema,
+	joinedOn: optionalString,
+	businessPartnerId: optionalString,
 };
+
+const addUserTypeValidation = (
+	values: {
+		userType: "Select" | "THCM" | "DEALER" | "CUSTOMER";
+	},
+	context: z.RefinementCtx,
+) => {
+	if (values.userType === "Select") {
+		context.addIssue({
+			code: z.ZodIssueCode.custom,
+			path: ["userType"],
+			message: "User type is required.",
+		});
+	}
+};
+
+export const createUserFormSchema = z
+	.object(baseUserFormShape)
+	.superRefine(addUserTypeValidation);
+
+export const editUserFormSchema = z
+	.object(baseUserFormShape)
+	.superRefine(addUserTypeValidation);
+
+export const getUserFormSchema = (pageMode: UserPageMode) =>
+	pageMode === "create" ? createUserFormSchema : editUserFormSchema;

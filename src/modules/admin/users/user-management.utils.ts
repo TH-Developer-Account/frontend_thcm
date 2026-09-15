@@ -15,9 +15,7 @@ import type {
 	UserStatus,
 	UserStatusTab,
 } from "./user-management.types";
-
 import { getUserFormSchema } from "./user-management.schema";
-
 export const USER_STATUS_TABS = [
 	"All",
 	"Active",
@@ -307,15 +305,19 @@ export const validateUserForm = (
 	values: UserFormValues,
 	pageMode: UserPageMode,
 ): UserFieldErrors => {
-	const schema = getUserFormSchema(pageMode === "list" ? "create" : pageMode);
+	const schema = getUserFormSchema(pageMode);
+
 	const result = schema.safeParse(values);
 
 	if (result.success) return {};
 
 	const fieldErrors: UserFieldErrors = {};
+
 	result.error.issues.forEach((issue: ZodIssue) => {
 		const field = issue.path[0] as UserFormField | undefined;
-		if (!field || fieldErrors[field]) return; // first issue per field only
+
+		if (!field || fieldErrors[field]) return;
+
 		fieldErrors[field] = issue.message;
 	});
 
