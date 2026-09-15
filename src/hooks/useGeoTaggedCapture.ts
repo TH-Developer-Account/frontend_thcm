@@ -14,6 +14,20 @@ import type {
 
 const CAPTURE_UPLOAD_ENDPOINT = "/api/captures";
 
+async function getLocationPermissionState(): Promise<
+  "granted" | "denied" | "prompt" | "unsupported"
+> {
+  if (!("permissions" in navigator)) {
+    return "unsupported";
+  }
+  try {
+    const status = await navigator.permissions.query({ name: "geolocation" });
+    return status.state;
+  } catch {
+    return "unsupported";
+  }
+}
+
 // Camera and location are requested in parallel: browsers only allow the native
 // picker to open synchronously within a user gesture, so we cannot await location
 // first without losing that activation. Whichever resolves first waits briefly
@@ -42,27 +56,26 @@ export function useGeoTaggedCapture() {
     } else if (photo && !coordinates) {
       setState({ status: "awaitingLocation", photo });
     }
-    // If only coordinates are ready, stay in capturingPhoto — nothing to show yet.
   }, []);
 
-  const startCapture = useCallback(() => {
+  // Fast path — only entered when we've just confirmed permission is
+  // "granted". Opens the camera synchronously (preserves the user gesture,
+  // which browsers require for the native picker to actually open) while
+  // fetching location in parallel.
+  const openCameraWithParallelLocation = useCallback(() => {
     capturedPhotoRef.current = null;
     resolvedCoordinatesRef.current = null;
     setState({ status: "capturingPhoto" });
 
-    // Fired synchronously in the click handler so the picker actually opens.
     cameraInputRef.current = createCameraCaptureInput(
       (photo) => {
         capturedPhotoRef.current = photo;
         tryFinalizeCapture();
       },
-      () => {
-        reset();
-      },
+      () => reset(),
     );
     triggerCameraCapture(cameraInputRef.current);
 
-    // Runs independently of the camera; does not block input.click() above.
     requestCurrentLocation()
       .then((coordinates) => {
         resolvedCoordinatesRef.current = coordinates;
@@ -79,6 +92,38 @@ export function useGeoTaggedCapture() {
         capturedPhotoRef.current = null;
       });
   }, [reset, tryFinalizeCapture]);
+
+  // Permission-only path — no camera yet. Triggers the browser's native
+  // permission prompt. Once resolved, the user taps again and the fast path
+  // above runs (permission will now read "granted").
+  const requestPermissionOnly = useCallback(() => {
+    setState({ status: "requestingPermission" });
+
+    requestCurrentLocation()
+      .then(() => {
+        setState({ status: "idle" });
+      })
+      .catch((error) => {
+        setState({
+          status: "locationDenied",
+          reason:
+            error instanceof Error ? error.message : "Location access failed.",
+        });
+      });
+  }, []);
+
+  const startCapture = useCallback(async () => {
+    const permissionState = await getLocationPermissionState();
+
+    if (permissionState === "granted") {
+      openCameraWithParallelLocation();
+    } else {
+      // "prompt", "denied", and "unsupported" all go through the
+      // permission-request step — we can't safely assume the fast path will
+      // succeed without a prompt in any of these states.
+      requestPermissionOnly();
+    }
+  }, [openCameraWithParallelLocation, requestPermissionOnly]);
 
   return { state, startCapture, reset };
 }

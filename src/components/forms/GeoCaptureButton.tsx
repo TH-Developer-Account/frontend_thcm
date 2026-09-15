@@ -164,6 +164,16 @@ export function GeoCaptureButton() {
     );
   }
 
+  if (state.status === "requestingPermission") {
+    return (
+      <StatusPanel
+        icon={<Loader2 size={28} className="animate-spin" />}
+        label="Requesting location permission…"
+        tone="neutral"
+      />
+    );
+  }
+
   return null;
 }
 

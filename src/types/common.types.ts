@@ -36,6 +36,7 @@ export type EventDeviationPayload =
 
 export type CaptureState =
   | { status: "idle" }
+  | { status: "requestingPermission" }
   | { status: "capturingPhoto" }
   | { status: "awaitingLocation"; photo: File }
   | { status: "captured"; payload: CapturePayload }
