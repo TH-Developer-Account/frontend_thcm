@@ -2,10 +2,10 @@ const CACHE_NAME = "thcm-v1";
 
 // Only truly static files — never React Router routes
 const STATIC_ASSETS = [
-  "/index.html",
-  "/manifest.json",
-  "/icons/logo.svg",
-  "/icons/test.svg",
+  "/web/index.html",
+  "/web/manifest.json",
+  "/web/icons/logo.svg",
+  "/web/icons/test.svg",
 ];
 
 self.addEventListener("install", (event) => {
