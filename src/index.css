@@ -30,3 +30,4 @@
 @import "./modules/marketing/leads/styles/leads.css";
 @import "./components/ui/comments/comments.css";
 @import "./modules/workflows/utils/workflow.css";
+@import "./modules/audit/dealerAudit/checklist-card.css";

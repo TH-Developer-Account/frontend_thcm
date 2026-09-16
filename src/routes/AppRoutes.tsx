@@ -15,6 +15,8 @@ import VendorRoutes from "./VendorRoutes";
 import WorkflowRoutes from "./workflowRoutes";
 import { GuestRoutesWrapper } from "./guestRoutes";
 import FullScreenLoader from "./FullScreenLoader";
+import DealerAuditRoutes from "./DealerAuditRoutes";
+import LivePhotoTestPage from "../modules/audit/dealerAudit/LivePhotoTestPage";
 
 const ForbiddenPage = lazy(() => import("../Forbidden"));
 const HomeScreen = lazy(() => import("../containers/HomeScreen"));
@@ -58,6 +60,7 @@ const AuthenticatedRoutes = () => {
 					<Route path="/vendor/*" element={<VendorRoutes />} />
 					<Route path="/workflow/*" element={<WorkflowRoutes />} />
 					<Route path="/medi-claim/*" element={<MedicalRoutes />} />
+					<Route path="/audit/dealer/*" element={<DealerAuditRoutes />} />
 				</Route>
 			</Routes>
 		</SessionTimeoutProvider>
@@ -91,6 +94,7 @@ export default function AppRoutes() {
 				/>
 
 				<Route path="/forbidden" element={<ForbiddenPage />} />
+				<Route path="/photo" element={<LivePhotoTestPage />} />
 
 				<Route path="/*" element={<AuthenticatedRoutes />} />
 			</Routes>

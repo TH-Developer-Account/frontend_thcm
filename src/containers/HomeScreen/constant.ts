@@ -1,6 +1,7 @@
 import {
 	FileText,
 	Hospital,
+	Inspect,
 	Megaphone,
 	MonitorCog,
 	UserCheck,
@@ -48,6 +49,14 @@ export const actions = [
 		description: "System config, user roles, and access management.",
 		path: "/admin/users",
 		appKey: "ADMIN",
+		isActive: false,
+	},
+	{
+		icon: Inspect,
+		title: "Dealer Audit",
+		description: "Audit for dealers.",
+		path: "/audit/dealer/checklist/listing",
+		appKey: "DEALER_AUDIT",
 		isActive: false,
 	},
 ] as const;

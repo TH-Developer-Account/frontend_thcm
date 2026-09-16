@@ -10,6 +10,7 @@ import { vendorSidebar } from "../modules/vendorOnboarding/vendor.sidebar";
 import { workflowSidebar } from "../modules/workflows/utils/workflow.sidebar";
 import { medicalClaimSidebar } from "../modules/medicalReimbursment/utils/medical-claim.sidebar";
 import { guestSidebar } from "../modules/guest/GuestSidebar";
+import { dealerAuditSidebar } from "../modules/audit/dealerAudit/dealerAudit.sidebar";
 
 const MOBILE_SIDEBAR_QUERY = "(max-width: 767px)";
 
@@ -68,6 +69,9 @@ export default function MainContentWrapper() {
 		}
 		if (path.startsWith("/guest")) {
 			return guestSidebar;
+		}
+		if (path.startsWith("/audit/dealer")) {
+			return dealerAuditSidebar;
 		}
 
 		return [];

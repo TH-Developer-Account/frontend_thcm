@@ -42,8 +42,15 @@
 		/* Feedback primitives */
 		--color-green-soft: #fafffb;
 		--color-green-50: #ecfdf3;
-		--color-green-600: #15803d;
+		--color-green-50: #f0fdf4;
+		--color-green-100: #dcfce7;
+		--color-green-200: #bbf7d0;
+		--color-green-300: #86efac;
+		--color-green-400: #4ade80;
+		--color-green-500: #22c55e;
+		--color-green-600: #16a34a;
 		--color-green-700: #166534;
+		--color-green-800: #14532d;
 		--color-amber-50: #fffbeb;
 		--color-amber-600: #d97706;
 		--color-amber-700: #b45309;
