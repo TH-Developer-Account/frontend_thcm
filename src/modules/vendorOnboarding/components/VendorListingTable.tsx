@@ -114,6 +114,7 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 					items={normalizedFilterTabs}
 					value={selectedFilter}
 					onChange={onFilterChange}
+					variant="underline"
 					className="border-b-none px-0 py-0"
 				/>
 			}

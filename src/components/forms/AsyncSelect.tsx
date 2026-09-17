@@ -16,6 +16,7 @@ export type UserOption = {
 	email?: string;
 	firstName?: string;
 	lastName?: string;
+	phone?: string;
 };
 
 type UserAsyncSelectProps = {

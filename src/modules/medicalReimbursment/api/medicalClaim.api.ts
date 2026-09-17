@@ -9,18 +9,18 @@ import type {
 	MedicalClaimListItem,
 	MedicalClaimMutationResponse,
 } from "../types/medicalClaimListing.types";
-import type {
-	MedicalClaimInitiationImportPayload,
-	BulkMedicalClaimInitiationPayload,
-	BulkMedicalClaimInitiationResponse,
-	MedicalClaimInitiationImportResponse,
-} from "../types/medicalClaimInitiation.types";
 import type { ClaimHeadRow } from "../types/reimbursementClaim.types";
-import { createExportApi } from "../../../api/common.api";
+import { createExportApi, createImportApi } from "../../../common/common.api";
+import type { MedicalClaimImportError } from "../types/medicalClaimInitiation.types";
 
 const MEDICAL_CLAIM_URL = "/medi-claim";
 const medicalExportApi = createExportApi(`${MEDICAL_CLAIM_URL}/export`, {
 	enqueuePath: "",
+});
+const medicalImportApi = createImportApi<MedicalClaimImportError>("/import", {
+	enqueuePath: "/medical-claims",
+	statusPath: "/status/medical-claims",
+	statusJobIdMode: "query",
 });
 
 type ApiDataResponse<T> = {
@@ -99,32 +99,7 @@ export const medicalClaimApi = {
 
 		return data;
 	},
-	importInitiations: async (
-		payload: MedicalClaimInitiationImportPayload,
-	): Promise<MedicalClaimInitiationImportResponse> => {
-		const { data: response } =
-			await ServerAxios.post<MedicalClaimInitiationImportResponse>(
-				"/import/leads",
-				payload,
-				{
-					headers: {
-						"Content-Type": "multipart/form-data",
-					},
-				},
-			);
 
-		return response;
-	},
-	initiateImportedEmployees: async (
-		payload: BulkMedicalClaimInitiationPayload,
-	): Promise<BulkMedicalClaimInitiationResponse> => {
-		const { data } = await ServerAxios.post<BulkMedicalClaimInitiationResponse>(
-			"/medi-claim/initiate/bulk",
-			payload,
-		);
-
-		return data;
-	},
 	resendLink: async (
 		claimId: string,
 	): Promise<MedicalClaimMutationResponse> => {
@@ -213,6 +188,11 @@ export const medicalClaimApi = {
 
 	// 	return data;
 	// },
+
+	// --- Import (shared factory) ---
+	enqueueInitiationImport: medicalImportApi.enqueueImport,
+	getInitiationImportStatus: medicalImportApi.getImportStatus,
+
 	// --- Export (shared factory) ---
 	enqueueListingExport: medicalExportApi.enqueueBulkExport,
 	getExportStatus: medicalExportApi.getExportStatus,

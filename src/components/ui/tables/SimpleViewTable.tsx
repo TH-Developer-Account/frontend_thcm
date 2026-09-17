@@ -148,6 +148,7 @@ export interface SimpleTableProps<T> {
 
 	emptyTitle?: string;
 	emptyDescription?: string;
+	emptyContent?: ReactNode;
 
 	/** Optional heading rendered above the table. */
 	title?: ReactNode;
@@ -219,6 +220,7 @@ export default function SimpleViewTable<T>({
 	skeletonRows = 5,
 	emptyTitle = "No records found",
 	emptyDescription = "There's nothing to show here yet.",
+	emptyContent,
 	title,
 	headerActions,
 	maxHeight = "420px",
@@ -417,14 +419,15 @@ export default function SimpleViewTable<T>({
 									colSpan={Math.max(1, columnCount)}
 									className="px-3 py-10 text-center"
 								>
-									<p className="text-sm font-medium text-slate-700">
-										{emptyTitle}
-									</p>
+									<p className="empty-title">{emptyTitle}</p>
 									{emptyDescription ? (
-										<p className="mt-1 text-sm text-slate-500">
+										<p className="mt-1 mb-1 text-sm text-slate-500">
 											{emptyDescription}
 										</p>
 									) : null}
+									<div className="empty-content-actions mt-2">
+										{emptyContent ? emptyContent : null}
+									</div>
 								</td>
 							</tr>
 						) : (

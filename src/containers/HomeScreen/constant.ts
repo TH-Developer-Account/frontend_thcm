@@ -13,7 +13,7 @@ export const actions = [
 		description: "Plan, track, and approve marketing events and campaigns.",
 		path: "/marketing/activity-planner/listing",
 		appKey: "MAP",
-		isActive: true,
+		isActive: false,
 	},
 
 	{

@@ -1,135 +1,380 @@
-import { Mail, Phone } from "lucide-react";
+import { useState } from "react";
+import { Mail, Phone, Plus, Trash2, UserRoundCheck, X } from "lucide-react";
 
-const organizationUsers = [
-	{
-		id: 1,
-		name: "Ananya Sharma",
-		role: "Admin",
-		email: "ananya.sharma@company.com",
-		phone: "+91 98765 43210",
-		department: "Operations",
-		status: "Active",
-	},
-	{
-		id: 2,
-		name: "Rahul Verma",
-		role: "Manager",
-		email: "rahul.verma@company.com",
-		phone: "+91 91234 56789",
-		department: "Sales",
-		status: "Active",
-	},
-	{
-		id: 3,
-		name: "Sneha Reddy",
-		role: "Executive",
-		email: "sneha.reddy@company.com",
-		phone: "+91 99887 76655",
-		department: "Marketing",
-		status: "Inactive",
-	},
-	{
-		id: 4,
-		name: "Arjun Nair",
-		role: "Finance Lead",
-		email: "arjun.nair@company.com",
-		phone: "+91 93456 78123",
-		department: "Finance",
-		status: "Active",
-	},
-];
+import ActionMenu from "../../../../components/common/ActionMenu";
+import type { ActionMenuItem } from "../../../../components/common/ActionMenu";
+import { Badge } from "../../../../components/common/Badge";
+import Button from "../../../../components/common/Button";
+import SimpleViewTable from "../../../../components/ui/tables/SimpleViewTable";
+import type { SimpleTableColumn } from "../../../../components/ui/tables/SimpleViewTable";
+import UserAsyncSelect from "../../../../components/forms/AsyncSelect";
+import {
+	useBPPeopleManager,
+	useBPAddExistingPeopleForm,
+} from "../hooks/useBusinessPartners";
 
-const getInitials = (name: string) =>
-	name
-		.trim()
-		.split(/\s+/)
-		.slice(0, 2)
-		.map((part) => part.charAt(0))
-		.join("")
-		.toUpperCase();
+import type { BPPersonViewModel, BPPeoplePermissions } from "../utils/bp.types";
+import { getInitials } from "../../../../utils/format";
 
-const BPPeople = () => {
+type BPPeopleProps = {
+	businessPartnerId: string;
+	people: BPPersonViewModel[];
+	permissions: BPPeoplePermissions;
+
+	/** Controlled from BPTabs via the "Add People" action row. */
+	isAdding: boolean;
+	onAddPeople: () => void;
+	onCancelAdd: () => void;
+	onAdded: () => void;
+};
+
+type PeopleColumnOptions = {
+	canSetMainContact: boolean;
+	canRemovePeople: boolean;
+	isUpdating: boolean;
+	isRemoving: boolean;
+	onSetMainContact: (person: BPPersonViewModel) => void;
+	onRemove: (person: BPPersonViewModel) => void;
+};
+
+type RoleBadgeVariant = "success" | "warning" | "info";
+
+const getRoleBadgeVariant = (person: BPPersonViewModel): RoleBadgeVariant => {
+	if (person.isOwner) {
+		return "success";
+	}
+
+	if (person.isMainContact) {
+		return "info";
+	}
+
+	return "warning";
+};
+
+const getColumns = ({
+	canSetMainContact,
+	canRemovePeople,
+	isUpdating,
+	isRemoving,
+	onSetMainContact,
+	onRemove,
+}: PeopleColumnOptions): SimpleTableColumn<BPPersonViewModel>[] => {
+	const columns: SimpleTableColumn<BPPersonViewModel>[] = [
+		{
+			key: "user",
+			header: "Person",
+			widthUnits: 3,
+			minWidth: 190,
+			render: (person) => (
+				<div
+					className={[
+						"bp-people-user",
+						person.isMainContact && "bp-main-contact-marker",
+					]
+						.filter(Boolean)
+						.join(" ")}
+				>
+					<div className="bp-people-avatar" aria-hidden="true">
+						{getInitials(person.name)}
+					</div>
+
+					<div className="bp-people-user-copy">
+						<div className="bp-people-name-row">
+							<p className="bp-people-name">{person.name}</p>
+						</div>
+
+						<p className="bp-people-id">
+							{person.email || `Contact ID: ${person.userId.slice(0, 8)}`}
+						</p>
+					</div>
+				</div>
+			),
+		},
+
+		{
+			key: "role",
+			header: "Role",
+			widthUnits: 2,
+			minWidth: 130,
+			render: (person) => (
+				<Badge variant={getRoleBadgeVariant(person)}>
+					{person.role || "--"}
+				</Badge>
+			),
+		},
+
+		{
+			key: "contact",
+			header: "Contact",
+			widthUnits: 4,
+			minWidth: 230,
+			render: (person) => (
+				<div className="bp-people-contact-list">
+					{person.email ? (
+						<a
+							href={`mailto:${person.email}`}
+							className="bp-people-contact-row"
+						>
+							<Mail
+								size={13}
+								className="bp-people-contact-icon"
+								aria-hidden="true"
+							/>
+
+							<span className="bp-people-contact">{person.email}</span>
+						</a>
+					) : (
+						<span>--</span>
+					)}
+
+					{person.phoneNumber ? (
+						<a
+							href={`tel:${person.phoneNumber.replace(/\s+/g, "")}`}
+							className="bp-people-contact-row"
+						>
+							<Phone
+								size={13}
+								className="bp-people-contact-icon"
+								aria-hidden="true"
+							/>
+
+							<span className="bp-people-contact">{person.phoneNumber}</span>
+						</a>
+					) : null}
+				</div>
+			),
+		},
+
+		{
+			key: "pan",
+			header: "PAN",
+			widthUnits: 2,
+			minWidth: 140,
+			render: (person) => <span>{person.panNumber || "--"}</span>,
+		},
+	];
+
+	const hasActions = canSetMainContact || canRemovePeople;
+
+	if (hasActions) {
+		columns.push({
+			key: "actions",
+			header: "Actions",
+			widthUnits: 1,
+			minWidth: 80,
+			render: (person) => {
+				const actions: ActionMenuItem<BPPersonViewModel>[] = [
+					{
+						id: "set-main-contact",
+						label: person.isMainContact
+							? "Current main contact"
+							: "Set as main contact",
+						Icon: UserRoundCheck,
+						onClick: onSetMainContact,
+						hidden: !canSetMainContact,
+						disabled: person.isMainContact || isUpdating,
+						ariaLabel: person.isMainContact
+							? `${person.name} is already the main contact`
+							: `Set ${person.name} as main contact`,
+					},
+
+					{
+						id: "remove-contact",
+						label: "Remove",
+						Icon: Trash2,
+						onClick: onRemove,
+						hidden: !canRemovePeople,
+						disabled: person.isOwner || isRemoving,
+						variant: "danger",
+						ariaLabel: person.isOwner
+							? `${person.name} is the owner and cannot be removed`
+							: `Remove ${person.name} from this business partner`,
+					},
+				];
+
+				return (
+					<ActionMenu
+						row={person}
+						actions={actions}
+						ariaLabel={`Actions for ${person.name}`}
+						size="md"
+						triggerVariant="outline"
+					/>
+				);
+			},
+		});
+	}
+
+	return columns;
+};
+
+const BPPeople = ({
+	businessPartnerId,
+	people,
+	permissions,
+	isAdding,
+	onAddPeople,
+	onCancelAdd,
+	onAdded,
+}: BPPeopleProps) => {
+	const {
+		sortedPeople,
+		handleSetMainContact,
+		handleRemovePerson,
+		isUpdatingPeople,
+		isRemovingContact,
+		canSetMainContact,
+		canRemovePeople,
+	} = useBPPeopleManager(businessPartnerId, people, permissions);
+
+	const {
+		selected,
+		excludedUserIds,
+		handleSelectUser,
+		handleRemoveSelected,
+		handleToggleMainContact,
+		resetSelection,
+		handleSubmit,
+		isSubmitting,
+		error: addPeopleError,
+	} = useBPAddExistingPeopleForm(businessPartnerId, people);
+
+	const [selectKey, setSelectKey] = useState(0);
+
+	const columns = getColumns({
+		canSetMainContact,
+		canRemovePeople,
+		isUpdating: isUpdatingPeople,
+		isRemoving: isRemovingContact,
+		onSetMainContact: handleSetMainContact,
+		onRemove: handleRemovePerson,
+	});
+
+	const handleCancel = () => {
+		resetSelection();
+		onCancelAdd();
+	};
+
+	const handleAdd = async () => {
+		const succeeded = await handleSubmit();
+
+		if (succeeded) {
+			onAdded();
+		}
+	};
+
 	return (
 		<div className="bp-people">
-			<div className="bp-people-header">
-				<h3 className="bp-people-title">User Directory</h3>
-				<p className="bp-people-description">
-					View and manage all organization members in one place.
-				</p>
-			</div>
+			{!(isAdding && sortedPeople.length === 0) && (
+				<SimpleViewTable
+					data={sortedPeople}
+					columns={columns}
+					getRowId={(person) => person.id ?? ""}
+					maxHeight="360px"
+					className="bp-people-view-table"
+					ariaLabel="Business partner people"
+					emptyTitle="No people found"
+					emptyDescription="No contacts are associated with this business partner."
+					emptyContent={
+						<Button
+							type="button"
+							text="Add People"
+							Icon={Plus}
+							iconPosition="left"
+							appearance="standard"
+							variant="outline"
+							size="sm"
+							onClick={onAddPeople}
+						/>
+					}
+				/>
+			)}
 
-			<div className="bp-people-table">
-				<div className="bp-people-head">
-					<div className="col-span-3">User</div>
-					<div className="col-span-2">Role</div>
-					<div className="col-span-3">Contact</div>
-					<div className="col-span-2">Department</div>
-					<div className="col-span-2">Status</div>
-				</div>
+			{isAdding && (
+				<div className="bp-people-add-panel">
+					<UserAsyncSelect
+						key={selectKey}
+						name="add-people-search"
+						label="Search and add people"
+						placeholder="Search by name or email..."
+						excludedUserIds={excludedUserIds}
+						value={null}
+						className="bp-contact-select-input"
+						onChange={(user) => {
+							if (!user) {
+								return;
+							}
 
-				<div className="bp-people-body">
-					{organizationUsers.map((user) => {
-						const isActive = user.status === "Active";
+							handleSelectUser(user);
 
-						return (
-							<div key={user.id} className="bp-people-row">
-								<div className="md:col-span-3">
-									<div className="bp-people-user">
-										<div className="bp-people-avatar" aria-hidden="true">
-											{getInitials(user.name)}
-										</div>
+							setSelectKey((current) => current + 1);
+						}}
+					/>
 
-										<div className="min-w-0">
-											<p className="bp-people-name">{user.name}</p>
-											<p className="bp-people-id">Employee ID #{user.id}</p>
-										</div>
+					{selected.length > 0 && (
+						<div className="bp-people-selected-list">
+							{selected.map((entry) => (
+								<div key={entry.userId} className="bp-people-selected-chip">
+									<div className="bp-people-avatar" aria-hidden="true">
+										{getInitials(entry.name)}
 									</div>
-								</div>
 
-								<div className="md:col-span-2">
-									<span className="bp-people-role">{user.role}</span>
-								</div>
+									<div className="bp-people-user-copy">
+										<p className="bp-people-name">{entry.name}</p>
 
-								<div className="space-y-1 md:col-span-3">
-									<div className="bp-people-contact-row">
-										<Mail
-											size={14}
-											className="bp-people-contact-icon"
-											aria-hidden="true"
+										<p className="bp-people-id">{entry.email || "--"}</p>
+									</div>
+
+									<label className="bp-people-selected-main-check">
+										<input
+											type="checkbox"
+											checked={entry.isMainContact}
+											onChange={() => handleToggleMainContact(entry.userId)}
 										/>
-										<span className="bp-people-contact">{user.email}</span>
-									</div>
 
-									<div className="bp-people-contact-row">
-										<Phone
-											size={14}
-											className="bp-people-contact-icon"
-											aria-hidden="true"
-										/>
-										<span className="bp-people-contact">{user.phone}</span>
-									</div>
-								</div>
+										<span>Main contact</span>
+									</label>
 
-								<div className="md:col-span-2">
-									<p className="bp-people-department">{user.department}</p>
-								</div>
-
-								<div className="md:col-span-2">
-									<span
-										className={`bp-people-status ${
-											isActive
-												? "bp-people-status--active"
-												: "bp-people-status--inactive"
-										}`}
+									<button
+										type="button"
+										className="bp-people-selected-remove"
+										aria-label={`Remove ${entry.name} from selection`}
+										onClick={() => handleRemoveSelected(entry.userId)}
 									>
-										{user.status}
-									</span>
+										<X size={14} aria-hidden="true" />
+									</button>
 								</div>
-							</div>
-						);
-					})}
+							))}
+						</div>
+					)}
+
+					{addPeopleError && (
+						<p className="bp-master-form-error" role="alert">
+							{addPeopleError instanceof Error
+								? addPeopleError.message
+								: "Unable to add people"}
+						</p>
+					)}
+
+					<div className="bp-master-form-actions bp-gen-content-actions">
+						<Button
+							type="button"
+							text="Cancel"
+							variant="secondary"
+							onClick={handleCancel}
+							disabled={isSubmitting}
+						/>
+
+						<Button
+							type="button"
+							text={isSubmitting ? "Adding..." : "Add Selected"}
+							variant="brand"
+							onClick={handleAdd}
+							disabled={selected.length === 0 || isSubmitting}
+						/>
+					</div>
 				</div>
-			</div>
+			)}
 		</div>
 	);
 };

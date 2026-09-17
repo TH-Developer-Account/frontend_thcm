@@ -1134,4 +1134,7 @@
 			transition: none;
 		}
 	}
+	.profile-page-sections .ui-card-header {
+		border-bottom: none;
+	}
 }

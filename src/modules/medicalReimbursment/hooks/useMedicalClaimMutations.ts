@@ -7,7 +7,6 @@ import {
 
 import { medicalClaimApi } from "../api/medicalClaim.api";
 import { publicReimburseClaimApi } from "../../guest/guestMedicalForms/reimbursementClaim.api";
-import type { BulkMedicalClaimInitiationPayload } from "../types/medicalClaimInitiation.types";
 import type {
 	ExportListingParams,
 	MedicalClaimDetail,
@@ -62,26 +61,6 @@ export function useInitiateMedicalClaimMutation() {
 		mutationFn: medicalClaimApi.initiate,
 	});
 }
-export const useImportMedicalClaimInitiationsMutation = () => {
-	return useMutation({
-		mutationFn: (payload: FormData) =>
-			medicalClaimApi.importInitiations(payload),
-	});
-};
-export const useBulkMedicalClaimInitiationMutation = () => {
-	const queryClient = useQueryClient();
-
-	return useMutation({
-		mutationFn: (payload: BulkMedicalClaimInitiationPayload) =>
-			medicalClaimApi.initiateImportedEmployees(payload),
-
-		onSuccess: async () => {
-			await queryClient.invalidateQueries({
-				queryKey: medicalClaimKeys.lists(),
-			});
-		},
-	});
-};
 
 export function useResendMedicalClaimLinkMutation() {
 	const queryClient = useQueryClient();

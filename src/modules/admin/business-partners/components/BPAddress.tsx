@@ -1,154 +1,130 @@
-import React from "react";
+import { useMemo } from "react";
+
+import { useBPAddressManager } from "../hooks/useBusinessPartners";
+import {
+	mapAddressToForm,
+	formatAddressType,
+} from "../utils/businessPartner.mapper";
+import type {
+	BPAddressPermissions,
+	BPAddressViewModel,
+} from "../utils/bp.types";
 
 import BPAddressFormCard from "./BPAddressFormCard";
-import BPAddressListCard from "./BPAddressListCard";
 
-export type AddressItem = {
-	id: string;
-	label?: string;
-	addressType?: string;
-	address: string;
-	isDefault?: boolean;
+type BPAddressProps = {
+	businessPartnerId: string;
+	addresses: BPAddressViewModel[];
+	permissions: BPAddressPermissions;
+
+	/** Controlled from BPTabs via the "Add Address" action row. */
+	isAdding: boolean;
+	onCancelAdd: () => void;
+	onAdded: () => void;
 };
 
-const emptyForm = {
-	label: "",
-	addressType: "",
-	address: "",
-};
+const BPAddress = ({
+	addresses: initialAddresses,
+	businessPartnerId,
+	permissions,
+	isAdding,
+	onCancelAdd,
+	onAdded,
+}: BPAddressProps) => {
+	const {
+		form,
+		defaultAddress,
+		otherAddresses,
+		editingId,
+		isEditing,
+		handleChange,
+		handleAddAddress,
+		handleEditAddress,
+		handleCopyAddress,
+		handleSetDefault,
+		handleRemoveAddress,
+		resetForm,
+	} = useBPAddressManager(businessPartnerId, initialAddresses, permissions);
 
-const BPAddress = () => {
-	const [form, setForm] = React.useState(emptyForm);
-	const [editingId, setEditingId] = React.useState<string | null>(null);
+	const addresses = useMemo(
+		() => [...(defaultAddress ? [defaultAddress] : []), ...otherAddresses],
+		[defaultAddress, otherAddresses],
+	);
 
-	const [addresses, setAddresses] = React.useState<AddressItem[]>([
-		{
-			id: "1",
-			label: "Head Office",
-			addressType: "Head Office",
-			address:
-				"342, 2nd Floor, Bandra West Near Linking Road, Mumbai, Maharashtra, India 400050",
-			isDefault: true,
-		},
-	]);
+	const copyAddressOptions = useMemo(
+		() =>
+			addresses
+				.filter((address) => address.id !== editingId)
+				.map((address) => ({
+					label: `${
+						address.label || formatAddressType(address.addressType)
+					} — ${address.address}`,
+					value: address.id,
+				})),
+		[addresses, editingId],
+	);
 
-	const defaultAddress =
-		addresses.find((address) => address.isDefault) ?? addresses[0] ?? null;
+	const showCreateForm = isAdding && !isEditing;
 
-	const otherAddresses = addresses.filter((address) => !address.isDefault);
-
-	const handleChange = (key: keyof typeof emptyForm, value: string) => {
-		setForm((prev) => ({ ...prev, [key]: value }));
-	};
-
-	const resetForm = () => {
-		setForm(emptyForm);
-		setEditingId(null);
-	};
-
-	const handleAddAddress = () => {
-		if (!form.address.trim()) return;
-
-		if (editingId) {
-			setAddresses((prev) =>
-				prev.map((address) =>
-					address.id === editingId
-						? {
-								...address,
-								label: form.label.trim(),
-								addressType: form.addressType,
-								address: form.address.trim(),
-							}
-						: address,
-				),
-			);
-			resetForm();
-			return;
-		}
-
-		const newAddress: AddressItem = {
-			id: crypto.randomUUID(),
-			label: form.label.trim(),
-			addressType: form.addressType,
-			address: form.address.trim(),
-			isDefault: addresses.length === 0,
-		};
-
-		setAddresses((prev) => [...prev, newAddress]);
+	const handleCancelAdd = () => {
 		resetForm();
+		onCancelAdd();
 	};
 
-	const handleEditAddress = (id: string) => {
-		const target = addresses.find((address) => address.id === id);
-		if (!target) return;
-
-		setForm({
-			label: target.label || "",
-			addressType: target.addressType || "",
-			address: target.address,
-		});
-		setEditingId(id);
-	};
-
-	const handleSetDefault = (id: string) => {
-		setAddresses((prev) =>
-			prev.map((address) => ({
-				...address,
-				isDefault: address.id === id,
-			})),
-		);
-	};
-
-	const handleRemoveAddress = (id: string) => {
-		setAddresses((prev) => {
-			const target = prev.find((address) => address.id === id);
-			const remaining = prev.filter((address) => address.id !== id);
-
-			if (editingId === id) {
-				resetForm();
-			}
-
-			if (!target?.isDefault) return remaining;
-			if (remaining.length === 0) return [];
-
-			return remaining.map((address, index) => ({
-				...address,
-				isDefault: index === 0,
-			}));
-		});
+	const handleSubmitAdd = async () => {
+		await handleAddAddress();
+		onAdded();
 	};
 
 	return (
-		<div className="bp-gen-content">
-			<div className="bp-address-layout">
-				<BPAddressFormCard
-					form={form}
-					onChange={handleChange}
-					onAdd={handleAddAddress}
-					isEditing={Boolean(editingId)}
-				/>
+		<div className="bp-address-layout">
+			<div className="bp-address-list-grid">
+				{addresses.map((address) => {
+					const isCurrentAddress = editingId === address.id;
 
-				<div className="bp-address-list-grid">
-					{defaultAddress && (
-						<BPAddressListCard
-							address={defaultAddress}
-							showActions
-							onEdit={() => handleEditAddress(defaultAddress.id)}
-							onRemove={() => handleRemoveAddress(defaultAddress.id)}
-						/>
-					)}
+					if (isCurrentAddress) {
+						return (
+							<BPAddressFormCard
+								key={address.id}
+								form={form}
+								mode="edit"
+								isDefault={address.isDefault}
+								copyAddressOptions={copyAddressOptions}
+								onChange={handleChange}
+								onCopyAddress={handleCopyAddress}
+								onSubmit={handleAddAddress}
+								onCancel={resetForm}
+							/>
+						);
+					}
 
-					{otherAddresses.map((address) => (
-						<BPAddressListCard
+					return (
+						<BPAddressFormCard
 							key={address.id}
-							address={address}
-							showActions
-							onSetDefault={() => handleSetDefault(address.id)}
+							form={mapAddressToForm(address)}
+							mode="view"
+							isDefault={address.isDefault}
+							onSetDefault={
+								address.isDefault
+									? undefined
+									: () => handleSetDefault(address.id)
+							}
 							onEdit={() => handleEditAddress(address.id)}
 							onRemove={() => handleRemoveAddress(address.id)}
 						/>
-					))}
-				</div>
+					);
+				})}
+				{showCreateForm && (
+					<BPAddressFormCard
+						form={form}
+						mode="create"
+						copyAddressOptions={copyAddressOptions}
+						onChange={handleChange}
+						onCopyAddress={handleCopyAddress}
+						onSubmit={handleSubmitAdd}
+						onCancel={handleCancelAdd}
+					/>
+				)}
 			</div>
 		</div>
 	);

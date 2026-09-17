@@ -15,18 +15,38 @@ export interface ToggleProps {
 	size?: "sm" | "md" | "lg";
 	className?: string;
 }
+
 export interface TabItem<T extends string> {
 	label: string;
 	value: T;
 	badge?: React.ReactNode;
 }
 
-export interface TabsBarProps<T extends string> {
-	items: TabItem<T>[];
-	active: T;
-	onChange: (value: T) => void;
+type TabsBarBaseProps<T extends string> = {
+	items: readonly TabItem<T>[];
+	/** "underline" (default) — original look. "soft" — pill-style active
+	 * state, similar to the FilterTabs soft variant. */
+	variant?: "underline" | "soft";
+	/** CSS color value (e.g. "var(--color-brand)") for the active label
+	 * and indicator, and — in soft variant — the pill's text/base color. */
+	color?: string;
+	/** Soft variant only: background color of the active pill. */
+	softBackground?: string;
 	className?: string;
-}
+	ariaLabel?: string;
+};
+
+export type TabsBarProps<T extends string> =
+	| (TabsBarBaseProps<T> & {
+			mode?: "single";
+			active: T;
+			onChange: (value: T) => void;
+	  })
+	| (TabsBarBaseProps<T> & {
+			mode: "multi";
+			active: T[];
+			onChange: (value: T[]) => void;
+	  });
 
 export interface PaginationProps {
 	pageIndex: number;

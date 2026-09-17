@@ -8,22 +8,22 @@ type TemplateColumn = {
 
 const MEDICAL_INITIATION_IMPORT_COLUMNS: TemplateColumn[] = [
 	{
-		header: "Employee Name",
+		header: "employeeName",
 		example: "Rahul Sharma",
 		width: 28,
 	},
 	{
-		header: "Grade",
-		example: "M1",
+		header: "ticketNumber",
+		example: "1234",
 		width: 16,
 	},
 	{
-		header: "Email",
+		header: "email",
 		example: "rahul.sharma@example.com",
 		width: 32,
 	},
 	{
-		header: "Phone Number",
+		header: "mobile",
 		example: "9876543210",
 		width: 20,
 	},
@@ -31,11 +31,11 @@ const MEDICAL_INITIATION_IMPORT_COLUMNS: TemplateColumn[] = [
 
 const FIELD_GUIDE_ROWS: string[][] = [
 	["Field", "Format", "Required", "Description"],
-	["Employee Name", "Text", "Yes", "Full name of the employee"],
-	["Grade", "Text", "Yes", "Employee grade"],
-	["Email", "Email", "Yes", "Valid employee email address"],
+	["employeeName", "Text", "Yes", "Full name of the employee"],
+	["ticketNumber", "Text", "Yes", "Employee grade"],
+	["email", "Email", "Yes", "Valid employee email address"],
 	[
-		"Phone Number",
+		"mobile",
 		"Text",
 		"Yes",
 		"10-digit phone number without spaces or country code",

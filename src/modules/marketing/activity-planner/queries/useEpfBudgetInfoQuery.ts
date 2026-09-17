@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { budgetApi } from "../../../../api/common.api";
+import { budgetApi } from "../../../../common/common.api";
 
 export function useEpfBudgetInfoQuery(budgetMasterId?: string) {
 	return useQuery({

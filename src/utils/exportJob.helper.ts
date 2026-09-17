@@ -1,4 +1,4 @@
-import type { ExportJobStatus } from "../api/common.api";
+import type { ExportJobStatus } from "../common/common.api";
 
 export type ExportState =
 	| { status: "idle" }

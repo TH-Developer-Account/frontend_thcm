@@ -1,5 +1,5 @@
 import { useAuth } from "../../context/Auth/AuthContext";
-
+import { formatDateTime } from "../../utils/format";
 import ActionCard from "./components/Card";
 import { actions } from "./constant";
 
@@ -16,24 +16,11 @@ export default function HomeScreen() {
 				<div className="home-subheader-content">
 					<span className="home-eyebrow">Module Selector</span>
 
-					<span className="home-meta">
-						FY 2025–26 · Sales &amp; Marketing Ops
-					</span>
+					<span className="home-meta">{formatDateTime(new Date())}</span>
 				</div>
 			</div>
 
 			<div className="home-main">
-				<section className="home-intro" aria-labelledby="home-title">
-					<h1 id="home-title" className="home-title">
-						Choose an application
-					</h1>
-
-					<p className="home-description">
-						Access enterprise tools for planning, administration, master data,
-						and business operations.
-					</p>
-				</section>
-
 				<section
 					className="home-module-section"
 					aria-label="Available applications"

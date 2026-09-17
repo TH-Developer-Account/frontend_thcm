@@ -40,12 +40,6 @@ export const adminSidebar: SidebarItem[] = [
 		icon: <BriefcaseBusinessIcon size={18} />,
 		link: "/admin/business-partners",
 	},
-	{
-		id: "business-partners-view",
-		label: "Business Partner View",
-		icon: <BriefcaseBusinessIcon size={18} />,
-		link: "/admin/business-partners-view",
-	},
 
 	{
 		id: "bydesign",

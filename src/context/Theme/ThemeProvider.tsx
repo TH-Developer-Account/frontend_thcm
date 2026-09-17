@@ -15,15 +15,15 @@ type ThemeProviderProps = {
 
 const THEME_STORAGE_KEY = "thcm-theme";
 
-const getSystemTheme = (): Theme => {
-	if (typeof window === "undefined") {
-		return "light";
-	}
+// const getSystemTheme = (): Theme => {
+// 	if (typeof window === "undefined") {
+// 		return "light";
+// 	}
 
-	return window.matchMedia("(prefers-color-scheme: dark)").matches
-		? "dark"
-		: "light";
-};
+// 	return window.matchMedia("(prefers-color-scheme: dark)").matches
+// 		? "dark"
+// 		: "light";
+// };
 
 const getStoredTheme = (): Theme | null => {
 	if (typeof window === "undefined") {
@@ -39,12 +39,12 @@ const getStoredTheme = (): Theme | null => {
 	return null;
 };
 
-const getInitialTheme = (): Theme => {
-	return getStoredTheme() ?? getSystemTheme();
-};
+// const getInitialTheme = (): Theme => {
+// 	return getStoredTheme() ?? getSystemTheme();
+// };
 
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
-	const [theme, setThemeState] = useState<Theme>(getInitialTheme);
+	const [theme, setThemeState] = useState<Theme>("light");
 	const [isSystemTheme, setIsSystemTheme] = useState(() => !getStoredTheme());
 
 	useEffect(() => {

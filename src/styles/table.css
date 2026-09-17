@@ -863,7 +863,7 @@
 		overflow: hidden;
 
 		border: var(--border-width-default) solid var(--table-border);
-		border-radius: var(--radius-lg);
+		/* border-radius: var(--radius-lg); */
 
 		background-color: var(--table-bg);
 		color: var(--color-text-primary);

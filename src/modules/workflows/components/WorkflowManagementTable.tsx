@@ -176,6 +176,7 @@ export const WorkflowManagementTable = ({
 						ariaLabel="Filter Workflow listings"
 						items={filterTabs}
 						value={selectedFilter}
+						variant="underline"
 						onChange={handleListFilterChange}
 						className="workflow-filter-tabs-reset"
 					/>
