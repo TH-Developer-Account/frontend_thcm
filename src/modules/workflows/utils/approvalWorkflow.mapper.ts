@@ -145,33 +145,50 @@ export const mapWorkflowStagesToApprovalRows = (
 	});
 };
 
-export const mapEpcWorkflowUser = (approval: any): WorkflowUser => ({
-	id: approval.approver.id || approval.approverId,
-	firstName: approval.approver.first_name?.trim() ?? "",
-	lastName: approval.approver.last_name?.trim() ?? "",
-	email: approval.approver.email?.trim() || undefined,
-});
+export const mapEpcWorkflowUser = (approval: any): WorkflowUser => {
+	const user = approval?.approver ?? approval?.user;
+
+	return {
+		id:
+			user?.id ??
+			approval?.approverId ??
+			approval?.userId ??
+			approval?.id ??
+			"",
+		firstName: user?.firstName?.trim() ?? user?.first_name?.trim() ?? "",
+		lastName: user?.lastName?.trim() ?? user?.last_name?.trim() ?? "",
+		email: user?.email?.trim() || undefined,
+	};
+};
 
 export const mapEpcWorkflowApproval = (
 	approval: any,
 ): WorkflowApprovalLike => ({
-	id: approval.id,
-	approverId: approval.approverId,
-	status: approval.status,
+	id: approval?.id,
+	approverId: approval?.approverId ?? approval?.userId,
+	status: approval?.status,
+	isExternalApprover: approval?.isExternalApprover ?? false,
 	approver: mapEpcWorkflowUser(approval),
 });
 
 export const mapEpcWorkflowStage = (
 	stage: WorkflowStage,
-): ApprovalStageLike => ({
-	id: stage.id,
-	workflowId: stage.workflowId,
-	stageOrder: stage.stageOrder,
-	stageName: stage.stageName,
-	name: stage.name,
-	strategy: stage.strategy,
-	minApprovals: stage.minApprovals,
-	status: stage.status,
-	isCurrentIteration: stage.isCurrentIteration,
-	approvals: stage.approvers.map(mapEpcWorkflowApproval),
-});
+): ApprovalStageLike => {
+	const approvals = stage.approvals ?? [];
+	const approvers = stage.approvers ?? [];
+
+	return {
+		id: stage.id,
+		workflowId: stage.workflowId,
+		stageOrder: stage.stageOrder,
+		stageName: stage.stageName,
+		name: stage.name,
+		strategy: stage.strategy,
+		minApprovals: stage.minApprovals,
+		status: stage.status,
+		isCurrentIteration: stage.isCurrentIteration,
+
+		approvals: approvals.map(mapEpcWorkflowApproval),
+		approvers: approvers.map(mapEpcWorkflowApproval),
+	};
+};
