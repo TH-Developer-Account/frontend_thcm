@@ -1,4 +1,4 @@
-import type { ApprovalWorkflowStage } from "../../../workflows";
+import type { WorkflowStage } from "../../../workflows";
 import type { EpcDetailResponse } from "../types/epc.types";
 
 export const isNonEmptyString = (value: unknown): value is string => {
@@ -25,30 +25,29 @@ export const hasEpf = (
 	return Boolean(epcData?.epf?.id);
 };
 
-export const isCurrentWorkflowStage = (stage: ApprovalWorkflowStage) => {
+export const isCurrentWorkflowStage = (stage: WorkflowStage) => {
 	return stage.status === "IN_PROGRESS" && stage.isCurrentIteration;
 };
 
 export const isUserStageApprover = (
-	stage: ApprovalWorkflowStage | undefined,
+	stage: WorkflowStage | undefined,
 	userId?: string | null,
 ) => {
 	if (!stage || !userId) return false;
 
-	return stage.approvals.some(
-		(approval) =>
-			approval.approverId === userId || approval.approver?.id === userId,
+	return stage.approvers.some(
+		(approval) => approval.id === userId || approval?.id === userId,
 	);
 };
 
 export const getApprovalIdForUser = (
-	stage: ApprovalWorkflowStage | undefined,
+	stage: WorkflowStage | undefined,
 	userId?: string | null,
 ) => {
 	if (!stage || !userId) return null;
 
-	const approval = stage.approvals.find(
-		(item) => item.approverId === userId || item.approver?.id === userId,
+	const approval = stage.approvers.find(
+		(item) => item.id === userId || item?.id === userId,
 	);
 
 	return approval?.id ?? null;

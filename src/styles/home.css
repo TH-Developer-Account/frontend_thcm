@@ -110,8 +110,8 @@
 	.home-layout-header .logo-img {
 		display: block;
 		width: auto;
-		max-width: 11rem;
-		height: 2rem;
+		/* max-width: 11rem; */
+		/* height: 2rem; */
 
 		object-fit: contain;
 		object-position: left center;
@@ -651,8 +651,8 @@
 
 		.home-brand img,
 		.home-layout-header .logo-img {
-			max-width: 10rem;
-			height: 1.75rem;
+			/* max-width: 10rem; */
+			/* height: 1.75rem; */
 		}
 
 		.home-layout-header .app-header-actions {

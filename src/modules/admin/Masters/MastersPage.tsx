@@ -119,7 +119,8 @@ const MastersPage = () => {
 				<div className="flex-1 min-w-0">
 					<MasterLineItemTable
 						title={activeMaster}
-						nameLabel={`${activeMaster.replace(/s$/, "")}`}
+						nameLabel={activeMaster}
+						// nameLabel={`${activeMaster.replace(/s$/, "")}`}
 						items={items}
 						selectedId={selectedItem?.id}
 						onChange={(updated) => setItems(activeMaster, updated)}
