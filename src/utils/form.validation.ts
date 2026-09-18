@@ -1,3 +1,12 @@
+import {
+	required,
+	email,
+	mobileNumber,
+	strongPassword,
+	minLength,
+	type Validator,
+} from "./validation.rules";
+
 export type ValidationType = "required" | "email" | "phone";
 
 export type ValidationRule = {
@@ -61,3 +70,18 @@ export const FORM_VALIDATIONS = {
 	email: [{ type: "required" }, { type: "email" }],
 	phone: [{ type: "required" }, { type: "phone" }],
 } satisfies Record<string, ValidationRules>;
+
+export const composeValidators =
+	(...validators: Validator[]): Validator =>
+	(value) => {
+		for (const validate of validators) {
+			const error = validate(value);
+			if (error) return error;
+		}
+		return null;
+	};
+
+export const emailField = composeValidators(required(), email());
+export const mobileField = composeValidators(required(), mobileNumber());
+export const passwordField = composeValidators(required(), strongPassword());
+export const nameField = composeValidators(required(), minLength(2));

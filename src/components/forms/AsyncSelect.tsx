@@ -1,8 +1,9 @@
 import React, { useId, useMemo, useState } from "react";
-import Select from "react-select";
+import Select, { components } from "react-select";
 import type {
 	//  ActionMeta,
 	InputActionMeta,
+	InputProps as ReactSelectInputProps,
 	SingleValue,
 } from "react-select";
 
@@ -34,6 +35,27 @@ type UserAsyncSelectProps = {
 	className?: string;
 	success?: boolean;
 };
+
+/*
+ * react-select renders a real <input> for typing the search query. Browsers
+ * (and any active password-manager extension) apply their own heuristics to
+ * that input independently of react-select's own menu — Chrome's address/
+ * contact autofill panel in particular can pop up over this field and sit on
+ * top of react-select's own suggestion menu, since neither knows about the
+ * other. autoComplete="off" is not always honoured by Chrome for fields it
+ * still recognises, so we also mark the field so password managers
+ * (LastPass, 1Password, Dashlane, Bitwarden) skip it outright.
+ */
+const NoAutofillInput = (props: ReactSelectInputProps<UserOption, false>) => (
+	<components.Input
+		{...props}
+		autoComplete="off"
+		data-lpignore="true"
+		data-1p-ignore="true"
+		data-bwignore="true"
+		data-form-type="other"
+	/>
+);
 
 const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 	name = "user",
@@ -187,6 +209,7 @@ const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 				isClearable={isClearable}
 				placeholder={placeholder}
 				filterOption={null}
+				components={{ Input: NoAutofillInput }}
 				className={[
 					"react-select-container",
 					error ? "react-select-container-error" : "",

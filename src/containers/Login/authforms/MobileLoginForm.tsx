@@ -1,5 +1,4 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 import Button from "../../../components/common/Button";
@@ -8,6 +7,7 @@ import OtpInput from "../../../components/forms/OtpInput";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { API_BASE_URL, ServerAxios } from "../../../services/ServerAxios";
+import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { MOBILE_REGEX, api_routes } from "../../Login/constant";
 
 type MobileStep = "enterMobile" | "verifyOtp";
@@ -37,17 +37,16 @@ const MobileLoginForm = () => {
 		error: "",
 	});
 
-	const getErrorMessage = (error: unknown, fallback: string) => {
-		if (axios.isAxiosError(error)) {
-			return error.response?.data?.message || error.message || fallback;
-		}
-
-		if (error instanceof Error) {
-			return error.message;
-		}
-
-		return fallback;
-	};
+	/*
+	 * This used to be a local copy of the same axios-error-unwrapping logic
+	 * that already lives in utils/apiError.helper.ts (getApiErrorMessage) —
+	 * a duplicate validation/error path the project standard explicitly
+	 * asks to avoid. Reusing the shared helper also means this form gets
+	 * the same field-error (`data.errors`) fallback the helper already
+	 * handles, which the local copy did not.
+	 */
+	const getErrorMessage = (error: unknown, fallback: string) =>
+		getApiErrorMessage(error, fallback);
 
 	const handleMobileChange = (event: ChangeEvent<HTMLInputElement>) => {
 		setState((current) => ({

@@ -192,6 +192,36 @@ FORM CONTAINER AND LAYOUT
 	.form-input[type="password"]::-ms-clear {
 		display: none;
 	}
+	/*
+	 * Chrome/Edge/most password managers (Google Password Manager, LastPass,
+	 * 1Password, Dashlane, Bitwarden) draw their own key/eye icon inside a
+	 * password field once it recognises one, positioned flush at the input's
+	 * inner right edge — the exact spot our own custom show/hide toggle
+	 * (.form-icon-right) also sits, so the two overlap. That native icon
+	 * can't be disabled from the page (autoComplete="off" is ignored by
+	 * modern Chrome for password fields, and removing autoComplete=
+	 * "current-password" would break legitimate password-manager autofill),
+	 * so the fix is layout: give our toggle extra clearance from the edge
+	 * so it renders just inside/left of where the browser draws its own
+	 * icon instead of on top of it.
+	===================================================== */
+	.form-input-wrapper.has-password-toggle .form-icon-right {
+		right: var(--space-6);
+	}
+
+	.form-input-wrapper.has-password-toggle.has-status-icon .form-icon-right {
+		right: var(--space-6);
+	}
+
+	.form-input-wrapper.has-password-toggle.has-status-icon .form-error-icon,
+	.form-input-wrapper.has-password-toggle.has-status-icon .form-success-icon {
+		right: calc(var(--space-6) + var(--space-6));
+	}
+
+	.form-input-with-status-and-toggle {
+		padding-right: var(--space-20, 5rem);
+	}
+
 	/* =====================================================
 	   BASE FIELD CONTROLS
 	   Sharp, compact enterprise styling.

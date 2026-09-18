@@ -10,6 +10,7 @@ import Button from "../../../components/common/Button";
 import FormInput from "../../../components/forms/FormInput";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
+import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { EMAIL_REGEX } from "../../Login/constant";
 
 type EmailLoginData = {
@@ -108,15 +109,26 @@ const EmailLoginForm = () => {
 
 			navigate(result.requiresPasswordReset ? "/reset-password" : "/");
 		} catch (error: unknown) {
-			const message =
-				error instanceof Error
-					? error.message
-					: "Unable to sign in. Check your credentials.";
-
+			/*
+			 * Previously this only handled the case where `login` threw a
+			 * plain Error and showed its .message — but axios errors (the
+			 * actual shape thrown for a rejected /login request) carry the
+			 * backend's real reason ("Invalid credentials", "Account
+			 * locked", etc.) in error.response.data.message, not in
+			 * error.message. That meant real sign-in failures either fell
+			 * through to a generic "Unable to sign in" string or, for
+			 * anything not an Error instance, were silently swallowed with
+			 * no toast at all. Route through the same centralized helper
+			 * every other mutation in this app uses so the backend's actual
+			 * message reaches the user.
+			 */
 			showToast({
 				type: "error",
 				title: "Sign-in failed",
-				description: message,
+				description: getApiErrorMessage(
+					error,
+					"Unable to sign in. Check your credentials.",
+				),
 			});
 		} finally {
 			setLoading(false);
@@ -150,6 +162,8 @@ const EmailLoginForm = () => {
 					required
 					error={errors.password}
 					autoComplete="current-password"
+					data-lpignore="true"
+					data-1p-ignore="true"
 				/>
 			</div>
 
