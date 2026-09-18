@@ -34,6 +34,27 @@ FORM CONTAINER AND LAYOUT
 		@apply relative w-full min-w-0;
 	}
 
+	/*
+	 * Fixed leading segment (e.g. a "+91" country code) shown inside a
+	 * field's wrapper, to the left of the actual input. Purely visual —
+	 * not part of the field's editable value.
+	 */
+	.form-input-prefix {
+		@apply pointer-events-none absolute inline-flex items-center;
+
+		top: 50%;
+		left: var(--space-3);
+		transform: translateY(-50%);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+	}
+
+	.form-input-wrapper.has-prefix .form-input {
+		padding-left: var(--space-12);
+	}
+
 	/* =====================================================
 	   LABELS
 	===================================================== */
@@ -215,7 +236,7 @@ FORM CONTAINER AND LAYOUT
 
 	.form-input-wrapper.has-password-toggle.has-status-icon .form-error-icon,
 	.form-input-wrapper.has-password-toggle.has-status-icon .form-success-icon {
-		right: calc(var(--space-6) + var(--space-6));
+		right: var(--space-16);
 	}
 
 	.form-input-with-status-and-toggle {
@@ -408,13 +429,23 @@ FORM CONTAINER AND LAYOUT
 
 	/* Space for both the status icon and password visibility button */
 	.form-input-with-status-and-toggle {
-		padding-right: var(--space-16);
+		padding-right: var(--space-20);
 	}
 
-	/* Move validation status left when the password toggle is present */
+	/*
+	 * Move validation status left when the password toggle is present.
+	 *
+	 * The toggle button sits at right: var(--space-6) (24px) and is
+	 * 1.75rem (28px) wide, so it occupies the region 24px-52px from the
+	 * input's right edge. The earlier value here (--space-12, 48px) put
+	 * the status icon's right edge only 4px past that, so the two icons
+	 * visually overlapped/touched — this wasn't a browser-drawn icon,
+	 * it was our own success/error icon colliding with our own toggle.
+	 * --space-16 (64px) clears the toggle's full width with a gap.
+	 */
 	.form-input-wrapper.has-password-toggle.has-status-icon .form-error-icon,
 	.form-input-wrapper.has-password-toggle.has-status-icon .form-success-icon {
-		right: var(--space-12);
+		right: var(--space-16);
 	}
 
 	/* Keep the clickable password toggle above decorative icons */

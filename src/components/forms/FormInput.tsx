@@ -75,6 +75,7 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 			readOnlyValue,
 			emptyReadOnlyValue = "--",
 			validation,
+			inputPrefix,
 			onBlur,
 			onChange,
 			...nativeInputProps
@@ -252,15 +253,46 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 						"form-input-wrapper",
 						isPassword && "has-password-toggle",
 						(resolvedError || resolvedSuccess) && "has-status-icon",
+						inputPrefix ? "has-prefix" : null,
 					)}
 				>
+					{inputPrefix ? (
+						<span className="form-input-prefix" aria-hidden="true">
+							{inputPrefix}
+						</span>
+					) : null}
+
 					<input
 						{...nativeInputProps}
 						ref={ref}
 						id={inputId}
 						name={name}
 						type={resolvedInputType}
-						value={value ?? ""}
+						// Password managers (Chrome/Edge/LastPass/1Password/Bitwarden)
+						// draw their own icon inside recognised password fields;
+						// these attributes ask them to skip it so it doesn't stack
+						// on top of our own show/hide toggle. Harmless no-ops on
+						// non-password fields and on managers that ignore them.
+						{...(isPassword
+							? {
+									"data-lpignore": "true",
+									"data-1p-ignore": "true",
+									"data-bwignore": "true",
+									"data-form-type": "other",
+								}
+							: null)}
+						// Only force a controlled "" fallback when the caller actually
+						// passed a `value` (the manual-state pattern used elsewhere in
+						// this app, e.g. VendorCreationFormOne). When no `value` prop is
+						// given at all — as with `{...register("field")}` from React
+						// Hook Form, which manages the DOM value via `ref` instead —
+						// stay uncontrolled. Forcing value={value ?? ""} here pins
+						// every RHF-registered input to a permanent controlled "",
+						// so typed characters get reset on every render and the
+						// field appears to reject all input. (This exact regression
+						// has now reappeared twice — if this file is regenerated
+						// from an older copy again, check this line first.)
+						value={value === undefined ? undefined : (value ?? "")}
 						required={required}
 						disabled={disabled}
 						min={resolvedMin}

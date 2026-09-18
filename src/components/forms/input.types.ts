@@ -28,6 +28,16 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	emptyReadOnlyValue?: ReactNode;
 	success?: boolean;
 	invalidRadio?: string;
+	/**
+	 * Fixed, non-editable content shown at the input's leading edge —
+	 * e.g. a country code ("+91") on a mobile-number field. Purely
+	 * presentational; it is not part of the field's value.
+	 *
+	 * Named `inputPrefix` (not `prefix`) because native
+	 * `InputHTMLAttributes` already declares a deprecated string
+	 * `prefix` attribute, which would otherwise conflict.
+	 */
+	inputPrefix?: ReactNode;
 }
 
 export interface CheckboxProps {

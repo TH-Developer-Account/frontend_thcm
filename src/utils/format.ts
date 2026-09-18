@@ -232,3 +232,50 @@ export const capitalizeSnakeCase = (str: string) => {
 		.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
 		.join(" ");
 };
+
+/* =========================
+   SANITIZATION / NORMALIZATION
+   Run these on form values right before they cross the API boundary
+   (inside a form's submit mapper), never on every keystroke and never
+   on the value shown back in the field. Per the project's sanitization
+   standard: trim/lowercase email, digit-strip phone numbers, uppercase
+   PAN/GSTIN/IFSC-style codes — and never touch passwords, tokens, or
+   file contents, where exact characters (including whitespace) matter.
+========================= */
+
+/**
+ * name@Company.COM  →  name@company.com
+ */
+export const normalizeEmail = (value: string) => value.trim().toLowerCase();
+
+/**
+ * Strips everything but digits so a pasted "+91 98765-43210" or
+ * "(9876) 543-210" becomes a plain 10-digit string before validation/
+ * submission. Safe to call on every keystroke (used for the live
+ * mobile-number inputs) as well as at submit time.
+ */
+export const normalizeMobileNumber = (value: string) =>
+	value.replace(/\D/g, "").slice(0, 10);
+
+/**
+ * Same digit-only stripping as normalizeMobileNumber, kept as a separate
+ * named export so OTP fields aren't coupled to "this is a phone number"
+ * semantics — a 6-digit OTP is a different domain concept that happens
+ * to share the same sanitization rule today.
+ */
+export const normalizeOtp = (value: string) => value.replace(/\D/g, "");
+
+/**
+ * PAN / GSTIN / IFSC and similar bank/compliance codes are conventionally
+ * upper-case; normalize casing without altering anything else about the
+ * value (no digit stripping, no trimming beyond the edges).
+ */
+export const normalizeUpperCaseCode = (value: string) =>
+	value.trim().toUpperCase();
+
+/**
+ * Generic "trim, nothing else" normalizer for free-text fields (names,
+ * addresses, remarks) where the only sanitization rule is removing
+ * leading/trailing whitespace. Never apply this to passwords or tokens.
+ */
+export const normalizeText = (value: string) => value.trim();

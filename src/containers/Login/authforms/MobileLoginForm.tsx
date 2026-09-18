@@ -1,4 +1,6 @@
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useState } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
 
 import Button from "../../../components/common/Button";
@@ -8,16 +10,16 @@ import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { API_BASE_URL, ServerAxios } from "../../../services/ServerAxios";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
+import { normalizeMobileNumber } from "../../../utils/format";
 import { MOBILE_REGEX, api_routes } from "../../Login/constant";
+import {
+	mobileEntrySchema,
+	otpVerifySchema,
+	type MobileEntryFormValues,
+	type OtpVerifyFormValues,
+} from "../../../schemas/authForms.schema";
 
 type MobileStep = "enterMobile" | "verifyOtp";
-
-type MobileLoginState = {
-	loading: boolean;
-	mobile: string;
-	otp: string;
-	error: string;
-};
 
 const MobileLoginForm = () => {
 	const navigate = useNavigate();
@@ -25,66 +27,46 @@ const MobileLoginForm = () => {
 	const { showToast } = useToast();
 
 	const [mobileStep, setMobileStep] = useState<MobileStep>("enterMobile");
-
 	const [otpTimerActive, setOtpTimerActive] = useState(true);
-
 	const [secondsLeft, setSecondsLeft] = useState(30);
+	const [loading, setLoading] = useState(false);
 
-	const [state, setState] = useState<MobileLoginState>({
-		loading: false,
-		mobile: "",
-		otp: "",
-		error: "",
+	// The confirmed mobile number carries across steps (needed to display
+	// "Enter the code sent to X" on step 2 and as the verify-OTP payload) —
+	// this is cross-step data, not validation, so it stays outside both
+	// RHF instances rather than trying to share one form across two
+	// separately-submitted screens.
+	const [confirmedMobile, setConfirmedMobile] = useState("");
+
+	const mobileForm = useForm<MobileEntryFormValues>({
+		resolver: zodResolver(mobileEntrySchema),
+		mode: "onBlur",
+		reValidateMode: "onChange",
+		defaultValues: { mobile: "" },
 	});
 
-	/*
-	 * This used to be a local copy of the same axios-error-unwrapping logic
-	 * that already lives in utils/apiError.helper.ts (getApiErrorMessage) —
-	 * a duplicate validation/error path the project standard explicitly
-	 * asks to avoid. Reusing the shared helper also means this form gets
-	 * the same field-error (`data.errors`) fallback the helper already
-	 * handles, which the local copy did not.
-	 */
-	const getErrorMessage = (error: unknown, fallback: string) =>
-		getApiErrorMessage(error, fallback);
+	const otpForm = useForm<OtpVerifyFormValues>({
+		resolver: zodResolver(otpVerifySchema),
+		mode: "onBlur",
+		reValidateMode: "onChange",
+		defaultValues: { otp: "" },
+	});
 
-	const handleMobileChange = (event: ChangeEvent<HTMLInputElement>) => {
-		setState((current) => ({
-			...current,
-			mobile: event.target.value.replace(/\D/g, ""),
-			error: "",
-		}));
-	};
+	// useWatch (a proper subscribable hook) instead of form.watch() — the
+	// latter is a plain function call the React Compiler can't safely
+	// memoize around.
+	const mobileValue = useWatch({ control: mobileForm.control, name: "mobile" });
+	const otpValue = useWatch({ control: otpForm.control, name: "otp" });
 
-	const handleOtpChange = (value: string) => {
-		setState((current) => ({
-			...current,
-			otp: value,
-			error: "",
-		}));
-	};
-
-	const sendOtp = async () => {
-		if (!MOBILE_REGEX.test(state.mobile)) {
-			setState((current) => ({
-				...current,
-				error: "Enter a valid 10-digit mobile number",
-			}));
-
-			return false;
-		}
-
-		setState((current) => ({
-			...current,
-			loading: true,
-			error: "",
-		}));
+	const requestOtp = async (mobile: string): Promise<boolean> => {
+		setLoading(true);
 
 		try {
 			await ServerAxios.post(`${API_BASE_URL}${api_routes.send_otp}`, {
-				phone_number: state.mobile,
+				phone_number: mobile,
 			});
 
+			setConfirmedMobile(mobile);
 			setMobileStep("verifyOtp");
 
 			showToast({
@@ -98,40 +80,28 @@ const MobileLoginForm = () => {
 			showToast({
 				type: "error",
 				title: "Unable to send OTP",
-				description: getErrorMessage(error, "User not found"),
+				description: getApiErrorMessage(error, "User not found"),
 			});
 
 			return false;
 		} finally {
-			setState((current) => ({
-				...current,
-				loading: false,
-			}));
+			setLoading(false);
 		}
 	};
 
-	const verifyOtp = async () => {
-		if (state.otp.length !== 6) {
-			setState((current) => ({
-				...current,
-				error: "Enter the complete 6-digit OTP",
-			}));
+	const onMobileSubmit = async (values: MobileEntryFormValues) => {
+		await requestOtp(normalizeMobileNumber(values.mobile));
+	};
 
-			return;
-		}
-
-		setState((current) => ({
-			...current,
-			loading: true,
-			error: "",
-		}));
+	const onOtpSubmit = async (values: OtpVerifyFormValues) => {
+		setLoading(true);
 
 		try {
 			const response = await ServerAxios.post(
 				`${API_BASE_URL}${api_routes.verify_otp}`,
 				{
-					phone_number: state.mobile,
-					otp: state.otp,
+					phone_number: confirmedMobile,
+					otp: values.otp,
 				},
 			);
 
@@ -151,82 +121,64 @@ const MobileLoginForm = () => {
 			showToast({
 				type: "error",
 				title: "Verification failed",
-				description: getErrorMessage(error, "Invalid OTP"),
+				description: getApiErrorMessage(error, "Invalid OTP"),
 			});
 		} finally {
-			setState((current) => ({
-				...current,
-				loading: false,
-			}));
+			setLoading(false);
 		}
 	};
 
-	const handleMobileSubmit = async (event: FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
-		await sendOtp();
-	};
-
-	const handleOtpSubmit = async (event: FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
-		await verifyOtp();
-	};
-
 	const handleResendOtp = async () => {
-		if (otpTimerActive || state.loading) return;
+		if (otpTimerActive || loading) return;
 
-		const sent = await sendOtp();
+		const sent = await requestOtp(confirmedMobile);
 
 		if (sent) {
-			setState((current) => ({
-				...current,
-				otp: "",
-			}));
+			otpForm.reset({ otp: "" });
 		}
 	};
 
 	const handleChangeMobile = () => {
 		setMobileStep("enterMobile");
-
-		setState({
-			loading: false,
-			mobile: "",
-			otp: "",
-			error: "",
-		});
+		setConfirmedMobile("");
+		otpForm.reset({ otp: "" });
+		mobileForm.reset({ mobile: "" });
 	};
 
 	if (mobileStep === "verifyOtp") {
 		return (
-			<form className="auth-form" onSubmit={handleOtpSubmit}>
+			<form className="auth-form" onSubmit={otpForm.handleSubmit(onOtpSubmit)}>
 				<div className="auth-otp-intro">
 					<p className="auth-otp-label">Verification code</p>
 
 					<p className="auth-otp-description">
-						Enter the code sent to <strong>{state.mobile}</strong>
+						Enter the code sent to <strong>{confirmedMobile}</strong>
 					</p>
 				</div>
 
-				<OtpInput
-					length={6}
-					onChange={handleOtpChange}
-					onTimerChange={(seconds, active) => {
-						setSecondsLeft(seconds);
-						setOtpTimerActive(active);
-					}}
+				<Controller
+					control={otpForm.control}
+					name="otp"
+					render={({ field, fieldState }) => (
+						<OtpInput
+							length={6}
+							value={field.value}
+							onChange={field.onChange}
+							error={fieldState.error?.message}
+							onTimerChange={(seconds, active) => {
+								setSecondsLeft(seconds);
+								setOtpTimerActive(active);
+							}}
+						/>
+					)}
 				/>
-
-				{state.error ? (
-					<p className="auth-form-error" role="alert">
-						{state.error}
-					</p>
-				) : null}
 
 				<Button
 					type="submit"
 					appearance="cta"
 					variant="brand"
-					text={state.loading ? "Verifying..." : "Verify OTP"}
-					disabled={state.loading || state.otp.length !== 6}
+					text={loading ? "Verifying..." : "Verify OTP"}
+					disabled={loading || otpValue.length !== 6}
 					fullWidth
 				/>
 
@@ -235,7 +187,7 @@ const MobileLoginForm = () => {
 						type="button"
 						className="auth-text-button"
 						onClick={handleResendOtp}
-						disabled={otpTimerActive || state.loading}
+						disabled={otpTimerActive || loading}
 					>
 						{otpTimerActive ? `Resend in ${secondsLeft}s` : "Resend OTP"}
 					</button>
@@ -253,18 +205,32 @@ const MobileLoginForm = () => {
 	}
 
 	return (
-		<form className="auth-form" onSubmit={handleMobileSubmit} noValidate>
+		<form
+			className="auth-form"
+			onSubmit={mobileForm.handleSubmit(onMobileSubmit)}
+			noValidate
+		>
 			<FormInput
-				name="mobile"
 				label="Mobile number"
 				type="tel"
 				inputMode="numeric"
 				autoComplete="tel"
 				placeholder="Enter 10-digit mobile number"
-				value={state.mobile}
-				onChange={handleMobileChange}
-				error={state.error}
 				required
+				error={mobileForm.formState.errors.mobile?.message}
+				maxLength={10}
+				inputPrefix="+91"
+				{...mobileForm.register("mobile", {
+					// Live-strip non-digits and cap at 10 digits as the user
+					// types, same as the original handleMobileChange —
+					// register's onChange still runs afterward and picks up
+					// the sanitized DOM value.
+					onChange: (event) => {
+						event.target.value = event.target.value
+							.replace(/\D/g, "")
+							.slice(0, 10);
+					},
+				})}
 			/>
 
 			<p className="auth-field-helper">
@@ -272,8 +238,8 @@ const MobileLoginForm = () => {
 			</p>
 
 			<Button
-				text={state.loading ? "Sending OTP..." : "Continue"}
-				disabled={state.loading || !MOBILE_REGEX.test(state.mobile)}
+				text={loading ? "Sending OTP..." : "Continue"}
+				disabled={loading || !MOBILE_REGEX.test(mobileValue)}
 				fullWidth
 				type="submit"
 				appearance="cta"

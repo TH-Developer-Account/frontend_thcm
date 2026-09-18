@@ -1,4 +1,6 @@
-import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useMemo, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Circle, ShieldCheck } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
@@ -7,23 +9,12 @@ import FormInput from "../../../components/forms/FormInput";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { ServerAxios } from "../../../services/ServerAxios";
+import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { PasswordPolicy } from "../constant";
-
-type ResetPasswordErrors = {
-	oldPassword?: string;
-	newPassword?: string;
-	confirmPassword?: string;
-	general?: string;
-};
-
-type ResetPasswordState = {
-	oldPassword: string;
-	newPassword: string;
-	confirmPassword: string;
-	errors: ResetPasswordErrors;
-	loading: boolean;
-	showPolicy: boolean;
-};
+import {
+	buildResetPasswordSchema,
+	type ResetPasswordFormValues,
+} from "../../../schemas/authForms.schema";
 
 const ResetPasswordForm = () => {
 	const navigate = useNavigate();
@@ -31,78 +22,48 @@ const ResetPasswordForm = () => {
 	const { resetPassword } = useAuth();
 	const { showToast } = useToast();
 
-	const [state, setState] = useState<ResetPasswordState>({
-		oldPassword: "",
-		newPassword: "",
-		confirmPassword: "",
-		errors: {},
-		loading: false,
-		showPolicy: false,
-	});
+	const [generalError, setGeneralError] = useState<string | undefined>();
+	const [showPolicy, setShowPolicy] = useState(false);
 
-	const isPasswordValid = useMemo(
-		() => PasswordPolicy.every((rule) => rule.test(state.newPassword)),
-		[state.newPassword],
+	// Rules differ depending on entry point (see schema file): an
+	// authenticated "change password" needs the current password, a
+	// tokenized reset link does not.
+	const resetPasswordSchema = useMemo(
+		() => buildResetPasswordSchema(!token),
+		[token],
 	);
 
-	const validateForm = () => {
-		const nextErrors: ResetPasswordErrors = {};
+	const {
+		register,
+		handleSubmit,
+		control,
+		formState: { errors, isSubmitting },
+	} = useForm<ResetPasswordFormValues>({
+		resolver: zodResolver(resetPasswordSchema),
+		mode: "onBlur",
+		reValidateMode: "onChange",
+		defaultValues: { oldPassword: "", newPassword: "", confirmPassword: "" },
+	});
 
-		if (!token && !state.oldPassword) {
-			nextErrors.oldPassword = "Current password is required";
-		}
+	const newPasswordValue = useWatch({ control, name: "newPassword" });
+	const oldPasswordValue = useWatch({ control, name: "oldPassword" });
+	const confirmPasswordValue = useWatch({ control, name: "confirmPassword" });
 
-		if (!state.newPassword) {
-			nextErrors.newPassword = "New password is required";
-		} else if (!isPasswordValid) {
-			nextErrors.newPassword = "Password does not meet all requirements";
-		}
+	const isPasswordValid = useMemo(
+		() => PasswordPolicy.every((rule) => rule.test(newPasswordValue)),
+		[newPasswordValue],
+	);
 
-		if (!state.confirmPassword) {
-			nextErrors.confirmPassword = "Confirm your new password";
-		} else if (state.confirmPassword !== state.newPassword) {
-			nextErrors.confirmPassword = "Passwords do not match";
-		}
-
-		setState((current) => ({
-			...current,
-			errors: nextErrors,
-		}));
-
-		return Object.keys(nextErrors).length === 0;
-	};
-
-	const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-		const { name, value } = event.target;
-
-		setState((current) => ({
-			...current,
-			[name]: value,
-			errors: {
-				...current.errors,
-				[name]: undefined,
-				general: undefined,
-			},
-		}));
-	};
-
-	const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
-
-		if (!validateForm()) return;
-
-		setState((current) => ({
-			...current,
-			loading: true,
-		}));
+	const onSubmit = async (values: ResetPasswordFormValues) => {
+		setGeneralError(undefined);
 
 		try {
 			if (token) {
 				await ServerAxios.post(`/auth/reset-password/${token}`, {
-					newPassword: state.newPassword,
+					newPassword: values.newPassword,
 				});
 			} else {
-				await resetPassword(state.oldPassword, state.newPassword);
+				await resetPassword(values.oldPassword, values.newPassword);
 			}
 
 			showToast({
@@ -113,29 +74,18 @@ const ResetPasswordForm = () => {
 
 			navigate("/login");
 		} catch (error: unknown) {
-			const message =
-				error instanceof Error
-					? error.message
-					: "Unable to update your password.";
+			const message = getApiErrorMessage(
+				error,
+				"Unable to update your password.",
+			);
 
-			setState((current) => ({
-				...current,
-				errors: {
-					...current.errors,
-					general: message,
-				},
-			}));
+			setGeneralError(message);
 
 			showToast({
 				type: "error",
 				title: "Password update failed",
 				description: message,
 			});
-		} finally {
-			setState((current) => ({
-				...current,
-				loading: false,
-			}));
 		}
 	};
 
@@ -157,46 +107,37 @@ const ResetPasswordForm = () => {
 				</p>
 			</header>
 
-			<form className="auth-form" onSubmit={handleSubmit} noValidate>
+			<form className="auth-form" onSubmit={handleSubmit(onSubmit)} noValidate>
 				<div className="auth-form-fields">
 					{!token ? (
 						<FormInput
-							name="oldPassword"
 							type="password"
 							label="Current password"
 							placeholder="Enter current password"
-							value={state.oldPassword}
-							onChange={handleChange}
-							error={state.errors.oldPassword}
-							success={Boolean(state.oldPassword) && !state.errors.oldPassword}
+							error={errors.oldPassword?.message}
+							success={Boolean(oldPasswordValue) && !errors.oldPassword}
 							autoComplete="current-password"
 							required
+							{...register("oldPassword")}
 						/>
 					) : null}
 
 					<FormInput
-						name="newPassword"
 						type="password"
 						label="New password"
 						placeholder="Enter new password"
-						value={state.newPassword}
-						onChange={handleChange}
-						onFocus={() =>
-							setState((current) => ({
-								...current,
-								showPolicy: true,
-							}))
-						}
-						error={state.errors.newPassword}
+						onFocus={() => setShowPolicy(true)}
+						error={errors.newPassword?.message}
 						success={isPasswordValid}
 						autoComplete="new-password"
 						required
+						{...register("newPassword")}
 					/>
 
-					{!isPasswordValid && state.showPolicy ? (
+					{!isPasswordValid && showPolicy ? (
 						<ul className="auth-password-policy">
 							{PasswordPolicy.map((rule) => {
-								const passed = rule.test(state.newPassword);
+								const passed = rule.test(newPasswordValue);
 
 								return (
 									<li
@@ -221,37 +162,36 @@ const ResetPasswordForm = () => {
 					) : null}
 
 					<FormInput
-						name="confirmPassword"
 						type="password"
 						label="Confirm new password"
 						placeholder="Re-enter new password"
-						value={state.confirmPassword}
-						onChange={handleChange}
-						error={state.errors.confirmPassword}
+						error={errors.confirmPassword?.message}
 						success={
-							state.confirmPassword.length > 0 &&
-							state.confirmPassword === state.newPassword
+							confirmPasswordValue.length > 0 && !errors.confirmPassword
 						}
 						autoComplete="new-password"
 						required
+						{...register("confirmPassword")}
 					/>
-					{state.confirmPassword.length > 0 &&
-						state.confirmPassword !== state.newPassword && (
-							<div className="auth-form-error" role="alert">
-								<p>Passwords do not match</p>
-							</div>
-						)}
+					{/*
+					 * The mismatch message used to also be duplicated in a
+					 * separate <div> right below the field, on top of
+					 * FormInput's own error text under the input — the exact
+					 * double-message bug already fixed in TextareaInput.
+					 * fieldState now owns this message once, via
+					 * errors.confirmPassword above.
+					 */}
 				</div>
 
-				{state.errors.general ? (
+				{generalError ? (
 					<p className="auth-form-error" role="alert">
-						{state.errors.general}
+						{generalError}
 					</p>
 				) : null}
 
 				<Button
-					text={state.loading ? "Updating password..." : "Update password"}
-					disabled={state.loading || !isPasswordValid}
+					text={isSubmitting ? "Updating password..." : "Update password"}
+					disabled={isSubmitting || !isPasswordValid}
 					fullWidth
 					type="submit"
 					appearance="cta"
