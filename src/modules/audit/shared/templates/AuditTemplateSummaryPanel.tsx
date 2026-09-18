@@ -1,14 +1,14 @@
 import { Award, ListChecks } from "lucide-react";
-import type { ChecklistTemplateSummary } from "../dealer-audit.types";
+import type { AuditTemplateSummary } from "../shared.audit.types";
 import Card from "../../../../components/common/Card";
 
 type Props = {
-	summary: ChecklistTemplateSummary;
+	summary: AuditTemplateSummary;
 	sticky?: boolean;
 	title?: string;
 };
 
-export default function ChecklistTemplateSummaryPanel({
+export default function AuditTemplateSummaryPanel({
 	summary,
 	sticky = false,
 	title = "Checklist outline",

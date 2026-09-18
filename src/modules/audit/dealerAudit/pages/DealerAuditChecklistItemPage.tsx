@@ -16,17 +16,17 @@ import PageSectionLayout from "../../../../layout/PageSectionLayout";
 import {
 	LivePhotoUploadField,
 	type LivePhotoValue,
-} from "../LivePhotoUploadField";
+} from "../../shared/checklist/LivePhotoUploadField";
 import {
 	flattenChecklist,
 	getAuditProgress,
 	mapChecklistFormToPayload,
 	mapChecklistItemToForm,
 } from "../dealer-audit.utils";
-import type { ChecklistItemFormValues } from "../dealer-audit.types";
-import AuditProgress from "../components/AuditProgress";
-import ScoreSelector from "../components/ScoreSelector";
+import type { ChecklistItemFormValues } from "../../shared/shared.audit.types";
 import useDealerAudit from "../dealer-audit.store";
+import AuditProgress from "../../shared/checklist/AuditProgress";
+import ScoreSelector from "../../shared/checklist/ScoreSelector";
 
 type DealerAuditChecklistItemPageProps = {
 	imagesRequired?: boolean;

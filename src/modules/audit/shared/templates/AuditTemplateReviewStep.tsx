@@ -1,32 +1,25 @@
 import Card from "../../../../components/common/Card";
-import ChecklistTemplateSummaryPanel from "./ChecklistTemplateSummaryPanel";
-import type {
-	ChecklistTemplateFormValues,
-	ChecklistTemplateSection,
-} from "../dealer-audit.types";
-import { deriveTemplateSummary } from "../dealer-audit.utils";
+import AuditTemplateSummaryPanel from "./AuditTemplateSummaryPanel";
+
+import { deriveTemplateSummary } from "../../dealerAudit/dealer-audit.utils";
+import type { AuditTemplateDetailsValues } from "./AuditTemplateDetailsStep";
+import type { AuditTemplateSection } from "../shared.audit.types";
 
 type Props = {
-	details: ChecklistTemplateFormValues;
-	sections: ChecklistTemplateSection[];
+	details: AuditTemplateDetailsValues;
+	sections: AuditTemplateSection[];
 };
 
-export default function ChecklistTemplateReviewStep({
-	details,
-	sections,
-}: Props) {
+export default function AuditTemplateReviewStep({ details, sections }: Props) {
 	const summary = deriveTemplateSummary(sections);
 
 	return (
 		<div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
 			<Card variant="outlined" padding="default">
 				<h2 className="text-base font-semibold text-slate-900">
-					{details.name || "Untitled checklist"}
+					{details.name || "Untitled AuditTemplate"}
 				</h2>
 				<p className="mt-1 text-sm text-slate-500">{details.description}</p>
-				<p className="mt-1 text-xs font-medium text-(--color-brand)">
-					{details.auditCategory}
-				</p>
 
 				<div className="mt-5 space-y-4">
 					{sections.map((section, index) => (
@@ -48,7 +41,7 @@ export default function ChecklistTemplateReviewStep({
 			</Card>
 
 			<div className="hidden lg:block">
-				<ChecklistTemplateSummaryPanel
+				<AuditTemplateSummaryPanel
 					summary={summary}
 					sticky
 					title="Final summary"

@@ -6,7 +6,7 @@ import {
 	type LucideIcon,
 } from "lucide-react";
 
-import type { ChecklistCardProps } from "./ChecklistCard";
+import type { ChecklistCardProps } from "../shared/checklist/ChecklistCard";
 import type { ChecklistTemplate as ChecklistTemplateDetail } from "./dealer-audit.types";
 
 export type ChecklistFilter = "all" | "published" | "draft";
@@ -979,3 +979,36 @@ const MOCK_TEMPLATE_DETAIL: Record<string, ChecklistTemplateDetail> = {
 export const getMockChecklistTemplateById = (
 	id: string,
 ): ChecklistTemplateDetail | undefined => MOCK_TEMPLATE_DETAIL[id];
+
+export const SCORE_OPTIONS = [
+	{
+		value: 0,
+		label: "Poor",
+		// description: "Not compliant.",
+	},
+	{
+		value: 1,
+		label: "Needs Improvement",
+		// description: "Major improvement is required.",
+	},
+	{
+		value: 2,
+		label: "Average",
+		// description: "Partially compliant with significant gaps.",
+	},
+	{
+		value: 3,
+		label: "Good",
+		// description: "Generally compliant with some gaps.",
+	},
+	{
+		value: 4,
+		label: "Very Good",
+		// description: "Mostly compliant with minor gaps.",
+	},
+	{
+		value: 5,
+		label: "Excellent",
+		// description: "Fully compliant with the criteria.",
+	},
+] as const;

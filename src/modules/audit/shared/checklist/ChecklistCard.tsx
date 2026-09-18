@@ -1,14 +1,16 @@
+// modules/audit/shared/ChecklistCard.tsx
 import type { ReactNode } from "react";
 import { Ban, CheckCircle2, ClipboardList, Pencil, Trash2 } from "lucide-react";
 
-import Card from "../../../components/common/Card";
-import { Badge } from "../../../components/common/Badge";
-import Avatar from "../../../components/common/Avatar";
+import Card from "../../../../components/common/Card";
+import { Badge } from "../../../../components/common/Badge";
+import Avatar from "../../../../components/common/Avatar";
 import ActionMenu, {
 	type ActionMenuItem,
-} from "../../../components/common/ActionMenu";
+} from "../../../../components/common/ActionMenu";
+import type { AuditModuleKey } from "../shared.audit.types";
 
-export type ChecklistStatus = "published" | "draft" | "archived";
+export type ChecklistTemplateStatus = "published" | "draft" | "archived";
 
 export type ChecklistOwner = {
 	id: string;
@@ -17,22 +19,33 @@ export type ChecklistOwner = {
 	imageUrl?: string;
 	className?: string;
 };
+
 export type ChecklistCardActionData = {
 	id: string;
 	title: string;
-	status: ChecklistStatus;
+	status: ChecklistTemplateStatus;
 	isBlocked: boolean;
 };
+
 export type ChecklistCardProps = {
 	id: string;
 	title: string;
 	description?: string;
-	status: ChecklistStatus;
+	status: ChecklistTemplateStatus;
 	sectionCount: number;
 	pointCount: number;
 	readiness: number;
 	updatedLabel: string;
 	owners?: readonly ChecklistOwner[];
+
+	/**
+	 * Which audit module this template belongs to. Optional — a
+	 * single-module library (e.g. Dealer Audit's own listing) can omit
+	 * it; a combined library renders it as a small badge so templates
+	 * from different modules aren't mistaken for one another.
+	 */
+	auditModule?: AuditModuleKey;
+	auditModuleLabel?: string;
 
 	isBlocked?: boolean;
 	canEdit?: boolean;
@@ -60,7 +73,7 @@ const clampPercentage = (value: number): number =>
 	Math.min(100, Math.max(0, Number.isFinite(value) ? value : 0));
 
 const STATUS_CONFIG: Record<
-	ChecklistStatus,
+	ChecklistTemplateStatus,
 	{ variant: "success" | "warning" | "neutral"; text: string }
 > = {
 	published: { variant: "success", text: "● Published" },
@@ -78,6 +91,7 @@ export default function ChecklistCard({
 	readiness,
 	updatedLabel,
 	owners = [],
+	auditModuleLabel,
 
 	isBlocked = false,
 	canEdit = true,
@@ -110,18 +124,15 @@ export default function ChecklistCard({
 			label: "Edit template",
 			Icon: Pencil,
 			hidden: !canEdit || !onEdit,
-			onClick: (template) => {
-				onEdit?.(template.id);
-			},
+			onClick: (template) => onEdit?.(template.id),
 		},
 		{
 			id: "toggle-block",
 			label: isBlocked ? "Unblock template" : "Block template",
 			Icon: isBlocked ? CheckCircle2 : Ban,
 			hidden: !canBlock || !onToggleBlocked,
-			onClick: (template) => {
-				onToggleBlocked?.(template.id, !template.isBlocked);
-			},
+			onClick: (template) =>
+				onToggleBlocked?.(template.id, !template.isBlocked),
 		},
 		{
 			id: "delete",
@@ -129,14 +140,11 @@ export default function ChecklistCard({
 			Icon: Trash2,
 			variant: "danger",
 			hidden: !canDelete || !onDelete,
-			onClick: (template) => {
-				onDelete?.(template.id);
-			},
+			onClick: (template) => onDelete?.(template.id),
 		},
 	];
 
 	const hasMenuActions = menuActions.some((action) => !action.hidden);
-
 	const openCard = () => onOpen?.(id);
 
 	return (
@@ -200,6 +208,9 @@ export default function ChecklistCard({
 						variant={statusConfig.variant}
 						text={statusConfig.text}
 					/>
+					{auditModuleLabel ? (
+						<Badge variant="neutral" text={auditModuleLabel} />
+					) : null}
 					<Badge variant="neutral" text={pluralize(sectionCount, "section")} />
 					<Badge variant="neutral" text={pluralize(pointCount, "point")} />
 				</div>

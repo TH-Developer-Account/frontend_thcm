@@ -1,26 +1,30 @@
+// modules/audit/shared/AuditTemplateParameterEditor.tsx
 import { ChevronDown, ChevronUp, GripVertical, Trash2 } from "lucide-react";
 import Button from "../../../../components/common/Button";
 import TextareaInput from "../../../../components/forms/TextareaInput";
 import Checkbox from "../../../../components/forms/Checkbox";
-import type { ChecklistTemplateParameter } from "../dealer-audit.types";
+import { useAuditTemplateBuilder } from "./audit-template-builder.context";
+import type { AuditTemplateParameter } from "../shared.audit.types";
 
 type Props = {
-	parameter: ChecklistTemplateParameter;
+	sectionId: string;
+	parameter: AuditTemplateParameter;
 	index: number;
 	total: number;
-	onChange: (updates: Partial<ChecklistTemplateParameter>) => void;
-	onRemove: () => void;
-	onMove: (direction: "up" | "down") => void;
 };
 
-export default function ChecklistParameterEditor({
+export default function AuditTemplateParameterEditor({
+	sectionId,
 	parameter,
 	index,
 	total,
-	onChange,
-	onRemove,
-	onMove,
 }: Props) {
+	const { updateParameter, removeParameter, moveParameter } =
+		useAuditTemplateBuilder();
+
+	const onChange = (patch: Partial<AuditTemplateParameter>) =>
+		updateParameter(sectionId, parameter.id, patch);
+
 	return (
 		<div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
 			<div className="flex items-start gap-2.5">
@@ -40,10 +44,10 @@ export default function ChecklistParameterEditor({
 					/>
 
 					<TextareaInput
-						name={`parameter-${parameter.id}-description`}
+						name={`parameter-${parameter.id}-criteria`}
 						label=""
-						value={parameter.description}
-						onChange={(event) => onChange({ description: event.target.value })}
+						value={parameter.criteria}
+						onChange={(event) => onChange({ criteria: event.target.value })}
 						placeholder="Criteria / guidance for the reviewer and dealer"
 						rows={2}
 					/>
@@ -71,7 +75,7 @@ export default function ChecklistParameterEditor({
 						Icon={ChevronUp}
 						aria-label="Move item up"
 						disabled={index === 0}
-						onClick={() => onMove("up")}
+						onClick={() => moveParameter(sectionId, index, "up")}
 					/>
 					<Button
 						appearance="icon"
@@ -80,7 +84,7 @@ export default function ChecklistParameterEditor({
 						Icon={ChevronDown}
 						aria-label="Move item down"
 						disabled={index === total - 1}
-						onClick={() => onMove("down")}
+						onClick={() => moveParameter(sectionId, index, "down")}
 					/>
 					<Button
 						appearance="icon"
@@ -88,7 +92,7 @@ export default function ChecklistParameterEditor({
 						size="sm"
 						Icon={Trash2}
 						aria-label="Delete item"
-						onClick={onRemove}
+						onClick={() => removeParameter(sectionId, parameter.id)}
 					/>
 				</div>
 			</div>

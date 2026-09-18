@@ -1,5 +1,5 @@
 import { Check, ChevronRight } from "lucide-react";
-import type { AuditChecklistItem } from "../dealer-audit.types";
+import type { AuditChecklistItem } from "../shared.audit.types";
 
 type Props = {
 	item: AuditChecklistItem;

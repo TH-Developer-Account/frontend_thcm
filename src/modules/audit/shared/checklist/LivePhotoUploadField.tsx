@@ -12,9 +12,9 @@ import {
 import {
 	revokeFilePreview,
 	validateUploadFile,
-} from "../../../components/ui/FileUpload/fileUpload.helpers";
-import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
-import { Modal } from "../../../components/common/Modal";
+} from "../../../../components/ui/FileUpload/fileUpload.helpers";
+import type { FileUploadValue } from "../../../../components/ui/FileUpload/fileUpload.types";
+import { Modal } from "../../../../components/common/Modal";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */

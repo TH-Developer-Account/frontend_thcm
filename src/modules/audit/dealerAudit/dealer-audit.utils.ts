@@ -1,23 +1,21 @@
 import type {
-	AuditChecklistItem,
+	AuditTemplateSection,
+	AuditTemplateParameter,
+	AuditTemplateItem,
+} from "../shared/shared.audit.types";
+import type {
 	ChecklistItemFormValues,
 	DealerAuditChecklist,
 	UpdateChecklistItemPayload,
 } from "./dealer-audit.types";
-import type {
-	ChecklistTemplateParameter,
-	ChecklistTemplate,
-	ChecklistTemplateFormValues,
-	ChecklistTemplateSection,
-	ChecklistTemplateSummary,
-} from "./dealer-audit.types";
+import type { ChecklistTemplateFormValues } from "./dealer-audit.types";
 
 const DEFAULT_SCORE_MIN = 0;
 const DEFAULT_SCORE_MAX = 5;
 
 export const createEmptyParameter = (
 	order: number,
-): ChecklistTemplateParameter => ({
+): AuditTemplateParameter => ({
 	id: crypto.randomUUID(),
 	order,
 	title: "",
@@ -30,9 +28,7 @@ export const createEmptyParameter = (
 	maxEvidenceCount: null,
 });
 
-export const createEmptySection = (
-	order: number,
-): ChecklistTemplateSection => ({
+export const createEmptySection = (order: number): AuditTemplateSection => ({
 	id: crypto.randomUUID(),
 	order,
 	name: "",
@@ -52,7 +48,7 @@ export const reorderList = <T extends { order: number }>(
 };
 
 export const deriveTemplateSummary = (
-	sections: ChecklistTemplateSection[],
+	sections: AuditTemplateSection[],
 ): ChecklistTemplateSummary => {
 	const perSection = sections.map((section) => {
 		const points = section.parameters.reduce(
@@ -75,11 +71,10 @@ export const deriveTemplateSummary = (
 	};
 };
 
-export const isParameterValid = (
-	parameter: ChecklistTemplateParameter,
-): boolean => parameter.title.trim().length > 0;
+export const isParameterValid = (parameter: AuditTemplateParameter): boolean =>
+	parameter.title.trim().length > 0;
 
-export const isSectionValid = (section: ChecklistTemplateSection): boolean =>
+export const isSectionValid = (section: AuditTemplateSection): boolean =>
 	section.name.trim().length > 0 && section.parameters.some(isParameterValid);
 
 export const flattenChecklist = (checklist: DealerAuditChecklist) =>
@@ -98,10 +93,10 @@ export const getAuditProgress = (checklist: DealerAuditChecklist) => {
 };
 
 export const mapChecklistItemToForm = (
-	item: AuditChecklistItem,
+	item: AuditTemplateItem,
 ): ChecklistItemFormValues => ({
-	score: item.score,
-	remarks: item.remarks,
+	score: item.selfScore,
+	remarks: item.selfRemarks,
 	evidence: item.evidence,
 });
 

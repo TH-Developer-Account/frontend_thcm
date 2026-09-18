@@ -8,11 +8,11 @@ import { PageHeader } from "../../../../components/ui/PageHeader";
 import PageNavigation from "../../../../components/ui/PageNavigation/PageNavigation";
 import { FilterTabs } from "../../../../components/ui/FilterTabs";
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
-import type { ChecklistFilter } from "../dealer-audit.types";
+import type { ChecklistFilter } from "../../shared/shared.audit.types";
 import { getAuditProgress } from "../dealer-audit.utils";
-import AuditProgress from "../components/AuditProgress";
-import ChecklistItemRow from "../components/ChecklistItemRow";
 import useDealerAudit from "../dealer-audit.store";
+import AuditProgress from "../../shared/checklist/AuditProgress";
+import ChecklistItemRow from "../../shared/checklist/ChecklistItemRow";
 
 export default function DealerAuditChecklistPage() {
 	const navigate = useNavigate();

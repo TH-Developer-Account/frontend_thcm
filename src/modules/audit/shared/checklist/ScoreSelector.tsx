@@ -1,40 +1,18 @@
-export const SCORE_OPTIONS = [
-	{
-		value: 0,
-		label: "Poor",
-		description: "Not compliant.",
-	},
-	{
-		value: 1,
-		label: "Needs Improvement",
-		description: "Major improvement is required.",
-	},
-	{
-		value: 2,
-		label: "Average",
-		description: "Partially compliant with significant gaps.",
-	},
-	{
-		value: 3,
-		label: "Good",
-		description: "Generally compliant with some gaps.",
-	},
-	{
-		value: 4,
-		label: "Very Good",
-		description: "Mostly compliant with minor gaps.",
-	},
-	{
-		value: 5,
-		label: "Excellent",
-		description: "Fully compliant with the criteria.",
-	},
-] as const;
+import { Alert } from "../../../../components/common/Alert";
+import { SCORE_OPTIONS } from "../../dealerAudit/checklist-library.constants";
 
 type ScoreValue = (typeof SCORE_OPTIONS)[number]["value"];
 
+const getScoreAlertVariant = (
+	score: ScoreValue,
+): "success" | "warning" | "error" => {
+	if (score <= 1) return "error";
+	if (score <= 3) return "warning";
+	return "success";
+};
+
 type Props = {
-	value: number | null;
+	value: ScoreValue | null;
 	onChange: (value: ScoreValue) => void;
 	disabled?: boolean;
 };
@@ -53,7 +31,6 @@ export default function ScoreSelector({
 				role="radiogroup"
 				aria-label="Compliance score"
 				aria-disabled={disabled}
-				aria-describedby={selected ? "selected-score-description" : undefined}
 			>
 				{SCORE_OPTIONS.map((option) => {
 					const isSelected = value === option.value;
@@ -66,6 +43,9 @@ export default function ScoreSelector({
 							aria-checked={isSelected}
 							aria-label={`${option.value} — ${option.label}`}
 							disabled={disabled}
+							aria-describedby={
+								selected ? "selected-score-feedback" : undefined
+							}
 							onClick={() => onChange(option.value)}
 							className="score-selector-option min-w-0 px-1 py-2 text-center"
 							data-selected={isSelected}
@@ -73,28 +53,24 @@ export default function ScoreSelector({
 							<span className="score-selector-value block text-sm font-semibold">
 								{option.value}
 							</span>
-
-							{/* <span className="score-selector-label mt-1 hidden text-[10px] leading-tight sm:block">
-								{option.label}
-							</span> */}
 						</button>
 					);
 				})}
 			</div>
-
 			{selected ? (
-				<div
-					id="selected-score-description"
-					className="score-selector-feedback px-3 py-2 text-xs"
-					role="status"
-					aria-live="polite"
-				>
-					<strong>
-						{selected.value} — {selected.label}:
-					</strong>{" "}
-					{selected.description}
-				</div>
+				<Alert
+					type="banner"
+					variant={getScoreAlertVariant(selected.value)}
+					title={`${selected.value} — ${selected.label}`}
+					// description={selected.description}
+				/>
 			) : null}
+			{/* <Alert
+				type="banner"
+				variant="info"
+				title="Select a compliance score"
+				description="Rate this item from 0 to 5 based on the checklist criteria."
+			/> */}
 		</div>
 	);
 }
