@@ -1,5 +1,6 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
 import React, { type TextareaHTMLAttributes } from "react";
+import type { ValidationRules } from "../../utils/form.validation";
 
 export type FormFieldMode = "edit" | "view";
 
@@ -8,7 +9,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	error?: string;
 	helperText?: string;
 	isTooltip?: boolean;
-
+	validation?: ValidationRules;
 	/**
 	 * "edit" renders the native input.
 	 * "view" renders a formatted read-only value.

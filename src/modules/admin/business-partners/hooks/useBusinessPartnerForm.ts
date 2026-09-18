@@ -15,11 +15,14 @@ import {
 
 import {
 	DEFAULT_BUSINESS_PARTNER_PERMISSIONS,
+	SECTION_LABELS,
 	type BPFormTab,
 	type BusinessPartnerDetail,
 	type BusinessPartnerFormState,
 	type BusinessPartnerPermissions,
 } from "../utils/bp.types";
+import { useToast } from "../../../../context/Auth/AuthContext";
+import { getApiErrorMessage } from "../../../../utils/apiError.helper";
 
 export type DetailFormSection =
 	| "general"
@@ -86,6 +89,7 @@ export const useBusinessPartnerForm = ({
 }: UseBusinessPartnerFormOptions = {}) => {
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
+	const { showToast } = useToast();
 
 	/**
 	 * ---------------------------------------------------------------------------
@@ -338,10 +342,7 @@ export const useBusinessPartnerForm = ({
 			try {
 				setValidationError(null);
 
-				// ---------------------------------------------------------------
 				// Create
-				// ---------------------------------------------------------------
-
 				if (!isEditMode) {
 					if (section !== "organization") {
 						throw new Error(
@@ -350,8 +351,13 @@ export const useBusinessPartnerForm = ({
 					}
 
 					const payload = mapGeneralFormToCreatePayload(form);
-
 					const createdPartner = await createBusinessPartner(payload);
+
+					showToast({
+						type: "success",
+						title: "Business partner created",
+						description: `${createdPartner.bpName ?? "Business partner"} was created successfully.`,
+					});
 
 					navigate(businessPartnerPaths.view(createdPartner.id), {
 						replace: true,
@@ -361,10 +367,7 @@ export const useBusinessPartnerForm = ({
 					return;
 				}
 
-				// ---------------------------------------------------------------
 				// Update
-				// ---------------------------------------------------------------
-
 				if (!canSubmit) {
 					return;
 				}
@@ -383,8 +386,22 @@ export const useBusinessPartnerForm = ({
 					payload,
 				});
 
+				showToast({
+					type: "success",
+					title: "Saved",
+					description: `${SECTION_LABELS[section]} updated successfully.`,
+				});
+
 				setLastSavedSection(section);
 			} catch (error) {
+				const message = getApiErrorMessage(error, getErrorMessage(error));
+
+				showToast({
+					type: "error",
+					title: "Save failed",
+					description: message,
+				});
+
 				setValidationError(getErrorMessage(error));
 			}
 		},
@@ -397,6 +414,7 @@ export const useBusinessPartnerForm = ({
 			isSaving,
 			navigate,
 			normalizedId,
+			showToast,
 			updateBusinessPartner,
 		],
 	);
@@ -454,8 +472,22 @@ export const useBusinessPartnerForm = ({
 				payload,
 			});
 
+			showToast({
+				type: "success",
+				title: "Saved",
+				description: `${SECTION_LABELS[editingSection]} updated successfully.`,
+			});
+
 			setEditingSection(null);
 		} catch (error) {
+			const message = getApiErrorMessage(error, getErrorMessage(error));
+
+			showToast({
+				type: "error",
+				title: "Update failed",
+				description: message,
+			});
+
 			setValidationError(getErrorMessage(error));
 		}
 	}, [
@@ -463,6 +495,7 @@ export const useBusinessPartnerForm = ({
 		form,
 		partner,
 		permissions.canUpdateBusinessPartner,
+		showToast,
 		updateBusinessPartner,
 	]);
 

@@ -225,3 +225,10 @@ export const trimText = (value?: string | null, maxLength = 80) => {
 
 	return `${text.slice(0, maxLength).trim()}...`;
 };
+
+export const capitalizeSnakeCase = (str: string) => {
+	return str
+		.split("_")
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+		.join(" ");
+};

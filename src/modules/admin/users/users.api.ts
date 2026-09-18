@@ -33,18 +33,46 @@ const unwrapData = <T>(response: T | ApiEnvelope<T>): T => {
 	return response as T;
 };
 
+export type GetUsersParams = {
+	search?: string;
+	signal?: AbortSignal;
+};
+
 export const userApi = {
-	getUsers: async (): Promise<User[]> => {
+	getUsers: async ({ search, signal }: GetUsersParams = {}): Promise<
+		User[]
+	> => {
 		const response = await ServerAxios.get(USER_API_ROUTES.list, {
-			params: { profile: "all" },
+			signal,
+			params: {
+				profile: "all",
+				...(search?.trim()
+					? {
+							search: search.trim(),
+						}
+					: {}),
+			},
 		});
 
-		const rawUsers = unwrapData<UserResponse[]>(response.data);
-		return (Array.isArray(rawUsers) ? rawUsers : []).map(mapUser);
+		const responseData = response.data;
+
+		const rows =
+			responseData?.rows ??
+			responseData?.data?.rows ??
+			responseData?.data ??
+			[];
+
+		if (!Array.isArray(rows)) {
+			console.error("Unexpected /users response:", responseData);
+			return [];
+		}
+
+		return rows.map((user: UserResponse) => mapUser(user));
 	},
 
 	getUserById: async (userId: string): Promise<User> => {
 		const response = await ServerAxios.get(USER_API_ROUTES.detail(userId));
+
 		return mapUser(unwrapData<UserResponse>(response.data));
 	},
 
@@ -61,14 +89,20 @@ export const userApi = {
 		 *     if (value !== undefined) formData.append(key, String(value));
 		 * });
 		 * if (payload.avatar) formData.append("avatar", payload.avatar);
-		 * const response = await ServerAxios.post(USER_API_ROUTES.create, formData);
+		 * const response = await ServerAxios.post(
+		 *     USER_API_ROUTES.create,
+		 *     formData,
+		 * );
 		 */
+
 		const response = await ServerAxios.post(
 			USER_API_ROUTES.create,
 			jsonPayload,
 		);
+
 		return response.data as UserMutationResult;
 	},
+
 	updateUser: async ({
 		userId,
 		payload,
@@ -105,43 +139,6 @@ export const userApi = {
 
 		return response.data as UserMutationResult;
 	},
-	// updateUser: async ({
-	// 	userId,
-	// 	payload,
-	// }: UpdateUserVariables): Promise<UserMutationResult> => {
-	// 	const jsonPayload = mapUserFormToUpdatePayload(payload);
-	// 	const formData = new FormData();
-
-	// 	Object.entries(jsonPayload).forEach(([key, value]) => {
-	// 		if (value !== undefined && value !== null) {
-	// 			formData.append(key, String(value));
-	// 		}
-	// 	});
-
-	// 	if (payload.avatar instanceof File) {
-	// 		formData.append("avatar", payload.avatar, payload.avatar.name);
-	// 	}
-
-	// 	// Temporary debugging only
-	// 	for (const [key, value] of formData.entries()) {
-	// 		if (value instanceof File) {
-	// 			console.log(key, {
-	// 				name: value.name,
-	// 				type: value.type,
-	// 				size: value.size,
-	// 			});
-	// 		} else {
-	// 			console.log(key, value);
-	// 		}
-	// 	}
-
-	// 	const response = await ServerAxios.patch(
-	// 		USER_API_ROUTES.update(userId),
-	// 		formData,
-	// 	);
-
-	// 	return response.data as UserMutationResult;
-	// },
 
 	deleteUser: async ({ userId }: DeleteUserVariables): Promise<void> => {
 		await ServerAxios.delete(USER_API_ROUTES.delete(userId));
@@ -155,6 +152,7 @@ export const userApi = {
 			status,
 			is_active: status === "Active",
 		});
+
 		return response.data as UserMutationResult;
 	},
 };

@@ -135,11 +135,13 @@ export function useUsersData() {
 
 	const usersQuery = useQuery({
 		queryKey: userKeys.list("all"),
-		queryFn: userApi.getUsers,
+		queryFn: ({ signal }) =>
+			userApi.getUsers({
+				signal,
+			}),
 		...USER_QUERY_OPTIONS,
 	});
-
-	const users = usersQuery.data ?? [];
+	const users = Array.isArray(usersQuery.data) ? usersQuery.data : [];
 
 	const selectedUser: User | null =
 		userDetailQuery.data ??

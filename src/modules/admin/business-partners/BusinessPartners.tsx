@@ -74,7 +74,7 @@ const BusinessPartners = () => {
 			/>
 
 			<Card
-				className="bp-listing-card"
+				className="bp-listing-card bp-listing-card--scrollable"
 				secondaryHeader={
 					<div className="bp-listing-toolbar">
 						<div className="bp-listing-search">

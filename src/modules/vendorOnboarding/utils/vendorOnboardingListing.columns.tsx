@@ -100,17 +100,18 @@ export const getVendorOnboardingColumns = ({
 
 			return (
 				<div className="flex items-center gap-2">
-					<Button
-						type="button"
-						text="View"
-						Icon={Eye}
-						iconPosition="left"
-						size="sm"
-						appearance="standard"
-						variant="outline"
-						onClick={() => onView(record)}
-					/>
-
+					{showEdit ? (
+						<Button
+							type="button"
+							text="View"
+							Icon={Eye}
+							iconPosition="left"
+							size="sm"
+							appearance="standard"
+							variant="outline"
+							onClick={() => onView(record)}
+						/>
+					) : null}
 					{showEdit ? (
 						<Button
 							type="button"

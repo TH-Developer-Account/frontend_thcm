@@ -53,9 +53,14 @@ type UserRowActionOptions = {
 
 const getUserRowActions = (
 	user: User,
-	{ onEdit, onView, onDelete, onToggleBlock }: UserRowActionOptions,
+	{
+		onEdit,
+		onView,
+		onDelete,
+		//  onToggleBlock
+	}: UserRowActionOptions,
 ): ActionMenuItem<User>[] => {
-	const isBlocked = user.status === "Blocked";
+	// const isBlocked = user.status === "Blocked";
 
 	return [
 		{
@@ -72,13 +77,13 @@ const getUserRowActions = (
 			onClick: onView,
 			ariaLabel: `View ${getUserDisplayName(user)}`,
 		},
-		{
-			id: "toggle-block-user",
-			label: isBlocked ? "Unblock User" : "Block User",
-			Icon: isBlocked ? Unlock : Lock,
-			onClick: onToggleBlock,
-			ariaLabel: `${isBlocked ? "Unblock" : "Block"} ${getUserDisplayName(user)}`,
-		},
+		// {
+		// 	id: "toggle-block-user",
+		// 	label: isBlocked ? "Unblock User" : "Block User",
+		// 	Icon: isBlocked ? Unlock : Lock,
+		// 	onClick: onToggleBlock,
+		// 	ariaLabel: `${isBlocked ? "Unblock" : "Block"} ${getUserDisplayName(user)}`,
+		// },
 		{
 			id: "delete-user",
 			label: "Delete User",

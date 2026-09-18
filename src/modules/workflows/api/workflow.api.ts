@@ -382,10 +382,12 @@ export const workflowApi = {
 	},
 
 	getUsers: async (): Promise<User[]> => {
-		const response = await ServerAxios.get(USERS_URL, {
+		const {
+			data: { rows },
+		} = await ServerAxios.get(USERS_URL, {
 			params: { profile: "all" },
 		});
-		const rawUsers = unwrapData<UserResponse[]>(response.data);
+		const rawUsers = unwrapData<UserResponse[]>(rows);
 		return (Array.isArray(rawUsers) ? rawUsers : []).map(mapUser);
 	},
 

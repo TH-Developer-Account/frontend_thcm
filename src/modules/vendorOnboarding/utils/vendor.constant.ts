@@ -4,19 +4,20 @@ import type { Option } from "../../../components/forms/input.types";
 
 export const VENDOR_ONBOARDING_FILTER_TABS = [
 	{
-		value: "onboarding",
-		label: "Created by me",
-		shortLabel: "Created",
-		tooltipLabel: "View vendor onboarding records created by me",
-		Icon: ShieldCheck,
-	},
-	{
 		value: "pendingOnMe",
 		label: "Pending on me",
 		shortLabel: "Pending",
 		tooltipLabel: "View vendor onboarding approvals pending on me",
 		Icon: Clock3,
 	},
+	{
+		value: "onboarding",
+		label: "Created by me",
+		shortLabel: "Created",
+		tooltipLabel: "View vendor onboarding records created by me",
+		Icon: ShieldCheck,
+	},
+
 	{
 		value: "approvedByMe",
 		label: "Approved by me",

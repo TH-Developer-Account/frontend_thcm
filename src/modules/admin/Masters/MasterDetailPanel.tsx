@@ -1,5 +1,5 @@
 import { useState, type KeyboardEvent } from "react";
-import { X, Save, Database } from "lucide-react";
+import { Database, Save, X } from "lucide-react";
 
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/forms/FormInput";
@@ -8,8 +8,10 @@ import { type MasterItem } from "../../../components/ui/tables/LineItemTable/Mas
 interface MasterDetailPanelProps {
 	masterName: string;
 	item: MasterItem | null;
-	onSave: (updated: MasterItem) => void;
+	onSave: (updated: MasterItem) => Promise<void> | void;
 	onClose: () => void;
+	isSaving?: boolean;
+	readOnly?: boolean;
 }
 
 export function MasterDetailPanel({
@@ -17,28 +19,43 @@ export function MasterDetailPanel({
 	item,
 	onSave,
 	onClose,
+	isSaving = false,
+	readOnly = false,
 }: MasterDetailPanelProps) {
 	const [form, setForm] = useState<MasterItem | null>(
 		item ? { ...item } : null,
 	);
+
 	const [dirty, setDirty] = useState(false);
 
 	const handleChange = (field: keyof MasterItem, value: string) => {
-		if (!form) return;
-		setForm({ ...form, [field]: value });
+		if (!form || readOnly) return;
+
+		setForm((current) =>
+			current
+				? {
+						...current,
+						[field]: value,
+					}
+				: current,
+		);
+
 		setDirty(true);
 	};
 
-	const handleSave = () => {
-		if (!form || !form.label.trim()) return;
-		onSave(form);
-		console.log(form, "form");
+	const handleSave = async () => {
+		if (!form || !form.label.trim() || readOnly || isSaving) {
+			return;
+		}
+
+		await onSave(form);
+
 		setDirty(false);
 	};
 
 	const handleEnterSave = (event: KeyboardEvent<HTMLInputElement>) => {
 		if (event.key === "Enter") {
-			handleSave();
+			void handleSave();
 		}
 	};
 
@@ -66,6 +83,7 @@ export function MasterDetailPanel({
 			<header className="master-detail-header">
 				<div className="master-detail-heading">
 					<p className="master-detail-eyebrow">{masterName}</p>
+
 					<h3 className="master-detail-title">{form.label || "New"}</h3>
 				</div>
 
@@ -91,6 +109,7 @@ export function MasterDetailPanel({
 					value={form.label}
 					onChange={(event) => handleChange("label", event.target.value)}
 					onKeyDown={handleEnterSave}
+					disabled={readOnly}
 				/>
 
 				{masterName !== "Budget" && masterName !== "Event Names" && (
@@ -100,6 +119,7 @@ export function MasterDetailPanel({
 						value={form.code ?? ""}
 						onChange={(event) => handleChange("code", event.target.value)}
 						onKeyDown={handleEnterSave}
+						disabled={readOnly}
 					/>
 				)}
 
@@ -108,6 +128,7 @@ export function MasterDetailPanel({
 					label={masterName === "Budget" ? "Budget Description" : "Description"}
 					value={form.description ?? ""}
 					onChange={(event) => handleChange("description", event.target.value)}
+					disabled={readOnly}
 				/>
 
 				{masterName === "Budget" && (
@@ -118,38 +139,42 @@ export function MasterDetailPanel({
 						onChange={(event) =>
 							handleChange("budgetAmount", event.target.value)
 						}
+						disabled={readOnly}
 					/>
 				)}
 
-				<div className="master-detail-status-row">
-					<p className="master-detail-status-label">Status</p>
+				{!readOnly && (
+					<div className="master-detail-status-row">
+						<p className="master-detail-status-label">Status</p>
 
-					<div className="master-detail-status-group">
-						{["Active", "Inactive"].map((status) => {
-							const current = form.status ?? "Active";
-							const isSelected = current === status;
+						<div className="master-detail-status-group">
+							{["Active", "Inactive"].map((status) => {
+								const current = form.status ?? "Active";
 
-							return (
-								<Button
-									key={status}
-									type="button"
-									size="sm"
-									appearance="toggle"
-									variant="secondary"
-									active={isSelected}
-									className={
-										status === "Active"
-											? "master-detail-status-button master-detail-status-button-active"
-											: "master-detail-status-button master-detail-status-button-inactive"
-									}
-									onClick={() => handleChange("status", status)}
-								>
-									{status}
-								</Button>
-							);
-						})}
+								const isSelected = current === status;
+
+								return (
+									<Button
+										key={status}
+										type="button"
+										size="sm"
+										appearance="toggle"
+										variant="secondary"
+										active={isSelected}
+										className={
+											status === "Active"
+												? "master-detail-status-button master-detail-status-button-active"
+												: "master-detail-status-button master-detail-status-button-inactive"
+										}
+										onClick={() => handleChange("status", status)}
+									>
+										{status}
+									</Button>
+								);
+							})}
+						</div>
 					</div>
-				</div>
+				)}
 			</div>
 
 			<footer className="master-detail-footer">
@@ -159,21 +184,36 @@ export function MasterDetailPanel({
 					appearance="ghost"
 					variant="secondary"
 					onClick={onClose}
+					disabled={isSaving}
 				>
 					Cancel
 				</Button>
 
+				{/* DELETE
 				<Button
 					type="button"
 					size="sm"
 					appearance="standard"
-					variant="brand"
-					Icon={Save}
-					onClick={handleSave}
-					disabled={!dirty}
+					variant="danger"
+					onClick={handleDelete}
 				>
-					Save changes
+					Delete
 				</Button>
+				*/}
+
+				{!readOnly && (
+					<Button
+						type="button"
+						size="sm"
+						appearance="standard"
+						variant="brand"
+						Icon={Save}
+						onClick={() => void handleSave()}
+						disabled={!dirty || isSaving || !form.label.trim()}
+					>
+						{isSaving ? "Saving..." : "Save changes"}
+					</Button>
+				)}
 			</footer>
 		</section>
 	);

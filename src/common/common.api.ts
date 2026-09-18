@@ -192,14 +192,30 @@ export const mapUser = (emp: User): User => ({
 	//   jobRole: emp.TJOB_UUID,
 	phone: emp.phone,
 });
+type GetUsersParams = {
+	search?: string;
+	signal?: AbortSignal;
+};
 
 export function usersApi() {
 	return {
-		getUsers: async (): Promise<User[]> => {
-			const response = await ServerAxios.get(USERS_URL, {
-				params: { profile: "all" },
+		getUsers: async ({ search, signal }: GetUsersParams = {}): Promise<
+			User[]
+		> => {
+			const {
+				data: { rows },
+			} = await ServerAxios.get(USERS_URL, {
+				signal,
+				params: {
+					profile: "all",
+					...(search?.trim() && {
+						search: search.trim(),
+					}),
+				},
 			});
-			const rawUsers = unwrapData<User[]>(response.data);
+
+			const rawUsers = unwrapData<User[]>(rows);
+
 			return (Array.isArray(rawUsers) ? rawUsers : []).map(mapUser);
 		},
 	};

@@ -13,6 +13,8 @@ import type {
 	UpdateBusinessPartnerPayload,
 	UpdateBusinessPartnerPeoplePayload,
 } from "../utils/bp.types";
+import { getApiErrorMessage } from "../../../../utils/apiError.helper";
+import { useToast } from "../../../../context/Auth/AuthContext";
 
 const useRefreshBusinessPartner = (businessPartnerId: string) => {
 	const queryClient = useQueryClient();
@@ -33,6 +35,7 @@ const useRefreshBusinessPartner = (businessPartnerId: string) => {
 
 export const useBusinessPartnerMutations = () => {
 	const queryClient = useQueryClient();
+	const { showToast } = useToast();
 
 	const createMutation = useMutation({
 		mutationFn: (payload: CreateBusinessPartnerPayload) =>
@@ -46,6 +49,17 @@ export const useBusinessPartnerMutations = () => {
 
 			void queryClient.invalidateQueries({
 				queryKey: businessPartnerKeys.lists(),
+			});
+		},
+
+		onError: (error) => {
+			showToast({
+				type: "error",
+				title: "Creation failed",
+				description: getApiErrorMessage(
+					error,
+					"Unable to create business partner.",
+				),
 			});
 		},
 	});
@@ -83,6 +97,21 @@ export const useBusinessPartnerMutations = () => {
 			void queryClient.invalidateQueries({
 				queryKey: businessPartnerKeys.lists(),
 			});
+
+			// NOTE: useBusinessPartnerDetailForm already shows a success toast
+			// on update, scoped to the section being edited. Not duplicating
+			// it here to avoid a double toast on every save.
+		},
+
+		onError: (error) => {
+			showToast({
+				type: "error",
+				title: "Update failed",
+				description: getApiErrorMessage(
+					error,
+					"Unable to update business partner.",
+				),
+			});
 		},
 	});
 
@@ -97,6 +126,23 @@ export const useBusinessPartnerMutations = () => {
 
 			void queryClient.invalidateQueries({
 				queryKey: businessPartnerKeys.lists(),
+			});
+
+			showToast({
+				type: "success",
+				title: "Business partner removed",
+				description: "The business partner was deactivated successfully.",
+			});
+		},
+
+		onError: (error) => {
+			showToast({
+				type: "error",
+				title: "Deletion failed",
+				description: getApiErrorMessage(
+					error,
+					"Unable to remove business partner.",
+				),
 			});
 		},
 	});
@@ -133,6 +179,7 @@ export const useBusinessPartnerPeopleMutations = (
 	businessPartnerId: string,
 ) => {
 	const normalizedId = businessPartnerId.trim();
+	const { showToast } = useToast();
 
 	const refreshBusinessPartner = useRefreshBusinessPartner(normalizedId);
 
@@ -142,6 +189,19 @@ export const useBusinessPartnerPeopleMutations = (
 
 		onSuccess: () => {
 			void refreshBusinessPartner();
+			showToast({
+				type: "success",
+				title: "Contacts added",
+				description: "The contact(s) were added successfully.",
+			});
+		},
+
+		onError: (error) => {
+			showToast({
+				type: "error",
+				title: "Unable to add contacts",
+				description: getApiErrorMessage(error, "Unable to add contacts."),
+			});
 		},
 	});
 
@@ -151,6 +211,19 @@ export const useBusinessPartnerPeopleMutations = (
 
 		onSuccess: () => {
 			void refreshBusinessPartner();
+			showToast({
+				type: "success",
+				title: "Contacts updated",
+				description: "Contact details were updated successfully.",
+			});
+		},
+
+		onError: (error) => {
+			showToast({
+				type: "error",
+				title: "Unable to update contacts",
+				description: getApiErrorMessage(error, "Unable to update contacts."),
+			});
 		},
 	});
 
@@ -160,6 +233,19 @@ export const useBusinessPartnerPeopleMutations = (
 
 		onSuccess: () => {
 			void refreshBusinessPartner();
+			showToast({
+				type: "success",
+				title: "Contact removed",
+				description: "The contact was removed successfully.",
+			});
+		},
+
+		onError: (error) => {
+			showToast({
+				type: "error",
+				title: "Unable to remove contact",
+				description: getApiErrorMessage(error, "Unable to remove contact."),
+			});
 		},
 	});
 
@@ -182,6 +268,7 @@ export const useBusinessPartnerAddressMutations = (
 	businessPartnerId: string,
 ) => {
 	const normalizedId = businessPartnerId.trim();
+	const { showToast } = useToast();
 
 	const refreshBusinessPartner = useRefreshBusinessPartner(normalizedId);
 
@@ -191,6 +278,19 @@ export const useBusinessPartnerAddressMutations = (
 
 		onSuccess: () => {
 			void refreshBusinessPartner();
+			showToast({
+				type: "success",
+				title: "Address added",
+				description: "The address was added successfully.",
+			});
+		},
+
+		onError: (error) => {
+			showToast({
+				type: "error",
+				title: "Unable to add address",
+				description: getApiErrorMessage(error, "Unable to add address."),
+			});
 		},
 	});
 
@@ -205,6 +305,19 @@ export const useBusinessPartnerAddressMutations = (
 
 		onSuccess: () => {
 			void refreshBusinessPartner();
+			showToast({
+				type: "success",
+				title: "Address updated",
+				description: "The address was updated successfully.",
+			});
+		},
+
+		onError: (error) => {
+			showToast({
+				type: "error",
+				title: "Unable to update address",
+				description: getApiErrorMessage(error, "Unable to update address."),
+			});
 		},
 	});
 
@@ -214,6 +327,19 @@ export const useBusinessPartnerAddressMutations = (
 
 		onSuccess: () => {
 			void refreshBusinessPartner();
+			showToast({
+				type: "success",
+				title: "Address removed",
+				description: "The address was removed successfully.",
+			});
+		},
+
+		onError: (error) => {
+			showToast({
+				type: "error",
+				title: "Unable to remove address",
+				description: getApiErrorMessage(error, "Unable to remove address."),
+			});
 		},
 	});
 
@@ -223,6 +349,22 @@ export const useBusinessPartnerAddressMutations = (
 
 		onSuccess: () => {
 			void refreshBusinessPartner();
+			showToast({
+				type: "success",
+				title: "Default address updated",
+				description: "The default address was set successfully.",
+			});
+		},
+
+		onError: (error) => {
+			showToast({
+				type: "error",
+				title: "Unable to set default address",
+				description: getApiErrorMessage(
+					error,
+					"Unable to set default address.",
+				),
+			});
 		},
 	});
 

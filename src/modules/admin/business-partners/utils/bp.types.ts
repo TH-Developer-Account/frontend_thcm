@@ -1,3 +1,5 @@
+import type { DetailFormSection } from "../hooks/useBusinessPartnerForm";
+
 export type BusinessPartnerOfficeType = "HEAD_OFFICE" | "BRANCH_OFFICE";
 
 type SelectOption<T extends string> = {
@@ -9,7 +11,8 @@ export const BUSINESS_PARTNER_TYPE_OPTIONS: SelectOption<BusinessPartnerType>[] 
 	[
 		{ label: "Dealer", value: "DEALER" },
 		{ label: "Customer", value: "CUSTOMER" },
-		{ label: "Employee", value: "EMPLOYEE" },
+		{ label: "TATA-Hitachi", value: "TATA-Hitachi" },
+		{ label: "Plant", value: "PLANT" },
 	];
 export const OFFICE_TYPE_OPTIONS: SelectOption<BusinessPartnerOfficeType>[] = [
 	{ label: "Head Office", value: "HEAD_OFFICE" },
@@ -24,7 +27,11 @@ export const ENTITY_TYPE_OPTIONS: SelectOption<BusinessPartnerEntityType>[] = [
 	{ label: "Other", value: "OTHER" },
 ];
 export type BusinessPartnerStatus = "Active" | "Inactive";
-export type BusinessPartnerType = "DEALER" | "CUSTOMER" | "EMPLOYEE";
+export type BusinessPartnerType =
+	| "DEALER"
+	| "CUSTOMER"
+	| "TATA-Hitachi"
+	| "PLANT";
 
 export type BusinessPartnerEntityType =
 	| "COMPANY"
@@ -32,6 +39,16 @@ export type BusinessPartnerEntityType =
 	| "PROPRIETORSHIP"
 	| "INDIVIDUAL"
 	| "OTHER";
+
+export const SECTION_LABELS: Record<
+	Exclude<DetailFormSection, null>,
+	string
+> = {
+	general: "General information",
+	organization: "Organization information",
+	contact: "Contact information",
+	address: "Address information",
+};
 
 // -----------------------------------------------------------------------------
 // Section-level permissions
@@ -261,6 +278,7 @@ export type BusinessPartner = {
 	internalId: string;
 	externalId: string;
 	organizationName: string;
+	bpShortName?: string;
 	region: string;
 	mainContact: string;
 	address: string;

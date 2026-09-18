@@ -942,44 +942,61 @@ export function useVendorCreationForm({
 			value: VendorCreationFormOneValues[K],
 		) => {
 			vendorUpdateCompletedRef.current = false;
-			setFormOneValues((current) => {
-				let nextValues = { ...(current ?? formOneValues), [field]: value };
 
-				// Auto-fill PAN once enough of the GSTIN has been typed for its
-				// embedded PAN segment to be trustworthy. The vendor can still
-				// overwrite it afterwards — this only fills, never locks it.
+			setFormOneValues((current) => {
+				let nextValues = {
+					...(current ?? formOneValues),
+					[field]: value,
+				};
+
 				if (field === "gstin") {
 					const derivedPan = extractPanFromGstin(String(value ?? ""));
+
 					if (derivedPan) {
-						nextValues = { ...nextValues, pan: derivedPan };
+						nextValues = {
+							...nextValues,
+							pan: derivedPan,
+						};
 					}
 				}
 
-				setFormOneErrors((currentErrors) => {
-					const nextErrors = {
-						...currentErrors,
-						[field]: validateFormOneField(field, value),
-					};
-
-					// Either field changing can affect confirm-required/match state.
-					if (field === "accountNumber" || field === "confirmAccountNumber") {
-						nextErrors.confirmAccountNumber = validateConfirmAccountNumber(
-							nextValues,
-							originalAccountNumber,
-						);
-					}
-
-					// GSTIN and PAN are cross-validated against each other, so a
-					// change to either re-checks PAN (required + format + match).
-					if (field === "gstin" || field === "pan") {
-						nextErrors.pan = validatePanForForm(nextValues);
-					}
-
-					return nextErrors;
-				});
-
 				return nextValues;
 			});
+
+			// Clear the current error while user is correcting the field.
+			setFormOneErrors((current) => {
+				if (!current[field]) {
+					return current;
+				}
+
+				return {
+					...current,
+					[field]: undefined,
+				};
+			});
+		},
+		[formOneValues],
+	);
+
+	const blurFormOneField = React.useCallback(
+		<K extends keyof VendorCreationFormOneValues>(field: K) => {
+			let error: string | undefined;
+
+			if (field === "pan") {
+				error = validatePanForForm(formOneValues);
+			} else if (field === "confirmAccountNumber") {
+				error = validateConfirmAccountNumber(
+					formOneValues,
+					originalAccountNumber,
+				);
+			} else {
+				error = validateFormOneField(field, formOneValues[field]);
+			}
+
+			setFormOneErrors((current) => ({
+				...current,
+				[field]: error,
+			}));
 		},
 		[formOneValues, originalAccountNumber],
 	);
@@ -1729,6 +1746,8 @@ export function useVendorCreationForm({
 		handleBack: back,
 
 		handleFormOneChange: changeFormOne,
+		handleFormOneBlur: blurFormOneField,
+
 		handleFormTwoChange: changeFormTwo,
 
 		handleSaveFormOne: saveVendorDetails,

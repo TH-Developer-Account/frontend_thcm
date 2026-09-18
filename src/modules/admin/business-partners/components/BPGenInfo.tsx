@@ -5,11 +5,12 @@ import Card from "../../../../components/common/Card";
 import FormInput from "../../../../components/forms/FormInput";
 import SelectInput from "../../../../components/forms/SelectInput";
 
-import type {
-	BusinessPartnerEntityType,
-	BusinessPartnerFormState,
-	BusinessPartnerOfficeType,
-	BusinessPartnerType,
+import {
+	BUSINESS_PARTNER_TYPE_OPTIONS,
+	type BusinessPartnerEntityType,
+	type BusinessPartnerFormState,
+	type BusinessPartnerOfficeType,
+	type BusinessPartnerType,
 } from "../utils/bp.types";
 
 type FormChangeHandler = <K extends keyof BusinessPartnerFormState>(
@@ -38,12 +39,6 @@ const FALLBACK_VALUE = "--";
 const OFFICE_TYPE_OPTIONS = [
 	{ label: "Head Office", value: "HEAD_OFFICE" },
 	{ label: "Branch Office", value: "BRANCH_OFFICE" },
-];
-
-const BUSINESS_PARTNER_TYPE_OPTIONS = [
-	{ label: "Dealer", value: "DEALER" },
-	{ label: "Customer", value: "CUSTOMER" },
-	{ label: "Employee", value: "EMPLOYEE" },
 ];
 
 const ENTITY_TYPE_OPTIONS = [

@@ -16,10 +16,6 @@ const LoginPage = () => {
 			description="Access marketing, administration, master data, dealer, and service workflows from a unified enterprise platform."
 		>
 			<header className="auth-form-header">
-				<div className="auth-mobile-logo">
-					<img src="/th-brand-logo.png" alt="Tata Hitachi" />
-				</div>
-
 				<p className="auth-form-eyebrow">Welcome back</p>
 
 				<h2 className="auth-form-title">Sign in to your account</h2>

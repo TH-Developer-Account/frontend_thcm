@@ -13,6 +13,8 @@ import type {
 	BusinessPartnerDetail,
 	BusinessPartnerFormState,
 } from "../utils/bp.types";
+import { useToast } from "../../../../context/Auth/AuthContext";
+import { getApiErrorMessage } from "../../../../utils/apiError.helper";
 
 export type DetailFormSection = "general" | "organization" | "contact" | null;
 
@@ -20,6 +22,12 @@ type DetailFormState = {
 	form: BusinessPartnerFormState;
 	editingSection: DetailFormSection;
 	validationError: string | null;
+};
+
+const SECTION_LABELS: Record<Exclude<DetailFormSection, null>, string> = {
+	general: "General details",
+	organization: "Organization details",
+	contact: "Contact details",
 };
 
 const getErrorMessage = (error: unknown): string =>
@@ -38,6 +46,7 @@ export const useBusinessPartnerDetailForm = (
 ) => {
 	const { updateBusinessPartner, isUpdating, updateError } =
 		useBusinessPartnerMutations();
+	const { showToast } = useToast();
 
 	const [state, setState] = useState<DetailFormState>(() =>
 		buildInitialState(partner),
@@ -110,15 +119,39 @@ export const useBusinessPartnerDetailForm = (
 
 			console.log("[detailForm] update succeeded:", result);
 
+			showToast({
+				type: "success",
+				title: "Saved",
+				description: `${SECTION_LABELS[section]} updated successfully.`,
+			});
+
 			setState((current) => ({ ...current, editingSection: null }));
 		} catch (error) {
 			console.error("[detailForm] update failed:", error);
+
+			const message = getApiErrorMessage(
+				error,
+				`Unable to update ${SECTION_LABELS[section].toLowerCase()}.`,
+			);
+
+			showToast({
+				type: "error",
+				title: "Update failed",
+				description: message,
+			});
+
 			setState((current) => ({
 				...current,
 				validationError: getErrorMessage(error),
 			}));
 		}
-	}, [partner.id, state.editingSection, state.form, updateBusinessPartner]);
+	}, [
+		partner.id,
+		state.editingSection,
+		state.form,
+		updateBusinessPartner,
+		showToast,
+	]);
 
 	return {
 		form: state.form,

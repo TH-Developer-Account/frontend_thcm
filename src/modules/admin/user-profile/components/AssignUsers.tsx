@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 import Avatar from "../../../../components/common/Avatar";
 import Button from "../../../../components/common/Button";
@@ -6,8 +7,8 @@ import { Modal } from "../../../../components/common/Modal";
 import Checkbox from "../../../../components/forms/Checkbox";
 import { SearchInput } from "../../../../components/forms/SearchInput";
 
-import { ServerAxios } from "../../../../services/ServerAxios";
-import { mapUser, type Profile, type User } from "../types/profile.types";
+import type { Profile, User } from "../types/profile.types";
+import { usersApi } from "../../../../common/common.api";
 
 type AssignProps = {
 	profile: Profile | null;
@@ -18,6 +19,8 @@ type AssignProps = {
 	) => Promise<void>;
 };
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 export const AssignUsers: React.FC<AssignProps> = ({
 	profile,
 	onClose,
@@ -26,25 +29,7 @@ export const AssignUsers: React.FC<AssignProps> = ({
 	const [users, setUsers] = useState<User[]>([]);
 	const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 	const [loading, setLoading] = useState(false);
-	const [search, setSearch] = useState<string>("");
-
-	const filteredUsers = useMemo(() => {
-		const query = search.trim().toLowerCase();
-
-		if (!query) return users;
-
-		return users.filter((user) => {
-			const fullName = `${user.firstName ?? ""} ${user.lastName ?? ""}`
-				.trim()
-				.toLowerCase();
-
-			return (
-				fullName.includes(query) ||
-				user.email?.toLowerCase().includes(query) ||
-				user.phone?.toLowerCase().includes(query)
-			);
-		});
-	}, [users, search]);
+	const [search, setSearch] = useState("");
 
 	const toggleUser = (id: string) => {
 		setSelectedUsers((prev) =>
@@ -54,31 +39,68 @@ export const AssignUsers: React.FC<AssignProps> = ({
 		);
 	};
 
-	const handleAssign = () => {
-		handleAssignUser(selectedUsers, profile?.id);
+	const handleAssign = async () => {
+		await handleAssignUser(selectedUsers, profile?.id);
 	};
 
+	/*
+	 * Initialize the selected users whenever the opened profile changes.
+	 *
+	 * Keep this separate from the user-fetching effect so a search request
+	 * never resets selections the user has already made in the modal.
+	 */
 	useEffect(() => {
-		if (!profile?.id) return;
+		if (!profile?.id) {
+			setSelectedUsers([]);
+			return;
+		}
 
-		const loadUsers = async () => {
+		setSelectedUsers(profile.users?.map((user) => user.id) ?? []);
+	}, [profile?.id, profile?.users]);
+
+	/*
+	 * Backend search:
+	 * - waits 300 ms after typing
+	 * - sends `search` to /users
+	 * - aborts the previous HTTP request when search changes
+	 * - prevents stale responses from replacing newer results
+	 */
+	useEffect(() => {
+		if (!profile?.id) {
+			setUsers([]);
+			return;
+		}
+
+		const controller = new AbortController();
+
+		const timeoutId = window.setTimeout(async () => {
 			try {
 				setLoading(true);
 
-				const { data } = await ServerAxios.get("/users");
-				const mappedUsers: User[] = data.map(mapUser);
+				const result = await usersApi.getUsers({
+					search,
+					signal: controller.signal,
+				});
 
-				setUsers(mappedUsers);
-				setSelectedUsers(profile.users?.map((each) => each.id) ?? []);
-			} catch (err) {
-				console.error("Failed to fetch users", err);
+				setUsers(result);
+			} catch (error) {
+				if (axios.isCancel(error) || controller.signal.aborted) {
+					return;
+				}
+
+				console.error("Failed to fetch users", error);
 			} finally {
-				setLoading(false);
+				if (!controller.signal.aborted) {
+					setLoading(false);
+				}
 			}
-		};
+		}, SEARCH_DEBOUNCE_MS);
 
-		loadUsers();
-	}, [profile?.id, profile?.users]);
+		return () => {
+			window.clearTimeout(timeoutId);
+			controller.abort();
+		};
+	}, [profile?.id, search]);
 
 	return (
 		<Modal
@@ -125,9 +147,10 @@ export const AssignUsers: React.FC<AssignProps> = ({
 				<div className="assign-users-list scrollbar-sleek">
 					{loading ? (
 						<div className="assign-users-state">Loading users...</div>
-					) : filteredUsers.length > 0 ? (
-						filteredUsers.map((user) => {
+					) : users.length > 0 ? (
+						users.map((user) => {
 							const selected = selectedUsers.includes(user.id);
+
 							const fullName = `${user.firstName ?? ""} ${
 								user.lastName ?? ""
 							}`.trim();
@@ -172,7 +195,11 @@ export const AssignUsers: React.FC<AssignProps> = ({
 							);
 						})
 					) : (
-						<div className="assign-users-state">No users found</div>
+						<div className="assign-users-state">
+							{search.trim()
+								? `No users found for "${search.trim()}"`
+								: "No users found"}
+						</div>
 					)}
 				</div>
 			</div>

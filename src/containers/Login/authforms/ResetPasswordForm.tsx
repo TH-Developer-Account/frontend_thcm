@@ -142,10 +142,6 @@ const ResetPasswordForm = () => {
 	return (
 		<>
 			<header className="auth-form-header">
-				<div className="auth-mobile-logo">
-					<img src="/th-brand-logo.png" alt="Tata Hitachi" />
-				</div>
-
 				<div className="auth-form-icon">
 					<ShieldCheck aria-hidden="true" size={24} strokeWidth={1.75} />
 				</div>

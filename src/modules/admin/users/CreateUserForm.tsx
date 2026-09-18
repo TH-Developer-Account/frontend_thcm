@@ -40,12 +40,17 @@ const USER_TYPE_OPTIONS: Array<{
 // TODO: replace with real grade options from API/config once available.
 const GRADE_OPTIONS: GradeOption[] = [
 	{ label: "Select", value: "" },
-	{ label: "M1", value: "M1" },
-	{ label: "M2", value: "M2" },
-	{ label: "M3", value: "M3" },
-	{ label: "E1", value: "E1" },
-	{ label: "E2", value: "E2" },
-	{ label: "E3", value: "E3" },
+	{ label: "EG-3", value: "EG-3" },
+	{ label: "EG-4", value: "EG-4" },
+	{ label: "TM-5", value: "TM-5" },
+	{ label: "TM-4", value: "TM-4" },
+	{ label: "TM-3", value: "TM-3" },
+	{ label: "TM-2", value: "TM-2" },
+	{ label: "TM-1", value: "TM-1" },
+	{ label: "TM-0", value: "TM-0" },
+	{ label: "TS-2", value: "TS-2" },
+	{ label: "TS-1", value: "TS-1" },
+	{ label: "TE-3", value: "TE-3" },
 ];
 
 const parseJoinedOn = (value: string): Date | undefined => {

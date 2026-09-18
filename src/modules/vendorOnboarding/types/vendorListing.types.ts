@@ -46,6 +46,7 @@ export type VendorOnboardingColumnsParams = {
 	getViewPath?: (row: VendorOnboardingListingRow) => string;
 
 	canEdit?: (row: VendorOnboardingListingRow) => boolean;
+	canView?: (row: VendorOnboardingListingRow) => boolean;
 };
 export type VendorOnboardingInitiationPayload = {
 	vendorName: string;

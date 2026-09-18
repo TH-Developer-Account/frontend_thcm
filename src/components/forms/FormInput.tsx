@@ -2,16 +2,18 @@ import {
 	forwardRef,
 	useId,
 	useState,
+	type FocusEvent,
 	type InputHTMLAttributes,
 	type ReactNode,
 } from "react";
-import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
+import { CircleCheck } from "lucide-react";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
 import HelperTooltip from "../common/HelperTooltip";
-import ReadOnlyField from "./ReadOnlyField";
 import type { InputProps } from "./input.types";
-import { CircleCheck } from "lucide-react";
+import ReadOnlyField from "./ReadOnlyField";
+import { validateFormValue } from "../../utils/form.validation";
 
 const joinClassNames = (
 	...classes: Array<string | false | null | undefined>
@@ -72,12 +74,17 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 			invalidRadio,
 			readOnlyValue,
 			emptyReadOnlyValue = "--",
+			validation,
+			onBlur,
+			onChange,
 			...nativeInputProps
 		},
 		ref,
 	) => {
 		const generatedId = useId();
+
 		const [showPassword, setShowPassword] = useState(false);
+		const [validationError, setValidationError] = useState("");
 
 		const inputId = id ?? name ?? `form-input-${generatedId}`;
 		const errorId = `${inputId}-error`;
@@ -86,10 +93,19 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 		const isViewMode = mode === "view";
 		const isPassword = type === "password";
 		const isRadio = type === "radio";
+
 		const resolvedInputType = isPassword && showPassword ? "text" : type;
 
+		/*
+		 * External form/controller errors take priority.
+		 * Otherwise use FormInput's common validation error.
+		 */
+		const resolvedError = error || validationError;
+
+		const resolvedSuccess = success && !resolvedError;
+
 		const describedBy = [
-			error ? errorId : undefined,
+			resolvedError ? errorId : undefined,
 			helperText && !isTooltip ? helperId : undefined,
 		]
 			.filter(Boolean)
@@ -99,6 +115,39 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 
 		const togglePasswordVisibility = () => {
 			setShowPassword((previous) => !previous);
+		};
+
+		const runValidation = (nextValue: unknown): string => {
+			if (!validation?.length) {
+				setValidationError("");
+				return "";
+			}
+
+			const nextError = validateFormValue(nextValue, validation);
+
+			setValidationError(nextError);
+
+			return nextError;
+		};
+
+		const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+			/*
+			 * If this field has already produced a local validation
+			 * error, revalidate while the user corrects it.
+			 *
+			 * Otherwise validation waits until blur so we don't show
+			 * "invalid email" immediately after the first character.
+			 */
+			if (validationError) {
+				runValidation(event.target.value);
+			}
+
+			onChange?.(event);
+		};
+
+		const handleBlur = (event: FocusEvent<HTMLInputElement>) => {
+			runValidation(event.target.value);
+			onBlur?.(event);
 		};
 
 		if (isViewMode) {
@@ -139,14 +188,14 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 							value={value}
 							disabled={disabled}
 							required={required}
-							aria-invalid={error ? "true" : undefined}
-							aria-describedby={error ? errorId : undefined}
-							className={[
+							onChange={handleChange}
+							onBlur={handleBlur}
+							aria-invalid={resolvedError ? "true" : undefined}
+							aria-describedby={resolvedError ? errorId : undefined}
+							className={joinClassNames(
 								"form-radio-input",
 								invalidRadio && "form-radio-input-error",
-							]
-								.filter(Boolean)
-								.join(" ")}
+							)}
 						/>
 
 						{label ? (
@@ -161,6 +210,12 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 							</span>
 						) : null}
 					</label>
+
+					{resolvedError ? (
+						<p id={errorId} className="form-error-text" role="alert">
+							{resolvedError}
+						</p>
+					) : null}
 				</div>
 			);
 		}
@@ -170,8 +225,8 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 				className={joinClassNames(
 					"form-field",
 					disabled && "is-disabled",
-					error && "has-error",
-					success && !error && "is-valid",
+					resolvedError && "has-error",
+					resolvedSuccess && "is-valid",
 				)}
 			>
 				{label ? (
@@ -186,7 +241,7 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 							) : null}
 						</label>
 
-						{helperText && isTooltip && !error ? (
+						{helperText && isTooltip && !resolvedError ? (
 							<HelperTooltip label={label} text={helperText} />
 						) : null}
 					</div>
@@ -196,7 +251,7 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 					className={joinClassNames(
 						"form-input-wrapper",
 						isPassword && "has-password-toggle",
-						(error || success) && "has-status-icon",
+						(resolvedError || resolvedSuccess) && "has-status-icon",
 					)}
 				>
 					<input
@@ -210,27 +265,30 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 						disabled={disabled}
 						min={resolvedMin}
 						placeholder={placeholder}
-						aria-invalid={error ? "true" : undefined}
+						onChange={handleChange}
+						onBlur={handleBlur}
+						aria-invalid={resolvedError ? "true" : undefined}
 						aria-describedby={describedBy || undefined}
 						className={joinClassNames(
 							"form-input",
-							(error || success || isPassword) && "form-input-with-icon",
+							(resolvedError || resolvedSuccess || isPassword) &&
+								"form-input-with-icon",
 							isPassword &&
-								(error || success) &&
+								(resolvedError || resolvedSuccess) &&
 								"form-input-with-status-and-toggle",
-							error && "form-input-error",
-							success && !error && "form-input-success",
+							resolvedError && "form-input-error",
+							resolvedSuccess && "form-input-success",
 							disabled && "form-input-disabled",
 							className,
 						)}
 					/>
 
-					{error ? (
+					{resolvedError ? (
 						<ExclamationCircleIcon
 							aria-hidden="true"
 							className="form-error-icon"
 						/>
-					) : success ? (
+					) : resolvedSuccess ? (
 						<CircleCheck aria-hidden="true" className="form-success-icon" />
 					) : null}
 
@@ -253,9 +311,9 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 					) : null}
 				</div>
 
-				{error ? (
+				{resolvedError ? (
 					<p id={errorId} className="form-error-text" role="alert">
-						{error}
+						{resolvedError}
 					</p>
 				) : helperText && !isTooltip ? (
 					<p id={helperId} className="form-helper-text">

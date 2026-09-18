@@ -40,23 +40,17 @@ const Checkbox: React.FC<CheckboxProps> = ({
 	const generatedId = React.useId();
 	const checkboxId = name || `checkbox-${generatedId}`;
 	const errorId = `${checkboxId}-error`;
+
+	const inputRef = React.useRef<HTMLInputElement>(null);
+
 	const hasError = Boolean(error);
 	const isSelected = checked || indeterminate;
 
-	const toggleChecked = () => {
-		if (!disabled) {
-			onChange?.(!checked);
+	React.useEffect(() => {
+		if (inputRef.current) {
+			inputRef.current.indeterminate = indeterminate;
 		}
-	};
-
-	const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-		if (disabled) return;
-
-		if (event.key === "Enter" || event.key === " ") {
-			event.preventDefault();
-			toggleChecked();
-		}
-	};
+	}, [indeterminate]);
 
 	const borderColor = hasError
 		? "var(--color-error)"
@@ -75,6 +69,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
 				: undefined;
 
 	const iconColor = hasError ? "var(--color-error)" : checked ? "#fff" : color;
+
 	return (
 		<div
 			className={[
@@ -87,68 +82,79 @@ const Checkbox: React.FC<CheckboxProps> = ({
 				.join(" ")}
 		>
 			<div className="checkbox-field-row">
-				<div
-					id={checkboxId}
-					role="checkbox"
-					tabIndex={disabled ? -1 : 0}
-					aria-checked={indeterminate ? "mixed" : checked}
-					aria-disabled={disabled}
-					aria-invalid={hasError}
-					aria-describedby={hasError ? errorId : undefined}
-					onClick={toggleChecked}
-					onKeyDown={handleKeyDown}
-					className={[
-						"checkbox",
-						disabled ? "checkbox-disabled" : "checkbox-enabled",
-						hasError ? "checkbox-error" : "",
-						className,
-					]
-						.filter(Boolean)
-						.join(" ")}
-					style={{
-						...style,
-						width: size,
-						height: size,
-						borderRadius: 4,
-						borderColor,
-						backgroundColor,
-						boxShadow:
-							checked && !hasError && !disabled
-								? `0 1px 6px ${color}44`
-								: "none",
-					}}
-				>
-					{checked ? (
-						<span
-							className="checkbox-icon"
-							style={{
-								color: iconColor,
-								fontSize: size * 0.6,
-							}}
-						>
-							✓
-						</span>
-					) : null}
+				<div className="relative shrink-0">
+					<input
+						ref={inputRef}
+						id={checkboxId}
+						name={name}
+						type="checkbox"
+						checked={checked}
+						disabled={disabled}
+						required={required}
+						aria-invalid={hasError}
+						aria-describedby={hasError ? errorId : undefined}
+						onChange={(event) => onChange?.(event.target.checked)}
+						className="peer absolute inset-0 z-10 m-0 cursor-pointer opacity-0 disabled:cursor-not-allowed"
+						style={{
+							width: size,
+							height: size,
+						}}
+					/>
 
-					{!checked && indeterminate ? (
-						<span
-							className="checkbox-icon"
-							style={{
-								color: iconColor,
-								fontSize: size * 0.65,
-							}}
-						>
-							−
-						</span>
-					) : null}
+					<span
+						aria-hidden="true"
+						className={[
+							"checkbox",
+							disabled ? "checkbox-disabled" : "checkbox-enabled",
+							hasError ? "checkbox-error" : "",
+							className,
+						]
+							.filter(Boolean)
+							.join(" ")}
+						style={{
+							...style,
+							width: size,
+							height: size,
+							borderRadius: 4,
+							borderColor,
+							backgroundColor,
+							boxShadow:
+								checked && !hasError && !disabled
+									? `0 1px 6px ${color}44`
+									: "none",
+						}}
+					>
+						{checked ? (
+							<span
+								className="checkbox-icon"
+								style={{
+									color: iconColor,
+									fontSize: size * 0.6,
+								}}
+							>
+								✓
+							</span>
+						) : null}
+
+						{!checked && indeterminate ? (
+							<span
+								className="checkbox-icon"
+								style={{
+									color: iconColor,
+									fontSize: size * 0.65,
+								}}
+							>
+								−
+							</span>
+						) : null}
+					</span>
 				</div>
 
 				{label ? (
 					<div className="form-label-row">
 						<label
 							htmlFor={checkboxId}
-							className="form-radio-label"
-							onClick={toggleChecked}
+							className="form-radio-label cursor-pointer"
 						>
 							{label}
 

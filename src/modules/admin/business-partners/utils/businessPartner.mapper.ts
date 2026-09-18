@@ -30,6 +30,7 @@ export const mapBusinessPartnerListItem = (
 	item: BusinessPartnerListItem,
 ): BusinessPartner => ({
 	id: item.id,
+	bpShortName: item.bpShortName ?? "",
 	internalId: item.internalId ?? item.bpId ?? item.s4Id ?? "",
 	externalId: item.externalId ?? item.vendorId ?? "",
 	organizationName: item.organizationName ?? item.bpName ?? "",

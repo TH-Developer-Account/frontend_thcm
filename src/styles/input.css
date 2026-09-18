@@ -184,7 +184,14 @@ FORM CONTAINER AND LAYOUT
 		visibility: visible;
 		transform: translateX(-50%) translateY(0);
 	}
-
+	input[type="password"]::-ms-reveal,
+	input[type="password"]::-ms-clear {
+		display: none;
+	}
+	.form-input[type="password"]::-ms-reveal,
+	.form-input[type="password"]::-ms-clear {
+		display: none;
+	}
 	/* =====================================================
 	   BASE FIELD CONTROLS
 	   Sharp, compact enterprise styling.

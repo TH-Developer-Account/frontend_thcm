@@ -1,143 +1,80 @@
-import { useEffect, useRef, useState } from "react";
-import { MasterSidebar } from "./MasterSidebar";
+import { useMemo, useState } from "react";
+
+import { MasterLineItemTable } from "../../../components/ui/tables/LineItemTable/MasterLineItemTable";
 import {
-	MasterLineItemTable,
-	type MasterItem,
-} from "../../../components/ui/tables/LineItemTable/MasterLineItemTable";
-import { MasterDetailPanel } from "./MasterDetailPanel";
-import { useMasterData } from "../../../hooks/useMasterData";
+	useManageMasterData,
+	useMasterData,
+} from "../../../hooks/useMasterData";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 
-// Map each sidebar master key → your data source key
-const MASTER_KEYS: Record<string, string> = {
-	Branches: "branches",
-	Departments: "departments",
-	Regions: "regions",
-	"Event Names": "eventNames",
-	Budget: "budgetMasters",
-	Vertical: "vertical",
-};
+import { MasterSidebar } from "./MasterSidebar";
+
+import type { MasterItem, MasterName } from "./masterData.types";
+import { DEFAULT_MASTER } from "./master.data.constant";
+import {
+	buildCreateMasterPayload,
+	buildUpdateMasterPayload,
+	getMasterCounts,
+	getMasterItems,
+} from "./master.data.mapper";
 
 const MastersPage = () => {
-	const { data } = useMasterData();
+	const [activeMaster, setActiveMaster] = useState<MasterName>(DEFAULT_MASTER);
 
-	const [activeMaster, setActiveMaster] = useState("Branches");
-	const [selectedItem, setSelectedItem] = useState<MasterItem | null>(null);
-	const [localData, setLocalData] = useState<Record<string, MasterItem[]>>({});
-	const containerRef = useRef<HTMLDivElement>(null);
-	const [isCompact, setIsCompact] = useState(false);
+	const { data, isLoading, isFetching } = useMasterData();
 
-	useEffect(() => {
-		const el = containerRef.current;
-		if (!el) return;
+	const manageMaster = useManageMasterData();
 
-		const observer = new ResizeObserver(([entry]) => {
-			const width = entry.contentRect.width;
-
-			// compact sidebar until XL layout
-			setIsCompact(width < 1000);
-		});
-
-		observer.observe(el);
-
-		return () => observer.disconnect();
-	}, []);
-
-	const mapNormalMasterItem = (item: any): MasterItem => ({
-		id: item.value ?? item.id ?? crypto.randomUUID(),
-		label: item.label ?? item.name ?? "",
-		code: item.code ?? "",
-		description: item.description ?? "",
-	});
-
-	const mapBudgetMasterItem = (item: any): MasterItem => ({
-		id: item.value ?? item.id ?? crypto.randomUUID(),
-		label: item.label ?? "",
-		description: item.description ?? "",
-		budgetAmount: Number(item.budgetAmount ?? 0),
-	});
-
-	const getItems = (masterName: string): MasterItem[] => {
-		const key = MASTER_KEYS[masterName] ?? masterName.toLowerCase();
-		const apiData = data?.[key] ?? [];
-
-		const apiItems =
-			masterName === "Budget"
-				? apiData.map(mapBudgetMasterItem)
-				: apiData.map(mapNormalMasterItem);
-
-		return localData[masterName] ?? apiItems;
-	};
-	const setItems = (masterName: string, items: MasterItem[]) => {
-		setLocalData((prev) => ({ ...prev, [masterName]: items }));
-		// If selected item was deleted, deselect
-		if (selectedItem && !items.find((i) => i.id === selectedItem.id)) {
-			setSelectedItem(null);
-		}
-	};
-
-	const handleSave = (updated: MasterItem) => {
-		const items = getItems(activeMaster);
-
-		setItems(
-			activeMaster,
-			items.map((i) => (i.id === updated.id ? updated : i)),
-		);
-		setSelectedItem(updated);
-	};
-
-	const handleMasterChange = (master: string) => {
-		setActiveMaster(master);
-		setSelectedItem(null);
-	};
-
-	const items = getItems(activeMaster);
-
-	// Build counts for sidebar badges
-	const counts = Object.fromEntries(
-		Object.keys(MASTER_KEYS).map((k) => [k, getItems(k).length]),
+	const items = useMemo(
+		() => getMasterItems(data, activeMaster),
+		[data, activeMaster],
 	);
+
+	const counts = useMemo(() => getMasterCounts(data), [data]);
+
+	const handleAdd = async (item: MasterItem) => {
+		const payload = buildCreateMasterPayload(activeMaster, item);
+
+		await manageMaster.mutateAsync({
+			payload,
+			masterName: activeMaster,
+		});
+	};
+
+	const handleUpdate = async (item: MasterItem) => {
+		const payload = buildUpdateMasterPayload(activeMaster, item);
+
+		await manageMaster.mutateAsync({
+			payload,
+			masterName: activeMaster,
+		});
+	};
+
 	return (
 		<PageSectionLayout>
-			<div
-				ref={containerRef}
-				className={`flex gap-4 h-[calc(100vh-100px)] transition-all duration-400 ${
-					isCompact ? "flex-col" : "flex-row"
-				}`}
-			>
-				{/* Sidebar */}
-				<div className=" shrink-0">
+			<div className="flex h-[calc(100vh-100px)] min-h-0 gap-4">
+				<div className="shrink-0">
 					<MasterSidebar
 						activeMaster={activeMaster}
-						onSelectMaster={handleMasterChange}
+						onSelectMaster={setActiveMaster}
 						counts={counts}
-						isCompact={isCompact}
+						isCompact={false}
 					/>
 				</div>
 
-				{/* Table */}
-				<div className="flex-1 min-w-0">
+				<div className="min-w-0 flex-1">
 					<MasterLineItemTable
 						title={activeMaster}
-						nameLabel={activeMaster}
-						// nameLabel={`${activeMaster.replace(/s$/, "")}`}
 						items={items}
-						selectedId={selectedItem?.id}
-						onChange={(updated) => setItems(activeMaster, updated)}
-						onSelect={setSelectedItem}
+						onAdd={handleAdd}
+						onUpdate={handleUpdate}
+						isSaving={manageMaster.isPending}
 					/>
 				</div>
 
-				{/* Detail */}
-				<div className="flex-1 min-w-0">
-					<MasterDetailPanel
-						masterName={activeMaster}
-						item={selectedItem}
-						onSave={handleSave}
-						onClose={() => setSelectedItem(null)}
-						key={selectedItem?.id}
-					/>
-				</div>
+				{(isLoading || isFetching) && (
+					<span className="sr-only">Loading master data</span>
+				)}
 			</div>
 		</PageSectionLayout>
 	);

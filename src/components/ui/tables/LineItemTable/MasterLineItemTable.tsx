@@ -1,100 +1,113 @@
-import { useState, type KeyboardEvent } from "react";
-import { Edit, Trash } from "lucide-react";
+import { useEffect, useState, type KeyboardEvent } from "react";
+import { Check, Edit, X } from "lucide-react";
 
 import Button from "../../../common/Button";
 import FormInput from "../../../forms/FormInput";
-
-export type MasterItem = {
-	id: string;
-	label: string;
-	code?: string;
-	description?: string;
-	budgetAmount?: number | string;
-	status?: string;
-};
+import type {
+	MasterItem,
+	MasterStatus,
+} from "../../../../modules/admin/Masters/masterData.types";
 
 interface MasterLineItemTableProps {
 	title: string;
-	nameLabel?: string;
 	items: MasterItem[];
-	selectedId?: string | null;
-	onChange: (items: MasterItem[]) => void;
-	onSelect?: (item: MasterItem) => void;
+
+	onAdd: (item: MasterItem) => Promise<void> | void;
+	onUpdate: (item: MasterItem) => Promise<void> | void;
+
+	isSaving?: boolean;
 	isViewer?: boolean;
 }
 
+const EMPTY_DRAFT: MasterItem = {
+	id: "",
+	description: "",
+	status: "active",
+};
+
 export function MasterLineItemTable({
 	title,
-	nameLabel = "Name",
 	items,
-	selectedId,
-	onChange,
-	onSelect,
+	onAdd,
+	onUpdate,
+	isSaving = false,
 	isViewer = false,
 }: MasterLineItemTableProps) {
-	const [draft, setDraft] = useState<MasterItem>({
-		id: "",
-		label: "",
-		code: "",
-		description: "",
-		budgetAmount: "",
-	});
+	const [draft, setDraft] = useState<MasterItem>(EMPTY_DRAFT);
 
-	const [dirty, setDirty] = useState(false);
+	const [editingId, setEditingId] = useState<string | null>(null);
 
-	const isBudget = title === "Budget";
-	const canAdd = dirty && Boolean(draft.label?.trim());
+	const [editDraft, setEditDraft] = useState<MasterItem | null>(null);
 
-	const resetDraft = () => {
-		setDraft({
-			id: "",
-			label: "",
-			code: "",
-			description: "",
-			budgetAmount: "",
-		});
-		setDirty(false);
-	};
+	useEffect(() => {
+		setDraft(EMPTY_DRAFT);
+		setEditingId(null);
+		setEditDraft(null);
+	}, [title]);
 
-	const handleDraftChange = (field: keyof MasterItem, value: string) => {
-		setDraft((previous) => ({
-			...previous,
-			[field]: value,
-		}));
-		setDirty(true);
-	};
+	const canAdd = Boolean(draft.description.trim()) && !isSaving;
 
-	const handleAdd = () => {
+	const handleAdd = async () => {
 		if (!canAdd) return;
 
-		const newItem: MasterItem = isBudget
-			? {
-					id: crypto.randomUUID(),
-					label: draft.label.trim(),
-					description: draft.description?.trim() ?? "",
-					budgetAmount: Number(draft.budgetAmount ?? 0),
-				}
-			: {
-					id: crypto.randomUUID(),
-					label: draft.label.trim(),
-					code: draft.code?.trim() ?? "",
-				};
+		await onAdd({
+			...draft,
+			description: draft.description.trim(),
+		});
 
-		onChange([...items, newItem]);
-		resetDraft();
-	};
-
-	const handleDelete = (id: string) => {
-		onChange(items.filter((item) => item.id !== id));
+		setDraft(EMPTY_DRAFT);
 	};
 
 	const handleEnterAdd = (event: KeyboardEvent<HTMLInputElement>) => {
-		if (event.key === "Enter") {
-			handleAdd();
-		}
+		if (event.key !== "Enter") return;
+
+		event.preventDefault();
+
+		void handleAdd();
 	};
 
-	const emptyColSpan = isBudget ? (isViewer ? 4 : 6) : isViewer ? 3 : 5;
+	const startEditing = (item: MasterItem) => {
+		setEditingId(item.id);
+		setEditDraft({ ...item });
+	};
+
+	const cancelEditing = () => {
+		setEditingId(null);
+		setEditDraft(null);
+	};
+
+	const handleUpdate = async () => {
+		if (!editDraft || !editDraft.description.trim() || isSaving) {
+			return;
+		}
+
+		await onUpdate({
+			...editDraft,
+			description: editDraft.description.trim(),
+		});
+
+		cancelEditing();
+	};
+
+	const updateStatus = (status: MasterStatus, target: "draft" | "edit") => {
+		if (target === "draft") {
+			setDraft((current) => ({
+				...current,
+				status,
+			}));
+
+			return;
+		}
+
+		setEditDraft((current) =>
+			current
+				? {
+						...current,
+						status,
+					}
+				: current,
+		);
+	};
 
 	return (
 		<div className="master-line-item-card">
@@ -108,26 +121,12 @@ export function MasterLineItemTable({
 						<tr>
 							<th className="master-line-item-index-col">#</th>
 
-							<th className="master-line-item-name-col">
-								{isBudget ? "Budget Code" : nameLabel}
-							</th>
+							<th className="master-line-item-description-col">Description</th>
 
-							{isBudget ? (
-								<>
-									<th className="master-line-item-description-col">
-										Description
-									</th>
-									<th className="master-line-item-amount-col">Amount</th>
-								</>
-							) : (
-								<th className="master-line-item-code-col">Code</th>
-							)}
+							<th className="master-line-item-status-col">Status</th>
 
 							{!isViewer && (
-								<>
-									<th className="master-line-item-action-col">Edit</th>
-									<th className="master-line-item-action-col">Delete</th>
-								</>
+								<th className="master-line-item-action-col">Action</th>
 							)}
 						</tr>
 					</thead>
@@ -135,90 +134,113 @@ export function MasterLineItemTable({
 					<tbody>
 						{items.length === 0 ? (
 							<tr>
-								<td colSpan={emptyColSpan} className="master-line-item-empty">
+								<td
+									colSpan={isViewer ? 3 : 4}
+									className="master-line-item-empty"
+								>
 									No items added yet.
 								</td>
 							</tr>
 						) : (
 							items.map((item, index) => {
-								const isSelected = selectedId === item.id;
+								const isEditing = editingId === item.id && editDraft !== null;
 
 								return (
 									<tr
 										key={item.id}
-										onClick={() => onSelect?.(item)}
-										className={[
-											"master-line-item-row",
-											isSelected
-												? "master-line-item-row-selected"
-												: "master-line-item-row-default",
-										].join(" ")}
+										className="master-line-item-row master-line-item-row-default"
 									>
 										<td className="master-line-item-index-cell">{index + 1}</td>
 
-										<td
-											className="master-line-item-primary-cell"
-											title={item.label || "--"}
-										>
-											{item.label ? item.label : "--"}
+										<td className="master-line-item-description-cell">
+											{isEditing ? (
+												<FormInput
+													name={`description-${item.id}`}
+													value={editDraft.description}
+													onChange={(event) =>
+														setEditDraft((current) =>
+															current
+																? {
+																		...current,
+																		description: event.target.value,
+																	}
+																: current,
+														)
+													}
+												/>
+											) : (
+												item.description || "--"
+											)}
 										</td>
 
-										{isBudget ? (
-											<>
-												<td
-													className="master-line-item-description-cell"
-													title={item.description || "--"}
+										<td className="master-line-item-status-cell">
+											{isEditing ? (
+												<select
+													value={editDraft.status}
+													onChange={(event) =>
+														updateStatus(
+															event.target.value as MasterStatus,
+															"edit",
+														)
+													}
+													className="form-input"
 												>
-													{item.description ? item.description : "--"}
-												</td>
+													<option value="active">Active</option>
 
-												<td className="master-line-item-amount-cell">
-													{item.budgetAmount !== undefined &&
-													item.budgetAmount !== null
-														? Number(item.budgetAmount).toLocaleString("en-IN")
-														: "--"}
-												</td>
-											</>
-										) : (
-											<td
-												className="master-line-item-code-cell"
-												title={item.code || "--"}
-											>
-												{item.code ? item.code : "--"}
-											</td>
-										)}
+													<option value="inactive">Inactive</option>
+												</select>
+											) : (
+												<span
+													className={
+														item.status === "active"
+															? "master-status master-status-active"
+															: "master-status master-status-inactive"
+													}
+												>
+													{item.status === "active" ? "Active" : "Inactive"}
+												</span>
+											)}
+										</td>
 
 										{!isViewer && (
 											<td className="master-line-item-action-cell">
-												<Button
-													type="button"
-													size="sm"
-													appearance="icon"
-													variant="outline"
-													Icon={Edit}
-													aria-label={`Edit ${item.label || "item"}`}
-													onClick={(event) => {
-														event.stopPropagation();
-														onSelect?.(item);
-													}}
-												/>
-											</td>
-										)}
+												{isEditing ? (
+													<div className="flex items-center gap-1">
+														<Button
+															type="button"
+															size="sm"
+															appearance="icon"
+															variant="outline"
+															Icon={Check}
+															aria-label="Save changes"
+															disabled={
+																isSaving || !editDraft.description.trim()
+															}
+															onClick={() => void handleUpdate()}
+														/>
 
-										{!isViewer && (
-											<td className="master-line-item-action-cell">
-												<Button
-													type="button"
-													size="sm"
-													appearance="icon"
-													variant="outline"
-													Icon={Trash}
-													aria-label={`Delete ${item.label || "item"}`}
-													onClick={(event) => {
-														event.stopPropagation();
-														handleDelete(item.id);
-													}}
-												/>
+														<Button
+															type="button"
+															size="sm"
+															appearance="icon"
+															variant="outline"
+															Icon={X}
+															aria-label="Cancel editing"
+															disabled={isSaving}
+															onClick={cancelEditing}
+														/>
+													</div>
+												) : (
+													<Button
+														type="button"
+														size="sm"
+														appearance="icon"
+														variant="outline"
+														Icon={Edit}
+														aria-label={`Edit ${item.description || "item"}`}
+														onClick={() => startEditing(item)}
+													/>
+												)}
 											</td>
 										)}
 									</tr>
@@ -231,68 +253,41 @@ export function MasterLineItemTable({
 
 			{!isViewer && (
 				<div className="master-line-item-add-row">
-					<div
-						className={
-							isBudget
-								? "master-line-item-add-grid master-line-item-add-grid-budget"
-								: "master-line-item-add-grid master-line-item-add-grid-default"
-						}
-					>
+					<div className="master-line-item-add-grid master-line-item-add-grid-simple">
 						<span className="master-line-item-next-index">
 							{items.length + 1}
 						</span>
 
 						<div className="master-line-item-field">
 							<FormInput
-								name="label"
-								value={draft.label ?? ""}
+								name="description"
+								value={draft.description}
 								onChange={(event) =>
-									handleDraftChange("label", event.target.value)
+									setDraft((current) => ({
+										...current,
+										description: event.target.value,
+									}))
 								}
 								onKeyDown={handleEnterAdd}
-								placeholder={isBudget ? "Budget Code" : "Name"}
+								placeholder="Description"
+								disabled={isSaving}
 							/>
 						</div>
 
-						{isBudget ? (
-							<>
-								<div className="master-line-item-field">
-									<FormInput
-										name="description"
-										value={draft.description ?? ""}
-										onChange={(event) =>
-											handleDraftChange("description", event.target.value)
-										}
-										onKeyDown={handleEnterAdd}
-										placeholder="Description"
-									/>
-								</div>
+						<div className="master-line-item-field">
+							<select
+								value={draft.status}
+								onChange={(event) =>
+									updateStatus(event.target.value as MasterStatus, "draft")
+								}
+								className="form-input"
+								disabled={isSaving}
+							>
+								<option value="active">Active</option>
 
-								<div className="master-line-item-field">
-									<FormInput
-										name="budgetAmount"
-										value={String(draft.budgetAmount ?? "")}
-										onChange={(event) =>
-											handleDraftChange("budgetAmount", event.target.value)
-										}
-										onKeyDown={handleEnterAdd}
-										placeholder="Amount"
-									/>
-								</div>
-							</>
-						) : (
-							<div className="master-line-item-field">
-								<FormInput
-									name="code"
-									value={draft.code ?? ""}
-									onChange={(event) =>
-										handleDraftChange("code", event.target.value)
-									}
-									onKeyDown={handleEnterAdd}
-									placeholder="Code"
-								/>
-							</div>
-						)}
+								<option value="inactive">Inactive</option>
+							</select>
+						</div>
 
 						<div className="master-line-item-add-action">
 							<Button
@@ -300,10 +295,10 @@ export function MasterLineItemTable({
 								size="sm"
 								appearance="standard"
 								variant="brand"
-								onClick={handleAdd}
+								onClick={() => void handleAdd()}
 								disabled={!canAdd}
 							>
-								Add
+								{isSaving ? "Saving..." : "Add"}
 							</Button>
 						</div>
 					</div>

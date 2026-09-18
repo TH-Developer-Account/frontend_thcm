@@ -233,23 +233,33 @@ export const mapUserFormToUpdatePayload = (
 export const getUserDisplayName = (user: User): string =>
 	[user.firstName, user.lastName].filter(Boolean).join(" ") || "--";
 
-export const getUserCounts = (users: User[]): UserCounts => ({
-	All: users.length,
-	Active: users.filter((user) => user.status === "Active").length,
-	Blocked: users.filter((user) => user.status === "Blocked").length,
-	Inactive: users.filter((user) => user.status === "Inactive").length,
-});
+export const getUserCounts = (users: User[] = []): UserCounts => {
+	const safeUsers = Array.isArray(users) ? users : [];
 
-export const getRoleOptions = (users: User[]): UserRoleOption[] =>
-	Array.from(
+	return {
+		All: safeUsers.length,
+		Active: safeUsers.filter((user) => user.status === "Active").length,
+		Blocked: safeUsers.filter((user) => user.status === "Blocked").length,
+		Inactive: safeUsers.filter((user) => user.status === "Inactive").length,
+	};
+};
+
+export const getRoleOptions = (users: User[] = []): UserRoleOption[] => {
+	const safeUsers = Array.isArray(users) ? users : [];
+
+	return Array.from(
 		new Set(
-			users
-				.map((user) => user.role.trim())
+			safeUsers
+				.map((user) => user.role?.trim())
 				.filter((role): role is string => Boolean(role)),
 		),
 	)
 		.sort((left, right) => left.localeCompare(right))
-		.map((role) => ({ label: role, value: role }));
+		.map((role) => ({
+			label: role,
+			value: role,
+		}));
+};
 
 type FilterUsersParams = {
 	users: User[];
@@ -264,11 +274,14 @@ export const filterUsers = ({
 	search,
 	role,
 }: FilterUsersParams): User[] => {
+	const safeUsers = Array.isArray(users) ? users : [];
 	const normalizedSearch = search.trim().toLowerCase();
 
-	return users.filter((user) => {
+	return safeUsers.filter((user) => {
 		const matchesStatus = activeTab === "All" || user.status === activeTab;
+
 		const matchesRole = role === null || user.role === role.value;
+
 		const searchableContent = [
 			getUserDisplayName(user),
 			user.email,
@@ -283,6 +296,7 @@ export const filterUsers = ({
 			user.userType,
 			user.status,
 		]
+			.filter(Boolean)
 			.join(" ")
 			.toLowerCase();
 

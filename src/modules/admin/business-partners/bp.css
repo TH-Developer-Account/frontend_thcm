@@ -135,6 +135,26 @@ button {
 		border-bottom: 1px solid black;
 		outline: none;
 	}
+	.bp-listing-card--scrollable {
+		display: flex;
+		flex-direction: column;
+		/* // Fill remaining viewport height below the page header/toolbar. */
+		/* // Adjust 220px to match your actual header + toolbar + padding height. */
+		height: calc(100vh - 220px);
+		min-height: 0;
+		/* // needed for flex children to shrink/scroll properly */
+	}
+
+	.bp-listing-card--scrollable .bp-table-scroll-area {
+		flex: 1 1 auto;
+		overflow-y: auto;
+		min-height: 0;
+	}
+
+	.bp-listing-card--scrollable .bp-table-pagination {
+		flex: 0 0 auto;
+		/* // stays outside the scroll area, always visible */
+	}
 }
 
 /* BP Summary Cards */

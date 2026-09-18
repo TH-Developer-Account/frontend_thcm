@@ -1,11 +1,15 @@
+import DatePickerInput from "../../../../components/common/DatePickerInput";
+import Checkbox from "../../../../components/forms/Checkbox";
 import FormInput from "../../../../components/forms/FormInput";
 import SelectInput from "../../../../components/forms/SelectInput";
+import { formatDateOnly } from "../../../../utils/format";
 
-import type {
-	BusinessPartnerEntityType,
-	BusinessPartnerFormState,
-	BusinessPartnerOfficeType,
-	BusinessPartnerType,
+import {
+	BUSINESS_PARTNER_TYPE_OPTIONS,
+	type BusinessPartnerEntityType,
+	type BusinessPartnerFormState,
+	type BusinessPartnerOfficeType,
+	type BusinessPartnerType,
 } from "../utils/bp.types";
 
 type FormChangeHandler = <K extends keyof BusinessPartnerFormState>(
@@ -26,21 +30,6 @@ const OFFICE_TYPE_OPTIONS = [
 	{
 		label: "Branch Office",
 		value: "BRANCH_OFFICE",
-	},
-];
-
-const BUSINESS_PARTNER_TYPE_OPTIONS = [
-	{
-		label: "Dealer",
-		value: "DEALER",
-	},
-	{
-		label: "Customer",
-		value: "CUSTOMER",
-	},
-	{
-		label: "Employee",
-		value: "EMPLOYEE",
 	},
 ];
 
@@ -66,7 +55,13 @@ const ENTITY_TYPE_OPTIONS = [
 		value: "OTHER",
 	},
 ];
+const parseJoinedOn = (value: string): Date | undefined => {
+	if (!value) return undefined;
 
+	const parsed = new Date(`${value}T00:00:00`);
+
+	return Number.isNaN(parsed.getTime()) ? undefined : parsed;
+};
 export const BPOrganizationForm = ({
 	form,
 	onChange,
@@ -81,13 +76,13 @@ export const BPOrganizationForm = ({
 			</div>
 
 			<div className="bp-master-form-grid">
-				<FormInput
+				{/* <FormInput
 					name="internalId"
 					label="Internal ID"
 					value={form.internalId}
 					onChange={(event) => onChange("internalId", event.target.value)}
 					required
-				/>
+				/> */}
 
 				<FormInput
 					name="bpName"
@@ -164,12 +159,17 @@ export const BPOrganizationForm = ({
 					}
 				/>
 
-				<FormInput
-					name="joinedOn"
+				<DatePickerInput
 					label="Joined On"
-					type="date"
-					value={form.joinedOn}
-					onChange={(event) => onChange("joinedOn", event.target.value)}
+					mode="single"
+					value={parseJoinedOn(form.joinedOn)}
+					onChange={(nextValue) =>
+						onChange(
+							"joinedOn",
+							formatDateOnly(nextValue instanceof Date ? nextValue : undefined),
+						)
+					}
+					placeholder="Select joining date"
 				/>
 			</div>
 		</section>
@@ -275,23 +275,19 @@ export const BPOrganizationForm = ({
 			</div>
 
 			<div className="bp-master-form-checks">
-				<label>
-					<input
-						type="checkbox"
-						checked={form.isKeyAccount}
-						onChange={(event) => onChange("isKeyAccount", event.target.checked)}
-					/>
-					Key account
-				</label>
+				<Checkbox
+					name="isKeyAccount"
+					label="Key Account"
+					checked={form.isKeyAccount}
+					onChange={(checked) => onChange("isKeyAccount", checked)}
+				/>
 
-				<label>
-					<input
-						type="checkbox"
-						checked={form.isActive}
-						onChange={(event) => onChange("isActive", event.target.checked)}
-					/>
-					Active
-				</label>
+				<Checkbox
+					name="isActive"
+					label="Active"
+					checked={form.isActive}
+					onChange={(checked) => onChange("isActive", checked)}
+				/>
 			</div>
 		</section>
 	</div>
