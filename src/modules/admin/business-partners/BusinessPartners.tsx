@@ -27,8 +27,8 @@ const BusinessPartners = () => {
 
 	const { data, isLoading, isFetching, isError } = useBusinessPartnerListing({
 		search,
-		page: pagination.pageIndex + 1,
-		limit: pagination.pageSize,
+		pageIndex: pagination.pageIndex + 1,
+		pageSize: pagination.pageSize,
 	});
 
 	const handleSearchChange = React.useCallback((value: string) => {

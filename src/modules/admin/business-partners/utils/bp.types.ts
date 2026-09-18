@@ -271,37 +271,50 @@ export type BusinessPartner = {
 	status: BusinessPartnerStatus;
 };
 
-export type BusinessPartnerListingParams = {
+export interface BusinessPartnerListingParams {
 	search?: string;
 	status?: string[];
 	zone?: string[];
-	page?: number;
-	limit?: number;
-};
+	pageIndex?: number;
+	pageSize?: number;
+}
 
-export type BusinessPartnerListingResult = {
+export interface NormalizedBusinessPartnerListingParams {
+	search: string;
+	status: string[];
+	zone: string[];
+	pageIndex: number;
+	pageSize: number;
+}
+export interface BusinessPartnerListingResult {
 	rows: BusinessPartner[];
 	totalCount: number;
-	page: number;
-	limit: number;
+	pageIndex: number;
+	pageSize: number;
 	totalPages: number;
-};
+}
+
+export interface BusinessPartnerListApiResponse {
+	success?: boolean;
+
+	data?: BusinessPartnerListItem[];
+	rows?: BusinessPartnerListItem[];
+
+	total?: number;
+	totalCount?: number;
+
+	page?: number;
+	page_index?: number;
+
+	limit?: number;
+	page_size?: number;
+
+	totalPages?: number;
+	total_pages?: number;
+}
 
 export type ApiEnvelope<T> = {
 	data: T;
-};
-
-export type BusinessPartnerListApiResponse = {
-	data?: BusinessPartnerListItem[];
-	rows?: BusinessPartnerListItem[];
-	total?: number;
-	totalCount?: number;
-	page?: number;
-	page_index?: number;
-	limit?: number;
-	page_size?: number;
-	totalPages?: number;
-	total_pages?: number;
 };
 
 export type BusinessPartnerListItem = {

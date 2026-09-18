@@ -232,20 +232,20 @@ export const VENDOR_DOCUMENT_FIELDS = [
 		description: "Upload an additional supporting document.",
 		required: false,
 	},
-	{
-		statusKey: "otherAttachment5",
-		documentType: "ADDITIONAL_DOC_5",
-		label: "Other Attachment 5",
-		description: "Upload an additional supporting document.",
-		required: false,
-	},
-	{
-		statusKey: "otherAttachment6",
-		documentType: "ADDITIONAL_DOC_6",
-		label: "Other Attachment 6",
-		description: "Upload an additional supporting document.",
-		required: false,
-	},
+	// {
+	// 	statusKey: "otherAttachment5",
+	// 	documentType: "ADDITIONAL_DOC_5",
+	// 	label: "Other Attachment 5",
+	// 	description: "Upload an additional supporting document.",
+	// 	required: false,
+	// },
+	// {
+	// 	statusKey: "otherAttachment6",
+	// 	documentType: "ADDITIONAL_DOC_6",
+	// 	label: "Other Attachment 6",
+	// 	description: "Upload an additional supporting document.",
+	// 	required: false,
+	// },
 ] as const;
 
 export type VendorDocumentType =

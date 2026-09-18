@@ -1,221 +1,224 @@
 import { ServerAxios } from "../../../../services/ServerAxios";
 
 import {
-  mapBusinessPartnerListItem,
-  unwrapData,
+	mapBusinessPartnerListItem,
+	unwrapData,
 } from "../utils/businessPartner.mapper";
 
 import type {
-  ApiEnvelope,
-  BusinessPartnerAddress,
-  BusinessPartnerAddressPayload,
-  BusinessPartnerContact,
-  BusinessPartnerDetail,
-  BusinessPartnerListApiResponse,
-  BusinessPartnerListItem,
-  BusinessPartnerListingParams,
-  BusinessPartnerListingResult,
-  CreateBusinessPartnerPayload,
-  UpdateBusinessPartnerPayload,
-  UpdateBusinessPartnerPeoplePayload,
+	ApiEnvelope,
+	BusinessPartnerAddress,
+	BusinessPartnerAddressPayload,
+	BusinessPartnerContact,
+	BusinessPartnerDetail,
+	BusinessPartnerListApiResponse,
+	BusinessPartnerListItem,
+	BusinessPartnerListingResult,
+	CreateBusinessPartnerPayload,
+	NormalizedBusinessPartnerListingParams,
+	UpdateBusinessPartnerPayload,
+	UpdateBusinessPartnerPeoplePayload,
 } from "../utils/bp.types";
 
 const API_URL = "/business-partner";
 
 const getPartnerUrl = (businessPartnerId: string): string =>
-  `${API_URL}/${encodeURIComponent(businessPartnerId)}`;
+	`${API_URL}/${encodeURIComponent(businessPartnerId)}`;
 
 const getAddressesUrl = (businessPartnerId: string): string =>
-  `${getPartnerUrl(businessPartnerId)}/addresses`;
+	`${getPartnerUrl(businessPartnerId)}/addresses`;
 
 const getContactsUrl = (businessPartnerId: string): string =>
-  `${getPartnerUrl(businessPartnerId)}/contacts`;
+	`${getPartnerUrl(businessPartnerId)}/contacts`;
 
 export const businessPartnerKeys = {
-  all: ["business-partners"] as const,
+	all: ["business-partners"] as const,
 
-  lists: () => [...businessPartnerKeys.all, "list"] as const,
+	lists: () => [...businessPartnerKeys.all, "list"] as const,
 
-  list: (params: Required<BusinessPartnerListingParams>) =>
-    [...businessPartnerKeys.lists(), params] as const,
+	list: (params: NormalizedBusinessPartnerListingParams) =>
+		[...businessPartnerKeys.lists(), params] as const,
 
-  details: () => [...businessPartnerKeys.all, "detail"] as const,
+	details: () => [...businessPartnerKeys.all, "detail"] as const,
 
-  detail: (businessPartnerId: string) =>
-    [...businessPartnerKeys.details(), businessPartnerId] as const,
+	detail: (businessPartnerId: string) =>
+		[...businessPartnerKeys.details(), businessPartnerId] as const,
 };
 
 export const businessPartnerApi = {
-  list: async (
-    params: Required<BusinessPartnerListingParams>,
-  ): Promise<BusinessPartnerListingResult> => {
-    const response = await ServerAxios.get<
-      BusinessPartnerListApiResponse | BusinessPartnerListItem[]
-    >(API_URL, {
-      params: {
-        search: params.search.trim() || undefined,
-        status: params.status.length ? params.status : undefined,
-        zone: params.zone.length ? params.zone : undefined,
-        page: params.page,
-        limit: params.limit,
-      },
-    });
+	list: async (
+		params: NormalizedBusinessPartnerListingParams,
+	): Promise<BusinessPartnerListingResult> => {
+		const response = await ServerAxios.get<
+			BusinessPartnerListApiResponse | BusinessPartnerListItem[]
+		>(API_URL, {
+			params: {
+				search: params.search?.trim() || undefined,
+				status: params.status?.length ? params.status : undefined,
+				zone: params.zone?.length ? params.zone : undefined,
 
-    const body = response.data;
+				// Frontend uses pageIndex/pageSize.
+				// Backend expects page/limit.
+				page: params.pageIndex,
+				limit: params.pageSize,
+			},
+		});
 
-    const rawRows = Array.isArray(body) ? body : (body.rows ?? body.data ?? []);
+		const body = response.data;
 
-    const rows = rawRows.map(mapBusinessPartnerListItem);
+		const rawRows = Array.isArray(body) ? body : (body.rows ?? body.data ?? []);
 
-    const totalCount = Array.isArray(body)
-      ? rows.length
-      : (body.totalCount ?? body.total ?? rows.length);
+		const rows = rawRows.map(mapBusinessPartnerListItem);
 
-    const page = Array.isArray(body)
-      ? params.page
-      : (body.page ?? body.page_index ?? params.page);
+		const totalCount = Array.isArray(body)
+			? rows.length
+			: (body.totalCount ?? body.total ?? rows.length);
 
-    const limit = Array.isArray(body)
-      ? params.limit
-      : (body.limit ?? body.page_size ?? params.limit);
+		const pageIndex = Array.isArray(body)
+			? params.pageIndex
+			: (body.page ?? body.page_index ?? params.pageIndex);
 
-    const totalPages = Array.isArray(body)
-      ? Math.max(Math.ceil(totalCount / limit), 1)
-      : (body.totalPages ??
-        body.total_pages ??
-        Math.max(Math.ceil(totalCount / limit), 1));
+		const pageSize = Array.isArray(body)
+			? params.pageSize
+			: (body.limit ?? body.page_size ?? params.pageSize);
 
-    return {
-      rows,
-      totalCount,
-      page,
-      limit,
-      totalPages,
-    };
-  },
+		const totalPages = Array.isArray(body)
+			? Math.max(Math.ceil(totalCount / pageSize), 1)
+			: (body.totalPages ??
+				body.total_pages ??
+				Math.max(Math.ceil(totalCount / pageSize), 1));
 
-  getById: async (
-    businessPartnerId: string,
-  ): Promise<BusinessPartnerDetail> => {
-    const response = await ServerAxios.get<
-      BusinessPartnerDetail | ApiEnvelope<BusinessPartnerDetail>
-    >(getPartnerUrl(businessPartnerId));
+		return {
+			rows,
+			totalCount,
+			pageIndex,
+			pageSize,
+			totalPages,
+		};
+	},
 
-    return unwrapData(response.data);
-  },
+	getById: async (
+		businessPartnerId: string,
+	): Promise<BusinessPartnerDetail> => {
+		const response = await ServerAxios.get<
+			BusinessPartnerDetail | ApiEnvelope<BusinessPartnerDetail>
+		>(getPartnerUrl(businessPartnerId));
 
-  remove: async (businessPartnerId: string): Promise<string> => {
-    await ServerAxios.delete(getPartnerUrl(businessPartnerId));
+		return unwrapData(response.data);
+	},
 
-    return businessPartnerId;
-  },
+	remove: async (businessPartnerId: string): Promise<string> => {
+		await ServerAxios.delete(getPartnerUrl(businessPartnerId));
 
-  createAddress: async (
-    businessPartnerId: string,
-    payload: BusinessPartnerAddressPayload,
-  ): Promise<BusinessPartnerAddress> => {
-    const response = await ServerAxios.post<
-      BusinessPartnerAddress | ApiEnvelope<BusinessPartnerAddress>
-    >(getAddressesUrl(businessPartnerId), payload);
+		return businessPartnerId;
+	},
 
-    return unwrapData(response.data);
-  },
+	createAddress: async (
+		businessPartnerId: string,
+		payload: BusinessPartnerAddressPayload,
+	): Promise<BusinessPartnerAddress> => {
+		const response = await ServerAxios.post<
+			BusinessPartnerAddress | ApiEnvelope<BusinessPartnerAddress>
+		>(getAddressesUrl(businessPartnerId), payload);
 
-  updateAddress: async (
-    businessPartnerId: string,
-    addressId: string,
-    payload: BusinessPartnerAddressPayload,
-  ): Promise<BusinessPartnerAddress> => {
-    const response = await ServerAxios.patch<
-      BusinessPartnerAddress | ApiEnvelope<BusinessPartnerAddress>
-    >(
-      `${getAddressesUrl(businessPartnerId)}/${encodeURIComponent(addressId)}`,
-      payload,
-    );
+		return unwrapData(response.data);
+	},
 
-    return unwrapData(response.data);
-  },
+	updateAddress: async (
+		businessPartnerId: string,
+		addressId: string,
+		payload: BusinessPartnerAddressPayload,
+	): Promise<BusinessPartnerAddress> => {
+		const response = await ServerAxios.patch<
+			BusinessPartnerAddress | ApiEnvelope<BusinessPartnerAddress>
+		>(
+			`${getAddressesUrl(businessPartnerId)}/${encodeURIComponent(addressId)}`,
+			payload,
+		);
 
-  setDefaultAddress: async (
-    businessPartnerId: string,
-    addressId: string,
-  ): Promise<BusinessPartnerAddress> => {
-    const response = await ServerAxios.patch<
-      BusinessPartnerAddress | ApiEnvelope<BusinessPartnerAddress>
-    >(
-      `${getAddressesUrl(businessPartnerId)}/${encodeURIComponent(addressId)}`,
-      {
-        isDefault: true,
-      },
-    );
+		return unwrapData(response.data);
+	},
 
-    return unwrapData(response.data);
-  },
+	setDefaultAddress: async (
+		businessPartnerId: string,
+		addressId: string,
+	): Promise<BusinessPartnerAddress> => {
+		const response = await ServerAxios.patch<
+			BusinessPartnerAddress | ApiEnvelope<BusinessPartnerAddress>
+		>(
+			`${getAddressesUrl(businessPartnerId)}/${encodeURIComponent(addressId)}`,
+			{
+				isDefault: true,
+			},
+		);
 
-  deleteAddress: async (
-    businessPartnerId: string,
-    addressId: string,
-  ): Promise<string> => {
-    await ServerAxios.delete(
-      `${getAddressesUrl(businessPartnerId)}/${encodeURIComponent(addressId)}`,
-    );
+		return unwrapData(response.data);
+	},
 
-    return addressId;
-  },
+	deleteAddress: async (
+		businessPartnerId: string,
+		addressId: string,
+	): Promise<string> => {
+		await ServerAxios.delete(
+			`${getAddressesUrl(businessPartnerId)}/${encodeURIComponent(addressId)}`,
+		);
 
-  addPeople: async (
-    businessPartnerId: string,
-    payload: UpdateBusinessPartnerPeoplePayload,
-  ): Promise<BusinessPartnerContact[]> => {
-    const response = await ServerAxios.post<
-      BusinessPartnerContact[] | ApiEnvelope<BusinessPartnerContact[]>
-    >(getContactsUrl(businessPartnerId), payload);
+		return addressId;
+	},
 
-    return unwrapData(response.data);
-  },
+	addPeople: async (
+		businessPartnerId: string,
+		payload: UpdateBusinessPartnerPeoplePayload,
+	): Promise<BusinessPartnerContact[]> => {
+		const response = await ServerAxios.post<
+			BusinessPartnerContact[] | ApiEnvelope<BusinessPartnerContact[]>
+		>(getContactsUrl(businessPartnerId), payload);
 
-  updatePeople: async (
-    businessPartnerId: string,
-    payload: UpdateBusinessPartnerPeoplePayload,
-  ): Promise<BusinessPartnerContact[]> => {
-    const response = await ServerAxios.patch<
-      BusinessPartnerContact[] | ApiEnvelope<BusinessPartnerContact[]>
-    >(getContactsUrl(businessPartnerId), payload);
+		return unwrapData(response.data);
+	},
 
-    return unwrapData(response.data);
-  },
+	updatePeople: async (
+		businessPartnerId: string,
+		payload: UpdateBusinessPartnerPeoplePayload,
+	): Promise<BusinessPartnerContact[]> => {
+		const response = await ServerAxios.patch<
+			BusinessPartnerContact[] | ApiEnvelope<BusinessPartnerContact[]>
+		>(getContactsUrl(businessPartnerId), payload);
 
-  removeContact: async (
-    businessPartnerId: string,
-    contactId: string,
-  ): Promise<string> => {
-    await ServerAxios.delete(
-      `${getContactsUrl(businessPartnerId)}/${encodeURIComponent(contactId)}`,
-    );
+		return unwrapData(response.data);
+	},
 
-    return contactId;
-  },
+	removeContact: async (
+		businessPartnerId: string,
+		contactId: string,
+	): Promise<string> => {
+		await ServerAxios.delete(
+			`${getContactsUrl(businessPartnerId)}/${encodeURIComponent(contactId)}`,
+		);
 
-  create: async (
-    payload: CreateBusinessPartnerPayload,
-  ): Promise<BusinessPartnerDetail> => {
-    const response = await ServerAxios.post<
-      BusinessPartnerDetail | ApiEnvelope<BusinessPartnerDetail>
-    >(API_URL, payload);
+		return contactId;
+	},
 
-    return unwrapData(response.data);
-  },
+	create: async (
+		payload: CreateBusinessPartnerPayload,
+	): Promise<BusinessPartnerDetail> => {
+		const response = await ServerAxios.post<
+			BusinessPartnerDetail | ApiEnvelope<BusinessPartnerDetail>
+		>(API_URL, payload);
 
-  update: async (
-    businessPartnerId: string,
-    payload: UpdateBusinessPartnerPayload,
-  ): Promise<BusinessPartnerDetail> => {
-    const response = await ServerAxios.patch<
-      BusinessPartnerDetail | ApiEnvelope<BusinessPartnerDetail>
-    >(getPartnerUrl(businessPartnerId), payload);
+		return unwrapData(response.data);
+	},
 
-    return unwrapData(response.data);
-  },
+	update: async (
+		businessPartnerId: string,
+		payload: UpdateBusinessPartnerPayload,
+	): Promise<BusinessPartnerDetail> => {
+		const response = await ServerAxios.patch<
+			BusinessPartnerDetail | ApiEnvelope<BusinessPartnerDetail>
+		>(getPartnerUrl(businessPartnerId), payload);
+
+		return unwrapData(response.data);
+	},
 };
 
 /**

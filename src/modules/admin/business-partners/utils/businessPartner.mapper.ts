@@ -20,10 +20,8 @@ import type {
 	UpdateBusinessPartnerPayload,
 	BPPeopleSelection,
 	BPPersonViewModel,
+	NormalizedBusinessPartnerListingParams,
 } from "./bp.types";
-
-const DEFAULT_PAGE = 1;
-const DEFAULT_PAGE_SIZE = 20;
 
 const text = (value: unknown): string =>
 	typeof value === "string" ? value.trim() : "";
@@ -188,13 +186,13 @@ export const unwrapData = <T>(value: T | ApiEnvelope<T>): T => {
 };
 
 export const normalizeListingParams = (
-	params: BusinessPartnerListingParams,
-): Required<BusinessPartnerListingParams> => ({
+	params: BusinessPartnerListingParams = {},
+): NormalizedBusinessPartnerListingParams => ({
 	search: params.search?.trim() ?? "",
 	status: params.status ?? [],
 	zone: params.zone ?? [],
-	page: Math.max(params.page ?? DEFAULT_PAGE, 1),
-	limit: Math.max(params.limit ?? DEFAULT_PAGE_SIZE, 1),
+	pageIndex: Math.max(params.pageIndex ?? 1, 1),
+	pageSize: Math.max(params.pageSize ?? 20, 1),
 });
 
 // People mapping
