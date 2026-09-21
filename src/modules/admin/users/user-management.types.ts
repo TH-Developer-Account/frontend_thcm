@@ -9,6 +9,11 @@ export type UserStatus = "Active" | "Inactive" | "Blocked";
 
 export type UserStatusTab = "All" | UserStatus;
 
+export type UserTypeOption = {
+	label: string;
+	value: Exclude<UserType, "Select">;
+};
+
 // Frontend-facing shape, produced by mapUser(). Casing here is just
 // frontend convention — doesn't need to match Prisma, mapUser() does that translation.
 export type User = {

@@ -1,5 +1,5 @@
 import { ServerAxios } from "../services/ServerAxios";
-import { USERS_URL, type User } from "./common.types";
+import { USERS_URL, type User, type UserApiResponse } from "./common.types";
 
 export const budgetApi = {
 	getBudgetInfo: async (budgetMasterId?: string | null) => {
@@ -183,40 +183,35 @@ const unwrapData = <T>(value: unknown): T => {
 
 	return current as T;
 };
-
-export const mapUser = (emp: User): User => ({
+export const mapUser = (emp: UserApiResponse): User => ({
 	id: emp.id,
-	firstName: emp.firstName,
-	lastName: emp.lastName,
-	email: emp.email,
-	//   jobRole: emp.TJOB_UUID,
-	phone: emp.phone,
+	firstName: emp.first_name ?? "",
+	lastName: emp.last_name ?? "",
+	email: emp.email ?? "",
+	phone: emp.phone_number ?? "",
 });
+
 type GetUsersParams = {
 	search?: string;
 	signal?: AbortSignal;
 };
 
-export function usersApi() {
-	return {
-		getUsers: async ({ search, signal }: GetUsersParams = {}): Promise<
-			User[]
-		> => {
-			const {
-				data: { rows },
-			} = await ServerAxios.get(USERS_URL, {
-				signal,
-				params: {
-					profile: "all",
-					...(search?.trim() && {
-						search: search.trim(),
-					}),
-				},
-			});
+export const usersApi = {
+	getUsers: async ({ search, signal }: GetUsersParams = {}): Promise<
+		User[]
+	> => {
+		const {
+			data: { rows },
+		} = await ServerAxios.get(USERS_URL, {
+			signal,
+			params: {
+				profile: "all",
+				...(search?.trim() && { search: search.trim() }),
+			},
+		});
 
-			const rawUsers = unwrapData<User[]>(rows);
+		const rawUsers = unwrapData<User[]>(rows);
 
-			return (Array.isArray(rawUsers) ? rawUsers : []).map(mapUser);
-		},
-	};
-}
+		return (Array.isArray(rawUsers) ? rawUsers : []).map(mapUser);
+	},
+};

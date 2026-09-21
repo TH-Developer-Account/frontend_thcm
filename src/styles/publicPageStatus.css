@@ -1,0 +1,264 @@
+@reference "tailwindcss";
+
+/* =====================================================
+   PUBLIC PAGE STATUS CARD
+
+   Loading / link-invalid / submitted states shown on the
+   public, unauthenticated flows — Vendor Onboarding
+   (VendorOnboardingPublicPage) and Medical Claim
+   (ReimbursmentClaimPublicPage).
+
+   `.public-page-status` is the className those two pages
+   already pass to <PublicPagesLayout>; previously unstyled,
+   which is why the card wasn't centered/compact. This file
+   only adds rules — it does not change public-page-container/
+   public-page-content in layout.css.
+===================================================== */
+
+@layer components {
+	.public-page-status {
+		width: 100%;
+		max-width: 30rem;
+		margin-inline: auto;
+		text-align: center;
+	}
+
+	.public-page-status-card {
+		width: 100%;
+	}
+
+	.public-page-status-content {
+		display: flex;
+		width: 100%;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-5);
+
+		text-align: center;
+	}
+
+	/* ---------- Icon badge ---------- */
+
+	.public-page-status-icon {
+		display: inline-flex;
+		width: 3.5rem;
+		height: 3.5rem;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+
+		border-radius: var(--radius-full);
+	}
+
+	.public-page-status-icon svg {
+		width: 1.75rem;
+		height: 1.75rem;
+		stroke-width: 2;
+	}
+
+	.public-page-status-icon--success {
+		background-color: var(--color-success-bg);
+		color: var(--color-success);
+	}
+
+	.public-page-status-icon--warning,
+	.public-page-status-icon--error {
+		background-color: var(--color-warning-bg);
+		color: var(--color-warning);
+	}
+
+	.public-page-status-icon--loading {
+		background-color: var(--color-brand-subtle);
+		color: var(--color-brand);
+	}
+
+	.public-page-status-spin {
+		animation: public-page-status-spin 0.9s linear infinite;
+	}
+
+	@keyframes public-page-status-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	/* ---------- Title / description ---------- */
+
+	.public-page-status-copy {
+		display: flex;
+		width: 100%;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.public-page-status-title {
+		margin: 0;
+
+		color: var(--color-text-primary);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-lg);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+	}
+
+	.public-page-status-description {
+		max-width: 26rem;
+		margin: 0;
+
+		color: var(--color-text-secondary);
+
+		font-size: var(--font-size-sm);
+		line-height: var(--line-height-normal);
+	}
+
+	/* ---------- Notice callout (e.g. "Check your email") ---------- */
+
+	.public-page-status-notice {
+		display: flex;
+		width: 100%;
+		align-items: flex-start;
+		gap: var(--space-3);
+
+		padding: var(--space-3) var(--space-4);
+
+		border: var(--border-width-default) solid var(--color-border-subtle);
+		border-radius: var(--radius-md);
+
+		background-color: var(--color-bg-surface-subtle);
+
+		text-align: left;
+	}
+
+	.public-page-status-notice-icon {
+		width: 1.25rem;
+		height: 1.25rem;
+		flex-shrink: 0;
+		margin-top: var(--space-0-5);
+
+		color: var(--color-brand);
+	}
+
+	.public-page-status-notice-title {
+		margin: 0 0 var(--space-0-5);
+
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.public-page-status-notice-description {
+		margin: 0;
+
+		color: var(--color-text-secondary);
+
+		font-size: var(--font-size-xs);
+		line-height: var(--line-height-normal);
+	}
+
+	/* ---------- Help block (e.g. contact-support copy on expired link) ---------- */
+
+	.public-page-status-help {
+		width: 100%;
+		padding: var(--space-3) var(--space-4);
+
+		border-radius: var(--radius-md);
+
+		background-color: var(--color-bg-surface-subtle);
+		color: var(--color-text-secondary);
+
+		font-size: var(--font-size-xs);
+		line-height: var(--line-height-normal);
+	}
+
+	/* ---------- Security note ---------- */
+
+	.public-page-status-security {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-1-5);
+
+		color: var(--color-text-muted);
+
+		font-size: var(--font-size-2xs);
+	}
+
+	.public-page-status-security svg {
+		width: 0.875rem;
+		height: 0.875rem;
+	}
+
+	/* ---------- Primary action link ---------- */
+
+	.public-page-status-link {
+		display: inline-flex;
+		min-height: var(--control-height-md);
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-1-5);
+
+		padding-inline: var(--space-4);
+
+		border-radius: var(--radius-sm);
+
+		color: var(--color-brand);
+
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		text-decoration: none;
+
+		transition:
+			background-color var(--duration-fast) var(--ease-standard),
+			color var(--duration-fast) var(--ease-standard);
+	}
+
+	.public-page-status-link:hover {
+		background-color: var(--color-brand-subtle);
+		color: var(--color-brand-active);
+	}
+
+	.public-page-status-link:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.public-page-status-link svg {
+		width: 1rem;
+		height: 1rem;
+	}
+
+	/* ---------- Mobile ---------- */
+
+	@media (max-width: 639px) {
+		.public-page-status {
+			max-width: 100%;
+		}
+
+		.public-page-status-content {
+			gap: var(--space-4);
+		}
+
+		.public-page-status-icon {
+			width: 3rem;
+			height: 3rem;
+		}
+
+		.public-page-status-icon svg {
+			width: 1.5rem;
+			height: 1.5rem;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.public-page-status-spin {
+			animation-duration: 1.5s;
+		}
+
+		.public-page-status-link {
+			transition-duration: 0.01ms;
+		}
+	}
+}

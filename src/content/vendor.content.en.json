@@ -1,0 +1,610 @@
+{
+	"documents": {
+		"GST_CERTIFICATE": {
+			"label": "GST Certificate",
+			"description": "Upload the GST registration certificate."
+		},
+		"PAN_DOCUMENT": {
+			"label": "PAN Document",
+			"description": "Upload the vendor PAN document."
+		},
+		"CANCELLED_CHEQUE": {
+			"label": "Cancelled Cheque",
+			"description": "Upload a cancelled cheque or bank proof."
+		},
+		"INCORPORATION_CERTIFICATE": {
+			"label": "Incorporation Certificate",
+			"description": "Upload the certificate of incorporation."
+		},
+		"MSME_CERTIFICATE": {
+			"label": "MSME Certificate",
+			"description": "Required when the vendor is registered under MSME.",
+			"uploadDescription": "Upload the MSME registration certificate."
+		},
+		"NDA_CERTIFICATE": {
+			"label": "NDA Certificate",
+			"description": "Required when NDA has been obtained.",
+			"uploadDescription": "Upload the signed NDA certificate."
+		},
+		"ADDITIONAL_DOC_1": {
+			"label": "Other Attachment 1",
+			"description": "Upload an additional supporting document."
+		},
+		"ADDITIONAL_DOC_2": {
+			"label": "Other Attachment 2",
+			"description": "Upload an additional supporting document."
+		},
+		"ADDITIONAL_DOC_3": {
+			"label": "Other Attachment 3",
+			"description": "Upload an additional supporting document."
+		},
+		"ADDITIONAL_DOC_4": {
+			"label": "Other Attachment 4",
+			"description": "Upload an additional supporting document."
+		},
+		"tooltipMandatory": "Mandatory",
+		"addMore": "Add More"
+	},
+
+	"formOne": {
+		"title": "Domestic Vendor Onboarding Form",
+		"fields": {
+			"vendorName": {
+				"label": "Name Of Vendor",
+				"helperText": "Enter vendor name in capital letters."
+			},
+			"mobile": {
+				"label": "Mobile",
+				"helperText": "Vendor mobile number."
+			},
+			"email": {
+				"label": "E-mail",
+				"helperText": "Vendor email address."
+			},
+			"state": {
+				"label": "State",
+				"placeholder": "Select state",
+				"helperText": "Select the applicable vendor state."
+			},
+			"city": {
+				"label": "City/ Town",
+				"placeholder": "Select city",
+				"helperText": "Vendor city."
+			},
+			"pinCode": {
+				"label": "Pin Code",
+				"helperText": "Vendor location pin code."
+			},
+			"address": {
+				"label": "Complete Address",
+				"helperText": "Registered or communication address."
+			},
+			"bankName": {
+				"label": "Bank",
+				"helperText": "Bank name."
+			},
+			"bankBranch": {
+				"label": "Branch",
+				"helperText": "Bank branch."
+			},
+			"ifscCode": {
+				"label": "IFSC Code",
+				"helperText": "Bank IFSC code."
+			},
+			"accountNumber": {
+				"label": "A/C No.",
+				"helperText": "Vendor bank account number."
+			},
+			"confirmAccountNumber": {
+				"label": "Confirm Account Number",
+				"helperText": "Re-enter the bank account number."
+			},
+			"bankAddress": {
+				"label": "Address",
+				"helperText": "Bank branch address."
+			},
+			"gstin": {
+				"label": "GSTIN",
+				"helperText": "GST identification number."
+			},
+			"pan": {
+				"label": "PAN",
+				"helperText": "Permanent account number."
+			},
+			"entityRegNo": {
+				"label": "Entity Reg. No.",
+				"helperText": "Entity registration number, if applicable."
+			},
+			"msmeVendor": {
+				"label": "MSME Vendor",
+				"placeholder": "Select option",
+				"helperText": "Select whether this vendor is registered under MSME."
+			},
+			"ndaObtained": {
+				"label": "Non-Disclosure Undertaking Obtained?",
+				"placeholder": "Select option",
+				"helperText": "Confirm whether NDA is obtained."
+			}
+		},
+		"errors": {
+			"vendorName": "Vendor Name is required.",
+			"state": "State is required.",
+			"city": "City is required.",
+			"pinCode": "Pin Code is required.",
+			"address": "Complete Address is required.",
+			"mobile": "Mobile is required.",
+			"email": "E-mail is required.",
+			"bankName": "Bank is required.",
+			"bankBranch": "Branch is required.",
+			"ifscCode": "IFSC Code is required.",
+			"accountNumber": "A/C No. is required.",
+			"confirmAccountNumber": "Confirm A/C No. is required.",
+			"gstin": "GSTIN is required.",
+			"pan": "PAN is required.",
+			"entityRegNo": "Entity Registration No. is required.",
+			"msmeVendor": "MSME Vendor is required.",
+			"ndaObtained": "NDA Obtained is required.",
+			"bankAddress": "Bank address is required.",
+			"accountNumberFormat": "Account number must be 9-34 alphanumeric characters.",
+			"gstinFormat": "Enter a valid GSTIN, e.g. 22AAAAA0000A1Z5.",
+			"panFormat": "Enter a valid PAN, e.g. AAAAA9999A.",
+			"pinCodeFormat": "Enter a valid 6-digit Pin Code.",
+			"mobileFormat": "Enter a valid 10-digit mobile number.",
+			"emailFormat": "Enter a valid e-mail address.",
+			"ifscFormat": "Enter a valid IFSC code, e.g. HDFC0001234.",
+			"panGstinMismatch": "PAN does not match the PAN embedded in the GSTIN.",
+			"accountNumberMismatch": "Account numbers do not match."
+		},
+		"documentsMissingError": "Please upload: {documents}",
+		"dpdp": {
+			"title": "Data Privacy Notice",
+			"intro": "Please review how the information provided in this vendor onboarding form will be collected, used, stored and shared.",
+			"sections": [
+				{
+					"heading": "1. Information collected",
+					"body": "We collect the vendor and authorised representative information entered in this form, including business contact details, address, bank information, tax information, registration information and supporting documents."
+				},
+				{
+					"heading": "2. Purpose of processing",
+					"body": "The information will be used for vendor onboarding, identity and document verification, due diligence, payment processing, tax and regulatory compliance, procurement operations, communication, audit and record management."
+				},
+				{
+					"heading": "3. Information sharing",
+					"body": "The information may be accessed by authorised Tata Hitachi personnel and approved service providers where required for vendor onboarding, verification, finance, audit, compliance, legal obligations and technology support."
+				},
+				{
+					"heading": "4. Storage and retention",
+					"body": "The information will be protected using appropriate organisational and technical safeguards and retained only for the period required for the stated purposes, contractual requirements and applicable legal or regulatory obligations."
+				},
+				{
+					"heading": "5. Your responsibilities",
+					"body": "You confirm that the information provided is accurate and that you are authorised to provide personal data and documents relating to the vendor and its representatives."
+				},
+				{
+					"heading": "6. Withdrawal and privacy requests",
+					"body": "You may raise a privacy query, correction request, grievance or consent-withdrawal request through the privacy or grievance contact published by Tata Hitachi."
+				}
+			],
+			"confirmationLabel": "I confirm that I have read and understood this Data Privacy Notice and consent to the processing of the provided information for the purposes stated above.",
+			"consentPrefix": "I have read and agree to the",
+			"consentLinkText": "Digital Personal Data Protection Act",
+			"acceptAndContinue": "Accept and Continue",
+			"requiredError": "You must accept the Data Privacy Notice.",
+			"submitTooltip": "Please accept the consent form to submit."
+		}
+	},
+
+	"formTwo": {
+		"fields": {
+			"vendorCode": {
+				"label": "Vendor Code",
+				"helperText": "Enter or update the vendor code."
+			},
+			"vendorType": {
+				"label": "Vendor Type",
+				"placeholder": "Select vendor type",
+				"helperText": "Choose whether the vendor is PO based, non-PO based, or not applicable."
+			},
+			"companyCode": {
+				"label": "Company Code",
+				"placeholder": "Select company code",
+				"helperText": "Select the applicable THCM company code."
+			},
+			"purchaseOrg": {
+				"label": "Purchase Org",
+				"placeholder": "Select purchase organization",
+				"helperText": "Select the purchase organization applicable to this vendor."
+			},
+			"paymentTerm": {
+				"label": "Payment Term",
+				"placeholder": "Select Payment Term",
+				"helperText": "Select proprietary, non-proprietary, or not applicable."
+			},
+			"tds": {
+				"label": "TDS",
+				"placeholder": "Select TDS",
+				"helperText": "Select the applicable TDS section."
+			},
+			"vendorCategory": {
+				"label": "Vendor Category",
+				"placeholder": "Select vendor category",
+				"helperText": "Select the category applicable to this vendor."
+			},
+			"materialType": {
+				"label": "Material Type",
+				"placeholder": "Select material type",
+				"helperText": "Select direct, indirect, or not applicable."
+			},
+			"materialSubType": {
+				"label": "Material Sub Type",
+				"placeholder": "Select material sub type",
+				"helperText": "Select proprietary, non-proprietary, or not applicable."
+			},
+			"vendorSelfAssessmentObtained": {
+				"label": "Vendor Self Assessment Form Obtained?",
+				"placeholder": "Select option",
+				"helperText": "Confirm whether vendor self assessment form is obtained."
+			},
+			"gpaObtained": {
+				"label": "General Purpose Agreement Obtained?",
+				"placeholder": "Select option",
+				"helperText": "Confirm whether GPA is obtained."
+			},
+			"relatedPartyToThcm": {
+				"label": "Is it Related Party to THCM?",
+				"placeholder": "Select option",
+				"helperText": "Confirm whether vendor is a related party to THCM."
+			},
+			"vendorAuditReportPrepared": {
+				"label": "Vendor Audit Report Prepared?",
+				"placeholder": "Select option",
+				"helperText": "Confirm whether vendor audit report is prepared."
+			},
+			"natureOfService": {
+				"label": "Nature of Service",
+				"helperText": "Describe the nature of services provided by the vendor."
+			},
+			"reasonForOnboarding": {
+				"label": "Reason for Onboarding of Vendor",
+				"helperText": "Explain why this vendor is being onboarded."
+			}
+		},
+		"errors": {
+			"vendorType": "Vendor Type is required.",
+			"companyCode": "Company Code is required.",
+			"purchaseOrg": "Purchase Org is required.",
+			"paymentTerm": "Payment Term is required.",
+			"tds": "TDS is required.",
+			"vendorCategory": "Vendor Category is required.",
+			"materialType": "Material Type is required.",
+			"materialSubType": "Material Sub Type is required.",
+			"vendorSelfAssessmentObtained": "Vendor Self Assessment Form Obtained is required.",
+			"gpaObtained": "General Purpose Agreement Obtained is required.",
+			"relatedPartyToThcm": "Related Party to THCM is required.",
+			"vendorAuditReportPrepared": "Vendor Audit Report Prepared is required.",
+			"natureOfService": "Nature of Service is required.",
+			"reasonForOnboarding": "Reason for Onboarding is required.",
+			"vendorCode": "Vendor Code is required."
+		}
+	},
+
+	"initiation": {
+		"titles": {
+			"view": "Vendor Initiation Details",
+			"edit": "Edit Vendor Initiation",
+			"create": "Vendor Info"
+		},
+		"fields": {
+			"vendorReferenceName": {
+				"label": "Vendor initiated for",
+				"helperText": "Enter the vendor name"
+			},
+			"email": {
+				"label": "Vendor Email",
+				"helperText": "Enter the vendor email"
+			},
+			"mobile": {
+				"label": "Vendor Phone Number",
+				"helperText": "Enter the vendor phone number"
+			}
+		},
+		"errors": {
+			"vendorReferenceName": "Vendor name is required.",
+			"email": "Enter a valid email address.",
+			"mobile": "Enter a valid 10-digit mobile number."
+		}
+	},
+
+	"vendorCodeModal": {
+		"title": "Vendor Code required",
+		"description": "As the final approver, the Vendor Code must be set before this request can be approved and closed.",
+		"field": {
+			"label": "Vendor Code"
+		},
+		"errors": {
+			"required": "Vendor Code is required."
+		}
+	},
+
+	"summary": {
+		"titles": {
+			"view": "Vendor Onboarding Summary",
+			"edit": "Form Summary"
+		},
+		"sections": {
+			"vendorSubmittedDetails": "Vendor Submitted Details",
+			"thcmVendorDetails": "THCM Vendor Details",
+			"approvalWorkflow": "Approval Workflow",
+			"chatSection": "Chat Section",
+			"auditSection": "Audit Section"
+		},
+		"emptyWorkflow": {
+			"title": "No approval workflow assigned",
+			"description": "Select an approval workflow before submitting the request."
+		},
+		"actions": {
+			"downloadPdf": "PDF",
+			"downloadingPdf": "Downloading…",
+			"exportExcel": "Excel",
+			"exportingExcel": "Exporting…",
+			"edit": "Edit"
+		}
+	},
+
+	"buttons": {
+		"back": "Back",
+		"backToListing": "Back to Listing",
+		"cancel": "Cancel",
+		"reset": "Reset",
+		"next": "Next",
+		"saveAsDraft": "Save as Draft",
+		"saving": "Saving...",
+		"saveAndProceed": "Save & Proceed",
+		"submit": "Submit",
+		"submitForm": "Submit Form",
+		"submitting": "Submitting...",
+		"update": "Update",
+		"updating": "Updating...",
+		"sending": "Sending...",
+		"retriggerEmail": "Re-Trigger Email",
+		"sendForClarification": "Send for Clarification",
+		"approve": "Approve",
+		"approving": "Approving...",
+		"acceptAndClose": "Accept and Close",
+		"sendBackToVendor": "Send Back to Vendor",
+		"finalSubmit": "Final Submit",
+		"saveAndApprove": "Save & Approve"
+	},
+
+	"listing": {
+		"onboarding": {
+			"searchPlaceholder": {
+				"createdByMe": "Search vendor requests created by me",
+				"pendingOnMe": "Search approvals pending on me",
+				"approvedByMe": "Search vendor requests approved by me",
+				"default": "Search vendor onboarding records"
+			},
+			"empty": {
+				"createdByMe": {
+					"title": "No vendor requests created by you",
+					"description": "Vendor onboarding requests you create will appear here."
+				},
+				"pendingOnMe": {
+					"title": "No approvals are pending on you",
+					"description": "Vendor onboarding requests requiring your approval will appear here."
+				},
+				"approvedByMe": {
+					"title": "No vendor requests approved by you",
+					"description": "Vendor onboarding requests you approve will appear here."
+				},
+				"default": {
+					"title": "No vendor onboarding records found",
+					"description": "Vendor onboarding records will appear here."
+				}
+			}
+		},
+		"initiation": {
+			"searchPlaceholder": {
+				"createdByMe": "Search initiation requests created by me",
+				"pendingOnMe": "Search initiation requests pending on me",
+				"approvedByMe": "Search initiation requests approved by me",
+				"default": "No vendor initiation requests found"
+			},
+			"empty": {
+				"createdByMe": {
+					"title": "No initiation requests created by you",
+					"description": "Vendor initiation requests you create will appear here."
+				},
+				"pendingOnMe": {
+					"title": "No initiation requests are pending on you",
+					"description": "Vendor initiation requests requiring your action will appear here."
+				},
+				"approvedByMe": {
+					"title": "No initiation requests approved by you",
+					"description": "Vendor initiation requests you approve will appear here."
+				},
+				"default": {
+					"title": "No vendor initiation requests found",
+					"description": "Vendor initiation form entries will appear here."
+				}
+			}
+		},
+		"comments": {
+			"emptyTitle": "No comments yet",
+			"emptyDescription": "Comments about this vendor request will appear here."
+		},
+		"audit": {
+			"emptyTitle": "No vendor activity yet",
+			"emptyDescription": "Vendor onboarding activity will appear here."
+		}
+	},
+
+	"dashboard": {
+		"metrics": {
+			"total": {
+				"title": "Total onboardings",
+				"description": "All vendor onboarding records"
+			},
+			"pending": {
+				"title": "Pending on me",
+				"description": "Requests waiting for your action"
+			},
+			"approved": {
+				"title": "Approved by me",
+				"description": "Requests you have approved"
+			},
+			"created": {
+				"title": "Created by me",
+				"description": "Requests initiated by you"
+			}
+		},
+		"unableToLoad": "Unable to load",
+		"loading": "Loading vendor dashboard...",
+		"refresh": "Refresh",
+		"refreshing": "Refreshing",
+		"retry": "Retry",
+		"recentOnboardings": "Recent vendor onboardings",
+		"statusOverview": "Status overview",
+		"unableToLoadRecent": "Unable to load recent onboardings"
+	},
+
+	"audit": {
+		"entityName": "vendor onboarding request",
+		"messages": {
+			"VENDOR_ONBOARDING_CREATED": "{actorName} created the vendor onboarding request.",
+			"VENDOR_CREATED": "{actorName} created the vendor onboarding request.",
+			"VENDOR_SUBMITTED": "{actorName} submitted the vendor details.",
+			"SUBMITTED_BY_VENDOR": "{actorName} submitted the vendor details.",
+			"THCM_SUBMITTED": "{actorName} submitted the vendor request for approval.",
+			"THCM_APPROVED": "{actorName} approved the vendor request{stageSuffix}.",
+			"EXTERNAL_ACCEPTED": "{actorName} accepted the vendor request{stageSuffix}.",
+			"VENDOR_RESUBMITTED": "{actorName} resubmitted the vendor details."
+		}
+	},
+
+	"toast": {
+		"saveDetails": {
+			"missingIdTitle": "Unable to continue",
+			"missingIdDescription": "Vendor onboarding ID is missing.",
+			"validationTitle": "Please fix the highlighted fields",
+			"validationDescription": "Some vendor details are missing or invalid.",
+			"errorTitle": "Unable to save vendor details",
+			"errorFallback": "Failed to save vendor details."
+		},
+		"saveThcmDetails": {
+			"validationTitle": "Please fix the highlighted fields",
+			"validationDescription": "All THCM details are mandatory.",
+			"successTitle": "Details saved",
+			"successDescription": "THCM details were saved successfully.",
+			"errorTitle": "Unable to save details",
+			"errorFallback": "Something went wrong while saving THCM details."
+		},
+		"draft": {
+			"successTitle": "Draft saved",
+			"successDescription": "Your vendor details were saved successfully.",
+			"errorTitle": "Unable to save draft",
+			"errorFallback": "Failed to save the draft. Please try again."
+		},
+		"publicSubmit": {
+			"validationTitle": "Please fix the highlighted fields",
+			"validationDescription": "Some vendor details are missing or invalid.",
+			"dpdpTitle": "Consent required",
+			"dpdpDescription": "Please accept the Data Privacy Notice before submitting.",
+			"missingDocsTitle": "Documents missing",
+			"missingDocsDescription": "Please upload: {documents}",
+			"errorTitle": "Unable to submit vendor form",
+			"errorFallback": "Failed to submit the vendor form. Please try again."
+		},
+		"submitForApproval": {
+			"workflowRequiredTitle": "Workflow required",
+			"workflowRequiredDescription": "Return to the Workflow step and select an approval workflow.",
+			"activeWorkflowMissingTitle": "Workflow required",
+			"activeWorkflowMissingDescription": "The active workflow is unavailable. Return to the Workflow step and select a workflow.",
+			"workspaceMissingTitle": "Workflow assignment failed",
+			"workspaceMissingDescription": "Workspace or application information is missing. Please refresh and try again.",
+			"templateNameRequiredTitle": "Template name required",
+			"templateNameRequiredDescription": "Enter a name for the edited workflow template.",
+			"missingIdTitle": "Submission failed",
+			"missingIdDescription": "Vendor onboarding ID is missing.",
+			"validationTitle": "Please fix the highlighted fields",
+			"validationDescription": "All form fields are mandatory.",
+			"resubmitSuccessTitle": "Resubmitted successfully",
+			"submitSuccessTitle": "Submitted successfully",
+			"resubmitWithNewWorkflowDescription": "The clarified vendor details were updated and the selected workflow was applied.",
+			"resubmitWithStageEditsDescription": "The clarified vendor details were updated and the current workflow's stages were changed.",
+			"resubmitUnchangedWorkflowDescription": "The clarified vendor details were updated and the active workflow was continued.",
+			"submitSuccessDescription": "The THCM details were updated and the approval workflow was assigned.",
+			"resubmitFailedTitle": "Resubmission failed",
+			"resubmitFailedFallback": "The clarified vendor details could not be updated.",
+			"submitFailedTitle": "Submission failed",
+			"submitFailedFallback": "Unable to submit the vendor onboarding request."
+		},
+		"workflowAttached": {
+			"successTitle": "Workflow attached",
+			"successDescription": "The approval workflow was attached to this vendor request."
+		},
+		"vendorCode": {
+			"permissionDeniedTitle": "Permission denied",
+			"permissionDeniedDescription": "You are not allowed to update the Vendor Code at this workflow stage.",
+			"successTitle": "Vendor code updated",
+			"successDescription": "The Vendor Code was updated successfully.",
+			"authErrorTitle": "Authentication error",
+			"authErrorDescription": "The server rejected your authentication token. Please check the request authorization header.",
+			"forbiddenTitle": "Permission denied",
+			"forbiddenDescription": "The server does not allow this approver to update the Vendor Code.",
+			"errorTitle": "Unable to update vendor code",
+			"errorFallback": "Failed to update the Vendor Code."
+		},
+		"acceptAndClose": {
+			"successTitle": "Vendor onboarding closed",
+			"successDescription": "The vendor onboarding request was closed successfully.",
+			"errorTitle": "Unable to close onboarding",
+			"errorFallback": "Failed to close the vendor onboarding request."
+		},
+		"pdf": {
+			"previewErrorTitle": "PDF preview failed",
+			"previewErrorFallback": "Unable to prepare the vendor details PDF.",
+			"downloadErrorTitle": "PDF download failed",
+			"downloadErrorFallback": "Unable to download the vendor details PDF."
+		},
+		"export": {
+			"errorTitle": "Export failed",
+			"errorFallback": "Failed to export vendor onboarding records.",
+			"excelErrorTitle": "Excel export failed",
+			"excelErrorFallback": "Failed to download the Excel export. Please try again.",
+			"delayedTitle": "Still exporting…",
+			"delayedDescription": "This is taking longer than usual. We'll let you know when it's ready.",
+			"readyTitle": "Export ready",
+			"readyDescription": "Your vendor onboarding export is ready to download.",
+			"downloadLabel": "Download",
+			"dismissLabel": "Dismiss",
+			"retryLabel": "Retry"
+		},
+		"approval": {
+			"successTitle": "Approved successfully",
+			"errorTitle": "Unable to approve",
+			"errorFallback": "Something went wrong while approving this request."
+		},
+		"clarify": {
+			"missingStageTitle": "Not allowed",
+			"missingStageDescription": "No active approval stage found.",
+			"successTitle": "Sent for clarification",
+			"errorTitle": "Unable to send for clarification",
+			"errorFallback": "Something went wrong while requesting clarification."
+		},
+		"initiation": {
+			"createSuccessTitle": "Submitted successfully",
+			"createSuccessDescription": "The vendor initiation was submitted successfully.",
+			"createErrorTitle": "Unable to submit initiation",
+			"createErrorFallback": "Failed to submit the vendor initiation. Please try again.",
+			"updateSuccessTitle": "Updated successfully",
+			"updateSuccessDescription": "The vendor initiation was updated successfully.",
+			"updateErrorTitle": "Unable to update initiation",
+			"updateErrorFallback": "Failed to update the vendor initiation. Please try again.",
+			"sendBackSuccessTitle": "Sent back to vendor",
+			"sendBackSuccessDescription": "The form was sent back to the vendor successfully.",
+			"sendBackErrorTitle": "Unable to send back",
+			"sendBackErrorFallback": "Failed to send the form back to the vendor."
+		}
+	}
+}

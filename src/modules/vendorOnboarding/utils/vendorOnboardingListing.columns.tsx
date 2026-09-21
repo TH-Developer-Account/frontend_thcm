@@ -1,24 +1,29 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Eye, Pencil } from "lucide-react";
-import { NavLink } from "react-router-dom";
 
 import { Badge } from "../../../components/common/Badge";
 import Button from "../../../components/common/Button";
+import { formatDateTime24 } from "../../../utils/format";
 
 import type {
 	VendorOnboardingColumnsParams,
 	VendorOnboardingListingRow,
 } from "../types/vendorListing.types";
-import { formatDateTime24 } from "../../../utils/format";
 
 const renderCellValue = (value: string | null | undefined): string =>
 	value?.trim() || "—";
 
+const normalizeStatus = (status: string | null | undefined): string =>
+	status
+		?.trim()
+		.toUpperCase()
+		.replace(/[\s-]+/g, "_") ?? "";
+
+const EDITABLE_STATUSES = new Set(["VENDOR_SUBMITTED", "IN_REVIEW"]);
+
 export const getVendorOnboardingColumns = ({
 	onView,
 	onEdit,
-	basePath = "/vendor/onboarding",
-	getViewPath,
 	canEdit,
 }: VendorOnboardingColumnsParams): ColumnDef<VendorOnboardingListingRow>[] => [
 	{
@@ -29,14 +34,10 @@ export const getVendorOnboardingColumns = ({
 			cellClassName: "vendor-reference-number",
 		},
 		cell: ({ row }) => {
-			const viewPath = getViewPath
-				? getViewPath(row.original)
-				: `${basePath}/${row.original.id}/view`;
-
 			return (
-				<NavLink to={viewPath} className="epc-number-link">
+				<span className="epc-number-link">
 					{row.original.referenceNumber || "--"}
-				</NavLink>
+				</span>
 			);
 		},
 	},
@@ -51,7 +52,7 @@ export const getVendorOnboardingColumns = ({
 
 				{row.original.vendorReferenceName ? (
 					<span className="vendor-listing-subtitle">
-						{row.original.vendorReferenceName ?? "Test"}
+						{row.original.vendorReferenceName}
 					</span>
 				) : null}
 			</div>
@@ -96,30 +97,63 @@ export const getVendorOnboardingColumns = ({
 		header: "Actions",
 		cell: ({ row }) => {
 			const record = row.original;
-			const showEdit = Boolean(onEdit) && (canEdit ? canEdit(record) : true);
+			const status = normalizeStatus(record.status);
+
+			/**
+			 * ACTION RULES
+			 *
+			 * AWAITING_VENDOR
+			 * - No View
+			 * - No Edit
+			 *
+			 * IN_PROGRESS
+			 * - View
+			 *
+			 * VENDOR_SUBMITTED
+			 * - View
+			 * - Edit
+			 *
+			 * IN_REVIEW
+			 * - View
+			 * - Edit
+			 *
+			 * Everything else
+			 * - View
+			 */
+			const showView = Boolean(onView) && status !== "AWAITING_VENDOR";
+
+			const showEdit =
+				Boolean(onEdit) &&
+				EDITABLE_STATUSES.has(status) &&
+				(canEdit ? canEdit(record) : true);
+
+			if (!showView && !showEdit) {
+				return "—";
+			}
 
 			return (
 				<div className="flex items-center gap-2">
-					{showEdit ? (
+					{showView ? (
 						<Button
 							type="button"
-							text="View"
+							// text="View"
 							Icon={Eye}
 							iconPosition="left"
 							size="sm"
-							appearance="standard"
+							appearance="icon"
 							variant="outline"
 							onClick={() => onView(record)}
 						/>
 					) : null}
+
 					{showEdit ? (
 						<Button
 							type="button"
-							text="Edit"
+							// text="Edit"
 							Icon={Pencil}
 							iconPosition="left"
 							size="sm"
-							appearance="standard"
+							appearance="icon"
 							variant="outline"
 							onClick={() => onEdit?.(record)}
 						/>

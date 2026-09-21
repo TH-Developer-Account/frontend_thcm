@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, RefreshCcw, Save } from "lucide-react";
+import { ArrowLeft, ArrowRight, RefreshCcw } from "lucide-react";
 
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/forms/FormInput";
@@ -38,6 +38,7 @@ export type VendorCreationFormTwoProps = {
 	onBack?: () => void;
 	onNext?: () => void;
 	onSaveDraft?: () => void;
+	onReset?: () => void;
 
 	errors?: VendorFormErrors<VendorCreationFormTwoValues>;
 
@@ -64,7 +65,8 @@ const VendorCreationFormTwo = ({
 	onChange: onChangeProp,
 	onBack: onBackProp,
 	onNext: onNextProp,
-	onSaveDraft: onSaveDraftProp,
+	// onSaveDraft: onSaveDraftProp,
+	onReset: onResetProp,
 	errors: errorsProp,
 	loading: loadingProp = false,
 	vendorCodeLoading: vendorCodeLoadingProp = false,
@@ -75,7 +77,8 @@ const VendorCreationFormTwo = ({
 	const onChange = onChangeProp ?? formContext?.handleFormTwoChange;
 	const onBack = onBackProp ?? formContext?.handleBack;
 	const onNext = onNextProp ?? formContext?.handleSaveFormTwo;
-	const onSaveDraft = onSaveDraftProp ?? formContext?.handleSaveFormTwoDraft;
+	// const onSaveDraft = onSaveDraftProp ?? formContext?.handleSaveFormTwoDraft;
+	const onReset = onResetProp ?? formContext?.handleResetFormTwo;
 	const loading = loadingProp || formContext?.mutationLoading || false;
 	const vendorCodeLoading =
 		vendorCodeLoadingProp || formContext?.vendorCodeLoading || false;
@@ -171,9 +174,7 @@ const VendorCreationFormTwo = ({
 							onChange?.("purchaseOrg", option?.value ?? "")
 						}
 					/>
-				</div>
 
-				<div className="vendor-onboarding-form-grid">
 					<SelectInput
 						mode={fieldMode}
 						name="paymentTerm"
@@ -181,6 +182,7 @@ const VendorCreationFormTwo = ({
 						placeholder="Select Payment Term"
 						options={paymentTermOptions}
 						value={getSelectedOption(paymentTermOptions, values.paymentTerm)}
+						required
 						success={
 							fieldMode === "edit" &&
 							!errors.paymentTerm &&
@@ -199,6 +201,7 @@ const VendorCreationFormTwo = ({
 						placeholder="Select TDS"
 						options={tdsOptions}
 						value={getSelectedOption(tdsOptions, values.tds)}
+						required
 						error={errors.tds}
 						success={fieldMode === "edit" && !errors.tds && Boolean(values.tds)}
 						helperText="Select the applicable TDS section."
@@ -215,6 +218,7 @@ const VendorCreationFormTwo = ({
 							vendorCategoryOptions,
 							values.vendorCategory,
 						)}
+						required
 						success={
 							fieldMode === "edit" &&
 							!errors.vendorCategory &&
@@ -234,6 +238,7 @@ const VendorCreationFormTwo = ({
 						placeholder="Select material type"
 						options={materialTypeOptions}
 						value={getSelectedOption(materialTypeOptions, values.materialType)}
+						required
 						error={errors.materialType}
 						success={
 							fieldMode === "edit" &&
@@ -256,6 +261,7 @@ const VendorCreationFormTwo = ({
 							materialSubTypeOptions,
 							values.materialSubType,
 						)}
+						required
 						success={
 							fieldMode === "edit" &&
 							!errors.materialSubType &&
@@ -267,9 +273,7 @@ const VendorCreationFormTwo = ({
 							onChange?.("materialSubType", option?.value ?? "")
 						}
 					/>
-				</div>
 
-				<div className="vendor-onboarding-form-grid">
 					<SelectInput
 						mode={fieldMode}
 						name="vendorSelfAssessmentObtained"
@@ -280,6 +284,7 @@ const VendorCreationFormTwo = ({
 							yesNoOptions,
 							values.vendorSelfAssessmentObtained,
 						)}
+						required
 						success={
 							fieldMode === "edit" &&
 							!errors.vendorSelfAssessmentObtained &&
@@ -299,6 +304,7 @@ const VendorCreationFormTwo = ({
 						placeholder="Select option"
 						options={yesNoOptions}
 						value={getSelectedOption(yesNoOptions, values.gpaObtained)}
+						required
 						error={errors.gpaObtained}
 						success={
 							fieldMode === "edit" &&
@@ -318,6 +324,7 @@ const VendorCreationFormTwo = ({
 						placeholder="Select option"
 						options={yesNoOptions}
 						value={getSelectedOption(yesNoOptions, values.relatedPartyToThcm)}
+						required
 						error={errors.relatedPartyToThcm}
 						success={
 							fieldMode === "edit" &&
@@ -340,6 +347,7 @@ const VendorCreationFormTwo = ({
 							yesNoOptions,
 							values.vendorAuditReportPrepared,
 						)}
+						required
 						success={
 							fieldMode === "edit" &&
 							!errors.vendorAuditReportPrepared &&
@@ -412,10 +420,11 @@ const VendorCreationFormTwo = ({
 								size="sm"
 								appearance="standard"
 								variant="outline"
-								disabled={loading}
+								onClick={onReset}
+								disabled={loading || !onReset}
 							/>
 
-							<Button
+							{/* <Button
 								type="button"
 								text={loading ? "Saving..." : "Save as Draft"}
 								Icon={Save}
@@ -424,7 +433,7 @@ const VendorCreationFormTwo = ({
 								variant="outline"
 								onClick={onSaveDraft}
 								disabled={loading || !onSaveDraft}
-							/>
+							/> */}
 
 							<Button
 								type="button"

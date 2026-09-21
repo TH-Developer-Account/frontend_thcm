@@ -1,8 +1,15 @@
-import React from "react";
+import { useEffect } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import Button from "../../../components/common/Button";
 import { Modal } from "../../../components/common/Modal";
 import FormInput from "../../../components/forms/FormInput";
+import { vendorContent } from "../../../content/vendor.content";
+import {
+	vendorCodeModalSchema,
+	type VendorCodeModalValues,
+} from "../schemas/vendorCode.schema";
 
 type VendorCodeRequiredModalProps = {
 	open: boolean;
@@ -11,81 +18,77 @@ type VendorCodeRequiredModalProps = {
 	onConfirm: (code: string) => void | Promise<void>;
 };
 
+const content = vendorContent.vendorCodeModal;
+
 export const VendorCodeRequiredModal = ({
 	open,
 	loading = false,
 	onClose,
 	onConfirm,
 }: VendorCodeRequiredModalProps) => {
-	const [code, setCode] = React.useState("");
-	const [error, setError] = React.useState("");
+	const {
+		register,
+		handleSubmit,
+		reset,
+		control,
+		formState: { errors },
+	} = useForm<VendorCodeModalValues>({
+		resolver: zodResolver(vendorCodeModalSchema),
+		// Validate on every keystroke, per explicit request — errors should
+		// appear as the user types, not only once they blur the field.
+		mode: "onChange",
+		reValidateMode: "onChange",
+		defaultValues: { code: "" },
+	});
 
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!open) {
-			setCode("");
-			setError("");
+			reset({ code: "" });
 		}
-	}, [open]);
+	}, [open, reset]);
 
-	const trimmedCode = code.trim();
+	const codeValue = useWatch({ control, name: "code" });
 
-	const handleClose = React.useCallback(() => {
+	const handleClose = () => {
 		if (loading) return;
 
-		setCode("");
-		setError("");
+		reset({ code: "" });
 		onClose();
-	}, [loading, onClose]);
+	};
 
-	const handleConfirm = React.useCallback(async () => {
+	const onValid = async ({ code }: VendorCodeModalValues) => {
 		if (loading) return;
 
-		if (!trimmedCode) {
-			setError("Vendor Code is required.");
-			return;
-		}
+		await onConfirm(code.trim());
+	};
 
-		await onConfirm(trimmedCode);
-	}, [loading, onConfirm, trimmedCode]);
+	const onSubmit = handleSubmit(onValid);
 
 	return (
-		<Modal
-			open={open}
-			title="Vendor Code required"
-			size="md"
-			onClose={handleClose}
-		>
-			<div className="modal-form">
-				<p className="modal-description">
-					As the final approver, the Vendor Code must be set before this request
-					can be approved and closed.
-				</p>
+		<Modal open={open} title={content.title} size="md" onClose={handleClose}>
+			<form
+				className="modal-form"
+				noValidate
+				onSubmit={(event) => {
+					void onSubmit(event);
+				}}
+			>
+				<p className="modal-description">{content.description}</p>
 
 				<FormInput
 					mode="edit"
-					name="vendorCodeModalInput"
-					label="Vendor Code"
-					value={code}
-					error={error}
+					label={content.field.label}
+					error={errors.code?.message}
 					autoFocus
 					disabled={loading}
-					onChange={(event) => {
-						setCode(event.target.value);
-						if (error) setError("");
-					}}
-					onKeyDown={(event) => {
-						if (event.key === "Enter") {
-							event.preventDefault();
-							void handleConfirm();
-						}
-					}}
+					{...register("code")}
 				/>
 
 				<footer className="modal-footer">
 					<div className="modal-footer-actions">
 						<Button
 							type="button"
-							text="Cancel"
+							text={vendorContent.buttons.cancel}
 							appearance="standard"
 							variant="outline"
 							size="sm"
@@ -94,17 +97,20 @@ export const VendorCodeRequiredModal = ({
 						/>
 
 						<Button
-							type="button"
-							text={loading ? "Approving..." : "Save & Approve"}
+							type="submit"
+							text={
+								loading
+									? vendorContent.buttons.approving
+									: vendorContent.buttons.saveAndApprove
+							}
 							appearance="standard"
 							variant="brand"
 							size="sm"
-							disabled={!trimmedCode || loading}
-							onClick={() => void handleConfirm()}
+							disabled={!codeValue?.trim() || loading}
 						/>
 					</div>
 				</footer>
-			</div>
+			</form>
 		</Modal>
 	);
 };

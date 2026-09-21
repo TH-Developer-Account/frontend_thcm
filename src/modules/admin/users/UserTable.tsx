@@ -11,14 +11,18 @@ import { FilterTabs } from "../../../components/ui/FilterTabs";
 import ManagementTable from "../../../components/ui/tables/ManagementTable/ManagementTable";
 import { ManagementIdentityCell } from "../../../components/ui/tables/ManagementTable/ManagementTableCells";
 import type { ManagementTableColumn } from "../../../components/ui/tables/ManagementTable/ManagementTable.types";
-
 import type {
 	User,
-	UserRoleOption,
 	UserStatus,
 	UserStatusTab,
+	UserTypeOption,
 } from "./user-management.types";
-import { getUserDisplayName, USER_STATUS_TABS } from "./user-management.utils";
+
+import {
+	getUserDisplayName,
+	USER_STATUS_TABS,
+	USER_TYPE_OPTIONS,
+} from "./user-management.utils";
 import type { UsersController } from "./useUsersData";
 
 interface UserTableProps {
@@ -110,28 +114,32 @@ const getBulkActions = ({
 }): ActionMenuItem<string[]>[] => [
 	{
 		id: "bulk-activate",
-		label: "Activate Selected",
+		// label: "Activate Selected",
+		label: "Option 1",
 		Icon: Unlock,
 		onClick: onActivate,
 		ariaLabel: "Activate selected users",
 	},
 	{
 		id: "bulk-block",
-		label: "Block Selected",
+		// label: "Block Selected",
+		label: "Option 2",
 		Icon: Lock,
 		onClick: onBlock,
 		ariaLabel: "Block selected users",
 	},
 	{
 		id: "bulk-inactive",
-		label: "Mark Selected Inactive",
+		label: "Option 3",
+		// label: "Mark Selected Inactive",
 		Icon: Lock,
 		onClick: onMarkInactive,
 		ariaLabel: "Mark selected users inactive",
 	},
 	{
 		id: "bulk-delete",
-		label: "Delete Selected",
+		label: "Option 4",
+		// label: "Delete Selected",
 		Icon: Trash,
 		onClick: onDelete,
 		ariaLabel: "Delete selected users",
@@ -142,14 +150,16 @@ export function UserTable({ controller }: UserTableProps) {
 	const {
 		filteredUsers,
 		counts,
-		roleOptions,
 		activeTab,
 		search,
-		role,
+		userType,
 		selectedRowIds,
 		isLoading,
 		isFetching,
 		error,
+		// roleOptions,
+		// role,
+		// handleRoleChange,
 		setSearch,
 		setSelectedRowIds,
 		handleTabChange,
@@ -157,7 +167,7 @@ export function UserTable({ controller }: UserTableProps) {
 		handleToggleBlockUser,
 		handleBulkStatusChange,
 		handleBulkDelete,
-		handleRoleChange,
+		handleUserTypeChange,
 		handleStartCreate,
 		handleStartEdit,
 		handleStartView,
@@ -270,7 +280,7 @@ export function UserTable({ controller }: UserTableProps) {
 			/>
 
 			<div className="user-management-toolbar">
-				<div className="user-management-role-filter">
+				{/* <div className="user-management-role-filter">
 					<SelectInput<UserRoleOption>
 						inputId="user-role-filter"
 						aria-label="Filter users by role"
@@ -279,6 +289,17 @@ export function UserTable({ controller }: UserTableProps) {
 						isClearable
 						placeholder="All roles"
 						onChange={handleRoleChange}
+					/>
+				</div> */}
+				<div className="user-management-role-filter">
+					<SelectInput<UserTypeOption>
+						inputId="user-type-filter"
+						aria-label="Filter users by user type"
+						options={USER_TYPE_OPTIONS}
+						value={userType}
+						isClearable
+						placeholder="All user types"
+						onChange={handleUserTypeChange}
 					/>
 				</div>
 

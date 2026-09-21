@@ -5,8 +5,9 @@ import {
 	useParams,
 	useSearchParams,
 } from "react-router-dom";
+import { CheckCircle2, LoaderCircle, Mail, TriangleAlert } from "lucide-react";
 
-import Card from "../../../components/common/Card";
+import PublicPageStatusCard from "../../../components/common/PublicPageStatusCard";
 import { createRemoteFileUploadValue } from "../../../components/ui/FileUpload/fileUpload.helpers";
 import PublicPagesLayout from "../../../layout/PublicPagesLayout";
 import ReimbursementClaimForm from "../components/ReimbursementClaimForm";
@@ -21,9 +22,12 @@ import {
 	useSavePublicMedicalClaimDraftMutation,
 	useSubmitPublicMedicalClaimMutation,
 } from "../hooks/useMedicalClaimMutations";
+import { getPublicPageStatusContent } from "../../../content/publicPageStatus.content";
 
 const PUBLIC_MEDICAL_CLAIM_SESSION_KEY = "medical-claim-session-code";
 const PUBLIC_SESSION_END_DELAY_MS = 2500;
+
+const statusContent = getPublicPageStatusContent("medicalClaim");
 
 const getSavedSessionCode = (): string => {
 	if (typeof window === "undefined") return "";
@@ -404,19 +408,14 @@ const ReimbursementClaimPublicPage = ({
 	if (!initialValues && claimQuery.isLoading) {
 		return (
 			<PublicPagesLayout className="public-page-status">
-				<Card padding="spacious">
-					<div aria-busy="true" className="public-page-status-content">
-						<span aria-hidden="true" className="public-page-status-spinner" />
-						<div>
-							<h2 className="public-page-status-title">
-								Validating medical claim link
-							</h2>
-							<p className="public-page-status-description" role="status">
-								We are confirming that this medical claim link is valid.
-							</p>
-						</div>
-					</div>
-				</Card>
+				<PublicPageStatusCard
+					variant="loading"
+					Icon={LoaderCircle}
+					title={statusContent.validating.title}
+					description={statusContent.validating.description}
+					role="status"
+					ariaBusy
+				/>
 			</PublicPagesLayout>
 		);
 	}
@@ -424,18 +423,14 @@ const ReimbursementClaimPublicPage = ({
 	if (!initialValues && claimQuery.isError) {
 		return (
 			<PublicPagesLayout className="public-page-status">
-				<Card padding="spacious">
-					<div className="public-page-status-content" role="alert">
-						<div>
-							<h2 className="public-page-status-title">
-								Link validation failed
-							</h2>
-							<p className="public-page-status-description">
-								The medical claim link is invalid or no longer available.
-							</p>
-						</div>
-					</div>
-				</Card>
+				<PublicPageStatusCard
+					variant="warning"
+					Icon={TriangleAlert}
+					title={statusContent.linkInvalid.title}
+					description={statusContent.linkInvalid.description}
+					help={statusContent.linkInvalid.help}
+					role="alert"
+				/>
 			</PublicPagesLayout>
 		);
 	}
@@ -443,19 +438,23 @@ const ReimbursementClaimPublicPage = ({
 	if (submitted) {
 		return (
 			<PublicPagesLayout className="public-page-status">
-				<Card padding="spacious">
-					<div className="public-page-status-content" role="status">
-						<div>
-							<h2 className="public-page-status-title">Claim submitted</h2>
-							<p className="public-page-status-description">
-								Tata Hitachi will review the information provided. Guest login
-								credentials will be sent to you so you can track progress and
-								update the claim if clarification is requested. This secure
-								session will close automatically.
-							</p>
-						</div>
-					</div>
-				</Card>
+				<PublicPageStatusCard
+					variant="success"
+					Icon={CheckCircle2}
+					title={statusContent.submitted.title}
+					description={statusContent.submitted.description}
+					notice={{
+						title: statusContent.submitted.noticeTitle,
+						description: statusContent.submitted.noticeDescription,
+						Icon: Mail,
+					}}
+					securityNote={statusContent.submitted.securityNote}
+					action={{
+						label: statusContent.submitted.actionLabel,
+						to: statusContent.submitted.actionTo,
+					}}
+					role="status"
+				/>
 			</PublicPagesLayout>
 		);
 	}

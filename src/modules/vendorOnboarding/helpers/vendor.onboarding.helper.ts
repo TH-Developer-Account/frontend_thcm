@@ -1,4 +1,5 @@
 import type { VendorListingFilter } from "../types/vendorListing.types";
+import { vendorContent } from "../../../content/vendor.content";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Boolean / string conversion primitives
@@ -26,63 +27,73 @@ export const toNullableString = (value?: string): string | null =>
 	value?.trim() || null;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Error message extraction
+// API-boundary sanitizers
 // ─────────────────────────────────────────────────────────────────────────────
+// Defense-in-depth: the form UI already sanitizes most of these as the
+// vendor types (e.g. FormOne uppercases gstin/pan on change, and
+// sanitizeAccountNumber strips non-alphanumerics from the account number
+// fields), but that's per-input JSX behavior. These run again at the
+// mapper → payload boundary so a value reaching the API is normalized
+// regardless of which code path produced it — a resubmission, a future
+// new entry point, or a field the JSX sanitization ever misses.
+//
+// Per project convention: never applied to passwords, tokens, file
+// contents, or confirmAccountNumber (which never leaves the frontend at
+// all — see buildVendorUpdatePayload's comment on that field).
 
-export const getErrorMessage = (error: unknown, fallback: string): string => {
-	if (
-		typeof error === "object" &&
-		error !== null &&
-		"response" in error &&
-		typeof error.response === "object" &&
-		error.response !== null &&
-		"data" in error.response &&
-		typeof error.response.data === "object" &&
-		error.response.data !== null &&
-		"message" in error.response.data &&
-		typeof error.response.data.message === "string"
-	) {
-		return error.response.data.message;
-	}
-	return error instanceof Error ? error.message : fallback;
+export const toNullableEmail = (value?: string): string | null => {
+	const trimmed = value?.trim().toLowerCase() ?? "";
+	return trimmed || null;
+};
+
+export const toNullableMobileDigits = (value?: string): string | null => {
+	const digitsOnly = value?.replace(/\D/g, "") ?? "";
+	return digitsOnly || null;
+};
+
+export const toNullableUpperCase = (value?: string): string | null => {
+	const trimmed = value?.trim().toUpperCase() ?? "";
+	return trimmed || null;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Listing UI text (search placeholders + empty states)
 // ─────────────────────────────────────────────────────────────────────────────
+// Copy lives in src/content/vendor.content.en.json (listing.onboarding /
+// listing.initiation) — this stays a plain function so callers don't need
+// to know the content shape, only the filter they're on.
 
 export const getOnboardingSearchPlaceholder = (
 	filter: VendorListingFilter,
 ): string => {
+	const { searchPlaceholder } = vendorContent.listing.onboarding;
+
 	switch (filter) {
 		case "createdByMe":
-			return "Search vendor requests created by me";
-
+			return searchPlaceholder.createdByMe;
 		case "pendingOnMe":
-			return "Search approvals pending on me";
-
+			return searchPlaceholder.pendingOnMe;
 		case "approvedByMe":
-			return "Search vendor requests approved by me";
-
+			return searchPlaceholder.approvedByMe;
 		default:
-			return "Search vendor onboarding records";
+			return searchPlaceholder.default;
 	}
 };
 
 export const getInitiationSearchPlaceholder = (
 	filter: VendorListingFilter,
 ): string => {
+	const { searchPlaceholder } = vendorContent.listing.initiation;
+
 	switch (filter) {
 		case "createdByMe":
-			return "Search initiation requests created by me";
-
+			return searchPlaceholder.createdByMe;
 		case "pendingOnMe":
-			return "Search initiation requests pending on me";
-
+			return searchPlaceholder.pendingOnMe;
 		case "approvedByMe":
-			return "Search initiation requests approved by me";
+			return searchPlaceholder.approvedByMe;
 		default:
-			return "No vendor initiation requests found";
+			return searchPlaceholder.default;
 	}
 };
 
@@ -92,30 +103,17 @@ export const getInitiationEmptyContent = (
 	title: string;
 	description: string;
 } => {
+	const { empty } = vendorContent.listing.initiation;
+
 	switch (filter) {
 		case "createdByMe":
-			return {
-				title: "No initiation requests created by you",
-				description: "Vendor initiation requests you create will appear here.",
-			};
-
+			return empty.createdByMe;
 		case "pendingOnMe":
-			return {
-				title: "No initiation requests are pending on you",
-				description:
-					"Vendor initiation requests requiring your action will appear here.",
-			};
-
+			return empty.pendingOnMe;
 		case "approvedByMe":
-			return {
-				title: "No initiation requests approved by you",
-				description: "Vendor initiation requests you approve will appear here.",
-			};
+			return empty.approvedByMe;
 		default:
-			return {
-				title: "No vendor initiation requests found",
-				description: "Vendor initiation form entries will appear here.",
-			};
+			return empty.default;
 	}
 };
 
@@ -125,30 +123,16 @@ export const getOnboardingEmptyContent = (
 	title: string;
 	description: string;
 } => {
+	const { empty } = vendorContent.listing.onboarding;
+
 	switch (filter) {
 		case "createdByMe":
-			return {
-				title: "No vendor requests created by you",
-				description: "Vendor onboarding requests you create will appear here.",
-			};
-
+			return empty.createdByMe;
 		case "pendingOnMe":
-			return {
-				title: "No approvals are pending on you",
-				description:
-					"Vendor onboarding requests requiring your approval will appear here.",
-			};
-
+			return empty.pendingOnMe;
 		case "approvedByMe":
-			return {
-				title: "No vendor requests approved by you",
-				description: "Vendor onboarding requests you approve will appear here.",
-			};
-
+			return empty.approvedByMe;
 		default:
-			return {
-				title: "No vendor onboarding records found",
-				description: "Vendor onboarding records will appear here.",
-			};
+			return empty.default;
 	}
 };

@@ -14,6 +14,7 @@ import {
 } from "../../../utils/exportJob.helper";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { useToast } from "../../../context/Auth/AuthContext";
+import { vendorContent } from "../../../content/vendor.content";
 
 const DEFAULT_PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 400;
@@ -122,12 +123,12 @@ export const useVendorListing = ({ initialTab }: UseVendorListingParams) => {
 			clearTimeout(delayedTimer);
 			const message = getApiErrorMessage(
 				error,
-				"Failed to export vendor onboarding records.",
+				vendorContent.toast.export.errorFallback,
 			);
 			setExportState({ status: "error", message });
 			showToast({
 				type: "error",
-				title: "Export failed",
+				title: vendorContent.toast.export.errorTitle,
 				description: message,
 			});
 		} finally {

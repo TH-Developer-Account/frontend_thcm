@@ -1,30 +1,38 @@
-import React, { useId, useMemo, useState } from "react";
+import React, { useId, useState } from "react";
 import Select, { components } from "react-select";
 import type {
-	//  ActionMeta,
 	InputActionMeta,
 	InputProps as ReactSelectInputProps,
 	SingleValue,
 } from "react-select";
+import { useDebounce } from "../../../hooks/useDebounce";
+import { ServerAxios } from "../../../services/ServerAxios";
 
-import { useDebounce } from "../../hooks/useDebounce";
-import { ServerAxios } from "../../services/ServerAxios";
-import type { UserResponse } from "../../modules/admin/user-profile/types/profile.types";
-
-export type UserOption = {
+/*
+ * Mirrors AsyncSelect.tsx's UserOption/UserAsyncSelect shape exactly, scoped
+ * to Business Partners. Talks to ServerAxios directly (not
+ * businessPartnerApi) for the same reason AsyncSelect.tsx does: this is a
+ * shared /components/forms control, not a BP-feature-module file, so it
+ * shouldn't reach into that module's api layer.
+ */
+export type BusinessPartnerOption = {
 	value: string;
 	label: string;
-	email?: string;
-	firstName?: string;
-	lastName?: string;
-	phone?: string;
+	bpType?: string;
+	officeType?: string;
 };
 
-type UserAsyncSelectProps = {
+type BusinessPartnerListApiRow = {
+	id: string;
+	bpName: string;
+	bpType?: string;
+	officeType?: string;
+};
+
+type BusinessPartnerAsyncSelectProps = {
 	name?: string;
-	value?: UserOption | null;
-	onChange: (user: UserOption | null) => void;
-	excludedUserIds?: string[];
+	value?: BusinessPartnerOption | null;
+	onChange: (partner: BusinessPartnerOption | null) => void;
 	placeholder?: string;
 	isClearable?: boolean;
 	isDisabled?: boolean;
@@ -36,17 +44,9 @@ type UserAsyncSelectProps = {
 	success?: boolean;
 };
 
-/*
- * react-select renders a real <input> for typing the search query. Browsers
- * (and any active password-manager extension) apply their own heuristics to
- * that input independently of react-select's own menu — Chrome's address/
- * contact autofill panel in particular can pop up over this field and sit on
- * top of react-select's own suggestion menu, since neither knows about the
- * other. autoComplete="off" is not always honoured by Chrome for fields it
- * still recognises, so we also mark the field so password managers
- * (LastPass, 1Password, Dashlane, Bitwarden) skip it outright.
- */
-const NoAutofillInput = (props: ReactSelectInputProps<UserOption, false>) => (
+const NoAutofillInput = (
+	props: ReactSelectInputProps<BusinessPartnerOption, false>,
+) => (
 	<components.Input
 		{...props}
 		autoComplete="off"
@@ -57,15 +57,14 @@ const NoAutofillInput = (props: ReactSelectInputProps<UserOption, false>) => (
 	/>
 );
 
-const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
-	name = "user",
+const BusinessPartnerAsyncSelect: React.FC<BusinessPartnerAsyncSelectProps> = ({
+	name = "businessPartner",
 	value = null,
 	onChange,
-	excludedUserIds = [],
 	error,
 	label,
 	helperText,
-	placeholder = "Search users...",
+	placeholder = "Search business partners...",
 	isClearable = true,
 	isDisabled = false,
 	required = false,
@@ -79,22 +78,10 @@ const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 	const describedBy = errorId ?? helperId;
 
 	const [inputValue, setInputValue] = useState("");
-	const [options, setOptions] = useState<UserOption[]>([]);
+	const [options, setOptions] = useState<BusinessPartnerOption[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 
 	const debouncedInput = useDebounce(inputValue.trim(), 400);
-
-	/*
-	 * Keep a stable lookup representation so filtering does not repeatedly
-	 * scan the original array for every returned user.
-	 */
-	const excludedUserIdKey = excludedUserIds.join("|");
-
-	const excludedUserIdSet = useMemo(
-		() => new Set(excludedUserIds),
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[excludedUserIdKey],
-	);
 
 	React.useEffect(() => {
 		if (!debouncedInput || isDisabled) return;
@@ -102,42 +89,42 @@ const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 		const controller = new AbortController();
 		let requestIsActive = true;
 
-		const fetchUsers = async () => {
+		const fetchPartners = async () => {
 			try {
 				const { data } = await ServerAxios.get<
-					UserResponse[] | { rows?: UserResponse[]; data?: UserResponse[] }
-				>("/users", {
+					| BusinessPartnerListApiRow[]
+					| {
+							rows?: BusinessPartnerListApiRow[];
+							data?: BusinessPartnerListApiRow[];
+					  }
+				>("/business-partner", {
 					params: {
 						search: debouncedInput,
+						// Keep the result list short for a searchable dropdown —
+						// this is a picker, not the full BP listing page.
+						limit: 20,
 					},
 					signal: controller.signal,
 				});
 
 				if (!requestIsActive) return;
 
-				// GET /users returns { rows, totalCount, pageIndex, pageSize },
-				// not a plain array — unwrap it the same way userApi.getUsers
-				// does. Falling back to `data` itself covers any endpoint that
-				// genuinely does return a plain array.
 				const rows = Array.isArray(data)
 					? data
 					: (data.rows ?? data.data ?? []);
 
-				const formattedOptions = rows
-					.filter((user) => !excludedUserIdSet.has(user.id))
-					.map<UserOption>((user) => ({
-						value: user.id,
-						firstName: user.first_name,
-						lastName: user.last_name,
-						label: `${user.first_name} ${user.last_name}`.trim(),
-						email: user.email,
-					}));
-
-				setOptions(formattedOptions);
+				setOptions(
+					rows.map((partner) => ({
+						value: partner.id,
+						label: partner.bpName,
+						bpType: partner.bpType,
+						officeType: partner.officeType,
+					})),
+				);
 			} catch (err) {
 				if (!requestIsActive || controller.signal.aborted) return;
 
-				console.error("User search failed:", err);
+				console.error("Business partner search failed:", err);
 				setOptions([]);
 			} finally {
 				if (requestIsActive) {
@@ -146,13 +133,13 @@ const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 			}
 		};
 
-		void fetchUsers();
+		void fetchPartners();
 
 		return () => {
 			requestIsActive = false;
 			controller.abort();
 		};
-	}, [debouncedInput, excludedUserIdSet, isDisabled]);
+	}, [debouncedInput, isDisabled]);
 
 	const handleInputChange = (
 		nextValue: string,
@@ -173,10 +160,7 @@ const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 		setIsLoading(true);
 	};
 
-	const handleChange = (
-		selected: SingleValue<UserOption>,
-		// _actionMeta: ActionMeta<UserOption>,
-	) => {
+	const handleChange = (selected: SingleValue<BusinessPartnerOption>) => {
 		onChange(selected);
 		setInputValue("");
 		setOptions([]);
@@ -187,7 +171,7 @@ const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 		<div
 			className={[
 				"form-field",
-				"user-async-select-field",
+				"bp-async-select-field",
 				isDisabled ? "is-disabled" : "",
 				className,
 			]
@@ -208,7 +192,7 @@ const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 				</div>
 			)}
 
-			<Select<UserOption, false>
+			<Select<BusinessPartnerOption, false>
 				inputId={inputId}
 				name={name}
 				value={value}
@@ -240,16 +224,16 @@ const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 				onChange={handleChange}
 				noOptionsMessage={({ inputValue: currentInput }) =>
 					currentInput.trim()
-						? "No matching users found"
-						: "Start typing to search users"
+						? "No matching business partners found"
+						: "Start typing to search business partners"
 				}
-				loadingMessage={() => "Searching users..."}
+				loadingMessage={() => "Searching business partners..."}
 				formatOptionLabel={(option) => (
 					<div className="select-option-content">
 						<div className="select-option-primary">{option.label}</div>
 
-						{option.email && (
-							<div className="select-option-secondary">{option.email}</div>
+						{option.bpType && (
+							<div className="select-option-secondary">{option.bpType}</div>
 						)}
 					</div>
 				)}
@@ -268,4 +252,4 @@ const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 	);
 };
 
-export default UserAsyncSelect;
+export default BusinessPartnerAsyncSelect;

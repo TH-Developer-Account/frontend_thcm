@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
-import Header from "../components/ui/Header";
+import ModuleHeader from "../components/ui/ModuleHeader";
 import { useSidebarPermissions } from "../hooks/useSidebarPermission";
 import { adminSidebar } from "../modules/admin/admin.sidebar";
 import { marketingSidebar } from "../modules/marketing/marketing.sidebar";
@@ -105,7 +105,7 @@ export default function MainContentWrapper() {
 			onToggleSidebar={handleToggleSidebar}
 			onCloseSidebar={handleCloseSidebar}
 			sidebarItems={filteredSidebar}
-			header={<Header />}
+			header={<ModuleHeader />}
 		>
 			<Outlet />
 		</DashboardLayout>

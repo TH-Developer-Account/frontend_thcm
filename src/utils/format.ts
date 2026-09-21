@@ -143,12 +143,54 @@ export const toPrismaDateTime = (date?: string | Date | null) => {
 	return new Date(`${date}T00:00:00.000Z`).toISOString();
 };
 
+/**
+ * Parses a single date-only string into a Date, using local
+ * year/month/day components (never a bare `new Date(string)` call,
+ * which is unreliable for anything but strict ISO and can drift a
+ * day depending on timezone).
+ *
+ * Accepts every format this codebase actually produces or consumes
+ * for date-only fields:
+ *  - YYYY-MM-DD   (API / ISO — see epc.payload.ts's toApiDate)
+ *  - DD-MM-YYYY   (this file's own formatDateOnly output)
+ *  - DD/MM-style  (DD/MM/YYYY, also tolerated by toApiDate)
+ * Falls back to a plain `new Date(value)` parse for anything else,
+ * and returns undefined rather than an Invalid Date if that fails.
+ */
+const parseDateOnly = (value?: string | null): Date | undefined => {
+	if (!value) return undefined;
+
+	// YYYY-MM-DD
+	const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	if (isoMatch) {
+		const [, year, month, day] = isoMatch;
+		return new Date(Number(year), Number(month) - 1, Number(day));
+	}
+
+	// DD-MM-YYYY
+	const dashMatch = value.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+	if (dashMatch) {
+		const [, day, month, year] = dashMatch;
+		return new Date(Number(year), Number(month) - 1, Number(day));
+	}
+
+	// DD/MM/YYYY
+	const slashMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+	if (slashMatch) {
+		const [, day, month, year] = slashMatch;
+		return new Date(Number(year), Number(month) - 1, Number(day));
+	}
+
+	const fallback = new Date(value);
+	return Number.isNaN(fallback.getTime()) ? undefined : fallback;
+};
+
 export const toDateRange = (from?: string | null, to?: string | null) => {
 	if (!from && !to) return undefined;
 
 	return {
-		from: from ? new Date(from) : undefined,
-		to: to ? new Date(to) : undefined,
+		from: parseDateOnly(from),
+		to: parseDateOnly(to),
 	};
 };
 /* =========================

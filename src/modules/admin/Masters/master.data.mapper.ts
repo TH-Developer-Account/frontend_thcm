@@ -1,60 +1,88 @@
 import type {
+	BudgetMasterOption,
+	ManageMasterPayload,
 	MasterDataResponse,
 	MasterItem,
 	MasterName,
-	ManageMasterPayload,
 	MasterOption,
-	MasterStatus,
 } from "./masterData.types";
 import { MASTER_KEYS, MASTER_TYPES } from "./master.data.constant";
+
+const clean = (value?: string) => value?.trim() || undefined;
+
+const buildMasterData = (
+	masterName: MasterName,
+	item: MasterItem,
+): ManageMasterPayload["data"] => {
+	const name = clean(item.name);
+	const code = clean(item.code);
+	const description = clean(item.description);
+	const fiscalYear = clean(item.fiscalYear);
+
+	switch (masterName) {
+		case "Branches":
+		case "Departments":
+		case "Regions":
+			return {
+				...(name && { name }),
+				...(code && { code }),
+			};
+
+		case "Event Names":
+			return {
+				...(name && { name }),
+			};
+
+		case "Budget": {
+			const amount =
+				item.budgetAmount !== undefined &&
+				item.budgetAmount !== null &&
+				String(item.budgetAmount).trim() !== ""
+					? Number(item.budgetAmount)
+					: undefined;
+
+			return {
+				...(code && { code }),
+				...(fiscalYear && { fiscal_year: fiscalYear }),
+				...(description && { id_desc: description }),
+				...(amount !== undefined &&
+					Number.isFinite(amount) && { value: amount }),
+			};
+		}
+	}
+};
 
 export const buildCreateMasterPayload = (
 	masterName: MasterName,
 	item: MasterItem,
-): ManageMasterPayload => {
-	const type = MASTER_TYPES[masterName];
-
-	return {
-		type,
-		action: "create",
-		data: {
-			id_desc: item.description.trim(),
-			status: item.status,
-		},
-	};
-};
+): ManageMasterPayload => ({
+	type: MASTER_TYPES[masterName],
+	action: "create",
+	data: buildMasterData(masterName, item),
+});
 
 export const buildUpdateMasterPayload = (
 	masterName: MasterName,
 	item: MasterItem,
-): ManageMasterPayload => {
-	const type = MASTER_TYPES[masterName];
+): ManageMasterPayload => ({
+	type: MASTER_TYPES[masterName],
+	action: "update",
+	data: {
+		id: item.id,
+		...buildMasterData(masterName, item),
+	},
+});
 
-	return {
-		type,
-		action: "update",
-		data: {
-			id: item.id,
-			id_desc: item.description.trim(),
-			status: item.status,
-		},
-	};
-};
-
-const normalizeStatus = (status?: string): MasterStatus =>
-	status?.toLowerCase() === "inactive" ? "inactive" : "active";
-
-const getDescription = (item: MasterOption): string =>
-	item.description?.trim() ||
-	item.id_desc?.trim() ||
-	item.label?.trim() ||
-	item.name?.trim() ||
-	"";
+const isBudgetMasterOption = (item: MasterOption): item is BudgetMasterOption =>
+	"budgetAmount" in item || "fiscalYear" in item;
 
 export const mapMasterItem = (item: MasterOption): MasterItem => ({
-	id: String(item.value ?? ""),
-	description: getDescription(item),
-	status: normalizeStatus(item.status),
+	id: String(item.value),
+	name: clean(item.label),
+	code: clean(item.code),
+	description: clean(item.description) ?? clean(item.id_desc),
+	budgetAmount: isBudgetMasterOption(item) ? item.budgetAmount : undefined,
+	fiscalYear: isBudgetMasterOption(item) ? clean(item.fiscalYear) : undefined,
 });
 
 export const getMasterItems = (
@@ -63,15 +91,10 @@ export const getMasterItems = (
 ): MasterItem[] => {
 	if (!data) return [];
 
-	const key = MASTER_KEYS[masterName];
-
-	const collection = data[key];
-
-	if (!Array.isArray(collection)) {
-		return [];
-	}
-
-	return collection.map((item) => mapMasterItem(item));
+	const collection = data[MASTER_KEYS[masterName]];
+	return Array.isArray(collection)
+		? collection.map((item) => mapMasterItem(item))
+		: [];
 };
 
 export const getMasterCounts = (

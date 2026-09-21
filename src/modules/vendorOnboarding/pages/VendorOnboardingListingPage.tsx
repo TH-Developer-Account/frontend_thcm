@@ -1,17 +1,19 @@
 import { useCallback, useMemo } from "react";
+import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+import { Alert } from "../../../components/common/Alert";
+import Button from "../../../components/common/Button";
 import { PageHeader } from "../../../components/ui/PageHeader";
+import { vendorContent } from "../../../content/vendor.content";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
+import { navigateToDownloadUrl } from "../../../utils/exportJob.helper";
+
 import VendorListingTable from "../components/VendorListingTable";
 import { useVendorListing } from "../hooks/useVendorListing";
 import type { VendorOnboardingListingRow } from "../types/vendorListing.types";
 import { VENDOR_ONBOARDING_FILTER_TABS } from "../utils/vendor.constant";
 import { toOnboardingRow } from "../utils/vendorListingRowMapper";
-import Button from "../../../components/common/Button";
-import { Plus } from "lucide-react";
-import { Alert } from "../../../components/common/Alert";
-import { navigateToDownloadUrl } from "../../../utils/exportJob.helper";
 
 const VendorOnboardingListingPage = () => {
 	const navigate = useNavigate();
@@ -33,13 +35,22 @@ const VendorOnboardingListingPage = () => {
 		handleExport,
 		dismissExport,
 		setPageIndex,
-	} = useVendorListing({ initialTab: "pendingOnMe" });
+	} = useVendorListing({
+		initialTab: "pendingOnMe",
+	});
 
 	const rowsForTable = useMemo(() => rows.map(toOnboardingRow), [rows]);
 
 	const handleViewRow = useCallback(
 		(row: VendorOnboardingListingRow) => {
-			navigate(`/vendor/onboarding/${row.id}/view`);
+			navigate(`/vendor/onboarding/${row.id}`);
+		},
+		[navigate],
+	);
+
+	const handleEditRow = useCallback(
+		(row: VendorOnboardingListingRow) => {
+			navigate(`/vendor/onboarding/${row.id}`);
 		},
 		[navigate],
 	);
@@ -51,7 +62,7 @@ const VendorOnboardingListingPage = () => {
 				headerChildren={
 					<Button
 						path="/vendor/initiation/create"
-						text="Initiate Onboarding"
+						text="Initiate"
 						appearance="standard"
 						variant="brand"
 						Icon={Plus}
@@ -65,8 +76,8 @@ const VendorOnboardingListingPage = () => {
 				<Alert
 					type="banner"
 					variant="info"
-					title="Still exporting…"
-					description="This is taking longer than usual. We'll let you know when it's ready."
+					title={vendorContent.toast.export.delayedTitle}
+					description={vendorContent.toast.export.delayedDescription}
 				/>
 			)}
 
@@ -74,13 +85,16 @@ const VendorOnboardingListingPage = () => {
 				<Alert
 					type="banner"
 					variant="success"
-					title="Export ready"
-					description="Your vendor onboarding export is ready to download."
+					title={vendorContent.toast.export.readyTitle}
+					description={vendorContent.toast.export.readyDescription}
 					primaryAction={{
-						label: "Download",
+						label: vendorContent.toast.export.downloadLabel,
 						onClick: () => navigateToDownloadUrl(exportState.downloadUrl),
 					}}
-					secondaryAction={{ label: "Dismiss", onClick: dismissExport }}
+					secondaryAction={{
+						label: vendorContent.toast.export.dismissLabel,
+						onClick: dismissExport,
+					}}
 				/>
 			)}
 
@@ -88,10 +102,16 @@ const VendorOnboardingListingPage = () => {
 				<Alert
 					type="banner"
 					variant="error"
-					title="Export failed"
+					title={vendorContent.toast.export.errorTitle}
 					description={exportState.message}
-					primaryAction={{ label: "Retry", onClick: handleExport }}
-					secondaryAction={{ label: "Dismiss", onClick: dismissExport }}
+					primaryAction={{
+						label: vendorContent.toast.export.retryLabel,
+						onClick: handleExport,
+					}}
+					secondaryAction={{
+						label: vendorContent.toast.export.dismissLabel,
+						onClick: dismissExport,
+					}}
 				/>
 			)}
 
@@ -112,6 +132,7 @@ const VendorOnboardingListingPage = () => {
 				onPageSizeChange={handlePageSizeChange}
 				onExport={handleExport}
 				onViewRow={handleViewRow}
+				onEditRow={handleEditRow}
 				isExporting={isExporting}
 			/>
 		</PageSectionLayout>

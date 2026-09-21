@@ -20,7 +20,10 @@ import {
 } from "../types/vendorOnboarding.types";
 import {
 	toNullableBoolean,
+	toNullableEmail,
+	toNullableMobileDigits,
 	toNullableString,
+	toNullableUpperCase,
 	toYesNo,
 } from "./vendor.onboarding.helper";
 
@@ -204,21 +207,21 @@ export const buildVendorUpdatePayload = (
 	city: toNullableString(values.city),
 	pinCode: toNullableString(values.pinCode),
 	address: toNullableString(values.address),
-	mobile: toNullableString(values.mobile),
-	email: toNullableString(values.email),
+	mobile: toNullableMobileDigits(values.mobile),
+	email: toNullableEmail(values.email),
 	msmeVendor: toNullableBoolean(values.msmeVendor),
 	msmeCertAttached: toNullableBoolean(values.msmeCertificateAttached),
 	bankName: toNullableString(values.bankName),
 	bankBranch: toNullableString(values.bankBranch),
-	ifscCode: toNullableString(values.ifscCode),
+	ifscCode: toNullableUpperCase(values.ifscCode),
 	bankAddress: toNullableString(values.bankAddress),
 	accountNumber: toNullableString(values.accountNumber),
 	// NOTE: confirmAccountNumber is intentionally NOT included here.
 	// It is a frontend-only validation field — the backend has no such
 	// column and must never receive it. If you're adding a new field to
 	// this payload, don't reflexively include confirmAccountNumber too.
-	gstin: toNullableString(values.gstin),
-	pan: toNullableString(values.pan),
+	gstin: toNullableUpperCase(values.gstin),
+	pan: toNullableUpperCase(values.pan),
 	entityRegNo: toNullableString(values.entityRegNo),
 	ndaObtained: toNullableBoolean(values.ndaObtained),
 	vendorReferenceName: toNullableString(values.vendorReferenceName),

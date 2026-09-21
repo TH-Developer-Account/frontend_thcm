@@ -3,11 +3,7 @@ import axios from "axios";
 import type { Option } from "../../../components/forms/input.types";
 import { ServerAxios } from "../../../services/ServerAxios";
 import type { EventDeviationPayload } from "../../../types/common.types";
-import type {
-	User,
-	UserResponse,
-} from "../../admin/user-profile/types/profile.types";
-import { mapUser } from "../../admin/user-profile/types/profile.types";
+
 import { api_routes } from "../constant/workflow.constant";
 import type {
 	AttachWorkflowInput,
@@ -28,6 +24,7 @@ import type {
 	WorkflowListResponse,
 } from "../types/types";
 import { normalizeWorkflowTemplates } from "../utils/workflow-list.helpers";
+import { usersApi } from "../../../common/common.api";
 
 const WORKFLOW_URL = "/work-flow";
 
@@ -381,15 +378,7 @@ export const workflowApi = {
 		return response.data;
 	},
 
-	getUsers: async (): Promise<User[]> => {
-		const {
-			data: { rows },
-		} = await ServerAxios.get(USERS_URL, {
-			params: { profile: "all" },
-		});
-		const rawUsers = unwrapData<UserResponse[]>(rows);
-		return (Array.isArray(rawUsers) ? rawUsers : []).map(mapUser);
-	},
+	getUsers: usersApi.getUsers,
 
 	getUserOptions: async (): Promise<Option[]> => {
 		const users = await workflowApi.getUsers();

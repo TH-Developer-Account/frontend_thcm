@@ -6,6 +6,7 @@ import {
 	Send,
 	X,
 } from "lucide-react";
+import { useWatch } from "react-hook-form";
 
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
@@ -15,6 +16,7 @@ import FormHeader from "../../../components/ui/FormHeader";
 import { useVendorOnboardingInitiation } from "../hooks/useVendorOnboardingInitiation";
 import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";
 import { Badge } from "../../../components/common/Badge";
+import { vendorContent } from "../../../content/vendor.content";
 
 export type VendorInitiationFormMode = "create" | "edit" | "view";
 
@@ -44,14 +46,15 @@ const VendorOnboardingInitiationForm = ({
 	const fieldMode: VendorInitiationFormMode = isViewMode ? "view" : "edit";
 
 	const {
-		values,
+		register,
+		control,
 		errors,
 		isDirty,
 		isSubmitting,
 		isDetailLoading,
-		handleChange,
 		handleReset,
 		handleSubmit,
+		onValid,
 	} = useVendorOnboardingInitiation({
 		initiationId,
 		initialValues,
@@ -59,6 +62,11 @@ const VendorOnboardingInitiationForm = ({
 		onSubmitSuccess: onSuccess,
 		onUpdateSuccess: onSuccess,
 	});
+
+	// View mode never renders a real <input> (FormInput short-circuits to
+	// ReadOnlyField before touching name/onChange/ref), so those fields need
+	// their current value read explicitly rather than via register().
+	const values = useWatch({ control });
 
 	const canRetriggerEmail = isViewMode && values.status === "AWAITING_VENDOR";
 	const handleCancel = () => {
@@ -74,22 +82,20 @@ const VendorOnboardingInitiationForm = ({
 			<form
 				className="vendor-onboarding-form"
 				noValidate
-				onSubmit={(event) => {
-					event.preventDefault();
-
-					if (!isViewMode || canRetriggerEmail) {
-						void handleSubmit();
-					}
-				}}
+				onSubmit={
+					isViewMode && !canRetriggerEmail
+						? (event) => event.preventDefault()
+						: handleSubmit(onValid)
+				}
 			>
 				<div className="flex justify-between items-center">
 					<FormHeader
 						title={
 							isViewMode
-								? "Vendor Initiation Details"
+								? vendorContent.initiation.titles.view
 								: isEditMode
-									? "Edit Vendor Initiation"
-									: "Vendor Info"
+									? vendorContent.initiation.titles.edit
+									: vendorContent.initiation.titles.create
 						}
 						Icon={LucideBriefcaseBusiness}
 					/>
@@ -97,8 +103,7 @@ const VendorOnboardingInitiationForm = ({
 				</div>
 				<div className="vendor-onboarding-form-grid">
 					<FormInput
-						name="vendorReferenceName"
-						label="Vendor initiated for"
+						label={vendorContent.initiation.fields.vendorReferenceName.label}
 						mode={fieldMode}
 						value={values.vendorReferenceName}
 						required={!isViewMode}
@@ -109,32 +114,17 @@ const VendorOnboardingInitiationForm = ({
 							!errors.vendorReferenceName &&
 							Boolean(values.vendorReferenceName)
 						}
-						error={isViewMode ? undefined : errors.vendorReferenceName}
-						helperText={isViewMode ? undefined : "Enter the vendor name"}
-						autoComplete="organization"
-						onChange={(event) =>
-							handleChange("vendorReferenceName", event.target.value)
+						error={isViewMode ? undefined : errors.vendorReferenceName?.message}
+						helperText={
+							isViewMode
+								? undefined
+								: vendorContent.initiation.fields.vendorReferenceName.helperText
 						}
+						autoComplete="organization"
+						{...register("vendorReferenceName")}
 					/>
-					{/* <FormInput
-						name="vendorName"
-						label="Vendor Name"
-						mode={fieldMode}
-						value={values.vendorName}
-						required={!isViewMode}
-						readOnly={isViewMode}
-						disabled={isDetailLoading}
-						success={
-							!isViewMode && !errors.vendorName && Boolean(values.vendorName)
-						}
-						error={isViewMode ? undefined : errors.vendorName}
-						helperText={isViewMode ? undefined : "Enter the vendor name"}
-						autoComplete="organization"
-						onChange={(event) => handleChange("vendorName", event.target.value)}
-					/> */}
 					<FormInput
-						name="email"
-						label="Vendor Email"
+						label={vendorContent.initiation.fields.email.label}
 						type="email"
 						mode={fieldMode}
 						value={values.email}
@@ -142,35 +132,41 @@ const VendorOnboardingInitiationForm = ({
 						readOnly={isViewMode}
 						disabled={isDetailLoading}
 						success={!isViewMode && !errors.email && Boolean(values.email)}
-						error={isViewMode ? undefined : errors.email}
-						helperText={isViewMode ? undefined : "Enter the vendor email"}
+						error={isViewMode ? undefined : errors.email?.message}
+						helperText={
+							isViewMode
+								? undefined
+								: vendorContent.initiation.fields.email.helperText
+						}
 						autoComplete="email"
-						onChange={(event) => handleChange("email", event.target.value)}
+						{...register("email")}
 					/>
 
 					<FormInput
-						name="mobile"
-						label="Vendor Phone Number"
+						label={vendorContent.initiation.fields.mobile.label}
 						type="tel"
 						mode={fieldMode}
 						value={values.mobile}
 						required={!isViewMode}
+						max={10}
 						disabled={isDetailLoading}
 						readOnly={isViewMode}
 						success={!isViewMode && !errors.mobile && Boolean(values.mobile)}
-						error={isViewMode ? undefined : errors.mobile}
+						error={isViewMode ? undefined : errors.mobile?.message}
 						helperText={
-							isViewMode ? undefined : "Enter the vendor phone number"
+							isViewMode
+								? undefined
+								: vendorContent.initiation.fields.mobile.helperText
 						}
 						autoComplete="tel"
-						onChange={(event) => handleChange("mobile", event.target.value)}
+						{...register("mobile")}
 					/>
 				</div>
 				<div className="vendor-onboarding-form-actions">
 					{isViewMode ? (
 						<Button
 							type="button"
-							text="Back to Listing"
+							text={vendorContent.buttons.backToListing}
 							Icon={ArrowLeft}
 							iconPosition="left"
 							size="sm"
@@ -181,7 +177,7 @@ const VendorOnboardingInitiationForm = ({
 					) : (
 						<Button
 							type="button"
-							text="Cancel"
+							text={vendorContent.buttons.cancel}
 							Icon={X}
 							iconPosition="left"
 							size="sm"
@@ -196,7 +192,7 @@ const VendorOnboardingInitiationForm = ({
 						<div className="vendor-onboarding-form-actions-end">
 							<Button
 								type="button"
-								text="Reset"
+								text={vendorContent.buttons.reset}
 								Icon={RefreshCcw}
 								iconPosition="left"
 								size="sm"
@@ -211,11 +207,11 @@ const VendorOnboardingInitiationForm = ({
 								text={
 									isSubmitting
 										? isEditMode
-											? "Updating..."
-											: "Submitting..."
+											? vendorContent.buttons.updating
+											: vendorContent.buttons.submitting
 										: isEditMode
-											? "Update"
-											: "Submit"
+											? vendorContent.buttons.update
+											: vendorContent.buttons.submit
 								}
 								Icon={isEditMode ? Save : Send}
 								iconPosition="left"
@@ -229,7 +225,11 @@ const VendorOnboardingInitiationForm = ({
 					{canRetriggerEmail && (
 						<Button
 							type="submit"
-							text={isSubmitting ? "Sending..." : "Re-Trigger Email"}
+							text={
+								isSubmitting
+									? vendorContent.buttons.sending
+									: vendorContent.buttons.retriggerEmail
+							}
 							Icon={Send}
 							iconPosition="left"
 							size="sm"

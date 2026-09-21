@@ -1,13 +1,16 @@
 import * as React from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { CheckCircle2, LoaderCircle, Mail, TriangleAlert } from "lucide-react";
 
 import Card from "../../../components/common/Card";
+import PublicPageStatusCard from "../../../components/common/PublicPageStatusCard";
 import PublicPagesLayout from "../../../layout/PublicPagesLayout";
 import VendorCreationFormOne from "../forms/VendorCreationFormOne";
 import {
 	VendorCreationFormProvider,
 	useVendorCreationForm,
 } from "../hooks/useVendorCreationForm";
+import { getPublicPageStatusContent } from "../../../content/publicPageStatus.content";
 
 const PUBLIC_VENDOR_SESSION_KEY = "vendor-onboarding-session-code";
 const PUBLIC_SESSION_END_DELAY_MS = 2500;
@@ -28,6 +31,8 @@ const clearSessionCode = (): void => {
 		window.sessionStorage.removeItem(PUBLIC_VENDOR_SESSION_KEY);
 	}
 };
+
+const statusContent = getPublicPageStatusContent("vendorOnboarding");
 
 const VendorOnboardingPublicPage = () => {
 	const navigate = useNavigate();
@@ -70,19 +75,14 @@ const VendorOnboardingPublicPage = () => {
 	if (form.isLoading) {
 		return (
 			<PublicPagesLayout className="public-page-status">
-				<Card padding="spacious">
-					<div aria-busy="true" className="public-page-status-content">
-						<span aria-hidden="true" className="public-page-status-spinner" />
-						<div>
-							<h2 className="public-page-status-title">
-								Validating onboarding link
-							</h2>
-							<p className="public-page-status-description" role="status">
-								We are confirming that this vendor onboarding link is valid.
-							</p>
-						</div>
-					</div>
-				</Card>
+				<PublicPageStatusCard
+					variant="loading"
+					Icon={LoaderCircle}
+					title={statusContent.validating.title}
+					description={statusContent.validating.description}
+					role="status"
+					ariaBusy
+				/>
 			</PublicPagesLayout>
 		);
 	}
@@ -90,18 +90,14 @@ const VendorOnboardingPublicPage = () => {
 	if (form.isError) {
 		return (
 			<PublicPagesLayout className="public-page-status">
-				<Card padding="spacious">
-					<div className="public-page-status-content" role="alert">
-						<div>
-							<h2 className="public-page-status-title">
-								Link validation failed
-							</h2>
-							<p className="public-page-status-description">
-								The vendor onboarding link is invalid or no longer available.
-							</p>
-						</div>
-					</div>
-				</Card>
+				<PublicPageStatusCard
+					variant="warning"
+					Icon={TriangleAlert}
+					title={statusContent.linkInvalid.title}
+					description={statusContent.linkInvalid.description}
+					help={statusContent.linkInvalid.help}
+					role="alert"
+				/>
 			</PublicPagesLayout>
 		);
 	}
@@ -109,17 +105,23 @@ const VendorOnboardingPublicPage = () => {
 	if (submitted) {
 		return (
 			<PublicPagesLayout className="public-page-status">
-				<Card padding="spacious">
-					<div className="public-page-status-content" role="status">
-						<div>
-							<h2 className="public-page-status-title">Form submitted</h2>
-							<p className="public-page-status-description">
-								Tata Hitachi will review the information provided. This secure
-								session will close automatically.
-							</p>
-						</div>
-					</div>
-				</Card>
+				<PublicPageStatusCard
+					variant="success"
+					Icon={CheckCircle2}
+					title={statusContent.submitted.title}
+					description={statusContent.submitted.description}
+					notice={{
+						title: statusContent.submitted.noticeTitle,
+						description: statusContent.submitted.noticeDescription,
+						Icon: Mail,
+					}}
+					securityNote={statusContent.submitted.securityNote}
+					action={{
+						label: statusContent.submitted.actionLabel,
+						to: statusContent.submitted.actionTo,
+					}}
+					role="status"
+				/>
 			</PublicPagesLayout>
 		);
 	}

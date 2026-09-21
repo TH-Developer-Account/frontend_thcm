@@ -1,5 +1,3 @@
-export type MasterStatus = "active" | "inactive";
-
 export type MasterType =
 	| "department"
 	| "region"
@@ -25,23 +23,35 @@ export type MasterDataKey =
 
 export interface MasterOption {
 	value: string;
-	label?: string;
-	name?: string;
+	label: string;
 	code?: string;
 	description?: string;
 	id_desc?: string;
-	status?: MasterStatus | string;
+	budgetAmount?: number | string;
+	fiscalYear?: string;
+	[key: string]: unknown;
 }
 
 export interface BudgetMasterOption extends MasterOption {
-	budgetAmount?: number;
+	budgetAmount?: number | string;
+	fiscalYear?: string;
 }
+
+export type MasterItem = {
+	id: string;
+	name?: string;
+	code?: string;
+	description?: string;
+	budgetAmount?: number | string;
+	fiscalYear?: string;
+};
 
 export interface VerticalOption {
 	value: string;
 	label: string;
 	code?: string;
 	department: string;
+	[key: string]: unknown;
 }
 
 export interface MasterDataResponse {
@@ -53,12 +63,6 @@ export interface MasterDataResponse {
 	vertical: VerticalOption[];
 }
 
-export interface MasterItem {
-	id: string;
-	description: string;
-	status: MasterStatus;
-}
-
 export interface ManageMasterPayload {
 	type: MasterType;
 	action: MasterAction;
@@ -66,7 +70,6 @@ export interface ManageMasterPayload {
 		id?: string;
 		name?: string;
 		code?: string;
-		status?: MasterStatus;
 		fiscal_year?: string;
 		id_desc?: string;
 		value?: number;

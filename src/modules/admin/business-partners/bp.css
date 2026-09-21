@@ -140,7 +140,7 @@ button {
 		flex-direction: column;
 		/* // Fill remaining viewport height below the page header/toolbar. */
 		/* // Adjust 220px to match your actual header + toolbar + padding height. */
-		height: calc(100vh - 220px);
+		/* height: calc(100vh - 200px); */
 		min-height: 0;
 		/* // needed for flex children to shrink/scroll properly */
 	}

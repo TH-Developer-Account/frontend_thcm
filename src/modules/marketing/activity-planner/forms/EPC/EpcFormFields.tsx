@@ -9,7 +9,7 @@ import PincodeAsyncSelect, {
 	type PincodeOption,
 } from "../../../../../components/forms/PincodeAsyncSelect";
 
-import { formatDateOnly } from "../../../../../utils/format";
+import { formatDateOnly, toDateRange } from "../../../../../utils/format";
 import type { EpcFormValues } from "../../types/epc.types";
 
 type Option = {
@@ -36,15 +36,6 @@ type EpcFormFieldsProps = {
 	masters?: EpcMasters;
 	onChange: (name: keyof EpcFormValues, value: string) => void;
 	lockOrgFields?: boolean;
-};
-
-const toDateRange = (from?: string | null, to?: string | null) => {
-	if (!from && !to) return undefined;
-
-	return {
-		from: from ? new Date(from) : undefined,
-		to: to ? new Date(to) : undefined,
-	};
 };
 
 const findOption = (options: Option[] = [], value?: string | null) => {
@@ -312,6 +303,7 @@ export default function EpcFormFields({
 					onChange={handleDateRangeChange}
 					helperText="Select the start and end date of the event."
 					error={errors.event_from_date || errors.event_to_date}
+					disablePast
 				/>
 
 				<SelectInput

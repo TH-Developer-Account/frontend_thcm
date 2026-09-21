@@ -1,0 +1,42 @@
+{
+	"vendorOnboarding": {
+		"validating": {
+			"title": "Validating onboarding link",
+			"description": "We are confirming that this vendor onboarding link is valid."
+		},
+		"linkInvalid": {
+			"title": "This link is no longer available",
+			"description": "This vendor onboarding link may have expired, already been used, or is no longer valid.",
+			"help": "If you believe this is a mistake, please contact your Tata Hitachi representative and request a new link."
+		},
+		"submitted": {
+			"title": "Thank you for submitting your response",
+			"description": "Your vendor onboarding form has been submitted successfully. Tata Hitachi will review the information provided.",
+			"noticeTitle": "Check your email",
+			"noticeDescription": "A copy of your submitted response has been sent to your registered email address.",
+			"securityNote": "This secure session will close automatically.",
+			"actionLabel": "Log in to Tata Hitachi",
+			"actionTo": "/guest/login"
+		}
+	},
+	"medicalClaim": {
+		"validating": {
+			"title": "Validating medical claim link",
+			"description": "We are confirming that this medical claim link is valid."
+		},
+		"linkInvalid": {
+			"title": "This link is no longer available",
+			"description": "This medical claim link may have expired, already been used, or is no longer valid.",
+			"help": "If you believe this is a mistake, please contact your Tata Hitachi representative and request a new link."
+		},
+		"submitted": {
+			"title": "Thank you for submitting your claim",
+			"description": "Your medical reimbursement claim has been submitted successfully. Tata Hitachi will review the information provided.",
+			"noticeTitle": "Check your email",
+			"noticeDescription": "A copy of your response and your login details will be sent to your registered email address. You can use them to track your claim and respond if clarification is requested.",
+			"securityNote": "This secure session will close automatically.",
+			"actionLabel": "Log in to track your claim",
+			"actionTo": "/guest/login"
+		}
+	}
+}

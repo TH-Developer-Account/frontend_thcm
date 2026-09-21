@@ -1,5 +1,7 @@
 import React, { type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useForm, useWatch, type Resolver } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 import type { ReasonActionMode } from "../../../components/ui/ReasonActionModal";
@@ -13,7 +15,15 @@ import type {
 	WorkflowStage,
 } from "../../workflows/types/types";
 
-import { getErrorMessage, toYesNo } from "../helpers/vendor.onboarding.helper";
+import { toYesNo } from "../helpers/vendor.onboarding.helper";
+import {
+	showApiErrorToast,
+	showSuccessToast,
+} from "../../../utils/apiError.helper";
+import {
+	vendorContent,
+	formatVendorMessage,
+} from "../../../content/vendor.content";
 import {
 	buildPublicFormData,
 	buildVendorOnboardingUpdatePayload,
@@ -29,17 +39,18 @@ import {
 } from "../helpers/vendor.onboarding.mapper";
 import {
 	EDITABLE_STATUSES,
-	MANDATORY_ERROR,
 	extractPanFromGstin,
 	getMissingDocuments,
 	normalizeAccountNumber,
-	normalizeMandatoryErrors,
-	validateConfirmAccountNumber,
-	validateFormOneField,
-	validateFormOneForSubmit,
-	validateMandatoryValues,
-	validatePanForForm,
 } from "../helpers/vendor.onboarding.validations";
+import {
+	buildVendorFormOneSchema,
+	type VendorFormOneValues,
+} from "../schemas/vendorFormOne.schema";
+import {
+	vendorFormTwoSchema,
+	type VendorFormTwoValues,
+} from "../schemas/vendorFormTwo.schema";
 import {
 	useAcceptAndCloseVendorMutation,
 	useDraftSubmitPublicVendorFormMutation,
@@ -80,6 +91,70 @@ export const vendorOnboardingSteps = [
 
 const EMPTY_FORM_ONE: VendorCreationFormOneValues = {};
 const EMPTY_FORM_TWO: VendorCreationFormTwoValues = {};
+
+// Label used for enclosure-upload / DPDP-consent "required" states. These
+// aren't part of the Form One/Two Zod schemas (documents and consent are
+// validated by useVendorCreationFormOneController, not by field-level
+// validation), so they keep the exact literal the app already shows rather
+// than picking up the (more descriptive) per-field Zod messages.
+const MANDATORY_ERROR = "Mandatory";
+
+// Fills every Form One field the Zod schema requires, defaulting anything
+// missing from the API/detail response to "" so `reset()`/`defaultValues`
+// always get a fully-shaped VendorFormOneValues instead of undefineds.
+const toFormOneDefaults = (
+	source: VendorCreationFormOneValues,
+): VendorFormOneValues => ({
+	vendorName: source.vendorName ?? "",
+	vendorReferenceName: source.vendorReferenceName ?? "",
+	address: source.address ?? "",
+	msmeVendor: source.msmeVendor ?? "",
+	msmeCertificateAttached: source.msmeCertificateAttached ?? "",
+	city: source.city ?? "",
+	pinCode: source.pinCode ?? "",
+	state: source.state ?? "",
+	mobile: source.mobile ?? "",
+	email: source.email ?? "",
+	bankName: source.bankName ?? "",
+	bankBranch: source.bankBranch ?? "",
+	ifscCode: source.ifscCode ?? "",
+	bankAddress: source.bankAddress ?? "",
+	accountNumber: source.accountNumber ?? "",
+	confirmAccountNumber: source.confirmAccountNumber ?? "",
+	gstin: source.gstin ?? "",
+	pan: source.pan ?? "",
+	entityRegNo: source.entityRegNo ?? "",
+	gstCertificate: source.gstCertificate ?? "",
+	panNumber: source.panNumber ?? "",
+	bankCancelledCheque: source.bankCancelledCheque ?? "",
+	certificateOfIncorporation: source.certificateOfIncorporation ?? "",
+	msmeCertificate: source.msmeCertificate ?? "",
+	ndaCertificate: source.ndaCertificate ?? "",
+	ndaObtained: source.ndaObtained ?? "",
+	referenceNumber: source.referenceNumber ?? "",
+});
+
+// Same idea for Form Two — every field required by vendorFormTwoSchema
+// (everything except vendorCode) gets a "" fallback.
+const toFormTwoDefaults = (
+	source: VendorCreationFormTwoValues,
+): VendorFormTwoValues => ({
+	vendorCode: source.vendorCode ?? "",
+	vendorType: source.vendorType ?? "",
+	companyCode: source.companyCode ?? "",
+	purchaseOrg: source.purchaseOrg ?? "",
+	paymentTerm: source.paymentTerm ?? "",
+	tds: source.tds ?? "",
+	vendorCategory: source.vendorCategory ?? "",
+	materialType: source.materialType ?? "",
+	materialSubType: source.materialSubType ?? "",
+	vendorSelfAssessmentObtained: source.vendorSelfAssessmentObtained ?? "",
+	gpaObtained: source.gpaObtained ?? "",
+	relatedPartyToThcm: source.relatedPartyToThcm ?? "",
+	vendorAuditReportPrepared: source.vendorAuditReportPrepared ?? "",
+	natureOfService: source.natureOfService ?? "",
+	reasonForOnboarding: source.reasonForOnboarding ?? "",
+});
 
 const ADDITIONAL_DOCUMENT_FIELDS = VENDOR_DOCUMENT_FIELDS.filter((field) =>
 	field.documentType.startsWith("ADDITIONAL_DOC_"),
@@ -135,8 +210,9 @@ type UseVendorCreationFormOneControllerParams = {
 	// returns whether it passed. Checked before enclosures/DPDP so field
 	// errors are what the vendor sees first on an empty submit, not file
 	// errors. Optional only for callers that don't have field-level
-	// validation to run (fields are assumed valid if omitted).
-	validateFields?: () => boolean;
+	// validation to run (fields are assumed valid if omitted). Async because
+	// it's now backed by React Hook Form's trigger() (Zod-validated).
+	validateFields?: () => boolean | Promise<boolean>;
 	onNext?: () => void;
 	onSubmit?: (
 		submission: VendorCreationFormOneSubmission,
@@ -388,8 +464,8 @@ export function useVendorCreationFormOneController({
 		setDpdpError("");
 	}, [documentsKey, initialDocuments]);
 
-	const handleFormAction = React.useCallback(() => {
-		if (validateFields && !validateFields()) return;
+	const handleFormAction = React.useCallback(async () => {
+		if (validateFields && !(await validateFields())) return;
 		if (!validateEnclosures()) return;
 		if (requireDpdpConsent && !hasAcceptedDpdp) {
 			setDpdpError(MANDATORY_ERROR);
@@ -518,18 +594,23 @@ export function useVendorCreationSummaryController({
 		try {
 			const { message } =
 				await approveStageMutation.mutateAsync(currentStageId);
-			showToast({ type: "success", title: "Success", description: message });
+			showSuccessToast(
+				showToast,
+				message ?? vendorContent.toast.approval.successTitle,
+				vendorContent.toast.approval.successTitle,
+			);
 			onApprove?.();
 
 			if (requiresVendorCodeToApprove) {
 				await onAcceptAndClose?.();
 			}
 		} catch (error) {
-			showToast({
-				type: "error",
-				title: "Error",
-				description: getErrorMessage(error, "Error while approving."),
-			});
+			showApiErrorToast(
+				showToast,
+				error,
+				vendorContent.toast.approval.errorFallback,
+				vendorContent.toast.approval.errorTitle,
+			);
 		}
 	}, [
 		currentStageId,
@@ -585,8 +666,8 @@ export function useVendorCreationSummaryController({
 			if (!currentStageId) {
 				showToast({
 					type: "error",
-					title: "Not allowed",
-					description: "No active approval stage found.",
+					title: vendorContent.toast.clarify.missingStageTitle,
+					description: vendorContent.toast.clarify.missingStageDescription,
 				});
 				return;
 			}
@@ -596,18 +677,20 @@ export function useVendorCreationSummaryController({
 					currentStageId,
 					reason,
 				);
-				showToast({ type: "success", title: "Success", description: message });
+				showSuccessToast(
+					showToast,
+					message ?? vendorContent.toast.clarify.successTitle,
+					vendorContent.toast.clarify.successTitle,
+				);
 				closeReasonModal();
 				await onClarify?.();
 			} catch (error) {
-				showToast({
-					type: "error",
-					title: "Error",
-					description: getErrorMessage(
-						error,
-						"Unable to complete this action.",
-					),
-				});
+				showApiErrorToast(
+					showToast,
+					error,
+					vendorContent.toast.clarify.errorFallback,
+					vendorContent.toast.clarify.errorTitle,
+				);
 			} finally {
 				setReasonModal((current) => ({ ...current, loading: false }));
 			}
@@ -671,19 +754,93 @@ export function useVendorCreationForm({
 
 	const [currentStep, setCurrentStep] = React.useState(1);
 
-	const [formOneValuesState, setFormOneValues] =
-		React.useState<VendorCreationFormOneValues | null>(null);
+	// ───────────────────────────────────────────────────────────────────────
+	// Form One / Form Two — React Hook Form + Zod
+	// ───────────────────────────────────────────────────────────────────────
+	// These two useForm() instances are the single authoritative source of
+	// validation for the vendor/THCM forms (see vendorFormOne.schema.ts /
+	// vendorFormTwo.schema.ts) — the manual validators that used to live in
+	// vendor.onboarding.validations.ts have been removed, not duplicated.
+	//
+	// VendorCreationFormOne/Two.tsx are NOT wired to RHF's register()/
+	// Controller — they're a manual multi-step wizard driven by plain
+	// values/errors/onChange props (and this hook is consumed through
+	// Context by several other read-only views too). Rewiring those
+	// components' every field to register()/Controller would touch a very
+	// large amount of working JSX for no behavioral gain, so instead RHF
+	// stays internal to this hook: it owns validation state, and this hook
+	// keeps exposing the exact same formOneValues/formOneErrors/
+	// handleFormOneChange/handleFormOneBlur (and formTwo equivalents) shape
+	// it always has, now computed from the RHF/Zod source of truth instead
+	// of the old manual validators.
 
-	const [formTwoValues, setFormTwoValues] =
-		React.useState<VendorCreationFormTwoValues>(EMPTY_FORM_TWO);
+	// originalAccountNumber's value at the moment a schema needs it can't
+	// come from a closed-over prop (the schema factory is only created once,
+	// inside the resolver below) — a ref keeps it fresh without having to
+	// recreate the resolver/useForm instance on every detail refetch.
+	const originalAccountNumberRef = React.useRef("");
+	const [originalAccountNumber, setOriginalAccountNumberState] =
+		React.useState("");
 
-	const [formOneErrors, setFormOneErrors] = React.useState<
-		VendorFormErrors<VendorCreationFormOneValues>
-	>({});
+	const setOriginalAccountNumber = React.useCallback((value: string) => {
+		originalAccountNumberRef.current = value;
+		setOriginalAccountNumberState(value);
+	}, []);
 
-	const [formTwoErrors, setFormTwoErrors] = React.useState<
-		VendorFormErrors<VendorCreationFormTwoValues>
-	>({});
+	const formOneResolver: Resolver<VendorFormOneValues> = React.useCallback(
+		(values, context, options) =>
+			zodResolver(buildVendorFormOneSchema(originalAccountNumberRef.current))(
+				values,
+				context,
+				options,
+			),
+		[],
+	);
+
+	// mode/reValidateMode below only govern fields registered via
+	// register()/Controller — Form One and Form Two are driven by explicit
+	// setValue() calls from changeFormOne/changeFormTwo instead (see the
+	// "shouldValidate: true" comment on each), which is what actually makes
+	// validation run on every keystroke here. These are kept "onChange" too
+	// so the two configuration points don't contradict each other.
+	const formOneForm = useForm<VendorFormOneValues>({
+		resolver: formOneResolver,
+		mode: "onChange",
+		reValidateMode: "onChange",
+		defaultValues: toFormOneDefaults(EMPTY_FORM_ONE),
+	});
+
+	const formTwoForm = useForm<VendorFormTwoValues>({
+		resolver: zodResolver(vendorFormTwoSchema),
+		mode: "onChange",
+		reValidateMode: "onChange",
+		defaultValues: toFormTwoDefaults(EMPTY_FORM_TWO),
+	});
+
+	const formOneValuesWatched = useWatch({ control: formOneForm.control });
+	const formTwoValues = useWatch({ control: formTwoForm.control });
+
+	const formOneErrors = React.useMemo(
+		() =>
+			Object.fromEntries(
+				Object.entries(formOneForm.formState.errors).map(([key, value]) => [
+					key,
+					value?.message,
+				]),
+			) as VendorFormErrors<VendorCreationFormOneValues>,
+		[formOneForm.formState.errors],
+	);
+
+	const formTwoErrors = React.useMemo(
+		() =>
+			Object.fromEntries(
+				Object.entries(formTwoForm.formState.errors).map(([key, value]) => [
+					key,
+					value?.message,
+				]),
+			) as VendorFormErrors<VendorCreationFormTwoValues>,
+		[formTwoForm.formState.errors],
+	);
 
 	const [pendingWorkflowSelection, setPendingWorkflowSelectionState] =
 		React.useState<PendingWorkflowSelection | null>(null);
@@ -694,7 +851,6 @@ export function useVendorCreationForm({
 	const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
 	const [isPreparingPdf, setIsPreparingPdf] = React.useState(false);
 	const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
-	const [originalAccountNumber, setOriginalAccountNumber] = React.useState("");
 	const submissionInFlightRef = React.useRef(false);
 	const workflowPreparedRef = React.useRef(false);
 	const vendorUpdateCompletedRef = React.useRef(false);
@@ -737,9 +893,21 @@ export function useVendorCreationForm({
 		[publicQuery.data],
 	);
 
-	const formOneValues =
-		formOneValuesState ??
-		(isPublicForm ? publicFormInitialValues : EMPTY_FORM_ONE);
+	// Mirrors the old `formOneValuesState ?? publicFormInitialValues`
+	// fallback: keep syncing the public form from the fetched session while
+	// the vendor hasn't touched anything yet, and stop once they have (so a
+	// background refetch — e.g. after a draft save — never stomps on
+	// in-progress edits). formState.isDirty is read fresh on every reset()
+	// call, which is exactly the same "touched" signal the old null-vs-set
+	// formOneValuesState carried.
+	React.useEffect(() => {
+		if (!isPublicForm) return;
+		if (formOneForm.formState.isDirty) return;
+
+		formOneForm.reset(toFormOneDefaults(publicFormInitialValues));
+	}, [isPublicForm, publicFormInitialValues, formOneForm]);
+
+	const formOneValues: VendorCreationFormOneValues = formOneValuesWatched;
 
 	const updateMutation = useUpdateVendorMutation();
 	const submitMutation = useSubmitVendorMutation();
@@ -897,11 +1065,14 @@ export function useVendorCreationForm({
 
 		detailInitKeyRef.current = key;
 
-		setFormOneValues(data.partOne ?? EMPTY_FORM_ONE);
-		setFormTwoValues(data.partTwo ?? {});
+		// Order matters: the ref backing the schema factory must be current
+		// *before* formOneForm.reset() triggers Zod validation of the
+		// freshly-loaded values (reset() with a resolver re-validates).
 		setOriginalAccountNumber(
 			normalizeAccountNumber(data.partOne?.accountNumber),
 		);
+		formOneForm.reset(toFormOneDefaults(data.partOne ?? EMPTY_FORM_ONE));
+		formTwoForm.reset(toFormTwoDefaults(data.partTwo ?? {}));
 
 		if (stepInitVendorIdRef.current !== vendorRequestId) {
 			stepInitVendorIdRef.current = vendorRequestId;
@@ -912,6 +1083,9 @@ export function useVendorCreationForm({
 		detailQuery.dataUpdatedAt,
 		isPublicForm,
 		vendorRequestId,
+		formOneForm,
+		formTwoForm,
+		setOriginalAccountNumber,
 	]);
 
 	const next = React.useCallback(() => {
@@ -922,19 +1096,24 @@ export function useVendorCreationForm({
 		setCurrentStep((step) => Math.max(step - 1, 1));
 	}, []);
 
-	const validateFormOneBeforeSubmit = React.useCallback((): boolean => {
-		const errors = normalizeMandatoryErrors(
-			validateFormOneForSubmit(formOneValues, originalAccountNumber),
-		);
-		setFormOneErrors(errors);
-		return Object.keys(errors).length === 0;
-	}, [formOneValues, originalAccountNumber]);
+	// Full submit-time gate for each form — runs the whole Zod schema (via
+	// RHF's own resolver-backed trigger()) and populates formState.errors,
+	// which formOneErrors/formTwoErrors above already mirror out as plain
+	// field->message objects. Kept as the same `(): boolean` signature used
+	// everywhere below by returning the already-awaited result — every
+	// caller in this file is itself async, so `await`ing these two is a
+	// same-file, non-breaking change; nothing outside this file (e.g.
+	// VendorCreationFormOne.tsx) inspects the boolean itself, it only
+	// forwards the function reference as `validateFields`.
+	const validateFormOneBeforeSubmit = React.useCallback(
+		() => formOneForm.trigger(),
+		[formOneForm],
+	);
 
-	const validateFormTwoBeforeSubmit = React.useCallback((): boolean => {
-		const errors = validateMandatoryValues(formTwoValues);
-		setFormTwoErrors(errors);
-		return Object.keys(errors).length === 0;
-	}, [formTwoValues]);
+	const validateFormTwoBeforeSubmit = React.useCallback(
+		() => formTwoForm.trigger(),
+		[formTwoForm],
+	);
 
 	const changeFormOne = React.useCallback(
 		<K extends keyof VendorCreationFormOneValues>(
@@ -943,62 +1122,38 @@ export function useVendorCreationForm({
 		) => {
 			vendorUpdateCompletedRef.current = false;
 
-			setFormOneValues((current) => {
-				let nextValues = {
-					...(current ?? formOneValues),
-					[field]: value,
-				};
+			const fieldName = field as keyof VendorFormOneValues;
 
-				if (field === "gstin") {
-					const derivedPan = extractPanFromGstin(String(value ?? ""));
-
-					if (derivedPan) {
-						nextValues = {
-							...nextValues,
-							pan: derivedPan,
-						};
-					}
-				}
-
-				return nextValues;
+			formOneForm.setValue(fieldName, (value ?? "") as never, {
+				shouldDirty: true,
+				// Validate on every keystroke, per explicit request — errors
+				// (and the field's success tick) should update live as the
+				// vendor types, not only once they blur the field or hit
+				// Submit/Save & Proceed.
+				shouldValidate: true,
 			});
 
-			// Clear the current error while user is correcting the field.
-			setFormOneErrors((current) => {
-				if (!current[field]) {
-					return current;
-				}
+			// GSTIN embeds the vendor's PAN at characters 3-12 — live-derive it
+			// exactly like the pre-migration changeFormOne did.
+			if (field === "gstin") {
+				const derivedPan = extractPanFromGstin(String(value ?? ""));
 
-				return {
-					...current,
-					[field]: undefined,
-				};
-			});
+				if (derivedPan) {
+					formOneForm.setValue("pan", derivedPan, {
+						shouldDirty: true,
+						shouldValidate: true,
+					});
+				}
+			}
 		},
-		[formOneValues],
+		[formOneForm],
 	);
 
 	const blurFormOneField = React.useCallback(
 		<K extends keyof VendorCreationFormOneValues>(field: K) => {
-			let error: string | undefined;
-
-			if (field === "pan") {
-				error = validatePanForForm(formOneValues);
-			} else if (field === "confirmAccountNumber") {
-				error = validateConfirmAccountNumber(
-					formOneValues,
-					originalAccountNumber,
-				);
-			} else {
-				error = validateFormOneField(field, formOneValues[field]);
-			}
-
-			setFormOneErrors((current) => ({
-				...current,
-				[field]: error,
-			}));
+			void formOneForm.trigger(field as keyof VendorFormOneValues);
 		},
-		[formOneValues, originalAccountNumber],
+		[formOneForm],
 	);
 
 	const changeFormTwo = React.useCallback(
@@ -1007,44 +1162,44 @@ export function useVendorCreationForm({
 			value: VendorCreationFormTwoValues[K],
 		) => {
 			vendorUpdateCompletedRef.current = false;
-			setFormTwoValues((current) => ({
-				...current,
-				[key]: value,
-			}));
 
-			setFormTwoErrors((current) => ({
-				...current,
-				[key]: "",
-			}));
+			const fieldName = key as keyof VendorFormTwoValues;
+
+			formTwoForm.setValue(fieldName, (value ?? "") as never, {
+				shouldDirty: true,
+				// Validate on every keystroke — see changeFormOne above.
+				shouldValidate: true,
+			});
 		},
-		[],
+		[formTwoForm],
 	);
 
 	const saveVendorDetails = async () => {
 		if (!vendorRequestId) {
 			showToast({
 				type: "error",
-				title: "Unable to continue",
-				description: "Vendor onboarding ID is missing.",
+				title: vendorContent.toast.saveDetails.missingIdTitle,
+				description: vendorContent.toast.saveDetails.missingIdDescription,
 			});
 			return;
 		}
-		if (!validateFormOneBeforeSubmit()) {
+		if (!(await validateFormOneBeforeSubmit())) {
 			showToast({
 				type: "error",
-				title: "Please fix the highlighted fields",
-				description: "Some vendor details are missing or invalid.",
+				title: vendorContent.toast.saveDetails.validationTitle,
+				description: vendorContent.toast.saveDetails.validationDescription,
 			});
 			return;
 		}
 		try {
 			next();
 		} catch (error) {
-			showToast({
-				type: "error",
-				title: "Error",
-				description: getErrorMessage(error, "Failed to save vendor details."),
-			});
+			showApiErrorToast(
+				showToast,
+				error,
+				vendorContent.toast.saveDetails.errorFallback,
+				vendorContent.toast.saveDetails.errorTitle,
+			);
 		}
 	};
 
@@ -1053,18 +1208,39 @@ export function useVendorCreationForm({
 			return;
 		}
 
-		if (!validateFormTwoBeforeSubmit()) {
+		if (!(await validateFormTwoBeforeSubmit())) {
 			showToast({
 				type: "error",
-				title: "Please fix the highlighted fields",
-				description: "All THCM details are mandatory.",
+				title: vendorContent.toast.saveThcmDetails.validationTitle,
+				description: vendorContent.toast.saveThcmDetails.validationDescription,
 			});
 			return;
 		}
 
-		// Internal step navigation does not persist. The complete payload is
-		// updated once at the final submission boundary.
-		next();
+		try {
+			await handleSaveVendorUpdate(
+				buildVendorOnboardingUpdatePayload(formOneValues, formTwoValues),
+			);
+			// Mirrors the ref submitForApproval already checks — marking it here
+			// means a plain "Save & Next" with no further edits won't trigger a
+			// second, redundant update call (or a duplicate toast) at final submit.
+			vendorUpdateCompletedRef.current = true;
+
+			showSuccessToast(
+				showToast,
+				vendorContent.toast.saveThcmDetails.successDescription,
+				vendorContent.toast.saveThcmDetails.successTitle,
+			);
+
+			next();
+		} catch (error) {
+			showApiErrorToast(
+				showToast,
+				error,
+				vendorContent.toast.saveThcmDetails.errorFallback,
+				vendorContent.toast.saveThcmDetails.errorTitle,
+			);
+		}
 	};
 
 	const submitDraftPublicVendor = async (
@@ -1078,19 +1254,20 @@ export function useVendorCreationForm({
 				formData: buildPublicFormData(formOneValues, submission, "DRAFT"),
 			});
 
-			showToast({
-				type: "success",
-				title: "Draft saved",
-				description: "Your vendor details were saved successfully.",
-			});
+			showSuccessToast(
+				showToast,
+				vendorContent.toast.draft.successDescription,
+				vendorContent.toast.draft.successTitle,
+			);
 
 			await publicQuery.refetch();
 		} catch (error) {
-			showToast({
-				type: "error",
-				title: "Unable to save draft",
-				description: getErrorMessage(error, "Failed to save draft."),
-			});
+			showApiErrorToast(
+				showToast,
+				error,
+				vendorContent.toast.draft.errorFallback,
+				vendorContent.toast.draft.errorTitle,
+			);
 		}
 	};
 
@@ -1100,11 +1277,11 @@ export function useVendorCreationForm({
 		if (!submission || !normalizedToken) {
 			return;
 		}
-		if (!validateFormOneBeforeSubmit()) {
+		if (!(await validateFormOneBeforeSubmit())) {
 			showToast({
 				type: "error",
-				title: "Please fix the highlighted fields",
-				description: "Some vendor details are missing or invalid.",
+				title: vendorContent.toast.publicSubmit.validationTitle,
+				description: vendorContent.toast.publicSubmit.validationDescription,
 			});
 			return;
 		}
@@ -1113,8 +1290,8 @@ export function useVendorCreationForm({
 		if (!submission.dpdpConsent) {
 			showToast({
 				type: "error",
-				title: "Required information missing",
-				description: "Please accept the Data Privacy Notice.",
+				title: vendorContent.toast.publicSubmit.dpdpTitle,
+				description: vendorContent.toast.publicSubmit.dpdpDescription,
 			});
 
 			return;
@@ -1122,8 +1299,11 @@ export function useVendorCreationForm({
 		if (missing.length > 0) {
 			showToast({
 				type: "error",
-				title: "Required information missing",
-				description: `Please upload: ${missing.join(", ")}`,
+				title: vendorContent.toast.publicSubmit.missingDocsTitle,
+				description: formatVendorMessage(
+					vendorContent.toast.publicSubmit.missingDocsDescription,
+					{ documents: missing.join(", ") },
+				),
 			});
 
 			return;
@@ -1137,11 +1317,12 @@ export function useVendorCreationForm({
 
 			await onSuccess?.();
 		} catch (error) {
-			showToast({
-				type: "error",
-				title: "Error",
-				description: getErrorMessage(error, "Failed to submit vendor form."),
-			});
+			showApiErrorToast(
+				showToast,
+				error,
+				vendorContent.toast.publicSubmit.errorFallback,
+				vendorContent.toast.publicSubmit.errorTitle,
+			);
 		}
 	};
 
@@ -1163,21 +1344,22 @@ export function useVendorCreationForm({
 		if (!vendorRequestId) {
 			showToast({
 				type: "error",
-				title: "Submission failed",
-				description: "Vendor onboarding ID is missing.",
+				title: vendorContent.toast.submitForApproval.missingIdTitle,
+				description: vendorContent.toast.submitForApproval.missingIdDescription,
 			});
 			return;
 		}
 
-		const isFormOneValid = validateFormOneBeforeSubmit();
-		const isFormTwoValid = validateFormTwoBeforeSubmit();
+		const isFormOneValid = await validateFormOneBeforeSubmit();
+		const isFormTwoValid = await validateFormTwoBeforeSubmit();
 
 		if (!isFormOneValid || !isFormTwoValid) {
 			setCurrentStep(isFormOneValid ? 2 : 1);
 			showToast({
 				type: "error",
-				title: "Please fix the highlighted fields",
-				description: "All form fields are mandatory.",
+				title: vendorContent.toast.submitForApproval.validationTitle,
+				description:
+					vendorContent.toast.submitForApproval.validationDescription,
 			});
 			return;
 		}
@@ -1236,9 +1418,9 @@ export function useVendorCreationForm({
 		if (shouldAssignSelectedWorkflow && !hasPendingWorkflowSelection) {
 			showToast({
 				type: "error",
-				title: "Workflow required",
+				title: vendorContent.toast.submitForApproval.workflowRequiredTitle,
 				description:
-					"Return to the Workflow step and select an approval workflow.",
+					vendorContent.toast.submitForApproval.workflowRequiredDescription,
 			});
 			return;
 		}
@@ -1246,9 +1428,10 @@ export function useVendorCreationForm({
 		if (isClarifiedResubmission && !activeWorkflowId) {
 			showToast({
 				type: "error",
-				title: "Workflow required",
+				title: vendorContent.toast.submitForApproval.activeWorkflowMissingTitle,
 				description:
-					"The active workflow is unavailable. Return to the Workflow step and select a workflow.",
+					vendorContent.toast.submitForApproval
+						.activeWorkflowMissingDescription,
 			});
 			return;
 		}
@@ -1256,9 +1439,9 @@ export function useVendorCreationForm({
 		if (shouldAssignSelectedWorkflow && (!workspaceId || !appId)) {
 			showToast({
 				type: "error",
-				title: "Workflow assignment failed",
+				title: vendorContent.toast.submitForApproval.workspaceMissingTitle,
 				description:
-					"Workspace or application information is missing. Please refresh and try again.",
+					vendorContent.toast.submitForApproval.workspaceMissingDescription,
 			});
 			return;
 		}
@@ -1269,8 +1452,9 @@ export function useVendorCreationForm({
 		) {
 			showToast({
 				type: "error",
-				title: "Template name required",
-				description: "Enter a name for the edited workflow template.",
+				title: vendorContent.toast.submitForApproval.templateNameRequiredTitle,
+				description:
+					vendorContent.toast.submitForApproval.templateNameRequiredDescription,
 			});
 			return;
 		}
@@ -1279,11 +1463,20 @@ export function useVendorCreationForm({
 
 		try {
 			// The THCM form is persisted once, before any workflow operation.
+			// Normally this is already done by saveThcmDetails ("Save & Next" on
+			// Form Two) — this only runs (and toasts) again if the vendor/THCM
+			// edited a field after that save, which resets vendorUpdateCompletedRef.
 			if (!vendorUpdateCompletedRef.current) {
 				await handleSaveVendorUpdate(
 					buildVendorOnboardingUpdatePayload(formOneValues, formTwoValues),
 				);
 				vendorUpdateCompletedRef.current = true;
+
+				showSuccessToast(
+					showToast,
+					vendorContent.toast.saveThcmDetails.successDescription,
+					vendorContent.toast.saveThcmDetails.successTitle,
+				);
 			}
 
 			if (shouldCreateEditedTemplate && pendingWorkflowSelection) {
@@ -1342,6 +1535,12 @@ export function useVendorCreationForm({
 				}
 			}
 
+			// Captured before the branch below mutates workflowPreparedRef, so we
+			// can tell "just attached this call" apart from "already attached on
+			// an earlier attempt, only retrying what failed after it" — the
+			// latter must not re-fire the workflow-attached toast.
+			const workflowJustPrepared = !workflowPreparedRef.current;
+
 			if (workflowPreparedRef.current) {
 				// A previous attempt prepared the workflow but failed later in the
 				// chain. Do not assign/activate it a second time.
@@ -1372,6 +1571,14 @@ export function useVendorCreationForm({
 				);
 			}
 
+			if (workflowJustPrepared) {
+				showSuccessToast(
+					showToast,
+					vendorContent.toast.workflowAttached.successDescription,
+					vendorContent.toast.workflowAttached.successTitle,
+				);
+			}
+
 			// Status advances only after the update and workflow preparation succeed.
 			await submitMutation.mutateAsync(vendorRequestId);
 			workflowPreparedRef.current = false;
@@ -1384,15 +1591,18 @@ export function useVendorCreationForm({
 			showToast({
 				type: "success",
 				title: isClarifiedResubmission
-					? "Resubmitted successfully"
-					: "Submitted successfully",
+					? vendorContent.toast.submitForApproval.resubmitSuccessTitle
+					: vendorContent.toast.submitForApproval.submitSuccessTitle,
 				description: isClarifiedResubmission
 					? hasPendingWorkflowSelection
-						? "The clarified vendor details were updated and the selected workflow was applied."
+						? vendorContent.toast.submitForApproval
+								.resubmitWithNewWorkflowDescription
 						: resubmitStageEdits?.length
-							? "The clarified vendor details were updated and the current workflow's stages were changed."
-							: "The clarified vendor details were updated and the active workflow was continued."
-					: "The THCM details were updated and the approval workflow was assigned.",
+							? vendorContent.toast.submitForApproval
+									.resubmitWithStageEditsDescription
+							: vendorContent.toast.submitForApproval
+									.resubmitUnchangedWorkflowDescription
+					: vendorContent.toast.submitForApproval.submitSuccessDescription,
 			});
 
 			if (onSuccess) {
@@ -1401,20 +1611,16 @@ export function useVendorCreationForm({
 				navigate("/vendor/onboarding/listing?tab=onboarding");
 			}
 		} catch (error: unknown) {
-			console.error("Vendor onboarding submission failed:", error);
-
-			showToast({
-				type: "error",
-				title: isClarifiedResubmission
-					? "Resubmission failed"
-					: "Submission failed",
-				description: getErrorMessage(
-					error,
-					isClarifiedResubmission
-						? "The clarified vendor details could not be updated."
-						: "Unable to submit the vendor onboarding request.",
-				),
-			});
+			showApiErrorToast(
+				showToast,
+				error,
+				isClarifiedResubmission
+					? vendorContent.toast.submitForApproval.resubmitFailedFallback
+					: vendorContent.toast.submitForApproval.submitFailedFallback,
+				isClarifiedResubmission
+					? vendorContent.toast.submitForApproval.resubmitFailedTitle
+					: vendorContent.toast.submitForApproval.submitFailedTitle,
+			);
 		} finally {
 			submissionInFlightRef.current = false;
 		}
@@ -1448,9 +1654,9 @@ export function useVendorCreationForm({
 			if (!canEditVendorCode) {
 				showToast({
 					type: "error",
-					title: "Permission denied",
+					title: vendorContent.toast.vendorCode.permissionDeniedTitle,
 					description:
-						"You are not allowed to update the Vendor Code at this workflow stage.",
+						vendorContent.toast.vendorCode.permissionDeniedDescription,
 				});
 				return false;
 			}
@@ -1459,10 +1665,10 @@ export function useVendorCreationForm({
 				(codeOverride ?? formTwoValues.vendorCode)?.trim() ?? "";
 
 			if (!vendorCode) {
-				setFormTwoErrors((current) => ({
-					...current,
-					vendorCode: MANDATORY_ERROR,
-				}));
+				formTwoForm.setError("vendorCode", {
+					type: "manual",
+					message: MANDATORY_ERROR,
+				});
 				return false;
 			}
 			const isDirty =
@@ -1482,23 +1688,16 @@ export function useVendorCreationForm({
 					isExternalApprover,
 				});
 
-				setFormTwoValues((current) => ({
-					...current,
-					vendorCode,
-				}));
-
-				setFormTwoErrors((current) => ({
-					...current,
-					vendorCode: "",
-				}));
+				formTwoForm.setValue("vendorCode", vendorCode, { shouldDirty: true });
+				formTwoForm.clearErrors("vendorCode");
 
 				await detailQuery.refetch();
 
-				showToast({
-					type: "success",
-					title: "Vendor code updated",
-					description: "The Vendor Code was updated successfully.",
-				});
+				showSuccessToast(
+					showToast,
+					vendorContent.toast.vendorCode.successDescription,
+					vendorContent.toast.vendorCode.successTitle,
+				);
 
 				return true;
 			} catch (error) {
@@ -1508,9 +1707,8 @@ export function useVendorCreationForm({
 				if (responseStatus === 401) {
 					showToast({
 						type: "error",
-						title: "Authentication error",
-						description:
-							"The server rejected your authentication token. Please check the request authorization header.",
+						title: vendorContent.toast.vendorCode.authErrorTitle,
+						description: vendorContent.toast.vendorCode.authErrorDescription,
 					});
 					return false;
 				}
@@ -1518,21 +1716,18 @@ export function useVendorCreationForm({
 				if (responseStatus === 403) {
 					showToast({
 						type: "error",
-						title: "Permission denied",
-						description:
-							"The server does not allow this approver to update the Vendor Code.",
+						title: vendorContent.toast.vendorCode.forbiddenTitle,
+						description: vendorContent.toast.vendorCode.forbiddenDescription,
 					});
 					return false;
 				}
 
-				showToast({
-					type: "error",
-					title: "Unable to update vendor code",
-					description: getErrorMessage(
-						error,
-						"Failed to update the Vendor Code.",
-					),
-				});
+				showApiErrorToast(
+					showToast,
+					error,
+					vendorContent.toast.vendorCode.errorFallback,
+					vendorContent.toast.vendorCode.errorTitle,
+				);
 				return false;
 			} finally {
 				setIsSavingVendorCode(false);
@@ -1542,6 +1737,7 @@ export function useVendorCreationForm({
 			canEditVendorCode,
 			detailQuery,
 			formTwoValues.vendorCode,
+			formTwoForm,
 			handleSaveVendorUpdate,
 			isExternalApprover,
 			isVendorCodeDirty,
@@ -1558,22 +1754,20 @@ export function useVendorCreationForm({
 		try {
 			await closeMutation.mutateAsync(vendorRequestId);
 
-			showToast({
-				type: "success",
-				title: "Vendor onboarding closed",
-				description: "The vendor onboarding request was closed successfully.",
-			});
+			showSuccessToast(
+				showToast,
+				vendorContent.toast.acceptAndClose.successDescription,
+				vendorContent.toast.acceptAndClose.successTitle,
+			);
 
 			navigate("/vendor/onboarding/listing?tab=onboarding");
 		} catch (error) {
-			showToast({
-				type: "error",
-				title: "Unable to close onboarding",
-				description: getErrorMessage(
-					error,
-					"Failed to close the vendor onboarding request.",
-				),
-			});
+			showApiErrorToast(
+				showToast,
+				error,
+				vendorContent.toast.acceptAndClose.errorFallback,
+				vendorContent.toast.acceptAndClose.errorTitle,
+			);
 		}
 	};
 
@@ -1591,14 +1785,12 @@ export function useVendorCreationForm({
 			setPdfUrl(url);
 			setPdfPreviewOpen(true);
 		} catch (error) {
-			showToast({
-				type: "error",
-				title: "PDF preview failed",
-				description: getErrorMessage(
-					error,
-					"Unable to prepare the vendor details PDF.",
-				),
-			});
+			showApiErrorToast(
+				showToast,
+				error,
+				vendorContent.toast.pdf.previewErrorFallback,
+				vendorContent.toast.pdf.previewErrorTitle,
+			);
 		} finally {
 			setIsPreparingPdf(false);
 		}
@@ -1637,8 +1829,8 @@ export function useVendorCreationForm({
 		} catch {
 			showToast({
 				type: "error",
-				title: "PDF download failed",
-				description: "Unable to download the vendor details PDF.",
+				title: vendorContent.toast.pdf.downloadErrorTitle,
+				description: vendorContent.toast.pdf.downloadErrorFallback,
 			});
 		} finally {
 			setIsDownloadingPdf(false);
@@ -1749,6 +1941,15 @@ export function useVendorCreationForm({
 		handleFormOneBlur: blurFormOneField,
 
 		handleFormTwoChange: changeFormTwo,
+		// Form Two's "Reset" button had no handler at all before this
+		// migration (a dead button — see VendorCreationFormTwo.tsx). Now
+		// backed by RHF: resets back to the last-loaded/defaultValues
+		// baseline, the same "reset to original" meaning Form One's Reset
+		// already has.
+		handleResetFormTwo: React.useCallback(
+			() => formTwoForm.reset(),
+			[formTwoForm],
+		),
 
 		handleSaveFormOne: saveVendorDetails,
 		handleSaveFormOneDraft: isPublicForm ? submitDraftPublicVendor : undefined,

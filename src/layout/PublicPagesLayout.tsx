@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-
+import logo from "../assets/thcm-logo/th-brand-logo.png";
 type PublicPagesLayoutProps = {
 	children: ReactNode;
 	className?: string;
@@ -17,7 +17,7 @@ export const PublicPagesLayout = ({
 			<header className="header-public bg-white">
 				<div className="public-page-brand">
 					<a className="home-brand" href="/" aria-label="Tata Hitachi home">
-						<img src="/lo.jpg" alt="Tata Hitachi" />
+						<img src={logo} alt="Tata Hitachi" />
 					</a>
 				</div>
 			</header>

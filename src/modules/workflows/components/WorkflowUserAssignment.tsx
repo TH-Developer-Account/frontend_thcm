@@ -1,13 +1,17 @@
-import React, { useEffect, useMemo, useState } from "react";
+import axios from "axios";
+import React, { useEffect, useState } from "react";
 import { Modal } from "../../../components/common/Modal";
 import Button from "../../../components/common/Button";
 import Avatar from "../../../components/common/Avatar";
 import { SearchInput } from "../../../components/forms/SearchInput";
+import { useDebounce } from "../../../hooks/useDebounce";
 import type { WorkflowRow, WorkflowUser } from "../types/types";
 import { workflowApi, getWorkflowErrorMessage } from "../api/workflow.api";
 import { useAssignWorkflowUsersMutation } from "../context/useWorkflowMutations";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { getFullName } from "../utils/user";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 type AssignProps = {
 	workflow: WorkflowRow | null;
@@ -25,23 +29,12 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 	const assignMutation = useAssignWorkflowUsersMutation();
 	const { showToast } = useToast();
 
-	const filteredUsers = useMemo(() => {
-		const keyword = search.trim().toLowerCase();
+	const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_MS);
 
-		if (!keyword) return users;
-
-		return users.filter((user) => {
-			const fullName = getFullName(user).toLowerCase();
-			const email = (user.email ?? "").toLowerCase();
-			const phone = (user.phone ?? "").toLowerCase();
-
-			return (
-				fullName.includes(keyword) ||
-				email.includes(keyword) ||
-				phone.includes(keyword)
-			);
-		});
-	}, [users, search]);
+	// The backend already filters /users by `search` (name/email/phone) —
+	// no client-side re-filtering needed, and none of it has to touch all
+	// 10k rows to do it.
+	const filteredUsers = users;
 
 	const toggleUser = (id: string) => {
 		setSelectedUsers((prev) =>
@@ -49,23 +42,65 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 		);
 	};
 
+	/*
+	 * Initialize the selected users whenever the opened workflow changes.
+	 * Kept separate from the search-fetching effect so a search request
+	 * never resets selections already made in the modal.
+	 */
 	useEffect(() => {
-		if (!workflow?.id) return;
+		if (!workflow?.id) {
+			setSelectedUsers([]);
+			return;
+		}
 
-		const loadUsers = async () => {
+		setSelectedUsers(workflow.workflowUsers?.map((each) => each.id) ?? []);
+	}, [workflow?.id, workflow?.workflowUsers]);
+
+	/*
+	 * Backend search:
+	 * - waits 300 ms after typing
+	 * - sends `search` to /users
+	 * - aborts the previous HTTP request when search changes
+	 * - prevents stale responses from replacing newer results
+	 */
+	useEffect(() => {
+		if (!workflow?.id) {
+			setUsers([]);
+			return;
+		}
+
+		const controller = new AbortController();
+
+		setLoading(true);
+
+		const fetchUsers = async () => {
 			try {
-				setLoading(true);
-				setUsers(await workflowApi.getUsers());
-				setSelectedUsers(workflow.workflowUsers?.map((each) => each.id) ?? []);
+				const result = await workflowApi.getUsers({
+					search: debouncedSearch,
+					signal: controller.signal,
+				});
+
+				setUsers(result);
 			} catch (err) {
+				if (axios.isCancel(err) || controller.signal.aborted) {
+					return;
+				}
+
 				console.error("Failed to fetch users", err);
+				setUsers([]);
 			} finally {
-				setLoading(false);
+				if (!controller.signal.aborted) {
+					setLoading(false);
+				}
 			}
 		};
 
-		loadUsers();
-	}, [workflow]);
+		void fetchUsers();
+
+		return () => {
+			controller.abort();
+		};
+	}, [workflow?.id, debouncedSearch]);
 
 	const handleSubmit = async (): Promise<void> => {
 		if (!workflow?.id || assignMutation.loading) {

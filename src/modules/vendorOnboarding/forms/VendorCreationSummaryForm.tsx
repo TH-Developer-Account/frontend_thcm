@@ -42,6 +42,8 @@ import VendorCreationFormOne from "./VendorCreationFormOne";
 import VendorCreationFormTwo from "./VendorCreationFormTwo";
 import NavigateButton from "../../../components/common/NavigateButton";
 import { Badge } from "../../../components/common/Badge";
+import { vendorContent } from "../../../content/vendor.content";
+import { showApiErrorToast } from "../../../utils/apiError.helper";
 
 type VendorCreationSummaryMode = "edit" | "view";
 
@@ -195,12 +197,13 @@ const VendorCreationSummaryForm = ({
 
 			document.body.appendChild(downloadLink);
 			downloadLink.click();
-		} catch {
-			showToast({
-				type: "error",
-				title: "Request failed",
-				description: "Failed to download the Excel file.",
-			});
+		} catch (error) {
+			showApiErrorToast(
+				showToast,
+				error,
+				vendorContent.toast.export.excelErrorFallback,
+				vendorContent.toast.export.excelErrorTitle,
+			);
 		} finally {
 			if (blobUrl) {
 				window.URL.revokeObjectURL(blobUrl);
@@ -214,7 +217,9 @@ const VendorCreationSummaryForm = ({
 	const summaryActions: ActionMenuItem<string>[] = [
 		{
 			id: "download-pdf",
-			label: formContext?.isDownloadingPdf ? "Downloading…" : "PDF",
+			label: formContext?.isDownloadingPdf
+				? vendorContent.summary.actions.downloadingPdf
+				: vendorContent.summary.actions.downloadPdf,
 			Icon: FileDown,
 			onClick: () => void formContext?.handleDownloadPdf?.(),
 			disabled:
@@ -224,14 +229,16 @@ const VendorCreationSummaryForm = ({
 		},
 		{
 			id: "export-excel",
-			label: isExportingExcel ? "Exporting…" : "Excel",
+			label: isExportingExcel
+				? vendorContent.summary.actions.exportingExcel
+				: vendorContent.summary.actions.exportExcel,
 			Icon: FileSpreadsheet,
 			onClick: () => void handleExport(),
 			disabled: !onboardingId || isExportingExcel,
 		},
 		{
 			id: "edit",
-			label: "Edit",
+			label: vendorContent.summary.actions.edit,
 			Icon: Pencil,
 			onClick: handleEdit,
 			hidden: !formContext?.canEditMainForm,
@@ -281,7 +288,7 @@ const VendorCreationSummaryForm = ({
 	const sections: CardSection[] = [
 		{
 			id: "vendor-submitted-details",
-			title: "Vendor Submitted Details",
+			title: vendorContent.summary.sections.vendorSubmittedDetails,
 			// subtitle: "Review the vendor information and uploaded documents.",
 			Icon: Building2,
 			defaultExpanded: true,
@@ -299,7 +306,7 @@ const VendorCreationSummaryForm = ({
 		},
 		{
 			id: "thcm-vendor-details",
-			title: "THCM Vendor Details",
+			title: vendorContent.summary.sections.thcmVendorDetails,
 			// subtitle: "Review the THCM classification and vendor master details.",
 			Icon: FileCheck2,
 			defaultExpanded: true,
@@ -317,7 +324,7 @@ const VendorCreationSummaryForm = ({
 		},
 		{
 			id: "approval-workflow",
-			title: "Approval Workflow",
+			title: vendorContent.summary.sections.approvalWorkflow,
 			// subtitle: "Review the assigned approval stages and their current status.",
 			Icon: ClipboardClock,
 			defaultExpanded: true,
@@ -333,8 +340,8 @@ const VendorCreationSummaryForm = ({
 					</div>
 				) : (
 					<CardEmpty
-						title="No approval workflow assigned"
-						description="Select an approval workflow before submitting the request."
+						title={vendorContent.summary.emptyWorkflow.title}
+						description={vendorContent.summary.emptyWorkflow.description}
 						Icon={ClipboardClock}
 					/>
 				)),
@@ -343,7 +350,7 @@ const VendorCreationSummaryForm = ({
 			? [
 					{
 						id: "comments-and-activity",
-						title: "Chat Section",
+						title: vendorContent.summary.sections.chatSection,
 						// subtitle: "Review the discussion and audit history.",
 						Icon: MessageSquareText,
 						defaultExpanded: true,
@@ -355,7 +362,7 @@ const VendorCreationSummaryForm = ({
 			? [
 					{
 						id: "audit",
-						title: "Audit Section",
+						title: vendorContent.summary.sections.auditSection,
 						// subtitle: "Review the discussion and audit history.",
 						Icon: MessageSquareText,
 						defaultExpanded: true,
@@ -369,7 +376,7 @@ const VendorCreationSummaryForm = ({
 		<div className="vendor-onboarding-form-actions flex justify-between">
 			<Button
 				type="button"
-				text="Back"
+				text={vendorContent.buttons.back}
 				size="sm"
 				appearance="standard"
 				variant="outline"
@@ -380,7 +387,7 @@ const VendorCreationSummaryForm = ({
 				{canActOnCurrentStage && showClarifyAction ? (
 					<Button
 						type="button"
-						text="Send for Clarification"
+						text={vendorContent.buttons.sendForClarification}
 						size="sm"
 						appearance="standard"
 						variant="outline"
@@ -391,7 +398,7 @@ const VendorCreationSummaryForm = ({
 				{canActOnCurrentStage && showApproveAction ? (
 					<Button
 						type="button"
-						text="Approve"
+						text={vendorContent.buttons.approve}
 						size="sm"
 						appearance="standard"
 						variant="brand"
@@ -402,7 +409,7 @@ const VendorCreationSummaryForm = ({
 				{showAcceptAndCloseAction ? (
 					<Button
 						type="button"
-						text="Accept and Close"
+						text={vendorContent.buttons.acceptAndClose}
 						size="sm"
 						Icon={CircleCheck}
 						appearance="standard"
@@ -414,7 +421,7 @@ const VendorCreationSummaryForm = ({
 				{showSendBackAction ? (
 					<Button
 						type="button"
-						text="Send Back to Vendor"
+						text={vendorContent.buttons.sendBackToVendor}
 						size="sm"
 						appearance="standard"
 						variant="outline"
@@ -426,7 +433,7 @@ const VendorCreationSummaryForm = ({
 				{showSubmitAction ? (
 					<Button
 						type="button"
-						text="Final Submit"
+						text={vendorContent.buttons.finalSubmit}
 						size="sm"
 						appearance="standard"
 						variant="brand"
@@ -446,7 +453,7 @@ const VendorCreationSummaryForm = ({
 					isViewMode ? (
 						<div className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight text-iron-dark">
 							<NavigateButton direction="back" />
-							<span>Vendor Onboarding Summary</span>
+							<span>{vendorContent.summary.titles.view}</span>
 							{formContext?.referenceNumber && (
 								<span>/ {formContext?.referenceNumber} /</span>
 							)}
@@ -458,7 +465,7 @@ const VendorCreationSummaryForm = ({
 							<Badge status={formContext?.formStatus} />
 						</div>
 					) : (
-						"Form Summary"
+						vendorContent.summary.titles.edit
 					)
 				}
 				className={!isViewMode ? "border-none" : ""}

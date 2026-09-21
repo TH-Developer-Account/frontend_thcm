@@ -7,10 +7,11 @@ import type {
 	UserCounts,
 	UserFormValues,
 	UserResponse,
-	UserRoleOption,
+	// UserRoleOption,
 	UserStatus,
 	UserStatusTab,
 } from "./user-management.types";
+import type { UserTypeOption } from "./user-management.types";
 
 export const USER_STATUS_TABS = [
 	"All",
@@ -18,6 +19,12 @@ export const USER_STATUS_TABS = [
 	"Blocked",
 	"Inactive",
 ] as const satisfies readonly UserStatusTab[];
+
+export const USER_TYPE_OPTIONS: UserTypeOption[] = [
+	{ label: "THCM", value: "THCM" },
+	{ label: "Dealer", value: "DEALER" },
+	{ label: "Customer", value: "CUSTOMER" },
+];
 
 export const mapUserToForm = (user: User): UserFormValues => ({
 	// Existing URL is rendered from user.avatar; this holds only a new file.
@@ -144,7 +151,11 @@ export const mapUserFormToCreatePayload = (
 		}
 	};
 
-	assignText("password", form.password);
+	// Password isn't collected in the form (see the commented-out password
+	// field in CreateUserForm) — createUser always assigns DEFAULT_PASSWORD
+	// server-side regardless of what's sent. Commented rather than deleted
+	// in case a dedicated "set initial password" flow needs this later.
+	// assignText("password", form.password);
 	assignText("bydId", form.bydId);
 	assignText("s4Id", form.s4Id);
 	assignText("tallyId", form.tallyId);
@@ -215,6 +226,23 @@ export const mapUserFormToUpdatePayload = (
 		if (key === "workspaceId") return; // never sent on update — not an updatable field
 		if (key === "password" && String(value).trim().length === 0) return;
 
+		// joinedOn and businessPartnerId are a DateTime column and a
+		// relation id respectively — unlike a plain text column, an empty
+		// string isn't a valid "leave unchanged" value for either.
+		// prisma.user.update() throws on `joinedOn: ""` ("Invalid value for
+		// argument joinedOn: premature end of input. Expected ISO-8601
+		// DateTime."), and an empty businessPartnerId would try to relate
+		// to a nonexistent id. The form now validates both as required
+		// before submit, but this guard keeps the mapper itself safe for
+		// any other caller.
+		if (
+			(key === "joinedOn" || key === "businessPartnerId") &&
+			typeof value === "string" &&
+			value.trim().length === 0
+		) {
+			return;
+		}
+
 		const apiKey =
 			USER_UPDATE_FIELD_MAP[key as keyof typeof USER_UPDATE_FIELD_MAP];
 		if (!apiKey) return;
@@ -244,43 +272,49 @@ export const getUserCounts = (users: User[] = []): UserCounts => {
 	};
 };
 
-export const getRoleOptions = (users: User[] = []): UserRoleOption[] => {
-	const safeUsers = Array.isArray(users) ? users : [];
+// export const getRoleOptions = (users: User[] = []): UserRoleOption[] => {
+// 	const safeUsers = Array.isArray(users) ? users : [];
 
-	return Array.from(
-		new Set(
-			safeUsers
-				.map((user) => user.role?.trim())
-				.filter((role): role is string => Boolean(role)),
-		),
-	)
-		.sort((left, right) => left.localeCompare(right))
-		.map((role) => ({
-			label: role,
-			value: role,
-		}));
-};
+// 	return Array.from(
+// 		new Set(
+// 			safeUsers
+// 				.map((user) => user.role?.trim())
+// 				.filter((role): role is string => Boolean(role)),
+// 		),
+// 	)
+// 		.sort((left, right) => left.localeCompare(right))
+// 		.map((role) => ({
+// 			label: role,
+// 			value: role,
+// 		}));
+// };
 
-type FilterUsersParams = {
-	users: User[];
-	activeTab: UserStatusTab;
-	search: string;
-	role: UserRoleOption | null;
-};
+// type FilterUsersParams = {
+// 	users: User[];
+// 	activeTab: UserStatusTab;
+// 	search: string;
+// 	role: UserRoleOption | null;
+// };
 
 export const filterUsers = ({
 	users,
 	activeTab,
 	search,
-	role,
-}: FilterUsersParams): User[] => {
+	userType,
+}: {
+	users: User[];
+	activeTab: UserStatusTab;
+	search: string;
+	userType: UserTypeOption | null;
+}): User[] => {
 	const safeUsers = Array.isArray(users) ? users : [];
 	const normalizedSearch = search.trim().toLowerCase();
 
 	return safeUsers.filter((user) => {
 		const matchesStatus = activeTab === "All" || user.status === activeTab;
 
-		const matchesRole = role === null || user.role === role.value;
+		const matchesUserType =
+			userType === null || user.userType === userType.value;
 
 		const searchableContent = [
 			getUserDisplayName(user),
@@ -300,11 +334,10 @@ export const filterUsers = ({
 			.join(" ")
 			.toLowerCase();
 
-		return (
-			matchesStatus &&
-			matchesRole &&
-			(normalizedSearch.length === 0 ||
-				searchableContent.includes(normalizedSearch))
-		);
+		const matchesSearch =
+			normalizedSearch.length === 0 ||
+			searchableContent.includes(normalizedSearch);
+
+		return matchesStatus && matchesUserType && matchesSearch;
 	});
 };
