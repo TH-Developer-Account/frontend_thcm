@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AuthLayout } from "../../../layout/AuthLayout";
 import GuestEmailLoginForm from "../authforms/GuestEmailLoginForm";
 import GuestMobileLoginForm from "../authforms/GuestMobileLoginForm";
+import logo from "../../../assets/thcm-logo/th-brand-logo.png";
 
 type LoginTab = "email" | "mobile";
 
@@ -17,7 +18,7 @@ const GuestLoginPage = () => {
     >
       <header className="auth-form-header">
         <div className="auth-mobile-logo">
-          <img src="/th-brand-logo.png" alt="Tata Hitachi" />
+          <img src={logo} alt="Tata Hitachi" />
         </div>
 
         <p className="auth-form-eyebrow">Welcome back</p>
