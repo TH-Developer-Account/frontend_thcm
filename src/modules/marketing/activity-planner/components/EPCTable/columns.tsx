@@ -8,6 +8,7 @@ import { formatDate } from "../../utils/formatters";
 
 import EPCActionMenu from "./EPCActionMenu";
 import { formatPendingOn } from "../../../../../utils/statusAlert.helper";
+import { Badge } from "../../../../../components/common/Badge";
 
 type EpcColumnActions = {
 	onLeadCreate?: (row: EpcListItem) => void;
@@ -98,7 +99,11 @@ export const getEPCColumns = ({
 			cellClassName: "epc-column-owner",
 		},
 		cell: ({ row }) => {
-			return <span>{formatPendingOn(row.original.pendingOn)}</span>;
+			return (
+				<Badge
+					status={formatPendingOn(row.original.pendingOn, row.original.status)}
+				/>
+			);
 		},
 	},
 

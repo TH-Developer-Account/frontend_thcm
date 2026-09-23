@@ -92,7 +92,6 @@ export const getVendorOnboardingColumns = ({
 		accessorKey: "status",
 		header: "Status",
 		cell: ({ row }) => {
-			console.log("status", row.original.pendingOn, row.original.status);
 			return (
 				<Badge
 					status={formatPendingOn(row.original.pendingOn, row.original.status)}
