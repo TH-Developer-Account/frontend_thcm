@@ -57,8 +57,6 @@ const DEFAULT_MAX_REASON_LENGTH = 1000;
 const pluralizeCharacters = (count: number) =>
 	`${count} character${count === 1 ? "" : "s"}`;
 
-// Always returns a hint (never undefined) so the helper-text line keeps
-// the same height while typing and the row doesn't jump.
 const getReasonHint = (
 	length: number,
 	minLength: number,
