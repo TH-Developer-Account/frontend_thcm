@@ -15,7 +15,7 @@ import type { BusinessPartner } from "./utils/bp.types";
 
 const INITIAL_PAGINATION: PaginationState = {
 	pageIndex: 0,
-	pageSize: 20,
+	pageSize: 10,
 };
 
 const BusinessPartners = () => {
@@ -74,6 +74,7 @@ const BusinessPartners = () => {
 			/>
 
 			<Card
+				className="bp-listing-card"
 				secondaryHeader={
 					<div className="bp-listing-toolbar">
 						<div className="bp-listing-search">

@@ -11,6 +11,7 @@ import type {
 	VendorOnboardingResponse,
 } from "../types/vendorOnboarding.types";
 import { createExportApi } from "../../../common/common.api";
+import type { PendingOn } from "../../../utils/statusAlert.helper";
 
 const VENDOR_URL = "/vendor-onboarding";
 const PUBLIC_VENDOR_URL = `${VENDOR_URL}/public`;
@@ -46,6 +47,7 @@ export type VendorListingRow = {
 		last_name: string;
 	};
 	referenceNumber?: string;
+	pendingOn?: PendingOn;
 };
 
 export type VendorListingResponse = {

@@ -2,7 +2,7 @@
 import type { SidebarItem } from "../../layout/layout.types";
 import {
 	Home,
-	Settings,
+	// Settings,
 	Table,
 	CalendarDays,
 	LayoutDashboard,
@@ -69,10 +69,10 @@ export const marketingSidebar: SidebarItem[] = [
 			},
 		],
 	},
-	{
-		id: "settings",
-		label: "Settings",
-		icon: <Settings size={20} />,
-		link: "/marketing/profile",
-	},
+	// {
+	// 	id: "settings",
+	// 	label: "Settings",
+	// 	icon: <Settings size={20} />,
+	// 	link: "/marketing/profile",
+	// },
 ];

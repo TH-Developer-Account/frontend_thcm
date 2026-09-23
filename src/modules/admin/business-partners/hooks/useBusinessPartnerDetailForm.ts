@@ -54,7 +54,6 @@ export const useBusinessPartnerDetailForm = (
 
 	const startEditing = useCallback(
 		(section: Exclude<DetailFormSection, null>) => {
-			console.log("[detailForm] startEditing:", section);
 			setState({
 				form: mapBusinessPartnerToForm(partner),
 				editingSection: section,
@@ -65,7 +64,6 @@ export const useBusinessPartnerDetailForm = (
 	);
 
 	const cancelEditing = useCallback(() => {
-		console.log("[detailForm] cancelEditing");
 		setState({
 			form: mapBusinessPartnerToForm(partner),
 			editingSection: null,
@@ -88,11 +86,6 @@ export const useBusinessPartnerDetailForm = (
 	);
 
 	const handleSave = useCallback(async () => {
-		console.log(
-			"[detailForm] handleSave called. editingSection =",
-			state.editingSection,
-		);
-
 		const section = state.editingSection;
 		if (!section) {
 			console.warn("[detailForm] handleSave aborted: no editingSection set");
@@ -108,9 +101,6 @@ export const useBusinessPartnerDetailForm = (
 					: section === "contact"
 						? mapContactFormToUpdatePayload(state.form)
 						: mapGeneralFormToUpdatePayload(state.form);
-
-			console.log("[detailForm] section:", section, "payload:", payload);
-			console.log("[detailForm] partner.id:", partner.id);
 
 			const result = await updateBusinessPartner({
 				businessPartnerId: partner.id,

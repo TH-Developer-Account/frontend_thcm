@@ -113,15 +113,42 @@ export const getStatusAlertConfig = (
 	return { variant, title, description };
 };
 
+const formatStatusLabel = (status: string): string =>
+	status
+		.trim()
+		.toLowerCase()
+		.split(/[\s_-]+/)
+		.filter(Boolean)
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(" ");
+
+const TERMINAL_STATUSES = new Set([
+	"APPROVED",
+	"REJECTED",
+	"CANCELLED",
+	"CANCELED",
+	"CLOSED",
+]);
+
 export const formatPendingOn = (
 	pendingOn: PendingOn | null | undefined,
+	status?: string | null,
 ): string => {
-	if (!pendingOn) return "—";
+	const normalizedStatus = status
+		?.trim()
+		.toUpperCase()
+		.replace(/[\s-]+/g, "_");
+
+	// Closed must show "Closed", even if pendingOn says outcome: APPROVED.
+	if (normalizedStatus && TERMINAL_STATUSES.has(normalizedStatus)) {
+		return formatStatusLabel(normalizedStatus);
+	}
+
+	if (!pendingOn) {
+		return status ? formatStatusLabel(status) : "—";
+	}
 
 	switch (pendingOn.role) {
-		case "NONE":
-			return pendingOn.outcome === "APPROVED" ? "Approved" : "Rejected";
-
 		case "PROPOSER":
 			return "Pending on Proposer";
 
@@ -131,15 +158,20 @@ export const formatPendingOn = (
 		case "GUEST":
 			return "Pending on Ex-Employee";
 
-		case "APPROVER":
-			return pendingOn.approvers?.length
-				? `Pending on ${pendingOn.approvers.map((a) => a.name).join(", ")}`
-				: "Pending on Approver";
+		case "APPROVER": {
+			const approverNames = pendingOn.approvers
+				.map((approver) => approver.name?.trim())
+				.filter(Boolean);
 
-		// case "CLOSED" :
-		// 	return "Closed";
+			return approverNames.length
+				? `Pending on ${approverNames.join(", ")}`
+				: "Pending on Approver";
+		}
+
+		case "NONE":
+			return status ? formatStatusLabel(status) : "—";
 
 		default:
-			return "—";
+			return status ? formatStatusLabel(status) : "—";
 	}
 };

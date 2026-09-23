@@ -92,11 +92,13 @@ export const getVendorOnboardingColumns = ({
 		accessorKey: "status",
 		header: "Status",
 		cell: ({ row }) => {
-			console.log("status", row.original.pendingOn);
-			return <Badge status={formatPendingOn(row.original.pendingOn)} />;
+			console.log("status", row.original.pendingOn, row.original.status);
+			return (
+				<Badge
+					status={formatPendingOn(row.original.pendingOn, row.original.status)}
+				/>
+			);
 		},
-		// span>{formatPendingOn(row.original?.status)}</span>,
-		// <={row.original.status} ,
 	},
 	{
 		id: "actions",

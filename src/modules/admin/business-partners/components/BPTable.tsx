@@ -87,6 +87,7 @@ const BPTable = ({
 
 	return (
 		<section
+			className="min-w-0"
 			aria-label="Business partner records"
 			aria-busy={isLoading || isFetching}
 		>
@@ -106,6 +107,7 @@ const BPTable = ({
 				onPageChange={handlePageChange}
 				onPageSizeChange={handlePageSizeChange}
 				scrollTargetId="business-partner-table-scroll"
+				className="h-[400px]"
 				emptyTitle="No business partners found"
 				emptyDescription="Try adjusting the current search term."
 			/>

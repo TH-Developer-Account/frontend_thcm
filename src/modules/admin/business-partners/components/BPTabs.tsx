@@ -108,14 +108,12 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 		if (detailForm.editingSection !== null) return;
 
 		if (isContactDataEmpty(view)) {
-			console.log("[BPTabs] auto-opening contact (empty data)");
 			detailForm.startEditing("contact");
 			hasAutoOpened.current = true;
 			return;
 		}
 
 		if (isOrgDataEmpty(view)) {
-			console.log("[BPTabs] auto-opening organization (empty data)");
 			detailForm.startEditing("organization");
 			hasAutoOpened.current = true;
 		}
@@ -195,12 +193,6 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 						text={detailForm.isSaving ? "Saving..." : "Save"}
 						variant="brand"
 						onClick={() => {
-							console.log(
-								"[BPTabs] Save button clicked, section:",
-								section,
-								"editingSection:",
-								detailForm.editingSection,
-							);
 							detailForm.handleSave();
 						}}
 						disabled={detailForm.isSaving}

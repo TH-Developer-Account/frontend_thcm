@@ -84,7 +84,6 @@ export const validateWorkflow = (
 	}
 
 	stages.forEach((stage, index) => {
-		console.log("stage", stage);
 		if (!stage.name.trim()) {
 			stageErrors[index].name = "Stage name is required";
 		}

@@ -308,7 +308,12 @@ const WorkflowCreatePage = () => {
 	};
 
 	const handleBack = () => {
-		setCurrentStep((prev) => Math.max(prev - 1, 1));
+		if (currentStep === 1) {
+			navigate("/workflow/listing");
+			return;
+		}
+
+		setCurrentStep((prev) => prev - 1);
 	};
 
 	const handleSubmit = async () => {

@@ -233,8 +233,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
 			setWorkspaceId(null);
 			setPermissions([]);
 		} catch (err) {
-			console.log("Error while resetting password=====>", err);
-
 			const { title, description } = resolveAuthError(
 				err,
 				"Unable to reset password",

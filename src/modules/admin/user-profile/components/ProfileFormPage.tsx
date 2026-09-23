@@ -33,7 +33,6 @@ export const ProfileFormPage = () => {
 	const { workspaceId } = useAuth();
 	const { showToast } = useToast();
 
-	// 🔥 All permission logic comes from hook
 	const {
 		permState,
 		togglePerm,
@@ -47,7 +46,6 @@ export const ProfileFormPage = () => {
 			try {
 				const { data } = await ServerAxios.get(`/profile/${id}`);
 
-				console.log({ data });
 				setForm(data);
 			} catch (error: unknown) {
 				if (error instanceof Error) {
@@ -79,7 +77,6 @@ export const ProfileFormPage = () => {
 				permissions: permissions, // required
 			};
 
-			console.log("Submitting Payload =>", payload);
 			let apiResponseMessage;
 			if (isEditing) {
 				const {
@@ -120,7 +117,6 @@ export const ProfileFormPage = () => {
 			m.name.toLowerCase().includes(search.toLowerCase()),
 		),
 	}));
-	console.log("profile data", filteredApps);
 
 	return (
 		<PageSectionLayout>
