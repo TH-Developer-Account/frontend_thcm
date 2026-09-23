@@ -9,24 +9,31 @@ import { CardEmpty, CardSkeleton } from "../CardSkeleton";
 import { auditApi } from "./audit.api";
 import { auditKeys } from "./audit.keys";
 import type { AuditLogRowProps, AuditLogSectionProps } from "./audit.types";
-import { getAuditActorName, getAuditMessage } from "./audit.helper";
+import { getAuditMessageParts } from "./audit.helper";
 
+const Separator = () => (
+	<span className="comment-audit-separator" aria-hidden="true">
+		-
+	</span>
+);
+
+/**
+ * Renders: Actor - Action - Timestamp - Reason/comment
+ */
 const AuditLogRow = React.memo(function AuditLogRow({
 	entry,
 	entityName,
 	actionMessages,
 	formatMessage,
 }: AuditLogRowProps) {
-	const actorName = getAuditActorName(entry);
+	const { actorName, actionLabel, reason } = getAuditMessageParts(entry, {
+		entityName,
+		actionMessages,
+		formatTimestamp: formatDateTime,
+	});
 
-	const actionMessage =
-		formatMessage?.(entry) ??
-		getAuditMessage(entry, {
-			entityName,
-			actionMessages,
-			includeActor: false,
-			includeTimestamp: false,
-		});
+	const action = formatMessage?.(entry) ?? actionLabel;
+	console.log("audit messages :", action);
 
 	return (
 		<div className="comment-card comment-audit-card">
@@ -34,21 +41,25 @@ const AuditLogRow = React.memo(function AuditLogRow({
 				<div className="comment-audit-content">
 					<span className="comment-audit-actor">{actorName}</span>
 
-					<span className="comment-audit-separator" aria-hidden="true">
-						·
-					</span>
+					<Separator />
 
-					<span className="comment-audit-text">{actionMessage}</span>
+					<span className="comment-audit-text">{action}</span>
 
 					{entry.createdAt ? (
 						<>
-							<span className="comment-audit-separator" aria-hidden="true">
-								·
-							</span>
+							<Separator />
 
 							<time className="comment-audit-time" dateTime={entry.createdAt}>
 								{formatDateTime(entry.createdAt)}
 							</time>
+						</>
+					) : null}
+
+					{reason ? (
+						<>
+							<Separator />
+
+							<span className="comment-audit-reason">{reason}</span>
 						</>
 					) : null}
 				</div>
@@ -56,6 +67,7 @@ const AuditLogRow = React.memo(function AuditLogRow({
 		</div>
 	);
 });
+
 export default function AuditLogSection({
 	subjectType,
 	subjectId,
@@ -96,7 +108,6 @@ export default function AuditLogSection({
 			? error.message
 			: "Unable to load activity log"
 		: null;
-
 	return (
 		<section aria-label={title} className="comments-body">
 			{isLoading ? (

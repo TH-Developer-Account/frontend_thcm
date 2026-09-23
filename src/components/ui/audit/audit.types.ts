@@ -24,12 +24,6 @@ export const AUDIT_ACTIVITY_ACTIONS = [
 	"REPORT_CLARIFICATION_REQUESTED",
 	"EPC_CLOSED",
 
-	// Vendor onboarding
-	"VENDOR_ONBOARDING_INITIATED",
-	"VENDOR_FORM_SUBMITTED",
-	"VENDOR_ONBOARDING_SENT_FOR_APPROVAL",
-	"VENDOR_ONBOARDING_CLOSED",
-
 	// Medical claim
 	"MEDICAL_CLAIM_INITIATED",
 	"MEDICAL_CLAIM_SUBMITTED",
@@ -238,6 +232,15 @@ export type AuditMessageOptions = {
 	formatTimestamp?: (date: string) => string;
 	includeTimestamp?: boolean;
 	includeActor?: boolean;
+	includeReason?: boolean;
+};
+
+/** actor - action - timestamp - reason/comment */
+export type AuditMessageParts = {
+	actorName: string;
+	actionLabel: string;
+	timestamp?: string;
+	reason?: string;
 };
 
 /* -------------------------------------------------------------------------- */

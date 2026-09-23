@@ -4,9 +4,17 @@ import {
 	type AuditLogEntry,
 	type AuditMessageContext,
 	type AuditMessageOptions,
+	type AuditMessageParts,
 	type AuditMetadata,
 	type NormalizedAuditAction,
 } from "./audit.types";
+
+/* -------------------------------------------------------------------------- */
+/* Constants                                                                  */
+/* -------------------------------------------------------------------------- */
+
+/** Separator used when an audit message is rendered as a single string. */
+export const AUDIT_MESSAGE_SEPARATOR = " - ";
 
 /* -------------------------------------------------------------------------- */
 /* Action normalization                                                       */
@@ -100,91 +108,75 @@ export const formatAuditTimestamp = (date: string): string => {
 };
 
 /* -------------------------------------------------------------------------- */
-/* Default messages                                                           */
+/* Default action labels                                                      */
 /* -------------------------------------------------------------------------- */
 
-const getDefaultAuditMessage = (context: AuditMessageContext): string => {
-	const { action, stageSuffix, reasonSuffix, entityName } = context;
+/**
+ * Short, past-tense action labels.
+ * Reason/comment is NOT part of the label — it is rendered separately
+ * after the timestamp.
+ */
+const DEFAULT_AUDIT_ACTION_LABELS: Record<NormalizedAuditAction, string> = {
+	CREATED: "Created",
+	INITIATED: "Initiated",
+	UPDATED: "Updated",
+	SUBMITTED: "Submitted",
+	RESUBMITTED: "Resubmitted",
+	SENT_FOR_APPROVAL: "Sent for approval",
+	CONDUCTED: "Conducted",
+	CANCELLED: "Cancelled",
+	VALIDATED: "Validated",
+	APPROVED: "Approved",
+	REJECTED: "Rejected",
+	CLARIFY: "Clarified ",
+	CLARIFICATION_REQUESTED: "Clarified",
+	DEVIATION_RAISED: "Deviated",
+	ACCEPTED: "Accepted",
+	CLOSED: "Closed",
+	WORKFLOW_ASSIGNED: "Assigned workflow",
+	WORKFLOW_STARTED: "Started workflow",
+};
 
-	switch (action) {
-		case "CREATED":
-			return `Created the ${entityName}`;
+/** Actions where the workflow stage adds useful context to the label. */
+const STAGE_AWARE_ACTIONS: ReadonlySet<string> = new Set<NormalizedAuditAction>(
+	[
+		"APPROVED",
+		"REJECTED",
+		"CLARIFY",
+		"CLARIFICATION_REQUESTED",
+		"DEVIATION_RAISED",
+		"ACCEPTED",
+	],
+);
 
-		case "INITIATED":
-			return `Initiated the ${entityName}`;
+const getDefaultAuditActionLabel = (context: AuditMessageContext): string => {
+	const { action, stageSuffix } = context;
 
-		case "UPDATED":
-			return `Updated the ${entityName}`;
+	const baseLabel = isNormalizedAuditAction(action)
+		? DEFAULT_AUDIT_ACTION_LABELS[action]
+		: formatAuditLabel(action) || "Updated";
 
-		case "SUBMITTED":
-			return `Submitted the ${entityName}`;
-
-		case "RESUBMITTED":
-			return `Resubmitted the ${entityName}`;
-
-		case "SENT_FOR_APPROVAL":
-			return `Sent the ${entityName} for approval`;
-
-		case "CONDUCTED":
-			return `Marked the ${entityName} as conducted`;
-
-		case "CANCELLED":
-			return `Cancelled the ${entityName}`;
-
-		case "VALIDATED":
-			return `Validated the ${entityName}`;
-
-		case "APPROVED":
-			return `Approved the ${entityName}${stageSuffix}`;
-
-		case "REJECTED":
-			return `Rejected the ${entityName}${stageSuffix}${reasonSuffix}`;
-
-		case "CLARIFY":
-		case "CLARIFICATION_REQUESTED":
-			return `Requested clarification for the ${entityName}${stageSuffix}${reasonSuffix}`;
-
-		case "DEVIATION_RAISED":
-			return `Raised a deviation for the ${entityName}${stageSuffix}${reasonSuffix}`;
-
-		case "ACCEPTED":
-			return `Accepted the ${entityName}${stageSuffix}`;
-
-		case "CLOSED":
-			return `Closed the ${entityName}`;
-
-		case "WORKFLOW_ASSIGNED":
-			return `Assigned an approval workflow to the ${entityName}`;
-
-		case "WORKFLOW_STARTED":
-			return `Started the approval workflow for the ${entityName}`;
-
-		default: {
-			const actionLabel = formatAuditLabel(action);
-
-			if (actionLabel) {
-				return `Performed “${actionLabel}”${stageSuffix}${reasonSuffix}`;
-			}
-
-			return `Updated the ${entityName}`;
-		}
-	}
+	return STAGE_AWARE_ACTIONS.has(action)
+		? `${baseLabel}${stageSuffix}`
+		: baseLabel;
 };
 
 /* -------------------------------------------------------------------------- */
-/* Main helper                                                                */
+/* Main helpers                                                               */
 /* -------------------------------------------------------------------------- */
 
-export const getAuditMessage = (
+/**
+ * Returns the individual parts of an audit message:
+ * actor - action - timestamp - reason/comment
+ */
+export const getAuditMessageParts = (
 	entry: AuditLogEntry,
 	options: AuditMessageOptions,
-): string => {
+): AuditMessageParts => {
 	const {
 		entityName,
 		actionMessages = {},
 		formatTimestamp = formatAuditTimestamp,
-		includeTimestamp = true,
-		includeActor = true,
 	} = options;
 
 	const rawAction = entry.action;
@@ -193,9 +185,9 @@ export const getAuditMessage = (
 	const stageName = entry.stageName?.trim() || undefined;
 	const reason = getAuditReason(entry);
 
-	const stageSuffix = stageName ? ` at ${stageName}` : "";
+	// const stageSuffix = stageName ? ` at ${stageName}` : "";
+	const stageSuffix = "";
 	const reasonSuffix = reason ? ` — ${reason}` : "";
-
 	const context: AuditMessageContext = {
 		entry,
 		actorName,
@@ -210,20 +202,46 @@ export const getAuditMessage = (
 
 	const customMessage = actionMessages[rawAction] ?? actionMessages[action];
 
-	const actionMessage =
+	const actionLabel =
 		typeof customMessage === "function"
 			? customMessage(context)
-			: (customMessage ?? getDefaultAuditMessage(context));
+			: (customMessage ?? getDefaultAuditActionLabel(context));
 
-	const message = includeActor
-		? `${actorName} · ${actionMessage}`
-		: actionMessage;
+	const timestamp = entry.createdAt ? formatTimestamp(entry.createdAt) : "";
 
-	if (!includeTimestamp || !entry.createdAt) {
-		return message;
-	}
+	return {
+		actorName,
+		actionLabel: actionLabel.trim(),
+		timestamp: timestamp || undefined,
+		reason,
+	};
+};
 
-	const timestamp = formatTimestamp(entry.createdAt);
+/**
+ * Plain-string audit message:
+ * "Actor - Action - Timestamp - Reason"
+ */
+export const getAuditMessage = (
+	entry: AuditLogEntry,
+	options: AuditMessageOptions,
+): string => {
+	const {
+		includeTimestamp = true,
+		includeActor = true,
+		includeReason = true,
+	} = options;
 
-	return timestamp ? `${message} · ${timestamp}` : message;
+	const { actorName, actionLabel, timestamp, reason } = getAuditMessageParts(
+		entry,
+		options,
+	);
+
+	return [
+		includeActor ? actorName : undefined,
+		actionLabel,
+		includeTimestamp ? timestamp : undefined,
+		includeReason ? reason : undefined,
+	]
+		.filter((part): part is string => Boolean(part))
+		.join(AUDIT_MESSAGE_SEPARATOR);
 };

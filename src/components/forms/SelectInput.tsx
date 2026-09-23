@@ -1,9 +1,10 @@
 import { useId, useRef, useState, type ReactNode } from "react";
-import Select from "react-select";
+import Select, { components } from "react-select";
 import type {
 	ActionMeta,
 	GroupBase,
 	InputActionMeta,
+	InputProps,
 	OptionsOrGroups,
 	Props,
 	SelectInstance,
@@ -20,6 +21,9 @@ export interface BaseOption {
 	label: string;
 	value: string;
 }
+const NoAutofillInput = <T extends BaseOption>(
+	props: InputProps<T, false, GroupBase<T>>,
+) => <components.Input {...props} autoComplete="new-password" />;
 
 interface SelectInputProps<T extends BaseOption> extends Props<
 	T,
@@ -291,6 +295,10 @@ export default function SelectInput<T extends BaseOption>({
 					aria-required={required || undefined}
 					aria-describedby={describedBy || undefined}
 					aria-errormessage={error ? errorId : undefined}
+					components={{
+						...selectProps.components,
+						Input: NoAutofillInput,
+					}}
 				/>
 
 				{error ? (

@@ -116,10 +116,6 @@ const VendorOnboardingPublicPage = () => {
 						Icon: Mail,
 					}}
 					securityNote={statusContent.submitted.securityNote}
-					action={{
-						label: statusContent.submitted.actionLabel,
-						to: statusContent.submitted.actionTo,
-					}}
 					role="status"
 				/>
 			</PublicPagesLayout>

@@ -267,6 +267,7 @@ const VendorCreationFormOne = ({
 							label="State"
 							placeholder="Select state"
 							options={STATES}
+							selectOnAutofill={false}
 							value={getSelectedOption(STATES, values.state)}
 							required
 							error={errors.state}
