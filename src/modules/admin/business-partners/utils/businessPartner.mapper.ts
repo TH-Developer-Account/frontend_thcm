@@ -1,5 +1,14 @@
 import type { User } from "../../user-profile/types/profile.types";
 import type {
+	BPAddressCardFormValues,
+	BPGeneralInfoFormValues,
+} from "../utils/businessPartner.schema";
+import {
+	formatDateOnlyAPI,
+	parseDateOnly,
+	toPrismaDateTime,
+} from "../../../../utils/format";
+import type {
 	ApiEnvelope,
 	BPAddressFormState,
 	BPAddressViewModel,
@@ -20,11 +29,22 @@ import type {
 	UpdateBusinessPartnerPayload,
 	BPPeopleSelection,
 	BPPersonViewModel,
+	BPUserRow,
+	BPUserViewModel,
 	NormalizedBusinessPartnerListingParams,
 } from "./bp.types";
 
 const text = (value: unknown): string =>
 	typeof value === "string" ? value.trim() : "";
+
+/**
+ * Form date-only string -> ISO DateTime Prisma accepts ("2026-09-01T00:00:00.000Z").
+ * Accepts YYYY-MM-DD and DD-MM-YYYY; empty/invalid -> null.
+ */
+const toApiDateTime = (value?: string | null): string | null => {
+	const date = parseDateOnly(value?.trim());
+	return date ? toPrismaDateTime(formatDateOnlyAPI(date)) : null;
+};
 
 export const mapBusinessPartnerListItem = (
 	item: BusinessPartnerListItem,
@@ -117,6 +137,21 @@ export const mapPerson = (person: BPPeopleSelection): BPPersonViewModel => ({
 export const mapPeople = (
 	people: BPPeopleSelection[] | undefined,
 ): BPPersonViewModel[] => (people ?? []).map(mapPerson);
+
+/** Maps a raw GET /users row (see BPUserRow) into the BP Users tab's
+ * view model. Used only by businessPartnerApi.getUsers. */
+export const mapBPUser = (row: BPUserRow): BPUserViewModel => ({
+	id: row.id,
+	name:
+		[text(row.first_name), text(row.last_name)].filter(Boolean).join(" ") ||
+		"Unnamed user",
+	email: text(row.email),
+	phoneNumber: text(row.phone_number),
+	role: text(row.role) || text(row.designation),
+	department: text(row.department),
+	isDefaultContact: Boolean(row.isDefaultContact),
+	isActive: row.is_active !== false,
+});
 
 export const mapBranch = (
 	branch: BusinessPartnerBranch,
@@ -235,17 +270,16 @@ export const formatAddressType = (value: string): string =>
 export const mapAddress = (
 	address: BusinessPartnerAddress,
 ): BPAddressViewModel => {
-	const addressType = address.addressType ?? "HEAD_OFFICE";
+	// const addressType = address.addressType ?? "HEAD_OFFICE";
 
 	return {
 		id: address.id,
 		businessPartnerId: address.businessPartnerId,
 
-		label: address.isDefault
-			? "Default Address"
-			: formatAddressType(addressType),
+		label: address.isDefault ? "Default Address" : "",
+		// : formatAddressType(addressType),
 
-		addressType,
+		// addressType,
 		address: text(address.address),
 
 		city: text(address.city),
@@ -286,7 +320,7 @@ export const mapAddressToForm = (
 	address: BPAddressViewModel,
 ): BPAddressFormState => ({
 	label: address.label,
-	addressType: address.addressType,
+	// addressType: address.addressType,
 	copyFromAddressId: "",
 
 	address: address.address,
@@ -311,9 +345,9 @@ export const mapAddressToForm = (
 export const mapAddressFormToPayload = (
 	form: BPAddressFormState,
 ): BusinessPartnerAddressPayload => {
-	if (!form.addressType) {
-		throw new Error("Address type is required");
-	}
+	// if (!form.addressType) {
+	// 	throw new Error("Address type is required");
+	// }
 
 	const address = form.address.trim();
 
@@ -322,7 +356,7 @@ export const mapAddressFormToPayload = (
 	}
 
 	return {
-		addressType: form.addressType,
+		// addressType: form.addressType,
 		address,
 		label: nullableText(form.label),
 		city: nullableText(form.city),
@@ -427,68 +461,6 @@ export const mapBusinessPartnerToForm = (
 });
 
 /**
- * GENERAL tab -> POST /bp (first creation only).
- * Sends the full create payload; organization/tax fields go as null
- * so the user isn't forced to fill Organization Information up front.
- */
-export const mapGeneralFormToCreatePayload = (
-	form: BusinessPartnerFormState,
-): CreateBusinessPartnerPayload => {
-	const internalId = form.internalId.trim();
-	const bpName = form.bpName.trim();
-
-	if (!internalId) {
-		throw new Error("Internal ID is required");
-	}
-
-	if (!bpName) {
-		throw new Error("Business partner name is required");
-	}
-
-	if (!form.officeType) {
-		throw new Error("Office type is required");
-	}
-
-	if (!form.bpType) {
-		throw new Error("Business partner type is required");
-	}
-
-	if (form.officeType === "BRANCH_OFFICE" && !form.parentId.trim()) {
-		throw new Error("Parent business partner is required for a branch");
-	}
-
-	return {
-		internalId,
-		bpName,
-		bpShortName: nullableText(form.bpShortName),
-		officeType: form.officeType,
-		bpType: form.bpType,
-		isKeyAccount: form.isKeyAccount,
-		isActive: form.isActive,
-		// parentId: nullableText(form.parentId),
-
-		vendorId: null,
-		bpId: null,
-		s4Id: null,
-		bydId: null,
-		c4cId: null,
-		legalTradeName: null,
-		gst: null,
-		panNumber: null,
-		vendorCode: null,
-		entityType: null,
-		joinedOn: null,
-
-		// mobileNumber: null,
-		// email: null,
-		// fax: null,
-		// telephone: null,
-		// mainContactName: null,
-		// mainContactNumber: null,
-	};
-};
-
-/**
  * GENERAL tab -> PATCH /bp/:id (editing an existing BP).
  */
 export const mapGeneralFormToUpdatePayload = (
@@ -497,7 +469,7 @@ export const mapGeneralFormToUpdatePayload = (
 	const internalId = form.internalId.trim();
 	const bpName = form.bpName.trim();
 
-	if (!internalId) throw new Error("Internal ID is required");
+	// if (!internalId) throw new Error("Internal ID is required");
 	if (!bpName) throw new Error("Business partner name is required");
 	if (!form.officeType) throw new Error("Office type is required");
 	if (!form.bpType) throw new Error("Business partner type is required");
@@ -510,11 +482,11 @@ export const mapGeneralFormToUpdatePayload = (
 		internalId,
 		bpName,
 		bpShortName: nullableText(form.bpShortName),
-		officeType: form.officeType,
+		// officeType: form.officeType,
 		bpType: form.bpType,
 		isKeyAccount: form.isKeyAccount,
 		isActive: form.isActive,
-		parentId: nullableText(form.parentId),
+		// parentId: nullableText(form.parentId),
 	};
 };
 
@@ -534,7 +506,7 @@ export const mapOrganizationFormToUpdatePayload = (
 	panNumber: nullableText(form.panNumber)?.toUpperCase() ?? null,
 	vendorCode: nullableText(form.vendorCode),
 	entityType: form.entityType || null,
-	joinedOn: nullableText(form.joinedOn),
+	joinedOn: toApiDateTime(form.joinedOn),
 });
 
 /**
@@ -553,3 +525,146 @@ export const mapContactFormToUpdatePayload = (
 	// mainContactName: nullableText(form.mainContactName),
 	// mainContactNumber: nullableText(form.mainContactNumber),
 });
+
+// -----------------------------------------------------------------------------
+// Create/Update page cards (RHF + Zod). Values arriving here have already
+// passed the Zod schema, so these functions only sanitize and reshape — they
+// never validate for the user. The narrowing guards below exist purely for
+// TypeScript and are unreachable after a successful schema parse.
+// -----------------------------------------------------------------------------
+
+export const EMPTY_BP_GENERAL_INFO_FORM: BPGeneralInfoFormValues = {
+	bpName: "",
+	bpType: "",
+	officeType: "",
+	parentId: "",
+	entityType: "",
+	joinedOn: "",
+	legalTradeName: "",
+};
+
+export const mapPartnerToGeneralInfoForm = (
+	partner: BusinessPartnerDetail,
+): BPGeneralInfoFormValues => ({
+	bpName: cleanText(partner.bpName),
+	bpType: partner.bpType ?? "",
+	officeType: partner.officeType ?? "",
+	parentId: cleanText(partner.parentId),
+	entityType: partner.entityType ?? "",
+	joinedOn: partner.joinedOn?.slice(0, 10) ?? "",
+	legalTradeName: cleanText(partner.legalTradeName),
+});
+
+const assertSelected = <T extends string>(
+	value: T | "",
+	fieldLabel: string,
+): T => {
+	if (!value) {
+		throw new Error(`${fieldLabel} is required`);
+	}
+
+	return value;
+};
+
+/**
+ * Card 1 (create) -> POST /business-partner.
+ *
+ * Identifier/tax fields stay null here (they're edited later from BPTabs'
+ * Organization tab). isKeyAccount/isActive keep the previous create defaults.
+ */
+export const mapGeneralInfoFormToCreatePayload = (
+	values: BPGeneralInfoFormValues,
+): CreateBusinessPartnerPayload => {
+	const officeType = assertSelected(values.officeType, "Office type");
+
+	return {
+		bpName: values.bpName.trim(),
+		bpShortName: null,
+		officeType,
+		bpType: assertSelected(values.bpType, "Business partner type"),
+		entityType: values.entityType || null,
+		legalTradeName: nullableText(values.legalTradeName),
+		joinedOn: toApiDateTime(values.joinedOn),
+		isKeyAccount: false,
+		isActive: true,
+		// Only a branch office has a parent; never send a stale id for a head office.
+		parentId:
+			officeType === "BRANCH_OFFICE" ? nullableText(values.parentId) : null,
+
+		vendorId: null,
+		bpId: null,
+		s4Id: null,
+		bydId: null,
+		c4cId: null,
+		gst: null,
+		panNumber: null,
+		vendorCode: null,
+	};
+};
+
+/**
+ * Card 1 (update) -> PATCH /business-partner/:id.
+ *
+ * officeType and parentId are intentionally omitted — the existing
+ * mapGeneralFormToUpdatePayload never sent them either, so the card renders
+ * them read-only in update mode.
+ */
+export const mapGeneralInfoFormToUpdatePayload = (
+	values: BPGeneralInfoFormValues,
+): UpdateBusinessPartnerPayload => ({
+	bpName: values.bpName.trim(),
+	bpType: assertSelected(values.bpType, "Business partner type"),
+	entityType: values.entityType || null,
+	legalTradeName: nullableText(values.legalTradeName),
+	joinedOn: toApiDateTime(values.joinedOn),
+});
+
+export const createEmptyAddressCardForm = (
+	isDefault: boolean,
+): BPAddressCardFormValues => ({
+	label: "",
+	// addressType: "",
+	address: "",
+	city: "",
+	state: "",
+	country: "India",
+	pincode: "",
+	region: "",
+	zone: "",
+	branch: "",
+	latitude: "",
+	longitude: "",
+	email: "",
+	phoneNumber: "",
+	website: "",
+	isDefault,
+});
+
+/** Card 3 -> POST /business-partner/:id/addresses. */
+export const mapAddressCardFormToPayload = (
+	values: BPAddressCardFormValues,
+): BusinessPartnerAddressPayload => {
+	const phoneDigits = values.phoneNumber.replace(/\D/g, "");
+
+	return {
+		// addressType: assertSelected(values.addressType, "Address type"),
+		address: values.address.trim(),
+		label: nullableText(values.label),
+		city: nullableText(values.city),
+		state: nullableText(values.state),
+		country: nullableText(values.country),
+		pincode: nullableText(values.pincode),
+		region: nullableText(values.region),
+		zone: nullableText(values.zone),
+		branch: nullableText(values.branch),
+
+		latitude: toNullableNumber(values.latitude),
+		longitude: toNullableNumber(values.longitude),
+
+		email: nullableText(values.email)?.toLowerCase() ?? null,
+		phoneNo: phoneDigits || null,
+		website: nullableText(values.website),
+
+		isDefault: values.isDefault,
+	};
+};

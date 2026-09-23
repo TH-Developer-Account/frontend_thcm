@@ -14,7 +14,10 @@ import {
 	vendorInitiationSchema,
 	type VendorInitiationFormValues,
 } from "../schemas/vendorInitiation.schema";
-import { showApiErrorToast, showSuccessToast } from "../../../utils/apiError.helper";
+import {
+	showApiErrorToast,
+	showSuccessToast,
+} from "../../../utils/apiError.helper";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { vendorContent } from "../../../content/vendor.content";
 
@@ -124,7 +127,7 @@ export const useVendorOnboardingInitiation = ({
 		mutationFn: vendorInitationApi.createInitiation,
 		onSuccess: async () => {
 			await onSubmitSuccess?.();
-			navigate("/vendor/onboarding/listing");
+			navigate("/vendor-onboarding/listing");
 			showSuccessToast(
 				showToast,
 				toastContent.createSuccessDescription,
@@ -145,7 +148,7 @@ export const useVendorOnboardingInitiation = ({
 		mutationFn: vendorInitationApi.updateInitiation,
 		onSuccess: async () => {
 			await onUpdateSuccess?.();
-			navigate("/vendor/onboarding/listing");
+			navigate("/vendor-onboarding/listing");
 			showSuccessToast(
 				showToast,
 				toastContent.updateSuccessDescription,

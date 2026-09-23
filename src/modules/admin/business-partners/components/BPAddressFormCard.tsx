@@ -11,12 +11,12 @@ import {
 import Button from "../../../../components/common/Button";
 import Card from "../../../../components/common/Card";
 import FormInput from "../../../../components/forms/FormInput";
-import SelectInput from "../../../../components/forms/SelectInput";
+// import SelectInput from "../../../../components/forms/SelectInput";
 import TextareaInput from "../../../../components/forms/TextareaInput";
 
 import type {
 	BPAddressFormState,
-	BusinessPartnerAddressType,
+	// BusinessPartnerAddressType,
 } from "../utils/bp.types";
 import { Badge } from "../../../../components/common/Badge";
 
@@ -27,10 +27,10 @@ type SelectOption = {
 	value: string;
 };
 
-type AddressTypeOption = {
-	label: string;
-	value: BusinessPartnerAddressType;
-};
+// type AddressTypeOption = {
+// 	label: string;
+// 	value: BusinessPartnerAddressType;
+// };
 
 type Props = {
 	form: BPAddressFormState;
@@ -52,19 +52,19 @@ type Props = {
 	onRemove?: () => void;
 };
 
-const addressTypeOptions: AddressTypeOption[] = [
-	{ label: "Head Office", value: "HEAD_OFFICE" },
-	{ label: "Branch Office", value: "BRANCH_OFFICE" },
-	{ label: "Plant", value: "PLANT" },
-	{ label: "Billing Address", value: "BILLING_ADDRESS" },
-	{ label: "Shipping Address", value: "SHIPPING_ADDRESS" },
-	{ label: "Warehouse", value: "WAREHOUSE" },
-];
+// const addressTypeOptions: AddressTypeOption[] = [
+// 	{ label: "Head Office", value: "HEAD_OFFICE" },
+// 	{ label: "Branch Office", value: "BRANCH_OFFICE" },
+// 	{ label: "Plant", value: "PLANT" },
+// 	{ label: "Billing Address", value: "BILLING_ADDRESS" },
+// 	{ label: "Shipping Address", value: "SHIPPING_ADDRESS" },
+// 	{ label: "Warehouse", value: "WAREHOUSE" },
+// ];
 
-const getSelectedAddressType = (
-	value: BPAddressFormState["addressType"],
-): AddressTypeOption | null =>
-	addressTypeOptions.find((option) => option.value === value) ?? null;
+// const getSelectedAddressType = (
+// 	value: BPAddressFormState["addressType"],
+// ): AddressTypeOption | null =>
+// 	addressTypeOptions.find((option) => option.value === value) ?? null;
 
 const getCardTitle = (
 	mode: BPAddressFormMode,
@@ -75,7 +75,7 @@ const getCardTitle = (
 
 	return (
 		form.label.trim() ||
-		getSelectedAddressType(form.addressType)?.label ||
+		// getSelectedAddressType(form.addressType)?.label ||
 		"Address"
 	);
 };
@@ -103,7 +103,7 @@ const BPAddressFormCard = ({
 	const isCreateMode = mode === "create";
 	const isPending = isSubmitting || isDeleting || isSettingDefault;
 
-	const isActionDisabled = !form.address.trim() || !form.addressType;
+	const isActionDisabled = !form.address.trim();
 
 	// const [showCopyAddress, setShowCopyAddress] = useState(false);
 
@@ -156,7 +156,7 @@ const BPAddressFormCard = ({
 				}
 				aria-label={`Edit ${
 					form.label ||
-					getSelectedAddressType(form.addressType)?.label ||
+					// getSelectedAddressType(form.addressType)?.label ||
 					"address"
 				}`}
 			/>
@@ -178,7 +178,7 @@ const BPAddressFormCard = ({
 				}
 				aria-label={`Remove ${
 					form.label ||
-					getSelectedAddressType(form.addressType)?.label ||
+					// getSelectedAddressType(form.addressType)?.label ||
 					"address"
 				}`}
 			/>
@@ -273,7 +273,7 @@ const BPAddressFormCard = ({
 					mode={isViewMode ? "view" : "edit"}
 				/>
 
-				<SelectInput
+				{/* <SelectInput
 					name={`address-type-${mode}`}
 					label="Address Type"
 					placeholder="Select address type"
@@ -284,7 +284,7 @@ const BPAddressFormCard = ({
 					}
 					mode={isViewMode ? "view" : "edit"}
 					required
-				/>
+				/> */}
 
 				<FormInput
 					name={`city-${mode}`}

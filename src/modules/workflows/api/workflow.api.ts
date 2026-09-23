@@ -380,8 +380,19 @@ export const workflowApi = {
 
 	getUsers: usersApi.getUsers,
 
-	getUserOptions: async (): Promise<Option[]> => {
-		const users = await workflowApi.getUsers();
+	/**
+	 * Same backend-search behavior as `getUsers` (used directly by
+	 * WorkflowUserAssignment), just mapped down to `Option[]` for
+	 * consumers like the "Created By" filter. Without `params.search`,
+	 * this only returns the backend's default (unfiltered) page — pass the
+	 * user's typed query through so results aren't limited to whatever
+	 * loaded on mount.
+	 */
+	getUserOptions: async (params?: {
+		search?: string;
+		signal?: AbortSignal;
+	}): Promise<Option[]> => {
+		const users = await workflowApi.getUsers(params);
 		return users.map((user) => ({
 			value: user.id,
 			label:
@@ -489,9 +500,14 @@ export const workflowApi = {
 			criteria: createAttachCriteria(input),
 		}),
 
-	approveStage: async (stageId: string) => {
+	// CHANGED: approve now takes a mandatory `reason`, sent the same way
+	// clarifyStage already sends its reason. If the backend endpoint hasn't
+	// been updated to accept/store this field, this call will need a
+	// matching backend change — this only covers the frontend contract.
+	approveStage: async (stageId: string, reason?: string) => {
 		const response = await ServerAxios.post<ApiEnvelope<unknown>>(
 			`${WORKFLOW_RUNTIME_URL}/stages/${encodeURIComponent(stageId)}/approve`,
+			reason ? { reason } : {},
 		);
 		return unwrapEnvelope<unknown>(response.data);
 	},

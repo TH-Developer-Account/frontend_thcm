@@ -1,7 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Eye, Pencil } from "lucide-react";
 
-import { Badge } from "../../../components/common/Badge";
 import Button from "../../../components/common/Button";
 import { formatDateTime24 } from "../../../utils/format";
 
@@ -9,6 +8,8 @@ import type {
 	VendorOnboardingColumnsParams,
 	VendorOnboardingListingRow,
 } from "../types/vendorListing.types";
+import { formatPendingOn } from "../../../utils/statusAlert.helper";
+import { Badge } from "../../../components/common/Badge";
 
 const renderCellValue = (value: string | null | undefined): string =>
 	value?.trim() || "—";
@@ -90,7 +91,12 @@ export const getVendorOnboardingColumns = ({
 	{
 		accessorKey: "status",
 		header: "Status",
-		cell: ({ row }) => <Badge status={row.original.status} />,
+		cell: ({ row }) => {
+			console.log("status", row.original.pendingOn);
+			return <Badge status={formatPendingOn(row.original.pendingOn)} />;
+		},
+		// span>{formatPendingOn(row.original?.status)}</span>,
+		// <={row.original.status} ,
 	},
 	{
 		id: "actions",

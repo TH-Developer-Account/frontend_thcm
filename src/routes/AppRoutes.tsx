@@ -55,7 +55,7 @@ const AuthenticatedRoutes = () => {
 				<Route element={<MainContentWrapper />}>
 					<Route path="/marketing/*" element={<MarketingRoutes />} />
 					<Route path="/admin/*" element={<AdminRoutes />} />
-					<Route path="/vendor/*" element={<VendorRoutes />} />
+					<Route path="/vendor-onboarding/*" element={<VendorRoutes />} />
 					<Route path="/workflow/*" element={<WorkflowRoutes />} />
 					<Route path="/medi-claim/*" element={<MedicalRoutes />} />
 				</Route>

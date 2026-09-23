@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useBPAddressManager } from "../hooks/useBusinessPartners";
 import {
 	mapAddressToForm,
-	formatAddressType,
+	// formatAddressType,
 } from "../utils/businessPartner.mapper";
 import type {
 	BPAddressPermissions,
@@ -57,7 +57,8 @@ const BPAddress = ({
 				.filter((address) => address.id !== editingId)
 				.map((address) => ({
 					label: `${
-						address.label || formatAddressType(address.addressType)
+						address.label
+						// || formatAddressType(address.addressType)
 					} — ${address.address}`,
 					value: address.id,
 				})),

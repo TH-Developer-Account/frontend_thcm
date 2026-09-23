@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
 import WorkflowCreateMain from "../components/WorkflowCreateMain";
@@ -8,11 +9,18 @@ import {
 	buildWorkflowPayload,
 	toggleStageExpanded,
 	updateStageField,
+	removeStage,
+	getResetStages,
 	validateWorkflow,
 	validateWorkflowBasics,
 	getDefaultMapStages,
+	createStageId,
 } from "../utils/workflow.helpers";
-import { budgetCategories, formatApps } from "../constant/workflow.constant";
+import {
+	budgetCategories,
+	formatApps,
+	MARKETING_ACTIVITY_PLANNER_APP_NAME,
+} from "../utils/workflow.constants";
 
 import type {
 	WorkflowBasics,
@@ -25,6 +33,9 @@ import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import Card from "../../../components/common/Card";
+import Button from "../../../components/common/Button";
+import { Alert } from "../../../components/common/Alert";
+import { Modal } from "../../../components/common/Modal";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { StepProgress } from "../../../components/ui/StepProgress";
 import { getWorkflowErrorMessage, workflowApi } from "../api/workflow.api";
@@ -60,6 +71,7 @@ const WorkflowCreatePage = () => {
 	const [basicErrors, setBasicErrors] = useState<WorkflowGenErrors>({});
 	const [stageErrors, setStageErrors] = useState<WorkflowStageErrors[]>([]);
 	const [stageFormError, setStageFormError] = useState<string | null>(null);
+	const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 	const workflowCreateSteps = [
 		{ id: 1, label: "Workflow basics" },
 		{ id: 2, label: "Approval stages" },
@@ -100,7 +112,7 @@ const WorkflowCreatePage = () => {
 		[permissions],
 	);
 
-	const showCategory = basics.appDesc === "Marketing Activity Planner";
+	const showCategory = basics.appDesc === MARKETING_ACTIVITY_PLANNER_APP_NAME;
 
 	const showStatus = Boolean(id);
 
@@ -113,7 +125,7 @@ const WorkflowCreatePage = () => {
 
 			if ((key === "app" || key === "appDesc") && !id) {
 				const isMarketingActivityPlanner =
-					updatedBasics.appDesc === "Marketing Activity Planner";
+					updatedBasics.appDesc === MARKETING_ACTIVITY_PLANNER_APP_NAME;
 
 				if (isMarketingActivityPlanner) {
 					setStages((prevStages) => {
@@ -212,9 +224,18 @@ const WorkflowCreatePage = () => {
 		setStages((prev) => [
 			...prev,
 			{
-				id: `stage-${prev.length + 1}`,
+				// A length-derived id (the previous `stage-${prev.length + 1}`)
+				// can collide with an existing stage's id after an add/remove
+				// cycle brings the count back down — createStageId() avoids that.
+				id: createStageId(),
 				stageOrder: prev.length + 1,
-				name: `Stage ${prev.length + 1}`,
+				// Left blank rather than a "Stage N" placeholder: the stage-name
+				// field is a required dropdown (Recommender/Checker/Approver),
+				// and a non-empty placeholder here both hid the "Select stage
+				// name" prompt behind a value that matched no option and let
+				// validateWorkflow's required-name check silently pass without
+				// the user ever picking one.
+				name: "",
 				strategy: "ANY",
 				approvers: [],
 				minApprovals: 1,
@@ -223,6 +244,34 @@ const WorkflowCreatePage = () => {
 		]);
 
 		setStageErrors((prev) => [...prev, {}]);
+	};
+
+	// Removes a whole stage (as opposed to removeApprover, which only removes
+	// one approver from a stage). Keeps stageErrors aligned to the stages
+	// array by dropping the same index, and renumbers the remaining stages'
+	// stageOrder via the removeStage helper so "Stage 3" doesn't survive as
+	// the only stage after "Stage 1" and "Stage 2" are removed.
+	const removeStageById = (stageId: string) => {
+		const indexToRemove = stages.findIndex((stage) => stage.id === stageId);
+
+		setStages((prev) => removeStage(prev, stageId));
+
+		setStageErrors((prev) =>
+			indexToRemove === -1
+				? prev
+				: prev.filter((_, index) => index !== indexToRemove),
+		);
+
+		setStageFormError(null);
+	};
+
+	// "Reset stages" — clears every stage and approver configured so far and
+	// leaves a single blank stage to start over from. Distinct from
+	// removeStageById, which only removes one stage at a time.
+	const resetStages = () => {
+		setStages(getResetStages());
+		setStageErrors([{}]);
+		setStageFormError(null);
 	};
 
 	const handleNext = () => {
@@ -325,14 +374,69 @@ const WorkflowCreatePage = () => {
 					separator: "›",
 				}}
 			/>
-			<Card>
-				<StepProgress
-					steps={workflowCreateSteps}
-					currentStep={currentStep}
-					className="workflow-create-step-progress"
-					ariaLabel="Workflow creation progress"
-				/>
+			<Card
+				title={
+					<StepProgress
+						steps={workflowCreateSteps}
+						currentStep={currentStep}
+						className="workflow-create-step-progress"
+						ariaLabel="Workflow creation progress"
+					/>
+				}
+				headerClassName="border-none"
+				footer={
+					<div className="bottom-buttons-bar-between">
+						<Button
+							onClick={handleBack}
+							type="button"
+							text="Back"
+							Icon={ArrowLeft}
+							iconPosition="left"
+							appearance="standard"
+							variant="outline"
+							size="sm"
+						/>
 
+						<div className="bottom-buttons-bar-end">
+							{currentStep === 2 && stages.length > 0 && (
+								<Button
+									type="button"
+									text="Reset stages"
+									Icon={RotateCcw}
+									iconPosition="left"
+									appearance="standard"
+									variant="outline"
+									size="sm"
+									onClick={() => setIsResetConfirmOpen(true)}
+								/>
+							)}
+
+							{currentStep === 3 ? (
+								<Button
+									onClick={handleSubmit}
+									disabled={loading}
+									type="button"
+									text={loading ? "Saving..." : "Save workflow"}
+									appearance="standard"
+									variant="brand"
+									size="sm"
+								/>
+							) : (
+								<Button
+									onClick={handleNext}
+									type="button"
+									text="Next"
+									Icon={ArrowRight}
+									iconPosition="right"
+									appearance="standard"
+									size="sm"
+									variant="brand"
+								/>
+							)}
+						</div>
+					</div>
+				}
+			>
 				<div className="workflow-create-grid">
 					<WorkflowCreateMain
 						currentStep={currentStep}
@@ -347,6 +451,8 @@ const WorkflowCreatePage = () => {
 						onRemoveApprover={removeApprover}
 						onAddApprover={addApprover}
 						onAddStage={addStage}
+						onRemoveStage={removeStageById}
+						onResetStages={resetStages}
 						onSubmit={handleSubmit}
 						loading={loading}
 						basicErrors={basicErrors}
@@ -367,6 +473,32 @@ const WorkflowCreatePage = () => {
 					/>
 				</div>
 			</Card>
+
+			<Modal
+				open={isResetConfirmOpen}
+				onClose={() => setIsResetConfirmOpen(false)}
+				mode="shell"
+				size="sm"
+				dialogRole="alertdialog"
+				ariaLabel="Reset approval stages confirmation"
+			>
+				<Alert
+					variant="warning"
+					title="Reset approval stages"
+					description="This removes every stage and approver you've configured here and starts over with a single blank stage. This can't be undone."
+					primaryAction={{
+						label: "Reset",
+						onClick: () => {
+							resetStages();
+							setIsResetConfirmOpen(false);
+						},
+					}}
+					secondaryAction={{
+						label: "Cancel",
+						onClick: () => setIsResetConfirmOpen(false),
+					}}
+				/>
+			</Modal>
 		</PageSectionLayout>
 	);
 };

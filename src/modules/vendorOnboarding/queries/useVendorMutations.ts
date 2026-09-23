@@ -9,6 +9,9 @@ import {
 	workflowApi,
 	type ActivateFirstStagePayload,
 } from "../../workflows/api/workflow.api";
+import { auditKeys } from "../../../components/ui/audit/audit.keys";
+
+const VENDOR_AUDIT_SUBJECT_TYPE = "VENDOR_ONBOARDING";
 
 export const vendorOnboardingKeys = {
 	all: ["vendor-onboarding"] as const,
@@ -18,16 +21,42 @@ export const vendorOnboardingKeys = {
 		[...vendorOnboardingKeys.all, "public-session", token] as const,
 };
 
-const invalidateVendor = (
+/**
+ * Refreshes everything that changes when a vendor record changes: the
+ * listings, the record itself and its activity log.
+ *
+ * Returned (not fire-and-forget) so mutation onSuccess can return it —
+ * React Query then keeps the mutation pending until the refetch lands, and
+ * mutateAsync() resolves with fresh data already in the cache. Whatever
+ * renders next (e.g. the view page after submit) shows the new state on
+ * first paint, without a second fetch.
+ *
+ * The activity log uses refetchType "all": AuditLogSection caches with
+ * staleTime Infinity + refetchOnMount false, so a normal invalidate only
+ * marks an unmounted log stale and it would never refetch when the view
+ * page mounts. "all" refetches it immediately, mounted or not.
+ */
+export const invalidateVendor = (
 	queryClient: ReturnType<typeof useQueryClient>,
 	vendorRequestId?: string,
-) => {
-	queryClient.invalidateQueries({ queryKey: vendorOnboardingKeys.lists() });
+): Promise<unknown> => {
+	const tasks: Promise<unknown>[] = [
+		queryClient.invalidateQueries({ queryKey: vendorOnboardingKeys.lists() }),
+	];
+
 	if (vendorRequestId) {
-		queryClient.invalidateQueries({
-			queryKey: vendorOnboardingKeys.detail(vendorRequestId),
-		});
+		tasks.push(
+			queryClient.invalidateQueries({
+				queryKey: vendorOnboardingKeys.detail(vendorRequestId),
+			}),
+			queryClient.invalidateQueries({
+				queryKey: auditKeys.log(VENDOR_AUDIT_SUBJECT_TYPE, vendorRequestId),
+				refetchType: "all",
+			}),
+		);
 	}
+
+	return Promise.all(tasks);
 };
 
 export function useVendorOnboardingDetailQuery(

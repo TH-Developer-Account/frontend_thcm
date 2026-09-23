@@ -3,7 +3,7 @@ import { ToastContext } from "../Auth/AuthContext";
 import { Toast } from "../../components/common/Toast";
 import type { ToastInput, ToastProps } from "./toast.types";
 
-const AUTO_CLOSE_MS = 10000;
+const AUTO_CLOSE_MS = 5000;
 
 type ToastState = ToastProps & {
 	id: string;

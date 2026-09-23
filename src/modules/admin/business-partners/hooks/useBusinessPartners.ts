@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
 	businessPartnerApi,
@@ -26,9 +26,13 @@ import {
 	type BPContactViewModel,
 	type BPPersonViewModel,
 	type BPPeoplePermissions,
+	type BPUserViewModel,
 	type BusinessPartnerAddressPayload,
 	type UpdateBusinessPartnerPeoplePayload,
 } from "../utils/bp.types";
+
+import { getApiErrorMessage } from "../../../../utils/apiError.helper";
+import { useToast } from "../../../../context/Auth/AuthContext";
 
 const BUSINESS_PARTNER_QUERY_OPTIONS = {
 	staleTime: Infinity,
@@ -54,7 +58,7 @@ export const useBusinessPartner = (businessPartnerId?: string | null) => {
 
 const EMPTY_ADDRESS_FORM: BPAddressFormState = {
 	label: "",
-	addressType: "",
+	// addressType: "",
 	copyFromAddressId: "",
 
 	address: "",
@@ -158,7 +162,7 @@ export const useBPAddressManager = (
 				...current,
 
 				label: current.label,
-				addressType: current.addressType,
+				// addressType: current.addressType,
 				copyFromAddressId: sourceAddressId,
 
 				address: sourceAddress.address,
@@ -658,5 +662,134 @@ export const useBPAddExistingPeopleForm = (
 
 		isSubmitting: isAddingPeople,
 		error: addPeopleError,
+	};
+};
+
+/* -------------------------------------------------------------------------
+ * Users tab — read-only listing of Users scoped to this business partner
+ * (GET /users?businessPartnerId=...). Distinct from useBPPeopleManager
+ * above: "people"/"contacts" are business-partner sub-resources, this is
+ * the Users module's own listing, filtered. The only supported action is
+ * setting a user as the default contact.
+ * ---------------------------------------------------------------------- */
+
+export const useBPUsersManager = (businessPartnerId: string) => {
+	const normalizedId = businessPartnerId.trim();
+	const queryClient = useQueryClient();
+	const { showToast } = useToast();
+
+	const usersQuery = useQuery({
+		queryKey: businessPartnerKeys.usersOfPartner(normalizedId),
+		queryFn: () => businessPartnerApi.getUsers(normalizedId),
+		enabled: Boolean(normalizedId),
+		...BUSINESS_PARTNER_QUERY_OPTIONS,
+	});
+
+	const setDefaultMutation = useMutation({
+		mutationFn: (userId: string) => businessPartnerApi.setDefaultUser(userId),
+
+		onSuccess: () => {
+			void queryClient.invalidateQueries({
+				queryKey: businessPartnerKeys.usersOfPartner(normalizedId),
+			});
+
+			showToast({
+				type: "success",
+				title: "Default user updated",
+				description:
+					"The user was set as the default contact for this business partner.",
+			});
+		},
+
+		onError: (error) => {
+			showToast({
+				type: "error",
+				title: "Unable to set default user",
+				description: getApiErrorMessage(
+					error,
+					"Unable to set the default user.",
+				),
+			});
+		},
+	});
+
+	const setActiveStatusMutation = useMutation({
+		mutationFn: ({ userId, isActive }: { userId: string; isActive: boolean }) =>
+			businessPartnerApi.setUserActiveStatus(userId, isActive),
+
+		onSuccess: (_data, variables) => {
+			void queryClient.invalidateQueries({
+				queryKey: businessPartnerKeys.usersOfPartner(normalizedId),
+			});
+
+			showToast({
+				type: "success",
+				title: variables.isActive ? "User activated" : "User deactivated",
+				description: variables.isActive
+					? "The user was activated successfully."
+					: "The user was deactivated successfully.",
+			});
+		},
+
+		onError: (error, variables) => {
+			showToast({
+				type: "error",
+				title: variables.isActive
+					? "Unable to activate user"
+					: "Unable to deactivate user",
+				description: getApiErrorMessage(
+					error,
+					variables.isActive
+						? "Unable to activate the user."
+						: "Unable to deactivate the user.",
+				),
+			});
+		},
+	});
+
+	const handleSetDefaultUser = useCallback(
+		async (user: BPUserViewModel) => {
+			if (user.isDefaultContact || setDefaultMutation.isPending) {
+				return;
+			}
+
+			try {
+				await setDefaultMutation.mutateAsync(user.id);
+			} catch {
+				// Mutation exposes the error via toast above.
+			}
+		},
+		[setDefaultMutation],
+	);
+
+	const handleToggleActiveStatus = useCallback(
+		async (user: BPUserViewModel) => {
+			if (setActiveStatusMutation.isPending) {
+				return;
+			}
+
+			try {
+				await setActiveStatusMutation.mutateAsync({
+					userId: user.id,
+					isActive: !user.isActive,
+				});
+			} catch {
+				// Mutation exposes the error via toast above.
+			}
+		},
+		[setActiveStatusMutation],
+	);
+
+	return {
+		users: usersQuery.data ?? [],
+		isLoading: usersQuery.isLoading,
+		isFetching: usersQuery.isFetching,
+		error: usersQuery.error,
+
+		handleSetDefaultUser,
+		isSettingDefault: setDefaultMutation.isPending,
+
+		handleToggleActiveStatus,
+		isTogglingActiveStatus: setActiveStatusMutation.isPending,
 	};
 };

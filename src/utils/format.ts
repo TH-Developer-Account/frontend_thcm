@@ -123,10 +123,16 @@ export const formatDateOnly = (date?: Date) => {
 	return `${day}-${month}-${year}`;
 };
 
-export const formatDateOnlyAPI = (date?: string | null) => {
+export const formatDateOnlyAPI = (date?: Date | null) => {
 	if (!date) return "";
-	return String(date).split("T")[0];
+
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+
+	return `${year}-${month}-${day}`;
 };
+
 export const toPrismaDateTime = (date?: string | Date | null) => {
 	if (!date) return null;
 
@@ -143,21 +149,7 @@ export const toPrismaDateTime = (date?: string | Date | null) => {
 	return new Date(`${date}T00:00:00.000Z`).toISOString();
 };
 
-/**
- * Parses a single date-only string into a Date, using local
- * year/month/day components (never a bare `new Date(string)` call,
- * which is unreliable for anything but strict ISO and can drift a
- * day depending on timezone).
- *
- * Accepts every format this codebase actually produces or consumes
- * for date-only fields:
- *  - YYYY-MM-DD   (API / ISO — see epc.payload.ts's toApiDate)
- *  - DD-MM-YYYY   (this file's own formatDateOnly output)
- *  - DD/MM-style  (DD/MM/YYYY, also tolerated by toApiDate)
- * Falls back to a plain `new Date(value)` parse for anything else,
- * and returns undefined rather than an Invalid Date if that fails.
- */
-const parseDateOnly = (value?: string | null): Date | undefined => {
+export const parseDateOnly = (value?: string | null): Date | undefined => {
 	if (!value) return undefined;
 
 	// YYYY-MM-DD

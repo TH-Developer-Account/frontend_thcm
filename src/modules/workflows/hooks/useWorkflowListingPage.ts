@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { SortingState } from "@tanstack/react-table";
+import axios from "axios";
 
 import type { Option } from "../../../components/forms/input.types";
 import { useAuth } from "../../../context/Auth/useAuth";
@@ -54,22 +55,25 @@ const getArraySearchParam = (
 const createSelectedOptions = (
 	selectedIds: string[],
 	availableOptions: Option[],
+	knownOptions?: Map<string, Option>,
 ): Option[] =>
 	selectedIds.map(
 		(id) =>
-			availableOptions.find((option) => option.value === id) ?? {
+			availableOptions.find((option) => option.value === id) ??
+			knownOptions?.get(id) ?? {
 				value: id,
 				label: id,
 			},
 	);
 
 export const useWorkflowListingPage = () => {
-	const { permissions, user } = useAuth();
+	const { permissions } = useAuth();
 
 	const [searchParams, setSearchParams] = useSearchParams();
 
 	const [data, setData] = useState<WorkflowRow[]>([]);
 	const [users, setUsers] = useState<Option[]>([]);
+	const [userSearchInput, setUserSearchInput] = useState("");
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<unknown>(null);
@@ -77,6 +81,11 @@ export const useWorkflowListingPage = () => {
 	const [refetchKey, setRefetchKey] = useState(0);
 
 	const requestIdRef = useRef(0);
+
+	// Every user option this hook has ever seen, keyed by id — kept around so
+	// an already-selected "Created By" chip still shows its name after a new
+	// search narrows `users` down to a different set of results.
+	const knownUserOptionsRef = useRef<Map<string, Option>>(new Map());
 
 	const page = toPositiveNumber(searchParams.get("page"), 1);
 
@@ -89,6 +98,7 @@ export const useWorkflowListingPage = () => {
 	const [searchInput, setSearchInput] = useState(urlSearch);
 
 	const debouncedSearch = useDebounce(searchInput, 400);
+	const debouncedUserSearch = useDebounce(userSearchInput, 400);
 
 	const appOptions = useMemo(() => formatApps(permissions), [permissions]);
 
@@ -104,7 +114,11 @@ export const useWorkflowListingPage = () => {
 
 	const filters = useMemo<Record<string, Option[]>>(
 		() => ({
-			createdBy: createSelectedOptions(createdByIds, users),
+			createdBy: createSelectedOptions(
+				createdByIds,
+				users,
+				knownUserOptionsRef.current,
+			),
 			apps: createSelectedOptions(appIds, appOptions),
 		}),
 		[appIds, appOptions, createdByIds, users],
@@ -151,19 +165,35 @@ export const useWorkflowListingPage = () => {
 
 	/*
 	 * Load the Created By filter options.
+	 *
+	 * Re-fetches from the backend on every typed search (same `getUsers`
+	 * call — and the same `search` param — WorkflowUserAssignment uses),
+	 * instead of filtering a single fixed page fetched once on mount. That
+	 * one-time fetch only ever held the backend's default page (e.g. its
+	 * first 10 users), so searching for anyone outside it always came back
+	 * "not found" even though they exist.
 	 */
 	useEffect(() => {
-		let active = true;
+		const controller = new AbortController();
 
 		const fetchUsers = async (): Promise<void> => {
 			try {
-				const options = await workflowApi.getUserOptions();
+				const options = await workflowApi.getUserOptions({
+					search: debouncedUserSearch.trim() || undefined,
+					signal: controller.signal,
+				});
 
-				if (!active) return;
+				if (controller.signal.aborted) return;
 
-				setUsers(Array.isArray(options) ? options : []);
+				const nextOptions = Array.isArray(options) ? options : [];
+
+				nextOptions.forEach((option) => {
+					knownUserOptionsRef.current.set(option.value, option);
+				});
+
+				setUsers(nextOptions);
 			} catch (nextError) {
-				if (!active) return;
+				if (axios.isCancel(nextError) || controller.signal.aborted) return;
 
 				console.error("Failed to fetch workflow users", nextError);
 
@@ -174,9 +204,9 @@ export const useWorkflowListingPage = () => {
 		void fetchUsers();
 
 		return () => {
-			active = false;
+			controller.abort();
 		};
-	}, []);
+	}, [debouncedUserSearch]);
 
 	const fetchWorkflowList = useCallback(async (): Promise<void> => {
 		const requestId = requestIdRef.current + 1;
@@ -204,13 +234,13 @@ export const useWorkflowListingPage = () => {
 				return;
 			}
 
-			const rows = mapWorkflowRows(response.data).map((workflow) => ({
-				...workflow,
-				ownerType:
-					user?.id === workflow.created_by_id
-						? ("USER" as const)
-						: ("ADMIN" as const),
-			}));
+			// `mapWorkflowRows` already carries `ownerType` straight from the
+			// API payload — that's the real USER/ADMIN template distinction.
+			// (This used to be overwritten here with a guess — "did the
+			// current user create it" — which isn't the same thing: an admin
+			// viewing their own admin-scoped template would incorrectly get
+			// "USER" and appear editable.)
+			const rows = mapWorkflowRows(response.data);
 
 			setData(rows);
 			setTotalPages(response.meta.totalPages);
@@ -238,7 +268,6 @@ export const useWorkflowListingPage = () => {
 		sortBy,
 		sortOrder,
 		urlSearch,
-		user?.id,
 	]);
 
 	useEffect(() => {
@@ -331,6 +360,9 @@ export const useWorkflowListingPage = () => {
 
 		users,
 		appOptions,
+
+		userSearchInput,
+		setUserSearchInput,
 
 		searchInput,
 		setSearchInput,

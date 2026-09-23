@@ -126,6 +126,7 @@ export type CreateUserPayload = {
 	designation?: string;
 	vertical?: string;
 	grade?: string;
+	status?: UserStatus;
 	managerCode1?: string;
 	managerCode2?: string;
 	isDefaultContact?: boolean;
@@ -160,6 +161,7 @@ export type CreateUserInput = {
 	designation?: string;
 	vertical?: string;
 	grade?: string;
+	status?: string;
 	managerCode1?: string;
 	managerCode2?: string;
 	isDefaultContact?: boolean;

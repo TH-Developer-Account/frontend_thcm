@@ -390,7 +390,19 @@ export type WorkFlowProps = {
 	onRemoveApprover: (stageId: string, approverId: string) => void;
 
 	onAddApprover: (stageId: string, approver: WorkflowApprover) => void;
+	/**
+	 * Removes an entire stage (all of its approvers along with it) — distinct
+	 * from onRemoveApprover, which only removes one approver from within a
+	 * stage.
+	 */
+	onRemoveStage: (stageId: string) => void;
 
+	/**
+	 * Clears every configured stage and approver, leaving a single blank
+	 * stage to start over from. Distinct from onRemoveStage, which removes
+	 * one stage at a time.
+	 */
+	onResetStages: () => void;
 	onSubmit: () => void;
 	loading?: boolean;
 	onAddStage: () => void;

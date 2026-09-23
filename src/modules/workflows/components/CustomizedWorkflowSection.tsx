@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
 	ArrowLeft,
+	ArrowRight,
 	CheckCircle2,
 	Pencil,
 	RefreshCcw,
@@ -10,9 +11,9 @@ import {
 import Button from "../../../components/common/Button";
 import Checkbox from "../../../components/forms/Checkbox";
 import FormInput from "../../../components/forms/FormInput";
-import { ApprovalWorkflowTableContent } from "../../workflows";
-import { WorkflowFetchPage } from "../../workflows/pages/WorkflowFetchPage";
-import WorkflowStagesForm from "../../workflows/components/WorkflowStagesForm"; // adjust path if different
+import { ApprovalWorkflowTableContent } from "../index"; // adjust to this module's own barrel
+import { WorkflowFetchPage } from "../pages/WorkflowFetchPage";
+import WorkflowStagesForm from "./WorkflowStagesForm";
 
 import type {
 	ApprovalStageLike,
@@ -20,20 +21,25 @@ import type {
 	WorkflowStage,
 	WorkflowApprover,
 	WorkflowStageErrors,
-} from "../../workflows/types/types";
+} from "../types/types";
 
-import type { VendorActiveWorkflow } from "../types/vendorOnboarding.types";
-import { validateWorkflow } from "../../workflows/utils/workflow.helpers"; // adjust path if different
+import { validateWorkflow } from "../utils/workflow.helpers";
 
 type WorkflowSource = "active" | "selection";
 
-type VendorWorkflowSectionProps = {
+type ActiveWorkflowLike = {
+	id: string;
+	template?: { name?: string } | null;
+	stages: ApprovalStageLike[];
+};
+
+type WorkflowCustomizationSectionProps = {
 	sourceRecordRef?: string;
 	recordType: string;
 
 	selectedWorkflow: PendingWorkflowSelection | null;
 
-	activeWorkflow?: VendorActiveWorkflow | null;
+	activeWorkflow?: ActiveWorkflowLike | null;
 
 	isClarificationResubmission?: boolean;
 
@@ -45,9 +51,6 @@ type VendorWorkflowSectionProps = {
 	onBack: () => void;
 	onNext: () => void;
 
-	// ── Direct edit of the ACTIVE workflow's stages ("Edit current workflow") ──
-	// Distinct from onWorkflowSelected — this never touches pendingWorkflowSelection,
-	// it feeds the hook's separate stageEdits state (→ sent as `stageEdits` on submit).
 	canEditActiveWorkflow?: boolean;
 	stageEdits: WorkflowStage[] | null;
 	onStageEditsChange: (stages: WorkflowStage[] | null) => void;
@@ -86,14 +89,21 @@ const getSelectedWorkflowStages = (
 	return [];
 };
 
-// ─────────────────────────────────────────────────────────────────────────
-// Converts the active workflow's read-only ApprovalStageLike[] (fetched
-// shape — approvals: [{ approver: { id, first_name, last_name, email },
-// isExternalApprover }]) into WorkflowStagesForm's editable WorkflowStage[]
-// shape. ASSUMPTION: field names below match the approver payload shape
-// used by getWorkflowController/getWorkflowHistoryController — adjust if
-// ApprovalStageLike's actual generated type differs.
-// ─────────────────────────────────────────────────────────────────────────
+const createBlankStage = (): WorkflowStage => ({
+	id: `new-stage-${Date.now()}`,
+	name: "",
+	stageOrder: 1,
+	strategy: "ANY",
+	minApprovals: 1,
+	isExpanded: true,
+	approvers: [],
+});
+
+// Keeps stageOrder contiguous (1..n) after a stage is removed, so numbering
+// in the UI and any downstream payload stay in sync.
+const reindexStages = (stages: WorkflowStage[]): WorkflowStage[] =>
+	stages.map((stage, index) => ({ ...stage, stageOrder: index + 1 }));
+
 const mapActiveStagesToEditable = (
 	stages: ApprovalStageLike[],
 ): WorkflowStage[] =>
@@ -138,6 +148,7 @@ const mapActiveStagesToEditable = (
 			),
 		};
 	});
+
 const mapEditableStagesToPreview = (
 	stages: WorkflowStage[],
 ): ApprovalStageLike[] =>
@@ -156,7 +167,8 @@ const mapEditableStagesToPreview = (
 			isExternalApprover: approver.isExternalApprover,
 		})),
 	}));
-const VendorWorkflowSection = ({
+
+const CustomizedWorkflowSection = ({
 	sourceRecordRef,
 	recordType,
 	selectedWorkflow,
@@ -170,7 +182,7 @@ const VendorWorkflowSection = ({
 	stageEdits,
 	onStageEditsChange,
 	currentUserId,
-}: VendorWorkflowSectionProps) => {
+}: WorkflowCustomizationSectionProps) => {
 	/*
 	 * Clarification starts by previewing the existing active workflow.
 	 * The user can explicitly switch to workflow selection.
@@ -178,29 +190,12 @@ const VendorWorkflowSection = ({
 	const [workflowSource, setWorkflowSource] =
 		useState<WorkflowSource>("active");
 
-	// "Edit current workflow" — direct in-place stage edit of the ACTIVE
-	// workflow. Mutually exclusive with the selection flow: entering this
-	// mode never sets pendingWorkflowSelection, and "Change current
-	// workflow" always exits this mode.
 	const [isEditingCurrentWorkflow, setIsEditingCurrentWorkflow] =
 		useState(false);
 	const [selectedEditStages, setSelectedEditStages] = useState<
 		WorkflowStage[] | null
 	>(null);
 
-	// ─────────────────────────────────────────────────────────────────────
-	// "Use existing → Customise" — WorkflowFetchPage internally switches
-	// between its "list" screen (WorkflowEntrySection, no footer of its
-	// own) and its "builder" screen (WorkflowTemplateBuilder, which always
-	// renders its own footer — WorkflowStagesForm's Back/Next on the
-	// stages step, or the Back-to-stages/Save actions on the usage step).
-	//
-	// Without tracking this, the outer footer below (Back/Next for this
-	// whole vendor-workflow step) stays visible at the same time as the
-	// builder's own footer, producing two footers. This mirrors how
-	// `isEditingCurrentWorkflow` already suppresses the outer footer for
-	// the "edit current workflow" path.
-	// ─────────────────────────────────────────────────────────────────────
 	const [isCustomisingExistingWorkflow, setIsCustomisingExistingWorkflow] =
 		useState(false);
 
@@ -352,12 +347,6 @@ const VendorWorkflowSection = ({
 		onStageEditsChange(null);
 	};
 
-	// Confirm — edits already synced live via updateStages. Previously this
-	// only checked "is the list non-empty", so per-stage problems (missing
-	// approvers, invalid minApprovals, etc.) were never surfaced and never
-	// blocked continuing. Now runs the same `validateWorkflow` check the
-	// "customise" builder flow (WorkflowTemplateBuilder.handleContinue)
-	// already uses, so both paths behave consistently.
 	const handleConfirmEditCurrentWorkflow = () => {
 		const validation = validateWorkflow(stageEdits ?? []);
 
@@ -370,10 +359,6 @@ const VendorWorkflowSection = ({
 
 		if (validation.formError || hasStageErrors) {
 			if (hasStageErrors) {
-				// Same reasoning as WorkflowTemplateBuilder.handleContinue —
-				// WorkflowStagesForm only shows a stage's error while it's
-				// expanded, so a collapsed stage's error would otherwise be
-				// invisible and "Confirm" would appear to silently do nothing.
 				onStageEditsChange(
 					(stageEdits ?? []).map((stage, index) =>
 						Object.keys(validation.stageErrors[index] || {}).length > 0
@@ -473,14 +458,36 @@ const VendorWorkflowSection = ({
 		else updateStages(updater);
 	};
 
+	const handleRemoveStage = (stageId: string) => {
+		const updater = (prev: WorkflowStage[]) =>
+			reindexStages(prev.filter((s) => s.id !== stageId));
+
+		if (isEditingSelectedWorkflow) updateSelectedStages(updater);
+		else updateStages(updater);
+
+		setStageErrors([]);
+		setStageFormError(null);
+	};
+
+	const handleResetStages = () => {
+		if (isEditingSelectedWorkflow) {
+			setSelectedEditStages([createBlankStage()]);
+		} else {
+			updateStages(() => [createBlankStage()]);
+		}
+
+		setStageErrors([]);
+		setStageFormError(null);
+	};
+
 	return (
-		<div className="vendor-workflow-section">
-			<div className="vendor-workflow-content">
+		<div className="workflow-customization-section">
+			<div className="workflow-customization-content">
 				{showWorkflowPreview ? (
-					<div className="vendor-workflow-preview">
-						<div className="vendor-workflow-selection" role="status">
-							<div className="vendor-workflow-selection-main">
-								<span className="vendor-workflow-selection-icon">
+					<div className="workflow-customization-preview">
+						<div className="workflow-customization-selection" role="status">
+							<div className="workflow-customization-selection-main">
+								<span className="workflow-customization-selection-icon">
 									<CheckCircle2 size={18} aria-hidden="true" />
 								</span>
 
@@ -497,25 +504,10 @@ const VendorWorkflowSection = ({
 
 									<strong>{workflowName}</strong>
 
-									{/* {isEditingWorkflow && (
-										<small className="vendor-workflow-selection-note">
-											{isEditingSelectedWorkflow
-												? "Review and confirm the stages, then choose whether to save the changes as a reusable template."
-												: "Changes apply to the active workflow's stages when resubmitted."}
-										</small>
-									)} */}
-
-									{/* {!isEditingCurrentWorkflow && shouldUseActiveWorkflow && (
-										<small className="vendor-workflow-selection-note">
-											Continue with this workflow, edit its stages, or select a
-											different one for resubmission.
-										</small>
-									)} */}
-
 									{!isEditingCurrentWorkflow &&
 										!shouldUseActiveWorkflow &&
 										isClarificationResubmission && (
-											<small className="vendor-workflow-selection-note">
+											<small className="workflow-customization-selection-note">
 												This workflow will replace the current selection when
 												the form is resubmitted.
 											</small>
@@ -563,7 +555,7 @@ const VendorWorkflowSection = ({
 							)}
 						</div>
 
-						<div className="vendor-workflow-table">
+						<div className="workflow-customization-table">
 							{isEditingWorkflow ? (
 								<WorkflowStagesForm
 									stages={
@@ -579,6 +571,8 @@ const VendorWorkflowSection = ({
 									onRemoveApprover={handleRemoveApprover}
 									onAddApprover={handleAddApprover}
 									onAddStage={handleAddStage}
+									onRemoveStage={handleRemoveStage}
+									onResetStages={handleResetStages}
 									onBack={
 										isEditingSelectedWorkflow
 											? handleCancelEditSelectedWorkflow
@@ -598,7 +592,7 @@ const VendorWorkflowSection = ({
 									/>
 
 									{selectedWorkflow?.isEditedExistingWorkflow && (
-										<div className="vendor-workflow-save-template">
+										<div className="workflow-customization-save-template">
 											<Checkbox
 												name="save-edited-workflow-as-template"
 												label="Save these changes as a reusable template"
@@ -636,11 +630,11 @@ const VendorWorkflowSection = ({
 						</div>
 					</div>
 				) : sourceRecordRef ? (
-					<div className="vendor-workflow-picker">
+					<div className="workflow-customization-picker">
 						{canUseActiveWorkflow && (
-							<div className="vendor-workflow-selection">
-								<div className="vendor-workflow-selection-main">
-									<span className="vendor-workflow-selection-icon">
+							<div className="workflow-customization-selection">
+								<div className="workflow-customization-selection-main">
+									<span className="workflow-customization-selection-icon">
 										<CheckCircle2 size={18} aria-hidden="true" />
 									</span>
 									<div className="flex gap-2">
@@ -676,14 +670,14 @@ const VendorWorkflowSection = ({
 						/>
 					</div>
 				) : (
-					<div className="vendor-workflow-empty" role="alert">
+					<div className="workflow-customization-empty" role="alert">
 						A source record is required to select a workflow.
 					</div>
 				)}
 			</div>
 
 			{!isEditingWorkflow && !isCustomisingExistingWorkflow && (
-				<div className="vendor-onboarding-form-actions vendor-workflow-navigation">
+				<div className="workflow-customization-form-actions workflow-customization-navigation">
 					<Button
 						type="button"
 						text="Back"
@@ -695,11 +689,13 @@ const VendorWorkflowSection = ({
 						onClick={onBack}
 					/>
 
-					<div className="vendor-onboarding-form-actions-end">
+					<div className="workflow-customization-form-actions-end">
 						<Button
 							type="button"
 							text="Next"
 							size="sm"
+							Icon={ArrowRight}
+							iconPosition="right"
 							appearance="standard"
 							variant="brand"
 							onClick={onNext}
@@ -719,4 +715,4 @@ const VendorWorkflowSection = ({
 	);
 };
 
-export default VendorWorkflowSection;
+export default CustomizedWorkflowSection;

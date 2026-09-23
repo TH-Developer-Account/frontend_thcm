@@ -135,26 +135,6 @@ button {
 		border-bottom: 1px solid black;
 		outline: none;
 	}
-	.bp-listing-card--scrollable {
-		display: flex;
-		flex-direction: column;
-		/* // Fill remaining viewport height below the page header/toolbar. */
-		/* // Adjust 220px to match your actual header + toolbar + padding height. */
-		/* height: calc(100vh - 200px); */
-		min-height: 0;
-		/* // needed for flex children to shrink/scroll properly */
-	}
-
-	.bp-listing-card--scrollable .bp-table-scroll-area {
-		flex: 1 1 auto;
-		overflow-y: auto;
-		min-height: 0;
-	}
-
-	.bp-listing-card--scrollable .bp-table-pagination {
-		flex: 0 0 auto;
-		/* // stays outside the scroll area, always visible */
-	}
 }
 
 /* BP Summary Cards */
@@ -845,18 +825,6 @@ button {
 	}
 }
 @layer components {
-	.bp-create-form-card {
-		@apply w-full min-w-0;
-	}
-
-	.bp-create-form-card .bp-tabs {
-		@apply mb-0;
-	}
-
-	.bp-create-form-panel {
-		@apply w-full min-w-0 px-4 py-5 sm:px-6;
-	}
-
 	.bp-create-form-sections {
 		@apply divide-y divide-gray-200;
 	}
@@ -876,19 +844,53 @@ button {
 	.bp-create-form-heading p {
 		@apply mt-1 text-xs text-gray-500;
 	}
-
-	.bp-create-form-empty {
-		@apply flex min-h-40 items-center justify-center rounded-lg
-			border border-dashed border-gray-300 px-4 text-center
-			text-sm text-gray-500;
+}
+/* =====================================================
+   BP create / update page — stacked independent cards
+===================================================== */
+@layer components {
+	.bp-create-page-sections {
+		@apply flex w-full min-w-0 flex-col gap-4;
 	}
 
-	.bp-create-form-card .bp-master-form-error {
-		@apply mx-4 mb-4 sm:mx-6;
+	/* Error text under one field must not re-centre its neighbours. */
+	.bp-create-card-grid {
+		@apply items-start;
 	}
 
-	.bp-create-form-card .bp-master-form-actions {
-		@apply border-t border-gray-200 px-4 py-4 sm:px-6;
+	.bp-create-card-full-row {
+		@apply col-span-full;
+	}
+
+	.bp-create-card-inline-actions {
+		@apply px-6 pb-4;
+	}
+
+	.bp-create-address-card {
+		@apply flex flex-col gap-4;
+	}
+
+	.bp-create-address-form {
+		@apply rounded-lg border border-gray-200;
+	}
+
+	.bp-create-card-locked {
+		@apply flex items-center gap-2 rounded-lg border border-dashed border-gray-300
+			px-4 py-6 text-sm text-gray-500;
+	}
+
+	.bp-create-card-empty {
+		@apply px-6 py-4 text-sm text-gray-500;
+	}
+
+	[data-theme="dark"] .bp-create-address-form,
+	[data-theme="dark"] .bp-create-card-locked {
+		border-color: var(--color-border-default);
+	}
+
+	[data-theme="dark"] .bp-create-card-locked,
+	[data-theme="dark"] .bp-create-card-empty {
+		color: var(--color-text-secondary);
 	}
 }
 /* =====================================================

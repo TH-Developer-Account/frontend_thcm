@@ -1,3 +1,7 @@
+// import type { PendingOn } from "../../../utils/statusAlert.helper";
+
+import type { PendingOn } from "../../../utils/statusAlert.helper";
+
 export type VendorListingFilter =
 	| "createdByMe"
 	| "pendingOnMe"
@@ -32,9 +36,10 @@ export type VendorOnboardingListingRow = {
 	createdDate?: string | null;
 	updatedAt?: string | null;
 
-	status?: VendorTableStatus | null;
+	status?: VendorTableStatus;
 	referenceNumber?: string;
 	vendorReferenceName?: string;
+	pendingOn?: PendingOn;
 };
 
 export type VendorOnboardingColumnsParams = {

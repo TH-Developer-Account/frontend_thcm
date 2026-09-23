@@ -818,6 +818,31 @@ FORM CONTAINER AND LAYOUT
 			transition-duration: 0.01ms;
 		}
 	}
+	.form-radio-field--with-description {
+		align-items: flex-start;
+	}
+
+	.form-radio-field--with-description .form-radio-input {
+		margin-top: 0.15rem; /* optical alignment with the first line of the label */
+	}
+
+	.form-radio-copy {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-0-5);
+	}
+
+	.form-radio-description {
+		font-family: var(--font-sans);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-tight);
+		color: var(--color-text-muted);
+	}
+
+	.radio-group.is-disabled .form-radio-description {
+		color: var(--color-text-secondary);
+	}
 }
 
 /* =====================================================

@@ -80,7 +80,7 @@ export const getMissingDocuments = (
 export const ACCOUNT_NUMBER_REGEX = /^[A-Za-z0-9]{9,34}$/;
 export const PAN_REGEX = /^[A-Z]{5}\d{4}[A-Z]$/;
 export const GSTIN_REGEX =
-	/^(?:0[1-9]|[12]\d|3[0-9])[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+	/^(?:0[1-9]|[12]\d|3[0-9])[A-Z]{5}\d{4}[A-Z][1-9A-Z][A-Z][0-9A-Z]$/;
 
 // 6-digit Indian PIN code; first digit can't be 0.
 export const PIN_CODE_REGEX = /^[1-9][0-9]{5}$/;

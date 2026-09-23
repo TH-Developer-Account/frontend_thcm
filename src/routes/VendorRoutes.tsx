@@ -23,23 +23,17 @@ const VendorRoutes = () => {
 	return (
 		<Suspense fallback={<FullScreenLoader />}>
 			<Routes>
-				<Route
-					path="onboarding/listing"
-					element={<VendorOnboardingListingPage />}
-				/>
+				<Route path="/listing" element={<VendorOnboardingListingPage />} />
 				<Route path="dashboard" element={<VendorDashboardPage />} />
 
-				<Route path="initiation/create" element={<VendorInitiationPage />} />
+				<Route path="/initiation/create" element={<VendorInitiationPage />} />
 
-				<Route path="/onboarding/create" element={<VendorOnboardingPage />} />
+				<Route path="/create" element={<VendorOnboardingPage />} />
 
-				<Route
-					path="/onboarding/:onboardingId"
-					element={<VendorOnboardingPage />}
-				/>
+				<Route path="/:onboardingId" element={<VendorOnboardingPage />} />
 
 				<Route
-					path="/onboarding/:onboardingId/view"
+					path="/:onboardingId/view"
 					element={<VendorOnboardingFormView />}
 				/>
 			</Routes>

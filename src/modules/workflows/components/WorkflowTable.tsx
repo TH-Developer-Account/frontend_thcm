@@ -13,13 +13,20 @@ import DataTable from "../../../components/ui/tables/DataTable/DataTable";
 import DataTableSkeleton from "../../../components/ui/tables/Skeletons/DataTableSkeleton";
 import { useToast } from "../../../context/Auth/AuthContext";
 
-import { getWorkflowErrorMessage } from "../api/workflow.api";
+import { getWorkflowErrorMessage, workflowApi } from "../api/workflow.api";
 import { workflowListFilterOptions } from "../constant/workflow.constant";
 import { useDeleteWorkflowMutation } from "../context/useWorkflowMutations";
 import { useWorkflowListingPage } from "../hooks/useWorkflowListingPage";
-import type { WorkflowListScope, WorkflowRow } from "../types/types";
+import type {
+	WorkflowBasics,
+	WorkflowListScope,
+	WorkflowRow,
+	WorkflowStage,
+} from "../types/types";
+import { mapBasics, mapStages } from "../utils/workflow.helpers";
 import { getWorkflowColumns } from "../utils/workflow.columns";
 import { WorkflowUserAssignment } from "./WorkflowUserAssignment";
+import WorkflowViewForm from "./WorkflowViewForm";
 
 const WORKFLOW_SKELETON_ROWS = 8;
 const WORKFLOW_SKELETON_COLUMNS = 7;
@@ -62,6 +69,9 @@ const WorkflowTable = () => {
 		users,
 		appOptions,
 
+		userSearchInput,
+		setUserSearchInput,
+
 		searchInput,
 		setSearchInput,
 
@@ -93,6 +103,14 @@ const WorkflowTable = () => {
 	const [deleteModal, setDeleteModal] = React.useState<WorkflowRow | null>(
 		null,
 	);
+
+	const [viewModal, setViewModal] = React.useState<WorkflowRow | null>(null);
+	const [viewLoading, setViewLoading] = React.useState(false);
+	const [viewError, setViewError] = React.useState<string | null>(null);
+	const [viewDetail, setViewDetail] = React.useState<{
+		basics: WorkflowBasics;
+		stages: WorkflowStage[];
+	} | null>(null);
 
 	const deleteMutation = useDeleteWorkflowMutation();
 
@@ -133,14 +151,50 @@ const WorkflowTable = () => {
 		setDeleteModal(workflow);
 	}, []);
 
+	const handleOpenView = React.useCallback(
+		async (workflow: WorkflowRow) => {
+			setViewModal(workflow);
+			setViewDetail(null);
+			setViewError(null);
+
+			if (!workflow.id) return;
+
+			setViewLoading(true);
+
+			try {
+				const detail = await workflowApi.getById(workflow.id);
+				const basics = mapBasics(detail);
+
+				// The detail endpoint only returns the app id, not its name —
+				// resolve it against the same appOptions list the filter uses.
+				const resolvedAppName =
+					appOptions.find((option) => option.value === detail.appId)?.label ??
+					basics.appDesc;
+
+				setViewDetail({
+					basics: { ...basics, appDesc: resolvedAppName },
+					stages: mapStages(detail.stages ?? []),
+				});
+			} catch (error) {
+				setViewError(
+					getWorkflowErrorMessage(error, "Failed to load this workflow."),
+				);
+			} finally {
+				setViewLoading(false);
+			}
+		},
+		[appOptions],
+	);
+
 	const columns = React.useMemo(
 		() =>
 			getWorkflowColumns({
 				onAssign: handleOpenAssignment,
 				onEdit: handleEdit,
 				onDelete: handleOpenDelete,
+				onView: (workflow) => void handleOpenView(workflow),
 			}),
-		[handleEdit, handleOpenAssignment, handleOpenDelete],
+		[handleEdit, handleOpenAssignment, handleOpenDelete, handleOpenView],
 	);
 
 	const handleDelete = React.useCallback(
@@ -193,6 +247,9 @@ const WorkflowTable = () => {
 							value={filters.createdBy ?? []}
 							onValueChange={handleAdvancedFilterChange}
 							isSearchable
+							onInputChange={setUserSearchInput}
+							inputValue={userSearchInput}
+							filterOption={() => true}
 						/>
 
 						<MultiSelectInput
@@ -260,6 +317,34 @@ const WorkflowTable = () => {
 					onClose={() => setAssignModalOpen(null)}
 				/>
 			) : null}
+
+			<Modal
+				open={Boolean(viewModal)}
+				onClose={() => setViewModal(null)}
+				size="lg"
+				title={viewModal?.name ? `View: ${viewModal.name}` : "View Workflow"}
+				footer_actions={
+					<Button
+						text="Close"
+						onClick={() => setViewModal(null)}
+						appearance="standard"
+						variant="outline"
+					/>
+				}
+			>
+				{viewLoading ? (
+					<p className="workflow-assignment-empty">Loading workflow…</p>
+				) : viewError ? (
+					<p className="workflow-fetch-stage-error" role="alert">
+						{viewError}
+					</p>
+				) : viewDetail ? (
+					<WorkflowViewForm
+						basics={viewDetail.basics}
+						stages={viewDetail.stages}
+					/>
+				) : null}
+			</Modal>
 
 			<Modal
 				open={Boolean(deleteModal)}

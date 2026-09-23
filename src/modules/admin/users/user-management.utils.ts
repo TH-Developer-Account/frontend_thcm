@@ -25,7 +25,10 @@ export const USER_TYPE_OPTIONS: UserTypeOption[] = [
 	{ label: "Dealer", value: "DEALER" },
 	{ label: "Customer", value: "CUSTOMER" },
 ];
-
+const getUserResponseStatus = (user: User): UserStatus => {
+	if (user.status) return user.status;
+	return user.status ? "Active" : "Inactive";
+};
 export const mapUserToForm = (user: User): UserFormValues => ({
 	// Existing URL is rendered from user.avatar; this holds only a new file.
 	avatar: null,
@@ -49,6 +52,7 @@ export const mapUserToForm = (user: User): UserFormValues => ({
 	designation: user.designation,
 	vertical: user.vertical,
 	grade: user.grade ?? "",
+	status: getUserResponseStatus(user),
 	managerCode1: user.managerCode1,
 	managerCode2: user.managerCode2,
 	isDefaultContact: user.isDefaultContact,
@@ -80,6 +84,7 @@ export const EMPTY_USER_FORM: UserFormValues = {
 	designation: "",
 	vertical: "",
 	grade: "",
+	status: "",
 	managerCode1: "",
 	managerCode2: "",
 	isDefaultContact: false,
@@ -115,7 +120,7 @@ export const mapUser = (user: UserResponse): User => ({
 	role: user.role ?? "",
 	designation: user.designation ?? "",
 	vertical: user.vertical ?? "",
-	// grade: user.grade ?? "",
+	grade: user.grade ?? "",
 	managerCode1: user.managerCode1 ?? "",
 	managerCode2: user.managerCode2 ?? "",
 	isDefaultContact: Boolean(user.isDefaultContact),
@@ -168,7 +173,7 @@ export const mapUserFormToCreatePayload = (
 	assignText("role", form.role);
 	assignText("designation", form.designation);
 	assignText("vertical", form.vertical);
-	// assignText("grade", form.grade); // enable after backend grade support
+	assignText("grade", form.grade); // enable after backend grade support
 	assignText("managerCode1", form.managerCode1);
 	assignText("managerCode2", form.managerCode2);
 	assignText("joinedOn", form.joinedOn);
@@ -178,8 +183,14 @@ export const mapUserFormToCreatePayload = (
 		payload.userType = form.userType;
 	}
 
+	// isActive (the checkbox the form actually collects) is the single
+	// source of truth for both flags the backend accepts: the boolean
+	// is_active and the textual status. Deriving status here — rather than
+	// relying on form.status, which no input in CreateUserForm writes to —
+	// keeps the two from ever disagreeing.
 	if (form.isActive !== undefined) {
 		(payload as Record<string, unknown>).is_active = form.isActive;
+		payload.status = form.isActive ? "Active" : "Inactive";
 	}
 
 	return payload;
@@ -205,7 +216,8 @@ const USER_UPDATE_FIELD_MAP = {
 	role: "role",
 	designation: "designation",
 	vertical: "vertical",
-	// grade: "grade", // enable after backend grade support
+	status: "status",
+	grade: "grade", // enable after backend grade support
 	// isDefaultContact: "isDefaultContact", // enable after backend isDefaultContact support
 	managerCode1: "managerCode1",
 	managerCode2: "managerCode2",
@@ -254,6 +266,15 @@ export const mapUserFormToUpdatePayload = (
 					: value.trim()
 				: value;
 	});
+
+	// form.status is a separate field the update form never actually
+	// writes to (no input targets it — see CreateUserForm's status
+	// checkbox, which only sets isActive), so it can be stale relative to
+	// isActive. Re-derive it here whenever isActive is present so the two
+	// flags sent to the backend never disagree.
+	if (form.isActive !== undefined) {
+		payload.status = form.isActive ? "Active" : "Inactive";
+	}
 
 	return payload as UpdateUserPayload;
 };

@@ -3,34 +3,34 @@
 import type { AlertVariant } from "../components/common/common.types";
 
 export type StatusAlertConfig = {
-  variant: AlertVariant;
-  title: string;
-  description: string;
+	variant: AlertVariant;
+	title: string;
+	description: string;
 };
 
 export type PendingOn =
-  | { role: "NONE"; outcome: "APPROVED" | "REJECTED" }
-  | { role: "PROPOSER" }
-  | { role: "VENDOR" }
-  | { role: "GUEST" }
-  | { role: "APPROVER"; approvers: { id: string; name: string }[] };
+	| { role: "NONE"; outcome: "APPROVED" | "REJECTED" }
+	| { role: "PROPOSER" }
+	| { role: "VENDOR" }
+	| { role: "GUEST" }
+	| { role: "APPROVER"; approvers: { id: string; name: string }[] };
 
 const SUCCESS_STATUSES = new Set([
-  "APPROVED",
-  "ACCEPTED",
-  "ACCEPT_AND_CLOSE",
-  "CLOSED",
-  "VALIDATED",
-  "CONDUCTED",
+	"APPROVED",
+	"ACCEPTED",
+	"ACCEPT_AND_CLOSE",
+	"CLOSED",
+	"VALIDATED",
+	"CONDUCTED",
 ]);
 
 const ERROR_STATUSES = new Set(["REJECTED", "CANCELLED", "CANCELED"]);
 
 const WARNING_STATUSES = new Set([
-  "CLARIFY",
-  "CLARIFICATION_REQUESTED",
-  "THCM_CLARIFICATION_REQUESTED",
-  "CLARIFIED",
+	"CLARIFY",
+	"CLARIFICATION_REQUESTED",
+	"THCM_CLARIFICATION_REQUESTED",
+	"CLARIFIED",
 ]);
 
 // Everything NOT in the three sets above (PENDING, IN_PROGRESS, INITIATED,
@@ -41,38 +41,38 @@ const WARNING_STATUSES = new Set([
 // approved/rejected/cancelled/clarification states.
 
 const TITLE_OVERRIDES: Record<string, string> = {
-  APPROVED: "Approved",
-  ACCEPTED: "Accepted",
-  ACCEPT_AND_CLOSE: "Accepted and Closed",
-  CLOSED: "Closed",
-  VALIDATED: "Validated",
-  CONDUCTED: "Conducted",
-  REJECTED: "Rejected",
-  CANCELLED: "Cancelled",
-  CANCELED: "Cancelled",
-  CLARIFY: "Clarification Requested",
-  CLARIFICATION_REQUESTED: "Clarification Requested",
-  THCM_CLARIFICATION_REQUESTED: "Clarification Requested",
-  CLARIFIED: "Clarified",
+	APPROVED: "Approved",
+	ACCEPTED: "Accepted",
+	ACCEPT_AND_CLOSE: "Accepted and Closed",
+	CLOSED: "Closed",
+	VALIDATED: "Validated",
+	CONDUCTED: "Conducted",
+	REJECTED: "Rejected",
+	CANCELLED: "Cancelled",
+	CANCELED: "Cancelled",
+	CLARIFY: "Clarification Requested",
+	CLARIFICATION_REQUESTED: "Clarification Requested",
+	THCM_CLARIFICATION_REQUESTED: "Clarification Requested",
+	CLARIFIED: "Clarified",
 };
 
 const normalizeStatus = (status: string): string =>
-  status
-    .trim()
-    .toUpperCase()
-    .replace(/[\s-]+/g, "_");
+	status
+		.trim()
+		.toUpperCase()
+		.replace(/[\s-]+/g, "_");
 
 const titleCaseFallback = (normalized: string): string =>
-  normalized
-    .split("_")
-    .filter(Boolean)
-    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
-    .join(" ");
+	normalized
+		.split("_")
+		.filter(Boolean)
+		.map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+		.join(" ");
 
 export type GetStatusAlertOptions = {
-  entityLabel?: string;
-  title?: string;
-  description?: string;
+	entityLabel?: string;
+	title?: string;
+	description?: string;
 };
 
 /**
@@ -82,48 +82,64 @@ export type GetStatusAlertOptions = {
  * should not show a status banner at all.
  */
 export const getStatusAlertConfig = (
-  status: string | null | undefined,
-  options: GetStatusAlertOptions = {},
+	status: string | null | undefined,
+	options: GetStatusAlertOptions = {},
 ): StatusAlertConfig | null => {
-  if (!status) return null;
+	if (!status) return null;
 
-  const normalized = normalizeStatus(status);
+	const normalized = normalizeStatus(status);
 
-  let variant: AlertVariant;
-  if (SUCCESS_STATUSES.has(normalized)) {
-    variant = "success";
-  } else if (ERROR_STATUSES.has(normalized)) {
-    variant = "error";
-  } else if (WARNING_STATUSES.has(normalized)) {
-    variant = "warning";
-  } else {
-    // in-progress / unrecognized -> no banner
-    return null;
-  }
+	let variant: AlertVariant;
+	if (SUCCESS_STATUSES.has(normalized)) {
+		variant = "success";
+	} else if (ERROR_STATUSES.has(normalized)) {
+		variant = "error";
+	} else if (WARNING_STATUSES.has(normalized)) {
+		variant = "warning";
+	} else {
+		// in-progress / unrecognized -> no banner
+		return null;
+	}
 
-  const title =
-    options.title ??
-    TITLE_OVERRIDES[normalized] ??
-    titleCaseFallback(normalized);
+	const title =
+		options.title ??
+		TITLE_OVERRIDES[normalized] ??
+		titleCaseFallback(normalized);
 
-  const entity = options.entityLabel ? ` ${options.entityLabel}` : " item";
-  const description =
-    options.description ?? `This${entity} has been ${title.toLowerCase()}.`;
+	const entity = options.entityLabel ? ` ${options.entityLabel}` : " item";
+	const description =
+		options.description ?? `This${entity} has been ${title.toLowerCase()}.`;
 
-  return { variant, title, description };
+	return { variant, title, description };
 };
 
-export const formatPendingOn = (pendingOn: PendingOn): string => {
-  switch (pendingOn.role) {
-    case "NONE":
-      return pendingOn.outcome === "APPROVED" ? "Approved" : "Rejected";
-    case "PROPOSER":
-      return "Pending on Proposer";
-    case "VENDOR":
-      return "Pending on Vendor";
-    case "GUEST":
-      return "Pending on Ex-Employee";
-    case "APPROVER":
-      return `Pending on ${pendingOn.approvers.map((a) => a.name).join(", ")}`;
-  }
+export const formatPendingOn = (
+	pendingOn: PendingOn | null | undefined,
+): string => {
+	if (!pendingOn) return "—";
+
+	switch (pendingOn.role) {
+		case "NONE":
+			return pendingOn.outcome === "APPROVED" ? "Approved" : "Rejected";
+
+		case "PROPOSER":
+			return "Pending on Proposer";
+
+		case "VENDOR":
+			return "Pending on Vendor";
+
+		case "GUEST":
+			return "Pending on Ex-Employee";
+
+		case "APPROVER":
+			return pendingOn.approvers?.length
+				? `Pending on ${pendingOn.approvers.map((a) => a.name).join(", ")}`
+				: "Pending on Approver";
+
+		// case "CLOSED" :
+		// 	return "Closed";
+
+		default:
+			return "—";
+	}
 };

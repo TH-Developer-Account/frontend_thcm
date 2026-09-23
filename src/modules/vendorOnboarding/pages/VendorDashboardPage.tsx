@@ -12,7 +12,7 @@ const VendorDashboardPage = () => {
 					ariaLabel: "Vendor dashboard breadcrumb",
 					breadcrumbs: [
 						{ label: "Home Screen", href: "/" },
-						{ label: "Vendors", href: "/vendor/dashboard" },
+						{ label: "Vendors", href: "/vendor-onboarding/dashboard" },
 						{ label: "Dashboard" },
 					],
 					separator: "›",

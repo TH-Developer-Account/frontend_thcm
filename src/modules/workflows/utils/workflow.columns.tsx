@@ -1,9 +1,11 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import moment from "moment-timezone";
-import { Edit, Trash, UserPlus } from "lucide-react";
+import { Edit, Eye, Trash, UserPlus } from "lucide-react";
 
 import { Badge } from "../../../components/common/Badge";
-import Button from "../../../components/common/Button";
+import ActionMenu, {
+	type ActionMenuItem,
+} from "../../../components/common/ActionMenu";
 
 import type { WorkflowRow } from "../types/types";
 
@@ -11,7 +13,14 @@ type WorkflowColumnActions = {
 	onAssign: (workflow: WorkflowRow) => void;
 	onEdit: (workflow: WorkflowRow) => void;
 	onDelete: (workflow: WorkflowRow) => void;
+	onView: (workflow: WorkflowRow) => void;
 };
+
+// Admin templates (ownerType "ADMIN", or missing/unrecognized — fail
+// closed toward view-only rather than accidentally editable) can only be
+// viewed. Only a user's own templates (ownerType "USER") are editable.
+const isEditableTemplate = (workflow: WorkflowRow): boolean =>
+	workflow.ownerType === "USER";
 
 const formatWorkflowDate = (value: WorkflowRow["lastUpdated"]): string => {
 	if (!value) return "—";
@@ -25,6 +34,7 @@ export const getWorkflowColumns = ({
 	onAssign,
 	onEdit,
 	onDelete,
+	onView,
 }: WorkflowColumnActions): ColumnDef<WorkflowRow>[] => [
 	{
 		accessorKey: "name",
@@ -84,38 +94,46 @@ export const getWorkflowColumns = ({
 		enableSorting: false,
 		cell: ({ row }) => {
 			const workflow = row.original;
+			const editable = isEditableTemplate(workflow);
+
+			const actions: ActionMenuItem<WorkflowRow>[] = [
+				{
+					id: "assign",
+					label: "Assign Users",
+					Icon: UserPlus,
+					onClick: onAssign,
+					hidden: editable, // only applicable to admin templates, not self-assigned USER templates
+				},
+				{
+					id: "edit",
+					label: "Edit",
+					Icon: Edit,
+					onClick: onEdit,
+					hidden: !editable,
+				},
+				{
+					id: "delete",
+					label: "Delete",
+					Icon: Trash,
+					onClick: onDelete,
+					hidden: !editable,
+					variant: "danger",
+				},
+				{
+					id: "view",
+					label: "View",
+					Icon: Eye,
+					onClick: onView,
+					hidden: editable,
+				},
+			];
+
 			return (
-				<div className="workflow-table-actions">
-					<Button
-						type="button"
-						size="sm"
-						appearance="icon"
-						variant="secondary"
-						onClick={() => onAssign(workflow)}
-						Icon={UserPlus}
-						isTooltip="Assign Users"
-					/>
-					<>
-						<Button
-							type="button"
-							size="sm"
-							appearance="icon"
-							variant="secondary"
-							onClick={() => onEdit(workflow)}
-							Icon={Edit}
-							isTooltip="Edit"
-						/>
-						<Button
-							type="button"
-							size="sm"
-							appearance="icon"
-							variant="secondary"
-							onClick={() => onDelete(workflow)}
-							Icon={Trash}
-							isTooltip="Delete"
-						/>
-					</>
-				</div>
+				<ActionMenu<WorkflowRow>
+					row={workflow}
+					actions={actions}
+					ariaLabel={`Actions for ${workflow.name || "workflow"}`}
+				/>
 			);
 		},
 	},

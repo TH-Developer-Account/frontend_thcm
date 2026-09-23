@@ -15,10 +15,17 @@ import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { formatApps } from "../utils/workflow.constants";
 import { useWorkflow } from "../context/useWorkflows";
-import type { WorkflowListScope, WorkflowRow } from "../types/types";
+import type {
+	WorkflowBasics,
+	WorkflowListScope,
+	WorkflowRow,
+	WorkflowStage,
+} from "../types/types";
 import { workflowListFilterOptions } from "../utils/workflow.constants";
 import { getWorkflowColumns } from "../utils/workflow.columns";
+import { mapBasics, mapStages } from "../utils/workflow.helpers";
 import { WorkflowUserAssignment } from "./WorkflowUserAssignment";
+import WorkflowViewForm from "./WorkflowViewForm";
 import { FilterTabs } from "../../../components/ui/FilterTabs";
 import { getWorkflowErrorMessage, workflowApi } from "../api/workflow.api";
 import { useDeleteWorkflowMutation } from "../context/useWorkflowMutations";
@@ -67,6 +74,14 @@ export const WorkflowManagementTable = ({
 	const [deleteModal, setDeleteModal] = React.useState<WorkflowRow | null>(
 		null,
 	);
+
+	const [viewModal, setViewModal] = React.useState<WorkflowRow | null>(null);
+	const [viewLoading, setViewLoading] = React.useState(false);
+	const [viewError, setViewError] = React.useState<string | null>(null);
+	const [viewDetail, setViewDetail] = React.useState<{
+		basics: WorkflowBasics;
+		stages: WorkflowStage[];
+	} | null>(null);
 
 	const deleteMutation = useDeleteWorkflowMutation();
 
@@ -123,14 +138,43 @@ export const WorkflowManagementTable = ({
 		setDeleteModal(workflow);
 	}, []);
 
+	// Non-editable (admin) templates get a read-only look via the same
+	// summary view used at the end of the create/edit wizard, instead of
+	// the Edit/Delete actions a USER-owned template gets.
+	const handleOpenView = React.useCallback(async (workflow: WorkflowRow) => {
+		setViewModal(workflow);
+		setViewDetail(null);
+		setViewError(null);
+
+		if (!workflow.id) return;
+
+		setViewLoading(true);
+
+		try {
+			const detail = await workflowApi.getById(workflow.id);
+
+			setViewDetail({
+				basics: mapBasics(detail),
+				stages: mapStages(detail.stages ?? []),
+			});
+		} catch (error) {
+			setViewError(
+				getWorkflowErrorMessage(error, "Failed to load this workflow."),
+			);
+		} finally {
+			setViewLoading(false);
+		}
+	}, []);
+
 	const columns = React.useMemo(
 		() =>
 			getWorkflowColumns({
 				onAssign: setAssignModalOpen,
 				onEdit: handleEdit,
 				onDelete: handleOpenDelete,
+				onView: (workflow) => void handleOpenView(workflow),
 			}),
-		[handleEdit, handleOpenDelete],
+		[handleEdit, handleOpenDelete, handleOpenView],
 	);
 
 	const handleDelete = React.useCallback(
@@ -259,6 +303,34 @@ export const WorkflowManagementTable = ({
 				workflow={assignModalOpen}
 				onClose={() => setAssignModalOpen(null)}
 			/>
+
+			<Modal
+				open={Boolean(viewModal)}
+				onClose={() => setViewModal(null)}
+				size="lg"
+				title={viewModal?.name ? `View: ${viewModal.name}` : "View Workflow"}
+				footer_actions={
+					<Button
+						text="Close"
+						onClick={() => setViewModal(null)}
+						appearance="standard"
+						variant="outline"
+					/>
+				}
+			>
+				{viewLoading ? (
+					<p className="workflow-assignment-empty">Loading workflow…</p>
+				) : viewError ? (
+					<p className="workflow-fetch-stage-error" role="alert">
+						{viewError}
+					</p>
+				) : viewDetail ? (
+					<WorkflowViewForm
+						basics={viewDetail.basics}
+						stages={viewDetail.stages}
+					/>
+				) : null}
+			</Modal>
 
 			<Modal
 				open={Boolean(deleteModal)}

@@ -140,13 +140,6 @@ export type BusinessPartnerAddressType =
 	| "SHIPPING_ADDRESS"
 	| "WAREHOUSE";
 
-export type BPFormTab =
-	| "organization"
-	| "contact"
-	| "address"
-	| "branches"
-	| "people";
-
 export type BusinessPartnerAddress = {
 	id: string;
 	businessPartnerId: string;
@@ -157,7 +150,7 @@ export type BusinessPartnerAddress = {
 	 * return addressType. Once the backend always supplies it,
 	 * this can become BusinessPartnerAddressType.
 	 */
-	addressType: BusinessPartnerAddressType | null;
+	// addressType: BusinessPartnerAddressType | null;
 
 	address: string;
 	city?: string | null;
@@ -361,7 +354,7 @@ export type BPAddressViewModel = {
 	businessPartnerId: string;
 
 	label: string;
-	addressType: BusinessPartnerAddressType;
+	// addressType: BusinessPartnerAddressType;
 	address: string;
 
 	city?: string;
@@ -433,7 +426,7 @@ export type BusinessPartnerViewModel = {
 
 export type BPAddressFormState = {
 	label: string;
-	addressType: BusinessPartnerAddressType | "";
+	// addressType: BusinessPartnerAddressType | "";
 
 	/*
 	 * UI-only field. Do not include it in the API payload.
@@ -460,7 +453,7 @@ export type BPAddressFormState = {
 };
 
 export type BusinessPartnerAddressPayload = {
-	addressType: BusinessPartnerAddressType;
+	// addressType: BusinessPartnerAddressType;
 	address: string;
 	label?: string | null;
 	city: string | null;
@@ -524,6 +517,39 @@ export type BPPersonViewModel = {
 };
 
 export type UpdateBusinessPartnerPeoplePayload = BusinessPartnerPersonPayload[];
+
+// BP Users tab — read-only listing of Users scoped to a business partner
+// (GET /users?businessPartnerId=...), plus one action: set default user
+// (PATCH /users/:id { isDefaultContact: true }). Deliberately minimal —
+// this is not the same thing as BPPersonViewModel/BPContactViewModel
+// above, which come from the business-partner "people"/"contacts"
+// resources, not the Users module.
+
+/** Raw row shape as returned by GET /users (see UserResponse in the
+ * user-management module) — only the fields this tab actually reads. */
+export type BPUserRow = {
+	id: string;
+	first_name?: string | null;
+	last_name?: string | null;
+	email?: string | null;
+	phone_number?: string | null;
+	role?: string | null;
+	department?: string | null;
+	designation?: string | null;
+	isDefaultContact?: boolean | null;
+	is_active?: boolean | null;
+};
+
+export type BPUserViewModel = {
+	id: string;
+	name: string;
+	email: string;
+	phoneNumber: string;
+	role: string;
+	department: string;
+	isDefaultContact: boolean;
+	isActive: boolean;
+};
 
 export type BusinessPartnerContact = {
 	id: string;
@@ -646,7 +672,7 @@ export type BusinessPartnerFormState = {
 };
 
 export type CreateBusinessPartnerPayload = {
-	internalId: string;
+	internalId?: string;
 	vendorId: string | null;
 	bpId: string | null;
 	s4Id: string | null;

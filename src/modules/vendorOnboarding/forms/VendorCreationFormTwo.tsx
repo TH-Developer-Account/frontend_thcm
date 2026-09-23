@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, RefreshCcw } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/forms/FormInput";
@@ -66,7 +66,7 @@ const VendorCreationFormTwo = ({
 	onBack: onBackProp,
 	onNext: onNextProp,
 	// onSaveDraft: onSaveDraftProp,
-	onReset: onResetProp,
+	// onReset: onResetProp,
 	errors: errorsProp,
 	loading: loadingProp = false,
 	vendorCodeLoading: vendorCodeLoadingProp = false,
@@ -78,7 +78,7 @@ const VendorCreationFormTwo = ({
 	const onBack = onBackProp ?? formContext?.handleBack;
 	const onNext = onNextProp ?? formContext?.handleSaveFormTwo;
 	// const onSaveDraft = onSaveDraftProp ?? formContext?.handleSaveFormTwoDraft;
-	const onReset = onResetProp ?? formContext?.handleResetFormTwo;
+	// const onReset = onResetProp ?? formContext?.handleResetFormTwo;
 	const loading = loadingProp || formContext?.mutationLoading || false;
 	const vendorCodeLoading =
 		vendorCodeLoadingProp || formContext?.vendorCodeLoading || false;
@@ -92,6 +92,7 @@ const VendorCreationFormTwo = ({
 		<>
 			<form
 				className="vendor-onboarding-form"
+				noValidate
 				onSubmit={(event) => event.preventDefault()}
 			>
 				<div className="vendor-onboarding-form-grid">
@@ -413,7 +414,7 @@ const VendorCreationFormTwo = ({
 						/>
 
 						<div className="vendor-onboarding-form-actions-end">
-							<Button
+							{/* <Button
 								type="button"
 								text="Reset"
 								Icon={RefreshCcw}
@@ -422,7 +423,7 @@ const VendorCreationFormTwo = ({
 								variant="outline"
 								onClick={onReset}
 								disabled={loading || !onReset}
-							/>
+							/> */}
 
 							{/* <Button
 								type="button"

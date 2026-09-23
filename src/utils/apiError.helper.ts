@@ -18,13 +18,18 @@ type AxiosLikeError = {
 };
 
 type ShowToastFn = (toast: ToastInput) => void;
-
 export function getApiErrorMessage(
 	error: unknown,
 	fallback = "Something went wrong.",
 ): string {
 	const err = error as AxiosLikeError;
 	const data = err.response?.data;
+
+	const status =
+		err.response?.status ??
+		(typeof data === "object" ? data?.statusCode : undefined);
+
+	if (status !== undefined && status >= 500) return fallback;
 
 	if (typeof data === "string") return data;
 

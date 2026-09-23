@@ -23,9 +23,8 @@ type MobileStep = "enterMobile" | "verifyOtp";
 
 const MobileLoginForm = () => {
 	const navigate = useNavigate();
-	const { setUser } = useAuth();
+	const { hydrateSession } = useAuth();
 	const { showToast } = useToast();
-
 	const [mobileStep, setMobileStep] = useState<MobileStep>("enterMobile");
 	const [otpTimerActive, setOtpTimerActive] = useState(true);
 	const [secondsLeft, setSecondsLeft] = useState(30);
@@ -105,11 +104,16 @@ const MobileLoginForm = () => {
 				},
 			);
 
-			const { user, accessToken } = response.data;
+			const { accessToken } = response.data;
 
 			localStorage.setItem("authToken", accessToken);
 
-			setUser(user);
+			// Hydrate the full session (user + permissions) from /users/me — the
+			// verify-otp response only guarantees { user, accessToken }, so this
+			// reuses the same source of truth a page refresh already relies on,
+			// instead of setUser(user) alone leaving permissions empty until reload.
+			await hydrateSession();
+
 			navigate("/");
 
 			showToast({

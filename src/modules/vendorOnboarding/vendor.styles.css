@@ -1081,117 +1081,6 @@
 	}
 }
 
-/* -------------------------------------------------------------------------- */
-/* Vendor workflow section                                                     */
-/* -------------------------------------------------------------------------- */
-.vendor-workflow-selection-note {
-	display: block;
-	margin-top: var(--space-1);
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-xs);
-	font-weight: 400;
-	line-height: 1.4;
-}
-.vendor-workflow-section {
-	display: grid;
-	gap: var(--space-4);
-	width: 100%;
-	min-width: 0;
-}
-
-.vendor-workflow-content,
-.vendor-workflow-preview,
-.vendor-workflow-picker {
-	display: grid;
-	gap: var(--space-3);
-	min-width: 0;
-}
-
-.vendor-workflow-selection {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--space-4);
-	padding: var(--space-3) var(--space-4);
-	border: 1px solid var(--color-border);
-	border-radius: var(--card-radius);
-	background: var(--color-surface);
-}
-
-.vendor-workflow-selection-main {
-	display: flex;
-	align-items: center;
-	gap: var(--space-3);
-	min-width: 0;
-}
-
-.vendor-workflow-selection-icon {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 2rem;
-	height: 2rem;
-	flex: none;
-	border-radius: 50%;
-	background: color-mix(in srgb, var(--color-brand) 8%, transparent);
-	color: var(--color-brand);
-}
-
-.vendor-workflow-selection-copy {
-	display: grid;
-	gap: var(--space-1);
-	min-width: 0;
-}
-
-.vendor-workflow-selection-copy span {
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-xs);
-}
-
-.vendor-workflow-selection-copy strong {
-	overflow: hidden;
-	color: var(--color-text-primary);
-	font-size: var(--font-size-sm);
-	font-weight: 600;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.vendor-workflow-table {
-	min-width: 0;
-	overflow-x: auto;
-	border-radius: var(--card-radius);
-}
-
-.vendor-workflow-empty {
-	padding: var(--space-5);
-	border: 1px dashed var(--color-border);
-	border-radius: var(--card-radius);
-	background: var(--color-page-bg);
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-sm);
-	text-align: center;
-}
-
-.vendor-workflow-save-template {
-	display: grid;
-	gap: 0.75rem;
-	margin-top: 0.875rem;
-	border: 1px solid #e5e7eb;
-	border-radius: 0.5rem;
-	background: #fafafa;
-	padding: 0.875rem;
-}
-
-.vendor-workflow-navigation {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--space-3);
-	padding-top: var(--space-4);
-	border-top: 1px solid var(--color-border);
-}
-
 .vendor-onboarding-form-actions-end {
 	display: flex;
 	align-items: center;
@@ -1203,16 +1092,11 @@
 		grid-template-columns: minmax(0, 1fr);
 	}
 
-	.workflow-customise-actions,
-	.vendor-workflow-selection,
-	.vendor-workflow-navigation {
+	.workflow-customise-actions {
 		align-items: stretch;
 		flex-direction: column;
 	}
 
-	.workflow-customise-actions > *,
-	.vendor-workflow-selection > button,
-	.vendor-workflow-navigation > button,
 	.vendor-onboarding-form-actions-end,
 	.vendor-onboarding-form-actions-end > button {
 		width: 100%;
@@ -1221,53 +1105,208 @@
 	.vendor-onboarding-form-actions-end {
 		display: grid;
 	}
+}
 
-	.vendor-workflow-selection-copy strong {
-		white-space: normal;
+/* -------------------------------------------------------------------------- */
+/* Summary view heading                                                        */
+/*   Desktop: [←] Vendor Onboarding / VON-… / Name              [badge]       */
+/*   Mobile:  [←] Vendor Onboarding                              [badge]       */
+/*                VON-…                                                        */
+/*                Name                                                         */
+/* -------------------------------------------------------------------------- */
+
+@layer components {
+	.vendor-summary-heading {
+		display: grid;
+		width: 100%;
+		min-width: 0;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		column-gap: var(--space-2);
+	}
+
+	.vendor-summary-heading > :last-child {
+		justify-self: end;
+		white-space: nowrap;
+	}
+
+	.vendor-summary-heading-text {
+		display: flex;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: baseline;
+		row-gap: var(--space-0-5);
+
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-xl, 1.25rem);
+		font-weight: var(--font-weight-semibold, 600);
+		line-height: var(--line-height-tight);
+		letter-spacing: -0.01em;
+	}
+
+	.vendor-summary-heading-title {
+		white-space: nowrap;
+	}
+
+	.vendor-summary-heading-meta {
+		display: inline-flex;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: baseline;
+	}
+
+	.vendor-summary-heading-meta > span {
+		min-width: 0;
+		overflow-wrap: anywhere;
+	}
+
+	/* Separator lives on the item it introduces, so a wrapped line never
+	   ends with a stray "/". */
+	.vendor-summary-heading-meta > span::before {
+		content: "/";
+		margin-inline: var(--space-2);
+		color: var(--color-text-muted);
+		font-weight: var(--font-weight-regular, 400);
+	}
+
+	@media (max-width: 639px) {
+		.vendor-summary-heading {
+			align-items: start;
+		}
+
+		.vendor-summary-heading-text {
+			flex-direction: column;
+			align-items: flex-start;
+			font-size: var(--font-size-base);
+		}
+
+		.vendor-summary-heading-meta {
+			flex-direction: column;
+			gap: var(--space-0-5);
+
+			color: var(--color-text-secondary);
+
+			font-size: var(--font-size-sm);
+			font-weight: var(--font-weight-medium);
+			letter-spacing: normal;
+		}
+
+		.vendor-summary-heading-meta > span::before {
+			content: none;
+		}
+
+		.vendor-summary-heading-ref {
+			color: var(--color-text-primary);
+		}
 	}
 }
-.vendor-workflow-existing-option {
+
+/* -------------------------------------------------------------------------- */
+/* Approval actions bar                                                        */
+/*                                                                             */
+/* > 900px                                                                     */
+/*   approver : Back [ reason — fills the row ........... ] [Clarify][Approve] */
+/*   proposer : Back ................................ [Accept/Send back/Submit]*/
+/* 481–900px                                                                   */
+/*   approver : [ reason — full width ........................................ ]*/
+/*              Back ...................................... [Clarify][Approve] */
+/* ≤ 480px                                                                     */
+/*              [ reason — full width ]                                        */
+/*              [ Clarify ][ Approve ]   (equal widths)                        */
+/*              [ Back — full width  ]                                         */
+/* ≤ 380px    action buttons stack one per row                                 */
+/* -------------------------------------------------------------------------- */
+
+.approval-actions-bar {
 	display: flex;
+	width: 100%;
+	min-width: 0;
 	align-items: center;
 	justify-content: space-between;
-	gap: var(--space-4);
-	padding: var(--space-3) var(--space-4);
-	border: 1px solid var(--color-border);
-	border-radius: var(--card-radius);
-	background: var(--color-page-bg);
+	gap: var(--space-3);
 }
-.vendor-workflow-exiting-title {
+
+.approval-actions-bar-end {
 	display: flex;
-	flex-direction: row;
-	flex-wrap: wrap;
-	justify-content: space-between;
+	min-width: 0;
+	flex: none;
+	align-items: center;
+	gap: var(--space-2);
 }
 
-.vendor-workflow-existing-option strong {
-	color: var(--color-text-primary);
-	font-size: var(--font-size-sm);
-	font-weight: 600;
+/* Bottom-aligned so the buttons line up with the textarea's hint line
+   rather than its label. */
+.approval-actions-bar--approver {
+	align-items: flex-end;
+	justify-content: flex-start;
 }
 
-.vendor-workflow-existing-option span {
-	overflow: hidden;
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-xs);
-	text-overflow: ellipsis;
-	white-space: nowrap;
+.approval-actions-bar--approver .approval-reason-inline {
+	flex: 1 1 auto;
+	min-width: 0;
 }
 
-@media (max-width: 767px) {
-	.vendor-workflow-existing-option {
-		align-items: stretch;
-		flex-direction: column;
+.approval-reason-inline textarea {
+	min-height: unset;
+	resize: none;
+}
+
+@media (max-width: 900px) {
+	.approval-actions-bar {
+		flex-wrap: wrap;
+		align-items: center;
+		row-gap: var(--space-3);
 	}
 
-	.vendor-workflow-existing-option > button {
+	/* Reason moves to its own full-width row above everything else. */
+	.approval-actions-bar--approver .approval-reason-inline {
+		order: -1;
+		flex: 1 1 100%;
 		width: 100%;
 	}
 
-	.vendor-workflow-existing-option span {
-		white-space: normal;
+	.approval-actions-bar-end {
+		flex: 1 1 auto;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+	}
+}
+
+@media (max-width: 480px) {
+	/* Actions take a full row with equal-width buttons … */
+	.approval-actions-bar-end {
+		order: 1;
+		flex: 1 1 100%;
+		flex-wrap: nowrap;
+	}
+
+	.approval-actions-bar-end > * {
+		flex: 1 1 0;
+		min-width: 0;
+	}
+
+	/* … and Back drops to the bottom, full width. */
+	.approval-actions-bar > :first-child {
+		order: 2;
+		flex: 1 1 100%;
+	}
+
+	.approval-actions-bar-end .button-wrapper,
+	.approval-actions-bar-end .button-base,
+	.approval-actions-bar > :first-child .button-base,
+	.approval-actions-bar > .button-base:first-child {
+		width: 100%;
+	}
+}
+
+@media (max-width: 380px) {
+	.approval-actions-bar-end {
+		flex-direction: column;
+	}
+
+	.approval-actions-bar-end > * {
+		flex: none;
+		width: 100%;
 	}
 }

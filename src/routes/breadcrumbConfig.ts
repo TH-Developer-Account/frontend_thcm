@@ -15,43 +15,43 @@ type BreadcrumbRoute = {
 export const breadcrumbRoutes: BreadcrumbRoute[] = [
 	// Vendor Onboarding
 	{
-		pattern: "/vendor/onboarding/:onboardingId/view",
+		pattern: "/vendor-onboarding/:onboardingId/view",
 		getBreadcrumbs: ({ onboardingId }) => [
-			{ label: "Vendor Onboarding", href: "/vendor/onboarding/listing" },
+			{ label: "Vendor Onboarding", href: "/vendor-onboarding/listing" },
 			{
 				label: "Vendor Details",
-				href: onboardingId ? `/vendor/onboarding/${onboardingId}` : undefined,
+				href: onboardingId ? `/vendor-onboarding/${onboardingId}` : undefined,
 			},
 			{ label: "View" },
 		],
 	},
 	{
-		pattern: "/vendor/onboarding/:onboardingId",
+		pattern: "/vendor-onboarding/:onboardingId",
 		getBreadcrumbs: () => [
-			{ label: "Vendor Onboarding", href: "/vendor/onboarding/listing" },
+			{ label: "Vendor Onboarding", href: "/vendor-onboarding/listing" },
 			{ label: "Vendor Details" },
 		],
 	},
 	{
-		pattern: "/vendor/onboarding/create",
+		pattern: "/vendor-onboarding/create",
 		getBreadcrumbs: () => [
-			{ label: "Vendor Onboarding", href: "/vendor/onboarding/listing" },
+			{ label: "Vendor Onboarding", href: "/vendor-onboarding/listing" },
 			{ label: "Create" },
 		],
 	},
 	{
-		pattern: "/vendor/initiation/create",
+		pattern: "/vendor-onboarding/initiation/create",
 		getBreadcrumbs: () => [
-			{ label: "Vendor Onboarding", href: "/vendor/onboarding/listing" },
+			{ label: "Vendor Onboarding", href: "/vendor-onboarding/listing" },
 			{ label: "Initiate" },
 		],
 	},
 	{
-		pattern: "/vendor/onboarding/listing",
+		pattern: "/vendor-onboarding/listing",
 		getBreadcrumbs: () => [{ label: "Vendor Onboarding" }],
 	},
 	{
-		pattern: "/vendor/dashboard",
+		pattern: "/vendor-onboarding/dashboard",
 		getBreadcrumbs: () => [{ label: "Vendor Dashboard" }],
 	},
 

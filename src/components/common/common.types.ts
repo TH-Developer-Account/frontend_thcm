@@ -56,6 +56,7 @@ export interface PaginationProps {
 	onPageSizeChange: (pageSize: number) => void;
 	variant?: "default" | "compact";
 	scrollTargetId?: string; // optional container id to scroll
+	pageSizeOptions?: number[];
 }
 
 export type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
@@ -109,6 +110,25 @@ export type ButtonVariant =
 	| "danger"
 	| "success"
 	| "warning"
+	| "transparent"
+	| "brand"
+	| "brand-soft"
+	| "brand-softest"
+	| "iron"
+	| "outline"
+	| "secondary"
+	| "danger"
+	| "danger-soft"
+	| "danger-softest"
+	| "success"
+	| "success-soft"
+	| "success-softest"
+	| "warning"
+	| "warning-soft"
+	| "warning-softest"
+	| "info"
+	| "info-soft"
+	| "info-softest"
 	| "transparent";
 
 export type ButtonSize = "sm" | "md" | "lg" | "xl";

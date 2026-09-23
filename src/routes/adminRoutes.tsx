@@ -1,7 +1,6 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router-dom";
 import FullScreenLoader from "./FullScreenLoader";
-import CreateBusinessPartner from "../modules/admin/business-partners/CreateBusinessPartner";
 
 const UsersPage = lazy(() => import("../modules/admin/users/UsersPage"));
 const UserProfilePage = lazy(() =>
@@ -23,6 +22,9 @@ const MastersPage = lazy(() => import("../modules/admin/Masters/MastersPage"));
 const BusinessPartners = lazy(
 	() => import("../modules/admin/business-partners/BusinessPartners"),
 );
+const CreateBusinessPartner = lazy(
+	() => import("../modules/admin/business-partners/CreateBusinessPartner"),
+);
 const BusinessPartnerView = lazy(
 	() => import("../modules/admin/business-partners/BusinessPartnerView"),
 );
@@ -33,9 +35,7 @@ export default function AdminRoutes() {
 			<Routes>
 				<Route path="users" element={<UsersPage />} />
 				<Route path="users/create" element={<UsersPage />} />
-				{/* Editing now happens in-place on the detail route via
-				    EditableCard's own Edit/Cancel/Save toggle — there is no
-				    longer a distinct "/edit" page or route. */}
+
 				<Route path="users/:id" element={<UsersPage />} />
 
 				<Route
@@ -50,6 +50,11 @@ export default function AdminRoutes() {
 				<Route path="business-partners" element={<BusinessPartners />} />
 				<Route
 					path="business-partners/create"
+					element={<CreateBusinessPartner />}
+				/>
+
+				<Route
+					path="business-partners/:id/edit"
 					element={<CreateBusinessPartner />}
 				/>
 				<Route

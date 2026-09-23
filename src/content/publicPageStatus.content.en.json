@@ -16,7 +16,7 @@
 			"noticeDescription": "A copy of your submitted response has been sent to your registered email address.",
 			"securityNote": "This secure session will close automatically.",
 			"actionLabel": "Log in to Tata Hitachi",
-			"actionTo": "/guest/login"
+			"actionTo": "/"
 		}
 	},
 	"medicalClaim": {
@@ -36,7 +36,7 @@
 			"noticeDescription": "A copy of your response and your login details will be sent to your registered email address. You can use them to track your claim and respond if clarification is requested.",
 			"securityNote": "This secure session will close automatically.",
 			"actionLabel": "Log in to track your claim",
-			"actionTo": "/guest/login"
+			"actionTo": "/"
 		}
 	}
 }

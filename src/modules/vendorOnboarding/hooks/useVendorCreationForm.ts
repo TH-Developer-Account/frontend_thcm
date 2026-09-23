@@ -1,10 +1,17 @@
 import React, { type ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useForm, useWatch, type Resolver } from "react-hook-form";
+import {
+	useForm,
+	useWatch,
+	type FieldValues,
+	type Path,
+	type Resolver,
+	type UseFormReturn,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
-import type { ReasonActionMode } from "../../../components/ui/ReasonActionModal";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { workflowApi } from "../../workflows/api/workflow.api";
@@ -52,10 +59,12 @@ import {
 	type VendorFormTwoValues,
 } from "../schemas/vendorFormTwo.schema";
 import {
+	invalidateVendor,
 	useAcceptAndCloseVendorMutation,
 	useDraftSubmitPublicVendorFormMutation,
 	usePublicVendorSessionQuery,
 	useSubmitPublicVendorFormMutation,
+	useSendBackToVendorMutation,
 	useSubmitVendorMutation,
 	useUpdateVendorMutation,
 	useVendorOnboardingDetailQuery,
@@ -98,6 +107,85 @@ const EMPTY_FORM_TWO: VendorCreationFormTwoValues = {};
 // validation), so they keep the exact literal the app already shows rather
 // than picking up the (more descriptive) per-field Zod messages.
 const MANDATORY_ERROR = "Mandatory";
+
+// ─────────────────────────────────────────────────────────────────────────
+// Invalid-field toasts
+// ─────────────────────────────────────────────────────────────────────────
+// Every blocked submit/next now also raises a toast naming the fields that
+// need attention — inline errors alone are easy to miss on a long form,
+// especially on mobile where the failing field can be off-screen.
+// Labels mirror the on-screen labels, in on-screen order, so the toast
+// reads top-to-bottom like the form. Move to vendor.content.en.json if
+// these need translating.
+
+const FORM_ONE_FIELD_LABELS: Partial<
+	Record<keyof VendorFormOneValues, string>
+> = {
+	vendorName: "Name Of Vendor",
+	mobile: "Mobile",
+	email: "E-mail",
+	state: "State",
+	city: "City/ Town",
+	pinCode: "Pin Code",
+	address: "Complete Address",
+	bankName: "Bank",
+	bankBranch: "Branch",
+	ifscCode: "IFSC Code",
+	accountNumber: "A/C No.",
+	confirmAccountNumber: "Confirm Account Number",
+	bankAddress: "Bank Address",
+	gstin: "GSTIN",
+	pan: "PAN",
+	entityRegNo: "Entity Reg. No.",
+	msmeVendor: "MSME Vendor",
+	ndaObtained: "Non-Disclosure Undertaking Obtained?",
+};
+
+const FORM_TWO_FIELD_LABELS: Partial<
+	Record<keyof VendorFormTwoValues, string>
+> = {
+	vendorCode: "Vendor Code",
+	vendorType: "Vendor Type",
+	companyCode: "Company Code",
+	purchaseOrg: "Purchase Org",
+	paymentTerm: "Payment Term",
+	tds: "TDS",
+	vendorCategory: "Vendor Category",
+	materialType: "Material Type",
+	materialSubType: "Material Sub Type",
+	vendorSelfAssessmentObtained: "Vendor Self Assessment Form Obtained?",
+	gpaObtained: "General Purpose Agreement Obtained?",
+	relatedPartyToThcm: "Is it Related Party to THCM?",
+	vendorAuditReportPrepared: "Vendor Audit Report Prepared?",
+	natureOfService: "Nature of Service",
+	reasonForOnboarding: "Reason for Onboarding of Vendor",
+};
+
+const MAX_LISTED_FIELDS = 4;
+
+// "Check: A, B, C, D and 3 more." — capped so a fully empty form doesn't
+// produce a toast the size of the form itself.
+const describeInvalidFields = (labels: string[]): string => {
+	if (labels.length === 0) return "";
+
+	const listed = labels.slice(0, MAX_LISTED_FIELDS).join(", ");
+	const remaining = labels.length - MAX_LISTED_FIELDS;
+
+	return remaining > 0
+		? `Check: ${listed} and ${remaining} more.`
+		: `Check: ${listed}.`;
+};
+
+// Must be called AFTER trigger() resolves. getFieldState() without a
+// formState argument reads RHF's live internal state, so it reflects the
+// validation that just ran rather than the errors from the last render.
+const getInvalidFieldLabels = <T extends FieldValues>(
+	form: UseFormReturn<T>,
+	labels: Partial<Record<keyof T, string>>,
+): string[] =>
+	(Object.entries(labels) as Array<[Path<T>, string]>)
+		.filter(([name]) => form.getFieldState(name).invalid)
+		.map(([, label]) => label);
 
 // Fills every Form One field the Zod schema requires, defaulting anything
 // missing from the API/detail response to "" so `reset()`/`defaultValues`
@@ -183,6 +271,43 @@ const getInitialAdditionalDocumentCount = (
 		),
 	);
 
+type ApprovalIdentity = {
+	approverId?: string | null;
+	approver?: { id?: string | null; email?: string | null } | null;
+};
+
+// True when the user appears as an approver on ANY stage of the workflow
+// (any iteration, any status) — not just the current one. Used to keep
+// proposer-only actions (e.g. Send Back to Vendor) away from anyone who
+// also sits in the approval chain.
+const isUserApproverInAnyStage = (
+	stages: readonly ApprovalStageLike[],
+	user: { id?: string | null; email?: string | null } | null | undefined,
+): boolean => {
+	if (!user) return false;
+
+	const userId = user.id ?? "";
+	const userEmail = user.email?.trim().toLowerCase() ?? "";
+
+	return stages.some((stage) =>
+		(stage.approvals ?? []).some((approval) => {
+			const identity = approval as unknown as ApprovalIdentity;
+
+			if (
+				userId &&
+				(identity.approverId === userId || identity.approver?.id === userId)
+			) {
+				return true;
+			}
+
+			return Boolean(
+				userEmail &&
+				identity.approver?.email?.trim().toLowerCase() === userEmail,
+			);
+		}),
+	);
+};
+
 export type {
 	VendorEnclosureUploadItem,
 	VendorCreationFormOneSubmission,
@@ -213,6 +338,10 @@ type UseVendorCreationFormOneControllerParams = {
 	// validation to run (fields are assumed valid if omitted). Async because
 	// it's now backed by React Hook Form's trigger() (Zod-validated).
 	validateFields?: () => boolean | Promise<boolean>;
+	// Restores the field values (owned by useVendorCreationForm's RHF form,
+	// not by this controller) to their last loaded/saved state. Called by
+	// handleReset alongside the enclosure/DPDP reset this controller owns.
+	onResetFields?: () => void;
 	onNext?: () => void;
 	onSubmit?: (
 		submission: VendorCreationFormOneSubmission,
@@ -230,10 +359,12 @@ export function useVendorCreationFormOneController({
 	isReadOnly,
 	onChange,
 	validateFields,
+	onResetFields,
 	onNext,
 	onSubmit,
 	onSaveDraft,
 }: UseVendorCreationFormOneControllerParams) {
+	const { showToast } = useToast();
 	const [enclosureUploads, setEnclosureUploads] = React.useState<
 		VendorEnclosureUploadItem[]
 	>(() => createInitialEnclosureUploads(initialDocuments));
@@ -401,13 +532,17 @@ export function useVendorCreationFormOneController({
 		[onChange],
 	);
 
-	const validateEnclosures = React.useCallback((): boolean => {
+	// Returns the labels of missing mandatory documents (empty = all good),
+	// so the caller can both block and name them in a toast.
+	const validateEnclosures = React.useCallback((): string[] => {
 		if (!requireDocuments) {
 			setEnclosureErrors({});
-			return true;
+			return [];
 		}
 
 		const nextErrors: Partial<Record<VendorEnclosureStatusKey, string>> = {};
+		const missingLabels: string[] = [];
+
 		VENDOR_DOCUMENT_FIELDS.forEach((field) => {
 			if (!isEnclosureRequired(field)) return;
 			const upload = enclosureUploads.find(
@@ -415,10 +550,11 @@ export function useVendorCreationFormOneController({
 			);
 			if (!upload?.value?.file && !upload?.value?.url) {
 				nextErrors[field.statusKey] = MANDATORY_ERROR;
+				missingLabels.push(field.label);
 			}
 		});
 		setEnclosureErrors(nextErrors);
-		return Object.keys(nextErrors).length === 0;
+		return missingLabels;
 	}, [enclosureUploads, isEnclosureRequired, requireDocuments]);
 
 	const openDpdpModal = React.useCallback(() => {
@@ -453,6 +589,8 @@ export function useVendorCreationFormOneController({
 	}, [hasConfirmedDpdp]);
 
 	const handleReset = React.useCallback(() => {
+		onResetFields?.();
+
 		syncedDocumentsKeyRef.current = documentsKey;
 		setEnclosureUploads(createInitialEnclosureUploads(initialDocuments));
 		setVisibleAdditionalDocumentCount(
@@ -462,14 +600,33 @@ export function useVendorCreationFormOneController({
 		setHasAcceptedDpdp(false);
 		setHasConfirmedDpdp(false);
 		setDpdpError("");
-	}, [documentsKey, initialDocuments]);
+	}, [documentsKey, initialDocuments, onResetFields]);
 
 	const handleFormAction = React.useCallback(async () => {
+		// validateFields raises its own toast (it knows the field labels).
 		if (validateFields && !(await validateFields())) return;
-		if (!validateEnclosures()) return;
+
+		const missingDocuments = validateEnclosures();
+		if (missingDocuments.length > 0) {
+			showToast({
+				type: "error",
+				title: vendorContent.toast.publicSubmit.missingDocsTitle,
+				description: formatVendorMessage(
+					vendorContent.toast.publicSubmit.missingDocsDescription,
+					{ documents: missingDocuments.join(", ") },
+				),
+			});
+			return;
+		}
+
 		if (requireDpdpConsent && !hasAcceptedDpdp) {
 			setDpdpError(MANDATORY_ERROR);
 			setIsDpdpModalOpen(true);
+			showToast({
+				type: "error",
+				title: vendorContent.toast.publicSubmit.dpdpTitle,
+				description: vendorContent.toast.publicSubmit.dpdpDescription,
+			});
 			return;
 		}
 		if (onSubmit) {
@@ -483,6 +640,7 @@ export function useVendorCreationFormOneController({
 		onNext,
 		onSubmit,
 		requireDpdpConsent,
+		showToast,
 		validateEnclosures,
 		validateFields,
 	]);
@@ -523,8 +681,10 @@ export function useVendorCreationFormOneController({
 type UseVendorCreationSummaryControllerParams = {
 	workflowStages: ApprovalStageLike[];
 	vendorCode?: string;
-	onApprove?: () => void;
-	onClarify?: () => void;
+	// CHANGED: both now take the mandatory reason ApprovalActionsBar collects
+	// inline (no more modal handing it over separately).
+	onApprove?: (reason: string) => void;
+	onClarify?: (reason: string) => void;
 	onSaveVendorCode?: (code?: string) => void | Promise<boolean>;
 	onAcceptAndClose?: () => void | Promise<void>;
 };
@@ -541,10 +701,6 @@ export function useVendorCreationSummaryController({
 	const { showToast } = useToast();
 	const approveStageMutation = useApproveWorkflowStageMutation();
 	const clarifyStageMutation = useClarifyWorkflowStageMutation();
-	const [reasonModal, setReasonModal] = React.useState<{
-		mode: ReasonActionMode | null;
-		loading: boolean;
-	}>({ mode: null, loading: false });
 
 	const [vendorCodeModal, setVendorCodeModal] = React.useState<{
 		open: boolean;
@@ -580,46 +736,44 @@ export function useVendorCreationSummaryController({
 	const requiresVendorCodeToApprove =
 		isFinalStage && Boolean(isExternalApprover);
 
-	const openReasonModal = React.useCallback(() => {
-		setReasonModal({ mode: "clarify-workflow", loading: false });
-	}, []);
-	const closeReasonModal = React.useCallback(() => {
-		setReasonModal({ mode: null, loading: false });
-	}, []);
-
 	const currentStageId = currentStage?.id;
 
-	const approveCurrentStage = React.useCallback(async () => {
-		if (!currentStageId) return;
-		try {
-			const { message } =
-				await approveStageMutation.mutateAsync(currentStageId);
-			showSuccessToast(
-				showToast,
-				message ?? vendorContent.toast.approval.successTitle,
-				vendorContent.toast.approval.successTitle,
-			);
-			onApprove?.();
+	const approveCurrentStage = React.useCallback(
+		async (reason: string) => {
+			if (!currentStageId) return;
+			try {
+				const { message } = await approveStageMutation.mutateAsync(
+					currentStageId,
+					reason,
+				);
+				showSuccessToast(
+					showToast,
+					message ?? vendorContent.toast.approval.successTitle,
+					vendorContent.toast.approval.successTitle,
+				);
+				onApprove?.(reason);
 
-			if (requiresVendorCodeToApprove) {
-				await onAcceptAndClose?.();
+				if (requiresVendorCodeToApprove) {
+					await onAcceptAndClose?.();
+				}
+			} catch (error) {
+				showApiErrorToast(
+					showToast,
+					error,
+					vendorContent.toast.approval.errorFallback,
+					vendorContent.toast.approval.errorTitle,
+				);
 			}
-		} catch (error) {
-			showApiErrorToast(
-				showToast,
-				error,
-				vendorContent.toast.approval.errorFallback,
-				vendorContent.toast.approval.errorTitle,
-			);
-		}
-	}, [
-		currentStageId,
-		onAcceptAndClose,
-		onApprove,
-		requiresVendorCodeToApprove,
-		showToast,
-		approveStageMutation,
-	]);
+		},
+		[
+			currentStageId,
+			onAcceptAndClose,
+			onApprove,
+			requiresVendorCodeToApprove,
+			showToast,
+			approveStageMutation,
+		],
+	);
 	const openVendorCodeModal = React.useCallback(() => {
 		setVendorCodeModal({ open: true, loading: false });
 	}, []);
@@ -627,18 +781,28 @@ export function useVendorCreationSummaryController({
 		setVendorCodeModal({ open: false, loading: false });
 	}, []);
 
-	const handleApprove = React.useCallback(async () => {
-		if (requiresVendorCodeToApprove && !vendorCode?.trim()) {
-			openVendorCodeModal();
-			return;
-		}
-		await approveCurrentStage();
-	}, [
-		approveCurrentStage,
-		openVendorCodeModal,
-		requiresVendorCodeToApprove,
-		vendorCode,
-	]);
+	// The vendor-code modal can interrupt Approve before the mutation ever
+	// fires (final stage, external approver, no code on file yet). The
+	// reason the person already typed into ApprovalActionsBar has to survive
+	// that detour, so it's stashed here and replayed once the code is saved.
+	const pendingApproveReasonRef = React.useRef("");
+
+	const handleApprove = React.useCallback(
+		async (reason: string) => {
+			if (requiresVendorCodeToApprove && !vendorCode?.trim()) {
+				pendingApproveReasonRef.current = reason;
+				openVendorCodeModal();
+				return;
+			}
+			await approveCurrentStage(reason);
+		},
+		[
+			approveCurrentStage,
+			openVendorCodeModal,
+			requiresVendorCodeToApprove,
+			vendorCode,
+		],
+	);
 
 	const handleVendorCodeModalConfirm = React.useCallback(
 		async (code: string) => {
@@ -653,7 +817,8 @@ export function useVendorCreationSummaryController({
 					return;
 				}
 				setVendorCodeModal({ open: false, loading: false });
-				await approveCurrentStage();
+				await approveCurrentStage(pendingApproveReasonRef.current);
+				pendingApproveReasonRef.current = "";
 			} catch {
 				setVendorCodeModal({ open: true, loading: false });
 			}
@@ -661,7 +826,10 @@ export function useVendorCreationSummaryController({
 		[approveCurrentStage, onSaveVendorCode],
 	);
 
-	const handleReasonConfirm = React.useCallback(
+	// Replaces the old modal-driven handleReasonConfirm — ApprovalActionsBar
+	// now collects the mandatory reason inline and calls this directly with
+	// it, the same way handleApprove is called.
+	const handleClarify = React.useCallback(
 		async (reason: string) => {
 			if (!currentStageId) {
 				showToast({
@@ -672,7 +840,6 @@ export function useVendorCreationSummaryController({
 				return;
 			}
 			try {
-				setReasonModal((current) => ({ ...current, loading: true }));
 				const { message } = await clarifyStageMutation.mutateAsync(
 					currentStageId,
 					reason,
@@ -682,8 +849,7 @@ export function useVendorCreationSummaryController({
 					message ?? vendorContent.toast.clarify.successTitle,
 					vendorContent.toast.clarify.successTitle,
 				);
-				closeReasonModal();
-				await onClarify?.();
+				await onClarify?.(reason);
 			} catch (error) {
 				showApiErrorToast(
 					showToast,
@@ -691,17 +857,9 @@ export function useVendorCreationSummaryController({
 					vendorContent.toast.clarify.errorFallback,
 					vendorContent.toast.clarify.errorTitle,
 				);
-			} finally {
-				setReasonModal((current) => ({ ...current, loading: false }));
 			}
 		},
-		[
-			clarifyStageMutation,
-			closeReasonModal,
-			currentStageId,
-			onClarify,
-			showToast,
-		],
+		[clarifyStageMutation, currentStageId, onClarify, showToast],
 	);
 
 	const handleVendorCodeSave = React.useCallback(() => {
@@ -709,18 +867,16 @@ export function useVendorCreationSummaryController({
 	}, [onSaveVendorCode]);
 
 	return {
-		reasonModal,
 		currentStage,
 		canActOnCurrentStage: canActNow && Boolean(isCurrentStageApprover),
 		requiresVendorCodeToApprove,
 		vendorCodeModal,
 		approveLoading: approveStageMutation.loading,
-		openReasonModal,
-		closeReasonModal,
+		clarifyLoading: clarifyStageMutation.loading,
 		closeVendorCodeModal,
 		handleApprove,
+		handleClarify,
 		handleVendorCodeModalConfirm,
-		handleReasonConfirm,
 		handleVendorCodeSave,
 	};
 }
@@ -738,6 +894,7 @@ export function useVendorCreationForm({
 	}>();
 
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const { showToast } = useToast();
 	const { workspaceId, user } = useAuth();
 
@@ -867,6 +1024,14 @@ export function useVendorCreationForm({
 	);
 
 	const vendorRequestId = routeVendorId;
+
+	// Record + activity log + listings, awaited. Used after workflow
+	// actions (approve/clarify) that go through the workflow mutations and
+	// so don't hit the vendor mutations' own onSuccess invalidation.
+	const refreshVendorRecord = React.useCallback(
+		() => invalidateVendor(queryClient, vendorRequestId || undefined),
+		[queryClient, vendorRequestId],
+	);
 
 	React.useEffect(() => {
 		setPendingWorkflowSelection(null);
@@ -1019,15 +1184,54 @@ export function useVendorCreationForm({
 		activeWorkflow?.isActive && assignedWorkflowStages.length > 0,
 	);
 
+	// Steps 3/4 preview what WILL be submitted, not what's on the server:
+	//   1. a newly picked workflow (pendingWorkflowSelection) wins — same
+	//      precedence submitForApproval uses, where stageEdits are ignored
+	//      whenever a new selection exists;
+	//   2. otherwise the proposer's edits to the active workflow during a
+	//      clarification resubmit (stageEdits);
+	//   3. otherwise the assigned workflow as fetched.
+	// Previously (2) was missing, so Review & Submit rendered the old
+	// cached stages until the submit refetched them.
 	const workflowStages = React.useMemo<ApprovalStageLike[]>(() => {
-		if ((currentStep === 3 || currentStep === 4) && pendingWorkflowSelection) {
+		const isPreviewStep = currentStep === 3 || currentStep === 4;
+
+		if (isPreviewStep && pendingWorkflowSelection) {
 			return pendingWorkflowSelection.previewStages;
 		}
 
+		if (isPreviewStep && stageEdits && stageEdits.length > 0) {
+			return stageEdits;
+		}
+
 		return assignedWorkflowStages;
-	}, [assignedWorkflowStages, currentStep, pendingWorkflowSelection]);
+	}, [
+		assignedWorkflowStages,
+		currentStep,
+		pendingWorkflowSelection,
+		stageEdits,
+	]);
 
 	const isResubmission = hasPendingClarifiedApproval;
+
+	// Send Back to Vendor is a proposer/creator action only. Anyone who is
+	// an approver on any stage of the workflow never gets it, even if they
+	// also created the record.
+	const createdByUserId = detailQuery.data?.createdBy?.id ?? "";
+	const isRecordCreator =
+		isThcmProposer ||
+		(isThcmEmployee && Boolean(user?.id) && createdByUserId === user?.id);
+
+	const isApproverOnAnyStage = React.useMemo(
+		() => isUserApproverInAnyStage(assignedWorkflowStages, user),
+		[assignedWorkflowStages, user],
+	);
+
+	const canSendBackToVendor =
+		!isPublicForm &&
+		status === "IN_REVIEW" &&
+		isRecordCreator &&
+		!isApproverOnAnyStage;
 
 	const canEditMainForm =
 		isThcmProposer && Boolean(status && EDITABLE_STATUSES.includes(status));
@@ -1115,6 +1319,54 @@ export function useVendorCreationForm({
 		[formTwoForm],
 	);
 
+	const showInvalidFieldsToast = React.useCallback(
+		(title: string, description: string, labels: string[]) => {
+			const fieldList = describeInvalidFields(labels);
+
+			showToast({
+				type: "error",
+				title,
+				description: fieldList ? `${description} ${fieldList}` : description,
+			});
+		},
+		[showToast],
+	);
+
+	// Same gate as validateFormOneBeforeSubmit, plus a toast naming the
+	// failing fields. This is what Form One's buttons use (via
+	// validateFields), and what every Form One submit path below calls.
+	const validateFormOneWithFeedback = React.useCallback(async () => {
+		const isValid = await formOneForm.trigger();
+
+		if (!isValid) {
+			const content = isPublicForm
+				? vendorContent.toast.publicSubmit
+				: vendorContent.toast.saveDetails;
+
+			showInvalidFieldsToast(
+				content.validationTitle,
+				content.validationDescription,
+				getInvalidFieldLabels(formOneForm, FORM_ONE_FIELD_LABELS),
+			);
+		}
+
+		return isValid;
+	}, [formOneForm, isPublicForm, showInvalidFieldsToast]);
+
+	const validateFormTwoWithFeedback = React.useCallback(async () => {
+		const isValid = await formTwoForm.trigger();
+
+		if (!isValid) {
+			showInvalidFieldsToast(
+				vendorContent.toast.saveThcmDetails.validationTitle,
+				vendorContent.toast.saveThcmDetails.validationDescription,
+				getInvalidFieldLabels(formTwoForm, FORM_TWO_FIELD_LABELS),
+			);
+		}
+
+		return isValid;
+	}, [formTwoForm, showInvalidFieldsToast]);
+
 	const changeFormOne = React.useCallback(
 		<K extends keyof VendorCreationFormOneValues>(
 			field: K,
@@ -1174,6 +1426,37 @@ export function useVendorCreationForm({
 		[formTwoForm],
 	);
 
+	// Reset = back to what's on the server, not to an empty form:
+	//   - internal pages → the fetched detail (partOne / partTwo)
+	//   - public vendor page → the fetched session, which includes the last
+	//     saved draft (publicQuery is refetched after every draft save)
+	// The source is read explicitly rather than calling reset() with no
+	// arguments, because RHF's remembered defaults can be stale: the public
+	// sync effect stops re-resetting once the form is dirty, so after
+	// "edit → save draft", RHF would still remember the pre-draft values.
+	// reset() also clears field errors and the dirty flag, so the public
+	// sync effect resumes following the session afterwards.
+	const resetFormOne = React.useCallback(() => {
+		const source = isPublicForm
+			? publicFormInitialValues
+			: (detailQuery.data?.partOne ?? EMPTY_FORM_ONE);
+
+		vendorUpdateCompletedRef.current = false;
+		formOneForm.reset(toFormOneDefaults(source));
+	}, [
+		detailQuery.data?.partOne,
+		formOneForm,
+		isPublicForm,
+		publicFormInitialValues,
+	]);
+
+	const resetFormTwo = React.useCallback(() => {
+		vendorUpdateCompletedRef.current = false;
+		formTwoForm.reset(
+			toFormTwoDefaults(detailQuery.data?.partTwo ?? EMPTY_FORM_TWO),
+		);
+	}, [detailQuery.data?.partTwo, formTwoForm]);
+
 	const saveVendorDetails = async () => {
 		if (!vendorRequestId) {
 			showToast({
@@ -1183,14 +1466,7 @@ export function useVendorCreationForm({
 			});
 			return;
 		}
-		if (!(await validateFormOneBeforeSubmit())) {
-			showToast({
-				type: "error",
-				title: vendorContent.toast.saveDetails.validationTitle,
-				description: vendorContent.toast.saveDetails.validationDescription,
-			});
-			return;
-		}
+		if (!(await validateFormOneWithFeedback())) return;
 		try {
 			next();
 		} catch (error) {
@@ -1208,14 +1484,7 @@ export function useVendorCreationForm({
 			return;
 		}
 
-		if (!(await validateFormTwoBeforeSubmit())) {
-			showToast({
-				type: "error",
-				title: vendorContent.toast.saveThcmDetails.validationTitle,
-				description: vendorContent.toast.saveThcmDetails.validationDescription,
-			});
-			return;
-		}
+		if (!(await validateFormTwoWithFeedback())) return;
 
 		try {
 			await handleSaveVendorUpdate(
@@ -1277,14 +1546,7 @@ export function useVendorCreationForm({
 		if (!submission || !normalizedToken) {
 			return;
 		}
-		if (!(await validateFormOneBeforeSubmit())) {
-			showToast({
-				type: "error",
-				title: vendorContent.toast.publicSubmit.validationTitle,
-				description: vendorContent.toast.publicSubmit.validationDescription,
-			});
-			return;
-		}
+		if (!(await validateFormOneWithFeedback())) return;
 		const missing = getMissingDocuments(submission, formOneValues);
 
 		if (!submission.dpdpConsent) {
@@ -1355,12 +1617,18 @@ export function useVendorCreationForm({
 
 		if (!isFormOneValid || !isFormTwoValid) {
 			setCurrentStep(isFormOneValid ? 2 : 1);
-			showToast({
-				type: "error",
-				title: vendorContent.toast.submitForApproval.validationTitle,
-				description:
-					vendorContent.toast.submitForApproval.validationDescription,
-			});
+			showInvalidFieldsToast(
+				vendorContent.toast.submitForApproval.validationTitle,
+				vendorContent.toast.submitForApproval.validationDescription,
+				[
+					...(isFormOneValid
+						? []
+						: getInvalidFieldLabels(formOneForm, FORM_ONE_FIELD_LABELS)),
+					...(isFormTwoValid
+						? []
+						: getInvalidFieldLabels(formTwoForm, FORM_TWO_FIELD_LABELS)),
+				],
+			);
 			return;
 		}
 
@@ -1605,10 +1873,17 @@ export function useVendorCreationForm({
 					: vendorContent.toast.submitForApproval.submitSuccessDescription,
 			});
 
+			// submitMutation's onSuccess has already awaited the refetch of the
+			// record and its activity log, so the view page renders the
+			// submitted state (status, workflow, log entry) on first paint,
+			// with no extra request. replace: Back shouldn't return to an
+			// edit form the user can no longer edit.
 			if (onSuccess) {
 				await onSuccess();
 			} else {
-				navigate("/vendor/onboarding/listing?tab=onboarding");
+				navigate(`/vendor-onboarding/${vendorRequestId}/view`, {
+					replace: true,
+				});
 			}
 		} catch (error: unknown) {
 			showApiErrorToast(
@@ -1647,6 +1922,9 @@ export function useVendorCreationForm({
 		setPendingWorkflowSelection,
 		validateFormOneBeforeSubmit,
 		validateFormTwoBeforeSubmit,
+		showInvalidFieldsToast,
+		formOneForm,
+		formTwoForm,
 	]);
 
 	const saveVendorCode = React.useCallback(
@@ -1746,6 +2024,37 @@ export function useVendorCreationForm({
 		],
 	);
 
+	const sendBackToVendorMutation = useSendBackToVendorMutation();
+
+	const sendBackToVendor = React.useCallback(async () => {
+		if (!vendorRequestId || !canSendBackToVendor) return;
+
+		try {
+			await sendBackToVendorMutation.mutateAsync(vendorRequestId);
+
+			showSuccessToast(
+				showToast,
+				vendorContent.toast.initiation.sendBackSuccessDescription,
+				vendorContent.toast.initiation.sendBackSuccessTitle,
+			);
+
+			navigate("/vendor-onboarding/listing?tab=onboarding");
+		} catch (error) {
+			showApiErrorToast(
+				showToast,
+				error,
+				vendorContent.toast.initiation.sendBackErrorFallback,
+				vendorContent.toast.initiation.sendBackErrorTitle,
+			);
+		}
+	}, [
+		canSendBackToVendor,
+		navigate,
+		sendBackToVendorMutation,
+		showToast,
+		vendorRequestId,
+	]);
+
 	const acceptAndClose = async () => {
 		if (!vendorRequestId) {
 			return;
@@ -1760,7 +2069,7 @@ export function useVendorCreationForm({
 				vendorContent.toast.acceptAndClose.successTitle,
 			);
 
-			navigate("/vendor/onboarding/listing?tab=onboarding");
+			navigate("/vendor-onboarding/listing?tab=onboarding");
 		} catch (error) {
 			showApiErrorToast(
 				showToast,
@@ -1860,6 +2169,7 @@ export function useVendorCreationForm({
 		updateMutation.isPending ||
 		submitMutation.isPending ||
 		closeMutation.isPending ||
+		sendBackToVendorMutation.isPending ||
 		publicSubmitMutation.isPending ||
 		publicDraftSubmitMutation.isPending ||
 		assignWorkflowLoading ||
@@ -1879,6 +2189,7 @@ export function useVendorCreationForm({
 		originalAccountNumber,
 		formTwoErrors,
 		validateFormOneBeforeSubmit,
+		validateFormOneWithFeedback,
 		formOneDocuments: isPublicForm
 			? (publicQuery.data?.documents ?? [])
 			: (detailQuery.data?.documents ?? []),
@@ -1905,8 +2216,8 @@ export function useVendorCreationForm({
 		canSubmit: canEditMainForm,
 		canApprove,
 		canClarify,
-		canSendBackToVendor:
-			isThcmProposer && detailQuery.data?.status === "IN_REVIEW",
+		canSendBackToVendor,
+		isApproverOnAnyStage,
 		canAcceptAndClose:
 			detailQuery.data?.status === "APPROVED" && isExternalApprover,
 
@@ -1941,15 +2252,8 @@ export function useVendorCreationForm({
 		handleFormOneBlur: blurFormOneField,
 
 		handleFormTwoChange: changeFormTwo,
-		// Form Two's "Reset" button had no handler at all before this
-		// migration (a dead button — see VendorCreationFormTwo.tsx). Now
-		// backed by RHF: resets back to the last-loaded/defaultValues
-		// baseline, the same "reset to original" meaning Form One's Reset
-		// already has.
-		handleResetFormTwo: React.useCallback(
-			() => formTwoForm.reset(),
-			[formTwoForm],
-		),
+		handleResetFormOne: resetFormOne,
+		handleResetFormTwo: resetFormTwo,
 
 		handleSaveFormOne: saveVendorDetails,
 		handleSaveFormOneDraft: isPublicForm ? submitDraftPublicVendor : undefined,
@@ -1960,13 +2264,20 @@ export function useVendorCreationForm({
 		handleSubmitSummary: submitForApproval,
 		handleVendorDraftSubmitForm: submitDraftPublicVendor,
 
-		handleApprove: async () => {
-			await detailQuery.refetch();
+		// CHANGED: both now accept the mandatory reason ApprovalActionsBar
+		// collects inline. This file only refetches the detail afterwards —
+		// useVendorCreationSummaryController.handleApprove/handleClarify are
+		// what actually call the approve/clarify API with that reason; these
+		// two are just the "refresh the page" callback passed in as onApprove
+		// / onClarify.
+		handleApprove: async (_reason: string) => {
+			await refreshVendorRecord();
 		},
-		handleClarify: async () => {
-			await detailQuery.refetch();
+		handleClarify: async (_reason: string) => {
+			await refreshVendorRecord();
 		},
 		handleAcceptAndClose: acceptAndClose,
+		handleSendBackToVendor: sendBackToVendor,
 
 		handleSaveVendorCode: saveVendorCode,
 

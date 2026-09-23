@@ -4,8 +4,6 @@ import Card from "../../../components/common/Card";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { StepProgress } from "../../../components/ui/StepProgress";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
-
-import VendorWorkflowSection from "../components/VendorWorkflowSection";
 import VendorCreationFormOne from "../forms/VendorCreationFormOne";
 import VendorCreationFormTwo from "../forms/VendorCreationFormTwo";
 import VendorCreationSummaryForm from "../forms/VendorCreationSummaryForm";
@@ -14,6 +12,7 @@ import {
 	VendorCreationFormProvider,
 	useVendorCreationForm,
 } from "../hooks/useVendorCreationForm";
+import CustomizedWorkflowSection from "../../workflows/components/CustomizedWorkflowSection";
 
 const VendorOnboardingPage = () => {
 	const { onboardingId } = useParams<{
@@ -36,11 +35,11 @@ const VendorOnboardingPage = () => {
 		!form.canEditMainForm;
 
 	const handleBackToListing = () => {
-		navigate("/vendor/onboarding/listing?tab=onboarding");
+		navigate("/vendor-onboarding/listing?tab=onboarding");
 	};
 
 	if (shouldRedirectToView) {
-		return <Navigate to={`/vendor/onboarding/${onboardingId}/view`} replace />;
+		return <Navigate to={`/vendor-onboarding/${onboardingId}/view`} replace />;
 	}
 
 	return (
@@ -57,7 +56,7 @@ const VendorOnboardingPage = () => {
 						},
 						{
 							label: "Vendors Listing",
-							href: "/vendor/onboarding/listing?tab=onboarding",
+							href: "/vendor-onboarding/listing?tab=onboarding",
 						},
 						{
 							label: "Domestic Vendor Onboarding Form",
@@ -94,7 +93,7 @@ const VendorOnboardingPage = () => {
 						) : form.currentStep === 2 ? (
 							<VendorCreationFormTwo mode="edit" canEdit />
 						) : form.currentStep === 3 ? (
-							<VendorWorkflowSection
+							<CustomizedWorkflowSection
 								sourceRecordRef={form.vendorRequestId}
 								recordType="VENDOR_ONBOARDING"
 								selectedWorkflow={form.pendingWorkflowSelection}

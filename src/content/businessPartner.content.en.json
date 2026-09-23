@@ -1,0 +1,112 @@
+{
+	"page": {
+		"createTitle": "Create Business Partner",
+		"updateTitle": "Update Business Partner",
+		"breadcrumbList": "Business Partners",
+		"breadcrumbCreate": "Create",
+		"breadcrumbUpdate": "Update",
+		"breadcrumbAriaLabel": "Business partner form",
+		"loading": "Loading business partner...",
+		"loadError": "Unable to load the business partner.",
+		"viewPartner": "View Business Partner"
+	},
+	"general": {
+		"title": "General Information",
+		"fields": {
+			"bpName": "Business Partner Name",
+			"bpType": "Business Partner Type",
+			"officeType": "Office Type",
+			"parentId": "Parent Business Partner ID",
+			"entityType": "Entity Type",
+			"joinedOn": "Joined On",
+			"legalTradeName": "Legal Trade Name"
+		},
+		"placeholders": {
+			"bpType": "Select business partner type",
+			"officeType": "Select office type",
+			"parentId": "Required for a branch office",
+			"entityType": "Select entity type",
+			"joinedOn": "Select joining date"
+		},
+		"actions": {
+			"cancel": "Cancel",
+			"create": "Create Business Partner",
+			"creating": "Creating...",
+			"save": "Save",
+			"saving": "Saving..."
+		},
+		"toasts": {
+			"invalidCreateTitle": "Can't create business partner",
+			"invalidUpdateTitle": "Can't save general information",
+			"invalidDescription": "Please fix the highlighted fields and try again.",
+			"createdTitle": "Business partner created",
+			"createdDescription": "{name} was created. You can now add contact and address details.",
+			"updatedTitle": "Saved",
+			"updatedDescription": "General information updated successfully.",
+			"unexpectedTitle": "Unable to save",
+			"unexpectedDescription": "Something went wrong while saving."
+		}
+	},
+	"contact": {
+		"title": "Contact Information",
+		"add": "Add Contact",
+		"locked": "Create the business partner first to add contacts."
+	},
+	"address": {
+		"title": "Address Information",
+		"add": "Add Address",
+		"locked": "Create the business partner first to add addresses.",
+		"empty": "No addresses added yet.",
+		"fields": {
+			"label": "Address Label",
+			"address": "Address",
+			"city": "City",
+			"state": "State",
+			"country": "Country",
+			"pincode": "PIN Code",
+			"region": "Region",
+			"zone": "Zone",
+			"branch": "Branch",
+			"latitude": "Latitude",
+			"longitude": "Longitude",
+			"email": "Email",
+			"phoneNumber": "Phone Number",
+			"website": "Website",
+			"isDefault": "Set as default address",
+			"isBillingAddress": "Billing address",
+			"isShippingAddress": "Shipping address"
+		},
+		"placeholders": {
+			"state": "Select state",
+			"label": "Example: Corporate Office",
+			"address": "Flat / Building / Street / Area"
+		},
+		"actions": {
+			"cancel": "Cancel",
+			"save": "Save Address",
+			"saving": "Saving..."
+		},
+		"toasts": {
+			"invalidTitle": "Can't save address",
+			"invalidDescription": "Please fix the highlighted fields and try again."
+		}
+	},
+	"validation": {
+		"bpNameRequired": "Business partner name is required.",
+		"bpTypeRequired": "Select a business partner type.",
+		"officeTypeRequired": "Select an office type.",
+		"parentIdRequired": "Parent business partner is required for a branch office.",
+		"invalidDate": "Enter a valid date.",
+		"addressRequired": "Address is required.",
+		"cityRequired": "City is required.",
+		"stateRequired": "Select a state.",
+		"countryRequired": "Country is required.",
+		"pincodeRequired": "PIN code is required.",
+		"pincodeInvalid": "Enter a valid 6-digit PIN code.",
+		"latitudeInvalid": "Latitude must be a number between -90 and 90.",
+		"longitudeInvalid": "Longitude must be a number between -180 and 180.",
+		"emailInvalid": "Enter a valid email address.",
+		"phoneInvalid": "Enter a valid 10-digit mobile number.",
+		"websiteInvalid": "Enter a valid website address."
+	}
+}

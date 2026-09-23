@@ -3,7 +3,7 @@ import {
 	CheckCircle2,
 	FilePenLine,
 	Plus,
-	RefreshCcw,
+	// RefreshCcw,
 	Save,
 } from "lucide-react";
 import type { ClipboardEvent } from "react";
@@ -168,7 +168,7 @@ const VendorCreationFormOne = ({
 		closeDpdpModal,
 		handleDpdpConsentChange,
 		handleAcceptDpdpTerms,
-		handleReset,
+		// handleReset,
 		handleSaveDraft,
 		handleFormAction,
 		setHasConfirmedDpdp,
@@ -180,7 +180,9 @@ const VendorCreationFormOne = ({
 		isReadOnly,
 		// Field validation runs before enclosure/file validation inside
 		// handleFormAction, so an empty submit surfaces field errors first.
-		validateFields: formContext?.validateFormOneBeforeSubmit,
+		// The "WithFeedback" variant also toasts the failing field names.
+		validateFields: formContext?.validateFormOneWithFeedback,
+		onResetFields: formContext?.handleResetFormOne,
 		onChange: resolvedOnChange,
 		onNext: resolvedOnNext,
 		onSubmit: resolvedOnSubmit,
@@ -191,6 +193,9 @@ const VendorCreationFormOne = ({
 		<>
 			<form
 				className="vendor-onboarding-form"
+				// Validation is Zod-only; stop the browser's own "Please fill
+				// out this field" bubbles (triggered by Enter in a text input).
+				noValidate
 				onSubmit={(event) => event.preventDefault()}
 			>
 				{submittedMessage ? (
@@ -218,6 +223,7 @@ const VendorCreationFormOne = ({
 							onChange={(event) =>
 								resolvedOnChange?.("vendorName", event.target.value)
 							}
+							required
 						/>
 						<FormInput
 							mode={fieldMode}
@@ -465,6 +471,7 @@ const VendorCreationFormOne = ({
 							onChange={(event) =>
 								resolvedOnChange?.("bankAddress", event.target.value)
 							}
+							required
 						/>
 					</div>
 				</div>
@@ -504,6 +511,7 @@ const VendorCreationFormOne = ({
 						mode={fieldMode}
 						name="entityRegNo"
 						label="Entity Reg. No."
+						required
 						value={values.entityRegNo}
 						success={
 							fieldMode === "edit" &&
@@ -614,6 +622,7 @@ const VendorCreationFormOne = ({
 									name="ndaObtained"
 									label="Non-Disclosure Undertaking Obtained?"
 									placeholder="Select option"
+									required
 									options={yesNoOptions}
 									value={getSelectedOption(
 										yesNoOptions,
@@ -834,7 +843,7 @@ const VendorCreationFormOne = ({
 							/>
 
 							<div className="bottom-buttons-bar-between">
-								<Button
+								{/* <Button
 									type="button"
 									text="Reset"
 									Icon={RefreshCcw}
@@ -843,7 +852,7 @@ const VendorCreationFormOne = ({
 									variant="outline"
 									disabled={loading}
 									onClick={handleReset}
-								/>
+								/> */}
 								{resolvedOnSaveDraft ? (
 									<Button
 										type="button"

@@ -34,6 +34,22 @@ const VARIANT_CLASS_MAP: Record<ButtonVariant, string> = {
 	success: "button-success",
 	warning: "button-warning",
 	transparent: "button-transparent",
+
+	"brand-soft": "button-brand-soft",
+	"brand-softest": "button-brand-softest",
+
+	"danger-soft": "button-danger-soft",
+	"danger-softest": "button-danger-softest",
+
+	"success-soft": "button-success-soft",
+	"success-softest": "button-success-softest",
+
+	"warning-soft": "button-warning-soft",
+	"warning-softest": "button-warning-softest",
+
+	info: "button-info",
+	"info-soft": "button-info-soft",
+	"info-softest": "button-info-softest",
 };
 
 const SIZE_CLASS_MAP: Record<ButtonSize, string> = {

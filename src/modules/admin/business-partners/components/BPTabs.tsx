@@ -20,10 +20,12 @@ import BPAddress from "./BPAddress";
 import BPBranches from "./BPBranches";
 // import { BPGeneralInfoForm } from "./BPGenInfo";
 import { BPOrganizationForm } from "./BPOrganization";
-import BPPeople from "./BPPeople";
+// import BPPeople from "./BPPeople";
+import BPUsers from "./BPUsers";
+import { BPGeneralInfoForm } from "./BPGenInfo";
 
 const bpTabs = [
-	// { value: "general", label: "General", controlsId: "bp-tab-general-panel" },
+	{ value: "general", label: "General", controlsId: "bp-tab-general-panel" },
 	{
 		value: "organization",
 		label: "Organization",
@@ -38,6 +40,7 @@ const bpTabs = [
 		controlsId: "bp-tab-branches-panel",
 	},
 	{ value: "people", label: "People", controlsId: "bp-tab-people-panel" },
+	// { value: "users", label: "Users", controlsId: "bp-tab-users-panel" },
 ] as const;
 
 type BPTab = (typeof bpTabs)[number]["value"];
@@ -224,7 +227,7 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 				role="tabpanel"
 				tabIndex={0}
 			>
-				{/* {activeTab === "general" &&
+				{activeTab === "general" &&
 					renderDetailSection(
 						"general",
 						<div className="detail-section">
@@ -253,7 +256,7 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 							form={detailForm.form}
 							onChange={detailForm.handleChange}
 						/>,
-					)} */}
+					)}
 
 				{activeTab === "contact" && (
 					<div className="bp-gen-content">
@@ -452,15 +455,7 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 
 				{activeTab === "people" && (
 					<div className="bp-gen-content">
-						<BPPeople
-							businessPartnerId={view.partner.id}
-							people={view.people}
-							permissions={permissions.people}
-							isAdding={isAddingPeople}
-							onAddPeople={() => setIsAddingPeople(true)}
-							onCancelAdd={() => setIsAddingPeople(false)}
-							onAdded={() => setIsAddingPeople(false)}
-						/>
+						<BPUsers businessPartnerId={view.partner.id} />
 
 						{permissions.people.canAddPeople &&
 							view.people.length > 0 &&

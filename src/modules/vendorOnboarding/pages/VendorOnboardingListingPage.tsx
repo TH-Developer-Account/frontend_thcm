@@ -43,14 +43,14 @@ const VendorOnboardingListingPage = () => {
 
 	const handleViewRow = useCallback(
 		(row: VendorOnboardingListingRow) => {
-			navigate(`/vendor/onboarding/${row.id}`);
+			navigate(`/vendor-onboarding/${row.id}/view`);
 		},
 		[navigate],
 	);
 
 	const handleEditRow = useCallback(
 		(row: VendorOnboardingListingRow) => {
-			navigate(`/vendor/onboarding/${row.id}`);
+			navigate(`/vendor-onboarding/${row.id}`);
 		},
 		[navigate],
 	);
@@ -61,7 +61,7 @@ const VendorOnboardingListingPage = () => {
 				headerText="Vendor Onboarding"
 				headerChildren={
 					<Button
-						path="/vendor/initiation/create"
+						path="/vendor-onboarding/initiation/create"
 						text="Initiate"
 						appearance="standard"
 						variant="brand"
