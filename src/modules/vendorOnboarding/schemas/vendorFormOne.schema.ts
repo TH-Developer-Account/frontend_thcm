@@ -1,33 +1,24 @@
 import { z } from "zod";
 
 import { vendorContent } from "../../../content/vendor.content";
+
 import {
 	ACCOUNT_NUMBER_REGEX,
 	EMAIL_REGEX,
 	GSTIN_REGEX,
+	// EMAIL_STRICT_REGEX,
 	IFSC_REGEX,
 	MOBILE_REGEX,
 	PAN_REGEX,
 	PIN_CODE_REGEX,
 	getAccountNumberConfirmState,
 	getGstinPanMatchStatus,
-} from "../helpers/vendor.onboarding.validations";
+} from "../../../utils/form.validation";
 
 const errors = vendorContent.formOne.errors;
 
 const requiredText = (message: string) => z.string().trim().min(1, message);
 
-/**
- * Form One's schema is a factory, not a static object, because whether
- * `confirmAccountNumber` is required depends on `originalAccountNumber` —
- * runtime state (what's already saved for this vendor) the schema has no
- * other way to see. This mirrors `buildResetPasswordSchema(requiresOldPassword)`
- * in src/schemas/authForms.schema.ts, the existing precedent for a
- * schema-factory parameterized by a caller-supplied flag.
- *
- * `originalAccountNumber` should be "" for a brand-new record — that's what
- * makes confirmAccountNumber required for every first-time submission.
- */
 export const buildVendorFormOneSchema = (originalAccountNumber: string) =>
 	z
 		.object({
@@ -49,10 +40,7 @@ export const buildVendorFormOneSchema = (originalAccountNumber: string) =>
 				MOBILE_REGEX,
 				errors.mobileFormat,
 			),
-			email: requiredText(errors.email).regex(
-				EMAIL_REGEX,
-				errors.emailFormat,
-			),
+			email: requiredText(errors.email).regex(EMAIL_REGEX, errors.emailFormat),
 			bankName: requiredText(errors.bankName),
 			bankBranch: requiredText(errors.bankBranch),
 			ifscCode: requiredText(errors.ifscCode).regex(

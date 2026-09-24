@@ -19,7 +19,11 @@
 			"parentId": "Parent Business Partner ID",
 			"entityType": "Entity Type",
 			"joinedOn": "Joined On",
-			"legalTradeName": "Legal Trade Name"
+			"legalTradeName": "Legal Trade Name",
+			"gstLabel": "GST Number",
+			"gstHelper": "GST identification number.",
+			"panLabel": "PAN Number",
+			"panHelper": "Permanent account number. Filled automatically from the GST number."
 		},
 		"placeholders": {
 			"bpType": "Select business partner type",
@@ -107,6 +111,9 @@
 		"longitudeInvalid": "Longitude must be a number between -180 and 180.",
 		"emailInvalid": "Enter a valid email address.",
 		"phoneInvalid": "Enter a valid 10-digit mobile number.",
-		"websiteInvalid": "Enter a valid website address."
+		"websiteInvalid": "Enter a valid website address.",
+		"gstInvalid": "Enter a valid 15-character GST number.",
+		"panInvalid": "Enter a valid 10-character PAN.",
+		"panGstMismatch": "PAN does not match the PAN in the GST number."
 	}
 }

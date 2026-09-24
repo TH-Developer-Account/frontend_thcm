@@ -9,6 +9,11 @@ import {
 	mapGeneralFormToUpdatePayload,
 	mapOrganizationFormToUpdatePayload,
 } from "../utils/businessPartner.mapper";
+import {
+	BP_ORGANIZATION_TAX_FIELD_ORDER,
+	bpOrganizationTaxSchema,
+	type BPOrganizationTaxValues,
+} from "../utils/businessPartner.schema";
 
 import {
 	DEFAULT_BUSINESS_PARTNER_PERMISSIONS,
@@ -27,14 +32,11 @@ export type DetailFormSection =
 	| "address"
 	| null;
 
-/**
- * Inline section editor for the BP view page (BPTabs).
- *
- * The create/edit page no longer uses this hook — it moved to independent
- * RHF + Zod cards (see useBPGeneralInfoCardForm / useBPAddressCardForm).
- * The create-mode, parent-prefill, availableTabs and navigation branches
- * that only served the old tabbed create form were removed with it.
- */
+export type OrganizationTaxField = keyof BPOrganizationTaxValues;
+export type OrganizationFieldErrors = Partial<
+	Record<OrganizationTaxField, string>
+>;
+
 type UseBusinessPartnerFormOptions = {
 	partner: BusinessPartnerDetail;
 	permissions?: BusinessPartnerPermissions;
@@ -69,6 +71,39 @@ const isDetailSection = (
 	section: DetailFormSection,
 ): section is Exclude<DetailFormSection, null> => Boolean(section);
 
+const EMPTY_REVEALED: ReadonlySet<OrganizationTaxField> = new Set();
+const ALL_REVEALED: ReadonlySet<OrganizationTaxField> = new Set(
+	BP_ORGANIZATION_TAX_FIELD_ORDER,
+);
+
+/** Runs the Zod schema and keeps the first message per field. */
+const getOrganizationFieldErrors = (
+	form: BusinessPartnerFormState,
+): OrganizationFieldErrors => {
+	const result = bpOrganizationTaxSchema.safeParse({
+		gst: form.gst,
+		panNumber: form.panNumber,
+	});
+
+	if (result.success) return {};
+
+	const errors: OrganizationFieldErrors = {};
+
+	for (const issue of result.error.issues) {
+		const field = issue.path[0];
+
+		if ((field === "gst" || field === "panNumber") && !errors[field]) {
+			errors[field] = issue.message;
+		}
+	}
+
+	return errors;
+};
+
+const focusField = (field: OrganizationTaxField) => {
+	document.querySelector<HTMLElement>(`[name="${field}"]`)?.focus();
+};
+
 // -----------------------------------------------------------------------------
 // Hook
 // -----------------------------------------------------------------------------
@@ -88,6 +123,10 @@ export const useBusinessPartnerForm = ({
 
 	const [validationError, setValidationError] = useState<string | null>(null);
 
+	/** Org tax fields whose errors are visible (blurred, or after a save attempt). */
+	const [revealedOrgFields, setRevealedOrgFields] =
+		useState<ReadonlySet<OrganizationTaxField>>(EMPTY_REVEALED);
+
 	/**
 	 * null       => read mode
 	 * otherwise  => the section currently being edited
@@ -105,11 +144,18 @@ export const useBusinessPartnerForm = ({
 		[],
 	);
 
+	const handleOrganizationBlur = useCallback((field: OrganizationTaxField) => {
+		setRevealedOrgFields((current) =>
+			current.has(field) ? current : new Set(current).add(field),
+		);
+	}, []);
+
 	const startEditing = useCallback(
 		(section: Exclude<DetailFormSection, null>) => {
 			setForm(mapBusinessPartnerToForm(partner));
 			setEditingSection(section);
 			setValidationError(null);
+			setRevealedOrgFields(EMPTY_REVEALED);
 		},
 		[partner],
 	);
@@ -118,6 +164,7 @@ export const useBusinessPartnerForm = ({
 		setForm(mapBusinessPartnerToForm(partner));
 		setEditingSection(null);
 		setValidationError(null);
+		setRevealedOrgFields(EMPTY_REVEALED);
 	}, [partner]);
 
 	/**
@@ -130,6 +177,19 @@ export const useBusinessPartnerForm = ({
 
 		if (!permissions.canUpdateBusinessPartner) {
 			return;
+		}
+
+		if (editingSection === "organization") {
+			const errors = getOrganizationFieldErrors(form);
+			const firstInvalid = BP_ORGANIZATION_TAX_FIELD_ORDER.find(
+				(field) => errors[field],
+			);
+
+			if (firstInvalid) {
+				setRevealedOrgFields(ALL_REVEALED);
+				focusField(firstInvalid);
+				return; // never send an invalid form to the backend
+			}
 		}
 
 		try {
@@ -154,10 +214,11 @@ export const useBusinessPartnerForm = ({
 			});
 
 			setEditingSection(null);
+			setRevealedOrgFields(EMPTY_REVEALED);
 		} catch (error) {
 			// API failures are toasted by useBusinessPartnerMutations' onError.
 			// Only toast here for local (mapper) validation errors, so a failed
-			// request no longer produces two "Update failed" toasts.
+			// request doesn't produce two "Update failed" toasts.
 			if (!axios.isAxiosError(error)) {
 				showToast({
 					type: "error",
@@ -177,6 +238,17 @@ export const useBusinessPartnerForm = ({
 		updateBusinessPartner,
 	]);
 
+	// Derived from the current values, so corrections revalidate on change.
+	const allOrganizationErrors =
+		editingSection === "organization" ? getOrganizationFieldErrors(form) : {};
+
+	const organizationErrors: OrganizationFieldErrors = {};
+	for (const field of revealedOrgFields) {
+		if (allOrganizationErrors[field]) {
+			organizationErrors[field] = allOrganizationErrors[field];
+		}
+	}
+
 	const error =
 		validationError ?? (updateError ? getErrorMessage(updateError) : null);
 
@@ -185,6 +257,9 @@ export const useBusinessPartnerForm = ({
 		handleChange,
 		error,
 		isSaving: isUpdating,
+
+		organizationErrors,
+		handleOrganizationBlur,
 
 		editingSection,
 		startEditing,

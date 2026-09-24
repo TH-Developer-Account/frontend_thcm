@@ -2,7 +2,12 @@ import DatePickerInput from "../../../../components/common/DatePickerInput";
 import Checkbox from "../../../../components/forms/Checkbox";
 import FormInput from "../../../../components/forms/FormInput";
 import SelectInput from "../../../../components/forms/SelectInput";
+import { extractPanFromGstin } from "../../../../utils/form.validation";
 import { formatDateOnly } from "../../../../utils/format";
+import type {
+	OrganizationFieldErrors,
+	OrganizationTaxField,
+} from "../hooks/useBusinessPartnerForm";
 
 import {
 	BUSINESS_PARTNER_TYPE_OPTIONS,
@@ -20,6 +25,8 @@ type FormChangeHandler = <K extends keyof BusinessPartnerFormState>(
 type BPOrganizationFormProps = {
 	form: BusinessPartnerFormState;
 	onChange: FormChangeHandler;
+	errors?: OrganizationFieldErrors;
+	onFieldBlur?: (field: OrganizationTaxField) => void;
 };
 
 const OFFICE_TYPE_OPTIONS = [
@@ -65,6 +72,8 @@ const parseJoinedOn = (value: string): Date | undefined => {
 export const BPOrganizationForm = ({
 	form,
 	onChange,
+	errors,
+	onFieldBlur,
 }: BPOrganizationFormProps) => (
 	<div className="bp-create-form-sections">
 		<section
@@ -250,18 +259,30 @@ export const BPOrganizationForm = ({
 					name="gst"
 					label="GST Number"
 					value={form.gst}
-					onChange={(event) =>
-						onChange("gst", event.target.value.toUpperCase())
-					}
+					maxLength={15}
+					autoComplete="off"
+					onChange={(event) => {
+						const gst = event.target.value.toUpperCase();
+						onChange("gst", gst);
+
+						const derivedPan = extractPanFromGstin(gst);
+						if (derivedPan) onChange("panNumber", derivedPan);
+					}}
+					onBlur={() => onFieldBlur?.("gst")}
+					error={errors?.gst}
 				/>
 
 				<FormInput
 					name="panNumber"
 					label="PAN Number"
 					value={form.panNumber}
+					maxLength={10}
+					autoComplete="off"
 					onChange={(event) =>
 						onChange("panNumber", event.target.value.toUpperCase())
 					}
+					onBlur={() => onFieldBlur?.("panNumber")}
+					error={errors?.panNumber}
 				/>
 			</div>
 		</section>

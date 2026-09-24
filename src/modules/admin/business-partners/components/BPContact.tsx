@@ -47,7 +47,6 @@ type PendingContact = {
 	name: string;
 	email?: string;
 	phoneNumber?: string;
-	panNumber?: string;
 	isMainContact: boolean;
 	isDefault: boolean;
 	isManual: boolean;
@@ -57,7 +56,6 @@ const EMPTY_MANUAL_FORM = {
 	name: "",
 	phoneNumber: "",
 	email: "",
-	panNumber: "",
 };
 
 const addContactModes = [
@@ -182,13 +180,6 @@ const getColumns = ({
 				) : (
 					<span>--</span>
 				),
-		},
-		{
-			key: "pan",
-			header: "PAN Number",
-			widthUnits: 2,
-			minWidth: 140,
-			render: (contact) => <span>{contact.panNumber || "--"}</span>,
 		},
 	];
 
@@ -338,7 +329,6 @@ const BPContact = ({
 				name: manualForm.name.trim(),
 				phoneNumber: manualForm.phoneNumber.trim() || undefined,
 				email: manualForm.email.trim() || undefined,
-				panNumber: manualForm.panNumber.trim() || undefined,
 				isMainContact: false,
 				isDefault: false,
 				isManual: true,
@@ -388,7 +378,6 @@ const BPContact = ({
 						name: entry.name,
 						phoneNumber: entry.phoneNumber,
 						email: entry.email,
-						panNumber: entry.panNumber,
 						isMainContact: entry.isMainContact,
 						isDefault: entry.isDefault,
 					},
@@ -396,7 +385,6 @@ const BPContact = ({
 
 		try {
 			// NOTE: manual (no-userId) entries assume the payload/mutation
-			// accepts name/phoneNumber/email/panNumber directly. If
 			// UpdateBusinessPartnerPeoplePayload is currently typed to
 			// require userId, widen it to accept this shape too.
 			await addPeople(payload as Parameters<typeof addPeople>[0]);
@@ -483,15 +471,6 @@ const BPContact = ({
 								value={manualForm.email}
 								onChange={(event) =>
 									handleManualFieldChange("email", event.target.value)
-								}
-							/>
-
-							<FormInput
-								name="manualPanNumber"
-								label="PAN Number"
-								value={manualForm.panNumber}
-								onChange={(event) =>
-									handleManualFieldChange("panNumber", event.target.value)
 								}
 							/>
 

@@ -538,6 +538,8 @@ export const EMPTY_BP_GENERAL_INFO_FORM: BPGeneralInfoFormValues = {
 	entityType: "",
 	joinedOn: "",
 	legalTradeName: "",
+	gst: "",
+	panNumber: "",
 };
 
 export const mapPartnerToGeneralInfoForm = (
@@ -550,7 +552,13 @@ export const mapPartnerToGeneralInfoForm = (
 	entityType: partner.entityType ?? "",
 	joinedOn: partner.joinedOn?.slice(0, 10) ?? "",
 	legalTradeName: cleanText(partner.legalTradeName),
+	gst: cleanText(partner.gst).toUpperCase(),
+	panNumber: cleanText(partner.panNumber).toUpperCase(),
 });
+
+/** trim + uppercase, empty -> null (PAN/GSTIN sanitization rule). */
+const nullableUpper = (value: string | undefined | null): string | null =>
+	nullableText(value)?.toUpperCase() ?? null;
 
 const assertSelected = <T extends string>(
 	value: T | "",
@@ -593,8 +601,8 @@ export const mapGeneralInfoFormToCreatePayload = (
 		s4Id: null,
 		bydId: null,
 		c4cId: null,
-		gst: null,
-		panNumber: null,
+		gst: nullableUpper(values.gst),
+		panNumber: nullableUpper(values.panNumber),
 		vendorCode: null,
 	};
 };
@@ -614,6 +622,8 @@ export const mapGeneralInfoFormToUpdatePayload = (
 	entityType: values.entityType || null,
 	legalTradeName: nullableText(values.legalTradeName),
 	joinedOn: toApiDateTime(values.joinedOn),
+	gst: nullableUpper(values.gst),
+	panNumber: nullableUpper(values.panNumber),
 });
 
 export const createEmptyAddressCardForm = (

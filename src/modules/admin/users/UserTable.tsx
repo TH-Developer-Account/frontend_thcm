@@ -359,12 +359,12 @@ export function UserTable({ controller }: UserTableProps) {
 				<ManagementTable<User>
 					rows={filteredUsers}
 					columns={columns}
-					pagination
-					defaultPageSize={15}
 					getRowId={(user) => user.id}
 					ariaLabel="User management table"
 					caption="Application users"
 					minWidth="76rem"
+					pagination
+					defaultPageSize={10}
 					density="comfortable"
 					loading={isLoading || isFetching}
 					loadingRowCount={6}

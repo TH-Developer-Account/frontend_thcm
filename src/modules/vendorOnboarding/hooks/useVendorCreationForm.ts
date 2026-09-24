@@ -51,9 +51,7 @@ import {
 } from "../helpers/vendor.onboarding.mapper";
 import {
 	EDITABLE_STATUSES,
-	extractPanFromGstin,
 	getMissingDocuments,
-	normalizeAccountNumber,
 } from "../helpers/vendor.onboarding.validations";
 import {
 	buildVendorFormOneSchema,
@@ -96,6 +94,10 @@ import {
 	useClarifyWorkflowStageMutation,
 } from "../../workflows/context/useWorkflowMutations";
 import type { MentionableUserInput } from "../../../components/ui/comments";
+import {
+	extractPanFromGstin,
+	normalizeAccountNumber,
+} from "../../../utils/form.validation";
 
 export const vendorOnboardingSteps = [
 	{ id: 1, label: "Vendor filled details" },

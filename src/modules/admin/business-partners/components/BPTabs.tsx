@@ -77,7 +77,7 @@ const isContactDataEmpty = (view: BusinessPartnerViewModel): boolean =>
 export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 	const navigate = useNavigate();
 
-	const [activeTab, setActiveTab] = useState<BPTab>("organization");
+	const [activeTab, setActiveTab] = useState<BPTab>("general");
 	const activeTabId = `bp-tab-${activeTab}`;
 	const activePanelId = `${activeTabId}-panel`;
 
@@ -356,6 +356,8 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 						<BPOrganizationForm
 							form={detailForm.form}
 							onChange={detailForm.handleChange}
+							errors={detailForm.organizationErrors}
+							onFieldBlur={detailForm.handleOrganizationBlur}
 						/>,
 					)}
 

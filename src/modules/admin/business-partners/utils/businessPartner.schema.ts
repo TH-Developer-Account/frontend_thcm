@@ -8,6 +8,13 @@ import type {
 	BusinessPartnerType,
 } from "../utils/bp.types";
 
+import {
+	GSTIN_REGEX,
+	MOBILE_REGEX,
+	PAN_REGEX,
+	PIN_CODE_REGEX,
+	getGstinPanMatchStatus,
+} from "../../../../utils/form.validation";
 const messages = businessPartnerContent.validation;
 
 // -----------------------------------------------------------------------------
@@ -48,8 +55,6 @@ const ENTITY_TYPES = [
 // -----------------------------------------------------------------------------
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const INDIAN_PIN_PATTERN = /^[1-9]\d{5}$/;
-const INDIAN_MOBILE_PATTERN = /^[6-9]\d{9}$/;
 const WEBSITE_PATTERN = /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(:\d+)?(\/\S*)?$/i;
 
 const optionalText = z.string().trim();
@@ -95,18 +100,6 @@ export const normalizeMobileInput = (raw: string): string => {
 	return digits.slice(0, 10);
 };
 
-// -----------------------------------------------------------------------------
-// Coordinates — form values stay strings; these helpers only read them.
-//
-// Accepted per field (latitude uses N/S, longitude uses E/W):
-//   Decimal                 41.40338 | -73.9857 | 41.4 N | N 41.4
-//   Degrees/minutes         41°24.2033'N
-//   Degrees/minutes/seconds 41°24'12.2"N | N 41° 24' 12.2"
-// Smart quotes (’ ” ′ ″), º/˚ for the degree sign and '' for " are tolerated,
-// since copied values often contain them. A full "lat lon" pair pasted into
-// one field is rejected rather than guessed at.
-// -----------------------------------------------------------------------------
-
 export type CoordinateAxis = "latitude" | "longitude";
 
 const COORDINATE_LIMITS: Record<CoordinateAxis, number> = {
@@ -140,14 +133,6 @@ const normalizeCoordinateText = (value: string): string =>
 		.replace(/[”“″]/g, '"')
 		.replace(/''/g, '"');
 
-/**
- * Converts a latitude/longitude string (decimal or DMS) to signed decimal
- * degrees. Returns null when the value is empty, malformed, uses the wrong
- * hemisphere for the axis, mixes a sign with a hemisphere, has minutes or
- * seconds >= 60, or falls outside ±90 / ±180.
- *
- * Use this in the mapper if the API expects decimal degrees.
- */
 export const parseCoordinate = (
 	value: string,
 	axis: CoordinateAxis,
@@ -219,13 +204,54 @@ const optionalCoordinate = (axis: CoordinateAxis, message: string) =>
 			message,
 		);
 
-// -----------------------------------------------------------------------------
-// Card 1 — General Information (create + update)
-//
-// Selects start as "" (nothing chosen), so each enum is unioned with "" and a
-// refine rejects the empty choice for required selects. The resulting type
-// matches the existing `X | ""` convention in BusinessPartnerFormState.
-// -----------------------------------------------------------------------------
+/** Optional GSTIN: empty, or a structurally valid GSTIN (case-insensitive). */
+const optionalGstin = z
+	.string()
+	.trim()
+	.refine(
+		(value) => value === "" || GSTIN_REGEX.test(value.toUpperCase()),
+		messages.gstInvalid,
+	);
+
+/** Optional PAN: empty, or a structurally valid PAN (case-insensitive). */
+const optionalPan = z
+	.string()
+	.trim()
+	.refine(
+		(value) => value === "" || PAN_REGEX.test(value.toUpperCase()),
+		messages.panInvalid,
+	);
+
+/**
+ * GSTIN embeds the PAN (chars 3–12). Same rule Vendor Onboarding uses.
+ * getGstinPanMatchStatus returns "incomplete" unless both are individually
+ * valid, so this never stacks on a format error or fires when one is empty.
+ */
+const refineGstPanMatch = (
+	values: { gst: string; panNumber: string },
+	ctx: z.RefinementCtx,
+) => {
+	if (getGstinPanMatchStatus(values.gst, values.panNumber) === "mismatch") {
+		ctx.addIssue({
+			code: "custom",
+			path: ["panNumber"],
+			message: messages.panGstMismatch,
+		});
+	}
+};
+
+export const bpOrganizationTaxSchema = z
+	.object({
+		gst: optionalGstin,
+		panNumber: optionalPan,
+	})
+	.superRefine(refineGstPanMatch);
+
+export type BPOrganizationTaxValues = z.infer<typeof bpOrganizationTaxSchema>;
+
+export const BP_ORGANIZATION_TAX_FIELD_ORDER: Array<
+	keyof BPOrganizationTaxValues
+> = ["gst", "panNumber"];
 
 export const bpGeneralInfoSchema = z
 	.object({
@@ -240,10 +266,11 @@ export const bpGeneralInfoSchema = z
 		entityType: z.union([z.literal(""), z.enum(ENTITY_TYPES)]),
 		joinedOn: optionalIsoDate,
 		legalTradeName: optionalText,
+		gst: optionalGstin,
+		panNumber: optionalPan,
 	})
 	.superRefine((values, ctx) => {
-		// Existing business rule (previously enforced only by the mapper
-		// throwing): a branch office must point at its parent BP.
+		// Existing business rule: a branch office must point at its parent BP.
 		if (values.officeType === "BRANCH_OFFICE" && values.parentId === "") {
 			ctx.addIssue({
 				code: "custom",
@@ -251,11 +278,12 @@ export const bpGeneralInfoSchema = z
 				message: messages.parentIdRequired,
 			});
 		}
+
+		refineGstPanMatch(values, ctx);
 	});
 
 export type BPGeneralInfoFormValues = z.infer<typeof bpGeneralInfoSchema>;
 
-/** Field order used to focus the first invalid field on submit. */
 export const BP_GENERAL_INFO_FIELD_ORDER: Array<keyof BPGeneralInfoFormValues> =
 	[
 		"bpName",
@@ -265,6 +293,8 @@ export const BP_GENERAL_INFO_FIELD_ORDER: Array<keyof BPGeneralInfoFormValues> =
 		"entityType",
 		"joinedOn",
 		"legalTradeName",
+		"gst",
+		"panNumber",
 	];
 
 // -----------------------------------------------------------------------------
@@ -282,7 +312,7 @@ export const bpAddressSchema = z.object({
 	state: requiredText(messages.stateRequired),
 	country: requiredText(messages.countryRequired),
 	pincode: requiredText(messages.pincodeRequired).regex(
-		INDIAN_PIN_PATTERN,
+		PIN_CODE_REGEX,
 		messages.pincodeInvalid,
 	),
 	region: optionalText,
@@ -304,8 +334,7 @@ export const bpAddressSchema = z.object({
 		.string()
 		.trim()
 		.refine(
-			(value) =>
-				value === "" || INDIAN_MOBILE_PATTERN.test(value.replace(/[\s-]/g, "")),
+			(value) => value === "" || MOBILE_REGEX.test(value.replace(/[\s-]/g, "")),
 			messages.phoneInvalid,
 		),
 	website: z

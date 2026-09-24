@@ -1,10 +1,7 @@
 import { z } from "zod";
 
 import { vendorContent } from "../../../content/vendor.content";
-import {
-	EMAIL_REGEX,
-	MOBILE_REGEX,
-} from "../helpers/vendor.onboarding.validations";
+import { EMAIL_REGEX, MOBILE_REGEX } from "../../../utils/form.validation";
 
 const errors = vendorContent.initiation.errors;
 
@@ -22,10 +19,7 @@ export const vendorInitiationSchema = z.object({
 		.trim()
 		.min(1, errors.email)
 		.regex(EMAIL_REGEX, errors.email),
-	mobile: z
-		.string()
-		.trim()
-		.regex(MOBILE_REGEX, errors.mobile),
+	mobile: z.string().trim().regex(MOBILE_REGEX, errors.mobile),
 	// Server-driven display status ("Pending" / "AWAITING_VENDOR" / ...),
 	// never entered by the user — no validation rule needed.
 	status: z.string().optional(),
