@@ -40,11 +40,13 @@ import { PageHeader } from "../../../components/ui/PageHeader";
 import { StepProgress } from "../../../components/ui/StepProgress";
 import { getWorkflowErrorMessage, workflowApi } from "../api/workflow.api";
 import { useSaveWorkflowMutation } from "../context/useWorkflowMutations";
+import { useAppLookup } from "../../../common/common.app.helper";
 
 const WorkflowCreatePage = () => {
 	const { user, workspaceId, isLoading, permissions } = useAuth();
 	const { showToast } = useToast();
 	const { id } = useParams();
+	const { getAppName } = useAppLookup();
 	const location = useLocation();
 	const navigate = useNavigate();
 	const isUserCreatedWorkflow =
@@ -101,6 +103,14 @@ const WorkflowCreatePage = () => {
 
 		fetchWorkflow();
 	}, [id]);
+	useEffect(() => {
+		if (!basics.app || basics.appDesc) return;
+
+		const appName = getAppName(basics.app);
+		if (!appName) return;
+
+		setBasics((prev) => ({ ...prev, appDesc: appName }));
+	}, [basics.app, basics.appDesc, getAppName]);
 
 	const totalApprovers = useMemo(
 		() => stages.reduce((sum, stage) => sum + stage.approvers.length, 0),

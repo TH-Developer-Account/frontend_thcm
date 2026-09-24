@@ -84,10 +84,10 @@ const VendorOnboardingPage = () => {
 							<VendorCreationFormOne
 								mode={form.canEditFormOne ? "edit" : "view"}
 								canEdit={form.canEditFormOne}
-								requireDocuments={!isExistingRequest}
+								requireDocuments={form.canEditFormOne}
 								requireDpdpConsent={false}
 								actionText={isExistingRequest ? "Next" : "Save & Proceed"}
-								onNext={form.handleSaveFormOne}
+								onSubmit={form.handleSaveFormOne}
 								onBack={isExistingRequest ? handleBackToListing : undefined}
 							/>
 						) : form.currentStep === 2 ? (

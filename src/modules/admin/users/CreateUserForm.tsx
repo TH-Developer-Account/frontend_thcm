@@ -5,6 +5,7 @@ import EditableCard, {
 	type EditableCardField,
 } from "../../../components/common/EditableCard";
 import Checkbox from "../../../components/forms/Checkbox";
+import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import DatePickerInput from "../../../components/common/DatePickerInput";
 import type { GradeOption, UserType } from "./user-management.types";
@@ -13,13 +14,17 @@ import {
 	BASIC_INFO_FIELDS,
 	ORGANIZATION_REQUIRED_FIELDS,
 } from "./useUsersData";
-import { mapUserToForm } from "./user-management.utils";
+import {
+	mapUserToForm,
+	normalizeMobileInput,
+	parseDateOnly,
+	toDateOnlyString,
+} from "./user-management.utils";
 
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
 import { Badge } from "../../../components/common/Badge";
 import Avatar from "../../../components/common/Avatar";
-import { formatDateOnly } from "../../../utils/format";
 import type { BusinessPartnerOption } from "./BusinessPartnerAsyncSelect";
 import BusinessPartnerAsyncSelect from "./BusinessPartnerAsyncSelect";
 
@@ -55,14 +60,6 @@ const GRADE_OPTIONS: GradeOption[] = [
 	{ label: "TE-3", value: "TE-3" },
 ];
 
-const parseJoinedOn = (value: string): Date | undefined => {
-	if (!value) return undefined;
-
-	const parsed = new Date(`${value}T00:00:00`);
-
-	return Number.isNaN(parsed.getTime()) ? undefined : parsed;
-};
-
 export function CreateUserForm({ controller }: UserFormProps) {
 	const {
 		pageMode,
@@ -74,6 +71,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		isLoadingSelectedUser,
 		startInEditMode,
 		handleFormChange,
+		validateUserField,
 		handleSubmitUser,
 		handleCancelForm,
 	} = controller;
@@ -85,10 +83,6 @@ export function CreateUserForm({ controller }: UserFormProps) {
 	const isDetailMode = pageMode === "view";
 	const isSaving = isCreating || isUpdating;
 
-	// Cancelling out of "create" should return to the list. Cancelling out
-	// of editing an existing user just drops back to viewing them — which,
-	// since edit/view now share one route, EditableCard already does on its
-	// own by resetting local state. We only need to step in for "create".
 	const handleCancelEditing = () => {
 		if (isCreateMode) {
 			handleCancelForm();
@@ -98,7 +92,13 @@ export function CreateUserForm({ controller }: UserFormProps) {
 	const [profileImage, setProfileImage] = useState<FileUploadValue | null>(
 		null,
 	);
-
+	// Latest selectable joining date = yesterday (today and future are disabled).
+	const getLatestJoiningDate = () => {
+		const date = new Date();
+		date.setHours(0, 0, 0, 0);
+		date.setDate(date.getDate() - 1);
+		return date;
+	};
 	// The form itself only carries businessPartnerId (a string) — the label
 	// needed for display isn't part of UserFormValues, so we track the
 	// chosen option (id + label) locally, seeded from the already-known BP
@@ -174,12 +174,33 @@ export function CreateUserForm({ controller }: UserFormProps) {
 			required: true,
 			error: fieldErrors.email,
 		},
+		// Custom render so the input can (a) mask to 10 digits as you type and
+		// (b) run the Zod mobile rule onChange instead of only on submit.
 		{
+			id: "phoneNumber",
 			name: "phoneNumber",
 			label: "Phone Number",
-			type: "tel",
 			required: true,
-			error: fieldErrors.phoneNumber,
+			displayValue: displayValues.phoneNumber || "--",
+			render: ({ draft, disabled, setFieldValue }) => (
+				<FormInput
+					name="phoneNumber"
+					label="Phone Number"
+					type="tel"
+					inputMode="numeric"
+					autoComplete="tel-national"
+					placeholder="10-digit mobile number"
+					value={draft.phoneNumber}
+					disabled={disabled}
+					required
+					error={fieldErrors.phoneNumber}
+					onChange={(event) => {
+						const nextPhone = normalizeMobileInput(event.target.value);
+						setFieldValue("phoneNumber", nextPhone as never);
+						validateUserField("phoneNumber", nextPhone);
+					}}
+				/>
+			),
 		},
 		// Password: create only. Not shown for an existing user — an
 		// edit-mode password reset should go through a dedicated "reset
@@ -306,21 +327,17 @@ export function CreateUserForm({ controller }: UserFormProps) {
 				<DatePickerInput
 					label={`Joined On${!isCreateMode ? " *" : ""}`}
 					mode="single"
-					value={parseJoinedOn(draft.joinedOn)}
-					onChange={(nextValue) =>
-						setFieldValue(
-							"joinedOn",
-							formatDateOnly(
-								nextValue instanceof Date ? nextValue : undefined,
-							) as never,
-						)
-					}
+					value={parseDateOnly(draft.joinedOn) ?? undefined}
+					onChange={(nextValue) => {
+						const nextJoinedOn = toDateOnlyString(
+							nextValue instanceof Date ? nextValue : undefined,
+						);
+						setFieldValue("joinedOn", nextJoinedOn as never);
+						validateUserField("joinedOn", nextJoinedOn);
+					}}
 					placeholder="Select joining date"
 					disabled={disabled}
-					// Only restrict to future dates while creating a brand new
-					// user. Editing an existing user needs to allow their
-					// actual (often past) joining date.
-					disablePast={isCreateMode}
+					toDate={getLatestJoiningDate()}
 					error={fieldErrors.joinedOn}
 				/>
 			),
@@ -456,19 +473,13 @@ export function CreateUserForm({ controller }: UserFormProps) {
 			avatar: profileImage?.file ?? null,
 		};
 
-		// Only touch this card's own fields here. Looping over every key
-		// (including the other card's) would call handleFormChange for
-		// fields that didn't change, which also clears that field's error —
-		// silently wiping the other card's still-valid errors on an
-		// unrelated save.
 		const sectionFieldNames =
 			section === "basic" ? BASIC_INFO_FIELDS : ORGANIZATION_REQUIRED_FIELDS;
 
 		sectionFieldNames.forEach((key) => {
 			handleFormChange(key, valuesWithAvatar[key] as never);
 		});
-		// avatar lives outside both section field lists (it's synced via the
-		// profile header, not either EditableCard), so sync it explicitly.
+
 		handleFormChange("avatar", valuesWithAvatar.avatar as never);
 
 		return handleSubmitUser(valuesWithAvatar, section);
@@ -479,10 +490,6 @@ export function CreateUserForm({ controller }: UserFormProps) {
 			.filter(Boolean)
 			.join(" ") || "New User";
 
-	// Single header used for both editing and read-only display. `editing`
-	// comes from EditableCard itself (via the function form of `title`),
-	// since that's the only place the current isEditing state actually
-	// lives now that display/edit share one route.
 	const renderProfileHeader = (editing: boolean) => (
 		<div className="profile-summary">
 			<div

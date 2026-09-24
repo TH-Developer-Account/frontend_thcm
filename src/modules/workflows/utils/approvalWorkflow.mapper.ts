@@ -74,6 +74,7 @@ const mapActiveApproval = (
 		id: approval.id ?? `${stageOrder}-${index}`,
 		name: getFullName(user, "--"),
 		email: user?.email?.trim() || "--",
+		isExternal: Boolean(approval.isExternalApprover),
 		minApprovals,
 		status: normalizeWorkflowStatus(approval.status) || null,
 	};
@@ -91,6 +92,7 @@ const mapPreviewApprover = (
 		id: approver.id ?? `${stageOrder}-${index}`,
 		name: getFullName(user, "--"),
 		email: user?.email?.trim() || "--",
+		isExternal: Boolean(approver.isExternalApprover),
 		minApprovals,
 		status: approver.status ? normalizeWorkflowStatus(approver.status) : null,
 	};
@@ -141,6 +143,7 @@ export const mapWorkflowStagesToApprovalRows = (
 				...approver,
 				status: shouldShowStageStatus ? approver.status : null,
 			})),
+			isExternal: stage.isExternal,
 		};
 	});
 };

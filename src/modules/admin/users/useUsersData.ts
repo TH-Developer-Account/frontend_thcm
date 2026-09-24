@@ -29,7 +29,11 @@ import {
 	mapUserToForm,
 } from "./user-management.utils";
 import { userApi } from "./users.api";
-
+import {
+	validateUserBasicField,
+	validateUserSection,
+	type UserBasicInfoField,
+} from "./user.schema";
 import { useAuth, useToast } from "../../../context/Auth/AuthContext";
 import { useDebounce } from "../../../hooks/useDebounce";
 import {
@@ -73,17 +77,8 @@ export const useUserDetailQuery = (userId?: string) =>
 const getErrorMessage = (error: unknown): string =>
 	error instanceof Error ? error.message : "Something went wrong.";
 
-// The two EditableCards in CreateUserForm (Basic Info / Organization
-// Details) save independently — saving one must never validate or clear
-// errors that belong to the other. Each card's `section` is validated
-// against its own field list only. Every UserFormField the form has must
-// be classified here or the "which required fields am I checking" logic
-// below silently ignores it.
 type FormSection = "basic" | "organization";
 
-// NOTE: workspaceId intentionally excluded — it's no longer user-entered.
-// It's sourced from useAuth() at submit time (see handleSubmitUser) since
-// there's no input field for it anywhere in CreateUserForm.
 const BASIC_INFO_REQUIRED_FIELDS: Array<keyof UserFormValues> = [
 	"firstName",
 	"lastName",
@@ -92,13 +87,6 @@ const BASIC_INFO_REQUIRED_FIELDS: Array<keyof UserFormValues> = [
 	"employeeCode",
 ];
 
-// These asterisked fields in CreateUserForm's Organization Details card
-// were never actually enforced before (validateForm only ever checked the
-// basic-info fields above, regardless of which card was being saved) —
-// now that validation is scoped per section, they're real requirements.
-// Every field in the Organization Details card happens to be required, so
-// this list also doubles as "every field that belongs to that card" (see
-// its use in CreateUserForm's saveSection).
 export const ORGANIZATION_REQUIRED_FIELDS: Array<keyof UserFormValues> = [
 	"region",
 	"address",
@@ -116,10 +104,6 @@ export const ORGANIZATION_REQUIRED_FIELDS: Array<keyof UserFormValues> = [
 	"c4cId",
 ];
 
-// Every field that lives in the Basic Info card, for clearing/merging
-// field errors scoped to that card, and for CreateUserForm's saveSection
-// to know which fields to sync there. Keep this in sync with the fields
-// CreateUserForm actually renders in basicInfoFields.
 export const BASIC_INFO_FIELDS: Array<keyof UserFormValues> = [
 	...BASIC_INFO_REQUIRED_FIELDS,
 	"userType",
@@ -129,13 +113,6 @@ export const BASIC_INFO_FIELDS: Array<keyof UserFormValues> = [
 	"isActive",
 ];
 
-const REQUIRED_FIELD_MESSAGE = "This field is required.";
-
-// Matches the wording the backend now sends for a Prisma unique-constraint
-// (P2002) violation — see toUniqueConstraintError() in user.controller.ts —
-// so the specific input can be highlighted too, not just the toast. Backend
-// wording and this list are meant to move together; if the backend message
-// changes, update this.
 const DUPLICATE_FIELD_HINTS: Array<{
 	pattern: RegExp;
 	field: UserFormField;
@@ -151,11 +128,6 @@ const DUPLICATE_FIELD_HINTS: Array<{
 
 type FormFieldErrors = Partial<Record<UserFormField, string>>;
 
-// Drops every field-error key that belongs to `section`, leaving the
-// other section's errors untouched — used both when a save succeeds
-// (clear this card's errors) and when it fails (replace this card's
-// errors with the freshly-validated ones) so the two cards never step on
-// each other's error state.
 const clearSectionFieldErrors = (
 	current: FormFieldErrors,
 	section: FormSection,
@@ -206,40 +178,22 @@ export function useUsersData() {
 			? "view"
 			: "list";
 
-	// Row actions like "Edit User" in the table still want to land the user
-	// directly in edit mode rather than making them click Edit again once
-	// the page loads. Since there's no dedicated route for that anymore, we
-	// pass it as router state instead — see handleStartEdit below.
 	const startInEditMode =
 		pageMode === "view" &&
 		Boolean((location.state as { openEdit?: boolean } | null)?.openEdit);
 
-	// Fetches the routed user for view/edit. Falls back to the already-loaded
-	// list row (if present) while the detail request is in flight, so
-	// navigating from the table doesn't show a blank form/panel.
 	const userDetailQuery = useUserDetailQuery(
 		pageMode === "view" ? userId : undefined,
 	);
 
 	const usersQuery = useQuery({
-		// Search wasn't being sent to the backend at all before — the table
-		// was just filtering whatever page of default results had already
-		// loaded, which is why some users never showed up in a search. Now
-		// it's debounced and forwarded to userApi.getUsers, and part of the
-		// query key so a new search term gets (and caches) its own result.
 		queryKey: userKeys.list("all", debouncedSearch),
 		queryFn: ({ signal }) =>
 			userApi.getUsers({
 				search: debouncedSearch,
 				signal,
 			}),
-		// The create/edit page has no use for the full user list (it only
-		// needs the single routed user, via userDetailQuery below) — this
-		// was previously firing on every create/edit page load for no
-		// reason. staleTime: Infinity above means any previously-cached
-		// list page data (e.g. from visiting /admin/users first) is still
-		// available for the selectedUser fallback below even while this is
-		// disabled here.
+
 		enabled: pageMode === "list",
 		...USER_QUERY_OPTIONS,
 	});
@@ -393,6 +347,32 @@ export function useUsersData() {
 		});
 	};
 
+	// Live validation for one Basic Info field (inputs that validate onChange).
+	// Sets the field's Zod message, or clears it once valid — which also clears
+	// a stale submit/server error (e.g. duplicate phone) as soon as the user
+	// edits the value.
+	const validateUserField = (field: UserBasicInfoField, value: unknown) => {
+		const message = validateUserBasicField(
+			field,
+			value,
+			pageMode === "create" ? "create" : "edit",
+		);
+
+		setFieldErrors((current) => {
+			if (message) {
+				return current[field] === message
+					? current
+					: { ...current, [field]: message };
+			}
+
+			if (!current[field]) return current;
+
+			const next = { ...current };
+			delete next[field];
+			return next;
+		});
+	};
+
 	// Route-driven navigation. Adjust the "/admin/users" prefix if
 	// AdminRoutes is mounted at a different base path.
 	const handleStartCreate = () => {
@@ -424,81 +404,22 @@ export function useUsersData() {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [pageMode, selectedUser?.id]);
 
-	// Takes the values to validate explicitly rather than reading `form`
-	// from closure — callers that just updated form state via setState
-	// would otherwise validate against the *previous* render's values.
-	// Only checks the fields that belong to `section` — the Basic Info and
-	// Organization Details cards save independently, so saving one must
-	// never fail because of the other card's required fields.
-	const validateForm = (
-		values: UserFormValues,
-		section: FormSection,
-	): FormFieldErrors => {
-		const nextFieldErrors: FormFieldErrors = {};
-
-		const requiredFields =
-			section === "basic"
-				? BASIC_INFO_REQUIRED_FIELDS
-				: ORGANIZATION_REQUIRED_FIELDS;
-
-		requiredFields.forEach((field) => {
-			const value = values[field];
-			if (typeof value === "string" && value.trim().length === 0) {
-				nextFieldErrors[field] = REQUIRED_FIELD_MESSAGE;
-			}
-		});
-
-		// The rest of these are all Basic Info card fields/rules — skip
-		// them entirely when validating an Organization Details save.
-		if (section === "basic") {
-			if (values.email && !/^\S+@\S+\.\S+$/.test(values.email)) {
-				nextFieldErrors.email = "Enter a valid email address.";
-			}
-
-			// Business Partner is only mandatory while creating a brand-new
-			// user. An existing user should still be editable even if no BP
-			// has been linked yet.
-			if (pageMode === "create" && !values.businessPartnerId?.trim()) {
-				nextFieldErrors.businessPartnerId = "Business partner is required.";
-			}
-
-			// Joined On isn't collected at creation time (see disablePast in
-			// CreateUserForm), but is required once a user exists. This also
-			// guarantees mapUserFormToUpdatePayload never has to decide what
-			// an empty joinedOn means — prisma.user.update() throws on "" as
-			// a DateTime, so this can't reach the API un-set.
-			if (pageMode === "view" && !values.joinedOn?.trim()) {
-				nextFieldErrors.joinedOn = "Joining date is required.";
-			}
-		}
-
-		return nextFieldErrors;
-	};
-
-	// `overrideValues` lets callers (EditableCard's onSubmit) pass the just-
-	// edited draft directly, instead of relying on `form` state having
-	// already committed — fixes edit-save silently no-op'ing because it
-	// validated/submitted the previous render's stale form.
-	//
-	// `section` identifies which of the two independent cards is being
-	// saved (defaults to "basic" for create mode, where only that one card
-	// exists). It scopes both validation and which field errors get
-	// touched — see validateForm and clearSectionFieldErrors above.
 	const handleSubmitUser = async (
 		overrideValues?: UserFormValues,
 		section: FormSection = "basic",
 	) => {
 		const draftValues = overrideValues ?? form;
 
-		// workspaceId is never user-entered — inject the signed-in admin's
-		// workspace here rather than requiring/validating a field that has
-		// no corresponding input anywhere in the form.
 		const values: UserFormValues = {
 			...draftValues,
 			workspaceId: workspaceId ?? draftValues.workspaceId,
 		};
 
-		const nextFieldErrors = validateForm(values, section);
+		const nextFieldErrors: FormFieldErrors = validateUserSection(
+			section,
+			values,
+			pageMode === "create" ? "create" : "edit",
+		);
 
 		if (Object.keys(nextFieldErrors).length > 0) {
 			setFieldErrors((current) => ({
@@ -526,17 +447,6 @@ export function useUsersData() {
 			let response;
 
 			if (pageMode === "view" && selectedUser) {
-				// Password isn't collected in the form anymore (see the
-				// commented-out password field in CreateUserForm), and the
-				// backend's updateUser destructures password out and ignores
-				// it regardless. Kept the original password-aware branching
-				// here, commented, in case a dedicated "reset password" flow
-				// needs this shape later.
-				// const { password, ...rest } = values;
-				// response = await handleUpdateUser({
-				// 	userId: selectedUser.id,
-				// 	payload: password?.trim() ? values : rest,
-				// });
 				response = await handleUpdateUser({
 					userId: selectedUser.id,
 					payload: values,
@@ -555,16 +465,6 @@ export function useUsersData() {
 						: "User created successfully."),
 			);
 
-			// On create, don't bounce back to the list — move straight into
-			// viewing (which doubles as editing) the just-created user so the
-			// Organization Details card becomes available as a second step.
-			// Falls back to the list if the API response didn't include an id.
-			//
-			// On view (i.e. updating an existing user), stay put: the API
-			// call already ran above, and EditableCard flips itself back to
-			// display mode on a successful submit — there's no reason to
-			// navigate away, and the other card (if it's also mid-edit)
-			// should be left exactly as it was.
 			if (pageMode === "create") {
 				const newUserId = extractCreatedUserId(response);
 				if (newUserId) {
@@ -585,10 +485,6 @@ export function useUsersData() {
 
 			showApiErrorToast(showToast, error, fallbackMessage);
 
-			// The backend now sends a specific message for a duplicate
-			// email/employee code/etc. (e.g. "A user with this email address
-			// already exists.") instead of the raw Prisma error — surface
-			// that on the actual input too, not just the toast.
 			const serverMessage = getApiErrorMessage(error, fallbackMessage);
 			const duplicateField = DUPLICATE_FIELD_HINTS.find(({ pattern }) =>
 				pattern.test(serverMessage),
@@ -647,6 +543,7 @@ export function useUsersData() {
 		handleBulkStatusChange,
 		handleBulkDelete,
 		handleFormChange,
+		validateUserField,
 		handleStartCreate,
 		handleStartEdit,
 		handleStartView,

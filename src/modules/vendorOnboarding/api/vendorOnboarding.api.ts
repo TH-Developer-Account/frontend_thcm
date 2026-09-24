@@ -5,6 +5,7 @@ import { normalizeVendorOnboardingResponse } from "../helpers/vendor.onboarding.
 import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";
 import type {
 	UpdateVendorVariables,
+	UpdateVendorWithDocumentsVariables,
 	VendorCreationFormOneValues,
 	VendorOnboardingDocument,
 	VendorOnboardingRawResponse,
@@ -116,6 +117,21 @@ export const vendorOnboardingApi = {
 		const {
 			data: { data },
 		} = await ServerAxios.patch(`${VENDOR_URL}/${vendorRequestId}`, payload);
+		return data;
+	},
+
+	// Multipart variant of `update` for the internal (THCM) edit flow, used
+	// only when enclosures changed. Same route as `update`; the backend reads
+	// file parts named by documentType (like the public submit) plus repeated
+	// `removedDocuments` parts. No Content-Type header on purpose — axios
+	// sets multipart/form-data with the boundary itself for FormData.
+	updateWithDocuments: async ({
+		vendorRequestId,
+		formData,
+	}: UpdateVendorWithDocumentsVariables): Promise<VendorOnboardingResponse> => {
+		const {
+			data: { data },
+		} = await ServerAxios.patch(`${VENDOR_URL}/${vendorRequestId}`, formData);
 		return data;
 	},
 

@@ -1,26 +1,25 @@
-.workflow-entry-card,
-.workflow-builder,
+/* =========================================================
+   workflow.css
+   Workflow create / fetch / assignment screens + Approval table
+========================================================= */
+
+/* ---------------------------------------------------------------------------
+   Shared surfaces & layout primitives
+--------------------------------------------------------------------------- */
+
 .workflow-sidebar-card,
 .workflow-stage-card,
-.workflow-fetch-item,
-.workflow-approval-table {
+.workflow-fetch-item {
 	border: 1px solid var(--color-border);
 	border-radius: var(--card-radius);
 	background: var(--color-surface);
 	box-shadow: var(--shadow-sm);
 }
 
-.workflow-entry-heading,
-.workflow-builder-header,
-.workflow-builder-heading,
-.workflow-entry-create,
 .workflow-fetch-row,
 .workflow-fetch-row-main,
 .workflow-fetch-actions,
-.workflow-customise-panel,
 .workflow-save-options,
-.workflow-builder-footer,
-.workflow-builder-stage-actions,
 .workflow-form-actions,
 .workflow-assignment-row,
 .workflow-table-actions {
@@ -28,520 +27,57 @@
 	align-items: center;
 }
 
-.workflow-entry-heading,
-.workflow-builder-header,
-.workflow-builder-footer,
 .workflow-fetch-row,
-.workflow-customise-panel,
 .workflow-form-actions {
 	justify-content: space-between;
 }
 
-.workflow-entry-heading,
-.workflow-builder-header {
-	gap: var(--space-3);
-}
-
-.workflow-entry-heading-copy,
 .workflow-fetch-copy,
 .workflow-assignment-name,
 .workflow-assignment-detail {
 	min-width: 0;
 }
 
-.workflow-entry-heading-copy {
-	flex: 1;
-}
-
-.workflow-entry-title-row {
-	display: flex;
-	align-items: center;
-	gap: var(--space-2);
-}
-
-.workflow-entry-title,
-.workflow-builder-heading h3,
 .workflow-sidebar-title,
-.workflow-customise-title,
-.workflow-entry-create-title {
+.workflow-customise-title {
 	margin: 0;
 	color: var(--color-text-primary);
 	font-size: var(--font-size-base);
 	font-weight: 600;
 }
 
-.workflow-entry-description,
-.workflow-builder-heading p,
-.workflow-entry-create-copy,
-.workflow-customise-copy,
-.workflow-builder-settings p,
-.workflow-builder-footer > p {
-	margin: 0;
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-xs);
-	line-height: 1.5;
-}
-
-.workflow-entry-reference {
-	color: var(--color-text-primary);
-	font-weight: 500;
-}
-
-.workflow-entry-required,
-.workflow-builder-count,
 .workflow-stage-step-pill,
 .workflow-create-badge {
 	display: inline-flex;
 	align-items: center;
 	width: max-content;
+	padding: var(--space-1) var(--space-2);
 	border-radius: var(--radius-xs);
-	background: color-mix(in srgb, var(--color-brand) 5%, transparent);
-	font-size: var(--font-size-xs);
-	font-weight: 600;
 	border-color: var(--color-brand);
+	border-width: var(--border-width-default);
 	background-color: var(--color-brand-subtle);
 	color: var(--color-brand-active);
+	font-size: var(--font-size-xs);
+	font-weight: 600;
 	box-shadow: var(--shadow-xs);
-	border-width: var(--border-width-default);
 }
 
-.workflow-entry-required,
-.workflow-builder-count,
-.workflow-stage-step-pill {
-	padding: var(--space-1) var(--space-2);
+.workflow-cell-center {
+	text-align: center;
 }
 
-.workflow-entry-options,
-.workflow-builder-settings {
+/* ---------------------------------------------------------------------------
+   Create page grid
+--------------------------------------------------------------------------- */
+
+/* minmax(0, …) lets the main column shrink below its content's min width,
+   so a wide table scrolls inside itself instead of squeezing the sidebar. */
+.workflow-create-grid {
 	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: var(--space-3);
-	margin-top: var(--space-4);
-}
-
-.workflow-entry-option {
-	display: flex;
-	align-items: flex-start;
-	gap: var(--space-3);
+	grid-template-columns: minmax(0, 3fr) minmax(280px, 1fr);
 	width: 100%;
-	padding: var(--space-3);
-	border: 1px solid var(--color-border);
-	border-radius: var(--form-radius);
-	background: var(--color-surface);
-	color: var(--color-text-primary);
-	text-align: left;
-	cursor: pointer;
-	transition:
-		border-color var(--duration-fast),
-		background-color var(--duration-fast);
-}
-
-.workflow-entry-option:hover {
-	border-color: var(--color-brand);
-	background: var(--color-surface-raised);
-}
-
-.workflow-entry-option--active {
-	border-color: var(--color-brand);
-	background: color-mix(in srgb, var(--color-brand) 5%, transparent);
-}
-
-.workflow-entry-option span,
-.workflow-template-toggle span {
-	display: grid;
-	gap: var(--space-1);
-}
-
-.workflow-entry-option strong,
-.workflow-template-toggle strong {
-	font-size: var(--font-size-sm);
-	font-weight: 600;
-}
-
-.workflow-entry-option small,
-.workflow-template-toggle small {
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-xs);
-}
-
-.workflow-entry-create {
-	gap: var(--space-4);
-	margin-top: var(--space-4);
-	padding: var(--space-4);
-	/* border: 1px dashed var(--color-border); */
-	border-radius: var(--form-radius);
-	background: var(--color-page-bg);
-}
-
-.workflow-filter-tabs {
-	display: flex;
-	gap: var(--space-2);
-	margin-bottom: var(--space-3);
-	border-bottom: 1px solid var(--color-border);
-}
-
-.workflow-filter-tab {
-	padding: var(--space-2) var(--space-3);
-	border: 0;
-	border-bottom: 2px solid transparent;
-	background: transparent;
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-sm);
-	cursor: pointer;
-}
-
-.workflow-filter-tab--active {
-	border-bottom-color: var(--color-brand);
-	color: var(--color-brand);
-	font-weight: 600;
-}
-
-.workflow-filter-tab span {
-	margin-left: var(--space-1);
-}
-
-.workflow-filter-tabs-reset {
-	padding: 0;
-	border-bottom: 0;
-}
-
-.workflow-fetch-panel,
-.workflow-fetch-list,
-.workflow-stage-list,
-.workflow-approver-list,
-.workflow-builder-stage-list,
-.workflow-assignment-list {
-	display: grid;
-	gap: var(--space-3);
-}
-
-.workflow-fetch-panel {
-	margin-top: var(--space-4);
-}
-
-.workflow-fetch-item {
-	overflow: hidden;
-}
-
-.workflow-fetch-row {
-	gap: var(--space-4);
-	padding: var(--space-3) var(--space-4);
-}
-
-.workflow-fetch-row-main,
-.workflow-builder-heading,
-.workflow-builder-approver {
-	gap: var(--space-3);
-}
-
-.workflow-fetch-copy h4 {
-	margin: 0;
-	color: var(--color-text-primary);
-	font-size: var(--font-size-sm);
-}
-
-.workflow-fetch-copy p {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--space-3);
-	margin: var(--space-1) 0 0;
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-xs);
-}
-
-.workflow-fetch-copy p span {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--space-1);
-}
-
-.workflow-fetch-item-icon,
-.workflow-entry-icon,
-.workflow-search-avatar,
-.workflow-create-card-icon,
-.workflow-stage-number,
-.workflow-builder-stage-number {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	flex: none;
-}
-
-.workflow-fetch-item-icon,
-.workflow-entry-icon,
-.workflow-search-avatar {
-	width: 2rem;
-	height: 2rem;
-	border-radius: var(--form-radius);
-	background: color-mix(in srgb, var(--color-brand) 5%, transparent);
-	color: var(--color-brand);
-}
-
-.workflow-fetch-actions,
-.workflow-save-options,
-.workflow-builder-stage-actions,
-.workflow-table-actions {
-	gap: var(--space-2);
-}
-
-.workflow-customise-panel {
-	gap: var(--space-4);
-	padding: var(--space-3) var(--space-4);
-	background: var(--color-page-bg);
-}
-
-.workflow-builder-empty,
-.workflow-empty-state,
-.workflow-assignment-empty {
-	padding: var(--space-6);
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-sm);
-	text-align: center;
-}
-
-/*
- * Split out from the shared empty-state rule above: this one also holds an
- * icon and (now) a "Create Workflow" button, so it needs to stack and
- * center them as a column instead of relying on text-align alone, which
- * only centers inline content and left the icon sitting on its own line.
- */
-.workflow-fetch-empty {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: var(--space-3);
-	padding: var(--space-6);
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-sm);
-	text-align: center;
-}
-
-.workflow-builder {
-	overflow: visible;
-}
-
-.workflow-builder-header,
-.workflow-builder-footer {
-	padding: var(--space-3) var(--space-4);
-}
-
-.workflow-builder-header {
-	border-bottom: 1px solid var(--color-border);
-}
-
-.workflow-builder-footer {
-	gap: var(--space-4);
-	border-top: 1px solid var(--color-border);
-}
-
-.workflow-builder-footer > div {
-	display: flex;
-	gap: var(--space-2);
-}
-
-.workflow-builder-add {
-	display: grid;
-	grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
-	align-items: end;
-	gap: var(--space-3);
-	padding: var(--space-4);
-}
-
-.workflow-add-stage-action {
-	align-self: end;
-}
-
-.workflow-approver-search {
-	position: relative;
-}
-
-.workflow-approver-search-icon {
-	position: absolute;
-	right: var(--space-3);
-	top: 2.35rem;
-	color: var(--color-text-secondary);
-	pointer-events: none;
-}
-
-.workflow-search-status {
-	position: absolute;
-	right: var(--space-3);
-	top: 2.25rem;
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-xs);
-}
-
-.workflow-search-results {
-	position: absolute;
-	z-index: var(--z-popover);
-	top: calc(100% + var(--space-1));
-	left: 0;
-	right: 0;
-	max-height: 15rem;
-	margin: 0;
-	padding: var(--space-1);
-	overflow-y: auto;
-	list-style: none;
-	border: 1px solid var(--color-border);
-	border-radius: var(--form-radius);
-	background: var(--color-surface);
-	box-shadow: var(--shadow-md);
-}
-
-.workflow-search-results button {
-	display: flex;
-	align-items: center;
-	gap: var(--space-2);
-	width: 100%;
-	padding: var(--space-2);
-	border: 0;
-	border-radius: var(--form-radius);
-	background: transparent;
-	color: var(--color-text-primary);
-	text-align: left;
-	cursor: pointer;
-}
-
-.workflow-search-results button:hover {
-	background: var(--color-surface-raised);
-}
-
-.workflow-search-results button > span:last-child {
-	display: grid;
-	min-width: 0;
-}
-
-.workflow-search-results small,
-.workflow-builder-approver small {
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-xs);
-}
-
-.workflow-field-error,
-.workflow-form-error {
-	margin: var(--space-2) 0 0;
-	color: var(--color-error);
-	font-size: var(--font-size-xs);
-}
-
-.workflow-form-error--center {
-	text-align: center;
-}
-
-.workflow-form-error--left {
-	text-align: left;
-}
-
-.workflow-builder-stage-list {
-	margin: 0;
-	padding: 0 var(--space-4) var(--space-4);
-	list-style: none;
-}
-
-.workflow-builder-stage {
-	display: grid;
-	grid-template-columns: auto minmax(0, 1fr) auto;
-	align-items: center;
-	gap: var(--space-3);
-	padding: var(--space-3);
-	border: 1px solid var(--color-border);
-	border-radius: var(--form-radius);
-	background: var(--color-surface);
-}
-
-.workflow-builder-stage-number,
-.workflow-stage-number {
-	width: 1.75rem;
-	height: 1.75rem;
-	border-radius: 50%;
-	background: color-mix(in srgb, var(--color-brand) 5%, transparent);
-	color: var(--color-brand);
-	font-size: var(--font-size-xs);
-	font-weight: 600;
-}
-
-.workflow-builder-stage-fields {
-	display: grid;
-	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-	align-items: end;
-	gap: var(--space-3);
-}
-
-.workflow-builder-approver {
-	display: flex;
-	align-items: center;
-	min-width: 0;
-	padding: var(--space-2);
-	border-radius: var(--form-radius);
-	background: var(--color-page-bg);
-}
-
-.workflow-builder-approver > span:last-child {
-	display: grid;
-	min-width: 0;
-}
-
-.workflow-builder-settings {
-	padding: 0 var(--space-4) var(--space-4);
-}
-
-.workflow-builder-settings fieldset {
-	margin: 0;
-	padding: var(--space-3);
-	border: 1px solid var(--color-border);
-	border-radius: var(--form-radius);
-}
-
-.workflow-builder-settings legend {
-	padding: 0 var(--space-1);
-	color: var(--color-text-primary);
-	font-size: var(--font-size-sm);
-	font-weight: 600;
-}
-
-.workflow-segmented-control {
-	display: grid;
-	grid-template-columns: repeat(2, 1fr);
-	gap: var(--space-1);
-	padding: var(--space-1);
-	border: 1px solid var(--color-border);
-	border-radius: var(--form-radius);
-	background: var(--color-page-bg);
-}
-
-.workflow-segment {
-	padding: var(--space-2);
-	border: 0;
-	border-radius: var(--form-radius);
-	background: transparent;
-	color: var(--color-text-secondary);
-	cursor: pointer;
-}
-
-.workflow-segment--active {
-	background: var(--color-surface);
-	color: var(--color-brand);
-	box-shadow: var(--shadow-sm);
-}
-
-.workflow-template-toggle {
-	display: flex;
-	align-items: flex-start;
-	gap: var(--space-2);
-	padding: var(--space-3);
-	border: 1px solid var(--color-border);
-	border-radius: var(--form-radius);
-	background: var(--color-page-bg);
-	color: var(--color-text-primary);
-}
-
-.workflow-template-toggle input {
-	accent-color: var(--color-brand);
-}
-
-.workflow-template-name {
-	max-width: 32rem;
-	padding: 0 var(--space-4) var(--space-4);
+	gap: 10px;
+	margin-top: 0px;
 }
 
 .workflow-create-card-title {
@@ -551,29 +87,6 @@
 	color: var(--color-text-primary);
 	font-size: var(--font-size-base);
 	font-weight: 600;
-}
-
-.workflow-create-card-title-meta {
-	margin-left: auto;
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-xs);
-	font-weight: 400;
-}
-
-.workflow-create-card-icon {
-	width: 1.75rem;
-	height: 1.75rem;
-	border-radius: var(--form-radius);
-}
-
-.workflow-create-card-icon-orange {
-	background: color-mix(in srgb, var(--color-brand) 5%, transparent);
-	color: var(--color-brand);
-}
-
-.workflow-create-card-icon-violet {
-	background: var(--color-draft-bg);
-	color: var(--color-draft-text);
 }
 
 .workflow-create-field-row {
@@ -606,44 +119,290 @@
 	align-items: flex-end;
 }
 
-.workflow-stage-card {
-	overflow: hidden;
-}
+/* ---------------------------------------------------------------------------
+   Sidebar summary
+--------------------------------------------------------------------------- */
 
-.workflow-stage-card-expanded {
-	border-color: var(--color-brand);
-}
-
-/*
- * Highlights a stage card that has a validation error — the box-level
- * equivalent of a form field's red error border, applied to the whole
- * card since a stage bundles several fields (name, approvers,
- * minApprovals). Declared after workflow-stage-card-expanded so the error
- * color wins when an errored stage is also the expanded one (a stage
- * with errors is auto-expanded on submit — see handleContinue in
- * WorkflowTemplateBuilder / handleNext in WorkflowCreatePage).
- */
-.workflow-stage-card-error {
-	border-color: var(--color-error);
-	background: color-mix(in srgb, var(--color-error) 5%, transparent);
-}
-
-.workflow-stage-header-row {
-	display: flex;
-	align-items: stretch;
+.workflow-create-sidebar {
+	min-width: 0;
 	width: 100%;
 }
 
-.workflow-stage-header-row .workflow-stage-header {
-	flex: 1;
-	width: auto;
-	min-width: 0;
+.workflow-sidebar-card {
+	padding: var(--space-4);
 }
 
-.workflow-stage-remove-btn {
+.workflow-summary-list {
+	display: grid;
+	margin-top: var(--space-3);
+}
+
+.workflow-summary-item {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--space-3);
+	padding: var(--space-2) 0;
+	border-bottom: 1px solid var(--color-border);
+}
+
+.workflow-summary-item-last {
+	border-bottom: 0;
+}
+
+.workflow-summary-key {
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-xs);
+}
+
+.workflow-summary-value {
+	color: var(--color-text-primary);
+	font-size: var(--font-size-sm);
+	font-weight: 500;
+	text-align: right;
+}
+
+/* ---------------------------------------------------------------------------
+   Listing / filter tabs
+--------------------------------------------------------------------------- */
+
+.workflow-filter-tabs {
+	display: flex;
+	gap: var(--space-2);
+	margin-bottom: var(--space-3);
+	border-bottom: 1px solid var(--color-border);
+}
+
+.workflow-filter-tabs-reset {
+	padding: 0;
+	border-bottom: 0;
+}
+
+.workflow-table-primary {
+	color: var(--color-text-primary);
+	font-size: var(--font-size-sm);
+	font-weight: 500;
+}
+
+.workflow-table-actions {
+	gap: var(--space-2);
+}
+
+/* ---------------------------------------------------------------------------
+   Fetch list
+--------------------------------------------------------------------------- */
+
+.workflow-fetch-panel,
+.workflow-fetch-list,
+.workflow-stage-list,
+.workflow-approver-list {
+	display: grid;
+	gap: var(--space-3);
+}
+
+.workflow-fetch-panel {
+	margin-top: var(--space-4);
+}
+
+.workflow-fetch-item {
+	overflow: hidden;
+}
+
+.workflow-fetch-row {
+	gap: var(--space-4);
+	padding: var(--space-3) var(--space-4);
+}
+
+.workflow-fetch-row-main {
+	gap: var(--space-3);
+}
+
+.workflow-fetch-copy h4 {
+	margin: 0;
+	color: var(--color-text-primary);
+	font-size: var(--font-size-sm);
+}
+
+.workflow-fetch-copy p {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-3);
+	margin: var(--space-1) 0 0;
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-xs);
+}
+
+.workflow-fetch-copy p span {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+}
+
+.workflow-fetch-item-icon,
+.workflow-stage-number {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	flex: none;
-	align-self: center;
-	margin-right: var(--space-3);
+}
+
+.workflow-fetch-item-icon {
+	width: 2rem;
+	height: 2rem;
+	border-radius: var(--form-radius);
+	background: color-mix(in srgb, var(--color-brand) 5%, transparent);
+	color: var(--color-brand);
+}
+
+.workflow-fetch-actions,
+.workflow-save-options {
+	gap: var(--space-2);
+}
+
+.workflow-empty-state,
+.workflow-assignment-empty {
+	padding: var(--space-6);
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-sm);
+	text-align: center;
+}
+
+/* Holds an icon and a "Create Workflow" button, so it stacks as a column
+   rather than relying on text-align (which only centers inline content). */
+.workflow-fetch-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--space-3);
+	padding: var(--space-6);
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-sm);
+	text-align: center;
+}
+
+.workflow-fetch-stage-details {
+	padding: 0.75rem 1rem 1rem;
+	border-top: 1px solid #e5e7eb;
+	background: #fafafa;
+}
+
+.workflow-fetch-stage-details > p,
+.workflow-fetch-stage-error {
+	margin: 0;
+	color: #6b7280;
+	font-size: 0.78rem;
+}
+
+.workflow-fetch-stage-error {
+	color: #b91c1c;
+}
+
+.workflow-fetch-stage-details ol {
+	display: grid;
+	gap: 0.55rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.workflow-fetch-stage-details li {
+	padding: 0.65rem 0.75rem;
+	border: 1px solid #e5e7eb;
+	border-radius: 0.5rem;
+	background: #fff;
+}
+
+.workflow-fetch-stage-details li p {
+	margin: 0.3rem 0 0;
+	color: #6b7280;
+	font-size: 0.75rem;
+}
+
+.workflow-fetch-stage-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+	gap: 0.625rem;
+	width: 100%;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.workflow-fetch-stage-heading {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.workflow-fetch-stage-heading strong {
+	min-width: 0;
+	color: #1f2937;
+	font-size: 0.82rem;
+	font-weight: 600;
+	line-height: 1.35;
+	overflow-wrap: anywhere;
+}
+
+.workflow-fetch-stage-heading span {
+	flex-shrink: 0;
+	padding: 0.2rem 0.5rem;
+	border-radius: 999px;
+	background: #fff3eb;
+	color: #c2410c;
+	font-size: 0.7rem;
+	font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------
+   Customise step
+--------------------------------------------------------------------------- */
+
+.workflow-customise-panel {
+	display: flex;
+	gap: var(--space-4);
+	padding: var(--space-4);
+	background: transparent;
+}
+
+.workflow-customise-header {
+	display: grid;
+	gap: var(--space-1);
+}
+
+.workflow-customise-copy {
+	margin: 0;
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-sm);
+	line-height: 1.5;
+}
+
+.workflow-customise-name {
+	width: 100%;
+	max-width: 48rem;
+}
+
+.workflow-customise-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
+	padding-top: var(--space-4);
+	border-top: 1px solid var(--color-border);
+}
+
+/* ---------------------------------------------------------------------------
+   Stages form
+--------------------------------------------------------------------------- */
+
+.workflow-stage-main-list {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+.workflow-stage-list .ui-card-header {
+	padding-bottom: var(--space-3);
 }
 
 .workflow-stage-list-actions {
@@ -652,21 +411,30 @@
 	margin-bottom: var(--space-3);
 }
 
-.workflow-stage-header {
-	display: flex;
-	align-items: center;
-	gap: var(--space-3);
-	width: 100%;
-	padding: var(--space-3) var(--space-4);
-	border: 0;
-	background: transparent;
-	color: var(--color-text-primary);
-	text-align: left;
-	cursor: pointer;
+.workflow-stage-card {
+	overflow: hidden;
 }
 
-.workflow-stage-header-content {
-	flex: 1;
+/* Whole-card error state (a stage bundles name, approvers and minApprovals).
+   Stages with errors are auto-expanded on submit. */
+.workflow-stage-card-error {
+	border-color: var(--color-error);
+	background: color-mix(in srgb, var(--color-error) 5%, transparent);
+}
+
+/* Card's accordion title draws a leading ::before bar that collides with
+   the stage-number badge — hidden for stage cards only. */
+.workflow-stage-card .ui-card-accordion .ui-card-title::before {
+	display: none;
+}
+
+/* Number badge, name, approver count and error all live in Card's `title`
+   slot so they share one row and stay visible collapsed or expanded. */
+.workflow-stage-title-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-2);
 	min-width: 0;
 }
 
@@ -675,38 +443,19 @@
 	font-weight: 600;
 }
 
-/*
- * Card's own accordion title renders a decorative ::before marker (a small
- * leading bar) ahead of whatever we pass into `title` — harmless on a plain
- * text title, but it visually collided with our stage-number badge here, so
- * it's hidden for this specific card only (scoped to .workflow-stage-card,
- * not Card's accordion title everywhere else it's used).
- */
-.workflow-stage-card .ui-card-accordion .ui-card-title::before {
-	display: none;
+.workflow-stage-number {
+	width: 1.75rem;
+	height: 1.75rem;
+	border-radius: 50%;
+	background: color-mix(in srgb, var(--color-brand) 5%, transparent);
+	color: var(--color-brand);
+	font-size: var(--font-size-xs);
+	font-weight: 600;
 }
 
-/*
- * Card's `title` slot renders inside its accordion trigger button
- * regardless of expand state, so putting the stage-number badge, name,
- * approver count and error icon/text all in title (rather than splitting
- * approver count into `subtitle`) is what keeps them on one row and keeps
- * stage errors visible whether the card is collapsed or expanded.
- */
-.workflow-stage-title-row {
-	display: flex;
-	align-items: center;
-	gap: var(--space-2);
-	flex-wrap: wrap;
-	min-width: 0;
-}
-
-.workflow-stage-subtitle-col {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: var(--space-1);
-	min-width: 0;
+.workflow-stage-number-active {
+	background: var(--color-brand);
+	color: var(--color-clean-white);
 }
 
 .workflow-stage-error-icon {
@@ -730,19 +479,10 @@
 	font-size: var(--font-size-xs);
 }
 
-.workflow-stage-number-active {
-	background: var(--color-brand);
-	color: var(--color-clean-white);
-}
-
-.workflow-stage-chevron {
-	color: var(--color-text-secondary);
-	font-size: 1.25rem;
-	transition: transform var(--duration-fast);
-}
-
-.workflow-stage-chevron-open {
-	transform: rotate(90deg);
+.workflow-stage-remove-btn {
+	flex: none;
+	align-self: center;
+	margin-right: var(--space-3);
 }
 
 .workflow-stage-body {
@@ -750,19 +490,11 @@
 	border-top: 1px solid var(--color-border);
 }
 
-.workflow-min-approvals-field {
-	position: relative;
-}
-
-.workflow-min-approvals-input {
-	width: 25%;
-}
-
 .workflow-approvers-length-text {
-	font-size: 1rem;
 	position: absolute;
 	top: 46%;
 	left: 30%;
+	font-size: 1rem;
 }
 
 .workflow-approver-list {
@@ -828,15 +560,12 @@
 	color: var(--color-brand);
 }
 
-.workflow-remove-btn:disabled {
-	color: var(--color-text-secondary);
-	opacity: 0.4;
-	cursor: not-allowed;
-}
-
+.workflow-remove-btn:disabled,
 .workflow-remove-btn:disabled:hover {
 	background: transparent;
 	color: var(--color-text-secondary);
+	opacity: 0.4;
+	cursor: not-allowed;
 }
 
 .workflow-add-stage-btn {
@@ -854,93 +583,19 @@
 	cursor: pointer;
 }
 
-.workflow-create-sidebar {
-	min-width: 0;
-	width: 100%;
-}
-
-.workflow-sidebar-card {
-	padding: var(--space-4);
-}
-
-.workflow-summary-list {
-	display: grid;
-	margin-top: var(--space-3);
-}
-
-.workflow-summary-item {
-	display: flex;
-	justify-content: space-between;
-	gap: var(--space-3);
-	padding: var(--space-2) 0;
-	border-bottom: 1px solid var(--color-border);
-}
-
-.workflow-summary-item-last {
-	border-bottom: 0;
-}
-
-.workflow-summary-key {
-	color: var(--color-text-secondary);
+.workflow-form-error {
+	margin: var(--space-2) 0 0;
+	color: var(--color-error);
 	font-size: var(--font-size-xs);
 }
 
-.workflow-summary-value {
-	color: var(--color-text-primary);
-	font-size: var(--font-size-sm);
-	font-weight: 500;
-	text-align: right;
-}
-
-.workflow-approval-table {
-	overflow-x: auto;
-}
-
-.workflow-approval-table-inner,
-.pdf-approval-table {
-	width: 100%;
-	border-collapse: collapse;
-}
-
-.workflow-approval-th,
-.workflow-approval-td,
-.pdf-approval-table th,
-.pdf-approval-table td {
-	padding: var(--space-3);
-	border-bottom: 1px solid var(--color-border);
-	color: var(--color-text-primary);
-	font-size: var(--font-size-sm);
+.workflow-form-error--left {
 	text-align: left;
 }
 
-.workflow-approval-th,
-.pdf-approval-table th {
-	background: var(--color-page-bg);
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-xs);
-	font-weight: 600;
-}
-
-.workflow-approval-row:last-child .workflow-approval-td,
-.pdf-approval-table tbody tr:last-child td {
-	border-bottom: 0;
-}
-
-.workflow-approval-name {
-	font-weight: 600;
-}
-
-.workflow-approval-approvers {
-	color: var(--color-text-secondary);
-}
-
-.workflow-create-badge {
-	padding: var(--space-1) var(--space-2);
-}
-
-.workflow-cell-center {
-	text-align: center;
-}
+/* ---------------------------------------------------------------------------
+   User assignment
+--------------------------------------------------------------------------- */
 
 .workflow-assignment-search {
 	position: relative;
@@ -1003,8 +658,7 @@
 	font-weight: 600;
 }
 
-.workflow-assignment-secondary,
-.workflow-assignment-empty {
+.workflow-assignment-secondary {
 	color: var(--color-text-secondary);
 	font-size: var(--font-size-xs);
 }
@@ -1031,341 +685,9 @@
 	font-weight: 700;
 }
 
-.workflow-table-primary {
-	color: var(--color-text-primary);
-	font-size: var(--font-size-sm);
-	font-weight: 500;
-}
-
-.approval-workflow-content {
-	display: grid;
-	gap: var(--space-4);
-}
-
-.approval-flow-table {
-	overflow: hidden;
-}
-
-.approval-table-column-stage {
-	width: 4rem;
-}
-
-.approval-table-column-type {
-	min-width: 9rem;
-}
-
-.approval-table-column-approver {
-	min-width: 11rem;
-}
-
-.approval-table-column-email {
-	min-width: 13rem;
-}
-
-.approval-table-column-flow {
-	width: 7rem;
-}
-
-.approval-table-column-count {
-	width: 5rem;
-}
-
-.approval-table-column-status {
-	width: 8rem;
-}
-
-.approval-workflow-empty {
-	padding: var(--space-2);
-	border: 1px solid var(--color-border);
-	border-radius: var(--card-radius);
-	background: var(--color-page-bg);
-	text-align: center;
-}
-
-.approval-workflow-empty-title,
-.approval-workflow-empty-description,
-.pdf-empty {
-	margin: 0;
-}
-
-.approval-workflow-empty-title {
-	color: var(--color-text-primary);
-	font-size: var(--font-size-sm);
-	font-weight: 600;
-}
-
-.approval-workflow-empty-description,
-.pdf-empty {
-	margin-top: var(--space-1);
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-xs);
-}
-
-.approval-table-value-stack {
-	display: grid;
-	gap: var(--space-2);
-}
-
-.approval-table-stack-item {
-	min-height: 2rem;
-	display: flex;
-	align-items: center;
-}
-
-.approval-table-primary-value {
-	color: var(--color-text-primary);
-	font-size: var(--font-size-sm);
-	font-weight: 500;
-}
-
-.approval-table-secondary-value,
-.approval-table-empty-value {
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-sm);
-}
-
-.approval-table-email {
-	color: var(--color-brand);
-	text-decoration: none;
-}
-
-.approval-table-email:hover {
-	text-decoration: underline;
-}
-
-.approval-table-stage-number,
-.approval-table-count {
-	font-variant-numeric: tabular-nums;
-}
-
-.pdf-table {
-	width: 100%;
-}
-.workflow-create-grid {
-	display: grid;
-	grid-template-columns: 2fr 1fr;
-	width: 100%;
-	gap: 1rem;
-	margin-top: var(--space-4);
-}
-@media (max-width: 767px) {
-	.workflow-entry-options,
-	.workflow-builder-settings,
-	.workflow-create-field-row-2,
-	.workflow-create-field-row-3,
-	.workflow-builder-add,
-	.workflow-builder-stage,
-	.workflow-builder-stage-fields,
-	.workflow-create-grid {
-		grid-template-columns: 1fr;
-	}
-
-	.workflow-entry-create,
-	.workflow-fetch-row,
-	.workflow-customise-panel,
-	.workflow-builder-footer,
-	.workflow-assignment-row {
-		align-items: stretch;
-		flex-direction: column;
-	}
-
-	.workflow-fetch-actions,
-	.workflow-save-options,
-	.workflow-builder-footer > div {
-		width: 100%;
-		flex-wrap: wrap;
-	}
-
-	.workflow-builder-stage-number {
-		display: none;
-	}
-
-	.workflow-builder-stage-actions {
-		justify-content: flex-end;
-	}
-}
-/* -------------------------------------------------------------------------- */
-/* Custom workflow usage step                                                  */
-/* -------------------------------------------------------------------------- */
-
-.workflow-customise-panel {
-	display: flex;
-	align-items: initial;
-	justify-content: initial;
-	gap: var(--space-4);
-	padding: var(--space-4);
-	background: transparent;
-}
-
-.workflow-customise-header {
-	display: grid;
-	gap: var(--space-1);
-}
-
-.workflow-customise-title {
-	margin: 0;
-	color: var(--color-text-primary);
-	font-size: var(--font-size-base);
-	font-weight: 600;
-}
-
-.workflow-customise-copy {
-	margin: 0;
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-sm);
-	line-height: 1.5;
-}
-
-.workflow-customise-name {
-	width: 100%;
-	max-width: 48rem;
-}
-
-.workflow-customise-actions {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--space-3);
-	padding-top: var(--space-4);
-	border-top: 1px solid var(--color-border);
-}
-.workflow-fetch-stage-details {
-	border-top: 1px solid #e5e7eb;
-	background: #fafafa;
-	padding: 0.75rem 1rem 1rem;
-}
-
-.workflow-fetch-stage-details > p,
-.workflow-fetch-stage-error {
-	margin: 0;
-	font-size: 0.78rem;
-	color: #6b7280;
-}
-
-.workflow-fetch-stage-error {
-	color: #b91c1c;
-}
-
-.workflow-fetch-stage-details ol {
-	display: grid;
-	gap: 0.55rem;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.workflow-fetch-stage-details li {
-	border: 1px solid #e5e7eb;
-	border-radius: 0.5rem;
-	background: #fff;
-	padding: 0.65rem 0.75rem;
-}
-
-.workflow-fetch-stage-heading {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.75rem;
-}
-
-.workflow-fetch-stage-heading strong {
-	font-size: 0.82rem;
-	color: #1f2937;
-}
-
-.workflow-fetch-stage-heading span,
-.workflow-fetch-stage-details li p {
-	font-size: 0.75rem;
-	color: #6b7280;
-}
-
-.workflow-fetch-stage-details li p {
-	margin: 0.3rem 0 0;
-}
-.workflow-fetch-stage-list {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-	gap: 0.625rem;
-
-	width: 100%;
-	margin: 0;
-	padding: 0;
-	list-style: none;
-}
-
-.workflow-fetch-stage-item {
-	display: flex;
-	flex-direction: column;
-	min-width: 0;
-	height: 100%;
-
-	border: 1px solid #e5e7eb;
-	border-radius: 0.5rem;
-	background: #fff;
-	padding: 0.75rem;
-
-	box-shadow: 0 1px 2px rgb(15 23 42 / 4%);
-}
-
-.workflow-fetch-stage-heading {
-	display: flex;
-	align-items: flex-start;
-	justify-content: space-between;
-	gap: 0.75rem;
-}
-
-.workflow-fetch-stage-heading strong {
-	min-width: 0;
-	overflow-wrap: anywhere;
-
-	font-size: 0.82rem;
-	font-weight: 600;
-	line-height: 1.35;
-	color: #1f2937;
-}
-
-.workflow-fetch-stage-heading span {
-	flex-shrink: 0;
-	border-radius: 999px;
-	background: #fff3eb;
-	padding: 0.2rem 0.5rem;
-
-	font-size: 0.7rem;
-	font-weight: 600;
-	color: #c2410c;
-}
-
-.workflow-fetch-stage-item p {
-	margin: 0.4rem 0 0;
-	font-size: 0.75rem;
-	line-height: 1.45;
-	color: #6b7280;
-}
-
-.workflow-stage-main-list {
-	display: flex;
-	flex-direction: column;
-	gap: 1rem;
-	justify-content: space-between;
-}
-.workflow-stage-list .ui-card-header {
-	padding-bottom: var(--space-3);
-}
-
-/* -------------------------------------------------------------------------- */
-/* Workflow customization section                                             */
-/* (formerly vendor-onboarding-only "vendor-workflow-*" — generalized so any   */
-/* record type can reuse WorkflowCustomizationSection)                        */
-/* -------------------------------------------------------------------------- */
-
-.workflow-customization-selection-note {
-	display: block;
-	margin-top: var(--space-1);
-	color: var(--color-text-secondary);
-	font-size: var(--font-size-xs);
-	font-weight: 400;
-	line-height: 1.4;
-}
+/* ---------------------------------------------------------------------------
+   Workflow customization section (reusable across record types)
+--------------------------------------------------------------------------- */
 
 .workflow-customization-section {
 	display: grid;
@@ -1412,6 +734,15 @@
 	color: var(--color-brand);
 }
 
+.workflow-customization-selection-note {
+	display: block;
+	margin-top: var(--space-1);
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-xs);
+	font-weight: 400;
+	line-height: 1.4;
+}
+
 .workflow-customization-table {
 	min-width: 0;
 	overflow-x: auto;
@@ -1432,10 +763,10 @@
 	display: grid;
 	gap: 0.75rem;
 	margin-top: 0.875rem;
+	padding: 0.875rem;
 	border: 1px solid #e5e7eb;
 	border-radius: 0.5rem;
 	background: #fafafa;
-	padding: 0.875rem;
 }
 
 .workflow-customization-navigation {
@@ -1453,12 +784,245 @@
 	gap: var(--space-2);
 }
 
+/* =========================================================
+   APPROVAL TABLE
+   (moved from UI.css — used by ApprovalTable / ApprovalWorkflowTableContent)
+========================================================= */
+
+.approval-workflow-content {
+	display: grid;
+	gap: var(--space-4);
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	overflow-x: auto;
+}
+
+.approval-flow-table {
+	--approval-line: 2.25rem;
+	width: 100%;
+	min-width: 0;
+	overflow: hidden;
+}
+
+/* Pin cell content to the top so first lines stay level while name/email
+   lists grow or shrink. */
+.approval-flow-table tbody td {
+	vertical-align: top;
+}
+
+/* ---- Values ---- */
+
+.approval-table-primary-value {
+	color: var(--color-text-primary);
+	font-size: var(--font-size-sm);
+	font-weight: var(--font-weight-medium);
+	line-height: var(--line-height-normal);
+}
+
+.approval-table-secondary-value {
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-sm);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--line-height-normal);
+}
+
+.approval-table-empty-value {
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-sm);
+	font-weight: var(--font-weight-regular);
+}
+
+.approval-table-count {
+	color: var(--color-text-primary);
+	font-size: var(--font-size-xs);
+	font-weight: var(--font-weight-medium);
+	font-variant-numeric: tabular-nums;
+}
+
+.approval-table-stage-number {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: var(--control-height-xs);
+	height: var(--control-height-xs);
+	padding-inline: var(--space-1-5);
+	border: var(--border-width-default) solid var(--color-border-default);
+	border-radius: var(--radius-xs);
+	background-color: var(--color-bg-surface-muted);
+	color: var(--color-text-primary);
+	font-size: var(--font-size-xs);
+	font-weight: var(--font-weight-medium);
+	line-height: 1;
+	font-variant-numeric: tabular-nums;
+}
+
+.approval-table-email {
+	color: var(--color-brand);
+	font-size: var(--font-size-xs);
+	font-weight: var(--font-weight-regular);
+	line-height: var(--line-height-normal);
+	text-decoration: none;
+	overflow-wrap: anywhere;
+}
+
+.approval-table-email:hover {
+	color: var(--color-text-link-hover);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.approval-table-email:focus-visible {
+	outline: none;
+	box-shadow: var(--shadow-focus-brand);
+}
+
+.approval-table-more {
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--color-brand);
+	font-size: 0.8125rem;
+	font-weight: 500;
+	cursor: pointer;
+}
+
+.approval-table-more:hover,
+.approval-table-more:focus-visible {
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+/* ---- Stacked approvers (one line per approver) ---- */
+
+.approval-table-value-stack {
+	display: grid;
+	gap: var(--space-2);
+	min-width: 0;
+}
+
+/* Fixed line height: every stacked line is the same height in every column,
+   so line N of Name/Email/External/Status always sit side by side. Long
+   values are truncated with an ellipsis instead of wrapping. */
+.approval-table-stack-item {
+	box-sizing: border-box;
+	height: var(--approval-line);
+	min-width: 0;
+	padding-block: 0;
+	overflow: hidden;
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-xs);
+	line-height: var(--approval-line);
+	white-space: nowrap;
+	text-overflow: ellipsis;
+}
+
+.approval-table-stack-item + .approval-table-stack-item {
+	border-top: var(--border-width-hairline) solid var(--color-border-subtle);
+}
+
+/* Values nested in a stack line must not add their own height */
+.approval-table-stack-item > * {
+	display: inline;
+	min-height: 0;
+	vertical-align: middle;
+}
+.approval-table-stack-inline {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	max-width: 100%;
+	min-width: 0;
+}
+
+.approval-table-stack-text {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.approval-table-more {
+	flex-shrink: 0;
+	white-space: nowrap;
+}
+/* Single (non-stacked) values sit on the same first line as the stacks */
+.approval-flow-table td > .approval-table-primary-value,
+.approval-flow-table td > .approval-table-secondary-value,
+.approval-flow-table td > .approval-table-count,
+.approval-flow-table td > .approval-table-empty-value,
+.approval-flow-table td > .approval-table-stage-cell {
+	display: flex;
+	align-items: center;
+	min-height: var(--approval-line);
+}
+
+.approval-flow-table td.text-center > * {
+	justify-content: center;
+}
+
+/* ---- PDF variant ---- */
+
+.pdf-table,
+.pdf-approval-table {
+	width: 100%;
+}
+
+.pdf-approval-table {
+	border-collapse: collapse;
+}
+
+.pdf-approval-table th,
+.pdf-approval-table td {
+	padding: var(--space-3);
+	border-bottom: 1px solid var(--color-border);
+	color: var(--color-text-primary);
+	font-size: var(--font-size-sm);
+	text-align: left;
+}
+
+.pdf-approval-table th {
+	background: var(--color-page-bg);
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-xs);
+	font-weight: 600;
+}
+
+.pdf-approval-table tbody tr:last-child td {
+	border-bottom: 0;
+}
+
+.pdf-empty {
+	margin: var(--space-1) 0 0;
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-xs);
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
 @media (max-width: 767px) {
+	.workflow-create-grid,
+	.workflow-create-field-row-2,
+	.workflow-create-field-row-3 {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.workflow-fetch-row,
+	.workflow-customise-panel,
+	.workflow-assignment-row,
 	.workflow-customise-actions,
 	.workflow-customization-selection,
 	.workflow-customization-navigation {
 		align-items: stretch;
 		flex-direction: column;
+	}
+
+	.workflow-fetch-actions,
+	.workflow-save-options {
+		width: 100%;
+		flex-wrap: wrap;
 	}
 
 	.workflow-customise-actions > *,

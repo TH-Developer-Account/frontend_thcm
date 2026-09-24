@@ -5,13 +5,13 @@ export type ApprovalRule = "ANY" | "ALL" | "SOME";
 export type WorkflowExecutionMode = "SEQUENTIAL" | "PARALLEL";
 
 export type WorkflowUser = {
-  id: string;
-  firstName: string;
-  lastName: string;
-  name?: string;
-  email?: string;
-  phone?: string;
-  avatarUrl?: string;
+	id: string;
+	firstName: string;
+	lastName: string;
+	name?: string;
+	email?: string;
+	phone?: string;
+	avatarUrl?: string;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -30,30 +30,31 @@ export type WorkflowUser = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type WorkflowApprovalLike = {
-  id?: string | null;
-  approverId?: string | null;
-  userId?: string | null;
-  status?: string | null;
-  isExternalApprover?: boolean | null;
-  approver?: WorkflowUser | null;
-  user?: WorkflowUser | null;
+	id?: string | null;
+	approverId?: string | null;
+	userId?: string | null;
+	status?: string | null;
+	isExternalApprover?: boolean | null;
+	approver?: WorkflowUser | null;
+	user?: WorkflowUser | null;
 };
 
 export type ApprovalStageLike<
-  TApproval extends WorkflowApprovalLike = WorkflowApprovalLike,
+	TApproval extends WorkflowApprovalLike = WorkflowApprovalLike,
 > = {
-  id?: string | null;
-  workflowId?: string | null;
-  stageOrder: number;
-  stageName?: string | null;
-  name?: string | null;
-  strategy?: ApprovalRule | "QUORUM" | string | null;
-  minApprovals?: number | string | null;
-  status?: string | null;
-  isCurrentIteration?: boolean | null;
-  approvals?: readonly TApproval[] | null;
-  // Preview-mode approvers (before a real Approval row exists) share the
-  // same shape as WorkflowApprovalLike — reused rather than declaring a
-  // third near-identical type.
-  approvers?: readonly WorkflowApprovalLike[] | null;
+	id?: string | null;
+	workflowId?: string | null;
+	stageOrder: number;
+	stageName?: string | null;
+	name?: string | null;
+	strategy?: ApprovalRule | "QUORUM" | string | null;
+	minApprovals?: number | string | null;
+	status?: string | null;
+	isCurrentIteration?: boolean | null;
+	approvals?: readonly TApproval[] | null;
+	// Preview-mode approvers (before a real Approval row exists) share the
+	// same shape as WorkflowApprovalLike — reused rather than declaring a
+	// third near-identical type.
+	approvers?: readonly WorkflowApprovalLike[] | null;
+	isExternal?: Boolean;
 };

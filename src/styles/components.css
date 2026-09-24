@@ -4293,7 +4293,7 @@
 	========================================= */
 
 	.popover-panel {
-		@apply absolute z-50 mt-2 min-w-[150px] rounded-lg shadow-lg border p-1;
+		@apply absolute z-50 mt-2 min-w-[150px] rounded-lg shadow-lg;
 
 		background: var(--color-bg-surface);
 		border-color: var(--color-border-default);

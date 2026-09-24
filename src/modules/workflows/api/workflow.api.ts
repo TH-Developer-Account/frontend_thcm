@@ -507,7 +507,7 @@ export const workflowApi = {
 	approveStage: async (stageId: string, reason?: string) => {
 		const response = await ServerAxios.post<ApiEnvelope<unknown>>(
 			`${WORKFLOW_RUNTIME_URL}/stages/${encodeURIComponent(stageId)}/approve`,
-			reason ? { reason } : {},
+			{ reason },
 		);
 		return unwrapEnvelope<unknown>(response.data);
 	},

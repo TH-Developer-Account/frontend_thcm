@@ -34,6 +34,11 @@ import {
 import {
 	buildPublicFormData,
 	buildVendorOnboardingUpdatePayload,
+	buildVendorUpdatePayload,
+	diffVendorPayload,
+	getEnclosureChanges,
+	hasEnclosureChanges,
+	buildInternalUpdateFormData,
 	getCreatedById,
 	getCreatedWorkflowId,
 	mapStageEditsForApi,
@@ -67,6 +72,7 @@ import {
 	useSendBackToVendorMutation,
 	useSubmitVendorMutation,
 	useUpdateVendorMutation,
+	useUpdateVendorWithDocumentsMutation,
 	useVendorOnboardingDetailQuery,
 } from "../queries/useVendorMutations";
 import type {
@@ -243,6 +249,16 @@ const toFormTwoDefaults = (
 	natureOfService: source.natureOfService ?? "",
 	reasonForOnboarding: source.reasonForOnboarding ?? "",
 });
+
+const toErrorMessages = (
+	errors: Record<string, { message?: unknown } | undefined>,
+): Record<string, string | undefined> =>
+	Object.fromEntries(
+		Object.entries(errors).map(([key, value]) => [
+			key,
+			typeof value?.message === "string" ? value.message : undefined,
+		]),
+	);
 
 const ADDITIONAL_DOCUMENT_FIELDS = VENDOR_DOCUMENT_FIELDS.filter((field) =>
 	field.documentType.startsWith("ADDITIONAL_DOC_"),
@@ -977,27 +993,20 @@ export function useVendorCreationForm({
 	const formOneValuesWatched = useWatch({ control: formOneForm.control });
 	const formTwoValues = useWatch({ control: formTwoForm.control });
 
-	const formOneErrors = React.useMemo(
-		() =>
-			Object.fromEntries(
-				Object.entries(formOneForm.formState.errors).map(([key, value]) => [
-					key,
-					value?.message,
-				]),
-			) as VendorFormErrors<VendorCreationFormOneValues>,
-		[formOneForm.formState.errors],
-	);
+	// NOT memoized on purpose. RHF mutates formState.errors IN PLACE for
+	// single-field validation (setValue(..., { shouldValidate: true }) and
+	// trigger(name) both do set/unset on the same object), so a useMemo keyed
+	// on formState.errors never recomputes — inline errors only appeared
+	// after a full trigger() swapped the object. Reading formState.errors
+	// here also keeps this component subscribed to error changes. Mapping
+	// ~25 keys per render is trivially cheap.
+	const formOneErrors = toErrorMessages(
+		formOneForm.formState.errors,
+	) as VendorFormErrors<VendorCreationFormOneValues>;
 
-	const formTwoErrors = React.useMemo(
-		() =>
-			Object.fromEntries(
-				Object.entries(formTwoForm.formState.errors).map(([key, value]) => [
-					key,
-					value?.message,
-				]),
-			) as VendorFormErrors<VendorCreationFormTwoValues>,
-		[formTwoForm.formState.errors],
-	);
+	const formTwoErrors = toErrorMessages(
+		formTwoForm.formState.errors,
+	) as VendorFormErrors<VendorCreationFormTwoValues>;
 
 	const [pendingWorkflowSelection, setPendingWorkflowSelectionState] =
 		React.useState<PendingWorkflowSelection | null>(null);
@@ -1075,6 +1084,7 @@ export function useVendorCreationForm({
 	const formOneValues: VendorCreationFormOneValues = formOneValuesWatched;
 
 	const updateMutation = useUpdateVendorMutation();
+	const updateWithDocumentsMutation = useUpdateVendorWithDocumentsMutation();
 	const submitMutation = useSubmitVendorMutation();
 	const closeMutation = useAcceptAndCloseVendorMutation();
 	const publicSubmitMutation = useSubmitPublicVendorFormMutation();
@@ -1251,7 +1261,15 @@ export function useVendorCreationForm({
 		isVendorCodeDirty &&
 		!isSavingVendorCode;
 
-	const detailInitKeyRef = React.useRef("");
+	// Server → form sync, per form. Each form is reset only when ITS part of
+	// the record actually changed on the server, not on every refetch.
+	// Previously any refetch (every save invalidates the detail) reset BOTH
+	// forms, so saving Form One silently wiped unsaved Form Two edits and
+	// vice versa. After a save, the saved part comes back changed, so that
+	// form is re-baselined to exactly what the server stored (clearing its
+	// dirty state), while the other form keeps whatever is in progress.
+	const syncedPartOneRef = React.useRef("");
+	const syncedPartTwoRef = React.useRef("");
 	const stepInitVendorIdRef = React.useRef("");
 
 	React.useEffect(() => {
@@ -1261,22 +1279,23 @@ export function useVendorCreationForm({
 			return;
 		}
 
-		const key = `${vendorRequestId}:${detailQuery.dataUpdatedAt}`;
+		const partOneKey = `${vendorRequestId}:${JSON.stringify(data.partOne ?? {})}`;
+		const partTwoKey = `${vendorRequestId}:${JSON.stringify(data.partTwo ?? {})}`;
 
-		if (detailInitKeyRef.current === key) {
-			return;
+		if (syncedPartOneRef.current !== partOneKey) {
+			syncedPartOneRef.current = partOneKey;
+			// Order matters: the ref backing the schema factory must be current
+			// *before* reset() re-validates the freshly-loaded values.
+			setOriginalAccountNumber(
+				normalizeAccountNumber(data.partOne?.accountNumber),
+			);
+			formOneForm.reset(toFormOneDefaults(data.partOne ?? EMPTY_FORM_ONE));
 		}
 
-		detailInitKeyRef.current = key;
-
-		// Order matters: the ref backing the schema factory must be current
-		// *before* formOneForm.reset() triggers Zod validation of the
-		// freshly-loaded values (reset() with a resolver re-validates).
-		setOriginalAccountNumber(
-			normalizeAccountNumber(data.partOne?.accountNumber),
-		);
-		formOneForm.reset(toFormOneDefaults(data.partOne ?? EMPTY_FORM_ONE));
-		formTwoForm.reset(toFormTwoDefaults(data.partTwo ?? {}));
+		if (syncedPartTwoRef.current !== partTwoKey) {
+			syncedPartTwoRef.current = partTwoKey;
+			formTwoForm.reset(toFormTwoDefaults(data.partTwo ?? EMPTY_FORM_TWO));
+		}
 
 		if (stepInitVendorIdRef.current !== vendorRequestId) {
 			stepInitVendorIdRef.current = vendorRequestId;
@@ -1284,13 +1303,45 @@ export function useVendorCreationForm({
 		}
 	}, [
 		detailQuery.data,
-		detailQuery.dataUpdatedAt,
 		isPublicForm,
 		vendorRequestId,
 		formOneForm,
 		formTwoForm,
 		setOriginalAccountNumber,
 	]);
+
+	// Only the fields that differ from what the server has. Both sides go
+	// through the same payload builders, so normalization (trim, lowercase
+	// email, Yes/No → boolean, digits-only mobile) can't produce false diffs.
+	// An empty object means "nothing changed" — callers skip the PATCH.
+	const getChangedFormOnePayload = React.useCallback(
+		() =>
+			diffVendorPayload(
+				buildVendorUpdatePayload(formOneForm.getValues()),
+				buildVendorUpdatePayload(detailQuery.data?.partOne ?? EMPTY_FORM_ONE),
+			),
+		[detailQuery.data?.partOne, formOneForm],
+	);
+
+	const getChangedFullPayload = React.useCallback(
+		() =>
+			diffVendorPayload(
+				buildVendorOnboardingUpdatePayload(
+					formOneForm.getValues(),
+					formTwoForm.getValues(),
+				),
+				buildVendorOnboardingUpdatePayload(
+					detailQuery.data?.partOne ?? EMPTY_FORM_ONE,
+					detailQuery.data?.partTwo ?? EMPTY_FORM_TWO,
+				),
+			),
+		[
+			detailQuery.data?.partOne,
+			detailQuery.data?.partTwo,
+			formOneForm,
+			formTwoForm,
+		],
+	);
 
 	const next = React.useCallback(() => {
 		setCurrentStep((step) => Math.min(step + 1, vendorOnboardingSteps.length));
@@ -1457,7 +1508,18 @@ export function useVendorCreationForm({
 		);
 	}, [detailQuery.data?.partTwo, formTwoForm]);
 
-	const saveVendorDetails = async () => {
+	// Form One save for the internal (THCM) edit flow. Receives the
+	// enclosure uploads from VendorCreationFormOne's controller via onSubmit
+	// (handleFormAction has already run field + enclosure validation by the
+	// time this is called), so document changes are actually persisted —
+	// previously this took no arguments and uploads never left the browser.
+	//
+	//   files changed        → one multipart PATCH (changed fields + files)
+	//   only fields changed  → JSON PATCH with just the changed fields
+	//   nothing changed      → no request, straight to the next step
+	const saveVendorDetails = async (
+		submission?: VendorCreationFormOneSubmission,
+	) => {
 		if (!vendorRequestId) {
 			showToast({
 				type: "error",
@@ -1466,8 +1528,25 @@ export function useVendorCreationForm({
 			});
 			return;
 		}
+
 		if (!(await validateFormOneWithFeedback())) return;
+
 		try {
+			const payload = getChangedFormOnePayload();
+			const documentChanges = getEnclosureChanges(
+				submission?.enclosureUploads ?? [],
+				detailQuery.data?.documents ?? [],
+			);
+
+			if (hasEnclosureChanges(documentChanges)) {
+				await updateWithDocumentsMutation.mutateAsync({
+					vendorRequestId,
+					formData: buildInternalUpdateFormData(payload, documentChanges),
+				});
+			} else if (Object.keys(payload).length > 0) {
+				await handleSaveVendorUpdate(payload);
+			}
+
 			next();
 		} catch (error) {
 			showApiErrorToast(
@@ -1487,19 +1566,21 @@ export function useVendorCreationForm({
 		if (!(await validateFormTwoWithFeedback())) return;
 
 		try {
-			await handleSaveVendorUpdate(
-				buildVendorOnboardingUpdatePayload(formOneValues, formTwoValues),
-			);
+			const payload = getChangedFullPayload();
+
+			if (Object.keys(payload).length > 0) {
+				await handleSaveVendorUpdate(payload);
+
+				showSuccessToast(
+					showToast,
+					vendorContent.toast.saveThcmDetails.successDescription,
+					vendorContent.toast.saveThcmDetails.successTitle,
+				);
+			}
 			// Mirrors the ref submitForApproval already checks — marking it here
 			// means a plain "Save & Next" with no further edits won't trigger a
 			// second, redundant update call (or a duplicate toast) at final submit.
 			vendorUpdateCompletedRef.current = true;
-
-			showSuccessToast(
-				showToast,
-				vendorContent.toast.saveThcmDetails.successDescription,
-				vendorContent.toast.saveThcmDetails.successTitle,
-			);
 
 			next();
 		} catch (error) {
@@ -1735,16 +1816,18 @@ export function useVendorCreationForm({
 			// Form Two) — this only runs (and toasts) again if the vendor/THCM
 			// edited a field after that save, which resets vendorUpdateCompletedRef.
 			if (!vendorUpdateCompletedRef.current) {
-				await handleSaveVendorUpdate(
-					buildVendorOnboardingUpdatePayload(formOneValues, formTwoValues),
-				);
-				vendorUpdateCompletedRef.current = true;
+				const payload = getChangedFullPayload();
 
-				showSuccessToast(
-					showToast,
-					vendorContent.toast.saveThcmDetails.successDescription,
-					vendorContent.toast.saveThcmDetails.successTitle,
-				);
+				if (Object.keys(payload).length > 0) {
+					await handleSaveVendorUpdate(payload);
+
+					showSuccessToast(
+						showToast,
+						vendorContent.toast.saveThcmDetails.successDescription,
+						vendorContent.toast.saveThcmDetails.successTitle,
+					);
+				}
+				vendorUpdateCompletedRef.current = true;
 			}
 
 			if (shouldCreateEditedTemplate && pendingWorkflowSelection) {
@@ -1906,8 +1989,7 @@ export function useVendorCreationForm({
 		hasAssignedWorkflow,
 		hasPendingClarifiedApproval,
 		handleSaveVendorUpdate,
-		formOneValues,
-		formTwoValues,
+		getChangedFullPayload,
 		referenceNumber,
 		navigate,
 		onSuccess,
@@ -2167,6 +2249,7 @@ export function useVendorCreationForm({
 	}, [detailQuery.data]);
 	const mutationLoading =
 		updateMutation.isPending ||
+		updateWithDocumentsMutation.isPending ||
 		submitMutation.isPending ||
 		closeMutation.isPending ||
 		sendBackToVendorMutation.isPending ||

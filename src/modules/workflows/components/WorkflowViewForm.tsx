@@ -1,29 +1,40 @@
-import { capitalize } from "../../../utils/format";
+import { useMemo } from "react";
+// import { capitalize } from "../../../utils/format";
 import type { WorkflowBasics, WorkflowStage } from "../types/types";
-import WorkflowApproverCards from "./WorkflowApproverCards";
+import { mapWorkflowStagesToApprovalRows } from "../utils/approvalWorkflow.mapper";
+import { ApprovalTable } from "./ApprovalTable";
 
 type WorkflowViewFormProps = {
 	basics: WorkflowBasics;
 	stages: WorkflowStage[];
 };
 
-const WorkflowViewForm = ({ basics, stages }: WorkflowViewFormProps) => {
-	const workflow_name = capitalize(basics.name);
-	const workflow_app = capitalize(basics.appDesc);
+const HIDDEN_DRAFT_COLUMNS = ["status"] as const;
+
+const WorkflowViewForm = ({ stages }: WorkflowViewFormProps) => {
+	const approvalRows = useMemo(
+		() =>
+			mapWorkflowStagesToApprovalRows(
+				stages.filter((stage) => stage.approvers?.length > 0),
+				{ showOnlyCurrentStageStatus: false },
+			),
+		[stages],
+	);
+
+	const hasStages = stages.length > 0;
+
 	return (
 		<>
-			<div className="workflow-create-field-row workflow-create-field-row-2 workflow-view-summary">
-				<div className="workflow-create-card-title">
-					<label className="workflow-summary-key">Workflow name</label>
-					{workflow_name || "--"}
-				</div>
-				<div className="workflow-create-card-title">
-					<label className="workflow-summary-key">App Name</label>
-					{workflow_app || "--"}
-				</div>
-			</div>
-
-			<WorkflowApproverCards stages={stages} />
+			<ApprovalTable
+				data={approvalRows}
+				hiddenColumns={[...HIDDEN_DRAFT_COLUMNS]}
+				emptyTitle={hasStages ? "No approvers added" : "No stages added yet"}
+				emptyDescription={
+					hasStages
+						? "Go back to the previous step to add approvers."
+						: "Add stages in the previous step to see them here."
+				}
+			/>
 		</>
 	);
 };

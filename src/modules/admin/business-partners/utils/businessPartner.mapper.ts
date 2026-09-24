@@ -1,7 +1,9 @@
 import type { User } from "../../user-profile/types/profile.types";
-import type {
-	BPAddressCardFormValues,
-	BPGeneralInfoFormValues,
+import {
+	parseCoordinate,
+	type BPAddressCardFormValues,
+	type BPGeneralInfoFormValues,
+	type CoordinateAxis,
 } from "../utils/businessPartner.schema";
 import {
 	formatDateOnlyAPI,
@@ -304,16 +306,12 @@ export const mapAddress = (
 const nullableText = (value: string | undefined | null): string | null =>
 	value?.trim() || null;
 
-const nullableNumber = (value: string | undefined | null): number | null => {
-	if (!value) return null;
-
-	const normalizedValue = value.trim();
-
-	if (!normalizedValue) return null;
-
-	const parsedValue = Number(normalizedValue);
-
-	return Number.isFinite(parsedValue) ? parsedValue : null;
+const toCoordinate = (
+	value: string | undefined | null,
+	axis: CoordinateAxis,
+): number | null => {
+	const normalizedValue = value?.trim();
+	return normalizedValue ? parseCoordinate(normalizedValue, axis) : null;
 };
 
 export const mapAddressToForm = (
@@ -367,9 +365,8 @@ export const mapAddressFormToPayload = (
 		zone: nullableText(form.zone),
 		branch: nullableText(form.branch),
 
-		latitude: nullableNumber(form.latitude),
-		longitude: nullableNumber(form.longitude),
-
+		latitude: toCoordinate(form.latitude, "latitude"),
+		longitude: toCoordinate(form.longitude, "longitude"),
 		email: nullableText(form.email),
 		phoneNo: nullableText(form.phoneNumber),
 		website: nullableText(form.website),
@@ -649,7 +646,9 @@ export const mapAddressCardFormToPayload = (
 	return {
 		// addressType: assertSelected(values.addressType, "Address type"),
 		address: values.address.trim(),
-		label: nullableText(values.label),
+		// BusinessPartnerAddress has no `label` column (Prisma: "Unknown
+		// argument `label`"). Re-enable once the backend adds it.
+		// label: nullableText(values.label),
 		city: nullableText(values.city),
 		state: nullableText(values.state),
 		country: nullableText(values.country),
@@ -658,8 +657,8 @@ export const mapAddressCardFormToPayload = (
 		zone: nullableText(values.zone),
 		branch: nullableText(values.branch),
 
-		latitude: toNullableNumber(values.latitude),
-		longitude: toNullableNumber(values.longitude),
+		latitude: toCoordinate(values.latitude, "latitude"),
+		longitude: toCoordinate(values.longitude, "longitude"),
 
 		email: nullableText(values.email)?.toLowerCase() ?? null,
 		phoneNo: phoneDigits || null,

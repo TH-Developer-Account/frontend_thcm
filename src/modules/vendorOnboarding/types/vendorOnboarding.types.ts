@@ -142,6 +142,13 @@ export type UpdateVendorVariables = {
 	isExternalApprover?: boolean;
 };
 
+// Internal (THCM) edit when enclosures changed — the payload is multipart
+// FormData built by buildInternalUpdateFormData, not a JSON object.
+export type UpdateVendorWithDocumentsVariables = {
+	vendorRequestId: string;
+	formData: FormData;
+};
+
 export type VendorClarificationPayload = {
 	reason: string;
 	comment?: string;

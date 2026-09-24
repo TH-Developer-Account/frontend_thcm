@@ -284,56 +284,6 @@ export function WorkflowTemplateBuilder({
 					</p>
 				</div>
 
-				{/*
-					Old "once" / "template" radio group — replaced by the "Save as
-					template" checkbox below. Left here (commented, not deleted) as
-					a reference in case the three-way choice needs to come back.
-
-				<div
-					className="workflow-save-options"
-					role="radiogroup"
-					aria-label="Workflow usage"
-				>
-					<label
-						className={`workflow-save-option ${
-							saveMode === "once" ? "workflow-save-option--active" : ""
-						}`}
-					>
-						<input
-							type="radio"
-							name="custom-workflow-save-mode"
-							checked={saveMode === "once"}
-							onChange={() => setSaveMode("once")}
-							disabled={disabled || saving}
-						/>
-
-						<span>
-							<strong>Use once</strong>
-							<small>Use only for this vendor onboarding form.</small>
-						</span>
-					</label>
-
-					<label
-						className={`workflow-save-option ${
-							saveMode === "template" ? "workflow-save-option--active" : ""
-						}`}
-					>
-						<input
-							type="radio"
-							name="custom-workflow-save-mode"
-							checked={saveMode === "template"}
-							onChange={() => setSaveMode("template")}
-							disabled={disabled || saving}
-						/>
-
-						<span>
-							<strong>Save as template</strong>
-							<small>Save and reuse this workflow in other forms.</small>
-						</span>
-					</label>
-				</div>
-				*/}
-
 				<div
 					className="workflow-save-options"
 					role="group"

@@ -129,7 +129,32 @@ const TERMINAL_STATUSES = new Set([
 	"CANCELED",
 	"CLOSED",
 ]);
+// Add below TERMINAL_STATUSES
 
+/** Trims whitespace and stray trailing dots ("Swathi Chandran ." → "Swathi Chandran"). */
+const cleanPersonName = (name: string | null | undefined): string =>
+	name?.trim().replace(/[\s.]+$/, "") ?? "";
+
+/**
+ * Names of approvers the record is currently pending on.
+ * Empty for terminal statuses or when it's pending on anyone other than approvers.
+ */
+export const getPendingApproverNames = (
+	pendingOn: PendingOn | null | undefined,
+	status?: string | null,
+): string[] => {
+	const normalizedStatus = status
+		?.trim()
+		.toUpperCase()
+		.replace(/[\s-]+/g, "_");
+
+	if (normalizedStatus && TERMINAL_STATUSES.has(normalizedStatus)) return [];
+	if (pendingOn?.role !== "APPROVER") return [];
+
+	return pendingOn.approvers
+		.map((approver) => cleanPersonName(approver.name))
+		.filter(Boolean);
+};
 export const formatPendingOn = (
 	pendingOn: PendingOn | null | undefined,
 	status?: string | null,
@@ -159,9 +184,7 @@ export const formatPendingOn = (
 			return "Pending on Ex-Employee";
 
 		case "APPROVER": {
-			const approverNames = pendingOn.approvers
-				.map((approver) => approver.name?.trim())
-				.filter(Boolean);
+			const approverNames = getPendingApproverNames(pendingOn, status);
 
 			return approverNames.length
 				? `Pending on ${approverNames.join(", ")}`

@@ -28,7 +28,12 @@ const parseDateOnly = (value: string): Date | undefined => {
 
 	return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 };
-
+// Latest selectable joining date = today (future dates are disabled).
+const getToday = () => {
+	const date = new Date();
+	date.setHours(0, 0, 0, 0);
+	return date;
+};
 type BPGeneralInfoCardProps = {
 	partner: BusinessPartnerDetail | null;
 	parentIdFromQuery: string;
@@ -237,6 +242,8 @@ const BPGeneralInfoCard = (props: BPGeneralInfoCardProps) => {
 								placeholder={copy.placeholders.joinedOn}
 								error={fieldState.error?.message}
 								disabled={isSaving}
+								// Create only: a new BP can't have joined in the future.
+								toDate={isCreateMode ? getToday() : undefined}
 							/>
 						)}
 					/>

@@ -1,5 +1,5 @@
 /* =========================================================
-   common.css
+   UI.css
    Global Branding & Design Variables
 ========================================================= */
 @reference "tailwindcss";
@@ -10,86 +10,26 @@
 }
 
 .bottom-buttons-bar-end {
-	@apply flex items-center justify-end gap-4;
+	@apply flex items-center justify-end gap-4 w-full;
 }
+
 .bottom-buttons-bar-between {
-	@apply flex items-center justify-between gap-4;
+	@apply flex items-center justify-between gap-4 w-full;
 }
 
-@layer components {
-	/* =========================================
-	   COMING SOON PAGE
-	========================================= */
+/* =====================================================
+   COMING SOON PAGE
+===================================================== */
 
+@layer components {
 	.coming-soon-page {
 		@apply min-h-screen flex flex-col items-center justify-center text-center gap-6 px-6;
 	}
-
-	/* =========================================
-	   IMAGE
-	========================================= */
-
-	.coming-soon-img {
-		@apply w-48 md:w-64 animate-bounce select-none;
-	}
-
-	/* =========================================
-	   TITLE
-	========================================= */
-
-	.coming-soon-title {
-		@apply text-2xl md:text-3xl font-semibold;
-		color: var(--color-text-primary);
-	}
-
-	/* =========================================
-	   DESCRIPTION
-	========================================= */
-
-	.coming-soon-text {
-		@apply text-sm md:text-base max-w-md;
-		color: var(--color-text-muted);
-	}
-}
-
-@layer components {
-	/* =========================================
-	   COMING SOON PAGE
-	========================================= */
-
-	.coming-soon-page {
-		@apply min-h-screen flex flex-col items-center justify-center text-center gap-6 px-6;
-	}
-
-	/* =========================================
-	   IMAGE
-	========================================= */
 
 	.coming-soon-img {
 		@apply w-48 md:w-64 select-none;
-		/* animate-bounce */
 	}
 
-	/* =========================================
-	   TITLE
-	========================================= */
-
-	.coming-soon-title {
-		@apply text-2xl md:text-3xl font-semibold;
-		color: var(--color-text-primary);
-	}
-
-	/* =========================================
-	   DESCRIPTION
-	========================================= */
-
-	.coming-soon-text {
-		@apply text-sm md:text-base max-w-md;
-		color: var(--color-text-muted);
-	}
-}
-
-@layer components {
 	/* container */
 	.coming-soon-wrapper {
 		@apply relative flex flex-col items-center justify-center overflow-hidden;
@@ -117,7 +57,7 @@
 
 	/* heading */
 	.coming-soon-title {
-		@apply leading-[0.9] tracking-wide;
+		@apply font-semibold leading-[0.9] tracking-wide;
 		font-size: clamp(72px, 10vw, 128px);
 		color: var(--color-brand-dark);
 	}
@@ -133,10 +73,9 @@
 		@apply relative mt-2 h-[238px] w-full max-w-full;
 	}
 
-	/* excavator */
+	/* vehicles */
 	.coming-soon-excavator {
 		@apply absolute left-1/2 bottom-4 w-[100px] -translate-x-1/2 bg-transparent drop-shadow-lg;
-		/* animation: excavator-idle 3s ease-in-out infinite; */
 	}
 
 	.coming-soon-backhoe {
@@ -160,7 +99,6 @@
 		);
 		background-size: 70px 3px;
 		animation: road-scroll 1.4s linear infinite;
-		/* animation: road-scroll 0.8s linear infinite; */
 	}
 
 	/* tape */
@@ -189,233 +127,7 @@
 }
 
 /* =====================================================
-   APPROVAL WORKFLOW
-===================================================== */
-
-@layer components {
-	/* =====================================================
-	   WORKFLOW LAYOUT
-	===================================================== */
-
-	.approval-workflow-content {
-		@apply flex w-full min-w-0 flex-col gap-4;
-	}
-
-	/* =====================================================
-	   APPROVAL TABLE
-	===================================================== */
-
-	.approval-flow-table {
-		@apply w-full min-w-0 overflow-auto;
-	}
-
-	.approval-flow-table .data-table-cell {
-		vertical-align: top;
-	}
-	.approval-workflow-content {
-		width: 100%;
-		max-width: 100%;
-		min-width: 0;
-		overflow-x: auto;
-	}
-
-	/* =====================================================
-	   VALUE PRESENTATION
-	===================================================== */
-
-	.approval-table-primary-value {
-		color: var(--color-text-primary);
-
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-normal);
-	}
-
-	.approval-table-secondary-value {
-		color: var(--color-text-secondary);
-
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-normal);
-	}
-
-	.approval-table-stage-number {
-		display: inline-flex;
-		min-width: var(--control-height-xs);
-		height: var(--control-height-xs);
-		align-items: center;
-		justify-content: center;
-
-		padding-inline: var(--space-1-5);
-
-		border: var(--border-width-default) solid var(--color-border-default);
-		border-radius: var(--radius-xs);
-
-		background-color: var(--color-bg-surface-muted);
-		color: var(--color-text-primary);
-
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-medium);
-		line-height: 1;
-		font-variant-numeric: tabular-nums;
-	}
-
-	.approval-table-count {
-		color: var(--color-text-primary);
-
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-medium);
-		font-variant-numeric: tabular-nums;
-	}
-
-	.approval-table-email {
-		color: var(--color-text-link);
-
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-normal);
-		text-decoration: none;
-
-		overflow-wrap: anywhere;
-	}
-
-	.approval-table-email:hover {
-		color: var(--color-text-link-hover);
-		text-decoration: underline;
-		text-underline-offset: 2px;
-	}
-
-	.approval-table-email:focus-visible {
-		outline: none;
-		box-shadow: var(--shadow-focus-brand);
-	}
-
-	.approval-table-empty-value {
-		color: var(--color-text-subtle);
-
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-regular);
-	}
-
-	/* =====================================================
-	   STACKED APPROVERS
-	===================================================== */
-
-	.approval-table-value-stack {
-		@apply flex min-w-0 flex-col gap-1;
-	}
-
-	.approval-table-stack-item {
-		@apply min-w-0;
-
-		color: var(--color-text-secondary);
-
-		font-size: var(--font-size-xs);
-		line-height: var(--line-height-normal);
-
-		overflow-wrap: anywhere;
-	}
-
-	.approval-table-stack-item + .approval-table-stack-item {
-		padding-top: var(--space-1);
-
-		border-top: var(--border-width-hairline) solid var(--color-border-subtle);
-	}
-
-	/* =====================================================
-	   COLUMN WIDTHS
-	===================================================== */
-
-	.approval-table-column-stage {
-		width: 5rem;
-		min-width: 5rem;
-	}
-
-	.approval-table-column-type {
-		width: 10rem;
-		min-width: 10rem;
-	}
-
-	.approval-table-column-approver {
-		width: 13rem;
-		min-width: 13rem;
-	}
-
-	.approval-table-column-email {
-		width: 16rem;
-		min-width: 16rem;
-	}
-
-	.approval-table-column-flow {
-		width: 7rem;
-		min-width: 7rem;
-	}
-
-	.approval-table-column-count {
-		width: 5rem;
-		min-width: 5rem;
-		justify-content: center;
-	}
-
-	.approval-table-column-status {
-		width: 9rem;
-		min-width: 9rem;
-		justify-content: center;
-	}
-
-	/* =====================================================
-	   EMPTY WORKFLOW
-	===================================================== */
-
-	.approval-workflow-empty {
-		@apply flex min-h-20 flex-col items-center
-			justify-center gap-1 text-center;
-
-		padding: var(--space-5);
-
-		border: var(--border-width-default) dashed var(--color-border-default);
-		border-radius: var(--radius-md);
-
-		background-color: var(--color-bg-surface-subtle);
-	}
-
-	.approval-workflow-empty-title {
-		color: var(--color-text-primary);
-
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-tight);
-	}
-
-	.approval-workflow-empty-description {
-		max-width: 28rem;
-
-		color: var(--color-text-muted);
-
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-normal);
-	}
-
-	/* =====================================================
-	   MOBILE
-	===================================================== */
-
-	@media (max-width: 640px) {
-		.approval-workflow-content {
-			@apply gap-3;
-		}
-
-		.approval-workflow-empty {
-			@apply min-h-28;
-
-			padding: var(--space-4);
-		}
-	}
-}
-
-/* =====================================================
-	FILE LISTING
+   FILE LISTING
 ===================================================== */
 
 @layer components {
@@ -560,7 +272,7 @@
 }
 
 /* =====================================================
-	PROFILE LISTING
+   PROFILE LISTING
 ===================================================== */
 
 @layer components {
@@ -597,9 +309,7 @@
 		padding: var(--space-3);
 	}
 
-	/* =====================================================
-	   CELLS
-	===================================================== */
+	/* ---- Cells ---- */
 
 	.profile-name-cell {
 		min-width: 0;
@@ -689,9 +399,7 @@
 		gap: var(--space-1);
 	}
 
-	/* =====================================================
-	   USERS POPOVER
-	===================================================== */
+	/* ---- Users popover ---- */
 
 	.profile-users-popover {
 		width: min(18rem, calc(100vw - var(--space-6)));
@@ -750,10 +458,109 @@
 		background-color: var(--color-bg-surface-subtle);
 		color: var(--color-text-primary);
 	}
-
 	/* =====================================================
-	   TABLET
-	===================================================== */
+	PENDING ON STATUS
+ ===================================================== */
+
+	@layer components {
+		.pending-on-status {
+			display: inline-flex;
+			max-width: 100%;
+			min-width: 0;
+			align-items: center;
+			gap: var(--space-1-5);
+		}
+
+		.pending-on-status-trigger {
+			display: inline-flex;
+			flex: 0 0 auto;
+		}
+
+		.pending-on-status-more {
+			display: inline-flex;
+			height: 1.375rem;
+			align-items: center;
+			padding-inline: var(--space-2);
+
+			border: var(--border-width-default) solid var(--color-border-default);
+			border-radius: var(--radius-full);
+
+			background-color: var(--color-bg-surface-subtle);
+			color: var(--color-text-primary);
+
+			font-size: var(--font-size-2xs);
+			font-weight: var(--font-weight-medium);
+			line-height: 1;
+			white-space: nowrap;
+			cursor: default;
+		}
+		.pending-on-status-more[aria-expanded="true"] {
+			border-color: var(--color-brand);
+			background-color: var(--color-brand-subtle);
+			color: var(--color-brand);
+		}
+		.pending-on-status-more:hover,
+		.pending-on-status-more:focus-visible {
+			border-color: var(--color-brand);
+			color: var(--color-brand);
+		}
+
+		.pending-on-popover {
+			width: min(18rem, calc(100vw - var(--space-6)));
+			overflow: hidden;
+
+			border: var(--border-width-default) solid var(--color-border-default);
+			border-radius: var(--radius-md);
+
+			background-color: var(--color-bg-surface);
+			box-shadow: var(--shadow-md);
+		}
+
+		.pending-on-popover-title {
+			margin: 0;
+			padding: var(--space-2) var(--space-3);
+
+			border-bottom: var(--border-width-default) solid
+				var(--color-border-subtle);
+
+			color: var(--color-text-primary);
+
+			font-size: var(--font-size-xs);
+			font-weight: var(--font-weight-medium);
+		}
+
+		.pending-on-popover-list {
+			display: flex;
+			max-height: 14rem;
+			flex-direction: column;
+			gap: var(--space-0-5, 2px);
+
+			margin: 0;
+			padding: var(--space-2);
+			overflow-y: auto;
+			overscroll-behavior: contain;
+
+			list-style: none;
+		}
+
+		.pending-on-popover-item {
+			padding: var(--space-1-5) var(--space-2);
+
+			border-radius: var(--radius-sm);
+
+			color: var(--color-text-secondary);
+
+			font-size: var(--font-size-xs);
+			line-height: var(--line-height-tight);
+			overflow-wrap: anywhere;
+		}
+
+		.pending-on-popover-item:hover {
+			background-color: var(--color-bg-surface-subtle);
+			color: var(--color-text-primary);
+		}
+	}
+	/* ---- Tablet ---- */
 
 	@media (max-width: 1023px) {
 		.profile-listing-search {
@@ -761,9 +568,7 @@
 		}
 	}
 
-	/* =====================================================
-	   MOBILE
-	===================================================== */
+	/* ---- Mobile ---- */
 
 	@media (max-width: 767px) {
 		.profile-listing-toolbar {
@@ -790,18 +595,12 @@
 		}
 	}
 
-	/* =====================================================
-	   SMALL MOBILE
-	===================================================== */
+	/* ---- Small mobile ---- */
 
 	@media (max-width: 479px) {
 		.profile-listing-actions .button-base {
 			width: 100%;
 			justify-content: center;
-		}
-
-		.profile-row-actions {
-			gap: var(--space-1);
 		}
 	}
 }

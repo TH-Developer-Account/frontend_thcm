@@ -481,6 +481,7 @@ export type ApprovalTableApproverRow = {
 	id: string;
 	name: string;
 	email: string;
+	isExternal?: boolean;
 	minApprovals?: string | number | null;
 	status?: string | null;
 };

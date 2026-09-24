@@ -8,8 +8,7 @@ import type {
 	VendorOnboardingColumnsParams,
 	VendorOnboardingListingRow,
 } from "../types/vendorListing.types";
-import { formatPendingOn } from "../../../utils/statusAlert.helper";
-import { Badge } from "../../../components/common/Badge";
+import PendingOnStatus from "../../../components/common/PendingOnStatus";
 
 const renderCellValue = (value: string | null | undefined): string =>
 	value?.trim() || "—";
@@ -91,13 +90,12 @@ export const getVendorOnboardingColumns = ({
 	{
 		accessorKey: "status",
 		header: "Status",
-		cell: ({ row }) => {
-			return (
-				<Badge
-					status={formatPendingOn(row.original.pendingOn, row.original.status)}
-				/>
-			);
-		},
+		cell: ({ row }) => (
+			<PendingOnStatus
+				pendingOn={row.original.pendingOn}
+				status={row.original.status}
+			/>
+		),
 	},
 	{
 		id: "actions",

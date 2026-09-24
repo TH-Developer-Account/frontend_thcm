@@ -13,6 +13,59 @@ import type {
 } from "./user-management.types";
 import type { UserTypeOption } from "./user-management.types";
 
+const DATE_ONLY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * Strictly parses a "YYYY-MM-DD" string as a LOCAL calendar date.
+ * Returns null for any other shape, and for impossible dates (2026-02-31),
+ * so callers never depend on the browser's lenient Date parsing.
+ */
+export const parseDateOnly = (
+	value: string | null | undefined,
+): Date | null => {
+	if (!value) return null;
+
+	const match = DATE_ONLY_PATTERN.exec(value.trim());
+	if (!match) return null;
+
+	const year = Number(match[1]);
+	const monthIndex = Number(match[2]) - 1;
+	const day = Number(match[3]);
+	const date = new Date(year, monthIndex, day);
+
+	return date.getFullYear() === year &&
+		date.getMonth() === monthIndex &&
+		date.getDate() === day
+		? date
+		: null;
+};
+
+/**
+ * Formats a picked Date as "YYYY-MM-DD" from its LOCAL parts. Deliberately
+ * not toISOString(): in IST that shifts a picked date back by a day.
+ */
+export const toDateOnlyString = (date: Date | undefined): string => {
+	if (!date || Number.isNaN(date.getTime())) return "";
+
+	const pad = (part: number) => String(part).padStart(2, "0");
+
+	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
+/**
+ * Input mask for the mobile field: digits only, max 10. A pasted
+ * "+91 98765 43210" (12 digits) or "09876543210" (11 digits) is reduced to
+ * the 10-digit number. The actual rule stays in user.schema.ts.
+ */
+export const normalizeMobileInput = (raw: string): string => {
+	const digits = raw.replace(/\D/g, "");
+
+	if (digits.length === 12 && digits.startsWith("91")) return digits.slice(2);
+	if (digits.length === 11 && digits.startsWith("0")) return digits.slice(1);
+
+	return digits.slice(0, 10);
+};
+
 export const USER_STATUS_TABS = [
 	"All",
 	"Active",

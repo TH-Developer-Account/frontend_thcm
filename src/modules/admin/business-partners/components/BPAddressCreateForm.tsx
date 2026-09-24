@@ -8,7 +8,10 @@ import TextareaInput from "../../../../components/forms/TextareaInput";
 import { businessPartnerContent } from "../../../../content/businessPartner.content";
 
 import { useBPAddressCardForm } from "../hooks/useBPAddressCardForm";
-import type { BPAddressCardFormValues } from "../utils/businessPartner.schema";
+import {
+	normalizeMobileInput,
+	type BPAddressCardFormValues,
+} from "../utils/businessPartner.schema";
 // import type { BusinessPartnerAddressType } from "../utils/bp.types";
 
 const copy = businessPartnerContent.address;
@@ -35,9 +38,18 @@ type TextFieldName = Exclude<
 
 type TextFieldConfig = {
 	name: TextFieldName;
-	type?: "text" | "email" | "tel" | "number" | "url";
+	type?: "text" | "email" | "tel" | "url";
+	inputMode?: "text" | "numeric" | "decimal" | "email" | "tel" | "url";
+	autoComplete?: string;
 	required?: boolean;
 	placeholder?: string;
+	/** Input mask applied before the value reaches RHF. */
+	normalize?: (value: string) => string;
+	/**
+	 * Re-run this field's Zod rule on every change, instead of waiting for
+	 * blur (the form-wide mode stays onBlur for everything else).
+	 */
+	validateOnChange?: boolean;
 };
 
 const TEXT_FIELDS: TextFieldConfig[] = [
@@ -48,11 +60,23 @@ const TEXT_FIELDS: TextFieldConfig[] = [
 	{ name: "region" },
 	{ name: "zone" },
 	{ name: "branch" },
-	{ name: "latitude", type: "number" },
-	{ name: "longitude", type: "number" },
-	{ name: "email", type: "email" },
-	{ name: "phoneNumber", type: "tel" },
-	{ name: "website", type: "url" },
+	// Coordinates must be text inputs: a type="number" input reports "" for
+	// anything it can't parse (e.g. 12°58'16.3"N), so RHF received an empty
+	// value and the payload silently sent null. The schema's parseCoordinate
+	// validates both decimal and DMS, and the mapper converts to decimal.
+	// No inputMode="decimal": the numeric keypad can't type ° ' " N/E/S/W.
+	{ name: "latitude", type: "text", autoComplete: "off" },
+	{ name: "longitude", type: "text", autoComplete: "off" },
+	{ name: "email", type: "email", inputMode: "email" },
+	{
+		name: "phoneNumber",
+		type: "tel",
+		inputMode: "numeric",
+		autoComplete: "tel-national",
+		normalize: normalizeMobileInput,
+		validateOnChange: true,
+	},
+	{ name: "website", type: "url", inputMode: "url" },
 ];
 
 type BPAddressCreateFormProps = {
@@ -78,7 +102,7 @@ const BPAddressCreateForm = ({
 		onSaved,
 	});
 
-	const { control } = form;
+	const { control, trigger } = form;
 
 	const handleCancel = () => {
 		reset();
@@ -146,9 +170,21 @@ const BPAddressCreateForm = ({
 								name={field.name}
 								label={copy.fields[config.name]}
 								type={config.type ?? "text"}
+								inputMode={config.inputMode}
+								autoComplete={config.autoComplete}
 								placeholder={config.placeholder}
 								value={field.value}
-								onChange={(event) => field.onChange(event.target.value)}
+								onChange={(event) => {
+									const nextValue = config.normalize
+										? config.normalize(event.target.value)
+										: event.target.value;
+
+									field.onChange(nextValue);
+
+									if (config.validateOnChange) {
+										void trigger(config.name);
+									}
+								}}
 								onBlur={field.onBlur}
 								error={fieldState.error?.message}
 								disabled={isSaving}

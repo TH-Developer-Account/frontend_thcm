@@ -116,6 +116,18 @@ export function useUpdateVendorMutation() {
 	});
 }
 
+export function useUpdateVendorWithDocumentsMutation() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: vendorOnboardingApi.updateWithDocuments,
+		// Same refresh as a plain update — the refetched detail brings the
+		// new documents back with their URLs, so Form One shows them again
+		// when the user navigates back to step 1.
+		onSuccess: (_data, variables) =>
+			invalidateVendor(queryClient, variables.vendorRequestId),
+	});
+}
+
 export function useSubmitVendorMutation() {
 	const queryClient = useQueryClient();
 	return useMutation({

@@ -462,6 +462,7 @@ export type ApprovalTableApproverRow = {
 	id: string;
 	name: string;
 	email: string;
+	isExternal?: boolean;
 	minApprovals?: string | number | null;
 	status?: string | null;
 };
@@ -477,6 +478,7 @@ export type ApprovalTableRow = {
 	name?: string;
 	email?: string;
 	approvers?: ApprovalTableApproverRow[];
+	isExternal?: Boolean;
 };
 
 export type WorkflowApproval = {
