@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
-
+// import logo from "../assets/thcm-logo/th-brand-logo.png";
 import type { SidebarItem, SidebarLayoutProps } from "./layout.types";
 
 const MOBILE_SIDEBAR_QUERY = "(max-width: 767px)";
@@ -71,6 +71,21 @@ export const SidebarLayout = ({
 				}`}
 				aria-label="Application navigation"
 			>
+				{/* <div className="flex h-16 items-center border-b border-(--color-border-default) px-4">
+					<Link
+						to="/"
+						aria-label="Tata Hitachi home"
+						className="inline-flex min-w-0 items-center"
+					>
+						<img
+							src={logo}
+							alt="Tata Hitachi"
+							className={
+								isOpen ? "h-8 w-auto object-contain" : "h-7 w-7 object-contain"
+							}
+						/>
+					</Link>
+				</div> */}
 				<nav className="app-sidebar-nav">
 					{items.map((item) => {
 						const hasChildren = Boolean(item.children?.length);

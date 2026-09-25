@@ -10,9 +10,10 @@ import SimpleViewTable from "../../../../components/ui/tables/SimpleViewTable";
 import type { SimpleTableColumn } from "../../../../components/ui/tables/SimpleViewTable";
 import UserAsyncSelect from "../../../../components/forms/AsyncSelect";
 import { useBPContactsManager } from "../hooks/useBusinessPartners";
-import { useBusinessPartnerPeopleMutations } from "../hooks/useBusinessPartnerMutations";
+import { useBusinessPartnerContactMutations } from "../hooks/useBusinessPartnerMutations";
 
 import type {
+	BPContactPayload,
 	BPContactViewModel,
 	BPPeoplePermissions,
 } from "../utils/bp.types";
@@ -48,8 +49,8 @@ type PendingContact = {
 	email?: string;
 	phoneNumber?: string;
 	isMainContact: boolean;
-	isDefault: boolean;
-	isManual: boolean;
+	// isDefault: boolean;
+	// isManual: boolean;
 };
 
 const EMPTY_MANUAL_FORM = {
@@ -255,8 +256,8 @@ const BPContact = ({
 		canRemoveContact,
 	} = useBPContactsManager(businessPartnerId, contacts, permissions);
 
-	const { addPeople, isAddingPeople, addPeopleError } =
-		useBusinessPartnerPeopleMutations(businessPartnerId);
+	const { createContact, isCreatingContact, createContactError } =
+		useBusinessPartnerContactMutations(businessPartnerId);
 
 	const columns = getColumns({
 		canSetMainContact,
@@ -303,8 +304,8 @@ const BPContact = ({
 					name: user.label,
 					email: user.email ?? "",
 					isMainContact: false,
-					isDefault: false,
-					isManual: false,
+					// isDefault: false,
+					// isManual: false,
 				},
 			];
 		});
@@ -330,8 +331,8 @@ const BPContact = ({
 				phoneNumber: manualForm.phoneNumber.trim() || undefined,
 				email: manualForm.email.trim() || undefined,
 				isMainContact: false,
-				isDefault: false,
-				isManual: true,
+				// isDefault: false,
+				// isManual: true,
 			},
 		]);
 
@@ -365,29 +366,23 @@ const BPContact = ({
 	};
 
 	const handleAdd = async () => {
-		if (pending.length === 0) return;
-
-		const payload = pending.map((entry) =>
-			entry.userId
-				? {
-						userId: entry.userId,
-						isMainContact: entry.isMainContact,
-						isDefault: entry.isDefault,
-					}
-				: {
-						name: entry.name,
-						phoneNumber: entry.phoneNumber,
-						email: entry.email,
-						isMainContact: entry.isMainContact,
-						isDefault: entry.isDefault,
-					},
-		);
+		if (pending.length === 0 || isCreatingContact) return;
 
 		try {
-			// NOTE: manual (no-userId) entries assume the payload/mutation
-			// UpdateBusinessPartnerPeoplePayload is currently typed to
-			// require userId, widen it to accept this shape too.
-			await addPeople(payload as Parameters<typeof addPeople>[0]);
+			for (const entry of pending) {
+				const payload: BPContactPayload = {
+					userId: entry.userId ?? null,
+					name: entry.name.trim(),
+					phoneNumber: entry.phoneNumber?.trim() || null,
+					email: entry.email?.trim() || null,
+					panNumber: null,
+					isMainContact: entry.isMainContact,
+					// isDefault: entry.isDefault,
+				};
+
+				await createContact(payload);
+			}
+
 			resetAddPanel();
 			onAdded();
 		} catch {
@@ -497,7 +492,7 @@ const BPContact = ({
 									<div className="bp-people-user-copy">
 										<p className="bp-people-name">
 											{entry.name}
-											{entry.isManual ? " (manual)" : ""}
+											{/* {entry.isManual ? " (manual)" : ""} */}
 										</p>
 										<p className="bp-people-id">{entry.email || "--"}</p>
 									</div>
@@ -524,10 +519,10 @@ const BPContact = ({
 						</div>
 					)}
 
-					{addPeopleError && (
+					{createContactError && (
 						<p className="bp-master-form-error" role="alert">
-							{addPeopleError instanceof Error
-								? addPeopleError.message
+							{createContactError instanceof Error
+								? createContactError.message
 								: "Unable to add contact"}
 						</p>
 					)}
@@ -538,15 +533,15 @@ const BPContact = ({
 							text="Cancel"
 							variant="secondary"
 							onClick={handleCancel}
-							disabled={isAddingPeople}
+							disabled={isCreatingContact}
 						/>
 
 						<Button
 							type="button"
-							text={isAddingPeople ? "Adding..." : "Add Selected"}
+							text={isCreatingContact ? "Adding..." : "Add Selected"}
 							variant="brand"
 							onClick={handleAdd}
-							disabled={pending.length === 0 || isAddingPeople}
+							disabled={pending.length === 0 || isCreatingContact}
 						/>
 					</div>
 				</div>

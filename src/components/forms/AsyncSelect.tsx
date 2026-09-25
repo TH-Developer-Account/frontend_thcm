@@ -10,6 +10,8 @@ import type {
 import { useDebounce } from "../../hooks/useDebounce";
 import { ServerAxios } from "../../services/ServerAxios";
 import type { UserResponse } from "../../modules/admin/user-profile/types/profile.types";
+import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
+import { CircleCheck } from "lucide-react";
 
 export type UserOption = {
 	value: string;
@@ -187,9 +189,10 @@ const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 		<div
 			className={[
 				"form-field",
+				"select-field",
 				"user-async-select-field",
+				error ? "has-error" : "",
 				isDisabled ? "is-disabled" : "",
-				className,
 			]
 				.filter(Boolean)
 				.join(" ")}
@@ -208,52 +211,70 @@ const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 				</div>
 			)}
 
-			<Select<UserOption, false>
-				inputId={inputId}
-				name={name}
-				value={value}
-				inputValue={inputValue}
-				options={options}
-				isLoading={isLoading}
-				isDisabled={isDisabled}
-				isClearable={isClearable}
-				placeholder={placeholder}
-				filterOption={null}
-				components={{ Input: NoAutofillInput }}
-				className={[
-					"react-select-container",
-					error ? "react-select-container-error" : "",
-					success && !error && "react-select-container-success",
-				]
-					.filter(Boolean)
-					.join(" ")}
-				classNamePrefix="react-select"
-				menuPortalTarget={
-					typeof document !== "undefined" ? document.body : undefined
-				}
-				menuPosition="fixed"
-				menuPlacement="auto"
-				aria-invalid={Boolean(error)}
-				aria-describedby={describedBy}
-				aria-required={required}
-				onInputChange={handleInputChange}
-				onChange={handleChange}
-				noOptionsMessage={({ inputValue: currentInput }) =>
-					currentInput.trim()
-						? "No matching users found"
-						: "Start typing to search users"
-				}
-				loadingMessage={() => "Searching users..."}
-				formatOptionLabel={(option) => (
-					<div className="select-option-content">
-						<div className="select-option-primary">{option.label}</div>
+			<div className="form-input-wrapper">
+				<Select<UserOption, false>
+					inputId={inputId}
+					name={name}
+					value={value}
+					inputValue={inputValue}
+					options={options}
+					isLoading={isLoading}
+					isDisabled={isDisabled}
+					isClearable={isClearable}
+					placeholder={placeholder}
+					filterOption={null}
+					components={{ Input: NoAutofillInput }}
+					unstyled
+					className={[
+						"react-select-container",
+						error ? "react-select-container-error" : "",
+						isDisabled ? "react-select-container-disabled" : "",
+						className,
+						success && !error ? "react-select-container-success" : "",
+					]
+						.filter(Boolean)
+						.join(" ")}
+					classNamePrefix="react-select"
+					menuPortalTarget={
+						typeof document !== "undefined" ? document.body : undefined
+					}
+					menuPosition="fixed"
+					menuPlacement="auto"
+					aria-invalid={error ? "true" : undefined}
+					aria-describedby={describedBy}
+					aria-required={required || undefined}
+					aria-errormessage={error ? errorId : undefined}
+					onInputChange={handleInputChange}
+					onChange={handleChange}
+					noOptionsMessage={({ inputValue: currentInput }) =>
+						currentInput.trim()
+							? "No matching users found"
+							: "Start typing to search users"
+					}
+					loadingMessage={() => "Searching users..."}
+					formatOptionLabel={(option) => (
+						<div className="select-option-content">
+							<div className="select-option-primary">{option.label}</div>
 
-						{option.email && (
-							<div className="select-option-secondary">{option.email}</div>
-						)}
-					</div>
-				)}
-			/>
+							{option.email && (
+								<div className="select-option-secondary">{option.email}</div>
+							)}
+						</div>
+					)}
+				/>
+
+				{error ? (
+					<ExclamationCircleIcon
+						aria-hidden="true"
+						className="form-error-icon select-error-icon"
+					/>
+				) : success ? (
+					<CircleCheck
+						aria-hidden="true"
+						className="form-success-icon select-success-icon"
+					/>
+				) : null}
+			</div>
 
 			{error ? (
 				<p id={errorId} className="form-error-text" role="alert">

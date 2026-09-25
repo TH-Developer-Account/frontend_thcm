@@ -1,14 +1,12 @@
-// components/ui/ModuleHeader.tsx
-
-// import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
 import logo from "../../assets/thcm-logo/th-brand-logo.png";
 import UserProfile from "./UserProfile";
 import { useAuth } from "../../context/Auth/useAuth";
 import { useGuestAuth } from "../../context/Auth/useGuestAuth";
-// import { usePageBreadcrumbs } from "../../routes/usePageBreadcrumbs";
-// import PageNavigation from "./PageNavigation/PageNavigation";
+import PageNavigation from "./PageNavigation/PageNavigation";
+import { usePageBreadcrumbs } from "../../routes/usePageBreadcrumbs";
 
 function StaffModuleActions() {
 	const { logout, user } = useAuth();
@@ -31,7 +29,7 @@ function GuestModuleActions() {
 function ModuleHeader() {
 	const { pathname } = useLocation();
 	const isGuestRoute = pathname.startsWith("/guest");
-	// const breadcrumbs = usePageBreadcrumbs();
+	const breadcrumbs = usePageBreadcrumbs();
 
 	return (
 		<div className="home-header-content">
@@ -44,13 +42,13 @@ function ModuleHeader() {
 					<img src={logo} alt="Tata Hitachi" className="h-10 object-contain" />
 				</NavLink>
 
-				{/* {breadcrumbs.length > 0 ? (
+				{breadcrumbs.length > 0 ? (
 					<PageNavigation
 						variant="breadcrumbs"
 						breadcrumbs={breadcrumbs}
 						separator={<ChevronRight size={14} aria-hidden="true" />}
 					/>
-				) : null} */}
+				) : null}
 			</div>
 
 			{isGuestRoute ? <GuestModuleActions /> : <StaffModuleActions />}

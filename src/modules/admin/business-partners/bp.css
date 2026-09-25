@@ -428,7 +428,7 @@ button {
 	}
 
 	.bp-address-form {
-		@apply grid w-full min-w-0 grid-cols-1 items-start gap-3 p-3 sm:grid-cols-2 sm:gap-4;
+		@apply grid w-full min-w-0 grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4;
 		max-height: 22rem;
 		overflow-y: auto;
 		overscroll-behavior: contain;
@@ -557,7 +557,6 @@ button {
 	@media (max-width: 767px) {
 		.bp-address-form {
 			@apply grid-cols-1 gap-3 p-3;
-			max-height: 26rem;
 		}
 
 		.bp-address-textarea-field {

@@ -13,8 +13,10 @@ import {
 import {
 	createEmptyAddressCardForm,
 	mapAddressCardFormToPayload,
+	mapAddressToAddressCardForm,
 } from "../utils/businessPartner.mapper";
 import { focusFirstInvalidField } from "../utils/focusFirstInvalidField";
+import type { BPAddressViewModel } from "../utils/bp.types";
 
 import { useBusinessPartnerAddressMutations } from "./useBusinessPartnerMutations";
 
@@ -22,38 +24,56 @@ const copy = businessPartnerContent.address;
 
 type UseBPAddressCardFormOptions = {
 	businessPartnerId: string;
-	/** The first address a BP gets defaults to being its default address. */
-	hasExistingAddresses: boolean;
+	/** Present => edit this existing address. Omit to create a new one. */
+	address?: BPAddressViewModel;
+	/** Create-only: the first address a BP gets defaults to being its default address. */
+	hasExistingAddresses?: boolean;
 	onSaved?: () => void;
 };
 
 export const useBPAddressCardForm = ({
 	businessPartnerId,
-	hasExistingAddresses,
+	address,
+	hasExistingAddresses = false,
 	onSaved,
 }: UseBPAddressCardFormOptions) => {
 	const { showToast } = useToast();
 	const formRef = useRef<HTMLFormElement>(null);
 
-	const { createAddress, isCreatingAddress } =
+	const isEditMode = Boolean(address);
+
+	const defaultValues = () =>
+		address
+			? mapAddressToAddressCardForm(address)
+			: createEmptyAddressCardForm(!hasExistingAddresses);
+
+	const { createAddress, updateAddress, isCreatingAddress, isUpdatingAddress } =
 		useBusinessPartnerAddressMutations(businessPartnerId);
 
 	const form = useForm<BPAddressCardFormValues>({
 		resolver: zodResolver(bpAddressSchema),
 		mode: "onBlur",
 		reValidateMode: "onChange",
-		defaultValues: createEmptyAddressCardForm(!hasExistingAddresses),
+		defaultValues: defaultValues(),
 		shouldFocusError: false,
 	});
 
 	const onValid = async (values: BPAddressCardFormValues) => {
 		try {
-			await createAddress(mapAddressCardFormToPayload(values));
+			if (address) {
+				await updateAddress({
+					addressId: address.id,
+					payload: mapAddressCardFormToPayload(values),
+				});
+			} else {
+				await createAddress(mapAddressCardFormToPayload(values));
+
+				// A just-saved address means the BP now has one, so the next
+				// form no longer defaults to "set as default".
+				form.reset(createEmptyAddressCardForm(false));
+			}
 
 			// Success/error toasts are owned by useBusinessPartnerAddressMutations.
-			// A just-saved address means the BP now has one, so the next form
-			// no longer defaults to "set as default".
-			form.reset(createEmptyAddressCardForm(false));
 			onSaved?.();
 		} catch {
 			// Mutation already toasted the API error — keep the form open and
@@ -72,13 +92,15 @@ export const useBPAddressCardForm = ({
 	};
 
 	const reset = () => {
-		form.reset(createEmptyAddressCardForm(!hasExistingAddresses));
+		form.reset(defaultValues());
 	};
 
 	return {
 		form,
 		formRef,
-		isSaving: isCreatingAddress || form.formState.isSubmitting,
+		isEditMode,
+		isSaving:
+			isCreatingAddress || isUpdatingAddress || form.formState.isSubmitting,
 		onSubmit: form.handleSubmit(onValid, onInvalid),
 		reset,
 	};

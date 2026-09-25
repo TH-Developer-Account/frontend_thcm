@@ -1,7 +1,8 @@
+import { Pencil } from "lucide-react";
 import { Controller, useWatch } from "react-hook-form";
 
 import Button from "../../../../components/common/Button";
-import Card from "../../../../components/common/Card";
+// import Card from "../../../../components/common/Card";
 import DatePickerInput from "../../../../components/common/DatePickerInput";
 import FormInput from "../../../../components/forms/FormInput";
 import SelectInput from "../../../../components/forms/SelectInput";
@@ -16,6 +17,10 @@ import {
 } from "../utils/bp.types";
 
 const copy = businessPartnerContent.general;
+// TODO: internalId/bpShortName labels are inline below because they're new
+// to this card — add them to businessPartner.content.en.json as
+// copy.fields.internalId / copy.fields.bpShortName and swap these literals
+// out, per the content-extraction pattern.
 
 type BPTypeOption = (typeof BUSINESS_PARTNER_TYPE_OPTIONS)[number];
 type OfficeTypeOption = (typeof OFFICE_TYPE_OPTIONS)[number];
@@ -39,6 +44,8 @@ type BPGeneralInfoCardProps = {
 	parentIdFromQuery: string;
 	parentPartner: BusinessPartnerDetail | null;
 	canSubmit: boolean;
+	/** BPTabs' General tab: read-only until Edit is clicked. */
+	allowViewToggle?: boolean;
 };
 
 const BPGeneralInfoCard = (props: BPGeneralInfoCardProps) => {
@@ -51,6 +58,9 @@ const BPGeneralInfoCard = (props: BPGeneralInfoCardProps) => {
 		canSubmit,
 		onSubmit,
 		handleCancel,
+		allowViewToggle,
+		isEditing,
+		startEditing,
 	} = useBPGeneralInfoCardForm(props);
 
 	const {
@@ -67,6 +77,9 @@ const BPGeneralInfoCard = (props: BPGeneralInfoCardProps) => {
 	// payload never included them), and are fixed when arriving via
 	// "Add Branch" on a parent BP.
 	const isOfficeStructureLocked = !isCreateMode || isBranchFromParent;
+
+	const isViewMode = allowViewToggle && !isEditing;
+	const fieldMode = isViewMode ? "view" : "edit";
 
 	const submitText = isSaving
 		? isCreateMode
@@ -85,29 +98,50 @@ const BPGeneralInfoCard = (props: BPGeneralInfoCardProps) => {
 				void onSubmit(event);
 			}}
 		>
-			<Card
-				padding="default"
-				title={copy.title}
-				footer={
-					<div className="bp-master-form-actions">
-						<Button
-							type="button"
-							text={copy.actions.cancel}
-							variant="outline"
-							onClick={handleCancel}
-							disabled={isSaving || (!isCreateMode && !isDirty)}
-						/>
+			<div className="bp-general-info">
+				{/* <div className="bp-general-info-header">
+					<h2 className="bp-general-info-title">{copy.title}</h2>
+				</div> */}
 
-						<Button
-							type="submit"
-							text={submitText}
-							variant="brand"
-							disabled={!canSubmit || isSaving || (!isCreateMode && !isDirty)}
-						/>
-					</div>
-				}
-			>
 				<div className="bp-master-form-grid bp-create-card-grid">
+					{allowViewToggle && (
+						<Controller
+							control={control}
+							name="internalId"
+							render={({ field, fieldState }) => (
+								<FormInput
+									name={field.name}
+									label="Internal ID"
+									value={field.value}
+									onChange={(event) => field.onChange(event.target.value)}
+									onBlur={field.onBlur}
+									error={fieldState.error?.message}
+									disabled={isSaving}
+									mode={fieldMode}
+								/>
+							)}
+						/>
+					)}
+
+					{allowViewToggle && (
+						<Controller
+							control={control}
+							name="bpShortName"
+							render={({ field, fieldState }) => (
+								<FormInput
+									name={field.name}
+									label="Short Name"
+									value={field.value}
+									onChange={(event) => field.onChange(event.target.value)}
+									onBlur={field.onBlur}
+									error={fieldState.error?.message}
+									disabled={isSaving}
+									mode={fieldMode}
+								/>
+							)}
+						/>
+					)}
+
 					<Controller
 						control={control}
 						name="bpName"
@@ -120,6 +154,7 @@ const BPGeneralInfoCard = (props: BPGeneralInfoCardProps) => {
 								onBlur={field.onBlur}
 								error={fieldState.error?.message}
 								disabled={isSaving}
+								mode={fieldMode}
 								required
 							/>
 						)}
@@ -142,6 +177,7 @@ const BPGeneralInfoCard = (props: BPGeneralInfoCardProps) => {
 								}
 								onChange={(option) => field.onChange(option?.value ?? "")}
 								error={fieldState.error?.message}
+								mode={fieldMode}
 								isDisabled={isSaving}
 								required
 							/>
@@ -167,14 +203,13 @@ const BPGeneralInfoCard = (props: BPGeneralInfoCardProps) => {
 									const nextValue = option?.value ?? "";
 									field.onChange(nextValue);
 
-									// The parent field is hidden for a head office —
-									// drop any stale value/error rather than sending it.
 									if (nextValue !== "BRANCH_OFFICE") {
 										setValue("parentId", "");
 										clearErrors("parentId");
 									}
 								}}
 								error={fieldState.error?.message}
+								mode={fieldMode}
 								isDisabled={isSaving || isOfficeStructureLocked}
 								required
 							/>
@@ -195,6 +230,7 @@ const BPGeneralInfoCard = (props: BPGeneralInfoCardProps) => {
 									onBlur={field.onBlur}
 									error={fieldState.error?.message}
 									disabled={isSaving || isOfficeStructureLocked}
+									mode={fieldMode}
 									required
 								/>
 							)}
@@ -218,6 +254,7 @@ const BPGeneralInfoCard = (props: BPGeneralInfoCardProps) => {
 								}
 								onChange={(option) => field.onChange(option?.value ?? "")}
 								error={fieldState.error?.message}
+								mode={fieldMode}
 								isDisabled={isSaving}
 								isClearable
 							/>
@@ -241,8 +278,7 @@ const BPGeneralInfoCard = (props: BPGeneralInfoCardProps) => {
 								}
 								placeholder={copy.placeholders.joinedOn}
 								error={fieldState.error?.message}
-								disabled={isSaving}
-								// Create only: a new BP can't have joined in the future.
+								disabled={isSaving || isViewMode}
 								toDate={isCreateMode ? getToday() : undefined}
 							/>
 						)}
@@ -260,11 +296,51 @@ const BPGeneralInfoCard = (props: BPGeneralInfoCardProps) => {
 								onBlur={field.onBlur}
 								error={fieldState.error?.message}
 								disabled={isSaving}
+								mode={fieldMode}
 							/>
 						)}
 					/>
 				</div>
-			</Card>
+
+				<div className="bp-general-info-actions bottom-buttons-bar-end">
+					{isViewMode ? (
+						canSubmit && (
+							<Button
+								type="button"
+								text="Edit General Information"
+								Icon={Pencil}
+								iconPosition="left"
+								variant="outline"
+								size="sm"
+								onClick={startEditing}
+							/>
+						)
+					) : (
+						<>
+							<Button
+								type="button"
+								text={copy.actions.cancel}
+								variant="outline"
+								onClick={handleCancel}
+								disabled={
+									isSaving || (!isCreateMode && !allowViewToggle && !isDirty)
+								}
+							/>
+
+							<Button
+								type="submit"
+								text={submitText}
+								variant="brand"
+								disabled={
+									!canSubmit ||
+									isSaving ||
+									(!isCreateMode && !allowViewToggle && !isDirty)
+								}
+							/>
+						</>
+					)}
+				</div>
+			</div>
 		</form>
 	);
 };

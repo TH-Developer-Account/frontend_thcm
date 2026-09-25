@@ -1,5 +1,5 @@
 import { matchPath } from "react-router-dom";
-import type { BreadcrumbItem } from "../components/ui/PageNavigation/pageNavigation.types";
+import type { BreadcrumbItem } from "../components/ui/PageNavigation/pageNavigation.types"; // adjust to your real path
 
 type BreadcrumbResolver = (
 	params: Record<string, string | undefined>,
@@ -10,48 +10,48 @@ type BreadcrumbRoute = {
 	getBreadcrumbs: BreadcrumbResolver;
 };
 
-// Keep in sync with the actual route declarations in AppRoutes/*Routes.tsx.
 // Longest/most-specific patterns first so matchPath doesn't shadow a child route.
+// Keep in sync with AppRoutes/*Routes.tsx path declarations.
 export const breadcrumbRoutes: BreadcrumbRoute[] = [
 	// Vendor Onboarding
 	{
-		pattern: "/vendor-onboarding/:onboardingId/view",
+		pattern: "/vendor/onboarding/:onboardingId/view",
 		getBreadcrumbs: ({ onboardingId }) => [
-			{ label: "Vendor Onboarding", href: "/vendor-onboarding/listing" },
+			{ label: "Vendor Onboarding", href: "/vendor/onboarding/listing" },
 			{
 				label: "Vendor Details",
-				href: onboardingId ? `/vendor-onboarding/${onboardingId}` : undefined,
+				href: onboardingId ? `/vendor/onboarding/${onboardingId}` : undefined,
 			},
 			{ label: "View" },
 		],
 	},
 	{
-		pattern: "/vendor-onboarding/:onboardingId",
+		pattern: "/vendor/onboarding/:onboardingId",
 		getBreadcrumbs: () => [
-			{ label: "Vendor Onboarding", href: "/vendor-onboarding/listing" },
+			{ label: "Vendor Onboarding", href: "/vendor/onboarding/listing" },
 			{ label: "Vendor Details" },
 		],
 	},
 	{
-		pattern: "/vendor-onboarding/create",
+		pattern: "/vendor/onboarding/create",
 		getBreadcrumbs: () => [
-			{ label: "Vendor Onboarding", href: "/vendor-onboarding/listing" },
+			{ label: "Vendor Onboarding", href: "/vendor/onboarding/listing" },
 			{ label: "Create" },
 		],
 	},
 	{
-		pattern: "/vendor-onboarding/initiation/create",
+		pattern: "/vendor/initiation/create",
 		getBreadcrumbs: () => [
-			{ label: "Vendor Onboarding", href: "/vendor-onboarding/listing" },
+			{ label: "Vendor Onboarding", href: "/vendor/onboarding/listing" },
 			{ label: "Initiate" },
 		],
 	},
 	{
-		pattern: "/vendor-onboarding/listing",
+		pattern: "/vendor/onboarding/listing",
 		getBreadcrumbs: () => [{ label: "Vendor Onboarding" }],
 	},
 	{
-		pattern: "/vendor-onboarding/dashboard",
+		pattern: "/vendor/dashboard",
 		getBreadcrumbs: () => [{ label: "Vendor Dashboard" }],
 	},
 
@@ -233,9 +233,7 @@ export const breadcrumbRoutes: BreadcrumbRoute[] = [
 export const resolveBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
 	for (const route of breadcrumbRoutes) {
 		const match = matchPath(route.pattern, pathname);
-		if (match) {
-			return route.getBreadcrumbs(match.params);
-		}
+		if (match) return route.getBreadcrumbs(match.params);
 	}
 	return [];
 };

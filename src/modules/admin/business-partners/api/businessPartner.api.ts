@@ -7,7 +7,6 @@ import {
 } from "../utils/businessPartner.mapper";
 
 import type {
-	ApiEnvelope,
 	BPUserRow,
 	BPUserViewModel,
 	BusinessPartnerAddress,
@@ -21,6 +20,9 @@ import type {
 	NormalizedBusinessPartnerListingParams,
 	UpdateBusinessPartnerPayload,
 	UpdateBusinessPartnerPeoplePayload,
+	ApiEnvelope,
+	BPContactPayload,
+	UpdateBPContactPayload,
 } from "../utils/bp.types";
 
 const API_URL = "/business-partner";
@@ -47,9 +49,12 @@ export const businessPartnerKeys = {
 	detail: (businessPartnerId: string) =>
 		[...businessPartnerKeys.details(), businessPartnerId] as const,
 
-	// BP Users tab — GET /users?businessPartnerId=... (a Users-module
-	// resource, not a business-partner sub-resource, so it's keyed
-	// separately from detail() and never invalidated by it).
+	contacts: (businessPartnerId: string) =>
+		[...businessPartnerKeys.detail(businessPartnerId), "contacts"] as const,
+
+	contact: (businessPartnerId: string, contactId: string) =>
+		[...businessPartnerKeys.contacts(businessPartnerId), contactId] as const,
+
 	usersOfPartner: (businessPartnerId: string) =>
 		[...businessPartnerKeys.all, "users", businessPartnerId] as const,
 };
@@ -305,6 +310,63 @@ export const businessPartnerApi = {
 		>(getPartnerUrl(businessPartnerId), payload);
 
 		return unwrapData(response.data);
+	},
+	getContacts: async (
+		businessPartnerId: string,
+	): Promise<BusinessPartnerContact[]> => {
+		const response = await ServerAxios.get<
+			BusinessPartnerContact[] | ApiEnvelope<BusinessPartnerContact[]>
+		>(getContactsUrl(businessPartnerId));
+
+		return unwrapData(response.data);
+	},
+
+	getContactById: async (
+		businessPartnerId: string,
+		contactId: string,
+	): Promise<BusinessPartnerContact> => {
+		const response = await ServerAxios.get<
+			BusinessPartnerContact | ApiEnvelope<BusinessPartnerContact>
+		>(`${getContactsUrl(businessPartnerId)}/${encodeURIComponent(contactId)}`);
+
+		return unwrapData(response.data);
+	},
+
+	createContact: async (
+		businessPartnerId: string,
+		payload: BPContactPayload,
+	): Promise<BusinessPartnerContact> => {
+		const response = await ServerAxios.post<
+			BusinessPartnerContact | ApiEnvelope<BusinessPartnerContact>
+		>(getContactsUrl(businessPartnerId), payload);
+
+		return unwrapData(response.data);
+	},
+
+	updateContact: async (
+		businessPartnerId: string,
+		contactId: string,
+		payload: UpdateBPContactPayload,
+	): Promise<BusinessPartnerContact> => {
+		const response = await ServerAxios.patch<
+			BusinessPartnerContact | ApiEnvelope<BusinessPartnerContact>
+		>(
+			`${getContactsUrl(businessPartnerId)}/${encodeURIComponent(contactId)}`,
+			payload,
+		);
+
+		return unwrapData(response.data);
+	},
+
+	deleteContact: async (
+		businessPartnerId: string,
+		contactId: string,
+	): Promise<string> => {
+		await ServerAxios.delete(
+			`${getContactsUrl(businessPartnerId)}/${encodeURIComponent(contactId)}`,
+		);
+
+		return contactId;
 	},
 };
 

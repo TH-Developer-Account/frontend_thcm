@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
@@ -25,7 +25,7 @@ import {
 import type { BusinessPartnerDetail } from "../utils/bp.types";
 import { focusFirstInvalidField } from "../utils/focusFirstInvalidField";
 
-import { businessPartnerPaths } from "./useBusinessPartnerForm";
+import { businessPartnerPaths } from "../utils/businessPartner.paths";
 import { useBusinessPartnerMutations } from "./useBusinessPartnerMutations";
 
 const copy = businessPartnerContent.general;
@@ -67,6 +67,12 @@ type UseBPGeneralInfoCardFormOptions = {
 	/** Create-only: the loaded parent BP, used to prefill name fields once. */
 	parentPartner: BusinessPartnerDetail | null;
 	canSubmit: boolean;
+	/**
+	 * BPTabs' General tab: renders read-only (mode="view") until the user
+	 * clicks Edit, and returns to view mode after Cancel or a successful
+	 * save, instead of the create/edit page's always-editable card.
+	 */
+	allowViewToggle?: boolean;
 };
 
 export const useBPGeneralInfoCardForm = ({
@@ -74,6 +80,7 @@ export const useBPGeneralInfoCardForm = ({
 	parentIdFromQuery,
 	parentPartner,
 	canSubmit,
+	allowViewToggle = false,
 }: UseBPGeneralInfoCardFormOptions) => {
 	const navigate = useNavigate();
 	const { showToast } = useToast();
@@ -81,6 +88,11 @@ export const useBPGeneralInfoCardForm = ({
 
 	const isCreateMode = !partner;
 	const isBranchFromParent = isCreateMode && Boolean(parentIdFromQuery);
+
+	// Card starts read-only when it supports the toggle at all; the
+	// create/edit page (allowViewToggle false) is always editable, same as
+	// before.
+	const [isEditing, setIsEditing] = useState(!allowViewToggle);
 
 	const {
 		createBusinessPartner,
@@ -197,6 +209,10 @@ export const useBPGeneralInfoCardForm = ({
 
 			// Submitted values become the new baseline for Cancel / isDirty.
 			form.reset(values);
+
+			if (allowViewToggle) {
+				setIsEditing(false);
+			}
 		} catch (error) {
 			// API failures are already toasted by useBusinessPartnerMutations'
 			// onError — only highlight the field here to avoid a double toast.
@@ -233,6 +249,12 @@ export const useBPGeneralInfoCardForm = ({
 	};
 
 	const handleCancel = () => {
+		if (allowViewToggle) {
+			form.reset();
+			setIsEditing(false);
+			return;
+		}
+
 		if (isCreateMode) {
 			navigate(businessPartnerPaths.list());
 			return;
@@ -240,6 +262,8 @@ export const useBPGeneralInfoCardForm = ({
 
 		form.reset();
 	};
+
+	const startEditing = () => setIsEditing(true);
 
 	return {
 		form,
@@ -250,5 +274,9 @@ export const useBPGeneralInfoCardForm = ({
 		canSubmit,
 		onSubmit: form.handleSubmit(onValid, onInvalid),
 		handleCancel,
+
+		allowViewToggle,
+		isEditing,
+		startEditing,
 	};
 };

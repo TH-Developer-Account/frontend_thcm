@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
-import ModuleHeader from "../components/ui/ModuleHeader";
+// import ModuleHeader from "../components/ui/ModuleHeader";
 import { useSidebarPermissions } from "../hooks/useSidebarPermission";
 import { adminSidebar } from "../modules/admin/admin.sidebar";
 import { marketingSidebar } from "../modules/marketing/marketing.sidebar";
@@ -10,6 +10,7 @@ import { vendorSidebar } from "../modules/vendorOnboarding/vendor.sidebar";
 import { workflowSidebar } from "../modules/workflows/utils/workflow.sidebar";
 import { medicalClaimSidebar } from "../modules/medicalReimbursment/utils/medical-claim.sidebar";
 import { guestSidebar } from "../modules/guest/GuestSidebar";
+import Header from "../components/ui/Header";
 
 const MOBILE_SIDEBAR_QUERY = "(max-width: 767px)";
 
@@ -37,7 +38,7 @@ export default function MainContentWrapper() {
 	const location = useLocation();
 
 	const [sidebarState, setSidebarState] = useState<SidebarState>({
-		isOpen: false,
+		isOpen: true,
 		openedAtPathname: null,
 	});
 
@@ -105,7 +106,7 @@ export default function MainContentWrapper() {
 			onToggleSidebar={handleToggleSidebar}
 			onCloseSidebar={handleCloseSidebar}
 			sidebarItems={filteredSidebar}
-			header={<ModuleHeader />}
+			header={<Header />}
 		>
 			<Outlet />
 		</DashboardLayout>

@@ -12,6 +12,8 @@ import {
 	normalizeMobileInput,
 	type BPAddressCardFormValues,
 } from "../utils/businessPartner.schema";
+import type { BPAddressViewModel } from "../utils/bp.types";
+import Card from "../../../../components/common/Card";
 // import type { BusinessPartnerAddressType } from "../utils/bp.types";
 
 const copy = businessPartnerContent.address;
@@ -81,26 +83,33 @@ const TEXT_FIELDS: TextFieldConfig[] = [
 
 type BPAddressCreateFormProps = {
 	businessPartnerId: string;
+	/** Present => editing this existing address instead of creating a new one. */
+	address?: BPAddressViewModel;
 	hasExistingAddresses: boolean;
 	onSaved: () => void;
 	onCancel: () => void;
 };
 
 /**
- * Mounted only while the "add address" form is open, so every open starts
- * from fresh defaults (including isDefault for the first address).
+ * Renders both the "add address" and "edit address" forms — same validated
+ * fields either way, just create vs update underneath (see
+ * useBPAddressCardForm). Mounted only while open, so every open starts from
+ * fresh defaults (including isDefault for a brand-new first address).
  */
 const BPAddressCreateForm = ({
 	businessPartnerId,
+	address,
 	hasExistingAddresses,
 	onSaved,
 	onCancel,
 }: BPAddressCreateFormProps) => {
-	const { form, formRef, isSaving, onSubmit, reset } = useBPAddressCardForm({
-		businessPartnerId,
-		hasExistingAddresses,
-		onSaved,
-	});
+	const { form, formRef, isEditMode, isSaving, onSubmit, reset } =
+		useBPAddressCardForm({
+			businessPartnerId,
+			address,
+			hasExistingAddresses,
+			onSaved,
+		});
 
 	const { control, trigger } = form;
 
@@ -110,34 +119,63 @@ const BPAddressCreateForm = ({
 	};
 
 	return (
-		<form
-			ref={formRef}
-			noValidate
-			aria-label={copy.add}
-			className="bp-create-address-form"
-			onSubmit={(event) => {
-				void onSubmit(event);
-			}}
-		>
-			<div className="bp-master-form-grid bp-create-card-grid">
-				<Controller
-					control={control}
-					name="label"
-					render={({ field, fieldState }) => (
-						<FormInput
-							name={field.name}
-							label={copy.fields.label}
-							placeholder={copy.placeholders.label}
-							value={field.value}
-							onChange={(event) => field.onChange(event.target.value)}
-							onBlur={field.onBlur}
-							error={fieldState.error?.message}
-							disabled={isSaving}
-						/>
-					)}
-				/>
+		<Card
+			footer={
+				<div className="bottom-buttons-bar-end">
+					<Button
+						type="button"
+						text={copy.actions.cancel}
+						variant="secondary"
+						onClick={handleCancel}
+						disabled={isSaving}
+					/>
 
-				{/* <Controller
+					<Button
+						type="submit"
+						text={
+							isSaving
+								? isEditMode
+									? "Updating..."
+									: copy.actions.saving
+								: isEditMode
+									? "Update Address"
+									: copy.actions.save
+						}
+						variant="brand"
+						disabled={isSaving}
+					/>
+				</div>
+			}
+		>
+			<form
+				ref={formRef}
+				noValidate
+				// TODO: businessPartnerContent.address has no distinct edit-mode
+				// label yet (see other TODOs in BPGeneralInfoCard.tsx / useBPOrganizationInfoCardForm.ts)
+				aria-label={isEditMode ? "Edit Address" : copy.add}
+				onSubmit={(event) => {
+					void onSubmit(event);
+				}}
+			>
+				<div className="bp-address-form">
+					<Controller
+						control={control}
+						name="label"
+						render={({ field, fieldState }) => (
+							<FormInput
+								name={field.name}
+								label={copy.fields.label}
+								placeholder={copy.placeholders.label}
+								value={field.value}
+								onChange={(event) => field.onChange(event.target.value)}
+								onBlur={field.onBlur}
+								error={fieldState.error?.message}
+								disabled={isSaving}
+							/>
+						)}
+					/>
+
+					{/* <Controller
 					control={control}
 					name="addressType"
 					render={({ field, fieldState }) => (
@@ -160,96 +198,82 @@ const BPAddressCreateForm = ({
 					)}
 				/> */}
 
-				{TEXT_FIELDS.map((config) => (
-					<Controller
-						key={config.name}
-						control={control}
-						name={config.name}
-						render={({ field, fieldState }) => (
-							<FormInput
-								name={field.name}
-								label={copy.fields[config.name]}
-								type={config.type ?? "text"}
-								inputMode={config.inputMode}
-								autoComplete={config.autoComplete}
-								placeholder={config.placeholder}
-								value={field.value}
-								onChange={(event) => {
-									const nextValue = config.normalize
-										? config.normalize(event.target.value)
-										: event.target.value;
+					{TEXT_FIELDS.map((config) => (
+						<Controller
+							key={config.name}
+							control={control}
+							name={config.name}
+							render={({ field, fieldState }) => (
+								<FormInput
+									name={field.name}
+									label={copy.fields[config.name]}
+									type={config.type ?? "text"}
+									inputMode={config.inputMode}
+									autoComplete={config.autoComplete}
+									placeholder={config.placeholder}
+									value={field.value}
+									onChange={(event) => {
+										const nextValue = config.normalize
+											? config.normalize(event.target.value)
+											: event.target.value;
 
-									field.onChange(nextValue);
+										field.onChange(nextValue);
 
-									if (config.validateOnChange) {
-										void trigger(config.name);
-									}
-								}}
-								onBlur={field.onBlur}
-								error={fieldState.error?.message}
-								disabled={isSaving}
-								required={config.required}
+										if (config.validateOnChange) {
+											void trigger(config.name);
+										}
+									}}
+									onBlur={field.onBlur}
+									error={fieldState.error?.message}
+									disabled={isSaving}
+									required={config.required}
+								/>
+							)}
+						/>
+					))}
+
+					<div className="bp-create-card-full-row">
+						<Controller
+							control={control}
+							name="address"
+							render={({ field, fieldState }) => (
+								<TextareaInput
+									name={field.name}
+									label={copy.fields.address}
+									placeholder={copy.placeholders.address}
+									value={field.value}
+									onChange={(event) => field.onChange(event.target.value)}
+									onBlur={field.onBlur}
+									error={fieldState.error?.message}
+									className="bigtextArea"
+									rows={4}
+									disabled={isSaving}
+									required
+								/>
+							)}
+						/>
+					</div>
+
+					{!isEditMode && (
+						<div className="bp-create-card-full-row">
+							<Controller
+								control={control}
+								name="isDefault"
+								render={({ field }) => (
+									<Checkbox
+										name={field.name}
+										label={copy.fields.isDefault}
+										checked={field.value}
+										disabled={isSaving}
+										onChange={(checked) => field.onChange(Boolean(checked))}
+									/>
+								)}
 							/>
-						)}
-					/>
-				))}
-
-				<div className="bp-create-card-full-row">
-					<Controller
-						control={control}
-						name="address"
-						render={({ field, fieldState }) => (
-							<TextareaInput
-								name={field.name}
-								label={copy.fields.address}
-								placeholder={copy.placeholders.address}
-								value={field.value}
-								onChange={(event) => field.onChange(event.target.value)}
-								onBlur={field.onBlur}
-								error={fieldState.error?.message}
-								className="bigtextArea"
-								rows={4}
-								disabled={isSaving}
-								required
-							/>
-						)}
-					/>
+						</div>
+					)}
 				</div>
-
-				<div className="bp-create-card-full-row">
-					<Controller
-						control={control}
-						name="isDefault"
-						render={({ field }) => (
-							<Checkbox
-								name={field.name}
-								label={copy.fields.isDefault}
-								checked={field.value}
-								disabled={isSaving}
-								onChange={(checked) => field.onChange(Boolean(checked))}
-							/>
-						)}
-					/>
-				</div>
-			</div>
-
-			<div className="bp-master-form-actions bp-create-card-inline-actions">
-				<Button
-					type="button"
-					text={copy.actions.cancel}
-					variant="secondary"
-					onClick={handleCancel}
-					disabled={isSaving}
-				/>
-
-				<Button
-					type="submit"
-					text={isSaving ? copy.actions.saving : copy.actions.save}
-					variant="brand"
-					disabled={isSaving}
-				/>
-			</div>
-		</form>
+			</form>
+		</Card>
 	);
 };
 

@@ -3,13 +3,14 @@ import { Ban, CheckCircle2 } from "lucide-react";
 import ActionMenu from "../../../../components/common/ActionMenu";
 import type { ActionMenuItem } from "../../../../components/common/ActionMenu";
 import { Badge } from "../../../../components/common/Badge";
-import SimpleViewTable from "../../../../components/ui/tables/SimpleViewTable";
-import type { SimpleTableColumn } from "../../../../components/ui/tables/SimpleViewTable";
+import type { ColumnDef } from "@tanstack/react-table";
 
-import { useBPUsersManager } from "../hooks/useBusinessPartners";
 import type { BPUserViewModel } from "../utils/bp.types";
 import { getInitials } from "../../../../utils/format";
 import { getApiErrorMessage } from "../../../../utils/apiError.helper";
+import { useBPUsersManager } from "../hooks/useBusinessPartners";
+import React from "react";
+import DataTable from "../../../../components/ui/tables/DataTable/DataTable";
 
 type BPUsersProps = {
 	businessPartnerId: string;
@@ -27,53 +28,57 @@ const getColumns = ({
 	isTogglingActiveStatus,
 	onSetDefault,
 	onToggleActiveStatus,
-}: UsersColumnOptions): SimpleTableColumn<BPUserViewModel>[] => [
+}: UsersColumnOptions): ColumnDef<BPUserViewModel>[] => [
 	{
-		key: "user",
+		id: "user",
 		header: "User",
-		widthUnits: 3,
-		minWidth: 190,
-		render: (user) => (
-			<div className="bp-people-user">
-				<div className="bp-people-avatar" aria-hidden="true">
-					{getInitials(user.name)}
-				</div>
+		enableSorting: false,
+		cell: ({ row }) => {
+			const user = row.original;
 
-				<div className="bp-people-user-copy">
-					<p className="bp-people-name">{user.name}</p>
-					<p className="bp-people-id">{user.email || "--"}</p>
+			return (
+				<div className="bp-people-user">
+					<div className="bp-people-avatar" aria-hidden="true">
+						{getInitials(user.name)}
+					</div>
+
+					<div className="bp-people-user-copy">
+						<p className="bp-people-name">{user.name}</p>
+						<p className="bp-people-id">{user.email || "--"}</p>
+					</div>
 				</div>
-			</div>
-		),
+			);
+		},
 	},
 
 	{
-		key: "phone",
+		id: "phone",
 		header: "Phone",
-		widthUnits: 2,
-		minWidth: 150,
-		render: (user) => <span>{user.phoneNumber || "--"}</span>,
+		accessorFn: (user) => user.phoneNumber ?? "",
+		cell: ({ row }) => <span>{row.original.phoneNumber || "--"}</span>,
 	},
 
 	{
-		key: "role",
+		id: "role",
 		header: "Role / Department",
-		widthUnits: 3,
-		minWidth: 190,
-		render: (user) => (
-			<span>
-				{[user.role, user.department].filter(Boolean).join(" · ") || "--"}
-			</span>
-		),
+		enableSorting: false,
+		cell: ({ row }) => {
+			const user = row.original;
+
+			return (
+				<span>
+					{[user.role, user.department].filter(Boolean).join(" · ") || "--"}
+				</span>
+			);
+		},
 	},
 
 	{
-		key: "default",
+		id: "default",
 		header: "Default",
-		widthUnits: 2,
-		minWidth: 120,
-		render: (user) =>
-			user.isDefaultContact ? (
+		accessorFn: (user) => user.isDefaultContact,
+		cell: ({ row }) =>
+			row.original.isDefaultContact ? (
 				<Badge variant="success">Default</Badge>
 			) : (
 				<span>--</span>
@@ -81,23 +86,27 @@ const getColumns = ({
 	},
 
 	{
-		key: "status",
+		id: "status",
 		header: "Status",
-		widthUnits: 2,
-		minWidth: 110,
-		render: (user) => (
-			<Badge variant={user.isActive ? "success" : "warning"}>
-				{user.isActive ? "Active" : "Inactive"}
-			</Badge>
-		),
+		accessorFn: (user) => user.isActive,
+		cell: ({ row }) => {
+			const user = row.original;
+
+			return (
+				<Badge variant={user.isActive ? "success" : "warning"}>
+					{user.isActive ? "Active" : "Inactive"}
+				</Badge>
+			);
+		},
 	},
 
 	{
-		key: "actions",
+		id: "actions",
 		header: "Actions",
-		widthUnits: 1,
-		minWidth: 80,
-		render: (user) => {
+		enableSorting: false,
+		cell: ({ row }) => {
+			const user = row.original;
+
 			const actions: ActionMenuItem<BPUserViewModel>[] = [
 				{
 					id: "set-default-user",
@@ -111,7 +120,6 @@ const getColumns = ({
 						? `${user.name} is already the default user for this business partner`
 						: `Set ${user.name} as the default user for this business partner`,
 				},
-
 				{
 					id: "toggle-user-status",
 					label: user.isActive ? "Mark Inactive" : "Mark Active",
@@ -142,19 +150,31 @@ const BPUsers = ({ businessPartnerId }: BPUsersProps) => {
 	const {
 		users,
 		isLoading,
+		// isFetching,
 		error,
+
 		handleSetDefaultUser,
 		isSettingDefault,
+
 		handleToggleActiveStatus,
 		isTogglingActiveStatus,
 	} = useBPUsersManager(businessPartnerId);
 
-	const columns = getColumns({
-		isSettingDefault,
-		isTogglingActiveStatus,
-		onSetDefault: handleSetDefaultUser,
-		onToggleActiveStatus: handleToggleActiveStatus,
-	});
+	const columns = React.useMemo(
+		() =>
+			getColumns({
+				isSettingDefault,
+				isTogglingActiveStatus,
+				onSetDefault: handleSetDefaultUser,
+				onToggleActiveStatus: handleToggleActiveStatus,
+			}),
+		[
+			isSettingDefault,
+			isTogglingActiveStatus,
+			handleSetDefaultUser,
+			handleToggleActiveStatus,
+		],
+	);
 
 	return (
 		<div className="bp-people">
@@ -167,19 +187,18 @@ const BPUsers = ({ businessPartnerId }: BPUsersProps) => {
 				</p>
 			)}
 
-			<SimpleViewTable
-				data={isLoading ? [] : users}
+			<DataTable
+				data={users}
 				columns={columns}
 				getRowId={(user) => user.id}
-				maxHeight="360px"
-				className="bp-people-view-table"
+				loading={isLoading}
+				enablePagination
+				pageSize={5}
+				enableSorting
+				minWidth="lg"
 				ariaLabel="Users for this business partner"
-				emptyTitle={isLoading ? "Loading users..." : "No users found"}
-				emptyDescription={
-					isLoading
-						? "Please wait while we load the users for this business partner."
-						: "No users are linked to this business partner yet."
-				}
+				emptyTitle="No users found"
+				emptyDescription="No users are linked to this business partner yet."
 			/>
 		</div>
 	);

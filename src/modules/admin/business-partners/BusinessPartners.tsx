@@ -12,6 +12,7 @@ import PageSectionLayout from "../../../layout/PageSectionLayout";
 import BPTable from "./components/BPTable";
 import { useBusinessPartnerListing } from "./hooks/useBusinessPartnerQueries";
 import type { BusinessPartner } from "./utils/bp.types";
+import { useDebounce } from "../../../hooks/useDebounce";
 
 const INITIAL_PAGINATION: PaginationState = {
 	pageIndex: 0,
@@ -25,20 +26,30 @@ const BusinessPartners = () => {
 	const [pagination, setPagination] =
 		React.useState<PaginationState>(INITIAL_PAGINATION);
 
+	const debouncedSearch = useDebounce(search, 400);
+
 	const { data, isLoading, isFetching, isError } = useBusinessPartnerListing({
-		search,
+		search: debouncedSearch,
 		pageIndex: pagination.pageIndex + 1,
 		pageSize: pagination.pageSize,
 	});
 
 	const handleSearchChange = React.useCallback((value: string) => {
 		setSearch(value);
-
-		setPagination((current) => ({
-			...current,
-			pageIndex: 0,
-		}));
 	}, []);
+
+	React.useEffect(() => {
+		setPagination((current) => {
+			if (current.pageIndex === 0) {
+				return current;
+			}
+
+			return {
+				...current,
+				pageIndex: 0,
+			};
+		});
+	}, [debouncedSearch]);
 
 	const handleView = React.useCallback(
 		(partner: BusinessPartner) => {

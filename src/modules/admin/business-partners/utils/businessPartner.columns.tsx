@@ -46,10 +46,10 @@ export const getBusinessPartnerColumns = (
 		),
 	},
 	{
-		accessorKey: "mainContact",
-		header: "Main Contact",
+		accessorKey: "gst",
+		header: "GST",
 		enableSorting: true,
-		cell: ({ row }) => <span>{row.original.mainContact || "--"}</span>,
+		cell: ({ row }) => <span>{row.original.gst || "--"}</span>,
 	},
 
 	// {

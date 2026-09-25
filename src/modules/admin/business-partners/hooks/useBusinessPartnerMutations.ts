@@ -8,8 +8,10 @@ import {
 } from "../api/businessPartner.api";
 
 import type {
+	BPContactPayload,
 	BusinessPartnerAddressPayload,
 	CreateBusinessPartnerPayload,
+	UpdateBPContactPayload,
 	UpdateBusinessPartnerPayload,
 	UpdateBusinessPartnerPeoplePayload,
 } from "../utils/bp.types";
@@ -383,5 +385,123 @@ export const useBusinessPartnerAddressMutations = (
 		updateAddressError: updateMutation.error,
 		deleteAddressError: deleteMutation.error,
 		setDefaultAddressError: setDefaultMutation.error,
+	};
+};
+
+export const useBusinessPartnerContactMutations = (
+	businessPartnerId: string,
+) => {
+	const queryClient = useQueryClient();
+	const { showToast } = useToast();
+
+	const normalizedId = businessPartnerId.trim();
+
+	const invalidateContacts = useCallback(async () => {
+		await Promise.all([
+			queryClient.invalidateQueries({
+				queryKey: businessPartnerKeys.contacts(normalizedId),
+			}),
+			queryClient.invalidateQueries({
+				queryKey: businessPartnerKeys.detail(normalizedId),
+			}),
+		]);
+	}, [queryClient, normalizedId]);
+
+	const createContactMutation = useMutation({
+		mutationFn: (payload: BPContactPayload) =>
+			businessPartnerApi.createContact(normalizedId, payload),
+
+		onSuccess: async () => {
+			await invalidateContacts();
+
+			showToast({
+				type: "success",
+				title: "Contact added",
+				description: "The contact was added successfully.",
+			});
+		},
+
+		onError: (error) => {
+			showToast({
+				type: "error",
+				title: "Unable to add contact",
+				description: getApiErrorMessage(error, "Unable to add the contact."),
+			});
+		},
+	});
+
+	const updateContactMutation = useMutation({
+		mutationFn: ({
+			contactId,
+			payload,
+		}: {
+			contactId: string;
+			payload: UpdateBPContactPayload;
+		}) => businessPartnerApi.updateContact(normalizedId, contactId, payload),
+
+		onSuccess: async (contact) => {
+			queryClient.setQueryData(
+				businessPartnerKeys.contact(normalizedId, contact.id),
+				contact,
+			);
+
+			await invalidateContacts();
+
+			showToast({
+				type: "success",
+				title: "Contact updated",
+				description: "The contact was updated successfully.",
+			});
+		},
+
+		onError: (error) => {
+			showToast({
+				type: "error",
+				title: "Unable to update contact",
+				description: getApiErrorMessage(error, "Unable to update the contact."),
+			});
+		},
+	});
+
+	const deleteContactMutation = useMutation({
+		mutationFn: (contactId: string) =>
+			businessPartnerApi.deleteContact(normalizedId, contactId),
+
+		onSuccess: async () => {
+			await invalidateContacts();
+
+			showToast({
+				type: "success",
+				title: "Contact removed",
+				description: "The contact was removed successfully.",
+			});
+		},
+
+		onError: (error) => {
+			showToast({
+				type: "error",
+				title: "Unable to remove contact",
+				description: getApiErrorMessage(error, "Unable to remove the contact."),
+			});
+		},
+	});
+
+	return {
+		createContact: createContactMutation.mutateAsync,
+		updateContact: updateContactMutation.mutateAsync,
+		deleteContact: deleteContactMutation.mutateAsync,
+
+		isCreatingContact: createContactMutation.isPending,
+		isUpdatingContact: updateContactMutation.isPending,
+		isDeletingContact: deleteContactMutation.isPending,
+
+		isContactMutationPending:
+			createContactMutation.isPending ||
+			updateContactMutation.isPending ||
+			deleteContactMutation.isPending,
+
+		createContactError: createContactMutation.error,
+		updateContactError: updateContactMutation.error,
+		deleteContactError: deleteContactMutation.error,
 	};
 };

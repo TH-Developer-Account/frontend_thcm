@@ -1,5 +1,3 @@
-import type { DetailFormSection } from "../hooks/useBusinessPartnerForm";
-
 export type BusinessPartnerOfficeType = "HEAD_OFFICE" | "BRANCH_OFFICE";
 
 type SelectOption<T extends string> = {
@@ -39,16 +37,6 @@ export type BusinessPartnerEntityType =
 	| "PROPRIETORSHIP"
 	| "INDIVIDUAL"
 	| "OTHER";
-
-export const SECTION_LABELS: Record<
-	Exclude<DetailFormSection, null>,
-	string
-> = {
-	general: "General information",
-	organization: "Organization information",
-	contact: "Contact information",
-	address: "Address information",
-};
 
 // -----------------------------------------------------------------------------
 // Section-level permissions
@@ -592,7 +580,7 @@ export type BPContactFormState = {
 	email: string;
 	panNumber: string;
 	isMainContact: boolean;
-	isDefault: boolean;
+	isDefault?: boolean;
 };
 export type BPContactPayload = {
 	name: string;
@@ -601,7 +589,7 @@ export type BPContactPayload = {
 	email: string | null;
 	panNumber: string | null;
 	isMainContact: boolean;
-	isDefault: boolean;
+	isDefault?: boolean;
 };
 
 export type UpdateBPContactPayload = Partial<BPContactPayload>;

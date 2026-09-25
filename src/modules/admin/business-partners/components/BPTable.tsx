@@ -108,6 +108,7 @@ const BPTable = ({
 				onPageSizeChange={handlePageSizeChange}
 				scrollTargetId="business-partner-table-scroll"
 				emptyTitle="No business partners found"
+				className="min-h-[100px]"
 				emptyDescription="Try adjusting the current search term."
 			/>
 

@@ -7,6 +7,8 @@ import type {
 } from "react-select";
 import { useDebounce } from "../../../hooks/useDebounce";
 import { ServerAxios } from "../../../services/ServerAxios";
+import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
+import { CircleCheck } from "lucide-react";
 
 /*
  * Mirrors AsyncSelect.tsx's UserOption/UserAsyncSelect shape exactly, scoped
@@ -171,9 +173,10 @@ const BusinessPartnerAsyncSelect: React.FC<BusinessPartnerAsyncSelectProps> = ({
 		<div
 			className={[
 				"form-field",
+				"select-field",
 				"bp-async-select-field",
+				error ? "has-error" : "",
 				isDisabled ? "is-disabled" : "",
-				className,
 			]
 				.filter(Boolean)
 				.join(" ")}
@@ -192,52 +195,70 @@ const BusinessPartnerAsyncSelect: React.FC<BusinessPartnerAsyncSelectProps> = ({
 				</div>
 			)}
 
-			<Select<BusinessPartnerOption, false>
-				inputId={inputId}
-				name={name}
-				value={value}
-				inputValue={inputValue}
-				options={options}
-				isLoading={isLoading}
-				isDisabled={isDisabled}
-				isClearable={isClearable}
-				placeholder={placeholder}
-				filterOption={null}
-				components={{ Input: NoAutofillInput }}
-				className={[
-					"react-select-container",
-					error ? "react-select-container-error" : "",
-					success && !error && "react-select-container-success",
-				]
-					.filter(Boolean)
-					.join(" ")}
-				classNamePrefix="react-select"
-				menuPortalTarget={
-					typeof document !== "undefined" ? document.body : undefined
-				}
-				menuPosition="fixed"
-				menuPlacement="auto"
-				aria-invalid={Boolean(error)}
-				aria-describedby={describedBy}
-				aria-required={required}
-				onInputChange={handleInputChange}
-				onChange={handleChange}
-				noOptionsMessage={({ inputValue: currentInput }) =>
-					currentInput.trim()
-						? "No matching business partners found"
-						: "Start typing to search business partners"
-				}
-				loadingMessage={() => "Searching business partners..."}
-				formatOptionLabel={(option) => (
-					<div className="select-option-content">
-						<div className="select-option-primary">{option.label}</div>
+			<div className="form-input-wrapper">
+				<Select<BusinessPartnerOption, false>
+					inputId={inputId}
+					name={name}
+					value={value}
+					inputValue={inputValue}
+					options={options}
+					isLoading={isLoading}
+					isDisabled={isDisabled}
+					isClearable={isClearable}
+					placeholder={placeholder}
+					filterOption={null}
+					components={{ Input: NoAutofillInput }}
+					unstyled
+					className={[
+						"react-select-container",
+						error ? "react-select-container-error" : "",
+						isDisabled ? "react-select-container-disabled" : "",
+						className,
+						success && !error ? "react-select-container-success" : "",
+					]
+						.filter(Boolean)
+						.join(" ")}
+					classNamePrefix="react-select"
+					menuPortalTarget={
+						typeof document !== "undefined" ? document.body : undefined
+					}
+					menuPosition="fixed"
+					menuPlacement="auto"
+					aria-invalid={error ? "true" : undefined}
+					aria-describedby={describedBy}
+					aria-required={required || undefined}
+					aria-errormessage={error ? errorId : undefined}
+					onInputChange={handleInputChange}
+					onChange={handleChange}
+					noOptionsMessage={({ inputValue: currentInput }) =>
+						currentInput.trim()
+							? "No matching business partners found"
+							: "Start typing to search business partners"
+					}
+					loadingMessage={() => "Searching business partners..."}
+					formatOptionLabel={(option) => (
+						<div className="select-option-content">
+							<div className="select-option-primary">{option.label}</div>
 
-						{option.bpType && (
-							<div className="select-option-secondary">{option.bpType}</div>
-						)}
-					</div>
-				)}
-			/>
+							{option.bpType && (
+								<div className="select-option-secondary">{option.bpType}</div>
+							)}
+						</div>
+					)}
+				/>
+
+				{error ? (
+					<ExclamationCircleIcon
+						aria-hidden="true"
+						className="form-error-icon select-error-icon"
+					/>
+				) : success ? (
+					<CircleCheck
+						aria-hidden="true"
+						className="form-success-icon select-success-icon"
+					/>
+				) : null}
+			</div>
 
 			{error ? (
 				<p id={errorId} className="form-error-text" role="alert">

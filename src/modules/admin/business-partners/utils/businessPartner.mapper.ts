@@ -3,6 +3,7 @@ import {
 	parseCoordinate,
 	type BPAddressCardFormValues,
 	type BPGeneralInfoFormValues,
+	type BPOrganizationInfoFormValues,
 	type CoordinateAxis,
 } from "../utils/businessPartner.schema";
 import {
@@ -457,71 +458,15 @@ export const mapBusinessPartnerToForm = (
 	// mainContactNumber: cleanText(partner.mainContactNumber),
 });
 
-/**
- * GENERAL tab -> PATCH /bp/:id (editing an existing BP).
- */
-export const mapGeneralFormToUpdatePayload = (
-	form: BusinessPartnerFormState,
-): UpdateBusinessPartnerPayload => {
-	const internalId = form.internalId.trim();
-	const bpName = form.bpName.trim();
-
-	// if (!internalId) throw new Error("Internal ID is required");
-	if (!bpName) throw new Error("Business partner name is required");
-	if (!form.officeType) throw new Error("Office type is required");
-	if (!form.bpType) throw new Error("Business partner type is required");
-
-	if (form.officeType === "BRANCH_OFFICE" && !form.parentId.trim()) {
-		throw new Error("Parent business partner is required for a branch");
-	}
-
-	return {
-		internalId,
-		bpName,
-		bpShortName: nullableText(form.bpShortName),
-		// officeType: form.officeType,
-		bpType: form.bpType,
-		isKeyAccount: form.isKeyAccount,
-		isActive: form.isActive,
-		// parentId: nullableText(form.parentId),
-	};
-};
-
-/**
- * ORGANIZATION tab -> PATCH /bp/:id only (never used at creation time).
- */
-export const mapOrganizationFormToUpdatePayload = (
-	form: BusinessPartnerFormState,
-): UpdateBusinessPartnerPayload => ({
-	vendorId: nullableText(form.vendorId),
-	bpId: nullableText(form.bpId),
-	s4Id: nullableText(form.s4Id),
-	bydId: nullableText(form.bydId),
-	c4cId: nullableText(form.c4cId),
-	legalTradeName: nullableText(form.legalTradeName),
-	gst: nullableText(form.gst)?.toUpperCase() ?? null,
-	panNumber: nullableText(form.panNumber)?.toUpperCase() ?? null,
-	vendorCode: nullableText(form.vendorCode),
-	entityType: form.entityType || null,
-	joinedOn: toApiDateTime(form.joinedOn),
-});
-
-/**
- * CONTACT tab -> PATCH /bp/:id by default (same pattern as Organization).
- * If contact info ends up living on a dedicated resource instead,
- * this is the only function that needs to change — everything above
- * it (the hook, the form component) stays the same.
- */
-export const mapContactFormToUpdatePayload = (
-	form: BusinessPartnerFormState,
-): UpdateBusinessPartnerPayload => ({
-	mobileNumber: nullableText(form.mobileNumber),
-	email: nullableText(form.email)?.toLowerCase() ?? null,
-	fax: nullableText(form.fax),
-	telephone: nullableText(form.telephone),
-	// mainContactName: nullableText(form.mainContactName),
-	// mainContactNumber: nullableText(form.mainContactNumber),
-});
+// -----------------------------------------------------------------------------
+// mapGeneralFormToUpdatePayload / mapOrganizationFormToUpdatePayload /
+// mapContactFormToUpdatePayload used to live here, consumed only by the now-
+// deleted useBusinessPartnerForm.ts. Superseded by mapGeneralInfoFormToUpdatePayload
+// and mapOrganizationInfoFormToUpdatePayload below. mapContactFormToUpdatePayload's
+// only caller was an editingSection === "contact" branch that BPTabs never actually
+// reached (the Contact tab has always rendered independently of that hook), so it
+// was dead code, not a Contact-tab feature being removed here.
+// -----------------------------------------------------------------------------
 
 // -----------------------------------------------------------------------------
 // Create/Update page cards (RHF + Zod). Values arriving here have already
@@ -531,6 +476,8 @@ export const mapContactFormToUpdatePayload = (
 // -----------------------------------------------------------------------------
 
 export const EMPTY_BP_GENERAL_INFO_FORM: BPGeneralInfoFormValues = {
+	internalId: "",
+	bpShortName: "",
 	bpName: "",
 	bpType: "",
 	officeType: "",
@@ -545,6 +492,8 @@ export const EMPTY_BP_GENERAL_INFO_FORM: BPGeneralInfoFormValues = {
 export const mapPartnerToGeneralInfoForm = (
 	partner: BusinessPartnerDetail,
 ): BPGeneralInfoFormValues => ({
+	internalId: cleanText(partner.internalId),
+	bpShortName: cleanText(partner.bpShortName),
 	bpName: cleanText(partner.bpName),
 	bpType: partner.bpType ?? "",
 	officeType: partner.officeType ?? "",
@@ -616,14 +565,88 @@ export const mapGeneralInfoFormToCreatePayload = (
  */
 export const mapGeneralInfoFormToUpdatePayload = (
 	values: BPGeneralInfoFormValues,
+): UpdateBusinessPartnerPayload => {
+	const internalId = values.internalId.trim();
+
+	return {
+		// RHF carries defaultValues through submission even for fields with
+		// no rendered input, so this round-trips the loaded partner's real
+		// internalId on the create/edit page too. Guard kept defensive:
+		// never send an empty internalId key either way.
+		...(internalId ? { internalId } : {}),
+		bpShortName: nullableText(values.bpShortName),
+		bpName: values.bpName.trim(),
+		bpType: assertSelected(values.bpType, "Business partner type"),
+		entityType: values.entityType || null,
+		legalTradeName: nullableText(values.legalTradeName),
+		joinedOn: toApiDateTime(values.joinedOn),
+		gst: nullableUpper(values.gst),
+		panNumber: nullableUpper(values.panNumber),
+	};
+};
+
+// -----------------------------------------------------------------------------
+// Organization tab (BPTabs, RHF + Zod via bpOrganizationInfoSchema).
+// -----------------------------------------------------------------------------
+
+export const EMPTY_BP_ORGANIZATION_INFO_FORM: BPOrganizationInfoFormValues = {
+	legalTradeName: "",
+	entityType: "",
+	joinedOn: "",
+	vendorId: "",
+	bpId: "",
+	s4Id: "",
+	bydId: "",
+	c4cId: "",
+	vendorCode: "",
+	gst: "",
+	panNumber: "",
+	isKeyAccount: false,
+	isActive: true,
+};
+
+export const mapPartnerToOrganizationInfoForm = (
+	partner: BusinessPartnerDetail,
+): BPOrganizationInfoFormValues => ({
+	legalTradeName: cleanText(partner.legalTradeName),
+	entityType: partner.entityType ?? "",
+	joinedOn: partner.joinedOn?.slice(0, 10) ?? "",
+	vendorId: cleanText(partner.vendorId),
+	bpId: cleanText(partner.bpId),
+	s4Id: cleanText(partner.s4Id),
+	bydId: cleanText(partner.bydId),
+	c4cId: cleanText(partner.c4cId),
+	vendorCode: cleanText(partner.vendorCode),
+	gst: cleanText(partner.gst).toUpperCase(),
+	panNumber: cleanText(partner.panNumber).toUpperCase(),
+	isKeyAccount: partner.isKeyAccount,
+	isActive: partner.isActive,
+});
+
+/**
+ * PATCH /bp/:id from the Organization tab.
+ *
+ * isKeyAccount/isActive are now included — the old mapOrganizationFormToUpdatePayload
+ * never sent them even though BPOrganization.tsx rendered both as editable
+ * checkboxes (confirmed with Monica: this was a silent-drop bug, now fixed
+ * as part of moving the tab onto a real Zod schema).
+ */
+export const mapOrganizationInfoFormToUpdatePayload = (
+	values: BPOrganizationInfoFormValues,
 ): UpdateBusinessPartnerPayload => ({
-	bpName: values.bpName.trim(),
-	bpType: assertSelected(values.bpType, "Business partner type"),
-	entityType: values.entityType || null,
 	legalTradeName: nullableText(values.legalTradeName),
+	entityType: values.entityType || null,
 	joinedOn: toApiDateTime(values.joinedOn),
+	vendorId: nullableText(values.vendorId),
+	bpId: nullableText(values.bpId),
+	s4Id: nullableText(values.s4Id),
+	bydId: nullableText(values.bydId),
+	c4cId: nullableText(values.c4cId),
+	vendorCode: nullableText(values.vendorCode),
 	gst: nullableUpper(values.gst),
 	panNumber: nullableUpper(values.panNumber),
+	isKeyAccount: values.isKeyAccount,
+	isActive: values.isActive,
 });
 
 export const createEmptyAddressCardForm = (
@@ -645,6 +668,31 @@ export const createEmptyAddressCardForm = (
 	phoneNumber: "",
 	website: "",
 	isDefault,
+});
+
+/**
+ * An existing address -> the same RHF-validated shape createEmptyAddressCardForm
+ * produces, so useBPAddressCardForm can edit through bpAddressSchema instead of
+ * the old unvalidated BPAddressFormState/mapAddressToForm path.
+ */
+export const mapAddressToAddressCardForm = (
+	address: BPAddressViewModel,
+): BPAddressCardFormValues => ({
+	label: address.label ?? "",
+	address: address.address,
+	city: address.city ?? "",
+	state: address.state ?? "",
+	country: address.country ?? "",
+	pincode: address.pincode ?? "",
+	region: address.region ?? "",
+	zone: address.zone ?? "",
+	branch: address.branch ?? "",
+	latitude: address.latitude?.toString() ?? "",
+	longitude: address.longitude?.toString() ?? "",
+	email: address.email ?? "",
+	phoneNumber: address.phoneNumber ?? "",
+	website: address.website ?? "",
+	isDefault: address.isDefault,
 });
 
 /** Card 3 -> POST /business-partner/:id/addresses. */

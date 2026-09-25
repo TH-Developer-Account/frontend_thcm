@@ -10,13 +10,14 @@ import PageSectionLayout from "../../../layout/PageSectionLayout";
 import BPContactCard from "./components/BPContactCard";
 import BPGeneralInfoCard from "./components/BPGeneralInfoCard";
 import BPLockedSectionCard from "./components/BPLockedSectionCard";
-import { businessPartnerPaths } from "./hooks/useBusinessPartnerForm";
 import {
 	useBusinessPartner,
 	useBusinessPartnerView,
 } from "./hooks/useBusinessPartnerQueries";
 import { DEFAULT_BUSINESS_PARTNER_PERMISSIONS } from "./utils/bp.types";
 import BPAddressCard from "./components/BPAddressCard";
+import { businessPartnerPaths } from "./utils/businessPartner.paths";
+import Card from "../../../components/common/Card";
 
 const copy = businessPartnerContent;
 const permissions = DEFAULT_BUSINESS_PARTNER_PERMISSIONS;
@@ -90,19 +91,21 @@ const CreateBusinessPartner = () => {
 			/>
 
 			<div className="bp-create-page-sections">
-				<BPGeneralInfoCard
-					// Remount when moving from create -> edit (or between BPs) so
-					// RHF picks up fresh default values.
-					key={partner?.id ?? "create"}
-					partner={partner}
-					parentIdFromQuery={parentIdFromQuery}
-					parentPartner={parentQuery.data ?? null}
-					canSubmit={
-						partner
-							? permissions.general.canUpdateGeneral
-							: permissions.canCreateBusinessPartner
-					}
-				/>
+				<Card padding="compact">
+					<BPGeneralInfoCard
+						// Remount when moving from create -> edit (or between BPs) so
+						// RHF picks up fresh default values.
+						key={partner?.id ?? "create"}
+						partner={partner}
+						parentIdFromQuery={parentIdFromQuery}
+						parentPartner={parentQuery.data ?? null}
+						canSubmit={
+							partner
+								? permissions.general.canUpdateGeneral
+								: permissions.canCreateBusinessPartner
+						}
+					/>
+				</Card>
 
 				{view && partner ? (
 					<>

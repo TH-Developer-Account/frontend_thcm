@@ -255,6 +255,10 @@ export const BP_ORGANIZATION_TAX_FIELD_ORDER: Array<
 
 export const bpGeneralInfoSchema = z
 	.object({
+		// Only shown/editable from BPTabs' General tab (see BPGeneralInfoCard's
+		// `allowViewToggle`) — the create page never collects these.
+		internalId: optionalText,
+		bpShortName: optionalText,
 		bpName: requiredText(messages.bpNameRequired),
 		bpType: z
 			.union([z.literal(""), z.enum(BUSINESS_PARTNER_TYPES)])
@@ -286,6 +290,8 @@ export type BPGeneralInfoFormValues = z.infer<typeof bpGeneralInfoSchema>;
 
 export const BP_GENERAL_INFO_FIELD_ORDER: Array<keyof BPGeneralInfoFormValues> =
 	[
+		"internalId",
+		"bpShortName",
 		"bpName",
 		"bpType",
 		"officeType",
@@ -296,6 +302,61 @@ export const BP_GENERAL_INFO_FIELD_ORDER: Array<keyof BPGeneralInfoFormValues> =
 		"gst",
 		"panNumber",
 	];
+
+// -----------------------------------------------------------------------------
+// Organization tab (BPTabs) — identifiers, tax info, and the two settings
+// checkboxes. legalTradeName/entityType/joinedOn/gst/panNumber overlap with
+// General on purpose (existing UI behavior, both tabs have always shown
+// them) — not something this migration redesigns.
+//
+// bpOrganizationTaxSchema above (gst/panNumber only) is what the OLD
+// non-RHF useBusinessPartnerForm.ts validates against. This schema
+// supersedes it; bpOrganizationTaxSchema/BP_ORGANIZATION_TAX_FIELD_ORDER
+// can be deleted once useBusinessPartnerForm.ts is retired.
+// -----------------------------------------------------------------------------
+
+export const bpOrganizationInfoSchema = z
+	.object({
+		legalTradeName: optionalText,
+		entityType: z.union([z.literal(""), z.enum(ENTITY_TYPES)]),
+		joinedOn: optionalIsoDate,
+
+		vendorId: optionalText,
+		bpId: optionalText,
+		s4Id: optionalText,
+		bydId: optionalText,
+		c4cId: optionalText,
+		vendorCode: optionalText,
+
+		gst: optionalGstin,
+		panNumber: optionalPan,
+
+		isKeyAccount: z.boolean(),
+		isActive: z.boolean(),
+	})
+	.superRefine(refineGstPanMatch);
+
+export type BPOrganizationInfoFormValues = z.infer<
+	typeof bpOrganizationInfoSchema
+>;
+
+export const BP_ORGANIZATION_INFO_FIELD_ORDER: Array<
+	keyof BPOrganizationInfoFormValues
+> = [
+	"legalTradeName",
+	"entityType",
+	"joinedOn",
+	"vendorId",
+	"bpId",
+	"s4Id",
+	"bydId",
+	"c4cId",
+	"vendorCode",
+	"gst",
+	"panNumber",
+	"isKeyAccount",
+	"isActive",
+];
 
 // -----------------------------------------------------------------------------
 // Card 3 — Address Information (create only on this page; existing addresses
