@@ -8,7 +8,7 @@ import { businessPartnerContent } from "../../../content/businessPartner.content
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 
 import BPContactCard from "./components/BPContactCard";
-import BPGeneralInfoCard from "./components/BPGeneralInfoCard";
+import BPOrganizationCard from "./components/BPOrganizationCard";
 import BPLockedSectionCard from "./components/BPLockedSectionCard";
 import {
 	useBusinessPartner,
@@ -92,7 +92,7 @@ const CreateBusinessPartner = () => {
 
 			<div className="bp-create-page-sections">
 				<Card padding="compact">
-					<BPGeneralInfoCard
+					<BPOrganizationCard
 						// Remount when moving from create -> edit (or between BPs) so
 						// RHF picks up fresh default values.
 						key={partner?.id ?? "create"}
@@ -101,7 +101,7 @@ const CreateBusinessPartner = () => {
 						parentPartner={parentQuery.data ?? null}
 						canSubmit={
 							partner
-								? permissions.general.canUpdateGeneral
+								? permissions.organization.canUpdateOrganization
 								: permissions.canCreateBusinessPartner
 						}
 					/>

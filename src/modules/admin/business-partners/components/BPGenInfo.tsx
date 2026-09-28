@@ -1,49 +1,85 @@
-import { Building2, Hash, MapPinned, Phone, UserRound } from "lucide-react";
+import { Building2, CalendarDays, Hash, Landmark, Layers } from "lucide-react";
 
 import { Badge } from "../../../../components/common/Badge";
 import Card from "../../../../components/common/Card";
+import {
+	BUSINESS_PARTNER_TYPE_OPTIONS,
+	ENTITY_TYPE_OPTIONS,
+	type BusinessPartnerEntityType,
+	type BusinessPartnerOfficeType,
+	type BusinessPartnerType,
+} from "../utils/bp.types";
 
 type BPGeneralInfoViewProps = {
-	name?: string;
-	number?: string;
-	mainContactPerson?: string;
-	mainContactNumber?: string;
-	code?: string;
-	zone?: string;
-	status?: string;
 	title?: string;
+	bpName?: string;
+	code?: string;
+	bpType?: BusinessPartnerType;
+	officeType?: BusinessPartnerOfficeType;
+	joinedOn?: string | null;
+	entityType?: BusinessPartnerEntityType | null;
+	status?: string;
 };
 
 const FALLBACK_VALUE = "--";
 
+const optionLabel = <T extends string>(
+	options: ReadonlyArray<{ label: string; value: T }>,
+	value: T | null | undefined,
+): string =>
+	options.find((option) => option.value === value)?.label ?? FALLBACK_VALUE;
+
+const formatJoinedOn = (value?: string | null): string => {
+	if (!value) return FALLBACK_VALUE;
+
+	const parsed = new Date(value);
+	if (Number.isNaN(parsed.getTime())) return FALLBACK_VALUE;
+
+	return parsed.toLocaleDateString("en-IN", {
+		day: "2-digit",
+		month: "short",
+		year: "numeric",
+	});
+};
+
 export const BPGeneralInfoView = ({
-	name,
-	number,
-	mainContactPerson,
-	mainContactNumber,
-	code,
-	zone,
-	status = "Active",
 	title,
+	bpName,
+	code,
+	bpType,
+	officeType,
+	joinedOn,
+	entityType,
+	status = "Active",
 }: BPGeneralInfoViewProps) => {
 	const cards = [
 		{ label: "Code", value: code || FALLBACK_VALUE, icon: Hash, tone: "brand" },
 		{
-			label: "Zone",
-			value: zone || FALLBACK_VALUE,
-			icon: MapPinned,
+			label: "BP Type",
+			value: bpType
+				? optionLabel(BUSINESS_PARTNER_TYPE_OPTIONS, bpType)
+				: FALLBACK_VALUE,
+			icon: Building2,
 			tone: "neutral",
 		},
 		{
-			label: "BP Number",
-			value: number || FALLBACK_VALUE,
-			icon: Phone,
+			label: "Office Type",
+			value: officeType ? officeType.replaceAll("_", " ") : FALLBACK_VALUE,
+			icon: Landmark,
 			tone: "neutral",
 		},
 		{
-			label: "Main Contact",
-			value: mainContactPerson || mainContactNumber || FALLBACK_VALUE,
-			icon: UserRound,
+			label: "Joined On",
+			value: formatJoinedOn(joinedOn),
+			icon: CalendarDays,
+			tone: "neutral",
+		},
+		{
+			label: "Entity Type",
+			value: entityType
+				? optionLabel(ENTITY_TYPE_OPTIONS, entityType)
+				: FALLBACK_VALUE,
+			icon: Layers,
 			tone: "neutral",
 		},
 	] as const;
@@ -58,7 +94,7 @@ export const BPGeneralInfoView = ({
 						</div>
 						<div className="bp-gen-title-wrap">
 							<h3 className="bp-gen-title brand-text">
-								{title || name || "Business Partner"}
+								{title || bpName || "Business Partner"}
 							</h3>
 							<p className="bp-gen-subtext">Business Partner Details</p>
 						</div>
@@ -70,7 +106,7 @@ export const BPGeneralInfoView = ({
 				</div>
 			</div>
 
-			<div className="bp-summary-grid sm:grid-cols-2 xl:grid-cols-4">
+			<div className="bp-summary-grid sm:grid-cols-2 xl:grid-cols-5">
 				{cards.map(({ label, value, icon: Icon, tone }) => (
 					<div key={label} className="bp-stat-card">
 						<div className="bp-stat-card-inner">

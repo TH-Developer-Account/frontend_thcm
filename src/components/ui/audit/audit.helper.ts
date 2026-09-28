@@ -76,7 +76,11 @@ export const getAuditActorName = (entry: AuditLogEntry): string => {
 		.join(" ")
 		.trim();
 
-	return fullName || actor?.email || "A user";
+	if (fullName) return fullName;
+	if (actor?.email) return actor.email;
+
+	// No linked user: vendor-portal actions have no User row
+	return entry.action === "VENDOR_FORM_SUBMITTED" ? "Vendor" : "A user";
 };
 
 export const getAuditReason = (entry: AuditLogEntry): string | undefined => {

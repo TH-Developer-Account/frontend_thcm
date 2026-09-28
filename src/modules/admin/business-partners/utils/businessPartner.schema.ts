@@ -253,10 +253,26 @@ export const BP_ORGANIZATION_TAX_FIELD_ORDER: Array<
 	keyof BPOrganizationTaxValues
 > = ["gst", "panNumber"];
 
-export const bpGeneralInfoSchema = z
+// -----------------------------------------------------------------------------
+// Organization tab (BPTabs) + the Create/Edit page's single card.
+//
+// This used to be split across bpGeneralInfoSchema (bpName/bpType/officeType/
+// parentId/internalId/bpShortName) and bpOrganizationInfoSchema (everything
+// else). Per the BP General/Organization merge, the "General" tab was
+// removed and its fields folded in here — one schema, one form, one Save,
+// used by both BPOrganizationCard (BPTabs) and the Create/Edit page.
+// bpGeneralInfoSchema/BPGeneralInfoFormValues/BP_GENERAL_INFO_FIELD_ORDER are
+// retired; nothing else referenced them.
+//
+// bpOrganizationTaxSchema above (gst/panNumber only) is what the OLD
+// non-RHF useBusinessPartnerForm.ts validates against. This schema
+// supersedes it; bpOrganizationTaxSchema/BP_ORGANIZATION_TAX_FIELD_ORDER
+// can be deleted once useBusinessPartnerForm.ts is retired.
+// -----------------------------------------------------------------------------
+
+export const bpOrganizationInfoSchema = z
 	.object({
-		// Only shown/editable from BPTabs' General tab (see BPGeneralInfoCard's
-		// `allowViewToggle`) — the create page never collects these.
+		// Folded in from the retired General tab/schema.
 		internalId: optionalText,
 		bpShortName: optionalText,
 		bpName: requiredText(messages.bpNameRequired),
@@ -267,56 +283,7 @@ export const bpGeneralInfoSchema = z
 			.union([z.literal(""), z.enum(OFFICE_TYPES)])
 			.refine(isSelected, messages.officeTypeRequired),
 		parentId: optionalText,
-		entityType: z.union([z.literal(""), z.enum(ENTITY_TYPES)]),
-		joinedOn: optionalIsoDate,
-		legalTradeName: optionalText,
-		gst: optionalGstin,
-		panNumber: optionalPan,
-	})
-	.superRefine((values, ctx) => {
-		// Existing business rule: a branch office must point at its parent BP.
-		if (values.officeType === "BRANCH_OFFICE" && values.parentId === "") {
-			ctx.addIssue({
-				code: "custom",
-				path: ["parentId"],
-				message: messages.parentIdRequired,
-			});
-		}
 
-		refineGstPanMatch(values, ctx);
-	});
-
-export type BPGeneralInfoFormValues = z.infer<typeof bpGeneralInfoSchema>;
-
-export const BP_GENERAL_INFO_FIELD_ORDER: Array<keyof BPGeneralInfoFormValues> =
-	[
-		"internalId",
-		"bpShortName",
-		"bpName",
-		"bpType",
-		"officeType",
-		"parentId",
-		"entityType",
-		"joinedOn",
-		"legalTradeName",
-		"gst",
-		"panNumber",
-	];
-
-// -----------------------------------------------------------------------------
-// Organization tab (BPTabs) — identifiers, tax info, and the two settings
-// checkboxes. legalTradeName/entityType/joinedOn/gst/panNumber overlap with
-// General on purpose (existing UI behavior, both tabs have always shown
-// them) — not something this migration redesigns.
-//
-// bpOrganizationTaxSchema above (gst/panNumber only) is what the OLD
-// non-RHF useBusinessPartnerForm.ts validates against. This schema
-// supersedes it; bpOrganizationTaxSchema/BP_ORGANIZATION_TAX_FIELD_ORDER
-// can be deleted once useBusinessPartnerForm.ts is retired.
-// -----------------------------------------------------------------------------
-
-export const bpOrganizationInfoSchema = z
-	.object({
 		legalTradeName: optionalText,
 		entityType: z.union([z.literal(""), z.enum(ENTITY_TYPES)]),
 		joinedOn: optionalIsoDate,
@@ -334,7 +301,19 @@ export const bpOrganizationInfoSchema = z
 		isKeyAccount: z.boolean(),
 		isActive: z.boolean(),
 	})
-	.superRefine(refineGstPanMatch);
+	.superRefine((values, ctx) => {
+		// Existing business rule (carried over from bpGeneralInfoSchema): a
+		// branch office must point at its parent BP.
+		if (values.officeType === "BRANCH_OFFICE" && values.parentId === "") {
+			ctx.addIssue({
+				code: "custom",
+				path: ["parentId"],
+				message: messages.parentIdRequired,
+			});
+		}
+
+		refineGstPanMatch(values, ctx);
+	});
 
 export type BPOrganizationInfoFormValues = z.infer<
 	typeof bpOrganizationInfoSchema
@@ -343,6 +322,12 @@ export type BPOrganizationInfoFormValues = z.infer<
 export const BP_ORGANIZATION_INFO_FIELD_ORDER: Array<
 	keyof BPOrganizationInfoFormValues
 > = [
+	"internalId",
+	"bpShortName",
+	"bpName",
+	"bpType",
+	"officeType",
+	"parentId",
 	"legalTradeName",
 	"entityType",
 	"joinedOn",

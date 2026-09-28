@@ -38,7 +38,7 @@ export default function MainContentWrapper() {
 	const location = useLocation();
 
 	const [sidebarState, setSidebarState] = useState<SidebarState>({
-		isOpen: true,
+		isOpen: false,
 		openedAtPathname: null,
 	});
 

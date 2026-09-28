@@ -395,7 +395,7 @@
 	}
 	@layer components {
 		.vendor-compliance-grid {
-			@apply grid grid-cols-1 items-start gap-4 xl:grid-cols-2;
+			@apply grid grid-cols-1 items-start gap-4 md:grid-cols-2;
 		}
 
 		.vendor-compliance-card {

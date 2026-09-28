@@ -1023,6 +1023,7 @@ export function useVendorCreationForm({
 	const workflowPreparedRef = React.useRef(false);
 	const vendorUpdateCompletedRef = React.useRef(false);
 	const preparedTemplateIdRef = React.useRef<string | null>(null);
+	const sentForApprovalRef = React.useRef(false); // NEW
 
 	const setPendingWorkflowSelection = React.useCallback(
 		(selection: PendingWorkflowSelection | null) => {
@@ -1672,17 +1673,19 @@ export function useVendorCreationForm({
 	};
 
 	/*
-	|--------------------------------------------------------------------------
-	| Summary submission — strict order
-	|--------------------------------------------------------------------------
-	| 1. Validate and update the complete vendor payload exactly once.
-	| 2. Assign a workflow (fresh form) or activate it (clarification).
-	| 3. Send the record for approval.
-	|
-	| No detail refetch is needed between these operations. The status already
-	| tells us whether this is the THCM user's first submission.
-	|--------------------------------------------------------------------------
-	*/
+|--------------------------------------------------------------------------
+| Summary submission — strict order
+|--------------------------------------------------------------------------
+| 1. Validate and update the complete vendor payload exactly once
+|    (changes from Form One AND Form Two are diffed and PATCHed here).
+| 2. First submission: send for approval (validates + flips status),
+|    THEN assign the workflow (which makes stage 1 live).
+|    Clarified resubmission: activate the workflow, THEN sync the status.
+|
+| sendForApproval is idempotent on the backend, so the resubmission sync is
+| a no-op when activate already flipped the status.
+|--------------------------------------------------------------------------
+*/
 	const submitForApproval = React.useCallback(async () => {
 		if (submissionInFlightRef.current) return;
 
@@ -1888,6 +1891,14 @@ export function useVendorCreationForm({
 				}
 			}
 
+			// Validate + flip status BEFORE anything goes live (assign and
+			// activate both notify approvers). Idempotent on the backend, so
+			// retries are safe.
+			if (!sentForApprovalRef.current) {
+				await submitMutation.mutateAsync(vendorRequestId);
+				sentForApprovalRef.current = true;
+			}
+
 			// Captured before the branch below mutates workflowPreparedRef, so we
 			// can tell "just attached this call" apart from "already attached on
 			// an earlier attempt, only retrying what failed after it" — the
@@ -1897,6 +1908,9 @@ export function useVendorCreationForm({
 			if (workflowPreparedRef.current) {
 				// A previous attempt prepared the workflow but failed later in the
 				// chain. Do not assign/activate it a second time.
+			} else if (isClarifiedResubmission) {
+				await activateFirstStage(buildActivationPayload());
+				workflowPreparedRef.current = true;
 			} else if (shouldAssignSelectedWorkflow) {
 				if (!workspaceId || !appId) {
 					throw new Error("Workspace or application information is missing.");
@@ -1913,11 +1927,6 @@ export function useVendorCreationForm({
 					},
 				});
 				workflowPreparedRef.current = true;
-			} else if (isClarifiedResubmission) {
-				const activationPayload = buildActivationPayload();
-
-				await activateFirstStage(activationPayload);
-				workflowPreparedRef.current = true;
 			} else {
 				throw new Error(
 					"Workflow submission state is invalid. No workflow action was performed.",
@@ -1932,9 +1941,8 @@ export function useVendorCreationForm({
 				);
 			}
 
-			// Status advances only after the update and workflow preparation succeed.
-			await submitMutation.mutateAsync(vendorRequestId);
 			workflowPreparedRef.current = false;
+			sentForApprovalRef.current = false;
 			vendorUpdateCompletedRef.current = false;
 			preparedTemplateIdRef.current = null;
 

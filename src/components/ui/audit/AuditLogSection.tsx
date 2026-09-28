@@ -17,23 +17,89 @@ const Separator = () => (
 	</span>
 );
 
+// Row renders: Actor - Action - Timestamp - Reason/comment
+const DEFAULT_MESSAGE_TRUNCATE_LENGTH = 50;
+
 /**
- * Renders: Actor - Action - Timestamp - Reason/comment
+ * Renders a piece of the audit line, truncating it with a "...read more"
+ * toggle when it exceeds `truncateLength`. Expanded text wraps normally.
  */
+const TruncatedText = ({
+	text,
+	truncateLength,
+	className,
+}: {
+	text: string;
+	truncateLength: number;
+	className?: string;
+}) => {
+	const [expanded, setExpanded] = React.useState(false);
+
+	const isTruncatable =
+		Number.isFinite(truncateLength) && text.length > truncateLength;
+
+	if (!isTruncatable) {
+		return <span className={className}>{text}</span>;
+	}
+
+	if (expanded) {
+		return (
+			<span
+				className={className}
+				style={{
+					display: "block",
+					width: "100%",
+					flexBasis: "100%",
+					minWidth: 0,
+					whiteSpace: "pre-wrap",
+					overflowWrap: "anywhere",
+					wordBreak: "break-word",
+				}}
+			>
+				{text}{" "}
+				<button
+					type="button"
+					className="comment-audit-readmore-toggle"
+					onClick={() => setExpanded(false)}
+				>
+					Show less
+				</button>
+			</span>
+		);
+	}
+
+	return (
+		<span className={className}>
+			{text.slice(0, truncateLength).trimEnd()}
+			{"... "}
+			<button
+				type="button"
+				className="comment-audit-readmore-toggle"
+				onClick={() => setExpanded(true)}
+			>
+				Read more
+			</button>
+		</span>
+	);
+};
+
 const AuditLogRow = React.memo(function AuditLogRow({
 	entry,
 	entityName,
 	actionMessages,
 	formatMessage,
+	anonymousActorLabel,
+	messageTruncateLength = DEFAULT_MESSAGE_TRUNCATE_LENGTH,
 }: AuditLogRowProps) {
 	const { actorName, actionLabel, reason } = getAuditMessageParts(entry, {
 		entityName,
 		actionMessages,
 		formatTimestamp: formatDateTime,
+		anonymousActorLabel,
 	});
 
 	const action = formatMessage?.(entry) ?? actionLabel;
-	console.log("audit messages :", action);
+	const actionText = typeof action === "string" ? action : null;
 
 	return (
 		<div className="comment-card comment-audit-card">
@@ -43,7 +109,15 @@ const AuditLogRow = React.memo(function AuditLogRow({
 
 					<Separator />
 
-					<span className="comment-audit-text">{action}</span>
+					{actionText !== null ? (
+						<TruncatedText
+							text={actionText}
+							truncateLength={messageTruncateLength}
+							className="comment-audit-text"
+						/>
+					) : (
+						<span className="comment-audit-text">{action}</span>
+					)}
 
 					{entry.createdAt ? (
 						<>
@@ -59,7 +133,11 @@ const AuditLogRow = React.memo(function AuditLogRow({
 						<>
 							<Separator />
 
-							<span className="comment-audit-reason">{reason}</span>
+							<TruncatedText
+								text={reason}
+								truncateLength={messageTruncateLength}
+								className="comment-audit-reason"
+							/>
 						</>
 					) : null}
 				</div>
@@ -79,6 +157,8 @@ export default function AuditLogSection({
 	api = auditApi,
 	formatMessage,
 	actionMessages,
+	anonymousActorLabel,
+	messageTruncateLength,
 }: AuditLogSectionProps) {
 	const queryKey = React.useMemo(
 		() => [...auditKeys.log(subjectType, subjectId), refreshKey] as const,
@@ -136,6 +216,8 @@ export default function AuditLogSection({
 								entityName={entityName}
 								actionMessages={actionMessages}
 								formatMessage={formatMessage}
+								anonymousActorLabel={anonymousActorLabel}
+								messageTruncateLength={messageTruncateLength}
 							/>
 						))}
 					</div>

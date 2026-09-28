@@ -2,7 +2,6 @@ import type { User } from "../../user-profile/types/profile.types";
 import {
 	parseCoordinate,
 	type BPAddressCardFormValues,
-	type BPGeneralInfoFormValues,
 	type BPOrganizationInfoFormValues,
 	type CoordinateAxis,
 } from "../utils/businessPartner.schema";
@@ -475,36 +474,6 @@ export const mapBusinessPartnerToForm = (
 // TypeScript and are unreachable after a successful schema parse.
 // -----------------------------------------------------------------------------
 
-export const EMPTY_BP_GENERAL_INFO_FORM: BPGeneralInfoFormValues = {
-	internalId: "",
-	bpShortName: "",
-	bpName: "",
-	bpType: "",
-	officeType: "",
-	parentId: "",
-	entityType: "",
-	joinedOn: "",
-	legalTradeName: "",
-	gst: "",
-	panNumber: "",
-};
-
-export const mapPartnerToGeneralInfoForm = (
-	partner: BusinessPartnerDetail,
-): BPGeneralInfoFormValues => ({
-	internalId: cleanText(partner.internalId),
-	bpShortName: cleanText(partner.bpShortName),
-	bpName: cleanText(partner.bpName),
-	bpType: partner.bpType ?? "",
-	officeType: partner.officeType ?? "",
-	parentId: cleanText(partner.parentId),
-	entityType: partner.entityType ?? "",
-	joinedOn: partner.joinedOn?.slice(0, 10) ?? "",
-	legalTradeName: cleanText(partner.legalTradeName),
-	gst: cleanText(partner.gst).toUpperCase(),
-	panNumber: cleanText(partner.panNumber).toUpperCase(),
-});
-
 /** trim + uppercase, empty -> null (PAN/GSTIN sanitization rule). */
 const nullableUpper = (value: string | undefined | null): string | null =>
 	nullableText(value)?.toUpperCase() ?? null;
@@ -520,76 +489,23 @@ const assertSelected = <T extends string>(
 	return value;
 };
 
-/**
- * Card 1 (create) -> POST /business-partner.
- *
- * Identifier/tax fields stay null here (they're edited later from BPTabs'
- * Organization tab). isKeyAccount/isActive keep the previous create defaults.
- */
-export const mapGeneralInfoFormToCreatePayload = (
-	values: BPGeneralInfoFormValues,
-): CreateBusinessPartnerPayload => {
-	const officeType = assertSelected(values.officeType, "Office type");
-
-	return {
-		bpName: values.bpName.trim(),
-		bpShortName: null,
-		officeType,
-		bpType: assertSelected(values.bpType, "Business partner type"),
-		entityType: values.entityType || null,
-		legalTradeName: nullableText(values.legalTradeName),
-		joinedOn: toApiDateTime(values.joinedOn),
-		isKeyAccount: false,
-		isActive: true,
-		// Only a branch office has a parent; never send a stale id for a head office.
-		parentId:
-			officeType === "BRANCH_OFFICE" ? nullableText(values.parentId) : null,
-
-		vendorId: null,
-		bpId: null,
-		s4Id: null,
-		bydId: null,
-		c4cId: null,
-		gst: nullableUpper(values.gst),
-		panNumber: nullableUpper(values.panNumber),
-		vendorCode: null,
-	};
-};
-
-/**
- * Card 1 (update) -> PATCH /business-partner/:id.
- *
- * officeType and parentId are intentionally omitted — the existing
- * mapGeneralFormToUpdatePayload never sent them either, so the card renders
- * them read-only in update mode.
- */
-export const mapGeneralInfoFormToUpdatePayload = (
-	values: BPGeneralInfoFormValues,
-): UpdateBusinessPartnerPayload => {
-	const internalId = values.internalId.trim();
-
-	return {
-		// RHF carries defaultValues through submission even for fields with
-		// no rendered input, so this round-trips the loaded partner's real
-		// internalId on the create/edit page too. Guard kept defensive:
-		// never send an empty internalId key either way.
-		...(internalId ? { internalId } : {}),
-		bpShortName: nullableText(values.bpShortName),
-		bpName: values.bpName.trim(),
-		bpType: assertSelected(values.bpType, "Business partner type"),
-		entityType: values.entityType || null,
-		legalTradeName: nullableText(values.legalTradeName),
-		joinedOn: toApiDateTime(values.joinedOn),
-		gst: nullableUpper(values.gst),
-		panNumber: nullableUpper(values.panNumber),
-	};
-};
-
 // -----------------------------------------------------------------------------
-// Organization tab (BPTabs, RHF + Zod via bpOrganizationInfoSchema).
+// Organization tab (BPTabs) + Create/Edit page — one combined RHF + Zod card
+// via bpOrganizationInfoSchema. Used to be split across a "General" card
+// (mapGeneralInfoFormToCreatePayload/mapGeneralInfoFormToUpdatePayload/
+// mapPartnerToGeneralInfoForm/EMPTY_BP_GENERAL_INFO_FORM, all retired — the
+// General tab/card no longer exists) and this "Organization" card. The
+// mappers below now cover both.
 // -----------------------------------------------------------------------------
 
 export const EMPTY_BP_ORGANIZATION_INFO_FORM: BPOrganizationInfoFormValues = {
+	internalId: "",
+	bpShortName: "",
+	bpName: "",
+	bpType: "",
+	officeType: "",
+	parentId: "",
+
 	legalTradeName: "",
 	entityType: "",
 	joinedOn: "",
@@ -608,6 +524,13 @@ export const EMPTY_BP_ORGANIZATION_INFO_FORM: BPOrganizationInfoFormValues = {
 export const mapPartnerToOrganizationInfoForm = (
 	partner: BusinessPartnerDetail,
 ): BPOrganizationInfoFormValues => ({
+	internalId: cleanText(partner.internalId),
+	bpShortName: cleanText(partner.bpShortName),
+	bpName: cleanText(partner.bpName),
+	bpType: partner.bpType ?? "",
+	officeType: partner.officeType ?? "",
+	parentId: cleanText(partner.parentId),
+
 	legalTradeName: cleanText(partner.legalTradeName),
 	entityType: partner.entityType ?? "",
 	joinedOn: partner.joinedOn?.slice(0, 10) ?? "",
@@ -624,30 +547,87 @@ export const mapPartnerToOrganizationInfoForm = (
 });
 
 /**
- * PATCH /bp/:id from the Organization tab.
+ * The merged card (create mode) -> POST /business-partner.
  *
- * isKeyAccount/isActive are now included — the old mapOrganizationFormToUpdatePayload
+ * Supersedes the old mapGeneralInfoFormToCreatePayload, which hard-coded
+ * every identifier/tax/settings field to null/false/true because those
+ * fields lived only on the Organization tab, edited after creation. They're
+ * now on the same form as bpName/bpType/officeType, so they're sent as
+ * entered. internalId is still never sent on create — it's system-assigned,
+ * same as before (the field was hidden on the create page previously; it's
+ * now shown but has no effect on create).
+ */
+export const mapOrganizationInfoFormToCreatePayload = (
+	values: BPOrganizationInfoFormValues,
+): CreateBusinessPartnerPayload => {
+	const officeType = assertSelected(values.officeType, "Office type");
+
+	return {
+		bpName: values.bpName.trim(),
+		bpShortName: nullableText(values.bpShortName),
+		officeType,
+		bpType: assertSelected(values.bpType, "Business partner type"),
+		entityType: values.entityType || null,
+		legalTradeName: nullableText(values.legalTradeName),
+		joinedOn: toApiDateTime(values.joinedOn),
+		isKeyAccount: values.isKeyAccount,
+		isActive: values.isActive,
+		// Only a branch office has a parent; never send a stale id for a head office.
+		parentId:
+			officeType === "BRANCH_OFFICE" ? nullableText(values.parentId) : null,
+
+		vendorId: nullableText(values.vendorId),
+		bpId: nullableText(values.bpId),
+		s4Id: nullableText(values.s4Id),
+		bydId: nullableText(values.bydId),
+		c4cId: nullableText(values.c4cId),
+		gst: nullableUpper(values.gst),
+		panNumber: nullableUpper(values.panNumber),
+		vendorCode: nullableText(values.vendorCode),
+	};
+};
+
+/**
+ * The merged card (update mode) -> PATCH /business-partner/:id.
+ *
+ * officeType and parentId are intentionally omitted — same as the old
+ * mapGeneralFormToUpdatePayload — the card renders them read-only once a BP
+ * exists, so there's nothing new to send for them.
+ *
+ * isKeyAccount/isActive are included — the old mapOrganizationFormToUpdatePayload
  * never sent them even though BPOrganization.tsx rendered both as editable
  * checkboxes (confirmed with Monica: this was a silent-drop bug, now fixed
  * as part of moving the tab onto a real Zod schema).
  */
 export const mapOrganizationInfoFormToUpdatePayload = (
 	values: BPOrganizationInfoFormValues,
-): UpdateBusinessPartnerPayload => ({
-	legalTradeName: nullableText(values.legalTradeName),
-	entityType: values.entityType || null,
-	joinedOn: toApiDateTime(values.joinedOn),
-	vendorId: nullableText(values.vendorId),
-	bpId: nullableText(values.bpId),
-	s4Id: nullableText(values.s4Id),
-	bydId: nullableText(values.bydId),
-	c4cId: nullableText(values.c4cId),
-	vendorCode: nullableText(values.vendorCode),
-	gst: nullableUpper(values.gst),
-	panNumber: nullableUpper(values.panNumber),
-	isKeyAccount: values.isKeyAccount,
-	isActive: values.isActive,
-});
+): UpdateBusinessPartnerPayload => {
+	const internalId = values.internalId.trim();
+
+	return {
+		// RHF carries defaultValues through submission even for fields with
+		// no rendered input, so this round-trips the loaded partner's real
+		// internalId. Guard kept defensive: never send an empty internalId key.
+		...(internalId ? { internalId } : {}),
+		bpShortName: nullableText(values.bpShortName),
+		bpName: values.bpName.trim(),
+		bpType: assertSelected(values.bpType, "Business partner type"),
+
+		legalTradeName: nullableText(values.legalTradeName),
+		entityType: values.entityType || null,
+		joinedOn: toApiDateTime(values.joinedOn),
+		vendorId: nullableText(values.vendorId),
+		bpId: nullableText(values.bpId),
+		s4Id: nullableText(values.s4Id),
+		bydId: nullableText(values.bydId),
+		c4cId: nullableText(values.c4cId),
+		vendorCode: nullableText(values.vendorCode),
+		gst: nullableUpper(values.gst),
+		panNumber: nullableUpper(values.panNumber),
+		isKeyAccount: values.isKeyAccount,
+		isActive: values.isActive,
+	};
+};
 
 export const createEmptyAddressCardForm = (
 	isDefault: boolean,

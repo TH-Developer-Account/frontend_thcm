@@ -843,7 +843,7 @@ const VendorCreationFormOne = ({
 								Icon={ArrowLeft}
 							/>
 
-							<div className="bottom-buttons-bar-between">
+							<div className="bottom-buttons-bar-end">
 								{/* <Button
 									type="button"
 									text="Reset"

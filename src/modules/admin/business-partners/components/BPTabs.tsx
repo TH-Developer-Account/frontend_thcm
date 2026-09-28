@@ -12,13 +12,11 @@ import type {
 import BPContact from "./BPContact";
 import BPAddress from "./BPAddress";
 import BPBranches from "./BPBranches";
-import BPGeneralInfoCard from "./BPGeneralInfoCard";
 import BPOrganizationCard from "./BPOrganizationCard";
 import BPUsers from "./BPUsers";
 import { businessPartnerPaths } from "../utils/businessPartner.paths";
 
 const bpTabs = [
-	{ value: "general", label: "General", controlsId: "bp-tab-general-panel" },
 	{
 		value: "organization",
 		label: "Organization",
@@ -57,7 +55,7 @@ const isOrgDataEmpty = (view: BusinessPartnerViewModel): boolean =>
 export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 	const navigate = useNavigate();
 
-	const [activeTab, setActiveTab] = useState<BPTab>("general");
+	const [activeTab, setActiveTab] = useState<BPTab>("organization");
 	const activeTabId = `bp-tab-${activeTab}`;
 	const activePanelId = `${activeTabId}-panel`;
 
@@ -95,19 +93,6 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 				role="tabpanel"
 				tabIndex={0}
 			>
-				{activeTab === "general" && (
-					<div className="bp-gen-content">
-						<BPGeneralInfoCard
-							key={view.partner.id}
-							partner={view.partner}
-							parentIdFromQuery=""
-							parentPartner={null}
-							canSubmit={permissions.general.canUpdateGeneral}
-							allowViewToggle
-						/>
-					</div>
-				)}
-
 				{activeTab === "contact" && (
 					<div className="bp-gen-content">
 						<BPContact
@@ -146,6 +131,7 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 							key={view.partner.id}
 							partner={view.partner}
 							canSubmit={permissions.organization.canUpdateOrganization}
+							allowViewToggle
 							startInEditMode={isOrgDataEmpty(view)}
 						/>
 					</div>

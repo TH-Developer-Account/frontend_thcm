@@ -233,6 +233,13 @@ export type AuditMessageOptions = {
 	includeTimestamp?: boolean;
 	includeActor?: boolean;
 	includeReason?: boolean;
+
+	/**
+	 * Shown when the backend intentionally omits an actor (e.g. a public
+	 * vendor-side action with no internal user attached).
+	 * Defaults to "A user".
+	 */
+	anonymousActorLabel?: string;
 };
 
 /** actor - action - timestamp - reason/comment */
@@ -258,6 +265,19 @@ export type AuditLogSectionProps = {
 	api?: AuditApiAdapter;
 	formatMessage?: (entry: AuditLogEntry) => ReactNode;
 	actionMessages?: AuditActionMessages;
+
+	/**
+	 * Label used when an entry's actor is null/empty (backend-intentional,
+	 * e.g. vendor-side actions on the public vendor onboarding flow).
+	 * Defaults to "A user". Pass "Vendor" for vendor-onboarding screens.
+	 */
+	anonymousActorLabel?: string;
+
+	/**
+	 * Max characters shown before an entry's message is truncated with a
+	 * "...read more" toggle. Defaults to 140. Pass Infinity to disable.
+	 */
+	messageTruncateLength?: number;
 };
 
 export type AuditLogRowProps = {
@@ -265,4 +285,6 @@ export type AuditLogRowProps = {
 	entityName: string;
 	actionMessages?: AuditActionMessages;
 	formatMessage?: (entry: AuditLogEntry) => ReactNode;
+	anonymousActorLabel?: string;
+	messageTruncateLength?: number;
 };

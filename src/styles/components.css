@@ -7285,6 +7285,25 @@ PAGE NAVIGATION
 				overflow-wrap: anywhere;
 			}
 		}
+		.comment-audit-readmore-toggle {
+			background: none;
+			border: none;
+			padding: 0;
+			margin-left: 2px;
+			font: inherit;
+			color: var(--color-primary, #2563eb);
+			cursor: pointer;
+			text-decoration: underline;
+		}
+
+		.comment-audit-readmore-toggle:hover {
+			text-decoration: none;
+		}
+
+		.comment-audit-readmore-toggle:focus-visible {
+			outline: 2px solid var(--color-primary, #2563eb);
+			outline-offset: 2px;
+		}
 	}
 	/* =====================================================
 	   COMPOSER
