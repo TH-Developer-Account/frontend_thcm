@@ -39,7 +39,6 @@ import {
 	getEnclosureChanges,
 	hasEnclosureChanges,
 	buildInternalUpdateFormData,
-	getCreatedById,
 	getCreatedWorkflowId,
 	mapStageEditsForApi,
 	normalizePublicFormOneValues,
@@ -83,10 +82,7 @@ import type {
 	VendorOnboardingDocument,
 } from "../types/vendorOnboarding.types";
 import { VENDOR_DOCUMENT_FIELDS } from "../types/vendorOnboarding.types";
-import {
-	getWorkflowApproverData,
-	type ApprovalStageLike,
-} from "../../workflows/utils/approvalWorkflow.helpers";
+import type { ApprovalStageLike } from "../../workflows/utils/approvalWorkflow.helpers";
 import {
 	useActivateFirstStageMutation,
 	useApproveWorkflowStageMutation,
@@ -98,6 +94,10 @@ import {
 	extractPanFromGstin,
 	normalizeAccountNumber,
 } from "../../../utils/form.validation";
+import {
+	useVendorRecordPermissions,
+	useVendorStageActionPermissions,
+} from "./useVendorPermissions";
 
 export const vendorOnboardingSteps = [
 	{ id: 1, label: "Vendor filled details" },
@@ -115,7 +115,7 @@ const EMPTY_FORM_TWO: VendorCreationFormTwoValues = {};
 // validation), so they keep the exact literal the app already shows rather
 // than picking up the (more descriptive) per-field Zod messages.
 const MANDATORY_ERROR = "Mandatory";
-
+const VENDOR_LISTING_PATH = "/vendor-onboarding/listing?tab=onboarding";
 // ─────────────────────────────────────────────────────────────────────────
 // Invalid-field toasts
 // ─────────────────────────────────────────────────────────────────────────
@@ -288,43 +288,6 @@ const getInitialAdditionalDocumentCount = (
 			0,
 		),
 	);
-
-type ApprovalIdentity = {
-	approverId?: string | null;
-	approver?: { id?: string | null; email?: string | null } | null;
-};
-
-// True when the user appears as an approver on ANY stage of the workflow
-// (any iteration, any status) — not just the current one. Used to keep
-// proposer-only actions (e.g. Send Back to Vendor) away from anyone who
-// also sits in the approval chain.
-const isUserApproverInAnyStage = (
-	stages: readonly ApprovalStageLike[],
-	user: { id?: string | null; email?: string | null } | null | undefined,
-): boolean => {
-	if (!user) return false;
-
-	const userId = user.id ?? "";
-	const userEmail = user.email?.trim().toLowerCase() ?? "";
-
-	return stages.some((stage) =>
-		(stage.approvals ?? []).some((approval) => {
-			const identity = approval as unknown as ApprovalIdentity;
-
-			if (
-				userId &&
-				(identity.approverId === userId || identity.approver?.id === userId)
-			) {
-				return true;
-			}
-
-			return Boolean(
-				userEmail &&
-				identity.approver?.email?.trim().toLowerCase() === userEmail,
-			);
-		}),
-	);
-};
 
 export type {
 	VendorEnclosureUploadItem,
@@ -715,7 +678,6 @@ export function useVendorCreationSummaryController({
 	onSaveVendorCode,
 	onAcceptAndClose,
 }: UseVendorCreationSummaryControllerParams) {
-	const { user } = useAuth();
 	const { showToast } = useToast();
 	const approveStageMutation = useApproveWorkflowStageMutation();
 	const clarifyStageMutation = useClarifyWorkflowStageMutation();
@@ -725,34 +687,10 @@ export function useVendorCreationSummaryController({
 		loading: boolean;
 	}>({ open: false, loading: false });
 
-	const workflowApproverData = React.useMemo(
-		() =>
-			getWorkflowApproverData(
-				{
-					isActive: true,
-					status: "IN_PROGRESS",
-					stages: workflowStages,
-				},
-				user,
-			),
-		[workflowStages, user?.email, user?.id, user],
-	);
-
-	const {
-		currentStage,
-		canActNow,
-		isCurrentStageApprover,
-		isExternalApprover,
-	} = workflowApproverData;
-
-	const isFinalStage = Boolean(
-		currentStage &&
-		workflowStages.length > 0 &&
-		workflowStages[workflowStages.length - 1]?.id === currentStage.id,
-	);
-
-	const requiresVendorCodeToApprove =
-		isFinalStage && Boolean(isExternalApprover);
+	// Who can act on the stage being shown — rules live in
+	// helpers/vendor.permissions.ts (getVendorStageActionPermissions).
+	const { currentStage, canActOnCurrentStage, requiresVendorCodeToApprove } =
+		useVendorStageActionPermissions(workflowStages);
 
 	const currentStageId = currentStage?.id;
 
@@ -886,7 +824,7 @@ export function useVendorCreationSummaryController({
 
 	return {
 		currentStage,
-		canActOnCurrentStage: canActNow && Boolean(isCurrentStageApprover),
+		canActOnCurrentStage,
 		requiresVendorCodeToApprove,
 		vendorCodeModal,
 		approveLoading: approveStageMutation.loading,
@@ -1023,7 +961,7 @@ export function useVendorCreationForm({
 	const workflowPreparedRef = React.useRef(false);
 	const vendorUpdateCompletedRef = React.useRef(false);
 	const preparedTemplateIdRef = React.useRef<string | null>(null);
-	const sentForApprovalRef = React.useRef(false); // NEW
+	const sentForApprovalRef = React.useRef(false);
 
 	const setPendingWorkflowSelection = React.useCallback(
 		(selection: PendingWorkflowSelection | null) => {
@@ -1039,7 +977,8 @@ export function useVendorCreationForm({
 
 	// Record + activity log + listings, awaited. Used after workflow
 	// actions (approve/clarify) that go through the workflow mutations and
-	// so don't hit the vendor mutations' own onSuccess invalidation.
+	// so don't hit the vendor mutations' own onSuccess invalidation — and
+	// as the single end-of-chain refresh in submitForApproval.
 	const refreshVendorRecord = React.useCallback(
 		() => invalidateVendor(queryClient, vendorRequestId || undefined),
 		[queryClient, vendorRequestId],
@@ -1048,9 +987,6 @@ export function useVendorCreationForm({
 	React.useEffect(() => {
 		setPendingWorkflowSelection(null);
 	}, [setPendingWorkflowSelection, vendorRequestId]);
-
-	const isPublicVendor = isPublicForm;
-	const isThcmEmployee = !isPublicForm;
 
 	const detailQuery = useVendorOnboardingDetailQuery(
 		vendorRequestId,
@@ -1061,6 +997,26 @@ export function useVendorCreationForm({
 		normalizedToken,
 		isPublicForm,
 	);
+
+	// ───────────────────────────────────────────────────────────────────────
+	// Permissions — every can*/is* flag comes from one place.
+	// Rules: helpers/vendor.permissions.ts (getVendorRecordPermissions).
+	// Only the flags this hook's own handlers need are destructured; the
+	// whole object is spread into the return value so Context consumers
+	// keep reading form.canApprove, form.canEditMainForm, etc. unchanged.
+	// ───────────────────────────────────────────────────────────────────────
+	const permissions = useVendorRecordPermissions({
+		detail: detailQuery.data,
+		isPublicForm,
+	});
+
+	const {
+		hasPendingClarifiedApproval,
+		canEditStagesOnResubmit,
+		canEditVendorCode,
+		canSendBackToVendor,
+		isExternalApprover,
+	} = permissions;
 
 	const publicFormInitialValues = React.useMemo(
 		() =>
@@ -1088,7 +1044,11 @@ export function useVendorCreationForm({
 
 	const updateMutation = useUpdateVendorMutation();
 	const updateWithDocumentsMutation = useUpdateVendorWithDocumentsMutation();
-	const submitMutation = useSubmitVendorMutation();
+	// Silent: submitForApproval does ONE refreshVendorRecord() after the whole
+	// chain (PATCH → submit → workflow) instead of one refetch per step.
+	const submitMutation = useSubmitVendorMutation({
+		invalidateOnSuccess: false,
+	});
 	const closeMutation = useAcceptAndCloseVendorMutation();
 	const publicSubmitMutation = useSubmitPublicVendorFormMutation();
 	const publicDraftSubmitMutation = useDraftSubmitPublicVendorFormMutation();
@@ -1104,28 +1064,11 @@ export function useVendorCreationForm({
 	const vendorReferenceName = detailQuery.data?.partOne?.vendorReferenceName;
 	const activeWorkflow = detailQuery.data?.activeWorkflow ?? null;
 	const activeWorkflowId = activeWorkflow?.id ?? null;
-	const createdById = getCreatedById(detailQuery.data?.initiatedById);
-	const isThcmProposer =
-		isThcmEmployee && Boolean(user?.id) && createdById === user?.id;
 
 	const assignedWorkflowStages = React.useMemo<ApprovalStageLike[]>(
 		() => activeWorkflow?.stages ?? [],
 		[activeWorkflow?.stages],
 	);
-
-	const hasPendingClarifiedApproval = React.useMemo(() => {
-		if (!activeWorkflow || activeWorkflow.iteration <= 1) {
-			return false;
-		}
-
-		return assignedWorkflowStages.some((stage) => {
-			const hasPendingApproval = stage.approvals?.some(
-				(approval) => approval.status?.toUpperCase() === "PENDING",
-			);
-
-			return stage.isCurrentIteration === true && hasPendingApproval;
-		});
-	}, [activeWorkflow, assignedWorkflowStages]);
 
 	/*
 	|--------------------------------------------------------------------------
@@ -1133,14 +1076,13 @@ export function useVendorCreationForm({
 	| after a clarification (never during initial submission or as an
 	| approver). null = resubmit unchanged; a real array = the proposer's
 	| edited stage list, sent as stageEdits to activateFirstStage.
+	| Who may edit: permissions.canEditStagesOnResubmit.
 	|--------------------------------------------------------------------------
 	*/
 
 	const [stageEdits, setStageEditsState] = React.useState<
 		WorkflowStage[] | null
 	>(null);
-
-	const canEditStagesOnResubmit = isThcmProposer && hasPendingClarifiedApproval;
 
 	React.useEffect(() => {
 		setStageEditsState(null);
@@ -1157,22 +1099,20 @@ export function useVendorCreationForm({
 		[canEditStagesOnResubmit],
 	);
 
-	const workflowApproverData = React.useMemo(
-		() => getWorkflowApproverData(activeWorkflow, user),
-		[activeWorkflow, user?.email, user?.id],
-	);
-
-	const { canActNow, isExternalApprover, isCurrentStageApprover } =
-		workflowApproverData;
-
 	type VendorUpdatePayload = Parameters<
 		typeof updateMutation.mutateAsync
 	>[0]["payload"] & {
 		isExternalApprover?: boolean;
 	};
 
+	// skipInvalidate: used by submitForApproval, which refreshes the record
+	// exactly once at the end of its chain. Every other caller (Save & Next,
+	// vendor code) keeps the default per-save refresh.
 	const handleSaveVendorUpdate = React.useCallback(
-		async (payload: VendorUpdatePayload) => {
+		async (
+			payload: VendorUpdatePayload,
+			options?: { skipInvalidate?: boolean },
+		) => {
 			if (!vendorRequestId) {
 				throw new Error("Vendor onboarding ID is missing.");
 			}
@@ -1180,18 +1120,11 @@ export function useVendorCreationForm({
 			return updateMutation.mutateAsync({
 				vendorRequestId,
 				payload,
+				skipInvalidate: options?.skipInvalidate,
 			});
 		},
 		[updateMutation, vendorRequestId],
 	);
-
-	const isApprover = Boolean(isCurrentStageApprover);
-
-	const isTcsApprover = isApprover && Boolean(isExternalApprover);
-
-	const canApprove = canActNow && isApprover;
-
-	const canClarify = canApprove;
 
 	const hasAssignedWorkflow = Boolean(
 		activeWorkflow?.isActive && assignedWorkflowStages.length > 0,
@@ -1204,8 +1137,6 @@ export function useVendorCreationForm({
 	//   2. otherwise the proposer's edits to the active workflow during a
 	//      clarification resubmit (stageEdits);
 	//   3. otherwise the assigned workflow as fetched.
-	// Previously (2) was missing, so Review & Submit rendered the old
-	// cached stages until the submit refetched them.
 	const workflowStages = React.useMemo<ApprovalStageLike[]>(() => {
 		const isPreviewStep = currentStep === 3 || currentStep === 4;
 
@@ -1227,30 +1158,6 @@ export function useVendorCreationForm({
 
 	const isResubmission = hasPendingClarifiedApproval;
 
-	// Send Back to Vendor is a proposer/creator action only. Anyone who is
-	// an approver on any stage of the workflow never gets it, even if they
-	// also created the record.
-	const createdByUserId = detailQuery.data?.createdBy?.id ?? "";
-	const isRecordCreator =
-		isThcmProposer ||
-		(isThcmEmployee && Boolean(user?.id) && createdByUserId === user?.id);
-
-	const isApproverOnAnyStage = React.useMemo(
-		() => isUserApproverInAnyStage(assignedWorkflowStages, user),
-		[assignedWorkflowStages, user],
-	);
-
-	const canSendBackToVendor =
-		!isPublicForm &&
-		status === "IN_REVIEW" &&
-		isRecordCreator &&
-		!isApproverOnAnyStage;
-
-	const canEditMainForm =
-		isThcmProposer && Boolean(status && EDITABLE_STATUSES.includes(status));
-
-	const canEditVendorCode = !isPublicForm && isExternalApprover;
-
 	const normalizedVendorCode = formTwoValues.vendorCode?.trim() ?? "";
 
 	const savedVendorCode = detailQuery.data?.partTwo?.vendorCode?.trim() ?? "";
@@ -1258,6 +1165,8 @@ export function useVendorCreationForm({
 	const isVendorCodeDirty =
 		Boolean(detailQuery.data) && normalizedVendorCode !== savedVendorCode;
 
+	// Permission (canEditVendorCode) AND live form state — so it stays here
+	// rather than in the permission helper, which knows nothing about forms.
 	const canSaveVendorCode =
 		canEditVendorCode &&
 		Boolean(normalizedVendorCode) &&
@@ -1300,6 +1209,8 @@ export function useVendorCreationForm({
 			formTwoForm.reset(toFormTwoDefaults(data.partTwo ?? EMPTY_FORM_TWO));
 		}
 
+		// Initial step is a navigation choice based on status alone, not a
+		// permission — non-editors are redirected to /view by the page.
 		if (stepInitVendorIdRef.current !== vendorRequestId) {
 			stepInitVendorIdRef.current = vendorRequestId;
 			setCurrentStep(EDITABLE_STATUSES.includes(data.status) ? 1 : 4);
@@ -1357,12 +1268,7 @@ export function useVendorCreationForm({
 	// Full submit-time gate for each form — runs the whole Zod schema (via
 	// RHF's own resolver-backed trigger()) and populates formState.errors,
 	// which formOneErrors/formTwoErrors above already mirror out as plain
-	// field->message objects. Kept as the same `(): boolean` signature used
-	// everywhere below by returning the already-awaited result — every
-	// caller in this file is itself async, so `await`ing these two is a
-	// same-file, non-breaking change; nothing outside this file (e.g.
-	// VendorCreationFormOne.tsx) inspects the boolean itself, it only
-	// forwards the function reference as `validateFields`.
+	// field->message objects.
 	const validateFormOneBeforeSubmit = React.useCallback(
 		() => formOneForm.trigger(),
 		[formOneForm],
@@ -1484,12 +1390,6 @@ export function useVendorCreationForm({
 	//   - internal pages → the fetched detail (partOne / partTwo)
 	//   - public vendor page → the fetched session, which includes the last
 	//     saved draft (publicQuery is refetched after every draft save)
-	// The source is read explicitly rather than calling reset() with no
-	// arguments, because RHF's remembered defaults can be stale: the public
-	// sync effect stops re-resetting once the form is dirty, so after
-	// "edit → save draft", RHF would still remember the pre-draft values.
-	// reset() also clears field errors and the dirty flag, so the public
-	// sync effect resumes following the session afterwards.
 	const resetFormOne = React.useCallback(() => {
 		const source = isPublicForm
 			? publicFormInitialValues
@@ -1511,12 +1411,7 @@ export function useVendorCreationForm({
 		);
 	}, [detailQuery.data?.partTwo, formTwoForm]);
 
-	// Form One save for the internal (THCM) edit flow. Receives the
-	// enclosure uploads from VendorCreationFormOne's controller via onSubmit
-	// (handleFormAction has already run field + enclosure validation by the
-	// time this is called), so document changes are actually persisted —
-	// previously this took no arguments and uploads never left the browser.
-	//
+	// Form One save for the internal (THCM) edit flow.
 	//   files changed        → one multipart PATCH (changed fields + files)
 	//   only fields changed  → JSON PATCH with just the changed fields
 	//   nothing changed      → no request, straight to the next step
@@ -1681,6 +1576,9 @@ export function useVendorCreationForm({
 | 2. First submission: send for approval (validates + flips status),
 |    THEN assign the workflow (which makes stage 1 live).
 |    Clarified resubmission: activate the workflow, THEN sync the status.
+| 3. Refresh the record ONCE (detail + audit log + listings), awaited,
+|    then navigate — the steps above are silent (no per-step invalidation)
+|    so the page refetches a single time instead of once per step.
 |
 | sendForApproval is idempotent on the backend, so the resubmission sync is
 | a no-op when activate already flipped the status.
@@ -1813,6 +1711,9 @@ export function useVendorCreationForm({
 			return;
 		}
 
+		// Tracks whether anything was written to the server during this run,
+		// so a failure part-way through still refreshes the (now stale) cache.
+		let hasServerWrites = false;
 		submissionInFlightRef.current = true;
 
 		try {
@@ -1824,7 +1725,8 @@ export function useVendorCreationForm({
 				const payload = getChangedFullPayload();
 
 				if (Object.keys(payload).length > 0) {
-					await handleSaveVendorUpdate(payload);
+					await handleSaveVendorUpdate(payload, { skipInvalidate: true });
+					hasServerWrites = true;
 
 					showSuccessToast(
 						showToast,
@@ -1897,6 +1799,7 @@ export function useVendorCreationForm({
 			if (!sentForApprovalRef.current) {
 				await submitMutation.mutateAsync(vendorRequestId);
 				sentForApprovalRef.current = true;
+				hasServerWrites = true;
 			}
 
 			// Captured before the branch below mutates workflowPreparedRef, so we
@@ -1911,6 +1814,7 @@ export function useVendorCreationForm({
 			} else if (isClarifiedResubmission) {
 				await activateFirstStage(buildActivationPayload());
 				workflowPreparedRef.current = true;
+				hasServerWrites = true;
 			} else if (shouldAssignSelectedWorkflow) {
 				if (!workspaceId || !appId) {
 					throw new Error("Workspace or application information is missing.");
@@ -1927,11 +1831,17 @@ export function useVendorCreationForm({
 					},
 				});
 				workflowPreparedRef.current = true;
+				hasServerWrites = true;
 			} else {
 				throw new Error(
 					"Workflow submission state is invalid. No workflow action was performed.",
 				);
 			}
+
+			// The ONE refetch (record + audit log + listings). Awaited so the
+			// view page renders the submitted state on first paint with no
+			// extra request.
+			await refreshVendorRecord();
 
 			if (workflowJustPrepared) {
 				showSuccessToast(
@@ -1966,19 +1876,19 @@ export function useVendorCreationForm({
 					: vendorContent.toast.submitForApproval.submitSuccessDescription,
 			});
 
-			// submitMutation's onSuccess has already awaited the refetch of the
-			// record and its activity log, so the view page renders the
-			// submitted state (status, workflow, log entry) on first paint,
-			// with no extra request. replace: Back shouldn't return to an
-			// edit form the user can no longer edit.
+			// replace: Back shouldn't return to an edit form the user can no
+			// longer edit.
 			if (onSuccess) {
 				await onSuccess();
 			} else {
-				navigate(`/vendor-onboarding/${vendorRequestId}/view`, {
-					replace: true,
-				});
+				navigate(VENDOR_LISTING_PATH, { replace: true });
 			}
 		} catch (error: unknown) {
+			// The steps above no longer refresh the cache themselves, so if
+			// something was already written before the failure, sync the UI
+			// with the server.
+			if (hasServerWrites) void refreshVendorRecord();
+
 			showApiErrorToast(
 				showToast,
 				error,
@@ -2017,6 +1927,7 @@ export function useVendorCreationForm({
 		showInvalidFieldsToast,
 		formOneForm,
 		formTwoForm,
+		refreshVendorRecord,
 	]);
 
 	const saveVendorCode = React.useCallback(
@@ -2130,7 +2041,7 @@ export function useVendorCreationForm({
 				vendorContent.toast.initiation.sendBackSuccessTitle,
 			);
 
-			navigate("/vendor-onboarding/listing?tab=onboarding");
+			navigate(VENDOR_LISTING_PATH);
 		} catch (error) {
 			showApiErrorToast(
 				showToast,
@@ -2161,7 +2072,7 @@ export function useVendorCreationForm({
 				vendorContent.toast.acceptAndClose.successTitle,
 			);
 
-			navigate("/vendor-onboarding/listing?tab=onboarding");
+			navigate(VENDOR_LISTING_PATH);
 		} catch (error) {
 			showApiErrorToast(
 				showToast,
@@ -2292,27 +2203,18 @@ export function useVendorCreationForm({
 		referenceNumber,
 		vendorReferenceName,
 
-		canEditFormOne: canEditMainForm,
-		canEditFormTwo: canEditMainForm,
-		canEditMainForm,
+		// ── Permissions ────────────────────────────────────────────────────
+		// Spread keeps every existing flag at the top level (canApprove,
+		// canEditMainForm, isThcmProposer, workflowApproverData, …) so
+		// Context consumers don't change. `permissions` is the grouped form
+		// for new code.
+		...permissions,
+		permissions,
 
-		canEditVendorCode,
-		isThcmProposer,
-		isTcsApprover,
-		isExternalApprover,
+		// Needs live form state, so it lives here (see comment above).
 		canSaveVendorCode,
 		isVendorCodeDirty,
 		vendorCodeLoading: isSavingVendorCode,
-
-		canSubmitVendorForm: isPublicVendor,
-		canSaveDraft: isPublicForm,
-		canSubmit: canEditMainForm,
-		canApprove,
-		canClarify,
-		canSendBackToVendor,
-		isApproverOnAnyStage,
-		canAcceptAndClose:
-			detailQuery.data?.status === "APPROVED" && isExternalApprover,
 
 		isLoading: isPublicForm ? publicQuery.isLoading : detailQuery.isLoading,
 
@@ -2325,10 +2227,8 @@ export function useVendorCreationForm({
 		mutationLoading,
 		isResubmission,
 
-		canEditStagesOnResubmit,
 		stageEdits,
 		setStageEdits,
-		hasPendingClarifiedApproval,
 
 		pdfUrl,
 		pdfPreviewOpen,
@@ -2357,12 +2257,9 @@ export function useVendorCreationForm({
 		handleSubmitSummary: submitForApproval,
 		handleVendorDraftSubmitForm: submitDraftPublicVendor,
 
-		// CHANGED: both now accept the mandatory reason ApprovalActionsBar
-		// collects inline. This file only refetches the detail afterwards —
-		// useVendorCreationSummaryController.handleApprove/handleClarify are
-		// what actually call the approve/clarify API with that reason; these
-		// two are just the "refresh the page" callback passed in as onApprove
-		// / onClarify.
+		// Post-success "refresh the page" callbacks passed in as onApprove /
+		// onClarify. useVendorCreationSummaryController.handleApprove/
+		// handleClarify are what actually call the approve/clarify API.
 		handleApprove: async (_reason: string) => {
 			await refreshVendorRecord();
 		},
@@ -2375,7 +2272,6 @@ export function useVendorCreationForm({
 		handleSaveVendorCode: saveVendorCode,
 
 		activeWorkflow,
-		workflowApproverData,
 		workflowStages,
 		assignedWorkflowStages,
 		pendingWorkflowSelection,

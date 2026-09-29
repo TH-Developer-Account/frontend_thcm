@@ -188,12 +188,13 @@ export const WorkflowUserAssignment: React.FC<AssignProps> = ({
 									<p className="workflow-assignment-primary">
 										{getFullName(user)}
 									</p>
-								</div>
-
-								<div className="workflow-assignment-detail">
 									<p className="workflow-assignment-secondary">
 										{user.email ?? "--"}
 									</p>
+								</div>
+
+								<div className="workflow-assignment-detail">
+									{user.designation ?? "--"}
 								</div>
 
 								<div className="workflow-assignment-detail">

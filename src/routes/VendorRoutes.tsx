@@ -26,7 +26,7 @@ const VendorRoutes = () => {
 				<Route path="/listing" element={<VendorOnboardingListingPage />} />
 				<Route path="dashboard" element={<VendorDashboardPage />} />
 
-				<Route path="/initiation/create" element={<VendorInitiationPage />} />
+				<Route path="/initiate" element={<VendorInitiationPage />} />
 
 				<Route path="/create" element={<VendorOnboardingPage />} />
 

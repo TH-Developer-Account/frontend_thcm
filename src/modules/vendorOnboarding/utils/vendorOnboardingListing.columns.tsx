@@ -1,30 +1,32 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Eye, Pencil } from "lucide-react";
+import { NavLink } from "react-router-dom";
 
-import Button from "../../../components/common/Button";
+import ActionMenu, {
+	type ActionMenuItem,
+} from "../../../components/common/ActionMenu";
+import PendingOnStatus from "../../../components/common/PendingOnStatus";
 import { formatDateTime24 } from "../../../utils/format";
 
 import type {
 	VendorOnboardingColumnsParams,
 	VendorOnboardingListingRow,
 } from "../types/vendorListing.types";
-import PendingOnStatus from "../../../components/common/PendingOnStatus";
 
 const renderCellValue = (value: string | null | undefined): string =>
 	value?.trim() || "—";
 
-const normalizeStatus = (status: string | null | undefined): string =>
-	status
-		?.trim()
-		.toUpperCase()
-		.replace(/[\s-]+/g, "_") ?? "";
-
-const EDITABLE_STATUSES = new Set(["VENDOR_SUBMITTED", "IN_REVIEW"]);
+const getRowLabel = (record: VendorOnboardingListingRow): string =>
+	record.vendorName ||
+	record.vendorReferenceName ||
+	record.referenceNumber ||
+	"vendor";
 
 export const getVendorOnboardingColumns = ({
 	onView,
 	onEdit,
-	canEdit,
+	onRetrigger,
+	getRowPermissions,
 }: VendorOnboardingColumnsParams): ColumnDef<VendorOnboardingListingRow>[] => [
 	{
 		accessorKey: "referenceNumber",
@@ -33,13 +35,14 @@ export const getVendorOnboardingColumns = ({
 			headerClassName: "vendor-reference-number",
 			cellClassName: "vendor-reference-number",
 		},
-		cell: ({ row }) => {
-			return (
-				<span className="epc-number-link">
-					{row.original.referenceNumber || "--"}
-				</span>
-			);
-		},
+		cell: ({ row }) => (
+			<NavLink
+				to={`/vendor-onboarding/${row.original.id}`}
+				className="epc-number-link"
+			>
+				{row.original.referenceNumber || "--"}
+			</NavLink>
+		),
 	},
 	{
 		accessorKey: "vendorName",
@@ -47,14 +50,10 @@ export const getVendorOnboardingColumns = ({
 		cell: ({ row }) => (
 			<div className="vendor-listing-identity">
 				<span className="vendor-listing-title">
-					{renderCellValue(row.original.vendorName)}
+					{row.original.vendorName
+						? renderCellValue(row.original.vendorName)
+						: row.original.vendorReferenceName}
 				</span>
-
-				{row.original.vendorReferenceName ? (
-					<span className="vendor-listing-subtitle">
-						{row.original.vendorReferenceName}
-					</span>
-				) : null}
 			</div>
 		),
 	},
@@ -100,73 +99,53 @@ export const getVendorOnboardingColumns = ({
 	{
 		id: "actions",
 		header: "Actions",
+		enableSorting: false,
+		size: 80,
 		cell: ({ row }) => {
 			const record = row.original;
-			const status = normalizeStatus(record.status);
 
-			/**
-			 * ACTION RULES
-			 *
-			 * AWAITING_VENDOR
-			 * - No View
-			 * - No Edit
-			 *
-			 * IN_PROGRESS
-			 * - View
-			 *
-			 * VENDOR_SUBMITTED
-			 * - View
-			 * - Edit
-			 *
-			 * IN_REVIEW
-			 * - View
-			 * - Edit
-			 *
-			 * Everything else
-			 * - View
-			 */
-			const showView = Boolean(onView) && status !== "AWAITING_VENDOR";
+			// Rules live in helpers/vendor.permissions.ts
+			// (getVendorRowPermissions). Columns only decide HOW to render;
+			// an action also needs its handler to be wired to show.
+			const { canView, canEdit, canRetrigger } = getRowPermissions(record);
 
-			const showEdit =
-				Boolean(onEdit) &&
-				EDITABLE_STATUSES.has(status) &&
-				(canEdit ? canEdit(record) : true);
+			const showView = canView && Boolean(onView);
+			const showEdit = canEdit && Boolean(onEdit);
+			const showRetrigger = canRetrigger && Boolean(onRetrigger);
 
-			if (!showView && !showEdit) {
-				return "—";
-			}
+			if (!showView && !showEdit && !showRetrigger) return "—";
+
+			const actions: ActionMenuItem<VendorOnboardingListingRow>[] = [
+				{
+					id: "view",
+					label: "View",
+					Icon: Eye,
+					onClick: (r) => onView?.(r),
+					hidden: !showView,
+				},
+				{
+					id: "edit",
+					label: "Edit",
+					Icon: Pencil,
+					onClick: (r) => onEdit?.(r),
+					hidden: !showEdit,
+				},
+				// {
+				// 	id: "retrigger",
+				// 	label: "Retrigger Email",
+				// 	Icon: Send,
+				// 	onClick: (r) => onRetrigger?.(r),
+				// 	hidden: !showRetrigger,
+				// },
+			];
 
 			return (
-				<div className="flex items-center gap-2">
-					{showView ? (
-						<Button
-							type="button"
-							// text="View"
-							Icon={Eye}
-							iconPosition="left"
-							size="sm"
-							appearance="icon"
-							variant="outline"
-							onClick={() => onView(record)}
-						/>
-					) : null}
-
-					{showEdit ? (
-						<Button
-							type="button"
-							// text="Edit"
-							Icon={Pencil}
-							iconPosition="left"
-							size="sm"
-							appearance="icon"
-							variant="outline"
-							onClick={() => onEdit?.(record)}
-						/>
-					) : null}
-				</div>
+				<ActionMenu<VendorOnboardingListingRow>
+					row={record}
+					actions={actions}
+					ariaLabel={`Actions for ${getRowLabel(record)}`}
+				/>
 			);
 		},
-		enableSorting: false,
-		size: 160,
 	},
 ];

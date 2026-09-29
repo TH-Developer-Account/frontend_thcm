@@ -40,7 +40,7 @@ export const breadcrumbRoutes: BreadcrumbRoute[] = [
 		],
 	},
 	{
-		pattern: "/vendor/initiation/create",
+		pattern: "/vendor/initiate",
 		getBreadcrumbs: () => [
 			{ label: "Vendor Onboarding", href: "/vendor/onboarding/listing" },
 			{ label: "Initiate" },
@@ -131,7 +131,7 @@ export const breadcrumbRoutes: BreadcrumbRoute[] = [
 		],
 	},
 	{
-		pattern: "/medi-claim/initiation/create",
+		pattern: "/medi-claim/initiate",
 		getBreadcrumbs: () => [
 			{ label: "Medical Claims", href: "/medi-claim/listing" },
 			{ label: "Initiation", href: "/medi-claim/initiation/listing" },

@@ -20,6 +20,7 @@ export type UserOption = {
 	firstName?: string;
 	lastName?: string;
 	phone?: string;
+	designation?: string | null;
 };
 
 type UserAsyncSelectProps = {

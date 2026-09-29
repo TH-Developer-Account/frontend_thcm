@@ -316,6 +316,9 @@ const WorkflowStagesForm = ({
 													<div className="workflow-approver-role">
 														{approver.user?.email ?? "--"}
 													</div>
+													<div className="workflow-approver-role">
+														{approver.user?.designation ?? "--"}
+													</div>
 												</div>
 
 												<label
@@ -369,6 +372,7 @@ const WorkflowStagesForm = ({
 												firstName: selected.firstName ?? "",
 												lastName: selected.lastName ?? "",
 												email: selected.email ?? "",
+												designation: selected.designation ?? "",
 											},
 											isExternalApprover: false,
 										});

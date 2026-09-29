@@ -290,7 +290,9 @@ const VendorCreationSummaryForm = ({
 	const showClarifyAction = resolvedCanClarify;
 
 	const showSendBackAction =
-		resolvedCanSendBack && typeof resolvedOnSendBack === "function";
+		isViewMode &&
+		resolvedCanSendBack &&
+		typeof onHandleSendBackVendor === "function";
 
 	const showAcceptAndCloseAction =
 		resolvedCanAcceptAndClose && typeof resolvedOnAcceptAndClose === "function";
@@ -409,7 +411,7 @@ const VendorCreationSummaryForm = ({
 			clarifyLabel={vendorContent.buttons.sendForClarification}
 			sendBackLabel={vendorContent.buttons.sendBackToVendor}
 			acceptAndCloseLabel={vendorContent.buttons.acceptAndClose}
-			submitLabel={vendorContent.buttons.finalSubmit}
+			submitLabel={vendorContent.buttons.sendForApproval}
 			backLabel={vendorContent.buttons.back}
 		/>
 	);

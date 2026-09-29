@@ -103,6 +103,7 @@ export const getWorkflowColumns = ({
 					Icon: UserPlus,
 					onClick: onAssign,
 					hidden: editable, // only applicable to admin templates, not self-assigned USER templates
+					variant: "danger",
 				},
 				{
 					id: "edit",
@@ -110,6 +111,7 @@ export const getWorkflowColumns = ({
 					Icon: Edit,
 					onClick: onEdit,
 					hidden: !editable,
+					variant: "danger",
 				},
 				{
 					id: "delete",
@@ -125,6 +127,7 @@ export const getWorkflowColumns = ({
 					Icon: Eye,
 					onClick: onView,
 					hidden: editable,
+					variant: "danger",
 				},
 			];
 

@@ -35,6 +35,7 @@ export type VendorListingParams = {
 export type VendorListingRow = {
 	id: string;
 	vendorName: string | null;
+	vendorReferenceName: string | null;
 	mobile: string | null;
 	email: string | null;
 	vendorCode: string | null;

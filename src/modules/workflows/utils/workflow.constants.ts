@@ -1,6 +1,13 @@
 import { ClipboardCheck, ClipboardList } from "lucide-react";
 import type { Permission } from "../../../context/Auth/AuthContext";
-import type { BudgetCategory } from "../types/workflow.types";
+import type { BudgetCategory, WorkflowSelectOption } from "../types/types";
+
+// Merged from utils/workflow.constants.ts + constant/workflow.constant.ts.
+// The two files were identical except that this one also had
+// MARKETING_ACTIVITY_PLANNER_APP_NAME. After merging, delete
+// constant/workflow.constant.ts and re-point its 4 importers here:
+//   api/workflow.api.ts, hooks/useWorkflowListingPage.ts,
+//   components/WorkflowTable.tsx, components/WorkflowFetchList.tsx
 
 // App name used to gate the budget-category field/requirement on the
 // workflow create/edit form. Compared against `basics.appDesc`.
@@ -18,8 +25,12 @@ export const api_routes = {
 // app-admin with no individual module grants would never see their own
 // app here — app-scope rows are always action: "write" only, so a
 // read-only filter silently excluded them.
-export const formatApps = (data: Permission[]) => {
-	const uniqueMap = new Map();
+//
+// Return type is now WorkflowSelectOption[] (was implicitly any[] because
+// the Map was untyped), so callers get real type-checking on `.value` /
+// `.label`.
+export const formatApps = (data: Permission[]): WorkflowSelectOption[] => {
+	const uniqueMap = new Map<string, WorkflowSelectOption>();
 
 	data.forEach((item) => {
 		const isModuleRead = item.scope === "MODULE" && item.action === "read";

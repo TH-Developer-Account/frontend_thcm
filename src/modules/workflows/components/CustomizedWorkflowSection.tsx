@@ -122,6 +122,7 @@ const mapActiveStagesToEditable = (
 					firstName?: string;
 					lastName?: string;
 					email?: string;
+					designation?: string;
 				};
 			}>;
 		};
@@ -142,6 +143,7 @@ const mapActiveStagesToEditable = (
 						firstName: approval.approver?.firstName ?? "",
 						lastName: approval.approver?.lastName ?? "",
 						email: approval.approver?.email ?? "",
+						designation: approval.approver?.designation ?? "",
 					},
 					isExternalApprover: approval.isExternalApprover ?? false,
 				}),

@@ -2,10 +2,8 @@ import type {
 	CreateWorkflowPayload,
 	WorkflowBasics,
 	WorkflowGenErrors,
-	WorkflowRow,
 	WorkflowStage,
 	WorkflowStageErrors,
-	WorkflowTemplate,
 } from "../types/types";
 import { deriveStrategy } from "./strategy";
 import { getFullName } from "./user";
@@ -224,20 +222,6 @@ export const addStageApprover = (
 			: { ...stage, approvers: [...stage.approvers, approver] },
 	);
 
-export const mapWorkflowRows = (workflows: WorkflowTemplate[]): WorkflowRow[] =>
-	workflows.map((workflow) => ({
-		id: workflow.id,
-		name: workflow.name,
-		appName: workflow.app?.name || "",
-		createdBy: getFullName(workflow.createdBy, ""),
-		isActive: workflow.isActive,
-		lastUpdated: workflow.updatedAt,
-		updatedBy: getFullName(workflow.updatedBy, ""),
-		workflowUsers: workflow.workflowUsers.map(({ user }) => ({
-			id: user.id,
-		})),
-		workflowType: workflow.workflowType,
-	}));
 export const mapBasics = (data: any) => ({
 	id: data?.id ?? "",
 	name: data?.name ?? "",
@@ -278,6 +262,7 @@ export const mapStages = (stages: WorkflowStage[] = []): WorkflowStage[] => {
 							approver?.lastName ??
 							"",
 						email: approver?.user?.email ?? approver?.email ?? "",
+						designation: approver?.user.designation ?? "",
 					},
 					isExternalApprover: Boolean(approver?.isExternalApprover),
 				})) ?? [],

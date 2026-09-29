@@ -11,6 +11,6 @@ export const medicalClaimSidebar: SidebarItem[] = [
 		id: "form-initiation-create",
 		label: "Initiate Create",
 		icon: <FilePlusCorner size={18} />,
-		link: "/medi-claim/initiation/create",
+		link: "/medi-claim/initiate",
 	},
 ];

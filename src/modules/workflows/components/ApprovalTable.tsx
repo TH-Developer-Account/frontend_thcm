@@ -14,6 +14,7 @@ type ApprovalTableColumnId =
 	| "type"
 	| "approver"
 	| "email"
+	| "designation"
 	| "isExternal"
 	| "flow"
 	| "minimum"
@@ -195,12 +196,30 @@ const buildColumns = (
 		},
 	},
 	{
+		key: "designation",
+		header: "Designation",
+		render: (row) => {
+			const { visible } = getRowView(row);
+
+			return renderValueStack(
+				visible.map((approver) => ({
+					key: String(approver.id),
+					content: (
+						<span className="approval-table-secondary-value">
+							{approver.designation || "--"}
+						</span>
+					),
+				})),
+				renderEmptyValue(),
+			);
+		},
+	},
+	{
 		key: "isExternal",
 		header: "External approver",
 		align: "center",
 		render: (row) => {
 			const { visible } = getRowView(row);
-
 			return renderValueStack(
 				visible.map((approver) => ({
 					key: String(approver.id),
@@ -225,22 +244,22 @@ const buildColumns = (
 			</span>
 		),
 	},
-	{
-		key: "minimum",
-		header: "Minimum Approvals",
-		align: "center",
-		render: (row) => (
-			<span className="approval-table-count">{row.minApprovals ?? "--"}</span>
-		),
-	},
-	{
-		key: "total",
-		header: "Total Approvals",
-		align: "center",
-		render: (row) => (
-			<span className="approval-table-count">{row.totalApprovers ?? "--"}</span>
-		),
-	},
+	// {
+	// 	key: "minimum",
+	// 	header: "Minimum Approvals",
+	// 	align: "center",
+	// 	render: (row) => (
+	// 		<span className="approval-table-count">{row.minApprovals ?? "--"}</span>
+	// 	),
+	// },
+	// {
+	// 	key: "total",
+	// 	header: "Total Approvals",
+	// 	align: "center",
+	// 	render: (row) => (
+	// 		<span className="approval-table-count">{row.totalApprovers ?? "--"}</span>
+	// 	),
+	// },
 	{
 		key: "status",
 		header: "Status",
@@ -279,6 +298,7 @@ const ApprovalPdfTable = ({ data }: { data: ApprovalTableRow[] }) => {
 					<th>Type</th>
 					<th>Approver</th>
 					<th>Email</th>
+					<th>Designation</th>
 					<th>Flow</th>
 					<th>Min</th>
 					<th>Total</th>
@@ -306,6 +326,13 @@ const ApprovalPdfTable = ({ data }: { data: ApprovalTableRow[] }) => {
 											.map((approver) => approver.email || "--")
 											.join(", ")
 									: row.email || "--"}
+							</td>
+							<td>
+								{approvers.length
+									? approvers
+											.map((approver) => approver.designation || "--")
+											.join(", ")
+									: row.designation || "--"}
 							</td>
 							<td>{row.strategy || "--"}</td>
 							<td>{row.minApprovals ?? "--"}</td>

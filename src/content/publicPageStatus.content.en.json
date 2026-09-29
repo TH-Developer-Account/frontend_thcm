@@ -14,7 +14,7 @@
 			"description": "Your vendor onboarding form has been submitted successfully. Tata Hitachi will review the information provided.",
 			"noticeTitle": "Check your email",
 			"noticeDescription": "A copy of your submitted response has been sent to your registered email address.",
-			"securityNote": "This secure session will close automatically.",
+			"securityNote": "Your submission is complete. You can now safely close this window.",
 			"actionLabel": "Log in to Tata Hitachi",
 			"actionTo": "/"
 		}

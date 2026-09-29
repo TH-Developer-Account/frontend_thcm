@@ -29,6 +29,7 @@ const VendorOnboardingListingPage = () => {
 		isFetching,
 		isExporting,
 		exportState,
+		getRowPermissions,
 		handleTabChange,
 		handleSearchChange,
 		handlePageSizeChange,
@@ -55,13 +56,23 @@ const VendorOnboardingListingPage = () => {
 		[navigate],
 	);
 
+	// The Retrigger Email button in VendorOnboardingInitiationForm only
+	// renders in "view" mode — point this at whichever route mounts
+	// VendorInitiationPage with mode="view".
+	const handleRetriggerRow = useCallback(
+		(row: VendorOnboardingListingRow) => {
+			navigate(`/vendor/initiation/${row.id}/view`);
+		},
+		[navigate],
+	);
+
 	return (
 		<PageSectionLayout>
 			<PageHeader
 				headerText="Vendor Onboarding"
 				headerChildren={
 					<Button
-						path="/vendor-onboarding/initiation/create"
+						path="/vendor-onboarding/initiate"
 						text="Initiate"
 						appearance="standard"
 						variant="brand"
@@ -131,8 +142,10 @@ const VendorOnboardingListingPage = () => {
 				onPageChange={setPageIndex}
 				onPageSizeChange={handlePageSizeChange}
 				onExport={handleExport}
+				getRowPermissions={getRowPermissions}
 				onViewRow={handleViewRow}
 				onEditRow={handleEditRow}
+				onRetriggerRow={handleRetriggerRow}
 				isExporting={isExporting}
 			/>
 		</PageSectionLayout>

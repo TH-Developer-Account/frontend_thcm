@@ -74,6 +74,7 @@ const mapActiveApproval = (
 		id: approval.id ?? `${stageOrder}-${index}`,
 		name: getFullName(user, "--"),
 		email: user?.email?.trim() || "--",
+		designation: user?.designation || "--",
 		isExternal: Boolean(approval.isExternalApprover),
 		minApprovals,
 		status: normalizeWorkflowStatus(approval.status) || null,
@@ -92,6 +93,7 @@ const mapPreviewApprover = (
 		id: approver.id ?? `${stageOrder}-${index}`,
 		name: getFullName(user, "--"),
 		email: user?.email?.trim() || "--",
+		designation: user?.designation || "--",
 		isExternal: Boolean(approver.isExternalApprover),
 		minApprovals,
 		status: approver.status ? normalizeWorkflowStatus(approver.status) : null,
@@ -106,6 +108,26 @@ const shouldRenderStageStatus = (stage: ApprovalStageLike): boolean => {
 		status === "REJECTED" ||
 		status === "CLARIFIED" ||
 		(stage.isCurrentIteration === true && status === "IN_PROGRESS")
+	);
+};
+
+const isStageCompleted = (
+	stage: ApprovalStageLike,
+	approvers: ApprovalTableApproverRow[],
+	minApprovals: string | number,
+): boolean => {
+	const required = Number(minApprovals);
+	if (!Number.isFinite(required) || required <= 0) return false;
+
+	const stageStatus = normalizeWorkflowStatus(stage.status);
+	const approvedCount = approvers.filter(
+		(approver) => normalizeWorkflowStatus(approver.status) === "APPROVED",
+	).length;
+
+	return (
+		stage.isCurrentIteration === true &&
+		stageStatus === "APPROVED" &&
+		approvedCount >= required
 	);
 };
 
@@ -129,6 +151,8 @@ export const mapWorkflowStagesToApprovalRows = (
 					mapPreviewApprover(approver, stage.stageOrder, index, minApprovals),
 				);
 
+		const stageCompleted = isStageCompleted(stage, approvers, minApprovals);
+
 		return {
 			id: stage.id ?? String(stage.stageOrder),
 			stageOrder: stage.stageOrder,
@@ -139,11 +163,20 @@ export const mapWorkflowStagesToApprovalRows = (
 			status: shouldShowStageStatus ? (stage.status ?? null) : null,
 			name: approvers[0]?.name ?? "--",
 			email: approvers[0]?.email ?? "--",
-			approvers: approvers.map((approver) => ({
-				...approver,
-				status: shouldShowStageStatus ? approver.status : null,
-			})),
-			isExternal: stage.isExternal,
+			designation: approvers[0].designation ?? "--",
+			approvers: approvers.map((approver) => {
+				if (!shouldShowStageStatus) return { ...approver, status: null };
+
+				// Stage is fully satisfied: leftover pending approvers show "--"
+				if (
+					stageCompleted &&
+					normalizeWorkflowStatus(approver.status) === "PENDING"
+				) {
+					return { ...approver, status: null };
+				}
+
+				return approver;
+			}),
 		};
 	});
 };
@@ -161,6 +194,7 @@ export const mapEpcWorkflowUser = (approval: any): WorkflowUser => {
 		firstName: user?.firstName?.trim() ?? user?.first_name?.trim() ?? "",
 		lastName: user?.lastName?.trim() ?? user?.last_name?.trim() ?? "",
 		email: user?.email?.trim() || undefined,
+		designation: user?.designation ?? "",
 	};
 };
 

@@ -21,21 +21,6 @@ export const vendorOnboardingKeys = {
 		[...vendorOnboardingKeys.all, "public-session", token] as const,
 };
 
-/**
- * Refreshes everything that changes when a vendor record changes: the
- * listings, the record itself and its activity log.
- *
- * Returned (not fire-and-forget) so mutation onSuccess can return it —
- * React Query then keeps the mutation pending until the refetch lands, and
- * mutateAsync() resolves with fresh data already in the cache. Whatever
- * renders next (e.g. the view page after submit) shows the new state on
- * first paint, without a second fetch.
- *
- * The activity log uses refetchType "all": AuditLogSection caches with
- * staleTime Infinity + refetchOnMount false, so a normal invalidate only
- * marks an unmounted log stale and it would never refetch when the view
- * page mounts. "all" refetches it immediately, mounted or not.
- */
 export const invalidateVendor = (
 	queryClient: ReturnType<typeof useQueryClient>,
 	vendorRequestId?: string,
@@ -70,6 +55,7 @@ export function useVendorOnboardingDetailQuery(
 		retry: false,
 		staleTime: 30_000,
 		refetchOnWindowFocus: false,
+		refetchOnMount: "always",
 	});
 }
 
@@ -107,12 +93,21 @@ export function useCreateVendorMutation() {
 	});
 }
 
+type UpdateVendorVariables = Parameters<typeof vendorOnboardingApi.update>[0];
+
 export function useUpdateVendorMutation() {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: vendorOnboardingApi.update,
+		// skipInvalidate is a client-only flag — strip it before the API call.
+		mutationFn: ({
+			skipInvalidate: _skipInvalidate,
+			...variables
+		}: UpdateVendorVariables & { skipInvalidate?: boolean }) =>
+			vendorOnboardingApi.update(variables),
 		onSuccess: (_data, variables) =>
-			invalidateVendor(queryClient, variables.vendorRequestId),
+			variables.skipInvalidate
+				? undefined
+				: invalidateVendor(queryClient, variables.vendorRequestId),
 	});
 }
 
@@ -128,12 +123,16 @@ export function useUpdateVendorWithDocumentsMutation() {
 	});
 }
 
-export function useSubmitVendorMutation() {
+export function useSubmitVendorMutation({
+	invalidateOnSuccess = true,
+}: { invalidateOnSuccess?: boolean } = {}) {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: vendorOnboardingApi.submit,
 		onSuccess: (_data, vendorRequestId) =>
-			invalidateVendor(queryClient, vendorRequestId),
+			invalidateOnSuccess
+				? invalidateVendor(queryClient, vendorRequestId)
+				: undefined,
 	});
 }
 

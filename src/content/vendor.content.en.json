@@ -373,7 +373,8 @@
 		"acceptAndClose": "Accept and Close",
 		"sendBackToVendor": "Send Back to Vendor",
 		"finalSubmit": "Final Submit",
-		"saveAndApprove": "Save & Approve"
+		"saveAndApprove": "Save & Approve",
+		"sendForApproval": "Submit for Approval"
 	},
 
 	"listing": {

@@ -321,7 +321,7 @@ const WorkflowTable = () => {
 			<Modal
 				open={Boolean(viewModal)}
 				onClose={() => setViewModal(null)}
-				size="lg"
+				size="xl"
 				title={viewModal?.name ? `View: ${viewModal.name}` : "View Workflow"}
 				footer_actions={
 					<Button

@@ -2414,7 +2414,7 @@
 
 	@media (max-width: 640px) {
 		.modal-overlay {
-			align-items: flex-end;
+			align-items: center;
 			justify-content: center;
 			padding: var(--space-3);
 		}

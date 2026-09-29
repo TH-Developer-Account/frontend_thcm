@@ -15,6 +15,7 @@ import {
 import type {
 	VendorListingFilter,
 	VendorOnboardingListingRow,
+	VendorRowPermissions,
 } from "../types/vendorListing.types";
 import { VENDOR_ONBOARDING_FILTER_TABS } from "../utils/vendor.constant";
 import { getVendorOnboardingColumns } from "../utils/vendorOnboardingListing.columns";
@@ -54,8 +55,10 @@ type VendorOnboardingListingTableProps = VendorListingCommonProps & {
 	listingType: "onboarding";
 	rows?: VendorOnboardingListingRow[];
 
+	getRowPermissions: (row: VendorOnboardingListingRow) => VendorRowPermissions;
 	onViewRow: (row: VendorOnboardingListingRow) => void;
 	onEditRow?: (row: VendorOnboardingListingRow) => void;
+	onRetriggerRow?: (row: VendorOnboardingListingRow) => void;
 };
 
 type VendorListingTableProps = VendorOnboardingListingTableProps;
@@ -78,8 +81,10 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 		onPageSizeChange,
 		onExport,
 		isExporting = false,
+		getRowPermissions,
 		onViewRow,
 		onEditRow,
+		onRetriggerRow,
 	} = props;
 
 	const resolvedFilterTabs = filterTabs ?? VENDOR_ONBOARDING_FILTER_TABS;
@@ -99,10 +104,12 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 	const onboardingColumns = useMemo(
 		() =>
 			getVendorOnboardingColumns({
+				getRowPermissions,
 				onView: onViewRow,
 				onEdit: onEditRow,
+				onRetrigger: onRetriggerRow,
 			}),
-		[onViewRow, onEditRow],
+		[getRowPermissions, onViewRow, onEditRow, onRetriggerRow],
 	);
 
 	const searchPlaceholder = getOnboardingSearchPlaceholder(selectedFilter);

@@ -9,6 +9,7 @@ export const toOnboardingRow = (
 ): VendorOnboardingListingRow => ({
 	id: row.id,
 	vendorName: row.vendorName ?? "",
+	vendorReferenceName: row.vendorReferenceName ?? "",
 	email: row.email ?? "",
 	mobile: row.mobile ?? "",
 	vendorCode: row.vendorCode,
