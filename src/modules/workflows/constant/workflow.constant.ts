@@ -1,6 +1,6 @@
 import { ClipboardCheck, ClipboardList } from "lucide-react";
 import type { Permission } from "../../../context/Auth/AuthContext";
-import type { BudgetCategory } from "../types/workflow.types";
+import type { BudgetCategory } from "../types/types";
 
 export const api_routes = {
 	// other routes...
