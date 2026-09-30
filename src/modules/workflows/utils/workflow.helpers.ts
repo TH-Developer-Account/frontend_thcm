@@ -262,7 +262,8 @@ export const mapStages = (stages: WorkflowStage[] = []): WorkflowStage[] => {
 							approver?.lastName ??
 							"",
 						email: approver?.user?.email ?? approver?.email ?? "",
-						designation: approver?.user.designation ?? "",
+						designation:
+							approver?.user?.designation ?? approver?.designation ?? "",
 					},
 					isExternalApprover: Boolean(approver?.isExternalApprover),
 				})) ?? [],

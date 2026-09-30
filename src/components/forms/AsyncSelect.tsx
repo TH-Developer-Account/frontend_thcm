@@ -128,14 +128,23 @@ const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 
 				const formattedOptions = rows
 					.filter((user) => !excludedUserIdSet.has(user.id))
-					.map<UserOption>((user) => ({
-						value: user.id,
-						firstName: user.first_name,
-						lastName: user.last_name,
-						label: `${user.first_name} ${user.last_name}`.trim(),
-						email: user.email,
-					}));
+					.map<UserOption>((user) => {
+						const firstName = user.first_name?.trim() ?? "";
+						const lastName = user.last_name?.trim() ?? "";
 
+						return {
+							value: user.id,
+							firstName,
+							lastName,
+							label:
+								`${firstName} ${lastName}`.trim() ||
+								user.email ||
+								"Unnamed user",
+							email: user.email,
+							phone: user.phone ?? undefined,
+							designation: user.designation?.trim() || null,
+						};
+					});
 				setOptions(formattedOptions);
 			} catch (err) {
 				if (!requestIsActive || controller.signal.aborted) return;

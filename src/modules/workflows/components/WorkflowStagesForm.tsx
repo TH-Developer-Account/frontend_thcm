@@ -314,10 +314,10 @@ const WorkflowStagesForm = ({
 													</div>
 
 													<div className="workflow-approver-role">
-														{approver.user?.email ?? "--"}
+														{approver.user?.email || "--"}
 													</div>
 													<div className="workflow-approver-role">
-														{approver.user?.designation ?? "--"}
+														{approver.user?.designation || "--"}
 													</div>
 												</div>
 

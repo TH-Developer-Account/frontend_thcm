@@ -1377,7 +1377,7 @@
 		display: grid;
 		gap: var(--space-1);
 		width: 100%;
-		margin-top: 0.8rem;
+		margin-top: 0;
 	}
 
 	.ui-card-section {
