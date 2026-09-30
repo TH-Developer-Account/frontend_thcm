@@ -10,11 +10,11 @@ import { PageHeader } from "../../../../components/ui/PageHeader";
 import { SearchInput } from "../../../../components/forms/SearchInput";
 
 import ChecklistCard, { type ChecklistCardProps } from "./ChecklistCard";
+import { deriveChecklistLibrarySummary } from "./checklist.utils";
 import {
 	CHECKLIST_FILTER_TABS,
-	type ChecklistTemplateFilter,
-} from "../shared.audit.types";
-import { deriveChecklistLibrarySummary } from "./checklist.utils";
+	type ChecklistFilter,
+} from "../../dealerAudit/checklist-library.constants";
 
 export interface ChecklistLibraryProps {
 	/** Page copy — each module supplies its own, nothing is assumed here. */
@@ -53,8 +53,7 @@ export default function ChecklistLibrary({
 	onDeleteTemplate,
 }: ChecklistLibraryProps) {
 	const [search, setSearch] = useState("");
-	const [activeFilter, setActiveFilter] =
-		useState<ChecklistTemplateFilter>("all");
+	const [activeFilter, setActiveFilter] = useState<ChecklistFilter>("all");
 	const [blockedIds, setBlockedIds] = useState<Set<string>>(() => new Set());
 
 	const summaryCards = useMemo(
