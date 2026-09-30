@@ -9,6 +9,9 @@ import {
 	workflowApi,
 	type ActivateFirstStagePayload,
 } from "../../workflows/api/workflow.api";
+import { auditKeys } from "../../../components/ui/audit/audit.keys";
+
+const VENDOR_AUDIT_SUBJECT_TYPE = "VENDOR_ONBOARDING";
 
 export const vendorOnboardingKeys = {
 	all: ["vendor-onboarding"] as const,
@@ -18,16 +21,27 @@ export const vendorOnboardingKeys = {
 		[...vendorOnboardingKeys.all, "public-session", token] as const,
 };
 
-const invalidateVendor = (
+export const invalidateVendor = (
 	queryClient: ReturnType<typeof useQueryClient>,
 	vendorRequestId?: string,
-) => {
-	queryClient.invalidateQueries({ queryKey: vendorOnboardingKeys.lists() });
+): Promise<unknown> => {
+	const tasks: Promise<unknown>[] = [
+		queryClient.invalidateQueries({ queryKey: vendorOnboardingKeys.lists() }),
+	];
+
 	if (vendorRequestId) {
-		queryClient.invalidateQueries({
-			queryKey: vendorOnboardingKeys.detail(vendorRequestId),
-		});
+		tasks.push(
+			queryClient.invalidateQueries({
+				queryKey: vendorOnboardingKeys.detail(vendorRequestId),
+			}),
+			queryClient.invalidateQueries({
+				queryKey: auditKeys.log(VENDOR_AUDIT_SUBJECT_TYPE, vendorRequestId),
+				refetchType: "all",
+			}),
+		);
 	}
+
+	return Promise.all(tasks);
 };
 
 export function useVendorOnboardingDetailQuery(
@@ -41,6 +55,7 @@ export function useVendorOnboardingDetailQuery(
 		retry: false,
 		staleTime: 30_000,
 		refetchOnWindowFocus: false,
+		refetchOnMount: "always",
 	});
 }
 
@@ -78,21 +93,46 @@ export function useCreateVendorMutation() {
 	});
 }
 
+type UpdateVendorVariables = Parameters<typeof vendorOnboardingApi.update>[0];
+
 export function useUpdateVendorMutation() {
 	const queryClient = useQueryClient();
 	return useMutation({
-		mutationFn: vendorOnboardingApi.update,
+		// skipInvalidate is a client-only flag — strip it before the API call.
+		mutationFn: ({
+			skipInvalidate: _skipInvalidate,
+			...variables
+		}: UpdateVendorVariables & { skipInvalidate?: boolean }) =>
+			vendorOnboardingApi.update(variables),
+		onSuccess: (_data, variables) =>
+			variables.skipInvalidate
+				? undefined
+				: invalidateVendor(queryClient, variables.vendorRequestId),
+	});
+}
+
+export function useUpdateVendorWithDocumentsMutation() {
+	const queryClient = useQueryClient();
+	return useMutation({
+		mutationFn: vendorOnboardingApi.updateWithDocuments,
+		// Same refresh as a plain update — the refetched detail brings the
+		// new documents back with their URLs, so Form One shows them again
+		// when the user navigates back to step 1.
 		onSuccess: (_data, variables) =>
 			invalidateVendor(queryClient, variables.vendorRequestId),
 	});
 }
 
-export function useSubmitVendorMutation() {
+export function useSubmitVendorMutation({
+	invalidateOnSuccess = true,
+}: { invalidateOnSuccess?: boolean } = {}) {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: vendorOnboardingApi.submit,
 		onSuccess: (_data, vendorRequestId) =>
-			invalidateVendor(queryClient, vendorRequestId),
+			invalidateOnSuccess
+				? invalidateVendor(queryClient, vendorRequestId)
+				: undefined,
 	});
 }
 

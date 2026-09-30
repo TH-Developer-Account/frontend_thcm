@@ -9,7 +9,8 @@ export const BUSINESS_PARTNER_TYPE_OPTIONS: SelectOption<BusinessPartnerType>[] 
 	[
 		{ label: "Dealer", value: "DEALER" },
 		{ label: "Customer", value: "CUSTOMER" },
-		{ label: "Employee", value: "EMPLOYEE" },
+		{ label: "TATA-Hitachi", value: "TATA-Hitachi" },
+		{ label: "Plant", value: "PLANT" },
 	];
 export const OFFICE_TYPE_OPTIONS: SelectOption<BusinessPartnerOfficeType>[] = [
 	{ label: "Head Office", value: "HEAD_OFFICE" },
@@ -24,7 +25,11 @@ export const ENTITY_TYPE_OPTIONS: SelectOption<BusinessPartnerEntityType>[] = [
 	{ label: "Other", value: "OTHER" },
 ];
 export type BusinessPartnerStatus = "Active" | "Inactive";
-export type BusinessPartnerType = "DEALER" | "CUSTOMER" | "EMPLOYEE";
+export type BusinessPartnerType =
+	| "DEALER"
+	| "CUSTOMER"
+	| "TATA-Hitachi"
+	| "PLANT";
 
 export type BusinessPartnerEntityType =
 	| "COMPANY"
@@ -123,13 +128,6 @@ export type BusinessPartnerAddressType =
 	| "SHIPPING_ADDRESS"
 	| "WAREHOUSE";
 
-export type BPFormTab =
-	| "organization"
-	| "contact"
-	| "address"
-	| "branches"
-	| "people";
-
 export type BusinessPartnerAddress = {
 	id: string;
 	businessPartnerId: string;
@@ -140,7 +138,7 @@ export type BusinessPartnerAddress = {
 	 * return addressType. Once the backend always supplies it,
 	 * this can become BusinessPartnerAddressType.
 	 */
-	addressType: BusinessPartnerAddressType | null;
+	// addressType: BusinessPartnerAddressType | null;
 
 	address: string;
 	city?: string | null;
@@ -261,6 +259,7 @@ export type BusinessPartner = {
 	internalId: string;
 	externalId: string;
 	organizationName: string;
+	bpShortName?: string;
 	region: string;
 	mainContact: string;
 	address: string;
@@ -271,37 +270,50 @@ export type BusinessPartner = {
 	status: BusinessPartnerStatus;
 };
 
-export type BusinessPartnerListingParams = {
+export interface BusinessPartnerListingParams {
 	search?: string;
 	status?: string[];
 	zone?: string[];
-	page?: number;
-	limit?: number;
-};
+	pageIndex?: number;
+	pageSize?: number;
+}
 
-export type BusinessPartnerListingResult = {
+export interface NormalizedBusinessPartnerListingParams {
+	search: string;
+	status: string[];
+	zone: string[];
+	pageIndex: number;
+	pageSize: number;
+}
+export interface BusinessPartnerListingResult {
 	rows: BusinessPartner[];
 	totalCount: number;
-	page: number;
-	limit: number;
+	pageIndex: number;
+	pageSize: number;
 	totalPages: number;
-};
+}
+
+export interface BusinessPartnerListApiResponse {
+	success?: boolean;
+
+	data?: BusinessPartnerListItem[];
+	rows?: BusinessPartnerListItem[];
+
+	total?: number;
+	totalCount?: number;
+
+	page?: number;
+	page_index?: number;
+
+	limit?: number;
+	page_size?: number;
+
+	totalPages?: number;
+	total_pages?: number;
+}
 
 export type ApiEnvelope<T> = {
 	data: T;
-};
-
-export type BusinessPartnerListApiResponse = {
-	data?: BusinessPartnerListItem[];
-	rows?: BusinessPartnerListItem[];
-	total?: number;
-	totalCount?: number;
-	page?: number;
-	page_index?: number;
-	limit?: number;
-	page_size?: number;
-	totalPages?: number;
-	total_pages?: number;
 };
 
 export type BusinessPartnerListItem = {
@@ -330,7 +342,7 @@ export type BPAddressViewModel = {
 	businessPartnerId: string;
 
 	label: string;
-	addressType: BusinessPartnerAddressType;
+	// addressType: BusinessPartnerAddressType;
 	address: string;
 
 	city?: string;
@@ -402,7 +414,7 @@ export type BusinessPartnerViewModel = {
 
 export type BPAddressFormState = {
 	label: string;
-	addressType: BusinessPartnerAddressType | "";
+	// addressType: BusinessPartnerAddressType | "";
 
 	/*
 	 * UI-only field. Do not include it in the API payload.
@@ -429,7 +441,7 @@ export type BPAddressFormState = {
 };
 
 export type BusinessPartnerAddressPayload = {
-	addressType: BusinessPartnerAddressType;
+	// addressType: BusinessPartnerAddressType;
 	address: string;
 	label?: string | null;
 	city: string | null;
@@ -494,6 +506,39 @@ export type BPPersonViewModel = {
 
 export type UpdateBusinessPartnerPeoplePayload = BusinessPartnerPersonPayload[];
 
+// BP Users tab — read-only listing of Users scoped to a business partner
+// (GET /users?businessPartnerId=...), plus one action: set default user
+// (PATCH /users/:id { isDefaultContact: true }). Deliberately minimal —
+// this is not the same thing as BPPersonViewModel/BPContactViewModel
+// above, which come from the business-partner "people"/"contacts"
+// resources, not the Users module.
+
+/** Raw row shape as returned by GET /users (see UserResponse in the
+ * user-management module) — only the fields this tab actually reads. */
+export type BPUserRow = {
+	id: string;
+	first_name?: string | null;
+	last_name?: string | null;
+	email?: string | null;
+	phone_number?: string | null;
+	role?: string | null;
+	department?: string | null;
+	designation?: string | null;
+	isDefaultContact?: boolean | null;
+	is_active?: boolean | null;
+};
+
+export type BPUserViewModel = {
+	id: string;
+	name: string;
+	email: string;
+	phoneNumber: string;
+	role: string;
+	department: string;
+	isDefaultContact: boolean;
+	isActive: boolean;
+};
+
 export type BusinessPartnerContact = {
 	id: string;
 	businessPartnerId: string;
@@ -535,7 +580,7 @@ export type BPContactFormState = {
 	email: string;
 	panNumber: string;
 	isMainContact: boolean;
-	isDefault: boolean;
+	isDefault?: boolean;
 };
 export type BPContactPayload = {
 	name: string;
@@ -544,7 +589,7 @@ export type BPContactPayload = {
 	email: string | null;
 	panNumber: string | null;
 	isMainContact: boolean;
-	isDefault: boolean;
+	isDefault?: boolean;
 };
 
 export type UpdateBPContactPayload = Partial<BPContactPayload>;
@@ -615,7 +660,7 @@ export type BusinessPartnerFormState = {
 };
 
 export type CreateBusinessPartnerPayload = {
-	internalId: string;
+	internalId?: string;
 	vendorId: string | null;
 	bpId: string | null;
 	s4Id: string | null;

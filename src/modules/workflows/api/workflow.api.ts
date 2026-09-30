@@ -3,11 +3,7 @@ import axios from "axios";
 import type { Option } from "../../../components/forms/input.types";
 import { ServerAxios } from "../../../services/ServerAxios";
 import type { EventDeviationPayload } from "../../../types/common.types";
-import type {
-	User,
-	UserResponse,
-} from "../../admin/user-profile/types/profile.types";
-import { mapUser } from "../../admin/user-profile/types/profile.types";
+
 import { api_routes } from "../constant/workflow.constant";
 import type {
 	AttachWorkflowInput,
@@ -28,6 +24,7 @@ import type {
 	WorkflowListResponse,
 } from "../types/types";
 import { normalizeWorkflowTemplates } from "../utils/workflow-list.helpers";
+import { usersApi } from "../../../common/common.api";
 
 const WORKFLOW_URL = "/work-flow";
 
@@ -132,62 +129,6 @@ const unwrapEnvelope = <T>(value: unknown): ApiEnvelope<T> => {
 		success: envelope.success,
 		data: envelope.data,
 		message: envelope.message,
-	};
-};
-
-const normalizeWorkflowList = (value: unknown): WorkflowListResponse => {
-	if (Array.isArray(value)) {
-		return {
-			data: value as WorkflowTemplate[],
-			meta: {
-				total: value.length,
-				page: 1,
-				limit: value.length,
-				totalPages: value.length > 0 ? 1 : 0,
-			},
-		};
-	}
-
-	if (!isRecord(value)) {
-		return { data: [], meta: { total: 0, page: 1, limit: 0, totalPages: 0 } };
-	}
-
-	const nested = value.data;
-	const payload =
-		isRecord(nested) &&
-		(Array.isArray(nested.data) ||
-			Array.isArray(nested.rows) ||
-			isRecord(nested.meta))
-			? nested
-			: value;
-
-	const rows = Array.isArray(payload.data)
-		? payload.data
-		: Array.isArray(payload.rows)
-			? payload.rows
-			: [];
-	const meta = isRecord(payload.meta) ? payload.meta : {};
-
-	const rawTotalPages = meta.totalPages ?? meta.total_pages;
-	const totalPages = Number(rawTotalPages ?? (rows.length > 0 ? 1 : 0));
-
-	const rawTotal = meta.total ?? meta.total_count;
-	const total = Number(rawTotal ?? rows.length);
-
-	const rawPage = meta.page ?? meta.current_page;
-	const page = Number(rawPage ?? 1);
-
-	const rawLimit = meta.limit ?? meta.pageSize ?? meta.page_size;
-	const limit = Number(rawLimit ?? rows.length);
-
-	return {
-		data: rows as WorkflowTemplate[],
-		meta: {
-			total: Number.isFinite(total) ? total : 0,
-			page: Number.isFinite(page) ? page : 1,
-			limit: Number.isFinite(limit) ? limit : 0,
-			totalPages: Number.isFinite(totalPages) ? totalPages : 0,
-		},
 	};
 };
 
@@ -329,23 +270,6 @@ export const workflowListApi = {
 };
 
 export const workflowApi = {
-	// Workflow template management
-	list: async (params: WorkflowListParams): Promise<WorkflowListResponse> => {
-		const { pageSize, ...rest } = params;
-
-		const response = await ServerAxios.get(
-			api_routes.get_all_workflow_api_route,
-			{
-				params: {
-					...rest,
-					limit: pageSize,
-					filters: JSON.stringify(params.filters ?? {}),
-				},
-			},
-		);
-		return normalizeWorkflowList(response.data);
-	},
-
 	getById: async (id: string): Promise<WorkflowTemplate> => {
 		const response = await ServerAxios.get(
 			`${WORKFLOW_TEMPLATE_URL}/${encodeURIComponent(id)}`,
@@ -381,16 +305,21 @@ export const workflowApi = {
 		return response.data;
 	},
 
-	getUsers: async (): Promise<User[]> => {
-		const response = await ServerAxios.get(USERS_URL, {
-			params: { profile: "all" },
-		});
-		const rawUsers = unwrapData<UserResponse[]>(response.data);
-		return (Array.isArray(rawUsers) ? rawUsers : []).map(mapUser);
-	},
+	getUsers: usersApi.getUsers,
 
-	getUserOptions: async (): Promise<Option[]> => {
-		const users = await workflowApi.getUsers();
+	/**
+	 * Same backend-search behavior as `getUsers` (used directly by
+	 * WorkflowUserAssignment), just mapped down to `Option[]` for
+	 * consumers like the "Created By" filter. Without `params.search`,
+	 * this only returns the backend's default (unfiltered) page — pass the
+	 * user's typed query through so results aren't limited to whatever
+	 * loaded on mount.
+	 */
+	getUserOptions: async (params?: {
+		search?: string;
+		signal?: AbortSignal;
+	}): Promise<Option[]> => {
+		const users = await workflowApi.getUsers(params);
 		return users.map((user) => ({
 			value: user.id,
 			label:
@@ -498,9 +427,14 @@ export const workflowApi = {
 			criteria: createAttachCriteria(input),
 		}),
 
-	approveStage: async (stageId: string) => {
+	// CHANGED: approve now takes a mandatory `reason`, sent the same way
+	// clarifyStage already sends its reason. If the backend endpoint hasn't
+	// been updated to accept/store this field, this call will need a
+	// matching backend change — this only covers the frontend contract.
+	approveStage: async (stageId: string, reason?: string) => {
 		const response = await ServerAxios.post<ApiEnvelope<unknown>>(
 			`${WORKFLOW_RUNTIME_URL}/stages/${encodeURIComponent(stageId)}/approve`,
+			{ reason },
 		);
 		return unwrapEnvelope<unknown>(response.data);
 	},

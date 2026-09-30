@@ -27,8 +27,10 @@ import {
 	type ActiveWorkflowLike,
 	type WorkflowUserIdentity,
 } from "../../../workflows";
-import type { ApprovalStageLike } from "../../../workflows/types/types";
-import type { WorkflowStage } from "../types/workflow.types";
+import type {
+	ApprovalStageLike,
+	WorkflowStage,
+} from "../../../workflows/types/types";
 import { mapEpcWorkflowStage } from "../../../workflows/utils/approvalWorkflow.mapper";
 
 export type ActivityEditingSection = "epc" | "crf" | "epf" | null;

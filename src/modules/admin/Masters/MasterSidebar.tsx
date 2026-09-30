@@ -2,19 +2,13 @@ import { Database } from "lucide-react";
 
 import Button from "../../../components/common/Button";
 
-const masters = [
-	"Branches",
-	"Departments",
-	"Regions",
-	"Event Names",
-	"Budget",
-	"Vertical",
-];
+import type { MasterName } from "./masterData.types";
+import { MASTER_NAMES } from "./master.data.constant";
 
 type MasterSidebarProps = {
-	activeMaster: string;
-	onSelectMaster: (master: string) => void;
-	counts?: Record<string, number>;
+	activeMaster: MasterName;
+	onSelectMaster: (master: MasterName) => void;
+	counts?: Partial<Record<MasterName, number>>;
 	isCompact?: boolean;
 };
 
@@ -35,7 +29,7 @@ export const MasterSidebar = ({
 		>
 			{!isCompact && <p className="master-sidebar-title">Masters</p>}
 
-			{masters.map((master) => {
+			{MASTER_NAMES.map((master) => {
 				const isActive = activeMaster === master;
 
 				return (

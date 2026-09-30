@@ -142,6 +142,13 @@ export type UpdateVendorVariables = {
 	isExternalApprover?: boolean;
 };
 
+// Internal (THCM) edit when enclosures changed — the payload is multipart
+// FormData built by buildInternalUpdateFormData, not a JSON object.
+export type UpdateVendorWithDocumentsVariables = {
+	vendorRequestId: string;
+	formData: FormData;
+};
+
 export type VendorClarificationPayload = {
 	reason: string;
 	comment?: string;
@@ -232,20 +239,20 @@ export const VENDOR_DOCUMENT_FIELDS = [
 		description: "Upload an additional supporting document.",
 		required: false,
 	},
-	{
-		statusKey: "otherAttachment5",
-		documentType: "ADDITIONAL_DOC_5",
-		label: "Other Attachment 5",
-		description: "Upload an additional supporting document.",
-		required: false,
-	},
-	{
-		statusKey: "otherAttachment6",
-		documentType: "ADDITIONAL_DOC_6",
-		label: "Other Attachment 6",
-		description: "Upload an additional supporting document.",
-		required: false,
-	},
+	// {
+	// 	statusKey: "otherAttachment5",
+	// 	documentType: "ADDITIONAL_DOC_5",
+	// 	label: "Other Attachment 5",
+	// 	description: "Upload an additional supporting document.",
+	// 	required: false,
+	// },
+	// {
+	// 	statusKey: "otherAttachment6",
+	// 	documentType: "ADDITIONAL_DOC_6",
+	// 	label: "Other Attachment 6",
+	// 	description: "Upload an additional supporting document.",
+	// 	required: false,
+	// },
 ] as const;
 
 export type VendorDocumentType =

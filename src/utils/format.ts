@@ -123,10 +123,16 @@ export const formatDateOnly = (date?: Date) => {
 	return `${day}-${month}-${year}`;
 };
 
-export const formatDateOnlyAPI = (date?: string | null) => {
+export const formatDateOnlyAPI = (date?: Date | null) => {
 	if (!date) return "";
-	return String(date).split("T")[0];
+
+	const year = date.getFullYear();
+	const month = String(date.getMonth() + 1).padStart(2, "0");
+	const day = String(date.getDate()).padStart(2, "0");
+
+	return `${year}-${month}-${day}`;
 };
+
 export const toPrismaDateTime = (date?: string | Date | null) => {
 	if (!date) return null;
 
@@ -143,12 +149,40 @@ export const toPrismaDateTime = (date?: string | Date | null) => {
 	return new Date(`${date}T00:00:00.000Z`).toISOString();
 };
 
+export const parseDateOnly = (value?: string | null): Date | undefined => {
+	if (!value) return undefined;
+
+	// YYYY-MM-DD
+	const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	if (isoMatch) {
+		const [, year, month, day] = isoMatch;
+		return new Date(Number(year), Number(month) - 1, Number(day));
+	}
+
+	// DD-MM-YYYY
+	const dashMatch = value.match(/^(\d{2})-(\d{2})-(\d{4})$/);
+	if (dashMatch) {
+		const [, day, month, year] = dashMatch;
+		return new Date(Number(year), Number(month) - 1, Number(day));
+	}
+
+	// DD/MM/YYYY
+	const slashMatch = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+	if (slashMatch) {
+		const [, day, month, year] = slashMatch;
+		return new Date(Number(year), Number(month) - 1, Number(day));
+	}
+
+	const fallback = new Date(value);
+	return Number.isNaN(fallback.getTime()) ? undefined : fallback;
+};
+
 export const toDateRange = (from?: string | null, to?: string | null) => {
 	if (!from && !to) return undefined;
 
 	return {
-		from: from ? new Date(from) : undefined,
-		to: to ? new Date(to) : undefined,
+		from: parseDateOnly(from),
+		to: parseDateOnly(to),
 	};
 };
 /* =========================
@@ -225,3 +259,57 @@ export const trimText = (value?: string | null, maxLength = 80) => {
 
 	return `${text.slice(0, maxLength).trim()}...`;
 };
+
+export const capitalizeSnakeCase = (str: string) => {
+	return str
+		.split("_")
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+		.join(" ");
+};
+
+/* =========================
+   SANITIZATION / NORMALIZATION
+   Run these on form values right before they cross the API boundary
+   (inside a form's submit mapper), never on every keystroke and never
+   on the value shown back in the field. Per the project's sanitization
+   standard: trim/lowercase email, digit-strip phone numbers, uppercase
+   PAN/GSTIN/IFSC-style codes — and never touch passwords, tokens, or
+   file contents, where exact characters (including whitespace) matter.
+========================= */
+
+/**
+ * name@Company.COM  →  name@company.com
+ */
+export const normalizeEmail = (value: string) => value.trim().toLowerCase();
+
+/**
+ * Strips everything but digits so a pasted "+91 98765-43210" or
+ * "(9876) 543-210" becomes a plain 10-digit string before validation/
+ * submission. Safe to call on every keystroke (used for the live
+ * mobile-number inputs) as well as at submit time.
+ */
+export const normalizeMobileNumber = (value: string) =>
+	value.replace(/\D/g, "").slice(0, 10);
+
+/**
+ * Same digit-only stripping as normalizeMobileNumber, kept as a separate
+ * named export so OTP fields aren't coupled to "this is a phone number"
+ * semantics — a 6-digit OTP is a different domain concept that happens
+ * to share the same sanitization rule today.
+ */
+export const normalizeOtp = (value: string) => value.replace(/\D/g, "");
+
+/**
+ * PAN / GSTIN / IFSC and similar bank/compliance codes are conventionally
+ * upper-case; normalize casing without altering anything else about the
+ * value (no digit stripping, no trimming beyond the edges).
+ */
+export const normalizeUpperCaseCode = (value: string) =>
+	value.trim().toUpperCase();
+
+/**
+ * Generic "trim, nothing else" normalizer for free-text fields (names,
+ * addresses, remarks) where the only sanitization rule is removing
+ * leading/trailing whitespace. Never apply this to passwords or tokens.
+ */
+export const normalizeText = (value: string) => value.trim();

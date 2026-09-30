@@ -15,6 +15,7 @@ import {
 import type {
 	VendorListingFilter,
 	VendorOnboardingListingRow,
+	VendorRowPermissions,
 } from "../types/vendorListing.types";
 import { VENDOR_ONBOARDING_FILTER_TABS } from "../utils/vendor.constant";
 import { getVendorOnboardingColumns } from "../utils/vendorOnboardingListing.columns";
@@ -53,7 +54,11 @@ type VendorListingCommonProps = {
 type VendorOnboardingListingTableProps = VendorListingCommonProps & {
 	listingType: "onboarding";
 	rows?: VendorOnboardingListingRow[];
+
+	getRowPermissions: (row: VendorOnboardingListingRow) => VendorRowPermissions;
 	onViewRow: (row: VendorOnboardingListingRow) => void;
+	onEditRow?: (row: VendorOnboardingListingRow) => void;
+	onRetriggerRow?: (row: VendorOnboardingListingRow) => void;
 };
 
 type VendorListingTableProps = VendorOnboardingListingTableProps;
@@ -62,6 +67,7 @@ const SKELETON_ROW_COUNT = 8;
 
 export default function VendorListingTable(props: VendorListingTableProps) {
 	const {
+		filterTabs,
 		selectedFilter,
 		onFilterChange,
 		search,
@@ -74,10 +80,15 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 		onPageChange,
 		onPageSizeChange,
 		onExport,
-		isExporting,
+		isExporting = false,
+		getRowPermissions,
+		onViewRow,
+		onEditRow,
+		onRetriggerRow,
 	} = props;
 
-	const resolvedFilterTabs = VENDOR_ONBOARDING_FILTER_TABS;
+	const resolvedFilterTabs = filterTabs ?? VENDOR_ONBOARDING_FILTER_TABS;
+
 	const normalizedFilterTabs = useMemo(
 		() =>
 			resolvedFilterTabs.map((option) => ({
@@ -90,15 +101,16 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 		[resolvedFilterTabs],
 	);
 
-	const onboardingColumns = useMemo(() => {
-		if (props.listingType !== "onboarding") {
-			return [];
-		}
-
-		return getVendorOnboardingColumns({
-			onView: props.onViewRow,
-		});
-	}, [props.listingType, props.onViewRow]);
+	const onboardingColumns = useMemo(
+		() =>
+			getVendorOnboardingColumns({
+				getRowPermissions,
+				onView: onViewRow,
+				onEdit: onEditRow,
+				onRetrigger: onRetriggerRow,
+			}),
+		[getRowPermissions, onViewRow, onEditRow, onRetriggerRow],
+	);
 
 	const searchPlaceholder = getOnboardingSearchPlaceholder(selectedFilter);
 
@@ -110,7 +122,7 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 			title={
 				<FilterTabs
 					id={`${props.listingType}-vendor-listing-filter-tabs`}
-					ariaLabel={"Filter vendor onboarding listings"}
+					ariaLabel="Filter vendor onboarding listings"
 					items={normalizedFilterTabs}
 					value={selectedFilter}
 					onChange={onFilterChange}
@@ -136,6 +148,7 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 						variant="outline"
 						size="sm"
 						onClick={onExport}
+						disabled={isExporting}
 					/>
 				</>
 			}

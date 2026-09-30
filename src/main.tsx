@@ -9,6 +9,7 @@ import App from "./App.tsx";
 import ToastProvider from "./context/Toast/ToastProvider.tsx";
 import { AuthProvider } from "./context/Auth/AuthProvider.tsx";
 import { ThemeProvider } from "./context/Theme/ThemeProvider.tsx";
+import { registerServiceWorker } from "./registerServiceWorker";
 
 const rootElement = document.getElementById("root");
 
@@ -29,3 +30,5 @@ createRoot(rootElement).render(
     </BrowserRouter>
   </StrictMode>,
 );
+
+registerServiceWorker();

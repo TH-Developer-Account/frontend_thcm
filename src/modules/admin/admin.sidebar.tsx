@@ -1,6 +1,5 @@
 import type { SidebarItem } from "../../layout/layout.types";
 import {
-	Home,
 	Settings,
 	Database,
 	// MapPinHouse,
@@ -10,12 +9,6 @@ import {
 } from "lucide-react";
 
 export const adminSidebar: SidebarItem[] = [
-	{
-		id: "home",
-		label: "Home",
-		icon: <Home size={18} />,
-		link: "/admin/dashboard",
-	},
 	{
 		id: "users",
 		label: "Business Users",

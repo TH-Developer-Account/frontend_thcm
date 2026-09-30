@@ -244,8 +244,6 @@ export default function UserProfile({ userRole = "ADMIN" }: UserProfileProps) {
 	];
 
 	const saveProfile = async (values: ProfileValues) => {
-		console.log("Save profile", values);
-
 		/*
 		 * Replace this block with your profile API mutation.
 		 *
@@ -277,8 +275,6 @@ export default function UserProfile({ userRole = "ADMIN" }: UserProfileProps) {
 	};
 
 	const saveAddress = async (values: AddressValues) => {
-		console.log("Save address", values);
-
 		// Replace with the address API mutation.
 		setAddress(values);
 	};

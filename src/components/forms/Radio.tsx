@@ -5,6 +5,7 @@ export type RadioOption = {
 	label: string;
 	value: string;
 	disabled?: boolean;
+	description?: string;
 };
 
 interface InputProps extends Omit<
@@ -142,6 +143,7 @@ const Radio = forwardRef<HTMLInputElement, InputProps>(
 								htmlFor={optionId}
 								className={joinClassNames(
 									"form-radio-field",
+									option.description && "form-radio-field--with-description",
 									isOptionDisabled && "is-disabled",
 								)}
 							>
@@ -164,7 +166,14 @@ const Radio = forwardRef<HTMLInputElement, InputProps>(
 									aria-invalid={error ? "true" : undefined}
 								/>
 
-								<span className="form-radio-label">{option.label}</span>
+								<span className="form-radio-copy">
+									<span className="form-radio-label">{option.label}</span>
+									{option.description ? (
+										<span className="form-radio-description">
+											{option.description}
+										</span>
+									) : null}
+								</span>
 							</label>
 						);
 					})}

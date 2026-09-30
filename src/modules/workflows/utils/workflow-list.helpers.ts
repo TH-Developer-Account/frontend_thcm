@@ -14,6 +14,7 @@ const normalizeWorkflowPerson = (
 	firstName: person?.first_name ?? "",
 	lastName: person?.last_name ?? "",
 	email: person?.email ?? "",
+	designation: person?.designation ?? "",
 });
 
 const getWorkflowPersonName = (

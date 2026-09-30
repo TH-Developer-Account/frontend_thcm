@@ -17,7 +17,7 @@ const VendorInitiationPage = ({ mode }: VendorInitiationPageProps) => {
 	const isViewMode = mode === "view";
 
 	const handleBackToListing = () => {
-		navigate("/vendor/onboarding/listing?tab=onboarding");
+		navigate("/vendor-onboarding/listing?tab=onboarding");
 	};
 
 	return (
@@ -38,7 +38,7 @@ const VendorInitiationPage = ({ mode }: VendorInitiationPageProps) => {
 						},
 						{
 							label: "Vendors Listing",
-							href: "/vendor/onboarding/listing?tab=onboarding",
+							href: "/vendor-onboarding/listing?tab=onboarding",
 						},
 						{
 							label: isViewMode

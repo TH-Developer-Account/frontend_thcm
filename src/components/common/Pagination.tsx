@@ -7,7 +7,8 @@ import SelectInput from "../forms/SelectInput";
 import Button from "./Button";
 import type { PaginationProps } from "./common.types";
 
-const PAGE_SIZE_OPTIONS: Option[] = [
+// Rename the module constant to make clear it's the default
+const DEFAULT_PAGE_SIZE_OPTIONS: Option[] = [
 	{ label: "5", value: "5" },
 	{ label: "10", value: "10" },
 	{ label: "15", value: "15" },
@@ -56,12 +57,24 @@ const Pagination: React.FC<PaginationProps> = ({
 	onPageSizeChange,
 	variant = "default",
 	scrollTargetId,
+	pageSizeOptions,
 }) => {
 	const safeTotalPages = Math.max(1, totalPages);
 	const safePageIndex = Math.min(Math.max(pageIndex, 0), safeTotalPages - 1);
 
 	const currentPage = safePageIndex + 1;
 	const isCompact = variant === "compact";
+
+	const resolvedPageSizeOptions = useMemo(
+		() =>
+			pageSizeOptions?.length
+				? pageSizeOptions.map((size) => ({
+						label: String(size),
+						value: String(size),
+					}))
+				: DEFAULT_PAGE_SIZE_OPTIONS,
+		[pageSizeOptions],
+	);
 
 	useEffect(() => {
 		if (!scrollTargetId) return;
@@ -80,8 +93,9 @@ const Pagination: React.FC<PaginationProps> = ({
 	);
 
 	const selectedPageSize =
-		PAGE_SIZE_OPTIONS.find((option) => Number(option.value) === pageSize) ??
-		PAGE_SIZE_OPTIONS[0];
+		DEFAULT_PAGE_SIZE_OPTIONS.find(
+			(option) => Number(option.value) === pageSize,
+		) ?? DEFAULT_PAGE_SIZE_OPTIONS[0];
 
 	const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
 		if (event.key === "Home") {
@@ -175,7 +189,7 @@ const Pagination: React.FC<PaginationProps> = ({
 
 					<SelectInput
 						name="pageSize"
-						options={PAGE_SIZE_OPTIONS}
+						options={resolvedPageSizeOptions} // ← was PAGE_SIZE_OPTIONS
 						value={selectedPageSize}
 						onChange={handlePageSizeChange}
 						isSearchable={false}

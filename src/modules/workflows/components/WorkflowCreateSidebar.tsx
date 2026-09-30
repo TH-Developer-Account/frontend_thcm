@@ -27,10 +27,12 @@ const WorkflowCreateSidebar = ({
 						<span className="workflow-summary-key">App Name</span>
 						<span className="workflow-summary-value">{basics.appDesc}</span>
 					</div>
-					<div className="workflow-summary-item">
-						<span className="workflow-summary-key">Category</span>
-						<span className="workflow-summary-value">{basics.category}</span>
-					</div>
+					{basics.category ? (
+						<div className="workflow-summary-item">
+							<span className="workflow-summary-key">Category</span>
+							<span className="workflow-summary-value">{basics.category}</span>
+						</div>
+					) : null}
 					<div className="workflow-summary-item">
 						<span className="workflow-summary-key">Stages</span>
 						<span className="workflow-summary-value">{stageCount}</span>

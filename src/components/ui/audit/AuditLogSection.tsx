@@ -9,24 +9,97 @@ import { CardEmpty, CardSkeleton } from "../CardSkeleton";
 import { auditApi } from "./audit.api";
 import { auditKeys } from "./audit.keys";
 import type { AuditLogRowProps, AuditLogSectionProps } from "./audit.types";
-import { getAuditActorName, getAuditMessage } from "./audit.helper";
+import { getAuditMessageParts } from "./audit.helper";
+
+const Separator = () => (
+	<span className="comment-audit-separator" aria-hidden="true">
+		-
+	</span>
+);
+
+// Row renders: Actor - Action - Timestamp - Reason/comment
+const DEFAULT_MESSAGE_TRUNCATE_LENGTH = 50;
+
+/**
+ * Renders a piece of the audit line, truncating it with a "...read more"
+ * toggle when it exceeds `truncateLength`. Expanded text wraps normally.
+ */
+const TruncatedText = ({
+	text,
+	truncateLength,
+	className,
+}: {
+	text: string;
+	truncateLength: number;
+	className?: string;
+}) => {
+	const [expanded, setExpanded] = React.useState(false);
+
+	const isTruncatable =
+		Number.isFinite(truncateLength) && text.length > truncateLength;
+
+	if (!isTruncatable) {
+		return <span className={className}>{text}</span>;
+	}
+
+	if (expanded) {
+		return (
+			<span
+				className={className}
+				style={{
+					display: "block",
+					width: "100%",
+					flexBasis: "100%",
+					minWidth: 0,
+					whiteSpace: "pre-wrap",
+					overflowWrap: "anywhere",
+					wordBreak: "break-word",
+				}}
+			>
+				{text}{" "}
+				<button
+					type="button"
+					className="comment-audit-readmore-toggle"
+					onClick={() => setExpanded(false)}
+				>
+					Show less
+				</button>
+			</span>
+		);
+	}
+
+	return (
+		<span className={className}>
+			{text.slice(0, truncateLength).trimEnd()}
+			{"... "}
+			<button
+				type="button"
+				className="comment-audit-readmore-toggle"
+				onClick={() => setExpanded(true)}
+			>
+				Read more
+			</button>
+		</span>
+	);
+};
 
 const AuditLogRow = React.memo(function AuditLogRow({
 	entry,
 	entityName,
 	actionMessages,
 	formatMessage,
+	anonymousActorLabel,
+	messageTruncateLength = DEFAULT_MESSAGE_TRUNCATE_LENGTH,
 }: AuditLogRowProps) {
-	const actorName = getAuditActorName(entry);
+	const { actorName, actionLabel, reason } = getAuditMessageParts(entry, {
+		entityName,
+		actionMessages,
+		formatTimestamp: formatDateTime,
+		anonymousActorLabel,
+	});
 
-	const actionMessage =
-		formatMessage?.(entry) ??
-		getAuditMessage(entry, {
-			entityName,
-			actionMessages,
-			includeActor: false,
-			includeTimestamp: false,
-		});
+	const action = formatMessage?.(entry) ?? actionLabel;
+	const actionText = typeof action === "string" ? action : null;
 
 	return (
 		<div className="comment-card comment-audit-card">
@@ -34,21 +107,37 @@ const AuditLogRow = React.memo(function AuditLogRow({
 				<div className="comment-audit-content">
 					<span className="comment-audit-actor">{actorName}</span>
 
-					<span className="comment-audit-separator" aria-hidden="true">
-						·
-					</span>
+					<Separator />
 
-					<span className="comment-audit-text">{actionMessage}</span>
+					{actionText !== null ? (
+						<TruncatedText
+							text={actionText}
+							truncateLength={messageTruncateLength}
+							className="comment-audit-text"
+						/>
+					) : (
+						<span className="comment-audit-text">{action}</span>
+					)}
 
 					{entry.createdAt ? (
 						<>
-							<span className="comment-audit-separator" aria-hidden="true">
-								·
-							</span>
+							<Separator />
 
 							<time className="comment-audit-time" dateTime={entry.createdAt}>
 								{formatDateTime(entry.createdAt)}
 							</time>
+						</>
+					) : null}
+
+					{reason ? (
+						<>
+							<Separator />
+
+							<TruncatedText
+								text={reason}
+								truncateLength={messageTruncateLength}
+								className="comment-audit-reason"
+							/>
 						</>
 					) : null}
 				</div>
@@ -56,6 +145,7 @@ const AuditLogRow = React.memo(function AuditLogRow({
 		</div>
 	);
 });
+
 export default function AuditLogSection({
 	subjectType,
 	subjectId,
@@ -67,6 +157,8 @@ export default function AuditLogSection({
 	api = auditApi,
 	formatMessage,
 	actionMessages,
+	anonymousActorLabel,
+	messageTruncateLength,
 }: AuditLogSectionProps) {
 	const queryKey = React.useMemo(
 		() => [...auditKeys.log(subjectType, subjectId), refreshKey] as const,
@@ -96,7 +188,6 @@ export default function AuditLogSection({
 			? error.message
 			: "Unable to load activity log"
 		: null;
-
 	return (
 		<section aria-label={title} className="comments-body">
 			{isLoading ? (
@@ -125,6 +216,8 @@ export default function AuditLogSection({
 								entityName={entityName}
 								actionMessages={actionMessages}
 								formatMessage={formatMessage}
+								anonymousActorLabel={anonymousActorLabel}
+								messageTruncateLength={messageTruncateLength}
 							/>
 						))}
 					</div>

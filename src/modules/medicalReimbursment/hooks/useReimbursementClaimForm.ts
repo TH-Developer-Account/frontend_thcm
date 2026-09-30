@@ -27,18 +27,22 @@ import {
 	type ReimbursementClaimFormValues,
 	type ReimbursementClaimSubmission,
 } from "../types/reimbursementClaim.types";
-
 export const GRADE_OPTIONS = [
-	{ label: "M1", value: "M1", eligibility: 25_000 },
-	{ label: "M2", value: "M2", eligibility: 35_000 },
-	{ label: "M3", value: "M3", eligibility: 45_000 },
-	{ label: "M4", value: "M4", eligibility: 60_000 },
-	{ label: "M5", value: "M5", eligibility: 75_000 },
-	{ label: "E1", value: "E1", eligibility: 100_000 },
-	{ label: "E2", value: "E2", eligibility: 125_000 },
-	{ label: "E3", value: "E3", eligibility: 150_000 },
-];
+	{ label: "EG-3", value: "EG-3", eligibility: 25_000 },
+	{ label: "EG-4", value: "EG-4", eligibility: 30_000 },
 
+	{ label: "TM-5", value: "TM-5", eligibility: 35_000 },
+	{ label: "TM-4", value: "TM-4", eligibility: 40_000 },
+	{ label: "TM-3", value: "TM-3", eligibility: 45_000 },
+	{ label: "TM-2", value: "TM-2", eligibility: 50_000 },
+	{ label: "TM-1", value: "TM-1", eligibility: 60_000 },
+	{ label: "TM-0", value: "TM-0", eligibility: 75_000 },
+
+	{ label: "TS-2", value: "TS-2", eligibility: 90_000 },
+	{ label: "TS-1", value: "TS-1", eligibility: 100_000 },
+
+	{ label: "TE-3", value: "TE-3", eligibility: 125_000 },
+];
 export const COVERAGE_OPTIONS: Array<{ label: string; value: CoverageType }> = [
 	{ label: "Self", value: "SELF" },
 	{ label: "Spouse", value: "SPOUSE" },

@@ -18,13 +18,18 @@ type AxiosLikeError = {
 };
 
 type ShowToastFn = (toast: ToastInput) => void;
-
 export function getApiErrorMessage(
 	error: unknown,
 	fallback = "Something went wrong.",
 ): string {
 	const err = error as AxiosLikeError;
 	const data = err.response?.data;
+
+	const status =
+		err.response?.status ??
+		(typeof data === "object" ? data?.statusCode : undefined);
+
+	if (status !== undefined && status >= 500) return fallback;
 
 	if (typeof data === "string") return data;
 
@@ -55,10 +60,16 @@ export function showApiErrorToast(
 	showToast: ShowToastFn,
 	error: unknown,
 	fallback = "Something went wrong.",
+	// Optional so every existing call site (which passes only a fallback
+	// message) keeps its current "Error" title unchanged. Callers that want
+	// a distinctive, action-specific title (e.g. "Unable to update
+	// initiation") can pass it explicitly instead of overloading `fallback`
+	// to double as both the description and an implied title.
+	title = "Error",
 ) {
 	showToast({
 		type: "error",
-		title: "Error",
+		title,
 		description: getApiErrorMessage(error, fallback),
 	});
 }

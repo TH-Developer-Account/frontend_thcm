@@ -18,7 +18,8 @@ export default function Avatar({
 	className = "",
 	isTooltip = false,
 }: AvatarProps) {
-	const initials = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+	const initials =
+		`${firstName?.charAt(0) ?? ""}${lastName?.charAt(0) ?? ""}`.toUpperCase();
 	const fullName = `${firstName} ${lastName}`.trim() || "User";
 
 	return (

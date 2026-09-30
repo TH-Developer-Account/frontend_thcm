@@ -1,78 +1,152 @@
-import { useParams } from "react-router-dom";
+import { Eye } from "lucide-react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 import { Alert } from "../../../components/common/Alert";
+import Button from "../../../components/common/Button";
 import { PageHeader } from "../../../components/ui/PageHeader";
+import { businessPartnerContent } from "../../../content/businessPartner.content";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 
-import BPCreateForm from "./components/BPCreateForm";
-import { useBusinessPartnerForm } from "./hooks/useBusinessPartnerForm";
+import BPContactCard from "./components/BPContactCard";
+import BPOrganizationCard from "./components/BPOrganizationCard";
+import BPLockedSectionCard from "./components/BPLockedSectionCard";
+import {
+	useBusinessPartner,
+	useBusinessPartnerView,
+} from "./hooks/useBusinessPartnerQueries";
 import { DEFAULT_BUSINESS_PARTNER_PERMISSIONS } from "./utils/bp.types";
+import BPAddressCard from "./components/BPAddressCard";
+import { businessPartnerPaths } from "./utils/businessPartner.paths";
+import Card from "../../../components/common/Card";
 
+const copy = businessPartnerContent;
+const permissions = DEFAULT_BUSINESS_PARTNER_PERMISSIONS;
+
+/**
+ * /admin/business-partners/create       -> create mode (card 1 only is active)
+ * /admin/business-partners/:id/edit     -> update mode (all cards active)
+ *
+ * Each card owns its own form, validation, Save/Cancel and API call. After
+ * card 1 creates the BP, the page replaces the URL with the edit route so
+ * Contact and Address unlock for the new id (same flow as Create User).
+ */
 const CreateBusinessPartner = () => {
-	// Route param is `:id` — see AdminRoutes. Read it under that name.
-	const { id: businessPartnerId } = useParams<{ id?: string }>();
+	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
 
-	const {
-		form,
-		isEditMode,
-		isLoading,
-		isError,
-		isSaving,
-		canSubmit,
-		error,
-		availableTabs,
-		handleChange,
-		handleSubmit,
-		handleCancel,
-	} = useBusinessPartnerForm({
-		businessPartnerId,
-		permissions: DEFAULT_BUSINESS_PARTNER_PERMISSIONS,
-	});
+	// Route param is `:id` — see AdminRoutes.
+	const { id } = useParams<{ id?: string }>();
+	const businessPartnerId = id?.trim() ?? "";
+	const isEditMode = Boolean(businessPartnerId);
 
-	if (isLoading) {
+	const parentIdFromQuery = isEditMode
+		? ""
+		: (searchParams.get("parentId")?.trim() ?? "");
+
+	const viewQuery = useBusinessPartnerView(
+		isEditMode ? businessPartnerId : undefined,
+	);
+	const parentQuery = useBusinessPartner(parentIdFromQuery || undefined);
+
+	if (isEditMode && viewQuery.isLoading) {
 		return (
 			<PageSectionLayout>
-				<p>Loading business partner...</p>
+				<p role="status">{copy.page.loading}</p>
 			</PageSectionLayout>
 		);
 	}
 
-	if (isError) {
+	if (isEditMode && (viewQuery.isError || !viewQuery.data)) {
 		return (
 			<PageSectionLayout>
-				<Alert variant="error" title="Unable to load the business partner." />
+				<Alert variant="error" title={copy.page.loadError} />
 			</PageSectionLayout>
 		);
 	}
+
+	const view = viewQuery.data ?? null;
+	const partner = view?.partner ?? null;
+
+	const breadcrumbs = partner
+		? [
+				{ label: copy.page.breadcrumbList, href: businessPartnerPaths.list() },
+				{ label: partner.bpName, href: businessPartnerPaths.view(partner.id) },
+				{ label: copy.page.breadcrumbUpdate },
+			]
+		: [
+				{ label: copy.page.breadcrumbList, href: businessPartnerPaths.list() },
+				{ label: copy.page.breadcrumbCreate },
+			];
 
 	return (
 		<PageSectionLayout>
 			<PageHeader
-				headerText={
-					isEditMode ? "Update Business Partner" : "Create Business Partner"
-				}
+				headerText={partner ? copy.page.updateTitle : copy.page.createTitle}
 				navigation={{
 					variant: "breadcrumbs",
-					ariaLabel: "Business partner form",
-					breadcrumbs: [
-						{ label: "Business Partners", href: "/business-partners" },
-						{ label: isEditMode ? "Update" : "Create" },
-					],
+					ariaLabel: copy.page.breadcrumbAriaLabel,
+					breadcrumbs,
 					separator: "›",
 				}}
 			/>
 
-			<BPCreateForm
-				form={form}
-				isEditMode={isEditMode}
-				isSaving={isSaving}
-				canSubmit={canSubmit}
-				error={error}
-				availableTabs={availableTabs}
-				onChange={handleChange}
-				onSubmit={handleSubmit}
-				onCancel={handleCancel}
-			/>
+			<div className="bp-create-page-sections">
+				<Card padding="compact">
+					<BPOrganizationCard
+						// Remount when moving from create -> edit (or between BPs) so
+						// RHF picks up fresh default values.
+						key={partner?.id ?? "create"}
+						partner={partner}
+						parentIdFromQuery={parentIdFromQuery}
+						parentPartner={parentQuery.data ?? null}
+						canSubmit={
+							partner
+								? permissions.organization.canUpdateOrganization
+								: permissions.canCreateBusinessPartner
+						}
+					/>
+				</Card>
+
+				{view && partner ? (
+					<>
+						<BPContactCard
+							key={`contact-${partner.id}`}
+							businessPartnerId={partner.id}
+							contacts={view.contacts}
+							permissions={permissions.people}
+						/>
+
+						<BPAddressCard
+							key={`address-${partner.id}`}
+							businessPartnerId={partner.id}
+							addresses={view.addresses}
+							permissions={permissions.address}
+						/>
+
+						<div className="bp-master-form-actions">
+							<Button
+								type="button"
+								text={copy.page.viewPartner}
+								Icon={Eye}
+								iconPosition="left"
+								variant="outline"
+								onClick={() => navigate(businessPartnerPaths.view(partner.id))}
+							/>
+						</div>
+					</>
+				) : (
+					<>
+						<BPLockedSectionCard
+							title={copy.contact.title}
+							description={copy.contact.locked}
+						/>
+						<BPLockedSectionCard
+							title={copy.address.title}
+							description={copy.address.locked}
+						/>
+					</>
+				)}
+			</div>
 		</PageSectionLayout>
 	);
 };

@@ -14,6 +14,8 @@ import type {
 
 import {
 	addStageApprover,
+	getResetStages,
+	removeStage,
 	removeStageApprover,
 	toggleStageExpanded,
 	updateStageField,
@@ -128,13 +130,46 @@ export function WorkflowTemplateBuilder({
 			{
 				id: createStageId(),
 				stageOrder: current.length + 1,
-				name: `Stage ${current.length + 1}`,
+				// Left blank rather than a "Stage N" placeholder: the stage-name
+				// field is a required dropdown (Recommender/Checker/Approver), and
+				// a non-empty default here matched no option (dropdown showed
+				// "Select stage name" while the field actually held "Stage N"),
+				// and could produce two differently-ordered stages showing the
+				// same literal name if an add followed a removal.
+				name: "",
 				strategy: "ANY",
 				minApprovals: 1,
 				approvers: [],
 				isExpanded: true,
 			},
 		]);
+	};
+
+	// Removes an entire stage — distinct from removeStageApprover, which
+	// only drops one approver from within a stage. Keeps stageErrors aligned
+	// to the stages array (same index dropped) and lets the removeStage
+	// helper renumber the remaining stages' stageOrder.
+	const handleRemoveStage = (stageId: string) => {
+		const indexToRemove = stages.findIndex((stage) => stage.id === stageId);
+
+		setStages((current) => removeStage(current, stageId));
+
+		setStageErrors((current) =>
+			indexToRemove === -1
+				? current
+				: current.filter((_, index) => index !== indexToRemove),
+		);
+
+		setStageFormError(null);
+	};
+
+	// Clears every configured stage and approver and leaves a single blank
+	// stage to start over from. Distinct from handleRemoveStage, which
+	// removes one stage at a time.
+	const handleResetStages = () => {
+		setStages(getResetStages());
+		setStageErrors([{}]);
+		setStageFormError(null);
 	};
 
 	const handleContinue = () => {
@@ -226,6 +261,8 @@ export function WorkflowTemplateBuilder({
 					onAddApprover={(stageId, approver: WorkflowApprover) =>
 						setStages((current) => addStageApprover(current, stageId, approver))
 					}
+					onRemoveStage={handleRemoveStage}
+					onResetStages={handleResetStages}
 					onBack={() => onCancel?.()}
 					onSubmit={handleContinue}
 					onAddStage={handleAddStage}
@@ -246,56 +283,6 @@ export function WorkflowTemplateBuilder({
 						The original workflow will remain unchanged.
 					</p>
 				</div>
-
-				{/*
-					Old "once" / "template" radio group — replaced by the "Save as
-					template" checkbox below. Left here (commented, not deleted) as
-					a reference in case the three-way choice needs to come back.
-
-				<div
-					className="workflow-save-options"
-					role="radiogroup"
-					aria-label="Workflow usage"
-				>
-					<label
-						className={`workflow-save-option ${
-							saveMode === "once" ? "workflow-save-option--active" : ""
-						}`}
-					>
-						<input
-							type="radio"
-							name="custom-workflow-save-mode"
-							checked={saveMode === "once"}
-							onChange={() => setSaveMode("once")}
-							disabled={disabled || saving}
-						/>
-
-						<span>
-							<strong>Use once</strong>
-							<small>Use only for this vendor onboarding form.</small>
-						</span>
-					</label>
-
-					<label
-						className={`workflow-save-option ${
-							saveMode === "template" ? "workflow-save-option--active" : ""
-						}`}
-					>
-						<input
-							type="radio"
-							name="custom-workflow-save-mode"
-							checked={saveMode === "template"}
-							onChange={() => setSaveMode("template")}
-							disabled={disabled || saving}
-						/>
-
-						<span>
-							<strong>Save as template</strong>
-							<small>Save and reuse this workflow in other forms.</small>
-						</span>
-					</label>
-				</div>
-				*/}
 
 				<div
 					className="workflow-save-options"

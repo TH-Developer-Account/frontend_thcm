@@ -4,7 +4,7 @@ import {
 	LoaderIcon,
 	// ScanEye,
 } from "lucide-react";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
@@ -18,8 +18,6 @@ import {
 	VendorCreationFormProvider,
 	useVendorCreationForm,
 } from "../hooks/useVendorCreationForm";
-import { useVendorOnboardingInitiation } from "../hooks/useVendorOnboardingInitiation";
-import VendorCommentSection from "./VendorCommentSection";
 import { AuditLogSection } from "../../../components/ui/audit";
 
 type VendorOnboardingReadOnlyViewProps = {
@@ -39,18 +37,17 @@ const VendorOnboardingReadOnlyView = ({
 	const {
 		isLoading,
 		isError,
-		workflowStages,
-		creator,
+		// workflowStages,
+		// creator,
 		pdfUrl,
 		pdfPreviewOpen,
 		isDownloadingPdf,
 		handleDownloadPdf,
 		closePdfPreview,
 	} = form;
-	const { handleSendBackToVendor } = useVendorOnboardingInitiation();
 
 	const handleBackToListing = () => {
-		navigate("/vendor/onboarding/listing?tab=onboarding");
+		navigate("/vendor-onboarding/listing?tab=onboarding");
 	};
 
 	const pageNavigation = {
@@ -63,7 +60,7 @@ const VendorOnboardingReadOnlyView = ({
 			},
 			{
 				label: "Vendors Listing",
-				href: "/vendor/onboarding/listing?tab=onboarding",
+				href: "/vendor-onboarding/listing?tab=onboarding",
 			},
 			{
 				label: "Vendor Form View",
@@ -104,10 +101,6 @@ const VendorOnboardingReadOnlyView = ({
 		);
 	}
 
-	if (form.canEditMainForm) {
-		return <Navigate to={`/vendor/onboarding/${onboardingId}`} replace />;
-	}
-
 	return (
 		<PageSectionLayout>
 			<VendorCreationFormProvider value={form}>
@@ -115,14 +108,13 @@ const VendorOnboardingReadOnlyView = ({
 					mode="view"
 					onboardingId={onboardingId}
 					onBack={handleBackToListing}
-					onHandleSendBackVendor={handleSendBackToVendor}
-					commentsSection={
-						<VendorCommentSection
-							onboardingId={onboardingId}
-							workflow={workflowStages}
-							createdBy={creator}
-						/>
-					}
+					// commentsSection={
+					// 	<VendorCommentSection
+					// 		onboardingId={onboardingId}
+					// 		workflow={workflowStages}
+					// 		createdBy={creator}
+					// 	/>
+					// }
 					auditSection={
 						<AuditLogSection
 							subjectType="VENDOR_ONBOARDING"

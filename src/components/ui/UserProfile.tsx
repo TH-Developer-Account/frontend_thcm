@@ -22,7 +22,7 @@ const UserProfile = ({ user, onLogOut }: UserProfileProps) => {
 
 	const displayName = lastName ? `${firstName} ${lastName}` : firstName;
 	const handleNavigate = () => {
-		navigate("marketing/profile");
+		navigate("/admin/profile");
 	};
 
 	return (

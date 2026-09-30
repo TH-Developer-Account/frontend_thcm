@@ -14,6 +14,8 @@ import {
 } from "../../../utils/exportJob.helper";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { useToast } from "../../../context/Auth/AuthContext";
+import { vendorContent } from "../../../content/vendor.content";
+import { useVendorListingPermissions } from "./useVendorPermissions";
 
 const DEFAULT_PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 400;
@@ -41,6 +43,8 @@ type UseVendorListingParams = {
 
 export const useVendorListing = ({ initialTab }: UseVendorListingParams) => {
 	const { showToast } = useToast();
+	// Per-row view/edit/retrigger rules — see helpers/vendor.permissions.ts.
+	const getRowPermissions = useVendorListingPermissions();
 
 	const [tab, setTab] = useState<VendorListingTab>(initialTab);
 	const [search, setSearch] = useState("");
@@ -122,12 +126,12 @@ export const useVendorListing = ({ initialTab }: UseVendorListingParams) => {
 			clearTimeout(delayedTimer);
 			const message = getApiErrorMessage(
 				error,
-				"Failed to export vendor onboarding records.",
+				vendorContent.toast.export.errorFallback,
 			);
 			setExportState({ status: "error", message });
 			showToast({
 				type: "error",
-				title: "Export failed",
+				title: vendorContent.toast.export.errorTitle,
 				description: message,
 			});
 		} finally {
@@ -156,6 +160,8 @@ export const useVendorListing = ({ initialTab }: UseVendorListingParams) => {
 		isFetching: listingQuery.isFetching,
 		isError: listingQuery.isError,
 		error: listingQuery.error,
+
+		getRowPermissions,
 
 		handleTabChange,
 		handleSearchChange,

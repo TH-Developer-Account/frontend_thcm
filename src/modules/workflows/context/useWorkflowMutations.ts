@@ -209,11 +209,13 @@ export const useAttachWorkflowMutation = () => {
 |--------------------------------------------------------------------------
 */
 
+// useWorkflowMutations.ts
 export const useApproveWorkflowStageMutation = () => {
 	const mutation = useMutationState();
 
 	const mutateAsync = useCallback(
-		(stageId: string) => mutation.run(() => workflowApi.approveStage(stageId)),
+		(stageId: string, reason?: string) =>
+			mutation.run(() => workflowApi.approveStage(stageId, reason)),
 		[mutation.run],
 	);
 

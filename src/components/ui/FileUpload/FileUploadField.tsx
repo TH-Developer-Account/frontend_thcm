@@ -1,5 +1,6 @@
 import React from "react";
 import {
+	Download,
 	Eye,
 	FileText,
 	ImageIcon,
@@ -37,6 +38,51 @@ const joinClassNames = (
 
 const getValueId = (value: FileUploadValue): string =>
 	value.id ?? `${value.name}-${value.size}-${value.url}`;
+
+const triggerAnchorDownload = (
+	href: string,
+	fileName: string,
+	openInNewTab = false,
+) => {
+	const link = document.createElement("a");
+
+	link.href = href;
+	link.download = fileName;
+	link.rel = "noopener noreferrer";
+
+	if (openInNewTab) {
+		link.target = "_blank";
+	}
+
+	document.body.appendChild(link);
+	link.click();
+	link.remove();
+};
+
+// The `download` attribute is ignored for cross-origin URLs (e.g. signed
+// storage links), so fetch the file as a blob first and download that.
+// If the fetch is blocked (CORS etc.), fall back to opening the URL in a
+// new tab so the user can still save it.
+const downloadUploadedFile = async (value: FileUploadValue): Promise<void> => {
+	if (!value.url) return;
+
+	const fileName = value.name?.trim() || "download";
+
+	try {
+		const response = await fetch(value.url);
+
+		if (!response.ok) {
+			throw new Error(`Download failed with status ${response.status}`);
+		}
+
+		const blobUrl = URL.createObjectURL(await response.blob());
+
+		triggerAnchorDownload(blobUrl, fileName);
+		window.setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+	} catch {
+		triggerAnchorDownload(value.url, fileName, true);
+	}
+};
 
 export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 	const {
@@ -265,6 +311,16 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 		],
 	);
 
+	const handleDownload = React.useCallback(
+		(valueToDownload: FileUploadValue, event?: React.MouseEvent) => {
+			event?.preventDefault();
+			event?.stopPropagation();
+
+			void downloadUploadedFile(valueToDownload);
+		},
+		[],
+	);
+
 	const handleCaptionChange = React.useCallback(
 		(valueToUpdate: FileUploadValue, caption: string) => {
 			if (disabled || readonly) {
@@ -363,6 +419,7 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 							captionError={captionError}
 							onCaptionChange={handleCaptionChange}
 							onPreview={() => setPreviewValue(item)}
+							onDownload={(event) => handleDownload(item, event)}
 							onReplace={(event) => openFilePicker(event, item)}
 							onRemove={(event) => handleRemove(item, event)}
 						/>
@@ -423,6 +480,7 @@ type PreviewCardProps = {
 	captionError?: string;
 	onCaptionChange: (value: FileUploadValue, caption: string) => void;
 	onPreview: () => void;
+	onDownload: (event?: React.MouseEvent) => void;
 	onReplace: (event?: React.MouseEvent) => void;
 	onRemove: (event?: React.MouseEvent) => void;
 };
@@ -443,12 +501,17 @@ const FileUploadPreviewCard = React.memo(
 		captionError,
 		onCaptionChange,
 		onPreview,
+		onDownload,
 		onReplace,
 		onRemove,
 	}: PreviewCardProps) => {
 		const showImagePreview = isImageUpload(value);
 		const showPdfPreview = isPdfUpload(value);
 		const captionId = React.useId();
+
+		// Download is offered in view (read-only) mode whenever the file has a
+		// URL. In edit mode the user already has replace/remove/preview.
+		const showDownload = readonly && Boolean(value.url);
 
 		if (variant === "line") {
 			return (
@@ -494,6 +557,18 @@ const FileUploadPreviewCard = React.memo(
 							>
 								<Eye className="size-3.5" aria-hidden="true" />
 							</button>
+
+							{showDownload ? (
+								<button
+									type="button"
+									className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 px-2 text-xs font-medium text-slate-700 transition-colors hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-50"
+									aria-label={`Download ${value.name}`}
+									title="Download"
+									onClick={onDownload}
+								>
+									<Download className="size-3.5" aria-hidden="true" />
+								</button>
+							) : null}
 
 							{!readonly && !disabled ? (
 								<Button
@@ -587,6 +662,19 @@ const FileUploadPreviewCard = React.memo(
 							size="sm"
 							aria-hidden="true"
 						/>
+
+						{showDownload ? (
+							<Button
+								type="button"
+								appearance="icon"
+								variant="secondary"
+								size="sm"
+								Icon={Download}
+								iconSize={18}
+								aria-label={`Download ${value.name}`}
+								onClick={onDownload}
+							/>
+						) : null}
 
 						{!readonly && !disabled ? (
 							<Button

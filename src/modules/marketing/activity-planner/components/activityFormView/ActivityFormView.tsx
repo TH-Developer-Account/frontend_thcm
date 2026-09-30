@@ -32,6 +32,7 @@ import CrfSection from "../../forms/CRF/CrfSection";
 import EpfSection from "../../forms/EPF/EpfSection";
 import type { ActivityPlannerController } from "../../hooks/useActivityPlanner";
 import ActivityDetailsSection from "./ActivityDetailsSection";
+import NavigateButton from "../../../../../components/common/NavigateButton";
 
 type ActivityFormViewProps = { activity: ActivityPlannerController };
 
@@ -324,6 +325,7 @@ const ActivityFormView = ({ activity }: ActivityFormViewProps) => {
 			<Card
 				title={
 					<div className="inline-flex flex-wrap items-center gap-2 text-xl font-semibold tracking-tight text-iron-dark">
+						<NavigateButton direction="back" />
 						<div className="flex items-center gap-2 text-iron">
 							<span>{proposerName || "--"} /</span>
 						</div>

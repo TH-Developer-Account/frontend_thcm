@@ -1,5 +1,6 @@
-import * as React from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -10,14 +11,17 @@ import {
 } from "../queries/useVendorMutations";
 import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";
 import {
+	vendorInitiationSchema,
+	type VendorInitiationFormValues,
+} from "../schemas/vendorInitiation.schema";
+import {
 	showApiErrorToast,
 	showSuccessToast,
 } from "../../../utils/apiError.helper";
 import { useToast } from "../../../context/Auth/AuthContext";
+import { vendorContent } from "../../../content/vendor.content";
 
-export type VendorOnboardingInitiationErrors = Partial<
-	Record<keyof VendorOnboardingInitiationPayload, string>
->;
+const toastContent = vendorContent.toast.initiation;
 
 const initialFormValues: VendorOnboardingInitiationPayload = {
 	vendorName: "",
@@ -34,6 +38,7 @@ type UseVendorOnboardingInitiationParams = {
 	onSubmitSuccess?: () => void | Promise<void>;
 	onUpdateSuccess?: () => void | Promise<void>;
 };
+
 const mapInitiationDetailsToForm = (
 	response: VendorOnboardingInitiationPayload | null | undefined,
 ): VendorOnboardingInitiationPayload => ({
@@ -72,14 +77,26 @@ export const useVendorOnboardingInitiation = ({
 		[initialValues],
 	);
 
-	const [values, setValues] = useState<VendorOnboardingInitiationPayload>(
-		initialResolvedValues,
-	);
+	// `vendorName` is not collected by the visible form (its FormInput has
+	// been intentionally commented out upstream) but the payload type still
+	// carries it, so it rides along outside React Hook Form/Zod rather than
+	// being silently dropped by the resolver's schema-stripping behaviour.
+	const vendorNameRef = useRef(initialResolvedValues.vendorName);
 
-	const [originalValues, setOriginalValues] =
-		useState<VendorOnboardingInitiationPayload>(initialResolvedValues);
-
-	const [errors, setErrors] = useState<VendorOnboardingInitiationErrors>({});
+	const {
+		register,
+		handleSubmit,
+		reset,
+		control,
+		formState: { errors, isDirty, isSubmitting: isFormSubmitting },
+	} = useForm<VendorInitiationFormValues>({
+		resolver: zodResolver(vendorInitiationSchema),
+		// Validate on every keystroke, per explicit request — errors should
+		// appear as the user types, not only once they blur the field.
+		mode: "onChange",
+		reValidateMode: "onChange",
+		defaultValues: initialResolvedValues,
+	});
 
 	const isEditMode = Boolean(initiationId);
 
@@ -87,40 +104,43 @@ export const useVendorOnboardingInitiation = ({
 		shouldFetchDetails ? resolvedInitiationId : "",
 	);
 
-	React.useEffect(() => {
+	useEffect(() => {
 		if (!shouldFetchDetails || !detailQuery.data) {
 			return;
 		}
 		const mappedValues = mapInitiationDetailsToForm(detailQuery.data);
 
-		setValues(mappedValues);
-		setOriginalValues(mappedValues);
-		setErrors({});
-	}, [detailQuery.data, shouldFetchDetails]);
+		vendorNameRef.current = mappedValues.vendorName;
+		reset(mappedValues);
+	}, [detailQuery.data, shouldFetchDetails, reset]);
 
-	React.useEffect(() => {
+	useEffect(() => {
 		if (shouldFetchDetails) {
 			return;
 		}
 
-		setValues(initialResolvedValues);
-		setOriginalValues(initialResolvedValues);
-	}, [initialResolvedValues, shouldFetchDetails]);
+		vendorNameRef.current = initialResolvedValues.vendorName;
+		reset(initialResolvedValues);
+	}, [initialResolvedValues, shouldFetchDetails, reset]);
 
 	const submitMutation = useMutation({
 		mutationFn: vendorInitationApi.createInitiation,
 		onSuccess: async () => {
 			await onSubmitSuccess?.();
-			navigate("/vendor/onboarding/listing");
+			navigate("/vendor-onboarding/listing");
 			showSuccessToast(
 				showToast,
-				"The Vendor initiation was submitted successfully.",
-				"Submitted successfully",
+				toastContent.createSuccessDescription,
+				toastContent.createSuccessTitle,
 			);
 		},
 		onError: (error) => {
-			console.error("Vendor initiation submit failed:", error);
-			showApiErrorToast(showToast, error, "Vendor initiation submit failed");
+			showApiErrorToast(
+				showToast,
+				error,
+				toastContent.createErrorFallback,
+				toastContent.createErrorTitle,
+			);
 		},
 	});
 
@@ -128,56 +148,55 @@ export const useVendorOnboardingInitiation = ({
 		mutationFn: vendorInitationApi.updateInitiation,
 		onSuccess: async () => {
 			await onUpdateSuccess?.();
-			navigate("/vendor/onboarding/listing");
+			navigate("/vendor-onboarding/listing");
+			showSuccessToast(
+				showToast,
+				toastContent.updateSuccessDescription,
+				toastContent.updateSuccessTitle,
+			);
 		},
 		onError: (error) => {
-			console.error("Vendor initiation update failed:", error);
+			// Previously this only logged to the console — the user got no
+			// feedback at all when an update silently failed. Now it goes
+			// through the same centralized toast path as every other
+			// mutation in this module.
+			showApiErrorToast(
+				showToast,
+				error,
+				toastContent.updateErrorFallback,
+				toastContent.updateErrorTitle,
+			);
 		},
 	});
 
-	const isSubmitting = submitMutation.isPending || updateMutation.isPending;
-
-	const isDirty = useMemo(
-		() => JSON.stringify(values) !== JSON.stringify(originalValues),
-		[originalValues, values],
-	);
-
-	const handleChange = <K extends keyof VendorOnboardingInitiationPayload>(
-		key: K,
-		value: VendorOnboardingInitiationPayload[K],
-	) => {
-		setValues((previousValues) => ({
-			...previousValues,
-			[key]: value,
-		}));
-
-		setErrors((previousErrors) => ({
-			...previousErrors,
-			[key]: undefined,
-		}));
-	};
+	const isSubmitting =
+		isFormSubmitting || submitMutation.isPending || updateMutation.isPending;
 
 	const handleReset = () => {
-		setValues(originalValues);
-		setErrors({});
+		reset();
 	};
 
-	const handleSubmit = () => {
+	const onValid = (formValues: VendorInitiationFormValues) => {
+		const payload: VendorOnboardingInitiationPayload = {
+			...formValues,
+			vendorName: vendorNameRef.current,
+		};
+
 		if (isEditMode && resolvedInitiationId) {
 			updateMutation.mutate({
 				id: resolvedInitiationId,
-				payload: values,
+				payload,
 			});
 
 			return;
 		}
 
-		submitMutation.mutate(values);
+		submitMutation.mutate(payload);
 	};
 
 	/*
 	|--------------------------------------------------------------------------
-	| Send back to vendor 
+	| Send back to vendor
 	|--------------------------------------------------------------------------
 	*/
 	const sendBackToVendorMutation = useSendBackToVendorMutation();
@@ -190,22 +209,22 @@ export const useVendorOnboardingInitiation = ({
 
 			showSuccessToast(
 				showToast,
-				"The form was sent back to the vendor successfully.",
+				toastContent.sendBackSuccessDescription,
+				toastContent.sendBackSuccessTitle,
 			);
 		} catch (error) {
-			showToast({
-				type: "error",
-				title: "Unable to send back",
-				description:
-					error instanceof Error
-						? error.message
-						: "Failed to send the form back to the vendor.",
-			});
+			showApiErrorToast(
+				showToast,
+				error,
+				toastContent.sendBackErrorFallback,
+				toastContent.sendBackErrorTitle,
+			);
 		}
 	};
 
 	return {
-		values,
+		register,
+		control,
 		errors,
 
 		isEditMode,
@@ -217,11 +236,19 @@ export const useVendorOnboardingInitiation = ({
 		isDetailError: detailQuery.isError,
 		detailError: detailQuery.error,
 
-		handleChange,
 		handleReset,
+		// Exposed raw (not pre-applied) so the form calls
+		// `handleSubmit(onValid)` directly inline in its <form onSubmit={...}>
+		// — the same pattern the Login forms already use, and the one RHF's
+		// own lint rules expect: calling handleSubmit() during render is only
+		// recognized as safe when it's the JSX event-handler expression
+		// itself, not a value precomputed and stored in this hook.
 		handleSubmit,
+		onValid,
 		handleSendBackToVendor,
 		submitMutation,
 		updateMutation,
 	};
 };
+
+export type { VendorInitiationFormValues };

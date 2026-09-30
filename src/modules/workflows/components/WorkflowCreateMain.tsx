@@ -1,9 +1,7 @@
-import { ArrowLeft } from "lucide-react";
 import WorkFlowGenForm from "./WorkFlowGenForm";
 import WorkflowStagesForm from "./WorkflowStagesForm";
 import WorkflowViewForm from "./WorkflowViewForm";
 
-import Button from "../../../components/common/Button";
 import type {
 	WorkflowGenErrors,
 	WorkFlowProps,
@@ -28,10 +26,10 @@ const WorkflowCreateMain = ({
 	onToggleStage,
 	onRemoveApprover,
 	onAddApprover,
-	onSubmit,
+	onRemoveStage,
+	onResetStages,
 	currentUserId,
 	onAddStage,
-	loading,
 	basicErrors,
 	stageErrors,
 	stageFormError,
@@ -42,15 +40,13 @@ const WorkflowCreateMain = ({
 	showStatus,
 }: Props) => {
 	return (
-		<div className="w-full">
+		<div className="w-full h-full">
 			{currentStep === 1 && (
 				<WorkFlowGenForm
 					basics={basics}
 					errors={basicErrors}
 					onBasicChange={onBasicChange}
 					onClearError={onClearBasicError}
-					onNext={goNext}
-					onBack={goBack}
 					appOptions={appOptions}
 					categoryOptions={categoryOptions}
 					showCategory={showCategory}
@@ -68,38 +64,18 @@ const WorkflowCreateMain = ({
 					onToggleStage={onToggleStage}
 					onRemoveApprover={onRemoveApprover}
 					onAddApprover={onAddApprover}
+					onRemoveStage={onRemoveStage}
+					onResetStages={onResetStages}
 					onBack={goBack}
 					onSubmit={goNext}
 					onAddStage={onAddStage}
+					hideNavActions
+					hideResetAction
 				/>
 			)}
 
 			{currentStep === 3 && (
-				<>
-					<WorkflowViewForm basics={basics} stages={stages} />
-
-					<div className="workflow-form-actions">
-						<Button
-							onClick={goBack}
-							type="button"
-							text="Back"
-							Icon={ArrowLeft}
-							iconPosition="left"
-							appearance="standard"
-							variant="outline"
-							size="sm"
-						/>
-						<Button
-							onClick={onSubmit}
-							disabled={loading}
-							type="button"
-							text={loading ? "Saving..." : "Save workflow"}
-							appearance="standard"
-							variant="brand"
-							size="sm"
-						/>
-					</div>
-				</>
+				<WorkflowViewForm basics={basics} stages={stages} />
 			)}
 		</div>
 	);

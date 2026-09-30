@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 
-import Header from "../components/ui/Header";
+// import ModuleHeader from "../components/ui/ModuleHeader";
 import { useSidebarPermissions } from "../hooks/useSidebarPermission";
 import { adminSidebar } from "../modules/admin/admin.sidebar";
 import { marketingSidebar } from "../modules/marketing/marketing.sidebar";
@@ -11,6 +11,7 @@ import { workflowSidebar } from "../modules/workflows/utils/workflow.sidebar";
 import { medicalClaimSidebar } from "../modules/medicalReimbursment/utils/medical-claim.sidebar";
 import { guestSidebar } from "../modules/guest/GuestSidebar";
 import { dealerAuditSidebar } from "../modules/audit/dealerAudit/dealerAudit.sidebar";
+import Header from "../components/ui/Header";
 
 const MOBILE_SIDEBAR_QUERY = "(max-width: 767px)";
 

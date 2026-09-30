@@ -374,6 +374,7 @@
 
 	.data-table-body {
 		background-color: var(--table-bg);
+		height: 100%;
 	}
 
 	.data-table-row {

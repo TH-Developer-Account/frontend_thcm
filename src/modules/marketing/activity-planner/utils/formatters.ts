@@ -1,4 +1,4 @@
-import type { ApprovalWorkflowStage } from "../../../workflows";
+import type { WorkflowStage } from "../../../workflows";
 import type { EpcDetailResponse } from "../types/epc.types";
 import type { BudgetItem, ShareInfo } from "../types/epf.types";
 import {
@@ -103,7 +103,7 @@ export const getEpcBudgetValue = (
 	);
 };
 
-export const getApprovalStrategyLabel = (stage: ApprovalWorkflowStage) => {
+export const getApprovalStrategyLabel = (stage: WorkflowStage) => {
 	const approverCount = stage.approvals?.length ?? 0;
 	const minApprovals = stage.minApprovals ?? null;
 

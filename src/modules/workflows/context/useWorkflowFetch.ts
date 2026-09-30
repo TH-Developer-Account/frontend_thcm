@@ -98,6 +98,7 @@ const buildWorkflowPayload = ({
 			name: getFullName(approver.user),
 			email: approver.user.email?.trim() ?? "",
 			isExternalApprover: approver.isExternalApprover,
+			designation: approver.user.designation ?? "--",
 		})),
 	})),
 });

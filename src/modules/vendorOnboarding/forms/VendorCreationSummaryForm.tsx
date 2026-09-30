@@ -1,26 +1,20 @@
 import { useState, type ReactNode } from "react";
 import {
 	Building2,
-	CircleCheck,
 	ClipboardClock,
 	FileDown,
 	FileCheck2,
 	FileSpreadsheet,
 	MessageSquareText,
 	Pencil,
-	Save,
-	Send,
-	ArrowLeft,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import ActionMenu, {
 	type ActionMenuItem,
 } from "../../../components/common/ActionMenu";
-import Button from "../../../components/common/Button";
 import Card, { type CardSection } from "../../../components/common/Card";
 import { CardEmpty } from "../../../components/ui/CardSkeleton";
-import { ReasonActionModal } from "../../../components/ui/ReasonActionModal";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { ServerAxios } from "../../../services/ServerAxios";
 import { ApprovalWorkflowTableContent } from "../../workflows/components/ApprovalWorkflowTableContent";
@@ -42,6 +36,9 @@ import VendorCreationFormOne from "./VendorCreationFormOne";
 import VendorCreationFormTwo from "./VendorCreationFormTwo";
 import NavigateButton from "../../../components/common/NavigateButton";
 import { Badge } from "../../../components/common/Badge";
+import { vendorContent } from "../../../content/vendor.content";
+import { showApiErrorToast } from "../../../utils/apiError.helper";
+import ApprovalActionsBar from "../../../components/ui/ApprovalActionsBar";
 
 type VendorCreationSummaryMode = "edit" | "view";
 
@@ -64,8 +61,15 @@ type VendorCreationSummaryFormProps = {
 
 	onBack?: () => void;
 	onSubmit?: () => void | Promise<void>;
-	onApprove?: () => void | Promise<void>;
-	onClarify?: () => void | Promise<void>;
+
+	// These are the "what happens after a successful approve/clarify"
+	// callback (e.g. refetch the detail query) — NOT what fires the API
+	// call itself. useVendorCreationSummaryController's own handleApprove/
+	// handleClarify (below) call these internally once the mutation
+	// succeeds. The footer never calls onApprove/onClarify directly.
+	onApprove?: (reason: string) => void | Promise<void>;
+	onClarify?: (reason: string) => void | Promise<void>;
+
 	onHandleSendBackVendor?: () => void | Promise<void>;
 	onAcceptAndClose?: () => void | Promise<void>;
 	onSaveVendorCode?: (code?: string) => void | Promise<boolean>;
@@ -143,10 +147,16 @@ const VendorCreationSummaryForm = ({
 		onFormTwoChange ?? formContext?.handleFormTwoChange;
 	const resolvedOnBack = onBack ?? formContext?.handleBack;
 	const resolvedOnSubmit = onSubmit ?? formContext?.handleSubmitSummary;
+
+	// These feed INTO the controller below as its post-success callback —
+	// they are not called by the footer.
 	const resolvedOnApprove = onApprove ?? formContext?.handleApprove;
 	const resolvedOnClarify = onClarify ?? formContext?.handleClarify;
+
 	const resolvedOnAcceptAndClose =
 		onAcceptAndClose ?? formContext?.handleAcceptAndClose;
+	const resolvedOnSendBack =
+		onHandleSendBackVendor ?? formContext?.handleSendBackToVendor;
 	const resolvedOnSaveVendorCode =
 		onSaveVendorCode ?? formContext?.handleSaveVendorCode;
 
@@ -163,13 +173,12 @@ const VendorCreationSummaryForm = ({
 	const resolvedLoading = loading ?? formContext?.mutationLoading ?? false;
 	const resolvedVendorCodeLoading =
 		vendorCodeLoading ?? formContext?.vendorCodeLoading ?? false;
-	const isActionLoading = resolvedLoading || resolvedVendorCodeLoading;
 	const isViewMode = mode === "view";
 
 	const handleEdit = () => {
 		if (!onboardingId) return;
 
-		navigate(`/vendor/onboarding/${onboardingId}`);
+		navigate(`/vendor-onboarding/${onboardingId}`);
 	};
 
 	const handleExport = async () => {
@@ -195,12 +204,13 @@ const VendorCreationSummaryForm = ({
 
 			document.body.appendChild(downloadLink);
 			downloadLink.click();
-		} catch {
-			showToast({
-				type: "error",
-				title: "Request failed",
-				description: "Failed to download the Excel file.",
-			});
+		} catch (error) {
+			showApiErrorToast(
+				showToast,
+				error,
+				vendorContent.toast.export.excelErrorFallback,
+				vendorContent.toast.export.excelErrorTitle,
+			);
 		} finally {
 			if (blobUrl) {
 				window.URL.revokeObjectURL(blobUrl);
@@ -214,7 +224,9 @@ const VendorCreationSummaryForm = ({
 	const summaryActions: ActionMenuItem<string>[] = [
 		{
 			id: "download-pdf",
-			label: formContext?.isDownloadingPdf ? "Downloading…" : "PDF",
+			label: formContext?.isDownloadingPdf
+				? vendorContent.summary.actions.downloadingPdf
+				: vendorContent.summary.actions.downloadPdf,
 			Icon: FileDown,
 			onClick: () => void formContext?.handleDownloadPdf?.(),
 			disabled:
@@ -224,14 +236,16 @@ const VendorCreationSummaryForm = ({
 		},
 		{
 			id: "export-excel",
-			label: isExportingExcel ? "Exporting…" : "Excel",
+			label: isExportingExcel
+				? vendorContent.summary.actions.exportingExcel
+				: vendorContent.summary.actions.exportExcel,
 			Icon: FileSpreadsheet,
 			onClick: () => void handleExport(),
 			disabled: !onboardingId || isExportingExcel,
 		},
 		{
 			id: "edit",
-			label: "Edit",
+			label: vendorContent.summary.actions.edit,
 			Icon: Pencil,
 			onClick: handleEdit,
 			hidden: !formContext?.canEditMainForm,
@@ -239,15 +253,20 @@ const VendorCreationSummaryForm = ({
 	];
 
 	const {
-		reasonModal,
 		canActOnCurrentStage,
 		vendorCodeModal,
-		openReasonModal,
-		closeReasonModal,
 		closeVendorCodeModal,
-		handleApprove,
 		handleVendorCodeModalConfirm,
-		handleReasonConfirm,
+		// THE FIX: these are the real approve/clarify handlers — they call
+		// approveStageMutation/clarifyStageMutation with the typed reason,
+		// and only call resolvedOnApprove/resolvedOnClarify internally as
+		// their post-success "refresh" step. ApprovalActionsBar must call
+		// THESE, never resolvedOnApprove/resolvedOnClarify directly — that
+		// was the bug (nothing fired the actual mutation).
+		handleApprove,
+		handleClarify,
+		approveLoading,
+		clarifyLoading,
 	} = useVendorCreationSummaryController({
 		workflowStages: resolvedWorkflowStages,
 		vendorCode: formTwoValues.vendorCode,
@@ -257,17 +276,23 @@ const VendorCreationSummaryForm = ({
 		onAcceptAndClose: resolvedOnAcceptAndClose,
 	});
 
+	const isActionLoading =
+		resolvedLoading ||
+		resolvedVendorCodeLoading ||
+		approveLoading ||
+		clarifyLoading;
+
 	const showSubmitAction =
 		!isViewMode && resolvedCanSubmit && typeof resolvedOnSubmit === "function";
 
-	const showApproveAction =
-		resolvedCanApprove && typeof resolvedOnApprove === "function";
+	const showApproveAction = resolvedCanApprove;
 
-	const showClarifyAction =
-		resolvedCanClarify && typeof resolvedOnClarify === "function";
+	const showClarifyAction = resolvedCanClarify;
 
 	const showSendBackAction =
-		resolvedCanSendBack && typeof onHandleSendBackVendor === "function";
+		isViewMode &&
+		resolvedCanSendBack &&
+		typeof onHandleSendBackVendor === "function";
 
 	const showAcceptAndCloseAction =
 		resolvedCanAcceptAndClose && typeof resolvedOnAcceptAndClose === "function";
@@ -278,11 +303,18 @@ const VendorCreationSummaryForm = ({
 		showAcceptAndCloseAction;
 	const showButtons =
 		showSendBackAction || showSubmitAction || hasApprovalActions;
+
+	// Two footers: an approver who can act on the current stage gets
+	// Back | reason | Clarify + Approve. Everyone else (proposer/creator)
+	// gets Back | Accept & Close / Send Back / Final Submit — never the
+	// reason box.
+	const isApproverFooter =
+		canActOnCurrentStage && (showApproveAction || showClarifyAction);
+
 	const sections: CardSection[] = [
 		{
 			id: "vendor-submitted-details",
-			title: "Vendor Submitted Details",
-			// subtitle: "Review the vendor information and uploaded documents.",
+			title: vendorContent.summary.sections.vendorSubmittedDetails,
 			Icon: Building2,
 			defaultExpanded: true,
 			children: (
@@ -299,8 +331,7 @@ const VendorCreationSummaryForm = ({
 		},
 		{
 			id: "thcm-vendor-details",
-			title: "THCM Vendor Details",
-			// subtitle: "Review the THCM classification and vendor master details.",
+			title: vendorContent.summary.sections.thcmVendorDetails,
 			Icon: FileCheck2,
 			defaultExpanded: true,
 			children: (
@@ -317,15 +348,13 @@ const VendorCreationSummaryForm = ({
 		},
 		{
 			id: "approval-workflow",
-			title: "Approval Workflow",
-			// subtitle: "Review the assigned approval stages and their current status.",
+			title: vendorContent.summary.sections.approvalWorkflow,
 			Icon: ClipboardClock,
 			defaultExpanded: true,
 			children:
 				workflowSection ??
 				(resolvedWorkflowStages.length > 0 ? (
 					<div className="px-4">
-						{" "}
 						<ApprovalWorkflowTableContent
 							stages={resolvedWorkflowStages}
 							showEmptyState={false}
@@ -333,8 +362,8 @@ const VendorCreationSummaryForm = ({
 					</div>
 				) : (
 					<CardEmpty
-						title="No approval workflow assigned"
-						description="Select an approval workflow before submitting the request."
+						title={vendorContent.summary.emptyWorkflow.title}
+						description={vendorContent.summary.emptyWorkflow.description}
 						Icon={ClipboardClock}
 					/>
 				)),
@@ -343,8 +372,7 @@ const VendorCreationSummaryForm = ({
 			? [
 					{
 						id: "comments-and-activity",
-						title: "Chat Section",
-						// subtitle: "Review the discussion and audit history.",
+						title: vendorContent.summary.sections.chatSection,
 						Icon: MessageSquareText,
 						defaultExpanded: true,
 						children: commentsSection,
@@ -355,8 +383,7 @@ const VendorCreationSummaryForm = ({
 			? [
 					{
 						id: "audit",
-						title: "Audit Section",
-						// subtitle: "Review the discussion and audit history.",
+						title: vendorContent.summary.sections.auditSection,
 						Icon: MessageSquareText,
 						defaultExpanded: true,
 						children: auditSection,
@@ -366,77 +393,27 @@ const VendorCreationSummaryForm = ({
 	];
 
 	const footer = showButtons && (
-		<div className="vendor-onboarding-form-actions flex justify-between">
-			<Button
-				type="button"
-				text="Back"
-				size="sm"
-				appearance="standard"
-				variant="outline"
-				Icon={ArrowLeft}
-				onClick={resolvedOnBack}
-			/>{" "}
-			<div className="vendor-onboarding-form-actions-end">
-				{canActOnCurrentStage && showClarifyAction ? (
-					<Button
-						type="button"
-						text="Send for Clarification"
-						size="sm"
-						appearance="standard"
-						variant="outline"
-						disabled={isActionLoading || reasonModal.loading}
-						onClick={openReasonModal}
-					/>
-				) : null}
-				{canActOnCurrentStage && showApproveAction ? (
-					<Button
-						type="button"
-						text="Approve"
-						size="sm"
-						appearance="standard"
-						variant="brand"
-						disabled={isActionLoading || reasonModal.loading}
-						onClick={() => void handleApprove()}
-					/>
-				) : null}
-				{showAcceptAndCloseAction ? (
-					<Button
-						type="button"
-						text="Accept and Close"
-						size="sm"
-						Icon={CircleCheck}
-						appearance="standard"
-						variant="brand"
-						disabled={isActionLoading || reasonModal.loading}
-						onClick={() => void resolvedOnAcceptAndClose?.()}
-					/>
-				) : null}
-				{showSendBackAction ? (
-					<Button
-						type="button"
-						text="Send Back to Vendor"
-						size="sm"
-						appearance="standard"
-						variant="outline"
-						Icon={Send}
-						disabled={isActionLoading || reasonModal.loading}
-						onClick={() => void onHandleSendBackVendor?.()}
-					/>
-				) : null}
-				{showSubmitAction ? (
-					<Button
-						type="button"
-						text="Final Submit"
-						size="sm"
-						appearance="standard"
-						variant="brand"
-						Icon={Save}
-						disabled={isActionLoading || reasonModal.loading}
-						onClick={() => void resolvedOnSubmit?.()}
-					/>
-				) : null}
-			</div>
-		</div>
+		<ApprovalActionsBar
+			variant={isApproverFooter ? "approver" : "proposer"}
+			onBack={resolvedOnBack}
+			canApprove={canActOnCurrentStage && showApproveAction}
+			onApprove={handleApprove}
+			canClarify={canActOnCurrentStage && showClarifyAction}
+			onClarify={handleClarify}
+			canSendBack={showSendBackAction}
+			onSendBack={resolvedOnSendBack}
+			canAcceptAndClose={showAcceptAndCloseAction}
+			onAcceptAndClose={resolvedOnAcceptAndClose}
+			canSubmit={showSubmitAction}
+			onSubmit={resolvedOnSubmit}
+			loading={isActionLoading}
+			approveLabel={vendorContent.buttons.approve}
+			clarifyLabel={vendorContent.buttons.sendForClarification}
+			sendBackLabel={vendorContent.buttons.sendBackToVendor}
+			acceptAndCloseLabel={vendorContent.buttons.acceptAndClose}
+			submitLabel={vendorContent.buttons.sendForApproval}
+			backLabel={vendorContent.buttons.back}
+		/>
 	);
 
 	return (
@@ -444,21 +421,40 @@ const VendorCreationSummaryForm = ({
 			<Card
 				title={
 					isViewMode ? (
-						<div className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight text-iron-dark">
+						// Desktop: one line — Title / Ref / Name  [badge]
+						// Mobile:  title on top, ref + name stacked under it,
+						//          badge pinned to the right of the block.
+						// "/" separators are CSS pseudo-elements so they never
+						// dangle at the end of a wrapped line.
+						<div className="vendor-summary-heading">
 							<NavigateButton direction="back" />
-							<span>Vendor Onboarding Summary</span>
-							{formContext?.referenceNumber && (
-								<span>/ {formContext?.referenceNumber} /</span>
-							)}
-							{formContext?.vendorReferenceName ? (
-								<span> {formContext?.vendorReferenceName} /</span>
-							) : (
-								"Reference Name /"
-							)}
+
+							<div className="vendor-summary-heading-text">
+								<span className="vendor-summary-heading-title">
+									{vendorContent.summary.titles.view}
+								</span>
+
+								{formContext?.referenceNumber ||
+								formContext?.vendorReferenceName ? (
+									<span className="vendor-summary-heading-meta">
+										{formContext?.referenceNumber ? (
+											<span className="vendor-summary-heading-ref">
+												{formContext.referenceNumber}
+											</span>
+										) : null}
+										{formContext?.vendorReferenceName ? (
+											<span className="vendor-summary-heading-name">
+												{formContext.vendorReferenceName}
+											</span>
+										) : null}
+									</span>
+								) : null}
+							</div>
+
 							<Badge status={formContext?.formStatus} />
 						</div>
 					) : (
-						"Form Summary"
+						vendorContent.summary.titles.edit
 					)
 				}
 				className={!isViewMode ? "border-none" : ""}
@@ -474,18 +470,9 @@ const VendorCreationSummaryForm = ({
 						/>
 					) : null
 				}
-				// subtitle="Review the complete request before taking the final action."
 				sections={sections}
 				padding="compact"
 				footer={footer}
-			/>
-
-			<ReasonActionModal
-				open={Boolean(reasonModal.mode)}
-				mode={reasonModal.mode}
-				loading={reasonModal.loading}
-				onClose={closeReasonModal}
-				onConfirm={handleReasonConfirm}
 			/>
 
 			<VendorCodeRequiredModal

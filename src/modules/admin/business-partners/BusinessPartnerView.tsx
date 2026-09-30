@@ -56,7 +56,7 @@ const BusinessPartnerView = () => {
 		);
 	}
 
-	const { partner, primaryContact } = view;
+	const { partner } = view;
 
 	return (
 		<PageSectionLayout>
@@ -80,15 +80,19 @@ const BusinessPartnerView = () => {
 
 			<div className="bp-view-container">
 				<BPGenInfo
-					title={partner.bpShortName || partner.bpName}
-					name={partner.legalTradeName || partner.bpName}
-					number={
-						partner.internalId || partner.bpId || partner.s4Id || partner.id
+					title={partner.bpName ?? partner.bpShortName}
+					bpName={partner.bpName}
+					code={
+						partner.internalId ||
+						partner.vendorCode ||
+						partner.bpId ||
+						partner.s4Id ||
+						undefined
 					}
-					mainContactPerson={primaryContact?.name || "--"}
-					mainContactNumber={primaryContact?.phoneNumber || "--"}
-					code={partner.vendorCode || partner.bpShortName || undefined}
-					zone={partner.officeType.replaceAll("_", " ")}
+					bpType={partner.bpType}
+					officeType={partner.officeType}
+					joinedOn={partner.joinedOn}
+					entityType={partner.entityType}
 					status={partner.isActive ? "Active" : "Inactive"}
 				/>
 

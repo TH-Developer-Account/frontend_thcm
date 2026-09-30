@@ -17,6 +17,7 @@
 @import "./styles/components.css";
 @import "./styles/home.css";
 @import "./styles/table.css";
+@import "./styles/publicPageStatus.css";
 
 /* Existing feature styles. Keep until each module is migrated. */
 @import "./modules/workflows/utils/workflow.css";
@@ -28,6 +29,5 @@
 @import "./modules/admin/business-partners/bp.css";
 @import "./modules/admin/Masters/master.styles.css";
 @import "./modules/marketing/leads/styles/leads.css";
-@import "./components/ui/comments/comments.css";
 @import "./modules/workflows/utils/workflow.css";
 @import "./modules/audit/dealerAudit/checklist-card.css";

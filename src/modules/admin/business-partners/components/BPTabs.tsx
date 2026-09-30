@@ -1,15 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-import { Pencil, Plus } from "lucide-react";
+import { useState } from "react";
+import { Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import Button from "../../../../components/common/Button";
 import { FilterTabs } from "../../../../components/ui/FilterTabs";
-
-import {
-	useBusinessPartnerForm,
-	businessPartnerPaths,
-	type DetailFormSection,
-} from "../hooks/useBusinessPartnerForm";
 
 import type {
 	BusinessPartnerPermissions,
@@ -18,12 +12,11 @@ import type {
 import BPContact from "./BPContact";
 import BPAddress from "./BPAddress";
 import BPBranches from "./BPBranches";
-// import { BPGeneralInfoForm } from "./BPGenInfo";
-import { BPOrganizationForm } from "./BPOrganization";
-import BPPeople from "./BPPeople";
+import BPOrganizationCard from "./BPOrganizationCard";
+import BPUsers from "./BPUsers";
+import { businessPartnerPaths } from "../utils/businessPartner.paths";
 
 const bpTabs = [
-	// { value: "general", label: "General", controlsId: "bp-tab-general-panel" },
 	{
 		value: "organization",
 		label: "Organization",
@@ -38,6 +31,7 @@ const bpTabs = [
 		controlsId: "bp-tab-branches-panel",
 	},
 	{ value: "people", label: "People", controlsId: "bp-tab-people-panel" },
+	// { value: "users", label: "Users", controlsId: "bp-tab-users-panel" },
 ] as const;
 
 type BPTab = (typeof bpTabs)[number]["value"];
@@ -50,13 +44,6 @@ type BPTabsProps = {
 // const isBPTab = (value: string): value is BPTab =>
 // 	bpTabs.some((tab) => tab.value === value);
 
-const SECTION_LABELS: Record<Exclude<DetailFormSection, null>, string> = {
-	general: "General Information",
-	organization: "Organization Information",
-	contact: "Contact Information",
-	address: "Address Information",
-};
-
 const isOrgDataEmpty = (view: BusinessPartnerViewModel): boolean =>
 	!view.partner.gst &&
 	!view.partner.panNumber &&
@@ -64,12 +51,6 @@ const isOrgDataEmpty = (view: BusinessPartnerViewModel): boolean =>
 	!view.partner.vendorCode &&
 	!view.partner.entityType &&
 	!view.partner.joinedOn;
-
-const isContactDataEmpty = (view: BusinessPartnerViewModel): boolean =>
-	!view.partner.mobileNumber &&
-	!view.partner.email &&
-	!view.partner.telephone &&
-	!view.partner.fax;
 
 export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 	const navigate = useNavigate();
@@ -89,121 +70,9 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 	// Same lifted pattern for the "Add People" search-and-attach panel.
 	const [isAddingPeople, setIsAddingPeople] = useState(false);
 
-	const detailForm = useBusinessPartnerForm({
-		partner: view.partner,
-		permissions,
-	});
-
-	// Auto-open an empty section into edit mode exactly once, on first
-	// load — via a real startEditing() call, so editingSection is
-	// genuinely set and Save works. Never re-fires on later renders,
-	// and never overrides a section the user is actively editing.
-	const hasAutoOpened = useRef(false);
-
-	useEffect(() => {
-		if (hasAutoOpened.current) return;
-		if (detailForm.editingSection !== null) return;
-
-		if (isContactDataEmpty(view)) {
-			console.log("[BPTabs] auto-opening contact (empty data)");
-			detailForm.startEditing("contact");
-			hasAutoOpened.current = true;
-			return;
-		}
-
-		if (isOrgDataEmpty(view)) {
-			console.log("[BPTabs] auto-opening organization (empty data)");
-			detailForm.startEditing("organization");
-			hasAutoOpened.current = true;
-		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [view]);
-
 	const handleAddBranch = () => {
 		navigate(
 			`${businessPartnerPaths.create()}?parentId=${encodeURIComponent(view.partner.id)}`,
-		);
-	};
-	const canUpdateSection = (
-		section: Exclude<DetailFormSection, null>,
-	): boolean => {
-		switch (section) {
-			case "general":
-				return permissions.general.canUpdateGeneral;
-			case "organization":
-				return permissions.organization.canUpdateOrganization;
-			case "contact":
-				return permissions.contact.canUpdateContact;
-			case "address":
-				return permissions.address.canUpdateAddress;
-			default:
-				return false;
-		}
-	};
-	const renderDetailSection = (
-		section: Exclude<DetailFormSection, null>,
-		readView: React.ReactNode,
-		formView: React.ReactNode,
-	) => {
-		const showForm = detailForm.editingSection === section;
-
-		if (!showForm) {
-			return (
-				<div className="bp-gen-content">
-					{readView}
-
-					{canUpdateSection(section) && (
-						<div className="bp-gen-content-actions">
-							<Button
-								type="button"
-								text={`Edit ${SECTION_LABELS[section]}`}
-								variant="outline"
-								size="sm"
-								Icon={Pencil}
-								onClick={() => detailForm.startEditing(section)}
-							/>
-						</div>
-					)}
-				</div>
-			);
-		}
-
-		return (
-			<div className="bp-gen-content">
-				{formView}
-
-				{detailForm.error && (
-					<p className="bp-master-form-error" role="alert">
-						{detailForm.error}
-					</p>
-				)}
-
-				<div className="bp-master-form-actions">
-					<Button
-						type="button"
-						text="Cancel"
-						variant="secondary"
-						onClick={detailForm.cancelEditing}
-						disabled={detailForm.isSaving}
-					/>
-
-					<Button
-						type="button"
-						text={detailForm.isSaving ? "Saving..." : "Save"}
-						variant="brand"
-						onClick={() => {
-							console.log(
-								"[BPTabs] Save button clicked, section:",
-								section,
-								"editingSection:",
-								detailForm.editingSection,
-							);
-							detailForm.handleSave();
-						}}
-						disabled={detailForm.isSaving}
-					/>
-				</div>
-			</div>
 		);
 	};
 	return (
@@ -224,37 +93,6 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 				role="tabpanel"
 				tabIndex={0}
 			>
-				{/* {activeTab === "general" &&
-					renderDetailSection(
-						"general",
-						<div className="detail-section">
-							<div className="detail-grid">
-								<div className="detail-row">
-									<p className="detail-label">Internal ID</p>
-									<p className="detail-value">{view.partner.internalId}</p>
-								</div>
-								<div className="detail-row">
-									<p className="detail-label">BP Name</p>
-									<p className="detail-value">{view.partner.bpName}</p>
-								</div>
-								<div className="detail-row">
-									<p className="detail-label">Office Type</p>
-									<p className="detail-value">
-										{view.partner.officeType.replaceAll("_", " ")}
-									</p>
-								</div>
-								<div className="detail-row">
-									<p className="detail-label">BP Type</p>
-									<p className="detail-value">{view.partner.bpType}</p>
-								</div>
-							</div>
-						</div>,
-						<BPGeneralInfoForm
-							form={detailForm.form}
-							onChange={detailForm.handleChange}
-						/>,
-					)} */}
-
 				{activeTab === "contact" && (
 					<div className="bp-gen-content">
 						<BPContact
@@ -287,82 +125,17 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 					</div>
 				)}
 
-				{activeTab === "organization" &&
-					renderDetailSection(
-						"organization",
-						<div className="detail-section">
-							<div className="detail-grid">
-								<div className="detail-row">
-									<p className="detail-label">Legal Trade Name</p>
-									<p className="detail-value">
-										{view.partner.legalTradeName || "--"}
-									</p>
-								</div>
-								<div className="detail-row">
-									<p className="detail-label">Entity Type</p>
-									<p className="detail-value">
-										{view.partner.entityType || "--"}
-									</p>
-								</div>
-								<div className="detail-row">
-									<p className="detail-label">Joined On</p>
-									<p className="detail-value">
-										{view.partner.joinedOn || "--"}
-									</p>
-								</div>
-								<div className="detail-row">
-									<p className="detail-label">Vendor ID</p>
-									<p className="detail-value">
-										{view.partner.vendorId || "--"}
-									</p>
-								</div>
-								<div className="detail-row">
-									<p className="detail-label">Vendor Code</p>
-									<p className="detail-value">
-										{view.partner.vendorCode || "--"}
-									</p>
-								</div>
-								<div className="detail-row">
-									<p className="detail-label">S4 ID</p>
-									<p className="detail-value">{view.partner.s4Id || "--"}</p>
-								</div>
-								<div className="detail-row">
-									<p className="detail-label">BYD ID</p>
-									<p className="detail-value">{view.partner.bydId || "--"}</p>
-								</div>
-								<div className="detail-row">
-									<p className="detail-label">C4C ID</p>
-									<p className="detail-value">{view.partner.c4cId || "--"}</p>
-								</div>
-								<div className="detail-row">
-									<p className="detail-label">GST Number</p>
-									<p className="detail-value">{view.partner.gst || "--"}</p>
-								</div>
-								<div className="detail-row">
-									<p className="detail-label">PAN Number</p>
-									<p className="detail-value">
-										{view.partner.panNumber || "--"}
-									</p>
-								</div>
-								<div className="detail-row">
-									<p className="detail-label">Key Account</p>
-									<p className="detail-value">
-										{view.partner.isKeyAccount ? "Yes" : "No"}
-									</p>
-								</div>
-								<div className="detail-row">
-									<p className="detail-label">Active</p>
-									<p className="detail-value">
-										{view.partner.isActive ? "Yes" : "No"}
-									</p>
-								</div>
-							</div>
-						</div>,
-						<BPOrganizationForm
-							form={detailForm.form}
-							onChange={detailForm.handleChange}
-						/>,
-					)}
+				{activeTab === "organization" && (
+					<div className="bp-gen-content">
+						<BPOrganizationCard
+							key={view.partner.id}
+							partner={view.partner}
+							canSubmit={permissions.organization.canUpdateOrganization}
+							allowViewToggle
+							startInEditMode={isOrgDataEmpty(view)}
+						/>
+					</div>
+				)}
 
 				{activeTab === "address" && (
 					<div className="bp-gen-content">
@@ -452,15 +225,7 @@ export const BPTabs = ({ view, permissions }: BPTabsProps) => {
 
 				{activeTab === "people" && (
 					<div className="bp-gen-content">
-						<BPPeople
-							businessPartnerId={view.partner.id}
-							people={view.people}
-							permissions={permissions.people}
-							isAdding={isAddingPeople}
-							onAddPeople={() => setIsAddingPeople(true)}
-							onCancelAdd={() => setIsAddingPeople(false)}
-							onAdded={() => setIsAddingPeople(false)}
-						/>
+						<BPUsers businessPartnerId={view.partner.id} />
 
 						{permissions.people.canAddPeople &&
 							view.people.length > 0 &&

@@ -20,7 +20,10 @@ import {
 } from "../types/vendorOnboarding.types";
 import {
 	toNullableBoolean,
+	toNullableEmail,
+	toNullableMobileDigits,
 	toNullableString,
+	toNullableUpperCase,
 	toYesNo,
 } from "./vendor.onboarding.helper";
 
@@ -204,21 +207,21 @@ export const buildVendorUpdatePayload = (
 	city: toNullableString(values.city),
 	pinCode: toNullableString(values.pinCode),
 	address: toNullableString(values.address),
-	mobile: toNullableString(values.mobile),
-	email: toNullableString(values.email),
+	mobile: toNullableMobileDigits(values.mobile),
+	email: toNullableEmail(values.email),
 	msmeVendor: toNullableBoolean(values.msmeVendor),
 	msmeCertAttached: toNullableBoolean(values.msmeCertificateAttached),
 	bankName: toNullableString(values.bankName),
 	bankBranch: toNullableString(values.bankBranch),
-	ifscCode: toNullableString(values.ifscCode),
+	ifscCode: toNullableUpperCase(values.ifscCode),
 	bankAddress: toNullableString(values.bankAddress),
 	accountNumber: toNullableString(values.accountNumber),
 	// NOTE: confirmAccountNumber is intentionally NOT included here.
 	// It is a frontend-only validation field — the backend has no such
 	// column and must never receive it. If you're adding a new field to
 	// this payload, don't reflexively include confirmAccountNumber too.
-	gstin: toNullableString(values.gstin),
-	pan: toNullableString(values.pan),
+	gstin: toNullableUpperCase(values.gstin),
+	pan: toNullableUpperCase(values.pan),
 	entityRegNo: toNullableString(values.entityRegNo),
 	ndaObtained: toNullableBoolean(values.ndaObtained),
 	vendorReferenceName: toNullableString(values.vendorReferenceName),
@@ -256,6 +259,88 @@ export const buildVendorOnboardingUpdatePayload = (
 	...buildVendorUpdatePayload(formOneValues),
 	...buildThcmUpdatePayload(formTwoValues),
 });
+
+// Keeps only the keys whose value differs between two payloads built by
+// the SAME builder (so both sides are identically normalized). Values are
+// primitives (string | boolean | null), so strict equality is enough.
+// A field the user cleared shows up as null here — the backend must treat
+// an explicit null as "clear this column", not "leave it alone".
+export const diffVendorPayload = (
+	next: VendorUpdatePayload,
+	previous: VendorUpdatePayload,
+): VendorUpdatePayload =>
+	Object.fromEntries(
+		Object.entries(next).filter(
+			([key, value]) => value !== previous[key as keyof VendorUpdatePayload],
+		),
+	) as VendorUpdatePayload;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Internal (THCM) edit — enclosure diff + multipart payload
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type VendorEnclosureChanges = {
+	// A new File was picked: a brand-new document, or a replacement for one
+	// already on the server (the backend replaces by documentType).
+	added: VendorEnclosureUploadItem[];
+	// The server had this documentType and the slot is now empty.
+	removed: VendorDocumentType[];
+};
+
+export const getEnclosureChanges = (
+	uploads: VendorEnclosureUploadItem[],
+	existingDocuments: VendorOnboardingDocument[],
+): VendorEnclosureChanges => {
+	const existingTypes = new Set(
+		existingDocuments.map((document) => document.documentType),
+	);
+
+	return {
+		added: uploads.filter((upload) => upload.value?.file instanceof File),
+		removed: uploads
+			.filter(
+				(upload) => !upload.value && existingTypes.has(upload.documentType),
+			)
+			.map((upload) => upload.documentType),
+	};
+};
+
+export const hasEnclosureChanges = ({
+	added,
+	removed,
+}: VendorEnclosureChanges): boolean => added.length > 0 || removed.length > 0;
+
+// Same file convention as buildPublicFormData (part name = documentType),
+// so the backend can share its file-handling code between both routes.
+// Multipart has no null, so a cleared field is sent as "" — the backend must
+// treat "" as "clear this column", same as it already does for the public form.
+export const buildInternalUpdateFormData = (
+	payload: VendorUpdatePayload,
+	{ added, removed }: VendorEnclosureChanges,
+): FormData => {
+	const formData = new FormData();
+
+	Object.entries(payload).forEach(([key, value]) => {
+		formData.append(
+			key,
+			value === null || value === undefined ? "" : String(value),
+		);
+	});
+
+	added.forEach(({ documentType, value }) => {
+		const file = value?.file;
+
+		if (file instanceof File) {
+			formData.append(documentType, file, value?.name || file.name);
+		}
+	});
+
+	removed.forEach((documentType) => {
+		formData.append("removedDocuments", documentType);
+	});
+
+	return formData;
+};
 
 export const buildVendorCodeUpdatePayload = (
 	vendorCode?: string,

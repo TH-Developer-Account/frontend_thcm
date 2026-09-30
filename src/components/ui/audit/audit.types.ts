@@ -24,12 +24,6 @@ export const AUDIT_ACTIVITY_ACTIONS = [
 	"REPORT_CLARIFICATION_REQUESTED",
 	"EPC_CLOSED",
 
-	// Vendor onboarding
-	"VENDOR_ONBOARDING_INITIATED",
-	"VENDOR_FORM_SUBMITTED",
-	"VENDOR_ONBOARDING_SENT_FOR_APPROVAL",
-	"VENDOR_ONBOARDING_CLOSED",
-
 	// Medical claim
 	"MEDICAL_CLAIM_INITIATED",
 	"MEDICAL_CLAIM_SUBMITTED",
@@ -238,6 +232,22 @@ export type AuditMessageOptions = {
 	formatTimestamp?: (date: string) => string;
 	includeTimestamp?: boolean;
 	includeActor?: boolean;
+	includeReason?: boolean;
+
+	/**
+	 * Shown when the backend intentionally omits an actor (e.g. a public
+	 * vendor-side action with no internal user attached).
+	 * Defaults to "A user".
+	 */
+	anonymousActorLabel?: string;
+};
+
+/** actor - action - timestamp - reason/comment */
+export type AuditMessageParts = {
+	actorName: string;
+	actionLabel: string;
+	timestamp?: string;
+	reason?: string;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -255,6 +265,19 @@ export type AuditLogSectionProps = {
 	api?: AuditApiAdapter;
 	formatMessage?: (entry: AuditLogEntry) => ReactNode;
 	actionMessages?: AuditActionMessages;
+
+	/**
+	 * Label used when an entry's actor is null/empty (backend-intentional,
+	 * e.g. vendor-side actions on the public vendor onboarding flow).
+	 * Defaults to "A user". Pass "Vendor" for vendor-onboarding screens.
+	 */
+	anonymousActorLabel?: string;
+
+	/**
+	 * Max characters shown before an entry's message is truncated with a
+	 * "...read more" toggle. Defaults to 140. Pass Infinity to disable.
+	 */
+	messageTruncateLength?: number;
 };
 
 export type AuditLogRowProps = {
@@ -262,4 +285,6 @@ export type AuditLogRowProps = {
 	entityName: string;
 	actionMessages?: AuditActionMessages;
 	formatMessage?: (entry: AuditLogEntry) => ReactNode;
+	anonymousActorLabel?: string;
+	messageTruncateLength?: number;
 };

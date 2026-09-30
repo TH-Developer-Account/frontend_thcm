@@ -18,7 +18,7 @@ export const vendorSidebar: SidebarItem[] = [
 			module: "VENDOR_INITIATION",
 			action: "write",
 		},
-		link: "/vendor/onboarding/listing",
+		link: "/vendor-onboarding/listing",
 		// children: [
 		// 	// {
 		// 	// 	id: "vendorInitiationListing",
@@ -30,7 +30,7 @@ export const vendorSidebar: SidebarItem[] = [
 		// 		id: "vendorOnboardingListing",
 		// 		label: "Vendor Onboarding Listing",
 
-		// 		link: "/vendor/onboarding/listing",
+		// 		link: "/vendor-onboarding/listing",
 		// 	},
 		// ],
 	},

@@ -14,5 +14,5 @@ export function getStrategyLabel(
 	total: number,
 ): string {
 	if (total <= 1) return "Sequential";
-	return strategy === "ALL" ? "ALL" : "Parallel";
+	return strategy === "ALL" ? "Sequential" : "Parallel";
 }

@@ -5,17 +5,18 @@ import Button from "../../../../components/common/Button";
 // import { formatDate } from "../../../../utils/format";
 import type { BusinessPartner } from "../utils/bp.types";
 import { Badge } from "../../../../components/common/Badge";
+import { capitalizeSnakeCase } from "../../../../utils/format";
 
 export const getBusinessPartnerColumns = (
 	onView: (partner: BusinessPartner) => void,
 ): ColumnDef<BusinessPartner>[] => [
 	{
-		accessorKey: "internalId",
-		header: "Internal ID",
+		accessorKey: "bpShortName",
+		header: "BP Short Name",
 		enableSorting: true,
 		cell: ({ row }) => (
 			<span className="font-medium tabular-nums">
-				{row.original.internalId || "--"}
+				{row.original.bpShortName || "--"}
 			</span>
 		),
 	},
@@ -40,22 +41,17 @@ export const getBusinessPartnerColumns = (
 		accessorKey: "officeType",
 		header: "Office Type",
 		enableSorting: true,
-		cell: ({ row }) => <span>{row.original.officeType || "--"}</span>,
-	},
-	{
-		accessorKey: "mainContact",
-		header: "Main Contact",
-		enableSorting: true,
-		cell: ({ row }) => <span>{row.original.mainContact || "--"}</span>,
-	},
-	{
-		accessorKey: "address",
-		header: "Address",
-		enableSorting: true,
 		cell: ({ row }) => (
-			<span title={row.original.address}>{row.original.address || "--"}</span>
+			<span>{capitalizeSnakeCase(row.original.officeType) || "--"}</span>
 		),
 	},
+	{
+		accessorKey: "gst",
+		header: "GST",
+		enableSorting: true,
+		cell: ({ row }) => <span>{row.original.gst || "--"}</span>,
+	},
+
 	// {
 	// 	accessorKey: "joinedOn",
 	// 	header: "Joined On",

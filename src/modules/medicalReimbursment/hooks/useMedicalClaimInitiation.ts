@@ -137,8 +137,6 @@ export const useMedicalClaimInitiation = ({
 	};
 
 	const handleSubmit = () => {
-		console.log(values, "vl");
-
 		if (!validate()) return;
 		initiateMutation.mutate(
 			{

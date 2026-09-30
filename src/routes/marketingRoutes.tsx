@@ -26,11 +26,6 @@ const EpcListingPage = lazy(
 const FilesModule = lazy(
 	() => import("../modules/marketing/activity-planner/pages/FilesModule"),
 );
-const TestPage = lazy(() =>
-	import("../containers/Login/pages/TestPage").then((m) => ({
-		default: m.TestPage,
-	})),
-);
 
 export default function MarketingRoutes() {
 	return (
@@ -55,7 +50,6 @@ export default function MarketingRoutes() {
 					element={<LeadCreatePage />}
 				/>
 				<Route path="/profile" element={<UserProfile />} />
-				<Route path="/test" element={<TestPage />} />
 				<Route
 					path="/activity-planner/create"
 					element={<ActivityPlannerPage />}

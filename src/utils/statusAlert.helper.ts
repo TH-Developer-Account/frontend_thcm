@@ -8,6 +8,13 @@ export type StatusAlertConfig = {
 	description: string;
 };
 
+export type PendingOn =
+	| { role: "NONE"; outcome: "APPROVED" | "REJECTED" }
+	| { role: "PROPOSER" }
+	| { role: "VENDOR" }
+	| { role: "GUEST" }
+	| { role: "APPROVER"; approvers: { id: string; name: string }[] };
+
 const SUCCESS_STATUSES = new Set([
 	"APPROVED",
 	"ACCEPTED",
@@ -104,4 +111,90 @@ export const getStatusAlertConfig = (
 		options.description ?? `This${entity} has been ${title.toLowerCase()}.`;
 
 	return { variant, title, description };
+};
+
+const formatStatusLabel = (status: string): string =>
+	status
+		.trim()
+		.toLowerCase()
+		.split(/[\s_-]+/)
+		.filter(Boolean)
+		.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+		.join(" ");
+
+const TERMINAL_STATUSES = new Set([
+	"APPROVED",
+	"REJECTED",
+	"CANCELLED",
+	"CANCELED",
+	"CLOSED",
+]);
+// Add below TERMINAL_STATUSES
+
+/** Trims whitespace and stray trailing dots ("Swathi Chandran ." → "Swathi Chandran"). */
+const cleanPersonName = (name: string | null | undefined): string =>
+	name?.trim().replace(/[\s.]+$/, "") ?? "";
+
+/**
+ * Names of approvers the record is currently pending on.
+ * Empty for terminal statuses or when it's pending on anyone other than approvers.
+ */
+export const getPendingApproverNames = (
+	pendingOn: PendingOn | null | undefined,
+	status?: string | null,
+): string[] => {
+	const normalizedStatus = status
+		?.trim()
+		.toUpperCase()
+		.replace(/[\s-]+/g, "_");
+
+	if (normalizedStatus && TERMINAL_STATUSES.has(normalizedStatus)) return [];
+	if (pendingOn?.role !== "APPROVER") return [];
+
+	return pendingOn.approvers
+		.map((approver) => cleanPersonName(approver.name))
+		.filter(Boolean);
+};
+export const formatPendingOn = (
+	pendingOn: PendingOn | null | undefined,
+	status?: string | null,
+): string => {
+	const normalizedStatus = status
+		?.trim()
+		.toUpperCase()
+		.replace(/[\s-]+/g, "_");
+
+	// Closed must show "Closed", even if pendingOn says outcome: APPROVED.
+	if (normalizedStatus && TERMINAL_STATUSES.has(normalizedStatus)) {
+		return formatStatusLabel(normalizedStatus);
+	}
+
+	if (!pendingOn) {
+		return status ? formatStatusLabel(status) : "—";
+	}
+
+	switch (pendingOn.role) {
+		case "PROPOSER":
+			return "Pending on Proposer";
+
+		case "VENDOR":
+			return "Pending on Vendor";
+
+		case "GUEST":
+			return "Pending on Ex-Employee";
+
+		case "APPROVER": {
+			const approverNames = getPendingApproverNames(pendingOn, status);
+
+			return approverNames.length
+				? `Pending on ${approverNames.join(", ")}`
+				: "Pending on Approver";
+		}
+
+		case "NONE":
+			return status ? formatStatusLabel(status) : "—";
+
+		default:
+			return status ? formatStatusLabel(status) : "—";
+	}
 };

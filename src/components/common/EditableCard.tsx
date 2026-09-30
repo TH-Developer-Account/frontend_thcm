@@ -135,8 +135,33 @@ export default function EditableCard<T extends Record<string, unknown>>({
 	const handleSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
 		event.preventDefault();
 
+		/*
+		 * Independence fix: `draft` starts as a full copy of `value` (whatever
+		 * shape the caller passed in), because callers commonly pass the same
+		 * full record to every card on a page and let each card's own
+		 * `fields` decide what's actually editable. Without this, submitting
+		 * ONE card resends the entire object — including sibling cards'
+		 * fields, from whatever stale snapshot this card's draft happened to
+		 * hold — so two cards editing the same shared object stop being
+		 * independent saves. Scope the submitted payload to only the keys
+		 * this card actually declares via `field.name`; keys with no owning
+		 * field are left out entirely rather than sent with a stale value.
+		 */
+		const ownedKeys = new Set(
+			fields
+				.map((field) => field.name)
+				.filter((name): name is keyof T => name !== undefined),
+		);
+
+		const scopedPayload =
+			ownedKeys.size > 0
+				? (Object.fromEntries(
+						Array.from(ownedKeys).map((key) => [key, draft[key]]),
+					) as T)
+				: draft;
+
 		try {
-			const succeeded = await onSubmit(draft);
+			const succeeded = await onSubmit(scopedPayload);
 			if (succeeded === false) return;
 
 			setIsEditing(false);

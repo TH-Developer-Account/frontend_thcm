@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
 	ChevronDown,
 	ChevronUp,
@@ -9,6 +10,8 @@ import {
 } from "lucide-react";
 
 import Button from "../../../components/common/Button";
+import { Alert } from "../../../components/common/Alert";
+import { Modal } from "../../../components/common/Modal";
 import { FilterTabs } from "../../../components/ui/FilterTabs";
 
 import { workflowListFilterOptions } from "../constant/workflow.constant";
@@ -58,6 +61,15 @@ export function WorkflowFetchList({
 	disabled = false,
 	loading = false,
 }: WorkflowFetchListProps) {
+	const navigate = useNavigate();
+
+	// "Create Workflow" from the empty state takes the user out of this
+	// flow entirely (into the standalone Workflow module, not the inline
+	// customise-workflow builder used elsewhere here), so it gets a
+	// confirmation first — same warn-before-leaving treatment as the
+	// destructive confirmations elsewhere in this module.
+	const [isCreateConfirmOpen, setIsCreateConfirmOpen] = React.useState(false);
+
 	const filterTabs = React.useMemo(
 		() =>
 			workflowListFilterOptions.map((option) => ({
@@ -98,6 +110,18 @@ export function WorkflowFetchList({
 					<GitFork size={20} aria-hidden="true" />
 
 					<p>{getEmptyMessage(filter)}</p>
+
+					<Button
+						type="button"
+						text="Create Workflow"
+						Icon={Plus}
+						iconPosition="left"
+						appearance="standard"
+						variant="brand"
+						size="sm"
+						disabled={disabled}
+						onClick={() => setIsCreateConfirmOpen(true)}
+					/>
 				</div>
 			) : (
 				<div className="workflow-fetch-scroll max-h-[28rem] overflow-y-auto overscroll-contain pr-1">
@@ -223,6 +247,32 @@ export function WorkflowFetchList({
 					</div>
 				</div>
 			)}
+
+			<Modal
+				open={isCreateConfirmOpen}
+				onClose={() => setIsCreateConfirmOpen(false)}
+				mode="shell"
+				size="sm"
+				dialogRole="alertdialog"
+				ariaLabel="Leave to create a workflow confirmation"
+			>
+				<Alert
+					variant="warning"
+					title="Leave this page?"
+					description="Creating a workflow takes you to the Workflow module on a different screen. Anything you haven't attached here yet will be left behind. Continue?"
+					primaryAction={{
+						label: "Continue",
+						onClick: () => {
+							setIsCreateConfirmOpen(false);
+							navigate("/workflow/create-workflows");
+						},
+					}}
+					secondaryAction={{
+						label: "Cancel",
+						onClick: () => setIsCreateConfirmOpen(false),
+					}}
+				/>
+			</Modal>
 		</div>
 	);
 }

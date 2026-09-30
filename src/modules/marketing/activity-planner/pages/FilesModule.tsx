@@ -15,13 +15,9 @@ const FilesModule = () => {
 		isError,
 	} = useFileModuleQuery();
 	const [selectedFilter, setSelectedFilter] = useState<FileListFilter>("all");
-	const handleImport = () => {
-		console.log("Import clicked");
-	};
+	const handleImport = () => {};
 
-	const handleExport = () => {
-		console.log("Export clicked");
-	};
+	const handleExport = () => {};
 
 	return (
 		<PageSectionLayout>

@@ -53,32 +53,18 @@ export interface AuthContextType {
 	isLoading: boolean;
 	setUser: Dispatch<SetStateAction<User | null>>;
 
+	workspaceId: string | null;
+
 	// ── New ───────────────────────────────────────────────────────────
 	isSuperAdmin: boolean;
 	permissions: Permission[];
-
-	// Flat list of appKeys this user is APP-scope admin of — e.g. ["MAP"].
-	// Derived from permissions (scope: "APP", action: "write"), same
-	// derivation canManageApp does per-call, but precomputed once per
-	// permissions change for cheap direct checks like
-	// `adminApps.includes("MAP")` or `adminApps.length > 0`, without a
-	// function call for the common "just show me the list" case.
 	adminApps: string[];
-
-	// can("write", "MAP", "EPC") → true / false
 	can: (action: PermissionAction, appKey: string, moduleKey: string) => boolean;
-
-	// canReadApp / canWriteApp → used in sidebar to show/hide app tabs
 	canReadApp: (appKey: string) => boolean;
 	canWriteApp: (appKey: string) => boolean;
-
-	// canManageApp("MAP") → true if this user is MAP's app-admin (or super
-	// admin). Mirrors the backend's canManageApp() exactly. Used anywhere the
-	// FE needs to decide "should this admin-only option even be shown" — e.g.
-	// the APP/USER scope toggle when creating a workflow template.
 	canManageApp: (appKey: string) => boolean;
 
-	workspaceId: string | null;
+	hydrateSession: () => Promise<void>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

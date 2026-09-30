@@ -1,3 +1,7 @@
+// import type { PendingOn } from "../../../utils/statusAlert.helper";
+
+import type { PendingOn } from "../../../utils/statusAlert.helper";
+
 export type VendorListingFilter =
 	| "createdByMe"
 	| "pendingOnMe"
@@ -26,27 +30,41 @@ export type VendorOnboardingListingRow = {
 	purchaseOrg?: string | null;
 	region?: string | null;
 	initiatedBy: {
+		id?: string | null;
 		first_name: string;
 		last_name: string;
 	};
 	createdDate?: string | null;
 	updatedAt?: string | null;
 
-	status?: VendorTableStatus | null;
+	status?: VendorTableStatus;
 	referenceNumber?: string;
 	vendorReferenceName?: string;
+	pendingOn?: PendingOn;
+};
+
+// What the current user may do on one listing row. Computed by
+// helpers/vendor.permissions.ts → getVendorRowPermissions.
+export type VendorRowPermissions = {
+	canView: boolean;
+	canEdit: boolean;
+	canRetrigger: boolean;
 };
 
 export type VendorOnboardingColumnsParams = {
 	onView: (row: VendorOnboardingListingRow) => void;
 	onEdit?: (row: VendorOnboardingListingRow) => void;
+	onRetrigger?: (row: VendorOnboardingListingRow) => void;
+
+	// Single source of truth for row actions. Replaces the old per-action
+	// canView/canEdit callbacks and the status rules hard-coded in columns.
+	getRowPermissions: (row: VendorOnboardingListingRow) => VendorRowPermissions;
 
 	basePath?: string;
 
 	getViewPath?: (row: VendorOnboardingListingRow) => string;
-
-	canEdit?: (row: VendorOnboardingListingRow) => boolean;
 };
+
 export type VendorOnboardingInitiationPayload = {
 	vendorName: string;
 	vendorReferenceName?: string;

@@ -2,12 +2,13 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { CalendarDays, MapPin } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
-import { Badge } from "../../../../../components/common/Badge";
 import { trimText } from "../../../../../utils/format";
 import type { EpcListItem } from "../../types/epc.types";
 import { formatDate } from "../../utils/formatters";
 
 import EPCActionMenu from "./EPCActionMenu";
+import { formatPendingOn } from "../../../../../utils/statusAlert.helper";
+import { Badge } from "../../../../../components/common/Badge";
 
 type EpcColumnActions = {
 	onLeadCreate?: (row: EpcListItem) => void;
@@ -94,10 +95,16 @@ export const getEPCColumns = ({
 		accessorKey: "status",
 		header: "Status",
 		meta: {
-			headerClassName: "epc-column-status",
-			cellClassName: "epc-column-status",
+			headerClassName: "epc-column-owner",
+			cellClassName: "epc-column-owner",
 		},
-		cell: ({ row }) => <Badge status={row.original.status} />,
+		cell: ({ row }) => {
+			return (
+				<Badge
+					status={formatPendingOn(row.original.pendingOn, row.original.status)}
+				/>
+			);
+		},
 	},
 
 	{

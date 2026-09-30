@@ -1,25 +1,32 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pencil } from "lucide-react";
 
 import EditableCard, {
 	type EditableCardField,
 } from "../../../components/common/EditableCard";
 import Checkbox from "../../../components/forms/Checkbox";
+import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import DatePickerInput from "../../../components/common/DatePickerInput";
-import type {
-	GradeOption,
-	UserFormField,
-	UserType,
-} from "./user-management.types";
+import type { GradeOption, UserType } from "./user-management.types";
 import type { UsersController } from "./useUsersData";
-import { mapUserToForm } from "./user-management.utils";
+import {
+	BASIC_INFO_FIELDS,
+	ORGANIZATION_REQUIRED_FIELDS,
+} from "./useUsersData";
+import {
+	mapUserToForm,
+	normalizeMobileInput,
+	parseDateOnly,
+	toDateOnlyString,
+} from "./user-management.utils";
 
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
 import { Badge } from "../../../components/common/Badge";
 import Avatar from "../../../components/common/Avatar";
-import { formatDateOnly } from "../../../utils/format";
+import type { BusinessPartnerOption } from "./BusinessPartnerAsyncSelect";
+import BusinessPartnerAsyncSelect from "./BusinessPartnerAsyncSelect";
 
 interface UserFormProps {
 	controller: UsersController;
@@ -40,21 +47,18 @@ const USER_TYPE_OPTIONS: Array<{
 // TODO: replace with real grade options from API/config once available.
 const GRADE_OPTIONS: GradeOption[] = [
 	{ label: "Select", value: "" },
-	{ label: "M1", value: "M1" },
-	{ label: "M2", value: "M2" },
-	{ label: "M3", value: "M3" },
-	{ label: "E1", value: "E1" },
-	{ label: "E2", value: "E2" },
-	{ label: "E3", value: "E3" },
+	{ label: "EG-3", value: "EG-3" },
+	{ label: "EG-4", value: "EG-4" },
+	{ label: "TM-5", value: "TM-5" },
+	{ label: "TM-4", value: "TM-4" },
+	{ label: "TM-3", value: "TM-3" },
+	{ label: "TM-2", value: "TM-2" },
+	{ label: "TM-1", value: "TM-1" },
+	{ label: "TM-0", value: "TM-0" },
+	{ label: "TS-2", value: "TS-2" },
+	{ label: "TS-1", value: "TS-1" },
+	{ label: "TE-3", value: "TE-3" },
 ];
-
-const parseJoinedOn = (value: string): Date | undefined => {
-	if (!value) return undefined;
-
-	const parsed = new Date(`${value}T00:00:00`);
-
-	return Number.isNaN(parsed.getTime()) ? undefined : parsed;
-};
 
 export function CreateUserForm({ controller }: UserFormProps) {
 	const {
@@ -67,6 +71,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		isLoadingSelectedUser,
 		startInEditMode,
 		handleFormChange,
+		validateUserField,
 		handleSubmitUser,
 		handleCancelForm,
 	} = controller;
@@ -78,10 +83,6 @@ export function CreateUserForm({ controller }: UserFormProps) {
 	const isDetailMode = pageMode === "view";
 	const isSaving = isCreating || isUpdating;
 
-	// Cancelling out of "create" should return to the list. Cancelling out
-	// of editing an existing user just drops back to viewing them — which,
-	// since edit/view now share one route, EditableCard already does on its
-	// own by resetting local state. We only need to step in for "create".
 	const handleCancelEditing = () => {
 		if (isCreateMode) {
 			handleCancelForm();
@@ -91,6 +92,42 @@ export function CreateUserForm({ controller }: UserFormProps) {
 	const [profileImage, setProfileImage] = useState<FileUploadValue | null>(
 		null,
 	);
+	// Latest selectable joining date = yesterday (today and future are disabled).
+	const getLatestJoiningDate = () => {
+		const date = new Date();
+		date.setHours(0, 0, 0, 0);
+		date.setDate(date.getDate() - 1);
+		return date;
+	};
+	// The form itself only carries businessPartnerId (a string) — the label
+	// needed for display isn't part of UserFormValues, so we track the
+	// chosen option (id + label) locally, seeded from the already-known BP
+	// on an existing user.
+	const [selectedBpOption, setSelectedBpOption] =
+		useState<BusinessPartnerOption | null>(
+			selectedUser?.businessPartner
+				? {
+						value: selectedUser.businessPartner.id,
+						label: selectedUser.businessPartner.bpName,
+						officeType: selectedUser.businessPartner.officeType,
+					}
+				: null,
+		);
+
+	// Re-seed whenever we land on a different user (or move from create
+	// into the freshly-created user's view route) so the field doesn't
+	// show a stale selection from whatever was previously loaded.
+	useEffect(() => {
+		setSelectedBpOption(
+			selectedUser?.businessPartner
+				? {
+						value: selectedUser.businessPartner.id,
+						label: selectedUser.businessPartner.bpName,
+						officeType: selectedUser.businessPartner.officeType,
+					}
+				: null,
+		);
+	}, [selectedUser?.id, selectedUser?.businessPartner]);
 
 	const displayValues: FormValues =
 		isDetailMode && selectedUser ? mapUserToForm(selectedUser) : form;
@@ -137,26 +174,47 @@ export function CreateUserForm({ controller }: UserFormProps) {
 			required: true,
 			error: fieldErrors.email,
 		},
+		// Custom render so the input can (a) mask to 10 digits as you type and
+		// (b) run the Zod mobile rule onChange instead of only on submit.
 		{
+			id: "phoneNumber",
 			name: "phoneNumber",
 			label: "Phone Number",
-			type: "tel",
 			required: true,
-			error: fieldErrors.phoneNumber,
+			displayValue: displayValues.phoneNumber || "--",
+			render: ({ draft, disabled, setFieldValue }) => (
+				<FormInput
+					name="phoneNumber"
+					label="Phone Number"
+					type="tel"
+					inputMode="numeric"
+					autoComplete="tel-national"
+					placeholder="10-digit mobile number"
+					value={draft.phoneNumber}
+					disabled={disabled}
+					required
+					error={fieldErrors.phoneNumber}
+					onChange={(event) => {
+						const nextPhone = normalizeMobileInput(event.target.value);
+						setFieldValue("phoneNumber", nextPhone as never);
+						validateUserField("phoneNumber", nextPhone);
+					}}
+				/>
+			),
 		},
 		// Password: create only. Not shown for an existing user — an
 		// edit-mode password reset should go through a dedicated "reset
 		// password" action rather than living in this form.
-		...(isCreateMode
-			? [
-					{
-						name: "password" as const,
-						label: "Password",
-						visibleInDisplay: false,
-						error: fieldErrors.password,
-					},
-				]
-			: []),
+		// ...(isCreateMode
+		// 	? [
+		// 			{
+		// 				name: "password" as const,
+		// 				label: "Password",
+		// 				visibleInDisplay: false,
+		// 				error: fieldErrors.password,
+		// 			},
+		// 		]
+		// 	: []),
 
 		{
 			id: "userType",
@@ -186,6 +244,57 @@ export function CreateUserForm({ controller }: UserFormProps) {
 			),
 		},
 
+		// Business Partner — optional for every user type. Search-as-you-type
+		// against the /business-partner endpoint, via the shared
+		// BusinessPartnerAsyncSelect control (it only fetches once there's
+		// actual input, and never while the field is disabled/read-only).
+		{
+			id: "businessPartner",
+			name: "businessPartnerId",
+			label: "Business Partner",
+			required: isCreateMode,
+			displayValue: displayValues.businessPartnerId
+				? (selectedUser?.businessPartner?.bpName ??
+					displayValues.businessPartnerId)
+				: "--",
+			render: ({ draft, disabled, setFieldValue }) => {
+				const currentValue: BusinessPartnerOption | null =
+					draft.businessPartnerId
+						? selectedBpOption?.value === draft.businessPartnerId
+							? selectedBpOption
+							: selectedUser?.businessPartner?.id === draft.businessPartnerId
+								? {
+										value: selectedUser.businessPartner.id,
+										label: selectedUser.businessPartner.bpName,
+										officeType: selectedUser.businessPartner.officeType,
+									}
+								: {
+										value: draft.businessPartnerId,
+										label: draft.businessPartnerId,
+									}
+						: null;
+
+				return (
+					<BusinessPartnerAsyncSelect
+						name="businessPartnerId"
+						label="Business Partner"
+						placeholder="Search business partner..."
+						value={currentValue}
+						isDisabled={disabled}
+						required={isCreateMode}
+						error={fieldErrors.businessPartnerId}
+						onChange={(option) => {
+							setSelectedBpOption(option);
+							setFieldValue(
+								"businessPartnerId",
+								(option?.value ?? "") as never,
+							);
+						}}
+					/>
+				);
+			},
+		},
+
 		{
 			id: "grade",
 			name: "grade",
@@ -213,25 +322,22 @@ export function CreateUserForm({ controller }: UserFormProps) {
 			id: "joinedOn",
 			name: "joinedOn",
 			label: "Joined On",
+			required: !isCreateMode,
 			render: ({ draft, disabled, setFieldValue }) => (
 				<DatePickerInput
-					label="Joined On"
+					label={`Joined On${!isCreateMode ? " *" : ""}`}
 					mode="single"
-					value={parseJoinedOn(draft.joinedOn)}
-					onChange={(nextValue) =>
-						setFieldValue(
-							"joinedOn",
-							formatDateOnly(
-								nextValue instanceof Date ? nextValue : undefined,
-							) as never,
-						)
-					}
+					value={parseDateOnly(draft.joinedOn) ?? undefined}
+					onChange={(nextValue) => {
+						const nextJoinedOn = toDateOnlyString(
+							nextValue instanceof Date ? nextValue : undefined,
+						);
+						setFieldValue("joinedOn", nextJoinedOn as never);
+						validateUserField("joinedOn", nextJoinedOn);
+					}}
 					placeholder="Select joining date"
 					disabled={disabled}
-					// Only restrict to future dates while creating a brand new
-					// user. Editing an existing user needs to allow their
-					// actual (often past) joining date.
-					disablePast={isCreateMode}
+					toDate={getLatestJoiningDate()}
 					error={fieldErrors.joinedOn}
 				/>
 			),
@@ -352,19 +458,31 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		},
 	];
 
-	const saveSection = async (values: FormValues) => {
+	// `section` tells handleSubmitUser which card this save came from, so
+	// it only validates — and only reports field errors for — that card's
+	// own fields. Both cards call this same function, just with a
+	// different section: they must NOT share one whole-form validation
+	// pass, or saving one card can fail (and surface errors) because of
+	// the OTHER card's fields, which is what was happening before.
+	const saveSection = async (
+		section: "basic" | "organization",
+		values: FormValues,
+	) => {
 		const valuesWithAvatar: FormValues = {
 			...values,
 			avatar: profileImage?.file ?? null,
 		};
 
-		(Object.keys(valuesWithAvatar) as Array<keyof FormValues>).forEach(
-			(key) => {
-				handleFormChange(key as UserFormField, valuesWithAvatar[key] as never);
-			},
-		);
+		const sectionFieldNames =
+			section === "basic" ? BASIC_INFO_FIELDS : ORGANIZATION_REQUIRED_FIELDS;
 
-		return handleSubmitUser(valuesWithAvatar);
+		sectionFieldNames.forEach((key) => {
+			handleFormChange(key, valuesWithAvatar[key] as never);
+		});
+
+		handleFormChange("avatar", valuesWithAvatar.avatar as never);
+
+		return handleSubmitUser(valuesWithAvatar, section);
 	};
 
 	const fullName =
@@ -372,10 +490,6 @@ export function CreateUserForm({ controller }: UserFormProps) {
 			.filter(Boolean)
 			.join(" ") || "New User";
 
-	// Single header used for both editing and read-only display. `editing`
-	// comes from EditableCard itself (via the function form of `title`),
-	// since that's the only place the current isEditing state actually
-	// lives now that display/edit share one route.
 	const renderProfileHeader = (editing: boolean) => (
 		<div className="profile-summary">
 			<div
@@ -443,7 +557,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
 					value={displayValues}
 					fields={basicInfoFields}
 					saving={isSaving}
-					onSubmit={saveSection}
+					onSubmit={(values) => saveSection("basic", values)}
 					onCancel={handleCancelEditing}
 					title={renderProfileHeader}
 					className="[&>div:first-child]:border-b-0"
@@ -464,7 +578,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
 						value={displayValues}
 						fields={organizationFields}
 						saving={isSaving}
-						onSubmit={saveSection}
+						onSubmit={(values) => saveSection("organization", values)}
 						onCancel={handleCancelEditing}
 						editable={isDetailMode}
 						defaultEditing={defaultEditing}

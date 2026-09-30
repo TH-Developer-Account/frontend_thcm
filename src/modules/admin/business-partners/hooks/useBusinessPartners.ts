@@ -1,34 +1,22 @@
-import { useCallback, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useCallback, useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
 	businessPartnerApi,
 	businessPartnerKeys,
 } from "../api/businessPartner.api";
 
-import {
-	useBusinessPartnerAddressMutations,
-	useBusinessPartnerPeopleMutations,
-} from "./useBusinessPartnerMutations";
-
-import {
-	mapAddressFormToPayload,
-	mapAddressToForm,
-	mapPeopleToPayload,
-} from "../utils/businessPartner.mapper";
+import { useBusinessPartnerContactMutations } from "./useBusinessPartnerMutations";
 
 import {
 	DEFAULT_BUSINESS_PARTNER_PERMISSIONS,
-	type BPAddressFormState,
-	type BPAddressPermissions,
-	type BPAddressViewModel,
-	type BPPeopleSelection,
 	type BPContactViewModel,
-	type BPPersonViewModel,
 	type BPPeoplePermissions,
-	type BusinessPartnerAddressPayload,
-	type UpdateBusinessPartnerPeoplePayload,
+	type BPUserViewModel,
 } from "../utils/bp.types";
+
+import { getApiErrorMessage } from "../../../../utils/apiError.helper";
+import { useToast } from "../../../../context/Auth/AuthContext";
 
 const BUSINESS_PARTNER_QUERY_OPTIONS = {
 	staleTime: Infinity,
@@ -37,303 +25,8 @@ const BUSINESS_PARTNER_QUERY_OPTIONS = {
 	refetchOnReconnect: false,
 } as const;
 
-/* Business partner detail query */
-
-export const useBusinessPartner = (businessPartnerId?: string | null) => {
-	const normalizedId = businessPartnerId?.trim() ?? "";
-
-	return useQuery({
-		queryKey: businessPartnerKeys.detail(normalizedId),
-		queryFn: () => businessPartnerApi.getById(normalizedId),
-		enabled: Boolean(normalizedId),
-		...BUSINESS_PARTNER_QUERY_OPTIONS,
-	});
-};
-
-/* Address logic */
-
-const EMPTY_ADDRESS_FORM: BPAddressFormState = {
-	label: "",
-	addressType: "",
-	copyFromAddressId: "",
-
-	address: "",
-	city: "",
-	state: "",
-	country: "",
-	pincode: "",
-	region: "",
-	zone: "",
-	branch: "",
-
-	latitude: "",
-	longitude: "",
-
-	email: "",
-	phoneNumber: "",
-	website: "",
-
-	isDefault: false,
-};
-
-export const useBPAddressManager = (
-	businessPartnerId: string,
-	initialAddresses: BPAddressViewModel[],
-	permissions: BPAddressPermissions = DEFAULT_BUSINESS_PARTNER_PERMISSIONS.address,
-) => {
-	const [form, setForm] = useState<BPAddressFormState>(() => ({
-		...EMPTY_ADDRESS_FORM,
-	}));
-
-	const [editingId, setEditingId] = useState<string | null>(null);
-
-	const {
-		createAddress,
-		updateAddress,
-		deleteAddress,
-		setDefaultAddress,
-
-		isCreatingAddress,
-		isUpdatingAddress,
-		isDeletingAddress,
-		isSettingDefault,
-
-		createAddressError,
-		updateAddressError,
-		deleteAddressError,
-		setDefaultAddressError,
-	} = useBusinessPartnerAddressMutations(businessPartnerId);
-
-	const defaultAddress = useMemo(
-		() =>
-			initialAddresses.find((address) => address.isDefault) ??
-			initialAddresses[0] ??
-			null,
-		[initialAddresses],
-	);
-
-	const otherAddresses = useMemo(
-		() =>
-			initialAddresses.filter((address) => address.id !== defaultAddress?.id),
-		[initialAddresses, defaultAddress?.id],
-	);
-
-	const handleChange = useCallback(
-		<K extends keyof BPAddressFormState>(
-			key: K,
-			value: BPAddressFormState[K],
-		) => {
-			setForm((current) => ({
-				...current,
-				[key]: value,
-			}));
-		},
-		[],
-	);
-
-	const resetForm = useCallback(() => {
-		setForm({
-			...EMPTY_ADDRESS_FORM,
-		});
-
-		setEditingId(null);
-	}, []);
-
-	const handleCopyAddress = useCallback(
-		(sourceAddressId: string) => {
-			const sourceAddress = initialAddresses.find(
-				(address) => address.id === sourceAddressId,
-			);
-
-			if (!sourceAddress) {
-				setForm((current) => ({
-					...current,
-					copyFromAddressId: "",
-				}));
-
-				return;
-			}
-
-			setForm((current) => ({
-				...current,
-
-				label: current.label,
-				addressType: current.addressType,
-				copyFromAddressId: sourceAddressId,
-
-				address: sourceAddress.address,
-				city: sourceAddress.city ?? "",
-				state: sourceAddress.state ?? "",
-				country: sourceAddress.country ?? "",
-				pincode: sourceAddress.pincode ?? "",
-				region: sourceAddress.region ?? "",
-				zone: sourceAddress.zone ?? "",
-				branch: sourceAddress.branch ?? "",
-
-				latitude: sourceAddress.latitude?.toString() ?? "",
-				longitude: sourceAddress.longitude?.toString() ?? "",
-
-				email: sourceAddress.email ?? "",
-				phoneNumber: sourceAddress.phoneNumber ?? "",
-				website: sourceAddress.website ?? "",
-
-				isDefault: false,
-			}));
-		},
-		[initialAddresses],
-	);
-
-	const handleEditAddress = useCallback(
-		(addressId: string) => {
-			if (!permissions.canUpdateAddress) {
-				return;
-			}
-
-			const address = initialAddresses.find((item) => item.id === addressId);
-
-			if (!address) {
-				return;
-			}
-
-			setForm(mapAddressToForm(address));
-			setEditingId(address.id);
-		},
-		[permissions.canUpdateAddress, initialAddresses],
-	);
-
-	const handleAddAddress = useCallback(async () => {
-		const canSubmit = editingId
-			? permissions.canUpdateAddress
-			: permissions.canCreateAddress;
-
-		if (!canSubmit) {
-			return;
-		}
-
-		let payload: BusinessPartnerAddressPayload;
-
-		try {
-			payload = mapAddressFormToPayload(form);
-		} catch {
-			return;
-		}
-
-		try {
-			if (editingId) {
-				await updateAddress({
-					addressId: editingId,
-					payload,
-				});
-			} else {
-				await createAddress(payload);
-			}
-
-			resetForm();
-		} catch {
-			/*
-			 * The mutation exposes the error.
-			 * Keep the form open for retry.
-			 */
-		}
-	}, [
-		permissions.canCreateAddress,
-		permissions.canUpdateAddress,
-		createAddress,
-		editingId,
-		form,
-		resetForm,
-		updateAddress,
-	]);
-
-	const handleSetDefault = useCallback(
-		async (addressId: string) => {
-			if (!permissions.canSetDefaultAddress) {
-				return;
-			}
-
-			try {
-				await setDefaultAddress(addressId);
-			} catch {
-				// Mutation exposes the error.
-			}
-		},
-		[permissions.canSetDefaultAddress, setDefaultAddress],
-	);
-
-	const handleRemoveAddress = useCallback(
-		async (addressId: string) => {
-			if (!permissions.canDeleteAddress) {
-				return;
-			}
-
-			const target = initialAddresses.find(
-				(address) => address.id === addressId,
-			);
-
-			if (!target || target.isDefault) {
-				return;
-			}
-
-			try {
-				await deleteAddress(addressId);
-
-				if (editingId === addressId) {
-					resetForm();
-				}
-			} catch {
-				// Mutation exposes the error.
-			}
-		},
-		[
-			permissions.canDeleteAddress,
-			deleteAddress,
-			editingId,
-			initialAddresses,
-			resetForm,
-		],
-	);
-
-	return {
-		form,
-		defaultAddress,
-		otherAddresses,
-		editingId,
-		isEditing: Boolean(editingId),
-
-		handleChange,
-		handleCopyAddress,
-		handleAddAddress,
-		handleEditAddress,
-		handleSetDefault,
-		handleRemoveAddress,
-		resetForm,
-
-		isSaving: isCreatingAddress || isUpdatingAddress,
-		isDeleting: isDeletingAddress,
-		isSettingDefault,
-
-		createAddressError,
-		updateAddressError,
-		deleteAddressError,
-		setDefaultAddressError,
-
-		canCreateAddress: permissions.canCreateAddress,
-		canUpdateAddress: permissions.canUpdateAddress,
-		canDeleteAddress: permissions.canDeleteAddress,
-		canSetDefaultAddress: permissions.canSetDefaultAddress,
-	};
-};
-
 /* -------------------------------------------------------------------------
  * Contact tab (BPContact.tsx) — list logic for BPContactViewModel rows.
- *
- * Deliberately NOT shared with useBPPeopleManager below, even though
- * the two started out structurally similar: contacts carry
- * contact-specific fields (phone, PAN) and their own add flow (search
- * existing user OR add manually), and are expected to diverge further
- * as contact-specific features (e.g. editing manual contacts) are
- * added. Keeping them separate avoids threading a shared abstraction
- * through unrelated future changes.
  * ---------------------------------------------------------------------- */
 
 const getContactPriority = (contact: BPContactViewModel): number => {
@@ -354,15 +47,15 @@ export const useBPContactsManager = (
 	permissions: BPPeoplePermissions = DEFAULT_BUSINESS_PARTNER_PERMISSIONS.people,
 ) => {
 	const {
-		updatePeople,
-		removeContact,
+		updateContact,
+		deleteContact,
 
-		isUpdatingPeople,
-		isRemovingContact,
+		isUpdatingContact,
+		isDeletingContact,
 
-		updatePeopleError,
-		removeContactError,
-	} = useBusinessPartnerPeopleMutations(businessPartnerId);
+		updateContactError,
+		deleteContactError,
+	} = useBusinessPartnerContactMutations(businessPartnerId);
 
 	const sortedContacts = useMemo(
 		() =>
@@ -378,57 +71,42 @@ export const useBPContactsManager = (
 			if (
 				!permissions.canSetMainContact ||
 				contact.isMainContact ||
-				!contact.userId
+				isUpdatingContact
 			) {
 				return;
 			}
 
-			const linkedPeople: BPPeopleSelection[] = contacts
-				.filter(
-					(
-						currentContact,
-					): currentContact is BPContactViewModel & { userId: string } =>
-						Boolean(currentContact.userId),
-				)
-				.map((currentContact) => ({
-					userId: currentContact.userId,
-					name: currentContact.name,
-					email: currentContact.email ?? "",
-					isOwner: currentContact.isOwner,
-					isMainContact: currentContact.isMainContact,
-					isDefault: currentContact.isDefault,
-					id: currentContact.id,
-					businessPartnerId:
-						currentContact.businessPartnerId ?? businessPartnerId,
-					phoneNumber: currentContact.phoneNumber,
-					panNumber: currentContact.panNumber,
-					role: currentContact.role,
-				}));
-
-			const payload = mapPeopleToPayload(linkedPeople, contact.userId);
-
 			try {
-				await updatePeople(payload);
+				await updateContact({
+					contactId: contact.id,
+					payload: {
+						isMainContact: true,
+					},
+				});
 			} catch {
 				// Mutation exposes the error.
 			}
 		},
-		[permissions.canSetMainContact, contacts, businessPartnerId, updatePeople],
+		[permissions.canSetMainContact, isUpdatingContact, updateContact],
 	);
 
 	const handleRemoveContact = useCallback(
 		async (contact: BPContactViewModel) => {
-			if (!permissions.canRemovePeople || contact.isOwner) {
+			if (
+				!permissions.canRemovePeople ||
+				contact.isOwner ||
+				isDeletingContact
+			) {
 				return;
 			}
 
 			try {
-				await removeContact(contact.id);
+				await deleteContact(contact.id);
 			} catch {
 				// Mutation exposes the error.
 			}
 		},
-		[permissions.canRemovePeople, removeContact],
+		[permissions.canRemovePeople, isDeletingContact, deleteContact],
 	);
 
 	return {
@@ -437,12 +115,12 @@ export const useBPContactsManager = (
 		handleSetMainContact,
 		handleRemoveContact,
 
-		isUpdatingContacts: isUpdatingPeople,
-		isRemovingContact,
-		isContactsMutationPending: isUpdatingPeople || isRemovingContact,
+		isUpdatingContacts: isUpdatingContact,
+		isRemovingContact: isDeletingContact,
+		isContactsMutationPending: isUpdatingContact || isDeletingContact,
 
-		updateContactsError: updatePeopleError,
-		removeContactError,
+		updateContactsError: updateContactError,
+		removeContactError: deleteContactError,
 
 		canSetMainContact: permissions.canSetMainContact,
 		canRemoveContact: permissions.canRemovePeople,
@@ -450,213 +128,129 @@ export const useBPContactsManager = (
 };
 
 /* -------------------------------------------------------------------------
- * People tab (BPPeople.tsx) — list logic for BPPersonViewModel rows.
- *
- * Separate from useBPContactsManager above by design: people carry only
- * userId/name/email/isOwner/isMainContact/isDefault (no phone/PAN), and
- * the People tab's add flow only ever attaches existing users (see
- * useBPAddExistingPeopleForm below) — no manual-entry path. Kept apart
- * so contact-only features (manual entry, editing, phone/PAN fields)
- * never leak into this hook, and vice versa.
+ * Users tab — read-only listing of Users scoped to this business partner
+ * (GET /users?businessPartnerId=...). This is the Users module's own
+ * listing, filtered — not a business-partner sub-resource. The only
+ * supported action is setting a user as the default contact and toggling
+ * active status.
  * ---------------------------------------------------------------------- */
+export const useBPUsersManager = (businessPartnerId: string) => {
+	const normalizedId = businessPartnerId.trim();
+	const queryClient = useQueryClient();
+	const { showToast } = useToast();
 
-const getPersonPriority = (person: BPPersonViewModel): number => {
-	if (person.isOwner) {
-		return 0;
-	}
+	const usersQuery = useQuery({
+		queryKey: businessPartnerKeys.usersOfPartner(normalizedId),
+		queryFn: () => businessPartnerApi.getUsers(normalizedId),
+		enabled: Boolean(normalizedId),
+		...BUSINESS_PARTNER_QUERY_OPTIONS,
+	});
 
-	if (person.isMainContact) {
-		return 1;
-	}
+	const setDefaultMutation = useMutation({
+		mutationFn: (userId: string) => businessPartnerApi.setDefaultUser(userId),
 
-	return 2;
-};
+		onSuccess: () => {
+			void queryClient.invalidateQueries({
+				queryKey: businessPartnerKeys.usersOfPartner(normalizedId),
+			});
 
-export const useBPPeopleManager = (
-	businessPartnerId: string,
-	people: BPPersonViewModel[],
-	permissions: BPPeoplePermissions = DEFAULT_BUSINESS_PARTNER_PERMISSIONS.people,
-) => {
-	const {
-		updatePeople,
-		removeContact,
-
-		isUpdatingPeople,
-		isRemovingContact,
-
-		updatePeopleError,
-		removeContactError,
-	} = useBusinessPartnerPeopleMutations(businessPartnerId);
-
-	const sortedPeople = useMemo(
-		() =>
-			[...people].sort(
-				(firstPerson, secondPerson) =>
-					getPersonPriority(firstPerson) - getPersonPriority(secondPerson),
-			),
-		[people],
-	);
-
-	const handleSetMainContact = useCallback(
-		async (person: BPPersonViewModel) => {
-			if (!permissions.canSetMainContact || person.isMainContact) {
-				return;
-			}
-
-			const payload = mapPeopleToPayload(people, person.userId);
-
-			try {
-				await updatePeople(payload);
-			} catch {
-				// Mutation exposes the error.
-			}
-		},
-		[permissions.canSetMainContact, people, updatePeople],
-	);
-
-	const handleRemovePerson = useCallback(
-		async (person: BPPersonViewModel) => {
-			if (!permissions.canRemovePeople || person.isOwner) {
-				return;
-			}
-
-			try {
-				await removeContact(person.userId);
-			} catch {
-				// Mutation exposes the error.
-			}
-		},
-		[permissions.canRemovePeople, removeContact],
-	);
-
-	return {
-		sortedPeople,
-
-		handleSetMainContact,
-		handleRemovePerson,
-
-		isUpdatingPeople,
-		isRemovingContact,
-		isPeopleMutationPending: isUpdatingPeople || isRemovingContact,
-
-		updatePeopleError,
-		removeContactError,
-
-		canSetMainContact: permissions.canSetMainContact,
-		canRemovePeople: permissions.canRemovePeople,
-	};
-};
-
-/* -------------------------------------------------------------------------
- * People tab — "Add People" flow (search + attach one or more existing
- * users in a single batch submit). Used only by BPPeople.tsx.
- * ---------------------------------------------------------------------- */
-
-export const useBPAddExistingPeopleForm = (
-	businessPartnerId: string,
-	existingPeople: BPPersonViewModel[],
-) => {
-	const { addPeople, isAddingPeople, addPeopleError } =
-		useBusinessPartnerPeopleMutations(businessPartnerId);
-
-	const [selected, setSelected] = useState<BPPeopleSelection[]>([]);
-
-	const existingUserIds = useMemo<string[]>(
-		() =>
-			existingPeople
-				.map((person) => person.userId)
-				.filter(
-					(userId): userId is string =>
-						typeof userId === "string" && userId.trim().length > 0,
-				),
-		[existingPeople],
-	);
-
-	const excludedUserIds = useMemo<string[]>(
-		() => [...existingUserIds, ...selected.map((entry) => entry.userId)],
-		[existingUserIds, selected],
-	);
-
-	const handleSelectUser = useCallback(
-		(user: { value: string; label: string; email?: string } | null) => {
-			if (!user) return;
-
-			setSelected((current) => {
-				if (current.some((entry) => entry.userId === user.value)) {
-					return current;
-				}
-
-				const selectedPerson: BPPeopleSelection = {
-					userId: user.value,
-					name: user.label,
-					email: user.email ?? "",
-					isMainContact: false,
-					isDefault: false,
-					isOwner: false,
-					businessPartnerId,
-				};
-
-				return [...current, selectedPerson];
+			showToast({
+				type: "success",
+				title: "Default user updated",
+				description:
+					"The user was set as the default contact for this business partner.",
 			});
 		},
-		[businessPartnerId],
+
+		onError: (error) => {
+			showToast({
+				type: "error",
+				title: "Unable to set default user",
+				description: getApiErrorMessage(
+					error,
+					"Unable to set the default user.",
+				),
+			});
+		},
+	});
+
+	const setActiveStatusMutation = useMutation({
+		mutationFn: ({ userId, isActive }: { userId: string; isActive: boolean }) =>
+			businessPartnerApi.setUserActiveStatus(userId, isActive),
+
+		onSuccess: (_data, variables) => {
+			void queryClient.invalidateQueries({
+				queryKey: businessPartnerKeys.usersOfPartner(normalizedId),
+			});
+
+			showToast({
+				type: "success",
+				title: variables.isActive ? "User activated" : "User deactivated",
+				description: variables.isActive
+					? "The user was activated successfully."
+					: "The user was deactivated successfully.",
+			});
+		},
+
+		onError: (error, variables) => {
+			showToast({
+				type: "error",
+				title: variables.isActive
+					? "Unable to activate user"
+					: "Unable to deactivate user",
+				description: getApiErrorMessage(
+					error,
+					variables.isActive
+						? "Unable to activate the user."
+						: "Unable to deactivate the user.",
+				),
+			});
+		},
+	});
+
+	const handleSetDefaultUser = useCallback(
+		async (user: BPUserViewModel) => {
+			if (user.isDefaultContact || setDefaultMutation.isPending) {
+				return;
+			}
+
+			try {
+				await setDefaultMutation.mutateAsync(user.id);
+			} catch {
+				// Mutation exposes error via toast.
+			}
+		},
+		[setDefaultMutation],
 	);
 
-	const handleRemoveSelected = useCallback((userId: string) => {
-		setSelected((current) =>
-			current.filter((entry) => entry.userId !== userId),
-		);
-	}, []);
+	const handleToggleActiveStatus = useCallback(
+		async (user: BPUserViewModel) => {
+			if (setActiveStatusMutation.isPending) {
+				return;
+			}
 
-	// Only one main contact can be picked in a single add — selecting one
-	// clears any previously toggled entry.
-	const handleToggleMainContact = useCallback((userId: string) => {
-		setSelected((current) =>
-			current.map((entry) => ({
-				...entry,
-				isMainContact: entry.userId === userId ? !entry.isMainContact : false,
-			})),
-		);
-	}, []);
-
-	const resetSelection = useCallback(() => {
-		setSelected([]);
-	}, []);
-
-	const buildPayload = useCallback(
-		(): UpdateBusinessPartnerPeoplePayload =>
-			selected.map((entry) => ({
-				userId: entry.userId,
-				isMainContact: entry.isMainContact,
-				isDefault: entry.isDefault,
-			})),
-		[selected],
+			try {
+				await setActiveStatusMutation.mutateAsync({
+					userId: user.id,
+					isActive: !user.isActive,
+				});
+			} catch {
+				// Mutation exposes error via toast.
+			}
+		},
+		[setActiveStatusMutation],
 	);
-
-	const handleSubmit = useCallback(async (): Promise<boolean> => {
-		if (selected.length === 0) return false;
-
-		try {
-			await addPeople(buildPayload());
-			resetSelection();
-			return true;
-		} catch {
-			// Mutation exposes the error via addPeopleError.
-			return false;
-		}
-	}, [selected.length, addPeople, buildPayload, resetSelection]);
 
 	return {
-		selected,
-		excludedUserIds,
+		users: usersQuery.data ?? [],
+		isLoading: usersQuery.isLoading,
+		isFetching: usersQuery.isFetching,
+		error: usersQuery.error,
 
-		handleSelectUser,
-		handleRemoveSelected,
-		handleToggleMainContact,
-		resetSelection,
-		handleSubmit,
+		handleSetDefaultUser,
+		isSettingDefault: setDefaultMutation.isPending,
 
-		isSubmitting: isAddingPeople,
-		error: addPeopleError,
+		handleToggleActiveStatus,
+		isTogglingActiveStatus: setActiveStatusMutation.isPending,
 	};
 };

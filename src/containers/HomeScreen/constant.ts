@@ -14,14 +14,14 @@ export const actions = [
 		description: "Plan, track, and approve marketing events and campaigns.",
 		path: "/marketing/activity-planner/listing",
 		appKey: "MAP",
-		isActive: true,
+		isActive: false,
 	},
 
 	{
 		icon: FileText,
 		title: "Vendor Onboarding",
 		description: "Submit, review, and process dealer reimbursements.",
-		path: "/vendor/onboarding/listing",
+		path: "/vendor-onboarding/listing",
 		appKey: "VENDOR_ONBOARDING",
 		isActive: false,
 	},
