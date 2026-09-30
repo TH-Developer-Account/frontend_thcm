@@ -97,6 +97,17 @@ export const getWorkflowColumns = ({
 			const editable = isEditableTemplate(workflow);
 
 			const actions: ActionMenuItem<WorkflowRow>[] = [
+				// View is read-only, so it's available for every workflow —
+				// admin and user templates alike. Listed first as the
+				// lowest-risk action.
+				{
+					id: "view",
+					label: "View",
+					Icon: Eye,
+					onClick: onView,
+					hidden: !workflow.id,
+					variant: "danger",
+				},
 				{
 					id: "assign",
 					label: "Assign Users",
@@ -119,14 +130,6 @@ export const getWorkflowColumns = ({
 					Icon: Trash,
 					onClick: onDelete,
 					hidden: !editable,
-					variant: "danger",
-				},
-				{
-					id: "view",
-					label: "View",
-					Icon: Eye,
-					onClick: onView,
-					hidden: editable,
 					variant: "danger",
 				},
 			];

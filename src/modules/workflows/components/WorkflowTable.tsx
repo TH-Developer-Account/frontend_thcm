@@ -151,36 +151,61 @@ const WorkflowTable = () => {
 		setDeleteModal(workflow);
 	}, []);
 
+	// Tracks the most recent View request so a slow response for a workflow
+	// the user already closed / switched away from can't overwrite the
+	// modal's current contents.
+	const latestViewRequestRef = React.useRef(0);
+
+	const handleCloseView = React.useCallback(() => {
+		latestViewRequestRef.current += 1;
+		setViewModal(null);
+		setViewDetail(null);
+		setViewError(null);
+		setViewLoading(false);
+	}, []);
+
 	const handleOpenView = React.useCallback(
 		async (workflow: WorkflowRow) => {
+			const requestId = ++latestViewRequestRef.current;
+
 			setViewModal(workflow);
 			setViewDetail(null);
 			setViewError(null);
 
-			if (!workflow.id) return;
+			if (!workflow.id) {
+				setViewError("This workflow has no id and can't be loaded.");
+				return;
+			}
 
 			setViewLoading(true);
 
 			try {
-				const detail = await workflowApi.getById(workflow.id);
+				const detail = await workflowApi.getById(String(workflow.id));
+				if (requestId !== latestViewRequestRef.current) return;
+
 				const basics = mapBasics(detail);
 
-				// The detail endpoint only returns the app id, not its name —
-				// resolve it against the same appOptions list the filter uses.
+				// The detail endpoint may only return the app id, not its name —
+				// resolve it against appOptions, then the detail payload, then
+				// the name already shown in the table row.
 				const resolvedAppName =
 					appOptions.find((option) => option.value === detail.appId)?.label ??
-					basics.appDesc;
+					(basics.appDesc || workflow.appName || "");
 
 				setViewDetail({
 					basics: { ...basics, appDesc: resolvedAppName },
 					stages: mapStages(detail.stages ?? []),
 				});
 			} catch (error) {
+				if (requestId !== latestViewRequestRef.current) return;
+
 				setViewError(
 					getWorkflowErrorMessage(error, "Failed to load this workflow."),
 				);
 			} finally {
-				setViewLoading(false);
+				if (requestId === latestViewRequestRef.current) {
+					setViewLoading(false);
+				}
 			}
 		},
 		[appOptions],
@@ -320,13 +345,13 @@ const WorkflowTable = () => {
 
 			<Modal
 				open={Boolean(viewModal)}
-				onClose={() => setViewModal(null)}
+				onClose={handleCloseView}
 				size="xl"
-				title={viewModal?.name ? `View: ${viewModal.name}` : "View Workflow"}
+				title={viewModal?.name ? `${viewModal.name}` : "View Workflow"}
 				footer_actions={
 					<Button
 						text="Close"
-						onClick={() => setViewModal(null)}
+						onClick={handleCloseView}
 						appearance="standard"
 						variant="outline"
 					/>
@@ -342,6 +367,7 @@ const WorkflowTable = () => {
 					<WorkflowViewForm
 						basics={viewDetail.basics}
 						stages={viewDetail.stages}
+						mode="view"
 					/>
 				) : null}
 			</Modal>

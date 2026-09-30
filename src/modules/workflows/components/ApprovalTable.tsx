@@ -198,6 +198,7 @@ const buildColumns = (
 	{
 		key: "designation",
 		header: "Designation",
+		widthUnits: 2,
 		render: (row) => {
 			const { visible } = getRowView(row);
 

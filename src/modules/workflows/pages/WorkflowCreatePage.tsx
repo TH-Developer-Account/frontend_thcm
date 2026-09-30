@@ -117,6 +117,20 @@ const WorkflowCreatePage = () => {
 		[stages],
 	);
 
+	// Sum of each stage's own minApprovals — this is what the sidebar's
+	// "Minimum approvers" should show. Clamped to the stage's approver count
+	// so a fresh stage (minApprovals: 1, no approvers yet) doesn't report 1.
+	const minApprovers = useMemo(
+		() =>
+			stages.reduce(
+				(sum, stage) =>
+					sum +
+					Math.min(Number(stage.minApprovals) || 0, stage.approvers.length),
+				0,
+			),
+		[stages],
+	);
+
 	const appOptions = useMemo(
 		() => formatApps(permissions ?? []),
 		[permissions],
@@ -484,7 +498,7 @@ const WorkflowCreatePage = () => {
 						basics={basics}
 						stageCount={stages.length}
 						approverCount={totalApprovers}
-						minApprovers={totalApprovers}
+						minApprovers={minApprovers}
 					/>
 				</div>
 			</Card>

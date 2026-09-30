@@ -107,6 +107,7 @@ type ApproverApiItem = {
 	firstName?: string;
 	lastName?: string;
 	email?: string;
+	designation?: string | null;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -389,6 +390,7 @@ export const workflowApi = {
 				lastName: lastNameParts.join(" "),
 				name,
 				email: user.email?.trim() ?? "",
+				designation: user.designation?.trim() || null,
 			};
 		});
 	},
