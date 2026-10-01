@@ -14,6 +14,7 @@ import {
   showApiErrorToast,
   showSuccessToast,
 } from "../../../../utils/apiError.helper";
+import type { TablePagination } from "../../../../hooks/useServerPagination";
 import { userKeys } from "../../users/useUsersData";
 import { profileApi, profileKeys } from "../profile.api";
 import { getProfileColumns } from "../utils/profile.columns";
@@ -23,6 +24,7 @@ import type { Profile } from "../types/profile.types";
 
 type ProfileListProps = {
   profiles: Profile[];
+  tablePagination: TablePagination;
   search: string;
   onSearchChange: (value: string) => void;
   appFilter: React.ReactNode;
@@ -39,6 +41,7 @@ const PROFILE_SKELETON_COLUMNS = 6;
 
 const ProfileList = ({
   profiles,
+  tablePagination,
   search,
   onSearchChange,
   appFilter,
@@ -155,7 +158,14 @@ const ProfileList = ({
               data={profiles}
               columns={columns}
               manualSorting={false}
-              manualPagination={false}
+              manualPagination
+              pageIndex={tablePagination.pageIndex}
+              pageSize={tablePagination.pageSize}
+              pageCount={Math.ceil(
+                tablePagination.totalRowCount / tablePagination.pageSize,
+              )}
+              onPageChange={tablePagination.onPageChange}
+              onPageSizeChange={tablePagination.onPageSizeChange}
               scrollTargetId="profile-listing-table-scroll"
               emptyTitle="No profiles found"
               emptyDescription={

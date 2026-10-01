@@ -14,20 +14,59 @@ type ProfileSaveInput = Omit<ProfileFormValues, "appKey"> & {
 
 const encode = encodeURIComponent;
 
+// Mirrors the server cap in parsePaginationParams.
+export const PROFILE_LIST_MAX_PAGE_SIZE = 100;
+
+export type ProfileListParams = {
+  appKey?: string;
+  search?: string;
+  pageIndex?: number;
+  pageSize?: number;
+};
+
+export type ProfilePage = {
+  rows: Profile[];
+  totalCount: number;
+};
+
+// Empty params are dropped so the query string only carries what was asked.
+const toProfileListQuery = (params: ProfileListParams) =>
+  Object.fromEntries(
+    Object.entries({ ...params, search: params.search?.trim() }).filter(
+      ([, value]) => value !== undefined && value !== "",
+    ),
+  );
+
 export const profileKeys = {
   all: ["profiles"] as const,
   list: (appKey = "all") => [...profileKeys.all, "list", appKey] as const,
+  page: (params: ProfileListParams) =>
+    [...profileKeys.all, "page", params] as const,
   detail: (profileId: string) =>
     [...profileKeys.all, "detail", profileId] as const,
 };
 
 export const profileApi = {
-  list: async (appKey?: string, signal?: AbortSignal): Promise<Profile[]> => {
+  listPage: async ({
+    signal,
+    ...params
+  }: ProfileListParams & { signal?: AbortSignal }): Promise<ProfilePage> => {
     const { data } = await ServerAxios.get("/profile", {
-      params: appKey ? { appKey } : {},
+      params: toProfileListQuery(params),
       signal,
     });
-    return data.data;
+    return { rows: data.rows ?? [], totalCount: data.totalCount ?? 0 };
+  },
+
+  // Pickers need every profile of an app, not a page. One request is enough
+  // while an app has fewer profiles than the server's page-size cap.
+  list: async (appKey?: string, signal?: AbortSignal): Promise<Profile[]> => {
+    const { rows } = await profileApi.listPage({
+      appKey,
+      pageSize: PROFILE_LIST_MAX_PAGE_SIZE,
+      signal,
+    });
+    return rows;
   },
 
   get: async (profileId: string): Promise<Profile> => {

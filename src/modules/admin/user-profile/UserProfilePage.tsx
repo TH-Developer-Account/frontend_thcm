@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import SelectInput from "../../../components/forms/SelectInput";
 import { PageHeader } from "../../../components/ui/PageHeader";
@@ -13,29 +13,19 @@ import {
 import { useManageableApps } from "../access.api";
 import ProfileList from "./components/ProfileList";
 import { profileApi, profileKeys } from "./profile.api";
+import { usePaginatedProfiles } from "./usePaginateProfiles";
 
 import type { Profile } from "./types/profile.types";
 
 const ALL_APPS_OPTION = { label: "All applications", value: "" };
-
-const matchesSearch = (profile: Profile, normalizedSearch: string) =>
-  [
-    profile.name,
-    profile.description ?? "",
-    profile.appName,
-    ...profile.users.map((user) => `${user.firstName} ${user.lastName}`),
-  ]
-    .join(" ")
-    .toLowerCase()
-    .includes(normalizedSearch);
 
 export const UserProfilePage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { showToast } = useToast();
 
-  const [search, setSearch] = React.useState("");
-  const [selectedAppKey, setSelectedAppKey] = React.useState("");
+  const profileList = usePaginatedProfiles();
+  const { query: profilesQuery } = profileList;
 
   const appsQuery = useManageableApps();
   const appOptions = React.useMemo(
@@ -49,13 +39,6 @@ export const UserProfilePage = () => {
     [appsQuery.data],
   );
 
-  // The backend already limits the list to apps the caller manages.
-  const profilesQuery = useQuery({
-    queryKey: profileKeys.list(selectedAppKey || undefined),
-    queryFn: ({ signal }) =>
-      profileApi.list(selectedAppKey || undefined, signal),
-  });
-
   React.useEffect(() => {
     if (profilesQuery.isError) {
       showApiErrorToast(
@@ -65,15 +48,6 @@ export const UserProfilePage = () => {
       );
     }
   }, [profilesQuery.isError, profilesQuery.error, showToast]);
-
-  const filteredProfiles = React.useMemo(() => {
-    const profiles = profilesQuery.data ?? [];
-    const normalizedSearch = search.trim().toLowerCase();
-    if (!normalizedSearch) return profiles;
-    return profiles.filter((profile) =>
-      matchesSearch(profile, normalizedSearch),
-    );
-  }, [profilesQuery.data, search]);
 
   const deleteMutation = useMutation({
     mutationFn: profileApi.remove,
@@ -107,19 +81,21 @@ export const UserProfilePage = () => {
       />
 
       <ProfileList
-        profiles={filteredProfiles}
-        search={search}
-        onSearchChange={setSearch}
+        profiles={profileList.rows}
+        tablePagination={profileList.tablePagination}
+        search={profileList.search}
+        onSearchChange={profileList.setSearch}
         appFilter={
           <SelectInput
             name="profileAppFilter"
             aria-label="Filter profiles by application"
             options={appOptions}
             value={
-              appOptions.find((option) => option.value === selectedAppKey) ??
-              ALL_APPS_OPTION
+              appOptions.find(
+                (option) => option.value === profileList.appKey,
+              ) ?? ALL_APPS_OPTION
             }
-            onChange={(option) => setSelectedAppKey(option?.value ?? "")}
+            onChange={(option) => profileList.setAppKey(option?.value ?? "")}
             isSearchable={false}
             isLoading={appsQuery.isLoading}
           />

@@ -1,13 +1,14 @@
-import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
-import { useDebounce } from "../../../hooks/useDebounce";
+import {
+  toTablePagination,
+  useClampPageToTotal,
+  useServerPagination,
+} from "../../../hooks/useServerPagination";
 import { userApi, userKeys } from "./users.api";
 
 import type { User, UserListFilters } from "./user-management.types";
 
-const SEARCH_DEBOUNCE_MS = 300;
-const DEFAULT_PAGE_SIZE = 10;
 // Short, so a revisited page reflects recent edits without a manual refresh.
 const USER_PAGE_STALE_TIME_MS = 30 * 1000;
 const NO_USERS: User[] = [];
@@ -23,10 +24,9 @@ export const usePaginatedUsers = ({
   filters = {},
   enabled = true,
 }: UsePaginatedUsersOptions = {}) => {
-  const [search, setSearchValue] = useState("");
-  const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize, setPageSizeValue] = useState(DEFAULT_PAGE_SIZE);
-  const debouncedSearch = useDebounce(search.trim(), SEARCH_DEBOUNCE_MS);
+  const pagination = useServerPagination();
+  const { search, setSearch, resetPage, debouncedSearch, pageIndex, pageSize } =
+    pagination;
 
   const params = { ...filters, search: debouncedSearch, pageIndex, pageSize };
 
@@ -40,30 +40,15 @@ export const usePaginatedUsers = ({
     placeholderData: keepPreviousData,
   });
 
-  // A new search or page size makes the current page index meaningless.
-  const setSearch = (value: string) => {
-    setSearchValue(value);
-    setPageIndex(0);
-  };
-
-  const setPageSize = (size: number) => {
-    setPageSizeValue(size);
-    setPageIndex(0);
-  };
+  useClampPageToTotal(pagination, query.data?.totalCount);
 
   return {
     search,
     setSearch,
-    resetPage: () => setPageIndex(0),
+    resetPage,
     query,
     rows: query.data?.rows ?? NO_USERS,
     statusCounts: query.data?.statusCounts,
-    tablePagination: {
-      pageIndex,
-      pageSize,
-      totalRowCount: query.data?.totalCount ?? 0,
-      onPageChange: setPageIndex,
-      onPageSizeChange: setPageSize,
-    },
+    tablePagination: toTablePagination(pagination, query.data?.totalCount ?? 0),
   };
 };
