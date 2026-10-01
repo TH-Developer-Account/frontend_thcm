@@ -1,6 +1,11 @@
-import type { User, Permission, PermissionAction } from "./Auth/AuthContext";
+import type {
+  AccessSession,
+  User,
+  Permission,
+  PermissionAction,
+} from "./Auth/AuthContext";
 
-export type { Permission, PermissionAction };
+export type { AccessSession, Permission, PermissionAction };
 
 export type ApiErrorResponse = {
   success: false;
@@ -12,11 +17,8 @@ export type LoginSuccessResponse = {
   message: string;
   requiresPasswordReset: boolean;
   user: User;
-  accessToken?: string; // may be absent in reset flow
-  permissions?: {
-    isSuperAdmin: boolean;
-    permissions: Permission[]; // ✅ reuses the canonical type — no more duplicated inline shape
-  };
+  accessToken?: string; // absent in the password-reset flow
+  permissions?: AccessSession;
   workspaceId: string;
 };
 
