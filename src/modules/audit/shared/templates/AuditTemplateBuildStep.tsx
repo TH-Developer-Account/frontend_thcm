@@ -1,66 +1,90 @@
-// modules/audit/shared/AuditTemplateBuildStep.tsx
+// modules/audit/shared/templates/AuditTemplateBuildStep.tsx
+import type { FormEventHandler } from "react";
 import { Plus } from "lucide-react";
+import {
+	FormProvider,
+	useFieldArray,
+	useWatch,
+	type UseFormReturn,
+} from "react-hook-form";
+
 import Button from "../../../../components/common/Button";
 import AuditTemplateSectionCard from "./AuditTemplateSectionCard";
 import AuditTemplateSummaryPanel from "./AuditTemplateSummaryPanel";
-import { AuditTemplateBuilderProvider } from "./audit-template-builder.context";
-import { useAuditTemplateSections } from "./useAuditTemplateSections";
-import { deriveTemplateSummary } from "../../dealerAudit/dealer-audit.utils";
-import type { ChecklistSection } from "../shared.audit.types";
+import type {
+	AuditTemplateBuildFormValues,
+	AuditTemplateFieldConfig,
+} from "./audit.template.types";
+import {
+	createEmptySection,
+	deriveTemplateSummary,
+	getArrayErrorMessage,
+} from "./audit-template.utils";
 
 type Props = {
-	sections: ChecklistSection[];
-	onChange: (sections: ChecklistSection[]) => void;
+	form: UseFormReturn<AuditTemplateBuildFormValues>;
+	parameterFields: readonly AuditTemplateFieldConfig[];
+	onSubmit: FormEventHandler<HTMLFormElement>;
+	disabled?: boolean;
 };
 
-export default function AuditTemplateBuildStep({ sections, onChange }: Props) {
-	// The hook is the single source of truth for editing; `sections`/`onChange`
-	// keep the parent step (Details/Build/Review) in sync without every card
-	// or editor needing to know that sync exists.
-	const builder = useAuditTemplateSections(sections);
+export default function AuditTemplateBuildStep({
+	form,
+	parameterFields,
+	onSubmit,
+	disabled = false,
+}: Props) {
+	const { control, formState } = form;
 
-	if (builder.sections !== sections) {
-		onChange(builder.sections);
-	}
+	const { fields, append, remove, move } = useFieldArray({
+		control,
+		name: "sections",
+		keyName: "fieldKey",
+	});
 
-	const summary = deriveTemplateSummary(builder.sections);
+	// Watched (not copied into state) so the outline stays derived.
+	const sections = useWatch({ control, name: "sections" }) ?? [];
+	const summary = deriveTemplateSummary(sections);
+	const sectionsError = getArrayErrorMessage(formState.errors.sections);
 
 	return (
-		<AuditTemplateBuilderProvider
-			value={{
-				sections: builder.sections,
-				updateSection: builder.updateSection,
-				removeSection: builder.removeSection,
-				addSection: builder.addSection,
-				updateParameter: builder.updateParameter,
-				removeParameter: builder.removeParameter,
-				addParameter: builder.addParameter,
-				moveParameter: builder.moveParameter,
-			}}
-		>
-			<div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-				<div className="space-y-4">
-					{builder.sections.map((section, index) => (
-						<AuditTemplateSectionCard
-							key={section.id}
-							section={section}
-							index={index}
+		<FormProvider {...form}>
+			<form noValidate onSubmit={onSubmit} aria-label="Build checklist">
+				<div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+					<div className="space-y-4">
+						{fields.map((field, sectionIndex) => (
+							<AuditTemplateSectionCard
+								key={field.fieldKey}
+								sectionIndex={sectionIndex}
+								sectionCount={fields.length}
+								parameterFields={parameterFields}
+								disabled={disabled}
+								onRemove={remove}
+								onMove={move}
+							/>
+						))}
+
+						{sectionsError ? (
+							<p className="form-error-text" role="alert">
+								{sectionsError}
+							</p>
+						) : null}
+
+						<Button
+							text="Add another section"
+							variant="outline"
+							Icon={Plus}
+							className="w-full border-dashed"
+							disabled={disabled}
+							onClick={() => append(createEmptySection(parameterFields))}
 						/>
-					))}
+					</div>
 
-					<Button
-						text="Add another section"
-						variant="outline"
-						Icon={Plus}
-						className="w-full border-dashed"
-						onClick={builder.addSection}
-					/>
+					<div className="hidden lg:block">
+						<AuditTemplateSummaryPanel summary={summary} sticky />
+					</div>
 				</div>
-
-				<div className="hidden lg:block">
-					<AuditTemplateSummaryPanel summary={summary} sticky />
-				</div>
-			</div>
-		</AuditTemplateBuilderProvider>
+			</form>
+		</FormProvider>
 	);
 }

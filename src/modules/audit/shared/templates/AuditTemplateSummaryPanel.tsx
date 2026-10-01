@@ -1,43 +1,47 @@
-import { Award, ListChecks } from "lucide-react";
-import type { AuditTemplateSummary } from "../shared.audit.types";
+// modules/audit/shared/templates/AuditTemplateSummaryPanel.tsx
+import { Award, Camera, ListChecks } from "lucide-react";
+
 import Card from "../../../../components/common/Card";
+import type { AuditTemplateSummary } from "./audit.template.types";
 
 type Props = {
 	summary: AuditTemplateSummary;
 	sticky?: boolean;
 	title?: string;
+	eyebrow?: string;
 };
 
 export default function AuditTemplateSummaryPanel({
 	summary,
 	sticky = false,
 	title = "Checklist outline",
+	eyebrow = "Live structure",
 }: Props) {
 	return (
 		<Card
 			variant="outlined"
 			padding="compact"
-			className={sticky ? "sticky top-24 self-start" : ""}
+			className={sticky ? "sticky top-24 self-start" : undefined}
+			aria-label={title}
 		>
-			<p className="text-xs font-bold uppercase tracking-wide text-brand">
-				Live structure
+			<p className="text-xs font-bold uppercase tracking-wide text-(--color-brand)">
+				{eyebrow}
 			</p>
-			<h3 className="mt-1 text-base font-semibold text-slate-900">{title}</h3>
-			<p className="mt-1 text-xs text-slate-500">
-				Your template updates as you build.
-			</p>
+			<h3 className="mt-1 text-base font-semibold text-(--color-text-primary)">
+				{title}
+			</h3>
 
 			<ol className="mt-4 space-y-3">
 				{summary.perSection.map((section, index) => (
 					<li key={section.sectionId} className="flex items-start gap-2.5">
-						<span className="grid size-7 shrink-0 place-items-center rounded-full bg-orange-50 text-xs font-bold text-brand">
+						<span className="grid size-7 shrink-0 place-items-center rounded-full bg-(--color-brand-softest) text-xs font-bold text-(--color-brand)">
 							{index + 1}
 						</span>
 						<span className="min-w-0">
-							<span className="block text-sm font-semibold text-slate-900">
+							<span className="block truncate text-sm font-semibold text-(--color-text-primary)">
 								{section.name}
 							</span>
-							<span className="block text-xs text-slate-500">
+							<span className="block text-xs text-(--color-text-secondary)">
 								{section.parameterCount} item
 								{section.parameterCount === 1 ? "" : "s"} · {section.points} pts
 							</span>
@@ -45,24 +49,38 @@ export default function AuditTemplateSummaryPanel({
 					</li>
 				))}
 				{summary.perSection.length === 0 ? (
-					<li className="text-xs text-slate-400">No sections yet.</li>
+					<li className="text-xs text-(--color-text-secondary)">
+						No sections yet.
+					</li>
 				) : null}
 			</ol>
 
-			<div className="mt-4 rounded-xl bg-slate-900 px-4 py-3 text-white">
-				<div className="flex items-center justify-between text-xs text-slate-300">
-					<span className="inline-flex items-center gap-1.5">
-						<ListChecks size={14} aria-hidden="true" /> Total items
-					</span>
-					<span>{summary.parameterCount}</span>
+			<dl className="mt-4 space-y-1.5 rounded-xl bg-(--color-bg-muted) px-4 py-3 text-xs">
+				<div className="flex items-center justify-between text-(--color-text-secondary)">
+					<dt className="inline-flex items-center gap-1.5">
+						<ListChecks size={14} aria-hidden="true" /> Parameters
+					</dt>
+					<dd className="font-semibold text-(--color-text-primary)">
+						{summary.parameterCount} ({summary.scoredParameterCount} scored)
+					</dd>
 				</div>
-				<div className="mt-1 flex items-baseline justify-between">
-					<span className="text-2xl font-bold">{summary.totalPoints}</span>
-					<span className="inline-flex items-center gap-1 text-xs text-slate-300">
-						<Award size={13} aria-hidden="true" /> total points
-					</span>
+				<div className="flex items-center justify-between text-(--color-text-secondary)">
+					<dt className="inline-flex items-center gap-1.5">
+						<Camera size={14} aria-hidden="true" /> Photo evidence
+					</dt>
+					<dd className="font-semibold text-(--color-text-primary)">
+						{summary.evidenceParameterCount}
+					</dd>
 				</div>
-			</div>
+				<div className="flex items-baseline justify-between pt-1">
+					<dt className="inline-flex items-center gap-1.5 text-(--color-text-secondary)">
+						<Award size={14} aria-hidden="true" /> Total points
+					</dt>
+					<dd className="text-2xl font-bold text-(--color-text-primary)">
+						{summary.totalPoints}
+					</dd>
+				</div>
+			</dl>
 		</Card>
 	);
 }

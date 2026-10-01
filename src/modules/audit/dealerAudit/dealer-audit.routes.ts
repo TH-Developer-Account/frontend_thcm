@@ -16,8 +16,11 @@ export const DEALER_AUDIT_ROUTES = {
 		list: `${CHECKLIST_TEMPLATE_BASE_PATH}/listing`,
 		create: `${CHECKLIST_TEMPLATE_BASE_PATH}/create`,
 
+		view: (templateId: string) =>
+			`${CHECKLIST_TEMPLATE_BASE_PATH}/${encodeURIComponent(templateId)}`,
+
 		edit: (templateId: string) =>
-			`${CHECKLIST_TEMPLATE_BASE_PATH}/${templateId}/edit`,
+			`${CHECKLIST_TEMPLATE_BASE_PATH}/${encodeURIComponent(templateId)}/edit`,
 	},
 
 	execution: {

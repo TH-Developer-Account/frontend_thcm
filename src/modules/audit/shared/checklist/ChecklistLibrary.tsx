@@ -1,98 +1,109 @@
-// modules/audit/shared/ChecklistLibrary.tsx
-import { useMemo, useState } from "react";
-import { Filter, Plus } from "lucide-react";
+// modules/audit/shared/checklist/ChecklistLibrary.tsx
+//
+// Presentational checklist-template library: header, toolbar (search,
+// status tabs, FilterDropdown) and a server-driven TanStack data table.
+// All state (page, sort, filters) is owned by the module page so it can
+// live in the URL and drive the query.
 
-import PageSectionLayout from "../../../../layout/PageSectionLayout";
+import type { ColumnDef, OnChangeFn, SortingState } from "@tanstack/react-table";
+import { Plus } from "lucide-react";
+
 import Button from "../../../../components/common/Button";
-import Card from "../../../../components/common/Card";
-import TabsBar from "../../../../components/common/TabsBar";
-import { PageHeader } from "../../../../components/ui/PageHeader";
-import { SearchInput } from "../../../../components/forms/SearchInput";
-
-import ChecklistCard, { type ChecklistCardProps } from "./ChecklistCard";
-import { deriveChecklistLibrarySummary } from "./checklist.utils";
+import { Alert } from "../../../../components/common/Alert";
 import {
-	CHECKLIST_FILTER_TABS,
-	type ChecklistFilter,
-} from "../../dealerAudit/checklist-library.constants";
+	FilterDropdown,
+	type FilterSection,
+} from "../../../../components/common/FilterDropdown";
+import TabsBar from "../../../../components/common/TabsBar";
+import { SearchInput } from "../../../../components/forms/SearchInput";
+import { PageHeader } from "../../../../components/ui/PageHeader";
+import TableListing from "../../../../components/ui/tables/DataTable/TableListing";
+import PageSectionLayout from "../../../../layout/PageSectionLayout";
+import { TEMPLATE_STATUS_FILTER_TABS } from "../templates/audit-template.status";
+import type {
+	AuditTemplateListRow,
+	TemplateLifecycleStatus,
+} from "../templates/audit.template.types";
 
-export interface ChecklistLibraryProps {
-	/** Page copy — each module supplies its own, nothing is assumed here. */
+export type TemplateStatusTab = TemplateLifecycleStatus | "ALL";
+
+export interface ChecklistLibraryProps<TFilters extends object> {
 	eyebrow: string;
 	title: string;
 	subtitle: string;
 	createLabel?: string;
-
-	templates: ChecklistCardProps[];
-	isLoading?: boolean;
-	error?: string | null;
-
-	/** Fields searched against, beyond title/description. */
-	searchableFields?: (template: ChecklistCardProps) => string[];
-
+	canCreate: boolean;
 	onCreateTemplate: () => void;
-	onOpenTemplate: (id: string) => void;
-	onEditTemplate: (id: string) => void;
-	onToggleBlocked?: (id: string, nextBlocked: boolean) => void;
-	onDeleteTemplate?: (id: string) => void;
+
+	rows: AuditTemplateListRow[];
+	columns: ColumnDef<AuditTemplateListRow>[];
+	isLoading: boolean;
+	isFetching?: boolean;
+	errorMessage?: string | null;
+	onRetry?: () => void;
+
+	search: string;
+	onSearchChange: (value: string) => void;
+
+	statusTab: TemplateStatusTab;
+	onStatusTabChange: (value: TemplateStatusTab) => void;
+
+	filters: TFilters;
+	filterSections: readonly FilterSection<TFilters>[];
+	onFiltersChange: (updated: Partial<TFilters>) => void;
+	onClearFilters: () => void;
+
+	sorting: SortingState;
+	onSortingChange: OnChangeFn<SortingState>;
+
+	/** 0-based, as the shared DataTable expects. */
+	pageIndex: number;
+	pageSize: number;
+	pageCount: number;
+	totalItems: number;
+	onPageChange: (pageIndex: number) => void;
+	onPageSizeChange: (pageSize: number) => void;
+
+	onRowClick?: (row: AuditTemplateListRow) => void;
 }
 
-export default function ChecklistLibrary({
+export default function ChecklistLibrary<TFilters extends object>({
 	eyebrow,
 	title,
 	subtitle,
 	createLabel = "Create checklist",
-	templates,
-	isLoading = false,
-	error = null,
-	searchableFields,
+	canCreate,
 	onCreateTemplate,
-	onOpenTemplate,
-	onEditTemplate,
-	onToggleBlocked,
-	onDeleteTemplate,
-}: ChecklistLibraryProps) {
-	const [search, setSearch] = useState("");
-	const [activeFilter, setActiveFilter] = useState<ChecklistFilter>("all");
-	const [blockedIds, setBlockedIds] = useState<Set<string>>(() => new Set());
-
-	const summaryCards = useMemo(
-		() => deriveChecklistLibrarySummary(templates),
-		[templates],
-	);
-
-	const filteredTemplates = useMemo(() => {
-		const normalizedSearch = search.trim().toLowerCase();
-
-		return templates.filter((template) => {
-			const matchesStatus =
-				activeFilter === "all" || template.status === activeFilter;
-			if (!matchesStatus) return false;
-
-			if (!normalizedSearch) return true;
-
-			const searchableText = [
-				template.title,
-				template.description,
-				...(searchableFields?.(template) ?? []),
-			]
-				.filter(Boolean)
-				.join(" ")
-				.toLowerCase();
-
-			return searchableText.includes(normalizedSearch);
-		});
-	}, [activeFilter, search, searchableFields, templates]);
-
-	const handleToggleBlocked = (id: string, nextBlocked: boolean) => {
-		setBlockedIds((current) => {
-			const next = new Set(current);
-			if (nextBlocked) next.add(id);
-			else next.delete(id);
-			return next;
-		});
-		onToggleBlocked?.(id, nextBlocked);
-	};
+	rows,
+	columns,
+	isLoading,
+	isFetching = false,
+	errorMessage,
+	onRetry,
+	search,
+	onSearchChange,
+	statusTab,
+	onStatusTabChange,
+	filters,
+	filterSections,
+	onFiltersChange,
+	onClearFilters,
+	sorting,
+	onSortingChange,
+	pageIndex,
+	pageSize,
+	pageCount,
+	totalItems,
+	onPageChange,
+	onPageSizeChange,
+	onRowClick,
+}: ChecklistLibraryProps<TFilters>) {
+	const hasActiveQuery =
+		search.trim().length > 0 ||
+		statusTab !== "ALL" ||
+		Object.values(filters).some(
+			(value) => Array.isArray(value) && value.length > 0,
+		);
 
 	return (
 		<PageSectionLayout>
@@ -100,15 +111,11 @@ export default function ChecklistLibrary({
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div className="flex flex-col gap-1">
 						<span className="text-eyebrow text-(--color-brand)">{eyebrow}</span>
-						<h1 className="text-page-title text-(--color-text-primary)">
-							{title}
-						</h1>
-						<p className="text-body-sm text-(--color-text-secondary)">
-							{subtitle}
-						</p>
+						<h1 className="text-page-title text-(--color-text-primary)">{title}</h1>
+						<p className="text-body-sm text-(--color-text-secondary)">{subtitle}</p>
 					</div>
 
-					<div className="flex flex-wrap items-center gap-2">
+					{canCreate ? (
 						<Button
 							text={createLabel}
 							variant="brand"
@@ -116,115 +123,89 @@ export default function ChecklistLibrary({
 							Icon={Plus}
 							onClick={onCreateTemplate}
 						/>
-					</div>
+					) : null}
 				</div>
 			</PageHeader>
 
-			<div className="flex flex-col gap-3">
-				<Card padding="default" variant="outlined" className="rounded-2xl">
-					<div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-						<SearchInput
-							value={search}
-							onChange={setSearch}
-							placeholder="Search checklists"
-							containerClassName="min-w-0 flex-1"
-						/>
-
-						<div className="flex items-center gap-3 overflow-x-auto">
-							<TabsBar
-								items={CHECKLIST_FILTER_TABS}
-								mode="single"
-								active={activeFilter}
-								onChange={setActiveFilter}
-								ariaLabel="Filter checklists by status"
-								variant="soft"
-								className="shrink-0"
-							/>
-							<Button
-								text="Filters"
-								variant="outline"
-								size="md"
-								Icon={Filter}
-								className="shrink-0"
-							/>
-						</div>
-					</div>
-				</Card>
-
-				<section
-					className="grid grid-cols-1 gap-3 sm:grid-cols-3 xl:grid-cols-4"
-					aria-label="Checklist statistics"
-				>
-					{summaryCards.map(({ id, label, value }) => (
-						<Card
-							key={id}
-							padding="compact"
-							variant="outlined"
-							className="rounded-2xl"
+			<TableListing<AuditTemplateListRow>
+				ariaLabel="All checklist templates"
+				data={rows}
+				columns={columns}
+				getRowId={(row) => row.id}
+				loading={isLoading}
+				minWidth="lg"
+				tabs={
+					<TabsBar
+						items={TEMPLATE_STATUS_FILTER_TABS}
+						mode="single"
+						active={statusTab}
+						onChange={onStatusTabChange}
+						ariaLabel="Filter templates by status"
+						variant="soft"
+					/>
+				}
+				toolbarStart={
+					<SearchInput
+						value={search}
+						onChange={onSearchChange}
+						placeholder="Search by template name or description"
+						containerClassName="min-w-0 w-full sm:w-80"
+					/>
+				}
+				toolbarEnd={
+					<div className="flex items-center gap-3">
+						<span
+							className="text-body-sm text-(--color-text-secondary)"
+							aria-live="polite"
 						>
-							<div className="flex p-2 items-center gap-4">
-								<span className="min-w-0">
-									<strong className="block text-2xl font-bold leading-none text-(--color-text-primary)">
-										{value}
-									</strong>
-									<span className="mt-2 block text-body-sm text-(--color-text-secondary)">
-										{label}
-									</span>
-								</span>
-							</div>
-						</Card>
-					))}
-				</section>
-
-				<section aria-labelledby="checklist-results-title">
-					<div className="mb-3 flex items-center justify-between gap-3">
-						<h2
-							id="checklist-results-title"
-							className="text-section-title text-(--color-text-primary)"
-						>
-							All checklists
-						</h2>
-						<span className="text-body-sm text-(--color-text-secondary)">
-							{filteredTemplates.length} templates
+							{isFetching && !isLoading
+								? "Updating…"
+								: `${totalItems} template${totalItems === 1 ? "" : "s"}`}
 						</span>
+						<FilterDropdown<TFilters>
+							filters={filters}
+							sections={filterSections}
+							onChange={onFiltersChange}
+							onClearAll={onClearFilters}
+							title="Filter templates"
+							ariaLabel="Filter templates"
+						/>
 					</div>
-
-					{error ? (
-						<Card variant="outlined" className="py-12 text-center">
-							<p className="text-body-sm text-red-600">{error}</p>
-						</Card>
-					) : isLoading ? (
-						<Card variant="outlined" className="py-12 text-center">
-							<p className="text-body-sm text-(--color-text-secondary)">
-								Loading checklists…
-							</p>
-						</Card>
-					) : filteredTemplates.length > 0 ? (
-						<div className="checklist-card-grid">
-							{filteredTemplates.map((template) => (
-								<ChecklistCard
-									key={template.id}
-									{...template}
-									isBlocked={blockedIds.has(template.id)}
-									onOpen={onOpenTemplate}
-									onEdit={onEditTemplate}
-									onToggleBlocked={handleToggleBlocked}
-									onDelete={onDeleteTemplate}
-								/>
-							))}
-						</div>
-					) : (
-						<Card variant="outlined" className="py-12 text-center">
-							<h3 className="font-semibold text-(--color-text-primary)">
-								No checklists found
-							</h3>
-							<p className="mt-1 text-body-sm text-(--color-text-secondary)">
-								Try another search or status filter.
-							</p>
-						</Card>
-					)}
-				</section>
-			</div>
+				}
+				message={
+					errorMessage ? (
+						<Alert
+							variant="error"
+							title="Couldn't load checklist templates"
+							description={errorMessage}
+							primaryAction={
+								onRetry ? { label: "Retry", onClick: onRetry } : undefined
+							}
+						/>
+					) : null
+				}
+				emptyTitle={
+					hasActiveQuery ? "No templates match your filters" : "No checklist templates yet"
+				}
+				emptyDescription={
+					hasActiveQuery
+						? "Try another search, status or filter."
+						: canCreate
+							? "Create your first checklist template to start auditing."
+							: "Templates will appear here once an admin publishes them."
+				}
+				sorting={sorting}
+				onSortingChange={onSortingChange}
+				manualSorting
+				enablePagination
+				manualPagination
+				pageIndex={pageIndex}
+				pageSize={pageSize}
+				pageCount={pageCount}
+				onPageChange={onPageChange}
+				onPageSizeChange={onPageSizeChange}
+				onRowClick={onRowClick}
+			/>
 		</PageSectionLayout>
 	);
 }

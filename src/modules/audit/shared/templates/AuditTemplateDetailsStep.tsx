@@ -1,84 +1,98 @@
-// modules/audit/shared/AuditTemplateDetailsStep.tsx
-import Card from "../../../../components/common/Card";
-import TextareaInput from "../../../../components/forms/TextareaInput";
-import type { AuditModuleKey } from "../shared.audit.types";
+// modules/audit/shared/templates/AuditTemplateDetailsStep.tsx
+import type { FormEventHandler } from "react";
+import { FormProvider, type UseFormReturn } from "react-hook-form";
 
-export interface AuditTemplateDetailsValues {
-	name: string;
-	description: string;
-	facilityType?: string;
-}
+import Card from "../../../../components/common/Card";
+import FormInput from "../../../../components/forms/FormInput";
+import TextareaInput from "../../../../components/forms/TextareaInput";
+import AuditTemplateConfiguredField from "./AuditTemplateConfiguredField";
+import {
+	TEMPLATE_DESCRIPTION_MAX_LENGTH,
+	TEMPLATE_NAME_MAX_LENGTH,
+} from "./audit-template.constants";
+import type {
+	AuditTemplateDetailsFormValues,
+	AuditTemplateFieldConfig,
+} from "./audit.template.types";
 
 type Props = {
-	values: AuditTemplateDetailsValues;
-	onChange: (values: AuditTemplateDetailsValues) => void;
-	/** Each module supplies its own facility-type options — not hardcoded here. */
-	facilityTypeOptions: Array<{ value: string; label: string }>;
-	auditModule: AuditModuleKey;
+	form: UseFormReturn<AuditTemplateDetailsFormValues>;
+	/** Module-specific fields (facility type, category, plant …). */
+	detailFields: readonly AuditTemplateFieldConfig[];
+	namePlaceholder?: string;
+	onSubmit: FormEventHandler<HTMLFormElement>;
+	disabled?: boolean;
 };
 
 export default function AuditTemplateDetailsStep({
-	values,
-	onChange,
-	facilityTypeOptions,
+	form,
+	detailFields,
+	namePlaceholder = "e.g. Dealer Facility Audit — FY 2026-27",
+	onSubmit,
+	disabled = false,
 }: Props) {
+	const {
+		register,
+		formState: { errors },
+	} = form;
+
 	return (
-		<Card variant="outlined" padding="default">
-			<h2 className="text-base font-semibold text-slate-900">
-				Audit Template details
-			</h2>
-			<p className="mt-1 text-sm text-slate-500">
-				Give reviewers enough context to choose the right template.
-			</p>
-
-			<div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-				<div>
-					<label className="mb-1.5 block text-sm font-semibold text-slate-900">
-						Audit Template name <span className="text-(--color-brand)">*</span>
-					</label>
-					<input
-						value={values.name}
-						onChange={(event) =>
-							onChange({ ...values, name: event.target.value })
-						}
-						placeholder="e.g. Dealer Facility Audit — 2026"
-						className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-(--color-brand) focus:ring-2 focus:ring-(--color-brand)/15"
-					/>
-				</div>
-
-				<div>
-					<label className="mb-1.5 block text-sm font-semibold text-slate-900">
-						Facility type
-					</label>
-					<select
-						value={values.facilityType ?? ""}
-						onChange={(event) =>
-							onChange({ ...values, facilityType: event.target.value })
-						}
-						className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-(--color-brand) focus:ring-2 focus:ring-(--color-brand)/15"
+		<FormProvider {...form}>
+			<form noValidate onSubmit={onSubmit} aria-labelledby="template-details-title">
+				<Card variant="outlined" padding="default">
+					<h2
+						id="template-details-title"
+						className="text-base font-semibold text-(--color-text-primary)"
 					>
-						<option value="">Applies to all facility types</option>
-						{facilityTypeOptions.map((option) => (
-							<option key={option.value} value={option.value}>
-								{option.label}
-							</option>
-						))}
-					</select>
-				</div>
+						Audit template details
+					</h2>
+					<p className="mt-1 text-body-sm text-(--color-text-secondary)">
+						Give reviewers enough context to choose the right template.
+					</p>
 
-				<div className="sm:col-span-2">
-					<TextareaInput
-						name="template-description"
-						label="Description"
-						value={values.description}
-						onChange={(event) =>
-							onChange({ ...values, description: event.target.value })
-						}
-						placeholder="What this AuditTemplate evaluates and where it applies."
-						rows={3}
-					/>
-				</div>
-			</div>
-		</Card>
+					<div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+						<div className="sm:col-span-2">
+							<FormInput
+								id="template-name"
+								label="Template name"
+								required
+								placeholder={namePlaceholder}
+								maxLength={TEMPLATE_NAME_MAX_LENGTH}
+								disabled={disabled}
+								error={errors.name?.message}
+								{...register("name")}
+							/>
+						</div>
+
+						{detailFields.map((config) => (
+							<div
+								key={config.key}
+								className={config.span === 2 ? "sm:col-span-2" : undefined}
+							>
+								<AuditTemplateConfiguredField
+									config={config}
+									name={`fields.${config.key}`}
+									disabled={disabled}
+									error={errors.fields?.[config.key]?.message}
+								/>
+							</div>
+						))}
+
+						<div className="sm:col-span-2">
+							<TextareaInput
+								id="template-description"
+								label="Description"
+								placeholder="What this template evaluates and where it applies."
+								rows={3}
+								maxLength={TEMPLATE_DESCRIPTION_MAX_LENGTH}
+								disabled={disabled}
+								error={errors.description?.message}
+								{...register("description")}
+							/>
+						</div>
+					</div>
+				</Card>
+			</form>
+		</FormProvider>
 	);
 }

@@ -1,70 +1,169 @@
-// modules/audit/shared/AuditTemplateParameterEditor.tsx
-import { ChevronDown, ChevronUp, GripVertical, Trash2 } from "lucide-react";
+// modules/audit/shared/templates/AuditTemplateParameterEditor.tsx
+import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
+
 import Button from "../../../../components/common/Button";
+import Toggle from "../../../../components/common/Toggle";
+import FormInput from "../../../../components/forms/FormInput";
 import TextareaInput from "../../../../components/forms/TextareaInput";
-import Checkbox from "../../../../components/forms/Checkbox";
-import { useAuditTemplateBuilder } from "./audit-template-builder.context";
-import type { AuditTemplateParameter } from "../shared.audit.types";
+import AuditTemplateConfiguredField from "./AuditTemplateConfiguredField";
+import AuditTemplateScoringMatrix from "./AuditTemplateScoringMatrix";
+import {
+	PARAMETER_GUIDANCE_MAX_LENGTH,
+	PARAMETER_TITLE_MAX_LENGTH,
+	TEMPLATE_EVIDENCE_MAX_LIMIT,
+} from "./audit-template.constants";
+import type {
+	AuditTemplateBuildFormValues,
+	AuditTemplateFieldConfig,
+} from "./audit.template.types";
 
 type Props = {
-	sectionId: string;
-	parameter: AuditTemplateParameter;
-	index: number;
-	total: number;
+	sectionIndex: number;
+	parameterIndex: number;
+	parameterCount: number;
+	parameterFields: readonly AuditTemplateFieldConfig[];
+	disabled?: boolean;
+	onMove: (fromIndex: number, toIndex: number) => void;
+	onRemove: (index: number) => void;
 };
 
 export default function AuditTemplateParameterEditor({
-	sectionId,
-	parameter,
-	index,
-	total,
+	sectionIndex,
+	parameterIndex,
+	parameterCount,
+	parameterFields,
+	disabled = false,
+	onMove,
+	onRemove,
 }: Props) {
-	const { updateParameter, removeParameter, moveParameter } =
-		useAuditTemplateBuilder();
+	const {
+		control,
+		register,
+		formState: { errors },
+	} = useFormContext<AuditTemplateBuildFormValues>();
 
-	const onChange = (patch: Partial<AuditTemplateParameter>) =>
-		updateParameter(sectionId, parameter.id, patch);
+	const basePath = `sections.${sectionIndex}.parameters.${parameterIndex}` as const;
+	const parameterErrors =
+		errors.sections?.[sectionIndex]?.parameters?.[parameterIndex];
+
+	const evidenceRequired = useWatch({
+		control,
+		name: `${basePath}.evidenceRequired`,
+	});
+
+	const idPrefix = `s${sectionIndex}-p${parameterIndex}`;
+	const displayNumber = `${sectionIndex + 1}.${parameterIndex + 1}`;
 
 	return (
-		<div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+		<article
+			className="rounded-xl border border-(--color-border-default) bg-(--color-bg-muted) p-3"
+			aria-label={`Parameter ${displayNumber}`}
+		>
 			<div className="flex items-start gap-2.5">
-				<GripVertical
-					size={16}
-					className="mt-2.5 shrink-0 text-slate-400"
+				<span
+					className="mt-2 shrink-0 text-xs font-bold text-(--color-text-secondary)"
 					aria-hidden="true"
-				/>
+				>
+					{displayNumber}
+				</span>
 
-				<div className="min-w-0 flex-1 space-y-2.5">
-					<input
-						value={parameter.title}
-						onChange={(event) => onChange({ title: event.target.value })}
-						placeholder="Parameter title, e.g. Is signage clearly visible?"
-						aria-label={`Parameter ${index + 1} title`}
-						className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-brand focus:ring-2 focus:ring-brand/15"
+				<div className="min-w-0 flex-1 space-y-3">
+					<FormInput
+						id={`${idPrefix}-title`}
+						label="Parameter"
+						required
+						placeholder="e.g. Reception counter"
+						maxLength={PARAMETER_TITLE_MAX_LENGTH}
+						disabled={disabled}
+						error={parameterErrors?.title?.message}
+						{...register(`${basePath}.title`)}
 					/>
 
 					<TextareaInput
-						name={`parameter-${parameter.id}-criteria`}
-						label=""
-						value={parameter.criteria}
-						onChange={(event) => onChange({ criteria: event.target.value })}
-						placeholder="Criteria / guidance for the reviewer and dealer"
+						id={`${idPrefix}-guidance`}
+						label="How to inspect"
+						placeholder="e.g. Reception table & Tata Hitachi backdrop"
 						rows={2}
+						maxLength={PARAMETER_GUIDANCE_MAX_LENGTH}
+						disabled={disabled}
+						error={parameterErrors?.guidance?.message}
+						{...register(`${basePath}.guidance`)}
 					/>
 
-					<label className="flex items-center gap-2 text-xs text-slate-600">
-						<Checkbox
-							checked={parameter.evidenceRequired}
-							onChange={(checked: boolean) =>
-								onChange({
-									evidenceRequired: checked,
-									minEvidenceCount: checked ? 1 : null,
-									maxEvidenceCount: checked ? 3 : null,
-								})
-							}
+					{parameterFields.length > 0 ? (
+						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+							{parameterFields.map((config) => (
+								<AuditTemplateConfiguredField
+									key={config.key}
+									config={config}
+									name={`${basePath}.attributes.${config.key}`}
+									idPrefix={`${idPrefix}-`}
+									disabled={disabled}
+									error={parameterErrors?.attributes?.[config.key]?.message}
+								/>
+							))}
+						</div>
+					) : null}
+
+					<AuditTemplateScoringMatrix
+						sectionIndex={sectionIndex}
+						parameterIndex={parameterIndex}
+						disabled={disabled}
+					/>
+
+					<div className="rounded-lg border border-(--color-border-default) bg-(--color-bg-surface) p-3">
+						<Controller
+							control={control}
+							name={`${basePath}.evidenceRequired`}
+							render={({ field }) => (
+								<Toggle
+									checked={field.value}
+									onChange={field.onChange}
+									disabled={disabled}
+									size="sm"
+									label="Photo evidence required"
+								/>
+							)}
 						/>
-						Require photo evidence for this item
-					</label>
+
+						{evidenceRequired ? (
+							<div className="mt-3 grid grid-cols-2 gap-3 sm:max-w-sm">
+								<FormInput
+									id={`${idPrefix}-min-evidence`}
+									type="number"
+									inputMode="numeric"
+									label="Min photos"
+									required
+									min={1}
+									max={TEMPLATE_EVIDENCE_MAX_LIMIT}
+									disabled={disabled}
+									error={parameterErrors?.minEvidenceCount?.message}
+									{...register(`${basePath}.minEvidenceCount`, {
+										valueAsNumber: true,
+									})}
+								/>
+								<FormInput
+									id={`${idPrefix}-max-evidence`}
+									type="number"
+									inputMode="numeric"
+									label="Max photos"
+									required
+									min={1}
+									max={TEMPLATE_EVIDENCE_MAX_LIMIT}
+									disabled={disabled}
+									error={parameterErrors?.maxEvidenceCount?.message}
+									{...register(`${basePath}.maxEvidenceCount`, {
+										valueAsNumber: true,
+									})}
+								/>
+							</div>
+						) : null}
+					</div>
+
+					<p className="text-xs text-(--color-text-secondary)">
+						Remarks are always available to the auditor and are optional.
+					</p>
 				</div>
 
 				<div className="flex shrink-0 flex-col items-center gap-1">
@@ -73,33 +172,30 @@ export default function AuditTemplateParameterEditor({
 						variant="transparent"
 						size="sm"
 						Icon={ChevronUp}
-						aria-label="Move item up"
-						disabled={index === 0}
-						onClick={() => moveParameter(sectionId, index, "up")}
+						aria-label={`Move parameter ${displayNumber} up`}
+						disabled={disabled || parameterIndex === 0}
+						onClick={() => onMove(parameterIndex, parameterIndex - 1)}
 					/>
 					<Button
 						appearance="icon"
 						variant="transparent"
 						size="sm"
 						Icon={ChevronDown}
-						aria-label="Move item down"
-						disabled={index === total - 1}
-						onClick={() => moveParameter(sectionId, index, "down")}
+						aria-label={`Move parameter ${displayNumber} down`}
+						disabled={disabled || parameterIndex === parameterCount - 1}
+						onClick={() => onMove(parameterIndex, parameterIndex + 1)}
 					/>
 					<Button
 						appearance="icon"
-						variant="secondary"
+						variant="transparent"
 						size="sm"
 						Icon={Trash2}
-						aria-label="Delete item"
-						onClick={() => removeParameter(sectionId, parameter.id)}
+						aria-label={`Delete parameter ${displayNumber}`}
+						disabled={disabled}
+						onClick={() => onRemove(parameterIndex)}
 					/>
 				</div>
 			</div>
-
-			<p className="mt-2 pl-6 text-[11px] text-slate-400">
-				Score is mandatory (0–5) · Remarks always available, optional
-			</p>
-		</div>
+		</article>
 	);
 }
