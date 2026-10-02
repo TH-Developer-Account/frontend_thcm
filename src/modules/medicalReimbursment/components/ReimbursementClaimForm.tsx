@@ -35,6 +35,7 @@ import {
 	type UseReimbursementClaimFormArgs,
 } from "../hooks/useReimbursementClaimForm";
 import ClaimHeadEntryTable from "./ClaimHeadEntryTable";
+import EligibilitySidePanel from "./EligibilitySidePanel";
 import NavigateButton from "../../../components/common/NavigateButton";
 import type { ActionMenuItem } from "../../../components/common/ActionMenu";
 import ActionMenu from "../../../components/common/ActionMenu";
@@ -91,7 +92,6 @@ const ReimbursementClaimFormContent = ({
 		isSubmitting,
 		isSavingDraft,
 		selectedGrade,
-		resolvedEligibleAmount,
 		lineItemsTotal,
 		isReadOnly,
 		canEditClaimForm,
@@ -174,8 +174,9 @@ const ReimbursementClaimFormContent = ({
 			title: "Employee and Patient Details",
 			Icon: UserRound,
 			defaultExpanded: true,
+			// Total / settled / remaining now live in the sticky EligibilitySidePanel.
 			children: (
-				<div className="grid grid-cols-1 gap-3 px-4.5 items-center sm:grid-cols-2 md:grid-cols-4 xl:grid-cols-5">
+				<div className="grid grid-cols-1 gap-3 px-4.5 items-center sm:grid-cols-2">
 					<FormInput
 						mode={fieldMode}
 						name="ticketNumber"
@@ -205,31 +206,6 @@ const ReimbursementClaimFormContent = ({
 						error={errors.grade}
 						onChange={(option) => handleChange("grade", option?.value ?? "")}
 					/>
-					<FormInput
-						mode={fieldMode}
-						name="totalAmountEligible"
-						label="Total Amount Eligible"
-						value={currencyFormatter.format(resolvedEligibleAmount)}
-						helperText="Calculated automatically from grade."
-					/>
-					<FormInput
-						mode={fieldMode}
-						name="companySettledAmount"
-						label="Amount Settled This Year"
-						value={currencyFormatter.format(
-							Number(values.companySettledAmount || 0),
-						)}
-						helperText="Read-only — pulled from records."
-					/>
-					<FormInput
-						mode={fieldMode}
-						name="companyRemainingAmount"
-						label="Amount Remaining This Year"
-						value={currencyFormatter.format(
-							Number(values.companySettledAmount || 0),
-						)}
-						helperText="Read-only — pulled from records."
-					/>
 				</div>
 			),
 		},
@@ -239,7 +215,7 @@ const ReimbursementClaimFormContent = ({
 			Icon: UserRound,
 			defaultExpanded: true,
 			children: (
-				<div className="grid grid-cols-1 items-center gap-3 px-4.5 sm:grid-cols-2 xl:grid-cols-4">
+				<div className="grid grid-cols-1 items-center gap-3 px-4.5 sm:grid-cols-2 xl:grid-cols-3">
 					<Radio
 						groupLabel="Coverage Type"
 						name="coverageType"
@@ -406,9 +382,11 @@ const ReimbursementClaimFormContent = ({
 	];
 
 	return (
-		<>
+		// Form on the left, sticky eligibility panel on the right (lg+).
+		// Below lg the panel stacks ABOVE the form so the balance is seen first.
+		<div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
 			<form
-				className="flex flex-col gap-2"
+				className="flex min-w-0 flex-col gap-2"
 				noValidate
 				onSubmit={(event) => event.preventDefault()}
 			>
@@ -614,7 +592,9 @@ const ReimbursementClaimFormContent = ({
 					padding="none"
 				/>
 			</form>
-		</>
+
+			<EligibilitySidePanel className="order-first lg:order-last lg:sticky lg:top-4" />
+		</div>
 	);
 };
 

@@ -22,6 +22,7 @@ import {
 	useSavePublicMedicalClaimDraftMutation,
 	useSubmitPublicMedicalClaimMutation,
 } from "../hooks/useMedicalClaimMutations";
+import { useMedicalClaimPermissions } from "../hooks/useMedicalClaimpermissions";
 import { getPublicPageStatusContent } from "../../../content/publicPageStatus.content";
 
 const PUBLIC_MEDICAL_CLAIM_SESSION_KEY = "medical-claim-session-code";
@@ -64,6 +65,7 @@ export type MedicalClaimFormSource = {
 	values?: Partial<ReimbursementClaimFormValues>;
 	lineItems?: Array<ClaimHeadRow | PublicBillShape>;
 	bills?: PublicBillShape[];
+	status?: string | null;
 	employeeName?: string | null;
 	ticketNumber?: string | null;
 	grade?: string | null;
@@ -72,6 +74,7 @@ export type MedicalClaimFormSource = {
 	spouseName?: string | null;
 	medicalAdvanceTaken?: string | number | null;
 	alreadySettled?: string | number | null;
+	signatureDate?: string | null;
 	mobile?: string | null;
 	email?: string | null;
 };
@@ -186,6 +189,8 @@ const mapMedicalClaimValues = (
 			spouseName: claim.spouseName ?? "",
 			medicalAdvanceAmount: String(claim.medicalAdvanceTaken ?? ""),
 			companySettledAmount: String(claim.alreadySettled ?? ""),
+			// Empty → the form hook autofills today's date.
+			claimDate: toDateInputValue(claim.signatureDate),
 		}
 	);
 };
@@ -217,24 +222,19 @@ const appendNonBlankText = (
 	formData.append(name, String(value));
 };
 
-// const resolvePatientName = (values: ReimbursementClaimFormValues): string => {
-// 	const explicitPatientName = values.patientName?.trim();
-// 	if (explicitPatientName) return explicitPatientName;
-// 	if (values.coverageType === "SPOUSE") return values.spouseName.trim();
-// 	return values.employeeName.trim();
-// };
-
 const appendClaimFields = (
 	formData: FormData,
 	submission: ReimbursementClaimSubmission,
 	publicClaim?: PublicClaimShape,
 ): void => {
 	const { values } = submission;
+	// TEMP: grade is not sent for now (UI still uses it for the eligibility
+	// panel). Re-enable once the grade eligibility config is sorted out.
 	appendText(formData, "grade", values.grade);
 	appendText(formData, "location", values.location);
-	// appendText(formData, "patientName", resolvePatientName(values));
 	appendText(formData, "claimCover", values.coverageType);
 	appendText(formData, "spouseName", values.spouseName);
+	appendText(formData, "grade", values.grade);
 	appendNonBlankText(
 		formData,
 		"medicalAdvanceTaken",
@@ -359,6 +359,13 @@ const ReimbursementClaimPublicPage = ({
 	const publicClaim = claimQuery.data as unknown as
 		| PublicClaimShape
 		| undefined;
+
+	// Retired employee via token link: can fill + submit, never reviews.
+	const permissions = useMedicalClaimPermissions({
+		context: "public",
+		status: publicClaim?.status,
+	});
+
 	const resolvedInitialValues = React.useMemo(
 		() => initialValues ?? mapMedicalClaimValues(publicClaim),
 		[initialValues, publicClaim],
@@ -462,12 +469,17 @@ const ReimbursementClaimPublicPage = ({
 	return (
 		<PublicPagesLayout>
 			<ReimbursementClaimForm
-				mode="edit"
+				mode={permissions.mode}
+				canEdit={permissions.canEditClaim}
+				actorRole={permissions.actorRole}
+				canApprove={permissions.canApprove}
+				canClarify={permissions.canClarify}
+				canReviewLineItems={permissions.canReviewLineItems}
 				initialValues={resolvedInitialValues}
 				initialLineItems={resolvedInitialLineItems}
 				actionText="Submit Claim"
-				onSubmit={handleSubmit}
-				onSaveDraft={handleSaveDraft}
+				onSubmit={permissions.canSubmit ? handleSubmit : undefined}
+				onSaveDraft={permissions.canSaveDraft ? handleSaveDraft : undefined}
 			/>
 		</PublicPagesLayout>
 	);

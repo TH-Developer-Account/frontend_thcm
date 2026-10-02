@@ -23,8 +23,6 @@ import {
 import type { MedicalClaimDetail } from "../types/medicalClaimListing.types";
 import type {
 	ClaimHeadRow,
-	ReimbursementClaimActor,
-	ReimbursementClaimFormMode,
 	ReimbursementClaimSubmission,
 } from "../types/reimbursementClaim.types";
 import {
@@ -34,6 +32,7 @@ import {
 	useExportMedicalClaimMutation,
 	useSaveMedicalClaimLineItemRemarksMutation,
 } from "./useMedicalClaimMutations";
+import { useMedicalClaimPermissions } from "./useMedicalClaimpermissions";
 import {
 	useGuestReimbursementClaimDetailQuery,
 	useResubmitGuestMedicalClaimMutation,
@@ -43,6 +42,7 @@ type MedicalClaimViewDetail = MedicalClaimDetail & {
 	status?: string | null;
 	activeWorkflow?: ActiveWorkflowLike<ApprovalStageLike> | null;
 	grade?: string | null;
+	initiatedById?: string | null;
 	createdBy?: MentionableUserInput | null;
 	created_by?: MentionableUserInput | null;
 	initiatedBy?: MentionableUserInput | null;
@@ -54,12 +54,6 @@ type UseMedicalClaimViewArgs = {
 	claimId: string;
 	context?: MedicalClaimContext;
 };
-
-const GUEST_EDITABLE_STATUSES = new Set([
-	"CLARIFIED",
-	"CLARIFICATION_REQUESTED",
-	"THCM_CLARIFICATION_REQUESTED",
-]);
 
 const appendText = (
 	formData: FormData,
@@ -170,57 +164,32 @@ export function useMedicalClaimView({
 
 	const creator = React.useMemo(() => getClaimCreator(detail), [detail]);
 
-	const isCurrentApprover = workflowData.isCurrentStageApprover;
-
-	const isExternalApprover =
-		workflowData.isExternalApprover || workflowData.wasExternalApprover;
-
-	const isCurrentInternalApprover = isCurrentApprover && !isExternalApprover;
-
-	const canActNow = isCurrentInternalApprover && workflowData.canActNow;
-
-	const normalizedStatus = detail?.status?.toUpperCase() ?? "";
-
 	/*
 	 * --------------------------------------------------------------------------
-	 * Actor
+	 * Permissions — all access rules live in useMedicalClaimPermissions.
 	 * --------------------------------------------------------------------------
 	 */
 
-	const actorRole: ReimbursementClaimActor = isGuestRoute
-		? "creator"
-		: isExternalApprover
-			? "externalApprover"
-			: isCurrentInternalApprover
-				? "approver"
-				: "creator";
+	const isInitiator =
+		Boolean(user?.id) &&
+		(detail?.initiatedById === user?.id || creator?.id === user?.id);
 
-	/*
-	 * --------------------------------------------------------------------------
-	 * Permissions
-	 * --------------------------------------------------------------------------
-	 *
-	 * No pathname-based permission logic.
-	 *
-	 * The route only tells us whether this is the guest/external flow.
-	 * The actual edit permission is determined from the claim state.
-	 */
+	const permissions = useMedicalClaimPermissions({
+		context: isGuestRoute ? "guest" : "internal",
+		status: detail?.status,
+		workflow: workflowData,
+		isInitiator,
+	});
 
-	const canEdit = isGuestRoute && GUEST_EDITABLE_STATUSES.has(normalizedStatus);
-
-	const canApprove = !isGuestRoute && canActNow;
-
-	const canApproveLineItems = canApprove;
-
-	const canClarify = canApprove;
-
-	/*
-	 * --------------------------------------------------------------------------
-	 * Form mode / action
-	 * --------------------------------------------------------------------------
-	 */
-
-	const mode: ReimbursementClaimFormMode = canEdit ? "edit" : "view";
+	const {
+		actorRole,
+		mode,
+		canEditClaim: canEdit,
+		canApprove,
+		canClarify,
+		canReviewLineItems: canApproveLineItems,
+		isExternalApprover,
+	} = permissions;
 
 	const actionText = isGuestRoute ? "Resubmit Claim" : "Save Changes";
 
@@ -236,17 +205,9 @@ export function useMedicalClaimView({
 				activeWorkflow,
 				currentUser: user,
 				creator,
-				canComment:
-					!isGuestRoute && !isExternalApprover && isCurrentInternalApprover,
+				canComment: permissions.canComment,
 			}),
-		[
-			activeWorkflow,
-			creator,
-			isCurrentInternalApprover,
-			isExternalApprover,
-			isGuestRoute,
-			user,
-		],
+		[activeWorkflow, creator, permissions.canComment, user],
 	);
 
 	/*
@@ -410,7 +371,7 @@ export function useMedicalClaimView({
 	const detailReferenceNumber = detail?.referenceNumber;
 
 	const handleExport = React.useCallback(async () => {
-		if (!claimId) return;
+		if (!claimId || !permissions.canExport) return;
 
 		let blobUrl: string | undefined;
 		let downloadLink: HTMLAnchorElement | undefined;
@@ -435,7 +396,13 @@ export function useMedicalClaimView({
 			if (blobUrl) window.URL.revokeObjectURL(blobUrl);
 			downloadLink?.remove();
 		}
-	}, [claimId, detailReferenceNumber, exportClaimMutation, showToast]);
+	}, [
+		claimId,
+		detailReferenceNumber,
+		exportClaimMutation,
+		permissions.canExport,
+		showToast,
+	]);
 
 	/*
 	 * --------------------------------------------------------------------------
@@ -529,7 +496,8 @@ export function useMedicalClaimView({
 		actorRole,
 		isGuestRoute,
 
-		// Permissions
+		// Permissions (full object + the flat fields existing pages already use)
+		permissions,
 		canEdit,
 		canComment: commentContext.canComment,
 		canShowCommentSection: Boolean(activeWorkflow) && commentContext.canComment,

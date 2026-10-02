@@ -41,6 +41,32 @@ const sumAmounts = (
 	accessor: (row: ClaimHeadRow) => string | number | null | undefined,
 ) => rows.reduce((total, row) => total + Number(accessor(row) || 0), 0);
 
+/**
+ * Wraps a review cell (Approved Amount / Approved / Remarks) so it is
+ * visibly disabled and can't be clicked or focused, even if the inner
+ * FormInput / Checkbox doesn't style its own disabled state.
+ */
+const ReviewCell = ({
+	locked,
+	className = "",
+	children,
+}: {
+	locked: boolean;
+	className?: string;
+	children: ReactNode;
+}) => (
+	<div
+		className={`${className} ${
+			locked
+				? "pointer-events-none cursor-not-allowed select-none opacity-60"
+				: ""
+		}`}
+		aria-disabled={locked || undefined}
+	>
+		{children}
+	</div>
+);
+
 type TableColumnDefinition<T> = {
 	id?: string;
 	accessorKey?: string;
@@ -76,6 +102,16 @@ export const ClaimHeadEntryTable = () => {
 		handleSaveRemarks,
 		savingRemarksId,
 	} = useReimbursementClaimFormContext();
+
+	// Only the current internal approver can review line items. The retired
+	// employee (public token page / guest portal) — and anyone else who isn't
+	// the active approver — sees these three columns locked.
+	const reviewLocked = !canApproveLineItems;
+
+	// Only the claimant (retired employee) can edit claim rows, so "locked +
+	// editable rows" means the retired employee is filling the form: hide the
+	// review columns entirely. Read-only viewers still see them, locked.
+	const hideReviewColumns = reviewLocked && canEditClaimRows && !isViewMode;
 
 	const columns = useMemo<TableColumnDefinition<ClaimHeadRow>[]>(() => {
 		const tableColumns: TableColumnDefinition<ClaimHeadRow>[] = [
@@ -201,121 +237,145 @@ export const ClaimHeadEntryTable = () => {
 			},
 		];
 
-		tableColumns.push({
-			id: "approvedClaimAmount",
+		if (!hideReviewColumns) {
+			tableColumns.push({
+				id: "approvedClaimAmount",
 
-			header: "Approved Amount",
+				header: "Approved Amount",
 
-			enableSorting: false,
+				enableSorting: false,
 
-			cell: ({ row }) => {
-				const claim = row.original;
+				cell: ({ row }) => {
+					const claim = row.original;
 
-				const isApproved = claim.approvalStatus === "APPROVED";
+					const isApproved = claim.approvalStatus === "APPROVED";
 
-				return (
-					<div className="min-w-10">
-						<FormInput
-							value={claim.approvedClaimAmount ?? claim.amount}
-							inputMode="decimal"
-							disabled={loading || !canApproveLineItems || isApproved}
-							onChange={(event) =>
-								onApprovedAmountChange(claim.id, event.target.value)
-							}
-							error={errors[`approvedClaimAmount-${claim.id}`]}
-						/>
-					</div>
-				);
-			},
-		});
+					return (
+						<ReviewCell locked={reviewLocked} className="min-w-10">
+							<FormInput
+								value={claim.approvedClaimAmount ?? claim.amount}
+								inputMode="decimal"
+								disabled={reviewLocked || loading || isApproved}
+								readOnly={reviewLocked}
+								tabIndex={reviewLocked ? -1 : undefined}
+								onChange={(event) => {
+									if (reviewLocked) return;
+									onApprovedAmountChange(claim.id, event.target.value);
+								}}
+								error={errors[`approvedClaimAmount-${claim.id}`]}
+								aria-label={`Approved amount for bill ${claim.billNumber}`}
+							/>
+						</ReviewCell>
+					);
+				},
+			});
 
-		tableColumns.push({
-			id: "review",
+			tableColumns.push({
+				id: "review",
 
-			header: "Approved",
+				header: "Approved",
 
-			enableSorting: false,
+				enableSorting: false,
 
-			cell: ({ row }) => {
-				const claim = row.original;
+				cell: ({ row }) => {
+					const claim = row.original;
 
-				const isApproved = claim.approvalStatus === "APPROVED";
+					const isApproved = claim.approvalStatus === "APPROVED";
 
-				const isApproving = approvingId === claim.id;
+					const isApproving = approvingId === claim.id;
 
-				const disabled = loading || isApproving || !canApproveLineItems;
+					const disabled = reviewLocked || loading || isApproving;
 
-				return (
-					<div className="flex flex-col gap-1.5 justify-center text-center">
-						<div className="flex items-center gap-1.5 justify-center text-center">
+					// The retired employee only sees the outcome, never the action.
+					const label = isApproved
+						? "Approved"
+						: reviewLocked
+							? "Pending"
+							: "Approve";
+
+					return (
+						<ReviewCell
+							locked={reviewLocked}
+							className="flex items-center justify-center gap-1.5 text-center"
+						>
 							<Checkbox
 								name={`bill-approved-${claim.id}`}
 								checked={isApproved || isApproving}
 								disabled={disabled}
 								onChange={(checked) => {
+									if (disabled) return;
 									if (checked) {
 										void handleApproveLineItem(claim);
 										return;
 									}
 									onToggleLineItemStatus(claim.id);
 								}}
-								label={isApproved ? "Approved" : "Approve"}
+								label={label}
 								size={20}
 							/>
-						</div>
-					</div>
-				);
-			},
-		});
+						</ReviewCell>
+					);
+				},
+			});
 
-		tableColumns.push({
-			id: "remarks",
-			header: "Remarks",
-			widthUnits: 2,
-			enableSorting: false,
-			cell: ({ row }) => {
-				const claim = row.original;
-				const isApproved = claim.approvalStatus === "APPROVED";
-				const isApproving = approvingId === claim.id;
-				const isSavingRemarks = savingRemarksId === claim.id;
+			tableColumns.push({
+				id: "remarks",
+				header: "Remarks",
+				widthUnits: 2,
+				enableSorting: false,
+				cell: ({ row }) => {
+					const claim = row.original;
+					const isApproved = claim.approvalStatus === "APPROVED";
+					const isApproving = approvingId === claim.id;
+					const isSavingRemarks = savingRemarksId === claim.id;
 
-				const disabled =
-					loading ||
-					isApproving ||
-					!canApproveLineItems ||
-					isApproved ||
-					isSavingRemarks;
+					const disabled =
+						reviewLocked ||
+						loading ||
+						isApproving ||
+						isApproved ||
+						isSavingRemarks;
 
-				const hasRemarks = Boolean(claim.remarks?.trim());
+					const hasRemarks = Boolean(claim.remarks?.trim());
 
-				return (
-					<div className="flex min-w-56 items-start gap-2">
-						<div className="min-w-0 flex-1">
-							<FormInput
-								placeholder="Enter remarks"
-								value={claim.remarks ?? ""}
-								disabled={disabled}
-								onChange={(event) =>
-									onRemarksChange(claim.id, event.target.value)
-								}
-								error={errors[`remarks-${claim.id}`]}
-								aria-label={`Remarks for bill ${claim.billNumber}`}
-							/>
-						</div>
+					return (
+						<ReviewCell
+							locked={reviewLocked}
+							className="flex min-w-56 items-start gap-2"
+						>
+							<div className="min-w-0 flex-1">
+								<FormInput
+									placeholder={reviewLocked ? "--" : "Enter remarks"}
+									value={claim.remarks ?? ""}
+									disabled={disabled}
+									readOnly={reviewLocked}
+									tabIndex={reviewLocked ? -1 : undefined}
+									onChange={(event) => {
+										if (reviewLocked) return;
+										onRemarksChange(claim.id, event.target.value);
+									}}
+									error={errors[`remarks-${claim.id}`]}
+									aria-label={`Remarks for bill ${claim.billNumber}`}
+								/>
+							</div>
 
-						<Button
-							type="button"
-							appearance="icon"
-							Icon={Save}
-							disabled={disabled || !hasRemarks}
-							loading={isSavingRemarks}
-							onClick={() => void handleSaveRemarks(claim.id)}
-							title="Save remarks"
-						/>
-					</div>
-				);
-			},
-		});
+							{/* No save action at all when the column is locked. */}
+							{reviewLocked ? null : (
+								<Button
+									type="button"
+									appearance="icon"
+									Icon={Save}
+									disabled={disabled || !hasRemarks}
+									loading={isSavingRemarks}
+									onClick={() => void handleSaveRemarks(claim.id)}
+									title="Save remarks"
+								/>
+							)}
+						</ReviewCell>
+					);
+				},
+			});
+		}
 
 		if (canEditClaimRows && !isViewMode) {
 			tableColumns.push({
@@ -361,12 +421,13 @@ export const ClaimHeadEntryTable = () => {
 		return tableColumns;
 	}, [
 		approvingId,
-		canApproveLineItems,
 		canEditClaimRows,
 		deletingId,
 		errors,
+		hideReviewColumns,
 		isViewMode,
 		loading,
+		reviewLocked,
 		onApprovedAmountChange,
 		onDeleteRow,
 		onEditRow,

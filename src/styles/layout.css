@@ -3074,9 +3074,19 @@
 		}
 	}
 }
-
 /* =====================================================
    PUBLIC PAGE LAYOUT
+
+   Fixed header + fixed footer, only the middle scrolls.
+
+   .public-pages-layout  → exactly one viewport tall, never scrolls
+   .header-public        → fixed height (flex: none)
+   .public-page          → THE scroll container (flex: 1, min-height: 0)
+   .public-page-footer   → fixed height (flex: none)
+
+   Because .public-page is the scroll owner, `position: sticky`
+   inside it (e.g. EligibilitySidePanel `lg:sticky lg:top-4`)
+   now sticks relative to the scrolling content area.
 ===================================================== */
 
 :root {
@@ -3089,14 +3099,18 @@
 		display: flex;
 		flex-direction: column;
 		width: 100%;
-		min-height: 100dvh;
+		height: 100dvh; /* was: min-height: 100dvh — the page itself must not grow */
+		min-height: 0;
+		overflow: hidden; /* the layout never scrolls; .public-page does */
 		background: var(--color-page-bg);
 		color: var(--color-text-primary);
 	}
 
 	.header-public {
+		position: relative;
+		z-index: var(--z-header);
 		width: 100%;
-		flex-shrink: 0;
+		flex: 0 0 auto;
 		padding: var(--space-2) var(--space-4);
 		border-bottom: 0.5px solid var(--color-border);
 	}
@@ -3122,20 +3136,49 @@
 		height: clamp(32px, 3vw, 44px);
 		object-fit: contain;
 	}
+
+	/* Scroll container between the header and the footer. */
 	.public-page {
 		display: flex;
-		flex: 1 0 auto; /* was: flex: 1 — grow to fill, never shrink below content */
+		flex-direction: column; /* container below grows vertically, not horizontally */
+		flex: 1 1 auto; /* was: 1 0 auto — must be allowed to shrink to the space left */
 		width: 100%;
 		min-width: 0;
+		min-height: 0; /* lets a flex child be shorter than its content → enables scrolling */
 		overflow-x: hidden;
+		overflow-y: auto;
 		background: var(--color-page-bg);
+
+		overscroll-behavior-y: contain;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-gutter: stable;
+		scrollbar-width: thin;
+		scrollbar-color: var(--color-scrollbar-thumb) transparent;
+	}
+
+	.public-page::-webkit-scrollbar {
+		width: 5px;
+		height: 5px;
+	}
+
+	.public-page::-webkit-scrollbar-track {
+		background-color: transparent;
+	}
+
+	.public-page::-webkit-scrollbar-thumb {
+		border-radius: var(--radius-full);
+		background-color: var(--color-scrollbar-thumb);
+	}
+
+	.public-page::-webkit-scrollbar-thumb:hover {
+		background-color: var(--color-scrollbar-thumb-hover);
 	}
 
 	.public-page-container {
 		display: flex;
-		flex: 1;
-		align-items: stretch; /* was: center */
-		max-width: var(--layout-content-max-width, 1080px);
+		flex: 1 0 auto; /* grows to fill short pages, grows past the viewport for long ones */
+		align-items: stretch;
+		max-width: var(--layout-content-max-width, 1200px);
 		width: 100%;
 		margin-inline: auto;
 		padding-block: clamp(16px, 2vw, 28px);
@@ -3144,17 +3187,20 @@
 	.public-page-content {
 		width: 100%;
 		min-width: 0;
-		margin: auto; /* was: margin-inline: auto; margin: 0 auto; — auto block margins center short content and never clip tall content */
+		margin: auto; /* centers short content (status cards); resolves to 0 for tall forms */
 	}
 
 	.public-page-footer {
+		position: relative;
+		z-index: var(--z-header);
 		width: 100%;
-		flex-shrink: 0;
+		flex: 0 0 auto;
 		padding: 16px;
 		text-align: center;
 		font-size: max(1.1rem, 11px);
 		color: var(--color-text-secondary);
 		border-top: 0.5px solid var(--color-border);
+		background-color: var(--color-bg-surface);
 	}
 
 	@media (max-width: 639px) {
@@ -3170,15 +3216,27 @@
 		.public-page-container {
 			padding-block: 14px;
 		}
+
+		.public-page-footer {
+			padding: 10px;
+			padding-bottom: max(10px, env(safe-area-inset-bottom));
+		}
 	}
+
+	/*
+	 * Mobile used to make the whole layout scroll. It now uses the same
+	 * model as desktop (header/footer fixed, .public-page scrolls), so the
+	 * old `.public-pages-layout { overflow-y: auto }` override is removed.
+	 */
 	@media (max-width: 767px) {
-		.public-pages-layout {
-			height: 100dvh;
-			min-height: 0;
-			overflow-x: hidden;
-			overflow-y: auto;
-			overscroll-behavior-y: contain;
-			-webkit-overflow-scrolling: touch;
+		.public-page {
+			scrollbar-gutter: auto;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.public-page {
+			scroll-behavior: auto;
 		}
 	}
 }
