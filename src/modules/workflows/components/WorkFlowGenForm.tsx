@@ -1,276 +1,236 @@
-import React, { useId, useState } from "react";
-import Select, { components } from "react-select";
+import { useMemo } from "react";
+import type { SingleValue } from "react-select";
+
+import Button from "../../../components/common/Button";
+import FormInput from "../../../components/forms/FormInput";
+import Radio from "../../../components/forms/Radio";
+import SelectInput from "../../../components/forms/SelectInput";
+import TextareaInput from "../../../components/forms/TextareaInput";
+import { useAuth } from "../../../context/Auth/useAuth";
+
 import type {
-  InputActionMeta,
-  InputProps as ReactSelectInputProps,
-  SingleValue,
-} from "react-select";
-import { useDebounce } from "../../../hooks/useDebounce";
-import { ServerAxios } from "../../../services/ServerAxios";
-import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
-import { CircleCheck } from "lucide-react";
+  WorkflowBasics,
+  WorkflowGenErrors,
+  WorkflowSelectOption,
+} from "../types/types";
 
-/*
- * Mirrors AsyncSelect.tsx's UserOption/UserAsyncSelect shape exactly, scoped
- * to Business Partners. Talks to ServerAxios directly (not
- * businessPartnerApi) for the same reason AsyncSelect.tsx does: this is a
- * shared /components/forms control, not a BP-feature-module file, so it
- * shouldn't reach into that module's api layer.
- */
-export type BusinessPartnerOption = {
-  value: string;
-  label: string;
-  bpType?: string;
-  officeType?: string;
+export type WorkflowGenProps = {
+  basics: WorkflowBasics;
+  errors: WorkflowGenErrors;
+  onBasicChange: <K extends keyof WorkflowBasics>(
+    key: K,
+    value: WorkflowBasics[K],
+  ) => void;
+  onClearError: (key: keyof WorkflowGenErrors) => void;
+  // Optional: WorkflowCreateMain no longer passes them, so the page owns step
+  // navigation. The buttons render only when a handler is supplied.
+  onNext?: () => void;
+  onBack?: () => void;
+  appOptions?: WorkflowSelectOption[];
+  categoryOptions?: WorkflowSelectOption[];
+  showCategory?: boolean;
+  showStatus?: boolean;
 };
 
-type BusinessPartnerListApiRow = {
-  id: string;
-  bpName: string;
-  bpType?: string;
-  officeType?: string;
-};
+const WorkFlowGenForm = ({
+  basics,
+  errors,
+  onBasicChange,
+  onClearError,
+  onNext,
+  onBack,
+  appOptions = [],
+  categoryOptions = [],
+  showCategory = false,
+  showStatus = false,
+}: WorkflowGenProps) => {
+  const { permissions, canManageApp, isSuperAdmin } = useAuth();
 
-type BusinessPartnerAsyncSelectProps = {
-  name?: string;
-  value?: BusinessPartnerOption | null;
-  onChange: (partner: BusinessPartnerOption | null) => void;
-  placeholder?: string;
-  isClearable?: boolean;
-  isDisabled?: boolean;
-  required?: boolean;
-  error?: string;
-  label?: string;
-  helperText?: string;
-  className?: string;
-  success?: boolean;
-};
+  // A user has one permission row per module/action, so the Map keeps each
+  // app once.
+  const permissionAppOptions = useMemo<WorkflowSelectOption[]>(() => {
+    const uniqueApps = new Map<string, WorkflowSelectOption>();
 
-const NoAutofillInput = (
-  props: ReactSelectInputProps<BusinessPartnerOption, false>,
-) => (
-  <components.Input
-    {...props}
-    autoComplete="off"
-    data-lpignore="true"
-    data-1p-ignore="true"
-    data-bwignore="true"
-    data-form-type="other"
-  />
-);
+    permissions.forEach((permission) => {
+      if (!permission.appId || !permission.appName) return;
 
-const BusinessPartnerAsyncSelect: React.FC<BusinessPartnerAsyncSelectProps> = ({
-  name = "businessPartner",
-  value = null,
-  onChange,
-  error,
-  label,
-  helperText,
-  placeholder = "Search business partners...",
-  isClearable = true,
-  isDisabled = false,
-  required = false,
-  success,
-  className = "",
-}) => {
-  const generatedId = useId();
-  const inputId = `${name}-${generatedId}`;
-  const errorId = error ? `${inputId}-error` : undefined;
-  const helperId = helperText && !error ? `${inputId}-helper` : undefined;
-  const describedBy = errorId ?? helperId;
+      uniqueApps.set(permission.appId, {
+        value: permission.appId,
+        label: permission.appName,
+      });
+    });
 
-  const [inputValue, setInputValue] = useState("");
-  const [options, setOptions] = useState<BusinessPartnerOption[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+    return Array.from(uniqueApps.values());
+  }, [permissions]);
 
-  const debouncedInput = useDebounce(inputValue.trim(), 400);
+  const resolvedAppOptions =
+    appOptions.length > 0 ? appOptions : permissionAppOptions;
 
-  React.useEffect(() => {
-    if (!debouncedInput || isDisabled) return;
+  const selectedPermission = permissions.find(
+    (permission) => permission.appId === basics.app,
+  );
 
-    const controller = new AbortController();
-    let requestIsActive = true;
+  const selectedAppKey = selectedPermission?.appKey;
 
-    const fetchPartners = async () => {
-      try {
-        const { data } = await ServerAxios.get<
-          | BusinessPartnerListApiRow[]
-          | {
-              rows?: BusinessPartnerListApiRow[];
-              data?: BusinessPartnerListApiRow[];
-            }
-        >("/business-partner", {
-          params: {
-            search: debouncedInput,
-            // Keep the result list short for a searchable dropdown —
-            // this is a picker, not the full BP listing page.
-            limit: 20,
-          },
-          signal: controller.signal,
-        });
+  // The scope choice only makes sense for someone who can manage the app.
+  const isEligibleForAppScope = Boolean(
+    basics.app &&
+    selectedAppKey &&
+    (isSuperAdmin || canManageApp(selectedAppKey)),
+  );
 
-        if (!requestIsActive) return;
+  const handleAppChange = (option: SingleValue<WorkflowSelectOption>) => {
+    onBasicChange("app", option?.value ?? "");
+    onBasicChange("appDesc", option?.label ?? "");
 
-        const rows = Array.isArray(data)
-          ? data
-          : (data.rows ?? data.data ?? []);
+    // Never carry APP scope from one app into another app.
+    onBasicChange("scope", "USER");
 
-        setOptions(
-          rows.map((partner) => ({
-            value: partner.id,
-            label: partner.bpName,
-            bpType: partner.bpType,
-            officeType: partner.officeType,
-          })),
-        );
-      } catch (err) {
-        if (!requestIsActive || controller.signal.aborted) return;
-
-        console.error("Business partner search failed:", err);
-        setOptions([]);
-      } finally {
-        if (requestIsActive) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    void fetchPartners();
-
-    return () => {
-      requestIsActive = false;
-      controller.abort();
-    };
-  }, [debouncedInput, isDisabled]);
-
-  const handleInputChange = (
-    nextValue: string,
-    actionMeta: InputActionMeta,
-  ) => {
-    if (actionMeta.action !== "input-change") {
-      return;
+    if (!showCategory) {
+      onBasicChange("category", "");
+      onClearError("category");
     }
 
-    setInputValue(nextValue);
-
-    if (!nextValue.trim()) {
-      setOptions([]);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-  };
-
-  const handleChange = (selected: SingleValue<BusinessPartnerOption>) => {
-    onChange(selected);
-    setInputValue("");
-    setOptions([]);
-    setIsLoading(false);
+    onClearError("app");
   };
 
   return (
-    <div
-      className={[
-        "form-field",
-        "select-field",
-        "bp-async-select-field",
-        error ? "has-error" : "",
-        isDisabled ? "is-disabled" : "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      {label && (
-        <div className="form-label-row">
-          <label htmlFor={inputId} className="form-label">
-            {label}
+    <>
+      <div
+        className={`workflow-create-field-row ${
+          showCategory
+            ? "workflow-create-field-row-3"
+            : "workflow-create-field-row-2"
+        }`}
+      >
+        <FormInput
+          name="name"
+          label="Workflow name"
+          value={basics.name}
+          onChange={(event) => {
+            onBasicChange("name", event.target.value);
+            onClearError("name");
+          }}
+          error={errors.name}
+          placeholder="e.g. Standard Approval"
+          helperText="Used to identify this workflow across modules"
+          required
+        />
 
-            {required && (
-              <span className="form-required" aria-hidden="true">
-                *
-              </span>
-            )}
-          </label>
+        <SelectInput
+          name="app"
+          label="App"
+          value={
+            resolvedAppOptions.find((option) => option.value === basics.app) ??
+            null
+          }
+          options={resolvedAppOptions}
+          onChange={handleAppChange}
+          error={errors.app}
+          helperText="For which app this workflow is being created"
+          required
+        />
+
+        {showCategory && (
+          <SelectInput
+            name="category"
+            label="Category"
+            value={
+              categoryOptions.find(
+                (option) => option.value === basics.category,
+              ) ?? null
+            }
+            options={categoryOptions}
+            onChange={(option: SingleValue<WorkflowSelectOption>) => {
+              onBasicChange("category", option?.value ?? "");
+              onClearError("category");
+            }}
+            error={errors.category}
+            helperText="For which category this workflow is being created"
+            required
+          />
+        )}
+      </div>
+
+      {isEligibleForAppScope && (
+        <div className="workflow-create-field-row workflow-create-field-row-2">
+          <Radio
+            name="scope"
+            groupLabel="Who is this workflow for?"
+            label1="Everyone in this app (admin template)"
+            label2="Just me (personal template)"
+            value1="APP"
+            value2="USER"
+            selectedValue={basics.scope ?? "USER"}
+            onChange={(value) => {
+              onBasicChange("scope", value as WorkflowBasics["scope"]);
+            }}
+          />
         </div>
       )}
 
-      <div className="form-input-wrapper">
-        <Select<BusinessPartnerOption, false>
-          inputId={inputId}
-          name={name}
-          value={value}
-          inputValue={inputValue}
-          options={options}
-          isLoading={isLoading}
-          isDisabled={isDisabled}
-          isClearable={isClearable}
-          placeholder={placeholder}
-          filterOption={null}
-          components={{ Input: NoAutofillInput }}
-          unstyled
-          className={[
-            "react-select-container",
-            error ? "react-select-container-error" : "",
-            isDisabled ? "react-select-container-disabled" : "",
-            className,
-            success && !error ? "react-select-container-success" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          classNamePrefix="react-select"
-          menuPortalTarget={
-            typeof document !== "undefined" ? document.body : undefined
-          }
-          menuPosition="fixed"
-          menuPlacement="auto"
-          aria-invalid={error ? "true" : undefined}
-          aria-describedby={describedBy}
-          aria-required={required || undefined}
-          aria-errormessage={error ? errorId : undefined}
-          onInputChange={handleInputChange}
-          onChange={handleChange}
-          noOptionsMessage={({ inputValue: currentInput }) =>
-            currentInput.trim()
-              ? "No matching business partners found"
-              : "Start typing to search business partners"
-          }
-          loadingMessage={() => "Searching business partners..."}
-          formatOptionLabel={(option) => (
-            <div className="select-option-content">
-              <div className="select-option-primary">{option.label}</div>
+      {showStatus && (
+        <div className="workflow-create-field-row workflow-create-field-row-2">
+          <Radio
+            name="status"
+            groupLabel="Status"
+            label1="Active"
+            label2="Inactive"
+            value1="true"
+            value2="false"
+            selectedValue={String(basics.isActive)}
+            onChange={(value) => {
+              onBasicChange("isActive", value === "true");
+            }}
+          />
+        </div>
+      )}
 
-              {option.bpType && (
-                <div className="select-option-secondary">{option.bpType}</div>
-              )}
-            </div>
-          )}
+      <div className="workflow-create-field-row">
+        <TextareaInput
+          name="description"
+          label="Description"
+          className="workflow-create-textarea"
+          rows={2}
+          draggable="false"
+          value={basics.description}
+          onChange={(event) => {
+            onBasicChange("description", event.target.value);
+            onClearError("description");
+          }}
+          error={errors.description}
         />
-
-        {error ? (
-          <ExclamationCircleIcon
-            aria-hidden="true"
-            className="form-error-icon select-error-icon"
-          />
-        ) : success ? (
-          <CircleCheck
-            aria-hidden="true"
-            className="form-success-icon select-success-icon"
-          />
-        ) : null}
       </div>
 
-      {error ? (
-        <p id={errorId} className="form-error-text" role="alert">
-          {error}
-        </p>
-      ) : helperText ? (
-        <p id={helperId} className="form-helper-text">
-          {helperText}
-        </p>
+      {onBack || onNext ? (
+        <div className="workflow-form-actions">
+          {onBack && (
+            <Button
+              type="button"
+              direction="back"
+              text="Back"
+              appearance="standard"
+              variant="outline"
+              size="sm"
+              onClick={onBack}
+            />
+          )}
+
+          {onNext && (
+            <Button
+              type="button"
+              direction="forward"
+              text="Next"
+              appearance="standard"
+              size="sm"
+              variant="brand"
+              onClick={onNext}
+            />
+          )}
+        </div>
       ) : null}
-    </div>
+    </>
   );
 };
 
-export default BusinessPartnerAsyncSelect;
+export default WorkFlowGenForm;
