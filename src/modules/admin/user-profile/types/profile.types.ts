@@ -1,119 +1,91 @@
-export type RoleType =
-	| "admin"
-	| "manager"
-	| "analyst"
-	| "executive"
-	| "agent"
-	| "viewer";
-
-export type PermissionFlag = {
-	read: boolean;
-	write: boolean;
-};
-
-export type PermissionMap = Record<string, PermissionFlag>;
-
-export type User = {
-	id: string;
-	firstName: string;
-	lastName: string;
-	email: string;
-	//   jobRole: string;
-	phone: string;
-	designation?: string | null;
-};
-export type UserResponse = {
-	id: string;
-	first_name: string;
-	last_name: string;
-	email: string;
-	//   TJOB_UUID: string;
-	phone_number: string;
-	designation?: string | null;
-	phone?: string | null;
-};
-export const mapUser = (emp: UserResponse): User => ({
-	id: emp.id,
-	firstName: emp.first_name,
-	lastName: emp.last_name,
-	email: emp.email,
-	//   jobRole: emp.TJOB_UUID,
-	phone: emp.phone_number,
-});
-
-export interface Profile {
-	id: string;
-	assignedUserCount: number;
-	isSystemProfile: boolean;
-	name: string;
-	description: string;
-	users: User[];
-	permissions: ApiPermission[];
-}
-
-export interface WorkspaceAccess {
-	id: string;
-	name: string;
-	apps: AppAccess[];
-}
-
-export interface AppAccess {
-	key: string;
-	name: string;
-	enabled: boolean;
-	modules: ModuleAccess[];
-}
-
-export interface ModuleAccess {
-	key: string;
-	name: string;
-	profiles: ProfileAccess[];
-}
-
-export interface ProfileAccess {
-	id: string;
-	permissions: Permission[];
-}
-
 export type Permission = "read" | "write";
 
-export type WorkspacePermission = {
-	scope: "MODULE" | "APP";
-	appKey: string;
-	moduleKey?: string; // omit when scope === "APP"
-	action: Permission;
-	appName?: string;
-	appId?: string;
+export type PermissionFlag = {
+  read: boolean;
+  write: boolean;
 };
 
-export type WorkspacePayload = WorkspacePermission[];
+// moduleKey → flags, for the single app a profile belongs to.
+export type ModulePermissionState = Record<string, PermissionFlag>;
 
-export interface ApiPermission {
-	scope: "MODULE" | "APP";
-	appKey: string;
-	moduleKey?: string; // present only when scope === "MODULE"
-	moduleName?: string; // present only when scope === "MODULE"
-	action: Permission;
-	appName?: string;
-	appId?: string;
-}
-
-export type PermissionFlags = {
-	read: boolean;
-	write: boolean;
+export type ModuleDefinition = {
+  key: string;
+  name: string;
 };
 
-export type PermState = Record<string, Record<string, PermissionFlags>>;
+export type AppDefinition = {
+  appId: string;
+  appKey: string;
+  appName: string;
+  modules: ModuleDefinition[];
+};
 
-export type Action = "read" | "write";
+export type ProfilePermission = {
+  action: Permission;
+  moduleKey: string;
+  moduleName: string;
+};
 
-export interface Module {
-	key: string;
-	name: string;
+export type ProfilePermissionInput = {
+  action: Permission;
+  moduleKey: string;
+};
+
+export type ProfileAssignee = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+};
+
+export interface Profile {
+  id: string;
+  name: string;
+  description: string | null;
+  isSystemProfile: boolean;
+  appKey: string;
+  appName: string;
+  assignedUserCount: number;
+  users: ProfileAssignee[];
+  permissions: ProfilePermission[];
 }
 
-export interface AppItem {
-	key: string;
-	name: string;
-	modules: Module[];
-}
+export type ProfileFormValues = {
+  appKey: string;
+  name: string;
+  description: string;
+};
+
+export type ProfileAssignmentResult = {
+  assignedCount: number;
+  replacedCount: number;
+  removedCount: number;
+};
+
+// Used by workflow.api.ts for approver pickers.
+export type User = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  designation?: string | null;
+};
+
+export type UserResponse = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+  designation?: string | null;
+  phone?: string | null;
+};
+
+export const mapUser = (employee: UserResponse): User => ({
+  id: employee.id,
+  firstName: employee.first_name,
+  lastName: employee.last_name,
+  email: employee.email,
+  phone: employee.phone_number,
+});
