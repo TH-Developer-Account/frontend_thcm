@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import type { SingleValue } from "react-select";
 
 import Button from "../../../components/common/Button";
@@ -44,39 +43,18 @@ const WorkFlowGenForm = ({
   showCategory = false,
   showStatus = false,
 }: WorkflowGenProps) => {
-  const { permissions, canManageApp, isSuperAdmin } = useAuth();
+  const { accessibleApps, canManageApp, isSuperAdmin } = useAuth();
 
-  // A user has one permission row per module/action, so the Map keeps each
-  // app once.
-  const permissionAppOptions = useMemo<WorkflowSelectOption[]>(() => {
-    const uniqueApps = new Map<string, WorkflowSelectOption>();
+  // A Super Admin manages every app, so eligibility must not depend on the
+  // app being found in the session list. An app admin with no module grant
+  // is found through accessibleApps, not permissions.
+  const selectedAppKey = accessibleApps.find(
+    (app) => app.appId === basics.app,
+  )?.appKey;
 
-    permissions.forEach((permission) => {
-      if (!permission.appId || !permission.appName) return;
-
-      uniqueApps.set(permission.appId, {
-        value: permission.appId,
-        label: permission.appName,
-      });
-    });
-
-    return Array.from(uniqueApps.values());
-  }, [permissions]);
-
-  const resolvedAppOptions =
-    appOptions.length > 0 ? appOptions : permissionAppOptions;
-
-  const selectedPermission = permissions.find(
-    (permission) => permission.appId === basics.app,
-  );
-
-  const selectedAppKey = selectedPermission?.appKey;
-
-  // The scope choice only makes sense for someone who can manage the app.
   const isEligibleForAppScope = Boolean(
     basics.app &&
-    selectedAppKey &&
-    (isSuperAdmin || canManageApp(selectedAppKey)),
+    (isSuperAdmin || (selectedAppKey && canManageApp(selectedAppKey))),
   );
 
   const handleAppChange = (option: SingleValue<WorkflowSelectOption>) => {
@@ -121,10 +99,9 @@ const WorkFlowGenForm = ({
           name="app"
           label="App"
           value={
-            resolvedAppOptions.find((option) => option.value === basics.app) ??
-            null
+            appOptions.find((option) => option.value === basics.app) ?? null
           }
-          options={resolvedAppOptions}
+          options={appOptions}
           onChange={handleAppChange}
           error={errors.app}
           helperText="For which app this workflow is being created"

@@ -67,7 +67,7 @@ const createSelectedOptions = (
 	);
 
 export const useWorkflowListingPage = () => {
-	const { permissions } = useAuth();
+	const { accessibleApps } = useAuth();
 
 	const [searchParams, setSearchParams] = useSearchParams();
 
@@ -100,7 +100,10 @@ export const useWorkflowListingPage = () => {
 	const debouncedSearch = useDebounce(searchInput, 400);
 	const debouncedUserSearch = useDebounce(userSearchInput, 400);
 
-	const appOptions = useMemo(() => formatApps(permissions), [permissions]);
+	const appOptions = useMemo(
+		() => formatApps(accessibleApps),
+		[accessibleApps],
+	);
 
 	const createdByIds = useMemo(
 		() => getArraySearchParam(searchParams, "createdBy"),
