@@ -7,7 +7,6 @@ import type {
 	WorkflowSummary,
 	WorkflowTemplate,
 } from "../types/types";
-import "../utils/workflow.css";
 import { WorkflowFetchList } from "./WorkflowFetchList";
 
 export interface WorkflowEntrySectionProps {

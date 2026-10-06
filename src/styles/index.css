@@ -1,0 +1,32 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&display=swap");
+
+@import "tailwindcss";
+
+@import "./styles/globals.css";
+
+/* Foundation: variables before consumers. */
+@import "./styles/color.css";
+@import "./styles/tailwind-bridge.css"; /* Tailwind classes for the tokens: bg-surface, text-fg, border-line, bg-accent ... */
+@import "./styles/theme.css";
+@import "./styles/typography.css";
+@import "./styles/token.css";
+
+/* Global system. */
+@import "./styles/input.css";
+@import "./styles/layout.css";
+@import "./styles/ui.css";
+@import "./styles/components.css";
+@import "./styles/home.css";
+@import "./styles/table.css";
+@import "./styles/publicPageStatus.css";
+@import "./bp.css";
+@import "./comments.css";
+@import "./workflow.css";
+
+/* Existing feature styles. Keep until each module is migrated. */
+@import "./modules/marketing/marketing.styles.css";
+@import "./styles/user-management.css";
+@import "./modules/vendorOnboarding/vendor.styles.css";
+@import "./modules/admin/user-profile/user-profile.styles.css";
+@import "./modules/admin/Masters/master.styles.css";
+@import "./modules/marketing/leads/styles/leads.css";

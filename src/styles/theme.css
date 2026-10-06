@@ -191,3 +191,17 @@
 		--epc-topbar-mobile-search-width: 100%;
 	}
 }
+
+/* Previously used but undeclared (design-system pass) + the single root-size knob. */
+@layer base {
+	:root {
+		/* ONE place for app density. Effective value before this pass was 70%
+		   (typography.css loaded after globals.css 80%). Change here only. */
+		--root-font-size: 70%;
+
+		--border-width-thick: var(--border-width-strong);
+		--space-20: 5rem;
+		--opacity-disabled: 0.5;
+		--transition-fast: var(--duration-fast) var(--ease-standard);
+	}
+}

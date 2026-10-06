@@ -281,19 +281,19 @@
 
 .workflow-fetch-stage-details {
 	padding: 0.75rem 1rem 1rem;
-	border-top: 1px solid #e5e7eb;
-	background: #fafafa;
+	border-top: 1px solid var(--color-border-default);
+	background: var(--color-bg-surface-subtle);
 }
 
 .workflow-fetch-stage-details > p,
 .workflow-fetch-stage-error {
 	margin: 0;
-	color: #6b7280;
+	color: var(--color-text-muted);
 	font-size: 0.78rem;
 }
 
 .workflow-fetch-stage-error {
-	color: #b91c1c;
+	color: var(--color-status-rejected-text);
 }
 
 .workflow-fetch-stage-details ol {
@@ -306,14 +306,14 @@
 
 .workflow-fetch-stage-details li {
 	padding: 0.65rem 0.75rem;
-	border: 1px solid #e5e7eb;
+	border: 1px solid var(--color-border-default);
 	border-radius: 0.5rem;
-	background: #fff;
+	background: var(--color-bg-surface);
 }
 
 .workflow-fetch-stage-details li p {
 	margin: 0.3rem 0 0;
-	color: #6b7280;
+	color: var(--color-text-muted);
 	font-size: 0.75rem;
 }
 
@@ -336,7 +336,7 @@
 
 .workflow-fetch-stage-heading strong {
 	min-width: 0;
-	color: #1f2937;
+	color: var(--color-text-primary);
 	font-size: 0.82rem;
 	font-weight: 600;
 	line-height: 1.35;
@@ -347,8 +347,8 @@
 	flex-shrink: 0;
 	padding: 0.2rem 0.5rem;
 	border-radius: 999px;
-	background: #fff3eb;
-	color: #c2410c;
+	background: var(--color-brand-subtle);
+	color: var(--color-text-brand);
 	font-size: 0.7rem;
 	font-weight: 600;
 }
@@ -764,9 +764,9 @@
 	gap: 0.75rem;
 	margin-top: 0.875rem;
 	padding: 0.875rem;
-	border: 1px solid #e5e7eb;
+	border: 1px solid var(--color-border-default);
 	border-radius: 0.5rem;
-	background: #fafafa;
+	background: var(--color-bg-surface-subtle);
 }
 
 .workflow-customization-navigation {

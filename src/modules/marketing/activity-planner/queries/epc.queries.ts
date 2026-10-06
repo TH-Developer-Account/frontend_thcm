@@ -9,7 +9,7 @@ import {
 } from "@tanstack/react-query";
 
 import { auditApi, auditKeys } from "../../../../components/ui/audit";
-import { commentApi, commentKeys } from "../../../../components/ui/comments";
+import { commentApi } from "../../../../components/ui/comments";
 import { createPdfApi } from "../../../../common/common.api";
 import { workflowApi } from "../../../workflows";
 import {
@@ -25,6 +25,7 @@ import type {
 	EventDeviationPayload,
 	EventOutcomePayload,
 } from "../types/epc.types";
+import { commentKeys } from "../../../../components/ui/comments/comment.api";
 
 /* -------------------------------------------------------------------------- */
 /*                                    Keys                                    */

@@ -12,7 +12,7 @@ import {
 	type LucideIcon,
 } from "lucide-react";
 
-import type { FormatType } from "../../../../components/ui/comments/richTextarea.types";
+import type { FormatType } from "../../../../components/ui/comments/comment.types";
 import type { ColumnConfig, EpcFilters } from "../types/epc.types";
 import {
 	createActivityActionOptions,
@@ -27,13 +27,16 @@ export const epc_api_routes = {
 	epc_listing_route: "/epc",
 };
 
+// utils/constant.ts
+// Keep in sync with routes/marketingRoutes.tsx.
 export const ACTIVITY_PLANNER_ROUTES = {
-	list: "/marketing/activity-planner",
+	list: "/marketing/activity-planner/listing",
 	create: "/marketing/activity-planner/create",
+	/** Read-only EPC detail page (ActivityPlannerPage). */
 	detail: (epcId: string) => `/marketing/activity-planner/${epcId}`,
-	edit: (epcId: string) => `/marketing/activity-planner/${epcId}/edit`,
-	crf: (epcId: string) => `/marketing/activity-planner/${epcId}/crf`,
-	epf: (epcId: string) => `/marketing/activity-planner/${epcId}/epf`,
+	/** EPC → CRF → EPF stepper. `start` only changes the page title. */
+	addForms: (epcId: string, start?: "crf" | "epf") =>
+		`/marketing/activity-planner/${epcId}/add-forms${start ? `?start=${start}` : ""}`,
 };
 
 /* ========================================================================== */

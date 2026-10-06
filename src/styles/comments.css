@@ -30,7 +30,7 @@
 		flex-direction: column;
 		overflow: hidden;
 
-		border: var(--border-width-default) solid var(--color-neutral-300);
+		border: var(--border-width-default) solid var(--color-border-strong);
 		border-radius: var(--radius-md);
 
 		background-color: var(--comment-panel-bg);
@@ -50,7 +50,7 @@
 
 		border-bottom: var(--border-width-default) solid
 			var(--comment-panel-divider);
-		background-color: var(--color-neutral-100);
+		background-color: var(--color-bg-surface-muted);
 	}
 
 	.comments-subtitle {
@@ -278,7 +278,7 @@
 
 		padding: var(--space-1-5);
 
-		background-color: var(--color-neutral-100);
+		background-color: var(--color-bg-surface-muted);
 	}
 
 	.rich-textarea-input-wrap {

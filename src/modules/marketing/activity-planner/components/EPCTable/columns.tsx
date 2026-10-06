@@ -1,9 +1,10 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { CalendarDays, MapPin } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { trimText } from "../../../../../utils/format";
 import type { EpcListItem } from "../../types/epc.types";
+import { ACTIVITY_PLANNER_ROUTES } from "../../utils/constant";
 import { formatDate } from "../../utils/formatters";
 
 import EPCActionMenu from "./EPCActionMenu";
@@ -38,13 +39,6 @@ const hasEventStarted = (eventFromDate?: string | null) => {
 	return today >= startDate;
 };
 
-// Shared eligibility rule for both Lead and Machine Study creation —
-// confirmed by Fazal to be identical (APPROVED, or CONDUCTED once the
-// event has started). Kept as two named functions rather than one
-// generically-named helper: they read the same today, but Lead and
-// Machine Study are different domain actions and the rule diverging
-// later (e.g. Machine Study needing CONDUCTED only) shouldn't require
-// un-abstracting a shared function under time pressure.
 const canCreateLead = (row: EpcListItem) =>
 	row.status?.toUpperCase() === "APPROVED" ||
 	(row.status?.toUpperCase() === "CONDUCTED" &&
@@ -68,12 +62,15 @@ export const getEPCColumns = ({
 			cellClassName: "epc-column-number",
 		},
 		cell: ({ row }) => (
-			<NavLink
-				to={`/marketing/activity-planner/${row.original.id}`}
+			// EPC number opens the read-only detail/view page. Uses the shared
+			// route constant so it stays in sync with the action menu's "View".
+			<Link
+				to={ACTIVITY_PLANNER_ROUTES.detail(row.original.id)}
 				className="epc-number-link"
+				onClick={(e) => e.stopPropagation()}
 			>
 				{row.original.proposal_number || "--"}
-			</NavLink>
+			</Link>
 		),
 	},
 	{

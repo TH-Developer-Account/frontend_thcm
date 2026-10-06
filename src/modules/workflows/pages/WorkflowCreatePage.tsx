@@ -43,7 +43,7 @@ import { useSaveWorkflowMutation } from "../context/useWorkflowMutations";
 import { useAppLookup } from "../../../common/common.app.helper";
 
 const WorkflowCreatePage = () => {
-	const { user, workspaceId, isLoading, permissions } = useAuth();
+	const { user, workspaceId, isLoading, accessibleApps } = useAuth();
 	const { showToast } = useToast();
 	const { id } = useParams();
 	const { getAppName } = useAppLookup();
@@ -132,8 +132,8 @@ const WorkflowCreatePage = () => {
 	);
 
 	const appOptions = useMemo(
-		() => formatApps(permissions ?? []),
-		[permissions],
+		() => formatApps(accessibleApps),
+		[accessibleApps],
 	);
 
 	const showCategory = basics.appDesc === MARKETING_ACTIVITY_PLANNER_APP_NAME;

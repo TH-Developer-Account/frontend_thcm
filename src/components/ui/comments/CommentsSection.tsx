@@ -15,8 +15,6 @@ import type {
 } from "./comment.types";
 import RichTextareaInput from "./RichTextareaInput";
 
-import "./comments.css";
-
 /* -------------------------------------------------------------------------- */
 /* Utils                                                                      */
 /* -------------------------------------------------------------------------- */

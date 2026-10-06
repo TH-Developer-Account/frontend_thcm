@@ -1,5 +1,3 @@
-import "./comments.css";
-
 export { commentApi } from "./comment.api";
 
 export { default as CommentsSection } from "./CommentsSection";

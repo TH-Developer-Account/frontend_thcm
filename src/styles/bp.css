@@ -1,5 +1,4 @@
 @reference "tailwindcss";
-@import "../../../styles/color.css";
 
 /* Common styles for Business Partners module */
 
@@ -50,7 +49,7 @@ button {
 	}
 	.bp-gen-content-actions {
 		@apply mt-2 pb-2 pt-4 flex justify-end items-center;
-		border-top: 1px solid var(--border-color, #e5e7eb);
+		border-top: 1px solid var(--color-border-default);
 	}
 	.bp-branches-add {
 		@apply flex justify-end items-center pb-2;
@@ -68,7 +67,7 @@ button {
 	}
 
 	.bp-gen-header-clean {
-		@apply flex w-full min-w-0 flex-col gap-3 border-b border-zinc-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5;
+		@apply flex w-full min-w-0 flex-col gap-3 border-b border-line bg-surface px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5;
 	}
 
 	.bp-gen-header-left {
@@ -80,7 +79,7 @@ button {
 	}
 
 	.bp-gen-title-icon {
-		@apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-[#f35a00];
+		@apply flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent-subtle text-accent;
 	}
 
 	.bp-gen-title-wrap {
@@ -88,11 +87,11 @@ button {
 	}
 
 	.bp-gen-title {
-		@apply min-w-0 break-words text-lg font-semibold leading-tight text-zinc-900 sm:text-xl md:text-2xl;
+		@apply min-w-0 break-words text-lg font-semibold leading-tight text-fg sm:text-xl md:text-2xl;
 	}
 
 	.bp-gen-subtext {
-		@apply mt-1 text-xs text-zinc-400 sm:text-sm;
+		@apply mt-1 text-xs text-fg-subtle sm:text-sm;
 	}
 
 	.bp-header-status {
@@ -100,7 +99,7 @@ button {
 	}
 
 	.bp-status-label {
-		@apply text-xs font-medium text-zinc-500 sm:text-sm;
+		@apply text-xs font-medium text-fg-muted sm:text-sm;
 	}
 
 	.bp-gen-content {
@@ -112,7 +111,7 @@ button {
 	}
 
 	.bp-info-mini-card {
-		@apply flex items-start gap-3 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-3.5;
+		@apply flex items-start gap-3 rounded-2xl border border-line bg-surface-subtle/70 p-3.5;
 	}
 
 	.bp-info-mini-icon {
@@ -124,11 +123,11 @@ button {
 	}
 
 	.bp-info-mini-label {
-		@apply text-[11px] font-medium uppercase tracking-wide text-zinc-500;
+		@apply text-[11px] font-medium uppercase tracking-wide text-fg-muted;
 	}
 
 	.bp-info-mini-value {
-		@apply mt-1 break-words text-sm font-semibold leading-5 text-zinc-900;
+		@apply mt-1 break-words text-sm font-semibold leading-5 text-fg;
 	}
 
 	.input-b {
@@ -142,11 +141,11 @@ button {
    Visual values are matched to the old inline BPCards UI. */
 @layer components {
 	.bp-summary-grid {
-		@apply grid gap-3 border-b border-zinc-200 bg-zinc-50/70 px-4 py-4 sm:grid-cols-2 xl:grid-cols-4;
+		@apply grid gap-3 border-b border-line bg-surface-subtle/70 px-4 py-4 sm:grid-cols-2 xl:grid-cols-4;
 	}
 
 	.bp-stat-card {
-		@apply rounded-xl border border-zinc-200 bg-white px-3 py-2.5 flex items-center justify-between;
+		@apply rounded-xl border border-line bg-surface px-3 py-2.5 flex items-center justify-between;
 	}
 
 	.bp-stat-card-inner {
@@ -158,15 +157,15 @@ button {
 	}
 
 	.bp-stat-label {
-		@apply text-[10px] font-medium uppercase tracking-wide text-zinc-400;
+		@apply text-[10px] font-medium uppercase tracking-wide text-fg-subtle;
 	}
 
 	.bp-stat-value {
-		@apply mt-0.5 truncate text-sm font-medium text-zinc-800;
+		@apply mt-0.5 truncate text-sm font-medium text-fg;
 	}
 
 	.bp-stat-icon {
-		@apply rounded-md bg-zinc-100 p-1.5 text-zinc-500;
+		@apply rounded-md bg-surface-muted p-1.5 text-fg-muted;
 	}
 
 	.bp-stat-icon--brand,
@@ -174,7 +173,7 @@ button {
 	.bp-stat-icon--info,
 	.bp-stat-icon--success,
 	.bp-stat-icon--warning {
-		@apply bg-zinc-100 text-zinc-500;
+		@apply bg-surface-muted text-fg-muted;
 	}
 }
 
@@ -193,12 +192,12 @@ button {
 	}
 
 	.bp-info-label {
-		@apply text-xs font-semibold text-gray-900;
+		@apply text-xs font-semibold text-fg;
 		word-break: break-word;
 	}
 
 	.bp-info-value {
-		@apply text-xs text-gray-700;
+		@apply text-xs text-fg-secondary;
 		word-break: break-word;
 		overflow-wrap: anywhere;
 	}
@@ -226,12 +225,12 @@ button {
 	}
 
 	.detail-label {
-		@apply mb-2 text-sm font-medium text-gray-900;
+		@apply mb-2 text-sm font-medium text-fg;
 		word-break: break-word;
 	}
 
 	.detail-value {
-		@apply text-sm text-gray-700;
+		@apply text-sm text-fg-secondary;
 		word-break: break-word;
 		overflow-wrap: anywhere;
 	}
@@ -484,9 +483,9 @@ button {
 	.bp-address-empty {
 		padding: 24px;
 		text-align: center;
-		color: var(--text-secondary, #6b7280);
+		color: var(--color-text-muted);
 		font-size: 14px;
-		border: 1px dashed var(--border-color, #d1d5db);
+		border: 1px dashed var(--color-border-strong);
 		border-radius: 8px;
 	}
 	.bp-address-list-card {
@@ -595,7 +594,7 @@ button {
 		}
 
 		.bp-master-form-checks label {
-			@apply flex cursor-pointer items-center gap-2 text-sm font-medium text-zinc-700;
+			@apply flex cursor-pointer items-center gap-2 text-sm font-medium text-fg-secondary;
 		}
 
 		.bp-master-form-checks input {
@@ -603,7 +602,7 @@ button {
 		}
 
 		.bp-master-form-error {
-			@apply rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700;
+			@apply rounded-lg border border-danger-line bg-danger-bg px-4 py-3 text-sm text-danger-text;
 		}
 
 		.bp-master-form-actions {
@@ -611,11 +610,11 @@ button {
 		}
 
 		[data-theme="dark"] .bp-master-form-checks label {
-			@apply text-zinc-200;
+			@apply text-fg-secondary;
 		}
 
 		[data-theme="dark"] .bp-master-form-error {
-			@apply border-red-800 bg-red-950/40 text-red-300;
+			@apply border-danger-line bg-danger-bg/40 text-danger-text;
 		}
 	}
 }
@@ -634,11 +633,11 @@ button {
 	}
 
 	.bp-people-title {
-		@apply text-sm font-semibold text-zinc-900;
+		@apply text-sm font-semibold text-fg;
 	}
 
 	.bp-people-description {
-		@apply mt-0.5 text-xs text-zinc-500;
+		@apply mt-0.5 text-xs text-fg-muted;
 	}
 
 	.bp-people-user {
@@ -647,7 +646,7 @@ button {
 
 	.bp-people-avatar {
 		@apply flex h-8 w-8 shrink-0 items-center justify-center rounded-full
-			bg-orange-50 text-xs font-semibold text-orange-700 ring-1 ring-orange-200;
+			bg-accent-subtle text-xs font-semibold text-accent-active ring-1 ring-accent-soft;
 	}
 
 	.bp-people-user-copy {
@@ -655,11 +654,11 @@ button {
 	}
 
 	.bp-people-name {
-		@apply truncate text-sm font-medium text-zinc-900;
+		@apply truncate text-sm font-medium text-fg;
 	}
 
 	.bp-people-id {
-		@apply truncate text-xs text-zinc-500;
+		@apply truncate text-xs text-fg-muted;
 	}
 
 	.bp-people-role-details {
@@ -667,12 +666,12 @@ button {
 	}
 
 	.bp-people-role {
-		@apply inline-flex max-w-full truncate rounded-full border border-zinc-200
-			bg-zinc-50 px-2 py-0.5 text-xs font-medium text-zinc-700;
+		@apply inline-flex max-w-full truncate rounded-full border border-line
+			bg-surface-subtle px-2 py-0.5 text-xs font-medium text-fg-secondary;
 	}
 
 	.bp-people-department {
-		@apply truncate text-xs text-zinc-500;
+		@apply truncate text-xs text-fg-muted;
 	}
 
 	.bp-people-contact-list {
@@ -680,12 +679,12 @@ button {
 	}
 
 	.bp-people-contact-row {
-		@apply flex min-w-0 items-center gap-1.5 text-xs text-zinc-600
-			no-underline hover:text-orange-600;
+		@apply flex min-w-0 items-center gap-1.5 text-xs text-fg-secondary
+			no-underline hover:text-accent-text;
 	}
 
 	.bp-people-contact-icon {
-		@apply shrink-0 text-zinc-400;
+		@apply shrink-0 text-fg-subtle;
 	}
 
 	.bp-people-contact {
@@ -697,11 +696,11 @@ button {
 	}
 
 	.bp-people-status--active {
-		@apply bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200;
+		@apply bg-positive-bg text-positive-text ring-1 ring-positive-line;
 	}
 
 	.bp-people-status--inactive {
-		@apply bg-zinc-100 text-zinc-600 ring-1 ring-zinc-200;
+		@apply bg-surface-muted text-fg-secondary ring-1 ring-line;
 	}
 
 	[data-theme="dark"] .bp-people-title,
@@ -730,9 +729,9 @@ button {
 	.bp-address-empty-state,
 	.empty-state {
 		width: 100%;
-		border: 1px dotted #e5e7eb;
+		border: 1px dotted var(--color-border-default);
 		border-radius: 8px;
-		background: #ffffff;
+		background: var(--color-bg-surface);
 	}
 
 	.bp-address-empty-content,
@@ -750,7 +749,7 @@ button {
 		margin: 0;
 		font-size: 12px;
 		font-weight: 600;
-		color: #575757;
+		color: var(--color-text-secondary);
 	}
 
 	.bp-address-empty-description {
@@ -758,7 +757,7 @@ button {
 		max-width: 420px;
 		font-size: 10px;
 		line-height: 1.5;
-		color: #9ca3af;
+		color: var(--color-text-subtle);
 		text-align: center;
 	}
 
@@ -798,11 +797,11 @@ button {
 	}
 
 	.bp-people-selected-chip {
-		@apply flex flex-wrap items-center gap-3 rounded-lg border border-zinc-200 bg-white px-3 py-2;
+		@apply flex flex-wrap items-center gap-3 rounded-lg border border-line bg-surface px-3 py-2;
 	}
 
 	.bp-people-selected-main-check {
-		@apply ml-auto flex cursor-pointer items-center gap-1.5 text-xs font-medium text-zinc-600 whitespace-nowrap;
+		@apply ml-auto flex cursor-pointer items-center gap-1.5 text-xs font-medium text-fg-secondary whitespace-nowrap;
 	}
 
 	.bp-people-selected-main-check input {
@@ -810,7 +809,7 @@ button {
 	}
 
 	.bp-people-selected-remove {
-		@apply flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700;
+		@apply flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-fg-subtle hover:bg-surface-muted hover:text-fg-secondary;
 	}
 
 	[data-theme="dark"] .bp-people-add-panel {
@@ -825,7 +824,7 @@ button {
 }
 @layer components {
 	.bp-create-form-sections {
-		@apply divide-y divide-gray-200;
+		@apply divide-y divide-line;
 	}
 
 	.bp-create-form-section {
@@ -837,11 +836,11 @@ button {
 	}
 
 	.bp-create-form-heading h3 {
-		@apply text-sm font-semibold text-gray-900;
+		@apply text-sm font-semibold text-fg;
 	}
 
 	.bp-create-form-heading p {
-		@apply mt-1 text-xs text-gray-500;
+		@apply mt-1 text-xs text-fg-muted;
 	}
 }
 /* =====================================================
@@ -870,16 +869,16 @@ button {
 	}
 
 	.bp-create-address-form {
-		@apply rounded-lg border border-gray-200;
+		@apply rounded-lg border border-line;
 	}
 
 	.bp-create-card-locked {
-		@apply flex items-center gap-2 rounded-lg border border-dashed border-gray-300
-			px-4 py-6 text-sm text-gray-500;
+		@apply flex items-center gap-2 rounded-lg border border-dashed border-line-strong
+			px-4 py-6 text-sm text-fg-muted;
 	}
 
 	.bp-create-card-empty {
-		@apply px-6 py-4 text-sm text-gray-500;
+		@apply px-6 py-4 text-sm text-fg-muted;
 	}
 
 	[data-theme="dark"] .bp-create-address-form,
