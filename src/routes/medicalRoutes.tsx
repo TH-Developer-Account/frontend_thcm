@@ -32,7 +32,7 @@ export default function MedicalRoutes() {
 					element={<MedicalClaimInitiationForm />}
 				/>
 
-				<Route path="/initiate" element={<MedicalClaimInitiationPage />} />
+				<Route path="initiate" element={<MedicalClaimInitiationPage />} />
 
 				<Route
 					path="initiation/:initiationId"
