@@ -14,6 +14,10 @@ const ActivityPlannerPage = lazy(
 	() =>
 		import("../modules/marketing/activity-planner/pages/ActivityPlannerPage"),
 );
+const EpcFormsWizardPage = lazy(
+	() =>
+		import("../modules/marketing/activity-planner/pages/EpcFormsWizardPage"),
+);
 const LeadsTablePage = lazy(
 	() => import("../modules/marketing/leads/pages/LeadsTablePage"),
 );
@@ -53,6 +57,12 @@ export default function MarketingRoutes() {
 				<Route
 					path="/activity-planner/create"
 					element={<ActivityPlannerPage />}
+				/>
+				{/* EPC → CRF → EPF stepper, opened from the listing action menu.
+				    ?start=crf | epf only changes the page title. */}
+				<Route
+					path="/activity-planner/:id/add-forms"
+					element={<EpcFormsWizardPage />}
 				/>
 				<Route path="/activity-planner/:id" element={<ActivityPlannerPage />} />
 			</Routes>

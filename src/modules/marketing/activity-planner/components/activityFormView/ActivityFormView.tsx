@@ -1,5 +1,7 @@
+import { useState, type ReactNode } from "react";
 import {
 	CalendarCheck,
+	ClipboardCheck,
 	FileDown,
 	FileSpreadsheet,
 	FileText,
@@ -9,6 +11,8 @@ import {
 	Pencil,
 	Plus,
 	ReceiptIndianRupee,
+	TriangleAlert,
+	Truck,
 } from "lucide-react";
 
 import ActionMenu, {
@@ -17,26 +21,96 @@ import ActionMenu, {
 import { Badge } from "../../../../../components/common/Badge";
 import Button from "../../../../../components/common/Button";
 import Card, { type CardSection } from "../../../../../components/common/Card";
+import NavigateButton from "../../../../../components/common/NavigateButton";
+import { TabsBar } from "../../../../../components/common/TabsBar";
+import type { TabItem } from "../../../../../components/common/common.types";
 import { AuditLogSection } from "../../../../../components/ui/audit";
 import { CommentsSection } from "../../../../../components/ui/comments";
+import ApprovalActionsBar from "../../../../../components/ui/ApprovalActionsBar";
 import { ReasonActionModal } from "../../../../../components/ui/ReasonActionModal";
 import { ApprovalWorkflowSection } from "../../../../workflows";
-import {
-	activityPlannerAuditApi,
-	activityPlannerCommentApi,
-} from "../../api/activityPlannerComment.adapter";
+
 import { EventOutcome } from "../../forms/EventOutcome/EventOutcome";
 import { EventReportSection } from "../../forms/EventReport/EventReportSection";
 import EpcForm from "../../forms/EPC/EpcForm";
-import CrfSection from "../../forms/CRF/CrfSection";
+import CrfSection from "../../../crf/CrfSection";
 import EpfSection from "../../forms/EPF/EpfSection";
 import type { ActivityPlannerController } from "../../hooks/useActivityPlanner";
 import ActivityDetailsSection from "./ActivityDetailsSection";
-import NavigateButton from "../../../../../components/common/NavigateButton";
+import {
+	activityPlannerAuditApi,
+	activityPlannerCommentApi,
+} from "../../api/epc.api";
+
+/* ========================================================================== */
+/*                                    Tabs                                    */
+/* ========================================================================== */
+
+type ActivityTab =
+	| "epc"
+	| "epf"
+	| "crf"
+	| "approval"
+	| "outcome"
+	| "report"
+	| "deviation"
+	| "tracking";
+
+/** Full tab order. Conditional tabs are filtered out at render time. */
+const ACTIVITY_TABS: readonly TabItem<ActivityTab>[] = [
+	{ value: "epc", label: "EPC Info" },
+	{ value: "crf", label: "CRF" },
+	{ value: "epf", label: "EPF Info" },
+	{ value: "approval", label: "Approval Workflow" },
+	{ value: "outcome", label: "Event Outcome" },
+	{ value: "report", label: "Event Report" },
+	{ value: "deviation", label: "Deviation" },
+	{ value: "tracking", label: "Tracking" },
+];
+
+const TAB_TITLES: Record<ActivityTab, string> = {
+	epc: "EPC Information",
+	epf: "EPF Information",
+	crf: "CRF Details",
+	approval: "Approval Workflow",
+	outcome: "Event Outcome",
+	report: "Event Report",
+	deviation: "Post-report Outcome & Deviation",
+	tracking: "Order Tracking",
+};
+
+/** Which tab owns each editable section — used to jump there when editing starts. */
+const EDIT_SECTION_TAB: Record<"epc" | "epf" | "crf", ActivityTab> = {
+	epc: "epc",
+	epf: "epf",
+	crf: "crf",
+};
+
+const TabEmptyState = ({
+	Icon,
+	title,
+	description,
+}: {
+	Icon: typeof Truck;
+	title: string;
+	description: ReactNode;
+}) => (
+	<div className="activity-form-view-empty">
+		<Icon size={22} strokeWidth={1.8} aria-hidden="true" />
+		<p className="activity-form-view-empty-title">{title}</p>
+		<p className="activity-form-view-empty-description">{description}</p>
+	</div>
+);
+
+/* ========================================================================== */
+/*                                  Component                                 */
+/* ========================================================================== */
 
 type ActivityFormViewProps = { activity: ActivityPlannerController };
 
 const ActivityFormView = ({ activity }: ActivityFormViewProps) => {
+	const [activeTab, setActiveTab] = useState<ActivityTab>("epc");
+
 	const {
 		epcData,
 		reportData,
@@ -62,6 +136,7 @@ const ActivityFormView = ({ activity }: ActivityFormViewProps) => {
 		closeReasonModal,
 		handleReasonConfirm,
 		handleApproveWorkflow,
+		handleClarifyWorkflow,
 		handleDeviationPreviewSuccess,
 		hasValidatorPreviewed,
 		isValidatingReport,
@@ -77,10 +152,8 @@ const ActivityFormView = ({ activity }: ActivityFormViewProps) => {
 		handleDownloadPdf,
 		handleExport,
 		isSubmittingClarifiedUpdate,
-		canSubmitClarifiedUpdate,
 		submitClarifiedUpdate,
 		isSubmittingDeviationUpdate,
-		canSubmitDeviationUpdate,
 		submitDeviationUpdate,
 		handleRefresh,
 	} = activity;
@@ -98,6 +171,34 @@ const ActivityFormView = ({ activity }: ActivityFormViewProps) => {
 	const status = epcData.status || "IN_PROGRESS";
 	const hasCrfLineItems = Boolean(epcData.crf?.lineItems?.length);
 	const hasEpf = Boolean(epcData.epf);
+
+	/** Comments + audit need a workflow context (approvalId), same rule as before. */
+	const showSidePanels = hasEpf && editingSection !== "epf";
+
+	/** Event outcome / report / deviation tabs only exist when their section applies. */
+	const conditionalTabVisibility: Partial<Record<ActivityTab, boolean>> = {
+		outcome: permissions.canShowInitialEventOutcome,
+		report: permissions.canShowReportSection,
+		deviation: permissions.canShowPostReportEventOutcome,
+	};
+
+	const visibleTabs = ACTIVITY_TABS.filter(
+		(tab) => conditionalTabVisibility[tab.value] ?? true,
+	);
+
+	// If the active tab disappears (status changed after a refresh), fall back to EPC.
+	const currentTab: ActivityTab = visibleTabs.some(
+		(tab) => tab.value === activeTab,
+	)
+		? activeTab
+		: "epc";
+
+	/** Start editing and make sure the owning tab is the one on screen. */
+	const editSection = (section: keyof typeof EDIT_SECTION_TAB) => {
+		setActiveTab(EDIT_SECTION_TAB[section]);
+		startEditing(section);
+	};
+
 	const exportActions: ActionMenuItem<string>[] = [
 		{
 			id: "download-pdf",
@@ -115,7 +216,11 @@ const ActivityFormView = ({ activity }: ActivityFormViewProps) => {
 		},
 	];
 
-	const sections: CardSection[] = [
+	/* ------------------------------------------------------------------------ */
+	/*                              EPC tab                                     */
+	/* ------------------------------------------------------------------------ */
+
+	const buildEpcSections = (): CardSection[] => [
 		{
 			id: "activity-details",
 			title: "Activity Details",
@@ -128,7 +233,7 @@ const ActivityFormView = ({ activity }: ActivityFormViewProps) => {
 						Icon={Pencil}
 						text="Edit EPC"
 						size="sm"
-						onClick={() => startEditing("epc")}
+						onClick={() => editSection("epc")}
 						appearance="standard"
 						variant="outline"
 					/>
@@ -142,140 +247,27 @@ const ActivityFormView = ({ activity }: ActivityFormViewProps) => {
 				/>
 			),
 		},
-		{
-			id: "crf-details",
-			title: "CRF Details",
-			Icon: FileText,
-			defaultExpanded: true,
-			actions:
-				editingSection !== "crf" &&
-				(hasCrfLineItems
-					? permissions.canEditCrf
-					: permissions.canCreateCrf) ? (
-					<Button
-						type="button"
-						Icon={hasCrfLineItems ? Pencil : Plus}
-						text={hasCrfLineItems ? "Edit CRF" : "Create CRF"}
-						size="sm"
-						onClick={() => startEditing("crf")}
-						appearance="standard"
-						variant="outline"
-					/>
-				) : undefined,
-			children: (
-				<CrfSection
-					epcData={epcData}
-					isEditing={editingSection === "crf"}
-					onCancel={cancelEditing}
-					onSuccess={finishEditing}
-				/>
-			),
-		},
-		{
-			id: "epf-details",
-			title: "EPF Details",
-			Icon: ReceiptIndianRupee,
-			defaultExpanded: true,
-			actions:
-				editingSection !== "epf" &&
-				(hasEpf ? permissions.canEditEpf : permissions.canCreateEpf) ? (
-					<Button
-						type="button"
-						Icon={hasEpf ? Pencil : Plus}
-						text={hasEpf ? "Edit EPF" : "Create EPF"}
-						size="sm"
-						onClick={() => startEditing("epf")}
-						appearance="standard"
-						variant="outline"
-					/>
-				) : undefined,
-			children: (
-				<EpfSection
-					epcData={epcData}
-					isEditing={editingSection === "epf"}
-					onCancel={cancelEditing}
-					onSuccess={finishEditing}
-				/>
-			),
-		},
 	];
 
-	if (epcData.epf && editingSection !== "epf") {
-		sections.push(
-			{
-				id: "approval-workflow",
-				title: "Approval Workflow",
-				Icon: GitBranch,
-				defaultExpanded: true,
-				children: (
-					<ApprovalWorkflowSection
-						stages={workflowStages}
-						additionalFlows={
-							deviationPreviewStages.length
-								? [
-										{
-											key: "deviation",
-											title: "Deviation Approval Flow",
-											stages: deviationPreviewStages,
-										},
-									]
-								: []
-						}
-					/>
-				),
-			},
-			{
-				id: "comments",
-				title: "Comment Section",
-				Icon: MessageSquareText,
-				defaultExpanded: true,
-				children: (
-					<CommentsSection
-						subjectType="EPC"
-						subjectId={epcData.id}
-						currentUserId={currentUserId}
-						approvalId={commentContext.approvalId}
-						mentionableUsers={commentContext.mentionableUsers}
-						ccEmails={commentContext.ccEmails}
-						refreshKey={commentsRefreshKey}
-						canComment={canComment}
-						api={activityPlannerCommentApi}
-					/>
-				),
-			},
-			{
-				id: "activity-log",
-				title: "Activity Log",
-				Icon: History,
-				defaultExpanded: true,
-				children: (
-					<AuditLogSection
-						subjectType="EVENT_PROPOSAL"
-						subjectId={epcData.id}
-						entityName="event proposal"
-						refreshKey={commentsRefreshKey}
-						api={activityPlannerAuditApi}
-					/>
-				),
-			},
-		);
-	}
+	/* ------------------------------------------------------------------------ */
+	/*               Event outcome / report / deviation tabs                    */
+	/* ------------------------------------------------------------------------ */
 
-	if (permissions.canShowInitialEventOutcome) {
-		sections.push({
+	const buildOutcomeSections = (): CardSection[] => [
+		{
 			id: "initial-event-outcome",
 			title: "Event Outcome",
 			Icon: CalendarCheck,
 			defaultExpanded: true,
 			children: <EventOutcome eventStatus={eventStatus} epcID={epcData.id} />,
-		});
-	}
+		},
+	];
 
-	if (permissions.canShowReportSection) {
-		sections.push({
+	const buildReportSections = (): CardSection[] => [
+		{
 			id: "event-report",
 			title: "Event Report",
-			Icon: FileText,
+			Icon: ClipboardCheck,
 			defaultExpanded: true,
 			children: (
 				<EventReportSection
@@ -292,128 +284,367 @@ const ActivityFormView = ({ activity }: ActivityFormViewProps) => {
 					onClarifyReport={() => openReasonModal("clarify-report")}
 				/>
 			),
-		});
-	}
+		},
+	];
 
-	if (permissions.canShowPostReportEventOutcome) {
-		sections.push({
-			id: "post-report-event-outcome",
-			title: "Post-report Event Outcome",
-			Icon: CalendarCheck,
+	const buildDeviationSections = (): CardSection[] => {
+		const sections: CardSection[] = [
+			{
+				id: "post-report-event-outcome",
+				title: "Post-report Event Outcome",
+				Icon: TriangleAlert,
+				defaultExpanded: true,
+				children: (
+					<EventOutcome
+						eventStatus={eventStatus}
+						epcID={epcData.id}
+						workspaceId={workspaceId ?? undefined}
+						appId={appId ?? undefined}
+						onSuccess={handleRefresh}
+						onDeviationPreviewSuccess={handleDeviationPreviewSuccess}
+					/>
+				),
+			},
+		];
+
+		// Show the deviation approval flow right where it was generated.
+		if (deviationPreviewStages.length) {
+			sections.push({
+				id: "deviation-approval-flow",
+				title: "Deviation Approval Flow",
+				Icon: GitBranch,
+				defaultExpanded: true,
+				children: (
+					<ApprovalWorkflowSection
+						stages={deviationPreviewStages}
+						additionalFlows={[]}
+					/>
+				),
+			});
+		}
+
+		return sections;
+	};
+
+	/* ------------------------------------------------------------------------ */
+	/*                              EPF tab: budget                             */
+	/* ------------------------------------------------------------------------ */
+
+	const buildEpfSections = (): CardSection[] => [
+		{
+			id: "epf-details",
+			title: "EPF Details",
+			Icon: ReceiptIndianRupee,
 			defaultExpanded: true,
+			actions:
+				editingSection !== "epf" &&
+				(hasEpf ? permissions.canEditEpf : permissions.canCreateEpf) ? (
+					<Button
+						type="button"
+						Icon={hasEpf ? Pencil : Plus}
+						text={hasEpf ? "Edit EPF" : "Create EPF"}
+						size="sm"
+						onClick={() => editSection("epf")}
+						appearance="standard"
+						variant="outline"
+					/>
+				) : undefined,
 			children: (
-				<EventOutcome
-					eventStatus={eventStatus}
-					epcID={epcData.id}
-					workspaceId={workspaceId ?? undefined}
-					appId={appId ?? undefined}
-					onSuccess={handleRefresh}
-					onDeviationPreviewSuccess={handleDeviationPreviewSuccess}
+				<EpfSection
+					epcData={epcData}
+					isEditing={editingSection === "epf"}
+					onCancel={cancelEditing}
+					onSuccess={finishEditing}
 				/>
 			),
-		});
-	}
+		},
+	];
 
-	const showFooter =
-		workflowData.canActNow ||
-		permissions.canShowCloseEpcAction ||
-		permissions.isClarifiedPending ||
-		permissions.isDeviationPending;
+	/* ------------------------------------------------------------------------ */
+	/*                               CRF tab                                    */
+	/* ------------------------------------------------------------------------ */
+
+	const buildCrfSections = (): CardSection[] => [
+		{
+			id: "crf-details",
+			title: "CRF Details",
+			Icon: FileText,
+			defaultExpanded: true,
+			actions:
+				editingSection !== "crf" &&
+				(hasCrfLineItems
+					? permissions.canEditCrf
+					: permissions.canCreateCrf) ? (
+					<Button
+						type="button"
+						Icon={hasCrfLineItems ? Pencil : Plus}
+						text={hasCrfLineItems ? "Edit CRF" : "Create CRF"}
+						size="sm"
+						onClick={() => editSection("crf")}
+						appearance="standard"
+						variant="outline"
+					/>
+				) : undefined,
+			children: (
+				<CrfSection
+					epcData={epcData}
+					isEditing={editingSection === "crf"}
+					onCancel={cancelEditing}
+					onSuccess={finishEditing}
+				/>
+			),
+		},
+	];
+
+	/* ------------------------------------------------------------------------ */
+	/*                            Tab → content                                 */
+	/* ------------------------------------------------------------------------ */
+
+	const renderTabContent = (): {
+		sections?: CardSection[];
+		body?: ReactNode;
+	} => {
+		switch (currentTab) {
+			case "epc":
+				return { sections: buildEpcSections() };
+
+			case "outcome":
+				return { sections: buildOutcomeSections() };
+
+			case "report":
+				return { sections: buildReportSections() };
+
+			case "deviation":
+				return { sections: buildDeviationSections() };
+
+			case "epf":
+				return { sections: buildEpfSections() };
+
+			case "crf":
+				return { sections: buildCrfSections() };
+
+			case "tracking":
+				return {
+					body: (
+						<TabEmptyState
+							Icon={Truck}
+							title="No shipment updates yet"
+							description="Order and shipment tracking will appear here once the CRF is approved and the Shopify order is created."
+						/>
+					),
+				};
+
+			case "approval":
+				return {
+					body:
+						hasEpf && editingSection !== "epf" ? (
+							<div className="activity-form-view-tab-body">
+								<ApprovalWorkflowSection
+									stages={workflowStages}
+									additionalFlows={
+										deviationPreviewStages.length
+											? [
+													{
+														key: "deviation",
+														title: "Deviation Approval Flow",
+														stages: deviationPreviewStages,
+													},
+												]
+											: []
+									}
+								/>
+							</div>
+						) : (
+							<TabEmptyState
+								Icon={GitBranch}
+								title="Workflow not available"
+								description={
+									editingSection === "epf"
+										? "Finish editing the EPF to view the approval workflow."
+										: "The approval workflow starts once the EPF is created."
+								}
+							/>
+						),
+				};
+		}
+	};
+
+	const tabContent = renderTabContent();
+
+	/* ------------------------------------------------------------------------ */
+	/*                          Approval actions bar                            */
+	/* ------------------------------------------------------------------------ */
+
+	// Proposer "submit" slot: clarified resubmission takes priority over deviation.
+	// The hook's submit handlers already toast when the form hasn't been updated yet.
+	const resubmit = permissions.isClarifiedPending
+		? {
+				label: "Submit clarified changes",
+				onSubmit: submitClarifiedUpdate,
+				isSubmitting: isSubmittingClarifiedUpdate,
+			}
+		: permissions.isDeviationPending
+			? {
+					label: "Submit deviation changes",
+					onSubmit: submitDeviationUpdate,
+					isSubmitting: isSubmittingDeviationUpdate,
+				}
+			: null;
+
+	const canCloseEpc =
+		permissions.canShowCloseEpcAction && !permissions.isClosed;
+
+	const showFooter = workflowData.canActNow || canCloseEpc || Boolean(resubmit);
+
+	/* ------------------------------------------------------------------------ */
+	/*                                  Render                                  */
+	/* ------------------------------------------------------------------------ */
 
 	return (
 		<>
-			<Card
-				title={
-					<div className="inline-flex flex-wrap items-center gap-2 text-xl font-semibold tracking-tight text-iron-dark">
+			<div className="activity-form-view">
+				{/* ── Header: back + title (left) · tabs (right) ── */}
+				<header className="activity-form-view-header">
+					<div className="activity-form-view-header-copy">
 						<NavigateButton direction="back" />
-						<div className="flex items-center gap-2 text-iron">
-							<span>{proposerName || "--"} /</span>
-						</div>
-						<span>{title}</span>
-						{proposalNumber !== "--" && <span>/ {proposalNumber} /</span>}
 
-						<Badge status={status} />
-					</div>
-				}
-				actions={
-					<ActionMenu
-						size="xs"
-						row={epcData.id}
-						actions={exportActions}
-						ariaLabel="Activity planner actions"
-						triggerLabel="Actions"
-						triggerVariant="brand"
-					/>
-				}
-				sections={sections}
-				padding="none"
-				footer={
-					showFooter ? (
-						<div className="flex w-full flex-wrap items-center justify-end gap-2">
-							{permissions.isClarifiedPending && (
-								<Button
-									type="button"
-									text={
-										isSubmittingClarifiedUpdate
-											? "Submitting..."
-											: "Submit clarified changes"
-									}
-									variant="brand"
-									appearance="standard"
-									disabled={
-										isSubmittingClarifiedUpdate || !canSubmitClarifiedUpdate
-									}
-									onClick={() => void submitClarifiedUpdate()}
-								/>
-							)}
-							{permissions.isDeviationPending && (
-								<Button
-									type="button"
-									text={
-										isSubmittingDeviationUpdate
-											? "Submitting..."
-											: "Submit deviation changes"
-									}
-									variant="brand"
-									appearance="standard"
-									disabled={
-										isSubmittingDeviationUpdate || !canSubmitDeviationUpdate
-									}
-									onClick={() => void submitDeviationUpdate()}
-								/>
-							)}
-							{workflowData.canActNow && (
-								<>
-									<Button
-										type="button"
-										text="Send for Clarification"
-										variant="outline"
-										appearance="standard"
-										onClick={() => openReasonModal("clarify-workflow")}
-									/>
-									<Button
-										type="button"
-										text="Approve"
-										variant="brand"
-										appearance="standard"
-										onClick={() => void handleApproveWorkflow()}
-									/>
-								</>
-							)}
-							{permissions.canShowCloseEpcAction && (
-								<Button
-									type="button"
-									text={isClosingEPC ? "Closing..." : "Close EPC"}
-									variant="brand"
-									appearance="standard"
-									disabled={isClosingEPC || permissions.isClosed}
-									onClick={() => void handleCloseEPC()}
-								/>
-							)}
+						<div className="min-w-0">
+							<div className="activity-form-view-title-row">
+								<h2 className="activity-form-view-title">{title}</h2>
+								<Badge status={status} />
+							</div>
+
+							<p className="activity-form-view-subtitle">
+								{proposerName || "--"}
+								{proposalNumber !== "--" && <> · {proposalNumber}</>}
+							</p>
 						</div>
-					) : null
-				}
-			/>
+					</div>
+
+					<TabsBar<ActivityTab>
+						items={visibleTabs}
+						active={currentTab}
+						onChange={setActiveTab}
+						variant="soft"
+						ariaLabel="Activity sections"
+						className="activity-form-view-tabs"
+					/>
+				</header>
+
+				{/* ── Body: form (left) · comments + audit (right) ── */}
+				<div
+					className={[
+						"activity-form-view-body",
+						showSidePanels && "has-side-panels",
+					]
+						.filter(Boolean)
+						.join(" ")}
+				>
+					<Card
+						key={currentTab}
+						className="activity-form-view-main"
+						title={TAB_TITLES[currentTab]}
+						actions={
+							<ActionMenu
+								size="xs"
+								row={epcData.id}
+								actions={exportActions}
+								ariaLabel="Activity planner export actions"
+								triggerLabel="Export"
+								triggerVariant="brand"
+							/>
+						}
+						sections={tabContent.sections}
+						padding="none"
+					>
+						{tabContent.body}
+					</Card>
+
+					{showSidePanels && (
+						<aside
+							className="activity-form-view-side"
+							aria-label="Activity log and comments"
+						>
+							<Card
+								className="activity-form-view-panel"
+								accordion
+								defaultExpanded
+								title={
+									<span className="activity-form-view-panel-title">
+										<MessageSquareText size={15} aria-hidden="true" />
+										Comments
+									</span>
+								}
+								padding="none"
+								bodyClassName="activity-form-view-panel-body"
+							>
+								<CommentsSection
+									subjectType="EPC"
+									subjectId={epcData.id}
+									currentUserId={currentUserId}
+									approvalId={commentContext.approvalId}
+									mentionableUsers={commentContext.mentionableUsers}
+									ccEmails={commentContext.ccEmails}
+									refreshKey={commentsRefreshKey}
+									canComment={canComment}
+									api={activityPlannerCommentApi}
+								/>
+							</Card>
+							<Card
+								className="activity-form-view-panel"
+								accordion
+								defaultExpanded
+								title={
+									<span className="activity-form-view-panel-title">
+										<History size={15} aria-hidden="true" />
+										Audit Trail
+									</span>
+								}
+								padding="none"
+								bodyClassName="activity-form-view-panel-body"
+							>
+								<AuditLogSection
+									subjectType="EVENT_PROPOSAL"
+									subjectId={epcData.id}
+									entityName="event proposal"
+									refreshKey={commentsRefreshKey}
+									api={activityPlannerAuditApi}
+								/>
+							</Card>
+						</aside>
+					)}
+				</div>
+
+				{/* ── Footer: approval actions bar ── */}
+				{showFooter && (
+					<footer className="activity-form-view-footer">
+						<ApprovalActionsBar
+							showBack={false}
+							/* Approver: reason box + Clarify / Approve */
+							canApprove={workflowData.canActNow}
+							canClarify={workflowData.canActNow}
+							onApprove={(reason) => handleApproveWorkflow(reason)}
+							onClarify={(reason) => handleClarifyWorkflow(reason)}
+							/* Proposer: resubmit / close */
+							canSubmit={Boolean(resubmit)}
+							onSubmit={resubmit?.onSubmit}
+							submitLabel={
+								resubmit?.isSubmitting
+									? "Submitting..."
+									: (resubmit?.label ?? "Final Submit")
+							}
+							canAcceptAndClose={canCloseEpc}
+							onAcceptAndClose={handleCloseEPC}
+							acceptAndCloseLabel={isClosingEPC ? "Closing..." : "Close EPC"}
+							loading={
+								isClosingEPC ||
+								isSubmittingClarifiedUpdate ||
+								isSubmittingDeviationUpdate
+							}
+						/>
+					</footer>
+				)}
+			</div>
 
 			<ReasonActionModal
 				open={Boolean(reasonModal.mode)}

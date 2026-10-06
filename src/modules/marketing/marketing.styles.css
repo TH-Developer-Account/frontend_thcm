@@ -2190,3 +2190,482 @@ Responsive enterprise detail layout
 		}
 	}
 }
+/* =========================================================
+   ACTIVITY FORM VIEW
+   Header (title + tabs) · Form | Audit + Comments · Footer
+   Add to components.css (or import alongside it).
+========================================================= */
+
+@layer components {
+	.activity-form-view {
+		/* Tune these to match the app shell height (top nav + page padding). */
+		--afv-sticky-top: var(--space-4);
+		--afv-side-offset: 9rem;
+
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	/* ---------------- Header ---------------- */
+
+	.activity-form-view-header {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-4);
+
+		padding: var(--space-3) var(--space-4);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-lg);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.activity-form-view-header-copy {
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	.activity-form-view-title-row {
+		display: flex;
+		min-width: 0;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.activity-form-view-title {
+		min-width: 0;
+		margin: 0;
+		overflow: hidden;
+
+		color: var(--color-text-primary);
+		font-size: var(--font-size-lg);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.activity-form-view-subtitle {
+		margin: var(--space-1) 0 0;
+		overflow: hidden;
+
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
+		font-variant-numeric: tabular-nums;
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.activity-form-view-tabs {
+		flex: 0 0 auto;
+		max-width: 100%;
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+
+	.activity-form-view-tabs::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* ---------------- Body ---------------- */
+
+	.activity-form-view-body {
+		display: grid;
+		min-width: 0;
+		grid-template-columns: minmax(0, 1fr);
+		align-items: start;
+		gap: var(--space-4);
+	}
+
+	.activity-form-view-main {
+		min-width: 0;
+	}
+
+	.activity-form-view-tab-body {
+		padding: var(--space-4);
+	}
+
+	.activity-form-view-empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-2);
+
+		padding: var(--space-10, 2.5rem) var(--space-4);
+
+		color: var(--color-text-muted);
+		text-align: center;
+	}
+
+	.activity-form-view-empty-title {
+		margin: 0;
+		color: var(--color-text-primary);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.activity-form-view-empty-description {
+		max-width: 26rem;
+		margin: 0;
+		font-size: var(--font-size-xs);
+	}
+
+	/* ---------------- Side panels ---------------- */
+
+	.activity-form-view-side {
+		display: grid;
+		min-width: 0;
+		grid-template-rows: repeat(2, minmax(0, 1fr));
+		gap: var(--space-4);
+	}
+
+	.activity-form-view-panel {
+		display: flex;
+		min-height: 0;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	/* Card renders: header + <div id> wrapper + body — keep the flex chain unbroken
+	   so the audit/comment components' own scroll gets a bounded height. */
+	.activity-form-view-panel > div {
+		display: flex;
+		min-height: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+	}
+
+	.activity-form-view-panel-body {
+		display: flex;
+		min-height: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.activity-form-view-panel .ui-card-header {
+		padding-bottom: var(--space-3);
+	}
+	.activity-form-view-panel .ui-card-header ::before {
+		display: none;
+	}
+	.activity-form-view-panel-body > * {
+		min-height: 0;
+		flex: 1 1 auto;
+	}
+
+	.activity-form-view-panel-title {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.activity-form-view-panel-title svg {
+		color: var(--color-brand);
+	}
+
+	/* ---------------- Footer ---------------- */
+
+	/* Sticky shell only — ApprovalActionsBar keeps its own internal layout. */
+	.activity-form-view-footer {
+		/* position: sticky; */
+		/* bottom: 0; */
+		/* z-index: var(--z-sticky); */
+
+		padding: var(--space-3) var(--space-4);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-lg);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.activity-form-view-footer > .approval-actions-bar {
+		width: 100%;
+	}
+
+	/* ---------------- Responsive ---------------- */
+
+	/* Below 1280px: stack; panels get a fixed height so their inner scroll still works. */
+	@media (max-width: 1279px) {
+		.activity-form-view-side {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-template-rows: none;
+		}
+
+		.activity-form-view-panel {
+			height: 28rem;
+		}
+	}
+
+	@media (min-width: 1280px) {
+		.activity-form-view-body.has-side-panels {
+			grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
+		}
+
+		.activity-form-view-side {
+			position: sticky;
+			top: var(--afv-sticky-top);
+			height: calc(100dvh - var(--afv-side-offset));
+		}
+	}
+
+	@media (max-width: 767px) {
+		.activity-form-view-header {
+			align-items: stretch;
+			flex-direction: column;
+		}
+
+		.activity-form-view-side {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+}
+/* =========================================================
+   ACTIVITY FORM VIEW
+   Header (title + tabs) · Form | Audit + Comments · Footer
+   Add to components.css (or import alongside it).
+========================================================= */
+
+@layer components {
+	.activity-form-view {
+		/* Tune these to match the app shell height (top nav + page padding). */
+		--afv-sticky-top: var(--space-4);
+		--afv-side-offset: 9rem;
+
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	/* ---------------- Header ---------------- */
+
+	.activity-form-view-header {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-4);
+
+		padding: var(--space-3) var(--space-4);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-lg);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.activity-form-view-header-copy {
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	.activity-form-view-title-row {
+		display: flex;
+		min-width: 0;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.activity-form-view-title {
+		min-width: 0;
+		margin: 0;
+		overflow: hidden;
+
+		color: var(--color-text-primary);
+		font-size: var(--font-size-lg);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.activity-form-view-subtitle {
+		margin: var(--space-1) 0 0;
+		overflow: hidden;
+
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
+		font-variant-numeric: tabular-nums;
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.activity-form-view-tabs {
+		flex: 0 0 auto;
+		max-width: 100%;
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+
+	.activity-form-view-tabs::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* ---------------- Body ---------------- */
+
+	.activity-form-view-body {
+		display: grid;
+		min-width: 0;
+		grid-template-columns: minmax(0, 1fr);
+		align-items: start;
+		gap: var(--space-4);
+	}
+
+	.activity-form-view-main {
+		min-width: 0;
+	}
+
+	.activity-form-view-tab-body {
+		padding: var(--space-4);
+	}
+
+	.activity-form-view-empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-2);
+
+		padding: var(--space-10, 2.5rem) var(--space-4);
+
+		color: var(--color-text-muted);
+		text-align: center;
+	}
+
+	.activity-form-view-empty-title {
+		margin: 0;
+		color: var(--color-text-primary);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.activity-form-view-empty-description {
+		max-width: 26rem;
+		margin: 0;
+		font-size: var(--font-size-xs);
+	}
+
+	/* ---------------- Side panels (collapsible) ---------------- */
+
+	.activity-form-view-side {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	/* Collapsed panel = header only */
+	.activity-form-view-panel {
+		display: flex;
+		min-height: 0;
+		flex: 0 0 auto;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	/* Expanded panels share the remaining column height */
+	.activity-form-view-panel.ui-card-accordion-expanded {
+		flex: 1 1 0;
+		min-height: 12rem;
+	}
+
+	/* Card renders: header + <div id hidden> wrapper + body — keep the flex chain
+	   unbroken so the audit/comment components' own scroll gets a bounded height. */
+	.activity-form-view-panel > div {
+		display: flex;
+		min-height: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+	}
+
+	/* display:flex above would override the [hidden] attribute when collapsed */
+	.activity-form-view-panel > div[hidden] {
+		display: none;
+	}
+
+	.activity-form-view-panel-body {
+		display: flex;
+		min-height: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.activity-form-view-panel-body > * {
+		min-height: 0;
+		flex: 1 1 auto;
+	}
+
+	.activity-form-view-panel-title {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.activity-form-view-panel-title svg {
+		color: var(--color-brand);
+	}
+
+	/* ---------------- Responsive ---------------- */
+
+	/* Below 1280px: stack; panels get a fixed height so their inner scroll still works. */
+	@media (max-width: 1279px) {
+		.activity-form-view-side {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			align-items: start;
+		}
+
+		.activity-form-view-panel.ui-card-accordion-expanded {
+			height: 28rem;
+		}
+	}
+
+	@media (min-width: 1280px) {
+		.activity-form-view-body.has-side-panels {
+			grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
+		}
+
+		.activity-form-view-side {
+			position: sticky;
+			top: var(--afv-sticky-top);
+			height: calc(100dvh - var(--afv-side-offset));
+		}
+
+		/* Both collapsed: shrink the column to the two headers */
+		.activity-form-view-side:not(:has(.ui-card-accordion-expanded)) {
+			height: auto;
+		}
+	}
+
+	@media (max-width: 767px) {
+		.activity-form-view-header {
+			align-items: stretch;
+			flex-direction: column;
+		}
+
+		.activity-form-view-side {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+}

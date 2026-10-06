@@ -8,7 +8,7 @@ import type {
 	FileDownloadKind,
 	FileModuleEventGroupRow,
 	FileModuleListingRow,
-} from "../../types/fileModule.types";
+} from "../../types/epc.types";
 
 type DownloadFileHandler = (
 	file: FileModuleListingRow,

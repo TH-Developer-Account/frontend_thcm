@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "../../../context/Auth/useAuth";
-import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
+import { getStoredAppId } from "../../marketing/activity-planner/utils/localstorage";
 import { workflowApi } from "../api/workflow.api";
 import { useAttachWorkflowMutation } from "../context/useWorkflowMutations";
 import type {

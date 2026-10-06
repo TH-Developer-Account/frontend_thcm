@@ -9,12 +9,12 @@ import DataTableSkeleton from "../../../../../components/ui/tables/Skeletons/Dat
 import { FilterTabs } from "../../../../../components/ui/FilterTabs";
 import { ServerAxios } from "../../../../../services/ServerAxios";
 
-import { groupFileRowsByEvent } from "../../helpers/fileModule.helper";
+import { groupFileRowsByEvent } from "../../utils/fileModule.helper";
 import type {
 	FileDownloadKind,
 	FileModuleEventGroupRow,
 	FileModuleListingRow,
-} from "../../types/fileModule.types";
+} from "../../types/epc.types";
 
 import { getFilesListingColumns } from "./files.module.columns";
 import { getGroupedFilesListingColumns } from "./files.module.columns";

@@ -4,7 +4,7 @@ import type {
 	FormState,
 	OutcomeStatus,
 	ReportImage,
-} from "../../types/event.report.types";
+} from "../../types/epc.types";
 
 export const getReportImageUrl = (image?: ReportImage | null) => {
 	return image?.url || image?.fileUrl || "";

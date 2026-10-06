@@ -2,9 +2,9 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../../../context/Auth/useAuth";
 import { useToast } from "../../../../../context/Auth/AuthContext";
-import { mapWorkflowStagesToApprovalRows } from "../../utils/approvalTable.mapper";
+import { mapWorkflowStagesToApprovalRows } from "../../utils/formatters";
 
-import type { LineItemOption } from "../../types/lineItem.types";
+import type { LineItemOption } from "../../types/epc.types";
 import type {
 	EpfCrfData,
 	EpfDetailResponse,
@@ -34,20 +34,20 @@ import {
 	buildEpfUpdatePayload,
 	// buildEpfFormData,
 } from "./epf.payload";
-import { validateEpfForm } from "../../utils/validations";
+import { validateEpfForm } from "../../utils/formatters";
 
 import {
 	clearStoredEpcInfo,
 	getStoredAppId,
 	getStoredEpcInfo,
-} from "../../helpers/localstorage";
+} from "../../utils/localstorage";
 
 import {
 	useCreateEpfMutation,
-	useUpdateEpfMutation,
+	useEpfBudgetInfoQuery,
 	useEpfProductsQuery,
-} from "../../queries/useEpfMutation";
-import { useEpfBudgetInfoQuery } from "../../queries/useEpfBudgetInfoQuery";
+	useUpdateEpfMutation,
+} from "../../queries/epf.queries";
 import type { ApiErrorResponse } from "../../../../../context/context.types";
 import type { AxiosError } from "axios";
 import { workflowApi, type ApprovalTableRow } from "../../../../workflows";

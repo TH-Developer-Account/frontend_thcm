@@ -15,7 +15,7 @@ import { formatDate } from "../../utils/formatters";
 import { mapReportToPreviewImages } from "./eventReport.mapper";
 import { getEventReportPreviewState } from "./eventReport.logic";
 
-import type { PreviewProps } from "../../types/event.report.types";
+import type { PreviewProps } from "../../types/epc.types";
 import Button from "../../../../../components/common/Button";
 
 type SkeletonProps = {

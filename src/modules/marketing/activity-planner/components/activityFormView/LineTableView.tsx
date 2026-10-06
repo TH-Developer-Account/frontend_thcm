@@ -6,13 +6,13 @@ import DataTable from "../../../../../components/ui/tables/DataTable/DataTable";
 
 import { CRF_CATEGORIES } from "../../utils/constant";
 
-import type { ColumnConfig, TableRow } from "../../types/lineItem.types";
+import type { ColumnConfig, TableRow } from "../../types/epc.types";
 
 import {
 	ARTWORK_COLUMNS,
 	DEFAULT_COLUMNS,
 	OVERHEAD_COLUMNS,
-} from "../../utils/columnPresets";
+} from "../../utils/constant";
 
 type LineTableViewProps = {
 	title?: string;

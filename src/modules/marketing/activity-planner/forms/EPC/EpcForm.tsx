@@ -1,3 +1,14 @@
+// forms/EPC/EpcForm.tsx
+// Single entry point for the EPC form in every mode — same pattern as the
+// vendor onboarding forms:
+//
+//   <EpcForm mode="create" onSuccess={...} />
+//   <EpcForm mode="edit"   epcId initialData onCancel onSuccess />
+//   <EpcForm mode="view"   initialData />          ← replaces ActivityDetailsSection
+//
+// "view" renders a separate component (EpcFormView) instead of branching
+// inside one component, so useEpcForm is never mounted for read-only display
+// and switching view ⇄ edit remounts the editor with fresh values.
 import React from "react";
 import { RefreshCcw, Save, X } from "lucide-react";
 
@@ -6,26 +17,84 @@ import SectionAccordion from "../../../../../components/common/SectionAccordion"
 
 import { useMasterData } from "../../../../../hooks/useMasterData";
 import { useEpcForm } from "./useEpcForm";
-import EpcFormFields from "./EpcFormFields";
+import EpcFormFields, { type EpcReadOnlyLabels } from "./EpcFormFields";
+import { mapEpcDetailToFormValues } from "./epc.mapper";
 
-import { getStoredEpcInfo } from "../../helpers/localstorage";
-import type { EpcDetailResponse } from "../../types/epc.types";
+import { getStoredEpcInfo } from "../../utils/localstorage";
+import type { EpcDetailResponse, EpcFormValues } from "../../types/epc.types";
+
+export type EpcFormMode = "create" | "edit" | "view";
 
 export type EpcFormProps = {
-	mode?: "create" | "edit";
+	mode?: EpcFormMode;
 	epcId?: string | null;
 	initialData?: EpcDetailResponse | null;
 	onCancel?: () => void;
 	onSuccess?: (data?: any) => Promise<void> | void;
 };
 
-const EpcForm = ({
+/* -------------------------------------------------------------------------- */
+/*                                  View mode                                 */
+/* -------------------------------------------------------------------------- */
+
+/** Labels from the detail response relations — used if a master option is missing. */
+const getReadOnlyLabels = (epc: EpcDetailResponse): EpcReadOnlyLabels => ({
+	region: epc.region?.region_name || epc.region?.title,
+	branch:
+		epc.branch?.branch_name || epc.branch?.title || epc.branch?.description,
+	department: epc.department?.department_name || epc.department?.title,
+	vertical: epc.vertical?.name || epc.vertical?.title || epc.vertical?.code,
+	eventName: epc.event_name?.title,
+	budgetCode: epc.budget_master?.code || epc.budget_master?.value,
+	budgetDescription: epc.budget_master?.description,
+});
+
+type EpcFormViewProps = {
+	initialData?: EpcDetailResponse | null;
+};
+
+const EpcFormView = ({ initialData }: EpcFormViewProps) => {
+	const { data: masters } = useMasterData();
+
+	const values = React.useMemo(
+		() => mapEpcDetailToFormValues(initialData) as EpcFormValues,
+		[initialData],
+	);
+
+	const readOnlyLabels = React.useMemo(
+		() => (initialData ? getReadOnlyLabels(initialData) : undefined),
+		[initialData],
+	);
+
+	if (!initialData) {
+		return <p className="epf-empty-message">EPC details are not available.</p>;
+	}
+
+	return (
+		<EpcFormFields
+			mode="view"
+			values={values}
+			masters={masters}
+			readOnlyLabels={readOnlyLabels}
+		/>
+	);
+};
+
+/* -------------------------------------------------------------------------- */
+/*                              Create / edit mode                            */
+/* -------------------------------------------------------------------------- */
+
+type EpcFormEditorProps = Omit<EpcFormProps, "mode"> & {
+	mode: "create" | "edit";
+};
+
+const EpcFormEditor = ({
 	epcId: propEpcId,
-	mode = "create",
+	mode,
 	initialData,
 	onSuccess,
 	onCancel,
-}: EpcFormProps) => {
+}: EpcFormEditorProps) => {
 	const epcInfo = React.useMemo(() => getStoredEpcInfo(), []);
 
 	const storedEpcId = epcInfo?.epcId || "";
@@ -71,6 +140,7 @@ const EpcForm = ({
 			}
 		>
 			<EpcFormFields
+				mode="edit"
 				values={values}
 				errors={errors}
 				masters={masters}
@@ -116,5 +186,16 @@ const EpcForm = ({
 		</SectionAccordion>
 	);
 };
+
+/* -------------------------------------------------------------------------- */
+/*                                   Entry                                    */
+/* -------------------------------------------------------------------------- */
+
+const EpcForm = ({ mode = "create", ...props }: EpcFormProps) =>
+	mode === "view" ? (
+		<EpcFormView initialData={props.initialData} />
+	) : (
+		<EpcFormEditor mode={mode} {...props} />
+	);
 
 export default EpcForm;

@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ClipboardList } from "lucide-react";
+import { ArrowRight, ClipboardList } from "lucide-react";
 
 import { formatDateTime } from "../../../utils/format";
 
@@ -8,22 +8,86 @@ import { CardEmpty, CardSkeleton } from "../CardSkeleton";
 
 import { auditApi } from "./audit.api";
 import { auditKeys } from "./audit.keys";
-import type { AuditLogRowProps, AuditLogSectionProps } from "./audit.types";
-import { getAuditMessageParts } from "./audit.helper";
+import type {
+	AuditLogEntry,
+	AuditLogRowProps,
+	AuditLogSectionProps,
+} from "./audit.types";
+import {
+	formatAuditLabel,
+	getAuditMessageParts,
+	normalizeAuditAction,
+} from "./audit.helper";
 
-const Separator = () => (
-	<span className="comment-audit-separator" aria-hidden="true">
-		-
-	</span>
-);
+/* -------------------------------------------------------------------------- */
+/* Constants                                                                  */
+/* -------------------------------------------------------------------------- */
 
-// Row renders: Actor - Action - Timestamp - Reason/comment
 const DEFAULT_MESSAGE_TRUNCATE_LENGTH = 50;
 
-/**
- * Renders a piece of the audit line, truncating it with a "...read more"
- * toggle when it exceeds `truncateLength`. Expanded text wraps normally.
- */
+type AuditTone = "brand" | "success" | "warning" | "danger";
+
+const ACTION_TONES: Record<string, AuditTone> = {
+	CREATED: "success",
+	INITIATED: "success",
+	APPROVED: "success",
+	VALIDATED: "success",
+	ACCEPTED: "success",
+	CONDUCTED: "success",
+	CLOSED: "success",
+
+	UPDATED: "warning",
+	RESUBMITTED: "warning",
+	CLARIFY: "warning",
+	CLARIFICATION_REQUESTED: "warning",
+	DEVIATION_RAISED: "warning",
+
+	REJECTED: "danger",
+	CANCELLED: "danger",
+};
+
+const getAuditTone = (entry: AuditLogEntry): AuditTone =>
+	ACTION_TONES[normalizeAuditAction(entry.action)] ?? "brand";
+
+/* -------------------------------------------------------------------------- */
+/* Compact time: "Today, 10:42 am" / "Yesterday, …" / "05 Oct, 10:42 am"      */
+/* -------------------------------------------------------------------------- */
+
+const isSameDay = (a: Date, b: Date) =>
+	a.getFullYear() === b.getFullYear() &&
+	a.getMonth() === b.getMonth() &&
+	a.getDate() === b.getDate();
+
+const formatCompactTime = (value: string): string => {
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return "";
+
+	const now = new Date();
+	const yesterday = new Date(now);
+	yesterday.setDate(now.getDate() - 1);
+
+	const time = date.toLocaleTimeString("en-IN", {
+		hour: "2-digit",
+		minute: "2-digit",
+		hour12: true,
+	});
+
+	if (isSameDay(date, now)) return `Today, ${time}`;
+	if (isSameDay(date, yesterday)) return `Yesterday, ${time}`;
+
+	const day = date.toLocaleDateString("en-IN", {
+		day: "2-digit",
+		month: "short",
+		...(date.getFullYear() !== now.getFullYear() && { year: "numeric" }),
+	});
+
+	return `${day}, ${time}`;
+};
+
+/* -------------------------------------------------------------------------- */
+/* Truncated text with read more                                              */
+/* -------------------------------------------------------------------------- */
+
 const TruncatedText = ({
 	text,
 	truncateLength,
@@ -42,46 +106,25 @@ const TruncatedText = ({
 		return <span className={className}>{text}</span>;
 	}
 
-	if (expanded) {
-		return (
-			<span
-				className={className}
-				style={{
-					display: "block",
-					width: "100%",
-					flexBasis: "100%",
-					minWidth: 0,
-					whiteSpace: "pre-wrap",
-					overflowWrap: "anywhere",
-					wordBreak: "break-word",
-				}}
-			>
-				{text}{" "}
-				<button
-					type="button"
-					className="comment-audit-readmore-toggle"
-					onClick={() => setExpanded(false)}
-				>
-					Show less
-				</button>
-			</span>
-		);
-	}
-
 	return (
 		<span className={className}>
-			{text.slice(0, truncateLength).trimEnd()}
-			{"... "}
+			{expanded ? text : `${text.slice(0, truncateLength).trimEnd()}… `}
+			{expanded ? " " : null}
 			<button
 				type="button"
-				className="comment-audit-readmore-toggle"
-				onClick={() => setExpanded(true)}
+				className="audit-timeline-readmore"
+				aria-expanded={expanded}
+				onClick={() => setExpanded((current) => !current)}
 			>
-				Read more
+				{expanded ? "Show less" : "Read more"}
 			</button>
 		</span>
 	);
 };
+
+/* -------------------------------------------------------------------------- */
+/* Row                                                                        */
+/* -------------------------------------------------------------------------- */
 
 const AuditLogRow = React.memo(function AuditLogRow({
 	entry,
@@ -99,52 +142,72 @@ const AuditLogRow = React.memo(function AuditLogRow({
 	});
 
 	const action = formatMessage?.(entry) ?? actionLabel;
-	const actionText = typeof action === "string" ? action : null;
+	const tone = getAuditTone(entry);
+
+	const stageName = entry.stageName?.trim();
+	const previousStatus = entry.metadata?.previousStatus?.trim();
+	const currentStatus = entry.metadata?.currentStatus?.trim();
+	const hasStatusChange = Boolean(previousStatus || currentStatus);
 
 	return (
-		<div className="comment-card comment-audit-card">
-			<div className="comment-audit-message">
-				<div className="comment-audit-content">
-					<span className="comment-audit-actor">{actorName}</span>
+		<li className={`audit-timeline-item audit-timeline-item--${tone}`}>
+			<span className="audit-timeline-dot" aria-hidden="true" />
 
-					<Separator />
+			{/* Line 1: action + stage chip */}
+			<div className="audit-timeline-head">
+				<span className="audit-timeline-action">{action}</span>
 
-					{actionText !== null ? (
-						<TruncatedText
-							text={actionText}
-							truncateLength={messageTruncateLength}
-							className="comment-audit-text"
-						/>
-					) : (
-						<span className="comment-audit-text">{action}</span>
-					)}
+				{stageName ? (
+					<span className="audit-timeline-chip" title="Workflow stage">
+						{stageName}
+					</span>
+				) : null}
+			</div>
 
-					{entry.createdAt ? (
-						<>
-							<Separator />
+			{/* Line 2: actor · time */}
+			<div className="audit-timeline-meta">
+				<span className="audit-timeline-actor">{actorName}</span>
 
-							<time className="comment-audit-time" dateTime={entry.createdAt}>
-								{formatDateTime(entry.createdAt)}
-							</time>
-						</>
+				{entry.createdAt ? (
+					<>
+						<span aria-hidden="true">·</span>
+						<time
+							dateTime={entry.createdAt}
+							title={formatDateTime(entry.createdAt)}
+						>
+							{formatCompactTime(entry.createdAt)}
+						</time>
+					</>
+				) : null}
+			</div>
+
+			{/* Optional detail box: status change + reason */}
+			{hasStatusChange || reason ? (
+				<div className="audit-timeline-detail">
+					{hasStatusChange ? (
+						<span className="audit-timeline-status">
+							<span>{formatAuditLabel(previousStatus) || "—"}</span>
+							<ArrowRight size={11} aria-hidden="true" />
+							<span>{formatAuditLabel(currentStatus) || "—"}</span>
+						</span>
 					) : null}
 
 					{reason ? (
-						<>
-							<Separator />
-
-							<TruncatedText
-								text={reason}
-								truncateLength={messageTruncateLength}
-								className="comment-audit-reason"
-							/>
-						</>
+						<TruncatedText
+							text={reason}
+							truncateLength={messageTruncateLength}
+							className="audit-timeline-reason"
+						/>
 					) : null}
 				</div>
-			</div>
-		</div>
+			) : null}
+		</li>
 	);
 });
+
+/* -------------------------------------------------------------------------- */
+/* Section                                                                    */
+/* -------------------------------------------------------------------------- */
 
 export default function AuditLogSection({
 	subjectType,
@@ -188,6 +251,7 @@ export default function AuditLogSection({
 			? error.message
 			: "Unable to load activity log"
 		: null;
+
 	return (
 		<section aria-label={title} className="comments-body">
 			{isLoading ? (
@@ -209,17 +273,19 @@ export default function AuditLogSection({
 			) : (
 				<div className="comments-section">
 					<div className="comments-list scrollbar-sleek">
-						{entries.map((entry) => (
-							<AuditLogRow
-								key={entry.id}
-								entry={entry}
-								entityName={entityName}
-								actionMessages={actionMessages}
-								formatMessage={formatMessage}
-								anonymousActorLabel={anonymousActorLabel}
-								messageTruncateLength={messageTruncateLength}
-							/>
-						))}
+						<ol className="audit-timeline">
+							{entries.map((entry) => (
+								<AuditLogRow
+									key={entry.id}
+									entry={entry}
+									entityName={entityName}
+									actionMessages={actionMessages}
+									formatMessage={formatMessage}
+									anonymousActorLabel={anonymousActorLabel}
+									messageTruncateLength={messageTruncateLength}
+								/>
+							))}
+						</ol>
 					</div>
 				</div>
 			)}

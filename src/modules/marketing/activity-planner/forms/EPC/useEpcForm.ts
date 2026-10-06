@@ -3,15 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import { useToast } from "../../../../../context/Auth/AuthContext";
 
-import {
-	clearStoredEpcInfo,
-	getStoredEpcInfo,
-} from "../../helpers/localstorage";
-
-import {
-	useCreateEpcMutation,
-	useUpdateEpcMutation,
-} from "../../queries/useEpcMutation";
+import { clearStoredEpcInfo, getStoredEpcInfo } from "../../utils/localstorage";
 
 import { validateEpcForm, type EpcFormErrors } from "./epc.schema";
 import { buildEpcCreatePayload, buildEpcUpdatePayload } from "./epc.payload";
@@ -23,6 +15,10 @@ import type {
 	EpcDetailResponse,
 	EpcFormValues,
 } from "../../types/epc.types";
+import {
+	useCreateEpcMutation,
+	useUpdateEpcMutation,
+} from "../../queries/epc.queries";
 
 export type EpcFormMode = "create" | "edit";
 export type EpcSaveStatus = "DRAFT" | "SUBMITTED";

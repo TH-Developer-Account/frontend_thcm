@@ -5,13 +5,13 @@ import type {
 	UseEventReportFormProps,
 	FormState,
 	ReportImage,
-} from "../../types/event.report.types";
+} from "../../types/epc.types";
 import {
 	buildEventReportFormData,
 	mapReportToForm,
 	mapReportToImages,
 } from "./eventReport.mapper";
-import { useSubmitEventReportMutation } from "../../queries/useActivityFormQuery";
+import { useSubmitEventReportMutation } from "../../queries/epc.queries";
 
 const revokeObjectUrl = (url?: string | null): void => {
 	if (url?.startsWith("blob:")) {

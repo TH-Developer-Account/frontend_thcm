@@ -10,7 +10,7 @@ import {
 
 import Button from "../../../../../components/common/Button";
 import { getEventReportSectionState } from "./eventReport.logic";
-import type { EventReportSectionProps } from "../../types/event.report.types";
+import type { EventReportSectionProps } from "../../types/epc.types";
 import SectionAccordion from "../../../../../components/common/SectionAccordion";
 
 export const EventReportSection = ({

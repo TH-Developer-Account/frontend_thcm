@@ -44,6 +44,7 @@ const canCreateLead = (row: EpcListItem) =>
 
 export const getEPCColumns = ({
 	onLeadCreate,
+	currentUserId,
 }: EpcColumnActions): ColumnDef<EpcListItem>[] => [
 	{
 		accessorKey: "proposal_number",
@@ -131,6 +132,9 @@ export const getEPCColumns = ({
 			return (
 				<EPCActionMenu
 					row={epc}
+					// currentUserId was already passed in by EPCTable but never used;
+					// the menu now needs it to decide Edit / Add CRF / Add EPF.
+					currentUserId={currentUserId}
 					canCreateLead={canCreateLead(epc)}
 					onLeadCreate={onLeadCreate}
 				/>

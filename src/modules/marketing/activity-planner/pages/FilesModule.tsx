@@ -5,7 +5,7 @@ import PageSectionLayout from "../../../../layout/PageSectionLayout";
 import FileListingTable, {
 	type FileListFilter,
 } from "../components/fileModule/FileListingTable";
-import { useFileModuleQuery } from "../queries/useFileModuleQuery";
+import { useFileModuleQuery } from "../queries/epc.queries";
 
 const FilesModule = () => {
 	const {

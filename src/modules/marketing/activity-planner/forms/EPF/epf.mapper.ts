@@ -2,9 +2,9 @@ import {
 	getLineItemQuantity,
 	getLineItemRate,
 	getLineItemsTotal,
-} from "../../helpers/lineItemHelper";
+} from "../../utils/lineItemHelper";
 
-import type { LineItemOption, TableRow } from "../../types/lineItem.types";
+import type { LineItemOption, TableRow } from "../../types/epc.types";
 import type { EpfFormValues, EpfProduct } from "../../types/epf.types";
 
 const EPF_OVERHEAD_CATEGORY = "EVENT_OVERHEAD";

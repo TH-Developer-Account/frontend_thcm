@@ -1,6 +1,6 @@
 import React from "react";
 import { Upload, X } from "lucide-react";
-import type { ReportImage } from "../../types/event.report.types";
+import type { ReportImage } from "../../types/epc.types";
 
 export const ImageCard = ({
 	image,

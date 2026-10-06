@@ -170,6 +170,16 @@ export const breadcrumbRoutes: BreadcrumbRoute[] = [
 		],
 	},
 	{
+		pattern: "/marketing/activity-planner/:id/add-forms",
+		getBreadcrumbs: () => [
+			{
+				label: "Activity Planner",
+				href: "/marketing/activity-planner/listing",
+			},
+			{ label: "Add Forms" },
+		],
+	},
+	{
 		pattern: "/marketing/activity-planner/leads/view",
 		getBreadcrumbs: () => [
 			{

@@ -9,7 +9,7 @@ import { OUTCOME_OPTIONS, MAX_IMAGES } from "./constant";
 import type {
 	EventReportTemplateProps,
 	OutcomeStatus,
-} from "../../types/event.report.types";
+} from "../../types/epc.types";
 import { ImageCard } from "./ImageCard";
 import { useEventReportForm } from "./useEventReportForm";
 

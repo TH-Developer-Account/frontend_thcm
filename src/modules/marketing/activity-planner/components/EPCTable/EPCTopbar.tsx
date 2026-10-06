@@ -7,7 +7,7 @@ import { FilterTabs } from "../../../../../components/ui/FilterTabs";
 import { Can } from "../../../../../context/permissionHelpers";
 import { useMasterData } from "../../../../../hooks/useMasterData";
 
-import { clearStoredEpcInfo } from "../../helpers/localstorage";
+import { clearStoredEpcInfo } from "../../utils/localstorage";
 import type { EpcFilters } from "../../types/epc.types";
 import {
 	epcListFilterOptions,

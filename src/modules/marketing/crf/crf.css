@@ -1,0 +1,428 @@
+/* crf/crf.css
+   CRF catalog: tabs + product tiles + "Items" summary card.
+   Uses the app's design tokens (token.css / color.css); the fallbacks only
+   matter if a token is renamed. */
+
+@layer components {
+	/* ===================================================== LAYOUT */
+
+	.crf-catalog {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4, 1rem);
+		padding: var(--space-4, 1rem);
+	}
+
+	.crf-catalog-toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3, 0.75rem);
+	}
+
+	.crf-catalog-body {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 17rem;
+		align-items: start;
+		gap: var(--space-6, 1.5rem);
+	}
+
+	.crf-catalog-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+		gap: var(--space-4, 1rem);
+		min-height: 12rem;
+		padding: var(--space-4, 1rem);
+		border: 1px dashed var(--color-border-default, #d4d4d8);
+		border-radius: var(--radius-lg, 0.625rem);
+		background-color: var(--color-bg-subtle, #fafafa);
+	}
+
+	.crf-catalog-empty {
+		grid-column: 1 / -1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2, 0.5rem);
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-sm, 0.875rem);
+	}
+
+	.crf-catalog-empty svg {
+		width: 1.75rem;
+		height: 1.75rem;
+	}
+
+	.crf-catalog-form-error {
+		margin: 0;
+		padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+		border-radius: var(--radius-md, 0.5rem);
+		background-color: var(--color-danger-soft, #fef2f2);
+		color: var(--color-danger, #dc2626);
+		font-size: var(--font-size-sm, 0.875rem);
+	}
+
+	.crf-tab-badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.125rem;
+		height: 1.125rem;
+		margin-left: var(--space-1, 0.25rem);
+		padding-inline: 0.3rem;
+		border-radius: var(--radius-full, 9999px);
+		background-color: var(--color-brand, #f35a00);
+		color: var(--color-brand-foreground, #fff);
+		font-size: 0.6875rem;
+		font-weight: var(--font-weight-semibold, 600);
+		line-height: 1;
+	}
+
+	/* ===================================================== TILE */
+
+	.crf-tile {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2, 0.5rem);
+		height: 100%;
+		min-height: 9.5rem;
+		padding: var(--space-3, 0.75rem);
+		border: 1.5px solid var(--color-border-default, #d4d4d8);
+		border-radius: var(--radius-lg, 0.625rem);
+		background-color: var(--color-bg-surface, #fff);
+		transition:
+			border-color var(--duration-fast, 120ms) var(--ease-standard, ease),
+			box-shadow var(--duration-fast, 120ms) var(--ease-standard, ease);
+	}
+
+	.crf-tile:hover {
+		border-color: var(--color-border-strong, #a1a1aa);
+	}
+
+	.crf-tile--selected {
+		border-color: var(--color-brand, #f35a00);
+		box-shadow: var(--shadow-focus-brand, 0 0 0 3px rgba(243, 90, 0, 0.12));
+	}
+
+	.crf-tile--error {
+		border-color: var(--color-danger, #dc2626);
+	}
+
+	.crf-tile-header {
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+		min-width: 0;
+	}
+
+	.crf-tile-name {
+		margin: 0;
+		overflow: hidden;
+		color: var(--color-text-primary, #18181b);
+		font-size: var(--font-size-sm, 0.875rem);
+		font-weight: var(--font-weight-semibold, 600);
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.crf-tile-part,
+	.crf-tile-size {
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+	}
+
+	.crf-tile-description {
+		display: -webkit-box;
+		margin: 0;
+		overflow: hidden;
+		color: var(--color-text-secondary, #52525b);
+		font-size: var(--font-size-xs, 0.75rem);
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+	}
+
+	.crf-tile-meta {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--space-2, 0.5rem);
+		margin-top: auto;
+	}
+
+	.crf-tile-price {
+		color: var(--color-text-primary, #18181b);
+		font-size: var(--font-size-sm, 0.875rem);
+		font-variant-numeric: tabular-nums;
+		font-weight: var(--font-weight-semibold, 600);
+	}
+
+	/* The sketch's square "+" button */
+	.crf-tile-add {
+		display: grid;
+		place-items: center;
+		width: 100%;
+		height: 2.75rem;
+		border: 1.5px dashed var(--color-border-strong, #a1a1aa);
+		border-radius: var(--radius-md, 0.5rem);
+		background-color: transparent;
+		color: var(--color-text-secondary, #52525b);
+		cursor: pointer;
+		transition:
+			border-color var(--duration-fast, 120ms) var(--ease-standard, ease),
+			color var(--duration-fast, 120ms) var(--ease-standard, ease),
+			background-color var(--duration-fast, 120ms) var(--ease-standard, ease);
+	}
+
+	.crf-tile-add svg {
+		width: 1.375rem;
+		height: 1.375rem;
+	}
+
+	.crf-tile-add:hover,
+	.crf-tile-add:focus-visible {
+		border-color: var(--color-brand, #f35a00);
+		background-color: var(--color-brand-soft, #fff4ed);
+		color: var(--color-brand, #f35a00);
+		outline: none;
+	}
+
+	.crf-tile-controls {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2, 0.5rem);
+	}
+
+	.crf-tile-qty-readonly {
+		font-weight: var(--font-weight-semibold, 600);
+	}
+
+	.crf-tile-size-fields {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1, 0.25rem);
+		font-size: var(--font-size-xs, 0.75rem);
+	}
+
+	.crf-size-input {
+		width: 3.5rem;
+		min-width: 0;
+		padding-inline: var(--space-2, 0.5rem);
+	}
+
+	.crf-unit-select {
+		width: 3.75rem;
+		padding-inline: var(--space-1, 0.25rem);
+	}
+
+	.crf-tile-errors {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		color: var(--color-danger, #dc2626);
+		font-size: var(--font-size-xs, 0.75rem);
+		line-height: var(--line-height-tight, 1.25);
+	}
+
+	/* ===================================================== STEPPER */
+
+	.crf-stepper {
+		display: inline-flex;
+		align-items: stretch;
+		height: 2rem;
+		overflow: hidden;
+		border: 1px solid var(--color-border-default, #d4d4d8);
+		border-radius: var(--radius-md, 0.5rem);
+	}
+
+	.crf-stepper-button {
+		display: grid;
+		place-items: center;
+		width: 2rem;
+		border: 0;
+		background-color: var(--color-bg-subtle, #fafafa);
+		color: var(--color-text-secondary, #52525b);
+		cursor: pointer;
+	}
+
+	.crf-stepper-button svg {
+		width: 0.875rem;
+		height: 0.875rem;
+	}
+
+	.crf-stepper-button:hover:not(:disabled) {
+		color: var(--color-brand, #f35a00);
+	}
+
+	.crf-stepper-button:disabled {
+		cursor: not-allowed;
+		opacity: 0.4;
+	}
+
+	.crf-stepper-input {
+		width: 3rem;
+		border: 0;
+		border-inline: 1px solid var(--color-border-default, #d4d4d8);
+		background: transparent;
+		font-variant-numeric: tabular-nums;
+		font-weight: var(--font-weight-semibold, 600);
+		text-align: center;
+	}
+
+	.crf-stepper-input:focus {
+		outline: none;
+		background-color: var(--color-brand-soft, #fff4ed);
+	}
+
+	.crf-stepper-input[aria-invalid="true"] {
+		color: var(--color-danger, #dc2626);
+	}
+
+	/* ===================================================== SUMMARY CARD */
+
+	.crf-cart {
+		position: sticky;
+		top: var(--space-4, 1rem);
+		overflow: hidden;
+		border: 1.5px solid var(--color-border-strong, #a1a1aa);
+		border-radius: var(--radius-lg, 0.625rem);
+		background-color: var(--color-bg-surface, #fff);
+	}
+
+	.crf-cart-title {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+		border-bottom: 1px solid var(--color-border-default, #d4d4d8);
+		font-weight: var(--font-weight-bold, 700);
+	}
+
+	.crf-cart-count {
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+		font-weight: var(--font-weight-medium, 500);
+	}
+
+	.crf-cart-empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-1, 0.25rem);
+		padding: var(--space-6, 1.5rem) var(--space-4, 1rem);
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-sm, 0.875rem);
+		text-align: center;
+	}
+
+	.crf-cart-empty p {
+		margin: 0;
+	}
+
+	.crf-cart-empty-hint {
+		font-size: var(--font-size-xs, 0.75rem);
+	}
+
+	.crf-cart-list {
+		max-height: 20rem;
+		margin: 0;
+		padding: 0;
+		overflow-y: auto;
+		list-style: none;
+	}
+
+	.crf-cart-row {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		column-gap: var(--space-2, 0.5rem);
+		width: 100%;
+		padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+		border: 0;
+		border-bottom: 1px solid var(--color-border-subtle, #f4f4f5);
+		background: transparent;
+		color: inherit;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.crf-cart-row:hover {
+		background-color: var(--color-bg-subtle, #fafafa);
+	}
+
+	.crf-cart-row--error {
+		box-shadow: inset 3px 0 0 var(--color-danger, #dc2626);
+	}
+
+	.crf-cart-row-name {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		overflow: hidden;
+		font-size: var(--font-size-sm, 0.875rem);
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.crf-cart-row-name small {
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+	}
+
+	.crf-cart-row-qty {
+		font-variant-numeric: tabular-nums;
+	}
+
+	.crf-cart-row-amount {
+		grid-column: 2;
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+		font-variant-numeric: tabular-nums;
+		text-align: right;
+	}
+
+	.crf-cart-total {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1, 0.25rem);
+		padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+		background-color: var(--color-bg-subtle, #f5f5f5);
+		font-size: var(--font-size-sm, 0.875rem);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.crf-cart-total > div {
+		display: flex;
+		justify-content: space-between;
+	}
+
+	.crf-cart-total-amount {
+		font-weight: var(--font-weight-bold, 700);
+	}
+
+	/* ===================================================== RESPONSIVE */
+
+	@media (max-width: 1024px) {
+		.crf-catalog-body {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.crf-cart {
+			position: static;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.crf-catalog {
+			padding: var(--space-2, 0.5rem);
+		}
+
+		.crf-catalog-grid {
+			grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+			padding: var(--space-2, 0.5rem);
+		}
+	}
+}

@@ -1,5 +1,5 @@
 import type { EpcDetailResponse } from "../../types/epc.types";
-import type { EventReportDetail } from "../../types/event.report.types";
+import type { EventReportDetail } from "../../types/epc.types";
 
 export const REPORT_STATUS = {
 	SUBMITTED: ["REPORT_SUBMITTED", "SUBMITTED"],
