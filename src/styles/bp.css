@@ -1,4 +1,5 @@
 @reference "tailwindcss";
+@reference "./tailwind-bridge.css"; /* so @apply can use bg-surface, border-line, text-fg ... */
 
 /* Common styles for Business Partners module */
 
