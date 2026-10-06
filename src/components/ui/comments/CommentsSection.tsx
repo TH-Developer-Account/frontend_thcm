@@ -5,34 +5,109 @@ import { MessageCircle } from "lucide-react";
 import Avatar from "../../common/Avatar";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { formatDateTime } from "../../../utils/format";
+import { CardEmpty, CardSkeleton } from "../CardSkeleton";
 
-import { commentApi } from "./comment.api";
-import { commentKeys } from "./comment.keys";
-import CommentInput from "./CommentInput";
+import { commentApi, commentKeys } from "./comment.api";
 import type {
 	CommentApiAdapter,
 	CommentItem,
 	CommentUser,
 } from "./comment.types";
+import RichTextareaInput from "./RichTextareaInput";
 
 import "./comments.css";
-import { CardEmpty, CardSkeleton } from "../CardSkeleton";
 
-export type CommentsSectionProps = {
-	subjectType: string;
-	subjectId: string;
-	approvalId?: string | null;
+/* -------------------------------------------------------------------------- */
+/* Utils                                                                      */
+/* -------------------------------------------------------------------------- */
+
+const joinClassNames = (
+	...classNames: Array<string | false | null | undefined>
+): string => classNames.filter(Boolean).join(" ");
+
+const getAuthorName = (comment: CommentItem): string =>
+	`${comment.actor?.first_name ?? ""} ${comment.actor?.last_name ?? ""}`.trim() ||
+	"Unknown user";
+
+const uniqueEmails = (emails: readonly string[]) =>
+	Array.from(new Set(emails.map((email) => email.trim()).filter(Boolean)));
+
+/* -------------------------------------------------------------------------- */
+/* Comment input                                                              */
+/* -------------------------------------------------------------------------- */
+
+type CommentInputProps = {
+	placeholder?: string;
+	submitText?: string;
+	disabled?: boolean;
+	autoFocus?: boolean;
+	initialValue?: string;
+	maxLength?: number;
+	onSubmit: (value: string) => Promise<void>;
 	mentionableUsers?: CommentUser[];
-	ccEmails?: string[];
-	refreshKey?: string | number;
-	canComment?: boolean;
-	currentUserId?: string;
-	title?: string;
-	emptyTitle?: string;
-	emptyDescription?: string;
-	api?: CommentApiAdapter;
-	onCommentsChange?: (comments: CommentItem[]) => void;
+	onMentionInsert?: (user: CommentUser) => void;
 };
+
+export const CommentInput = React.memo(function CommentInput({
+	placeholder = "Write a comment...",
+	submitText = "Send",
+	disabled = false,
+	autoFocus = false,
+	initialValue = "",
+	maxLength = 1000,
+	onSubmit,
+	mentionableUsers = [],
+	onMentionInsert,
+}: CommentInputProps) {
+	const [value, setValue] = React.useState(initialValue);
+	const [submitting, setSubmitting] = React.useState(false);
+	const hasRealContent = value.trim().length > 0;
+
+	React.useEffect(() => setValue(initialValue), [initialValue]);
+
+	const handleSubmit = React.useCallback(async () => {
+		if (submitting || disabled || !hasRealContent) return;
+
+		setSubmitting(true);
+		try {
+			await onSubmit(value.trim());
+			setValue("");
+		} catch {
+			// Caller already surfaced the error; keep the draft so the user can retry.
+		} finally {
+			setSubmitting(false);
+		}
+	}, [disabled, hasRealContent, onSubmit, submitting, value]);
+
+	return (
+		<RichTextareaInput
+			name="comment"
+			autoFocus={autoFocus}
+			value={value}
+			disabled={disabled || submitting}
+			placeholder={placeholder}
+			maxLength={maxLength}
+			mentionableUsers={mentionableUsers}
+			onMentionInsert={onMentionInsert}
+			onChange={(event) => setValue(event.target.value)}
+			onKeyDown={(event) => {
+				// Ctrl/Cmd + Enter sends.
+				if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+					event.preventDefault();
+					void handleSubmit();
+				}
+			}}
+			submitText={submitText}
+			submitting={submitting}
+			hasRealContent={hasRealContent}
+			onSubmit={handleSubmit}
+		/>
+	);
+});
+
+/* -------------------------------------------------------------------------- */
+/* Comment card                                                               */
+/* -------------------------------------------------------------------------- */
 
 type CommentCardProps = {
 	comment: CommentItem;
@@ -40,50 +115,42 @@ type CommentCardProps = {
 	level?: number;
 };
 
-const getCommentAuthorName = (comment: CommentItem): string => {
-	const name =
-		`${comment.actor?.first_name ?? ""} ${comment.actor?.last_name ?? ""}`.trim();
-	return name || "Unknown user";
-};
-
-const normalizeEmailList = (emails: string[]) =>
-	Array.from(new Set(emails.map((email) => email.trim()).filter(Boolean)));
-
 const CommentCard = React.memo(function CommentCard({
 	comment,
 	currentUserId,
 	level = 0,
 }: CommentCardProps) {
-	const isSelf = comment.actor?.id === currentUserId;
+	const isSelf = Boolean(currentUserId) && comment.actor?.id === currentUserId;
 
 	return (
 		<article
-			className={[
+			className={joinClassNames(
 				"comment-card",
 				level > 0 && "comment-reply-card",
 				isSelf && "comment-card-self",
-			]
-				.filter(Boolean)
-				.join(" ")}
+			)}
 		>
 			<div
-				className={["comment-main", isSelf && "comment-main-self"]
-					.filter(Boolean)
-					.join(" ")}
+				className={joinClassNames(
+					"comment-main",
+					isSelf && "comment-main-self",
+				)}
 			>
 				<Avatar
 					firstName={comment.actor?.first_name}
 					lastName={comment.actor?.last_name}
 					size="sm"
 				/>
+
 				<div className="comment-content">
 					<div
-						className={["comment-bubble", isSelf && "comment-bubble-self"]
-							.filter(Boolean)
-							.join(" ")}
+						className={joinClassNames(
+							"comment-bubble",
+							isSelf && "comment-bubble-self",
+						)}
 					>
 						<div className="comment-meta">
-							<p className="comment-author">{getCommentAuthorName(comment)}</p>
+							<p className="comment-author">{getAuthorName(comment)}</p>
 							<time className="comment-submeta" dateTime={comment.createdAt}>
 								{formatDateTime(comment.createdAt)}
 							</time>
@@ -109,6 +176,26 @@ const CommentCard = React.memo(function CommentCard({
 	);
 });
 
+/* -------------------------------------------------------------------------- */
+/* Section                                                                    */
+/* -------------------------------------------------------------------------- */
+
+export type CommentsSectionProps = {
+	subjectType: string;
+	subjectId: string;
+	approvalId?: string | null;
+	mentionableUsers?: CommentUser[];
+	ccEmails?: string[];
+	refreshKey?: string | number;
+	canComment?: boolean;
+	currentUserId?: string;
+	title?: string;
+	emptyTitle?: string;
+	emptyDescription?: string;
+	api?: CommentApiAdapter;
+	onCommentsChange?: (comments: CommentItem[]) => void;
+};
+
 export default function CommentsSection({
 	subjectType,
 	subjectId,
@@ -127,7 +214,7 @@ export default function CommentsSection({
 	const { showToast } = useToast();
 	const queryClient = useQueryClient();
 	const [toEmails, setToEmails] = React.useState<string[]>([]);
-	const commentsListRef = React.useRef<HTMLDivElement>(null);
+	const listRef = React.useRef<HTMLDivElement>(null);
 	const hasLoadedRef = React.useRef(false);
 	const onCommentsChangeRef = React.useRef(onCommentsChange);
 
@@ -142,7 +229,7 @@ export default function CommentsSection({
 
 	const {
 		data: comments = [],
-		isLoading: commentsLoading,
+		isLoading,
 		error,
 	} = useQuery({
 		queryKey,
@@ -164,29 +251,27 @@ export default function CommentsSection({
 		onCommentsChangeRef.current?.(comments);
 	}, [comments]);
 
+	// Scroll to the newest comment after the first load.
 	React.useEffect(() => {
 		if (!hasLoadedRef.current) {
 			hasLoadedRef.current = true;
 			return;
 		}
-
-		commentsListRef.current?.scrollTo({
-			top: commentsListRef.current.scrollHeight,
+		listRef.current?.scrollTo({
+			top: listRef.current.scrollHeight,
 			behavior: "smooth",
 		});
 	}, [comments.length]);
 
 	const handleMentionInsert = React.useCallback((user: CommentUser) => {
 		if (!user.email) return;
-		setToEmails((current) => normalizeEmailList([...current, user.email!]));
+		setToEmails((current) => uniqueEmails([...current, user.email!]));
 	}, []);
 
 	const handleCreate = React.useCallback(
 		async (message: string) => {
-			const to = normalizeEmailList(toEmails);
-			const cc = normalizeEmailList(ccEmails).filter(
-				(email) => !to.includes(email),
-			);
+			const to = uniqueEmails(toEmails);
+			const cc = uniqueEmails(ccEmails).filter((email) => !to.includes(email));
 
 			try {
 				const response = await api.createComment({
@@ -231,14 +316,12 @@ export default function CommentsSection({
 		],
 	);
 
-	const commentCountLabel = `${comments.length} ${
-		comments.length === 1 ? "comment" : "comments"
-	}`;
+	const countLabel = `${comments.length} ${comments.length === 1 ? "comment" : "comments"}`;
 
 	return (
-		<section aria-label={title}>
+		<section aria-label={title} className="comments">
 			<div className="comments-body">
-				{commentsLoading ? (
+				{isLoading ? (
 					<CardSkeleton />
 				) : loadError ? (
 					<CardEmpty
@@ -257,12 +340,9 @@ export default function CommentsSection({
 				) : (
 					<div className="comments-section">
 						<header className="comments-summary">
-							<span className="comments-subtitle">{commentCountLabel}</span>
+							<span className="comments-subtitle">{countLabel}</span>
 						</header>
-						<div
-							className="comments-list scrollbar-sleek"
-							ref={commentsListRef}
-						>
+						<div className="comments-list scrollbar-sleek" ref={listRef}>
 							{comments.map((comment) => (
 								<CommentCard
 									key={comment.id}
@@ -277,14 +357,12 @@ export default function CommentsSection({
 
 			{canComment ? (
 				<footer className="comments-create">
-					<div className="comments-create-input">
-						<CommentInput
-							disabled={commentsLoading || Boolean(loadError)}
-							onSubmit={handleCreate}
-							mentionableUsers={mentionableUsers}
-							onMentionInsert={handleMentionInsert}
-						/>
-					</div>
+					<CommentInput
+						disabled={isLoading || Boolean(loadError)}
+						onSubmit={handleCreate}
+						mentionableUsers={mentionableUsers}
+						onMentionInsert={handleMentionInsert}
+					/>
 				</footer>
 			) : null}
 		</section>

@@ -53,7 +53,13 @@ export const fileModuleKeys = {
 /*                                   Shared                                   */
 /* -------------------------------------------------------------------------- */
 
-const EVENT_PROPOSAL_SUBJECT_TYPE = "EVENT_PROPOSAL";
+/**
+ * Single subject type for everything attached to an EPC: comments, audit log
+ * and PDF. Use this constant in components too (CommentsSection,
+ * AuditLogSection) so query keys and invalidation always line up.
+ */
+export const EVENT_PROPOSAL_SUBJECT_TYPE = "EVENT_PROPOSAL";
+
 const activityPlannerPdfApi =
 	createPdfApi<typeof EVENT_PROPOSAL_SUBJECT_TYPE>();
 
@@ -71,9 +77,17 @@ type UpdateEpcVariables = {
 	payload: EpcUpdatePayload;
 };
 
+/**
+ * Refreshes everything shown on the activity detail page for one EPC:
+ * detail, report, comments and audit log. Comment/audit keys are prefixes,
+ * so the sections' own `[...key, refreshKey]` queries refetch too.
+ *
+ * Pass `includeLists` when the change affects the listing (status, title…).
+ */
 const invalidateActivityData = async (
 	queryClient: QueryClient,
 	epcId: string,
+	{ includeLists = false }: { includeLists?: boolean } = {},
 ) => {
 	await Promise.all([
 		queryClient.invalidateQueries({ queryKey: epcKeys.detail(epcId) }),
@@ -84,6 +98,9 @@ const invalidateActivityData = async (
 		queryClient.invalidateQueries({
 			queryKey: auditKeys.log(EVENT_PROPOSAL_SUBJECT_TYPE, epcId),
 		}),
+		includeLists
+			? queryClient.invalidateQueries({ queryKey: epcKeys.lists() })
+			: undefined,
 	]);
 };
 
@@ -182,12 +199,9 @@ export function useUpdateEpcMutation() {
 	return useMutation({
 		mutationFn: ({ epcId, payload }: UpdateEpcVariables) =>
 			epcApi.update(epcId, payload),
-		onSuccess: (_, variables) => {
-			queryClient.invalidateQueries({
-				queryKey: epcKeys.detail(variables.epcId),
-			});
-			queryClient.invalidateQueries({ queryKey: epcKeys.lists() });
-		},
+		// Returned so mutateAsync resolves only after fresh data is in.
+		onSuccess: (_, { epcId }) =>
+			invalidateActivityData(queryClient, epcId, { includeLists: true }),
 	});
 }
 
@@ -197,11 +211,8 @@ export const useCloseEPC = () => {
 	return useMutation({
 		mutationFn: ({ epcId }: { epcId: string }) =>
 			eventOutcomeApi.closeEpc(epcId),
-		onSuccess: (_, variables) => {
-			queryClient.invalidateQueries({
-				queryKey: epcKeys.detail(variables.epcId),
-			});
-		},
+		onSuccess: (_, { epcId }) =>
+			invalidateActivityData(queryClient, epcId, { includeLists: true }),
 	});
 };
 
@@ -209,8 +220,10 @@ export const useCloseEPC = () => {
 /*                     Event outcome / deviation / workflow                   */
 /* -------------------------------------------------------------------------- */
 
-export const useEventOutcomeMutation = () =>
-	useMutation({
+export const useEventOutcomeMutation = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation({
 		mutationFn: ({
 			epcId,
 			payload,
@@ -218,9 +231,14 @@ export const useEventOutcomeMutation = () =>
 			epcId: string;
 			payload: EventOutcomePayload;
 		}) => eventOutcomeApi.eventOutcome(epcId, payload),
+		onSuccess: (_, { epcId }) =>
+			invalidateActivityData(queryClient, epcId, { includeLists: true }),
 	});
+};
 
 export function useEventDeviationMutation() {
+	const queryClient = useQueryClient();
+
 	return useMutation({
 		mutationFn: ({
 			epcId,
@@ -229,6 +247,7 @@ export function useEventDeviationMutation() {
 			epcId: string;
 			payload: EventDeviationPayload;
 		}) => workflowApi.deviationStage(epcId, payload),
+		onSuccess: (_, { epcId }) => invalidateActivityData(queryClient, epcId),
 	});
 }
 
@@ -237,8 +256,10 @@ export const usePreviewWorkflowMutation = () =>
 		mutationFn: workflowApi.previewWorkflow,
 	});
 
-export const useSubmitDeviatedUpdatedFormMutation = () =>
-	useMutation({
+export const useSubmitDeviatedUpdatedFormMutation = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation({
 		mutationFn: (payload: {
 			workflowId: string;
 			eventProposalId?: string;
@@ -246,13 +267,39 @@ export const useSubmitDeviatedUpdatedFormMutation = () =>
 			appId?: string;
 			newBudget?: string | number;
 		}) => workflowApi.submitDeviationUpdatedForm(payload),
+		onSuccess: (_, { eventProposalId }) =>
+			eventProposalId
+				? invalidateActivityData(queryClient, eventProposalId, {
+						includeLists: true,
+					})
+				: undefined,
 	});
+};
 
-export const useSubmitClarifiedUpdatedFormMutation = () =>
-	useMutation({
-		mutationFn: (workflowId: string) =>
-			workflowApi.submitClarifiedUpdatedForm(workflowId),
+/**
+ * Accepts the old `workflowId` string or `{ workflowId, epcId }`.
+ * Passing `epcId` lets the page refresh comments + audit after resubmission.
+ */
+type SubmitClarifiedVariables =
+	| string
+	| { workflowId: string; epcId?: string | null };
+
+export const useSubmitClarifiedUpdatedFormMutation = () => {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (variables: SubmitClarifiedVariables) =>
+			workflowApi.submitClarifiedUpdatedForm(
+				typeof variables === "string" ? variables : variables.workflowId,
+			),
+		onSuccess: (_, variables) => {
+			const epcId = typeof variables === "string" ? null : variables.epcId;
+			return epcId
+				? invalidateActivityData(queryClient, epcId, { includeLists: true })
+				: undefined;
+		},
 	});
+};
 
 /* -------------------------------------------------------------------------- */
 /*                               Event report                                 */
@@ -274,8 +321,7 @@ export function useSubmitEventReportMutation() {
 			isEditMode
 				? eventReportApi.resubmit(epcId, payload)
 				: eventReportApi.submit(epcId, payload),
-		onSuccess: (_, variables) =>
-			invalidateActivityData(queryClient, variables.epcId),
+		onSuccess: (_, { epcId }) => invalidateActivityData(queryClient, epcId),
 	});
 }
 
@@ -285,8 +331,7 @@ export function useValidateEventReportMutation() {
 	return useMutation({
 		mutationFn: ({ reportId }: { reportId: string; epcId: string }) =>
 			eventReportApi.validateReport(reportId),
-		onSuccess: (_, variables) =>
-			invalidateActivityData(queryClient, variables.epcId),
+		onSuccess: (_, { epcId }) => invalidateActivityData(queryClient, epcId),
 	});
 }
 
@@ -302,8 +347,7 @@ export function useClarifyEventReportMutation() {
 			epcId: string;
 			reason: string;
 		}) => eventReportApi.clarifyReport(reportId, reason),
-		onSuccess: (_, variables) =>
-			invalidateActivityData(queryClient, variables.epcId),
+		onSuccess: (_, { epcId }) => invalidateActivityData(queryClient, epcId),
 	});
 }
 

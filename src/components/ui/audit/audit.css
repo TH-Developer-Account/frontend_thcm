@@ -1,0 +1,172 @@
+/* =========================================================
+   AUDIT TIMELINE (compact)
+   dot + rail · action (bold) + stage chip · actor · time
+   · optional detail box (status change / reason)
+========================================================= */
+
+@layer components {
+	.audit-timeline {
+		--audit-dot-size: 10px;
+		--audit-tone: var(--color-brand);
+
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+
+		margin: 0;
+		padding: var(--space-1);
+		list-style: none;
+	}
+
+	/* Vertical rail */
+	.audit-timeline::before {
+		content: "";
+		position: absolute;
+		top: var(--space-2);
+		bottom: var(--space-2);
+		/* centred under the dots: item padding (space-1) + dot radius - half rail */
+		left: calc(var(--space-1) + (var(--audit-dot-size) / 2) - 1px);
+		width: 2px;
+		border-radius: 1px;
+		background-color: var(--color-border-subtle);
+	}
+
+	.audit-timeline-item {
+		position: relative;
+		min-width: 0;
+		padding-left: calc(var(--audit-dot-size) + var(--space-2));
+	}
+
+	.audit-timeline-item--success {
+		--audit-tone: var(--color-success, #16a34a);
+	}
+	.audit-timeline-item--warning {
+		--audit-tone: var(--color-warning, #f59e0b);
+	}
+	.audit-timeline-item--danger {
+		--audit-tone: var(--color-danger, #dc2626);
+	}
+
+	/* Hollow ring dot, sits on the rail */
+	.audit-timeline-dot {
+		position: absolute;
+		top: 3px;
+		left: 0;
+
+		box-sizing: border-box;
+		width: var(--audit-dot-size);
+		height: var(--audit-dot-size);
+
+		border: 2px solid var(--audit-tone);
+		border-radius: 999px;
+		background-color: var(--color-bg-surface);
+	}
+
+	/* Line 1 */
+	.audit-timeline-head {
+		display: flex;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1-5, 0.375rem);
+	}
+
+	.audit-timeline-action {
+		min-width: 0;
+		color: var(--color-text-primary);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-semibold, 600);
+		line-height: var(--line-height-tight);
+		overflow-wrap: anywhere;
+	}
+
+	.audit-timeline-chip {
+		flex: 0 0 auto;
+		max-width: 100%;
+		overflow: hidden;
+
+		padding: 1px var(--space-1-5, 0.375rem);
+		border-radius: 999px;
+		background-color: var(--color-bg-surface-subtle);
+		color: var(--color-text-secondary);
+
+		font-size: var(--font-size-2xs);
+		line-height: 1.4;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* Line 2 */
+	.audit-timeline-meta {
+		display: flex;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1);
+		margin-top: 2px;
+
+		color: var(--color-text-muted);
+		font-size: var(--font-size-2xs);
+		line-height: var(--line-height-normal);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.audit-timeline-actor {
+		min-width: 0;
+		overflow: hidden;
+		color: var(--color-text-secondary);
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* Detail box */
+	.audit-timeline-detail {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: 2px;
+		margin-top: var(--space-1);
+		padding: var(--space-1) var(--space-2);
+
+		border-radius: var(--radius-sm);
+		background-color: var(--color-bg-surface-subtle);
+		color: var(--color-text-secondary);
+
+		font-size: var(--font-size-2xs);
+		line-height: var(--line-height-normal);
+	}
+
+	.audit-timeline-status {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		color: var(--color-text-primary);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.audit-timeline-reason {
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+	}
+
+	.audit-timeline-readmore {
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--color-brand);
+		font-size: inherit;
+		font-weight: var(--font-weight-medium);
+		cursor: pointer;
+	}
+
+	.audit-timeline-readmore:hover {
+		text-decoration: underline;
+	}
+
+	.audit-timeline-readmore:focus-visible {
+		outline: 2px solid var(--color-brand);
+		outline-offset: 2px;
+		border-radius: 2px;
+	}
+}

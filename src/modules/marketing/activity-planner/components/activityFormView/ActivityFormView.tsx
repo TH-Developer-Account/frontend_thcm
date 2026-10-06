@@ -41,6 +41,7 @@ import {
 	activityPlannerAuditApi,
 	activityPlannerCommentApi,
 } from "../../api/epc.api";
+import { EVENT_PROPOSAL_SUBJECT_TYPE } from "../../queries/epc.queries";
 
 /* ========================================================================== */
 /*                                    Tabs                                    */
@@ -579,7 +580,7 @@ const ActivityFormView = ({ activity }: ActivityFormViewProps) => {
 								bodyClassName="activity-form-view-panel-body"
 							>
 								<CommentsSection
-									subjectType="EPC"
+									subjectType={EVENT_PROPOSAL_SUBJECT_TYPE}
 									subjectId={epcData.id}
 									currentUserId={currentUserId}
 									approvalId={commentContext.approvalId}
@@ -604,7 +605,7 @@ const ActivityFormView = ({ activity }: ActivityFormViewProps) => {
 								bodyClassName="activity-form-view-panel-body"
 							>
 								<AuditLogSection
-									subjectType="EVENT_PROPOSAL"
+									subjectType={EVENT_PROPOSAL_SUBJECT_TYPE}
 									subjectId={epcData.id}
 									entityName="event proposal"
 									refreshKey={commentsRefreshKey}
