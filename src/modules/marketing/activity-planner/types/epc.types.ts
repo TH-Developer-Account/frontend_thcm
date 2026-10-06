@@ -657,6 +657,7 @@ export type EventReportSectionProps = {
 	onOpenReportPreview: () => void;
 	onValidateReport?: () => void | Promise<void>;
 	onClarifyReport?: () => void | Promise<void>;
+	onDownload: () => void;
 };
 
 export type UseEventReportFormProps = {

@@ -16,8 +16,10 @@ import type {
 	FileModuleListingRow,
 } from "../../types/epc.types";
 
-import { getFilesListingColumns } from "./files.module.columns";
-import { getGroupedFilesListingColumns } from "./files.module.columns";
+import {
+	getFilesListingColumns,
+	getGroupedFilesListingColumns,
+} from "./files.module.columns";
 
 export type FileListFilter = "all" | "grouped" | "assigned";
 
@@ -216,12 +218,6 @@ const FileListingTable = ({
 	return (
 		<Card
 			className="file-listing-card"
-			// title="Import and export history"
-			// subtitle={
-			// 	isGroupedView
-			// 		? "Operations grouped by Event Planning Calendar."
-			// 		: "Individual import and export operations."
-			// }
 			title={
 				<FilterTabs
 					ariaLabel="Filter file listings"

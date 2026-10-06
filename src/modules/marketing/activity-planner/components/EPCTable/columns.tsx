@@ -12,6 +12,7 @@ import { Badge } from "../../../../../components/common/Badge";
 
 type EpcColumnActions = {
 	onLeadCreate?: (row: EpcListItem) => void;
+	onMachineStudyCreate?: (row: EpcListItem) => void;
 	currentUserId?: string;
 };
 
@@ -37,13 +38,26 @@ const hasEventStarted = (eventFromDate?: string | null) => {
 	return today >= startDate;
 };
 
+// Shared eligibility rule for both Lead and Machine Study creation —
+// confirmed by Fazal to be identical (APPROVED, or CONDUCTED once the
+// event has started). Kept as two named functions rather than one
+// generically-named helper: they read the same today, but Lead and
+// Machine Study are different domain actions and the rule diverging
+// later (e.g. Machine Study needing CONDUCTED only) shouldn't require
+// un-abstracting a shared function under time pressure.
 const canCreateLead = (row: EpcListItem) =>
+	row.status?.toUpperCase() === "APPROVED" ||
+	(row.status?.toUpperCase() === "CONDUCTED" &&
+		hasEventStarted(row.event_from_date));
+
+const canCreateMachineStudy = (row: EpcListItem) =>
 	row.status?.toUpperCase() === "APPROVED" ||
 	(row.status?.toUpperCase() === "CONDUCTED" &&
 		hasEventStarted(row.event_from_date));
 
 export const getEPCColumns = ({
 	onLeadCreate,
+	onMachineStudyCreate,
 	currentUserId,
 }: EpcColumnActions): ColumnDef<EpcListItem>[] => [
 	{
@@ -96,18 +110,15 @@ export const getEPCColumns = ({
 		accessorKey: "status",
 		header: "Status",
 		meta: {
-			headerClassName: "epc-column-owner",
-			cellClassName: "epc-column-owner",
+			headerClassName: "epc-column-status",
+			cellClassName: "epc-column-status",
 		},
-		cell: ({ row }) => {
-			return (
-				<Badge
-					status={formatPendingOn(row.original.pendingOn, row.original.status)}
-				/>
-			);
-		},
+		cell: ({ row }) => (
+			<Badge
+				status={formatPendingOn(row.original.pendingOn, row.original.status)}
+			/>
+		),
 	},
-
 	{
 		accessorKey: "created_at",
 		header: "Created",
@@ -132,11 +143,12 @@ export const getEPCColumns = ({
 			return (
 				<EPCActionMenu
 					row={epc}
-					// currentUserId was already passed in by EPCTable but never used;
-					// the menu now needs it to decide Edit / Add CRF / Add EPF.
+					// The menu needs currentUserId to decide Edit / Add CRF / Add EPF.
 					currentUserId={currentUserId}
 					canCreateLead={canCreateLead(epc)}
 					onLeadCreate={onLeadCreate}
+					canCreateMachineStudy={canCreateMachineStudy(epc)}
+					onMachineStudyCreate={onMachineStudyCreate}
 				/>
 			);
 		},

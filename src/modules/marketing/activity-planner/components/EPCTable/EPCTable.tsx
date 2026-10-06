@@ -15,17 +15,17 @@ import { useMasterData } from "../../../../../hooks/useMasterData";
 
 import { clearStoredEpcInfo } from "../../utils/localstorage";
 import type { EpcFilters, EpcListItem } from "../../types/epc.types";
-import {
-	epcListFilterOptions,
-	epcStatusOptions,
-	type EpcListFilter,
-} from "../../utils/constant";
 
 import { getEPCColumns } from "./columns";
 import {
 	FilterDropdown,
 	type FilterSection,
 } from "../../../../../components/common/FilterDropdown";
+import {
+	epcListFilterOptions,
+	epcStatusOptions,
+	type EpcListFilter,
+} from "../../utils/constant";
 
 type EPCTableProps = {
 	data: EpcListItem[];
@@ -134,6 +134,9 @@ const EPCTable = ({
 			getEPCColumns({
 				onLeadCreate: () => {
 					navigate("/marketing/activity-planner/leads/create");
+				},
+				onMachineStudyCreate: () => {
+					navigate("/marketing/activity-planner/data-form/create");
 				},
 				currentUserId: user?.id,
 			}),

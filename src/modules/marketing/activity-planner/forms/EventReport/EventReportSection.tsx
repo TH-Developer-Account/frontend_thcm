@@ -10,20 +10,8 @@ import {
 
 import Button from "../../../../../components/common/Button";
 import { getEventReportSectionState } from "./eventReport.logic";
-// import type { EventReportSectionProps } from "../../types/epc.types";
+import type { EventReportSectionProps } from "../../types/epc.types";
 import SectionAccordion from "../../../../../components/common/SectionAccordion";
-import type { EventReportDetail } from "./eventReport.types";
-
-type EventReportSectionProps = {
-	report?: EventReportDetail | null;
-	isProposer?: boolean;
-	isValidator?: boolean;
-	canCreateReport?: boolean;
-	isValidating?: boolean;
-	onOpenReportBuilder: () => void;
-	onDownload: () => void;
-	onValidateReport?: () => void;
-};
 
 export const EventReportSection = ({
 	report,
