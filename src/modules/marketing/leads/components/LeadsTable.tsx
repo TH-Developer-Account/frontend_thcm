@@ -10,10 +10,15 @@ import DataTable from "../../../../components/ui/tables/DataTable/DataTable";
 import DataTableSkeleton from "../../../../components/ui/tables/Skeletons/DataTableSkeleton";
 
 import {
+	buildLeadColumns,
 	getGroupedLeadColumns,
-	getLeadCustomerColumns,
 } from "../columns/leadCustomerColumns";
-import type { LeadEventGroup, LeadInfo, LeadRow } from "../types/leads.types";
+import type {
+	LeadEventGroup,
+	LeadFormFieldKey,
+	LeadInfo,
+	LeadRow,
+} from "../types/leads.types";
 
 export type LeadListFilter = "all" | "grouped" | "assigned";
 
@@ -63,6 +68,19 @@ const LEAD_FILTER_TABS = [
 ] as const;
 
 const SKELETON_ROW_COUNT = 8;
+
+// Fixed, variant-agnostic column set for the flat "All Leads" view, which can
+// span multiple EPCs of different event types at once — there's no single
+// LeadFormConfig to build against here, so this covers the fields that
+// exist across every variant rather than every field any one variant has.
+const ALL_LEADS_COLUMN_FIELDS: LeadFormFieldKey[] = [
+	"name",
+	"email",
+	"phone",
+	"companyName",
+	"dealership",
+	"notes",
+];
 
 const buildLeadInfo = (group: LeadEventGroup): LeadInfo => ({
 	epcId: group.epcId,
@@ -137,7 +155,10 @@ export default function LeadsTable({
 		[],
 	);
 
-	const leadColumns = useMemo(() => getLeadCustomerColumns(), []);
+	const leadColumns = useMemo(
+		() => buildLeadColumns(ALL_LEADS_COLUMN_FIELDS),
+		[],
+	);
 
 	const groupedLeadColumns = useMemo(
 		() =>
@@ -182,7 +203,6 @@ export default function LeadsTable({
 					value={selectedFilter}
 					onChange={onFilterChange}
 					className="border-b-none px-0 py-0"
-					variant="underline"
 				/>
 			}
 			secondaryHeader={

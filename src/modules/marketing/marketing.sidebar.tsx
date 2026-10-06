@@ -67,8 +67,20 @@ export const marketingSidebar: SidebarItem[] = [
 					action: "read",
 				},
 			},
+			{
+				id: "reports-module",
+				label: "Reports Module",
+				link: "/marketing/activity-planner/reports/listing",
+				icon: <Table size={18} />,
+				permission: {
+					app: "MAP",
+					module: "reports-module",
+					action: "read",
+				},
+			},
 		],
 	},
+
 	// {
 	// 	id: "settings",
 	// 	label: "Settings",

@@ -1,6 +1,8 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router-dom";
 import FullScreenLoader from "./FullScreenLoader";
+import ReportListingPage from "../modules/marketing/activity-planner/forms/EventReport/listing/reportListingPage";
+import MachineStudyEntryPage from "../modules/marketing/machine-study/MachineStudyEntryPage";
 
 const DashboardPage = lazy(() =>
 	import("../modules/marketing/dashboard/DashboardPage").then((m) => ({
@@ -48,6 +50,15 @@ export default function MarketingRoutes() {
 				<Route
 					path="/activity-planner/leads/create"
 					element={<LeadCreatePage />}
+				/>
+				<Route
+					path="/activity-planner/reports/listing"
+					element={<ReportListingPage />}
+				/>
+
+				<Route
+					path="/activity-planner/data-form/create"
+					element={<MachineStudyEntryPage />}
 				/>
 				<Route
 					path="/activity-planner/leads/view"

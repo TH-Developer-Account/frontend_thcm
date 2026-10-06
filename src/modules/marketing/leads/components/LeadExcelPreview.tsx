@@ -1,204 +1,219 @@
 import React from "react";
 
-const COLUMNS = [
-	{ label: "Name", required: true },
-	{ label: "Email", required: true },
-	{ label: "Phone", required: false },
-	{ label: "Notes", required: false },
-];
+import {
+  FIELD_LABELS,
+  FIELD_TEMPLATE_META,
+  orderFields,
+  REQUIRED_FIELDS,
+} from "../helpers/lead.fieldConfig";
+import type { LeadFormFieldKey } from "../types/leads.types";
 
-const EXAMPLE_ROWS = [
-	["Rahul Sharma", "rahul@dealer.in", "9876543210", "Warm"],
-	["Priya Mehta", "priya@example.com", "8765432109", "Cold"],
-];
+type LeadExcelPreviewProps = {
+  fields: LeadFormFieldKey[];
+};
 
-export function LeadExcelPreview() {
-	const [activeRow, setActiveRow] = React.useState(0);
-	const [activeCol, setActiveCol] = React.useState(0);
-	const [charIdx, setCharIdx] = React.useState(0);
-	const [phase, setPhase] = React.useState<"typing" | "pause" | "clear">(
-		"typing",
-	);
-	const [displayRows, setDisplayRows] = React.useState(() =>
-		EXAMPLE_ROWS.map((row) => row.map(() => "")),
-	);
+export function LeadExcelPreview({ fields }: LeadExcelPreviewProps) {
+  const orderedFields = React.useMemo(() => orderFields(fields), [fields]);
 
-	React.useEffect(() => {
-		const id = setInterval(() => {
-			if (phase === "typing") {
-				const full = EXAMPLE_ROWS[activeRow][activeCol];
-				const next = charIdx + 1;
+  const columns = React.useMemo(
+    () =>
+      orderedFields.map((field) => ({
+        field,
+        label: FIELD_LABELS[field],
+        required: REQUIRED_FIELDS.includes(field),
+      })),
+    [orderedFields],
+  );
 
-				setDisplayRows((previous) => {
-					const copy = previous.map((row) => [...row]);
-					copy[activeRow][activeCol] = full.slice(0, next);
-					return copy;
-				});
+  const exampleRowValues = React.useMemo(
+    () => orderedFields.map((field) => FIELD_TEMPLATE_META[field].example),
+    [orderedFields],
+  );
 
-				if (next >= full.length) {
-					const nextCol = activeCol + 1;
+  const [activeCol, setActiveCol] = React.useState(0);
+  const [charIdx, setCharIdx] = React.useState(0);
+  const [phase, setPhase] = React.useState<"typing" | "pause" | "clear">(
+    "typing",
+  );
+  const [displayRow, setDisplayRow] = React.useState<string[]>(() =>
+    columns.map(() => ""),
+  );
 
-					if (nextCol >= COLUMNS.length) {
-						const nextRow = activeRow + 1;
+  // Reset animation state whenever the field set changes (e.g. navigating
+  // between EPCs of different event types without a full remount).
+  React.useEffect(() => {
+    setActiveCol(0);
+    setCharIdx(0);
+    setPhase("typing");
+    setDisplayRow(columns.map(() => ""));
+  }, [columns]);
 
-						if (nextRow >= EXAMPLE_ROWS.length) {
-							setActiveCol(0);
-							setCharIdx(0);
-							setPhase("pause");
-						} else {
-							setActiveRow(nextRow);
-							setActiveCol(0);
-							setCharIdx(0);
-						}
-					} else {
-						setActiveCol(nextCol);
-						setCharIdx(0);
-					}
-				} else {
-					setCharIdx(next);
-				}
-			} else if (phase === "pause") {
-				setPhase("clear");
-			} else {
-				setDisplayRows(EXAMPLE_ROWS.map((row) => row.map(() => "")));
-				setActiveRow(0);
-				setActiveCol(0);
-				setCharIdx(0);
-				setPhase("typing");
-			}
-		}, 75);
+  React.useEffect(() => {
+    if (columns.length === 0) return;
 
-		return () => clearInterval(id);
-	}, [phase, activeRow, activeCol, charIdx]);
+    const id = setInterval(() => {
+      if (phase === "typing") {
+        const full = exampleRowValues[activeCol] ?? "";
+        const next = charIdx + 1;
 
-	const isActive = (rowIndex: number, columnIndex: number) =>
-		phase === "typing" && rowIndex === activeRow && columnIndex === activeCol;
+        setDisplayRow((previous) => {
+          const copy = [...previous];
+          copy[activeCol] = full.slice(0, next);
+          return copy;
+        });
 
-	return (
-		<div className="lead-excel-preview">
-			<div className="lead-excel-titlebar">
-				<div className="lead-excel-window-controls" aria-hidden="true">
-					<div className="lead-excel-window-dot lead-excel-window-dot-red" />
-					<div className="lead-excel-window-dot lead-excel-window-dot-yellow" />
-					<div className="lead-excel-window-dot lead-excel-window-dot-green" />
-				</div>
+        if (next >= full.length) {
+          const nextCol = activeCol + 1;
 
-				<span className="lead-excel-file-name">lead-import-template.xlsx</span>
-			</div>
+          if (nextCol >= columns.length) {
+            setCharIdx(0);
+            setPhase("pause");
+          } else {
+            setActiveCol(nextCol);
+            setCharIdx(0);
+          }
+        } else {
+          setCharIdx(next);
+        }
+      } else if (phase === "pause") {
+        setPhase("clear");
+      } else {
+        setDisplayRow(columns.map(() => ""));
+        setActiveCol(0);
+        setCharIdx(0);
+        setPhase("typing");
+      }
+    }, 75);
 
-			<div className="lead-excel-formula-bar">
-				<span className="lead-excel-cell-ref">
-					{phase === "typing"
-						? `${String.fromCharCode(65 + activeCol)}${activeRow + 2}`
-						: "A1"}
-				</span>
+    return () => clearInterval(id);
+  }, [phase, activeCol, charIdx, columns, exampleRowValues]);
 
-				<div className="lead-excel-formula-divider" aria-hidden="true" />
+  if (columns.length === 0) return null;
 
-				<span className="lead-excel-formula-value">
-					{phase === "typing"
-						? EXAMPLE_ROWS[activeRow][activeCol].slice(0, charIdx + 1)
-						: ""}
-				</span>
-			</div>
+  const isActive = (columnIndex: number) =>
+    phase === "typing" && columnIndex === activeCol;
 
-			<div className="lead-excel-sheet-scroll scrollbar-sleek">
-				<table className="lead-excel-sheet">
-					<colgroup>
-						<col className="lead-excel-row-number-col" />
-						{COLUMNS.map((column) => (
-							<col key={column.label} className="lead-excel-data-col" />
-						))}
-					</colgroup>
+  return (
+    <div className="lead-excel-preview">
+      <div className="lead-excel-titlebar">
+        <div className="lead-excel-window-controls" aria-hidden="true">
+          <div className="lead-excel-window-dot lead-excel-window-dot-red" />
+          <div className="lead-excel-window-dot lead-excel-window-dot-yellow" />
+          <div className="lead-excel-window-dot lead-excel-window-dot-green" />
+        </div>
 
-					<thead>
-						<tr>
-							<th className="lead-excel-corner-cell" />
+        <span className="lead-excel-file-name">lead-import-template.xlsx</span>
+      </div>
 
-							{COLUMNS.map((column, index) => (
-								<th key={column.label} className="lead-excel-column-cell">
-									{String.fromCharCode(65 + index)}
-								</th>
-							))}
-						</tr>
-					</thead>
+      <div className="lead-excel-formula-bar">
+        <span className="lead-excel-cell-ref">
+          {phase === "typing"
+            ? `${String.fromCharCode(65 + activeCol)}2`
+            : "A1"}
+        </span>
 
-					<tbody>
-						<tr>
-							<td className="lead-excel-row-number-cell">1</td>
+        <div className="lead-excel-formula-divider" aria-hidden="true" />
 
-							{COLUMNS.map((column) => (
-								<td
-									key={column.label}
-									className={
-										column.required
-											? "lead-excel-header-cell lead-excel-header-cell-required"
-											: "lead-excel-header-cell lead-excel-header-cell-optional"
-									}
-								>
-									{column.label}
+        <span className="lead-excel-formula-value">
+          {phase === "typing"
+            ? (exampleRowValues[activeCol] ?? "").slice(0, charIdx + 1)
+            : ""}
+        </span>
+      </div>
 
-									{column.required && (
-										<span className="lead-excel-required-mark">*</span>
-									)}
-								</td>
-							))}
-						</tr>
+      <div className="lead-excel-sheet-scroll scrollbar-sleek">
+        <table className="lead-excel-sheet">
+          <colgroup>
+            <col className="lead-excel-row-number-col" />
+            {columns.map((column) => (
+              <col key={column.field} className="lead-excel-data-col" />
+            ))}
+          </colgroup>
 
-						{EXAMPLE_ROWS.map((_, rowIndex) => (
-							<tr key={rowIndex}>
-								<td className="lead-excel-row-number-cell">{rowIndex + 2}</td>
+          <thead>
+            <tr>
+              <th className="lead-excel-corner-cell" />
 
-								{COLUMNS.map((column, columnIndex) => {
-									const active = isActive(rowIndex, columnIndex);
+              {columns.map((column, index) => (
+                <th key={column.field} className="lead-excel-column-cell">
+                  {String.fromCharCode(65 + index)}
+                </th>
+              ))}
+            </tr>
+          </thead>
 
-									return (
-										<td
-											key={column.label}
-											className={[
-												"lead-excel-data-cell",
-												column.required
-													? "lead-excel-data-cell-required"
-													: "lead-excel-data-cell-optional",
-												active ? "lead-excel-data-cell-active" : "",
-											]
-												.filter(Boolean)
-												.join(" ")}
-										>
-											{displayRows[rowIndex]?.[columnIndex] ?? ""}
+          <tbody>
+            <tr>
+              <td className="lead-excel-row-number-cell">1</td>
 
-											{active && (
-												<span className="lead-excel-caret" aria-hidden="true" />
-											)}
-										</td>
-									);
-								})}
-							</tr>
-						))}
-					</tbody>
-				</table>
-			</div>
+              {columns.map((column) => (
+                <td
+                  key={column.field}
+                  className={
+                    column.required
+                      ? "lead-excel-header-cell lead-excel-header-cell-required"
+                      : "lead-excel-header-cell lead-excel-header-cell-optional"
+                  }
+                >
+                  {column.label}
+                  {column.required && (
+                    <span className="lead-excel-required-mark">*</span>
+                  )}
+                </td>
+              ))}
+            </tr>
 
-			<div className="lead-excel-tabs">
-				<div className="lead-excel-tab lead-excel-tab-active">Import Data</div>
-				<div className="lead-excel-tab">Field Guide</div>
-			</div>
+            <tr>
+              <td className="lead-excel-row-number-cell">2</td>
 
-			<div className="lead-excel-legend">
-				<div className="lead-excel-legend-item">
-					<div className="lead-excel-legend-swatch lead-excel-legend-required" />
-					<span>Required</span>
-				</div>
+              {columns.map((column, columnIndex) => {
+                const active = isActive(columnIndex);
 
-				<div className="lead-excel-legend-item">
-					<div className="lead-excel-legend-swatch lead-excel-legend-optional" />
-					<span>Optional</span>
-				</div>
+                return (
+                  <td
+                    key={column.field}
+                    className={[
+                      "lead-excel-data-cell",
+                      column.required
+                        ? "lead-excel-data-cell-required"
+                        : "lead-excel-data-cell-optional",
+                      active ? "lead-excel-data-cell-active" : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    {displayRow[columnIndex] ?? ""}
+                    {active && (
+                      <span className="lead-excel-caret" aria-hidden="true" />
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-				<span className="lead-excel-legend-note">
-					* Row 1 must be the header row
-				</span>
-			</div>
-		</div>
-	);
+      <div className="lead-excel-tabs">
+        <div className="lead-excel-tab lead-excel-tab-active">Import Data</div>
+        <div className="lead-excel-tab">Field Guide</div>
+      </div>
+
+      <div className="lead-excel-legend">
+        <div className="lead-excel-legend-item">
+          <div className="lead-excel-legend-swatch lead-excel-legend-required" />
+          <span>Required</span>
+        </div>
+
+        <div className="lead-excel-legend-item">
+          <div className="lead-excel-legend-swatch lead-excel-legend-optional" />
+          <span>Optional</span>
+        </div>
+
+        <span className="lead-excel-legend-note">
+          * Row 1 must be the header row
+        </span>
+      </div>
+    </div>
+  );
 }

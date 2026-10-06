@@ -150,6 +150,15 @@ export type EpcListItem = {
 	created_by_id?: string;
 	crf_id?: string | null;
 	epf_id?: string | null;
+
+	// Derived server-side (see searchEventProposal.helper.ts's
+	// attachSourceType) from the EPC's EventName.reportTemplateKey via the
+	// event report template registry. null when the EventName has no
+	// reportTemplateKey mapped — callers should treat null as "no
+	// report-related actions available for this row", not as a LEAD_FORM
+	// default.
+	sourceType?: "LEAD_FORM" | "DATA_FORM" | null;
+	dualVariant?: boolean;
 };
 
 export type EpcListResponse = {

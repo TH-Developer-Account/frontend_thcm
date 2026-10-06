@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState, type ComponentProps, type ReactNode } from "react";
 import {
 	CalendarCheck,
 	ClipboardCheck,
@@ -107,14 +107,29 @@ const TabEmptyState = ({
 /*                                  Component                                 */
 /* ========================================================================== */
 
-type ActivityFormViewProps = { activity: ActivityPlannerController };
+/**
+ * Event report wiring owned by the page (report query, generation watcher,
+ * builder mode). Typed off EventReportSection so the two never drift.
+ */
+export type EventReportController = Pick<
+	ComponentProps<typeof EventReportSection>,
+	| "report"
+	| "isValidating"
+	| "onOpenReportBuilder"
+	| "onDownload"
+	| "onValidateReport"
+>;
 
-const ActivityFormView = ({ activity }: ActivityFormViewProps) => {
+type ActivityFormViewProps = {
+	activity: ActivityPlannerController;
+	eventReport: EventReportController;
+};
+
+const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 	const [activeTab, setActiveTab] = useState<ActivityTab>("epc");
 
 	const {
 		epcData,
-		reportData,
 		permissions,
 		proposerName,
 		currentUserId,
@@ -133,18 +148,11 @@ const ActivityFormView = ({ activity }: ActivityFormViewProps) => {
 		canComment,
 		commentsRefreshKey,
 		reasonModal,
-		openReasonModal,
 		closeReasonModal,
 		handleReasonConfirm,
 		handleApproveWorkflow,
 		handleClarifyWorkflow,
 		handleDeviationPreviewSuccess,
-		hasValidatorPreviewed,
-		isValidatingReport,
-		isClarifyingReport,
-		handleOpenReportBuilder,
-		handleOpenReportPreview,
-		handleValidateReport,
 		handleCloseEPC,
 		isClosingEPC,
 		isPreparingPdf,
@@ -272,17 +280,14 @@ const ActivityFormView = ({ activity }: ActivityFormViewProps) => {
 			defaultExpanded: true,
 			children: (
 				<EventReportSection
-					report={reportData}
+					report={eventReport.report}
 					isProposer={permissions.isProposer}
 					isValidator={permissions.isValidator}
 					canCreateReport={permissions.canCreateReport}
-					hasValidatorPreviewed={hasValidatorPreviewed}
-					isValidating={isValidatingReport}
-					isClarifying={isClarifyingReport}
-					onOpenReportBuilder={handleOpenReportBuilder}
-					onOpenReportPreview={handleOpenReportPreview}
-					onValidateReport={handleValidateReport}
-					onClarifyReport={() => openReasonModal("clarify-report")}
+					isValidating={eventReport.isValidating}
+					onOpenReportBuilder={eventReport.onOpenReportBuilder}
+					onDownload={eventReport.onDownload}
+					onValidateReport={eventReport.onValidateReport}
 				/>
 			),
 		},
@@ -650,7 +655,7 @@ const ActivityFormView = ({ activity }: ActivityFormViewProps) => {
 			<ReasonActionModal
 				open={Boolean(reasonModal.mode)}
 				mode={reasonModal.mode}
-				loading={reasonModal.loading || isClarifyingReport}
+				loading={reasonModal.loading}
 				onClose={closeReasonModal}
 				onConfirm={handleReasonConfirm}
 			/>

@@ -1,122 +1,162 @@
-import React, { lazy, Suspense } from "react";
+import React from "react";
 import { useParams } from "react-router-dom";
 
 import { Alert } from "../../../../components/common/Alert";
 import Loader from "../../../../components/ui/Loader";
-import ActivityFormView from "../components/activityFormView/ActivityFormView";
-import EventReportTemplate from "../forms/EventReport/EventReportTemplate";
-import { useActivityPlanner } from "../hooks/useActivityPlanner";
 import PageSectionLayout from "../../../../layout/PageSectionLayout";
+import ActivityFormView, {
+	type EventReportController,
+} from "../components/activityFormView/ActivityFormView";
+import EventReportUploadForm from "../forms/EventReport/eventReportUploadForm";
+import { getEventReportSectionState } from "../forms/EventReport/eventReport.logic";
+import {
+	useEventReportFormConfigQuery,
+	useEventReportQuery,
+} from "../forms/EventReport/useEventReportQueries";
+import { useReportGenerationWatcher } from "../forms/EventReport/useReportGenerationWatcher";
+import { useActivityPlanner } from "../hooks/useActivityPlanner";
 
-const EventReportPreview = lazy(
-	() => import("../forms/EventReport/EventReportPreview"),
-);
-
-type PageView = "form" | "report-builder" | "report-preview";
+type PageView = "form" | "report-builder";
 
 const ActivityPlannerPage = () => {
 	const { id } = useParams<{ id: string }>();
 	const [pageView, setPageView] = React.useState<PageView>("form");
 
-	const showReportBuilder = React.useCallback(() => {
+	const openReportBuilder = React.useCallback(() => {
 		setPageView("report-builder");
 	}, []);
 
-	const showReportPreview = React.useCallback(() => {
-		setPageView("report-preview");
-	}, []);
-
-	const closeReportView = React.useCallback(() => {
+	const closeReportBuilder = React.useCallback(() => {
 		setPageView("form");
 	}, []);
 
 	const activity = useActivityPlanner(id, {
-		onOpenReportBuilder: showReportBuilder,
-		onOpenReportPreview: showReportPreview,
+		onOpenReportBuilder: openReportBuilder,
 	});
 
 	const {
 		epcData,
-		reportData,
-		reportQuery,
+		permissions,
 		isLoading,
 		exportState,
 		handleExport,
 		dismissExport,
-		handleOpenReportPreview,
+		handleRefresh,
+		handleValidateReport,
+		isValidatingReport,
 	} = activity;
 
-	const handleReportSaved = React.useCallback(() => {
+	/* ------------------------------------------------------------------------ */
+	/*                     Event report (async-generation model)                */
+	/* ------------------------------------------------------------------------ */
+
+	// Report data/config come from the report's own query hooks so they can be
+	// invalidated/refetched independently of the EPC (e.g. after a
+	// REPORT_STATUS notification arrives via the generation watcher).
+	const { data: report, refetch: refetchReport } = useEventReportQuery(id);
+	const { data: formConfig } = useEventReportFormConfigQuery(id);
+	useReportGenerationWatcher(id);
+
+	const { canProposerResubmit, canProposerRetry } = getEventReportSectionState({
+		report,
+		isProposer: permissions.isProposer,
+		isValidator: permissions.isValidator,
+		canCreateReport: permissions.canCreateReport,
+	});
+
+	// Derived from section state so the button that opens the builder and the
+	// form it opens never disagree about which action is being taken.
+	const reportBuilderMode: "create" | "resubmit" | "retry" = canProposerRetry
+		? "retry"
+		: canProposerResubmit
+			? "resubmit"
+			: "create";
+
+	const handleDownloadReport = React.useCallback(() => {
+		if (report?.pdfUrl) {
+			window.open(report.pdfUrl, "_blank", "noopener,noreferrer");
+		}
+	}, [report?.pdfUrl]);
+
+	const validateReport = React.useCallback(async () => {
+		await handleValidateReport();
+		await refetchReport();
+	}, [handleValidateReport, refetchReport]);
+
+	const handleReportSaved = React.useCallback(async () => {
 		setPageView("form");
-	}, []);
+		await handleRefresh();
+		await refetchReport();
+	}, [handleRefresh, refetchReport]);
+
+	const eventReport = React.useMemo<EventReportController>(
+		() => ({
+			report: report ?? null,
+			isValidating: Boolean(isValidatingReport),
+			onOpenReportBuilder: openReportBuilder,
+			onDownload: handleDownloadReport,
+			onValidateReport: validateReport,
+		}),
+		[
+			report,
+			isValidatingReport,
+			openReportBuilder,
+			handleDownloadReport,
+			validateReport,
+		],
+	);
 
 	if (isLoading) {
 		return <Loader />;
 	}
 
 	return (
-		<>
-			<PageSectionLayout>
-				{exportState.status === "queued" && (
-					<Alert
-						type="banner"
-						variant="info"
-						title="Export queued"
-						description={`${exportState.message} Once the export is complete, the file will be shown in Notifications and can be downloaded from there.`}
-						secondaryAction={{
-							label: "Dismiss",
-							onClick: dismissExport,
-						}}
-					/>
-				)}
-
-				{exportState.status === "error" && (
-					<Alert
-						type="banner"
-						variant="error"
-						title="Export failed"
-						description={exportState.message}
-						primaryAction={{
-							label: "Retry",
-							onClick: handleExport,
-						}}
-						secondaryAction={{
-							label: "Dismiss",
-							onClick: dismissExport,
-						}}
-					/>
-				)}
-				{pageView === "report-builder" ? (
-					<div
-						id="event-report-pdf-content"
-						className="activity-planner-report-builder"
-					>
-						<EventReportTemplate
-							epcId={id!}
-							eventCost={epcData?.epf?.eventBudget || 0}
-							initialReport={reportData}
-							onBack={closeReportView}
-							onPreview={handleOpenReportPreview}
-							onSuccess={handleReportSaved}
-						/>
-					</div>
-				) : (
-					<ActivityFormView activity={activity} />
-				)}
-			</PageSectionLayout>
-
-			{pageView === "report-preview" && (
-				<Suspense fallback={<Loader />}>
-					<EventReportPreview
-						open
-						onClose={closeReportView}
-						epcData={epcData ?? null}
-						report={reportData}
-						loading={reportQuery.isLoading || reportQuery.isFetching}
-					/>
-				</Suspense>
+		<PageSectionLayout>
+			{exportState.status === "queued" && (
+				<Alert
+					type="banner"
+					variant="info"
+					title="Export queued"
+					description={`${exportState.message} Once the export is complete, the file will be shown in Notifications and can be downloaded from there.`}
+					secondaryAction={{
+						label: "Dismiss",
+						onClick: dismissExport,
+					}}
+				/>
 			)}
-		</>
+
+			{exportState.status === "error" && (
+				<Alert
+					type="banner"
+					variant="error"
+					title="Export failed"
+					description={exportState.message}
+					primaryAction={{
+						label: "Retry",
+						onClick: handleExport,
+					}}
+					secondaryAction={{
+						label: "Dismiss",
+						onClick: dismissExport,
+					}}
+				/>
+			)}
+
+			{pageView === "report-builder" ? (
+				<div className="activity-planner-report-builder">
+					<EventReportUploadForm
+						epcId={id!}
+						formConfig={formConfig}
+						existingReport={report}
+						mode={reportBuilderMode}
+						onBack={closeReportBuilder}
+						onSuccess={handleReportSaved}
+					/>
+				</div>
+			) : (
+				<ActivityFormView activity={activity} eventReport={eventReport} />
+			)}
+		</PageSectionLayout>
 	);
 };
 

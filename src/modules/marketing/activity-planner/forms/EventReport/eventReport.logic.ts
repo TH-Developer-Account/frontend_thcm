@@ -1,5 +1,8 @@
-import type { EpcDetailResponse } from "../../types/epc.types";
-import type { EventReportDetail } from "../../types/epc.types";
+import type {
+	EpcDetailResponse,
+	ReportStatus,
+	EventReportDetail,
+} from "../../types/epc.types";
 
 export const REPORT_STATUS = {
 	SUBMITTED: ["REPORT_SUBMITTED", "SUBMITTED"],
@@ -21,38 +24,19 @@ const normalizeStatus = (s?: string | null) =>
 		.trim()
 		.toUpperCase();
 
-export const isOneOfReportStatuses = (
-	status: string | null | undefined,
-	statuses: readonly string[],
-) => statuses.includes(normalizeStatus(status));
-
-export const isSubmittedReport = (s?: string | null) =>
-	isOneOfReportStatuses(s, [
-		...REPORT_STATUS.SUBMITTED,
-		...REPORT_STATUS.RESUBMITTED,
-	]);
-export const isValidatedReport = (s?: string | null) =>
-	isOneOfReportStatuses(s, REPORT_STATUS.VALIDATED);
-export const isEditableReport = (s?: string | null) =>
-	isOneOfReportStatuses(s, REPORT_STATUS.EDITABLE);
-
-export const getReportStatusLabel = (status?: string | null): string => {
+export const getReportStatusLabel = (
+	status?: ReportStatus | string | null,
+): string => {
 	switch (normalizeStatus(status)) {
-		case "REPORT_SUBMITTED":
+		case "GENERATING":
+			return "Generating";
+		case "GENERATION_FAILED":
+			return "Generation Failed";
 		case "SUBMITTED":
 			return "Submitted";
-		case "REPORT_RESUBMITTED":
-		case "RESUBMITTED":
-			return "Resubmitted";
-		case "REPORT_VALIDATED":
 		case "VALIDATED":
 			return "Validated";
-		case "REPORT_REJECTED":
-		case "REJECTED":
-			return "Rejected";
-		case "REPORT_CLARIFICATION_REQUESTED":
-			return "Clarification requested for the report";
-		case "CLARIFY_REPORT":
+		case "CLARIFICATION_REQUESTED":
 			return "Clarification Requested";
 		default:
 			return status || "--";
@@ -63,8 +47,6 @@ type UseEventReportSectionProps = {
 	report?: EventReportDetail | null;
 	isProposer?: boolean;
 	isValidator?: boolean;
-	hasValidatorPreviewed?: boolean;
-	isValidating?: boolean;
 	canCreateReport?: boolean;
 };
 
@@ -72,92 +54,67 @@ export const getEventReportSectionState = ({
 	report,
 	isProposer,
 	isValidator,
-	hasValidatorPreviewed,
-	isValidating,
 	canCreateReport = false,
 }: UseEventReportSectionProps) => {
-	const reportStatus = report?.status;
+	const status = report?.status;
 	const isReportCreated = Boolean(report?.id);
-	const isSubmitted = isSubmittedReport(reportStatus);
-	const isValidated = isValidatedReport(reportStatus);
-	const isEditable = isEditableReport(reportStatus);
+
+	const isGenerating = status === "GENERATING";
+	const isGenerationFailed = status === "GENERATION_FAILED";
+	const isSubmitted = status === "SUBMITTED";
+	const isValidated = status === "VALIDATED";
+	const isClarificationRequested = status === "CLARIFICATION_REQUESTED";
 
 	const shouldShowSection = canCreateReport || isReportCreated;
+
 	const canProposerCreate =
 		Boolean(isProposer) && canCreateReport && !isReportCreated;
-	const canProposerEdit = Boolean(isProposer) && isReportCreated && isEditable;
-	const canPreview = isReportCreated;
+	const canProposerResubmit =
+		Boolean(isProposer) && isReportCreated && isClarificationRequested;
+	const canProposerRetry =
+		Boolean(isProposer) && isReportCreated && isGenerationFailed;
+	const canDownload = isReportCreated && isSubmitted && Boolean(report?.pdfUrl);
 	const canValidatorValidate =
-		Boolean(isValidator) &&
-		isSubmitted &&
-		Boolean(hasValidatorPreviewed) &&
-		Boolean(report?.id);
+		Boolean(isValidator) && isSubmitted && Boolean(report?.id);
+	const canValidatorClarify = canValidatorValidate;
 
-	const statusLabel = getReportStatusLabel(reportStatus);
+	const statusLabel = getReportStatusLabel(status);
 
 	const title = !isReportCreated
 		? "Create Report"
-		: canProposerEdit
+		: canProposerResubmit
 			? "Edit Report"
-			: "Preview Report";
+			: canProposerRetry
+				? "Retry Generation"
+				: isGenerating
+					? "Generating Report"
+					: "Report";
 
 	const description = !isReportCreated
 		? "Create activity report after event is conducted."
-		: canProposerEdit
+		: canProposerResubmit
 			? "Report needs correction. Proposer can edit and resubmit."
-			: `Current status: ${statusLabel}`;
+			: canProposerRetry
+				? "Report generation failed. You can retry."
+				: isGenerating
+					? "Your report is being generated. You'll be notified when it's ready."
+					: `Current status: ${statusLabel}`;
 
 	return {
 		shouldShowSection,
 		isReportCreated,
+		isGenerating,
+		isGenerationFailed,
 		isSubmitted,
 		isValidated,
+		isClarificationRequested,
 		canProposerCreate,
-		canProposerEdit,
-		canPreview,
+		canProposerResubmit,
+		canProposerRetry,
+		canDownload,
 		canValidatorValidate,
-		isValidating,
+		canValidatorClarify,
 		title,
 		description,
 	};
-};
-
-export const getEventReportPreviewState = (
-	epcData?: EpcDetailResponse | null,
-	report?: EventReportDetail | null,
-) => {
-	const epf = epcData?.epf;
-
-	const totalParticipants =
-		(Number(epf?.internalParticipants) || 0) +
-		(Number(epf?.externalParticipants) || 0);
-
-	const hasData = Boolean(
-		epcData &&
-		(epcData.event_name?.title ||
-			epcData.proposal_number ||
-			epcData.event_description ||
-			epcData.location),
-	);
-
-	const summaryRows = [
-		{
-			label: "Internal Participants",
-			value: epf?.internalParticipants ?? "--",
-		},
-		{
-			label: "External Participants",
-			value: epf?.externalParticipants ?? "--",
-		},
-		{ label: "Total Participants", value: totalParticipants },
-		{
-			label: "Total Leads Generated",
-			value: report?.totalLeadsGenerated ?? "--",
-		},
-		{ label: "Approved Event Cost", value: report?.approvedEventCost ?? "--" },
-		{ label: "Expected Conversion", value: report?.expectedConversion ?? "--" },
-		{ label: "Outcome Status", value: report?.outcomeStatus ?? "--" },
-	];
-
-	return { totalParticipants, hasData, summaryRows };
 };
