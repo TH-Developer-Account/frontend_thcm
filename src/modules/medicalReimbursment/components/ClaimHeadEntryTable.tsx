@@ -10,7 +10,10 @@ import SimpleViewTable, {
 	type SimpleTableWidthUnits,
 } from "../../../components/ui/tables/SimpleViewTable";
 
-import { CLAIM_HEAD_OPTIONS } from "../utils/claimHead.constants";
+import {
+	CLAIM_HEAD_OPTIONS,
+	getClaimHeadLabel,
+} from "../utils/claimHead.constants";
 
 import type {
 	ClaimHead,
@@ -22,13 +25,13 @@ import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadFie
 import { formatDate } from "../../../utils/format";
 import Checkbox from "../../../components/forms/Checkbox";
 import {
+	resolveApprovedAmount,
 	sanitizeAmountInput,
+	sanitizeBillNumberInput,
 	toDatePickerValue,
 	toDateString,
 	useReimbursementClaimFormContext,
 } from "../hooks/useReimbursementClaimForm";
-
-const SKELETON_ROWS = 5;
 
 const formatCurrency = (amount: number) =>
 	`₹ ${amount.toLocaleString("en-IN", {
@@ -43,8 +46,7 @@ const sumAmounts = (
 
 /**
  * Wraps a review cell (Approved Amount / Approved / Remarks) so it is
- * visibly disabled and can't be clicked or focused, even if the inner
- * FormInput / Checkbox doesn't style its own disabled state.
+ * visibly disabled and can't be clicked or focused.
  */
 const ReviewCell = ({
 	locked,
@@ -89,6 +91,7 @@ export const ClaimHeadEntryTable = () => {
 		isReadOnly: isViewMode,
 		canReviewLineItems: canApproveLineItems,
 		canEditClaimForm: canEditClaimRows,
+		hideReviewColumns: hideReviewColumnsProp,
 		claimErrors: errors,
 		handleClaimChange: onChange,
 		handleSaveClaim: onSaveRow,
@@ -103,57 +106,39 @@ export const ClaimHeadEntryTable = () => {
 		savingRemarksId,
 	} = useReimbursementClaimFormContext();
 
-	// Only the current internal approver can review line items. The retired
-	// employee (public token page / guest portal) — and anyone else who isn't
-	// the active approver — sees these three columns locked.
+	// Only the current internal approver can review line items; everyone
+	// else sees these three columns locked.
 	const reviewLocked = !canApproveLineItems;
 
-	// Only the claimant (retired employee) can edit claim rows, so "locked +
-	// editable rows" means the retired employee is filling the form: hide the
-	// review columns entirely. Read-only viewers still see them, locked.
-	const hideReviewColumns = reviewLocked && canEditClaimRows && !isViewMode;
+	// Claimant filling a fresh claim: nothing to show in the review columns.
+	const hideReviewColumns = hideReviewColumnsProp;
 
 	const columns = useMemo<TableColumnDefinition<ClaimHeadRow>[]>(() => {
 		const tableColumns: TableColumnDefinition<ClaimHeadRow>[] = [
 			{
 				id: "serialNumber",
 				header: "S.No",
-
 				enableSorting: false,
-
 				cell: ({ row }) => row.index + 1,
 			},
-
 			{
 				accessorKey: "claimHead",
 				widthUnits: 1,
-
 				header: "Claim Head",
-
 				cell: ({ row }) => {
-					const option = CLAIM_HEAD_OPTIONS.find(
-						(item) => item.value === row.original.claimHead,
-					);
-
+					const label = getClaimHeadLabel(row.original.claimHead);
 					return (
-						<span
-							className="block max-w-52 truncate font-medium"
-							title={option?.label}
-						>
-							{option?.label ?? "--"}
+						<span className="block max-w-52 truncate font-medium" title={label}>
+							{label}
 						</span>
 					);
 				},
 			},
-
 			{
 				accessorKey: "billNumber",
-
 				header: "Bill No.",
-
 				cell: ({ row }) => {
 					const value = row.original.billNumber || "--";
-
 					return (
 						<span className="whitespace-nowrap" title={value}>
 							{value}
@@ -161,16 +146,12 @@ export const ClaimHeadEntryTable = () => {
 					);
 				},
 			},
-
 			{
 				accessorKey: "billName",
 				widthUnits: 1,
-
 				header: "Bill Description",
-
 				cell: ({ row }) => {
 					const value = row.original.billName || "--";
-
 					return (
 						<span className="block max-w-56 truncate" title={value}>
 							{value}
@@ -178,32 +159,25 @@ export const ClaimHeadEntryTable = () => {
 					);
 				},
 			},
-
 			{
 				accessorKey: "billDate",
-
 				header: "Bill Date",
-
 				cell: ({ row }) => (
 					<span className="whitespace-nowrap">
 						{formatDate(row.original.billDate)}
 					</span>
 				),
 			},
-
 			{
 				accessorKey: "fileName",
 				header: "Attachment",
 				widthUnits: 2,
 				enableSorting: false,
-
 				cell: ({ row }) => {
 					const fileValue = row.original.attachment;
-
 					if (!fileValue) {
 						return <span className="text-iron">--</span>;
 					}
-
 					return (
 						<div className="min-w-0">
 							<FileUploadField
@@ -222,12 +196,9 @@ export const ClaimHeadEntryTable = () => {
 			},
 			{
 				accessorKey: "amount",
-
 				header: "Claimed Amount",
-
 				cell: ({ row }) => {
 					const amount = Number(row.original.amount || 0);
-
 					return (
 						<span className="font-medium">
 							₹ {amount.toLocaleString("en-IN")}
@@ -240,28 +211,34 @@ export const ClaimHeadEntryTable = () => {
 		if (!hideReviewColumns) {
 			tableColumns.push({
 				id: "approvedClaimAmount",
-
 				header: "Approved Amount",
-
 				enableSorting: false,
-
 				cell: ({ row }) => {
 					const claim = row.original;
-
 					const isApproved = claim.approvalStatus === "APPROVED";
 
+					// Read-only viewers only see an amount once a bill is approved.
+					if (reviewLocked) {
+						return (
+							<span className="font-medium">
+								{isApproved
+									? `₹ ${Number(resolveApprovedAmount(claim) || 0).toLocaleString("en-IN")}`
+									: "--"}
+							</span>
+						);
+					}
+
 					return (
-						<ReviewCell locked={reviewLocked} className="min-w-10">
+						<ReviewCell locked={false} className="min-w-10">
 							<FormInput
-								value={claim.approvedClaimAmount ?? claim.amount}
+								// Pre-filled with the claimed amount, so ticking
+								// "Approve" without typing approves the full amount.
+								value={claim.approvedClaimAmount || claim.amount}
 								inputMode="decimal"
-								disabled={reviewLocked || loading || isApproved}
-								readOnly={reviewLocked}
-								tabIndex={reviewLocked ? -1 : undefined}
-								onChange={(event) => {
-									if (reviewLocked) return;
-									onApprovedAmountChange(claim.id, event.target.value);
-								}}
+								disabled={loading || isApproved || approvingId === claim.id}
+								onChange={(event) =>
+									onApprovedAmountChange(claim.id, event.target.value)
+								}
 								error={errors[`approvedClaimAmount-${claim.id}`]}
 								aria-label={`Approved amount for bill ${claim.billNumber}`}
 							/>
@@ -272,21 +249,15 @@ export const ClaimHeadEntryTable = () => {
 
 			tableColumns.push({
 				id: "review",
-
 				header: "Approved",
-
 				enableSorting: false,
-
 				cell: ({ row }) => {
 					const claim = row.original;
-
 					const isApproved = claim.approvalStatus === "APPROVED";
-
 					const isApproving = approvingId === claim.id;
-
 					const disabled = reviewLocked || loading || isApproving;
 
-					// The retired employee only sees the outcome, never the action.
+					// The claimant only sees the outcome, never the action.
 					const label = isApproved
 						? "Approved"
 						: reviewLocked
@@ -300,7 +271,7 @@ export const ClaimHeadEntryTable = () => {
 						>
 							<Checkbox
 								name={`bill-approved-${claim.id}`}
-								checked={isApproved || isApproving}
+								checked={isApproved}
 								disabled={disabled}
 								onChange={(checked) => {
 									if (disabled) return;
@@ -308,9 +279,9 @@ export const ClaimHeadEntryTable = () => {
 										void handleApproveLineItem(claim);
 										return;
 									}
-									onToggleLineItemStatus(claim.id);
+									void onToggleLineItemStatus(claim.id);
 								}}
-								label={label}
+								label={isApproving ? "Saving…" : label}
 								size={20}
 							/>
 						</ReviewCell>
@@ -325,52 +296,55 @@ export const ClaimHeadEntryTable = () => {
 				enableSorting: false,
 				cell: ({ row }) => {
 					const claim = row.original;
+
+					if (reviewLocked) {
+						const text = claim.remarks?.trim();
+						return (
+							<span
+								className={text ? "text-sm text-iron-dark" : "text-iron"}
+								title={text || undefined}
+							>
+								{text || "--"}
+							</span>
+						);
+					}
+
 					const isApproved = claim.approvalStatus === "APPROVED";
 					const isApproving = approvingId === claim.id;
 					const isSavingRemarks = savingRemarksId === claim.id;
-
-					const disabled =
-						reviewLocked ||
-						loading ||
-						isApproving ||
-						isApproved ||
-						isSavingRemarks;
-
 					const hasRemarks = Boolean(claim.remarks?.trim());
+					// Remarks stay editable until the bill is approved; a reduced
+					// approval needs its remark typed BEFORE ticking Approve.
+					const disabled =
+						loading || isApproving || isApproved || isSavingRemarks;
 
 					return (
 						<ReviewCell
-							locked={reviewLocked}
+							locked={false}
 							className="flex min-w-56 items-start gap-2"
 						>
 							<div className="min-w-0 flex-1">
 								<FormInput
-									placeholder={reviewLocked ? "--" : "Enter remarks"}
+									placeholder="Enter remarks"
 									value={claim.remarks ?? ""}
 									disabled={disabled}
-									readOnly={reviewLocked}
-									tabIndex={reviewLocked ? -1 : undefined}
-									onChange={(event) => {
-										if (reviewLocked) return;
-										onRemarksChange(claim.id, event.target.value);
-									}}
+									maxLength={500}
+									onChange={(event) =>
+										onRemarksChange(claim.id, event.target.value)
+									}
 									error={errors[`remarks-${claim.id}`]}
 									aria-label={`Remarks for bill ${claim.billNumber}`}
 								/>
 							</div>
-
-							{/* No save action at all when the column is locked. */}
-							{reviewLocked ? null : (
-								<Button
-									type="button"
-									appearance="icon"
-									Icon={Save}
-									disabled={disabled || !hasRemarks}
-									loading={isSavingRemarks}
-									onClick={() => void handleSaveRemarks(claim.id)}
-									title="Save remarks"
-								/>
-							)}
+							<Button
+								type="button"
+								appearance="icon"
+								Icon={Save}
+								disabled={disabled || !hasRemarks}
+								loading={isSavingRemarks}
+								onClick={() => void handleSaveRemarks(claim.id)}
+								title="Save remarks"
+							/>
 						</ReviewCell>
 					);
 				},
@@ -380,16 +354,11 @@ export const ClaimHeadEntryTable = () => {
 		if (canEditClaimRows && !isViewMode) {
 			tableColumns.push({
 				id: "actions",
-
 				header: "Actions",
-
 				enableSorting: false,
-
 				cell: ({ row }) => {
 					const claim = row.original;
-
 					const isDeleting = deletingId === claim.id;
-
 					return (
 						<div className="flex items-center gap-1.5">
 							<Button
@@ -398,17 +367,17 @@ export const ClaimHeadEntryTable = () => {
 								appearance="icon"
 								variant="outline"
 								size="sm"
+								disabled={loading}
 								onClick={() => onEditRow(claim)}
 								aria-label="Edit Claim"
 							/>
-
 							<Button
 								type="button"
 								Icon={Trash2}
 								appearance="icon"
 								variant="outline"
 								size="sm"
-								disabled={isDeleting}
+								disabled={isDeleting || loading}
 								onClick={() => onDeleteRow(claim.id)}
 								aria-label="Delete Claim"
 							/>
@@ -455,7 +424,10 @@ export const ClaimHeadEntryTable = () => {
 							: column.id === "approvedClaimAmount"
 								? (rows) =>
 										formatCurrency(
-											sumAmounts(rows, (row) => row.approvedClaimAmount),
+											sumAmounts(
+												rows.filter((row) => row.approvalStatus === "APPROVED"),
+												(row) => resolveApprovedAmount(row),
+											),
 										)
 								: undefined,
 			})),
@@ -473,7 +445,6 @@ export const ClaimHeadEntryTable = () => {
 			{canEditClaimRows && !isViewMode
 				? items.map((item) => {
 						const isSaving = savingId === item.id;
-
 						const isEditing = editingId === item.id;
 
 						return (
@@ -503,9 +474,14 @@ export const ClaimHeadEntryTable = () => {
 								<FormInput
 									value={item.billNumber}
 									label="Bill Number"
-									placeholder="Bill Number"
+									placeholder="e.g. MI-5532"
+									maxLength={50}
 									onChange={(event) =>
-										onChange(item.id, "billNumber", event.target.value)
+										onChange(
+											item.id,
+											"billNumber",
+											sanitizeBillNumberInput(event.target.value),
+										)
 									}
 									error={errors[`billNumber-${item.id}`]}
 								/>
@@ -514,6 +490,7 @@ export const ClaimHeadEntryTable = () => {
 									value={item.billName}
 									placeholder="Bill Description"
 									label="Bill Description"
+									maxLength={150}
 									onChange={(event) =>
 										onChange(item.id, "billName", event.target.value)
 									}
@@ -569,11 +546,11 @@ export const ClaimHeadEntryTable = () => {
 										appearance="icon"
 										variant="outline"
 										size="sm"
-										disabled={isSaving}
+										disabled={isSaving || loading}
 										onClick={() => onSaveRow(item)}
 										aria-label={isEditing ? "Update Claim" : "Add Claim"}
+										title={isEditing ? "Update bill" : "Add bill"}
 									/>
-
 									<Button
 										type="button"
 										Icon={RotateCcw}
@@ -583,6 +560,7 @@ export const ClaimHeadEntryTable = () => {
 										disabled={isSaving}
 										onClick={onCancelEdit}
 										aria-label="Reset"
+										title={isEditing ? "Cancel editing" : "Clear row"}
 									/>
 								</div>
 							</div>
@@ -600,8 +578,7 @@ export const ClaimHeadEntryTable = () => {
 						data={savedClaims}
 						columns={simpleColumns}
 						getRowId={(claim) => claim.id}
-						loading={loading}
-						skeletonRows={SKELETON_ROWS}
+						loading={false}
 						maxHeight="500px"
 						ariaLabel="Saved Claim Heads"
 						emptyTitle="No claim heads added"

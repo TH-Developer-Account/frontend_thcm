@@ -4,6 +4,10 @@ import { NavLink } from "react-router-dom";
 
 import Button from "../../../components/common/Button";
 import { Badge } from "../../../components/common/Badge";
+import {
+	GUEST_EDITABLE_STATUSES,
+	normalizeStatus,
+} from "../../medicalReimbursment/utils/medicalClaimStatus.constants";
 
 import type { ReimbursementClaimListItem } from "./reimbursementClaim.types";
 
@@ -21,28 +25,12 @@ const dateFormatter = new Intl.DateTimeFormat("en-IN", {
 
 const formatDate = (value: string): string => {
 	const date = new Date(value);
-
 	return Number.isNaN(date.getTime()) ? "—" : dateFormatter.format(date);
 };
 
-/* -------------------------------------------------------------------------- */
-/* Route helpers                                                              */
-/* -------------------------------------------------------------------------- */
-
-const EDITABLE_STATUSES = new Set([
-	"CLARIFIED",
-	"CLARIFICATION_REQUESTED",
-	"THCM_CLARIFICATION_REQUESTED",
-]);
-
-const normalizeStatus = (status?: string | null): string =>
-	String(status ?? "")
-		.trim()
-		.toUpperCase();
-
-const canEditClaim = (claim: ReimbursementClaimListItem): boolean => {
-	return EDITABLE_STATUSES.has(normalizeStatus(claim.status));
-};
+/** Same rule as the backend: guests edit only after a clarification request. */
+export const canGuestEditClaim = (claim: Pick<ReimbursementClaimListItem, "status">): boolean =>
+	GUEST_EDITABLE_STATUSES.has(normalizeStatus(claim.status));
 
 const getClaimRoute = (claim: ReimbursementClaimListItem): string =>
 	`/guest/medi-claim/${claim.id}`;
@@ -65,76 +53,60 @@ export const getReimbursementClaimListingColumns = ({
 			</NavLink>
 		),
 	},
-
-	{
-		accessorKey: "employeeName",
-		header: "Employee Name",
-	},
-
-	{
-		accessorKey: "ticketNumber",
-		header: "Ticket No.",
-	},
-
+	{ accessorKey: "employeeName", header: "Employee Name" },
+	{ accessorKey: "ticketNumber", header: "Ticket No." },
 	{
 		accessorKey: "claimFor",
 		header: "Claim For",
 		cell: ({ row }) => {
 			const value = row.original.claimFor;
-
 			return value ? value.charAt(0) + value.slice(1).toLowerCase() : "—";
 		},
 	},
-
 	{
 		accessorKey: "totalClaimAmount",
 		header: "Claimed Amount",
 		cell: ({ row }) => currencyFormatter.format(row.original.totalClaimAmount),
 	},
-
 	{
 		accessorKey: "totalApprovedAmount",
 		header: "Approved Amount",
-		cell: ({ row }) =>
-			currencyFormatter.format(row.original.totalApprovedAmount),
+		cell: ({ row }) => currencyFormatter.format(row.original.totalApprovedAmount),
 	},
-
 	{
-		accessorKey: "isApproved",
-		header: "Approved",
-		cell: ({ row }) => (row.original.isApproved ? "Yes" : "No"),
+		accessorKey: "approvedBillsLabel",
+		header: "Bills Approved",
 	},
-
 	{
 		accessorKey: "remarks",
 		header: "Remarks",
-		cell: ({ row }) => row.original.remarks || "—",
+		cell: ({ row }) => (
+			<span className="block max-w-64 truncate" title={row.original.remarks || undefined}>
+				{row.original.remarks || "—"}
+			</span>
+		),
 	},
-
 	{
 		accessorKey: "status",
 		header: "Status",
 		cell: ({ row }) => <Badge status={row.original.status} />,
 	},
-
 	{
 		accessorKey: "createdAt",
 		header: "Created On",
 		cell: ({ row }) => formatDate(row.original.createdAt),
 	},
-
 	{
 		id: "actions",
 		header: "Actions",
 		enableSorting: false,
 		cell: ({ row }) => {
 			const claim = row.original;
-			const editable = canEditClaim(claim);
-
+			const editable = canGuestEditClaim(claim);
 			return (
 				<Button
 					type="button"
-					text={editable ? "Edit" : "View"}
+					text={editable ? "Edit & Resubmit" : "View"}
 					Icon={editable ? FilePenLine : Eye}
 					iconPosition="left"
 					iconSize={16}

@@ -3,10 +3,12 @@ import { ClipboardClock } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import Card from "../../../components/common/Card";
+import Button from "../../../components/common/Button";
 import { CardEmpty } from "../../../components/ui/CardSkeleton";
 import { AuditLogSection } from "../../../components/ui/audit";
 import { CommentsSection } from "../../../components/ui/comments";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
+import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { ApprovalWorkflowTableContent } from "../../workflows";
 import ReimbursementClaimForm from "../components/ReimbursementClaimForm";
 import { useMedicalClaimView } from "../hooks/useMedicalClaimView";
@@ -17,10 +19,8 @@ type ReimbursementPageProps = {
 	refreshKey?: string | number;
 };
 
-const ReimbursementPage = ({
-	mode,
-	refreshKey = 0,
-}: ReimbursementPageProps) => {
+/** THCM claim detail: review, line-item approval, workflow, close, export. */
+const ReimbursementPage = ({ mode, refreshKey = 0 }: ReimbursementPageProps) => {
 	const navigate = useNavigate();
 
 	const {
@@ -34,15 +34,11 @@ const ReimbursementPage = ({
 	}>();
 
 	const resolvedClaimId = claimId || medicalClaimId || id;
-	const isExistingClaim = Boolean(resolvedClaimId);
-
-	const claimView = useMedicalClaimView({
-		claimId: resolvedClaimId,
-	});
+	const claimView = useMedicalClaimView({ claimId: resolvedClaimId });
 
 	let content: ReactNode;
 
-	if (!isExistingClaim) {
+	if (!resolvedClaimId) {
 		content = (
 			<Card padding="spacious">
 				<p className="text-sm text-rejected" role="alert">
@@ -56,12 +52,25 @@ const ReimbursementPage = ({
 				<p role="status">Loading medical claim…</p>
 			</Card>
 		);
-	} else if (claimView.isError) {
+	} else if (claimView.isError || !claimView.detail) {
 		content = (
 			<Card padding="spacious">
-				<p className="text-sm text-rejected" role="alert">
-					Unable to load this medical claim. Please try again.
-				</p>
+				<div className="flex flex-col items-start gap-3">
+					<p className="text-sm text-rejected" role="alert">
+						{getApiErrorMessage(
+							claimView.error,
+							"Unable to load this medical claim. Please try again.",
+						)}
+					</p>
+					<Button
+						type="button"
+						text="Retry"
+						size="sm"
+						appearance="standard"
+						variant="outline"
+						onClick={() => void claimView.refresh()}
+					/>
+				</div>
 			</Card>
 		);
 	} else {
@@ -69,20 +78,31 @@ const ReimbursementPage = ({
 			<ReimbursementClaimForm
 				claimId={resolvedClaimId}
 				referenceNumber={claimView.referenceNumber}
+				// Staff never edit claimant data — view mode unless a page forces it.
 				mode={mode ?? claimView.mode}
 				canEdit={claimView.canEdit}
 				actorRole={claimView.actorRole}
 				initialValues={claimView.initialValues}
 				initialLineItems={claimView.initialLineItems}
-				statusLabel={claimView.detail?.status ?? undefined}
+				gradeOptions={claimView.gradeOptions}
+				statusLabel={claimView.detail.status ?? undefined}
+				correctionReason={claimView.correctionReason}
+				eligibilityPendingAmount={claimView.eligibilityPendingAmount}
+				// Approvers decide on over-limit claims; never block in staff view.
+				enforceEligibilityLimit={false}
 				isExportingExcel={claimView.isExportingExcel}
-				handleExport={claimView.handleExport}
+				handleExport={claimView.permissions.canExport ? claimView.handleExport : undefined}
 				isPreparingPdf={claimView.isPreparingPdf}
 				isDownloadingPdf={claimView.isDownloadingPdf}
-				handleDownloadPdf={claimView.handleDownloadPdf}
-				handleViewPdf={claimView.handleViewPdf}
+				handleViewPdf={claimView.permissions.canDownloadPdf ? claimView.handleViewPdf : undefined}
+				handleDownloadPdf={
+					claimView.permissions.canDownloadPdf ? claimView.handleDownloadPdf : undefined
+				}
+				pdfUrl={claimView.pdfUrl}
+				onClosePdfPreview={claimView.closePdfPreview}
 				canApprove={claimView.canApprove}
 				canClarify={claimView.canClarify}
+				canReviewLineItems={claimView.canApproveLineItems}
 				isExternalApprover={claimView.isExternalApprover}
 				approvalActionLoading={claimView.isWorkflowActionLoading}
 				onApproveStage={claimView.approveCurrentStage}
@@ -90,12 +110,15 @@ const ReimbursementPage = ({
 				onLineItemApprove={
 					claimView.canApproveLineItems ? claimView.approveLineItem : undefined
 				}
-				onLineItemRemarksSave={
-					claimView.canApproveLineItems
-						? claimView.saveLineItemRemarks
-						: undefined
+				onLineItemUnapprove={
+					claimView.canApproveLineItems ? claimView.unapproveLineItem : undefined
 				}
-				onSubmit={claimView.canEdit ? claimView.saveClaim : undefined}
+				onLineItemRemarksSave={
+					claimView.canApproveLineItems ? claimView.saveLineItemRemarks : undefined
+				}
+				canClose={claimView.canClose}
+				onCloseClaim={claimView.canClose ? claimView.closeClaim : undefined}
+				isClosing={claimView.isClosing}
 				actionText={claimView.actionText}
 				commentsSection={
 					claimView.canShowCommentSection ? (

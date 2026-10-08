@@ -3,15 +3,16 @@ import {
 	ArrowLeft,
 	BadgeIndianRupee,
 	CheckCircle2,
+	Eye,
 	FileDown,
 	FilePenLine,
 	FileSpreadsheet,
 	GitBranch,
+	Lock,
 	MessageSquareText,
 	RefreshCcw,
 	Save,
 	Stethoscope,
-	UserRound,
 } from "lucide-react";
 
 import { Badge } from "../../../components/common/Badge";
@@ -22,10 +23,8 @@ import Checkbox from "../../../components/forms/Checkbox";
 import FormInput from "../../../components/forms/FormInput";
 import Radio from "../../../components/forms/Radio";
 import SelectInput from "../../../components/forms/SelectInput";
-import TextareaInput from "../../../components/forms/TextareaInput";
 import {
 	COVERAGE_OPTIONS,
-	GRADE_OPTIONS,
 	ReimbursementClaimFormContext,
 	currencyFormatter,
 	toDatePickerValue,
@@ -36,11 +35,18 @@ import {
 } from "../hooks/useReimbursementClaimForm";
 import ClaimHeadEntryTable from "./ClaimHeadEntryTable";
 import EligibilitySidePanel from "./EligibilitySidePanel";
+import PdfPreviewModal from "./PdfPreviewModal";
 import NavigateButton from "../../../components/common/NavigateButton";
 import type { ActionMenuItem } from "../../../components/common/ActionMenu";
 import ActionMenu from "../../../components/common/ActionMenu";
 import { Alert } from "../../../components/common/Alert";
 import type { AlertVariant } from "../../../components/common/common.types";
+import { formatDate } from "../../../utils/format";
+import { MEDICLAIM_BACKEND } from "../utils/mediclaimBackend.config";
+import { MAX_REASON_LENGTH } from "../utils/reimbursementClaim.schemas";
+// Shared approve / clarify footer. Adjust this path if the component lives
+// elsewhere in your repo (it imports ../forms/TextareaInput + ../common/Button).
+import ApprovalActionsBar from "../../../components/ui/ApprovalActionsBar";
 
 export type StatusBanner = {
 	variant: AlertVariant;
@@ -55,25 +61,24 @@ export type ReimbursementClaimFormProps = UseReimbursementClaimFormArgs & {
 	isPreparingPdf?: boolean;
 	isDownloadingPdf?: boolean;
 	handleViewPdf?: () => void | Promise<void>;
+	handleDownloadPdf?: () => void | Promise<void>;
+	/** Signed URL of the PDF being previewed (null = modal closed). */
+	pdfUrl?: string | null;
+	onClosePdfPreview?: () => void;
 	statusBanner?: StatusBanner;
 	showAlertBanner?: boolean;
-	handleDownloadPdf?: () => void | Promise<void>;
 };
 
-type ReimbursementClaimFormContentProps = {
-	claimId?: string;
-	isExportingExcel?: boolean;
-	handleExport?: () => void | Promise<void>;
-	isPreparingPdf?: boolean;
-	isDownloadingPdf?: boolean;
-	handleViewPdf?: () => void | Promise<void>;
-	handleDownloadPdf?: () => void | Promise<void>;
-	statusBanner?: StatusBanner | null;
-};
+type ReimbursementClaimFormContentProps = Omit<
+	ReimbursementClaimFormProps,
+	keyof UseReimbursementClaimFormArgs | "showAlertBanner" | "statusBanner"
+> & { statusBanner?: StatusBanner | null };
 
-// One action can be pending at a time — either sending for clarification
-// or approving. Both share a single inline reason textarea.
-type PendingApprovalAction = "clarify" | "approve" | null;
+// One footer action can be pending at a time. approve/clarify share a reason
+// textarea; close is a plain confirmation.
+// Approve / clarify go through ApprovalActionsBar (it owns the reason box);
+// only "close" still needs a local confirmation step.
+type PendingFooterAction = "close" | null;
 
 const ReimbursementClaimFormContent = ({
 	claimId,
@@ -81,7 +86,10 @@ const ReimbursementClaimFormContent = ({
 	handleExport,
 	isPreparingPdf,
 	isDownloadingPdf,
+	handleViewPdf,
 	handleDownloadPdf,
+	pdfUrl,
+	onClosePdfPreview,
 	statusBanner,
 }: ReimbursementClaimFormContentProps) => {
 	const {
@@ -91,16 +99,22 @@ const ReimbursementClaimFormContent = ({
 		isLoading,
 		isSubmitting,
 		isSavingDraft,
+		gradeOptions,
 		selectedGrade,
+		isGradeLocked,
 		lineItemsTotal,
 		isReadOnly,
 		canEditClaimForm,
 		fieldMode,
 		claimStatusLabel,
 		canCompleteStage,
+		savedClaims,
 		mode,
 		canApprove,
 		canClarify,
+		canClose,
+		isClosing,
+		correctionReason,
 		isExternalApprover,
 		approvalActionLoading,
 		onBack,
@@ -113,109 +127,151 @@ const ReimbursementClaimFormContent = ({
 		hasSaveDraftAction,
 		hasApproveStageAction,
 		hasClarifyStageAction,
+		hasCloseAction,
 		handleChange,
 		handleSubmit,
 		handleSaveDraft,
 		handleReset,
 		clarifyLoading,
-
-		// buildClarifyReasonPrefix, // commented out per request — user will type their own reason for now, will revisit prefixing later
+		buildClarifyReasonPrefix,
 		handleClarifyConfirm,
 		handleApproveStage,
+		handleCloseClaim,
 	} = useReimbursementClaimFormContext();
 
-	const [pendingAction, setPendingAction] =
-		useState<PendingApprovalAction>(null);
-	const [reasonText, setReasonText] = useState("");
-	const [reasonError, setReasonError] = useState<string | undefined>();
+	const [pendingAction, setPendingAction] = useState<PendingFooterAction>(null);
+	const [isConfirming, setIsConfirming] = useState(false);
 
 	const isReasonFlowOpen = pendingAction !== null;
-	const isReasonBusy = clarifyLoading || approvalActionLoading;
+	const isReasonBusy =
+		clarifyLoading || approvalActionLoading || isConfirming || isClosing;
 
-	const openReasonFlow = (action: PendingApprovalAction) => {
+	const openFooterAction = (action: PendingFooterAction) => {
 		setPendingAction(action);
-		setReasonText("");
-		setReasonError(undefined);
 	};
 
-	const cancelReasonFlow = () => {
+	const cancelFooterAction = () => {
 		if (isReasonBusy) return;
 		setPendingAction(null);
-		setReasonText("");
-		setReasonError(undefined);
 	};
 
-	const handleReasonConfirm = async () => {
-		const trimmed = reasonText.trim();
-		if (!trimmed) {
-			setReasonError("A reason is required to continue.");
-			return;
+	const handleFooterConfirm = async () => {
+		if (pendingAction !== "close") return;
+		setIsConfirming(true);
+		try {
+			await handleCloseClaim?.();
+			setPendingAction(null);
+		} catch {
+			// The page-level handler already showed an error toast.
+		} finally {
+			setIsConfirming(false);
 		}
-
-		if (pendingAction === "clarify") {
-			await handleClarifyConfirm(trimmed);
-		} else if (pendingAction === "approve") {
-			// NOTE: handleApproveStage (onApproveStage) currently takes no
-			// arguments, so the reason isn't forwarded to the API yet — the
-			// hook's onApproveStage signature needs to accept a reason param
-			// for this to be persisted. Flagging this rather than silently
-			// dropping it.
-			await handleApproveStage?.();
-		}
-
-		setPendingAction(null);
-		setReasonText("");
-		setReasonError(undefined);
 	};
 
-	const sections: CardSection[] = [
-		{
-			id: "employee-details",
-			title: "Employee and Patient Details",
-			Icon: UserRound,
-			defaultExpanded: true,
-			// Total / settled / remaining now live in the sticky EligibilitySidePanel.
-			children: (
-				<div className="grid grid-cols-1 gap-3 px-4.5 items-center sm:grid-cols-2">
+	// ApprovalActionsBar validates the reason length and clears it on
+	// success. The page handlers toast their own errors, so failures are
+	// swallowed here (the bar fires these without a catch).
+	const approveFromBar = async (reason: string) => {
+		try {
+			await handleApproveStage(reason);
+		} catch {
+			/* toasted by the page */
+		}
+	};
+
+	// The claimant should see exactly which bills to fix, so the flagged
+	// bills (with the approver's remarks) are appended to the typed reason.
+	const clarifyFromBar = async (reason: string) => {
+		const flagged = buildClarifyReasonPrefix();
+		try {
+			await handleClarifyConfirm(flagged ? `${reason}\n\n${flagged}` : reason);
+		} catch {
+			/* toasted by the page */
+		}
+	};
+
+	const showSpouse =
+		values.coverageType === "SPOUSE" || values.coverageType === "BOTH";
+
+	// Employee details + coverage sit at the top of the card, without their
+	// own collapsible sections.
+	// Top of the card: employee + coverage fields on the left, eligibility
+	// panel on the right (stacks below the fields on small screens), all
+	// above the Claim Heads table.
+	// `w-full` makes the grid span the whole card even when the parent
+	// secondary-header is a flex container.
+	const headerFields = (
+		<div className="grid w-full grid-cols-1 gap-5 px-5 py-4 xl:grid-cols-[minmax(0,1fr)_420px]">
+			{/* Employee / claim information */}
+			<div className="min-w-0">
+				<div className="mb-4 flex items-center gap-2">
+					<div className="h-4 w-1 rounded-full bg-orange-500" />
+					<h3 className="text-sm font-semibold text-iron-dark">
+						Employee Details
+					</h3>
+				</div>
+
+				<div className="grid grid-cols-1 gap-x-4 gap-y-4 md:grid-cols-2 2xl:grid-cols-3">
 					<FormInput
-						mode={fieldMode}
+						mode="view"
+						name="employeeName"
+						label="Name of Employee"
+						value={values.employeeName}
+						readOnly
+						error={errors.employeeName}
+					/>
+
+					<FormInput
+						mode="view"
 						name="ticketNumber"
 						label="Ticket Number"
-						value={values.ticketNumber}
-						error={errors.ticketNumber}
-						helperText="Ticket Number from grade."
-						required
-						onChange={(event: ChangeEvent<HTMLInputElement>) =>
-							handleChange("ticketNumber", event.target.value)
+						value={values.ticketNumber || "--"}
+						readOnly
+						helperText={
+							canEditClaimForm
+								? "Set by HR. Contact HR if this is wrong."
+								: undefined
 						}
 					/>
+
 					<SelectInput
-						mode={fieldMode}
+						mode={isGradeLocked ? "view" : fieldMode}
 						name="grade"
 						label="Grade"
 						placeholder="Select grade"
-						options={GRADE_OPTIONS.map(({ label, value }) => ({
+						options={gradeOptions.map(({ label, value }) => ({
 							label,
 							value,
 						}))}
 						value={
 							selectedGrade
-								? { label: selectedGrade.label, value: selectedGrade.value }
+								? {
+										label: selectedGrade.label,
+										value: selectedGrade.value,
+									}
 								: null
 						}
 						error={errors.grade}
-						onChange={(option) => handleChange("grade", option?.value ?? "")}
+						onChange={(option) => {
+							if (!isGradeLocked) {
+								handleChange("grade", option?.value ?? "");
+							}
+						}}
 					/>
-				</div>
-			),
-		},
-		{
-			id: "coverage-type",
-			title: "Coverage Type",
-			Icon: UserRound,
-			defaultExpanded: true,
-			children: (
-				<div className="grid grid-cols-1 items-center gap-3 px-4.5 sm:grid-cols-2 xl:grid-cols-3">
+
+					<FormInput
+						mode={fieldMode}
+						name="location"
+						label="Location"
+						value={values.location}
+						required={canEditClaimForm}
+						maxLength={100}
+						error={errors.location}
+						onChange={(event: ChangeEvent<HTMLInputElement>) =>
+							handleChange("location", event.target.value)
+						}
+					/>
+
 					<Radio
 						groupLabel="Coverage Type"
 						name="coverageType"
@@ -231,45 +287,30 @@ const ReimbursementClaimFormContent = ({
 							)
 						}
 					/>
-					<FormInput
-						mode={fieldMode}
-						name="employeeName"
-						label="Name of Employee"
-						value={values.employeeName}
-						required
-						error={errors.employeeName}
-						onChange={(event: ChangeEvent<HTMLInputElement>) =>
-							handleChange("employeeName", event.target.value)
-						}
-					/>
-					{values.coverageType === "SPOUSE" ||
-					values.coverageType === "BOTH" ? (
+
+					{showSpouse ? (
 						<FormInput
 							mode={fieldMode}
 							name="spouseName"
 							label="Spouse Name"
 							value={values.spouseName}
-							required
+							required={canEditClaimForm}
+							maxLength={100}
 							error={errors.spouseName}
 							onChange={(event: ChangeEvent<HTMLInputElement>) =>
 								handleChange("spouseName", event.target.value)
 							}
 						/>
 					) : null}
-					<FormInput
-						mode={fieldMode}
-						name="location"
-						label="Location"
-						value={values.location}
-						required
-						error={errors.location}
-						onChange={(event: ChangeEvent<HTMLInputElement>) =>
-							handleChange("location", event.target.value)
-						}
-					/>
 				</div>
-			),
-		},
+			</div>
+
+			{/* Eligibility summary */}
+			<EligibilitySidePanel className="min-w-0 xl:self-stretch" />
+		</div>
+	);
+
+	const sections: CardSection[] = [
 		{
 			id: "claim-heads",
 			title: "Claim Heads",
@@ -282,7 +323,7 @@ const ReimbursementClaimFormContent = ({
 			defaultExpanded: true,
 			children: <ClaimHeadEntryTable />,
 		},
-		...(mode === "edit"
+		...(mode === "edit" && canEditClaimForm
 			? [
 					{
 						id: "declaration-signature",
@@ -328,7 +369,33 @@ const ReimbursementClaimFormContent = ({
 						),
 					},
 				]
-			: []),
+			: values.declarationAccepted
+				? [
+						{
+							id: "declaration-signature",
+							title: "Declaration",
+							Icon: BadgeIndianRupee,
+							defaultExpanded: false,
+							children: (
+								<p className="flex items-center gap-2 px-4.5 text-sm text-iron">
+									<CheckCircle2
+										aria-hidden="true"
+										size={16}
+										className="shrink-0"
+									/>
+									Declaration accepted
+									{values.employeeSignature
+										? ` by ${values.employeeSignature}`
+										: ""}
+									{values.claimDate
+										? ` on ${formatDate(values.claimDate)}`
+										: ""}
+									.
+								</p>
+							),
+						},
+					]
+				: []),
 		...(workflowSection
 			? [
 					{
@@ -363,28 +430,66 @@ const ReimbursementClaimFormContent = ({
 				]
 			: []),
 	];
-	const showButtons = canEditClaimForm || canApprove || canClarify;
+
+	const canShowClose = canClose && hasCloseAction;
+	const showButtons =
+		canEditClaimForm || canApprove || canClarify || canShowClose;
+
 	const claimActions: ActionMenuItem<string>[] = [
-		{
-			id: "download-pdf",
-			label: isDownloadingPdf ? "Downloading…" : "PDF",
-			Icon: FileDown,
-			onClick: () => void handleDownloadPdf?.(),
-			disabled: isDownloadingPdf || isPreparingPdf,
-		},
-		{
-			id: "export-excel",
-			label: isExportingExcel ? "Exporting…" : "Excel",
-			Icon: FileSpreadsheet,
-			onClick: () => void handleExport?.(),
-			disabled: isExportingExcel || !handleExport,
-		},
+		...(handleViewPdf
+			? [
+					{
+						id: "view-pdf",
+						label: isPreparingPdf ? "Preparing…" : "View PDF",
+						Icon: Eye,
+						onClick: () => void handleViewPdf(),
+						disabled: isPreparingPdf || isDownloadingPdf,
+					},
+				]
+			: []),
+		...(handleDownloadPdf
+			? [
+					{
+						id: "download-pdf",
+						label: isDownloadingPdf ? "Downloading…" : "Download PDF",
+						Icon: FileDown,
+						onClick: () => void handleDownloadPdf(),
+						disabled: isDownloadingPdf || isPreparingPdf,
+					},
+				]
+			: []),
+		...(handleExport
+			? [
+					{
+						id: "export-excel",
+						label: isExportingExcel ? "Exporting…" : "Excel",
+						Icon: FileSpreadsheet,
+						onClick: () => void handleExport(),
+						disabled: Boolean(isExportingExcel),
+					},
+				]
+			: []),
 	];
 
+	const approveLabel = isExternalApprover
+		? MEDICLAIM_BACKEND.externalApproverClose
+			? "OK and Close"
+			: "OK"
+		: "Approve";
+	// Approve stays visible but disabled until every line item is approved.
+	const approveBlocked =
+		canApprove && hasApproveStageAction && !canCompleteStage;
+	const approveBlockedMessage = `Approve every line item to enable ${approveLabel}.`;
+	const approvedLineItemCount = savedClaims.filter(
+		(item) => item.approvalStatus === "APPROVED",
+	).length;
+
+	const isApproverFooter =
+		(canApprove && hasApproveStageAction) ||
+		(canClarify && hasClarifyStageAction);
+
 	return (
-		// Form on the left, sticky eligibility panel on the right (lg+).
-		// Below lg the panel stacks ABOVE the form so the balance is seen first.
-		<div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1fr)_300px]">
+		<div className="flex flex-col gap-3">
 			<form
 				className="flex min-w-0 flex-col gap-2"
 				noValidate
@@ -393,26 +498,31 @@ const ReimbursementClaimFormContent = ({
 				{statusBanner ? (
 					<Alert
 						key={`${statusBanner.title}-${statusBanner.description ?? ""}`}
-						{...statusBanner}
 						type="banner"
 						variant={statusBanner.variant}
 						title={statusBanner.title}
 						description={statusBanner.description}
 						dismissible
-						autoHideMs={2000}
+					/>
+				) : null}
+				{correctionReason ? (
+					<Alert
+						type="banner"
+						variant="warning"
+						title="Changes requested by the approver"
+						description={correctionReason}
 					/>
 				) : null}
 				<Card
 					title={
 						<div className="inline-flex items-center gap-2 text-xl font-semibold tracking-tight text-iron-dark">
 							<NavigateButton direction="back" />
-							<span>Medical Claim Form </span>
-							{referenceNumber ? <span>/ {referenceNumber} /</span> : null}
+							{referenceNumber ? <span>{referenceNumber}</span> : null}
 							<Badge status={claimStatusLabel} />
 						</div>
 					}
 					actions={
-						claimId ? (
+						claimId && claimActions.length ? (
 							<ActionMenu
 								size="xs"
 								row={claimId}
@@ -427,32 +537,12 @@ const ReimbursementClaimFormContent = ({
 						showButtons && (
 							<div className="flex w-full flex-col gap-3">
 								{isReasonFlowOpen ? (
-									// Inline reason flow replaces the approve/clarify button
-									// row in place, so the footer never shows both the
-									// buttons and the textarea at once (avoids layout jumps
-									// / overflow on narrow screens).
-									<div className="flex w-full flex-col gap-2 rounded-md border border-border bg-page p-3 sm:flex-row sm:items-start">
-										<div className="flex-1">
-											<TextareaInput
-												name="approvalReason"
-												label={
-													pendingAction === "clarify"
-														? "Reason for clarification"
-														: "Reason for approval"
-												}
-												value={reasonText}
-												rows={3}
-												autoFocus
-												disabled={isReasonBusy}
-												error={reasonError}
-												placeholder="Enter a reason…"
-												onChange={(event) => {
-													setReasonText(event.target.value);
-													if (reasonError) setReasonError(undefined);
-												}}
-											/>
-										</div>
-										<div className="flex shrink-0 gap-2 sm:pt-6">
+									<div className="flex w-full flex-col gap-2 rounded-md border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center">
+										<p className="flex-1 text-sm text-iron">
+											Close this approved claim? Closed claims are final and can
+											no longer be changed.
+										</p>
+										<div className="flex shrink-0 gap-2">
 											<Button
 												type="button"
 												text="Cancel"
@@ -460,27 +550,61 @@ const ReimbursementClaimFormContent = ({
 												appearance="standard"
 												variant="outline"
 												disabled={isReasonBusy}
-												onClick={cancelReasonFlow}
+												onClick={cancelFooterAction}
 											/>
 											<Button
 												type="button"
-												text={
-													isReasonBusy
-														? "Submitting…"
-														: pendingAction === "clarify"
-															? "Send"
-															: isExternalApprover
-																? "OK and Close"
-																: "Approve"
-												}
+												text={isReasonBusy ? "Closing…" : "Close Claim"}
+												Icon={Lock}
 												size="sm"
 												appearance="standard"
 												variant="brand"
-												disabled={isReasonBusy || !reasonText.trim()}
-												onClick={() => void handleReasonConfirm()}
+												disabled={isReasonBusy}
+												onClick={() => void handleFooterConfirm()}
 											/>
 										</div>
 									</div>
+								) : isApproverFooter ? (
+									<>
+										{approveBlocked ? (
+											<Alert
+												type="banner"
+												variant="warning"
+												title={approveBlockedMessage}
+												description={`${approvedLineItemCount} of ${savedClaims.length} line items approved. Approve or adjust the rest to finish this stage.`}
+											/>
+										) : null}
+										<ApprovalActionsBar
+											variant="approver"
+											showBack={Boolean(onBack)}
+											onBack={onBack}
+											canApprove={canApprove && hasApproveStageAction}
+											approveDisabled={approveBlocked}
+											approveDisabledReason={approveBlockedMessage}
+											canClarify={canClarify && hasClarifyStageAction}
+											onApprove={approveFromBar}
+											onClarify={clarifyFromBar}
+											approveLabel={approveLabel}
+											clarifyLabel="Send for Clarification"
+											loading={isReasonBusy}
+											maxReasonLength={MAX_REASON_LENGTH}
+											reasonPlaceholder={
+												canClarify
+													? "Reason for approval, or what the claimant should correct"
+													: "Add a reason (at least 3 characters)"
+											}
+										/>
+									</>
+								) : canShowClose ? (
+									<ApprovalActionsBar
+										variant="proposer"
+										showBack={Boolean(onBack)}
+										onBack={onBack}
+										canAcceptAndClose
+										onAcceptAndClose={() => openFooterAction("close")}
+										acceptAndCloseLabel="Close Claim"
+										loading={isReasonBusy}
+									/>
 								) : (
 									<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
 										<div>
@@ -519,7 +643,7 @@ const ReimbursementClaimFormContent = ({
 														appearance="standard"
 														variant="outline"
 														disabled={isLoading}
-														onClick={handleSaveDraft}
+														onClick={() => void handleSaveDraft()}
 													/>
 												) : null}
 												{hasSubmitAction ? (
@@ -531,39 +655,7 @@ const ReimbursementClaimFormContent = ({
 														appearance="standard"
 														variant="brand"
 														disabled={isLoading}
-														onClick={handleSubmit}
-													/>
-												) : null}
-											</div>
-										) : null}
-
-										{canApprove || canClarify ? (
-											<div className="flex flex-col gap-2 sm:flex-row">
-												{canClarify && hasClarifyStageAction ? (
-													<Button
-														type="button"
-														text="Send for Clarification"
-														size="sm"
-														appearance="standard"
-														variant="outline"
-														disabled={approvalActionLoading}
-														onClick={() => openReasonFlow("clarify")}
-													/>
-												) : null}
-												{canApprove && hasApproveStageAction ? (
-													<Button
-														type="button"
-														text={
-															isExternalApprover ? "OK and Close" : "Approve"
-														}
-														size="sm"
-														appearance="standard"
-														variant="brand"
-														isTooltip="Please approve all line items to approve this form"
-														disabled={
-															approvalActionLoading || !canCompleteStage
-														}
-														onClick={() => openReasonFlow("approve")}
+														onClick={() => void handleSubmit()}
 													/>
 												) : null}
 											</div>
@@ -574,26 +666,35 @@ const ReimbursementClaimFormContent = ({
 						)
 					}
 					secondaryHeader={
-						submittedMessage ? (
-							<div
-								className="flex items-start gap-2 rounded-md border border-border bg-page p-3 text-sm text-iron"
-								role="status"
-							>
-								<CheckCircle2
-									aria-hidden="true"
-									className="shrink-0"
-									size={18}
-								/>
-								<span>{submittedMessage}</span>
-							</div>
-						) : null
+						<div className="flex w-full min-w-0 flex-col gap-3">
+							{submittedMessage ? (
+								<div
+									className="flex items-start gap-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-iron"
+									role="status"
+								>
+									<CheckCircle2
+										aria-hidden="true"
+										className="shrink-0"
+										size={18}
+									/>
+									<span>{submittedMessage}</span>
+								</div>
+							) : null}
+							{headerFields}
+						</div>
 					}
 					sections={sections}
 					padding="none"
 				/>
 			</form>
 
-			<EligibilitySidePanel className="order-first lg:order-last lg:sticky lg:top-4" />
+			<PdfPreviewModal
+				url={pdfUrl ?? null}
+				title={
+					referenceNumber ? `Medical claim ${referenceNumber}` : "Medical claim"
+				}
+				onClose={onClosePdfPreview}
+			/>
 		</div>
 	);
 };
@@ -607,6 +708,8 @@ const ReimbursementClaimForm = (props: ReimbursementClaimFormProps) => {
 		isDownloadingPdf,
 		handleViewPdf,
 		handleDownloadPdf,
+		pdfUrl,
+		onClosePdfPreview,
 		statusBanner,
 		showAlertBanner,
 		...formArgs
@@ -624,6 +727,8 @@ const ReimbursementClaimForm = (props: ReimbursementClaimFormProps) => {
 				isDownloadingPdf={isDownloadingPdf}
 				handleViewPdf={handleViewPdf}
 				handleDownloadPdf={handleDownloadPdf}
+				pdfUrl={pdfUrl}
+				onClosePdfPreview={onClosePdfPreview}
 				statusBanner={showAlertBanner ? statusBanner : null}
 			/>
 		</ReimbursementClaimFormContext.Provider>

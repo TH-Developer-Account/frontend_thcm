@@ -61,10 +61,12 @@ export const FILE_UPLOAD_LIMITS: Record<
 		extensions: ["pdf", "jpg", "jpeg", "png", "webp"],
 		label: "PDF, JPG, JPEG, PNG, or WEBP files",
 	},
+	// Must match the backend multer filter for bill attachments
+	// (mediclaim.validation.ts → BILL_ATTACHMENT_MIME_TYPES / 5 MB).
 	mediclaimDocument: {
 		maxSize: 5 * 1024 * 1024,
-		mimeTypes: ["application/pdf", "image/jpeg", "image/png"],
-		extensions: ["pdf", "jpg", "jpeg", "png"],
-		label: "PDF, JPG, JPEG, PNG, or WEBP files",
+		mimeTypes: ["application/pdf", "image/jpeg", "image/png", "image/webp"],
+		extensions: ["pdf", "jpg", "jpeg", "png", "webp"],
+		label: "PDF, JPG, JPEG, PNG, or WEBP files (max 5 MB)",
 	},
 };

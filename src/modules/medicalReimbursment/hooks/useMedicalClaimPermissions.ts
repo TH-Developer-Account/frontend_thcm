@@ -4,6 +4,12 @@ import type {
 	ReimbursementClaimActor,
 	ReimbursementClaimFormMode,
 } from "../types/reimbursementClaim.types";
+import {
+	GUEST_EDITABLE_STATUSES,
+	PUBLIC_EDITABLE_STATUSES,
+	normalizeStatus,
+} from "../utils/medicalClaimStatus.constants";
+import { MEDICLAIM_BACKEND } from "../utils/mediclaimBackend.config";
 
 /*
  * ----------------------------------------------------------------------------
@@ -11,34 +17,20 @@ import type {
  * ----------------------------------------------------------------------------
  *
  * Three ways into a claim:
- *   - "public"   → retired employee via the token link (/medi-claim/public/:token)
+ *   - "public"   → retired employee via the token link (/medical-claim-form/:token)
  *   - "guest"    → retired employee logged into the guest portal
  *   - "internal" → THCM user (initiator / workflow approver)
  *
- * "public" and "guest" are both the claimant (the retired employee). A
- * claimant can NEVER review line items (approved amount / approve / remarks),
- * whatever the workflow data says.
+ * "public" and "guest" are both the claimant. A claimant can NEVER review
+ * line items (approved amount / approve / remarks), whatever the workflow
+ * data says. The backend enforces every one of these rules again.
  */
 
 export type MedicalClaimAccessContext = "public" | "guest" | "internal";
 
-/** Token form is editable until the claim is submitted. */
-export const PUBLIC_EDITABLE_STATUSES = new Set([
-	"AWAITING_EX_EMPLOYEE",
-	"DRAFT",
-]);
+export { GUEST_EDITABLE_STATUSES, PUBLIC_EDITABLE_STATUSES };
 
-/** Guest portal can only edit after an approver sends it back. */
-export const GUEST_EDITABLE_STATUSES = new Set([
-	"CLARIFIED",
-	"CLARIFICATION_REQUESTED",
-	"THCM_CLARIFICATION_REQUESTED",
-]);
-
-/**
- * The subset of getWorkflowApproverData()'s result this hook needs. Kept
- * structural so the hook doesn't depend on the workflows module's types.
- */
+/** The subset of getWorkflowApproverData()'s result this hook needs. */
 export type MedicalClaimWorkflowAccess = {
 	isCurrentStageApprover?: boolean;
 	isExternalApprover?: boolean;
@@ -54,6 +46,8 @@ export type ResolveMedicalClaimPermissionsArgs = {
 	workflow?: MedicalClaimWorkflowAccess | null;
 	/** Internal only — true when the logged-in user initiated the claim. */
 	isInitiator?: boolean;
+	/** Guest only — true when the guest is starting a brand-new claim. */
+	isCreate?: boolean;
 };
 
 export type MedicalClaimPermissions = {
@@ -76,6 +70,8 @@ export type MedicalClaimPermissions = {
 
 	// Line-item review (Approved Amount / Approved / Remarks columns)
 	canReviewLineItems: boolean;
+	/** Hide the review columns entirely (claimant filling a fresh claim). */
+	hideReviewColumns: boolean;
 
 	// Workflow
 	canApprove: boolean;
@@ -86,6 +82,7 @@ export type MedicalClaimPermissions = {
 
 	// Claim-level actions
 	canExport: boolean;
+	canDownloadPdf: boolean;
 	canResendLink: boolean;
 	canClose: boolean;
 };
@@ -96,8 +93,9 @@ export function resolveMedicalClaimPermissions({
 	status,
 	workflow,
 	isInitiator = false,
+	isCreate = false,
 }: ResolveMedicalClaimPermissionsArgs): MedicalClaimPermissions {
-	const normalizedStatus = status?.trim().toUpperCase() ?? "";
+	const normalizedStatus = normalizeStatus(status);
 
 	const isClaimant = context !== "internal";
 	const isInternalUser = !isClaimant;
@@ -107,27 +105,32 @@ export function resolveMedicalClaimPermissions({
 		isInternalUser &&
 		Boolean(workflow?.isExternalApprover || workflow?.wasExternalApprover);
 	const isCurrentApprover =
-		isInternalUser &&
-		!isExternalApprover &&
-		Boolean(workflow?.isCurrentStageApprover);
-	const canActNow = isCurrentApprover && Boolean(workflow?.canActNow);
+		isInternalUser && Boolean(workflow?.isCurrentStageApprover);
 
-	// Public token form: an unknown status (field missing from the response)
-	// is treated as editable — the backend still rejects a used token.
-	const canEditClaim =
-		context === "public"
-			? !normalizedStatus || PUBLIC_EDITABLE_STATUSES.has(normalizedStatus)
-			: context === "guest"
-				? GUEST_EDITABLE_STATUSES.has(normalizedStatus)
-				: false;
+	// Approving only makes sense while the claim is in the workflow. An
+	// unknown status (field missing) defers to the workflow data.
+	const isInWorkflow = !normalizedStatus || normalizedStatus === "IN_PROGRESS";
+	const canActNow =
+		isCurrentApprover && Boolean(workflow?.canActNow) && isInWorkflow;
+
+	let canEditClaim = false;
+	if (context === "public") {
+		// Unknown status is treated as editable — the backend still rejects a used token.
+		canEditClaim =
+			!normalizedStatus || PUBLIC_EDITABLE_STATUSES.has(normalizedStatus);
+	} else if (context === "guest") {
+		canEditClaim = isCreate || GUEST_EDITABLE_STATUSES.has(normalizedStatus);
+	}
 
 	const actorRole: ReimbursementClaimActor = isClaimant
 		? "creator"
-		: isExternalApprover
+		: isExternalApprover && isCurrentApprover
 			? "externalApprover"
 			: isCurrentApprover
 				? "approver"
 				: "creator";
+
+	const isApproved = normalizedStatus === "APPROVED";
 
 	return {
 		context,
@@ -145,19 +148,29 @@ export function resolveMedicalClaimPermissions({
 		canSaveDraft: context === "public" && canEditClaim,
 		canSubmit: canEditClaim,
 
-		// Claimant never reviews line items.
-		canReviewLineItems: isInternalUser && canActNow,
+		// Claimant never reviews line items; external approvers only "OK".
+		canReviewLineItems: isInternalUser && canActNow && !isExternalApprover,
+		// A claimant filling a fresh claim has nothing to see in these columns.
+		// During clarification (guest) they are shown read-only so the
+		// claimant can read the approver's remarks.
+		hideReviewColumns:
+			context === "public" || (context === "guest" && isCreate),
 
 		canApprove: canActNow,
-		canClarify: canActNow,
+		canClarify: canActNow && !isExternalApprover,
 		canComment: isCurrentApprover,
 		canViewWorkflow: isInternalUser,
 		canViewAudit: isInternalUser,
 
 		canExport: isInternalUser,
+		canDownloadPdf: isInternalUser,
 		canResendLink:
 			isInternalInitiator && normalizedStatus === "AWAITING_EX_EMPLOYEE",
-		canClose: isInternalInitiator && normalizedStatus === "APPROVED",
+		// The current backend lets only the initiator close an APPROVED claim.
+		canClose:
+			isApproved &&
+			(isInternalInitiator ||
+				(MEDICLAIM_BACKEND.externalApproverClose && isExternalApprover)),
 	};
 }
 
@@ -166,6 +179,7 @@ export function useMedicalClaimPermissions({
 	status,
 	workflow,
 	isInitiator,
+	isCreate,
 }: ResolveMedicalClaimPermissionsArgs): MedicalClaimPermissions {
 	return useMemo(
 		() =>
@@ -174,8 +188,9 @@ export function useMedicalClaimPermissions({
 				status,
 				workflow,
 				isInitiator,
+				isCreate,
 			}),
-		[context, status, workflow, isInitiator],
+		[context, status, workflow, isInitiator, isCreate],
 	);
 }
 

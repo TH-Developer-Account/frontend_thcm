@@ -1,52 +1,42 @@
 import * as React from "react";
 import { useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { medicalClaimApi } from "../api/medicalClaim.api";
-import { medicalClaimKeys } from "../hooks/useMedicalClaimMutations";
-import {
-	pollExportJob,
-	type ExportState,
-} from "../../../utils/exportJob.helper";
+import { medicalClaimKeys } from "./useMedicalClaimMutations";
+import { useDebouncedValue } from "./useDebouncedValue";
+import { pollExportJob, type ExportState } from "../../../utils/exportJob.helper";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { useToast } from "../../../context/Auth/AuthContext";
 import type {
 	MedicalClaimListingParams,
 	MedicalClaimListingTab,
 } from "../types/medicalClaimListing.types";
+import { MEDICLAIM_BACKEND } from "../utils/mediclaimBackend.config";
+import { downloadMedicalClaimListingXlsx } from "../helpers/medicalClaimListingExport";
+import {
+	getStatusOptionsForTab,
+	type MedicalClaimStatusFilter,
+	type MedicalClaimStatusOption,
+} from "../utils/medicalClaimListing.constants";
+
+export type { MedicalClaimStatusFilter, MedicalClaimStatusOption };
 
 const DEFAULT_PAGE_SIZE = 10;
-const COMPLETE_LIST_PAGE_SIZE = 10_000;
 const DELAYED_THRESHOLD_MS = 4000;
-
-export type MedicalClaimStatusFilter =
-	| "all"
-	| "PENDING"
-	| "IN_PROGRESS"
-	| "APPROVED"
-	| "REJECTED"
-	| "CLOSED";
-
-export type MedicalClaimStatusOption = {
-	label: string;
-	value: MedicalClaimStatusFilter;
-};
-
-export const MEDICAL_CLAIM_STATUS_OPTIONS: MedicalClaimStatusOption[] = [
-	{ label: "All statuses", value: "all" },
-	{ label: "Pending", value: "PENDING" },
-	{ label: "In progress", value: "IN_PROGRESS" },
-	{ label: "Approved", value: "APPROVED" },
-	{ label: "Rejected", value: "REJECTED" },
-	{ label: "Closed", value: "CLOSED" },
-];
 
 type UseMedicalClaimListingParams = {
 	initialTab?: MedicalClaimListingTab;
 };
 
+/**
+ * Staff listing. Tab, search and pagination are sent to the backend (it caps
+ * page_size at 100). The current backend has no status filter, so with a
+ * status selected the API layer fetches the tab and filters/paginates here
+ * (see MEDICLAIM_BACKEND.listingStatusFilter). Search is debounced.
+ */
 export const useMedicalClaimListing = ({
-	initialTab = "claims",
+	initialTab = "pendingOnMe",
 }: UseMedicalClaimListingParams = {}) => {
 	const { showToast } = useToast();
 
@@ -55,90 +45,54 @@ export const useMedicalClaimListing = ({
 	const [status, setStatus] = useState<MedicalClaimStatusFilter>("all");
 	const [pageIndex, setPageIndex] = useState(0);
 	const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
-	const [exportState, setExportState] = useState<ExportState>({
-		status: "idle",
-	});
+	const [exportState, setExportState] = useState<ExportState>({ status: "idle" });
 
-	// Guards against double-fire (rapid clicks, re-renders) independent of
-	// React state's async commit timing.
+	const debouncedSearch = useDebouncedValue(search.trim());
+
+	// Guards against double-fire independent of React's async state commits.
 	const isExportingRef = useRef(false);
 
-	/**
-	 * The tab is sent to the backend, but search, status and pagination
-	 * are handled locally.
-	 */
 	const queryParams = useMemo<MedicalClaimListingParams>(
 		() => ({
 			tab,
-			pageIndex: 0,
-			pageSize: COMPLETE_LIST_PAGE_SIZE,
+			search: debouncedSearch || undefined,
+			status: status === "all" ? undefined : status,
+			pageIndex,
+			pageSize,
 		}),
-		[tab],
+		[debouncedSearch, pageIndex, pageSize, status, tab],
 	);
 
-	/**
-	 * Including the tab in the query key makes TanStack Query call the
-	 * API whenever the selected tab changes.
-	 *
-	 * staleTime: 0 ensures returning to a previously opened tab fetches
-	 * its latest data instead of only serving the cached result.
-	 */
 	const listingQuery = useQuery({
-		queryKey: [...medicalClaimKeys.lists(), tab],
+		queryKey: [...medicalClaimKeys.lists(), queryParams],
 		queryFn: () => medicalClaimApi.listMedicalClaims(queryParams),
-		staleTime: 0,
-		gcTime: Infinity,
-		refetchOnMount: true,
+		placeholderData: keepPreviousData,
+		staleTime: 15_000,
 		refetchOnWindowFocus: false,
-		refetchOnReconnect: false,
-		retry: false,
+		retry: 1,
 	});
 
-	const allRows = listingQuery.data?.rows ?? [];
-
-	const filteredRows = useMemo(() => {
-		const normalizedSearch = search.trim().toLowerCase();
-
-		return allRows.filter((row) => {
-			const rowStatus = (row as { status?: string }).status?.toUpperCase();
-
-			const matchesStatus = status === "all" || rowStatus === status;
-
-			const matchesSearch =
-				!normalizedSearch ||
-				Object.values(row).some((value) =>
-					String(value ?? "")
-						.toLowerCase()
-						.includes(normalizedSearch),
-				);
-
-			return matchesStatus && matchesSearch;
-		});
-	}, [allRows, search, status]);
-
-	const totalCount = filteredRows.length;
-
+	const totalCount = listingQuery.data?.totalCount ?? 0;
 	const pageCount = Math.max(1, Math.ceil(totalCount / pageSize));
+	const rows = listingQuery.data?.rows ?? [];
 
-	const rows = useMemo(() => {
-		const startIndex = pageIndex * pageSize;
-		const endIndex = startIndex + pageSize;
-
-		return filteredRows.slice(startIndex, endIndex);
-	}, [filteredRows, pageIndex, pageSize]);
+	// Search changes reset to the first page once the debounced value lands.
+	React.useEffect(() => {
+		setPageIndex(0);
+	}, [debouncedSearch]);
 
 	React.useEffect(() => {
 		const lastPageIndex = Math.max(0, pageCount - 1);
-
-		if (pageIndex > lastPageIndex) {
+		if (!listingQuery.isFetching && pageIndex > lastPageIndex) {
 			setPageIndex(lastPageIndex);
 		}
-	}, [pageCount, pageIndex]);
+	}, [listingQuery.isFetching, pageCount, pageIndex]);
+
+	const statusOptions = useMemo(() => getStatusOptionsForTab(tab), [tab]);
 
 	const handleTabChange = React.useCallback(
 		(nextTab: MedicalClaimListingTab) => {
 			if (nextTab === tab) return;
-
 			setTab(nextTab);
 			setSearch("");
 			setStatus("all");
@@ -148,17 +102,13 @@ export const useMedicalClaimListing = ({
 	);
 
 	const handleSearchChange = React.useCallback((nextSearch: string) => {
-		setSearch(nextSearch);
-		setPageIndex(0);
+		setSearch(nextSearch.slice(0, 100));
 	}, []);
 
-	const handleStatusChange = React.useCallback(
-		(nextStatus: MedicalClaimStatusFilter) => {
-			setStatus(nextStatus);
-			setPageIndex(0);
-		},
-		[],
-	);
+	const handleStatusChange = React.useCallback((nextStatus: MedicalClaimStatusFilter) => {
+		setStatus(nextStatus || "all");
+		setPageIndex(0);
+	}, []);
 
 	const handlePageSizeChange = React.useCallback((nextPageSize: number) => {
 		setPageSize(nextPageSize);
@@ -171,15 +121,46 @@ export const useMedicalClaimListing = ({
 		setExportState({ status: "pending" });
 
 		const delayedTimer = setTimeout(() => {
-			setExportState((prev) =>
-				prev.status === "pending" ? { status: "delayed" } : prev,
-			);
+			setExportState((prev) => (prev.status === "pending" ? { status: "delayed" } : prev));
 		}, DELAYED_THRESHOLD_MS);
 
 		try {
+			// The backend export ignores `status`, so with a status filter on,
+			// build the file here from the same rows the table shows.
+			if (status !== "all" && !MEDICLAIM_BACKEND.listingStatusFilter) {
+				const claims = await medicalClaimApi.listAllByStatus(
+					{ tab, search: search.trim() || undefined },
+					status,
+				);
+				clearTimeout(delayedTimer);
+				if (!claims.length) {
+					setExportState({ status: "idle" });
+					showToast({
+						type: "error",
+						title: "Nothing to export",
+						description: "No claims match the current filters.",
+					});
+					return;
+				}
+				const date = new Date().toISOString().slice(0, 10);
+				downloadMedicalClaimListingXlsx(
+					claims,
+					`medical-claims-${tab}-${status.toLowerCase()}-${date}.xlsx`,
+				);
+				setExportState({ status: "idle" });
+				showToast({
+					type: "success",
+					title: "Export ready",
+					description: `${claims.length} claim${claims.length === 1 ? "" : "s"} downloaded.`,
+				});
+				return;
+			}
+
+			// Export exactly what is on screen: same tab and search.
 			const queuedExport = await medicalClaimApi.enqueueListingExport({
 				tab,
 				search: search.trim() || undefined,
+				status: status === "all" ? undefined : status,
 				format: "xlsx",
 			});
 
@@ -192,20 +173,13 @@ export const useMedicalClaimListing = ({
 			setExportState({ status: "ready", downloadUrl });
 		} catch (error) {
 			clearTimeout(delayedTimer);
-			const message = getApiErrorMessage(
-				error,
-				"Failed to export medical claim records.",
-			);
+			const message = getApiErrorMessage(error, "Failed to export medical claim records.");
 			setExportState({ status: "error", message });
-			showToast({
-				type: "error",
-				title: "Export failed",
-				description: message,
-			});
+			showToast({ type: "error", title: "Export failed", description: message });
 		} finally {
 			isExportingRef.current = false;
 		}
-	}, [search, showToast, tab]);
+	}, [search, showToast, status, tab]);
 
 	const dismissExport = React.useCallback(() => {
 		setExportState({ status: "idle" });
@@ -215,6 +189,7 @@ export const useMedicalClaimListing = ({
 		tab,
 		search,
 		status,
+		statusOptions,
 		pageIndex,
 		pageSize,
 		pageCount,
@@ -225,8 +200,7 @@ export const useMedicalClaimListing = ({
 		isFetching: listingQuery.isFetching,
 		isError: listingQuery.isError,
 		error: listingQuery.error,
-		isExporting:
-			exportState.status === "pending" || exportState.status === "delayed",
+		isExporting: exportState.status === "pending" || exportState.status === "delayed",
 		exportState,
 
 		refetch: listingQuery.refetch,
