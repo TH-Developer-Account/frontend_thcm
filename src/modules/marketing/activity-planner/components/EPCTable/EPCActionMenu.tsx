@@ -7,6 +7,7 @@
 //   • Submitted     → everyone with access can View; Edit follows the existing
 //     rules (getEpcRowActionRules — i.e. clarification).
 //   • Add CRF / Add EPF / Final Submit stay in the stepper.
+//   • APPROVED → "CRF Order" opens the view on the order / tracking tab.
 
 import {
 	Eye,
@@ -14,6 +15,7 @@ import {
 	FlaskConical,
 	Pencil,
 	ReceiptIndianRupee,
+	Truck,
 	UserPlus,
 	Users,
 } from "lucide-react";
@@ -35,6 +37,8 @@ import {
 	type EpcRowActionRules,
 } from "../../utils/activity.helper";
 import { canOpenEpcView, isEpcSubmitted } from "../../forms/EPC/epc.utils";
+import { isCrfOrderOpen } from "../../../crf";
+import type { ActivityFormViewLocationState } from "../activityFormView/ActivityFormView";
 
 type EPCActionMenuProps = {
 	row: EpcListItem;
@@ -107,6 +111,18 @@ const EPCActionMenu = ({
 					editSection: "epc",
 				};
 
+				navigate(EPC_DETAIL_PATH(selectedRow.id), { state });
+			},
+		},
+		// APPROVED (before CONDUCTED) → place the CRF's store order / track it.
+		{
+			id: "crf-order",
+			label: "CRF Order",
+			Icon: Truck,
+			hidden: !canView || !isCrfOrderOpen(row.status),
+			ariaLabel: `Open CRF order for ${rowLabel}`,
+			onClick: (selectedRow) => {
+				const state: ActivityFormViewLocationState = { openTab: "order" };
 				navigate(EPC_DETAIL_PATH(selectedRow.id), { state });
 			},
 		},

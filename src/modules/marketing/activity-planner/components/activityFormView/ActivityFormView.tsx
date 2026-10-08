@@ -11,6 +11,7 @@
 //                       (ActivityPlannerPage shows the "Not submitted" banner)
 //       submitted     → existing permissions (edit via clarification)
 import { useState, type ComponentProps, type ReactNode } from "react";
+import { useLocation } from "react-router-dom";
 import {
 	FileDown,
 	FileSpreadsheet,
@@ -42,6 +43,11 @@ import { EventOutcome } from "../../forms/EventOutcome/EventOutcome";
 import { EventReportSection } from "../../forms/EventReport/EventReportSection";
 import EpcForm from "../../forms/EPC/EpcForm";
 import CrfSection from "../../../crf/CrfSection";
+import {
+	CrfOrderSection,
+	getCrfOrderPhase,
+	type CrfOrderContext,
+} from "../../../crf";
 import EpfSection from "../../forms/EPF/EpfSection";
 import type { ActivityPlannerController } from "../../hooks/useActivityPlanner";
 import {
@@ -132,8 +138,16 @@ type ActivityFormViewProps = {
 	eventReport: EventReportController;
 };
 
+/** Router state the EPC listing sends to open a tab directly (e.g. "CRF Order"). */
+export type ActivityFormViewLocationState = { openTab?: "order" } | null;
+
 const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
-	const [activeTab, setActiveTab] = useState<ActivityTab>("epc");
+	const location = useLocation();
+	const [activeTab, setActiveTab] = useState<ActivityTab>(() =>
+		(location.state as ActivityFormViewLocationState)?.openTab === "order"
+			? "tracking"
+			: "epc",
+	);
 
 	const {
 		epcData,
@@ -208,9 +222,39 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 		deviation: permissions.canShowPostReportEventOutcome,
 	};
 
+	/** APPROVED (before CONDUCTED) → the tracking tab is where the order is placed. */
+	const orderOpen = getCrfOrderPhase(epcData.status) === "OPEN";
+
 	const visibleTabs = ACTIVITY_TABS.filter(
 		(tab) => conditionalTabVisibility[tab.value] ?? true,
+	).map((tab) =>
+		tab.value === "tracking" && orderOpen ? { ...tab, label: "CRF Order" } : tab,
 	);
+
+	// created_by is either the API user or a CommentUser → read it loosely.
+	const creator = epcData.created_by as
+		| { first_name?: string; last_name?: string; email?: string }
+		| null
+		| undefined;
+
+	const crfOrderContext: CrfOrderContext = {
+		epcId: epcData.id,
+		epcStatus: epcData.status ?? "",
+		proposalNumber: epcData.proposal_number || "",
+		eventName: epcData.event_name?.title || "",
+		eventDate: epcData.event_from_date,
+		defaultPincode: epcData.locationMeta?.pincode ?? null,
+		requester: {
+			name:
+				[creator?.first_name, creator?.last_name]
+					.filter(Boolean)
+					.join(" ") || proposerName || "",
+			email: creator?.email ?? "",
+		},
+		// The EPF dealer issues the debit note to THCM on a stock shortfall.
+		dealer: epcData.epf?.dealerName ? { name: epcData.epf.dealerName } : null,
+		crf: epcData.crf ?? null,
+	};
 
 	// If the active tab disappears (status changed after a refresh), fall back to EPC.
 	const currentTab: ActivityTab = visibleTabs.some(
@@ -281,7 +325,11 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 	const renderViewCard = (children: ReactNode, action?: ReactNode) => (
 		<Card
 			key={currentTab}
-			title={TAB_TITLES[currentTab]}
+			title={
+				currentTab === "tracking" && orderOpen
+					? "CRF Order"
+					: TAB_TITLES[currentTab]
+			}
 			actions={
 				<>
 					{action}
@@ -452,12 +500,12 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 				);
 
 			/* ------------------------------ Tracking --------------------------- */
+			// APPROVED → order form (proposer); once ordered → tracking.
 			case "tracking":
 				return renderViewCard(
-					<TabEmptyState
-						Icon={Truck}
-						title="No shipment updates yet"
-						description="Order and shipment tracking will appear here once the CRF is approved and the Shopify order is created."
+					<CrfOrderSection
+						context={crfOrderContext}
+						canPlaceOrder={Boolean(permissions.isProposer)}
 					/>,
 				);
 		}

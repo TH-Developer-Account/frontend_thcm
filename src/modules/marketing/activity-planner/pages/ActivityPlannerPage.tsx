@@ -19,7 +19,7 @@ import ActivityFormView, {
 import EventReportUploadForm from "../forms/EventReport/eventReportUploadForm";
 import { getEventReportSectionState } from "../forms/EventReport/eventReport.logic";
 import {
-	useEventReportFormConfigQuery,
+	// useEventReportFormConfigQuery,
 	useEventReportQuery,
 } from "../forms/EventReport/useEventReportQueries";
 import { useReportGenerationWatcher } from "../forms/EventReport/useReportGenerationWatcher";
@@ -67,7 +67,9 @@ const ActivityPlannerPage = () => {
 	// invalidated/refetched independently of the EPC (e.g. after a
 	// REPORT_STATUS notification arrives via the generation watcher).
 	const { data: report, refetch: refetchReport } = useEventReportQuery(id);
-	const { data: formConfig } = useEventReportFormConfigQuery(id);
+	// TEMP: re-enable once GET /report/form-config/:epcId exists
+	// const { data: formConfig } = useEventReportFormConfigQuery(id);
+	const formConfig = undefined;
 	useReportGenerationWatcher(id);
 
 	const { canProposerResubmit, canProposerRetry } = getEventReportSectionState({

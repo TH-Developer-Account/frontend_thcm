@@ -1,4 +1,23 @@
-// crf/CrfCatalog.tsx
+// crf/crf.catalog.tsx
+// CRF item picker — category tabs, product cards, and the active tab's
+// summary card.
+//
+//   [ Printed Materials ] [ Souvenirs ] [ Artworks ]          [ search ]
+//
+//   Printed Materials  MAP product master · placeholder image · price · qty
+//                      (no size fields)
+//   Souvenirs          live from the store (crf.souvenirs.tsx): image,
+//                      variants, price / compare-at, discount, GST, stock
+//   Artworks           MAP product master · placeholder image · WIDE card;
+//                      digital → pick a pixel resolution (preset or custom)
+//
+// Fully controlled: the cart (items / onChange) lives in useCrfForm. This
+// component owns only UI state (search, and the active tab when the parent
+// doesn't control it).
+//
+// Tabs are independent: the grid AND the summary card show only the active
+// tab's category. The summary lists the first few lines; "Load more" shows
+// the rest of that tab's lines.
 
 import React from "react";
 import { Minus, PackageOpen, Plus, Trash2 } from "lucide-react";
@@ -9,7 +28,6 @@ import { SearchInput } from "../../../components/forms/SearchInput";
 import type { GroupedOption, LineItemOption } from "../shared/lineItem.types";
 
 import {
-	ARTWORK_UNITS,
 	CRF_LIMITS,
 	EMPTY_CRF_ERRORS,
 	formatArtworkSize,
@@ -20,7 +38,17 @@ import {
 	sanitizeQuantityInput,
 	type CrfFormErrors,
 } from "./crf.schema";
-import { CRF_CATEGORIES, type CrfCategory } from "./crf.types";
+import { getLinePricing, sumPricing } from "./crf.shop.mapper";
+import { CrfImage } from "./crf.media";
+import SouvenirCatalog from "./crf.souvenirs";
+import {
+	ARTWORK_CUSTOM_PRESET,
+	ARTWORK_RESOLUTION_PRESETS,
+	CRF_CATEGORIES,
+	type ArtworkResolutionPreset,
+	type CrfCategory,
+	type CrfLineItem,
+} from "./crf.types";
 import "./crf.css";
 
 /* ========================================================================== */
@@ -30,11 +58,11 @@ import "./crf.css";
 type CategoryConfig = { readonly title: string; readonly value: CrfCategory };
 
 export type CrfCatalogProps = {
-	/** Products grouped by category (GroupedOption.label = category value). */
+	/** MAP products grouped by category (printed materials, artworks). */
 	options: GroupedOption[];
 	/** Selected lines (the cart). */
-	items: LineItemOption[];
-	onChange: React.Dispatch<React.SetStateAction<LineItemOption[]>>;
+	items: CrfLineItem[];
+	onChange: React.Dispatch<React.SetStateAction<CrfLineItem[]>>;
 	/** Output of validateCrfForm — shown on tiles and above the grid. */
 	errors?: CrfFormErrors;
 	/** Hides all add / edit controls. */
@@ -60,12 +88,9 @@ const toNumber = (value: unknown) => {
 	return Number.isFinite(parsed) ? parsed : 0;
 };
 
-const getLineTotal = (item: LineItemOption) =>
-	roundTo(toNumber(item.rate) * toNumber(item.quantity));
-
-/** Line in the cart for this product (artwork: first size line of the product). */
+/** Line in the cart for a MAP product (printed / artwork: one line each). */
 const findLineIndex = (
-	items: LineItemOption[],
+	items: CrfLineItem[],
 	productId: string,
 	category: string,
 ) =>
@@ -82,40 +107,157 @@ const matchesSearch = (option: LineItemOption, query: string) => {
 	return haystack.includes(query);
 };
 
-/** New cart line from a catalog product. */
+/**
+ * New cart line from a MAP product.
+ *   • Printed: no size fields at all.
+ *   • Artwork: px, resolution still to be chosen (the schema requires it).
+ */
 const createLine = (
 	option: LineItemOption,
 	category: CrfCategory,
-): LineItemOption => {
-	const isArtwork = category === "ARTWORK";
+): CrfLineItem => {
 	const rate = toNumber(option.rate);
+	const { width: _w, height: _h, unit: _u, ...rest } = option;
 
 	return {
-		...option,
+		...rest,
 		id: undefined, // new line — no server id yet
 		category,
 		particular: option.value,
 		quantity: 1,
 		rate,
 		total: rate,
-		width: isArtwork ? toNumber(option.width) || undefined : undefined,
-		height: isArtwork ? toNumber(option.height) || undefined : undefined,
-		unit: isArtwork ? option.unit || "ft" : undefined,
+		...(category === "ARTWORK"
+			? { unit: "px", width: undefined, height: undefined, resolutionPreset: undefined }
+			: {}),
+	};
+};
+
+/** Patch for a resolution preset choice (fills or clears width × height). */
+const getPresetPatch = (
+	preset: ArtworkResolutionPreset | "",
+): Partial<CrfLineItem> => {
+	if (!preset) {
+		return { resolutionPreset: undefined, width: undefined, height: undefined, unit: "px" };
+	}
+	if (preset === ARTWORK_CUSTOM_PRESET) {
+		return { resolutionPreset: preset, unit: "px" };
+	}
+	const match = ARTWORK_RESOLUTION_PRESETS.find((p) => p.value === preset);
+	return {
+		resolutionPreset: preset,
+		width: match?.width,
+		height: match?.height,
+		unit: "px",
 	};
 };
 
 /* ========================================================================== */
-/*                               Product tile                                 */
+/*                           Shared quantity controls                         */
 /* ========================================================================== */
 
-type ProductTileProps = {
+type QuantityControlsProps = {
+	label: string;
+	line: CrfLineItem;
+	invalid: boolean;
+	readOnly: boolean;
+	onQuantity: (next: number | undefined) => void;
+	onRemove: () => void;
+};
+
+const QuantityControls = ({
+	label,
+	line,
+	invalid,
+	readOnly,
+	onQuantity,
+	onRemove,
+}: QuantityControlsProps) => {
+	const quantity = toNumber(line.quantity);
+
+	const step = (next: number) => {
+		if (next < 1) {
+			onRemove();
+			return;
+		}
+		onQuantity(next);
+	};
+
+	return (
+		<div className="crf-tile-controls">
+			{readOnly ? (
+				<span className="crf-tile-qty-readonly">× {formatCrfQuantity(quantity)}</span>
+			) : (
+				<div className="crf-stepper" role="group" aria-label="Quantity">
+					<button
+						type="button"
+						className="crf-stepper-button"
+						onClick={() => step(quantity - 1)}
+						aria-label={quantity <= 1 ? `Remove ${label}` : `Decrease ${label} quantity`}
+					>
+						<Minus aria-hidden="true" />
+					</button>
+					<input
+						type="text"
+						inputMode="numeric"
+						className="crf-stepper-input"
+						value={line.quantity ?? ""}
+						aria-label={`${label} quantity`}
+						aria-invalid={invalid ? "true" : undefined}
+						onChange={(event) => {
+							const cleaned = sanitizeQuantityInput(event.target.value);
+							// Blank stays blank while typing; the schema reports it.
+							onQuantity(cleaned === "" ? undefined : Number(cleaned));
+						}}
+					/>
+					<button
+						type="button"
+						className="crf-stepper-button"
+						onClick={() => step(quantity + 1)}
+						disabled={quantity >= CRF_LIMITS.MAX_QUANTITY}
+						aria-label={`Increase ${label} quantity`}
+					>
+						<Plus aria-hidden="true" />
+					</button>
+				</div>
+			)}
+
+			{!readOnly ? (
+				<Button
+					type="button"
+					appearance="icon"
+					variant="outline"
+					size="sm"
+					Icon={Trash2}
+					aria-label={`Remove ${label}`}
+					onClick={onRemove}
+				/>
+			) : null}
+		</div>
+	);
+};
+
+const TileErrors = ({ messages }: { messages: string[] }) =>
+	messages.length > 0 ? (
+		<ul className="crf-tile-errors" role="alert">
+			{messages.map((message) => (
+				<li key={message}>{message}</li>
+			))}
+		</ul>
+	) : null;
+
+/* ========================================================================== */
+/*                        Printed material tile (compact)                     */
+/* ========================================================================== */
+
+type TileProps = {
 	option: LineItemOption;
 	category: CrfCategory;
-	line?: LineItemOption;
+	line?: CrfLineItem;
 	lineErrors?: CrfFormErrors["items"][number];
 	readOnly: boolean;
 	onAdd: () => void;
-	onPatch: (patch: Partial<LineItemOption>) => void;
+	onPatch: (patch: Partial<CrfLineItem>) => void;
 	onRemove: () => void;
 };
 
@@ -128,40 +270,30 @@ const ProductTile = ({
 	onAdd,
 	onPatch,
 	onRemove,
-}: ProductTileProps) => {
-	const isSelected = Boolean(line);
-	const isArtwork = category === "ARTWORK";
-	const quantity = line ? toNumber(line.quantity) : 0;
-	const errorMessages = lineErrors
-		? Object.values(lineErrors).filter(Boolean)
-		: [];
-
-	const setQuantity = (next: number | undefined) => {
-		if (next !== undefined && next < 1) {
-			onRemove();
-			return;
-		}
-		onPatch({ quantity: next });
-	};
+}: TileProps) => {
+	const errorMessages = lineErrors ? Object.values(lineErrors).filter(Boolean) as string[] : [];
 
 	return (
 		<article
 			className={[
 				"crf-tile",
-				isSelected && "crf-tile--selected",
+				"crf-tile--product",
+				line && "crf-tile--selected",
 				errorMessages.length > 0 && "crf-tile--error",
 			]
 				.filter(Boolean)
 				.join(" ")}
 			aria-label={option.label}
 		>
+			<div className="crf-tile-media">
+				<CrfImage alt={option.label} category={category} className="crf-tile-image" />
+			</div>
+
 			<header className="crf-tile-header">
 				<h4 className="crf-tile-name" title={option.label}>
 					{option.label}
 				</h4>
-				{option.partNumber ? (
-					<span className="crf-tile-part">{option.partNumber}</span>
-				) : null}
+				{option.partNumber ? <span className="crf-tile-part">{option.partNumber}</span> : null}
 			</header>
 
 			{option.description ? (
@@ -170,160 +302,178 @@ const ProductTile = ({
 				</p>
 			) : null}
 
-			<div className="crf-tile-meta">
+			<div className="crf-price-row">
 				<span className="crf-tile-price">{formatCrfAmount(option.rate)}</span>
-				{isArtwork ? (
-					<span className="crf-tile-size">
-						{formatArtworkSize(option.width, option.height, option.unit)}
-					</span>
-				) : null}
+				<span className="crf-tile-part">per piece</span>
 			</div>
 
-			{/* ---------------- Not in cart: big "+" (the sketch's tile) --------------- */}
-			{!isSelected && !readOnly ? (
-				<button
-					type="button"
-					className="crf-tile-add"
-					onClick={onAdd}
-					aria-label={`Add ${option.label}`}
-				>
+			{!line && !readOnly ? (
+				<button type="button" className="crf-tile-add" onClick={onAdd} aria-label={`Add ${option.label}`}>
 					<Plus aria-hidden="true" />
+					<span>Add</span>
 				</button>
 			) : null}
 
-			{/* ------------------------- In cart: edit controls ------------------------ */}
-			{isSelected && line ? (
-				<div className="crf-tile-controls">
-					{readOnly ? (
-						<span className="crf-tile-qty-readonly">
-							× {formatCrfQuantity(quantity)}
-						</span>
-					) : (
-						<div className="crf-stepper" role="group" aria-label="Quantity">
-							<button
-								type="button"
-								className="crf-stepper-button"
-								onClick={() => setQuantity(quantity - 1)}
-								aria-label={
-									quantity <= 1
-										? `Remove ${option.label}`
-										: `Decrease ${option.label} quantity`
-								}
-							>
-								<Minus aria-hidden="true" />
-							</button>
+			{line ? (
+				<QuantityControls
+					label={option.label}
+					line={line}
+					invalid={Boolean(lineErrors?.quantity)}
+					readOnly={readOnly}
+					onQuantity={(quantity) => onPatch({ quantity })}
+					onRemove={onRemove}
+				/>
+			) : null}
 
-							<input
-								type="text"
-								inputMode="numeric"
-								className="crf-stepper-input"
-								value={line.quantity ?? ""}
-								aria-label={`${option.label} quantity`}
-								aria-invalid={lineErrors?.quantity ? "true" : undefined}
-								onChange={(event) => {
-									const cleaned = sanitizeQuantityInput(event.target.value);
-									// Blank stays blank while typing; the schema reports it.
-									onPatch({
-										quantity: cleaned === "" ? undefined : Number(cleaned),
-									});
-								}}
-							/>
+			<TileErrors messages={errorMessages} />
+		</article>
+	);
+};
 
-							<button
-								type="button"
-								className="crf-stepper-button"
-								onClick={() => setQuantity(quantity + 1)}
-								disabled={quantity >= CRF_LIMITS.MAX_QUANTITY}
-								aria-label={`Increase ${option.label} quantity`}
-							>
-								<Plus aria-hidden="true" />
-							</button>
-						</div>
-					)}
+/* ========================================================================== */
+/*                      Artwork tile (wide · digital resolution)              */
+/* ========================================================================== */
 
-					{!readOnly ? (
-						<Button
-							type="button"
-							appearance="icon"
-							variant="outline"
-							size="sm"
-							Icon={Trash2}
-							aria-label={`Remove ${option.label}`}
-							onClick={onRemove}
+const ArtworkTile = ({
+	option,
+	category,
+	line,
+	lineErrors,
+	readOnly,
+	onAdd,
+	onPatch,
+	onRemove,
+}: TileProps) => {
+	const errorMessages = lineErrors ? Object.values(lineErrors).filter(Boolean) as string[] : [];
+	const preset = line?.resolutionPreset ?? "";
+	const isCustom = preset === ARTWORK_CUSTOM_PRESET;
+	const presetHint = ARTWORK_RESOLUTION_PRESETS.find((p) => p.value === preset)?.hint;
+	const sizeInvalid = Boolean(
+		lineErrors?.resolutionPreset || lineErrors?.width || lineErrors?.height || lineErrors?.unit,
+	);
+
+	const setDimension = (key: "width" | "height", raw: string) => {
+		const digits = raw.replace(/\D/g, "").slice(0, String(CRF_LIMITS.MAX_PIXELS).length);
+		onPatch({ [key]: digits === "" ? undefined : Number(digits), resolutionPreset: ARTWORK_CUSTOM_PRESET });
+	};
+
+	return (
+		<article
+			className={[
+				"crf-tile",
+				"crf-tile--wide",
+				line && "crf-tile--selected",
+				errorMessages.length > 0 && "crf-tile--error",
+			]
+				.filter(Boolean)
+				.join(" ")}
+			aria-label={option.label}
+		>
+			<div className="crf-tile-media crf-tile-media--side">
+				<CrfImage alt={option.label} category={category} className="crf-tile-image" />
+			</div>
+
+			<div className="crf-tile-body">
+				<header className="crf-tile-header">
+					<h4 className="crf-tile-name" title={option.label}>
+						{option.label}
+					</h4>
+					<span className="crf-tile-part">
+						{[option.partNumber, "Digital artwork"].filter(Boolean).join(" · ")}
+					</span>
+				</header>
+
+				{option.description ? (
+					<p className="crf-tile-description" title={option.description}>
+						{option.description}
+					</p>
+				) : null}
+
+				<div className="crf-price-row">
+					<span className="crf-tile-price">{formatCrfAmount(option.rate)}</span>
+					<span className="crf-tile-part">per artwork</span>
+				</div>
+
+				{!line && !readOnly ? (
+					<button type="button" className="crf-tile-add" onClick={onAdd} aria-label={`Add ${option.label}`}>
+						<Plus aria-hidden="true" />
+						<span>Add &amp; choose size</span>
+					</button>
+				) : null}
+
+				{line ? (
+					<>
+						{/* ---------------------- Resolution (required) --------------------- */}
+						{readOnly ? (
+							<span className="crf-tile-part">
+								{formatArtworkSize(line.width, line.height, line.unit)}
+							</span>
+						) : (
+							<div className="crf-resolution">
+								<label className="crf-field-label" htmlFor={`res-${option.value}`}>
+									Resolution <span aria-hidden="true">*</span>
+								</label>
+								<select
+									id={`res-${option.value}`}
+									className="form-input crf-resolution-select"
+									value={preset}
+									aria-invalid={sizeInvalid ? "true" : undefined}
+									onChange={(event) =>
+										onPatch(getPresetPatch(event.target.value as ArtworkResolutionPreset | ""))
+									}
+								>
+									<option value="">Select resolution…</option>
+									{ARTWORK_RESOLUTION_PRESETS.map((p) => (
+										<option key={p.value} value={p.value}>
+											{p.label}
+										</option>
+									))}
+									<option value={ARTWORK_CUSTOM_PRESET}>Custom size (px)…</option>
+								</select>
+								{presetHint ? <span className="crf-tile-part">{presetHint}</span> : null}
+
+								{isCustom ? (
+									<div className="crf-tile-size-fields">
+										<input
+											type="text"
+											inputMode="numeric"
+											className="form-input crf-size-input"
+											placeholder="Width"
+											aria-label={`${option.label} width in pixels`}
+											aria-invalid={lineErrors?.width ? "true" : undefined}
+											value={line.width ?? ""}
+											onChange={(event) => setDimension("width", event.target.value)}
+										/>
+										<span aria-hidden="true">×</span>
+										<input
+											type="text"
+											inputMode="numeric"
+											className="form-input crf-size-input"
+											placeholder="Height"
+											aria-label={`${option.label} height in pixels`}
+											aria-invalid={lineErrors?.height ? "true" : undefined}
+											value={line.height ?? ""}
+											onChange={(event) => setDimension("height", event.target.value)}
+										/>
+										<span className="crf-tile-part">px</span>
+									</div>
+								) : null}
+							</div>
+						)}
+
+						<QuantityControls
+							label={option.label}
+							line={line}
+							invalid={Boolean(lineErrors?.quantity)}
+							readOnly={readOnly}
+							onQuantity={(quantity) => onPatch({ quantity })}
+							onRemove={onRemove}
 						/>
-					) : null}
-				</div>
-			) : null}
+					</>
+				) : null}
 
-			{/* ------------------------- Artwork size (in cart) ----------------------- */}
-			{isSelected && line && isArtwork ? (
-				<div className="crf-tile-size-fields">
-					{readOnly ? (
-						<span>{formatArtworkSize(line.width, line.height, line.unit)}</span>
-					) : (
-						<>
-							<input
-								type="number"
-								min={0}
-								step="0.01"
-								className="form-input crf-size-input"
-								placeholder="W"
-								aria-label={`${option.label} width`}
-								aria-invalid={lineErrors?.width ? "true" : undefined}
-								value={line.width ?? ""}
-								onChange={(event) =>
-									onPatch({
-										width:
-											event.target.value === ""
-												? undefined
-												: Number(event.target.value),
-									})
-								}
-							/>
-							<span aria-hidden="true">×</span>
-							<input
-								type="number"
-								min={0}
-								step="0.01"
-								className="form-input crf-size-input"
-								placeholder="H"
-								aria-label={`${option.label} height`}
-								aria-invalid={lineErrors?.height ? "true" : undefined}
-								value={line.height ?? ""}
-								onChange={(event) =>
-									onPatch({
-										height:
-											event.target.value === ""
-												? undefined
-												: Number(event.target.value),
-									})
-								}
-							/>
-							<select
-								className="form-input crf-unit-select"
-								aria-label={`${option.label} unit`}
-								aria-invalid={lineErrors?.unit ? "true" : undefined}
-								value={line.unit ?? ""}
-								onChange={(event) => onPatch({ unit: event.target.value })}
-							>
-								{ARTWORK_UNITS.map((unit) => (
-									<option key={unit} value={unit}>
-										{unit}
-									</option>
-								))}
-							</select>
-						</>
-					)}
-				</div>
-			) : null}
-
-			{errorMessages.length > 0 ? (
-				<ul className="crf-tile-errors" role="alert">
-					{errorMessages.map((message) => (
-						<li key={message}>{message}</li>
-					))}
-				</ul>
-			) : null}
+				<TileErrors messages={errorMessages} />
+			</div>
 		</article>
 	);
 };
@@ -333,7 +483,7 @@ const ProductTile = ({
 /* ========================================================================== */
 
 /** A cart line plus its index in the FULL items list (errors are keyed by it). */
-type CartEntry = { item: LineItemOption; index: number };
+type CartEntry = { item: CrfLineItem; index: number };
 
 type CartSummaryProps = {
 	/** Title of the active tab, e.g. "Souvenirs". */
@@ -341,6 +491,17 @@ type CartSummaryProps = {
 	/** Only the active tab's lines. */
 	entries: CartEntry[];
 	errors: CrfFormErrors;
+};
+
+/** Second line under the item name: variant (souvenir) or size (artwork). */
+const getLineDetail = (item: CrfLineItem) => {
+	if (item.category === "SOUVENIR") {
+		return [item.variantTitle, item.sku].filter(Boolean).join(" · ") || null;
+	}
+	if (item.category === "ARTWORK") {
+		return formatArtworkSize(item.width, item.height, item.unit);
+	}
+	return null;
 };
 
 /**
@@ -356,19 +517,11 @@ const CartSummary = ({ title, entries, errors }: CartSummaryProps) => {
 		.some(({ index }) => Boolean(errors.items[index]));
 
 	const expanded = showAll || hiddenHasError;
-	const visibleEntries = expanded
-		? entries
-		: entries.slice(0, CRF_SUMMARY_PAGE_SIZE);
+	const visibleEntries = expanded ? entries : entries.slice(0, CRF_SUMMARY_PAGE_SIZE);
 	const hiddenCount = entries.length - visibleEntries.length;
 
-	const totalQuantity = entries.reduce(
-		(sum, { item }) => sum + toNumber(item.quantity),
-		0,
-	);
-	const totalAmount = entries.reduce(
-		(sum, { item }) => sum + getLineTotal(item),
-		0,
-	);
+	const totalQuantity = entries.reduce((sum, { item }) => sum + toNumber(item.quantity), 0);
+	const totals = sumPricing(entries.map(({ item }) => getLinePricing(item)));
 
 	return (
 		<aside className="crf-cart" aria-label={`${title} — selected items`}>
@@ -390,27 +543,27 @@ const CartSummary = ({ title, entries, errors }: CartSummaryProps) => {
 					<ul className="crf-cart-list">
 						{visibleEntries.map(({ item, index }) => {
 							const hasError = Boolean(errors.items[index]);
+							const detail = getLineDetail(item);
+							const pricing = getLinePricing(item);
 
 							return (
 								<li
 									key={item.id ?? `${getCrfLineKey(item)}-${index}`}
-									className={["crf-cart-row", hasError && "crf-cart-row--error"]
-										.filter(Boolean)
-										.join(" ")}
+									className={["crf-cart-row", hasError && "crf-cart-row--error"].filter(Boolean).join(" ")}
 								>
+									<CrfImage
+										src={item.imageUrl}
+										alt=""
+										category={item.category}
+										className="crf-cart-thumb"
+									/>
 									<span className="crf-cart-row-name">
 										{item.label || "Item"}
-										{item.category === "ARTWORK" ? (
-											<small>
-												{formatArtworkSize(item.width, item.height, item.unit)}
-											</small>
-										) : null}
+										{detail ? <small>{detail}</small> : null}
 									</span>
-									<strong className="crf-cart-row-qty">
-										× {formatCrfQuantity(item.quantity)}
-									</strong>
-									<span className="crf-cart-row-amount">
-										{formatCrfAmount(getLineTotal(item))}
+									<span className="crf-cart-row-figures">
+										<strong className="crf-cart-row-qty">× {formatCrfQuantity(item.quantity)}</strong>
+										<span className="crf-cart-row-amount">{formatCrfAmount(pricing.total)}</span>
 									</span>
 								</li>
 							);
@@ -418,11 +571,7 @@ const CartSummary = ({ title, entries, errors }: CartSummaryProps) => {
 					</ul>
 
 					{hiddenCount > 0 ? (
-						<button
-							type="button"
-							className="crf-cart-more"
-							onClick={() => setShowAll(true)}
-						>
+						<button type="button" className="crf-cart-more" onClick={() => setShowAll(true)}>
 							Load more ({hiddenCount})
 						</button>
 					) : null}
@@ -434,9 +583,33 @@ const CartSummary = ({ title, entries, errors }: CartSummaryProps) => {
 					<span>Total qty</span>
 					<span>{formatCrfQuantity(totalQuantity)}</span>
 				</div>
+				{totals.discount > 0 ? (
+					<>
+						<div>
+							<span>MRP</span>
+							<span>{formatCrfAmount(totals.mrpAmount)}</span>
+						</div>
+						<div className="crf-cart-total-discount">
+							<span>Discount</span>
+							<span>− {formatCrfAmount(totals.discount)}</span>
+						</div>
+					</>
+				) : null}
+				{totals.gst > 0 ? (
+					<>
+						<div>
+							<span>Taxable value</span>
+							<span>{formatCrfAmount(totals.taxable)}</span>
+						</div>
+						<div>
+							<span>GST</span>
+							<span>{formatCrfAmount(totals.gst)}</span>
+						</div>
+					</>
+				) : null}
 				<div className="crf-cart-total-amount">
 					<span>Total</span>
-					<span>{formatCrfAmount(totalAmount)}</span>
+					<span>{formatCrfAmount(roundTo(totals.total))}</span>
 				</div>
 			</footer>
 		</aside>
@@ -474,17 +647,18 @@ export default function CrfCatalog({
 		[onCategoryChange],
 	);
 
-	// Search belongs to one tab: switching tabs (by click OR by the parent's
-	// "Save & Next") starts with an empty search — no effect needed.
+	// Search belongs to one tab: switching tabs starts with an empty search.
 	const [searchState, setSearchState] = React.useState({
 		category: activeCategory,
 		text: "",
 	});
-	const search =
-		searchState.category === activeCategory ? searchState.text : "";
+	const search = searchState.category === activeCategory ? searchState.text : "";
 	const setSearch = (text: string) =>
 		setSearchState({ category: activeCategory, text });
 	const query = search.trim().toLowerCase();
+
+	const isSouvenirTab = activeCategory === "SOUVENIR";
+	const isArtworkTab = activeCategory === "ARTWORK";
 
 	/* ------------------------------ Derived ------------------------------ */
 
@@ -527,7 +701,7 @@ export default function CrfCatalog({
 		[options, activeCategory, query],
 	);
 
-	/* ------------------------------ Mutations ---------------------------- */
+	/* --------------------- Mutations (printed / artwork) ----------------- */
 
 	const addProduct = React.useCallback(
 		(option: LineItemOption) => {
@@ -540,10 +714,7 @@ export default function CrfCatalog({
 						itemIndex === index
 							? {
 									...item,
-									quantity: Math.min(
-										toNumber(item.quantity) + 1,
-										CRF_LIMITS.MAX_QUANTITY,
-									),
+									quantity: Math.min(toNumber(item.quantity) + 1, CRF_LIMITS.MAX_QUANTITY),
 								}
 							: item,
 					);
@@ -556,14 +727,14 @@ export default function CrfCatalog({
 	);
 
 	const patchProduct = React.useCallback(
-		(productId: string, patch: Partial<LineItemOption>) => {
+		(productId: string, patch: Partial<CrfLineItem>) => {
 			onChange((previous) =>
 				previous.map((item) => {
 					if (item.value !== productId || item.category !== activeCategory) {
 						return item;
 					}
 					const next = { ...item, ...patch };
-					return { ...next, total: getLineTotal(next) };
+					return { ...next, total: roundTo(toNumber(next.rate) * toNumber(next.quantity)) };
 				}),
 			);
 		},
@@ -574,8 +745,7 @@ export default function CrfCatalog({
 		(productId: string) => {
 			onChange((previous) =>
 				previous.filter(
-					(item) =>
-						!(item.value === productId && item.category === activeCategory),
+					(item) => !(item.value === productId && item.category === activeCategory),
 				),
 			);
 		},
@@ -583,6 +753,8 @@ export default function CrfCatalog({
 	);
 
 	/* -------------------------------- Render ----------------------------- */
+
+	const Tile = isArtworkTab ? ArtworkTile : ProductTile;
 
 	return (
 		<section className="crf-catalog" aria-label="CRF item catalog">
@@ -597,7 +769,9 @@ export default function CrfCatalog({
 				<SearchInput
 					value={search}
 					onChange={setSearch}
-					placeholder="Search by name or part no."
+					placeholder={
+						isSouvenirTab ? "Search souvenirs, SKU, size, colour…" : "Search by name or part no."
+					}
 				/>
 			</div>
 
@@ -608,38 +782,53 @@ export default function CrfCatalog({
 			) : null}
 
 			<div className="crf-catalog-body">
-				<div className="crf-catalog-grid" role="list">
-					{products.length === 0 ? (
-						<div className="crf-catalog-empty">
-							<PackageOpen aria-hidden="true" />
-							<p>
-								{query
-									? "No products match your search."
-									: "No products available in this category."}
-							</p>
-						</div>
-					) : (
-						products.map((option) => {
-							const index = findLineIndex(items, option.value, activeCategory);
-							const line = index >= 0 ? items[index] : undefined;
+				{isSouvenirTab ? (
+					<SouvenirCatalog
+						items={items}
+						onChange={onChange}
+						errors={errors}
+						readOnly={readOnly}
+						search={search}
+					/>
+				) : (
+					<div
+						className={["crf-catalog-grid", isArtworkTab && "crf-catalog-grid--wide"]
+							.filter(Boolean)
+							.join(" ")}
+						role="list"
+					>
+						{products.length === 0 ? (
+							<div className="crf-catalog-empty">
+								<PackageOpen aria-hidden="true" />
+								<p>
+									{query
+										? "No products match your search."
+										: "No products available in this category."}
+								</p>
+							</div>
+						) : (
+							products.map((option) => {
+								const index = findLineIndex(items, option.value, activeCategory);
+								const line = index >= 0 ? items[index] : undefined;
 
-							return (
-								<div role="listitem" key={option.value}>
-									<ProductTile
-										option={option}
-										category={activeCategory}
-										line={line}
-										lineErrors={line ? errors.items[index] : undefined}
-										readOnly={readOnly}
-										onAdd={() => addProduct(option)}
-										onPatch={(patch) => patchProduct(option.value, patch)}
-										onRemove={() => removeProduct(option.value)}
-									/>
-								</div>
-							);
-						})
-					)}
-				</div>
+								return (
+									<div role="listitem" key={option.value}>
+										<Tile
+											option={option}
+											category={activeCategory}
+											line={line}
+											lineErrors={line ? errors.items[index] : undefined}
+											readOnly={readOnly}
+											onAdd={() => addProduct(option)}
+											onPatch={(patch) => patchProduct(option.value, patch)}
+											onRemove={() => removeProduct(option.value)}
+										/>
+									</div>
+								);
+							})
+						)}
+					</div>
+				)}
 
 				<CartSummary
 					key={activeCategory}

@@ -1,5 +1,5 @@
 // crf/useCrfForm.ts
-// CRF form controller. Owns the cart (LineItemOption[]), the active tab and
+// CRF form controller. Owns the cart (CrfLineItem[]), the active tab and
 // the validation state; <CrfForm /> / <CrfCatalog /> just render it.
 //
 // Tabs work as steps:  Printed Materials → Souvenirs → Artworks
@@ -14,11 +14,22 @@
 // Errors are shown per tab: only for tabs the user has already saved, and
 // they re-check live as the cart changes. After the final save, all errors
 // are shown.
+//
+// Souvenirs come from the store, so the final save first re-checks live stock
+// (POST /crf-shop/stock-check — a check, never a reservation). Lines whose
+// stock dropped get the fresh availability, the schema flags them, and the
+// form jumps to the Souvenirs tab instead of saving.
 
 import React from "react";
 
 import { useToast } from "../../../context/Auth/AuthContext";
-import type { GroupedOption, LineItemOption } from "../shared/lineItem.types";
+import type { GroupedOption } from "../shared/lineItem.types";
+import { useStockCheckMutation } from "./crf.shop.api";
+import {
+	saveLocalStoreLines,
+	splitCrfPayload,
+	withLocalStoreLines,
+} from "./crf.store-lines";
 import {
 	useCreateCrfMutation,
 	useCrfProductsQuery,
@@ -38,7 +49,12 @@ import {
 	validateCrfForm,
 	type CrfFormErrors,
 } from "./crf.schema";
-import { CRF_CATEGORIES, type CrfCategory, type CrfDetail } from "./crf.types";
+import {
+	CRF_CATEGORIES,
+	type CrfCategory,
+	type CrfDetail,
+	type CrfLineItem,
+} from "./crf.types";
 
 export type CrfFormProps = {
 	/** Parent EPC the CRF belongs to (sent in the payload). */
@@ -55,8 +71,8 @@ export type CrfFormProps = {
 type CategoryStep = (typeof CRF_CATEGORIES)[number];
 
 type UseCrfFormResult = {
-	costItems: LineItemOption[];
-	setCostItems: React.Dispatch<React.SetStateAction<LineItemOption[]>>;
+	costItems: CrfLineItem[];
+	setCostItems: React.Dispatch<React.SetStateAction<CrfLineItem[]>>;
 	options: GroupedOption[];
 	errors: CrfFormErrors;
 	loading: boolean;
@@ -95,15 +111,20 @@ export function useCrfForm({
 
 	const createCrfMutation = useCreateCrfMutation();
 	const updateCrfMutation = useUpdateCrfMutation();
+	const stockCheckMutation = useStockCheckMutation();
 	const productsQuery = useCrfProductsQuery();
 
 	const initialCostItems = React.useMemo(
-		() => mapCrfLineItemsToFormItems(initialData?.lineItems ?? []),
-		[initialData],
+		() =>
+			// TEMP: + souvenir lines kept in this browser (see crf.store-lines.ts)
+			mapCrfLineItemsToFormItems(
+				withLocalStoreLines(epcId, initialData?.lineItems ?? []),
+			),
+		[epcId, initialData],
 	);
 
 	const [costItems, setCostItems] =
-		React.useState<LineItemOption[]>(initialCostItems);
+		React.useState<CrfLineItem[]>(initialCostItems);
 
 	/* ------------------------------ Tab state ------------------------------ */
 
@@ -154,7 +175,10 @@ export function useCrfForm({
 		);
 	}, [checkedCategories, costItems, finalAttempted, validation.errors]);
 
-	const submitting = createCrfMutation.isPending || updateCrfMutation.isPending;
+	const submitting =
+		createCrfMutation.isPending ||
+		updateCrfMutation.isPending ||
+		stockCheckMutation.isPending;
 	const loading = productsQuery.isLoading;
 	const isDirty = costItems !== initialCostItems;
 
@@ -204,6 +228,65 @@ export function useCrfForm({
 		validation.errors,
 	]);
 
+	/**
+	 * Live stock re-check for souvenir lines right before saving.
+	 * Writes the fresh availability onto the lines, so the schema shows
+	 * "Only N in stock" / "Out of stock" on exactly the lines that changed.
+	 * Returns true when every souvenir line can still be fulfilled.
+	 */
+	const verifySouvenirStock = React.useCallback(async (): Promise<boolean> => {
+		const souvenirLines = costItems.filter(
+			(item) => item.category === "SOUVENIR" && item.sku,
+		);
+		if (souvenirLines.length === 0) return true;
+
+		let result;
+		try {
+			result = await stockCheckMutation.mutateAsync(
+				souvenirLines.map((item) => ({
+					sku: item.sku as string,
+					quantity: Number(item.quantity) || 0,
+				})),
+			);
+		} catch (error) {
+			console.error("CRF stock check failed:", error);
+			showToast({
+				type: "error",
+				title: "Couldn't check stock",
+				description:
+					"The store couldn't be reached to confirm souvenir stock. Please try again.",
+			});
+			return false;
+		}
+
+		const bySku = new Map(
+			result.lines.map((line) => [line.sku.toLowerCase(), line]),
+		);
+
+		setCostItems((previous) =>
+			previous.map((item) => {
+				if (item.category !== "SOUVENIR" || !item.sku) return item;
+				const line = bySku.get(item.sku.toLowerCase());
+				return line
+					? { ...item, availableQty: line.available, stockStatus: line.status }
+					: item;
+			}),
+		);
+
+		if (result.allAvailable) return true;
+
+		setActiveCategory("SOUVENIR");
+		const shortCount = result.lines.filter(
+			(line) => line.status !== "AVAILABLE",
+		).length;
+		showToast({
+			type: "error",
+			title: "Stock changed",
+			description: `${shortCount} souvenir ${shortCount === 1 ? "item has" : "items have"} less stock than requested. Adjust the highlighted items and save again.`,
+		});
+		return false;
+	}, [costItems, showToast, stockCheckMutation]);
+
 	const handleSubmit = React.useCallback(async () => {
 		if (submitting) return;
 
@@ -231,18 +314,37 @@ export function useCrfForm({
 			return;
 		}
 
+		// Store stock can change between adding an item and saving.
+		if (!(await verifySouvenirStock())) return;
+
 		try {
-			// Schema output: trimmed, rounded, totals recomputed, artwork-only sizes.
-			const payload = buildCrfPayload(
-				// buildCrfPayload only reads value/category/quantity/rate/total/
-				// description/width/height/unit — all present on the schema output.
-				validation.data.lineItems as unknown as LineItemOption[],
+			// Schema output: trimmed, rounded, totals recomputed, and each line
+			// carries only its category's fields (size → artwork, store
+			// snapshot → souvenir).
+			const fullPayload = buildCrfPayload(
+				validation.data.lineItems as unknown as CrfLineItem[],
 				validation.data.epcId,
 			);
+
+			// TEMP: the backend only accepts product-master lines today, so
+			// souvenirs (store SKUs) are kept in this browser instead.
+			const { apiPayload: payload, storeLines } = splitCrfPayload(fullPayload);
+
+			if (!crfId && payload.lineItems.length === 0) {
+				showToast({
+					type: "error",
+					title: "Add a printed material or artwork",
+					description:
+						"Souvenir-only CRFs can't be saved until the backend supports store items. Add at least one printed material or artwork.",
+				});
+				return;
+			}
 
 			const saved = crfId
 				? await updateCrfMutation.mutateAsync({ crfId, payload })
 				: await createCrfMutation.mutateAsync(payload);
+
+			saveLocalStoreLines(validation.data.epcId, storeLines);
 
 			showToast({
 				type: "success",
@@ -277,6 +379,7 @@ export function useCrfForm({
 		submitting,
 		updateCrfMutation,
 		validation,
+		verifySouvenirStock,
 	]);
 
 	const handleReset = React.useCallback(() => {

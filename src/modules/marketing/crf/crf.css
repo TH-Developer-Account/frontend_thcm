@@ -735,8 +735,7 @@
 	}
 
 	.crf-tile--clickable .crf-tile-image {
-		transition: transform var(--duration-normal, 200ms)
-			var(--ease-standard, ease);
+		transition: transform var(--duration-normal, 200ms) var(--ease-standard, ease);
 	}
 
 	.crf-badge--in-crf {

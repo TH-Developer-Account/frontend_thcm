@@ -14,8 +14,13 @@
 
 import { z } from "zod";
 
-import type { LineItemOption } from "../shared/lineItem.types";
-import { CRF_CATEGORIES, type CrfCategory } from "./crf.types";
+import {
+	ARTWORK_CUSTOM_PRESET,
+	ARTWORK_RESOLUTION_PRESETS,
+	CRF_CATEGORIES,
+	type CrfCategory,
+	type CrfLineItem,
+} from "./crf.types";
 
 /* ========================================================================== */
 /*                                   Limits                                   */
@@ -28,16 +33,27 @@ export const CRF_LIMITS = {
 	MAX_QUANTITY: 10_000,
 	/** Max unit rate (₹10 crore) — guards against typos like an extra 0s. */
 	MAX_RATE: 100_000_000,
-	/** Max artwork width / height (in the selected unit). */
+	/** Max artwork width / height for legacy physical units (ft/in/cm/m). */
 	MAX_DIMENSION: 1_000,
+	/** Max digital artwork width / height in pixels. */
+	MAX_PIXELS: 20_000,
 	/** Max free-text description length. */
 	MAX_DESCRIPTION: 500,
 	/** Decimal places allowed for money and dimensions. */
 	DECIMALS: 2,
 } as const;
 
-export const ARTWORK_UNITS = ["ft", "in", "cm", "m"] as const;
+/** Artworks are digital → pixels. */
+export const ARTWORK_UNIT = "px" as const;
+/** Physical units only accepted on CRFs saved before artworks went digital. */
+export const ARTWORK_LEGACY_UNITS = ["ft", "in", "cm", "m"] as const;
+export const ARTWORK_UNITS = [ARTWORK_UNIT, ...ARTWORK_LEGACY_UNITS] as const;
 export type ArtworkUnit = (typeof ARTWORK_UNITS)[number];
+
+const PRESET_VALUES: readonly string[] = [
+	...ARTWORK_RESOLUTION_PRESETS.map((preset) => preset.value),
+	ARTWORK_CUSTOM_PRESET,
+];
 
 const CATEGORY_VALUES = CRF_CATEGORIES.map((category) => category.value);
 
@@ -70,7 +86,17 @@ export const CRF_MESSAGES = {
 		`${label} cannot exceed ${max.toLocaleString("en-IN")}.`,
 	decimals: (label: string, decimals: number) =>
 		`${label} can have at most ${decimals} decimal places.`,
-	unitInvalid: `Select a unit (${ARTWORK_UNITS.join(", ")}).`,
+	unitInvalid: "Artwork size must be in pixels (px).",
+	resolutionRequired:
+		"Select a resolution, or choose Custom and enter width × height.",
+	pixelsWhole: "Width and height must be whole pixels.",
+	/* ---- Souvenirs (store) ---- */
+	skuMissing: "This item has no SKU in the store and can't be ordered.",
+	variantRequired: "Select a size / variant.",
+	unavailable: "This item is no longer available in the store.",
+	outOfStock: "Out of stock.",
+	notEnoughStock: (available: number) =>
+		`Only ${available.toLocaleString("en-IN")} in stock. Reduce the quantity.`,
 	descriptionTooLong: `Description cannot exceed ${CRF_LIMITS.MAX_DESCRIPTION} characters.`,
 } as const;
 
@@ -185,15 +211,15 @@ const numberField = ({
 /* ========================================================================== */
 
 /**
- * Field rules of one CRF line, in the LineItemOption shape the form already
- * holds (value = productId, rate = unit amount). Cross-field rules live in
- * crfLineItemSchema below.
+ * Field rules of one CRF line, in the CrfLineItem shape the form holds
+ * (value = productId / variantId, rate = unit amount). Cross-field and
+ * per-category rules live in getArtworkIssues / getSouvenirIssues.
  */
 const lineItemFieldsSchema = z.object({
 	id: z.string().optional(),
 
-	// productId. Preprocessed so a missing value gets our message,
-	// not Zod's default "Required" / "expected string".
+	// productId (printed / artwork) or variantId (souvenir). Preprocessed so a
+	// missing value gets our message, not Zod's default "Required".
 	value: z.preprocess(
 		(raw) => (typeof raw === "string" ? raw : ""),
 		z.string().trim().min(1, CRF_MESSAGES.productRequired),
@@ -232,62 +258,165 @@ const lineItemFieldsSchema = z.object({
 		decimals: CRF_LIMITS.DECIMALS,
 	}),
 
-	// Artwork only — format checked here, "required" checked in getArtworkIssues.
+	/* ---- Artwork only — format here, "required"/px rules in getArtworkIssues ---- */
 	width: numberField({
 		label: "Width",
 		required: false,
 		positive: true,
-		max: CRF_LIMITS.MAX_DIMENSION,
+		max: CRF_LIMITS.MAX_PIXELS,
 		decimals: CRF_LIMITS.DECIMALS,
 	}),
 	height: numberField({
 		label: "Height",
 		required: false,
 		positive: true,
-		max: CRF_LIMITS.MAX_DIMENSION,
+		max: CRF_LIMITS.MAX_PIXELS,
 		decimals: CRF_LIMITS.DECIMALS,
 	}),
 	unit: z.string().nullish(),
+	resolutionPreset: z
+		.string()
+		.nullish()
+		.transform((value) => (value && PRESET_VALUES.includes(value) ? value : undefined)),
+
+	/* ---- Souvenir (store) snapshot — rules in getSouvenirIssues ---- */
+	sku: z.string().trim().nullish(),
+	variantId: z.string().trim().nullish(),
+	shopifyProductId: z.string().nullish(),
+	variantTitle: z.string().nullish(),
+	options: z.record(z.string(), z.string()).nullish(),
+	imageUrl: z.string().nullish(),
+	compareAtPrice: z.number().nullish(),
+	gstRate: z.number().min(0).max(100).nullish(),
+	availableQty: z.number().nullish(),
+	stockStatus: z.string().nullish(),
 });
 
 type Issue = { path: (string | number)[]; message: string };
 
-/** Artwork lines must carry a size and a known unit. Runs on raw input. */
+/**
+ * Artworks are digital: a pixel resolution is required (preset or custom).
+ * Physical units are tolerated only on CRFs saved before the switch.
+ * Runs on raw input.
+ */
 const getArtworkIssues = (raw: unknown): Issue[] => {
 	const item = (raw ?? {}) as Record<string, unknown>;
 	if (item.category !== "ARTWORK") return [];
 
+	if (isBlank(item.width) || isBlank(item.height)) {
+		return [
+			{ path: ["resolutionPreset"], message: CRF_MESSAGES.resolutionRequired },
+		];
+	}
+
+	const unit = typeof item.unit === "string" ? item.unit : "";
+	if (!(ARTWORK_UNITS as readonly string[]).includes(unit)) {
+		return [{ path: ["unit"], message: CRF_MESSAGES.unitInvalid }];
+	}
+
+	const width = Number(item.width);
+	const height = Number(item.height);
+
+	if (unit === ARTWORK_UNIT) {
+		return Number.isInteger(width) && Number.isInteger(height)
+			? []
+			: [{ path: ["width"], message: CRF_MESSAGES.pixelsWhole }];
+	}
+
+	// Legacy physical sizes keep their old limit.
 	const issues: Issue[] = [];
-	if (isBlank(item.width)) {
-		issues.push({ path: ["width"], message: CRF_MESSAGES.required("Width") });
+	if (width > CRF_LIMITS.MAX_DIMENSION) {
+		issues.push({ path: ["width"], message: CRF_MESSAGES.max("Width", CRF_LIMITS.MAX_DIMENSION) });
 	}
-	if (isBlank(item.height)) {
-		issues.push({ path: ["height"], message: CRF_MESSAGES.required("Height") });
-	}
-	if (
-		typeof item.unit !== "string" ||
-		!(ARTWORK_UNITS as readonly string[]).includes(item.unit)
-	) {
-		issues.push({ path: ["unit"], message: CRF_MESSAGES.unitInvalid });
+	if (height > CRF_LIMITS.MAX_DIMENSION) {
+		issues.push({ path: ["height"], message: CRF_MESSAGES.max("Height", CRF_LIMITS.MAX_DIMENSION) });
 	}
 	return issues;
 };
 
-/** Normalised line: totals recomputed, sizes only on artwork. */
+/**
+ * Souvenirs come from the store: they need a SKU + variant, and the quantity
+ * can't exceed the last known stock (from the catalog or the pre-save stock
+ * check). Unknown stock (e.g. an old CRF opened for edit) is not blocked
+ * here — the pre-save stock check fills it in. Runs on raw input.
+ */
+const getSouvenirIssues = (raw: unknown): Issue[] => {
+	const item = (raw ?? {}) as Record<string, unknown>;
+	if (item.category !== "SOUVENIR") return [];
+
+	if (item.stockStatus === "INACTIVE" || item.stockStatus === "UNKNOWN_SKU") {
+		return [{ path: ["sku"], message: CRF_MESSAGES.unavailable }];
+	}
+	if (isBlank(item.variantId)) {
+		return [{ path: ["value"], message: CRF_MESSAGES.variantRequired }];
+	}
+	if (isBlank(item.sku)) {
+		return [{ path: ["sku"], message: CRF_MESSAGES.skuMissing }];
+	}
+
+	if (isBlank(item.availableQty)) return [];
+	const available = Number(item.availableQty);
+	const quantity = Number(item.quantity);
+
+	if (available <= 0) {
+		return [{ path: ["quantity"], message: CRF_MESSAGES.outOfStock }];
+	}
+	if (Number.isFinite(quantity) && quantity > available) {
+		return [{ path: ["quantity"], message: CRF_MESSAGES.notEnoughStock(available) }];
+	}
+	return [];
+};
+
+/**
+ * Normalised line: totals recomputed, and each category keeps only its own
+ * fields — size only on artworks, store snapshot only on souvenirs, and
+ * printed materials carry neither.
+ */
 const normalizeLineItem = (item: z.output<typeof lineItemFieldsSchema>) => {
 	const isArtwork = item.category === "ARTWORK";
+	const isSouvenir = item.category === "SOUVENIR";
 	const quantity = item.quantity as number;
 	const rate = item.rate as number;
 
+	const {
+		width, height, unit, resolutionPreset,
+		sku, variantId, shopifyProductId, variantTitle, options, imageUrl,
+		compareAtPrice, gstRate, availableQty, stockStatus,
+		...common
+	} = item;
+
 	return {
-		...item,
+		...common,
 		quantity,
 		rate,
 		// Recomputed so a stale `total` held by the form can never be sent.
 		total: roundTo(quantity * rate),
-		width: isArtwork ? item.width : undefined,
-		height: isArtwork ? item.height : undefined,
-		unit: isArtwork ? (item.unit as ArtworkUnit) : undefined,
+
+		...(isArtwork
+			? {
+					width,
+					height,
+					unit: (unit || ARTWORK_UNIT) as ArtworkUnit,
+					resolutionPreset:
+						(resolutionPreset as CrfLineItem["resolutionPreset"]) ??
+						ARTWORK_CUSTOM_PRESET,
+				}
+			: {}),
+
+		...(isSouvenir
+			? {
+					sku: sku ?? null,
+					variantId: variantId ?? null,
+					shopifyProductId: shopifyProductId ?? null,
+					variantTitle: variantTitle ?? null,
+					options: options ?? {},
+					imageUrl: imageUrl ?? null,
+					compareAtPrice: compareAtPrice ?? null,
+					gstRate: gstRate ?? null,
+					availableQty: availableQty ?? null,
+					stockStatus: (stockStatus as CrfLineItem["stockStatus"]) ?? null,
+				}
+			: {}),
 	};
 };
 
@@ -295,9 +424,9 @@ const normalizeLineItem = (item: z.output<typeof lineItemFieldsSchema>) => {
  * One CRF line.
  *
  * Built on z.unknown() + superRefine on purpose: Zod skips object-level
- * refinements once any field fails, which would hide "Width is required"
+ * refinements once any field fails, which would hide "Select a resolution"
  * while "Quantity must be at least 1" is showing. Running the field schema
- * and the artwork rules side by side reports everything in one pass.
+ * and the category rules side by side reports everything in one pass.
  */
 export const crfLineItemSchema = z
 	.unknown()
@@ -316,8 +445,8 @@ export const crfLineItemSchema = z
 			}
 		}
 
-		for (const issue of getArtworkIssues(raw)) {
-			// Don't stack "required" on top of a format error for the same field.
+		for (const issue of [...getArtworkIssues(raw), ...getSouvenirIssues(raw)]) {
+			// Don't stack a category rule on top of a format error for the same field.
 			if (taken.has(issue.path.join("."))) continue;
 			ctx.addIssue({ code: "custom", ...issue });
 		}
@@ -332,19 +461,28 @@ export type CrfLineItemValues = z.output<typeof crfLineItemSchema>;
 /* ========================================================================== */
 
 /**
- * Identity of a line for duplicate detection. Artwork of the same product in
- * different sizes is a legitimate separate line; everything else must merge.
+ * Identity of a line for duplicate detection:
+ *   • souvenir — one line per store variant
+ *   • artwork  — same product in different resolutions is a separate line
+ *   • printed  — one line per product
  */
 export const getCrfLineKey = (item: {
 	value?: string;
 	category?: string;
+	variantId?: string | null;
+	sku?: string | null;
 	width?: unknown;
 	height?: unknown;
 	unit?: unknown;
-}) =>
-	item.category === "ARTWORK"
-		? `${item.category}:${item.value}:${Number(item.width)}x${Number(item.height)}${item.unit ?? ""}`
-		: `${item.category}:${item.value}`;
+}) => {
+	if (item.category === "SOUVENIR") {
+		return `SOUVENIR:${item.variantId || item.sku || item.value}`;
+	}
+	if (item.category === "ARTWORK") {
+		return `ARTWORK:${item.value}:${Number(item.width)}x${Number(item.height)}${item.unit ?? ""}`;
+	}
+	return `${item.category}:${item.value}`;
+};
 
 /** Duplicate lines, reported on every repeat after the first. Runs on raw input. */
 const getDuplicateIssues = (lineItems: unknown): Issue[] => {
@@ -414,6 +552,8 @@ export type CrfFormValues = z.output<typeof crfFormSchema>;
 
 export type CrfLineItemField =
 	| "value"
+	| "sku"
+	| "resolutionPreset"
 	| "quantity"
 	| "rate"
 	| "width"
@@ -444,7 +584,7 @@ type ValidationResult =
  */
 export const validateCrfForm = (input: {
 	epcId?: string | null;
-	lineItems: LineItemOption[];
+	lineItems: CrfLineItem[];
 }): ValidationResult => {
 	const result = crfFormSchema.safeParse({
 		epcId: input.epcId ?? "",
@@ -491,7 +631,7 @@ export const hasCrfErrors = (errors: CrfFormErrors) =>
  */
 export const filterCrfErrorsByCategory = (
 	errors: CrfFormErrors,
-	lineItems: LineItemOption[],
+	lineItems: CrfLineItem[],
 	categories: readonly string[],
 	includeForm = false,
 ): CrfFormErrors => {
@@ -511,7 +651,7 @@ export const filterCrfErrorsByCategory = (
 /** Category of the first invalid line, so the final save can jump to its tab. */
 export const getFirstInvalidCategory = (
 	errors: CrfFormErrors,
-	lineItems: LineItemOption[],
+	lineItems: CrfLineItem[],
 ): CrfCategory | undefined => {
 	const firstIndex = Object.keys(errors.items)
 		.map(Number)
@@ -525,7 +665,7 @@ export const getFirstInvalidCategory = (
 /** Human-readable summary for a toast: "Caps: Quantity must be at least 1." */
 export const getFirstCrfErrorMessage = (
 	errors: CrfFormErrors,
-	lineItems: LineItemOption[],
+	lineItems: CrfLineItem[],
 ): string | undefined => {
 	if (errors.form) return errors.form;
 
@@ -566,7 +706,7 @@ export const formatCrfAmount = (value: unknown) =>
 export const formatCrfQuantity = (value: unknown) =>
 	quantityFormatter.format(toFiniteNumber(value));
 
-/** (4, 2.5, "ft") → "4 × 2.5 ft" */
+/** (1920, 1080, "px") → "1,920 × 1,080 px" */
 export const formatArtworkSize = (
 	width: unknown,
 	height: unknown,
@@ -575,7 +715,7 @@ export const formatArtworkSize = (
 	const w = toFiniteNumber(width);
 	const h = toFiniteNumber(height);
 	if (!w || !h) return "--";
-	return `${w} × ${h} ${unit || "ft"}`;
+	return `${w.toLocaleString("en-IN")} × ${h.toLocaleString("en-IN")} ${unit || "px"}`;
 };
 
 export const getCrfCategoryTitle = (category?: string) =>
