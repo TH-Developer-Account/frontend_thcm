@@ -473,6 +473,55 @@ export const validateCrfForm = (input: {
 	return { success: false, errors };
 };
 
+/* ========================================================================== */
+/*                         Per-tab (category) helpers                         */
+/* ========================================================================== */
+
+/** True when there is at least one form-level or line-level message. */
+export const hasCrfErrors = (errors: CrfFormErrors) =>
+	Boolean(errors.form) || Object.keys(errors.items).length > 0;
+
+/**
+ * Keeps only the line errors that belong to the given categories.
+ * Indices stay those of the full `lineItems` list, so the catalog and the
+ * summary card can keep looking errors up by the line's real index.
+ *
+ * The form-level message ("Add at least one item…") is CRF-wide, so it is
+ * dropped unless `includeForm` is set (only the final save sets it).
+ */
+export const filterCrfErrorsByCategory = (
+	errors: CrfFormErrors,
+	lineItems: LineItemOption[],
+	categories: readonly string[],
+	includeForm = false,
+): CrfFormErrors => {
+	const items: CrfFormErrors["items"] = {};
+
+	for (const [key, lineErrors] of Object.entries(errors.items)) {
+		const index = Number(key);
+		const category = lineItems[index]?.category;
+		if (category && categories.includes(category)) {
+			items[index] = lineErrors;
+		}
+	}
+
+	return { form: includeForm ? errors.form : undefined, items };
+};
+
+/** Category of the first invalid line, so the final save can jump to its tab. */
+export const getFirstInvalidCategory = (
+	errors: CrfFormErrors,
+	lineItems: LineItemOption[],
+): CrfCategory | undefined => {
+	const firstIndex = Object.keys(errors.items)
+		.map(Number)
+		.sort((a, b) => a - b)[0];
+
+	return firstIndex === undefined
+		? undefined
+		: (lineItems[firstIndex]?.category as CrfCategory | undefined);
+};
+
 /** Human-readable summary for a toast: "Caps: Quantity must be at least 1." */
 export const getFirstCrfErrorMessage = (
 	errors: CrfFormErrors,

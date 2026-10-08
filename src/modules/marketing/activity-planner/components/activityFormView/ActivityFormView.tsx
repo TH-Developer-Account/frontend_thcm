@@ -1,16 +1,23 @@
+// components/activityFormView/ActivityFormView.tsx
+// EPC detail ("view") page body: header + tabs, one card per tab,
+// comments/audit side panels, approval actions bar.
+//
+// Rules:
+//   • No collapsible sections — every tab is ONE card.
+//   • Adding CRF / EPF and Final Submit live in the stepper (no Create
+//     buttons here, no Review tab).
+//   • Editing existing forms:
+//       not submitted → the proposer can edit EPC / CRF / EPF freely
+//                       (ActivityPlannerPage shows the "Not submitted" banner)
+//       submitted     → existing permissions (edit via clarification)
 import { useState, type ComponentProps, type ReactNode } from "react";
 import {
-	CalendarCheck,
-	ClipboardCheck,
 	FileDown,
 	FileSpreadsheet,
-	FileText,
 	GitBranch,
 	History,
 	MessageSquareText,
 	Pencil,
-	Plus,
-	ReceiptIndianRupee,
 	TriangleAlert,
 	Truck,
 } from "lucide-react";
@@ -20,10 +27,11 @@ import ActionMenu, {
 } from "../../../../../components/common/ActionMenu";
 import { Badge } from "../../../../../components/common/Badge";
 import Button from "../../../../../components/common/Button";
-import Card, { type CardSection } from "../../../../../components/common/Card";
+import Card from "../../../../../components/common/Card";
 import NavigateButton from "../../../../../components/common/NavigateButton";
 import { TabsBar } from "../../../../../components/common/TabsBar";
 import type { TabItem } from "../../../../../components/common/common.types";
+import FormHeader from "../../../../../components/ui/FormHeader";
 import { AuditLogSection } from "../../../../../components/ui/audit";
 import { CommentsSection } from "../../../../../components/ui/comments";
 import ApprovalActionsBar from "../../../../../components/ui/ApprovalActionsBar";
@@ -36,7 +44,6 @@ import EpcForm from "../../forms/EPC/EpcForm";
 import CrfSection from "../../../crf/CrfSection";
 import EpfSection from "../../forms/EPF/EpfSection";
 import type { ActivityPlannerController } from "../../hooks/useActivityPlanner";
-import ActivityDetailsSection from "./ActivityDetailsSection";
 import {
 	activityPlannerAuditApi,
 	activityPlannerCommentApi,
@@ -49,8 +56,8 @@ import { EVENT_PROPOSAL_SUBJECT_TYPE } from "../../queries/epc.queries";
 
 type ActivityTab =
 	| "epc"
-	| "epf"
 	| "crf"
+	| "epf"
 	| "approval"
 	| "outcome"
 	| "report"
@@ -71,8 +78,8 @@ const ACTIVITY_TABS: readonly TabItem<ActivityTab>[] = [
 
 const TAB_TITLES: Record<ActivityTab, string> = {
 	epc: "EPC Information",
-	epf: "EPF Information",
 	crf: "CRF Details",
+	epf: "EPF Information",
 	approval: "Approval Workflow",
 	outcome: "Event Outcome",
 	report: "Event Report",
@@ -180,11 +187,21 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 	const status = epcData.status || "IN_PROGRESS";
 	const hasCrfLineItems = Boolean(epcData.crf?.lineItems?.length);
 	const hasEpf = Boolean(epcData.epf);
+	const workflowStarted = Boolean(epcData.activeWorkflow);
 
-	/** Comments + audit need a workflow context (approvalId), same rule as before. */
-	const showSidePanels = hasEpf && editingSection !== "epf";
+	/** Before submission the proposer owns the EPC and can edit every saved form. */
+	const canEditBeforeSubmit =
+		!workflowStarted && Boolean(permissions.isProposer);
 
-	/** Event outcome / report / deviation tabs only exist when their section applies. */
+	const canEditEpc = canEditBeforeSubmit || permissions.canEditEpc;
+	const canEditCrf =
+		hasCrfLineItems && (canEditBeforeSubmit || permissions.canEditCrf);
+	const canEditEpf = hasEpf && (canEditBeforeSubmit || permissions.canEditEpf);
+
+	/** Comments + audit need a workflow context (approvalId) → only once submitted. */
+	const showSidePanels = workflowStarted && editingSection !== "epf";
+
+	/** Conditional tabs only exist when their section applies. */
 	const conditionalTabVisibility: Partial<Record<ActivityTab, boolean>> = {
 		outcome: permissions.canShowInitialEventOutcome,
 		report: permissions.canShowReportSection,
@@ -208,6 +225,10 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 		startEditing(section);
 	};
 
+	/* ------------------------------------------------------------------------ */
+	/*                          Header actions (view cards)                     */
+	/* ------------------------------------------------------------------------ */
+
 	const exportActions: ActionMenuItem<string>[] = [
 		{
 			id: "download-pdf",
@@ -225,257 +246,222 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 		},
 	];
 
-	/* ------------------------------------------------------------------------ */
-	/*                              EPC tab                                     */
-	/* ------------------------------------------------------------------------ */
+	const exportMenu = (
+		<ActionMenu
+			size="xs"
+			row={epcData.id}
+			actions={exportActions}
+			ariaLabel="Activity planner export actions"
+			triggerLabel="Export"
+			triggerVariant="brand"
+		/>
+	);
 
-	const buildEpcSections = (): CardSection[] => [
-		{
-			id: "activity-details",
-			title: "Activity Details",
-			Icon: CalendarCheck,
-			defaultExpanded: true,
-			actions:
-				permissions.canEditEpc && editingSection !== "epc" ? (
-					<Button
-						type="button"
-						Icon={Pencil}
-						text="Edit EPC"
-						size="sm"
-						onClick={() => editSection("epc")}
-						appearance="standard"
-						variant="outline"
-					/>
-				) : undefined,
-			children: (
-				<ActivityDetailsSection
-					epcData={epcData}
-					isEditing={editingSection === "epc"}
-					onCancel={cancelEditing}
-					onSuccess={finishEditing}
-				/>
-			),
-		},
-	];
+	/** Edit only — adding forms happens in the stepper. */
+	const editButton = (
+		section: keyof typeof EDIT_SECTION_TAB,
+		label: string,
+	) => (
+		<Button
+			type="button"
+			Icon={Pencil}
+			text={label}
+			size="sm"
+			onClick={() => editSection(section)}
+			appearance="standard"
+			variant="outline"
+		/>
+	);
 
-	/* ------------------------------------------------------------------------ */
-	/*               Event outcome / report / deviation tabs                    */
-	/* ------------------------------------------------------------------------ */
-
-	const buildOutcomeSections = (): CardSection[] => [
-		{
-			id: "initial-event-outcome",
-			title: "Event Outcome",
-			Icon: CalendarCheck,
-			defaultExpanded: true,
-			children: <EventOutcome eventStatus={eventStatus} epcID={epcData.id} />,
-		},
-	];
-
-	const buildReportSections = (): CardSection[] => [
-		{
-			id: "event-report",
-			title: "Event Report",
-			Icon: ClipboardCheck,
-			defaultExpanded: true,
-			children: (
-				<EventReportSection
-					report={eventReport.report}
-					isProposer={permissions.isProposer}
-					isValidator={permissions.isValidator}
-					canCreateReport={permissions.canCreateReport}
-					isValidating={eventReport.isValidating}
-					onOpenReportBuilder={eventReport.onOpenReportBuilder}
-					onDownload={eventReport.onDownload}
-					onValidateReport={eventReport.onValidateReport}
-				/>
-			),
-		},
-	];
-
-	const buildDeviationSections = (): CardSection[] => {
-		const sections: CardSection[] = [
-			{
-				id: "post-report-event-outcome",
-				title: "Post-report Event Outcome",
-				Icon: TriangleAlert,
-				defaultExpanded: true,
-				children: (
-					<EventOutcome
-						eventStatus={eventStatus}
-						epcID={epcData.id}
-						workspaceId={workspaceId ?? undefined}
-						appId={appId ?? undefined}
-						onSuccess={handleRefresh}
-						onDeviationPreviewSuccess={handleDeviationPreviewSuccess}
-					/>
-				),
-			},
-		];
-
-		// Show the deviation approval flow right where it was generated.
-		if (deviationPreviewStages.length) {
-			sections.push({
-				id: "deviation-approval-flow",
-				title: "Deviation Approval Flow",
-				Icon: GitBranch,
-				defaultExpanded: true,
-				children: (
-					<ApprovalWorkflowSection
-						stages={deviationPreviewStages}
-						additionalFlows={[]}
-					/>
-				),
-			});
-		}
-
-		return sections;
-	};
+	/**
+	 * Standard view card for a tab: title + [action] + Export.
+	 * A render helper, NOT a component declared in here — an inner component
+	 * would get a new identity every render and remount (wiping form state).
+	 */
+	const renderViewCard = (children: ReactNode, action?: ReactNode) => (
+		<Card
+			key={currentTab}
+			title={TAB_TITLES[currentTab]}
+			actions={
+				<>
+					{action}
+					{exportMenu}
+				</>
+			}
+		>
+			{children}
+		</Card>
+	);
 
 	/* ------------------------------------------------------------------------ */
-	/*                              EPF tab: budget                             */
+	/*                            Tab → card                                    */
 	/* ------------------------------------------------------------------------ */
 
-	const buildEpfSections = (): CardSection[] => [
-		{
-			id: "epf-details",
-			title: "EPF Details",
-			Icon: ReceiptIndianRupee,
-			defaultExpanded: true,
-			actions:
-				editingSection !== "epf" &&
-				(hasEpf ? permissions.canEditEpf : permissions.canCreateEpf) ? (
-					<Button
-						type="button"
-						Icon={hasEpf ? Pencil : Plus}
-						text={hasEpf ? "Edit EPF" : "Create EPF"}
-						size="sm"
-						onClick={() => editSection("epf")}
-						appearance="standard"
-						variant="outline"
-					/>
-				) : undefined,
-			children: (
-				<EpfSection
-					epcData={epcData}
-					isEditing={editingSection === "epf"}
-					onCancel={cancelEditing}
-					onSuccess={finishEditing}
-				/>
-			),
-		},
-	];
-
-	/* ------------------------------------------------------------------------ */
-	/*                               CRF tab                                    */
-	/* ------------------------------------------------------------------------ */
-
-	const buildCrfSections = (): CardSection[] => [
-		{
-			id: "crf-details",
-			title: "CRF Details",
-			Icon: FileText,
-			defaultExpanded: true,
-			actions:
-				editingSection !== "crf" &&
-				(hasCrfLineItems
-					? permissions.canEditCrf
-					: permissions.canCreateCrf) ? (
-					<Button
-						type="button"
-						Icon={hasCrfLineItems ? Pencil : Plus}
-						text={hasCrfLineItems ? "Edit CRF" : "Create CRF"}
-						size="sm"
-						onClick={() => editSection("crf")}
-						appearance="standard"
-						variant="outline"
-					/>
-				) : undefined,
-			children: (
-				<CrfSection
-					epcData={epcData}
-					isEditing={editingSection === "crf"}
-					onCancel={cancelEditing}
-					onSuccess={finishEditing}
-				/>
-			),
-		},
-	];
-
-	/* ------------------------------------------------------------------------ */
-	/*                            Tab → content                                 */
-	/* ------------------------------------------------------------------------ */
-
-	const renderTabContent = (): {
-		sections?: CardSection[];
-		body?: ReactNode;
-	} => {
+	const renderTab = (): ReactNode => {
 		switch (currentTab) {
+			/* ------------------------------- EPC ------------------------------- */
 			case "epc":
-				return { sections: buildEpcSections() };
+				if (editingSection === "epc") {
+					return (
+						<Card key="epc-edit" title="Edit EPC">
+							<EpcForm
+								mode="edit"
+								epcId={epcData.id}
+								initialData={epcData}
+								onCancel={cancelEditing}
+								onSuccess={finishEditing}
+							/>
+						</Card>
+					);
+				}
 
-			case "outcome":
-				return { sections: buildOutcomeSections() };
+				return renderViewCard(
+					<EpcForm mode="view" initialData={epcData} />,
+					canEditEpc ? editButton("epc", "Edit EPC") : undefined,
+				);
 
-			case "report":
-				return { sections: buildReportSections() };
-
-			case "deviation":
-				return { sections: buildDeviationSections() };
-
-			case "epf":
-				return { sections: buildEpfSections() };
-
+			/* ------------------------------- CRF ------------------------------- */
 			case "crf":
-				return { sections: buildCrfSections() };
-
-			case "tracking":
-				return {
-					body: (
-						<TabEmptyState
-							Icon={Truck}
-							title="No shipment updates yet"
-							description="Order and shipment tracking will appear here once the CRF is approved and the Shopify order is created."
+				if (editingSection === "crf") {
+					// CrfSection in edit mode renders CrfForm — a card with its own footer.
+					return (
+						<CrfSection
+							epcData={epcData}
+							isEditing
+							onCancel={cancelEditing}
+							onSuccess={finishEditing}
 						/>
-					),
-				};
+					);
+				}
 
+				return renderViewCard(
+					<CrfSection
+						epcData={epcData}
+						isEditing={false}
+						onCancel={cancelEditing}
+						onSuccess={finishEditing}
+					/>,
+					canEditCrf ? editButton("crf", "Edit CRF") : undefined,
+				);
+
+			/* ------------------------------- EPF ------------------------------- */
+			case "epf":
+				if (editingSection === "epf") {
+					// EpfSection in edit mode renders EpfForm — a card with its own footer.
+					return (
+						<EpfSection
+							epcData={epcData}
+							isEditing
+							onCancel={cancelEditing}
+							onSuccess={finishEditing}
+						/>
+					);
+				}
+
+				return renderViewCard(
+					<EpfSection
+						epcData={epcData}
+						isEditing={false}
+						onCancel={cancelEditing}
+						onSuccess={finishEditing}
+					/>,
+					canEditEpf ? editButton("epf", "Edit EPF") : undefined,
+				);
+
+			/* ------------------------- Approval workflow ----------------------- */
 			case "approval":
-				return {
-					body:
-						hasEpf && editingSection !== "epf" ? (
-							<div className="activity-form-view-tab-body">
-								<ApprovalWorkflowSection
-									stages={workflowStages}
-									additionalFlows={
-										deviationPreviewStages.length
-											? [
-													{
-														key: "deviation",
-														title: "Deviation Approval Flow",
-														stages: deviationPreviewStages,
-													},
-												]
-											: []
-									}
-								/>
-							</div>
-						) : (
-							<TabEmptyState
-								Icon={GitBranch}
-								title="Workflow not available"
-								description={
-									editingSection === "epf"
-										? "Finish editing the EPF to view the approval workflow."
-										: "The approval workflow starts once the EPF is created."
+				return renderViewCard(
+					workflowStarted && editingSection !== "epf" ? (
+						<div className="activity-form-view-tab-body">
+							<ApprovalWorkflowSection
+								stages={workflowStages}
+								additionalFlows={
+									deviationPreviewStages.length
+										? [
+												{
+													key: "deviation",
+													title: "Deviation Approval Flow",
+													stages: deviationPreviewStages,
+												},
+											]
+										: []
 								}
 							/>
-						),
-				};
+						</div>
+					) : (
+						<TabEmptyState
+							Icon={GitBranch}
+							title="Workflow not started"
+							description={
+								editingSection === "epf"
+									? "Finish editing the EPF to view the approval workflow."
+									: "The approval workflow starts when the EPC is submitted (Continue to submit, above)."
+							}
+						/>
+					),
+				);
+
+			/* ------------------------------ Outcome ---------------------------- */
+			case "outcome":
+				return renderViewCard(
+					<EventOutcome eventStatus={eventStatus} epcID={epcData.id} />,
+				);
+
+			/* ------------------------------ Report ----------------------------- */
+			case "report":
+				return renderViewCard(
+					<EventReportSection
+						report={eventReport.report}
+						isProposer={permissions.isProposer}
+						isValidator={permissions.isValidator}
+						canCreateReport={permissions.canCreateReport}
+						isValidating={eventReport.isValidating}
+						onOpenReportBuilder={eventReport.onOpenReportBuilder}
+						onDownload={eventReport.onDownload}
+						onValidateReport={eventReport.onValidateReport}
+					/>,
+				);
+
+			/* ----------------------------- Deviation --------------------------- */
+			case "deviation":
+				return renderViewCard(
+					<div className="flex min-w-0 flex-col gap-4">
+						<EventOutcome
+							eventStatus={eventStatus}
+							epcID={epcData.id}
+							workspaceId={workspaceId ?? undefined}
+							appId={appId ?? undefined}
+							onSuccess={handleRefresh}
+							onDeviationPreviewSuccess={handleDeviationPreviewSuccess}
+						/>
+
+						{/* Show the deviation approval flow right where it was generated. */}
+						{deviationPreviewStages.length > 0 && (
+							<section className="min-w-0">
+								<FormHeader
+									title="Deviation Approval Flow"
+									Icon={TriangleAlert}
+								/>
+								<ApprovalWorkflowSection
+									stages={deviationPreviewStages}
+									additionalFlows={[]}
+								/>
+							</section>
+						)}
+					</div>,
+				);
+
+			/* ------------------------------ Tracking --------------------------- */
+			case "tracking":
+				return renderViewCard(
+					<TabEmptyState
+						Icon={Truck}
+						title="No shipment updates yet"
+						description="Order and shipment tracking will appear here once the CRF is approved and the Shopify order is created."
+					/>,
+				);
 		}
 	};
-
-	const tabContent = renderTabContent();
 
 	/* ------------------------------------------------------------------------ */
 	/*                          Approval actions bar                            */
@@ -537,7 +523,7 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 					/>
 				</header>
 
-				{/* ── Body: form (left) · comments + audit (right) ── */}
+				{/* ── Body: tab card (left) · comments + audit (right) ── */}
 				<div
 					className={[
 						"activity-form-view-body",
@@ -546,25 +532,7 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 						.filter(Boolean)
 						.join(" ")}
 				>
-					<Card
-						key={currentTab}
-						className="activity-form-view-main"
-						title={TAB_TITLES[currentTab]}
-						actions={
-							<ActionMenu
-								size="xs"
-								row={epcData.id}
-								actions={exportActions}
-								ariaLabel="Activity planner export actions"
-								triggerLabel="Export"
-								triggerVariant="brand"
-							/>
-						}
-						sections={tabContent.sections}
-						padding="none"
-					>
-						{tabContent.body}
-					</Card>
+					<div className="activity-form-view-main min-w-0">{renderTab()}</div>
 
 					{showSidePanels && (
 						<aside

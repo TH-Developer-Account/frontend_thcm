@@ -1,23 +1,4 @@
 // crf/CrfCatalog.tsx
-// Reusable CRF item picker — tabs per category, product tiles with "+", and a
-// live "Items" summary card (the hand-drawn CRF step design).
-//
-//   [ Printed ] [ Souvenirs ] [ Artworks ]            [ search ]
-//   ┌───┐ ┌───┐ ┌───┐ ┌───┐                ┌──────────────┐
-//   │ + │ │ + │ │ + │ │ + │                │ Items        │
-//   └───┘ └───┘ └───┘ └───┘                │ Caps     × 1 │
-//   ┌───┐ ┌───┐                            │ Shirts   × 2 │
-//   │ + │ │ + │                            │ Total      3 │
-//   └───┘ └───┘                            └──────────────┘
-//
-// Fully controlled: it owns no cart state, only UI state (active tab, search).
-// `items` / `onChange` use the same LineItemOption[] + setState contract the
-// CRF form already uses, so it drops in where the LineItemTables were.
-//
-// Rules applied while editing (the schema re-checks all of them on submit):
-//   • Adding a product already in the cart increases its quantity (no duplicates).
-//   • Quantity is a whole number; going below 1 removes the line.
-//   • Artwork lines carry width × height + unit, prefilled from the product.
 
 import React from "react";
 import { Minus, PackageOpen, Plus, Trash2 } from "lucide-react";
@@ -60,8 +41,15 @@ export type CrfCatalogProps = {
 	readOnly?: boolean;
 	/** Override to show a subset of categories. Defaults to all CRF categories. */
 	categories?: readonly CategoryConfig[];
+	/** Uncontrolled starting tab (ignored when `activeCategory` is passed). */
 	defaultCategory?: CrfCategory;
+	/** Controlled active tab — pass with `onCategoryChange` (CrfForm's steps). */
+	activeCategory?: CrfCategory;
+	onCategoryChange?: (category: CrfCategory) => void;
 };
+
+/** Lines shown in the summary card before "Load more". */
+export const CRF_SUMMARY_PAGE_SIZE = 5;
 
 /* ========================================================================== */
 /*                                  Helpers                                   */
@@ -344,46 +332,71 @@ const ProductTile = ({
 /*                               Summary card                                 */
 /* ========================================================================== */
 
+/** A cart line plus its index in the FULL items list (errors are keyed by it). */
+type CartEntry = { item: LineItemOption; index: number };
+
 type CartSummaryProps = {
-	items: LineItemOption[];
+	/** Title of the active tab, e.g. "Souvenirs". */
+	title: string;
+	/** Only the active tab's lines. */
+	entries: CartEntry[];
 	errors: CrfFormErrors;
-	onSelectCategory: (category: CrfCategory) => void;
 };
 
-const CartSummary = ({ items, errors, onSelectCategory }: CartSummaryProps) => {
-	const totalQuantity = items.reduce(
-		(sum, item) => sum + toNumber(item.quantity),
+/**
+ * Summary of the ACTIVE tab only. Render it with `key={activeCategory}` so
+ * "Load more" collapses again when the tab changes.
+ */
+const CartSummary = ({ title, entries, errors }: CartSummaryProps) => {
+	const [showAll, setShowAll] = React.useState(false);
+
+	// Never hide a broken line behind "Load more".
+	const hiddenHasError = entries
+		.slice(CRF_SUMMARY_PAGE_SIZE)
+		.some(({ index }) => Boolean(errors.items[index]));
+
+	const expanded = showAll || hiddenHasError;
+	const visibleEntries = expanded
+		? entries
+		: entries.slice(0, CRF_SUMMARY_PAGE_SIZE);
+	const hiddenCount = entries.length - visibleEntries.length;
+
+	const totalQuantity = entries.reduce(
+		(sum, { item }) => sum + toNumber(item.quantity),
 		0,
 	);
-	const totalAmount = items.reduce((sum, item) => sum + getLineTotal(item), 0);
+	const totalAmount = entries.reduce(
+		(sum, { item }) => sum + getLineTotal(item),
+		0,
+	);
 
 	return (
-		<aside className="crf-cart" aria-label="Selected items">
+		<aside className="crf-cart" aria-label={`${title} — selected items`}>
 			<header className="crf-cart-title">
-				<span>Items</span>
-				<span className="crf-cart-count">{items.length}</span>
+				<span>{title}</span>
+				<span className="crf-cart-count">
+					{entries.length} {entries.length === 1 ? "item" : "items"}
+				</span>
 			</header>
 
-			{items.length === 0 ? (
+			{entries.length === 0 ? (
 				<div className="crf-cart-empty">
 					<PackageOpen aria-hidden="true" />
-					<p>No items added yet.</p>
+					<p>No {title.toLowerCase()} added yet.</p>
 					<p className="crf-cart-empty-hint">Tap + on a product to add it.</p>
 				</div>
 			) : (
-				<ul className="crf-cart-list">
-					{items.map((item, index) => {
-						const hasError = Boolean(errors.items[index]);
+				<>
+					<ul className="crf-cart-list">
+						{visibleEntries.map(({ item, index }) => {
+							const hasError = Boolean(errors.items[index]);
 
-						return (
-							<li key={item.id ?? `${getCrfLineKey(item)}-${index}`}>
-								<button
-									type="button"
+							return (
+								<li
+									key={item.id ?? `${getCrfLineKey(item)}-${index}`}
 									className={["crf-cart-row", hasError && "crf-cart-row--error"]
 										.filter(Boolean)
 										.join(" ")}
-									onClick={() => onSelectCategory(item.category as CrfCategory)}
-									title="Show in catalog"
 								>
 									<span className="crf-cart-row-name">
 										{item.label || "Item"}
@@ -399,11 +412,21 @@ const CartSummary = ({ items, errors, onSelectCategory }: CartSummaryProps) => {
 									<span className="crf-cart-row-amount">
 										{formatCrfAmount(getLineTotal(item))}
 									</span>
-								</button>
-							</li>
-						);
-					})}
-				</ul>
+								</li>
+							);
+						})}
+					</ul>
+
+					{hiddenCount > 0 ? (
+						<button
+							type="button"
+							className="crf-cart-more"
+							onClick={() => setShowAll(true)}
+						>
+							Load more ({hiddenCount})
+						</button>
+					) : null}
+				</>
 			)}
 
 			<footer className="crf-cart-total">
@@ -432,14 +455,51 @@ export default function CrfCatalog({
 	readOnly = false,
 	categories = CRF_CATEGORIES,
 	defaultCategory,
+	activeCategory: controlledCategory,
+	onCategoryChange,
 }: CrfCatalogProps) {
-	const [activeCategory, setActiveCategory] = React.useState<CrfCategory>(
-		defaultCategory ?? categories[0]?.value ?? "PRINTED_MATERIAL",
+	/* ------------------------------ Tab state ---------------------------- */
+
+	const [uncontrolledCategory, setUncontrolledCategory] =
+		React.useState<CrfCategory>(
+			defaultCategory ?? categories[0]?.value ?? "PRINTED_MATERIAL",
+		);
+	const activeCategory = controlledCategory ?? uncontrolledCategory;
+
+	const changeCategory = React.useCallback(
+		(category: CrfCategory) => {
+			if (onCategoryChange) onCategoryChange(category);
+			else setUncontrolledCategory(category);
+		},
+		[onCategoryChange],
 	);
-	const [search, setSearch] = React.useState("");
+
+	// Search belongs to one tab: switching tabs (by click OR by the parent's
+	// "Save & Next") starts with an empty search — no effect needed.
+	const [searchState, setSearchState] = React.useState({
+		category: activeCategory,
+		text: "",
+	});
+	const search =
+		searchState.category === activeCategory ? searchState.text : "";
+	const setSearch = (text: string) =>
+		setSearchState({ category: activeCategory, text });
 	const query = search.trim().toLowerCase();
 
 	/* ------------------------------ Derived ------------------------------ */
+
+	const activeTitle =
+		categories.find((category) => category.value === activeCategory)?.title ??
+		"Items";
+
+	/** Active tab's lines, keeping each line's index in the full list. */
+	const activeEntries = React.useMemo<CartEntry[]>(
+		() =>
+			items
+				.map((item, index) => ({ item, index }))
+				.filter(({ item }) => item.category === activeCategory),
+		[items, activeCategory],
+	);
 
 	const tabItems = React.useMemo(
 		() =>
@@ -530,10 +590,7 @@ export default function CrfCatalog({
 				<TabsBar<CrfCategory>
 					items={tabItems}
 					active={activeCategory}
-					onChange={(value) => {
-						setActiveCategory(value);
-						setSearch("");
-					}}
+					onChange={changeCategory}
 					ariaLabel="CRF categories"
 				/>
 
@@ -585,12 +642,10 @@ export default function CrfCatalog({
 				</div>
 
 				<CartSummary
-					items={items}
+					key={activeCategory}
+					title={activeTitle}
+					entries={activeEntries}
 					errors={errors}
-					onSelectCategory={(category) => {
-						setActiveCategory(category);
-						setSearch("");
-					}}
 				/>
 			</div>
 		</section>

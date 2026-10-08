@@ -151,12 +151,8 @@ export type EpcListItem = {
 	crf_id?: string | null;
 	epf_id?: string | null;
 
-	// Derived server-side (see searchEventProposal.helper.ts's
-	// attachSourceType) from the EPC's EventName.reportTemplateKey via the
-	// event report template registry. null when the EventName has no
-	// reportTemplateKey mapped — callers should treat null as "no
-	// report-related actions available for this row", not as a LEAD_FORM
-	// default.
+	workflow_id?: string | null;
+
 	sourceType?: "LEAD_FORM" | "DATA_FORM" | null;
 	dualVariant?: boolean;
 };
@@ -585,7 +581,7 @@ export type ReportImage = {
 	s3Key?: string | null;
 	reportId?: string;
 	position?: number;
-	caption?: string;
+	caption?: string | null;
 	file?: File;
 };
 
@@ -654,7 +650,7 @@ export type EventReportSectionProps = {
 	isValidating?: boolean;
 	isClarifying?: boolean;
 	onOpenReportBuilder: () => void;
-	onOpenReportPreview: () => void;
+	onOpenReportPreview?: () => void;
 	onValidateReport?: () => void | Promise<void>;
 	onClarifyReport?: () => void | Promise<void>;
 	onDownload: () => void;

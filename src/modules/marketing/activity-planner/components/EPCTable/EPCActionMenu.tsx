@@ -1,5 +1,12 @@
 // components/EPCTable/EPCActionMenu.tsx
 // Row-level action menu for the EPC listing table.
+//
+// View / Edit rules:
+//   • Not submitted → the CREATOR can View and Edit (the view shows a
+//     "Not submitted yet" banner with "Continue to submit"); others can't.
+//   • Submitted     → everyone with access can View; Edit follows the existing
+//     rules (getEpcRowActionRules — i.e. clarification).
+//   • Add CRF / Add EPF / Final Submit stay in the stepper.
 
 import {
 	Eye,
@@ -27,6 +34,7 @@ import {
 	getEpcRowActionRules,
 	type EpcRowActionRules,
 } from "../../utils/activity.helper";
+import { canOpenEpcView, isEpcSubmitted } from "../../forms/EPC/epc.utils";
 
 type EPCActionMenuProps = {
 	row: EpcListItem;
@@ -68,19 +76,31 @@ const EPCActionMenu = ({
 	// Existing EPC / CRF / EPF permissions remain unchanged.
 	const rules: EpcRowActionRules = getEpcRowActionRules(row, currentUserId);
 
+	const isSubmitted = isEpcSubmitted(row);
+
+	// Submitted → anyone with access; not submitted → only the creator.
+	const canView = canOpenEpcView(row, currentUserId);
+
+	// Before submission the creator edits freely (in the view); after
+	// submission the existing rules apply (edit via clarification).
+	const canEdit = isSubmitted ? rules.canEdit : canView;
+
 	const actions: ActionMenuItem<EpcListItem>[] = [
 		{
 			id: "view-epc",
 			label: "View",
 			Icon: Eye,
-			ariaLabel: `View ${rowLabel}`,
+			disabled: !canView,
+			ariaLabel: canView
+				? `View ${rowLabel}`
+				: `View ${rowLabel} (available after submission)`,
 			onClick: (selectedRow) => navigate(EPC_DETAIL_PATH(selectedRow.id)),
 		},
 		{
 			id: "edit-epc",
 			label: "Edit",
 			Icon: Pencil,
-			hidden: !rules.canEdit,
+			hidden: !canEdit,
 			ariaLabel: `Edit ${rowLabel}`,
 			onClick: (selectedRow) => {
 				const state: ActivityPlannerLocationState = {

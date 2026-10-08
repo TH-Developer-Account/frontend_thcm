@@ -1,8 +1,17 @@
+// forms/EPF/useEpfForm.ts
+// EPF form controller.
+//
+// CHANGED (Review & Submit):
+//   • Saving the EPF no longer starts the approval workflow, and the
+//     "Display Approval Flow" preview is gone from here.
+//   • Both now live in the Review & Submit step (forms/Review/EpcReviewSubmit):
+//     the preview loads when the user lands there, and "Final Submit" is the
+//     only thing that calls workflowApi.assignWorkflow.
+//   • Validation on save is unchanged (required fields + ₹25k quotation rule),
+//     so whatever reaches Review is already complete.
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../../../context/Auth/useAuth";
 import { useToast } from "../../../../../context/Auth/AuthContext";
-import { mapWorkflowStagesToApprovalRows } from "../../utils/formatters";
 
 import type { LineItemOption } from "../../types/epc.types";
 import type {
@@ -29,18 +38,10 @@ import {
 	mapEpfResponseToFormValues,
 } from "./epf.mapper";
 
-import {
-	buildEpfCreatePayload,
-	buildEpfUpdatePayload,
-	// buildEpfFormData,
-} from "./epf.payload";
+import { buildEpfCreatePayload, buildEpfUpdatePayload } from "./epf.payload";
 import { validateEpfForm } from "../../utils/formatters";
 
-import {
-	clearStoredEpcInfo,
-	getStoredAppId,
-	getStoredEpcInfo,
-} from "../../utils/localstorage";
+import { clearStoredEpcInfo, getStoredEpcInfo } from "../../utils/localstorage";
 
 import {
 	useCreateEpfMutation,
@@ -48,9 +49,6 @@ import {
 	useEpfProductsQuery,
 	useUpdateEpfMutation,
 } from "../../queries/epf.queries";
-import type { ApiErrorResponse } from "../../../../../context/context.types";
-import type { AxiosError } from "axios";
-import { workflowApi, type ApprovalTableRow } from "../../../../workflows";
 
 export type EpfFormMode = "create" | "edit";
 
@@ -82,9 +80,6 @@ type UseEpfFormResult = {
 	handleChange: (name: keyof EpfFormValues, value: string) => void;
 	handleReset: () => void;
 	handleSubmit: (status: EpfStatus) => Promise<void>;
-	previewRows: ApprovalTableRow[];
-	previewLoading: boolean;
-	handlePreviewWorkflow: () => Promise<void>;
 };
 
 const numericFields = new Set<keyof EpfFormValues>([
@@ -139,10 +134,8 @@ export const useEpfForm = ({
 }: EpfFormProps = {}): UseEpfFormResult => {
 	const navigate = useNavigate();
 	const { showToast } = useToast();
-	const { workspaceId } = useAuth();
 
 	const storedInfo = React.useMemo(() => getStoredEpcInfo(), []);
-	const appId = React.useMemo(() => getStoredAppId(), []);
 
 	const epcId = propEpcId ?? storedInfo?.epcId ?? null;
 	const crfId = propCrfId ?? storedInfo?.crfId ?? null;
@@ -172,9 +165,7 @@ export const useEpfForm = ({
 	const [errors, setErrors] = React.useState<
 		Partial<Record<keyof EpfFormValues, string>>
 	>({});
-	const [previewRows, setPreviewRows] = React.useState<ApprovalTableRow[]>([]);
 
-	const [previewLoading, setPreviewLoading] = React.useState(false);
 	const budgetMasterId = getBudgetMasterId({
 		budgetMasterId: propBudgetMasterId,
 		initialData,
@@ -225,6 +216,7 @@ export const useEpfForm = ({
 		}));
 	}, [budgetQuery.data]);
 
+	/** Event cost = overheads + CRF total. Saved as the EPF's event budget. */
 	const eventCost = React.useMemo(() => {
 		const overheadTotal = calculateLineItemsTotal(costItems);
 		return overheadTotal + Number(values.crfTotal || 0);
@@ -298,22 +290,10 @@ export const useEpfForm = ({
 		setErrors({});
 	}, [initialData, initialCrfTotal]);
 
-	const assignWorkflow = React.useCallback(async () => {
-		if (!epcId || !workspaceId || !appId) return;
-
-		await workflowApi.assignWorkflow({
-			subjectType: "EVENT_PROPOSAL",
-			subjectId: epcId,
-			workspaceId,
-			appId,
-			criteria: {
-				budget: eventCost,
-			},
-		});
-	}, [appId, epcId, eventCost, workspaceId]);
-
 	const handleSubmit = React.useCallback(
 		async (status: EpfStatus) => {
+			if (submitting) return;
+
 			try {
 				if (!epcId) {
 					showToast({
@@ -337,6 +317,7 @@ export const useEpfForm = ({
 
 					return;
 				}
+
 				if (status === "SUBMITTED") {
 					const overheadItemsMissingQuotation =
 						getOverheadItemsMissingQuotation(costItems);
@@ -361,22 +342,6 @@ export const useEpfForm = ({
 					costItems,
 				};
 
-				// const hasQuotationFiles = costItems.some((item) => item.quotationFile);
-
-				// const savedData = epfId
-				// 	? await updateEpfMutation.mutateAsync({
-				// 			epcId,
-				// 			epfId,
-				// 			payload: hasQuotationFiles
-				// 				? buildEpfFormData(payloadArgs)
-				// 				: buildEpfUpdatePayload(payloadArgs),
-				// 		})
-				// 	: await createEpfMutation.mutateAsync({
-				// 			epcId,
-				// 			payload: hasQuotationFiles
-				// 				? buildEpfFormData(payloadArgs)
-				// 				: buildEpfCreatePayload(payloadArgs),
-				// 		});
 				const savedData = epfId
 					? await updateEpfMutation.mutateAsync({
 							epcId,
@@ -387,19 +352,9 @@ export const useEpfForm = ({
 							epcId,
 							payload: buildEpfCreatePayload(payloadArgs),
 						});
-				if (!epfId && status === "SUBMITTED") {
-					try {
-						await assignWorkflow();
-					} catch (workflowError) {
-						console.error("Workflow assignment failed:", workflowError);
 
-						showToast({
-							type: "error",
-							title: "Workflow Error",
-							description: "EPF saved, but workflow assignment failed.",
-						});
-					}
-				}
+				// NOTE: no workflow assignment here any more — Final Submit on the
+				// Review & Submit step starts the approval workflow.
 
 				clearStoredEpcInfo();
 
@@ -408,7 +363,7 @@ export const useEpfForm = ({
 					title: "Success",
 					description: epfId
 						? "EPF updated successfully."
-						: "EPF submitted successfully.",
+						: "EPF saved. Review and submit to start the approval workflow.",
 				});
 
 				if (onSuccess) {
@@ -431,7 +386,6 @@ export const useEpfForm = ({
 			}
 		},
 		[
-			assignWorkflow,
 			costItems,
 			createEpfMutation,
 			crfId,
@@ -442,74 +396,11 @@ export const useEpfForm = ({
 			navigate,
 			onSuccess,
 			showToast,
+			submitting,
 			updateEpfMutation,
 		],
 	);
-	const handlePreviewWorkflow = React.useCallback(async () => {
-		try {
-			if (!workspaceId) {
-				showToast({
-					type: "error",
-					title: "Workspace Error",
-					description: "Workspace not found.",
-				});
 
-				return;
-			}
-
-			if (!appId) {
-				showToast({
-					type: "error",
-					title: "Application Error",
-					description: "Application ID not found.",
-				});
-
-				return;
-			}
-
-			if (!eventCost || Number(eventCost) <= 0) {
-				showToast({
-					type: "error",
-					title: "Invalid Budget",
-					description: "Event cost must be greater than zero.",
-				});
-
-				return;
-			}
-
-			setPreviewLoading(true);
-
-			const response = await workflowApi.previewWorkflow({
-				subjectType: "EVENT_PROPOSAL",
-				workspaceId,
-				appId,
-				criteria: {
-					budget: Number(eventCost),
-				},
-			});
-
-			const rows = mapWorkflowStagesToApprovalRows(response?.stages ?? [], {
-				showOnlyCurrentStageStatus: false,
-			});
-
-			setPreviewRows(rows ?? []);
-		} catch (error) {
-			const err = error as AxiosError<ApiErrorResponse>;
-
-			console.error("Workflow preview failed:", err.response?.data || error);
-
-			showToast({
-				type: "error",
-				title: "Workflow Error",
-				description:
-					err.response?.data?.message || "Unable to preview workflow.",
-			});
-
-			setPreviewRows([]);
-		} finally {
-			setPreviewLoading(false);
-		}
-	}, [workspaceId, appId, eventCost, showToast]);
 	return {
 		values: displayValues,
 		eventCost,
@@ -525,8 +416,5 @@ export const useEpfForm = ({
 		handleChange,
 		handleReset,
 		handleSubmit,
-		previewRows: previewRows ?? [],
-		previewLoading,
-		handlePreviewWorkflow,
 	};
 };

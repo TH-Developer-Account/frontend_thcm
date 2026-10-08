@@ -1,11 +1,19 @@
 // crf/useCrfForm.ts
-// CRF form controller. Owns the cart (LineItemOption[]) and validation state;
-// <CrfForm /> / <CrfCatalog /> just render it.
+// CRF form controller. Owns the cart (LineItemOption[]), the active tab and
+// the validation state; <CrfForm /> / <CrfCatalog /> just render it.
 //
-// Validation is Zod-only (crf.schema.ts):
-//   • nothing is shown while the user is still picking items,
-//   • the first Save validates everything and reveals errors,
-//   • after that, errors re-validate live as the cart changes.
+// Tabs work as steps:  Printed Materials → Souvenirs → Artworks
+//   • "Save & Next" checks ONLY the active tab's lines and moves to the next
+//     tab. Nothing is sent to the API. An empty tab is allowed (a CRF does
+//     not need every category).
+//   • The last tab's save checks the whole CRF (at least one item, every
+//     line valid) and creates / updates it. If a line in another tab is
+//     invalid, the form jumps to that tab. The parent's `onSuccess` then
+//     moves the flow on (e.g. to EPF).
+//
+// Errors are shown per tab: only for tabs the user has already saved, and
+// they re-check live as the cart changes. After the final save, all errors
+// are shown.
 
 import React from "react";
 
@@ -23,11 +31,14 @@ import {
 } from "./crf.mapper";
 import {
 	EMPTY_CRF_ERRORS,
+	filterCrfErrorsByCategory,
 	getFirstCrfErrorMessage,
+	getFirstInvalidCategory,
+	hasCrfErrors,
 	validateCrfForm,
 	type CrfFormErrors,
 } from "./crf.schema";
-import type { CrfDetail } from "./crf.types";
+import { CRF_CATEGORIES, type CrfCategory, type CrfDetail } from "./crf.types";
 
 export type CrfFormProps = {
 	/** Parent EPC the CRF belongs to (sent in the payload). */
@@ -37,9 +48,11 @@ export type CrfFormProps = {
 	/** Called after a successful save. The parent refreshes its own data here. */
 	onSuccess: (saved?: unknown) => void | Promise<void>;
 	onCancel?: () => void;
-	/** Overrides the save button label (e.g. "Save & Next" inside the wizard). */
+	/** Overrides the LAST tab's save label (e.g. "Save & Next" inside the wizard). */
 	submitLabel?: string;
 };
+
+type CategoryStep = (typeof CRF_CATEGORIES)[number];
 
 type UseCrfFormResult = {
 	costItems: LineItemOption[];
@@ -50,9 +63,25 @@ type UseCrfFormResult = {
 	submitting: boolean;
 	isEditMode: boolean;
 	isDirty: boolean;
+
+	/* --------------------------- Tab steps --------------------------- */
+	steps: readonly CategoryStep[];
+	activeCategory: CrfCategory;
+	setActiveCategory: (category: CrfCategory) => void;
+	stepIndex: number;
+	isFirstStep: boolean;
+	isLastStep: boolean;
+	/** Back one tab (no validation). */
+	handleBack: () => void;
+	/** Intermediate tabs: validate this tab, then go to the next one. */
+	handleSaveAndNext: () => void;
+	/** Last tab: validate everything, then create / update the CRF. */
 	handleSubmit: () => Promise<void>;
+	/** Resets only the active tab to its initial lines. */
 	handleReset: () => void;
 };
+
+const STEPS = CRF_CATEGORIES;
 
 export function useCrfForm({
 	epcId,
@@ -75,23 +104,105 @@ export function useCrfForm({
 
 	const [costItems, setCostItems] =
 		React.useState<LineItemOption[]>(initialCostItems);
-	const [errors, setErrors] = React.useState<CrfFormErrors>(EMPTY_CRF_ERRORS);
-	const [hasSubmitted, setHasSubmitted] = React.useState(false);
+
+	/* ------------------------------ Tab state ------------------------------ */
+
+	const [activeCategory, setActiveCategory] = React.useState<CrfCategory>(
+		STEPS[0].value,
+	);
+	/** Tabs whose "Save & Next" was clicked → their errors are visible. */
+	const [checkedCategories, setCheckedCategories] = React.useState<
+		CrfCategory[]
+	>([]);
+	/** Set by the final save → every error (incl. CRF-level) is visible. */
+	const [finalAttempted, setFinalAttempted] = React.useState(false);
+
+	const stepIndex = Math.max(
+		0,
+		STEPS.findIndex((step) => step.value === activeCategory),
+	);
+	const isFirstStep = stepIndex === 0;
+	const isLastStep = stepIndex === STEPS.length - 1;
+
+	const markChecked = React.useCallback((category: CrfCategory) => {
+		setCheckedCategories((previous) =>
+			previous.includes(category) ? previous : [...previous, category],
+		);
+	}, []);
+
+	/* ------------------------------ Derived -------------------------------- */
 
 	const options = React.useMemo(
 		() => groupProductsByCategory(productsQuery.data ?? []),
 		[productsQuery.data],
 	);
 
-	// Live re-validation, but only after the first submit attempt.
-	React.useEffect(() => {
-		if (!hasSubmitted) return;
-		setErrors(validateCrfForm({ epcId, lineItems: costItems }).errors);
-	}, [costItems, epcId, hasSubmitted]);
+	// Cheap (≤100 lines), so it runs on every cart change instead of an effect.
+	const validation = React.useMemo(
+		() => validateCrfForm({ epcId, lineItems: costItems }),
+		[costItems, epcId],
+	);
+
+	// Only reveal errors for tabs the user has already tried to save.
+	const errors = React.useMemo<CrfFormErrors>(() => {
+		if (finalAttempted) return validation.errors;
+		if (checkedCategories.length === 0) return EMPTY_CRF_ERRORS;
+		return filterCrfErrorsByCategory(
+			validation.errors,
+			costItems,
+			checkedCategories,
+		);
+	}, [checkedCategories, costItems, finalAttempted, validation.errors]);
 
 	const submitting = createCrfMutation.isPending || updateCrfMutation.isPending;
 	const loading = productsQuery.isLoading;
 	const isDirty = costItems !== initialCostItems;
+
+	/* ------------------------------ Actions -------------------------------- */
+
+	const showFixToast = React.useCallback(
+		(tabErrors: CrfFormErrors) => {
+			showToast({
+				type: "error",
+				title: "Please fix the CRF",
+				description:
+					getFirstCrfErrorMessage(tabErrors, costItems) ??
+					"Some CRF items are invalid.",
+			});
+		},
+		[costItems, showToast],
+	);
+
+	const handleBack = React.useCallback(() => {
+		if (isFirstStep) return;
+		setActiveCategory(STEPS[stepIndex - 1].value);
+	}, [isFirstStep, stepIndex]);
+
+	const handleSaveAndNext = React.useCallback(() => {
+		if (submitting || isLastStep) return;
+
+		markChecked(activeCategory);
+
+		const tabErrors = filterCrfErrorsByCategory(validation.errors, costItems, [
+			activeCategory,
+		]);
+
+		if (hasCrfErrors(tabErrors)) {
+			showFixToast(tabErrors);
+			return;
+		}
+
+		setActiveCategory(STEPS[stepIndex + 1].value);
+	}, [
+		activeCategory,
+		costItems,
+		isLastStep,
+		markChecked,
+		showFixToast,
+		stepIndex,
+		submitting,
+		validation.errors,
+	]);
 
 	const handleSubmit = React.useCallback(async () => {
 		if (submitting) return;
@@ -106,18 +217,17 @@ export function useCrfForm({
 			return;
 		}
 
-		setHasSubmitted(true);
-		const validation = validateCrfForm({ epcId, lineItems: costItems });
-		setErrors(validation.errors);
+		setFinalAttempted(true);
 
 		if (!validation.success) {
-			showToast({
-				type: "error",
-				title: "Please fix the CRF",
-				description:
-					getFirstCrfErrorMessage(validation.errors, costItems) ??
-					"Some CRF items are invalid.",
-			});
+			// Bring the user to the tab that has the first broken line.
+			const invalidCategory = getFirstInvalidCategory(
+				validation.errors,
+				costItems,
+			);
+			if (invalidCategory) setActiveCategory(invalidCategory);
+
+			showFixToast(validation.errors);
 			return;
 		}
 
@@ -142,6 +252,7 @@ export function useCrfForm({
 					: "CRF created successfully.",
 			});
 
+			// Parent decides what's next (refresh EPC, move the wizard to EPF …).
 			await onSuccess(saved);
 		} catch (error: any) {
 			console.error("CRF save failed:", error);
@@ -159,19 +270,25 @@ export function useCrfForm({
 		costItems,
 		createCrfMutation,
 		crfId,
-		epcId,
 		onSuccess,
 		productsQuery.isError,
+		showFixToast,
 		showToast,
 		submitting,
 		updateCrfMutation,
+		validation,
 	]);
 
 	const handleReset = React.useCallback(() => {
-		setCostItems(initialCostItems);
-		setErrors(EMPTY_CRF_ERRORS);
-		setHasSubmitted(false);
-	}, [initialCostItems]);
+		// Tabs are independent: only the active tab goes back to its initial lines.
+		setCostItems((previous) => [
+			...previous.filter((item) => item.category !== activeCategory),
+			...initialCostItems.filter((item) => item.category === activeCategory),
+		]);
+		setCheckedCategories((previous) =>
+			previous.filter((category) => category !== activeCategory),
+		);
+	}, [activeCategory, initialCostItems]);
 
 	return {
 		costItems,
@@ -182,6 +299,15 @@ export function useCrfForm({
 		submitting,
 		isEditMode,
 		isDirty,
+
+		steps: STEPS,
+		activeCategory,
+		setActiveCategory,
+		stepIndex,
+		isFirstStep,
+		isLastStep,
+		handleBack,
+		handleSaveAndNext,
 		handleSubmit,
 		handleReset,
 	};

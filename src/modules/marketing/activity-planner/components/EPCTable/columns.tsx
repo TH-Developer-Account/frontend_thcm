@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { trimText } from "../../../../../utils/format";
 import type { EpcListItem } from "../../types/epc.types";
 import { ACTIVITY_PLANNER_ROUTES } from "../../utils/constant";
+import { canOpenEpcView } from "../../forms/EPC/epc.utils";
 import { formatDate } from "../../utils/formatters";
 
 import EPCActionMenu from "./EPCActionMenu";
@@ -61,17 +62,32 @@ export const getEPCColumns = ({
 			headerClassName: "epc-column-number",
 			cellClassName: "epc-column-number",
 		},
-		cell: ({ row }) => (
-			// EPC number opens the read-only detail/view page. Uses the shared
-			// route constant so it stays in sync with the action menu's "View".
-			<Link
-				to={ACTIVITY_PLANNER_ROUTES.detail(row.original.id)}
-				className="epc-number-link"
-				onClick={(e) => e.stopPropagation()}
-			>
-				{row.original.proposal_number || "--"}
-			</Link>
-		),
+		cell: ({ row }) => {
+			const proposalNumber = row.original.proposal_number || "--";
+
+			// Same rule as the menu's "View": submitted → anyone with access;
+			// not submitted → only its creator. Otherwise plain text.
+			if (!canOpenEpcView(row.original, currentUserId)) {
+				return (
+					<span
+						className="epc-cell-primary"
+						title="Available after the EPC is submitted"
+					>
+						{proposalNumber}
+					</span>
+				);
+			}
+
+			return (
+				<Link
+					to={ACTIVITY_PLANNER_ROUTES.detail(row.original.id)}
+					className="epc-number-link"
+					onClick={(e) => e.stopPropagation()}
+				>
+					{proposalNumber}
+				</Link>
+			);
+		},
 	},
 	{
 		accessorKey: "event_name",

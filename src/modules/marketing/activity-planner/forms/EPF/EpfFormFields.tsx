@@ -1,18 +1,19 @@
-import { Banknote, HandCoins, ShieldCheck, Users, Wallet } from "lucide-react";
-import Button from "../../../../../components/common/Button";
+// forms/EPF/EpfFormFields.tsx
+// EPF fields: participants, dealer share, CRF total and budget.
+//
+// CHANGED: the "Approval Workflow" block ("Display Approval Flow" button +
+// preview table) moved to the Review & Submit step, where the preview loads
+// automatically. The preview props are gone from this component.
+import { Banknote, HandCoins, Users, Wallet } from "lucide-react";
 import FormInput from "../../../../../components/forms/FormInput";
 import type { EpfFormValues } from "../../types/epf.types";
 import FormHeader from "../../../../../components/ui/FormHeader";
-import { ApprovalTable, type ApprovalTableRow } from "../../../../workflows";
 
 type EpfFormInfoProps = {
 	values: EpfFormValues;
 	errors?: Partial<Record<keyof EpfFormValues, string>>;
 	handleChange: (name: keyof EpfFormValues, value: string) => void;
 	eventCost: number;
-	previewRows?: ApprovalTableRow[];
-	previewLoading?: boolean;
-	handlePreviewWorkflow?: () => Promise<void>;
 };
 
 export default function EpfFormFields({
@@ -20,9 +21,6 @@ export default function EpfFormFields({
 	errors = {},
 	handleChange,
 	eventCost,
-	previewRows = [],
-	previewLoading,
-	handlePreviewWorkflow,
 }: EpfFormInfoProps) {
 	return (
 		<div className="mt-4 grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,9fr)_minmax(260px,3fr)]">
@@ -130,34 +128,6 @@ export default function EpfFormFields({
 							onChange={(e) => handleChange("tataHitachiShare", e.target.value)}
 						/>
 					</div>
-				</div>
-
-				<div className="bg-white pb-3">
-					<div className="flex flex-wrap items-center justify-between gap-3 pr-3">
-						<FormHeader title="Approval Workflow" Icon={ShieldCheck} />
-
-						<Button
-							type="button"
-							text={previewLoading ? "Loading..." : "Display Approval Flow"}
-							appearance="standard"
-							variant="brand"
-							onClick={handlePreviewWorkflow}
-							size="sm"
-							disabled={previewLoading}
-						/>
-					</div>
-
-					{Array.isArray(previewRows) && previewRows.length > 0 ? (
-						<div className="min-w-0 overflow-hidden px-3 py-2">
-							<div className="approval-workflow-content max-w-full overflow-x-auto">
-								<ApprovalTable data={previewRows} />
-							</div>
-						</div>
-					) : (
-						<p className="px-3 text-xs text-[var(--color-text-muted)]">
-							No workflow preview loaded yet.
-						</p>
-					)}
 				</div>
 			</div>
 

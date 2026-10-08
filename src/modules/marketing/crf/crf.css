@@ -161,9 +161,14 @@
 
 	/* The sketch's square "+" button */
 	.crf-tile-add {
-		display: grid;
-		place-items: center;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-1, 0.25rem);
 		width: 100%;
+		font: inherit;
+		font-size: var(--font-size-sm, 0.875rem);
+		font-weight: var(--font-weight-semibold, 600);
 		height: 2.75rem;
 		border: 1.5px dashed var(--color-border-strong, #a1a1aa);
 		border-radius: var(--radius-md, 0.5rem);
@@ -177,11 +182,16 @@
 	}
 
 	.crf-tile-add svg {
-		width: 1.375rem;
-		height: 1.375rem;
+		width: 1.125rem;
+		height: 1.125rem;
 	}
 
-	.crf-tile-add:hover,
+	.crf-tile-add:disabled {
+		cursor: not-allowed;
+		opacity: 0.55;
+	}
+
+	.crf-tile-add:hover:not(:disabled),
 	.crf-tile-add:focus-visible {
 		border-color: var(--color-brand, #f35a00);
 		background-color: var(--color-brand-soft, #fff4ed);
@@ -334,23 +344,36 @@
 		list-style: none;
 	}
 
+	/* Plain list row (only the active tab's lines are listed, so no click-to-jump). */
 	.crf-cart-row {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+		align-items: center;
 		column-gap: var(--space-2, 0.5rem);
+		padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+		border-bottom: 1px solid var(--color-border-subtle, #f4f4f5);
+	}
+
+	/* "Load more (n)" under the summary list */
+	.crf-cart-more {
+		display: block;
 		width: 100%;
 		padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
 		border: 0;
-		border-bottom: 1px solid var(--color-border-subtle, #f4f4f5);
+		border-bottom: 1px solid var(--color-border-default, #d4d4d8);
 		background: transparent;
-		color: inherit;
+		color: var(--color-brand, #f35a00);
 		font: inherit;
-		text-align: left;
+		font-size: var(--font-size-sm, 0.875rem);
+		font-weight: var(--font-weight-semibold, 600);
+		text-align: center;
 		cursor: pointer;
 	}
 
-	.crf-cart-row:hover {
-		background-color: var(--color-bg-subtle, #fafafa);
+	.crf-cart-more:hover,
+	.crf-cart-more:focus-visible {
+		background-color: var(--color-brand-soft, #fff4ed);
+		outline: none;
 	}
 
 	.crf-cart-row--error {
@@ -376,8 +399,21 @@
 		font-variant-numeric: tabular-nums;
 	}
 
+	.crf-cart-row-figures {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+	}
+
+	.crf-cart-thumb {
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: var(--radius-sm, 0.375rem);
+		object-fit: cover;
+		background-color: var(--color-bg-subtle, #fafafa);
+	}
+
 	.crf-cart-row-amount {
-		grid-column: 2;
 		color: var(--color-text-muted, #71717a);
 		font-size: var(--font-size-xs, 0.75rem);
 		font-variant-numeric: tabular-nums;
@@ -400,10 +436,599 @@
 	}
 
 	.crf-cart-total-amount {
+		padding-top: var(--space-1, 0.25rem);
+		border-top: 1px dashed var(--color-border-default, #d4d4d8);
 		font-weight: var(--font-weight-bold, 700);
 	}
 
+	.crf-cart-total-discount {
+		color: var(--color-success, #15803d);
+	}
+
+	/* ===================================================== PRODUCT IMAGES */
+
+	.crf-tile--product {
+		padding-top: var(--space-2, 0.5rem);
+	}
+
+	.crf-tile-media {
+		position: relative;
+		overflow: hidden;
+		aspect-ratio: 1 / 1;
+		border-radius: var(--radius-md, 0.5rem);
+		background-color: var(--color-bg-subtle, #fafafa);
+	}
+
+	.crf-tile-image {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.crf-tile-media-overlay {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		place-items: center;
+		background-color: rgba(255, 255, 255, 0.7);
+		color: var(--color-text-secondary, #52525b);
+		font-size: var(--font-size-sm, 0.875rem);
+		font-weight: var(--font-weight-semibold, 600);
+	}
+
+	.crf-tile--unavailable .crf-tile-image {
+		filter: grayscale(1);
+	}
+
+	/* ===================================================== BADGES & PRICE */
+
+	.crf-badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.125rem 0.4rem;
+		border-radius: var(--radius-full, 9999px);
+		font-size: 0.6875rem;
+		font-weight: var(--font-weight-semibold, 600);
+		line-height: 1.3;
+		white-space: nowrap;
+	}
+
+	.crf-badge--discount {
+		position: absolute;
+		top: var(--space-2, 0.5rem);
+		left: var(--space-2, 0.5rem);
+		background-color: var(--color-success, #15803d);
+		color: #fff;
+	}
+
+	.crf-badge--gst {
+		background-color: var(--color-bg-subtle, #f4f4f5);
+		color: var(--color-text-secondary, #52525b);
+	}
+
+	.crf-price-block {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1, 0.25rem);
+		margin-top: auto;
+	}
+
+	.crf-price-row,
+	.crf-meta-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--space-2, 0.5rem);
+	}
+
+	.crf-meta-row {
+		align-items: center;
+	}
+
+	.crf-price-compare {
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* ===================================================== STOCK */
+
+	.crf-stock {
+		font-size: var(--font-size-xs, 0.75rem);
+		font-weight: var(--font-weight-medium, 500);
+	}
+
+	.crf-stock--in_stock {
+		color: var(--color-success, #15803d);
+	}
+
+	.crf-stock--low {
+		color: var(--color-warning, #b45309);
+	}
+
+	.crf-stock--out_of_stock,
+	.crf-stock--unavailable {
+		color: var(--color-danger, #dc2626);
+	}
+
+	/* ===================================================== VARIANT CHIPS */
+
+	.crf-variant-chips,
+	.crf-souvenir-filters {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1, 0.25rem);
+	}
+
+	.crf-souvenir-filters {
+		align-items: center;
+		gap: var(--space-2, 0.5rem);
+		margin-bottom: var(--space-3, 0.75rem);
+	}
+
+	.crf-chip {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		padding: 0.2rem 0.6rem;
+		border: 1px solid var(--color-border-default, #d4d4d8);
+		border-radius: var(--radius-full, 9999px);
+		background-color: var(--color-bg-surface, #fff);
+		color: var(--color-text-secondary, #52525b);
+		font: inherit;
+		font-size: var(--font-size-xs, 0.75rem);
+		cursor: pointer;
+	}
+
+	.crf-chip--active {
+		border-color: var(--color-brand, #f35a00);
+		background-color: var(--color-brand-soft, #fff4ed);
+		color: var(--color-brand, #f35a00);
+		font-weight: var(--font-weight-semibold, 600);
+	}
+
+	.crf-chip--disabled {
+		color: var(--color-text-muted, #a1a1aa);
+		text-decoration: line-through;
+	}
+
+	.crf-chip-dot {
+		position: absolute;
+		top: -2px;
+		right: -2px;
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 50%;
+		background-color: var(--color-brand, #f35a00);
+	}
+
+	.crf-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1, 0.25rem);
+		margin-left: auto;
+		color: var(--color-text-secondary, #52525b);
+		font-size: var(--font-size-sm, 0.875rem);
+		cursor: pointer;
+	}
+
+	/* ===================================================== SOUVENIRS */
+
+	.crf-souvenirs {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.crf-load-more {
+		align-self: center;
+		margin-top: var(--space-4, 1rem);
+		padding: var(--space-2, 0.5rem) var(--space-6, 1.5rem);
+		border: 1px solid var(--color-border-default, #d4d4d8);
+		border-radius: var(--radius-full, 9999px);
+		background-color: var(--color-bg-surface, #fff);
+		color: var(--color-brand, #f35a00);
+		font: inherit;
+		font-size: var(--font-size-sm, 0.875rem);
+		font-weight: var(--font-weight-semibold, 600);
+		cursor: pointer;
+	}
+
+	.crf-load-more:disabled {
+		cursor: progress;
+		opacity: 0.6;
+	}
+
+	.crf-tile--skeleton {
+		min-height: 18rem;
+		border-style: dashed;
+		background: linear-gradient(
+			100deg,
+			var(--color-bg-subtle, #f4f4f5) 30%,
+			var(--color-bg-surface, #fff) 50%,
+			var(--color-bg-subtle, #f4f4f5) 70%
+		);
+		background-size: 200% 100%;
+		animation: crf-shimmer 1.2s linear infinite;
+	}
+
+	@keyframes crf-shimmer {
+		to {
+			background-position: -200% 0;
+		}
+	}
+
+	/* ===================================================== ARTWORKS (wide) */
+
+	/* Artwork cards span two columns: image on the left, details + the
+	   resolution picker on the right, so there's room to choose a size. */
+	.crf-catalog-grid--wide {
+		grid-template-columns: repeat(auto-fill, minmax(26rem, 1fr));
+	}
+
+	.crf-tile--wide {
+		display: grid;
+		grid-template-columns: 9rem minmax(0, 1fr);
+		gap: var(--space-4, 1rem);
+		min-height: 12rem;
+	}
+
+	.crf-tile-media--side {
+		aspect-ratio: auto;
+		height: 100%;
+		min-height: 9rem;
+	}
+
+	.crf-tile-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2, 0.5rem);
+		min-width: 0;
+	}
+
+	.crf-resolution {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1, 0.25rem);
+	}
+
+	.crf-field-label {
+		color: var(--color-text-secondary, #52525b);
+		font-size: var(--font-size-xs, 0.75rem);
+		font-weight: var(--font-weight-semibold, 600);
+	}
+
+	.crf-field-label span {
+		color: var(--color-danger, #dc2626);
+	}
+
+	.crf-resolution-select {
+		width: 100%;
+	}
+
+	.crf-resolution-select[aria-invalid="true"],
+	.crf-size-input[aria-invalid="true"] {
+		border-color: var(--color-danger, #dc2626);
+	}
+
+	.crf-tile--wide .crf-size-input {
+		width: 6rem;
+	}
+
 	/* ===================================================== RESPONSIVE */
+
+	/* ===================================================== MINIMAL SOUVENIR CARD */
+
+	.crf-tile--clickable {
+		cursor: pointer;
+	}
+
+	.crf-tile--clickable:focus-visible {
+		outline: none;
+		border-color: var(--color-brand, #f35a00);
+		box-shadow: var(--shadow-focus-brand, 0 0 0 3px rgba(243, 90, 0, 0.12));
+	}
+
+	.crf-tile--clickable:hover .crf-tile-image {
+		transform: scale(1.03);
+	}
+
+	.crf-tile--clickable .crf-tile-image {
+		transition: transform var(--duration-normal, 200ms)
+			var(--ease-standard, ease);
+	}
+
+	.crf-badge--in-crf {
+		position: absolute;
+		right: var(--space-2, 0.5rem);
+		bottom: var(--space-2, 0.5rem);
+		background-color: var(--color-brand, #f35a00);
+		color: var(--color-brand-foreground, #fff);
+	}
+
+	.crf-tile-add--secondary {
+		background-color: var(--color-bg-surface, #fff);
+		color: var(--color-text-primary, #18181b);
+		border: 1px solid var(--color-border-default, #d4d4d8);
+	}
+
+	.crf-tile-add--secondary:hover:not(:disabled) {
+		border-color: var(--color-brand, #f35a00);
+		color: var(--color-brand, #f35a00);
+	}
+
+	/* ===================================================== PRODUCT VIEW (modal) */
+
+	.crf-product-view {
+		display: grid;
+		grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+		gap: var(--space-6, 1.5rem);
+		align-items: start;
+	}
+
+	.crf-product-gallery {
+		position: sticky;
+		top: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2, 0.5rem);
+	}
+
+	.crf-product-main-image {
+		position: relative;
+		overflow: hidden;
+		aspect-ratio: 1 / 1;
+		border: 1px solid var(--color-border-default, #e4e4e7);
+		border-radius: var(--radius-lg, 0.625rem);
+		background-color: var(--color-bg-subtle, #fafafa);
+	}
+
+	.crf-product-thumbs {
+		display: flex;
+		gap: var(--space-2, 0.5rem);
+		overflow-x: auto;
+		padding-bottom: 2px;
+	}
+
+	.crf-product-thumb {
+		flex: 0 0 3.75rem;
+		height: 3.75rem;
+		padding: 0;
+		overflow: hidden;
+		border: 2px solid transparent;
+		border-radius: var(--radius-md, 0.5rem);
+		background-color: var(--color-bg-subtle, #fafafa);
+		cursor: pointer;
+		opacity: 0.75;
+	}
+
+	.crf-product-thumb:hover,
+	.crf-product-thumb--active {
+		opacity: 1;
+	}
+
+	.crf-product-thumb--active {
+		border-color: var(--color-brand, #f35a00);
+	}
+
+	.crf-product-details {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4, 1rem);
+		min-width: 0;
+	}
+
+	.crf-product-eyebrow {
+		margin: 0;
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+
+	.crf-product-price {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--space-2, 0.5rem);
+	}
+
+	.crf-product-price-now {
+		color: var(--color-text-primary, #18181b);
+		font-size: var(--font-size-2xl, 1.5rem);
+		font-weight: var(--font-weight-bold, 700);
+	}
+
+	.crf-product-saving {
+		flex-basis: 100%;
+		color: var(--color-success, #15803d);
+		font-size: var(--font-size-sm, 0.875rem);
+		font-weight: var(--font-weight-medium, 500);
+	}
+
+	/* GST panel */
+
+	.crf-gst-panel {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2, 0.5rem);
+		padding: var(--space-3, 0.75rem);
+		border: 1px solid var(--color-border-default, #e4e4e7);
+		border-radius: var(--radius-md, 0.5rem);
+		background-color: var(--color-bg-subtle, #fafafa);
+		font-size: var(--font-size-sm, 0.875rem);
+	}
+
+	.crf-gst-panel p {
+		margin: 0;
+	}
+
+	.crf-gst-panel--missing {
+		border-color: var(--color-warning-border, #fcd34d);
+		background-color: var(--color-warning-soft, #fffbeb);
+		color: var(--color-warning-text, #92400e);
+	}
+
+	.crf-gst-panel-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2, 0.5rem);
+		color: var(--color-text-secondary, #52525b);
+	}
+
+	.crf-gst-panel .crf-badge--gst {
+		background-color: var(--color-bg-surface, #fff);
+		border: 1px solid var(--color-border-default, #e4e4e7);
+	}
+
+	.crf-gst-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.crf-gst-table th,
+	.crf-gst-table td {
+		padding: 0.3rem 0;
+		text-align: right;
+		font-weight: var(--font-weight-normal, 400);
+	}
+
+	.crf-gst-table th[scope="row"] {
+		text-align: left;
+		color: var(--color-text-secondary, #52525b);
+	}
+
+	.crf-gst-table thead th {
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+	}
+
+	.crf-gst-table-total th,
+	.crf-gst-table-total td {
+		border-top: 1px dashed var(--color-border-default, #d4d4d8);
+		color: var(--color-text-primary, #18181b);
+		font-weight: var(--font-weight-semibold, 600) !important;
+	}
+
+	.crf-gst-note {
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+	}
+
+	/* Options */
+
+	.crf-option-group {
+		margin: 0;
+		padding: 0;
+		border: 0;
+		min-width: 0;
+	}
+
+	.crf-option-group legend {
+		margin-bottom: var(--space-2, 0.5rem);
+		padding: 0;
+		color: var(--color-text-primary, #18181b);
+		font-size: var(--font-size-sm, 0.875rem);
+		font-weight: var(--font-weight-semibold, 600);
+	}
+
+	.crf-option-group legend span {
+		color: var(--color-text-secondary, #52525b);
+		font-weight: var(--font-weight-normal, 400);
+	}
+
+	.crf-chip--option {
+		min-width: 2.75rem;
+		justify-content: center;
+		padding: 0.375rem 0.75rem;
+		font-size: var(--font-size-sm, 0.875rem);
+	}
+
+	.crf-chip--option.crf-chip--disabled {
+		text-decoration: line-through;
+	}
+
+	.crf-swatch {
+		display: inline-block;
+		width: 0.875rem;
+		height: 0.875rem;
+		margin-right: 0.375rem;
+		border: 1px solid rgba(0, 0, 0, 0.15);
+		border-radius: var(--radius-full, 9999px);
+		vertical-align: -0.125rem;
+	}
+
+	/* Quantity + "In this CRF" + description */
+
+	.crf-product-qty {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+	}
+
+	.crf-product-qty .crf-tile-errors {
+		flex-basis: 100%;
+	}
+
+	.crf-product-in-crf ul {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1, 0.25rem);
+		margin: var(--space-1, 0.25rem) 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.crf-product-in-crf li {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2, 0.5rem);
+		padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+		border-radius: var(--radius-md, 0.5rem);
+		background-color: var(--color-brand-soft, #fff4ed);
+		font-size: var(--font-size-sm, 0.875rem);
+	}
+
+	.crf-link-button {
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--color-danger, #dc2626);
+		font-size: var(--font-size-xs, 0.75rem);
+		font-weight: var(--font-weight-medium, 500);
+		cursor: pointer;
+	}
+
+	.crf-link-button:hover {
+		text-decoration: underline;
+	}
+
+	.crf-product-description p {
+		margin: var(--space-1, 0.25rem) 0 0;
+		color: var(--color-text-secondary, #52525b);
+		font-size: var(--font-size-sm, 0.875rem);
+		line-height: 1.6;
+		white-space: pre-line;
+	}
+
+	.crf-product-details .crf-field-label {
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+	}
+
+	@media (max-width: 768px) {
+		.crf-product-view {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.crf-product-gallery {
+			position: static;
+		}
+	}
 
 	@media (max-width: 1024px) {
 		.crf-catalog-body {
@@ -418,6 +1043,19 @@
 	@media (max-width: 640px) {
 		.crf-catalog {
 			padding: var(--space-2, 0.5rem);
+		}
+
+		.crf-catalog-grid--wide {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.crf-tile--wide {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.crf-tile-media--side {
+			aspect-ratio: 16 / 9;
+			min-height: 0;
 		}
 
 		.crf-catalog-grid {
