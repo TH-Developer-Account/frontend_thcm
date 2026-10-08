@@ -3119,7 +3119,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		width: min(calc(100% - 24px), 1120px);
+		width: min(calc(100% - 24px), 1200px);
 		margin-inline: auto;
 		gap: 16px;
 	}
@@ -3176,8 +3176,8 @@
 
 	.public-page-container {
 		display: flex;
-		flex: 1 0 auto; /* grows to fill short pages, grows past the viewport for long ones */
-		align-items: stretch;
+		flex: 1;
+		align-items: stretch; /* was: center */
 		max-width: var(--layout-content-max-width, 1200px);
 		width: 100%;
 		margin-inline: auto;

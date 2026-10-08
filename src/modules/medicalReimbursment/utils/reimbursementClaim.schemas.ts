@@ -1,50 +1,57 @@
 import { z } from "zod";
 
 /* -------------------------------------------------------------------------- */
-/* Constants (single source of truth - derive GRADE_OPTIONS / CLAIM_HEAD_OPTIONS */
-/* labels from these so the UI and the schemas can never drift apart)          */
+/* Medical claim — zod schemas (single source of truth for validation)         */
+/*                                                                            */
+/* Mirrors backend/src/modules/mediclaim/mediclaim.validation.ts. The backend  */
+/* re-validates everything; these exist so the user sees field-level errors   */
+/* before a round trip. Keep the two in sync.                                 */
 /* -------------------------------------------------------------------------- */
 
-export const GRADE_VALUES = [
-	"EG-3",
-	"EG-4",
-	"TM-5",
-	"TM-4",
-	"TM-3",
-	"TM-2",
-	"TM-1",
-	"TM-0",
-	"TS-2",
-	"TS-1",
-	"TE-3",
-] as const;
+/* -------------------------------------------------------------------------- */
+/* Constants                                                                   */
+/* -------------------------------------------------------------------------- */
 
 export const COVERAGE_VALUES = ["SELF", "SPOUSE", "BOTH"] as const;
 
-/** EXCESS_HOSPITALISATION intentionally removed: this form is non-hospitalisation only. */
+/**
+ * Claim heads a claimant can pick on this form. EXCESS_HOSPITALISATION is
+ * intentionally NOT selectable (non-hospitalisation form) but still exists in
+ * ALL_CLAIM_HEAD_VALUES so old bills that carry it can be displayed.
+ */
 export const CLAIM_HEAD_VALUES = [
 	"VISIT_FEES",
 	"MEDICINES_INVESTIGATIONS",
 	"OPHTHALMIC_TREATMENT",
 	"EXECUTIVE_HEALTH_CHECKUP",
+] as const;
+
+export const ALL_CLAIM_HEAD_VALUES = [
+	...CLAIM_HEAD_VALUES,
 	"EXCESS_HOSPITALISATION",
 ] as const;
 
 export const PATIENT_VALUES = ["SELF", "SPOUSE"] as const;
 
-/** Heads that used to exist and may still arrive from old drafts / the API. */
-const REMOVED_CLAIM_HEADS = ["EXCESS_HOSPITALISATION"];
+const REMOVED_CLAIM_HEADS: string[] = ["EXCESS_HOSPITALISATION"];
 
-/* -------------------------------------------------------------------------- */
-/* Small building blocks                                                       */
-/* -------------------------------------------------------------------------- */
+export const NAME_REGEX = /^[\p{L}][\p{L}\s.'-]*$/u;
+export const TICKET_REGEX = /^[A-Za-z0-9-]+$/;
+/**
+ * Bill / invoice number: letters and digits, plus "-" and "/" inside
+ * (e.g. MI-5532, INV/2026/0412). The input upper-cases as you type
+ * (sanitizeBillNumberInput); lower case is still accepted for older bills.
+ */
+export const BILL_NUMBER_REGEX = /^[A-Za-z0-9](?:[A-Za-z0-9/-]*[A-Za-z0-9])?$/;
+export const AMOUNT_REGEX = /^(\d+(\.\d{0,2})?|\.\d{1,2})$/; // matches sanitizeAmountInput output
+export const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+export const MOBILE_REGEX = /^[6-9]\d{9}$/; // Indian mobile numbers
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const NAME_REGEX = /^[\p{L}][\p{L}\s.'-]*$/u;
-const TICKET_REGEX = /^[A-Za-z0-9-]+$/;
-const BILL_NUMBER_REGEX = /^\d+$/; // digits only — matches sanitizeWholeNumberInput output
-const AMOUNT_REGEX = /^(\d+(\.\d{0,2})?|\.\d{1,2})$/; // matches sanitizeAmountInput output
-const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
-const MOBILE_REGEX = /^[6-9]\d{9}$/; // Indian mobile numbers
+/** Sanity ceiling for a single bill (₹10 lakh) — catches typos like an extra zero. */
+export const MAX_BILL_AMOUNT = 10_00_000;
+export const MAX_REMARKS_LENGTH = 500;
+export const MAX_REASON_LENGTH = 1000;
 
 const inr = new Intl.NumberFormat("en-IN", {
 	style: "currency",
@@ -62,12 +69,13 @@ export const todayIso = (): string => {
 
 /**
  * true when the YYYY-MM-DD date is today or earlier.
- *
- * NOTE: the previous version returned `true | string`. zod's refine treats any
- * truthy value as "valid", so the error string made future dates PASS.
- * This must return a plain boolean.
+ * Must return a plain boolean: zod's refine treats any truthy value as valid.
  */
 export const isNotInFuture = (value: string): boolean => value <= todayIso();
+
+/* -------------------------------------------------------------------------- */
+/* Building blocks                                                             */
+/* -------------------------------------------------------------------------- */
 
 const requiredText = (label: string, max = 100) =>
 	z
@@ -98,16 +106,20 @@ const pastOrPresentDate = (label: string) =>
 	isoDate(label).refine(isNotInFuture, `${label} cannot be in the future.`);
 
 /** Positive money, kept as a string because the form stores amounts as strings. */
-const positiveAmount = (label = "Amount") =>
+const positiveAmount = (label = "Amount", max = MAX_BILL_AMOUNT) =>
 	z
 		.string({ message: `${label} is required.` })
 		.trim()
 		.min(1, `${label} is required.`)
 		.regex(
 			AMOUNT_REGEX,
-			`Enter a valid ${label.toLowerCase()} (max 2 decimals).`,
+			`Enter a valid ${label.toLowerCase()} (numbers only, max 2 decimals).`,
 		)
-		.refine((v) => Number(v) > 0, `${label} must be greater than 0.`);
+		.refine((v) => Number(v) > 0, `${label} must be greater than 0.`)
+		.refine(
+			(v) => Number(v) <= max,
+			`${label} cannot exceed ${inr.format(max)}.`,
+		);
 
 /** Money that may be 0 (e.g. an approver approving 0 with a remark). */
 const nonNegativeAmount = (label: string) =>
@@ -117,22 +129,25 @@ const nonNegativeAmount = (label: string) =>
 		.min(1, `${label} is required.`)
 		.regex(
 			AMOUNT_REGEX,
-			`Enter a valid ${label.toLowerCase()} (max 2 decimals).`,
+			`Enter a valid ${label.toLowerCase()} (numbers only, max 2 decimals).`,
 		);
 
 const requireSpouseName = (
 	value: { coverageType?: string; spouseName?: string },
 	ctx: z.RefinementCtx,
 ) => {
-	if (value.coverageType !== "SPOUSE" && value.coverageType !== "BOTH") return;
 	const name = value.spouseName?.trim() ?? "";
-	if (!name) {
+	const needsSpouse =
+		value.coverageType === "SPOUSE" || value.coverageType === "BOTH";
+	if (needsSpouse && !name) {
 		ctx.addIssue({
 			code: "custom",
 			path: ["spouseName"],
 			message: "Spouse name is required.",
 		});
-	} else if (!NAME_REGEX.test(name)) {
+		return;
+	}
+	if (name && needsSpouse && !NAME_REGEX.test(name)) {
 		ctx.addIssue({
 			code: "custom",
 			path: ["spouseName"],
@@ -142,11 +157,14 @@ const requireSpouseName = (
 };
 
 /* -------------------------------------------------------------------------- */
-/* 1. Initiation form (THCM user starts a claim / Excel import row)            */
+/* 1. Initiation (THCM user starts a claim) + Excel import rows                */
 /* -------------------------------------------------------------------------- */
 
 export const medicalClaimInitiationSchema = z.object({
-	employeeName: personName("Employee name"),
+	employeeName: personName("Employee name").refine(
+		(v) => v.length >= 2,
+		"Employee name must be at least 2 characters.",
+	),
 	ticketNumber: requiredText("Ticket number", 20).regex(
 		TICKET_REGEX,
 		"Ticket number can only contain letters, numbers and hyphens.",
@@ -155,82 +173,146 @@ export const medicalClaimInitiationSchema = z.object({
 		.string({ message: "Employee email is required." })
 		.trim()
 		.min(1, "Employee email is required.")
-		.email("Enter a valid email address."),
+		.max(254, "Email is too long.")
+		.regex(EMAIL_REGEX, "Enter a valid email address.")
+		.transform((v) => v.toLowerCase()),
 	mobile: z
 		.string({ message: "Phone number is required." })
 		.trim()
 		.min(1, "Phone number is required.")
-		.regex(MOBILE_REGEX, "Enter a valid 10-digit mobile number."),
+		.transform((v) =>
+			v.replace(/[\s-]/g, "").replace(/^(\+91|91|0)(?=\d{10}$)/, ""),
+		)
+		.pipe(
+			z
+				.string()
+				.regex(
+					MOBILE_REGEX,
+					"Enter a valid 10-digit mobile number starting with 6-9.",
+				),
+		),
 });
 export type MedicalClaimInitiationInput = z.infer<
 	typeof medicalClaimInitiationSchema
 >;
 
-/** Excel import: same rules per row, plus the spreadsheet row number for error reports. */
+/** Excel import: same rules per row, plus the spreadsheet row number. */
 export const medicalClaimInitiationImportRowSchema =
 	medicalClaimInitiationSchema.extend({ row: z.number().int().positive() });
 
 /* -------------------------------------------------------------------------- */
-/* 2 + 3. Claim header (guest public form AND THCM user form)                  */
+/* 2. Claim header (public token form, guest portal, THCM view)                */
 /* -------------------------------------------------------------------------- */
 
-const headerFields = {
-	location: requiredText("Location"),
-	employeeName: personName("Employee name"),
-	ticketNumber: requiredText("Ticket number", 20).regex(
-		TICKET_REGEX,
-		"Ticket number can only contain letters, numbers and hyphens.",
-	),
-	grade: z.enum(GRADE_VALUES, { message: "Select a grade." }),
-	coverageType: z.enum(COVERAGE_VALUES, { message: "Select a coverage type." }),
-	spouseName: z.string().trim().max(100, "Spouse name is too long."),
-	claimDate: pastOrPresentDate("Date"),
-	declarationAccepted: z
-		.boolean()
-		.refine((v) => v === true, "Please accept the declaration to continue."),
-	// Read-only, pulled from records - never validated as user input.
-	companySettledAmount: z.string().optional(),
-	medicalAdvanceAmount: z
-		.union([z.literal(""), positiveAmount("Advance amount")])
-		.optional(),
-	employeeSignature: z.string().trim().max(100).optional(),
-};
+export interface HeaderSchemaOptions {
+	/** Grades the user may pick (from the backend grade list). Empty = don't check. */
+	allowedGrades?: readonly string[];
+}
+
+const gradeField = (allowedGrades?: readonly string[]) =>
+	z
+		.string({ message: "Select a grade." })
+		.trim()
+		.min(1, "Select a grade.")
+		.refine(
+			(v) => !allowedGrades?.length || allowedGrades.includes(v),
+			"Select a valid grade.",
+		);
+
+const optionalAdvance = z
+	.union([z.literal(""), positiveAmount("Advance amount")])
+	.optional();
+
+export const createReimbursementClaimHeaderSchema = ({
+	allowedGrades,
+}: HeaderSchemaOptions = {}) =>
+	z
+		.object({
+			location: requiredText("Location"),
+			employeeName: personName("Employee name"),
+			// Prefilled by HR at initiation and never editable by the claimant —
+			// validated only for format when present.
+			ticketNumber: z
+				.string()
+				.trim()
+				.max(20, "Ticket number must be at most 20 characters.")
+				.refine(
+					(v) => !v || TICKET_REGEX.test(v),
+					"Ticket number can only contain letters, numbers and hyphens.",
+				)
+				.optional(),
+			grade: gradeField(allowedGrades),
+			coverageType: z.enum(COVERAGE_VALUES, {
+				message: "Select a coverage type.",
+			}),
+			spouseName: z.string().trim().max(100, "Spouse name is too long."),
+			claimDate: pastOrPresentDate("Date"),
+			declarationAccepted: z
+				.boolean()
+				.refine(
+					(v) => v === true,
+					"Please accept the declaration to continue.",
+				),
+			// Read-only, pulled from records - never validated as user input.
+			companySettledAmount: z.string().optional(),
+			medicalAdvanceAmount: optionalAdvance,
+			employeeSignature: z.string().trim().max(100).optional(),
+		})
+		.superRefine(requireSpouseName);
 
 /** "Submit Claim" - everything is required. */
-export const reimbursementClaimHeaderSchema = z
-	.object(headerFields)
-	.superRefine(requireSpouseName);
+export const reimbursementClaimHeaderSchema =
+	createReimbursementClaimHeaderSchema();
 export type ReimbursementClaimHeaderInput = z.infer<
 	typeof reimbursementClaimHeaderSchema
 >;
 
-/** "Save as Draft" - only the minimum needed to identify the claim. */
+/**
+ * "Save as Draft" - nothing is required (partial saves are the point of a
+ * draft), but anything that IS filled in must still be well-formed.
+ */
 export const reimbursementClaimDraftSchema = z
 	.object({
-		ticketNumber: headerFields.ticketNumber,
-		grade: headerFields.grade,
-		location: headerFields.location,
-		coverageType: headerFields.coverageType,
-		spouseName: headerFields.spouseName,
-		employeeName: z.string().trim().max(100),
-		// Optional for a draft, but if a date is there it still can't be in the future.
+		ticketNumber: z.string().trim().max(20).optional(),
+		grade: z.string().trim().max(20, "Select a valid grade.").optional(),
+		location: z
+			.string()
+			.trim()
+			.max(100, "Location must be at most 100 characters.")
+			.optional(),
+		coverageType: z.union([z.literal(""), z.enum(COVERAGE_VALUES)]).optional(),
+		spouseName: z
+			.string()
+			.trim()
+			.max(100, "Spouse name is too long.")
+			.optional(),
+		employeeName: z.string().trim().max(100).optional(),
 		claimDate: z
 			.string()
 			.optional()
 			.refine((v) => !v || isNotInFuture(v), "Date cannot be in the future."),
 		declarationAccepted: z.boolean().optional(),
 		companySettledAmount: z.string().optional(),
-		medicalAdvanceAmount: headerFields.medicalAdvanceAmount,
-		employeeSignature: headerFields.employeeSignature,
+		medicalAdvanceAmount: optionalAdvance,
+		employeeSignature: z.string().trim().max(100).optional(),
 	})
-	.superRefine(requireSpouseName);
+	.superRefine((value, ctx) => {
+		const name = value.spouseName?.trim();
+		if (name && !NAME_REGEX.test(name)) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["spouseName"],
+				message: "Spouse name can only contain letters, spaces and . ' -",
+			});
+		}
+	});
 
 /* -------------------------------------------------------------------------- */
-/* 4. One claim-head (bill) row                                                */
+/* 3. One claim-head (bill) row                                                */
 /* -------------------------------------------------------------------------- */
 
 export interface ClaimHeadRowSchemaOptions {
-	/** Eligibility year window (YYYY-MM-DD). Bills outside it are rejected. */
+	/** Eligibility window (YYYY-MM-DD). Bills outside it are rejected. */
 	yearStart?: string;
 	yearEnd?: string;
 }
@@ -254,9 +336,9 @@ export const createClaimHeadRowSchema = ({
 				),
 			billNumber: requiredText("Bill number", 50).regex(
 				BILL_NUMBER_REGEX,
-				"Bill number can only contain numbers.",
+				"Bill number can only contain letters, numbers, - and / (and must start and end with a letter or number).",
 			),
-			billName: requiredText("Bill name", 150),
+			billName: requiredText("Bill description", 150),
 			billDate: pastOrPresentDate("Bill date"),
 			amount: positiveAmount("Amount"),
 			patient: z.enum(PATIENT_VALUES).or(z.literal("")).nullish(),
@@ -267,6 +349,7 @@ export const createClaimHeadRowSchema = ({
 				.passthrough()
 				.nullish(),
 		})
+		.passthrough()
 		.superRefine((row, ctx) => {
 			if (!row.file && !row.attachment?.file && !row.attachment?.url) {
 				ctx.addIssue({
@@ -295,35 +378,52 @@ export type ClaimHeadRowInput = z.infer<
 >;
 
 /* -------------------------------------------------------------------------- */
-/* 5. Whole submission: header + rows + eligibility limit                      */
+/* 4. Whole submission: header + rows + eligibility limit                      */
 /* -------------------------------------------------------------------------- */
 
-export interface SubmitSchemaOptions extends ClaimHeadRowSchemaOptions {
-	/** Eligible - already settled this year (from the server, not the form). */
+export interface SubmitSchemaOptions
+	extends ClaimHeadRowSchemaOptions, HeaderSchemaOptions {
+	/** Eligible - already settled this year. */
 	remainingAmount?: number;
-	/**
-	 * true  -> claimed total above remaining eligibility is a hard error
-	 * false -> only the UI warns; approvers decide (undecided - see option cards)
-	 */
+	/** true -> claimed total above remaining eligibility is a hard error. */
 	enforceRemaining?: boolean;
 }
+
+const billKey = (row: { claimHead?: string; billNumber?: string }) =>
+	`${row.claimHead ?? ""}::${(row.billNumber ?? "").trim().toUpperCase()}`;
 
 export const createReimbursementClaimSubmitSchema = ({
 	remainingAmount,
 	enforceRemaining = true,
+	allowedGrades,
 	...rowOptions
 }: SubmitSchemaOptions = {}) =>
 	z
 		.object({
-			values: reimbursementClaimHeaderSchema,
+			values: createReimbursementClaimHeaderSchema({ allowedGrades }),
 			lineItems: z
 				.array(createClaimHeadRowSchema(rowOptions))
-				.min(1, "Add at least one claim line item before submitting."),
+				.min(1, "Add at least one claim line item before submitting.")
+				.max(50, "A claim can have at most 50 bills."),
 		})
 		.superRefine(({ lineItems }, ctx) => {
+			const seen = new Set<string>();
+			for (const row of lineItems) {
+				const key = billKey(row);
+				if (seen.has(key)) {
+					ctx.addIssue({
+						code: "custom",
+						path: ["lineItems"],
+						message: `Bill ${row.billNumber} is added twice under the same claim head.`,
+					});
+					return;
+				}
+				seen.add(key);
+			}
+
 			if (enforceRemaining && typeof remainingAmount === "number") {
 				const total = lineItems.reduce((sum, r) => sum + Number(r.amount), 0);
-				if (total > remainingAmount) {
+				if (total > remainingAmount + 0.001) {
 					ctx.addIssue({
 						code: "custom",
 						path: ["lineItems"],
@@ -334,7 +434,7 @@ export const createReimbursementClaimSubmitSchema = ({
 		});
 
 /* -------------------------------------------------------------------------- */
-/* 6-8. Approver-side forms (THCM users only)                                  */
+/* 5. Approver-side (THCM users only)                                          */
 /* -------------------------------------------------------------------------- */
 
 /** Approver edits "Approved Amount" and ticks "Approve" on a line item. */
@@ -345,8 +445,12 @@ export const lineItemApprovalSchema = z
 		remarks: z
 			.string()
 			.trim()
-			.max(500, "Remarks must be at most 500 characters.")
-			.optional(),
+			.max(
+				MAX_REMARKS_LENGTH,
+				`Remarks must be at most ${MAX_REMARKS_LENGTH} characters.`,
+			)
+			.optional()
+			.nullable(),
 	})
 	.superRefine((item, ctx) => {
 		const claimed = Number(item.amount);
@@ -374,46 +478,43 @@ export const lineItemRemarksSchema = z.object({
 		.string({ message: "Remarks are required." })
 		.trim()
 		.min(1, "Remarks are required.")
-		.max(500, "Remarks must be at most 500 characters."),
+		.max(
+			MAX_REMARKS_LENGTH,
+			`Remarks must be at most ${MAX_REMARKS_LENGTH} characters.`,
+		),
 });
 
-/** Inline reason box for "Approve" and "Send for Clarification". */
+/** Inline reason box for "Approve". */
 export const approvalReasonSchema = z.object({
 	reason: z
 		.string({ message: "A reason is required to continue." })
 		.trim()
 		.min(1, "A reason is required to continue.")
-		.max(1000, "Reason must be at most 1000 characters."),
+		.max(
+			MAX_REASON_LENGTH,
+			`Reason must be at most ${MAX_REASON_LENGTH} characters.`,
+		),
+});
+
+/** "Send for Clarification" — must tell the claimant what to fix. */
+export const clarificationReasonSchema = z.object({
+	reason: z
+		.string({ message: "Tell the claimant what needs to be corrected." })
+		.trim()
+		.min(10, "Describe what needs to be corrected (at least 10 characters).")
+		.max(
+			MAX_REASON_LENGTH,
+			`Reason must be at most ${MAX_REASON_LENGTH} characters.`,
+		),
 });
 
 /* -------------------------------------------------------------------------- */
-/* 9. Eligibility (shown to guest AND THCM users)                              */
+/* 6. Eligibility (shown to guest AND THCM users)                              */
 /* -------------------------------------------------------------------------- */
 
-export const eligibilitySummarySchema = z
-	.object({
-		/** Proposed API field: this form is for retired employees only. */
-		employeeStatus: z.literal("RETIRED", {
-			message: "This claim form is only available to retired employees.",
-		}),
-		/** e.g. "FY 2026-27" or "CY 2026" - depends on how the company defines "year". */
-		periodLabel: z.string().min(1),
-		periodStart: z.string().regex(ISO_DATE_REGEX),
-		periodEnd: z.string().regex(ISO_DATE_REGEX),
-		totalEligible: z.number().nonnegative(),
-		settled: z.number().nonnegative(),
-		/** Submitted / under review, not yet settled. Optional - THCM view only. */
-		pending: z.number().nonnegative().optional(),
-	})
-	.refine((s) => s.settled <= s.totalEligible, {
-		message: "Settled amount cannot exceed total eligibility.",
-		path: ["settled"],
-	});
-export type EligibilitySummary = z.infer<typeof eligibilitySummarySchema>;
-
-/** Pure helper so every eligibility view (guest, THCM, any layout option) shows the same numbers. */
+/** Pure helper so every eligibility view shows the same numbers. */
 export function deriveEligibility(
-	summary: Pick<EligibilitySummary, "totalEligible" | "settled">,
+	summary: { totalEligible: number; settled: number },
 	claimingNow = 0,
 ) {
 	const remaining = Math.max(summary.totalEligible - summary.settled, 0);
@@ -423,7 +524,7 @@ export function deriveEligibility(
 		balanceAfter,
 		isOverLimit: balanceAfter < 0,
 		percentSettled: summary.totalEligible
-			? (summary.settled / summary.totalEligible) * 100
+			? Math.min((summary.settled / summary.totalEligible) * 100, 100)
 			: 0,
 		percentThisClaim: summary.totalEligible
 			? (Math.min(claimingNow, remaining) / summary.totalEligible) * 100
@@ -432,8 +533,8 @@ export function deriveEligibility(
 }
 
 /**
- * Financial year (Apr-Mar) containing `ref`. ASSUMPTION: "year" = financial year.
- * Only used for the panel label today; bill dates are not restricted to it.
+ * Financial year (Apr-Mar) containing `ref`. Eligibility is counted per FY —
+ * same rule as the backend (mediclaim.validation.ts → getFinancialYear).
  */
 export function getFinancialYear(ref: Date = new Date()) {
 	const startYear =
@@ -475,3 +576,9 @@ export function toRowErrors(
 	}
 	return out;
 }
+
+/** First human-readable message — for toasts. */
+export const firstErrorMessage = (
+	error: z.ZodError,
+	fallback = "Please check the highlighted fields.",
+): string => error.issues[0]?.message ?? fallback;

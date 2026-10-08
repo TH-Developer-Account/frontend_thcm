@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CircleCheck, Save, Send } from "lucide-react";
+import { CircleCheck, Info, Save, Send } from "lucide-react";
 import TextareaInput from "../forms/TextareaInput";
 import Button from "../common/Button";
 
@@ -21,6 +21,13 @@ export type ApprovalActionsBarProps = {
 	canClarify?: boolean;
 	onApprove?: (reason: string) => void | Promise<void>;
 	onClarify?: (reason: string) => void | Promise<void>;
+
+	// Keeps Approve visible but disabled (e.g. "approve every line item
+	// first"). Optional — existing callers are unaffected.
+	approveDisabled?: boolean;
+	// Why Approve is disabled: shown on hover of the (i) icon next to the
+	// button and as the button's tooltip.
+	approveDisabledReason?: string;
 
 	// Proposer/creator-only actions. No reason.
 	canSendBack?: boolean;
@@ -73,6 +80,27 @@ const getReasonHint = (
 	return `${length}/${maxLength}`;
 };
 
+// Small (i) with a hover/focus tooltip. A disabled button doesn't receive
+// hover events in most browsers, so the reason lives on this icon.
+const InfoTip = ({ text }: { text: string }) => (
+	<span className="group relative inline-flex">
+		<span
+			tabIndex={0}
+			role="img"
+			aria-label={text}
+			className="inline-flex cursor-help items-center text-amber-600 outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-full"
+		>
+			<Info aria-hidden="true" size={16} />
+		</span>
+		<span
+			role="tooltip"
+			className="pointer-events-none absolute bottom-full right-0 z-20 mb-2 hidden w-56 rounded-md bg-iron-dark px-2.5 py-1.5 text-xs leading-snug text-white shadow-lg group-hover:block group-focus-within:block"
+		>
+			{text}
+		</span>
+	</span>
+);
+
 const ApprovalActionsBar = ({
 	variant,
 	onBack,
@@ -81,6 +109,8 @@ const ApprovalActionsBar = ({
 	canClarify = false,
 	onApprove,
 	onClarify,
+	approveDisabled = false,
+	approveDisabledReason,
 	canSendBack = false,
 	onSendBack,
 	canAcceptAndClose = false,
@@ -137,6 +167,7 @@ const ApprovalActionsBar = ({
 
 	const submitReason = async (action: "approve" | "clarify") => {
 		if (!isReasonValid || isBusy) return;
+		if (action === "approve" && approveDisabled) return;
 
 		setSubmitting(true);
 		try {
@@ -208,15 +239,23 @@ const ApprovalActionsBar = ({
 							) : null}
 
 							{showApprove ? (
-								<Button
-									type="button"
-									text={approveLabel}
-									size="sm"
-									appearance="standard"
-									variant="brand"
-									disabled={isBusy || !isReasonValid}
-									onClick={() => void submitReason("approve")}
-								/>
+								<span className="inline-flex items-center gap-1.5">
+									<Button
+										type="button"
+										text={approveLabel}
+										size="sm"
+										appearance="standard"
+										variant="brand"
+										isTooltip={
+											approveDisabled ? approveDisabledReason : undefined
+										}
+										disabled={isBusy || !isReasonValid || approveDisabled}
+										onClick={() => void submitReason("approve")}
+									/>
+									{/* {approveDisabled && approveDisabledReason ? (
+										<InfoTip text={approveDisabledReason} />
+									) : null} */}
+								</span>
 							) : null}
 						</div>
 					</>

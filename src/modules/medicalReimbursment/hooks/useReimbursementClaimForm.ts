@@ -11,16 +11,22 @@ import {
 
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 import { useToast } from "../../../context/Auth/AuthContext";
+import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { createClaimHeadRow } from "../helpers/reimbursementClaimForm.helper";
 import {
+	approvalReasonSchema,
+	clarificationReasonSchema,
 	createClaimHeadRowSchema,
 	createReimbursementClaimSubmitSchema,
 	deriveEligibility,
-	getFinancialYear,
+	firstErrorMessage,
+	lineItemApprovalSchema,
+	lineItemRemarksSchema,
 	reimbursementClaimDraftSchema,
 	toFieldErrors,
 	toRowErrors,
 } from "../utils/reimbursementClaim.schemas";
+import { FALLBACK_GRADE_OPTIONS } from "../utils/gradeEligibility.constants";
 import {
 	EMPTY_CLAIM_ATTACHMENTS,
 	type ApprovalStage,
@@ -29,6 +35,7 @@ import {
 	type ClaimHeadRow,
 	type ClaimHeadValidationErrors,
 	type CoverageType,
+	type GradeOption,
 	type ReimbursementClaimActor,
 	type ReimbursementClaimAttachments,
 	type ReimbursementClaimFormErrors,
@@ -36,22 +43,11 @@ import {
 	type ReimbursementClaimFormValues,
 	type ReimbursementClaimSubmission,
 } from "../types/reimbursementClaim.types";
-export const GRADE_OPTIONS = [
-	{ label: "EG-3", value: "EG-3", eligibility: 25_000 },
-	{ label: "EG-4", value: "EG-4", eligibility: 30_000 },
+import { getEligibilityPeriodLabel } from "../utils/mediclaimBackend.config";
 
-	{ label: "TM-5", value: "TM-5", eligibility: 35_000 },
-	{ label: "TM-4", value: "TM-4", eligibility: 40_000 },
-	{ label: "TM-3", value: "TM-3", eligibility: 45_000 },
-	{ label: "TM-2", value: "TM-2", eligibility: 50_000 },
-	{ label: "TM-1", value: "TM-1", eligibility: 60_000 },
-	{ label: "TM-0", value: "TM-0", eligibility: 75_000 },
+/** @deprecated use gradeOptions from useGradeOptions — kept for old imports. */
+export const GRADE_OPTIONS = FALLBACK_GRADE_OPTIONS;
 
-	{ label: "TS-2", value: "TS-2", eligibility: 90_000 },
-	{ label: "TS-1", value: "TS-1", eligibility: 100_000 },
-
-	{ label: "TE-3", value: "TE-3", eligibility: 125_000 },
-];
 export const COVERAGE_OPTIONS: Array<{ label: string; value: CoverageType }> = [
 	{ label: "Self", value: "SELF" },
 	{ label: "Spouse", value: "SPOUSE" },
@@ -80,6 +76,8 @@ export const EMPTY_REIMBURSEMENT_CLAIM_VALUES: ReimbursementClaimFormValues = {
 
 export type ApprovedBillAmountPayload = ClaimHeadRow;
 
+export type ReasonAction = "approve" | "clarify";
+
 export interface UseReimbursementClaimFormArgs {
 	referenceNumber?: string;
 	mode?: ReimbursementClaimFormMode;
@@ -88,12 +86,16 @@ export interface UseReimbursementClaimFormArgs {
 	initialLineItems?: ClaimHeadRow[];
 	initialValues?: Partial<ReimbursementClaimFormValues>;
 	initialAttachments?: Partial<ReimbursementClaimAttachments>;
+	/** Grade → cap options (useGradeOptions). Falls back to the static list. */
+	gradeOptions?: GradeOption[];
 	onSubmit?: (submission: ReimbursementClaimSubmission) => void | Promise<void>;
 	onSaveDraft?: (
 		submission: ReimbursementClaimSubmission,
 	) => void | Promise<void>;
 	onBack?: () => void;
 	submittedMessage?: string;
+	/** Toast text after a successful onSubmit. */
+	submitSuccessMessage?: string;
 	actionText?: string;
 	approvalStages?: ApprovalStage[];
 	statusLabel?: string;
@@ -101,36 +103,41 @@ export interface UseReimbursementClaimFormArgs {
 	canClarify?: boolean;
 	/**
 	 * Whether the Approved Amount / Approved / Remarks columns are editable.
-	 * Pass `permissions.canReviewLineItems` from useMedicalClaimPermissions.
-	 * Defaults to `canApprove` when omitted. Always false for the retired
-	 * employee (public token page / guest portal).
+	 * Pass `permissions.canReviewLineItems`. Defaults to `canApprove`.
 	 */
 	canReviewLineItems?: boolean;
+	/** Hide the review columns entirely (claimant filling a fresh claim). */
+	hideReviewColumns?: boolean;
 	isExternalApprover?: boolean;
 	commentsSection?: ReactNode;
 	auditSection?: ReactNode;
 	workflowSection?: ReactNode;
 	approvalActionLoading?: boolean;
-	onApproveStage?: () => void | Promise<void>;
+	onApproveStage?: (reason: string) => void | Promise<void>;
 	onClarifyStage?: (reason: string) => void | Promise<void>;
 	onLineItemApprove?: (
+		payload: ApprovedBillAmountPayload,
+	) => void | Promise<void>;
+	onLineItemUnapprove?: (
 		payload: ApprovedBillAmountPayload,
 	) => void | Promise<void>;
 	onLineItemRemarksSave?: (
 		payload: ApprovedBillAmountPayload,
 	) => void | Promise<void>;
+	/** Claim-level close (initiator / external approver once APPROVED). */
+	canClose?: boolean;
+	onCloseClaim?: () => void | Promise<void>;
+	isClosing?: boolean;
+	/** Clarification reason shown to the claimant. */
+	correctionReason?: string | null;
 	/**
-	 * Amount submitted / under review in OTHER claims this year, not yet settled.
-	 * Pass it from the logged-in THCM pages only. When undefined (guest / public
-	 * page) the side panel hides the "THCM only" block.
+	 * Amount submitted / under review in OTHER claims this year, not yet
+	 * settled. THCM pages only; undefined hides the "THCM only" block.
 	 */
 	eligibilityPendingAmount?: number;
-	/** Label for the eligibility year, e.g. "FY 2026-27". Defaults to the current financial year. */
+	/** Label for the eligibility year, e.g. "FY 2026-27". */
 	eligibilityPeriodLabel?: string;
-	/**
-	 * true  -> submit is blocked when the claimed total is above the remaining eligibility
-	 * false -> the side panel only warns (approvers decide)
-	 */
+	/** true → submit is blocked when the claimed total exceeds the balance. */
 	enforceEligibilityLimit?: boolean;
 }
 
@@ -147,8 +154,8 @@ export function deriveClaimStatusLabel(stages: ApprovalStage[]): string {
 export function sanitizeAmountInput(raw: string): string {
 	const cleaned = raw.replace(/[^0-9.]/g, "");
 	const firstDot = cleaned.indexOf(".");
-	if (firstDot === -1) return cleaned;
-	const whole = cleaned.slice(0, firstDot);
+	if (firstDot === -1) return cleaned.slice(0, 9);
+	const whole = cleaned.slice(0, firstDot).slice(0, 9);
 	const fraction = cleaned
 		.slice(firstDot + 1)
 		.replace(/\./g, "")
@@ -156,8 +163,16 @@ export function sanitizeAmountInput(raw: string): string {
 	return `${whole}.${fraction}`;
 }
 
-export function sanitizeWholeNumberInput(raw: string): string {
-	return raw.replace(/[^0-9]/g, "");
+export function sanitizeWholeNumberInput(raw: string, maxLength = 50): string {
+	return raw.replace(/[^0-9]/g, "").slice(0, maxLength);
+}
+
+/** Bill number as typed → CAPS letters, digits, "-" and "/" only. */
+export function sanitizeBillNumberInput(raw: string, maxLength = 50): string {
+	return raw
+		.toUpperCase()
+		.replace(/[^A-Z0-9/-]/g, "")
+		.slice(0, maxLength);
 }
 
 export const toDatePickerValue = (value?: string): Date | undefined => {
@@ -174,9 +189,17 @@ export const toDateString = (date: Date): string => {
 };
 
 /**
- * Declaration date defaults to today when the claimant is filling the form.
- * A date already saved on the claim (e.g. from a draft) is kept as-is.
+ * The amount an approval should use: what the approver typed, otherwise the
+ * claimed amount. Never "" → 0 (that approved bills at ₹0).
  */
+export const resolveApprovedAmount = (
+	row: Pick<ClaimHeadRow, "approvedClaimAmount" | "amount">,
+): string => {
+	const typed = row.approvedClaimAmount?.toString().trim();
+	return typed ? typed : String(row.amount ?? "").trim();
+};
+
+/** Declaration date defaults to today while the claimant can edit it. */
 const withDeclarationDateDefault = (
 	values: ReimbursementClaimFormValues,
 	shouldAutofill: boolean,
@@ -184,6 +207,30 @@ const withDeclarationDateDefault = (
 	shouldAutofill && !values.claimDate
 		? { ...values, claimDate: toDateString(new Date()) }
 		: values;
+
+/**
+ * Server rows win, except review input still being typed: on a row the
+ * server hasn't approved, a non-empty local approved amount / remark is kept.
+ */
+export const mergeReviewedLineItems = (
+	local: ClaimHeadRow[],
+	server: ClaimHeadRow[],
+): ClaimHeadRow[] => {
+	const localById = new Map(local.map((item) => [item.id, item]));
+	return server.map((row) => {
+		const mine = localById.get(row.id);
+		if (!mine || row.approvalStatus === "APPROVED") return { ...row };
+		const typedAmount = mine.approvedClaimAmount?.toString().trim();
+		const typedRemarks = mine.remarks?.trim();
+		return {
+			...row,
+			approvedClaimAmount: typedAmount
+				? mine.approvedClaimAmount
+				: row.approvedClaimAmount,
+			remarks: typedRemarks ? mine.remarks : row.remarks,
+		};
+	});
+};
 
 const getLineItemsKey = (items: ClaimHeadRow[]): string =>
 	JSON.stringify(
@@ -204,6 +251,12 @@ const getLineItemsKey = (items: ClaimHeadRow[]): string =>
 		})),
 	);
 
+const errorMessage = (error: unknown, fallback: string) =>
+	getApiErrorMessage(
+		error,
+		error instanceof Error && error.message ? error.message : fallback,
+	);
+
 export function useReimbursementClaimForm({
 	mode = "edit",
 	canEdit = true,
@@ -211,16 +264,19 @@ export function useReimbursementClaimForm({
 	initialLineItems = [],
 	initialValues,
 	initialAttachments,
+	gradeOptions: gradeOptionsProp,
 	onSubmit,
 	onSaveDraft,
 	onBack,
 	submittedMessage,
+	submitSuccessMessage = "Medical claim submitted successfully.",
 	actionText = "Submit Claim",
 	approvalStages = [],
 	statusLabel,
 	canApprove = false,
 	canClarify = false,
 	canReviewLineItems: canReviewLineItemsProp,
+	hideReviewColumns = false,
 	isExternalApprover = false,
 	commentsSection,
 	auditSection,
@@ -229,8 +285,13 @@ export function useReimbursementClaimForm({
 	onApproveStage,
 	onClarifyStage,
 	onLineItemApprove,
+	onLineItemUnapprove,
 	referenceNumber,
 	onLineItemRemarksSave,
+	canClose = false,
+	onCloseClaim,
+	isClosing = false,
+	correctionReason,
 	eligibilityPendingAmount,
 	eligibilityPeriodLabel,
 	enforceEligibilityLimit = true,
@@ -239,8 +300,11 @@ export function useReimbursementClaimForm({
 
 	const isReadOnly =
 		mode === "view" || !canEdit || actorRole === "externalApprover";
-	// Only autofill while the claimant can actually edit the declaration.
 	const shouldAutofillDeclarationDate = !isReadOnly;
+
+	const gradeOptions = gradeOptionsProp?.length
+		? gradeOptionsProp
+		: FALLBACK_GRADE_OPTIONS;
 
 	const [values, setValues] = useState<ReimbursementClaimFormValues>(() =>
 		withDeclarationDateDefault(
@@ -317,23 +381,41 @@ export function useReimbursementClaimForm({
 	useEffect(() => {
 		if (syncedLineItemsKey.current === initialLineItemsKey) return;
 		syncedLineItemsKey.current = initialLineItemsKey;
+		if (canReviewLineItemsProp ?? canApprove) {
+			// Reviewer refetch after a line-item action: take the server's
+			// rows, but keep amounts/remarks still being typed on rows the
+			// server hasn't approved yet.
+			setSavedClaims((current) =>
+				mergeReviewedLineItems(current, initialLineItems),
+			);
+			return;
+		}
 		setSavedClaims(initialLineItems.map((item) => ({ ...item })));
 		setClaimRows([createClaimHeadRow()]);
 		setEditingClaimId(null);
 		setClaimErrors({});
-	}, [initialLineItems, initialLineItemsKey]);
+	}, [
+		canApprove,
+		canReviewLineItemsProp,
+		initialLineItems,
+		initialLineItemsKey,
+	]);
 
 	const selectedGrade = useMemo(
-		() => GRADE_OPTIONS.find((option) => option.value === values.grade),
-		[values.grade],
+		() => gradeOptions.find((option) => option.value === values.grade),
+		[gradeOptions, values.grade],
 	);
-	const resolvedEligibleAmount = selectedGrade?.eligibility ?? 0;
+	/** null when the grade has no known cap — panel + limit check adapt. */
+	const resolvedEligibleAmount: number | null =
+		selectedGrade?.eligibility ?? null;
 	const lineItemsTotal = useMemo(
 		() =>
-			savedClaims.reduce(
-				(total, item) => total + (Number(item.amount) || 0),
-				0,
-			),
+			Math.round(
+				savedClaims.reduce(
+					(total, item) => total + (Number(item.amount) || 0),
+					0,
+				) * 100,
+			) / 100,
 		[savedClaims],
 	);
 
@@ -342,22 +424,34 @@ export function useReimbursementClaimForm({
 	const eligibility = useMemo(
 		() =>
 			deriveEligibility(
-				{ totalEligible: resolvedEligibleAmount, settled: settledAmount },
+				{ totalEligible: resolvedEligibleAmount ?? 0, settled: settledAmount },
 				lineItemsTotal,
 			),
 		[lineItemsTotal, resolvedEligibleAmount, settledAmount],
 	);
 	const resolvedEligibilityPeriodLabel =
-		eligibilityPeriodLabel ?? getFinancialYear().label;
+		eligibilityPeriodLabel ?? getEligibilityPeriodLabel();
+
+	const allowedGrades = useMemo(
+		() => gradeOptions.map((option) => option.value),
+		[gradeOptions],
+	);
 
 	const submitSchema = useMemo(
 		() =>
 			createReimbursementClaimSubmitSchema({
+				allowedGrades,
 				remainingAmount: eligibility.remaining,
-				// Without a grade we cannot know the limit, so don't block on it.
-				enforceRemaining: enforceEligibilityLimit && Boolean(selectedGrade),
+				// Without a known cap we can't know the limit, so don't block.
+				enforceRemaining:
+					enforceEligibilityLimit && resolvedEligibleAmount !== null,
 			}),
-		[eligibility.remaining, enforceEligibilityLimit, selectedGrade],
+		[
+			allowedGrades,
+			eligibility.remaining,
+			enforceEligibilityLimit,
+			resolvedEligibleAmount,
+		],
 	);
 	const rowSchema = useMemo(() => createClaimHeadRowSchema(), []);
 
@@ -366,7 +460,6 @@ export function useReimbursementClaimForm({
 	const claimStatusLabel =
 		statusLabel ?? deriveClaimStatusLabel(approvalStages);
 	const canReviewLineItems = canReviewLineItemsProp ?? canApprove;
-	// Drives the visibly-disabled state of the review columns in the table.
 	const isLineItemReviewLocked = !canReviewLineItems;
 	const isLoading = isSubmitting || isSavingDraft;
 
@@ -379,12 +472,24 @@ export function useReimbursementClaimForm({
 		});
 	}, []);
 
+	// Grade comes from HR records (User.grade / legacy data) at initiation.
+	// When it's on record, the claimant can't change it — the backend trusts
+	// the submitted grade for the eligibility cap. Only an empty grade is
+	// selectable, so a claim without one can still be submitted.
+	const isGradeLocked = Boolean(initialValues?.grade?.trim());
+
 	const handleChange = useCallback(
 		<K extends keyof ReimbursementClaimFormValues>(
 			field: K,
 			value: ReimbursementClaimFormValues[K],
 		) => {
-			setValues((current) => ({ ...current, [field]: value }));
+			if (field === "grade" && isGradeLocked) return;
+			setValues((current) => {
+				const next = { ...current, [field]: value };
+				// Self-only cover never keeps a stale spouse name.
+				if (field === "coverageType" && value === "SELF") next.spouseName = "";
+				return next;
+			});
 			setErrors((current) => {
 				if (!current[field]) return current;
 				const next = { ...current };
@@ -392,7 +497,7 @@ export function useReimbursementClaimForm({
 				return next;
 			});
 		},
-		[],
+		[isGradeLocked],
 	);
 
 	const handleClaimChange = useCallback(
@@ -410,17 +515,14 @@ export function useReimbursementClaimForm({
 							...row,
 							attachment,
 							file: attachment?.file ?? null,
-							fileName:
-								attachment?.file?.name ??
-								attachment?.name ??
-								row.fileName ??
-								null,
+							fileName: attachment?.file?.name ?? attachment?.name ?? null,
 						};
 					}
 					return { ...row, [field]: value };
 				}),
 			);
 			clearClaimError(`${field === "attachment" ? "file" : field}-${rowId}`);
+			clearClaimError("form");
 		},
 		[clearClaimError],
 	);
@@ -429,9 +531,27 @@ export function useReimbursementClaimForm({
 	const validateClaim = useCallback(
 		(row: ClaimHeadFormRow): ClaimHeadValidationErrors => {
 			const result = rowSchema.safeParse(row);
-			return result.success ? {} : toRowErrors(row.id, result.error);
+			const rowErrors: ClaimHeadValidationErrors = result.success
+				? {}
+				: toRowErrors(row.id, result.error);
+
+			// Same bill number twice under the same head is almost always a
+			// double entry — catch it when the row is added, not at submit.
+			const duplicate = savedClaims.find(
+				(item) =>
+					item.id !== row.id &&
+					item.claimHead === row.claimHead &&
+					item.billNumber.trim().toUpperCase() ===
+						row.billNumber.trim().toUpperCase() &&
+					row.billNumber.trim() !== "",
+			);
+			if (duplicate && !rowErrors[`billNumber-${row.id}`]) {
+				rowErrors[`billNumber-${row.id}`] =
+					"This bill number is already added under the same claim head.";
+			}
+			return rowErrors;
 		},
-		[rowSchema],
+		[rowSchema, savedClaims],
 	);
 
 	const handleSaveClaim = useCallback(
@@ -443,6 +563,7 @@ export function useReimbursementClaimForm({
 					type: "error",
 					title: "Complete the claim entry",
 					description:
+						Object.values(validation)[0] ??
 						"Fill all required fields and upload one supporting document before adding the entry.",
 				});
 				return;
@@ -451,6 +572,9 @@ export function useReimbursementClaimForm({
 			const savedRow: ClaimHeadRow = {
 				...row,
 				claimHead: row.claimHead as ClaimHead,
+				billNumber: row.billNumber.trim(),
+				billName: row.billName.trim(),
+				amount: String(Number(row.amount)),
 				fileName:
 					row.file?.name ?? row.attachment?.name ?? row.fileName ?? null,
 				approvedClaimAmount: row.approvedClaimAmount ?? "",
@@ -493,7 +617,6 @@ export function useReimbursementClaimForm({
 				setClaimRows([createClaimHeadRow()]);
 				return null;
 			});
-
 			setDeletingClaimId(null);
 		},
 		[canEditClaimForm],
@@ -515,62 +638,52 @@ export function useReimbursementClaimForm({
 				),
 			);
 			clearClaimError(`approvedClaimAmount-${id}`);
+			clearClaimError(`remarks-${id}`);
 		},
 		[canReviewLineItems, clearClaimError],
 	);
 
-	const handleToggleLineItemStatus = useCallback(
-		(id: string) => {
-			if (!canReviewLineItems) return;
+	const setRowReviewState = useCallback(
+		(id: string, patch: Partial<ClaimHeadRow>) => {
 			setSavedClaims((current) =>
-				current.map((claim) =>
-					claim.id === id
-						? {
-								...claim,
-								approvalStatus:
-									claim.approvalStatus === "APPROVED" ? "PENDING" : "APPROVED",
-							}
-						: claim,
-				),
+				current.map((item) => (item.id === id ? { ...item, ...patch } : item)),
 			);
 		},
-		[canReviewLineItems],
+		[],
 	);
 
-	const handleApproveLineItem = useCallback(
-		async (claim: ClaimHeadRow) => {
+	/** Un-approves a bill (backend call when wired, local toggle otherwise). */
+	const handleToggleLineItemStatus = useCallback(
+		async (id: string) => {
 			if (!canReviewLineItems) return;
+			const claim = savedClaims.find((item) => item.id === id);
+			if (!claim) return;
 
-			if (!onLineItemApprove) {
-				handleToggleLineItemStatus(claim.id);
+			if (claim.approvalStatus !== "APPROVED" || !onLineItemUnapprove) {
+				setRowReviewState(id, {
+					approvalStatus:
+						claim.approvalStatus === "APPROVED" ? "PENDING" : "APPROVED",
+				});
 				return;
 			}
 
-			setApprovingClaimId(claim.id);
-
+			setApprovingClaimId(id);
 			try {
-				await onLineItemApprove(claim);
-
-				setSavedClaims((current) =>
-					current.map((item) =>
-						item.id === claim.id
-							? {
-									...item,
-									approvalStatus: "APPROVED",
-								}
-							: item,
-					),
-				);
+				await onLineItemUnapprove(claim);
+				setRowReviewState(id, { approvalStatus: "PENDING", approved: false });
+				showToast({
+					type: "success",
+					title: "Approval removed",
+					description: "The bill is back to pending review.",
+				});
 			} catch (error) {
-				const message =
-					error instanceof Error
-						? error.message
-						: "Unable to approve this line item. Please try again.";
-
 				showToast({
 					type: "error",
-					title: "Error",
-					description: message,
+					title: "Unable to update the bill",
+					description: errorMessage(
+						error,
+						"Unable to remove the approval. Please try again.",
+					),
 				});
 			} finally {
 				setApprovingClaimId(null);
@@ -578,8 +691,70 @@ export function useReimbursementClaimForm({
 		},
 		[
 			canReviewLineItems,
-			handleToggleLineItemStatus,
+			onLineItemUnapprove,
+			savedClaims,
+			setRowReviewState,
+			showToast,
+		],
+	);
+
+	const handleApproveLineItem = useCallback(
+		async (claim: ClaimHeadRow) => {
+			if (!canReviewLineItems) return;
+
+			const approvedClaimAmount = resolveApprovedAmount(claim);
+			const validation = lineItemApprovalSchema.safeParse({
+				amount: String(claim.amount),
+				approvedClaimAmount,
+				remarks: claim.remarks ?? "",
+			});
+			if (!validation.success) {
+				const fieldErrors = toRowErrors(claim.id, validation.error);
+				setClaimErrors((current) => ({ ...current, ...fieldErrors }));
+				showToast({
+					type: "error",
+					title: "Check the approved amount",
+					description: firstErrorMessage(validation.error),
+				});
+				return;
+			}
+
+			if (!onLineItemApprove) {
+				setRowReviewState(claim.id, {
+					approvalStatus: "APPROVED",
+					approvedClaimAmount,
+				});
+				return;
+			}
+
+			setApprovingClaimId(claim.id);
+			try {
+				await onLineItemApprove({ ...claim, approvedClaimAmount });
+				setRowReviewState(claim.id, {
+					approvalStatus: "APPROVED",
+					approved: true,
+					approvedClaimAmount,
+				});
+				clearClaimError(`approvedClaimAmount-${claim.id}`);
+				clearClaimError(`remarks-${claim.id}`);
+			} catch (error) {
+				showToast({
+					type: "error",
+					title: "Unable to approve the bill",
+					description: errorMessage(
+						error,
+						"Unable to approve this line item. Please try again.",
+					),
+				});
+			} finally {
+				setApprovingClaimId(null);
+			}
+		},
+		[
+			canReviewLineItems,
+			clearClaimError,
 			onLineItemApprove,
+			setRowReviewState,
 			showToast,
 		],
 	);
@@ -602,54 +777,39 @@ export function useReimbursementClaimForm({
 			if (!canReviewLineItems || !onLineItemRemarksSave) return;
 
 			const claim = savedClaims.find((item) => item.id === claimId);
-
 			if (!claim || claim.approvalStatus === "APPROVED") return;
 
-			const trimmedRemarks = claim.remarks?.trim() ?? "";
-
-			if (!trimmedRemarks) {
+			const validation = lineItemRemarksSchema.safeParse({
+				remarks: claim.remarks ?? "",
+			});
+			if (!validation.success) {
 				setClaimErrors((current) => ({
 					...current,
-					[`remarks-${claimId}`]: "Remarks are required.",
+					[`remarks-${claimId}`]: firstErrorMessage(validation.error),
 				}));
 				return;
 			}
 
+			const trimmedRemarks = validation.data.remarks;
 			clearClaimError(`remarks-${claimId}`);
 			setSavingRemarksId(claimId);
 
 			try {
-				await onLineItemRemarksSave({
-					...claim,
-					remarks: trimmedRemarks,
-				});
-
-				setSavedClaims((current) =>
-					current.map((item) =>
-						item.id === claimId
-							? {
-									...item,
-									remarks: trimmedRemarks,
-								}
-							: item,
-					),
-				);
-
+				await onLineItemRemarksSave({ ...claim, remarks: trimmedRemarks });
+				setRowReviewState(claimId, { remarks: trimmedRemarks });
 				showToast({
 					type: "success",
 					title: "Remarks saved",
 					description: "The bill remarks have been updated.",
 				});
 			} catch (error) {
-				const message =
-					error instanceof Error
-						? error.message
-						: "Unable to save remarks. Please try again.";
-
 				showToast({
 					type: "error",
 					title: "Unable to save remarks",
-					description: message,
+					description: errorMessage(
+						error,
+						"Unable to save remarks. Please try again.",
+					),
 				});
 			} finally {
 				setSavingRemarksId(null);
@@ -660,6 +820,7 @@ export function useReimbursementClaimForm({
 			clearClaimError,
 			onLineItemRemarksSave,
 			savedClaims,
+			setRowReviewState,
 			showToast,
 		],
 	);
@@ -668,10 +829,11 @@ export function useReimbursementClaimForm({
 		(): ReimbursementClaimSubmission => ({
 			values: {
 				...values,
+				location: values.location.trim(),
 				spouseName:
 					values.coverageType === "SELF" || !values.coverageType
 						? ""
-						: values.spouseName,
+						: values.spouseName.trim(),
 			},
 			attachments,
 			lineItems: savedClaims.map((item) => ({
@@ -679,17 +841,36 @@ export function useReimbursementClaimForm({
 				fileName:
 					item.file?.name ?? item.attachment?.name ?? item.fileName ?? null,
 			})),
-			totalAmountEligible: resolvedEligibleAmount,
+			totalAmountEligible: resolvedEligibleAmount ?? 0,
 			lineItemsTotal,
 		}),
 		[attachments, lineItemsTotal, resolvedEligibleAmount, savedClaims, values],
 	);
 
+	/** True when a bill row is half-filled but not added to the table yet. */
+	const hasUnsavedRow = useMemo(
+		() =>
+			claimRows.some(
+				(row) =>
+					Boolean(row.claimHead) ||
+					Boolean(row.billNumber.trim()) ||
+					Boolean(row.billName.trim()) ||
+					Boolean(row.amount) ||
+					Boolean(row.file),
+			),
+		[claimRows],
+	);
+
 	const handleSubmit = useCallback(async () => {
-		// One schema validates header + line items + eligibility limit.
+		if (isSubmitting) return;
+
 		const result = submitSchema.safeParse({ values, lineItems: savedClaims });
 		if (!result.success) {
-			const { form, ...fieldErrors } = toFieldErrors(result.error);
+			const { form: schemaForm, ...fieldErrors } = toFieldErrors(result.error);
+			const form =
+				hasUnsavedRow && savedClaims.length === 0
+					? "You entered a bill but didn't add it — click + to add it to the claim."
+					: schemaForm;
 			setErrors(fieldErrors as ReimbursementClaimFormErrors);
 			setClaimErrors((current) => {
 				const next = { ...current };
@@ -697,8 +878,23 @@ export function useReimbursementClaimForm({
 				else delete next.form;
 				return next;
 			});
+			showToast({
+				type: "error",
+				title: "Please fix the highlighted fields",
+				description: form ?? firstErrorMessage(result.error),
+			});
 			return;
 		}
+		if (editingClaimId) {
+			showToast({
+				type: "error",
+				title: "Finish editing the bill",
+				description:
+					"Save or cancel the bill you are editing before submitting.",
+			});
+			return;
+		}
+
 		setErrors({});
 		clearClaimError("form");
 		setMutationError(null);
@@ -708,65 +904,76 @@ export function useReimbursementClaimForm({
 			showToast({
 				type: "success",
 				title: "Success",
-				description: "Medical claim submitted successfully.",
+				description: submitSuccessMessage,
 			});
 		} catch (error) {
-			const message =
-				error instanceof Error
-					? error.message
-					: "Unable to submit the medical claim. Please try again.";
+			const message = errorMessage(
+				error,
+				"Unable to submit the medical claim. Please try again.",
+			);
 			setMutationError(message);
-			showToast({ type: "error", title: "Error", description: message });
+			showToast({
+				type: "error",
+				title: "Submission failed",
+				description: message,
+			});
 		} finally {
 			setIsSubmitting(false);
 		}
 	}, [
 		buildSubmission,
 		clearClaimError,
+		editingClaimId,
+		hasUnsavedRow,
+		isSubmitting,
 		onSubmit,
 		savedClaims,
 		showToast,
 		submitSchema,
+		submitSuccessMessage,
 		values,
 	]);
 
 	const handleSaveDraft = useCallback(async () => {
+		if (isSavingDraft) return;
 		const result = reimbursementClaimDraftSchema.safeParse(values);
 		if (!result.success) {
 			setErrors(toFieldErrors(result.error) as ReimbursementClaimFormErrors);
+			showToast({
+				type: "error",
+				title: "Draft not saved",
+				description: firstErrorMessage(result.error),
+			});
 			return;
 		}
 		setErrors({});
-
 		setMutationError(null);
 		setIsSavingDraft(true);
 
 		try {
 			await onSaveDraft?.(buildSubmission());
-
 			showToast({
 				type: "success",
-				title: "Success",
-				description: "Medical claim draft saved successfully.",
+				title: "Draft saved",
+				description: "You can come back to this link and continue later.",
 			});
 		} catch (error) {
-			const message =
-				error instanceof Error
-					? error.message
-					: "Unable to save the medical claim draft. Please try again.";
-
+			const message = errorMessage(
+				error,
+				"Unable to save the medical claim draft. Please try again.",
+			);
 			setMutationError(message);
-
 			showToast({
 				type: "error",
-				title: "Error",
+				title: "Draft not saved",
 				description: message,
 			});
 		} finally {
 			setIsSavingDraft(false);
 		}
-	}, [buildSubmission, onSaveDraft, showToast, values]);
+	}, [buildSubmission, isSavingDraft, onSaveDraft, showToast, values]);
 
+	/** Builds a suggested clarification reason from flagged (unapproved) bills. */
 	const buildClarifyReasonPrefix = useCallback((): string => {
 		const flagged = savedClaims.filter(
 			(item) => item.approvalStatus !== "APPROVED",
@@ -782,12 +989,23 @@ export function useReimbursementClaimForm({
 		return `Flagged line items:\n${lines.join("\n")}`;
 	}, [savedClaims]);
 
+	/** Validates an approve / clarify reason; returns an error or null. */
+	const validateReason = useCallback(
+		(action: ReasonAction, reason: string): string | null => {
+			const schema =
+				action === "clarify" ? clarificationReasonSchema : approvalReasonSchema;
+			const result = schema.safeParse({ reason });
+			return result.success ? null : firstErrorMessage(result.error);
+		},
+		[],
+	);
+
 	const handleClarifyConfirm = useCallback(
 		async (reason: string) => {
 			if (!onClarifyStage) return;
 			setClarifyLoading(true);
 			try {
-				await onClarifyStage(reason);
+				await onClarifyStage(reason.trim());
 				setClarifyModalOpen(false);
 			} finally {
 				setClarifyLoading(false);
@@ -796,11 +1014,28 @@ export function useReimbursementClaimForm({
 		[onClarifyStage],
 	);
 
+	const handleApproveStage = useCallback(
+		async (reason: string) => {
+			await onApproveStage?.(reason.trim());
+		},
+		[onApproveStage],
+	);
+
 	const allLineItemsApproved =
 		savedClaims.length > 0 &&
 		savedClaims.every((item) => item.approvalStatus === "APPROVED");
 	const canCompleteStage =
 		canApprove && (isExternalApprover || allLineItemsApproved);
+	const approvedTotal = useMemo(
+		() =>
+			savedClaims
+				.filter((item) => item.approvalStatus === "APPROVED")
+				.reduce(
+					(sum, item) => sum + (Number(resolveApprovedAmount(item)) || 0),
+					0,
+				),
+		[savedClaims],
+	);
 
 	const handleReset = useCallback(() => {
 		setValues(
@@ -841,25 +1076,37 @@ export function useReimbursementClaimForm({
 		mutationError,
 		clarifyModalOpen,
 		clarifyLoading,
+		gradeOptions,
 		selectedGrade,
+		isGradeLocked,
 		resolvedEligibleAmount,
 		settledAmount,
 		eligibility,
 		eligibilityPeriodLabel: resolvedEligibilityPeriodLabel,
 		pendingAmount: eligibilityPendingAmount,
 		lineItemsTotal,
+		approvedTotal,
 		isReadOnly,
 		canEditClaimForm,
 		fieldMode,
 		claimStatusLabel,
 		canReviewLineItems,
 		isLineItemReviewLocked,
+		hideReviewColumns,
 		allLineItemsApproved,
 		canCompleteStage,
 		mode,
 		actorRole,
 		canApprove,
 		canClarify,
+		canClose,
+		isClosing,
+		// The backend returns the LAST clarification reason even after the
+		// claim moved on — only show it while a clarification is open.
+		correctionReason:
+			claimStatusLabel?.trim().toUpperCase() === "CLARIFICATION_REQUESTED"
+				? correctionReason
+				: null,
 		isExternalApprover,
 		approvalActionLoading,
 		onBack,
@@ -876,6 +1123,7 @@ export function useReimbursementClaimForm({
 		hasSaveDraftAction: Boolean(onSaveDraft),
 		hasApproveStageAction: Boolean(onApproveStage),
 		hasClarifyStageAction: Boolean(onClarifyStage),
+		hasCloseAction: Boolean(onCloseClaim),
 		handleChange,
 		handleClaimChange,
 		handleSaveClaim,
@@ -890,8 +1138,10 @@ export function useReimbursementClaimForm({
 		handleReset,
 		setClarifyModalOpen,
 		buildClarifyReasonPrefix,
+		validateReason,
 		handleClarifyConfirm,
-		handleApproveStage: onApproveStage,
+		handleApproveStage,
+		handleCloseClaim: onCloseClaim,
 	};
 }
 

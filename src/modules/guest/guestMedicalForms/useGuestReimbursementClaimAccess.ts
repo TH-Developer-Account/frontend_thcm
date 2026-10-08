@@ -1,26 +1,28 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 
 import {
-	useGuestReimbursementClaimDetailQuery,
 	useCreateGuestMedicalClaimMutation,
+	useGuestClaimProfileQuery,
+	useGuestReimbursementClaimDetailQuery,
 	useResubmitGuestMedicalClaimMutation,
-	useGuestMedicalClaimPdfUrlMutation,
 } from "./useReimbursementClaimQueries";
 
 import {
+	deriveAnnualCap,
 	toMedicalClaimFormValues,
 	toMedicalClaimLineItems,
 } from "../../medicalReimbursment/helpers/medicalClaimListing.mapper";
-
-import type { ReimbursementClaimSubmission } from "../../medicalReimbursment/types/reimbursementClaim.types";
-
-import { useGuestAuth } from "../../../context/Auth/useGuestAuth";
-import {
-	buildMedicalClaimFormData,
-	GUEST_EDITABLE_STATUSES,
-	appendText,
-} from "../../medicalReimbursment/helpers/reimbursementClaimForm.helper";
+import type {
+	CoverageType,
+	ReimbursementClaimFormValues,
+	ReimbursementClaimSubmission,
+} from "../../medicalReimbursment/types/reimbursementClaim.types";
+import { buildMedicalClaimFormData } from "../../medicalReimbursment/helpers/reimbursementClaimForm.helper";
+import { useMedicalClaimPermissions } from "../../medicalReimbursment/hooks/useMedicalClaimPermissions";
+import { useGradeOptions } from "../../medicalReimbursment/hooks/useGradeOptions";
 import { getStatusAlertConfig } from "../../../utils/statusAlert.helper";
+import { getApiErrorMessage } from "../../../utils/apiError.helper";
 
 export interface GuestReimbursementClaimAccess {
 	canView: boolean;
@@ -29,79 +31,76 @@ export interface GuestReimbursementClaimAccess {
 	canResubmit: boolean;
 }
 
-const getGuestDisplayName = (
-	guest: {
-		first_name?: string;
-		last_name?: string;
-		firstName?: string;
-		lastName?: string;
-		name?: string;
-		full_name?: string;
-	} | null,
-): string => {
-	if (!guest) return "";
-	const fullName = guest.name ?? guest.full_name;
-	if (fullName?.trim()) return fullName.trim();
-
-	return [
-		guest.first_name ?? guest.firstName,
-		guest.last_name ?? guest.lastName,
-	]
-		.filter(Boolean)
-		.join(" ")
-		.trim();
-};
-
+/**
+ * Guest-portal claim page (logged-in retiree):
+ *  - existing claim → view; editable + resubmittable only while
+ *    CLARIFICATION_REQUESTED (approver remarks shown read-only)
+ *  - "create" → new claim prefilled from the guest's latest claim
+ *    (POST /medi-claim/guest/submit)
+ *
+ * Toasts for submit/resubmit come from the shared form hook; errors thrown
+ * here carry the server's message.
+ */
 export function useGuestMedicalClaimView(claimId = "") {
+	const navigate = useNavigate();
 	const isCreateMode = !claimId;
 
-	const detailQuery = useGuestReimbursementClaimDetailQuery(
-		claimId,
-		!isCreateMode,
-	);
-
+	const detailQuery = useGuestReimbursementClaimDetailQuery(claimId, !isCreateMode);
+	const profileQuery = useGuestClaimProfileQuery(isCreateMode);
 	const createMutation = useCreateGuestMedicalClaimMutation();
 	const resubmitMutation = useResubmitGuestMedicalClaimMutation();
 
-	const { guest, isLoading: isGuestAuthLoading } = useGuestAuth();
-
 	const detail = detailQuery.data;
+	const profile = profileQuery.data;
 	const referenceNumber = detail?.referenceNumber;
 
-	const access = useMemo<GuestReimbursementClaimAccess>(() => {
-		if (isCreateMode) {
+	const permissions = useMedicalClaimPermissions({
+		context: "guest",
+		status: detail?.status,
+		isCreate: isCreateMode,
+	});
+
+	const canCreate = isCreateMode && Boolean(profile?.canCreate);
+
+	const access = useMemo<GuestReimbursementClaimAccess>(
+		() => ({
+			canView: isCreateMode ? canCreate : Boolean(detail),
+			canEdit: isCreateMode ? canCreate : permissions.canEditClaim,
+			canCreate,
+			canResubmit: !isCreateMode && permissions.canEditClaim,
+		}),
+		[canCreate, detail, isCreateMode, permissions.canEditClaim],
+	);
+
+	const { gradeOptions } = useGradeOptions(
+		{ kind: "guest" },
+		isCreateMode
+			? {
+					grade: profile?.grade,
+					derivedCap:
+						profile?.eligibleAmount != null
+							? Number(profile.eligibleAmount) + Number(profile.alreadySettled ?? 0)
+							: null,
+				}
+			: { grade: detail?.grade, derivedCap: deriveAnnualCap(detail) },
+	);
+
+	const initialValues = useMemo<Partial<ReimbursementClaimFormValues> | undefined>(() => {
+		if (detail) return toMedicalClaimFormValues(detail);
+		if (isCreateMode && profile?.canCreate) {
 			return {
-				canView: true,
-				canEdit: true,
-				canCreate: true,
-				canResubmit: false,
+				employeeName: profile.employeeName ?? "",
+				ticketNumber: profile.ticketNumber ?? "",
+				grade: profile.grade ?? "",
+				location: profile.location ?? "",
+				coverageType: (profile.claimCover ?? "") as CoverageType,
+				spouseName: profile.spouseName ?? "",
+				companySettledAmount:
+					profile.alreadySettled != null ? String(profile.alreadySettled) : "",
 			};
 		}
-
-		const normalizedStatus = detail?.status?.toUpperCase() ?? "";
-		const canEdit = GUEST_EDITABLE_STATUSES.has(normalizedStatus);
-		return {
-			canView: Boolean(detail),
-			canEdit,
-			canCreate: false,
-			canResubmit: canEdit,
-		};
-	}, [detail, isCreateMode]);
-
-	const initialValues = useMemo(() => {
-		if (detail) {
-			return toMedicalClaimFormValues(detail);
-		}
-
-		// Contact details are sourced from guest auth and sent with create.
-		// employeeName is the matching visible field in the reimbursement form.
-		if (isCreateMode && guest) {
-			const displayName = getGuestDisplayName(guest);
-			return displayName ? { employeeName: displayName } : undefined;
-		}
-
 		return undefined;
-	}, [detail, guest, isCreateMode]);
+	}, [detail, isCreateMode, profile]);
 
 	const initialLineItems = useMemo(
 		() => (detail ? toMedicalClaimLineItems(detail) : []),
@@ -110,125 +109,73 @@ export function useGuestMedicalClaimView(claimId = "") {
 
 	const submitClaim = useCallback(
 		async (submission: ReimbursementClaimSubmission) => {
-			const guestDisplayName = getGuestDisplayName(guest);
-
-			const enrichedSubmission =
-				isCreateMode && guestDisplayName
-					? {
-							...submission,
-							values: {
-								...submission.values,
-								employeeName:
-									submission.values.employeeName || guestDisplayName,
-							},
-						}
-					: submission;
-
-			const formData = await buildMedicalClaimFormData(enrichedSubmission);
-
-			if (isCreateMode && guest) {
-				appendText(formData, "email", guest.email ?? "");
-				appendText(formData, "mobile", guest.mobile ?? "");
-			}
+			const formData = buildMedicalClaimFormData(submission, {
+				mode: "submit",
+				existingBills: detail?.bills,
+			});
 
 			if (isCreateMode) {
-				await createMutation.mutateAsync(formData);
+				if (!canCreate) {
+					throw new Error("New claims can't be started from this account. Please contact HR.");
+				}
+				const created = await createMutation.mutateAsync(formData);
+				if (created?.id) navigate(`/guest/medi-claim/${created.id}`, { replace: true });
 				return;
 			}
 
 			if (!access.canResubmit) {
 				throw new Error("This claim cannot be edited or resubmitted.");
 			}
-
-			await resubmitMutation.mutateAsync({
-				claimId,
-				formData,
-			});
+			await resubmitMutation.mutateAsync({ claimId, formData });
 		},
 		[
 			access.canResubmit,
+			canCreate,
 			claimId,
 			createMutation,
-			guest,
+			detail?.bills,
 			isCreateMode,
+			navigate,
 			resubmitMutation,
 		],
 	);
 
-	// --- PDF (view/download) — no Excel export for guests ---
-	const pdfUrlMutation = useGuestMedicalClaimPdfUrlMutation();
-	const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-	const [pdfAction, setPdfAction] = useState<"view" | "download" | null>(null);
-
-	const handleViewPdf = useCallback(async () => {
-		if (!claimId) return;
-
-		setPdfAction("view");
-		try {
-			const url = await pdfUrlMutation.mutateAsync({ claimId });
-			setPdfUrl(url);
-		} catch {
-			// no toast hook wired into this module currently
-		} finally {
-			setPdfAction(null);
-		}
-	}, [claimId, pdfUrlMutation]);
-
-	const handleDownloadPdf = useCallback(async () => {
-		if (!claimId) return;
-
-		setPdfAction("download");
-		try {
-			const url = pdfUrl ?? (await pdfUrlMutation.mutateAsync({ claimId }));
-			setPdfUrl(url);
-
-			const response = await fetch(url);
-			if (!response.ok) throw new Error("Failed to download PDF.");
-
-			const pdfBlob = await response.blob();
-			const blobUrl = window.URL.createObjectURL(
-				new Blob([pdfBlob], { type: "application/pdf" }),
-			);
-
-			const link = document.createElement("a");
-			link.href = blobUrl;
-			link.download = `medical-claim-${referenceNumber ?? claimId}.pdf`;
-			document.body.appendChild(link);
-			link.click();
-			link.remove();
-
-			window.URL.revokeObjectURL(blobUrl);
-		} catch {
-			// no toast hook wired into this module currently
-		} finally {
-			setPdfAction(null);
-		}
-	}, [claimId, pdfUrl, pdfUrlMutation, referenceNumber]);
-
-	const isPreparingPdf = pdfUrlMutation.isPending && pdfAction === "view";
-	const isDownloadingPdf = pdfUrlMutation.isPending && pdfAction === "download";
-
-	// Status banner — guest view only. Not shown in create mode (there's no
-	// status yet), only once an existing claim has a status worth surfacing
-	// (approved/rejected/clarification — see getStatusAlertConfig for which
-	// statuses actually produce a banner vs. return null for "in progress").
+	// Status banner — not shown in create mode (there's no status yet).
 	const statusBanner = useMemo(
 		() =>
 			isCreateMode
 				? null
-				: getStatusAlertConfig(detail?.status, { entityLabel: "claim" }),
+				: getStatusAlertConfig(detail?.status, {
+						entityLabel: "claim",
+						// The approver's reason is shown in its own banner; this one
+						// just tells the guest what to do next.
+						...(detail?.status?.toUpperCase() === "CLARIFICATION_REQUESTED"
+							? { description: "Please update the claim below and resubmit it for approval." }
+							: {}),
+					}),
 		[detail?.status, isCreateMode],
 	);
+
+	const loadError = isCreateMode ? profileQuery.error : detailQuery.error;
 
 	return {
 		detail,
 		isCreateMode,
 		referenceNumber,
-		isLoading: isGuestAuthLoading || (!isCreateMode && detailQuery.isLoading),
-		isError: !isCreateMode && detailQuery.isError,
+		isLoading: isCreateMode ? profileQuery.isLoading : detailQuery.isLoading,
+		isError: isCreateMode ? profileQuery.isError : detailQuery.isError,
+		errorMessage: getApiErrorMessage(
+			loadError,
+			isCreateMode
+				? "Unable to start a new claim right now."
+				: "Unable to load this medical reimbursement claim.",
+		),
 
 		initialValues,
 		initialLineItems,
+		gradeOptions,
+		permissions,
+		correctionReason: detail?.correctionReason ?? null,
 
 		access,
 		canView: access.canView,
@@ -239,16 +186,10 @@ export function useGuestMedicalClaimView(claimId = "") {
 		isSaving: createMutation.isPending || resubmitMutation.isPending,
 
 		submitClaim,
-		refetch: detailQuery.refetch,
+		refetch: isCreateMode ? profileQuery.refetch : detailQuery.refetch,
 
 		claimId,
-		pdfUrl,
-		isPreparingPdf,
-		isDownloadingPdf,
-		handleViewPdf,
-		handleDownloadPdf,
 
-		// Status banner — consumed only by the guest page.
 		statusBanner,
 		showAlertBanner: Boolean(statusBanner),
 	};
