@@ -3079,19 +3079,16 @@
 
    Fixed header + fixed footer, only the middle scrolls.
 
-   .public-pages-layout  → exactly one viewport tall, never scrolls
-   .header-public        → fixed height (flex: none)
-   .public-page          → THE scroll container (flex: 1, min-height: 0)
-   .public-page-footer   → fixed height (flex: none)
-
-   Because .public-page is the scroll owner, `position: sticky`
-   inside it (e.g. EligibilitySidePanel `lg:sticky lg:top-4`)
-   now sticks relative to the scrolling content area.
+   Header, content and footer all use --public-page-gutter,
+   so the logo, card and footer text line up at every width.
 ===================================================== */
 
 :root {
 	--public-page-max-width: 1120px;
 	--public-page-text-width: 680px;
+
+	/* 12px on phones -> 60px on large desktops */
+	--public-page-gutter: clamp(0.75rem, 3vw, 3.75rem);
 }
 
 @layer components {
@@ -3099,19 +3096,21 @@
 		display: flex;
 		flex-direction: column;
 		width: 100%;
-		height: 100dvh; /* was: min-height: 100dvh — the page itself must not grow */
+		height: 100dvh;
 		min-height: 0;
-		overflow: hidden; /* the layout never scrolls; .public-page does */
+		overflow: hidden;
 		background: var(--color-page-bg);
 		color: var(--color-text-primary);
 	}
+
+	/* ---------- Header ---------- */
 
 	.header-public {
 		position: relative;
 		z-index: var(--z-header);
 		width: 100%;
 		flex: 0 0 auto;
-		padding: var(--space-2) var(--space-4);
+		padding: var(--space-2) var(--public-page-gutter);
 		border-bottom: 0.5px solid var(--color-border);
 	}
 
@@ -3119,7 +3118,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		width: min(calc(100% - 24px), 1200px);
+		width: 100%;
+		max-width: var(--layout-content-max-width, 1200px);
 		margin-inline: auto;
 		gap: 16px;
 	}
@@ -3137,21 +3137,25 @@
 		object-fit: contain;
 	}
 
-	/* Scroll container between the header and the footer. */
+	/* ---------- Scroll area ---------- */
+
 	.public-page {
 		display: flex;
-		flex-direction: column; /* container below grows vertically, not horizontally */
-		flex: 1 1 auto; /* was: 1 0 auto — must be allowed to shrink to the space left */
+		flex-direction: column;
+		flex: 1 1 auto;
 		width: 100%;
 		min-width: 0;
-		min-height: 0; /* lets a flex child be shorter than its content → enables scrolling */
+		min-height: 0;
 		overflow-x: hidden;
 		overflow-y: auto;
 		background: var(--color-page-bg);
 
 		overscroll-behavior-y: contain;
 		-webkit-overflow-scrolling: touch;
-		scrollbar-gutter: stable;
+
+		/* "stable" reserved an empty strip on the right that the header
+		   and footer didn't have, so everything looked misaligned. */
+		scrollbar-gutter: auto;
 		scrollbar-width: thin;
 		scrollbar-color: var(--color-scrollbar-thumb) transparent;
 	}
@@ -3174,28 +3178,39 @@
 		background-color: var(--color-scrollbar-thumb-hover);
 	}
 
+	/*
+	 * Inner width = min(viewport - 2 * gutter, content max width),
+	 * exactly the same as the header brand row above.
+	 */
 	.public-page-container {
 		display: flex;
-		flex: 1;
-		align-items: stretch; /* was: center */
-		max-width: var(--layout-content-max-width, 1200px);
+		flex: 1 0 auto;
+		align-items: stretch;
+		box-sizing: border-box;
 		width: 100%;
+		min-width: 0;
+		max-width: calc(
+			var(--layout-content-max-width, 1200px) + (var(--public-page-gutter) * 2)
+		);
 		margin-inline: auto;
-		padding-block: clamp(16px, 2vw, 28px);
+		padding-block: clamp(12px, 2vw, 28px);
+		padding-inline: var(--public-page-gutter);
 	}
 
 	.public-page-content {
 		width: 100%;
 		min-width: 0;
-		margin: auto; /* centers short content (status cards); resolves to 0 for tall forms */
+		margin: auto; /* centres short content (status cards); 0 for tall forms */
 	}
+
+	/* ---------- Footer ---------- */
 
 	.public-page-footer {
 		position: relative;
 		z-index: var(--z-header);
 		width: 100%;
 		flex: 0 0 auto;
-		padding: 16px;
+		padding: 16px var(--public-page-gutter);
 		text-align: center;
 		font-size: max(1.1rem, 11px);
 		color: var(--color-text-secondary);
@@ -3203,12 +3218,9 @@
 		background-color: var(--color-bg-surface);
 	}
 
-	@media (max-width: 639px) {
-		.public-page-brand,
-		.public-page-container {
-			width: calc(100% - 24px);
-		}
+	/* ---------- Mobile ---------- */
 
+	@media (max-width: 639px) {
 		.header-public {
 			padding-block: 10px;
 		}
@@ -3218,16 +3230,11 @@
 		}
 
 		.public-page-footer {
-			padding: 10px;
+			padding-block: 10px;
 			padding-bottom: max(10px, env(safe-area-inset-bottom));
 		}
 	}
 
-	/*
-	 * Mobile used to make the whole layout scroll. It now uses the same
-	 * model as desktop (header/footer fixed, .public-page scrolls), so the
-	 * old `.public-pages-layout { overflow-y: auto }` override is removed.
-	 */
 	@media (max-width: 767px) {
 		.public-page {
 			scrollbar-gutter: auto;

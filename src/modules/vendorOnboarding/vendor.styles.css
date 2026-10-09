@@ -20,60 +20,50 @@
 	}
 
 	/*
-	 * Form One:
-	 * Basic information fields + address textarea.
+	 * SHARED PAGE GRID
+	 * Every form section (vendor info, bank, GSTIN row) uses the same
+	 * 4 equal columns, the same gap and the same side gutter, so columns
+	 * line up from top to bottom of the page. The uploads and the
+	 * MSME/NDA row use the exact same values.
 	 *
-	 * Desktop:
-	 * - field grid takes approximately two-thirds
-	 * - address takes approximately one-third
-	 */
-	.vendor-onboarding-form-grid-parent {
-		display: grid;
-		width: 100%;
-		min-width: 0;
-		grid-template-columns: minmax(0, 2fr) minmax(16rem, 1fr);
-		align-items: stretch;
-		gap: var(--space-4);
-
-		padding: var(--space-2) var(--space-4);
-	}
-
-	.vendor-onboarding-form-grid-parent > * {
-		min-width: 0;
-	}
-
-	/*
-	 * Four compact fields inside the left side of Form One.
-	 */
-	.vendor-onboarding-form-grid-child {
-		display: grid;
-		width: 100%;
-		min-width: 0;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		align-content: start;
-		gap: var(--space-4);
-	}
-
-	/*
-	 * Standard form sections.
-	 *
-	 * Desktop: 3 columns
+	 * Desktop: 4 columns
 	 * Tablet: 2 columns
 	 * Mobile: 1 column
 	 */
+	.vendor-onboarding-form-grid-parent,
 	.vendor-onboarding-form-grid {
 		display: grid;
 		width: 100%;
 		min-width: 0;
 		grid-template-columns: repeat(4, minmax(0, 1fr));
 		align-items: start;
-		gap: var(--space-4);
+		gap: var(--space-2) var(--space-4);
 
 		padding: var(--space-2) var(--space-4);
 	}
 
-	.vendor-onboarding-form-grid > *,
-	.vendor-onboarding-form-grid-child > *,
+	.vendor-onboarding-form-grid-parent > *,
+	.vendor-onboarding-form-grid > * {
+		min-width: 0;
+	}
+
+	/*
+	 * The child wrapper no longer creates its own grid. Its fields sit
+	 * directly in the parent's 4 columns (columns 1-3).
+	 */
+	.vendor-onboarding-form-grid-child {
+		display: contents;
+	}
+
+	/*
+	 * The textarea block takes column 4 and spans both field rows.
+	 */
+	.vendor-onboarding-form-grid-parent
+		> :not(.vendor-onboarding-form-grid-child) {
+		grid-column: 4;
+		grid-row: 1 / span 2;
+	}
+
 	.vendor-form-textarea > * {
 		min-width: 0;
 	}
@@ -393,39 +383,31 @@
 	.padding {
 		padding: var(--space-3) var(--space-4) var(--space-4);
 	}
-	@layer components {
-		.vendor-compliance-grid {
-			@apply grid grid-cols-1 items-start gap-4 md:grid-cols-2;
-		}
 
-		.vendor-compliance-card {
-			@apply min-w-0  bg-white p-4;
-		}
-
-		.vendor-compliance-card-grid {
-			@apply grid min-w-0 grid-cols-1 items-start gap-4;
-		}
-
-		.vendor-compliance-upload {
-			@apply min-w-0;
-		}
-
-		.vendor-compliance-upload-height {
-			@apply min-h-[6rem];
-		}
-	}
 	/* =====================================================
-	   LAPTOP / SMALL DESKTOP
+	   COMPLIANCE ROW (MSME / NDA)
+	   Same 4-column grid, gap and gutter as the rest of the page,
+	   so each card takes exactly one column.
 	===================================================== */
 
-	@media (max-width: 1199px) {
-		.vendor-onboarding-form-grid-parent {
-			grid-template-columns: minmax(0, 1.5fr) minmax(15rem, 1fr);
-		}
+	.vendor-compliance-grid {
+		@apply grid grid-cols-1 items-start gap-x-4 gap-y-2 px-4 py-2 sm:grid-cols-2;
+	}
 
-		.vendor-onboarding-form-grid {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
+	.vendor-compliance-card {
+		@apply min-w-0 bg-white p-0;
+	}
+
+	.vendor-compliance-card-grid {
+		@apply grid min-w-0 grid-cols-1 items-start gap-4;
+	}
+
+	.vendor-compliance-upload {
+		@apply min-w-0;
+	}
+
+	.vendor-compliance-upload-height {
+		@apply min-h-[6rem];
 	}
 
 	/* =====================================================
@@ -437,22 +419,19 @@
 			margin-bottom: var(--space-4);
 		}
 
-		.vendor-onboarding-form-grid-parent {
-			grid-template-columns: minmax(0, 1fr);
-			gap: var(--space-3);
-			padding-inline: var(--space-3);
-		}
-
-		.vendor-onboarding-form-grid-child {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: var(--space-3);
-		}
-
+		.vendor-onboarding-form-grid-parent,
 		.vendor-onboarding-form-grid,
 		.vendor-form-textarea {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 			gap: var(--space-3);
 			padding-inline: var(--space-3);
+		}
+
+		/* Textarea block goes full width under the fields. */
+		.vendor-onboarding-form-grid-parent
+			> :not(.vendor-onboarding-form-grid-child) {
+			grid-column: 1 / -1;
+			grid-row: auto;
 		}
 
 		.vendor-onboarding-form-actions {
@@ -482,20 +461,10 @@
 
 		.vendor-onboarding-form-grid-parent,
 		.vendor-onboarding-form-grid,
-		.vendor-onboarding-form-grid-child,
 		.vendor-form-textarea {
 			grid-template-columns: minmax(0, 1fr);
 			gap: var(--space-3);
-		}
-
-		.vendor-onboarding-form-grid-parent,
-		.vendor-onboarding-form-grid,
-		.vendor-form-textarea {
 			padding: var(--space-3);
-		}
-
-		.vendor-onboarding-form-grid-child {
-			padding: 0;
 		}
 
 		.vendor-onboarding-form-actions {
@@ -615,12 +584,18 @@
 		}
 	}
 }
+
 @layer components {
+	/* =====================================================
+	   ENCLOSURE UPLOADS
+	   Same gap and gutter as .vendor-onboarding-form-grid
+	===================================================== */
+
 	.vendor-enclosure-upload-grid {
 		display: grid;
 		grid-template-columns: repeat(1, minmax(0, 1fr));
-		gap: var(--space-1);
-		padding: var(--space-2);
+		gap: var(--space-2) var(--space-4);
+		padding: var(--space-2) var(--space-4);
 	}
 
 	.vendor-enclosure-upload-card {
@@ -633,7 +608,7 @@
 
 	.vendor-enclosure-upload-field {
 		margin: 0;
-		@apply py-1 px-2;
+		@apply py-1 px-0;
 	}
 
 	.vendor-enclosure-upload-field .form-label-row {
@@ -815,6 +790,7 @@
 		}
 	}
 }
+
 @layer components {
 	.vendor-listing-card {
 		width: 100%;
@@ -931,6 +907,7 @@
 		}
 	}
 }
+
 @layer components {
 	.vendor-onboarding-form-message {
 		display: flex;

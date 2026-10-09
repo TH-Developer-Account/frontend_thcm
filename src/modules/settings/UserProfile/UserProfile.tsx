@@ -1,33 +1,41 @@
-import { useMemo, useState, type ReactNode } from "react";
-import { MapPin } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Building2 } from "lucide-react";
 
 import EditableCard, {
 	type EditableCardField,
 } from "../../../components/common/EditableCard";
 import { useAuth } from "../../../context/Auth/useAuth";
-import {
-	AiOutlineFacebook,
-	AiOutlineInstagram,
-	AiOutlineLinkedin,
-	AiOutlineTwitter,
-} from "react-icons/ai";
+import { useToast } from "../../../context/Auth/AuthContext";
+// NOTE: path assumed - point this at the project's centralized helper.
+/*
+ * Social links are hidden for now. To bring them back, restore these imports,
+ * the SocialLink component below, the "Social Links" display field and the
+ * four URL fields, and add them to the schema/mapper/backend allowlist.
+ *
+ * import {
+ * 	AiOutlineFacebook,
+ * 	AiOutlineInstagram,
+ * 	AiOutlineLinkedin,
+ * 	AiOutlineTwitter,
+ * } from "react-icons/ai";
+ */
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import { PageHeader } from "../../../components/ui/PageHeader";
 
+import {
+	userProfileSchema,
+	type UserProfileFormValues,
+} from "./userProfile.schema";
+import { mapProfileFormToPayload } from "./userProfile.mapper";
+import { useUpdateCurrentUser } from "./userProfile.api";
+import { getApiErrorMessage } from "../../../utils/apiError.helper";
+
 type UserRole = "ADMIN" | "MANAGER" | "VIEWER";
 
-type ProfileValues = {
-	firstName: string;
-	lastName: string;
-	email: string;
-	phone: string;
-	bio: string;
-	location: string;
-	facebook: string;
-	twitter: string;
-	linkedin: string;
-	instagram: string;
-};
+// Email is shown (locked) in the card but is not part of the form schema.
+type ProfileValues = UserProfileFormValues & { email: string };
+
+type FieldErrors = Partial<Record<keyof UserProfileFormValues, string>>;
 
 type AddressValues = {
 	country: string;
@@ -36,16 +44,11 @@ type AddressValues = {
 	taxId: string;
 };
 
-type SocialLinkProps = {
-	href?: string;
-	label: string;
-	icon: ReactNode;
-};
-
 type UserProfileProps = {
 	userRole?: UserRole;
 };
 
+// Address is locked for now and still shows placeholder data.
 const DEFAULT_ADDRESS: AddressValues = {
 	country: "United States",
 	cityState: "Phoenix, Arizona, United States",
@@ -53,39 +56,34 @@ const DEFAULT_ADDRESS: AddressValues = {
 	taxId: "AS4568384",
 };
 
-const DEFAULT_PROFILE_DETAILS = {
-	bio: "Team Manager",
-	location: "Phoenix, Arizona, United States",
-	facebook: "https://www.facebook.com/PimjoHQ",
-	twitter: "https://x.com/PimjoHQ",
-	linkedin: "https://www.linkedin.com/company/pimjo",
-	instagram: "https://instagram.com/PimjoHQ",
-};
+// Address card is read-only; EditableCard requires an onSubmit handler.
+const lockedAddressSubmit = async () => false;
 
-function SocialLink({ href, label, icon }: SocialLinkProps) {
-	if (!href) return null;
-
-	return (
-		<a
-			href={href}
-			target="_blank"
-			rel="noopener noreferrer"
-			className="profile-social-icon-link"
-			aria-label={`Open ${label} profile`}
-			title={label}
-		>
-			{icon}
-		</a>
-	);
-}
+/*
+ * function SocialLink({ href, label, icon }: SocialLinkProps) {
+ * 	if (!href) return null;
+ * 	return (
+ * 		<a
+ * 			href={href}
+ * 			target="_blank"
+ * 			rel="noopener noreferrer"
+ * 			className="profile-social-icon-link"
+ * 			aria-label={`Open ${label} profile`}
+ * 			title={label}
+ * 		>
+ * 			{icon}
+ * 		</a>
+ * 	);
+ * }
+ */
 
 export default function UserProfile({ userRole = "ADMIN" }: UserProfileProps) {
-	const { user } = useAuth();
+	const { user, setUser } = useAuth();
+	const { showToast } = useToast();
+	const updateProfile = useUpdateCurrentUser();
 	const isViewer = userRole === "VIEWER";
 
-	const [profileDetails, setProfileDetails] = useState(DEFAULT_PROFILE_DETAILS);
-
-	const [address, setAddress] = useState<AddressValues>(DEFAULT_ADDRESS);
+	const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
 	const profileValues = useMemo<ProfileValues>(
 		() => ({
@@ -93,19 +91,16 @@ export default function UserProfile({ userRole = "ADMIN" }: UserProfileProps) {
 			lastName: user?.last_name ?? "",
 			email: user?.email ?? "",
 			phone: user?.phone_number ?? "",
-			bio: profileDetails.bio,
-			location: profileDetails.location,
-			facebook: profileDetails.facebook,
-			twitter: profileDetails.twitter,
-			linkedin: profileDetails.linkedin,
-			instagram: profileDetails.instagram,
+			designation: user?.designation ?? "",
+			department: user?.department ?? "",
 		}),
 		[
 			user?.first_name,
 			user?.last_name,
 			user?.email,
 			user?.phone_number,
-			profileDetails,
+			user?.designation,
+			user?.department,
 		],
 	);
 
@@ -125,158 +120,126 @@ export default function UserProfile({ userRole = "ADMIN" }: UserProfileProps) {
 			name: "firstName",
 			label: "First Name",
 			required: true,
+			error: fieldErrors.firstName,
 		},
 		{
 			name: "lastName",
 			label: "Last Name",
 			required: true,
+			error: fieldErrors.lastName,
 		},
 		{
+			// Locked: visible but disabled, and never sent to the API.
 			name: "email",
 			label: "Email Address",
 			type: "email",
-			required: true,
+			disabled: true,
 		},
 		{
 			name: "phone",
 			label: "Phone",
 			type: "tel",
+			error: fieldErrors.phone,
 		},
 		{
-			name: "bio",
-			label: "Bio",
+			name: "designation",
+			label: "Designation",
+			error: fieldErrors.designation,
 		},
 		{
-			name: "location",
-			label: "Location",
+			name: "department",
+			label: "Department",
+			error: fieldErrors.department,
 		},
 
 		/*
-		 * Display-only grouped social links.
-		 * This field does not require a data name because it is
-		 * never rendered as an input.
+		 * Social links section (display-only grouped icons + four URL inputs)
+		 * is commented out for now.
+		 *
+		 * {
+		 * 	id: "profile-social-links",
+		 * 	label: "Social Links",
+		 * 	visibleInEdit: false,
+		 * 	displayValue: (
+		 * 		<div className="profile-social-links">
+		 * 			<SocialLink href={...} label="Facebook" icon={<AiOutlineFacebook size={18} aria-hidden="true" />} />
+		 * 			<SocialLink href={...} label="X" icon={<AiOutlineTwitter size={18} aria-hidden="true" />} />
+		 * 			<SocialLink href={...} label="LinkedIn" icon={<AiOutlineLinkedin size={18} aria-hidden="true" />} />
+		 * 			<SocialLink href={...} label="Instagram" icon={<AiOutlineInstagram size={18} aria-hidden="true" />} />
+		 * 		</div>
+		 * 	),
+		 * },
+		 * { name: "facebook", label: "Facebook URL", type: "url", visibleInDisplay: false },
+		 * { name: "twitter", label: "X URL", type: "url", visibleInDisplay: false },
+		 * { name: "linkedin", label: "LinkedIn URL", type: "url", visibleInDisplay: false },
+		 * { name: "instagram", label: "Instagram URL", type: "url", visibleInDisplay: false },
 		 */
-		{
-			id: "profile-social-links",
-			label: "Social Links",
-			visibleInEdit: false,
-			displayValue: (
-				<div className="profile-social-links">
-					<SocialLink
-						href={profileValues.facebook}
-						label="Facebook"
-						icon={<AiOutlineFacebook size={18} aria-hidden="true" />}
-					/>
-
-					<SocialLink
-						href={profileValues.twitter}
-						label="X"
-						icon={<AiOutlineTwitter size={18} aria-hidden="true" />}
-					/>
-
-					<SocialLink
-						href={profileValues.linkedin}
-						label="LinkedIn"
-						icon={<AiOutlineLinkedin size={18} aria-hidden="true" />}
-					/>
-
-					<SocialLink
-						href={profileValues.instagram}
-						label="Instagram"
-						icon={<AiOutlineInstagram size={18} aria-hidden="true" />}
-					/>
-				</div>
-			),
-		},
-
-		/*
-		 * Social URLs appear only when editing.
-		 */
-		{
-			name: "facebook",
-			label: "Facebook URL",
-			type: "url",
-			placeholder: "https://facebook.com/username",
-			visibleInDisplay: false,
-		},
-		{
-			name: "twitter",
-			label: "X URL",
-			type: "url",
-			placeholder: "https://x.com/username",
-			visibleInDisplay: false,
-		},
-		{
-			name: "linkedin",
-			label: "LinkedIn URL",
-			type: "url",
-			placeholder: "https://linkedin.com/in/username",
-			visibleInDisplay: false,
-		},
-		{
-			name: "instagram",
-			label: "Instagram URL",
-			type: "url",
-			placeholder: "https://instagram.com/username",
-			visibleInDisplay: false,
-		},
 	];
 
 	const addressFields: EditableCardField<AddressValues>[] = [
-		{
-			name: "country",
-			label: "Country",
-			required: true,
-		},
-		{
-			name: "cityState",
-			label: "City / State",
-			required: true,
-		},
-		{
-			name: "postalCode",
-			label: "Postal Code",
-		},
-		{
-			name: "taxId",
-			label: "Tax ID",
-		},
+		{ name: "country", label: "Country" },
+		{ name: "cityState", label: "City / State" },
+		{ name: "postalCode", label: "Postal Code" },
+		{ name: "taxId", label: "Tax ID" },
 	];
 
-	const saveProfile = async (values: ProfileValues) => {
-		/*
-		 * Replace this block with your profile API mutation.
-		 *
-		 * await ServerAxios.put("/user/profile", {
-		 *   first_name: values.firstName,
-		 *   last_name: values.lastName,
-		 *   email: values.email,
-		 *   phone_number: values.phone,
-		 *   bio: values.bio,
-		 *   location: values.location,
-		 *   facebook: values.facebook,
-		 *   twitter: values.twitter,
-		 *   linkedin: values.linkedin,
-		 *   instagram: values.instagram,
-		 * });
-		 *
-		 * Refresh or update the Auth context after saving the
-		 * identity fields returned by the API.
-		 */
+	/*
+	 * Returns true only after the backend confirms the save, so EditableCard
+	 * stays in edit mode on validation or API failure.
+	 */
+	const saveProfile = async (values: ProfileValues): Promise<boolean> => {
+		const result = userProfileSchema.safeParse(values);
 
-		setProfileDetails({
-			bio: values.bio,
-			location: values.location,
-			facebook: values.facebook,
-			twitter: values.twitter,
-			linkedin: values.linkedin,
-			instagram: values.instagram,
-		});
-	};
+		if (!result.success) {
+			const errors: FieldErrors = {};
+			for (const issue of result.error.issues) {
+				const key = issue.path[0];
+				if (typeof key === "string" && !(key in errors)) {
+					errors[key as keyof UserProfileFormValues] = issue.message;
+				}
+			}
+			setFieldErrors(errors);
+			return false;
+		}
 
-	const saveAddress = async (values: AddressValues) => {
-		// Replace with the address API mutation.
-		setAddress(values);
+		setFieldErrors({});
+
+		try {
+			const response = await updateProfile.mutateAsync(
+				mapProfileFormToPayload(result.data),
+			);
+			const updated = response.user;
+
+			setUser((current) =>
+				current
+					? {
+							...current,
+							first_name: updated.first_name,
+							last_name: updated.last_name,
+							phone_number: updated.phone_number ?? "",
+							designation: updated.designation ?? "",
+							department: updated.department ?? "",
+						}
+					: current,
+			);
+
+			showToast({
+				type: "success",
+				title: "Success",
+				description: response.message ?? "Profile updated successfully.",
+			});
+			return true;
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "Unable to save",
+				description: getApiErrorMessage(
+					error,
+					"Something went wrong while saving your profile.",
+				),
+			});
+			return false;
+		}
 	};
 
 	return (
@@ -285,7 +248,7 @@ export default function UserProfile({ userRole = "ADMIN" }: UserProfileProps) {
 				headerText="User Profile"
 				navigation={{
 					variant: "breadcrumbs",
-					ariaLabel: "Vendors listing location",
+					ariaLabel: "User profile location",
 					breadcrumbs: [
 						{
 							label: "Home Screen",
@@ -303,13 +266,14 @@ export default function UserProfile({ userRole = "ADMIN" }: UserProfileProps) {
 				<div className="profile-page-sections">
 					<EditableCard
 						title="User Information"
-						// subtitle="Personal information, contact details and social profiles"
 						editTitle="Edit User Information"
-						editSubtitle="Update your personal information and social profile URLs."
+						editSubtitle="Update your name, phone number, designation and department."
 						value={profileValues}
 						fields={profileFields}
 						editable={!isViewer}
+						saving={updateProfile.isPending}
 						onSubmit={saveProfile}
+						onCancel={() => setFieldErrors({})}
 						header={
 							<div className="profile-summary">
 								<div className="profile-summary-avatar">
@@ -324,16 +288,18 @@ export default function UserProfile({ userRole = "ADMIN" }: UserProfileProps) {
 									<div className="profile-summary-heading">
 										<h3 className="profile-summary-name">{fullName}</h3>
 
-										<span className="profile-summary-role">
-											{profileValues.bio}
-										</span>
+										{profileValues.designation ? (
+											<span className="profile-summary-role">
+												{profileValues.designation}
+											</span>
+										) : null}
 									</div>
 
 									<div className="profile-summary-details">
-										{profileValues.location ? (
+										{profileValues.department ? (
 											<span className="profile-summary-detail">
-												<MapPin size={14} aria-hidden="true" />
-												<span>{profileValues.location}</span>
+												<Building2 size={14} aria-hidden="true" />
+												<span>{profileValues.department}</span>
 											</span>
 										) : null}
 									</div>
@@ -342,16 +308,14 @@ export default function UserProfile({ userRole = "ADMIN" }: UserProfileProps) {
 						}
 					/>
 
-					<EditableCard
+					{/* Address is locked for now: no edit button, no save path. */}
+					{/* <EditableCard
 						title="Address"
-						// subtitle="Registered address and tax information"
-						editTitle="Edit Address"
-						editSubtitle="Update your registered address and tax information."
-						value={address}
+						value={DEFAULT_ADDRESS}
 						fields={addressFields}
-						editable={!isViewer}
-						onSubmit={saveAddress}
-					/>
+						editable={false}
+						onSubmit={lockedAddressSubmit}
+					/> */}
 				</div>
 			</section>
 		</PageSectionLayout>
