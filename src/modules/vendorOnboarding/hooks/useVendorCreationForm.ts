@@ -662,10 +662,10 @@ export function useVendorCreationFormOneController({
 type UseVendorCreationSummaryControllerParams = {
 	workflowStages: ApprovalStageLike[];
 	vendorCode?: string;
-	// CHANGED: both now take the mandatory reason ApprovalActionsBar collects
-	// inline (no more modal handing it over separately).
-	onApprove?: (reason: string) => void;
-	onClarify?: (reason: string) => void;
+	// Both take the mandatory reason ApprovalActionsBar collects inline.
+	// They may be async (they refresh the record before we navigate away).
+	onApprove?: (reason: string) => void | Promise<void>;
+	onClarify?: (reason: string) => void | Promise<void>;
 	onSaveVendorCode?: (code?: string) => void | Promise<boolean>;
 	onAcceptAndClose?: () => void | Promise<void>;
 };
@@ -678,6 +678,7 @@ export function useVendorCreationSummaryController({
 	onSaveVendorCode,
 	onAcceptAndClose,
 }: UseVendorCreationSummaryControllerParams) {
+	const navigate = useNavigate();
 	const { showToast } = useToast();
 	const approveStageMutation = useApproveWorkflowStageMutation();
 	const clarifyStageMutation = useClarifyWorkflowStageMutation();
@@ -707,10 +708,15 @@ export function useVendorCreationSummaryController({
 					message ?? vendorContent.toast.approval.successTitle,
 					vendorContent.toast.approval.successTitle,
 				);
-				onApprove?.(reason);
+
+				// Refresh first so the listing shows the new status.
+				await onApprove?.(reason);
 
 				if (requiresVendorCodeToApprove) {
+					// acceptAndClose already navigates to the listing itself.
 					await onAcceptAndClose?.();
+				} else {
+					navigate(VENDOR_LISTING_PATH, { replace: true });
 				}
 			} catch (error) {
 				showApiErrorToast(
@@ -723,6 +729,7 @@ export function useVendorCreationSummaryController({
 		},
 		[
 			currentStageId,
+			navigate,
 			onAcceptAndClose,
 			onApprove,
 			requiresVendorCodeToApprove,
@@ -796,16 +803,18 @@ export function useVendorCreationSummaryController({
 				return;
 			}
 			try {
-				const { message } = await clarifyStageMutation.mutateAsync(
-					currentStageId,
-					reason,
-				);
-				showSuccessToast(
-					showToast,
-					message ?? vendorContent.toast.clarify.successTitle,
-					vendorContent.toast.clarify.successTitle,
-				);
+				await clarifyStageMutation.mutateAsync(currentStageId, reason);
+
+				// Short, fixed text. The backend message is long, so it is not shown.
+				showToast({
+					type: "success",
+					title: vendorContent.toast.clarify.successTitle,
+					description: "Clarification request sent successfully.",
+				});
+
+				// Refresh the record, then send the approver back to the listing.
 				await onClarify?.(reason);
+				navigate(VENDOR_LISTING_PATH, { replace: true });
 			} catch (error) {
 				showApiErrorToast(
 					showToast,
@@ -815,7 +824,7 @@ export function useVendorCreationSummaryController({
 				);
 			}
 		},
-		[clarifyStageMutation, currentStageId, onClarify, showToast],
+		[clarifyStageMutation, currentStageId, navigate, onClarify, showToast],
 	);
 
 	const handleVendorCodeSave = React.useCallback(() => {
@@ -2259,7 +2268,8 @@ export function useVendorCreationForm({
 
 		// Post-success "refresh the page" callbacks passed in as onApprove /
 		// onClarify. useVendorCreationSummaryController.handleApprove/
-		// handleClarify are what actually call the approve/clarify API.
+		// handleClarify are what actually call the approve/clarify API, then
+		// navigate the approver back to the listing.
 		handleApprove: async (_reason: string) => {
 			await refreshVendorRecord();
 		},

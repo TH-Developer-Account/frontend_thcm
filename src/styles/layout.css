@@ -3077,11 +3077,19 @@
 
 /* =====================================================
    PUBLIC PAGE LAYOUT
+
+   Fixed header + fixed footer, only the middle scrolls.
+
+   Header, content and footer all use --public-page-gutter,
+   so the logo, card and footer text line up at every width.
 ===================================================== */
 
 :root {
 	--public-page-max-width: 1120px;
 	--public-page-text-width: 680px;
+
+	/* 12px on phones -> 60px on large desktops */
+	--public-page-gutter: clamp(0.75rem, 3vw, 3.75rem);
 }
 
 @layer components {
@@ -3089,15 +3097,19 @@
 		display: flex;
 		flex-direction: column;
 		width: 100%;
-		min-height: 100dvh;
+		height: 100dvh;
+		min-height: 0;
+		overflow: hidden;
 		background: var(--color-page-bg);
 		color: var(--color-text-primary);
 	}
 
+	/* ---------- Header ---------- */
+
 	.header-public {
 		width: 100%;
-		flex-shrink: 0;
-		padding: var(--space-2) var(--space-4);
+		flex: 0 0 auto;
+		padding: var(--space-2) var(--public-page-gutter);
 		border-bottom: 0.5px solid var(--color-border);
 	}
 
@@ -3105,7 +3117,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		width: min(calc(100% - 24px), 1120px);
+		width: 100%;
+		max-width: var(--layout-content-max-width, 1200px);
 		margin-inline: auto;
 		gap: 16px;
 	}
@@ -3122,47 +3135,87 @@
 		height: clamp(32px, 3vw, 44px);
 		object-fit: contain;
 	}
+
+	/* ---------- Scroll area ---------- */
+
 	.public-page {
 		display: flex;
-		flex: 1 0 auto; /* was: flex: 1 — grow to fill, never shrink below content */
+		flex-direction: column;
+		flex: 1 1 auto;
 		width: 100%;
 		min-width: 0;
+		min-height: 0;
 		overflow-x: hidden;
 		background: var(--color-page-bg);
+
+		overscroll-behavior-y: contain;
+		-webkit-overflow-scrolling: touch;
+
+		/* "stable" reserved an empty strip on the right that the header
+		   and footer didn't have, so everything looked misaligned. */
+		scrollbar-gutter: auto;
+		scrollbar-width: thin;
+		scrollbar-color: var(--color-scrollbar-thumb) transparent;
 	}
 
+	.public-page::-webkit-scrollbar {
+		width: 5px;
+		height: 5px;
+	}
+
+	.public-page::-webkit-scrollbar-track {
+		background-color: transparent;
+	}
+
+	.public-page::-webkit-scrollbar-thumb {
+		border-radius: var(--radius-full);
+		background-color: var(--color-scrollbar-thumb);
+	}
+
+	.public-page::-webkit-scrollbar-thumb:hover {
+		background-color: var(--color-scrollbar-thumb-hover);
+	}
+
+	/*
+	 * Inner width = min(viewport - 2 * gutter, content max width),
+	 * exactly the same as the header brand row above.
+	 */
 	.public-page-container {
 		display: flex;
-		flex: 1;
-		align-items: stretch; /* was: center */
-		max-width: var(--layout-content-max-width, 1080px);
+		flex: 1 0 auto;
+		align-items: stretch;
+		box-sizing: border-box;
 		width: 100%;
+		min-width: 0;
+		max-width: calc(
+			var(--layout-content-max-width, 1200px) + (var(--public-page-gutter) * 2)
+		);
 		margin-inline: auto;
-		padding-block: clamp(16px, 2vw, 28px);
+		padding-block: clamp(12px, 2vw, 28px);
+		padding-inline: var(--public-page-gutter);
 	}
 
 	.public-page-content {
 		width: 100%;
 		min-width: 0;
-		margin: auto; /* was: margin-inline: auto; margin: 0 auto; — auto block margins center short content and never clip tall content */
+		margin: auto; /* centres short content (status cards); 0 for tall forms */
 	}
+
+	/* ---------- Footer ---------- */
 
 	.public-page-footer {
 		width: 100%;
-		flex-shrink: 0;
-		padding: 16px;
+		flex: 0 0 auto;
+		padding: 16px var(--public-page-gutter);
 		text-align: center;
 		font-size: max(1.1rem, 11px);
 		color: var(--color-text-secondary);
 		border-top: 0.5px solid var(--color-border);
 	}
 
-	@media (max-width: 639px) {
-		.public-page-brand,
-		.public-page-container {
-			width: calc(100% - 24px);
-		}
+	/* ---------- Mobile ---------- */
 
+	@media (max-width: 639px) {
 		.header-public {
 			padding-block: 10px;
 		}
@@ -3170,7 +3223,13 @@
 		.public-page-container {
 			padding-block: 14px;
 		}
+
+		.public-page-footer {
+			padding-block: 10px;
+			padding-bottom: max(10px, env(safe-area-inset-bottom));
+		}
 	}
+
 	@media (max-width: 767px) {
 		.public-pages-layout {
 			height: 100dvh;
