@@ -1,4 +1,4 @@
-// crf/crf.product-view.tsx
+// crf/shop/SouvenirProductView.tsx
 // Single-product view for a store souvenir, e-commerce style, in a modal.
 //
 //   ┌──────────────────────────────────────────────────────────────────┐
@@ -27,10 +27,10 @@
 import React from "react";
 import { Check, Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 
-import Button from "../../../components/common/Button";
-import { Modal } from "../../../components/common/Modal";
-import { CrfImage } from "./crf.media";
-import { useSouvenirProductQuery } from "./crf.shop.api";
+import Button from "../../../../components/common/Button";
+import { Modal } from "../../../../components/common/Modal";
+import { CrfImage } from "../core/Media";
+import { useSouvenirProductQuery } from "./api";
 import {
 	SHOP_PRICES_INCLUDE_GST,
 	STOCK_LABEL,
@@ -47,14 +47,14 @@ import {
 	type OptionSelection,
 	type SouvenirProduct,
 	type SouvenirVariant,
-} from "./crf.shop.mapper";
+} from "./mapper";
 import {
 	CRF_LIMITS,
 	formatCrfAmount,
 	formatCrfQuantity,
 	sanitizeQuantityInput,
-} from "./crf.schema";
-import type { CrfLineItem } from "./crf.types";
+} from "../core/schema";
+import type { CrfLineItem } from "../core/types";
 
 /* ========================================================================== */
 /*                                   Types                                    */

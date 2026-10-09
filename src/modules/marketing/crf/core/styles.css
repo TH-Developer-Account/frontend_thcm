@@ -1,4 +1,4 @@
-/* crf/crf.css
+/* crf/core/styles.css
    CRF catalog: tabs + product tiles + "Items" summary card.
    Uses the app's design tokens (token.css / color.css); the fallbacks only
    matter if a token is renamed. */

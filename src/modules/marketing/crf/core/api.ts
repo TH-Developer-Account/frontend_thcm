@@ -1,4 +1,4 @@
-// crf/crf.api.ts
+// crf/core/api.ts
 // CRF HTTP calls, query keys and TanStack Query hooks.
 // Merged from: activity-planner/api/crf.api.ts + activity-planner/queries/crf.queries.ts
 //
@@ -8,9 +8,9 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-import type { CrfDetail, CrfPayload } from "./crf.types";
-import { ServerAxios } from "../../../services/ServerAxios";
-import type { Product } from "../shared/lineItem.types";
+import type { CrfDetail, CrfPayload } from "./types";
+import { ServerAxios } from "../../../../services/ServerAxios";
+import type { Product } from "../../shared/lineItem.types";
 
 /* ========================================================================== */
 /*                                    API                                     */

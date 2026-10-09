@@ -17,10 +17,10 @@
 import React from "react";
 import { ArrowLeft, ArrowRight, Check, SkipForward, X } from "lucide-react";
 import {
-	useLocation,
-	useNavigate,
-	useParams,
-	useSearchParams,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
 } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -41,7 +41,7 @@ import { useActivityPermissions } from "../hooks/useActivityPlanner";
 import { epcKeys, useEpcDetailQuery } from "../queries/epc.queries";
 import { EPC_LISTING_PATH, type EpcWizardIntent } from "../utils/constant";
 import { CrfForm } from "../../crf";
-import CrfSection from "../../crf/CrfSection";
+import CrfSection from "../../crf/core/CrfSection";
 import { clearStoredEpcInfo, getStoredAppId } from "../utils/common";
 import { isEpcSubmitted } from "../forms/EPC/epc.utils";
 
@@ -53,10 +53,10 @@ const STEP = { EPC: 1, CRF: 2, EPF: 3, REVIEW: 4 } as const;
 type WizardStep = (typeof STEP)[keyof typeof STEP];
 
 const WIZARD_STEPS = [
-	{ id: STEP.EPC, label: "EPC Details" },
-	{ id: STEP.CRF, label: "CRF" },
-	{ id: STEP.EPF, label: "EPF" },
-	{ id: STEP.REVIEW, label: "Review & Submit" },
+  { id: STEP.EPC, label: "EPC Details" },
+  { id: STEP.CRF, label: "CRF" },
+  { id: STEP.EPF, label: "EPF" },
+  { id: STEP.REVIEW, label: "Review & Submit" },
 ];
 
 // CrfSection / EpfSection require edit callbacks; they are never in edit
@@ -68,20 +68,20 @@ const asyncNoop = async () => {};
 export type EpcWizardLocationState = { startAt?: "review" };
 
 const getIntent = (value: string | null): EpcWizardIntent =>
-	value === "epf" ? "epf" : "crf";
+  value === "epf" ? "epf" : "crf";
 
 /** Shared footer layout: left group · right group. */
 const StepFooter = ({
-	start,
-	end,
+  start,
+  end,
 }: {
-	start?: React.ReactNode;
-	end?: React.ReactNode;
+  start?: React.ReactNode;
+  end?: React.ReactNode;
 }) => (
-	<div className="flex w-full flex-wrap items-center justify-between gap-2">
-		<div className="flex flex-wrap items-center gap-2">{start}</div>
-		<div className="flex flex-wrap items-center justify-end gap-2">{end}</div>
-	</div>
+  <div className="flex w-full flex-wrap items-center justify-between gap-2">
+    <div className="flex flex-wrap items-center gap-2">{start}</div>
+    <div className="flex flex-wrap items-center justify-end gap-2">{end}</div>
+  </div>
 );
 
 /* -------------------------------------------------------------------------- */
@@ -89,307 +89,307 @@ const StepFooter = ({
 /* -------------------------------------------------------------------------- */
 
 const EpcFormsWizardPage = () => {
-	const { id } = useParams<{ id: string }>();
-	const [searchParams] = useSearchParams();
-	const navigate = useNavigate();
-	const location = useLocation();
-	const queryClient = useQueryClient();
-	const { workspaceId } = useAuth();
-	const appId = React.useMemo(() => getStoredAppId(), []);
+  const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
+  const { workspaceId } = useAuth();
+  const appId = React.useMemo(() => getStoredAppId(), []);
 
-	const intent = getIntent(searchParams.get("start"));
-	const startAtReview =
-		(location.state as EpcWizardLocationState | null)?.startAt === "review";
-	const [step, setStep] = React.useState<WizardStep>(
-		startAtReview ? STEP.REVIEW : STEP.EPC,
-	);
+  const intent = getIntent(searchParams.get("start"));
+  const startAtReview =
+    (location.state as EpcWizardLocationState | null)?.startAt === "review";
+  const [step, setStep] = React.useState<WizardStep>(
+    startAtReview ? STEP.REVIEW : STEP.EPC,
+  );
 
-	const { data: epcData, isLoading, isError, refetch } = useEpcDetailQuery(id);
-	const permissions = useActivityPermissions({ epcData: epcData ?? null });
+  const { data: epcData, isLoading, isError, refetch } = useEpcDetailQuery(id);
+  const permissions = useActivityPermissions({ epcData: epcData ?? null });
 
-	// useCrfForm / useEpfForm fall back to ids stored in localStorage when no
-	// id prop is given. Clear any stale value so the wizard can never update
-	// another EPC's CRF/EPF by accident.
-	React.useEffect(() => {
-		clearStoredEpcInfo();
-	}, []);
+  // useCrfForm / useEpfForm fall back to ids stored in localStorage when no
+  // id prop is given. Clear any stale value so the wizard can never update
+  // another EPC's CRF/EPF by accident.
+  React.useEffect(() => {
+    clearStoredEpcInfo();
+  }, []);
 
-	const hasCrf = Boolean(epcData?.crf);
-	const hasEpf = Boolean(epcData?.epf);
-	const workflowStarted = isEpcSubmitted(epcData);
+  const hasCrf = Boolean(epcData?.crf);
+  const hasEpf = Boolean(epcData?.epf);
+  const workflowStarted = isEpcSubmitted(epcData);
 
-	/** EPF saved earlier but never submitted → only the Review step is left. */
-	const needsFinalSubmit =
-		hasEpf && !workflowStarted && Boolean(permissions.isProposer);
+  /** EPF saved earlier but never submitted → only the Review step is left. */
+  const needsFinalSubmit =
+    hasEpf && !workflowStarted && Boolean(permissions.isProposer);
 
-	const isEligible =
-		permissions.canCreateCrf || permissions.canCreateEpf || needsFinalSubmit;
+  const isEligible =
+    permissions.canCreateCrf || permissions.canCreateEpf || needsFinalSubmit;
 
-	// Latch: once the user was allowed in, keep the wizard open even after
-	// CRF/EPF creation flips canCreate* to false (avoids an error flash right
-	// before we navigate away on finish).
-	const wasEligibleRef = React.useRef(false);
-	if (isEligible) wasEligibleRef.current = true;
-	const isBlocked = !isEligible && !wasEligibleRef.current;
+  // Latch: once the user was allowed in, keep the wizard open even after
+  // CRF/EPF creation flips canCreate* to false (avoids an error flash right
+  // before we navigate away on finish).
+  const wasEligibleRef = React.useRef(false);
+  if (isEligible) wasEligibleRef.current = true;
+  const isBlocked = !isEligible && !wasEligibleRef.current;
 
-	/* ------------------------------ Navigation ------------------------------ */
+  /* ------------------------------ Navigation ------------------------------ */
 
-	const goToListing = React.useCallback(async () => {
-		// Refresh the listing so the row's menu reflects the newly added forms.
-		await queryClient.invalidateQueries({ queryKey: epcKeys.lists() });
-		navigate(EPC_LISTING_PATH);
-	}, [navigate, queryClient]);
+  const goToListing = React.useCallback(async () => {
+    // Refresh the listing so the row's menu reflects the newly added forms.
+    await queryClient.invalidateQueries({ queryKey: epcKeys.lists() });
+    navigate(EPC_LISTING_PATH);
+  }, [navigate, queryClient]);
 
-	const goBack = React.useCallback(() => {
-		setStep((current) => Math.max(STEP.EPC, current - 1) as WizardStep);
-	}, []);
+  const goBack = React.useCallback(() => {
+    setStep((current) => Math.max(STEP.EPC, current - 1) as WizardStep);
+  }, []);
 
-	const goNext = React.useCallback(() => {
-		setStep((current) => Math.min(STEP.REVIEW, current + 1) as WizardStep);
-	}, []);
+  const goNext = React.useCallback(() => {
+    setStep((current) => Math.min(STEP.REVIEW, current + 1) as WizardStep);
+  }, []);
 
-	/** CRF saved → reload EPC so the EPF step receives the CRF total. */
-	const handleCrfSaved = React.useCallback(async () => {
-		await refetch();
-		setStep(STEP.EPF);
-	}, [refetch]);
+  /** CRF saved → reload EPC so the EPF step receives the CRF total. */
+  const handleCrfSaved = React.useCallback(async () => {
+    await refetch();
+    setStep(STEP.EPF);
+  }, [refetch]);
 
-	/** EPF saved (workflow NOT started yet) → reload, then review. */
-	const handleEpfSaved = React.useCallback(async () => {
-		await refetch();
-		setStep(STEP.REVIEW);
-	}, [refetch]);
+  /** EPF saved (workflow NOT started yet) → reload, then review. */
+  const handleEpfSaved = React.useCallback(async () => {
+    await refetch();
+    setStep(STEP.REVIEW);
+  }, [refetch]);
 
-	/* -------------------------------- States -------------------------------- */
+  /* -------------------------------- States -------------------------------- */
 
-	if (isLoading) return <Loader />;
+  if (isLoading) return <Loader />;
 
-	const pageTitle = `Add ${intent.toUpperCase()}${
-		epcData?.proposal_number ? ` · ${epcData.proposal_number}` : ""
-	}`;
+  const pageTitle = `Add ${intent.toUpperCase()}${
+    epcData?.proposal_number ? ` · ${epcData.proposal_number}` : ""
+  }`;
 
-	const header = (
-		<PageHeader
-			headerText={pageTitle}
-			navigation={{
-				variant: "breadcrumbs",
-				ariaLabel: "EPC wizard location",
-				breadcrumbs: [
-					{ label: "Home Screen", href: "/" },
-					{ label: "EPC Listing", href: EPC_LISTING_PATH },
-					{ label: `Add ${intent.toUpperCase()}` },
-				],
-				separator: "›",
-			}}
-		/>
-	);
+  const header = (
+    <PageHeader
+      headerText={pageTitle}
+      navigation={{
+        variant: "breadcrumbs",
+        ariaLabel: "EPC wizard location",
+        breadcrumbs: [
+          { label: "Home Screen", href: "/" },
+          { label: "EPC Listing", href: EPC_LISTING_PATH },
+          { label: `Add ${intent.toUpperCase()}` },
+        ],
+        separator: "›",
+      }}
+    />
+  );
 
-	if (isError || !epcData || isBlocked) {
-		return (
-			<PageSectionLayout>
-				{header}
-				<Alert
-					type="banner"
-					variant="error"
-					title={!epcData ? "EPC not found" : "Nothing to add"}
-					description={
-						!epcData
-							? "This EPC could not be loaded. It may have been removed."
-							: "CRF and EPF have already been added for this EPC, or you don't have permission to add them."
-					}
-					primaryAction={{
-						label: "Back to listing",
-						onClick: () => navigate(EPC_LISTING_PATH),
-					}}
-				/>
-			</PageSectionLayout>
-		);
-	}
+  if (isError || !epcData || isBlocked) {
+    return (
+      <PageSectionLayout>
+        {header}
+        <Alert
+          type="banner"
+          variant="error"
+          title={!epcData ? "EPC not found" : "Nothing to add"}
+          description={
+            !epcData
+              ? "This EPC could not be loaded. It may have been removed."
+              : "CRF and EPF have already been added for this EPC, or you don't have permission to add them."
+          }
+          primaryAction={{
+            label: "Back to listing",
+            onClick: () => navigate(EPC_LISTING_PATH),
+          }}
+        />
+      </PageSectionLayout>
+    );
+  }
 
-	/* ------------------------------ Shared buttons -------------------------- */
+  /* ------------------------------ Shared buttons -------------------------- */
 
-	const backButton = (
-		<Button
-			type="button"
-			text="Back"
-			Icon={ArrowLeft}
-			size="sm"
-			appearance="standard"
-			variant="outline"
-			onClick={goBack}
-		/>
-	);
+  const backButton = (
+    <Button
+      type="button"
+      text="Back"
+      Icon={ArrowLeft}
+      size="sm"
+      appearance="standard"
+      variant="outline"
+      onClick={goBack}
+    />
+  );
 
-	const nextButton = (
-		<Button
-			type="button"
-			text="Next"
-			Icon={ArrowRight}
-			iconPosition="right"
-			size="sm"
-			appearance="standard"
-			variant="brand"
-			onClick={goNext}
-		/>
-	);
+  const nextButton = (
+    <Button
+      type="button"
+      text="Next"
+      Icon={ArrowRight}
+      iconPosition="right"
+      size="sm"
+      appearance="standard"
+      variant="brand"
+      onClick={goNext}
+    />
+  );
 
-	/* ------------------------------ Step body ------------------------------- */
+  /* ------------------------------ Step body ------------------------------- */
 
-	const renderStep = () => {
-		switch (step) {
-			case STEP.EPC:
-				return (
-					<Card
-						title="EPC Details"
-						footer={
-							<StepFooter
-								start={
-									<Button
-										type="button"
-										text="Cancel"
-										Icon={X}
-										size="sm"
-										appearance="standard"
-										variant="outline"
-										onClick={() => navigate(EPC_LISTING_PATH)}
-									/>
-								}
-								end={nextButton}
-							/>
-						}
-					>
-						<EpcForm mode="view" initialData={epcData} />
-					</Card>
-				);
+  const renderStep = () => {
+    switch (step) {
+      case STEP.EPC:
+        return (
+          <Card
+            title="EPC Details"
+            footer={
+              <StepFooter
+                start={
+                  <Button
+                    type="button"
+                    text="Cancel"
+                    Icon={X}
+                    size="sm"
+                    appearance="standard"
+                    variant="outline"
+                    onClick={() => navigate(EPC_LISTING_PATH)}
+                  />
+                }
+                end={nextButton}
+              />
+            }
+          >
+            <EpcForm mode="view" initialData={epcData} />
+          </Card>
+        );
 
-			case STEP.CRF:
-				// Already created (earlier, or just now and user came Back) → read-only.
-				return hasCrf ? (
-					<Card
-						title="CRF"
-						footer={<StepFooter start={backButton} end={nextButton} />}
-					>
-						<CrfSection
-							epcData={epcData}
-							isEditing={false}
-							onCancel={noop}
-							onSuccess={asyncNoop}
-						/>
-					</Card>
-				) : (
-					<CrfForm
-						epcId={epcData.id}
-						submitLabel="Save & Next"
-						onSuccess={handleCrfSaved}
-						footerStart={
-							<>
-								{backButton}
-								<Button
-									type="button"
-									text="Skip CRF"
-									Icon={SkipForward}
-									size="sm"
-									appearance="standard"
-									variant="outline"
-									onClick={goNext}
-								/>
-							</>
-						}
-					/>
-				);
+      case STEP.CRF:
+        // Already created (earlier, or just now and user came Back) → read-only.
+        return hasCrf ? (
+          <Card
+            title="CRF"
+            footer={<StepFooter start={backButton} end={nextButton} />}
+          >
+            <CrfSection
+              epcData={epcData}
+              isEditing={false}
+              onCancel={noop}
+              onSuccess={asyncNoop}
+            />
+          </Card>
+        ) : (
+          <CrfForm
+            epcId={epcData.id}
+            submitLabel="Save & Next"
+            onSuccess={handleCrfSaved}
+            footerStart={
+              <>
+                {backButton}
+                <Button
+                  type="button"
+                  text="Skip CRF"
+                  Icon={SkipForward}
+                  size="sm"
+                  appearance="standard"
+                  variant="outline"
+                  onClick={goNext}
+                />
+              </>
+            }
+          />
+        );
 
-			case STEP.EPF:
-				return hasEpf ? (
-					<Card
-						title="EPF"
-						footer={<StepFooter start={backButton} end={nextButton} />}
-					>
-						<EpfSection
-							epcData={epcData}
-							isEditing={false}
-							onCancel={noop}
-							onSuccess={asyncNoop}
-						/>
-					</Card>
-				) : (
-					<EpfForm
-						mode="create"
-						epcId={epcData.id}
-						crfId={epcData.crf?.id ?? null}
-						crfData={epcData.crf}
-						// Passed explicitly so budget info loads even when no CRF exists.
-						budgetMasterId={epcData.budget_master_id}
-						submitLabel="Save & Review"
-						footerStart={backButton}
-						onSuccess={handleEpfSaved}
-					/>
-				);
+      case STEP.EPF:
+        return hasEpf ? (
+          <Card
+            title="EPF"
+            footer={<StepFooter start={backButton} end={nextButton} />}
+          >
+            <EpfSection
+              epcData={epcData}
+              isEditing={false}
+              onCancel={noop}
+              onSuccess={asyncNoop}
+            />
+          </Card>
+        ) : (
+          <EpfForm
+            mode="create"
+            epcId={epcData.id}
+            crfId={epcData.crf?.id ?? null}
+            crfData={epcData.crf}
+            // Passed explicitly so budget info loads even when no CRF exists.
+            budgetMasterId={epcData.budget_master_id}
+            submitLabel="Save & Review"
+            footerStart={backButton}
+            onSuccess={handleEpfSaved}
+          />
+        );
 
-			case STEP.REVIEW:
-				// Reached Review without an EPF (e.g. skipped forward) → send them back.
-				if (!hasEpf) {
-					return (
-						<Card
-							title="Review & Submit"
-							footer={<StepFooter start={backButton} />}
-						>
-							<p className="text-sm text-[var(--color-text-muted)]">
-								Save the EPF first. The approval workflow can only start once
-								the EPF is complete.
-							</p>
-						</Card>
-					);
-				}
+      case STEP.REVIEW:
+        // Reached Review without an EPF (e.g. skipped forward) → send them back.
+        if (!hasEpf) {
+          return (
+            <Card
+              title="Review & Submit"
+              footer={<StepFooter start={backButton} />}
+            >
+              <p className="text-sm text-[var(--color-text-muted)]">
+                Save the EPF first. The approval workflow can only start once
+                the EPF is complete.
+              </p>
+            </Card>
+          );
+        }
 
-				return workflowStarted ? (
-					<Card
-						title="Submitted"
-						footer={
-							<StepFooter
-								end={
-									<Button
-										type="button"
-										text="Finish"
-										Icon={Check}
-										size="sm"
-										appearance="standard"
-										variant="brand"
-										onClick={() => void goToListing()}
-									/>
-								}
-							/>
-						}
-					>
-						<p className="text-sm text-[var(--color-text-muted)]">
-							This EPC has been submitted and its approval workflow is running.
-						</p>
-					</Card>
-				) : (
-					<EpcReviewSubmit
-						epcData={epcData}
-						workspaceId={workspaceId}
-						appId={appId}
-						footerStart={backButton}
-						onSubmitted={goToListing}
-					/>
-				);
-		}
-	};
+        return workflowStarted ? (
+          <Card
+            title="Submitted"
+            footer={
+              <StepFooter
+                end={
+                  <Button
+                    type="button"
+                    text="Finish"
+                    Icon={Check}
+                    size="sm"
+                    appearance="standard"
+                    variant="brand"
+                    onClick={() => void goToListing()}
+                  />
+                }
+              />
+            }
+          >
+            <p className="text-sm text-[var(--color-text-muted)]">
+              This EPC has been submitted and its approval workflow is running.
+            </p>
+          </Card>
+        ) : (
+          <EpcReviewSubmit
+            epcData={epcData}
+            workspaceId={workspaceId}
+            appId={appId}
+            footerStart={backButton}
+            onSubmitted={goToListing}
+          />
+        );
+    }
+  };
 
-	return (
-		<PageSectionLayout>
-			{header}
+  return (
+    <PageSectionLayout>
+      {header}
 
-			<StepProgress
-				steps={WIZARD_STEPS}
-				currentStep={step}
-				ariaLabel="Add forms progress"
-				className="workflow-create-step-progress"
-			/>
+      <StepProgress
+        steps={WIZARD_STEPS}
+        currentStep={step}
+        ariaLabel="Add forms progress"
+        className="workflow-create-step-progress"
+      />
 
-			{renderStep()}
-		</PageSectionLayout>
-	);
+      {renderStep()}
+    </PageSectionLayout>
+  );
 };
 
 export default EpcFormsWizardPage;

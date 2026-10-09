@@ -1,10 +1,10 @@
-// crf/crf.shop.types.ts
+// crf/shop/types.ts
 // THCM store (Shopify) contract, exactly as MAP's proxy returns it.
 // Source: THCM_Integration Document.docx → Get Stock / Get Product, plus the
 // MAP proxy additions (isOrderable, stock-check) from thcm-shop-proxy-README.
 //
 // Keep these 1:1 with the contract. UI-friendly shapes live in
-// crf.shop.mapper.ts so a contract change only touches this file + the mapper.
+// shop/mapper.ts so a contract change only touches this file + the mapper.
 
 /* ========================================================================== */
 /*                         Get Stock — one row per variant                    */
@@ -66,6 +66,10 @@ export type ShopCatalogParams = {
 	order?: "asc" | "desc";
 	limit?: number;
 	after?: string;
+	/** Exact-match, comma-separated SKU list — used for the edit-load
+	 *  souvenir display backfill (see fetchSouvenirStockBySkus), not the
+	 *  browse/search UI. */
+	sku?: string;
 };
 
 /* ========================================================================== */

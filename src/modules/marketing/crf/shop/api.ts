@@ -1,28 +1,20 @@
-// crf/crf.shop.api.ts
+// crf/shop/api.ts
 // Store (Shopify) calls for the CRF Souvenirs tab — via MAP's proxy only;
 // the browser never talks to THCM directly (API key stays server-side).
 //
 //   GET  /crf-shop/catalog       → souvenir catalog (cursor-paged)
 //   GET  /crf-shop/catalog/:key  → one product: all images + every variant
 //   POST /crf-shop/stock-check   → live stock re-check before saving the CRF
-//
-// While the backend proxy is not ready, CRF_SHOP_USE_MOCK serves the same
-// contract from crf.shop.mock.ts. Flip it to false when the proxy is live —
-// nothing else changes.
 
 import { useInfiniteQuery, useMutation, useQuery } from "@tanstack/react-query";
 
-import { ServerAxios } from "../../../services/ServerAxios";
-import { mockGetCatalog, mockGetProduct, mockStockCheck } from "./crf.shop.mock";
+import { ServerAxios } from "../../../../services/ServerAxios";
 import type {
 	ShopCatalogParams,
 	ShopCatalogResponse,
 	ShopProductDetail,
 	ShopStockCheckResult,
-} from "./crf.shop.types";
-
-/** TODO(backend): set to false once /crf-shop/* is deployed. */
-export const CRF_SHOP_USE_MOCK = true;
+} from "./types";
 
 const CATALOG_PAGE_SIZE = 50;
 
@@ -34,8 +26,6 @@ export const crfShopApi = {
 	getCatalog: async (
 		params: ShopCatalogParams = {},
 	): Promise<ShopCatalogResponse> => {
-		if (CRF_SHOP_USE_MOCK) return mockGetCatalog(params);
-
 		// Proxy returns { data, pageInfo } at the top level of the body.
 		const { data } = await ServerAxios.get("/crf-shop/catalog", { params });
 		const body = data as ShopCatalogResponse;
@@ -44,8 +34,6 @@ export const crfShopApi = {
 
 	/** key = product id, variant id, SKU or handle. */
 	getProduct: async (key: string): Promise<ShopProductDetail> => {
-		if (CRF_SHOP_USE_MOCK) return mockGetProduct(key);
-
 		const {
 			data: { data },
 		} = await ServerAxios.get(`/crf-shop/catalog/${encodeURIComponent(key)}`);
@@ -55,8 +43,6 @@ export const crfShopApi = {
 	stockCheck: async (
 		items: { sku: string; quantity: number }[],
 	): Promise<ShopStockCheckResult> => {
-		if (CRF_SHOP_USE_MOCK) return mockStockCheck(items);
-
 		const {
 			data: { data },
 		} = await ServerAxios.post("/crf-shop/stock-check", { items });
@@ -73,6 +59,7 @@ export const crfShopKeys = {
 	catalog: (params: Omit<ShopCatalogParams, "after">) =>
 		[...crfShopKeys.all, "catalog", params] as const,
 	product: (key: string) => [...crfShopKeys.all, "product", key] as const,
+	bySkus: (skus: string[]) => [...crfShopKeys.all, "by-skus", skus] as const,
 };
 
 /* ========================================================================== */
@@ -116,5 +103,30 @@ export function useStockCheckMutation() {
 	return useMutation({
 		mutationFn: (items: { sku: string; quantity: number }[]) =>
 			crfShopApi.stockCheck(items),
+	});
+}
+
+/**
+ * One-off, non-paged lookup for an exact set of SKUs — used to backfill a
+ * saved CRF's souvenir lines (title, image, price, GST) on edit-load, since
+ * the backend only kept { sku, requestedQty, status } for them. Not the
+ * browse/search catalog: `limit` is sized to the SKU list itself, so every
+ * requested SKU comes back in one page rather than needing pagination.
+ */
+export function useSouvenirStockBySkusQuery(
+	skus: string[],
+	enabled = true,
+) {
+	const sortedSkus = [...skus].sort();
+
+	return useQuery({
+		queryKey: crfShopKeys.bySkus(sortedSkus),
+		queryFn: () =>
+			crfShopApi.getCatalog({
+				sku: sortedSkus.join(","),
+				limit: Math.min(sortedSkus.length, 100),
+			}),
+		enabled: enabled && sortedSkus.length > 0,
+		staleTime: 30 * 1000,
 	});
 }

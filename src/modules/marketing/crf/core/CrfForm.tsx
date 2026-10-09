@@ -1,4 +1,4 @@
-// crf/CrfForm.tsx
+// crf/core/CrfForm.tsx
 // CRF form rendered as one card: catalog in the body, actions in the card
 // footer. No collapsible section.
 //
@@ -21,9 +21,9 @@ import {
 	X,
 } from "lucide-react";
 
-import Button from "../../../components/common/Button";
-import Card from "../../../components/common/Card";
-import CrfCatalog from "./crf.catalog";
+import Button from "../../../../components/common/Button";
+import Card from "../../../../components/common/Card";
+import CrfCatalog from "./CrfCatalog";
 import { useCrfForm, type CrfFormProps } from "./useCrfForm";
 
 export type CrfFormCardProps = CrfFormProps & {

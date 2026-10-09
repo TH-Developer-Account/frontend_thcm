@@ -1,11 +1,14 @@
 // crf/index.ts
 // Public API of the CRF module. Other modules import ONLY from here.
 
-export { default as CrfForm } from "./CrfForm";
-export type { CrfFormProps } from "./useCrfForm";
+export { default as CrfForm } from "./core/CrfForm";
+export type { CrfFormProps } from "./core/useCrfForm";
 
-export { default as CrfCatalog } from "./crf.catalog";
-export type { CrfCatalogProps } from "./crf.catalog";
+export { default as CrfCatalog } from "./core/CrfCatalog";
+export type { CrfCatalogProps } from "./core/CrfCatalog";
+
+export { default as CrfSection } from "./core/CrfSection";
+export type { CrfSectionProps } from "./core/CrfSection";
 
 export {
 	crfApi,
@@ -13,16 +16,16 @@ export {
 	useCreateCrfMutation,
 	useCrfProductsQuery,
 	useUpdateCrfMutation,
-} from "./crf.api";
+} from "./core/api";
 
 export {
-	CRF_SHOP_USE_MOCK,
 	crfShopApi,
 	crfShopKeys,
 	useSouvenirCatalogQuery,
 	useSouvenirProductQuery,
+	useSouvenirStockBySkusQuery,
 	useStockCheckMutation,
-} from "./crf.shop.api";
+} from "./shop/api";
 
 export {
 	SHOP_PRICES_INCLUDE_GST,
@@ -41,21 +44,28 @@ export {
 	type SouvenirProduct,
 	type SouvenirProductDetail,
 	type SouvenirVariant,
-} from "./crf.shop.mapper";
+} from "./shop/mapper";
 
-export { default as SouvenirProductView } from "./crf.product-view";
-export type { SouvenirProductViewProps } from "./crf.product-view";
+export { default as SouvenirProductView } from "./shop/SouvenirProductView";
+export type { SouvenirProductViewProps } from "./shop/SouvenirProductView";
 
 export type {
+	ShopCatalogParams,
 	ShopCatalogResponse,
 	ShopProductDetail,
 	ShopStockCheckResult,
 	ShopStockRow,
-} from "./crf.shop.types";
+} from "./shop/types";
 
-export { CrfImage, getPlaceholderImage } from "./crf.media";
+export { CrfImage, getPlaceholderImage } from "./core/Media";
 
-export { getCrfTotalFromData, mapCrfLineItemsToTableRows } from "./crf.mapper";
+export {
+	backfillSouvenirDisplayFields,
+	buildCrfItemInput,
+	buildCrfPayload,
+	getCrfTotalFromData,
+	mapCrfLineItemsToTableRows,
+} from "./core/mapper";
 
 export {
 	ARTWORK_UNIT,
@@ -72,44 +82,63 @@ export {
 	type CrfFormErrors,
 	type CrfFormValues,
 	type CrfLineItemValues,
-} from "./crf.schema";
+} from "./core/schema";
 
 export {
 	ARTWORK_CUSTOM_PRESET,
 	ARTWORK_RESOLUTION_PRESETS,
 	CRF_CATEGORIES,
 	findArtworkPreset,
+	type ApiCrfItem,
+	type ApiCrfOrder,
 	type ArtworkResolutionPreset,
 	type CrfCategory,
+	type CrfCatalogItem,
+	type CrfCatalogItemInput,
 	type CrfDetail,
+	type CrfItemInput,
 	type CrfLineItem,
-	type CrfLineItemPayload,
+	type CrfOrderLineRecord,
 	type CrfPayload,
-} from "./crf.types";
+	type CrfPermissions,
+	type CrfProductRef,
+	type CrfShopifyItem,
+	type CrfShopifyItemInput,
+	type CrfStatus,
+} from "./core/types";
 
 /* ---------------------------- Order (after approval) ---------------------------- */
+//
+// Reconciled with the real backend contract: updateDispatchDetails /
+// swapSouvenirLines / placeOrder / retryOrder / cancelOrder
+// (crfDispatchDetails.service.ts / crfOrder.service.ts). No delivery-
+// estimate endpoint, no billing address, no formal debit-note document, no
+// order polling — see order/types.ts's header comment for what changed.
 
-export { default as CrfOrderSection } from "./CrfOrderSection";
-export type { CrfOrderSectionProps } from "./CrfOrderSection";
-export { crfOrderApi, crfOrderKeys, useCrfOrderQuery } from "./crf.order.api";
-export {
-	CRF_ORDER_OPEN_STATUSES,
-	amountInWords,
-	getCrfOrderPhase,
-	isCrfOrderOpen,
-	type CrfOrderPhase,
-} from "./crf.order.logic";
-export type {
-	CrfOrderContext,
-	CrfOrderPayload,
-	CrfOrderRecord,
-	DebitNote,
-	DeliveryEstimate,
-	ShopOrder,
-} from "./crf.order.types";
+export { default as CrfOrderSection } from "./order/CrfOrderSection";
+export type { CrfOrderSectionProps } from "./order/CrfOrderSection";
 
-/* TEMP: souvenir lines kept locally until the backend accepts store lines. */
 export {
-	CRF_BACKEND_SUPPORTS_STORE_LINES,
-	withLocalStoreLines,
-} from "./crf.store-lines";
+	crfOrderApi,
+	useCancelCrfOrderMutation,
+	usePlaceCrfOrderMutation,
+	useRetryCrfOrderMutation,
+	useSwapSouvenirLinesMutation,
+	useUpdateDispatchDetailsMutation,
+} from "./order/api";
+
+export {
+	CRF_ORDER_ACTIVE_STATUSES,
+	CRF_STATUS_LABEL,
+	isCrfOrderActive,
+} from "./order/logic";
+
+export {
+	RECIPIENT_TYPES,
+	RECIPIENT_TYPE_LABEL,
+	type CrfDispatchFormErrors,
+	type CrfDispatchFormField,
+	type CrfDispatchFormValues,
+	type DispatchDetailsInput,
+	type RecipientType,
+} from "./order/types";

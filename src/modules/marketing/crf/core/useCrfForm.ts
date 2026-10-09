@@ -1,4 +1,4 @@
-// crf/useCrfForm.ts
+// crf/core/useCrfForm.ts
 // CRF form controller. Owns the cart (CrfLineItem[]), the active tab and
 // the validation state; <CrfForm /> / <CrfCatalog /> just render it.
 //
@@ -19,27 +19,30 @@
 // (POST /crf-shop/stock-check — a check, never a reservation). Lines whose
 // stock dropped get the fresh availability, the schema flags them, and the
 // form jumps to the Souvenirs tab instead of saving.
+//
+// Edit mode: a saved souvenir line only carries { sku, requestedQty, status }
+// (see crf.types.ts) — nothing to show. Once mapCrfLineItemsToFormItems has
+// produced the bare lines, a live catalog lookup for exactly those SKUs
+// (useSouvenirStockBySkusQuery) backfills title/image/price/GST, applied
+// once via backfillSouvenirDisplayFields. That backfill isn't a user edit,
+// so the "is this tab dirty" baseline moves forward with it (initialCostItemsRef).
 
 import React from "react";
 
-import { useToast } from "../../../context/Auth/AuthContext";
-import type { GroupedOption } from "../shared/lineItem.types";
-import { useStockCheckMutation } from "./crf.shop.api";
-import {
-	saveLocalStoreLines,
-	splitCrfPayload,
-	withLocalStoreLines,
-} from "./crf.store-lines";
+import { useToast } from "../../../../context/Auth/AuthContext";
+import type { GroupedOption } from "../../shared/lineItem.types";
+import { useSouvenirStockBySkusQuery, useStockCheckMutation } from "../shop/api";
 import {
 	useCreateCrfMutation,
 	useCrfProductsQuery,
 	useUpdateCrfMutation,
-} from "./crf.api";
+} from "./api";
 import {
+	backfillSouvenirDisplayFields,
 	buildCrfPayload,
 	groupProductsByCategory,
 	mapCrfLineItemsToFormItems,
-} from "./crf.mapper";
+} from "./mapper";
 import {
 	EMPTY_CRF_ERRORS,
 	filterCrfErrorsByCategory,
@@ -48,13 +51,13 @@ import {
 	hasCrfErrors,
 	validateCrfForm,
 	type CrfFormErrors,
-} from "./crf.schema";
+} from "./schema";
 import {
 	CRF_CATEGORIES,
 	type CrfCategory,
 	type CrfDetail,
 	type CrfLineItem,
-} from "./crf.types";
+} from "./types";
 
 export type CrfFormProps = {
 	/** Parent EPC the CRF belongs to (sent in the payload). */
@@ -115,16 +118,46 @@ export function useCrfForm({
 	const productsQuery = useCrfProductsQuery();
 
 	const initialCostItems = React.useMemo(
-		() =>
-			// TEMP: + souvenir lines kept in this browser (see crf.store-lines.ts)
-			mapCrfLineItemsToFormItems(
-				withLocalStoreLines(epcId, initialData?.lineItems ?? []),
-			),
-		[epcId, initialData],
+		() => mapCrfLineItemsToFormItems(initialData?.items ?? []),
+		[initialData],
 	);
 
 	const [costItems, setCostItems] =
 		React.useState<CrfLineItem[]>(initialCostItems);
+
+	// Moves forward with the one-time souvenir backfill below, so that
+	// backfill isn't itself mistaken for a user edit by isDirty.
+	const initialCostItemsRef = React.useRef(initialCostItems);
+
+	/* --------------------- Souvenir display backfill ----------------------- */
+
+	const souvenirSkus = React.useMemo(
+		() =>
+			(initialData?.items ?? [])
+				.filter((item) => item.source === "SHOPIFY")
+				.map((item) => item.sku),
+		[initialData],
+	);
+
+	const souvenirBackfillQuery = useSouvenirStockBySkusQuery(
+		souvenirSkus,
+		souvenirSkus.length > 0,
+	);
+
+	const backfillAppliedRef = React.useRef(false);
+	React.useEffect(() => {
+		if (!souvenirBackfillQuery.data || backfillAppliedRef.current) return;
+		backfillAppliedRef.current = true;
+
+		setCostItems((previous) => {
+			const next = backfillSouvenirDisplayFields(
+				previous,
+				souvenirBackfillQuery.data.data,
+			);
+			initialCostItemsRef.current = next;
+			return next;
+		});
+	}, [souvenirBackfillQuery.data]);
 
 	/* ------------------------------ Tab state ------------------------------ */
 
@@ -179,8 +212,10 @@ export function useCrfForm({
 		createCrfMutation.isPending ||
 		updateCrfMutation.isPending ||
 		stockCheckMutation.isPending;
-	const loading = productsQuery.isLoading;
-	const isDirty = costItems !== initialCostItems;
+	const loading =
+		productsQuery.isLoading ||
+		(souvenirSkus.length > 0 && souvenirBackfillQuery.isLoading);
+	const isDirty = costItems !== initialCostItemsRef.current;
 
 	/* ------------------------------ Actions -------------------------------- */
 
@@ -318,33 +353,19 @@ export function useCrfForm({
 		if (!(await verifySouvenirStock())) return;
 
 		try {
-			// Schema output: trimmed, rounded, totals recomputed, and each line
-			// carries only its category's fields (size → artwork, store
-			// snapshot → souvenir).
-			const fullPayload = buildCrfPayload(
+			// Schema output: trimmed, rounded line items. buildCrfPayload turns
+			// each into exactly what the backend accepts — identity + quantity
+			// (+ size for artworks) — never rate/amount/total for a catalog
+			// line and never a souvenir snapshot; both are computed or looked
+			// up server-side.
+			const payload = buildCrfPayload(
 				validation.data.lineItems as unknown as CrfLineItem[],
 				validation.data.epcId,
 			);
 
-			// TEMP: the backend only accepts product-master lines today, so
-			// souvenirs (store SKUs) are kept in this browser instead.
-			const { apiPayload: payload, storeLines } = splitCrfPayload(fullPayload);
-
-			if (!crfId && payload.lineItems.length === 0) {
-				showToast({
-					type: "error",
-					title: "Add a printed material or artwork",
-					description:
-						"Souvenir-only CRFs can't be saved until the backend supports store items. Add at least one printed material or artwork.",
-				});
-				return;
-			}
-
 			const saved = crfId
 				? await updateCrfMutation.mutateAsync({ crfId, payload })
 				: await createCrfMutation.mutateAsync(payload);
-
-			saveLocalStoreLines(validation.data.epcId, storeLines);
 
 			showToast({
 				type: "success",
@@ -386,12 +407,14 @@ export function useCrfForm({
 		// Tabs are independent: only the active tab goes back to its initial lines.
 		setCostItems((previous) => [
 			...previous.filter((item) => item.category !== activeCategory),
-			...initialCostItems.filter((item) => item.category === activeCategory),
+			...initialCostItemsRef.current.filter(
+				(item) => item.category === activeCategory,
+			),
 		]);
 		setCheckedCategories((previous) =>
 			previous.filter((category) => category !== activeCategory),
 		);
-	}, [activeCategory, initialCostItems]);
+	}, [activeCategory]);
 
 	return {
 		costItems,

@@ -1,4 +1,4 @@
-// crf/crf.schema.ts
+// crf/core/schema.ts
 // Zod schema + validation/format helpers for the CRF module.
 //
 // Single source of truth for:
@@ -20,7 +20,7 @@ import {
 	CRF_CATEGORIES,
 	type CrfCategory,
 	type CrfLineItem,
-} from "./crf.types";
+} from "./types";
 
 /* ========================================================================== */
 /*                                   Limits                                   */

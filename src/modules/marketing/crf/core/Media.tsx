@@ -1,4 +1,4 @@
-// crf/crf.media.tsx
+// crf/core/Media.tsx
 // Product images for the CRF catalog and summary.
 //
 //   • Souvenirs     — the store image (imageUrl); placeholder if missing or broken.
@@ -9,7 +9,7 @@
 
 import React from "react";
 
-import type { CrfCategory } from "./crf.types";
+import type { CrfCategory } from "./types";
 
 /* ========================================================================== */
 /*                                Placeholders                                */

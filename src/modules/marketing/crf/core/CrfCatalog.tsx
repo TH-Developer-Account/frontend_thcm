@@ -1,4 +1,4 @@
-// crf/crf.catalog.tsx
+// crf/core/CrfCatalog.tsx
 // CRF item picker — category tabs, product cards, and the active tab's
 // summary card.
 //
@@ -22,10 +22,10 @@
 import React from "react";
 import { Minus, PackageOpen, Plus, Trash2 } from "lucide-react";
 
-import Button from "../../../components/common/Button";
-import { TabsBar } from "../../../components/common/TabsBar";
-import { SearchInput } from "../../../components/forms/SearchInput";
-import type { GroupedOption, LineItemOption } from "../shared/lineItem.types";
+import Button from "../../../../components/common/Button";
+import { TabsBar } from "../../../../components/common/TabsBar";
+import { SearchInput } from "../../../../components/forms/SearchInput";
+import type { GroupedOption, LineItemOption } from "../../shared/lineItem.types";
 
 import {
 	CRF_LIMITS,
@@ -37,10 +37,10 @@ import {
 	roundTo,
 	sanitizeQuantityInput,
 	type CrfFormErrors,
-} from "./crf.schema";
-import { getLinePricing, sumPricing } from "./crf.shop.mapper";
-import { CrfImage } from "./crf.media";
-import SouvenirCatalog from "./crf.souvenirs";
+} from "./schema";
+import { getLinePricing, sumPricing } from "../shop/mapper";
+import { CrfImage } from "./Media";
+import SouvenirCatalog from "../shop/SouvenirCatalog";
 import {
 	ARTWORK_CUSTOM_PRESET,
 	ARTWORK_RESOLUTION_PRESETS,
@@ -48,8 +48,8 @@ import {
 	type ArtworkResolutionPreset,
 	type CrfCategory,
 	type CrfLineItem,
-} from "./crf.types";
-import "./crf.css";
+} from "./types";
+import "./styles.css";
 
 /* ========================================================================== */
 /*                                   Types                                    */

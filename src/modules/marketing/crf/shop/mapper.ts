@@ -1,4 +1,4 @@
-// crf/crf.shop.mapper.ts
+// crf/shop/mapper.ts
 // Store contract → what the CRF UI renders, plus the pricing maths shared by
 // tiles, the summary card and the payload.
 //
@@ -11,8 +11,8 @@ import type {
 	ShopProductDetail,
 	ShopStockCheckStatus,
 	ShopStockRow,
-} from "./crf.shop.types";
-import type { CrfLineItem } from "./crf.types";
+} from "./types";
+import type { CrfLineItem } from "../core/types";
 
 /* ========================================================================== */
 /*                                   Config                                   */

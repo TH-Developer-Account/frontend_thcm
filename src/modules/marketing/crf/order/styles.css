@@ -1,7 +1,8 @@
-/* crf/crf.order.css
-   CRF order section: steps, order form, summary, shortfall, debit note and
-   tracking. Same design tokens as crf.css (fallbacks only matter if a token
-   is renamed). The debit note is a document and always prints on white. */
+/* crf/order/styles.css
+   CRF order section: order form, summary, shortfall and tracking. Same
+   design tokens as core/styles.css (fallbacks only matter if a token is
+   renamed). Dead rules for the removed step timeline, PIN/ETA estimate,
+   debit-note document and order-tracking timeline have been stripped. */
 
 @layer components {
 	/* ===================================================== SHELL */
@@ -45,46 +46,6 @@
 		margin: 0;
 		font-size: var(--font-size-sm, 0.875rem);
 		line-height: 1.6;
-	}
-
-	/* ===================================================== STEPS */
-
-	.crf-order-steps {
-		display: flex;
-		flex-wrap: wrap;
-		gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
-		margin: 0;
-		padding: 0 0 var(--space-3, 0.75rem);
-		border-bottom: 1px solid var(--color-border-default, #e4e4e7);
-		list-style: none;
-	}
-
-	.crf-order-step {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2, 0.5rem);
-		color: var(--color-text-muted, #71717a);
-		font-size: var(--font-size-sm, 0.875rem);
-	}
-
-	.crf-order-step-index {
-		display: inline-grid;
-		place-items: center;
-		width: 1.375rem;
-		height: 1.375rem;
-		border: 1.5px solid currentColor;
-		border-radius: var(--radius-full, 9999px);
-		font-size: var(--font-size-xs, 0.75rem);
-		font-weight: var(--font-weight-semibold, 600);
-	}
-
-	.crf-order-step--current {
-		color: var(--color-brand, #f35a00);
-		font-weight: var(--font-weight-semibold, 600);
-	}
-
-	.crf-order-step--done {
-		color: var(--color-success, #15803d);
 	}
 
 	/* ===================================================== LAYOUT */
@@ -187,66 +148,6 @@
 		resize: vertical;
 	}
 
-	/* ===================================================== PIN + ESTIMATE */
-
-	.crf-order-pin-row {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: flex-end;
-		gap: var(--space-3, 0.75rem);
-	}
-
-	.crf-order-pin-row > :first-child {
-		flex: 0 1 14rem;
-	}
-
-	.crf-order-estimate {
-		display: flex;
-		gap: var(--space-3, 0.75rem);
-		padding: var(--space-3, 0.75rem);
-		border-radius: var(--radius-md, 0.5rem);
-		background-color: var(--color-success-soft, #f0fdf4);
-		color: var(--color-success, #15803d);
-	}
-
-	.crf-order-estimate > svg {
-		flex: 0 0 auto;
-		width: 1.25rem;
-		height: 1.25rem;
-	}
-
-	.crf-order-estimate p {
-		margin: 0;
-	}
-
-	.crf-order-estimate--error {
-		background-color: var(--color-danger-soft, #fef2f2);
-		color: var(--color-danger, #dc2626);
-		font-size: var(--font-size-sm, 0.875rem);
-	}
-
-	.crf-order-estimate-title {
-		font-weight: var(--font-weight-semibold, 600);
-	}
-
-	.crf-order-estimate-meta {
-		display: flex;
-		align-items: center;
-		gap: 0.25rem;
-		color: var(--color-text-secondary, #52525b);
-		font-size: var(--font-size-sm, 0.875rem);
-	}
-
-	.crf-order-estimate-meta > svg {
-		width: 0.875rem;
-		height: 0.875rem;
-	}
-
-	.crf-order-estimate-note {
-		color: var(--color-text-muted, #71717a);
-		font-size: var(--font-size-xs, 0.75rem);
-	}
-
 	/* ===================================================== SUMMARY */
 
 	.crf-order-summary {
@@ -279,13 +180,6 @@
 
 	.crf-order-summary-note--warn {
 		color: var(--color-warning-text, #92400e);
-	}
-
-	.crf-order-dev {
-		padding: var(--space-2, 0.5rem);
-		border: 1px dashed var(--color-border-strong, #a1a1aa);
-		border-radius: var(--radius-md, 0.5rem);
-		font-size: var(--font-size-xs, 0.75rem);
 	}
 
 	.crf-order-items {
@@ -598,216 +492,6 @@
 		padding-left: 2.25rem;
 	}
 
-	/* ===================================================== DEBIT NOTE (document) */
-
-	.crf-dn-frame {
-		overflow-x: auto;
-		padding: var(--space-3, 0.75rem);
-		border-radius: var(--radius-lg, 0.625rem);
-		background-color: var(--color-bg-subtle, #f4f4f5);
-	}
-
-	.crf-dn {
-		box-sizing: border-box;
-		width: 100%;
-		min-width: 40rem;
-		max-width: 52rem;
-		margin: 0 auto;
-		padding: 2rem;
-		background: #fff;
-		color: #18181b;
-		font-size: 12px;
-		line-height: 1.5;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-	}
-
-	.crf-dn p {
-		margin: 0;
-	}
-
-	.crf-dn-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-start;
-		padding-bottom: 1rem;
-		border-bottom: 3px solid #f35a00;
-	}
-
-	.crf-dn-kicker {
-		color: #f35a00;
-		font-size: 11px;
-		font-weight: 700;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-	}
-
-	.crf-dn-number {
-		margin: 0.25rem 0 0;
-		font-size: 20px;
-		font-weight: 700;
-	}
-
-	.crf-dn-meta,
-	.crf-dn-refs,
-	.crf-dn-totals {
-		margin: 0;
-	}
-
-	.crf-dn-meta {
-		display: grid;
-		gap: 0.25rem;
-		text-align: right;
-	}
-
-	.crf-dn-meta div,
-	.crf-dn-totals div {
-		display: flex;
-		justify-content: space-between;
-		gap: 1rem;
-	}
-
-	.crf-dn dt {
-		color: #71717a;
-	}
-
-	.crf-dn dd {
-		margin: 0;
-		font-weight: 600;
-	}
-
-	.crf-dn-parties {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
-		gap: 1.5rem;
-		padding: 1rem 0;
-		border-bottom: 1px solid #e4e4e7;
-	}
-
-	.crf-dn-label {
-		display: block;
-		margin-bottom: 0.25rem;
-		color: #71717a;
-		font-size: 10px;
-		font-weight: 700;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-	}
-
-	.crf-dn-party-name {
-		font-weight: 700;
-	}
-
-	.crf-dn-refs {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 0.75rem 1.5rem;
-		padding: 1rem 0;
-	}
-
-	.crf-dn-refs > div {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.crf-dn-refs dd {
-		font-weight: 500;
-		word-break: break-word;
-	}
-
-	.crf-dn-refs-wide {
-		grid-column: 1 / -1;
-	}
-
-	.crf-dn-table {
-		width: 100%;
-		border-collapse: collapse;
-		font-variant-numeric: tabular-nums;
-	}
-
-	.crf-dn-table th,
-	.crf-dn-table td {
-		padding: 0.5rem;
-		border-bottom: 1px solid #e4e4e7;
-		text-align: left;
-		vertical-align: top;
-	}
-
-	.crf-dn-table thead th {
-		background: #fafafa;
-		border-top: 1px solid #e4e4e7;
-		color: #52525b;
-		font-size: 10px;
-		font-weight: 700;
-		text-transform: uppercase;
-	}
-
-	.crf-dn-table .num {
-		text-align: right;
-		white-space: nowrap;
-	}
-
-	.crf-dn-item {
-		display: block;
-		font-weight: 600;
-	}
-
-	.crf-dn-item-meta {
-		display: block;
-		color: #71717a;
-		font-size: 10px;
-	}
-
-	.crf-dn-short {
-		color: #dc2626;
-		font-weight: 700;
-	}
-
-	.crf-dn-summary {
-		display: grid;
-		grid-template-columns: 1fr minmax(14rem, 18rem);
-		gap: 1.5rem;
-		padding: 1rem 0;
-	}
-
-	.crf-dn-words {
-		font-style: italic;
-	}
-
-	.crf-dn-totals {
-		display: grid;
-		gap: 0.25rem;
-	}
-
-	.crf-dn-grand {
-		margin-top: 0.25rem;
-		padding-top: 0.5rem;
-		border-top: 2px solid #18181b;
-		font-size: 14px;
-	}
-
-	.crf-dn-grand dt {
-		color: #18181b;
-		font-weight: 700;
-	}
-
-	.crf-dn-footer {
-		display: flex;
-		justify-content: space-between;
-		align-items: flex-end;
-		gap: 2rem;
-		padding-top: 2rem;
-		color: #71717a;
-		font-size: 10px;
-	}
-
-	.crf-dn-sign {
-		min-width: 12rem;
-		padding-top: 0.5rem;
-		border-top: 1px solid #a1a1aa;
-		color: #18181b;
-		text-align: center;
-	}
-
 	/* ===================================================== TRACKING */
 
 	.crf-track {
@@ -842,19 +526,9 @@
 		font-weight: var(--font-weight-semibold, 600);
 	}
 
-	.crf-track-status--info {
-		background-color: var(--color-info-soft, #eff6ff);
-		color: var(--color-info, #1d4ed8);
-	}
-
 	.crf-track-status--success {
 		background-color: var(--color-success-soft, #f0fdf4);
 		color: var(--color-success, #15803d);
-	}
-
-	.crf-track-status--warning {
-		background-color: var(--color-warning-soft, #fffbeb);
-		color: var(--color-warning-text, #92400e);
 	}
 
 	.crf-track-status--danger {
@@ -868,101 +542,7 @@
 		gap: var(--space-2, 0.5rem);
 	}
 
-	/* Timeline */
-
-	.crf-track-steps {
-		display: grid;
-		grid-template-columns: repeat(5, minmax(0, 1fr));
-		margin: 0;
-		padding: var(--space-4, 1rem) 0;
-		list-style: none;
-	}
-
-	.crf-track-step {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: var(--space-2, 0.5rem);
-		color: var(--color-text-muted, #71717a);
-		font-size: var(--font-size-sm, 0.875rem);
-		text-align: center;
-	}
-
-	/* Connector to the previous step */
-	.crf-track-step + .crf-track-step::before {
-		position: absolute;
-		top: 0.75rem;
-		right: 50%;
-		width: 100%;
-		height: 2px;
-		background-color: var(--color-border-default, #e4e4e7);
-		content: "";
-	}
-
-	.crf-track-step--done + .crf-track-step::before,
-	.crf-track-step--done + .crf-track-step--done::before {
-		background-color: var(--color-success, #15803d);
-	}
-
-	.crf-track-dot {
-		position: relative;
-		z-index: 1;
-		display: grid;
-		place-items: center;
-		width: 1.5rem;
-		height: 1.5rem;
-		border: 2px solid var(--color-border-strong, #a1a1aa);
-		border-radius: var(--radius-full, 9999px);
-		background-color: var(--color-bg-surface, #fff);
-	}
-
-	.crf-track-dot > svg {
-		width: 1rem;
-		height: 1rem;
-	}
-
-	.crf-track-step--done {
-		color: var(--color-text-primary, #18181b);
-	}
-
-	.crf-track-step--done .crf-track-dot {
-		border-color: var(--color-success, #15803d);
-		background-color: var(--color-success, #15803d);
-		color: #fff;
-	}
-
-	.crf-track-step--current {
-		color: var(--color-brand, #f35a00);
-		font-weight: var(--font-weight-semibold, 600);
-	}
-
-	.crf-track-step--current .crf-track-dot {
-		border-color: var(--color-brand, #f35a00);
-		box-shadow: 0 0 0 4px var(--color-brand-soft, #fff4ed);
-	}
-
-	.crf-track-step--error {
-		color: var(--color-danger, #dc2626);
-	}
-
-	.crf-track-step--error .crf-track-dot {
-		border-color: var(--color-danger, #dc2626);
-		background-color: var(--color-danger, #dc2626);
-		color: #fff;
-	}
-
-	.crf-track-step-hint {
-		font-size: var(--font-size-xs, 0.75rem);
-	}
-
 	/* Cards */
-
-	.crf-track-grid {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: var(--space-4, 1rem);
-	}
 
 	.crf-track-card {
 		display: flex;
@@ -989,83 +569,6 @@
 		color: var(--color-text-muted, #71717a);
 	}
 
-	.crf-track-dl {
-		display: grid;
-		gap: var(--space-2, 0.5rem);
-		margin: 0;
-		font-size: var(--font-size-sm, 0.875rem);
-	}
-
-	.crf-track-dl > div {
-		display: flex;
-		justify-content: space-between;
-		gap: var(--space-3, 0.75rem);
-	}
-
-	.crf-track-dl dt {
-		color: var(--color-text-muted, #71717a);
-	}
-
-	.crf-track-dl dd {
-		margin: 0;
-		font-weight: var(--font-weight-medium, 500);
-		text-align: right;
-	}
-
-	.crf-track-awb {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		font-family: var(--font-mono, ui-monospace, monospace);
-	}
-
-	.crf-link-button--neutral {
-		color: var(--color-text-muted, #71717a);
-	}
-
-	.crf-link-button--neutral svg {
-		width: 0.875rem;
-		height: 0.875rem;
-	}
-
-	.crf-track-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.25rem;
-		color: var(--color-brand, #f35a00);
-	}
-
-	.crf-track-link svg {
-		width: 0.875rem;
-		height: 0.875rem;
-	}
-
-	.crf-track-address {
-		display: flex;
-		flex-direction: column;
-		color: var(--color-text-secondary, #52525b);
-		font-size: var(--font-size-sm, 0.875rem);
-		font-style: normal;
-		line-height: 1.5;
-	}
-
-	.crf-track-address strong {
-		color: var(--color-text-primary, #18181b);
-	}
-
-	.crf-track-contact {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		margin: 0;
-		font-size: var(--font-size-sm, 0.875rem);
-	}
-
-	.crf-track-contact svg {
-		width: 0.875rem;
-		height: 0.875rem;
-	}
-
 	/* ===================================================== RESPONSIVE */
 
 	@media (max-width: 1024px) {
@@ -1080,23 +583,8 @@
 
 	@media (max-width: 640px) {
 		.crf-order-grid,
-		.crf-track-grid,
 		.crf-order-budget {
 			grid-template-columns: minmax(0, 1fr);
-		}
-
-		.crf-track-steps {
-			grid-template-columns: minmax(0, 1fr);
-			gap: var(--space-3, 0.75rem);
-		}
-
-		.crf-track-step {
-			flex-direction: row;
-			text-align: left;
-		}
-
-		.crf-track-step + .crf-track-step::before {
-			display: none;
 		}
 	}
 }
