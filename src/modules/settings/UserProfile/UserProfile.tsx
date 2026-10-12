@@ -37,13 +37,6 @@ type ProfileValues = UserProfileFormValues & { email: string };
 
 type FieldErrors = Partial<Record<keyof UserProfileFormValues, string>>;
 
-type AddressValues = {
-  country: string;
-  cityState: string;
-  postalCode: string;
-  taxId: string;
-};
-
 type UserProfileProps = {
   userRole?: UserRole;
 };
