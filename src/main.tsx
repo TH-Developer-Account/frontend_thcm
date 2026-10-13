@@ -8,27 +8,30 @@ import "./App.css";
 import App from "./App.tsx";
 import ToastProvider from "./context/Toast/ToastProvider.tsx";
 import { AuthProvider } from "./context/Auth/AuthProvider.tsx";
+import { NotificationsProvider } from "./context/Notification/NotificationsProvider.tsx";
 import { ThemeProvider } from "./context/Theme/ThemeProvider.tsx";
 import { registerServiceWorker } from "./registerServiceWorker";
 
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {
-  throw new Error('Root element with id "root" was not found.');
+	throw new Error('Root element with id "root" was not found.');
 }
 
 createRoot(rootElement).render(
-  <StrictMode>
-    <BrowserRouter basename="/web/">
-      <ThemeProvider>
-        <ToastProvider>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </ToastProvider>
-      </ThemeProvider>
-    </BrowserRouter>
-  </StrictMode>,
+	<StrictMode>
+		<BrowserRouter basename="/web/">
+			<ThemeProvider>
+				<ToastProvider>
+					<AuthProvider>
+						<NotificationsProvider>
+							<App />
+						</NotificationsProvider>
+					</AuthProvider>
+				</ToastProvider>
+			</ThemeProvider>
+		</BrowserRouter>
+	</StrictMode>,
 );
 
 registerServiceWorker();

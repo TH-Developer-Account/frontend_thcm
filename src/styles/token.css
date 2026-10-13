@@ -210,3 +210,21 @@
 		--epc-topbar-divider: var(--color-border-subtle);
 	}
 }
+
+/* home.css referenced these without declaring them (design-system pass). */
+@layer base {
+	:root {
+		--home-title: var(--color-text-primary);
+		--home-title-active: var(--color-text-brand);
+		--home-description: var(--color-text-secondary);
+		--home-meta: var(--color-text-muted);
+		--home-user-text: var(--color-text-secondary);
+		--home-arrow: var(--color-icon-muted);
+		--home-subheader-bg: var(--home-context-bg);
+		--home-active-badge-bg: var(--color-status-draft-bg);
+		--home-active-badge-border: var(--color-status-draft-border);
+		--home-card-shadow: var(--shadow-xs);
+		--home-card-shadow-hover: var(--shadow-sm);
+		--home-card-hover-tint: var(--color-effect-sheen);
+	}
+}

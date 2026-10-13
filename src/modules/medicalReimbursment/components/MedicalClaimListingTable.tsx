@@ -1,7 +1,11 @@
 import { useMemo } from "react";
+import { FileDown } from "lucide-react";
 
 import Card from "../../../components/common/Card";
+import Button from "../../../components/common/Button";
 import { SearchInput } from "../../../components/forms/SearchInput";
+import SelectInput from "../../../components/forms/SelectInput";
+import type { Option } from "../../../components/forms/input.types";
 import { FilterTabs } from "../../../components/ui/FilterTabs";
 import DataTable from "../../../components/ui/tables/DataTable/DataTable";
 import DataTableSkeleton from "../../../components/ui/tables/Skeletons/DataTableSkeleton";
@@ -10,16 +14,12 @@ import type {
 	MedicalClaimListingRow,
 	MedicalClaimListingTab,
 } from "../types/medicalClaimListing.types";
-import { MEDICAL_CLAIM_LISTING_FILTER_TABS } from "../utils/medicalClaimListing.constants";
-import { getMedicalClaimListingColumns } from "../utils/medicalClaimListing.columns";
-import Button from "../../../components/common/Button";
-import { FileDown } from "lucide-react";
 import {
-	MEDICAL_CLAIM_STATUS_OPTIONS,
+	MEDICAL_CLAIM_LISTING_FILTER_TABS,
 	type MedicalClaimStatusFilter,
-} from "../hooks/useMedicalClaimListing";
-import SelectInput from "../../../components/forms/SelectInput";
-import type { Option } from "../../../components/forms/input.types";
+	type MedicalClaimStatusOption,
+} from "../utils/medicalClaimListing.constants";
+import { getMedicalClaimListingColumns } from "../utils/medicalClaimListing.columns";
 
 interface MedicalClaimListingTableProps {
 	selectedFilter: MedicalClaimListingTab;
@@ -27,10 +27,15 @@ interface MedicalClaimListingTableProps {
 	search: string;
 	onSearchChange: (value: string) => void;
 	status: MedicalClaimStatusFilter;
+	statusOptions: MedicalClaimStatusOption[];
 	onStatusChange: (value: MedicalClaimStatusFilter) => void;
 	rows: MedicalClaimListingRow[];
+	totalCount: number;
 	isLoading?: boolean;
 	isFetching?: boolean;
+	isError?: boolean;
+	errorMessage?: string;
+	onRetry?: () => void;
 	pageIndex: number;
 	pageSize: number;
 	pageCount: number;
@@ -43,16 +48,28 @@ interface MedicalClaimListingTableProps {
 
 const SKELETON_ROW_COUNT = 8;
 
+const SEARCH_PLACEHOLDER: Record<MedicalClaimListingTab, string> = {
+	initiation: "Search by employee, ticket, email or mobile",
+	claims: "Search by employee, reference or ticket number",
+	pendingOnMe: "Search by employee, reference or ticket number",
+	approvedByMe: "Search by employee, reference or ticket number",
+};
+
 export default function MedicalClaimListingTable({
 	selectedFilter,
 	onFilterChange,
 	search,
 	onSearchChange,
 	status,
+	statusOptions,
 	onStatusChange,
 	rows,
+	totalCount,
 	isLoading = false,
 	isFetching = false,
+	isError = false,
+	errorMessage,
+	onRetry,
 	pageIndex,
 	pageSize,
 	pageCount,
@@ -63,9 +80,11 @@ export default function MedicalClaimListingTable({
 	isExporting,
 }: MedicalClaimListingTableProps) {
 	const columns = useMemo(
-		() => getMedicalClaimListingColumns({ onView: onViewRow }),
-		[onViewRow],
+		() =>
+			getMedicalClaimListingColumns({ onView: onViewRow, tab: selectedFilter }),
+		[onViewRow, selectedFilter],
 	);
+
 	return (
 		<Card
 			className="medical-claim-listing-card"
@@ -81,28 +100,30 @@ export default function MedicalClaimListingTable({
 				/>
 			}
 			actions={
-				<div className="flex gap-4">
+				<div className="flex flex-row gap-4">
 					<SearchInput
 						value={search}
 						onChange={onSearchChange}
-						placeholder="Search by employee, reference, ticket, email or mobile"
+						placeholder={SEARCH_PLACEHOLDER[selectedFilter]}
 					/>
 
-					<SelectInput<Option>
-						inputId="medical-claim-status-filter"
-						aria-label="Filter by status"
-						className="medical-claim-status-select"
-						options={MEDICAL_CLAIM_STATUS_OPTIONS}
-						value={
-							MEDICAL_CLAIM_STATUS_OPTIONS.find(
-								(option) => option.value === status,
-							) ?? null
-						}
-						onChange={(option) =>
-							onStatusChange((option?.value ?? "") as MedicalClaimStatusFilter)
-						}
-						isSearchable={false}
-					/>
+					{statusOptions.length > 1 ? (
+						<SelectInput<Option>
+							inputId="medical-claim-status-filter"
+							aria-label="Filter by status"
+							className="medical-claim-status-select"
+							options={statusOptions}
+							value={
+								statusOptions.find((option) => option.value === status) ?? null
+							}
+							onChange={(option) =>
+								onStatusChange(
+									(option?.value ?? "all") as MedicalClaimStatusFilter,
+								)
+							}
+							isSearchable={false}
+						/>
+					) : null}
 					<Button
 						type="button"
 						text={isExporting ? "Preparing export..." : "Export"}
@@ -113,7 +134,7 @@ export default function MedicalClaimListingTable({
 						variant="outline"
 						size="sm"
 						onClick={onExport}
-						disabled={isExporting || rows.length === 0}
+						disabled={isExporting || totalCount === 0}
 					/>
 				</div>
 			}
@@ -128,6 +149,22 @@ export default function MedicalClaimListingTable({
 						columns={columns.length}
 						showPagination
 					/>
+				) : isError ? (
+					<div className="flex flex-col items-start gap-3 p-4" role="alert">
+						<p className="text-sm text-rejected">
+							{errorMessage ?? "Unable to load medical claims."}
+						</p>
+						{onRetry ? (
+							<Button
+								type="button"
+								text="Retry"
+								size="sm"
+								appearance="standard"
+								variant="outline"
+								onClick={onRetry}
+							/>
+						) : null}
+					</div>
 				) : (
 					<DataTable<MedicalClaimListingRow>
 						data={rows}
@@ -141,7 +178,11 @@ export default function MedicalClaimListingTable({
 						onPageSizeChange={onPageSizeChange}
 						scrollTargetId={`medical-claim-${selectedFilter}-table-scroll`}
 						emptyTitle="No medical claims found"
-						emptyDescription="There are no medical claims matching this filter and search."
+						emptyDescription={
+							search || status !== "all"
+								? "No medical claims match this search or status."
+								: "There are no medical claims in this tab yet."
+						}
 					/>
 				)}
 

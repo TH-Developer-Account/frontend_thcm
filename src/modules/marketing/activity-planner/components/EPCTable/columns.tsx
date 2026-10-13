@@ -1,9 +1,11 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { CalendarDays, MapPin } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { trimText } from "../../../../../utils/format";
 import type { EpcListItem } from "../../types/epc.types";
+import { ACTIVITY_PLANNER_ROUTES } from "../../utils/constant";
+import { canOpenEpcView } from "../../forms/EPC/epc.utils";
 import { formatDate } from "../../utils/formatters";
 
 import EPCActionMenu from "./EPCActionMenu";
@@ -12,6 +14,7 @@ import { Badge } from "../../../../../components/common/Badge";
 
 type EpcColumnActions = {
 	onLeadCreate?: (row: EpcListItem) => void;
+	onMachineStudyCreate?: (row: EpcListItem) => void;
 	currentUserId?: string;
 };
 
@@ -42,8 +45,15 @@ const canCreateLead = (row: EpcListItem) =>
 	(row.status?.toUpperCase() === "CONDUCTED" &&
 		hasEventStarted(row.event_from_date));
 
+const canCreateMachineStudy = (row: EpcListItem) =>
+	row.status?.toUpperCase() === "APPROVED" ||
+	(row.status?.toUpperCase() === "CONDUCTED" &&
+		hasEventStarted(row.event_from_date));
+
 export const getEPCColumns = ({
 	onLeadCreate,
+	onMachineStudyCreate,
+	currentUserId,
 }: EpcColumnActions): ColumnDef<EpcListItem>[] => [
 	{
 		accessorKey: "proposal_number",
@@ -52,14 +62,32 @@ export const getEPCColumns = ({
 			headerClassName: "epc-column-number",
 			cellClassName: "epc-column-number",
 		},
-		cell: ({ row }) => (
-			<NavLink
-				to={`/marketing/activity-planner/${row.original.id}`}
-				className="epc-number-link"
-			>
-				{row.original.proposal_number || "--"}
-			</NavLink>
-		),
+		cell: ({ row }) => {
+			const proposalNumber = row.original.proposal_number || "--";
+
+			// Same rule as the menu's "View": submitted → anyone with access;
+			// not submitted → only its creator. Otherwise plain text.
+			if (!canOpenEpcView(row.original, currentUserId)) {
+				return (
+					<span
+						className="epc-cell-primary"
+						title="Available after the EPC is submitted"
+					>
+						{proposalNumber}
+					</span>
+				);
+			}
+
+			return (
+				<Link
+					to={ACTIVITY_PLANNER_ROUTES.detail(row.original.id)}
+					className="epc-number-link"
+					onClick={(e) => e.stopPropagation()}
+				>
+					{proposalNumber}
+				</Link>
+			);
+		},
 	},
 	{
 		accessorKey: "event_name",
@@ -95,18 +123,15 @@ export const getEPCColumns = ({
 		accessorKey: "status",
 		header: "Status",
 		meta: {
-			headerClassName: "epc-column-owner",
-			cellClassName: "epc-column-owner",
+			headerClassName: "epc-column-status",
+			cellClassName: "epc-column-status",
 		},
-		cell: ({ row }) => {
-			return (
-				<Badge
-					status={formatPendingOn(row.original.pendingOn, row.original.status)}
-				/>
-			);
-		},
+		cell: ({ row }) => (
+			<Badge
+				status={formatPendingOn(row.original.pendingOn, row.original.status)}
+			/>
+		),
 	},
-
 	{
 		accessorKey: "created_at",
 		header: "Created",
@@ -131,8 +156,12 @@ export const getEPCColumns = ({
 			return (
 				<EPCActionMenu
 					row={epc}
+					// The menu needs currentUserId to decide Edit / Add CRF / Add EPF.
+					currentUserId={currentUserId}
 					canCreateLead={canCreateLead(epc)}
 					onLeadCreate={onLeadCreate}
+					canCreateMachineStudy={canCreateMachineStudy(epc)}
+					onMachineStudyCreate={onMachineStudyCreate}
 				/>
 			);
 		},

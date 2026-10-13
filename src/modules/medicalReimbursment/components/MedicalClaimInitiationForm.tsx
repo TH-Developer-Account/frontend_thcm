@@ -24,8 +24,10 @@ import type {
 } from "../types/medicalClaimInitiation.types";
 import { Modal } from "../../../components/common/Modal";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
-import { MedicalClaimInitiationExcelPreview } from "../components/MedicalClaimInitiationExcelPreview";
-import { ImportedMedicalClaimInitiationTable } from "../components/ImportedMedicalClaimInitiationTable";
+import { MedicalClaimInitiationExcelPreview } from "./MedicalClaimInitiationExcelPreview";
+import { ImportedMedicalClaimInitiationTable } from "./ImportedMedicalClaimInitiationTable";
+import { InitiationImportPreviewTable } from "./InitiationImportPreviewTable";
+import { getApiErrorMessage } from "../../../utils/apiError.helper";
 
 type MedicalClaimInitiationFormProps = {
 	claimId?: string;
@@ -37,8 +39,8 @@ type MedicalClaimInitiationFormProps = {
 };
 
 const handleDownloadTemplate = (): void => {
-	void import("../helpers/generateMedicalClaimInitiationTemplate").then(
-		(module) => module.downloadMedicalClaimInitiationTemplate(),
+	void import("../helpers/generateMedicalClaimInitiationTemplate").then((module) =>
+		module.downloadMedicalClaimInitiationTemplate(),
 	);
 };
 
@@ -50,8 +52,7 @@ const MedicalClaimInitiationForm = ({
 	onBack,
 	onSuccess,
 }: MedicalClaimInitiationFormProps) => {
-	const resolvedMode: MedicalClaimInitiationFormMode =
-		mode ?? (claimId ? "view" : "create");
+	const resolvedMode: MedicalClaimInitiationFormMode = mode ?? (claimId ? "view" : "create");
 	const isViewMode = resolvedMode === "view";
 	const fieldMode = isViewMode ? "view" : "edit";
 
@@ -62,7 +63,10 @@ const MedicalClaimInitiationForm = ({
 		isSubmitting,
 		isResendingLink,
 		isDetailLoading,
+		isDetailError,
+		detailError,
 		handleChange,
+		handleBlur,
 		handleReset,
 		handleSubmit,
 		handleResendLink,
@@ -76,6 +80,9 @@ const MedicalClaimInitiationForm = ({
 		isImportModalOpen,
 		importFile,
 		importFileError,
+		parsedFile,
+		isParsing,
+		canImport,
 		progress,
 		isImporting,
 		openImportModal,
@@ -88,20 +95,31 @@ const MedicalClaimInitiationForm = ({
 			await onSuccess?.();
 		},
 	});
-	const canResendLink =
-		isViewMode && values.status === "AWAITING_EX_EMPLOYEE" && Boolean(claimId);
+	const canResendLink = isViewMode && values.status === "AWAITING_EX_EMPLOYEE";
 
 	const handleCancel = () => (onCancel ? onCancel() : onBack?.());
+
+	if (isViewMode && isDetailError) {
+		return (
+			<Card padding="spacious">
+				<p className="text-sm text-rejected" role="alert">
+					{getApiErrorMessage(detailError, "Unable to load this claim initiation.")}
+				</p>
+			</Card>
+		);
+	}
+
+	const importLabel = isImporting
+		? "Importing..."
+		: parsedFile && parsedFile.validCount && parsedFile.invalidCount
+			? `Import ${parsedFile.validCount} valid row${parsedFile.validCount === 1 ? "" : "s"}`
+			: "Import";
 
 	return (
 		<Card
 			title={
 				<FormHeader
-					title={
-						isViewMode
-							? "Medical Claim Initiation Details"
-							: "Initiate Medical Claim"
-					}
+					title={isViewMode ? "Medical Claim Initiation Details" : "Initiate Medical Claim"}
 					Icon={HeartPulse}
 				/>
 			}
@@ -117,7 +135,6 @@ const MedicalClaimInitiationForm = ({
 							Icon={Download}
 							text="Download Template"
 						/>
-
 						<Button
 							type="button"
 							onClick={openImportModal}
@@ -126,6 +143,7 @@ const MedicalClaimInitiationForm = ({
 							variant="brand"
 							Icon={FileUp}
 							text="Import Excel"
+							disabled={isImporting}
 						/>
 					</>
 				) : undefined
@@ -146,13 +164,11 @@ const MedicalClaimInitiationForm = ({
 				{values.referenceNumber ? (
 					<p className="mb-3 text-sm text-muted">
 						Reference:{" "}
-						<span className="font-medium text-iron-dark">
-							{values.referenceNumber}
-						</span>
+						<span className="font-medium text-iron-dark">{values.referenceNumber}</span>
 					</p>
 				) : null}
 
-				<div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-4 px-2.5">
+				<div className="grid grid-cols-1 gap-3 px-2.5 md:grid-cols-3 xl:grid-cols-4">
 					<FormInput
 						name="employeeName"
 						label="Employee Name"
@@ -160,12 +176,12 @@ const MedicalClaimInitiationForm = ({
 						value={values.employeeName}
 						required={!isViewMode}
 						readOnly={isViewMode}
-						disabled={isDetailLoading}
+						disabled={isDetailLoading || isSubmitting}
+						maxLength={100}
 						error={isViewMode ? undefined : errors.employeeName}
 						autoComplete="name"
-						onChange={(event) =>
-							handleChange("employeeName", event.target.value)
-						}
+						onChange={(event) => handleChange("employeeName", event.target.value)}
+						onBlur={() => handleBlur("employeeName")}
 					/>
 					<FormInput
 						name="ticketNumber"
@@ -174,11 +190,17 @@ const MedicalClaimInitiationForm = ({
 						value={values.ticketNumber}
 						required={!isViewMode}
 						readOnly={isViewMode}
-						disabled={isDetailLoading}
+						disabled={isDetailLoading || isSubmitting}
+						maxLength={20}
+						placeholder="e.g. RE10214"
 						error={isViewMode ? undefined : errors.ticketNumber}
 						onChange={(event) =>
-							handleChange("ticketNumber", event.target.value)
+							handleChange(
+								"ticketNumber",
+								event.target.value.replace(/[^A-Za-z0-9-]/g, "").toUpperCase(),
+							)
 						}
+						onBlur={() => handleBlur("ticketNumber")}
 					/>
 					<FormInput
 						name="email"
@@ -188,29 +210,30 @@ const MedicalClaimInitiationForm = ({
 						value={values.email}
 						required={!isViewMode}
 						readOnly={isViewMode}
-						disabled={isDetailLoading}
+						disabled={isDetailLoading || isSubmitting}
+						maxLength={254}
 						error={isViewMode ? undefined : errors.email}
 						autoComplete="email"
-						onChange={(event) => handleChange("email", event.target.value)}
+						onChange={(event) => handleChange("email", event.target.value.trim())}
+						onBlur={() => handleBlur("email")}
 					/>
 					<FormInput
 						name="mobile"
 						label="Employee Phone Number"
 						type="tel"
+						inputMode="numeric"
 						mode={fieldMode}
 						value={values.mobile}
 						required={!isViewMode}
 						readOnly={isViewMode}
-						disabled={isDetailLoading}
+						disabled={isDetailLoading || isSubmitting}
 						error={isViewMode ? undefined : errors.mobile}
 						autoComplete="tel"
 						maxLength={10}
 						onChange={(event) =>
-							handleChange(
-								"mobile",
-								event.target.value.replace(/\D/g, "").slice(0, 10),
-							)
+							handleChange("mobile", event.target.value.replace(/\D/g, "").slice(0, 10))
 						}
+						onBlur={() => handleBlur("mobile")}
 					/>
 				</div>
 
@@ -257,7 +280,7 @@ const MedicalClaimInitiationForm = ({
 						{canResendLink ? (
 							<Button
 								type="button"
-								text="Re-Send Link"
+								text={isResendingLink ? "Sending..." : "Re-Send Link"}
 								Icon={Send}
 								iconPosition="left"
 								size="sm"
@@ -294,16 +317,15 @@ const MedicalClaimInitiationForm = ({
 							onClick={closeImportModal}
 							disabled={isImporting}
 						/>
-
 						<Button
 							type="button"
-							text={isImporting ? "Importing..." : "Import"}
+							text={importLabel}
 							Icon={Save}
 							appearance="standard"
 							variant="brand"
 							size="sm"
 							onClick={() => void handleImportFile()}
-							disabled={!importFile?.file || isImporting}
+							disabled={!canImport || isImporting}
 						/>
 					</>
 				}
@@ -315,12 +337,10 @@ const MedicalClaimInitiationForm = ({
 								<p className="text-xs font-medium uppercase tracking-wide text-zinc-600">
 									Expected format
 								</p>
-
 								<p className="mt-1 text-xs text-zinc-500">
 									Do not rename or remove any template columns.
 								</p>
 							</div>
-
 							<Button
 								type="button"
 								onClick={handleDownloadTemplate}
@@ -331,20 +351,21 @@ const MedicalClaimInitiationForm = ({
 								text="Download Template"
 							/>
 						</div>
-
 						<MedicalClaimInitiationExcelPreview />
 					</div>
 
 					<FileUploadField
 						value={importFile}
-						onChange={handleImportFileChange}
+						onChange={(value) => void handleImportFileChange(value)}
 						kind="spreadsheet"
 						label="Upload Excel File"
-						description="Supported formats: XLSX, XLS and CSV"
+						description="Supported formats: XLSX, XLS and CSV (max 10 MB, 1000 rows)"
 						required
 						error={importFileError}
 						disabled={isImporting}
 					/>
+
+					<InitiationImportPreviewTable parsedFile={parsedFile} isParsing={isParsing} />
 				</div>
 			</Modal>
 		</Card>

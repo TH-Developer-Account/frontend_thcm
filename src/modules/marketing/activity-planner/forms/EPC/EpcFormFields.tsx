@@ -1,15 +1,32 @@
+// forms/EPC/EpcFormFields.tsx
+// EPC field grid shared by create, edit and view.
+//
+// mode="edit" (default) → interactive inputs, unchanged from before.
+// mode="view"           → same layout, every field rendered read-only via the
+//                         shared FormInput/SelectInput/TextareaInput `mode="view"`
+//                         (ReadOnlyField), matching the vendor onboarding forms.
+//
+// DatePickerInput and PincodeAsyncSelect have no view mode, so in view mode
+// they're swapped for ReadOnlyField directly.
 import React from "react";
 import type { SingleValue } from "react-select";
 
 import FormInput from "../../../../../components/forms/FormInput";
 import SelectInput from "../../../../../components/forms/SelectInput";
 import TextareaInput from "../../../../../components/forms/TextareaInput";
+import ReadOnlyField from "../../../../../components/forms/ReadOnlyField";
+import type { FormFieldMode } from "../../../../../components/forms/input.types";
 import DatePickerInput from "../../../../../components/common/DatePickerInput";
 import PincodeAsyncSelect, {
 	type PincodeOption,
 } from "../../../../../components/forms/PincodeAsyncSelect";
 
-import { formatDateOnly, toDateRange } from "../../../../../utils/format";
+import {
+	formatDate,
+	formatDateOnly,
+	parseDateOnly,
+	toDateRange,
+} from "../../../../../utils/format";
 import type { EpcFormValues } from "../../types/epc.types";
 
 type Option = {
@@ -30,13 +47,33 @@ type EpcMasters = {
 	budgetMasters?: Option[];
 };
 
+/**
+ * Display labels used in view mode when the matching master option can't be
+ * found (masters still loading, inactive master, branch filtered out, etc.).
+ * Taken straight from the EPC detail response relations.
+ */
+export type EpcReadOnlyLabels = Partial<{
+	region: string;
+	branch: string;
+	department: string;
+	vertical: string;
+	eventName: string;
+	budgetCode: string;
+	budgetDescription: string;
+}>;
+
 type EpcFormFieldsProps = {
 	values: EpcFormValues;
-	errors: Partial<Record<keyof EpcFormValues, string>>;
+	errors?: Partial<Record<keyof EpcFormValues, string>>;
 	masters?: EpcMasters;
-	onChange: (name: keyof EpcFormValues, value: string) => void;
+	/** Not needed in view mode. */
+	onChange?: (name: keyof EpcFormValues, value: string) => void;
 	lockOrgFields?: boolean;
+	mode?: FormFieldMode;
+	readOnlyLabels?: EpcReadOnlyLabels;
 };
+
+const EMPTY_ERRORS: Partial<Record<keyof EpcFormValues, string>> = {};
 
 const findOption = (options: Option[] = [], value?: string | null) => {
 	if (!value) return null;
@@ -51,13 +88,31 @@ const findOption = (options: Option[] = [], value?: string | null) => {
 	);
 };
 
+/** "2026-10-05" | "05-10-2026" | ISO → "05/10/2026 - 07/10/2026" */
+const formatEventDateRange = (from?: string, to?: string): string => {
+	const fromLabel = formatDate(parseDateOnly(from));
+	const toLabel = formatDate(parseDateOnly(to));
+
+	if (fromLabel && toLabel) return `${fromLabel} - ${toLabel}`;
+	return fromLabel || toLabel || "";
+};
+
 export default function EpcFormFields({
 	values,
-	errors,
+	errors = EMPTY_ERRORS,
 	masters,
 	onChange,
 	lockOrgFields = false,
+	mode = "edit",
+	readOnlyLabels,
 }: EpcFormFieldsProps) {
+	const isView = mode === "view";
+
+	// Helper texts describe how to fill a field — irrelevant when read-only.
+	const helper = (text: string) => (isView ? undefined : text);
+	const emit = (name: keyof EpcFormValues, value: string) =>
+		onChange?.(name, value);
+
 	const selectedDepartment = values.department || "";
 
 	const filteredBranches = React.useMemo(() => {
@@ -121,15 +176,15 @@ export default function EpcFormFields({
 	const handleRegionChange = (option: SingleValue<Option>) => {
 		const regionId = option?.value || "";
 
-		onChange("region", regionId);
-		onChange("branch", "");
+		emit("region", regionId);
+		emit("branch", "");
 	};
 
 	const handleDepartmentChange = (option: SingleValue<Option>) => {
 		const departmentId = option?.value || "";
 
-		onChange("department", departmentId);
-		onChange("vertical", "");
+		emit("department", departmentId);
+		emit("vertical", "");
 	};
 
 	const handleBudgetChange = (option: SingleValue<Option>) => {
@@ -140,8 +195,8 @@ export default function EpcFormFields({
 			budgetMasterId,
 		);
 
-		onChange("budget_master_id", budgetMasterId);
-		onChange(
+		emit("budget_master_id", budgetMasterId);
+		emit(
 			"budgetDescription",
 			selectedMaster?.description || selectedMaster?.label || "",
 		);
@@ -154,13 +209,13 @@ export default function EpcFormFields({
 				to?: Date;
 			};
 
-			onChange("event_from_date", range.from ? formatDateOnly(range.from) : "");
-			onChange("event_to_date", range.to ? formatDateOnly(range.to) : "");
+			emit("event_from_date", range.from ? formatDateOnly(range.from) : "");
+			emit("event_to_date", range.to ? formatDateOnly(range.to) : "");
 			return;
 		}
 
-		onChange("event_from_date", "");
-		onChange("event_to_date", "");
+		emit("event_from_date", "");
+		emit("event_to_date", "");
 	};
 
 	const buildPincodeOptionFromValues = (
@@ -187,13 +242,13 @@ export default function EpcFormFields({
 
 	const handlePincodeChange = (option: PincodeOption | null) => {
 		if (!option) {
-			onChange("location", "");
-			onChange("locationMeta", null as any);
+			emit("location", "");
+			onChange?.("locationMeta", null as any);
 			return;
 		}
 
-		onChange("location", option.label);
-		onChange("locationMeta", {
+		emit("location", option.label);
+		onChange?.("locationMeta", {
 			pincode: option.pincode,
 			officeName: option.officeName,
 			district: option.district,
@@ -204,142 +259,178 @@ export default function EpcFormFields({
 	};
 
 	return (
-		<form>
+		<form noValidate onSubmit={(event) => event.preventDefault()}>
 			<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
 				<FormInput
+					mode={mode}
 					name="epfNo"
 					label="EPC No"
 					value={values.epfNo || values.proposal_number || ""}
 					disabled
 					className="w-full p-2 text-black"
-					helperText="EPC No. auto generated"
+					helperText={helper("EPC No. auto generated")}
 				/>
 
 				<SelectInput
+					mode={mode}
 					name="region"
 					label="Zone"
 					value={findOption(masters?.regions ?? [], values.region)}
+					readOnlyValue={readOnlyLabels?.region}
 					options={masters?.regions || []}
 					onChange={handleRegionChange}
 					isDisabled={lockOrgFields}
 					required
-					helperText={
+					helperText={helper(
 						lockOrgFields
 							? "Zone cannot be changed after EPC creation"
-							: "Select zone to auto populate branches"
-					}
+							: "Select zone to auto populate branches",
+					)}
 					error={errors.region}
 					className="w-full"
 				/>
 
 				<SelectInput
+					mode={mode}
 					name="branch"
 					label="Branch"
 					options={filteredBranches}
 					value={findOption(filteredBranches, values.branch)}
+					readOnlyValue={readOnlyLabels?.branch}
 					onChange={(option: SingleValue<Option>) =>
-						onChange("branch", option?.value || "")
+						emit("branch", option?.value || "")
 					}
 					isDisabled={lockOrgFields}
 					required
-					helperText={
+					helperText={helper(
 						lockOrgFields
 							? "Branch cannot be changed after EPC creation"
-							: "Branches are filtered based on selected zone"
-					}
+							: "Branches are filtered based on selected zone",
+					)}
 					error={errors.branch}
 					className="w-full"
 				/>
 
 				<div className="flex flex-col gap-1">
-					<PincodeAsyncSelect
-						label="Location"
-						value={selectedPincode}
-						onChange={handlePincodeChange}
-						error={errors.location}
-						helperText="Search by pincode, office name, district, or state."
-					/>
+					{isView ? (
+						<ReadOnlyField label="Location" value={values.location} />
+					) : (
+						<PincodeAsyncSelect
+							label="Location"
+							value={selectedPincode}
+							onChange={handlePincodeChange}
+							error={errors.location}
+							helperText="Search by pincode, office name, district, or state."
+						/>
+					)}
 				</div>
 
 				<SelectInput
+					mode={mode}
 					name="department"
 					label="Department"
 					value={findOption(masters?.departments ?? [], values.department)}
+					readOnlyValue={readOnlyLabels?.department}
 					options={masters?.departments || []}
 					onChange={handleDepartmentChange}
 					isDisabled={lockOrgFields}
 					required
-					helperText={
+					helperText={helper(
 						lockOrgFields
 							? "Department cannot be changed after EPC creation"
-							: "Select department to auto populate verticals"
-					}
+							: "Select department to auto populate verticals",
+					)}
 					error={errors.department}
 					className="w-full"
 				/>
 
 				<SelectInput
+					mode={mode}
 					name="vertical"
 					label="Vertical"
 					value={findOption(filteredVerticals, values.vertical)}
+					readOnlyValue={readOnlyLabels?.vertical}
 					options={filteredVerticals}
 					onChange={(option: SingleValue<Option>) =>
-						onChange("vertical", option?.value || "")
+						emit("vertical", option?.value || "")
 					}
 					isDisabled={lockOrgFields || !selectedDepartment}
 					required
-					helperText={
+					helperText={helper(
 						lockOrgFields
 							? "Vertical cannot be changed after EPC creation"
-							: "Verticals are filtered based on selected department"
-					}
+							: "Verticals are filtered based on selected department",
+					)}
 					error={errors.vertical}
 					className="w-full"
 				/>
 
-				<DatePickerInput
-					label="Event [From - To]"
-					value={toDateRange(values.event_from_date, values.event_to_date)}
-					onChange={handleDateRangeChange}
-					helperText="Select the start and end date of the event."
-					error={errors.event_from_date || errors.event_to_date}
-					disablePast
-				/>
+				{isView ? (
+					<ReadOnlyField
+						label="Event [From - To]"
+						value={formatEventDateRange(
+							values.event_from_date,
+							values.event_to_date,
+						)}
+						required
+					/>
+				) : (
+					<DatePickerInput
+						label="Event [From - To]"
+						value={toDateRange(values.event_from_date, values.event_to_date)}
+						onChange={handleDateRangeChange}
+						helperText="Select the start and end date of the event."
+						error={errors.event_from_date || errors.event_to_date}
+						disablePast
+					/>
+				)}
 
 				<SelectInput
+					mode={mode}
 					name="budget_master_id"
 					label="Budget Code"
 					value={selectedBudgetCode}
+					readOnlyValue={readOnlyLabels?.budgetCode}
 					options={budgetCodeOptions}
 					onChange={handleBudgetChange}
 					required
-					helperText="Select a budget code to populate its description"
+					helperText={helper(
+						"Select a budget code to populate its description",
+					)}
 					error={errors.budget_master_id}
 					className="w-full"
 				/>
 
 				<SelectInput
+					mode={mode}
 					name="budgetDescription"
 					label="Budget Description"
 					value={selectedBudgetDescription}
+					readOnlyValue={readOnlyLabels?.budgetDescription}
 					options={budgetDescriptionOptions}
 					onChange={handleBudgetChange}
 					required
-					helperText="Select a description to populate its budget code"
+					helperText={helper(
+						"Select a description to populate its budget code",
+					)}
 					error={errors.budgetDescription}
 					className="w-full"
 				/>
 
 				<SelectInput
+					mode={mode}
 					name="event_name"
 					label="Event Name"
 					value={findOption(masters?.eventNames ?? [], values.event_name)}
+					readOnlyValue={readOnlyLabels?.eventName}
 					options={masters?.eventNames || []}
 					onChange={(option: SingleValue<Option>) =>
-						onChange("event_name", option?.value || "")
+						emit("event_name", option?.value || "")
 					}
 					required
-					helperText="Select from past events or create new by typing and pressing enter"
+					helperText={helper(
+						"Select from past events or create new by typing and pressing enter",
+					)}
 					error={errors.event_name}
 					className="w-full"
 				/>
@@ -348,33 +439,35 @@ export default function EpcFormFields({
 			<div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
 				<div className="flex min-w-0 flex-col gap-4">
 					<TextareaInput
+						mode={mode}
 						name="event_description"
 						label="Event Description"
 						value={values.event_description || ""}
-						onChange={(event) =>
-							onChange("event_description", event.target.value)
-						}
+						onChange={(event) => emit("event_description", event.target.value)}
 						className="h-full w-full p-2"
 						minLength={100}
 						rows={4}
-						helperText="Describe the purpose, audience, and expected outcome of this event."
+						helperText={helper(
+							"Describe the purpose, audience, and expected outcome of this event.",
+						)}
 						error={errors.event_description}
 					/>
 				</div>
 
 				<div className="min-w-0">
 					<TextareaInput
+						mode={mode}
 						name="event_objective"
 						label="Objective"
 						value={values.event_objective || ""}
-						onChange={(event) =>
-							onChange("event_objective", event.target.value)
-						}
+						onChange={(event) => emit("event_objective", event.target.value)}
 						minLength={100}
 						rows={4}
 						className="h-full w-full p-2"
 						error={errors.event_objective}
-						helperText="Mention the main goal of this event, such as brand awareness, lead generation, dealer engagement, product promotion, customer connect, or sales support."
+						helperText={helper(
+							"Mention the main goal of this event, such as brand awareness, lead generation, dealer engagement, product promotion, customer connect, or sales support.",
+						)}
 					/>
 				</div>
 			</div>

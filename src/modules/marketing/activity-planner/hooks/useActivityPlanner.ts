@@ -1,26 +1,16 @@
+// hooks/useActivityPlanner.ts
+// Activity Planner detail-page controller + its sub-hooks
+// (permissions, clarified resubmission, deviation resubmission).
 import React from "react";
-import { useNavigate } from "react-router-dom";
-
+import { useNavigate, useLocation } from "react-router-dom";
+import { getWorkflowCommentContext } from "../../../../components/ui/comments/comments.helper";
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { useAuth } from "../../../../context/Auth/useAuth";
-import { REPORT_ELIGIBLE_STATUSES } from "../helpers/activityPermissions.helper";
-import { getStoredAppId } from "../helpers/localstorage";
 import {
-	useActivityCommentsQuery,
-	useActivityPlannerPdfUrlMutation,
-	useClarifyEventReportMutation,
-	useEventReportQuery,
-	useExportActivityPlannerMutation,
-	useValidateEventReportMutation,
-} from "../queries/useActivityFormQuery";
-import { getApiErrorMessage } from "../../../../utils/apiError.helper";
-import { useEpcDetailQuery } from "../queries/useEpcListQuery";
-import { useCloseEPC } from "../queries/useEventOutcomeMutation";
-import type { EventReportDetail } from "../types/event.report.types";
-import { useClarifiedResubmission } from "./useClarifiedResubmission";
-import { useDeviationResubmission } from "./useDeviationResubmission";
-import { useActivityPermissions } from "./useActivityPermissions";
-import { getWorkflowCommentContext } from "../../../../components/ui/comments/comments.helper";
+	getApiErrorMessage,
+	showApiErrorToast,
+	showSuccessToast,
+} from "../../../../utils/apiError.helper";
 import {
 	getWorkflowApproverData,
 	workflowApi,
@@ -32,9 +22,196 @@ import type {
 	WorkflowStage,
 } from "../../../workflows/types/types";
 import { mapEpcWorkflowStage } from "../../../workflows/utils/approvalWorkflow.mapper";
+import {
+	getActivityPermissions,
+	REPORT_ELIGIBLE_STATUSES,
+	type ActivityPermissions,
+	type WorkflowEntry,
+} from "../utils/activity.helper";
+import { EPC_LISTING_PATH } from "../utils/constant";
+import { getStoredAppId } from "../utils/localstorage";
+import {
+	useActivityCommentsQuery,
+	useActivityPlannerPdfUrlMutation,
+	useClarifyEventReportMutation,
+	useCloseEPC,
+	useEpcDetailQuery,
+	useEventReportQuery,
+	useExportActivityPlannerMutation,
+	useSubmitClarifiedUpdatedFormMutation,
+	useSubmitDeviatedUpdatedFormMutation,
+	useValidateEventReportMutation,
+} from "../queries/epc.queries";
+import type { EpcDetailResponse, EventReportDetail } from "../types/epc.types";
+
+/* ========================================================================== */
+/*                               Permissions                                  */
+/* ========================================================================== */
+
+type UseActivityPermissionsArgs = {
+	epcData?: EpcDetailResponse | null;
+	report?: EventReportDetail | null;
+	workflowEntries?: WorkflowEntry[];
+	hasValidatorPreviewed?: boolean;
+};
+
+export const useActivityPermissions = ({
+	epcData,
+	report,
+	workflowEntries = [],
+	hasValidatorPreviewed = false,
+}: UseActivityPermissionsArgs) => {
+	const { user } = useAuth();
+
+	return React.useMemo(
+		() =>
+			getActivityPermissions({
+				epcData,
+				report,
+				workflowEntries,
+				hasValidatorPreviewed,
+				userId: user?.id,
+			}),
+		[epcData, report, workflowEntries, hasValidatorPreviewed, user?.id],
+	);
+};
+
+/* ========================================================================== */
+/*                         Clarified resubmission                             */
+/* ========================================================================== */
+
+type UseClarifiedResubmissionArgs = {
+	epcData?: EpcDetailResponse | null;
+	onRefresh: () => Promise<unknown>;
+	permissions: ActivityPermissions;
+};
+
+export const useClarifiedResubmission = ({
+	epcData,
+	onRefresh,
+	permissions,
+}: UseClarifiedResubmissionArgs) => {
+	const { showToast } = useToast();
+
+	const submitClarifiedMutation = useSubmitClarifiedUpdatedFormMutation();
+	const workflowId = epcData?.activeWorkflow?.id ?? null;
+
+	const isWorkflowClarifiedPending = permissions.isClarifiedPending;
+	const canSubmitClarifiedUpdate = permissions.canSubmitClarifiedUpdate;
+
+	const submitClarifiedUpdate = async () => {
+		if (!workflowId) {
+			showApiErrorToast(showToast, "No active workflow found.");
+			return;
+		}
+
+		if (!canSubmitClarifiedUpdate) {
+			showApiErrorToast(showToast, "Please update the form before submitting.");
+			return;
+		}
+
+		try {
+			await submitClarifiedMutation.mutateAsync(workflowId);
+			showSuccessToast(showToast, "Updated form submitted successfully.");
+			await onRefresh();
+		} catch (error: unknown) {
+			showApiErrorToast(showToast, `Failed to submit updated form ${error}.`);
+		}
+	};
+
+	return {
+		isClarifiedPending: isWorkflowClarifiedPending,
+		canSubmitClarifiedUpdate,
+		isSubmittingClarifiedUpdate: submitClarifiedMutation.isPending,
+		submitClarifiedUpdate,
+	};
+};
+
+/* ========================================================================== */
+/*                         Deviation resubmission                             */
+/* ========================================================================== */
+
+type UseDeviationResubmissionArgs = {
+	epcData?: EpcDetailResponse | null;
+	permissions: ActivityPermissions;
+	onRefresh: () => Promise<unknown>;
+	appId?: string | null;
+};
+
+export const useDeviationResubmission = ({
+	epcData,
+	onRefresh,
+	permissions,
+	appId,
+}: UseDeviationResubmissionArgs) => {
+	const { showToast } = useToast();
+	const { workspaceId } = useAuth();
+
+	const submitDeviationMutation = useSubmitDeviatedUpdatedFormMutation();
+	const workflowId = epcData?.activeWorkflow?.id ?? null;
+	const isDeviationPending = permissions.isDeviationPending;
+	const canSubmitDeviationUpdate = permissions.canSubmitDeviationUpdate;
+
+	const submitDeviationUpdate = async () => {
+		if (!workflowId) {
+			showApiErrorToast(showToast, "No active workflow found.");
+			return;
+		}
+
+		if (!isDeviationPending) {
+			showApiErrorToast(showToast, "No pending deviation clarification found.");
+			return;
+		}
+		if (!canSubmitDeviationUpdate) {
+			showApiErrorToast(showToast, "Please update the form before submitting.");
+			return;
+		}
+		try {
+			const payload = {
+				workflowId,
+				eventProposalId: epcData?.id,
+				workspaceId: workspaceId ?? undefined,
+				appId: appId ?? undefined,
+				newBudget: epcData?.epf?.eventBudget,
+			};
+
+			await submitDeviationMutation.mutateAsync(payload);
+			showSuccessToast(
+				showToast,
+				"Updated deviation form submitted successfully.",
+			);
+			await onRefresh();
+		} catch (error: unknown) {
+			showApiErrorToast(
+				showToast,
+				error,
+				"Failed to submit updated deviation form.",
+			);
+		}
+	};
+	return {
+		submitDeviationUpdate,
+		isDeviationPending,
+		isSubmittingDeviationUpdate: submitDeviationMutation.isPending,
+		canSubmitDeviationUpdate,
+	};
+};
+
+/* ========================================================================== */
+/*                          Activity planner (main)                           */
+/* ========================================================================== */
 
 export type ActivityEditingSection = "epc" | "crf" | "epf" | null;
-export type ActivityReasonMode = "clarify-workflow" | "clarify-report" | null;
+/** Router state accepted by the detail page (sent by the listing "Edit" action). */
+export type ActivityPlannerLocationState = {
+	editSection?: "epc";
+};
+// Workflow approve/clarify now go through ApprovalActionsBar (reason typed
+// inline in the footer). The modal is only used for report clarification.
+export type ActivityReasonMode = "clarify-report" | null;
+
+// Which workflow action the approver bar is currently running.
+type WorkflowActionInFlight = "approve" | "clarify" | null;
 
 type UseActivityPlannerOptions = {
 	onOpenReportBuilder?: () => void;
@@ -92,6 +269,12 @@ export const useActivityPlanner = (
 		loading: boolean;
 	}>({ mode: null, loading: false });
 	const reasonMode = reasonModal.mode;
+
+	const [workflowAction, setWorkflowAction] =
+		React.useState<WorkflowActionInFlight>(null);
+	// Ref guard so a fast double-click can't fire two approve/clarify calls
+	// before the state update re-renders the bar as disabled.
+	const workflowActionRef = React.useRef<WorkflowActionInFlight>(null);
 
 	const [isDownloadingPdf, setIsDownloadingPdf] = React.useState(false);
 	const [hasValidatorPreviewed, setHasValidatorPreviewed] =
@@ -254,7 +437,9 @@ export const useActivityPlanner = (
 				return;
 			}
 
-			navigate(`/marketing/activity-planner/${createdEpcId}`);
+			// CRF / EPF are added later from the listing action menu.
+			// (useCreateEpcMutation already invalidates the list query.)
+			navigate(EPC_LISTING_PATH);
 		},
 		[navigate, showToast],
 	);
@@ -491,52 +676,104 @@ export const useActivityPlanner = (
 		setReasonModal({ mode: null, loading: false });
 	}, []);
 
-	const handleApproveWorkflow = React.useCallback(async () => {
-		if (!currentStageId || !canActOnCurrentStage) return;
+	/* ---------------------------------------------------------------------- */
+	/*            Approver actions (wired to ApprovalActionsBar)               */
+	/* ---------------------------------------------------------------------- */
 
-		try {
-			const { message } = await workflowApi.approveStage(currentStageId);
-			showToast({ type: "success", title: "Success", description: message });
-			await handleWorkflowUpdate();
-		} catch (error) {
-			showToast({
-				type: "error",
-				title: "Error",
-				description: getApiErrorMessage(error, "Error while approving."),
-			});
-		}
-	}, [currentStageId, canActOnCurrentStage, showToast, handleWorkflowUpdate]);
+	// Shared runner for approve/clarify. Errors are toasted here and NOT
+	// re-thrown — ApprovalActionsBar calls these with `void` and has no catch,
+	// so a throw would surface as an unhandled promise rejection.
+	const runWorkflowAction = React.useCallback(
+		async (action: Exclude<WorkflowActionInFlight, null>, reason: string) => {
+			if (workflowActionRef.current) return;
+
+			const trimmedReason = reason.trim();
+
+			if (!currentStageId || !canActOnCurrentStage) {
+				showToast({
+					type: "error",
+					title: "Not allowed",
+					description: "No active approval stage found.",
+				});
+				return;
+			}
+
+			if (!trimmedReason) {
+				showToast({
+					type: "error",
+					title: "Reason required",
+					description: "Please enter a reason before continuing.",
+				});
+				return;
+			}
+
+			workflowActionRef.current = action;
+			setWorkflowAction(action);
+
+			try {
+				const { message } =
+					action === "approve"
+						? await workflowApi.approveStage(currentStageId, trimmedReason)
+						: await workflowApi.clarifyStage(currentStageId, trimmedReason);
+
+				showToast({
+					type: "success",
+					title: "Success",
+					description:
+						message ||
+						(action === "approve"
+							? "Approved successfully."
+							: "Sent for clarification."),
+				});
+
+				await handleWorkflowUpdate();
+			} catch (error) {
+				showToast({
+					type: "error",
+					title: "Error",
+					description: getApiErrorMessage(
+						error,
+						action === "approve"
+							? "Error while approving."
+							: "Error while sending for clarification.",
+					),
+				});
+			} finally {
+				workflowActionRef.current = null;
+				setWorkflowAction(null);
+			}
+		},
+		[currentStageId, canActOnCurrentStage, showToast, handleWorkflowUpdate],
+	);
+
+	const handleApproveWorkflow = React.useCallback(
+		(reason: string) => runWorkflowAction("approve", reason),
+		[runWorkflowAction],
+	);
+
+	const handleClarifyWorkflow = React.useCallback(
+		(reason: string) => runWorkflowAction("clarify", reason),
+		[runWorkflowAction],
+	);
+
+	/* ---------------------------------------------------------------------- */
+	/*                 Reason modal (report clarification only)                */
+	/* ---------------------------------------------------------------------- */
 
 	const handleReasonConfirm = React.useCallback(
 		async (reason: string) => {
-			if (!reasonMode) return;
+			if (reasonMode !== "clarify-report") return;
 
 			setReasonModal((current) => ({ ...current, loading: true }));
 			try {
-				if (reasonMode === "clarify-workflow") {
-					if (!currentStageId || !canActOnCurrentStage) {
-						throw new Error("No active approval stage found.");
-					}
-					const { message } = await workflowApi.clarifyStage(
-						currentStageId,
-						reason,
-					);
-					showToast({
-						type: "success",
-						title: "Success",
-						description: message,
-					});
-					await handleWorkflowUpdate();
-				} else {
-					if (!reportId || !epcId)
-						throw new Error("No submitted report found.");
-					await clarifyReport({ reportId, epcId, reason });
-					showToast({
-						type: "success",
-						title: "Clarification requested",
-						description: "The event report was sent back for clarification.",
-					});
-				}
+				if (!reportId || !epcId) throw new Error("No submitted report found.");
+
+				await clarifyReport({ reportId, epcId, reason });
+				showToast({
+					type: "success",
+					title: "Clarification requested",
+					description: "The event report was sent back for clarification.",
+				});
 
 				closeReasonModal();
 			} catch (error) {
@@ -552,17 +789,7 @@ export const useActivityPlanner = (
 				setReasonModal((current) => ({ ...current, loading: false }));
 			}
 		},
-		[
-			reasonMode,
-			currentStageId,
-			canActOnCurrentStage,
-			reportId,
-			epcId,
-			clarifyReport,
-			showToast,
-			handleWorkflowUpdate,
-			closeReasonModal,
-		],
+		[reasonMode, reportId, epcId, clarifyReport, showToast, closeReasonModal],
 	);
 
 	const deviationResubmission = useDeviationResubmission({
@@ -610,7 +837,12 @@ export const useActivityPlanner = (
 		openReasonModal,
 		closeReasonModal,
 		handleReasonConfirm,
+
 		handleApproveWorkflow,
+		handleClarifyWorkflow,
+		isApprovingWorkflow: workflowAction === "approve",
+		isClarifyingWorkflow: workflowAction === "clarify",
+
 		handleDeviationPreviewSuccess,
 
 		isValidatingReport: validateReportMutation.isPending,

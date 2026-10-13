@@ -3074,7 +3074,6 @@
 		}
 	}
 }
-
 /* =====================================================
    PUBLIC PAGE LAYOUT
 
@@ -3107,6 +3106,8 @@
 	/* ---------- Header ---------- */
 
 	.header-public {
+		position: relative;
+		z-index: var(--z-header);
 		width: 100%;
 		flex: 0 0 auto;
 		padding: var(--space-2) var(--public-page-gutter);
@@ -3146,6 +3147,7 @@
 		min-width: 0;
 		min-height: 0;
 		overflow-x: hidden;
+		overflow-y: auto;
 		background: var(--color-page-bg);
 
 		overscroll-behavior-y: contain;
@@ -3204,6 +3206,8 @@
 	/* ---------- Footer ---------- */
 
 	.public-page-footer {
+		position: relative;
+		z-index: var(--z-header);
 		width: 100%;
 		flex: 0 0 auto;
 		padding: 16px var(--public-page-gutter);
@@ -3211,6 +3215,7 @@
 		font-size: max(1.1rem, 11px);
 		color: var(--color-text-secondary);
 		border-top: 0.5px solid var(--color-border);
+		background-color: var(--color-bg-surface);
 	}
 
 	/* ---------- Mobile ---------- */
@@ -3231,13 +3236,14 @@
 	}
 
 	@media (max-width: 767px) {
-		.public-pages-layout {
-			height: 100dvh;
-			min-height: 0;
-			overflow-x: hidden;
-			overflow-y: auto;
-			overscroll-behavior-y: contain;
-			-webkit-overflow-scrolling: touch;
+		.public-page {
+			scrollbar-gutter: auto;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.public-page {
+			scroll-behavior: auto;
 		}
 	}
 }

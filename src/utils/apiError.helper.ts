@@ -18,34 +18,23 @@ type AxiosLikeError = {
 };
 
 type ShowToastFn = (toast: ToastInput) => void;
-export function getApiErrorMessage(
+
+// apiError.helper.ts
+export const getApiErrorMessage = (
 	error: unknown,
-	fallback = "Something went wrong.",
-): string {
-	const err = error as AxiosLikeError;
-	const data = err.response?.data;
+	fallback = "Something went wrong. Please try again.",
+): string => {
+	if (!error) return fallback;
 
-	const status =
-		err.response?.status ??
-		(typeof data === "object" ? data?.statusCode : undefined);
+	const err = error as {
+		response?: { data?: { message?: string } };
+		message?: string;
+	};
 
-	if (status !== undefined && status >= 500) return fallback;
+	return err.response?.data?.message ?? err.message ?? fallback;
+};
 
-	if (typeof data === "string") return data;
-
-	if (data?.message) return data.message;
-
-	if (data?.errors) {
-		const firstError = Object.values(data.errors).flat()[0];
-		if (firstError) return firstError;
-	}
-
-	if (err.message) return err.message;
-
-	return fallback;
-}
-
-export function getApiFieldErrors(error: unknown): Record<string, string[]> {
+export const getApiFieldErrors = (error: unknown): Record<string, string[]> => {
 	const err = error as AxiosLikeError;
 	const data = err.response?.data;
 
@@ -54,7 +43,7 @@ export function getApiFieldErrors(error: unknown): Record<string, string[]> {
 	}
 
 	return {};
-}
+};
 
 export function showApiErrorToast(
 	showToast: ShowToastFn,
