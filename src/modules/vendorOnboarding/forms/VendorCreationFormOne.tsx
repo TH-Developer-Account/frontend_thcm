@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import type { ClipboardEvent } from "react";
 import Button from "../../../components/common/Button";
-import { Modal } from "../../../components/common/Modal";
+// import { Modal } from "../../../components/common/Modal";
 import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
@@ -152,9 +152,9 @@ const VendorCreationFormOne = ({
 		value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
 	const {
 		enclosureErrors,
-		isDpdpModalOpen,
+		// isDpdpModalOpen,
 		hasAcceptedDpdp,
-		hasConfirmedDpdp,
+		// hasConfirmedDpdp,
 		dpdpError,
 		getEnclosureFile,
 		visibleDocumentFields,
@@ -164,14 +164,15 @@ const VendorCreationFormOne = ({
 		handleEnclosureChange,
 		handleEnclosureTypeChange,
 		handleConditionalFieldChange,
-		openDpdpModal,
-		closeDpdpModal,
-		handleDpdpConsentChange,
-		handleAcceptDpdpTerms,
+		// openDpdpModal,
+		// closeDpdpModal,
+		// handleDpdpConsentChange,
+		handleDpdpConsentToggle,
+		// handleAcceptDpdpTerms,
 		// handleReset,
 		handleSaveDraft,
 		handleFormAction,
-		setHasConfirmedDpdp,
+		// setHasConfirmedDpdp,
 	} = useVendorCreationFormOneController({
 		values,
 		initialDocuments,
@@ -663,7 +664,7 @@ const VendorCreationFormOne = ({
 						</section>
 					</div>
 				</div>
-				<Modal
+				{/* <Modal
 					open={isDpdpModalOpen}
 					title="Data Privacy Notice"
 					size="lg"
@@ -778,7 +779,8 @@ const VendorCreationFormOne = ({
 							</span>
 						</label>
 					</div>
-				</Modal>
+				</Modal> */}
+
 				{isReadOnly ? (
 					resolvedOnNext ? (
 						<div className="vendor-onboarding-form-actions">
@@ -803,23 +805,16 @@ const VendorCreationFormOne = ({
 										name="dpdpConsent"
 										checked={hasAcceptedDpdp}
 										disabled={loading}
-										onChange={handleDpdpConsentChange}
+										onChange={(event) =>
+											handleDpdpConsentToggle(event.target.checked)
+										}
 									/>
 
 									<span>
-										I have read and agree to the{" "}
-										<button
-											type="button"
-											className="vendor-dpdp-consent-link"
-											disabled={loading}
-											onClick={(event) => {
-												event.preventDefault();
-												openDpdpModal();
-											}}
-										>
-											Digital Personal Data Protection Act
-										</button>
-										.
+										I hereby declare that the information provided in this form
+										is true and accurate to the best of my knowledge, and I
+										consent to its processing for onboarding and verification
+										purposes.
 									</span>
 								</label>
 

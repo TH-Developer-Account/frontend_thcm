@@ -1,208 +1,161 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { useEffect, useState } from "react";
 
 import Avatar from "../../../../components/common/Avatar";
 import Button from "../../../../components/common/Button";
 import { Modal } from "../../../../components/common/Modal";
 import Checkbox from "../../../../components/forms/Checkbox";
 import { SearchInput } from "../../../../components/forms/SearchInput";
+import { useUserSearch } from "../../users/useUserSearch";
+import { getUserDisplayName } from "../../users/user-management.utils";
 
-import type { Profile, User } from "../types/profile.types";
-import { usersApi } from "../../../../common/common.api";
+import type { User } from "../../users/user-management.types";
+import type { Profile } from "../types/profile.types";
 
-type AssignProps = {
-	profile: Profile | null;
-	onClose: () => void;
-	handleAssignUser: (
-		userIds: string[],
-		profileId: string | undefined,
-	) => Promise<void>;
+type AssignUsersProps = {
+  profile: Profile | null;
+  isSaving: boolean;
+  onClose: () => void;
+  onSave: (userIds: string[]) => void;
 };
 
-const SEARCH_DEBOUNCE_MS = 300;
+// A user holds one profile per app, so ticking someone who already has a
+// different profile in this app moves them — the admin should see that first.
+const findConflictingProfileName = (
+  user: User,
+  profile: Profile,
+): string | undefined =>
+  user.appAccess.find(
+    (access) =>
+      access.appKey === profile.appKey && access.profileId !== profile.id,
+  )?.profileName;
 
-export const AssignUsers: React.FC<AssignProps> = ({
-	profile,
-	onClose,
-	handleAssignUser,
-}) => {
-	const [users, setUsers] = useState<User[]>([]);
-	const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-	const [loading, setLoading] = useState(false);
-	const [search, setSearch] = useState("");
+export const AssignUsers = ({
+  profile,
+  isSaving,
+  onClose,
+  onSave,
+}: AssignUsersProps) => {
+  const [search, setSearch] = useState("");
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const usersQuery = useUserSearch(search, Boolean(profile));
+  const users = usersQuery.data ?? [];
 
-	const toggleUser = (id: string) => {
-		setSelectedUsers((prev) =>
-			prev.includes(id)
-				? prev.filter((userId) => userId !== id)
-				: [...prev, id],
-		);
-	};
+  // Reset only when a different profile opens, so searching never drops
+  // selections already made in the modal.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedUserIds(profile?.users.map((user) => user.id) ?? []);
+    setSearch("");
+  }, [profile]);
 
-	const handleAssign = async () => {
-		await handleAssignUser(selectedUsers, profile?.id);
-	};
+  const toggleUser = (userId: string) =>
+    setSelectedUserIds((current) =>
+      current.includes(userId)
+        ? current.filter((id) => id !== userId)
+        : [...current, userId],
+    );
 
-	/*
-	 * Initialize the selected users whenever the opened profile changes.
-	 *
-	 * Keep this separate from the user-fetching effect so a search request
-	 * never resets selections the user has already made in the modal.
-	 */
-	useEffect(() => {
-		if (!profile?.id) {
-			setSelectedUsers([]);
-			return;
-		}
+  const renderUserRow = (user: User, currentProfile: Profile) => {
+    const isSelected = selectedUserIds.includes(user.id);
+    const conflictingProfileName = findConflictingProfileName(
+      user,
+      currentProfile,
+    );
 
-		setSelectedUsers(profile.users?.map((user) => user.id) ?? []);
-	}, [profile?.id, profile?.users]);
+    return (
+      <label
+        key={user.id}
+        className={`assign-user-row ${isSelected ? "assign-user-row-selected" : ""}`}
+      >
+        <span className="assign-user-avatar">
+          <Avatar firstName={user.firstName} lastName={user.lastName} />
+        </span>
 
-	/*
-	 * Backend search:
-	 * - waits 300 ms after typing
-	 * - sends `search` to /users
-	 * - aborts the previous HTTP request when search changes
-	 * - prevents stale responses from replacing newer results
-	 */
-	useEffect(() => {
-		if (!profile?.id) {
-			setUsers([]);
-			return;
-		}
+        <span className="assign-user-main">
+          <span className="assign-user-name">{getUserDisplayName(user)}</span>
+          <span className="assign-user-mobile-meta">{user.email || "--"}</span>
+          {conflictingProfileName ? (
+            <span className="assign-user-conflict">
+              {isSelected ? "Will replace" : "Currently has"} “
+              {conflictingProfileName}” in {currentProfile.appName}
+            </span>
+          ) : null}
+        </span>
 
-		const controller = new AbortController();
+        <span className="assign-user-meta assign-user-email">
+          {user.email || "--"}
+        </span>
+        <span className="assign-user-meta assign-user-phone">
+          {user.phoneNumber || "--"}
+        </span>
 
-		const timeoutId = window.setTimeout(async () => {
-			try {
-				setLoading(true);
+        <span className="assign-user-check">
+          <Checkbox checked={isSelected} onChange={() => toggleUser(user.id)} />
+        </span>
+      </label>
+    );
+  };
 
-				const result = await usersApi.getUsers({
-					search,
-					signal: controller.signal,
-				});
+  return (
+    <Modal
+      open={Boolean(profile)}
+      onClose={onClose}
+      size="lg"
+      title={profile ? `Assign Users · ${profile.name}` : "Assign Users"}
+      footer_actions={
+        <>
+          <Button
+            text="Cancel"
+            type="button"
+            onClick={onClose}
+            disabled={isSaving}
+            appearance="ghost"
+            variant="secondary"
+          />
+          <Button
+            text={isSaving ? "Saving..." : "Save Assignments"}
+            type="button"
+            onClick={() => onSave(selectedUserIds)}
+            disabled={isSaving}
+            appearance="standard"
+            variant="brand"
+          />
+        </>
+      }
+    >
+      <div className="assign-users">
+        <div className="assign-users-toolbar">
+          <div className="assign-users-search">
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder="Search users..."
+            />
+          </div>
+          <div className="assign-users-count">
+            <span>{selectedUserIds.length}</span> selected
+          </div>
+        </div>
 
-				setUsers(result);
-			} catch (error) {
-				if (axios.isCancel(error) || controller.signal.aborted) {
-					return;
-				}
+        <p className="assign-users-hint">
+          Unticking a user removes their access to{" "}
+          {profile?.appName ?? "this app"}.
+        </p>
 
-				console.error("Failed to fetch users", error);
-			} finally {
-				if (!controller.signal.aborted) {
-					setLoading(false);
-				}
-			}
-		}, SEARCH_DEBOUNCE_MS);
-
-		return () => {
-			window.clearTimeout(timeoutId);
-			controller.abort();
-		};
-	}, [profile?.id, search]);
-
-	return (
-		<Modal
-			open={!!profile?.id}
-			onClose={onClose}
-			size="lg"
-			title="Assign Users"
-			footer_actions={
-				<>
-					<Button
-						text="Cancel"
-						type="button"
-						onClick={onClose}
-						appearance="ghost"
-						variant="secondary"
-					/>
-
-					<Button
-						text="Assign Users"
-						type="button"
-						onClick={handleAssign}
-						disabled={loading}
-						appearance="standard"
-						variant="brand"
-					/>
-				</>
-			}
-		>
-			<div className="assign-users">
-				<div className="assign-users-toolbar">
-					<div className="assign-users-search">
-						<SearchInput
-							value={search}
-							onChange={setSearch}
-							placeholder="Search users..."
-						/>
-					</div>
-
-					<div className="assign-users-count">
-						<span>{selectedUsers.length}</span> selected
-					</div>
-				</div>
-
-				<div className="assign-users-list scrollbar-sleek">
-					{loading ? (
-						<div className="assign-users-state">Loading users...</div>
-					) : users.length > 0 ? (
-						users.map((user) => {
-							const selected = selectedUsers.includes(user.id);
-
-							const fullName = `${user.firstName ?? ""} ${
-								user.lastName ?? ""
-							}`.trim();
-
-							return (
-								<label
-									key={user.id}
-									className={`assign-user-row ${
-										selected ? "assign-user-row-selected" : ""
-									}`}
-								>
-									<span className="assign-user-avatar">
-										<Avatar
-											firstName={user.firstName}
-											lastName={user.lastName}
-										/>
-									</span>
-
-									<span className="assign-user-main">
-										<span className="assign-user-name">{fullName || "--"}</span>
-
-										<span className="assign-user-mobile-meta">
-											{user.email ?? "--"}
-										</span>
-									</span>
-
-									<span className="assign-user-meta assign-user-email">
-										{user.email ?? "--"}
-									</span>
-
-									<span className="assign-user-meta assign-user-phone">
-										{user.phone ?? "--"}
-									</span>
-
-									<span className="assign-user-check">
-										<Checkbox
-											checked={selected}
-											onChange={() => toggleUser(user.id)}
-										/>
-									</span>
-								</label>
-							);
-						})
-					) : (
-						<div className="assign-users-state">
-							{search.trim()
-								? `No users found for "${search.trim()}"`
-								: "No users found"}
-						</div>
-					)}
-				</div>
-			</div>
-		</Modal>
-	);
+        <div className="assign-users-list scrollbar-sleek">
+          {usersQuery.isLoading ? (
+            <div className="assign-users-state">Loading users...</div>
+          ) : users.length > 0 && profile ? (
+            users.map((user) => renderUserRow(user, profile))
+          ) : (
+            <div className="assign-users-state">
+              {search.trim()
+                ? `No users found for "${search.trim()}"`
+                : "No users found"}
+            </div>
+          )}
+        </div>
+      </div>
+    </Modal>
+  );
 };

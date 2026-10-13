@@ -1,73 +1,85 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router-dom";
+
+import AdministrationRoute from "./AdministrationRoute";
 import FullScreenLoader from "./FullScreenLoader";
 
 const UsersPage = lazy(() => import("../modules/admin/users/UsersPage"));
 const UserProfilePage = lazy(() =>
-	import("../modules/admin/user-profile/UserProfilePage").then((m) => ({
-		default: m.UserProfilePage,
-	})),
+  import("../modules/admin/user-profile/UserProfilePage").then((m) => ({
+    default: m.UserProfilePage,
+  })),
 );
 const ProfileFormPage = lazy(() =>
-	import("../modules/admin/user-profile/components/ProfileFormPage").then(
-		(m) => ({ default: m.ProfileFormPage }),
-	),
+  import("../modules/admin/user-profile/components/ProfileFormPage").then(
+    (m) => ({ default: m.ProfileFormPage }),
+  ),
+);
+const AppAdministratorsPage = lazy(
+  () => import("../modules/admin/app-administrators/AppAdministratorsPage"),
 );
 const ByDesignPage = lazy(() => import("../modules/admin/FetchUsers/ByDesign"));
 const C4CPage = lazy(() => import("../modules/admin/FetchUsers/C4C"));
 const UserProfile = lazy(
-	() => import("../modules/settings/UserProfile/UserProfile"),
+  () => import("../modules/settings/UserProfile/UserProfile"),
 );
 const MastersPage = lazy(() => import("../modules/admin/Masters/MastersPage"));
 const BusinessPartners = lazy(
-	() => import("../modules/admin/business-partners/BusinessPartners"),
+  () => import("../modules/admin/business-partners/BusinessPartners"),
 );
 const CreateBusinessPartner = lazy(
-	() => import("../modules/admin/business-partners/CreateBusinessPartner"),
+  () => import("../modules/admin/business-partners/CreateBusinessPartner"),
 );
 const BusinessPartnerView = lazy(
-	() => import("../modules/admin/business-partners/BusinessPartnerView"),
+  () => import("../modules/admin/business-partners/BusinessPartnerView"),
 );
 
 export default function AdminRoutes() {
-	return (
-		<Suspense fallback={<FullScreenLoader />}>
-			<Routes>
-				<Route path="users" element={<UsersPage />} />
-				<Route path="users/create" element={<UsersPage />} />
+  return (
+    <Suspense fallback={<FullScreenLoader />}>
+      <Routes>
+        <Route element={<AdministrationRoute />}>
+          <Route path="users" element={<UsersPage />} />
+          <Route path="users/create" element={<UsersPage />} />
+          <Route path="users/:id" element={<UsersPage />} />
 
-				<Route path="users/:id" element={<UsersPage />} />
+          <Route path="user-profiles" element={<UserProfilePage />} />
+          <Route path="profiles/create" element={<ProfileFormPage />} />
+          <Route path="profiles/:id/edit" element={<ProfileFormPage />} />
 
-				<Route
-					path="masters"
-					element={
-						<div className="overflow-y-auto scrollbar-sleek">
-							<MastersPage />
-						</div>
-					}
-				/>
+          <Route
+            path="masters"
+            element={
+              <div className="overflow-y-auto scrollbar-sleek">
+                <MastersPage />
+              </div>
+            }
+          />
+          <Route path="business-partners" element={<BusinessPartners />} />
+          <Route
+            path="business-partners/:id/view"
+            element={<BusinessPartnerView />}
+          />
+          <Route path="bydesign" element={<ByDesignPage />} />
+          <Route path="c4c" element={<C4CPage />} />
+          <Route path="profile" element={<UserProfile />} />
 
-				<Route path="business-partners" element={<BusinessPartners />} />
-				<Route
-					path="business-partners/create"
-					element={<CreateBusinessPartner />}
-				/>
-
-				<Route
-					path="business-partners/:id/edit"
-					element={<CreateBusinessPartner />}
-				/>
-				<Route
-					path="business-partners/:id/view"
-					element={<BusinessPartnerView />}
-				/>
-				<Route path="bydesign" element={<ByDesignPage />} />
-				<Route path="c4c" element={<C4CPage />} />
-				<Route path="/profile" element={<UserProfile />} />
-				<Route path="/profiles/create" element={<ProfileFormPage />} />
-				<Route path="/profiles/:id/edit" element={<ProfileFormPage />} />
-				<Route path="user_profiles" element={<UserProfilePage />} />
-			</Routes>
-		</Suspense>
-	);
+          <Route element={<AdministrationRoute superAdminOnly />}>
+            <Route
+              path="app-administrators"
+              element={<AppAdministratorsPage />}
+            />
+            <Route
+              path="business-partners/create"
+              element={<CreateBusinessPartner />}
+            />
+            <Route
+              path="business-partners/:id/edit"
+              element={<CreateBusinessPartner />}
+            />
+          </Route>
+        </Route>
+      </Routes>
+    </Suspense>
+  );
 }

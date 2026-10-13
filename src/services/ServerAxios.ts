@@ -12,6 +12,8 @@ export const API_BASE_URL = "http://localhost:9000/api/v1";
 // refresh error": any expired-session redirect (session refresh failure,
 // or a stolen/revoked token) sent the browser to a dead route instead of
 // back to the sign-in screen.
+// TODO: this comment and the value below disagree — confirm the login path
+// in guestRoutes and fix whichever one is wrong.
 const LOGIN_ROUTE = "/web/login";
 const REFRESH_ENDPOINT = "/auth/refresh";
 
@@ -123,11 +125,8 @@ ServerAxios.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Handle 403 (revoked/stolen token) - logout immediately
-    if (error.response?.status === 403) {
-      redirectToLogin();
-    }
-
+    // Any other 403 is an authorization refusal ("not allowed to do this"),
+    // not a dead session — let the caller show it instead of logging out.
     return Promise.reject(error);
   },
 );

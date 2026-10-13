@@ -1,3 +1,4 @@
+import type { LucideIcon } from "lucide-react";
 import {
 	FileText,
 	Hospital,
@@ -7,31 +8,45 @@ import {
 	UserCheck,
 } from "lucide-react";
 
-export const actions = [
+// Who may see a tile: an app's users, every signed-in user, or anyone with
+// administration rights (super admin or admin of at least one app).
+export type HomeActionAccess =
+	| { kind: "app"; appKey: string }
+	| { kind: "everyone" }
+	| { kind: "administration" };
+
+export type HomeAction = {
+	icon: LucideIcon;
+	title: string;
+	description: string;
+	path: string;
+	access: HomeActionAccess;
+	isActive: boolean;
+};
+
+export const actions: HomeAction[] = [
 	{
 		icon: Megaphone,
 		title: "Marketing Activity Planner",
 		description: "Plan, track, and approve marketing events and campaigns.",
 		path: "/marketing/activity-planner/listing",
-		appKey: "MAP",
+		access: { kind: "app", appKey: "MAP" },
 		isActive: false,
 	},
-
 	{
 		icon: FileText,
 		title: "Vendor Onboarding",
 		description: "Submit, review, and process dealer reimbursements.",
 		path: "/vendor-onboarding/listing",
-		appKey: "VENDOR_ONBOARDING",
+		access: { kind: "app", appKey: "VENDOR_ONBOARDING" },
 		isActive: false,
 	},
-
 	{
 		icon: Hospital,
 		title: "Medical Forms",
 		description: "Configure and compare machinery specs for customer needs.",
 		path: "/medi-claim/listing",
-		appKey: "MEDICAL_CLAIM",
+		access: { kind: "app", appKey: "MEDICAL_CLAIM" },
 		isActive: false,
 	},
 	{
@@ -40,7 +55,7 @@ export const actions = [
 		description:
 			"Manage vendor registration, verification, and approval processes.",
 		path: "/workflow/listing",
-		appKey: "WORKFLOW",
+		access: { kind: "everyone" },
 		isActive: false,
 	},
 	{
@@ -48,7 +63,7 @@ export const actions = [
 		title: "Administrator",
 		description: "System config, user roles, and access management.",
 		path: "/admin/users",
-		appKey: "ADMIN",
+		access: { kind: "administration" },
 		isActive: false,
 	},
 	{
@@ -56,7 +71,7 @@ export const actions = [
 		title: "Dealer Audit",
 		description: "Audit for dealers.",
 		path: "/audit/dealer/checklist/listing",
-		appKey: "DEALER_AUDIT",
+		access: { kind: "app", appKey: "DEALER_AUDIT" },
 		isActive: false,
 	},
 ] as const;

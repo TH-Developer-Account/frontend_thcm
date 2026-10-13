@@ -1,178 +1,163 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ServerAxios } from "../../../../services/ServerAxios";
-import { useAuth } from "../../../../context/Auth/useAuth";
-import { useToast } from "../../../../context/Auth/AuthContext";
-import ProfileGeneralSection from "./ProfileGeneralSection";
-import PermissionMatrix from "./PermissionMatrix";
-import { apps } from "../constant";
-import { usePermissionMatrix } from "../hooks/userPermissionMatrix";
-import type { Profile, WorkspacePayload } from "../types/profile.types";
-import PageSectionLayout from "../../../../layout/PageSectionLayout";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { PageHeader } from "../../../../components/ui/PageHeader";
+import { useToast } from "../../../../context/Auth/AuthContext";
+import PageSectionLayout from "../../../../layout/PageSectionLayout";
+import {
+  showApiErrorToast,
+  showSuccessToast,
+} from "../../../../utils/apiError.helper";
+import { useManageableApps } from "../../access.api";
+import { profileApi, profileKeys } from "../profile.api";
+import { usePermissionMatrix } from "../hooks/userPermissionMatrix";
+import { toPermissionInputs } from "../utils/permissions";
+import PermissionMatrix from "./PermissionMatrix";
+import ProfileGeneralSection from "./ProfileGeneralSection";
+
+import type {
+  ModuleDefinition,
+  ProfileFormValues,
+  ProfilePermission,
+} from "../types/profile.types";
+
+const PROFILE_LIST_PATH = "/admin/user-profiles";
+
+// Module-level so usePermissionMatrix sees the same reference every render.
+const NO_MODULES: ModuleDefinition[] = [];
+const NO_PERMISSIONS: ProfilePermission[] = [];
+
+const EMPTY_FORM: ProfileFormValues = { appKey: "", name: "", description: "" };
 
 export const ProfileFormPage = () => {
-	const { id } = useParams();
-	const isEditing = Boolean(id);
-	const [activeSection, setActiveSection] = useState<"general" | "permissions">(
-		"general",
-	);
-	const [isLoading, setIsLoading] = useState(false);
-	const [search, setSearch] = useState("");
-	const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
-	const [form, setForm] = useState<Profile>({
-		id: "",
-		name: "",
-		description: "",
-		assignedUserCount: 0,
-		isSystemProfile: false,
-		users: [],
-		permissions: [],
-	});
-	const navigate = useNavigate();
-	const { workspaceId } = useAuth();
-	const { showToast } = useToast();
+  const { id: profileId } = useParams();
+  const isEditing = Boolean(profileId);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
-	const {
-		permState,
-		togglePerm,
-		toggleAppAll,
-		toggleAppAction,
-		appActionState,
-	} = usePermissionMatrix(form.permissions);
+  const [activeSection, setActiveSection] = useState<"general" | "permissions">(
+    "general",
+  );
+  const [search, setSearch] = useState("");
+  const [form, setForm] = useState<ProfileFormValues>(EMPTY_FORM);
 
-	useEffect(() => {
-		const loadProfileToBeUpdated = async () => {
-			try {
-				const { data } = await ServerAxios.get(`/profile/${id}`);
+  const appsQuery = useManageableApps();
+  const apps = appsQuery.data ?? [];
 
-				setForm(data);
-			} catch (error: unknown) {
-				if (error instanceof Error) {
-					console.error("Failed to load profiles:", error?.message);
-				} else {
-					console.error("Failed to load profiles:", error);
-				}
-			}
-		};
+  const profileQuery = useQuery({
+    queryKey: profileKeys.detail(profileId ?? ""),
+    queryFn: () => profileApi.get(profileId as string),
+    enabled: isEditing,
+  });
+  const profile = profileQuery.data;
 
-		if (id) {
-			loadProfileToBeUpdated();
-		}
-	}, [id]);
+  useEffect(() => {
+    if (!profile) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setForm({
+      appKey: profile.appKey,
+      name: profile.name,
+      description: profile.description ?? "",
+    });
+  }, [profile]);
 
-	const handleChange = (
-		e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
-	) => {
-		const { name, value } = e.target;
-		setForm((prev) => ({ ...prev, [name]: value }));
-	};
+  // An admin of a single app should not have to pick it.
+  const soleAppKey = !isEditing && apps.length === 1 ? apps[0].appKey : "";
+  const selectedAppKey = form.appKey || soleAppKey;
+  const selectedApp = apps.find((app) => app.appKey === selectedAppKey);
 
-	const handleSave = async (permissions: WorkspacePayload) => {
-		try {
-			setIsLoading(true);
-			const payload = {
-				name: form?.name, // optional
-				description: form?.description, // optional
-				permissions: permissions, // required
-			};
+  const {
+    permissionState,
+    toggleModulePermission,
+    toggleAllPermissions,
+    toggleActionForAllModules,
+    getActionCheckboxState,
+  } = usePermissionMatrix(
+    selectedApp?.modules ?? NO_MODULES,
+    profile?.permissions ?? NO_PERMISSIONS,
+  );
 
-			let apiResponseMessage;
-			if (isEditing) {
-				const {
-					data: { message },
-				} = await ServerAxios.patch(`/profile/update/${id}`, payload);
-				apiResponseMessage = message;
-			} else {
-				const {
-					data: { message },
-				} = await ServerAxios.post(`/profile/create`, {
-					workspaceId,
-					...payload,
-				});
-				apiResponseMessage = message;
-			}
+  const visibleModules = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    const modules = selectedApp?.modules ?? NO_MODULES;
+    if (!normalizedSearch) return modules;
+    return modules.filter((appModule) =>
+      appModule.name.toLowerCase().includes(normalizedSearch),
+    );
+  }, [selectedApp, search]);
 
-			showToast({
-				type: "success",
-				title: apiResponseMessage,
-			});
+  const saveMutation = useMutation({
+    mutationFn: () => {
+      const input = {
+        name: form.name.trim(),
+        description: form.description.trim(),
+        permissions: toPermissionInputs(permissionState),
+      };
+      return isEditing
+        ? profileApi.update(profileId as string, input)
+        : profileApi.create(selectedAppKey, input);
+    },
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({ queryKey: profileKeys.all });
+      showSuccessToast(showToast, response.message);
+      navigate(PROFILE_LIST_PATH);
+    },
+    onError: (error) =>
+      showApiErrorToast(showToast, error, "Failed to save profile."),
+  });
 
-			navigate("/admin/user_profiles");
-		} catch (error) {
-			console.error("Failed to update profile:", error);
+  const handleFieldChange = <K extends keyof ProfileFormValues>(
+    field: K,
+    value: ProfileFormValues[K],
+  ) => setForm((current) => ({ ...current, [field]: value }));
 
-			showToast({
-				type: "error",
-				title: "Failed to update profile",
-			});
-		} finally {
-			setIsLoading(false);
-		}
-	};
+  const pageTitle = isEditing ? "Edit Profile" : "Create Profile";
 
-	const filteredApps = apps.map((app) => ({
-		...app,
-		modules: app.modules.filter((m) =>
-			m.name.toLowerCase().includes(search.toLowerCase()),
-		),
-	}));
+  return (
+    <PageSectionLayout>
+      <PageHeader
+        headerText={pageTitle}
+        navigation={{
+          variant: "breadcrumbs",
+          ariaLabel: "User Profile page location",
+          breadcrumbs: [
+            { label: "User profiles", href: PROFILE_LIST_PATH },
+            { label: pageTitle },
+          ],
+          separator: "›",
+        }}
+      />
 
-	return (
-		<PageSectionLayout>
-			<PageHeader
-				headerText={isEditing ? "Edit Profile" : "Create Profile"}
-				navigation={{
-					variant: "breadcrumbs",
-					ariaLabel: "User Profile page location",
-					breadcrumbs: [
-						{
-							label: "User profiles",
-							href: "/admin/user_profiles",
-						},
-						{
-							label: isEditing ? "Edit Profile" : "Create Profile",
-							href: "/admin/user_profiles/create",
-						},
-					],
-					separator: "›",
-				}}
-			/>
-			{/* Sections */}
-			{activeSection === "general" && (
-				<ProfileGeneralSection
-					form={form}
-					isEditing={isEditing}
-					handleChange={handleChange}
-					setForm={setForm}
-					onCancel={() => navigate("/admin/user_profiles")}
-					onSubmit={() => {}}
-					onPermission={() => setActiveSection("permissions")}
-				/>
-			)}
-			{activeSection === "permissions" && (
-				<PermissionMatrix
-					filteredApps={filteredApps}
-					collapsed={collapsed}
-					permState={permState}
-					search={search}
-					setSearch={setSearch}
-					setCollapsed={setCollapsed}
-					appActionState={appActionState}
-					toggleAppAll={toggleAppAll}
-					toggleAppAction={toggleAppAction}
-					togglePerm={togglePerm}
-					// ✅ Seed per-app Admin/User selects from any scope: "APP" rows
-					// already on this profile, so editing an existing MAP admin
-					// profile shows "Admin" pre-selected for MAP.
-					initialAdminAppKeys={form.permissions
-						.filter((p) => p.scope === "APP" && p.action === "write")
-						.map((p) => p.appKey)}
-					onSavePermissions={handleSave}
-					isLoading={isLoading}
-					goBack={() => setActiveSection("general")}
-				/>
-			)}
-		</PageSectionLayout>
-	);
+      {activeSection === "general" && (
+        <ProfileGeneralSection
+          form={{ ...form, appKey: selectedAppKey }}
+          apps={apps}
+          isEditing={isEditing}
+          isLoadingApps={appsQuery.isLoading}
+          onFieldChange={handleFieldChange}
+          onCancel={() => navigate(PROFILE_LIST_PATH)}
+          onContinue={() => setActiveSection("permissions")}
+        />
+      )}
+
+      {activeSection === "permissions" && selectedApp && (
+        <PermissionMatrix
+          app={selectedApp}
+          visibleModules={visibleModules}
+          permissionState={permissionState}
+          search={search}
+          onSearchChange={setSearch}
+          getActionCheckboxState={getActionCheckboxState}
+          onToggleAll={toggleAllPermissions}
+          onToggleAction={toggleActionForAllModules}
+          onToggleModule={toggleModulePermission}
+          isSaving={saveMutation.isPending}
+          onSave={() => saveMutation.mutate()}
+          onBack={() => setActiveSection("general")}
+        />
+      )}
+    </PageSectionLayout>
+  );
 };

@@ -78,6 +78,7 @@ export function WorkflowFetchPage({
 			sourceRecordRef={props.sourceRecordRef}
 			workflows={workflows}
 			selectedFilter={selectedFilter}
+			availableFilters={props.availableFilters}
 			onFilterChange={handleFilterChange}
 			onAttach={handleAttach}
 			expandedWorkflowId={expandedWorkflowId}

@@ -1,198 +1,112 @@
 import React from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import SelectInput from "../../../components/forms/SelectInput";
 import { PageHeader } from "../../../components/ui/PageHeader";
-import PageSectionLayout from "../../../layout/PageSectionLayout";
-import { useAuth } from "../../../context/Auth/useAuth";
 import { useToast } from "../../../context/Auth/AuthContext";
-import { ServerAxios } from "../../../services/ServerAxios";
-
+import PageSectionLayout from "../../../layout/PageSectionLayout";
+import {
+  showApiErrorToast,
+  showSuccessToast,
+} from "../../../utils/apiError.helper";
+import { useManageableApps } from "../access.api";
 import ProfileList from "./components/ProfileList";
+import { profileApi, profileKeys } from "./profile.api";
+import { usePaginatedProfiles } from "./usePaginateProfiles";
+
 import type { Profile } from "./types/profile.types";
 
-const getErrorMessage = (error: unknown, fallback: string): string => {
-	if (axios.isAxiosError(error)) {
-		const responseData = error.response?.data as
-			| {
-					message?: unknown;
-					error?: unknown;
-			  }
-			| undefined;
-
-		if (
-			typeof responseData?.message === "string" &&
-			responseData.message.trim()
-		) {
-			return responseData.message;
-		}
-
-		if (typeof responseData?.error === "string" && responseData.error.trim()) {
-			return responseData.error;
-		}
-	}
-
-	if (error instanceof Error && error.message.trim()) {
-		return error.message;
-	}
-
-	return fallback;
-};
+const ALL_APPS_OPTION = { label: "All applications", value: "" };
 
 export const UserProfilePage = () => {
-	const { workspaceId } = useAuth();
-	const navigate = useNavigate();
-	const { showToast } = useToast();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
 
-	const [profiles, setProfiles] = React.useState<Profile[]>([]);
-	const [search, setSearch] = React.useState("");
-	const [isLoading, setIsLoading] = React.useState(true);
-	const [isFetching, setIsFetching] = React.useState(false);
-	const [isError, setIsError] = React.useState(false);
+  const profileList = usePaginatedProfiles();
+  const { query: profilesQuery } = profileList;
 
-	React.useEffect(() => {
-		const controller = new AbortController();
+  const appsQuery = useManageableApps();
+  const appOptions = React.useMemo(
+    () => [
+      ALL_APPS_OPTION,
+      ...(appsQuery.data ?? []).map((app) => ({
+        label: app.appName,
+        value: app.appKey,
+      })),
+    ],
+    [appsQuery.data],
+  );
 
-		const loadProfiles = async () => {
-			if (!workspaceId) {
-				setProfiles([]);
-				setIsLoading(false);
-				setIsError(false);
-				return;
-			}
+  React.useEffect(() => {
+    if (profilesQuery.isError) {
+      showApiErrorToast(
+        showToast,
+        profilesQuery.error,
+        "Failed to load user profiles.",
+      );
+    }
+  }, [profilesQuery.isError, profilesQuery.error, showToast]);
 
-			setIsLoading(true);
-			setIsFetching(true);
-			setIsError(false);
+  const deleteMutation = useMutation({
+    mutationFn: profileApi.remove,
+    onSuccess: async (response) => {
+      await queryClient.invalidateQueries({ queryKey: profileKeys.all });
+      showSuccessToast(showToast, response.message);
+    },
+    onError: (error) =>
+      showApiErrorToast(showToast, error, "Failed to delete the profile."),
+  });
 
-			try {
-				const response = await ServerAxios.get("/profile", {
-					params: {
-						workspaceId,
-					},
-					signal: controller.signal,
-				});
+  const handleEdit = React.useCallback(
+    (profile: Profile) =>
+      navigate(`/admin/profiles/${encodeURIComponent(profile.id)}/edit`),
+    [navigate],
+  );
 
-				const responseData = response.data?.data;
+  return (
+    <PageSectionLayout>
+      <PageHeader
+        headerText="User Profiles"
+        navigation={{
+          variant: "breadcrumbs",
+          ariaLabel: "User profiles page location",
+          breadcrumbs: [
+            { label: "Home Screen", href: "/" },
+            { label: "User Profiles" },
+          ],
+          separator: "›",
+        }}
+      />
 
-				setProfiles(Array.isArray(responseData) ? responseData : []);
-			} catch (error) {
-				if (axios.isAxiosError(error) && error.code === "ERR_CANCELED") {
-					return;
-				}
-
-				setProfiles([]);
-				setIsError(true);
-
-				showToast({
-					type: "error",
-					title: "Unable to load profiles",
-					description: getErrorMessage(error, "Failed to load user profiles."),
-				});
-			} finally {
-				if (!controller.signal.aborted) {
-					setIsLoading(false);
-					setIsFetching(false);
-				}
-			}
-		};
-
-		void loadProfiles();
-
-		return () => {
-			controller.abort();
-		};
-	}, [showToast, workspaceId]);
-
-	const filteredProfiles = React.useMemo(() => {
-		const normalizedSearch = search.trim().toLowerCase();
-
-		if (!normalizedSearch) {
-			return profiles;
-		}
-
-		return profiles.filter((profile) => {
-			const name = profile.name?.toLowerCase() ?? "";
-			const description = profile.description?.toLowerCase() ?? "";
-
-			const assignedUsers =
-				profile.users
-					?.map((user) => `${user.firstName} ${user.lastName}`.toLowerCase())
-					.join(" ") ?? "";
-
-			return (
-				name.includes(normalizedSearch) ||
-				description.includes(normalizedSearch) ||
-				assignedUsers.includes(normalizedSearch)
-			);
-		});
-	}, [profiles, search]);
-
-	const handleDelete = React.useCallback(
-		async (id: string): Promise<void> => {
-			try {
-				const response = await ServerAxios.delete(
-					`/profile/delete/${encodeURIComponent(id)}`,
-				);
-
-				const message =
-					typeof response.data?.message === "string"
-						? response.data.message
-						: "Profile deleted successfully.";
-
-				setProfiles((currentProfiles) =>
-					currentProfiles.filter((profile) => profile.id !== id),
-				);
-
-				showToast({
-					type: "success",
-					title: "Profile deleted",
-					description: message,
-				});
-			} catch (error) {
-				showToast({
-					type: "error",
-					title: "Unable to delete profile",
-					description: getErrorMessage(error, "Failed to delete the profile."),
-				});
-			}
-		},
-		[showToast],
-	);
-
-	return (
-		<PageSectionLayout>
-			<PageHeader
-				headerText="User Profiles"
-				navigation={{
-					variant: "breadcrumbs",
-					ariaLabel: "User profiles page location",
-					breadcrumbs: [
-						{
-							label: "Home Screen",
-							href: "/",
-						},
-						{
-							label: "User Profiles",
-						},
-					],
-					separator: "›",
-				}}
-			/>
-
-			<ProfileList
-				profiles={filteredProfiles}
-				search={search}
-				onSearchChange={setSearch}
-				onCreateNew={() => navigate("/admin/profiles/create")}
-				onEdit={(profile) =>
-					navigate(`/admin/profiles/${encodeURIComponent(profile.id)}/edit`)
-				}
-				onDelete={handleDelete}
-				isLoading={isLoading}
-				isFetching={isFetching}
-				isError={isError}
-			/>
-		</PageSectionLayout>
-	);
+      <ProfileList
+        profiles={profileList.rows}
+        tablePagination={profileList.tablePagination}
+        search={profileList.search}
+        onSearchChange={profileList.setSearch}
+        appFilter={
+          <SelectInput
+            name="profileAppFilter"
+            aria-label="Filter profiles by application"
+            options={appOptions}
+            value={
+              appOptions.find(
+                (option) => option.value === profileList.appKey,
+              ) ?? ALL_APPS_OPTION
+            }
+            onChange={(option) => profileList.setAppKey(option?.value ?? "")}
+            isSearchable={false}
+            isLoading={appsQuery.isLoading}
+          />
+        }
+        onCreateNew={() => navigate("/admin/profiles/create")}
+        onEdit={handleEdit}
+        onDelete={(profileId) => deleteMutation.mutate(profileId)}
+        isLoading={profilesQuery.isLoading}
+        isFetching={profilesQuery.isFetching}
+        isError={profilesQuery.isError}
+      />
+    </PageSectionLayout>
+  );
 };

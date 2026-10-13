@@ -14,7 +14,7 @@ import { Alert } from "../../../components/common/Alert";
 import { Modal } from "../../../components/common/Modal";
 import { FilterTabs } from "../../../components/ui/FilterTabs";
 
-import { workflowListFilterOptions } from "../constant/workflow.constant";
+import { workflowListFilterOptions } from "../utils/workflow.constants";
 import type {
 	WorkflowListScope,
 	WorkflowSummary,
@@ -33,6 +33,7 @@ interface WorkflowFetchListProps {
 	onToggleWorkflow: (workflowId: string) => void | Promise<void>;
 	disabled?: boolean;
 	loading?: boolean;
+	availableFilters?: WorkflowListScope[];
 }
 
 const getEmptyMessage = (filter: WorkflowListScope): string => {
@@ -56,6 +57,7 @@ export function WorkflowFetchList({
 	loadingWorkflowId,
 	workflowDetails,
 	workflowDetailErrors,
+	availableFilters,
 	onAttach,
 	onToggleWorkflow,
 	disabled = false,
@@ -72,15 +74,16 @@ export function WorkflowFetchList({
 
 	const filterTabs = React.useMemo(
 		() =>
-			workflowListFilterOptions.map((option) => ({
-				value: option.value,
-				label: option.label,
-				tooltipLabel: option.tooltipLabel,
-				Icon: option.Icon,
-			})),
-		[],
+			workflowListFilterOptions
+				.filter((o) => !availableFilters || availableFilters.includes(o.value))
+				.map((option) => ({
+					value: option.value,
+					label: option.label,
+					tooltipLabel: option.tooltipLabel,
+					Icon: option.Icon,
+				})),
+		[availableFilters],
 	);
-
 	const handleFilterChange = React.useCallback(
 		(value: WorkflowListScope) => {
 			if (disabled || loading) return;
