@@ -3,14 +3,16 @@
 //
 // The read model (ApiCrfItem / CrfDetail) and the write model (CrfItemInput /
 // CrfPayload) are intentionally asymmetric: the backend stores a souvenir
-// line as { sku, requestedQty, amount } — no title, image or GST, since that
-// all lives in Shopify, not MAP (see crf.service.ts's CrfItemInput). `amount`
-// is the one exception: a client-supplied snapshot of what the line was
-// worth at request time, kept for audit only — never re-derived from a live
-// Shopify price, and never used to decide the stock-shortfall budget cap or
-// the debit note (those still re-check Shopify directly).
-// CrfLineItem (the form/cart shape) carries the richer display fields the UI
-// needs, but those are populated from a live store lookup, never persisted.
+// line as { sku, requestedQty, amount, title, variantTitle, imageUrl, rate }
+// — a trusted display snapshot taken at request time (see
+// crf.service.ts's ShopifyCrfItemInput), never re-derived from a live
+// Shopify price/catalog lookup. compareAtPrice and gstRate are the one
+// exception kept OUT of this snapshot — those stay display-only, backfilled
+// from a live store lookup every time (see backfillSouvenirDisplayFields in
+// core/mapper.ts), because they're used nowhere else as a stored fact.
+// CrfLineItem (the form/cart shape) carries the richer set the UI needs;
+// most of it now round-trips through the stored snapshot above, except
+// compareAtPrice/gstRate/availableQty/options, which stay backfill-only.
 
 import type { LineItemOption } from "../../shared/lineItem.types";
 import type { ShopStockCheckStatus } from "../shop/types";
@@ -129,29 +131,36 @@ export const findArtworkPreset = (
 /**
  * One CRF line as the form/cart holds it. Extends the shared LineItemOption
  * with the per-category fields:
- *   • Souvenirs (store) — SKU identity + DISPLAY-ONLY fields (image, price,
- *     compare-at, GST, stock) backfilled from a live store lookup. None of
- *     these are sent back to the API and none are persisted — except
- *     `rate`/`quantity`, whose product (via `total`) IS sent as the
- *     souvenir line's `amount` audit snapshot (see buildCrfItemInput in
- *     core/mapper.ts). The display fields themselves never go back.
+ *   • Souvenirs (store) — SKU identity + display fields. title/variantTitle/
+ *     imageUrl/rate now round-trip through the saved CrfItem (see
+ *     mapCrfLineItemsToFormItems); compareAtPrice/gstRate/availableQty/
+ *     options are still display-only, backfilled from a live store lookup
+ *     (see backfillSouvenirDisplayFields) and never sent back to the API.
+ *     `rate`/`quantity` (via `total`) ARE sent back, as the souvenir line's
+ *     `amount` audit snapshot (see buildCrfItemInput in core/mapper.ts).
  *   • Artworks — pixel resolution (preset or custom).
  *   • Printed materials — no size fields at all.
  */
 export type CrfLineItem = LineItemOption & {
-	/* ---- Souvenir (store) — display only, never persisted ---- */
+	/* ---- Souvenir (store) ---- */
 	sku?: string | null;
 	/** Shopify variant id. Known while building the cart from the live
 	 *  catalog; absent after reloading a saved CRF (the backend only kept
 	 *  the sku) — sku alone is enough to re-order or re-identify the line. */
 	variantId?: string | null;
 	shopifyProductId?: string | null;
+	/** Persisted on the saved CrfItem — see CrfShopifyItem.variantTitle. */
 	variantTitle?: string | null;
+	/** Display-only — backfilled live, never persisted. */
 	options?: Record<string, string>;
+	/** Persisted on the saved CrfItem — see CrfShopifyItem.imageUrl. */
 	imageUrl?: string | null;
+	/** Display-only — backfilled live, never persisted. */
 	compareAtPrice?: number | null;
+	/** Display-only — backfilled live, never persisted. */
 	gstRate?: number | null;
-	/** Stock seen when added / at the last live lookup (not a reservation). */
+	/** Stock seen when added / at the last live lookup (not a reservation).
+	 *  Display-only — backfilled live, never persisted. */
 	availableQty?: number | null;
 	/** Result of the last pre-save stock check, or the CRF item's saved
 	 *  REQUESTED/OUT_OF_STOCK status after a post-approval evaluation. */
@@ -190,11 +199,11 @@ export type CrfCatalogItem = {
 };
 
 /**
- * A souvenir line — backend's "SHOPIFY" source. Still no title/image/live
- * stock snapshot, by design — `amount` is the one field kept, purely as an
- * audit record of what the line was worth when requested (client-supplied,
- * never re-derived from a live Shopify price). `amount` is `null` on a line
- * saved before this field existed.
+ * A souvenir line — backend's "SHOPIFY" source. `amount`/`rate`/`title`/
+ * `variantTitle`/`imageUrl` are a client-supplied display/audit snapshot of
+ * what the line looked like at request time (never re-derived from a live
+ * Shopify price or catalog lookup — see schema.prisma's CrfItem doc
+ * comment). All are `null` on a line saved before these fields existed.
  */
 export type CrfShopifyItem = {
 	id: string;
@@ -203,8 +212,13 @@ export type CrfShopifyItem = {
 	sku: string;
 	requestedQty: number;
 	amount: number | null;
+	/** Unit price snapshot — same column CATALOG lines use for `rate`. */
+	rate: number | null;
+	title: string | null;
+	variantTitle: string | null;
+	imageUrl: string | null;
 	/** Set by the post-approval stock evaluation; REQUESTED until then. */
-	status: "REQUESTED" | "OUT_OF_STOCK" | "ORDERED" | "DEBITED";
+	status: "REQUESTED" | "OUT_OF_STOCK" | "REMOVED" | "ORDERED" | "DEBITED";
 };
 
 export type ApiCrfItem = CrfCatalogItem | CrfShopifyItem;
@@ -287,14 +301,20 @@ export type CrfCatalogItemInput = {
 
 /**
  * Souvenir line — matches backend's ShopifyCrfItemInput exactly. `amount` is
- * the client's own price × requestedQty at submission time, trusted as-is
- * by the backend and kept only as an audit snapshot — see buildCrfItemInput
- * in core/mapper.ts for where it comes from.
+ * the client's own price × requestedQty at submission time; `rate` is the
+ * unit price alone; `title`/`variantTitle`/`imageUrl` are the display
+ * snapshot. All trusted as-is by the backend and kept only as an audit/
+ * display snapshot — see buildCrfItemInput in core/mapper.ts for where they
+ * come from.
  */
 export type CrfShopifyItemInput = {
 	sku: string;
 	requestedQty: number;
 	amount: number;
+	title?: string;
+	variantTitle?: string;
+	imageUrl?: string;
+	rate: number;
 };
 
 export type CrfItemInput = CrfCatalogItemInput | CrfShopifyItemInput;

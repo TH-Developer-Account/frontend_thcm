@@ -5,17 +5,22 @@
 //   • PRINTED_MATERIAL — no width / height / unit, ever.
 //   • ARTWORK          — pixel resolution (width × height px + preset).
 //   • SOUVENIR         — store line: the API gives back { sku, requestedQty,
-//                        amount, status }. There is no title/image/live-stock
-//                        snapshot — that lives in Shopify, not MAP. `amount`
-//                        is the one exception: a client-supplied audit
-//                        snapshot of what the line was worth at request
-//                        time (see buildShopifyItemInput below) — never a
-//                        live Shopify price. mapCrfLineItemsToFormItems
-//                        alone produces a line with identity + that stored
-//                        amount but no display fields; call
-//                        backfillSouvenirDisplayFields with a live catalog
-//                        lookup (by sku) to fill in title/image/price/GST
-//                        before rendering/editing. See crf.types.ts's
+//                        amount, rate, title, variantTitle, imageUrl, status }.
+//                        title/variantTitle/imageUrl/rate are a trusted
+//                        display snapshot taken at request time (see
+//                        buildShopifyItemInput below and crf.service.ts's
+//                        ShopifyCrfItemInput) — never a live Shopify price
+//                        lookup. compareAtPrice/gstRate/options/availableQty
+//                        are NOT part of that snapshot — they stay
+//                        display-only, so mapCrfLineItemsToFormItems alone
+//                        produces a line with identity + the stored
+//                        name/image/price but no GST/discount/stock info.
+//                        Call backfillSouvenirDisplayFields with a live
+//                        catalog lookup (by sku) to fill those in before
+//                        rendering/editing — the stored snapshot fields are
+//                        then overwritten with the live ones (still the
+//                        same values, barring a price/name change upstream)
+//                        via createSouvenirLine. See crf.types.ts's
 //                        CrfLineItem doc comment.
 
 import type {
@@ -109,9 +114,11 @@ const getLineAmount = (
 
 /**
  * Editable lines for the CRF form. Souvenir lines come back with identity +
- * the stored `amount` snapshot but no display fields — pass the result
- * through backfillSouvenirDisplayFields once a live catalog lookup for
- * their SKUs is available, before showing them to the user.
+ * the stored amount/rate/title/variantTitle/imageUrl snapshot — enough to
+ * render the line immediately. compareAtPrice/gstRate/options/availableQty
+ * still aren't known until backfillSouvenirDisplayFields runs with a live
+ * catalog lookup for their SKUs — call it before showing GST/discount/stock
+ * to the user.
  */
 export const mapCrfLineItemsToFormItems = (
   items: ApiCrfItem[] = [],
@@ -121,13 +128,13 @@ export const mapCrfLineItemsToFormItems = (
       return {
         id: item.id,
         value: item.sku,
-        label: item.sku,
+        label: item.title ?? item.sku,
         particular: item.sku,
         description: "",
         partNumber: item.sku,
         category: SOUVENIR,
 
-        rate: 0,
+        rate: toNumber(item.rate),
         quantity: item.requestedQty,
         total: toNumber(item.amount),
 
@@ -136,14 +143,14 @@ export const mapCrfLineItemsToFormItems = (
         // CrfLineItem's doc comment on variantId in crf.types.ts.
         variantId: null,
         shopifyProductId: null,
-        variantTitle: null,
+        variantTitle: item.variantTitle,
         options: {},
-        imageUrl: null,
+        imageUrl: item.imageUrl,
         compareAtPrice: null,
         gstRate: null,
         availableQty: null,
         // Only OUT_OF_STOCK has a matching ShopStockCheckStatus value;
-        // REQUESTED/ORDERED/DEBITED aren't a stock-check outcome.
+        // REQUESTED/REMOVED/ORDERED/DEBITED aren't a stock-check outcome.
         stockStatus: item.status === "OUT_OF_STOCK" ? "OUT_OF_STOCK" : null,
       };
     }
@@ -180,8 +187,11 @@ export const mapCrfLineItemsToFormItems = (
   });
 
 /**
- * Fills in the display fields a saved souvenir line can't carry on its own
- * (title, image, price, GST, options) from a live catalog lookup, by sku.
+ * Fills in the display fields a saved souvenir line doesn't carry on its own
+ * (compareAtPrice, GST, option axes, live stock) from a live catalog lookup,
+ * by sku. Also refreshes title/variantTitle/imageUrl/rate to the live
+ * values — the stored snapshot (above) is what renders instantly, this is
+ * what keeps it accurate if the catalog changed since the line was saved.
  * `stockRows` is expected to already be scoped to exactly the SKUs on
  * `items` (e.g. crfShopApi.getCatalog({ sku: skus.join(",") })) — a sku with
  * no matching row (discontinued, renamed) is left as the bare line rather
@@ -250,12 +260,11 @@ export const mapCrfLineItemsToTableRows = (items: CrfLineItem[] = []) =>
 
 /**
  * Grand total of a CRF. Catalog lines carry their own amount; souvenir
- * lines only have a usable total once backfilled (bare API items have no
- * display price, though they do carry the stored `amount` snapshot as
- * `total` — see mapCrfLineItemsToFormItems), so this sums whatever
- * `total`/`rate × quantity` each line already resolves to — call it after
- * backfillSouvenirDisplayFields, not on raw API items, for an accurate
- * live-priced total.
+ * lines have a usable total straight from mapCrfLineItemsToFormItems now
+ * (the stored `amount` snapshot, as `total`), refined further once
+ * backfillSouvenirDisplayFields re-prices from the live catalog — so this
+ * sums whatever `total`/`rate × quantity` each line already resolves to,
+ * accurate either before or after backfill.
  */
 export const getCrfTotalFromData = (items: CrfLineItem[] = []) =>
   items.reduce((sum, item) => sum + getLineAmount(item), 0);
@@ -289,16 +298,23 @@ const buildShopifyItemInput = (item: CrfLineItem): CrfShopifyItemInput => ({
   // must reflect the same price × quantity the user was shown, not be
   // independently recomputed here.
   amount: getLineAmount(item),
+  // Display snapshot — same trust rule as `amount` above. `rate` is the
+  // unit price alone (not × quantity), matching crf.service.ts's
+  // ShopifyCrfItemInput.rate / schema.prisma's CrfItem.rate column.
+  title: item.label || undefined,
+  variantTitle: item.variantTitle || undefined,
+  imageUrl: item.imageUrl || undefined,
+  rate: toNumber(item.rate),
 });
 
 /**
  * Form line → wire item. Deliberately sends ONLY identity + quantity (+ size
  * for artworks) for a catalog line — the backend computes rate/amount from
  * ProductMaster.unitRate and rejects anything else — and, for a souvenir
- * line, identity + quantity + the `amount` audit snapshot above (still no
- * title/image/GST/stock — those stay display-only). Pricing shown to the
- * user (getLinePricing/sumPricing in crf.shop.mapper.ts) otherwise plays no
- * part in what gets sent.
+ * line, identity + quantity + the amount/rate/title/variantTitle/imageUrl
+ * snapshot above (still no GST/discount/stock — those stay display-only).
+ * Pricing shown to the user (getLinePricing/sumPricing in crf.shop.mapper.ts)
+ * otherwise plays no part in what gets sent.
  */
 export const buildCrfItemInput = (item: CrfLineItem): CrfItemInput =>
   item.category === SOUVENIR
