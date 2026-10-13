@@ -921,7 +921,130 @@
 			transition-duration: 0.01ms;
 		}
 	}
+} /* components/activityFormView/epfCompact.css
+Compact EPF view. Imported by BudgetShare / EpfSection; same layer as
+components.css, later rules win, so the old .epf-* rules stay untouched. */
+
+@layer components {
+	.epf-summary-section--split {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-3, 0.75rem);
+		align-items: start;
+	}
+
+	@media (min-width: 1100px) {
+		.epf-summary-section--split {
+			grid-template-columns: minmax(0, 8fr) minmax(300px, 4fr);
+		}
+
+		.epf-summary-aside {
+			position: sticky;
+			top: var(--space-3, 0.75rem);
+		}
+	}
+
+	.epf-summary-main,
+	.epf-summary-aside {
+		min-width: 0;
+	}
+
+	.epf-budget-summary--compact {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3, 0.75rem);
+	}
+
+	/* One flat grid of small tiles instead of four stacked grids of cards. */
+	.epf-stat-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--space-2, 0.5rem);
+	}
+
+	.epf-stat {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2, 0.5rem);
+		min-width: 0;
+		padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+		border: 1px solid var(--color-border, #e4e4e7);
+		border-radius: var(--radius-lg, 0.625rem);
+		background-color: var(--color-bg-subtle, #fafafa);
+	}
+
+	.epf-stat--wide {
+		grid-column: 1 / -1;
+	}
+
+	.epf-stat-copy {
+		min-width: 0;
+	}
+
+	.epf-stat .epf-summary-card-label {
+		margin: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.epf-stat .epf-summary-card-value {
+		overflow-wrap: anywhere;
+	}
+
+	.epf-budget-summary--compact .epf-share-panel {
+		margin: 0;
+	}
+
+	/* ---- EPF create / edit form ---- */
+
+	.epf-form-grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-3, 0.75rem);
+		min-width: 0;
+	}
+
+	.epf-form-block {
+		min-width: 0;
+		border: 1px solid var(--color-border, #e4e4e7);
+		border-radius: var(--radius-xl, 0.75rem);
+		background-color: var(--color-bg-surface, #fff);
+		padding-bottom: var(--space-3, 0.75rem);
+	}
+
+	.epf-form-fields {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-3, 0.75rem);
+		padding-inline: var(--space-3, 0.75rem);
+	}
+
+	@media (min-width: 768px) {
+		.epf-form-fields--3 {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+		.epf-form-fields--dealer {
+			grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+		}
+		.epf-form-fields--budget {
+			grid-template-columns: repeat(3, minmax(0, 1fr));
+		}
+	}
+
+	@media (min-width: 1100px) {
+		.epf-form-grid--top {
+			grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+		}
+		.epf-form-fields--dealer {
+			grid-template-columns: minmax(0, 2fr) repeat(4, minmax(0, 1fr));
+		}
+		.epf-form-fields--budget {
+			grid-template-columns: repeat(6, minmax(0, 1fr));
+		}
+	}
 }
+
 /* =====================================================
 ACTIVITY DETAILS
 Responsive enterprise detail layout
@@ -2667,5 +2790,87 @@ Responsive enterprise detail layout
 		.activity-form-view-side {
 			grid-template-columns: minmax(0, 1fr);
 		}
+	}
+} /* activityFormView.fixes.css
+Import AFTER the existing activity-form-view rules (ActivityFormView does).
+Same layer, later wins — nothing existing has to be edited. */
+
+@layer components {
+	/* Header: title left, tabs + actions right, wraps on narrow screens. */
+	.activity-form-view-header {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
+	}
+
+	.activity-form-view-header-end {
+		display: flex;
+		flex: 1 1 auto;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+		min-width: 0;
+	}
+
+	.activity-form-view-header-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2, 0.5rem);
+		flex-shrink: 0;
+	}
+
+	/* Body: main + audit. The audit column is as tall as the viewport area. */
+	.activity-form-view-body.has-side-panels {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+		gap: var(--space-3, 0.75rem);
+		align-items: stretch;
+	}
+
+	@media (max-width: 1024px) {
+		.activity-form-view-body.has-side-panels {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	.activity-form-view-side {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		min-width: 0;
+	}
+
+	.activity-form-view-panel--audit {
+		display: flex;
+		flex: 1 1 auto;
+		flex-direction: column;
+		min-height: 0;
+		/* Stay in view while the main card scrolls. */
+		position: sticky;
+		top: var(--space-3, 0.75rem);
+		max-height: calc(100vh - 9rem);
+		height: calc(100vh - 9rem);
+	}
+
+	.activity-form-view-panel--audit .activity-form-view-panel-body {
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow-y: auto;
+	}
+
+	@media (max-width: 1024px) {
+		.activity-form-view-panel--audit {
+			position: static;
+			height: auto;
+			max-height: 28rem;
+		}
+	}
+
+	/* Comments tab fills the card. */
+	.activity-form-view-comments-card {
+		min-height: 24rem;
 	}
 }

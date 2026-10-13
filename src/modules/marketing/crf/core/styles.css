@@ -735,7 +735,8 @@
 	}
 
 	.crf-tile--clickable .crf-tile-image {
-		transition: transform var(--duration-normal, 200ms) var(--ease-standard, ease);
+		transition: transform var(--duration-normal, 200ms)
+			var(--ease-standard, ease);
 	}
 
 	.crf-badge--in-crf {
@@ -1060,6 +1061,306 @@
 		.crf-catalog-grid {
 			grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
 			padding: var(--space-2, 0.5rem);
+		}
+	}
+}
+/* crf/core/fixes.css
+   Import AFTER ./styles.css (CrfCatalog does). Same cascade layer, later
+   rules win, so nothing in styles.css has to be edited. */
+
+@layer components {
+	/* ============================================ CARD HEADER (tabs as title) */
+
+	.crf-card-header.ui-card-header {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
+		padding-block: var(--space-1, 0.25rem);
+	}
+
+	.crf-card-header .ui-card-header-copy {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	.crf-card-header .ui-card-title {
+		margin: 0;
+		font-size: inherit;
+		font-weight: inherit;
+		line-height: 1;
+	}
+
+	.crf-card-header .tabs-bar {
+		margin: 0;
+	}
+
+	.crf-card-header .ui-card-actions {
+		flex: 0 1 18rem;
+		min-width: 12rem;
+	}
+
+	/* ============================================ CATALOG LAYOUT */
+
+	.crf-catalog {
+		gap: var(--space-3, 0.75rem);
+	}
+
+	.crf-catalog-main {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	/* ============================================ TILES: equal height, button pinned to the bottom */
+
+	.crf-catalog-grid {
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 11.5rem), 1fr));
+		gap: var(--space-3, 0.75rem);
+		padding: var(--space-3, 0.75rem);
+	}
+
+	/* Artwork cards are wide; min() lets them shrink below 26rem on phones. */
+	.crf-catalog-grid.crf-catalog-grid--wide {
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr));
+	}
+
+	/* The wrapper is a grid item: it must be allowed to shrink to its column,
+	   otherwise the tile's intrinsic (image) width pushes it over its neighbour. */
+	.crf-catalog-grid > [role="listitem"] {
+		display: flex;
+		min-width: 0;
+		max-width: 100%;
+	}
+
+	.crf-catalog-grid > [role="listitem"] > .crf-tile {
+		flex: 1 1 0;
+		width: 100%;
+		min-width: 0;
+		max-width: 100%;
+		height: auto;
+		overflow: hidden;
+		box-sizing: border-box;
+	}
+
+	.crf-tile {
+		min-height: 0;
+		min-width: 0;
+	}
+
+	/* Media: fixed square box, image fills it, never sets the tile's width. */
+	.crf-tile > .crf-tile-media,
+	.crf-tile .crf-tile-media:not(.crf-tile-media--side) {
+		width: 100%;
+		aspect-ratio: 1 / 1;
+		overflow: hidden;
+	}
+
+	.crf-tile .crf-tile-image {
+		display: block;
+		width: 100%;
+		height: 100%;
+		max-width: 100%;
+		object-fit: cover;
+	}
+
+	/* Long names wrap to 2 lines instead of running out of the card. */
+	.crf-tile-name,
+	.crf-tile-title {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+		overflow-wrap: anywhere;
+	}
+
+	.crf-tile .crf-tile-add {
+		flex-shrink: 0;
+		margin-top: auto;
+		width: 100%;
+	}
+
+	/* The price row used to sit at the bottom; the button now owns that spot. */
+	.crf-tile .crf-price-row {
+		margin-top: 0;
+	}
+
+	/* ============================================ LOAD MORE BAR */
+
+	.crf-load-more {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2, 0.5rem);
+		align-self: stretch;
+		width: 100%;
+		margin-top: var(--space-3, 0.75rem);
+		padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+		border: 1px dashed var(--color-border-strong, #a1a1aa);
+		border-radius: var(--radius-lg, 0.625rem);
+		background-color: var(--color-bg-surface, #fff);
+		color: var(--color-brand, #f35a00);
+		font: inherit;
+		font-size: var(--font-size-sm, 0.875rem);
+		font-weight: var(--font-weight-semibold, 600);
+		cursor: pointer;
+		transition:
+			background-color var(--duration-fast, 120ms) var(--ease-standard, ease),
+			border-color var(--duration-fast, 120ms) var(--ease-standard, ease);
+	}
+
+	.crf-load-more svg {
+		width: 1rem;
+		height: 1rem;
+	}
+
+	.crf-load-more:hover:not(:disabled),
+	.crf-load-more:focus-visible {
+		border-color: var(--color-brand, #f35a00);
+		background-color: var(--color-brand-soft, #fff4ed);
+		outline: none;
+	}
+
+	.crf-load-more-count {
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+		font-weight: var(--font-weight-medium, 500);
+	}
+
+	/* ============================================ FOOTER */
+
+	.crf-footer {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+		width: 100%;
+	}
+
+	.crf-footer-start,
+	.crf-footer-end {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-3, 0.75rem);
+	}
+
+	.crf-footer-step {
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-sm, 0.875rem);
+	}
+
+	.crf-footer-step strong {
+		color: var(--color-text-primary, #18181b);
+		font-weight: var(--font-weight-semibold, 600);
+	}
+
+	/* Quiet secondary actions (Reset / Skip CRF): text only, no outline. */
+	.crf-footer-link {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1, 0.25rem);
+		padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+		border: 0;
+		border-radius: var(--radius-md, 0.5rem);
+		background: transparent;
+		color: var(--color-text-secondary, #52525b);
+		font: inherit;
+		font-size: var(--font-size-sm, 0.875rem);
+		font-weight: var(--font-weight-medium, 500);
+		cursor: pointer;
+	}
+
+	.crf-footer-link svg {
+		width: 0.9rem;
+		height: 0.9rem;
+	}
+
+	.crf-footer-link:hover:not(:disabled),
+	.crf-footer-link:focus-visible {
+		background-color: var(--color-brand-soft, #fff4ed);
+		color: var(--color-brand, #f35a00);
+		outline: none;
+	}
+
+	.crf-footer-link:disabled {
+		cursor: not-allowed;
+		opacity: 0.5;
+	}
+
+	/* ============================================ RESPONSIVE */
+
+	@media (max-width: 1024px) {
+		.crf-catalog-body {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	@media (max-width: 640px) {
+		.crf-catalog {
+			padding: var(--space-2, 0.5rem);
+			gap: var(--space-3, 0.75rem);
+		}
+
+		/* Two cards per row on phones. */
+		.crf-catalog-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: var(--space-2, 0.5rem);
+			padding: var(--space-2, 0.5rem);
+		}
+
+		.crf-catalog-grid--wide {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		/* Card header: tabs scroll sideways, search goes full width below. */
+		.crf-card-header .ui-card-header-copy {
+			flex: 1 1 100%;
+			overflow-x: auto;
+			scrollbar-width: none;
+		}
+
+		.crf-card-header .ui-card-actions {
+			flex: 1 1 100%;
+			min-width: 0;
+		}
+
+		/* Category chips scroll sideways instead of wrapping into many rows. */
+		.crf-catalog-toolbar {
+			flex-wrap: nowrap;
+			overflow-x: auto;
+			scrollbar-width: none;
+		}
+
+		.crf-catalog-toolbar > * {
+			flex-shrink: 0;
+		}
+
+		/* Footer: step text on its own line, buttons share the row. */
+		.crf-footer {
+			gap: var(--space-2, 0.5rem);
+		}
+
+		.crf-footer-start,
+		.crf-footer-end {
+			flex: 1 1 100%;
+			justify-content: space-between;
+			gap: var(--space-2, 0.5rem);
+		}
+
+		.crf-footer-step {
+			order: -1;
+			flex: 1 1 100%;
+		}
+
+		.crf-footer-end > .crf-footer-link {
+			flex: 0 0 auto;
+		}
+
+		.crf-load-more {
+			padding-block: var(--space-3, 0.75rem);
 		}
 	}
 }

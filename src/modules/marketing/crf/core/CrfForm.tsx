@@ -1,40 +1,47 @@
-// crf/core/CrfForm.tsx
-// CRF form rendered as one card: catalog in the body, actions in the card
-// footer. No collapsible section.
-//
-// The category tabs act as steps:
-//   Intermediate tabs → [Back] [Reset] [Save & Next]   (local only)
-//   Last tab          → [Back] [Reset] [Save CRF]      (creates / updates CRF)
-//
-//   footer:  [footerStart…] Step 2 of 3 · Souvenirs      [Cancel] [Reset] [Back] [Save & Next]
-//
-// `footerStart` lets a host (the wizard) put its own buttons (Back to EPC,
-// Skip CRF) in the same footer, so there is only one action bar per screen.
-
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
 	ArrowLeft,
 	ArrowRight,
 	LucideSave,
 	RefreshCcw,
 	Save,
+	SkipForward,
 	X,
 } from "lucide-react";
 
 import Button from "../../../../components/common/Button";
 import Card from "../../../../components/common/Card";
-import CrfCatalog from "./CrfCatalog";
+import { SearchInput } from "../../../../components/forms/SearchInput";
+import CrfCatalog, {
+	CrfCategoryTabs,
+	crfSearchPlaceholder,
+} from "./CrfCatalog";
 import { useCrfForm, type CrfFormProps } from "./useCrfForm";
+import type { CrfCategory } from "./types";
 
 export type CrfFormCardProps = CrfFormProps & {
-	/** Card title. Defaults to "Create CRF" / "Edit CRF". */
+	/**
+	 * Card title. When omitted (default) the category tabs + search take the
+	 * header instead of a "Create CRF" / "Edit CRF" title.
+	 */
 	title?: ReactNode;
-	/** Rendered at the left of the footer (e.g. the wizard's Back / Skip). */
+	/** Extra content at the left of the footer. */
 	footerStart?: ReactNode;
+	/** Back on the FIRST tab (e.g. the wizard's previous step). Omit to hide Back there. */
+	onBackFromFirstStep?: () => void;
+	/** Shows a quiet "Skip CRF" action (wizard only). */
+	onSkip?: () => void;
 };
 
 export default function CrfForm(props: CrfFormCardProps) {
-	const { onCancel, submitLabel, title, footerStart } = props;
+	const {
+		onCancel,
+		submitLabel,
+		title,
+		footerStart,
+		onBackFromFirstStep,
+		onSkip,
+	} = props;
 
 	const {
 		costItems,
@@ -56,24 +63,70 @@ export default function CrfForm(props: CrfFormCardProps) {
 		handleReset,
 	} = useCrfForm(props);
 
+	/* ------------------------- Header: tabs + search ----------------------- */
+
+	const hostsToolbar = !title;
+
+	// Search belongs to one tab: it starts empty again when the tab changes
+	// (Save & Next / Back change the tab inside the hook, hence the key check).
+	const [searchState, setSearchState] = useState<{
+		category: CrfCategory;
+		text: string;
+	}>({ category: activeCategory, text: "" });
+	const search =
+		searchState.category === activeCategory ? searchState.text : "";
+
 	const finalLabel = submitLabel ?? (isEditMode ? "Update CRF" : "Save CRF");
-	const cardTitle = title ?? (isEditMode ? "Edit CRF" : "Create CRF");
+
+	const headerTitle = hostsToolbar ? (
+		<CrfCategoryTabs
+			categories={steps}
+			items={costItems}
+			active={activeCategory}
+			onChange={setActiveCategory}
+		/>
+	) : (
+		title
+	);
+
+	const headerActions = hostsToolbar ? (
+		<SearchInput
+			value={search}
+			onChange={(text) => setSearchState({ category: activeCategory, text })}
+			placeholder={crfSearchPlaceholder(activeCategory)}
+		/>
+	) : undefined;
+
+	/* -------------------------------- Footer ------------------------------- */
+
+	const showBack = !isFirstStep || Boolean(onBackFromFirstStep);
 
 	const footer = (
-		<div className="flex w-full flex-wrap items-center justify-between gap-2">
-			<div className="flex flex-wrap items-center gap-3">
+		<div className="crf-footer">
+			<div className="crf-footer-start">
 				{footerStart}
 
-				<span className="text-sm text-[var(--color-text-muted)]">
-					Step {stepIndex + 1} of {steps.length} ·{" "}
-					<strong className="font-semibold text-[var(--color-text-primary)]">
-						{steps[stepIndex]?.title}
-					</strong>
+				{showBack ? (
+					<Button
+						type="button"
+						onClick={isFirstStep ? onBackFromFirstStep : handleBack}
+						size="sm"
+						text="Back"
+						Icon={ArrowLeft}
+						appearance="standard"
+						variant="outline"
+						disabled={submitting}
+					/>
+				) : null}
+
+				<span className="crf-footer-step">
+					Step {stepIndex + 1} of {steps.length}
+					<span className="sr-only"> · {steps[stepIndex]?.title}</span>
 				</span>
 			</div>
 
-			<div className="flex flex-wrap items-center justify-end gap-2">
-				{onCancel && (
+			<div className="crf-footer-end">
+				{onCancel ? (
 					<Button
 						type="button"
 						onClick={onCancel}
@@ -84,31 +137,31 @@ export default function CrfForm(props: CrfFormCardProps) {
 						variant="outline"
 						disabled={submitting}
 					/>
-				)}
+				) : null}
 
-				<Button
+				<button
 					type="button"
+					className="crf-footer-link"
 					onClick={handleReset}
-					size="sm"
-					text="Reset"
-					Icon={RefreshCcw}
-					appearance="standard"
-					variant="outline"
 					disabled={submitting || loading}
-				/>
+					title="Reset this tab to its saved items"
+				>
+					<RefreshCcw aria-hidden="true" />
+					Reset
+				</button>
 
-				{!isFirstStep && (
-					<Button
+				{onSkip ? (
+					<button
 						type="button"
-						onClick={handleBack}
-						size="sm"
-						text="Back"
-						Icon={ArrowLeft}
-						appearance="standard"
-						variant="outline"
+						className="crf-footer-link"
+						onClick={onSkip}
 						disabled={submitting}
-					/>
-				)}
+						title="Continue without adding a CRF"
+					>
+						<SkipForward aria-hidden="true" />
+						Skip CRF
+					</button>
+				) : null}
 
 				{isLastStep ? (
 					<Button
@@ -128,6 +181,7 @@ export default function CrfForm(props: CrfFormCardProps) {
 						text="Save & Next"
 						size="sm"
 						Icon={ArrowRight}
+						iconPosition="right"
 						appearance="standard"
 						variant="brand"
 						disabled={submitting || loading}
@@ -138,7 +192,14 @@ export default function CrfForm(props: CrfFormCardProps) {
 	);
 
 	return (
-		<Card title={cardTitle} footer={footer} loading={loading} padding="none">
+		<Card
+			title={headerTitle}
+			actions={headerActions}
+			headerClassName={hostsToolbar ? "crf-card-header" : undefined}
+			footer={footer}
+			loading={loading}
+			padding="none"
+		>
 			<CrfCatalog
 				options={options}
 				items={costItems}
@@ -148,6 +209,13 @@ export default function CrfForm(props: CrfFormCardProps) {
 				categories={steps}
 				activeCategory={activeCategory}
 				onCategoryChange={setActiveCategory}
+				hideToolbar={hostsToolbar}
+				search={hostsToolbar ? search : undefined}
+				onSearchChange={
+					hostsToolbar
+						? (text) => setSearchState({ category: activeCategory, text })
+						: undefined
+				}
 			/>
 		</Card>
 	);
