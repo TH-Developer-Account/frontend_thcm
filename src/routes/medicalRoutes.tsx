@@ -1,6 +1,7 @@
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import FullScreenLoader from "./FullScreenLoader";
+import MedicalClaimInitiationForm from "../modules/medicalReimbursment/components/MedicalClaimInitiationForm";
 
 const ReimbursementPage = lazy(
 	() => import("../modules/medicalReimbursment/pages/ReimbursementPage"),
