@@ -14,14 +14,14 @@ import DataTableSkeleton from "../../../components/ui/tables/Skeletons/DataTable
 import { useToast } from "../../../context/Auth/AuthContext";
 
 import { getWorkflowErrorMessage, workflowApi } from "../api/workflow.api";
-import { workflowListFilterOptions } from "../constant/workflow.constant";
+import { workflowListFilterOptions } from "../utils/workflow.constants";
 import { useDeleteWorkflowMutation } from "../context/useWorkflowMutations";
 import { useWorkflowListingPage } from "../hooks/useWorkflowListingPage";
 import type {
-	WorkflowBasics,
-	WorkflowListScope,
-	WorkflowRow,
-	WorkflowStage,
+  WorkflowBasics,
+  WorkflowListScope,
+  WorkflowRow,
+  WorkflowStage,
 } from "../types/types";
 import { mapBasics, mapStages } from "../utils/workflow.helpers";
 import { getWorkflowColumns } from "../utils/workflow.columns";
@@ -32,386 +32,386 @@ const WORKFLOW_SKELETON_ROWS = 8;
 const WORKFLOW_SKELETON_COLUMNS = 7;
 
 const getDeleteResponseMessage = (response: unknown): string => {
-	if (
-		typeof response !== "object" ||
-		response === null ||
-		Array.isArray(response)
-	) {
-		return "Workflow deleted successfully.";
-	}
+  if (
+    typeof response !== "object" ||
+    response === null ||
+    Array.isArray(response)
+  ) {
+    return "Workflow deleted successfully.";
+  }
 
-	const record = response as Record<string, unknown>;
+  const record = response as Record<string, unknown>;
 
-	if (typeof record.message === "string") {
-		return record.message;
-	}
+  if (typeof record.message === "string") {
+    return record.message;
+  }
 
-	if (
-		typeof record.data === "object" &&
-		record.data !== null &&
-		!Array.isArray(record.data)
-	) {
-		const data = record.data as Record<string, unknown>;
+  if (
+    typeof record.data === "object" &&
+    record.data !== null &&
+    !Array.isArray(record.data)
+  ) {
+    const data = record.data as Record<string, unknown>;
 
-		if (typeof data.message === "string") {
-			return data.message;
-		}
-	}
+    if (typeof data.message === "string") {
+      return data.message;
+    }
+  }
 
-	return "Workflow deleted successfully.";
+  return "Workflow deleted successfully.";
 };
 
 const WorkflowTable = () => {
-	const {
-		data,
-		loading,
+  const {
+    data,
+    loading,
 
-		users,
-		appOptions,
+    users,
+    appOptions,
 
-		userSearchInput,
-		setUserSearchInput,
+    userSearchInput,
+    setUserSearchInput,
 
-		searchInput,
-		setSearchInput,
+    searchInput,
+    setSearchInput,
 
-		selectedFilter,
-		handleFilterChange,
+    selectedFilter,
+    handleFilterChange,
 
-		filters,
-		handleAdvancedFilterChange,
+    filters,
+    handleAdvancedFilterChange,
 
-		sorting,
-		setSorting,
+    sorting,
+    setSorting,
 
-		pageIndex,
-		pageSize,
-		pageCount,
+    pageIndex,
+    pageSize,
+    pageCount,
 
-		handlePageChange,
-		handlePageSizeChange,
+    handlePageChange,
+    handlePageSizeChange,
 
-		removeWorkflowFromList,
-	} = useWorkflowListingPage();
+    removeWorkflowFromList,
+  } = useWorkflowListingPage();
 
-	const { showToast } = useToast();
-	const navigate = useNavigate();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
 
-	const [assignModalOpen, setAssignModalOpen] =
-		React.useState<WorkflowRow | null>(null);
+  const [assignModalOpen, setAssignModalOpen] =
+    React.useState<WorkflowRow | null>(null);
 
-	const [deleteModal, setDeleteModal] = React.useState<WorkflowRow | null>(
-		null,
-	);
+  const [deleteModal, setDeleteModal] = React.useState<WorkflowRow | null>(
+    null,
+  );
 
-	const [viewModal, setViewModal] = React.useState<WorkflowRow | null>(null);
-	const [viewLoading, setViewLoading] = React.useState(false);
-	const [viewError, setViewError] = React.useState<string | null>(null);
-	const [viewDetail, setViewDetail] = React.useState<{
-		basics: WorkflowBasics;
-		stages: WorkflowStage[];
-	} | null>(null);
+  const [viewModal, setViewModal] = React.useState<WorkflowRow | null>(null);
+  const [viewLoading, setViewLoading] = React.useState(false);
+  const [viewError, setViewError] = React.useState<string | null>(null);
+  const [viewDetail, setViewDetail] = React.useState<{
+    basics: WorkflowBasics;
+    stages: WorkflowStage[];
+  } | null>(null);
 
-	const deleteMutation = useDeleteWorkflowMutation();
+  const deleteMutation = useDeleteWorkflowMutation();
 
-	const filterTabs = React.useMemo(
-		() =>
-			workflowListFilterOptions.map((option) => ({
-				value: option.value,
-				label: option.label,
-				tooltipLabel: option.tooltipLabel,
-				Icon: option.Icon,
-			})),
-		[],
-	);
+  const filterTabs = React.useMemo(
+    () =>
+      workflowListFilterOptions.map((option) => ({
+        value: option.value,
+        label: option.label,
+        tooltipLabel: option.tooltipLabel,
+        Icon: option.Icon,
+      })),
+    [],
+  );
 
-	const handleListFilterChange = React.useCallback(
-		(value: WorkflowListScope) => {
-			handleFilterChange(value);
-		},
-		[handleFilterChange],
-	);
+  const handleListFilterChange = React.useCallback(
+    (value: WorkflowListScope) => {
+      handleFilterChange(value);
+    },
+    [handleFilterChange],
+  );
 
-	const handleEdit = React.useCallback(
-		(workflow: WorkflowRow) => {
-			if (!workflow.id) return;
+  const handleEdit = React.useCallback(
+    (workflow: WorkflowRow) => {
+      if (!workflow.id) return;
 
-			navigate(
-				`/workflow/edit-workflows/${encodeURIComponent(String(workflow.id))}`,
-			);
-		},
-		[navigate],
-	);
+      navigate(
+        `/workflow/edit-workflows/${encodeURIComponent(String(workflow.id))}`,
+      );
+    },
+    [navigate],
+  );
 
-	const handleOpenAssignment = React.useCallback((workflow: WorkflowRow) => {
-		setAssignModalOpen(workflow);
-	}, []);
+  const handleOpenAssignment = React.useCallback((workflow: WorkflowRow) => {
+    setAssignModalOpen(workflow);
+  }, []);
 
-	const handleOpenDelete = React.useCallback((workflow: WorkflowRow) => {
-		setDeleteModal(workflow);
-	}, []);
+  const handleOpenDelete = React.useCallback((workflow: WorkflowRow) => {
+    setDeleteModal(workflow);
+  }, []);
 
-	// Tracks the most recent View request so a slow response for a workflow
-	// the user already closed / switched away from can't overwrite the
-	// modal's current contents.
-	const latestViewRequestRef = React.useRef(0);
+  // Tracks the most recent View request so a slow response for a workflow
+  // the user already closed / switched away from can't overwrite the
+  // modal's current contents.
+  const latestViewRequestRef = React.useRef(0);
 
-	const handleCloseView = React.useCallback(() => {
-		latestViewRequestRef.current += 1;
-		setViewModal(null);
-		setViewDetail(null);
-		setViewError(null);
-		setViewLoading(false);
-	}, []);
+  const handleCloseView = React.useCallback(() => {
+    latestViewRequestRef.current += 1;
+    setViewModal(null);
+    setViewDetail(null);
+    setViewError(null);
+    setViewLoading(false);
+  }, []);
 
-	const handleOpenView = React.useCallback(
-		async (workflow: WorkflowRow) => {
-			const requestId = ++latestViewRequestRef.current;
+  const handleOpenView = React.useCallback(
+    async (workflow: WorkflowRow) => {
+      const requestId = ++latestViewRequestRef.current;
 
-			setViewModal(workflow);
-			setViewDetail(null);
-			setViewError(null);
+      setViewModal(workflow);
+      setViewDetail(null);
+      setViewError(null);
 
-			if (!workflow.id) {
-				setViewError("This workflow has no id and can't be loaded.");
-				return;
-			}
+      if (!workflow.id) {
+        setViewError("This workflow has no id and can't be loaded.");
+        return;
+      }
 
-			setViewLoading(true);
+      setViewLoading(true);
 
-			try {
-				const detail = await workflowApi.getById(String(workflow.id));
-				if (requestId !== latestViewRequestRef.current) return;
+      try {
+        const detail = await workflowApi.getById(String(workflow.id));
+        if (requestId !== latestViewRequestRef.current) return;
 
-				const basics = mapBasics(detail);
+        const basics = mapBasics(detail);
 
-				// The detail endpoint may only return the app id, not its name —
-				// resolve it against appOptions, then the detail payload, then
-				// the name already shown in the table row.
-				const resolvedAppName =
-					appOptions.find((option) => option.value === detail.appId)?.label ??
-					(basics.appDesc || workflow.appName || "");
+        // The detail endpoint may only return the app id, not its name —
+        // resolve it against appOptions, then the detail payload, then
+        // the name already shown in the table row.
+        const resolvedAppName =
+          appOptions.find((option) => option.value === detail.appId)?.label ??
+          (basics.appDesc || workflow.appName || "");
 
-				setViewDetail({
-					basics: { ...basics, appDesc: resolvedAppName },
-					stages: mapStages(detail.stages ?? []),
-				});
-			} catch (error) {
-				if (requestId !== latestViewRequestRef.current) return;
+        setViewDetail({
+          basics: { ...basics, appDesc: resolvedAppName },
+          stages: mapStages(detail.stages ?? []),
+        });
+      } catch (error) {
+        if (requestId !== latestViewRequestRef.current) return;
 
-				setViewError(
-					getWorkflowErrorMessage(error, "Failed to load this workflow."),
-				);
-			} finally {
-				if (requestId === latestViewRequestRef.current) {
-					setViewLoading(false);
-				}
-			}
-		},
-		[appOptions],
-	);
+        setViewError(
+          getWorkflowErrorMessage(error, "Failed to load this workflow."),
+        );
+      } finally {
+        if (requestId === latestViewRequestRef.current) {
+          setViewLoading(false);
+        }
+      }
+    },
+    [appOptions],
+  );
 
-	const columns = React.useMemo(
-		() =>
-			getWorkflowColumns({
-				onAssign: handleOpenAssignment,
-				onEdit: handleEdit,
-				onDelete: handleOpenDelete,
-				onView: (workflow) => void handleOpenView(workflow),
-			}),
-		[handleEdit, handleOpenAssignment, handleOpenDelete, handleOpenView],
-	);
+  const columns = React.useMemo(
+    () =>
+      getWorkflowColumns({
+        onAssign: handleOpenAssignment,
+        onEdit: handleEdit,
+        onDelete: handleOpenDelete,
+        onView: (workflow) => void handleOpenView(workflow),
+      }),
+    [handleEdit, handleOpenAssignment, handleOpenDelete, handleOpenView],
+  );
 
-	const handleDelete = React.useCallback(
-		async (workflowId: string): Promise<void> => {
-			try {
-				const response = await deleteMutation.mutateAsync(workflowId);
+  const handleDelete = React.useCallback(
+    async (workflowId: string): Promise<void> => {
+      try {
+        const response = await deleteMutation.mutateAsync(workflowId);
 
-				removeWorkflowFromList(workflowId);
+        removeWorkflowFromList(workflowId);
 
-				showToast({
-					type: "success",
-					title: "Workflow deleted",
-					description: getDeleteResponseMessage(response),
-				});
+        showToast({
+          type: "success",
+          title: "Workflow deleted",
+          description: getDeleteResponseMessage(response),
+        });
 
-				setDeleteModal(null);
-			} catch (error) {
-				showToast({
-					type: "error",
-					title: "Unable to delete workflow",
-					description: getWorkflowErrorMessage(
-						error,
-						"Failed to delete the workflow.",
-					),
-				});
-			}
-		},
-		[deleteMutation, removeWorkflowFromList, showToast],
-	);
+        setDeleteModal(null);
+      } catch (error) {
+        showToast({
+          type: "error",
+          title: "Unable to delete workflow",
+          description: getWorkflowErrorMessage(
+            error,
+            "Failed to delete the workflow.",
+          ),
+        });
+      }
+    },
+    [deleteMutation, removeWorkflowFromList, showToast],
+  );
 
-	return (
-		<>
-			<Card
-				title={
-					<FilterTabs
-						ariaLabel="Filter workflow listings"
-						items={filterTabs}
-						value={selectedFilter}
-						variant="underline"
-						onChange={handleListFilterChange}
-						className="border-b-none px-0 py-0"
-					/>
-				}
-				secondaryHeader={
-					<>
-						<MultiSelectInput
-							placeholder="Created By"
-							options={users}
-							name="createdBy"
-							value={filters.createdBy ?? []}
-							onValueChange={handleAdvancedFilterChange}
-							isSearchable
-							onInputChange={setUserSearchInput}
-							inputValue={userSearchInput}
-							filterOption={() => true}
-						/>
+  return (
+    <>
+      <Card
+        title={
+          <FilterTabs
+            ariaLabel="Filter workflow listings"
+            items={filterTabs}
+            value={selectedFilter}
+            variant="underline"
+            onChange={handleListFilterChange}
+            className="border-b-none px-0 py-0"
+          />
+        }
+        secondaryHeader={
+          <>
+            <MultiSelectInput
+              placeholder="Created By"
+              options={users}
+              name="createdBy"
+              value={filters.createdBy ?? []}
+              onValueChange={handleAdvancedFilterChange}
+              isSearchable
+              onInputChange={setUserSearchInput}
+              inputValue={userSearchInput}
+              filterOption={() => true}
+            />
 
-						<MultiSelectInput
-							placeholder="Apps"
-							options={appOptions}
-							name="apps"
-							value={filters.apps ?? []}
-							onValueChange={handleAdvancedFilterChange}
-							isSearchable
-						/>
+            <MultiSelectInput
+              placeholder="Apps"
+              options={appOptions}
+              name="apps"
+              value={filters.apps ?? []}
+              onValueChange={handleAdvancedFilterChange}
+              isSearchable
+            />
 
-						<SearchInput
-							value={searchInput}
-							onChange={setSearchInput}
-							placeholder="Search workflows"
-							aria-label="Search workflows"
-						/>
+            <SearchInput
+              value={searchInput}
+              onChange={setSearchInput}
+              placeholder="Search workflows"
+              aria-label="Search workflows"
+            />
 
-						<Button
-							type="button"
-							text="Create Workflow"
-							Icon={Plus}
-							iconPosition="left"
-							iconSize={16}
-							appearance="cta"
-							variant="brand"
-							size="sm"
-							onClick={() => navigate("/workflow/create-workflows")}
-						/>
-					</>
-				}
-			>
-				<section aria-label="Workflow records" aria-busy={loading}>
-					{loading ? (
-						<DataTableSkeleton
-							rows={WORKFLOW_SKELETON_ROWS}
-							columns={WORKFLOW_SKELETON_COLUMNS}
-							showPagination
-						/>
-					) : (
-						<DataTable<WorkflowRow>
-							data={data}
-							columns={columns}
-							loading={false}
-							sorting={sorting}
-							onSortingChange={setSorting}
-							manualSorting
-							manualPagination
-							pageIndex={pageIndex}
-							pageSize={pageSize}
-							pageCount={pageCount}
-							onPageChange={handlePageChange}
-							onPageSizeChange={handlePageSizeChange}
-							scrollTargetId="workflow-table-scroll"
-							emptyTitle="No workflows found"
-							emptyDescription="Create a workflow or adjust the current search and filters."
-						/>
-					)}
-				</section>
-			</Card>
+            <Button
+              type="button"
+              text="Create Workflow"
+              Icon={Plus}
+              iconPosition="left"
+              iconSize={16}
+              appearance="cta"
+              variant="brand"
+              size="sm"
+              onClick={() => navigate("/workflow/create-workflows")}
+            />
+          </>
+        }
+      >
+        <section aria-label="Workflow records" aria-busy={loading}>
+          {loading ? (
+            <DataTableSkeleton
+              rows={WORKFLOW_SKELETON_ROWS}
+              columns={WORKFLOW_SKELETON_COLUMNS}
+              showPagination
+            />
+          ) : (
+            <DataTable<WorkflowRow>
+              data={data}
+              columns={columns}
+              loading={false}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              manualSorting
+              manualPagination
+              pageIndex={pageIndex}
+              pageSize={pageSize}
+              pageCount={pageCount}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              scrollTargetId="workflow-table-scroll"
+              emptyTitle="No workflows found"
+              emptyDescription="Create a workflow or adjust the current search and filters."
+            />
+          )}
+        </section>
+      </Card>
 
-			{assignModalOpen ? (
-				<WorkflowUserAssignment
-					workflow={assignModalOpen}
-					onClose={() => setAssignModalOpen(null)}
-				/>
-			) : null}
+      {assignModalOpen ? (
+        <WorkflowUserAssignment
+          workflow={assignModalOpen}
+          onClose={() => setAssignModalOpen(null)}
+        />
+      ) : null}
 
-			<Modal
-				open={Boolean(viewModal)}
-				onClose={handleCloseView}
-				size="xl"
-				title={viewModal?.name ? `${viewModal.name}` : "View Workflow"}
-				footer_actions={
-					<Button
-						text="Close"
-						onClick={handleCloseView}
-						appearance="standard"
-						variant="outline"
-					/>
-				}
-			>
-				{viewLoading ? (
-					<p className="workflow-assignment-empty">Loading workflow…</p>
-				) : viewError ? (
-					<p className="workflow-fetch-stage-error" role="alert">
-						{viewError}
-					</p>
-				) : viewDetail ? (
-					<WorkflowViewForm
-						basics={viewDetail.basics}
-						stages={viewDetail.stages}
-						mode="view"
-					/>
-				) : null}
-			</Modal>
+      <Modal
+        open={Boolean(viewModal)}
+        onClose={handleCloseView}
+        size="xl"
+        title={viewModal?.name ? `${viewModal.name}` : "View Workflow"}
+        footer_actions={
+          <Button
+            text="Close"
+            onClick={handleCloseView}
+            appearance="standard"
+            variant="outline"
+          />
+        }
+      >
+        {viewLoading ? (
+          <p className="workflow-assignment-empty">Loading workflow…</p>
+        ) : viewError ? (
+          <p className="workflow-fetch-stage-error" role="alert">
+            {viewError}
+          </p>
+        ) : viewDetail ? (
+          <WorkflowViewForm
+            basics={viewDetail.basics}
+            stages={viewDetail.stages}
+            mode="view"
+          />
+        ) : null}
+      </Modal>
 
-			<Modal
-				open={Boolean(deleteModal)}
-				onClose={() => {
-					if (!deleteMutation.loading) {
-						setDeleteModal(null);
-					}
-				}}
-				mode="shell"
-				size="sm"
-				dialogRole="alertdialog"
-				ariaLabel="Delete workflow confirmation"
-			>
-				<Alert
-					variant="warning"
-					title="Delete Workflow"
-					description={`Are you sure you want to delete "${
-						deleteModal?.name ?? "this workflow"
-					}"?`}
-					primaryAction={{
-						label: deleteMutation.loading ? "Deleting..." : "Delete",
-						onClick: () => {
-							if (!deleteModal?.id || deleteMutation.loading) {
-								return;
-							}
+      <Modal
+        open={Boolean(deleteModal)}
+        onClose={() => {
+          if (!deleteMutation.loading) {
+            setDeleteModal(null);
+          }
+        }}
+        mode="shell"
+        size="sm"
+        dialogRole="alertdialog"
+        ariaLabel="Delete workflow confirmation"
+      >
+        <Alert
+          variant="warning"
+          title="Delete Workflow"
+          description={`Are you sure you want to delete "${
+            deleteModal?.name ?? "this workflow"
+          }"?`}
+          primaryAction={{
+            label: deleteMutation.loading ? "Deleting..." : "Delete",
+            onClick: () => {
+              if (!deleteModal?.id || deleteMutation.loading) {
+                return;
+              }
 
-							void handleDelete(String(deleteModal.id));
-						},
-					}}
-					secondaryAction={{
-						label: "Cancel",
-						onClick: () => {
-							if (!deleteMutation.loading) {
-								setDeleteModal(null);
-							}
-						},
-					}}
-				/>
-			</Modal>
-		</>
-	);
+              void handleDelete(String(deleteModal.id));
+            },
+          }}
+          secondaryAction={{
+            label: "Cancel",
+            onClick: () => {
+              if (!deleteMutation.loading) {
+                setDeleteModal(null);
+              }
+            },
+          }}
+        />
+      </Modal>
+    </>
+  );
 };
 
 export default WorkflowTable;

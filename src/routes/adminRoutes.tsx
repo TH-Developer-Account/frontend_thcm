@@ -1,5 +1,7 @@
 import { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router-dom";
+
+import AdministrationRoute from "./AdministrationRoute";
 import FullScreenLoader from "./FullScreenLoader";
 
 const UsersPage = lazy(() => import("../modules/admin/users/UsersPage"));
@@ -13,11 +15,11 @@ const ProfileFormPage = lazy(() =>
 		(m) => ({ default: m.ProfileFormPage }),
 	),
 );
+const AppAdministratorsPage = lazy(
+	() => import("../modules/admin/app-administrators/AppAdministratorsPage"),
+);
 const ByDesignPage = lazy(() => import("../modules/admin/FetchUsers/ByDesign"));
 const C4CPage = lazy(() => import("../modules/admin/FetchUsers/C4C"));
-const UserProfile = lazy(
-	() => import("../modules/settings/UserProfile/UserProfile"),
-);
 const MastersPage = lazy(() => import("../modules/admin/Masters/MastersPage"));
 const BusinessPartners = lazy(
 	() => import("../modules/admin/business-partners/BusinessPartners"),
@@ -29,44 +31,52 @@ const BusinessPartnerView = lazy(
 	() => import("../modules/admin/business-partners/BusinessPartnerView"),
 );
 
+// The signed-in user's own profile is no longer here: it is served at
+// /profile (see AppRoutes) so non-admin users can reach it.
 export default function AdminRoutes() {
 	return (
 		<Suspense fallback={<FullScreenLoader />}>
 			<Routes>
-				<Route path="users" element={<UsersPage />} />
-				<Route path="users/create" element={<UsersPage />} />
+				<Route element={<AdministrationRoute />}>
+					<Route path="users" element={<UsersPage />} />
+					<Route path="users/create" element={<UsersPage />} />
+					<Route path="users/:id" element={<UsersPage />} />
 
-				<Route path="users/:id" element={<UsersPage />} />
+					<Route path="user-profiles" element={<UserProfilePage />} />
+					<Route path="profiles/create" element={<ProfileFormPage />} />
+					<Route path="profiles/:id/edit" element={<ProfileFormPage />} />
 
-				<Route
-					path="masters"
-					element={
-						<div className="overflow-y-auto scrollbar-sleek">
-							<MastersPage />
-						</div>
-					}
-				/>
+					<Route
+						path="masters"
+						element={
+							<div className="overflow-y-auto scrollbar-sleek">
+								<MastersPage />
+							</div>
+						}
+					/>
+					<Route path="business-partners" element={<BusinessPartners />} />
+					<Route
+						path="business-partners/:id/view"
+						element={<BusinessPartnerView />}
+					/>
+					<Route path="bydesign" element={<ByDesignPage />} />
+					<Route path="c4c" element={<C4CPage />} />
 
-				<Route path="business-partners" element={<BusinessPartners />} />
-				<Route
-					path="business-partners/create"
-					element={<CreateBusinessPartner />}
-				/>
-
-				<Route
-					path="business-partners/:id/edit"
-					element={<CreateBusinessPartner />}
-				/>
-				<Route
-					path="business-partners/:id/view"
-					element={<BusinessPartnerView />}
-				/>
-				<Route path="bydesign" element={<ByDesignPage />} />
-				<Route path="c4c" element={<C4CPage />} />
-				<Route path="/profile" element={<UserProfile />} />
-				<Route path="/profiles/create" element={<ProfileFormPage />} />
-				<Route path="/profiles/:id/edit" element={<ProfileFormPage />} />
-				<Route path="user_profiles" element={<UserProfilePage />} />
+					<Route element={<AdministrationRoute superAdminOnly />}>
+						<Route
+							path="app-administrators"
+							element={<AppAdministratorsPage />}
+						/>
+						<Route
+							path="business-partners/create"
+							element={<CreateBusinessPartner />}
+						/>
+						<Route
+							path="business-partners/:id/edit"
+							element={<CreateBusinessPartner />}
+						/>
+					</Route>
+				</Route>
 			</Routes>
 		</Suspense>
 	);

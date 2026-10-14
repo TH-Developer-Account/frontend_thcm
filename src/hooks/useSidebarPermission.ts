@@ -1,38 +1,29 @@
 import { useMemo } from "react";
+
 import { useAuth } from "../context/Auth/AuthContext";
 import type { SidebarItem } from "../layout/layout.types";
 
 export function useSidebarPermissions(items: SidebarItem[]) {
-	const { can, isSuperAdmin } = useAuth();
+  const { can, isSuperAdmin } = useAuth();
 
-	return useMemo(() => {
-		const filterItems = (items: SidebarItem[]): SidebarItem[] => {
-			return items
-				.map((item) => {
-					if (item.permission && !isSuperAdmin) {
-						const { app, module, action = "read" } = item.permission;
+  return useMemo(() => {
+    const isItemAllowed = (item: SidebarItem): boolean => {
+      if (item.superAdminOnly && !isSuperAdmin) return false;
+      if (!item.permission) return true;
 
-						const allowed = can(action, app, module);
+      const { app, module, action = "read" } = item.permission;
+      return can(action, app, module);
+    };
 
-						if (!allowed) return null;
-					}
+    const filterItems = (sidebarItems: SidebarItem[]): SidebarItem[] =>
+      sidebarItems.flatMap((item) => {
+        if (!isItemAllowed(item)) return [];
+        if (!item.children) return [item];
 
-					if (item.children) {
-						const children = filterItems(item.children);
+        const children = filterItems(item.children);
+        return children.length > 0 ? [{ ...item, children }] : [];
+      });
 
-						if (children.length === 0) return null;
-
-						return {
-							...item,
-							children,
-						};
-					}
-
-					return item;
-				})
-				.filter((item): item is SidebarItem => item !== null);
-		};
-
-		return filterItems(items);
-	}, [items, can, isSuperAdmin]);
+    return filterItems(items);
+  }, [items, can, isSuperAdmin]);
 }

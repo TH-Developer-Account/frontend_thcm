@@ -4,7 +4,7 @@ import type { Option } from "../../../components/forms/input.types";
 import { ServerAxios } from "../../../services/ServerAxios";
 import type { EventDeviationPayload } from "../../../types/common.types";
 
-import { api_routes } from "../constant/workflow.constant";
+import { api_routes } from "../utils/workflow.constants";
 import type {
 	AttachWorkflowInput,
 	CreateWorkflowPayload,
@@ -331,10 +331,18 @@ export const workflowApi = {
 	listReusable: async (
 		scope: WorkflowScope,
 		module: string,
+		appId?: string,
 	): Promise<WorkflowSummary[]> => {
 		const response = await ServerAxios.get(
 			api_routes.get_all_workflow_api_route,
-			{ params: { scope, module } },
+			{
+				params: {
+					scope,
+					module,
+					// Backend only filters by app through `filters.apps`.
+					...(appId && { filters: JSON.stringify({ apps: [appId] }) }),
+				},
+			},
 		);
 		const rawWorkflows = unwrapData<ReusableWorkflowApiItem[]>(response.data);
 		return (Array.isArray(rawWorkflows) ? rawWorkflows : []).map(

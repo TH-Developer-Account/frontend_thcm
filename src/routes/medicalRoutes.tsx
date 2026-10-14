@@ -9,7 +9,8 @@ const MedicalClaimListingPage = lazy(
 	() => import("../modules/medicalReimbursment/pages/MedicalClaimListingPage"),
 );
 const MedicalClaimInitiationPage = lazy(
-	() => import("../modules/medicalReimbursment/pages/MedicalClaimInitiationPage"),
+	() =>
+		import("../modules/medicalReimbursment/pages/MedicalClaimInitiationPage"),
 );
 
 export default function MedicalRoutes() {
@@ -25,6 +26,14 @@ export default function MedicalRoutes() {
 					path="initiation/listing"
 					element={<Navigate to="/medi-claim/listing?tab=initiation" replace />}
 				/>
+
+				<Route path="initiate" element={<MedicalClaimInitiationPage />} />
+
+				<Route
+					path="initiation/:initiationId"
+					element={<MedicalClaimInitiationForm />}
+				/>
+
 				<Route
 					path="initiation/:initiationId/view"
 					element={<MedicalClaimInitiationPage mode="view" />}
@@ -36,7 +45,10 @@ export default function MedicalRoutes() {
 
 				<Route path=":id/view" element={<ReimbursementPage />} />
 
-				<Route path="*" element={<Navigate to="/medi-claim/listing" replace />} />
+				<Route
+					path="*"
+					element={<Navigate to="/medi-claim/listing" replace />}
+				/>
 			</Routes>
 		</Suspense>
 	);

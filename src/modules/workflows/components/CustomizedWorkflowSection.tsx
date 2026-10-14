@@ -20,12 +20,18 @@ import type {
 	PendingWorkflowSelection,
 	WorkflowStage,
 	WorkflowApprover,
+	WorkflowListScope,
 	WorkflowStageErrors,
 } from "../types/types";
 
 import { validateWorkflow } from "../utils/workflow.helpers";
 
 type WorkflowSource = "active" | "selection";
+
+// Tabs shown when picking a workflow here ("Assigned to me" is for approvers,
+// not for choosing a workflow to attach). Module-level so the reference stays
+// stable across renders. The first entry is the tab the picker opens on.
+const PICKER_FILTERS: WorkflowListScope[] = ["CREATED_BY_ME", "ALL"];
 
 type ActiveWorkflowLike = {
 	id: string;
@@ -669,6 +675,7 @@ const CustomizedWorkflowSection = ({
 							onScreenChange={(view) =>
 								setIsCustomisingExistingWorkflow(view === "builder")
 							}
+							availableFilters={PICKER_FILTERS}
 						/>
 					</div>
 				) : (

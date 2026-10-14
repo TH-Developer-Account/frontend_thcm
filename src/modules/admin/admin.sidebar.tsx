@@ -1,14 +1,20 @@
 import type { SidebarItem } from "../../layout/layout.types";
 import {
-	Settings,
+	Home,
 	Database,
-	// MapPinHouse,
 	Users,
 	User,
 	BriefcaseBusinessIcon,
+	ShieldCheck,
 } from "lucide-react";
 
 export const adminSidebar: SidebarItem[] = [
+	{
+		id: "home",
+		label: "Home",
+		icon: <Home size={18} />,
+		link: "/admin/dashboard",
+	},
 	{
 		id: "users",
 		label: "Business Users",
@@ -19,7 +25,14 @@ export const adminSidebar: SidebarItem[] = [
 		id: "profiles",
 		label: "User Profiles",
 		icon: <User size={18} />,
-		link: "/admin/user_profiles",
+		link: "/admin/user-profiles",
+	},
+	{
+		id: "app-administrators",
+		label: "App Administrators",
+		icon: <ShieldCheck size={18} />,
+		link: "/admin/app-administrators",
+		superAdminOnly: true,
 	},
 	{
 		id: "masters",
@@ -33,7 +46,6 @@ export const adminSidebar: SidebarItem[] = [
 		icon: <BriefcaseBusinessIcon size={18} />,
 		link: "/admin/business-partners",
 	},
-
 	{
 		id: "bydesign",
 		label: "By Design Data",
@@ -45,11 +57,5 @@ export const adminSidebar: SidebarItem[] = [
 		label: "C4C Data",
 		icon: <Database size={18} />,
 		link: "/admin/c4c",
-	},
-	{
-		id: "settings",
-		label: "Settings",
-		icon: <Settings size={18} />,
-		link: "/admin/profile",
 	},
 ];

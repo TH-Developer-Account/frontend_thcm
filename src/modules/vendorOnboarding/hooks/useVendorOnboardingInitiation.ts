@@ -20,6 +20,7 @@ import {
 } from "../../../utils/apiError.helper";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { vendorContent } from "../../../content/vendor.content";
+import { joinMobile, splitMobile } from "../../../utils/phone";
 
 const toastContent = vendorContent.toast.initiation;
 
@@ -48,6 +49,26 @@ const mapInitiationDetailsToForm = (
 	mobile: response?.mobile ?? "",
 	status: response?.status ?? "Pending",
 });
+
+/**
+ * API payload (mobile = "+919845012345") -> form values
+ * (countryCode = "+91", mobile = "9845012345"). Every path that fills the
+ * form (defaults, detail load, reset) goes through this one function.
+ * `vendorName` is intentionally left out; it rides in vendorNameRef.
+ */
+const toFormValues = (
+	source: VendorOnboardingInitiationPayload,
+): VendorInitiationFormValues => {
+	const { countryCode, mobile } = splitMobile(source.mobile);
+
+	return {
+		vendorReferenceName: source.vendorReferenceName ?? "",
+		email: source.email,
+		countryCode,
+		mobile,
+		status: source.status,
+	};
+};
 
 export const useVendorOnboardingInitiation = ({
 	initialValues,
@@ -95,7 +116,7 @@ export const useVendorOnboardingInitiation = ({
 		// appear as the user types, not only once they blur the field.
 		mode: "onChange",
 		reValidateMode: "onChange",
-		defaultValues: initialResolvedValues,
+		defaultValues: toFormValues(initialResolvedValues),
 	});
 
 	const isEditMode = Boolean(initiationId);
@@ -111,7 +132,7 @@ export const useVendorOnboardingInitiation = ({
 		const mappedValues = mapInitiationDetailsToForm(detailQuery.data);
 
 		vendorNameRef.current = mappedValues.vendorName;
-		reset(mappedValues);
+		reset(toFormValues(mappedValues));
 	}, [detailQuery.data, shouldFetchDetails, reset]);
 
 	useEffect(() => {
@@ -120,7 +141,7 @@ export const useVendorOnboardingInitiation = ({
 		}
 
 		vendorNameRef.current = initialResolvedValues.vendorName;
-		reset(initialResolvedValues);
+		reset(toFormValues(initialResolvedValues));
 	}, [initialResolvedValues, shouldFetchDetails, reset]);
 
 	const submitMutation = useMutation({
@@ -177,8 +198,13 @@ export const useVendorOnboardingInitiation = ({
 	};
 
 	const onValid = (formValues: VendorInitiationFormValues) => {
+		// Split fields are recombined here, so the API payload shape is
+		// unchanged: `mobile` is still a single string, now with the code.
+		const { countryCode, mobile, ...rest } = formValues;
+
 		const payload: VendorOnboardingInitiationPayload = {
-			...formValues,
+			...rest,
+			mobile: joinMobile(countryCode, mobile),
 			vendorName: vendorNameRef.current,
 		};
 

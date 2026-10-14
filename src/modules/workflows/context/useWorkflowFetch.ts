@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { useAuth } from "../../../context/Auth/useAuth";
 import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
@@ -30,6 +30,9 @@ type ScreenState =
 export type UseWorkflowFetchOptions = {
 	sourceRecordRef: string;
 	recordType: string;
+	// Tabs the caller allows. The first one is the tab the list opens on.
+	// Pass a stable reference (module-level constant), not an inline array.
+	availableFilters?: WorkflowListScope[];
 	onWorkflowSelected?: (
 		selection: PendingWorkflowSelection,
 	) => void | Promise<void>;
@@ -106,6 +109,7 @@ const buildWorkflowPayload = ({
 export function useWorkflowFetch({
 	sourceRecordRef,
 	recordType,
+	availableFilters,
 	onWorkflowSelected,
 	onWorkflowAttached,
 }: UseWorkflowFetchOptions) {
@@ -120,8 +124,13 @@ export function useWorkflowFetch({
 
 	const [workflows, setWorkflows] = useState<WorkflowSummary[]>([]);
 
-	const [selectedFilter, setSelectedFilter] =
-		useState<WorkflowListScope>("CREATED_BY_ME");
+	// Start on a tab the user can actually see.
+	const [selectedFilter, setSelectedFilter] = useState<WorkflowListScope>(
+		availableFilters?.[0] ?? "CREATED_BY_ME",
+	);
+
+	// Ignores a slow response from a tab the user has already left.
+	const loadRequestRef = useRef(0);
 
 	const [loading, setLoading] = useState(true);
 	const [customising, setCustomising] = useState(false);
@@ -214,38 +223,29 @@ export function useWorkflowFetch({
 	}, [appId, sourceRecordRef, workspaceId]);
 
 	const loadWorkflows = useCallback(async (): Promise<void> => {
+		const requestId = ++loadRequestRef.current;
+		const isLatest = () => requestId === loadRequestRef.current;
+
 		setLoading(true);
 		setError(null);
 
 		try {
-			let result: WorkflowSummary[];
+			const result = await workflowApi.listReusable(
+				selectedFilter,
+				recordType,
+				appId,
+			);
 
-			switch (selectedFilter) {
-				case "ASSIGNED_TO_ME": {
-					result = await workflowApi.listReusable("ASSIGNED_TO_ME", recordType);
-					break;
-				}
-
-				case "ALL": {
-					result = await workflowApi.listReusable("ALL", recordType);
-					break;
-				}
-
-				case "CREATED_BY_ME":
-				default: {
-					result = await workflowApi.listReusable("CREATED_BY_ME", recordType);
-					break;
-				}
-			}
-
-			setWorkflows(result);
+			if (isLatest()) setWorkflows(result);
 		} catch (nextError) {
+			if (!isLatest()) return;
+
 			setWorkflows([]);
 			setError(nextError);
 		} finally {
-			setLoading(false);
+			if (isLatest()) setLoading(false);
 		}
-	}, [recordType, selectedFilter]);
+	}, [appId, recordType, selectedFilter]);
 
 	const handleFilterChange = useCallback(
 		(nextFilter: WorkflowListScope): void => {
