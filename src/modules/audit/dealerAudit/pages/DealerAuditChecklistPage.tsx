@@ -1,112 +1,232 @@
-import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { ClipboardCheck } from "lucide-react";
+// modules/audit/dealerAudit/pages/DealerAuditChecklistPage.tsx
+//
+// The parameters of one audit, grouped by section. Works for the dealer
+// (self-assessment), the reviewer (review) and read-only viewers.
 
+import { useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+
+import { Alert } from "../../../../components/common/Alert";
 import Card from "../../../../components/common/Card";
-import PageSectionLayout from "../../../../layout/PageSectionLayout";
-import { PageHeader } from "../../../../components/ui/PageHeader";
-import PageNavigation from "../../../../components/ui/PageNavigation/PageNavigation";
 import { FilterTabs } from "../../../../components/ui/FilterTabs";
+import PageNavigation from "../../../../components/ui/PageNavigation/PageNavigation";
+import PageSectionLayout from "../../../../layout/PageSectionLayout";
+import { dealerAuditContent as content } from "../dealer-audit.content";
+import { getAssessmentMode } from "../dealer-audit.permissions";
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
-import type { ChecklistFilter } from "../../shared/shared.audit.types";
-import { getAuditProgress } from "../dealer-audit.utils";
-import useDealerAudit from "../dealer-audit.store";
-import AuditProgress from "../../shared/checklist/AuditProgress";
-import ChecklistItemRow from "../../shared/checklist/ChecklistItemRow";
+import { formatPeriodLabel } from "../dealer-audit.sla";
+import type { DealerAuditSection } from "../dealer-audit.types";
+import {
+	flattenChecklistItems,
+	getChecklistProgress,
+	getReviewProgress,
+	isItemReviewed,
+	isChecklistItemComplete,
+	isItemClarificationOpen,
+} from "../../shared/execution/audit-execution.utils";
+import AuditProgressSummary from "../../shared/execution/components/AuditProgressSummary";
+import AuditReminderBanner from "../../shared/execution/components/AuditReminderBanner";
+import AuditStatusBadge from "../components/AuditStatusBadge";
+import AuditWorkflowActions from "../components/AuditWorkflowActions";
+import ChecklistItemList from "../../shared/execution/components/ChecklistItemList";
+import { useAuditReminders } from "../hooks/useAuditReminders";
+import {
+	useAuditPermissions,
+	useDealerAuditSession,
+} from "../hooks/useDealerAuditAccess";
+import { useDealerAudit, useDealerAuditChecklist } from "../hooks/useDealerAudits";
+import { getAuditActionErrorMessage } from "../../shared/audit-error.utils";
+
+const text = content.ui.checklist;
+
+type ChecklistFilter = "ALL" | "TODO" | "DONE";
 
 export default function DealerAuditChecklistPage() {
+	const { auditId } = useParams();
 	const navigate = useNavigate();
-	const { auditId = "demo-audit" } = useParams();
-	const { checklist } = useDealerAudit();
+	const { role } = useDealerAuditSession();
 	const [filter, setFilter] = useState<ChecklistFilter>("ALL");
-	const progress = getAuditProgress(checklist);
 
-	const counts = useMemo(
-		() => ({
-			ALL: progress.total,
-			PENDING: progress.total - progress.completed,
-			COMPLETED: progress.completed,
-		}),
-		[progress],
+	const auditQuery = useDealerAudit(auditId);
+	const checklistQuery = useDealerAuditChecklist(auditId);
+	const audit = auditQuery.data;
+	const permissions = useAuditPermissions(audit);
+	const mode = getAssessmentMode(permissions);
+	const reminders = useAuditReminders(
+		audit,
+		role === "DEALER" ? "DEALER" : "INTERNAL",
 	);
-	const tabs = (["ALL", "PENDING", "COMPLETED"] as const).map((value) => ({
-		value,
-		label:
-			value === "ALL" ? "All" : value === "PENDING" ? "Pending" : "Completed",
-		count: counts[value],
-	}));
+
+	const sections = useMemo(
+		() => checklistQuery.data?.sections ?? [],
+		[checklistQuery.data],
+	);
+	const items = useMemo(() => flattenChecklistItems(sections), [sections]);
+	const isReviewing = mode === "REVIEW";
+
+	const progress = useMemo(
+		() => (isReviewing ? getReviewProgress(items) : getChecklistProgress(items)),
+		[isReviewing, items],
+	);
+
+	const isDone = useMemo(
+		() =>
+			isReviewing
+				? isItemReviewed
+				: (item: (typeof items)[number]) =>
+						isChecklistItemComplete(item) && !isItemClarificationOpen(item),
+		[isReviewing],
+	);
+
+	const tabs = useMemo(
+		() => [
+			{ value: "ALL" as const, label: text.filters.all, count: items.length },
+			{
+				value: "TODO" as const,
+				label: isReviewing ? text.filters.toReview : text.filters.pending,
+				count: items.filter((item) => !isDone(item)).length,
+			},
+			{
+				value: "DONE" as const,
+				label: isReviewing ? text.filters.reviewed : text.filters.completed,
+				count: items.filter(isDone).length,
+			},
+		],
+		[isDone, isReviewing, items],
+	);
+
+	const visibleSections = useMemo<DealerAuditSection[]>(
+		() =>
+			sections
+				.map((section) => ({
+					...section,
+					items: section.items.filter(
+						(item) =>
+							filter === "ALL" || (filter === "DONE") === isDone(item),
+					),
+				}))
+				.filter((section) => section.items.length > 0),
+		[filter, isDone, sections],
+	);
+
+	const detailPath = auditId ? DEALER_AUDIT_ROUTES.audits.detail(auditId) : "";
+
+	if (auditQuery.isLoading || checklistQuery.isLoading) {
+		return (
+			<PageSectionLayout className="audit-page">
+				<p className="text-sm text-slate-600" role="status">
+					{text.loading}
+				</p>
+			</PageSectionLayout>
+		);
+	}
+
+	if (auditQuery.isError || checklistQuery.isError || !audit) {
+		const error = auditQuery.error ?? checklistQuery.error;
+		return (
+			<PageSectionLayout className="audit-page">
+				<Alert
+					variant="error"
+					title={text.errorTitle}
+					description={getAuditActionErrorMessage(error, "checklist")}
+					primaryAction={{
+						label: text.retry,
+						onClick: () => {
+							void auditQuery.refetch();
+							void checklistQuery.refetch();
+						},
+					}}
+				/>
+			</PageSectionLayout>
+		);
+	}
+
+	if (!permissions.canView) {
+		return (
+			<PageSectionLayout className="audit-page">
+				<Alert
+					variant="warning"
+					title={text.deniedTitle}
+					description={text.deniedDescription}
+				/>
+			</PageSectionLayout>
+		);
+	}
 
 	return (
-		<PageSectionLayout className="dealer-audit-page">
-			<PageHeader>
-				<div className="dealer-audit-header">
-					<PageNavigation
-						variant="button"
-						direction="back"
-						ariaLabel="Go back"
-					/>
-					<div className="dealer-audit-header-copy">
-						<h1 className="dealer-audit-title">Dealer Audit</h1>
-						<p className="dealer-audit-subtitle">
-							{checklist.dealerName}, {checklist.location}
-						</p>
-					</div>
+		<PageSectionLayout className="audit-page">
+			<header className="flex flex-wrap items-start gap-3">
+				<PageNavigation
+					variant="button"
+					direction="back"
+					ariaLabel={text.back}
+					to={detailPath}
+				/>
+				<div className="min-w-0 flex-1">
+					<h1 className="break-words text-lg font-semibold text-(--color-text-primary)">
+						{audit.dealerName}
+					</h1>
+					<p className="text-sm text-(--color-text-secondary)">
+						{audit.auditNumber} · {formatPeriodLabel(audit.period)}
+					</p>
 				</div>
-			</PageHeader>
+				<AuditStatusBadge status={audit.status} />
+			</header>
 
-			<div className="dealer-audit-stack">
-				<AuditProgress {...progress} />
+			<div className="audit-stack">
+				<AuditReminderBanner reminders={reminders} />
+
+				<Card variant="outlined" padding="compact">
+					<AuditProgressSummary
+						label={isReviewing ? text.reviewProgress : text.selfProgress}
+						progress={progress}
+					/>
+				</Card>
 
 				<FilterTabs
 					items={tabs}
 					value={filter}
 					onChange={setFilter}
-					ariaLabel="Checklist status"
+					ariaLabel={text.filterLabel}
 					variant="soft"
 				/>
 
-				<div className="dealer-audit-category-list">
-					{checklist.categories.map((category) => {
-						const items = category.items.filter(
-							(item) => filter === "ALL" || item.status === filter,
-						);
-						if (!items.length) return null;
-						return (
-							<Card
-								key={category.id}
-								title={category.name}
-								subtitle={`${items.length} item${items.length === 1 ? "" : "s"}`}
-								accordion
-								defaultExpanded={category.id === "sales-display"}
-								padding="none"
-								variant="outlined"
-								headerClassName="!py-3"
-								className="overflow-hidden"
-								actions={
-									<ClipboardCheck
-										size={17}
-										className="text-brand"
-										aria-hidden="true"
-									/>
-								}
+				{visibleSections.length === 0 ? (
+					<p className="rounded-lg border border-dashed border-(--color-border-default) p-4 text-center text-sm text-slate-600">
+						{items.length === 0 ? text.empty : text.emptyFiltered}
+					</p>
+				) : (
+					<ChecklistItemList
+						sections={visibleSections}
+						showReviewer={permissions.canViewReviewerAssessment}
+						renderLink={(item, className, children) => (
+							<Link
+								to={DEALER_AUDIT_ROUTES.execution.item(audit.id, item.id)}
+								className={className}
 							>
-								{items.map((item) => (
-									<ChecklistItemRow
-										key={item.id}
-										item={item}
-										onOpen={() => {
-											if (!auditId) return;
+								{children}
+							</Link>
+						)}
+					/>
+				)}
 
-											navigate(
-												DEALER_AUDIT_ROUTES.execution.item(auditId, item.id),
-											);
-										}}
-									/>
-								))}
-							</Card>
-						);
-					})}
-				</div>
+				<Card variant="outlined" title={text.actionsTitle} padding="compact">
+					<AuditWorkflowActions
+						audit={audit}
+						items={items}
+						permissions={permissions}
+						onOpenChecklist={() => setFilter("ALL")}
+						onOpenReport={() =>
+							navigate(DEALER_AUDIT_ROUTES.audits.report(audit.id))
+						}
+						onJumpToItem={(itemId) =>
+							navigate(DEALER_AUDIT_ROUTES.execution.item(audit.id, itemId))
+						}
+						onReAuditCreated={(newAuditId) =>
+							navigate(DEALER_AUDIT_ROUTES.audits.detail(newAuditId))
+						}
+					/>
+				</Card>
 			</div>
 		</PageSectionLayout>
 	);

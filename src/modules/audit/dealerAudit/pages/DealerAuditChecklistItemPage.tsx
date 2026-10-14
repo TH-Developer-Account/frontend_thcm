@@ -1,378 +1,476 @@
-import { useMemo, useRef, useState } from "react";
+// modules/audit/dealerAudit/pages/DealerAuditChecklistItemPage.tsx
+//
+// One parameter at a time, full screen on mobile. Three modes, decided by
+// the audit-scoped permissions:
+//   SELF       dealer answers (or fixes a flagged parameter)
+//   REVIEW     reviewer scores the dealer's answer
+//   READ_ONLY  everyone else, and every closed audit
+//
+// Leaving a parameter (Previous / Next / swipe / back) always goes through
+// the draft's confirmLeave, so unsaved work is saved or knowingly discarded.
+
+import { Check, ChevronRight } from "lucide-react";
+import { useCallback, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-	Check,
-	ChevronLeft,
-	ChevronRight,
-	ClipboardList,
-	ListChecks,
-} from "lucide-react";
-import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
+
+import { Alert } from "../../../../components/common/Alert";
 import Button from "../../../../components/common/Button";
 import Card from "../../../../components/common/Card";
-import { Badge } from "../../../../components/common/Badge";
-import TextareaInput from "../../../../components/forms/TextareaInput";
 import PageSectionLayout from "../../../../layout/PageSectionLayout";
+import { dealerAuditContent as content } from "../dealer-audit.content";
 import {
-	LivePhotoUploadField,
-	type LivePhotoValue,
-} from "../../shared/checklist/LivePhotoUploadField";
+	getAssessmentMode,
+	type DealerAuditPermissions,
+} from "../dealer-audit.permissions";
+import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
+import { isClarificationStatus } from "../dealer-audit.status";
+import type { DealerAudit, DealerAuditChecklistItem } from "../dealer-audit.types";
 import {
-	flattenChecklist,
-	getAuditProgress,
-	mapChecklistFormToPayload,
-	mapChecklistItemToForm,
-} from "../dealer-audit.utils";
-import type { ChecklistItemFormValues } from "../../shared/shared.audit.types";
-import useDealerAudit from "../dealer-audit.store";
-import AuditProgress from "../../shared/checklist/AuditProgress";
-import ScoreSelector from "../../shared/checklist/ScoreSelector";
+	flattenChecklistItems,
+	getChecklistProgress,
+	getEvidenceLimits,
+	getItemNeighbours,
+	getReviewProgress,
+	isItemClarificationOpen,
+	type ChecklistProgress,
+} from "../../shared/execution/audit-execution.utils";
+import ChecklistItemShell, {
+	type ItemNavigationTarget,
+} from "../../shared/execution/components/ChecklistItemShell";
+import DealerClarificationPanel from "../components/DealerClarificationPanel";
+import SelfAssessmentAnswerPanel from "../../shared/execution/components/SelfAssessmentAnswerPanel";
+import ReviewItemForm from "../../shared/execution/components/ReviewItemForm";
+import ReviewResultPanel from "../../shared/execution/components/ReviewResultPanel";
+import SaveStatusIndicator from "../../shared/execution/components/SaveStatusIndicator";
+import SelfAssessmentForm from "../../shared/execution/components/SelfAssessmentForm";
+import {
+	useAuditPermissions,
+} from "../hooks/useDealerAuditAccess";
+import { useDealerAudit, useDealerAuditChecklist } from "../hooks/useDealerAudits";
+import { useChecklistItemDraft } from "../hooks/useChecklistItemDraft";
+import { useEvidenceUploader } from "../hooks/useEvidenceUploader";
+import { useReviewItemDraft } from "../hooks/useReviewItemDraft";
+import { getAuditActionErrorMessage } from "../../shared/audit-error.utils";
 
-type DealerAuditChecklistItemPageProps = {
-	imagesRequired?: boolean;
-	minImages?: number;
-	maxImages?: number;
-};
+const text = content.ui.itemPage;
 
-const EMPTY_FORM: ChecklistItemFormValues = {
-	score: null,
-	remarks: "",
-	evidence: [],
-};
+// ── Shared workspace plumbing ─────────────────────────────────────────
 
-export default function DealerAuditChecklistItemPage({
-	imagesRequired = true,
-	minImages = 2,
-	maxImages = 5,
-}: DealerAuditChecklistItemPageProps) {
-	const { auditId = "demo-audit", itemId = "" } = useParams();
+interface WorkspaceProps {
+	audit: DealerAudit;
+	item: DealerAuditChecklistItem;
+	index: number;
+	total: number;
+	previousId: string | null;
+	nextId: string | null;
+	progress: ChecklistProgress;
+	permissions: DealerAuditPermissions;
+}
 
-	const checklistPath = DEALER_AUDIT_ROUTES.execution.checklist(auditId);
-
+function useItemNavigation(
+	auditId: string,
+	previousId: string | null,
+	nextId: string | null,
+) {
 	const navigate = useNavigate();
-	const { checklist, updateItem } = useDealerAudit();
-	const items = useMemo(() => flattenChecklist(checklist), [checklist]);
-	const index = items.findIndex((entry) => entry.id === itemId);
-	const item = items[index];
-	const previous = index > 0 ? items[index - 1] : undefined;
-	const next =
-		index >= 0 && index < items.length - 1 ? items[index + 1] : undefined;
-	const progress = getAuditProgress(checklist);
-	const mappedForm = useMemo(
-		() => (item ? mapChecklistItemToForm(item) : EMPTY_FORM),
-		[item],
+
+	/** Where a target leads; null = nowhere (no neighbour). */
+	const getPath = useCallback(
+		(target: ItemNavigationTarget): string | null => {
+			if (target === "list") return DEALER_AUDIT_ROUTES.execution.checklist(auditId);
+			const id = target === "next" ? nextId : previousId;
+			return id ? DEALER_AUDIT_ROUTES.execution.item(auditId, id) : null;
+		},
+		[auditId, nextId, previousId],
 	);
-	const [formState, setFormState] = useState<{
-		itemId: string;
-		values: ChecklistItemFormValues;
-	}>(() => ({ itemId: item?.id ?? "", values: mappedForm }));
-	const [saving, setSaving] = useState(false);
-	const touchStart = useRef<{ x: number; y: number } | null>(null);
 
-	/*
-	 * Derive a fresh form when the route changes to another item. State is only
-	 * written in event handlers, avoiding a synchronous setState inside an effect.
-	 */
-	const form = formState.itemId === item?.id ? formState.values : mappedForm;
+	const goTo = useCallback(
+		(target: ItemNavigationTarget) => {
+			const path = getPath(target);
+			if (path) navigate(path);
+		},
+		[getPath, navigate],
+	);
 
-	const updateForm = (
-		updater: (current: ChecklistItemFormValues) => ChecklistItemFormValues,
-	) => {
-		if (!item) return;
+	return { goTo };
+}
 
-		setFormState((current) => {
-			const currentValues =
-				current.itemId === item.id ? current.values : mappedForm;
+// ── Dealer self-assessment ────────────────────────────────────────────
 
-			return {
-				itemId: item.id,
-				values: updater(currentValues),
-			};
-		});
+interface SelfWorkspaceProps extends WorkspaceProps {
+	editable: boolean;
+}
+
+function SelfWorkspace({
+	audit,
+	item,
+	index,
+	total,
+	previousId,
+	nextId,
+	progress,
+	permissions,
+	editable,
+}: SelfWorkspaceProps) {
+	const { goTo } = useItemNavigation(audit.id, previousId, nextId);
+	const draft = useChecklistItemDraft({ auditId: audit.id, item, editable });
+	const uploader = useEvidenceUploader({
+		auditId: audit.id,
+		itemId: item.id,
+		evidence: draft.values.evidence,
+		updateEvidence: draft.updateEvidence,
+		maxCount: getEvidenceLimits(item).max,
+	});
+
+	const handleNavigate = useCallback(
+		(target: ItemNavigationTarget) => {
+			void draft.confirmLeave().then((canLeave) => {
+				if (canLeave) goTo(target);
+			});
+		},
+		[draft, goTo],
+	);
+
+	const handleSaveAndContinue = async (): Promise<void> => {
+		const saved = await draft.saveAndComplete();
+		if (saved) goTo(nextId ? "next" : "list");
 	};
+
+	const showClarification =
+		item.clarification !== null &&
+		(permissions.canRespondToClarification || permissions.canViewComments);
+
+	return (
+		<ChecklistItemShell
+			heading={audit.dealerName}
+			subheading={[audit.auditNumber, audit.location].filter(Boolean).join(" · ")}
+			item={item}
+			index={index}
+			total={total}
+			hasPrevious={previousId !== null}
+			hasNext={nextId !== null}
+			progress={progress}
+			progressLabel={text.selfProgress}
+			isBusy={draft.isSaving || draft.isUploading}
+			onNavigate={handleNavigate}
+			statusSlot={
+				editable ? (
+					<div className="space-y-1">
+						{draft.isUploading ? (
+							<p className="text-xs text-slate-600" role="status">
+								{text.uploadingHint}
+							</p>
+						) : null}
+						<SaveStatusIndicator
+							status={draft.saveStatus}
+							error={draft.saveError}
+							isDirty={draft.isDirty}
+							onRetry={() => void draft.saveDraft()}
+						/>
+					</div>
+				) : null
+			}
+			footerActions={
+				editable ? (
+					<Button
+						type="button"
+						text={nextId ? text.saveAndNext : text.saveAndFinish}
+						Icon={nextId ? ChevronRight : Check}
+						iconPosition="right"
+						appearance="standard"
+						variant="brand"
+						loading={draft.isSaving}
+						disabled={draft.isSaving || draft.isUploading}
+						onClick={() => void handleSaveAndContinue()}
+					/>
+				) : null
+			}
+		>
+			{showClarification ? (
+				<DealerClarificationPanel
+					auditId={audit.id}
+					item={item}
+					canRespond={permissions.canRespondToClarification}
+				/>
+			) : null}
+
+			{editable ? (
+				<Card variant="outlined" title={text.yourAnswer} padding="default">
+					<SelfAssessmentForm
+						item={item}
+						draft={draft}
+						uploader={uploader}
+						editable={editable}
+					/>
+				</Card>
+			) : (
+				<Card variant="outlined" title={text.dealerAnswer} padding="default">
+					<SelfAssessmentAnswerPanel item={item} />
+				</Card>
+			)}
+		</ChecklistItemShell>
+	);
+}
+
+// ── Reviewer ──────────────────────────────────────────────────────────
+
+function ReviewWorkspace({
+	audit,
+	item,
+	index,
+	total,
+	previousId,
+	nextId,
+	progress,
+	permissions,
+}: WorkspaceProps) {
+	const { goTo } = useItemNavigation(audit.id, previousId, nextId);
+	const draft = useReviewItemDraft({ auditId: audit.id, item });
+
+	const handleNavigate = useCallback(
+		(target: ItemNavigationTarget) => {
+			void draft.confirmLeave().then((canLeave) => {
+				if (canLeave) goTo(target);
+			});
+		},
+		[draft, goTo],
+	);
+
+	const handleSaveAndContinue = async (): Promise<void> => {
+		const saved = await draft.save();
+		if (saved) goTo(nextId ? "next" : "list");
+	};
+
+	return (
+		<ChecklistItemShell
+			heading={audit.dealerName}
+			subheading={[audit.auditNumber, audit.location].filter(Boolean).join(" · ")}
+			item={item}
+			index={index}
+			total={total}
+			hasPrevious={previousId !== null}
+			hasNext={nextId !== null}
+			progress={progress}
+			progressLabel={text.reviewProgress}
+			isBusy={draft.isSaving}
+			onNavigate={handleNavigate}
+			statusSlot={
+				<SaveStatusIndicator
+					status={draft.saveStatus}
+					error={draft.saveError}
+					isDirty={draft.isDirty}
+					onRetry={() => void draft.save()}
+				/>
+			}
+			footerActions={
+				<Button
+					type="button"
+					text={nextId ? text.saveReviewAndNext : text.saveReviewAndFinish}
+					Icon={nextId ? ChevronRight : Check}
+					iconPosition="right"
+					appearance="standard"
+					variant="brand"
+					loading={draft.isSaving}
+					disabled={draft.isSaving}
+					onClick={() => void handleSaveAndContinue()}
+				/>
+			}
+		>
+			{item.clarification && permissions.canViewComments ? (
+				<DealerClarificationPanel
+					auditId={audit.id}
+					item={item}
+					canRespond={false}
+				/>
+			) : null}
+
+			<Card variant="outlined" title={text.dealerAnswer} padding="default">
+				<SelfAssessmentAnswerPanel item={item} />
+			</Card>
+
+			<Card variant="outlined" title={text.yourReview} padding="default">
+				<ReviewItemForm item={item} draft={draft} editable />
+			</Card>
+		</ChecklistItemShell>
+	);
+}
+
+// ── Read-only ─────────────────────────────────────────────────────────
+
+function ReadOnlyWorkspace({
+	audit,
+	item,
+	index,
+	total,
+	previousId,
+	nextId,
+	progress,
+	permissions,
+}: WorkspaceProps) {
+	const { goTo } = useItemNavigation(audit.id, previousId, nextId);
+
+	return (
+		<ChecklistItemShell
+			heading={audit.dealerName}
+			subheading={[audit.auditNumber, audit.location].filter(Boolean).join(" · ")}
+			item={item}
+			index={index}
+			total={total}
+			hasPrevious={previousId !== null}
+			hasNext={nextId !== null}
+			progress={progress}
+			progressLabel={text.selfProgress}
+			isBusy={false}
+			onNavigate={goTo}
+			footerActions={
+				<Button
+					type="button"
+					text={text.next}
+					Icon={ChevronRight}
+					iconPosition="right"
+					appearance="standard"
+					variant="brand"
+					disabled={nextId === null}
+					onClick={() => goTo("next")}
+				/>
+			}
+		>
+			{item.clarification && permissions.canViewComments ? (
+				<DealerClarificationPanel
+					auditId={audit.id}
+					item={item}
+					canRespond={false}
+				/>
+			) : null}
+
+			<Card variant="outlined" title={text.dealerAnswer} padding="default">
+				<SelfAssessmentAnswerPanel item={item} />
+			</Card>
+
+			{permissions.canViewReviewerAssessment ? (
+				<Card variant="outlined" title={text.reviewerResult} padding="default">
+					<ReviewResultPanel item={item} />
+				</Card>
+			) : null}
+		</ChecklistItemShell>
+	);
+}
+
+// ── Page ──────────────────────────────────────────────────────────────
+
+export default function DealerAuditChecklistItemPage() {
+	const { auditId, itemId } = useParams();
+	const navigate = useNavigate();
+
+	const auditQuery = useDealerAudit(auditId);
+	const checklistQuery = useDealerAuditChecklist(auditId);
+	const audit = auditQuery.data;
+	const permissions = useAuditPermissions(audit);
+	const mode = getAssessmentMode(permissions);
+
+	const items = useMemo(
+		() =>
+			checklistQuery.data
+				? flattenChecklistItems(checklistQuery.data.sections)
+				: [],
+		[checklistQuery.data],
+	);
+	const neighbours = useMemo(
+		() => getItemNeighbours(items, itemId ?? ""),
+		[items, itemId],
+	);
+	const item = neighbours.index >= 0 ? items[neighbours.index] : undefined;
+
+	const progress = useMemo(
+		() =>
+			mode === "REVIEW" ? getReviewProgress(items) : getChecklistProgress(items),
+		[items, mode],
+	);
+
+	const listPath = auditId ? DEALER_AUDIT_ROUTES.execution.checklist(auditId) : "";
+
+	if (auditQuery.isLoading || checklistQuery.isLoading) {
+		return (
+			<PageSectionLayout className="audit-page audit-page-narrow">
+				<p className="text-sm text-slate-600" role="status">
+					{text.loading}
+				</p>
+			</PageSectionLayout>
+		);
+	}
+
+	if (auditQuery.isError || checklistQuery.isError || !audit) {
+		return (
+			<PageSectionLayout className="audit-page audit-page-narrow">
+				<Alert
+					variant="error"
+					title={text.errorTitle}
+					description={getAuditActionErrorMessage(
+						auditQuery.error ?? checklistQuery.error,
+						"parameter",
+					)}
+					primaryAction={{
+						label: text.retry,
+						onClick: () => {
+							void auditQuery.refetch();
+							void checklistQuery.refetch();
+						},
+					}}
+				/>
+			</PageSectionLayout>
+		);
+	}
+
+	if (!permissions.canView) {
+		return (
+			<PageSectionLayout className="audit-page audit-page-narrow">
+				<Alert
+					variant="warning"
+					title={text.deniedTitle}
+					description={text.deniedDescription}
+				/>
+			</PageSectionLayout>
+		);
+	}
 
 	if (!item) {
 		return (
-			<PageSectionLayout className="dealer-audit-page dealer-audit-page-narrow">
-				<Card title="Checklist item not found">
+			<PageSectionLayout className="audit-page audit-page-narrow">
+				<Card title={text.notFoundTitle}>
+					<p className="mb-3 text-sm text-slate-600">{text.notFoundDescription}</p>
 					<Button
-						text="Back to checklist"
+						type="button"
+						text={text.backToList}
 						variant="brand"
-						onClick={() => navigate(checklistPath)}
+						onClick={() => navigate(listPath)}
 					/>
 				</Card>
 			</PageSectionLayout>
 		);
 	}
 
-	const hasRequiredImages =
-		!imagesRequired || form.evidence.length >= minImages;
-	const dirty =
-		form.score !== item.score ||
-		form.remarks !== item.remarks ||
-		form.evidence !== item.evidence;
-
-	const go = (target?: typeof item) => {
-		if (!target) return;
-
-		if (
-			dirty &&
-			!window.confirm("You have unsaved changes. Leave this item?")
-		) {
-			return;
-		}
-
-		navigate(DEALER_AUDIT_ROUTES.execution.item(auditId, target.id));
+	const common: WorkspaceProps = {
+		audit,
+		item,
+		index: neighbours.index,
+		total: neighbours.total,
+		previousId: neighbours.previous?.id ?? null,
+		nextId: neighbours.next?.id ?? null,
+		progress,
+		permissions,
 	};
 
-	const save = async () => {
-		if (form.score === null || !hasRequiredImages) return;
+	// During a clarification the dealer may only change the flagged items.
+	const canEditThisItem =
+		permissions.canEditSelfAssessment &&
+		(!isClarificationStatus(audit.status) || isItemClarificationOpen(item));
 
-		setSaving(true);
-
-		try {
-			updateItem(item.id, mapChecklistFormToPayload(form));
-
-			if (next) {
-				navigate(DEALER_AUDIT_ROUTES.execution.item(auditId, next.id));
-			}
-		} finally {
-			setSaving(false);
-		}
-	};
-
-	const onTouchEnd = (event: React.TouchEvent) => {
-		const start = touchStart.current;
-		touchStart.current = null;
-		if (!start) return;
-
-		const end = event.changedTouches[0];
-		const dx = end.clientX - start.x;
-		const dy = end.clientY - start.y;
-		if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.25) return;
-
-		if (dx < 0) {
-			go(next);
-		} else {
-			go(previous);
-		}
-	};
-
-	const saveDisabled = form.score === null || !hasRequiredImages;
-
-	return (
-		<PageSectionLayout
-			className="dealer-audit-page dealer-audit-page-narrow dealer-audit-item-page"
-			onTouchStart={(event: React.TouchEvent) => {
-				const touch = event.touches[0];
-				touchStart.current = { x: touch.clientX, y: touch.clientY };
-			}}
-			onTouchEnd={onTouchEnd}
-		>
-			<div className="dealer-audit-stack dealer-audit-stack-pad-footer sm:pb-0">
-				<header className="dealer-audit-header">
-					<Button
-						appearance="icon"
-						variant="secondary"
-						Icon={ChevronLeft}
-						aria-label="Back to checklist"
-						onClick={() => navigate(checklistPath)}
-					/>
-					<div className="dealer-audit-header-copy">
-						<h1 className="dealer-audit-title dealer-audit-title-sm">
-							Dealer Audit
-						</h1>
-						<p className="dealer-audit-subtitle">
-							{checklist.dealerName}, {checklist.location}
-						</p>
-					</div>
-					<div className="dealer-audit-item-nav">
-						<Button
-							appearance="icon"
-							variant="transparent"
-							Icon={ChevronLeft}
-							aria-label="Previous checklist item"
-							disabled={!previous}
-							onClick={() => go(previous)}
-						/>
-						<span className="dealer-audit-item-nav-count">
-							Item {index + 1} of {items.length}
-						</span>
-						<Button
-							appearance="icon"
-							variant="transparent"
-							Icon={ChevronRight}
-							aria-label="Next checklist item"
-							disabled={!next}
-							onClick={() => go(next)}
-						/>
-					</div>
-				</header>
-
-				<AuditProgress {...progress} compact />
-
-				<Card
-					padding="default"
-					variant="outlined"
-					className="dealer-audit-item-card"
-				>
-					<div className="dealer-audit-item-card-content">
-						<div className="dealer-audit-item-card-heading">
-							<div className="dealer-audit-item-card-meta">
-								<Badge variant="success">{item.categoryName}</Badge>
-								<span className="dealer-audit-item-code">ID: {item.code}</span>
-							</div>
-							<h2 className="dealer-audit-item-title">{item.title}</h2>
-							<p className="dealer-audit-item-description">
-								{item.description}
-							</p>
-						</div>
-
-						<div className="dealer-audit-item-sections">
-							<section className="dealer-audit-item-section">
-								<ClipboardList
-									size={19}
-									className="dealer-audit-item-section-icon"
-									aria-hidden="true"
-								/>
-								<div className="dealer-audit-item-section-content">
-									<h3 className="dealer-audit-item-section-title">Parameter</h3>
-									<p className="dealer-audit-item-section-text">
-										{item.parameter}
-									</p>
-								</div>
-							</section>
-							<section className="dealer-audit-item-section">
-								<ListChecks
-									size={19}
-									className="dealer-audit-item-section-icon"
-									aria-hidden="true"
-								/>
-								<div className="dealer-audit-item-section-content">
-									<h3 className="dealer-audit-item-section-title">Criteria</h3>
-									<ul className="dealer-audit-item-criteria">
-										{item.criteria.map((criterion) => (
-											<li key={criterion}>{criterion}</li>
-										))}
-									</ul>
-								</div>
-							</section>
-						</div>
-					</div>
-				</Card>
-
-				{imagesRequired ? (
-					<Card
-						title="Photo Evidence"
-						subtitle={`Capture at least ${minImages} live photos showing the current condition.`}
-						accordion
-						defaultExpanded
-						actions={
-							<span
-								className={
-									hasRequiredImages
-										? "text-xs text-slate-500"
-										: "text-xs font-medium text-red-600"
-								}
-							>
-								{form.evidence.length}/{maxImages} photos
-							</span>
-						}
-						padding="compact"
-					>
-						<LivePhotoUploadField
-							required
-							minFiles={minImages}
-							maxFiles={maxImages}
-							value={form.evidence as LivePhotoValue[]}
-							disabled={saving}
-							onChange={(evidence) =>
-								updateForm((current) => ({ ...current, evidence }))
-							}
-						/>
-					</Card>
-				) : null}
-
-				<Card
-					title="Scoring"
-					subtitle="Rate based on compliance with the criteria."
-					accordion
-					defaultExpanded
-					actions={
-						<span className="text-xs text-slate-500">
-							{form.score ?? 0}/5 points
-						</span>
-					}
-					padding="compact"
-				>
-					<ScoreSelector
-						value={form.score}
-						onChange={(score) =>
-							updateForm((current) => ({ ...current, score }))
-						}
-						disabled={saving}
-					/>
-				</Card>
-
-				<Card title="Remarks" accordion defaultExpanded padding="compact">
-					<TextareaInput
-						name="remarks"
-						label=""
-						value={form.remarks}
-						maxLength={500}
-						rows={4}
-						placeholder="Add your observations, remarks or areas of improvement..."
-						disabled={saving}
-						onChange={(event) =>
-							updateForm((current) => ({
-								...current,
-								remarks: event.target.value,
-							}))
-						}
-					/>
-					<div className="mt-1 text-right text-xs text-slate-500">
-						{form.remarks.length}/500
-					</div>
-				</Card>
-			</div>
-
-			<div className="dealer-audit-sticky-footer sm:hidden">
-				<div className="dealer-audit-sticky-footer-inner">
-					<Button
-						text="Cancel"
-						variant="outline"
-						disabled={saving}
-						onClick={() => navigate(`/audit/dealer/${auditId}/checklist`)}
-					/>
-					<Button
-						text={next ? "Save & Next" : "Save"}
-						variant="brand"
-						Icon={next ? ChevronRight : Check}
-						iconPosition="right"
-						loading={saving}
-						disabled={saveDisabled}
-						onClick={save}
-					/>
-				</div>
-			</div>
-
-			<div className="dealer-audit-inline-footer hidden sm:flex">
-				<Button
-					text="Cancel"
-					variant="outline"
-					disabled={saving}
-					onClick={() => navigate(`/audit/dealer/${auditId}/checklist`)}
-				/>
-				<Button
-					text={next ? "Save & Next" : "Save"}
-					variant="brand"
-					Icon={next ? ChevronRight : Check}
-					iconPosition="right"
-					loading={saving}
-					disabled={saveDisabled}
-					onClick={save}
-				/>
-			</div>
-		</PageSectionLayout>
-	);
+	// `key` gives every parameter its own draft state.
+	if (mode === "SELF") {
+		return <SelfWorkspace key={item.id} {...common} editable={canEditThisItem} />;
+	}
+	if (mode === "REVIEW") {
+		return <ReviewWorkspace key={item.id} {...common} />;
+	}
+	return <ReadOnlyWorkspace key={item.id} {...common} />;
 }

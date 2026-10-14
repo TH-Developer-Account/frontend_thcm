@@ -3,12 +3,14 @@
 // Owns loading an existing template and saving it back. The page stays a
 // thin wrapper around the shared AuditTemplateBuilder.
 // `templateId` undefined → creating a new template.
+//
+// TODO: save / publish API calls are commented out until the backend is
+// ready. Search for "TODO(api)" to re-enable them.
 
 import { useMemo, useState } from "react";
 import {
-	useMutation,
+	// TODO(api): useMutation, useQueryClient
 	useQuery,
-	useQueryClient,
 } from "@tanstack/react-query";
 
 import { useToast } from "../../../../context/Auth/AuthContext";
@@ -17,11 +19,11 @@ import type { AuditTemplateBuilderValues } from "../../shared/templates/audit.te
 import { dealerAuditKeys } from "../dealer-audit.queries";
 import { dealerTemplateApi } from "../templates/dealer-template.api";
 import {
-	mapBuilderValuesToCreateDealerTemplatePayload,
-	mapBuilderValuesToUpdateDealerTemplatePayload,
+	// TODO(api): mapBuilderValuesToCreateDealerTemplatePayload,
+	// TODO(api): mapBuilderValuesToUpdateDealerTemplatePayload,
 	mapDealerTemplateToBuilderValues,
 } from "../templates/dealer-template.mappers";
-import type { DealerChecklistTemplate } from "../templates/dealer-template.types";
+// TODO(api): import type { DealerChecklistTemplate } from "../templates/dealer-template.types";
 
 const TEMPLATE_SUBJECT = "template";
 
@@ -46,19 +48,23 @@ const formatSavedLabel = (isoDate: string | null): string | null => {
 	})}`;
 };
 
-export function useDealerChecklistTemplateEditor(templateId: string | undefined) {
-	const queryClient = useQueryClient();
+export function useDealerChecklistTemplateEditor(
+	templateId: string | undefined,
+) {
+	// TODO(api): const queryClient = useQueryClient();
 	const { showToast } = useToast();
 	const detailQuery = useDealerChecklistTemplate(templateId);
 
-	// The template saved during THIS session (a new template gets its id on
-	// first save; every save returns a new version for the concurrency guard).
-	const [savedTemplate, setSavedTemplate] =
-		useState<DealerChecklistTemplate | null>(null);
+	// Temporary: time of the last local "save", used only for the footer label.
+	const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
 
-	const [isPublishFlow, setIsPublishFlow] = useState(false);
-
-	const currentTemplate = savedTemplate ?? detailQuery.data ?? null;
+	// TODO(api): replace lastSavedAt with the template saved during THIS session
+	// (a new template gets its id on first save; every save returns a new
+	// version for the concurrency guard).
+	// const [savedTemplate, setSavedTemplate] =
+	// 	useState<DealerChecklistTemplate | null>(null);
+	// const [isPublishFlow, setIsPublishFlow] = useState(false);
+	// const currentTemplate = savedTemplate ?? detailQuery.data ?? null;
 
 	// Read once by the builder on mount; memoized so client ids stay stable.
 	const initialValues = useMemo(
@@ -69,78 +75,99 @@ export function useDealerChecklistTemplateEditor(templateId: string | undefined)
 		[detailQuery.data],
 	);
 
-	const cacheSavedTemplate = (template: DealerChecklistTemplate) => {
-		setSavedTemplate(template);
-		queryClient.setQueryData(
-			dealerAuditKeys.templateDetail(template.id),
-			template,
-		);
-		void queryClient.invalidateQueries({
-			queryKey: dealerAuditKeys.templateLists(),
-		});
-	};
+	// TODO(api)
+	// const cacheSavedTemplate = (template: DealerChecklistTemplate) => {
+	// 	setSavedTemplate(template);
+	// 	queryClient.setQueryData(
+	// 		dealerAuditKeys.templateDetail(template.id),
+	// 		template,
+	// 	);
+	// 	void queryClient.invalidateQueries({
+	// 		queryKey: dealerAuditKeys.templateLists(),
+	// 	});
+	// };
 
-	const saveMutation = useMutation({
-		mutationFn: (values: AuditTemplateBuilderValues) =>
-			currentTemplate
-				? dealerTemplateApi.updateTemplate({
-						templateId: currentTemplate.id,
-						payload: mapBuilderValuesToUpdateDealerTemplatePayload(
-							values,
-							currentTemplate.version,
-						),
-					})
-				: dealerTemplateApi.createTemplate(
-						mapBuilderValuesToCreateDealerTemplatePayload(values),
-					),
-		onSuccess: cacheSavedTemplate,
-	});
+	// TODO(api)
+	// const saveMutation = useMutation({
+	// 	mutationFn: (values: AuditTemplateBuilderValues) =>
+	// 		currentTemplate
+	// 			? dealerTemplateApi.updateTemplate({
+	// 					templateId: currentTemplate.id,
+	// 					payload: mapBuilderValuesToUpdateDealerTemplatePayload(
+	// 						values,
+	// 						currentTemplate.version,
+	// 					),
+	// 				})
+	// 			: dealerTemplateApi.createTemplate(
+	// 					mapBuilderValuesToCreateDealerTemplatePayload(values),
+	// 				),
+	// 	onSuccess: cacheSavedTemplate,
+	// });
 
-	const publishMutation = useMutation({
-		mutationFn: (id: string) => dealerTemplateApi.publishTemplate(id),
-		onSuccess: cacheSavedTemplate,
-	});
+	// TODO(api)
+	// const publishMutation = useMutation({
+	// 	mutationFn: (id: string) => dealerTemplateApi.publishTemplate(id),
+	// 	onSuccess: cacheSavedTemplate,
+	// });
 
-	const showError = (error: unknown, title: string) =>
-		showToast({
-			type: "error",
-			title,
-			description: getAuditActionErrorMessage(error, TEMPLATE_SUBJECT),
-		});
+	// TODO(api)
+	// const showError = (error: unknown, title: string) =>
+	// 	showToast({
+	// 		type: "error",
+	// 		title,
+	// 		description: getAuditActionErrorMessage(error, TEMPLATE_SUBJECT),
+	// 	});
 
-	/** Resolves with the server's values, or null when the save failed. */
+	/**
+	 * Temporary: no request is sent. Echoing the values back lets the builder
+	 * clear its dirty flag and continue to the next step.
+	 */
 	const saveDraft = async (
 		values: AuditTemplateBuilderValues,
 	): Promise<AuditTemplateBuilderValues | null> => {
-		if (saveMutation.isPending || publishMutation.isPending) return null;
-		try {
-			const template = await saveMutation.mutateAsync(values);
-			return mapDealerTemplateToBuilderValues(template);
-		} catch (error) {
-			showError(error, "Draft not saved");
-			return null;
-		}
+		setLastSavedAt(new Date().toISOString());
+		return values;
+
+		// TODO(api): restore the real save below and remove the stub above.
+		// if (saveMutation.isPending || publishMutation.isPending) return null;
+		// try {
+		// 	const template = await saveMutation.mutateAsync(values);
+		// 	return mapDealerTemplateToBuilderValues(template);
+		// } catch (error) {
+		// 	showError(error, "Draft not saved");
+		// 	return null;
+		// }
 	};
 
-	/** Saves the latest edits, then publishes. Resolves true on success. */
-	const publish = async (values: AuditTemplateBuilderValues): Promise<boolean> => {
-		if (saveMutation.isPending || publishMutation.isPending) return false;
-		setIsPublishFlow(true);
-		try {
-			const saved = await saveMutation.mutateAsync(values);
-			await publishMutation.mutateAsync(saved.id);
-			showToast({
-				type: "success",
-				title: "Template published",
-				description: `"${saved.name}" is now available for new audits.`,
-			});
-			return true;
-		} catch (error) {
-			showError(error, "Template not published");
-			return false;
-		} finally {
-			setIsPublishFlow(false);
-		}
+	/** Temporary: no request is sent. Resolves true so the page can navigate. */
+	const publish = async (
+		_values: AuditTemplateBuilderValues,
+	): Promise<boolean> => {
+		showToast({
+			type: "success",
+			title: "Publish skipped",
+			description: "The API is not connected yet, so nothing was published.",
+		});
+		return true;
+
+		// TODO(api): restore the real save-then-publish flow below.
+		// if (saveMutation.isPending || publishMutation.isPending) return false;
+		// setIsPublishFlow(true);
+		// try {
+		// 	const saved = await saveMutation.mutateAsync(values);
+		// 	await publishMutation.mutateAsync(saved.id);
+		// 	showToast({
+		// 		type: "success",
+		// 		title: "Template published",
+		// 		description: `"${saved.name}" is now available for new audits.`,
+		// 	});
+		// 	return true;
+		// } catch (error) {
+		// 	showError(error, "Template not published");
+		// 	return false;
+		// } finally {
+		// 	setIsPublishFlow(false);
+		// }
 	};
 
 	return {
@@ -152,9 +179,9 @@ export function useDealerChecklistTemplateEditor(templateId: string | undefined)
 			? getAuditActionErrorMessage(detailQuery.error, TEMPLATE_SUBJECT)
 			: null,
 		refetch: detailQuery.refetch,
-		isSaving: saveMutation.isPending && !isPublishFlow,
-		isPublishing: isPublishFlow,
-		lastSavedLabel: formatSavedLabel(savedTemplate?.updatedAt ?? null),
+		isSaving: false, // TODO(api): saveMutation.isPending && !isPublishFlow
+		isPublishing: false, // TODO(api): isPublishFlow
+		lastSavedLabel: formatSavedLabel(lastSavedAt),
 		saveDraft,
 		publish,
 	};

@@ -22,14 +22,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import Button from "../../../../components/common/Button";
+import Card from "../../../../components/common/Card";
+import { StepProgress } from "../../../../components/ui/StepProgress";
 import AuditConfirmModal from "../components/AuditConfirmModal";
 import AuditTemplateBuildStep from "./AuditTemplateBuildStep";
 import AuditTemplateDetailsStep from "./AuditTemplateDetailsStep";
 import AuditTemplatePreview from "./AuditTemplatePreview";
-import AuditTemplateStepper, {
+import {
+	AUDIT_TEMPLATE_PROGRESS_STEPS,
 	AUDIT_TEMPLATE_STEP_ORDER,
 	type AuditTemplateBuilderStep,
-} from "./AuditTemplateStepper";
+} from "./audit-template.steps";
 import {
 	createAuditTemplateBuildSchema,
 	createAuditTemplateDetailsSchema,
@@ -51,7 +54,7 @@ export interface AuditTemplateBuilderProps {
 	initialValues?: AuditTemplateBuilderValues;
 	namePlaceholder?: string;
 
-	/** Rendered above the stepper (e.g. "editing a published version" notice). */
+	/** Rendered above the step progress (e.g. "editing a published version" notice). */
 	notice?: ReactNode;
 	isSaving?: boolean;
 	isPublishing?: boolean;
@@ -83,11 +86,13 @@ export default function AuditTemplateBuilder({
 	onPublish,
 }: AuditTemplateBuilderProps) {
 	const [defaults] = useState<AuditTemplateBuilderValues>(
-		() => initialValues ?? createEmptyBuilderValues(detailFields, parameterFields),
+		() =>
+			initialValues ?? createEmptyBuilderValues(detailFields, parameterFields),
 	);
 
 	const [step, setStep] = useState<AuditTemplateBuilderStep>("details");
-	// Existing templates were already valid once — let the user jump around.
+	// Existing templates were already valid once, so validation covers every
+	// step on save/publish even though navigation is Back / Continue only.
 	const [furthestStepIndex, setFurthestStepIndex] = useState(
 		initialValues ? AUDIT_TEMPLATE_STEP_ORDER.length - 1 : 0,
 	);
@@ -141,9 +146,9 @@ export default function AuditTemplateBuilder({
 	});
 
 	/** Validates the forms the user has reached; jumps to the first invalid one. */
-	const validateReachedSteps = async (
-		options: { requireBuild: boolean },
-	): Promise<boolean> => {
+	const validateReachedSteps = async (options: {
+		requireBuild: boolean;
+	}): Promise<boolean> => {
 		const isDetailsValid = await detailsForm.trigger(undefined, {
 			shouldFocus: step === "details",
 		});
@@ -167,7 +172,9 @@ export default function AuditTemplateBuilder({
 
 	const handleContinue = async () => {
 		if (step === "details") {
-			const isValid = await detailsForm.trigger(undefined, { shouldFocus: true });
+			const isValid = await detailsForm.trigger(undefined, {
+				shouldFocus: true,
+			});
 			if (isValid) goToStep("build");
 			return;
 		}
@@ -232,115 +239,105 @@ export default function AuditTemplateBuilder({
 	};
 
 	return (
-		<div className="pb-24">
+		<div className="">
 			{notice ? <div className="mb-4">{notice}</div> : null}
-
-			<AuditTemplateStepper
-				currentStep={step}
-				furthestStepIndex={furthestStepIndex}
-				onStepSelect={(nextStep) => {
-					// Moving forward via the stepper still validates the current step.
-					const nextIndex = AUDIT_TEMPLATE_STEP_ORDER.indexOf(nextStep);
-					if (nextIndex > stepIndex) {
-						void handleContinue();
-						return;
-					}
-					setStep(nextStep);
-				}}
+			<StepProgress
+				className="mb-5"
+				steps={AUDIT_TEMPLATE_PROGRESS_STEPS}
+				currentStep={stepIndex + 1}
+				ariaLabel="Template builder progress"
 			/>
+			<Card
+				footer={
+					<div className="flex flex-wrap items-center justify-between gap-2 w-full">
+						<div className="flex items-center gap-3">
+							{step === "details" ? (
+								<Button
+									text="Cancel"
+									variant="outline"
+									disabled={isBusy}
+									onClick={handleCancel}
+								/>
+							) : (
+								<Button
+									text="Back"
+									variant="outline"
+									Icon={ArrowLeft}
+									disabled={isBusy}
+									onClick={handleBack}
+								/>
+							)}
+							<span
+								className="hidden text-xs text-(--color-text-secondary) sm:inline"
+								aria-live="polite"
+							>
+								{isSaving
+									? "Saving…"
+									: isDirty
+										? "Unsaved changes"
+										: (lastSavedLabel ?? "")}
+							</span>
+						</div>
 
-			{step === "details" ? (
-				<AuditTemplateDetailsStep
-					form={detailsForm}
-					detailFields={detailFields}
-					namePlaceholder={namePlaceholder}
-					disabled={isBusy}
-					onSubmit={handleStepSubmit}
-				/>
-			) : null}
-
-			{step === "build" ? (
-				<AuditTemplateBuildStep
-					form={buildForm}
-					parameterFields={parameterFields}
-					disabled={isBusy}
-					onSubmit={handleStepSubmit}
-				/>
-			) : null}
-
-			{step === "review" ? (
-				<AuditTemplatePreview
-					values={collectValues()}
-					detailFields={detailFields}
-					parameterFields={parameterFields}
-				/>
-			) : null}
-
-			<footer
-				className="fixed inset-x-0 bottom-0 z-20 border-t border-(--color-border-default) bg-(--color-bg-surface) px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:sticky sm:mt-6 sm:rounded-xl sm:border"
-				aria-label="Template builder actions"
+						<div className="flex items-center gap-2">
+							<Button
+								text="Save draft"
+								variant="outline"
+								Icon={Save}
+								loading={isSaving}
+								disabled={isBusy}
+								onClick={() => void handleSaveDraft()}
+							/>
+							{step === "review" ? (
+								<Button
+									text="Publish"
+									variant="brand"
+									Icon={Check}
+									loading={isPublishing}
+									disabled={isBusy}
+									onClick={() => void handlePublish()}
+								/>
+							) : (
+								<Button
+									text="Save & continue"
+									variant="brand"
+									Icon={ArrowRight}
+									iconPosition="right"
+									disabled={isBusy}
+									onClick={() => void handleSaveAndContinue()}
+								/>
+							)}
+						</div>
+					</div>
+				}
 			>
-				<div className="flex flex-wrap items-center justify-between gap-2">
-					<div className="flex items-center gap-3">
-						{step === "details" ? (
-							<Button
-								text="Cancel"
-								variant="outline"
-								disabled={isBusy}
-								onClick={handleCancel}
-							/>
-						) : (
-							<Button
-								text="Back"
-								variant="outline"
-								Icon={ArrowLeft}
-								disabled={isBusy}
-								onClick={handleBack}
-							/>
-						)}
-						<span
-							className="hidden text-xs text-(--color-text-secondary) sm:inline"
-							aria-live="polite"
-						>
-							{isSaving
-								? "Saving…"
-								: isDirty
-									? "Unsaved changes"
-									: lastSavedLabel ?? ""}
-						</span>
-					</div>
+				{step === "details" ? (
+					<AuditTemplateDetailsStep
+						form={detailsForm}
+						detailFields={detailFields}
+						namePlaceholder={namePlaceholder}
+						disabled={isBusy}
+						onSubmit={handleStepSubmit}
+					/>
+				) : null}
 
-					<div className="flex items-center gap-2">
-						<Button
-							text="Save draft"
-							variant="outline"
-							Icon={Save}
-							loading={isSaving}
-							disabled={isBusy}
-							onClick={() => void handleSaveDraft()}
-						/>
-						{step === "review" ? (
-							<Button
-								text="Publish"
-								variant="brand"
-								Icon={Check}
-								loading={isPublishing}
-								disabled={isBusy}
-								onClick={() => void handlePublish()}
-							/>
-						) : (
-							<Button
-								text="Save & continue"
-								variant="brand"
-								Icon={ArrowRight}
-								iconPosition="right"
-								disabled={isBusy}
-								onClick={() => void handleSaveAndContinue()}
-							/>
-						)}
-					</div>
-				</div>
-			</footer>
+				{step === "build" ? (
+					<AuditTemplateBuildStep
+						form={buildForm}
+						parameterFields={parameterFields}
+						disabled={isBusy}
+						onSubmit={handleStepSubmit}
+					/>
+				) : null}
+
+				{step === "review" ? (
+					<AuditTemplatePreview
+						values={collectValues()}
+						detailFields={detailFields}
+						parameterFields={parameterFields}
+					/>
+				) : null}
+			</Card>
 
 			<AuditConfirmModal
 				open={isDiscardOpen}

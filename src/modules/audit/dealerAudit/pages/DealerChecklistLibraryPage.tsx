@@ -15,10 +15,11 @@ import type { AuditTemplateListRow } from "../../shared/templates/audit.template
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
 import { useDealerAuditAccess } from "../hooks/useDealerAuditAccess";
 import { useDealerChecklistLibraryParams } from "../hooks/useDealerChecklistLibraryParams";
-import {
-	useDealerChecklistTemplates,
-	useDeleteDealerChecklistTemplate,
-} from "../hooks/useDealerChecklistTemplates";
+// TODO: re-enable when the checklist template API is ready
+// import {
+// 	useDealerChecklistTemplates,
+// 	useDeleteDealerChecklistTemplate,
+// } from "../hooks/useDealerChecklistTemplates";
 import {
 	DEALER_AUDIT_CATEGORY_OPTIONS,
 	DEALER_DETAIL_FIELD_KEYS,
@@ -26,22 +27,23 @@ import {
 } from "../templates/dealer-template.config";
 import type { DealerChecklistLibraryFilters } from "../templates/dealer-template.types";
 
-const FILTER_SECTIONS: readonly FilterSection<DealerChecklistLibraryFilters>[] = [
-	{
-		type: "checkbox",
-		key: "facilityTypes",
-		label: "Facility type",
-		options: DEALER_FACILITY_TYPE_OPTIONS,
-		columns: 1,
-	},
-	{
-		type: "checkbox",
-		key: "auditCategories",
-		label: "Audit category",
-		options: DEALER_AUDIT_CATEGORY_OPTIONS,
-		columns: 1,
-	},
-];
+const FILTER_SECTIONS: readonly FilterSection<DealerChecklistLibraryFilters>[] =
+	[
+		{
+			type: "checkbox",
+			key: "facilityTypes",
+			label: "Facility type",
+			options: DEALER_FACILITY_TYPE_OPTIONS,
+			columns: 1,
+		},
+		{
+			type: "checkbox",
+			key: "auditCategories",
+			label: "Audit category",
+			options: DEALER_AUDIT_CATEGORY_OPTIONS,
+			columns: 1,
+		},
+	];
 
 const FIELD_COLUMNS = [
 	{ key: DEALER_DETAIL_FIELD_KEYS.facilityType, header: "Facility type" },
@@ -54,8 +56,29 @@ export default function DealerChecklistLibraryPage() {
 	const libraryParams = useDealerChecklistLibraryParams();
 	const { listParams } = libraryParams;
 
-	const templates = useDealerChecklistTemplates(listParams);
-	const deleteMutation = useDeleteDealerChecklistTemplate();
+	// TODO: re-enable when the API is ready
+	// const templates = useDealerChecklistTemplates(listParams);
+	// const deleteMutation = useDeleteDealerChecklistTemplate();
+
+	// Temporary stubs, no network calls
+	const templates = {
+		rows: [] as AuditTemplateListRow[],
+		isLoading: false,
+		isFetching: false,
+		errorMessage: null as string | null,
+		totalPages: 0,
+		totalItems: 0,
+		refetch: async () => undefined,
+	};
+
+	const deleteMutation = {
+		reset: () => {},
+		mutate: (_id: string, options?: { onSuccess?: () => void }) =>
+			options?.onSuccess?.(),
+		isPending: false,
+		isError: false,
+		error: null as unknown,
+	};
 	const [templatePendingDelete, setTemplatePendingDelete] =
 		useState<AuditTemplateListRow | null>(null);
 
@@ -109,7 +132,8 @@ export default function DealerChecklistLibraryPage() {
 		});
 	};
 
-	const isPublishedPendingDelete = templatePendingDelete?.status === "PUBLISHED";
+	const isPublishedPendingDelete =
+		templatePendingDelete?.status === "PUBLISHED";
 
 	return (
 		<>
@@ -141,7 +165,9 @@ export default function DealerChecklistLibraryPage() {
 				totalItems={templates.totalItems}
 				onPageChange={libraryParams.setPageIndex}
 				onPageSizeChange={libraryParams.setPageSize}
-				onRowClick={(row) => navigate(DEALER_AUDIT_ROUTES.template.view(row.id))}
+				onRowClick={(row) =>
+					navigate(DEALER_AUDIT_ROUTES.template.view(row.id))
+				}
 			/>
 
 			<AuditConfirmModal

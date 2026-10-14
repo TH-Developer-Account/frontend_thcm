@@ -1,23 +1,26 @@
 import {
+	Building2,
+	ClipboardCheck,
+	ClipboardList,
+	FileCheck2,
+	FilePlus,
 	Home,
+	LayoutDashboard,
+	ListChecks,
 	Settings,
 	Table,
-	ClipboardList,
-	LayoutDashboard,
-	FilePlus,
-	FileCheck2,
-	Building2,
-	PlayCircle,
-	ListChecks,
-	ScanLine,
 } from "lucide-react";
 
 import type { SidebarItem } from "../../../layout/layout.types";
 import { DEALER_AUDIT_ROUTES } from "./dealer-audit.routes";
 
-const DEMO_AUDIT_ID = "AUD-001";
-const DEMO_ITEM_ID = "showroom-cleanliness";
+const READ = { app: "MAP", module: "DealerAudit", action: "read" } as const;
+const WRITE = { app: "MAP", module: "DealerAudit", action: "write" } as const;
 
+/**
+ * Sidebar visibility is a convenience only. Page access is enforced by
+ * DealerAuditGuard and, authoritatively, by the backend.
+ */
 export const dealerAuditSidebar: SidebarItem[] = [
 	{
 		id: "home",
@@ -30,107 +33,67 @@ export const dealerAuditSidebar: SidebarItem[] = [
 		label: "Dashboard",
 		icon: <LayoutDashboard size={20} />,
 		link: DEALER_AUDIT_ROUTES.dashboard,
-		permission: {
-			app: "MAP",
-			module: "DealerAudit",
-			action: "read",
-		},
+		permission: READ,
 	},
-
+	{
+		id: "audits",
+		label: "Audits",
+		icon: <ClipboardCheck size={20} />,
+		link: DEALER_AUDIT_ROUTES.audits.root,
+		permission: READ,
+		children: [
+			{
+				id: "audits-list",
+				label: "Audit Listing",
+				link: DEALER_AUDIT_ROUTES.audits.list,
+				icon: <ListChecks size={18} />,
+				permission: READ,
+			},
+			{
+				id: "audits-create",
+				label: "Create Audit",
+				link: DEALER_AUDIT_ROUTES.audits.create,
+				icon: <FilePlus size={18} />,
+				permission: WRITE,
+			},
+		],
+	},
 	{
 		id: "checklist",
 		label: "Checklist",
 		icon: <ClipboardList size={20} />,
 		link: DEALER_AUDIT_ROUTES.template.root,
-		permission: {
-			app: "MAP",
-			module: "DealerAudit",
-			action: "read",
-		},
+		permission: READ,
 		children: [
 			{
 				id: "checklist-list",
 				label: "Checklist Listing",
 				link: DEALER_AUDIT_ROUTES.template.list,
 				icon: <Table size={18} />,
-				permission: {
-					app: "MAP",
-					module: "DealerAudit",
-					action: "read",
-				},
+				permission: READ,
 			},
 			{
 				id: "checklist-create",
 				label: "Create Checklist",
 				link: DEALER_AUDIT_ROUTES.template.create,
 				icon: <FilePlus size={18} />,
-				permission: {
-					app: "MAP",
-					module: "DealerAudit",
-					action: "write",
-				},
+				permission: WRITE,
 			},
 		],
 	},
-
-	// Temporary demo audit execution links.
-	{
-		id: "audit-execution",
-		label: "Audit Execution",
-		icon: <PlayCircle size={20} />,
-		link: DEALER_AUDIT_ROUTES.execution.checklist(DEMO_AUDIT_ID),
-		permission: {
-			app: "MAP",
-			module: "DealerAudit",
-			action: "read",
-		},
-		children: [
-			{
-				id: "audit-checklist",
-				label: "Audit Checklist",
-				link: DEALER_AUDIT_ROUTES.execution.checklist(DEMO_AUDIT_ID),
-				icon: <ListChecks size={18} />,
-				permission: {
-					app: "MAP",
-					module: "DealerAudit",
-					action: "read",
-				},
-			},
-			{
-				id: "audit-item-demo",
-				label: "Audit Item",
-				link: DEALER_AUDIT_ROUTES.execution.item(DEMO_AUDIT_ID, DEMO_ITEM_ID),
-				icon: <ScanLine size={18} />,
-				permission: {
-					app: "MAP",
-					module: "DealerAudit",
-					action: "read",
-				},
-			},
-		],
-	},
-
 	{
 		id: "audit-reports",
 		label: "Audit Reports",
 		icon: <FileCheck2 size={20} />,
 		link: DEALER_AUDIT_ROUTES.reports.root,
-		permission: {
-			app: "MAP",
-			module: "DealerAudit",
-			action: "read",
-		},
+		permission: READ,
 	},
 	{
 		id: "dealers",
 		label: "Dealers",
 		icon: <Building2 size={20} />,
 		link: DEALER_AUDIT_ROUTES.dealers.root,
-		permission: {
-			app: "MAP",
-			module: "Dealers",
-			action: "read",
-		},
+		permission: { app: "MAP", module: "Dealers", action: "read" },
 	},
 	{
 		id: "settings",

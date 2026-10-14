@@ -3,6 +3,8 @@ const CHECKLIST_TEMPLATE_BASE_PATH = `${DEALER_AUDIT_BASE_PATH}/checklist`;
 
 const AUDIT_REPORTS_PATH = `${DEALER_AUDIT_BASE_PATH}/reports`;
 
+const AUDITS_PATH = `${DEALER_AUDIT_BASE_PATH}/audits`;
+
 const DEALERS_PATH = `${DEALER_AUDIT_BASE_PATH}/dealers`;
 
 export const DEALER_AUDIT_ROUTES = {
@@ -21,6 +23,19 @@ export const DEALER_AUDIT_ROUTES = {
 
 		edit: (templateId: string) =>
 			`${CHECKLIST_TEMPLATE_BASE_PATH}/${encodeURIComponent(templateId)}/edit`,
+	},
+
+	// Audit instances (the quarterly / yearly audits themselves).
+	audits: {
+		root: AUDITS_PATH,
+		list: AUDITS_PATH,
+		create: `${AUDITS_PATH}/create`,
+
+		detail: (auditId: string) =>
+			`${AUDITS_PATH}/${encodeURIComponent(auditId)}`,
+
+		report: (auditId: string) =>
+			`${AUDITS_PATH}/${encodeURIComponent(auditId)}/report`,
 	},
 
 	execution: {

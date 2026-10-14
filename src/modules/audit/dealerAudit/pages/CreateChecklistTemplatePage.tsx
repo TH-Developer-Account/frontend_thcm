@@ -9,7 +9,10 @@ import { FileWarning } from "lucide-react";
 
 import { Alert } from "../../../../components/common/Alert";
 import Button from "../../../../components/common/Button";
-import { CardEmpty, CardSkeleton } from "../../../../components/ui/CardSkeleton";
+import {
+	CardEmpty,
+	CardSkeleton,
+} from "../../../../components/ui/CardSkeleton";
 import { PageHeader } from "../../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../../layout/PageSectionLayout";
 import AuditTemplateBuilder from "../../shared/templates/AuditTemplateBuilder";
@@ -30,7 +33,7 @@ export default function CreateChecklistTemplatePage() {
 
 	const header = (
 		<PageHeader>
-			<div className="flex flex-col gap-1">
+			<div className="flex flex-col gap-1 mb-4">
 				<span className="text-eyebrow text-(--color-brand)">Dealer Audit</span>
 				<h1 className="text-page-title text-(--color-text-primary)">
 					{isEditMode ? "Edit checklist template" : "Create checklist template"}
@@ -66,7 +69,11 @@ export default function CreateChecklistTemplatePage() {
 					Icon={FileWarning}
 				/>
 				<div className="mt-3 flex justify-center gap-2">
-					<Button text="Back to library" variant="outline" onClick={goToLibrary} />
+					<Button
+						text="Back to library"
+						variant="outline"
+						onClick={goToLibrary}
+					/>
 					<Button
 						text="Retry"
 						variant="brand"
