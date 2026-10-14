@@ -10,6 +10,7 @@ import type { ClipboardEvent } from "react";
 import Button from "../../../components/common/Button";
 // import { Modal } from "../../../components/common/Modal";
 import FormInput from "../../../components/forms/FormInput";
+import PhoneInput from "../../../components/forms/PhoneInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
 import { getCitiesByState } from "../helpers/vendorLocation.helpers";
@@ -90,6 +91,25 @@ const blockClipboardEvent = (event: ClipboardEvent<HTMLInputElement>) => {
 };
 
 const yesNoOptions = toSelectOptions(["Yes", "No"]);
+
+// Form One stores only the national number (no country code field in the
+// schema/payload), so the prefix is fixed to India. With a single entry,
+// PhoneInput renders the attached "+91" segment without a dropdown.
+const MOBILE_COUNTRY_CODES = [{ code: "+91", label: "India (+91)" }];
+
+// The prefilled mobile (from the initiation record) can arrive with the
+// country code attached, e.g. "919845012345" or "+919845012345". The prefix
+// is already shown in the attached segment, so strip it from the input value.
+const toNationalMobile = (value?: string | null): string => {
+	const raw = (value ?? "").trim();
+	const digits = raw.replace(/\D/g, "");
+
+	if (digits.length > 10 && digits.startsWith("91")) {
+		return digits.slice(-10);
+	}
+
+	return raw;
+};
 
 const VendorCreationFormOne = ({
 	mode = "edit",
@@ -226,14 +246,15 @@ const VendorCreationFormOne = ({
 							}
 							required
 						/>
-						<FormInput
+						<PhoneInput
 							mode={fieldMode}
 							name="mobile"
 							label="Mobile"
-							type="tel"
-							inputMode="tel"
-							autoComplete="tel"
-							value={values.mobile ?? ""}
+							countryCodes={MOBILE_COUNTRY_CODES}
+							countryCodeValue="+91"
+							autoComplete="tel-national"
+							value={toNationalMobile(values.mobile)}
+							readOnlyValue={toNationalMobile(values.mobile)}
 							success={
 								fieldMode === "edit" && !errors.mobile && Boolean(values.mobile)
 							}
