@@ -5,13 +5,6 @@ import { EMAIL_REGEX, MOBILE_REGEX } from "../../../utils/form.validation";
 
 const errors = vendorContent.initiation.errors;
 
-/**
- * The vendor initiation form previously had NO client-side validation at
- * all — VendorOnboardingInitiationForm.tsx marked fields `required` at
- * the HTML level only, and useVendorOnboardingInitiation's handleSubmit
- * called the mutation directly with whatever was in state. This schema
- * is net-new validation, not a preservation of prior behavior.
- */
 export const vendorInitiationSchema = z.object({
 	vendorReferenceName: z.string().trim().min(1, errors.vendorReferenceName),
 	email: z
@@ -19,9 +12,11 @@ export const vendorInitiationSchema = z.object({
 		.trim()
 		.min(1, errors.email)
 		.regex(EMAIL_REGEX, errors.email),
+	// Country code is its own field; `mobile` stays the national number so
+	// MOBILE_REGEX keeps validating exactly what it did before.
+	countryCode: z.string().regex(/^\+\d{1,4}$/, errors.mobile),
 	mobile: z.string().trim().regex(MOBILE_REGEX, errors.mobile),
-	// Server-driven display status ("Pending" / "AWAITING_VENDOR" / ...),
-	// never entered by the user — no validation rule needed.
+	// Server-driven display status, never entered by the user.
 	status: z.string().optional(),
 });
 

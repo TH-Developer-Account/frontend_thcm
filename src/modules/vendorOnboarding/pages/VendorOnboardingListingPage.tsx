@@ -81,6 +81,21 @@ const VendorOnboardingListingPage = () => {
 						iconSize={18}
 					/>
 				}
+				navigation={{
+					variant: "breadcrumbs",
+					ariaLabel: "Vendors Listing Page",
+					breadcrumbs: [
+						{
+							label: "Home Screen",
+							href: "/",
+						},
+						{
+							label: "Vendors Listing",
+							href: "/vendor-onboarding/listing?tab=onboarding",
+						},
+					],
+					separator: "›",
+				}}
 			/>
 
 			{exportState.status === "delayed" && (

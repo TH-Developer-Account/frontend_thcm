@@ -1,6 +1,195 @@
+/* =====================================================
+   VENDOR MODULE STYLES
+   Sections:
+   1. Initiation page layout, field grid, next-steps panel
+   2. Onboarding form (grid, actions, read-only, summary)
+   3. Enclosure uploads and file preview modal
+   4. Listing
+   5. Consent / messages
+   6. Summary heading
+   7. Unlayered: workflow mobile rules, approval actions bar
+===================================================== */
+
 @layer components {
 	/* =====================================================
-	   VENDOR ONBOARDING FORM
+	   1. INITIATION — PAGE LAYOUT (form + side panel)
+	===================================================== */
+
+	.vendor-initiation-layout {
+		display: block;
+		width: 100%;
+		min-width: 0;
+	}
+
+	.vendor-initiation-layout > * {
+		min-width: 0;
+	}
+
+	.vendor-next-steps {
+		display: none;
+	}
+
+	@media (min-width: 768px) {
+		.vendor-initiation-layout-with-aside {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) clamp(16rem, 32%, 26rem);
+			align-items: start;
+			gap: var(--space-4);
+		}
+
+		.vendor-next-steps {
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-4);
+
+			padding: var(--space-5);
+
+			border: var(--border-width-default) solid var(--color-border-default);
+			border-radius: var(--radius-lg);
+
+			background-color: var(--color-bg-surface);
+			color: var(--color-text-primary);
+			box-shadow: var(--shadow-xs);
+		}
+	}
+
+	/* ---------- Fields grid ----------
+	   Responds to the width of the form card, not the viewport:
+	   < 36rem  → 1 column
+	   ≥ 36rem  → 2 columns
+	   ≥ 52rem  → 3 columns
+	*/
+
+	.vendor-initiation-fields {
+		container-type: inline-size;
+		container-name: vendor-initiation;
+
+		width: 100%;
+		min-width: 0;
+	}
+
+	.vendor-initiation-grid {
+		display: grid;
+		width: 100%;
+		min-width: 0;
+		grid-template-columns: minmax(0, 1fr);
+		align-items: start;
+		gap: var(--space-3) var(--space-4);
+
+		padding: var(--space-2) var(--space-3);
+	}
+
+	.vendor-initiation-grid > * {
+		min-width: 0;
+	}
+
+	.vendor-initiation-grid .form-field {
+		width: 100%;
+		min-width: 0;
+	}
+
+	@container vendor-initiation (min-width: 36rem) {
+		.vendor-initiation-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@container vendor-initiation (min-width: 52rem) {
+		.vendor-initiation-grid {
+			grid-template-columns:
+				minmax(0, 1fr)
+				minmax(0, 1fr)
+				minmax(0, 1.25fr);
+		}
+	}
+
+	/* Action row aligns with the fields (tablet and up) */
+	@media (min-width: 640px) {
+		.vendor-initiation-form .vendor-onboarding-form-actions {
+			padding-inline: var(--space-3);
+			margin-top: var(--space-2);
+		}
+	}
+
+	/* ---------- "What happens next" panel ---------- */
+
+	.vendor-next-steps-title {
+		margin: 0;
+
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-semibold);
+		line-height: var(--line-height-tight);
+	}
+
+	.vendor-next-steps-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+
+		margin: 0;
+		padding: 0;
+
+		list-style: none;
+	}
+
+	.vendor-next-steps-item {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-3);
+	}
+
+	.vendor-next-steps-number {
+		display: inline-flex;
+		width: 2rem;
+		height: 2rem;
+		flex: 0 0 auto;
+		align-items: center;
+		justify-content: center;
+
+		border: var(--border-width-default) solid var(--color-brand-soft);
+		border-radius: var(--radius-full);
+
+		background-color: var(--color-brand-subtle);
+		color: var(--color-brand-active);
+
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-semibold);
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.vendor-next-steps-copy {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-0-5);
+	}
+
+	.vendor-next-steps-item-title {
+		margin: 0;
+
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+	}
+
+	.vendor-next-steps-item-description {
+		margin: 0;
+
+		color: var(--color-text-secondary);
+
+		font-size: var(--font-size-xs);
+		line-height: var(--line-height-normal);
+
+		overflow-wrap: anywhere;
+	}
+
+	/* =====================================================
+	   2. VENDOR ONBOARDING FORM
 	===================================================== */
 
 	.vendor-onboarding-step-progress {
@@ -13,7 +202,7 @@
 		width: 100%;
 		min-width: 0;
 		flex-direction: column;
-		gap: var(--space-2);
+		gap: var(--space-1);
 
 		background-color: var(--color-bg-surface);
 		color: var(--color-text-primary);
@@ -21,14 +210,7 @@
 
 	/*
 	 * SHARED PAGE GRID
-	 * Every form section (vendor info, bank, GSTIN row) uses the same
-	 * 4 equal columns, the same gap and the same side gutter, so columns
-	 * line up from top to bottom of the page. The uploads and the
-	 * MSME/NDA row use the exact same values.
-	 *
-	 * Desktop: 4 columns
-	 * Tablet: 2 columns
-	 * Mobile: 1 column
+	 * Desktop: 4 columns | Tablet: 2 columns | Mobile: 1 column
 	 */
 	.vendor-onboarding-form-grid-parent,
 	.vendor-onboarding-form-grid {
@@ -47,30 +229,19 @@
 		min-width: 0;
 	}
 
-	/*
-	 * The child wrapper no longer creates its own grid. Its fields sit
-	 * directly in the parent's 4 columns (columns 1-3).
-	 */
+	/* Child wrapper fields sit directly in the parent's columns 1-3 */
 	.vendor-onboarding-form-grid-child {
 		display: contents;
 	}
 
-	/*
-	 * The textarea block takes column 4 and spans both field rows.
-	 */
+	/* Textarea block takes column 4 and spans both field rows */
 	.vendor-onboarding-form-grid-parent
 		> :not(.vendor-onboarding-form-grid-child) {
 		grid-column: 4;
 		grid-row: 1 / span 2;
 	}
 
-	.vendor-form-textarea > * {
-		min-width: 0;
-	}
-
-	/*
-	 * Form Two long text fields.
-	 */
+	/* Form Two long text fields */
 	.vendor-form-textarea {
 		display: grid;
 		width: 100%;
@@ -82,9 +253,10 @@
 		padding: var(--space-3) var(--space-4) var(--space-4);
 	}
 
-	/*
-	 * Ensure textareas use the entire available grid column.
-	 */
+	.vendor-form-textarea > * {
+		min-width: 0;
+	}
+
 	.vendor-form-textarea .form-field,
 	.vendor-onboarding-form-grid-parent .form-field {
 		width: 100%;
@@ -98,9 +270,7 @@
 		resize: vertical;
 	}
 
-	/*
-	 * Read-only multiline values should fill their grid cell.
-	 */
+	/* Read-only multiline values fill their grid cell */
 	.form-readonly-value-multiline {
 		width: 100%;
 		min-width: 0;
@@ -110,9 +280,7 @@
 		overflow-wrap: anywhere;
 	}
 
-	/* =====================================================
-	   FORM ACTIONS
-	===================================================== */
+	/* ---------- Form actions ---------- */
 
 	.vendor-onboarding-form-actions {
 		display: flex;
@@ -126,14 +294,13 @@
 	.vendor-onboarding-form-actions-end {
 		display: flex;
 		min-width: 0;
+		flex-direction: row;
 		align-items: center;
 		justify-content: flex-end;
 		gap: var(--space-2);
 	}
 
-	/*
-	 * Covers the action class used in Form One.
-	 */
+	/* Action class used in Form One */
 	.bottom-buttons-bar-between {
 		display: flex;
 		width: 100%;
@@ -148,9 +315,7 @@
 		justify-content: flex-end;
 	}
 
-	/* =====================================================
-	   READ-ONLY FIELD
-	===================================================== */
+	/* ---------- Read-only field ---------- */
 
 	.form-readonly-field {
 		width: 100%;
@@ -180,10 +345,7 @@
 		word-break: break-word;
 	}
 
-	/*
-	 * Legacy classes can remain temporarily while other forms migrate to
-	 * the shared ReadOnlyField component.
-	 */
+	/* Legacy classes: remove once all forms use ReadOnlyField */
 	.vendor-detail-field {
 		display: grid;
 		width: 100%;
@@ -229,9 +391,7 @@
 		word-break: break-word;
 	}
 
-	/* =====================================================
-	   SUMMARY / REVIEW PAGE
-	===================================================== */
+	/* ---------- Summary / review page ---------- */
 
 	.vendor-summary-intro {
 		display: flex;
@@ -309,6 +469,7 @@
 		padding: var(--space-2);
 		@apply flex justify-between items-center;
 	}
+
 	.vendor-summary-block-title {
 		margin: 0;
 		padding: var(--space-2) var(--space-3);
@@ -349,9 +510,7 @@
 		line-height: var(--line-height-normal);
 	}
 
-	/* =====================================================
-	   APPROVAL PANEL
-	===================================================== */
+	/* ---------- Approval panel ---------- */
 
 	.vendor-approval-panel {
 		display: flex;
@@ -380,15 +539,12 @@
 	.vendor-onboarding-msme-section {
 		@apply grid grid-cols-2 gap-4;
 	}
+
 	.padding {
 		padding: var(--space-3) var(--space-4) var(--space-4);
 	}
 
-	/* =====================================================
-	   COMPLIANCE ROW (MSME / NDA)
-	   Same 4-column grid, gap and gutter as the rest of the page,
-	   so each card takes exactly one column.
-	===================================================== */
+	/* ---------- Compliance row (MSME / NDA) ---------- */
 
 	.vendor-compliance-grid {
 		@apply grid grid-cols-1 items-start gap-x-4 gap-y-2 px-4 py-2 sm:grid-cols-2;
@@ -410,9 +566,7 @@
 		@apply min-h-[6rem];
 	}
 
-	/* =====================================================
-	   TABLET
-	===================================================== */
+	/* ---------- Form responsive: tablet ---------- */
 
 	@media (max-width: 1023px) {
 		.vendor-onboarding-step-progress {
@@ -427,7 +581,7 @@
 			padding-inline: var(--space-3);
 		}
 
-		/* Textarea block goes full width under the fields. */
+		/* Textarea block goes full width under the fields */
 		.vendor-onboarding-form-grid-parent
 			> :not(.vendor-onboarding-form-grid-child) {
 			grid-column: 1 / -1;
@@ -445,9 +599,7 @@
 		}
 	}
 
-	/* =====================================================
-	   MOBILE
-	===================================================== */
+	/* ---------- Form responsive: mobile ---------- */
 
 	@media (max-width: 639px) {
 		.vendor-onboarding-step-progress {
@@ -456,7 +608,7 @@
 
 		.vendor-onboarding-form,
 		.vendor-summary-form {
-			gap: var(--space-3);
+			gap: var(--space-2);
 		}
 
 		.vendor-onboarding-form-grid-parent,
@@ -467,6 +619,7 @@
 			padding: var(--space-3);
 		}
 
+		/* Back below, primary group above; every button full width */
 		.vendor-onboarding-form-actions {
 			align-items: stretch;
 			flex-direction: column-reverse;
@@ -478,6 +631,8 @@
 		.vendor-onboarding-form-actions-end {
 			width: 100%;
 			flex-direction: column-reverse;
+			align-items: stretch;
+			justify-content: flex-start;
 			gap: var(--space-2);
 		}
 
@@ -492,8 +647,12 @@
 		}
 
 		.vendor-onboarding-form-actions .button-wrapper,
+		.bottom-buttons-bar-between .button-wrapper {
+			display: flex;
+			width: 100%;
+		}
+
 		.vendor-onboarding-form-actions .button-base,
-		.bottom-buttons-bar-between .button-wrapper,
 		.bottom-buttons-bar-between .button-base {
 			width: 100%;
 		}
@@ -553,9 +712,7 @@
 		}
 	}
 
-	/* =====================================================
-	   SMALL MOBILE
-	===================================================== */
+	/* ---------- Form responsive: small mobile ---------- */
 
 	@media (max-width: 380px) {
 		.vendor-onboarding-form-grid-parent,
@@ -583,12 +740,9 @@
 			height: var(--control-height-sm);
 		}
 	}
-}
 
-@layer components {
 	/* =====================================================
-	   ENCLOSURE UPLOADS
-	   Same gap and gutter as .vendor-onboarding-form-grid
+	   3. ENCLOSURE UPLOADS + FILE PREVIEW MODAL
 	===================================================== */
 
 	.vendor-enclosure-upload-grid {
@@ -789,9 +943,11 @@
 			transition: none;
 		}
 	}
-}
 
-@layer components {
+	/* =====================================================
+	   4. LISTING
+	===================================================== */
+
 	.vendor-listing-card {
 		width: 100%;
 		min-width: 0;
@@ -906,9 +1062,11 @@
 			padding-inline: var(--space-1-5);
 		}
 	}
-}
 
-@layer components {
+	/* =====================================================
+	   5. FORM MESSAGE + DPDP CONSENT
+	===================================================== */
+
 	.vendor-onboarding-form-message {
 		display: flex;
 		width: 100%;
@@ -942,6 +1100,7 @@
 		min-width: 0;
 		overflow-wrap: anywhere;
 	}
+
 	.vendor-onboarding-submit-section {
 		margin-top: var(--space-5);
 		padding-top: var(--space-4);
@@ -1057,43 +1216,13 @@
 		line-height: var(--line-height-normal);
 		cursor: pointer;
 	}
-}
 
-.vendor-onboarding-form-actions-end {
-	display: flex;
-	align-items: center;
-	gap: var(--space-2);
-}
+	/* =====================================================
+	   6. SUMMARY VIEW HEADING
+	   Desktop: [←] Vendor Onboarding / VON-… / Name   [badge]
+	   Mobile:  stacked title, ref, name
+	===================================================== */
 
-@media (max-width: 767px) {
-	.workflow-save-options {
-		grid-template-columns: minmax(0, 1fr);
-	}
-
-	.workflow-customise-actions {
-		align-items: stretch;
-		flex-direction: column;
-	}
-
-	.vendor-onboarding-form-actions-end,
-	.vendor-onboarding-form-actions-end > button {
-		width: 100%;
-	}
-
-	.vendor-onboarding-form-actions-end {
-		display: grid;
-	}
-}
-
-/* -------------------------------------------------------------------------- */
-/* Summary view heading                                                        */
-/*   Desktop: [←] Vendor Onboarding / VON-… / Name              [badge]       */
-/*   Mobile:  [←] Vendor Onboarding                              [badge]       */
-/*                VON-…                                                        */
-/*                Name                                                         */
-/* -------------------------------------------------------------------------- */
-
-@layer components {
 	.vendor-summary-heading {
 		display: grid;
 		width: 100%;
@@ -1136,11 +1265,12 @@
 
 	.vendor-summary-heading-meta > span {
 		min-width: 0;
-		overflow-wrap: anywhere;
+		overflow-wrap: normal;
+		word-break: normal;
 	}
 
-	/* Separator lives on the item it introduces, so a wrapped line never
-	   ends with a stray "/". */
+	/* Separator lives on the item it introduces, so a wrapped line
+	   never ends with a stray "/" */
 	.vendor-summary-heading-meta > span::before {
 		content: "/";
 		margin-inline: var(--space-2);
@@ -1180,15 +1310,31 @@
 	}
 }
 
+/* =====================================================
+   7. UNLAYERED
+===================================================== */
+
+/* Workflow mobile rules (kept unlayered so they keep winning) */
+@media (max-width: 767px) {
+	.workflow-save-options {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.workflow-customise-actions {
+		align-items: stretch;
+		flex-direction: column;
+	}
+}
+
 /* -------------------------------------------------------------------------- */
 /* Approval actions bar                                                        */
 /*                                                                             */
 /* > 900px                                                                     */
-/*   approver : Back [ reason — fills the row ........... ] [Clarify][Approve] */
-/*   proposer : Back ................................ [Accept/Send back/Submit]*/
+/*   approver : Back [ reason — fills the row ....... ] [Clarify][Approve]    */
+/*   proposer : Back ........................... [Accept/Send back/Submit]    */
 /* 481–900px                                                                   */
-/*   approver : [ reason — full width ........................................ ]*/
-/*              Back ...................................... [Clarify][Approve] */
+/*   approver : [ reason — full width ................................... ]   */
+/*              Back ................................ [Clarify][Approve]      */
 /* ≤ 480px                                                                     */
 /*              [ reason — full width ]                                        */
 /*              [ Clarify ][ Approve ]   (equal widths)                        */
@@ -1213,8 +1359,7 @@
 	gap: var(--space-2);
 }
 
-/* Bottom-aligned so the buttons line up with the textarea's hint line
-   rather than its label. */
+/* Bottom-aligned so the buttons line up with the textarea's hint line */
 .approval-actions-bar--approver {
 	align-items: flex-end;
 	justify-content: flex-start;
@@ -1237,7 +1382,7 @@
 		row-gap: var(--space-3);
 	}
 
-	/* Reason moves to its own full-width row above everything else. */
+	/* Reason moves to its own full-width row above everything else */
 	.approval-actions-bar--approver .approval-reason-inline {
 		order: -1;
 		flex: 1 1 100%;
@@ -1264,7 +1409,7 @@
 		min-width: 0;
 	}
 
-	/* … and Back drops to the bottom, full width. */
+	/* … and Back drops to the bottom, full width */
 	.approval-actions-bar > :first-child {
 		order: 2;
 		flex: 1 1 100%;
@@ -1287,4 +1432,35 @@
 		flex: none;
 		width: 100%;
 	}
+}
+
+/* =====================================================
+   VENDOR SUMMARY CARD HEADER
+   Scoped to this card only (via headerClassName), so no other
+   Card in the app is affected. Keep OUTSIDE any @layer so it
+   beats Card's responsive rules.
+
+   Title block first; Export + expand-all share the row when
+   there is room, otherwise they wrap below, right-aligned.
+===================================================== */
+
+.vendor-summary-card-header {
+	flex-direction: row;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--space-2);
+}
+
+.vendor-summary-card-header .ui-card-header-copy {
+	min-width: 0;
+	flex: 1 1 16rem;
+}
+
+.vendor-summary-card-header .ui-card-actions {
+	width: auto;
+	flex: 0 0 auto;
+	flex-wrap: nowrap;
+	margin-left: auto;
+	justify-content: flex-end;
 }

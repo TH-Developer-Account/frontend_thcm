@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 import logo from "../assets/thcm-logo/th-brand-logo.png";
+
 type PublicPagesLayoutProps = {
 	children: ReactNode;
 	className?: string;
+	title?: ReactNode;
 };
 
 const joinClassNames = (...classNames: Array<string | undefined | false>) =>
@@ -11,6 +13,7 @@ const joinClassNames = (...classNames: Array<string | undefined | false>) =>
 export const PublicPagesLayout = ({
 	className,
 	children,
+	title,
 }: PublicPagesLayoutProps) => {
 	return (
 		<div className="public-pages-layout">
@@ -19,6 +22,11 @@ export const PublicPagesLayout = ({
 					<a className="home-brand" href="/" aria-label="Tata Hitachi home">
 						<img src={logo} alt="Tata Hitachi" />
 					</a>
+
+					{title ? <div className="public-page-title">{title}</div> : null}
+
+					{/* Mirrors the logo column so the title stays centred */}
+					<div className="public-page-brand-spacer" aria-hidden="true" />
 				</div>
 			</header>
 

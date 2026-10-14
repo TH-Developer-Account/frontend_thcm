@@ -74,7 +74,10 @@ const VendorOnboardingPublicPage = () => {
 
 	if (form.isLoading) {
 		return (
-			<PublicPagesLayout className="public-page-status">
+			<PublicPagesLayout
+				className="public-page-status"
+				title="Domestic Vendor Onboarding Form"
+			>
 				<PublicPageStatusCard
 					variant="loading"
 					Icon={LoaderCircle}
@@ -89,7 +92,10 @@ const VendorOnboardingPublicPage = () => {
 
 	if (form.isError) {
 		return (
-			<PublicPagesLayout className="public-page-status">
+			<PublicPagesLayout
+				className="public-page-status"
+				title="Domestic Vendor Onboarding Form"
+			>
 				<PublicPageStatusCard
 					variant="warning"
 					Icon={TriangleAlert}
@@ -104,7 +110,10 @@ const VendorOnboardingPublicPage = () => {
 
 	if (submitted) {
 		return (
-			<PublicPagesLayout className="public-page-status">
+			<PublicPagesLayout
+				className="public-page-status"
+				title="Domestic Vendor Onboarding Form"
+			>
 				<PublicPageStatusCard
 					variant="success"
 					Icon={CheckCircle2}
@@ -123,8 +132,8 @@ const VendorOnboardingPublicPage = () => {
 	}
 
 	return (
-		<PublicPagesLayout>
-			<Card title="Domestic Vendor Onboarding Form">
+		<PublicPagesLayout title="Domestic Vendor Onboarding Form">
+			<Card>
 				<VendorCreationFormProvider value={form}>
 					<VendorCreationFormOne
 						mode="edit"
