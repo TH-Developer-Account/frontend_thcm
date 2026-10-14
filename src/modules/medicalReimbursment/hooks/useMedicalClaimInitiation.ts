@@ -46,7 +46,11 @@ type UseMedicalClaimInitiationArgs = {
 };
 
 const mapDetailToForm = (
-	response: Partial<MedicalClaimInitiationValues> | MedicalClaimDetail | null | undefined,
+	response:
+		| Partial<MedicalClaimInitiationValues>
+		| MedicalClaimDetail
+		| null
+		| undefined,
 ): MedicalClaimInitiationValues => ({
 	employeeName: response?.employeeName ?? "",
 	email: response?.email ?? "",
@@ -56,7 +60,9 @@ const mapDetailToForm = (
 	referenceNumber: response?.referenceNumber ?? "",
 });
 
-const toPayload = (values: MedicalClaimInitiationValues): MedicalClaimInitiationPayload => ({
+const toPayload = (
+	values: MedicalClaimInitiationValues,
+): MedicalClaimInitiationPayload => ({
 	employeeName: values.employeeName,
 	email: values.email,
 	mobile: values.mobile,
@@ -72,7 +78,11 @@ export const useMedicalClaimInitiation = ({
 }: UseMedicalClaimInitiationArgs = {}) => {
 	const navigate = useNavigate();
 	const { showToast } = useToast();
-	const params = useParams<{ id?: string; claimId?: string; initiationId?: string }>();
+	const params = useParams<{
+		id?: string;
+		claimId?: string;
+		initiationId?: string;
+	}>();
 	const resolvedClaimId =
 		claimId ?? params.initiationId ?? params.claimId ?? params.id ?? "";
 	const initialResolvedValues = useMemo(
@@ -82,7 +92,10 @@ export const useMedicalClaimInitiation = ({
 	const [values, setValues] = useState(initialResolvedValues);
 	const [originalValues, setOriginalValues] = useState(initialResolvedValues);
 	const [errors, setErrors] = useState<MedicalClaimInitiationErrors>({});
-	const detailQuery = useMedicalClaimDetailQuery(resolvedClaimId, shouldFetchDetails);
+	const detailQuery = useMedicalClaimDetailQuery(
+		resolvedClaimId,
+		shouldFetchDetails,
+	);
 	const initiateMutation = useInitiateMedicalClaimMutation();
 	const resendLinkMutation = useResendMedicalClaimLinkMutation();
 
@@ -150,7 +163,9 @@ export const useMedicalClaimInitiation = ({
 			const mailFailed = response?.mailSent === false;
 			showToast({
 				type: mailFailed ? "error" : "success",
-				title: mailFailed ? "Claim initiated — email not sent" : "Submitted successfully",
+				title: mailFailed
+					? "Claim initiated — email not sent"
+					: "Submitted successfully",
 				description:
 					response?.message ??
 					"The medical claim was initiated and the access link was sent successfully.",
@@ -162,7 +177,8 @@ export const useMedicalClaimInitiation = ({
 			// The current backend saves the claim BEFORE emailing the link, so
 			// a server error (e.g. mail failure) can still have created it.
 			// Refresh the list and warn, so nobody retries into a duplicate.
-			const status = (error as { response?: { status?: number } })?.response?.status;
+			const status = (error as { response?: { status?: number } })?.response
+				?.status;
 			const mayExist = !status || status >= 500;
 			showToast({
 				type: "error",
@@ -182,7 +198,8 @@ export const useMedicalClaimInitiation = ({
 				type: "success",
 				title: "Link sent",
 				description:
-					response?.message ?? "The medical claim access link was re-sent successfully.",
+					response?.message ??
+					"The medical claim access link was re-sent successfully.",
 			});
 		} catch (error) {
 			showToast({
@@ -244,9 +261,12 @@ export function useMedicalClaimInitiationImport({
 }: UseMedicalClaimInitiationImportOptions = {}) {
 	const { showToast } = useToast();
 	const [isImportModalOpen, setIsImportModalOpen] = React.useState(false);
-	const [importFile, setImportFile] = React.useState<FileUploadValue | null>(null);
+	const [importFile, setImportFile] = React.useState<FileUploadValue | null>(
+		null,
+	);
 	const [importFileError, setImportFileError] = React.useState<string>();
-	const [parsedFile, setParsedFile] = React.useState<ParsedInitiationFile | null>(null);
+	const [parsedFile, setParsedFile] =
+		React.useState<ParsedInitiationFile | null>(null);
 	const [isParsing, setIsParsing] = React.useState(false);
 	const [isImporting, setIsImporting] = React.useState(false);
 	const [progress, setProgress] = React.useState<MedicalClaimImportProgress>();
@@ -278,36 +298,45 @@ export function useMedicalClaimInitiationImport({
 		resetSelection();
 	}, [isImporting, resetSelection]);
 
-	const handleImportFileChange = React.useCallback(async (value: FileUploadValue | null) => {
-		setImportFile(value);
-		setImportFileError(undefined);
-		setParsedFile(null);
-		if (!value?.file) return;
+	const handleImportFileChange = React.useCallback(
+		async (value: FileUploadValue | null) => {
+			setImportFile(value);
+			setImportFileError(undefined);
+			setParsedFile(null);
+			if (!value?.file) return;
 
-		setIsParsing(true);
-		try {
-			const parsed = await parseInitiationImportFile(value.file);
-			if (!isMountedRef.current) return;
-			setParsedFile(parsed);
-			if (parsed.fileErrors.length) setImportFileError(parsed.fileErrors[0]);
-		} catch {
-			setImportFileError("This file could not be read. Upload an .xlsx, .xls or .csv file.");
-		} finally {
-			if (isMountedRef.current) setIsParsing(false);
-		}
-	}, []);
+			setIsParsing(true);
+			try {
+				const parsed = await parseInitiationImportFile(value.file);
+				if (!isMountedRef.current) return;
+				setParsedFile(parsed);
+				if (parsed.fileErrors.length) setImportFileError(parsed.fileErrors[0]);
+			} catch {
+				setImportFileError(
+					"This file could not be read. Upload an .xlsx, .xls or .csv file.",
+				);
+			} finally {
+				if (isMountedRef.current) setIsParsing(false);
+			}
+		},
+		[],
+	);
 
 	const pollStatus = React.useCallback(
-		async (jobId: string, startedAt: number, skippedRows: number): Promise<void> => {
+		async (
+			jobId: string,
+			startedAt: number,
+			skippedRows: number,
+		): Promise<void> => {
 			const result = await medicalClaimApi.getInitiationImportStatus(jobId);
 			if (!isMountedRef.current) return;
 
 			const nextProgress: MedicalClaimImportProgress = {
 				status: result.status,
-				totalRows: 0,
-				processedRows: 0,
-				failedRows: 0,
 				...result.progress,
+				totalRows: result.progress?.totalRows ?? 0,
+				processedRows: result.progress?.processedRows ?? 0,
+				failedRows: result.progress?.failedRows ?? 0,
 				errors: result.errors ?? [],
 				failedReason: result.failedReason,
 				skippedRows,
@@ -331,7 +360,8 @@ export function useMedicalClaimInitiationImport({
 				showToast({
 					type: "error",
 					title: "Import failed",
-					description: result.failedReason ?? "The import could not be completed.",
+					description:
+						result.failedReason ?? "The import could not be completed.",
 				});
 				return;
 			}
@@ -379,7 +409,9 @@ export function useMedicalClaimInitiationImport({
 			return;
 		}
 		if (!parsedFile) {
-			setImportFileError("The file is still being checked. Please wait a moment.");
+			setImportFileError(
+				"The file is still being checked. Please wait a moment.",
+			);
 			return;
 		}
 		if (parsedFile.fileErrors.length) {
@@ -387,12 +419,17 @@ export function useMedicalClaimInitiationImport({
 			return;
 		}
 		if (parsedFile.validCount === 0) {
-			setImportFileError("No valid rows to import. Fix the errors shown below and upload again.");
+			setImportFileError(
+				"No valid rows to import. Fix the errors shown below and upload again.",
+			);
 			return;
 		}
 
 		const formData = new FormData();
-		formData.append("file", buildInitiationImportFile(parsedFile.rows, selectedFile.name));
+		formData.append(
+			"file",
+			buildInitiationImportFile(parsedFile.rows, selectedFile.name),
+		);
 
 		try {
 			setIsImporting(true);
@@ -428,10 +465,10 @@ export function useMedicalClaimInitiationImport({
 
 	const canImport = Boolean(
 		importFile?.file &&
-			parsedFile &&
-			!parsedFile.fileErrors.length &&
-			parsedFile.validCount > 0 &&
-			!isParsing,
+		parsedFile &&
+		!parsedFile.fileErrors.length &&
+		parsedFile.validCount > 0 &&
+		!isParsing,
 	);
 
 	return {

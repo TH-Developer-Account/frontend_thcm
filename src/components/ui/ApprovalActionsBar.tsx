@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CircleCheck, Info, Save, Send } from "lucide-react";
+import { CircleCheck, Save, Send } from "lucide-react";
 import TextareaInput from "../forms/TextareaInput";
 import Button from "../common/Button";
 
@@ -82,24 +82,24 @@ const getReasonHint = (
 
 // Small (i) with a hover/focus tooltip. A disabled button doesn't receive
 // hover events in most browsers, so the reason lives on this icon.
-const InfoTip = ({ text }: { text: string }) => (
-	<span className="group relative inline-flex">
-		<span
-			tabIndex={0}
-			role="img"
-			aria-label={text}
-			className="inline-flex cursor-help items-center text-amber-600 outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-full"
-		>
-			<Info aria-hidden="true" size={16} />
-		</span>
-		<span
-			role="tooltip"
-			className="pointer-events-none absolute bottom-full right-0 z-20 mb-2 hidden w-56 rounded-md bg-iron-dark px-2.5 py-1.5 text-xs leading-snug text-white shadow-lg group-hover:block group-focus-within:block"
-		>
-			{text}
-		</span>
-	</span>
-);
+// const InfoTip = ({ text }: { text: string }) => (
+// 	<span className="group relative inline-flex">
+// 		<span
+// 			tabIndex={0}
+// 			role="img"
+// 			aria-label={text}
+// 			className="inline-flex cursor-help items-center text-amber-600 outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-full"
+// 		>
+// 			<Info aria-hidden="true" size={16} />
+// 		</span>
+// 		<span
+// 			role="tooltip"
+// 			className="pointer-events-none absolute bottom-full right-0 z-20 mb-2 hidden w-56 rounded-md bg-iron-dark px-2.5 py-1.5 text-xs leading-snug text-white shadow-lg group-hover:block group-focus-within:block"
+// 		>
+// 			{text}
+// 		</span>
+// 	</span>
+// );
 
 const ApprovalActionsBar = ({
 	variant,
