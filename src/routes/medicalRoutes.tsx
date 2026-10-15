@@ -1,16 +1,13 @@
 import { Suspense, lazy } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import FullScreenLoader from "./FullScreenLoader";
+import MedicalClaimInitiationForm from "../modules/medicalReimbursment/components/MedicalClaimInitiationForm";
 
 const ReimbursementPage = lazy(
 	() => import("../modules/medicalReimbursment/pages/ReimbursementPage"),
 );
 const MedicalClaimListingPage = lazy(
 	() => import("../modules/medicalReimbursment/pages/MedicalClaimListingPage"),
-);
-const MedicalClaimInitiationForm = lazy(
-	() =>
-		import("../modules/medicalReimbursment/components/MedicalClaimInitiationForm"),
 );
 const MedicalClaimInitiationPage = lazy(
 	() =>
@@ -21,15 +18,14 @@ export default function MedicalRoutes() {
 	return (
 		<Suspense fallback={<FullScreenLoader />}>
 			<Routes>
-				<Route path="/listing" element={<MedicalClaimListingPage />} />
+				<Route path="listing" element={<MedicalClaimListingPage />} />
 
-				<Route path="/:id/view" element={<ReimbursementPage mode="view" />} />
+				<Route path="/initiate" element={<MedicalClaimInitiationPage />} />
 
-				<Route path="/view" element={<ReimbursementPage mode="view" />} />
-
+				{/* Initiation list = the "Awaiting employee" tab of the listing. */}
 				<Route
 					path="initiation/listing"
-					element={<MedicalClaimInitiationForm />}
+					element={<Navigate to="/medi-claim/listing?tab=initiation" replace />}
 				/>
 
 				<Route path="initiate" element={<MedicalClaimInitiationPage />} />
@@ -41,7 +37,18 @@ export default function MedicalRoutes() {
 
 				<Route
 					path="initiation/:initiationId/view"
-					element={<MedicalClaimInitiationForm mode="view" />}
+					element={<MedicalClaimInitiationPage mode="view" />}
+				/>
+				<Route
+					path="initiation/:initiationId"
+					element={<MedicalClaimInitiationPage mode="view" />}
+				/>
+
+				<Route path=":id/view" element={<ReimbursementPage />} />
+
+				<Route
+					path="*"
+					element={<Navigate to="/medi-claim/listing" replace />}
 				/>
 			</Routes>
 		</Suspense>

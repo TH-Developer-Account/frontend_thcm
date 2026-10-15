@@ -17,7 +17,7 @@ export const PublicPagesLayout = ({
 }: PublicPagesLayoutProps) => {
 	return (
 		<div className="public-pages-layout">
-			<header className="header-public bg-white">
+			<header className="header-public relative bg-white">
 				<div className="public-page-brand">
 					<a className="home-brand" href="/" aria-label="Tata Hitachi home">
 						<img src={logo} alt="Tata Hitachi" />
@@ -28,6 +28,14 @@ export const PublicPagesLayout = ({
 					{/* Mirrors the logo column so the title stays centred */}
 					<div className="public-page-brand-spacer" aria-hidden="true" />
 				</div>
+
+				{title ? (
+					// Centred on the header itself (not between logo and edge), and
+					// kept narrow enough that it never runs into the logo.
+					<h1 className="pointer-events-none absolute left-1/2 top-1/2 m-0 max-w-[50%] -translate-x-1/2 -translate-y-1/2 truncate text-center text-base font-semibold tracking-tight text-iron-dark sm:text-lg">
+						{title}
+					</h1>
+				) : null}
 			</header>
 
 			<main className="public-page">

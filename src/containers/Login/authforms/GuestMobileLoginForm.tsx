@@ -69,7 +69,7 @@ const GuestMobileLoginForm = () => {
 
 		try {
 			await verifyOtp(confirmedMobile, values.otp);
-			navigate("/guest/medi-claim/create");
+			navigate("/guest/medi-claim/listing");
 		} catch {
 			// toast already shown by GuestAuthProvider
 		} finally {

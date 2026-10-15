@@ -57,45 +57,26 @@ export type LineItemApprovalStatus = "PENDING" | "APPROVED";
 
 export interface ClaimHeadRowBase {
 	id: string;
-
 	billNumber: string;
-
 	billName: string;
-
 	patient?: PatientType | "";
-
 	billDate: string | undefined;
-
 	amount: string;
-
-	/**
-	 * Local file selected by the user while creating/editing a row.
-	 *
-	 * This should NOT contain an S3 key or remote URL.
-	 */
+	/** Local file selected while creating/editing a row — never an S3 key. */
 	file: File | null;
-
-	/**
-	 * Normalized file representation used by the UI.
-	 *
-	 * Can represent both:
-	 * - locally selected files
-	 * - remotely stored files
-	 */
+	/** Normalized file (local or remote) used by the UI. */
 	attachment?: FileUploadValue | null;
-
 	fileName?: string | null;
-
 	approvedClaimAmount?: string | null;
-
 	approvalStatus?: LineItemApprovalStatus;
 	remarks?: string | null;
 	approved?: boolean;
+	/** true for rows that exist on the server (have a real bill id). */
+	isPersisted?: boolean;
 }
 
 export interface ClaimHeadRow extends ClaimHeadRowBase {
 	claimHead: ClaimHead;
-
 	billDate: string;
 }
 
@@ -123,3 +104,13 @@ export interface ApprovalStage {
 }
 
 export type ClaimHeadValidationErrors = Record<string, string>;
+
+/** Grade + annual cap. `eligibility` is null when the cap isn't known. */
+export interface GradeOption {
+	label: string;
+	value: string;
+	eligibility: number | null;
+}
+
+/** Where the claim form is being shown — drives what the claimant can see. */
+export type MedicalClaimFormContext = "public" | "guest" | "internal";

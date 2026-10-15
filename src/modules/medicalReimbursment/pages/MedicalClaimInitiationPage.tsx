@@ -9,21 +9,18 @@ type MedicalClaimInitiationPageProps = {
 	mode?: MedicalClaimInitiationFormMode;
 };
 
-const MedicalClaimInitiationPage = ({
-	mode,
-}: MedicalClaimInitiationPageProps) => {
+const MedicalClaimInitiationPage = ({ mode }: MedicalClaimInitiationPageProps) => {
 	const navigate = useNavigate();
-	const { claimId } = useParams<{ claimId: string }>();
+	const { initiationId, claimId } = useParams<{ initiationId?: string; claimId?: string }>();
+	const resolvedId = initiationId ?? claimId;
 
 	const isViewMode = mode === "view";
-
 	const pageTitle = isViewMode
 		? "Medical Claim Initiation Details"
 		: "Medical Claim Initiation Form";
-
-	const handleBackToListing = () => {
-		navigate("/medi-claim/listing?tab=claims");
-	};
+	const listingHref = isViewMode
+		? "/medi-claim/listing?tab=initiation"
+		: "/medi-claim/listing?tab=claims";
 
 	return (
 		<PageSectionLayout>
@@ -33,28 +30,22 @@ const MedicalClaimInitiationPage = ({
 					variant: "breadcrumbs",
 					ariaLabel: pageTitle,
 					breadcrumbs: [
-						{
-							label: "Home Screen",
-							href: "/",
-						},
-						{
-							label: "Medical Reimbursement Claims",
-							href: "/medi-claim/listing?tab=claims",
-						},
-						{
-							label: pageTitle,
-						},
+						{ label: "Home Screen", href: "/" },
+						{ label: "Medical Reimbursement Claims", href: listingHref },
+						{ label: pageTitle },
 					],
 					separator: "›",
 				}}
 			/>
 
+			{/* Single initiation navigates to the "Awaiting employee" tab on
+			    success (inside the hook); bulk import stays on this page so
+			    the import result can be read. */}
 			<MedicalClaimInitiationForm
-				claimId={claimId}
+				claimId={resolvedId}
 				mode={mode}
-				onCancel={handleBackToListing}
-				onSuccess={handleBackToListing}
-				onBack={handleBackToListing}
+				onCancel={() => navigate(listingHref)}
+				onBack={() => navigate(listingHref)}
 			/>
 		</PageSectionLayout>
 	);
