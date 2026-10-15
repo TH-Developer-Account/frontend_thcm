@@ -8,6 +8,11 @@
 //
 // DatePickerInput and PincodeAsyncSelect have no view mode, so in view mode
 // they're swapped for ReadOnlyField directly.
+//
+// Zone ⇄ Branch are linked in both directions:
+//   - choosing a Zone limits the Branch list to that zone's branches
+//     (and clears the Branch if it doesn't belong to the new zone);
+//   - choosing a Branch sets its Zone automatically.
 import React from "react";
 import type { SingleValue } from "react-select";
 
@@ -22,21 +27,21 @@ import PincodeAsyncSelect, {
 } from "../../../../../components/forms/PincodeAsyncSelect";
 
 import {
-	formatDate,
 	formatDateOnly,
 	parseDateOnly,
 	toDateRange,
 } from "../../../../../utils/format";
+import {
+	findOption,
+	formatEventDateRange,
+	getEventDateHelperText,
+	getEventDateLabel,
+	getOptionCode,
+	resolveEventDateMode,
+	type EpcOption as Option,
+} from "./epc.utils";
 import type { EpcFormValues } from "../../types/epc.types";
-
-type Option = {
-	value: string;
-	label: string;
-	code?: string;
-	description?: string;
-	department?: string;
-	[key: string]: any;
-};
+import { getZoneCodeForBranch, getZoneCodeForBudget } from "./epc.zonemap";
 
 type EpcMasters = {
 	regions?: Option[];
@@ -73,29 +78,14 @@ type EpcFormFieldsProps = {
 	readOnlyLabels?: EpcReadOnlyLabels;
 };
 
+/**
+ * false → once a zone is chosen, Budget Description lists ONLY that zone's
+ * budget. true → head-office budgets (Retainers, Digital Marketing, …) are
+ * listed alongside it.
+ */
+const SHOW_GENERAL_BUDGETS_WITH_ZONE = true;
+
 const EMPTY_ERRORS: Partial<Record<keyof EpcFormValues, string>> = {};
-
-const findOption = (options: Option[] = [], value?: string | null) => {
-	if (!value) return null;
-
-	return (
-		options.find(
-			(option) =>
-				option.value === value ||
-				option.code === value ||
-				option.label === value,
-		) ?? null
-	);
-};
-
-/** "2026-10-05" | "05-10-2026" | ISO → "05/10/2026 - 07/10/2026" */
-const formatEventDateRange = (from?: string, to?: string): string => {
-	const fromLabel = formatDate(parseDateOnly(from));
-	const toLabel = formatDate(parseDateOnly(to));
-
-	if (fromLabel && toLabel) return `${fromLabel} - ${toLabel}`;
-	return fromLabel || toLabel || "";
-};
 
 export default function EpcFormFields({
 	values,
@@ -115,24 +105,73 @@ export default function EpcFormFields({
 
 	const selectedDepartment = values.department || "";
 
+	// Single-date vs From–To picker, driven by the chosen event name.
+	const eventDateMode = React.useMemo(
+		() =>
+			resolveEventDateMode(
+				masters?.eventNames,
+				values.event_name,
+				readOnlyLabels?.eventName,
+			),
+		[masters?.eventNames, values.event_name, readOnlyLabels?.eventName],
+	);
+	const isSingleDate = eventDateMode === "single";
+	console.log("eventDateMode", eventDateMode, {
+		selected: values.event_name,
+		option: findOption(masters?.eventNames, values.event_name),
+		sample: masters?.eventNames?.slice(0, 5),
+	});
+	/**
+	 * The zone (region option `value`) a branch belongs to.
+	 *
+	 * 1. Uses a region id supplied by the API on the branch, if there is one.
+	 * 2. Otherwise falls back to the code-based map in zoneBranchMap.ts
+	 *    (the master-data endpoint doesn't link branches to regions yet).
+	 *
+	 * Returns null for a branch that isn't mapped to any zone.
+	 */
+	const resolveBranchRegionId = React.useCallback(
+		(branch: Option): string | null => {
+			const direct =
+				branch.regionId ??
+				branch.region_id ??
+				branch.zoneId ??
+				branch.zone_id ??
+				(typeof branch.region === "string" ? branch.region : undefined);
+
+			if (direct) {
+				return findOption(masters?.regions, String(direct))?.value ?? null;
+			}
+
+			const zoneCode = getZoneCodeForBranch(getOptionCode(branch));
+			if (!zoneCode) return null;
+
+			return (
+				(masters?.regions ?? []).find(
+					(region) => getOptionCode(region) === zoneCode,
+				)?.value ?? null
+			);
+		},
+		[masters?.regions],
+	);
+
+	// Normalise whatever is stored in values.region (id, code or label) to the
+	// region option's `value`, so it can be compared with resolveBranchRegionId.
+	const selectedRegionId = React.useMemo(
+		() => findOption(masters?.regions, values.region)?.value ?? "",
+		[masters?.regions, values.region],
+	);
+
 	const filteredBranches = React.useMemo(() => {
 		const branches = masters?.branches ?? [];
 
-		if (!values.region) return branches;
+		// No zone chosen yet → every branch is selectable (picking one sets the zone).
+		if (!selectedRegionId) return branches;
 
-		return branches.filter((branch) => {
-			const regionValue =
-				branch.regionId ??
-				branch.region_id ??
-				branch.region ??
-				branch.zoneId ??
-				branch.zone_id;
-
-			if (!regionValue) return true;
-
-			return regionValue === values.region;
-		});
-	}, [masters?.branches, values.region]);
+		return branches.filter(
+			(branch) => resolveBranchRegionId(branch) === selectedRegionId,
+		);
+	}, [masters?.branches, selectedRegionId, resolveBranchRegionId]);
 
 	const filteredVerticals = React.useMemo(() => {
 		const verticals = masters?.vertical ?? [];
@@ -157,27 +196,108 @@ export default function EpcFormFields({
 		}));
 	}, [masters?.budgetMasters]);
 
+	/** Zone (region option `value`) a budget belongs to; null = head-office budget. */
+	const resolveBudgetRegionId = React.useCallback(
+		(budget: Option): string | null => {
+			const zoneCode = getZoneCodeForBudget(budget.description ?? budget.label);
+			if (!zoneCode) return null;
+
+			return (
+				(masters?.regions ?? []).find(
+					(region) => getOptionCode(region) === zoneCode,
+				)?.value ?? null
+			);
+		},
+		[masters?.regions],
+	);
+
+	// With a zone chosen: only that zone's budget (head-office budgets too if
+	// SHOW_GENERAL_BUDGETS_WITH_ZONE). No zone chosen: everything (picking a
+	// zone budget sets the zone).
 	const budgetDescriptionOptions = React.useMemo<Option[]>(() => {
-		return (masters?.budgetMasters ?? []).map((budget) => ({
-			...budget,
-			value: budget.value,
-			label: budget.description || budget.label || budget.code || budget.value,
-		}));
-	}, [masters?.budgetMasters]);
+		return (masters?.budgetMasters ?? [])
+			.filter((budget) => {
+				if (!selectedRegionId) return true;
+
+				const budgetRegionId = resolveBudgetRegionId(budget);
+				if (!budgetRegionId) return SHOW_GENERAL_BUDGETS_WITH_ZONE;
+				return budgetRegionId === selectedRegionId;
+			})
+			.map((budget) => ({
+				...budget,
+				value: budget.value,
+				label:
+					budget.description || budget.label || budget.code || budget.value,
+			}));
+	}, [masters?.budgetMasters, selectedRegionId, resolveBudgetRegionId]);
 
 	const selectedBudgetCode = React.useMemo(() => {
 		return findOption(budgetCodeOptions, values.budget_master_id);
 	}, [budgetCodeOptions, values.budget_master_id]);
 
 	const selectedBudgetDescription = React.useMemo(() => {
-		return findOption(budgetDescriptionOptions, values.budget_master_id);
-	}, [budgetDescriptionOptions, values.budget_master_id]);
+		return findOption(
+			(masters?.budgetMasters ?? []).map((budget) => ({
+				...budget,
+				label:
+					budget.description || budget.label || budget.code || budget.value,
+			})),
+			values.budget_master_id,
+		);
+	}, [masters?.budgetMasters, values.budget_master_id]);
 
+	/** Clear the budget if it doesn't fit the zone (head-office budgets stay only if allowed). */
+	const clearBudgetIfOutsideZone = (regionId: string) => {
+		const currentBudget = findOption(
+			masters?.budgetMasters,
+			values.budget_master_id,
+		);
+		if (!currentBudget) return;
+
+		const budgetRegionId = resolveBudgetRegionId(currentBudget);
+		const outsideZone = budgetRegionId
+			? budgetRegionId !== regionId
+			: !SHOW_GENERAL_BUDGETS_WITH_ZONE;
+
+		if (outsideZone) {
+			emit("budget_master_id", "");
+			emit("budgetDescription", "");
+		}
+	};
+
+	/** Zone → Branch + Budget: keep the current branch / budget only if they fit the new zone. */
 	const handleRegionChange = (option: SingleValue<Option>) => {
 		const regionId = option?.value || "";
 
 		emit("region", regionId);
-		emit("branch", "");
+		if (regionId) clearBudgetIfOutsideZone(regionId);
+
+		const currentBranch = findOption(masters?.branches, values.branch);
+		const branchStillValid =
+			Boolean(regionId) &&
+			Boolean(currentBranch) &&
+			resolveBranchRegionId(currentBranch as Option) === regionId;
+
+		if (!branchStillValid) {
+			emit("branch", "");
+		}
+	};
+
+	/** Branch → Zone: selecting a branch sets the zone it belongs to. */
+	const handleBranchChange = (option: SingleValue<Option>) => {
+		const branchId = option?.value || "";
+
+		if (option) {
+			const branchRegionId = resolveBranchRegionId(option);
+
+			// Emit zone first so the EPC No is regenerated once both are set.
+			if (branchRegionId && branchRegionId !== selectedRegionId) {
+				emit("region", branchRegionId);
+				clearBudgetIfOutsideZone(branchRegionId);
+			}
+		}
+
+		emit("branch", branchId);
 	};
 
 	const handleDepartmentChange = (option: SingleValue<Option>) => {
@@ -195,6 +315,25 @@ export default function EpcFormFields({
 			budgetMasterId,
 		);
 
+		// A zone budget (North 1, South 2, …) also sets its zone; the branch is
+		// cleared if it doesn't belong to that zone. Head-office budgets leave
+		// the zone alone.
+		const budgetRegionId = selectedMaster
+			? resolveBudgetRegionId(selectedMaster)
+			: null;
+
+		if (budgetRegionId && budgetRegionId !== selectedRegionId) {
+			emit("region", budgetRegionId);
+
+			const currentBranch = findOption(masters?.branches, values.branch);
+			if (
+				currentBranch &&
+				resolveBranchRegionId(currentBranch) !== budgetRegionId
+			) {
+				emit("branch", "");
+			}
+		}
+
 		emit("budget_master_id", budgetMasterId);
 		emit(
 			"budgetDescription",
@@ -202,12 +341,17 @@ export default function EpcFormFields({
 		);
 	};
 
-	const handleDateRangeChange = (value: unknown) => {
+	const handleEventDateChange = (value: unknown) => {
+		// Single mode → picker returns a Date; mirror it into both fields.
+		if (value instanceof Date) {
+			const iso = formatDateOnly(value);
+			emit("event_from_date", iso);
+			emit("event_to_date", iso);
+			return;
+		}
+
 		if (value && typeof value === "object" && "from" in value) {
-			const range = value as {
-				from?: Date;
-				to?: Date;
-			};
+			const range = value as { from?: Date; to?: Date };
 
 			emit("event_from_date", range.from ? formatDateOnly(range.from) : "");
 			emit("event_to_date", range.to ? formatDateOnly(range.to) : "");
@@ -216,6 +360,20 @@ export default function EpcFormFields({
 
 		emit("event_from_date", "");
 		emit("event_to_date", "");
+	};
+
+	const handleEventNameChange = (option: SingleValue<Option>) => {
+		emit("event_name", option?.value || "");
+
+		// Range → single: collapse to the start date so no stale "to" date remains.
+		const nextMode = resolveEventDateMode(
+			masters?.eventNames,
+			option?.value,
+			option?.label,
+		);
+		if (nextMode === "single" && values.event_from_date) {
+			emit("event_to_date", values.event_from_date);
+		}
 	};
 
 	const buildPincodeOptionFromValues = (
@@ -295,17 +453,15 @@ export default function EpcFormFields({
 					name="branch"
 					label="Branch"
 					options={filteredBranches}
-					value={findOption(filteredBranches, values.branch)}
+					value={findOption(masters?.branches ?? [], values.branch)}
 					readOnlyValue={readOnlyLabels?.branch}
-					onChange={(option: SingleValue<Option>) =>
-						emit("branch", option?.value || "")
-					}
+					onChange={handleBranchChange}
 					isDisabled={lockOrgFields}
 					required
 					helperText={helper(
 						lockOrgFields
 							? "Branch cannot be changed after EPC creation"
-							: "Branches are filtered based on selected zone",
+							: "Branches are filtered by zone; selecting a branch sets its zone",
 					)}
 					error={errors.branch}
 					className="w-full"
@@ -365,42 +521,6 @@ export default function EpcFormFields({
 					className="w-full"
 				/>
 
-				{isView ? (
-					<ReadOnlyField
-						label="Event [From - To]"
-						value={formatEventDateRange(
-							values.event_from_date,
-							values.event_to_date,
-						)}
-						required
-					/>
-				) : (
-					<DatePickerInput
-						label="Event [From - To]"
-						value={toDateRange(values.event_from_date, values.event_to_date)}
-						onChange={handleDateRangeChange}
-						helperText="Select the start and end date of the event."
-						error={errors.event_from_date || errors.event_to_date}
-						disablePast
-					/>
-				)}
-
-				<SelectInput
-					mode={mode}
-					name="budget_master_id"
-					label="Budget Code"
-					value={selectedBudgetCode}
-					readOnlyValue={readOnlyLabels?.budgetCode}
-					options={budgetCodeOptions}
-					onChange={handleBudgetChange}
-					required
-					helperText={helper(
-						"Select a budget code to populate its description",
-					)}
-					error={errors.budget_master_id}
-					className="w-full"
-				/>
-
 				<SelectInput
 					mode={mode}
 					name="budgetDescription"
@@ -411,12 +531,26 @@ export default function EpcFormFields({
 					onChange={handleBudgetChange}
 					required
 					helperText={helper(
-						"Select a description to populate its budget code",
+						"Shows the selected zone's budget plus general budgets; the budget code fills automatically",
 					)}
-					error={errors.budgetDescription}
+					error={errors.budgetDescription || errors.budget_master_id}
 					className="w-full"
 				/>
 
+				<SelectInput
+					mode={mode}
+					name="budget_master_id"
+					label="Budget Code"
+					value={selectedBudgetCode}
+					readOnlyValue={readOnlyLabels?.budgetCode}
+					options={budgetCodeOptions}
+					onChange={handleBudgetChange}
+					isDisabled
+					helperText={helper(
+						"Auto-filled from the selected budget description",
+					)}
+					className="w-full"
+				/>
 				<SelectInput
 					mode={mode}
 					name="event_name"
@@ -424,9 +558,7 @@ export default function EpcFormFields({
 					value={findOption(masters?.eventNames ?? [], values.event_name)}
 					readOnlyValue={readOnlyLabels?.eventName}
 					options={masters?.eventNames || []}
-					onChange={(option: SingleValue<Option>) =>
-						emit("event_name", option?.value || "")
-					}
+					onChange={handleEventNameChange}
 					required
 					helperText={helper(
 						"Select from past events or create new by typing and pressing enter",
@@ -434,6 +566,32 @@ export default function EpcFormFields({
 					error={errors.event_name}
 					className="w-full"
 				/>
+				{isView ? (
+					<ReadOnlyField
+						label={getEventDateLabel(eventDateMode)}
+						value={formatEventDateRange(
+							values.event_from_date,
+							values.event_to_date,
+							eventDateMode,
+						)}
+						required
+					/>
+				) : (
+					<DatePickerInput
+						key={eventDateMode} // remount so the picker's draft resets on mode change
+						mode={eventDateMode}
+						label={getEventDateLabel(eventDateMode)}
+						value={
+							isSingleDate
+								? parseDateOnly(values.event_from_date)
+								: toDateRange(values.event_from_date, values.event_to_date)
+						}
+						onChange={handleEventDateChange}
+						helperText={getEventDateHelperText(eventDateMode)}
+						error={errors.event_from_date || errors.event_to_date}
+						disablePast
+					/>
+				)}
 			</div>
 
 			<div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
