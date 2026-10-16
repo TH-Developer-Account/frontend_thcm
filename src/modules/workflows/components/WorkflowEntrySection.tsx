@@ -17,6 +17,7 @@ export interface WorkflowEntrySectionProps {
 	workflowDetails: Record<string, WorkflowTemplate>;
 	workflowDetailErrors: Record<string, string>;
 	selectedFilter: WorkflowListScope;
+	availableFilters?: WorkflowListScope[];
 	onFilterChange: (filter: WorkflowListScope) => void;
 	onToggleWorkflow: (workflowId: string) => void | Promise<void>;
 	onAttach: (workflow: WorkflowSummary) => void | Promise<void>;
@@ -52,6 +53,7 @@ export function WorkflowEntrySection({
 	workflowDetails,
 	workflowDetailErrors,
 	selectedFilter,
+	availableFilters,
 	onFilterChange,
 	onToggleWorkflow,
 	onAttach,
@@ -77,6 +79,7 @@ export function WorkflowEntrySection({
 
 			<WorkflowFetchList
 				filter={selectedFilter}
+				availableFilters={availableFilters}
 				onFilterChange={onFilterChange}
 				workflows={filteredWorkflows}
 				expandedWorkflowId={expandedWorkflowId}

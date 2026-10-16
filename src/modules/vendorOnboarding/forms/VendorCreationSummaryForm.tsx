@@ -419,6 +419,7 @@ const VendorCreationSummaryForm = ({
 	return (
 		<div className="vendor-summary-form">
 			<Card
+				headerClassName="vendor-summary-card-header"
 				title={
 					isViewMode ? (
 						// Desktop: one line — Title / Ref / Name  [badge]

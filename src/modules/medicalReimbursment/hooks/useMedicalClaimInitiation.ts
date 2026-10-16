@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { useToast } from "../../../context/Auth/AuthContext";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
+import { DEFAULT_COUNTRY_CODE, joinMobile } from "../../../utils/phone";
 import {
 	useInitiateMedicalClaimMutation,
 	useMedicalClaimDetailQuery,
@@ -38,15 +39,29 @@ const EMPTY_VALUES: MedicalClaimInitiationValues = {
 	ticketNumber: "",
 };
 
+/**
+ * medicalClaimInitiationSchema's mobile rule is India-only (10 digits). For
+ * other countries the schema still checks every other field (with this
+ * stand-in number) and the typed number is checked against the pattern below.
+ */
+const SCHEMA_PLACEHOLDER_MOBILE = "9999999999";
+const OTHER_COUNTRY_MOBILE_PATTERN = /^\d{6,14}$/;
+
 type UseMedicalClaimInitiationArgs = {
 	claimId?: string;
 	initialValues?: Partial<MedicalClaimInitiationValues>;
 	shouldFetchDetails?: boolean;
+	/** Selected phone country code, e.g. "+91". `values.mobile` stays the national number. */
+	countryCode?: string;
 	onSubmitSuccess?: () => void | Promise<void>;
 };
 
 const mapDetailToForm = (
-	response: Partial<MedicalClaimInitiationValues> | MedicalClaimDetail | null | undefined,
+	response:
+		| Partial<MedicalClaimInitiationValues>
+		| MedicalClaimDetail
+		| null
+		| undefined,
 ): MedicalClaimInitiationValues => ({
 	employeeName: response?.employeeName ?? "",
 	email: response?.email ?? "",
@@ -56,7 +71,9 @@ const mapDetailToForm = (
 	referenceNumber: response?.referenceNumber ?? "",
 });
 
-const toPayload = (values: MedicalClaimInitiationValues): MedicalClaimInitiationPayload => ({
+const toPayload = (
+	values: MedicalClaimInitiationValues,
+): MedicalClaimInitiationPayload => ({
 	employeeName: values.employeeName,
 	email: values.email,
 	mobile: values.mobile,
@@ -68,13 +85,19 @@ export const useMedicalClaimInitiation = ({
 	claimId,
 	initialValues,
 	shouldFetchDetails = false,
+	countryCode = DEFAULT_COUNTRY_CODE,
 	onSubmitSuccess,
 }: UseMedicalClaimInitiationArgs = {}) => {
 	const navigate = useNavigate();
 	const { showToast } = useToast();
-	const params = useParams<{ id?: string; claimId?: string; initiationId?: string }>();
+	const params = useParams<{
+		id?: string;
+		claimId?: string;
+		initiationId?: string;
+	}>();
 	const resolvedClaimId =
 		claimId ?? params.initiationId ?? params.claimId ?? params.id ?? "";
+	const isDefaultCountry = countryCode === DEFAULT_COUNTRY_CODE;
 	const initialResolvedValues = useMemo(
 		() => ({ ...EMPTY_VALUES, ...initialValues }),
 		[initialValues],
@@ -82,7 +105,10 @@ export const useMedicalClaimInitiation = ({
 	const [values, setValues] = useState(initialResolvedValues);
 	const [originalValues, setOriginalValues] = useState(initialResolvedValues);
 	const [errors, setErrors] = useState<MedicalClaimInitiationErrors>({});
-	const detailQuery = useMedicalClaimDetailQuery(resolvedClaimId, shouldFetchDetails);
+	const detailQuery = useMedicalClaimDetailQuery(
+		resolvedClaimId,
+		shouldFetchDetails,
+	);
 	const initiateMutation = useInitiateMedicalClaimMutation();
 	const resendLinkMutation = useResendMedicalClaimLinkMutation();
 
@@ -114,27 +140,61 @@ export const useMedicalClaimInitiation = ({
 		setErrors((current) => ({ ...current, [key]: undefined }));
 	};
 
+	/**
+	 * Runs the schema on the form values (national number) and, for countries
+	 * other than the default, swaps the India-only mobile rule for a generic
+	 * digits check.
+	 */
+	const validateValues = () => {
+		const payload = toPayload(values);
+		const result = medicalClaimInitiationSchema.safeParse(
+			isDefaultCountry
+				? payload
+				: { ...payload, mobile: SCHEMA_PLACEHOLDER_MOBILE },
+		);
+		const fieldErrors: MedicalClaimInitiationErrors = result.success
+			? {}
+			: (toFieldErrors(result.error) as MedicalClaimInitiationErrors);
+
+		if (!isDefaultCountry) {
+			const nationalNumber = values.mobile.trim();
+			if (!nationalNumber) {
+				fieldErrors.mobile = "Phone number is required.";
+			} else if (!OTHER_COUNTRY_MOBILE_PATTERN.test(nationalNumber)) {
+				fieldErrors.mobile = "Enter a valid mobile number.";
+			}
+		}
+
+		return { result, fieldErrors };
+	};
+
 	/** Validates one field on blur so mistakes show before submit. */
 	const handleBlur = (key: keyof MedicalClaimInitiationPayload) => {
-		const result = medicalClaimInitiationSchema.safeParse(toPayload(values));
-		if (result.success) return;
-		const fieldErrors = toFieldErrors(result.error);
+		const { fieldErrors } = validateValues();
 		if (fieldErrors[key] && String(values[key] ?? "").trim()) {
 			setErrors((current) => ({ ...current, [key]: fieldErrors[key] }));
 		}
 	};
 
 	const validate = () => {
-		const result = medicalClaimInitiationSchema.safeParse(toPayload(values));
-		if (result.success) {
+		const { result, fieldErrors } = validateValues();
+		if (result.success && Object.keys(fieldErrors).length === 0) {
 			setErrors({});
-			return result.data;
+			// The API gets the full number: "+<country code><national number>".
+			return {
+				...result.data,
+				mobile: joinMobile(countryCode, values.mobile.trim()),
+			};
 		}
-		setErrors(toFieldErrors(result.error) as MedicalClaimInitiationErrors);
+		setErrors(fieldErrors);
 		showToast({
 			type: "error",
 			title: "Please fix the highlighted fields",
-			description: firstErrorMessage(result.error),
+			description:
+				!result.success && isDefaultCountry
+					? firstErrorMessage(result.error)
+					: (Object.values(fieldErrors).find(Boolean) ??
+						"Please check the details and try again."),
 		});
 		return null;
 	};
@@ -150,7 +210,9 @@ export const useMedicalClaimInitiation = ({
 			const mailFailed = response?.mailSent === false;
 			showToast({
 				type: mailFailed ? "error" : "success",
-				title: mailFailed ? "Claim initiated — email not sent" : "Submitted successfully",
+				title: mailFailed
+					? "Claim initiated — email not sent"
+					: "Submitted successfully",
 				description:
 					response?.message ??
 					"The medical claim was initiated and the access link was sent successfully.",
@@ -162,7 +224,8 @@ export const useMedicalClaimInitiation = ({
 			// The current backend saves the claim BEFORE emailing the link, so
 			// a server error (e.g. mail failure) can still have created it.
 			// Refresh the list and warn, so nobody retries into a duplicate.
-			const status = (error as { response?: { status?: number } })?.response?.status;
+			const status = (error as { response?: { status?: number } })?.response
+				?.status;
 			const mayExist = !status || status >= 500;
 			showToast({
 				type: "error",
@@ -182,7 +245,8 @@ export const useMedicalClaimInitiation = ({
 				type: "success",
 				title: "Link sent",
 				description:
-					response?.message ?? "The medical claim access link was re-sent successfully.",
+					response?.message ??
+					"The medical claim access link was re-sent successfully.",
 			});
 		} catch (error) {
 			showToast({
@@ -244,22 +308,25 @@ export function useMedicalClaimInitiationImport({
 }: UseMedicalClaimInitiationImportOptions = {}) {
 	const { showToast } = useToast();
 	const [isImportModalOpen, setIsImportModalOpen] = React.useState(false);
-	const [importFile, setImportFile] = React.useState<FileUploadValue | null>(null);
+	const [importFile, setImportFile] = React.useState<FileUploadValue | null>(
+		null,
+	);
 	const [importFileError, setImportFileError] = React.useState<string>();
-	const [parsedFile, setParsedFile] = React.useState<ParsedInitiationFile | null>(null);
+	const [parsedFile, setParsedFile] =
+		React.useState<ParsedInitiationFile | null>(null);
 	const [isParsing, setIsParsing] = React.useState(false);
 	const [isImporting, setIsImporting] = React.useState(false);
 	const [progress, setProgress] = React.useState<MedicalClaimImportProgress>();
 	const pollTimerRef = React.useRef<number | undefined>(undefined);
 	const isMountedRef = React.useRef(true);
 
-	React.useEffect(
-		() => () => {
+	React.useEffect(() => {
+		isMountedRef.current = true;
+		return () => {
 			isMountedRef.current = false;
 			window.clearTimeout(pollTimerRef.current);
-		},
-		[],
-	);
+		};
+	}, []);
 
 	const resetSelection = React.useCallback(() => {
 		setImportFile(null);
@@ -278,36 +345,45 @@ export function useMedicalClaimInitiationImport({
 		resetSelection();
 	}, [isImporting, resetSelection]);
 
-	const handleImportFileChange = React.useCallback(async (value: FileUploadValue | null) => {
-		setImportFile(value);
-		setImportFileError(undefined);
-		setParsedFile(null);
-		if (!value?.file) return;
+	const handleImportFileChange = React.useCallback(
+		async (value: FileUploadValue | null) => {
+			setImportFile(value);
+			setImportFileError(undefined);
+			setParsedFile(null);
+			if (!value?.file) return;
 
-		setIsParsing(true);
-		try {
-			const parsed = await parseInitiationImportFile(value.file);
-			if (!isMountedRef.current) return;
-			setParsedFile(parsed);
-			if (parsed.fileErrors.length) setImportFileError(parsed.fileErrors[0]);
-		} catch {
-			setImportFileError("This file could not be read. Upload an .xlsx, .xls or .csv file.");
-		} finally {
-			if (isMountedRef.current) setIsParsing(false);
-		}
-	}, []);
+			setIsParsing(true);
+			try {
+				const parsed = await parseInitiationImportFile(value.file);
+				if (!isMountedRef.current) return;
+				setParsedFile(parsed);
+				if (parsed.fileErrors.length) setImportFileError(parsed.fileErrors[0]);
+			} catch {
+				setImportFileError(
+					"This file could not be read. Upload an .xlsx, .xls or .csv file.",
+				);
+			} finally {
+				if (isMountedRef.current) setIsParsing(false);
+			}
+		},
+		[],
+	);
 
 	const pollStatus = React.useCallback(
-		async (jobId: string, startedAt: number, skippedRows: number): Promise<void> => {
+		async (
+			jobId: string,
+			startedAt: number,
+			skippedRows: number,
+		): Promise<void> => {
 			const result = await medicalClaimApi.getInitiationImportStatus(jobId);
 			if (!isMountedRef.current) return;
 
 			const nextProgress: MedicalClaimImportProgress = {
 				status: result.status,
-				totalRows: 0,
-				processedRows: 0,
-				failedRows: 0,
 				...result.progress,
+				totalRows: result.progress?.totalRows ?? 0,
+				processedRows: result.progress?.processedRows ?? 0,
+				failedRows: result.progress?.failedRows ?? 0,
 				errors: result.errors ?? [],
 				failedReason: result.failedReason,
 				skippedRows,
@@ -331,7 +407,8 @@ export function useMedicalClaimInitiationImport({
 				showToast({
 					type: "error",
 					title: "Import failed",
-					description: result.failedReason ?? "The import could not be completed.",
+					description:
+						result.failedReason ?? "The import could not be completed.",
 				});
 				return;
 			}
@@ -379,7 +456,9 @@ export function useMedicalClaimInitiationImport({
 			return;
 		}
 		if (!parsedFile) {
-			setImportFileError("The file is still being checked. Please wait a moment.");
+			setImportFileError(
+				"The file is still being checked. Please wait a moment.",
+			);
 			return;
 		}
 		if (parsedFile.fileErrors.length) {
@@ -387,12 +466,17 @@ export function useMedicalClaimInitiationImport({
 			return;
 		}
 		if (parsedFile.validCount === 0) {
-			setImportFileError("No valid rows to import. Fix the errors shown below and upload again.");
+			setImportFileError(
+				"No valid rows to import. Fix the errors shown below and upload again.",
+			);
 			return;
 		}
 
 		const formData = new FormData();
-		formData.append("file", buildInitiationImportFile(parsedFile.rows, selectedFile.name));
+		formData.append(
+			"file",
+			buildInitiationImportFile(parsedFile.rows, selectedFile.name),
+		);
 
 		try {
 			setIsImporting(true);
@@ -428,10 +512,10 @@ export function useMedicalClaimInitiationImport({
 
 	const canImport = Boolean(
 		importFile?.file &&
-			parsedFile &&
-			!parsedFile.fileErrors.length &&
-			parsedFile.validCount > 0 &&
-			!isParsing,
+		parsedFile &&
+		!parsedFile.fileErrors.length &&
+		parsedFile.validCount > 0 &&
+		!isParsing,
 	);
 
 	return {

@@ -1,7 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import axios from "axios";
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+	type ReactNode,
+} from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-
+import axios, { type AxiosResponse } from "axios";
 import { GuestAuthContext } from "./GuestAuthContext";
 import type { Guest, GuestAuthContextType } from "./GuestAuthContext";
 import { useToast } from "../Auth/AuthContext";
@@ -33,9 +39,13 @@ interface GuestAuthProviderProps {
 
 function getErrorMessage(error: unknown, fallback: string): string {
 	if (axios.isAxiosError(error)) {
-		if (!error.response) return "Unable to reach the server. Check your connection and try again.";
+		if (!error.response)
+			return "Unable to reach the server. Check your connection and try again.";
 		if (error.response.status === 429) {
-			return error.response.data?.message || "Too many attempts. Please wait a few minutes and try again.";
+			return (
+				error.response.data?.message ||
+				"Too many attempts. Please wait a few minutes and try again."
+			);
 		}
 		return error.response.data?.message || fallback;
 	}
@@ -62,11 +72,15 @@ export function GuestAuthProvider({ children }: GuestAuthProviderProps) {
 			setGuest(null);
 			const current = locationRef.current;
 			const redirectTo =
-				options.redirectTo ?? (options.expired ? `${current.pathname}${current.search}` : undefined);
+				options.redirectTo ??
+				(options.expired ? `${current.pathname}${current.search}` : undefined);
 			// Router navigation keeps the app's basename (no hardcoded "/web").
-			navigate(buildGuestLoginUrl(redirectTo, options.expired ? "expired" : undefined), {
-				replace: true,
-			});
+			navigate(
+				buildGuestLoginUrl(redirectTo, options.expired ? "expired" : undefined),
+				{
+					replace: true,
+				},
+			);
 		},
 		[navigate],
 	);
@@ -80,7 +94,10 @@ export function GuestAuthProvider({ children }: GuestAuthProviderProps) {
 			const delay = Math.max(expiry - Date.now(), 0);
 			// setTimeout overflows above ~24.8 days; guest tokens live 24h.
 			if (delay < 2 ** 31 - 1) {
-				expiryTimerRef.current = window.setTimeout(() => logout({ expired: true }), delay);
+				expiryTimerRef.current = window.setTimeout(
+					() => logout({ expired: true }),
+					delay,
+				);
 			}
 		},
 		[logout],
@@ -103,11 +120,13 @@ export function GuestAuthProvider({ children }: GuestAuthProviderProps) {
 	// session is gone — send the guest back to login and remember where they were.
 	useEffect(() => {
 		const interceptorId = GuestAxios.interceptors.response.use(
-			(response: unknown) => response,
+			(response: AxiosResponse) => response,
 			(error: unknown) => {
 				if (axios.isAxiosError(error) && error.response?.status === 401) {
 					const url = error.config?.url ?? "";
-					const isAuthCall = AUTH_ENDPOINTS.some((endpoint) => url.includes(endpoint));
+					const isAuthCall = AUTH_ENDPOINTS.some((endpoint) =>
+						url.includes(endpoint),
+					);
 					if (!isAuthCall && readGuestToken()) {
 						showToast({
 							type: "error",
@@ -161,10 +180,13 @@ export function GuestAuthProvider({ children }: GuestAuthProviderProps) {
 	const verifyOtp = useCallback(
 		async (mobile: string, otp: string) => {
 			try {
-				const { data } = await GuestAxios.post<LoginResponse>(guest_api_routes.verify_otp, {
-					mobile: normalizeIndianMobile(mobile),
-					otp: otp.trim(),
-				});
+				const { data } = await GuestAxios.post<LoginResponse>(
+					guest_api_routes.verify_otp,
+					{
+						mobile: normalizeIndianMobile(mobile),
+						otp: otp.trim(),
+					},
+				);
 				persistGuestSession(data);
 				showToast({
 					type: "success",
@@ -191,7 +213,10 @@ export function GuestAuthProvider({ children }: GuestAuthProviderProps) {
 			const typed = email.trim();
 			const lower = typed.toLowerCase();
 			const attempt = (value: string) =>
-				GuestAxios.post<LoginResponse>(guest_api_routes.login, { email: value, password });
+				GuestAxios.post<LoginResponse>(guest_api_routes.login, {
+					email: value,
+					password,
+				});
 			try {
 				let response;
 				try {
@@ -264,8 +289,20 @@ export function GuestAuthProvider({ children }: GuestAuthProviderProps) {
 			requestPasswordReset,
 			logout,
 		}),
-		[guest, isLoading, loginWithPassword, logout, requestPasswordReset, sendOtp, verifyOtp],
+		[
+			guest,
+			isLoading,
+			loginWithPassword,
+			logout,
+			requestPasswordReset,
+			sendOtp,
+			verifyOtp,
+		],
 	);
 
-	return <GuestAuthContext.Provider value={value}>{children}</GuestAuthContext.Provider>;
+	return (
+		<GuestAuthContext.Provider value={value}>
+			{children}
+		</GuestAuthContext.Provider>
+	);
 }

@@ -1013,8 +1013,7 @@
 	.workflow-customise-panel,
 	.workflow-assignment-row,
 	.workflow-customise-actions,
-	.workflow-customization-selection,
-	.workflow-customization-navigation {
+	.workflow-customization-selection {
 		align-items: stretch;
 		flex-direction: column;
 	}
@@ -1025,15 +1024,35 @@
 		flex-wrap: wrap;
 	}
 
-	.workflow-customise-actions > *,
-	.workflow-customization-selection > button,
-	.workflow-customization-navigation > button,
-	.workflow-customization-form-actions-end,
-	.workflow-customization-form-actions-end > button {
-		width: 100%;
+	/* Back + Next: full-width stack, primary action on top */
+	.workflow-customization-navigation {
+		align-items: stretch;
+		flex-direction: column-reverse;
 	}
 
 	.workflow-customization-form-actions-end {
-		display: grid;
+		display: flex;
+		width: 100%;
+		flex-direction: column-reverse;
+		align-items: stretch;
+	}
+
+	.workflow-customization-navigation .button-wrapper,
+	.workflow-customise-actions .button-wrapper,
+	.workflow-customization-selection .button-wrapper {
+		display: flex;
+		width: 100%;
+	}
+
+	.workflow-customization-navigation .button-base,
+	.workflow-customise-actions .button-base,
+	.workflow-customization-selection .button-base {
+		width: 100%;
+	}
+
+	/* "Edit workflow" / "Reattach workflow" group in the selection bar */
+	.workflow-customization-selection > div:last-child {
+		flex-direction: column;
+		width: 100%;
 	}
 }

@@ -561,7 +561,10 @@ export function useVendorCreationFormOneController({
 		},
 		[openDpdpModal],
 	);
-
+	const handleDpdpConsentToggle = React.useCallback((checked: boolean) => {
+		setHasAcceptedDpdp(checked);
+		setDpdpError("");
+	}, []);
 	const handleAcceptDpdpTerms = React.useCallback(() => {
 		if (!hasConfirmedDpdp) return;
 		setHasAcceptedDpdp(true);
@@ -602,7 +605,7 @@ export function useVendorCreationFormOneController({
 
 		if (requireDpdpConsent && !hasAcceptedDpdp) {
 			setDpdpError(MANDATORY_ERROR);
-			setIsDpdpModalOpen(true);
+			// setIsDpdpModalOpen(true); // modal disabled until legal approves the full notice
 			showToast({
 				type: "error",
 				title: vendorContent.toast.publicSubmit.dpdpTitle,
@@ -651,6 +654,7 @@ export function useVendorCreationFormOneController({
 		openDpdpModal,
 		closeDpdpModal,
 		handleDpdpConsentChange,
+		handleDpdpConsentToggle,
 		handleAcceptDpdpTerms,
 		handleReset,
 		handleFormAction,
@@ -2261,7 +2265,6 @@ export function useVendorCreationForm({
 		handleSaveFormOneDraft: isPublicForm ? submitDraftPublicVendor : undefined,
 		handleSaveFormTwo: saveThcmDetails,
 		handleSaveFormTwoDraft: undefined,
-
 		handleVendorSubmitForm: submitPublicVendor,
 		handleSubmitSummary: submitForApproval,
 		handleVendorDraftSubmitForm: submitDraftPublicVendor,

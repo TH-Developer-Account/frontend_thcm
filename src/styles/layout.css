@@ -2573,45 +2573,89 @@
 /* =========================================================
    PAGE HEADER
 
-   Ownership:
-   - back-navigation alignment
-   - title/subtitle/meta typography
-   - reusable identity layout
-   - reusable toolbar separation
+   Order (top to bottom):
+   1. Breadcrumb / back navigation
+   2. Title  (+ optional extra content on the right)
+   3. Subtitle and meta
+   4. Optional toolbar
 
    Surface styling is owned by PageRowSectionLayout.
+   Page-specific overrides (e.g. .activity-planner-page-header)
+   stay in their own blocks.
 ========================================================= */
 @layer components {
+	/* =====================================================
+	   ROOT
+	===================================================== */
+
 	.page-header {
 		display: flex;
 		width: 100%;
 		min-width: 0;
 		flex-direction: column;
-		gap: var(--space-3);
+		gap: var(--space-2);
 
 		color: var(--color-text-primary);
 	}
 
 	/* =====================================================
-	   PRIMARY HEADER ROW
-	   Title left, breadcrumb navigation right
+	   1. NAVIGATION (breadcrumbs / back button)
+	   Sits above the title, left aligned.
+	===================================================== */
+
+	.page-header-navigation {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		max-width: 100%;
+		flex: 0 0 auto;
+		align-items: center;
+		justify-content: flex-start;
+	}
+
+	.page-header-navigation .page-navigation,
+	.page-header-navigation .page-navigation-breadcrumbs-layout,
+	.page-header-navigation .page-navigation-breadcrumbs {
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+	}
+
+	.page-header-navigation .page-navigation-breadcrumbs-layout {
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.page-header-navigation .page-navigation-breadcrumb-list {
+		width: 100%;
+		max-width: 100%;
+		flex-wrap: wrap;
+		justify-content: flex-start;
+		row-gap: var(--space-0-5);
+	}
+
+	/* =====================================================
+	   2. PRIMARY ROW
+	   Title block on the left, optional extra on the right.
 	===================================================== */
 
 	.page-header-primary {
 		display: flex;
 		width: 100%;
 		min-width: 0;
-		align-items: center;
+		align-items: flex-start;
 		justify-content: space-between;
 		gap: var(--space-4);
 	}
 
 	.page-header-heading-group {
 		display: flex;
+		width: 100%;
 		min-width: 0;
 		flex: 1 1 auto;
-		align-items: center;
-		gap: var(--space-3);
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--space-4);
 	}
 
 	.page-header-copy {
@@ -2634,50 +2678,25 @@
 		text-align: right;
 	}
 
+	/* Keep the width-capped subtitle aligned with the chosen alignment */
+	.page-header-copy.is-center .page-header-subtitle,
+	.page-header-copy.is-center .page-header-meta {
+		margin-inline: auto;
+	}
+
+	.page-header-copy.is-right .page-header-subtitle,
+	.page-header-copy.is-right .page-header-meta {
+		margin-left: auto;
+	}
+
 	.page-header-extra {
 		display: flex;
 		min-width: 0;
 		flex: 0 0 auto;
 		align-items: center;
 		gap: var(--space-2);
-	}
 
-	.page-header-navigation {
-		display: flex;
-		width: auto;
-		min-width: 0;
-		max-width: 55%;
-		flex: 0 1 auto;
-		align-items: center;
-		justify-content: flex-end;
-	}
-
-	/*
-	 * PageNavigation breadcrumb mode currently has width: 100%.
-	 * Override that inside the header so it remains content-sized
-	 * on the right side.
-	 */
-	.page-header-navigation .page-navigation {
-		width: auto;
-		max-width: 100%;
-	}
-
-	.page-header-navigation .page-navigation-breadcrumbs-layout {
-		width: auto;
-		flex-direction: row;
-		align-items: center;
-	}
-
-	.page-header-navigation .page-navigation-breadcrumbs {
-		width: auto;
-		max-width: 100%;
-	}
-
-	.page-header-navigation .page-navigation-breadcrumb-list {
-		width: auto;
-		max-width: 100%;
-		flex-wrap: nowrap;
-		justify-content: flex-end;
+		margin-left: auto;
 	}
 
 	/* =====================================================
@@ -2688,6 +2707,13 @@
 		min-width: 0;
 		margin: 0;
 
+		/* color: var(--color-text-primary);
+
+		font-family: var(--font-sans);
+		font-size: clamp(1.5rem, 1.2rem + 1vw, 1.875rem);
+		font-weight: var(--font-weight-semibold);
+		line-height: 1.2;
+		letter-spacing: var(--tracking-heading); */
 		color: var(--page-header-title-color);
 
 		font-family: var(--font-sans);
@@ -2697,39 +2723,46 @@
 		letter-spacing: var(--page-header-title-tracking);
 
 		overflow-wrap: anywhere;
+		text-wrap: balance;
 	}
 
 	.page-header-subtitle,
 	.page-header-meta {
 		min-width: 0;
+		max-width: 46rem;
 		margin: 0;
 
 		font-family: var(--font-sans);
 		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-normal);
 
 		overflow-wrap: anywhere;
+		text-wrap: pretty;
 	}
 
 	.page-header-subtitle {
-		color: var(--page-header-subtitle-color);
-		font-size: var(--page-header-subtitle-size);
+		color: var(--color-text-secondary);
+
+		font-size: var(--font-size-sm);
+		line-height: var(--line-height-relaxed);
 	}
 
 	.page-header-meta {
-		color: var(--page-header-meta-color);
-		font-size: var(--page-header-meta-size);
+		color: var(--color-text-muted);
+
+		font-size: var(--font-size-xs);
+		line-height: var(--line-height-normal);
 	}
 
 	/* =====================================================
-	   TOOLBAR
+	   3. TOOLBAR
 	===================================================== */
 
 	.page-header-toolbar {
 		width: 100%;
 		min-width: 0;
 
-		padding-top: var(--space-2);
+		margin-top: var(--space-1);
+		padding-top: var(--space-3);
 
 		border-top: var(--border-width-default) solid var(--color-border-subtle);
 	}
@@ -2740,39 +2773,49 @@
 	}
 
 	/* =====================================================
-	   TABLET AND MOBILE
+	   TABLET AND UP
+	===================================================== */
+
+	@media (min-width: 640px) {
+		.page-header {
+			gap: var(--space-1);
+		}
+
+		.page-header-subtitle {
+			font-size: var(--font-size-base);
+		}
+	}
+
+	/* =====================================================
+	   MOBILE
+	   - breadcrumbs become one horizontally scrollable line
+	   - extra content drops below the title block
 	===================================================== */
 
 	@media (max-width: 767px) {
 		.page-header {
-			gap: var(--space-2);
+			gap: var(--space-1-5);
 		}
 
 		.page-header-primary {
-			align-items: flex-start;
-			flex-direction: column;
 			gap: var(--space-2);
 		}
 
 		.page-header-heading-group {
-			width: 100%;
+			flex-wrap: wrap;
+			gap: var(--space-2);
 		}
 
-		.page-header-navigation {
-			width: 100%;
-			max-width: none;
-			justify-content: flex-start;
+		.page-header-copy {
+			min-width: min(100%, 12rem);
 		}
 
-		.page-header-navigation .page-navigation,
-		.page-header-navigation .page-navigation-breadcrumbs-layout,
-		.page-header-navigation .page-navigation-breadcrumbs {
-			width: 100%;
+		.page-header-extra {
+			margin-left: 0;
 		}
 
 		.page-header-navigation .page-navigation-breadcrumb-list {
-			width: 100%;
-			justify-content: flex-start;
+			flex-wrap: nowrap;
 			overflow-x: auto;
 			overflow-y: hidden;
 
@@ -2786,25 +2829,38 @@
 			display: none;
 		}
 
-		.page-header-title {
-			font-size: var(--page-header-mobile-title-size);
-		}
-
 		.page-header-toolbar {
 			padding-top: var(--space-2);
 		}
 	}
 
+	/* =====================================================
+	   SMALL MOBILE
+	===================================================== */
+
 	@media (max-width: 479px) {
 		.page-header-heading-group {
-			align-items: flex-start;
 			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.page-header-copy {
+			min-width: 0;
 		}
 
 		.page-header-extra {
 			width: 100%;
+			flex-wrap: wrap;
+		}
+
+		.page-header-subtitle {
+			font-size: var(--font-size-xs);
 		}
 	}
+
+	/* =====================================================
+	   REDUCED MOTION
+	===================================================== */
 
 	@media (prefers-reduced-motion: reduce) {
 		.page-header,
@@ -3074,6 +3130,7 @@
 		}
 	}
 }
+
 /* =====================================================
    PUBLIC PAGE LAYOUT
 
@@ -3106,8 +3163,6 @@
 	/* ---------- Header ---------- */
 
 	.header-public {
-		position: relative;
-		z-index: var(--z-header);
 		width: 100%;
 		flex: 0 0 auto;
 		padding: var(--space-2) var(--public-page-gutter);
@@ -3136,7 +3191,56 @@
 		height: clamp(32px, 3vw, 44px);
 		object-fit: contain;
 	}
+	/* ---------- Header ---------- */
 
+	.header-public {
+		width: 100%;
+		flex: 0 0 auto;
+		padding: var(--space-2) var(--public-page-gutter);
+		border-bottom: 0.5px solid var(--color-border);
+	}
+
+	/*
+	 * 3-column grid: [logo] [title] [spacer].
+	 * The outer columns are equal (1fr), so the middle column is
+	 * always centred on the header, whatever the logo width is.
+	 */
+	.public-page-brand {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+		align-items: center;
+		width: 100%;
+		max-width: var(--layout-content-max-width, 1200px);
+		margin-inline: auto;
+		column-gap: 16px;
+	}
+
+	.home-brand {
+		display: inline-flex;
+		align-items: center;
+		justify-self: start;
+	}
+
+	.public-page-title {
+		grid-column: 2;
+		justify-self: center;
+		min-width: 0;
+		max-width: 100%;
+		text-align: center;
+
+		font-family: var(--font-sans);
+		font-size: clamp(var(--font-size-sm), 2.2vw, var(--font-size-xl));
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-heading);
+		letter-spacing: var(--tracking-heading);
+		color: var(--color-text-primary);
+
+		overflow-wrap: anywhere;
+	}
+
+	.public-page-brand-spacer {
+		grid-column: 3;
+	}
 	/* ---------- Scroll area ---------- */
 
 	.public-page {
@@ -3147,7 +3251,6 @@
 		min-width: 0;
 		min-height: 0;
 		overflow-x: hidden;
-		overflow-y: auto;
 		background: var(--color-page-bg);
 
 		overscroll-behavior-y: contain;
@@ -3206,8 +3309,6 @@
 	/* ---------- Footer ---------- */
 
 	.public-page-footer {
-		position: relative;
-		z-index: var(--z-header);
 		width: 100%;
 		flex: 0 0 auto;
 		padding: 16px var(--public-page-gutter);
@@ -3215,7 +3316,6 @@
 		font-size: max(1.1rem, 11px);
 		color: var(--color-text-secondary);
 		border-top: 0.5px solid var(--color-border);
-		background-color: var(--color-bg-surface);
 	}
 
 	/* ---------- Mobile ---------- */
@@ -3223,6 +3323,31 @@
 	@media (max-width: 639px) {
 		.header-public {
 			padding-block: 10px;
+		}
+
+		/*
+	 * Keep the row layout: [logo] [title] [spacer].
+	 * Fixed 1fr / 2fr / 1fr proportions keep the title centred and
+	 * give it a bounded width, so long titles wrap instead of
+	 * squeezing the logo.
+	 */
+		.public-page-brand {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+			column-gap: 8px;
+		}
+
+		.home-brand img {
+			height: 24px;
+			max-width: 100%;
+		}
+
+		.public-page-title {
+			font-size: var(--font-size-sm);
+			line-height: var(--line-height-tight);
+		}
+
+		.public-page-brand-spacer {
+			display: none;
 		}
 
 		.public-page-container {
@@ -3236,14 +3361,13 @@
 	}
 
 	@media (max-width: 767px) {
-		.public-page {
-			scrollbar-gutter: auto;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.public-page {
-			scroll-behavior: auto;
+		.public-pages-layout {
+			height: 100dvh;
+			min-height: 0;
+			overflow-x: hidden;
+			overflow-y: auto;
+			overscroll-behavior-y: contain;
+			-webkit-overflow-scrolling: touch;
 		}
 	}
 }

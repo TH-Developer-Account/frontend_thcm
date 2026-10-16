@@ -3,9 +3,8 @@
 /* =====================================================
    BUTTON SYSTEM
 
-   Architecture:
    .button-base       → shared interaction foundation
-   .button-cta        → rugged industrial CTA shape
+   .button-cta        → legacy CTA shape
    .button-standard   → normal application button
    .button-filter     → filter chip/button
    .button-segmented  → segmented control option
@@ -17,10 +16,6 @@
 ===================================================== */
 
 @layer components {
-	/* =====================================================
-	   WRAPPER
-	===================================================== */
-
 	.button-wrapper {
 		@apply relative inline-flex w-auto min-w-0 shrink-0 items-center;
 	}
@@ -32,12 +27,6 @@
 	.button-wrapper-segmented {
 		@apply flex-1;
 	}
-
-	/* =====================================================
-	   BASE
-	   Sharp rectangular foundation.
-	   Industrial geometry is not applied here.
-	===================================================== */
 
 	.button-base {
 		@apply relative m-0 inline-flex min-w-0 select-none
@@ -105,9 +94,7 @@
 		}
 	}
 
-	/* =====================================================
-	   SIZE
-	===================================================== */
+	/* ---------- Sizes ---------- */
 
 	.button-sm {
 		min-height: var(--control-height-sm);
@@ -133,10 +120,7 @@
 		font-size: var(--font-size-base);
 	}
 
-	/* =====================================================
-	   STANDARD APPEARANCE
-	   Default shape for form and application actions.
-	===================================================== */
+	/* ---------- Appearances ---------- */
 
 	.button-standard {
 		border-radius: var(--radius-xs);
@@ -147,12 +131,7 @@
 		transform: translateY(1px);
 	}
 
-	/* =====================================================
-	   LEGACY CTA APPEARANCE
-	   Kept only for compatibility.
-	   No angled treatment is applied here.
-	===================================================== */
-
+	/* Legacy CTA — kept for compatibility, no angled treatment */
 	.button-cta {
 		border-radius: var(--radius-xs);
 		clip-path: none;
@@ -162,11 +141,7 @@
 		text-transform: none;
 	}
 
-	/* =====================================================
-	   IRON INDUSTRIAL TREATMENT
-	   Only variant="iron" receives this shape.
-	===================================================== */
-
+	/* Iron industrial treatment — only variant="iron" */
 	.button-industrial {
 		--button-cut-size: 0.75rem;
 
@@ -255,10 +230,6 @@
 		--button-cut-size: 1rem;
 	}
 
-	/* =====================================================
-	   FILTER APPEARANCE
-	===================================================== */
-
 	.button-filter {
 		min-height: var(--control-height-sm);
 		padding: var(--space-1-5) var(--space-3);
@@ -290,10 +261,6 @@
 		background-color: var(--color-brand-subtle);
 		color: var(--color-brand-active);
 	}
-
-	/* =====================================================
-	   SEGMENTED APPEARANCE
-	===================================================== */
 
 	.button-segmented {
 		min-height: var(--control-height-sm);
@@ -327,10 +294,6 @@
 		box-shadow: var(--shadow-xs);
 	}
 
-	/* =====================================================
-	   TOGGLE APPEARANCE
-	===================================================== */
-
 	.button-toggle {
 		min-height: var(--control-height-sm);
 		padding: var(--space-1-5) var(--space-3);
@@ -362,11 +325,7 @@
 		color: var(--color-brand-foreground);
 	}
 
-	/* =====================================================
-	   SWITCH APPEARANCE
-	   Track/thumb structure is supplied by the switch content.
-	===================================================== */
-
+	/* Switch — track/thumb structure is supplied by the switch content */
 	.button-switch {
 		border-color: transparent;
 		border-radius: var(--radius-full);
@@ -387,10 +346,7 @@
 		box-shadow: var(--shadow-md);
 	}
 
-	/* =====================================================
-	   STATE APPEARANCE OVERRIDES
-	===================================================== */
-
+	/* Active filter / segmented / toggle never carry a shadow */
 	.button-filter.is-active,
 	.button-filter[data-active="true"],
 	.button-segmented.is-active,
@@ -399,10 +355,6 @@
 	.button-toggle[data-active="true"] {
 		box-shadow: none;
 	}
-
-	/* =====================================================
-	   ICON APPEARANCE
-	===================================================== */
 
 	.button-icon {
 		width: var(--control-height-md);
@@ -457,10 +409,6 @@
 		flex-shrink: 0;
 	}
 
-	/* =====================================================
-	   GHOST APPEARANCE
-	===================================================== */
-
 	.button-ghost {
 		border-color: transparent;
 		border-radius: var(--radius-xs);
@@ -485,10 +433,6 @@
 		color: var(--color-brand-active);
 	}
 
-	/* =====================================================
-	   TRANSPARENT APPEARANCE
-	===================================================== */
-
 	.button-transparent {
 		border-color: transparent;
 		border-radius: var(--radius-xs);
@@ -506,10 +450,7 @@
 		color: var(--color-text-primary);
 	}
 
-	/* =====================================================
-	   IRON VARIANT
-	   The only variant with industrial geometry.
-	===================================================== */
+	/* ---------- Variants ---------- */
 
 	.button-iron {
 		border-color: var(--color-bg-darker);
@@ -530,10 +471,6 @@
 		background-color: var(--color-bg-darker);
 	}
 
-	/* =====================================================
-	   BRAND VARIANT
-	===================================================== */
-
 	.button-brand {
 		border-color: var(--color-brand);
 		background-color: var(--color-brand);
@@ -553,10 +490,6 @@
 		background-color: var(--color-brand-active);
 	}
 
-	/* =====================================================
-	   OUTLINE VARIANT
-	===================================================== */
-
 	.button-outline {
 		border-color: var(--color-brand);
 		background-color: var(--color-brand-subtle);
@@ -574,10 +507,6 @@
 	.button-outline:active:not(:disabled) {
 		background-color: var(--color-bg-surface-active);
 	}
-
-	/* =====================================================
-	   SECONDARY VARIANT
-	===================================================== */
 
 	.button-secondary {
 		border-color: var(--color-border-default);
@@ -597,10 +526,6 @@
 		background-color: var(--color-bg-surface-muted);
 	}
 
-	/* =====================================================
-	   SUCCESS VARIANT
-	===================================================== */
-
 	.button-success {
 		border-color: var(--color-success);
 		background-color: var(--color-success);
@@ -613,10 +538,6 @@
 		background-color: var(--color-success-hover);
 		box-shadow: var(--shadow-sm);
 	}
-
-	/* =====================================================
-	   WARNING VARIANT
-	===================================================== */
 
 	.button-warning {
 		border-color: var(--color-warning);
@@ -631,10 +552,6 @@
 		box-shadow: var(--shadow-sm);
 	}
 
-	/* =====================================================
-	   DANGER VARIANT
-	===================================================== */
-
 	.button-danger {
 		border-color: var(--color-error);
 		background-color: var(--color-error);
@@ -648,21 +565,13 @@
 		box-shadow: var(--shadow-sm);
 	}
 
-	/* =====================================================
-	   TRANSPARENT VARIANT
-	===================================================== */
-
 	.button-transparent.button-base {
 		border-color: transparent;
 		background-color: transparent;
 		box-shadow: none;
 	}
 
-	/* =====================================================
-	   FILTER / TOGGLE / SEGMENTED VARIANT PROTECTION
-	   Appearance owns these states.
-	===================================================== */
-
+	/* Appearance owns these states */
 	.button-filter.button-brand:not(.is-active),
 	.button-filter.button-secondary:not(.is-active),
 	.button-filter.button-outline:not(.is-active),
@@ -675,87 +584,7 @@
 		box-shadow: none;
 	}
 
-	/* =====================================================
-	   TOOLTIP
-	===================================================== */
-
-	.button-tooltip {
-		position: absolute;
-		right: 0;
-		bottom: calc(100% + var(--space-2));
-		z-index: var(--z-overlay);
-
-		width: max-content;
-		max-width: 20rem;
-		padding: var(--space-2) var(--space-3);
-
-		border: var(--border-width-default) solid var(--color-border-dark);
-		border-radius: var(--radius-xs);
-
-		background-color: var(--color-bg-darker);
-		color: var(--color-clean-white);
-		box-shadow: var(--shadow-overlay);
-
-		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-tight);
-		white-space: normal;
-
-		opacity: 0;
-		visibility: hidden;
-		pointer-events: none;
-		transform: translateY(var(--space-1));
-
-		transition:
-			opacity var(--duration-fast) var(--ease-standard),
-			visibility var(--duration-fast) var(--ease-standard),
-			transform var(--duration-fast) var(--ease-standard);
-	}
-
-	.button-wrapper:hover .button-tooltip,
-	.button-wrapper:focus-within .button-tooltip {
-		opacity: 1;
-		visibility: visible;
-		transform: translateY(0);
-	}
-
-	/* =====================================================
-	   RESPONSIVE
-	===================================================== */
-
-	@media (max-width: 640px) {
-		.button-xl {
-			padding-inline: var(--space-5);
-		}
-
-		.button-industrial {
-			letter-spacing: 0.035em;
-		}
-	}
-
-	/* =====================================================
-	   REDUCED MOTION
-	===================================================== */
-
-	@media (prefers-reduced-motion: reduce) {
-		.button-base,
-		.button-industrial::before,
-		.button-industrial::after,
-		.button-tooltip,
-		.theme-switch-thumb {
-			transition-duration: 0.01ms;
-		}
-
-		.button-base:hover:not(:disabled),
-		.button-base:active:not(:disabled) {
-			transform: none;
-		}
-
-		.button-loader {
-			animation-duration: 1.5s;
-		}
-	}
+	/* Soft / softest variants */
 	.button-brand-soft {
 		color: var(--color-brand-700);
 		background: var(--color-brand-100);
@@ -821,6 +650,7 @@
 		background: var(--color-info-50);
 		border-color: var(--color-info-100);
 	}
+
 	.button-base.button-icon.button-danger-soft {
 		color: var(--color-danger-700, #dc2626);
 		background: var(--color-danger-50, #fef2f2);
@@ -841,21 +671,223 @@
 		cursor: not-allowed;
 		opacity: 1;
 	}
+
+	/* ---------- Tooltip ---------- */
+
+	.button-tooltip {
+		position: absolute;
+		right: 0;
+		bottom: calc(100% + var(--space-2));
+		z-index: var(--z-overlay);
+
+		width: max-content;
+		max-width: 20rem;
+		padding: var(--space-2) var(--space-3);
+
+		border: var(--border-width-default) solid var(--color-border-dark);
+		border-radius: var(--radius-xs);
+
+		background-color: var(--color-bg-darker);
+		color: var(--color-clean-white);
+		box-shadow: var(--shadow-overlay);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-tight);
+		white-space: normal;
+
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+		transform: translateY(var(--space-1));
+
+		transition:
+			opacity var(--duration-fast) var(--ease-standard),
+			visibility var(--duration-fast) var(--ease-standard),
+			transform var(--duration-fast) var(--ease-standard);
+	}
+
+	.button-wrapper:hover .button-tooltip,
+	.button-wrapper:focus-within .button-tooltip {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0);
+	}
+
+	@media (max-width: 640px) {
+		.button-xl {
+			padding-inline: var(--space-5);
+		}
+
+		.button-industrial {
+			letter-spacing: 0.035em;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.button-base,
+		.button-industrial::before,
+		.button-industrial::after,
+		.button-tooltip,
+		.theme-switch-thumb {
+			transition-duration: 0.01ms;
+		}
+
+		.button-base:hover:not(:disabled),
+		.button-base:active:not(:disabled) {
+			transform: none;
+		}
+
+		.button-loader {
+			animation-duration: 1.5s;
+		}
+	}
 }
+
 /* =====================================================
-   BADGE
+   BADGE, AVATAR, STATE COLOURS
 ===================================================== */
 
 @layer components {
 	.badge {
-		@apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1);
+		min-height: 1.375rem;
+		padding: var(--space-0-5) var(--space-2);
+		border: var(--border-width-default) solid transparent;
+		border-radius: var(--radius-full);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-medium);
+		line-height: 1;
+		white-space: nowrap;
+	}
+
+	.badge-brand {
+		background: var(--color-brand);
+		color: var(--color-brand-foreground);
+		border-color: var(--color-brand);
+	}
+
+	.badge-success {
+		background: var(--color-success-bg);
+		color: var(--color-success);
+		border-color: var(--color-success-border);
+	}
+
+	.badge-pending,
+	.badge-warning {
+		background: var(--color-warning-bg);
+		color: var(--color-warning);
+		border-color: var(--color-warning-border);
+	}
+
+	.badge-danger {
+		background: var(--color-error-bg);
+		color: var(--color-error);
+		border-color: var(--color-error-border);
+	}
+
+	.badge-info {
+		background: var(--color-info-bg);
+		color: var(--color-info);
+		border-color: var(--color-info-border);
+	}
+
+	.badge-neutral {
+		background: var(--color-bg-surface-muted);
+		color: var(--color-text-secondary);
+		border-color: var(--color-border-default);
+	}
+
+	.badge-outline {
+		background: transparent;
+		color: var(--color-text-secondary);
+		border-color: var(--color-border-default);
+	}
+
+	.avatar-xs {
+		width: 1.5rem;
+		height: 1.5rem;
+		font-size: var(--font-size-3xs);
+	}
+
+	.avatar-sm {
+		width: 2rem;
+		height: 2rem;
+		font-size: var(--font-size-2xs);
+	}
+
+	.avatar-md {
+		width: 2.5rem;
+		height: 2.5rem;
+		font-size: var(--font-size-xs);
+	}
+
+	.avatar-lg {
+		width: 3.5rem;
+		height: 3.5rem;
+		font-size: var(--font-size-lg);
+	}
+
+	.avatar-image {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.alert-icon-warning,
+	.toast-icon-warning {
+		background: var(--color-warning-bg);
+		color: var(--color-warning);
+		border: var(--color-warning);
+	}
+
+	.alert-icon-info,
+	.toast-icon-info {
+		background: var(--color-info-bg);
+		color: var(--color-info);
+		border: var(--color-info);
+	}
+
+	.alert-icon-error,
+	.toast-icon-error {
+		background: var(--color-error-bg);
+		color: var(--color-error);
+		border: var(--color-error);
+	}
+
+	.alert-icon-success,
+	.toast-icon-success {
+		background: var(--color-success-bg);
+		color: var(--color-success);
+		border: var(--color-success);
+	}
+
+	.toast-success {
+		border-color: var(--color-success-border);
+		background: var(--color-success-bg);
+	}
+
+	.toast-info {
+		border-color: var(--color-info-border);
+		background: var(--color-info-bg);
+	}
+
+	.toast-warning {
+		border-color: var(--color-warning-border);
+		background: var(--color-warning-bg);
+	}
+
+	.toast-error {
+		border-color: var(--color-error-border);
+		background: var(--color-error-bg);
 	}
 }
 
 /* =====================================================
    COMMON CARD
-   Reusable surface for details, profiles, forms,
-   summaries and normal application content.
 ===================================================== */
 
 @layer components {
@@ -875,10 +907,6 @@
 		color: var(--color-text-primary);
 		box-shadow: var(--shadow-xs);
 	}
-
-	/* =====================================================
-	   VARIANTS
-	===================================================== */
 
 	.ui-card-default {
 		border-color: var(--color-border-default);
@@ -904,12 +932,6 @@
 		box-shadow: none;
 	}
 
-	.ui-card-small {
-	}
-	/* =====================================================
-	   SHARED SECTIONS
-	===================================================== */
-
 	.ui-card-header,
 	.ui-card-secondary-header,
 	.ui-card-body,
@@ -918,9 +940,7 @@
 		min-width: 0;
 	}
 
-	/* =====================================================
-	   PRIMARY HEADER
-	===================================================== */
+	/* ---------- Primary header ---------- */
 
 	.ui-card-header {
 		display: flex;
@@ -933,6 +953,7 @@
 		border-bottom: var(--border-width-default) solid var(--color-border-subtle);
 		background-color: var(--color-bg-surface);
 	}
+
 	.epc-table .ui-card-header {
 		padding-bottom: 0;
 	}
@@ -980,19 +1001,10 @@
 		align-items: center;
 		justify-content: flex-end;
 		gap: var(--space-2);
-		/* margin-bottom: var(--space-2); */
+		margin-left: auto;
 	}
 
-	/* =====================================================
-	   SECONDARY HEADER
-
-	   Intended for:
-	   - tabs
-	   - filters
-	   - toolbars
-	   - contextual metadata
-	   - secondary navigation
-	===================================================== */
+	/* ---------- Secondary header (tabs, filters, toolbars) ---------- */
 
 	.ui-card-secondary-header {
 		display: flex;
@@ -1012,9 +1024,7 @@
 		min-width: 0;
 	}
 
-	/* =====================================================
-	   BODY
-	===================================================== */
+	/* ---------- Body ---------- */
 
 	.ui-card-body {
 		position: relative;
@@ -1047,9 +1057,7 @@
 		max-width: 100%;
 	}
 
-	/* =====================================================
-	   FOOTER
-	===================================================== */
+	/* ---------- Footer ---------- */
 
 	.ui-card-footer {
 		@apply mt-4;
@@ -1062,13 +1070,9 @@
 		padding: var(--space-2) var(--space-4);
 
 		border-top: var(--border-width-default) solid var(--color-border-subtle);
-
-		/* background-color: var(--color-bg-surface-subtle); */
 	}
 
-	/* =====================================================
-	   LISTING LAYOUT
-	===================================================== */
+	/* ---------- Listing layout ---------- */
 
 	.ui-card-layout-listing .ui-card-header {
 		padding-block: var(--space-2);
@@ -1087,9 +1091,7 @@
 		padding-block: var(--space-2);
 	}
 
-	/* =====================================================
-	   STATES
-	===================================================== */
+	/* ---------- States ---------- */
 
 	.ui-card-disabled {
 		opacity: var(--opacity-disabled);
@@ -1131,113 +1133,14 @@
 		}
 	}
 
-	/* =====================================================
-	   TABLET
-	===================================================== */
+	/* ---------- Avatar upload (profile summary) ---------- */
 
-	@media (max-width: 1023px) {
-		.ui-card-header {
-			padding-inline: var(--space-3);
-		}
-		.ui-card-header {
-			align-items: stretch;
-			flex-direction: column;
-		}
-		.ui-card-secondary-header {
-			padding-inline: var(--space-3);
-		}
-
-		.ui-card-body-default {
-			padding: var(--space-3);
-		}
-
-		.ui-card-body-spacious {
-			padding: var(--space-4);
-		}
-
-		.ui-card-footer {
-			padding-inline: var(--space-3);
-		}
-	}
-
-	/* =====================================================
-	   MOBILE
-	===================================================== */
-
-	@media (max-width: 767px) {
-		.ui-card {
-			border-radius: var(--radius-md);
-		}
-
-		.ui-card-header {
-			align-items: flex-start;
-			gap: var(--space-2);
-			padding: var(--space-2);
-		}
-
-		.ui-card-actions {
-			flex-wrap: wrap;
-		}
-
-		.ui-card-secondary-header {
-			align-items: stretch;
-			flex-wrap: wrap;
-			gap: var(--space-2);
-			padding: var(--space-2);
-		}
-
-		.ui-card-body-compact,
-		.ui-card-body-default {
-			padding: var(--space-2);
-		}
-
-		.ui-card-body-spacious {
-			padding: var(--space-3);
-		}
-
-		.ui-card-footer {
-			flex-wrap: wrap;
-			padding: var(--space-2);
-		}
-	}
-
-	/* =====================================================
-	   SMALL MOBILE
-	===================================================== */
-
-	@media (max-width: 479px) {
-		.ui-card-header {
-			align-items: stretch;
-			flex-direction: column;
-		}
-
-		.ui-card-actions {
-			width: 100%;
-			justify-content: flex-start;
-		}
-
-		.ui-card-secondary-header {
-			flex-direction: column;
-		}
-
-		.ui-card-footer {
-			align-items: stretch;
-			flex-direction: column;
-		}
-
-		.ui-card-footer > .button-base {
-			width: 100%;
-			justify-content: center;
-		}
-	}
 	.profile-summary-avatar-editable {
 		position: relative;
 		cursor: pointer;
 	}
 
-	/* Stretch FileUploadField's actual <input type="file"> to cover
-	   the whole circle and make it invisible, so clicking anywhere
-	   on the avatar opens the file picker. */
+	/* Stretch FileUploadField's <input type="file"> over the whole circle */
 	.profile-summary-avatar-input {
 		position: absolute;
 		inset: 0;
@@ -1246,7 +1149,6 @@
 	}
 
 	.profile-summary-avatar-input * {
-		/* neutralize any dropzone/label/preview box FileUploadField renders */
 		width: 100%;
 		height: 100%;
 	}
@@ -1262,15 +1164,9 @@
 		display: flex;
 		pointer-events: none;
 	}
-	/* =====================================================
-	   REDUCED MOTION
-	===================================================== */
 
-	@media (prefers-reduced-motion: reduce) {
-		.ui-card-loading-indicator {
-			animation: none;
-		}
-	}
+	/* ---------- Accordion card ---------- */
+
 	.ui-card-accordion-trigger {
 		display: flex;
 		flex: 1;
@@ -1298,13 +1194,14 @@
 
 	.ui-card-accordion-icon {
 		flex: 0 0 auto;
-		color: var(--color-slate);
+		color: var(--color-icon-brand);
 		transition: transform var(--transition-fast);
 	}
 
 	.ui-card-accordion-expanded .ui-card-accordion-icon {
 		transform: rotate(180deg);
 	}
+
 	.ui-card-accordion .ui-card-title {
 		display: flex;
 		min-width: 0;
@@ -1323,19 +1220,7 @@
 		content: "";
 	}
 
-	.ui-card-accordion-icon {
-		flex: 0 0 auto;
-		color: var(--color-icon-brand);
-		transition: transform var(--transition-fast);
-	}
-	@media (prefers-reduced-motion: reduce) {
-		.ui-card-accordion-icon {
-			transition: none;
-		}
-	}
-	.ui-card-actions {
-		margin-left: auto;
-	}
+	/* ---------- Card sections ---------- */
 
 	.ui-card-sections-toggle-all {
 		display: inline-flex;
@@ -1500,7 +1385,68 @@
 		padding: var(--space-4) var(--space-8);
 	}
 
+	/* ---------- Responsive ---------- */
+
+	@media (max-width: 1023px) {
+		.ui-card-header {
+			align-items: stretch;
+			flex-direction: column;
+			padding-inline: var(--space-3);
+		}
+
+		.ui-card-secondary-header {
+			padding-inline: var(--space-3);
+		}
+
+		.ui-card-body-default {
+			padding: var(--space-3);
+		}
+
+		.ui-card-body-spacious {
+			padding: var(--space-4);
+		}
+
+		.ui-card-footer {
+			padding-inline: var(--space-3);
+		}
+	}
+
 	@media (max-width: 767px) {
+		.ui-card {
+			border-radius: var(--radius-md);
+		}
+
+		.ui-card-header {
+			align-items: flex-start;
+			gap: var(--space-2);
+			padding: var(--space-2);
+		}
+
+		.ui-card-actions {
+			flex-wrap: wrap;
+		}
+
+		.ui-card-secondary-header {
+			align-items: stretch;
+			flex-wrap: wrap;
+			gap: var(--space-2);
+			padding: var(--space-2);
+		}
+
+		.ui-card-body-compact,
+		.ui-card-body-default {
+			padding: var(--space-2);
+		}
+
+		.ui-card-body-spacious {
+			padding: var(--space-3);
+		}
+
+		.ui-card-footer {
+			flex-wrap: wrap;
+			padding: var(--space-2);
+		}
+
 		.ui-card-sections {
 			gap: var(--space-2);
 		}
@@ -1521,7 +1467,38 @@
 		}
 	}
 
+	@media (max-width: 479px) {
+		.ui-card-header {
+			align-items: stretch;
+			flex-direction: column;
+		}
+
+		.ui-card-actions {
+			width: 100%;
+			justify-content: flex-start;
+		}
+
+		.ui-card-secondary-header {
+			flex-direction: column;
+		}
+
+		.ui-card-footer {
+			align-items: stretch;
+			flex-direction: column;
+		}
+
+		.ui-card-footer > .button-base {
+			width: 100%;
+			justify-content: center;
+		}
+	}
+
 	@media (prefers-reduced-motion: reduce) {
+		.ui-card-loading-indicator {
+			animation: none;
+		}
+
+		.ui-card-accordion-icon,
 		.ui-card-section-chevron {
 			transition: none;
 		}
@@ -1529,70 +1506,11 @@
 }
 
 /* =====================================================
-   EDITABLE CARD
-   Shared display/edit card pattern
+   EDITABLE CARD + PROFILE SUMMARY
 ===================================================== */
 
 @layer components {
-	/* =====================================================
-	   CUSTOM DISPLAY HEADER
-	===================================================== */
-
-	/* =====================================================
-	   DISPLAY MODE
-	===================================================== */
-
-	.editable-card-value-grid {
-		display: grid;
-		width: 100%;
-		min-width: 0;
-		grid-template-columns: repeat(1, minmax(0, 1fr));
-		gap: var(--space-4);
-	}
-
-	.editable-card-value {
-		display: flex;
-		min-width: 0;
-		flex-direction: column;
-		gap: var(--space-1);
-	}
-
-	.editable-card-value-label {
-		color: var(--color-text-muted);
-
-		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-tight);
-		letter-spacing: var(--tracking-label);
-
-		overflow-wrap: anywhere;
-	}
-
-	.editable-card-value-content {
-		min-width: 0;
-
-		color: var(--color-text-primary);
-
-		font-family: var(--font-sans);
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-normal);
-
-		overflow-wrap: anywhere;
-	}
-
-	.editable-card-value-span-2 {
-		grid-column: auto;
-	}
-
-	.editable-card-value-full {
-		grid-column: 1 / -1;
-	}
-
-	/* =====================================================
-	   EDIT MODE
-	===================================================== */
+	/* ---------- Display + edit grid ---------- */
 
 	.editable-card-form {
 		width: 100%;
@@ -1602,43 +1520,64 @@
 	.editable-card-form-grid,
 	.editable-card-value-grid {
 		display: grid;
+		width: 100%;
+		min-width: 0;
 		grid-template-columns: repeat(5, minmax(0, 1fr));
 		gap: var(--space-4);
-		width: 100%;
 	}
 
-	.editable-card-form-field,
-	.editable-card-value {
+	.editable-card-form-field {
 		min-width: 0;
-	}
-
-	.editable-card-form-field-span-2,
-	.editable-card-value-span-2 {
-		grid-column: span 2;
-	}
-
-	.editable-card-form-field-full,
-	.editable-card-value-full {
-		grid-column: 1 / -1;
 	}
 
 	.editable-card-value {
 		display: flex;
+		min-width: 0;
 		flex-direction: column;
 		gap: 0.375rem;
 	}
 
 	.editable-card-value-label {
-		font-size: 0.875rem;
 		color: #64748b;
+
+		font-family: var(--font-sans);
+		font-size: 0.875rem;
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+		letter-spacing: var(--tracking-label);
+
+		overflow-wrap: anywhere;
 	}
 
 	.editable-card-value-content {
+		min-width: 0;
 		min-height: 1.25rem;
+
+		color: #0f172a;
+
+		font-family: var(--font-sans);
 		font-size: 0.875rem;
 		font-weight: 500;
-		color: #0f172a;
+		line-height: var(--line-height-normal);
+
 		overflow-wrap: anywhere;
+	}
+
+	.editable-card-value-span-2 {
+		grid-column: span 2;
+	}
+
+	.editable-card-value-full {
+		grid-column: 1 / -1;
+	}
+
+	.editable-card-form-field-span-2,
+	.editable-card-form-field-full {
+		grid-column: auto;
+	}
+
+	.editable-card-editing .editable-card-custom-header {
+		display: none;
 	}
 
 	@media (max-width: 1024px) {
@@ -1654,34 +1593,48 @@
 			grid-template-columns: minmax(0, 1fr);
 		}
 
-		.editable-card-form-field-span-2,
 		.editable-card-value-span-2,
-		.editable-card-form-field-full,
 		.editable-card-value-full {
 			grid-column: auto;
 		}
 	}
 
-	.editable-card-form-field {
-		min-width: 0;
-	}
-
-	.editable-card-form-field-span-2 {
-		grid-column: auto;
-	}
-
+	/* Declared after the 640px query so full-width form fields stay full width */
 	.editable-card-form-field-full {
 		grid-column: 1 / -1;
 	}
 
-	.editable-card-editing .editable-card-custom-header {
-		display: none;
+	@media (min-width: 640px) {
+		.editable-card-value-span-2,
+		.editable-card-form-field-span-2,
+		.editable-card-value-full,
+		.editable-card-form-field-full {
+			grid-column: span 2;
+		}
 	}
 
-	/* =====================================================
-	   PROFILE SUMMARY
-	   Avatar, identity and compact metadata
-	===================================================== */
+	@media (min-width: 1024px) {
+		.editable-card-value-grid {
+			grid-template-columns: repeat(5, minmax(0, 1fr));
+			column-gap: var(--space-4);
+			row-gap: var(--space-5);
+		}
+
+		.editable-card-value-span-2 {
+			grid-column: span 2;
+		}
+
+		.editable-card-value-full {
+			grid-column: 1 / -1;
+		}
+
+		.editable-card-form-field-span-2,
+		.editable-card-form-field-full {
+			grid-column: span 2;
+		}
+	}
+
+	/* ---------- Profile summary ---------- */
 
 	.profile-summary {
 		display: flex;
@@ -1818,10 +1771,7 @@
 		box-shadow: var(--shadow-focus-brand);
 	}
 
-	/* =====================================================
-	   SOCIAL LINKS
-	   Display mode uses icons only
-	===================================================== */
+	/* ---------- Social links ---------- */
 
 	.profile-social-links {
 		display: flex;
@@ -1884,10 +1834,7 @@
 		stroke-width: 1.9;
 	}
 
-	/* =====================================================
-	   LEGACY PROFILE META SUPPORT
-	   Safe to remove after all usages use profile-summary.
-	===================================================== */
+	/* ---------- Legacy profile meta (remove once migrated) ---------- */
 
 	.editable-card-profile-meta {
 		display: flex;
@@ -1941,48 +1888,6 @@
 		line-height: var(--line-height-normal);
 	}
 
-	/* =====================================================
-	   TABLET
-	===================================================== */
-
-	@media (min-width: 640px) {
-		.editable-card-value-span-2,
-		.editable-card-form-field-span-2,
-		.editable-card-value-full,
-		.editable-card-form-field-full {
-			grid-column: span 2;
-		}
-	}
-
-	/* =====================================================
-	   DESKTOP
-	===================================================== */
-
-	@media (min-width: 1024px) {
-		.editable-card-value-grid {
-			grid-template-columns: repeat(5, minmax(0, 1fr));
-			column-gap: var(--space-4);
-			row-gap: var(--space-5);
-		}
-
-		.editable-card-value-span-2 {
-			grid-column: span 2;
-		}
-
-		.editable-card-value-full {
-			grid-column: 1 / -1;
-		}
-
-		.editable-card-form-field-span-2,
-		.editable-card-form-field-full {
-			grid-column: span 2;
-		}
-	}
-
-	/* =====================================================
-	   MOBILE
-	===================================================== */
-
 	@media (max-width: 639px) {
 		.editable-card-custom-header {
 			align-items: flex-start;
@@ -2026,10 +1931,6 @@
 		}
 	}
 
-	/* =====================================================
-	   VERY SMALL SCREENS
-	===================================================== */
-
 	@media (max-width: 420px) {
 		.profile-summary {
 			flex-direction: column;
@@ -2039,10 +1940,6 @@
 			width: 100%;
 		}
 	}
-
-	/* =====================================================
-	   REDUCED MOTION
-	===================================================== */
 
 	@media (prefers-reduced-motion: reduce) {
 		.profile-social-icon-link {
@@ -2082,14 +1979,9 @@
 
 /* =====================================================
    MODAL
-   Generic theme-aware responsive dialog
 ===================================================== */
 
 @layer components {
-	/* =====================================================
-	   OVERLAY
-	===================================================== */
-
 	.modal-overlay {
 		position: fixed;
 		inset: 0;
@@ -2106,10 +1998,6 @@
 
 		overscroll-behavior: contain;
 	}
-
-	/* =====================================================
-	   CONTAINER
-	===================================================== */
 
 	.modal-container {
 		position: relative;
@@ -2136,10 +2024,6 @@
 	.modal-container:focus-visible {
 		box-shadow: var(--shadow-overlay), var(--shadow-focus-brand);
 	}
-
-	/* =====================================================
-	   SIZES
-	===================================================== */
 
 	.modal-container-sm {
 		max-width: min(28rem, calc(100vw - (var(--space-4) * 2)));
@@ -2179,10 +2063,6 @@
 	.modal-container-xl .modal-title {
 		font-size: var(--font-size-xl);
 	}
-
-	/* =====================================================
-	   HEADER
-	===================================================== */
 
 	.modal-header {
 		display: flex;
@@ -2233,10 +2113,6 @@
 		gap: var(--space-2);
 	}
 
-	/* =====================================================
-	   CLOSE BUTTON
-	===================================================== */
-
 	.modal-close-button {
 		display: inline-flex;
 		width: var(--control-height-sm);
@@ -2285,10 +2161,6 @@
 		stroke-width: 1.8;
 	}
 
-	/* =====================================================
-	   SHELL MODAL VARIANT
-	===================================================== */
-
 	.modal-container-shell {
 		padding: 0;
 		border: 0;
@@ -2301,10 +2173,6 @@
 		box-shadow: none;
 		outline: none;
 	}
-
-	/* =====================================================
-	   BODY
-	===================================================== */
 
 	.modal-body {
 		width: 100%;
@@ -2342,10 +2210,6 @@
 		background-color: var(--color-scrollbar-thumb-hover);
 	}
 
-	/* =====================================================
-	   GENERIC MODAL CONTENT HELPERS
-	===================================================== */
-
 	.modal-form {
 		display: flex;
 		width: 100%;
@@ -2371,10 +2235,6 @@
 
 		overflow-wrap: anywhere;
 	}
-
-	/* =====================================================
-	   FOOTER
-	===================================================== */
 
 	.modal-footer {
 		display: flex;
@@ -2406,12 +2266,7 @@
 		white-space: nowrap;
 	}
 
-	/* =====================================================
-	   MOBILE — RESPONSIVE MODAL
-	   Default modals stay compact.
-	   Only .modal-container-full fills the viewport.
-	===================================================== */
-
+	/* Mobile: default modals stay compact; only .modal-container-full fills the viewport */
 	@media (max-width: 640px) {
 		.modal-overlay {
 			align-items: center;
@@ -2503,10 +2358,6 @@
 		}
 	}
 
-	/* =====================================================
-	   VERY SMALL MOBILE
-	===================================================== */
-
 	@media (max-width: 380px) {
 		.modal-overlay {
 			padding: var(--space-2);
@@ -2539,10 +2390,6 @@
 		}
 	}
 
-	/* =====================================================
-	   REDUCED MOTION
-	===================================================== */
-
 	@media (prefers-reduced-motion: reduce) {
 		.modal-close-button {
 			transition-duration: 0.01ms;
@@ -2552,7 +2399,6 @@
 
 /* =====================================================
    PAGINATION
-   Generic application-wide pagination
 ===================================================== */
 
 @layer components {
@@ -2588,10 +2434,6 @@
 		padding: 0;
 	}
 
-	/* =====================================================
-	   SUMMARY
-	===================================================== */
-
 	.pagination-summary {
 		display: inline-flex;
 		min-width: 0;
@@ -2610,10 +2452,6 @@
 		font-weight: var(--font-weight-medium);
 		font-variant-numeric: tabular-nums;
 	}
-
-	/* =====================================================
-	   PAGE CONTROLS
-	===================================================== */
 
 	.pagination-pages {
 		display: flex;
@@ -2668,10 +2506,6 @@
 		user-select: none;
 	}
 
-	/* =====================================================
-	   PAGE SIZE
-	===================================================== */
-
 	.pagination-page-size {
 		display: flex;
 		min-width: 0;
@@ -2700,19 +2534,12 @@
 		margin: 0;
 	}
 
-	/*
-	 * Keep react-select and its control from expanding beyond
-	 * the compact page-size field.
-	 */
+	/* Keep react-select from expanding beyond the compact page-size field */
 	.pagination-page-size-select .select-input-container,
 	.pagination-page-size-select .select-input-control {
 		width: 100%;
 		min-width: 0;
 	}
-
-	/* =====================================================
-	   DATATABLE INTEGRATION
-	===================================================== */
 
 	.data-table-pagination .pagination {
 		width: 100%;
@@ -2721,30 +2548,14 @@
 		background-color: var(--table-bg);
 	}
 
-	/* =====================================================
-	   NARROW DESKTOP / TABLET
-	   Keep all three areas on the same row.
-	===================================================== */
-
+	/* Narrow desktop / tablet: keep all three areas on one row */
 	@media (max-width: 900px) and (min-width: 641px) {
 		.pagination {
-			grid-template-columns:
-				minmax(max-content, 1fr)
-				auto
-				minmax(max-content, 1fr);
 			gap: var(--space-2);
 		}
 
-		.pagination-summary {
-			grid-column: auto;
-			grid-row: auto;
-		}
-
-		.pagination-pages {
-			grid-column: auto;
-			grid-row: auto;
-		}
-
+		.pagination-summary,
+		.pagination-pages,
 		.pagination-page-size {
 			grid-column: auto;
 			grid-row: auto;
@@ -2754,10 +2565,6 @@
 			font-size: var(--font-size-2xs);
 		}
 	}
-
-	/* =====================================================
-	   MOBILE
-	===================================================== */
 
 	@media (max-width: 640px) {
 		.pagination-default {
@@ -2813,10 +2620,6 @@
 		}
 	}
 
-	/* =====================================================
-	   VERY SMALL MOBILE
-	===================================================== */
-
 	@media (max-width: 420px) {
 		.pagination-default {
 			grid-template-columns: 1fr;
@@ -2848,9 +2651,11 @@
 		}
 	}
 }
+
 /* =====================================================
    TABS
 ===================================================== */
+
 @layer components {
 	.tabs-bar {
 		@apply flex items-center gap-8 px-6 pt-5;
@@ -2873,9 +2678,7 @@
 		background: var(--tabs-bar-color, var(--color-text-primary));
 	}
 
-	/* Soft variant — pill-style active state, similar to
-	   .filter-tabs--soft, for contexts that want a chip instead of an
-	   underline (e.g. the add-contact mode toggle). */
+	/* Soft variant — pill-style active state */
 	.tabs-bar--soft {
 		@apply gap-2 px-0 pt-0;
 	}
@@ -2963,6 +2766,7 @@
 	.toggle-disabled {
 		@apply opacity-40 cursor-not-allowed;
 	}
+
 	.toggle-enabled {
 		@apply cursor-pointer;
 	}
@@ -2988,10 +2792,6 @@
 		background-color: var(--color-bg-surface);
 	}
 }
-
-/* =====================================================
-   PROFILE CARD
-===================================================== */
 
 /* =====================================================
    USER PROFILE
@@ -3077,9 +2877,7 @@
 		min-width: 0;
 	}
 
-	/* =====================================================
-	   PROFILE CARD
-	===================================================== */
+	/* ---------- Profile card ---------- */
 
 	.profile-card {
 		position: relative;
@@ -3120,6 +2918,15 @@
 		gap: var(--space-4);
 	}
 
+	.profile-card-content {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
 	.profile-section-title {
 		margin: 0;
 
@@ -3132,9 +2939,20 @@
 		color: var(--color-text-primary);
 	}
 
-	/* =====================================================
-	   PROFILE FIELDS
-	===================================================== */
+	.profile-section-header {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+
+		padding-bottom: var(--space-3);
+
+		border-bottom: var(--border-width-default) solid var(--color-border-subtle);
+	}
+
+	/* ---------- Fields ---------- */
 
 	.profile-grid {
 		display: grid;
@@ -3198,9 +3016,7 @@
 		box-shadow: var(--shadow-focus-brand);
 	}
 
-	/* =====================================================
-	   META PROFILE HEADER
-	===================================================== */
+	/* ---------- Meta header ---------- */
 
 	.profile-meta-header {
 		display: flex;
@@ -3288,9 +3104,7 @@
 		color: var(--color-text-muted);
 	}
 
-	/* =====================================================
-	   EDIT ACTION
-	===================================================== */
+	/* ---------- Edit action ---------- */
 
 	.profile-card-edit {
 		display: inline-flex;
@@ -3322,6 +3136,11 @@
 			box-shadow var(--duration-fast) var(--ease-standard);
 	}
 
+	.profile-card-edit.button-base {
+		flex: 0 0 auto;
+		align-self: flex-start;
+	}
+
 	.profile-card-edit:hover {
 		border-color: var(--color-border-hover);
 		background-color: var(--color-bg-surface-hover);
@@ -3345,9 +3164,7 @@
 		color: var(--color-icon-brand);
 	}
 
-	/* =====================================================
-	   EDIT MODAL
-	===================================================== */
+	/* ---------- Edit modal ---------- */
 
 	.profile-edit-modal {
 		width: 100%;
@@ -3407,55 +3224,6 @@
 		background-color: var(--modal-bg);
 	}
 
-	@layer components {
-		.profile-card-content {
-			display: flex;
-			width: 100%;
-			min-width: 0;
-			flex: 1 1 auto;
-			flex-direction: column;
-			gap: var(--space-4);
-		}
-
-		.profile-section-header {
-			display: flex;
-			width: 100%;
-			min-width: 0;
-			align-items: center;
-			justify-content: space-between;
-			gap: var(--space-3);
-
-			padding-bottom: var(--space-3);
-
-			border-bottom: var(--border-width-default) solid
-				var(--color-border-subtle);
-		}
-
-		.profile-field-value {
-			margin: 0;
-		}
-
-		.profile-card-edit.button-base {
-			flex: 0 0 auto;
-			align-self: flex-start;
-		}
-
-		@media (max-width: 640px) {
-			.profile-card-layout {
-				position: relative;
-			}
-
-			.profile-card-edit.button-base {
-				position: absolute;
-				top: 0;
-				right: 0;
-			}
-		}
-	}
-	/* =====================================================
-	   TABLET
-	===================================================== */
-
 	@media (max-width: 1023px) {
 		.profile-page-sections {
 			grid-template-columns: minmax(0, 1fr);
@@ -3465,10 +3233,6 @@
 			grid-column: auto;
 		}
 	}
-
-	/* =====================================================
-	   MOBILE
-	===================================================== */
 
 	@media (max-width: 640px) {
 		.profile-page {
@@ -3487,7 +3251,14 @@
 		}
 
 		.profile-card-layout {
+			position: relative;
 			gap: var(--space-3);
+		}
+
+		.profile-card-edit.button-base {
+			position: absolute;
+			top: 0;
+			right: 0;
 		}
 
 		.profile-grid,
@@ -3527,10 +3298,6 @@
 		}
 	}
 
-	/* =====================================================
-	   VERY SMALL MOBILE
-	===================================================== */
-
 	@media (max-width: 380px) {
 		.profile-page {
 			padding-inline: var(--space-2);
@@ -3550,10 +3317,6 @@
 			width: 100%;
 		}
 	}
-
-	/* =====================================================
-	   REDUCED MOTION
-	===================================================== */
 
 	@media (prefers-reduced-motion: reduce) {
 		.profile-card,
@@ -3576,7 +3339,6 @@
 		@apply rounded-full flex items-center justify-center
 		font-semibold overflow-hidden select-none cursor-pointer;
 
-		/* was var(--color-brand) — that token no longer exists */
 		background-color: var(--color-brand);
 		color: var(--color-brand-foreground);
 	}
@@ -3595,25 +3357,17 @@
 		@apply opacity-100 scale-100;
 	}
 }
+
 /* =====================================================
-   USER MENU PROFILE
-   Tata Hitachi — User Profile Dropdown
+   USER MENU
 ===================================================== */
 
 @layer components {
-	/* =====================================================
-	   WRAPPER
-	===================================================== */
-
 	.user-menu {
 		position: relative;
 		display: inline-flex;
 		flex-shrink: 0;
 	}
-
-	/* =====================================================
-	   TRIGGER
-	===================================================== */
 
 	.user-menu-trigger {
 		display: inline-flex;
@@ -3679,10 +3433,6 @@
 		transform: rotate(180deg);
 	}
 
-	/* =====================================================
-	   DROPDOWN PANEL
-	===================================================== */
-
 	.user-menu-panel {
 		z-index: var(--z-overlay);
 		width: 16rem;
@@ -3706,7 +3456,6 @@
 			transform var(--duration-fast) var(--ease-standard);
 	}
 
-	/* Headless UI transition states */
 	.user-menu-panel[data-closed] {
 		opacity: 0;
 		transform: translateY(calc(var(--space-1) * -1)) scale(0.98);
@@ -3718,10 +3467,6 @@
 		top: calc(100% + var(--space-2));
 		right: 0;
 	}
-
-	/* =====================================================
-	   USER SUMMARY ROW
-	===================================================== */
 
 	.user-menu-summary {
 		display: flex;
@@ -3763,10 +3508,6 @@
 
 		color: var(--color-text-muted);
 	}
-
-	/* =====================================================
-	   MENU ITEMS
-	===================================================== */
 
 	.user-menu-items {
 		display: flex;
@@ -3820,11 +3561,7 @@
 		color: var(--color-icon-primary);
 	}
 
-	/* Danger variant — sign out */
-	.user-menu-item-danger {
-		color: var(--color-error);
-	}
-
+	.user-menu-item-danger,
 	.user-menu-item-danger svg {
 		color: var(--color-error);
 	}
@@ -3839,10 +3576,6 @@
 	.user-menu-item-danger.user-menu-item-focus svg {
 		color: var(--color-error);
 	}
-
-	/* =====================================================
-	   RESPONSIVE
-	===================================================== */
 
 	@media (max-width: 640px) {
 		.user-menu-name {
@@ -3863,15 +3596,11 @@
 	}
 }
 
-/* =========================================
+/* =====================================================
    ALERT
-========================================= */
+===================================================== */
 
 @layer components {
-	/* =========================================
-	   BASE
-	========================================= */
-
 	.alert {
 		width: 100%;
 		min-width: 0;
@@ -3926,10 +3655,7 @@
 		overflow-wrap: anywhere;
 	}
 
-	/* =========================================
-	   BANNER
-	   Inline page feedback
-	========================================= */
+	/* ---------- Banner: inline page feedback ---------- */
 
 	.alert-banner {
 		display: flex;
@@ -3976,10 +3702,7 @@
 		margin-left: auto;
 	}
 
-	/* =========================================
-	   BOX
-	   Modal confirmation / blocking decision card
-	========================================= */
+	/* ---------- Box: modal confirmation card ---------- */
 
 	.alert-box {
 		display: flex;
@@ -4027,9 +3750,7 @@
 		font-size: var(--font-size-sm);
 	}
 
-	/* =========================================
-	   VARIANT COLOURS
-	========================================= */
+	/* ---------- Variant colours ---------- */
 
 	.alert-success.alert-banner {
 		border-color: var(--color-success-border);
@@ -4087,9 +3808,7 @@
 		border-color: var(--color-info-border);
 	}
 
-	/* =========================================
-	   ACTIONS
-	========================================= */
+	/* ---------- Actions ---------- */
 
 	.alert-actions {
 		display: flex;
@@ -4177,10 +3896,6 @@
 		color: var(--color-text-primary);
 	}
 
-	/* =========================================
-	   RESPONSIVE
-	========================================= */
-
 	@media (min-width: 640px) {
 		.alert-box {
 			padding: var(--space-5);
@@ -4267,30 +3982,18 @@
 	}
 }
 
-/* =========================================
-	POPOVER 
-========================================= */
+/* =====================================================
+   POPOVER
+===================================================== */
 
 @layer components {
-	/* =========================================
-	   POPOVER WRAPPER
-	========================================= */
-
 	.popover {
 		@apply relative inline-block;
 	}
 
-	/* =========================================
-	   TRIGGER
-	========================================= */
-
 	.popover-trigger {
 		@apply cursor-pointer inline-flex items-center;
 	}
-
-	/* =========================================
-	   PANEL
-	========================================= */
 
 	.popover-panel {
 		@apply absolute z-50 mt-2 min-w-[150px] rounded-lg shadow-lg;
@@ -4298,10 +4001,6 @@
 		background: var(--color-bg-surface);
 		border-color: var(--color-border-default);
 	}
-
-	/* =========================================
-	   POSITIONING
-	========================================= */
 
 	.popover-bottom {
 		@apply top-full left-1/2 -translate-x-1/2;
@@ -4318,10 +4017,6 @@
 	.popover-right {
 		@apply left-full top-1/2 -translate-y-1/2 ml-2;
 	}
-
-	/* =========================================
-	   ANIMATION
-	========================================= */
 }
 
 @keyframes popover-in {
@@ -4341,9 +4036,9 @@
 	}
 }
 
-/* =========================================
-	ACCORDION 
-========================================= */
+/* =====================================================
+   ACCORDION
+===================================================== */
 
 @layer components {
 	.accordion {
@@ -4388,11 +4083,13 @@
 		border-color: var(--accordion-border);
 		color: var(--accordion-content-text);
 	}
+
 	.accordion-item-title {
 		display: flex;
 		align-items: center;
 		gap: 10px;
 	}
+
 	.accordion-item-title::before {
 		content: "";
 		display: block;
@@ -4406,17 +4103,11 @@
 
 /* =====================================================
    EDITABLE LINE ITEM TABLE
-
-   Separate from shared DataTable because this component
-   contains form controls, draft rows and inline editing.
-
-   Theme-aware through semantic tokens only.
+   Separate from shared DataTable: contains form controls,
+   draft rows and inline editing.
 ===================================================== */
 
 @layer components {
-	/* =====================================================
-	   SHELL
-	===================================================== */
 	.line-item-editor-list {
 		display: flex;
 		width: 100%;
@@ -4424,9 +4115,11 @@
 		flex-direction: column;
 		gap: var(--space-3);
 	}
+
 	.line-item-editor + .line-item-editor {
 		margin-top: var(--space-3);
 	}
+
 	.line-item-editor {
 		display: flex;
 		width: 100%;
@@ -4441,9 +4134,7 @@
 		box-shadow: var(--shadow-xs);
 	}
 
-	/* =====================================================
-	   HEADER
-	===================================================== */
+	/* ---------- Header ---------- */
 
 	.line-item-editor-header {
 		display: flex;
@@ -4515,9 +4206,7 @@
 		white-space: nowrap;
 	}
 
-	/* =====================================================
-	   SCROLLER AND TABLE WIDTH
-	===================================================== */
+	/* ---------- Scroller and table width ---------- */
 
 	.line-item-editor-scroll {
 		width: 100%;
@@ -4533,9 +4222,7 @@
 		min-width: max(100%, 61.25rem);
 	}
 
-	/* =====================================================
-	   HEADER ROW
-	===================================================== */
+	/* ---------- Header row ---------- */
 
 	.line-item-editor-head {
 		display: grid;
@@ -4572,9 +4259,7 @@
 		border-right: var(--border-width-default) solid var(--color-border-subtle);
 	}
 
-	/* =====================================================
-	   COMMON GRID CELLS
-	===================================================== */
+	/* ---------- Common grid cells ---------- */
 
 	.line-item-grid-cell {
 		min-width: 0;
@@ -4601,9 +4286,7 @@
 		justify-content: flex-end;
 	}
 
-	/* =====================================================
-	   DRAFT ROW
-	===================================================== */
+	/* ---------- Draft row ---------- */
 
 	.line-item-editor-draft {
 		display: grid;
@@ -4613,8 +4296,6 @@
 		padding: var(--space-2) 0;
 
 		border-bottom: var(--border-width-default) solid var(--color-table-border);
-
-		/* background-color: var(--color-bg-surface-subtle); */
 	}
 
 	.line-item-editor-draft > .line-item-grid-cell {
@@ -4640,9 +4321,7 @@
 		font-variant-numeric: tabular-nums;
 	}
 
-	/* =====================================================
-	   BODY ROWS
-	===================================================== */
+	/* ---------- Body rows ---------- */
 
 	.line-item-editor-body {
 		width: 100%;
@@ -4728,9 +4407,7 @@
 		font-weight: var(--font-weight-medium);
 	}
 
-	/* =====================================================
-	   ACTIONS
-	===================================================== */
+	/* ---------- Actions ---------- */
 
 	.line-item-editor-actions {
 		display: flex;
@@ -4743,9 +4420,7 @@
 		flex: 0 0 auto;
 	}
 
-	/* =====================================================
-	   FILE INPUT
-	===================================================== */
+	/* ---------- File input ---------- */
 
 	.line-item-file-input {
 		position: absolute;
@@ -4875,9 +4550,7 @@
 		font-size: var(--font-size-xs);
 	}
 
-	/* =====================================================
-	   EMPTY STATE
-	===================================================== */
+	/* ---------- Empty state ---------- */
 
 	.line-item-editor-empty {
 		display: flex;
@@ -4909,9 +4582,7 @@
 		line-height: var(--line-height-normal);
 	}
 
-	/* =====================================================
-	   GRAND TOTAL
-	===================================================== */
+	/* ---------- Grand total ---------- */
 
 	.line-item-editor-total-row {
 		display: flex;
@@ -4943,11 +4614,7 @@
 		line-height: var(--line-height-tight);
 	}
 
-	/* =====================================================
-	   MOBILE
-	   Preserve tabular structure through horizontal scrolling.
-	===================================================== */
-
+	/* Mobile: preserve tabular structure through horizontal scrolling */
 	@media (max-width: 767px) {
 		.line-item-editor-header {
 			padding: var(--space-3);
@@ -4983,10 +4650,6 @@
 		}
 	}
 
-	/* =====================================================
-	   REDUCED MOTION
-	===================================================== */
-
 	@media (prefers-reduced-motion: reduce) {
 		.line-item-editor-row,
 		.line-item-file-upload,
@@ -4996,9 +4659,9 @@
 	}
 }
 
-/* =========================================
-	WORKFLOW TABLE 
-========================================= */
+/* =====================================================
+   WORKFLOW TABLE / CALENDAR
+===================================================== */
 
 @layer components {
 	.workflow-empty-state {
@@ -5038,8 +4701,7 @@
 }
 
 /* =====================================================
-   THREE-WAY SEGMENTED TOGGLE
-   EPC listing toolbar
+   THREE-WAY SEGMENTED TOGGLE (EPC listing toolbar)
 ===================================================== */
 
 @layer components {
@@ -5072,10 +4734,6 @@
 		height: var(--control-height-sm);
 	}
 
-	/* =====================================================
-	   ACTIVE SEGMENT
-	===================================================== */
-
 	.three-way-toggle-indicator {
 		position: absolute;
 		inset-block: 0;
@@ -5101,10 +4759,6 @@
 
 		pointer-events: none;
 	}
-
-	/* =====================================================
-	   OPTION
-	===================================================== */
 
 	.three-way-toggle-option {
 		position: relative;
@@ -5132,7 +4786,6 @@
 		font-family: var(--font-sans);
 		font-size: var(--font-size-2xs);
 		font-weight: var(--type-control-weight);
-		line-height: var(--line-height-control);
 		letter-spacing: var(--tracking-control);
 		line-height: 1;
 		text-align: center;
@@ -5172,10 +4825,6 @@
 		cursor: not-allowed;
 	}
 
-	/* =====================================================
-	   ICON
-	===================================================== */
-
 	.three-way-toggle-icon {
 		width: 1rem;
 		height: 1rem;
@@ -5195,10 +4844,6 @@
 		color: var(--epc-topbar-toggle-active-icon);
 	}
 
-	/* =====================================================
-	   LABELS
-	===================================================== */
-
 	.three-way-toggle-label,
 	.three-way-toggle-short-label {
 		min-width: 0;
@@ -5215,17 +4860,9 @@
 		display: none;
 	}
 
-	/* =====================================================
-	   DISABLED
-	===================================================== */
-
 	.three-way-toggle-disabled {
 		opacity: 0.55;
 	}
-
-	/* =====================================================
-	   TABLET
-	===================================================== */
 
 	@media (max-width: 1199px) {
 		.three-way-toggle-option {
@@ -5233,10 +4870,6 @@
 			padding-inline: var(--space-3);
 		}
 	}
-
-	/* =====================================================
-	   MOBILE
-	===================================================== */
 
 	@media (max-width: 767px) {
 		.three-way-toggle-option {
@@ -5261,10 +4894,6 @@
 		}
 	}
 
-	/* =====================================================
-	   VERY SMALL MOBILE
-	===================================================== */
-
 	@media (max-width: 380px) {
 		.three-way-toggle-option {
 			padding-inline: var(--space-1);
@@ -5274,10 +4903,6 @@
 			display: none;
 		}
 	}
-
-	/* =====================================================
-	   REDUCED MOTION
-	===================================================== */
 
 	@media (prefers-reduced-motion: reduce) {
 		.three-way-toggle-indicator,
@@ -5299,8 +4924,6 @@
 		min-width: 0;
 		flex: 0 0 auto;
 	}
-
-	/* Trigger */
 
 	.filter-dropdown-trigger.button-base {
 		min-width: max-content;
@@ -5365,8 +4988,6 @@
 		transform: rotate(180deg);
 	}
 
-	/* Panel */
-
 	.filter-dropdown-panel {
 		position: absolute;
 		top: calc(100% + var(--space-2));
@@ -5386,8 +5007,6 @@
 		color: var(--color-text-primary);
 		box-shadow: var(--shadow-overlay);
 	}
-
-	/* Header */
 
 	.filter-dropdown-panel-header {
 		display: flex;
@@ -5486,8 +5105,6 @@
 		box-shadow: var(--shadow-focus-brand);
 	}
 
-	/* Scrollable content */
-
 	.filter-dropdown-panel-content {
 		min-height: 0;
 		flex: 1 1 auto;
@@ -5499,8 +5116,6 @@
 		overscroll-behavior-y: contain;
 		scrollbar-gutter: stable;
 	}
-
-	/* Sections */
 
 	.filter-dropdown-section {
 		display: flex;
@@ -5529,8 +5144,6 @@
 		letter-spacing: var(--tracking-wide);
 		text-transform: uppercase;
 	}
-
-	/* Checkbox options */
 
 	.filter-dropdown-options {
 		display: grid;
@@ -5625,8 +5238,6 @@
 		overflow-wrap: anywhere;
 	}
 
-	/* Date fields */
-
 	.filter-dropdown-date-grid {
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -5710,11 +5321,6 @@
 		z-index: var(--z-popover);
 	}
 
-	.filter-dropdown-panel {
-		z-index: var(--z-popover);
-	}
-	/* Mobile */
-
 	@media (max-width: 767px) {
 		.filter-dropdown {
 			width: 100%;
@@ -5775,17 +5381,16 @@
 }
 
 /* =====================================================
-PAGE NAVIGATION
+   PAGE NAVIGATION
 ===================================================== */
+
 @layer components {
 	.page-navigation {
 		min-width: 0;
 		color: var(--color-text-primary);
 	}
 
-	/* =====================================================
-	   BUTTON VARIANT
-	===================================================== */
+	/* ---------- Button variant ---------- */
 
 	.page-navigation-button {
 		display: inline-flex;
@@ -5848,9 +5453,7 @@ PAGE NAVIGATION
 		white-space: nowrap;
 	}
 
-	/* =====================================================
-	   BREADCRUMB VARIANT
-	===================================================== */
+	/* ---------- Breadcrumb variant ---------- */
 
 	.page-navigation-breadcrumbs-layout {
 		display: flex;
@@ -5946,41 +5549,6 @@ PAGE NAVIGATION
 		user-select: none;
 	}
 
-	/* =====================================================
-	   PAGE HEADER INTEGRATION
-	===================================================== */
-
-	.page-header-navigation {
-		display: flex;
-		width: auto;
-		min-width: 0;
-		flex: 0 1 auto;
-		align-items: flex-start;
-	}
-
-	.page-header-extra {
-		display: flex;
-		min-width: 0;
-		flex: 0 0 auto;
-		align-items: center;
-	}
-
-	.page-header-copy.is-left {
-		text-align: left;
-	}
-
-	.page-header-copy.is-center {
-		text-align: center;
-	}
-
-	.page-header-copy.is-right {
-		text-align: right;
-	}
-
-	/* =====================================================
-	   MOBILE
-	===================================================== */
-
 	@media (max-width: 767px) {
 		.page-navigation-button {
 			min-height: var(--control-height-sm);
@@ -6025,14 +5593,6 @@ PAGE NAVIGATION
 	}
 
 	@media (max-width: 479px) {
-		.page-header-primary {
-			flex-wrap: wrap;
-		}
-
-		.page-header-navigation {
-			max-width: 100%;
-		}
-
 		.page-navigation-button-label {
 			max-width: 8rem;
 		}
@@ -6050,21 +5610,16 @@ PAGE NAVIGATION
 	}
 }
 
-/* =========================================================
+/* =====================================================
    ACTIVITY PLANNER DETAIL PAGE
 
-   Visual structure:
    1. Transparent sticky PageHeader
    2. Planner summary forms the top of one continuous surface
    3. ActivityFormView continues inside the same surface
    4. No visible split, duplicated border, radius or shadow
-========================================================= */
+===================================================== */
 
 @layer components {
-	/* =====================================================
-	   LAYOUT ROOT
-	===================================================== */
-
 	.activity-planner-layout {
 		width: 100%;
 		min-width: 0;
@@ -6074,18 +5629,10 @@ PAGE NAVIGATION
 		padding-bottom: var(--space-4);
 	}
 
-	/*
-	 * The complete sticky region needs an opaque backdrop so
-	 * form content scrolling underneath cannot show through.
-	 */
+	/* The sticky region needs an opaque backdrop */
 	.activity-planner-layout-header {
 		background-color: var(--app-bg);
 	}
-
-	/* =====================================================
-	   PAGE HEADER
-	   Transparent title and breadcrumb row
-	===================================================== */
 
 	.activity-planner-layout-page-header {
 		background-color: transparent;
@@ -6166,17 +5713,7 @@ PAGE NAVIGATION
 		white-space: nowrap;
 	}
 
-	/* =====================================================
-	   SHARED CONTINUOUS SURFACE
-
-	   The PageRowSectionLayout owns:
-	   - outer border
-	   - outer radius
-	   - outer shadow
-	   - white/surface background
-
-	   Planner header and form content must not add their own.
-	===================================================== */
+	/* ---------- Shared continuous surface ---------- */
 
 	.activity-planner-layout .page-row-layout-surface-header,
 	.activity-planner-layout .page-row-layout-surface-content {
@@ -6194,28 +5731,21 @@ PAGE NAVIGATION
 	.activity-planner-layout .page-row-layout-surface-content {
 		overflow: hidden;
 
+		/* Begins immediately after the header — no visible seam */
+		margin-top: 0;
+
 		border-color: var(--color-border-default);
 		border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 
 		background-color: var(--color-bg-surface);
 		box-shadow: var(--shadow-xs);
 	}
-	/*
-	 * Prevent a visible seam between header and content.
-	 * The surface-content begins immediately after the header.
-	 */
-	.activity-planner-layout .page-row-layout-surface-content {
-		margin-top: 0;
-	}
 
 	.activity-planner-layout-header-body {
 		background-color: var(--color-bg-surface);
 	}
 
-	/* =====================================================
-	   PLANNER SUMMARY
-	   Uses the parent continuous surface
-	===================================================== */
+	/* ---------- Planner summary ---------- */
 
 	.activity-planner-summary {
 		display: flex;
@@ -6231,10 +5761,6 @@ PAGE NAVIGATION
 		color: var(--color-text-primary);
 		box-shadow: none;
 	}
-
-	/* =====================================================
-	   SUMMARY TOP ROW
-	===================================================== */
 
 	.activity-planner-summary-main {
 		display: flex;
@@ -6310,10 +5836,6 @@ PAGE NAVIGATION
 		white-space: nowrap;
 	}
 
-	/* =====================================================
-	   SUMMARY META ROW
-	===================================================== */
-
 	.activity-planner-summary-meta {
 		display: flex;
 		width: 100%;
@@ -6377,12 +5899,7 @@ PAGE NAVIGATION
 		white-space: nowrap;
 	}
 
-	/* =====================================================
-	   FORM CONTENT
-
-	   Continues directly from the planner summary.
-	   No card, no border, no radius, no shadow.
-	===================================================== */
+	/* ---------- Form content: no card, border, radius or shadow ---------- */
 
 	.activity-planner-layout-content {
 		width: 100%;
@@ -6420,10 +5937,7 @@ PAGE NAVIGATION
 		max-width: 100%;
 	}
 
-	/*
-	 * ActivityFormView should not create another outer card shell.
-	 * Internal accordion/section borders can remain.
-	 */
+	/* ActivityFormView must not create another outer card shell */
 	.activity-planner-layout-content-body > .activity-form-view {
 		margin: 0;
 		padding: 0;
@@ -6445,17 +5959,7 @@ PAGE NAVIGATION
 		background-color: transparent;
 	}
 
-	/* =====================================================
-	   RESPONSIVE SCROLL AND STICKY HEADER BEHAVIOUR
-
-	   Below 1024px:
-	   - the complete page follows normal document flow
-	   - the page header, planner summary and form scroll together
-
-	   From 1024px:
-	   - the existing sticky planner header behaviour is enabled
-	===================================================== */
-
+	/* Below 1024px the whole page scrolls as one; from 1024px the planner header is sticky */
 	@media (max-width: 1023px) {
 		.page-row-layout-sticky.activity-planner-layout {
 			height: auto;
@@ -6485,45 +5989,7 @@ PAGE NAVIGATION
 			max-height: none;
 			overflow: visible;
 		}
-	}
 
-	@media (min-width: 1024px) {
-		.page-row-layout-sticky.activity-planner-layout .page-row-layout-header {
-			position: sticky;
-			top: 0;
-			z-index: var(--z-sticky);
-			background-color: var(--app-bg);
-		}
-
-		/*
-		 * Keep an opaque continuation below the sticky summary so
-		 * form content cannot show through while scrolling underneath.
-		 */
-		.page-row-layout-sticky.activity-planner-layout
-			.page-row-layout-header::after {
-			display: block;
-			height: var(--space-3);
-
-			border-right: var(--border-width-default) solid
-				var(--color-border-default);
-			border-bottom: var(--border-width-default) solid
-				var(--color-border-default);
-			border-left: var(--border-width-default) solid var(--color-border-default);
-
-			background-color: var(--color-bg-surface);
-		}
-
-		.page-row-layout-sticky.activity-planner-layout
-			.page-row-layout-surface-header {
-			box-shadow: none;
-		}
-	}
-
-	/* =====================================================
-	   TABLET
-	===================================================== */
-
-	@media (max-width: 1023px) {
 		.activity-planner-page-header {
 			padding-top: var(--space-3);
 			padding-bottom: var(--space-2);
@@ -6544,9 +6010,34 @@ PAGE NAVIGATION
 		}
 	}
 
-	/* =====================================================
-	   MOBILE
-	===================================================== */
+	@media (min-width: 1024px) {
+		.page-row-layout-sticky.activity-planner-layout .page-row-layout-header {
+			position: sticky;
+			top: 0;
+			z-index: var(--z-sticky);
+			background-color: var(--app-bg);
+		}
+
+		/* Opaque continuation below the sticky summary */
+		.page-row-layout-sticky.activity-planner-layout
+			.page-row-layout-header::after {
+			display: block;
+			height: var(--space-3);
+
+			border-right: var(--border-width-default) solid
+				var(--color-border-default);
+			border-bottom: var(--border-width-default) solid
+				var(--color-border-default);
+			border-left: var(--border-width-default) solid var(--color-border-default);
+
+			background-color: var(--color-bg-surface);
+		}
+
+		.page-row-layout-sticky.activity-planner-layout
+			.page-row-layout-surface-header {
+			box-shadow: none;
+		}
+	}
 
 	@media (max-width: 767px) {
 		.activity-planner-page-header {
@@ -6635,10 +6126,6 @@ PAGE NAVIGATION
 		}
 	}
 
-	/* =====================================================
-	   SMALL MOBILE
-	===================================================== */
-
 	@media (max-width: 479px) {
 		.activity-planner-summary-main {
 			align-items: stretch;
@@ -6674,10 +6161,6 @@ PAGE NAVIGATION
 		}
 	}
 
-	/* =====================================================
-	   VERY SMALL MOBILE
-	===================================================== */
-
 	@media (max-width: 359px) {
 		.activity-planner-summary-main,
 		.activity-planner-summary-meta {
@@ -6688,10 +6171,6 @@ PAGE NAVIGATION
 			max-width: 6rem;
 		}
 	}
-
-	/* =====================================================
-	   REDUCED MOTION
-	===================================================== */
 
 	@media (prefers-reduced-motion: reduce) {
 		.activity-planner-layout,
@@ -6704,14 +6183,9 @@ PAGE NAVIGATION
 
 /* =====================================================
    EPF SUMMARY
- 
 ===================================================== */
 
 @layer components {
-	/* =====================================================
-	   SECTION
-	===================================================== */
-
 	.epf-summary-section {
 		@apply flex min-w-0 flex-col gap-3;
 	}
@@ -6725,10 +6199,6 @@ PAGE NAVIGATION
 	.epf-budget-summary {
 		@apply flex w-full min-w-0 flex-col gap-2;
 	}
-
-	/* =====================================================
-	   RESPONSIVE CARD GRIDS
-	===================================================== */
 
 	.epf-participant-card-grid {
 		@apply grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3;
@@ -6745,11 +6215,6 @@ PAGE NAVIGATION
 		@apply grid min-w-0 grid-cols-1 gap-2
 			lg:grid-cols-[minmax(0,1fr)_minmax(14rem,18rem)];
 	}
-
-	/* =====================================================
-	   SHARED SUMMARY CONTENT
-	   Used inside the common Card component.
-	===================================================== */
 
 	.epf-summary-card-content {
 		@apply flex min-w-0 items-center gap-3;
@@ -6786,10 +6251,6 @@ PAGE NAVIGATION
 		color: var(--color-text-brand);
 	}
 
-	/* =====================================================
-	   SUMMARY ICON
-	===================================================== */
-
 	.epf-summary-card-icon {
 		@apply inline-flex h-10 w-10 shrink-0
 			items-center justify-center border;
@@ -6800,10 +6261,6 @@ PAGE NAVIGATION
 	.epf-summary-card-icon svg {
 		@apply shrink-0;
 	}
-
-	/* =====================================================
-	   SEMANTIC ICON TONES
-	===================================================== */
 
 	.epf-summary-card-icon-info {
 		border-color: var(--color-info-border);
@@ -6835,10 +6292,7 @@ PAGE NAVIGATION
 		color: var(--color-icon-secondary);
 	}
 
-	/* =====================================================
-	   DEALER SHARE
-	   Unique EPF business visualization.
-	===================================================== */
+	/* ---------- Dealer share ---------- */
 
 	.epf-share-panel {
 		@apply min-w-0;
@@ -6870,10 +6324,6 @@ PAGE NAVIGATION
 		font-weight: var(--font-weight-medium);
 		line-height: var(--line-height-tight);
 	}
-
-	/* =====================================================
-	   NATIVE PROGRESS
-	===================================================== */
 
 	.epf-share-progress {
 		@apply block w-full overflow-hidden appearance-none border-0;
@@ -6913,10 +6363,6 @@ PAGE NAVIGATION
 		line-height: var(--line-height-normal);
 	}
 
-	/* =====================================================
-	   MOBILE
-	===================================================== */
-
 	@media (max-width: 480px) {
 		.epf-share-panel {
 			padding: var(--space-3);
@@ -6937,9 +6383,787 @@ PAGE NAVIGATION
 }
 
 /* =====================================================
-   FILE UPLOAD FIELD
-   Reusable, compact and theme-aware
+   COMMENTS AND RICH TEXTAREA
 ===================================================== */
+
+@layer components {
+	/* ---------- Comment panel ---------- */
+
+	.comments-section {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-direction: column;
+		overflow: hidden;
+
+		border: var(--border-width-default) solid var(--color-neutral-300);
+		border-radius: var(--radius-md);
+
+		background-color: var(--comment-panel-bg);
+		color: var(--color-text-primary);
+		box-shadow: var(--comment-panel-shadow);
+	}
+
+	.comments-summary {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		min-height: var(--control-height-sm);
+		align-items: center;
+		justify-content: flex-end;
+
+		padding: var(--space-1-5) var(--space-3);
+
+		border-bottom: var(--border-width-default) solid
+			var(--comment-panel-divider);
+
+		background-color: var(--color-neutral-100);
+	}
+
+	.comments-subtitle {
+		color: var(--color-text-muted);
+
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-tight);
+	}
+
+	.comments-body {
+		width: 100%;
+		min-width: 0;
+
+		background-color: var(--comment-panel-bg);
+	}
+
+	/* ---------- Comment list (also the container-query root for audit rows) ---------- */
+
+	.comments-list {
+		container-name: comments-list;
+		container-type: inline-size;
+
+		display: flex;
+		width: 100%;
+		max-height: min(24rem, 45vh);
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-2);
+		overflow-x: hidden;
+		overflow-y: auto;
+
+		padding: var(--space-3);
+
+		background-color: var(--comment-panel-bg);
+	}
+
+	.comment-card {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.comment-main {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		align-items: flex-start;
+		gap: var(--space-2);
+	}
+
+	.comment-main-self {
+		flex-direction: row-reverse;
+	}
+
+	.comment-content {
+		display: flex;
+		max-width: min(78%, 44rem);
+		min-width: 0;
+		flex-direction: column;
+	}
+
+	.comment-card-self .comment-content {
+		align-items: flex-end;
+	}
+
+	.comment-bubble {
+		display: flex;
+		width: fit-content;
+		max-width: 100%;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-1);
+
+		padding: var(--space-2) var(--space-2-5);
+
+		border: var(--border-width-default) solid var(--comment-bubble-border);
+		border-radius: var(--radius-sm);
+
+		background-color: var(--comment-bubble-bg);
+		color: var(--color-text-primary);
+	}
+
+	.comment-bubble-self {
+		border-color: var(--comment-self-border);
+		background-color: var(--comment-self-bg);
+	}
+
+	.comment-meta {
+		display: flex;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--space-1-5);
+	}
+
+	.comment-author {
+		min-width: 0;
+		margin: 0;
+
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+
+		overflow-wrap: anywhere;
+	}
+
+	.comment-submeta {
+		color: var(--color-text-tertiary);
+
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-tight);
+		white-space: nowrap;
+	}
+
+	.comment-text {
+		margin: 0;
+
+		color: var(--color-text-secondary);
+
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+		text-align: left;
+
+		overflow-wrap: anywhere;
+		white-space: pre-wrap;
+		word-break: break-word;
+	}
+
+	.comment-replies {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-2);
+
+		margin-top: var(--space-2);
+		margin-left: var(--space-5);
+		padding-left: var(--space-3);
+
+		border-left: var(--border-width-strong) solid var(--color-border-subtle);
+	}
+
+	.comment-reply-card .avatar {
+		width: var(--control-height-sm);
+		height: var(--control-height-sm);
+	}
+
+	/* ---------- Audit log ----------
+	   Wide container   → one centred pill:  Actor · Message · Time
+	   ≤ 40rem          → card: Actor ... Time, message underneath
+	   ≤ 22rem          → fully stacked
+	   Uses container queries so it responds to the panel width. */
+
+	.comment-audit-card {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		justify-content: center;
+	}
+
+	.comment-audit-message {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		justify-content: center;
+	}
+
+	.comment-audit-content {
+		display: inline-flex;
+		max-width: 100%;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: baseline;
+		justify-content: center;
+		column-gap: var(--space-1-5);
+		row-gap: var(--space-0-5);
+
+		padding: var(--space-1-5) var(--space-3);
+
+		border: var(--border-width-default) solid var(--comment-audit-border);
+		border-radius: var(--radius-sm);
+
+		background-color: var(--comment-audit-bg);
+
+		font-size: var(--font-size-xs);
+		line-height: var(--line-height-normal);
+		text-align: center;
+	}
+
+	.comment-audit-actor {
+		min-width: 0;
+
+		color: var(--color-text-primary);
+		font-weight: var(--font-weight-medium);
+
+		overflow-wrap: anywhere;
+	}
+
+	.comment-audit-text {
+		min-width: 0;
+
+		color: var(--color-text-secondary);
+		font-weight: var(--font-weight-regular);
+
+		overflow-wrap: anywhere;
+		word-break: break-word;
+	}
+
+	.comment-audit-separator {
+		color: var(--color-text-muted);
+		user-select: none;
+	}
+
+	.comment-audit-time {
+		color: var(--color-text-muted);
+
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		font-variant-numeric: tabular-nums;
+		line-height: var(--line-height-tight);
+		white-space: nowrap;
+	}
+
+	@container comments-list (max-width: 40rem) {
+		.comment-audit-content {
+			display: grid;
+			width: 100%;
+			grid-template-columns: minmax(0, 1fr) auto;
+			grid-template-areas:
+				"actor time"
+				"text  text";
+			align-items: baseline;
+			column-gap: var(--space-3);
+			row-gap: var(--space-1);
+
+			padding: var(--space-2) var(--space-3);
+
+			text-align: left;
+		}
+
+		.comment-audit-actor {
+			grid-area: actor;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.comment-audit-time {
+			grid-area: time;
+		}
+
+		.comment-audit-text {
+			grid-area: text;
+		}
+
+		/* Row structure replaces the "·" separators */
+		.comment-audit-separator {
+			display: none;
+		}
+	}
+
+	@container comments-list (max-width: 22rem) {
+		.comment-audit-content {
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-areas:
+				"actor"
+				"text"
+				"time";
+		}
+
+		.comment-audit-actor {
+			white-space: normal;
+			overflow-wrap: anywhere;
+		}
+	}
+
+	.comment-audit-readmore-toggle {
+		background: none;
+		border: none;
+		padding: 0;
+		margin-left: 2px;
+		font: inherit;
+		color: var(--color-primary, #2563eb);
+		cursor: pointer;
+		text-decoration: underline;
+	}
+
+	.comment-audit-readmore-toggle:hover {
+		text-decoration: none;
+	}
+
+	.comment-audit-readmore-toggle:focus-visible {
+		outline: 2px solid var(--color-primary, #2563eb);
+		outline-offset: 2px;
+	}
+
+	/* ---------- Composer ---------- */
+
+	.comments-create {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		align-items: center;
+
+		border-top: var(--border-width-default) solid var(--comment-panel-divider);
+
+		background-color: var(--comment-composer-bg);
+	}
+
+	.comments-create-input {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.comments-create-input .form-field {
+		margin: 0;
+	}
+
+	/* ---------- Empty / loading / error ---------- */
+
+	.comments-empty {
+		display: flex;
+		@apply min-h-20;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-3);
+
+		padding: var(--space-2);
+
+		background-color: var(--comment-empty-bg);
+		color: var(--color-icon-muted);
+		text-align: left;
+	}
+
+	.comments-empty > svg {
+		flex: 0 0 auto;
+	}
+
+	.comments-empty-copy {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-0-5);
+	}
+
+	.comments-empty p {
+		margin: 0;
+
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+	}
+
+	.comments-empty span {
+		color: var(--color-text-muted);
+
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+	}
+
+	.comments-loading {
+		display: flex;
+		min-height: 7rem;
+		flex-direction: column;
+		gap: var(--space-2);
+
+		padding: var(--space-3);
+	}
+
+	.comments-loading div {
+		width: min(70%, 34rem);
+		height: 2.5rem;
+
+		border-radius: var(--radius-sm);
+
+		background: linear-gradient(
+			90deg,
+			var(--comment-skeleton-start),
+			var(--comment-skeleton-mid),
+			var(--comment-skeleton-start)
+		);
+		background-size: 200% 100%;
+
+		animation: comment-pulse 1.2s var(--ease-standard) infinite;
+	}
+
+	.comments-loading div:nth-child(even) {
+		margin-left: auto;
+	}
+
+	/* Shared by .comments-loading and .block-loading */
+	@keyframes comment-pulse {
+		from {
+			background-position: 200% 0;
+		}
+
+		to {
+			background-position: -200% 0;
+		}
+	}
+
+	.comments-error {
+		margin: var(--space-2) var(--space-3);
+		padding: var(--space-2) var(--space-3);
+
+		border: var(--border-width-default) solid var(--color-error-border);
+		border-radius: var(--radius-sm);
+
+		background-color: var(--color-error-bg);
+		color: var(--color-error);
+
+		font-size: var(--font-size-xs);
+		line-height: var(--line-height-normal);
+	}
+
+	/* ---------- Rich textarea shell ---------- */
+
+	.rich-textarea-field {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.rich-textarea {
+		position: relative;
+
+		border: var(--border-width-default) solid var(--color-input-border);
+		border-radius: var(--radius-sm);
+
+		background-color: var(--color-input-bg);
+		color: var(--color-input-text);
+		box-shadow: none;
+
+		transition:
+			border-color var(--duration-fast) var(--ease-standard),
+			background-color var(--duration-fast) var(--ease-standard),
+			box-shadow var(--duration-fast) var(--ease-standard);
+	}
+
+	.rich-textarea:hover:not(.rich-textarea-disabled) {
+		border-color: var(--color-input-border-hover);
+	}
+
+	.rich-textarea:focus-within:not(.rich-textarea-disabled) {
+		border-color: var(--color-input-border-focus);
+	}
+
+	.rich-textarea-error {
+		border-color: var(--color-error);
+	}
+
+	.rich-textarea-error:focus-within {
+		border-color: var(--color-error);
+		box-shadow: var(--shadow-focus-error);
+	}
+
+	.rich-textarea-disabled {
+		background-color: var(--color-input-bg-disabled);
+		color: var(--color-input-text-disabled);
+		opacity: var(--opacity-disabled);
+		pointer-events: none;
+	}
+
+	/* Single-line row: emoji → textarea (fills) → mention → send */
+	.rich-textarea-row {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		align-items: flex-end;
+		gap: var(--space-1-5);
+
+		padding: var(--space-1-5);
+
+		background-color: var(--color-neutral-100);
+	}
+
+	.rich-textarea-input-wrap {
+		position: relative;
+
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+
+		border-radius: var(--radius-sm);
+		background-color: var(--color-bg-surface);
+	}
+
+	.rich-textarea-row .rich-textarea-tool-group,
+	.rich-textarea-row > .button-wrapper,
+	.rich-textarea-row > .rich-textarea-submit {
+		flex: 0 0 auto;
+	}
+
+	.rich-textarea-row .form-error-icon {
+		flex: 0 0 auto;
+		align-self: center;
+	}
+
+	.rich-textarea-control,
+	.rich-textarea .rich-textarea-control {
+		width: 100%;
+		min-width: 0;
+		min-height: var(--control-height-md);
+		max-height: 8rem;
+		resize: none;
+		overflow-y: auto;
+
+		margin: 0;
+		padding: var(--space-2) var(--space-3);
+
+		border: 0;
+		border-radius: var(--radius-sm);
+
+		background-color: transparent;
+		color: var(--color-input-text);
+		box-shadow: none;
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+
+		outline: none;
+	}
+
+	.rich-textarea-control::placeholder {
+		color: var(--color-input-placeholder);
+	}
+
+	.rich-textarea-control:focus,
+	.rich-textarea-control:focus-visible {
+		border: 0;
+		outline: none;
+		box-shadow: none;
+	}
+
+	.rich-textarea-tool-group {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+	}
+
+	.rich-textarea-mention-trigger {
+		width: 7.5rem;
+		min-width: 7.5rem;
+		justify-content: center;
+		white-space: nowrap;
+	}
+
+	.rich-textarea-counter {
+		display: block;
+
+		margin-top: var(--space-1);
+		padding-inline: var(--space-1);
+
+		color: var(--color-text-muted);
+
+		font-size: var(--font-size-2xs);
+		font-variant-numeric: tabular-nums;
+		line-height: 1;
+		text-align: right;
+		white-space: nowrap;
+	}
+
+	/* ---------- Popovers ---------- */
+
+	.rich-textarea-popover {
+		position: absolute;
+		bottom: calc(100% + var(--space-1));
+		z-index: var(--z-overlay);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-sm);
+
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-primary);
+		box-shadow: var(--shadow-overlay);
+	}
+
+	.rich-textarea-mention-popover {
+		left: 0;
+
+		width: min(18rem, calc(100vw - var(--space-8)));
+		max-height: 14rem;
+		overflow-y: auto;
+
+		padding: var(--space-1);
+	}
+
+	.rich-textarea-tool-group:last-of-type .rich-textarea-mention-popover {
+		right: 0;
+		left: auto;
+	}
+
+	.rich-textarea-emoji-popover {
+		left: 0;
+
+		display: grid;
+		width: 16rem;
+		grid-template-columns: repeat(8, minmax(0, 1fr));
+		gap: var(--space-0-5);
+
+		padding: var(--space-2);
+	}
+
+	.rich-textarea-menu-item {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		min-height: var(--control-height-sm);
+		align-items: center;
+		gap: var(--space-2);
+
+		padding: var(--space-1-5) var(--space-2);
+
+		border: 0;
+		border-radius: var(--radius-xs);
+
+		background-color: transparent;
+		color: var(--color-text-secondary);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-tight);
+		text-align: left;
+
+		cursor: pointer;
+	}
+
+	.rich-textarea-menu-item:hover {
+		background-color: var(--color-bg-surface-hover);
+		color: var(--color-text-primary);
+	}
+
+	.rich-textarea-menu-item:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.rich-textarea-menu-item > svg {
+		flex: 0 0 auto;
+		color: var(--color-icon-secondary);
+	}
+
+	.rich-textarea-menu-label {
+		min-width: 0;
+		overflow: hidden;
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.rich-textarea-emoji {
+		display: inline-flex;
+		width: var(--control-height-lg);
+		height: var(--control-height-lg);
+		align-items: center;
+		justify-content: center;
+
+		padding: 0;
+		border: 0;
+		border-radius: var(--radius-xs);
+
+		background-color: transparent;
+
+		font-size: var(--font-size-lg);
+		line-height: 1;
+
+		cursor: pointer;
+	}
+
+	.rich-textarea-emoji:hover {
+		background-color: var(--color-bg-surface-hover);
+	}
+
+	.rich-textarea-emoji:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	@media (max-width: 640px) {
+		.comments-list {
+			max-height: min(22rem, 48vh);
+			padding: var(--space-2);
+		}
+
+		.comment-content {
+			max-width: calc(100% - var(--control-height-lg));
+		}
+
+		.comment-replies {
+			margin-left: var(--space-3);
+			padding-left: var(--space-2);
+		}
+
+		.comments-create {
+			padding: var(--space-2);
+		}
+
+		.rich-textarea-row {
+			gap: var(--space-1);
+			padding: var(--space-1);
+		}
+
+		.rich-textarea-mention-popover {
+			width: min(16rem, calc(100vw - var(--space-6)));
+		}
+	}
+
+	@media (max-width: 420px) {
+		.comment-content {
+			max-width: calc(100% - var(--control-height-md));
+		}
+
+		.comments-empty {
+			align-items: flex-start;
+			padding: var(--space-3);
+		}
+
+		.rich-textarea-counter {
+			display: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.comment-icon-actions,
+		.rich-textarea,
+		.rich-textarea-menu-trigger svg,
+		.comments-loading div {
+			transition-duration: 0.01ms;
+			animation-duration: 0.01ms;
+			animation-iteration-count: 1;
+		}
+	}
+}
+
+/* =====================================================
+   FILE UPLOAD FIELD
+===================================================== */
+
 @layer components {
 	.file-upload-field {
 		min-width: 0;
@@ -7189,6 +7413,18 @@ PAGE NAVIGATION
 		text-underline-offset: 0.2em;
 	}
 
+	.file-upload-field--multiple {
+		grid-column: 1 / -1;
+	}
+
+	/* Multiple files tile into a responsive grid */
+	.file-upload-list--grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+		align-items: start;
+		gap: var(--space-2);
+	}
+
 	@media (max-width: 479px) {
 		.file-upload-preview-modal-content {
 			min-height: 60dvh;
@@ -7197,6 +7433,7 @@ PAGE NAVIGATION
 		.file-upload-preview-modal-frame {
 			height: 60dvh;
 		}
+
 		.file-upload-preview-body {
 			grid-template-columns: auto minmax(0, 1fr);
 		}
@@ -7214,151 +7451,17 @@ PAGE NAVIGATION
 			gap: var(--space-1, 0.25rem);
 		}
 	}
-	.file-upload-field--multiple {
-		grid-column: 1 / -1;
-	}
-
-	/* Multiple files tile into a responsive grid instead of stacking
-	   vertically in one narrow column — same reasoning, same scope. */
-	.file-upload-list--grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
-		align-items: start;
-		gap: var(--space-2);
-	}
-}
-/* =====================================================
-   MIGRATED GENERIC STATE STYLES
-===================================================== */
-@layer components {
-	.badge {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-1);
-		min-height: 1.375rem;
-		padding: var(--space-0-5) var(--space-2);
-		border: var(--border-width-default) solid transparent;
-		border-radius: var(--radius-full);
-		font-size: var(--font-size-2xs);
-		font-weight: var(--font-weight-medium);
-		line-height: 1;
-		white-space: nowrap;
-	}
-	.badge-brand {
-		background: var(--color-brand);
-		color: var(--color-brand-foreground);
-		border-color: var(--color-brand);
-	}
-	.badge-success {
-		background: var(--color-success-bg);
-		color: var(--color-success);
-		border-color: var(--color-success-border);
-	}
-	.badge-pending,
-	.badge-warning {
-		background: var(--color-warning-bg);
-		color: var(--color-warning);
-		border-color: var(--color-warning-border);
-	}
-	.badge-danger {
-		background: var(--color-error-bg);
-		color: var(--color-error);
-		border-color: var(--color-error-border);
-	}
-	.badge-info {
-		background: var(--color-info-bg);
-		color: var(--color-info);
-		border-color: var(--color-info-border);
-	}
-	.badge-neutral {
-		background: var(--color-bg-surface-muted);
-		color: var(--color-text-secondary);
-		border-color: var(--color-border-default);
-	}
-	.badge-outline {
-		background: transparent;
-		color: var(--color-text-secondary);
-		border-color: var(--color-border-default);
-	}
-
-	.avatar-xs {
-		width: 1.5rem;
-		height: 1.5rem;
-		font-size: var(--font-size-3xs);
-	}
-	.avatar-sm {
-		width: 2rem;
-		height: 2rem;
-		font-size: var(--font-size-2xs);
-	}
-	.avatar-md {
-		width: 2.5rem;
-		height: 2.5rem;
-		font-size: var(--font-size-xs);
-	}
-	.avatar-lg {
-		width: 3.5rem;
-		height: 3.5rem;
-		font-size: var(--font-size-lg);
-	}
-	.avatar-image {
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-
-	.alert-icon-warning,
-	.toast-icon-warning {
-		background: var(--color-warning-bg);
-		color: var(--color-warning);
-		border: var(--color-warning);
-	}
-	.alert-icon-info,
-	.toast-icon-info {
-		background: var(--color-info-bg);
-		color: var(--color-info);
-		border: var(--color-info);
-	}
-	.alert-icon-error,
-	.toast-icon-error {
-		background: var(--color-error-bg);
-		color: var(--color-error);
-		border: var(--color-error);
-	}
-	.alert-icon-success,
-	.toast-icon-success {
-		background: var(--color-success-bg);
-		color: var(--color-success);
-		border: var(--color-success);
-	}
-	.toast-success {
-		border-color: var(--color-success-border);
-		background: var(--color-success-bg);
-	}
-	.toast-info {
-		border-color: var(--color-info-border);
-		background: var(--color-info-bg);
-	}
-	.toast-warning {
-		border-color: var(--color-warning-border);
-		background: var(--color-warning-bg);
-	}
-	.toast-error {
-		border-color: var(--color-error-border);
-		background: var(--color-error-bg);
-	}
 }
 
 /* =====================================================
-   Filter Tabs
+   FILTER TABS
 ===================================================== */
 
 @layer components {
-	/* ---------- Shared container ---------- */
-
 	.filter-tabs {
 		display: flex;
-		width: 100%;
+		width: fit-content;
+		max-width: 100%;
 		min-width: 0;
 		align-items: center;
 		overflow-x: auto;
@@ -7372,8 +7475,6 @@ PAGE NAVIGATION
 	.filter-tabs::-webkit-scrollbar {
 		display: none;
 	}
-
-	/* ---------- Shared tab ---------- */
 
 	.filter-tab {
 		position: relative;
@@ -7421,8 +7522,6 @@ PAGE NAVIGATION
 		opacity: var(--opacity-disabled);
 	}
 
-	/* ---------- Text ---------- */
-
 	.filter-tab-label,
 	.filter-tab-short-label {
 		min-width: 0;
@@ -7434,8 +7533,6 @@ PAGE NAVIGATION
 	.filter-tab-short-label {
 		display: none;
 	}
-
-	/* ---------- Icons ---------- */
 
 	.filter-tab-icon {
 		width: 1rem;
@@ -7456,9 +7553,7 @@ PAGE NAVIGATION
 		margin-inline: auto;
 	}
 
-	/* =====================================================
-	   Variant 1: Underline
-	===================================================== */
+	/* ---------- Variant: underline ---------- */
 
 	.filter-tabs--underline {
 		gap: var(--space-5);
@@ -7503,30 +7598,18 @@ PAGE NAVIGATION
 	.filter-tabs--none {
 		border-bottom: none;
 	}
-	/* =====================================================
-	Variant: Soft
-	Same styling as the original BP tabs
- ===================================================== */
+
+	/* ---------- Variant: soft (same styling as the original BP tabs) ---------- */
 
 	.filter-tabs--soft {
 		margin-bottom: var(--space-2);
-		display: flex;
-		width: 100%;
-		min-width: 0;
 		flex-wrap: nowrap;
-		align-items: center;
 		gap: var(--space-2);
-		overflow-x: auto;
-		overflow-y: hidden;
 
 		padding: var(--space-2);
 		border-bottom: var(--border-width-default) solid var(--color-brand);
 
 		font-weight: var(--font-weight-medium);
-
-		scrollbar-width: none;
-		overscroll-behavior-inline: contain;
-		-webkit-overflow-scrolling: touch;
 	}
 
 	.filter-tabs--soft .filter-tab {
@@ -7549,28 +7632,19 @@ PAGE NAVIGATION
 			color var(--transition-fast);
 	}
 
-	/* Inactive hover */
 	.filter-tabs--soft .filter-tab:hover:not(:disabled) {
 		border-color: transparent;
 		background-color: var(--color-bg-muted);
 		color: var(--color-text-primary);
 	}
 
-	/* Selected tab */
-	.filter-tabs--soft .filter-tab.is-active {
-		border-color: var(--color-brand-softest);
-		background-color: var(--color-brand-softest);
-		color: var(--color-brand);
-	}
-
-	/* Selected tab hover */
+	.filter-tabs--soft .filter-tab.is-active,
 	.filter-tabs--soft .filter-tab.is-active:hover:not(:disabled) {
 		border-color: var(--color-brand-softest);
 		background-color: var(--color-brand-softest);
 		color: var(--color-brand);
 	}
 
-	/* Keyboard focus */
 	.filter-tabs--soft .filter-tab:focus-visible {
 		border-color: var(--color-brand-soft);
 		background-color: var(--color-brand-softest);
@@ -7579,7 +7653,6 @@ PAGE NAVIGATION
 		box-shadow: var(--shadow-focus-brand);
 	}
 
-	/* Original responsive label size */
 	.filter-tabs--soft .filter-tab-label,
 	.filter-tabs--soft .filter-tab-short-label {
 		text-align: left;
@@ -7593,23 +7666,12 @@ PAGE NAVIGATION
 		}
 	}
 
-	/* ---------- Responsive ---------- */
-
 	@media (max-width: 640px) {
 		.filter-tabs--underline {
 			gap: var(--space-4);
 			padding-top: var(--space-3);
 			padding-inline: var(--space-3);
 		}
-		/* 
-		.filter-tabs--soft {
-			gap: var(--space-1);
-			padding: var(--space-2);
-		}
-
-		.filter-tabs--soft .filter-tab {
-			padding-inline: var(--space-2);
-		} */
 
 		.filter-tab-label {
 			display: none;
@@ -7634,7 +7696,8 @@ PAGE NAVIGATION
 
 /* =====================================================
    STEP PROGRESS
-   Generic 1-2-3 progress section
+   Mobile: every step fits on screen; only the active
+   step shows its label (others stay screen-reader only).
 ===================================================== */
 
 @layer components {
@@ -7747,9 +7810,7 @@ PAGE NAVIGATION
 		transition: background-color var(--duration-fast) var(--ease-standard);
 	}
 
-	/* =====================================================
-	   STATES
-	===================================================== */
+	/* ---------- States ---------- */
 
 	.step-progress-item-done .step-progress-dot {
 		border-color: var(--color-success);
@@ -7786,79 +7847,72 @@ PAGE NAVIGATION
 		color: var(--color-text-muted);
 	}
 
-	/* =====================================================
-	   WORKFLOW CREATE PAGE INTEGRATION
-	===================================================== */
-
 	.workflow-create-step-progress {
 		margin-top: var(--space-4);
 		margin-bottom: var(--space-4);
 	}
 
-	/* =====================================================
-	   RESPONSIVE
-	===================================================== */
+	/* ---------- Mobile ---------- */
 
 	@media (max-width: 767px) {
 		.step-progress {
-			overflow-x: auto;
-			overflow-y: hidden;
-
-			padding-bottom: var(--space-1);
-
-			scrollbar-width: none;
-			overscroll-behavior-inline: contain;
-			-webkit-overflow-scrolling: touch;
+			overflow: visible;
 		}
 
-		.step-progress::-webkit-scrollbar {
-			display: none;
+		.step-progress .step-progress-list {
+			width: 100%;
+			min-width: 0;
 		}
 
-		.step-progress-list {
-			width: max-content;
-			min-width: 100%;
+		.step-progress .step-progress-item {
+			flex: 1 1 auto;
+			min-width: 0;
 		}
 
-		.step-progress-item {
+		.step-progress .step-progress-item:last-child {
 			flex: 0 0 auto;
 		}
 
-		.step-progress-step {
+		.step-progress .step-progress-step {
 			max-width: 9rem;
 		}
 
-		.step-progress-dot {
+		.step-progress .step-progress-dot {
 			width: 1.625rem;
 			height: 1.625rem;
 		}
 
-		.step-progress-line {
-			width: 2.5rem;
-			min-width: 2.5rem;
-			flex: 0 0 auto;
-			margin-inline: var(--space-2);
+		/* Lines absorb the free space between dots */
+		.step-progress .step-progress-line {
+			width: auto;
+			min-width: var(--space-2);
+			flex: 1 1 auto;
+			margin-inline: var(--space-1-5);
 		}
 
-		.step-progress-label {
-			max-width: 6.75rem;
+		/* Inactive labels: visually hidden, still announced */
+		.step-progress .step-progress-item-done .step-progress-label,
+		.step-progress .step-progress-item-wait .step-progress-label {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			margin: -1px;
+			padding: 0;
+			overflow: hidden;
+			clip: rect(0 0 0 0);
+			white-space: nowrap;
+		}
+
+		.step-progress .step-progress-item-active .step-progress-label {
+			max-width: 8rem;
 			font-size: var(--font-size-2xs);
 		}
 	}
 
 	@media (max-width: 420px) {
-		.step-progress-step {
+		.step-progress .step-progress-step {
 			max-width: 7.5rem;
 			gap: var(--space-1-5);
-		}
-
-		.step-progress-label {
-			max-width: 5.5rem;
-		}
-
-		.step-progress-line {
-			width: 2rem;
-			min-width: 2rem;
 		}
 	}
 
@@ -7876,19 +7930,11 @@ PAGE NAVIGATION
 ===================================================== */
 
 @layer components {
-	/* =====================================================
-	   CONTAINER
-	===================================================== */
-
 	.action-menu {
 		@apply relative inline-flex min-w-0 items-center justify-end;
 
 		max-width: 100%;
 	}
-
-	/* =====================================================
-	   TRIGGER — BASE
-	===================================================== */
 
 	.action-menu-trigger {
 		@apply relative inline-flex min-w-0 shrink-0 select-none
@@ -7952,9 +7998,7 @@ PAGE NAVIGATION
 		stroke-width: 1.8;
 	}
 
-	/* =====================================================
-	   TRIGGER SIZES
-	===================================================== */
+	/* ---------- Trigger sizes ---------- */
 
 	.action-menu-trigger-xs {
 		width: 1.75rem;
@@ -8008,9 +8052,7 @@ PAGE NAVIGATION
 		height: 1.25rem;
 	}
 
-	/* =====================================================
-	   LABELED TRIGGER
-	===================================================== */
+	/* ---------- Labeled trigger ---------- */
 
 	.action-menu-trigger-labeled {
 		width: auto;
@@ -8046,9 +8088,7 @@ PAGE NAVIGATION
 			text-ellipsis whitespace-nowrap;
 	}
 
-	/* =====================================================
-	   DEFAULT VARIANT
-	===================================================== */
+	/* ---------- Trigger variants ---------- */
 
 	.action-menu-trigger-default {
 		border-color: transparent;
@@ -8063,10 +8103,6 @@ PAGE NAVIGATION
 		background-color: var(--color-bg-surface-hover);
 		color: var(--color-icon-primary);
 	}
-
-	/* =====================================================
-	   BRAND VARIANT
-	===================================================== */
 
 	.action-menu-trigger-brand {
 		border-color: var(--color-brand);
@@ -8098,10 +8134,6 @@ PAGE NAVIGATION
 		color: currentColor;
 	}
 
-	/* =====================================================
-	   SECONDARY VARIANT
-	===================================================== */
-
 	.action-menu-trigger-secondary {
 		border-color: var(--color-border-default);
 		background-color: var(--color-bg-surface);
@@ -8121,9 +8153,6 @@ PAGE NAVIGATION
 		background-color: var(--color-bg-surface-muted);
 	}
 
-	/* =====================================================
-	   OUTLINE VARIANT
-	===================================================== */
 	.action-menu-trigger-outline {
 		border-color: var(--color-brand);
 		background-color: var(--color-bg-surface);
@@ -8145,10 +8174,6 @@ PAGE NAVIGATION
 		box-shadow: none;
 	}
 
-	/* =====================================================
-	   GHOST VARIANT
-	===================================================== */
-
 	.action-menu-trigger-ghost {
 		border-color: transparent;
 		background-color: transparent;
@@ -8163,9 +8188,7 @@ PAGE NAVIGATION
 		color: var(--color-text-primary);
 	}
 
-	/* =====================================================
-	   MENU PANEL
-	===================================================== */
+	/* ---------- Menu panel ---------- */
 
 	.action-menu-panel {
 		@apply mt-1 overflow-hidden rounded-sm border p-1;
@@ -8194,10 +8217,6 @@ PAGE NAVIGATION
 		@apply -translate-y-1 scale-[0.98] opacity-0;
 	}
 
-	/* =====================================================
-	   PANEL SIZES
-	===================================================== */
-
 	.action-menu-panel-xs {
 		min-width: 8rem;
 	}
@@ -8214,9 +8233,7 @@ PAGE NAVIGATION
 		min-width: 15rem;
 	}
 
-	/* =====================================================
-	   MENU ITEM — BASE
-	===================================================== */
+	/* ---------- Menu items ---------- */
 
 	.action-menu-item {
 		@apply flex w-full min-w-0 items-center;
@@ -8244,10 +8261,6 @@ PAGE NAVIGATION
 	.action-menu-item span {
 		@apply min-w-0 overflow-hidden text-ellipsis whitespace-nowrap;
 	}
-
-	/* =====================================================
-	   MENU ITEM SIZES
-	===================================================== */
 
 	.action-menu-item-xs {
 		min-height: 1.75rem;
@@ -8301,10 +8314,6 @@ PAGE NAVIGATION
 		height: 1.125rem;
 	}
 
-	/* =====================================================
-	   ITEM STATES
-	===================================================== */
-
 	.action-menu-item-danger {
 		color: var(--color-rejected-text);
 	}
@@ -8321,10 +8330,7 @@ PAGE NAVIGATION
 	}
 
 	.action-menu-item-danger:hover,
-	.action-menu-item-danger.action-menu-item-focus {
-		color: var(--color-rejected-text);
-	}
-
+	.action-menu-item-danger.action-menu-item-focus,
 	.action-menu-item-danger:hover svg,
 	.action-menu-item-danger.action-menu-item-focus svg {
 		color: var(--color-rejected-text);
@@ -8344,10 +8350,6 @@ PAGE NAVIGATION
 		color: var(--color-text-disabled);
 	}
 
-	/* =====================================================
-	   RESPONSIVE
-	===================================================== */
-
 	@media (max-width: 640px) {
 		.action-menu-trigger-labeled {
 			max-width: min(11rem, calc(100vw - var(--space-8)));
@@ -8366,10 +8368,7 @@ PAGE NAVIGATION
 			min-width: min(11rem, calc(100vw - var(--space-4)));
 		}
 
-		/*
-		 * Ensure a usable touch target on mobile regardless of the
-		 * selected visual size.
-		 */
+		/* Usable touch target regardless of selected visual size */
 		.action-menu-item-xs,
 		.action-menu-item-sm,
 		.action-menu-item-md,
@@ -8395,10 +8394,6 @@ PAGE NAVIGATION
 		}
 	}
 
-	/* =====================================================
-	   REDUCED MOTION
-	===================================================== */
-
 	@media (prefers-reduced-motion: reduce) {
 		.action-menu-trigger,
 		.action-menu-panel,
@@ -8412,11 +8407,11 @@ PAGE NAVIGATION
 	}
 }
 
-@layer {
-	/* =====================================================
-	   EMPTY STATE
-	===================================================== */
+/* =====================================================
+   EMPTY BLOCK + BLOCK LOADING
+===================================================== */
 
+@layer components {
 	.empty-block {
 		display: flex;
 		@apply min-h-20;
@@ -8447,7 +8442,6 @@ PAGE NAVIGATION
 	.empty-block p {
 		margin: 0;
 		color: var(--color-text-primary);
-		font-weight: 600;
 		font-size: var(--font-size-sm);
 		font-weight: var(--font-weight-medium);
 		line-height: var(--line-height-tight);
@@ -8460,10 +8454,6 @@ PAGE NAVIGATION
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-normal);
 	}
-
-	/* =====================================================
-	   LOADING
-	===================================================== */
 
 	.block-loading {
 		display: flex;
@@ -8494,24 +8484,13 @@ PAGE NAVIGATION
 	.block-loading div:nth-child(even) {
 		margin-left: auto;
 	}
-
-	@keyframes block-pulse {
-		from {
-			background-position: 200% 0;
-		}
-
-		to {
-			background-position: -200% 0;
-		}
-	}
 }
 
-@layer components {
-	/* =====================================================
-	   SECTION HEADER
-	   Shared foundation
-	===================================================== */
+/* =====================================================
+   SECTION HEADER
+===================================================== */
 
+@layer components {
 	.section-header {
 		width: 100%;
 		min-width: 0;
@@ -8572,10 +8551,7 @@ PAGE NAVIGATION
 		overflow-wrap: anywhere;
 	}
 
-	/* =====================================================
-	   STANDARD
-	   Equivalent to the old FormHeader
-	===================================================== */
+	/* ---------- Standard (equivalent to the old FormHeader) ---------- */
 
 	.section-header-standard {
 		width: 100%;
@@ -8647,20 +8623,12 @@ PAGE NAVIGATION
 		display: none;
 	}
 
-	/* =====================================================
-	   STANDARD COLLAPSIBLE
-	   Minimal additional treatment
-	===================================================== */
-
 	.section-header-standard.section-header-collapsible
 		.section-header-standard-row {
 		padding-block: var(--space-1);
 	}
 
-	/* =====================================================
-	   ACCORDION
-	   Existing SectionAccordion treatment
-	===================================================== */
+	/* ---------- Accordion (existing SectionAccordion treatment) ---------- */
 
 	.section-header-accordion {
 		width: 100%;
@@ -8675,10 +8643,6 @@ PAGE NAVIGATION
 		color: var(--color-text-primary);
 		box-shadow: none;
 	}
-
-	/* =====================================================
-	   ACCORDION HEADER
-	===================================================== */
 
 	.section-header-accordion-header {
 		display: flex;
@@ -8763,10 +8727,6 @@ PAGE NAVIGATION
 		vertical-align: -0.1em;
 	}
 
-	/* =====================================================
-	   ACCORDION CONTENT
-	===================================================== */
-
 	.section-header-accordion-content {
 		width: 100%;
 		min-width: 0;
@@ -8784,21 +8744,10 @@ PAGE NAVIGATION
 		display: none;
 	}
 
-	/* =====================================================
-	   ACCORDION — MINIMAL
-	   
-	   Use:
-	   variant="accordion"
-	   contentClassName="section-header-accordion-content-minimal"
-	===================================================== */
-
+	/* Use: variant="accordion" contentClassName="section-header-accordion-content-minimal" */
 	.section-header-accordion-content-minimal {
 		padding: var(--space-2) var(--space-3);
 	}
-
-	/* =====================================================
-	   MOBILE
-	===================================================== */
 
 	@media (max-width: 640px) {
 		.section-header-standard {
@@ -8834,4 +8783,70 @@ PAGE NAVIGATION
 			gap: var(--space-1-5);
 		}
 	}
+}
+
+/* =====================================================
+   VENDOR LISTING — CARD HEADER
+   Full-width tab divider, compact tabs, tidy actions row
+===================================================== */
+
+@layer components {
+	.vendor-listing-card .ui-card-header-copy {
+		width: 100%;
+		flex: 1 1 100%;
+
+		border-bottom: var(--border-width-default) solid var(--color-border-subtle);
+	}
+
+	/* The parent owns the divider; tabs sit on top of it */
+	.vendor-listing-card .filter-tabs--underline {
+		border-bottom: 0;
+		margin-bottom: calc(var(--border-width-default) * -1);
+	}
+
+	@media (max-width: 1023px) {
+		.vendor-listing-card .ui-card-actions {
+			width: 100%;
+			margin-left: 0;
+			flex-wrap: nowrap;
+			justify-content: flex-end;
+
+			padding-bottom: var(--space-2);
+		}
+
+		/* Search grows to fill the row, Export keeps its natural width */
+		.vendor-listing-card .ui-card-actions > :first-child {
+			min-width: 0;
+			max-width: 24rem;
+			flex: 1 1 auto;
+		}
+
+		.vendor-listing-card .ui-card-actions > .button-wrapper {
+			flex: 0 0 auto;
+		}
+	}
+
+	@media (max-width: 479px) {
+		.vendor-listing-card .ui-card-actions {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.vendor-listing-card .ui-card-actions > :first-child {
+			max-width: none;
+		}
+
+		.vendor-listing-card .ui-card-actions > .button-wrapper,
+		.vendor-listing-card .ui-card-actions .button-base {
+			width: 100%;
+		}
+	}
+}
+
+/* Vendor summary heading: wrap between meta items instead of mid-token.
+   (This rule belongs in the vendor CSS — it is kept here only because it
+   lived next to the header fix.) */
+.vendor-summary-heading-meta > span {
+	overflow-wrap: normal;
+	word-break: normal;
 }
