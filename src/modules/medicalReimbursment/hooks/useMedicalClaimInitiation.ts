@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { useToast } from "../../../context/Auth/AuthContext";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
+import { DEFAULT_COUNTRY_CODE, joinMobile } from "../../../utils/phone";
 import {
 	useInitiateMedicalClaimMutation,
 	useMedicalClaimDetailQuery,
@@ -38,10 +39,20 @@ const EMPTY_VALUES: MedicalClaimInitiationValues = {
 	ticketNumber: "",
 };
 
+/**
+ * medicalClaimInitiationSchema's mobile rule is India-only (10 digits). For
+ * other countries the schema still checks every other field (with this
+ * stand-in number) and the typed number is checked against the pattern below.
+ */
+const SCHEMA_PLACEHOLDER_MOBILE = "9999999999";
+const OTHER_COUNTRY_MOBILE_PATTERN = /^\d{6,14}$/;
+
 type UseMedicalClaimInitiationArgs = {
 	claimId?: string;
 	initialValues?: Partial<MedicalClaimInitiationValues>;
 	shouldFetchDetails?: boolean;
+	/** Selected phone country code, e.g. "+91". `values.mobile` stays the national number. */
+	countryCode?: string;
 	onSubmitSuccess?: () => void | Promise<void>;
 };
 
@@ -74,6 +85,7 @@ export const useMedicalClaimInitiation = ({
 	claimId,
 	initialValues,
 	shouldFetchDetails = false,
+	countryCode = DEFAULT_COUNTRY_CODE,
 	onSubmitSuccess,
 }: UseMedicalClaimInitiationArgs = {}) => {
 	const navigate = useNavigate();
@@ -85,6 +97,7 @@ export const useMedicalClaimInitiation = ({
 	}>();
 	const resolvedClaimId =
 		claimId ?? params.initiationId ?? params.claimId ?? params.id ?? "";
+	const isDefaultCountry = countryCode === DEFAULT_COUNTRY_CODE;
 	const initialResolvedValues = useMemo(
 		() => ({ ...EMPTY_VALUES, ...initialValues }),
 		[initialValues],
@@ -127,27 +140,61 @@ export const useMedicalClaimInitiation = ({
 		setErrors((current) => ({ ...current, [key]: undefined }));
 	};
 
+	/**
+	 * Runs the schema on the form values (national number) and, for countries
+	 * other than the default, swaps the India-only mobile rule for a generic
+	 * digits check.
+	 */
+	const validateValues = () => {
+		const payload = toPayload(values);
+		const result = medicalClaimInitiationSchema.safeParse(
+			isDefaultCountry
+				? payload
+				: { ...payload, mobile: SCHEMA_PLACEHOLDER_MOBILE },
+		);
+		const fieldErrors: MedicalClaimInitiationErrors = result.success
+			? {}
+			: (toFieldErrors(result.error) as MedicalClaimInitiationErrors);
+
+		if (!isDefaultCountry) {
+			const nationalNumber = values.mobile.trim();
+			if (!nationalNumber) {
+				fieldErrors.mobile = "Phone number is required.";
+			} else if (!OTHER_COUNTRY_MOBILE_PATTERN.test(nationalNumber)) {
+				fieldErrors.mobile = "Enter a valid mobile number.";
+			}
+		}
+
+		return { result, fieldErrors };
+	};
+
 	/** Validates one field on blur so mistakes show before submit. */
 	const handleBlur = (key: keyof MedicalClaimInitiationPayload) => {
-		const result = medicalClaimInitiationSchema.safeParse(toPayload(values));
-		if (result.success) return;
-		const fieldErrors = toFieldErrors(result.error);
+		const { fieldErrors } = validateValues();
 		if (fieldErrors[key] && String(values[key] ?? "").trim()) {
 			setErrors((current) => ({ ...current, [key]: fieldErrors[key] }));
 		}
 	};
 
 	const validate = () => {
-		const result = medicalClaimInitiationSchema.safeParse(toPayload(values));
-		if (result.success) {
+		const { result, fieldErrors } = validateValues();
+		if (result.success && Object.keys(fieldErrors).length === 0) {
 			setErrors({});
-			return result.data;
+			// The API gets the full number: "+<country code><national number>".
+			return {
+				...result.data,
+				mobile: joinMobile(countryCode, values.mobile.trim()),
+			};
 		}
-		setErrors(toFieldErrors(result.error) as MedicalClaimInitiationErrors);
+		setErrors(fieldErrors);
 		showToast({
 			type: "error",
 			title: "Please fix the highlighted fields",
-			description: firstErrorMessage(result.error),
+			description:
+				!result.success && isDefaultCountry
+					? firstErrorMessage(result.error)
+					: (Object.values(fieldErrors).find(Boolean) ??
+						"Please check the details and try again."),
 		});
 		return null;
 	};
@@ -273,13 +320,13 @@ export function useMedicalClaimInitiationImport({
 	const pollTimerRef = React.useRef<number | undefined>(undefined);
 	const isMountedRef = React.useRef(true);
 
-	React.useEffect(
-		() => () => {
+	React.useEffect(() => {
+		isMountedRef.current = true;
+		return () => {
 			isMountedRef.current = false;
 			window.clearTimeout(pollTimerRef.current);
-		},
-		[],
-	);
+		};
+	}, []);
 
 	const resetSelection = React.useCallback(() => {
 		setImportFile(null);

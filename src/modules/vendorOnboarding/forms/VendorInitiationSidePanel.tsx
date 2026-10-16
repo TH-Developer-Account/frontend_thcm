@@ -1,4 +1,8 @@
-const STEPS = [
+import NextStepsPanel, {
+	type NextStep,
+} from "../../../components/ui/NextStepsPanel";
+
+const STEPS: readonly NextStep[] = [
 	{
 		title: "Vendor gets a secure link",
 		description: "It arrives by email and opens the onboarding form.",
@@ -13,31 +17,14 @@ const STEPS = [
 	},
 ];
 
-const VendorInitiationSidePanel = () => (
-	<aside
-		className="vendor-next-steps"
-		aria-labelledby="vendor-next-steps-title"
-	>
-		<h3 id="vendor-next-steps-title" className="vendor-next-steps-title">
-			What happens next
-		</h3>
+type VendorInitiationSidePanelProps = {
+	className?: string;
+};
 
-		<ol className="vendor-next-steps-list">
-			{STEPS.map((step, index) => (
-				<li key={step.title} className="vendor-next-steps-item">
-					<span className="vendor-next-steps-number" aria-hidden="true">
-						{index + 1}
-					</span>
-					<div className="vendor-next-steps-copy">
-						<p className="vendor-next-steps-item-title">{step.title}</p>
-						<p className="vendor-next-steps-item-description">
-							{step.description}
-						</p>
-					</div>
-				</li>
-			))}
-		</ol>
-	</aside>
+const VendorInitiationSidePanel = ({
+	className,
+}: VendorInitiationSidePanelProps) => (
+	<NextStepsPanel steps={STEPS} className={className} />
 );
 
 export default VendorInitiationSidePanel;
