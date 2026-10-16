@@ -18,18 +18,25 @@
 // read — status, permissions, items (souvenir lines) and order — so there's
 // nothing extra to fetch or poll.
 
+import type { CrfShopifyItemInput } from "../core/types";
+
 /* ========================================================================== */
 /*                               Dispatch details                             */
 /* ========================================================================== */
 
-export const RECIPIENT_TYPES = ["SELF", "EMPLOYEE", "DEALER_CONTACT", "OTHER"] as const;
+export const RECIPIENT_TYPES = [
+  "SELF",
+  "EMPLOYEE",
+  "DEALER_CONTACT",
+  "OTHER",
+] as const;
 export type RecipientType = (typeof RECIPIENT_TYPES)[number];
 
 export const RECIPIENT_TYPE_LABEL: Record<RecipientType, string> = {
-	SELF: "Myself",
-	EMPLOYEE: "An employee",
-	DEALER_CONTACT: "A dealer contact",
-	OTHER: "Someone else",
+  SELF: "Myself",
+  EMPLOYEE: "An employee",
+  DEALER_CONTACT: "A dealer contact",
+  OTHER: "Someone else",
 };
 
 /**
@@ -40,65 +47,76 @@ export const RECIPIENT_TYPE_LABEL: Record<RecipientType, string> = {
  * real request body on submit.
  */
 export type CrfDispatchFormValues = {
-	recipientType: RecipientType;
-	recipientName: string;
-	recipientPhone: string;
-	recipientEmail: string;
-	recipientOrganisation: string;
-	/** Required (and validated against the User table) when recipientType === "EMPLOYEE". */
-	recipientUserId: string;
-	/** Required (and validated against BusinessPartnerContact) when recipientType === "DEALER_CONTACT". */
-	recipientContactId: string;
-	deliveryInstructions: string;
-	requiredByDate: string;
+  recipientType: RecipientType;
+  recipientName: string;
+  recipientPhone: string;
+  recipientEmail: string;
+  recipientOrganisation: string;
+  /** Required (and validated against the User table) when recipientType === "EMPLOYEE". */
+  recipientUserId: string;
+  /** Required (and validated against BusinessPartnerContact) when recipientType === "DEALER_CONTACT". */
+  recipientContactId: string;
+  deliveryInstructions: string;
+  requiredByDate: string;
 
-	line1: string;
-	line2: string;
-	landmark: string;
-	city: string;
-	district: string;
-	state: string;
-	pincode: string;
-	country: string;
-	company: string;
-	gstin: string;
+  line1: string;
+  line2: string;
+  landmark: string;
+  city: string;
+  district: string;
+  state: string;
+  pincode: string;
+  country: string;
+  company: string;
+  gstin: string;
 };
 
 export type CrfDispatchFormField = keyof CrfDispatchFormValues;
-export type CrfDispatchFormErrors = Partial<Record<CrfDispatchFormField, string>>;
+export type CrfDispatchFormErrors = Partial<
+  Record<CrfDispatchFormField, string>
+>;
 
 /** PUT /crf/:crfId/dispatch-details body — matches crfDispatchDetails.service.ts exactly. */
 export type DispatchDetailsInput = {
-	recipientType: RecipientType;
-	recipientName: string;
-	recipientPhone: string;
-	recipientEmail: string;
-	recipientOrganisation?: string;
-	recipientUserId?: string;
-	recipientContactId?: string;
-	deliveryInstructions?: string;
-	requiredByDate?: string;
-	address: {
-		line1: string;
-		line2?: string;
-		landmark?: string;
-		city: string;
-		district?: string;
-		state: string;
-		pincode: string;
-		country?: string;
-		company?: string;
-		gstin?: string;
-	};
+  recipientType: RecipientType;
+  recipientName: string;
+  recipientPhone: string;
+  recipientEmail: string;
+  recipientOrganisation?: string;
+  recipientUserId?: string;
+  recipientContactId?: string;
+  deliveryInstructions?: string;
+  requiredByDate?: string;
+  address: {
+    line1: string;
+    line2?: string;
+    landmark?: string;
+    city: string;
+    district?: string;
+    state: string;
+    pincode: string;
+    country?: string;
+    company?: string;
+    gstin?: string;
+  };
 };
 
 /* ========================================================================== */
 /*                               Souvenir swap                                 */
 /* ========================================================================== */
 
-/** PUT /crf/:crfId/souvenirs body — full replace of the souvenir lines only. */
+/**
+ * PUT /crf/:crfId/souvenirs body — full replace of the souvenir lines only.
+ *
+ * Must carry the FULL CrfShopifyItemInput shape (sku/requestedQty/amount/
+ * rate/title/variantTitle/imageUrl), not just sku+requestedQty — the
+ * backend's buildShopifyItemRows (crf.service.ts) requires amount and rate
+ * on every line and throws a 400 if they're missing. This previously only
+ * carried { sku, requestedQty }, which both failed to typecheck against
+ * buildCrfItemInput's real return type and would have 400'd at runtime.
+ */
 export type SwapSouvenirsInput = {
-	items: { sku: string; requestedQty: number }[];
+  items: CrfShopifyItemInput[];
 };
 
 /* ========================================================================== */

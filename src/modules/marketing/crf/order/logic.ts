@@ -20,22 +20,24 @@ import type { CrfDetail, CrfLineItem, CrfStatus } from "../core/types";
 
 /** Statuses where the order section has something to show/do (post-approval). */
 export const CRF_ORDER_ACTIVE_STATUSES: readonly CrfStatus[] = [
-	"APPROVED",
-	"STOCK_SHORTFALL",
-	"ORDER_FAILED",
-	"ORDERED",
+  "APPROVED",
+  "STOCK_SHORTFALL",
+  "STOCK_CHECK_FAILED",
+  "ORDER_FAILED",
+  "ORDERED",
 ];
 
 export const isCrfOrderActive = (status?: CrfStatus | null): boolean =>
-	Boolean(status) && CRF_ORDER_ACTIVE_STATUSES.includes(status as CrfStatus);
+  Boolean(status) && CRF_ORDER_ACTIVE_STATUSES.includes(status as CrfStatus);
 
 export const CRF_STATUS_LABEL: Record<CrfStatus, string> = {
-	OPEN: "Being drafted",
-	APPROVED: "Approved — ready to order",
-	STOCK_SHORTFALL: "Stock shortfall",
-	ORDER_FAILED: "Order failed",
-	ORDERED: "Order placed",
-	CLOSED: "Closed",
+  OPEN: "Being drafted",
+  APPROVED: "Approved — ready to order",
+  STOCK_SHORTFALL: "Stock shortfall",
+  STOCK_CHECK_FAILED: "Stock check failed",
+  ORDER_FAILED: "Order failed",
+  ORDERED: "Order placed",
+  CLOSED: "Closed",
 };
 
 /* ========================================================================== */
@@ -44,10 +46,12 @@ export const CRF_STATUS_LABEL: Record<CrfStatus, string> = {
 
 /** The CRF's souvenir lines, mapped to the form/display shape (not yet backfilled with store data). */
 export const getSouvenirFormLines = (crf: CrfDetail | null): CrfLineItem[] =>
-	mapCrfLineItemsToFormItems(crf?.items ?? []).filter((item) => item.category === "SOUVENIR");
+  mapCrfLineItemsToFormItems(crf?.items ?? []).filter(
+    (item) => item.category === "SOUVENIR",
+  );
 
 export const getLineTotals = (lines: CrfLineItem[]): LinePricing =>
-	sumPricing(lines.map((line) => getLinePricing(line)));
+  sumPricing(lines.map((line) => getLinePricing(line)));
 
 // NOTE: CrfDetail (crf.types.ts) doesn't currently expose the CRF's saved
 // dispatch fields (recipientName, addressLine1, …) in its read model — only
