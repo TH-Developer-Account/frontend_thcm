@@ -444,9 +444,25 @@ export type LineItemOption = {
   height?: number;
   unit?: string;
 
+  // Client-side only, for instant preview of a just-picked file before (or
+  // instead of) an upload completes. Never sent to the backend.
   quotationFile?: File | null;
   quotationFileUrl?: string | null;
   quotationFileName?: string | null;
+
+  // S3 key + original filename once the file has actually been uploaded
+  // (EPF: via POST /epf/line-item/attachment — see lineItemAttachment
+  // .helper.ts on the backend). This is what's threaded through to
+  // createEPF/updateEPF as lineItems[].attachmentS3Key/attachmentFileName,
+  // and what comes back on read as item.attachmentS3Key/attachmentFileName
+  // alongside a fresh item.attachmentUrl. Undefined/CRF usage: feature is
+  // simply inert — see LineItemTable's `attachmentUpload` prop.
+  attachmentS3Key?: string | null;
+  attachmentFileName?: string | null;
+
+  // True while the just-picked file is mid-upload. Used to disable the
+  // row's actions and show a spinner instead of the file chip.
+  isUploadingAttachment?: boolean;
 };
 
 export interface LineItem {

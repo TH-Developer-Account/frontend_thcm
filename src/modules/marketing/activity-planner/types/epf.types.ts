@@ -6,83 +6,89 @@ export type EpfDetailResponse = EpcDetailEpf;
 export type EpfCrfData = EpcDetailCrf | null | undefined;
 
 export type EpfProduct = {
-	id: string;
-	productType?: "EPF" | "CRF";
-	category?: string;
-	partNumber?: string;
-	name: string;
-	description?: string | null;
-	unitRate?: string | number;
-	isActive?: boolean;
+  id: string;
+  productType?: "EPF" | "CRF";
+  category?: string;
+  partNumber?: string;
+  name: string;
+  description?: string | null;
+  unitRate?: string | number;
+  isActive?: boolean;
 };
 
 export type EpfFormValues = {
-	externalParticipants: number | string;
-	internalParticipants: number | string;
-	totalParticipants: number | string;
+  externalParticipants: number | string;
+  internalParticipants: number | string;
+  totalParticipants: number | string;
 
-	crfTotal: number | string;
-	eventBudget: number | string;
-	annualBudget: number | string;
-	availableBudget: number | string;
-	allotedBudget: number | string;
+  crfTotal: number | string;
+  eventBudget: number | string;
+  annualBudget: number | string;
+  availableBudget: number | string;
+  allotedBudget: number | string;
 
-	dealerName: string;
-	dealerPercent: number | string;
-	dealerShare: number | string;
+  dealerName: string;
+  dealerPercent: number | string;
+  dealerShare: number | string;
 
-	tataHitachiPercent: number | string;
-	tataHitachiShare: number | string;
-	tataHitachiPoAmount: number | string;
+  tataHitachiPercent: number | string;
+  tataHitachiShare: number | string;
+  tataHitachiPoAmount: number | string;
 };
 
 export type EpfLineItemPayload = {
-	productId: string;
-	quantity: number;
-	amount?: number;
-	total?: number;
-	description?: string;
-	category?: "EVENT_OVERHEAD";
+  productId: string;
+  quantity: number;
+  amount?: number;
+  total?: number;
+  description?: string;
+  category?: "EVENT_OVERHEAD";
+
+  // Optional — set only when the proposer uploaded a file via
+  // POST /epf/line-item/attachment first (see LineItemTable's
+  // attachmentUpload prop / epf.payload.ts's buildLineItemPayload).
+  attachmentS3Key?: string;
+  attachmentFileName?: string;
 };
 
 export type EpfCreatePayload = {
-	epcId: string;
-	status: EpfStatus;
+  epcId: string;
+  status: EpfStatus;
 
-	externalParticipants: number | null;
-	internalParticipants: number | null;
-	eventBudget: number | null;
-	annualBudget: number | null;
-	availableBudget: number | null;
-	dealerName: string;
-	dealerPercent: number | null;
-	dealerShare: number | null;
+  externalParticipants: number | null;
+  internalParticipants: number | null;
+  eventBudget: number | null;
+  annualBudget: number | null;
+  availableBudget: number | null;
+  dealerName: string;
+  dealerPercent: number | null;
+  dealerShare: number | null;
 
-	// Keep these optional because we are not sending them now.
-	crfId?: string;
-	totalParticipants?: number;
-	crfTotal?: number | null;
-	allotedBudget?: number | null;
-	tataHitachiPercent?: number | null;
-	tataHitachiShare?: number | null;
-	tataHitachiPoAmount?: number | null;
+  // Keep these optional because we are not sending them now.
+  crfId?: string;
+  totalParticipants?: number;
+  crfTotal?: number | null;
+  allotedBudget?: number | null;
+  tataHitachiPercent?: number | null;
+  tataHitachiShare?: number | null;
+  tataHitachiPoAmount?: number | null;
 
-	lineItems: EpfLineItemPayload[];
+  lineItems: EpfLineItemPayload[];
 };
 
 export type EpfUpdatePayload = Omit<EpfCreatePayload, "epcId" | "crfId">;
 
 export type BudgetItem = {
-	label: string;
-	value: number | string;
+  label: string;
+  value: number | string;
 };
 
 export type ShareInfo = {
-	dealerName: string;
-	tataHitachiPoAmount: number;
-	dealerPercent: number;
-	dealerShare: number;
-	tataHitachiPercent: number;
-	tataHitachiShare: number;
-	eventBudget?: number;
+  dealerName: string;
+  tataHitachiPoAmount: number;
+  dealerPercent: number;
+  dealerShare: number;
+  tataHitachiPercent: number;
+  tataHitachiShare: number;
+  eventBudget?: number;
 };

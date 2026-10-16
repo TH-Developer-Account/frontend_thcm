@@ -17,105 +17,107 @@ import { useEpfForm, type EpfFormProps } from "./useEpfForm";
 import EpfFormFields from "./EpfFormFields";
 
 export type EpfFormCardProps = EpfFormProps & {
-	/** Card title. Defaults to "Create / Edit Event Proposition Form". */
-	title?: ReactNode;
-	/** Overrides the primary button label. */
-	submitLabel?: string;
-	/** Rendered at the left of the footer (e.g. the wizard's Back button). */
-	footerStart?: ReactNode;
+  /** Card title. Defaults to "Create / Edit Event Proposition Form". */
+  title?: ReactNode;
+  /** Overrides the primary button label. */
+  submitLabel?: string;
+  /** Rendered at the left of the footer (e.g. the wizard's Back button). */
+  footerStart?: ReactNode;
 };
 
 /** Saving validates as a full submission; the workflow starts on Review & Submit. */
 const SAVE_STATUS = "SUBMITTED";
 
 export default function EpfForm(props: EpfFormCardProps) {
-	const { onCancel, title, submitLabel, footerStart } = props;
+  const { onCancel, title, submitLabel, footerStart } = props;
 
-	const {
-		values,
-		errors,
-		handleChange,
-		handleReset,
-		options,
-		costItems,
-		setCostItems,
-		handleSubmit,
-		eventCost,
-		isEditMode,
-		loading,
-		submitting,
-	} = useEpfForm(props);
+  const {
+    values,
+    errors,
+    handleChange,
+    handleReset,
+    options,
+    costItems,
+    setCostItems,
+    handleSubmit,
+    eventCost,
+    isEditMode,
+    loading,
+    submitting,
+    epcId,
+  } = useEpfForm(props);
 
-	const cardTitle =
-		title ??
-		(isEditMode
-			? "Edit Event Proposition Form"
-			: "Create Event Proposition Form");
+  const cardTitle =
+    title ??
+    (isEditMode
+      ? "Edit Event Proposition Form"
+      : "Create Event Proposition Form");
 
-	const primaryLabel = submitting
-		? "Saving..."
-		: (submitLabel ?? (isEditMode ? "Update EPF" : "Save & Review"));
+  const primaryLabel = submitting
+    ? "Saving..."
+    : (submitLabel ?? (isEditMode ? "Update EPF" : "Save & Review"));
 
-	const footer = (
-		<div className="flex w-full flex-wrap items-center justify-between gap-2">
-			<div className="flex flex-wrap items-center gap-2">{footerStart}</div>
+  const footer = (
+    <div className="flex w-full flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2">{footerStart}</div>
 
-			<div className="flex flex-wrap items-center justify-end gap-2">
-				{onCancel && (
-					<Button
-						type="button"
-						text="Cancel"
-						onClick={onCancel}
-						size="sm"
-						Icon={X}
-						appearance="standard"
-						variant="outline"
-						disabled={submitting}
-					/>
-				)}
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {onCancel && (
+          <Button
+            type="button"
+            text="Cancel"
+            onClick={onCancel}
+            size="sm"
+            Icon={X}
+            appearance="standard"
+            variant="outline"
+            disabled={submitting}
+          />
+        )}
 
-				<Button
-					type="button"
-					text="Reset"
-					onClick={handleReset}
-					Icon={RefreshCcw}
-					size="sm"
-					appearance="standard"
-					variant="outline"
-					disabled={submitting || loading}
-				/>
+        <Button
+          type="button"
+          text="Reset"
+          onClick={handleReset}
+          Icon={RefreshCcw}
+          size="sm"
+          appearance="standard"
+          variant="outline"
+          disabled={submitting || loading}
+        />
 
-				<Button
-					type="button"
-					onClick={() => void handleSubmit(SAVE_STATUS)}
-					text={primaryLabel}
-					size="sm"
-					appearance="standard"
-					variant="brand"
-					Icon={isEditMode ? Save : ArrowRight}
-					disabled={submitting || loading}
-				/>
-			</div>
-		</div>
-	);
+        <Button
+          type="button"
+          onClick={() => void handleSubmit(SAVE_STATUS)}
+          text={primaryLabel}
+          size="sm"
+          appearance="standard"
+          variant="brand"
+          Icon={isEditMode ? Save : ArrowRight}
+          disabled={submitting || loading}
+        />
+      </div>
+    </div>
+  );
 
-	return (
-		<Card title={cardTitle} footer={footer} loading={loading}>
-			<EpfItemsSection
-				items={costItems}
-				onChange={setCostItems}
-				options={options}
-				isViewer={false}
-			/>
+  return (
+    <Card title={cardTitle} footer={footer} loading={loading}>
+      <EpfItemsSection
+        items={costItems}
+        onChange={setCostItems}
+        options={options}
+        isViewer={false}
+        epcId={epcId}
+      />
 
-			<div className="mb-2">
-				<EpfFormFields
-					values={values}
-					errors={errors}
-					handleChange={handleChange}
-					eventCost={eventCost}
-				/>
-			</div>
-		</Card>
-	);
+      <div className="mb-2">
+        <EpfFormFields
+          values={values}
+          errors={errors}
+          handleChange={handleChange}
+          eventCost={eventCost}
+        />
+      </div>
+    </Card>
+  );
 }

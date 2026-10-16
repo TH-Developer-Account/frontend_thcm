@@ -1,93 +1,100 @@
 import type { LineItemOption } from "../../types/epc.types";
 import type {
-	EpfCreatePayload,
-	EpfFormValues,
-	EpfLineItemPayload,
-	EpfStatus,
-	EpfUpdatePayload,
+  EpfCreatePayload,
+  EpfFormValues,
+  EpfLineItemPayload,
+  EpfStatus,
+  EpfUpdatePayload,
 } from "../../types/epf.types";
 
 import { calculateBudgetShares, toNumberOrNull } from "./epf.calculations";
 
 type BuildEpfPayloadArgs = {
-	values: EpfFormValues;
-	status: EpfStatus;
-	epcId: string;
-	crfId?: string | null;
-	eventCost: number;
-	costItems: LineItemOption[];
+  values: EpfFormValues;
+  status: EpfStatus;
+  epcId: string;
+  crfId?: string | null;
+  eventCost: number;
+  costItems: LineItemOption[];
 };
 
 export const buildLineItemPayload = (
-	items: LineItemOption[],
-	extraPayload: Record<string, unknown>,
+  items: LineItemOption[],
+  extraPayload: Record<string, unknown>,
 ) => {
-	return {
-		...extraPayload,
-		lineItems: items.map(
-			(item): EpfLineItemPayload => ({
-				productId: item.value,
-				quantity: Number(item.quantity) || 1,
-				description: item.description || undefined,
-				amount: item.rate,
-				category: "EVENT_OVERHEAD",
-			}),
-		),
-	};
+  return {
+    ...extraPayload,
+    lineItems: items.map(
+      (item): EpfLineItemPayload => ({
+        productId: item.value,
+        quantity: Number(item.quantity) || 1,
+        description: item.description || undefined,
+        amount: item.rate,
+        category: "EVENT_OVERHEAD",
+
+        // Only set once POST /epf/line-item/attachment has actually
+        // uploaded the file (LineItemTable's attachmentUpload prop) —
+        // undefined here means "no attachment", same as omitting the
+        // field entirely (epf.controller.ts treats both the same way).
+        attachmentS3Key: item.attachmentS3Key || undefined,
+        attachmentFileName: item.attachmentFileName || undefined,
+      }),
+    ),
+  };
 };
 
 export const prepareEpfBasePayload = ({
-	values,
-	status,
-	epcId,
-	eventCost,
+  values,
+  status,
+  epcId,
+  eventCost,
 }: Omit<BuildEpfPayloadArgs, "costItems">): Omit<
-	EpfCreatePayload,
-	"lineItems"
+  EpfCreatePayload,
+  "lineItems"
 > => {
-	const budgetValues = calculateBudgetShares(values, eventCost);
+  const budgetValues = calculateBudgetShares(values, eventCost);
 
-	return {
-		epcId,
-		status,
+  return {
+    epcId,
+    status,
 
-		externalParticipants: toNumberOrNull(values.externalParticipants),
-		internalParticipants: toNumberOrNull(values.internalParticipants),
-		eventBudget: toNumberOrNull(budgetValues.eventBudget),
-		annualBudget: toNumberOrNull(values.annualBudget),
-		availableBudget: toNumberOrNull(values.availableBudget),
+    externalParticipants: toNumberOrNull(values.externalParticipants),
+    internalParticipants: toNumberOrNull(values.internalParticipants),
+    eventBudget: toNumberOrNull(budgetValues.eventBudget),
+    annualBudget: toNumberOrNull(values.annualBudget),
+    availableBudget: toNumberOrNull(values.availableBudget),
 
-		dealerName: values.dealerName || "",
-		dealerPercent: toNumberOrNull(budgetValues.dealerPercent),
-		dealerShare: toNumberOrNull(budgetValues.dealerShare),
-	};
+    dealerName: values.dealerName || "",
+    dealerPercent: toNumberOrNull(budgetValues.dealerPercent),
+    dealerShare: toNumberOrNull(budgetValues.dealerShare),
+  };
 };
 
 export const buildEpfCreatePayload = (
-	args: BuildEpfPayloadArgs,
+  args: BuildEpfPayloadArgs,
 ): EpfCreatePayload => {
-	const basePayload = prepareEpfBasePayload(args);
-	const lineItemPayload = buildLineItemPayload(args.costItems, {
-		epcId: args.epcId,
-	});
+  const basePayload = prepareEpfBasePayload(args);
+  const lineItemPayload = buildLineItemPayload(args.costItems, {
+    epcId: args.epcId,
+  });
 
-	return {
-		...basePayload,
-		lineItems: lineItemPayload.lineItems,
-	};
+  return {
+    ...basePayload,
+    lineItems: lineItemPayload.lineItems,
+  };
 };
 
 export const buildEpfUpdatePayload = (
-	args: BuildEpfPayloadArgs,
+  args: BuildEpfPayloadArgs,
 ): EpfUpdatePayload => {
-	const createPayload = buildEpfCreatePayload(args);
+  const createPayload = buildEpfCreatePayload(args);
 
-	const { epcId, crfId, ...updatePayload } = createPayload;
+  const { epcId, crfId, ...updatePayload } = createPayload;
 
-	void epcId;
-	void crfId;
+  void epcId;
+  void crfId;
 
-	return updatePayload;
+  return updatePayload;
 };
 
 // FUTURE: Uncomment/use this when backend supports multipart quotation upload.
