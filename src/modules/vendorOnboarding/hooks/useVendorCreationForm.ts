@@ -15,7 +15,7 @@ import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUplo
 import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import { workflowApi } from "../../workflows/api/workflow.api";
-import { getStoredAppId } from "../../marketing/activity-planner/helpers/localstorage";
+import { getStoredAppId } from "../../marketing/activity-planner/utils/localstorage";
 import { vendorOnboardingApi } from "../api/vendorOnboarding.api";
 import type {
 	PendingWorkflowSelection,

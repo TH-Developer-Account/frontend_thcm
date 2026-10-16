@@ -8478,7 +8478,7 @@
 		);
 		background-size: 200% 100%;
 
-		animation: comment-pulse 1.2s var(--ease-standard) infinite;
+		animation: block-pulse 1.2s var(--ease-standard) infinite;
 	}
 
 	.block-loading div:nth-child(even) {

@@ -1,8 +1,8 @@
 import type { Dispatch, SetStateAction } from "react";
 
-import LineItemTable from "../../../../../components/ui/tables/LineItemTable/LineItemTable";
-import type { LineItemOption } from "../../types/lineItem.types";
-import { OVERHEAD_COLUMNS } from "../../utils/columnPresets";
+import type { LineItemOption } from "../../types/epc.types";
+import { OVERHEAD_COLUMNS } from "../../utils/constant";
+import LineItemTable from "../../../shared/LineItemTable";
 
 type EpfItemsSectionProps = {
 	items: LineItemOption[];

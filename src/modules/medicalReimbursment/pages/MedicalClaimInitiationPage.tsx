@@ -49,6 +49,13 @@ const MedicalClaimInitiationPage = ({
 				}}
 			/>
 
+			{!isViewMode ? (
+				<p className="mb-3 text-sm text-iron">
+					Start one claim, or import many at once. Each employee gets a secure
+					link to submit their claim.
+				</p>
+			) : null}
+
 			<MedicalClaimInitiationForm
 				claimId={claimId}
 				mode={mode}

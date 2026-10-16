@@ -2,6 +2,7 @@ import type {
 	MedicalClaimDetail,
 	MedicalClaimListItem,
 	MedicalClaimListingRow,
+	PendingOnValue,
 } from "../types/medicalClaimListing.types";
 
 import type {
@@ -17,16 +18,37 @@ import {
 	getFileNameFromUrl,
 	getMimeTypeFromFileName,
 } from "../../../components/ui/FileUpload/fileUpload.helpers";
+import { formatPendingOn as formatPendingOnLabel } from "../../../utils/statusAlert.helper";
 import {
 	getAuditMessage,
 	type AuditLogEntry,
 } from "../../../components/ui/audit";
 
-const toNumber = (value: number | string | null | undefined): number => {
+export const toNumber = (value: number | string | null | undefined): number => {
+	if (value === null || value === undefined || value === "") return 0;
 	const parsed = Number(value);
-
 	return Number.isFinite(parsed) ? parsed : 0;
 };
+
+const toOptionalNumber = (
+	value: number | string | null | undefined,
+): number | null => {
+	if (value === null || value === undefined || value === "") return null;
+	const parsed = Number(value);
+	return Number.isFinite(parsed) ? parsed : null;
+};
+
+/** Money as the form stores it: "" when absent, never "null"/"undefined". */
+const toAmountString = (value: number | string | null | undefined): string => {
+	const parsed = toOptionalNumber(value);
+	return parsed === null ? "" : String(parsed);
+};
+
+/** "Pending on Asha, Ravi" / "Pending on Ex-Employee" / "Closed" — shared app wording. */
+export const formatPendingOn = (
+	value: PendingOnValue | undefined,
+	status?: string | null,
+): string => formatPendingOnLabel(value ?? null, status);
 
 export const toMedicalClaimListingRow = (
 	claim: MedicalClaimListItem,
@@ -35,9 +57,12 @@ export const toMedicalClaimListingRow = (
 	referenceNumber: claim.referenceNumber || "—",
 	employeeName: claim.employeeName || "—",
 	ticketNumber: claim.ticketNumber?.trim() || "—",
+	email: claim.email?.trim() || "—",
+	mobile: claim.mobile?.trim() || "—",
 	grade: claim.grade?.trim() || "—",
 	totalClaimed: toNumber(claim.totalClaimed),
 	status: claim.status || "--",
+	pendingOn: formatPendingOn(claim.pendingOn, claim.status),
 	createdAt: claim.created_at,
 });
 
@@ -53,12 +78,24 @@ export const toMedicalClaimFormValues = (
 	location: claim.location ?? "",
 	coverageType: (claim.claimCover ?? "") as CoverageType,
 	spouseName: claim.spouseName ?? "",
-	medicalAdvanceAmount: String(claim.medicalAdvanceTaken ?? ""),
-	companySettledAmount: String(claim.alreadySettled ?? ""),
+	medicalAdvanceAmount: toAmountString(claim.medicalAdvanceTaken),
+	companySettledAmount: toAmountString(claim.alreadySettled),
 	declarationAccepted: Boolean(claim.declarationAcceptedAt),
 	employeeSignature: claim.signatureName ?? "",
+	// Empty → the form hook autofills today's date while editable.
 	claimDate: toDateInputValue(claim.signatureDate ?? claim.submittedAt),
 });
+
+/**
+ * Annual cap implied by the server's numbers (eligible = cap - settled), used
+ * when the claim's grade isn't in the grade list (e.g. legacy grades).
+ */
+export const deriveAnnualCap = (claim?: MedicalClaimDetail | null): number | null => {
+	if (!claim) return null;
+	const eligible = toOptionalNumber(claim.eligibleAmount);
+	if (eligible === null) return null;
+	return eligible + toNumber(claim.alreadySettled);
+};
 
 export const toMedicalClaimLineItems = (
 	claim: MedicalClaimDetail,
@@ -66,11 +103,13 @@ export const toMedicalClaimLineItems = (
 	const defaultPatient: PatientType =
 		claim.claimCover === "SPOUSE" ? "SPOUSE" : "SELF";
 
-	return (claim.bills ?? []).map((bill): ClaimHeadRow => {
+	return (claim.bills ?? []).map((bill, index): ClaimHeadRow => {
 		const fileName =
-			bill.fileName ?? getFileNameFromUrl(bill.s3Key || bill.fileUrl || "");
-
-		const mimeType = getMimeTypeFromFileName(fileName);
+			bill.fileName ??
+			(bill.s3Key || bill.fileUrl
+				? getFileNameFromUrl(bill.s3Key || bill.fileUrl || "")
+				: `bill-${index + 1}`);
+		const mimeType = bill.mimeType ?? getMimeTypeFromFileName(fileName);
 
 		const attachment = bill.fileUrl
 			? createRemoteFileUploadValue({
@@ -83,37 +122,28 @@ export const toMedicalClaimLineItems = (
 				})
 			: null;
 
+		const approved = Boolean(bill.approved);
+
 		return {
 			id: bill.id,
-
+			isPersisted: true,
 			claimHead: bill.claimHead as ClaimHead,
-
 			billNumber: bill.billNo ?? "",
-
 			billName: bill.billName ?? "",
-
 			patient: defaultPatient,
-
 			billDate: toDateInputValue(bill.billDate),
-
-			amount: String(bill.amount ?? ""),
-
-			/**
-			 * Saved backend files are remote.
-			 *
-			 * Do NOT assign bill.s3Key here because `file`
-			 * represents a browser File object.
-			 */
+			amount: toAmountString(bill.amount),
+			// Saved backend files are remote: `file` is only for a browser File.
 			file: null,
-
 			fileName,
-
 			attachment,
-
-			approvedClaimAmount: bill.approvedClaimAmount ?? "",
-
-			remarks: bill.remarks ?? null,
-			approvalStatus: bill.approved ? "APPROVED" : "PENDING",
+			// Only an APPROVED bill has a meaningful approved amount. For
+			// pending bills this stays "" and the review input falls back to
+			// the claimed amount — never to 0.
+			approvedClaimAmount: approved ? toAmountString(bill.approvedClaimAmount) : "",
+			remarks: bill.remarks ?? "",
+			approved,
+			approvalStatus: approved ? "APPROVED" : "PENDING",
 		};
 	});
 };
@@ -125,16 +155,16 @@ export const getMedicalAuditMessage = (entry: AuditLogEntry): string => {
 		actionMessages: {
 			MEDICAL_CLAIM_INITIATED: ({ actorName }) =>
 				`${actorName} initiated the medical claim.`,
-
+			MEDICAL_CLAIM_LINK_RESENT: ({ actorName }) =>
+				`${actorName} re-sent the claim form link.`,
 			MEDICAL_CLAIM_SUBMITTED: ({ actorName }) =>
 				`${actorName} submitted the medical claim.`,
-
 			MEDICAL_CLAIM_RESUBMITTED: ({ actorName }) =>
 				`${actorName} resubmitted the medical claim.`,
-
 			MEDICAL_CLAIM_SENT_FOR_APPROVAL: ({ actorName }) =>
 				`${actorName} sent the medical claim for approval.`,
-
+			MEDICAL_CLAIM_LINE_ITEMS_REVIEWED: ({ actorName }) =>
+				`${actorName} reviewed bill line items.`,
 			MEDICAL_CLAIM_CLOSED: ({ actorName }) =>
 				`${actorName} closed the medical claim.`,
 		},

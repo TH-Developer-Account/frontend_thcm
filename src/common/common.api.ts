@@ -4,7 +4,7 @@ import { USERS_URL, type User, type UserApiResponse } from "./common.types";
 export const budgetApi = {
 	getBudgetInfo: async (budgetMasterId?: string | null) => {
 		const response = budgetMasterId
-			? await ServerAxios.get(`/master-data/budget/${budgetMasterId}`)
+			? await ServerAxios.get(`/master-data/budget`)
 			: await ServerAxios.get("/master-data/budget");
 
 		const raw = response?.data;

@@ -88,6 +88,23 @@ type ApiEnvelope<T> = {
 	message?: string;
 };
 
+// What approveStage's response `data` can carry, on top of the usual
+// success/message envelope. Only populated when the approval just resolved
+// is a workflow's FINAL stage AND that subject type has a post-final-
+// approval hook registered (workflowSubject.helper.ts's
+// postFinalApprovalHooks) that returns something. Today the only such
+// outcome is EVENT_PROPOSAL's stock-check result (see
+// crfOrder.service.ts's runEventProposalFinalApprovalHooks /
+// runPostApprovalStockCheck) — every field stays optional so a non-final
+// approval, or a subject with no hook, is simply `{}` and every existing
+// caller that ignores `data` keeps working unchanged.
+export type ApproveStageResult = {
+	/** EVENT_PROPOSAL only — the post-approval Shopify stock check couldn't
+	 *  reach the store. The CRF was moved to STOCK_CHECK_FAILED; owner/admin
+	 *  can retry it from the CRF Order section once the store is back up. */
+	stockCheckFailed?: boolean;
+};
+
 type ReusableWorkflowApiItem = {
 	id: string | number;
 	name?: string;
@@ -441,12 +458,25 @@ export const workflowApi = {
 	// clarifyStage already sends its reason. If the backend endpoint hasn't
 	// been updated to accept/store this field, this call will need a
 	// matching backend change — this only covers the frontend contract.
-	approveStage: async (stageId: string, reason?: string) => {
-		const response = await ServerAxios.post<ApiEnvelope<unknown>>(
+	//
+	// `data` is typed as ApproveStageResult rather than `unknown`: the
+	// workflow's post-final-approval hooks (workflow.service.ts's
+	// approveStage) can return extra, subject-specific outcomes on this same
+	// response — today just EVENT_PROPOSAL's `stockCheckFailed` (see
+	// crfOrder.service.ts's runEventProposalFinalApprovalHooks) — so callers
+	// like useActivityPlanner's runWorkflowAction can react to it without an
+	// `as` cast at the call site. Every field is optional: a stage approval
+	// that isn't yet the workflow's final one, or a subject with no
+	// post-final-approval hooks, returns `{}`.
+	approveStage: async (
+		stageId: string,
+		reason?: string,
+	): Promise<ApiEnvelope<ApproveStageResult>> => {
+		const response = await ServerAxios.post<ApiEnvelope<ApproveStageResult>>(
 			`${WORKFLOW_RUNTIME_URL}/stages/${encodeURIComponent(stageId)}/approve`,
 			{ reason },
 		);
-		return unwrapEnvelope<unknown>(response.data);
+		return unwrapEnvelope<ApproveStageResult>(response.data);
 	},
 
 	clarifyStage: async (stageId: string, reason: string) => {

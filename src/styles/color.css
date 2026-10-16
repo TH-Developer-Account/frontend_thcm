@@ -329,3 +329,112 @@
 		--color-info-border: #1d4ed8;
 	}
 }
+
+/* =========================================================
+   ADDITIONS (design-system pass)
+========================================================= */
+@layer base {
+	:root {
+		/* Used by Checkbox.tsx; was undefined */
+		--color-border-muted: var(--color-neutral-300);
+
+		/* Excel look-alike preview (LeadExcelPreview). Intentionally literal: it mimics Excel, not the brand. */
+		--color-excel-green: #1d6f42;
+		--color-excel-required-bg: #c6efce;
+		--color-excel-required-soft-bg: #f0fff4;
+		--color-excel-required-text: #276221;
+		--color-excel-optional-bg: #bdd7ee;
+		--color-excel-optional-soft-bg: #eff6ff;
+		--color-excel-optional-text: #1d4f76;
+		--color-excel-grid-border: #d8d8d8;
+		--color-excel-grid-border-soft: #e4e4e7;
+		--color-excel-sheet-bg: #ffffff;
+		--color-excel-muted-bg: #f4f4f5;
+		--color-excel-text-primary: #222222;
+		--color-excel-text-secondary: #52525b;
+		--color-excel-text-muted: #a1a1aa;
+		--color-excel-danger: #ef4444;
+		--color-excel-window-red: #ff5f57;
+		--color-excel-window-yellow: #febc2e;
+		--color-excel-window-green: #28c840;
+
+		/* ---- Scale aliases that components.css already uses but were never declared ----
+		   (soft / softest button variants, status chips). Built ONLY from existing themed
+		   tokens, so dark mode follows automatically. 50 and 100 share a value on purpose. */
+		--color-brand-50: var(--color-brand-subtle);
+		--color-brand-100: var(--color-brand-soft);
+		--color-brand-200: var(--color-orange-200);
+		--color-brand-700: var(--color-brand-active);
+
+		--color-success-50: var(--color-success-bg);
+		--color-success-100: var(--color-success-bg);
+		--color-success-200: var(--color-success-border);
+		--color-success-700: var(--color-success-hover);
+
+		--color-warning-50: var(--color-warning-bg);
+		--color-warning-100: var(--color-warning-bg);
+		--color-warning-200: var(--color-warning-border);
+		--color-warning-800: var(--color-warning-hover);
+
+		--color-danger-50: var(--color-error-bg);
+		--color-danger-100: var(--color-error-bg);
+		--color-danger-200: var(--color-error-border);
+		--color-danger-300: var(--color-error-border);
+		--color-danger-700: var(--color-error);
+		--color-danger-800: var(--color-error-hover);
+
+		--color-info-50: var(--color-info-bg);
+		--color-info-100: var(--color-info-bg);
+		--color-info-200: var(--color-info-border);
+		--color-info-600: var(--color-info);
+		--color-info-700: var(--color-info-hover);
+
+		--color-status-rejected: var(--color-status-rejected-text);
+		--color-rejected-text: var(--color-status-rejected-text);
+
+		--color-bg-muted: var(--color-bg-surface-muted);
+		--color-bg-subtle: var(--color-bg-surface-subtle);
+		--color-page-bg: var(--color-bg-page);
+	}
+}
+
+/* Module aliases + print palette (design-system pass, module CSS) */
+@layer base {
+	:root {
+		/* Names used by module CSS that were never declared */
+		--color-surface-raised: var(--color-bg-surface);                 /* workflow.css */
+		--color-approved-bg: var(--color-status-approved-bg);            /* vendor_styles.css */
+		--color-approved-text: var(--color-status-approved-text);
+		--color-bg-brand-soft: var(--color-bg-surface-active);           /* master_styles.css: active/selected rows (themed) */
+
+		/* ---- Activity Planner PDF palette (marketing_styles.css uses ~45 --pdf-* vars that nothing declared) ----
+		   A printed A4 page must stay light in dark mode, so these use only the
+		   primitives (which dark mode never overrides), never the semantic tokens. */
+		--pdf-bg: var(--color-clean-white);
+		--pdf-field-bg: var(--color-clean-white);
+		--pdf-text: var(--color-neutral-900);
+		--pdf-text-strong: var(--color-neutral-950);
+		--pdf-text-heading-soft: var(--color-neutral-800);
+		--pdf-text-body: var(--color-neutral-700);
+		--pdf-text-secondary: var(--color-neutral-600);
+		--pdf-text-muted: var(--color-neutral-500);
+		--pdf-text-slate: var(--color-neutral-500);
+		--pdf-text-soft: var(--color-neutral-400);
+		--pdf-border: var(--color-neutral-200);
+		--pdf-border-soft: var(--color-neutral-100);
+		--pdf-border-strong: var(--color-neutral-300);
+		--pdf-border-slate: var(--color-neutral-400);
+		--pdf-surface-subtle: var(--color-neutral-50);
+		--pdf-surface-muted: var(--color-neutral-100);
+		--pdf-surface-header: var(--color-neutral-50);
+		--pdf-surface-end: var(--color-neutral-50);
+		--pdf-hero-bg-start: var(--color-orange-50);
+		--pdf-brand: var(--color-orange-500);
+		--pdf-brand-dark: var(--color-orange-700);
+		--pdf-status-bg: var(--color-orange-50);
+		--pdf-status-border: var(--color-orange-200);
+		--pdf-status-text: var(--color-orange-700);
+		--pdf-shadow: var(--shadow-lg);
+		--pdf-shadow-xs: var(--shadow-xs);
+	}
+}

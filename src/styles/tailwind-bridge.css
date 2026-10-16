@@ -1,0 +1,66 @@
+/* =========================================================
+   TAILWIND BRIDGE
+   Gives Tailwind classes to the tokens in color.css.
+   Import AFTER `@import "tailwindcss"` and AFTER color.css.
+
+   Every name on the left is NEW (different from the variable on
+   the right) so nothing refers to itself. `inline` makes the class
+   read the live variable, so [data-theme="dark"] keeps working.
+
+   NOTE: "accent" (not "primary") because typography.css already has a .text-primary class.
+   NOTE: we deliberately do NOT add `--color-*: initial` yet.
+   That switch is Phase 2, once the audit script reports zero
+   default-palette classes (see scripts/check-colors.mjs).
+========================================================= */
+@theme inline {
+	/* Surfaces:  bg-page  bg-surface  bg-surface-subtle  bg-surface-muted  bg-surface-hover */
+	--color-page: var(--color-bg-page);
+	--color-surface: var(--color-bg-surface);
+	--color-surface-subtle: var(--color-bg-surface-subtle);
+	--color-surface-muted: var(--color-bg-surface-muted);
+	--color-surface-hover: var(--color-bg-surface-hover);
+
+	/* Text:  text-fg  text-fg-secondary  text-fg-muted  text-fg-subtle  text-fg-inverse */
+	--color-fg: var(--color-text-primary);
+	--color-fg-secondary: var(--color-text-secondary);
+	--color-fg-muted: var(--color-text-muted);
+	--color-fg-subtle: var(--color-text-subtle);
+	--color-fg-inverse: var(--color-text-inverse);
+
+	/* Borders:  border-line  border-line-subtle  border-line-strong */
+	--color-line: var(--color-border-default);
+	--color-line-subtle: var(--color-border-subtle);
+	--color-line-strong: var(--color-border-strong);
+
+	/* Brand:  bg-accent  hover:bg-accent-hover  bg-accent-subtle  bg-accent-soft  text-accent-text */
+	--color-accent: var(--color-brand);
+	--color-accent-hover: var(--color-brand-hover);
+	--color-accent-active: var(--color-brand-active);
+	--color-accent-soft: var(--color-brand-soft);
+	--color-accent-subtle: var(--color-brand-subtle);
+	--color-accent-text: var(--color-text-brand);
+	--color-on-accent: var(--color-brand-foreground);
+
+	/* Feedback:  text-danger  bg-danger-bg  border-danger-line  (same for positive / caution / notice) */
+	--color-positive: var(--color-success);
+	--color-positive-bg: var(--color-success-bg);
+	--color-positive-line: var(--color-success-border);
+	--color-caution: var(--color-warning);
+	--color-caution-bg: var(--color-warning-bg);
+	--color-caution-line: var(--color-warning-border);
+	--color-danger: var(--color-error);
+	--color-danger-bg: var(--color-error-bg);
+	--color-danger-line: var(--color-error-border);
+	--color-notice: var(--color-info);
+	--color-notice-bg: var(--color-info-bg);
+	--color-notice-line: var(--color-info-border);
+
+	/* Status text (darker, AA-safe, themed):  text-positive-text  text-caution-text  text-danger-text  text-notice-text */
+	--color-positive-text: var(--color-status-approved-text);
+	--color-caution-text: var(--color-status-pending-text);
+	--color-danger-text: var(--color-status-rejected-text);
+	--color-notice-text: var(--color-status-info-text);
+
+	/* Loading placeholders:  bg-skeleton */
+	--color-skeleton: var(--color-skeleton-base);
+}

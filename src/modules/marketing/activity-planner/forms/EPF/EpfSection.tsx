@@ -58,26 +58,32 @@ const EpfSection = ({
 		dealerPercent: epf.dealerPercent,
 	});
 
+	// Cost table on the left, budget summary on the right (stacks on small
+	// screens). No empty card when there are no overheads — just a one-liner.
 	return (
-		<div className="epf-summary-section">
-			{epf.lineItems?.length ? (
-				<LineTableView
-					data={mapEpfLineItemsToTableRows(epf.lineItems)}
-					showGrandTotal
-					grandTotalLabel="Event Cost Overheads Grand Total:"
-				/>
-			) : (
-				<Card variant="subtle" padding="compact">
-					<p className="epf-empty-message">No event cost overheads added.</p>
-				</Card>
-			)}
+		<div className="epf-summary-section epf-summary-section--split">
+			<div className="epf-summary-main">
+				{epf.lineItems?.length ? (
+					<LineTableView
+						data={mapEpfLineItemsToTableRows(epf.lineItems)}
+						showGrandTotal
+						grandTotalLabel="Event Cost Overheads Grand Total:"
+					/>
+				) : (
+					<Card variant="subtle" padding="compact">
+						<p className="epf-empty-message">No event cost overheads added.</p>
+					</Card>
+				)}
+			</div>
 
-			<BudgetShare
-				items={budgetItems}
-				shareInfo={shareInfo}
-				internalParticipants={internalParticipants}
-				externalParticipants={externalParticipants}
-			/>
+			<aside className="epf-summary-aside" aria-label="Budget summary">
+				<BudgetShare
+					items={budgetItems}
+					shareInfo={shareInfo}
+					internalParticipants={internalParticipants}
+					externalParticipants={externalParticipants}
+				/>
+			</aside>
 		</div>
 	);
 };

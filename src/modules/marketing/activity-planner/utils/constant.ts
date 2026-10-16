@@ -1,40 +1,52 @@
+// utils/constant.ts
+// Activity Planner constants: routes, filters, options, comment formatting,
+// status lists and line-item column presets.
+import {
+  Bold,
+  ClipboardCheck,
+  ClipboardList,
+  Code,
+  Italic,
+  List,
+  ListFilter,
+  type LucideIcon,
+} from "lucide-react";
+
+import type { ColumnConfig, EpcFilters } from "../types/epc.types";
+import {
+  createActivityActionOptions,
+  createEntityStatusOptions,
+} from "./status";
+
+/* ========================================================================== */
+/*                                   Routes                                   */
+/* ========================================================================== */
+
 export const epc_api_routes = {
   epc_listing_route: "/epc",
 };
 
-export type EpcListFilterValue = "createdByMe" | "pendingOnMe" | "approvedByMe";
+// utils/constant.ts
+// Keep in sync with routes/marketingRoutes.tsx.
+export const ACTIVITY_PLANNER_ROUTES = {
+  list: "/marketing/activity-planner/listing",
+  create: "/marketing/activity-planner/create",
+  /** Read-only EPC detail page (ActivityPlannerPage). */
+  detail: (epcId: string) => `/marketing/activity-planner/${epcId}`,
+  /** EPC → CRF → EPF stepper. `start` only changes the page title. */
+  addForms: (epcId: string, start?: "crf" | "epf") =>
+    `/marketing/activity-planner/${epcId}/add-forms${start ? `?start=${start}` : ""}`,
+};
+
+/* ========================================================================== */
+/*                          Products / sections / CRF                         */
+/* ========================================================================== */
 
 export const CRF_CATEGORIES = [
   { title: "Printed Materials", value: "PRINTED_MATERIAL" },
   { title: "Souvenirs", value: "SOUVENIR" },
   { title: "Artworks", value: "ARTWORK" },
 ];
-
-import {
-  Bold,
-  Italic,
-  Code,
-  List,
-  type LucideIcon,
-  ClipboardList,
-  ClipboardCheck,
-  ListFilter,
-} from "lucide-react";
-import type { FormatType } from "../../../../components/ui/comments/richTextarea.types";
-import type { EpcFilters } from "../types/epc.types";
-import {
-  createActivityActionOptions,
-  createEntityStatusOptions,
-} from "./statusConfig";
-
-export const ACTIVITY_PLANNER_ROUTES = {
-  list: "/marketing/activity-planner",
-  create: "/marketing/activity-planner/create",
-  detail: (epcId: string) => `/marketing/activity-planner/${epcId}`,
-  edit: (epcId: string) => `/marketing/activity-planner/${epcId}/edit`,
-  crf: (epcId: string) => `/marketing/activity-planner/${epcId}/crf`,
-  epf: (epcId: string) => `/marketing/activity-planner/${epcId}/epf`,
-};
 
 export const PRODUCT_TYPES = {
   CRF: "CRF",
@@ -53,23 +65,74 @@ export type EditingSection =
   | (typeof EDITING_SECTIONS)[keyof typeof EDITING_SECTIONS]
   | null;
 
-export const status = {
-  PENDING: "Pending",
-  REPORT_SUBMITTED: "Report Submitted",
-  APPROVED: "Approved",
-  SUBMITTED: "Submitted",
-  CANCELLED: "Cancelled",
-  COMPLETED: "Completed",
-  CONDUCTED: "Conducted",
-  NOT_CONDUCTED: "Cancelled",
-  VALIDATED: "Validated",
-  CLARIFIED: "Clarified",
-  IN_PROGRESS: "In Progress",
-  DEVIATION_IN_PROGRESS: "Deviated",
-  CLARIFY_REPORT: "Report Clarified",
-  CLOSED: "Closed",
-} as const;
+/* ========================================================================== */
+/*                           Line-item column presets                         */
+/* ========================================================================== */
 
+export const DEFAULT_COLUMNS: ColumnConfig[] = [
+  { key: "sno", label: "SNo", colSpan: 1 },
+  { key: "partNumber", label: "Part No.", colSpan: 2 },
+  { key: "particular", label: "Particulars", colSpan: 3 },
+  { key: "description", label: "Description", colSpan: 2, editable: true },
+  { key: "rate", label: "Rate", colSpan: 1, align: "right", editable: true },
+  { key: "quantity", label: "Qty", colSpan: 1, align: "right", editable: true },
+  { key: "total", label: "Total", colSpan: 1, align: "right" },
+  { key: "actions", label: "Action", colSpan: 1, align: "center" },
+];
+
+// Overhead lines are a single proposer-entered ₹ amount, not quantity × a
+// catalog rate (see epf.controller.ts's createEPF/updateEPF) — so there is
+// no Qty/Total column here. The `rate` key is kept as-is (only the label
+// changes) so this stays wired straight into LineItemOption.rate /
+// EpfLineItemPayload's `amount: item.rate` (epf.payload.ts) without
+// touching either shape.
+export const OVERHEAD_COLUMNS: ColumnConfig[] = [
+  { key: "sno", label: "SNo", colSpan: 1 },
+  { key: "partNumber", label: "Part No.", colSpan: 2 },
+  { key: "particular", label: "Particulars", colSpan: 2 },
+  { key: "description", label: "Description", colSpan: 2, editable: true },
+  { key: "rate", label: "Amount", colSpan: 1, align: "right", editable: true },
+  { key: "quotation", label: "File", colSpan: 1, align: "center" },
+  { key: "actions", label: "Action", colSpan: 1, align: "center" },
+];
+
+export const ARTWORK_COLUMNS: ColumnConfig[] = [
+  { key: "sno", label: "SNo", colSpan: 1 },
+  { key: "partNumber", label: "Part No.", colSpan: 2 },
+  { key: "particular", label: "Particulars", colSpan: 2 },
+  { key: "description", label: "Description", colSpan: 2, editable: true },
+  {
+    key: "width",
+    label: "Width",
+    colSpan: 1,
+    align: "right",
+    editable: true,
+    disabled: true,
+  },
+  {
+    key: "height",
+    label: "Height",
+    colSpan: 1,
+    align: "right",
+    editable: true,
+  },
+  { key: "unit", label: "Unit", colSpan: 1, align: "right" },
+  { key: "quantity", label: "Quantity", colSpan: 1, align: "right" },
+  { key: "actions", label: "Action", colSpan: 1, align: "center" },
+];
+
+// Map category value → column preset
+export const CATEGORY_COLUMNS: Record<string, ColumnConfig[]> = {
+  EVENT_OVERHEAD: OVERHEAD_COLUMNS,
+  ARTWORK: ARTWORK_COLUMNS,
+  // add more as needed
+};
+
+/* ========================================================================== */
+/*                               Listing filters                              */
+/* ========================================================================== */
+
+export type EpcListFilterValue = "createdByMe" | "pendingOnMe" | "approvedByMe";
 export type EpcListFilter = "pendingOnMe" | "createdByMe" | "approvedByMe";
 
 export const epcListFilterOptions = [
@@ -95,6 +158,35 @@ export const epcListFilterOptions = [
     Icon: ListFilter,
   },
 ] as const;
+
+export const EMPTY_EPC_FILTERS: EpcFilters = {
+  status: [],
+  zone: [],
+  eventType: [],
+  eventDateFrom: "",
+  eventDateTo: "",
+  createdDate: "",
+};
+
+/* ========================================================================== */
+/*                          Event outcome / deviation                         */
+/* ========================================================================== */
+
+export const eventOutcomeOptions = [
+  { label: "Select..", value: "" },
+  { label: "Conducted", value: "CONDUCTED" },
+  { label: "Not Conducted", value: "CANCELLED" },
+];
+
+export const eventDeviationOptions = [
+  { label: "Select..", value: "" },
+  { label: "Required", value: "REQUIRED" },
+  { label: "Not Required", value: "NOT_REQUIRED" },
+];
+
+/* ========================================================================== */
+/*                          Comment editor formatting                         */
+/* ========================================================================== */
 
 export const EMOJIS = [
   "👍",
@@ -128,6 +220,20 @@ export const EMOJIS = [
   "⏰",
   "📅",
 ];
+
+// FormatType used to be imported from components/ui/comments/comment.types,
+// but that file never exported it (a broken import — TS2305) — and nothing
+// else in the project defines it either. FORMAT_ACTIONS/FORMAT_WRAP/
+// FORMAT_CURSOR_OFFSET below also have no consumer anywhere (the actual
+// comment editor, RichTextareaInput.tsx, only ships emoji + mention + send,
+// no bold/italic/code/bullet toolbar) — this looks like scaffolding for a
+// formatting toolbar that was never wired up. Defining the type locally
+// here (it's only used by this file's own three exports) fixes the build
+// without guessing at a shared-type home for a type nothing else needs yet.
+// If/when a formatting toolbar is actually built, promote this type (and
+// these three exports) to wherever that toolbar component lives.
+export type FormatType = "bold" | "italic" | "code" | "bullet";
+
 type FormatAction = {
   icon: LucideIcon;
   fmt: FormatType;
@@ -155,25 +261,26 @@ export const FORMAT_CURSOR_OFFSET: Record<FormatType, number> = {
   bullet: 3,
 };
 
-export const EMPTY_EPC_FILTERS: EpcFilters = {
-  status: [],
-  zone: [],
-  eventType: [],
-  eventDateFrom: "",
-  eventDateTo: "",
-  createdDate: "",
-};
+/* ========================================================================== */
+/*                           Status lists & options                           */
+/* ========================================================================== */
 
-export const eventOutcomeOptions = [
-  { label: "Select..", value: "" },
-  { label: "Conducted", value: "CONDUCTED" },
-  { label: "Not Conducted", value: "CANCELLED" },
-];
-export const eventDeviationOptions = [
-  { label: "Select..", value: "" },
-  { label: "Required", value: "REQUIRED" },
-  { label: "Not Required", value: "NOT_REQUIRED" },
-];
+export const status = {
+  PENDING: "Pending",
+  REPORT_SUBMITTED: "Report Submitted",
+  APPROVED: "Approved",
+  SUBMITTED: "Submitted",
+  CANCELLED: "Cancelled",
+  COMPLETED: "Completed",
+  CONDUCTED: "Conducted",
+  NOT_CONDUCTED: "Cancelled",
+  VALIDATED: "Validated",
+  CLARIFIED: "Clarified",
+  IN_PROGRESS: "In Progress",
+  DEVIATION_IN_PROGRESS: "Deviated",
+  CLARIFY_REPORT: "Report Clarified",
+  CLOSED: "Closed",
+} as const;
 
 export const EPC_STATUSES = [
   "PENDING",
@@ -234,3 +341,17 @@ export const epcStatusOptions = createEntityStatusOptions(EPC_STATUSES);
 export const reportStatusOptions = createEntityStatusOptions(REPORT_STATUSES);
 export const activityActionOptions =
   createActivityActionOptions(ACTIVITY_ACTIONS);
+/* ------------------------------------------------------------------ */
+/*                    Activity planner route paths                     */
+/* ------------------------------------------------------------------ */
+
+export const EPC_LISTING_PATH = "/marketing/activity-planner/listing";
+export const EPC_LEADS_VIEW_PATH = "/marketing/activity-planner/leads/view";
+export const EPC_DETAIL_PATH = (epcId: string) =>
+  `/marketing/activity-planner/${epcId}`;
+
+/** Which menu option opened the wizard ("Add CRF" / "Add EPF"). Title only. */
+export type EpcWizardIntent = "crf" | "epf";
+
+export const EPC_FORMS_WIZARD_PATH = (epcId: string, start: EpcWizardIntent) =>
+  `/marketing/activity-planner/${epcId}/add-forms?start=${start}`;
