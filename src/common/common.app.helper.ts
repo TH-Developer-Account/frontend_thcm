@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 
 import type { Permission } from "../context/Auth/AuthContext";
 import { useAuth } from "../context/Auth/useAuth";
+import { useMasterData } from "../hooks/useMasterData";
 
 export type AppInfo = Pick<Permission, "appId" | "appName" | "appKey">;
 
@@ -78,4 +79,36 @@ export const useAppLookup = () => {
 	);
 
 	return { lookup, getApp, getAppName, getAppKey };
+};
+
+export const useUserInfo = () => {
+	const { user } = useAuth();
+	const { data: masters } = useMasterData();
+
+	const zone = user?.zone ?? "";
+	const matchZone = (masters?.regions ?? []).find(
+		(r) => r.value === zone || r.code === zone || r.label === zone,
+	);
+
+	const branch = user?.branch ?? "";
+	const matchBranch = (masters?.branches ?? []).find(
+		(r) => r.value === branch || r.code === branch || r.label === branch,
+	);
+
+	const department = user?.department ?? "";
+	const matchDepartment = (masters?.departments ?? []).find(
+		(r) =>
+			r.value === department || r.code === department || r.label === department,
+	);
+	return {
+		zoneId: matchZone?.value ?? "",
+		zoneCode: matchZone?.code ?? "",
+		zoneLabel: matchZone?.label ?? zone,
+		branchId: matchBranch?.value ?? "",
+		branchCode: matchBranch?.code ?? "",
+		branchLabel: matchBranch?.label ?? branch,
+		departmentId: matchDepartment?.value ?? "",
+		departmentCode: matchDepartment?.code ?? "",
+		departmentLabel: matchDepartment?.label ?? department,
+	};
 };
