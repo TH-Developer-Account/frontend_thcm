@@ -74,6 +74,7 @@ const EPCActionMenu = ({
   canCreateMachineStudy = false,
 }: EPCActionMenuProps) => {
   const navigate = useNavigate();
+  console.log({ canCreateLead });
   const rowLabel = row.proposal_number || getEventName(row);
 
   // Existing EPC / CRF / EPF permissions remain unchanged.
