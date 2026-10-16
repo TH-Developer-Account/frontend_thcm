@@ -1046,328 +1046,6 @@ components.css, later rules win, so the old .epf-* rules stay untouched. */
 }
 
 /* =====================================================
-ACTIVITY DETAILS
-Responsive enterprise detail layout
-===================================================== */
-
-@layer components {
-	.activity-details-content {
-		display: flex;
-		width: 100%;
-		min-width: 0;
-		flex-direction: column;
-		gap: var(--space-3);
-
-		padding: var(--space-3);
-	}
-
-	/* =====================================================
-	   PRIMARY DETAILS
-	   Branch, Department, Vertical, Zone, Created, Budget
-	===================================================== */
-
-	.activity-details-primary-grid {
-		display: grid;
-		width: 100%;
-		min-width: 0;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		align-items: start;
-		gap: var(--space-3) var(--space-2);
-	}
-
-	/* =====================================================
-	   SECONDARY DETAILS
-	   Location, Description, Objective
-	===================================================== */
-
-	.activity-details-secondary-grid {
-		display: grid;
-		width: 100%;
-		min-width: 0;
-		grid-template-columns: minmax(0, 1fr);
-		align-items: start;
-		gap: var(--space-3);
-
-		padding-top: var(--space-1);
-	}
-
-	/* =====================================================
-	   DETAIL ITEM
-	===================================================== */
-
-	.activity-detail-item {
-		display: flex;
-		width: 100%;
-		min-width: 0;
-		flex-direction: column;
-		gap: var(--space-1);
-
-		padding: var(--space-1);
-	}
-
-	/*
-	 * Location, Description and Objective use this class.
-	 * They occupy the full grid width until desktop.
-	 */
-	.activity-detail-item-wide {
-		grid-column: 1 / -1;
-	}
-
-	/*
-	 * Optional utility when a field should occupy two columns.
-	 */
-	.activity-detail-item-span-2 {
-		grid-column: span 2;
-	}
-
-	/*
-	 * Optional utility when a field must always occupy a full row.
-	 */
-	.activity-detail-item-full {
-		grid-column: 1 / -1;
-	}
-
-	/* =====================================================
-	   LABEL
-	===================================================== */
-
-	.activity-detail-label {
-		display: block;
-		min-width: 0;
-
-		color: var(--color-text-secondary);
-
-		font-family: var(--font-sans);
-		font-size: var(--font-size-2xs);
-		font-weight: var(--font-weight-medium);
-		letter-spacing: var(--tracking-wide);
-		line-height: 1;
-		text-transform: uppercase;
-
-		overflow-wrap: anywhere;
-	}
-
-	/* =====================================================
-	   VALUE
-	===================================================== */
-
-	.activity-detail-value {
-		width: 100%;
-		min-width: 0;
-		margin: 0;
-
-		color: var(--color-text-primary);
-
-		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-tight);
-	}
-
-	.activity-detail-value-truncate {
-		overflow: hidden;
-
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.activity-detail-value-wrap {
-		overflow-wrap: anywhere;
-		word-break: break-word;
-		white-space: normal;
-	}
-
-	/* =====================================================
-	   SEE MORE BUTTON
-	===================================================== */
-
-	.activity-detail-more {
-		display: inline;
-
-		margin: 0 0 0 var(--space-1);
-		padding: 0;
-
-		border: 0;
-		border-radius: var(--radius-xs);
-
-		background-color: transparent;
-		color: var(--color-text-link);
-		box-shadow: none;
-
-		font: inherit;
-		font-weight: var(--font-weight-medium);
-		line-height: inherit;
-		text-align: left;
-		text-decoration: none;
-
-		cursor: pointer;
-
-		transition:
-			color var(--duration-fast) var(--ease-standard),
-			box-shadow var(--duration-fast) var(--ease-standard);
-	}
-
-	.activity-detail-more:hover {
-		color: var(--color-text-link-hover);
-		text-decoration: underline;
-		text-underline-offset: 0.15em;
-	}
-
-	.activity-detail-more:focus-visible {
-		outline: none;
-		box-shadow: var(--shadow-focus-brand);
-	}
-
-	/* =====================================================
-	   VERY SMALL MOBILE
-	   All fields become one column.
-	===================================================== */
-
-	@media (max-width: 379px) {
-		.activity-details-content {
-			gap: var(--space-2);
-			padding: var(--space-2);
-		}
-
-		.activity-details-primary-grid,
-		.activity-details-secondary-grid {
-			grid-template-columns: minmax(0, 1fr);
-			gap: var(--space-2);
-		}
-
-		.activity-detail-item,
-		.activity-detail-item-wide,
-		.activity-detail-item-span-2,
-		.activity-detail-item-full {
-			grid-column: auto;
-		}
-	}
-
-	/* =====================================================
-	   MOBILE / SMALL TABLET
-	   Primary details stay two columns.
-	   Secondary details stay full width.
-	===================================================== */
-
-	@media (min-width: 480px) {
-		.activity-details-primary-grid {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			column-gap: var(--space-3);
-		}
-
-		.activity-details-secondary-grid {
-			grid-template-columns: minmax(0, 1fr);
-		}
-	}
-
-	/* =====================================================
-	   TABLET
-	   Primary details become three columns.
-	   Location, Description and Objective remain single-column.
-	===================================================== */
-
-	@media (min-width: 640px) {
-		.activity-details-primary-grid {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
-			gap: var(--space-3);
-		}
-
-		.activity-details-secondary-grid {
-			grid-template-columns: minmax(0, 1fr);
-			gap: var(--space-3);
-		}
-
-		.activity-details-secondary-grid .activity-detail-item-wide {
-			grid-column: 1 / -1;
-		}
-	}
-
-	/* =====================================================
-	   TABLET LANDSCAPE
-	   Primary details become four columns.
-	   Narrative fields remain full width.
-	===================================================== */
-
-	@media (min-width: 768px) {
-		.activity-details-primary-grid {
-			grid-template-columns: repeat(4, minmax(0, 1fr));
-		}
-
-		.activity-details-secondary-grid {
-			grid-template-columns: minmax(0, 1fr);
-			gap: var(--space-3);
-		}
-
-		.activity-details-secondary-grid .activity-detail-item-wide {
-			grid-column: 1 / -1;
-		}
-	}
-
-	/* =====================================================
-	   DESKTOP
-	   Primary details become five columns.
-	   Secondary fields become three equal columns.
-	===================================================== */
-
-	@media (min-width: 1024px) {
-		.activity-details-content {
-			gap: var(--space-4);
-		}
-
-		.activity-details-primary-grid {
-			grid-template-columns: repeat(5, minmax(0, 1fr));
-			gap: var(--space-3);
-		}
-
-		.activity-details-secondary-grid {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
-			gap: var(--space-4);
-		}
-
-		.activity-details-secondary-grid .activity-detail-item-wide {
-			grid-column: auto;
-		}
-
-		.activity-details-secondary-grid .activity-detail-item-full {
-			grid-column: 1 / -1;
-		}
-	}
-
-	/* =====================================================
-	   LARGE DESKTOP
-	   All six primary values fit in one row.
-	===================================================== */
-
-	@media (min-width: 1280px) {
-		.activity-details-primary-grid {
-			grid-template-columns: repeat(6, minmax(0, 1fr));
-		}
-	}
-
-	/* =====================================================
-	   EXTRA LARGE DESKTOP
-	   Keep six columns and slightly increase spacing.
-	===================================================== */
-
-	@media (min-width: 1536px) {
-		.activity-details-primary-grid {
-			grid-template-columns: repeat(6, minmax(0, 1fr));
-			column-gap: var(--space-4);
-		}
-	}
-
-	/* =====================================================
-	   REDUCED MOTION
-	===================================================== */
-
-	@media (prefers-reduced-motion: reduce) {
-		.activity-detail-more {
-			transition-duration: 0.01ms;
-		}
-	}
-}
-
-/* =====================================================
    COMPACT DATE RANGE
    Theme-aware animated event timeline
 ===================================================== */
@@ -2111,6 +1789,70 @@ Responsive enterprise detail layout
 }
 
 /* =====================================================
+   EPF — stat tiles + three-card layout (design C)
+   Used by EpfForm, EpfSection (view) and BudgetShare.
+   Paste inside @layer components. The old .epf-form-grid /
+   .epf-form-block / .epf-form-fields* / .epf-stat-grid rules are no
+   longer used and can be removed.
+===================================================== */
+
+@layer components {
+	.epf-layout {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	/* Four stat tiles in one row (tiles themselves are the existing .epf-stat) */
+	.epf-stat-strip {
+		display: grid;
+		min-width: 0;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: var(--space-3);
+	}
+
+	/* Participants / Dealer / Budget — three Cards side by side */
+	.epf-card-grid {
+		display: grid;
+		min-width: 0;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		align-items: start;
+		gap: var(--space-3);
+	}
+
+	/* Fields inside a card: one column, or two with --2 */
+	.epf-card-fields {
+		display: grid;
+		min-width: 0;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-3);
+	}
+
+	.epf-card-fields--2 {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.epf-card-field-wide {
+		grid-column: 1 / -1;
+	}
+
+	@media (max-width: 1080px) {
+		.epf-stat-strip,
+		.epf-card-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (max-width: 720px) {
+		.epf-stat-strip,
+		.epf-card-grid {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+}
+
+/* =====================================================
    EVENT OUTCOME
    Feature-specific activity outcome/deviation form
 ===================================================== */
@@ -2313,564 +2055,534 @@ Responsive enterprise detail layout
 		}
 	}
 }
-/* =========================================================
-   ACTIVITY FORM VIEW
-   Header (title + tabs) · Form | Audit + Comments · Footer
-   Add to components.css (or import alongside it).
-========================================================= */
+
+/* =====================================================
+   ACTIVITY OVERVIEW
+   EPC details: About card + Budget / Schedule / Facts card.
+
+   NOTE: your current marketing.styles.css has no `.activity-detail-label`
+   or `.activity-detail-more` — the new component still uses both, so they
+   are (re)defined here.
+===================================================== */
 
 @layer components {
-	.activity-form-view {
-		/* Tune these to match the app shell height (top nav + page padding). */
-		--afv-sticky-top: var(--space-4);
-		--afv-side-offset: 9rem;
+	/* ---------------- Shared small pieces ---------------- */
 
-		display: flex;
-		width: 100%;
-		min-width: 0;
-		flex-direction: column;
-		gap: var(--space-4);
-	}
-
-	/* ---------------- Header ---------------- */
-
-	.activity-form-view-header {
-		display: flex;
-		width: 100%;
-		min-width: 0;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-4);
-
-		padding: var(--space-3) var(--space-4);
-
-		border: var(--border-width-default) solid var(--color-border-default);
-		border-radius: var(--radius-lg);
-		background-color: var(--color-bg-surface);
-		box-shadow: var(--shadow-xs);
-	}
-
-	.activity-form-view-header-copy {
-		display: flex;
-		min-width: 0;
-		flex: 1 1 auto;
-		align-items: center;
-		gap: var(--space-3);
-	}
-
-	.activity-form-view-title-row {
-		display: flex;
-		min-width: 0;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	.activity-form-view-title {
+	/* Small grey uppercase label (Schedule, Branch, Department, …) */
+	.activity-detail-label {
+		display: block;
 		min-width: 0;
 		margin: 0;
-		overflow: hidden;
 
-		color: var(--color-text-primary);
-		font-size: var(--font-size-lg);
-		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-tight);
+		color: var(--color-text-muted);
 
-		text-overflow: ellipsis;
+		font-family: var(--font-sans);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-semibold);
+		letter-spacing: var(--tracking-wide);
+		line-height: 1;
+		text-transform: uppercase;
+
+		overflow-wrap: anywhere;
+	}
+
+	/* Inline "See more" / "See less" — bold brand colour, sits after the "…" */
+	.activity-detail-more {
+		display: inline;
+
+		margin: 0 0 0 var(--space-1);
+		padding: 0;
+
+		border: 0;
+		border-radius: var(--radius-xs);
+
+		background-color: transparent;
+		color: var(--color-text-brand);
+		box-shadow: none;
+
+		font: inherit;
+		font-weight: var(--font-weight-semibold);
+		line-height: inherit;
+		text-align: left;
+		text-decoration: none;
 		white-space: nowrap;
+
+		cursor: pointer;
+
+		transition:
+			color var(--duration-fast) var(--ease-standard),
+			box-shadow var(--duration-fast) var(--ease-standard);
 	}
 
-	.activity-form-view-subtitle {
-		margin: var(--space-1) 0 0;
-		overflow: hidden;
-
-		color: var(--color-text-secondary);
-		font-size: var(--font-size-xs);
-		font-variant-numeric: tabular-nums;
-
-		text-overflow: ellipsis;
-		white-space: nowrap;
+	.activity-detail-more:hover {
+		color: var(--color-brand-active);
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
 	}
 
-	.activity-form-view-tabs {
-		flex: 0 0 auto;
-		max-width: 100%;
-		overflow-x: auto;
-		scrollbar-width: none;
+	.activity-detail-more:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-focus-brand);
 	}
 
-	.activity-form-view-tabs::-webkit-scrollbar {
-		display: none;
+	/* ---------------- Layout ---------------- */
+
+	.activity-overview {
+		width: 100%;
+		min-width: 0;
 	}
 
-	/* ---------------- Body ---------------- */
-
-	.activity-form-view-body {
+	.activity-overview-layout {
 		display: grid;
 		min-width: 0;
 		grid-template-columns: minmax(0, 1fr);
 		align-items: start;
-		gap: var(--space-4);
+		gap: var(--space-3);
 	}
 
-	.activity-form-view-main {
+	@media (min-width: 1024px) {
+		.activity-overview-layout {
+			grid-template-columns: minmax(0, 1fr) minmax(24rem, 28rem);
+		}
+	}
+
+	.activity-overview-card {
 		min-width: 0;
-	}
-
-	.activity-form-view-tab-body {
-		padding: var(--space-4);
-	}
-
-	.activity-form-view-empty {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: var(--space-2);
-
-		padding: var(--space-10, 2.5rem) var(--space-4);
-
-		color: var(--color-text-muted);
-		text-align: center;
-	}
-
-	.activity-form-view-empty-title {
-		margin: 0;
-		color: var(--color-text-primary);
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-medium);
-	}
-
-	.activity-form-view-empty-description {
-		max-width: 26rem;
-		margin: 0;
-		font-size: var(--font-size-xs);
-	}
-
-	/* ---------------- Side panels ---------------- */
-
-	.activity-form-view-side {
-		display: grid;
-		min-width: 0;
-		grid-template-rows: repeat(2, minmax(0, 1fr));
-		gap: var(--space-4);
-	}
-
-	.activity-form-view-panel {
-		display: flex;
-		min-height: 0;
-		flex-direction: column;
 		overflow: hidden;
-	}
-
-	/* Card renders: header + <div id> wrapper + body — keep the flex chain unbroken
-	   so the audit/comment components' own scroll gets a bounded height. */
-	.activity-form-view-panel > div {
-		display: flex;
-		min-height: 0;
-		flex: 1 1 auto;
-		flex-direction: column;
-	}
-
-	.activity-form-view-panel-body {
-		display: flex;
-		min-height: 0;
-		flex: 1 1 auto;
-		flex-direction: column;
-		overflow: hidden;
-	}
-
-	.activity-form-view-panel .ui-card-header {
-		padding-bottom: var(--space-3);
-	}
-	.activity-form-view-panel .ui-card-header ::before {
-		display: none;
-	}
-	.activity-form-view-panel-body > * {
-		min-height: 0;
-		flex: 1 1 auto;
-	}
-
-	.activity-form-view-panel-title {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	.activity-form-view-panel-title svg {
-		color: var(--color-brand);
-	}
-
-	/* ---------------- Footer ---------------- */
-
-	/* Sticky shell only — ApprovalActionsBar keeps its own internal layout. */
-	.activity-form-view-footer {
-		/* position: sticky; */
-		/* bottom: 0; */
-		/* z-index: var(--z-sticky); */
-
-		padding: var(--space-3) var(--space-4);
 
 		border: var(--border-width-default) solid var(--color-border-default);
 		border-radius: var(--radius-lg);
+
 		background-color: var(--color-bg-surface);
-		box-shadow: var(--shadow-xs);
+		color: var(--color-text-primary);
 	}
 
-	.activity-form-view-footer > .approval-actions-bar {
+	/* ---------------- Main card ---------------- */
+
+	.activity-overview-main {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+
+		padding: var(--space-4) var(--space-5);
+	}
+
+	.activity-overview-header {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-1-5);
+	}
+
+	/* Orange eyebrow: "ABOUT THE EVENT", "OBJECTIVES" */
+	.activity-overview-eyebrow {
+		display: block;
+
+		color: var(--color-text-brand);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-semibold);
+		letter-spacing: var(--tracking-wide);
+		line-height: 1;
+		text-transform: uppercase;
+	}
+
+	.activity-overview-title {
+		margin: 0;
+
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-2xl, var(--font-size-xl));
+		font-weight: 700;
+		letter-spacing: var(--tracking-heading);
+		line-height: var(--line-height-heading);
+
+		overflow-wrap: anywhere;
+	}
+
+	.activity-overview-block {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.activity-overview-text {
+		margin: 0;
+
+		color: var(--color-text-secondary);
+
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+
+		overflow-wrap: anywhere;
+	}
+
+	.activity-overview-divider {
 		width: 100%;
+		margin: 0;
+
+		border: 0;
+		border-top: var(--border-width-default) solid var(--color-border-subtle);
+	}
+
+	/* ---------------- Objectives ---------------- */
+
+	.activity-overview-objectives {
+		display: grid;
+		min-width: 0;
+		margin: 0;
+		padding: 0;
+		grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+		gap: var(--space-3);
+
+		list-style: none;
+	}
+
+	.activity-overview-objective {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-1);
+
+		margin: 0;
+		padding: var(--space-3);
+
+		border-radius: var(--radius-md);
+
+		background-color: var(--color-bg-surface-subtle);
+	}
+
+	.activity-overview-objective-index {
+		color: var(--color-text-brand);
+
+		font-family: var(--font-mono);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-semibold);
+		font-variant-numeric: tabular-nums;
+		line-height: 1;
+	}
+
+	.activity-overview-objective-title {
+		margin: 0;
+
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-semibold);
+		letter-spacing: var(--tracking-tight);
+		line-height: var(--line-height-tight);
+
+		overflow-wrap: anywhere;
+	}
+
+	.activity-overview-objective-body {
+		margin: 0;
+
+		color: var(--color-text-secondary);
+
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+
+		overflow-wrap: anywhere;
+	}
+
+	/* ---------------- Summary card ---------------- */
+
+	.activity-overview-side {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.activity-overview-budget {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1-5);
+
+		padding: var(--space-4);
+
+		background-color: var(--color-brand-subtle);
+	}
+
+	.activity-overview-budget-label {
+		color: var(--color-text-brand);
+
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-semibold);
+		letter-spacing: var(--tracking-wide);
+		line-height: 1;
+		text-transform: uppercase;
+	}
+
+	.activity-overview-budget-value {
+		margin: 0;
+
+		color: var(--color-brand-active);
+
+		font-size: var(--font-size-3xl);
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		letter-spacing: var(--tracking-heading);
+		line-height: var(--line-height-heading);
+
+		overflow-wrap: anywhere;
+	}
+
+	.activity-overview-section,
+	.activity-overview-facts,
+	.activity-overview-location {
+		margin: 0;
+		padding: var(--space-3) var(--space-4);
+
+		border-top: var(--border-width-default) solid var(--color-border-subtle);
+	}
+
+	/* ---------------- Schedule ---------------- */
+
+	.activity-overview-section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	.activity-overview-section-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
+
+	.activity-overview-pill {
+		display: inline-flex;
+		align-items: center;
+
+		padding: var(--space-0-5) var(--space-2);
+
+		border-radius: var(--radius-full);
+
+		background-color: var(--color-brand-subtle);
+		color: var(--color-brand-active);
+
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+		white-space: nowrap;
+	}
+
+	/* Multi-day: From (filled dot) → To (hollow dot) */
+	.activity-overview-timeline {
+		display: flex;
+		margin: 0;
+		padding: 0;
+		flex-direction: column;
+		gap: var(--space-3);
+
+		list-style: none;
+	}
+
+	.activity-overview-timeline-item {
+		position: relative;
+
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-0-5);
+
+		padding-left: var(--space-5);
+	}
+
+	.activity-overview-timeline-dot {
+		position: absolute;
+		top: 0.2rem;
+		left: 0;
+		z-index: 1;
+
+		width: 0.5rem;
+		height: 0.5rem;
+
+		box-sizing: border-box;
+		border: 1.5px solid var(--color-brand);
+		border-radius: var(--radius-full);
+	}
+
+	.activity-overview-timeline-dot.is-start {
+		background-color: var(--color-brand);
+	}
+
+	.activity-overview-timeline-dot.is-end {
+		background-color: var(--color-bg-surface);
+	}
+
+	/* Connector between the two dots */
+	.activity-overview-timeline-item:first-child::after {
+		position: absolute;
+		top: 0.7rem;
+		left: calc(0.25rem - 0.5px);
+
+		width: 1px;
+		height: calc(100% + var(--space-3) - 0.5rem);
+
+		background-color: var(--color-border-strong);
+
+		content: "";
+	}
+
+	/* Single-day: label + date, no timeline */
+	.activity-overview-single-date {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-0-5);
+	}
+
+	.activity-overview-timeline-label {
+		color: var(--color-text-muted);
+
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-medium);
+		letter-spacing: var(--tracking-wide);
+		line-height: 1;
+		text-transform: uppercase;
+	}
+
+	.activity-overview-timeline-value {
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-semibold);
+		line-height: var(--line-height-tight);
+	}
+
+	.activity-overview-weekday {
+		margin-left: var(--space-1);
+
+		color: var(--color-text-muted);
+
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+	}
+
+	.activity-overview-weekday::before {
+		margin-right: var(--space-1);
+
+		content: "\00b7";
+	}
+
+	/* ---------------- Facts + location ---------------- */
+
+	.activity-overview-facts {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--space-3) var(--space-3);
+	}
+
+	.activity-overview-fact {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-1);
+
+		margin: 0;
+	}
+
+	.activity-overview-fact-value {
+		margin: 0;
+
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-semibold);
+		line-height: var(--line-height-tight);
+
+		overflow-wrap: anywhere;
+	}
+
+	.activity-overview-fact-value.is-wrap {
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-normal);
+	}
+
+	.activity-overview-location {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-2);
+	}
+
+	.activity-overview-location-icon {
+		flex: 0 0 auto;
+
+		margin-top: 0.1rem;
+
+		color: var(--color-brand);
+	}
+
+	.activity-overview-location-copy {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-1);
 	}
 
 	/* ---------------- Responsive ---------------- */
 
-	/* Below 1280px: stack; panels get a fixed height so their inner scroll still works. */
-	@media (max-width: 1279px) {
-		.activity-form-view-side {
+	/* Facts: 3 columns by default, fewer as the screen shrinks */
+	@media (max-width: 640px) {
+		.activity-overview-facts {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-			grid-template-rows: none;
-		}
-
-		.activity-form-view-panel {
-			height: 28rem;
 		}
 	}
 
-	@media (min-width: 1280px) {
-		.activity-form-view-body.has-side-panels {
-			grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
-		}
-
-		.activity-form-view-side {
-			position: sticky;
-			top: var(--afv-sticky-top);
-			height: calc(100dvh - var(--afv-side-offset));
-		}
-	}
-
-	@media (max-width: 767px) {
-		.activity-form-view-header {
-			align-items: stretch;
-			flex-direction: column;
-		}
-
-		.activity-form-view-side {
+	@media (max-width: 420px) {
+		.activity-overview-facts {
 			grid-template-columns: minmax(0, 1fr);
 		}
+	}
+
+	@media (max-width: 640px) {
+		.activity-overview-main {
+			padding: var(--space-3);
+		}
+
+		.activity-overview-objectives {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	/* =====================================================
+	   DATE RANGE — single-day variant (DateRangeSection)
+	   Place AFTER the existing .date-range-* block so it wins.
+	===================================================== */
+
+	.date-range-content.date-range-content-single {
+		grid-template-columns: minmax(0, 1fr) auto;
+	}
+
+	.date-range-content-single .date-range-pill {
+		justify-self: end;
 	}
 }
-/* =========================================================
-   ACTIVITY FORM VIEW
-   Header (title + tabs) · Form | Audit + Comments · Footer
-   Add to components.css (or import alongside it).
-========================================================= */
+/* =====================================================
+   EPF — one Card, collapsible sections in a 3-up grid
+   (unlayered on purpose: must beat Card's own section layout)
+===================================================== */
 
-@layer components {
-	.activity-form-view {
-		/* Tune these to match the app shell height (top nav + page padding). */
-		--afv-sticky-top: var(--space-4);
-		--afv-side-offset: 9rem;
+.epf-sections-card .ui-card-sections {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--space-4);
+	align-items: start;
+}
 
-		display: flex;
-		width: 100%;
-		min-width: 0;
-		flex-direction: column;
-		gap: var(--space-4);
-	}
+/* Budget Summary and Event Cost Overheads span the full row */
+.epf-sections-card .epf-section--full {
+	grid-column: 1 / -1;
+}
 
-	/* ---------------- Header ---------------- */
-
-	.activity-form-view-header {
-		display: flex;
-		width: 100%;
-		min-width: 0;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-4);
-
-		padding: var(--space-3) var(--space-4);
-
-		border: var(--border-width-default) solid var(--color-border-default);
-		border-radius: var(--radius-lg);
-		background-color: var(--color-bg-surface);
-		box-shadow: var(--shadow-xs);
-	}
-
-	.activity-form-view-header-copy {
-		display: flex;
-		min-width: 0;
-		flex: 1 1 auto;
-		align-items: center;
-		gap: var(--space-3);
-	}
-
-	.activity-form-view-title-row {
-		display: flex;
-		min-width: 0;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	.activity-form-view-title {
-		min-width: 0;
-		margin: 0;
-		overflow: hidden;
-
-		color: var(--color-text-primary);
-		font-size: var(--font-size-lg);
-		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-tight);
-
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.activity-form-view-subtitle {
-		margin: var(--space-1) 0 0;
-		overflow: hidden;
-
-		color: var(--color-text-secondary);
-		font-size: var(--font-size-xs);
-		font-variant-numeric: tabular-nums;
-
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.activity-form-view-tabs {
-		flex: 0 0 auto;
-		max-width: 100%;
-		overflow-x: auto;
-		scrollbar-width: none;
-	}
-
-	.activity-form-view-tabs::-webkit-scrollbar {
-		display: none;
-	}
-
-	/* ---------------- Body ---------------- */
-
-	.activity-form-view-body {
-		display: grid;
-		min-width: 0;
+@media (max-width: 1023px) {
+	.epf-sections-card .ui-card-sections {
 		grid-template-columns: minmax(0, 1fr);
-		align-items: start;
-		gap: var(--space-4);
-	}
-
-	.activity-form-view-main {
-		min-width: 0;
-	}
-
-	.activity-form-view-tab-body {
-		padding: var(--space-4);
-	}
-
-	.activity-form-view-empty {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: var(--space-2);
-
-		padding: var(--space-10, 2.5rem) var(--space-4);
-
-		color: var(--color-text-muted);
-		text-align: center;
-	}
-
-	.activity-form-view-empty-title {
-		margin: 0;
-		color: var(--color-text-primary);
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-medium);
-	}
-
-	.activity-form-view-empty-description {
-		max-width: 26rem;
-		margin: 0;
-		font-size: var(--font-size-xs);
-	}
-
-	/* ---------------- Side panels (collapsible) ---------------- */
-
-	.activity-form-view-side {
-		display: flex;
-		min-width: 0;
-		flex-direction: column;
-		gap: var(--space-4);
-	}
-
-	/* Collapsed panel = header only */
-	.activity-form-view-panel {
-		display: flex;
-		min-height: 0;
-		flex: 0 0 auto;
-		flex-direction: column;
-		overflow: hidden;
-	}
-
-	/* Expanded panels share the remaining column height */
-	.activity-form-view-panel.ui-card-accordion-expanded {
-		flex: 1 1 0;
-		min-height: 12rem;
-	}
-
-	/* Card renders: header + <div id hidden> wrapper + body — keep the flex chain
-	   unbroken so the audit/comment components' own scroll gets a bounded height. */
-	.activity-form-view-panel > div {
-		display: flex;
-		min-height: 0;
-		flex: 1 1 auto;
-		flex-direction: column;
-	}
-
-	/* display:flex above would override the [hidden] attribute when collapsed */
-	.activity-form-view-panel > div[hidden] {
-		display: none;
-	}
-
-	.activity-form-view-panel-body {
-		display: flex;
-		min-height: 0;
-		flex: 1 1 auto;
-		flex-direction: column;
-		overflow: hidden;
-	}
-
-	.activity-form-view-panel-body > * {
-		min-height: 0;
-		flex: 1 1 auto;
-	}
-
-	.activity-form-view-panel-title {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	.activity-form-view-panel-title svg {
-		color: var(--color-brand);
-	}
-
-	/* ---------------- Responsive ---------------- */
-
-	/* Below 1280px: stack; panels get a fixed height so their inner scroll still works. */
-	@media (max-width: 1279px) {
-		.activity-form-view-side {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			align-items: start;
-		}
-
-		.activity-form-view-panel.ui-card-accordion-expanded {
-			height: 28rem;
-		}
-	}
-
-	@media (min-width: 1280px) {
-		.activity-form-view-body.has-side-panels {
-			grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
-		}
-
-		.activity-form-view-side {
-			position: sticky;
-			top: var(--afv-sticky-top);
-			height: calc(100dvh - var(--afv-side-offset));
-		}
-
-		/* Both collapsed: shrink the column to the two headers */
-		.activity-form-view-side:not(:has(.ui-card-accordion-expanded)) {
-			height: auto;
-		}
-	}
-
-	@media (max-width: 767px) {
-		.activity-form-view-header {
-			align-items: stretch;
-			flex-direction: column;
-		}
-
-		.activity-form-view-side {
-			grid-template-columns: minmax(0, 1fr);
-		}
-	}
-} /* activityFormView.fixes.css
-Import AFTER the existing activity-form-view rules (ActivityFormView does).
-Same layer, later wins — nothing existing has to be edited. */
-
-@layer components {
-	/* Header: title left, tabs + actions right, wraps on narrow screens. */
-	.activity-form-view-header {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
-	}
-
-	.activity-form-view-header-end {
-		display: flex;
-		flex: 1 1 auto;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: flex-end;
-		gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
-		min-width: 0;
-	}
-
-	.activity-form-view-header-actions {
-		display: flex;
-		align-items: center;
-		gap: var(--space-2, 0.5rem);
-		flex-shrink: 0;
-	}
-
-	/* Body: main + audit. The audit column is as tall as the viewport area. */
-	.activity-form-view-body.has-side-panels {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
-		gap: var(--space-3, 0.75rem);
-		align-items: stretch;
-	}
-
-	@media (max-width: 1024px) {
-		.activity-form-view-body.has-side-panels {
-			grid-template-columns: minmax(0, 1fr);
-		}
-	}
-
-	.activity-form-view-side {
-		display: flex;
-		flex-direction: column;
-		min-height: 0;
-		min-width: 0;
-	}
-
-	.activity-form-view-panel--audit {
-		display: flex;
-		flex: 1 1 auto;
-		flex-direction: column;
-		min-height: 0;
-		/* Stay in view while the main card scrolls. */
-		position: sticky;
-		top: var(--space-3, 0.75rem);
-		max-height: calc(100vh - 9rem);
-		height: calc(100vh - 9rem);
-	}
-
-	.activity-form-view-panel--audit .activity-form-view-panel-body {
-		flex: 1 1 auto;
-		min-height: 0;
-		overflow-y: auto;
-	}
-
-	@media (max-width: 1024px) {
-		.activity-form-view-panel--audit {
-			position: static;
-			height: auto;
-			max-height: 28rem;
-		}
-	}
-
-	/* Comments tab fills the card. */
-	.activity-form-view-comments-card {
-		min-height: 24rem;
 	}
 }

@@ -106,6 +106,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
 
 	const departmentOptions: MasterOption[] = masters?.departments ?? [];
 
+	// Same fallback as zones: a legacy free-text department still displays.
 	const findDepartment = (stored?: string): MasterOption | null => {
 		if (!stored || isLoadingMasters) return null;
 		return (
@@ -114,6 +115,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
 			) ?? { value: stored, label: stored }
 		);
 	};
+
 	// "view" is now the single route for both looking at and editing an
 	// existing user — EditableCard owns the actual display/edit toggle
 	// internally. "create" always renders its cards already in edit mode.

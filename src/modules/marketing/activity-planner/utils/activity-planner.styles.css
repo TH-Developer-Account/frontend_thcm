@@ -1,0 +1,348 @@
+/* =========================================================
+   ACTIVITY FORM VIEW
+   components/activityFormView/activityFormView.css
+
+   EPC detail page: header (title + tabs) · tab card | Audit Trail · footer.
+   This is the ONLY place activity-form-view styles live — it replaces the
+   three duplicated blocks that were at the end of marketing.styles.css
+   (original, "collapsible side panels", and activityFormView.fixes.css).
+
+   Imported by ActivityFormView.tsx.
+
+   Rules this file relies on:
+   • The aside / Card must NOT carry Tailwind `h-full` — utilities beat
+     this layer and the panel would fall back to auto height.
+   • From 1024px the Audit Trail column is sticky and as tall as the screen
+     (minus --afv-side-offset and --afv-audit-trim); the list scrolls
+     inside it. Below 1024px it stacks under the tab card at a fixed height.
+========================================================= */
+
+@layer components {
+	.activity-form-view {
+		/* Tune these to match the app shell height (top nav + page padding). */
+		--afv-sticky-top: var(--space-4);
+		--afv-side-offset: 9rem;
+		/* Extra height taken off the Audit Trail column. Raise to make it shorter. */
+		--afv-audit-trim: 2.5rem;
+
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	/* ---------------- Header ---------------- */
+
+	/* Title left, tabs right; wraps on narrow screens. */
+	.activity-form-view-header {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2) var(--space-4);
+
+		padding: var(--space-3) var(--space-4);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-lg);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.activity-form-view-header-copy {
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	.activity-form-view-header-end {
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--space-2) var(--space-3);
+	}
+
+	.activity-form-view-header-actions {
+		display: flex;
+		flex-shrink: 0;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.activity-form-view-title-row {
+		display: flex;
+		min-width: 0;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.activity-form-view-title {
+		min-width: 0;
+		margin: 0;
+		overflow: hidden;
+
+		color: var(--color-text-primary);
+		font-size: var(--font-size-lg);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.activity-form-view-subtitle {
+		margin: var(--space-1) 0 0;
+		overflow: hidden;
+
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
+		font-variant-numeric: tabular-nums;
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.activity-form-view-tabs {
+		flex: 0 0 auto;
+		max-width: 100%;
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+
+	.activity-form-view-tabs::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* ---------------- Body ---------------- */
+
+	.activity-form-view-body {
+		display: grid;
+		min-width: 0;
+		grid-template-columns: minmax(0, 1fr);
+		align-items: start;
+		gap: var(--space-4);
+	}
+
+	@media (min-width: 1024px) {
+		.activity-form-view-body.has-side-panels {
+			grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+			gap: var(--space-3);
+			align-items: stretch;
+		}
+	}
+
+	.activity-form-view-main {
+		min-width: 0;
+	}
+
+	.activity-form-view-tab-body {
+		padding: var(--space-4);
+	}
+
+	/* Comments tab fills the card. */
+	.activity-form-view-comments-card {
+		min-height: 24rem;
+	}
+
+	/* ---------------- Tab empty state ---------------- */
+
+	.activity-form-view-empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-2);
+
+		padding: var(--space-10, 2.5rem) var(--space-4);
+
+		color: var(--color-text-muted);
+		text-align: center;
+	}
+
+	.activity-form-view-empty-title {
+		margin: 0;
+		color: var(--color-text-primary);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.activity-form-view-empty-description {
+		max-width: 26rem;
+		margin: 0;
+		font-size: var(--font-size-xs);
+	}
+
+	/* ---------------- Audit Trail column ---------------- */
+
+	.activity-form-view-side {
+		display: flex;
+		min-width: 0;
+		min-height: 0;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	/* From 1024px: sticky, as tall as the screen; the list scrolls inside. */
+	@media (min-width: 1024px) {
+		.activity-form-view-side {
+			position: sticky;
+			top: var(--afv-sticky-top);
+			height: calc(100dvh - var(--afv-side-offset) - var(--afv-audit-trim));
+		}
+
+		/* Collapsed → shrink the column to the header. */
+		.activity-form-view-side:not(:has(.ui-card-accordion-expanded)) {
+			height: auto;
+		}
+	}
+
+	/* Collapsed panel = header only */
+	.activity-form-view-panel {
+		display: flex;
+		min-height: 0;
+		flex: 0 0 auto;
+		flex-direction: column;
+		overflow: hidden;
+
+		background-color: var(--color-bg-surface);
+	}
+
+	/* Expanded panel fills the column */
+	.activity-form-view-panel.ui-card-accordion-expanded {
+		flex: 1 1 0;
+		min-height: 10rem;
+	}
+
+	/* Card renders: header + <div id hidden> wrapper + body — keep the flex chain
+	   unbroken so the audit list's own scroll gets a bounded height. */
+	.activity-form-view-panel > div {
+		display: flex;
+		min-height: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+	}
+
+	/* display:flex above would override [hidden] when collapsed */
+	.activity-form-view-panel > div[hidden] {
+		display: none;
+	}
+
+	.activity-form-view-panel .ui-card-header {
+		padding-bottom: var(--space-3);
+	}
+
+	.activity-form-view-panel .ui-card-header ::before {
+		display: none;
+	}
+
+	/* One surface colour top to bottom — no white patches under the list. */
+	.activity-form-view-panel-body {
+		display: flex;
+		min-height: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+		overflow: hidden;
+
+		background-color: var(--color-bg-surface);
+	}
+
+	.activity-form-view-panel-body > * {
+		min-height: 0;
+		flex: 1 1 auto;
+	}
+
+	.activity-form-view-panel-title {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.activity-form-view-panel-title svg {
+		color: var(--color-brand);
+	}
+
+	/* ---- Audit list scrolls inside the panel ---- */
+
+	.activity-form-view-panel--audit .comments-body,
+	.activity-form-view-panel--audit .comments-section {
+		display: flex;
+		height: 100%;
+		min-height: 0;
+		flex-direction: column;
+	}
+
+	/* The inner box is the panel itself here — no second border. */
+	.activity-form-view-panel--audit .comments-section {
+		flex: 1 1 auto;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+
+	/* comments.css caps .comments-list at min(24rem, 45vh) — that cap made the
+	   list fill only half the panel. Lift it and take the remaining height. */
+	.activity-form-view-panel--audit .comments-list {
+		max-height: none;
+		min-height: 0;
+		flex: 1 1 auto;
+		overflow-y: auto;
+	}
+
+	/* ---- Empty log: only the message, centred ---- */
+
+	.activity-form-view-panel--audit .comments-empty {
+		min-height: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+		justify-content: center;
+
+		border: 0;
+		border-radius: 0;
+		background-color: transparent;
+		box-shadow: none;
+		text-align: center;
+	}
+
+	.activity-form-view-panel--audit .comments-empty-copy {
+		align-items: center;
+	}
+
+	/* ---------------- Footer ---------------- */
+
+	/* Shell only — ApprovalActionsBar keeps its own internal layout. */
+	.activity-form-view-footer {
+		padding: var(--space-3) var(--space-4);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-lg);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.activity-form-view-footer > .approval-actions-bar {
+		width: 100%;
+	}
+
+	/* ---------------- Responsive ---------------- */
+
+	/* Below 1024px the Audit Trail stacks under the tab card at a fixed height. */
+	@media (max-width: 1023px) {
+		.activity-form-view-panel.ui-card-accordion-expanded {
+			height: 28rem;
+		}
+	}
+
+	@media (max-width: 767px) {
+		.activity-form-view-header {
+			align-items: stretch;
+			flex-direction: column;
+		}
+	}
+}

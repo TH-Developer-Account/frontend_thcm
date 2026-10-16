@@ -20,10 +20,16 @@ import {
 	useUpdateEpcMutation,
 } from "../../queries/epc.queries";
 import { useAuth } from "../../../../../context/Auth/useAuth"; // adjust if useAuth lives elsewhere
-import { findOption, resolveBranchRegionId } from "./epc.utils";
+import { findOption, getOptionCode } from "./epc.utils";
+import { getZoneCodeForBranch } from "./epc.zonemap";
 
 export type EpcFormMode = "create" | "edit";
 export type EpcSaveStatus = "DRAFT" | "SUBMITTED";
+
+/** Fields that were filled from the logged-in user's profile (shown read-only). */
+export type ProfileLocked = Partial<
+	Record<"region" | "branch" | "department", boolean>
+>;
 
 type MasterOption = {
 	value: string;
@@ -41,6 +47,30 @@ type EpcMasters = {
 	budgetMasters?: MasterOption[];
 };
 
+/**
+ * Zone (region option `value`) a branch belongs to. Same rule as
+ * EpcFormFields: a region id supplied by the API wins, otherwise the
+ * code-based map in epc.zonemap.ts. Null when the branch isn't mapped.
+ */
+const resolveBranchRegionId = (
+	branch: MasterOption,
+	regions: MasterOption[] = [],
+): string | null => {
+	const direct =
+		branch.regionId ??
+		branch.region_id ??
+		branch.zoneId ??
+		branch.zone_id ??
+		(typeof branch.region === "string" ? branch.region : undefined);
+
+	if (direct) return findOption(regions, String(direct))?.value ?? null;
+
+	const zoneCode = getZoneCodeForBranch(getOptionCode(branch));
+	if (!zoneCode) return null;
+
+	return regions.find((r) => getOptionCode(r) === zoneCode)?.value ?? null;
+};
+
 export type UseEpcFormProps = {
 	mode?: EpcFormMode;
 	epcId?: string | null;
@@ -54,6 +84,7 @@ type UseEpcFormResult = {
 	errors: EpcFormErrors;
 	loading: boolean;
 	isEditMode: boolean;
+	profileLocked: ProfileLocked;
 	handleChange: (name: keyof EpcFormValues, value: string) => void;
 	handleSave: (status: EpcSaveStatus) => Promise<void>;
 	handleReset: () => void;
@@ -151,7 +182,11 @@ export function useEpcForm({
 
 	const loading = createEpcMutation.isPending || updateEpcMutation.isPending;
 
-	// Create mode only: fill Department, Zone and Branch from the logged-in user, once.
+	const [profileLocked, setProfileLocked] = React.useState<ProfileLocked>({});
+
+	// Create mode only: fill Department, Zone and Branch from the logged-in
+	// user, once. A field that was filled this way is locked (read-only); a
+	// field the profile couldn't supply stays editable.
 	React.useEffect(() => {
 		if (mode !== "create" || isEditMode || prefilledRef.current) return;
 		if (
@@ -174,6 +209,12 @@ export function useEpcForm({
 			? resolveBranchRegionId(branch, masters.regions)
 			: null;
 		const zoneId = branchZoneId ?? userZone?.value ?? "";
+
+		setProfileLocked({
+			department: Boolean(department),
+			region: Boolean(zoneId),
+			branch: Boolean(branch),
+		});
 
 		if (!department && !branch && !zoneId) return;
 
@@ -352,6 +393,7 @@ export function useEpcForm({
 		errors,
 		loading,
 		isEditMode,
+		profileLocked,
 		handleChange,
 		handleSave,
 		handleReset,

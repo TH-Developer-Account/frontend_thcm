@@ -31,6 +31,10 @@ export const buildLineItemPayload = (
 				description: item.description || undefined,
 				amount: item.rate,
 				category: "EVENT_OVERHEAD",
+				attachmentS3Key: item.quotationS3Key ?? undefined,
+				attachmentFileName: item.quotationS3Key
+					? (item.quotationFileName ?? undefined)
+					: undefined,
 			}),
 		),
 	};

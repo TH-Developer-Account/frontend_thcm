@@ -1,20 +1,23 @@
 // forms/EPF/EpfForm.tsx
-// EPF form rendered as one card: title on top, fields in the body, actions in
-// the card footer. No collapsible section.
+// EPF form: ONE Card made of collapsible `sections` —
+//   Budget Summary · Event Cost Overheads · Participants · Dealer Info · Budget
+// with the actions in the card footer.
 //
 //   footer:  [footerStart…]                    [Cancel] [Reset] [Save & Review]
 //
 // `footerStart` lets a host (the wizard) put its own Back button in the same
 // footer, so there is only ever one action bar per screen.
-import type { ReactNode } from "react";
-import { ArrowRight, RefreshCcw, Save, X } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { ArrowRight, Receipt, RefreshCcw, Save, Wallet, X } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import Card from "../../../../../components/common/Card";
+import Card, { type CardSection } from "../../../../../components/common/Card";
 
+import BudgetShare from "../../components/activityFormView/BudgetShare";
+import { calculateBudgetShares } from "./epf.calculations";
 import EpfItemsSection from "./EpfItemSection";
 import { useEpfForm, type EpfFormProps } from "./useEpfForm";
-import EpfFormFields from "./EpfFormFields";
+import { useEpfFormSections } from "./EpfFormFields";
 
 export type EpfFormCardProps = EpfFormProps & {
 	/** Card title. Defaults to "Create / Edit Event Proposition Form". */
@@ -29,7 +32,7 @@ export type EpfFormCardProps = EpfFormProps & {
 const SAVE_STATUS = "SUBMITTED";
 
 export default function EpfForm(props: EpfFormCardProps) {
-	const { onCancel, title, submitLabel, footerStart } = props;
+	const { onCancel, submitLabel, footerStart, title } = props;
 
 	const {
 		values,
@@ -41,20 +44,74 @@ export default function EpfForm(props: EpfFormCardProps) {
 		setCostItems,
 		handleSubmit,
 		eventCost,
+		epcId,
 		isEditMode,
 		loading,
 		submitting,
 	} = useEpfForm(props);
 
-	const cardTitle =
-		title ??
-		(isEditMode
-			? "Edit Event Proposition Form"
-			: "Create Event Proposition Form");
+	// An attachment is still uploading: its S3 key isn't known yet, so saving
+	// now would drop the file from the line item.
+	const [attachmentBusy, setAttachmentBusy] = useState(false);
+
+	const fieldSections = useEpfFormSections({
+		values,
+		errors,
+		handleChange,
+		eventCost,
+	});
 
 	const primaryLabel = submitting
 		? "Saving..."
-		: (submitLabel ?? (isEditMode ? "Update EPF" : "Save & Review"));
+		: attachmentBusy
+			? "Uploading file..."
+			: (submitLabel ?? (isEditMode ? "Update EPF" : "Save & Review"));
+
+	// Live numbers for the summary — they move as the user edits the table
+	// or the dealer percentage.
+	const shares = calculateBudgetShares(values, eventCost);
+
+	const sections: CardSection[] = [
+		{
+			id: "summary",
+			title: "Budget Summary",
+			Icon: Wallet,
+			className: "epf-section--full",
+			children: (
+				<BudgetShare
+					eventCost={eventCost}
+					dealerName={values.dealerName}
+					dealerPercent={shares.dealerPercent}
+					dealerShare={shares.dealerShare}
+					tataHitachiPercent={shares.tataHitachiPercent}
+					tataHitachiShare={shares.tataHitachiShare}
+					availableBudget={Number(values.availableBudget) || 0}
+				/>
+			),
+		},
+		{
+			id: "overheads",
+			title: "Event Cost Overheads",
+			Icon: Receipt,
+			className: "epf-section--full",
+			actions: (
+				<span className="line-item-editor-count">
+					{costItems.length} {costItems.length === 1 ? "item" : "items"}
+				</span>
+			),
+			children: (
+				<EpfItemsSection
+					items={costItems}
+					onChange={setCostItems}
+					options={options}
+					isViewer={false}
+					epcId={epcId}
+					onAttachmentBusyChange={setAttachmentBusy}
+				/>
+			),
+		},
+		...fieldSections,
+	];
 
 	const footer = (
 		<div className="flex w-full flex-wrap items-center justify-between gap-2">
@@ -93,29 +150,19 @@ export default function EpfForm(props: EpfFormCardProps) {
 					appearance="standard"
 					variant="brand"
 					Icon={isEditMode ? Save : ArrowRight}
-					disabled={submitting || loading}
+					disabled={submitting || loading || attachmentBusy}
 				/>
 			</div>
 		</div>
 	);
 
 	return (
-		<Card title={cardTitle} footer={footer} loading={loading}>
-			<EpfItemsSection
-				items={costItems}
-				onChange={setCostItems}
-				options={options}
-				isViewer={false}
-			/>
-
-			<div className="mb-2">
-				<EpfFormFields
-					values={values}
-					errors={errors}
-					handleChange={handleChange}
-					eventCost={eventCost}
-				/>
-			</div>
-		</Card>
+		<Card
+			className="epf-sections-card"
+			title={title}
+			sections={sections}
+			footer={footer}
+			loading={loading}
+		/>
 	);
 }

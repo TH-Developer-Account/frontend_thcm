@@ -52,6 +52,24 @@ export const epfApi = {
 
 		return data;
 	},
+	uploadLineItemAttachment: async ({
+		epcId,
+		file,
+	}: {
+		epcId: string;
+		file: File;
+	}) => {
+		const formData = new FormData();
+		formData.append("epcId", epcId);
+		formData.append("file", file);
+
+		const res = await ServerAxios.post("/epf/line-item/attachment", formData, {
+			headers: { "Content-Type": "multipart/form-data" },
+		});
+
+		// Same `{ data }` envelope as the other epfApi calls; falls back to the raw body.
+		return (res.data?.data ?? res.data) as { s3Key: string; fileName?: string };
+	},
 
 	getProducts: async () => {
 		const {

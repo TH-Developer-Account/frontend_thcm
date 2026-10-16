@@ -112,6 +112,7 @@ const EpcFormEditor = ({
 		errors,
 		loading,
 		isEditMode,
+		profileLocked,
 		handleChange,
 		handleSave,
 		handleReset,
@@ -122,6 +123,13 @@ const EpcFormEditor = ({
 		masters,
 		onSuccess,
 	});
+
+	// Zone / Branch / Department render as read-only values when locked, so
+	// give them the saved EPC's own labels as a fallback (inactive masters).
+	const readOnlyLabels = React.useMemo(
+		() => (initialData ? getReadOnlyLabels(initialData) : undefined),
+		[initialData],
+	);
 
 	if (loading) {
 		return (
@@ -146,6 +154,8 @@ const EpcFormEditor = ({
 				masters={masters}
 				onChange={handleChange}
 				lockOrgFields={isEditMode}
+				profileLocked={profileLocked}
+				readOnlyLabels={readOnlyLabels}
 			/>
 
 			<div className="mt-4 flex flex-row items-center justify-end gap-2">

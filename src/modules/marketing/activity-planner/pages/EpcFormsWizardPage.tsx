@@ -1,10 +1,13 @@
 // pages/EpcFormsWizardPage.tsx
-// Stepper wizard opened from the EPC listing action menu ("Add CRF" / "Add EPF").
+// Stepper wizard opened from the EPC listing (EPC No / "Add CRF" / "Add EPF").
 //
 //   Step 1 — EPC Details     : ActivityDetailsSection (same read-only layout as the EPC view)
 //   Step 2 — CRF             : create CRF (optional, can be skipped) or read-only
 //   Step 3 — EPF             : create EPF (saved, NOT submitted) or read-only
 //   Step 4 — Review & Submit : read-only summary + approval-workflow preview
+//
+// Entry point (?start=) decides the step the wizard opens on:
+//   epc → EPC Details · crf → CRF · epf → EPF (CRF skipped)
 //
 // The StepProgress bar already names the current step, so the step cards no
 // longer repeat it as a title. The CRF form uses its own category tabs there.
@@ -49,6 +52,13 @@ const WIZARD_STEPS = [
 	{ id: STEP.REVIEW, label: "Review & Submit" },
 ];
 
+/** Which step each entry point opens the wizard on. */
+const INTENT_START_STEP: Record<EpcWizardIntent, WizardStep> = {
+	epc: STEP.EPC,
+	crf: STEP.CRF,
+	epf: STEP.EPF, // skips CRF
+};
+
 const noop = () => {};
 const asyncNoop = async () => {};
 
@@ -56,7 +66,7 @@ const asyncNoop = async () => {};
 export type EpcWizardLocationState = { startAt?: "review" };
 
 const getIntent = (value: string | null): EpcWizardIntent =>
-	value === "epf" ? "epf" : "crf";
+	value === "epf" ? "epf" : value === "epc" ? "epc" : "crf";
 
 /** Shared footer layout: left group · right group. */
 const StepFooter = ({
@@ -85,7 +95,7 @@ const EpcFormsWizardPage = () => {
 	const startAtReview =
 		(location.state as EpcWizardLocationState | null)?.startAt === "review";
 	const [step, setStep] = React.useState<WizardStep>(
-		startAtReview ? STEP.REVIEW : STEP.EPC,
+		startAtReview ? STEP.REVIEW : INTENT_START_STEP[intent],
 	);
 
 	const { data: epcData, isLoading, isError, refetch } = useEpcDetailQuery(id);
@@ -138,7 +148,10 @@ const EpcFormsWizardPage = () => {
 
 	if (isLoading) return <Loader />;
 
-	const pageTitle = `Add ${intent.toUpperCase()}${
+	const intentLabel =
+		intent === "epc" ? "Continue to submit" : `Add ${intent.toUpperCase()}`;
+
+	const pageTitle = `${intentLabel}${
 		epcData?.proposal_number ? ` · ${epcData.proposal_number}` : ""
 	}`;
 
@@ -151,7 +164,7 @@ const EpcFormsWizardPage = () => {
 				breadcrumbs: [
 					{ label: "Home Screen", href: "/" },
 					{ label: "EPC Listing", href: EPC_LISTING_PATH },
-					{ label: `Add ${intent.toUpperCase()}` },
+					{ label: intentLabel },
 				],
 				separator: "›",
 			}}

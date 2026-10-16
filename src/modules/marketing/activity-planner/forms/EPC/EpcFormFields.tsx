@@ -41,6 +41,7 @@ import {
 	type EpcOption as Option,
 } from "./epc.utils";
 import type { EpcFormValues } from "../../types/epc.types";
+import type { ProfileLocked } from "./useEpcForm";
 import { getZoneCodeForBranch, getZoneCodeForBudget } from "./epc.zonemap";
 
 type EpcMasters = {
@@ -76,6 +77,8 @@ type EpcFormFieldsProps = {
 	lockOrgFields?: boolean;
 	mode?: FormFieldMode;
 	readOnlyLabels?: EpcReadOnlyLabels;
+	/** Fields filled from the user's profile — rendered read-only. */
+	profileLocked?: ProfileLocked;
 };
 
 /**
@@ -86,6 +89,7 @@ type EpcFormFieldsProps = {
 const SHOW_GENERAL_BUDGETS_WITH_ZONE = true;
 
 const EMPTY_ERRORS: Partial<Record<keyof EpcFormValues, string>> = {};
+const EMPTY_LOCKED: ProfileLocked = {};
 
 export default function EpcFormFields({
 	values,
@@ -95,6 +99,7 @@ export default function EpcFormFields({
 	lockOrgFields = false,
 	mode = "edit",
 	readOnlyLabels,
+	profileLocked = EMPTY_LOCKED,
 }: EpcFormFieldsProps) {
 	const isView = mode === "view";
 
@@ -102,6 +107,27 @@ export default function EpcFormFields({
 	const helper = (text: string) => (isView ? undefined : text);
 	const emit = (name: keyof EpcFormValues, value: string) =>
 		onChange?.(name, value);
+
+	// Zone / Branch / Department are read-only when the EPC already exists or
+	// when they were filled from the user's profile. They render as plain
+	// values (not disabled dropdowns); a field the profile couldn't supply
+	// stays an editable dropdown.
+	type LockableField = "region" | "branch" | "department";
+
+	const isLocked = (field: LockableField) =>
+		lockOrgFields || Boolean(profileLocked[field]);
+
+	const lockableMode = (field: LockableField): FormFieldMode =>
+		isView || isLocked(field) ? "view" : mode;
+
+	const lockableHelper = (field: LockableField, label: string, hint: string) =>
+		helper(
+			lockOrgFields
+				? `${label} cannot be changed after EPC creation`
+				: profileLocked[field]
+					? `${label} is set from your profile`
+					: hint,
+		);
 
 	const selectedDepartment = values.department || "";
 
@@ -430,57 +456,54 @@ export default function EpcFormFields({
 				/>
 
 				<SelectInput
-					mode={mode}
+					mode={lockableMode("region")}
 					name="region"
 					label="Zone"
 					value={findOption(masters?.regions ?? [], values.region)}
 					readOnlyValue={readOnlyLabels?.region}
 					options={masters?.regions || []}
 					onChange={handleRegionChange}
-					isDisabled={true}
 					required
-					helperText={helper(
-						lockOrgFields
-							? "Zone cannot be changed after EPC creation"
-							: "Select zone to auto populate branches",
+					helperText={lockableHelper(
+						"region",
+						"Zone",
+						"Select zone to auto populate branches",
 					)}
 					error={errors.region}
 					className="w-full"
 				/>
 
 				<SelectInput
-					mode={mode}
+					mode={lockableMode("branch")}
 					name="branch"
 					label="Branch"
 					options={filteredBranches}
 					value={findOption(masters?.branches ?? [], values.branch)}
 					readOnlyValue={readOnlyLabels?.branch}
 					onChange={handleBranchChange}
-					isDisabled={true}
 					required
-					helperText={helper(
-						lockOrgFields
-							? "Branch cannot be changed after EPC creation"
-							: "Branches are filtered by zone; selecting a branch sets its zone",
+					helperText={lockableHelper(
+						"branch",
+						"Branch",
+						"Branches are filtered by zone; selecting a branch sets its zone",
 					)}
 					error={errors.branch}
 					className="w-full"
 				/>
 
 				<SelectInput
-					mode={mode}
+					mode={lockableMode("department")}
 					name="department"
 					label="Department"
 					value={findOption(masters?.departments ?? [], values.department)}
 					readOnlyValue={readOnlyLabels?.department}
 					options={masters?.departments || []}
 					onChange={handleDepartmentChange}
-					isDisabled={true}
 					required
-					helperText={helper(
-						lockOrgFields
-							? "Department cannot be changed after EPC creation"
-							: "Select department to auto populate verticals",
+					helperText={lockableHelper(
+						"department",
+						"Department",
+						"Select department to auto populate verticals",
 					)}
 					error={errors.department}
 					className="w-full"

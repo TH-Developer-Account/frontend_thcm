@@ -4,12 +4,22 @@ import { getZoneCodeForBranch } from "./epc.zonemap";
 /* ───────────────────────── Submission helpers ───────────────────────── */
 
 type SubmissionLike = {
+	status?: string | null;
 	activeWorkflow?: unknown;
 	workflow_id?: string | null;
 };
 
-export const isEpcSubmitted = (epc?: SubmissionLike | null): boolean =>
-	Boolean(epc?.activeWorkflow || epc?.workflow_id);
+export const isEpcSubmitted = (epc?: SubmissionLike | null): boolean => {
+	if (!epc) return false;
+	if (epc.activeWorkflow || epc.workflow_id) return true;
+
+	// Created but not finally submitted → status stays PENDING and
+	// crf / epf / activeWorkflow are all null. Any other status has started.
+	const status = String(epc.status ?? "")
+		.trim()
+		.toUpperCase();
+	return status !== "" && status !== "PENDING";
+};
 
 /**
  * Can this user open the EPC view?
@@ -19,6 +29,7 @@ export const isEpcSubmitted = (epc?: SubmissionLike | null): boolean =>
 export const canOpenEpcView = (
 	epc: {
 		created_by_id?: string | null;
+		status?: string | null;
 		activeWorkflow?: unknown;
 		workflow_id?: string | null;
 	},

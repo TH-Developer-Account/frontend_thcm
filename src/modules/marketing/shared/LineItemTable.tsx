@@ -1,14 +1,5 @@
-import {
-	Check,
-	Paperclip,
-	Pencil,
-	Plus,
-	RotateCcw,
-	Trash2,
-	Upload,
-	X,
-} from "lucide-react";
-import { useEffect, useId, useMemo, useState } from "react";
+import { Check, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 
 import type {
 	ColumnConfig,
@@ -20,6 +11,18 @@ import { DEFAULT_COLUMNS } from "../activity-planner/utils/constant";
 import SelectInput from "../../../components/forms/SelectInput";
 import FormInput from "../../../components/forms/FormInput";
 import Button from "../../../components/common/Button";
+import { useToast } from "../../../context/Auth/AuthContext";
+import {
+	createRemoteFileUploadValue,
+	formatFileSize,
+	getFileExtension,
+	getMimeTypeFromFileName,
+} from "../../../components/ui/FileUpload/fileUpload.helpers";
+import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
+import LineItemAttachment, {
+	LINE_ITEM_ATTACHMENT_TYPES,
+	type LineItemAttachmentUpload,
+} from "./LineItemAttachment";
 
 interface LineItemTableProps {
 	title: string;
@@ -29,6 +32,18 @@ interface LineItemTableProps {
 	isViewer?: boolean;
 	category: string;
 	columns?: ColumnConfig[];
+
+	/**
+	 * Uploads one attachment and returns its S3 key. When omitted the file is
+	 * only kept locally (preview/download work, nothing is sent to the server).
+	 */
+	onUploadAttachment?: (file: File) => Promise<LineItemAttachmentUpload>;
+
+	/** True while any attachment is still uploading — hosts block Save on it. */
+	onBusyChange?: (busy: boolean) => void;
+
+	/** Hide the table's own title row when a host section already shows it. */
+	hideHeader?: boolean;
 }
 
 const createEmptyDraft = (): LineItemOption => ({
@@ -49,7 +64,16 @@ const createEmptyDraft = (): LineItemOption => ({
 	quotationFile: null,
 	quotationFileUrl: null,
 	quotationFileName: null,
+	quotationS3Key: null,
 });
+
+/** Every attachment field, cleared. */
+const EMPTY_ATTACHMENT = {
+	quotationFile: null,
+	quotationFileUrl: null,
+	quotationFileName: null,
+	quotationS3Key: null,
+} satisfies Partial<LineItemOption>;
 
 const COLUMN_SPAN_CLASSES: Record<number, string> = {
 	1: "col-span-1",
@@ -88,6 +112,60 @@ const getColumnClassName = (column: ColumnConfig): string => {
 		.join(" ");
 };
 
+const revokeBlobUrl = (url?: string | null) => {
+	if (url?.startsWith("blob:")) {
+		URL.revokeObjectURL(url);
+	}
+};
+
+const getErrorMessage = (error: unknown): string => {
+	const apiError = error as {
+		response?: { data?: { message?: string } };
+		message?: string;
+	};
+
+	return (
+		apiError?.response?.data?.message ||
+		apiError?.message ||
+		"Could not upload the file."
+	);
+};
+
+/**
+ * Line-item attachment fields -> FileUploadValue.
+ * A freshly picked file (local blob) or a file already saved on the server
+ * (pre-signed URL from the API mapper) both come out in the same shape.
+ */
+const toUploadValue = (item: LineItemOption): FileUploadValue | null => {
+	const url = item.quotationFileUrl;
+
+	if (!url) return null;
+
+	const file = item.quotationFile;
+
+	if (file) {
+		return {
+			id: url,
+			file,
+			url,
+			name: item.quotationFileName || file.name,
+			type: file.type || getMimeTypeFromFileName(file.name),
+			size: file.size,
+			extension: getFileExtension(file.name),
+			sizeLabel: formatFileSize(file.size),
+			isLocal: true,
+			caption: "",
+		};
+	}
+
+	return createRemoteFileUploadValue({
+		id: url,
+		url,
+		name: item.quotationFileName ?? undefined,
+		fallbackName: "Quotation",
+	});
+};
+
 export default function LineItemTable({
 	title,
 	items,
@@ -96,14 +174,30 @@ export default function LineItemTable({
 	isViewer = false,
 	category,
 	columns = DEFAULT_COLUMNS,
+	onUploadAttachment,
+	onBusyChange,
+	hideHeader = false,
 }: LineItemTableProps) {
-	const quotationInputId = useId();
+	const { showToast } = useToast();
 
 	const [draft, setDraft] = useState<LineItemOption>(createEmptyDraft);
 
 	const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
+	// Blob URLs of attachments that are still uploading. A blob URL is unique
+	// per picked file, so it doubles as the key for "this upload".
+	const [uploadingUrls, setUploadingUrls] = useState<string[]>([]);
+
 	const isEditing = editingIndex !== null;
+
+	const hasUploads = uploadingUrls.length > 0;
+
+	useEffect(() => {
+		onBusyChange?.(hasUploads);
+	}, [hasUploads, onBusyChange]);
+
+	const isUploading = (url?: string | null): boolean =>
+		Boolean(url) && uploadingUrls.includes(url as string);
 
 	const visibleColumns = useMemo(
 		() =>
@@ -170,24 +264,30 @@ export default function LineItemTable({
 		0,
 	);
 
-	const revokeBlobUrl = (url?: string | null) => {
-		if (url?.startsWith("blob:")) {
-			URL.revokeObjectURL(url);
+	const draftQuotation = useMemo(
+		() => toUploadValue(draft),
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[draft.quotationFile, draft.quotationFileUrl, draft.quotationFileName],
+	);
+
+	/**
+	 * Revokes the draft's blob preview, unless a saved row still uses that URL
+	 * (editing a row reuses its URL in the draft).
+	 */
+	const releaseDraftFile = () => {
+		const url = draft.quotationFileUrl;
+
+		if (url && !items.some((item) => item.quotationFileUrl === url)) {
+			revokeBlobUrl(url);
 		}
 	};
 
 	const resetDraft = () => {
-		revokeBlobUrl(draft.quotationFileUrl);
+		releaseDraftFile();
 
 		setDraft(createEmptyDraft());
 		setEditingIndex(null);
 	};
-
-	useEffect(() => {
-		return () => {
-			revokeBlobUrl(draft.quotationFileUrl);
-		};
-	}, [draft.quotationFileUrl]);
 
 	const handleParticularChange = (
 		fieldName: "partNumber" | "particular",
@@ -233,36 +333,118 @@ export default function LineItemTable({
 		}));
 	};
 
-	const handleQuotationChange = (file?: File | null) => {
-		if (!file) return;
+	/* ---------------------------- Attachments ---------------------------- */
 
-		setDraft((previous) => {
-			revokeBlobUrl(previous.quotationFileUrl);
+	/** Applies `patch` to every draft/row still holding this blob URL. */
+	const patchAttachmentByUrl = (
+		url: string,
+		patch: Partial<LineItemOption>,
+	) => {
+		setDraft((previous) =>
+			previous.quotationFileUrl === url ? { ...previous, ...patch } : previous,
+		);
 
-			return {
-				...previous,
-				quotationFile: file,
-				quotationFileName: file.name,
-				quotationFileUrl: URL.createObjectURL(file),
-			};
-		});
+		onChange((previous) =>
+			previous.map((item) =>
+				item.quotationFileUrl === url ? { ...item, ...patch } : item,
+			),
+		);
 	};
 
-	const removeQuotation = () => {
-		setDraft((previous) => {
-			revokeBlobUrl(previous.quotationFileUrl);
+	/**
+	 * Picks a file for the draft row or a saved row, shows it straight away
+	 * (local blob) and uploads it in the background. The S3 key lands on the
+	 * same row when the upload finishes; a failed upload clears the file again.
+	 */
+	const attachFile = async (file: File, target: "draft" | number) => {
+		if (!LINE_ITEM_ATTACHMENT_TYPES.includes(file.type)) {
+			showToast({
+				type: "error",
+				title: "Unsupported file",
+				description: "Only JPEG images or PDF files are accepted.",
+			});
+			return;
+		}
 
-			return {
-				...previous,
-				quotationFile: null,
-				quotationFileUrl: null,
-				quotationFileName: null,
-			};
-		});
+		const blobUrl = URL.createObjectURL(file);
+
+		const localPatch: Partial<LineItemOption> = {
+			quotationFile: file,
+			quotationFileUrl: blobUrl,
+			quotationFileName: file.name,
+			quotationS3Key: null,
+		};
+
+		if (target === "draft") {
+			releaseDraftFile();
+			setDraft((previous) => ({ ...previous, ...localPatch }));
+		} else {
+			onChange((previous) =>
+				previous.map((item, index) =>
+					index === target ? { ...item, ...localPatch } : item,
+				),
+			);
+		}
+
+		if (!onUploadAttachment) return;
+
+		setUploadingUrls((previous) => [...previous, blobUrl]);
+
+		try {
+			const result = await onUploadAttachment(file);
+
+			patchAttachmentByUrl(blobUrl, {
+				quotationS3Key: result.s3Key,
+				quotationFileName: result.fileName || file.name,
+			});
+		} catch (error) {
+			revokeBlobUrl(blobUrl);
+			patchAttachmentByUrl(blobUrl, EMPTY_ATTACHMENT);
+
+			showToast({
+				type: "error",
+				title: "Upload failed",
+				description: getErrorMessage(error),
+			});
+		} finally {
+			setUploadingUrls((previous) => previous.filter((url) => url !== blobUrl));
+		}
 	};
+
+	const removeDraftAttachment = () => {
+		releaseDraftFile();
+
+		setDraft((previous) => ({ ...previous, ...EMPTY_ATTACHMENT }));
+	};
+
+	const removeRowAttachment = (index: number) => {
+		const url = items[index]?.quotationFileUrl;
+
+		onChange((previous) =>
+			previous.map((item, itemIndex) =>
+				itemIndex === index ? { ...item, ...EMPTY_ATTACHMENT } : item,
+			),
+		);
+
+		if (!url) return;
+
+		// The draft may be editing this very row — drop its copy as well.
+		setDraft((previous) =>
+			previous.quotationFileUrl === url
+				? { ...previous, ...EMPTY_ATTACHMENT }
+				: previous,
+		);
+
+		revokeBlobUrl(url);
+	};
+
+	/* ------------------------------ Row actions ------------------------------ */
 
 	const handleAddOrUpdate = () => {
 		if (!draft.particular) return;
+
+		// The key only arrives when the upload finishes.
+		if (isUploading(draft.quotationFileUrl)) return;
 
 		const payload: LineItemOption = {
 			...draft,
@@ -293,7 +475,7 @@ export default function LineItemTable({
 
 		/*
 		 * Do not revoke the quotation URL here because the
-		 * newly added item may still use that blob URL.
+		 * newly added item still uses that blob URL.
 		 */
 		setDraft(createEmptyDraft());
 		setEditingIndex(null);
@@ -304,7 +486,7 @@ export default function LineItemTable({
 
 		if (!item) return;
 
-		revokeBlobUrl(draft.quotationFileUrl);
+		releaseDraftFile();
 
 		setDraft({
 			value: item.value,
@@ -325,6 +507,7 @@ export default function LineItemTable({
 			quotationFile: item.quotationFile ?? null,
 			quotationFileUrl: item.quotationFileUrl ?? null,
 			quotationFileName: item.quotationFileName ?? null,
+			quotationS3Key: item.quotationS3Key ?? null,
 		});
 
 		setEditingIndex(index);
@@ -347,17 +530,19 @@ export default function LineItemTable({
 
 	return (
 		<section className="line-item-editor">
-			<header className="line-item-editor-header">
-				<div className="line-item-editor-heading">
-					<span className="line-item-editor-marker" aria-hidden="true" />
+			{hideHeader ? null : (
+				<header className="line-item-editor-header">
+					<div className="line-item-editor-heading">
+						<span className="line-item-editor-marker" aria-hidden="true" />
 
-					<h3 className="line-item-editor-title">{title}</h3>
-				</div>
+						<h3 className="line-item-editor-title">{title}</h3>
+					</div>
 
-				<span className="line-item-editor-count">
-					{items.length} {items.length === 1 ? "item" : "items"}
-				</span>
-			</header>
+					<span className="line-item-editor-count">
+						{items.length} {items.length === 1 ? "item" : "items"}
+					</span>
+				</header>
+			)}
 
 			<div className="line-item-editor-scroll scrollbar-sleek">
 				<div className="line-item-editor-table">
@@ -532,51 +717,13 @@ export default function LineItemTable({
 										"line-item-editor-center",
 									)}
 								>
-									<input
-										id={quotationInputId}
-										type="file"
-										accept=".pdf,.jpg,.jpeg,.png,.webp"
-										className="line-item-file-input"
-										onChange={(event) => {
-											handleQuotationChange(event.target.files?.[0] ?? null);
-
-											event.target.value = "";
-										}}
+									<LineItemAttachment
+										inputName="quotation"
+										value={draftQuotation}
+										uploading={isUploading(draft.quotationFileUrl)}
+										onSelect={(file) => void attachFile(file, "draft")}
+										onRemove={removeDraftAttachment}
 									/>
-
-									{draft.quotationFileName || draft.quotationFileUrl ? (
-										<div className="line-item-file-chip">
-											<Paperclip aria-hidden="true" />
-
-											<span
-												className="line-item-file-name"
-												title={draft.quotationFileName ?? "Quotation"}
-											>
-												{draft.quotationFileName ?? "File"}
-											</span>
-
-											<Button
-												type="button"
-												appearance="icon"
-												variant="secondary"
-												size="sm"
-												Icon={X}
-												aria-label="Remove quotation"
-												isTooltip
-												onClick={removeQuotation}
-												className="line-item-file-remove"
-											/>
-										</div>
-									) : (
-										<label
-											htmlFor={quotationInputId}
-											className="line-item-file-upload"
-											title="Upload quotation"
-											aria-label="Upload quotation"
-										>
-											<Upload aria-hidden="true" />
-										</label>
-									)}
 								</div>
 							) : null}
 
@@ -596,6 +743,7 @@ export default function LineItemTable({
 										aria-label={
 											isEditing ? "Update line item" : "Add line item"
 										}
+										disabled={isUploading(draft.quotationFileUrl)}
 										onClick={handleAddOrUpdate}
 									/>
 
@@ -632,6 +780,8 @@ export default function LineItemTable({
 									Number(item.rate || 0) * Number(item.quantity || 0);
 
 								const isActiveRow = editingIndex === index;
+
+								const rowQuotation = toUploadValue(item);
 
 								return (
 									<div
@@ -760,31 +910,25 @@ export default function LineItemTable({
 													"line-item-editor-center",
 												)}
 											>
-												{item.quotationFileUrl ? (
-													<a
-														href={item.quotationFileUrl}
-														target="_blank"
-														rel="noopener noreferrer"
-														className="line-item-file-action"
-														title={item.quotationFileName ?? "View quotation"}
-														aria-label={
-															item.quotationFileName
-																? `View quotation: ${item.quotationFileName}`
-																: "View quotation"
-														}
-													>
-														<Paperclip aria-hidden="true" />
-													</a>
-												) : item.quotationFileName ? (
-													<span
-														className="line-item-file-action line-item-file-action-disabled"
-														title={item.quotationFileName}
-													>
-														<Paperclip aria-hidden="true" />
-													</span>
-												) : (
-													<span className="line-item-empty-value">--</span>
-												)}
+												<LineItemAttachment
+													inputName={`quotation-${index}`}
+													value={rowQuotation}
+													unavailableName={
+														rowQuotation ? null : item.quotationFileName
+													}
+													uploading={isUploading(item.quotationFileUrl)}
+													readOnly={isViewer}
+													onSelect={
+														isViewer
+															? undefined
+															: (file) => void attachFile(file, index)
+													}
+													onRemove={
+														isViewer
+															? undefined
+															: () => removeRowAttachment(index)
+													}
+												/>
 											</div>
 										) : null}
 

@@ -43,6 +43,8 @@ export type EpfLineItemPayload = {
 	total?: number;
 	description?: string;
 	category?: "EVENT_OVERHEAD";
+	attachmentS3Key?: string;
+	attachmentFileName?: string;
 };
 
 export type EpfCreatePayload = {

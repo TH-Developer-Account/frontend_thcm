@@ -6326,7 +6326,7 @@
 	}
 
 	.epf-share-progress {
-		@apply block w-full overflow-hidden appearance-none border-0;
+		@apply block w-full overflow-hidden appearance-none border-0 mt-4 mb-2;
 
 		height: 0.375rem;
 

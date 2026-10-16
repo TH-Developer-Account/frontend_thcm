@@ -77,6 +77,8 @@ export type LineItemOption = {
 	quotationFile?: File | null;
 	quotationFileUrl?: string | null;
 	quotationFileName?: string | null;
+	/** S3 key returned by POST /epf/line-item/attachment; saved as attachmentS3Key. */
+	quotationS3Key?: string | null;
 };
 
 export type GroupedOption = {
