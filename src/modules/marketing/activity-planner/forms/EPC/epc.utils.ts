@@ -1,6 +1,6 @@
 // utils/epcSubmission.ts
 import { formatDate, parseDateOnly } from "../../../../../utils/format";
-
+import { getZoneCodeForBranch } from "./epc.zonemap";
 /* ───────────────────────── Submission helpers ───────────────────────── */
 
 type SubmissionLike = {
@@ -164,4 +164,24 @@ export const formatEventDateRange = (
 	if (mode === "single") return fromLabel || toLabel || "";
 	if (fromLabel && toLabel) return `${fromLabel} - ${toLabel}`;
 	return fromLabel || toLabel || "";
+};
+
+/** Zone (region option `value`) a branch belongs to, or null if unmapped. */
+export const resolveBranchRegionId = (
+	branch: EpcOption,
+	regions: EpcOption[] = [],
+): string | null => {
+	const direct =
+		branch.regionId ??
+		branch.region_id ??
+		branch.zoneId ??
+		branch.zone_id ??
+		(typeof branch.region === "string" ? branch.region : undefined);
+
+	if (direct) return findOption(regions, String(direct))?.value ?? null;
+
+	const zoneCode = getZoneCodeForBranch(getOptionCode(branch));
+	if (!zoneCode) return null;
+
+	return regions.find((r) => getOptionCode(r) === zoneCode)?.value ?? null;
 };

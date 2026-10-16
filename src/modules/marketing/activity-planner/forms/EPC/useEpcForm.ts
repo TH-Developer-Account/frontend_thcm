@@ -19,6 +19,8 @@ import {
 	useCreateEpcMutation,
 	useUpdateEpcMutation,
 } from "../../queries/epc.queries";
+import { useAuth } from "../../../../../context/Auth/useAuth"; // adjust if useAuth lives elsewhere
+import { findOption, resolveBranchRegionId } from "./epc.utils";
 
 export type EpcFormMode = "create" | "edit";
 export type EpcSaveStatus = "DRAFT" | "SUBMITTED";
@@ -121,6 +123,8 @@ export function useEpcForm({
 }: UseEpcFormProps = {}): UseEpcFormResult {
 	const navigate = useNavigate();
 	const { showToast } = useToast();
+	const { user } = useAuth();
+	const prefilledRef = React.useRef(false);
 
 	const createEpcMutation = useCreateEpcMutation();
 	const updateEpcMutation = useUpdateEpcMutation();
@@ -146,6 +150,51 @@ export function useEpcForm({
 	const [errors, setErrors] = React.useState<EpcFormErrors>({});
 
 	const loading = createEpcMutation.isPending || updateEpcMutation.isPending;
+
+	// Create mode only: fill Department, Zone and Branch from the logged-in user, once.
+	React.useEffect(() => {
+		if (mode !== "create" || isEditMode || prefilledRef.current) return;
+		if (
+			!user ||
+			!masters?.regions ||
+			!masters?.branches ||
+			!masters?.departments
+		)
+			return;
+
+		prefilledRef.current = true; // run once, even if nothing matches
+
+		const department = findOption(masters.departments, user.department);
+		const branch = findOption(masters.branches, user.branch);
+		const userZone = findOption(masters.regions, user.zone);
+
+		// A branch decides its zone (the form keeps the two consistent);
+		// otherwise fall back to the user's own zone.
+		const branchZoneId = branch
+			? resolveBranchRegionId(branch, masters.regions)
+			: null;
+		const zoneId = branchZoneId ?? userZone?.value ?? "";
+
+		if (!department && !branch && !zoneId) return;
+
+		setValues((prev) => {
+			const next: EpcFormValues = { ...prev };
+			if (!prev.department && department) next.department = department.value;
+			if (!prev.region && zoneId) next.region = zoneId;
+			if (!prev.branch && branch) next.branch = branch.value;
+
+			if (
+				next.department !== prev.department ||
+				next.region !== prev.region ||
+				next.branch !== prev.branch
+			) {
+				const epcNo = buildEpcNoFromValues(next, masters);
+				next.epfNo = epcNo;
+				next.proposal_number = epcNo;
+			}
+			return next;
+		});
+	}, [mode, isEditMode, user, masters]);
 
 	const handleChange = React.useCallback(
 		(name: keyof EpcFormValues, value: string) => {

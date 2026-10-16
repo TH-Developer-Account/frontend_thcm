@@ -437,7 +437,7 @@ export default function EpcFormFields({
 					readOnlyValue={readOnlyLabels?.region}
 					options={masters?.regions || []}
 					onChange={handleRegionChange}
-					isDisabled={lockOrgFields}
+					isDisabled={true}
 					required
 					helperText={helper(
 						lockOrgFields
@@ -456,7 +456,7 @@ export default function EpcFormFields({
 					value={findOption(masters?.branches ?? [], values.branch)}
 					readOnlyValue={readOnlyLabels?.branch}
 					onChange={handleBranchChange}
-					isDisabled={lockOrgFields}
+					isDisabled={true}
 					required
 					helperText={helper(
 						lockOrgFields
@@ -467,20 +467,6 @@ export default function EpcFormFields({
 					className="w-full"
 				/>
 
-				<div className="flex flex-col gap-1">
-					{isView ? (
-						<ReadOnlyField label="Location" value={values.location} />
-					) : (
-						<PincodeAsyncSelect
-							label="Location"
-							value={selectedPincode}
-							onChange={handlePincodeChange}
-							error={errors.location}
-							helperText="Search by pincode, office name, district, or state."
-						/>
-					)}
-				</div>
-
 				<SelectInput
 					mode={mode}
 					name="department"
@@ -489,7 +475,7 @@ export default function EpcFormFields({
 					readOnlyValue={readOnlyLabels?.department}
 					options={masters?.departments || []}
 					onChange={handleDepartmentChange}
-					isDisabled={lockOrgFields}
+					isDisabled={true}
 					required
 					helperText={helper(
 						lockOrgFields
@@ -520,7 +506,19 @@ export default function EpcFormFields({
 					error={errors.vertical}
 					className="w-full"
 				/>
-
+				<div className="flex flex-col gap-1">
+					{isView ? (
+						<ReadOnlyField label="Location" value={values.location} />
+					) : (
+						<PincodeAsyncSelect
+							label="Location"
+							value={selectedPincode}
+							onChange={handlePincodeChange}
+							error={errors.location}
+							helperText="Search by pincode, office name, district, or state."
+						/>
+					)}
+				</div>
 				<SelectInput
 					mode={mode}
 					name="budgetDescription"
