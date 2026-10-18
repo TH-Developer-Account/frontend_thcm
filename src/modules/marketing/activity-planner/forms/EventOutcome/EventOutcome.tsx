@@ -245,116 +245,96 @@ export const EventOutcome = ({
 	if (!mode) return null;
 
 	return (
-		<SectionAccordion title="Activity Outcome">
-			<section className="event-outcome" aria-label="Activity outcome">
-				<div className="event-outcome-intro">
-					<div className="event-outcome-intro-copy">
-						<h3 className="event-outcome-title">{label}</h3>
-
-						<p className="event-outcome-description">
-							{isOutcomeMode
-								? "Record the final outcome of this activity."
-								: "Confirm whether the activity requires a budget deviation."}
-						</p>
-					</div>
-
-					{isDeviationRequired ? (
-						<span className="event-outcome-required-indicator">
-							Additional details required
-						</span>
-					) : null}
+		<section aria-label="Activity outcome">
+			<div
+				className={[
+					"event-outcome-form-grid",
+					isDeviationRequired && "event-outcome-form-grid-expanded",
+				]
+					.filter(Boolean)
+					.join(" ")}
+			>
+				<div className="event-outcome-field event-outcome-field-selection">
+					<SelectInput
+						name="eventOutcome"
+						options={options}
+						label={label}
+						value={selectedOption}
+						isDisabled={isSubmitting}
+						onChange={handleChange}
+					/>
 				</div>
 
-				<div
-					className={[
-						"event-outcome-form-grid",
-						isDeviationRequired && "event-outcome-form-grid-expanded",
-					]
-						.filter(Boolean)
-						.join(" ")}
-				>
-					<div className="event-outcome-field event-outcome-field-selection">
-						<SelectInput
-							name="eventOutcome"
-							options={options}
-							label={label}
-							value={selectedOption}
-							isDisabled={isSubmitting}
-							onChange={handleChange}
-						/>
-					</div>
+				{isDeviationRequired ? (
+					<>
+						<div className="event-outcome-field event-outcome-field-amount">
+							<FormInput
+								name="deviatedAmount"
+								label="Deviated Amount"
+								type="number"
+								min="0"
+								step="0.01"
+								value={deviationInfo.deviatedAmount}
+								disabled={isSubmitting}
+								onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+									handleDeviationInfoChange(
+										"deviatedAmount",
+										event.target.value,
+									)
+								}
+							/>
+						</div>
 
-					{isDeviationRequired ? (
-						<>
-							<div className="event-outcome-field event-outcome-field-amount">
-								<FormInput
-									name="deviatedAmount"
-									label="Deviated Amount"
-									type="number"
-									min="0"
-									step="0.01"
-									value={deviationInfo.deviatedAmount}
-									disabled={isSubmitting}
-									onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
-										handleDeviationInfoChange(
-											"deviatedAmount",
-											event.target.value,
-										)
-									}
-								/>
-							</div>
+						<div className="event-outcome-field event-outcome-field-reason">
+							<TextareaInput
+								name="reason"
+								label="Reason"
+								value={deviationInfo.reason}
+								disabled={isSubmitting}
+								rows={4}
+								helperText="Provide a complete breakdown of the approved amount and the deviated amount."
+								onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
+									handleDeviationInfoChange("reason", event.target.value)
+								}
+							/>
+						</div>
 
-							<div className="event-outcome-field event-outcome-field-reason">
-								<TextareaInput
-									name="reason"
-									label="Reason"
-									value={deviationInfo.reason}
-									disabled={isSubmitting}
-									rows={4}
-									helperText="Provide a complete breakdown of the approved amount and the deviated amount."
-									onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
-										handleDeviationInfoChange("reason", event.target.value)
-									}
-								/>
-							</div>
+						<div className="event-outcome-field event-outcome-field-upload">
+							<FileUploadField
+								kind="pdf"
+								label="Quotation Attachment"
+								description="Upload one PDF file, up to 10 MB."
+								value={deviationInfo.file}
+								required
+								disabled={isSubmitting}
+								onChange={(file) => handleDeviationInfoChange("file", file)}
+							/>
+						</div>
+					</>
+				) : null}
+			</div>
 
-							<div className="event-outcome-field event-outcome-field-upload">
-								<FileUploadField
-									kind="pdf"
-									label="Quotation Attachment"
-									description="Upload one PDF file, up to 10 MB."
-									value={deviationInfo.file}
-									required
-									disabled={isSubmitting}
-									onChange={(file) => handleDeviationInfoChange("file", file)}
-								/>
-							</div>
-						</>
-					) : null}
-				</div>
+			<footer className="event-outcome-actions">
+				<Button
+					type="button"
+					text="Reset"
+					appearance="standard"
+					variant="outline"
+					size="sm"
+					disabled={isSubmitting}
+					onClick={resetForm}
+				/>
 
-				<footer className="event-outcome-actions">
-					<Button
-						type="button"
-						text="Reset"
-						appearance="standard"
-						variant="outline"
-						size="sm"
-						disabled={isSubmitting}
-						onClick={resetForm}
-					/>
-
-					<Button
-						type="button"
-						text={isSubmitting ? "Saving..." : "Save"}
-						appearance="standard"
-						variant="brand"
-						size="sm"
-						disabled={!selectedOption?.value || isSubmitting}
-						onClick={handleSubmit}
-					/>
-				</footer>
-			</section>
-		</SectionAccordion>
+				<Button
+					type="button"
+					text={isSubmitting ? "Saving..." : "Save"}
+					appearance="standard"
+					variant="brand"
+					size="sm"
+					disabled={!selectedOption?.value || isSubmitting}
+					onClick={handleSubmit}
+				/>
+			</footer>
+		</section>
 	);
 };

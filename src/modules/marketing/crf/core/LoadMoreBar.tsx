@@ -3,6 +3,14 @@
 
 import { ChevronDown } from "lucide-react";
 
+/**
+ * Product cards shown per category tab (Printed Materials, Souvenirs,
+ * Artworks) before "Load more" — and how many more each click adds.
+ * Deliberately NOT the store's fetch size (CATALOG_PAGE_SIZE): that is how
+ * many rows are pulled per request, this is how many cards are put on screen.
+ */
+export const CRF_GRID_PAGE_SIZE = 5;
+
 type LoadMoreBarProps = {
 	/** Cards currently on screen. */
 	shown: number;

@@ -2,12 +2,16 @@
 // Types for the CRF order step: the dispatch-details + order-placement flow
 // a CRF goes through once its EPC is approved (CrfStatus moves off OPEN).
 //
-// Replaces an earlier version built against an invented contract (a PIN
-// delivery-estimate endpoint, a separate billing address, a formal GST
-// debit note document, a 6-state shop-order lifecycle with courier
-// tracking). None of that exists on the real backend — see
-// crfDispatchDetails.service.ts / crfOrder.service.ts. The real contract:
+// Flow inside the "CRF Order" tab:
+//   1. Delivery PIN  → GET /crf/:crfId/delivery-estimate?pincode=   (NEW — see below)
+//   2. Recipient + shipping address → PUT /crf/:crfId/dispatch-details
+//   3. Place order                  → POST /crf/:crfId/order
 //
+// Backend contract:
+//
+//   GET  /crf/:crfId/delivery-estimate?pincode=  → DeliveryEstimate      (NOT BUILT YET —
+//                                                  api.ts serves a mock until
+//                                                  DELIVERY_ESTIMATE_USE_MOCK is false)
 //   PUT  /crf/:crfId/dispatch-details  body: DispatchDetailsInput
 //   PUT  /crf/:crfId/souvenirs         body: { items: CrfShopifyItemInput[] }
 //   POST /crf/:crfId/order             body: { acceptPartial?: boolean } → ApiCrfOrder
@@ -25,18 +29,18 @@ import type { CrfShopifyItemInput } from "../core/types";
 /* ========================================================================== */
 
 export const RECIPIENT_TYPES = [
-  "SELF",
-  "EMPLOYEE",
-  "DEALER_CONTACT",
-  "OTHER",
+	"SELF",
+	"EMPLOYEE",
+	"DEALER_CONTACT",
+	"OTHER",
 ] as const;
 export type RecipientType = (typeof RECIPIENT_TYPES)[number];
 
 export const RECIPIENT_TYPE_LABEL: Record<RecipientType, string> = {
-  SELF: "Myself",
-  EMPLOYEE: "An employee",
-  DEALER_CONTACT: "A dealer contact",
-  OTHER: "Someone else",
+	SELF: "Myself",
+	EMPLOYEE: "An employee",
+	DEALER_CONTACT: "A dealer contact",
+	OTHER: "Someone else",
 };
 
 /**
@@ -47,58 +51,88 @@ export const RECIPIENT_TYPE_LABEL: Record<RecipientType, string> = {
  * real request body on submit.
  */
 export type CrfDispatchFormValues = {
-  recipientType: RecipientType;
-  recipientName: string;
-  recipientPhone: string;
-  recipientEmail: string;
-  recipientOrganisation: string;
-  /** Required (and validated against the User table) when recipientType === "EMPLOYEE". */
-  recipientUserId: string;
-  /** Required (and validated against BusinessPartnerContact) when recipientType === "DEALER_CONTACT". */
-  recipientContactId: string;
-  deliveryInstructions: string;
-  requiredByDate: string;
+	recipientType: RecipientType;
+	recipientName: string;
+	recipientPhone: string;
+	recipientEmail: string;
+	recipientOrganisation: string;
+	/** Required (and validated against the User table) when recipientType === "EMPLOYEE". */
+	recipientUserId: string;
+	/** Required (and validated against BusinessPartnerContact) when recipientType === "DEALER_CONTACT". */
+	recipientContactId: string;
+	deliveryInstructions: string;
+	requiredByDate: string;
 
-  line1: string;
-  line2: string;
-  landmark: string;
-  city: string;
-  district: string;
-  state: string;
-  pincode: string;
-  country: string;
-  company: string;
-  gstin: string;
+	line1: string;
+	line2: string;
+	landmark: string;
+	city: string;
+	district: string;
+	state: string;
+	pincode: string;
+	country: string;
+	company: string;
+	gstin: string;
 };
 
 export type CrfDispatchFormField = keyof CrfDispatchFormValues;
 export type CrfDispatchFormErrors = Partial<
-  Record<CrfDispatchFormField, string>
+	Record<CrfDispatchFormField, string>
 >;
 
 /** PUT /crf/:crfId/dispatch-details body — matches crfDispatchDetails.service.ts exactly. */
 export type DispatchDetailsInput = {
-  recipientType: RecipientType;
-  recipientName: string;
-  recipientPhone: string;
-  recipientEmail: string;
-  recipientOrganisation?: string;
-  recipientUserId?: string;
-  recipientContactId?: string;
-  deliveryInstructions?: string;
-  requiredByDate?: string;
-  address: {
-    line1: string;
-    line2?: string;
-    landmark?: string;
-    city: string;
-    district?: string;
-    state: string;
-    pincode: string;
-    country?: string;
-    company?: string;
-    gstin?: string;
-  };
+	recipientType: RecipientType;
+	recipientName: string;
+	recipientPhone: string;
+	recipientEmail: string;
+	recipientOrganisation?: string;
+	recipientUserId?: string;
+	recipientContactId?: string;
+	deliveryInstructions?: string;
+	requiredByDate?: string;
+	address: {
+		line1: string;
+		line2?: string;
+		landmark?: string;
+		city: string;
+		district?: string;
+		state: string;
+		pincode: string;
+		country?: string;
+		company?: string;
+		gstin?: string;
+	};
+};
+
+/* ========================================================================== */
+/*                              Delivery estimate                             */
+/* ========================================================================== */
+
+/**
+ * GET /crf/:crfId/delivery-estimate?pincode=560001
+ *
+ * What the PIN-code step needs back. Every field except `pincode` and
+ * `serviceable` is optional so the backend can return as much (or as little)
+ * as the logistics provider gives — the UI shows whatever is present.
+ */
+export type DeliveryEstimate = {
+	pincode: string;
+	/** False → delivery isn't possible to this PIN; the user can't continue. */
+	serviceable: boolean;
+	/** Place the PIN resolves to — used to pre-fill the address, never overwrites typed values. */
+	city?: string | null;
+	district?: string | null;
+	state?: string | null;
+	/** Delivery window in days (business days). */
+	minDays?: number | null;
+	maxDays?: number | null;
+	/** Latest expected delivery, ISO 8601 date or date-time. */
+	estimatedDeliveryDate?: string | null;
+	/** Delivery charge, when the store applies one. */
+	shippingCharge?: number | null;
+	/** Reason / note to show the user (e.g. why a PIN isn't serviceable). */
+	message?: string | null;
 };
 
 /* ========================================================================== */
@@ -111,12 +145,10 @@ export type DispatchDetailsInput = {
  * Must carry the FULL CrfShopifyItemInput shape (sku/requestedQty/amount/
  * rate/title/variantTitle/imageUrl), not just sku+requestedQty — the
  * backend's buildShopifyItemRows (crf.service.ts) requires amount and rate
- * on every line and throws a 400 if they're missing. This previously only
- * carried { sku, requestedQty }, which both failed to typecheck against
- * buildCrfItemInput's real return type and would have 400'd at runtime.
+ * on every line and throws a 400 if they're missing.
  */
 export type SwapSouvenirsInput = {
-  items: CrfShopifyItemInput[];
+	items: CrfShopifyItemInput[];
 };
 
 /* ========================================================================== */

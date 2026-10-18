@@ -1,14 +1,18 @@
 /* crf/order/styles.css
-   CRF order section: order form, summary, shortfall and tracking. Same
-   design tokens as core/styles.css (fallbacks only matter if a token is
-   renamed). Dead rules for the removed step timeline, PIN/ETA estimate,
-   debit-note document and order-tracking timeline have been stripped. */
+   CRF order section: delivery PIN step, order form, summary, shortfall and
+   tracking. Same design tokens as core/styles.css (fallbacks only matter if
+   a token is renamed).
+
+   Responsive:  >1024px  form column + sticky summary column
+                ≤1024px  single column, summary under the form (not sticky)
+                ≤640px   fields stack, tighter padding, full-width buttons */
 
 @layer components {
 	/* ===================================================== SHELL */
 
 	.crf-order {
 		display: flex;
+		min-width: 0;
 		flex-direction: column;
 		gap: var(--space-4, 1rem);
 	}
@@ -50,11 +54,17 @@
 
 	/* ===================================================== LAYOUT */
 
+	/* Form column + summary column. CrfOrderSection owns this grid; the form
+	   components render plain panels inside .crf-order-main. */
 	.crf-order-layout {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
 		gap: var(--space-4, 1rem);
 		align-items: start;
+	}
+
+	.crf-order-layout > * {
+		min-width: 0;
 	}
 
 	.crf-order-main {
@@ -72,6 +82,7 @@
 	.crf-order-panel,
 	.crf-order-summary,
 	.crf-track-card {
+		min-width: 0;
 		padding: var(--space-4, 1rem);
 		border: 1px solid var(--color-border-default, #e4e4e7);
 		border-radius: var(--radius-lg, 0.625rem);
@@ -123,6 +134,27 @@
 		font-size: var(--font-size-sm, 0.875rem);
 	}
 
+	.crf-order-panel-footer {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-3, 0.75rem);
+		margin-top: var(--space-4, 1rem);
+	}
+
+	.crf-order-panel-hint {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-1, 0.25rem);
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+	}
+
+	.crf-order-panel-hint > svg {
+		width: 0.875rem;
+		height: 0.875rem;
+	}
+
 	.crf-order-fieldset {
 		display: flex;
 		flex-direction: column;
@@ -139,6 +171,10 @@
 		gap: var(--space-3, 0.75rem) var(--space-4, 1rem);
 	}
 
+	.crf-order-grid > * {
+		min-width: 0;
+	}
+
 	.crf-order-span-2 {
 		grid-column: 1 / -1;
 	}
@@ -146,6 +182,198 @@
 	.crf-order-textarea {
 		min-height: 4rem;
 		resize: vertical;
+	}
+
+	/* ===================================================== STEPS */
+
+	.crf-order-steps {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.crf-order-step {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2, 0.5rem);
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-sm, 0.875rem);
+		font-weight: var(--font-weight-medium, 500);
+	}
+
+	/* Connector between steps */
+	.crf-order-step + .crf-order-step::before {
+		content: "";
+		width: 1.5rem;
+		height: 1px;
+		margin-right: var(--space-2, 0.5rem);
+		background-color: var(--color-border-default, #d4d4d8);
+	}
+
+	.crf-order-step-index {
+		display: inline-grid;
+		flex: 0 0 auto;
+		place-items: center;
+		width: 1.5rem;
+		height: 1.5rem;
+		border: 1px solid var(--color-border-default, #d4d4d8);
+		border-radius: var(--radius-full, 9999px);
+		background-color: var(--color-bg-surface, #fff);
+		font-size: var(--font-size-xs, 0.75rem);
+		font-weight: var(--font-weight-semibold, 600);
+	}
+
+	.crf-order-step-index > svg {
+		width: 0.875rem;
+		height: 0.875rem;
+	}
+
+	.crf-order-step--active {
+		color: var(--color-text-primary, #18181b);
+	}
+
+	.crf-order-step--active .crf-order-step-index {
+		border-color: var(--color-brand, #f35a00);
+		background-color: var(--color-brand, #f35a00);
+		color: #fff;
+	}
+
+	.crf-order-step--done .crf-order-step-index {
+		border-color: var(--color-success, #15803d);
+		background-color: var(--color-success-soft, #f0fdf4);
+		color: var(--color-success, #15803d);
+	}
+
+	/* ===================================================== DELIVERY PIN STEP */
+
+	.crf-order-pin-form {
+		display: grid;
+		grid-template-columns: minmax(0, 20rem) auto;
+		align-items: end;
+		gap: var(--space-3, 0.75rem);
+	}
+
+	.crf-order-pin-form > * {
+		min-width: 0;
+	}
+
+	.crf-order-estimate-slot {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3, 0.75rem);
+		margin-top: var(--space-3, 0.75rem);
+	}
+
+	.crf-order-estimate-slot:empty {
+		display: none;
+	}
+
+	.crf-order-estimate-loading {
+		margin: 0;
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-sm, 0.875rem);
+	}
+
+	.crf-order-estimate {
+		display: flex;
+		gap: var(--space-3, 0.75rem);
+		padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+		border: 1px solid var(--color-success-border, #bbf7d0);
+		border-radius: var(--radius-md, 0.5rem);
+		background-color: var(--color-success-soft, #f0fdf4);
+		color: var(--color-success, #15803d);
+	}
+
+	.crf-order-estimate > svg {
+		flex: 0 0 auto;
+		width: 1.25rem;
+		height: 1.25rem;
+		margin-top: 0.125rem;
+	}
+
+	.crf-order-estimate-body {
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+		gap: var(--space-2, 0.5rem);
+	}
+
+	.crf-order-estimate-title {
+		margin: 0;
+		font-weight: var(--font-weight-semibold, 600);
+		overflow-wrap: anywhere;
+	}
+
+	.crf-order-estimate-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+		gap: var(--space-3, 0.75rem);
+		margin: 0;
+	}
+
+	.crf-order-estimate-grid dt {
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+	}
+
+	.crf-order-estimate-grid dd {
+		margin: 0;
+		color: var(--color-text-primary, #18181b);
+		font-size: var(--font-size-sm, 0.875rem);
+		font-weight: var(--font-weight-semibold, 600);
+	}
+
+	/* "Delivering to 560001 · Bengaluru — Change" strip on the details step */
+
+	.crf-order-delivering {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2, 0.5rem);
+		padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+		border: 1px solid var(--color-border-default, #e4e4e7);
+		border-radius: var(--radius-lg, 0.625rem);
+		background-color: var(--color-bg-subtle, #fafafa);
+		font-size: var(--font-size-sm, 0.875rem);
+	}
+
+	.crf-order-delivering > svg {
+		flex: 0 0 auto;
+		width: 1rem;
+		height: 1rem;
+		color: var(--color-brand, #f35a00);
+	}
+
+	.crf-order-delivering-text {
+		flex: 1 1 auto;
+		min-width: 0;
+		margin: 0;
+		color: var(--color-text-secondary, #52525b);
+		overflow-wrap: anywhere;
+	}
+
+	.crf-order-link {
+		flex: 0 0 auto;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--color-brand, #f35a00);
+		font-size: inherit;
+		font-weight: var(--font-weight-semibold, 600);
+		cursor: pointer;
+	}
+
+	.crf-order-link:hover {
+		text-decoration: underline;
+	}
+
+	.crf-order-link:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-focus-brand, 0 0 0 3px rgba(243, 90, 0, 0.12));
 	}
 
 	/* ===================================================== SUMMARY */
@@ -167,6 +395,7 @@
 	}
 
 	.crf-order-summary-eta > svg {
+		flex: 0 0 auto;
 		width: 1rem;
 		height: 1rem;
 	}
@@ -180,6 +409,13 @@
 
 	.crf-order-summary-note--warn {
 		color: var(--color-warning-text, #92400e);
+	}
+
+	.crf-order-summary-actions {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: var(--space-2, 0.5rem);
 	}
 
 	.crf-order-items {
@@ -211,6 +447,7 @@
 		flex: 1 1 auto;
 		flex-direction: column;
 		min-width: 0;
+		overflow-wrap: anywhere;
 	}
 
 	.crf-order-item-title {
@@ -231,6 +468,7 @@
 
 	.crf-order-item-aside {
 		display: flex;
+		flex: 0 0 auto;
 		flex-direction: column;
 		align-items: flex-end;
 		gap: 0.25rem;
@@ -317,6 +555,14 @@
 		height: 1.25rem;
 	}
 
+	.crf-order-alert > div {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--space-1, 0.25rem);
+	}
+
 	.crf-order-alert p {
 		margin: 0;
 	}
@@ -383,7 +629,7 @@
 
 	.crf-order-options {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
 		gap: var(--space-3, 0.75rem);
 	}
 
@@ -398,7 +644,8 @@
 		color: var(--color-text-secondary, #52525b);
 		text-align: left;
 		cursor: pointer;
-		transition: border-color var(--duration-fast, 120ms) var(--ease-standard, ease);
+		transition: border-color var(--duration-fast, 120ms)
+			var(--ease-standard, ease);
 	}
 
 	.crf-order-option:hover:not(:disabled),
@@ -431,6 +678,7 @@
 
 	.crf-order-footer {
 		display: flex;
+		flex-wrap: wrap;
 		justify-content: flex-start;
 		gap: var(--space-2, 0.5rem);
 	}
@@ -571,6 +819,7 @@
 
 	/* ===================================================== RESPONSIVE */
 
+	/* Tablet / small laptop: summary drops under the form and stops sticking. */
 	@media (max-width: 1024px) {
 		.crf-order-layout {
 			grid-template-columns: minmax(0, 1fr);
@@ -579,12 +828,46 @@
 		.crf-order-aside {
 			position: static;
 		}
+
+		/* Full-width summary has room: buttons sit side by side. */
+		.crf-order-summary-actions {
+			flex-direction: row;
+			flex-wrap: wrap;
+		}
 	}
 
+	/* Phones */
 	@media (max-width: 640px) {
+		.crf-order-panel,
+		.crf-order-summary,
+		.crf-track-card {
+			padding: var(--space-3, 0.75rem);
+		}
+
 		.crf-order-grid,
-		.crf-order-budget {
+		.crf-order-budget,
+		.crf-order-pin-form {
 			grid-template-columns: minmax(0, 1fr);
+		}
+
+		/* Every "span 2" is already full width in one column. */
+		.crf-order-pin-form > button,
+		.crf-order-panel-footer > button,
+		.crf-order-summary-actions > * {
+			width: 100%;
+		}
+
+		.crf-order-summary-actions {
+			flex-direction: column;
+		}
+
+		/* Step connector would wrap awkwardly — drop it. */
+		.crf-order-step + .crf-order-step::before {
+			display: none;
+		}
+
+		.crf-order-delivering {
+			flex-wrap: wrap;
 		}
 	}
 }
