@@ -20,6 +20,7 @@ import {
 } from "../../../components/ui/FileUpload/fileUpload.helpers";
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 import LineItemAttachment, {
+	LINE_ITEM_ATTACHMENT_MAX_BYTES,
 	LINE_ITEM_ATTACHMENT_TYPES,
 	type LineItemAttachmentUpload,
 } from "./LineItemAttachment";
@@ -362,6 +363,15 @@ export default function LineItemTable({
 				type: "error",
 				title: "Unsupported file",
 				description: "Only JPEG images or PDF files are accepted.",
+			});
+			return;
+		}
+
+		if (file.size > LINE_ITEM_ATTACHMENT_MAX_BYTES) {
+			showToast({
+				type: "error",
+				title: "File too large",
+				description: "File must be 5MB or smaller.",
 			});
 			return;
 		}

@@ -31,7 +31,13 @@ export const buildLineItemPayload = (
 				description: item.description || undefined,
 				amount: item.rate,
 				category: "EVENT_OVERHEAD",
-				attachmentS3Key: item.quotationS3Key ?? undefined,
+
+				// Only set once POST /epf/line-item/attachment has actually
+				// uploaded the file (LineItemTable's onUploadAttachment) —
+				// undefined here means "no attachment", same as omitting the
+				// field entirely (epf.controller.ts treats both the same way).
+				// The file name is only sent together with its S3 key.
+				attachmentS3Key: item.quotationS3Key || undefined,
 				attachmentFileName: item.quotationS3Key
 					? (item.quotationFileName ?? undefined)
 					: undefined,

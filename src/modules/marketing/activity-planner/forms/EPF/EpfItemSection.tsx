@@ -7,16 +7,17 @@
 import { useCallback, type Dispatch, type SetStateAction } from "react";
 
 import type { LineItemOption } from "../../types/epc.types";
-import { epfApi } from "../../api/epf.api";
 import { OVERHEAD_COLUMNS } from "../../utils/constant";
 import LineItemTable from "../../../shared/LineItemTable";
+import { useUploadLineItemAttachmentMutation } from "../../queries/epf.queries";
 
 type EpfItemsSectionProps = {
 	items: LineItemOption[];
 	onChange: Dispatch<SetStateAction<LineItemOption[]>>;
 	options: LineItemOption[];
 	isViewer?: boolean;
-	/** The upload endpoint files attachments under this EPC. */
+	/** The upload endpoint files attachments under this EPC. Omitted (EPC not
+	 * saved yet) → the table keeps files locally (blob preview only). */
 	epcId?: string | null;
 	/** True while an attachment is uploading. */
 	onAttachmentBusyChange?: (busy: boolean) => void;
@@ -30,15 +31,18 @@ export default function EpfItemsSection({
 	epcId,
 	onAttachmentBusyChange,
 }: EpfItemsSectionProps) {
+	const uploadAttachmentMutation = useUploadLineItemAttachmentMutation();
+
+	// LineItemTable shows its own "Upload failed" toast when this rejects.
 	const handleUpload = useCallback(
 		(file: File) => {
 			if (!epcId) {
 				return Promise.reject(new Error("EPC ID not found."));
 			}
 
-			return epfApi.uploadLineItemAttachment({ epcId, file });
+			return uploadAttachmentMutation.mutateAsync({ epcId, file });
 		},
-		[epcId],
+		[epcId, uploadAttachmentMutation],
 	);
 
 	return (

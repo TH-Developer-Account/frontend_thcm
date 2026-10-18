@@ -129,9 +129,11 @@ export const mapEpfLineItemsToFormItems = (
 
 			quotationFileUrl: getQuotationUrl(item),
 			quotationFileName: getQuotationFileName(item),
-			// Sent back on save — updateEPF replaces every line item, so a row
-			// without its key would lose its S3 file.
-			quotationS3Key: getQuotationS3Key(item),
+
+			// Carried through so re-saving an unchanged row doesn't orphan
+			// its own attachment (updateEPF diffs old vs. new attachmentS3Key
+			// per line item — see diffOrphanedAttachmentKeys on the backend).
+			attachmentS3Key: getAttachmentS3Key(item),
 		};
 	});
 };
@@ -256,11 +258,14 @@ export const mapBudgetInfoToFormValues = (budgetInfo?: any) => {
 	};
 };
 
+// S3 keys are stored, not URLs (see decisions-and-learnings.md) — on a
+// saved EPF, getEPFById resolves a fresh presigned `item.attachmentUrl` per
+// line item (withLineItemAttachmentUrls, epf.controller.ts). The legacy
+// quotationUrl/quotation.url/etc. fallbacks predate that endpoint and are
+// kept for any other shape this mapper is still fed (e.g. CRF-style items).
 const getQuotationUrl = (item: any) => {
 	return (
 		item?.attachmentUrl ??
-		item?.attachment_url ??
-		item?.attachmentSignedUrl ??
 		item?.quotationUrl ??
 		item?.quotation_url ??
 		item?.quotation?.url ??
@@ -271,14 +276,9 @@ const getQuotationUrl = (item: any) => {
 	);
 };
 
-const getQuotationS3Key = (item: any): string | null => {
-	return item?.attachmentS3Key ?? item?.attachment_s3_key ?? null;
-};
-
 const getQuotationFileName = (item: any) => {
 	return (
 		item?.attachmentFileName ??
-		item?.attachment_file_name ??
 		item?.quotationFileName ??
 		item?.quotation_file_name ??
 		item?.quotation?.fileName ??
@@ -288,4 +288,8 @@ const getQuotationFileName = (item: any) => {
 		item?.filename ??
 		null
 	);
+};
+
+const getAttachmentS3Key = (item: any) => {
+	return item?.attachmentS3Key ?? null;
 };

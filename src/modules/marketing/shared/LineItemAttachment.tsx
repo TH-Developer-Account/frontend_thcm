@@ -31,6 +31,9 @@ import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUplo
 /** Same set the backend accepts (LINE_ITEM_ATTACHMENT_MIME_TYPES). */
 export const LINE_ITEM_ATTACHMENT_TYPES = ["application/pdf", "image/jpeg"];
 
+/** Same limit as the backend (LINE_ITEM_ATTACHMENT_MAX_BYTES = 5 MB). */
+export const LINE_ITEM_ATTACHMENT_MAX_BYTES = 5 * 1024 * 1024;
+
 /** What the upload endpoint returns; `s3Key` is what the EPF payload carries. */
 export type LineItemAttachmentUpload = {
 	s3Key: string;

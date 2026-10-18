@@ -66,6 +66,24 @@ export type EditingSection =
 	| null;
 
 /* ========================================================================== */
+/*                     Line-item attachment (EPF — see                       */
+/*                     lineItemAttachment.helper.ts on the backend)           */
+/* ========================================================================== */
+
+// Mirrors the backend's LINE_ITEM_ATTACHMENT_MIME_TYPES / _MAX_BYTES
+// (modules/map/lineItemAttachment.helper.ts) so the file picker rejects an
+// obviously-wrong file before ever hitting the network — the server remains
+// the actual source of truth and re-validates both on upload.
+export const LINE_ITEM_ATTACHMENT_ACCEPT = ".jpg,.jpeg,.pdf";
+
+export const LINE_ITEM_ATTACHMENT_MIME_TYPES = [
+  "image/jpeg",
+  "application/pdf",
+];
+
+export const LINE_ITEM_ATTACHMENT_MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+
+/* ========================================================================== */
 /*                           Line-item column presets                         */
 /* ========================================================================== */
 

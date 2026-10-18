@@ -444,9 +444,17 @@ export type LineItemOption = {
 	height?: number;
 	unit?: string;
 
+	// Client-side only, for instant preview of a just-picked file before the
+	// upload completes. Never sent to the backend.
 	quotationFile?: File | null;
 	quotationFileUrl?: string | null;
 	quotationFileName?: string | null;
+
+	// S3 key returned by POST /epf/line-item/attachment (epfApi
+	// .uploadLineItemAttachment). Sent on save as lineItems[].attachmentS3Key
+	// (with quotationFileName → attachmentFileName) and filled back from the
+	// read response by epf.mapper.ts — updateEPF recreates every line item, so
+	// a row without its key would lose its file.
 	quotationS3Key?: string | null;
 };
 

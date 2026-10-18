@@ -50,6 +50,12 @@ export default function EpfForm(props: EpfFormCardProps) {
 		submitting,
 	} = useEpfForm(props);
 
+	const cardTitle =
+		title ??
+		(isEditMode
+			? "Edit Event Proposition Form"
+			: "Create Event Proposition Form");
+
 	// An attachment is still uploading: its S3 key isn't known yet, so saving
 	// now would drop the file from the line item.
 	const [attachmentBusy, setAttachmentBusy] = useState(false);
@@ -159,7 +165,7 @@ export default function EpfForm(props: EpfFormCardProps) {
 	return (
 		<Card
 			className="epf-sections-card"
-			title={title}
+			title={cardTitle}
 			sections={sections}
 			footer={footer}
 			loading={loading}
