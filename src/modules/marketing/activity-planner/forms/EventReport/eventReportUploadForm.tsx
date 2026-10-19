@@ -31,7 +31,7 @@ const EventReportUploadForm = ({
     slots,
     eventHighlights,
     setEventHighlights,
-    error,
+    errors,
     fileInputRef,
     minImages,
     maxImages,
@@ -147,6 +147,20 @@ const EventReportUploadForm = ({
               </button>
             ) : null}
           </div>
+
+          {errors.length > 0 ? (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {errors.length === 1 ? (
+                <p>{errors[0]}</p>
+              ) : (
+                <ul className="list-disc space-y-1 pl-4">
+                  {errors.map((message, index) => (
+                    <li key={index}>{message}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -174,12 +188,6 @@ const EventReportUploadForm = ({
           />
         </div>
       </div>
-
-      {error ? (
-        <div className="mx-5 mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      ) : null}
 
       <div className="mb-4 flex items-center justify-end gap-3 border-t border-gray-200 bg-white px-1 pt-4">
         <Button

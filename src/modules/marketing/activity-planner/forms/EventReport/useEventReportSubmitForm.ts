@@ -72,7 +72,10 @@ export function useEventReportSubmitForm({
   const [eventHighlights, setEventHighlights] = React.useState(
     existingReport?.eventHighlights ?? "",
   );
-  const [error, setError] = React.useState<string | null>(null);
+  // Every rejected file in one picked batch gets its own message, shown
+  // together — picking 3 bad files at once surfaces all 3 reasons, not just
+  // the last one processed.
+  const [errors, setErrors] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     return () => {
@@ -97,6 +100,8 @@ export function useEventReportSubmitForm({
       event.target.value = "";
       if (files.length === 0) return;
 
+      const rejections: string[] = [];
+
       setSlots((prev) => {
         const remainingSlots = maxImages - prev.length;
         const filesToAdd = files.slice(0, remainingSlots);
@@ -105,7 +110,7 @@ export function useEventReportSubmitForm({
         for (const file of filesToAdd) {
           const validationError = validateImageFile(file);
           if (validationError) {
-            setError(validationError);
+            rejections.push(validationError);
             continue;
           }
           newSlots.push({
@@ -116,9 +121,10 @@ export function useEventReportSubmitForm({
           });
         }
 
-        if (newSlots.length > 0) setError(null);
         return [...prev, ...newSlots];
       });
+
+      setErrors(rejections);
     },
     [maxImages],
   );
@@ -159,7 +165,7 @@ export function useEventReportSubmitForm({
   const handleSubmit = React.useCallback(async () => {
     const validationError = validate();
     if (validationError) {
-      setError(validationError);
+      setErrors([validationError]);
       return;
     }
 
@@ -171,18 +177,14 @@ export function useEventReportSubmitForm({
           captions: slots.map((slot) => slot.caption),
           eventHighlights,
         });
-      } else if (mode === "retry") {
-        // Plain retry — no new images, backend re-runs generation on
-        // whatever's already stored.
-        await resubmitMutation.mutateAsync({
-          epcId,
-          images: [],
-          positions: [],
-          captions: [],
-        });
       } else {
-        // Resubmit after clarification — only send slots that got a
-        // new file picked; unchanged slots are left alone entirely.
+        // Resubmit — covers both clarification-resubmit and generation-retry;
+        // the backend (report.controller.ts resubmitReport) treats them
+        // identically. Only send slots that got a new file picked — unchanged
+        // slots are left alone entirely. A "plain retry" naturally produces
+        // an empty images/positions/captions payload if the user didn't
+        // touch any photo, so there's no need to special-case it — doing so
+        // previously also dropped eventHighlights edits made during retry.
         const changedSlots = slots.filter((slot) => slot.file);
         await resubmitMutation.mutateAsync({
           epcId,
@@ -193,14 +195,14 @@ export function useEventReportSubmitForm({
         });
       }
 
-      setError(null);
+      setErrors([]);
       await onSuccess?.();
     } catch (err: any) {
-      setError(
+      setErrors([
         err?.response?.data?.message ||
           err?.message ||
           "Failed to submit report.",
-      );
+      ]);
     }
   }, [
     epcId,
@@ -217,7 +219,7 @@ export function useEventReportSubmitForm({
     slots,
     eventHighlights,
     setEventHighlights,
-    error,
+    errors,
     fileInputRef,
     minImages,
     maxImages,
