@@ -1,9 +1,14 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { CalendarDays, MapPin } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import { trimText } from "../../../../../utils/format";
 import type { EpcListItem } from "../../types/epc.types";
+import {
+	ACTIVITY_PLANNER_ROUTES,
+	EPC_FORMS_WIZARD_PATH,
+} from "../../utils/constant";
+import { canOpenEpcView, isEpcSubmitted } from "../../forms/EPC/epc.utils";
 import { formatDate } from "../../utils/formatters";
 
 import EPCActionMenu from "./EPCActionMenu";
@@ -12,6 +17,7 @@ import { Badge } from "../../../../../components/common/Badge";
 
 type EpcColumnActions = {
 	onLeadCreate?: (row: EpcListItem) => void;
+	onMachineStudyCreate?: (row: EpcListItem) => void;
 	currentUserId?: string;
 };
 
@@ -39,11 +45,25 @@ const hasEventStarted = (eventFromDate?: string | null) => {
 
 const canCreateLead = (row: EpcListItem) =>
 	row.status?.toUpperCase() === "APPROVED" ||
+	(row.status?.toUpperCase() === "CONDUCTED" && true);
+
+// "View all leads" is useful only once leads can exist (event approved /
+// conducted) or already do (leads were added at some point, e.g. before the
+// event was marked Not Conducted).
+const canViewLeads = (row: EpcListItem) => {
+	const status = row.status?.toUpperCase();
+	return status === "APPROVED" || status === "CONDUCTED";
+};
+
+const canCreateMachineStudy = (row: EpcListItem) =>
+	row.status?.toUpperCase() === "APPROVED" ||
 	(row.status?.toUpperCase() === "CONDUCTED" &&
 		hasEventStarted(row.event_from_date));
 
 export const getEPCColumns = ({
 	onLeadCreate,
+	onMachineStudyCreate,
+	currentUserId,
 }: EpcColumnActions): ColumnDef<EpcListItem>[] => [
 	{
 		accessorKey: "proposal_number",
@@ -52,14 +72,38 @@ export const getEPCColumns = ({
 			headerClassName: "epc-column-number",
 			cellClassName: "epc-column-number",
 		},
-		cell: ({ row }) => (
-			<NavLink
-				to={`/marketing/activity-planner/${row.original.id}`}
-				className="epc-number-link"
-			>
-				{row.original.proposal_number || "--"}
-			</NavLink>
-		),
+		cell: ({ row }) => {
+			const proposalNumber = row.original.proposal_number || "--";
+
+			// Same rule as the menu's "View": submitted → anyone with access;
+			// not submitted → only its creator. Otherwise plain text.
+			if (!canOpenEpcView(row.original, currentUserId)) {
+				return (
+					<span
+						className="epc-cell-primary"
+						title="Available after the EPC is submitted"
+					>
+						{proposalNumber}
+					</span>
+				);
+			}
+
+			// Not finally submitted → continue in the stepper (EPC Details step).
+			// Submitted → the read-only view page.
+			const to = isEpcSubmitted(row.original)
+				? ACTIVITY_PLANNER_ROUTES.detail(row.original.id)
+				: EPC_FORMS_WIZARD_PATH(row.original.id, "epc");
+
+			return (
+				<Link
+					to={to}
+					className="epc-number-link"
+					onClick={(e) => e.stopPropagation()}
+				>
+					{proposalNumber}
+				</Link>
+			);
+		},
 	},
 	{
 		accessorKey: "event_name",
@@ -95,18 +139,15 @@ export const getEPCColumns = ({
 		accessorKey: "status",
 		header: "Status",
 		meta: {
-			headerClassName: "epc-column-owner",
-			cellClassName: "epc-column-owner",
+			headerClassName: "epc-column-status",
+			cellClassName: "epc-column-status",
 		},
-		cell: ({ row }) => {
-			return (
-				<Badge
-					status={formatPendingOn(row.original.pendingOn, row.original.status)}
-				/>
-			);
-		},
+		cell: ({ row }) => (
+			<Badge
+				status={formatPendingOn(row.original.pendingOn, row.original.status)}
+			/>
+		),
 	},
-
 	{
 		accessorKey: "created_at",
 		header: "Created",
@@ -131,8 +172,13 @@ export const getEPCColumns = ({
 			return (
 				<EPCActionMenu
 					row={epc}
+					// The menu needs currentUserId to decide Edit / Add CRF / Add EPF.
+					currentUserId={currentUserId}
 					canCreateLead={canCreateLead(epc)}
+					canViewLeads={canViewLeads(epc)}
 					onLeadCreate={onLeadCreate}
+					canCreateMachineStudy={canCreateMachineStudy(epc)}
+					onMachineStudyCreate={onMachineStudyCreate}
 				/>
 			);
 		},

@@ -149,7 +149,6 @@ const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
 			} catch (err) {
 				if (!requestIsActive || controller.signal.aborted) return;
 
-				console.error("User search failed:", err);
 				setOptions([]);
 			} finally {
 				if (requestIsActive) {

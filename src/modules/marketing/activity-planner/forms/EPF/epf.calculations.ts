@@ -1,4 +1,4 @@
-import type { LineItemOption } from "../../types/lineItem.types";
+import type { LineItemOption } from "../../types/epc.types";
 import type { EpfFormValues } from "../../types/epf.types";
 
 const toNumber = (value: unknown) => {

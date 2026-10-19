@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 
 import type { Permission } from "../context/Auth/AuthContext";
 import { useAuth } from "../context/Auth/useAuth";
+import { useMasterData } from "../hooks/useMasterData";
 
 export type AppInfo = Pick<Permission, "appId" | "appName" | "appKey">;
 
@@ -78,4 +79,48 @@ export const useAppLookup = () => {
 	);
 
 	return { lookup, getApp, getAppName, getAppKey };
+};
+
+type MasterLike = { value: string; code?: string; label: string };
+
+/** Match a stored value (master id, code or label) against a master list. */
+const matchMaster = <T extends MasterLike>(
+	options: T[] | undefined,
+	stored: string,
+): T | undefined =>
+	stored
+		? (options ?? []).find(
+				(o) => o.value === stored || o.code === stored || o.label === stored,
+			)
+		: undefined;
+
+/**
+ * Logged-in user's zone / branch / department resolved against the master
+ * data. `*Label` falls back to the raw stored text, so legacy free-text values
+ * and custom branches still display.
+ */
+export const useUserInfo = () => {
+	const { user } = useAuth();
+	const { data: masters } = useMasterData();
+
+	const zone = user?.zone ?? "";
+	const matchZone = matchMaster(masters?.regions, zone);
+
+	const branch = user?.branch ?? "";
+	const matchBranch = matchMaster(masters?.branches, branch);
+
+	const department = user?.department ?? "";
+	const matchDepartment = matchMaster(masters?.departments, department);
+
+	return {
+		zoneId: matchZone?.value ?? "",
+		zoneCode: matchZone?.code ?? "",
+		zoneLabel: matchZone?.label ?? zone,
+		branchId: matchBranch?.value ?? "",
+		branchCode: matchBranch?.code ?? "",
+		branchLabel: matchBranch?.label ?? branch,
+		departmentId: matchDepartment?.value ?? "",
+		departmentCode: matchDepartment?.code ?? "",
+		departmentLabel: matchDepartment?.label ?? department,
+	};
 };

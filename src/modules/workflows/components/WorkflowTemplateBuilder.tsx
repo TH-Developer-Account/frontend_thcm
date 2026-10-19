@@ -22,7 +22,6 @@ import {
 	validateWorkflow,
 } from "../utils/workflow.helpers";
 
-import "../utils/workflow.css";
 import WorkflowStagesForm from "./WorkflowStagesForm";
 
 // ─────────────────────────────────────────────────────────────────────────

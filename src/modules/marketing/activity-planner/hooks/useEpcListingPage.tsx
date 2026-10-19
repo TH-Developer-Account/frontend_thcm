@@ -1,18 +1,29 @@
+// hooks/useEpcListingPage.tsx
+// EPC listing page controller + useDebouncedValue.
 import React, { useCallback, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { SortingState } from "@tanstack/react-table";
 
-import { useDebouncedValue } from "./useDebouncedValue";
-import { useEpcListQuery } from "../queries/useEpcListQuery";
-import type { EpcListFilter } from "../utils/constant";
-import type { EpcListParams, EpcFilters } from "../types/epc.types";
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { getApiErrorMessage } from "../../../../utils/apiError.helper";
-import { filesApi } from "../api/file.module.api";
-// import {
-// 	pollExportJob,
-// 	type ExportState,
-// } from "../../../../utils/exportJob.helper";
+import { filesApi } from "../api/epc.api";
+import { useEpcListQuery } from "../queries/epc.queries";
+import type { EpcFilters, EpcListParams } from "../types/epc.types";
+import type { EpcListFilter } from "../utils/constant";
+
+export function useDebouncedValue<T>(value: T, delay = 350) {
+	const [debouncedValue, setDebouncedValue] = useState(value);
+
+	React.useEffect(() => {
+		const timeoutId = window.setTimeout(() => {
+			setDebouncedValue(value);
+		}, delay);
+
+		return () => window.clearTimeout(timeoutId);
+	}, [value, delay]);
+
+	return debouncedValue;
+}
 
 export type EpcListingExportState =
 	| { status: "idle" }
@@ -24,8 +35,6 @@ export type EpcListingExportState =
 			logId?: string;
 	  }
 	| { status: "error"; message: string };
-
-// const DELAYED_EXPORT_THRESHOLD_MS = 4000;
 
 const DEFAULT_EPC_FILTER: EpcListFilter = "createdByMe";
 const VALID_EPC_FILTERS: EpcListFilter[] = [
@@ -203,90 +212,6 @@ export const useEpcListingPage = () => {
 		});
 	};
 
-	// const handleExport = useCallback(async () => {
-	// 	if (isExportingRef.current) return;
-
-	// 	isExportingRef.current = true;
-	// 	setExportState({ status: "pending" });
-
-	// 	const delayedTimer = window.setTimeout(() => {
-	// 		setExportState((current) =>
-	// 			current.status === "pending" ? { status: "delayed" } : current,
-	// 		);
-	// 	}, DELAYED_EXPORT_THRESHOLD_MS);
-
-	// 	try {
-	// 		const queuedExport = await filesApi.enqueueExport({
-	// 			format: "xlsx",
-
-	// 			search: urlSearch.trim() || undefined,
-	// 			sortBy,
-	// 			sortOrder,
-
-	// 			createdByMe: selectedFilter === "createdByMe" ? true : undefined,
-
-	// 			pendingOnMe: selectedFilter === "pendingOnMe" ? true : undefined,
-
-	// 			approvedByMe: selectedFilter === "approvedByMe" ? true : undefined,
-
-	// 			status: filters.status.length ? filters.status : undefined,
-
-	// 			zone: filters.zone.length ? filters.zone : undefined,
-
-	// 			eventType: filters.eventType.length ? filters.eventType : undefined,
-
-	// 			eventDateFrom: filters.eventDateFrom || undefined,
-
-	// 			eventDateTo: filters.eventDateTo || undefined,
-
-	// 			createdDate: filters.createdDate || undefined,
-	// 		});
-
-	// 		const downloadUrl = await pollExportJob(
-	// 			filesApi.getExportStatus,
-	// 			queuedExport.jobId,
-	// 		);
-
-	// 		window.clearTimeout(delayedTimer);
-
-	// 		setExportState({
-	// 			status: "ready",
-	// 			downloadUrl,
-	// 		});
-	// 	} catch (error) {
-	// 		window.clearTimeout(delayedTimer);
-
-	// 		const message = getApiErrorMessage(
-	// 			error,
-	// 			"Failed to export EPC records.",
-	// 		);
-
-	// 		setExportState({
-	// 			status: "error",
-	// 			message,
-	// 		});
-
-	// 		showToast({
-	// 			type: "error",
-	// 			title: "Export failed",
-	// 			description: message,
-	// 		});
-	// 	} finally {
-	// 		isExportingRef.current = false;
-	// 	}
-	// }, [
-	// 	filters.createdDate,
-	// 	filters.eventDateFrom,
-	// 	filters.eventDateTo,
-	// 	filters.eventType,
-	// 	filters.status,
-	// 	filters.zone,
-	// 	selectedFilter,
-	// 	showToast,
-	// 	sortBy,
-	// 	sortOrder,
-	// 	urlSearch,
-	// ]);
 	const handleExport = useCallback(async () => {
 		if (isExportingRef.current) return;
 
@@ -381,9 +306,6 @@ export const useEpcListingPage = () => {
 		pageIndex: page - 1,
 		pageSize: limit,
 		pageCount: query.data?.totalPages ?? 1,
-
-		// isExporting:
-		// 	exportState.status === "pending" || exportState.status === "delayed",
 
 		isExporting: exportState.status === "pending",
 		exportState,

@@ -1,25 +1,37 @@
 import type { ComponentType, ReactNode } from "react";
 import {
 	BadgeIndianRupee,
-	Coins,
-	GlobeIcon,
-	Landmark,
-	StoreIcon,
-	UsersIcon,
-	UsersRound,
-	WalletCards,
+	Building2,
+	RefreshCcw,
+	Store,
+	Wallet,
 } from "lucide-react";
 
-import Card from "../../../../../components/common/Card";
-
+import Button from "../../../../../components/common/Button";
 import { formatCurrency } from "../../utils/formatters";
-import type { BudgetItem, ShareInfo } from "../../types/epf.types";
+
+// Headline numbers for the EPF form and the EPF view: one row of four stat
+// tiles (total event cost, dealer share, Tata Hitachi share, budget
+// remaining). The form passes live values, the view passes the saved ones.
+//
+// `loading` / `error` / `onRetry` are optional: the EPF form fetches the
+// budget separately, so only this summary shows its own loading / error state
+// while the rest of the form stays usable.
 
 type BudgetShareProps = {
-	items: BudgetItem[];
-	shareInfo: ShareInfo;
-	internalParticipants?: number;
-	externalParticipants?: number;
+	eventCost: number;
+	dealerName?: string | null;
+	dealerPercent: number;
+	dealerShare: number;
+	tataHitachiPercent: number;
+	tataHitachiShare: number;
+	/** Budget still available before this EPF is counted. */
+	availableBudget: number;
+	/** Budget info is still being fetched. */
+	loading?: boolean;
+	/** Budget info failed to load. */
+	error?: boolean;
+	onRetry?: () => void;
 };
 
 type IconComponent = ComponentType<{
@@ -38,193 +50,106 @@ type SummaryItem = {
 	tone?: SummaryTone;
 };
 
-const BUDGET_PRESENTATION: Array<{
-	Icon: IconComponent;
-	tone: SummaryTone;
-}> = [
-	{
-		Icon: Landmark,
-		tone: "success",
-	},
-	{
-		Icon: WalletCards,
-		tone: "warning",
-	},
-	{
-		Icon: Coins,
-		tone: "neutral",
-	},
-	{
-		Icon: BadgeIndianRupee,
-		tone: "neutral",
-	},
-	{
-		Icon: WalletCards,
-		tone: "brand",
-	},
-];
-
-const SummaryCardContent = ({
-	label,
-	value,
-	Icon,
-	tone = "info",
-}: SummaryItem) => {
-	return (
-		<div className="epf-summary-card-content">
-			<span
-				className={`epf-summary-card-icon epf-summary-card-icon-${tone}`}
-				aria-hidden="true"
-			>
-				<Icon size={18} strokeWidth={1.75} />
-			</span>
-
-			<div className="epf-summary-card-copy">
-				<p className="epf-summary-card-label">{label}</p>
-
-				<div className="epf-summary-card-value">{value}</div>
-			</div>
+const StatTile = ({ label, value, Icon, tone = "info" }: SummaryItem) => (
+	<div className="epf-stat">
+		<span
+			className={`epf-summary-card-icon epf-summary-card-icon-${tone}`}
+			aria-hidden="true"
+		>
+			<Icon size={16} strokeWidth={1.75} />
+		</span>
+		<div className="epf-stat-copy">
+			<p className="epf-summary-card-label">{label}</p>
+			<div className="epf-summary-card-value">{value}</div>
 		</div>
-	);
-};
+	</div>
+);
 
 const BudgetShare = ({
-	items,
-	shareInfo,
-	internalParticipants = 0,
-	externalParticipants = 0,
+	eventCost,
+	dealerName,
+	dealerPercent,
+	dealerShare,
+	tataHitachiPercent,
+	tataHitachiShare,
+	availableBudget,
+	loading = false,
+	error = false,
+	onRetry,
 }: BudgetShareProps) => {
-	const {
-		dealerName,
-		dealerPercent,
-		dealerShare,
-		tataHitachiPercent,
-		tataHitachiShare,
-		eventBudget,
-	} = shareInfo;
+	if (loading) {
+		return (
+			<p className="text-sm text-[var(--color-text-muted)]" role="status">
+				Loading budget summary…
+			</p>
+		);
+	}
 
-	const totalParticipants = internalParticipants + externalParticipants;
+	if (error) {
+		return (
+			<div
+				className="flex flex-wrap items-center gap-3 text-sm text-[var(--color-text-muted)]"
+				role="alert"
+			>
+				<span>Couldn't load the budget summary.</span>
+				{onRetry ? (
+					<Button
+						type="button"
+						text="Retry"
+						Icon={RefreshCcw}
+						size="sm"
+						appearance="standard"
+						variant="outline"
+						onClick={onRetry}
+					/>
+				) : null}
+			</div>
+		);
+	}
 
-	const participantItems: SummaryItem[] = [
+	const remaining = availableBudget - eventCost;
+	const isOverBudget = remaining < 0;
+
+	const stats: SummaryItem[] = [
 		{
-			label: "Internal",
-			value: internalParticipants,
-			Icon: UsersIcon,
-			tone: "success",
-		},
-		{
-			label: "External",
-			value: externalParticipants,
-			Icon: GlobeIcon,
-			tone: "success",
-		},
-		{
-			label: "Total",
-			value: totalParticipants,
-			Icon: UsersRound,
+			label: "Total event cost",
+			value: (
+				<span className="epf-event-cost-value">
+					{formatCurrency(eventCost) || "--"}
+				</span>
+			),
+			Icon: BadgeIndianRupee,
 			tone: "brand",
+		},
+		{
+			label: `Dealer share · ${dealerPercent}%`,
+			value: formatCurrency(dealerShare) || "--",
+			Icon: Store,
+			tone: "info",
+		},
+		{
+			label: `Tata Hitachi share · ${tataHitachiPercent}%`,
+			value: formatCurrency(tataHitachiShare) || "--",
+			Icon: Building2,
+			tone: "neutral",
+		},
+		{
+			label: isOverBudget ? "Over budget by" : "Budget remaining",
+			value: formatCurrency(Math.abs(remaining)) || "--",
+			Icon: Wallet,
+			tone: isOverBudget ? "warning" : "success",
 		},
 	];
 
-	const budgetSummaryItems: SummaryItem[] = items.map((item, index) => {
-		const presentation =
-			BUDGET_PRESENTATION[index] ??
-			BUDGET_PRESENTATION[BUDGET_PRESENTATION.length - 1];
-
-		return {
-			label: item.label,
-			value:
-				typeof item.value === "number"
-					? formatCurrency(item.value)
-					: item.value || "--",
-			Icon: presentation.Icon,
-			tone: presentation.tone,
-		};
-	});
-
-	const hasParticipants = internalParticipants > 0 || externalParticipants > 0;
-
 	return (
-		<div className="epf-budget-summary">
-			{hasParticipants ? (
-				<div
-					className="epf-participant-card-grid"
-					aria-label="Participant summary"
-				>
-					{participantItems.map((item) => (
-						<Card key={item.label} variant="subtle" padding="compact">
-							<SummaryCardContent {...item} />
-						</Card>
-					))}
-				</div>
-			) : null}
-
-			<div className="epf-budget-card-grid">
-				{budgetSummaryItems.map((item) => (
-					<Card key={item.label} variant="subtle" padding="compact">
-						<SummaryCardContent {...item} />
-					</Card>
-				))}
-			</div>
-
-			<div className="epf-dealer-card-grid">
-				<Card variant="default" padding="compact">
-					<SummaryCardContent
-						label="Dealer Name"
-						value={dealerName || "--"}
-						Icon={StoreIcon}
-						tone="info"
-					/>
-				</Card>
-
-				<Card variant="subtle" padding="compact">
-					<SummaryCardContent
-						label="Total Event Cost"
-						value={
-							<span className="epf-event-cost-value">
-								{formatCurrency(eventBudget) || "--"}
-							</span>
-						}
-						Icon={BadgeIndianRupee}
-						tone="brand"
-					/>
-				</Card>
-			</div>
-
-			<div className="epf-share-panel">
-				<div className="epf-share-heading">
-					<div>
-						<span className="uppercase-label-text">Dealer Share</span>
-
-						<p className="epf-share-value">
-							{dealerPercent}% — {formatCurrency(dealerShare)}
-						</p>
-					</div>
-
-					<div className="epf-share-heading-end">
-						<span className="uppercase-label-text">Tata Hitachi Share</span>
-
-						<p className="epf-share-value">
-							{tataHitachiPercent}% — {formatCurrency(tataHitachiShare)}
-						</p>
-					</div>
-				</div>
-
-				<progress
-					className="epf-share-progress"
-					value={dealerPercent}
-					max={100}
-					aria-label={`Dealer share ${dealerPercent}%`}
-				>
-					{dealerPercent}%
-				</progress>
-
-				<div className="epf-share-footer">
-					<span>Dealer {dealerPercent}%</span>
-
-					<span>Tata Hitachi {tataHitachiPercent}%</span>
-				</div>
-			</div>
+		<div
+			className="epf-stat-strip"
+			role="group"
+			aria-label={`Cost summary${dealerName && dealerName !== "-" ? ` for ${dealerName}` : ""}`}
+		>
+			{stats.map((item) => (
+				<StatTile key={item.label} {...item} />
+			))}
 		</div>
 	);
 };

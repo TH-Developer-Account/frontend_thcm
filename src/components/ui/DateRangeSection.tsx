@@ -1,41 +1,44 @@
-import { formatDate } from "../../modules/marketing/activity-planner/utils/formatters";
+import {
+	formatCalendarDay,
+	getEventSchedule,
+	toDateTimeAttr,
+} from "./dateRange";
 
 type DateRangeProps = {
 	fromDate?: string | null;
 	toDate?: string | null;
 };
 
-const getDaysCount = (fromDate?: string | null, toDate?: string | null) => {
-	if (!fromDate || !toDate) return "--";
+const DateRangeSection = ({ fromDate, toDate }: DateRangeProps) => {
+	const schedule = getEventSchedule(fromDate, toDate);
 
-	const from = new Date(fromDate);
-	const to = new Date(toDate);
+	/* Single-day event (or missing / invalid dates): one date, no From → To. */
+	if (schedule.kind !== "range") {
+		return (
+			<div className="date-range-card">
+				<div className="date-range-content date-range-content-single">
+					<div className="date-range-side date-range-side-left">
+						<span className="date-range-label">
+							{schedule.kind === "single" ? "Date" : "Event date"}
+						</span>
 
-	if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
-		return "--";
+						<time
+							className="date-range-value"
+							dateTime={toDateTimeAttr(schedule.from)}
+						>
+							{formatCalendarDay(schedule.from)}
+						</time>
+					</div>
+
+					{schedule.kind === "single" && (
+						<span className="date-range-pill">{schedule.durationLabel}</span>
+					)}
+				</div>
+			</div>
+		);
 	}
 
-	const diffTime = to.getTime() - from.getTime();
-	const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-
-	if (diffDays <= 0) return "--";
-
-	return `${diffDays} ${diffDays === 1 ? "day" : "days"}`;
-};
-
-const getDateTimeValue = (value?: string | null) => {
-	if (!value) return undefined;
-
-	const date = new Date(value);
-
-	if (Number.isNaN(date.getTime())) return undefined;
-
-	return date.toISOString();
-};
-
-const DateRangeSection = ({ fromDate, toDate }: DateRangeProps) => {
-	const duration = getDaysCount(fromDate, toDate);
-
+	/* Multi-day event: From → To with the duration in the middle. */
 	return (
 		<div className="date-range-card">
 			<div className="date-range-content">
@@ -44,20 +47,22 @@ const DateRangeSection = ({ fromDate, toDate }: DateRangeProps) => {
 
 					<time
 						className="date-range-value"
-						dateTime={getDateTimeValue(fromDate)}
+						dateTime={toDateTimeAttr(schedule.from)}
 					>
-						{formatDate(fromDate)}
+						{formatCalendarDay(schedule.from)}
 					</time>
 				</div>
 
-				<div className="date-range-center" aria-label={`Duration: ${duration}`}>
+				<div
+					className="date-range-center"
+					aria-label={`Duration: ${schedule.durationLabel}`}
+				>
 					<div className="date-range-line-wrap" aria-hidden="true">
 						<span className="date-range-start-dot" />
 						<span className="date-range-line" />
-						<span className="date-range-line-progress" />
 						<span className="date-range-arrow" />
 
-						<span className="date-range-pill">{duration}</span>
+						<span className="date-range-pill">{schedule.durationLabel}</span>
 					</div>
 				</div>
 
@@ -66,9 +71,9 @@ const DateRangeSection = ({ fromDate, toDate }: DateRangeProps) => {
 
 					<time
 						className="date-range-value"
-						dateTime={getDateTimeValue(toDate)}
+						dateTime={toDateTimeAttr(schedule.to)}
 					>
-						{formatDate(toDate)}
+						{formatCalendarDay(schedule.to)}
 					</time>
 				</div>
 			</div>

@@ -1,5 +1,9 @@
 import type React from "react";
 
+/* -------------------------------------------------------------------------- */
+/* Domain                                                                     */
+/* -------------------------------------------------------------------------- */
+
 export type CommentSubjectType = string;
 
 export type MentionableUserInput = {
@@ -10,15 +14,7 @@ export type MentionableUserInput = {
 	avatarUrl?: string | null;
 	phone_number?: string;
 };
-export interface User {
-	id: string;
-	email: string;
-	first_name: string;
-	last_name: string;
-	phone_number: string;
-	role?: "ADMIN" | "DEALER" | "EMPLOYEE" | undefined;
-	profile_image?: string;
-}
+
 export type CommentUser = {
 	id: string;
 	first_name: string;
@@ -37,11 +33,9 @@ export type CommentItem = {
 	replies?: CommentItem[];
 };
 
-export type CommentMenuAction = {
-	icon: React.ElementType;
-	label: string;
-	action: string;
-};
+/* -------------------------------------------------------------------------- */
+/* API                                                                        */
+/* -------------------------------------------------------------------------- */
 
 export type CommentCreatePayload = {
 	message: string;
@@ -54,15 +48,50 @@ export type CommentCreateResult = {
 	message: string;
 };
 
+export type CreateCommentRequest = {
+	subjectType: CommentSubjectType;
+	subjectId: string;
+	approvalId?: string | null;
+	payload: CommentCreatePayload;
+};
+
+/** Kept for backwards compatibility with existing imports. */
+export type CreateCommentResponse = CommentCreateResult;
+
 export type CommentApiAdapter = {
 	getComments: (params: {
 		subjectType: CommentSubjectType;
 		subjectId: string;
 	}) => Promise<CommentItem[]>;
-	createComment: (params: {
-		subjectType: CommentSubjectType;
-		subjectId: string;
-		approvalId?: string | null;
-		payload: CommentCreatePayload;
-	}) => Promise<CommentCreateResult>;
+	createComment: (params: CreateCommentRequest) => Promise<CommentCreateResult>;
+};
+
+/* -------------------------------------------------------------------------- */
+/* Rich textarea                                                              */
+/* -------------------------------------------------------------------------- */
+
+export type PopupState = "emoji" | "mentionList" | null;
+
+export type RichTextareaProps = {
+	name: string;
+	label?: string;
+	placeholder?: string;
+	value: string;
+	error?: string;
+	className?: string;
+	required?: boolean;
+	disabled?: boolean;
+	helperText?: string;
+	isTooltip?: boolean;
+	maxLength?: number;
+	autoFocus?: boolean;
+	rows?: number;
+	onChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
+	onKeyDown?: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+	mentionableUsers?: CommentUser[];
+	onMentionInsert?: (user: CommentUser) => void;
+	submitText?: string;
+	submitting?: boolean;
+	hasRealContent?: boolean;
+	onSubmit?: () => void;
 };

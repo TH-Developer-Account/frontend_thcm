@@ -1,10 +1,35 @@
+// forms/EPF/useEpfForm.ts
+// EPF form controller.
+//
+// ONE-CLICK SUBMIT (when `submitWithWorkflow` is set, i.e. in the wizard):
+//
+//   Submit click
+//     1. validate the form
+//     2. preview the approval workflow for this budget  → none? STOP, save nothing
+//     3. save the EPF (create, or update if it already exists)
+//     4. assign the workflow (the real "submit")
+//
+// If step 4 fails the EPF stays saved (never the other way round), and the
+// next click updates that same EPF and retries only the assignment.
+//
+// Without `submitWithWorkflow` (e.g. editing from the detail page after a
+// clarification) the hook only saves, exactly as before.
+//
+// DRAFT (create mode only): what the user types is autosaved locally (per EPC)
+// so a refresh / Back doesn't lose it. Only user-entered fields are stored;
+// CRF total, budgets and shares are always recomputed from live data.
+//
+// BUDGET LOADING: the budget info query is exposed separately
+// (budgetLoading / budgetError / refetchBudget) so the form can render
+// everything else immediately and let only the Budget Summary load / retry.
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../../../context/Auth/useAuth";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "../../../../../context/Auth/AuthContext";
-import { mapWorkflowStagesToApprovalRows } from "../../utils/approvalTable.mapper";
+import { useAuth } from "../../../../../context/Auth/useAuth";
+import { getWorkflowErrorMessage, workflowApi } from "../../../../workflows";
 
-import type { LineItemOption } from "../../types/lineItem.types";
+import type { LineItemOption } from "../../types/epc.types";
 import type {
 	EpfCrfData,
 	EpfDetailResponse,
@@ -29,28 +54,23 @@ import {
 	mapEpfResponseToFormValues,
 } from "./epf.mapper";
 
+import { buildEpfCreatePayload, buildEpfUpdatePayload } from "./epf.payload";
 import {
-	buildEpfCreatePayload,
-	buildEpfUpdatePayload,
-	// buildEpfFormData,
-} from "./epf.payload";
-import { validateEpfForm } from "../../utils/validations";
+	mapWorkflowStagesToApprovalRows,
+	validateEpfForm,
+} from "../../utils/formatters";
+import { getStoredAppId } from "../../utils/common";
+import { clearEpfDraft, loadEpfDraft, saveEpfDraft } from "./epfDraft";
 
-import {
-	clearStoredEpcInfo,
-	getStoredAppId,
-	getStoredEpcInfo,
-} from "../../helpers/localstorage";
+import { clearStoredEpcInfo, getStoredEpcInfo } from "../../utils/localstorage";
 
 import {
 	useCreateEpfMutation,
-	useUpdateEpfMutation,
+	useEpfBudgetInfoQuery,
 	useEpfProductsQuery,
-} from "../../queries/useEpfMutation";
-import { useEpfBudgetInfoQuery } from "../../queries/useEpfBudgetInfoQuery";
-import type { ApiErrorResponse } from "../../../../../context/context.types";
-import type { AxiosError } from "axios";
-import { workflowApi, type ApprovalTableRow } from "../../../../workflows";
+	useUpdateEpfMutation,
+} from "../../queries/epf.queries";
+import { epcKeys } from "../../queries/epc.queries";
 
 export type EpfFormMode = "create" | "edit";
 
@@ -65,13 +85,35 @@ export type EpfFormProps = {
 	onSuccess?: (data?: any) => void | Promise<void>;
 	onCancel?: () => void;
 	isClarifiedUpdate?: boolean;
+	/**
+	 * Submit = preview workflow → save EPF → assign workflow. Blocked (nothing
+	 * saved) when no workflow exists for the budget.
+	 */
+	submitWithWorkflow?: boolean;
+	/** "Request workflow" clicked because none exists. Host navigates to listing. */
+	onRequestWorkflow?: () => void | Promise<void>;
+};
+
+export type EpfWorkflowPreview = {
+	/** Only relevant when `submitWithWorkflow` is on. */
+	enabled: boolean;
+	loading: boolean;
+	error: unknown;
+	rows: any[];
+	/** A workflow was found for the current budget. */
+	hasWorkflow: boolean;
 };
 
 type UseEpfFormResult = {
 	values: EpfFormValues;
 	eventCost: number;
 	errors: Partial<Record<keyof EpfFormValues, string>>;
+	/** Products or budget still loading — used to disable Reset / Save only. */
 	loading: boolean;
+	/** Budget info only — drives the Budget Summary's own loading state. */
+	budgetLoading: boolean;
+	budgetError: boolean;
+	refetchBudget: () => void;
 	submitting: boolean;
 	options: LineItemOption[];
 	costItems: LineItemOption[];
@@ -79,13 +121,16 @@ type UseEpfFormResult = {
 	epcId: string | null;
 	epfId: string | null;
 	isEditMode: boolean;
+	/** When the local draft was last written (create mode only), else null. */
+	draftSavedAt: number | null;
+	workflowPreview: EpfWorkflowPreview;
 	handleChange: (name: keyof EpfFormValues, value: string) => void;
 	handleReset: () => void;
 	handleSubmit: (status: EpfStatus) => Promise<void>;
-	previewRows: ApprovalTableRow[];
-	previewLoading: boolean;
-	handlePreviewWorkflow: () => Promise<void>;
+	handleRequestWorkflow: () => Promise<void>;
 };
+
+const SUBJECT_TYPE = "EVENT_PROPOSAL" as const;
 
 const numericFields = new Set<keyof EpfFormValues>([
 	"externalParticipants",
@@ -102,6 +147,12 @@ const numericFields = new Set<keyof EpfFormValues>([
 	"tataHitachiShare",
 	"tataHitachiPoAmount",
 ]);
+
+const DRAFT_DEBOUNCE_MS = 600;
+const PREVIEW_DEBOUNCE_MS = 500;
+
+const workflowPreviewKey = (epcId: string | null, budget: number) =>
+	["workflow-preview", SUBJECT_TYPE, epcId, budget] as const;
 
 const parseFieldValue = (name: keyof EpfFormValues, value: string) => {
 	if (!numericFields.has(name)) return value;
@@ -136,13 +187,16 @@ export const useEpfForm = ({
 	crfData,
 	budgetMasterId: propBudgetMasterId,
 	onSuccess,
+	submitWithWorkflow = false,
+	onRequestWorkflow,
 }: EpfFormProps = {}): UseEpfFormResult => {
 	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const { showToast } = useToast();
 	const { workspaceId } = useAuth();
+	const appId = React.useMemo(() => getStoredAppId(), []);
 
 	const storedInfo = React.useMemo(() => getStoredEpcInfo(), []);
-	const appId = React.useMemo(() => getStoredAppId(), []);
 
 	const epcId = propEpcId ?? storedInfo?.epcId ?? null;
 	const crfId = propCrfId ?? storedInfo?.crfId ?? null;
@@ -150,9 +204,28 @@ export const useEpfForm = ({
 
 	const isEditMode = mode === "edit" || Boolean(epfId);
 
+	/** Id of an EPF this form created during this session (see retry note above). */
+	const createdEpfIdRef = React.useRef<string | null>(null);
+
 	const initialCrfTotal = React.useMemo(() => {
 		return getCrfTotalFromData(crfData);
 	}, [crfData]);
+
+	/* ------------------------------- Draft ---------------------------------- */
+
+	// Read once on mount. Only used when creating a new EPF — once an EPF exists
+	// on the server, the server copy is the single source of truth.
+	const draft = React.useMemo(
+		() => (!initialData && epcId ? loadEpfDraft(epcId) : null),
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[],
+	);
+
+	/** Set after a successful save so a pending autosave can't recreate the draft. */
+	const savedRef = React.useRef(false);
+	const [draftSavedAt, setDraftSavedAt] = React.useState<number | null>(
+		draft?.savedAt ?? null,
+	);
 
 	const [values, setValues] = React.useState<EpfFormValues>(() => {
 		if (initialData) {
@@ -161,20 +234,23 @@ export const useEpfForm = ({
 
 		return {
 			...initialEpfValues,
+			...(draft?.values ?? {}),
+			// Always live, never from the draft.
 			crfTotal: initialCrfTotal,
 		};
 	});
 
 	const [costItems, setCostItems] = React.useState<LineItemOption[]>(() => {
+		if (draft) return draft.costItems;
 		return mapEpfLineItemsToFormItems(initialData?.lineItems ?? []);
 	});
 
 	const [errors, setErrors] = React.useState<
 		Partial<Record<keyof EpfFormValues, string>>
 	>({});
-	const [previewRows, setPreviewRows] = React.useState<ApprovalTableRow[]>([]);
 
-	const [previewLoading, setPreviewLoading] = React.useState(false);
+	const [assigning, setAssigning] = React.useState(false);
+
 	const budgetMasterId = getBudgetMasterId({
 		budgetMasterId: propBudgetMasterId,
 		initialData,
@@ -225,6 +301,21 @@ export const useEpfForm = ({
 		}));
 	}, [budgetQuery.data]);
 
+	/* ---------------------------- Draft autosave ----------------------------- */
+
+	React.useEffect(() => {
+		if (initialData || !epcId || savedRef.current) return;
+
+		const timer = window.setTimeout(() => {
+			if (savedRef.current) return;
+			const savedAt = saveEpfDraft(epcId, values, costItems);
+			if (savedAt) setDraftSavedAt(savedAt);
+		}, DRAFT_DEBOUNCE_MS);
+
+		return () => window.clearTimeout(timer);
+	}, [initialData, epcId, values, costItems]);
+
+	/** Event cost = overheads + CRF total. Saved as the EPF's event budget. */
 	const eventCost = React.useMemo(() => {
 		const overheadTotal = calculateLineItemsTotal(costItems);
 		return overheadTotal + Number(values.crfTotal || 0);
@@ -243,9 +334,77 @@ export const useEpfForm = ({
 		};
 	}, [eventCost, values]);
 
-	const loading = productsQuery.isLoading || budgetQuery.isLoading;
+	/* --------------------------- Workflow preview ---------------------------- */
 
-	const submitting = createEpfMutation.isPending || updateEpfMutation.isPending;
+	const fetchPreviewRows = React.useCallback(
+		async (budget: number) => {
+			const response = await workflowApi.previewWorkflow({
+				subjectType: SUBJECT_TYPE,
+				workspaceId: workspaceId as string,
+				appId: appId as string,
+				criteria: { budget },
+			});
+
+			return (
+				mapWorkflowStagesToApprovalRows(response?.stages ?? [], {
+					showOnlyCurrentStageStatus: false,
+				}) ?? []
+			);
+		},
+		[appId, workspaceId],
+	);
+
+	// Debounced so typing in the overheads table doesn't fire a request per key.
+	const [previewBudget, setPreviewBudget] = React.useState(0);
+	React.useEffect(() => {
+		const timer = window.setTimeout(
+			() => setPreviewBudget(eventCost),
+			PREVIEW_DEBOUNCE_MS,
+		);
+		return () => window.clearTimeout(timer);
+	}, [eventCost]);
+
+	const previewEnabled =
+		submitWithWorkflow &&
+		Boolean(epcId) &&
+		Boolean(workspaceId) &&
+		Boolean(appId) &&
+		previewBudget > 0;
+
+	const previewQuery = useQuery({
+		queryKey: workflowPreviewKey(epcId, previewBudget),
+		queryFn: () => fetchPreviewRows(previewBudget),
+		enabled: previewEnabled,
+		staleTime: 60 * 1000,
+		retry: 1,
+	});
+
+	const previewRows = previewQuery.data ?? [];
+
+	const workflowPreview: EpfWorkflowPreview = {
+		enabled: submitWithWorkflow,
+		loading:
+			submitWithWorkflow &&
+			(previewBudget !== eventCost || previewQuery.isFetching),
+		error: previewQuery.error,
+		rows: previewRows,
+		hasWorkflow: previewQuery.isSuccess && previewRows.length > 0,
+	};
+
+	/* --------------------------- Loading flags ------------------------------- */
+
+	const budgetLoading = budgetQuery.isLoading;
+	const budgetError = budgetQuery.isError;
+
+	const refetchBudget = React.useCallback(() => {
+		void budgetQuery.refetch();
+	}, [budgetQuery]);
+
+	// Used only to disable Reset / Save — NOT to blank the whole form.
+	const loading = productsQuery.isLoading || budgetLoading;
+
+	const submitting =
+		createEpfMutation.isPending || updateEpfMutation.isPending || assigning;
 
 	const handleChange = React.useCallback(
 		(name: keyof EpfFormValues, value: string) => {
@@ -293,27 +452,30 @@ export const useEpfForm = ({
 				crfTotal: initialCrfTotal,
 			});
 			setCostItems([]);
+
+			// Reset means "start over" — drop the saved draft too.
+			if (epcId) clearEpfDraft(epcId);
+			setDraftSavedAt(null);
 		}
 
 		setErrors({});
-	}, [initialData, initialCrfTotal]);
+	}, [epcId, initialData, initialCrfTotal]);
 
-	const assignWorkflow = React.useCallback(async () => {
-		if (!epcId || !workspaceId || !appId) return;
-
-		await workflowApi.assignWorkflow({
-			subjectType: "EVENT_PROPOSAL",
-			subjectId: epcId,
-			workspaceId,
-			appId,
-			criteria: {
-				budget: eventCost,
-			},
+	const handleRequestWorkflow = React.useCallback(async () => {
+		showToast({
+			type: "success",
+			title: "Workflow needed",
+			description:
+				"Nothing was submitted. Ask your administrator to set up an approval workflow for this budget, then continue from the listing.",
 		});
-	}, [appId, epcId, eventCost, workspaceId]);
+
+		await onRequestWorkflow?.();
+	}, [onRequestWorkflow, showToast]);
 
 	const handleSubmit = React.useCallback(
 		async (status: EpfStatus) => {
+			if (submitting) return;
+
 			try {
 				if (!epcId) {
 					showToast({
@@ -337,6 +499,7 @@ export const useEpfForm = ({
 
 					return;
 				}
+
 				if (status === "SUBMITTED") {
 					const overheadItemsMissingQuotation =
 						getOverheadItemsMissingQuotation(costItems);
@@ -352,6 +515,61 @@ export const useEpfForm = ({
 					}
 				}
 
+				/* ── Step 1: preview the workflow. None → save NOTHING. ───────── */
+				if (submitWithWorkflow) {
+					if (!(eventCost > 0)) {
+						showToast({
+							type: "error",
+							title: "Cannot submit",
+							description: "Event budget must be greater than zero.",
+						});
+						return;
+					}
+
+					if (!workspaceId || !appId) {
+						showToast({
+							type: "error",
+							title: "Cannot submit",
+							description: !workspaceId
+								? "Workspace not found."
+								: "Application ID not found.",
+						});
+						return;
+					}
+
+					let rows: any[];
+					try {
+						// Always fresh, for exactly this budget.
+						rows = await queryClient.fetchQuery({
+							queryKey: workflowPreviewKey(epcId, eventCost),
+							queryFn: () => fetchPreviewRows(eventCost),
+							staleTime: 0,
+						});
+					} catch (previewError) {
+						showToast({
+							type: "error",
+							title: "No workflow",
+							description: getWorkflowErrorMessage(
+								previewError,
+								"Unable to find an approval workflow for this budget.",
+							),
+						});
+						return;
+					}
+
+					if (rows.length === 0) {
+						showToast({
+							type: "error",
+							title: "Cannot submit",
+							description: "No approval workflow is assigned to this EPC yet.",
+						});
+						return;
+					}
+				}
+
+				/* ── Step 2: save the EPF (create, or update if it exists). ───── */
+				const currentEpfId = epfId ?? createdEpfIdRef.current;
+
 				const payloadArgs = {
 					values: displayValues,
 					status,
@@ -361,44 +579,63 @@ export const useEpfForm = ({
 					costItems,
 				};
 
-				// const hasQuotationFiles = costItems.some((item) => item.quotationFile);
-
-				// const savedData = epfId
-				// 	? await updateEpfMutation.mutateAsync({
-				// 			epcId,
-				// 			epfId,
-				// 			payload: hasQuotationFiles
-				// 				? buildEpfFormData(payloadArgs)
-				// 				: buildEpfUpdatePayload(payloadArgs),
-				// 		})
-				// 	: await createEpfMutation.mutateAsync({
-				// 			epcId,
-				// 			payload: hasQuotationFiles
-				// 				? buildEpfFormData(payloadArgs)
-				// 				: buildEpfCreatePayload(payloadArgs),
-				// 		});
-				const savedData = epfId
+				const savedData: any = currentEpfId
 					? await updateEpfMutation.mutateAsync({
 							epcId,
-							epfId,
+							epfId: currentEpfId,
 							payload: buildEpfUpdatePayload(payloadArgs),
 						})
 					: await createEpfMutation.mutateAsync({
 							epcId,
 							payload: buildEpfCreatePayload(payloadArgs),
 						});
-				if (!epfId && status === "SUBMITTED") {
+
+				if (!currentEpfId) {
+					createdEpfIdRef.current =
+						savedData?.id ?? savedData?.data?.id ?? null;
+				}
+
+				// Saved on the server → the local draft is obsolete. Mark it first so
+				// a pending autosave can't write it back.
+				savedRef.current = true;
+				clearEpfDraft(epcId);
+				setDraftSavedAt(null);
+
+				/* ── Step 3: attach the workflow — the actual submit. ─────────── */
+				if (submitWithWorkflow) {
+					setAssigning(true);
 					try {
-						await assignWorkflow();
-					} catch (workflowError) {
-						console.error("Workflow assignment failed:", workflowError);
+						await workflowApi.assignWorkflow({
+							subjectType: SUBJECT_TYPE,
+							subjectId: epcId,
+							workspaceId: workspaceId as string,
+							appId: appId as string,
+							criteria: { budget: eventCost },
+						});
+					} catch (assignError) {
+						console.error("Workflow assignment failed:", assignError);
+
+						await queryClient.invalidateQueries({
+							queryKey: epcKeys.detail(epcId),
+						});
 
 						showToast({
 							type: "error",
-							title: "Workflow Error",
-							description: "EPF saved, but workflow assignment failed.",
+							title: "EPF saved, not submitted",
+							description: getWorkflowErrorMessage(
+								assignError,
+								"Unable to start the approval workflow.",
+							),
 						});
+						return; // EPF stays saved; clicking Submit again retries only this step
+					} finally {
+						setAssigning(false);
 					}
+
+					await Promise.all([
+						queryClient.invalidateQueries({ queryKey: epcKeys.detail(epcId) }),
+						queryClient.invalidateQueries({ queryKey: epcKeys.lists() }),
+					]);
 				}
 
 				clearStoredEpcInfo();
@@ -406,9 +643,11 @@ export const useEpfForm = ({
 				showToast({
 					type: "success",
 					title: "Success",
-					description: epfId
-						? "EPF updated successfully."
-						: "EPF submitted successfully.",
+					description: submitWithWorkflow
+						? "Submitted. The approval workflow has started."
+						: currentEpfId
+							? "EPF updated successfully."
+							: "EPF saved successfully.",
 				});
 
 				if (onSuccess) {
@@ -431,7 +670,7 @@ export const useEpfForm = ({
 			}
 		},
 		[
-			assignWorkflow,
+			appId,
 			costItems,
 			createEpfMutation,
 			crfId,
@@ -439,82 +678,26 @@ export const useEpfForm = ({
 			epcId,
 			epfId,
 			eventCost,
+			fetchPreviewRows,
 			navigate,
 			onSuccess,
+			queryClient,
 			showToast,
+			submitWithWorkflow,
+			submitting,
 			updateEpfMutation,
+			workspaceId,
 		],
 	);
-	const handlePreviewWorkflow = React.useCallback(async () => {
-		try {
-			if (!workspaceId) {
-				showToast({
-					type: "error",
-					title: "Workspace Error",
-					description: "Workspace not found.",
-				});
 
-				return;
-			}
-
-			if (!appId) {
-				showToast({
-					type: "error",
-					title: "Application Error",
-					description: "Application ID not found.",
-				});
-
-				return;
-			}
-
-			if (!eventCost || Number(eventCost) <= 0) {
-				showToast({
-					type: "error",
-					title: "Invalid Budget",
-					description: "Event cost must be greater than zero.",
-				});
-
-				return;
-			}
-
-			setPreviewLoading(true);
-
-			const response = await workflowApi.previewWorkflow({
-				subjectType: "EVENT_PROPOSAL",
-				workspaceId,
-				appId,
-				criteria: {
-					budget: Number(eventCost),
-				},
-			});
-
-			const rows = mapWorkflowStagesToApprovalRows(response?.stages ?? [], {
-				showOnlyCurrentStageStatus: false,
-			});
-
-			setPreviewRows(rows ?? []);
-		} catch (error) {
-			const err = error as AxiosError<ApiErrorResponse>;
-
-			console.error("Workflow preview failed:", err.response?.data || error);
-
-			showToast({
-				type: "error",
-				title: "Workflow Error",
-				description:
-					err.response?.data?.message || "Unable to preview workflow.",
-			});
-
-			setPreviewRows([]);
-		} finally {
-			setPreviewLoading(false);
-		}
-	}, [workspaceId, appId, eventCost, showToast]);
 	return {
 		values: displayValues,
 		eventCost,
 		errors,
 		loading,
+		budgetLoading,
+		budgetError,
+		refetchBudget,
 		submitting,
 		options,
 		costItems,
@@ -522,11 +705,11 @@ export const useEpfForm = ({
 		epcId,
 		epfId,
 		isEditMode,
+		draftSavedAt: isEditMode ? null : draftSavedAt,
+		workflowPreview,
 		handleChange,
 		handleReset,
 		handleSubmit,
-		previewRows: previewRows ?? [],
-		previewLoading,
-		handlePreviewWorkflow,
+		handleRequestWorkflow,
 	};
 };

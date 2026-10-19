@@ -8,6 +8,7 @@ import "./App.css";
 import App from "./App.tsx";
 import ToastProvider from "./context/Toast/ToastProvider.tsx";
 import { AuthProvider } from "./context/Auth/AuthProvider.tsx";
+import { NotificationsProvider } from "./context/Notification/NotificationsProvider.tsx";
 import { ThemeProvider } from "./context/Theme/ThemeProvider.tsx";
 import { registerServiceWorker } from "./registerServiceWorker";
 
@@ -23,7 +24,9 @@ createRoot(rootElement).render(
       <ThemeProvider>
         <ToastProvider>
           <AuthProvider>
-            <App />
+            <NotificationsProvider>
+              <App />
+            </NotificationsProvider>
           </AuthProvider>
         </ToastProvider>
       </ThemeProvider>

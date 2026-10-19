@@ -4,12 +4,12 @@ import { ChevronDown, LogOut, UserRound } from "lucide-react";
 import Avatar from "../../components/common/Avatar";
 import { useLocation, useNavigate } from "react-router-dom";
 import NotificationBell from "./NotificationBell";
-import type { User } from "../../context/Auth/AuthContext";
 import type { Guest } from "../../context/Auth/GuestAuthContext";
+import type { AuthUser } from "../../common/common.types";
 
 export interface UserProfileProps {
 	onLogOut: () => void;
-	user?: User | Guest | null;
+	user?: AuthUser | Guest | null;
 }
 const UserProfile = ({ user, onLogOut }: UserProfileProps) => {
 	const navigate = useNavigate();

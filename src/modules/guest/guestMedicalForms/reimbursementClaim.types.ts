@@ -2,42 +2,23 @@ import type { ClaimHeadRow } from "../../medicalReimbursment/types/reimbursement
 
 export type ReimbursementClaimMode = "create" | "edit" | "view";
 
+/** Mirrors the backend MedicalClaim status values. */
 export type ReimbursementClaimStatus =
-	| "DRAFT"
-	| "SUBMITTED"
+	| "AWAITING_EX_EMPLOYEE"
 	| "IN_PROGRESS"
 	| "CLARIFICATION_REQUESTED"
-	| "RESUBMITTED"
 	| "APPROVED"
 	| "REJECTED"
-	| "CANCELLED";
+	| "CLOSED";
 
 export type ClaimFor = "SELF" | "SPOUSE" | "BOTH";
 
-export type ClaimHeadKey =
-	| "CONSULTATION"
-	| "DIAGNOSTIC_TEST"
-	| "MEDICINE"
-	| "DENTAL"
-	| "OTHER";
-
-export type EmployeeGrade = "A" | "B" | "C" | "D" | "E";
-
 export type ClaimantDetails = {
 	employeeName: string;
-	employeeCode: string;
 	ticketNumber: string;
-	grade: EmployeeGrade | "";
-	department: string;
+	grade: string;
 	claimFor: ClaimFor;
 	spouseName?: string;
-};
-
-export type ReimbursementEligibility = {
-	medicalAdvanceTaken: number;
-	amountSettledThisCalendarYear: number;
-	totalAmountEligible: number;
-	availableAmount: number;
 };
 
 export type ReimbursementClaimFormValues = ClaimantDetails & {
@@ -45,64 +26,30 @@ export type ReimbursementClaimFormValues = ClaimantDetails & {
 	remarks: string;
 };
 
-/** JSON fields sent with the multipart request. Attachments are appended separately. */
-export type ReimbursementClaimPayload = Omit<
-	ReimbursementClaimFormValues,
-	"claimItems"
-> & {
-	claimItems: Array<Omit<ClaimHeadRow, "attachment">>;
-};
-
-export type ReimbursementClaimCreatedBy = {
-	id: string;
-	firstName: string;
-	lastName: string;
-	email: string;
-	avatarUrl?: string | null;
-};
-
-export type ReimbursementClaimResponse = {
-	id: string;
-	claimNumber: string;
-	status: ReimbursementClaimStatus;
-	form: ReimbursementClaimFormValues;
-	eligibility: ReimbursementEligibility;
-	totalClaimAmount: number;
-	createdBy?: ReimbursementClaimCreatedBy | null;
-	createdAt: string;
-	updatedAt: string;
-	submittedAt?: string | null;
-	activeWorkflow?: unknown;
-};
-
-export type ReimbursementListingTab =
-	| "createdByMe"
-	| "pendingOnMe"
-	| "approvedByMe";
+export type ReimbursementListingTab = "createdByMe";
 
 export type ReimbursementClaimListParams = {
 	tab: ReimbursementListingTab;
 	search?: string;
-	status?: ReimbursementClaimStatus | "ALL";
 	pageIndex: number;
 	pageSize: number;
 };
 
-export type ReimbursementClaimListItem = Pick<
-	ReimbursementClaimResponse,
-	| "id"
-	| "claimNumber"
-	| "status"
-	| "totalClaimAmount"
-	| "createdBy"
-	| "createdAt"
-	| "updatedAt"
-> & {
+export type ReimbursementClaimListItem = {
+	id: string;
+	claimNumber: string;
+	status: ReimbursementClaimStatus | string;
+	totalClaimAmount: number;
+	createdAt: string;
+	updatedAt: string;
 	employeeName: string;
 	ticketNumber: string;
 	claimFor: ClaimFor;
 	totalApprovedAmount: number;
+	/** e.g. "2 / 3" bills approved. */
+	approvedBillsLabel: string;
 	isApproved: boolean;
+	/** Latest clarification reason while CLARIFICATION_REQUESTED. */
 	remarks: string;
 };
 
@@ -117,10 +64,4 @@ export type ReimbursementClaimListResponse = {
 export type UpdateReimbursementClaimVariables = {
 	claimId: string;
 	formData: FormData;
-};
-
-export type PublicClaimSessionResponse = {
-	sessionCode: string;
-	expiresAt: string;
-	claim?: ReimbursementClaimResponse | null;
 };
