@@ -16,6 +16,16 @@
 // Lines come from the already-mapped (and, for souvenirs, backfilled)
 // CrfLineItems, so the thumbnail / variant / price of a souvenir are the saved
 // snapshot or the live catalog values — same data the order summary shows.
+//
+// The same card also renders a PLACED STORE ORDER (CrfOrderSection, status
+// ORDERED). That mode is driven purely by the optional props below — with none
+// of them passed, the card is exactly the CRF view above:
+//   hideEmptySections  only sections that have lines (store orders are souvenirs only)
+//   headerNote         small text in the header, e.g. "Shopify order #1234"
+//   actions            extra header buttons (e.g. a Cancel order button)
+//   details            node between the sections and the footer (delivery details)
+//   stats              replaces the footer figures (Items / Total qty / GST …)
+//   totalLabel/Value   replaces the "CRF grand total" figure
 // Styles: ./crfView.css (all classes are prefixed `crf-details-`).
 
 import React from "react";
@@ -23,9 +33,9 @@ import { ArrowRight, ChevronDown, ChevronRight } from "lucide-react";
 
 import Button from "../../../../components/common/Button";
 
-import { CRF_STATUS_LABEL } from "../order/logic";
 import { getLinePricing, sumPricing } from "../shop/mapper";
 import { CrfImage } from "./Media";
+import CrfStatusPill from "./CRFStatusPill";
 import {
 	formatArtworkSize,
 	formatCrfAmount,
@@ -39,6 +49,8 @@ import {
 	type CrfStatus,
 } from "./types";
 
+export type CrfViewStat = { label: string; value: React.ReactNode };
+
 export type CrfViewProps = {
 	items: CrfLineItem[];
 	/** CRF status — shown as a pill next to the title when given. */
@@ -47,6 +59,22 @@ export type CrfViewProps = {
 	title?: string | null;
 	/** Shows the "Go to CRF Order" button in the header when given. */
 	onGoToOrder?: () => void;
+
+	/* ---- Placed-order mode (all optional) ---- */
+	/** Skip the "None added" rows — only categories that have lines are listed. */
+	hideEmptySections?: boolean;
+	/** Small text in the header (e.g. the store order id). */
+	headerNote?: React.ReactNode;
+	/** Extra header actions, rendered after "Go to CRF Order". */
+	actions?: React.ReactNode;
+	/** Content between the sections and the footer (e.g. delivery details). */
+	details?: React.ReactNode;
+	/** Replaces the footer figures (default: Items, Total qty, Taxable, GST). */
+	stats?: CrfViewStat[];
+	/** Replaces the grand-total label (default "CRF grand total"). */
+	totalLabel?: string;
+	/** Replaces the grand-total amount (default: sum of the lines). */
+	totalValue?: number;
 };
 
 /* ========================================================================== */
@@ -93,18 +121,6 @@ const getCodeText = (item: CrfLineItem) => {
 	return `${CODE_LABEL[item.category ?? ""] ?? "Part no."} ${code}`;
 };
 
-type StatusTone = "success" | "neutral" | "warning" | "danger";
-
-const STATUS_TONE: Record<CrfStatus, StatusTone> = {
-	OPEN: "neutral",
-	APPROVED: "success",
-	ORDERED: "success",
-	CLOSED: "neutral",
-	STOCK_SHORTFALL: "warning",
-	STOCK_CHECK_FAILED: "danger",
-	ORDER_FAILED: "danger",
-};
-
 const itemCountLabel = (count: number) =>
 	count === 0 ? "None added" : `${count} ${count === 1 ? "item" : "items"}`;
 
@@ -117,6 +133,13 @@ export default function CrfView({
 	status,
 	title = "CRF Details",
 	onGoToOrder,
+	hideEmptySections = false,
+	headerNote,
+	actions,
+	details,
+	stats,
+	totalLabel = "CRF grand total",
+	totalValue,
 }: CrfViewProps) {
 	const baseId = React.useId();
 
@@ -161,22 +184,27 @@ export default function CrfView({
 	const grandTotal = items.reduce((sum, item) => sum + getLineAmount(item), 0);
 	const pricing = sumPricing(items.map((item) => getLinePricing(item)));
 
+	const footerStats: CrfViewStat[] = stats ?? [
+		{ label: "Items", value: items.length },
+		{ label: "Total qty", value: formatCrfQuantity(totalQuantity) },
+		{ label: "Taxable value", value: formatCrfAmount(pricing.taxable) },
+		{ label: "GST (included)", value: formatCrfAmount(pricing.gst) },
+	];
+
 	return (
-		<section className="crf-details" aria-label="CRF details">
+		<section className="crf-details" aria-label={title ?? "CRF details"}>
 			{/* ------------------------------ Header ------------------------------ */}
 			<header className="crf-details-header">
 				<div className="crf-details-heading">
 					{title ? <h2 className="crf-details-title">{title}</h2> : null}
-					{status ? (
-						<span
-							className={`crf-details-status crf-details-status--${STATUS_TONE[status] ?? "neutral"}`}
-						>
-							{CRF_STATUS_LABEL[status] ?? status}
-						</span>
-					) : null}
+					<CrfStatusPill status={status} />
 				</div>
 
 				<div className="crf-details-actions">
+					{headerNote ? (
+						<span className="crf-details-order-id">{headerNote}</span>
+					) : null}
+
 					{expandable.length > 0 ? (
 						<div className="crf-details-toolbar">
 							<button
@@ -210,6 +238,8 @@ export default function CrfView({
 							onClick={onGoToOrder}
 						/>
 					) : null}
+
+					{actions}
 				</div>
 			</header>
 
@@ -239,8 +269,10 @@ export default function CrfView({
 					</span>
 				);
 
-				// Nothing to expand: a quiet, non-interactive row.
+				// Nothing to expand: a quiet, non-interactive row (or nothing at all).
 				if (!hasLines) {
+					if (hideEmptySections) return null;
+
 					return (
 						<div
 							key={category}
@@ -369,30 +401,23 @@ export default function CrfView({
 				);
 			})}
 
+			{/* ------------------------------ Details ----------------------------- */}
+			{details}
+
 			{/* ------------------------------ Footer ------------------------------ */}
 			<footer className="crf-details-footer">
 				<dl className="crf-details-stats">
-					<div>
-						<dt>Items</dt>
-						<dd>{items.length}</dd>
-					</div>
-					<div>
-						<dt>Total qty</dt>
-						<dd>{formatCrfQuantity(totalQuantity)}</dd>
-					</div>
-					<div>
-						<dt>Taxable value</dt>
-						<dd>{formatCrfAmount(pricing.taxable)}</dd>
-					</div>
-					<div>
-						<dt>GST (included)</dt>
-						<dd>{formatCrfAmount(pricing.gst)}</dd>
-					</div>
+					{footerStats.map((stat) => (
+						<div key={stat.label}>
+							<dt>{stat.label}</dt>
+							<dd>{stat.value}</dd>
+						</div>
+					))}
 				</dl>
 
 				<div className="crf-details-grand">
-					<span>CRF grand total</span>
-					<strong>{formatCrfAmount(grandTotal)}</strong>
+					<span>{totalLabel}</span>
+					<strong>{formatCrfAmount(totalValue ?? grandTotal)}</strong>
 				</div>
 			</footer>
 		</section>

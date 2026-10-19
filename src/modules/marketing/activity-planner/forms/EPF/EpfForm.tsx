@@ -1,18 +1,22 @@
 // forms/EPF/EpfForm.tsx
 // EPF form: ONE Card made of collapsible `sections` —
-//   Budget Summary · Event Cost Overheads · Participants · Dealer Info · Budget
+//   Event Cost Overheads · Budget Summary · Participants · Dealer Info · Budget
 //   · Approval Workflow (only when `submitWithWorkflow`)
 // with the actions in the card footer.
 //
-//   footer:  [footerStart…] [Draft saved 10:42]   [Request workflow] [Cancel] [Reset] [Submit]
+//   footer:  [footerStart…] [Draft saved 10:42]   [no-workflow note] [Cancel] [Reset] [Submit]
 //
 // With `submitWithWorkflow`, the primary button is disabled until a workflow
-// exists for the current budget; if none does, a small "Request workflow"
-// button appears instead of letting the user submit.
+// exists for the current budget; if none does, a short note says
+// "There is no workflow assigned for this budget." (no request button).
+//
+// The budget info is fetched separately and can be slow / fail on its own, so
+// the Card is NEVER put in a full "Loading content…" state: every section
+// renders immediately and only the Budget Summary shows its own loading /
+// retry state.
 import { useState, type ReactNode } from "react";
 import {
 	ArrowRight,
-	BellRing,
 	Receipt,
 	RefreshCcw,
 	Save,
@@ -23,7 +27,7 @@ import {
 
 import Button from "../../../../../components/common/Button";
 import Card, { type CardSection } from "../../../../../components/common/Card";
-import { ApprovalTable, getWorkflowErrorMessage } from "../../../../workflows";
+import { ApprovalTable } from "../../../../workflows";
 
 import BudgetShare from "../../components/activityFormView/BudgetShare";
 import { calculateBudgetShares } from "./epf.calculations";
@@ -43,6 +47,9 @@ export type EpfFormCardProps = EpfFormProps & {
 /** Saving validates as a full submission. */
 const SAVE_STATUS = "SUBMITTED";
 
+export const NO_WORKFLOW_MESSAGE =
+	"There is no workflow assigned for this budget.";
+
 export default function EpfForm(props: EpfFormCardProps) {
 	const { onCancel, submitLabel, footerStart, title, submitWithWorkflow } =
 		props;
@@ -56,13 +63,15 @@ export default function EpfForm(props: EpfFormCardProps) {
 		costItems,
 		setCostItems,
 		handleSubmit,
-		handleRequestWorkflow,
 		eventCost,
 		epcId,
 		isEditMode,
 		draftSavedAt,
 		workflowPreview,
 		loading,
+		budgetLoading,
+		budgetError,
+		refetchBudget,
 		submitting,
 	} = useEpfForm(props);
 
@@ -100,24 +109,18 @@ export default function EpfForm(props: EpfFormCardProps) {
 		workflowPreview.enabled && !workflowPreview.hasWorkflow,
 	);
 
-	/** Settled and still no workflow → offer "Request workflow". */
-	const showRequestWorkflow = Boolean(
+	/** Settled and still no workflow → say so (replaces "Request workflow"). */
+	const showNoWorkflow = Boolean(
 		workflowPreview.enabled &&
 		!workflowPreview.loading &&
 		!workflowPreview.hasWorkflow &&
 		eventCost > 0,
 	);
 
-	const requestWorkflowButton = (
-		<Button
-			type="button"
-			text="Request workflow"
-			Icon={BellRing}
-			size="sm"
-			appearance="standard"
-			variant="outline"
-			onClick={() => void handleRequestWorkflow()}
-		/>
+	const noWorkflowMessage = (
+		<p className="text-sm text-[var(--color-text-muted)]" role="status">
+			{NO_WORKFLOW_MESSAGE}
+		</p>
 	);
 
 	const renderWorkflowPreview = () => {
@@ -137,30 +140,10 @@ export default function EpfForm(props: EpfFormCardProps) {
 			);
 		}
 
-		if (workflowPreview.error) {
-			return (
-				<div className="flex flex-wrap items-center gap-3">
-					<p className="text-sm text-[var(--color-danger)]">
-						{getWorkflowErrorMessage(
-							workflowPreview.error,
-							"No approval workflow found for this budget.",
-						)}
-					</p>
-					{requestWorkflowButton}
-				</div>
-			);
-		}
-
-		if (!workflowPreview.hasWorkflow) {
-			return (
-				<div className="flex flex-wrap items-center gap-3">
-					<p className="text-sm text-[var(--color-danger)]">
-						No approval workflow is configured for this budget. You can't submit
-						without one.
-					</p>
-					{requestWorkflowButton}
-				</div>
-			);
+		// Preview failed (typically 404/400 = no template for this budget), or it
+		// came back empty: either way no workflow is assigned.
+		if (workflowPreview.error || !workflowPreview.hasWorkflow) {
+			return noWorkflowMessage;
 		}
 
 		return (
@@ -171,23 +154,6 @@ export default function EpfForm(props: EpfFormCardProps) {
 	};
 
 	const sections: CardSection[] = [
-		{
-			id: "summary",
-			title: "Budget Summary",
-			Icon: Wallet,
-			className: "epf-section--full",
-			children: (
-				<BudgetShare
-					eventCost={eventCost}
-					dealerName={values.dealerName}
-					dealerPercent={shares.dealerPercent}
-					dealerShare={shares.dealerShare}
-					tataHitachiPercent={shares.tataHitachiPercent}
-					tataHitachiShare={shares.tataHitachiShare}
-					availableBudget={Number(values.availableBudget) || 0}
-				/>
-			),
-		},
 		{
 			id: "overheads",
 			title: "Event Cost Overheads",
@@ -206,6 +172,26 @@ export default function EpfForm(props: EpfFormCardProps) {
 					isViewer={false}
 					epcId={epcId}
 					onAttachmentBusyChange={setAttachmentBusy}
+				/>
+			),
+		},
+		{
+			id: "summary",
+			title: "Budget Summary",
+			Icon: Wallet,
+			className: "epf-section--full",
+			children: (
+				<BudgetShare
+					eventCost={eventCost}
+					dealerName={values.dealerName}
+					dealerPercent={shares.dealerPercent}
+					dealerShare={shares.dealerShare}
+					tataHitachiPercent={shares.tataHitachiPercent}
+					tataHitachiShare={shares.tataHitachiShare}
+					availableBudget={Number(values.availableBudget) || 0}
+					loading={budgetLoading}
+					error={budgetError}
+					onRetry={refetchBudget}
 				/>
 			),
 		},
@@ -243,7 +229,7 @@ export default function EpfForm(props: EpfFormCardProps) {
 			</div>
 
 			<div className="flex flex-wrap items-center justify-end gap-2">
-				{showRequestWorkflow && requestWorkflowButton}
+				{showNoWorkflow && noWorkflowMessage}
 
 				{onCancel && (
 					<Button
@@ -291,7 +277,6 @@ export default function EpfForm(props: EpfFormCardProps) {
 			title={cardTitle}
 			sections={sections}
 			footer={footer}
-			loading={loading}
 		/>
 	);
 }

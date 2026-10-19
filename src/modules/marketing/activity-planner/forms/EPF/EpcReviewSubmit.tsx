@@ -14,17 +14,17 @@
 // "Final Submit" is the ONLY place that calls workflowApi.assignWorkflow, and
 // it is blocked unless a workflow was successfully previewed.
 //
-// No workflow for this budget (empty preview, or the preview call fails):
+// No workflow for this budget (empty preview, or the preview call answers
+// 404 / 400 = no matching template):
 //   • Final Submit stays disabled (and the handler refuses even if invoked)
-//   • a small "Request workflow" button saves nothing new, tells the user the
-//     EPC is saved-but-not-submitted, and sends them to the listing.
+//   • the Approval Workflow block simply says
+//     "There is no workflow assigned for this budget." (no request button)
 //
 // The budget sent is the EPF's saved event budget, so what the user previews
 // is exactly what gets assigned.
 import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	BellRing,
 	CalendarCheck,
 	FileText,
 	ReceiptIndianRupee,
@@ -57,6 +57,9 @@ import { isEpcSubmitted } from "../EPC/epc.utils";
 
 const SUBJECT_TYPE = "EVENT_PROPOSAL" as const;
 
+export const NO_WORKFLOW_MESSAGE =
+	"There is no workflow assigned for this budget.";
+
 export const workflowPreviewKey = (epcId: string, budget: number) =>
 	["workflow-preview", SUBJECT_TYPE, epcId, budget] as const;
 
@@ -71,9 +74,8 @@ export type EpcReviewSubmitProps = {
 	/** Called after the workflow was assigned (parent refreshes / navigates). */
 	onSubmitted: () => void | Promise<void>;
 	/**
-	 * Called when the user clicks "Request workflow" because no workflow could
-	 * be found for this EPC. Parent should navigate to the listing.
-	 * Falls back to `onSubmitted` (also the listing) when omitted.
+	 * @deprecated There is no "Request workflow" button any more. Kept optional
+	 * so existing callers still type-check; it is never called.
 	 */
 	onRequestWorkflow?: () => void | Promise<void>;
 	/** Rendered at the left of the footer (e.g. the wizard's Back button). */
@@ -87,6 +89,21 @@ export type EpcReviewSubmitProps = {
 const toBudget = (value: unknown) => {
 	const parsed = Number(value);
 	return Number.isFinite(parsed) ? parsed : 0;
+};
+
+/**
+ * The preview endpoint answers 404 (no templates) or 400 (no template matches
+ * the budget) when nothing is assigned to this budget — an expected "no
+ * workflow" outcome, not a failure to retry.
+ */
+const isNoWorkflowError = (error: unknown) => {
+	const err = error as {
+		response?: { status?: number };
+		status?: number;
+	} | null;
+	const status = err?.response?.status ?? err?.status;
+
+	return status === 404 || status === 400;
 };
 
 const ReviewBlock = ({
@@ -113,7 +130,6 @@ export default function EpcReviewSubmit({
 	workspaceId,
 	appId,
 	onSubmitted,
-	onRequestWorkflow,
 	footerStart,
 }: EpcReviewSubmitProps) {
 	const { showToast } = useToast();
@@ -157,7 +173,9 @@ export default function EpcReviewSubmit({
 		// assignments can change while the user is filling the EPF.
 		refetchOnMount: "always",
 		staleTime: 60 * 1000,
-		retry: 1,
+		// No point retrying when the budget simply has no workflow.
+		retry: (failureCount, error) =>
+			!isNoWorkflowError(error) && failureCount < 1,
 	});
 
 	const previewRows = previewQuery.data ?? [];
@@ -196,7 +214,7 @@ export default function EpcReviewSubmit({
 			showToast({
 				type: "error",
 				title: "Cannot submit",
-				description: "No approval workflow is assigned to this EPC yet.",
+				description: NO_WORKFLOW_MESSAGE,
 			});
 			return;
 		}
@@ -230,32 +248,15 @@ export default function EpcReviewSubmit({
 		}
 	};
 
-	const handleRequestWorkflow = async () => {
-		showToast({
-			type: "success",
-			title: "EPF saved",
-			description:
-				"This EPC is saved but not submitted. Ask your administrator to set up or assign an approval workflow for this budget, then use “Continue to submit” from the listing.",
-		});
-
-		await (onRequestWorkflow ?? onSubmitted)();
-	};
-
 	const canSubmit =
 		!alreadySubmitted && !blocker && hasWorkflow && !submitMutation.isPending;
 
 	/* ------------------------------- Render -------------------------------- */
 
-	const requestWorkflowButton = (
-		<Button
-			type="button"
-			text="Request workflow"
-			Icon={BellRing}
-			size="sm"
-			appearance="standard"
-			variant="outline"
-			onClick={() => void handleRequestWorkflow()}
-		/>
+	const noWorkflowMessage = (
+		<p className="text-sm text-[var(--color-text-muted)]" role="status">
+			{NO_WORKFLOW_MESSAGE}
+		</p>
 	);
 
 	const renderPreview = () => {
@@ -280,6 +281,10 @@ export default function EpcReviewSubmit({
 			);
 		}
 
+		if (previewQuery.isError && isNoWorkflowError(previewQuery.error)) {
+			return noWorkflowMessage;
+		}
+
 		if (previewQuery.isError) {
 			return (
 				<div className="flex flex-wrap items-center gap-3">
@@ -298,20 +303,12 @@ export default function EpcReviewSubmit({
 						variant="outline"
 						onClick={() => void previewQuery.refetch()}
 					/>
-					{requestWorkflowButton}
 				</div>
 			);
 		}
 
 		if (previewRows.length === 0) {
-			return (
-				<div className="flex flex-wrap items-center gap-3">
-					<p className="text-sm text-[var(--color-danger)]">
-						No approval workflow is configured for this budget.
-					</p>
-					{requestWorkflowButton}
-				</div>
-			);
+			return noWorkflowMessage;
 		}
 
 		return (

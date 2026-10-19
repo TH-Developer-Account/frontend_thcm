@@ -156,6 +156,9 @@ export type EpcListItem = {
 
 	sourceType?: "LEAD_FORM" | "DATA_FORM" | null;
 	dualVariant?: boolean;
+
+	report_status?: string | null;
+	report_validator_id?: string | null;
 };
 
 export type EpcListResponse = {
@@ -569,6 +572,9 @@ export type EventOutcomeProps = {
 
 	onSuccess?: () => void | Promise<void>;
 	onDeviationPreviewSuccess?: (stages: WorkflowStage[]) => void;
+
+	eventBudget?: number | string | null;
+	onDeviationActivate?: (deviatedAmount: number) => Promise<void>;
 };
 
 export type DeviationInfo = {

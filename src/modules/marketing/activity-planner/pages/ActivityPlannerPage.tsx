@@ -1,14 +1,14 @@
 // pages/ActivityPlannerPage.tsx
 // EPC detail ("view") page.
 //
-// Before the EPC is SUBMITTED (Final Submit in the Add-forms stepper):
-//   • its creator sees the view (and can edit the saved forms) under a
-//     "Not submitted yet" banner with "Continue to submit" → stepper
-//   • anyone else sees a notice instead of the tabs
-// After submission the view behaves as before. The create route (no id) is
-// unaffected.
+// The view renders ONLY for a submitted EPC (Final Submit in the Add-forms
+// stepper has started the workflow). For an EPC that isn't submitted yet:
+//   • its creator is sent to the stepper (EPC Details step) — the same place
+//     the EPC No link and the action menu's "View" open
+//   • anyone else sees a "Not submitted yet" notice instead of the tabs
+// The create route (no id) is unaffected.
 import React from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 
 import { Alert } from "../../../../components/common/Alert";
 import Loader from "../../../../components/ui/Loader";
@@ -25,7 +25,6 @@ import {
 import { useReportGenerationWatcher } from "../forms/EventReport/useReportGenerationWatcher";
 import { useActivityPlanner } from "../hooks/useActivityPlanner";
 import { EPC_FORMS_WIZARD_PATH, EPC_LISTING_PATH } from "../utils/constant";
-import type { EpcWizardLocationState } from "./EpcFormsWizardPage";
 import { isEpcSubmitted } from "../forms/EPC/epc.utils";
 
 type PageView = "form" | "report-builder";
@@ -127,8 +126,13 @@ const ActivityPlannerPage = () => {
 
 	const isUnsubmitted = Boolean(id && epcData && !isEpcSubmitted(epcData));
 
-	// Not submitted and not the creator → nothing to show yet.
-	if (isUnsubmitted && !permissions.isProposer) {
+	if (isUnsubmitted && id) {
+		// Creator → continue in the stepper (never the view page).
+		if (permissions.isProposer) {
+			return <Navigate to={EPC_FORMS_WIZARD_PATH(id, "epc")} replace />;
+		}
+
+		// Not the creator → nothing to show yet.
 		return (
 			<PageSectionLayout>
 				<Alert
@@ -145,36 +149,8 @@ const ActivityPlannerPage = () => {
 		);
 	}
 
-	/** Creator, not submitted → back to the stepper (straight to Review if the EPF is saved). */
-	const continueToSubmit = () => {
-		if (!id) return;
-		const state: EpcWizardLocationState = {
-			startAt: epcData?.epf ? "review" : undefined,
-		};
-		navigate(EPC_FORMS_WIZARD_PATH(id, epcData?.crf ? "epf" : "crf"), {
-			state,
-		});
-	};
-
 	return (
 		<PageSectionLayout>
-			{isUnsubmitted && pageView === "form" && (
-				<Alert
-					type="banner"
-					variant="info"
-					title="Not submitted yet"
-					description={
-						epcData?.epf
-							? "Your changes are saved, but approval hasn't started. Review the approval flow and submit when you're ready."
-							: "Add the EPF in the stepper, then review and submit to start approval."
-					}
-					primaryAction={{
-						label: epcData?.epf ? "Continue to submit" : "Continue in stepper",
-						onClick: continueToSubmit,
-					}}
-				/>
-			)}
-
 			{exportState.status === "queued" && (
 				<Alert
 					type="banner"

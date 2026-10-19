@@ -1,11 +1,22 @@
 import type { ComponentType, ReactNode } from "react";
-import { BadgeIndianRupee, Building2, Store, Wallet } from "lucide-react";
+import {
+	BadgeIndianRupee,
+	Building2,
+	RefreshCcw,
+	Store,
+	Wallet,
+} from "lucide-react";
 
+import Button from "../../../../../components/common/Button";
 import { formatCurrency } from "../../utils/formatters";
 
 // Headline numbers for the EPF form and the EPF view: one row of four stat
 // tiles (total event cost, dealer share, Tata Hitachi share, budget
 // remaining). The form passes live values, the view passes the saved ones.
+//
+// `loading` / `error` / `onRetry` are optional: the EPF form fetches the
+// budget separately, so only this summary shows its own loading / error state
+// while the rest of the form stays usable.
 
 type BudgetShareProps = {
 	eventCost: number;
@@ -16,6 +27,11 @@ type BudgetShareProps = {
 	tataHitachiShare: number;
 	/** Budget still available before this EPF is counted. */
 	availableBudget: number;
+	/** Budget info is still being fetched. */
+	loading?: boolean;
+	/** Budget info failed to load. */
+	error?: boolean;
+	onRetry?: () => void;
 };
 
 type IconComponent = ComponentType<{
@@ -57,7 +73,40 @@ const BudgetShare = ({
 	tataHitachiPercent,
 	tataHitachiShare,
 	availableBudget,
+	loading = false,
+	error = false,
+	onRetry,
 }: BudgetShareProps) => {
+	if (loading) {
+		return (
+			<p className="text-sm text-[var(--color-text-muted)]" role="status">
+				Loading budget summary…
+			</p>
+		);
+	}
+
+	if (error) {
+		return (
+			<div
+				className="flex flex-wrap items-center gap-3 text-sm text-[var(--color-text-muted)]"
+				role="alert"
+			>
+				<span>Couldn't load the budget summary.</span>
+				{onRetry ? (
+					<Button
+						type="button"
+						text="Retry"
+						Icon={RefreshCcw}
+						size="sm"
+						appearance="standard"
+						variant="outline"
+						onClick={onRetry}
+					/>
+				) : null}
+			</div>
+		);
+	}
+
 	const remaining = availableBudget - eventCost;
 	const isOverBudget = remaining < 0;
 

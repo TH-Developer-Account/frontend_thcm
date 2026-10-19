@@ -870,4 +870,114 @@
 			flex-wrap: wrap;
 		}
 	}
+	/* ===================================================== SIMULATED ESTIMATE */
+
+	.crf-order-sim {
+		border-style: dashed;
+	}
+
+	.crf-order-sim-toggle {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-2, 0.5rem);
+		cursor: pointer;
+	}
+
+	.crf-order-sim-toggle input {
+		margin-top: 0.25rem;
+	}
+
+	.crf-order-sim-toggle span {
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+	}
+
+	.crf-order-sim-toggle small {
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+	}
+
+	.crf-order-sim-body {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3, 0.75rem);
+		margin-top: var(--space-3, 0.75rem);
+	}
+
+	.crf-order-sim-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3, 0.75rem);
+	}
+
+	.crf-order-sim-pin {
+		margin: 0;
+		font-size: var(--font-size-sm, 0.875rem);
+		color: var(--color-text-secondary, #52525b);
+	}
+	/* ===================================================== PLACED ORDER VIEW */
+
+	.crf-details .crf-details-order-id {
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-sm, 0.8125rem);
+		overflow-wrap: anywhere;
+	}
+
+	/* Delivery details: label above value, several columns */
+	.crf-details .crf-order-details {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: var(--space-3, 0.75rem) var(--space-4, 1rem);
+		margin: 0;
+		padding: var(--space-1, 0.25rem) 0 var(--space-3, 0.75rem);
+	}
+
+	.crf-details .crf-order-details > div {
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+		min-width: 0;
+	}
+
+	.crf-details .crf-order-details dt {
+		margin: 0;
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+		line-height: 1.3;
+	}
+
+	.crf-details .crf-order-details dd {
+		margin: 0;
+		color: var(--color-text-primary, #18181b);
+		font-size: var(--font-size-sm, 0.875rem);
+		line-height: 1.4;
+		overflow-wrap: anywhere;
+	}
+
+	.crf-details .crf-order-details .crf-order-details-wide {
+		grid-column: 1 / -1;
+	}
+
+	.crf-details .crf-details-note {
+		margin: 0;
+		padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+		border-top: 1px solid var(--color-border-default, #e4e4e7);
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+	}
+
+	@media (max-width: 1024px) {
+		.crf-details .crf-order-details {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@media (max-width: 640px) {
+		.crf-details .crf-order-details {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
 }

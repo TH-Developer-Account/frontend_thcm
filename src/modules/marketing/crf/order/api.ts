@@ -1,33 +1,12 @@
 // crf/order/api.ts
-// CRF order-step HTTP calls + TanStack Query hooks, against the backend
-// routes (crf.routes.ts / crf-order.controller.ts):
-//
 //   GET  /crf/:crfId/delivery-estimate?pincode=   (NOT BUILT YET — mocked below)
 //   PUT  /crf/:crfId/dispatch-details
 //   PUT  /crf/:crfId/souvenirs
 //   POST /crf/:crfId/order
 //   POST /crf/:crfId/order/retry
-//   POST /crf/:crfId/order/cancel
 //   POST /crf/:crfId/stock-check/retry
-//
-// Every handler responds { success: true, data }. What `data` actually
-// contains differs by route and isn't fully pinned down from the frontend
-// side yet:
-//   • placeOrder / retryOrder return the created/retried CrfOrder row,
-//     which matches ApiCrfOrder (crf.types.ts) — confirmed against
-//     crfOrder.service.ts's executeOrderPlacement.
-//   • updateDispatchDetails returns the raw updated CRF row from
-//     `tx.cRF.update(...)` — NOT the full CrfDetail shape (no items/
-//     permissions/order on it).
-//   • swapSouvenirLines and cancelOrder's exact return shapes weren't
-//     re-confirmed this pass.
-//   • retryStockCheck returns `{ id: crfId }` (crfOrder.service.ts's
-//     retryStockCheck) — not a full CrfDetail either.
-// Because of that uncertainty, nothing here trusts a mutation's own
-// response for anything other than placeOrder/retryOrder. Every mutation's
-// onSuccess instead calls the caller-supplied `onSaved`, whose job is to
-// refetch the CRF's own detail query (GET /crf/:crfId) — the one shape this
-// module is certain about — so the UI never depends on a guessed shape.
+// Only placeOrder / retryOrder responses are trusted; every other mutation's
+// caller refetches GET /crf/:crfId.
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 
@@ -42,24 +21,32 @@ import type {
 	SwapSouvenirsInput,
 } from "./types";
 
-/* ========================================================================== */
-/*                          Delivery estimate (mock switch)                   */
-/* ========================================================================== */
+/* ------------------------- Delivery estimate (mock) ------------------------ */
 
-/**
- * The delivery-estimate endpoint doesn't exist yet. While this is `true`,
- * `crfOrderApi.getDeliveryEstimate` answers from `mockDeliveryEstimate`
- * (below) so the whole PIN step — UI, validation, loading / error states,
- * pre-fill, summary — can be built and tested end to end.
- *
- * When the backend ships GET /crf/:crfId/delivery-estimate, set this to
- * `false`. Nothing else changes: the request, response mapping
- * (`normalizeDeliveryEstimate`) and every consumer already go through the
- * real path.
- */
+/** While true, getDeliveryEstimate answers from the mock below. */
 export const DELIVERY_ESTIMATE_USE_MOCK = true;
 
 const MOCK_LATENCY_MS = 600;
+
+/** A few known PINs resolve to a place so the address pre-fill can be tried. */
+const MOCK_PLACES: Record<
+	string,
+	{ city: string; district: string; state: string }
+> = {
+	"560001": {
+		city: "Bengaluru",
+		district: "Bengaluru Urban",
+		state: "Karnataka",
+	},
+	"575001": {
+		city: "Mangaluru",
+		district: "Dakshina Kannada",
+		state: "Karnataka",
+	},
+	"400001": { city: "Mumbai", district: "Mumbai", state: "Maharashtra" },
+	"110001": { city: "New Delhi", district: "New Delhi", state: "Delhi" },
+	"700001": { city: "Kolkata", district: "Kolkata", state: "West Bengal" },
+};
 
 const addBusinessDays = (from: Date, days: number) => {
 	const date = new Date(from);
@@ -72,13 +59,33 @@ const addBusinessDays = (from: Date, days: number) => {
 	return date;
 };
 
-/** Stand-in for the real endpoint — deterministic from the PIN's first digit. */
+/**
+ * Deterministic per PIN, so the same PIN always gives the same result:
+ *   ends in 000        → request fails (tests "Couldn't check" + Try again)
+ *   starts 0 or 9      → not serviceable (generic message)
+ *   starts 19          → not serviceable (custom message)
+ *   56–59 (Karnataka)  → 1–3 days, free
+ *   other 5 / 6        → 2–4 / 3–5 days, free
+ *   1–4                → 3–6 days, free
+ *   7 / 8 (east, NE)   → 5–8 days, ₹150 charge + note
+ */
 const mockDeliveryEstimate = async (
 	pincode: string,
 ): Promise<DeliveryEstimate> => {
 	await new Promise((resolve) => setTimeout(resolve, MOCK_LATENCY_MS));
 
-	// Indian PINs start with 1–8; 0 and 9 aren't in use for delivery here.
+	if (pincode.endsWith("000")) {
+		throw new Error("Mock delivery check failure");
+	}
+
+	if (pincode.startsWith("19")) {
+		return {
+			pincode,
+			serviceable: false,
+			message: "This area is outside our delivery network.",
+		};
+	}
+
 	if (!/^[1-8]\d{5}$/.test(pincode)) {
 		return {
 			pincode,
@@ -88,25 +95,30 @@ const mockDeliveryEstimate = async (
 	}
 
 	const first = Number(pincode[0]);
-	const [minDays, maxDays] =
-		first >= 7 ? [5, 8] : first === 5 ? [2, 4] : [3, 6];
+	const karnataka = /^5[6-9]/.test(pincode);
+
+	const [minDays, maxDays] = karnataka
+		? [1, 3]
+		: first >= 7
+			? [5, 8]
+			: first === 6
+				? [3, 5]
+				: first === 5
+					? [2, 4]
+					: [3, 6];
 
 	return {
 		pincode,
 		serviceable: true,
+		...(MOCK_PLACES[pincode] ?? {}),
 		minDays,
 		maxDays,
 		estimatedDeliveryDate: addBusinessDays(new Date(), maxDays).toISOString(),
-		shippingCharge: null,
+		shippingCharge: first >= 7 ? 150 : null,
+		message: first >= 7 ? "Remote region, delivery may take longer." : null,
 	};
 };
 
-/**
- * Maps whatever the endpoint returns onto DeliveryEstimate. Tolerant on
- * purpose (a couple of likely alternative names) so a small difference in
- * the backend's field naming doesn't break the step — tighten it once the
- * real response is final.
- */
 const normalizeDeliveryEstimate = (
 	raw: Record<string, unknown> | null | undefined,
 	pincode: string,
@@ -137,9 +149,7 @@ const normalizeDeliveryEstimate = (
 	};
 };
 
-/* ========================================================================== */
-/*                                    API                                     */
-/* ========================================================================== */
+/* ---------------------------------- API ----------------------------------- */
 
 export const crfOrderApi = {
 	getDeliveryEstimate: async (
@@ -211,23 +221,16 @@ export const crfOrderApi = {
 	},
 };
 
-/* ========================================================================== */
-/*                                    Keys                                    */
-/* ========================================================================== */
+/* ---------------------------------- Keys ---------------------------------- */
 
 export const crfOrderKeys = {
 	deliveryEstimate: (crfId: string, pincode: string) =>
 		["crf", "delivery-estimate", crfId, pincode] as const,
 };
 
-/* ========================================================================== */
-/*                                   Hooks                                    */
-/* ========================================================================== */
+/* ---------------------------------- Hooks --------------------------------- */
 
-/**
- * Delivery estimate for one PIN. Only runs for a well-formed 6-digit PIN —
- * the caller passes the PIN the user asked to check (not every keystroke).
- */
+/** Runs only for a well-formed 6-digit PIN the user asked to check. */
 export function useDeliveryEstimateQuery(
 	crfId: string | null,
 	pincode: string | null,
@@ -240,7 +243,6 @@ export function useDeliveryEstimateQuery(
 			crfOrderApi.getDeliveryEstimate(crfId as string, pincode as string),
 		enabled: valid,
 		staleTime: 5 * 60 * 1000,
-		// A failed lookup is shown with a Retry button, not silently re-fired.
 		retry: false,
 	});
 }

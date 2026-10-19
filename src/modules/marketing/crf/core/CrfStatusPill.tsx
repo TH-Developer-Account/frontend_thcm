@@ -5,7 +5,6 @@
 
 import { CRF_STATUS_LABEL } from "../order/logic";
 import type { CrfStatus } from "./types";
-import "./crfView.css";
 
 type StatusTone = "success" | "neutral" | "warning" | "danger";
 

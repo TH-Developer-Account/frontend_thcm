@@ -47,6 +47,14 @@ const canCreateLead = (row: EpcListItem) =>
 	row.status?.toUpperCase() === "APPROVED" ||
 	(row.status?.toUpperCase() === "CONDUCTED" && true);
 
+// "View all leads" is useful only once leads can exist (event approved /
+// conducted) or already do (leads were added at some point, e.g. before the
+// event was marked Not Conducted).
+const canViewLeads = (row: EpcListItem) => {
+	const status = row.status?.toUpperCase();
+	return status === "APPROVED" || status === "CONDUCTED";
+};
+
 const canCreateMachineStudy = (row: EpcListItem) =>
 	row.status?.toUpperCase() === "APPROVED" ||
 	(row.status?.toUpperCase() === "CONDUCTED" &&
@@ -167,6 +175,7 @@ export const getEPCColumns = ({
 					// The menu needs currentUserId to decide Edit / Add CRF / Add EPF.
 					currentUserId={currentUserId}
 					canCreateLead={canCreateLead(epc)}
+					canViewLeads={canViewLeads(epc)}
 					onLeadCreate={onLeadCreate}
 					canCreateMachineStudy={canCreateMachineStudy(epc)}
 					onMachineStudyCreate={onMachineStudyCreate}

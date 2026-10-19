@@ -18,6 +18,10 @@
 // DRAFT (create mode only): what the user types is autosaved locally (per EPC)
 // so a refresh / Back doesn't lose it. Only user-entered fields are stored;
 // CRF total, budgets and shares are always recomputed from live data.
+//
+// BUDGET LOADING: the budget info query is exposed separately
+// (budgetLoading / budgetError / refetchBudget) so the form can render
+// everything else immediately and let only the Budget Summary load / retry.
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -104,7 +108,12 @@ type UseEpfFormResult = {
 	values: EpfFormValues;
 	eventCost: number;
 	errors: Partial<Record<keyof EpfFormValues, string>>;
+	/** Products or budget still loading — used to disable Reset / Save only. */
 	loading: boolean;
+	/** Budget info only — drives the Budget Summary's own loading state. */
+	budgetLoading: boolean;
+	budgetError: boolean;
+	refetchBudget: () => void;
 	submitting: boolean;
 	options: LineItemOption[];
 	costItems: LineItemOption[];
@@ -382,7 +391,17 @@ export const useEpfForm = ({
 		hasWorkflow: previewQuery.isSuccess && previewRows.length > 0,
 	};
 
-	const loading = productsQuery.isLoading || budgetQuery.isLoading;
+	/* --------------------------- Loading flags ------------------------------- */
+
+	const budgetLoading = budgetQuery.isLoading;
+	const budgetError = budgetQuery.isError;
+
+	const refetchBudget = React.useCallback(() => {
+		void budgetQuery.refetch();
+	}, [budgetQuery]);
+
+	// Used only to disable Reset / Save — NOT to blank the whole form.
+	const loading = productsQuery.isLoading || budgetLoading;
 
 	const submitting =
 		createEpfMutation.isPending || updateEpfMutation.isPending || assigning;
@@ -676,6 +695,9 @@ export const useEpfForm = ({
 		eventCost,
 		errors,
 		loading,
+		budgetLoading,
+		budgetError,
+		refetchBudget,
 		submitting,
 		options,
 		costItems,

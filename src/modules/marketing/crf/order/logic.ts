@@ -8,11 +8,16 @@
 // debitNoteAmount number (not a document), and the only order statuses are
 // ORDERED / CANCELLED (no courier/fulfillment data to render a timeline
 // from). What's left is just: turn CRF souvenir items into display lines,
-// total them, and build the dispatch-details request body.
+// total them, and map a placed order to the same display lines.
 
 import { mapCrfLineItemsToFormItems } from "../core/mapper";
 import { getLinePricing, sumPricing, type LinePricing } from "../shop/mapper";
-import type { CrfDetail, CrfLineItem, CrfStatus } from "../core/types";
+import type {
+	ApiCrfOrder,
+	CrfDetail,
+	CrfLineItem,
+	CrfStatus,
+} from "../core/types";
 
 /* ========================================================================== */
 /*                                  Status                                    */
@@ -20,24 +25,24 @@ import type { CrfDetail, CrfLineItem, CrfStatus } from "../core/types";
 
 /** Statuses where the order section has something to show/do (post-approval). */
 export const CRF_ORDER_ACTIVE_STATUSES: readonly CrfStatus[] = [
-  "APPROVED",
-  "STOCK_SHORTFALL",
-  "STOCK_CHECK_FAILED",
-  "ORDER_FAILED",
-  "ORDERED",
+	"APPROVED",
+	"STOCK_SHORTFALL",
+	"STOCK_CHECK_FAILED",
+	"ORDER_FAILED",
+	"ORDERED",
 ];
 
 export const isCrfOrderActive = (status?: CrfStatus | null): boolean =>
-  Boolean(status) && CRF_ORDER_ACTIVE_STATUSES.includes(status as CrfStatus);
+	Boolean(status) && CRF_ORDER_ACTIVE_STATUSES.includes(status as CrfStatus);
 
 export const CRF_STATUS_LABEL: Record<CrfStatus, string> = {
-  OPEN: "Being drafted",
-  APPROVED: "Approved — ready to order",
-  STOCK_SHORTFALL: "Stock shortfall",
-  STOCK_CHECK_FAILED: "Stock check failed",
-  ORDER_FAILED: "Order failed",
-  ORDERED: "Order placed",
-  CLOSED: "Closed",
+	OPEN: "Being drafted",
+	APPROVED: "Approved — ready to order",
+	STOCK_SHORTFALL: "Stock shortfall",
+	STOCK_CHECK_FAILED: "Stock check failed",
+	ORDER_FAILED: "Order failed",
+	ORDERED: "Order placed",
+	CLOSED: "Closed",
 };
 
 /* ========================================================================== */
@@ -46,17 +51,61 @@ export const CRF_STATUS_LABEL: Record<CrfStatus, string> = {
 
 /** The CRF's souvenir lines, mapped to the form/display shape (not yet backfilled with store data). */
 export const getSouvenirFormLines = (crf: CrfDetail | null): CrfLineItem[] =>
-  mapCrfLineItemsToFormItems(crf?.items ?? []).filter(
-    (item) => item.category === "SOUVENIR",
-  );
+	mapCrfLineItemsToFormItems(crf?.items ?? []).filter(
+		(item) => item.category === "SOUVENIR",
+	);
 
 export const getLineTotals = (lines: CrfLineItem[]): LinePricing =>
-  sumPricing(lines.map((line) => getLinePricing(line)));
+	sumPricing(lines.map((line) => getLinePricing(line)));
+
+/* ========================================================================== */
+/*                          Placed order → display lines                      */
+/* ========================================================================== */
+
+/**
+ * The placed order's lines (ApiCrfOrder.lines: sku/title/quantity/unitPrice/
+ * lineTotal — what was actually sent to the store) in the CrfLineItem shape
+ * <CrfView /> renders. The order snapshot has no image or variant, so those
+ * come from the CRF's own saved SHOPIFY item with the same SKU.
+ */
+export const mapOrderToLineItems = (
+	order: ApiCrfOrder,
+	crfItems: CrfDetail["items"],
+): CrfLineItem[] => {
+	const bySku = new Map<
+		string,
+		{ imageUrl: string | null; variantTitle: string | null }
+	>();
+	for (const item of crfItems) {
+		if (item.source === "SHOPIFY") {
+			bySku.set(item.sku, {
+				imageUrl: item.imageUrl,
+				variantTitle: item.variantTitle,
+			});
+		}
+	}
+
+	return order.lines.map(
+		(line): CrfLineItem => ({
+			id: line.sku,
+			value: line.sku,
+			label: line.title,
+			particular: line.sku,
+			description: "",
+			partNumber: line.sku,
+			category: "SOUVENIR",
+
+			rate: line.unitPrice,
+			quantity: line.quantity,
+			total: line.lineTotal,
+
+			sku: line.sku,
+			variantTitle: bySku.get(line.sku)?.variantTitle ?? null,
+			imageUrl: bySku.get(line.sku)?.imageUrl ?? null,
+		}),
+	);
+};
 
 // NOTE: CrfDetail (crf.types.ts) doesn't currently expose the CRF's saved
-// dispatch fields (recipientName, addressLine1, …) in its read model — only
-// status/items/order/permissions. So once dispatch details have been saved,
-// there's no confirmed way for this form to show what was actually saved;
-// it starts blank on every load rather than guessing a field layout that
-// might not match what getCrfDetail returns. Worth raising with the backend
-// if the form should prefill on reopen.
+// dispatch fields in older builds; the placed-order view reads them straight
+// off the CRF (recipientName, addressLine1, …) — see CrfOrderSection.

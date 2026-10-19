@@ -1,18 +1,19 @@
 // components/EPCTable/EPCActionMenu.tsx
 // Row-level action menu for the EPC listing table.
 //
-// View / Edit rules:
-//   • Not submitted → the CREATOR can View (the view shows a "Not submitted
-//     yet" banner with "Continue to submit"); there is NO Edit — the creator
-//     continues from the stepper (EPC No / Add CRF / Add EPF).
-//   • Submitted     → everyone with access can View; Edit follows the existing
-//     rules (getEpcRowActionRules — i.e. clarification) and opens the STEPPER
-//     in edit mode (EPC → CRF → EPF), not the view page.
+// View / Edit rules (kept identical to the EPC No link in columns.tsx):
+//   • Not submitted → the CREATOR can "View", which opens the STEPPER at the
+//     EPC Details step (same as clicking the EPC number). The read-only EPC
+//     view page is NOT used for unsubmitted EPCs. There is no Edit.
+//   • Submitted     → everyone with access can View (opens the EPC view page);
+//     Edit follows the existing rules (getEpcRowActionRules — i.e.
+//     clarification) and opens the STEPPER in edit mode (EPC → CRF → EPF).
 //   • Add CRF / Add EPF / Final Submit stay in the stepper.
-//   • "CRF Order" shows only once a CRF exists and opens the view on the
-//     order / tracking tab.
+//   • "CRF Order" shows only for a submitted EPC that has a CRF, and opens the
+//     view page on the order / tracking tab.
 
 import {
+	ClipboardCheck,
 	Eye,
 	FilePlus2,
 	FlaskConical,
@@ -35,6 +36,7 @@ import {
 	EPC_LEADS_VIEW_PATH,
 } from "../../utils/constant";
 import {
+	canValidateReportFromRow,
 	getEpcRowActionRules,
 	type EpcRowActionRules,
 } from "../../utils/activity.helper";
@@ -48,6 +50,7 @@ type EPCActionMenuProps = {
 	onLeadCreate?: (row: EpcListItem) => void;
 	onMachineStudyCreate?: (row: EpcListItem) => void;
 	canCreateLead?: boolean;
+	canViewLeads?: boolean;
 	canCreateMachineStudy?: boolean;
 };
 
@@ -74,6 +77,7 @@ const EPCActionMenu = ({
 	onLeadCreate,
 	onMachineStudyCreate,
 	canCreateLead = false,
+	canViewLeads = false,
 	canCreateMachineStudy = false,
 }: EPCActionMenuProps) => {
 	const navigate = useNavigate();
@@ -101,7 +105,14 @@ const EPCActionMenu = ({
 			ariaLabel: canView
 				? `View ${rowLabel}`
 				: `View ${rowLabel} (available after submission)`,
-			onClick: (selectedRow) => navigate(EPC_DETAIL_PATH(selectedRow.id)),
+			// Same destination as the EPC No link: the EPC view page renders
+			// only for a submitted EPC; otherwise continue in the stepper.
+			onClick: (selectedRow) =>
+				navigate(
+					isEpcSubmitted(selectedRow)
+						? EPC_DETAIL_PATH(selectedRow.id)
+						: EPC_FORMS_WIZARD_PATH(selectedRow.id, "epc"),
+				),
 		},
 		{
 			id: "edit-epc",
@@ -116,12 +127,14 @@ const EPCActionMenu = ({
 				navigate(EPC_FORMS_WIZARD_PATH(selectedRow.id, "epc"), { state });
 			},
 		},
-		// Only once a CRF exists → place the CRF's store order / track it.
+		// Only for a submitted EPC with a CRF → place the CRF's store order /
+		// track it. (The view page, and so its order tab, exists only after
+		// submission.)
 		{
 			id: "crf-order",
 			label: "CRF Order",
 			Icon: Truck,
-			hidden: !canView || !row.crf_id,
+			hidden: !isSubmitted || !canView || !row.crf_id,
 			ariaLabel: `Open CRF order for ${rowLabel}`,
 			onClick: (selectedRow) => {
 				const state: ActivityFormViewLocationState = { openTab: "order" };
@@ -168,7 +181,7 @@ const EPCActionMenu = ({
 			id: "view-lead-listing",
 			label: "View all leads",
 			Icon: Users,
-			hidden: row.sourceType !== "LEAD_FORM",
+			hidden: row.sourceType !== "LEAD_FORM" || !canViewLeads,
 			ariaLabel: `View all leads for ${rowLabel}`,
 			onClick: (selectedRow) => {
 				const leadInfo = buildEntryInfo(selectedRow);
@@ -199,6 +212,18 @@ const EPCActionMenu = ({
 				);
 
 				onMachineStudyCreate?.(selectedRow);
+			},
+		},
+		// Validate Report
+		{
+			id: "validate-report",
+			label: "Validate report",
+			Icon: ClipboardCheck,
+			hidden: !canValidateReportFromRow(row, currentUserId),
+			ariaLabel: `Validate report for ${rowLabel}`,
+			onClick: (selectedRow) => {
+				const state: ActivityFormViewLocationState = { openTab: "report" };
+				navigate(EPC_DETAIL_PATH(selectedRow.id), { state });
 			},
 		},
 	];

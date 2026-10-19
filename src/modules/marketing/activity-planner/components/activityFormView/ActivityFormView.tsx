@@ -143,16 +143,21 @@ type ActivityFormViewProps = {
 };
 
 /** Router state the EPC listing sends to open a tab directly (e.g. "CRF Order"). */
-export type ActivityFormViewLocationState = { openTab?: "order" } | null;
+export type ActivityFormViewLocationState = {
+	openTab?: "order" | "report";
+} | null;
 
 const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 	const location = useLocation();
 	const navigate = useNavigate();
-	const [activeTab, setActiveTab] = useState<ActivityTab>(() =>
-		(location.state as ActivityFormViewLocationState)?.openTab === "order"
+	const [activeTab, setActiveTab] = useState<ActivityTab>(() => {
+		const openTab = (location.state as ActivityFormViewLocationState)?.openTab;
+		return openTab === "order"
 			? "tracking"
-			: "epc",
-	);
+			: openTab === "report"
+				? "report"
+				: "epc";
+	});
 
 	const {
 		epcData,

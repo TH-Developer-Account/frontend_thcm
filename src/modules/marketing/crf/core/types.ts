@@ -22,9 +22,9 @@ import type { ShopStockCheckStatus } from "../shop/types";
 /* ========================================================================== */
 
 export const CRF_CATEGORIES = [
-  { title: "Printed Materials", value: "PRINTED_MATERIAL" },
-  { title: "Souvenirs", value: "SOUVENIR" },
-  { title: "Artworks", value: "ARTWORK" },
+	{ title: "Printed Materials", value: "PRINTED_MATERIAL" },
+	{ title: "Souvenirs", value: "SOUVENIR" },
+	{ title: "Artworks", value: "ARTWORK" },
 ] as const;
 
 export type CrfCategory = (typeof CRF_CATEGORIES)[number]["value"];
@@ -38,89 +38,89 @@ export type CrfCategory = (typeof CRF_CATEGORIES)[number]["value"];
  * A preset fills width × height; "CUSTOM" lets the user type them.
  */
 export const ARTWORK_RESOLUTION_PRESETS = [
-  {
-    value: "FHD",
-    label: "Full HD · 1920 × 1080",
-    hint: "16:9 · screens, LED walls",
-    width: 1920,
-    height: 1080,
-  },
-  {
-    value: "UHD_4K",
-    label: "4K UHD · 3840 × 2160",
-    hint: "16:9 · large displays",
-    width: 3840,
-    height: 2160,
-  },
-  {
-    value: "HD",
-    label: "HD · 1280 × 720",
-    hint: "16:9 · web, presentations",
-    width: 1280,
-    height: 720,
-  },
-  {
-    value: "SQUARE",
-    label: "Square · 1080 × 1080",
-    hint: "1:1 · social post",
-    width: 1080,
-    height: 1080,
-  },
-  {
-    value: "PORTRAIT",
-    label: "Portrait · 1080 × 1350",
-    hint: "4:5 · social post",
-    width: 1080,
-    height: 1350,
-  },
-  {
-    value: "STORY",
-    label: "Story / Reel · 1080 × 1920",
-    hint: "9:16 · stories, reels",
-    width: 1080,
-    height: 1920,
-  },
-  {
-    value: "A4_300",
-    label: "A4 print-ready · 2480 × 3508",
-    hint: "300 dpi · flyers",
-    width: 2480,
-    height: 3508,
-  },
-  {
-    value: "A3_300",
-    label: "A3 print-ready · 3508 × 4961",
-    hint: "300 dpi · posters",
-    width: 3508,
-    height: 4961,
-  },
-  {
-    value: "BANNER",
-    label: "Web banner · 1584 × 396",
-    hint: "4:1 · LinkedIn / site header",
-    width: 1584,
-    height: 396,
-  },
+	{
+		value: "FHD",
+		label: "Full HD · 1920 × 1080",
+		hint: "16:9 · screens, LED walls",
+		width: 1920,
+		height: 1080,
+	},
+	{
+		value: "UHD_4K",
+		label: "4K UHD · 3840 × 2160",
+		hint: "16:9 · large displays",
+		width: 3840,
+		height: 2160,
+	},
+	{
+		value: "HD",
+		label: "HD · 1280 × 720",
+		hint: "16:9 · web, presentations",
+		width: 1280,
+		height: 720,
+	},
+	{
+		value: "SQUARE",
+		label: "Square · 1080 × 1080",
+		hint: "1:1 · social post",
+		width: 1080,
+		height: 1080,
+	},
+	{
+		value: "PORTRAIT",
+		label: "Portrait · 1080 × 1350",
+		hint: "4:5 · social post",
+		width: 1080,
+		height: 1350,
+	},
+	{
+		value: "STORY",
+		label: "Story / Reel · 1080 × 1920",
+		hint: "9:16 · stories, reels",
+		width: 1080,
+		height: 1920,
+	},
+	{
+		value: "A4_300",
+		label: "A4 print-ready · 2480 × 3508",
+		hint: "300 dpi · flyers",
+		width: 2480,
+		height: 3508,
+	},
+	{
+		value: "A3_300",
+		label: "A3 print-ready · 3508 × 4961",
+		hint: "300 dpi · posters",
+		width: 3508,
+		height: 4961,
+	},
+	{
+		value: "BANNER",
+		label: "Web banner · 1584 × 396",
+		hint: "4:1 · LinkedIn / site header",
+		width: 1584,
+		height: 396,
+	},
 ] as const;
 
 export const ARTWORK_CUSTOM_PRESET = "CUSTOM" as const;
 
 export type ArtworkResolutionPreset =
-  | (typeof ARTWORK_RESOLUTION_PRESETS)[number]["value"]
-  | typeof ARTWORK_CUSTOM_PRESET;
+	| (typeof ARTWORK_RESOLUTION_PRESETS)[number]["value"]
+	| typeof ARTWORK_CUSTOM_PRESET;
 
 /** Matches a width × height back to its preset (CUSTOM when none match). */
 export const findArtworkPreset = (
-  width?: number | null,
-  height?: number | null,
+	width?: number | null,
+	height?: number | null,
 ): ArtworkResolutionPreset | undefined => {
-  if (!width || !height) return undefined;
-  return (
-    ARTWORK_RESOLUTION_PRESETS.find(
-      (preset) =>
-        preset.width === Number(width) && preset.height === Number(height),
-    )?.value ?? ARTWORK_CUSTOM_PRESET
-  );
+	if (!width || !height) return undefined;
+	return (
+		ARTWORK_RESOLUTION_PRESETS.find(
+			(preset) =>
+				preset.width === Number(width) && preset.height === Number(height),
+		)?.value ?? ARTWORK_CUSTOM_PRESET
+	);
 };
 
 /* ========================================================================== */
@@ -141,32 +141,32 @@ export const findArtworkPreset = (
  *   • Printed materials — no size fields at all.
  */
 export type CrfLineItem = LineItemOption & {
-  /* ---- Souvenir (store) ---- */
-  sku?: string | null;
-  /** Shopify variant id. Known while building the cart from the live
-   *  catalog; absent after reloading a saved CRF (the backend only kept
-   *  the sku) — sku alone is enough to re-order or re-identify the line. */
-  variantId?: string | null;
-  shopifyProductId?: string | null;
-  /** Persisted on the saved CrfItem — see CrfShopifyItem.variantTitle. */
-  variantTitle?: string | null;
-  /** Display-only — backfilled live, never persisted. */
-  options?: Record<string, string>;
-  /** Persisted on the saved CrfItem — see CrfShopifyItem.imageUrl. */
-  imageUrl?: string | null;
-  /** Display-only — backfilled live, never persisted. */
-  compareAtPrice?: number | null;
-  /** Display-only — backfilled live, never persisted. */
-  gstRate?: number | null;
-  /** Stock seen when added / at the last live lookup (not a reservation).
-   *  Display-only — backfilled live, never persisted. */
-  availableQty?: number | null;
-  /** Result of the last pre-save stock check, or the CRF item's saved
-   *  REQUESTED/OUT_OF_STOCK status after a post-approval evaluation. */
-  stockStatus?: ShopStockCheckStatus | null;
+	/* ---- Souvenir (store) ---- */
+	sku?: string | null;
+	/** Shopify variant id. Known while building the cart from the live
+	 *  catalog; absent after reloading a saved CRF (the backend only kept
+	 *  the sku) — sku alone is enough to re-order or re-identify the line. */
+	variantId?: string | null;
+	shopifyProductId?: string | null;
+	/** Persisted on the saved CrfItem — see CrfShopifyItem.variantTitle. */
+	variantTitle?: string | null;
+	/** Display-only — backfilled live, never persisted. */
+	options?: Record<string, string>;
+	/** Persisted on the saved CrfItem — see CrfShopifyItem.imageUrl. */
+	imageUrl?: string | null;
+	/** Display-only — backfilled live, never persisted. */
+	compareAtPrice?: number | null;
+	/** Display-only — backfilled live, never persisted. */
+	gstRate?: number | null;
+	/** Stock seen when added / at the last live lookup (not a reservation).
+	 *  Display-only — backfilled live, never persisted. */
+	availableQty?: number | null;
+	/** Result of the last pre-save stock check, or the CRF item's saved
+	 *  REQUESTED/OUT_OF_STOCK status after a post-approval evaluation. */
+	stockStatus?: ShopStockCheckStatus | null;
 
-  /* ---- Artwork ---- */
-  resolutionPreset?: ArtworkResolutionPreset;
+	/* ---- Artwork ---- */
+	resolutionPreset?: ArtworkResolutionPreset;
 };
 
 /* ========================================================================== */
@@ -174,27 +174,27 @@ export type CrfLineItem = LineItemOption & {
 /* ========================================================================== */
 
 export type CrfProductRef = {
-  id: string;
-  name: string;
-  description: string | null;
-  partNumber: string | null;
-  category: string;
-  unitRate: string | number;
+	id: string;
+	name: string;
+	description: string | null;
+	partNumber: string | null;
+	category: string;
+	unitRate: string | number;
 };
 
 /** A printed-material / artwork line — backend's "CATALOG" source. */
 export type CrfCatalogItem = {
-  id: string;
-  category: Exclude<CrfCategory, "SOUVENIR">;
-  source: "CATALOG";
-  productId: string;
-  product: CrfProductRef | null;
-  quantity: number;
-  rate: number;
-  amount: number;
-  width: string | null;
-  height: string | null;
-  unit: string | null;
+	id: string;
+	category: Exclude<CrfCategory, "SOUVENIR">;
+	source: "CATALOG";
+	productId: string;
+	product: CrfProductRef | null;
+	quantity: number;
+	rate: number;
+	amount: number;
+	width: string | null;
+	height: string | null;
+	unit: string | null;
 };
 
 /**
@@ -205,56 +205,55 @@ export type CrfCatalogItem = {
  * comment). All are `null` on a line saved before these fields existed.
  */
 export type CrfShopifyItem = {
-  id: string;
-  category: "SOUVENIR";
-  source: "SHOPIFY";
-  sku: string;
-  requestedQty: number;
-  amount: number | null;
-  /** Unit price snapshot — same column CATALOG lines use for `rate`. */
-  rate: number | null;
-  title: string | null;
-  variantTitle: string | null;
-  imageUrl: string | null;
-  /** Set by the post-approval stock evaluation; REQUESTED until then. */
-  status: "REQUESTED" | "OUT_OF_STOCK" | "REMOVED" | "ORDERED" | "DEBITED";
+	id: string;
+	category: "SOUVENIR";
+	source: "SHOPIFY";
+	sku: string;
+	requestedQty: number;
+	amount: number | null;
+	/** Unit price snapshot — same column CATALOG lines use for `rate`. */
+	rate: number | null;
+	title: string | null;
+	variantTitle: string | null;
+	imageUrl: string | null;
+	/** Set by the post-approval stock evaluation; REQUESTED until then. */
+	status: "REQUESTED" | "OUT_OF_STOCK" | "REMOVED" | "ORDERED" | "DEBITED";
 };
 
 export type ApiCrfItem = CrfCatalogItem | CrfShopifyItem;
 
 export type CrfStatus =
-  | "OPEN"
-  | "APPROVED"
-  | "STOCK_SHORTFALL"
-  // The post-approval Shopify stock check couldn't reach the store (THCM
-  // Shop down/unreachable) — the CRF never made it to APPROVED/
-  // STOCK_SHORTFALL. Distinct from ORDER_FAILED: this is a failure to
-  // CHECK stock, not a failure to PLACE an already-confirmed order.
-  // Mirrors ORDER_FAILED's retry shape exactly (see CrfPermissions.canRetryStockCheck).
-  | "STOCK_CHECK_FAILED"
-  | "ORDER_FAILED"
-  | "ORDERED"
-  | "CLOSED";
+	| "OPEN"
+	| "APPROVED"
+	| "STOCK_SHORTFALL"
+	// The post-approval Shopify stock check couldn't reach the store (THCM
+	// Shop down/unreachable) — the CRF never made it to APPROVED/
+	// STOCK_SHORTFALL. Distinct from ORDER_FAILED: this is a failure to
+	// CHECK stock, not a failure to PLACE an already-confirmed order.
+	// Mirrors ORDER_FAILED's retry shape exactly (see CrfPermissions.canRetryStockCheck).
+	| "STOCK_CHECK_FAILED"
+	| "ORDER_FAILED"
+	| "ORDERED"
+	| "CLOSED";
 
 export type CrfOrderLineRecord = {
-  sku: string;
-  title: string;
-  quantity: number;
-  unitPrice: number;
-  lineTotal: number;
+	sku: string;
+	title: string;
+	quantity: number;
+	unitPrice: number;
+	lineTotal: number;
 };
 
 /** GET /crf/:crfId → data.order, once an order has been placed. */
 export type ApiCrfOrder = {
-  id: string;
-  crfId: string;
-  shopifyOrderId: string;
-  totalPrice: number;
-  /** Plain amount, not a GST document — see crfOrder.service.ts. Null when
-   *  nothing was accepted as a shortfall. */
-  debitNoteAmount: number | null;
-  status: "ORDERED" | "CANCELLED";
-  lines: CrfOrderLineRecord[];
+	id: string;
+	crfId: string;
+	shopifyOrderId: string;
+	totalPrice: number;
+	debitNoteAmount: number | null;
+	status: "ACTIVE" | "ORDERED" | "CANCELLED";
+	placedAt?: string;
+	lines: CrfOrderLineRecord[];
 };
 
 /**
@@ -269,41 +268,56 @@ export type ApiCrfOrder = {
  * just unused by the frontend for now.
  */
 export type CrfPermissions = {
-  canEditLines: boolean; // full line replace — OPEN only, owner
-  canSwapSouvenirLines: boolean; // souvenir-only edit — STOCK_SHORTFALL, owner
-  canEditDispatchDetails: boolean; // recipient + addresses — APPROVED/STOCK_SHORTFALL/ORDER_FAILED, owner
-  canPlaceOrder: boolean; // APPROVED/STOCK_SHORTFALL, owner
-  canRetryOrder: boolean; // ORDER_FAILED — owner or admin
-  // STOCK_CHECK_FAILED — the post-approval Shopify stock check couldn't
-  // reach the store. Mirrors canRetryOrder exactly: same audience (owner
-  // or admin), same shape, just a different failure point in the
-  // pipeline (checking stock vs. placing the order). Deliberately NOT
-  // folded into canEditDispatchDetails — a stock-check failure has
-  // nothing to do with the recipient/address, so the dispatch form stays
-  // gated to its existing statuses.
-  canRetryStockCheck: boolean; // STOCK_CHECK_FAILED — owner or admin
-  canCancelOrder: boolean; // ORDERED — owner or admin
-  canMarkItemDelivered: boolean; // deferred — no endpoint/UI yet
-  canView: boolean;
+	canEditLines: boolean; // full line replace — OPEN only, owner
+	canSwapSouvenirLines: boolean; // souvenir-only edit — STOCK_SHORTFALL, owner
+	canEditDispatchDetails: boolean; // recipient + addresses — APPROVED/STOCK_SHORTFALL/ORDER_FAILED, owner
+	canPlaceOrder: boolean; // APPROVED/STOCK_SHORTFALL, owner
+	canRetryOrder: boolean; // ORDER_FAILED — owner or admin
+	// STOCK_CHECK_FAILED — the post-approval Shopify stock check couldn't
+	// reach the store. Mirrors canRetryOrder exactly: same audience (owner
+	// or admin), same shape, just a different failure point in the
+	// pipeline (checking stock vs. placing the order). Deliberately NOT
+	// folded into canEditDispatchDetails — a stock-check failure has
+	// nothing to do with the recipient/address, so the dispatch form stays
+	// gated to its existing statuses.
+	canRetryStockCheck: boolean; // STOCK_CHECK_FAILED — owner or admin
+	canCancelOrder: boolean; // ORDERED — owner or admin
+	canMarkItemDelivered: boolean; // deferred — no endpoint/UI yet
+	canView: boolean;
 };
 
 /** GET /crf/:crfId → data. */
 export type CrfDetail = {
-  id: string;
-  epcId: string;
-  status: CrfStatus;
-  /** Historical snapshot only — ALL approved souvenir value (in-stock +
-   *  short) at the moment of approval. No longer the swap budget — see
-   *  shortfallAmount below (schema.prisma's CRF doc comment has the full
-   *  reasoning). Kept for display/audit only. */
-  souvenirTotalAtApproval: number | null;
-  /** The REAL swap budget: frozen value of the CURRENT out-of-stock
-   *  lines, re-set whenever the CRF enters/re-enters STOCK_SHORTFALL.
-   *  Null while not in shortfall. */
-  shortfallAmount: number | null;
-  items: ApiCrfItem[];
-  order: ApiCrfOrder | null;
-  permissions: CrfPermissions;
+	id: string;
+	epcId: string;
+	status: CrfStatus;
+	souvenirTotalAtApproval: number | null;
+	shortfallAmount: number | null;
+
+	/* Saved dispatch details (null until saved). */
+	recipientType?: string | null;
+	recipientName?: string | null;
+	recipientPhone?: string | null;
+	recipientEmail?: string | null;
+	recipientOrganisation?: string | null;
+	recipientUserId?: string | null;
+	recipientContactId?: string | null;
+	deliveryInstructions?: string | null;
+	requiredByDate?: string | null;
+	addressCompany?: string | null;
+	addressLine1?: string | null;
+	addressLine2?: string | null;
+	addressLandmark?: string | null;
+	addressCity?: string | null;
+	addressDistrict?: string | null;
+	addressState?: string | null;
+	addressPincode?: string | null;
+	addressCountry?: string | null;
+	addressGstin?: string | null;
+
+	items: ApiCrfItem[];
+	order: ApiCrfOrder | null;
+	permissions: CrfPermissions;
 };
 
 /* ========================================================================== */
@@ -312,11 +326,11 @@ export type CrfDetail = {
 
 /** Printed material / artwork line — matches backend's CatalogCrfItemInput. */
 export type CrfCatalogItemInput = {
-  productId: string;
-  quantity: number;
-  width?: string;
-  height?: string;
-  unit?: string;
+	productId: string;
+	quantity: number;
+	width?: string;
+	height?: string;
+	unit?: string;
 };
 
 /**
@@ -328,19 +342,19 @@ export type CrfCatalogItemInput = {
  * come from.
  */
 export type CrfShopifyItemInput = {
-  sku: string;
-  requestedQty: number;
-  amount: number;
-  title?: string;
-  variantTitle?: string;
-  imageUrl?: string;
-  rate: number;
+	sku: string;
+	requestedQty: number;
+	amount: number;
+	title?: string;
+	variantTitle?: string;
+	imageUrl?: string;
+	rate: number;
 };
 
 export type CrfItemInput = CrfCatalogItemInput | CrfShopifyItemInput;
 
 /** POST /crf, PUT /crf/:crfId body. */
 export type CrfPayload = {
-  epcId: string;
-  items: CrfItemInput[];
+	epcId: string;
+	items: CrfItemInput[];
 };
