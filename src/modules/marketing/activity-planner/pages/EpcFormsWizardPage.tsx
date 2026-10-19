@@ -29,7 +29,6 @@ import { PageHeader } from "../../../../components/ui/PageHeader";
 import { StepProgress } from "../../../../components/ui/StepProgress";
 import PageSectionLayout from "../../../../layout/PageSectionLayout";
 
-import ActivityDetailsSection from "../components/activityFormView/ActivityDetailsSection";
 import EpfForm from "../forms/EPF/EpfForm";
 import EpfSection from "../forms/EPF/EpfSection";
 import { useActivityPermissions } from "../hooks/useActivityPlanner";
@@ -39,7 +38,7 @@ import { CrfForm } from "../../crf";
 import CrfSection from "../../crf/core/CrfSection";
 import { clearStoredEpcInfo } from "../utils/common";
 import { isEpcSubmitted } from "../forms/EPC/epc.utils";
-
+import EpcForm from "../forms/EPC/EpcForm";
 const STEP = { EPC: 1, CRF: 2, EPF: 3 } as const;
 type WizardStep = (typeof STEP)[keyof typeof STEP];
 
@@ -60,7 +59,7 @@ const noop = () => {};
 const asyncNoop = async () => {};
 
 /** Router state other screens can pass when opening the stepper. */
-export type EpcWizardLocationState = { startAt?: "review" };
+export type EpcWizardLocationState = { startAt?: "review"; mode?: "edit" };
 
 const getIntent = (value: string | null): EpcWizardIntent =>
 	value === "epf" ? "epf" : value === "epc" ? "epc" : "crf";
@@ -229,32 +228,21 @@ const EpcFormsWizardPage = () => {
 	const renderStep = () => {
 		switch (step) {
 			case STEP.EPC:
+				// Edit mode: the EPC form only. The read-only view stays on view pages.
 				return (
-					<Card
-						footer={
-							<StepFooter
-								start={
-									<Button
-										type="button"
-										text="Cancel"
-										Icon={X}
-										size="sm"
-										appearance="standard"
-										variant="outline"
-										onClick={() => navigate(EPC_LISTING_PATH)}
-									/>
-								}
-								end={nextButton}
-							/>
-						}
-					>
-						<ActivityDetailsSection
-							epcData={epcData}
-							isEditing={false}
-							onCancel={noop}
-							onSuccess={asyncNoop}
-						/>
-					</Card>
+					<EpcForm
+						key={epcData.id}
+						mode="edit"
+						epcId={epcData.id}
+						initialData={epcData}
+						onCancel={() => navigate(EPC_LISTING_PATH)}
+						onSuccess={async () => {
+							await queryClient.invalidateQueries({
+								queryKey: epcKeys.detail(id),
+							});
+							goNext();
+						}}
+					/>
 				);
 
 			case STEP.CRF:

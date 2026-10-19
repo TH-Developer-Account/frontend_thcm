@@ -142,11 +142,7 @@ export default function EpcFormFields({
 		[masters?.eventNames, values.event_name, readOnlyLabels?.eventName],
 	);
 	const isSingleDate = eventDateMode === "single";
-	console.log("eventDateMode", eventDateMode, {
-		selected: values.event_name,
-		option: findOption(masters?.eventNames, values.event_name),
-		sample: masters?.eventNames?.slice(0, 5),
-	});
+
 	/**
 	 * The zone (region option `value`) a branch belongs to.
 	 *
@@ -625,7 +621,7 @@ export default function EpcFormFields({
 						onChange={(event) => emit("event_description", event.target.value)}
 						className="h-full w-full p-2"
 						minLength={100}
-						rows={4}
+						rows={8}
 						helperText={helper(
 							"Describe the purpose, audience, and expected outcome of this event.",
 						)}
@@ -641,7 +637,7 @@ export default function EpcFormFields({
 						value={values.event_objective || ""}
 						onChange={(event) => emit("event_objective", event.target.value)}
 						minLength={100}
-						rows={4}
+						rows={8}
 						className="h-full w-full p-2"
 						error={errors.event_objective}
 						helperText={helper(
