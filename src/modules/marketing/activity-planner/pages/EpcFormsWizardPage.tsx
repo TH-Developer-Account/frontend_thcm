@@ -1,16 +1,16 @@
 // pages/EpcFormsWizardPage.tsx
 // Stepper wizard opened from the EPC listing (EPC No / "Add CRF" / "Add EPF").
 //
-//   Step 1 — EPC Details     : ActivityDetailsSection (same read-only layout as the EPC view)
-//   Step 2 — CRF             : create CRF (optional, can be skipped) or read-only
-//   Step 3 — EPF             : create EPF (saved, NOT submitted) or read-only
-//   Step 4 — Review & Submit : read-only summary + approval-workflow preview
+//   Step 1 — EPC Details : ActivityDetailsSection (same read-only layout as the EPC view)
+//   Step 2 — CRF         : create CRF (optional, can be skipped) or read-only
+//   Step 3 — EPF & Submit: ONE click does  preview workflow → save EPF → assign workflow.
+//                          No workflow for the budget → Submit is disabled and a
+//                          small "Request workflow" button sends the user to the listing.
 //
 // Entry point (?start=) decides the step the wizard opens on:
 //   epc → EPC Details · crf → CRF · epf → EPF (CRF skipped)
-//
-// The StepProgress bar already names the current step, so the step cards no
-// longer repeat it as a title. The CRF form uses its own category tabs there.
+// A saved-but-unsubmitted EPC ("Continue to submit") opens straight on the EPF
+// step, pre-filled and editable, so the user can fix anything and submit.
 import React from "react";
 import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
 import {
@@ -27,29 +27,26 @@ import Card from "../../../../components/common/Card";
 import Loader from "../../../../components/ui/Loader";
 import { PageHeader } from "../../../../components/ui/PageHeader";
 import { StepProgress } from "../../../../components/ui/StepProgress";
-import { useAuth } from "../../../../context/Auth/useAuth";
 import PageSectionLayout from "../../../../layout/PageSectionLayout";
 
 import ActivityDetailsSection from "../components/activityFormView/ActivityDetailsSection";
 import EpfForm from "../forms/EPF/EpfForm";
 import EpfSection from "../forms/EPF/EpfSection";
-import EpcReviewSubmit from "../forms/EPF/EpcReviewSubmit";
 import { useActivityPermissions } from "../hooks/useActivityPlanner";
 import { epcKeys, useEpcDetailQuery } from "../queries/epc.queries";
 import { EPC_LISTING_PATH, type EpcWizardIntent } from "../utils/constant";
 import { CrfForm } from "../../crf";
 import CrfSection from "../../crf/core/CrfSection";
-import { clearStoredEpcInfo, getStoredAppId } from "../utils/common";
+import { clearStoredEpcInfo } from "../utils/common";
 import { isEpcSubmitted } from "../forms/EPC/epc.utils";
 
-const STEP = { EPC: 1, CRF: 2, EPF: 3, REVIEW: 4 } as const;
+const STEP = { EPC: 1, CRF: 2, EPF: 3 } as const;
 type WizardStep = (typeof STEP)[keyof typeof STEP];
 
 const WIZARD_STEPS = [
 	{ id: STEP.EPC, label: "EPC Details" },
 	{ id: STEP.CRF, label: "CRF" },
-	{ id: STEP.EPF, label: "EPF" },
-	{ id: STEP.REVIEW, label: "Review & Submit" },
+	{ id: STEP.EPF, label: "EPF & Submit" },
 ];
 
 /** Which step each entry point opens the wizard on. */
@@ -88,17 +85,16 @@ const EpcFormsWizardPage = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const queryClient = useQueryClient();
-	const { workspaceId } = useAuth();
-	const appId = React.useMemo(() => getStoredAppId(), []);
 
 	const intent = getIntent(searchParams.get("start"));
+	// Old "open on Review" entry points now land on the EPF & Submit step.
 	const startAtReview =
 		(location.state as EpcWizardLocationState | null)?.startAt === "review";
 	const [step, setStep] = React.useState<WizardStep>(
-		startAtReview ? STEP.REVIEW : INTENT_START_STEP[intent],
+		startAtReview ? STEP.EPF : INTENT_START_STEP[intent],
 	);
 
-	const { data: epcData, isLoading, isError, refetch } = useEpcDetailQuery(id);
+	const { data: epcData, isLoading, isError } = useEpcDetailQuery(id);
 	const permissions = useActivityPermissions({ epcData: epcData ?? null });
 
 	React.useEffect(() => {
@@ -109,6 +105,7 @@ const EpcFormsWizardPage = () => {
 	const hasEpf = Boolean(epcData?.epf);
 	const workflowStarted = isEpcSubmitted(epcData);
 
+	/** EPF saved earlier but never submitted (no workflow attached yet). */
 	const needsFinalSubmit =
 		hasEpf && !workflowStarted && Boolean(permissions.isProposer);
 
@@ -131,18 +128,13 @@ const EpcFormsWizardPage = () => {
 	}, []);
 
 	const goNext = React.useCallback(() => {
-		setStep((current) => Math.min(STEP.REVIEW, current + 1) as WizardStep);
+		setStep((current) => Math.min(STEP.EPF, current + 1) as WizardStep);
 	}, []);
 
 	const handleCrfSaved = React.useCallback(async () => {
-		await refetch();
+		await queryClient.invalidateQueries({ queryKey: epcKeys.detail(id) });
 		setStep(STEP.EPF);
-	}, [refetch]);
-
-	const handleEpfSaved = React.useCallback(async () => {
-		await refetch();
-		setStep(STEP.REVIEW);
-	}, [refetch]);
+	}, [id, queryClient]);
 
 	/* -------------------------------- States -------------------------------- */
 
@@ -220,6 +212,18 @@ const EpcFormsWizardPage = () => {
 		/>
 	);
 
+	const finishButton = (
+		<Button
+			type="button"
+			text="Finish"
+			Icon={Check}
+			size="sm"
+			appearance="standard"
+			variant="brand"
+			onClick={() => void goToListing()}
+		/>
+	);
+
 	/* ------------------------------ Step body ------------------------------- */
 
 	const renderStep = () => {
@@ -276,69 +280,44 @@ const EpcFormsWizardPage = () => {
 				);
 
 			case STEP.EPF:
-				return hasEpf ? (
-					<Card footer={<StepFooter start={backButton} end={nextButton} />}>
-						<EpfSection
-							epcData={epcData}
-							isEditing={false}
-							onCancel={noop}
-							onSuccess={asyncNoop}
-						/>
-					</Card>
-				) : (
-					<EpfForm
-						mode="create"
-						epcId={epcData.id}
-						crfId={epcData.crf?.id ?? null}
-						crfData={epcData.crf}
-						budgetMasterId={epcData.budget_master_id}
-						submitLabel="Save & Review"
-						footerStart={backButton}
-						onSuccess={handleEpfSaved}
-					/>
-				);
-
-			case STEP.REVIEW:
-				if (!hasEpf) {
+				// Already submitted → read-only, nothing left to do but leave.
+				if (workflowStarted) {
 					return (
-						<Card footer={<StepFooter start={backButton} />}>
-							<p className="text-sm text-[var(--color-text-muted)]">
-								Save the EPF first. The approval workflow can only start once
-								the EPF is complete.
-							</p>
+						<Card footer={<StepFooter start={backButton} end={finishButton} />}>
+							{hasEpf ? (
+								<EpfSection
+									epcData={epcData}
+									isEditing={false}
+									onCancel={noop}
+									onSuccess={asyncNoop}
+								/>
+							) : (
+								<p className="text-sm text-[var(--color-text-muted)]">
+									This EPC has been submitted and its approval workflow is
+									running.
+								</p>
+							)}
 						</Card>
 					);
 				}
 
-				return workflowStarted ? (
-					<Card
-						footer={
-							<StepFooter
-								end={
-									<Button
-										type="button"
-										text="Finish"
-										Icon={Check}
-										size="sm"
-										appearance="standard"
-										variant="brand"
-										onClick={() => void goToListing()}
-									/>
-								}
-							/>
-						}
-					>
-						<p className="text-sm text-[var(--color-text-muted)]">
-							This EPC has been submitted and its approval workflow is running.
-						</p>
-					</Card>
-				) : (
-					<EpcReviewSubmit
-						epcData={epcData}
-						workspaceId={workspaceId}
-						appId={appId}
+				// New EPF, or a saved-but-unsubmitted one (edit + submit).
+				// `key` remounts the form with fresh server data when the EPF changes.
+				return (
+					<EpfForm
+						key={epcData.epf?.id ?? "new-epf"}
+						mode={hasEpf ? "edit" : "create"}
+						epcId={epcData.id}
+						epfId={epcData.epf?.id ?? null}
+						initialData={hasEpf ? epcData.epf : null}
+						crfId={epcData.crf?.id ?? null}
+						crfData={epcData.crf}
+						budgetMasterId={epcData.budget_master_id}
+						submitLabel="Submit"
+						submitWithWorkflow
 						footerStart={backButton}
-						onSubmitted={goToListing}
+						onSuccess={goToListing}
+						onRequestWorkflow={goToListing}
 					/>
 				);
 		}

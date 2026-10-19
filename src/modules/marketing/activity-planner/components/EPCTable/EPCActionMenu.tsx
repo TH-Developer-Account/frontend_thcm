@@ -6,7 +6,8 @@
 //     yet" banner with "Continue to submit"); there is NO Edit — the creator
 //     continues from the stepper (EPC No / Add CRF / Add EPF).
 //   • Submitted     → everyone with access can View; Edit follows the existing
-//     rules (getEpcRowActionRules — i.e. clarification).
+//     rules (getEpcRowActionRules — i.e. clarification) and opens the STEPPER
+//     in edit mode (EPC → CRF → EPF), not the view page.
 //   • Add CRF / Add EPF / Final Submit stay in the stepper.
 //   • "CRF Order" shows only once a CRF exists and opens the view on the
 //     order / tracking tab.
@@ -27,7 +28,6 @@ import ActionMenu, {
 	type ActionMenuItem,
 } from "../../../../../components/common/ActionMenu";
 
-import type { ActivityPlannerLocationState } from "../../hooks/useActivityPlanner";
 import type { EpcListItem } from "../../types/epc.types";
 import {
 	EPC_DETAIL_PATH,
@@ -40,6 +40,7 @@ import {
 } from "../../utils/activity.helper";
 import { canOpenEpcView, isEpcSubmitted } from "../../forms/EPC/epc.utils";
 import type { ActivityFormViewLocationState } from "../activityFormView/ActivityFormView";
+import type { EpcWizardLocationState } from "../../pages/EpcFormsWizardPage";
 
 type EPCActionMenuProps = {
 	row: EpcListItem;
@@ -109,12 +110,11 @@ const EPCActionMenu = ({
 			Icon: Pencil,
 			hidden: !canEdit,
 			ariaLabel: `Edit ${rowLabel}`,
+			// Opens the stepper in edit mode: EPC → CRF → EPF → Review.
 			onClick: (selectedRow) => {
-				const state: ActivityPlannerLocationState = {
-					editSection: "epc",
-				};
+				const state: EpcWizardLocationState = { mode: "edit" };
 
-				navigate(EPC_DETAIL_PATH(selectedRow.id), { state });
+				navigate(EPC_FORMS_WIZARD_PATH(selectedRow.id, "epc"), { state });
 			},
 		},
 		// Only once a CRF exists → place the CRF's store order / track it.

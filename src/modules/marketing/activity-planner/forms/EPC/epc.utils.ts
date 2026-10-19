@@ -11,14 +11,19 @@ type SubmissionLike = {
 
 export const isEpcSubmitted = (epc?: SubmissionLike | null): boolean => {
 	if (!epc) return false;
+
+	// A workflow attached is the only real proof of submission.
 	if (epc.activeWorkflow || epc.workflow_id) return true;
 
-	// Created but not finally submitted → status stays PENDING and
-	// crf / epf / activeWorkflow are all null. Any other status has started.
+	// No workflow → not submitted. PENDING is the normal "created, not yet
+	// submitted" state. SUBMITTED is also treated as NOT submitted here because
+	// older backends set it the moment an EPF was merely saved; without a
+	// workflow it must never skip the Review & Submit step. Any other status
+	// (APPROVED, REJECTED, CLOSED …) only exists after a workflow ran.
 	const status = String(epc.status ?? "")
 		.trim()
 		.toUpperCase();
-	return status !== "" && status !== "PENDING";
+	return status !== "" && status !== "PENDING" && status !== "SUBMITTED";
 };
 
 /**

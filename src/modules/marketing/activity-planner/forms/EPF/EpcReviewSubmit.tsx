@@ -11,12 +11,20 @@
 //   │ [footerStart…]                            [Final Submit]   │
 //   └────────────────────────────────────────────────────────────┘
 //
-// "Final Submit" is the ONLY place that calls workflowApi.assignWorkflow.
+// "Final Submit" is the ONLY place that calls workflowApi.assignWorkflow, and
+// it is blocked unless a workflow was successfully previewed.
+//
+// No workflow for this budget (empty preview, or the preview call fails):
+//   • Final Submit stays disabled (and the handler refuses even if invoked)
+//   • a small "Request workflow" button saves nothing new, tells the user the
+//     EPC is saved-but-not-submitted, and sends them to the listing.
+//
 // The budget sent is the EPF's saved event budget, so what the user previews
 // is exactly what gets assigned.
 import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	BellRing,
 	CalendarCheck,
 	FileText,
 	ReceiptIndianRupee,
@@ -62,6 +70,12 @@ export type EpcReviewSubmitProps = {
 	appId?: string | null;
 	/** Called after the workflow was assigned (parent refreshes / navigates). */
 	onSubmitted: () => void | Promise<void>;
+	/**
+	 * Called when the user clicks "Request workflow" because no workflow could
+	 * be found for this EPC. Parent should navigate to the listing.
+	 * Falls back to `onSubmitted` (also the listing) when omitted.
+	 */
+	onRequestWorkflow?: () => void | Promise<void>;
 	/** Rendered at the left of the footer (e.g. the wizard's Back button). */
 	footerStart?: ReactNode;
 };
@@ -99,6 +113,7 @@ export default function EpcReviewSubmit({
 	workspaceId,
 	appId,
 	onSubmitted,
+	onRequestWorkflow,
 	footerStart,
 }: EpcReviewSubmitProps) {
 	const { showToast } = useToast();
@@ -138,11 +153,17 @@ export default function EpcReviewSubmit({
 			);
 		},
 		enabled: !blocker && !alreadySubmitted,
+		// Always re-check on landing: workflow templates / approver
+		// assignments can change while the user is filling the EPF.
+		refetchOnMount: "always",
 		staleTime: 60 * 1000,
 		retry: 1,
 	});
 
 	const previewRows = previewQuery.data ?? [];
+
+	/** A workflow was found and can be shown. */
+	const hasWorkflow = previewQuery.isSuccess && previewRows.length > 0;
 
 	/* ------------------------- Final Submit ------------------------------ */
 
@@ -158,11 +179,24 @@ export default function EpcReviewSubmit({
 	});
 
 	const handleFinalSubmit = async () => {
+		if (submitMutation.isPending) return;
+
 		if (blocker) {
 			showToast({
 				type: "error",
 				title: "Cannot submit",
 				description: blocker,
+			});
+			return;
+		}
+
+		// Never submit without a workflow, even if this handler is invoked
+		// some other way than the (disabled) button.
+		if (!hasWorkflow) {
+			showToast({
+				type: "error",
+				title: "Cannot submit",
+				description: "No approval workflow is assigned to this EPC yet.",
 			});
 			return;
 		}
@@ -196,14 +230,33 @@ export default function EpcReviewSubmit({
 		}
 	};
 
+	const handleRequestWorkflow = async () => {
+		showToast({
+			type: "success",
+			title: "EPF saved",
+			description:
+				"This EPC is saved but not submitted. Ask your administrator to set up or assign an approval workflow for this budget, then use “Continue to submit” from the listing.",
+		});
+
+		await (onRequestWorkflow ?? onSubmitted)();
+	};
+
 	const canSubmit =
-		!alreadySubmitted &&
-		!blocker &&
-		previewQuery.isSuccess &&
-		previewRows.length > 0 &&
-		!submitMutation.isPending;
+		!alreadySubmitted && !blocker && hasWorkflow && !submitMutation.isPending;
 
 	/* ------------------------------- Render -------------------------------- */
+
+	const requestWorkflowButton = (
+		<Button
+			type="button"
+			text="Request workflow"
+			Icon={BellRing}
+			size="sm"
+			appearance="standard"
+			variant="outline"
+			onClick={() => void handleRequestWorkflow()}
+		/>
+	);
 
 	const renderPreview = () => {
 		if (alreadySubmitted) {
@@ -245,16 +298,19 @@ export default function EpcReviewSubmit({
 						variant="outline"
 						onClick={() => void previewQuery.refetch()}
 					/>
+					{requestWorkflowButton}
 				</div>
 			);
 		}
 
 		if (previewRows.length === 0) {
 			return (
-				<p className="text-sm text-[var(--color-danger)]">
-					No approval workflow is configured for this budget. Contact your
-					administrator before submitting.
-				</p>
+				<div className="flex flex-wrap items-center gap-3">
+					<p className="text-sm text-[var(--color-danger)]">
+						No approval workflow is configured for this budget.
+					</p>
+					{requestWorkflowButton}
+				</div>
 			);
 		}
 

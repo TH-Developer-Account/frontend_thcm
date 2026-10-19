@@ -15,7 +15,7 @@
 //                       (ActivityPlannerPage shows the "Not submitted" banner)
 //       submitted     → existing permissions (edit via clarification)
 import { useState, type ComponentProps, type ReactNode } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
 	// FileDown, // EXPORT (disabled)
 	// FileSpreadsheet, // EXPORT (disabled)
@@ -30,6 +30,7 @@ import {
 // import ActionMenu, {
 // 	type ActionMenuItem,
 // } from "../../../../../components/common/ActionMenu";
+import { EPC_LISTING_PATH } from "../../utils/constant";
 import { Badge } from "../../../../../components/common/Badge";
 import Button from "../../../../../components/common/Button";
 import Card from "../../../../../components/common/Card";
@@ -42,7 +43,6 @@ import { CommentsSection } from "../../../../../components/ui/comments";
 import ApprovalActionsBar from "../../../../../components/ui/ApprovalActionsBar";
 import { ReasonActionModal } from "../../../../../components/ui/ReasonActionModal";
 import { ApprovalWorkflowSection } from "../../../../workflows";
-
 import { EventOutcome } from "../../forms/EventOutcome/EventOutcome";
 import { EventReportSection } from "../../forms/EventReport/EventReportSection";
 import EpcForm from "../../forms/EPC/EpcForm";
@@ -147,6 +147,7 @@ export type ActivityFormViewLocationState = { openTab?: "order" } | null;
 
 const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 	const location = useLocation();
+	const navigate = useNavigate();
 	const [activeTab, setActiveTab] = useState<ActivityTab>(() =>
 		(location.state as ActivityFormViewLocationState)?.openTab === "order"
 			? "tracking"
@@ -195,9 +196,11 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 
 	if (!epcData) {
 		return (
-			<div className="px-6 py-4">
-				<EpcForm mode="create" onSuccess={handleCreatedEpc} />
-			</div>
+			<EpcForm
+				mode="create"
+				onSuccess={handleCreatedEpc}
+				onCancel={() => navigate(EPC_LISTING_PATH)}
+			/>
 		);
 	}
 
@@ -377,6 +380,7 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 						isEditing={false}
 						onCancel={cancelEditing}
 						onSuccess={finishEditing}
+						onGoToOrder={orderOpen ? () => setActiveTab("tracking") : undefined}
 					/>,
 					canEditCrf ? editButton("crf", "Edit CRF") : undefined,
 				);
@@ -606,8 +610,7 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 							aria-label="Audit trail"
 						>
 							{/* Audit trail only — comments now live in the Comments tab.
-							    No h-full utilities here: they override the sticky
-							    screen-height rule in activityFormView.audit.css. */}
+							    No h-full utilities here: they override the sticky	*/}
 							<Card
 								className="activity-form-view-panel activity-form-view-panel--audit"
 								accordion

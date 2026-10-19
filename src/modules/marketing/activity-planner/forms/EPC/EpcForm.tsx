@@ -9,11 +9,14 @@
 // "view" renders a separate component (EpcFormView) instead of branching
 // inside one component, so useEpcForm is never mounted for read-only display
 // and switching view ⇄ edit remounts the editor with fresh values.
+//
+// Create / edit render ONE Card: title in the header, fields in the body and
+// Cancel · Reset · Save in the footer (same layout as the stepper cards).
 import React from "react";
 import { RefreshCcw, Save, X } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
-import SectionAccordion from "../../../../../components/common/SectionAccordion";
+import Card from "../../../../../components/common/Card";
 
 import { useMasterData } from "../../../../../hooks/useMasterData";
 import { useEpcForm } from "./useEpcForm";
@@ -140,11 +143,52 @@ const EpcFormEditor = ({
 	}
 
 	return (
-		<SectionAccordion
+		<Card
 			title={
 				isEditMode
 					? "Edit Activity Planner Details"
 					: "Create Activity Planner Details"
+			}
+			footer={
+				<div className="flex w-full flex-wrap items-center justify-between gap-2">
+					<div className="flex flex-wrap items-center gap-2">
+						{/* {onCancel && ( */}
+						<Button
+							type="button"
+							text="Cancel"
+							onClick={onCancel}
+							size="sm"
+							Icon={X}
+							appearance="standard"
+							variant="outline"
+						/>
+						{/* )} */}
+					</div>
+
+					<div className="flex flex-wrap items-center justify-end gap-2">
+						{isEditMode && (
+							<Button
+								type="button"
+								text="Reset"
+								onClick={handleReset}
+								size="sm"
+								Icon={RefreshCcw}
+								appearance="standard"
+								variant="outline"
+							/>
+						)}
+
+						<Button
+							type="button"
+							text={isEditMode ? "Update" : "Create EPC"}
+							onClick={() => handleSave(saveStatus)}
+							size="sm"
+							Icon={Save}
+							appearance="standard"
+							variant="brand"
+						/>
+					</div>
+				</div>
 			}
 		>
 			<EpcFormFields
@@ -157,43 +201,7 @@ const EpcFormEditor = ({
 				profileLocked={profileLocked}
 				readOnlyLabels={readOnlyLabels}
 			/>
-
-			<div className="mt-4 flex flex-row items-center justify-end gap-2">
-				{onCancel && (
-					<Button
-						type="button"
-						text="Cancel"
-						onClick={onCancel}
-						size="sm"
-						Icon={X}
-						appearance="standard"
-						variant="outline"
-					/>
-				)}
-
-				{isEditMode && (
-					<Button
-						type="button"
-						text="Reset"
-						onClick={handleReset}
-						size="sm"
-						Icon={RefreshCcw}
-						appearance="standard"
-						variant="outline"
-					/>
-				)}
-
-				<Button
-					type="button"
-					text={isEditMode ? "Update" : "Create EPC"}
-					onClick={() => handleSave(saveStatus)}
-					size="sm"
-					Icon={Save}
-					appearance="standard"
-					variant="brand"
-				/>
-			</div>
-		</SectionAccordion>
+		</Card>
 	);
 };
 

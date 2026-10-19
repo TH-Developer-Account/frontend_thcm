@@ -1,17 +1,29 @@
 // forms/EPF/EpfForm.tsx
 // EPF form: ONE Card made of collapsible `sections` —
 //   Budget Summary · Event Cost Overheads · Participants · Dealer Info · Budget
+//   · Approval Workflow (only when `submitWithWorkflow`)
 // with the actions in the card footer.
 //
-//   footer:  [footerStart…]                    [Cancel] [Reset] [Save & Review]
+//   footer:  [footerStart…] [Draft saved 10:42]   [Request workflow] [Cancel] [Reset] [Submit]
 //
-// `footerStart` lets a host (the wizard) put its own Back button in the same
-// footer, so there is only ever one action bar per screen.
+// With `submitWithWorkflow`, the primary button is disabled until a workflow
+// exists for the current budget; if none does, a small "Request workflow"
+// button appears instead of letting the user submit.
 import { useState, type ReactNode } from "react";
-import { ArrowRight, Receipt, RefreshCcw, Save, Wallet, X } from "lucide-react";
+import {
+	ArrowRight,
+	BellRing,
+	Receipt,
+	RefreshCcw,
+	Save,
+	ShieldCheck,
+	Wallet,
+	X,
+} from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
 import Card, { type CardSection } from "../../../../../components/common/Card";
+import { ApprovalTable, getWorkflowErrorMessage } from "../../../../workflows";
 
 import BudgetShare from "../../components/activityFormView/BudgetShare";
 import { calculateBudgetShares } from "./epf.calculations";
@@ -28,11 +40,12 @@ export type EpfFormCardProps = EpfFormProps & {
 	footerStart?: ReactNode;
 };
 
-/** Saving validates as a full submission; the workflow starts on Review & Submit. */
+/** Saving validates as a full submission. */
 const SAVE_STATUS = "SUBMITTED";
 
 export default function EpfForm(props: EpfFormCardProps) {
-	const { onCancel, submitLabel, footerStart, title } = props;
+	const { onCancel, submitLabel, footerStart, title, submitWithWorkflow } =
+		props;
 
 	const {
 		values,
@@ -43,9 +56,12 @@ export default function EpfForm(props: EpfFormCardProps) {
 		costItems,
 		setCostItems,
 		handleSubmit,
+		handleRequestWorkflow,
 		eventCost,
 		epcId,
 		isEditMode,
+		draftSavedAt,
+		workflowPreview,
 		loading,
 		submitting,
 	} = useEpfForm(props);
@@ -68,14 +84,91 @@ export default function EpfForm(props: EpfFormCardProps) {
 	});
 
 	const primaryLabel = submitting
-		? "Saving..."
+		? submitWithWorkflow
+			? "Submitting..."
+			: "Saving..."
 		: attachmentBusy
 			? "Uploading file..."
-			: (submitLabel ?? (isEditMode ? "Update EPF" : "Save & Review"));
+			: (submitLabel ?? (isEditMode ? "Update EPF" : "Save"));
 
 	// Live numbers for the summary — they move as the user edits the table
 	// or the dealer percentage.
 	const shares = calculateBudgetShares(values, eventCost);
+
+	/** Submitting needs a workflow; plain saving does not. */
+	const blockedByWorkflow = Boolean(
+		workflowPreview.enabled && !workflowPreview.hasWorkflow,
+	);
+
+	/** Settled and still no workflow → offer "Request workflow". */
+	const showRequestWorkflow = Boolean(
+		workflowPreview.enabled &&
+		!workflowPreview.loading &&
+		!workflowPreview.hasWorkflow &&
+		eventCost > 0,
+	);
+
+	const requestWorkflowButton = (
+		<Button
+			type="button"
+			text="Request workflow"
+			Icon={BellRing}
+			size="sm"
+			appearance="standard"
+			variant="outline"
+			onClick={() => void handleRequestWorkflow()}
+		/>
+	);
+
+	const renderWorkflowPreview = () => {
+		if (eventCost <= 0) {
+			return (
+				<p className="text-sm text-[var(--color-text-muted)]">
+					Add event cost items to see the approval workflow for this budget.
+				</p>
+			);
+		}
+
+		if (workflowPreview.loading) {
+			return (
+				<p className="text-sm text-[var(--color-text-muted)]" role="status">
+					Loading approval workflow...
+				</p>
+			);
+		}
+
+		if (workflowPreview.error) {
+			return (
+				<div className="flex flex-wrap items-center gap-3">
+					<p className="text-sm text-[var(--color-danger)]">
+						{getWorkflowErrorMessage(
+							workflowPreview.error,
+							"No approval workflow found for this budget.",
+						)}
+					</p>
+					{requestWorkflowButton}
+				</div>
+			);
+		}
+
+		if (!workflowPreview.hasWorkflow) {
+			return (
+				<div className="flex flex-wrap items-center gap-3">
+					<p className="text-sm text-[var(--color-danger)]">
+						No approval workflow is configured for this budget. You can't submit
+						without one.
+					</p>
+					{requestWorkflowButton}
+				</div>
+			);
+		}
+
+		return (
+			<div className="approval-workflow-content max-w-full overflow-x-auto">
+				<ApprovalTable data={workflowPreview.rows} />
+			</div>
+		);
+	};
 
 	const sections: CardSection[] = [
 		{
@@ -117,13 +210,41 @@ export default function EpfForm(props: EpfFormCardProps) {
 			),
 		},
 		...fieldSections,
+		...(submitWithWorkflow
+			? [
+					{
+						id: "workflow",
+						title: "Approval Workflow",
+						Icon: ShieldCheck,
+						className: "epf-section--full",
+						children: renderWorkflowPreview(),
+					} satisfies CardSection,
+				]
+			: []),
 	];
 
 	const footer = (
 		<div className="flex w-full flex-wrap items-center justify-between gap-2">
-			<div className="flex flex-wrap items-center gap-2">{footerStart}</div>
+			<div className="flex flex-wrap items-center gap-2">
+				{footerStart}
+
+				{!isEditMode && draftSavedAt && (
+					<span
+						className="text-xs text-[var(--color-text-muted)]"
+						role="status"
+					>
+						Draft saved{" "}
+						{new Date(draftSavedAt).toLocaleTimeString([], {
+							hour: "2-digit",
+							minute: "2-digit",
+						})}
+					</span>
+				)}
+			</div>
 
 			<div className="flex flex-wrap items-center justify-end gap-2">
+				{showRequestWorkflow && requestWorkflowButton}
+
 				{onCancel && (
 					<Button
 						type="button"
@@ -155,8 +276,10 @@ export default function EpfForm(props: EpfFormCardProps) {
 					size="sm"
 					appearance="standard"
 					variant="brand"
-					Icon={isEditMode ? Save : ArrowRight}
-					disabled={submitting || loading || attachmentBusy}
+					Icon={isEditMode && !submitWithWorkflow ? Save : ArrowRight}
+					disabled={
+						submitting || loading || attachmentBusy || blockedByWorkflow
+					}
 				/>
 			</div>
 		</div>
