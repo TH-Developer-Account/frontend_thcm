@@ -263,8 +263,9 @@ export const getActivityPermissions = ({
 		hasValidatorPreviewed &&
 		isReportCreated;
 
-	const canShowCloseEpcAction =
-		proposerCanAct && (wasDeviated || status === "VALIDATED");
+	// const canShowCloseEpcAction =
+	// 	proposerCanAct && (wasDeviated || status === "VALIDATED");
+	const canShowCloseEpcAction = false;
 
 	const canShowEventOutcomeAt = (target: string) =>
 		proposerCanAct && !wasDeviated && status === target;

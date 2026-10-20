@@ -2,10 +2,16 @@ import { useState } from "react";
 import { CircleCheck, Save, Send } from "lucide-react";
 import TextareaInput from "../forms/TextareaInput";
 import Button from "../common/Button";
+import Card from "../common/Card";
 
 // "approver" → Back | reason (fills the row) | Clarify + Approve
 // "proposer" → Back | Accept & Close / Send Back / Submit (no reason box)
 export type ApprovalActionsBarVariant = "approver" | "proposer";
+
+// How the approver variant is laid out:
+//   "bar"  → one row (page footers) — the original layout
+//   "card" → stacked card with a heading, for side columns
+export type ApprovalActionsBarLayout = "bar" | "card";
 
 export type ApprovalActionsBarProps = {
 	// When omitted, the bar picks "approver" if Approve or Clarify is
@@ -13,14 +19,26 @@ export type ApprovalActionsBarProps = {
 	// pass a variant keep working.
 	variant?: ApprovalActionsBarVariant;
 
+	// Approver variant only. Defaults to "bar" so existing callers are
+	// unaffected.
+	layout?: ApprovalActionsBarLayout;
+	// Card layout only: small label, heading and optional second line.
+	eyebrow?: string;
+	title?: string;
+	subtitle?: string;
+
 	onBack?: () => void;
 	showBack?: boolean;
 
-	// Approver-only actions. Both require a written reason.
+	// Approver-only actions. Both require a written reason by default.
 	canApprove?: boolean;
 	canClarify?: boolean;
 	onApprove?: (reason: string) => void | Promise<void>;
 	onClarify?: (reason: string) => void | Promise<void>;
+
+	// Set false when Approve needs no comment (e.g. validating a report —
+	// only the clarification needs one). Defaults to true.
+	approveRequiresReason?: boolean;
 
 	// Keeps Approve visible but disabled (e.g. "approve every line item
 	// first"). Optional — existing callers are unaffected.
@@ -103,12 +121,17 @@ const getReasonHint = (
 
 const ApprovalActionsBar = ({
 	variant,
+	layout = "bar",
+	eyebrow = "Your decision",
+	title = "Awaiting your approval",
+	subtitle,
 	onBack,
 	showBack = true,
 	canApprove = false,
 	canClarify = false,
 	onApprove,
 	onClarify,
+	approveRequiresReason = true,
 	approveDisabled = false,
 	approveDisabledReason,
 	canSendBack = false,
@@ -165,14 +188,17 @@ const ApprovalActionsBar = ({
 		maxReasonLength,
 	);
 
+	// Clarify always needs a reason; Approve only when approveRequiresReason.
 	const submitReason = async (action: "approve" | "clarify") => {
-		if (!isReasonValid || isBusy) return;
+		if (isBusy) return;
 		if (action === "approve" && approveDisabled) return;
+		const needsReason = action === "clarify" || approveRequiresReason;
+		if (needsReason && !isReasonValid) return;
 
 		setSubmitting(true);
 		try {
 			if (action === "approve") {
-				await onApprove?.(trimmedReason);
+				await onApprove?.(approveRequiresReason ? trimmedReason : "");
 			} else {
 				await onClarify?.(trimmedReason);
 			}
@@ -196,6 +222,81 @@ const ApprovalActionsBar = ({
 		<span />
 	);
 
+	const clarifyButton = showClarify ? (
+		<Button
+			type="button"
+			text={clarifyLabel}
+			size="sm"
+			appearance="standard"
+			variant="outline"
+			disabled={isBusy || !isReasonValid}
+			onClick={() => void submitReason("clarify")}
+		/>
+	) : null;
+
+	const approveButton = showApprove ? (
+		<span className="flex w-full items-center gap-1.5">
+			<Button
+				type="button"
+				text={approveLabel}
+				size="sm"
+				appearance="standard"
+				variant="brand"
+				isTooltip={approveDisabled ? approveDisabledReason : undefined}
+				disabled={
+					isBusy || (approveRequiresReason && !isReasonValid) || approveDisabled
+				}
+				onClick={() => void submitReason("approve")}
+			/>
+			{/* {approveDisabled && approveDisabledReason ? (
+				<InfoTip text={approveDisabledReason} />
+			) : null} */}
+		</span>
+	) : null;
+
+	/* ---------------- Approver · card layout (side column) ---------------- */
+	if (isApproverView && layout === "card") {
+		return (
+			<Card
+				accordion
+				defaultExpanded
+				title={
+					<div className="approval-decision-card-head pb-2">
+						<span className="approval-decision-card-eyebrow">{eyebrow}</span>
+						<h3 className="approval-decision-card-title">{title}</h3>
+						{subtitle ? (
+							<p className="approval-decision-card-subtitle">{subtitle}</p>
+						) : null}
+					</div>
+				}
+			>
+				<section aria-label={eyebrow} aria-busy={isBusy}>
+					<TextareaInput
+						name="approval-action-reason"
+						label={reasonLabel || "Reason"}
+						value={reason}
+						placeholder={reasonPlaceholder}
+						rows={3}
+						disabled={isBusy}
+						minLength={requiredReasonLength}
+						maxLength={maxReasonLength}
+						required={approveRequiresReason}
+						helperText={reasonHint}
+						success={isReasonValid}
+						onChange={(event) => setReason(event.target.value)}
+					/>
+
+					{/* Approve on top, Clarify under it — both full width. */}
+					<div className="approval-decision-card-actions mt-2">
+						{approveButton}
+						{clarifyButton}
+					</div>
+				</section>
+			</Card>
+		);
+	}
+
+	/* ---------------- Approver · bar layout (original) ---------------- */
 	if (isApproverView) {
 		return (
 			<div className="approval-actions-bar approval-actions-bar--approver">
@@ -213,7 +314,7 @@ const ApprovalActionsBar = ({
 								disabled={isBusy}
 								minLength={requiredReasonLength}
 								maxLength={maxReasonLength}
-								required
+								required={approveRequiresReason}
 								helperText={reasonHint}
 								success={isReasonValid}
 								onChange={(event) => setReason(event.target.value)}
@@ -226,37 +327,8 @@ const ApprovalActionsBar = ({
 						</div>
 
 						<div className="approval-actions-bar-end">
-							{showClarify ? (
-								<Button
-									type="button"
-									text={clarifyLabel}
-									size="sm"
-									appearance="standard"
-									variant="outline"
-									disabled={isBusy || !isReasonValid}
-									onClick={() => void submitReason("clarify")}
-								/>
-							) : null}
-
-							{showApprove ? (
-								<span className="inline-flex items-center gap-1.5">
-									<Button
-										type="button"
-										text={approveLabel}
-										size="sm"
-										appearance="standard"
-										variant="brand"
-										isTooltip={
-											approveDisabled ? approveDisabledReason : undefined
-										}
-										disabled={isBusy || !isReasonValid || approveDisabled}
-										onClick={() => void submitReason("approve")}
-									/>
-									{/* {approveDisabled && approveDisabledReason ? (
-										<InfoTip text={approveDisabledReason} />
-									) : null} */}
-								</span>
-							) : null}
+							{clarifyButton}
+							{approveButton}
 						</div>
 					</>
 				) : null}
@@ -264,6 +336,7 @@ const ApprovalActionsBar = ({
 		);
 	}
 
+	/* ---------------------------- Proposer variant ---------------------------- */
 	return (
 		<div className="approval-actions-bar approval-actions-bar--proposer">
 			{backButton}

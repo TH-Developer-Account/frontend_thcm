@@ -1,16 +1,20 @@
 // pages/EpcFormsWizardPage.tsx
-// Stepper wizard opened from the EPC listing (EPC No / "Add CRF" / "Add EPF").
+// Stepper wizard opened from the EPC listing (EPC No / View / Edit / "Add CRF" / "Add EPF").
 //
-//   Step 1 — EPC Details : ActivityDetailsSection (same read-only layout as the EPC view)
-//   Step 2 — CRF         : create CRF (optional, can be skipped) or read-only
-//   Step 3 — EPF & Submit: ONE click does  preview workflow → save EPF → assign workflow.
-//                          No workflow for the budget → Submit is disabled and a
-//                          small "Request workflow" button sends the user to the listing.
+//   Step 1 — EPC Details : edit form
+//   Step 2 — CRF         : create (optional, can be skipped) · edit (clarified) · or read-only
+//   Step 3 — EPF & Submit: first submission → preview workflow → save EPF → assign workflow.
+//                          Clarified edit    → save EPF → restart the same workflow
+//                                              at stage 1 ("Resubmit").
 //
 // Entry point (?start=) decides the step the wizard opens on:
 //   epc → EPC Details · crf → CRF · epf → EPF (CRF skipped)
 // A saved-but-unsubmitted EPC ("Continue to submit") opens straight on the EPF
 // step, pre-filled and editable, so the user can fix anything and submit.
+//
+// CLARIFIED EDIT is derived from the loaded EPC (see utils/epcClarification),
+// never from router state, so a refresh or a pasted URL behaves the same as
+// arriving from the listing.
 import React from "react";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import {
@@ -38,7 +42,9 @@ import { CrfForm } from "../../crf";
 import CrfSection from "../../crf/core/CrfSection";
 import { clearStoredEpcInfo } from "../utils/common";
 import { isEpcSubmitted } from "../forms/EPC/epc.utils";
+import { isEpcClarified } from "../utils/epcClarification";
 import EpcForm from "../forms/EPC/EpcForm";
+
 const STEP = { EPC: 1, CRF: 2, EPF: 3 } as const;
 type WizardStep = (typeof STEP)[keyof typeof STEP];
 
@@ -108,8 +114,24 @@ const EpcFormsWizardPage = () => {
 	const needsFinalSubmit =
 		hasEpf && !workflowStarted && Boolean(permissions.isProposer);
 
+	/**
+	 * An approver sent the EPC back: the proposer edits EPC → CRF → EPF, and the
+	 * last step restarts the existing workflow at stage 1.
+	 */
+	const isClarifiedEdit =
+		workflowStarted &&
+		Boolean(permissions.isProposer) &&
+		isEpcClarified(epcData);
+
+	// The workflow to restart. Same source useClarifiedResubmission uses on the
+	// detail page.
+	const activeWorkflowId = epcData?.activeWorkflow?.id ?? null;
+
 	const isEligible =
-		permissions.canCreateCrf || permissions.canCreateEpf || needsFinalSubmit;
+		permissions.canCreateCrf ||
+		permissions.canCreateEpf ||
+		needsFinalSubmit ||
+		isClarifiedEdit;
 
 	const wasEligibleRef = React.useRef(false);
 	if (isEligible) wasEligibleRef.current = true;
@@ -139,8 +161,11 @@ const EpcFormsWizardPage = () => {
 
 	if (isLoading) return <Loader />;
 
-	const intentLabel =
-		intent === "epc" ? "Continue to submit" : `Add ${intent.toUpperCase()}`;
+	const intentLabel = isClarifiedEdit
+		? "Update and resubmit"
+		: intent === "epc"
+			? "Continue to submit"
+			: `Add ${intent.toUpperCase()}`;
 
 	const pageTitle = `${intentLabel}${
 		epcData?.proposal_number ? ` · ${epcData.proposal_number}` : ""
@@ -246,6 +271,28 @@ const EpcFormsWizardPage = () => {
 				);
 
 			case STEP.CRF:
+				// Clarified edit: the existing CRF is editable (full replace of its
+				// lines). "Skip CRF" keeps it exactly as it is. A CRF can't be added
+				// at this point, so an EPC without one just moves on.
+				if (isClarifiedEdit) {
+					return hasCrf ? (
+						<CrfForm
+							epcId={epcData.id}
+							initialData={epcData.crf}
+							submitLabel="Save & Next"
+							onSuccess={handleCrfSaved}
+							onBackFromFirstStep={goBack}
+							onSkip={goNext}
+						/>
+					) : (
+						<Card footer={<StepFooter start={backButton} end={nextButton} />}>
+							<p className="text-sm text-[var(--color-text-muted)]">
+								No CRF was added to this EPC.
+							</p>
+						</Card>
+					);
+				}
+
 				return hasCrf ? (
 					<Card footer={<StepFooter start={backButton} end={nextButton} />}>
 						<CrfSection
@@ -268,6 +315,28 @@ const EpcFormsWizardPage = () => {
 				);
 
 			case STEP.EPF:
+				// Clarified edit → save EPF, then restart the SAME workflow at stage 1.
+				// No workflow preview / assignment: the approval chain is unchanged.
+				if (isClarifiedEdit && hasEpf) {
+					return (
+						<EpfForm
+							key={epcData.epf?.id ?? "epf-resubmit"}
+							mode="edit"
+							epcId={epcData.id}
+							epfId={epcData.epf?.id ?? null}
+							initialData={epcData.epf}
+							crfId={epcData.crf?.id ?? null}
+							crfData={epcData.crf}
+							budgetMasterId={epcData.budget_master_id}
+							submitLabel="Resubmit"
+							isClarifiedUpdate
+							activeWorkflowId={activeWorkflowId}
+							footerStart={backButton}
+							onSuccess={goToListing}
+						/>
+					);
+				}
+
 				// Already submitted → read-only, nothing left to do but leave.
 				if (workflowStarted) {
 					return (
@@ -314,6 +383,15 @@ const EpcFormsWizardPage = () => {
 	return (
 		<PageSectionLayout>
 			{header}
+
+			{isClarifiedEdit ? (
+				<Alert
+					type="banner"
+					variant="warning"
+					title="Clarification requested"
+					description="Update what's needed, then resubmit on the last step. Approval restarts from the first stage."
+				/>
+			) : null}
 
 			<StepProgress
 				steps={WIZARD_STEPS}

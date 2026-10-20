@@ -189,25 +189,34 @@ export function useEpcForm({
 	// field the profile couldn't supply stays editable.
 	React.useEffect(() => {
 		if (mode !== "create" || isEditMode || prefilledRef.current) return;
-		if (
-			!user ||
-			!masters?.regions ||
-			!masters?.branches ||
-			!masters?.departments
-		)
+
+		// "Loaded" means non-empty, not merely defined: while the masters query
+		// is in flight the lists can be [] (truthy), and the profile can be a
+		// partial object. Marking the prefill as done on that first pass is why
+		// the fields stayed empty until a refresh.
+		const regions = masters?.regions;
+		const branches = masters?.branches;
+		const departments = masters?.departments;
+
+		const mastersReady = Boolean(
+			regions?.length && branches?.length && departments?.length,
+		);
+		const profileReady = Boolean(
+			user && (user.department || user.branch || user.zone),
+		);
+
+		if (!mastersReady || !profileReady || !regions || !branches || !departments)
 			return;
 
-		prefilledRef.current = true; // run once, even if nothing matches
+		prefilledRef.current = true; // real data is in: run once, even if nothing matches
 
-		const department = findOption(masters.departments, user.department);
-		const branch = findOption(masters.branches, user.branch);
-		const userZone = findOption(masters.regions, user.zone);
+		const department = findOption(departments, user!.department);
+		const branch = findOption(branches, user!.branch);
+		const userZone = findOption(regions, user!.zone);
 
 		// A branch decides its zone (the form keeps the two consistent);
 		// otherwise fall back to the user's own zone.
-		const branchZoneId = branch
-			? resolveBranchRegionId(branch, masters.regions)
-			: null;
+		const branchZoneId = branch ? resolveBranchRegionId(branch, regions) : null;
 		const zoneId = branchZoneId ?? userZone?.value ?? "";
 
 		setProfileLocked({

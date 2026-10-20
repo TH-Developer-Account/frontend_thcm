@@ -4,13 +4,10 @@ import { Link } from "react-router-dom";
 
 import { trimText } from "../../../../../utils/format";
 import type { EpcListItem } from "../../types/epc.types";
-import {
-	ACTIVITY_PLANNER_ROUTES,
-	EPC_FORMS_WIZARD_PATH,
-} from "../../utils/constant";
-import { canOpenEpcView, isEpcSubmitted } from "../../forms/EPC/epc.utils";
-import { formatDate } from "../../utils/formatters";
 
+import { canOpenEpcView } from "../../forms/EPC/epc.utils";
+import { formatDate } from "../../utils/formatters";
+import { getEpcOpenRoute } from "../../utils/epcClarification";
 import EPCActionMenu from "./EPCActionMenu";
 import { formatPendingOn } from "../../../../../utils/statusAlert.helper";
 import { Badge } from "../../../../../components/common/Badge";
@@ -90,13 +87,12 @@ export const getEPCColumns = ({
 
 			// Not finally submitted → continue in the stepper (EPC Details step).
 			// Submitted → the read-only view page.
-			const to = isEpcSubmitted(row.original)
-				? ACTIVITY_PLANNER_ROUTES.detail(row.original.id)
-				: EPC_FORMS_WIZARD_PATH(row.original.id, "epc");
+			const { to, state } = getEpcOpenRoute(row.original, currentUserId);
 
 			return (
 				<Link
 					to={to}
+					state={state}
 					className="epc-number-link"
 					onClick={(e) => e.stopPropagation()}
 				>

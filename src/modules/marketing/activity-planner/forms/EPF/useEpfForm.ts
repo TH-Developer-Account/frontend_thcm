@@ -70,7 +70,10 @@ import {
 	useEpfProductsQuery,
 	useUpdateEpfMutation,
 } from "../../queries/epf.queries";
-import { epcKeys } from "../../queries/epc.queries";
+import {
+	epcKeys,
+	useSubmitClarifiedUpdatedFormMutation,
+} from "../../queries/epc.queries";
 
 export type EpfFormMode = "create" | "edit";
 
@@ -85,6 +88,7 @@ export type EpfFormProps = {
 	onSuccess?: (data?: any) => void | Promise<void>;
 	onCancel?: () => void;
 	isClarifiedUpdate?: boolean;
+	activeWorkflowId?: string | null;
 	/**
 	 * Submit = preview workflow → save EPF → assign workflow. Blocked (nothing
 	 * saved) when no workflow exists for the budget.
@@ -189,6 +193,8 @@ export const useEpfForm = ({
 	onSuccess,
 	submitWithWorkflow = false,
 	onRequestWorkflow,
+	isClarifiedUpdate = false,
+	activeWorkflowId = null,
 }: EpfFormProps = {}): UseEpfFormResult => {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
@@ -262,6 +268,8 @@ export const useEpfForm = ({
 
 	const createEpfMutation = useCreateEpfMutation();
 	const updateEpfMutation = useUpdateEpfMutation();
+
+	const clarifiedResubmitMutation = useSubmitClarifiedUpdatedFormMutation();
 
 	const options = React.useMemo(() => {
 		return mapEpfProductsToOptions((productsQuery.data ?? []) as EpfProduct[]);
@@ -404,7 +412,10 @@ export const useEpfForm = ({
 	const loading = productsQuery.isLoading || budgetLoading;
 
 	const submitting =
-		createEpfMutation.isPending || updateEpfMutation.isPending || assigning;
+		createEpfMutation.isPending ||
+		updateEpfMutation.isPending ||
+		assigning ||
+		clarifiedResubmitMutation.isPending;
 
 	const handleChange = React.useCallback(
 		(name: keyof EpfFormValues, value: string) => {
@@ -514,7 +525,15 @@ export const useEpfForm = ({
 						return;
 					}
 				}
-
+				if (isClarifiedUpdate && !activeWorkflowId) {
+					showToast({
+						type: "error",
+						title: "Cannot resubmit",
+						description:
+							"The active approval workflow for this EPC could not be found.",
+					});
+					return;
+				}
 				/* ── Step 1: preview the workflow. None → save NOTHING. ───────── */
 				if (submitWithWorkflow) {
 					if (!(eventCost > 0)) {
@@ -637,17 +656,51 @@ export const useEpfForm = ({
 						queryClient.invalidateQueries({ queryKey: epcKeys.lists() }),
 					]);
 				}
+				/* ── Clarified resubmit: restart the SAME workflow at stage 1. ── */
+				// Same call the detail page's "Submit updated form" uses. If it fails
+				// the EPF edits stay saved; clicking Resubmit again re-saves and
+				// retries only this step.
+				if (isClarifiedUpdate && !submitWithWorkflow) {
+					try {
+						await clarifiedResubmitMutation.mutateAsync({
+							workflowId: activeWorkflowId as string,
+							epcId,
+						});
+					} catch (resubmitError) {
+						console.error("Clarified resubmit failed:", resubmitError);
 
+						await queryClient.invalidateQueries({
+							queryKey: epcKeys.detail(epcId),
+						});
+
+						showToast({
+							type: "error",
+							title: "Changes saved, not resubmitted",
+							description: getWorkflowErrorMessage(
+								resubmitError,
+								"Unable to restart the approval workflow.",
+							),
+						});
+						return;
+					}
+
+					await Promise.all([
+						queryClient.invalidateQueries({ queryKey: epcKeys.detail(epcId) }),
+						queryClient.invalidateQueries({ queryKey: epcKeys.lists() }),
+					]);
+				}
 				clearStoredEpcInfo();
 
 				showToast({
 					type: "success",
 					title: "Success",
-					description: submitWithWorkflow
-						? "Submitted. The approval workflow has started."
-						: currentEpfId
-							? "EPF updated successfully."
-							: "EPF saved successfully.",
+					description: isClarifiedUpdate
+						? "Resubmitted. Approval restarts from the first stage."
+						: submitWithWorkflow
+							? "Submitted. The approval workflow has started."
+							: currentEpfId
+								? "EPF updated successfully."
+								: "EPF saved successfully.",
 				});
 
 				if (onSuccess) {

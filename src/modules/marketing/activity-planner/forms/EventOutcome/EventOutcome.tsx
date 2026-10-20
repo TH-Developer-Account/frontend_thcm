@@ -25,6 +25,7 @@ import {
 } from "../../utils/constant";
 
 import {
+	useCloseEPC,
 	useEventDeviationMutation,
 	useEventOutcomeMutation,
 } from "../../queries/epc.queries";
@@ -53,6 +54,8 @@ export const EventOutcome = ({
 
 	const eventOutcomeMutation = useEventOutcomeMutation();
 	const eventDeviationMutation = useEventDeviationMutation();
+	// "Deviation not required" closes the EPC directly (PATCH /epc/:id/close).
+	const closeEpcMutation = useCloseEPC();
 
 	const [selectedOption, setSelectedOption] = React.useState<Option | null>(
 		null,
@@ -78,6 +81,7 @@ export const EventOutcome = ({
 	const isSubmitting =
 		eventOutcomeMutation.isPending ||
 		eventDeviationMutation.isPending ||
+		closeEpcMutation.isPending ||
 		isActivating;
 
 	/* ---------------------------- Budget banner ---------------------------- */
@@ -201,14 +205,11 @@ export const EventOutcome = ({
 				}
 			}
 
+			// "Deviation not required" → close the EPC straight away.
+			// NOTE: PATCH /epc/:id/close takes no body, so the reason typed above is
+			// validated but not stored.
 			if (isDeviationMode && !isDeviationRequired) {
-				await eventDeviationMutation.mutateAsync({
-					epcId: epcID!,
-					payload: {
-						status: selectedOption!.value,
-						reason: deviationInfo.reason.trim(),
-					},
-				});
+				await closeEpcMutation.mutateAsync({ epcId: epcID! });
 			}
 
 			showSuccessToast(
@@ -217,7 +218,7 @@ export const EventOutcome = ({
 					? "Event outcome saved successfully."
 					: isDeviationRequired
 						? "Deviation saved. Approval restarted from the first stage."
-						: "Event deviation saved successfully.",
+						: "No deviation required. EPC closed successfully.",
 			);
 
 			resetForm();
@@ -231,6 +232,7 @@ export const EventOutcome = ({
 			resetForm();
 		}
 	}, [
+		closeEpcMutation,
 		deviationInfo,
 		epcID,
 		eventDeviationMutation,
@@ -293,7 +295,7 @@ export const EventOutcome = ({
 					/>
 				</div>
 
-				{/* 3. "Not required" → reason only, sent in the payload */}
+				{/* 3. "Not required" → reason only; saving closes the EPC */}
 				{isDeviationNotRequired ? (
 					<div className="event-outcome-field event-outcome-field-reason">
 						<TextareaInput
@@ -302,7 +304,7 @@ export const EventOutcome = ({
 							value={deviationInfo.reason}
 							disabled={isSubmitting}
 							rows={4}
-							helperText="Briefly explain why no deviation is needed."
+							helperText="Briefly explain why no deviation is needed. Saving will close this EPC."
 							onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) =>
 								handleDeviationInfoChange("reason", event.target.value)
 							}

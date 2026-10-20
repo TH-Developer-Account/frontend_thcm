@@ -1,15 +1,23 @@
 // components/activityFormView/ActivityFormView.tsx
 // EPC detail ("view") page body: header + tabs, one card per tab,
-// audit side panel, approval actions bar.
+// side column (audit trail, then ALL action cards).
 //
 // Rules:
 //   • No collapsible sections — every tab is ONE card.
 //   • Comments live in their own tab (after submission); the right-hand side
-//     panel holds the Audit Trail only and takes the full height.
+//     column holds the Audit Trail (takes the remaining height) and, below
+//     it, the action cards.
 //   • EPC Info renders ActivityDetailsSection (same as the stepper).
 //   • Export menu is commented out for now (search "EXPORT (disabled)").
 //   • Adding CRF / EPF and Final Submit live in the stepper (no Create
 //     buttons here, no Review tab).
+//   • Where the actions live (one rule):
+//       PROPOSER actions (Close EPC, Submit clarified / deviation changes)
+//                          → side column, proposer variant of the same bar
+//       APPROVER actions (Approve / Send for Clarification)
+//                          → ApprovalActionsBar (layout="card") in the side column
+//       VALIDATOR actions (Validate report / Send report for clarification)
+//                          → same card, side column
 //   • Editing existing forms:
 //       not submitted → the proposer can edit EPC / CRF / EPF freely
 //                       (ActivityPlannerPage shows the "Not submitted" banner)
@@ -40,13 +48,14 @@ import type { TabItem } from "../../../../../components/common/common.types";
 import FormHeader from "../../../../../components/ui/FormHeader";
 import { AuditLogSection } from "../../../../../components/ui/audit";
 import { CommentsSection } from "../../../../../components/ui/comments";
-import ApprovalActionsBar from "../../../../../components/ui/ApprovalActionsBar";
 import { ReasonActionModal } from "../../../../../components/ui/ReasonActionModal";
 import { ApprovalWorkflowSection } from "../../../../workflows";
 import { EventOutcome } from "../../forms/EventOutcome/EventOutcome";
 import { EventReportSection } from "../../forms/EventReport/EventReportSection";
+import { getEventReportSectionState } from "../../forms/EventReport/eventReport.logic";
 import EpcForm from "../../forms/EPC/EpcForm";
 import ActivityDetailsSection from "./ActivityDetailsSection";
+import ApprovalActionsBar from "../../../../../components/ui/ApprovalActionsBar";
 import { CrfOrderSection, CrfSection, isCrfOrderActive } from "../../../crf";
 import EpfSection from "../../forms/EPF/EpfSection";
 import type { ActivityPlannerController } from "../../hooks/useActivityPlanner";
@@ -150,14 +159,11 @@ export type ActivityFormViewLocationState = {
 const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 	const location = useLocation();
 	const navigate = useNavigate();
-	const [activeTab, setActiveTab] = useState<ActivityTab>(() => {
-		const openTab = (location.state as ActivityFormViewLocationState)?.openTab;
-		return openTab === "order"
+	const [activeTab, setActiveTab] = useState<ActivityTab>(() =>
+		(location.state as ActivityFormViewLocationState)?.openTab === "order"
 			? "tracking"
-			: openTab === "report"
-				? "report"
-				: "epc";
-	});
+			: "epc",
+	);
 
 	const {
 		epcData,
@@ -197,6 +203,8 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 		isSubmittingDeviationUpdate,
 		submitDeviationUpdate,
 		handleRefresh,
+		handleClarifyReport,
+		isClarifyingReport,
 	} = activity;
 
 	if (!epcData) {
@@ -220,13 +228,63 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 	const canEditBeforeSubmit =
 		!workflowStarted && Boolean(permissions.isProposer);
 
-	const canEditEpc = canEditBeforeSubmit || permissions.canEditEpc;
-	const canEditCrf =
-		hasCrfLineItems && (canEditBeforeSubmit || permissions.canEditCrf);
-	const canEditEpf = hasEpf && (canEditBeforeSubmit || permissions.canEditEpf);
+	/** Stage 1 of the live workflow has at least one approval → proposer edits are locked. */
+	const firstStageHasApproval = Boolean(
+		epcData.activeWorkflow?.stages?.some(
+			(stage) =>
+				stage.stageOrder === 1 &&
+				stage.approvals?.some(
+					(approval) => String(approval.status).toUpperCase() === "APPROVED",
+				),
+		),
+	);
 
-	/** Comments + audit need a workflow context (approvalId) → only once submitted. */
+	const canEditAfterSubmit = !firstStageHasApproval;
+
+	const canEditEpc =
+		canEditBeforeSubmit || (permissions.canEditEpc && canEditAfterSubmit);
+	const canEditCrf =
+		hasCrfLineItems &&
+		(canEditBeforeSubmit || (permissions.canEditCrf && canEditAfterSubmit));
+	const canEditEpf =
+		hasEpf &&
+		(canEditBeforeSubmit || (permissions.canEditEpf && canEditAfterSubmit));
+
+	/** Audit needs a workflow context (approvalId) → only once submitted. */
 	const showSidePanels = workflowStarted && editingSection !== "epf";
+
+	/**
+	 * The approver's decision card lives in the side column. It follows the
+	 * approver's ability to act, NOT showSidePanels — so Approve / Clarify can
+	 * never disappear just because the audit panel is hidden.
+	 */
+	const showDecisionCard = workflowData.canActNow;
+
+	/**
+	 * Validator's card: only while the event report is SUBMITTED and waiting
+	 * for them. Never shown together with the approver card (different stages).
+	 */
+	const { isSubmitted: isReportSubmitted, canValidatorValidate } =
+		getEventReportSectionState({
+			report: eventReport.report,
+			isProposer: permissions.isProposer,
+			isValidator: permissions.isValidator,
+			canCreateReport: permissions.canCreateReport,
+		});
+	const showValidatorCard =
+		!showDecisionCard && Boolean(permissions.isValidator) && isReportSubmitted;
+
+	// showProposerActions is declared further down; mirror its inputs here.
+	const hasProposerActions =
+		(permissions.canShowCloseEpcAction && !permissions.isClosed) ||
+		permissions.isClarifiedPending ||
+		permissions.isDeviationPending;
+
+	const showSideColumn =
+		showSidePanels ||
+		showDecisionCard ||
+		showValidatorCard ||
+		hasProposerActions;
 
 	/** Conditional tabs only exist when their section applies. */
 	const conditionalTabVisibility: Partial<Record<ActivityTab, boolean>> = {
@@ -539,7 +597,7 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 	};
 
 	/* ------------------------------------------------------------------------ */
-	/*                          Approval actions bar                            */
+	/*                                 Actions                                  */
 	/* ------------------------------------------------------------------------ */
 
 	// Proposer "submit" slot: clarified resubmission takes priority over deviation.
@@ -561,7 +619,12 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 	const canCloseEpc =
 		permissions.canShowCloseEpcAction && !permissions.isClosed;
 
-	const showFooter = workflowData.canActNow || canCloseEpc || Boolean(resubmit);
+	/** Shared busy flag: any of these running locks the other actions. */
+	const actionsBusy =
+		isClosingEPC || isSubmittingClarifiedUpdate || isSubmittingDeviationUpdate;
+
+	/** Proposer actions card (side column) — only when there is something to do. */
+	const showProposerActions = canCloseEpc || Boolean(resubmit);
 
 	/* ------------------------------------------------------------------------ */
 	/*                                  Render                                  */
@@ -598,78 +661,127 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 					/>
 				</header>
 
-				{/* ── Body: tab card (left) · comments + audit (right) ── */}
+				{/* ── Body: tab card (left) · audit + actions (right) ── */}
 				<div
 					className={[
 						"activity-form-view-body",
-						showSidePanels && "has-side-panels",
+						showSideColumn && "has-side-panels",
 					]
 						.filter(Boolean)
 						.join(" ")}
 				>
 					<div className="activity-form-view-main min-w-0">{renderTab()}</div>
 
-					{showSidePanels && (
+					{showSideColumn && (
 						<aside
 							className="activity-form-view-side activity-form-view-side--audit"
-							aria-label="Audit trail"
+							aria-label="Decision and audit trail"
 						>
-							{/* Audit trail only — comments now live in the Comments tab.
+							{/* Audit trail only — comments live in the Comments tab.
 							    No h-full utilities here: they override the sticky	*/}
-							<Card
-								className="activity-form-view-panel activity-form-view-panel--audit"
-								accordion
-								defaultExpanded
-								title={
-									<span className="activity-form-view-panel-title">
-										<History size={15} aria-hidden="true" />
-										Audit Trail
-									</span>
-								}
-								padding="none"
-								bodyClassName="activity-form-view-panel-body"
-							>
-								<AuditLogSection
-									subjectType={EVENT_PROPOSAL_SUBJECT_TYPE}
-									subjectId={epcData.id}
-									entityName="event proposal"
-									refreshKey={commentsRefreshKey}
-									api={activityPlannerAuditApi}
+							{showSidePanels && (
+								<Card
+									className="activity-form-view-panel activity-form-view-panel--audit"
+									accordion
+									defaultExpanded
+									title={
+										<span className="activity-form-view-panel-title">
+											<History size={15} aria-hidden="true" />
+											Audit Trail
+										</span>
+									}
+									padding="none"
+									bodyClassName="activity-form-view-panel-body"
+								>
+									<AuditLogSection
+										subjectType={EVENT_PROPOSAL_SUBJECT_TYPE}
+										subjectId={epcData.id}
+										entityName="event proposal"
+										refreshKey={commentsRefreshKey}
+										api={activityPlannerAuditApi}
+									/>
+								</Card>
+							)}
+
+							{/* ALL actions live BELOW the audit trail. */}
+							{/* Approver only, and only while they can act on this stage. */}
+							{showDecisionCard && (
+								<ApprovalActionsBar
+									variant="approver"
+									layout="card"
+									showBack={false}
+									canApprove={workflowData.canActNow}
+									canClarify={workflowData.canActNow}
+									onApprove={(reason) => handleApproveWorkflow(reason)}
+									onClarify={(reason) => handleClarifyWorkflow(reason)}
+									loading={actionsBusy}
 								/>
-							</Card>
+							)}
+
+							{/* Validator only, while the submitted report awaits them. */}
+							{showValidatorCard && (
+								<ApprovalActionsBar
+									variant="approver"
+									layout="card"
+									showBack={false}
+									eyebrow="Your validation"
+									title="Report awaiting validation"
+									subtitle="Review the event report, then validate it or send it back."
+									approveLabel="Validate report"
+									clarifyLabel="Send report for clarification"
+									canApprove
+									canClarify
+									approveRequiresReason={false}
+									approveDisabled={!canValidatorValidate}
+									minReasonLength={5}
+									reasonPlaceholder="Required to send the report for clarification"
+									onApprove={() => eventReport.onValidateReport?.()}
+									onClarify={async (reason) => {
+										await handleClarifyReport(reason);
+										await handleRefresh();
+									}}
+									loading={
+										actionsBusy ||
+										Boolean(eventReport.isValidating) ||
+										Boolean(isClarifyingReport)
+									}
+								/>
+							)}
+
+							{/* Proposer: Close EPC / Submit changes (no reason box). */}
+							{showProposerActions && (
+								<section
+									className="approval-decision-card"
+									aria-label="Your actions"
+								>
+									<div className="approval-decision-card-head">
+										<span className="approval-decision-card-eyebrow">
+											Your actions
+										</span>
+									</div>
+
+									<ApprovalActionsBar
+										variant="proposer"
+										showBack={false}
+										canSubmit={Boolean(resubmit)}
+										onSubmit={resubmit?.onSubmit}
+										submitLabel={
+											resubmit?.isSubmitting
+												? "Submitting..."
+												: (resubmit?.label ?? "Final Submit")
+										}
+										canAcceptAndClose={canCloseEpc}
+										onAcceptAndClose={handleCloseEPC}
+										acceptAndCloseLabel={
+											isClosingEPC ? "Closing..." : "Close EPC"
+										}
+										loading={actionsBusy}
+									/>
+								</section>
+							)}
 						</aside>
 					)}
 				</div>
-
-				{/* ── Footer: approval actions bar ── */}
-				{showFooter && (
-					<footer className="activity-form-view-footer">
-						<ApprovalActionsBar
-							showBack={false}
-							/* Approver: reason box + Clarify / Approve */
-							canApprove={workflowData.canActNow}
-							canClarify={workflowData.canActNow}
-							onApprove={(reason) => handleApproveWorkflow(reason)}
-							onClarify={(reason) => handleClarifyWorkflow(reason)}
-							/* Proposer: resubmit / close */
-							canSubmit={Boolean(resubmit)}
-							onSubmit={resubmit?.onSubmit}
-							submitLabel={
-								resubmit?.isSubmitting
-									? "Submitting..."
-									: (resubmit?.label ?? "Final Submit")
-							}
-							canAcceptAndClose={canCloseEpc}
-							onAcceptAndClose={handleCloseEPC}
-							acceptAndCloseLabel={isClosingEPC ? "Closing..." : "Close EPC"}
-							loading={
-								isClosingEPC ||
-								isSubmittingClarifiedUpdate ||
-								isSubmittingDeviationUpdate
-							}
-						/>
-					</footer>
-				)}
 			</div>
 
 			<ReasonActionModal
