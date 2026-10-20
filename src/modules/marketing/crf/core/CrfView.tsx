@@ -35,7 +35,7 @@ import Button from "../../../../components/common/Button";
 
 import { getLinePricing, sumPricing } from "../shop/mapper";
 import { CrfImage } from "./Media";
-import CrfStatusPill from "./CRFStatusPill";
+import CrfStatusPill from "./CrfStatusPill";
 import {
 	formatArtworkSize,
 	formatCrfAmount,

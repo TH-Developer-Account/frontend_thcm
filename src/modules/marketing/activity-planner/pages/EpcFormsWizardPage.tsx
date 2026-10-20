@@ -12,7 +12,7 @@
 // A saved-but-unsubmitted EPC ("Continue to submit") opens straight on the EPF
 // step, pre-filled and editable, so the user can fix anything and submit.
 import React from "react";
-import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import {
 	useLocation,
 	useNavigate,
