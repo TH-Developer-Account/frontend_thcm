@@ -87,21 +87,23 @@ export const buildUserBasicInfoSchema = (mode: "create" | "edit") =>
 					.refine(isBeforeToday, { message: JOINED_ON_PAST_MESSAGE }),
 			});
 
+const optionalText = () => z.string().trim().optional();
+
 export const userOrganizationSchema = z.object({
 	region: requiredText("Region"),
 	address: requiredText("Address"),
 	zone: requiredText("Zone"),
 	branch: requiredText("Branch"),
 	department: requiredText("Department"),
-	role: requiredText("Role"),
+	role: optionalText(),
 	designation: requiredText("Designation"),
 	vertical: requiredText("Vertical"),
-	managerCode1: requiredText("Manager Code 1"),
-	managerCode2: requiredText("Manager Code 2"),
-	bydId: requiredText("BYD ID"),
-	s4Id: requiredText("S4 ID"),
-	tallyId: requiredText("Tally ID"),
-	c4cId: requiredText("C4C ID"),
+	managerCode1: optionalText(),
+	managerCode2: optionalText(),
+	bydId: optionalText(),
+	s4Id: optionalText(),
+	tallyId: optionalText(),
+	c4cId: optionalText(),
 });
 
 export type UserBasicInfoFormValues = z.infer<

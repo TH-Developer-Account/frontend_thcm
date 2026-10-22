@@ -535,7 +535,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		{
 			name: "role",
 			label: "Role",
-			required: true,
+			// required: true,
 			error: fieldErrors.role,
 		},
 		{
@@ -553,13 +553,13 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		{
 			name: "managerCode1",
 			label: "Manager Code 1",
-			required: true,
+			// required: true,
 			error: fieldErrors.managerCode1,
 		},
 		{
 			name: "managerCode2",
 			label: "Manager Code 2",
-			required: true,
+			// required: true,
 			error: fieldErrors.managerCode2,
 		},
 		{
@@ -577,25 +577,25 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		{
 			name: "bydId",
 			label: "BYD ID",
-			required: true,
+			// required: true,
 			error: fieldErrors.bydId,
 		},
 		{
 			name: "s4Id",
 			label: "S4 ID",
-			required: true,
+			// required: true,
 			error: fieldErrors.s4Id,
 		},
 		{
 			name: "tallyId",
 			label: "Tally ID",
-			required: true,
+			// required: true,
 			error: fieldErrors.tallyId,
 		},
 		{
 			name: "c4cId",
 			label: "C4C ID",
-			required: true,
+			// required: true,
 			error: fieldErrors.c4cId,
 		},
 	];
