@@ -246,48 +246,6 @@ export const ClaimHeadEntryTable = () => {
 			});
 
 			tableColumns.push({
-				id: "review",
-				header: "Approved",
-				enableSorting: false,
-				cell: ({ row }) => {
-					const claim = row.original;
-					const isApproved = claim.approvalStatus === "APPROVED";
-					const isApproving = approvingId === claim.id;
-					const disabled = reviewLocked || loading || isApproving;
-
-					// The claimant only sees the outcome, never the action.
-					const label = isApproved
-						? "Approved"
-						: reviewLocked
-							? "Pending"
-							: "Approve";
-
-					return (
-						<ReviewCell
-							locked={reviewLocked}
-							className="flex items-center justify-center gap-1.5 text-center"
-						>
-							<Checkbox
-								name={`bill-approved-${claim.id}`}
-								checked={isApproved}
-								disabled={disabled}
-								onChange={(checked) => {
-									if (disabled) return;
-									if (checked) {
-										void handleApproveLineItem(claim);
-										return;
-									}
-									void onToggleLineItemStatus(claim.id);
-								}}
-								label={isApproving ? "Saving…" : label}
-								size={20}
-							/>
-						</ReviewCell>
-					);
-				},
-			});
-
-			tableColumns.push({
 				id: "remarks",
 				header: "Remarks",
 				widthUnits: 2,
@@ -342,6 +300,47 @@ export const ClaimHeadEntryTable = () => {
 								loading={isSavingRemarks}
 								onClick={() => void handleSaveRemarks(claim.id)}
 								title="Save remarks"
+							/>
+						</ReviewCell>
+					);
+				},
+			});
+			tableColumns.push({
+				id: "review",
+				header: "Approved",
+				enableSorting: false,
+				cell: ({ row }) => {
+					const claim = row.original;
+					const isApproved = claim.approvalStatus === "APPROVED";
+					const isApproving = approvingId === claim.id;
+					const disabled = reviewLocked || loading || isApproving;
+
+					// The claimant only sees the outcome, never the action.
+					const label = isApproved
+						? "Approved"
+						: reviewLocked
+							? "Pending"
+							: "Approve";
+
+					return (
+						<ReviewCell
+							locked={reviewLocked}
+							className="flex items-center justify-center gap-1.5 text-center"
+						>
+							<Checkbox
+								name={`bill-approved-${claim.id}`}
+								checked={isApproved}
+								disabled={disabled}
+								onChange={(checked) => {
+									if (disabled) return;
+									if (checked) {
+										void handleApproveLineItem(claim);
+										return;
+									}
+									void onToggleLineItemStatus(claim.id);
+								}}
+								label={isApproving ? "Saving…" : label}
+								size={20}
 							/>
 						</ReviewCell>
 					);

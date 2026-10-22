@@ -2,143 +2,38 @@
    ACTIVITY FORM VIEW
    components/activityFormView/activityFormView.css
 
-   EPC detail page: header (title + tabs, one row) ·
-   tab card | Audit Trail + actions. ALL actions (proposer, approver, validator)
-   live in the side column, below the Audit Trail.
-   This is the ONLY place activity-form-view styles live — it replaces the
-   three duplicated blocks that were at the end of marketing.styles.css
-   (original, "collapsible side panels", and activityFormView.fixes.css).
+   Page-specific styles for the EPC detail page. The page SHELL
+   (header card · main | side grid · sticky side column) now lives in
+   components/ui/detail-page-layout.css (.dpl-*) and is used through
+   <DetailPageLayout>. What stays here is only what is specific to this page:
+   tab body padding, empty state, the decision / actions card and the
+   Audit Trail panel.
 
    Imported by ActivityFormView.tsx.
 
    Rules this file relies on:
-   • The aside / Card must NOT carry Tailwind `h-full` — utilities beat
-     this layer and the panel would fall back to auto height.
-   • From 1024px the side column is sticky and as tall as the screen
-     (minus --afv-side-offset and --afv-audit-trim); the Audit Trail list
-     scrolls inside it. Below 1024px it stacks under the tab card at a
+   • The Side column / audit Card must NOT carry Tailwind `h-full` —
+     utilities beat this layer and the panel would fall back to auto height.
+   • From 1024px the side column (.dpl-side) is sticky and as tall as the
+     screen (minus --dpl-side-offset and --dpl-side-trim); the Audit Trail
+     list scrolls inside it. Below 1024px it stacks under the tab card at a
      fixed height.
 ========================================================= */
 
 @layer components {
-	.activity-form-view {
-		/* Tune these to match the app shell height (top nav + page padding). */
-		--afv-sticky-top: var(--space-4);
-		--afv-side-offset: 9rem;
+	/* ---------------- Page-level overrides of the layout variables ----------------
+	   ActivityFormView passes className="activity-form-view" to DetailPageLayout.
+	   `.dpl.activity-form-view` is more specific than `.dpl`, so these always win,
+	   whichever stylesheet loads first. Tune to match the app shell height
+	   (top nav + page padding). */
+	.dpl.activity-form-view {
+		--dpl-sticky-top: var(--space-4);
+		--dpl-side-offset: 9rem;
 		/* Extra height taken off the Audit Trail column. Raise to make it shorter. */
-		--afv-audit-trim: 2.5rem;
-
-		display: flex;
-		width: 100%;
-		min-width: 0;
-		flex-direction: column;
-		gap: var(--space-4);
+		--dpl-side-trim: 2.5rem;
 	}
 
-	/* ---------------- Header ---------------- */
-
-	/* Title left, tabs right; wraps on narrow screens. */
-	.activity-form-view-header {
-		display: flex;
-		width: 100%;
-		min-width: 0;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-2) var(--space-4);
-
-		padding: var(--space-3) var(--space-4);
-
-		border: var(--border-width-default) solid var(--color-border-default);
-		border-radius: var(--radius-lg);
-		background-color: var(--color-bg-surface);
-		box-shadow: var(--shadow-xs);
-	}
-
-	.activity-form-view-header-copy {
-		display: flex;
-		min-width: 0;
-		flex: 1 1 auto;
-		align-items: center;
-		gap: var(--space-3);
-	}
-
-	.activity-form-view-header-end {
-		display: flex;
-		min-width: 0;
-		flex: 1 1 auto;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: flex-end;
-		gap: var(--space-2) var(--space-3);
-	}
-
-	.activity-form-view-title-row {
-		display: flex;
-		min-width: 0;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
-	.activity-form-view-title {
-		min-width: 0;
-		margin: 0;
-		overflow: hidden;
-
-		color: var(--color-text-primary);
-		font-size: var(--font-size-lg);
-		font-weight: var(--font-weight-medium);
-		line-height: var(--line-height-tight);
-
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.activity-form-view-subtitle {
-		margin: var(--space-1) 0 0;
-		overflow: hidden;
-
-		color: var(--color-text-secondary);
-		font-size: var(--font-size-xs);
-		font-variant-numeric: tabular-nums;
-
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	/* Title left, tabs right. */
-	.activity-form-view-tabs {
-		flex: 0 0 auto;
-		max-width: 100%;
-		overflow-x: auto;
-		scrollbar-width: none;
-	}
-
-	.activity-form-view-tabs::-webkit-scrollbar {
-		display: none;
-	}
-
-	/* ---------------- Body ---------------- */
-
-	.activity-form-view-body {
-		display: grid;
-		min-width: 0;
-		grid-template-columns: minmax(0, 1fr);
-		align-items: start;
-		gap: var(--space-4);
-	}
-
-	@media (min-width: 1024px) {
-		.activity-form-view-body.has-side-panels {
-			grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
-			gap: var(--space-3);
-			align-items: stretch;
-		}
-	}
-
-	.activity-form-view-main {
-		min-width: 0;
-	}
+	/* ---------------- Tab body ---------------- */
 
 	.activity-form-view-tab-body {
 		padding: var(--space-4);
@@ -176,38 +71,19 @@
 		font-size: var(--font-size-xs);
 	}
 
-	/* ---------------- Side column (decision card + Audit Trail) ---------------- */
+	/* ---------------- Side column: decision card on top of Audit Trail ----------------
+	   (.dpl-side itself — sticky, viewport height — is in detail-page-layout.css) */
 
-	.activity-form-view-side {
-		display: flex;
-		min-width: 0;
-		min-height: 0;
-		flex-direction: column;
-		gap: var(--space-4);
-	}
-
-	/* From 1024px: sticky, as tall as the screen; the list scrolls inside. */
 	@media (min-width: 1024px) {
-		.activity-form-view-side {
-			position: sticky;
-			top: var(--afv-sticky-top);
-			height: calc(100dvh - var(--afv-side-offset) - var(--afv-audit-trim));
-		}
-
-		/* Collapsed → shrink the column to the header. */
-		.activity-form-view-side:not(:has(.ui-card-accordion-expanded)) {
-			height: auto;
-		}
-
 		/* Decision card on top: on a short screen let the column grow instead
 		   of squeezing the Audit Trail below its own minimum height. */
-		.activity-form-view-side:has(.approval-decision-card) {
+		.dpl-side:has(.approval-decision-card) {
 			height: auto;
-			min-height: calc(100dvh - var(--afv-side-offset) - var(--afv-audit-trim));
+			min-height: calc(100dvh - var(--dpl-side-offset) - var(--dpl-side-trim));
 		}
 
 		/* …but with no expanded Audit Trail there is nothing to stretch. */
-		.activity-form-view-side:has(.approval-decision-card):not(
+		.dpl-side:has(.approval-decision-card):not(
 				:has(.ui-card-accordion-expanded)
 			) {
 			min-height: 0;
@@ -299,6 +175,8 @@
 		width: 100%;
 		justify-content: end;
 	}
+
+	/* ---------------- Audit Trail panel ---------------- */
 
 	/* Collapsed panel = header only */
 	.activity-form-view-panel {
@@ -417,13 +295,6 @@
 	@media (max-width: 1023px) {
 		.activity-form-view-panel.ui-card-accordion-expanded {
 			height: 28rem;
-		}
-	}
-
-	@media (max-width: 767px) {
-		/* Column layout: 100% basis would mean 100% HEIGHT, so reset it. */
-		.activity-form-view-tabs {
-			flex: 0 0 auto;
 		}
 	}
 }

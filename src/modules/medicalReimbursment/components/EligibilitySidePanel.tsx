@@ -1,14 +1,19 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
 	AlertTriangle,
 	BedDouble,
 	CheckCircle2,
+	ChevronDown,
+	ChevronUp,
+	ChevronsDown,
+	ChevronsUp,
 	Hourglass,
 	Info,
 	Stethoscope,
+	type LucideIcon,
 } from "lucide-react";
 
-import Card, { type CardSection } from "../../../components/common/Card";
+import Card from "../../../components/common/Card";
 import {
 	currencyFormatter,
 	resolveApprovedAmount,
@@ -43,9 +48,7 @@ const Stat = ({
 	className?: string;
 }) => (
 	<div className="min-w-0">
-		<dt className="truncate text-[11px] uppercase tracking-wide text-muted">
-			{label}
-		</dt>
+		<dt className="text-[11px] uppercase tracking-wide text-muted">{label}</dt>
 		<dd
 			className={`text-base font-semibold tabular-nums leading-tight ${className}`}
 		>
@@ -82,15 +85,17 @@ const Row = ({
 /** Green / amber / red balance note shown at the bottom of each panel. */
 const StatusNote = ({
 	tone,
+	className = "",
 	children,
 }: {
 	tone: Tone;
+	className?: string;
 	children: ReactNode;
 }) => (
 	<div
 		role="status"
 		aria-live="polite"
-		className={`flex items-start gap-2 rounded-md px-3 py-2.5 text-xs ${TONE_NOTE[tone]}`}
+		className={`flex items-start gap-2 rounded-md px-3 py-2.5 text-xs ${TONE_NOTE[tone]} ${className}`}
 	>
 		{tone === "ok" ? (
 			<CheckCircle2 aria-hidden="true" className="mt-0.5 shrink-0" size={15} />
@@ -101,16 +106,80 @@ const StatusNote = ({
 	</div>
 );
 
-/** Small "₹X available" summary shown in each accordion header. */
+/** Small "₹X available" summary shown in each panel header. */
 const AvailableBadge = ({ value, tone }: { value: string; tone: Tone }) => (
 	<span className={`text-xs font-semibold tabular-nums ${TONE_TEXT[tone]}`}>
 		{value} available
 	</span>
 );
 
-/** Section content padding — Card sections don't pad their children. */
-const SectionBody = ({ children }: { children: ReactNode }) => (
-	<div className="flex flex-col gap-4 px-4.5 pb-4">{children}</div>
+/**
+ * One collapsible limit panel. The header is the toggle; the body is only
+ * rendered while open. Panels sit side by side, so the body is a flex column
+ * that fills the panel and lets the status note stick to the bottom.
+ */
+const PanelShell = ({
+	id,
+	title,
+	Icon,
+	badge,
+	summary,
+	open,
+	onToggle,
+	children,
+}: {
+	id: string;
+	title: string;
+	Icon: LucideIcon;
+	badge?: ReactNode;
+	summary: ReactNode;
+	open: boolean;
+	onToggle: () => void;
+	children: ReactNode;
+}) => (
+	<section aria-labelledby={`${id}-title`} className="flex min-w-0 flex-col">
+		<button
+			type="button"
+			aria-expanded={open}
+			aria-controls={`${id}-body`}
+			onClick={onToggle}
+			className="flex w-full items-center justify-between gap-3 px-5 py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-orange-400"
+		>
+			<span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-orange-600">
+				<span
+					aria-hidden="true"
+					className="h-4 w-1 shrink-0 rounded-full bg-orange-500"
+				/>
+				<Icon aria-hidden="true" className="shrink-0" size={18} />
+				<span id={`${id}-title`} className="truncate">
+					{title}
+				</span>
+				{badge}
+			</span>
+
+			<span className="flex shrink-0 items-center gap-2 text-iron-dark">
+				{summary}
+				{open ? (
+					<ChevronUp aria-hidden="true" className="text-orange-600" size={16} />
+				) : (
+					<ChevronDown
+						aria-hidden="true"
+						className="text-orange-600"
+						size={16}
+					/>
+				)}
+			</span>
+		</button>
+
+		{open ? (
+			<div
+				id={`${id}-body`}
+				className="flex flex-1 flex-col gap-4 border-t border-slate-200 p-5"
+			>
+				{children}
+			</div>
+		) : null}
+	</section>
 );
 
 type EligibilitySidePanelProps = {
@@ -143,13 +212,15 @@ const PanelMessage = ({
 );
 
 /**
- * Sticky "Eligibility" card shown next to the claim form. Two accordion
- * sections, because the two limits are tracked separately:
+ * "Eligibility" block shown above the Claim Heads table. One card, two
+ * collapsible panels side by side (stacked on small screens), because the two
+ * limits are tracked separately:
  *
  *   1. Non-hospitalisation limit — annual limit, past claims, on hold,
  *      available, this claim (every bill except hospitalisation).
  *   2. Hospitalisation limit — EG grades only; its own limit, past claims,
- *      on hold, available and this claim.
+ *      on hold, available and this claim. Non-EG grades see panel 1 only,
+ *      full width.
  *
  * "On hold" is money tied up in the retiree's other submitted-but-unsettled
  * claims; it is already subtracted from "Available before this claim", so a
@@ -172,6 +243,9 @@ export const EligibilitySidePanel = ({
 		hospitalisation,
 		isReadOnly,
 	} = useReimbursementClaimFormContext();
+
+	const [standardOpen, setStandardOpen] = useState(true);
+	const [hospitalisationOpen, setHospitalisationOpen] = useState(true);
 
 	const format = (amount: number) => currencyFormatter.format(amount);
 
@@ -230,7 +304,7 @@ export const EligibilitySidePanel = ({
 	);
 
 	const nonHospitalisationBody = (
-		<SectionBody>
+		<>
 			<div className="grid grid-cols-[1fr_auto] items-center gap-5">
 				<dl className="space-y-3">
 					<Stat
@@ -361,7 +435,7 @@ export const EligibilitySidePanel = ({
 				) : null}
 			</div>
 
-			<StatusNote tone={tone}>
+			<StatusNote tone={tone} className="mt-auto">
 				{tone === "over"
 					? `This claim exceeds the available balance by ${format(
 							-eligibility.balanceAfter,
@@ -372,7 +446,7 @@ export const EligibilitySidePanel = ({
 							? `${format(eligibility.balanceAfter)} will remain after this claim.`
 							: "Add bills to see how this claim affects the balance."}
 			</StatusNote>
-		</SectionBody>
+		</>
 	);
 
 	/* ----------------------------- hospitalisation --------------------------- */
@@ -402,7 +476,7 @@ export const EligibilitySidePanel = ({
 				);
 
 				return (
-					<SectionBody>
+					<>
 						<dl className="grid grid-cols-2 gap-3">
 							<Stat
 								label="Hospitalisation limit"
@@ -496,7 +570,7 @@ export const EligibilitySidePanel = ({
 							) : null}
 						</div>
 
-						<StatusNote tone={hospTone}>
+						<StatusNote tone={hospTone} className="mt-auto">
 							{hospTone === "over"
 								? `Hospitalisation bills exceed the available limit by ${format(
 										-hospitalisation.balanceAfter,
@@ -507,7 +581,7 @@ export const EligibilitySidePanel = ({
 										? `${format(hospitalisation.balanceAfter)} will remain after this claim.`
 										: "Add a hospitalisation bill to see how it affects this limit."}
 						</StatusNote>
-					</SectionBody>
+					</>
 				);
 			})()
 		: null;
@@ -516,53 +590,92 @@ export const EligibilitySidePanel = ({
 		? "over"
 		: "ok";
 
-	const sections: CardSection[] = [
-		{
-			id: "non-hospitalisation-limit",
-			title: "Non-hospitalisation limit",
-			Icon: Stethoscope,
-			actions: (
-				<AvailableBadge value={format(eligibility.remaining)} tone={tone} />
-			),
-			defaultExpanded: true,
-			children: nonHospitalisationBody,
-		},
-		// EG grades only — everyone else has no hospitalisation cover.
-		...(hospitalisation && hospitalisationBody
-			? [
-					{
-						id: "hospitalisation-limit",
-						title: "Hospitalisation limit",
-						Icon: BedDouble,
-						actions: (
-							<AvailableBadge
-								value={format(hospitalisation.remaining)}
-								tone={hospitalisationTone}
-							/>
-						),
-						defaultExpanded: true,
-						children: hospitalisationBody,
-					},
-				]
-			: []),
-	];
+	// EG grades only — everyone else has no hospitalisation cover.
+	const showHospitalisation = Boolean(hospitalisation && hospitalisationBody);
+	const anyOpen = standardOpen || (showHospitalisation && hospitalisationOpen);
+
+	const toggleAll = () => {
+		setStandardOpen(!anyOpen);
+		setHospitalisationOpen(!anyOpen);
+	};
 
 	return (
 		<aside className={className} aria-label="Eligibility">
-			<Card
-				title={
-					<span className="text-base font-semibold text-iron-dark">
-						Eligibility
-					</span>
-				}
-				actions={
-					<span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-						{eligibilityPeriodLabel}
-					</span>
-				}
-				sections={sections}
-				padding="none"
-			/>
+			<div className="h-full overflow-hidden rounded-xl border border-slate-200 bg-white">
+				{/* Header */}
+				<div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-3.5">
+					<div className="flex items-center gap-3">
+						<h3 className="text-sm font-semibold text-iron-dark">
+							Eligibility
+						</h3>
+
+						<span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+							{eligibilityPeriodLabel}
+						</span>
+					</div>
+
+					<button
+						type="button"
+						onClick={toggleAll}
+						className="inline-flex items-center gap-1.5 rounded-md px-1 text-sm font-medium text-orange-600 hover:text-orange-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+					>
+						{anyOpen ? (
+							<ChevronsUp aria-hidden="true" size={16} />
+						) : (
+							<ChevronsDown aria-hidden="true" size={16} />
+						)}
+						{anyOpen ? "Collapse all" : "Expand all"}
+					</button>
+				</div>
+
+				{/* Panels: side by side from lg, stacked below */}
+				<div
+					className={`grid grid-cols-1 divide-y divide-slate-200 ${
+						showHospitalisation
+							? "lg:grid-cols-2 lg:divide-x lg:divide-y-0"
+							: ""
+					}`}
+				>
+					<PanelShell
+						id="non-hospitalisation-limit"
+						title="Non-hospitalisation limit"
+						Icon={Stethoscope}
+						summary={
+							<AvailableBadge
+								value={format(eligibility.remaining)}
+								tone={tone}
+							/>
+						}
+						open={standardOpen}
+						onToggle={() => setStandardOpen((current) => !current)}
+					>
+						{nonHospitalisationBody}
+					</PanelShell>
+
+					{showHospitalisation && hospitalisation ? (
+						<PanelShell
+							id="hospitalisation-limit"
+							title="Hospitalisation limit"
+							Icon={BedDouble}
+							badge={
+								<span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+									Separate limit
+								</span>
+							}
+							summary={
+								<AvailableBadge
+									value={format(hospitalisation.remaining)}
+									tone={hospitalisationTone}
+								/>
+							}
+							open={hospitalisationOpen}
+							onToggle={() => setHospitalisationOpen((current) => !current)}
+						>
+							{hospitalisationBody}
+						</PanelShell>
+					) : null}
+				</div>
+			</div>
 		</aside>
 	);
 };

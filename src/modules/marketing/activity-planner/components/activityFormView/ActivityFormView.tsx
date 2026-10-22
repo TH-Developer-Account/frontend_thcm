@@ -2,6 +2,9 @@
 // EPC detail ("view") page body: header + tabs, one card per tab,
 // side column (audit trail, then ALL action cards).
 //
+// Layout (header / main / side) comes from DetailPageLayout; this file only
+// decides WHAT goes into each section.
+//
 // Rules:
 //   • No collapsible sections — every tab is ONE card.
 //   • Comments live in their own tab (after submission); the right-hand side
@@ -46,6 +49,7 @@ import NavigateButton from "../../../../../components/common/NavigateButton";
 import { TabsBar } from "../../../../../components/common/TabsBar";
 import type { TabItem } from "../../../../../components/common/common.types";
 import FormHeader from "../../../../../components/ui/FormHeader";
+import DetailPageLayout from "../../../../../layout/DetailPageLayout";
 import { AuditLogSection } from "../../../../../components/ui/audit";
 import { CommentsSection } from "../../../../../components/ui/comments";
 import { ReasonActionModal } from "../../../../../components/ui/ReasonActionModal";
@@ -514,7 +518,7 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 			/* ------------------------------ Comments --------------------------- */
 			case "comments":
 				return renderViewCard(
-					<div className="activity-form-view-tab-body">
+					<div className="activity-form-view-tab-body comments-borderless">
 						<CommentsSection
 							subjectType={EVENT_PROPOSAL_SUBJECT_TYPE}
 							subjectId={epcData.id}
@@ -632,51 +636,37 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 
 	return (
 		<>
-			<div className="activity-form-view">
+			{/* className keeps the page-level CSS variables (--dpl-side-offset etc.)
+			    scoped to this page, see activity-planner.styles.css. */}
+			<DetailPageLayout className="activity-form-view">
 				{/* ── Header: back + title (left) · tabs (right) ── */}
-				<header className="activity-form-view-header">
-					<div className="activity-form-view-header-copy">
-						<NavigateButton direction="back" />
-
-						<div className="min-w-0">
-							<div className="activity-form-view-title-row">
-								<h2 className="activity-form-view-title">{title}</h2>
-								<Badge status={status} />
-							</div>
-
-							<p className="activity-form-view-subtitle">
-								{proposerName || "--"}
-								{proposalNumber !== "--" && <> · {proposalNumber}</>}
-							</p>
-						</div>
-					</div>
-
+				<DetailPageLayout.Header
+					back={<NavigateButton direction="back" />}
+					title={title}
+					badge={<Badge status={status} />}
+					subtitle={
+						<>
+							{proposerName || "--"}
+							{proposalNumber !== "--" && <> · {proposalNumber}</>}
+						</>
+					}
+				>
 					<TabsBar<ActivityTab>
 						items={visibleTabs}
 						active={currentTab}
 						onChange={setActiveTab}
 						variant="soft"
 						ariaLabel="Activity sections"
-						className="activity-form-view-tabs"
 					/>
-				</header>
+				</DetailPageLayout.Header>
 
-				{/* ── Body: tab card (left) · audit + actions (right) ── */}
-				<div
-					className={[
-						"activity-form-view-body",
-						showSideColumn && "has-side-panels",
-					]
-						.filter(Boolean)
-						.join(" ")}
-				>
-					<div className="activity-form-view-main min-w-0">{renderTab()}</div>
+				<DetailPageLayout.Body>
+					{/* ── Main: the active tab's card ── */}
+					<DetailPageLayout.Main>{renderTab()}</DetailPageLayout.Main>
 
+					{/* ── Side: audit trail, then ALL action cards ── */}
 					{showSideColumn && (
-						<aside
-							className="activity-form-view-side activity-form-view-side--audit"
-							aria-label="Decision and audit trail"
-						>
+						<DetailPageLayout.Side label="Decision and audit trail">
 							{/* Audit trail only — comments live in the Comments tab.
 							    No h-full utilities here: they override the sticky	*/}
 							{showSidePanels && (
@@ -779,10 +769,10 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 									/>
 								</section>
 							)}
-						</aside>
+						</DetailPageLayout.Side>
 					)}
-				</div>
-			</div>
+				</DetailPageLayout.Body>
+			</DetailPageLayout>
 
 			<ReasonActionModal
 				open={Boolean(reasonModal.mode)}

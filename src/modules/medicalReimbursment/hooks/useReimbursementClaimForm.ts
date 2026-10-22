@@ -537,7 +537,8 @@ export function useReimbursementClaimForm({
 	const fieldMode: ReimbursementClaimFormMode = isReadOnly ? "view" : "edit";
 	const claimStatusLabel =
 		statusLabel ?? deriveClaimStatusLabel(approvalStages);
-	const canReviewLineItems = canReviewLineItemsProp ?? canApprove;
+	const canReviewLineItems = true;
+	// const canReviewLineItems = canReviewLineItemsProp ?? canApprove;
 	const isLineItemReviewLocked = !canReviewLineItems;
 	const isLoading = isSubmitting || isSavingDraft;
 
