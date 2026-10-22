@@ -20,7 +20,10 @@ type ReimbursementPageProps = {
 };
 
 /** THCM claim detail: review, line-item approval, workflow, close, export. */
-const ReimbursementPage = ({ mode, refreshKey = 0 }: ReimbursementPageProps) => {
+const ReimbursementPage = ({
+	mode,
+	refreshKey = 0,
+}: ReimbursementPageProps) => {
 	const navigate = useNavigate();
 
 	const {
@@ -91,12 +94,20 @@ const ReimbursementPage = ({ mode, refreshKey = 0 }: ReimbursementPageProps) => 
 				// Approvers decide on over-limit claims; never block in staff view.
 				enforceEligibilityLimit={false}
 				isExportingExcel={claimView.isExportingExcel}
-				handleExport={claimView.permissions.canExport ? claimView.handleExport : undefined}
+				handleExport={
+					claimView.permissions.canExport ? claimView.handleExport : undefined
+				}
 				isPreparingPdf={claimView.isPreparingPdf}
 				isDownloadingPdf={claimView.isDownloadingPdf}
-				handleViewPdf={claimView.permissions.canDownloadPdf ? claimView.handleViewPdf : undefined}
+				handleViewPdf={
+					claimView.permissions.canDownloadPdf
+						? claimView.handleViewPdf
+						: undefined
+				}
 				handleDownloadPdf={
-					claimView.permissions.canDownloadPdf ? claimView.handleDownloadPdf : undefined
+					claimView.permissions.canDownloadPdf
+						? claimView.handleDownloadPdf
+						: undefined
 				}
 				pdfUrl={claimView.pdfUrl}
 				onClosePdfPreview={claimView.closePdfPreview}
@@ -107,14 +118,19 @@ const ReimbursementPage = ({ mode, refreshKey = 0 }: ReimbursementPageProps) => 
 				approvalActionLoading={claimView.isWorkflowActionLoading}
 				onApproveStage={claimView.approveCurrentStage}
 				onClarifyStage={claimView.clarifyCurrentStage}
+				hospitalisationSummary={claimView.hospitalisationSummary}
 				onLineItemApprove={
 					claimView.canApproveLineItems ? claimView.approveLineItem : undefined
 				}
 				onLineItemUnapprove={
-					claimView.canApproveLineItems ? claimView.unapproveLineItem : undefined
+					claimView.canApproveLineItems
+						? claimView.unapproveLineItem
+						: undefined
 				}
 				onLineItemRemarksSave={
-					claimView.canApproveLineItems ? claimView.saveLineItemRemarks : undefined
+					claimView.canApproveLineItems
+						? claimView.saveLineItemRemarks
+						: undefined
 				}
 				canClose={claimView.canClose}
 				onCloseClaim={claimView.canClose ? claimView.closeClaim : undefined}

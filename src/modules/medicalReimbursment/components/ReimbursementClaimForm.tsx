@@ -1,4 +1,4 @@
-import { type ChangeEvent, useState } from "react";
+import { type ChangeEvent, type ReactNode, useState } from "react";
 import {
 	ArrowLeft,
 	BadgeIndianRupee,
@@ -13,6 +13,7 @@ import {
 	RefreshCcw,
 	Save,
 	Stethoscope,
+	type LucideIcon,
 } from "lucide-react";
 
 import { Badge } from "../../../components/common/Badge";
@@ -21,7 +22,6 @@ import Card, { type CardSection } from "../../../components/common/Card";
 import DatePickerInput from "../../../components/common/DatePickerInput";
 import Checkbox from "../../../components/forms/Checkbox";
 import FormInput from "../../../components/forms/FormInput";
-import Radio from "../../../components/forms/Radio";
 import SelectInput from "../../../components/forms/SelectInput";
 import {
 	COVERAGE_OPTIONS,
@@ -79,6 +79,25 @@ type ReimbursementClaimFormContentProps = Omit<
 // Approve / clarify go through ApprovalActionsBar (it owns the reason box);
 // only "close" still needs a local confirmation step.
 type PendingFooterAction = "close" | null;
+
+/** Read-only pill in the employee card header (Ticket / Grade / Set by HR). */
+const InfoChip = ({
+	children,
+	Icon,
+	title,
+}: {
+	children: ReactNode;
+	Icon?: LucideIcon;
+	title?: string;
+}) => (
+	<span
+		title={title}
+		className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600"
+	>
+		{Icon ? <Icon aria-hidden="true" size={12} /> : null}
+		{children}
+	</span>
+);
 
 const ReimbursementClaimFormContent = ({
 	claimId,
@@ -193,72 +212,64 @@ const ReimbursementClaimFormContent = ({
 	const showSpouse =
 		values.coverageType === "SPOUSE" || values.coverageType === "BOTH";
 
-	// Employee details + coverage sit at the top of the card, without their
-	// own collapsible sections.
-	// Top of the card: employee + coverage fields on the left, eligibility
-	// panel on the right (stacks below the fields on small screens), all
-	// above the Claim Heads table.
+	const employeeName = values.employeeName.trim();
+	const avatarInitial = (employeeName[0] ?? "?").toUpperCase();
+	const gradeLabel = selectedGrade?.label ?? values.grade;
+	// Grade comes from HR when on record; only a claim without one can pick it.
+	const showGradeSelect = !isGradeLocked && canEditClaimForm;
+
+	// Top of the card: employee card (avatar, name, HR-set chips, then the
+	// fields the claimant fills) on the left, eligibility on the right (stacks
+	// below on small screens), all above the Claim Heads table.
 	// `w-full` makes the grid span the whole card even when the parent
 	// secondary-header is a flex container.
 	const headerFields = (
 		<div className="grid w-full grid-cols-1 gap-5 px-5 py-4 xl:grid-cols-[minmax(0,1fr)_420px]">
-			{/* Employee / claim information */}
-			<div className="min-w-0">
-				<div className="mb-4 flex items-center gap-2">
-					<div className="h-4 w-1 rounded-full bg-orange-500" />
-					<h3 className="text-sm font-semibold text-iron-dark">
-						Employee Details
-					</h3>
+			{/* Employee card */}
+			<section
+				aria-label="Employee details"
+				className="min-w-0 self-start rounded-xl border border-slate-200 bg-white"
+			>
+				<div className="flex items-center gap-4 px-5 py-4">
+					<div
+						aria-hidden="true"
+						className="grid size-12 shrink-0 place-items-center rounded-full bg-slate-800 text-lg font-semibold text-white"
+					>
+						{avatarInitial}
+					</div>
+
+					<div className="min-w-0">
+						<h3
+							className="truncate text-lg font-semibold leading-tight text-iron-dark"
+							title={employeeName || undefined}
+						>
+							{employeeName || "--"}
+						</h3>
+
+						{errors.employeeName ? (
+							<p role="alert" className="mt-0.5 text-xs text-red-600">
+								{errors.employeeName}
+							</p>
+						) : null}
+
+						<div className="mt-1.5 flex flex-wrap items-center gap-2">
+							<InfoChip>Ticket {values.ticketNumber || "--"}</InfoChip>
+							{gradeLabel && !showGradeSelect ? (
+								<InfoChip>Grade {gradeLabel}</InfoChip>
+							) : null}
+							{values.ticketNumber || isGradeLocked ? (
+								<InfoChip
+									Icon={Lock}
+									title="Set by HR. Contact HR if this is wrong."
+								>
+									Set by HR
+								</InfoChip>
+							) : null}
+						</div>
+					</div>
 				</div>
 
-				<div className="grid grid-cols-1 gap-x-4 gap-y-4 md:grid-cols-2 2xl:grid-cols-3">
-					<FormInput
-						mode="view"
-						name="employeeName"
-						label="Name of Employee"
-						value={values.employeeName}
-						readOnly
-						error={errors.employeeName}
-					/>
-
-					<FormInput
-						mode="view"
-						name="ticketNumber"
-						label="Ticket Number"
-						value={values.ticketNumber || "--"}
-						readOnly
-						helperText={
-							canEditClaimForm
-								? "Set by HR. Contact HR if this is wrong."
-								: undefined
-						}
-					/>
-
-					<SelectInput
-						mode={isGradeLocked ? "view" : fieldMode}
-						name="grade"
-						label="Grade"
-						placeholder="Select grade"
-						options={gradeOptions.map(({ label, value }) => ({
-							label,
-							value,
-						}))}
-						value={
-							selectedGrade
-								? {
-										label: selectedGrade.label,
-										value: selectedGrade.value,
-									}
-								: null
-						}
-						error={errors.grade}
-						onChange={(option) => {
-							if (!isGradeLocked) {
-								handleChange("grade", option?.value ?? "");
-							}
-						}}
-					/>
-
+				<div className="grid grid-cols-1 gap-x-5 gap-y-4 border-t border-slate-200 px-5 py-4 md:grid-cols-2">
 					<FormInput
 						mode={fieldMode}
 						name="location"
@@ -272,21 +283,73 @@ const ReimbursementClaimFormContent = ({
 						}
 					/>
 
-					<Radio
-						groupLabel="Coverage Type"
-						name="coverageType"
-						options={COVERAGE_OPTIONS}
-						selectedValue={values.coverageType}
-						disabled={isReadOnly}
-						error={errors.coverageType}
-						required
-						onChange={(value) =>
-							handleChange(
-								"coverageType",
-								value as (typeof COVERAGE_OPTIONS)[number]["value"],
-							)
-						}
-					/>
+					{/* Coverage type — segmented control */}
+					<div className="flex flex-col gap-1.5">
+						<span
+							id="coverage-type-label"
+							className="text-sm font-medium text-iron-dark"
+						>
+							Coverage type
+							{canEditClaimForm ? (
+								<span className="text-red-500"> *</span>
+							) : null}
+						</span>
+						<div
+							role="radiogroup"
+							aria-labelledby="coverage-type-label"
+							aria-invalid={Boolean(errors.coverageType)}
+							className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1"
+						>
+							{COVERAGE_OPTIONS.map((option) => {
+								const selected = values.coverageType === option.value;
+								return (
+									<button
+										key={option.value}
+										type="button"
+										role="radio"
+										aria-checked={selected}
+										disabled={isReadOnly}
+										onClick={() => handleChange("coverageType", option.value)}
+										className={`rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400 disabled:cursor-not-allowed ${
+											selected
+												? "bg-white font-semibold text-orange-600 shadow-sm"
+												: "font-medium text-slate-500 hover:text-iron-dark"
+										} ${isReadOnly && !selected ? "opacity-60" : ""}`}
+									>
+										{option.label}
+									</button>
+								);
+							})}
+						</div>
+						{errors.coverageType ? (
+							<p role="alert" className="text-xs text-red-600">
+								{errors.coverageType}
+							</p>
+						) : null}
+					</div>
+
+					{showGradeSelect ? (
+						<SelectInput
+							mode={fieldMode}
+							name="grade"
+							label="Grade"
+							placeholder="Select grade"
+							options={gradeOptions.map(({ label, value }) => ({
+								label,
+								value,
+							}))}
+							value={
+								selectedGrade
+									? {
+											label: selectedGrade.label,
+											value: selectedGrade.value,
+										}
+									: null
+							}
+							error={errors.grade}
+							onChange={(option) => handleChange("grade", option?.value ?? "")}
+						/>
+					) : null}
 
 					{showSpouse ? (
 						<FormInput
@@ -303,7 +366,7 @@ const ReimbursementClaimFormContent = ({
 						/>
 					) : null}
 				</div>
-			</div>
+			</section>
 
 			{/* Eligibility summary */}
 			<EligibilitySidePanel className="min-w-0 xl:self-stretch" />

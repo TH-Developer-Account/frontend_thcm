@@ -9,7 +9,6 @@ import {
 	X,
 } from "lucide-react";
 
-import Button from "../../../../components/common/Button";
 import Card from "../../../../components/common/Card";
 import { SearchInput } from "../../../../components/forms/SearchInput";
 import CrfCatalog, {
@@ -98,62 +97,86 @@ export default function CrfForm(props: CrfFormCardProps) {
 	) : undefined;
 
 	/* -------------------------------- Footer ------------------------------- */
+	/* Step navigator: Back | progress dots + "Step n of N" | quiet actions |
+	   primary action that names the next tab. Layout and breakpoints are in
+	   crfFooter.css (≥1025 one row, ≤1024 icon-only Back/Reset/Cancel,
+	   ≤768 short primary label, ≤640 two rows). */
 
 	const showBack = !isFirstStep || Boolean(onBackFromFirstStep);
+	const currentTitle = steps[stepIndex]?.title;
+	const nextTitle = steps[stepIndex + 1]?.title;
+	const busy = submitting || loading;
 
 	const footer = (
-		<div className="crf-footer">
-			<div className="crf-footer-start">
-				{footerStart}
+		<div className={showBack ? "crf-nav" : "crf-nav crf-nav--no-back"}>
+			{footerStart || showBack ? (
+				<div className="crf-nav-start">
+					{footerStart}
 
-				{showBack ? (
-					<Button
-						type="button"
-						onClick={isFirstStep ? onBackFromFirstStep : handleBack}
-						size="sm"
-						text="Back"
-						Icon={ArrowLeft}
-						appearance="standard"
-						variant="outline"
-						disabled={submitting}
-					/>
-				) : null}
+					{showBack ? (
+						<button
+							type="button"
+							className="crf-nav-btn crf-nav-btn--outline"
+							onClick={isFirstStep ? onBackFromFirstStep : handleBack}
+							disabled={submitting}
+						>
+							<ArrowLeft aria-hidden="true" />
+							{/* Visually hidden (not removed) when the footer is icon-only. */}
+							<span className="crf-nav-text">Back</span>
+						</button>
+					) : null}
+				</div>
+			) : null}
 
-				<span className="crf-footer-step">
+			<div className="crf-nav-progress" aria-live="polite">
+				<span className="crf-nav-dots" aria-hidden="true">
+					{steps.map((step, index) => (
+						<span
+							key={step.title}
+							className={
+								index === stepIndex
+									? "crf-nav-dot crf-nav-dot--active"
+									: index < stepIndex
+										? "crf-nav-dot crf-nav-dot--done"
+										: "crf-nav-dot"
+							}
+						/>
+					))}
+				</span>
+				<span className="crf-nav-step">
 					Step {stepIndex + 1} of {steps.length}
-					<span className="sr-only"> · {steps[stepIndex]?.title}</span>
+					<span className="crf-nav-step-title"> · {currentTitle}</span>
 				</span>
 			</div>
 
-			<div className="crf-footer-end">
+			<div className="crf-nav-secondary">
 				{onCancel ? (
-					<Button
+					<button
 						type="button"
+						className="crf-nav-btn crf-nav-btn--ghost"
 						onClick={onCancel}
-						text="Cancel"
-						size="sm"
-						Icon={X}
-						appearance="standard"
-						variant="outline"
 						disabled={submitting}
-					/>
+					>
+						<X aria-hidden="true" />
+						<span className="crf-nav-text">Cancel</span>
+					</button>
 				) : null}
 
 				<button
 					type="button"
-					className="crf-footer-link"
+					className="crf-nav-btn crf-nav-btn--ghost"
 					onClick={handleReset}
-					disabled={submitting || loading}
+					disabled={busy}
 					title="Reset this tab to its saved items"
 				>
 					<RefreshCcw aria-hidden="true" />
-					Reset
+					<span className="crf-nav-text">Reset</span>
 				</button>
 
 				{onSkip ? (
 					<button
 						type="button"
-						className="crf-footer-link"
+						className="crf-nav-btn crf-nav-btn--ghost"
 						onClick={onSkip}
 						disabled={submitting}
 						title="Continue without adding a CRF"
@@ -162,32 +185,39 @@ export default function CrfForm(props: CrfFormCardProps) {
 						Skip CRF
 					</button>
 				) : null}
-
-				{isLastStep ? (
-					<Button
-						type="button"
-						onClick={() => void handleSubmit()}
-						text={submitting ? "Saving..." : finalLabel}
-						size="sm"
-						Icon={isEditMode ? Save : LucideSave}
-						appearance="standard"
-						variant="brand"
-						disabled={submitting || loading}
-					/>
-				) : (
-					<Button
-						type="button"
-						onClick={handleSaveAndNext}
-						text="Save & Next"
-						size="sm"
-						Icon={ArrowRight}
-						iconPosition="right"
-						appearance="standard"
-						variant="brand"
-						disabled={submitting || loading}
-					/>
-				)}
 			</div>
+
+			{isLastStep ? (
+				<button
+					type="button"
+					className="crf-nav-btn crf-nav-btn--primary crf-nav-primary"
+					onClick={() => void handleSubmit()}
+					disabled={busy}
+				>
+					{isEditMode ? (
+						<Save aria-hidden="true" />
+					) : (
+						<LucideSave aria-hidden="true" />
+					)}
+					{submitting ? "Saving..." : finalLabel}
+				</button>
+			) : (
+				<button
+					type="button"
+					className="crf-nav-btn crf-nav-btn--primary crf-nav-primary"
+					onClick={handleSaveAndNext}
+					disabled={busy}
+				>
+					{/* Long label on wide screens, short one on phones (CSS swaps them). */}
+					<span className="crf-nav-label-long">
+						{nextTitle ? `Save & Next: ${nextTitle}` : "Save & Next"}
+					</span>
+					<span className="crf-nav-label-short">
+						{nextTitle ? `Next: ${nextTitle}` : "Next"}
+					</span>
+					<ArrowRight aria-hidden="true" />
+				</button>
+			)}
 		</div>
 	);
 

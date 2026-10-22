@@ -22,6 +22,7 @@ import {
 	toMedicalClaimFormValues,
 	toMedicalClaimLineItems,
 	toNumber,
+	toEligibilityHoldProps,
 } from "../helpers/medicalClaimListing.mapper";
 import type { MedicalClaimDetail } from "../types/medicalClaimListing.types";
 import type { ClaimHeadRow } from "../types/reimbursementClaim.types";
@@ -495,11 +496,13 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 		initialLineItems,
 		gradeOptions,
 		correctionReason: detail?.correctionReason ?? null,
-		eligibilityPendingAmount:
-			detail?.pendingInOtherClaims === undefined ||
-			detail?.pendingInOtherClaims === null
-				? undefined
-				: toNumber(detail.pendingInOtherClaims),
+		// eligibilityPendingAmount:
+		// 	detail?.pendingInOtherClaims === undefined ||
+		// 	detail?.pendingInOtherClaims === null
+		// 		? undefined
+		// 		: toNumber(detail.pendingInOtherClaims),
+
+		...toEligibilityHoldProps(detail),
 
 		// Context
 		activeWorkflow,

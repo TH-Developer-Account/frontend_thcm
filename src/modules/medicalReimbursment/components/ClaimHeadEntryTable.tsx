@@ -10,10 +10,7 @@ import SimpleViewTable, {
 	type SimpleTableWidthUnits,
 } from "../../../components/ui/tables/SimpleViewTable";
 
-import {
-	CLAIM_HEAD_OPTIONS,
-	getClaimHeadLabel,
-} from "../utils/claimHead.constants";
+import { getClaimHeadLabel } from "../utils/claimHead.constants";
 
 import type {
 	ClaimHead,
@@ -83,6 +80,7 @@ export const ClaimHeadEntryTable = () => {
 	const {
 		claimRows: items,
 		savedClaims,
+		claimHeadOptions,
 		isLoading: loading,
 		editingClaimId: editingId,
 		savingClaimId: savingId,
@@ -455,9 +453,9 @@ export const ClaimHeadEntryTable = () => {
 								<SelectInput
 									placeholder="Claim Head"
 									label="Claim Head"
-									options={CLAIM_HEAD_OPTIONS}
+									options={claimHeadOptions}
 									value={
-										CLAIM_HEAD_OPTIONS.find(
+										claimHeadOptions.find(
 											(option) => option.value === item.claimHead,
 										) ?? null
 									}

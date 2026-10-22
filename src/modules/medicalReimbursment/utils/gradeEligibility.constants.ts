@@ -26,6 +26,17 @@ export const GRADE_OPTIONS: GradeOption[] = [
 /** @deprecated use GRADE_OPTIONS. */
 export const FALLBACK_GRADE_OPTIONS = GRADE_OPTIONS;
 
+/**
+ * Hospitalisation cover for EG grades — separate from the regular annual
+ * limit. Mirrors HOSPITALISATION_ANNUAL_CAP in mediclaim.helper.ts (backend);
+ * the live value from the API wins when present.
+ */
+export const HOSPITALISATION_ANNUAL_CAP = 125_000;
+
+/** EG, EG-1A, EG-2B … — the only grades with hospitalisation cover. */
+export const isHospitalisationGrade = (grade?: string | null): boolean =>
+	/^EG/i.test((grade ?? "").trim());
+
 export const toGradeOptions = (
 	rows: Array<{ grade: string; annualCap: number | string | null }>,
 ): GradeOption[] =>
@@ -62,7 +73,9 @@ export function resolveGradeOptions(
 			label: grade,
 			value: grade,
 			eligibility:
-				typeof derivedCap === "number" && Number.isFinite(derivedCap) && derivedCap > 0
+				typeof derivedCap === "number" &&
+				Number.isFinite(derivedCap) &&
+				derivedCap > 0
 					? derivedCap
 					: null,
 		},

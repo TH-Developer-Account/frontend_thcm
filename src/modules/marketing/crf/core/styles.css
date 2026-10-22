@@ -1073,13 +1073,13 @@
 
 	.crf-card-header.ui-card-header {
 		display: flex;
+		flex-direction: row; /* app's ≤1023px rule makes .ui-card-header a column */
 		flex-wrap: wrap;
-		align-items: center;
+		align-items: center; /* overrides the same rule's align-items: stretch */
 		justify-content: space-between;
 		gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
 		padding-block: var(--space-1, 0.25rem);
 	}
-
 	.crf-card-header .ui-card-header-copy {
 		flex: 1 1 auto;
 		min-width: 0;
@@ -2062,6 +2062,242 @@
 		.crf-details-stats {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
 			gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
+		}
+	}
+}
+/* crf/core/crfFooter.css
+   CRF form footer: "step navigator" (Back | progress | quiet actions | primary).
+   Imported by CrfForm.tsx. All classes are new (`crf-nav-*`), so nothing here
+   fights the old `.crf-footer*` rules; those can now be deleted from
+   styles.css / fixes.css (including the footer block inside the 640px query).
+
+   Breakpoints (match the rest of the CRF css):
+     >1024px   one row: [Back] [progress] [Cancel Reset Skip] [Save & Next: Tab]
+     ≤1024px   Back / Reset / Cancel become icon-only (label stays for screen readers)
+     ≤768px    primary label shortens to "Next: Tab"
+     ≤640px    two rows: progress + quiet actions on top, Back + primary below */
+
+@layer components {
+	.crf-nav {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto auto;
+		grid-template-areas: "start progress secondary primary";
+		align-items: center;
+		gap: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+		width: 100%;
+	}
+
+	.crf-nav-start {
+		grid-area: start;
+		display: flex;
+		align-items: center;
+		gap: var(--space-3, 0.75rem);
+		min-width: 0;
+	}
+
+	.crf-nav-secondary {
+		grid-area: secondary;
+		display: flex;
+		align-items: center;
+		gap: var(--space-1, 0.25rem);
+	}
+
+	.crf-nav-primary {
+		grid-area: primary;
+		justify-self: end;
+	}
+
+	/* ---------------- Progress ---------------- */
+
+	.crf-nav-progress {
+		grid-area: progress;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.375rem;
+		min-width: 0;
+		text-align: center;
+	}
+
+	.crf-nav-dots {
+		display: flex;
+		gap: var(--space-2, 0.5rem);
+	}
+
+	.crf-nav-dot {
+		width: 1.75rem;
+		height: 0.375rem;
+		border-radius: var(--radius-full, 9999px);
+		background-color: var(--color-border-default, #d4d4d8);
+		transition: background-color var(--duration-fast, 120ms)
+			var(--ease-standard, ease);
+	}
+
+	.crf-nav-dot--done {
+		background-color: var(--color-brand, #f35a00);
+		opacity: 0.45;
+	}
+
+	.crf-nav-dot--active {
+		background-color: var(--color-brand, #f35a00);
+	}
+
+	.crf-nav-step {
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.8125rem);
+	}
+
+	/* ---------------- Buttons ---------------- */
+
+	.crf-nav-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2, 0.5rem);
+		min-height: 2.75rem;
+		padding-inline: var(--space-4, 1rem);
+		border: 1px solid transparent;
+		border-radius: var(--radius-md, 0.5rem);
+		font: inherit;
+		font-size: var(--font-size-sm, 0.875rem);
+		font-weight: var(--font-weight-semibold, 600);
+		white-space: nowrap;
+		cursor: pointer;
+		transition:
+			background-color var(--duration-fast, 120ms) var(--ease-standard, ease),
+			border-color var(--duration-fast, 120ms) var(--ease-standard, ease),
+			color var(--duration-fast, 120ms) var(--ease-standard, ease);
+	}
+
+	.crf-nav-btn svg {
+		flex: none;
+		width: 1.125rem;
+		height: 1.125rem;
+	}
+
+	.crf-nav-btn:focus-visible {
+		outline: 2px solid var(--color-brand, #f35a00);
+		outline-offset: 2px;
+	}
+
+	.crf-nav-btn:disabled {
+		cursor: not-allowed;
+		opacity: 0.5;
+	}
+
+	.crf-nav-btn--primary {
+		background-color: var(--color-brand, #f35a00);
+		color: var(--color-brand-foreground, #fff);
+	}
+
+	.crf-nav-btn--primary:hover:not(:disabled) {
+		filter: brightness(0.93);
+	}
+
+	.crf-nav-btn--outline {
+		border-color: var(--color-brand, #f35a00);
+		background-color: var(--color-bg-surface, #fff);
+		color: var(--color-brand, #f35a00);
+	}
+
+	.crf-nav-btn--outline:hover:not(:disabled) {
+		background-color: var(--color-brand-soft, #fff4ed);
+	}
+
+	/* Quiet actions (Cancel / Reset / Skip CRF): text only, no outline. */
+	.crf-nav-btn--ghost {
+		padding-inline: var(--space-3, 0.75rem);
+		background-color: transparent;
+		color: var(--color-text-secondary, #52525b);
+		font-weight: var(--font-weight-medium, 500);
+	}
+
+	.crf-nav-btn--ghost:hover:not(:disabled) {
+		background-color: var(--color-brand-soft, #fff4ed);
+		color: var(--color-brand, #f35a00);
+	}
+
+	/* Primary label: long by default, short on phones. */
+	.crf-nav-label-short {
+		display: none;
+	}
+
+	/* ---------------- Responsive ---------------- */
+
+	@media (max-width: 1024px) {
+		/* Icon-only: same technique as `sr-only`, so the name stays readable. */
+		.crf-nav-text {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
+		}
+
+		.crf-nav-start .crf-nav-btn,
+		.crf-nav-secondary .crf-nav-btn:has(.crf-nav-text) {
+			min-width: 2.75rem;
+			padding-inline: 0;
+		}
+	}
+
+	@media (max-width: 768px) {
+		.crf-nav-label-long {
+			display: none;
+		}
+
+		.crf-nav-label-short {
+			display: inline;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.crf-nav {
+			grid-template-columns: auto minmax(0, 1fr) auto;
+			grid-template-areas:
+				"progress progress secondary"
+				"start primary primary";
+		}
+
+		/* No Back button: the primary action takes the whole second row. */
+		.crf-nav--no-back {
+			grid-template-areas:
+				"progress progress secondary"
+				"primary primary primary";
+		}
+
+		.crf-nav-progress {
+			flex-direction: row;
+			justify-content: flex-start;
+			gap: 0.625rem;
+		}
+
+		.crf-nav-dot {
+			width: 1.375rem;
+		}
+
+		/* The tab name is already visible in the card header tabs. */
+		.crf-nav-step-title {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+		}
+
+		.crf-nav-primary {
+			justify-self: stretch;
+		}
+
+		.crf-nav-start .crf-nav-btn,
+		.crf-nav-primary {
+			min-height: 3rem;
+		}
+
+		.crf-nav-start .crf-nav-btn {
+			min-width: 3rem;
 		}
 	}
 }

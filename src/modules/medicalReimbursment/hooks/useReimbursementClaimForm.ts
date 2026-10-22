@@ -26,7 +26,15 @@ import {
 	toFieldErrors,
 	toRowErrors,
 } from "../utils/reimbursementClaim.schemas";
-import { FALLBACK_GRADE_OPTIONS } from "../utils/gradeEligibility.constants";
+import {
+	FALLBACK_GRADE_OPTIONS,
+	HOSPITALISATION_ANNUAL_CAP,
+	isHospitalisationGrade,
+} from "../utils/gradeEligibility.constants";
+import {
+	HOSPITALISATION_CLAIM_HEAD,
+	getClaimHeadOptions,
+} from "../utils/claimHead.constants";
 import {
 	EMPTY_CLAIM_ATTACHMENTS,
 	type ApprovalStage,
@@ -36,6 +44,7 @@ import {
 	type ClaimHeadValidationErrors,
 	type CoverageType,
 	type GradeOption,
+	type HospitalisationSummary,
 	type ReimbursementClaimActor,
 	type ReimbursementClaimAttachments,
 	type ReimbursementClaimFormErrors,
@@ -131,10 +140,19 @@ export interface UseReimbursementClaimFormArgs {
 	/** Clarification reason shown to the claimant. */
 	correctionReason?: string | null;
 	/**
-	 * Amount submitted / under review in OTHER claims this year, not yet
-	 * settled. THCM pages only; undefined hides the "THCM only" block.
+	 * Amount ON HOLD in the retiree's OTHER submitted-but-unsettled claims
+	 * (API: liveEligibility.inProgressAmount). It is subtracted from the
+	 * available balance — so a second claim can't spend money a first claim
+	 * is still holding. Pass it on every page (public, guest, THCM); leaving
+	 * it undefined means "nothing on hold".
 	 */
 	eligibilityPendingAmount?: number;
+	/**
+	 * Hospitalisation bucket for EG grades (API: liveEligibility
+	 * .hospitalisation). Omit to fall back to the full ₹1.25 lakh limit with
+	 * nothing used.
+	 */
+	hospitalisationSummary?: HospitalisationSummary | null;
 	/** Label for the eligibility year, e.g. "FY 2026-27". */
 	eligibilityPeriodLabel?: string;
 	/** true → submit is blocked when the claimed total exceeds the balance. */
@@ -257,6 +275,8 @@ const errorMessage = (error: unknown, fallback: string) =>
 		error instanceof Error && error.message ? error.message : fallback,
 	);
 
+const roundMoney = (value: number) => Math.round(value * 100) / 100;
+
 export function useReimbursementClaimForm({
 	mode = "edit",
 	canEdit = true,
@@ -293,6 +313,7 @@ export function useReimbursementClaimForm({
 	isClosing = false,
 	correctionReason,
 	eligibilityPendingAmount,
+	hospitalisationSummary,
 	eligibilityPeriodLabel,
 	enforceEligibilityLimit = true,
 }: UseReimbursementClaimFormArgs) {
@@ -408,27 +429,71 @@ export function useReimbursementClaimForm({
 	/** null when the grade has no known cap — panel + limit check adapt. */
 	const resolvedEligibleAmount: number | null =
 		selectedGrade?.eligibility ?? null;
+
+	// ---- Hospitalisation (EG grades only, separate limit) ----
+	const allowsHospitalisation = isHospitalisationGrade(values.grade);
+	const claimHeadOptions = useMemo(
+		() => getClaimHeadOptions(allowsHospitalisation),
+		[allowsHospitalisation],
+	);
+
+	// Bills split into the two buckets — each has its own limit.
 	const lineItemsTotal = useMemo(
 		() =>
-			Math.round(
+			roundMoney(
 				savedClaims.reduce(
 					(total, item) => total + (Number(item.amount) || 0),
 					0,
-				) * 100,
-			) / 100,
+				),
+			),
 		[savedClaims],
 	);
+	const hospitalisationTotal = useMemo(
+		() =>
+			roundMoney(
+				savedClaims
+					.filter((item) => item.claimHead === HOSPITALISATION_CLAIM_HEAD)
+					.reduce((total, item) => total + (Number(item.amount) || 0), 0),
+			),
+		[savedClaims],
+	);
+	const standardTotal = roundMoney(lineItemsTotal - hospitalisationTotal);
 
 	// ---- Eligibility (drives the side panel; same numbers for guest + THCM) ----
 	const settledAmount = Number(values.companySettledAmount) || 0;
+	/** On hold in the retiree's other in-progress claims. */
+	const heldAmount = Math.max(Number(eligibilityPendingAmount) || 0, 0);
 	const eligibility = useMemo(
 		() =>
 			deriveEligibility(
-				{ totalEligible: resolvedEligibleAmount ?? 0, settled: settledAmount },
-				lineItemsTotal,
+				{
+					totalEligible: resolvedEligibleAmount ?? 0,
+					settled: settledAmount,
+					held: heldAmount,
+				},
+				standardTotal,
 			),
-		[lineItemsTotal, resolvedEligibleAmount, settledAmount],
+		[heldAmount, resolvedEligibleAmount, settledAmount, standardTotal],
 	);
+
+	/** null for non-EG grades — they have no hospitalisation cover. */
+	const hospitalisation = useMemo(() => {
+		if (!allowsHospitalisation) return null;
+		const cap = hospitalisationSummary?.annualCap ?? HOSPITALISATION_ANNUAL_CAP;
+		const settled = hospitalisationSummary?.alreadySettled ?? 0;
+		const held = hospitalisationSummary?.inProgressAmount ?? 0;
+		const remaining = Math.max(cap - settled - held, 0);
+		return {
+			cap,
+			settled,
+			held,
+			remaining,
+			claimingNow: hospitalisationTotal,
+			balanceAfter: remaining - hospitalisationTotal,
+			isOverLimit: hospitalisationTotal > remaining + 0.001,
+		};
+	}, [allowsHospitalisation, hospitalisationSummary, hospitalisationTotal]);
+
 	const resolvedEligibilityPeriodLabel =
 		eligibilityPeriodLabel ?? getEligibilityPeriodLabel();
 
@@ -441,19 +506,32 @@ export function useReimbursementClaimForm({
 		() =>
 			createReimbursementClaimSubmitSchema({
 				allowedGrades,
+				allowHospitalisation: allowsHospitalisation,
+				// Available = limit − settled − on hold in other claims.
 				remainingAmount: eligibility.remaining,
+				heldAmount,
+				hospitalisationRemainingAmount: hospitalisation?.remaining,
+				hospitalisationHeldAmount: hospitalisation?.held,
 				// Without a known cap we can't know the limit, so don't block.
 				enforceRemaining:
 					enforceEligibilityLimit && resolvedEligibleAmount !== null,
 			}),
 		[
 			allowedGrades,
+			allowsHospitalisation,
 			eligibility.remaining,
 			enforceEligibilityLimit,
+			heldAmount,
+			hospitalisation?.held,
+			hospitalisation?.remaining,
 			resolvedEligibleAmount,
 		],
 	);
-	const rowSchema = useMemo(() => createClaimHeadRowSchema(), []);
+	const rowSchema = useMemo(
+		() =>
+			createClaimHeadRowSchema({ allowHospitalisation: allowsHospitalisation }),
+		[allowsHospitalisation],
+	);
 
 	const canEditClaimForm = !isReadOnly;
 	const fieldMode: ReimbursementClaimFormMode = isReadOnly ? "view" : "edit";
@@ -1084,6 +1162,16 @@ export function useReimbursementClaimForm({
 		eligibility,
 		eligibilityPeriodLabel: resolvedEligibilityPeriodLabel,
 		pendingAmount: eligibilityPendingAmount,
+		/** On hold in the retiree's other in-progress claims (0 when none). */
+		heldAmount,
+		/** Claim head options for this grade — hospitalisation for EG only. */
+		claimHeadOptions,
+		allowsHospitalisation,
+		/** Separate hospitalisation limit; null for non-EG grades. */
+		hospitalisation,
+		/** Bills on this claim split by bucket. */
+		standardTotal,
+		hospitalisationTotal,
 		lineItemsTotal,
 		approvedTotal,
 		isReadOnly,

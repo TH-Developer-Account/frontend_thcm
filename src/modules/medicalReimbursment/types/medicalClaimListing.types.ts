@@ -1,3 +1,5 @@
+import type { LiveEligibility } from "./reimbursementClaim.types";
+
 export type MedicalClaimListingTab =
 	| "initiation"
 	| "claims"
@@ -114,6 +116,8 @@ export interface MedicalClaimDetail extends MedicalClaimListItem {
 	/** THCM only — claimed amounts in this person's other open claims this FY. */
 	pendingInOtherClaims?: number | string | null;
 	bills: MedicalClaimBill[];
+
+	liveEligibility?: LiveEligibility | null;
 }
 
 export interface MedicalClaimMutationResponse {

@@ -114,3 +114,34 @@ export interface GradeOption {
 
 /** Where the claim form is being shown — drives what the claimant can see. */
 export type MedicalClaimFormContext = "public" | "guest" | "internal";
+
+/**
+ * Hospitalisation bucket (EG grades only) — tracked separately from the
+ * regular annual limit. Comes from the API's `liveEligibility.hospitalisation`.
+ */
+export interface HospitalisationSummary {
+	annualCap: number;
+	alreadySettled: number;
+	/** Held by this retiree's other submitted-but-unsettled claims. */
+	inProgressAmount: number;
+	availableAmount: number;
+}
+
+/**
+ * Live eligibility the API attaches to claim GET responses
+ * (`data.liveEligibility`). Unlike the stored eligibleAmount /
+ * alreadySettled snapshot, it reflects claims submitted since initiation
+ * and the amount currently on hold.
+ */
+export interface LiveEligibility {
+	annualCap: number;
+	/** annualCap − alreadySettled. Holds are NOT subtracted here. */
+	eligibleAmount: number;
+	alreadySettled: number;
+	/** On hold in the retiree's other in-progress claims. */
+	inProgressAmount: number;
+	/** eligibleAmount − inProgressAmount (floored at 0). */
+	availableAmount: number;
+	/** null for non-EG grades. */
+	hospitalisation: HospitalisationSummary | null;
+}

@@ -22,6 +22,7 @@ import {
 	deriveAnnualCap,
 	toMedicalClaimFormValues,
 	toMedicalClaimLineItems,
+	toEligibilityHoldProps,
 } from "../helpers/medicalClaimListing.mapper";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { normalizeIndianMobile } from "../../guest/guestAuth/guestLogin.schemas";
@@ -108,7 +109,6 @@ const ReimbursementClaimPublicPage = ({
 	);
 	const submitMutation = useSubmitPublicMedicalClaimMutation();
 	const draftMutation = useSavePublicMedicalClaimDraftMutation();
-
 	React.useEffect(() => {
 		if (!submitted) return;
 		const timerId = window.setTimeout(
@@ -119,6 +119,8 @@ const ReimbursementClaimPublicPage = ({
 	}, [submitted]);
 
 	const publicClaim = claimQuery.data;
+
+	const holdProps = toEligibilityHoldProps(publicClaim);
 
 	const permissions = useMedicalClaimPermissions({
 		context: "public",
@@ -295,6 +297,8 @@ const ReimbursementClaimPublicPage = ({
 				submitSuccessMessage="Your medical claim has been submitted for approval."
 				onSubmit={permissions.canSubmit ? handleSubmit : undefined}
 				onSaveDraft={permissions.canSaveDraft ? handleSaveDraft : undefined}
+				eligibilityPendingAmount={holdProps.eligibilityPendingAmount}
+				hospitalisationSummary={holdProps.hospitalisationSummary}
 			/>
 		</PublicPagesLayout>
 	);
