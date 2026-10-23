@@ -1,13 +1,20 @@
+import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { Badge } from "../../../components/common/Badge";
 import Card from "../../../components/common/Card";
 import Button from "../../../components/common/Button";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 
 import ReimbursementClaimForm from "../../medicalReimbursment/components/ReimbursementClaimForm";
+import { ClaimActionsCard } from "../../medicalReimbursment/components/ClaimActions";
+import ClaimEligibilityLedger from "../../medicalReimbursment/components/ClaimEligibilityLedger";
+import ClaimEmployeeCard from "../../medicalReimbursment/components/ClaimEmployeeCard";
+import ClaimFormAlerts from "../../medicalReimbursment/components/ClaimFormAlerts";
+import ClaimHeadsCard from "../../medicalReimbursment/components/ClaimHeadsCard";
 
-import { useGuestMedicalClaimView } from "./useGuestReimbursementClaimAccess";
+import { useGuestMedicalClaimView } from "./useGuestMedicalClaimView";
 import { MEDICLAIM_BACKEND } from "../../medicalReimbursment/utils/mediclaimBackend.config";
 
 const GuestReimbursementPage = () => {
@@ -18,15 +25,26 @@ const GuestReimbursementPage = () => {
 	const guestClaim = useGuestMedicalClaimView(claimId);
 	const { isCreateMode } = guestClaim;
 
+	const goToListing = () => navigate("/guest/medi-claim/listing");
+
 	const breadcrumbs = (
 		<PageHeader
-			headerText={isCreateMode ? "New Medical Reimbursement Claim" : "Medical Reimbursement Form"}
+			headerText={
+				isCreateMode
+					? "New Medical Reimbursement Claim"
+					: "Medical Reimbursement Form"
+			}
 			navigation={{
 				variant: "breadcrumbs",
 				ariaLabel: "Medical reimbursement form",
 				breadcrumbs: [
-					{ label: "Medical Reimbursement Forms", href: "/guest/medi-claim/listing" },
-					{ label: isCreateMode ? "Create Claim" : "Medical Reimbursement Form" },
+					{
+						label: "Medical Reimbursement Forms",
+						href: "/guest/medi-claim/listing",
+					},
+					{
+						label: isCreateMode ? "Create Claim" : "Medical Reimbursement Form",
+					},
 				],
 				separator: "›",
 			}}
@@ -81,6 +99,11 @@ const GuestReimbursementPage = () => {
 		);
 	}
 
+	const status = guestClaim.detail?.status;
+
+	// GUEST VIEW layout: same single column as the public page, inside the
+	// guest portal shell. No tabs, no side column, no audit / comments /
+	// workflow. The approver's remarks are shown read-only in the bills table.
 	return (
 		<PageSectionLayout>
 			{breadcrumbs}
@@ -90,6 +113,7 @@ const GuestReimbursementPage = () => {
 				mode={guestClaim.canEdit ? "edit" : "view"}
 				canEdit={guestClaim.canEdit}
 				actorRole="creator"
+				isClaimant
 				canApprove={false}
 				canClarify={false}
 				canReviewLineItems={false}
@@ -103,13 +127,55 @@ const GuestReimbursementPage = () => {
 				}
 				initialValues={guestClaim.initialValues}
 				initialLineItems={guestClaim.initialLineItems}
-				statusLabel={guestClaim.detail?.status}
+				statusLabel={status}
 				correctionReason={guestClaim.correctionReason}
 				actionText={isCreateMode ? "Submit Claim" : "Resubmit Claim"}
-				statusBanner={guestClaim.statusBanner ?? undefined}
-				showAlertBanner={guestClaim.showAlertBanner}
-				onBack={() => navigate("/guest/medi-claim/listing")}
-			/>
+				// Over-limit claims can be submitted after a confirmation; HR
+				// decides the approved amount.
+				enforceEligibilityLimit={false}
+				onBack={goToListing}
+			>
+				<div className="mx-auto flex w-full max-w-8xl flex-col gap-4">
+					{guestClaim.referenceNumber ? (
+						<div className="flex items-center gap-3 px-1">
+							<Button
+								type="button"
+								Icon={ArrowLeft}
+								size="sm"
+								appearance="icon"
+								variant="outline"
+								onClick={goToListing}
+							/>
+							<h2 className="text-lg font-semibold text-iron-dark">
+								{guestClaim.referenceNumber}
+							</h2>
+							{status ? <Badge status={status} /> : null}
+						</div>
+					) : null}
+
+					<ClaimFormAlerts statusBanner={guestClaim.statusBanner ?? null} />
+
+					<div className="flex w-full flex-col gap-4 lg:flex-row lg:items-start">
+						<form
+							className="flex min-w-0 flex-1 flex-col gap-4"
+							noValidate
+							onSubmit={(event) => event.preventDefault()}
+						>
+							<ClaimEmployeeCard />
+							<ClaimHeadsCard actionsVariant="none" />
+						</form>
+
+						{/* Ledger rail: eligibility and the actions stay in view. */}
+						<aside
+							aria-label="Eligibility and actions"
+							className="flex w-full shrink-0 flex-col gap-3 lg:sticky lg:top-4 lg:w-80 xl:w-[340px]"
+						>
+							<ClaimEligibilityLedger />
+							<ClaimActionsCard />
+						</aside>
+					</div>
+				</div>
+			</ReimbursementClaimForm>
 		</PageSectionLayout>
 	);
 };

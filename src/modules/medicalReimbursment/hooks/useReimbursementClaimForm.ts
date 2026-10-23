@@ -6,7 +6,6 @@ import {
 	useMemo,
 	useRef,
 	useState,
-	type ReactNode,
 } from "react";
 
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
@@ -14,8 +13,6 @@ import { useToast } from "../../../context/Auth/AuthContext";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { createClaimHeadRow } from "../helpers/reimbursementClaimForm.helper";
 import {
-	approvalReasonSchema,
-	clarificationReasonSchema,
 	createClaimHeadRowSchema,
 	createReimbursementClaimSubmitSchema,
 	deriveEligibility,
@@ -27,7 +24,7 @@ import {
 	toRowErrors,
 } from "../utils/reimbursementClaim.schemas";
 import {
-	FALLBACK_GRADE_OPTIONS,
+	GRADE_OPTIONS,
 	HOSPITALISATION_ANNUAL_CAP,
 	isHospitalisationGrade,
 } from "../utils/gradeEligibility.constants";
@@ -53,9 +50,6 @@ import {
 	type ReimbursementClaimSubmission,
 } from "../types/reimbursementClaim.types";
 import { getEligibilityPeriodLabel } from "../utils/mediclaimBackend.config";
-
-/** @deprecated use gradeOptions from useGradeOptions — kept for old imports. */
-export const GRADE_OPTIONS = FALLBACK_GRADE_OPTIONS;
 
 export const COVERAGE_OPTIONS: Array<{ label: string; value: CoverageType }> = [
 	{ label: "Self", value: "SELF" },
@@ -84,8 +78,6 @@ export const EMPTY_REIMBURSEMENT_CLAIM_VALUES: ReimbursementClaimFormValues = {
 };
 
 export type ApprovedBillAmountPayload = ClaimHeadRow;
-
-export type ReasonAction = "approve" | "clarify";
 
 export interface UseReimbursementClaimFormArgs {
 	referenceNumber?: string;
@@ -117,10 +109,13 @@ export interface UseReimbursementClaimFormArgs {
 	canReviewLineItems?: boolean;
 	/** Hide the review columns entirely (claimant filling a fresh claim). */
 	hideReviewColumns?: boolean;
+	/**
+	 * true for the claimant views (public link, guest portal). A claimant can
+	 * never review line items: no approved amount, no Approve checkbox, and
+	 * remarks are read-only.
+	 */
+	isClaimant?: boolean;
 	isExternalApprover?: boolean;
-	commentsSection?: ReactNode;
-	auditSection?: ReactNode;
-	workflowSection?: ReactNode;
 	approvalActionLoading?: boolean;
 	onApproveStage?: (reason: string) => void | Promise<void>;
 	onClarifyStage?: (reason: string) => void | Promise<void>;
@@ -297,10 +292,8 @@ export function useReimbursementClaimForm({
 	canClarify = false,
 	canReviewLineItems: canReviewLineItemsProp,
 	hideReviewColumns = false,
+	isClaimant = false,
 	isExternalApprover = false,
-	commentsSection,
-	auditSection,
-	workflowSection,
 	approvalActionLoading = false,
 	onApproveStage,
 	onClarifyStage,
@@ -325,7 +318,7 @@ export function useReimbursementClaimForm({
 
 	const gradeOptions = gradeOptionsProp?.length
 		? gradeOptionsProp
-		: FALLBACK_GRADE_OPTIONS;
+		: GRADE_OPTIONS;
 
 	const [values, setValues] = useState<ReimbursementClaimFormValues>(() =>
 		withDeclarationDateDefault(
@@ -355,7 +348,6 @@ export function useReimbursementClaimForm({
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isSavingDraft, setIsSavingDraft] = useState(false);
 	const [mutationError, setMutationError] = useState<string | null>(null);
-	const [clarifyModalOpen, setClarifyModalOpen] = useState(false);
 	const [clarifyLoading, setClarifyLoading] = useState(false);
 
 	const initialValuesKey = useMemo(
@@ -537,8 +529,10 @@ export function useReimbursementClaimForm({
 	const fieldMode: ReimbursementClaimFormMode = isReadOnly ? "view" : "edit";
 	const claimStatusLabel =
 		statusLabel ?? deriveClaimStatusLabel(approvalStages);
-	const canReviewLineItems = true;
-	// const canReviewLineItems = canReviewLineItemsProp ?? canApprove;
+	// Only the current internal approver reviews line items. A claimant (or
+	// anyone editing the claim) never does, whatever the page passes.
+	const canReviewLineItems =
+		!isClaimant && !canEditClaimForm && (canReviewLineItemsProp ?? canApprove);
 	const isLineItemReviewLocked = !canReviewLineItems;
 	const isLoading = isSubmitting || isSavingDraft;
 
@@ -1068,24 +1062,12 @@ export function useReimbursementClaimForm({
 		return `Flagged line items:\n${lines.join("\n")}`;
 	}, [savedClaims]);
 
-	/** Validates an approve / clarify reason; returns an error or null. */
-	const validateReason = useCallback(
-		(action: ReasonAction, reason: string): string | null => {
-			const schema =
-				action === "clarify" ? clarificationReasonSchema : approvalReasonSchema;
-			const result = schema.safeParse({ reason });
-			return result.success ? null : firstErrorMessage(result.error);
-		},
-		[],
-	);
-
 	const handleClarifyConfirm = useCallback(
 		async (reason: string) => {
 			if (!onClarifyStage) return;
 			setClarifyLoading(true);
 			try {
 				await onClarifyStage(reason.trim());
-				setClarifyModalOpen(false);
 			} finally {
 				setClarifyLoading(false);
 			}
@@ -1105,16 +1087,6 @@ export function useReimbursementClaimForm({
 		savedClaims.every((item) => item.approvalStatus === "APPROVED");
 	const canCompleteStage =
 		canApprove && (isExternalApprover || allLineItemsApproved);
-	const approvedTotal = useMemo(
-		() =>
-			savedClaims
-				.filter((item) => item.approvalStatus === "APPROVED")
-				.reduce(
-					(sum, item) => sum + (Number(resolveApprovedAmount(item)) || 0),
-					0,
-				),
-		[savedClaims],
-	);
 
 	const handleReset = useCallback(() => {
 		setValues(
@@ -1153,7 +1125,6 @@ export function useReimbursementClaimForm({
 		isSubmitting,
 		isSavingDraft,
 		mutationError,
-		clarifyModalOpen,
 		clarifyLoading,
 		gradeOptions,
 		selectedGrade,
@@ -1162,7 +1133,6 @@ export function useReimbursementClaimForm({
 		settledAmount,
 		eligibility,
 		eligibilityPeriodLabel: resolvedEligibilityPeriodLabel,
-		pendingAmount: eligibilityPendingAmount,
 		/** On hold in the retiree's other in-progress claims (0 when none). */
 		heldAmount,
 		/** Claim head options for this grade — hospitalisation for EG only. */
@@ -1174,7 +1144,6 @@ export function useReimbursementClaimForm({
 		standardTotal,
 		hospitalisationTotal,
 		lineItemsTotal,
-		approvedTotal,
 		isReadOnly,
 		canEditClaimForm,
 		fieldMode,
@@ -1182,6 +1151,7 @@ export function useReimbursementClaimForm({
 		canReviewLineItems,
 		isLineItemReviewLocked,
 		hideReviewColumns,
+		isClaimant,
 		allLineItemsApproved,
 		canCompleteStage,
 		mode,
@@ -1201,9 +1171,6 @@ export function useReimbursementClaimForm({
 		onBack,
 		submittedMessage,
 		actionText,
-		commentsSection,
-		auditSection,
-		workflowSection,
 		handleRemarksChange,
 		handleSaveRemarks,
 		savingRemarksId,
@@ -1225,9 +1192,7 @@ export function useReimbursementClaimForm({
 		handleSubmit,
 		handleSaveDraft,
 		handleReset,
-		setClarifyModalOpen,
 		buildClarifyReasonPrefix,
-		validateReason,
 		handleClarifyConfirm,
 		handleApproveStage,
 		handleCloseClaim: onCloseClaim,

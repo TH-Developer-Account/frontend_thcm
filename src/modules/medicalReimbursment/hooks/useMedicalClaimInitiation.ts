@@ -168,14 +168,6 @@ export const useMedicalClaimInitiation = ({
 		return { result, fieldErrors };
 	};
 
-	/** Validates one field on blur so mistakes show before submit. */
-	const handleBlur = (key: keyof MedicalClaimInitiationPayload) => {
-		const { fieldErrors } = validateValues();
-		if (fieldErrors[key] && String(values[key] ?? "").trim()) {
-			setErrors((current) => ({ ...current, [key]: fieldErrors[key] }));
-		}
-	};
-
 	const validate = () => {
 		const { result, fieldErrors } = validateValues();
 		if (result.success && Object.keys(fieldErrors).length === 0) {
@@ -265,21 +257,14 @@ export const useMedicalClaimInitiation = ({
 	return {
 		values,
 		errors,
-		resolvedClaimId,
 		isDirty,
 		isSubmitting: initiateMutation.isPending,
 		isResendingLink: resendLinkMutation.isPending,
 		isDetailLoading: detailQuery.isLoading,
-		isDetailFetching: detailQuery.isFetching,
-		isDetailError: detailQuery.isError,
-		detailError: detailQuery.error,
 		handleChange,
-		handleBlur,
 		handleReset,
 		handleSubmit,
 		handleResendLink,
-		initiateMutation,
-		resendLinkMutation,
 	};
 };
 
@@ -297,7 +282,7 @@ const MAX_POLL_DURATION_MS = 10 * 60_000;
 /**
  * Bulk initiation from an Excel/CSV file:
  *  1. The file is parsed and every row validated IN THE BROWSER (same zod
- *     schema as the single form + duplicate checks) and shown in a preview.
+ *     schema as the single form + duplicate checks).
  *  2. Only valid rows are uploaded (a clean xlsx is generated), so nothing
  *     is created or emailed for rows HR hasn't fixed.
  *  3. The import job is polled until it completes; the result summary and
@@ -307,7 +292,6 @@ export function useMedicalClaimInitiationImport({
 	onImportSuccess,
 }: UseMedicalClaimInitiationImportOptions = {}) {
 	const { showToast } = useToast();
-	const [isImportModalOpen, setIsImportModalOpen] = React.useState(false);
 	const [importFile, setImportFile] = React.useState<FileUploadValue | null>(
 		null,
 	);
@@ -333,17 +317,6 @@ export function useMedicalClaimInitiationImport({
 		setImportFileError(undefined);
 		setParsedFile(null);
 	}, []);
-
-	const openImportModal = React.useCallback(() => {
-		resetSelection();
-		setIsImportModalOpen(true);
-	}, [resetSelection]);
-
-	const closeImportModal = React.useCallback(() => {
-		if (isImporting) return;
-		setIsImportModalOpen(false);
-		resetSelection();
-	}, [isImporting, resetSelection]);
 
 	const handleImportFileChange = React.useCallback(
 		async (value: FileUploadValue | null) => {
@@ -491,7 +464,6 @@ export function useMedicalClaimInitiationImport({
 			});
 
 			const { jobId } = await medicalClaimApi.enqueueInitiationImport(formData);
-			setIsImportModalOpen(false);
 			resetSelection();
 			await pollStatus(jobId, Date.now(), parsedFile.invalidCount);
 		} catch (error) {
@@ -519,17 +491,13 @@ export function useMedicalClaimInitiationImport({
 	);
 
 	return {
-		isImportModalOpen,
 		importFile,
 		importFileError,
-		parsedFile,
 		isParsing,
 		canImport,
 		progress,
 		isImporting,
 
-		openImportModal,
-		closeImportModal,
 		handleImportFileChange,
 		handleImportFile,
 		clearProgress,

@@ -2,10 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { medicalClaimApi } from "../api/medicalClaim.api";
-import {
-	guestReimburseClaimApi,
-	publicReimburseClaimApi,
-} from "../../guest/guestMedicalForms/reimbursementClaim.api";
+import { guestReimburseClaimApi } from "../../guest/guestMedicalForms/reimbursementClaim.api";
 import type { GradeEligibilityRow } from "../types/medicalClaimListing.types";
 import type { GradeOption } from "../types/reimbursementClaim.types";
 import {
@@ -14,6 +11,7 @@ import {
 } from "../utils/gradeEligibility.constants";
 import { medicalClaimKeys } from "./useMedicalClaimMutations";
 import { MEDICLAIM_BACKEND } from "../utils/mediclaimBackend.config";
+import { publicReimburseClaimApi } from "../api/publicClaim.api";
 
 export type GradeSource =
 	| { kind: "internal" }
@@ -44,7 +42,8 @@ export function useGradeOptions(
 	current?: { grade?: string | null; derivedCap?: number | null },
 	enabled = true,
 ): { gradeOptions: GradeOption[]; isLoading: boolean } {
-	const cacheKey = source.kind === "public" ? `public:${source.token}` : source.kind;
+	const cacheKey =
+		source.kind === "public" ? `public:${source.token}` : source.kind;
 	const query = useQuery({
 		queryKey: medicalClaimKeys.grades(cacheKey),
 		queryFn: () => fetchGrades(source),

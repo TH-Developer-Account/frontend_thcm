@@ -129,13 +129,6 @@ export interface MedicalClaimMutationResponse {
 
 export type MedicalClaimExportFormat = "xlsx" | "csv";
 
-export type ExportListingParams = {
-	tab: MedicalClaimListingTab;
-	search?: string;
-	status?: MedicalClaimStatus;
-	format?: MedicalClaimExportFormat;
-};
-
 export type MedicalClaimExportQueueResponse = {
 	success: boolean;
 	message: string;

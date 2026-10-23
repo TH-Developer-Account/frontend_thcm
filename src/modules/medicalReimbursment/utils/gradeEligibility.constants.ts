@@ -23,9 +23,6 @@ export const GRADE_OPTIONS: GradeOption[] = [
 	{ label: "TS-2", value: "TS-2", eligibility: 25_000 },
 ];
 
-/** @deprecated use GRADE_OPTIONS. */
-export const FALLBACK_GRADE_OPTIONS = GRADE_OPTIONS;
-
 /**
  * Hospitalisation cover for EG grades — separate from the regular annual
  * limit. Mirrors HOSPITALISATION_ANNUAL_CAP in mediclaim.helper.ts (backend);

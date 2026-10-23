@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { HOSPITALISATION_CLAIM_HEAD } from "./claimHead.constants";
+
 /* -------------------------------------------------------------------------- */
 /* Medical claim — zod schemas (single source of truth for validation)         */
 /*                                                                            */
@@ -32,8 +34,6 @@ export const ALL_CLAIM_HEAD_VALUES = [
 	"EXCESS_HOSPITALISATION",
 ] as const;
 
-export const HOSPITALISATION_CLAIM_HEAD = "EXCESS_HOSPITALISATION";
-
 export const PATIENT_VALUES = ["SELF", "SPOUSE"] as const;
 
 export const NAME_REGEX = /^[\p{L}][\p{L}\s.'-]*$/u;
@@ -52,6 +52,7 @@ export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /** Sanity ceiling for a single bill (₹10 lakh) — catches typos like an extra zero. */
 export const MAX_BILL_AMOUNT = 10_00_000;
 export const MAX_REMARKS_LENGTH = 500;
+/** Character limit for the approve / clarify reason box (ClaimActions). */
 export const MAX_REASON_LENGTH = 1000;
 
 const inr = new Intl.NumberFormat("en-IN", {
@@ -158,7 +159,7 @@ const requireSpouseName = (
 };
 
 /* -------------------------------------------------------------------------- */
-/* 1. Initiation (THCM user starts a claim) + Excel import rows                */
+/* 1. Initiation (THCM user starts a claim; also validates each import row)    */
 /* -------------------------------------------------------------------------- */
 
 export const medicalClaimInitiationSchema = z.object({
@@ -196,10 +197,6 @@ export const medicalClaimInitiationSchema = z.object({
 export type MedicalClaimInitiationInput = z.infer<
 	typeof medicalClaimInitiationSchema
 >;
-
-/** Excel import: same rules per row, plus the spreadsheet row number. */
-export const medicalClaimInitiationImportRowSchema =
-	medicalClaimInitiationSchema.extend({ row: z.number().int().positive() });
 
 /* -------------------------------------------------------------------------- */
 /* 2. Claim header (public token form, guest portal, THCM view)                */
@@ -535,30 +532,6 @@ export const lineItemRemarksSchema = z.object({
 		.max(
 			MAX_REMARKS_LENGTH,
 			`Remarks must be at most ${MAX_REMARKS_LENGTH} characters.`,
-		),
-});
-
-/** Inline reason box for "Approve". */
-export const approvalReasonSchema = z.object({
-	reason: z
-		.string({ message: "A reason is required to continue." })
-		.trim()
-		.min(1, "A reason is required to continue.")
-		.max(
-			MAX_REASON_LENGTH,
-			`Reason must be at most ${MAX_REASON_LENGTH} characters.`,
-		),
-});
-
-/** "Send for Clarification" — must tell the claimant what to fix. */
-export const clarificationReasonSchema = z.object({
-	reason: z
-		.string({ message: "Tell the claimant what needs to be corrected." })
-		.trim()
-		.min(10, "Describe what needs to be corrected (at least 10 characters).")
-		.max(
-			MAX_REASON_LENGTH,
-			`Reason must be at most ${MAX_REASON_LENGTH} characters.`,
 		),
 });
 

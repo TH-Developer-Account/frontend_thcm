@@ -10,7 +10,10 @@ import SimpleViewTable, {
 	type SimpleTableWidthUnits,
 } from "../../../components/ui/tables/SimpleViewTable";
 
-import { getClaimHeadLabel } from "../utils/claimHead.constants";
+import {
+	HOSPITALISATION_CLAIM_HEAD,
+	getClaimHeadLabel,
+} from "../utils/claimHead.constants";
 
 import type {
 	ClaimHead,
@@ -102,14 +105,59 @@ export const ClaimHeadEntryTable = () => {
 		handleRemarksChange: onRemarksChange,
 		handleSaveRemarks,
 		savingRemarksId,
+		isClaimant,
+		eligibility,
+		hospitalisation,
+		resolvedEligibleAmount,
 	} = useReimbursementClaimFormContext();
 
+	// The claimant (public / guest) never sees approver tools: no approved
+	// amount, no Approve checkbox, and remarks are read-only text (no input,
+	// no save button). canEditClaimRows covers a claimant editing the claim.
+	const claimantView = isClaimant || canEditClaimRows;
+
 	// Only the current internal approver can review line items; everyone
-	// else sees these three columns locked.
-	const reviewLocked = !canApproveLineItems;
+	// else sees these columns locked.
+	const reviewLocked = !canApproveLineItems || claimantView;
 
 	// Claimant filling a fresh claim: nothing to show in the review columns.
 	const hideReviewColumns = hideReviewColumnsProp;
+
+	// Approved Amount + Approved checkbox are approver tools. A claimant only
+	// needs to READ the approver's remarks (guest resubmit after clarification).
+	const showApproverColumns = !hideReviewColumns && !claimantView;
+
+	// Bills that push the claim over the available limit (claimant view).
+	// Bills are counted in the order they were added; the overshoot of each
+	// bill is capped at its own amount.
+	const overLimitByRowId = useMemo(() => {
+		const result: Record<string, number> = {};
+		if (!claimantView) return result;
+		let standardRunning = 0;
+		let hospitalisationRunning = 0;
+		savedClaims.forEach((row) => {
+			const amount = Number(row.amount) || 0;
+			const isHospitalisation = row.claimHead === HOSPITALISATION_CLAIM_HEAD;
+			const limit = isHospitalisation
+				? hospitalisation?.remaining
+				: resolvedEligibleAmount === null
+					? undefined
+					: eligibility.remaining;
+			if (limit === undefined || limit === null) return;
+			const running = isHospitalisation
+				? (hospitalisationRunning += amount)
+				: (standardRunning += amount);
+			const over = Math.round((running - limit) * 100) / 100;
+			if (over > 0) result[row.id] = Math.min(over, amount);
+		});
+		return result;
+	}, [
+		claimantView,
+		eligibility.remaining,
+		hospitalisation?.remaining,
+		resolvedEligibleAmount,
+		savedClaims,
+	]);
 
 	const columns = useMemo<TableColumnDefinition<ClaimHeadRow>[]>(() => {
 		const tableColumns: TableColumnDefinition<ClaimHeadRow>[] = [
@@ -197,9 +245,20 @@ export const ClaimHeadEntryTable = () => {
 				header: "Claimed Amount",
 				cell: ({ row }) => {
 					const amount = Number(row.original.amount || 0);
+					const over = overLimitByRowId[row.original.id];
 					return (
-						<span className="font-medium">
-							₹ {amount.toLocaleString("en-IN")}
+						<span className="block">
+							<span className={`font-medium ${over ? "text-red-700" : ""}`}>
+								₹ {amount.toLocaleString("en-IN")}
+							</span>
+							{over ? (
+								<span
+									role="alert"
+									className="mt-0.5 block text-xs font-medium text-red-700"
+								>
+									₹ {over.toLocaleString("en-IN")} over your limit
+								</span>
+							) : null}
 						</span>
 					);
 				},
@@ -384,8 +443,14 @@ export const ClaimHeadEntryTable = () => {
 			});
 		}
 
-		return tableColumns;
+		return tableColumns.filter(
+			(column) =>
+				showApproverColumns ||
+				(column.id !== "approvedClaimAmount" && column.id !== "review"),
+		);
 	}, [
+		showApproverColumns,
+		overLimitByRowId,
 		approvingId,
 		canEditClaimRows,
 		deletingId,
@@ -534,6 +599,7 @@ export const ClaimHeadEntryTable = () => {
 									disabled={isSaving}
 									inputName={`attachment-${item.id}`}
 									showActions
+									previewVariant="line"
 								/>
 
 								<div className="mt-1 flex items-end gap-1.5 sm:mt-5">

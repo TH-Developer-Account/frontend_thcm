@@ -7,13 +7,6 @@ import type {
 import { MEDICAL_CLAIM_STATUS_LABELS } from "./medicalClaimStatus.constants";
 
 export const MEDICAL_CLAIM_LISTING_FILTER_TABS = [
-	// {
-	// 	value: "claims",
-	// 	label: "Created by me",
-	// 	shortLabel: "Created",
-	// 	tooltipLabel: "View medical claims initiated by me",
-	// 	Icon: ShieldCheck,
-	// },
 	{
 		value: "initiation",
 		label: "Awaiting employee",

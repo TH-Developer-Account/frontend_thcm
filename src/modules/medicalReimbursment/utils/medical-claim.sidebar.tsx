@@ -3,13 +3,13 @@ import type { SidebarItem } from "../../../layout/layout.types";
 export const medicalClaimSidebar: SidebarItem[] = [
 	{
 		id: "form-listing",
-		label: " Listing",
+		label: "Listing",
 		icon: <Table size={18} />,
 		link: "/medi-claim/listing",
 	},
 	{
 		id: "form-initiation-create",
-		label: "Initiate Create",
+		label: "Initiate Claim",
 		icon: <FilePlusCorner size={18} />,
 		link: "/medi-claim/initiate",
 	},

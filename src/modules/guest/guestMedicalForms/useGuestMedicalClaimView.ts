@@ -45,7 +45,10 @@ export function useGuestMedicalClaimView(claimId = "") {
 	const navigate = useNavigate();
 	const isCreateMode = !claimId;
 
-	const detailQuery = useGuestReimbursementClaimDetailQuery(claimId, !isCreateMode);
+	const detailQuery = useGuestReimbursementClaimDetailQuery(
+		claimId,
+		!isCreateMode,
+	);
 	const profileQuery = useGuestClaimProfileQuery(isCreateMode);
 	const createMutation = useCreateGuestMedicalClaimMutation();
 	const resubmitMutation = useResubmitGuestMedicalClaimMutation();
@@ -79,13 +82,16 @@ export function useGuestMedicalClaimView(claimId = "") {
 					grade: profile?.grade,
 					derivedCap:
 						profile?.eligibleAmount != null
-							? Number(profile.eligibleAmount) + Number(profile.alreadySettled ?? 0)
+							? Number(profile.eligibleAmount) +
+								Number(profile.alreadySettled ?? 0)
 							: null,
 				}
 			: { grade: detail?.grade, derivedCap: deriveAnnualCap(detail) },
 	);
 
-	const initialValues = useMemo<Partial<ReimbursementClaimFormValues> | undefined>(() => {
+	const initialValues = useMemo<
+		Partial<ReimbursementClaimFormValues> | undefined
+	>(() => {
 		if (detail) return toMedicalClaimFormValues(detail);
 		if (isCreateMode && profile?.canCreate) {
 			return {
@@ -116,10 +122,13 @@ export function useGuestMedicalClaimView(claimId = "") {
 
 			if (isCreateMode) {
 				if (!canCreate) {
-					throw new Error("New claims can't be started from this account. Please contact HR.");
+					throw new Error(
+						"New claims can't be started from this account. Please contact HR.",
+					);
 				}
 				const created = await createMutation.mutateAsync(formData);
-				if (created?.id) navigate(`/guest/medi-claim/${created.id}`, { replace: true });
+				if (created?.id)
+					navigate(`/guest/medi-claim/${created.id}`, { replace: true });
 				return;
 			}
 
@@ -150,7 +159,10 @@ export function useGuestMedicalClaimView(claimId = "") {
 						// The approver's reason is shown in its own banner; this one
 						// just tells the guest what to do next.
 						...(detail?.status?.toUpperCase() === "CLARIFICATION_REQUESTED"
-							? { description: "Please update the claim below and resubmit it for approval." }
+							? {
+									description:
+										"Please update the claim below and resubmit it for approval.",
+								}
 							: {}),
 					}),
 		[detail?.status, isCreateMode],
@@ -177,20 +189,12 @@ export function useGuestMedicalClaimView(claimId = "") {
 		permissions,
 		correctionReason: detail?.correctionReason ?? null,
 
-		access,
-		canView: access.canView,
 		canEdit: access.canEdit,
 		canCreate: access.canCreate,
-		canResubmit: access.canResubmit,
-
-		isSaving: createMutation.isPending || resubmitMutation.isPending,
 
 		submitClaim,
 		refetch: isCreateMode ? profileQuery.refetch : detailQuery.refetch,
 
-		claimId,
-
 		statusBanner,
-		showAlertBanner: Boolean(statusBanner),
 	};
 }

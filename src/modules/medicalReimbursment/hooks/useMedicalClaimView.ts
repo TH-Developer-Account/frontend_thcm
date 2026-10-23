@@ -21,7 +21,6 @@ import {
 	deriveAnnualCap,
 	toMedicalClaimFormValues,
 	toMedicalClaimLineItems,
-	toNumber,
 	toEligibilityHoldProps,
 } from "../helpers/medicalClaimListing.mapper";
 import type { MedicalClaimDetail } from "../types/medicalClaimListing.types";
@@ -55,6 +54,9 @@ type WorkflowActionResponse = { message?: string } | undefined;
 
 /** Where an approver lands after approving a claim. */
 export const AFTER_APPROVE_PATH = "/medi-claim/listing?tab=approvedByMe";
+
+/** Once the last approver has approved, the claim's chat is read-only. */
+const COMMENTS_LOCKED_STATUSES = new Set(["APPROVED", "CLOSED"]);
 
 const getClaimCreator = (
 	detail?: MedicalClaimViewDetail,
@@ -102,12 +104,6 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 
 	const pdfUrlMutation = useMedicalClaimPdfUrlMutation();
 	const exportClaimMutation = useExportMedicalClaimMutation();
-	const [pdfUrl, setPdfUrl] = React.useState<string | null>(null);
-	// Tracks which PDF button triggered the shared mutation, so "view" and
-	// "download" loading states don't light up together.
-	const [pdfAction, setPdfAction] = React.useState<"view" | "download" | null>(
-		null,
-	);
 
 	const detail = detailQuery.data as MedicalClaimViewDetail | undefined;
 	const activeWorkflow = detail?.activeWorkflow ?? null;
@@ -136,15 +132,22 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 		Boolean(detail),
 	);
 
+	// After the last approver approves (APPROVED) or the claim is closed, the
+	// chat stays visible as history but nobody can add to it.
+	const isCommentingLocked = COMMENTS_LOCKED_STATUSES.has(
+		permissions.normalizedStatus,
+	);
+	const canComment = permissions.canComment && !isCommentingLocked;
+
 	const commentContext = React.useMemo(
 		() =>
 			getWorkflowCommentContext({
 				activeWorkflow,
 				currentUser: user,
 				creator,
-				canComment: permissions.canComment,
+				canComment,
 			}),
-		[activeWorkflow, creator, permissions.canComment, user],
+		[activeWorkflow, canComment, creator, user],
 	);
 
 	const initialValues = React.useMemo(
@@ -254,30 +257,24 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 
 	/* ------------------------------ Close -------------------------------- */
 
-	const closeClaim = React.useCallback(
-		async (options: { silent?: boolean } = {}) => {
-			try {
-				const response = await closeMutation.mutateAsync(claimId);
-				if (!options.silent) {
-					showToast({
-						type: "success",
-						title: "Claim closed",
-						description:
-							response?.message ?? "The medical claim has been closed.",
-					});
-				}
-				await refresh();
-			} catch (error) {
-				showToast({
-					type: "error",
-					title: "Unable to close the claim",
-					description: getApiErrorMessage(error, "Please try again."),
-				});
-				throw error;
-			}
-		},
-		[claimId, closeMutation, refresh, showToast],
-	);
+	const closeClaim = React.useCallback(async () => {
+		try {
+			const response = await closeMutation.mutateAsync(claimId);
+			showToast({
+				type: "success",
+				title: "Claim closed",
+				description: response?.message ?? "The medical claim has been closed.",
+			});
+			await refresh();
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "Unable to close the claim",
+				description: getApiErrorMessage(error, "Please try again."),
+			});
+			throw error;
+		}
+	}, [claimId, closeMutation, refresh, showToast]);
 
 	/* ---------------------------- Workflow ------------------------------ */
 
@@ -298,30 +295,30 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 				const response = await approve(stageId, reason);
 
 				const refreshed = await refresh();
+				const isFinalApproval = refreshed?.status === "APPROVED";
 
-				// External approver's "OK and Close": once the final OK moves the
-				// claim to APPROVED, close it in the same click (only when the
-				// backend lets the external approver close).
-				if (
-					MEDICLAIM_BACKEND.externalApproverClose &&
-					permissions.isExternalApprover &&
-					refreshed?.status === "APPROVED"
-				) {
-					await closeClaim({ silent: true });
-					showToast({
-						type: "success",
-						title: "Claim approved and closed",
-						description: "The medical claim has been approved and closed.",
-					});
-					navigate(AFTER_APPROVE_PATH);
-					return;
+				// External approver's "OK and Close": the final OK moves the claim
+				// to APPROVED, so close it in the same click. The approval has
+				// already been saved, so a failed close (e.g. the backend still
+				// restricts closing to the initiator) is not an error — the claim
+				// just stays APPROVED for the initiator to close.
+				let closed = false;
+				if (permissions.isExternalApprover && isFinalApproval) {
+					try {
+						await closeMutation.mutateAsync(claimId);
+						closed = true;
+						await refresh();
+					} catch {
+						/* approved, but not closed — handled by the toast below */
+					}
 				}
 
 				showToast({
 					type: "success",
-					title: "Claim approved",
-					description:
-						permissions.isExternalApprover && refreshed?.status === "APPROVED"
+					title: closed ? "Claim approved and closed" : "Claim approved",
+					description: closed
+						? "The medical claim has been approved and closed."
+						: permissions.isExternalApprover && isFinalApproval
 							? "Your approval has been recorded. The initiator will close the claim."
 							: (response?.message ?? "Your approval has been recorded."),
 				});
@@ -341,7 +338,8 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 		},
 		[
 			approveStageMutation,
-			closeClaim,
+			claimId,
+			closeMutation,
 			navigate,
 			permissions.canApprove,
 			permissions.isExternalApprover,
@@ -425,28 +423,8 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 		showToast,
 	]);
 
-	const handleViewPdf = React.useCallback(async () => {
-		if (!claimId) return;
-		setPdfAction("view");
-		try {
-			setPdfUrl(await pdfUrlMutation.mutateAsync({ claimId }));
-		} catch (error) {
-			showToast({
-				type: "error",
-				title: "PDF preview failed",
-				description: getApiErrorMessage(
-					error,
-					"Unable to prepare the claim PDF.",
-				),
-			});
-		} finally {
-			setPdfAction(null);
-		}
-	}, [claimId, pdfUrlMutation, showToast]);
-
 	const handleDownloadPdf = React.useCallback(async () => {
 		if (!claimId) return;
-		setPdfAction("download");
 		const fileName = `medical-claim-${detailReferenceNumber ?? claimId}.pdf`;
 		try {
 			const url = await pdfUrlMutation.mutateAsync({ claimId });
@@ -470,12 +448,8 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 					"Failed to download the medical claim PDF.",
 				),
 			});
-		} finally {
-			setPdfAction(null);
 		}
 	}, [claimId, detailReferenceNumber, pdfUrlMutation, showToast]);
-
-	const closePdfPreview = React.useCallback(() => setPdfUrl(null), []);
 
 	const workflowActionLoading = Boolean(
 		(approveStageMutation as unknown as { loading?: boolean }).loading ||
@@ -496,11 +470,6 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 		initialLineItems,
 		gradeOptions,
 		correctionReason: detail?.correctionReason ?? null,
-		// eligibilityPendingAmount:
-		// 	detail?.pendingInOtherClaims === undefined ||
-		// 	detail?.pendingInOtherClaims === null
-		// 		? undefined
-		// 		: toNumber(detail.pendingInOtherClaims),
 
 		...toEligibilityHoldProps(detail),
 
@@ -516,8 +485,10 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 		// Permissions
 		permissions,
 		canEdit: permissions.canEditClaim,
-		canComment: commentContext.canComment,
-		canShowCommentSection: Boolean(activeWorkflow) && commentContext.canComment,
+		canComment,
+		/** Chat tab: for active commenters, and as read-only history once the claim is approved/closed. */
+		canShowCommentSection:
+			Boolean(activeWorkflow) && (canComment || isCommentingLocked),
 		canApprove: permissions.canApprove,
 		canClarify: permissions.canClarify,
 		canApproveLineItems: permissions.canReviewLineItems,
@@ -537,16 +508,12 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 		saveLineItemRemarks,
 		approveCurrentStage,
 		clarifyCurrentStage,
-		closeClaim: () => closeClaim(),
+		closeClaim,
 		refresh,
 
 		// PDF + export
 		claimId,
-		pdfUrl,
-		closePdfPreview,
-		isPreparingPdf: pdfUrlMutation.isPending && pdfAction === "view",
-		isDownloadingPdf: pdfUrlMutation.isPending && pdfAction === "download",
-		handleViewPdf,
+		isDownloadingPdf: pdfUrlMutation.isPending,
 		handleDownloadPdf,
 		isExportingExcel: exportClaimMutation.isPending,
 		handleExport,

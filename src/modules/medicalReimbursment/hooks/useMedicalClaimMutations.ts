@@ -5,13 +5,15 @@ import {
 	type QueryClient,
 } from "@tanstack/react-query";
 
-import { medicalClaimApi, type ApproveLineItemPayload } from "../api/medicalClaim.api";
-import { publicReimburseClaimApi } from "../../guest/guestMedicalForms/reimbursementClaim.api";
+import {
+	medicalClaimApi,
+	type ApproveLineItemPayload,
+} from "../api/medicalClaim.api";
 import type {
-	ExportListingParams,
 	MedicalClaimDetail,
 	ReviewedBill,
 } from "../types/medicalClaimListing.types";
+import { publicReimburseClaimApi } from "../api/publicClaim.api";
 
 export const medicalClaimKeys = {
 	all: ["medical-claims"] as const,
@@ -24,7 +26,8 @@ export const medicalClaimKeys = {
 	publicSession: (token: string) =>
 		[...medicalClaimKeys.all, "public-session", token] as const,
 
-	grades: (source: string) => [...medicalClaimKeys.all, "grades", source] as const,
+	grades: (source: string) =>
+		[...medicalClaimKeys.all, "grades", source] as const,
 };
 
 export const invalidateMedicalClaims = (
@@ -74,7 +77,8 @@ export function useResendMedicalClaimLinkMutation() {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: medicalClaimApi.resendLink,
-		onSuccess: (_data, claimId) => invalidateMedicalClaims(queryClient, claimId),
+		onSuccess: (_data, claimId) =>
+			invalidateMedicalClaims(queryClient, claimId),
 	});
 }
 
@@ -82,7 +86,8 @@ export function useCloseMedicalClaimMutation() {
 	const queryClient = useQueryClient();
 	return useMutation({
 		mutationFn: medicalClaimApi.close,
-		onSuccess: (_data, claimId) => invalidateMedicalClaims(queryClient, claimId),
+		onSuccess: (_data, claimId) =>
+			invalidateMedicalClaims(queryClient, claimId),
 	});
 }
 
@@ -112,7 +117,8 @@ export function useSubmitPublicMedicalClaimMutation() {
 		onSuccess: (_data, variables) => {
 			queryClient.setQueryData<MedicalClaimDetail>(
 				medicalClaimKeys.publicSession(variables.token.trim()),
-				(current) => (current ? { ...current, status: "IN_PROGRESS" } : current),
+				(current) =>
+					current ? { ...current, status: "IN_PROGRESS" } : current,
 			);
 		},
 	});
@@ -145,13 +151,6 @@ export function useMedicalClaimPdfUrlMutation() {
 	return useMutation({
 		mutationFn: ({ claimId }: { claimId: string }) =>
 			medicalClaimApi.getPdfUrl("MEDICAL_CLAIM", claimId),
-	});
-}
-
-export function useExportMedicalClaimListingMutation() {
-	return useMutation({
-		mutationFn: (params: ExportListingParams) =>
-			medicalClaimApi.enqueueListingExport(params),
 	});
 }
 
