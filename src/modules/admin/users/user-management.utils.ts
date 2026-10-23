@@ -94,13 +94,18 @@ export const mapUserToForm = (user: User): UserFormValues => ({
   phoneNumber: user.phoneNumber,
   email: user.email,
   workspaceId: user.workspaceId,
-  region: user.region,
+  // location/designation/division/costCenter are FK ids now — the form only
+  // writes the id, the display string (user.location etc.) is read-only and
+  // rendered straight from the User object, not through the form.
+  locationId: user.locationId ?? "",
   address: user.address,
-  zone: user.zone,
+  zoneIds: user.zoneIds ?? [],
   branch: user.branch,
   department: user.department,
   role: user.role,
-  designation: user.designation,
+  designationId: user.designationId ?? "",
+  divisionId: user.divisionId ?? "",
+  costCenterId: user.costCenterId ?? "",
   vertical: user.vertical,
   grade: user.grade ?? "",
   status: getUserResponseStatus(user),
@@ -126,13 +131,15 @@ export const EMPTY_USER_FORM: UserFormValues = {
   phoneNumber: "",
   email: "",
   workspaceId: "",
-  region: "",
+  locationId: "",
   address: "",
-  zone: "",
+  zoneIds: [],
   branch: "",
   department: "",
   role: "",
-  designation: "",
+  designationId: "",
+  divisionId: "",
+  costCenterId: "",
   vertical: "",
   grade: "",
   status: "",
@@ -163,13 +170,23 @@ export const mapUser = (user: UserResponse): User => ({
   phoneNumber: user.phone_number ?? "",
   email: user.email ?? "",
   workspaceId: user.workspaceUsers?.[0]?.workspaceId ?? "",
-  region: user.region ?? "",
+  // Display strings (backend flattens the FK relation's name/code for
+  // every read) alongside the raw ids the edit form needs to preselect
+  // the right master option.
+  location: user.location ?? "",
+  locationId: user.locationId ?? undefined,
   address: user.address ?? "",
-  zone: user.zone ?? "",
+  zones: user.zones ?? [],
+  zoneIds: user.zoneIds ?? [],
   branch: user.branch ?? "",
   department: user.department ?? "",
   role: user.role ?? "",
   designation: user.designation ?? "",
+  designationId: user.designationId ?? undefined,
+  division: user.division ?? "",
+  divisionId: user.divisionId ?? undefined,
+  costCenter: user.costCenter ?? "",
+  costCenterId: user.costCenterId ?? undefined,
   vertical: user.vertical ?? "",
   grade: user.grade ?? "",
   managerCode1: user.managerCode1 ?? "",
@@ -218,19 +235,26 @@ export const mapUserFormToCreatePayload = (
   assignText("s4Id", form.s4Id);
   assignText("tallyId", form.tallyId);
   assignText("c4cId", form.c4cId);
-  assignText("region", form.region);
+  assignText("locationId", form.locationId);
   assignText("address", form.address);
-  assignText("zone", form.zone);
   assignText("branch", form.branch);
   assignText("department", form.department);
   assignText("role", form.role);
-  assignText("designation", form.designation);
+  assignText("designationId", form.designationId);
+  assignText("divisionId", form.divisionId);
+  assignText("costCenterId", form.costCenterId);
   assignText("vertical", form.vertical);
   assignText("grade", form.grade); // enable after backend grade support
   assignText("managerCode1", form.managerCode1);
   assignText("managerCode2", form.managerCode2);
   assignText("joinedOn", form.joinedOn);
   assignText("businessPartnerId", form.businessPartnerId);
+
+  // zoneIds is an array, not text — assignText's trim()-based logic
+  // doesn't apply, so it's assigned directly when non-empty.
+  if (form.zoneIds && form.zoneIds.length > 0) {
+    payload.zoneIds = form.zoneIds;
+  }
 
   if (form.userType && form.userType !== "Select") {
     payload.userType = form.userType;
@@ -261,13 +285,15 @@ const USER_UPDATE_FIELD_MAP = {
   s4Id: "s4Id",
   tallyId: "tallyId",
   c4cId: "c4cId",
-  region: "region",
+  locationId: "locationId",
   address: "address",
-  zone: "zone",
+  zoneIds: "zoneIds",
   branch: "branch",
   department: "department",
   role: "role",
-  designation: "designation",
+  designationId: "designationId",
+  divisionId: "divisionId",
+  costCenterId: "costCenterId",
   vertical: "vertical",
   status: "status",
   grade: "grade", // enable after backend grade support
@@ -311,6 +337,13 @@ export const mapUserFormToUpdatePayload = (
     const apiKey =
       USER_UPDATE_FIELD_MAP[key as keyof typeof USER_UPDATE_FIELD_MAP];
     if (!apiKey) return;
+
+    // zoneIds is an array — pass it through as-is rather than running
+    // it through the string-trim branch below.
+    if (key === "zoneIds") {
+      payload[apiKey] = value;
+      return;
+    }
 
     payload[apiKey] =
       typeof value === "string" && key !== "password"

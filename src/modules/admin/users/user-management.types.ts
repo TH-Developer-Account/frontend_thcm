@@ -27,6 +27,14 @@ export type AppAccess = {
 
 // Frontend-facing shape, produced by mapUser(). Casing here is just
 // frontend convention — doesn't need to match Prisma, mapUser() does that translation.
+//
+// location/designation/division/costCenter are display strings (the backend
+// flattens the FK relation to its name/code for every read) — the
+// matching *Id field alongside each is what the User admin edit form uses
+// to preselect the right option. zones/zoneIds follow the same pattern,
+// pluralized since a user can hold more than one zone. "location" is
+// User's old "region" column — EOR's "Location" (plant/city) data, not the
+// same concept as a zone/sales-territory.
 export type User = {
   id: string;
   /** Persisted profile-image URL returned by the API. */
@@ -41,13 +49,20 @@ export type User = {
   phoneNumber: string;
   email: string;
   workspaceId: string;
-  region: string;
+  location: string;
+  locationId?: string;
   address: string;
-  zone: string;
+  zones: string[];
+  zoneIds: string[];
   branch: string;
   department: string;
   role: string;
   designation: string;
+  designationId?: string;
+  division: string;
+  divisionId?: string;
+  costCenter: string;
+  costCenterId?: string;
   vertical: string;
   grade?: string;
   managerCode1: string;
@@ -87,13 +102,20 @@ export type UserResponse = {
   s4Id?: string | null;
   tallyId?: string | null;
   c4cId?: string | null;
-  region?: string | null;
+  location?: string | null;
+  locationId?: string | null;
   address?: string | null;
-  zone?: string | null;
+  zones?: string[] | null;
+  zoneIds?: string[] | null;
   branch?: string | null;
   department?: string | null;
   role?: string | null;
   designation?: string | null;
+  designationId?: string | null;
+  division?: string | null;
+  divisionId?: string | null;
+  costCenter?: string | null;
+  costCenterId?: string | null;
   vertical?: string | null;
   grade?: string | null;
   managerCode1?: string | null;
@@ -129,13 +151,15 @@ export type CreateUserPayload = {
   s4Id?: string;
   tallyId?: string;
   c4cId?: string;
-  region?: string;
+  locationId?: string;
   address?: string;
-  zone?: string;
+  zoneIds?: string[];
   branch?: string;
   department?: string;
   role?: string;
-  designation?: string;
+  designationId?: string;
+  divisionId?: string;
+  costCenterId?: string;
   vertical?: string;
   grade?: string;
   status?: UserStatus;
@@ -164,13 +188,15 @@ export type CreateUserInput = {
   s4Id?: string;
   tallyId?: string;
   c4cId?: string;
-  region?: string;
+  locationId?: string;
   address?: string;
-  zone?: string;
+  zoneIds?: string[];
   branch?: string;
   department?: string;
   role?: string;
-  designation?: string;
+  designationId?: string;
+  divisionId?: string;
+  costCenterId?: string;
   vertical?: string;
   grade?: string;
   status?: string;
