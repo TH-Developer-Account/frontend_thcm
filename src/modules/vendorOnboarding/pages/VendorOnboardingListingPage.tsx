@@ -6,17 +6,72 @@ import { Alert } from "../../../components/common/Alert";
 import Button from "../../../components/common/Button";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { vendorContent } from "../../../content/vendor.content";
+import { useAuth } from "../../../context/Auth/useAuth";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import { navigateToDownloadUrl } from "../../../utils/exportJob.helper";
 
-import VendorListingTable from "../components/VendorListingTable";
+import VendorListingTable, {
+	type VendorListingFilterTab,
+} from "../components/VendorListingTable";
 import { useVendorListing } from "../hooks/useVendorListing";
 import type { VendorOnboardingListingRow } from "../types/vendorListing.types";
 import { VENDOR_ONBOARDING_FILTER_TABS } from "../utils/vendor.constant";
 import { toOnboardingRow } from "../utils/vendorListingRowMapper";
 
+// ─────────────────────────────────────────────────────────────────────────
+// External-user listing identity
+// ─────────────────────────────────────────────────────────────────────────
+// TODO(confirm): the two lookups below are the ONLY place that knows how the
+// auth user exposes "is external" and the BP name. I couldn't see the AuthUser
+// type in project files, so these property names are best guesses — rename
+// them here to match the real shape and nothing else needs to change.
+type AuthUserLike = Record<string, unknown> | null | undefined;
+
+const getExternalListingIdentity = (
+	user: unknown,
+): { isExternalUser: boolean; bpName: string } => {
+	const source = user as AuthUserLike;
+
+	const isExternalUser =
+		Boolean(source?.isExternal ?? source?.isExternalUser) ||
+		String(source?.userType ?? "").toUpperCase() === "EXTERNAL";
+
+	const bpName = String(
+		source?.bpName ??
+			(source?.businessPartner as { name?: string } | undefined)?.name ??
+			"",
+	).trim();
+
+	return { isExternalUser, bpName };
+};
+
+const PENDING_ON_ME_TAB = VENDOR_ONBOARDING_FILTER_TABS.find(
+	(tab) => tab.value === "pendingOnMe",
+);
+
 const VendorOnboardingListingPage = () => {
 	const navigate = useNavigate();
+	const { user } = useAuth();
+
+	const { isExternalUser, bpName } = getExternalListingIdentity(user);
+
+	// External users (e.g. TCS) get exactly one tab — "Pending on me" — labelled
+	// with their BP name. Internal users keep the full tab set.
+	const filterTabs = useMemo<readonly VendorListingFilterTab[]>(() => {
+		if (!isExternalUser || !PENDING_ON_ME_TAB) {
+			return VENDOR_ONBOARDING_FILTER_TABS;
+		}
+
+		const label = bpName || PENDING_ON_ME_TAB.label;
+
+		return [
+			{
+				...PENDING_ON_ME_TAB,
+				label,
+				shortLabel: bpName || PENDING_ON_ME_TAB.shortLabel,
+			},
+		];
+	}, [bpName, isExternalUser]);
 
 	const {
 		tab,
@@ -143,7 +198,7 @@ const VendorOnboardingListingPage = () => {
 
 			<VendorListingTable
 				listingType="onboarding"
-				filterTabs={VENDOR_ONBOARDING_FILTER_TABS}
+				filterTabs={filterTabs}
 				selectedFilter={tab}
 				onFilterChange={handleTabChange}
 				search={search}

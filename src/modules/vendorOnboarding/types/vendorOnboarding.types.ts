@@ -41,7 +41,11 @@ export type VendorCreationFormOneValues = {
 	bankAddress?: string;
 	accountNumber?: string;
 	confirmAccountNumber?: string;
+
 	gstin?: string;
+	gstApplicability?: string;
+	incorporationApplicability?: string;
+
 	pan?: string;
 	entityRegNo?: string;
 	gstCertificate?: string;

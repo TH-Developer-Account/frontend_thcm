@@ -51,6 +51,7 @@ import {
 import {
 	EDITABLE_STATUSES,
 	getMissingDocuments,
+	isNotApplicable,
 } from "../helpers/vendor.onboarding.validations";
 import {
 	buildVendorFormOneSchema,
@@ -142,9 +143,11 @@ const FORM_ONE_FIELD_LABELS: Partial<
 	accountNumber: "A/C No.",
 	confirmAccountNumber: "Confirm Account Number",
 	bankAddress: "Bank Address",
+	gstApplicability: "GST Applicable?",
 	gstin: "GSTIN",
 	pan: "PAN",
 	entityRegNo: "Entity Reg. No.",
+	incorporationApplicability: "Incorporation Applicable?",
 	msmeVendor: "MSME Vendor",
 	ndaObtained: "Non-Disclosure Undertaking Obtained?",
 };
@@ -206,6 +209,15 @@ const toFormOneDefaults = (
 	address: source.address ?? "",
 	msmeVendor: source.msmeVendor ?? "",
 	msmeCertificateAttached: source.msmeCertificateAttached ?? "",
+	// Records saved before the applicability selects existed: a stored GSTIN /
+	// uploaded incorporation certificate means it was applicable, so open
+	// them pre-selected.
+	gstApplicability:
+		source.gstApplicability ||
+		(source.gstin || source.gstCertificate === "Yes" ? "Applicable" : ""),
+	incorporationApplicability:
+		source.incorporationApplicability ||
+		(source.certificateOfIncorporation === "Yes" ? "Applicable" : ""),
 	city: source.city ?? "",
 	pinCode: source.pinCode ?? "",
 	state: source.state ?? "",
@@ -423,6 +435,13 @@ export function useVendorCreationFormOneController({
 			if (!requireDocuments) return false;
 
 			switch (field.statusKey) {
+				case "gstCertificate":
+					return !isNotApplicable(values.gstApplicability);
+
+				case "certificateOfIncorporation":
+					return !isNotApplicable(values.incorporationApplicability);
+
+				// Only "Yes" requires it; "No" and "N/A" don't.
 				case "msmeCertificate":
 					return toYesNo(values.msmeVendor) === "Yes";
 
@@ -433,7 +452,13 @@ export function useVendorCreationFormOneController({
 					return field.required;
 			}
 		},
-		[requireDocuments, values.msmeVendor, values.ndaObtained],
+		[
+			requireDocuments,
+			values.gstApplicability,
+			values.incorporationApplicability,
+			values.msmeVendor,
+			values.ndaObtained,
+		],
 	);
 
 	const handleEnclosureChange = React.useCallback(
@@ -509,6 +534,46 @@ export function useVendorCreationFormOneController({
 
 				return next;
 			});
+		},
+		[onChange],
+	);
+
+	// GST / Incorporation: "N/A" drops the document requirement, clears any
+	// file already chosen (so a stale file isn't submitted) and its error.
+	// GST also clears the GSTIN, since there is none to collect.
+	const handleApplicabilityChange = React.useCallback(
+		(key: "gstApplicability" | "incorporationApplicability", value: string) => {
+			onChange?.(key, value);
+
+			if (!isNotApplicable(value)) return;
+
+			const documentType =
+				key === "gstApplicability"
+					? "GST_CERTIFICATE"
+					: "INCORPORATION_CERTIFICATE";
+			const statusKey =
+				key === "gstApplicability"
+					? "gstCertificate"
+					: "certificateOfIncorporation";
+
+			setEnclosureUploads((current) =>
+				current.map((upload) =>
+					upload.documentType === documentType
+						? { ...upload, value: null }
+						: upload,
+				),
+			);
+
+			setEnclosureErrors((current) => {
+				const next = { ...current };
+				delete next[statusKey];
+				return next;
+			});
+
+			// No GSTIN to collect once GST is N/A.
+			if (key === "gstApplicability") {
+				onChange?.("gstin", "");
+			}
 		},
 		[onChange],
 	);
@@ -651,6 +716,7 @@ export function useVendorCreationFormOneController({
 		handleEnclosureChange,
 		handleEnclosureTypeChange,
 		handleConditionalFieldChange,
+		handleApplicabilityChange,
 		openDpdpModal,
 		closeDpdpModal,
 		handleDpdpConsentChange,

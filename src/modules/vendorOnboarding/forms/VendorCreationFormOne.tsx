@@ -22,7 +22,13 @@ import {
 	type VendorFormErrors,
 	type VendorFormMode,
 	type VendorOnboardingDocument,
+	VENDOR_DOCUMENT_FIELDS,
+	type VendorDocumentType,
 } from "../types/vendorOnboarding.types";
+import {
+	NOT_APPLICABLE,
+	isNotApplicable,
+} from "../helpers/vendor.onboarding.validations";
 import {
 	useOptionalVendorCreationFormContext,
 	useVendorCreationFormOneController,
@@ -91,6 +97,27 @@ const blockClipboardEvent = (event: ClipboardEvent<HTMLInputElement>) => {
 };
 
 const yesNoOptions = toSelectOptions(["Yes", "No"]);
+
+const applicabilityOptions = toSelectOptions(["Applicable", NOT_APPLICABLE]);
+const msmeOptions = toSelectOptions(["Yes", "No", NOT_APPLICABLE]);
+
+// Every row below the address/bank sections uses the same grid class as those
+// sections (4 cols desktop / 2 tablet / 1 mobile, same gap and same padding),
+// so all inputs line up on identical columns and spacing.
+const FORM_ROW_GRID = "vendor-onboarding-form-grid";
+
+// Rendered inline in the tax-details grid, so excluded from the generic
+// upload grid below.
+const INLINE_DOCUMENT_TYPES: VendorDocumentType[] = [
+	"GST_CERTIFICATE",
+	"PAN_DOCUMENT",
+	"INCORPORATION_CERTIFICATE",
+	"CANCELLED_CHEQUE",
+];
+
+// toYesNo() maps "N/A" to "", so the MSME select needs its own mapping.
+const toMsmeSelectValue = (value?: string): string =>
+	isNotApplicable(value) ? NOT_APPLICABLE : toYesNo(value);
 
 // Form One stores only the national number (no country code field in the
 // schema/payload), so the prefix is fixed to India. With a single entry,
@@ -184,6 +211,7 @@ const VendorCreationFormOne = ({
 		handleEnclosureChange,
 		handleEnclosureTypeChange,
 		handleConditionalFieldChange,
+		handleApplicabilityChange,
 		// openDpdpModal,
 		// closeDpdpModal,
 		// handleDpdpConsentChange,
@@ -209,6 +237,37 @@ const VendorCreationFormOne = ({
 		onSubmit: resolvedOnSubmit,
 		onSaveDraft: resolvedOnSaveDraft,
 	});
+
+	const isGstApplicable = values.gstApplicability === "Applicable";
+	const isIncorporationApplicable =
+		values.incorporationApplicability === "Applicable";
+
+	const renderUpload = (documentType: VendorDocumentType) => {
+		const field = VENDOR_DOCUMENT_FIELDS.find(
+			(item) => item.documentType === documentType,
+		);
+		if (!field) return null;
+
+		return (
+			<FileUploadField
+				key={field.documentType}
+				value={getEnclosureFile(field.documentType)}
+				onChange={(nextValue) => handleEnclosureChange(field, nextValue)}
+				kind="vendorDocument"
+				label={field.label}
+				description={field.description}
+				required={isEnclosureRequired(field)}
+				error={enclosureErrors[field.statusKey]}
+				readonly={isReadOnly}
+				disabled={loading}
+				tooltip={isEnclosureRequired(field) ? "Mandatory" : undefined}
+				heightClassName="vendor-enclosure-upload-height"
+				className="vendor-enclosure-upload-field"
+				inputName={field.documentType}
+				showActions
+			/>
+		);
+	};
 
 	return (
 		<>
@@ -498,23 +557,46 @@ const VendorCreationFormOne = ({
 						/>
 					</div>
 				</div>
-				<div className="vendor-onboarding-form-grid">
-					<FormInput
+				{/* Row 1 — GST Applicable? | GSTIN | PAN | Entity Reg. No. */}
+				<div className={FORM_ROW_GRID}>
+					<SelectInput
 						mode={fieldMode}
-						name="gstin"
-						label="GSTIN"
-						value={values.gstin ?? ""}
-						success={
-							fieldMode === "edit" && !errors.gstin && Boolean(values.gstin)
-						}
+						name="gstApplicability"
+						label="GST Applicable?"
+						placeholder="Select option"
+						options={applicabilityOptions}
+						value={getSelectedOption(
+							applicabilityOptions,
+							values.gstApplicability,
+						)}
 						required
-						maxLength={15}
-						error={errors.gstin}
-						helperText="GST identification number."
-						onChange={(event) =>
-							resolvedOnChange?.("gstin", event.target.value.toUpperCase())
+						error={errors.gstApplicability}
+						helperText="Select whether GST applies to this vendor."
+						onChange={(option) =>
+							handleApplicabilityChange("gstApplicability", option?.value ?? "")
 						}
 					/>
+
+					{/* GSTIN only when GST is Applicable; otherwise the row closes up */}
+					{isGstApplicable ? (
+						<FormInput
+							mode={fieldMode}
+							name="gstin"
+							label="GSTIN"
+							value={values.gstin ?? ""}
+							success={
+								fieldMode === "edit" && !errors.gstin && Boolean(values.gstin)
+							}
+							required
+							maxLength={15}
+							error={errors.gstin}
+							helperText="GST identification number."
+							onChange={(event) =>
+								resolvedOnChange?.("gstin", event.target.value.toUpperCase())
+							}
+						/>
+					) : null}
+
 					<FormInput
 						mode={fieldMode}
 						name="pan"
@@ -535,49 +617,64 @@ const VendorCreationFormOne = ({
 						name="entityRegNo"
 						label="Entity Reg. No."
 						required
-						value={values.entityRegNo}
+						value={values.entityRegNo ?? ""}
 						success={
 							fieldMode === "edit" &&
 							!errors.entityRegNo &&
 							Boolean(values.entityRegNo)
 						}
 						error={errors.entityRegNo}
-						helperText="Entity registration number, if applicable."
+						helperText="Entity registration number."
 						onChange={(event) =>
 							resolvedOnChange?.("entityRegNo", event.target.value)
 						}
 					/>
 				</div>
 
-				<div className="vendor-enclosure-upload-grid">
-					{visibleDocumentFields.map((field) => {
-						const uploadedFile = getEnclosureFile(field.documentType);
+				{/* Documents, same 4-column grid:
+				    GST certificate | PAN document | Incorporation Applicable? | Incorporation certificate
+				    Cancelled cheque | Other attachments … */}
+				<div className={FORM_ROW_GRID}>
+					{isGstApplicable ? renderUpload("GST_CERTIFICATE") : null}
 
-						return (
-							<FileUploadField
-								key={field.documentType}
-								value={uploadedFile}
-								onChange={(nextValue) =>
-									handleEnclosureChange(field, nextValue)
-								}
-								kind="vendorDocument"
-								label={field.label}
-								description={field.description}
-								required={isEnclosureRequired(field)}
-								error={enclosureErrors[field.statusKey]}
-								readonly={isReadOnly}
-								disabled={loading}
-								tooltip={field.required ? "Mandatory" : undefined}
-								heightClassName="vendor-enclosure-upload-height"
-								className="vendor-enclosure-upload-field"
-								inputName={field.documentType}
-								showActions
-							/>
-						);
-					})}
+					{renderUpload("PAN_DOCUMENT")}
+
+					<SelectInput
+						mode={fieldMode}
+						name="incorporationApplicability"
+						label="Incorporation Applicable?"
+						placeholder="Select option"
+						options={applicabilityOptions}
+						value={getSelectedOption(
+							applicabilityOptions,
+							values.incorporationApplicability,
+						)}
+						required
+						error={errors.incorporationApplicability}
+						helperText="Select whether incorporation applies to this vendor."
+						onChange={(option) =>
+							handleApplicabilityChange(
+								"incorporationApplicability",
+								option?.value ?? "",
+							)
+						}
+					/>
+
+					{isIncorporationApplicable
+						? renderUpload("INCORPORATION_CERTIFICATE")
+						: null}
+
+					{renderUpload("CANCELLED_CHEQUE")}
+
+					{/* Other attachments flow right after the cheque in the same grid */}
+					{visibleDocumentFields
+						.filter(
+							(field) => !INLINE_DOCUMENT_TYPES.includes(field.documentType),
+						)
+						.map((field) => renderUpload(field.documentType))}
 				</div>
 				{canAddMoreDocuments ? (
-					<div className="flex justify-end">
+					<div className="flex justify-end px-4 max-lg:px-3">
 						<Button
 							type="button"
 							text="Add More"
@@ -590,100 +687,83 @@ const VendorCreationFormOne = ({
 						/>
 					</div>
 				) : null}
-				<div>
-					<div className="vendor-compliance-grid">
-						<section className="vendor-compliance-card">
-							<div className="vendor-compliance-card-grid">
-								<SelectInput
-									mode={fieldMode}
-									name="msmeVendor"
-									label="MSME Vendor"
-									placeholder="Select option"
-									options={yesNoOptions}
-									value={getSelectedOption(
-										yesNoOptions,
-										toYesNo(values.msmeVendor),
-									)}
-									required
-									error={errors.msmeVendor}
-									helperText="Select whether this vendor is registered under MSME."
-									onChange={(option) =>
-										handleConditionalFieldChange(
-											"msmeVendor",
-											option?.value ?? "",
-										)
-									}
-								/>
+				{/* MSME / NDA: same 4-column grid.
+				    MSME select | MSME certificate (if Yes) | NDA select | NDA certificate (if Yes) */}
+				<div className={FORM_ROW_GRID}>
+					<SelectInput
+						mode={fieldMode}
+						name="msmeVendor"
+						label="MSME Vendor"
+						placeholder="Select option"
+						options={msmeOptions}
+						value={getSelectedOption(
+							msmeOptions,
+							toMsmeSelectValue(values.msmeVendor),
+						)}
+						required
+						error={errors.msmeVendor}
+						helperText="Select whether this vendor is registered under MSME."
+						onChange={(option) =>
+							handleConditionalFieldChange("msmeVendor", option?.value ?? "")
+						}
+					/>
 
-								{values.msmeVendor === "Yes" ? (
-									<FileUploadField
-										value={getEnclosureFile("MSME_CERTIFICATE")}
-										onChange={(nextValue) =>
-											handleEnclosureTypeChange("MSME_CERTIFICATE", nextValue)
-										}
-										kind="vendorDocument"
-										label="MSME Certificate"
-										description="Upload the MSME registration certificate."
-										required
-										error={enclosureErrors.msmeCertificate}
-										readonly={isReadOnly}
-										disabled={loading}
-										heightClassName="vendor-compliance-upload-height"
-										className="vendor-compliance-upload"
-										inputName="MSME_CERTIFICATE"
-										showActions
-										tooltip="Mandatory"
-									/>
-								) : null}
-							</div>
-						</section>
+					{values.msmeVendor === "Yes" ? (
+						<FileUploadField
+							value={getEnclosureFile("MSME_CERTIFICATE")}
+							onChange={(nextValue) =>
+								handleEnclosureTypeChange("MSME_CERTIFICATE", nextValue)
+							}
+							kind="vendorDocument"
+							label="MSME Certificate"
+							description="Upload the MSME registration certificate."
+							required
+							error={enclosureErrors.msmeCertificate}
+							readonly={isReadOnly}
+							disabled={loading}
+							heightClassName="vendor-enclosure-upload-height"
+							className="vendor-enclosure-upload-field"
+							inputName="MSME_CERTIFICATE"
+							showActions
+							tooltip="Mandatory"
+						/>
+					) : null}
 
-						<section className="vendor-compliance-card">
-							<div className="vendor-compliance-card-grid">
-								<SelectInput
-									mode={fieldMode}
-									name="ndaObtained"
-									label="Non-Disclosure Undertaking Obtained?"
-									placeholder="Select option"
-									required
-									options={yesNoOptions}
-									value={getSelectedOption(
-										yesNoOptions,
-										toYesNo(values.ndaObtained),
-									)}
-									error={errors.ndaObtained}
-									helperText="Confirm whether NDA is obtained."
-									onChange={(option) =>
-										handleConditionalFieldChange(
-											"ndaObtained",
-											option?.value ?? "",
-										)
-									}
-								/>
+					<SelectInput
+						mode={fieldMode}
+						name="ndaObtained"
+						label="Non-Disclosure Undertaking Obtained?"
+						placeholder="Select option"
+						required
+						options={yesNoOptions}
+						value={getSelectedOption(yesNoOptions, toYesNo(values.ndaObtained))}
+						error={errors.ndaObtained}
+						helperText="Confirm whether NDA is obtained."
+						onChange={(option) =>
+							handleConditionalFieldChange("ndaObtained", option?.value ?? "")
+						}
+					/>
 
-								{values.ndaObtained === "Yes" ? (
-									<FileUploadField
-										value={getEnclosureFile("NDA_CERTIFICATE")}
-										onChange={(nextValue) =>
-											handleEnclosureTypeChange("NDA_CERTIFICATE", nextValue)
-										}
-										kind="vendorDocument"
-										label="NDA Certificate"
-										description="Upload the signed NDA certificate."
-										required
-										error={enclosureErrors.ndaCertificate}
-										readonly={isReadOnly}
-										disabled={loading}
-										heightClassName="vendor-compliance-upload-height"
-										className="vendor-compliance-upload"
-										inputName="NDA_CERTIFICATE"
-										showActions
-										tooltip="Mandatory"
-									/>
-								) : null}
-							</div>
-						</section>
-					</div>
+					{values.ndaObtained === "Yes" ? (
+						<FileUploadField
+							value={getEnclosureFile("NDA_CERTIFICATE")}
+							onChange={(nextValue) =>
+								handleEnclosureTypeChange("NDA_CERTIFICATE", nextValue)
+							}
+							kind="vendorDocument"
+							label="NDA Certificate"
+							description="Upload the signed NDA certificate."
+							required
+							error={enclosureErrors.ndaCertificate}
+							readonly={isReadOnly}
+							disabled={loading}
+							heightClassName="vendor-enclosure-upload-height"
+							className="vendor-enclosure-upload-field"
+							inputName="NDA_CERTIFICATE"
+							showActions
+							tooltip="Mandatory"
+						/>
+					) : null}
 				</div>
 				{/* <Modal
 					open={isDpdpModalOpen}
@@ -847,7 +927,7 @@ const VendorCreationFormOne = ({
 							</div>
 						) : null}
 
-						<div className="bottom-buttons-bar-between">
+						<div className="bottom-buttons-bar-between px-4 max-lg:px-3">
 							<Button
 								type="button"
 								text="Back"

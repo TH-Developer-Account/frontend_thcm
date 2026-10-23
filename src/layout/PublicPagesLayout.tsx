@@ -23,8 +23,6 @@ export const PublicPagesLayout = ({
 						<img src={logo} alt="Tata Hitachi" />
 					</a>
 
-					{title ? <div className="public-page-title">{title}</div> : null}
-
 					{/* Mirrors the logo column so the title stays centred */}
 					<div className="public-page-brand-spacer" aria-hidden="true" />
 				</div>

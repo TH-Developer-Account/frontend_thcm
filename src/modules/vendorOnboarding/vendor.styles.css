@@ -762,7 +762,7 @@
 
 	.vendor-enclosure-upload-field {
 		margin: 0;
-		@apply py-1 px-0;
+		@apply py-0 px-0;
 	}
 
 	.vendor-enclosure-upload-field .form-label-row {
