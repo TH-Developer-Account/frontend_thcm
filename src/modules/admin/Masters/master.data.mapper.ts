@@ -1,111 +1,128 @@
 import type {
-	BudgetMasterOption,
-	ManageMasterPayload,
-	MasterDataResponse,
-	MasterItem,
-	MasterName,
-	MasterOption,
+  BudgetMasterOption,
+  ManageMasterPayload,
+  MasterDataResponse,
+  MasterItem,
+  MasterName,
+  MasterOption,
 } from "./masterData.types";
 import { MASTER_KEYS, MASTER_TYPES } from "./master.data.constant";
 
 const clean = (value?: string) => value?.trim() || undefined;
 
 const buildMasterData = (
-	masterName: MasterName,
-	item: MasterItem,
+  masterName: MasterName,
+  item: MasterItem,
 ): ManageMasterPayload["data"] => {
-	const name = clean(item.name);
-	const code = clean(item.code);
-	const description = clean(item.description);
-	const fiscalYear = clean(item.fiscalYear);
+  const name = clean(item.name);
+  const code = clean(item.code);
+  const description = clean(item.description);
+  const fiscalYear = clean(item.fiscalYear);
 
-	switch (masterName) {
-		case "Branches":
-		case "Departments":
-		case "Regions":
-			return {
-				...(name && { name }),
-				...(code && { code }),
-			};
+  switch (masterName) {
+    case "Branches":
+    case "Departments":
+      return {
+        ...(name && { name }),
+        ...(code && { code }),
+      };
 
-		case "Event Names":
-			return {
-				...(name && { name }),
-			};
+    case "Event Names":
+      return {
+        ...(name && { name }),
+      };
 
-		case "Budget": {
-			const amount =
-				item.budgetAmount !== undefined &&
-				item.budgetAmount !== null &&
-				String(item.budgetAmount).trim() !== ""
-					? Number(item.budgetAmount)
-					: undefined;
+    case "Budget": {
+      const amount =
+        item.budgetAmount !== undefined &&
+        item.budgetAmount !== null &&
+        String(item.budgetAmount).trim() !== ""
+          ? Number(item.budgetAmount)
+          : undefined;
 
-			return {
-				...(code && { code }),
-				...(fiscalYear && { fiscal_year: fiscalYear }),
-				...(description && { id_desc: description }),
-				...(amount !== undefined &&
-					Number.isFinite(amount) && { value: amount }),
-			};
-		}
-	}
+      return {
+        ...(code && { code }),
+        ...(fiscalYear && { fiscal_year: fiscalYear }),
+        ...(description && { id_desc: description }),
+        ...(amount !== undefined &&
+          Number.isFinite(amount) && { value: amount }),
+      };
+    }
+
+    // Division/Designation: free-text name only.
+    case "Divisions":
+    case "Designations":
+      return {
+        ...(name && { name }),
+      };
+
+    // Cost Center/Zone: both have a real required code alongside the
+    // name (Cost Center: EOR's numeric code; Zone: region_code, unique
+    // and required on the Zone model) — same shape as Branches/
+    // Departments above.
+    case "Cost Centers":
+    case "Zones":
+      return {
+        ...(code && { code }),
+        ...(name && { name }),
+      };
+  }
 };
 
 export const buildCreateMasterPayload = (
-	masterName: MasterName,
-	item: MasterItem,
+  masterName: MasterName,
+  item: MasterItem,
 ): ManageMasterPayload => ({
-	type: MASTER_TYPES[masterName],
-	action: "create",
-	data: buildMasterData(masterName, item),
+  type: MASTER_TYPES[masterName],
+  action: "create",
+  data: buildMasterData(masterName, item),
 });
 
 export const buildUpdateMasterPayload = (
-	masterName: MasterName,
-	item: MasterItem,
+  masterName: MasterName,
+  item: MasterItem,
 ): ManageMasterPayload => ({
-	type: MASTER_TYPES[masterName],
-	action: "update",
-	data: {
-		id: item.id,
-		...buildMasterData(masterName, item),
-	},
+  type: MASTER_TYPES[masterName],
+  action: "update",
+  data: {
+    id: item.id,
+    ...buildMasterData(masterName, item),
+  },
 });
 
 const isBudgetMasterOption = (item: MasterOption): item is BudgetMasterOption =>
-	"budgetAmount" in item || "fiscalYear" in item;
+  "budgetAmount" in item || "fiscalYear" in item;
 
 export const mapMasterItem = (item: MasterOption): MasterItem => ({
-	id: String(item.value),
-	name: clean(item.label),
-	code: clean(item.code),
-	description: clean(item.description) ?? clean(item.id_desc),
-	budgetAmount: isBudgetMasterOption(item) ? item.budgetAmount : undefined,
-	fiscalYear: isBudgetMasterOption(item) ? clean(item.fiscalYear) : undefined,
+  id: String(item.value),
+  name: clean(item.label),
+  code: clean(item.code),
+  description: clean(item.description) ?? clean(item.id_desc),
+  budgetAmount: isBudgetMasterOption(item) ? item.budgetAmount : undefined,
+  fiscalYear: isBudgetMasterOption(item) ? clean(item.fiscalYear) : undefined,
 });
 
 export const getMasterItems = (
-	data: MasterDataResponse | undefined,
-	masterName: MasterName,
+  data: MasterDataResponse | undefined,
+  masterName: MasterName,
 ): MasterItem[] => {
-	if (!data) return [];
+  if (!data) return [];
 
-	const collection = data[MASTER_KEYS[masterName]];
-	return Array.isArray(collection)
-		? collection.map((item) => mapMasterItem(item))
-		: [];
+  const collection = data[MASTER_KEYS[masterName]];
+  return Array.isArray(collection)
+    ? collection.map((item) => mapMasterItem(item))
+    : [];
 };
 
 export const getMasterCounts = (
-	data: MasterDataResponse | undefined,
+  data: MasterDataResponse | undefined,
 ): Partial<Record<MasterName, number>> => {
-	if (!data) return {};
+  if (!data) return {};
 
-	return Object.fromEntries(
-		(Object.keys(MASTER_KEYS) as MasterName[]).map((masterName) => [
-			masterName,
-			data[MASTER_KEYS[masterName]]?.length ?? 0,
-		]),
-	) as Record<MasterName, number>;
+  return Object.fromEntries(
+    (Object.keys(MASTER_KEYS) as MasterName[]).map((masterName) => [
+      masterName,
+      data[MASTER_KEYS[masterName]]?.length ?? 0,
+    ]),
+  ) as Record<MasterName, number>;
 };
