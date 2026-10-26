@@ -70,15 +70,15 @@ const BASIC_INFO_REQUIRED_FIELDS: Array<keyof UserFormValues> = [
   "employeeCode",
 ];
 
-// designation/division/costCenter are FK ids (designationId, divisionId,
-// costCenterId), and zone is a multi-select (zoneIds) — see
-// user-management.types.ts and user.schema.ts. location is plain free
-// text (not a master-backed FK), so it's just "location" here.
+// branch/designation/division/costCenter are FK ids (branchId,
+// designationId, divisionId, costCenterId), and zone is a multi-select
+// (zoneIds) — see user-management.types.ts and user.schema.ts. location is
+// plain free text (not a master-backed FK), so it's just "location" here.
 export const ORGANIZATION_REQUIRED_FIELDS: Array<keyof UserFormValues> = [
   "location",
   "address",
   "zoneIds",
-  "branch",
+  "branchId",
   "department",
   "role",
   "designationId",

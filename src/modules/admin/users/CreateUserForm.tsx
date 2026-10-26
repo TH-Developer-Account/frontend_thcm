@@ -82,13 +82,14 @@ export function CreateUserForm({ controller }: UserFormProps) {
   } = controller;
   const { isSuperAdmin } = useAuth();
 
-  // Designation/Division/Cost Center pickers and the Zone multi-select are
-  // all sourced from the Masters endpoint, the same one MastersPage.tsx
-  // reads from — so these dropdowns and the admin's Masters screen are
-  // always showing the same governed options. Location is NOT one of
-  // these — it's a plain text field below, not master-backed (see
-  // user-management.types.ts).
+  // Branch/Designation/Division/Cost Center pickers and the Zone
+  // multi-select are all sourced from the Masters endpoint, the same one
+  // MastersPage.tsx reads from — so these dropdowns and the admin's
+  // Masters screen are always showing the same governed options. Location
+  // is NOT one of these — it's a plain text field below, not master-backed
+  // (see user-management.types.ts).
   const { data: masterData } = useMasterData();
+  const branchOptions: MasterOption[] = masterData?.branches ?? [];
   const designationOptions: MasterOption[] = masterData?.designations ?? [];
   const divisionOptions: MasterOption[] = masterData?.divisions ?? [];
   const costCenterOptions: MasterOption[] = masterData?.costCenters ?? [];
@@ -392,11 +393,12 @@ export function CreateUserForm({ controller }: UserFormProps) {
     },
   ];
 
-  // Helper for the master-backed single-select pickers below (Designation/
-  // Division/Cost Center) — they all share the same shape (options:
-  // MasterOption[], value/onChange a *Id field), so this keeps the render
-  // callbacks from repeating the same find/onChange boilerplate each time.
-  // Location used to be one of these too, before it reverted to plain text.
+  // Helper for the master-backed single-select pickers below (Branch/
+  // Designation/Division/Cost Center) — they all share the same shape
+  // (options: MasterOption[], value/onChange a *Id field), so this keeps
+  // the render callbacks from repeating the same find/onChange boilerplate
+  // each time. Location used to be one of these too, before it reverted to
+  // plain text.
   const renderMasterSelect = (
     fieldLabel: string,
     options: MasterOption[],
@@ -434,6 +436,25 @@ export function CreateUserForm({ controller }: UserFormProps) {
       required: true,
       error: fieldErrors.address,
     },
+    // Branch reverted back to the master-backed Branch dropdown it was
+    // before — unlike location, it already had a governed master + admin
+    // screen, so it's a renderMasterSelect picker again, not plain text.
+    {
+      id: "branch",
+      name: "branchId",
+      label: "Branch",
+      required: true,
+      displayValue: selectedUser?.branch || "--",
+      render: ({ draft, disabled, setFieldValue }) =>
+        renderMasterSelect(
+          "Branch",
+          branchOptions,
+          draft.branchId,
+          disabled,
+          fieldErrors.branchId,
+          (id) => setFieldValue("branchId", id as never),
+        ),
+    },
     // A user can cover multiple zones, so this is a multi-select writing
     // to zoneIds (string[]) rather than a single plain-text field.
     {
@@ -464,12 +485,6 @@ export function CreateUserForm({ controller }: UserFormProps) {
           }
         />
       ),
-    },
-    {
-      name: "branch",
-      label: "Branch",
-      required: true,
-      error: fieldErrors.branch,
     },
     {
       name: "department",

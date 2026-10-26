@@ -28,14 +28,14 @@ export type AppAccess = {
 // Frontend-facing shape, produced by mapUser(). Casing here is just
 // frontend convention — doesn't need to match Prisma, mapUser() does that translation.
 //
-// designation/division/costCenter are display strings (the backend
+// branch/designation/division/costCenter are display strings (the backend
 // flattens the FK relation to its name/code for every read) — the
 // matching *Id field alongside each is what the User admin edit form uses
 // to preselect the right option. zones/zoneIds follow the same pattern,
 // pluralized since a user can hold more than one zone. "location" is
 // User's old "region" column — EOR's "Location" (plant/city) data, not the
 // same concept as a zone/sales-territory — and is plain free text with no
-// *Id companion (not master-backed, unlike the three above).
+// *Id companion (not master-backed, unlike the four above).
 export type User = {
   id: string;
   /** Persisted profile-image URL returned by the API. */
@@ -55,6 +55,7 @@ export type User = {
   zones: string[];
   zoneIds: string[];
   branch: string;
+  branchId?: string;
   department: string;
   role: string;
   designation: string;
@@ -107,6 +108,7 @@ export type UserResponse = {
   zones?: string[] | null;
   zoneIds?: string[] | null;
   branch?: string | null;
+  branchId?: string | null;
   department?: string | null;
   role?: string | null;
   designation?: string | null;
@@ -153,7 +155,7 @@ export type CreateUserPayload = {
   location?: string;
   address?: string;
   zoneIds?: string[];
-  branch?: string;
+  branchId?: string;
   department?: string;
   role?: string;
   designationId?: string;
@@ -190,7 +192,7 @@ export type CreateUserInput = {
   location?: string;
   address?: string;
   zoneIds?: string[];
-  branch?: string;
+  branchId?: string;
   department?: string;
   role?: string;
   designationId?: string;

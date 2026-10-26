@@ -102,7 +102,7 @@ export const mapUserToForm = (user: User): UserFormValues => ({
   location: user.location ?? "",
   address: user.address,
   zoneIds: user.zoneIds ?? [],
-  branch: user.branch,
+  branchId: user.branchId ?? "",
   department: user.department,
   role: user.role,
   designationId: user.designationId ?? "",
@@ -136,7 +136,7 @@ export const EMPTY_USER_FORM: UserFormValues = {
   location: "",
   address: "",
   zoneIds: [],
-  branch: "",
+  branchId: "",
   department: "",
   role: "",
   designationId: "",
@@ -172,15 +172,16 @@ export const mapUser = (user: UserResponse): User => ({
   phoneNumber: user.phone_number ?? "",
   email: user.email ?? "",
   workspaceId: user.workspaceUsers?.[0]?.workspaceId ?? "",
-  // designation/division/costCenter: display strings (backend flattens the
-  // FK relation's name/code for every read) alongside the raw ids the edit
-  // form needs to preselect the right master option. location is plain
-  // free text — no companion id, nothing to flatten.
+  // branch/designation/division/costCenter: display strings (backend
+  // flattens the FK relation's name/code for every read) alongside the raw
+  // ids the edit form needs to preselect the right master option. location
+  // is plain free text — no companion id, nothing to flatten.
   location: user.location ?? "",
   address: user.address ?? "",
   zones: user.zones ?? [],
   zoneIds: user.zoneIds ?? [],
   branch: user.branch ?? "",
+  branchId: user.branchId ?? undefined,
   department: user.department ?? "",
   role: user.role ?? "",
   designation: user.designation ?? "",
@@ -239,7 +240,7 @@ export const mapUserFormToCreatePayload = (
   assignText("c4cId", form.c4cId);
   assignText("location", form.location);
   assignText("address", form.address);
-  assignText("branch", form.branch);
+  assignText("branchId", form.branchId);
   assignText("department", form.department);
   assignText("role", form.role);
   assignText("designationId", form.designationId);
@@ -290,7 +291,7 @@ const USER_UPDATE_FIELD_MAP = {
   location: "location",
   address: "address",
   zoneIds: "zoneIds",
-  branch: "branch",
+  branchId: "branchId",
   department: "department",
   role: "role",
   designationId: "designationId",
