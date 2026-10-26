@@ -93,7 +93,6 @@ export type VendorUpdatePayload = {
 	mobile?: string | null;
 	email?: string | null;
 	msmeVendor?: boolean | null;
-	msmeCertAttached?: boolean | null;
 	bankName?: string | null;
 	bankBranch?: string | null;
 	ifscCode?: string | null;
@@ -102,6 +101,11 @@ export type VendorUpdatePayload = {
 	confirmAccountNumber?: string | null;
 	gstin?: string | null;
 	pan?: string | null;
+
+	// true = Applicable, false = N/A, null = not chosen (matches backend Boolean?)
+	gstApplicability?: boolean | null;
+	incorporationApplicability?: boolean | null;
+
 	entityRegNo?: string | null;
 	vendorCode?: string | null;
 	vendorType?: string | null;
@@ -305,7 +309,6 @@ export type VendorOnboardingRawResponse = {
 	mobile: string | null;
 	email: string | null;
 	msmeVendor: boolean | null;
-	msmeCertAttached: boolean | null;
 	bankName: string | null;
 	bankBranch: string | null;
 	ifscCode: string | null;
@@ -313,6 +316,8 @@ export type VendorOnboardingRawResponse = {
 	accountNumber: string | null;
 	confirmAccountNumber?: string | null;
 	gstin: string | null;
+	gstApplicability?: boolean | null;
+	incorporationApplicability?: boolean | null;
 	pan: string | null;
 	entityRegNo: string | null;
 	vendorCode: string | null;

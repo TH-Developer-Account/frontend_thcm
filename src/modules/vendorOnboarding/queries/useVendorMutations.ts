@@ -180,3 +180,17 @@ export function useSendBackToVendorMutation() {
 			invalidateVendor(queryClient, vendorRequestId),
 	});
 }
+
+// POST /vendor-onboarding/:id/resend-link — re-sends the invite mail with a
+// fresh link. Backend only allows it while status is AWAITING_VENDOR.
+export function useResendVendorLinkMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: (vendorRequestId: string) =>
+			vendorOnboardingApi.resendVendorLink(vendorRequestId),
+
+		onSuccess: (_data, vendorRequestId) =>
+			invalidateVendor(queryClient, vendorRequestId),
+	});
+}

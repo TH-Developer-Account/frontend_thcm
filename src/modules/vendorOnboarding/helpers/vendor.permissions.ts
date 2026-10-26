@@ -59,9 +59,7 @@ type ApprovalIdentity = {
 };
 
 // True when the user appears as an approver on ANY stage of the workflow
-// (any iteration, any status) — not just the current one. Used to keep
-// proposer-only actions (e.g. Send Back to Vendor) away from anyone who
-// also sits in the approval chain.
+// (any iteration, any status) — not just the current one.
 export const isUserApproverInAnyStage = (
 	stages: readonly ApprovalStageLike[],
 	user: { id?: string | null; email?: string | null } | null | undefined,
@@ -194,12 +192,14 @@ export const getVendorRecordPermissions = ({
 		// workflow actions
 		canApprove,
 		canClarify: canApprove,
-		// Proposer/creator only. Anyone on any approval stage never gets it,
-		// even if they also created the record.
+		// Initiator only, and only while a clarification is open (an approver
+		// asked for clarification and the round hasn't been resolved yet).
+		// Nobody else sees it. Being an approver on another stage does NOT
+		// hide it — the initiator can legitimately also sit in the chain.
 		canSendBackToVendor:
-			isThcmEmployee &&
+			isThcmProposer &&
 			status === "IN_REVIEW" &&
-			isRecordCreator &&
+			hasPendingClarifiedApproval &&
 			!isApproverOnAnyStage,
 		canAcceptAndClose: status === "APPROVED" && isExternalApprover,
 	};
@@ -278,6 +278,8 @@ export const getVendorRowPermissions = (
 	return {
 		canView: !isAwaitingVendor,
 		canEdit: isOwner && isEditableVendorStatus(row.status),
+		// Retrigger Email: only while the vendor hasn't submitted. Once the
+		// status leaves AWAITING_VENDOR the row action disappears.
 		canRetrigger: isOwner && isAwaitingVendor,
 	};
 };

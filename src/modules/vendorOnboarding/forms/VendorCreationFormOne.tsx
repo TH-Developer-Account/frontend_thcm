@@ -6,7 +6,7 @@ import {
 	// RefreshCcw,
 	Save,
 } from "lucide-react";
-import type { ClipboardEvent } from "react";
+import { type ClipboardEvent } from "react";
 import Button from "../../../components/common/Button";
 // import { Modal } from "../../../components/common/Modal";
 import FormInput from "../../../components/forms/FormInput";
@@ -631,140 +631,159 @@ const VendorCreationFormOne = ({
 					/>
 				</div>
 
-				{/* Documents, same 4-column grid:
-				    GST certificate | PAN document | Incorporation Applicable? | Incorporation certificate
-				    Cancelled cheque | Other attachments … */}
-				<div className={FORM_ROW_GRID}>
-					{isGstApplicable ? renderUpload("GST_CERTIFICATE") : null}
-
-					{renderUpload("PAN_DOCUMENT")}
-
-					<SelectInput
-						mode={fieldMode}
-						name="incorporationApplicability"
-						label="Incorporation Applicable?"
-						placeholder="Select option"
-						options={applicabilityOptions}
-						value={getSelectedOption(
-							applicabilityOptions,
-							values.incorporationApplicability,
-						)}
-						required
-						error={errors.incorporationApplicability}
-						helperText="Select whether incorporation applies to this vendor."
-						onChange={(option) =>
-							handleApplicabilityChange(
-								"incorporationApplicability",
-								option?.value ?? "",
-							)
-						}
-					/>
-
-					{isIncorporationApplicable
-						? renderUpload("INCORPORATION_CERTIFICATE")
-						: null}
-
-					{renderUpload("CANCELLED_CHEQUE")}
-
-					{/* Other attachments flow right after the cheque in the same grid */}
-					{visibleDocumentFields
-						.filter(
-							(field) => !INLINE_DOCUMENT_TYPES.includes(field.documentType),
-						)
-						.map((field) => renderUpload(field.documentType))}
-				</div>
-				{canAddMoreDocuments ? (
-					<div className="flex justify-end px-4 max-lg:px-3">
-						<Button
-							type="button"
-							text="Add More"
-							Icon={Plus}
-							size="sm"
-							appearance="standard"
-							variant="outline"
-							disabled={loading}
-							onClick={handleAddMoreDocument}
-						/>
+				{/* ── Documents section ─────────────────────────────────────────── */}
+				<section
+					className="mt-2 flex flex-col gap-1 border-t border-[var(--color-border-subtle)] pt-3"
+					aria-labelledby="vendor-documents-heading"
+				>
+					<div className="px-4 max-lg:px-3">
+						<h3
+							id="vendor-documents-heading"
+							className="m-0 text-sm font-semibold text-[var(--color-text-primary)]"
+						>
+							Documents
+						</h3>
 					</div>
-				) : null}
-				{/* MSME / NDA: same 4-column grid.
-				    MSME select | MSME certificate (if Yes) | NDA select | NDA certificate (if Yes) */}
-				<div className={FORM_ROW_GRID}>
-					<SelectInput
-						mode={fieldMode}
-						name="msmeVendor"
-						label="MSME Vendor"
-						placeholder="Select option"
-						options={msmeOptions}
-						value={getSelectedOption(
-							msmeOptions,
-							toMsmeSelectValue(values.msmeVendor),
-						)}
-						required
-						error={errors.msmeVendor}
-						helperText="Select whether this vendor is registered under MSME."
-						onChange={(option) =>
-							handleConditionalFieldChange("msmeVendor", option?.value ?? "")
-						}
-					/>
 
-					{values.msmeVendor === "Yes" ? (
-						<FileUploadField
-							value={getEnclosureFile("MSME_CERTIFICATE")}
-							onChange={(nextValue) =>
-								handleEnclosureTypeChange("MSME_CERTIFICATE", nextValue)
-							}
-							kind="vendorDocument"
-							label="MSME Certificate"
-							description="Upload the MSME registration certificate."
+					{/* Documents, same 4-column grid:
+					    GST certificate | PAN document | Incorporation Applicable? | Incorporation certificate
+					    Cancelled cheque | Other attachments … */}
+					<div className={FORM_ROW_GRID}>
+						{isGstApplicable ? renderUpload("GST_CERTIFICATE") : null}
+
+						{renderUpload("PAN_DOCUMENT")}
+
+						<SelectInput
+							mode={fieldMode}
+							name="incorporationApplicability"
+							label="Incorporation Applicable?"
+							placeholder="Select option"
+							options={applicabilityOptions}
+							value={getSelectedOption(
+								applicabilityOptions,
+								values.incorporationApplicability,
+							)}
 							required
-							error={enclosureErrors.msmeCertificate}
-							readonly={isReadOnly}
-							disabled={loading}
-							heightClassName="vendor-enclosure-upload-height"
-							className="vendor-enclosure-upload-field"
-							inputName="MSME_CERTIFICATE"
-							showActions
-							tooltip="Mandatory"
-						/>
-					) : null}
-
-					<SelectInput
-						mode={fieldMode}
-						name="ndaObtained"
-						label="Non-Disclosure Undertaking Obtained?"
-						placeholder="Select option"
-						required
-						options={yesNoOptions}
-						value={getSelectedOption(yesNoOptions, toYesNo(values.ndaObtained))}
-						error={errors.ndaObtained}
-						helperText="Confirm whether NDA is obtained."
-						onChange={(option) =>
-							handleConditionalFieldChange("ndaObtained", option?.value ?? "")
-						}
-					/>
-
-					{values.ndaObtained === "Yes" ? (
-						<FileUploadField
-							value={getEnclosureFile("NDA_CERTIFICATE")}
-							onChange={(nextValue) =>
-								handleEnclosureTypeChange("NDA_CERTIFICATE", nextValue)
+							error={errors.incorporationApplicability}
+							helperText="Select whether incorporation applies to this vendor."
+							onChange={(option) =>
+								handleApplicabilityChange(
+									"incorporationApplicability",
+									option?.value ?? "",
+								)
 							}
-							kind="vendorDocument"
-							label="NDA Certificate"
-							description="Upload the signed NDA certificate."
-							required
-							error={enclosureErrors.ndaCertificate}
-							readonly={isReadOnly}
-							disabled={loading}
-							heightClassName="vendor-enclosure-upload-height"
-							className="vendor-enclosure-upload-field"
-							inputName="NDA_CERTIFICATE"
-							showActions
-							tooltip="Mandatory"
 						/>
+
+						{isIncorporationApplicable
+							? renderUpload("INCORPORATION_CERTIFICATE")
+							: null}
+
+						{renderUpload("CANCELLED_CHEQUE")}
+
+						{/* Other attachments flow right after the cheque in the same grid */}
+						{visibleDocumentFields
+							.filter(
+								(field) => !INLINE_DOCUMENT_TYPES.includes(field.documentType),
+							)
+							.map((field) => renderUpload(field.documentType))}
+					</div>
+					{canAddMoreDocuments ? (
+						<div className="flex justify-end px-4 max-lg:px-3">
+							<Button
+								type="button"
+								text="Add More"
+								Icon={Plus}
+								size="sm"
+								appearance="standard"
+								variant="outline"
+								disabled={loading}
+								onClick={handleAddMoreDocument}
+							/>
+						</div>
 					) : null}
-				</div>
+					{/* MSME / NDA: same 4-column grid.
+					    MSME select | MSME certificate (if Yes) | NDA select | NDA certificate (if Yes) */}
+					<div className={FORM_ROW_GRID}>
+						<SelectInput
+							mode={fieldMode}
+							name="msmeVendor"
+							label="MSME Vendor"
+							placeholder="Select option"
+							options={msmeOptions}
+							value={getSelectedOption(
+								msmeOptions,
+								toMsmeSelectValue(values.msmeVendor),
+							)}
+							required
+							error={errors.msmeVendor}
+							helperText="Select whether this vendor is registered under MSME."
+							onChange={(option) =>
+								handleConditionalFieldChange("msmeVendor", option?.value ?? "")
+							}
+						/>
+
+						{values.msmeVendor === "Yes" ? (
+							<FileUploadField
+								value={getEnclosureFile("MSME_CERTIFICATE")}
+								onChange={(nextValue) =>
+									handleEnclosureTypeChange("MSME_CERTIFICATE", nextValue)
+								}
+								kind="vendorDocument"
+								label="MSME Certificate"
+								description="Upload the MSME registration certificate."
+								required
+								error={enclosureErrors.msmeCertificate}
+								readonly={isReadOnly}
+								disabled={loading}
+								heightClassName="vendor-enclosure-upload-height"
+								className="vendor-enclosure-upload-field"
+								inputName="MSME_CERTIFICATE"
+								showActions
+								tooltip="Mandatory"
+							/>
+						) : null}
+
+						<SelectInput
+							mode={fieldMode}
+							name="ndaObtained"
+							label="Non-Disclosure Undertaking Obtained?"
+							placeholder="Select option"
+							required
+							options={yesNoOptions}
+							value={getSelectedOption(
+								yesNoOptions,
+								toYesNo(values.ndaObtained),
+							)}
+							error={errors.ndaObtained}
+							helperText="Confirm whether NDA is obtained."
+							onChange={(option) =>
+								handleConditionalFieldChange("ndaObtained", option?.value ?? "")
+							}
+						/>
+
+						{values.ndaObtained === "Yes" ? (
+							<FileUploadField
+								value={getEnclosureFile("NDA_CERTIFICATE")}
+								onChange={(nextValue) =>
+									handleEnclosureTypeChange("NDA_CERTIFICATE", nextValue)
+								}
+								kind="vendorDocument"
+								label="NDA Certificate"
+								description="Upload the signed NDA certificate."
+								required
+								error={enclosureErrors.ndaCertificate}
+								readonly={isReadOnly}
+								disabled={loading}
+								heightClassName="vendor-enclosure-upload-height"
+								className="vendor-enclosure-upload-field"
+								inputName="NDA_CERTIFICATE"
+								showActions
+								tooltip="Mandatory"
+							/>
+						) : null}
+					</div>
+				</section>
+
 				{/* <Modal
 					open={isDpdpModalOpen}
 					title="Data Privacy Notice"
