@@ -62,6 +62,21 @@ const renderEmptyValue = () => (
 	<span className="approval-table-empty-value">--</span>
 );
 
+/**
+ * Designation can arrive as a plain string or, when the backend returns the
+ * Designation relation, as an object like { id, name, isActive, ... }.
+ * React cannot render an object as a child, so always reduce it to text.
+ */
+const getDesignationLabel = (value: unknown): string => {
+	if (!value) return "--";
+	if (typeof value === "string") return value.trim() || "--";
+	if (typeof value === "object" && "name" in value) {
+		const name = (value as { name?: unknown }).name;
+		return typeof name === "string" && name.trim() ? name : "--";
+	}
+	return "--";
+};
+
 const renderValueStack = (
 	values: Array<{ key: string; content: ReactNode }>,
 	fallback?: ReactNode,
@@ -207,7 +222,7 @@ const buildColumns = (
 					key: String(approver.id),
 					content: (
 						<span className="approval-table-secondary-value">
-							{approver.designation || "--"}
+							{getDesignationLabel(approver.designation)}
 						</span>
 					),
 				})),
@@ -283,7 +298,7 @@ const buildColumns = (
 ];
 
 /* -------------------------------------------------------------------------- */
-/* PDF variant (unchanged)                                                    */
+/* PDF variant                                                                */
 /* -------------------------------------------------------------------------- */
 
 const ApprovalPdfTable = ({ data }: { data: ApprovalTableRow[] }) => {
@@ -331,9 +346,11 @@ const ApprovalPdfTable = ({ data }: { data: ApprovalTableRow[] }) => {
 							<td>
 								{approvers.length
 									? approvers
-											.map((approver) => approver.designation || "--")
+											.map((approver) =>
+												getDesignationLabel(approver.designation),
+											)
 											.join(", ")
-									: row.designation || "--"}
+									: getDesignationLabel(row.designation)}
 							</td>
 							<td>{row.strategy || "--"}</td>
 							<td>{row.minApprovals ?? "--"}</td>
