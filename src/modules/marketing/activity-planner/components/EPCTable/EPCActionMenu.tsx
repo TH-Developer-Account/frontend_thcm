@@ -28,7 +28,7 @@ import { useNavigate } from "react-router-dom";
 import ActionMenu, {
 	type ActionMenuItem,
 } from "../../../../../components/common/ActionMenu";
-
+import { getEpcOpenRoute } from "../../utils/epcClarification";
 import type { EpcListItem } from "../../types/epc.types";
 import {
 	EPC_DETAIL_PATH,
@@ -107,12 +107,10 @@ const EPCActionMenu = ({
 				: `View ${rowLabel} (available after submission)`,
 			// Same destination as the EPC No link: the EPC view page renders
 			// only for a submitted EPC; otherwise continue in the stepper.
-			onClick: (selectedRow) =>
-				navigate(
-					isEpcSubmitted(selectedRow)
-						? EPC_DETAIL_PATH(selectedRow.id)
-						: EPC_FORMS_WIZARD_PATH(selectedRow.id, "epc"),
-				),
+			onClick: (selectedRow) => {
+				const { to, state } = getEpcOpenRoute(selectedRow, currentUserId);
+				navigate(to, { state });
+			},
 		},
 		{
 			id: "edit-epc",

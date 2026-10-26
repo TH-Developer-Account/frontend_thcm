@@ -2,7 +2,9 @@
    ACTIVITY FORM VIEW
    components/activityFormView/activityFormView.css
 
-   EPC detail page: header (title + tabs) · tab card | Audit Trail · footer.
+   EPC detail page: header (title + tabs, one row) ·
+   tab card | Audit Trail + actions. ALL actions (proposer, approver, validator)
+   live in the side column, below the Audit Trail.
    This is the ONLY place activity-form-view styles live — it replaces the
    three duplicated blocks that were at the end of marketing.styles.css
    (original, "collapsible side panels", and activityFormView.fixes.css).
@@ -12,9 +14,10 @@
    Rules this file relies on:
    • The aside / Card must NOT carry Tailwind `h-full` — utilities beat
      this layer and the panel would fall back to auto height.
-   • From 1024px the Audit Trail column is sticky and as tall as the screen
-     (minus --afv-side-offset and --afv-audit-trim); the list scrolls
-     inside it. Below 1024px it stacks under the tab card at a fixed height.
+   • From 1024px the side column is sticky and as tall as the screen
+     (minus --afv-side-offset and --afv-audit-trim); the Audit Trail list
+     scrolls inside it. Below 1024px it stacks under the tab card at a
+     fixed height.
 ========================================================= */
 
 @layer components {
@@ -70,13 +73,6 @@
 		gap: var(--space-2) var(--space-3);
 	}
 
-	.activity-form-view-header-actions {
-		display: flex;
-		flex-shrink: 0;
-		align-items: center;
-		gap: var(--space-2);
-	}
-
 	.activity-form-view-title-row {
 		display: flex;
 		min-width: 0;
@@ -110,6 +106,7 @@
 		white-space: nowrap;
 	}
 
+	/* Title left, tabs right. */
 	.activity-form-view-tabs {
 		flex: 0 0 auto;
 		max-width: 100%;
@@ -179,7 +176,7 @@
 		font-size: var(--font-size-xs);
 	}
 
-	/* ---------------- Audit Trail column ---------------- */
+	/* ---------------- Side column (decision card + Audit Trail) ---------------- */
 
 	.activity-form-view-side {
 		display: flex;
@@ -201,6 +198,106 @@
 		.activity-form-view-side:not(:has(.ui-card-accordion-expanded)) {
 			height: auto;
 		}
+
+		/* Decision card on top: on a short screen let the column grow instead
+		   of squeezing the Audit Trail below its own minimum height. */
+		.activity-form-view-side:has(.approval-decision-card) {
+			height: auto;
+			min-height: calc(100dvh - var(--afv-side-offset) - var(--afv-audit-trim));
+		}
+
+		/* …but with no expanded Audit Trail there is nothing to stretch. */
+		.activity-form-view-side:has(.approval-decision-card):not(
+				:has(.ui-card-accordion-expanded)
+			) {
+			min-height: 0;
+		}
+	}
+
+	/* ---------------- Approver decision card ---------------- */
+
+	/* Brand-tinted border so the one thing the approver must do stands out. */
+	.approval-decision-card {
+		display: flex;
+		flex: 0 0 auto;
+		flex-direction: column;
+		gap: var(--space-3);
+
+		padding: var(--space-4);
+
+		border: var(--border-width-default) solid
+			color-mix(in srgb, var(--color-brand) 35%, var(--color-border-default));
+		border-radius: var(--radius-lg);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.approval-decision-card-head {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.approval-decision-card-eyebrow {
+		color: var(--color-brand);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-medium);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.approval-decision-card-title {
+		margin: 0;
+
+		color: var(--color-text-primary);
+		font-size: var(--font-size-md, var(--font-size-sm));
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+	}
+
+	.approval-decision-card-subtitle {
+		margin: 0;
+
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
+	}
+
+	/* Stacked, full-width: Approve on top, Send for Clarification under it. */
+	.approval-decision-card-actions {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.approval-decision-card-actions > * {
+		width: 100%;
+		justify-content: center;
+	}
+
+	/* Proposer variant of ApprovalActionsBar inside the card: drop its own
+	   footer chrome, stack the buttons full width. */
+	.approval-decision-card .approval-actions-bar {
+		width: 100%;
+		padding: 0;
+		border: 0;
+		background: none;
+		box-shadow: none;
+	}
+
+	.approval-decision-card .approval-actions-bar > span:empty {
+		display: none;
+	}
+
+	.approval-decision-card .approval-actions-bar-end {
+		width: 100%;
+		flex-direction: column;
+		align-items: stretch;
+		gap: var(--space-2);
+	}
+
+	.approval-decision-card .approval-actions-bar-end > * {
+		width: 100%;
+		justify-content: end;
 	}
 
 	/* Collapsed panel = header only */
@@ -314,22 +411,6 @@
 		align-items: center;
 	}
 
-	/* ---------------- Footer ---------------- */
-
-	/* Shell only — ApprovalActionsBar keeps its own internal layout. */
-	.activity-form-view-footer {
-		padding: var(--space-3) var(--space-4);
-
-		border: var(--border-width-default) solid var(--color-border-default);
-		border-radius: var(--radius-lg);
-		background-color: var(--color-bg-surface);
-		box-shadow: var(--shadow-xs);
-	}
-
-	.activity-form-view-footer > .approval-actions-bar {
-		width: 100%;
-	}
-
 	/* ---------------- Responsive ---------------- */
 
 	/* Below 1024px the Audit Trail stacks under the tab card at a fixed height. */
@@ -340,9 +421,9 @@
 	}
 
 	@media (max-width: 767px) {
-		.activity-form-view-header {
-			align-items: stretch;
-			flex-direction: column;
+		/* Column layout: 100% basis would mean 100% HEIGHT, so reset it. */
+		.activity-form-view-tabs {
+			flex: 0 0 auto;
 		}
 	}
 }

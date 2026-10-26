@@ -17,34 +17,35 @@
 //                        name/image/price but no GST/discount/stock info.
 //                        Call backfillSouvenirDisplayFields with a live
 //                        catalog lookup (by sku) to fill those in before
-//                        rendering/editing — the stored snapshot fields are
-//                        then overwritten with the live ones (still the
+//                        rendering/editing — the stored snapshot fields
+//                        are then overwritten with the live ones (still the
 //                        same values, barring a price/name change upstream)
 //                        via createSouvenirLine. See crf.types.ts's
 //                        CrfLineItem doc comment.
 
 import type {
-  GroupedOption,
-  LineItemOption,
-  Product,
+	GroupedOption,
+	LineItemOption,
+	Product,
 } from "../../shared/lineItem.types";
 import { toNumber } from "../../shared/lineItem.utils";
 import {
-  createSouvenirLine,
-  getLinePricing,
-  groupStockRows,
-  type SouvenirProduct,
-  type SouvenirVariant,
+	createSouvenirLine,
+	getLinePricing,
+	groupStockRows,
+	type SouvenirProduct,
+	type SouvenirVariant,
 } from "../shop/mapper";
 import type { ShopStockRow } from "../shop/types";
 import {
-  findArtworkPreset,
-  type ApiCrfItem,
-  type CrfCatalogItemInput,
-  type CrfItemInput,
-  type CrfLineItem,
-  type CrfPayload,
-  type CrfShopifyItemInput,
+	findArtworkPreset,
+	type ApiCrfItem,
+	type CrfCatalogItem,
+	type CrfCatalogItemInput,
+	type CrfItemInput,
+	type CrfLineItem,
+	type CrfPayload,
+	type CrfShopifyItemInput,
 } from "./types";
 
 const UNCATEGORIZED = "UNCATEGORIZED";
@@ -57,40 +58,40 @@ const SOUVENIR = "SOUVENIR";
 
 /** MAP product master → catalog option. Size fields only for artworks. */
 export const mapProductToLineItemOption = (item: Product): LineItemOption => {
-  const category = item.category || UNCATEGORIZED;
+	const category = item.category || UNCATEGORIZED;
 
-  return {
-    value: item.id,
-    label: item.name,
-    particular: item.id,
-    description: item.description,
+	return {
+		value: item.id,
+		label: item.name,
+		particular: item.id,
+		description: item.description,
 
-    rate: toNumber(item.unitRate),
-    quantity: 1,
+		rate: toNumber(item.unitRate),
+		quantity: 1,
 
-    partNumber: item.partNumber,
-    category,
+		partNumber: item.partNumber,
+		category,
 
-    // Artworks are digital: the size is chosen per line (px resolution),
-    // so the master's physical size is not carried over. Printed
-    // materials never have a size.
-    ...(category === ARTWORK ? { unit: "px" } : {}),
-  };
+		// Artworks are digital: the size is chosen per line (px resolution),
+		// so the master's physical size is not carried over. Printed
+		// materials never have a size.
+		...(category === ARTWORK ? { unit: "px" } : {}),
+	};
 };
 
 export const groupProductsByCategory = (
-  products: Product[] = [],
+	products: Product[] = [],
 ): GroupedOption[] =>
-  Object.values(
-    products.reduce<Record<string, GroupedOption>>((acc, item) => {
-      const category = item.category || UNCATEGORIZED;
+	Object.values(
+		products.reduce<Record<string, GroupedOption>>((acc, item) => {
+			const category = item.category || UNCATEGORIZED;
 
-      acc[category] ??= { label: category, options: [] };
-      acc[category].options.push(mapProductToLineItemOption(item));
+			acc[category] ??= { label: category, options: [] };
+			acc[category].options.push(mapProductToLineItemOption(item));
 
-      return acc;
-    }, {}),
-  );
+			return acc;
+		}, {}),
+	);
 
 /* ========================================================================== */
 /*                               Line amount                                  */
@@ -105,12 +106,24 @@ export const groupProductsByCategory = (
  * in exactly one place instead of being re-typed at each call site.
  */
 const getLineAmount = (
-  item: Pick<CrfLineItem, "total" | "rate" | "quantity">,
+	item: Pick<CrfLineItem, "total" | "rate" | "quantity">,
 ) => toNumber(item.total ?? toNumber(item.rate) * toNumber(item.quantity));
 
 /* ========================================================================== */
 /*                         API items → form (edit mode)                       */
 /* ========================================================================== */
+
+/**
+ * The ProductMaster id of a catalog line.
+ *
+ * GET /crf/:id returns `productId` directly, but GET /epc/:id (what the
+ * wizard and the detail page load) selects the nested `product { id … }`
+ * and — until epcFullInfoSelect also selects `productId` — leaves the flat
+ * column out. An empty id here means "Select a product." on save and no
+ * selected tile in the catalog, so fall back to the nested product.
+ */
+const getCatalogProductId = (item: CrfCatalogItem): string =>
+	item.productId ?? (item.product as { id?: string } | null)?.id ?? "";
 
 /**
  * Editable lines for the CRF form. Souvenir lines come back with identity +
@@ -121,70 +134,72 @@ const getLineAmount = (
  * to the user.
  */
 export const mapCrfLineItemsToFormItems = (
-  items: ApiCrfItem[] = [],
+	items: ApiCrfItem[] = [],
 ): CrfLineItem[] =>
-  items.map((item): CrfLineItem => {
-    if (item.source === "SHOPIFY") {
-      return {
-        id: item.id,
-        value: item.sku,
-        label: item.title ?? item.sku,
-        particular: item.sku,
-        description: "",
-        partNumber: item.sku,
-        category: SOUVENIR,
+	items.map((item): CrfLineItem => {
+		if (item.source === "SHOPIFY") {
+			return {
+				id: item.id,
+				value: item.sku,
+				label: item.title ?? item.sku,
+				particular: item.sku,
+				description: "",
+				partNumber: item.sku,
+				category: SOUVENIR,
 
-        rate: toNumber(item.rate),
-        quantity: item.requestedQty,
-        total: toNumber(item.amount),
+				rate: toNumber(item.rate),
+				quantity: item.requestedQty,
+				total: toNumber(item.amount),
 
-        sku: item.sku,
-        // Not known until backfillSouvenirDisplayFields runs — see
-        // CrfLineItem's doc comment on variantId in crf.types.ts.
-        variantId: null,
-        shopifyProductId: null,
-        variantTitle: item.variantTitle,
-        options: {},
-        imageUrl: item.imageUrl,
-        compareAtPrice: null,
-        gstRate: null,
-        availableQty: null,
-        // Only OUT_OF_STOCK has a matching ShopStockCheckStatus value;
-        // REQUESTED/REMOVED/ORDERED/DEBITED aren't a stock-check outcome.
-        stockStatus: item.status === "OUT_OF_STOCK" ? "OUT_OF_STOCK" : null,
-      };
-    }
+				sku: item.sku,
+				// Not known until backfillSouvenirDisplayFields runs — see
+				// CrfLineItem's doc comment on variantId in crf.types.ts.
+				variantId: null,
+				shopifyProductId: null,
+				variantTitle: item.variantTitle,
+				options: {},
+				imageUrl: item.imageUrl,
+				compareAtPrice: null,
+				gstRate: null,
+				availableQty: null,
+				// Only OUT_OF_STOCK has a matching ShopStockCheckStatus value;
+				// REQUESTED/REMOVED/ORDERED/DEBITED aren't a stock-check outcome.
+				stockStatus: item.status === "OUT_OF_STOCK" ? "OUT_OF_STOCK" : null,
+			};
+		}
 
-    const width = item.width !== null ? Number(item.width) : undefined;
-    const height = item.height !== null ? Number(item.height) : undefined;
+		const width = item.width !== null ? Number(item.width) : undefined;
+		const height = item.height !== null ? Number(item.height) : undefined;
 
-    const base: CrfLineItem = {
-      id: item.id,
-      value: item.productId,
-      label: item.product?.name ?? "--",
-      particular: item.productId,
-      description: item.product?.description ?? "--",
+		const productId = getCatalogProductId(item);
 
-      rate: toNumber(item.rate),
-      quantity: item.quantity,
-      total: toNumber(item.amount),
+		const base: CrfLineItem = {
+			id: item.id,
+			value: productId,
+			label: item.product?.name ?? "--",
+			particular: productId,
+			description: item.product?.description ?? "--",
 
-      partNumber: item.product?.partNumber ?? "",
-      category: item.category,
-    };
+			rate: toNumber(item.rate),
+			quantity: item.quantity,
+			total: toNumber(item.amount),
 
-    if (item.category === ARTWORK) {
-      return {
-        ...base,
-        width,
-        height,
-        unit: item.unit ?? "px",
-        resolutionPreset: findArtworkPreset(width, height),
-      };
-    }
+			partNumber: item.product?.partNumber ?? "",
+			category: item.category,
+		};
 
-    return base;
-  });
+		if (item.category === ARTWORK) {
+			return {
+				...base,
+				width,
+				height,
+				unit: item.unit ?? "px",
+				resolutionPreset: findArtworkPreset(width, height),
+			};
+		}
+
+		return base;
+	});
 
 /**
  * Fills in the display fields a saved souvenir line doesn't carry on its own
@@ -198,65 +213,65 @@ export const mapCrfLineItemsToFormItems = (
  * than dropped, so the user still sees it's there and can remove it.
  */
 export const backfillSouvenirDisplayFields = (
-  items: CrfLineItem[],
-  stockRows: ShopStockRow[],
+	items: CrfLineItem[],
+	stockRows: ShopStockRow[],
 ): CrfLineItem[] => {
-  if (stockRows.length === 0) return items;
+	if (stockRows.length === 0) return items;
 
-  const variantBySku = new Map<
-    string,
-    { product: SouvenirProduct; variant: SouvenirVariant }
-  >();
-  for (const product of groupStockRows(stockRows)) {
-    for (const variant of product.variants) {
-      if (variant.sku) variantBySku.set(variant.sku, { product, variant });
-    }
-  }
+	const variantBySku = new Map<
+		string,
+		{ product: SouvenirProduct; variant: SouvenirVariant }
+	>();
+	for (const product of groupStockRows(stockRows)) {
+		for (const variant of product.variants) {
+			if (variant.sku) variantBySku.set(variant.sku, { product, variant });
+		}
+	}
 
-  return items.map((item) => {
-    if (item.category !== SOUVENIR || !item.sku) return item;
+	return items.map((item) => {
+		if (item.category !== SOUVENIR || !item.sku) return item;
 
-    const match = variantBySku.get(item.sku);
-    if (!match) return item;
+		const match = variantBySku.get(item.sku);
+		if (!match) return item;
 
-    return {
-      ...createSouvenirLine(match.product, match.variant, item.quantity),
-      // Keep the saved CrfItem's own id so a save replaces this line
-      // rather than creating a new one.
-      id: item.id,
-      stockStatus: item.stockStatus ?? null,
-    };
-  });
+		return {
+			...createSouvenirLine(match.product, match.variant, item.quantity),
+			// Keep the saved CrfItem's own id so a save replaces this line
+			// rather than creating a new one.
+			id: item.id,
+			stockStatus: item.stockStatus ?? null,
+		};
+	});
 };
 
 /** Readonly rows for <LineTableView />, from the already-mapped (and, for
  *  souvenirs, backfilled) form items — not raw API items, since those don't
  *  carry enough to display a souvenir row on their own. */
 export const mapCrfLineItemsToTableRows = (items: CrfLineItem[] = []) =>
-  items.map((item, index) => ({
-    id: item.id,
-    sno: index + 1,
+	items.map((item, index) => ({
+		id: item.id,
+		sno: index + 1,
 
-    particulars: item.variantTitle
-      ? `${item.label} · ${item.variantTitle}`
-      : item.label,
-    description: item.description ?? "--",
-    partNumber: item.partNumber ?? "",
+		particulars: item.variantTitle
+			? `${item.label} · ${item.variantTitle}`
+			: item.label,
+		description: item.description ?? "--",
+		partNumber: item.partNumber ?? "",
 
-    rate: toNumber(item.rate),
-    qty: toNumber(item.quantity),
-    total: getLineAmount(item),
+		rate: toNumber(item.rate),
+		qty: toNumber(item.quantity),
+		total: getLineAmount(item),
 
-    category: item.category,
+		category: item.category,
 
-    ...(item.category === ARTWORK
-      ? {
-          width: toNumber(item.width),
-          height: toNumber(item.height),
-          unit: item.unit ?? "px",
-        }
-      : {}),
-  }));
+		...(item.category === ARTWORK
+			? {
+					width: toNumber(item.width),
+					height: toNumber(item.height),
+					unit: item.unit ?? "px",
+				}
+			: {}),
+	}));
 
 /**
  * Grand total of a CRF. Catalog lines carry their own amount; souvenir
@@ -267,44 +282,44 @@ export const mapCrfLineItemsToTableRows = (items: CrfLineItem[] = []) =>
  * accurate either before or after backfill.
  */
 export const getCrfTotalFromData = (items: CrfLineItem[] = []) =>
-  items.reduce((sum, item) => sum + getLineAmount(item), 0);
+	items.reduce((sum, item) => sum + getLineAmount(item), 0);
 
 /* ========================================================================== */
 /*                               Form → payload                               */
 /* ========================================================================== */
 
 const buildCatalogItemInput = (item: CrfLineItem): CrfCatalogItemInput => {
-  const quantity = toNumber(item.quantity);
+	const quantity = toNumber(item.quantity);
 
-  if (item.category === ARTWORK) {
-    return {
-      productId: item.value || "",
-      quantity,
-      width: item.width !== undefined ? String(item.width) : undefined,
-      height: item.height !== undefined ? String(item.height) : undefined,
-      unit: item.unit || "px",
-    };
-  }
+	if (item.category === ARTWORK) {
+		return {
+			productId: item.value || "",
+			quantity,
+			width: item.width !== undefined ? String(item.width) : undefined,
+			height: item.height !== undefined ? String(item.height) : undefined,
+			unit: item.unit || "px",
+		};
+	}
 
-  // Printed material: no size fields.
-  return { productId: item.value || "", quantity };
+	// Printed material: no size fields.
+	return { productId: item.value || "", quantity };
 };
 
 const buildShopifyItemInput = (item: CrfLineItem): CrfShopifyItemInput => ({
-  sku: item.sku ?? "",
-  requestedQty: toNumber(item.quantity),
-  // Audit snapshot only (see CrfShopifyItemInput's doc comment) — the
-  // backend trusts this as given rather than re-checking Shopify, so it
-  // must reflect the same price × quantity the user was shown, not be
-  // independently recomputed here.
-  amount: getLineAmount(item),
-  // Display snapshot — same trust rule as `amount` above. `rate` is the
-  // unit price alone (not × quantity), matching crf.service.ts's
-  // ShopifyCrfItemInput.rate / schema.prisma's CrfItem.rate column.
-  title: item.label || undefined,
-  variantTitle: item.variantTitle || undefined,
-  imageUrl: item.imageUrl || undefined,
-  rate: toNumber(item.rate),
+	sku: item.sku ?? "",
+	requestedQty: toNumber(item.quantity),
+	// Audit snapshot only (see CrfShopifyItemInput's doc comment) — the
+	// backend trusts this as given rather than re-checking Shopify, so it
+	// must reflect the same price × quantity the user was shown, not be
+	// independently recomputed here.
+	amount: getLineAmount(item),
+	// Display snapshot — same trust rule as `amount` above. `rate` is the
+	// unit price alone (not × quantity), matching crf.service.ts's
+	// ShopifyCrfItemInput.rate / schema.prisma's CrfItem.rate column.
+	title: item.label || undefined,
+	variantTitle: item.variantTitle || undefined,
+	imageUrl: item.imageUrl || undefined,
+	rate: toNumber(item.rate),
 });
 
 /**
@@ -317,16 +332,16 @@ const buildShopifyItemInput = (item: CrfLineItem): CrfShopifyItemInput => ({
  * otherwise plays no part in what gets sent.
  */
 export const buildCrfItemInput = (item: CrfLineItem): CrfItemInput =>
-  item.category === SOUVENIR
-    ? buildShopifyItemInput(item)
-    : buildCatalogItemInput(item);
+	item.category === SOUVENIR
+		? buildShopifyItemInput(item)
+		: buildCatalogItemInput(item);
 
 export const buildCrfPayload = (
-  items: CrfLineItem[],
-  epcId: string,
+	items: CrfLineItem[],
+	epcId: string,
 ): CrfPayload => ({
-  epcId,
-  items: items.map(buildCrfItemInput),
+	epcId,
+	items: items.map(buildCrfItemInput),
 });
 
 /* ========================================================================== */
