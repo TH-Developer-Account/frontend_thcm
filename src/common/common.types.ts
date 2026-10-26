@@ -30,5 +30,7 @@ export interface AuthUser {
 	designation?: string;
 	department?: string;
 	zone?: string;
-	branch?: string;
+	designationId?: string | null;
+	zones?: string[];
+	branch?: string | null;
 }
