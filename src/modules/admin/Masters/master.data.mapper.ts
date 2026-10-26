@@ -66,13 +66,6 @@ const buildMasterData = (
         ...(code && { code }),
         ...(name && { name }),
       };
-
-    // Locations: free-text name only, same shape as Division/
-    // Designation above.
-    case "Locations":
-      return {
-        ...(name && { name }),
-      };
   }
 };
 

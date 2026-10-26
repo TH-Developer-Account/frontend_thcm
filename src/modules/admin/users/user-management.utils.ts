@@ -94,10 +94,12 @@ export const mapUserToForm = (user: User): UserFormValues => ({
   phoneNumber: user.phoneNumber,
   email: user.email,
   workspaceId: user.workspaceId,
-  // location/designation/division/costCenter are FK ids now — the form only
-  // writes the id, the display string (user.location etc.) is read-only and
+  // designation/division/costCenter are FK ids now — the form only writes
+  // the id, the display string (user.designation etc.) is read-only and
   // rendered straight from the User object, not through the form.
-  locationId: user.locationId ?? "",
+  // location is plain free text again (not a master-backed FK) — the
+  // form writes and displays the same `location` field.
+  location: user.location ?? "",
   address: user.address,
   zoneIds: user.zoneIds ?? [],
   branch: user.branch,
@@ -131,7 +133,7 @@ export const EMPTY_USER_FORM: UserFormValues = {
   phoneNumber: "",
   email: "",
   workspaceId: "",
-  locationId: "",
+  location: "",
   address: "",
   zoneIds: [],
   branch: "",
@@ -170,11 +172,11 @@ export const mapUser = (user: UserResponse): User => ({
   phoneNumber: user.phone_number ?? "",
   email: user.email ?? "",
   workspaceId: user.workspaceUsers?.[0]?.workspaceId ?? "",
-  // Display strings (backend flattens the FK relation's name/code for
-  // every read) alongside the raw ids the edit form needs to preselect
-  // the right master option.
+  // designation/division/costCenter: display strings (backend flattens the
+  // FK relation's name/code for every read) alongside the raw ids the edit
+  // form needs to preselect the right master option. location is plain
+  // free text — no companion id, nothing to flatten.
   location: user.location ?? "",
-  locationId: user.locationId ?? undefined,
   address: user.address ?? "",
   zones: user.zones ?? [],
   zoneIds: user.zoneIds ?? [],
@@ -235,7 +237,7 @@ export const mapUserFormToCreatePayload = (
   assignText("s4Id", form.s4Id);
   assignText("tallyId", form.tallyId);
   assignText("c4cId", form.c4cId);
-  assignText("locationId", form.locationId);
+  assignText("location", form.location);
   assignText("address", form.address);
   assignText("branch", form.branch);
   assignText("department", form.department);
@@ -285,7 +287,7 @@ const USER_UPDATE_FIELD_MAP = {
   s4Id: "s4Id",
   tallyId: "tallyId",
   c4cId: "c4cId",
-  locationId: "locationId",
+  location: "location",
   address: "address",
   zoneIds: "zoneIds",
   branch: "branch",

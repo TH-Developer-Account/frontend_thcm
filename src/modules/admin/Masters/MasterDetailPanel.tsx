@@ -87,8 +87,8 @@ export function MasterDetailPanel({
     form.description?.trim() ||
     "Master record";
 
-  // Division/Designation/Locations: free-text name only (same as Event
-  // Names). Cost Centers/Zones: has both a real code and a name, like
+  // Division/Designation: free-text name only (same as Event Names).
+  // Cost Centers/Zones: has both a real code and a name, like
   // Branches/Departments.
   const showName =
     masterName === "Branches" ||
@@ -97,7 +97,6 @@ export function MasterDetailPanel({
     masterName === "Divisions" ||
     masterName === "Designations" ||
     masterName === "Cost Centers" ||
-    masterName === "Locations" ||
     masterName === "Zones";
 
   const showCode =

@@ -10,7 +10,6 @@ export const MASTER_NAMES: MasterName[] = [
   "Divisions",
   "Designations",
   "Cost Centers",
-  "Locations",
   "Zones",
 ];
 
@@ -22,7 +21,6 @@ export const MASTER_KEYS: Record<MasterName, MasterDataKey> = {
   Divisions: "divisions",
   Designations: "designations",
   "Cost Centers": "costCenters",
-  Locations: "locations",
   Zones: "zones",
 };
 
@@ -34,6 +32,5 @@ export const MASTER_TYPES: Record<MasterName, MasterType> = {
   Divisions: "division",
   Designations: "designation",
   "Cost Centers": "costCenter",
-  Locations: "userRegion",
   Zones: "zone",
 };

@@ -6,7 +6,6 @@ export type MasterType =
   | "division"
   | "designation"
   | "costCenter"
-  | "userRegion"
   | "zone";
 
 export type MasterAction = "create" | "update";
@@ -15,6 +14,11 @@ export type MasterAction = "create" | "update";
 // (same table now; see schema.prisma's Zone model comment), so managing it
 // here as a separate screen alongside "Zones" would just be two UIs over
 // the same data. "Zones" is the one screen for it.
+//
+// "Locations" used to be here too (backed by a UserRegion master) — removed
+// when User.location went back to being plain free text instead of a
+// master-backed FK, since real-world location values vary too much to
+// constrain to a fixed list. See decisions-and-learnings.md.
 export type MasterName =
   | "Branches"
   | "Departments"
@@ -23,7 +27,6 @@ export type MasterName =
   | "Divisions"
   | "Designations"
   | "Cost Centers"
-  | "Locations"
   | "Zones";
 
 export type MasterDataKey =
@@ -34,7 +37,6 @@ export type MasterDataKey =
   | "divisions"
   | "designations"
   | "costCenters"
-  | "locations"
   | "zones";
 
 export interface MasterOption {
@@ -88,11 +90,8 @@ export interface MasterDataResponse {
   divisions: MasterOption[];
   designations: MasterOption[];
   costCenters: MasterOption[];
-  // Locations: User.location's master (EOR's "Location" column — a plant/
-  // city, NOT the same concept as Zones below, which is EventProposal's
-  // business-region/sales-territory master). Zones: code+name, like Cost
-  // Centers — region_code is unique and required on the Zone model.
-  locations: MasterOption[];
+  // Zones: code+name, like Cost Centers — region_code is unique and
+  // required on the Zone model.
   zones: MasterOption[];
 }
 
@@ -106,10 +105,9 @@ export interface ManageMasterPayload {
     fiscal_year?: string;
     id_desc?: string;
     value?: number;
-    // Only division/designation/costCenter/userRegion/zone use this —
-    // they're modeled with a real `isActive` boolean column (see
-    // schema.prisma), unlike department/branch/eventName/
-    // budgetMaster's `status` field.
+    // Only division/designation/costCenter/zone use this — they're
+    // modeled with a real `isActive` boolean column (see schema.prisma),
+    // unlike department/branch/eventName/budgetMaster's `status` field.
     isActive?: boolean;
   };
 }

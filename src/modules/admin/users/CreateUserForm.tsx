@@ -82,12 +82,13 @@ export function CreateUserForm({ controller }: UserFormProps) {
   } = controller;
   const { isSuperAdmin } = useAuth();
 
-  // Location/Designation/Division/Cost Center pickers and the Zone
-  // multi-select are all sourced from the Masters endpoint, the same one
-  // MastersPage.tsx reads from — so these dropdowns and the admin's
-  // Masters screen are always showing the same governed options.
+  // Designation/Division/Cost Center pickers and the Zone multi-select are
+  // all sourced from the Masters endpoint, the same one MastersPage.tsx
+  // reads from — so these dropdowns and the admin's Masters screen are
+  // always showing the same governed options. Location is NOT one of
+  // these — it's a plain text field below, not master-backed (see
+  // user-management.types.ts).
   const { data: masterData } = useMasterData();
-  const locationOptions: MasterOption[] = masterData?.locations ?? [];
   const designationOptions: MasterOption[] = masterData?.designations ?? [];
   const divisionOptions: MasterOption[] = masterData?.divisions ?? [];
   const costCenterOptions: MasterOption[] = masterData?.costCenters ?? [];
@@ -226,15 +227,15 @@ export function CreateUserForm({ controller }: UserFormProps) {
     // edit-mode password reset should go through a dedicated "reset
     // password" action rather than living in this form.
     // ...(isCreateMode
-    // 	? [
-    // 			{
-    // 				name: "password" as const,
-    // 				label: "Password",
-    // 				visibleInDisplay: false,
-    // 				error: fieldErrors.password,
-    // 			},
-    // 		]
-    // 	: []),
+    // \t? [
+    // \t\t\t{
+    // \t\t\t\tname: "password" as const,
+    // \t\t\t\tlabel: "Password",
+    // \t\t\t\tvisibleInDisplay: false,
+    // \t\t\t\terror: fieldErrors.password,
+    // \t\t\t},
+    // \t\t]
+    // \t: []),
 
     {
       id: "userType",
@@ -391,10 +392,11 @@ export function CreateUserForm({ controller }: UserFormProps) {
     },
   ];
 
-  // Helper for the four single-select master pickers below — they all
-  // share the same shape (options: MasterOption[], value/onChange a
-  // *Id field), so this keeps the five render callbacks from repeating
-  // the same find/onChange boilerplate five times.
+  // Helper for the master-backed single-select pickers below (Designation/
+  // Division/Cost Center) — they all share the same shape (options:
+  // MasterOption[], value/onChange a *Id field), so this keeps the render
+  // callbacks from repeating the same find/onChange boilerplate each time.
+  // Location used to be one of these too, before it reverted to plain text.
   const renderMasterSelect = (
     fieldLabel: string,
     options: MasterOption[],
@@ -416,21 +418,15 @@ export function CreateUserForm({ controller }: UserFormProps) {
   );
 
   const organizationFields: EditableCardField<FormValues>[] = [
+    // Location is plain free text again — real-world location values vary
+    // too much to constrain to a fixed master list (see
+    // decisions-and-learnings.md) — so it's an ordinary text field now,
+    // the same shape as address/branch/department/role below.
     {
-      id: "location",
-      name: "locationId",
+      name: "location",
       label: "Location",
       required: true,
-      displayValue: selectedUser?.location || "--",
-      render: ({ draft, disabled, setFieldValue }) =>
-        renderMasterSelect(
-          "Location",
-          locationOptions,
-          draft.locationId,
-          disabled,
-          fieldErrors.locationId,
-          (id) => setFieldValue("locationId", id as never),
-        ),
+      error: fieldErrors.location,
     },
     {
       name: "address",
@@ -693,8 +689,8 @@ export function CreateUserForm({ controller }: UserFormProps) {
         />
 
         {/* Organization Details only appears once the user actually
-					exists (view mode) — plain "create" never had a user id to
-					save this against yet. */}
+				exists (view mode) — plain "create" never had a user id to
+				save this against yet. */}
         {!isCreateMode ? (
           <EditableCard
             key={`organization-${selectedUser?.id ?? "create"}`}
@@ -711,7 +707,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
         ) : null}
 
         {/* Creating a user lands here, so the admin can grant app access
-					straight away. */}
+				straight away. */}
         {isDetailMode && selectedUser ? (
           <UserAppAccessPanel user={selectedUser} />
         ) : null}

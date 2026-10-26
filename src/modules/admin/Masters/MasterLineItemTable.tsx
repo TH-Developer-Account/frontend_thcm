@@ -139,16 +139,6 @@ const MASTER_COLUMNS: Record<MasterName, MasterColumn[]> = {
       className: "master-line-item-name-col",
     },
   ],
-  // Locations (User.location's master): free-text name only, purely
-  // admin-managed (no import source).
-  Locations: [
-    {
-      key: "name",
-      label: "Name",
-      placeholder: "Location name",
-      className: "master-line-item-name-col",
-    },
-  ],
   Zones: [
     {
       key: "code",
