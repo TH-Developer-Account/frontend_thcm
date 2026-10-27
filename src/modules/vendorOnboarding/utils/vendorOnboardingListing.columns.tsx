@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { Eye, Pencil } from "lucide-react";
+import { Eye, Pencil, Send } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 import ActionMenu, {
@@ -130,13 +130,16 @@ export const getVendorOnboardingColumns = ({
 					onClick: (r) => onEdit?.(r),
 					hidden: !showEdit,
 				},
-				// {
-				// 	id: "retrigger",
-				// 	label: "Retrigger Email",
-				// 	Icon: Send,
-				// 	onClick: (r) => onRetrigger?.(r),
-				// 	hidden: !showRetrigger,
-				// },
+				// Re-sends the invite mail with a fresh link. Only offered while
+				// the vendor hasn't submitted (canRetrigger = AWAITING_VENDOR);
+				// the moment they submit, the status changes and this disappears.
+				{
+					id: "retrigger",
+					label: "Retrigger Email",
+					Icon: Send,
+					onClick: (r) => onRetrigger?.(r),
+					hidden: !showRetrigger,
+				},
 			];
 
 			return (

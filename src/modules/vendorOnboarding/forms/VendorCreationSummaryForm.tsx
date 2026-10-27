@@ -72,7 +72,12 @@ type VendorCreationSummaryFormProps = {
 
 	onHandleSendBackVendor?: () => void | Promise<void>;
 	onAcceptAndClose?: () => void | Promise<void>;
-	onSaveVendorCode?: (code?: string) => void | Promise<boolean>;
+	// `silent` suppresses the "Vendor code updated" toast when the save is
+	// part of a bigger action (final approve) that shows its own toast.
+	onSaveVendorCode?: (
+		code?: string,
+		options?: { silent?: boolean },
+	) => void | Promise<boolean>;
 
 	canSendBackToVendor?: boolean;
 	canSubmit?: boolean;
@@ -289,10 +294,12 @@ const VendorCreationSummaryForm = ({
 
 	const showClarifyAction = resolvedCanClarify;
 
+	// Send Back to Vendor: shown only when the permission layer says so
+	// (initiator + clarification open — see getVendorRecordPermissions).
+	// Resolved handler is used, so it works whether the handler comes from
+	// props or from the form context, in both view and edit modes.
 	const showSendBackAction =
-		isViewMode &&
-		resolvedCanSendBack &&
-		typeof onHandleSendBackVendor === "function";
+		resolvedCanSendBack && typeof resolvedOnSendBack === "function";
 
 	const showAcceptAndCloseAction =
 		resolvedCanAcceptAndClose && typeof resolvedOnAcceptAndClose === "function";

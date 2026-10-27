@@ -1,12 +1,11 @@
 import { useMutation } from "@tanstack/react-query";
 
 import { ServerAxios } from "../../../services/ServerAxios";
-
 export type UpdateCurrentUserPayload = {
 	first_name: string;
 	last_name: string;
 	phone_number: string;
-	designation: string;
+	designationId: string;
 	department: string;
 };
 
@@ -16,8 +15,11 @@ export type CurrentUserProfile = {
 	last_name: string;
 	email: string | null;
 	phone_number: string | null;
+	designationId: string | null;
 	designation: string | null;
 	department: string | null;
+	zones?: string[];
+	branch?: string | null;
 };
 
 export type UpdateCurrentUserResponse = {

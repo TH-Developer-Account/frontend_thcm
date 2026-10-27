@@ -67,6 +67,32 @@
 }
 
 /* ---------------------------------------------------------------------------
+   Listing toolbar (filters + Create button)
+--------------------------------------------------------------------------- */
+
+/* The card's secondary header is a single non-wrapping row, so the filters
+   live in their own wrapping container. Filters share the free width evenly;
+   the Create button keeps its natural size. */
+.workflow-list-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--space-3);
+	width: 100%;
+	min-width: 0;
+}
+
+.workflow-list-toolbar > * {
+	flex: 1 1 12rem;
+	min-width: 0;
+}
+
+.workflow-list-toolbar > .button-wrapper,
+.workflow-list-toolbar > button {
+	flex: 0 0 auto;
+}
+
+/* ---------------------------------------------------------------------------
    Create page grid
 --------------------------------------------------------------------------- */
 
@@ -74,10 +100,19 @@
    so a wide table scrolls inside itself instead of squeezing the sidebar. */
 .workflow-create-grid {
 	display: grid;
-	grid-template-columns: minmax(0, 3fr) minmax(280px, 1fr);
+	grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+	align-items: start;
 	width: 100%;
-	gap: 10px;
-	margin-top: 0px;
+	gap: var(--space-4);
+	margin-top: 0;
+}
+
+.workflow-create-main,
+.workflow-gen-form {
+	display: grid;
+	gap: var(--space-4);
+	width: 100%;
+	min-width: 0;
 }
 
 .workflow-create-card-title {
@@ -92,16 +127,28 @@
 .workflow-create-field-row {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
-	gap: var(--space-3);
-	/* margin-top: var(--space-4); */
+	gap: var(--space-4);
 }
 
-.workflow-create-field-row-2 {
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
+/* auto-fit: fields share a row while each stays at least 16rem wide, and
+   wrap to the next row (instead of squeezing) when there isn't room. */
+.workflow-create-field-row-2,
 .workflow-create-field-row-3 {
-	grid-template-columns: repeat(3, minmax(0, 1fr));
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+}
+
+/* Template type (Shared / Personal) radio + its one-line explanation */
+.workflow-create-scope {
+	display: grid;
+	gap: var(--space-2);
+	min-width: 0;
+}
+
+.workflow-create-scope-hint {
+	margin: 0;
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-xs);
+	line-height: 1.5;
 }
 
 .workflow-view-summary {
@@ -124,6 +171,7 @@
 --------------------------------------------------------------------------- */
 
 .workflow-create-sidebar {
+	align-self: start;
 	min-width: 0;
 	width: 100%;
 }
@@ -150,15 +198,18 @@
 }
 
 .workflow-summary-key {
+	flex: none;
 	color: var(--color-text-secondary);
 	font-size: var(--font-size-xs);
 }
 
 .workflow-summary-value {
+	min-width: 0;
 	color: var(--color-text-primary);
 	font-size: var(--font-size-sm);
 	font-weight: 500;
 	text-align: right;
+	overflow-wrap: anywhere;
 }
 
 /* ---------------------------------------------------------------------------
@@ -357,11 +408,44 @@
    Customise step
 --------------------------------------------------------------------------- */
 
+/* Was `display: flex` (a row), which put the header, name field, options and
+   actions side by side. It is a vertical stack of sections. */
 .workflow-customise-panel {
-	display: flex;
+	display: grid;
 	gap: var(--space-4);
 	padding: var(--space-4);
 	background: transparent;
+}
+
+/* "Save as template" style options in the customise panel.
+   Scoped to the panel so they can't leak; drop this block if the same
+   classes are already defined in vendor.styles.css. */
+.workflow-customise-panel .workflow-save-option {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--space-3);
+	padding: var(--space-3);
+	border: 1px solid var(--color-border);
+	border-radius: var(--card-radius);
+	background: var(--color-surface);
+	cursor: pointer;
+}
+
+.workflow-customise-panel .workflow-save-option--active {
+	border-color: var(--color-brand);
+	background: color-mix(in srgb, var(--color-brand) 5%, transparent);
+}
+
+.workflow-customise-panel .workflow-save-option input {
+	margin-top: 0.2rem;
+	accent-color: var(--color-brand);
+}
+
+.workflow-customise-panel .workflow-save-option small {
+	display: block;
+	margin-top: var(--space-1);
+	color: var(--color-text-secondary);
+	font-size: var(--font-size-xs);
 }
 
 .workflow-customise-header {
@@ -398,7 +482,7 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
-	gap: 1rem;
+	gap: var(--space-4);
 }
 
 .workflow-stage-list .ui-card-header {
@@ -761,9 +845,9 @@
 
 .workflow-customization-save-template {
 	display: grid;
-	gap: 0.75rem;
-	margin-top: 0.875rem;
-	padding: 0.875rem;
+	gap: var(--space-3);
+	margin-top: var(--space-3);
+	padding: var(--space-3);
 	border: 1px solid var(--color-border-default);
 	border-radius: 0.5rem;
 	background: var(--color-bg-surface-subtle);
@@ -1002,15 +1086,33 @@
    RESPONSIVE
 ========================================================= */
 
+/* Tablet and below: sidebar summary drops under the form */
+@media (max-width: 1023px) {
+	.workflow-create-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
 @media (max-width: 767px) {
-	.workflow-create-grid,
 	.workflow-create-field-row-2,
 	.workflow-create-field-row-3 {
 		grid-template-columns: minmax(0, 1fr);
 	}
 
+	/* Filters and Create button each take a full row */
+	.workflow-list-toolbar > *,
+	.workflow-list-toolbar > .button-wrapper,
+	.workflow-list-toolbar > button {
+		flex: 1 1 100%;
+	}
+
+	.workflow-list-toolbar .button-wrapper,
+	.workflow-list-toolbar .button-base {
+		width: 100%;
+	}
+
 	.workflow-fetch-row,
-	.workflow-customise-panel,
+	.workflow-customise-panel .workflow-save-options,
 	.workflow-assignment-row,
 	.workflow-customise-actions,
 	.workflow-customization-selection {

@@ -6,17 +6,33 @@ import { Alert } from "../../../components/common/Alert";
 import Button from "../../../components/common/Button";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { vendorContent } from "../../../content/vendor.content";
+import { useToast } from "../../../context/Auth/AuthContext";
 import { useAuth } from "../../../context/Auth/useAuth";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
+import {
+	showApiErrorToast,
+	showSuccessToast,
+} from "../../../utils/apiError.helper";
 import { navigateToDownloadUrl } from "../../../utils/exportJob.helper";
 
 import VendorListingTable, {
 	type VendorListingFilterTab,
 } from "../components/VendorListingTable";
 import { useVendorListing } from "../hooks/useVendorListing";
+import { useResendVendorLinkMutation } from "../queries/useVendorMutations";
 import type { VendorOnboardingListingRow } from "../types/vendorListing.types";
 import { VENDOR_ONBOARDING_FILTER_TABS } from "../utils/vendor.constant";
 import { toOnboardingRow } from "../utils/vendorListingRowMapper";
+
+// Copy for the "Retrigger Email" row action. Kept here because
+// content/vendor.content(.en.json) isn't in the project files — move these
+// into vendorContent.toast.initiation when convenient.
+const RETRIGGER_TOAST = {
+	successTitle: "Email sent",
+	successDescription: "A fresh link has been emailed to the vendor.",
+	errorTitle: "Couldn't resend the email",
+	errorFallback: "The email could not be resent. Please try again.",
+} as const;
 
 // ─────────────────────────────────────────────────────────────────────────
 // External-user listing identity
@@ -52,6 +68,8 @@ const PENDING_ON_ME_TAB = VENDOR_ONBOARDING_FILTER_TABS.find(
 const VendorOnboardingListingPage = () => {
 	const navigate = useNavigate();
 	const { user } = useAuth();
+	const { showToast } = useToast();
+	const resendLinkMutation = useResendVendorLinkMutation();
 
 	const { isExternalUser, bpName } = getExternalListingIdentity(user);
 
@@ -111,14 +129,38 @@ const VendorOnboardingListingPage = () => {
 		[navigate],
 	);
 
-	// The Retrigger Email button in VendorOnboardingInitiationForm only
-	// renders in "view" mode — point this at whichever route mounts
-	// VendorInitiationPage with mode="view".
+	// "Retrigger Email" row action → POST /vendor-onboarding/:id/resend-link.
+	// The row action is only rendered while the vendor hasn't submitted
+	// (see getVendorRowPermissions → canRetrigger), and the backend rejects
+	// anything that isn't AWAITING_VENDOR, so a stale row can't resend.
+	const { mutateAsync: resendVendorLink, isPending: isResending } =
+		resendLinkMutation;
+
 	const handleRetriggerRow = useCallback(
-		(row: VendorOnboardingListingRow) => {
-			navigate(`/vendor/initiation/${row.id}/view`);
+		async (row: VendorOnboardingListingRow) => {
+			// Guards a double click while the first request is in flight.
+			if (isResending) return;
+
+			try {
+				await resendVendorLink(row.id);
+
+				showSuccessToast(
+					showToast,
+					row.email
+						? `A fresh link has been emailed to ${row.email}.`
+						: RETRIGGER_TOAST.successDescription,
+					RETRIGGER_TOAST.successTitle,
+				);
+			} catch (error) {
+				showApiErrorToast(
+					showToast,
+					error,
+					RETRIGGER_TOAST.errorFallback,
+					RETRIGGER_TOAST.errorTitle,
+				);
+			}
 		},
-		[navigate],
+		[isResending, resendVendorLink, showToast],
 	);
 
 	return (

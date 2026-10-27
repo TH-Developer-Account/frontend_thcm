@@ -50,7 +50,18 @@ export const toNullableMobileDigits = (value?: string): string | null => {
 	const digitsOnly = value?.replace(/\D/g, "") ?? "";
 	return digitsOnly || null;
 };
+// Prefilled mobile can arrive as "+91…" / "91…"; the form only holds the
+// 10-digit national number (the "+91" is a fixed prefix in the UI).
+export const toNationalMobile = (value?: string | null): string => {
+	const raw = (value ?? "").trim();
+	const digits = raw.replace(/\D/g, "");
 
+	if (digits.length > 10 && digits.startsWith("91")) {
+		return digits.slice(-10);
+	}
+
+	return raw;
+};
 export const toNullableUpperCase = (value?: string): string | null => {
 	const trimmed = value?.trim().toUpperCase() ?? "";
 	return trimmed || null;
