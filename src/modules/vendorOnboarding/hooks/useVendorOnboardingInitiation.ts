@@ -19,7 +19,7 @@ import {
 	showSuccessToast,
 } from "../../../utils/apiError.helper";
 import { useToast } from "../../../context/Auth/AuthContext";
-import { vendorContent } from "../../../content/vendor.content";
+import { vendorContent } from "../utils/vendor.content";
 import { joinMobile, splitMobile } from "../../../utils/phone";
 
 const toastContent = vendorContent.toast.initiation;

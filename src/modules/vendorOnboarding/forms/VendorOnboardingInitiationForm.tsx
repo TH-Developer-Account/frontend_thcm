@@ -17,7 +17,7 @@ import FormHeader from "../../../components/ui/FormHeader";
 import { useVendorOnboardingInitiation } from "../hooks/useVendorOnboardingInitiation";
 import type { VendorOnboardingInitiationPayload } from "../types/vendorListing.types";
 import { Badge } from "../../../components/common/Badge";
-import { vendorContent } from "../../../content/vendor.content";
+import { vendorContent } from "../utils/vendor.content";
 import { COUNTRY_CODES, joinMobile } from "../../../utils/phone";
 
 export type VendorInitiationFormMode = "create" | "edit" | "view";

@@ -45,7 +45,6 @@
 		"tooltipMandatory": "Mandatory",
 		"addMore": "Add More"
 	},
-
 	"formOne": {
 		"title": "Domestic Vendor Onboarding Form",
 		"fields": {
@@ -55,45 +54,45 @@
 			},
 			"mobile": {
 				"label": "Mobile",
-				"helperText": "Vendor mobile number."
+				"helperText": "Mandatory"
 			},
 			"email": {
 				"label": "E-mail",
-				"helperText": "Vendor email address."
+				"helperText": "Mandatory"
 			},
 			"state": {
 				"label": "State",
 				"placeholder": "Select state",
-				"helperText": "Select the applicable vendor state."
+				"helperText": "Mandatory"
 			},
 			"city": {
 				"label": "City/ Town",
 				"placeholder": "Select city",
-				"helperText": "Vendor city."
+				"helperText": "Mandatory"
 			},
 			"pinCode": {
 				"label": "Pin Code",
-				"helperText": "Vendor location pin code."
+				"helperText": "Mandatory"
 			},
 			"address": {
 				"label": "Complete Address",
-				"helperText": "Registered or communication address."
+				"helperText": "Mandatory"
 			},
 			"bankName": {
 				"label": "Bank",
-				"helperText": "Bank name."
+				"helperText": "Mandatory"
 			},
 			"bankBranch": {
 				"label": "Branch",
-				"helperText": "Bank branch."
+				"helperText": "Mandatory"
 			},
 			"ifscCode": {
 				"label": "IFSC Code",
-				"helperText": "Bank IFSC code."
+				"helperText": "Mandatory"
 			},
 			"accountNumber": {
 				"label": "A/C No.",
-				"helperText": "Vendor bank account number."
+				"helperText": "Mandatory"
 			},
 			"confirmAccountNumber": {
 				"label": "Confirm Account Number",
@@ -101,29 +100,40 @@
 			},
 			"bankAddress": {
 				"label": "Address",
-				"helperText": "Bank branch address."
+				"helperText": "Mandatory",
+				"toastLabel": "Bank Address"
 			},
 			"gstin": {
 				"label": "GSTIN",
-				"helperText": "GST identification number."
+				"helperText": "Mandatory"
 			},
 			"pan": {
 				"label": "PAN",
-				"helperText": "Permanent account number."
+				"helperText": "Mandatory"
 			},
 			"entityRegNo": {
 				"label": "Entity Reg. No.",
-				"helperText": "Entity registration number, if applicable."
+				"helperText": "Enter N/A if not applicable"
 			},
 			"msmeVendor": {
 				"label": "MSME Vendor",
 				"placeholder": "Select option",
-				"helperText": "Select whether this vendor is registered under MSME."
+				"helperText": "Mandatory"
 			},
 			"ndaObtained": {
 				"label": "Non-Disclosure Undertaking Obtained?",
 				"placeholder": "Select option",
-				"helperText": "Confirm whether NDA is obtained."
+				"helperText": "Mandatory"
+			},
+			"gstApplicability": {
+				"label": "GST Applicable?",
+				"placeholder": "Select option",
+				"helperText": "Mandatory"
+			},
+			"incorporationApplicability": {
+				"label": "Incorporation Applicable?",
+				"placeholder": "Select option",
+				"helperText": "Mandatory"
 			}
 		},
 		"errors": {
@@ -191,9 +201,12 @@
 			"acceptAndContinue": "Accept and Continue",
 			"requiredError": "You must accept the Data Privacy Notice.",
 			"submitTooltip": "Please accept the consent form to submit."
+		},
+		"mobileCountryLabel": "India (+91)",
+		"consent": {
+			"declaration": "I hereby declare that the information provided in this form is true and accurate to the best of my knowledge, and I consent to its processing for onboarding and verification purposes."
 		}
 	},
-
 	"formTwo": {
 		"fields": {
 			"vendorCode": {
@@ -287,7 +300,6 @@
 			"vendorCode": "Vendor Code is required."
 		}
 	},
-
 	"initiation": {
 		"titles": {
 			"view": "Vendor Initiation Details",
@@ -312,9 +324,22 @@
 			"vendorReferenceName": "Vendor name is required.",
 			"email": "Enter a valid email address.",
 			"mobile": "Enter a valid 10-digit mobile number."
-		}
+		},
+		"nextSteps": [
+			{
+				"title": "Vendor gets a secure link",
+				"description": "It arrives by email and opens the onboarding form."
+			},
+			{
+				"title": "Vendor verifies and fills details",
+				"description": "Verification uses the mobile number you enter here."
+			},
+			{
+				"title": "You track it in Vendors Listing",
+				"description": "The new vendor appears there with its onboarding status."
+			}
+		]
 	},
-
 	"vendorCodeModal": {
 		"title": "Vendor Code required",
 		"description": "As the final approver, the Vendor Code must be set before this request can be approved and closed.",
@@ -325,7 +350,6 @@
 			"required": "Vendor Code is required."
 		}
 	},
-
 	"summary": {
 		"titles": {
 			"view": "Vendor Onboarding",
@@ -347,10 +371,11 @@
 			"downloadingPdf": "Downloading…",
 			"exportExcel": "Excel",
 			"exportingExcel": "Exporting…",
-			"edit": "Edit"
+			"edit": "Edit",
+			"ariaLabel": "Vendor onboarding actions",
+			"exportTrigger": "Export"
 		}
 	},
-
 	"buttons": {
 		"back": "Back",
 		"backToListing": "Back to Listing",
@@ -374,9 +399,15 @@
 		"sendBackToVendor": "Send Back to Vendor",
 		"finalSubmit": "Final Submit",
 		"saveAndApprove": "Save & Approve",
-		"sendForApproval": "Submit for Approval"
+		"sendForApproval": "Submit for Approval",
+		"ok": "OK",
+		"export": "Export",
+		"exporting": "Exporting...",
+		"initiate": "Initiate",
+		"close": "Close",
+		"downloadPdf": "Download PDF",
+		"downloadingPdf": "Downloading…"
 	},
-
 	"listing": {
 		"onboarding": {
 			"searchPlaceholder": {
@@ -437,9 +468,47 @@
 		"audit": {
 			"emptyTitle": "No vendor activity yet",
 			"emptyDescription": "Vendor onboarding activity will appear here."
+		},
+		"filterTabs": {
+			"pendingOnMe": {
+				"label": "Pending on me",
+				"shortLabel": "Pending",
+				"tooltipLabel": "View vendor onboarding approvals pending on me"
+			},
+			"created": {
+				"label": "Created by me",
+				"shortLabel": "Created",
+				"tooltipLabel": "View vendor onboarding records created by me"
+			},
+			"approvedByMe": {
+				"label": "Approved by me",
+				"shortLabel": "Approved",
+				"tooltipLabel": "View vendor onboarding requests approved by me"
+			}
+		},
+		"table": {
+			"filterAriaLabel": "Filter vendor onboarding listings",
+			"searchWithSuffix": "{placeholder} by name",
+			"refreshingStatus": "Refreshing vendor records"
+		},
+		"columns": {
+			"referenceNumber": "Reference Number",
+			"vendorName": "Vendor Name",
+			"vendorEmail": "Vendor Email",
+			"vendorContact": "Vendor Contact",
+			"initiatedBy": "Initiated By",
+			"createdDate": "Created Date",
+			"status": "Status",
+			"actions": "Actions"
+		},
+		"rowActions": {
+			"view": "View",
+			"edit": "Edit",
+			"retrigger": "Retrigger Email",
+			"ariaLabel": "Actions for {name}",
+			"fallbackName": "vendor"
 		}
 	},
-
 	"dashboard": {
 		"metrics": {
 			"total": {
@@ -466,9 +535,9 @@
 		"retry": "Retry",
 		"recentOnboardings": "Recent vendor onboardings",
 		"statusOverview": "Status overview",
-		"unableToLoadRecent": "Unable to load recent onboardings"
+		"unableToLoadRecent": "Unable to load recent onboardings",
+		"summaryAriaLabel": "Vendor onboarding summary"
 	},
-
 	"audit": {
 		"entityName": "vendor onboarding request",
 		"messages": {
@@ -482,7 +551,6 @@
 			"VENDOR_RESUBMITTED": "{actorName} resubmitted the vendor details."
 		}
 	},
-
 	"toast": {
 		"saveDetails": {
 			"missingIdTitle": "Unable to continue",
@@ -538,7 +606,8 @@
 			"resubmitFailedTitle": "Resubmission failed",
 			"resubmitFailedFallback": "The clarified vendor details could not be updated.",
 			"submitFailedTitle": "Submission failed",
-			"submitFailedFallback": "Unable to submit the vendor onboarding request."
+			"submitFailedFallback": "Unable to submit the vendor onboarding request.",
+			"resubmitSuccessDescription": "Your changes have been sent for approval again."
 		},
 		"workflowAttached": {
 			"successTitle": "Workflow attached",
@@ -584,14 +653,16 @@
 		"approval": {
 			"successTitle": "Approved successfully",
 			"errorTitle": "Unable to approve",
-			"errorFallback": "Something went wrong while approving this request."
+			"errorFallback": "Something went wrong while approving this request.",
+			"successDescription": "The request has been approved."
 		},
 		"clarify": {
 			"missingStageTitle": "Not allowed",
 			"missingStageDescription": "No active approval stage found.",
 			"successTitle": "Sent for clarification",
 			"errorTitle": "Unable to send for clarification",
-			"errorFallback": "Something went wrong while requesting clarification."
+			"errorFallback": "Something went wrong while requesting clarification.",
+			"successDescription": "Sent back to the initiator for clarification."
 		},
 		"initiation": {
 			"createSuccessTitle": "Submitted successfully",
@@ -605,7 +676,75 @@
 			"sendBackSuccessTitle": "Sent back to vendor",
 			"sendBackSuccessDescription": "The form was sent back to the vendor successfully.",
 			"sendBackErrorTitle": "Unable to send back",
-			"sendBackErrorFallback": "Failed to send the form back to the vendor."
+			"sendBackErrorFallback": "Failed to send the form back to the vendor.",
+			"retriggerSuccessTitle": "Email sent",
+			"retriggerSuccessDescription": "A fresh link has been emailed to the vendor.",
+			"retriggerSuccessDescriptionWithEmail": "A fresh link has been emailed to {email}.",
+			"retriggerErrorTitle": "Couldn't resend the email",
+			"retriggerErrorFallback": "The email could not be resent. Please try again."
 		}
+	},
+	"common": {
+		"mandatory": "Mandatory",
+		"yes": "Yes",
+		"no": "No",
+		"notApplicable": "N/A",
+		"selectOption": "Select option",
+		"emptyValue": "—",
+		"emptyReference": "--",
+		"breadcrumbSeparator": "›"
+	},
+	"pages": {
+		"breadcrumbs": {
+			"home": "Home Screen",
+			"vendorsListing": "Vendors Listing",
+			"vendors": "Vendors",
+			"dashboard": "Dashboard",
+			"formView": "Vendor Form View"
+		},
+		"onboardingForm": {
+			"loading": "Loading vendor onboarding details...",
+			"error": "Unable to load vendor onboarding details.",
+			"progressAriaLabel": "Vendor onboarding progress"
+		},
+		"formView": {
+			"title": "Vendor Onboarding Details",
+			"loading": "Loading vendor onboarding details...",
+			"error": "Unable to load the vendor onboarding details.",
+			"missingId": "Vendor onboarding request ID was not found.",
+			"pdfTitle": "Vendor Details PDF",
+			"pdfIframeTitle": "Vendor details PDF preview",
+			"pdfPreparing": "Preparing PDF preview..."
+		},
+		"listing": {
+			"title": "Vendor Onboarding",
+			"ariaLabel": "Vendors Listing Page"
+		},
+		"initiation": {
+			"viewTitle": "Vendor Initiation Details",
+			"formTitle": "Vendor Initiation Form",
+			"subtitle": "Enter the basics below. We send the vendor a secure link to complete their onboarding details."
+		},
+		"dashboard": {
+			"title": "Vendor Dashboard",
+			"ariaLabel": "Vendor dashboard breadcrumb"
+		}
+	},
+	"sidebar": {
+		"vendorOnboardingListing": "Vendor Onboarding Listing"
+	},
+	"steps": {
+		"vendorDetails": "Vendor filled details",
+		"thcmDetails": "THCM details",
+		"workflow": "Workflow",
+		"reviewAndSubmit": "Review & Submit"
+	},
+	"validation": {
+		"singleField": "Please fix: {field}.",
+		"multipleFields": "{count} fields need attention, starting with {field}."
+	},
+	"workflow": {
+		"defaultTemplateName": "Vendor workflow - {reference}",
+		"unnamedApprover": "Unnamed user"
 	}
 }

@@ -372,6 +372,7 @@
 		box-shadow: none;
 
 		clip-path: none;
+		@apply rounded-md;
 	}
 
 	.button-icon.button-sm {
@@ -7442,7 +7443,6 @@
 			grid-column: 1 / -1;
 			justify-content: flex-end;
 			padding-top: var(--space-1, 0.25rem);
-			border-top: 0.5px solid var(--color-border, var(--color-ash));
 		}
 
 		.file-upload-caption-meta {

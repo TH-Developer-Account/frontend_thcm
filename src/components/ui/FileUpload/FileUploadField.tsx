@@ -543,10 +543,12 @@ const FileUploadPreviewCard = React.memo(
 									onClick={onReplace}
 								/>
 							) : null}
-
-							<button
+							<Button
 								type="button"
-								className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 px-2 text-xs font-medium text-slate-700 transition-colors hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-50"
+								appearance="icon"
+								variant="secondary"
+								size="sm"
+								Icon={Eye}
 								aria-label={`Preview ${value.name}`}
 								onClick={(event) => {
 									event.preventDefault();
@@ -554,20 +556,19 @@ const FileUploadPreviewCard = React.memo(
 									onPreview();
 								}}
 								disabled={!value.url}
-							>
-								<Eye className="size-3.5" aria-hidden="true" />
-							</button>
+							/>
 
 							{showDownload ? (
-								<button
+								<Button
+									appearance="icon"
+									variant="secondary"
+									size="sm"
 									type="button"
-									className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 px-2 text-xs font-medium text-slate-700 transition-colors hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-50"
 									aria-label={`Download ${value.name}`}
 									title="Download"
 									onClick={onDownload}
-								>
-									<Download className="size-3.5" aria-hidden="true" />
-								</button>
+									Icon={Download}
+								/>
 							) : null}
 
 							{!readonly && !disabled ? (
