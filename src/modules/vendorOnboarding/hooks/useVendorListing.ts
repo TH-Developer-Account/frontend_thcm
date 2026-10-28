@@ -14,7 +14,7 @@ import {
 } from "../../../utils/exportJob.helper";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { useToast } from "../../../context/Auth/AuthContext";
-import { vendorContent } from "../../../content/vendor.content";
+import { vendorContent } from "../utils/vendor.content";
 import { useVendorListingPermissions } from "./useVendorPermissions";
 
 const DEFAULT_PAGE_SIZE = 5;

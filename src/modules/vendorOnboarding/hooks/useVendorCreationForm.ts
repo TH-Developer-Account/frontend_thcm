@@ -22,15 +22,13 @@ import type {
 	WorkflowStage,
 } from "../../workflows/types/types";
 
-import { toYesNo } from "../helpers/vendor.onboarding.helper";
+import { toYesNo, toNationalMobile } from "../helpers/vendor.onboarding.helper";
+
 import {
 	showApiErrorToast,
 	showSuccessToast,
 } from "../../../utils/apiError.helper";
-import {
-	vendorContent,
-	formatVendorMessage,
-} from "../../../content/vendor.content";
+import { vendorContent, formatVendorMessage } from "../utils/vendor.content";
 import {
 	buildPublicFormData,
 	buildVendorOnboardingUpdatePayload,
@@ -51,6 +49,7 @@ import {
 import {
 	EDITABLE_STATUSES,
 	getMissingDocuments,
+	isNotApplicable,
 } from "../helpers/vendor.onboarding.validations";
 import {
 	buildVendorFormOneSchema,
@@ -99,11 +98,13 @@ import {
 	useVendorStageActionPermissions,
 } from "./useVendorPermissions";
 
+// Stepper labels live in content/vendor.content.en.json -> steps.*
+// (ids are routing/state values and stay literals).
 export const vendorOnboardingSteps = [
-	{ id: 1, label: "Vendor filled details" },
-	{ id: 2, label: "THCM details" },
-	{ id: 3, label: "Workflow" },
-	{ id: 4, label: "Review & Submit" },
+	{ id: 1, label: vendorContent.steps.vendorDetails },
+	{ id: 2, label: vendorContent.steps.thcmDetails },
+	{ id: 3, label: vendorContent.steps.workflow },
+	{ id: 4, label: vendorContent.steps.reviewAndSubmit },
 ];
 
 const EMPTY_FORM_ONE: VendorCreationFormOneValues = {};
@@ -112,76 +113,129 @@ const EMPTY_FORM_TWO: VendorCreationFormTwoValues = {};
 // Label used for enclosure-upload / DPDP-consent "required" states. These
 // aren't part of the Form One/Two Zod schemas (documents and consent are
 // validated by useVendorCreationFormOneController, not by field-level
-// validation), so they keep the exact literal the app already shows rather
-// than picking up the (more descriptive) per-field Zod messages.
-const MANDATORY_ERROR = "Mandatory";
+// validation), so they use the shared "Mandatory" text from
+// content.common.mandatory rather than the (more descriptive) per-field
+// Zod messages.
+const MANDATORY_ERROR = vendorContent.common.mandatory;
 const VENDOR_LISTING_PATH = "/vendor-onboarding/listing?tab=onboarding";
+
+// Success toasts: ONE per user action, always a short fixed sentence — never
+// the backend message (those are long and read like developer notes). Titles
+// and descriptions come from vendor.content.en.json -> toast.approval /
+// toast.clarify / toast.submitForApproval.
+const SUCCESS_COPY = {
+	approved: vendorContent.toast.approval.successDescription,
+	clarified: vendorContent.toast.clarify.successDescription,
+	resubmitted: vendorContent.toast.submitForApproval.resubmitSuccessDescription,
+} as const;
 // ─────────────────────────────────────────────────────────────────────────
 // Invalid-field toasts
 // ─────────────────────────────────────────────────────────────────────────
 // Every blocked submit/next now also raises a toast naming the fields that
 // need attention — inline errors alone are easy to miss on a long form,
 // especially on mobile where the failing field can be off-screen.
-// Labels mirror the on-screen labels, in on-screen order, so the toast
-// reads top-to-bottom like the form. Move to vendor.content.en.json if
-// these need translating.
+// Labels come from the same content file as the on-screen labels
+// (formOne.fields.*.label / formTwo.fields.*.label), in on-screen order, so
+// the toast reads top-to-bottom like the form.
+
+const formOneFields = vendorContent.formOne.fields;
+const formTwoFields = vendorContent.formTwo.fields;
 
 const FORM_ONE_FIELD_LABELS: Partial<
 	Record<keyof VendorFormOneValues, string>
 > = {
-	vendorName: "Name Of Vendor",
-	mobile: "Mobile",
-	email: "E-mail",
-	state: "State",
-	city: "City/ Town",
-	pinCode: "Pin Code",
-	address: "Complete Address",
-	bankName: "Bank",
-	bankBranch: "Branch",
-	ifscCode: "IFSC Code",
-	accountNumber: "A/C No.",
-	confirmAccountNumber: "Confirm Account Number",
-	bankAddress: "Bank Address",
-	gstin: "GSTIN",
-	pan: "PAN",
-	entityRegNo: "Entity Reg. No.",
-	msmeVendor: "MSME Vendor",
-	ndaObtained: "Non-Disclosure Undertaking Obtained?",
+	vendorName: formOneFields.vendorName.label,
+	mobile: formOneFields.mobile.label,
+	email: formOneFields.email.label,
+	state: formOneFields.state.label,
+	city: formOneFields.city.label,
+	pinCode: formOneFields.pinCode.label,
+	address: formOneFields.address.label,
+	bankName: formOneFields.bankName.label,
+	bankBranch: formOneFields.bankBranch.label,
+	ifscCode: formOneFields.ifscCode.label,
+	accountNumber: formOneFields.accountNumber.label,
+	confirmAccountNumber: formOneFields.confirmAccountNumber.label,
+	// "Address" alone would be ambiguous next to "Complete Address".
+	bankAddress: formOneFields.bankAddress.toastLabel,
+	gstApplicability: formOneFields.gstApplicability.label,
+	gstin: formOneFields.gstin.label,
+	pan: formOneFields.pan.label,
+	entityRegNo: formOneFields.entityRegNo.label,
+	incorporationApplicability: formOneFields.incorporationApplicability.label,
+	msmeVendor: formOneFields.msmeVendor.label,
+	ndaObtained: formOneFields.ndaObtained.label,
 };
 
 const FORM_TWO_FIELD_LABELS: Partial<
 	Record<keyof VendorFormTwoValues, string>
 > = {
-	vendorCode: "Vendor Code",
-	vendorType: "Vendor Type",
-	companyCode: "Company Code",
-	purchaseOrg: "Purchase Org",
-	paymentTerm: "Payment Term",
-	tds: "TDS",
-	vendorCategory: "Vendor Category",
-	materialType: "Material Type",
-	materialSubType: "Material Sub Type",
-	vendorSelfAssessmentObtained: "Vendor Self Assessment Form Obtained?",
-	gpaObtained: "General Purpose Agreement Obtained?",
-	relatedPartyToThcm: "Is it Related Party to THCM?",
-	vendorAuditReportPrepared: "Vendor Audit Report Prepared?",
-	natureOfService: "Nature of Service",
-	reasonForOnboarding: "Reason for Onboarding of Vendor",
+	vendorCode: formTwoFields.vendorCode.label,
+	vendorType: formTwoFields.vendorType.label,
+	companyCode: formTwoFields.companyCode.label,
+	purchaseOrg: formTwoFields.purchaseOrg.label,
+	paymentTerm: formTwoFields.paymentTerm.label,
+	tds: formTwoFields.tds.label,
+	vendorCategory: formTwoFields.vendorCategory.label,
+	materialType: formTwoFields.materialType.label,
+	materialSubType: formTwoFields.materialSubType.label,
+	vendorSelfAssessmentObtained:
+		formTwoFields.vendorSelfAssessmentObtained.label,
+	gpaObtained: formTwoFields.gpaObtained.label,
+	relatedPartyToThcm: formTwoFields.relatedPartyToThcm.label,
+	vendorAuditReportPrepared: formTwoFields.vendorAuditReportPrepared.label,
+	natureOfService: formTwoFields.natureOfService.label,
+	reasonForOnboarding: formTwoFields.reasonForOnboarding.label,
 };
 
-const MAX_LISTED_FIELDS = 4;
+// label → RHF field name, so a toast that only knows labels can still find
+// the input to focus.
+const FIELD_NAME_BY_LABEL: Record<string, string> = Object.fromEntries(
+	[
+		...Object.entries(FORM_ONE_FIELD_LABELS),
+		...Object.entries(FORM_TWO_FIELD_LABELS),
+	].map(([name, label]) => [label as string, name]),
+);
 
-// "Check: A, B, C, D and 3 more." — capped so a fully empty form doesn't
-// produce a toast the size of the form itself.
+// "Please fix: Mobile."  /  "4 fields need attention, starting with Mobile."
+// The count is what matters; the first field is where focus lands.
+// Sentence templates: content.validation.singleField / multipleFields.
 const describeInvalidFields = (labels: string[]): string => {
 	if (labels.length === 0) return "";
+	if (labels.length === 1) {
+		return formatVendorMessage(vendorContent.validation.singleField, {
+			field: labels[0],
+		});
+	}
 
-	const listed = labels.slice(0, MAX_LISTED_FIELDS).join(", ");
-	const remaining = labels.length - MAX_LISTED_FIELDS;
+	return formatVendorMessage(vendorContent.validation.multipleFields, {
+		count: labels.length,
+		field: labels[0],
+	});
+};
 
-	return remaining > 0
-		? `Check: ${listed} and ${remaining} more.`
-		: `Check: ${listed}.`;
+// Scrolls to and focuses the first invalid input. Deferred because on a
+// cross-step failure (submitForApproval) the step has to re-render before the
+// field exists in the DOM. Form One/Two are not wired to register(), so RHF's
+// setFocus() can't be used — this finds the input by its name attribute and
+// falls back to the first aria-invalid element.
+const focusFirstInvalidField = (fieldNames: string[]): void => {
+	if (typeof window === "undefined") return;
+
+	window.setTimeout(() => {
+		let target: HTMLElement | null = null;
+
+		for (const name of fieldNames) {
+			target = document.querySelector<HTMLElement>(`[name="${name}"]`);
+			if (target) break;
+		}
+
+		target ??= document.querySelector<HTMLElement>('[aria-invalid="true"]');
+		if (!target) return;
+
+		target.scrollIntoView({ behavior: "smooth", block: "center" });
+		target.focus({ preventScroll: true });
+	}, 150);
 };
 
 // Must be called AFTER trigger() resolves. getFieldState() without a
@@ -206,10 +260,19 @@ const toFormOneDefaults = (
 	address: source.address ?? "",
 	msmeVendor: source.msmeVendor ?? "",
 	msmeCertificateAttached: source.msmeCertificateAttached ?? "",
+	// Records saved before the applicability selects existed: a stored GSTIN /
+	// uploaded incorporation certificate means it was applicable, so open
+	// them pre-selected.
+	gstApplicability:
+		source.gstApplicability ||
+		(source.gstin || source.gstCertificate === "Yes" ? "Applicable" : ""),
+	incorporationApplicability:
+		source.incorporationApplicability ||
+		(source.certificateOfIncorporation === "Yes" ? "Applicable" : ""),
 	city: source.city ?? "",
 	pinCode: source.pinCode ?? "",
 	state: source.state ?? "",
-	mobile: source.mobile ?? "",
+	mobile: toNationalMobile(source.mobile),
 	email: source.email ?? "",
 	bankName: source.bankName ?? "",
 	bankBranch: source.bankBranch ?? "",
@@ -423,6 +486,13 @@ export function useVendorCreationFormOneController({
 			if (!requireDocuments) return false;
 
 			switch (field.statusKey) {
+				case "gstCertificate":
+					return !isNotApplicable(values.gstApplicability);
+
+				case "certificateOfIncorporation":
+					return !isNotApplicable(values.incorporationApplicability);
+
+				// Only "Yes" requires it; "No" and "N/A" don't.
 				case "msmeCertificate":
 					return toYesNo(values.msmeVendor) === "Yes";
 
@@ -433,7 +503,13 @@ export function useVendorCreationFormOneController({
 					return field.required;
 			}
 		},
-		[requireDocuments, values.msmeVendor, values.ndaObtained],
+		[
+			requireDocuments,
+			values.gstApplicability,
+			values.incorporationApplicability,
+			values.msmeVendor,
+			values.ndaObtained,
+		],
 	);
 
 	const handleEnclosureChange = React.useCallback(
@@ -509,6 +585,46 @@ export function useVendorCreationFormOneController({
 
 				return next;
 			});
+		},
+		[onChange],
+	);
+
+	// GST / Incorporation: "N/A" drops the document requirement, clears any
+	// file already chosen (so a stale file isn't submitted) and its error.
+	// GST also clears the GSTIN, since there is none to collect.
+	const handleApplicabilityChange = React.useCallback(
+		(key: "gstApplicability" | "incorporationApplicability", value: string) => {
+			onChange?.(key, value);
+
+			if (!isNotApplicable(value)) return;
+
+			const documentType =
+				key === "gstApplicability"
+					? "GST_CERTIFICATE"
+					: "INCORPORATION_CERTIFICATE";
+			const statusKey =
+				key === "gstApplicability"
+					? "gstCertificate"
+					: "certificateOfIncorporation";
+
+			setEnclosureUploads((current) =>
+				current.map((upload) =>
+					upload.documentType === documentType
+						? { ...upload, value: null }
+						: upload,
+				),
+			);
+
+			setEnclosureErrors((current) => {
+				const next = { ...current };
+				delete next[statusKey];
+				return next;
+			});
+
+			// No GSTIN to collect once GST is N/A.
+			if (key === "gstApplicability") {
+				onChange?.("gstin", "");
+			}
 		},
 		[onChange],
 	);
@@ -651,6 +767,7 @@ export function useVendorCreationFormOneController({
 		handleEnclosureChange,
 		handleEnclosureTypeChange,
 		handleConditionalFieldChange,
+		handleApplicabilityChange,
 		openDpdpModal,
 		closeDpdpModal,
 		handleDpdpConsentChange,
@@ -670,7 +787,10 @@ type UseVendorCreationSummaryControllerParams = {
 	// They may be async (they refresh the record before we navigate away).
 	onApprove?: (reason: string) => void | Promise<void>;
 	onClarify?: (reason: string) => void | Promise<void>;
-	onSaveVendorCode?: (code?: string) => void | Promise<boolean>;
+	onSaveVendorCode?: (
+		code?: string,
+		options?: { silent?: boolean },
+	) => void | Promise<boolean>;
 	onAcceptAndClose?: () => void | Promise<void>;
 };
 
@@ -703,15 +823,17 @@ export function useVendorCreationSummaryController({
 		async (reason: string) => {
 			if (!currentStageId) return;
 			try {
-				const { message } = await approveStageMutation.mutateAsync(
-					currentStageId,
-					reason,
-				);
-				showSuccessToast(
-					showToast,
-					message ?? vendorContent.toast.approval.successTitle,
-					vendorContent.toast.approval.successTitle,
-				);
+				await approveStageMutation.mutateAsync(currentStageId, reason);
+
+				// The final stage hands over to Accept & Close, which toasts
+				// "closed" — one toast for the whole action, not two.
+				if (!requiresVendorCodeToApprove) {
+					showSuccessToast(
+						showToast,
+						SUCCESS_COPY.approved,
+						vendorContent.toast.approval.successTitle,
+					);
+				}
 
 				// Refresh first so the listing shows the new status.
 				await onApprove?.(reason);
@@ -778,7 +900,8 @@ export function useVendorCreationSummaryController({
 
 			setVendorCodeModal({ open: true, loading: true });
 			try {
-				const saved = await onSaveVendorCode?.(trimmed);
+				// silent: the approve/close that follows shows the only toast.
+				const saved = await onSaveVendorCode?.(trimmed, { silent: true });
 				if (saved === false) {
 					setVendorCodeModal({ open: true, loading: false });
 					return;
@@ -813,7 +936,7 @@ export function useVendorCreationSummaryController({
 				showToast({
 					type: "success",
 					title: vendorContent.toast.clarify.successTitle,
-					description: "Clarification request sent successfully.",
+					description: SUCCESS_COPY.clarified,
 				});
 
 				// Refresh the record, then send the approver back to the listing.
@@ -1301,6 +1424,12 @@ export function useVendorCreationForm({
 				title,
 				description: fieldList ? `${description} ${fieldList}` : description,
 			});
+
+			focusFirstInvalidField(
+				labels
+					.map((label) => FIELD_NAME_BY_LABEL[label])
+					.filter((name): name is string => Boolean(name)),
+			);
 		},
 		[showToast],
 	);
@@ -1449,13 +1578,16 @@ export function useVendorCreationForm({
 				detailQuery.data?.documents ?? [],
 			);
 
+			// Draft behaviour: field edits stay in the form (they survive
+			// Back/Next) and are saved ONCE at final submit. A PATCH here would
+			// push the record back to IN_REVIEW on every Next. Files are the
+			// exception — they only exist in this step's upload state, so a
+			// document change has to be uploaded now. Silent either way.
 			if (hasEnclosureChanges(documentChanges)) {
 				await updateWithDocumentsMutation.mutateAsync({
 					vendorRequestId,
 					formData: buildInternalUpdateFormData(payload, documentChanges),
 				});
-			} else if (Object.keys(payload).length > 0) {
-				await handleSaveVendorUpdate(payload);
 			}
 
 			next();
@@ -1476,32 +1608,11 @@ export function useVendorCreationForm({
 
 		if (!(await validateFormTwoWithFeedback())) return;
 
-		try {
-			const payload = getChangedFullPayload();
-
-			if (Object.keys(payload).length > 0) {
-				await handleSaveVendorUpdate(payload);
-
-				showSuccessToast(
-					showToast,
-					vendorContent.toast.saveThcmDetails.successDescription,
-					vendorContent.toast.saveThcmDetails.successTitle,
-				);
-			}
-			// Mirrors the ref submitForApproval already checks — marking it here
-			// means a plain "Save & Next" with no further edits won't trigger a
-			// second, redundant update call (or a duplicate toast) at final submit.
-			vendorUpdateCompletedRef.current = true;
-
-			next();
-		} catch (error) {
-			showApiErrorToast(
-				showToast,
-				error,
-				vendorContent.toast.saveThcmDetails.errorFallback,
-				vendorContent.toast.saveThcmDetails.errorTitle,
-			);
-		}
+		// Draft behaviour: nothing is sent to the server here. Form Two values
+		// live in the form and survive Back/Next; submitForApproval diffs and
+		// saves them exactly once (vendorUpdateCompletedRef stays false, so
+		// its save step runs). No toast, no status change.
+		next();
 	};
 
 	const submitDraftPublicVendor = async (
@@ -1730,22 +1841,15 @@ export function useVendorCreationForm({
 		submissionInFlightRef.current = true;
 
 		try {
-			// The THCM form is persisted once, before any workflow operation.
-			// Normally this is already done by saveThcmDetails ("Save & Next" on
-			// Form Two) — this only runs (and toasts) again if the vendor/THCM
-			// edited a field after that save, which resets vendorUpdateCompletedRef.
+			// The Form One + Form Two edits are persisted ONCE here, before any
+			// workflow operation (Next on both forms is a draft and saves
+			// nothing). Silent — the single success toast comes at the end.
 			if (!vendorUpdateCompletedRef.current) {
 				const payload = getChangedFullPayload();
 
 				if (Object.keys(payload).length > 0) {
 					await handleSaveVendorUpdate(payload, { skipInvalidate: true });
 					hasServerWrites = true;
-
-					showSuccessToast(
-						showToast,
-						vendorContent.toast.saveThcmDetails.successDescription,
-						vendorContent.toast.saveThcmDetails.successTitle,
-					);
 				}
 				vendorUpdateCompletedRef.current = true;
 			}
@@ -1760,7 +1864,9 @@ export function useVendorCreationForm({
 
 					const templateName = pendingWorkflowSelection.saveAsTemplate
 						? pendingWorkflowSelection.templateName?.trim()
-						: `Vendor workflow - ${referenceNumber ?? vendorRequestId}`;
+						: formatVendorMessage(vendorContent.workflow.defaultTemplateName, {
+								reference: referenceNumber ?? vendorRequestId,
+							});
 
 					if (!templateName) {
 						throw new Error("A workflow template name is required.");
@@ -1791,7 +1897,7 @@ export function useVendorCreationForm({
 										.filter(Boolean)
 										.join(" ") ||
 									approver.user.email?.trim() ||
-									"Unnamed user",
+									vendorContent.workflow.unnamedApprover,
 								email: approver.user.email?.trim() ?? "",
 								isExternalApprover: approver.isExternalApprover,
 							})),
@@ -1814,12 +1920,6 @@ export function useVendorCreationForm({
 				sentForApprovalRef.current = true;
 				hasServerWrites = true;
 			}
-
-			// Captured before the branch below mutates workflowPreparedRef, so we
-			// can tell "just attached this call" apart from "already attached on
-			// an earlier attempt, only retrying what failed after it" — the
-			// latter must not re-fire the workflow-attached toast.
-			const workflowJustPrepared = !workflowPreparedRef.current;
 
 			if (workflowPreparedRef.current) {
 				// A previous attempt prepared the workflow but failed later in the
@@ -1856,14 +1956,6 @@ export function useVendorCreationForm({
 			// extra request.
 			await refreshVendorRecord();
 
-			if (workflowJustPrepared) {
-				showSuccessToast(
-					showToast,
-					vendorContent.toast.workflowAttached.successDescription,
-					vendorContent.toast.workflowAttached.successTitle,
-				);
-			}
-
 			workflowPreparedRef.current = false;
 			sentForApprovalRef.current = false;
 			vendorUpdateCompletedRef.current = false;
@@ -1878,14 +1970,7 @@ export function useVendorCreationForm({
 					? vendorContent.toast.submitForApproval.resubmitSuccessTitle
 					: vendorContent.toast.submitForApproval.submitSuccessTitle,
 				description: isClarifiedResubmission
-					? hasPendingWorkflowSelection
-						? vendorContent.toast.submitForApproval
-								.resubmitWithNewWorkflowDescription
-						: resubmitStageEdits?.length
-							? vendorContent.toast.submitForApproval
-									.resubmitWithStageEditsDescription
-							: vendorContent.toast.submitForApproval
-									.resubmitUnchangedWorkflowDescription
+					? SUCCESS_COPY.resubmitted
 					: vendorContent.toast.submitForApproval.submitSuccessDescription,
 			});
 
@@ -1944,7 +2029,10 @@ export function useVendorCreationForm({
 	]);
 
 	const saveVendorCode = React.useCallback(
-		async (codeOverride?: string): Promise<boolean> => {
+		async (
+			codeOverride?: string,
+			options?: { silent?: boolean },
+		): Promise<boolean> => {
 			if (!canEditVendorCode) {
 				showToast({
 					type: "error",
@@ -1987,11 +2075,13 @@ export function useVendorCreationForm({
 
 				await detailQuery.refetch();
 
-				showSuccessToast(
-					showToast,
-					vendorContent.toast.vendorCode.successDescription,
-					vendorContent.toast.vendorCode.successTitle,
-				);
+				if (!options?.silent) {
+					showSuccessToast(
+						showToast,
+						vendorContent.toast.vendorCode.successDescription,
+						vendorContent.toast.vendorCode.successTitle,
+					);
+				}
 
 				return true;
 			} catch (error) {

@@ -26,6 +26,7 @@ const BUSINESS_PARTNER_TYPES = [
 	"CUSTOMER",
 	"TATA-Hitachi",
 	"PLANT",
+	"TCS",
 ] as const satisfies readonly BusinessPartnerType[];
 
 const OFFICE_TYPES = [

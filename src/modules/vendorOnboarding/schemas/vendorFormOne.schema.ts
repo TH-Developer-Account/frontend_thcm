@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { vendorContent } from "../../../content/vendor.content";
+import { vendorContent } from "../utils/vendor.content";
 
 import {
 	ACCOUNT_NUMBER_REGEX,
@@ -25,9 +25,9 @@ export const buildVendorFormOneSchema = (originalAccountNumber: string) =>
 			vendorName: requiredText(errors.vendorName),
 			vendorReferenceName: z.string().trim().optional(),
 			address: requiredText(errors.address),
-			// "Yes" | "No" — set by the enclosure-upload controller, not typed
-			// by the vendor. Not schema-validated; see isEnclosureRequired /
-			// getMissingDocuments for the actual document-conditional rules.
+			// "Yes" | "No" | "N/A" — set by the enclosure-upload controller, not
+			// typed by the vendor. Only "Yes" makes the MSME certificate
+			// mandatory; see isEnclosureRequired / getMissingDocuments.
 			msmeVendor: requiredText(errors.msmeVendor),
 			msmeCertificateAttached: z.string().optional(),
 			city: requiredText(errors.city),
@@ -56,9 +56,19 @@ export const buildVendorFormOneSchema = (originalAccountNumber: string) =>
 			// superRefine below), so an empty string must be a *valid* parse
 			// here; the conditional check adds its own issue when needed.
 			confirmAccountNumber: z.string().trim().default(""),
-			gstin: requiredText(errors.gstin).regex(GSTIN_REGEX, errors.gstinFormat),
+			// Same idea for GSTIN: when GST is marked N/A there is no GSTIN to
+			// collect, so required + format are enforced in superRefine only
+			// when GST is applicable.
+			gstin: z.string().trim().default(""),
 			pan: requiredText(errors.pan).regex(PAN_REGEX, errors.panFormat),
 			entityRegNo: requiredText(errors.entityRegNo),
+
+			// "Applicable" | "N/A" | "" — chosen by the vendor via the select
+			// above the GST / Incorporation upload. Empty is treated as
+			// applicable (document stays mandatory), so existing records and
+			// saved drafts behave exactly as before.
+			gstApplicability: z.string().optional(),
+			incorporationApplicability: z.string().optional(),
 
 			// Document-derived status fields (set by the enclosure-upload
 			// controller as "Yes"/"No"/"" — see useVendorCreationFormOneController).
@@ -73,10 +83,46 @@ export const buildVendorFormOneSchema = (originalAccountNumber: string) =>
 			referenceNumber: z.string().optional(),
 		})
 		.superRefine((values, ctx) => {
+			// Applicability selects must be answered; the fields they gate are
+			// the GSTIN is only shown (and validated) when GST is "Applicable".
+			if (!values.gstApplicability) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["gstApplicability"],
+					message: "Select GST applicability",
+				});
+			}
+
+			if (!values.incorporationApplicability) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["incorporationApplicability"],
+					message: "Select incorporation applicability",
+				});
+			}
+
+			// GSTIN: required + well-formed, only when GST is Applicable.
+			if (values.gstApplicability === "Applicable") {
+				if (!values.gstin) {
+					ctx.addIssue({
+						code: "custom",
+						path: ["gstin"],
+						message: errors.gstin,
+					});
+				} else if (!GSTIN_REGEX.test(values.gstin)) {
+					ctx.addIssue({
+						code: "custom",
+						path: ["gstin"],
+						message: errors.gstinFormat,
+					});
+				}
+			}
+
 			// GSTIN → PAN cross-check. Only fires once both fields are
 			// individually well-formed (their own .regex() issues already
 			// cover the malformed case) — mirrors the legacy
 			// validatePanField's "nothing to cross-check yet" bail-out.
+			// Naturally skipped when GSTIN is empty (GST = N/A).
 			if (
 				GSTIN_REGEX.test(values.gstin) &&
 				PAN_REGEX.test(values.pan) &&

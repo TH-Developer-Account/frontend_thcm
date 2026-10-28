@@ -1,21 +1,10 @@
 import NextStepsPanel, {
 	type NextStep,
 } from "../../../components/ui/NextStepsPanel";
+import { vendorContent } from "../utils/vendor.content";
 
-const STEPS: readonly NextStep[] = [
-	{
-		title: "Vendor gets a secure link",
-		description: "It arrives by email and opens the onboarding form.",
-	},
-	{
-		title: "Vendor verifies and fills details",
-		description: "Verification uses the mobile number you enter here.",
-	},
-	{
-		title: "You track it in Vendors Listing",
-		description: "The new vendor appears there with its onboarding status.",
-	},
-];
+// Step copy lives in content/vendor.content.en.json -> initiation.nextSteps
+const STEPS: readonly NextStep[] = vendorContent.initiation.nextSteps;
 
 type VendorInitiationSidePanelProps = {
 	className?: string;

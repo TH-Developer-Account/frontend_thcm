@@ -6,15 +6,15 @@ import {
 	// RefreshCcw,
 	Save,
 } from "lucide-react";
-import type { ClipboardEvent } from "react";
+import { type ClipboardEvent } from "react";
 import Button from "../../../components/common/Button";
-// import { Modal } from "../../../components/common/Modal";
 import FormInput from "../../../components/forms/FormInput";
 import PhoneInput from "../../../components/forms/PhoneInput";
 import SelectInput from "../../../components/forms/SelectInput";
 import TextareaInput from "../../../components/forms/TextareaInput";
 import { getCitiesByState } from "../helpers/vendorLocation.helpers";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
+import { vendorContent } from "../utils/vendor.content";
 
 import { toYesNo } from "../helpers/vendor.onboarding.helper";
 import {
@@ -22,7 +22,13 @@ import {
 	type VendorFormErrors,
 	type VendorFormMode,
 	type VendorOnboardingDocument,
+	VENDOR_DOCUMENT_FIELDS,
+	type VendorDocumentType,
 } from "../types/vendorOnboarding.types";
+import {
+	NOT_APPLICABLE,
+	isNotApplicable,
+} from "../helpers/vendor.onboarding.validations";
 import {
 	useOptionalVendorCreationFormContext,
 	useVendorCreationFormOneController,
@@ -35,6 +41,12 @@ export type {
 	VendorCreationFormOneSubmission,
 	VendorEnclosureUploadItem,
 } from "../hooks/useVendorCreationForm";
+
+// All on-screen copy for this form lives in content/vendor.content.en.json
+// (formOne.*, documents.*, buttons.*, common.*). Nothing below is hardcoded.
+const content = vendorContent.formOne;
+const fields = content.fields;
+const { documents, buttons, common } = vendorContent;
 
 const EMPTY_VENDOR_DOCUMENTS: VendorOnboardingDocument[] = [];
 
@@ -74,12 +86,6 @@ type VendorCreationFormOneProps = {
 	actionText?: string;
 };
 
-const toSelectOptions = (values: string[]): SelectOption[] =>
-	values.map((value) => ({
-		label: value,
-		value,
-	}));
-
 const getSelectedOption = (
 	options: SelectOption[],
 	value?: string,
@@ -90,12 +96,46 @@ const blockClipboardEvent = (event: ClipboardEvent<HTMLInputElement>) => {
 	event.preventDefault();
 };
 
-const yesNoOptions = toSelectOptions(["Yes", "No"]);
+// Stored values stay "Yes" / "No" (validation, payloads and existing records
+// depend on them); only the visible label comes from the content file.
+const yesNoOptions: SelectOption[] = [
+	{ label: common.yes, value: "Yes" },
+	{ label: common.no, value: "No" },
+];
+
+// Shown as Yes / N/A. The stored value stays "Applicable", so validation,
+// payloads and existing records are unchanged.
+const applicabilityOptions: SelectOption[] = [
+	{ label: common.yes, value: "Applicable" },
+	{ label: common.notApplicable, value: NOT_APPLICABLE },
+];
+const msmeOptions = yesNoOptions;
+
+// Every row below the address/bank sections uses the same grid class as those
+// sections (4 cols desktop / 2 tablet / 1 mobile, same gap and same padding),
+// so all inputs line up on identical columns and spacing.
+const FORM_ROW_GRID = "vendor-onboarding-form-grid";
+
+// Rendered explicitly (certificates under their selects, PAN document and
+// cancelled cheque in the documents row), so excluded from the generic
+// "other attachments" list below.
+const INLINE_DOCUMENT_TYPES: VendorDocumentType[] = [
+	"GST_CERTIFICATE",
+	"PAN_DOCUMENT",
+	"INCORPORATION_CERTIFICATE",
+	"CANCELLED_CHEQUE",
+];
+
+// toYesNo() maps "N/A" to "", so the MSME select needs its own mapping.
+const toMsmeSelectValue = (value?: string): string =>
+	isNotApplicable(value) ? NOT_APPLICABLE : toYesNo(value);
 
 // Form One stores only the national number (no country code field in the
 // schema/payload), so the prefix is fixed to India. With a single entry,
 // PhoneInput renders the attached "+91" segment without a dropdown.
-const MOBILE_COUNTRY_CODES = [{ code: "+91", label: "India (+91)" }];
+const MOBILE_COUNTRY_CODES = [
+	{ code: "+91", label: content.mobileCountryLabel },
+];
 
 // The prefilled mobile (from the initiation record) can arrive with the
 // country code attached, e.g. "919845012345" or "+919845012345". The prefix
@@ -170,6 +210,34 @@ const VendorCreationFormOne = ({
 
 	const sanitizeAccountNumber = (value: string): string =>
 		value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+
+	// Typed text is shown masked (only the last 4 characters visible), so the
+	// real value is rebuilt from each edit. Supports typing at the end,
+	// backspacing from the end and select-all + retype. Edits in the middle of
+	// the masked text are ignored (paste/copy/cut are already blocked).
+	const applyMaskedEdit = (
+		previousValue: string,
+		nextDisplay: string,
+	): string => {
+		const previousDisplay = maskAccountNumber(previousValue) ?? "";
+
+		if (nextDisplay.startsWith(previousDisplay)) {
+			return (
+				previousValue +
+				sanitizeAccountNumber(nextDisplay.slice(previousDisplay.length))
+			);
+		}
+
+		if (previousDisplay.startsWith(nextDisplay)) {
+			return previousValue.slice(0, nextDisplay.length);
+		}
+
+		if (!nextDisplay.includes("*")) {
+			return sanitizeAccountNumber(nextDisplay);
+		}
+
+		return previousValue;
+	};
 	const {
 		enclosureErrors,
 		// isDpdpModalOpen,
@@ -184,6 +252,7 @@ const VendorCreationFormOne = ({
 		handleEnclosureChange,
 		handleEnclosureTypeChange,
 		handleConditionalFieldChange,
+		handleApplicabilityChange,
 		// openDpdpModal,
 		// closeDpdpModal,
 		// handleDpdpConsentChange,
@@ -210,6 +279,86 @@ const VendorCreationFormOne = ({
 		onSaveDraft: resolvedOnSaveDraft,
 	});
 
+	const isGstApplicable = values.gstApplicability === "Applicable";
+	const isIncorporationApplicable =
+		values.incorporationApplicability === "Applicable";
+
+	const renderUpload = (documentType: VendorDocumentType) => {
+		const field = VENDOR_DOCUMENT_FIELDS.find(
+			(item) => item.documentType === documentType,
+		);
+		if (!field) return null;
+
+		return (
+			<FileUploadField
+				key={field.documentType}
+				value={getEnclosureFile(field.documentType)}
+				onChange={(nextValue) => handleEnclosureChange(field, nextValue)}
+				kind="vendorDocument"
+				label={field.label}
+				description={field.description}
+				required={isEnclosureRequired(field)}
+				error={enclosureErrors[field.statusKey]}
+				readonly={isReadOnly}
+				disabled={loading}
+				tooltip={
+					isEnclosureRequired(field) ? documents.tooltipMandatory : undefined
+				}
+				heightClassName="vendor-enclosure-upload-height"
+				className="vendor-enclosure-upload-field"
+				inputName={field.documentType}
+				showActions
+				previewVariant="line"
+			/>
+		);
+	};
+
+	// MSME / NDA certificates: shown under their select while editing, and in
+	// the single Documents section at the bottom in view mode.
+	const renderMsmeUpload = () => (
+		<FileUploadField
+			value={getEnclosureFile("MSME_CERTIFICATE")}
+			onChange={(nextValue) =>
+				handleEnclosureTypeChange("MSME_CERTIFICATE", nextValue)
+			}
+			kind="vendorDocument"
+			label={documents.MSME_CERTIFICATE.label}
+			description={documents.MSME_CERTIFICATE.uploadDescription}
+			required
+			error={enclosureErrors.msmeCertificate}
+			readonly={isReadOnly}
+			disabled={loading}
+			heightClassName="vendor-enclosure-upload-height"
+			className="vendor-enclosure-upload-field"
+			inputName="MSME_CERTIFICATE"
+			showActions
+			tooltip={documents.tooltipMandatory}
+			previewVariant="line"
+		/>
+	);
+
+	const renderNdaUpload = () => (
+		<FileUploadField
+			value={getEnclosureFile("NDA_CERTIFICATE")}
+			onChange={(nextValue) =>
+				handleEnclosureTypeChange("NDA_CERTIFICATE", nextValue)
+			}
+			kind="vendorDocument"
+			label={documents.NDA_CERTIFICATE.label}
+			description={documents.NDA_CERTIFICATE.uploadDescription}
+			required
+			error={enclosureErrors.ndaCertificate}
+			readonly={isReadOnly}
+			disabled={loading}
+			heightClassName="vendor-enclosure-upload-height"
+			className="vendor-enclosure-upload-field"
+			inputName="NDA_CERTIFICATE"
+			showActions
+			tooltip={documents.tooltipMandatory}
+			previewVariant="line"
+		/>
+	);
+
 	return (
 		<>
 			<form
@@ -232,7 +381,7 @@ const VendorCreationFormOne = ({
 						<FormInput
 							mode={fieldMode}
 							name="vendorName"
-							label="Name Of Vendor"
+							label={fields.vendorName.label}
 							value={values.vendorName ?? ""}
 							error={errors.vendorName}
 							success={
@@ -240,7 +389,7 @@ const VendorCreationFormOne = ({
 								!errors.vendorName &&
 								Boolean(values.vendorName)
 							}
-							helperText="Enter vendor name in capital letters."
+							helperText={fields.vendorName.helperText}
 							onChange={(event) =>
 								resolvedOnChange?.("vendorName", event.target.value)
 							}
@@ -249,7 +398,7 @@ const VendorCreationFormOne = ({
 						<PhoneInput
 							mode={fieldMode}
 							name="mobile"
-							label="Mobile"
+							label={fields.mobile.label}
 							countryCodes={MOBILE_COUNTRY_CODES}
 							countryCodeValue="+91"
 							autoComplete="tel-national"
@@ -260,7 +409,7 @@ const VendorCreationFormOne = ({
 							}
 							required
 							error={errors.mobile}
-							helperText="Vendor mobile number."
+							helperText={fields.mobile.helperText}
 							onChange={(event) =>
 								resolvedOnChange?.("mobile", event.target.value)
 							}
@@ -269,7 +418,7 @@ const VendorCreationFormOne = ({
 						<FormInput
 							mode={fieldMode}
 							name="email"
-							label="E-mail"
+							label={fields.email.label}
 							type="email"
 							autoComplete="email"
 							value={values.email ?? ""}
@@ -278,7 +427,7 @@ const VendorCreationFormOne = ({
 							}
 							required
 							error={errors.email}
-							helperText="Vendor email address."
+							helperText={fields.email.helperText}
 							onChange={(event) =>
 								resolvedOnChange?.("email", event.target.value)
 							}
@@ -286,8 +435,8 @@ const VendorCreationFormOne = ({
 						<SelectInput
 							mode={fieldMode}
 							name="state"
-							label="State"
-							placeholder="Select state"
+							label={fields.state.label}
+							placeholder={fields.state.placeholder}
 							options={STATES}
 							selectOnAutofill={false}
 							value={getSelectedOption(STATES, values.state)}
@@ -296,7 +445,7 @@ const VendorCreationFormOne = ({
 							success={
 								fieldMode === "edit" && !errors.state && Boolean(values.state)
 							}
-							helperText="Select the applicable vendor state."
+							helperText={fields.state.helperText}
 							onChange={(option) => {
 								const nextState = option?.value ?? "";
 								resolvedOnChange?.("state", nextState);
@@ -312,15 +461,15 @@ const VendorCreationFormOne = ({
 						<FormInput
 							mode={fieldMode}
 							name="city"
-							label="City/ Town"
-							placeholder="Select city"
+							label={fields.city.label}
+							placeholder={fields.city.placeholder}
 							value={values.city ?? ""}
 							required
 							success={
 								fieldMode === "edit" && !errors.city && Boolean(values.city)
 							}
 							error={errors.city}
-							helperText="Vendor city."
+							helperText={fields.city.helperText}
 							onChange={(event) =>
 								resolvedOnChange?.("city", event.target.value)
 							}
@@ -329,7 +478,7 @@ const VendorCreationFormOne = ({
 						<FormInput
 							mode={fieldMode}
 							name="pinCode"
-							label="Pin Code"
+							label={fields.pinCode.label}
 							value={values.pinCode ?? ""}
 							required
 							success={
@@ -339,7 +488,7 @@ const VendorCreationFormOne = ({
 							}
 							inputMode="numeric"
 							error={errors.pinCode}
-							helperText="Vendor location pin code."
+							helperText={fields.pinCode.helperText}
 							onChange={(event) =>
 								resolvedOnChange?.("pinCode", event.target.value)
 							}
@@ -350,7 +499,7 @@ const VendorCreationFormOne = ({
 						<TextareaInput
 							mode={fieldMode}
 							name="address"
-							label="Complete Address"
+							label={fields.address.label}
 							value={values.address ?? ""}
 							success={
 								fieldMode === "edit" &&
@@ -359,7 +508,7 @@ const VendorCreationFormOne = ({
 							}
 							required
 							error={errors.address}
-							helperText="Registered or communication address."
+							helperText={fields.address.helperText}
 							onChange={(event) =>
 								resolvedOnChange?.("address", event.target.value)
 							}
@@ -373,7 +522,7 @@ const VendorCreationFormOne = ({
 						<FormInput
 							mode={fieldMode}
 							name="bankName"
-							label="Bank"
+							label={fields.bankName.label}
 							value={values.bankName ?? ""}
 							success={
 								fieldMode === "edit" &&
@@ -382,7 +531,7 @@ const VendorCreationFormOne = ({
 							}
 							required
 							error={errors.bankName}
-							helperText="Bank name."
+							helperText={fields.bankName.helperText}
 							onChange={(event) =>
 								resolvedOnChange?.("bankName", event.target.value)
 							}
@@ -391,7 +540,7 @@ const VendorCreationFormOne = ({
 						<FormInput
 							mode={fieldMode}
 							name="bankBranch"
-							label="Branch"
+							label={fields.bankBranch.label}
 							value={values.bankBranch ?? ""}
 							required
 							success={
@@ -400,7 +549,7 @@ const VendorCreationFormOne = ({
 								Boolean(values.bankBranch)
 							}
 							error={errors.bankBranch}
-							helperText="Bank branch."
+							helperText={fields.bankBranch.helperText}
 							onChange={(event) =>
 								resolvedOnChange?.("bankBranch", event.target.value)
 							}
@@ -409,7 +558,7 @@ const VendorCreationFormOne = ({
 						<FormInput
 							mode={fieldMode}
 							name="ifscCode"
-							label="IFSC Code"
+							label={fields.ifscCode.label}
 							value={values.ifscCode ?? ""}
 							required
 							success={
@@ -418,18 +567,23 @@ const VendorCreationFormOne = ({
 								Boolean(values.ifscCode)
 							}
 							error={errors.ifscCode}
-							helperText="Bank IFSC code."
+							helperText={fields.ifscCode.helperText}
 							onChange={(event) =>
 								resolvedOnChange?.("ifscCode", event.target.value)
 							}
+							autoComplete="off"
+							data-lpignore="true"
+							data-1p-ignore="true"
+							data-bwignore="true"
+							data-form-type="other"
 						/>
 
 						<FormInput
 							mode={fieldMode}
 							name="accountNumber"
-							label="A/C No."
-							type="password"
-							value={values.accountNumber ?? ""}
+							label={fields.accountNumber.label}
+							type="text"
+							value={maskAccountNumber(values.accountNumber) ?? ""}
 							readOnlyValue={maskAccountNumber(values.accountNumber)}
 							required
 							inputMode="text"
@@ -439,23 +593,35 @@ const VendorCreationFormOne = ({
 								!errors.accountNumber &&
 								Boolean(values.accountNumber)
 							}
-							helperText="Vendor bank account number."
-							onChange={(event) => {
-								const value = sanitizeAccountNumber(event.target.value);
-								resolvedOnChange?.("accountNumber", value);
-							}}
+							helperText={fields.accountNumber.helperText}
+							onChange={(event) =>
+								resolvedOnChange?.(
+									"accountNumber",
+									applyMaskedEdit(
+										values.accountNumber ?? "",
+										event.target.value,
+									),
+								)
+							}
 							onPaste={blockClipboardEvent}
 							onCopy={blockClipboardEvent}
 							onCut={blockClipboardEvent}
 							autoComplete="off"
+							autoCapitalize="off"
+							autoCorrect="off"
+							spellCheck={false}
+							data-lpignore="true"
+							data-1p-ignore="true"
+							data-bwignore="true"
+							data-form-type="other"
 						/>
 
 						<FormInput
 							mode={fieldMode}
 							name="confirmAccountNumber"
-							label="Confirm Account Number"
-							type="password"
-							value={values.confirmAccountNumber ?? ""}
+							label={fields.confirmAccountNumber.label}
+							type="text"
+							value={maskAccountNumber(values.confirmAccountNumber) ?? ""}
 							readOnlyValue={maskAccountNumber(values.confirmAccountNumber)}
 							required
 							inputMode="text"
@@ -466,22 +632,34 @@ const VendorCreationFormOne = ({
 								Boolean(values.confirmAccountNumber) &&
 								values.confirmAccountNumber === values.accountNumber
 							}
-							helperText="Re-enter the bank account number."
-							onChange={(event) => {
-								const value = sanitizeAccountNumber(event.target.value);
-								resolvedOnChange?.("confirmAccountNumber", value);
-							}}
+							helperText={fields.confirmAccountNumber.helperText}
+							onChange={(event) =>
+								resolvedOnChange?.(
+									"confirmAccountNumber",
+									applyMaskedEdit(
+										values.confirmAccountNumber ?? "",
+										event.target.value,
+									),
+								)
+							}
 							onPaste={blockClipboardEvent}
 							onCopy={blockClipboardEvent}
 							onCut={blockClipboardEvent}
 							autoComplete="off"
+							autoCapitalize="off"
+							autoCorrect="off"
+							spellCheck={false}
+							data-lpignore="true"
+							data-1p-ignore="true"
+							data-bwignore="true"
+							data-form-type="other"
 						/>
 					</div>
 					<div>
 						<TextareaInput
 							mode={fieldMode}
 							name="bankAddress"
-							label="Address"
+							label={fields.bankAddress.label}
 							value={values.bankAddress ?? ""}
 							error={errors.bankAddress}
 							success={
@@ -490,7 +668,7 @@ const VendorCreationFormOne = ({
 								Boolean(values.bankAddress)
 							}
 							rows={4}
-							helperText="Bank branch address."
+							helperText={fields.bankAddress.helperText}
 							onChange={(event) =>
 								resolvedOnChange?.("bankAddress", event.target.value)
 							}
@@ -498,27 +676,158 @@ const VendorCreationFormOne = ({
 						/>
 					</div>
 				</div>
-				<div className="vendor-onboarding-form-grid">
-					<FormInput
-						mode={fieldMode}
-						name="gstin"
-						label="GSTIN"
-						value={values.gstin ?? ""}
-						success={
-							fieldMode === "edit" && !errors.gstin && Boolean(values.gstin)
-						}
-						required
-						maxLength={15}
-						error={errors.gstin}
-						helperText="GST identification number."
-						onChange={(event) =>
-							resolvedOnChange?.("gstin", event.target.value.toUpperCase())
-						}
-					/>
+
+				{/* Row 1 — each applicability select with its certificate directly
+				    underneath (shown only when the answer needs one), one column each */}
+				<div className={FORM_ROW_GRID}>
+					<div className="vendor-field-stack">
+						<SelectInput
+							mode={fieldMode}
+							name="gstApplicability"
+							label={fields.gstApplicability.label}
+							placeholder={fields.gstApplicability.placeholder}
+							options={applicabilityOptions}
+							value={getSelectedOption(
+								applicabilityOptions,
+								values.gstApplicability,
+							)}
+							required
+							error={errors.gstApplicability}
+							helperText={fields.gstApplicability.helperText}
+							onChange={(option) =>
+								handleApplicabilityChange(
+									"gstApplicability",
+									option?.value ?? "",
+								)
+							}
+							success={
+								fieldMode === "edit" &&
+								!errors.gstApplicability &&
+								Boolean(values.gstApplicability)
+							}
+						/>
+
+						{!isReadOnly && isGstApplicable
+							? renderUpload("GST_CERTIFICATE")
+							: null}
+					</div>
+
+					<div className="vendor-field-stack">
+						<SelectInput
+							mode={fieldMode}
+							name="incorporationApplicability"
+							label={fields.incorporationApplicability.label}
+							placeholder={fields.incorporationApplicability.placeholder}
+							options={applicabilityOptions}
+							value={getSelectedOption(
+								applicabilityOptions,
+								values.incorporationApplicability,
+							)}
+							required
+							error={errors.incorporationApplicability}
+							helperText={fields.incorporationApplicability.helperText}
+							onChange={(option) =>
+								handleApplicabilityChange(
+									"incorporationApplicability",
+									option?.value ?? "",
+								)
+							}
+							success={
+								fieldMode === "edit" &&
+								!errors.incorporationApplicability &&
+								Boolean(values.incorporationApplicability)
+							}
+						/>
+
+						{!isReadOnly && isIncorporationApplicable
+							? renderUpload("INCORPORATION_CERTIFICATE")
+							: null}
+					</div>
+
+					<div className="vendor-field-stack">
+						<SelectInput
+							mode={fieldMode}
+							name="msmeVendor"
+							label={fields.msmeVendor.label}
+							placeholder={fields.msmeVendor.placeholder}
+							options={msmeOptions}
+							value={getSelectedOption(
+								msmeOptions,
+								toMsmeSelectValue(values.msmeVendor),
+							)}
+							required
+							error={errors.msmeVendor}
+							helperText={fields.msmeVendor.helperText}
+							onChange={(option) =>
+								handleConditionalFieldChange("msmeVendor", option?.value ?? "")
+							}
+							success={
+								fieldMode === "edit" &&
+								!errors.msmeVendor &&
+								Boolean(values.msmeVendor)
+							}
+						/>
+
+						{!isReadOnly && values.msmeVendor === "Yes"
+							? renderMsmeUpload()
+							: null}
+					</div>
+
+					<div className="vendor-field-stack">
+						<SelectInput
+							mode={fieldMode}
+							name="ndaObtained"
+							label={fields.ndaObtained.label}
+							placeholder={fields.ndaObtained.placeholder}
+							required
+							options={yesNoOptions}
+							value={getSelectedOption(
+								yesNoOptions,
+								toYesNo(values.ndaObtained),
+							)}
+							error={errors.ndaObtained}
+							helperText={fields.ndaObtained.helperText}
+							onChange={(option) =>
+								handleConditionalFieldChange("ndaObtained", option?.value ?? "")
+							}
+							success={
+								fieldMode === "edit" &&
+								!errors.ndaObtained &&
+								Boolean(values.ndaObtained)
+							}
+						/>
+
+						{!isReadOnly && values.ndaObtained === "Yes"
+							? renderNdaUpload()
+							: null}
+					</div>
+				</div>
+
+				{/* Row 2 — GSTIN (only if GST applicable) | PAN | Entity Reg. No. */}
+				<div className={FORM_ROW_GRID}>
+					{isGstApplicable ? (
+						<FormInput
+							mode={fieldMode}
+							name="gstin"
+							label={fields.gstin.label}
+							value={values.gstin ?? ""}
+							success={
+								fieldMode === "edit" && !errors.gstin && Boolean(values.gstin)
+							}
+							required
+							maxLength={15}
+							error={errors.gstin}
+							helperText={fields.gstin.helperText}
+							onChange={(event) =>
+								resolvedOnChange?.("gstin", event.target.value.toUpperCase())
+							}
+						/>
+					) : null}
+
 					<FormInput
 						mode={fieldMode}
 						name="pan"
-						label="PAN"
+						label={fields.pan.label}
 						value={values.pan ?? ""}
 						success={fieldMode === "edit" && !errors.pan && Boolean(values.pan)}
 						required
@@ -527,287 +836,88 @@ const VendorCreationFormOne = ({
 							resolvedOnChange?.("pan", event.target.value.toUpperCase())
 						}
 						error={errors.pan}
-						helperText="Permanent account number."
+						helperText={fields.pan.helperText}
 					/>
 
 					<FormInput
 						mode={fieldMode}
 						name="entityRegNo"
-						label="Entity Reg. No."
+						label={fields.entityRegNo.label}
 						required
-						value={values.entityRegNo}
+						value={values.entityRegNo ?? ""}
 						success={
 							fieldMode === "edit" &&
 							!errors.entityRegNo &&
 							Boolean(values.entityRegNo)
 						}
 						error={errors.entityRegNo}
-						helperText="Entity registration number, if applicable."
+						helperText={fields.entityRegNo.helperText}
 						onChange={(event) =>
 							resolvedOnChange?.("entityRegNo", event.target.value)
 						}
 					/>
 				</div>
 
-				<div className="vendor-enclosure-upload-grid">
-					{visibleDocumentFields.map((field) => {
-						const uploadedFile = getEnclosureFile(field.documentType);
+				{/* Row 3 — documents. Edit mode: PAN, cancelled cheque, others (the
+				    certificates sit under their selects). View mode: ONE Documents
+				    section holding every certificate, below all the form fields. */}
+				<section aria-labelledby="vendor-documents-heading">
+					<div className={FORM_ROW_GRID}>
+						{isReadOnly && isGstApplicable
+							? renderUpload("GST_CERTIFICATE")
+							: null}
+						{isReadOnly && isIncorporationApplicable
+							? renderUpload("INCORPORATION_CERTIFICATE")
+							: null}
+						{isReadOnly && values.msmeVendor === "Yes"
+							? renderMsmeUpload()
+							: null}
+						{isReadOnly && values.ndaObtained === "Yes"
+							? renderNdaUpload()
+							: null}
 
-						return (
-							<FileUploadField
-								key={field.documentType}
-								value={uploadedFile}
-								onChange={(nextValue) =>
-									handleEnclosureChange(field, nextValue)
-								}
-								kind="vendorDocument"
-								label={field.label}
-								description={field.description}
-								required={isEnclosureRequired(field)}
-								error={enclosureErrors[field.statusKey]}
-								readonly={isReadOnly}
-								disabled={loading}
-								tooltip={field.required ? "Mandatory" : undefined}
-								heightClassName="vendor-enclosure-upload-height"
-								className="vendor-enclosure-upload-field"
-								inputName={field.documentType}
-								showActions
-							/>
-						);
-					})}
-				</div>
-				{canAddMoreDocuments ? (
-					<div className="flex justify-end">
-						<Button
-							type="button"
-							text="Add More"
-							Icon={Plus}
-							size="sm"
-							appearance="standard"
-							variant="outline"
-							disabled={loading}
-							onClick={handleAddMoreDocument}
-						/>
-					</div>
-				) : null}
-				<div>
-					<div className="vendor-compliance-grid">
-						<section className="vendor-compliance-card">
-							<div className="vendor-compliance-card-grid">
-								<SelectInput
-									mode={fieldMode}
-									name="msmeVendor"
-									label="MSME Vendor"
-									placeholder="Select option"
-									options={yesNoOptions}
-									value={getSelectedOption(
-										yesNoOptions,
-										toYesNo(values.msmeVendor),
-									)}
-									required
-									error={errors.msmeVendor}
-									helperText="Select whether this vendor is registered under MSME."
-									onChange={(option) =>
-										handleConditionalFieldChange(
-											"msmeVendor",
-											option?.value ?? "",
-										)
-									}
+						{renderUpload("PAN_DOCUMENT")}
+
+						{renderUpload("CANCELLED_CHEQUE")}
+
+						{visibleDocumentFields
+							.filter(
+								(field) => !INLINE_DOCUMENT_TYPES.includes(field.documentType),
+							)
+							.map((field) => renderUpload(field.documentType))}
+
+						{/* Sits in the next free cell after the last attachment and moves
+						    along as the user adds more; bottom-aligned with the upload boxes */}
+						{canAddMoreDocuments ? (
+							<div className="flex min-w-0 self-end">
+								<Button
+									type="button"
+									Icon={Plus}
+									size="sm"
+									text={documents.addMore}
+									appearance="standard"
+									variant="outline"
+									disabled={loading}
+									onClick={handleAddMoreDocument}
+									className="mb-1"
 								/>
-
-								{values.msmeVendor === "Yes" ? (
-									<FileUploadField
-										value={getEnclosureFile("MSME_CERTIFICATE")}
-										onChange={(nextValue) =>
-											handleEnclosureTypeChange("MSME_CERTIFICATE", nextValue)
-										}
-										kind="vendorDocument"
-										label="MSME Certificate"
-										description="Upload the MSME registration certificate."
-										required
-										error={enclosureErrors.msmeCertificate}
-										readonly={isReadOnly}
-										disabled={loading}
-										heightClassName="vendor-compliance-upload-height"
-										className="vendor-compliance-upload"
-										inputName="MSME_CERTIFICATE"
-										showActions
-										tooltip="Mandatory"
-									/>
-								) : null}
 							</div>
-						</section>
-
-						<section className="vendor-compliance-card">
-							<div className="vendor-compliance-card-grid">
-								<SelectInput
-									mode={fieldMode}
-									name="ndaObtained"
-									label="Non-Disclosure Undertaking Obtained?"
-									placeholder="Select option"
-									required
-									options={yesNoOptions}
-									value={getSelectedOption(
-										yesNoOptions,
-										toYesNo(values.ndaObtained),
-									)}
-									error={errors.ndaObtained}
-									helperText="Confirm whether NDA is obtained."
-									onChange={(option) =>
-										handleConditionalFieldChange(
-											"ndaObtained",
-											option?.value ?? "",
-										)
-									}
-								/>
-
-								{values.ndaObtained === "Yes" ? (
-									<FileUploadField
-										value={getEnclosureFile("NDA_CERTIFICATE")}
-										onChange={(nextValue) =>
-											handleEnclosureTypeChange("NDA_CERTIFICATE", nextValue)
-										}
-										kind="vendorDocument"
-										label="NDA Certificate"
-										description="Upload the signed NDA certificate."
-										required
-										error={enclosureErrors.ndaCertificate}
-										readonly={isReadOnly}
-										disabled={loading}
-										heightClassName="vendor-compliance-upload-height"
-										className="vendor-compliance-upload"
-										inputName="NDA_CERTIFICATE"
-										showActions
-										tooltip="Mandatory"
-									/>
-								) : null}
-							</div>
-						</section>
+						) : null}
 					</div>
-				</div>
-				{/* <Modal
-					open={isDpdpModalOpen}
-					title="Data Privacy Notice"
-					size="lg"
-					onClose={closeDpdpModal}
-					footer_actions={
-						<>
-							<Button
-								type="button"
-								text="Cancel"
-								size="sm"
-								appearance="standard"
-								variant="outline"
-								onClick={closeDpdpModal}
-							/>
+				</section>
 
-							<Button
-								type="button"
-								text="Accept and Continue"
-								Icon={CheckCircle2}
-								size="sm"
-								appearance="standard"
-								variant="brand"
-								disabled={!hasConfirmedDpdp}
-								onClick={handleAcceptDpdpTerms}
-							/>
-						</>
-					}
-				>
-					<div className="vendor-dpdp-modal-content">
-						<p className="vendor-dpdp-modal-intro">
-							Please review how the information provided in this vendor
-							onboarding form will be collected, used, stored and shared.
-						</p>
-
-						<div className="vendor-dpdp-terms">
-							<section className="vendor-dpdp-section">
-								<h3>1. Information collected</h3>
-
-								<p>
-									We collect the vendor and authorised representative
-									information entered in this form, including business contact
-									details, address, bank information, tax information,
-									registration information and supporting documents.
-								</p>
-							</section>
-
-							<section className="vendor-dpdp-section">
-								<h3>2. Purpose of processing</h3>
-
-								<p>
-									The information will be used for vendor onboarding, identity
-									and document verification, due diligence, payment processing,
-									tax and regulatory compliance, procurement operations,
-									communication, audit and record management.
-								</p>
-							</section>
-
-							<section className="vendor-dpdp-section">
-								<h3>3. Information sharing</h3>
-
-								<p>
-									The information may be accessed by authorised Tata Hitachi
-									personnel and approved service providers where required for
-									vendor onboarding, verification, finance, audit, compliance,
-									legal obligations and technology support.
-								</p>
-							</section>
-
-							<section className="vendor-dpdp-section">
-								<h3>4. Storage and retention</h3>
-
-								<p>
-									The information will be protected using appropriate
-									organisational and technical safeguards and retained only for
-									the period required for the stated purposes, contractual
-									requirements and applicable legal or regulatory obligations.
-								</p>
-							</section>
-
-							<section className="vendor-dpdp-section">
-								<h3>5. Your responsibilities</h3>
-
-								<p>
-									You confirm that the information provided is accurate and that
-									you are authorised to provide personal data and documents
-									relating to the vendor and its representatives.
-								</p>
-							</section>
-
-							<section className="vendor-dpdp-section">
-								<h3>6. Withdrawal and privacy requests</h3>
-
-								<p>
-									You may raise a privacy query, correction request, grievance
-									or consent-withdrawal request through the privacy or grievance
-									contact published by Tata Hitachi.
-								</p>
-							</section>
-						</div>
-
-						<label className="vendor-dpdp-modal-confirmation">
-							<input
-								type="checkbox"
-								checked={hasConfirmedDpdp}
-								onChange={(event) => setHasConfirmedDpdp(event.target.checked)}
-							/>
-
-							<span>
-								I confirm that I have read and understood this Data Privacy
-								Notice and consent to the processing of the provided information
-								for the purposes stated above.
-							</span>
-						</label>
-					</div>
-				</Modal> */}
+				{/* The Data Privacy Notice modal is disabled until legal approves the
+				    full notice. Its copy is kept in content.formOne.dpdp (title, intro,
+				    six sections, confirmationLabel, acceptAndContinue), so re-enabling
+				    it only needs the <Modal> markup plus the commented controller
+				    handlers above. */}
 
 				{isReadOnly ? (
 					resolvedOnNext ? (
 						<div className="vendor-onboarding-form-actions">
 							<Button
 								type="button"
-								text={actionText || "Next"}
+								text={actionText || buttons.next}
 								size="sm"
 								appearance="standard"
 								variant="brand"
@@ -831,12 +941,7 @@ const VendorCreationFormOne = ({
 										}
 									/>
 
-									<span>
-										I hereby declare that the information provided in this form
-										is true and accurate to the best of my knowledge, and I
-										consent to its processing for onboarding and verification
-										purposes.
-									</span>
+									<span>{content.consent.declaration}</span>
 								</label>
 
 								{dpdpError ? (
@@ -847,10 +952,10 @@ const VendorCreationFormOne = ({
 							</div>
 						) : null}
 
-						<div className="bottom-buttons-bar-between">
+						<div className="bottom-buttons-bar-between px-4 max-lg:px-3">
 							<Button
 								type="button"
-								text="Back"
+								text={buttons.back}
 								size="sm"
 								appearance="standard"
 								variant="outline"
@@ -862,7 +967,7 @@ const VendorCreationFormOne = ({
 							<div className="bottom-buttons-bar-end">
 								{/* <Button
 									type="button"
-									text="Reset"
+									text={buttons.reset}
 									Icon={RefreshCcw}
 									size="sm"
 									appearance="standard"
@@ -873,7 +978,7 @@ const VendorCreationFormOne = ({
 								{resolvedOnSaveDraft ? (
 									<Button
 										type="button"
-										text="Save as Draft"
+										text={buttons.saveAsDraft}
 										Icon={FilePenLine}
 										size="sm"
 										appearance="standard"
@@ -887,19 +992,19 @@ const VendorCreationFormOne = ({
 									text={
 										loading
 											? resolvedOnSubmit
-												? "Submitting..."
-												: "Saving..."
+												? buttons.submitting
+												: buttons.saving
 											: actionText ||
-												(resolvedOnSubmit ? "Submit Form" : "Save & Proceed")
+												(resolvedOnSubmit
+													? buttons.submitForm
+													: buttons.saveAndProceed)
 									}
 									size="sm"
 									appearance="standard"
 									variant="brand"
 									Icon={Save}
 									isTooltip={
-										requireDpdpConsent
-											? "Please accept the consent form to submit."
-											: undefined
+										requireDpdpConsent ? content.dpdp.submitTooltip : undefined
 									}
 									onClick={handleFormAction}
 									disabled={loading || (requireDpdpConsent && !hasAcceptedDpdp)}

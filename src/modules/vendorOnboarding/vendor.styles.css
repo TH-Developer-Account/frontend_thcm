@@ -1,6 +1,7 @@
 /* =====================================================
    VENDOR MODULE STYLES
    Sections:
+   0. Spacing token (one gap for every form field)
    1. Initiation page layout, field grid, next-steps panel
    2. Onboarding form (grid, actions, read-only, summary)
    3. Enclosure uploads and file preview modal
@@ -9,6 +10,19 @@
    6. Summary heading
    7. Unlayered: workflow mobile rules, approval actions bar
 ===================================================== */
+
+/* =====================================================
+   0. SPACING TOKEN
+   --vendor-field-gap is THE gap between any two form fields,
+   horizontally and vertically, on every breakpoint. Grids, the
+   form itself, the textarea row, the initiation grid, the upload
+   grid and .vendor-field-stack all read this one value, and no
+   breakpoint overrides it. Change it here to retune the whole form.
+===================================================== */
+
+:root {
+	--vendor-field-gap: var(--space-4);
+}
 
 @layer components {
 	/* =====================================================
@@ -74,9 +88,9 @@
 		min-width: 0;
 		grid-template-columns: minmax(0, 1fr);
 		align-items: start;
-		gap: var(--space-3) var(--space-4);
+		gap: var(--vendor-field-gap);
 
-		padding: var(--space-2) var(--space-3);
+		padding: 0 var(--space-3);
 	}
 
 	.vendor-initiation-grid > * {
@@ -107,7 +121,6 @@
 	@media (min-width: 640px) {
 		.vendor-initiation-form .vendor-onboarding-form-actions {
 			padding-inline: var(--space-3);
-			margin-top: var(--space-2);
 		}
 	}
 
@@ -196,13 +209,16 @@
 		margin-bottom: var(--space-6);
 	}
 
+	/* Vertical gap between form rows = the shared field gap. The grids below
+	   have no vertical padding of their own, so the space between any two
+	   rows/fields is exactly --vendor-field-gap. */
 	.vendor-onboarding-form,
 	.vendor-summary-form {
 		display: flex;
 		width: 100%;
 		min-width: 0;
 		flex-direction: column;
-		gap: var(--space-1);
+		gap: var(--vendor-field-gap);
 
 		background-color: var(--color-bg-surface);
 		color: var(--color-text-primary);
@@ -219,14 +235,23 @@
 		min-width: 0;
 		grid-template-columns: repeat(4, minmax(0, 1fr));
 		align-items: start;
-		gap: var(--space-2) var(--space-4);
+		gap: var(--vendor-field-gap);
 
-		padding: var(--space-2) var(--space-4);
+		padding: 0 var(--space-4);
 	}
 
 	.vendor-onboarding-form-grid-parent > *,
 	.vendor-onboarding-form-grid > * {
 		min-width: 0;
+	}
+
+	/* A select with its certificate upload directly underneath it.
+	   Same gap as every other pair of fields. */
+	.vendor-field-stack {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--vendor-field-gap);
 	}
 
 	/* Child wrapper fields sit directly in the parent's columns 1-3 */
@@ -248,9 +273,9 @@
 		min-width: 0;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		align-items: start;
-		gap: var(--space-4);
+		gap: var(--vendor-field-gap);
 
-		padding: var(--space-3) var(--space-4) var(--space-4);
+		padding: 0 var(--space-4);
 	}
 
 	.vendor-form-textarea > * {
@@ -286,6 +311,7 @@
 		display: flex;
 		width: 100%;
 		min-width: 0;
+		box-sizing: border-box;
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);
@@ -300,13 +326,27 @@
 		gap: var(--space-2);
 	}
 
-	/* Action class used in Form One */
+	/* Action bar used in Form One (Back on the left, Save as Draft + Submit
+	   grouped on the right) */
 	.bottom-buttons-bar-between {
 		display: flex;
 		width: 100%;
 		min-width: 0;
+		box-sizing: border-box;
 		align-items: center;
 		justify-content: space-between;
+		gap: var(--space-2);
+	}
+
+	/* The right-hand group. It had no rule before, so on a phone it
+	   overflowed the bar and clipped the buttons at the screen edge. */
+	.bottom-buttons-bar-end {
+		display: flex;
+		min-width: 0;
+		max-width: 100%;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: flex-end;
 		gap: var(--space-2);
 	}
 
@@ -537,17 +577,19 @@
 	}
 
 	.vendor-onboarding-msme-section {
-		@apply grid grid-cols-2 gap-4;
+		@apply grid grid-cols-2;
+		gap: var(--vendor-field-gap);
 	}
 
 	.padding {
-		padding: var(--space-3) var(--space-4) var(--space-4);
+		padding: 0 var(--space-4);
 	}
 
 	/* ---------- Compliance row (MSME / NDA) ---------- */
 
 	.vendor-compliance-grid {
-		@apply grid grid-cols-1 items-start gap-x-4 gap-y-2 px-4 py-2 sm:grid-cols-2;
+		@apply grid grid-cols-1 items-start px-4 sm:grid-cols-2;
+		gap: var(--vendor-field-gap);
 	}
 
 	.vendor-compliance-card {
@@ -555,7 +597,8 @@
 	}
 
 	.vendor-compliance-card-grid {
-		@apply grid min-w-0 grid-cols-1 items-start gap-4;
+		@apply grid min-w-0 grid-cols-1 items-start;
+		gap: var(--vendor-field-gap);
 	}
 
 	.vendor-compliance-upload {
@@ -573,11 +616,11 @@
 			margin-bottom: var(--space-4);
 		}
 
+		/* Columns drop to 2; the gap stays --vendor-field-gap */
 		.vendor-onboarding-form-grid-parent,
 		.vendor-onboarding-form-grid,
 		.vendor-form-textarea {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: var(--space-3);
 			padding-inline: var(--space-3);
 		}
 
@@ -606,20 +649,18 @@
 			margin-bottom: var(--space-3);
 		}
 
-		.vendor-onboarding-form,
-		.vendor-summary-form {
-			gap: var(--space-2);
-		}
-
+		/* One column; vertical/horizontal gap is still --vendor-field-gap
+		   (no mobile override, so fields are never tighter than on desktop) */
 		.vendor-onboarding-form-grid-parent,
 		.vendor-onboarding-form-grid,
 		.vendor-form-textarea {
 			grid-template-columns: minmax(0, 1fr);
-			gap: var(--space-3);
-			padding: var(--space-3);
+			padding-inline: var(--space-3);
 		}
 
-		/* Back below, primary group above; every button full width */
+		/* Back below, primary group above; every button full width.
+		   Each wrapper is width-bound so nothing can poke past the
+		   screen edge. */
 		.vendor-onboarding-form-actions {
 			align-items: stretch;
 			flex-direction: column-reverse;
@@ -628,9 +669,12 @@
 			padding: var(--space-3);
 		}
 
-		.vendor-onboarding-form-actions-end {
+		.vendor-onboarding-form-actions-end,
+		.bottom-buttons-bar-end {
 			width: 100%;
+			max-width: 100%;
 			flex-direction: column-reverse;
+			flex-wrap: nowrap;
 			align-items: stretch;
 			justify-content: flex-start;
 			gap: var(--space-2);
@@ -650,11 +694,20 @@
 		.bottom-buttons-bar-between .button-wrapper {
 			display: flex;
 			width: 100%;
+			min-width: 0;
 		}
 
 		.vendor-onboarding-form-actions .button-base,
 		.bottom-buttons-bar-between .button-base {
 			width: 100%;
+			min-width: 0;
+			max-width: 100%;
+			justify-content: center;
+		}
+
+		/* Long consent text wraps; keep the checkbox on its first line */
+		.vendor-dpdp-consent-control {
+			align-items: flex-start;
 		}
 
 		.form-readonly-value {
@@ -748,8 +801,8 @@
 	.vendor-enclosure-upload-grid {
 		display: grid;
 		grid-template-columns: repeat(1, minmax(0, 1fr));
-		gap: var(--space-2) var(--space-4);
-		padding: var(--space-2) var(--space-4);
+		gap: var(--vendor-field-gap);
+		padding: 0 var(--space-4);
 	}
 
 	.vendor-enclosure-upload-card {
@@ -762,7 +815,7 @@
 
 	.vendor-enclosure-upload-field {
 		margin: 0;
-		@apply py-1 px-0;
+		@apply py-0 px-0;
 	}
 
 	.vendor-enclosure-upload-field .form-label-row {
@@ -777,12 +830,6 @@
 
 	.vendor-enclosure-upload-height {
 		min-height: 3.5rem;
-	}
-
-	.vendor-enclosure-upload-field .file-upload-empty,
-	.vendor-enclosure-upload-field .file-upload-preview {
-		min-height: 6.5rem;
-		border-radius: var(--radius-xs);
 	}
 
 	.vendor-enclosure-upload-field .file-upload-empty-copy {
@@ -1114,12 +1161,13 @@
 
 	.vendor-dpdp-consent-control {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		gap: var(--space-2);
 
-		color: var(--color-text-secondary);
+		color: var(--color-text-primary);
 
-		font-size: var(--font-size-xs);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
 		line-height: var(--line-height-normal);
 		cursor: pointer;
 	}
@@ -1355,4 +1403,108 @@
 	flex-wrap: nowrap;
 	margin-left: auto;
 	justify-content: flex-end;
+}
+
+/* =====================================================
+   VENDOR PUBLIC FORM + DOCUMENT UPLOADS
+   Unlayered so these beat Tailwind utilities used inside
+   FileUploadField (min-h-12, py-1.5, size-9 …).
+===================================================== */
+
+@layer components {
+	/* Public form: room above row 1 so helper tooltips aren't clipped */
+	.vendor-public-form-card .vendor-onboarding-form {
+		padding-top: var(--space-6);
+	}
+
+	/* Empty AND filled upload boxes match input/select height */
+	.vendor-onboarding-form .vendor-enclosure-upload-height {
+		min-height: var(--control-height-md);
+	}
+
+	.vendor-onboarding-form .vendor-enclosure-upload-field .file-upload-empty,
+	.vendor-onboarding-form .vendor-enclosure-upload-field .file-upload-preview {
+		box-sizing: border-box;
+		height: var(--control-height-md);
+		min-height: var(--control-height-md);
+		border-radius: var(--radius-xs);
+	}
+
+	.vendor-onboarding-form .vendor-enclosure-upload-field .file-upload-empty {
+		padding-block: 0;
+	}
+
+	/* Filled: icon + name/type on the left, actions on the right, one row */
+	.vendor-onboarding-form .vendor-enclosure-upload-field .file-upload-preview {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: 0 var(--space-2);
+	}
+
+	.vendor-onboarding-form
+		.vendor-enclosure-upload-field
+		.file-upload-preview-body {
+		flex: 1 1 auto;
+		min-width: 0;
+		min-height: 0;
+		padding: 0;
+	}
+
+	.vendor-onboarding-form
+		.vendor-enclosure-upload-field
+		.file-upload-preview-thumbnail {
+		width: 1.75rem;
+		height: 1.75rem;
+	}
+
+	.vendor-onboarding-form
+		.vendor-enclosure-upload-field
+		.file-upload-file-meta {
+		margin-top: 0;
+	}
+
+	.vendor-onboarding-form
+		.vendor-enclosure-upload-field
+		.file-upload-preview-actions {
+		flex: 0 0 auto;
+		margin-left: auto;
+	}
+}
+/* =====================================================
+	   FORM ONE — "Documents" section (view mode only)
+	   In view mode every certificate is rendered together in this section,
+	   below all the form fields. Address blocks and the field grids keep
+	   their existing layout. The section is not rendered in edit mode.
+	===================================================== */
+.vendor-form-documents {
+	margin-top: var(--space-2);
+	padding-top: var(--space-3);
+
+	border-top: var(--border-width-default) solid var(--color-border-subtle);
+}
+
+.vendor-form-documents-title {
+	margin: 0 0 var(--space-1);
+	/* Same side padding as .vendor-onboarding-form-grid so it lines up */
+	padding-inline: var(--space-4);
+
+	color: var(--color-text-secondary);
+
+	font-size: var(--font-size-xs);
+	font-weight: var(--font-weight-semibold);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+}
+
+@media (max-width: 1023px) {
+	.vendor-form-documents-title {
+		padding-inline: var(--space-3);
+	}
+}
+
+@media (max-width: 380px) {
+	.vendor-form-documents-title {
+		padding-inline: var(--space-2);
+	}
 }

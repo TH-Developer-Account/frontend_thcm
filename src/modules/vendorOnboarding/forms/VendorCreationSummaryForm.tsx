@@ -36,9 +36,10 @@ import VendorCreationFormOne from "./VendorCreationFormOne";
 import VendorCreationFormTwo from "./VendorCreationFormTwo";
 import NavigateButton from "../../../components/common/NavigateButton";
 import { Badge } from "../../../components/common/Badge";
-import { vendorContent } from "../../../content/vendor.content";
+import { vendorContent } from "../utils/vendor.content";
 import { showApiErrorToast } from "../../../utils/apiError.helper";
 import ApprovalActionsBar from "../../../components/ui/ApprovalActionsBar";
+import { useVendorStageActionPermissions } from "../hooks/useVendorPermissions";
 
 type VendorCreationSummaryMode = "edit" | "view";
 
@@ -72,7 +73,12 @@ type VendorCreationSummaryFormProps = {
 
 	onHandleSendBackVendor?: () => void | Promise<void>;
 	onAcceptAndClose?: () => void | Promise<void>;
-	onSaveVendorCode?: (code?: string) => void | Promise<boolean>;
+	// `silent` suppresses the "Vendor code updated" toast when the save is
+	// part of a bigger action (final approve) that shows its own toast.
+	onSaveVendorCode?: (
+		code?: string,
+		options?: { silent?: boolean },
+	) => void | Promise<boolean>;
 
 	canSendBackToVendor?: boolean;
 	canSubmit?: boolean;
@@ -142,6 +148,12 @@ const VendorCreationSummaryForm = ({
 		...stage,
 		approvals: stage.approvals ? [...stage.approvals] : undefined,
 	}));
+
+	// after resolvedWorkflowStages is defined
+	const { workflowApproverData } = useVendorStageActionPermissions(
+		resolvedWorkflowStages,
+	);
+	const isExternalApprover = Boolean(workflowApproverData.isExternalApprover);
 
 	const resolvedFormTwoChange =
 		onFormTwoChange ?? formContext?.handleFormTwoChange;
@@ -289,10 +301,12 @@ const VendorCreationSummaryForm = ({
 
 	const showClarifyAction = resolvedCanClarify;
 
+	// Send Back to Vendor: shown only when the permission layer says so
+	// (initiator + clarification open — see getVendorRecordPermissions).
+	// Resolved handler is used, so it works whether the handler comes from
+	// props or from the form context, in both view and edit modes.
 	const showSendBackAction =
-		isViewMode &&
-		resolvedCanSendBack &&
-		typeof onHandleSendBackVendor === "function";
+		resolvedCanSendBack && typeof resolvedOnSendBack === "function";
 
 	const showAcceptAndCloseAction =
 		resolvedCanAcceptAndClose && typeof resolvedOnAcceptAndClose === "function";
@@ -407,7 +421,11 @@ const VendorCreationSummaryForm = ({
 			canSubmit={showSubmitAction}
 			onSubmit={resolvedOnSubmit}
 			loading={isActionLoading}
-			approveLabel={vendorContent.buttons.approve}
+			approveLabel={
+				isExternalApprover
+					? vendorContent.buttons.ok
+					: vendorContent.buttons.approve
+			}
 			clarifyLabel={vendorContent.buttons.sendForClarification}
 			sendBackLabel={vendorContent.buttons.sendBackToVendor}
 			acceptAndCloseLabel={vendorContent.buttons.acceptAndClose}
@@ -465,8 +483,8 @@ const VendorCreationSummaryForm = ({
 							size="xs"
 							row={onboardingId}
 							actions={summaryActions}
-							ariaLabel="Vendor onboarding actions"
-							triggerLabel="Export"
+							ariaLabel={vendorContent.summary.actions.ariaLabel}
+							triggerLabel={vendorContent.summary.actions.exportTrigger}
 							triggerVariant="brand"
 						/>
 					) : null

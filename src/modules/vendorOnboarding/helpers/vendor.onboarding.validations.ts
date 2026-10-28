@@ -16,6 +16,19 @@ export const EDITABLE_STATUSES: readonly VendorOnboardingStatus[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Not-applicable (N/A) option
+// ─────────────────────────────────────────────────────────────────────────────
+// GST, Incorporation and MSME can be marked N/A. When a field is N/A its
+// document is not required (and not shown). "Other" attachments never get an
+// N/A option. Single source of truth for the literal + the check, so the
+// schema, the form controller and getMissingDocuments can't drift apart.
+
+export const NOT_APPLICABLE = "N/A";
+
+export const isNotApplicable = (value?: string | null): boolean =>
+	value?.trim().toUpperCase() === NOT_APPLICABLE;
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Missing-document check (public vendor submission)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -35,6 +48,15 @@ export const getMissingDocuments = (
 	);
 
 	return VENDOR_DOCUMENT_FIELDS.filter((field) => {
+		if (field.documentType === "GST_CERTIFICATE") {
+			return !isNotApplicable(values.gstApplicability);
+		}
+
+		if (field.documentType === "INCORPORATION_CERTIFICATE") {
+			return !isNotApplicable(values.incorporationApplicability);
+		}
+
+		// Only "Yes" requires the certificate; "No" and "N/A" don't.
 		if (field.documentType === "MSME_CERTIFICATE") {
 			return values.msmeVendor === "Yes";
 		}

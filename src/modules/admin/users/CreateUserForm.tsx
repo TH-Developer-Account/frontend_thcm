@@ -7,8 +7,10 @@ import EditableCard, {
 import Checkbox from "../../../components/forms/Checkbox";
 import FormInput from "../../../components/forms/FormInput";
 import SelectInput from "../../../components/forms/SelectInput";
+import MultiSelectInput from "../../../components/forms/MultiSelectInput";
 import DatePickerInput from "../../../components/common/DatePickerInput";
 import { useAuth } from "../../../context/Auth/AuthContext";
+import { useMasterData } from "../../../hooks/useMasterData";
 import type { GradeOption, UserType } from "./user-management.types";
 import type { UsersController } from "./useUsersData";
 import {
@@ -21,6 +23,7 @@ import {
 	parseDateOnly,
 	toDateOnlyString,
 } from "./user-management.utils";
+import type { MasterOption } from "../Masters/masterData.types";
 
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
@@ -29,8 +32,6 @@ import Avatar from "../../../components/common/Avatar";
 import type { BusinessPartnerOption } from "./BusinessPartnerAsyncSelect";
 import BusinessPartnerAsyncSelect from "./BusinessPartnerAsyncSelect";
 import UserAppAccessPanel from "./UserAppAccessPanel";
-import { useMasterData } from "../../../hooks/useMasterData";
-import type { MasterOption } from "../Masters/masterData.types";
 
 interface UserFormProps {
 	controller: UsersController;
@@ -46,6 +47,7 @@ const USER_TYPE_OPTIONS: Array<{
 	{ label: "THCM Employee", value: "THCM" },
 	{ label: "Dealer", value: "DEALER" },
 	{ label: "Customer", value: "CUSTOMER" },
+	{ label: "TCS", value: "TCS" },
 ];
 
 // TODO: replace with real grade options from API/config once available.
@@ -81,40 +83,19 @@ export function CreateUserForm({ controller }: UserFormProps) {
 	} = controller;
 	const { isSuperAdmin } = useAuth();
 
-	const { data: masters, isLoading: isLoadingMasters } = useMasterData();
-	const zoneOptions: MasterOption[] = masters?.regions ?? [];
-
-	const OTHER_BRANCH: MasterOption = {
-		value: "__other__",
-		label: "Other (not listed)",
-	};
-
-	const branchOptions: MasterOption[] = [
-		...(masters?.branches ?? []),
-		OTHER_BRANCH,
-	];
-	// Matches by id, code or label. Falls back to the raw string so a legacy
-	// free-text or since-deactivated zone still displays instead of going blank.
-	const findZone = (stored?: string): MasterOption | null => {
-		if (!stored || isLoadingMasters) return null;
-		return (
-			zoneOptions.find(
-				(o) => o.value === stored || o.code === stored || o.label === stored,
-			) ?? { value: stored, label: stored }
-		);
-	};
-
-	const departmentOptions: MasterOption[] = masters?.departments ?? [];
-
-	// Same fallback as zones: a legacy free-text department still displays.
-	const findDepartment = (stored?: string): MasterOption | null => {
-		if (!stored || isLoadingMasters) return null;
-		return (
-			departmentOptions.find(
-				(o) => o.value === stored || o.code === stored || o.label === stored,
-			) ?? { value: stored, label: stored }
-		);
-	};
+	// Branch/Designation/Division/Cost Center pickers and the Zone
+	// multi-select are all sourced from the Masters endpoint, the same one
+	// MastersPage.tsx reads from — so these dropdowns and the admin's
+	// Masters screen are always showing the same governed options. Location
+	// is NOT one of these — it's a plain text field below, not master-backed
+	// (see user-management.types.ts).
+	const { data: masterData } = useMasterData();
+	const branchOptions: MasterOption[] = masterData?.branches ?? [];
+	const designationOptions: MasterOption[] = masterData?.designations ?? [];
+	const divisionOptions: MasterOption[] = masterData?.divisions ?? [];
+	const costCenterOptions: MasterOption[] = masterData?.costCenters ?? [];
+	const zoneOptions: MasterOption[] = masterData?.zones ?? [];
+	const departmentOptions: MasterOption[] = masterData?.departments ?? [];
 
 	// "view" is now the single route for both looking at and editing an
 	// existing user — EditableCard owns the actual display/edit toggle
@@ -135,8 +116,6 @@ export function CreateUserForm({ controller }: UserFormProps) {
 	const [profileImage, setProfileImage] = useState<FileUploadValue | null>(
 		null,
 	);
-
-	const [branchOtherPicked, setBranchOtherPicked] = useState(false);
 	// Latest selectable joining date = yesterday (today and future are disabled).
 	const getLatestJoiningDate = () => {
 		const date = new Date();
@@ -173,19 +152,6 @@ export function CreateUserForm({ controller }: UserFormProps) {
 				: null,
 		);
 	}, [selectedUser?.id, selectedUser?.businessPartner]);
-
-	const matchBranch = (stored?: string): MasterOption | undefined =>
-		stored
-			? (masters?.branches ?? []).find(
-					(o) => o.value === stored || o.code === stored || o.label === stored,
-				)
-			: undefined;
-
-	// Text mode when: user picked "Other" and hasn't typed yet,
-	// or the saved value isn't in the master (legacy / custom branch).
-	const isCustomBranch = (stored?: string): boolean =>
-		!isLoadingMasters &&
-		((branchOtherPicked && !stored) || (!!stored && !matchBranch(stored)));
 
 	const displayValues: FormValues =
 		isDetailMode && selectedUser ? mapUserToForm(selectedUser) : form;
@@ -264,15 +230,15 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		// edit-mode password reset should go through a dedicated "reset
 		// password" action rather than living in this form.
 		// ...(isCreateMode
-		// 	? [
-		// 			{
-		// 				name: "password" as const,
-		// 				label: "Password",
-		// 				visibleInDisplay: false,
-		// 				error: fieldErrors.password,
-		// 			},
-		// 		]
-		// 	: []),
+		// \t? [
+		// \t\t\t{
+		// \t\t\t\tname: "password" as const,
+		// \t\t\t\tlabel: "Password",
+		// \t\t\t\tvisibleInDisplay: false,
+		// \t\t\t\terror: fieldErrors.password,
+		// \t\t\t},
+		// \t\t]
+		// \t: []),
 
 		{
 			id: "userType",
@@ -406,6 +372,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		{
 			id: "status-flags",
 			label: "Status",
+			name: "isActive",
 			visibleInDisplay: isDetailMode,
 			visibleInEdit: isDetailMode,
 			displayValue: (
@@ -429,102 +396,127 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		},
 	];
 
+	// Helper for the master-backed single-select pickers below (Branch/
+	// Designation/Division/Cost Center) — they all share the same shape
+	// (options: MasterOption[], value/onChange a *Id field), so this keeps
+	// the render callbacks from repeating the same find/onChange boilerplate
+	// each time. Location used to be one of these too, before it reverted to
+	// plain text.
+	const renderMasterSelect = (
+		fieldLabel: string,
+		options: MasterOption[],
+		draftValue: string,
+		disabled: boolean,
+		error: string | undefined,
+		onSelect: (id: string) => void,
+	) => (
+		<SelectInput<MasterOption>
+			inputId={`user-${fieldLabel.toLowerCase().replace(/\s+/g, "-")}`}
+			name={fieldLabel}
+			label={fieldLabel}
+			options={options}
+			value={options.find((option) => option.value === draftValue) ?? null}
+			isDisabled={disabled}
+			error={error}
+			onChange={(option) => onSelect(option?.value ?? "")}
+		/>
+	);
+
 	const organizationFields: EditableCardField<FormValues>[] = [
+		// Location is plain free text again — real-world location values vary
+		// too much to constrain to a fixed master list (see
+		// decisions-and-learnings.md) — so it's an ordinary text field now,
+		// the same shape as address/branch/department/role below.
 		{
-			id: "zone",
-			name: "zone",
+			name: "location",
+			label: "Location",
+			required: true,
+			error: fieldErrors.location,
+		},
+		{
+			name: "address",
+			label: "Address",
+			required: true,
+			error: fieldErrors.address,
+		},
+		// Branch reverted back to the master-backed Branch dropdown it was
+		// before — unlike location, it already had a governed master + admin
+		// screen, so it's a renderMasterSelect picker again, not plain text.
+		{
+			id: "branch",
+			name: "branchId",
+			label: "Branch",
+			required: true,
+			displayValue: selectedUser?.branch || "--",
+			render: ({ draft, disabled, setFieldValue }) =>
+				renderMasterSelect(
+					"Branch",
+					branchOptions,
+					draft.branchId,
+					disabled,
+					fieldErrors.branchId,
+					(id) => setFieldValue("branchId", id as never),
+				),
+		},
+		// A user can cover multiple zones, so this is a multi-select writing
+		// to zoneIds (string[]) rather than a single plain-text field.
+		{
+			id: "zones",
+			name: "zoneIds",
 			label: "Zone",
 			required: true,
-			displayValue: findZone(displayValues.zone)?.label || "--",
+			displayValue: selectedUser?.zones?.length
+				? selectedUser.zones.join(", ")
+				: "--",
 			render: ({ draft, disabled, setFieldValue }) => (
-				<SelectInput<MasterOption>
-					inputId="user-zone"
-					name="zone"
+				<MultiSelectInput
+					inputId="user-zones"
+					name="zoneIds"
 					label="Zone"
 					required
 					options={zoneOptions}
-					value={findZone(draft.zone)}
-					isDisabled={disabled || isLoadingMasters}
-					error={fieldErrors.zone}
-					onChange={(option) =>
-						setFieldValue("zone", (option?.value ?? "") as never)
+					value={zoneOptions.filter((option) =>
+						draft.zoneIds.includes(option.value),
+					)}
+					isDisabled={disabled}
+					error={fieldErrors.zoneIds}
+					onValueChange={({ value }) =>
+						setFieldValue(
+							"zoneIds",
+							value.map((option) => option.value) as never,
+						)
 					}
 				/>
 			),
-		},
-		{
-			id: "branch",
-			name: "branch",
-			label: "Branch",
-			required: true,
-			displayValue:
-				matchBranch(displayValues.branch)?.label ||
-				displayValues.branch ||
-				"--",
-			render: ({ draft, disabled, setFieldValue }) =>
-				isCustomBranch(draft.branch) ? (
-					<div className="flex flex-col gap-1">
-						<FormInput
-							name="branch"
-							label="Branch"
-							placeholder="Enter branch name"
-							required
-							value={draft.branch ?? ""}
-							disabled={disabled}
-							error={fieldErrors.branch}
-							onChange={(e) => setFieldValue("branch", e.target.value as never)}
-						/>
-						{!disabled && (
-							<button
-								type="button"
-								className="self-start text-xs text-brand underline"
-								onClick={() => {
-									setBranchOtherPicked(false);
-									setFieldValue("branch", "" as never);
-								}}
-							>
-								Choose from list instead
-							</button>
-						)}
-					</div>
-				) : (
-					<SelectInput<MasterOption>
-						inputId="user-branch"
-						name="branch"
-						label="Branch"
-						required
-						options={branchOptions}
-						value={matchBranch(draft.branch) ?? null}
-						isDisabled={disabled || isLoadingMasters}
-						error={fieldErrors.branch}
-						onChange={(option) => {
-							if (option?.value === OTHER_BRANCH.value) {
-								setBranchOtherPicked(true);
-								setFieldValue("branch", "" as never);
-							} else {
-								setBranchOtherPicked(false);
-								setFieldValue("branch", (option?.value ?? "") as never);
-							}
-						}}
-					/>
-				),
 		},
 		{
 			id: "department",
 			name: "department",
 			label: "Department",
 			required: true,
-			displayValue: findDepartment(displayValues.department)?.label || "--",
+			displayValue: selectedUser?.department
+				? (departmentOptions.find(
+						(o) =>
+							o.value === selectedUser.department ||
+							o.code === selectedUser.department ||
+							o.label === selectedUser.department,
+					)?.label ?? selectedUser.department)
+				: "--",
 			render: ({ draft, disabled, setFieldValue }) => (
 				<SelectInput<MasterOption>
 					inputId="user-department"
 					name="department"
 					label="Department"
-					required
-					placeholder="Select department"
 					options={departmentOptions}
-					value={findDepartment(draft.department)}
-					isDisabled={disabled || isLoadingMasters}
+					value={
+						departmentOptions.find(
+							(o) =>
+								o.value === draft.department ||
+								o.code === draft.department ||
+								o.label === draft.department,
+						) ?? null
+					}
+					isDisabled={disabled}
 					error={fieldErrors.department}
 					onChange={(option) =>
 						setFieldValue("department", (option?.value ?? "") as never)
@@ -535,14 +527,60 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		{
 			name: "role",
 			label: "Role",
-			// required: true,
+			required: false,
 			error: fieldErrors.role,
 		},
 		{
-			name: "designation",
+			id: "designation",
+			name: "designationId",
 			label: "Designation",
 			required: true,
-			error: fieldErrors.designation,
+			displayValue: selectedUser?.designation || "--",
+			render: ({ draft, disabled, setFieldValue }) =>
+				renderMasterSelect(
+					"Designation",
+					designationOptions,
+					draft.designationId,
+					disabled,
+					fieldErrors.designationId,
+					(id) => setFieldValue("designationId", id as never),
+				),
+		},
+		{
+			id: "division",
+			name: "divisionId",
+			label: "Division",
+			required: true,
+			displayValue: selectedUser?.division || "--",
+			render: ({ draft, disabled, setFieldValue }) =>
+				renderMasterSelect(
+					"Division",
+					divisionOptions,
+					draft.divisionId,
+					disabled,
+					fieldErrors.divisionId,
+					(id) => setFieldValue("divisionId", id as never),
+				),
+		},
+		{
+			id: "costCenter",
+			name: "costCenterId",
+			label: "Cost Center",
+			required: true,
+			// Cost Center's master option label carries its name, but the
+			// User-facing value is the code (see masterData.types.ts) — so the
+			// read-only display pulls selectedUser.costCenter (the code) even
+			// though the picker itself shows names.
+			displayValue: selectedUser?.costCenter || "--",
+			render: ({ draft, disabled, setFieldValue }) =>
+				renderMasterSelect(
+					"Cost Center",
+					costCenterOptions,
+					draft.costCenterId,
+					disabled,
+					fieldErrors.costCenterId,
+					(id) => setFieldValue("costCenterId", id as never),
+				),
 		},
 		{
 			name: "vertical",
@@ -553,49 +591,37 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		{
 			name: "managerCode1",
 			label: "Manager Code 1",
-			// required: true,
+			required: false,
 			error: fieldErrors.managerCode1,
 		},
 		{
 			name: "managerCode2",
 			label: "Manager Code 2",
-			// required: true,
+			required: false,
 			error: fieldErrors.managerCode2,
-		},
-		{
-			name: "region",
-			label: "Region",
-			required: true,
-			error: fieldErrors.region,
-		},
-		{
-			name: "address",
-			label: "Address",
-			required: true,
-			error: fieldErrors.address,
 		},
 		{
 			name: "bydId",
 			label: "BYD ID",
-			// required: true,
+			required: false,
 			error: fieldErrors.bydId,
 		},
 		{
 			name: "s4Id",
 			label: "S4 ID",
-			// required: true,
+			required: false,
 			error: fieldErrors.s4Id,
 		},
 		{
 			name: "tallyId",
 			label: "Tally ID",
-			// required: true,
+			required: false,
 			error: fieldErrors.tallyId,
 		},
 		{
 			name: "c4cId",
 			label: "C4C ID",
-			// required: true,
+			required: false,
 			error: fieldErrors.c4cId,
 		},
 	];
@@ -710,8 +736,8 @@ export function CreateUserForm({ controller }: UserFormProps) {
 				/>
 
 				{/* Organization Details only appears once the user actually
-					exists (view mode) — plain "create" never had a user id to
-					save this against yet. */}
+				exists (view mode) — plain "create" never had a user id to
+				save this against yet. */}
 				{!isCreateMode ? (
 					<EditableCard
 						key={`organization-${selectedUser?.id ?? "create"}`}
@@ -728,7 +754,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
 				) : null}
 
 				{/* Creating a user lands here, so the admin can grant app access
-					straight away. */}
+				straight away. */}
 				{isDetailMode && selectedUser ? (
 					<UserAppAccessPanel user={selectedUser} />
 				) : null}

@@ -1,11 +1,16 @@
 import { useNavigate, useParams } from "react-router-dom";
 
 import { PageHeader } from "../../../components/ui/PageHeader";
+import { vendorContent } from "../utils/vendor.content";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import VendorOnboardingInitiationForm, {
 	type VendorInitiationFormMode,
 } from "../forms/VendorOnboardingInitiationForm";
 import VendorInitiationSidePanel from "../forms/VendorInitiationSidePanel";
+
+// Copy lives in content/vendor.content.en.json -> pages.initiation.*, pages.breadcrumbs.*
+const { breadcrumbs } = vendorContent.pages;
+const pageContent = vendorContent.pages.initiation;
 
 type VendorInitiationPageProps = {
 	mode?: VendorInitiationFormMode;
@@ -22,6 +27,8 @@ const VendorInitiationPage = ({ mode }: VendorInitiationPageProps) => {
 		mode ?? (initiationId ? "edit" : "create");
 	const showNextSteps = resolvedMode === "create";
 
+	const pageTitle = isViewMode ? pageContent.viewTitle : pageContent.formTitle;
+
 	const handleBackToListing = () => {
 		navigate("/vendor-onboarding/listing?tab=onboarding");
 	};
@@ -29,31 +36,25 @@ const VendorInitiationPage = ({ mode }: VendorInitiationPageProps) => {
 	return (
 		<PageSectionLayout>
 			<PageHeader
-				headerText={
-					isViewMode ? "Vendor Initiation Details" : "Vendor Initiation Form"
-				}
-				subtitleText="Enter the basics below. We send the vendor a secure link to complete their onboarding details."
+				headerText={pageTitle}
+				subtitleText={pageContent.subtitle}
 				navigation={{
 					variant: "breadcrumbs",
-					ariaLabel: isViewMode
-						? "Vendor Initiation Details"
-						: "Vendor Initiation Form",
+					ariaLabel: pageTitle,
 					breadcrumbs: [
 						{
-							label: "Home Screen",
+							label: breadcrumbs.home,
 							href: "/",
 						},
 						{
-							label: "Vendors Listing",
+							label: breadcrumbs.vendorsListing,
 							href: "/vendor-onboarding/listing?tab=onboarding",
 						},
 						{
-							label: isViewMode
-								? "Vendor Initiation Details"
-								: "Vendor Initiation Form",
+							label: pageTitle,
 						},
 					],
-					separator: "›",
+					separator: vendorContent.common.breadcrumbSeparator,
 				}}
 			/>
 

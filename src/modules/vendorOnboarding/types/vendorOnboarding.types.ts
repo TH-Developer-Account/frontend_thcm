@@ -1,5 +1,6 @@
 import type { MentionableUserInput } from "../../../components/ui/comments";
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
+import { vendorContent } from "../utils/vendor.content";
 import type { ApprovalStageLike } from "../../workflows";
 
 export type VendorFormMode = "edit" | "view";
@@ -41,7 +42,11 @@ export type VendorCreationFormOneValues = {
 	bankAddress?: string;
 	accountNumber?: string;
 	confirmAccountNumber?: string;
+
 	gstin?: string;
+	gstApplicability?: string;
+	incorporationApplicability?: string;
+
 	pan?: string;
 	entityRegNo?: string;
 	gstCertificate?: string;
@@ -89,7 +94,6 @@ export type VendorUpdatePayload = {
 	mobile?: string | null;
 	email?: string | null;
 	msmeVendor?: boolean | null;
-	msmeCertAttached?: boolean | null;
 	bankName?: string | null;
 	bankBranch?: string | null;
 	ifscCode?: string | null;
@@ -98,6 +102,11 @@ export type VendorUpdatePayload = {
 	confirmAccountNumber?: string | null;
 	gstin?: string | null;
 	pan?: string | null;
+
+	// true = Applicable, false = N/A, null = not chosen (matches backend Boolean?)
+	gstApplicability?: boolean | null;
+	incorporationApplicability?: boolean | null;
+
 	entityRegNo?: string | null;
 	vendorCode?: string | null;
 	vendorType?: string | null;
@@ -168,75 +177,80 @@ export type VendorEnclosureStatusKey =
 	| "otherAttachment5"
 	| "otherAttachment6";
 
+// Labels and descriptions come from content/vendor.content.en.json ->
+// documents.<DOCUMENT_TYPE>.{label,description}. `documentType` and
+// `statusKey` are API/state identifiers and must stay literals.
+const documentsContent = vendorContent.documents;
+
 export const VENDOR_DOCUMENT_FIELDS = [
 	{
 		statusKey: "gstCertificate",
 		documentType: "GST_CERTIFICATE",
-		label: "GST Certificate",
-		description: "Upload the GST registration certificate.",
+		label: documentsContent.GST_CERTIFICATE.label,
+		description: documentsContent.GST_CERTIFICATE.description,
 		required: true,
 	},
 	{
 		statusKey: "panNumber",
 		documentType: "PAN_DOCUMENT",
-		label: "PAN Document",
-		description: "Upload the vendor PAN document.",
+		label: documentsContent.PAN_DOCUMENT.label,
+		description: documentsContent.PAN_DOCUMENT.description,
 		required: true,
 	},
 	{
 		statusKey: "bankCancelledCheque",
 		documentType: "CANCELLED_CHEQUE",
-		label: "Cancelled Cheque",
-		description: "Upload a cancelled cheque or bank proof.",
+		label: documentsContent.CANCELLED_CHEQUE.label,
+		description: documentsContent.CANCELLED_CHEQUE.description,
 		required: true,
 	},
 	{
 		statusKey: "certificateOfIncorporation",
 		documentType: "INCORPORATION_CERTIFICATE",
-		label: "Incorporation Certificate",
-		description: "Upload the certificate of incorporation.",
+		label: documentsContent.INCORPORATION_CERTIFICATE.label,
+		description: documentsContent.INCORPORATION_CERTIFICATE.description,
 		required: true,
 	},
 	{
 		statusKey: "msmeCertificate",
 		documentType: "MSME_CERTIFICATE",
-		label: "MSME Certificate",
-		description: "Required when the vendor is registered under MSME.",
+		label: documentsContent.MSME_CERTIFICATE.label,
+		description: documentsContent.MSME_CERTIFICATE.description,
 		required: false,
 	},
 	{
 		statusKey: "ndaCertificate",
 		documentType: "NDA_CERTIFICATE",
-		label: "NDA Certificate",
-		description: "Required when NDA has been obtained.",
+		label: documentsContent.NDA_CERTIFICATE.label,
+		description: documentsContent.NDA_CERTIFICATE.description,
 		required: false,
 	},
 	{
 		statusKey: "otherAttachment1",
 		documentType: "ADDITIONAL_DOC_1",
-		label: "Other Attachment 1",
-		description: "Upload an additional supporting document.",
+		label: documentsContent.ADDITIONAL_DOC_1.label,
+		description: documentsContent.ADDITIONAL_DOC_1.description,
 		required: false,
 	},
 	{
 		statusKey: "otherAttachment2",
 		documentType: "ADDITIONAL_DOC_2",
-		label: "Other Attachment 2",
-		description: "Upload an additional supporting document.",
+		label: documentsContent.ADDITIONAL_DOC_2.label,
+		description: documentsContent.ADDITIONAL_DOC_2.description,
 		required: false,
 	},
 	{
 		statusKey: "otherAttachment3",
 		documentType: "ADDITIONAL_DOC_3",
-		label: "Other Attachment 3",
-		description: "Upload an additional supporting document.",
+		label: documentsContent.ADDITIONAL_DOC_3.label,
+		description: documentsContent.ADDITIONAL_DOC_3.description,
 		required: false,
 	},
 	{
 		statusKey: "otherAttachment4",
 		documentType: "ADDITIONAL_DOC_4",
-		label: "Other Attachment 4",
-		description: "Upload an additional supporting document.",
+		label: documentsContent.ADDITIONAL_DOC_4.label,
+		description: documentsContent.ADDITIONAL_DOC_4.description,
 		required: false,
 	},
 	// {
@@ -301,7 +315,6 @@ export type VendorOnboardingRawResponse = {
 	mobile: string | null;
 	email: string | null;
 	msmeVendor: boolean | null;
-	msmeCertAttached: boolean | null;
 	bankName: string | null;
 	bankBranch: string | null;
 	ifscCode: string | null;
@@ -309,6 +322,8 @@ export type VendorOnboardingRawResponse = {
 	accountNumber: string | null;
 	confirmAccountNumber?: string | null;
 	gstin: string | null;
+	gstApplicability?: boolean | null;
+	incorporationApplicability?: boolean | null;
 	pan: string | null;
 	entityRegNo: string | null;
 	vendorCode: string | null;
