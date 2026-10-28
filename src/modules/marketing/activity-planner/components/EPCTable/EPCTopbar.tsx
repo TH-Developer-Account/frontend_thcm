@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Gift, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import Button from "../../../../../components/common/Button";
@@ -7,6 +7,10 @@ import { FilterTabs } from "../../../../../components/ui/FilterTabs";
 import { Can } from "../../../../../context/permissionHelpers";
 import { useMasterData } from "../../../../../hooks/useMasterData";
 
+// Deep imports (not the handouts index) so the lazy Handouts pages stay out
+// of the EPC listing bundle.
+import { HANDOUTS_BASE_PATH } from "../../../handouts/handouts.constants";
+import { useHandoutPermissions } from "../../../handouts/useHandoutPermissions";
 import { clearStoredEpcInfo } from "../../utils/localstorage";
 import type { EpcFilters } from "../../types/epc.types";
 import {
@@ -45,7 +49,8 @@ const EPCTopbar = ({
 }: EPCTopbarProps) => {
 	const navigate = useNavigate();
 	const { data } = useMasterData();
-
+	// const { canOpenHandouts } = useHandoutPermissions();
+	const canOpenHandouts = true;
 	const eventTypeOptions = data?.eventNames ?? [];
 	const zoneOptions = data?.regions ?? [];
 
@@ -96,6 +101,21 @@ const EPCTopbar = ({
 					eventTypeOptions={eventTypeOptions}
 					statusOptions={epcStatusOptions}
 				/>
+
+				{/* Souvenir handouts: anyone with a request / approve / deliver grant. */}
+				{/* {canOpenHandouts ? ( */}
+				<Button
+					type="button"
+					appearance="standard"
+					variant="outline"
+					size="sm"
+					Icon={Gift}
+					iconSize={16}
+					iconPosition="left"
+					text="Handouts"
+					onClick={() => navigate(HANDOUTS_BASE_PATH)}
+				/>
+				{/* ) : null} */}
 
 				<Can action="write" app="MAP" module="EPC">
 					<Button
