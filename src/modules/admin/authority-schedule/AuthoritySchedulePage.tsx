@@ -250,8 +250,6 @@ export default function AuthoritySchedulePage() {
   const canAddNew =
     newDraft.label.trim() !== "" && newDraft.minAmount.trim() !== "";
 
-  console.log({ canAddNew, newDraft });
-
   const selectedOptionsFor = (ids: string[]): Option[] =>
     designationOptions.filter((option) => ids.includes(option.value));
 
