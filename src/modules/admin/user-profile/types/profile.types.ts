@@ -62,6 +62,17 @@ export type ProfileAssignmentResult = {
   removedCount: number;
 };
 
+// The two shapes PUT /profile/:id/assignments accepts: an explicit,
+// hand-picked list, or "everyone active except these few."
+export type ProfileAssignmentPayload =
+  | { userIds: string[] }
+  | { selectAll: true; excludeUserIds: string[] };
+
+export type ProfileAssignmentPreview = {
+  willBeAssignedCount: number;
+  willBeReplacedCount: number;
+};
+
 // Used by workflow.api.ts for approver pickers.
 export type User = {
   id: string;
