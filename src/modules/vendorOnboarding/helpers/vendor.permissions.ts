@@ -49,6 +49,10 @@ export const isAwaitingVendorStatus = (
 	status: string | null | undefined,
 ): boolean => normalizeStatus(status) === "AWAITING_VENDOR";
 
+// Accept & Close has been completed — the record is final.
+export const isClosedVendorStatus = (
+	status: string | null | undefined,
+): boolean => normalizeStatus(status) === "CLOSED";
 // ─────────────────────────────────────────────────────────────────────────
 // Workflow helpers
 // ─────────────────────────────────────────────────────────────────────────
@@ -179,7 +183,8 @@ export const getVendorRecordPermissions = ({
 		canEditMainForm,
 		canEditFormOne: canEditMainForm,
 		canEditFormTwo: canEditMainForm,
-		canEditVendorCode: isThcmEmployee && isExternalApprover,
+		canEditVendorCode:
+			isThcmEmployee && isExternalApprover && !isClosedVendorStatus(status),
 		// Proposer may edit stages/approvers only when resubmitting after a
 		// clarification — never on first submit, never as an approver.
 		canEditStagesOnResubmit: isThcmProposer && hasPendingClarifiedApproval,

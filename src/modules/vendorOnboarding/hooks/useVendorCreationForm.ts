@@ -28,10 +28,7 @@ import {
 	showApiErrorToast,
 	showSuccessToast,
 } from "../../../utils/apiError.helper";
-import {
-	vendorContent,
-	formatVendorMessage,
-} from "../../../content/vendor.content";
+import { vendorContent, formatVendorMessage } from "../utils/vendor.content";
 import {
 	buildPublicFormData,
 	buildVendorOnboardingUpdatePayload,
@@ -101,11 +98,13 @@ import {
 	useVendorStageActionPermissions,
 } from "./useVendorPermissions";
 
+// Stepper labels live in content/vendor.content.en.json -> steps.*
+// (ids are routing/state values and stay literals).
 export const vendorOnboardingSteps = [
-	{ id: 1, label: "Vendor filled details" },
-	{ id: 2, label: "THCM details" },
-	{ id: 3, label: "Workflow" },
-	{ id: 4, label: "Review & Submit" },
+	{ id: 1, label: vendorContent.steps.vendorDetails },
+	{ id: 2, label: vendorContent.steps.thcmDetails },
+	{ id: 3, label: vendorContent.steps.workflow },
+	{ id: 4, label: vendorContent.steps.reviewAndSubmit },
 ];
 
 const EMPTY_FORM_ONE: VendorCreationFormOneValues = {};
@@ -114,18 +113,20 @@ const EMPTY_FORM_TWO: VendorCreationFormTwoValues = {};
 // Label used for enclosure-upload / DPDP-consent "required" states. These
 // aren't part of the Form One/Two Zod schemas (documents and consent are
 // validated by useVendorCreationFormOneController, not by field-level
-// validation), so they keep the exact literal the app already shows rather
-// than picking up the (more descriptive) per-field Zod messages.
-const MANDATORY_ERROR = "Mandatory";
+// validation), so they use the shared "Mandatory" text from
+// content.common.mandatory rather than the (more descriptive) per-field
+// Zod messages.
+const MANDATORY_ERROR = vendorContent.common.mandatory;
 const VENDOR_LISTING_PATH = "/vendor-onboarding/listing?tab=onboarding";
 
 // Success toasts: ONE per user action, always a short fixed sentence — never
 // the backend message (those are long and read like developer notes). Titles
-// still come from vendor.content; move these into vendor.content.en.json.
+// and descriptions come from vendor.content.en.json -> toast.approval /
+// toast.clarify / toast.submitForApproval.
 const SUCCESS_COPY = {
-	approved: "The request has been approved.",
-	clarified: "Sent back to the initiator for clarification.",
-	resubmitted: "Your changes have been sent for approval again.",
+	approved: vendorContent.toast.approval.successDescription,
+	clarified: vendorContent.toast.clarify.successDescription,
+	resubmitted: vendorContent.toast.submitForApproval.resubmitSuccessDescription,
 } as const;
 // ─────────────────────────────────────────────────────────────────────────
 // Invalid-field toasts
@@ -133,53 +134,58 @@ const SUCCESS_COPY = {
 // Every blocked submit/next now also raises a toast naming the fields that
 // need attention — inline errors alone are easy to miss on a long form,
 // especially on mobile where the failing field can be off-screen.
-// Labels mirror the on-screen labels, in on-screen order, so the toast
-// reads top-to-bottom like the form. Move to vendor.content.en.json if
-// these need translating.
+// Labels come from the same content file as the on-screen labels
+// (formOne.fields.*.label / formTwo.fields.*.label), in on-screen order, so
+// the toast reads top-to-bottom like the form.
+
+const formOneFields = vendorContent.formOne.fields;
+const formTwoFields = vendorContent.formTwo.fields;
 
 const FORM_ONE_FIELD_LABELS: Partial<
 	Record<keyof VendorFormOneValues, string>
 > = {
-	vendorName: "Name Of Vendor",
-	mobile: "Mobile",
-	email: "E-mail",
-	state: "State",
-	city: "City/ Town",
-	pinCode: "Pin Code",
-	address: "Complete Address",
-	bankName: "Bank",
-	bankBranch: "Branch",
-	ifscCode: "IFSC Code",
-	accountNumber: "A/C No.",
-	confirmAccountNumber: "Confirm Account Number",
-	bankAddress: "Bank Address",
-	gstApplicability: "GST Applicable?",
-	gstin: "GSTIN",
-	pan: "PAN",
-	entityRegNo: "Entity Reg. No.",
-	incorporationApplicability: "Incorporation Applicable?",
-	msmeVendor: "MSME Vendor",
-	ndaObtained: "Non-Disclosure Undertaking Obtained?",
+	vendorName: formOneFields.vendorName.label,
+	mobile: formOneFields.mobile.label,
+	email: formOneFields.email.label,
+	state: formOneFields.state.label,
+	city: formOneFields.city.label,
+	pinCode: formOneFields.pinCode.label,
+	address: formOneFields.address.label,
+	bankName: formOneFields.bankName.label,
+	bankBranch: formOneFields.bankBranch.label,
+	ifscCode: formOneFields.ifscCode.label,
+	accountNumber: formOneFields.accountNumber.label,
+	confirmAccountNumber: formOneFields.confirmAccountNumber.label,
+	// "Address" alone would be ambiguous next to "Complete Address".
+	bankAddress: formOneFields.bankAddress.toastLabel,
+	gstApplicability: formOneFields.gstApplicability.label,
+	gstin: formOneFields.gstin.label,
+	pan: formOneFields.pan.label,
+	entityRegNo: formOneFields.entityRegNo.label,
+	incorporationApplicability: formOneFields.incorporationApplicability.label,
+	msmeVendor: formOneFields.msmeVendor.label,
+	ndaObtained: formOneFields.ndaObtained.label,
 };
 
 const FORM_TWO_FIELD_LABELS: Partial<
 	Record<keyof VendorFormTwoValues, string>
 > = {
-	vendorCode: "Vendor Code",
-	vendorType: "Vendor Type",
-	companyCode: "Company Code",
-	purchaseOrg: "Purchase Org",
-	paymentTerm: "Payment Term",
-	tds: "TDS",
-	vendorCategory: "Vendor Category",
-	materialType: "Material Type",
-	materialSubType: "Material Sub Type",
-	vendorSelfAssessmentObtained: "Vendor Self Assessment Form Obtained?",
-	gpaObtained: "General Purpose Agreement Obtained?",
-	relatedPartyToThcm: "Is it Related Party to THCM?",
-	vendorAuditReportPrepared: "Vendor Audit Report Prepared?",
-	natureOfService: "Nature of Service",
-	reasonForOnboarding: "Reason for Onboarding of Vendor",
+	vendorCode: formTwoFields.vendorCode.label,
+	vendorType: formTwoFields.vendorType.label,
+	companyCode: formTwoFields.companyCode.label,
+	purchaseOrg: formTwoFields.purchaseOrg.label,
+	paymentTerm: formTwoFields.paymentTerm.label,
+	tds: formTwoFields.tds.label,
+	vendorCategory: formTwoFields.vendorCategory.label,
+	materialType: formTwoFields.materialType.label,
+	materialSubType: formTwoFields.materialSubType.label,
+	vendorSelfAssessmentObtained:
+		formTwoFields.vendorSelfAssessmentObtained.label,
+	gpaObtained: formTwoFields.gpaObtained.label,
+	relatedPartyToThcm: formTwoFields.relatedPartyToThcm.label,
+	vendorAuditReportPrepared: formTwoFields.vendorAuditReportPrepared.label,
+	natureOfService: formTwoFields.natureOfService.label,
+	reasonForOnboarding: formTwoFields.reasonForOnboarding.label,
 };
 
 // label → RHF field name, so a toast that only knows labels can still find
@@ -193,11 +199,19 @@ const FIELD_NAME_BY_LABEL: Record<string, string> = Object.fromEntries(
 
 // "Please fix: Mobile."  /  "4 fields need attention, starting with Mobile."
 // The count is what matters; the first field is where focus lands.
+// Sentence templates: content.validation.singleField / multipleFields.
 const describeInvalidFields = (labels: string[]): string => {
 	if (labels.length === 0) return "";
-	if (labels.length === 1) return `Please fix: ${labels[0]}.`;
+	if (labels.length === 1) {
+		return formatVendorMessage(vendorContent.validation.singleField, {
+			field: labels[0],
+		});
+	}
 
-	return `${labels.length} fields need attention, starting with ${labels[0]}.`;
+	return formatVendorMessage(vendorContent.validation.multipleFields, {
+		count: labels.length,
+		field: labels[0],
+	});
 };
 
 // Scrolls to and focuses the first invalid input. Deferred because on a
@@ -1850,7 +1864,9 @@ export function useVendorCreationForm({
 
 					const templateName = pendingWorkflowSelection.saveAsTemplate
 						? pendingWorkflowSelection.templateName?.trim()
-						: `Vendor workflow - ${referenceNumber ?? vendorRequestId}`;
+						: formatVendorMessage(vendorContent.workflow.defaultTemplateName, {
+								reference: referenceNumber ?? vendorRequestId,
+							});
 
 					if (!templateName) {
 						throw new Error("A workflow template name is required.");
@@ -1881,7 +1897,7 @@ export function useVendorCreationForm({
 										.filter(Boolean)
 										.join(" ") ||
 									approver.user.email?.trim() ||
-									"Unnamed user",
+									vendorContent.workflow.unnamedApprover,
 								email: approver.user.email?.trim() ?? "",
 								isExternalApprover: approver.isExternalApprover,
 							})),

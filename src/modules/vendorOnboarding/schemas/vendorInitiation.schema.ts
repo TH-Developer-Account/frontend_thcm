@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { vendorContent } from "../../../content/vendor.content";
+import { vendorContent } from "../utils/vendor.content";
 import { EMAIL_REGEX, MOBILE_REGEX } from "../../../utils/form.validation";
 
 const errors = vendorContent.initiation.errors;

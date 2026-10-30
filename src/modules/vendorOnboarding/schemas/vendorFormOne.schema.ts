@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { vendorContent } from "../../../content/vendor.content";
+import { vendorContent } from "../utils/vendor.content";
 
 import {
 	ACCOUNT_NUMBER_REGEX,

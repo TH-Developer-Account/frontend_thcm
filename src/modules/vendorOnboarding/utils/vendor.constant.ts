@@ -1,28 +1,34 @@
 import { CheckCircle2, Clock3, ShieldCheck } from "lucide-react";
+import { vendorContent } from "../utils/vendor.content";
 import type { VendorListingFilter } from "../types/vendorListing.types";
 import type { Option } from "../../../components/forms/input.types";
+
+// Tab labels / tooltips live in content/vendor.content.en.json -> listing.filterTabs.*
+// The dropdown option lists further down are SAP master data (stored values),
+// not UI copy, so they intentionally stay here.
+const tabs = vendorContent.listing.filterTabs;
 
 export const VENDOR_ONBOARDING_FILTER_TABS = [
 	{
 		value: "pendingOnMe",
-		label: "Pending on me",
-		shortLabel: "Pending",
-		tooltipLabel: "View vendor onboarding approvals pending on me",
+		label: tabs.pendingOnMe.label,
+		shortLabel: tabs.pendingOnMe.shortLabel,
+		tooltipLabel: tabs.pendingOnMe.tooltipLabel,
 		Icon: Clock3,
 	},
 	{
 		value: "onboarding",
-		label: "Created by me",
-		shortLabel: "Created",
-		tooltipLabel: "View vendor onboarding records created by me",
+		label: tabs.created.label,
+		shortLabel: tabs.created.shortLabel,
+		tooltipLabel: tabs.created.tooltipLabel,
 		Icon: ShieldCheck,
 	},
 
 	{
 		value: "approvedByMe",
-		label: "Approved by me",
-		shortLabel: "Approved",
-		tooltipLabel: "View vendor onboarding requests approved by me",
+		label: tabs.approvedByMe.label,
+		shortLabel: tabs.approvedByMe.shortLabel,
+		tooltipLabel: tabs.approvedByMe.tooltipLabel,
 		Icon: CheckCircle2,
 	},
 ] as const satisfies ReadonlyArray<{
@@ -32,28 +38,19 @@ export const VENDOR_ONBOARDING_FILTER_TABS = [
 	tooltipLabel: string;
 	Icon: typeof ShieldCheck;
 }>;
-export const VENDOR_INITIATION_FILTER_TABS = [
+
+// Tabs for external (TCS) users: Pending on me + Approved by me, with the
+// second one shown as "Completed". The value stays "approvedByMe", so the
+// API / query params are unchanged — only the visible copy differs.
+// TODO: move these strings into vendor.content.en.json -> listing.filterTabs.
+export const VENDOR_EXTERNAL_FILTER_TABS = [
+	VENDOR_ONBOARDING_FILTER_TABS[0],
 	{
-		value: "initiation",
-		label: "Created by me",
-		shortLabel: "Created",
-		tooltipLabel: "View vendor onboarding records created by me",
-		Icon: ShieldCheck,
+		...VENDOR_ONBOARDING_FILTER_TABS[2],
+		label: "Completed",
+		shortLabel: "Completed",
+		tooltipLabel: "View vendor onboarding requests I have completed",
 	},
-	{
-		value: "pendingOnMe",
-		label: "Pending on me",
-		shortLabel: "Pending",
-		tooltipLabel: "View vendor onboarding approvals pending on me",
-		Icon: Clock3,
-	},
-	// {
-	// 	value: "approvedByMe",
-	// 	label: "Approved by me",
-	// 	shortLabel: "Approved",
-	// 	tooltipLabel: "View vendor onboarding requests approved by me",
-	// 	Icon: CheckCircle2,
-	// },
 ] as const satisfies ReadonlyArray<{
 	value: VendorListingFilter;
 	label: string;

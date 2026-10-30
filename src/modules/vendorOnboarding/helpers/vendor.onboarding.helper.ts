@@ -1,5 +1,5 @@
 import type { VendorListingFilter } from "../types/vendorListing.types";
-import { vendorContent } from "../../../content/vendor.content";
+import { vendorContent } from "../utils/vendor.content";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Boolean / string conversion primitives

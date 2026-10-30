@@ -36,9 +36,10 @@ import VendorCreationFormOne from "./VendorCreationFormOne";
 import VendorCreationFormTwo from "./VendorCreationFormTwo";
 import NavigateButton from "../../../components/common/NavigateButton";
 import { Badge } from "../../../components/common/Badge";
-import { vendorContent } from "../../../content/vendor.content";
+import { vendorContent } from "../utils/vendor.content";
 import { showApiErrorToast } from "../../../utils/apiError.helper";
 import ApprovalActionsBar from "../../../components/ui/ApprovalActionsBar";
+import { useVendorStageActionPermissions } from "../hooks/useVendorPermissions";
 
 type VendorCreationSummaryMode = "edit" | "view";
 
@@ -147,6 +148,12 @@ const VendorCreationSummaryForm = ({
 		...stage,
 		approvals: stage.approvals ? [...stage.approvals] : undefined,
 	}));
+
+	// after resolvedWorkflowStages is defined
+	const { workflowApproverData } = useVendorStageActionPermissions(
+		resolvedWorkflowStages,
+	);
+	const isExternalApprover = Boolean(workflowApproverData.isExternalApprover);
 
 	const resolvedFormTwoChange =
 		onFormTwoChange ?? formContext?.handleFormTwoChange;
@@ -414,7 +421,11 @@ const VendorCreationSummaryForm = ({
 			canSubmit={showSubmitAction}
 			onSubmit={resolvedOnSubmit}
 			loading={isActionLoading}
-			approveLabel={vendorContent.buttons.approve}
+			approveLabel={
+				isExternalApprover
+					? vendorContent.buttons.ok
+					: vendorContent.buttons.approve
+			}
 			clarifyLabel={vendorContent.buttons.sendForClarification}
 			sendBackLabel={vendorContent.buttons.sendBackToVendor}
 			acceptAndCloseLabel={vendorContent.buttons.acceptAndClose}
@@ -472,8 +483,8 @@ const VendorCreationSummaryForm = ({
 							size="xs"
 							row={onboardingId}
 							actions={summaryActions}
-							ariaLabel="Vendor onboarding actions"
-							triggerLabel="Export"
+							ariaLabel={vendorContent.summary.actions.ariaLabel}
+							triggerLabel={vendorContent.summary.actions.exportTrigger}
 							triggerVariant="brand"
 						/>
 					) : null

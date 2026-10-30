@@ -47,6 +47,7 @@ const USER_TYPE_OPTIONS: Array<{
 	{ label: "THCM Employee", value: "THCM" },
 	{ label: "Dealer", value: "DEALER" },
 	{ label: "Customer", value: "CUSTOMER" },
+	{ label: "TCS", value: "TCS" },
 ];
 
 // TODO: replace with real grade options from API/config once available.
@@ -371,6 +372,7 @@ export function CreateUserForm({ controller }: UserFormProps) {
 		{
 			id: "status-flags",
 			label: "Status",
+			name: "isActive",
 			visibleInDisplay: isDetailMode,
 			visibleInEdit: isDetailMode,
 			displayValue: (
