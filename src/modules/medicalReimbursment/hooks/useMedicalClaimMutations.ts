@@ -8,6 +8,7 @@ import {
 import {
 	medicalClaimApi,
 	type ApproveLineItemPayload,
+	type BillRemarksPayload,
 } from "../api/medicalClaim.api";
 import type {
 	MedicalClaimDetail,
@@ -247,13 +248,52 @@ export function useSaveMedicalClaimLineItemRemarksMutation() {
 			lineItem,
 		}: {
 			claimId: string;
-			lineItem: { id: string; remarks?: string | null };
+			lineItem: BillRemarksPayload;
 		}) => medicalClaimApi.saveLineItemRemarks(claimId, lineItem),
 
 		onSuccess: (_data, { claimId, lineItem }) => {
 			patchBillInCache(queryClient, claimId, lineItem.id, {
 				remarks: lineItem.remarks?.trim() || null,
 			});
+		},
+	});
+}
+
+/**
+ * Persists the remarks of several bills in ONE request (remarks auto-save).
+ * The detail cache is patched from what was sent — no refetch, so text the
+ * reviewer is typing on other rows is never overwritten.
+ */
+export function useSaveMedicalClaimBillRemarksMutation() {
+	const queryClient = useQueryClient();
+
+	return useMutation({
+		mutationFn: ({
+			claimId,
+			items,
+		}: {
+			claimId: string;
+			items: BillRemarksPayload[];
+		}) => medicalClaimApi.saveBillRemarks(claimId, items),
+
+		onSuccess: (_data, { claimId, items }) => {
+			const remarksById = new Map(
+				items.map((item) => [item.id, item.remarks?.trim() || null]),
+			);
+			queryClient.setQueryData<MedicalClaimDetail>(
+				medicalClaimKeys.detail(claimId),
+				(current) =>
+					current
+						? {
+								...current,
+								bills: current.bills.map((bill) =>
+									remarksById.has(bill.id)
+										? { ...bill, remarks: remarksById.get(bill.id) ?? null }
+										: bill,
+								),
+							}
+						: current,
+			);
 		},
 	});
 }

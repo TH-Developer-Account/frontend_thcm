@@ -18,7 +18,6 @@ import {
 	deriveEligibility,
 	firstErrorMessage,
 	lineItemApprovalSchema,
-	lineItemRemarksSchema,
 	reimbursementClaimDraftSchema,
 	toFieldErrors,
 	toRowErrors,
@@ -79,6 +78,9 @@ export const EMPTY_REIMBURSEMENT_CLAIM_VALUES: ReimbursementClaimFormValues = {
 
 export type ApprovedBillAmountPayload = ClaimHeadRow;
 
+/** Where a line's remarks are in the auto-save cycle (reviewer only). */
+export type RemarksSaveStatus = "idle" | "saving" | "saved" | "error";
+
 export interface UseReimbursementClaimFormArgs {
 	referenceNumber?: string;
 	mode?: ReimbursementClaimFormMode;
@@ -125,8 +127,18 @@ export interface UseReimbursementClaimFormArgs {
 	onLineItemUnapprove?: (
 		payload: ApprovedBillAmountPayload,
 	) => void | Promise<void>;
+	/** Saves ONE line's remarks. Used only when no batch saver is given. */
 	onLineItemRemarksSave?: (
 		payload: ApprovedBillAmountPayload,
+	) => void | Promise<void>;
+	/**
+	 * Saves the remarks of several lines in ONE request. Powers the remarks
+	 * auto-save (on blur) and the flush before Approve / Send for
+	 * Clarification. When omitted, onLineItemRemarksSave is called once per
+	 * line instead.
+	 */
+	onLineItemRemarksBatchSave?: (
+		payload: ApprovedBillAmountPayload[],
 	) => void | Promise<void>;
 	/** Claim-level close (initiator / external approver once APPROVED). */
 	canClose?: boolean;
@@ -224,10 +236,15 @@ const withDeclarationDateDefault = (
 /**
  * Server rows win, except review input still being typed: on a row the
  * server hasn't approved, a non-empty local approved amount / remark is kept.
+ *
+ * `keepLocalRemarksFor` lists rows whose local remark has NOT reached the
+ * server yet (typed, or cleared on purpose). Their remark is kept even when
+ * empty, so a refetch can't bring back text the reviewer just deleted.
  */
 export const mergeReviewedLineItems = (
 	local: ClaimHeadRow[],
 	server: ClaimHeadRow[],
+	keepLocalRemarksFor?: ReadonlySet<string>,
 ): ClaimHeadRow[] => {
 	const localById = new Map(local.map((item) => [item.id, item]));
 	return server.map((row) => {
@@ -235,12 +252,14 @@ export const mergeReviewedLineItems = (
 		if (!mine || row.approvalStatus === "APPROVED") return { ...row };
 		const typedAmount = mine.approvedClaimAmount?.toString().trim();
 		const typedRemarks = mine.remarks?.trim();
+		const keepRemarks =
+			Boolean(typedRemarks) || Boolean(keepLocalRemarksFor?.has(row.id));
 		return {
 			...row,
 			approvedClaimAmount: typedAmount
 				? mine.approvedClaimAmount
 				: row.approvedClaimAmount,
-			remarks: typedRemarks ? mine.remarks : row.remarks,
+			remarks: keepRemarks ? mine.remarks : row.remarks,
 		};
 	});
 };
@@ -272,6 +291,23 @@ const errorMessage = (error: unknown, fallback: string) =>
 
 const roundMoney = (value: number) => Math.round(value * 100) / 100;
 
+/** A remark as the server stores it: trimmed, "" when empty. */
+const normalizeRemarks = (value?: string | null): string =>
+	(value ?? "").trim();
+
+/** Copy of a status map with `ids` set to `status`. */
+const withRemarksStatus = (
+	current: Record<string, RemarksSaveStatus>,
+	ids: string[],
+	status: RemarksSaveStatus,
+): Record<string, RemarksSaveStatus> => {
+	const next = { ...current };
+	ids.forEach((id) => {
+		next[id] = status;
+	});
+	return next;
+};
+
 export function useReimbursementClaimForm({
 	mode = "edit",
 	canEdit = true,
@@ -301,6 +337,7 @@ export function useReimbursementClaimForm({
 	onLineItemUnapprove,
 	referenceNumber,
 	onLineItemRemarksSave,
+	onLineItemRemarksBatchSave,
 	canClose = false,
 	onCloseClaim,
 	isClosing = false,
@@ -344,11 +381,36 @@ export function useReimbursementClaimForm({
 	const [savingClaimId, setSavingClaimId] = useState<string | null>(null);
 	const [deletingClaimId, setDeletingClaimId] = useState<string | null>(null);
 	const [approvingClaimId, setApprovingClaimId] = useState<string | null>(null);
-	const [savingRemarksId, setSavingRemarksId] = useState<string | null>(null);
+	const [remarksStatus, setRemarksStatus] = useState<
+		Record<string, RemarksSaveStatus>
+	>({});
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isSavingDraft, setIsSavingDraft] = useState(false);
 	const [mutationError, setMutationError] = useState<string | null>(null);
 	const [clarifyLoading, setClarifyLoading] = useState(false);
+
+	/**
+	 * The remark each line has ON THE SERVER (trimmed). A line is "dirty" —
+	 * needs saving — when what is typed differs from this. A stable Map kept
+	 * in state so it survives renders without causing them.
+	 */
+	const [lastSavedRemarks] = useState(
+		() =>
+			new Map<string, string>(
+				initialLineItems.map((item) => [
+					item.id,
+					normalizeRemarks(item.remarks),
+				]),
+			),
+	);
+
+	/** true when this line's remark still has to be saved. */
+	const isRemarksDirty = useCallback(
+		(row: ClaimHeadRow): boolean =>
+			row.approvalStatus !== "APPROVED" &&
+			normalizeRemarks(row.remarks) !== (lastSavedRemarks.get(row.id) ?? ""),
+		[lastSavedRemarks],
+	);
 
 	const initialValuesKey = useMemo(
 		() => JSON.stringify(initialValues ?? {}),
@@ -394,12 +456,20 @@ export function useReimbursementClaimForm({
 	useEffect(() => {
 		if (syncedLineItemsKey.current === initialLineItemsKey) return;
 		syncedLineItemsKey.current = initialLineItemsKey;
+		// Whatever the server now holds is what is "saved".
+		initialLineItems.forEach((item) => {
+			lastSavedRemarks.set(item.id, normalizeRemarks(item.remarks));
+		});
 		if (canReviewLineItemsProp ?? canApprove) {
 			// Reviewer refetch after a line-item action: take the server's
 			// rows, but keep amounts/remarks still being typed on rows the
 			// server hasn't approved yet.
 			setSavedClaims((current) =>
-				mergeReviewedLineItems(current, initialLineItems),
+				mergeReviewedLineItems(
+					current,
+					initialLineItems,
+					new Set(current.filter(isRemarksDirty).map((row) => row.id)),
+				),
 			);
 			return;
 		}
@@ -412,6 +482,8 @@ export function useReimbursementClaimForm({
 		canReviewLineItemsProp,
 		initialLineItems,
 		initialLineItemsKey,
+		isRemarksDirty,
+		lastSavedRemarks,
 	]);
 
 	const selectedGrade = useMemo(
@@ -544,6 +616,157 @@ export function useReimbursementClaimForm({
 			return next;
 		});
 	}, []);
+
+	/* ------------------------- Remarks auto-save -------------------------- */
+
+	// How remarks reach the server: one batch call when the page provides it,
+	// otherwise one call per line.
+	const remarksSaver = useMemo(() => {
+		if (onLineItemRemarksBatchSave) return onLineItemRemarksBatchSave;
+		if (onLineItemRemarksSave) {
+			return async (rows: ApprovedBillAmountPayload[]) => {
+				for (const row of rows) {
+					await onLineItemRemarksSave(row);
+				}
+			};
+		}
+		return undefined;
+	}, [onLineItemRemarksBatchSave, onLineItemRemarksSave]);
+
+	// Latest values for code that runs later (queued saves, unload handlers):
+	// they must read what is on screen NOW, not what a stale closure captured.
+	const savedClaimsRef = useRef(savedClaims);
+	const canReviewRemarksRef = useRef(canReviewLineItems);
+	const remarksSaverRef = useRef(remarksSaver);
+	useEffect(() => {
+		savedClaimsRef.current = savedClaims;
+		canReviewRemarksRef.current = canReviewLineItems;
+		remarksSaverRef.current = remarksSaver;
+	});
+
+	// Saves run strictly one after another, so two requests can never cross
+	// and an older text can never overwrite a newer one.
+	const remarksQueueRef = useRef<Promise<unknown>>(Promise.resolve());
+	const pendingRemarkSavesRef = useRef(0);
+
+	/**
+	 * Saves the remarks of the lines that changed (all of them, or just
+	 * `ids`) in one request. Resolves true when everything is on the server
+	 * (or there was nothing to save), false when the save failed.
+	 */
+	const flushRemarks = useCallback(
+		(ids?: string[]): Promise<boolean> => {
+			const task = async (): Promise<boolean> => {
+				const saver = remarksSaverRef.current;
+				if (!saver || !canReviewRemarksRef.current) return true;
+
+				// Read the rows INSIDE the queue: a save that ran just before
+				// this one may already have stored some of these remarks.
+				const dirtyRows = savedClaimsRef.current.filter(
+					(row) => (!ids || ids.includes(row.id)) && isRemarksDirty(row),
+				);
+				if (dirtyRows.length === 0) return true;
+
+				const payload = dirtyRows.map((row) => ({
+					...row,
+					remarks: normalizeRemarks(row.remarks),
+				}));
+				const sentIds = payload.map((row) => row.id);
+				setRemarksStatus((current) =>
+					withRemarksStatus(current, sentIds, "saving"),
+				);
+
+				try {
+					await saver(payload);
+					payload.forEach((row) => {
+						lastSavedRemarks.set(row.id, row.remarks);
+					});
+					// "Saved" only for lines still showing the text that was
+					// sent; a line edited meanwhile goes back to idle.
+					const stillCurrent = sentIds.filter((id) => {
+						const sent = payload.find((row) => row.id === id);
+						const live = savedClaimsRef.current.find((row) => row.id === id);
+						return (
+							sent && live && normalizeRemarks(live.remarks) === sent.remarks
+						);
+					});
+					const edited = sentIds.filter((id) => !stillCurrent.includes(id));
+					setRemarksStatus((current) =>
+						withRemarksStatus(
+							withRemarksStatus(current, stillCurrent, "saved"),
+							edited,
+							"idle",
+						),
+					);
+					return true;
+				} catch {
+					setRemarksStatus((current) =>
+						withRemarksStatus(current, sentIds, "error"),
+					);
+					return false;
+				}
+			};
+
+			pendingRemarkSavesRef.current += 1;
+			const run = remarksQueueRef.current.then(task);
+			remarksQueueRef.current = run.then(
+				() => undefined,
+				() => undefined,
+			);
+			return run.finally(() => {
+				pendingRemarkSavesRef.current -= 1;
+			});
+		},
+		[isRemarksDirty, lastSavedRemarks],
+	);
+
+	/**
+	 * Saves every unsaved remark before an action that depends on them
+	 * (Approve / Send for Clarification). Toasts and resolves false when the
+	 * save fails, so the caller can stop instead of acting on missing data.
+	 */
+	const flushPendingRemarks = useCallback(async (): Promise<boolean> => {
+		const saved = await flushRemarks();
+		if (!saved) {
+			showToast({
+				type: "error",
+				title: "Remarks not saved",
+				description:
+					"Your remarks couldn't be saved, so nothing was sent. Please try again.",
+			});
+		}
+		return saved;
+	}, [flushRemarks, showToast]);
+
+	// Leaving the page (close tab / refresh) with a remark not yet saved asks
+	// for confirmation. Normal use never gets here: each remark is saved the
+	// moment the reviewer leaves its box.
+	useEffect(() => {
+		if (!canReviewLineItems) return;
+		const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+			const unsaved =
+				pendingRemarkSavesRef.current > 0 ||
+				savedClaimsRef.current.some(isRemarksDirty);
+			if (!unsaved) return;
+			event.preventDefault();
+			event.returnValue = "";
+		};
+		window.addEventListener("beforeunload", warnBeforeUnload);
+		return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+	}, [canReviewLineItems, isRemarksDirty]);
+
+	// Navigating away inside the app unmounts the page without a blur: save
+	// whatever is still unsaved.
+	const flushRemarksRef = useRef(flushRemarks);
+	useEffect(() => {
+		flushRemarksRef.current = flushRemarks;
+	});
+	useEffect(
+		() => () => {
+			void flushRemarksRef.current();
+		},
+		[],
+	);
 
 	// Grade comes from HR records (User.grade / legacy data) at initiation.
 	// When it's on record, the claimant can't change it — the backend trusts
@@ -802,7 +1025,22 @@ export function useReimbursementClaimForm({
 
 			setApprovingClaimId(claim.id);
 			try {
-				await onLineItemApprove({ ...claim, approvedClaimAmount });
+				// The remark must be on the server BEFORE the line is approved
+				// (the field locks once approved). This also waits for an
+				// auto-save already running for this line.
+				const remarksSaved = await flushRemarks([claim.id]);
+				if (!remarksSaved) {
+					showToast({
+						type: "error",
+						title: "Remarks not saved",
+						description:
+							"This line wasn't approved because its remarks couldn't be saved. Please try again.",
+					});
+					return;
+				}
+				const latest =
+					savedClaimsRef.current.find((row) => row.id === claim.id) ?? claim;
+				await onLineItemApprove({ ...latest, approvedClaimAmount });
 				setRowReviewState(claim.id, {
 					approvalStatus: "APPROVED",
 					approved: true,
@@ -826,6 +1064,7 @@ export function useReimbursementClaimForm({
 		[
 			canReviewLineItems,
 			clearClaimError,
+			flushRemarks,
 			onLineItemApprove,
 			setRowReviewState,
 			showToast,
@@ -840,62 +1079,41 @@ export function useReimbursementClaimForm({
 					claim.id === id ? { ...claim, remarks: value } : claim,
 				),
 			);
+			// Edited again: any "Saved" / error label no longer applies.
+			setRemarksStatus((current) =>
+				current[id] && current[id] !== "idle"
+					? withRemarksStatus(current, [id], "idle")
+					: current,
+			);
 			clearClaimError(`remarks-${id}`);
 		},
 		[canReviewLineItems, clearClaimError],
 	);
 
+	/** The reviewer left the remarks box: save it (no-op when unchanged). */
+	const handleRemarksBlur = useCallback(
+		(id: string) => {
+			if (!canReviewLineItems) return;
+			void flushRemarks([id]);
+		},
+		[canReviewLineItems, flushRemarks],
+	);
+
+	/** Retry after a failed auto-save. */
 	const handleSaveRemarks = useCallback(
 		async (claimId: string) => {
-			if (!canReviewLineItems || !onLineItemRemarksSave) return;
-
-			const claim = savedClaims.find((item) => item.id === claimId);
-			if (!claim || claim.approvalStatus === "APPROVED") return;
-
-			const validation = lineItemRemarksSchema.safeParse({
-				remarks: claim.remarks ?? "",
-			});
-			if (!validation.success) {
-				setClaimErrors((current) => ({
-					...current,
-					[`remarks-${claimId}`]: firstErrorMessage(validation.error),
-				}));
-				return;
-			}
-
-			const trimmedRemarks = validation.data.remarks;
-			clearClaimError(`remarks-${claimId}`);
-			setSavingRemarksId(claimId);
-
-			try {
-				await onLineItemRemarksSave({ ...claim, remarks: trimmedRemarks });
-				setRowReviewState(claimId, { remarks: trimmedRemarks });
-				showToast({
-					type: "success",
-					title: "Remarks saved",
-					description: "The bill remarks have been updated.",
-				});
-			} catch (error) {
-				showToast({
-					type: "error",
-					title: "Unable to save remarks",
-					description: errorMessage(
-						error,
-						"Unable to save remarks. Please try again.",
-					),
-				});
-			} finally {
-				setSavingRemarksId(null);
-			}
+			if (!canReviewLineItems) return;
+			await flushRemarks([claimId]);
 		},
-		[
-			canReviewLineItems,
-			clearClaimError,
-			onLineItemRemarksSave,
-			savedClaims,
-			setRowReviewState,
-			showToast,
-		],
+		[canReviewLineItems, flushRemarks],
+	);
+
+	/** Line currently being saved (first one), for callers that show a spinner. */
+	const savingRemarksId = useMemo(
+		() =>
+			Object.keys(remarksStatus).find((id) => remarksStatus[id] === "saving") ??
+			null,
+		[remarksStatus],
 	);
 
 	const buildSubmission = useCallback(
@@ -1067,19 +1285,28 @@ export function useReimbursementClaimForm({
 			if (!onClarifyStage) return;
 			setClarifyLoading(true);
 			try {
+				// Every remark typed on the lines is saved first; if that fails
+				// nothing is sent (the reviewer was already told why).
+				if (!(await flushPendingRemarks())) {
+					throw new Error("Remarks could not be saved.");
+				}
 				await onClarifyStage(reason.trim());
 			} finally {
 				setClarifyLoading(false);
 			}
 		},
-		[onClarifyStage],
+		[flushPendingRemarks, onClarifyStage],
 	);
 
 	const handleApproveStage = useCallback(
 		async (reason: string) => {
-			await onApproveStage?.(reason.trim());
+			if (!onApproveStage) return;
+			if (!(await flushPendingRemarks())) {
+				throw new Error("Remarks could not be saved.");
+			}
+			await onApproveStage(reason.trim());
 		},
-		[onApproveStage],
+		[flushPendingRemarks, onApproveStage],
 	);
 
 	const allLineItemsApproved =
@@ -1172,9 +1399,13 @@ export function useReimbursementClaimForm({
 		submittedMessage,
 		actionText,
 		handleRemarksChange,
+		handleRemarksBlur,
 		handleSaveRemarks,
+		flushPendingRemarks,
+		/** Per line: idle | saving | saved | error — drives the small label under the remarks box. */
+		remarksStatus,
 		savingRemarksId,
-		hasLineItemRemarksSaveAction: Boolean(onLineItemRemarksSave),
+		hasLineItemRemarksSaveAction: Boolean(remarksSaver),
 		hasSubmitAction: Boolean(onSubmit),
 		hasSaveDraftAction: Boolean(onSaveDraft),
 		hasApproveStageAction: Boolean(onApproveStage),

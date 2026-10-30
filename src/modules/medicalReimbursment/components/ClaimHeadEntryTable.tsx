@@ -31,6 +31,7 @@ import {
 	toDatePickerValue,
 	toDateString,
 	useReimbursementClaimFormContext,
+	type RemarksSaveStatus,
 } from "../hooks/useReimbursementClaimForm";
 
 const formatCurrency = (amount: number) =>
@@ -69,6 +70,42 @@ const ReviewCell = ({
 	</div>
 );
 
+/**
+ * Small line under the remarks box that tells the reviewer their text is
+ * safe — so nobody has to wonder whether a save button is needed.
+ * A failure is shown here (with Retry) instead of as a toast per line.
+ */
+const RemarksStatusHint = ({
+	status,
+	onRetry,
+}: {
+	status: RemarksSaveStatus;
+	onRetry: () => void;
+}) => {
+	// Always renders a line of fixed height, so a row keeps the same height
+	// whether or not there is a status to show (no jumping between rows).
+	const base = "mt-0.5 block h-4 text-xs leading-4";
+	if (status === "saving" || status === "saved") {
+		return (
+			<span role="status" className={`${base} text-iron`}>
+				{status === "saving" ? "Saving…" : "Saved"}
+			</span>
+		);
+	}
+	if (status === "error") {
+		return (
+			<button
+				type="button"
+				onClick={onRetry}
+				className={`${base} font-medium text-red-700 underline`}
+			>
+				Couldn't save · Retry
+			</button>
+		);
+	}
+	return <span aria-hidden="true" className={base} />;
+};
+
 type TableColumnDefinition<T> = {
 	id?: string;
 	accessorKey?: string;
@@ -103,8 +140,9 @@ export const ClaimHeadEntryTable = () => {
 		handleToggleLineItemStatus: onToggleLineItemStatus,
 		handleApproveLineItem,
 		handleRemarksChange: onRemarksChange,
+		handleRemarksBlur: onRemarksBlur,
 		handleSaveRemarks,
-		savingRemarksId,
+		remarksStatus,
 		isClaimant,
 		eligibility,
 		hospitalisation,
@@ -112,8 +150,8 @@ export const ClaimHeadEntryTable = () => {
 	} = useReimbursementClaimFormContext();
 
 	// The claimant (public / guest) never sees approver tools: no approved
-	// amount, no Approve checkbox, and remarks are read-only text (no input,
-	// no save button). canEditClaimRows covers a claimant editing the claim.
+	// amount, no Approve checkbox, and remarks are read-only text (no input).
+	// canEditClaimRows covers a claimant editing the claim.
 	const claimantView = isClaimant || canEditClaimRows;
 
 	// Only the current internal approver can review line items; everyone
@@ -307,7 +345,9 @@ export const ClaimHeadEntryTable = () => {
 			tableColumns.push({
 				id: "remarks",
 				header: "Remarks",
-				widthUnits: 2,
+				// Read-only viewers only see short text, so the column doesn't
+				// need the extra width the editable input gets.
+				widthUnits: reviewLocked ? 1 : 2,
 				enableSorting: false,
 				cell: ({ row }) => {
 					const claim = row.original;
@@ -326,19 +366,16 @@ export const ClaimHeadEntryTable = () => {
 
 					const isApproved = claim.approvalStatus === "APPROVED";
 					const isApproving = approvingId === claim.id;
-					const isSavingRemarks = savingRemarksId === claim.id;
-					const hasRemarks = Boolean(claim.remarks?.trim());
 					// Remarks stay editable until the bill is approved; a reduced
 					// approval needs its remark typed BEFORE ticking Approve.
-					const disabled =
-						loading || isApproving || isApproved || isSavingRemarks;
+					// They are NOT disabled while saving, so typing never stalls.
+					const disabled = loading || isApproving || isApproved;
 
 					return (
-						<ReviewCell
-							locked={false}
-							className="flex min-w-56 items-start gap-2"
-						>
-							<div className="min-w-0 flex-1">
+						<ReviewCell locked={false} className="min-w-56">
+							{/* React's onBlur bubbles, so this catches the input
+							    losing focus without relying on FormInput's props. */}
+							<div className="min-w-0" onBlur={() => onRemarksBlur(claim.id)}>
 								<FormInput
 									placeholder="Enter remarks"
 									value={claim.remarks ?? ""}
@@ -351,14 +388,11 @@ export const ClaimHeadEntryTable = () => {
 									aria-label={`Remarks for bill ${claim.billNumber}`}
 								/>
 							</div>
-							<Button
-								type="button"
-								appearance="icon"
-								Icon={Save}
-								disabled={disabled || !hasRemarks}
-								loading={isSavingRemarks}
-								onClick={() => void handleSaveRemarks(claim.id)}
-								title="Save remarks"
+							<RemarksStatusHint
+								status={
+									isApproved ? "idle" : (remarksStatus[claim.id] ?? "idle")
+								}
+								onRetry={() => void handleSaveRemarks(claim.id)}
 							/>
 						</ReviewCell>
 					);
@@ -465,8 +499,9 @@ export const ClaimHeadEntryTable = () => {
 		handleApproveLineItem,
 		onToggleLineItemStatus,
 		onRemarksChange,
+		onRemarksBlur,
 		handleSaveRemarks,
-		savingRemarksId,
+		remarksStatus,
 	]);
 
 	const simpleColumns = useMemo<SimpleTableColumn<ClaimHeadRow>[]>(

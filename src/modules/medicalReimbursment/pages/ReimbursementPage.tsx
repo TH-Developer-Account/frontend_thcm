@@ -307,6 +307,11 @@ const ReimbursementPage = ({
 						? claimView.saveLineItemRemarks
 						: undefined
 				}
+				onLineItemRemarksBatchSave={
+					claimView.canApproveLineItems
+						? claimView.saveLineItemRemarksBatch
+						: undefined
+				}
 				canClose={claimView.canClose}
 				onCloseClaim={claimView.canClose ? claimView.closeClaim : undefined}
 				isClosing={claimView.isClosing}

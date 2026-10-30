@@ -31,6 +31,7 @@ import {
 	useExportMedicalClaimMutation,
 	useMedicalClaimDetailQuery,
 	useMedicalClaimPdfUrlMutation,
+	useSaveMedicalClaimBillRemarksMutation,
 	useSaveMedicalClaimLineItemRemarksMutation,
 	useUnapproveMedicalClaimLineItemMutation,
 } from "./useMedicalClaimMutations";
@@ -98,6 +99,7 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 	const lineItemMutation = useApproveMedicalClaimLineItemMutation();
 	const unapproveMutation = useUnapproveMedicalClaimLineItemMutation();
 	const lineItemRemarksMutation = useSaveMedicalClaimLineItemRemarksMutation();
+	const remarksBatchMutation = useSaveMedicalClaimBillRemarksMutation();
 	const closeMutation = useCloseMedicalClaimMutation();
 	const approveStageMutation = useApproveWorkflowStageMutation();
 	const clarifyStageMutation = useClarifyWorkflowStageMutation();
@@ -188,15 +190,8 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 					"Only the current internal workflow approver can approve claim line items.",
 				);
 			}
-			// Persist the remark first: the approve endpoint may not store
-			// remarks (older backend), and once approved the remark field locks.
-			const remarks = lineItem.remarks?.trim();
-			if (remarks) {
-				await lineItemRemarksMutation.mutateAsync({
-					claimId,
-					lineItem: { id: lineItem.id, remarks },
-				});
-			}
+			// The remark is already saved: the form flushes it (auto-save)
+			// right before calling this, since the field locks once approved.
 			await lineItemMutation.mutateAsync({
 				claimId,
 				lineItem: {
@@ -210,7 +205,6 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 		[
 			claimId,
 			lineItemMutation,
-			lineItemRemarksMutation,
 			permissions.canReviewLineItems,
 			syncWithServer,
 		],
@@ -253,6 +247,31 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 			permissions.canReviewLineItems,
 			syncWithServer,
 		],
+	);
+
+	/**
+	 * Saves the remarks of several lines in one request (auto-save on blur,
+	 * and the flush before Approve / Send for Clarification). No refetch: the
+	 * cache is patched from what was sent, so text still being typed on other
+	 * rows is never overwritten.
+	 */
+	const saveLineItemRemarksBatch = React.useCallback(
+		async (lineItems: ClaimHeadRow[]) => {
+			if (!permissions.canReviewLineItems) {
+				throw new Error(
+					"Only the current internal workflow approver can update remarks.",
+				);
+			}
+			if (lineItems.length === 0) return;
+			await remarksBatchMutation.mutateAsync({
+				claimId,
+				items: lineItems.map((item) => ({
+					id: item.id,
+					remarks: item.remarks,
+				})),
+			});
+		},
+		[claimId, permissions.canReviewLineItems, remarksBatchMutation],
 	);
 
 	/* ------------------------------ Close -------------------------------- */
@@ -506,6 +525,7 @@ export function useMedicalClaimView({ claimId }: UseMedicalClaimViewArgs) {
 			? unapproveLineItem
 			: undefined,
 		saveLineItemRemarks,
+		saveLineItemRemarksBatch,
 		approveCurrentStage,
 		clarifyCurrentStage,
 		closeClaim,
