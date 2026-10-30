@@ -20,7 +20,7 @@ import { profileApi, profileKeys } from "../profile.api";
 import { getProfileColumns } from "../utils/profile.columns";
 import { AssignUsers } from "./AssignUsers";
 
-import type { Profile } from "../types/profile.types";
+import type { Profile, ProfileAssignmentPayload } from "../types/profile.types";
 
 type ProfileListProps = {
   profiles: Profile[];
@@ -63,11 +63,11 @@ const ProfileList = ({
   const assignMutation = useMutation({
     mutationFn: ({
       profileId,
-      userIds,
+      payload,
     }: {
       profileId: string;
-      userIds: string[];
-    }) => profileApi.setAssignees(profileId, userIds),
+      payload: ProfileAssignmentPayload;
+    }) => profileApi.setAssignees(profileId, payload),
     onSuccess: async ({ assignedCount, replacedCount, removedCount }) => {
       // Assignments change both the profile rows and each user's appAccess.
       await Promise.all([
@@ -213,11 +213,11 @@ const ProfileList = ({
         onClose={() => {
           if (!assignMutation.isPending) setProfileBeingAssigned(null);
         }}
-        onSave={(userIds) => {
+        onSave={(payload) => {
           if (!profileBeingAssigned) return;
           assignMutation.mutate({
             profileId: profileBeingAssigned.id,
-            userIds,
+            payload,
           });
         }}
       />
