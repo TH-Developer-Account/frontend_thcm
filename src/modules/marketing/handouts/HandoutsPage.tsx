@@ -11,6 +11,9 @@ import { useNavigate } from "react-router-dom";
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
 import { SearchInput } from "../../../components/forms/SearchInput";
+import SelectInput, {
+	type BaseOption,
+} from "../../../components/forms/SelectInput";
 import { FilterTabs } from "../../../components/ui/FilterTabs";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import ManagementTable from "../../../components/ui/tables/ManagementTable/ManagementTable";
@@ -25,7 +28,9 @@ import { formatCrfQuantity } from "../crf";
 
 import { useHandoutsQuery } from "./handouts.api";
 import {
+	HANDOUT_STATUS_LABEL, // MOCK-LAYER: used by the list Badge below
 	HANDOUT_STATUS_OPTIONS,
+	HANDOUT_STATUS_TONE, // MOCK-LAYER: used by the list Badge below
 	HANDOUT_VIEW_LABEL,
 	HANDOUTS_BASE_PATH,
 } from "./handouts.constants";
@@ -35,9 +40,16 @@ import type {
 	HandoutSummary,
 	HandoutView,
 } from "./handouts.types";
-import HandoutStatusPill from "./HandoutStatusPill";
+import { Badge } from "../../../components/common/Badge";
+
+import HandoutMockToggle from "./HandoutMockToggle"; // MOCK-LAYER
 import { useHandoutPermissions } from "./useHandoutPermissions";
 import "./handouts.css";
+
+// Same {value,label} pairs the native <select> used, typed for SelectInput.
+const STATUS_FILTER_OPTIONS: BaseOption[] = HANDOUT_STATUS_OPTIONS.map(
+	({ value, label }) => ({ value, label }),
+);
 
 export default function HandoutsPage() {
 	const navigate = useNavigate();
@@ -124,7 +136,15 @@ export default function HandoutsPage() {
 			{
 				key: "status",
 				header: "Status",
-				render: (row) => <HandoutStatusPill status={row.status} />,
+				// MOCK-LAYER: same props the detail page already gives Badge, so the
+				// list shows the label and tone instead of a bare status.
+				render: (row) => (
+					<Badge
+						status={row.status}
+						variant={HANDOUT_STATUS_TONE[row.status]}
+						text={HANDOUT_STATUS_LABEL[row.status]}
+					/>
+				),
 			},
 		],
 		[view],
@@ -152,71 +172,90 @@ export default function HandoutsPage() {
 						ariaLabel: "Handouts page location",
 						breadcrumbs: [
 							{ label: "Home Screen", href: "/" },
-							{ label: "EPC Listing", href: "/marketing/activity-planner/listing" },
+							{
+								label: "EPC Listing",
+								href: "/marketing/activity-planner/listing",
+							},
 							{ label: "Handouts" },
 						],
 						separator: "›",
 					}}
 				>
-					{permissions.canRequest ? (
-						<Button
-							type="button"
-							appearance="cta"
-							variant="brand"
-							size="sm"
-							Icon={Plus}
-							iconSize={16}
-							iconPosition="left"
-							text="New handout request"
-							onClick={() => navigate(`${HANDOUTS_BASE_PATH}/new`)}
-						/>
-					) : null}
+					<HandoutMockToggle /> {/* MOCK-LAYER */}
 				</PageHeader>
 
-				<Card padding="none">
-					{tabs.length > 1 ? (
-						<FilterTabs
-							id="handout-view-tabs"
-							ariaLabel="Handout queues"
-							items={tabs}
-							value={view}
-							onChange={(next) => {
-								setSelectedView(next);
-								pagination.resetPage();
-							}}
-						/>
-					) : null}
-
-					<div className="handout-form-grid" style={{ padding: "var(--space-3)" }}>
-						<SearchInput
-							value={pagination.search}
-							onChange={pagination.setSearch}
-							placeholder="Search by request no. or purpose"
-						/>
-						<select
-							className="form-input"
-							aria-label="Status"
-							value={status}
-							onChange={(event) => {
-								setStatus(event.target.value as HandoutStatus | "");
-								pagination.resetPage();
-							}}
-						>
-							<option value="">All statuses</option>
-							{HANDOUT_STATUS_OPTIONS.map((option) => (
-								<option key={option.value} value={option.value}>
-									{option.label}
-								</option>
-							))}
-						</select>
-					</div>
-
+				<Card
+					padding="none"
+					actions={
+						permissions.canRequest ? (
+							<Button
+								type="button"
+								appearance="cta"
+								variant="brand"
+								size="sm"
+								Icon={Plus}
+								iconSize={16}
+								iconPosition="left"
+								text="New handout request"
+								onClick={() => navigate(`${HANDOUTS_BASE_PATH}/new`)}
+							/>
+						) : null
+					}
+					title={
+						tabs.length > 1 ? (
+							<FilterTabs
+								id="handout-view-tabs"
+								ariaLabel="Handout queues"
+								items={tabs}
+								value={view}
+								onChange={(next) => {
+									setSelectedView(next);
+									pagination.resetPage();
+								}}
+								className="p-0"
+							/>
+						) : null
+					}
+					secondaryHeader={
+						<>
+							<SearchInput
+								value={pagination.search}
+								onChange={pagination.setSearch}
+								placeholder="Search by request no. or purpose"
+							/>
+							<div className="w-48">
+								<SelectInput
+									inputId="handout-status-filter"
+									aria-label="Filter by status"
+									options={STATUS_FILTER_OPTIONS}
+									value={
+										STATUS_FILTER_OPTIONS.find(
+											(option) => option.value === status,
+										) ?? null
+									}
+									isClearable
+									placeholder="All statuses"
+									onChange={(option) => {
+										// Cleared → "" (all statuses), same as the old <select>.
+										setStatus(
+											((option as BaseOption | null)?.value ?? "") as
+												| HandoutStatus
+												| "",
+										);
+										pagination.resetPage();
+									}}
+								/>
+							</div>
+						</>
+					}
+				>
 					<ManagementTable
+						// MOCK-LAYER: was `rows={[]}`, which hid every row, mock or real.
 						rows={query.data?.items ?? []}
 						columns={columns}
 						getRowId={(row) => row.id}
 						ariaLabel="Handout requests"
-						loading={query.isLoading}
+						// loading={query.isLoading}
 						onRowClick={openRequest}
 						rowActions={(row) => (
 							<Button

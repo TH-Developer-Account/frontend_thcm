@@ -33,14 +33,16 @@ import {
 	useHandoutStockQuery,
 	useRejectHandoutMutation,
 } from "./handouts.api";
-import { HANDOUTS_BASE_PATH } from "./handouts.constants";
-import {
-	formatHandoutDate,
-	formatHandoutDateTime,
-} from "./handouts.format";
+import { formatHandoutDate, formatHandoutDateTime } from "./handouts.format";
 import HandoutDeliveryPanel from "./HandoutDeliveryPanel";
 import HandoutItemsTable from "./HandoutItemsTable";
-import HandoutStatusPill from "./HandoutStatusPill";
+import HandoutMockToggle from "./HandoutMockToggle"; // MOCK-LAYER
+import { Badge } from "../../../components/common/Badge";
+import {
+	HANDOUT_STATUS_LABEL,
+	HANDOUT_STATUS_TONE,
+	HANDOUTS_BASE_PATH,
+} from "./handouts.constants";
 import "./handouts.css";
 
 const ACTION_LABEL = {
@@ -93,6 +95,8 @@ export default function HandoutDetailPage() {
 					title="Request not found"
 					description="It may have been removed, or you may not have access to it."
 				/>
+				<HandoutMockToggle />{" "}
+				{/* MOCK-LAYER: flip here if a mock id was opened with mock off */}
 				<Button
 					type="button"
 					text="Back to Handouts"
@@ -146,7 +150,9 @@ export default function HandoutDetailPage() {
 				modalMode === "reject-handout"
 					? `${handout.requestNumber} was rejected.`
 					: `${handout.requestNumber} was cancelled.`,
-				modalMode === "reject-handout" ? "Request rejected" : "Request cancelled",
+				modalMode === "reject-handout"
+					? "Request rejected"
+					: "Request cancelled",
 			);
 			setModalMode(null);
 		} catch (err) {
@@ -171,14 +177,24 @@ export default function HandoutDetailPage() {
 						ariaLabel: "Handout page location",
 						breadcrumbs: [
 							{ label: "Home Screen", href: "/" },
-							{ label: "EPC Listing", href: "/marketing/activity-planner/listing" },
+							{
+								label: "EPC Listing",
+								href: "/marketing/activity-planner/listing",
+							},
 							{ label: "Handouts", href: HANDOUTS_BASE_PATH },
 							{ label: handout.requestNumber },
 						],
 						separator: "›",
 					}}
-					headerChildren={<HandoutStatusPill status={handout.status} />}
+					headerChildren={
+						<Badge
+							status={handout.status}
+							variant={HANDOUT_STATUS_TONE[handout.status]}
+							text={HANDOUT_STATUS_LABEL[handout.status]}
+						/>
+					}
 				>
+					<HandoutMockToggle /> {/* MOCK-LAYER */}
 					<Button
 						type="button"
 						text="Back to list"
@@ -265,7 +281,9 @@ export default function HandoutDetailPage() {
 									</div>
 									<div>
 										<dt>Delivered on</dt>
-										<dd>{formatHandoutDateTime(handout.delivery.deliveredOn)}</dd>
+										<dd>
+											{formatHandoutDateTime(handout.delivery.deliveredOn)}
+										</dd>
 									</div>
 									<div>
 										<dt>Delivered by</dt>

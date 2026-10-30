@@ -8,6 +8,7 @@ import {
 	LayoutDashboard,
 	Users,
 	Upload,
+	Gift,
 } from "lucide-react";
 
 export const marketingSidebar: SidebarItem[] = [
@@ -79,6 +80,12 @@ export const marketingSidebar: SidebarItem[] = [
 				},
 			},
 		],
+	},
+	{
+		id: "handouts",
+		label: "Handouts",
+		icon: <Gift size={20} />,
+		link: "/marketing/activity-planner/handouts",
 	},
 
 	// {

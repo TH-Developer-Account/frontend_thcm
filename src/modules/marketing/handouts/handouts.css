@@ -90,41 +90,6 @@
 	}
 }
 
-/* ---- Status pill (same shape as .crf-details-status) ---- */
-
-.handout-pill {
-	display: inline-flex;
-	align-items: center;
-	gap: var(--space-1);
-	padding: 0.125rem var(--space-2);
-	border-radius: 999px;
-	font-size: 0.75rem;
-	font-weight: 600;
-	white-space: nowrap;
-	border: 1px solid transparent;
-}
-
-.handout-pill--success {
-	background: var(--color-success-subtle, #dff3e4);
-	color: var(--color-success, #1b5e32);
-}
-.handout-pill--warning {
-	background: var(--color-warning-subtle, #fdf0d5);
-	color: var(--color-warning, #7a4b00);
-}
-.handout-pill--danger {
-	background: var(--color-danger-subtle, #fbe3e1);
-	color: var(--color-danger, #8c1d18);
-}
-.handout-pill--info {
-	background: var(--color-brand-subtle);
-	color: var(--color-brand-active);
-}
-.handout-pill--neutral {
-	background: var(--color-bg-surface-hover);
-	color: var(--color-text-secondary);
-}
-
 /* ---- Items table (approval + delivery) ---- */
 
 .handout-item-cell {
@@ -156,8 +121,7 @@
 	display: flex;
 	justify-content: space-between;
 	padding: var(--space-3);
-	border-top: var(--border-width-default, 1px) solid
-		var(--color-border-subtle);
+	border-top: var(--border-width-default, 1px) solid var(--color-border-subtle);
 	font-weight: 600;
 }
 
@@ -199,4 +163,305 @@
 	flex-wrap: wrap;
 	gap: var(--space-2);
 	justify-content: flex-end;
+}
+/* handouts/handouts.css
+   Only what the shared components don't already cover. Everything uses the
+   existing tokens (--space-*, --color-*, --radius-*); the few status colours
+   fall back to the same values the CRF status pill uses. */
+
+.handout-page {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+}
+
+.handout-split {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 22rem;
+	gap: var(--space-4);
+	align-items: start;
+}
+
+.handout-stack {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+	min-width: 0;
+}
+
+@media (max-width: 1023px) {
+	.handout-split {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* ---- Form grid ---- */
+
+.handout-form-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: var(--space-4);
+}
+
+.handout-form-grid > .is-wide {
+	grid-column: 1 / -1;
+}
+
+@media (max-width: 639px) {
+	.handout-form-grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.handout-note {
+	margin: 0;
+	font-size: 0.8125rem;
+	color: var(--color-text-secondary);
+}
+
+/* ---- Read-only key/value block ---- */
+
+.handout-kv {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: var(--space-4);
+	margin: 0;
+}
+
+.handout-kv dt {
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--color-text-secondary);
+	margin-bottom: var(--space-1);
+}
+
+.handout-kv dd {
+	margin: 0;
+	font-weight: 600;
+	color: var(--color-text-primary);
+	overflow-wrap: anywhere;
+}
+
+.handout-kv .is-wide {
+	grid-column: span 2;
+}
+
+@media (max-width: 639px) {
+	.handout-kv {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.handout-kv .is-wide {
+		grid-column: auto;
+	}
+}
+
+/* ---- Items table (approval + delivery) ---- */
+
+.handout-item-cell {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	min-width: 0;
+}
+
+.handout-item-thumb {
+	width: 2.5rem;
+	height: 2.5rem;
+	flex: none;
+	border-radius: var(--radius-xs);
+	object-fit: cover;
+}
+
+.handout-item-name {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.handout-item-name small {
+	color: var(--color-text-secondary);
+}
+
+.handout-total {
+	display: flex;
+	justify-content: space-between;
+	padding: var(--space-3);
+	border-top: var(--border-width-default, 1px) solid var(--color-border-subtle);
+	font-weight: 600;
+}
+
+/* ---- Timeline ---- */
+
+.handout-timeline {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-3);
+}
+
+.handout-timeline li {
+	display: flex;
+	gap: var(--space-2);
+	font-size: 0.8125rem;
+}
+
+.handout-timeline-dot {
+	width: 0.75rem;
+	height: 0.75rem;
+	margin-top: 0.25rem;
+	flex: none;
+	border-radius: 50%;
+	background: var(--color-brand);
+}
+
+.handout-timeline small {
+	display: block;
+	color: var(--color-text-secondary);
+}
+
+/* ---- Action panels ---- */
+
+.handout-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+	justify-content: flex-end;
+}
+
+/* ---- New request: souvenir catalog + "Request list" sidebar ---- */
+
+/* The sidebar replaces CrfCatalog's own cart inside the Souvenirs card, so
+   hide that cart here only (the CRF form keeps it) and let the grid use the
+   full width. */
+.handout-catalog .crf-cart {
+	display: none;
+}
+
+.handout-catalog .crf-catalog-body {
+	display: block;
+}
+
+/* Stays in view while the catalog scrolls (desktop only; stacked below). */
+.handout-sticky {
+	position: sticky;
+	top: var(--space-4);
+}
+
+@media (max-width: 1023px) {
+	.handout-sticky {
+		position: static;
+	}
+}
+
+/* Submit / Cancel stacked full width at the foot of the sidebar. */
+.handout-actions--stack {
+	flex-direction: column;
+	align-items: stretch;
+	justify-content: flex-start;
+}
+
+.handout-actions--stack > * {
+	width: 100%;
+}
+
+.handout-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.handout-list-row {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--space-3);
+	padding: var(--space-3) 0;
+	border-bottom: var(--border-width-default, 1px) solid
+		var(--color-border-subtle);
+	font-size: 0.8125rem;
+}
+
+.handout-list-row:first-child {
+	padding-top: 0;
+}
+
+.handout-list-name {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	font-weight: 600;
+	color: var(--color-text-primary);
+	overflow-wrap: anywhere;
+}
+
+.handout-list-name small {
+	font-weight: 400;
+	color: var(--color-text-secondary);
+}
+
+.handout-list-figures {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: var(--space-0-5, 0.125rem);
+	flex: none;
+	text-align: right;
+}
+
+.handout-link-button {
+	padding: 0;
+	border: 0;
+	background: none;
+	font: inherit;
+	font-weight: 600;
+	color: var(--color-brand);
+	cursor: pointer;
+}
+
+.handout-link-button:hover,
+.handout-link-button:focus-visible {
+	text-decoration: underline;
+}
+
+.handout-list-error {
+	margin-top: var(--space-1);
+	font-size: 0.75rem;
+	font-weight: 400;
+	color: var(--color-error);
+}
+
+.handout-warning {
+	margin-top: var(--space-3);
+	padding: var(--space-2) var(--space-3);
+	border-radius: var(--radius-xs);
+	background: var(--color-warning-bg, #fdf0d5);
+	color: var(--color-warning-text, #7a4b00);
+	font-size: 0.75rem;
+	font-weight: 600;
+}
+
+.handout-warning p {
+	margin: 0;
+}
+
+.handout-warning p + p {
+	margin-top: var(--space-1);
+}
+
+.handout-list-total {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--space-3);
+	margin-top: var(--space-3);
+	font-size: 0.875rem;
+}
+
+.handout-list-total span {
+	color: var(--color-text-secondary);
+}
+
+.handout-list-hint {
+	margin-top: var(--space-2);
 }

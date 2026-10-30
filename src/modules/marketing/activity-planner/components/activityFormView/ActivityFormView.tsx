@@ -655,7 +655,7 @@ const ActivityFormView = ({ activity, eventReport }: ActivityFormViewProps) => {
 						items={visibleTabs}
 						active={currentTab}
 						onChange={setActiveTab}
-						variant="soft"
+						variant="underline"
 						ariaLabel="Activity sections"
 					/>
 				</DetailPageLayout.Header>

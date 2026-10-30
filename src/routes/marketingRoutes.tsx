@@ -32,7 +32,7 @@ const EpcListingPage = lazy(
 const FilesModule = lazy(
 	() => import("../modules/marketing/activity-planner/pages/FilesModule"),
 );
-// Handouts (souvenir requests for premises use)
+// Handouts (HANDOUTS_BASE_PATH = /marketing/activity-planner/handouts)
 const HandoutsPage = lazy(
 	() => import("../modules/marketing/handouts/HandoutsPage"),
 );
@@ -75,12 +75,9 @@ export default function MarketingRoutes() {
 					element={<LeadCreatePage />}
 				/>
 				<Route path="/profile" element={<UserProfile />} />
-				<Route
-					path="/activity-planner/create"
-					element={<ActivityPlannerPage />}
-				/>
-				{/* Handouts: list → new request → request detail (approve / deliver).
-				    Declared before "/activity-planner/:id" so "handouts" is never read as an EPC id. */}
+
+				{/* Handouts. Keep these ABOVE "/activity-planner/:id" so "handouts"
+				    is never read as an EPC id. "new" must stay above ":id". */}
 				<Route path="/activity-planner/handouts" element={<HandoutsPage />} />
 				<Route
 					path="/activity-planner/handouts/new"
@@ -89,6 +86,11 @@ export default function MarketingRoutes() {
 				<Route
 					path="/activity-planner/handouts/:id"
 					element={<HandoutDetailPage />}
+				/>
+
+				<Route
+					path="/activity-planner/create"
+					element={<ActivityPlannerPage />}
 				/>
 				{/* EPC → CRF → EPF stepper, opened from the listing action menu.
 				    ?start=crf | epf only changes the page title. */}

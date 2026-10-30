@@ -15,6 +15,22 @@ export const REASON_ACTION_MODAL_COPY = {
 		confirmText: "Clarify Report",
 		loadingText: "Sending...",
 	},
+	"reject-handout": {
+		title: "Reject Request",
+		description:
+			"This will reject the handout request. The requester will be notified with the reason you enter.",
+		placeholder: "Enter the reason for rejecting this request.",
+		confirmText: "Reject Request",
+		loadingText: "Rejecting...",
+	},
+	"cancel-handout": {
+		title: "Cancel Request",
+		description:
+			"This will withdraw your handout request. This can't be undone.",
+		placeholder: "Enter the reason for cancelling this request.",
+		confirmText: "Cancel Request",
+		loadingText: "Cancelling...",
+	},
 } as const;
 
 export type ReasonActionMode = keyof typeof REASON_ACTION_MODAL_COPY;
