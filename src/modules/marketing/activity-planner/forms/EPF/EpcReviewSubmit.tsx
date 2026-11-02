@@ -11,26 +11,33 @@
 //   │ [footerStart…]                            [Final Submit]   │
 //   └────────────────────────────────────────────────────────────┘
 //
-// "Final Submit" is the ONLY place that calls workflowApi.assignWorkflow, and
-// it is blocked unless a workflow was successfully previewed.
+// "Final Submit" ALWAYS calls workflowApi.finalizeEpc first — that endpoint
+// decides server-side (Schedule of Authority eligibility check) whether the
+// EPC can be auto-approved without any workflow at all. Only when it isn't
+// (`data.bypassed === false`) does this component fall back to its previous
+// assignWorkflow flow, which stays gated on a successful preview exactly as
+// before.
 //
-// No workflow for this budget (empty preview, or the preview call answers
-// 404 / 400 = no matching template):
+// Eligibility is checked against EPF.tataHitachiPoAmount — the Tata Hitachi
+// share only, dealer share excluded — because SOA authority is scoped to
+// what Tata Hitachi itself is on the hook for. The workflow-template preview
+// below uses the same amount, so what the user previews (when there is a
+// preview at all) matches what would be assigned.
+//
+// No workflow for this amount (empty preview, or the preview call answers
+// 404 / 400 = no matching template) AND not SOA-eligible:
 //   • Final Submit stays disabled (and the handler refuses even if invoked)
 //   • the Approval Workflow block simply says
-//     "There is no workflow assigned for this budget." (no request button)
-//
-// The budget sent is the EPF's saved event budget, so what the user previews
-// is exactly what gets assigned.
+//     "There is no workflow assigned for this amount." (no request button)
 import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-	CalendarCheck,
-	FileText,
-	ReceiptIndianRupee,
-	RefreshCcw,
-	Send,
-	ShieldCheck,
+  CalendarCheck,
+  FileText,
+  ReceiptIndianRupee,
+  RefreshCcw,
+  Send,
+  ShieldCheck,
 } from "lucide-react";
 
 import Button from "../../../../../components/common/Button";
@@ -38,9 +45,9 @@ import Card from "../../../../../components/common/Card";
 import FormHeader from "../../../../../components/ui/FormHeader";
 import { useToast } from "../../../../../context/Auth/AuthContext";
 import {
-	ApprovalTable,
-	getWorkflowErrorMessage,
-	workflowApi,
+  ApprovalTable,
+  getWorkflowErrorMessage,
+  workflowApi,
 } from "../../../../workflows";
 
 import CrfSection from "../../../crf/core/CrfSection";
@@ -58,67 +65,72 @@ import { isEpcSubmitted } from "../EPC/epc.utils";
 const SUBJECT_TYPE = "EVENT_PROPOSAL" as const;
 
 export const NO_WORKFLOW_MESSAGE =
-	"There is no workflow assigned for this budget.";
+  "There is no workflow assigned for this amount.";
 
-export const workflowPreviewKey = (epcId: string, budget: number) =>
-	["workflow-preview", SUBJECT_TYPE, epcId, budget] as const;
+export const workflowPreviewKey = (epcId: string, tataHitachiAmount: number) =>
+  ["workflow-preview", SUBJECT_TYPE, epcId, tataHitachiAmount] as const;
+
+export const epcAuthorityEligibilityKey = (epcId: string) =>
+  ["epc-authority-eligibility", epcId] as const;
 
 // Review cards are read-only; these satisfy CrfSection / EpfSection props.
 const noop = () => {};
 const asyncNoop = async () => {};
 
 export type EpcReviewSubmitProps = {
-	epcData: EpcDetailResponse;
-	workspaceId?: string | null;
-	appId?: string | null;
-	/** Called after the workflow was assigned (parent refreshes / navigates). */
-	onSubmitted: () => void | Promise<void>;
-	/**
-	 * @deprecated There is no "Request workflow" button any more. Kept optional
-	 * so existing callers still type-check; it is never called.
-	 */
-	onRequestWorkflow?: () => void | Promise<void>;
-	/** Rendered at the left of the footer (e.g. the wizard's Back button). */
-	footerStart?: ReactNode;
+  epcData: EpcDetailResponse;
+  workspaceId?: string | null;
+  appId?: string | null;
+  /** Called after the EPC was submitted — either auto-approved under the
+   *  Schedule of Authority, or sent into a workflow (parent refreshes /
+   *  navigates either way). */
+  onSubmitted: () => void | Promise<void>;
+  /**
+   * @deprecated There is no "Request workflow" button any more. Kept optional
+   * so existing callers still type-check; it is never called.
+   */
+  onRequestWorkflow?: () => void | Promise<void>;
+  /** Rendered at the left of the footer (e.g. the wizard's Back button). */
+  footerStart?: ReactNode;
 };
 
 /* ========================================================================== */
 /*                                  Helpers                                   */
 /* ========================================================================== */
 
-const toBudget = (value: unknown) => {
-	const parsed = Number(value);
-	return Number.isFinite(parsed) ? parsed : 0;
+const toAmount = (value: unknown) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 };
 
 /**
  * The preview endpoint answers 404 (no templates) or 400 (no template matches
- * the budget) when nothing is assigned to this budget — an expected "no
+ * the amount) when nothing is assigned to this amount — an expected "no
  * workflow" outcome, not a failure to retry.
  */
 const isNoWorkflowError = (error: unknown) => {
-	const err = error as {
-		response?: { status?: number };
-		status?: number;
-	} | null;
-	const status = err?.response?.status ?? err?.status;
+  const err = error as {
+    response?: { status?: number };
+    status?: number;
+  } | null;
+  const status = err?.response?.status ?? err?.status;
 
-	return status === 404 || status === 400;
+  return status === 404 || status === 400;
 };
 
 const ReviewBlock = ({
-	title,
-	Icon,
-	children,
+  title,
+  Icon,
+  children,
 }: {
-	title: string;
-	Icon: typeof FileText;
-	children: ReactNode;
+  title: string;
+  Icon: typeof FileText;
+  children: ReactNode;
 }) => (
-	<section className="min-w-0 border-b border-dashed border-[var(--color-border)] pb-4 last:border-b-0">
-		<FormHeader title={title} Icon={Icon} />
-		<div className="min-w-0 px-3">{children}</div>
-	</section>
+  <section className="min-w-0 border-b border-dashed border-[var(--color-border)] pb-4 last:border-b-0">
+    <FormHeader title={title} Icon={Icon} />
+    <div className="min-w-0 px-3">{children}</div>
+  </section>
 );
 
 /* ========================================================================== */
@@ -126,248 +138,329 @@ const ReviewBlock = ({
 /* ========================================================================== */
 
 export default function EpcReviewSubmit({
-	epcData,
-	workspaceId,
-	appId,
-	onSubmitted,
-	footerStart,
+  epcData,
+  workspaceId,
+  appId,
+  onSubmitted,
+  footerStart,
 }: EpcReviewSubmitProps) {
-	const { showToast } = useToast();
-	const queryClient = useQueryClient();
+  const { showToast } = useToast();
+  const queryClient = useQueryClient();
 
-	const epcId = epcData.id;
-	const budget = toBudget(epcData.epf?.eventBudget);
-	const alreadySubmitted = isEpcSubmitted(epcData);
+  const epcId = epcData.id;
+  const tataHitachiAmount = toAmount(epcData.epf?.tataHitachiPoAmount);
+  const alreadySubmitted = isEpcSubmitted(epcData);
 
-	/** Why the workflow can't be previewed / submitted yet (null = all good). */
-	const blocker = !epcData.epf
-		? "Save the EPF before submitting."
-		: !workspaceId
-			? "Workspace not found."
-			: !appId
-				? "Application ID not found."
-				: budget <= 0
-					? "Event budget must be greater than zero."
-					: null;
+  /** Why the workflow can't be previewed / submitted yet (null = all good). */
+  const blocker = !epcData.epf
+    ? "Save the EPF before submitting."
+    : !workspaceId
+      ? "Workspace not found."
+      : !appId
+        ? "Application ID not found."
+        : tataHitachiAmount <= 0
+          ? "Tata Hitachi share must be greater than zero."
+          : null;
 
-	/* ----------------------- Preview: loads on landing ---------------------- */
+  /* --------------- Schedule of Authority eligibility check --------------- */
+  // Read-only — never commits anything. Drives whether the workflow preview
+  // below runs at all: while the creator is already an eligible Approver
+  // for this amount, there is no point previewing a workflow that will
+  // never be created.
+  const eligibilityQuery = useQuery({
+    queryKey: epcAuthorityEligibilityKey(epcId),
+    queryFn: () => workflowApi.getEpcAuthorityEligibility(epcId),
+    enabled: !blocker && !alreadySubmitted,
+    refetchOnMount: "always",
+    staleTime: 60 * 1000,
+  });
 
-	const previewQuery = useQuery({
-		queryKey: workflowPreviewKey(epcId, budget),
-		queryFn: async () => {
-			const response = await workflowApi.previewWorkflow({
-				subjectType: SUBJECT_TYPE,
-				workspaceId: workspaceId as string,
-				appId: appId as string,
-				criteria: { budget },
-			});
+  const isBypassEligible = eligibilityQuery.data?.eligible ?? false;
 
-			return (
-				mapWorkflowStagesToApprovalRows(response?.stages ?? [], {
-					showOnlyCurrentStageStatus: false,
-				}) ?? []
-			);
-		},
-		enabled: !blocker && !alreadySubmitted,
-		// Always re-check on landing: workflow templates / approver
-		// assignments can change while the user is filling the EPF.
-		refetchOnMount: "always",
-		staleTime: 60 * 1000,
-		// No point retrying when the budget simply has no workflow.
-		retry: (failureCount, error) =>
-			!isNoWorkflowError(error) && failureCount < 1,
-	});
+  /* ----------------------- Preview: loads on landing ---------------------- */
+  // Skipped entirely while SOA-eligible — fails open to the preview if the
+  // eligibility check itself errored, so a creator who isn't eligible never
+  // gets stuck with neither a preview nor a path to submit.
 
-	const previewRows = previewQuery.data ?? [];
+  const previewQuery = useQuery({
+    queryKey: workflowPreviewKey(epcId, tataHitachiAmount),
+    queryFn: async () => {
+      const response = await workflowApi.previewWorkflow({
+        subjectType: SUBJECT_TYPE,
+        workspaceId: workspaceId as string,
+        appId: appId as string,
+        criteria: { budget: tataHitachiAmount },
+      });
 
-	/** A workflow was found and can be shown. */
-	const hasWorkflow = previewQuery.isSuccess && previewRows.length > 0;
+      return (
+        mapWorkflowStagesToApprovalRows(response?.stages ?? [], {
+          showOnlyCurrentStageStatus: false,
+        }) ?? []
+      );
+    },
+    enabled:
+      !blocker &&
+      !alreadySubmitted &&
+      (eligibilityQuery.isError ||
+        (eligibilityQuery.isSuccess && !isBypassEligible)),
+    // Always re-check on landing: workflow templates / approver
+    // assignments can change while the user is filling the EPF.
+    refetchOnMount: "always",
+    staleTime: 60 * 1000,
+    // No point retrying when the amount simply has no workflow.
+    retry: (failureCount, error) =>
+      !isNoWorkflowError(error) && failureCount < 1,
+  });
 
-	/* ------------------------- Final Submit ------------------------------ */
+  const previewRows = previewQuery.data ?? [];
 
-	const submitMutation = useMutation({
-		mutationFn: () =>
-			workflowApi.assignWorkflow({
-				subjectType: SUBJECT_TYPE,
-				subjectId: epcId,
-				workspaceId: workspaceId as string,
-				appId: appId as string,
-				criteria: { budget },
-			}),
-	});
+  /** A workflow was found and can be shown. */
+  const hasWorkflow = previewQuery.isSuccess && previewRows.length > 0;
 
-	const handleFinalSubmit = async () => {
-		if (submitMutation.isPending) return;
+  /* ------------------------- Final Submit ------------------------------ */
 
-		if (blocker) {
-			showToast({
-				type: "error",
-				title: "Cannot submit",
-				description: blocker,
-			});
-			return;
-		}
+  // The ONLY place that commits anything. Always tries the Schedule of
+  // Authority auto-approve path first (server-side decision — see
+  // epc.controller.ts's finalizeEventProposal); only on
+  // `data.bypassed === false` does handleFinalSubmit fall back to
+  // assignWorkflow below.
+  const finalizeMutation = useMutation({
+    mutationFn: () => workflowApi.finalizeEpc(epcId),
+  });
 
-		// Never submit without a workflow, even if this handler is invoked
-		// some other way than the (disabled) button.
-		if (!hasWorkflow) {
-			showToast({
-				type: "error",
-				title: "Cannot submit",
-				description: NO_WORKFLOW_MESSAGE,
-			});
-			return;
-		}
+  const submitMutation = useMutation({
+    mutationFn: () =>
+      workflowApi.assignWorkflow({
+        subjectType: SUBJECT_TYPE,
+        subjectId: epcId,
+        workspaceId: workspaceId as string,
+        appId: appId as string,
+        criteria: { budget: tataHitachiAmount },
+      }),
+  });
 
-		try {
-			await submitMutation.mutateAsync();
+  const handleFinalSubmit = async () => {
+    if (finalizeMutation.isPending || submitMutation.isPending) return;
 
-			await Promise.all([
-				queryClient.invalidateQueries({ queryKey: epcKeys.detail(epcId) }),
-				queryClient.invalidateQueries({ queryKey: epcKeys.lists() }),
-			]);
+    if (blocker) {
+      showToast({
+        type: "error",
+        title: "Cannot submit",
+        description: blocker,
+      });
+      return;
+    }
 
-			showToast({
-				type: "success",
-				title: "Submitted",
-				description: "The approval workflow has started.",
-			});
+    try {
+      const finalizeResult = await finalizeMutation.mutateAsync();
 
-			await onSubmitted();
-		} catch (error) {
-			console.error("Workflow assignment failed:", error);
+      if (finalizeResult.data.bypassed) {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: epcKeys.detail(epcId) }),
+          queryClient.invalidateQueries({ queryKey: epcKeys.lists() }),
+        ]);
 
-			showToast({
-				type: "error",
-				title: "Workflow Error",
-				description: getWorkflowErrorMessage(
-					error,
-					"Unable to start the approval workflow.",
-				),
-			});
-		}
-	};
+        showToast({
+          type: "success",
+          title: "Approved",
+          description:
+            "EPC auto-approved under the Schedule of Authority. No workflow was required.",
+        });
 
-	const canSubmit =
-		!alreadySubmitted && !blocker && hasWorkflow && !submitMutation.isPending;
+        await onSubmitted();
+        return;
+      }
 
-	/* ------------------------------- Render -------------------------------- */
+      // Not SOA-eligible — fall back to the normal workflow-assignment
+      // path. Never submit without a previewed workflow, even if this
+      // handler is invoked some other way than the (disabled) button.
+      if (!hasWorkflow) {
+        showToast({
+          type: "error",
+          title: "Cannot submit",
+          description: NO_WORKFLOW_MESSAGE,
+        });
+        return;
+      }
 
-	const noWorkflowMessage = (
-		<p className="text-sm text-[var(--color-text-muted)]" role="status">
-			{NO_WORKFLOW_MESSAGE}
-		</p>
-	);
+      await submitMutation.mutateAsync();
 
-	const renderPreview = () => {
-		if (alreadySubmitted) {
-			return (
-				<p className="text-sm text-[var(--color-text-muted)]">
-					The approval workflow has already started. See the Approval Workflow
-					tab for its progress.
-				</p>
-			);
-		}
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: epcKeys.detail(epcId) }),
+        queryClient.invalidateQueries({ queryKey: epcKeys.lists() }),
+      ]);
 
-		if (blocker) {
-			return <p className="text-sm text-[var(--color-danger)]">{blocker}</p>;
-		}
+      showToast({
+        type: "success",
+        title: "Submitted",
+        description: "The approval workflow has started.",
+      });
 
-		if (previewQuery.isLoading) {
-			return (
-				<p className="text-sm text-[var(--color-text-muted)]" role="status">
-					Loading approval workflow...
-				</p>
-			);
-		}
+      await onSubmitted();
+    } catch (error) {
+      console.error("EPC submission failed:", error);
 
-		if (previewQuery.isError && isNoWorkflowError(previewQuery.error)) {
-			return noWorkflowMessage;
-		}
+      showToast({
+        type: "error",
+        title: "Workflow Error",
+        description: getWorkflowErrorMessage(
+          error,
+          "Unable to submit the EPC.",
+        ),
+      });
+    }
+  };
 
-		if (previewQuery.isError) {
-			return (
-				<div className="flex flex-wrap items-center gap-3">
-					<p className="text-sm text-[var(--color-danger)]">
-						{getWorkflowErrorMessage(
-							previewQuery.error,
-							"Unable to preview the approval workflow.",
-						)}
-					</p>
-					<Button
-						type="button"
-						text="Retry"
-						Icon={RefreshCcw}
-						size="sm"
-						appearance="standard"
-						variant="outline"
-						onClick={() => void previewQuery.refetch()}
-					/>
-				</div>
-			);
-		}
+  const canSubmit =
+    !alreadySubmitted &&
+    !blocker &&
+    !eligibilityQuery.isLoading &&
+    (isBypassEligible || hasWorkflow) &&
+    !finalizeMutation.isPending &&
+    !submitMutation.isPending;
 
-		if (previewRows.length === 0) {
-			return noWorkflowMessage;
-		}
+  /* ------------------------------- Render -------------------------------- */
 
-		return (
-			<div className="approval-workflow-content max-w-full overflow-x-auto">
-				<ApprovalTable data={previewRows} />
-			</div>
-		);
-	};
+  const noWorkflowMessage = (
+    <p className="text-sm text-[var(--color-text-muted)]" role="status">
+      {NO_WORKFLOW_MESSAGE}
+    </p>
+  );
 
-	const footer = (
-		<div className="flex w-full flex-wrap items-center justify-between gap-2">
-			<div className="flex flex-wrap items-center gap-2">{footerStart}</div>
+  const renderPreview = () => {
+    if (alreadySubmitted) {
+      return (
+        <p className="text-sm text-[var(--color-text-muted)]">
+          The approval workflow has already started. See the Approval Workflow
+          tab for its progress.
+        </p>
+      );
+    }
 
-			<Button
-				type="button"
-				text={submitMutation.isPending ? "Submitting..." : "Final Submit"}
-				Icon={Send}
-				size="sm"
-				appearance="standard"
-				variant="brand"
-				disabled={!canSubmit}
-				onClick={() => void handleFinalSubmit()}
-			/>
-		</div>
-	);
+    if (blocker) {
+      return <p className="text-sm text-[var(--color-danger)]">{blocker}</p>;
+    }
 
-	return (
-		<Card
-			title="Review & Submit"
-			subtitle="Check the details below. Final Submit starts the approval workflow."
-			footer={footer}
-		>
-			<div className="flex min-w-0 flex-col gap-4">
-				<ReviewBlock title="EPC Details" Icon={CalendarCheck}>
-					<EpcForm mode="view" initialData={epcData} />
-				</ReviewBlock>
+    if (eligibilityQuery.isLoading) {
+      return (
+        <p className="text-sm text-[var(--color-text-muted)]" role="status">
+          Checking approval authority...
+        </p>
+      );
+    }
 
-				<ReviewBlock title="CRF" Icon={FileText}>
-					<CrfSection
-						epcData={epcData}
-						isEditing={false}
-						onCancel={noop}
-						onSuccess={asyncNoop}
-					/>
-				</ReviewBlock>
+    if (isBypassEligible) {
+      return (
+        <p className="text-sm text-[var(--color-text-muted)]" role="status">
+          You are authorized to approve this EPC directly under the Schedule of
+          Authority
+          {eligibilityQuery.data?.authorityLimitLabel
+            ? ` (${eligibilityQuery.data.authorityLimitLabel} band)`
+            : ""}
+          . No approval workflow is required — click Final Submit to approve.
+        </p>
+      );
+    }
 
-				<ReviewBlock title="EPF" Icon={ReceiptIndianRupee}>
-					<EpfSection
-						epcData={epcData}
-						isEditing={false}
-						onCancel={noop}
-						onSuccess={asyncNoop}
-					/>
-				</ReviewBlock>
+    if (previewQuery.isLoading) {
+      return (
+        <p className="text-sm text-[var(--color-text-muted)]" role="status">
+          Loading approval workflow...
+        </p>
+      );
+    }
 
-				<ReviewBlock title="Approval Workflow" Icon={ShieldCheck}>
-					{renderPreview()}
-				</ReviewBlock>
-			</div>
-		</Card>
-	);
+    if (previewQuery.isError && isNoWorkflowError(previewQuery.error)) {
+      return noWorkflowMessage;
+    }
+
+    if (previewQuery.isError) {
+      return (
+        <div className="flex flex-wrap items-center gap-3">
+          <p className="text-sm text-[var(--color-danger)]">
+            {getWorkflowErrorMessage(
+              previewQuery.error,
+              "Unable to preview the approval workflow.",
+            )}
+          </p>
+          <Button
+            type="button"
+            text="Retry"
+            Icon={RefreshCcw}
+            size="sm"
+            appearance="standard"
+            variant="outline"
+            onClick={() => void previewQuery.refetch()}
+          />
+        </div>
+      );
+    }
+
+    if (previewRows.length === 0) {
+      return noWorkflowMessage;
+    }
+
+    return (
+      <div className="approval-workflow-content max-w-full overflow-x-auto">
+        <ApprovalTable data={previewRows} />
+      </div>
+    );
+  };
+
+  const footer = (
+    <div className="flex w-full flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2">{footerStart}</div>
+
+      <Button
+        type="button"
+        text={
+          finalizeMutation.isPending || submitMutation.isPending
+            ? "Submitting..."
+            : "Final Submit"
+        }
+        Icon={Send}
+        size="sm"
+        appearance="standard"
+        variant="brand"
+        disabled={!canSubmit}
+        onClick={() => void handleFinalSubmit()}
+      />
+    </div>
+  );
+
+  return (
+    <Card
+      title="Review & Submit"
+      subtitle="Check the details below. Final Submit starts the approval workflow."
+      footer={footer}
+    >
+      <div className="flex min-w-0 flex-col gap-4">
+        <ReviewBlock title="EPC Details" Icon={CalendarCheck}>
+          <EpcForm mode="view" initialData={epcData} />
+        </ReviewBlock>
+
+        <ReviewBlock title="CRF" Icon={FileText}>
+          <CrfSection
+            epcData={epcData}
+            isEditing={false}
+            onCancel={noop}
+            onSuccess={asyncNoop}
+          />
+        </ReviewBlock>
+
+        <ReviewBlock title="EPF" Icon={ReceiptIndianRupee}>
+          <EpfSection
+            epcData={epcData}
+            isEditing={false}
+            onCancel={noop}
+            onSuccess={asyncNoop}
+          />
+        </ReviewBlock>
+
+        <ReviewBlock title="Approval Workflow" Icon={ShieldCheck}>
+          {renderPreview()}
+        </ReviewBlock>
+      </div>
+    </Card>
+  );
 }

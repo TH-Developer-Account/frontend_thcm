@@ -2,6 +2,8 @@ import { ServerAxios } from "../../../services/ServerAxios";
 
 import type {
   Profile,
+  ProfileAssignmentPayload,
+  ProfileAssignmentPreview,
   ProfileAssignmentResult,
   ProfileFormValues,
   ProfilePermissionInput,
@@ -105,12 +107,27 @@ export const profileApi = {
 
   setAssignees: async (
     profileId: string,
-    userIds: string[],
+    payload: ProfileAssignmentPayload,
   ): Promise<ProfileAssignmentResult> => {
     const { data } = await ServerAxios.put(
       `/profile/${encode(profileId)}/assignments`,
-      { userIds },
+      payload,
     );
     return data.data;
+  },
+
+  previewAssignment: async (
+    profileId: string,
+    excludeUserIds: string[],
+  ): Promise<ProfileAssignmentPreview> => {
+    const { data } = await ServerAxios.get(
+      `/profile/${encode(profileId)}/assignments/preview`,
+      {
+        params: excludeUserIds.length
+          ? { excludeUserIds: excludeUserIds.join(",") }
+          : {},
+      },
+    );
+    return data;
   },
 };

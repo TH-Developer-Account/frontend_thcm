@@ -1,10 +1,10 @@
 import React, { useId, useMemo, useState } from "react";
 import Select, { components } from "react-select";
 import type {
-	//  ActionMeta,
-	InputActionMeta,
-	InputProps as ReactSelectInputProps,
-	SingleValue,
+  //  ActionMeta,
+  InputActionMeta,
+  InputProps as ReactSelectInputProps,
+  SingleValue,
 } from "react-select";
 
 import { useDebounce } from "../../hooks/useDebounce";
@@ -14,29 +14,29 @@ import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 import { CircleCheck } from "lucide-react";
 
 export type UserOption = {
-	value: string;
-	label: string;
-	email?: string;
-	firstName?: string;
-	lastName?: string;
-	phone?: string;
-	designation?: string | null;
+  value: string;
+  label: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  designation?: string | null;
 };
 
 type UserAsyncSelectProps = {
-	name?: string;
-	value?: UserOption | null;
-	onChange: (user: UserOption | null) => void;
-	excludedUserIds?: string[];
-	placeholder?: string;
-	isClearable?: boolean;
-	isDisabled?: boolean;
-	required?: boolean;
-	error?: string;
-	label?: string;
-	helperText?: string;
-	className?: string;
-	success?: boolean;
+  name?: string;
+  value?: UserOption | null;
+  onChange: (user: UserOption | null) => void;
+  excludedUserIds?: string[];
+  placeholder?: string;
+  isClearable?: boolean;
+  isDisabled?: boolean;
+  required?: boolean;
+  error?: string;
+  label?: string;
+  helperText?: string;
+  className?: string;
+  success?: boolean;
 };
 
 /*
@@ -50,252 +50,253 @@ type UserAsyncSelectProps = {
  * (LastPass, 1Password, Dashlane, Bitwarden) skip it outright.
  */
 const NoAutofillInput = (props: ReactSelectInputProps<UserOption, false>) => (
-	<components.Input
-		{...props}
-		autoComplete="off"
-		data-lpignore="true"
-		data-1p-ignore="true"
-		data-bwignore="true"
-		data-form-type="other"
-	/>
+  <components.Input
+    {...props}
+    autoComplete="off"
+    data-lpignore="true"
+    data-1p-ignore="true"
+    data-bwignore="true"
+    data-form-type="other"
+  />
 );
 
 const UserAsyncSelect: React.FC<UserAsyncSelectProps> = ({
-	name = "user",
-	value = null,
-	onChange,
-	excludedUserIds = [],
-	error,
-	label,
-	helperText,
-	placeholder = "Search users...",
-	isClearable = true,
-	isDisabled = false,
-	required = false,
-	success,
-	className = "",
+  name = "user",
+  value = null,
+  onChange,
+  excludedUserIds = [],
+  error,
+  label,
+  helperText,
+  placeholder = "Search users...",
+  isClearable = true,
+  isDisabled = false,
+  required = false,
+  success,
+  className = "",
 }) => {
-	const generatedId = useId();
-	const inputId = `${name}-${generatedId}`;
-	const errorId = error ? `${inputId}-error` : undefined;
-	const helperId = helperText && !error ? `${inputId}-helper` : undefined;
-	const describedBy = errorId ?? helperId;
+  const generatedId = useId();
+  const inputId = `${name}-${generatedId}`;
+  const errorId = error ? `${inputId}-error` : undefined;
+  const helperId = helperText && !error ? `${inputId}-helper` : undefined;
+  const describedBy = errorId ?? helperId;
 
-	const [inputValue, setInputValue] = useState("");
-	const [options, setOptions] = useState<UserOption[]>([]);
-	const [isLoading, setIsLoading] = useState(false);
+  const [inputValue, setInputValue] = useState("");
+  const [options, setOptions] = useState<UserOption[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-	const debouncedInput = useDebounce(inputValue.trim(), 400);
+  const debouncedInput = useDebounce(inputValue.trim(), 400);
 
-	/*
-	 * Keep a stable lookup representation so filtering does not repeatedly
-	 * scan the original array for every returned user.
-	 */
-	const excludedUserIdKey = excludedUserIds.join("|");
+  /*
+   * Keep a stable lookup representation so filtering does not repeatedly
+   * scan the original array for every returned user.
+   */
+  const excludedUserIdKey = excludedUserIds.join("|");
 
-	const excludedUserIdSet = useMemo(
-		() => new Set(excludedUserIds),
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[excludedUserIdKey],
-	);
+  const excludedUserIdSet = useMemo(
+    () => new Set(excludedUserIds),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [excludedUserIdKey],
+  );
 
-	React.useEffect(() => {
-		if (!debouncedInput || isDisabled) return;
+  React.useEffect(() => {
+    if (!debouncedInput || isDisabled) return;
 
-		const controller = new AbortController();
-		let requestIsActive = true;
+    const controller = new AbortController();
+    let requestIsActive = true;
 
-		const fetchUsers = async () => {
-			try {
-				const { data } = await ServerAxios.get<
-					UserResponse[] | { rows?: UserResponse[]; data?: UserResponse[] }
-				>("/users", {
-					params: {
-						search: debouncedInput,
-					},
-					signal: controller.signal,
-				});
+    const fetchUsers = async () => {
+      try {
+        const { data } = await ServerAxios.get<
+          UserResponse[] | { rows?: UserResponse[]; data?: UserResponse[] }
+        >("/users", {
+          params: {
+            search: debouncedInput,
+            status: "Active",
+          },
+          signal: controller.signal,
+        });
 
-				if (!requestIsActive) return;
+        if (!requestIsActive) return;
 
-				// GET /users returns { rows, totalCount, pageIndex, pageSize },
-				// not a plain array — unwrap it the same way userApi.getUsers
-				// does. Falling back to `data` itself covers any endpoint that
-				// genuinely does return a plain array.
-				const rows = Array.isArray(data)
-					? data
-					: (data.rows ?? data.data ?? []);
+        // GET /users returns { rows, totalCount, pageIndex, pageSize },
+        // not a plain array — unwrap it the same way userApi.getUsers
+        // does. Falling back to `data` itself covers any endpoint that
+        // genuinely does return a plain array.
+        const rows = Array.isArray(data)
+          ? data
+          : (data.rows ?? data.data ?? []);
 
-				const formattedOptions = rows
-					.filter((user) => !excludedUserIdSet.has(user.id))
-					.map<UserOption>((user) => {
-						const firstName = user.first_name?.trim() ?? "";
-						const lastName = user.last_name?.trim() ?? "";
+        const formattedOptions = rows
+          .filter((user) => !excludedUserIdSet.has(user.id))
+          .map<UserOption>((user) => {
+            const firstName = user.first_name?.trim() ?? "";
+            const lastName = user.last_name?.trim() ?? "";
 
-						return {
-							value: user.id,
-							firstName,
-							lastName,
-							label:
-								`${firstName} ${lastName}`.trim() ||
-								user.email ||
-								"Unnamed user",
-							email: user.email,
-							phone: user.phone ?? undefined,
-							designation: user.designation?.trim() || null,
-						};
-					});
-				setOptions(formattedOptions);
-			} catch (err) {
-				if (!requestIsActive || controller.signal.aborted) return;
+            return {
+              value: user.id,
+              firstName,
+              lastName,
+              label:
+                `${firstName} ${lastName}`.trim() ||
+                user.email ||
+                "Unnamed user",
+              email: user.email,
+              phone: user.phone ?? undefined,
+              designation: user.designation?.trim() || null,
+            };
+          });
+        setOptions(formattedOptions);
+      } catch (err) {
+        if (!requestIsActive || controller.signal.aborted) return;
 
-				setOptions([]);
-			} finally {
-				if (requestIsActive) {
-					setIsLoading(false);
-				}
-			}
-		};
+        setOptions([]);
+      } finally {
+        if (requestIsActive) {
+          setIsLoading(false);
+        }
+      }
+    };
 
-		void fetchUsers();
+    void fetchUsers();
 
-		return () => {
-			requestIsActive = false;
-			controller.abort();
-		};
-	}, [debouncedInput, excludedUserIdSet, isDisabled]);
+    return () => {
+      requestIsActive = false;
+      controller.abort();
+    };
+  }, [debouncedInput, excludedUserIdSet, isDisabled]);
 
-	const handleInputChange = (
-		nextValue: string,
-		actionMeta: InputActionMeta,
-	) => {
-		if (actionMeta.action !== "input-change") {
-			return;
-		}
+  const handleInputChange = (
+    nextValue: string,
+    actionMeta: InputActionMeta,
+  ) => {
+    if (actionMeta.action !== "input-change") {
+      return;
+    }
 
-		setInputValue(nextValue);
+    setInputValue(nextValue);
 
-		if (!nextValue.trim()) {
-			setOptions([]);
-			setIsLoading(false);
-			return;
-		}
+    if (!nextValue.trim()) {
+      setOptions([]);
+      setIsLoading(false);
+      return;
+    }
 
-		setIsLoading(true);
-	};
+    setIsLoading(true);
+  };
 
-	const handleChange = (
-		selected: SingleValue<UserOption>,
-		// _actionMeta: ActionMeta<UserOption>,
-	) => {
-		onChange(selected);
-		setInputValue("");
-		setOptions([]);
-		setIsLoading(false);
-	};
+  const handleChange = (
+    selected: SingleValue<UserOption>,
+    // _actionMeta: ActionMeta<UserOption>,
+  ) => {
+    onChange(selected);
+    setInputValue("");
+    setOptions([]);
+    setIsLoading(false);
+  };
 
-	return (
-		<div
-			className={[
-				"form-field",
-				"select-field",
-				"user-async-select-field",
-				error ? "has-error" : "",
-				isDisabled ? "is-disabled" : "",
-			]
-				.filter(Boolean)
-				.join(" ")}
-		>
-			{label && (
-				<div className="form-label-row">
-					<label htmlFor={inputId} className="form-label">
-						{label}
+  return (
+    <div
+      className={[
+        "form-field",
+        "select-field",
+        "user-async-select-field",
+        error ? "has-error" : "",
+        isDisabled ? "is-disabled" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      {label && (
+        <div className="form-label-row">
+          <label htmlFor={inputId} className="form-label">
+            {label}
 
-						{required && (
-							<span className="form-required" aria-hidden="true">
-								*
-							</span>
-						)}
-					</label>
-				</div>
-			)}
+            {required && (
+              <span className="form-required" aria-hidden="true">
+                *
+              </span>
+            )}
+          </label>
+        </div>
+      )}
 
-			<div className="form-input-wrapper">
-				<Select<UserOption, false>
-					inputId={inputId}
-					name={name}
-					value={value}
-					inputValue={inputValue}
-					options={options}
-					isLoading={isLoading}
-					isDisabled={isDisabled}
-					isClearable={isClearable}
-					placeholder={placeholder}
-					filterOption={null}
-					components={{ Input: NoAutofillInput }}
-					unstyled
-					className={[
-						"react-select-container",
-						error ? "react-select-container-error" : "",
-						isDisabled ? "react-select-container-disabled" : "",
-						className,
-						success && !error ? "react-select-container-success" : "",
-					]
-						.filter(Boolean)
-						.join(" ")}
-					classNamePrefix="react-select"
-					menuPortalTarget={
-						typeof document !== "undefined" ? document.body : undefined
-					}
-					menuPosition="fixed"
-					menuPlacement="auto"
-					aria-invalid={error ? "true" : undefined}
-					aria-describedby={describedBy}
-					aria-required={required || undefined}
-					aria-errormessage={error ? errorId : undefined}
-					onInputChange={handleInputChange}
-					onChange={handleChange}
-					noOptionsMessage={({ inputValue: currentInput }) =>
-						currentInput.trim()
-							? "No matching users found"
-							: "Start typing to search users"
-					}
-					loadingMessage={() => "Searching users..."}
-					formatOptionLabel={(option) => (
-						<div className="select-option-content">
-							<div className="select-option-primary">{option.label}</div>
+      <div className="form-input-wrapper">
+        <Select<UserOption, false>
+          inputId={inputId}
+          name={name}
+          value={value}
+          inputValue={inputValue}
+          options={options}
+          isLoading={isLoading}
+          isDisabled={isDisabled}
+          isClearable={isClearable}
+          placeholder={placeholder}
+          filterOption={null}
+          components={{ Input: NoAutofillInput }}
+          unstyled
+          className={[
+            "react-select-container",
+            error ? "react-select-container-error" : "",
+            isDisabled ? "react-select-container-disabled" : "",
+            className,
+            success && !error ? "react-select-container-success" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          classNamePrefix="react-select"
+          menuPortalTarget={
+            typeof document !== "undefined" ? document.body : undefined
+          }
+          menuPosition="fixed"
+          menuPlacement="auto"
+          aria-invalid={error ? "true" : undefined}
+          aria-describedby={describedBy}
+          aria-required={required || undefined}
+          aria-errormessage={error ? errorId : undefined}
+          onInputChange={handleInputChange}
+          onChange={handleChange}
+          noOptionsMessage={({ inputValue: currentInput }) =>
+            currentInput.trim()
+              ? "No matching users found"
+              : "Start typing to search users"
+          }
+          loadingMessage={() => "Searching users..."}
+          formatOptionLabel={(option) => (
+            <div className="select-option-content">
+              <div className="select-option-primary">{option.label}</div>
 
-							{option.email && (
-								<div className="select-option-secondary">{option.email}</div>
-							)}
-						</div>
-					)}
-				/>
+              {option.email && (
+                <div className="select-option-secondary">{option.email}</div>
+              )}
+            </div>
+          )}
+        />
 
-				{error ? (
-					<ExclamationCircleIcon
-						aria-hidden="true"
-						className="form-error-icon select-error-icon"
-					/>
-				) : success ? (
-					<CircleCheck
-						aria-hidden="true"
-						className="form-success-icon select-success-icon"
-					/>
-				) : null}
-			</div>
+        {error ? (
+          <ExclamationCircleIcon
+            aria-hidden="true"
+            className="form-error-icon select-error-icon"
+          />
+        ) : success ? (
+          <CircleCheck
+            aria-hidden="true"
+            className="form-success-icon select-success-icon"
+          />
+        ) : null}
+      </div>
 
-			{error ? (
-				<p id={errorId} className="form-error-text" role="alert">
-					{error}
-				</p>
-			) : helperText ? (
-				<p id={helperId} className="form-helper-text">
-					{helperText}
-				</p>
-			) : null}
-		</div>
-	);
+      {error ? (
+        <p id={errorId} className="form-error-text" role="alert">
+          {error}
+        </p>
+      ) : helperText ? (
+        <p id={helperId} className="form-helper-text">
+          {helperText}
+        </p>
+      ) : null}
+    </div>
+  );
 };
 
 export default UserAsyncSelect;
