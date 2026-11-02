@@ -10,6 +10,7 @@ import {
 
 import {
 	deriveAnnualCap,
+	toEligibilityHoldProps,
 	toMedicalClaimFormValues,
 	toMedicalClaimLineItems,
 } from "../../medicalReimbursment/helpers/medicalClaimListing.mapper";
@@ -80,8 +81,9 @@ export function useGuestMedicalClaimView(claimId = "") {
 		isCreateMode
 			? {
 					grade: profile?.grade,
-					derivedCap:
-						profile?.eligibleAmount != null
+					derivedCap: profile?.liveEligibility
+						? Number(profile.liveEligibility.annualCap)
+						: profile?.eligibleAmount != null
 							? Number(profile.eligibleAmount) +
 								Number(profile.alreadySettled ?? 0)
 							: null,
@@ -101,12 +103,28 @@ export function useGuestMedicalClaimView(claimId = "") {
 				location: profile.location ?? "",
 				coverageType: (profile.claimCover ?? "") as CoverageType,
 				spouseName: profile.spouseName ?? "",
-				companySettledAmount:
-					profile.alreadySettled != null ? String(profile.alreadySettled) : "",
+				companySettledAmount: String(
+					profile.liveEligibility?.alreadySettled ??
+						profile.alreadySettled ??
+						"",
+				),
 			};
 		}
 		return undefined;
 	}, [detail, isCreateMode, profile]);
+
+	// Amount on hold in the retiree's OTHER claims + the EG hospitalisation
+	// bucket. Create mode reads them from the profile, view/edit from the claim.
+	const holdProps = useMemo(() => {
+		if (detail) return toEligibilityHoldProps(detail);
+		const live = profile?.liveEligibility;
+		return {
+			eligibilityPendingAmount: live
+				? Number(live.inProgressAmount) || 0
+				: undefined,
+			hospitalisationSummary: live?.hospitalisation ?? null,
+		};
+	}, [detail, profile?.liveEligibility]);
 
 	const initialLineItems = useMemo(
 		() => (detail ? toMedicalClaimLineItems(detail) : []),
@@ -186,6 +204,7 @@ export function useGuestMedicalClaimView(claimId = "") {
 		initialValues,
 		initialLineItems,
 		gradeOptions,
+		holdProps,
 		permissions,
 		correctionReason: detail?.correctionReason ?? null,
 

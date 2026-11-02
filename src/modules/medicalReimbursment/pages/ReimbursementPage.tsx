@@ -38,7 +38,8 @@ import type { ReimbursementClaimFormMode } from "../types/reimbursementClaim.typ
 /* -------------------------------------------------------------------------- */
 
 // Order: employee details (+ eligibility ledger) → claim heads → workflow → chat.
-type ClaimTab = "employee" | "heads" | "workflow" | "chat";
+type ClaimTab = "employee" | "heads" | "workflow";
+// | "chat";
 
 type InternalClaimLayoutProps = {
 	claimId: string;
@@ -56,7 +57,7 @@ type InternalClaimLayoutProps = {
 const InternalClaimLayout = ({
 	claimId,
 	exportActions,
-	commentsSection,
+	// commentsSection,
 	auditSection,
 	workflowSection,
 }: InternalClaimLayoutProps) => {
@@ -70,7 +71,7 @@ const InternalClaimLayout = ({
 		...(workflowSection
 			? [{ value: "workflow" as const, label: "Approval Workflow" }]
 			: []),
-		...(commentsSection ? [{ value: "chat" as const, label: "Chat" }] : []),
+		// ...(commentsSection ? [{ value: "chat" as const, label: "Chat" }] : []),
 	];
 
 	// A tab that disappears (e.g. after a refresh) falls back to the first one.
@@ -95,12 +96,12 @@ const InternalClaimLayout = ({
 						<div className="p-4">{workflowSection}</div>
 					</Card>
 				);
-			case "chat":
-				return (
-					<Card title="Chat" padding="default">
-						<div className="comments-chat">{commentsSection}</div>
-					</Card>
-				);
+			// case "chat":
+			// 	return (
+			// 		<Card title="Chat" padding="default">
+			// 			<div className="comments-chat">{commentsSection}</div>
+			// 		</Card>
+			// 	);
 		}
 	};
 

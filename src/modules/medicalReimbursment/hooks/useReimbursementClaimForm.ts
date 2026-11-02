@@ -23,10 +23,11 @@ import {
 	toRowErrors,
 } from "../utils/reimbursementClaim.schemas";
 import {
-	GRADE_OPTIONS,
 	HOSPITALISATION_ANNUAL_CAP,
+	NO_GRADE_OPTIONS,
 	isHospitalisationGrade,
 } from "../utils/gradeEligibility.constants";
+
 import {
 	HOSPITALISATION_CLAIM_HEAD,
 	getClaimHeadOptions,
@@ -308,6 +309,14 @@ const withRemarksStatus = (
 	return next;
 };
 
+const SETTLED_LABELS = new Set(["APPROVED", "CLOSED"]);
+
+/** What a bill counts for against the limit: approved amount once settled. */
+const countedAmount = (item: ClaimHeadRow, settled: boolean): number =>
+	settled && item.approvalStatus === "APPROVED"
+		? Number(resolveApprovedAmount(item)) || 0
+		: Number(item.amount) || 0;
+
 export function useReimbursementClaimForm({
 	mode = "edit",
 	canEdit = true,
@@ -353,9 +362,7 @@ export function useReimbursementClaimForm({
 		mode === "view" || !canEdit || actorRole === "externalApprover";
 	const shouldAutofillDeclarationDate = !isReadOnly;
 
-	const gradeOptions = gradeOptionsProp?.length
-		? gradeOptionsProp
-		: GRADE_OPTIONS;
+	const gradeOptions = gradeOptionsProp ?? NO_GRADE_OPTIONS;
 
 	const [values, setValues] = useState<ReimbursementClaimFormValues>(() =>
 		withDeclarationDateDefault(
@@ -512,16 +519,34 @@ export function useReimbursementClaimForm({
 			),
 		[savedClaims],
 	);
+	const isSettledClaim = SETTLED_LABELS.has(
+		(statusLabel ?? "").trim().toUpperCase(),
+	);
+
 	const hospitalisationTotal = useMemo(
 		() =>
 			roundMoney(
 				savedClaims
 					.filter((item) => item.claimHead === HOSPITALISATION_CLAIM_HEAD)
-					.reduce((total, item) => total + (Number(item.amount) || 0), 0),
+					.reduce(
+						(total, item) => total + countedAmount(item, isSettledClaim),
+						0,
+					),
 			),
-		[savedClaims],
+		[savedClaims, isSettledClaim],
 	);
-	const standardTotal = roundMoney(lineItemsTotal - hospitalisationTotal);
+	const standardTotal = useMemo(
+		() =>
+			roundMoney(
+				savedClaims
+					.filter((item) => item.claimHead !== HOSPITALISATION_CLAIM_HEAD)
+					.reduce(
+						(total, item) => total + countedAmount(item, isSettledClaim),
+						0,
+					),
+			),
+		[savedClaims, isSettledClaim],
+	);
 
 	// ---- Eligibility (drives the side panel; same numbers for guest + THCM) ----
 	const settledAmount = Number(values.companySettledAmount) || 0;

@@ -1,6 +1,7 @@
 import { GuestAxios } from "../../../services/GuestAxios";
 import { MEDICLAIM_BACKEND } from "../../medicalReimbursment/utils/mediclaimBackend.config";
 
+import type { LiveEligibility } from "../../medicalReimbursment/types/reimbursementClaim.types";
 import type {
 	GradeEligibilityRow,
 	MedicalClaimDetail,
@@ -131,11 +132,12 @@ export type GuestClaimProfile = {
 	email?: string | null;
 	alreadySettled?: number | null;
 	eligibleAmount?: number | null;
+	/** Live cap / settled / on-hold numbers (same shape as on a claim GET). */
+	liveEligibility?: LiveEligibility | null;
 };
 
 export const guestReimburseClaimApi = {
 	getProfile: async (): Promise<GuestClaimProfile> => {
-		if (!MEDICLAIM_BACKEND.guestCreateClaim) return { canCreate: false };
 		const response = await GuestAxios.get<ApiDataResponse<GuestClaimProfile>>(
 			`${GUEST_URL}/profile`,
 		);
@@ -174,11 +176,6 @@ export const guestReimburseClaimApi = {
 
 	/** A logged-in retiree starts a new claim (POST /guest/submit). */
 	createGuest: async (formData: FormData): Promise<MedicalClaimDetail> => {
-		if (!MEDICLAIM_BACKEND.guestCreateClaim) {
-			throw new Error(
-				"New claims are started by HR. Please contact HR to raise a new claim.",
-			);
-		}
 		const response = await GuestAxios.post<ApiDataResponse<MedicalClaimDetail>>(
 			`${GUEST_URL}/submit`,
 			formData,

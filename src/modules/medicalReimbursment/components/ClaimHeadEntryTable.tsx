@@ -82,9 +82,8 @@ const RemarksStatusHint = ({
 	status: RemarksSaveStatus;
 	onRetry: () => void;
 }) => {
-	// Always renders a line of fixed height, so a row keeps the same height
-	// whether or not there is a status to show (no jumping between rows).
-	const base = "mt-0.5 block h-4 text-xs leading-4";
+	const base = "mt-0.5 block text-xs leading-4";
+
 	if (status === "saving" || status === "saved") {
 		return (
 			<span role="status" className={`${base} text-iron`}>
@@ -103,7 +102,7 @@ const RemarksStatusHint = ({
 			</button>
 		);
 	}
-	return <span aria-hidden="true" className={base} />;
+	return null;
 };
 
 type TableColumnDefinition<T> = {
@@ -366,16 +365,20 @@ export const ClaimHeadEntryTable = () => {
 
 					const isApproved = claim.approvalStatus === "APPROVED";
 					const isApproving = approvingId === claim.id;
+					const hasRemarks = Boolean(claim.remarks?.trim());
 					// Remarks stay editable until the bill is approved; a reduced
 					// approval needs its remark typed BEFORE ticking Approve.
 					// They are NOT disabled while saving, so typing never stalls.
 					const disabled = loading || isApproving || isApproved;
 
 					return (
-						<ReviewCell locked={false} className="min-w-56">
+						<ReviewCell locked={false} className="flex min-w-56 items-center">
 							{/* React's onBlur bubbles, so this catches the input
 							    losing focus without relying on FormInput's props. */}
-							<div className="min-w-0" onBlur={() => onRemarksBlur(claim.id)}>
+							<div
+								className="min-w-0 flex-1"
+								onBlur={() => onRemarksBlur(claim.id)}
+							>
 								<FormInput
 									placeholder="Enter remarks"
 									value={claim.remarks ?? ""}
@@ -387,13 +390,15 @@ export const ClaimHeadEntryTable = () => {
 									error={errors[`remarks-${claim.id}`]}
 									aria-label={`Remarks for bill ${claim.billNumber}`}
 								/>
+								<RemarksStatusHint
+									status={
+										isApproved || !hasRemarks
+											? "idle"
+											: (remarksStatus[claim.id] ?? "idle")
+									}
+									onRetry={() => void handleSaveRemarks(claim.id)}
+								/>
 							</div>
-							<RemarksStatusHint
-								status={
-									isApproved ? "idle" : (remarksStatus[claim.id] ?? "idle")
-								}
-								onRetry={() => void handleSaveRemarks(claim.id)}
-							/>
 						</ReviewCell>
 					);
 				},
@@ -547,7 +552,7 @@ export const ClaimHeadEntryTable = () => {
 						return (
 							<div
 								key={item.id}
-								className="grid grid-cols-1 items-center gap-3 bg-page p-4 xl:grid-cols-7"
+								className="grid grid-cols-1 items-end gap-3 bg-page p-4 sm:grid-cols-2 xl:grid-cols-[1.1fr_1fr_1.1fr_1fr_0.8fr_1.8fr_auto]"
 							>
 								<SelectInput
 									placeholder="Claim Head"
@@ -637,7 +642,7 @@ export const ClaimHeadEntryTable = () => {
 									previewVariant="line"
 								/>
 
-								<div className="mt-1 flex items-end gap-1.5 sm:mt-5">
+								<div className="flex items-center gap-1.5 pb-0.5">
 									<Button
 										type="button"
 										Icon={isEditing ? Save : Plus}

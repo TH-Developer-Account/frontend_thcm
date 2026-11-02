@@ -6,10 +6,12 @@ import Button from "../../../components/common/Button";
 // Shared approve / clarify footer. Adjust this path if the component lives
 // elsewhere in your repo.
 import ApprovalActionsBar from "../../../components/ui/ApprovalActionsBar";
-import { useReimbursementClaimFormContext } from "../hooks/useReimbursementClaimForm";
+import {
+	currencyFormatter,
+	useReimbursementClaimFormContext,
+} from "../hooks/useReimbursementClaimForm";
 import { MEDICLAIM_BACKEND } from "../utils/mediclaimBackend.config";
 import { MAX_REASON_LENGTH } from "../utils/reimbursementClaim.schemas";
-import ClaimOverLimitDialog from "./ClaimOverLimitDialog";
 
 /**
  * - "claimant": Back / Reset / Save as Draft / Submit (public, guest).
@@ -90,7 +92,6 @@ export const ClaimActions = ({
 
 	const [pendingAction, setPendingAction] = useState<PendingFooterAction>(null);
 	const [isConfirming, setIsConfirming] = useState(false);
-	const [overLimitOpen, setOverLimitOpen] = useState(false);
 
 	const isReasonBusy =
 		clarifyLoading || approvalActionLoading || isConfirming || isClosing;
@@ -107,39 +108,37 @@ export const ClaimActions = ({
 				100,
 		) / 100;
 
-	const requestSubmit = () => {
-		if (overBy > 0) {
-			setOverLimitOpen(true);
-			return;
-		}
+	// A claim above the available limit can't be submitted at all.
+	const isOverLimit = overBy > 0;
+
+	const handleSubmitClick = () => {
+		if (isOverLimit) return; // button is disabled; this is a safety net
 		void handleSubmit();
 	};
 
-	const confirmOverLimitSubmit = async () => {
-		setOverLimitOpen(false);
-		await handleSubmit();
-	};
+	const overLimitNotice = isOverLimit ? (
+		<p role="alert" className="text-xs font-medium leading-snug text-red-700">
+			You can't submit this claim because it is{" "}
+			{currencyFormatter.format(overBy)} above your available limit. Reduce or
+			remove bills to continue. You can still save it as a draft.
+		</p>
+	) : null;
 
 	const stackedButtons = (
 		<div className="flex w-full flex-col gap-2 [&>*]:w-full [&_button]:w-full">
 			{canEditClaimForm && hasSubmitAction ? (
 				<Button
 					type="button"
-					text={
-						isSubmitting
-							? "Submitting..."
-							: overBy > 0
-								? "Review and submit"
-								: actionText
-					}
+					text={isSubmitting ? "Submitting..." : actionText}
 					Icon={Save}
 					size="sm"
 					appearance="standard"
 					variant="brand"
-					disabled={isLoading}
-					onClick={requestSubmit}
+					disabled={isLoading || isOverLimit}
+					onClick={handleSubmitClick}
 				/>
 			) : null}
+			{canEditClaimForm && hasSubmitAction ? overLimitNotice : null}
 			{canEditClaimForm && hasSaveDraftAction ? (
 				<Button
 					type="button"
@@ -182,77 +181,73 @@ export const ClaimActions = ({
 	);
 
 	const editButtons = (
-		<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
-			<div>
-				{onBack ? (
-					<Button
-						type="button"
-						text="Back"
-						Icon={ArrowLeft}
-						size="sm"
-						appearance="standard"
-						variant="outline"
-						disabled={isLoading}
-						onClick={onBack}
-					/>
-				) : null}
-			</div>
-
-			{canEditClaimForm ? (
-				<div className="flex flex-col gap-2 sm:flex-row">
-					<Button
-						type="button"
-						text="Reset"
-						Icon={RefreshCcw}
-						size="sm"
-						appearance="standard"
-						variant="outline"
-						disabled={isLoading}
-						onClick={handleReset}
-					/>
-					{hasSaveDraftAction ? (
+		<div className="flex w-full flex-col gap-2">
+			<div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+				<div>
+					{onBack ? (
 						<Button
 							type="button"
-							text={isSavingDraft ? "Saving..." : "Save as Draft"}
-							Icon={FilePenLine}
+							text="Back"
+							Icon={ArrowLeft}
 							size="sm"
 							appearance="standard"
 							variant="outline"
 							disabled={isLoading}
-							onClick={() => void handleSaveDraft()}
-						/>
-					) : null}
-					{hasSubmitAction ? (
-						<Button
-							type="button"
-							text={isSubmitting ? "Submitting..." : actionText}
-							Icon={Save}
-							size="sm"
-							appearance="standard"
-							variant="brand"
-							disabled={isLoading}
-							onClick={requestSubmit}
+							onClick={onBack}
 						/>
 					) : null}
 				</div>
+
+				{canEditClaimForm ? (
+					<div className="flex flex-col gap-2 sm:flex-row">
+						<Button
+							type="button"
+							text="Reset"
+							Icon={RefreshCcw}
+							size="sm"
+							appearance="standard"
+							variant="outline"
+							disabled={isLoading}
+							onClick={handleReset}
+						/>
+						{hasSaveDraftAction ? (
+							<Button
+								type="button"
+								text={isSavingDraft ? "Saving..." : "Save as Draft"}
+								Icon={FilePenLine}
+								size="sm"
+								appearance="standard"
+								variant="outline"
+								disabled={isLoading}
+								onClick={() => void handleSaveDraft()}
+							/>
+						) : null}
+						{hasSubmitAction ? (
+							<Button
+								type="button"
+								text={isSubmitting ? "Submitting..." : actionText}
+								Icon={Save}
+								size="sm"
+								appearance="standard"
+								variant="brand"
+								disabled={isLoading || isOverLimit}
+								onClick={handleSubmitClick}
+							/>
+						) : null}
+					</div>
+				) : null}
+			</div>
+			{canEditClaimForm && hasSubmitAction ? (
+				<div className="sm:text-right">{overLimitNotice}</div>
 			) : null}
 		</div>
 	);
 
 	if (variant === "claimant") {
 		return (
-			<>
-				<div className="flex w-full flex-col gap-3">
-					{stacked ? stackedButtons : editButtons}
-				</div>
-				<ClaimOverLimitDialog
-					open={overLimitOpen}
-					overBy={overBy}
-					busy={isSubmitting}
-					onCancel={() => setOverLimitOpen(false)}
-					onConfirm={() => void confirmOverLimitSubmit()}
-				/>
-			</>
+			<div className="flex w-full flex-col gap-3">
+				{stacked ? stackedButtons : editButtons}
+			</div>
 		);
 	}
 

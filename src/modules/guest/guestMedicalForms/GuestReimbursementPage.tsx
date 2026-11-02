@@ -15,7 +15,6 @@ import ClaimFormAlerts from "../../medicalReimbursment/components/ClaimFormAlert
 import ClaimHeadsCard from "../../medicalReimbursment/components/ClaimHeadsCard";
 
 import { useGuestMedicalClaimView } from "./useGuestMedicalClaimView";
-import { MEDICLAIM_BACKEND } from "../../medicalReimbursment/utils/mediclaimBackend.config";
 
 const GuestReimbursementPage = () => {
 	const navigate = useNavigate();
@@ -90,9 +89,9 @@ const GuestReimbursementPage = () => {
 				{breadcrumbs}
 				<Card padding="spacious">
 					<p className="text-sm text-iron" role="status">
-						{MEDICLAIM_BACKEND.guestCreateClaim
-							? "Your first medical claim is started by HR — you'll receive an email with a link to the claim form. After that you can raise new claims from here."
-							: "New medical claims are started by HR — you'll receive an email with a link to the claim form. Please contact HR to raise a new claim."}
+						Your first medical claim is started by HR — you'll receive an email
+						with a link to the claim form. After that you can raise new claims
+						from here.
 					</p>
 				</Card>
 			</PageSectionLayout>
@@ -130,9 +129,11 @@ const GuestReimbursementPage = () => {
 				statusLabel={status}
 				correctionReason={guestClaim.correctionReason}
 				actionText={isCreateMode ? "Submit Claim" : "Resubmit Claim"}
-				// Over-limit claims can be submitted after a confirmation; HR
-				// decides the approved amount.
-				enforceEligibilityLimit={false}
+				eligibilityPendingAmount={guestClaim.holdProps.eligibilityPendingAmount}
+				hospitalisationSummary={guestClaim.holdProps.hospitalisationSummary}
+				// Over-limit claims are blocked: Submit stays disabled and the
+				// ledger tells the retiree by how much to reduce the bills.
+				enforceEligibilityLimit
 				onBack={goToListing}
 			>
 				<div className="mx-auto flex w-full max-w-8xl flex-col gap-4">

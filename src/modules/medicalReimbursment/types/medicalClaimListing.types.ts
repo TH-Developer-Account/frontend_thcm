@@ -153,7 +153,12 @@ export type MedicalClaimExportStatusResponse = {
 	failedReason?: string;
 };
 
-export type GradeEligibilityRow = { grade: string; annualCap: number };
+export type GradeEligibilityRow = {
+	value?: string; // GradeEligibility row id (uuid), not used
+	label?: string; // grade name, e.g. "EG-1A"
+	grade?: string; // accepted in case another endpoint returns this shape
+	annualCap: number | string | null;
+};
 
 /** Response row of PATCH /:id/bills/approved-amounts. */
 export type ReviewedBill = {

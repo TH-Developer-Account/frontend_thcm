@@ -10,7 +10,6 @@ import {
 	toGradeOptions,
 } from "../utils/gradeEligibility.constants";
 import { medicalClaimKeys } from "./useMedicalClaimMutations";
-import { MEDICLAIM_BACKEND } from "../utils/mediclaimBackend.config";
 import { publicReimburseClaimApi } from "../api/publicClaim.api";
 
 export type GradeSource =
@@ -30,27 +29,25 @@ const fetchGrades = (source: GradeSource): Promise<GradeEligibilityRow[]> => {
 };
 
 /**
- * Grade → annual cap options for the claim form.
+ * Grade → annual cap options for the claim form, straight from the grade
+ * master data (GradeEligibility table), so the dropdown and the backend can
+ * never disagree. There is no hard-coded fallback: until the request
+ * succeeds the list is empty (check `isLoading` / `isError`).
  *
- * With a grades endpoint (MEDICLAIM_BACKEND.gradesEndpoint) the list comes
- * from the GradeEligibility table; otherwise — or if the request fails — it
- * is GRADE_OPTIONS. It always includes the claim's current grade so a
- * prefilled legacy grade (e.g. EG-2B) is selectable and valid.
+ * It always includes the claim's current grade so a prefilled legacy grade
+ * is selectable and valid.
  */
 export function useGradeOptions(
 	source: GradeSource,
 	current?: { grade?: string | null; derivedCap?: number | null },
 	enabled = true,
-): { gradeOptions: GradeOption[]; isLoading: boolean } {
+): { gradeOptions: GradeOption[]; isLoading: boolean; isError: boolean } {
 	const cacheKey =
 		source.kind === "public" ? `public:${source.token}` : source.kind;
 	const query = useQuery({
 		queryKey: medicalClaimKeys.grades(cacheKey),
 		queryFn: () => fetchGrades(source),
-		enabled:
-			MEDICLAIM_BACKEND.gradesEndpoint &&
-			enabled &&
-			(source.kind !== "public" || Boolean(source.token)),
+		enabled: enabled && (source.kind !== "public" || Boolean(source.token)),
 		staleTime: 10 * 60_000,
 		retry: 1,
 		refetchOnWindowFocus: false,
@@ -66,5 +63,9 @@ export function useGradeOptions(
 		[current?.derivedCap, current?.grade, query.data],
 	);
 
-	return { gradeOptions, isLoading: query.isLoading };
+	return {
+		gradeOptions,
+		isLoading: query.isLoading,
+		isError: query.isError,
+	};
 }

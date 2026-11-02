@@ -127,9 +127,7 @@ const LedgerSection = ({
 				>
 					{tone === "over" ? "Over by" : "Remaining"}
 				</span>
-				<span
-					className={`text-base font-bold tabular-nums ${TONE_TEXT[tone]}`}
-				>
+				<span className={`text-base font-bold tabular-nums ${TONE_TEXT[tone]}`}>
 					{format(Math.abs(remaining))}
 				</span>
 			</div>
@@ -146,7 +144,7 @@ const LedgerSection = ({
 					/>
 					<span>
 						<span className="block text-[13px] font-semibold">
-							This claim is above your limit
+							This claim is above your limit and can't be submitted
 						</span>
 						{overMessage}
 					</span>
@@ -174,14 +172,12 @@ type ClaimEligibilityLedgerProps = {
 	className?: string;
 };
 
-const OVER_MESSAGE =
-	"You can still submit. HR may approve only the eligible amount.";
-
 /**
  * Ledger-style eligibility rail for the public and guest views:
  * Limit - Past claims - This claim = Remaining (or Over by), one block per
  * limit. Amber when the balance is low, red with an alert when the claim is
- * over the limit. Place it in a sidebar next to the form.
+ * over the limit (it can't be submitted until the bills fit). Place it in a
+ * sidebar next to the form.
  */
 export const ClaimEligibilityLedger = ({
 	className = "",
@@ -215,24 +211,28 @@ export const ClaimEligibilityLedger = ({
 			<LedgerSection
 				title={hospitalisation ? "Non-hospitalisation" : "Eligibility limit"}
 				limit={resolvedEligibleAmount}
-				past={round2(Math.max(resolvedEligibleAmount - eligibility.remaining, 0))}
+				past={round2(
+					Math.max(resolvedEligibleAmount - eligibility.remaining, 0),
+				)}
 				claiming={standardTotal}
 				remaining={eligibility.balanceAfter}
 				isOverLimit={eligibility.isOverLimit}
 				emptyMessage="Add bills to see how this claim affects your balance."
-				overMessage={OVER_MESSAGE}
+				overMessage={`Reduce your bills by ${format(Math.abs(eligibility.balanceAfter))} to submit this claim.`}
 			/>
 
 			{hospitalisation ? (
 				<LedgerSection
 					title="Hospitalisation"
 					limit={hospitalisation.cap}
-					past={round2(Math.max(hospitalisation.cap - hospitalisation.remaining, 0))}
+					past={round2(
+						Math.max(hospitalisation.cap - hospitalisation.remaining, 0),
+					)}
 					claiming={hospitalisation.claimingNow}
 					remaining={hospitalisation.balanceAfter}
 					isOverLimit={hospitalisation.isOverLimit}
 					emptyMessage="Add a hospitalisation bill to see how it affects this limit."
-					overMessage={OVER_MESSAGE}
+					overMessage={`Reduce your hospitalisation bills by ${format(Math.abs(hospitalisation.balanceAfter))} to submit this claim.`}
 				/>
 			) : null}
 		</section>

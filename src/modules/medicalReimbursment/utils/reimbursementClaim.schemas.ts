@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { HOSPITALISATION_CLAIM_HEAD } from "./claimHead.constants";
-
+import { DEFAULT_COUNTRY_CODE } from "../../../utils/phone";
 /* -------------------------------------------------------------------------- */
 /* Medical claim — zod schemas (single source of truth for validation)         */
 /*                                                                            */
@@ -158,6 +158,20 @@ const requireSpouseName = (
 	}
 };
 
+const INDIAN_MOBILE_PREFIX = /^(\+91|91|0)(?=\d{10}$)/;
+
+/** "+91 99999-99999" / "099999 99999" -> "9999999999". */
+export const toIndianNationalMobile = (value: string): string =>
+	value.replace(/[\s-]/g, "").replace(INDIAN_MOBILE_PREFIX, "");
+
+/** National number for the selected country code (spaces and hyphens removed). */
+export const toNationalMobile = (countryCode: string, value: string): string =>
+	countryCode === DEFAULT_COUNTRY_CODE
+		? toIndianNationalMobile(value)
+		: value.replace(/[\s-]/g, "");
+
+export const OTHER_COUNTRY_MOBILE_REGEX = /^\d{6,14}$/;
+
 /* -------------------------------------------------------------------------- */
 /* 1. Initiation (THCM user starts a claim; also validates each import row)    */
 /* -------------------------------------------------------------------------- */
@@ -182,9 +196,7 @@ export const medicalClaimInitiationSchema = z.object({
 		.string({ message: "Phone number is required." })
 		.trim()
 		.min(1, "Phone number is required.")
-		.transform((v) =>
-			v.replace(/[\s-]/g, "").replace(/^(\+91|91|0)(?=\d{10}$)/, ""),
-		)
+		.transform(toIndianNationalMobile)
 		.pipe(
 			z
 				.string()
@@ -196,6 +208,46 @@ export const medicalClaimInitiationSchema = z.object({
 });
 export type MedicalClaimInitiationInput = z.infer<
 	typeof medicalClaimInitiationSchema
+>;
+
+export const medicalClaimInitiationFormSchema = medicalClaimInitiationSchema
+	.omit({ mobile: true })
+	.extend({
+		// Country code is its own field; `mobile` stays the national number.
+		countryCode: z
+			.string()
+			.regex(/^\+\d{1,4}$/, "Select a valid country code."),
+		mobile: z
+			.string({ message: "Phone number is required." })
+			.trim()
+			.min(1, "Phone number is required."),
+		status: z.string().optional(),
+		referenceNumber: z.string().optional(),
+	})
+	.superRefine((value, ctx) => {
+		if (!value.mobile) return; // "required" is already reported
+		const national = toNationalMobile(value.countryCode, value.mobile);
+		if (value.countryCode === DEFAULT_COUNTRY_CODE) {
+			if (!MOBILE_REGEX.test(national)) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["mobile"],
+					message: "Enter a valid 10-digit mobile number starting with 6-9.",
+				});
+			}
+			return;
+		}
+		if (!OTHER_COUNTRY_MOBILE_REGEX.test(national)) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["mobile"],
+				message: "Enter a valid mobile number.",
+			});
+		}
+	});
+
+export type MedicalClaimInitiationFormValues = z.infer<
+	typeof medicalClaimInitiationFormSchema
 >;
 
 /* -------------------------------------------------------------------------- */
