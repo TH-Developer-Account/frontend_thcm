@@ -25,6 +25,11 @@ import { CrfImage } from "./Media";
 import LoadMoreBar, { CRF_GRID_PAGE_SIZE } from "./LoadMoreBar";
 import SouvenirCatalog from "../shop/SouvenirCatalog";
 import {
+	AddCustomArtworkTile,
+	CustomArtworkTile,
+	createCustomLine,
+} from "./CustomArtwork";
+import {
 	ARTWORK_CUSTOM_PRESET,
 	ARTWORK_RESOLUTION_PRESETS,
 	CRF_CATEGORIES,
@@ -605,7 +610,8 @@ const getLineDetail = (item: CrfLineItem) => {
 		return [item.variantTitle, item.sku].filter(Boolean).join(" · ") || null;
 	}
 	if (item.category === "ARTWORK") {
-		return formatArtworkSize(item.width, item.height, item.unit);
+		const size = formatArtworkSize(item.width, item.height, item.unit);
+		return item.isCustom ? `Custom · ${size}` : size;
 	}
 	return null;
 };
@@ -887,6 +893,21 @@ export default function CrfCatalog({
 		[activeCategory, onChange],
 	);
 
+	/* ------------------------- Custom artwork (Artworks) ----------------- */
+
+	// Custom requests have no catalog tile; they are listed first, full width.
+	const customEntries = React.useMemo(
+		() =>
+			isArtworkTab ? activeEntries.filter(({ item }) => item.isCustom) : [],
+		[activeEntries, isArtworkTab],
+	);
+	const showCustom = isArtworkTab && (!readOnly || customEntries.length > 0);
+
+	const addCustom = React.useCallback(
+		() => onChange((previous) => [...previous, createCustomLine()]),
+		[onChange],
+	);
+
 	/* -------------------------------- Render ----------------------------- */
 
 	const Tile = isArtworkTab ? ArtworkTile : ProductTile;
@@ -937,7 +958,47 @@ export default function CrfCatalog({
 									.join(" ")}
 								role="list"
 							>
-								{products.length === 0 ? (
+								{showCustom ? (
+									<>
+										{!readOnly ? (
+											<div role="listitem" className="crf-catalog-custom">
+												<AddCustomArtworkTile onAdd={addCustom} />
+											</div>
+										) : null}
+
+										{customEntries.map(({ item, index }, position) => {
+											const lineErrors = errors.items[index];
+
+											return (
+												<div
+													role="listitem"
+													key={item.value}
+													className="crf-catalog-custom"
+												>
+													<CustomArtworkTile
+														line={item}
+														lineErrors={lineErrors}
+														readOnly={readOnly}
+														onPatch={(patch) => patchProduct(item.value, patch)}
+													>
+														<QuantityControls
+															label={`Custom artwork ${position + 1}`}
+															line={item}
+															invalid={Boolean(lineErrors?.quantity)}
+															readOnly={readOnly}
+															onQuantity={(quantity) =>
+																patchProduct(item.value, { quantity })
+															}
+															onRemove={() => removeProduct(item.value)}
+														/>
+													</CustomArtworkTile>
+												</div>
+											);
+										})}
+									</>
+								) : null}
+
+								{products.length === 0 && !showCustom ? (
 									<div className="crf-catalog-empty">
 										<PackageOpen aria-hidden="true" />
 										<p>

@@ -1,4 +1,7 @@
 // sidebar.config.ts
+// Every module is a top-level entry (same level as Handouts). "Activity
+// Planner" is now just the EPC listing — Leads, Import/Export, Reports and
+// Artworks used to / would otherwise nest under it.
 import type { SidebarItem } from "../../layout/layout.types";
 import {
 	Home,
@@ -9,6 +12,7 @@ import {
 	Users,
 	Upload,
 	Gift,
+	Wallpaper,
 } from "lucide-react";
 
 export const marketingSidebar: SidebarItem[] = [
@@ -28,58 +32,45 @@ export const marketingSidebar: SidebarItem[] = [
 		id: "epc",
 		label: "Activity Planner",
 		icon: <CalendarDays size={20} />,
-		link: "/marketing/activity-planner/epc",
+		link: "/marketing/activity-planner/listing",
 		permission: {
 			app: "MAP",
 			module: "EPC",
 			action: "read",
 		},
-		children: [
-			{
-				id: "epc-list",
-				label: "EPC Listing",
-				link: "/marketing/activity-planner/listing",
-				icon: <Table size={18} />,
-				permission: {
-					app: "MAP",
-					module: "EPC",
-					action: "read",
-				},
-			},
-			{
-				id: "lead-list",
-				label: "Leads Listing",
-				link: "/marketing/activity-planner/leads/listing",
-				icon: <Users size={18} />,
-				permission: {
-					app: "MAP",
-					module: "Leads",
-					action: "read",
-				},
-			},
-			{
-				id: "file-module",
-				label: "Import/Export Module",
-				link: "/marketing/activity-planner/file-module/listing",
-				icon: <Upload size={18} />,
-				permission: {
-					app: "MAP",
-					module: "file-module",
-					action: "read",
-				},
-			},
-			{
-				id: "reports-module",
-				label: "Reports Module",
-				link: "/marketing/activity-planner/reports/listing",
-				icon: <Table size={18} />,
-				permission: {
-					app: "MAP",
-					module: "reports-module",
-					action: "read",
-				},
-			},
-		],
+	},
+	{
+		id: "lead-list",
+		label: "Leads Listing",
+		icon: <Users size={20} />,
+		link: "/marketing/activity-planner/leads/listing",
+		permission: {
+			app: "MAP",
+			module: "Leads",
+			action: "read",
+		},
+	},
+	{
+		id: "file-module",
+		label: "Import/Export Module",
+		icon: <Upload size={20} />,
+		link: "/marketing/activity-planner/file-module/listing",
+		permission: {
+			app: "MAP",
+			module: "file-module",
+			action: "read",
+		},
+	},
+	{
+		id: "reports-module",
+		label: "Reports Module",
+		icon: <Table size={20} />,
+		link: "/marketing/activity-planner/reports/listing",
+		permission: {
+			app: "MAP",
+			module: "reports-module",
+			action: "read",
+		},
 	},
 	{
 		id: "handouts",
@@ -87,7 +78,14 @@ export const marketingSidebar: SidebarItem[] = [
 		icon: <Gift size={20} />,
 		link: "/marketing/activity-planner/handouts",
 	},
-
+	{
+		id: "artworks",
+		label: "Artworks",
+		icon: <Wallpaper size={20} />,
+		link: "/marketing/activity-planner/artworks",
+		// TODO (when ARTWORK exists in the profile editor): restrict to the team with
+		// permission: { app: "MAP", module: "ARTWORK", action: "read" },
+	},
 	// {
 	// 	id: "settings",
 	// 	label: "Settings",
@@ -95,3 +93,4 @@ export const marketingSidebar: SidebarItem[] = [
 	// 	link: "/marketing/profile",
 	// },
 ];
+

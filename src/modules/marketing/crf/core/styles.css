@@ -2301,3 +2301,164 @@
 		}
 	}
 }
+
+/* crf/core/customArtwork.css
+   "Custom artwork" option on the Artworks tab (imported by CustomArtwork.tsx).
+   The add-bar and the card sit in the artwork grid but span the whole row, so
+   the card is noticeably bigger than the catalog artwork tiles.
+   Same layer + tokens as styles.css; every class is new (`crf-custom-*`). */
+
+@layer components {
+	/* Grid items that take the full row (the grid wrapper is a flex item). */
+	.crf-catalog-grid > .crf-catalog-custom {
+		grid-column: 1 / -1;
+	}
+
+	/* ---------------------------------------------------------------- CARD */
+
+	.crf-tile.crf-tile--custom {
+		gap: var(--space-4, 1rem);
+		padding: var(--space-4, 1rem) var(--space-5, 1.25rem);
+		min-height: 0;
+	}
+
+	.crf-custom-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3, 0.75rem);
+	}
+
+	.crf-custom-icon {
+		display: grid;
+		flex: none;
+		place-items: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: var(--radius-md, 0.5rem);
+		background-color: var(--color-brand-soft, #fff4ed);
+		color: var(--color-brand, #f35a00);
+	}
+
+	.crf-custom-icon svg {
+		width: 1.25rem;
+		height: 1.25rem;
+	}
+
+	.crf-custom-title {
+		margin: 0;
+		color: var(--color-text-primary, #18181b);
+		font-size: var(--font-size-base, 1rem);
+		font-weight: var(--font-weight-semibold, 600);
+	}
+
+	.crf-custom-sub {
+		margin: 0;
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+	}
+
+	/* Left: width / height / unit.  Right: description. */
+	.crf-custom-body {
+		display: grid;
+		grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+		align-items: start;
+		gap: var(--space-4, 1rem) var(--space-6, 1.5rem);
+	}
+
+	.crf-custom-size {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--space-3, 0.75rem);
+	}
+
+	.crf-custom-unit {
+		grid-column: 1 / -1;
+	}
+
+	.crf-custom-desc {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.crf-custom-desc textarea {
+		min-height: 8.5rem;
+		resize: vertical;
+	}
+
+	.crf-custom-counter {
+		align-self: flex-end;
+		margin-top: var(--space-1, 0.25rem);
+		color: var(--color-text-muted, #71717a);
+		font-size: var(--font-size-xs, 0.75rem);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.crf-custom-footer {
+		display: flex;
+		justify-content: flex-end;
+		padding-top: var(--space-3, 0.75rem);
+		border-top: 1px dashed var(--color-border-default, #d4d4d8);
+	}
+
+	.crf-custom-footer .crf-tile-controls {
+		justify-content: flex-end;
+		gap: var(--space-3, 0.75rem);
+	}
+
+	/* ------------------------------------------------------------- ADD BAR */
+
+	.crf-tile.crf-tile--custom-add {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		flex-wrap: wrap;
+		border-style: dashed;
+		border-color: var(--color-border-strong, #a1a1aa);
+		background-color: var(--color-bg-subtle, #fafafa);
+	}
+
+	.crf-custom-add-text {
+		flex: 1 1 16rem;
+		min-width: 0;
+	}
+
+	/* Beats `.crf-tile .crf-tile-add { width: 100%; margin-top: auto }` (fixes.css). */
+	.crf-tile.crf-tile--custom-add .crf-tile-add {
+		width: auto;
+		margin-top: 0;
+		padding-inline: var(--space-4, 1rem);
+		border-style: solid;
+		background-color: var(--color-bg-surface, #fff);
+	}
+
+	/* ---------------------------------------------------------- RESPONSIVE */
+
+	@media (max-width: 900px) {
+		.crf-custom-body {
+			grid-template-columns: minmax(0, 1fr);
+		}
+	}
+
+	@media (max-width: 640px) {
+		.crf-tile.crf-tile--custom {
+			padding: var(--space-3, 0.75rem);
+		}
+
+		.crf-tile.crf-tile--custom-add {
+			flex-direction: column;
+			align-items: stretch;
+		}
+
+		.crf-tile.crf-tile--custom-add .crf-tile-add {
+			width: 100%;
+		}
+
+		.crf-custom-footer,
+		.crf-custom-footer .crf-tile-controls {
+			justify-content: space-between;
+			width: 100%;
+		}
+	}
+}

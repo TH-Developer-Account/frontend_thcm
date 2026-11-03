@@ -42,6 +42,13 @@ const NewHandoutPage = lazy(
 const HandoutDetailPage = lazy(
 	() => import("../modules/marketing/handouts/HandoutDetailPage"),
 );
+// Artworks (ARTWORKS_BASE_PATH = /marketing/activity-planner/artworks)
+const ArtworksPage = lazy(
+	() => import("../modules/marketing/artworks/ArtworksPage"),
+);
+const ArtworkDetailPage = lazy(
+	() => import("../modules/marketing/artworks/ArtworkDetailPage"),
+);
 
 export default function MarketingRoutes() {
 	return (
@@ -86,6 +93,14 @@ export default function MarketingRoutes() {
 				<Route
 					path="/activity-planner/handouts/:id"
 					element={<HandoutDetailPage />}
+				/>
+
+				{/* Artworks. Same rule: ABOVE "/activity-planner/:id" so "artworks"
+				    is never read as an EPC id. */}
+				<Route path="/activity-planner/artworks" element={<ArtworksPage />} />
+				<Route
+					path="/activity-planner/artworks/:id"
+					element={<ArtworkDetailPage />}
 				/>
 
 				<Route

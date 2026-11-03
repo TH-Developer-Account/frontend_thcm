@@ -430,7 +430,7 @@ export default function HandoutDetailPage() {
 								showBack={false}
 								eyebrow="Delivery"
 								title="Awaiting delivery"
-								subtitle="Check the items and fill in the hand-over details, then say whether the request was fulfilled."
+								// subtitle="Check the items and fill in the hand-over details, then say whether the request was fulfilled."
 								approveLabel="Request fulfilled"
 								clarifyLabel="Request can't be fulfilled"
 								canApprove={permissions.canDeliver}

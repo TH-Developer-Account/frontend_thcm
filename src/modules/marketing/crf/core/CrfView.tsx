@@ -360,7 +360,8 @@ export default function CrfView({
 													{meta ? (
 														<span className="crf-details-meta">{meta}</span>
 													) : null}
-													{description && item.category !== "ARTWORK" ? (
+													{description &&
+													(item.category !== "ARTWORK" || item.isCustom) ? (
 														<span
 															className="crf-details-meta crf-details-meta--clamp"
 															title={description}

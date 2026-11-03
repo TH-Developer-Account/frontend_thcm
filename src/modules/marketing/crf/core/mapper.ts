@@ -3,7 +3,9 @@
 //
 // Category rules applied here:
 //   • PRINTED_MATERIAL — no width / height / unit, ever.
-//   • ARTWORK          — pixel resolution (width × height px + preset).
+//   • ARTWORK          — pixel resolution (width × height px + preset), or a
+//                        CUSTOM request (isCustom): free size + unit + description,
+//                        no catalog product, no price.
 //   • SOUVENIR         — store line: the API gives back { sku, requestedQty,
 //                        amount, rate, title, variantTitle, imageUrl, status }.
 //                        title/variantTitle/imageUrl/rate are a trusted
@@ -38,10 +40,13 @@ import {
 } from "../shop/mapper";
 import type { ShopStockRow } from "../shop/types";
 import {
+	CUSTOM_ARTWORK_ID_PREFIX,
+	CUSTOM_ARTWORK_LABEL,
 	findArtworkPreset,
 	type ApiCrfItem,
 	type CrfCatalogItem,
 	type CrfCatalogItemInput,
+	type CrfCustomArtworkItemInput,
 	type CrfItemInput,
 	type CrfLineItem,
 	type CrfPayload,
@@ -165,6 +170,31 @@ export const mapCrfLineItemsToFormItems = (
 				// Only OUT_OF_STOCK has a matching ShopStockCheckStatus value;
 				// REQUESTED/REMOVED/ORDERED/DEBITED aren't a stock-check outcome.
 				stockStatus: item.status === "OUT_OF_STOCK" ? "OUT_OF_STOCK" : null,
+			};
+		}
+
+		// Custom artwork request: no catalog product, so the line is rebuilt from
+		// the saved size + description (and gets a stable, unique form value).
+		if (item.source === "CUSTOM") {
+			const value = `${CUSTOM_ARTWORK_ID_PREFIX}${item.id}`;
+
+			return {
+				id: item.id,
+				value,
+				label: item.title || CUSTOM_ARTWORK_LABEL,
+				particular: value,
+				description: item.description ?? "",
+				category: ARTWORK,
+				isCustom: true,
+
+				rate: toNumber(item.rate),
+				quantity: item.quantity,
+				total: toNumber(item.amount),
+
+				width: item.width !== null ? Number(item.width) : undefined,
+				height: item.height !== null ? Number(item.height) : undefined,
+				unit: item.unit ?? "px",
+				resolutionPreset: "CUSTOM",
 			};
 		}
 
@@ -322,6 +352,17 @@ const buildShopifyItemInput = (item: CrfLineItem): CrfShopifyItemInput => ({
 	rate: toNumber(item.rate),
 });
 
+const buildCustomArtworkItemInput = (
+	item: CrfLineItem,
+): CrfCustomArtworkItemInput => ({
+	kind: "CUSTOM_ARTWORK",
+	quantity: toNumber(item.quantity),
+	width: String(item.width ?? ""),
+	height: String(item.height ?? ""),
+	unit: item.unit || "px",
+	description: (item.description ?? "").trim(),
+});
+
 /**
  * Form line → wire item. Deliberately sends ONLY identity + quantity (+ size
  * for artworks) for a catalog line — the backend computes rate/amount from
@@ -331,10 +372,14 @@ const buildShopifyItemInput = (item: CrfLineItem): CrfShopifyItemInput => ({
  * Pricing shown to the user (getLinePricing/sumPricing in crf.shop.mapper.ts)
  * otherwise plays no part in what gets sent.
  */
-export const buildCrfItemInput = (item: CrfLineItem): CrfItemInput =>
-	item.category === SOUVENIR
-		? buildShopifyItemInput(item)
-		: buildCatalogItemInput(item);
+export const buildCrfItemInput = (item: CrfLineItem): CrfItemInput => {
+	if (item.category === SOUVENIR) return buildShopifyItemInput(item);
+	// Custom artwork: size + description only, never a productId or a price.
+	if (item.category === ARTWORK && item.isCustom) {
+		return buildCustomArtworkItemInput(item);
+	}
+	return buildCatalogItemInput(item);
+};
 
 export const buildCrfPayload = (
 	items: CrfLineItem[],
