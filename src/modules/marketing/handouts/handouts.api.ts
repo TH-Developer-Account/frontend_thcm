@@ -7,8 +7,8 @@
 //   GET  /handouts?view=mine|approve|deliver&status&search&page&pageSize
 //   GET  /handouts/:id              detail + server-computed `permissions`
 //   POST /handouts/:id/approve
-//   POST /handouts/:id/reject   { reason }
-//   POST /handouts/:id/cancel   { reason }
+//   POST /handouts/:id/clarify  { reason }   approver sends it back to the requester
+//   POST /handouts/:id/cannot-fulfil { reason }   delivery team: no stock / cannot deliver
 //   POST /handouts/:id/deliver  { handedToName, deliveredOn, note?, checkedSkus }
 //
 // Souvenir availability is NOT a handouts endpoint: it reuses the CRF shop's
@@ -21,6 +21,7 @@
 
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 
+import type { AuditApiAdapter } from "../../../components/ui/audit/audit.types";
 import { ServerAxios } from "../../../services/ServerAxios";
 import { crfShopApi, crfShopKeys } from "../crf";
 import { handoutMockApi } from "./handouts.mock"; // MOCK-LAYER
@@ -69,12 +70,12 @@ const realApi = {
 		await ServerAxios.post(`/handouts/${id}/approve`);
 	},
 
-	reject: async (id: string, reason: string): Promise<void> => {
-		await ServerAxios.post(`/handouts/${id}/reject`, { reason });
+	clarify: async (id: string, reason: string): Promise<void> => {
+		await ServerAxios.post(`/handouts/${id}/clarify`, { reason });
 	},
 
-	cancel: async (id: string, reason: string): Promise<void> => {
-		await ServerAxios.post(`/handouts/${id}/cancel`, { reason });
+	cannotFulfil: async (id: string, reason: string): Promise<void> => {
+		await ServerAxios.post(`/handouts/${id}/cannot-fulfil`, { reason });
 	},
 
 	deliver: async (
@@ -95,8 +96,8 @@ export const handoutApi: typeof realApi = {
 	get: (id) => activeApi().get(id),
 	create: (payload) => activeApi().create(payload),
 	approve: (id) => activeApi().approve(id),
-	reject: (id, reason) => activeApi().reject(id, reason),
-	cancel: (id, reason) => activeApi().cancel(id, reason),
+	clarify: (id, reason) => activeApi().clarify(id, reason),
+	cannotFulfil: (id, reason) => activeApi().cannotFulfil(id, reason),
 	deliver: (id, payload) => activeApi().deliver(id, payload),
 };
 
@@ -150,17 +151,17 @@ export function useApproveHandoutMutation() {
 	return useMutation({ mutationFn: (id: string) => handoutApi.approve(id) });
 }
 
-export function useRejectHandoutMutation() {
+export function useClarifyHandoutMutation() {
 	return useMutation({
 		mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-			handoutApi.reject(id, reason),
+			handoutApi.clarify(id, reason),
 	});
 }
 
-export function useCancelHandoutMutation() {
+export function useCannotFulfilHandoutMutation() {
 	return useMutation({
 		mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-			handoutApi.cancel(id, reason),
+			handoutApi.cannotFulfil(id, reason),
 	});
 }
 
@@ -202,3 +203,39 @@ export function useHandoutStockQuery(items: HandoutItem[], enabled = true) {
 		staleTime: 30 * 1000,
 	});
 }
+
+/* ========================================================================== */
+/*                                 Audit trail                                */
+/* ========================================================================== */
+
+// Feeds the shared AuditLogSection from the request's own timeline, so the
+// handout page shows the same audit UI as the EPC page. When the backend adds
+// /comment/HANDOUT/:id/activity-log, delete this and drop the `api` prop.
+export const HANDOUT_AUDIT_SUBJECT = "HANDOUT_REQUEST";
+
+export const handoutAuditApi: AuditApiAdapter = {
+	getAuditLog: async ({ subjectId }) => {
+		const handout = await handoutApi.get(subjectId);
+
+		return handout.timeline.map((entry) => {
+			const [first = "", ...rest] = entry.byName.trim().split(/\s+/);
+			return {
+				id: entry.id,
+				action: entry.action,
+				metadata: entry.comment ? { reason: entry.comment } : null,
+				actor: {
+					id: entry.id,
+					first_name: first,
+					last_name: rest.join(" "),
+				},
+				createdAt: entry.at,
+			};
+		});
+	},
+};
+
+/** Wording for the one action the shared audit messages don't know. */
+export const HANDOUT_AUDIT_MESSAGES = {
+	DELIVERED: "hand delivered and closed the handout request",
+	CANNOT_FULFIL: "marked the handout request as cannot be fulfilled",
+} as const;

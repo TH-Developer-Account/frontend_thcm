@@ -1,57 +1,79 @@
 // handouts/HandoutDetailPage.tsx
 // One request, three audiences. What shows is driven by the server's
 // `permissions` flags on GET /handouts/:id, not re-derived from roles here:
-//   requester     → read-only + Cancel while pending
-//   approver      → Approve / Reject (reason) while pending
-//   delivery team → check items + hand over + close while approved
+//   approver      → Approve / Send for clarification (reason) while pending
+//   delivery team → check items + hand-over details, then "Request fulfilled" or
+//                   "Request can't be fulfilled" — a reason is required for both
+//
+// Same structure as ActivityFormView (DetailPageLayout):
+//   header : back + request no. + status (left) · tabs (right)
+//   main   : the active tab's card
+//   side   : audit trail (AuditLogSection), then the decision card
+//
+// Tabs: Handout Info · CRF Items · Delivery (once delivered).
 
 import { useState } from "react";
-import { ArrowLeft, Check, X } from "lucide-react";
+import { ArrowLeft, History } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { Alert } from "../../../components/common/Alert";
+import { Badge } from "../../../components/common/Badge";
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
+import NavigateButton from "../../../components/common/NavigateButton";
+import { TabsBar } from "../../../components/common/TabsBar";
+import type { TabItem } from "../../../components/common/common.types";
+import FormInput from "../../../components/forms/FormInput";
+import TextareaInput from "../../../components/forms/TextareaInput";
+import { AuditLogSection } from "../../../components/ui/audit";
+import ApprovalActionsBar from "../../../components/ui/ApprovalActionsBar";
 import { PageHeader } from "../../../components/ui/PageHeader";
-import {
-	ReasonActionModal,
-	type ReasonActionMode,
-} from "../../../components/ui/ReasonActionModal";
 import { useToast } from "../../../context/Auth/AuthContext";
+import DetailPageLayout from "../../../layout/DetailPageLayout";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import {
 	showApiErrorToast,
 	showSuccessToast,
 } from "../../../utils/apiError.helper";
+import "../activity-planner/utils/activity-planner.styles.css";
 
 import {
+	HANDOUT_AUDIT_MESSAGES,
+	HANDOUT_AUDIT_SUBJECT,
+	handoutAuditApi,
 	handoutKeys,
 	useApproveHandoutMutation,
-	useCancelHandoutMutation,
 	useHandoutQuery,
 	useHandoutStockQuery,
-	useRejectHandoutMutation,
+	useCannotFulfilHandoutMutation,
+	useClarifyHandoutMutation,
 } from "./handouts.api";
-import { formatHandoutDate, formatHandoutDateTime } from "./handouts.format";
-import HandoutDeliveryPanel from "./HandoutDeliveryPanel";
-import HandoutItemsTable from "./HandoutItemsTable";
-import HandoutMockToggle from "./HandoutMockToggle"; // MOCK-LAYER
-import { Badge } from "../../../components/common/Badge";
 import {
 	HANDOUT_STATUS_LABEL,
 	HANDOUT_STATUS_TONE,
 	HANDOUTS_BASE_PATH,
 } from "./handouts.constants";
+import { formatHandoutDateTime } from "./handouts.format";
+import HandoutDetailsFields from "./HandoutDetailsFields";
+import HandoutDeliveryPanel, {
+	useHandoutDelivery,
+} from "./HandoutDeliveryPanel";
+import HandoutItemsTable from "./HandoutItemsTable";
+import HandoutMockToggle from "./HandoutMockToggle"; // MOCK-LAYER
 import "./handouts.css";
 
-const ACTION_LABEL = {
-	SUBMITTED: "Submitted",
-	APPROVED: "Approved",
-	REJECTED: "Rejected",
-	CANCELLED: "Cancelled",
-	DELIVERED: "Hand delivered, closed",
-} as const;
+/* ========================================================================== */
+/*                                    Tabs                                    */
+/* ========================================================================== */
+
+type HandoutTab = "info" | "items" | "delivery";
+
+const TAB_TITLES: Record<HandoutTab, string> = {
+	info: "Handout Information",
+	items: "CRF Items",
+	delivery: "Delivery",
+};
 
 export default function HandoutDetailPage() {
 	const { id } = useParams<{ id: string }>();
@@ -67,15 +89,18 @@ export default function HandoutDetailPage() {
 	const stockQuery = useHandoutStockQuery(handout?.items ?? [], needsStock);
 
 	const approve = useApproveHandoutMutation();
-	const reject = useRejectHandoutMutation();
-	const cancel = useCancelHandoutMutation();
-
-	const [modalMode, setModalMode] = useState<ReasonActionMode | null>(null);
+	const clarify = useClarifyHandoutMutation();
+	const cannotFulfil = useCannotFulfilHandoutMutation();
+	// null = not chosen yet: the delivery team lands on the items tab.
+	const [selectedTab, setSelectedTab] = useState<HandoutTab | null>(null);
 
 	const refresh = () =>
 		queryClient.invalidateQueries({ queryKey: handoutKeys.all });
 
 	const back = () => navigate(HANDOUTS_BASE_PATH);
+
+	// Delivery team's form state, shared by the Items tab and the decision card.
+	const delivery = useHandoutDelivery(handout, refresh);
 
 	if (isLoading) {
 		return (
@@ -117,6 +142,8 @@ export default function HandoutDetailPage() {
 		(line) => line.status !== "AVAILABLE",
 	);
 
+	/* ------------------------------ Actions ------------------------------- */
+
 	const handleApprove = async () => {
 		try {
 			await approve.mutateAsync(handout.id);
@@ -136,76 +163,177 @@ export default function HandoutDetailPage() {
 		}
 	};
 
-	// One modal, two reasons — the mode picks the copy and the call.
-	const handleReason = async (reason: string) => {
+	// The decision card's reason box supplies the reason for both of these.
+	const handleClarify = async (reason: string) => {
 		try {
-			if (modalMode === "reject-handout") {
-				await reject.mutateAsync({ id: handout.id, reason });
-			} else {
-				await cancel.mutateAsync({ id: handout.id, reason });
-			}
+			await clarify.mutateAsync({ id: handout.id, reason });
 			await refresh();
 			showSuccessToast(
 				showToast,
-				modalMode === "reject-handout"
-					? `${handout.requestNumber} was rejected.`
-					: `${handout.requestNumber} was cancelled.`,
-				modalMode === "reject-handout"
-					? "Request rejected"
-					: "Request cancelled",
+				`${handout.requestNumber} was sent back to the requester.`,
+				"Clarification requested",
 			);
-			setModalMode(null);
 		} catch (err) {
 			showApiErrorToast(
 				showToast,
 				err,
-				"The action could not be completed.",
+				"The request could not be sent for clarification.",
 				"Unable to continue",
 			);
 		}
 	};
 
-	const showDecision = permissions.canApprove || permissions.canReject;
+	const handleCannotFulfil = async (reason: string) => {
+		try {
+			await cannotFulfil.mutateAsync({ id: handout.id, reason });
+			await refresh();
+			showSuccessToast(
+				showToast,
+				`${handout.requestNumber} was marked as cannot be fulfilled.`,
+				"Request closed",
+			);
+		} catch (err) {
+			showApiErrorToast(
+				showToast,
+				err,
+				"The request could not be updated.",
+				"Unable to continue",
+			);
+		}
+	};
+
+	/* -------------------------------- Tabs -------------------------------- */
+
+	const tabs: TabItem<HandoutTab>[] = [
+		{ value: "info", label: "Handout Info" },
+		{ value: "items", label: "CRF Items" },
+		...(handout.delivery
+			? [{ value: "delivery", label: "Delivery" } as TabItem<HandoutTab>]
+			: []),
+	];
+
+	const defaultTab: HandoutTab = permissions.canDeliver ? "items" : "info";
+	const currentTab: HandoutTab =
+		selectedTab && tabs.some((tab) => tab.value === selectedTab)
+			? selectedTab
+			: defaultTab;
+
+	const renderTab = () => {
+		switch (currentTab) {
+			case "info":
+				return (
+					<Card key="info" title={TAB_TITLES.info}>
+						{/* The same form as the New request page, in view mode. */}
+						<HandoutDetailsFields
+							mode="view"
+							values={{
+								purpose: handout.purpose,
+								requiredBy: handout.requiredBy ?? "",
+								contactPhone: handout.contactPhone,
+								deliverTo: handout.deliverTo,
+								remarks: handout.remarks ?? "",
+							}}
+							meta={{
+								requestedBy: handout.requestedByName,
+								designation: handout.requestedByDesignation,
+								department: handout.requestedByDepartment,
+								requestedOn: handout.createdAt,
+							}}
+						/>
+					</Card>
+				);
+
+			case "items":
+				// The delivery team verifies items and hands over from here; everyone
+				// else gets the read-only table.
+				return permissions.canDeliver ? (
+					<div key="items" className="handout-stack">
+						<HandoutDeliveryPanel
+							handout={handout}
+							stock={stock}
+							stockLoading={stockQuery.isLoading}
+							delivery={delivery}
+						/>
+					</div>
+				) : (
+					<Card key="items" padding="none" title={TAB_TITLES.items}>
+						<HandoutItemsTable
+							items={handout.items}
+							stock={needsStock ? stock : undefined}
+							stockLoading={needsStock && stockQuery.isLoading}
+						/>
+					</Card>
+				);
+
+			case "delivery":
+				return handout.delivery ? (
+					<Card key="delivery" title={TAB_TITLES.delivery}>
+						<div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+							<FormInput
+								mode="view"
+								name="handedTo"
+								label="Handed To"
+								value={handout.delivery.handedToName}
+							/>
+							<FormInput
+								mode="view"
+								name="deliveredOn"
+								label="Delivered On"
+								value={formatHandoutDateTime(handout.delivery.deliveredOn)}
+							/>
+							<FormInput
+								mode="view"
+								name="deliveredBy"
+								label="Delivered By"
+								value={handout.delivery.deliveredByName}
+							/>
+							<div className="min-w-0 md:col-span-2 xl:col-span-3">
+								<TextareaInput
+									mode="view"
+									name="deliveryNote"
+									label="Delivery Note"
+									value={handout.delivery.note ?? ""}
+								/>
+							</div>
+						</div>
+					</Card>
+				) : null;
+		}
+	};
+
+	const showApproverCard = permissions.canApprove || permissions.canClarify;
+	const showDeliveryCard =
+		permissions.canDeliver || permissions.canCannotFulfil;
+	const lastComment = [...handout.timeline].reverse().find((e) => e.comment);
+
+	/* ------------------------------- Render ------------------------------- */
 
 	return (
 		<PageSectionLayout>
-			<div className="handout-page">
-				<PageHeader
-					headerText={`${handout.requestNumber} · ${handout.purpose}`}
-					navigation={{
-						variant: "breadcrumbs",
-						ariaLabel: "Handout page location",
-						breadcrumbs: [
-							{ label: "Home Screen", href: "/" },
-							{
-								label: "EPC Listing",
-								href: "/marketing/activity-planner/listing",
-							},
-							{ label: "Handouts", href: HANDOUTS_BASE_PATH },
-							{ label: handout.requestNumber },
-						],
-						separator: "›",
-					}}
-					headerChildren={
+			{/* className keeps the page-level CSS variables scoped, as on the EPC page. */}
+			<DetailPageLayout className="activity-form-view">
+				{/* ── Header: back + title (left) · tabs (right) ── */}
+				<DetailPageLayout.Header
+					back={<NavigateButton direction="back" />}
+					title={handout.requestNumber}
+					badge={
 						<Badge
 							status={handout.status}
 							variant={HANDOUT_STATUS_TONE[handout.status]}
 							text={HANDOUT_STATUS_LABEL[handout.status]}
 						/>
 					}
+					subtitle={`${handout.purpose} · ${handout.requestedByName}`}
 				>
 					<HandoutMockToggle /> {/* MOCK-LAYER */}
-					<Button
-						type="button"
-						text="Back to list"
-						Icon={ArrowLeft}
-						iconPosition="left"
-						appearance="standard"
-						variant="outline"
-						size="sm"
-						onClick={back}
+					<TabsBar<HandoutTab>
+						items={tabs}
+						active={currentTab}
+						onChange={setSelectedTab}
+						variant="soft"
+						ariaLabel="Handout sections"
 					/>
-				</PageHeader>
+				</DetailPageLayout.Header>
 
 				{handout.status === "REJECTED" && handout.rejectionReason ? (
 					<Alert
@@ -216,194 +344,108 @@ export default function HandoutDetailPage() {
 					/>
 				) : null}
 
-				<div className="handout-split">
-					<div className="handout-stack">
-						<Card padding="compact" title="Request details">
-							<dl className="handout-kv">
-								<div>
-									<dt>Requested by</dt>
-									<dd>{handout.requestedByName}</dd>
-								</div>
-								<div>
-									<dt>Designation</dt>
-									<dd>{handout.requestedByDesignation ?? "--"}</dd>
-								</div>
-								<div>
-									<dt>Department</dt>
-									<dd>{handout.requestedByDepartment ?? "--"}</dd>
-								</div>
-								<div>
-									<dt>Requested on</dt>
-									<dd>{formatHandoutDate(handout.createdAt)}</dd>
-								</div>
-								<div>
-									<dt>Required by</dt>
-									<dd>{formatHandoutDate(handout.requiredBy)}</dd>
-								</div>
-								<div>
-									<dt>Contact</dt>
-									<dd>{handout.contactPhone}</dd>
-								</div>
-								<div className="is-wide">
-									<dt>Deliver to</dt>
-									<dd>{handout.deliverTo}</dd>
-								</div>
-								<div>
-									<dt>Remarks</dt>
-									<dd style={{ fontWeight: 400 }}>{handout.remarks || "--"}</dd>
-								</div>
-							</dl>
+				{handout.status === "CLARIFICATION_REQUESTED" ||
+				handout.status === "CANNOT_FULFIL" ? (
+					<Alert
+						type="banner"
+						variant={handout.status === "CANNOT_FULFIL" ? "error" : "warning"}
+						title={HANDOUT_STATUS_LABEL[handout.status]}
+						description={lastComment?.comment ?? ""}
+					/>
+				) : null}
+
+				{/* Stock shortfall: the requester and approver see it; the delivery
+				    team does not (they get "Request can't be fulfilled" instead). */}
+				{shortLines.length > 0 && needsStock && !permissions.canDeliver ? (
+					<Alert
+						type="banner"
+						variant="warning"
+						title="Stock shortage"
+						description={`${shortLines.length} ${
+							shortLines.length === 1 ? "item has" : "items have"
+						} less stock than requested.${
+							permissions.canClarify
+								? " Use Send for clarification so the requester can change the items and resubmit."
+								: ""
+						}`}
+					/>
+				) : null}
+
+				<DetailPageLayout.Body>
+					{/* ── Main: the active tab's card ── */}
+					<DetailPageLayout.Main>{renderTab()}</DetailPageLayout.Main>
+
+					{/* ── Side: activity (audit), then the decision card ── */}
+					<DetailPageLayout.Side label="Approval and activity">
+						<Card
+							className="activity-form-view-panel activity-form-view-panel--audit"
+							accordion
+							defaultExpanded
+							title={
+								<span className="activity-form-view-panel-title">
+									<History size={15} aria-hidden="true" />
+									Audit Trail
+								</span>
+							}
+							padding="none"
+							bodyClassName="activity-form-view-panel-body"
+						>
+							<AuditLogSection
+								subjectType={HANDOUT_AUDIT_SUBJECT}
+								subjectId={handout.id}
+								entityName="handout request"
+								refreshKey={`${handout.status}-${handout.timeline.length}`}
+								api={handoutAuditApi}
+								actionMessages={HANDOUT_AUDIT_MESSAGES}
+							/>
 						</Card>
 
-						{permissions.canDeliver ? (
-							<HandoutDeliveryPanel
-								handout={handout}
-								stock={stock}
-								stockLoading={stockQuery.isLoading}
-								onDelivered={refresh}
+						{/* Approver: Approve, or send back for clarification (reason). */}
+						{showApproverCard && (
+							<ApprovalActionsBar
+								variant="approver"
+								layout="card"
+								showBack={false}
+								eyebrow="Your decision"
+								title="Request awaiting approval"
+								subtitle="Approve to send it to the delivery team, or send it back to the requester."
+								approveLabel="Approve"
+								clarifyLabel="Send for clarification"
+								canApprove={permissions.canApprove}
+								canClarify={permissions.canClarify}
+								approveRequiresReason={false}
+								minReasonLength={5}
+								reasonPlaceholder="Required to send the request back"
+								onApprove={() => handleApprove()}
+								onClarify={(reason) => handleClarify(reason)}
+								loading={approve.isPending || clarify.isPending}
 							/>
-						) : (
-							<Card padding="none" title="Requested items">
-								<HandoutItemsTable
-									items={handout.items}
-									stock={needsStock ? stock : undefined}
-									stockLoading={needsStock && stockQuery.isLoading}
-								/>
-							</Card>
 						)}
 
-						{handout.delivery ? (
-							<Card padding="compact" title="Delivery">
-								<dl className="handout-kv">
-									<div>
-										<dt>Handed to</dt>
-										<dd>{handout.delivery.handedToName}</dd>
-									</div>
-									<div>
-										<dt>Delivered on</dt>
-										<dd>
-											{formatHandoutDateTime(handout.delivery.deliveredOn)}
-										</dd>
-									</div>
-									<div>
-										<dt>Delivered by</dt>
-										<dd>{handout.delivery.deliveredByName}</dd>
-									</div>
-									<div className="is-wide">
-										<dt>Note</dt>
-										<dd style={{ fontWeight: 400 }}>
-											{handout.delivery.note || "--"}
-										</dd>
-									</div>
-								</dl>
-							</Card>
-						) : null}
-					</div>
-
-					<div className="handout-stack">
-						{showDecision ? (
-							<Card
-								padding="compact"
-								title="Your decision"
-								footer={
-									<div className="handout-actions">
-										{permissions.canReject ? (
-											<Button
-												type="button"
-												text="Reject"
-												Icon={X}
-												iconPosition="left"
-												appearance="standard"
-												variant="outline"
-												size="sm"
-												disabled={approve.isPending}
-												onClick={() => setModalMode("reject-handout")}
-											/>
-										) : null}
-										{permissions.canApprove ? (
-											<Button
-												type="button"
-												text={approve.isPending ? "Approving..." : "Approve"}
-												Icon={Check}
-												iconPosition="left"
-												appearance="standard"
-												variant="brand"
-												size="sm"
-												disabled={approve.isPending}
-												onClick={() => void handleApprove()}
-											/>
-										) : null}
-									</div>
-								}
-							>
-								<p className="handout-note">
-									Single-step approval. Approving sends the request to the
-									delivery team and notifies the requester; rejecting needs a
-									reason.
-								</p>
-							</Card>
-						) : null}
-
-						{shortLines.length > 0 && needsStock ? (
-							<Alert
-								type="banner"
-								variant="warning"
-								title="Stock shortage"
-								description={`${shortLines.length} ${
-									shortLines.length === 1 ? "item has" : "items have"
-								} less stock than requested. You can still proceed; stock is not reserved.`}
+						{/* Delivery team: fulfilled or not — a reason is required either way. */}
+						{showDeliveryCard && (
+							<ApprovalActionsBar
+								variant="approver"
+								layout="card"
+								showBack={false}
+								eyebrow="Delivery"
+								title="Awaiting delivery"
+								subtitle="Check the items and fill in the hand-over details, then say whether the request was fulfilled."
+								approveLabel="Request fulfilled"
+								clarifyLabel="Request can't be fulfilled"
+								canApprove={permissions.canDeliver}
+								canClarify={permissions.canCannotFulfil}
+								approveDisabled={!delivery.canFulfil}
+								minReasonLength={5}
+								reasonPlaceholder="Required: add a note for the outcome"
+								onApprove={(reason) => delivery.submit(reason ?? "")}
+								onClarify={(reason) => handleCannotFulfil(reason)}
+								loading={delivery.isSubmitting || cannotFulfil.isPending}
 							/>
-						) : null}
-
-						{permissions.canCancel ? (
-							<Card
-								padding="compact"
-								title="Your request"
-								footer={
-									<div className="handout-actions">
-										<Button
-											type="button"
-											text="Cancel request"
-											appearance="standard"
-											variant="outline"
-											size="sm"
-											onClick={() => setModalMode("cancel-handout")}
-										/>
-									</div>
-								}
-							>
-								<p className="handout-note">
-									You can cancel while the request is waiting for approval.
-								</p>
-							</Card>
-						) : null}
-
-						<Card padding="compact" title="Activity">
-							<ol className="handout-timeline">
-								{handout.timeline.map((entry) => (
-									<li key={entry.id}>
-										<span className="handout-timeline-dot" aria-hidden="true" />
-										<div>
-											<strong>{ACTION_LABEL[entry.action]}</strong> by{" "}
-											{entry.byName}
-											<small>{formatHandoutDateTime(entry.at)}</small>
-											{entry.comment ? <small>{entry.comment}</small> : null}
-										</div>
-									</li>
-								))}
-							</ol>
-						</Card>
-					</div>
-				</div>
-			</div>
-
-			<ReasonActionModal
-				open={modalMode !== null}
-				mode={modalMode}
-				loading={reject.isPending || cancel.isPending}
-				onClose={() => setModalMode(null)}
-				onConfirm={handleReason}
-			/>
+						)}
+					</DetailPageLayout.Side>
+				</DetailPageLayout.Body>
+			</DetailPageLayout>
 		</PageSectionLayout>
 	);
 }

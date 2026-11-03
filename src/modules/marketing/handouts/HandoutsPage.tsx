@@ -166,7 +166,7 @@ export default function HandoutsPage() {
 			<div className="handout-page">
 				<PageHeader
 					headerText="Handouts"
-					subtitleText="Souvenir handouts for premises use. One approver, then hand delivery by the delivery team."
+					// subtitleText="Souvenir handouts for premises use. One approver, then hand delivery by the delivery team."
 					navigation={{
 						variant: "breadcrumbs",
 						ariaLabel: "Handouts page location",

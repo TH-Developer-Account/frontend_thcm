@@ -1,19 +1,21 @@
 // handouts/HandoutRequestList.tsx
-// The right-hand "Request list" sidebar of the New handout request page
-// (wireframe: board 3). Replaces the generic cart that CrfCatalog draws inside
-// the Souvenirs card, and takes over the Submit / Cancel buttons.
+// The "Request list" sidebar of the CRF items step (replaces the generic cart
+// CrfCatalog draws inside the Souvenirs card).
 //
 //   • One row per souvenir line: name, variant, qty × rate, Remove.
 //   • Stock warning while any line asks for more than is available
 //     (availability is display-only; the approver and delivery team re-check).
-//   • Estimated value (GST inclusive, same as the request detail page).
-//   • Submit for approval (disabled while empty, submitting or short) + Cancel.
+//   • Estimated value (GST inclusive).
 //
-// Validation messages from validateCrfForm still show per line, so a failed
-// submit points at the line to fix.
+// Back / Next come from the wizard through `footer`. Validation messages from
+// validateCrfForm show per line, so a failed Next points at the line to fix.
 
-import { useMemo, type Dispatch, type SetStateAction } from "react";
-import { Send } from "lucide-react";
+import {
+	useMemo,
+	type Dispatch,
+	type ReactNode,
+	type SetStateAction,
+} from "react";
 
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
@@ -29,9 +31,7 @@ type Props = {
 	onChange: Dispatch<SetStateAction<CrfLineItem[]>>;
 	/** Output of validateCrfForm (line messages are keyed by line index). */
 	errors: CrfFormErrors;
-	submitting: boolean;
-	onSubmit: () => void;
-	onCancel: () => void;
+	footer: ReactNode;
 };
 
 const toNumber = (value: unknown) => {
@@ -47,12 +47,9 @@ export default function HandoutRequestList({
 	items,
 	onChange,
 	errors,
-	submitting,
-	onSubmit,
-	onCancel,
+	footer,
 }: Props) {
-	// Quantity per SKU, so two lines of one SKU are compared with stock once
-	// (same rule as the stock check on submit).
+	// Quantity per SKU, so two lines of one SKU are compared with stock once.
 	const stockWarnings = useMemo(() => {
 		const perSku = new Map<string, number>();
 		for (const item of items) {
@@ -95,8 +92,7 @@ export default function HandoutRequestList({
 	const removeLine = (index: number) =>
 		onChange((previous) => previous.filter((_, i) => i !== index));
 
-	const canSubmit =
-		items.length > 0 && stockWarnings.length === 0 && !submitting;
+	const messages = [errors.form, ...stockWarnings].filter(Boolean) as string[];
 
 	return (
 		<Card
@@ -107,30 +103,7 @@ export default function HandoutRequestList({
 					{items.length} {items.length === 1 ? "item" : "items"}
 				</span>
 			}
-			footer={
-				<div className="bottom-buttons-bar-between ">
-					<Button
-						type="button"
-						text="Cancel"
-						appearance="standard"
-						variant="outline"
-						size="sm"
-						disabled={submitting}
-						onClick={onCancel}
-					/>
-					<Button
-						type="button"
-						text={submitting ? "Submitting..." : "Submit for approval"}
-						Icon={Send}
-						iconPosition="left"
-						appearance="standard"
-						variant="brand"
-						size="sm"
-						disabled={!canSubmit}
-						onClick={onSubmit}
-					/>
-				</div>
-			}
+			footer={footer}
 		>
 			{items.length === 0 ? (
 				<p className="handout-note">
@@ -169,14 +142,15 @@ export default function HandoutRequestList({
 										{formatCrfQuantity(item.quantity)} ×{" "}
 										{formatCrfAmount(toNumber(item.rate))}
 									</span>
-									<button
+									<Button
 										type="button"
-										className="handout-link-button"
+										text="Remove"
 										aria-label={`Remove ${lineName(item)}`}
+										appearance="standard"
+										variant="outline"
+										size="sm"
 										onClick={() => removeLine(index)}
-									>
-										Remove
-									</button>
+									/>
 								</div>
 							</li>
 						);
@@ -184,9 +158,9 @@ export default function HandoutRequestList({
 				</ul>
 			)}
 
-			{stockWarnings.length > 0 ? (
+			{messages.length > 0 ? (
 				<div className="handout-warning" role="alert">
-					{stockWarnings.map((message) => (
+					{messages.map((message) => (
 						<p key={message}>{message}</p>
 					))}
 				</div>

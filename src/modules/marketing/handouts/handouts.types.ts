@@ -12,7 +12,9 @@ export type HandoutStatus =
 	| "APPROVED"
 	| "REJECTED"
 	| "CANCELLED"
-	| "CLOSED";
+	| "CLOSED"
+	| "CLARIFICATION_REQUESTED"
+	| "CANNOT_FULFIL";
 
 /** Which queue the list shows. The backend filters by the caller's role. */
 export type HandoutView = "mine" | "approve" | "deliver";
@@ -52,7 +54,9 @@ export type HandoutTimelineEntry = {
 		| "APPROVED"
 		| "REJECTED"
 		| "CANCELLED"
-		| "DELIVERED";
+		| "DELIVERED"
+		| "CLARIFICATION_REQUESTED" // new
+		| "CANNOT_FULFIL";
 	byName: string;
 	at: string; // ISO datetime
 	comment: string | null;
@@ -65,6 +69,8 @@ export type HandoutPermissions = {
 	canApprove: boolean; // approver, PENDING_APPROVAL
 	canReject: boolean; // approver, PENDING_APPROVAL
 	canDeliver: boolean; // delivery team, APPROVED
+	canClarify: boolean; // requester, CLARIFICATION_REQUESTED
+	canCannotFulfil: boolean; // approver, PENDING_APPROVAL
 };
 
 export type HandoutDetail = HandoutSummary & {

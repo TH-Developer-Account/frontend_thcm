@@ -8,7 +8,12 @@
 // Submit order:  validate → live stock check (display only, soft-fails) →
 // POST /handouts → refresh lists → back to the Handouts page.
 
-import { useCallback, useState, type Dispatch, type SetStateAction } from "react";
+import {
+	useCallback,
+	useState,
+	type Dispatch,
+	type SetStateAction,
+} from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
@@ -56,21 +61,19 @@ export function useHandoutForm() {
 	const createHandout = useCreateHandoutMutation();
 	const stockCheck = useStockCheckMutation();
 
-	const [values, setValues] =
-		useState<Required<HandoutDetailsValues>>(EMPTY_HANDOUT_DETAILS);
+	const [values, setValues] = useState<Required<HandoutDetailsValues>>(
+		EMPTY_HANDOUT_DETAILS,
+	);
 	const [errors, setErrors] = useState<HandoutDetailsErrors>({});
 	const [items, setItemsState] = useState<CrfLineItem[]>([]);
 	const [itemErrors, setItemErrors] = useState<CrfFormErrors>(EMPTY_CRF_ERRORS);
 
-	const setField = useCallback(
-		(name: HandoutDetailsField, value: string) => {
-			setValues((previous) => ({ ...previous, [name]: value }));
-			setErrors((previous) =>
-				previous[name] ? { ...previous, [name]: undefined } : previous,
-			);
-		},
-		[],
-	);
+	const setField = useCallback((name: HandoutDetailsField, value: string) => {
+		setValues((previous) => ({ ...previous, [name]: value }));
+		setErrors((previous) =>
+			previous[name] ? { ...previous, [name]: undefined } : previous,
+		);
+	}, []);
 
 	// Same signature CrfCatalog expects; editing the cart clears stale errors.
 	const setItems: Dispatch<SetStateAction<CrfLineItem[]>> = useCallback(
@@ -98,6 +101,20 @@ export function useHandoutForm() {
 		return validateCrfForm({ epcId: NO_EPC, lineItems: lines });
 	}, []);
 
+	/** Wizard step 1: validates the details only (errors show inline). */
+	const validateDetails = useCallback(() => {
+		const details = parseWithFieldErrors(handoutDetailsSchema, values);
+		setErrors(details.success ? {} : (details.errors as HandoutDetailsErrors));
+		return details.success;
+	}, [values]);
+
+	/** Wizard step 2: validates the cart only. */
+	const validateItemsStep = useCallback(() => {
+		const result = validateItems(items);
+		setItemErrors(result.errors);
+		return result.success;
+	}, [items, validateItems]);
+
 	/**
 	 * Live stock for the cart. Returns the cart with availableQty / stockStatus
 	 * filled in, or null when the store could not be reached (soft-fail: stock
@@ -108,7 +125,10 @@ export function useHandoutForm() {
 			const perSku = new Map<string, number>();
 			for (const line of lines) {
 				if (!line.sku) continue;
-				perSku.set(line.sku, (perSku.get(line.sku) ?? 0) + toNumber(line.quantity));
+				perSku.set(
+					line.sku,
+					(perSku.get(line.sku) ?? 0) + toNumber(line.quantity),
+				);
 			}
 
 			try {
@@ -227,6 +247,8 @@ export function useHandoutForm() {
 		items,
 		setItems,
 		itemErrors,
+		validateDetails,
+		validateItemsStep,
 		submit,
 		submitting: createHandout.isPending || stockCheck.isPending,
 	};

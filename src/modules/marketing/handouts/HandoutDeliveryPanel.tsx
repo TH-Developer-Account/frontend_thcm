@@ -1,15 +1,23 @@
 // handouts/HandoutDeliveryPanel.tsx
-// Delivery team: tick every item once verified, say who received it, and
-// close the request ("Mark hand delivered"). Closing cannot be undone, so the
-// button stays disabled until every item is ticked.
+// Delivery team's part of the request:
+//   • Check items   : tick every item once physically verified
+//   • Hand-over     : who received it, and when
+// The OUTCOME is chosen in the side-panel decision card (HandoutDetailPage):
+//   "Request fulfilled"          → useHandoutDelivery().submit(reason)
+//   "Request can't be fulfilled" → cannot-fulfil API
+// Both need a reason, so the delivery team is accountable either way. The
+// fulfilled reason is saved as the delivery note.
+//
+// State lives in useHandoutDelivery so the page (decision card) and this panel
+// share it. "Delivered on" is the shared DatePickerInput; the form value is the
+// same "YYYY-MM-DDTHH:mm" string (the picker edits the date, the time stays
+// what it was — now, by default), so handoutDeliverySchema is unchanged.
 
 import { useMemo, useState } from "react";
-import { PackageCheck } from "lucide-react";
 
-import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
+import DatePickerInput from "../../../components/common/DatePickerInput";
 import FormInput from "../../../components/forms/FormInput";
-import TextareaInput from "../../../components/forms/TextareaInput";
 import { useToast } from "../../../context/Auth/AuthContext";
 import {
 	showApiErrorToast,
@@ -18,7 +26,7 @@ import {
 import type { ShopStockCheckResult } from "../crf";
 
 import { useDeliverHandoutMutation } from "./handouts.api";
-import { HANDOUT_LIMITS } from "./handouts.constants";
+import { fromDateInputValue, toDateInputValue } from "./handouts.format";
 import {
 	HANDOUT_MESSAGES,
 	handoutDeliverySchema,
@@ -29,34 +37,28 @@ import {
 import type { HandoutDetail } from "./handouts.types";
 import HandoutItemsTable from "./HandoutItemsTable";
 
-type Props = {
-	handout: HandoutDetail;
-	stock?: ShopStockCheckResult;
-	stockLoading?: boolean;
-	/** Called after a successful close so the page can refetch. */
-	onDelivered: () => void | Promise<void>;
-};
+/* ========================================================================== */
+/*                                    State                                   */
+/* ========================================================================== */
 
-export default function HandoutDeliveryPanel({
-	handout,
-	stock,
-	stockLoading,
-	onDelivered,
-}: Props) {
+export function useHandoutDelivery(
+	handout: HandoutDetail | undefined,
+	onDelivered: () => void | Promise<void>,
+) {
 	const { showToast } = useToast();
 	const deliver = useDeliverHandoutMutation();
 
 	const [checked, setChecked] = useState<Set<string>>(new Set());
 	const [handedToName, setHandedToName] = useState("");
 	const [deliveredOn, setDeliveredOn] = useState(nowInputValue);
-	const [note, setNote] = useState("");
 	const [errors, setErrors] = useState<HandoutDeliveryErrors>({});
 
 	const allSkus = useMemo(
-		() => [...new Set(handout.items.map((item) => item.sku))],
-		[handout.items],
+		() => [...new Set((handout?.items ?? []).map((item) => item.sku))],
+		[handout?.items],
 	);
-	const allChecked = allSkus.every((sku) => checked.has(sku));
+	const allChecked =
+		allSkus.length > 0 && allSkus.every((sku) => checked.has(sku));
 
 	const toggle = (sku: string, value: boolean) => {
 		setChecked((previous) => {
@@ -68,11 +70,27 @@ export default function HandoutDeliveryPanel({
 		setErrors((previous) => ({ ...previous, checked: undefined }));
 	};
 
-	const submit = async () => {
+	const changeHandedTo = (value: string) => {
+		setHandedToName(value);
+		setErrors((previous) => ({ ...previous, handedToName: undefined }));
+	};
+
+	// Picker ⇄ "YYYY-MM-DDTHH:mm": swap only the date part, keep the time.
+	const changeDeliveredDate = (next: unknown) => {
+		const date = next instanceof Date ? toDateInputValue(next) : "";
+		const time = deliveredOn.slice(11) || nowInputValue().slice(11);
+		setDeliveredOn(date ? `${date}T${time}` : "");
+		setErrors((previous) => ({ ...previous, deliveredOn: undefined }));
+	};
+
+	/** "Request fulfilled": `reason` is saved as the delivery note. */
+	const submit = async (reason: string) => {
+		if (!handout) return;
+
 		const parsed = parseWithFieldErrors(handoutDeliverySchema, {
 			handedToName,
 			deliveredOn,
-			note,
+			note: reason,
 		});
 		const nextErrors: HandoutDeliveryErrors = parsed.success
 			? {}
@@ -94,8 +112,8 @@ export default function HandoutDeliveryPanel({
 			});
 			showSuccessToast(
 				showToast,
-				`${handout.requestNumber} was marked hand delivered and closed.`,
-				"Request closed",
+				`${handout.requestNumber} was marked fulfilled and closed.`,
+				"Request fulfilled",
 			);
 			await onDelivered();
 		} catch (error) {
@@ -107,6 +125,43 @@ export default function HandoutDeliveryPanel({
 			);
 		}
 	};
+
+	return {
+		checked,
+		allChecked,
+		toggle,
+		handedToName,
+		changeHandedTo,
+		deliveredOn,
+		changeDeliveredDate,
+		errors,
+		submit,
+		isSubmitting: deliver.isPending,
+		/** Enough is filled in to pick "Request fulfilled". */
+		canFulfil: allChecked && Boolean(handedToName.trim()),
+	};
+}
+
+export type HandoutDelivery = ReturnType<typeof useHandoutDelivery>;
+
+/* ========================================================================== */
+/*                                    View                                    */
+/* ========================================================================== */
+
+type Props = {
+	handout: HandoutDetail;
+	delivery: HandoutDelivery;
+	stock?: ShopStockCheckResult;
+	stockLoading?: boolean;
+};
+
+export default function HandoutDeliveryPanel({
+	handout,
+	delivery,
+	stock,
+	stockLoading,
+}: Props) {
+	const { errors } = delivery;
 
 	return (
 		<>
@@ -130,30 +185,22 @@ export default function HandoutDeliveryPanel({
 					stock={stock}
 					stockLoading={stockLoading}
 					check={{
-						checkedSkus: checked,
-						onToggle: toggle,
-						disabled: deliver.isPending,
+						checkedSkus: delivery.checked,
+						onToggle: delivery.toggle,
+						disabled: delivery.isSubmitting,
 					}}
 				/>
 			</Card>
 
 			<Card
 				padding="compact"
-				title="Hand over and close"
+				title="Hand over"
 				footer={
-					<div className="handout-actions">
-						<Button
-							type="button"
-							text={deliver.isPending ? "Closing..." : "Mark hand delivered and close"}
-							Icon={PackageCheck}
-							iconPosition="left"
-							appearance="standard"
-							variant="brand"
-							size="sm"
-							disabled={deliver.isPending || !allChecked || !handedToName.trim()}
-							onClick={() => void submit()}
-						/>
-					</div>
+					<p className="handout-note">
+						Then choose “Request fulfilled” or “Request can't be fulfilled” in
+						the side panel. A reason is required for both, and fulfilling closes
+						the request.
+					</p>
 				}
 			>
 				<div className="handout-form-grid">
@@ -161,43 +208,21 @@ export default function HandoutDeliveryPanel({
 						name="handedToName"
 						label="Handed to (name)"
 						required
-						value={handedToName}
+						value={delivery.handedToName}
 						placeholder="Person who received the items"
-						onChange={(event) => {
-							setHandedToName(event.target.value);
-							setErrors((previous) => ({ ...previous, handedToName: undefined }));
-						}}
+						onChange={(event) => delivery.changeHandedTo(event.target.value)}
 						error={errors.handedToName}
 					/>
-					<FormInput
-						name="deliveredOn"
-						type="datetime-local"
+					<DatePickerInput
 						label="Delivered on"
-						required
-						max={nowInputValue()}
-						value={deliveredOn}
-						helperText="Defaults to now, editable"
-						onChange={(event) => {
-							setDeliveredOn(event.target.value);
-							setErrors((previous) => ({ ...previous, deliveredOn: undefined }));
-						}}
+						mode="single"
+						value={fromDateInputValue(delivery.deliveredOn)}
+						onChange={delivery.changeDeliveredDate}
+						placeholder="Select date"
+						helperText="Defaults to today, editable"
 						error={errors.deliveredOn}
+						toDate={new Date()}
 					/>
-					<div className="is-wide">
-						<TextareaInput
-							name="note"
-							label="Delivery note"
-							rows={3}
-							maxLength={HANDOUT_LIMITS.NOTE}
-							value={note}
-							placeholder="Optional"
-							onChange={(event) => setNote(event.target.value)}
-							error={errors.note}
-						/>
-					</div>
-					<p className="handout-note is-wide">
-						Marking hand delivered closes this request. It cannot be reopened.
-					</p>
 				</div>
 			</Card>
 		</>

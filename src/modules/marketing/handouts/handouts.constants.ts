@@ -9,6 +9,8 @@ export const HANDOUT_STATUS_LABEL: Record<HandoutStatus, string> = {
 	REJECTED: "Rejected",
 	CANCELLED: "Cancelled",
 	CLOSED: "Closed, hand delivered",
+	CLARIFICATION_REQUESTED: "Clarification requested",
+	CANNOT_FULFIL: "Cannot be fulfilled",
 };
 
 export type HandoutTone = "success" | "neutral" | "warning" | "danger" | "info";
@@ -19,6 +21,8 @@ export const HANDOUT_STATUS_TONE: Record<HandoutStatus, HandoutTone> = {
 	REJECTED: "danger",
 	CANCELLED: "neutral",
 	CLOSED: "success",
+	CLARIFICATION_REQUESTED: "warning",
+	CANNOT_FULFIL: "danger",
 };
 
 export const HANDOUT_STATUS_OPTIONS = (
@@ -28,7 +32,7 @@ export const HANDOUT_STATUS_OPTIONS = (
 export const HANDOUT_VIEW_LABEL: Record<HandoutView, string> = {
 	mine: "My requests",
 	approve: "To approve",
-	deliver: "To deliver",
+	deliver: "Pending to deliver",
 };
 
 /**

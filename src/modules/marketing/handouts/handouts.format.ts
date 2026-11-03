@@ -31,3 +31,18 @@ export const formatHandoutDateTime = (value?: string | null) => {
 /** "1 item" / "3 items" */
 export const pluralItems = (count: number) =>
 	`${count} ${count === 1 ? "item" : "items"}`;
+
+/* ---- Date picker ⇄ form value ("YYYY-MM-DD", what <input type="date"> used) ---- */
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/** Date → "YYYY-MM-DD" in local time (no UTC shift, no display formatting). */
+export const toDateInputValue = (date: Date) =>
+	`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+
+/** "YYYY-MM-DD" (or "YYYY-MM-DDTHH:mm") → local Date, or undefined. */
+export const fromDateInputValue = (value?: string | null) => {
+	if (!value) return undefined;
+	const date = new Date(`${value.slice(0, 10)}T00:00:00`);
+	return Number.isNaN(date.getTime()) ? undefined : date;
+};

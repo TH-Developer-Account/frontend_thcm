@@ -44,7 +44,9 @@ const permissionsFor = (status: HandoutStatus): HandoutPermissions => ({
 	canCancel: status === "PENDING_APPROVAL",
 	canApprove: status === "PENDING_APPROVAL",
 	canReject: status === "PENDING_APPROVAL",
+	canClarify: status === "PENDING_APPROVAL",
 	canDeliver: status === "APPROVED",
+	canCannotFulfil: status === "APPROVED",
 });
 
 /* -------------------------------- Stock ---------------------------------- */
@@ -81,7 +83,15 @@ const item = (
 });
 
 const BOTTLE = (n: number, i: number, qty: number) =>
-	item(n, i, "MOCK-BOTTLE-BLUE", "Steel water bottle", "Blue · 750 ml", qty, 450);
+	item(
+		n,
+		i,
+		"MOCK-BOTTLE-BLUE",
+		"Steel water bottle",
+		"Blue · 750 ml",
+		qty,
+		450,
+	);
 const CAP = (n: number, i: number, qty: number) =>
 	item(n, i, "MOCK-CAP-NAVY", "Branded cap", "Navy · Free size", qty, 280);
 const DIARY = (n: number, i: number, qty: number) =>
@@ -224,7 +234,13 @@ let store: HandoutDetail[] = [
 		timeline: [
 			entry("SUBMITTED", "Demo requester", 9, 10),
 			entry("APPROVED", "Demo approver", 8, 11),
-			entry("DELIVERED", "Demo delivery", 7, 16, "Handed over at the auditorium."),
+			entry(
+				"DELIVERED",
+				"Demo delivery",
+				7,
+				16,
+				"Handed over at the auditorium.",
+			),
 		],
 		delivery: {
 			handedToName: "Event coordinator",
@@ -388,21 +404,26 @@ export const handoutMockApi = {
 		await delay(undefined);
 	},
 
-	reject: async (id: string, reason: string) => {
+	clarify: async (id: string, reason: string) => {
 		const d = find(id);
 		patch(id, {
-			status: "REJECTED",
-			rejectionReason: reason,
-			timeline: [...d.timeline, makeEntry("REJECTED", "Demo approver", reason)],
+			status: "CLARIFICATION_REQUESTED",
+			timeline: [
+				...d.timeline,
+				makeEntry("CLARIFICATION_REQUESTED", "Demo approver", reason),
+			],
 		});
 		await delay(undefined);
 	},
 
-	cancel: async (id: string, reason: string) => {
+	cannotFulfil: async (id: string, reason: string) => {
 		const d = find(id);
 		patch(id, {
-			status: "CANCELLED",
-			timeline: [...d.timeline, makeEntry("CANCELLED", d.requestedByName, reason)],
+			status: "CANNOT_FULFIL",
+			timeline: [
+				...d.timeline,
+				makeEntry("CANNOT_FULFIL", "Demo delivery", reason),
+			],
 		});
 		await delay(undefined);
 	},
@@ -443,6 +464,9 @@ export const handoutMockApi = {
 			return { sku, requested: quantity, available, status };
 		});
 		// Cast: the real result type may carry extra fields the UI never reads.
-		return delay({ reserved: false, lines: result } as unknown as ShopStockCheckResult);
+		return delay({
+			reserved: false,
+			lines: result,
+		} as unknown as ShopStockCheckResult);
 	},
 };
