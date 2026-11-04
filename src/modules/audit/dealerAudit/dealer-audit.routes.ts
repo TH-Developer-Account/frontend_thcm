@@ -7,11 +7,25 @@ const AUDITS_PATH = `${DEALER_AUDIT_BASE_PATH}/audits`;
 
 const DEALERS_PATH = `${DEALER_AUDIT_BASE_PATH}/dealers`;
 
+const auditPath = (auditId: string): string =>
+	`${AUDITS_PATH}/${encodeURIComponent(auditId)}`;
+
 export const DEALER_AUDIT_ROUTES = {
 	home: "/",
 
 	root: DEALER_AUDIT_BASE_PATH,
 	dashboard: `${DEALER_AUDIT_BASE_PATH}/dashboard`,
+
+	// Role landing screens.
+	tracker: `${DEALER_AUDIT_BASE_PATH}/tracker`,
+	myAudits: `${DEALER_AUDIT_BASE_PATH}/my-audits`,
+	reviewQueue: `${DEALER_AUDIT_BASE_PATH}/review-queue`,
+	approvals: `${DEALER_AUDIT_BASE_PATH}/approvals`,
+
+	// Audit cycle (one launch = many dealer audits).
+	cycles: {
+		create: `${DEALER_AUDIT_BASE_PATH}/cycles/create`,
+	},
 
 	template: {
 		root: CHECKLIST_TEMPLATE_BASE_PATH,
@@ -31,11 +45,12 @@ export const DEALER_AUDIT_ROUTES = {
 		list: AUDITS_PATH,
 		create: `${AUDITS_PATH}/create`,
 
-		detail: (auditId: string) =>
-			`${AUDITS_PATH}/${encodeURIComponent(auditId)}`,
-
-		report: (auditId: string) =>
-			`${AUDITS_PATH}/${encodeURIComponent(auditId)}/report`,
+		detail: auditPath,
+		report: (auditId: string) => `${auditPath(auditId)}/report`,
+		submit: (auditId: string) => `${auditPath(auditId)}/submit`,
+		status: (auditId: string) => `${auditPath(auditId)}/status`,
+		reviewSummary: (auditId: string) => `${auditPath(auditId)}/review-summary`,
+		approval: (auditId: string) => `${auditPath(auditId)}/approval`,
 	},
 
 	execution: {

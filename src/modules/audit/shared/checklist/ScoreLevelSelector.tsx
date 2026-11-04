@@ -2,7 +2,14 @@
 //
 // Radio-style score picker whose options come from the parameter itself
 // (its own allowed scores / min / max) instead of a fixed 0-5 scale.
+//
+// `blockedScores` are shown but cannot be chosen (e.g. the reviewer may not
+// drop more than 1 mark below the self-assessment). A blocked option stays
+// focusable and explains itself, so the user is told WHY instead of being
+// left with a dead button. Both props are optional: existing callers are
+// unaffected.
 
+import { Lock } from "lucide-react";
 import { useId, type KeyboardEvent } from "react";
 
 export interface ScoreLevelOption {
@@ -17,6 +24,12 @@ interface ScoreLevelSelectorProps {
 	label: string;
 	disabled?: boolean;
 	error?: string;
+	/** Scores that are visible but not selectable. */
+	blockedScores?: readonly number[];
+	/** Accessible/tooltip explanation for a blocked score. */
+	blockedHint?: string;
+	/** Fired when the user tries to pick a blocked score. */
+	onBlockedSelect?: (score: number) => void;
 }
 
 export default function ScoreLevelSelector({
@@ -26,10 +39,23 @@ export default function ScoreLevelSelector({
 	label,
 	disabled = false,
 	error,
+	blockedScores = [],
+	blockedHint,
+	onBlockedSelect,
 }: ScoreLevelSelectorProps) {
 	const baseId = useId();
 	const errorId = `${baseId}-error`;
 	const selected = options.find((option) => option.score === value);
+	const isBlocked = (score: number) => blockedScores.includes(score);
+
+	const select = (score: number) => {
+		if (disabled) return;
+		if (isBlocked(score)) {
+			onBlockedSelect?.(score);
+			return;
+		}
+		onChange(score);
+	};
 
 	const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
 		if (disabled) return;
@@ -41,7 +67,7 @@ export default function ScoreLevelSelector({
 		}
 		if (nextIndex === null) return;
 		event.preventDefault();
-		onChange(options[nextIndex].score);
+		select(options[nextIndex].score);
 		const radios =
 			event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>(
 				"[role='radio']",
@@ -61,27 +87,35 @@ export default function ScoreLevelSelector({
 			>
 				{options.map((option, index) => {
 					const isSelected = value === option.score;
+					const blocked = isBlocked(option.score);
 					const isTabStop = isSelected || (value === null && index === 0);
+					const baseLabel = option.criteria
+						? `${option.score} — ${option.criteria}`
+						: String(option.score);
 					return (
 						<button
 							key={option.score}
 							type="button"
 							role="radio"
 							aria-checked={isSelected}
+							aria-disabled={blocked || undefined}
 							aria-label={
-								option.criteria
-									? `${option.score} — ${option.criteria}`
-									: String(option.score)
+								blocked && blockedHint ? `${baseLabel}. ${blockedHint}` : baseLabel
 							}
+							title={blocked ? blockedHint : undefined}
 							tabIndex={isTabStop ? 0 : -1}
 							disabled={disabled}
-							onClick={() => onChange(option.score)}
+							onClick={() => select(option.score)}
 							onKeyDown={(event) => handleKeyDown(event, index)}
-							className="score-selector-option min-h-11 min-w-11 px-3 py-2 text-center"
+							className={`score-selector-option min-h-11 min-w-11 px-3 py-2 text-center ${
+								blocked ? "cursor-not-allowed opacity-50" : ""
+							}`}
 							data-selected={isSelected}
+							data-blocked={blocked || undefined}
 						>
-							<span className="score-selector-value block text-sm font-semibold">
+							<span className="score-selector-value inline-flex items-center gap-1 text-sm font-semibold">
 								{option.score}
+								{blocked ? <Lock className="size-3" aria-hidden="true" /> : null}
 							</span>
 						</button>
 					);

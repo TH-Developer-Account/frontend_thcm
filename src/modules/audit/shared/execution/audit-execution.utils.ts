@@ -53,13 +53,11 @@ export const getItemNeighbours = (
 // ── Item state ────────────────────────────────────────────────────────
 
 /** Server-confirmed completion. Never derived from unsaved local drafts. */
-export const isChecklistItemComplete = (
-	item: AuditChecklistItem,
-): boolean => item.self.isComplete;
+export const isChecklistItemComplete = (item: AuditChecklistItem): boolean =>
+	item.self.isComplete;
 
-export const isItemClarificationOpen = (
-	item: AuditChecklistItem,
-): boolean => item.clarification?.status === "OPEN";
+export const isItemClarificationOpen = (item: AuditChecklistItem): boolean =>
+	item.clarification?.status === "OPEN";
 
 /** Items the assessed party may still edit while a clarification is running. */
 export const getEditableItemIdsDuringClarification = (
@@ -155,22 +153,18 @@ export const hasScoreChanged = (
 
 /** A score is valid when it is in the allowed list (or in range if none). */
 export const isScoreAllowed = (
-	item: Pick<
-		AuditChecklistItem,
-		"allowedScores" | "minScore" | "maxScore"
-	>,
+	item: Pick<AuditChecklistItem, "allowedScores" | "minScore" | "maxScore">,
 	score: number,
 ): boolean => {
 	if (item.allowedScores.length > 0) return item.allowedScores.includes(score);
-	return Number.isFinite(score) && score >= item.minScore && score <= item.maxScore;
+	return (
+		Number.isFinite(score) && score >= item.minScore && score <= item.maxScore
+	);
 };
 
 /** Evidence the item requires, honouring the per-parameter configuration. */
 export const getRequiredEvidenceCount = (
-	item: Pick<
-		AuditChecklistItem,
-		"evidenceRequired" | "minEvidenceCount"
-	>,
+	item: Pick<AuditChecklistItem, "evidenceRequired" | "minEvidenceCount">,
 ): number => (item.evidenceRequired ? Math.max(1, item.minEvidenceCount) : 0);
 
 export interface EvidenceLimits {
@@ -243,9 +237,7 @@ export type ItemWorkState =
 	| "PENDING";
 
 /** Drives the status chip on a checklist row; server-confirmed data only. */
-export const getItemWorkState = (
-	item: AuditChecklistItem,
-): ItemWorkState => {
+export const getItemWorkState = (item: AuditChecklistItem): ItemWorkState => {
 	if (item.clarification?.status === "OPEN") return "CLARIFICATION_OPEN";
 	if (item.clarification?.status === "RESPONDED") {
 		return "CLARIFICATION_RESPONDED";
@@ -267,4 +259,18 @@ export const getReviewProgress = (
 		total,
 		percent: total ? Math.round((completed / total) * 100) : 0,
 	};
+};
+/** Lowest score the reviewer may give, or null when nothing was self-assessed. */
+export const getReviewerMinScore = (selfScore: number | null): number | null =>
+	selfScore === null
+		? null
+		: selfScore - AUDIT_EXECUTION_RULES.review.maxScoreDrop;
+
+/** true when the reviewer lowers the self-assessed score by more than the allowed drop. */
+export const isReviewerScoreDropBlocked = (
+	selfScore: number | null,
+	reviewerScore: number | null,
+): boolean => {
+	const floor = getReviewerMinScore(selfScore);
+	return floor !== null && reviewerScore !== null && reviewerScore < floor;
 };

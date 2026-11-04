@@ -26,6 +26,35 @@ const DealerAuditChecklistItemPage = lazy(
 		import("../modules/audit/dealerAudit/pages/DealerAuditChecklistItemPage"),
 );
 
+// Audit cycle, dealer, reviewer, approver and report screens
+const CreateAuditCyclePage = lazy(
+	() => import("../modules/audit/dealerAudit/pages/CreateAuditCyclePage"),
+);
+const AuditTrackerPage = lazy(
+	() => import("../modules/audit/dealerAudit/pages/AuditTrackerPage"),
+);
+const MyAuditsPage = lazy(
+	() => import("../modules/audit/dealerAudit/pages/MyAuditsPage"),
+);
+const DealerAuditSubmitPage = lazy(
+	() => import("../modules/audit/dealerAudit/pages/DealerAuditSubmitPage"),
+);
+const DealerAuditStatusPage = lazy(
+	() => import("../modules/audit/dealerAudit/pages/DealerAuditStatusPage"),
+);
+const ReviewQueuePage = lazy(
+	() => import("../modules/audit/dealerAudit/pages/ReviewQueuePage"),
+);
+const ReviewSummaryPage = lazy(
+	() => import("../modules/audit/dealerAudit/pages/ReviewSummaryPage"),
+);
+const ApprovalPage = lazy(
+	() => import("../modules/audit/dealerAudit/pages/ApprovalPage"),
+);
+const DealerAuditReportsPage = lazy(
+	() => import("../modules/audit/dealerAudit/pages/DealerAuditReportsPage"),
+);
+
 // Checklist templates
 const DealerChecklistLibraryPage = lazy(
 	() => import("../modules/audit/dealerAudit/pages/DealerChecklistLibraryPage"),
@@ -64,6 +93,28 @@ const guarded = (
 export default function DealerAuditRoutes() {
 	return (
 		<Routes>
+			{/* Role landing screens */}
+			<Route
+				path={toRelativePath(DEALER_AUDIT_ROUTES.tracker)}
+				element={guarded("canAssignAudit", <AuditTrackerPage />)}
+			/>
+			<Route
+				path={toRelativePath(DEALER_AUDIT_ROUTES.myAudits)}
+				element={guarded("canView", <MyAuditsPage />)}
+			/>
+			<Route
+				path={toRelativePath(DEALER_AUDIT_ROUTES.reviewQueue)}
+				element={guarded("canReview", <ReviewQueuePage mode="reviewer" />)}
+			/>
+			<Route
+				path={toRelativePath(DEALER_AUDIT_ROUTES.approvals)}
+				element={guarded("canApprove", <ReviewQueuePage mode="approver" />)}
+			/>
+			<Route
+				path={toRelativePath(DEALER_AUDIT_ROUTES.cycles.create)}
+				element={guarded("canCreateAudit", <CreateAuditCyclePage />)}
+			/>
+
 			{/* Audit instances */}
 			<Route
 				path={toRelativePath(DEALER_AUDIT_ROUTES.audits.list)}
@@ -82,6 +133,24 @@ export default function DealerAuditRoutes() {
 				element={guarded("canView", <DealerAuditReportPage />)}
 			/>
 			<Route
+				path={toRelativePath(DEALER_AUDIT_ROUTES.audits.submit(":auditId"))}
+				element={guarded("canView", <DealerAuditSubmitPage />)}
+			/>
+			<Route
+				path={toRelativePath(DEALER_AUDIT_ROUTES.audits.status(":auditId"))}
+				element={guarded("canView", <DealerAuditStatusPage />)}
+			/>
+			<Route
+				path={toRelativePath(
+					DEALER_AUDIT_ROUTES.audits.reviewSummary(":auditId"),
+				)}
+				element={guarded("canReview", <ReviewSummaryPage />)}
+			/>
+			<Route
+				path={toRelativePath(DEALER_AUDIT_ROUTES.audits.approval(":auditId"))}
+				element={guarded("canApprove", <ApprovalPage />)}
+			/>
+			<Route
 				path={toRelativePath(
 					DEALER_AUDIT_ROUTES.execution.checklist(":auditId"),
 				)}
@@ -92,6 +161,12 @@ export default function DealerAuditRoutes() {
 					DEALER_AUDIT_ROUTES.execution.item(":auditId", ":itemId"),
 				)}
 				element={guarded("canView", <DealerAuditChecklistItemPage />)}
+			/>
+
+			{/* Reports */}
+			<Route
+				path={toRelativePath(DEALER_AUDIT_ROUTES.reports.root)}
+				element={guarded("canDownloadReport", <DealerAuditReportsPage />)}
 			/>
 
 			{/* Checklist templates */}
@@ -116,7 +191,7 @@ export default function DealerAuditRoutes() {
 				element={guarded("canManageTemplates", <CreateChecklistTemplatePage />)}
 			/>
 
-			{/* TODO: dashboard, reports, dealers and profile routes — add here once their page components are confirmed. */}
+			{/* TODO: dashboard, dealers and profile routes — add here once their page components are confirmed. */}
 		</Routes>
 	);
 }

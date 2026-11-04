@@ -25,16 +25,14 @@ export default function AuditReminderBanner({
 	if (reminders.length === 0) return null;
 
 	return (
-		<section
-			aria-label={content.reminders.regionLabel}
-			className="space-y-2"
-		>
+		<section aria-label={content.reminders.regionLabel} className="space-y-2">
 			{reminders.map((reminder) => (
 				<Alert
 					key={reminder.id}
 					variant={ALERT_VARIANT[reminder.severity]}
 					title={TITLES[reminder.severity]}
 					description={reminder.message}
+					type="banner"
 				/>
 			))}
 		</section>

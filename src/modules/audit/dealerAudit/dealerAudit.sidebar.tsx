@@ -4,11 +4,15 @@ import {
 	ClipboardList,
 	FileCheck2,
 	FilePlus,
+	Gavel,
 	Home,
 	LayoutDashboard,
 	ListChecks,
+	Rocket,
 	Settings,
 	Table,
+	UserCheck,
+	Activity,
 } from "lucide-react";
 
 import type { SidebarItem } from "../../../layout/layout.types";
@@ -36,6 +40,34 @@ export const dealerAuditSidebar: SidebarItem[] = [
 		permission: READ,
 	},
 	{
+		id: "my-audits",
+		label: "My Audits",
+		icon: <ClipboardCheck size={20} />,
+		link: DEALER_AUDIT_ROUTES.myAudits,
+		permission: READ,
+	},
+	{
+		id: "review-queue",
+		label: "Review Queue",
+		icon: <UserCheck size={20} />,
+		link: DEALER_AUDIT_ROUTES.reviewQueue,
+		permission: READ,
+	},
+	{
+		id: "approvals",
+		label: "Approvals",
+		icon: <Gavel size={20} />,
+		link: DEALER_AUDIT_ROUTES.approvals,
+		permission: READ,
+	},
+	{
+		id: "tracker",
+		label: "Audit Tracker",
+		icon: <Activity size={20} />,
+		link: DEALER_AUDIT_ROUTES.tracker,
+		permission: WRITE,
+	},
+	{
 		id: "audits",
 		label: "Audits",
 		icon: <ClipboardCheck size={20} />,
@@ -50,8 +82,15 @@ export const dealerAuditSidebar: SidebarItem[] = [
 				permission: READ,
 			},
 			{
+				id: "cycles-create",
+				label: "New Audit Cycle",
+				link: DEALER_AUDIT_ROUTES.cycles.create,
+				icon: <Rocket size={18} />,
+				permission: WRITE,
+			},
+			{
 				id: "audits-create",
-				label: "Create Audit",
+				label: "Create Single Audit",
 				link: DEALER_AUDIT_ROUTES.audits.create,
 				icon: <FilePlus size={18} />,
 				permission: WRITE,

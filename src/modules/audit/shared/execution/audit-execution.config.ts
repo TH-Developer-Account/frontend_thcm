@@ -25,6 +25,15 @@ export const AUDIT_EXECUTION_RULES = {
 		reasonMaxLength: 1000,
 	},
 
+	review: {
+		/**
+		 * The reviewer may lower the assessed party's score by at most this many
+		 * marks. A bigger gap must go back as a clarification. Raising a score is
+		 * not restricted. The server must enforce the same rule.
+		 */
+		maxScoreDrop: 1,
+	},
+
 	swipe: {
 		minDistancePx: 70,
 		/** |dx| must exceed |dy| by this factor to count as horizontal. */

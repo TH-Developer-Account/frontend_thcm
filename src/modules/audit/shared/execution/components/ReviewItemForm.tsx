@@ -2,19 +2,32 @@
 //
 // Reviewer's assessment for one parameter. The self-assessed score stays separate
 // (shown above, never overwritten). N/A is not offered: score the parameter 0.
+//
+// Score rule: the reviewer may lower the self-assessed score by at most
+// AUDIT_EXECUTION_RULES.review.maxScoreDrop marks. Lower options are locked, and
+// tapping one opens a highlighted prompt to send the parameter for clarification
+// instead.
 
-import { useId } from "react";
+import { AlertTriangle, CheckCircle2, Send } from "lucide-react";
+import { useId, useState } from "react";
 
 import TextareaInput from "../../../../../components/forms/TextareaInput";
 import ScoreLevelSelector from "../../checklist/ScoreLevelSelector";
 import { AUDIT_EXECUTION_RULES } from "../audit-execution.config";
-import { auditExecutionContent as content } from "../audit-execution.content";
+import {
+	auditExecutionContent as content,
+	formatAuditMessage as format,
+} from "../audit-execution.content";
 import type {
 	AuditChecklistItem,
 	ReviewDraftController,
 	ReviewItemFormValues,
 } from "../audit-execution.types";
-import { getScoreOptions, hasScoreChanged } from "../audit-execution.utils";
+import {
+	getReviewerMinScore,
+	getScoreOptions,
+	hasScoreChanged,
+} from "../audit-execution.utils";
 
 const text = content.review;
 
@@ -41,7 +54,22 @@ export default function ReviewItemForm({
 	editable,
 }: ReviewItemFormProps) {
 	const decisionErrorId = useId();
+	const [dropAttempted, setDropAttempted] = useState(false);
+
+	const options = getScoreOptions(item);
+	const minScore = getReviewerMinScore(item.self.score);
+	const blockedScores =
+		minScore === null
+			? []
+			: options.map((option) => option.score).filter((score) => score < minScore);
 	const scoreChanged = hasScoreChanged(item.self.score, draft.values.score);
+	const isSentForClarification = draft.values.decision === "CLARIFICATION_REQUIRED";
+	const maxDrop = AUDIT_EXECUTION_RULES.review.maxScoreDrop;
+
+	const handleSendForClarification = () => {
+		draft.setDecision("CLARIFICATION_REQUIRED");
+		setDropAttempted(false);
+	};
 
 	return (
 		<div className="space-y-5">
@@ -83,14 +111,67 @@ export default function ReviewItemForm({
 					<legend className="text-sm font-medium text-(--color-text-primary)">
 						{text.scoreLabel}
 					</legend>
+					{blockedScores.length > 0 ? (
+						<p className="text-xs text-slate-600">
+							{format(text.scoreDropRule, {
+								self: item.self.score ?? 0,
+								min: minScore ?? 0,
+								max: maxDrop,
+							})}
+						</p>
+					) : null}
 					<ScoreLevelSelector
 						label={text.scoreLabel}
-						options={getScoreOptions(item)}
+						options={options}
 						value={draft.values.score}
-						onChange={draft.setScore}
+						onChange={(score) => {
+							setDropAttempted(false);
+							draft.setScore(score);
+						}}
 						disabled={!editable}
 						error={draft.errors.score}
+						blockedScores={blockedScores}
+						blockedHint={text.scoreDropBlockedHint}
+						onBlockedSelect={() => setDropAttempted(true)}
 					/>
+
+					{/* Highlighted prompt: lowering by 2+ marks goes back as a clarification. */}
+					{editable && (dropAttempted || isSentForClarification) && blockedScores.length > 0 ? (
+						<div
+							role={isSentForClarification ? "status" : "alert"}
+							className={`rounded-lg border-2 p-3 text-sm ${
+								isSentForClarification
+									? "border-emerald-300 bg-emerald-50 text-emerald-900"
+									: "border-amber-400 bg-amber-50 text-amber-900"
+							}`}
+						>
+							<p className="flex items-start gap-2 font-semibold">
+								{isSentForClarification ? (
+									<CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+								) : (
+									<AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+								)}
+								{isSentForClarification
+									? text.scoreDropSentTitle
+									: format(text.scoreDropTitle, { max: maxDrop })}
+							</p>
+							<p className="mt-1">
+								{isSentForClarification
+									? text.scoreDropSentBody
+									: format(text.scoreDropBody, { max: maxDrop })}
+							</p>
+							{!isSentForClarification ? (
+								<button
+									type="button"
+									onClick={handleSendForClarification}
+									className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md bg-amber-600 px-4 text-sm font-semibold text-white hover:bg-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-900"
+								>
+									<Send className="size-4" aria-hidden="true" />
+									{text.scoreDropAction}
+								</button>
+							) : null}
+						</div>
+					) : null}
 				</fieldset>
 			) : null}
 
