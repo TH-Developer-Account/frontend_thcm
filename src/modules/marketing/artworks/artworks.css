@@ -1,0 +1,138 @@
+/* artworks/artworks.css
+   Only what the shared components don't already cover. Uses the existing
+   tokens (--space-*, --color-*, --radius-*). */
+
+.artwork-page {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+}
+
+.artwork-stack {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+	min-width: 0;
+}
+
+/* Two-line "title / subtitle" cell used in the table and the panel. */
+.artwork-event-cell {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.artwork-event-cell small {
+	color: var(--color-text-secondary);
+}
+
+/* ---- Link input row ---- */
+
+.artwork-link-cell {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--space-2);
+	min-width: 12rem;
+}
+
+.artwork-link-cell > :first-child {
+	flex: 1;
+	min-width: 0;
+}
+
+.artwork-link-open {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	height: 2.25rem;
+	padding: 0 var(--space-1);
+	color: var(--color-brand);
+}
+
+.artwork-link-anchor {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--space-1);
+	font-weight: 600;
+	color: var(--color-brand);
+	text-decoration: none;
+}
+
+.artwork-link-anchor:hover,
+.artwork-link-anchor:focus-visible,
+.artwork-link-open:hover,
+.artwork-link-open:focus-visible {
+	text-decoration: underline;
+}
+
+.artwork-link-missing {
+	font-size: 0.8125rem;
+	color: var(--color-text-secondary);
+}
+
+.artwork-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--space-2);
+	justify-content: flex-end;
+}
+
+.artwork-note {
+	margin: 0;
+	font-size: 0.8125rem;
+	color: var(--color-text-secondary);
+}
+
+/* ---- Read-only panel on the proposer's CRF view ---- */
+
+.artwork-links-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.artwork-links-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--space-3);
+	padding: var(--space-3) 0;
+	border-bottom: var(--border-width-default, 1px) solid
+		var(--color-border-subtle);
+	font-size: 0.8125rem;
+}
+
+.artwork-links-row:first-child {
+	padding-top: 0;
+}
+
+.artwork-links-row:last-child {
+	padding-bottom: 0;
+	border-bottom: 0;
+}
+
+.artwork-links-value {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: var(--space-0-5, 0.125rem);
+	text-align: right;
+}
+
+.artwork-links-value small {
+	color: var(--color-text-secondary);
+}
+
+@media (max-width: 639px) {
+	.artwork-links-row {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+	.artwork-links-value {
+		align-items: flex-start;
+		text-align: left;
+	}
+}

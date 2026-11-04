@@ -1,5 +1,5 @@
 import React from "react";
-import { FileDown, Plus } from "lucide-react";
+import { FileDown, Gift, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { SortingState } from "@tanstack/react-table";
 
@@ -13,6 +13,8 @@ import { useAuth } from "../../../../../context/Auth/useAuth";
 import { Can } from "../../../../../context/permissionHelpers";
 import { useMasterData } from "../../../../../hooks/useMasterData";
 
+import { HANDOUTS_BASE_PATH } from "../../../handouts/handouts.constants";
+import { useHandoutPermissions } from "../../../handouts/useHandoutPermissions";
 import { clearStoredEpcInfo } from "../../utils/localstorage";
 import type { EpcFilters, EpcListItem } from "../../types/epc.types";
 
@@ -85,6 +87,9 @@ const EPCTable = ({
 	const navigate = useNavigate();
 	const { user } = useAuth();
 	const { data: masterData } = useMasterData();
+	// Handouts gate lives in ONE place (useHandoutPermissions). It currently
+	// returns true for everyone; re-adding permissions there re-gates this button.
+	const { canOpenHandouts } = useHandoutPermissions();
 
 	const advancedFilterSections = React.useMemo<
 		FilterSection<EpcFilters>[]
@@ -175,6 +180,21 @@ const EPCTable = ({
 			}
 			actions={
 				<>
+					{/* Handouts: opens the Handouts list (no permission gate for now). */}
+					{canOpenHandouts ? (
+						<Button
+							type="button"
+							text="Handouts"
+							Icon={Gift}
+							iconSize={16}
+							iconPosition="left"
+							appearance="standard"
+							variant="outline"
+							size="sm"
+							onClick={() => navigate(HANDOUTS_BASE_PATH)}
+						/>
+					) : null}
+
 					<Button
 						type="button"
 						text={isExporting ? "Preparing export..." : "Export"}

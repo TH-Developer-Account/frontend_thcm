@@ -1,3 +1,5 @@
+import type { LiveEligibility } from "./reimbursementClaim.types";
+
 export type MedicalClaimListingTab =
 	| "initiation"
 	| "claims"
@@ -114,6 +116,8 @@ export interface MedicalClaimDetail extends MedicalClaimListItem {
 	/** THCM only — claimed amounts in this person's other open claims this FY. */
 	pendingInOtherClaims?: number | string | null;
 	bills: MedicalClaimBill[];
+
+	liveEligibility?: LiveEligibility | null;
 }
 
 export interface MedicalClaimMutationResponse {
@@ -124,13 +128,6 @@ export interface MedicalClaimMutationResponse {
 }
 
 export type MedicalClaimExportFormat = "xlsx" | "csv";
-
-export type ExportListingParams = {
-	tab: MedicalClaimListingTab;
-	search?: string;
-	status?: MedicalClaimStatus;
-	format?: MedicalClaimExportFormat;
-};
 
 export type MedicalClaimExportQueueResponse = {
 	success: boolean;
@@ -156,7 +153,12 @@ export type MedicalClaimExportStatusResponse = {
 	failedReason?: string;
 };
 
-export type GradeEligibilityRow = { grade: string; annualCap: number };
+export type GradeEligibilityRow = {
+	value?: string; // GradeEligibility row id (uuid), not used
+	label?: string; // grade name, e.g. "EG-1A"
+	grade?: string; // accepted in case another endpoint returns this shape
+	annualCap: number | string | null;
+};
 
 /** Response row of PATCH /:id/bills/approved-amounts. */
 export type ReviewedBill = {

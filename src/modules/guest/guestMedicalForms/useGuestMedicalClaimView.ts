@@ -10,6 +10,7 @@ import {
 
 import {
 	deriveAnnualCap,
+	toEligibilityHoldProps,
 	toMedicalClaimFormValues,
 	toMedicalClaimLineItems,
 } from "../../medicalReimbursment/helpers/medicalClaimListing.mapper";
@@ -45,7 +46,10 @@ export function useGuestMedicalClaimView(claimId = "") {
 	const navigate = useNavigate();
 	const isCreateMode = !claimId;
 
-	const detailQuery = useGuestReimbursementClaimDetailQuery(claimId, !isCreateMode);
+	const detailQuery = useGuestReimbursementClaimDetailQuery(
+		claimId,
+		!isCreateMode,
+	);
 	const profileQuery = useGuestClaimProfileQuery(isCreateMode);
 	const createMutation = useCreateGuestMedicalClaimMutation();
 	const resubmitMutation = useResubmitGuestMedicalClaimMutation();
@@ -77,15 +81,19 @@ export function useGuestMedicalClaimView(claimId = "") {
 		isCreateMode
 			? {
 					grade: profile?.grade,
-					derivedCap:
-						profile?.eligibleAmount != null
-							? Number(profile.eligibleAmount) + Number(profile.alreadySettled ?? 0)
+					derivedCap: profile?.liveEligibility
+						? Number(profile.liveEligibility.annualCap)
+						: profile?.eligibleAmount != null
+							? Number(profile.eligibleAmount) +
+								Number(profile.alreadySettled ?? 0)
 							: null,
 				}
 			: { grade: detail?.grade, derivedCap: deriveAnnualCap(detail) },
 	);
 
-	const initialValues = useMemo<Partial<ReimbursementClaimFormValues> | undefined>(() => {
+	const initialValues = useMemo<
+		Partial<ReimbursementClaimFormValues> | undefined
+	>(() => {
 		if (detail) return toMedicalClaimFormValues(detail);
 		if (isCreateMode && profile?.canCreate) {
 			return {
@@ -95,12 +103,28 @@ export function useGuestMedicalClaimView(claimId = "") {
 				location: profile.location ?? "",
 				coverageType: (profile.claimCover ?? "") as CoverageType,
 				spouseName: profile.spouseName ?? "",
-				companySettledAmount:
-					profile.alreadySettled != null ? String(profile.alreadySettled) : "",
+				companySettledAmount: String(
+					profile.liveEligibility?.alreadySettled ??
+						profile.alreadySettled ??
+						"",
+				),
 			};
 		}
 		return undefined;
 	}, [detail, isCreateMode, profile]);
+
+	// Amount on hold in the retiree's OTHER claims + the EG hospitalisation
+	// bucket. Create mode reads them from the profile, view/edit from the claim.
+	const holdProps = useMemo(() => {
+		if (detail) return toEligibilityHoldProps(detail);
+		const live = profile?.liveEligibility;
+		return {
+			eligibilityPendingAmount: live
+				? Number(live.inProgressAmount) || 0
+				: undefined,
+			hospitalisationSummary: live?.hospitalisation ?? null,
+		};
+	}, [detail, profile?.liveEligibility]);
 
 	const initialLineItems = useMemo(
 		() => (detail ? toMedicalClaimLineItems(detail) : []),
@@ -116,10 +140,13 @@ export function useGuestMedicalClaimView(claimId = "") {
 
 			if (isCreateMode) {
 				if (!canCreate) {
-					throw new Error("New claims can't be started from this account. Please contact HR.");
+					throw new Error(
+						"New claims can't be started from this account. Please contact HR.",
+					);
 				}
 				const created = await createMutation.mutateAsync(formData);
-				if (created?.id) navigate(`/guest/medi-claim/${created.id}`, { replace: true });
+				if (created?.id)
+					navigate(`/guest/medi-claim/${created.id}`, { replace: true });
 				return;
 			}
 
@@ -150,7 +177,10 @@ export function useGuestMedicalClaimView(claimId = "") {
 						// The approver's reason is shown in its own banner; this one
 						// just tells the guest what to do next.
 						...(detail?.status?.toUpperCase() === "CLARIFICATION_REQUESTED"
-							? { description: "Please update the claim below and resubmit it for approval." }
+							? {
+									description:
+										"Please update the claim below and resubmit it for approval.",
+								}
 							: {}),
 					}),
 		[detail?.status, isCreateMode],
@@ -174,23 +204,16 @@ export function useGuestMedicalClaimView(claimId = "") {
 		initialValues,
 		initialLineItems,
 		gradeOptions,
+		holdProps,
 		permissions,
 		correctionReason: detail?.correctionReason ?? null,
 
-		access,
-		canView: access.canView,
 		canEdit: access.canEdit,
 		canCreate: access.canCreate,
-		canResubmit: access.canResubmit,
-
-		isSaving: createMutation.isPending || resubmitMutation.isPending,
 
 		submitClaim,
 		refetch: isCreateMode ? profileQuery.refetch : detailQuery.refetch,
 
-		claimId,
-
 		statusBanner,
-		showAlertBanner: Boolean(statusBanner),
 	};
 }

@@ -32,6 +32,23 @@ const EpcListingPage = lazy(
 const FilesModule = lazy(
 	() => import("../modules/marketing/activity-planner/pages/FilesModule"),
 );
+// Handouts (HANDOUTS_BASE_PATH = /marketing/activity-planner/handouts)
+const HandoutsPage = lazy(
+	() => import("../modules/marketing/handouts/HandoutsPage"),
+);
+const NewHandoutPage = lazy(
+	() => import("../modules/marketing/handouts/NewHandoutPage"),
+);
+const HandoutDetailPage = lazy(
+	() => import("../modules/marketing/handouts/HandoutDetailPage"),
+);
+// Artworks (ARTWORKS_BASE_PATH = /marketing/activity-planner/artworks)
+const ArtworksPage = lazy(
+	() => import("../modules/marketing/artworks/ArtworksPage"),
+);
+const ArtworkDetailPage = lazy(
+	() => import("../modules/marketing/artworks/ArtworkDetailPage"),
+);
 
 export default function MarketingRoutes() {
 	return (
@@ -65,6 +82,27 @@ export default function MarketingRoutes() {
 					element={<LeadCreatePage />}
 				/>
 				<Route path="/profile" element={<UserProfile />} />
+
+				{/* Handouts. Keep these ABOVE "/activity-planner/:id" so "handouts"
+				    is never read as an EPC id. "new" must stay above ":id". */}
+				<Route path="/activity-planner/handouts" element={<HandoutsPage />} />
+				<Route
+					path="/activity-planner/handouts/new"
+					element={<NewHandoutPage />}
+				/>
+				<Route
+					path="/activity-planner/handouts/:id"
+					element={<HandoutDetailPage />}
+				/>
+
+				{/* Artworks. Same rule: ABOVE "/activity-planner/:id" so "artworks"
+				    is never read as an EPC id. */}
+				<Route path="/activity-planner/artworks" element={<ArtworksPage />} />
+				<Route
+					path="/activity-planner/artworks/:id"
+					element={<ArtworkDetailPage />}
+				/>
+
 				<Route
 					path="/activity-planner/create"
 					element={<ActivityPlannerPage />}

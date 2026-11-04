@@ -1,59 +1,64 @@
+import type { GradeEligibilityRow } from "../types/medicalClaimListing.types";
 import type { GradeOption } from "../types/reimbursementClaim.types";
 
 /**
- * Grade → annual cap. MUST match the GradeEligibility table (see
- * seed-grade-eligibility.sql). While MEDICLAIM_BACKEND.gradesEndpoint is
- * false this list is the grade dropdown; the server still recomputes
- * eligibility from the table on every submit.
+ * Hospitalisation cover for EG grades — separate from the regular annual
+ * limit. Mirrors HOSPITALISATION_ANNUAL_CAP in mediclaim.helper.ts (backend);
+ * the live value from the API wins when present.
  */
-export const GRADE_OPTIONS: GradeOption[] = [
-	{ label: "EG", value: "EG", eligibility: 75_000 },
-	{ label: "EG-1A", value: "EG-1A", eligibility: 75_000 },
-	{ label: "EG-1B", value: "EG-1B", eligibility: 75_000 },
-	{ label: "EG-2A", value: "EG-2A", eligibility: 75_000 },
-	{ label: "EG-2A1", value: "EG-2A1", eligibility: 75_000 },
-	{ label: "EG-2B", value: "EG-2B", eligibility: 75_000 },
-	{ label: "EG-3", value: "EG-3", eligibility: 75_000 },
-	{ label: "EG-4", value: "EG-4", eligibility: 75_000 },
-	{ label: "TM-0", value: "TM-0", eligibility: 30_000 },
-	{ label: "TM-1", value: "TM-1", eligibility: 30_000 },
-	{ label: "TM-3", value: "TM-3", eligibility: 30_000 },
-	{ label: "TM-4", value: "TM-4", eligibility: 30_000 },
-	{ label: "TM-5", value: "TM-5", eligibility: 30_000 },
-	{ label: "TS-2", value: "TS-2", eligibility: 25_000 },
-];
+export const HOSPITALISATION_ANNUAL_CAP = 125_000;
 
-/** @deprecated use GRADE_OPTIONS. */
-export const FALLBACK_GRADE_OPTIONS = GRADE_OPTIONS;
+/** EG, EG-1A, EG-2B … — the only grades with hospitalisation cover. */
+export const isHospitalisationGrade = (grade?: string | null): boolean =>
+	/^EG/i.test((grade ?? "").trim());
 
-export const toGradeOptions = (
-	rows: Array<{ grade: string; annualCap: number | string | null }>,
-): GradeOption[] =>
+/**
+ * Stable empty list, so hooks that depend on the options array don't re-run
+ * on every render while the grade master data is still loading.
+ */
+export const NO_GRADE_OPTIONS: GradeOption[] = [];
+
+/**
+ * Grade master data (GradeEligibility table) → select options.
+ *
+ * The API row is `{ value: <uuid>, label: "EG-1A", annualCap: "75000" | null }`.
+ * The uuid is the table's row id — NOT what the claim stores. Claims, the HR
+ * data and the backend all use the grade NAME, so the name is used for both
+ * `label` and `value`. `annualCap: null` means the cap isn't configured yet,
+ * which must stay `null` (Number(null) is 0, which would read as "no limit
+ * left" instead of "no limit configured").
+ */
+export const toGradeOptions = (rows: GradeEligibilityRow[]): GradeOption[] =>
 	rows
-		.filter((row) => row.grade?.trim())
 		.map((row) => {
-			const cap = Number(row.annualCap);
+			const name = (row.label ?? row.grade ?? "").trim();
+			const rawCap = row.annualCap;
+			const cap =
+				rawCap === null || rawCap === undefined || rawCap === ""
+					? null
+					: Number(rawCap);
 			return {
-				label: row.grade.trim(),
-				value: row.grade.trim(),
-				eligibility: Number.isFinite(cap) ? cap : null,
+				label: name,
+				value: name,
+				eligibility: cap !== null && Number.isFinite(cap) ? cap : null,
 			};
-		});
+		})
+		.filter((option) => option.value);
 
 /**
  * Final option list for the grade select:
- *  - backend list (or GRADE_OPTIONS when there is none)
+ *  - the grade master data from the API (empty until it has loaded)
  *  - plus the claim's CURRENT grade if it isn't in the list (e.g. legacy
- *    retiree grades like EG-2B), with its cap derived from the server-
- *    computed eligibleAmount + alreadySettled, so the dropdown never shows
- *    blank for a prefilled grade and validation doesn't reject it.
+ *    retiree grades), with its cap derived from the server-computed
+ *    eligibleAmount + alreadySettled, so the dropdown never shows blank for
+ *    a prefilled grade and validation doesn't reject it.
  */
 export function resolveGradeOptions(
 	apiOptions: GradeOption[] | undefined,
 	currentGrade?: string | null,
 	derivedCap?: number | null,
 ): GradeOption[] {
-	const base = apiOptions?.length ? apiOptions : GRADE_OPTIONS;
+	const base = apiOptions ?? NO_GRADE_OPTIONS;
 	const grade = currentGrade?.trim();
 	if (!grade || base.some((option) => option.value === grade)) return base;
 	return [
@@ -62,7 +67,9 @@ export function resolveGradeOptions(
 			label: grade,
 			value: grade,
 			eligibility:
-				typeof derivedCap === "number" && Number.isFinite(derivedCap) && derivedCap > 0
+				typeof derivedCap === "number" &&
+				Number.isFinite(derivedCap) &&
+				derivedCap > 0
 					? derivedCap
 					: null,
 		},

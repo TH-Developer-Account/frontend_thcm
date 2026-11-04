@@ -273,7 +273,7 @@ export default function AuditLogSection({
 					iconSize={20}
 				/>
 			) : (
-				<div className="comments-section">
+				<div className="comments-section border-none">
 					<div className="comments-list scrollbar-sleek">
 						<ol className="audit-timeline">
 							{entries.map((entry) => (

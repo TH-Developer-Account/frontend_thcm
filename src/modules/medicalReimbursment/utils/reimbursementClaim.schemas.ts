@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { HOSPITALISATION_CLAIM_HEAD } from "./claimHead.constants";
+import { DEFAULT_COUNTRY_CODE } from "../../../utils/phone";
 /* -------------------------------------------------------------------------- */
 /* Medical claim — zod schemas (single source of truth for validation)         */
 /*                                                                            */
@@ -14,11 +16,7 @@ import { z } from "zod";
 
 export const COVERAGE_VALUES = ["SELF", "SPOUSE", "BOTH"] as const;
 
-/**
- * Claim heads a claimant can pick on this form. EXCESS_HOSPITALISATION is
- * intentionally NOT selectable (non-hospitalisation form) but still exists in
- * ALL_CLAIM_HEAD_VALUES so old bills that carry it can be displayed.
- */
+/** Regular (non-hospitalisation) heads — selectable by every grade. */
 export const CLAIM_HEAD_VALUES = [
 	"VISIT_FEES",
 	"MEDICINES_INVESTIGATIONS",
@@ -26,14 +24,17 @@ export const CLAIM_HEAD_VALUES = [
 	"EXECUTIVE_HEALTH_CHECKUP",
 ] as const;
 
+/**
+ * Every head the API can return. EXCESS_HOSPITALISATION is selectable for EG
+ * grades only (see `allowHospitalisation` on the row schema) and has its own
+ * limit, tracked separately from the regular annual limit.
+ */
 export const ALL_CLAIM_HEAD_VALUES = [
 	...CLAIM_HEAD_VALUES,
 	"EXCESS_HOSPITALISATION",
 ] as const;
 
 export const PATIENT_VALUES = ["SELF", "SPOUSE"] as const;
-
-const REMOVED_CLAIM_HEADS: string[] = ["EXCESS_HOSPITALISATION"];
 
 export const NAME_REGEX = /^[\p{L}][\p{L}\s.'-]*$/u;
 export const TICKET_REGEX = /^[A-Za-z0-9-]+$/;
@@ -51,6 +52,7 @@ export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /** Sanity ceiling for a single bill (₹10 lakh) — catches typos like an extra zero. */
 export const MAX_BILL_AMOUNT = 10_00_000;
 export const MAX_REMARKS_LENGTH = 500;
+/** Character limit for the approve / clarify reason box (ClaimActions). */
 export const MAX_REASON_LENGTH = 1000;
 
 const inr = new Intl.NumberFormat("en-IN", {
@@ -156,8 +158,22 @@ const requireSpouseName = (
 	}
 };
 
+const INDIAN_MOBILE_PREFIX = /^(\+91|91|0)(?=\d{10}$)/;
+
+/** "+91 99999-99999" / "099999 99999" -> "9999999999". */
+export const toIndianNationalMobile = (value: string): string =>
+	value.replace(/[\s-]/g, "").replace(INDIAN_MOBILE_PREFIX, "");
+
+/** National number for the selected country code (spaces and hyphens removed). */
+export const toNationalMobile = (countryCode: string, value: string): string =>
+	countryCode === DEFAULT_COUNTRY_CODE
+		? toIndianNationalMobile(value)
+		: value.replace(/[\s-]/g, "");
+
+export const OTHER_COUNTRY_MOBILE_REGEX = /^\d{6,14}$/;
+
 /* -------------------------------------------------------------------------- */
-/* 1. Initiation (THCM user starts a claim) + Excel import rows                */
+/* 1. Initiation (THCM user starts a claim; also validates each import row)    */
 /* -------------------------------------------------------------------------- */
 
 export const medicalClaimInitiationSchema = z.object({
@@ -180,9 +196,7 @@ export const medicalClaimInitiationSchema = z.object({
 		.string({ message: "Phone number is required." })
 		.trim()
 		.min(1, "Phone number is required.")
-		.transform((v) =>
-			v.replace(/[\s-]/g, "").replace(/^(\+91|91|0)(?=\d{10}$)/, ""),
-		)
+		.transform(toIndianNationalMobile)
 		.pipe(
 			z
 				.string()
@@ -196,9 +210,45 @@ export type MedicalClaimInitiationInput = z.infer<
 	typeof medicalClaimInitiationSchema
 >;
 
-/** Excel import: same rules per row, plus the spreadsheet row number. */
-export const medicalClaimInitiationImportRowSchema =
-	medicalClaimInitiationSchema.extend({ row: z.number().int().positive() });
+export const medicalClaimInitiationFormSchema = medicalClaimInitiationSchema
+	.omit({ mobile: true })
+	.extend({
+		// Country code is its own field; `mobile` stays the national number.
+		countryCode: z
+			.string()
+			.regex(/^\+\d{1,4}$/, "Select a valid country code."),
+		mobile: z
+			.string({ message: "Phone number is required." })
+			.trim()
+			.min(1, "Phone number is required."),
+		status: z.string().optional(),
+		referenceNumber: z.string().optional(),
+	})
+	.superRefine((value, ctx) => {
+		if (!value.mobile) return; // "required" is already reported
+		const national = toNationalMobile(value.countryCode, value.mobile);
+		if (value.countryCode === DEFAULT_COUNTRY_CODE) {
+			if (!MOBILE_REGEX.test(national)) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["mobile"],
+					message: "Enter a valid 10-digit mobile number starting with 6-9.",
+				});
+			}
+			return;
+		}
+		if (!OTHER_COUNTRY_MOBILE_REGEX.test(national)) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["mobile"],
+				message: "Enter a valid mobile number.",
+			});
+		}
+	});
+
+export type MedicalClaimInitiationFormValues = z.infer<
+	typeof medicalClaimInitiationFormSchema
+>;
 
 /* -------------------------------------------------------------------------- */
 /* 2. Claim header (public token form, guest portal, THCM view)                */
@@ -315,11 +365,17 @@ export interface ClaimHeadRowSchemaOptions {
 	/** Eligibility window (YYYY-MM-DD). Bills outside it are rejected. */
 	yearStart?: string;
 	yearEnd?: string;
+	/**
+	 * true for EG grades — lets EXCESS_HOSPITALISATION through. Everyone else
+	 * gets "available for EG grades only".
+	 */
+	allowHospitalisation?: boolean;
 }
 
 export const createClaimHeadRowSchema = ({
 	yearStart,
 	yearEnd,
+	allowHospitalisation = false,
 }: ClaimHeadRowSchemaOptions = {}) =>
 	z
 		.object({
@@ -328,11 +384,13 @@ export const createClaimHeadRowSchema = ({
 				.string({ message: "Claim head is required." })
 				.min(1, "Claim head is required.")
 				.refine(
-					(v) => !REMOVED_CLAIM_HEADS.includes(v),
-					"Hospitalisation expenses are not covered by this form.",
+					(v) => allowHospitalisation || v !== HOSPITALISATION_CLAIM_HEAD,
+					"Hospitalisation cover is available for EG grades only.",
 				)
 				.pipe(
-					z.enum(CLAIM_HEAD_VALUES, { message: "Select a valid claim head." }),
+					z.enum(ALL_CLAIM_HEAD_VALUES, {
+						message: "Select a valid claim head.",
+					}),
 				),
 			billNumber: requiredText("Bill number", 50).regex(
 				BILL_NUMBER_REGEX,
@@ -378,22 +436,42 @@ export type ClaimHeadRowInput = z.infer<
 >;
 
 /* -------------------------------------------------------------------------- */
-/* 4. Whole submission: header + rows + eligibility limit                      */
+/* 4. Whole submission: header + rows + eligibility limits                     */
 /* -------------------------------------------------------------------------- */
 
 export interface SubmitSchemaOptions
 	extends ClaimHeadRowSchemaOptions, HeaderSchemaOptions {
-	/** Eligible - already settled this year. */
+	/**
+	 * Regular limit still available: annual limit − settled − on hold in the
+	 * retiree's other in-progress claims.
+	 */
 	remainingAmount?: number;
-	/** true -> claimed total above remaining eligibility is a hard error. */
+	/** On hold in other in-progress claims — only used to explain the error. */
+	heldAmount?: number;
+	/**
+	 * Hospitalisation limit still available (EG only). Hospitalisation bills
+	 * count against this, never against `remainingAmount`.
+	 */
+	hospitalisationRemainingAmount?: number;
+	/** On hold in other in-progress hospitalisation claims (error text only). */
+	hospitalisationHeldAmount?: number;
+	/** true -> claimed total above the available amount is a hard error. */
 	enforceRemaining?: boolean;
 }
 
 const billKey = (row: { claimHead?: string; billNumber?: string }) =>
 	`${row.claimHead ?? ""}::${(row.billNumber ?? "").trim().toUpperCase()}`;
 
+const holdNote = (held: number | undefined, what: string) =>
+	held && held > 0
+		? ` ${inr.format(held)} is on hold for ${what} that are still in progress.`
+		: "";
+
 export const createReimbursementClaimSubmitSchema = ({
 	remainingAmount,
+	heldAmount,
+	hospitalisationRemainingAmount,
+	hospitalisationHeldAmount,
 	enforceRemaining = true,
 	allowedGrades,
 	...rowOptions
@@ -421,15 +499,40 @@ export const createReimbursementClaimSubmitSchema = ({
 				seen.add(key);
 			}
 
-			if (enforceRemaining && typeof remainingAmount === "number") {
-				const total = lineItems.reduce((sum, r) => sum + Number(r.amount), 0);
-				if (total > remainingAmount + 0.001) {
-					ctx.addIssue({
-						code: "custom",
-						path: ["lineItems"],
-						message: `Claimed total ${inr.format(total)} exceeds your remaining eligibility of ${inr.format(Math.max(remainingAmount, 0))}.`,
-					});
+			if (!enforceRemaining) return;
+
+			// Hospitalisation is its own bucket — it never eats into the
+			// regular limit, and the regular limit never covers it.
+			let standardTotal = 0;
+			let hospitalisationTotal = 0;
+			for (const row of lineItems) {
+				if (row.claimHead === HOSPITALISATION_CLAIM_HEAD) {
+					hospitalisationTotal += Number(row.amount);
+				} else {
+					standardTotal += Number(row.amount);
 				}
+			}
+
+			if (
+				typeof remainingAmount === "number" &&
+				standardTotal > remainingAmount + 0.001
+			) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["lineItems"],
+					message: `Claimed total ${inr.format(standardTotal)} exceeds your available balance of ${inr.format(Math.max(remainingAmount, 0))}.${holdNote(heldAmount, "your other claims")}`,
+				});
+			}
+
+			if (
+				typeof hospitalisationRemainingAmount === "number" &&
+				hospitalisationTotal > hospitalisationRemainingAmount + 0.001
+			) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["lineItems"],
+					message: `Hospitalisation total ${inr.format(hospitalisationTotal)} exceeds your available hospitalisation limit of ${inr.format(Math.max(hospitalisationRemainingAmount, 0))}.${holdNote(hospitalisationHeldAmount, "hospitalisation claims")}`,
+				});
 			}
 		});
 
@@ -484,51 +587,38 @@ export const lineItemRemarksSchema = z.object({
 		),
 });
 
-/** Inline reason box for "Approve". */
-export const approvalReasonSchema = z.object({
-	reason: z
-		.string({ message: "A reason is required to continue." })
-		.trim()
-		.min(1, "A reason is required to continue.")
-		.max(
-			MAX_REASON_LENGTH,
-			`Reason must be at most ${MAX_REASON_LENGTH} characters.`,
-		),
-});
-
-/** "Send for Clarification" — must tell the claimant what to fix. */
-export const clarificationReasonSchema = z.object({
-	reason: z
-		.string({ message: "Tell the claimant what needs to be corrected." })
-		.trim()
-		.min(10, "Describe what needs to be corrected (at least 10 characters).")
-		.max(
-			MAX_REASON_LENGTH,
-			`Reason must be at most ${MAX_REASON_LENGTH} characters.`,
-		),
-});
-
 /* -------------------------------------------------------------------------- */
 /* 6. Eligibility (shown to guest AND THCM users)                              */
 /* -------------------------------------------------------------------------- */
 
-/** Pure helper so every eligibility view shows the same numbers. */
+/**
+ * Pure helper so every eligibility view shows the same numbers.
+ *
+ *   totalEligible — the annual limit
+ *   settled       — already approved / closed
+ *   held          — on hold in the retiree's OTHER in-progress claims
+ *
+ * remaining = what is actually left to claim (limit − settled − held).
+ */
 export function deriveEligibility(
-	summary: { totalEligible: number; settled: number },
+	summary: { totalEligible: number; settled: number; held?: number },
 	claimingNow = 0,
 ) {
-	const remaining = Math.max(summary.totalEligible - summary.settled, 0);
+	const held = Math.max(summary.held ?? 0, 0);
+	const remaining = Math.max(summary.totalEligible - summary.settled - held, 0);
 	const balanceAfter = remaining - claimingNow;
+	const pct = (amount: number) =>
+		summary.totalEligible
+			? Math.min((amount / summary.totalEligible) * 100, 100)
+			: 0;
 	return {
 		remaining,
+		held,
 		balanceAfter,
-		isOverLimit: balanceAfter < 0,
-		percentSettled: summary.totalEligible
-			? Math.min((summary.settled / summary.totalEligible) * 100, 100)
-			: 0,
-		percentThisClaim: summary.totalEligible
-			? (Math.min(claimingNow, remaining) / summary.totalEligible) * 100
-			: 0,
+		isOverLimit: balanceAfter < -0.001,
+		percentSettled: pct(summary.settled),
+		percentHeld: pct(held),
+		percentThisClaim: pct(Math.min(claimingNow, remaining)),
 	};
 }
 

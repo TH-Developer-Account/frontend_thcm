@@ -11,7 +11,7 @@ import SimpleViewTable, {
 } from "../../../components/ui/tables/SimpleViewTable";
 
 import {
-	CLAIM_HEAD_OPTIONS,
+	HOSPITALISATION_CLAIM_HEAD,
 	getClaimHeadLabel,
 } from "../utils/claimHead.constants";
 
@@ -31,6 +31,7 @@ import {
 	toDatePickerValue,
 	toDateString,
 	useReimbursementClaimFormContext,
+	type RemarksSaveStatus,
 } from "../hooks/useReimbursementClaimForm";
 
 const formatCurrency = (amount: number) =>
@@ -69,6 +70,41 @@ const ReviewCell = ({
 	</div>
 );
 
+/**
+ * Small line under the remarks box that tells the reviewer their text is
+ * safe — so nobody has to wonder whether a save button is needed.
+ * A failure is shown here (with Retry) instead of as a toast per line.
+ */
+const RemarksStatusHint = ({
+	status,
+	onRetry,
+}: {
+	status: RemarksSaveStatus;
+	onRetry: () => void;
+}) => {
+	const base = "mt-0.5 block text-xs leading-4";
+
+	if (status === "saving" || status === "saved") {
+		return (
+			<span role="status" className={`${base} text-iron`}>
+				{status === "saving" ? "Saving…" : "Saved"}
+			</span>
+		);
+	}
+	if (status === "error") {
+		return (
+			<button
+				type="button"
+				onClick={onRetry}
+				className={`${base} font-medium text-red-700 underline`}
+			>
+				Couldn't save · Retry
+			</button>
+		);
+	}
+	return null;
+};
+
 type TableColumnDefinition<T> = {
 	id?: string;
 	accessorKey?: string;
@@ -83,6 +119,7 @@ export const ClaimHeadEntryTable = () => {
 	const {
 		claimRows: items,
 		savedClaims,
+		claimHeadOptions,
 		isLoading: loading,
 		editingClaimId: editingId,
 		savingClaimId: savingId,
@@ -102,16 +139,62 @@ export const ClaimHeadEntryTable = () => {
 		handleToggleLineItemStatus: onToggleLineItemStatus,
 		handleApproveLineItem,
 		handleRemarksChange: onRemarksChange,
+		handleRemarksBlur: onRemarksBlur,
 		handleSaveRemarks,
-		savingRemarksId,
+		remarksStatus,
+		isClaimant,
+		eligibility,
+		hospitalisation,
+		resolvedEligibleAmount,
 	} = useReimbursementClaimFormContext();
 
+	// The claimant (public / guest) never sees approver tools: no approved
+	// amount, no Approve checkbox, and remarks are read-only text (no input).
+	// canEditClaimRows covers a claimant editing the claim.
+	const claimantView = isClaimant || canEditClaimRows;
+
 	// Only the current internal approver can review line items; everyone
-	// else sees these three columns locked.
-	const reviewLocked = !canApproveLineItems;
+	// else sees these columns locked.
+	const reviewLocked = !canApproveLineItems || claimantView;
 
 	// Claimant filling a fresh claim: nothing to show in the review columns.
 	const hideReviewColumns = hideReviewColumnsProp;
+
+	// Approved Amount + Approved checkbox are approver tools. A claimant only
+	// needs to READ the approver's remarks (guest resubmit after clarification).
+	const showApproverColumns = !hideReviewColumns && !claimantView;
+
+	// Bills that push the claim over the available limit (claimant view).
+	// Bills are counted in the order they were added; the overshoot of each
+	// bill is capped at its own amount.
+	const overLimitByRowId = useMemo(() => {
+		const result: Record<string, number> = {};
+		if (!claimantView) return result;
+		let standardRunning = 0;
+		let hospitalisationRunning = 0;
+		savedClaims.forEach((row) => {
+			const amount = Number(row.amount) || 0;
+			const isHospitalisation = row.claimHead === HOSPITALISATION_CLAIM_HEAD;
+			const limit = isHospitalisation
+				? hospitalisation?.remaining
+				: resolvedEligibleAmount === null
+					? undefined
+					: eligibility.remaining;
+			if (limit === undefined || limit === null) return;
+			const running = isHospitalisation
+				? (hospitalisationRunning += amount)
+				: (standardRunning += amount);
+			const over = Math.round((running - limit) * 100) / 100;
+			if (over > 0) result[row.id] = Math.min(over, amount);
+		});
+		return result;
+	}, [
+		claimantView,
+		eligibility.remaining,
+		hospitalisation?.remaining,
+		resolvedEligibleAmount,
+		savedClaims,
+	]);
 
 	const columns = useMemo<TableColumnDefinition<ClaimHeadRow>[]>(() => {
 		const tableColumns: TableColumnDefinition<ClaimHeadRow>[] = [
@@ -199,9 +282,20 @@ export const ClaimHeadEntryTable = () => {
 				header: "Claimed Amount",
 				cell: ({ row }) => {
 					const amount = Number(row.original.amount || 0);
+					const over = overLimitByRowId[row.original.id];
 					return (
-						<span className="font-medium">
-							₹ {amount.toLocaleString("en-IN")}
+						<span className="block">
+							<span className={`font-medium ${over ? "text-red-700" : ""}`}>
+								₹ {amount.toLocaleString("en-IN")}
+							</span>
+							{over ? (
+								<span
+									role="alert"
+									className="mt-0.5 block text-xs font-medium text-red-700"
+								>
+									₹ {over.toLocaleString("en-IN")} over your limit
+								</span>
+							) : null}
 						</span>
 					);
 				},
@@ -248,6 +342,68 @@ export const ClaimHeadEntryTable = () => {
 			});
 
 			tableColumns.push({
+				id: "remarks",
+				header: "Remarks",
+				// Read-only viewers only see short text, so the column doesn't
+				// need the extra width the editable input gets.
+				widthUnits: reviewLocked ? 1 : 2,
+				enableSorting: false,
+				cell: ({ row }) => {
+					const claim = row.original;
+
+					if (reviewLocked) {
+						const text = claim.remarks?.trim();
+						return (
+							<span
+								className={text ? "text-sm text-iron-dark" : "text-iron"}
+								title={text || undefined}
+							>
+								{text || "--"}
+							</span>
+						);
+					}
+
+					const isApproved = claim.approvalStatus === "APPROVED";
+					const isApproving = approvingId === claim.id;
+					const hasRemarks = Boolean(claim.remarks?.trim());
+					// Remarks stay editable until the bill is approved; a reduced
+					// approval needs its remark typed BEFORE ticking Approve.
+					// They are NOT disabled while saving, so typing never stalls.
+					const disabled = loading || isApproving || isApproved;
+
+					return (
+						<ReviewCell locked={false} className="flex min-w-56 items-center">
+							{/* React's onBlur bubbles, so this catches the input
+							    losing focus without relying on FormInput's props. */}
+							<div
+								className="min-w-0 flex-1"
+								onBlur={() => onRemarksBlur(claim.id)}
+							>
+								<FormInput
+									placeholder="Enter remarks"
+									value={claim.remarks ?? ""}
+									disabled={disabled}
+									maxLength={500}
+									onChange={(event) =>
+										onRemarksChange(claim.id, event.target.value)
+									}
+									error={errors[`remarks-${claim.id}`]}
+									aria-label={`Remarks for bill ${claim.billNumber}`}
+								/>
+								<RemarksStatusHint
+									status={
+										isApproved || !hasRemarks
+											? "idle"
+											: (remarksStatus[claim.id] ?? "idle")
+									}
+									onRetry={() => void handleSaveRemarks(claim.id)}
+								/>
+							</div>
+						</ReviewCell>
+					);
+				},
+			});
+			tableColumns.push({
 				id: "review",
 				header: "Approved",
 				enableSorting: false,
@@ -283,67 +439,6 @@ export const ClaimHeadEntryTable = () => {
 								}}
 								label={isApproving ? "Saving…" : label}
 								size={20}
-							/>
-						</ReviewCell>
-					);
-				},
-			});
-
-			tableColumns.push({
-				id: "remarks",
-				header: "Remarks",
-				widthUnits: 2,
-				enableSorting: false,
-				cell: ({ row }) => {
-					const claim = row.original;
-
-					if (reviewLocked) {
-						const text = claim.remarks?.trim();
-						return (
-							<span
-								className={text ? "text-sm text-iron-dark" : "text-iron"}
-								title={text || undefined}
-							>
-								{text || "--"}
-							</span>
-						);
-					}
-
-					const isApproved = claim.approvalStatus === "APPROVED";
-					const isApproving = approvingId === claim.id;
-					const isSavingRemarks = savingRemarksId === claim.id;
-					const hasRemarks = Boolean(claim.remarks?.trim());
-					// Remarks stay editable until the bill is approved; a reduced
-					// approval needs its remark typed BEFORE ticking Approve.
-					const disabled =
-						loading || isApproving || isApproved || isSavingRemarks;
-
-					return (
-						<ReviewCell
-							locked={false}
-							className="flex min-w-56 items-start gap-2"
-						>
-							<div className="min-w-0 flex-1">
-								<FormInput
-									placeholder="Enter remarks"
-									value={claim.remarks ?? ""}
-									disabled={disabled}
-									maxLength={500}
-									onChange={(event) =>
-										onRemarksChange(claim.id, event.target.value)
-									}
-									error={errors[`remarks-${claim.id}`]}
-									aria-label={`Remarks for bill ${claim.billNumber}`}
-								/>
-							</div>
-							<Button
-								type="button"
-								appearance="icon"
-								Icon={Save}
-								disabled={disabled || !hasRemarks}
-								loading={isSavingRemarks}
-								onClick={() => void handleSaveRemarks(claim.id)}
-								title="Save remarks"
 							/>
 						</ReviewCell>
 					);
@@ -387,8 +482,14 @@ export const ClaimHeadEntryTable = () => {
 			});
 		}
 
-		return tableColumns;
+		return tableColumns.filter(
+			(column) =>
+				showApproverColumns ||
+				(column.id !== "approvedClaimAmount" && column.id !== "review"),
+		);
 	}, [
+		showApproverColumns,
+		overLimitByRowId,
 		approvingId,
 		canEditClaimRows,
 		deletingId,
@@ -403,8 +504,9 @@ export const ClaimHeadEntryTable = () => {
 		handleApproveLineItem,
 		onToggleLineItemStatus,
 		onRemarksChange,
+		onRemarksBlur,
 		handleSaveRemarks,
-		savingRemarksId,
+		remarksStatus,
 	]);
 
 	const simpleColumns = useMemo<SimpleTableColumn<ClaimHeadRow>[]>(
@@ -450,14 +552,14 @@ export const ClaimHeadEntryTable = () => {
 						return (
 							<div
 								key={item.id}
-								className="grid grid-cols-1 items-center gap-3 bg-page p-4 xl:grid-cols-7"
+								className="grid grid-cols-1 items-end gap-3 bg-page p-4 sm:grid-cols-2 xl:grid-cols-[1.1fr_1fr_1.1fr_1fr_0.8fr_1.8fr_auto]"
 							>
 								<SelectInput
 									placeholder="Claim Head"
 									label="Claim Head"
-									options={CLAIM_HEAD_OPTIONS}
+									options={claimHeadOptions}
 									value={
-										CLAIM_HEAD_OPTIONS.find(
+										claimHeadOptions.find(
 											(option) => option.value === item.claimHead,
 										) ?? null
 									}
@@ -537,9 +639,10 @@ export const ClaimHeadEntryTable = () => {
 									disabled={isSaving}
 									inputName={`attachment-${item.id}`}
 									showActions
+									previewVariant="line"
 								/>
 
-								<div className="mt-1 flex items-end gap-1.5 sm:mt-5">
+								<div className="flex items-center gap-1.5 pb-0.5">
 									<Button
 										type="button"
 										Icon={isEditing ? Save : Plus}

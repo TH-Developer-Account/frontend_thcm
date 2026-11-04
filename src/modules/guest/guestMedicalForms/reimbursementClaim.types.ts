@@ -1,7 +1,3 @@
-import type { ClaimHeadRow } from "../../medicalReimbursment/types/reimbursementClaim.types";
-
-export type ReimbursementClaimMode = "create" | "edit" | "view";
-
 /** Mirrors the backend MedicalClaim status values. */
 export type ReimbursementClaimStatus =
 	| "AWAITING_EX_EMPLOYEE"
@@ -12,19 +8,6 @@ export type ReimbursementClaimStatus =
 	| "CLOSED";
 
 export type ClaimFor = "SELF" | "SPOUSE" | "BOTH";
-
-export type ClaimantDetails = {
-	employeeName: string;
-	ticketNumber: string;
-	grade: string;
-	claimFor: ClaimFor;
-	spouseName?: string;
-};
-
-export type ReimbursementClaimFormValues = ClaimantDetails & {
-	claimItems: ClaimHeadRow[];
-	remarks: string;
-};
 
 export type ReimbursementListingTab = "createdByMe";
 
@@ -59,9 +42,4 @@ export type ReimbursementClaimListResponse = {
 	pageSize: number;
 	total: number;
 	totalPages: number;
-};
-
-export type UpdateReimbursementClaimVariables = {
-	claimId: string;
-	formData: FormData;
 };

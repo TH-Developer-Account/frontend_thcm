@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useWatch } from "react-hook-form";
 import {
 	ArrowLeft,
 	Download,
@@ -30,7 +31,7 @@ import PhoneInput from "../../../components/forms/PhoneInput";
 import {
 	COUNTRY_CODES,
 	DEFAULT_COUNTRY_CODE,
-	splitMobile,
+	joinMobile,
 } from "../../../utils/phone";
 
 type InitiationTab = "single" | "bulk";
@@ -39,6 +40,13 @@ const TABS: ReadonlyArray<{ value: InitiationTab; label: string }> = [
 	{ value: "single", label: "Single claim" },
 	{ value: "bulk", label: "Bulk import" },
 ];
+
+/**
+ * Long enough for a pasted "+91 99999 99999" (15 characters). The schema
+ * strips the spaces and the +91 prefix, so a paste works instead of being
+ * cut off at 10 characters.
+ */
+const MAX_MOBILE_INPUT_LENGTH = 10;
 
 type MedicalClaimInitiationFormProps = {
 	claimId?: string;
@@ -69,24 +77,24 @@ const MedicalClaimInitiationForm = ({
 	const fieldMode = isViewMode ? "view" : "edit";
 
 	const [activeTab, setActiveTab] = useState<InitiationTab>("single");
-	const [countryCode, setCountryCode] = useState(DEFAULT_COUNTRY_CODE);
 
 	const {
-		values,
+		register,
+		control,
 		errors,
 		isDirty,
 		isSubmitting,
 		isResendingLink,
 		isDetailLoading,
-		handleChange,
 		handleReset,
 		handleSubmit,
+		onValid,
+		onInvalid,
 		handleResendLink,
 	} = useMedicalClaimInitiation({
 		claimId,
 		initialValues,
 		shouldFetchDetails: isViewMode,
-		countryCode,
 		onSubmitSuccess: onSuccess,
 	});
 	const {
@@ -104,6 +112,12 @@ const MedicalClaimInitiationForm = ({
 			await onSuccess?.();
 		},
 	});
+
+	// View mode never renders a real <input> (FormInput short-circuits to a
+	// read-only field before touching name/onChange/ref), so those fields need
+	// their current value read explicitly rather than via register().
+	const values = useWatch({ control });
+
 	const canResendLink =
 		isViewMode && values.status === "AWAITING_EX_EMPLOYEE" && Boolean(claimId);
 
@@ -113,16 +127,15 @@ const MedicalClaimInitiationForm = ({
 
 	const handleCancel = () => (onCancel ? onCancel() : onBack?.());
 
-	// View mode: the stored mobile is "+<code><number>" (or a legacy bare number).
-	const viewPhone = splitMobile(values.mobile);
-	const phoneCountryCode = isViewMode ? viewPhone.countryCode : countryCode;
-	const maxMobileDigits = phoneCountryCode === DEFAULT_COUNTRY_CODE ? 10 : 15;
+	// View mode shows the full number ("+91 9845012345"); edit mode shows only
+	// the national digits next to the attached country code.
+	const mobileDisplayValue = isViewMode
+		? values.mobile
+			? joinMobile(values.countryCode ?? DEFAULT_COUNTRY_CODE, values.mobile)
+			: ""
+		: values.mobile;
 
-	const isSingleDirty = isDirty || countryCode !== DEFAULT_COUNTRY_CODE;
-	const handleSingleReset = () => {
-		setCountryCode(DEFAULT_COUNTRY_CODE);
-		handleReset();
-	};
+	const submitSingle = () => void handleSubmit(onValid, onInvalid)();
 
 	return (
 		<div className="flex flex-col gap-4 lg:flex-row lg:items-start">
@@ -164,12 +177,12 @@ const MedicalClaimInitiationForm = ({
 											appearance="standard"
 											variant="outline"
 											disabled={
-												isBusy || (showBulkPanel ? !importFile : !isSingleDirty)
+												isBusy || (showBulkPanel ? !importFile : !isDirty)
 											}
 											onClick={
 												showBulkPanel
 													? () => handleImportFileChange(null)
-													: handleSingleReset
+													: handleReset
 											}
 										/>
 										{showBulkPanel ? (
@@ -206,7 +219,7 @@ const MedicalClaimInitiationForm = ({
 												appearance="standard"
 												variant="brand"
 												disabled={isBusy}
-												onClick={() => void handleSubmit()}
+												onClick={submitSingle}
 											/>
 										)}
 									</>
@@ -234,7 +247,7 @@ const MedicalClaimInitiationForm = ({
 						noValidate
 						onSubmit={(event) => {
 							event.preventDefault();
-							if (!isViewMode && activeTab === "single") void handleSubmit();
+							if (!isViewMode && activeTab === "single") submitSingle();
 						}}
 					>
 						{!isViewMode ? (
@@ -275,43 +288,46 @@ const MedicalClaimInitiationForm = ({
 								}
 							>
 								<FormInput
-									name="employeeName"
 									label="Employee Name"
 									mode={fieldMode}
 									value={values.employeeName}
 									required={!isViewMode}
 									readOnly={isViewMode}
 									disabled={isDetailLoading}
-									error={isViewMode ? undefined : errors.employeeName}
+									success={
+										!isViewMode &&
+										!errors.employeeName &&
+										Boolean(values.employeeName)
+									}
+									error={isViewMode ? undefined : errors.employeeName?.message}
 									helperText={
 										isViewMode ? undefined : "Full name of the employee."
 									}
 									autoComplete="name"
-									onChange={(event) =>
-										handleChange("employeeName", event.target.value)
-									}
+									{...register("employeeName")}
 								/>
 								<FormInput
-									name="ticketNumber"
 									label="Ticket Number"
 									mode={fieldMode}
 									value={values.ticketNumber}
 									required={!isViewMode}
 									readOnly={isViewMode}
 									disabled={isDetailLoading}
-									error={isViewMode ? undefined : errors.ticketNumber}
+									success={
+										!isViewMode &&
+										!errors.ticketNumber &&
+										Boolean(values.ticketNumber)
+									}
+									error={isViewMode ? undefined : errors.ticketNumber?.message}
 									placeholder={isViewMode ? undefined : "e.g. RE10214"}
 									helperText={
 										isViewMode
 											? undefined
 											: "The employee's ticket number, for example RE10214."
 									}
-									onChange={(event) =>
-										handleChange("ticketNumber", event.target.value)
-									}
+									{...register("ticketNumber")}
 								/>
 								<FormInput
-									name="email"
 									label="Employee Email"
 									type="email"
 									mode={fieldMode}
@@ -319,46 +335,42 @@ const MedicalClaimInitiationForm = ({
 									required={!isViewMode}
 									readOnly={isViewMode}
 									disabled={isDetailLoading}
-									error={isViewMode ? undefined : errors.email}
+									success={
+										!isViewMode && !errors.email && Boolean(values.email)
+									}
+									error={isViewMode ? undefined : errors.email?.message}
 									helperText={
 										isViewMode
 											? undefined
 											: "The secure claim link is sent to this address."
 									}
 									autoComplete="email"
-									onChange={(event) =>
-										handleChange("email", event.target.value)
-									}
+									{...register("email")}
 								/>
 								<PhoneInput
-									name="mobile"
 									label="Employee Phone Number"
 									mode={fieldMode}
-									value={isViewMode ? viewPhone.mobile : values.mobile}
+									value={values.mobile}
+									readOnlyValue={mobileDisplayValue}
+									countryCodes={COUNTRY_CODES}
+									countryCodeValue={values.countryCode}
+									countryCodeProps={register("countryCode")}
+									countryCodeDisabled={isSubmitting}
 									required={!isViewMode}
 									readOnly={isViewMode}
 									disabled={isDetailLoading}
-									error={isViewMode ? undefined : errors.mobile}
+									success={
+										!isViewMode && !errors.mobile && Boolean(values.mobile)
+									}
+									error={isViewMode ? undefined : errors.mobile?.message}
 									helperText={
 										isViewMode
 											? undefined
 											: "Select the country code and enter the mobile number."
 									}
-									maxLength={maxMobileDigits}
-									countryCodes={COUNTRY_CODES}
-									countryCodeValue={phoneCountryCode}
-									countryCodeProps={{
-										value: phoneCountryCode,
-										onChange: (event) => setCountryCode(event.target.value),
-									}}
-									onChange={(event) =>
-										handleChange(
-											"mobile",
-											event.target.value
-												.replace(/\D/g, "")
-												.slice(0, maxMobileDigits),
-										)
-									}
+									maxLength={MAX_MOBILE_INPUT_LENGTH}
+									autoComplete="tel-national"
+									{...register("mobile")}
 								/>
 							</div>
 						) : null}

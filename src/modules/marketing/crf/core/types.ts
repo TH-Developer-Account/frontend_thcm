@@ -29,6 +29,11 @@ export const CRF_CATEGORIES = [
 
 export type CrfCategory = (typeof CRF_CATEGORIES)[number]["value"];
 
+/** Custom artwork request (no catalog product behind the line). */
+export const CUSTOM_ARTWORK_LABEL = "Custom artwork";
+/** `value` prefix of a custom line (the form needs a non-empty, unique value). */
+export const CUSTOM_ARTWORK_ID_PREFIX = "custom-";
+
 /* ========================================================================== */
 /*                         Artwork (digital) resolution                       */
 /* ========================================================================== */
@@ -167,6 +172,9 @@ export type CrfLineItem = LineItemOption & {
 
 	/* ---- Artwork ---- */
 	resolutionPreset?: ArtworkResolutionPreset;
+	/** Custom artwork request: size + description typed by the user, no catalog
+	 *  product. Sent as a CUSTOM_ARTWORK item (see CrfCustomArtworkItemInput). */
+	isCustom?: boolean;
 };
 
 /* ========================================================================== */
@@ -220,7 +228,22 @@ export type CrfShopifyItem = {
 	status: "REQUESTED" | "OUT_OF_STOCK" | "REMOVED" | "ORDERED" | "DEBITED";
 };
 
-export type ApiCrfItem = CrfCatalogItem | CrfShopifyItem;
+/** A custom artwork line — backend's "CUSTOM" source. Unpriced (rate/amount 0). */
+export type CrfCustomArtworkItem = {
+	id: string;
+	category: "ARTWORK";
+	source: "CUSTOM";
+	quantity: number;
+	rate: number;
+	amount: number;
+	title: string | null;
+	description: string | null;
+	width: string | null;
+	height: string | null;
+	unit: string | null;
+};
+
+export type ApiCrfItem = CrfCatalogItem | CrfShopifyItem | CrfCustomArtworkItem;
 
 export type CrfStatus =
 	| "OPEN"
@@ -351,7 +374,20 @@ export type CrfShopifyItemInput = {
 	rate: number;
 };
 
-export type CrfItemInput = CrfCatalogItemInput | CrfShopifyItemInput;
+/** Custom artwork line — matches backend's CustomArtworkCrfItemInput. */
+export type CrfCustomArtworkItemInput = {
+	kind: "CUSTOM_ARTWORK";
+	quantity: number;
+	width: string;
+	height: string;
+	unit: string;
+	description: string;
+};
+
+export type CrfItemInput =
+	| CrfCatalogItemInput
+	| CrfShopifyItemInput
+	| CrfCustomArtworkItemInput;
 
 /** POST /crf, PUT /crf/:crfId body. */
 export type CrfPayload = {

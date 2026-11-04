@@ -48,6 +48,12 @@ export type ApproveLineItemPayload = {
 	remarks?: string | null;
 };
 
+/** One bill's remarks, as sent to the remarks endpoint. */
+export type BillRemarksPayload = {
+	id: string;
+	remarks?: string | null;
+};
+
 type ListingPage = MedicalClaimListingResult;
 
 const fetchListingPage = async (
@@ -240,14 +246,36 @@ export const medicalClaimApi = {
 		return Array.isArray(body?.data) ? body.data[0] : undefined;
 	},
 
+	/** Saves one bill's remarks. Prefer saveBillRemarks for several bills. */
 	saveLineItemRemarks: async (
 		claimId: string,
-		lineItem: { id: string; remarks?: string | null },
+		lineItem: BillRemarksPayload,
 	): Promise<void> => {
 		await ServerAxios.patch(
 			`${MEDICAL_CLAIM_URL}/${encodeURIComponent(claimId)}/bills/remarks`,
 			{
 				bills: [{ billId: lineItem.id, remarks: lineItem.remarks?.trim() ?? null }],
+			},
+		);
+	},
+
+	/**
+	 * Saves the remarks of several bills in ONE request — used by the remarks
+	 * auto-save and by the flush before Approve / Send for Clarification.
+	 * An empty remark is sent as null, which clears it on the server.
+	 */
+	saveBillRemarks: async (
+		claimId: string,
+		items: BillRemarksPayload[],
+	): Promise<void> => {
+		if (items.length === 0) return;
+		await ServerAxios.patch(
+			`${MEDICAL_CLAIM_URL}/${encodeURIComponent(claimId)}/bills/remarks`,
+			{
+				bills: items.map((item) => ({
+					billId: item.id,
+					remarks: item.remarks?.trim() || null,
+				})),
 			},
 		);
 	},

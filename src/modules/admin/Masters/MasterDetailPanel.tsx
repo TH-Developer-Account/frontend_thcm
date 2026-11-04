@@ -5,221 +5,254 @@ import Button from "../../../components/common/Button";
 import FormInput from "../../../components/forms/FormInput";
 
 import type { MasterItem, MasterName } from "./masterData.types";
+import { isValidAnnualCap } from "./master.data.mapper";
 
 interface MasterDetailPanelProps {
-  masterName: MasterName;
-  item: MasterItem | null;
-  onSave: (updated: MasterItem) => Promise<void> | void;
-  onClose: () => void;
-  isSaving?: boolean;
-  readOnly?: boolean;
+	masterName: MasterName;
+	item: MasterItem | null;
+	onSave: (updated: MasterItem) => Promise<void> | void;
+	onClose: () => void;
+	isSaving?: boolean;
+	readOnly?: boolean;
 }
 
 export function MasterDetailPanel({
-  masterName,
-  item,
-  onSave,
-  onClose,
-  isSaving = false,
-  readOnly = false,
+	masterName,
+	item,
+	onSave,
+	onClose,
+	isSaving = false,
+	readOnly = false,
 }: MasterDetailPanelProps) {
-  const [form, setForm] = useState<MasterItem | null>(
-    item ? { ...item } : null,
-  );
+	const [form, setForm] = useState<MasterItem | null>(
+		item ? { ...item } : null,
+	);
 
-  const [dirty, setDirty] = useState(false);
+	const [dirty, setDirty] = useState(false);
 
-  useEffect(() => {
-    setForm(item ? { ...item } : null);
-    setDirty(false);
-  }, [item]);
+	useEffect(() => {
+		setForm(item ? { ...item } : null);
+		setDirty(false);
+	}, [item]);
 
-  const handleChange = (field: keyof MasterItem, value: string) => {
-    if (!form || readOnly) return;
+	const handleChange = (field: keyof MasterItem, value: string) => {
+		if (!form || readOnly) return;
 
-    setForm((current) =>
-      current
-        ? {
-            ...current,
-            [field]: value,
-          }
-        : current,
-    );
+		setForm((current) =>
+			current
+				? {
+						...current,
+						[field]: value,
+					}
+				: current,
+		);
 
-    setDirty(true);
-  };
+		setDirty(true);
+	};
 
-  const handleSave = async () => {
-    if (!form || readOnly || isSaving || !dirty) {
-      return;
-    }
+	// Grade Eligibility: grade is fixed, only the annual cap is editable.
+	const showGradeFields = masterName === "Grade Eligibility";
 
-    await onSave(form);
-    setDirty(false);
-  };
+	// Grade cap must be a non-negative number before it can be saved.
+	const isInvalid = showGradeFields && !isValidAnnualCap(form?.annualCap);
 
-  const handleEnterSave = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key !== "Enter") return;
+	const handleSave = async () => {
+		if (!form || readOnly || isSaving || !dirty || isInvalid) {
+			return;
+		}
 
-    event.preventDefault();
-    void handleSave();
-  };
+		await onSave(form);
+		setDirty(false);
+	};
 
-  if (!item || !form) {
-    return (
-      <div className="master-detail-empty">
-        <div className="master-detail-empty-icon" aria-hidden="true">
-          <Database size={18} />
-        </div>
+	const handleEnterSave = (event: KeyboardEvent<HTMLInputElement>) => {
+		if (event.key !== "Enter") return;
 
-        <p className="master-detail-empty-title">Select a record</p>
+		event.preventDefault();
+		void handleSave();
+	};
 
-        <p className="master-detail-empty-text">
-          Click any row to view or edit it here
-        </p>
-      </div>
-    );
-  }
+	if (!item || !form) {
+		return (
+			<div className="master-detail-empty">
+				<div className="master-detail-empty-icon" aria-hidden="true">
+					<Database size={18} />
+				</div>
 
-  const title =
-    form.name?.trim() ||
-    form.code?.trim() ||
-    form.description?.trim() ||
-    "Master record";
+				<p className="master-detail-empty-title">Select a record</p>
 
-  // Division/Designation: free-text name only (same as Event Names).
-  // Cost Centers/Zones: has both a real code and a name, like
-  // Branches/Departments.
-  const showName =
-    masterName === "Branches" ||
-    masterName === "Departments" ||
-    masterName === "Event Names" ||
-    masterName === "Divisions" ||
-    masterName === "Designations" ||
-    masterName === "Cost Centers" ||
-    masterName === "Zones";
+				<p className="master-detail-empty-text">
+					Click any row to view or edit it here
+				</p>
+			</div>
+		);
+	}
 
-  const showCode =
-    masterName === "Branches" ||
-    masterName === "Departments" ||
-    masterName === "Budget" ||
-    masterName === "Cost Centers" ||
-    masterName === "Zones";
+	const title =
+		form.name?.trim() ||
+		form.code?.trim() ||
+		form.description?.trim() ||
+		"Master record";
 
-  const showBudgetFields = masterName === "Budget";
+	// Division/Designation: free-text name only (same as Event Names).
+	// Cost Centers/Zones: has both a real code and a name, like
+	// Branches/Departments.
+	const showName =
+		masterName === "Branches" ||
+		masterName === "Departments" ||
+		masterName === "Event Names" ||
+		masterName === "Divisions" ||
+		masterName === "Designations" ||
+		masterName === "Cost Centers" ||
+		masterName === "Zones";
 
-  return (
-    <section
-      className="master-detail-panel"
-      aria-label={`${masterName} details`}
-    >
-      <header className="master-detail-header">
-        <div className="master-detail-heading">
-          <p className="master-detail-eyebrow">{masterName}</p>
+	const showCode =
+		masterName === "Branches" ||
+		masterName === "Departments" ||
+		masterName === "Budget" ||
+		masterName === "Cost Centers" ||
+		masterName === "Zones";
 
-          <h3 className="master-detail-title">{title}</h3>
-        </div>
+	const showBudgetFields = masterName === "Budget";
 
-        <Button
-          type="button"
-          size="sm"
-          appearance="icon"
-          variant="secondary"
-          Icon={X}
-          aria-label="Close details panel"
-          onClick={onClose}
-        />
-      </header>
+	return (
+		<section
+			className="master-detail-panel"
+			aria-label={`${masterName} details`}
+		>
+			<header className="master-detail-header">
+				<div className="master-detail-heading">
+					<p className="master-detail-eyebrow">{masterName}</p>
 
-      <div className="master-detail-body scrollbar-sleek">
-        {showName && (
-          <FormInput
-            name="name"
-            label="Name"
-            value={form.name ?? ""}
-            onChange={(event) => handleChange("name", event.target.value)}
-            onKeyDown={handleEnterSave}
-            disabled={readOnly || isSaving}
-          />
-        )}
+					<h3 className="master-detail-title">{title}</h3>
+				</div>
 
-        {showCode && (
-          <FormInput
-            name="code"
-            label="Code"
-            value={form.code ?? ""}
-            onChange={(event) => handleChange("code", event.target.value)}
-            onKeyDown={handleEnterSave}
-            disabled={readOnly || isSaving}
-          />
-        )}
+				<Button
+					type="button"
+					size="sm"
+					appearance="icon"
+					variant="secondary"
+					Icon={X}
+					aria-label="Close details panel"
+					onClick={onClose}
+				/>
+			</header>
 
-        {showBudgetFields && (
-          <>
-            <FormInput
-              name="fiscalYear"
-              label="Fiscal Year"
-              value={form.fiscalYear ?? ""}
-              placeholder="2026"
-              onChange={(event) =>
-                handleChange("fiscalYear", event.target.value)
-              }
-              onKeyDown={handleEnterSave}
-              disabled={readOnly || isSaving}
-            />
+			<div className="master-detail-body scrollbar-sleek">
+				{showName && (
+					<FormInput
+						name="name"
+						label="Name"
+						value={form.name ?? ""}
+						onChange={(event) => handleChange("name", event.target.value)}
+						onKeyDown={handleEnterSave}
+						disabled={readOnly || isSaving}
+					/>
+				)}
 
-            <FormInput
-              name="description"
-              label="Description"
-              value={form.description ?? ""}
-              onChange={(event) =>
-                handleChange("description", event.target.value)
-              }
-              onKeyDown={handleEnterSave}
-              disabled={readOnly || isSaving}
-            />
+				{showCode && (
+					<FormInput
+						name="code"
+						label="Code"
+						value={form.code ?? ""}
+						onChange={(event) => handleChange("code", event.target.value)}
+						onKeyDown={handleEnterSave}
+						disabled={readOnly || isSaving}
+					/>
+				)}
 
-            <FormInput
-              type="number"
-              name="budgetAmount"
-              label="Budget Amount"
-              value={String(form.budgetAmount ?? "")}
-              onChange={(event) =>
-                handleChange("budgetAmount", event.target.value)
-              }
-              onKeyDown={handleEnterSave}
-              disabled={readOnly || isSaving}
-            />
-          </>
-        )}
-      </div>
+				{showBudgetFields && (
+					<>
+						<FormInput
+							name="fiscalYear"
+							label="Fiscal Year"
+							value={form.fiscalYear ?? ""}
+							placeholder="2026"
+							onChange={(event) =>
+								handleChange("fiscalYear", event.target.value)
+							}
+							onKeyDown={handleEnterSave}
+							disabled={readOnly || isSaving}
+						/>
 
-      {!readOnly && (
-        <footer className="master-detail-footer">
-          <Button
-            type="button"
-            size="sm"
-            appearance="ghost"
-            variant="secondary"
-            onClick={onClose}
-            disabled={isSaving}
-          >
-            Cancel
-          </Button>
+						<FormInput
+							name="description"
+							label="Description"
+							value={form.description ?? ""}
+							onChange={(event) =>
+								handleChange("description", event.target.value)
+							}
+							onKeyDown={handleEnterSave}
+							disabled={readOnly || isSaving}
+						/>
 
-          <Button
-            type="button"
-            size="sm"
-            appearance="standard"
-            variant="brand"
-            Icon={Save}
-            onClick={() => void handleSave()}
-            disabled={!dirty || isSaving}
-          >
-            {isSaving ? "Saving..." : "Save changes"}
-          </Button>
-        </footer>
-      )}
-    </section>
-  );
+						<FormInput
+							type="number"
+							name="budgetAmount"
+							label="Budget Amount"
+							value={String(form.budgetAmount ?? "")}
+							onChange={(event) =>
+								handleChange("budgetAmount", event.target.value)
+							}
+							onKeyDown={handleEnterSave}
+							disabled={readOnly || isSaving}
+						/>
+					</>
+				)}
+
+				{showGradeFields && (
+					<>
+						{/* Grade is fixed; only the annual cap is editable. */}
+						<FormInput
+							name="grade"
+							label="Grade"
+							value={form.name ?? ""}
+							onChange={() => undefined}
+							disabled
+						/>
+
+						<FormInput
+							type="number"
+							name="annualCap"
+							label="Annual Cap"
+							value={String(form.annualCap ?? "")}
+							placeholder="Annual cap"
+							onChange={(event) =>
+								handleChange("annualCap", event.target.value)
+							}
+							onKeyDown={handleEnterSave}
+							disabled={readOnly || isSaving}
+						/>
+					</>
+				)}
+			</div>
+
+			{!readOnly && (
+				<footer className="master-detail-footer">
+					<Button
+						type="button"
+						size="sm"
+						appearance="ghost"
+						variant="secondary"
+						onClick={onClose}
+						disabled={isSaving}
+					>
+						Cancel
+					</Button>
+
+					<Button
+						type="button"
+						size="sm"
+						appearance="standard"
+						variant="brand"
+						Icon={Save}
+						onClick={() => void handleSave()}
+						disabled={!dirty || isSaving || isInvalid}
+					>
+						{isSaving ? "Saving..." : "Save changes"}
+					</Button>
+				</footer>
+			)}
+		</section>
+	);
 }

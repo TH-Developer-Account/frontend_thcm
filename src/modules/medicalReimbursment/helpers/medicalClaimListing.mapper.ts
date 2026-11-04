@@ -79,7 +79,10 @@ export const toMedicalClaimFormValues = (
 	coverageType: (claim.claimCover ?? "") as CoverageType,
 	spouseName: claim.spouseName ?? "",
 	medicalAdvanceAmount: toAmountString(claim.medicalAdvanceTaken),
-	companySettledAmount: toAmountString(claim.alreadySettled),
+	// companySettledAmount: toAmountString(claim.alreadySettled),
+	companySettledAmount: toAmountString(
+		claim.liveEligibility?.alreadySettled ?? claim.alreadySettled,
+	),
 	declarationAccepted: Boolean(claim.declarationAcceptedAt),
 	employeeSignature: claim.signatureName ?? "",
 	// Empty → the form hook autofills today's date while editable.
@@ -90,12 +93,24 @@ export const toMedicalClaimFormValues = (
  * Annual cap implied by the server's numbers (eligible = cap - settled), used
  * when the claim's grade isn't in the grade list (e.g. legacy grades).
  */
-export const deriveAnnualCap = (claim?: MedicalClaimDetail | null): number | null => {
+// deriveAnnualCap — prefer the live cap
+export const deriveAnnualCap = (
+	claim?: MedicalClaimDetail | null,
+): number | null => {
 	if (!claim) return null;
+	if (claim.liveEligibility) return toNumber(claim.liveEligibility.annualCap);
 	const eligible = toOptionalNumber(claim.eligibleAmount);
 	if (eligible === null) return null;
 	return eligible + toNumber(claim.alreadySettled);
 };
+
+// new helper — the two props every page passes to <ReimbursementClaimForm>
+export const toEligibilityHoldProps = (claim?: MedicalClaimDetail | null) => ({
+	eligibilityPendingAmount: claim?.liveEligibility
+		? toNumber(claim.liveEligibility.inProgressAmount)
+		: undefined,
+	hospitalisationSummary: claim?.liveEligibility?.hospitalisation ?? null,
+});
 
 export const toMedicalClaimLineItems = (
 	claim: MedicalClaimDetail,
@@ -140,7 +155,9 @@ export const toMedicalClaimLineItems = (
 			// Only an APPROVED bill has a meaningful approved amount. For
 			// pending bills this stays "" and the review input falls back to
 			// the claimed amount — never to 0.
-			approvedClaimAmount: approved ? toAmountString(bill.approvedClaimAmount) : "",
+			approvedClaimAmount: approved
+				? toAmountString(bill.approvedClaimAmount)
+				: "",
 			remarks: bill.remarks ?? "",
 			approved,
 			approvalStatus: approved ? "APPROVED" : "PENDING",
