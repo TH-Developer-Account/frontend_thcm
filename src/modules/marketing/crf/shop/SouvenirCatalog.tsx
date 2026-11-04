@@ -1,3 +1,21 @@
+// crf/shop/SouvenirCatalog.tsx
+// Souvenirs tab of the CRF catalog — products come live from the store
+// (Shopify via MAP's proxy), not from MAP's product master.
+//
+//   ┌──────────────┐  Listing card = minimal info, one per store PRODUCT
+//   │ image  −30%  │  (rows are per variant, so they're grouped):
+//   │ Polo T-Shirt │    image · discount · title · price (or "From ₹x")
+//   │ From ₹549 ₹799│   stock hint only when low / out
+//   │ [View options]│   click / Enter → single product view (variants, GST)
+//   └──────────────┘    single-variant products get a quick "+ Add"
+//
+// Only CRF_GRID_PAGE_SIZE cards are on screen to start with; "Load more"
+// reveals the next batch (and pulls the next store page when the rows already
+// fetched have all been shown).
+//
+// Controlled like the rest of the catalog: the cart (items / onChange) lives
+// in useCrfForm; this component only owns the store query + UI state.
+
 import React from "react";
 import { PackageOpen, Plus, RefreshCcw, SlidersHorizontal } from "lucide-react";
 
@@ -13,13 +31,13 @@ import {
 	type SouvenirVariant,
 } from "./mapper";
 import { CrfImage } from "../core/Media";
+import LoadMoreBar, { CRF_GRID_PAGE_SIZE } from "../core/LoadMoreBar";
 import {
 	formatCrfAmount,
 	formatCrfQuantity,
 	type CrfFormErrors,
 } from "../core/schema";
-import { CRF_PAGE_SIZE, type CrfLineItem } from "../core/types";
-import LoadMoreBar from "../core/LoadMoreBar";
+import type { CrfLineItem } from "../core/types";
 
 /* ========================================================================== */
 /*                                  Helpers                                   */
@@ -57,6 +75,10 @@ type SouvenirCardProps = {
 	items: CrfLineItem[];
 	errors: CrfFormErrors;
 	readOnly: boolean;
+	/** True once the enclosing cart is already over its budget (shortfall
+	 *  swap only) — disables adding MORE, but never hides the card or blocks
+	 *  opening it to reduce/remove what's already there. */
+	disableAdd: boolean;
 	onOpen: (product: SouvenirProduct) => void;
 	onQuickAdd: (product: SouvenirProduct, variant: SouvenirVariant) => void;
 };
@@ -66,6 +88,7 @@ const SouvenirCard = ({
 	items,
 	errors,
 	readOnly,
+	disableAdd,
 	onOpen,
 	onQuickAdd,
 }: SouvenirCardProps) => {
@@ -189,6 +212,12 @@ const SouvenirCard = ({
 							onQuickAdd(product, single);
 						}}
 						aria-label={`Add ${product.title} to CRF`}
+						disabled={disableAdd}
+						title={
+							disableAdd
+								? "Over the shortfall budget — remove or reduce items first"
+								: undefined
+						}
 					>
 						<Plus aria-hidden="true" />
 						<span>Add</span>
@@ -229,6 +258,11 @@ export type SouvenirCatalogProps = {
 	readOnly: boolean;
 	/** Search text from the catalog toolbar (sent to the store as `q`). */
 	search: string;
+	/** True once the enclosing cart is already over its budget (shortfall
+	 *  swap only) — disables quick-add and the product view's increase
+	 *  controls, without hiding anything or blocking removal/decrease.
+	 *  Defaults to false: the main CRF form (no budget concept) never sets this. */
+	disableAdd?: boolean;
 };
 
 export default function SouvenirCatalog({
@@ -237,6 +271,7 @@ export default function SouvenirCatalog({
 	errors,
 	readOnly,
 	search,
+	disableAdd = false,
 }: SouvenirCatalogProps) {
 	const [category, setCategory] = React.useState<string>("");
 	const [inStockOnly, setInStockOnly] = React.useState(false);
@@ -254,48 +289,37 @@ export default function SouvenirCatalog({
 	);
 	const products = React.useMemo(() => groupStockRows(rows), [rows]);
 
-	/* --------------------------- Category chips --------------------------- */
-
-	// Chips are learned from every response and never forgotten, so selecting
-	// one (which narrows `rows` to that category) can't remove the others.
-	const [knownCategories, setKnownCategories] = React.useState<string[]>([]);
-	React.useEffect(() => {
-		setKnownCategories((previous) => {
-			const next = new Set(previous);
-			rows.forEach((row) => {
-				if (row.category) next.add(row.category);
-			});
-			return next.size === previous.length ? previous : [...next].sort();
-		});
-	}, [rows]);
-
+	// Chips are built from what the store returned. Keep the chosen one
+	// visible even when the current filter narrows the list.
 	const categories = React.useMemo(() => {
-		const set = new Set(knownCategories);
+		const set = new Set(rows.map((row) => row.category).filter(Boolean));
 		if (category) set.add(category);
 		return [...set].sort();
-	}, [knownCategories, category]);
+	}, [rows, category]);
 
-	/* ----------------------------- Load more ------------------------------ */
+	/* ------------------------------ Load more ---------------------------- */
 
-	// How many products are on screen. Resets whenever the filters change.
+	// Cards on screen: CRF_GRID_PAGE_SIZE to start with, +CRF_GRID_PAGE_SIZE per
+	// click; back to the first batch when any filter or the search changes.
 	const filterKey = `${q}|${category}|${inStockOnly}`;
 	const [visible, setVisible] = React.useState({
 		key: filterKey,
-		count: CRF_PAGE_SIZE,
+		count: CRF_GRID_PAGE_SIZE,
 	});
 	const visibleCount =
-		visible.key === filterKey ? visible.count : CRF_PAGE_SIZE;
-
+		visible.key === filterKey ? visible.count : CRF_GRID_PAGE_SIZE;
 	const shownProducts = products.slice(0, visibleCount);
+
 	const hasMore =
 		products.length > visibleCount || Boolean(catalog.hasNextPage);
 
 	const loadMore = () => {
-		const next = visibleCount + CRF_PAGE_SIZE;
-		setVisible({ key: filterKey, count: next });
-		// Not enough loaded yet → pull the next page from the store.
+		const nextCount = visibleCount + CRF_GRID_PAGE_SIZE;
+		setVisible({ key: filterKey, count: nextCount });
+
+		// Fetched rows won't cover the next batch → pull the next store page.
 		if (
-			next > products.length &&
+			nextCount > products.length &&
 			catalog.hasNextPage &&
 			!catalog.isFetchingNextPage
 		) {
@@ -366,7 +390,7 @@ export default function SouvenirCatalog({
 				aria-busy={catalog.isFetching}
 			>
 				{catalog.isLoading ? (
-					Array.from({ length: CRF_PAGE_SIZE }, (_, i) => (
+					Array.from({ length: CRF_GRID_PAGE_SIZE }, (_, i) => (
 						<div
 							key={i}
 							role="listitem"
@@ -405,6 +429,7 @@ export default function SouvenirCatalog({
 								items={items}
 								errors={errors}
 								readOnly={readOnly}
+								disableAdd={disableAdd}
 								onOpen={setViewing}
 								onQuickAdd={quickAdd}
 							/>
@@ -413,14 +438,17 @@ export default function SouvenirCatalog({
 				)}
 			</div>
 
-			<LoadMoreBar
-				shown={shownProducts.length}
-				// The exact total is only known once the store has no more pages.
-				total={catalog.hasNextPage ? undefined : products.length}
-				hasMore={hasMore && !catalog.isLoading && !catalog.isError}
-				loading={catalog.isFetchingNextPage}
-				onClick={loadMore}
-			/>
+			{!catalog.isLoading && !catalog.isError ? (
+				<LoadMoreBar
+					shown={shownProducts.length}
+					// The store may hold more than has been fetched, so only show a
+					// total once everything is loaded.
+					total={catalog.hasNextPage ? undefined : products.length}
+					hasMore={hasMore}
+					loading={catalog.isFetchingNextPage}
+					onClick={loadMore}
+				/>
+			) : null}
 
 			{viewing ? (
 				<SouvenirProductView
@@ -429,6 +457,7 @@ export default function SouvenirCatalog({
 					items={items}
 					onChange={onChange}
 					readOnly={readOnly}
+					disableAdd={disableAdd}
 					onClose={() => setViewing(null)}
 				/>
 			) : null}

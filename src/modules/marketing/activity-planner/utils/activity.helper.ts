@@ -263,8 +263,9 @@ export const getActivityPermissions = ({
 		hasValidatorPreviewed &&
 		isReportCreated;
 
-	const canShowCloseEpcAction =
-		proposerCanAct && (wasDeviated || status === "VALIDATED");
+	// const canShowCloseEpcAction =
+	// 	proposerCanAct && (wasDeviated || status === "VALIDATED");
+	const canShowCloseEpcAction = false;
 
 	const canShowEventOutcomeAt = (target: string) =>
 		proposerCanAct && !wasDeviated && status === target;
@@ -366,5 +367,13 @@ export const getEpcRowActionRules = (
 		canAddEpf: canManage && !row.epf_id,
 	};
 };
-
+/** Listing: show "Validate report" only to the report's validator, while it awaits validation. */
+export const canValidateReportFromRow = (
+	row: Pick<EpcListItem, "report_status" | "report_validator_id" | "status">,
+	userId?: string | null,
+): boolean =>
+	Boolean(userId && row.report_validator_id === userId) &&
+	REPORT_SUBMITTED_STATUSES.has(
+		normalizeWorkflowStatus(row.report_status ?? row.status),
+	);
 export type ActivityPermissions = ReturnType<typeof getActivityPermissions>;

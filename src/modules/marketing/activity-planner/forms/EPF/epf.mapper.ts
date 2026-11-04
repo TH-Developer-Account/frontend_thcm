@@ -37,10 +37,14 @@ const getProductName = (item: any) => {
   );
 };
 
+// The proposer's own typed note on this specific line takes priority over
+// the catalog's generic blurb — a persisted line-item description would
+// otherwise be masked by ProductMaster.description on reload. Falls back to
+// the catalog default only when the line item has no description of its own.
 const getDescription = (item: any) => {
   const product = getProduct(item);
 
-  return product?.description ?? item?.description ?? "--";
+  return item?.description ?? product?.description ?? "--";
 };
 
 const getCategory = (item: any) => {
@@ -129,6 +133,11 @@ export const mapEpfLineItemsToFormItems = (
 
       quotationFileUrl: getQuotationUrl(item),
       quotationFileName: getQuotationFileName(item),
+
+      // Carried through so re-saving an unchanged row doesn't orphan
+      // its own attachment (updateEPF diffs old vs. new attachmentS3Key
+      // per line item — see diffOrphanedAttachmentKeys on the backend).
+      attachmentS3Key: getAttachmentS3Key(item),
     };
   });
 };
@@ -253,8 +262,14 @@ export const mapBudgetInfoToFormValues = (budgetInfo?: any) => {
   };
 };
 
+// S3 keys are stored, not URLs (see decisions-and-learnings.md) — on a
+// saved EPF, getEPFById resolves a fresh presigned `item.attachmentUrl` per
+// line item (withLineItemAttachmentUrls, epf.controller.ts). The legacy
+// quotationUrl/quotation.url/etc. fallbacks predate that endpoint and are
+// kept for any other shape this mapper is still fed (e.g. CRF-style items).
 const getQuotationUrl = (item: any) => {
   return (
+    item?.attachmentUrl ??
     item?.quotationUrl ??
     item?.quotation_url ??
     item?.quotation?.url ??
@@ -267,6 +282,7 @@ const getQuotationUrl = (item: any) => {
 
 const getQuotationFileName = (item: any) => {
   return (
+    item?.attachmentFileName ??
     item?.quotationFileName ??
     item?.quotation_file_name ??
     item?.quotation?.fileName ??
@@ -276,4 +292,8 @@ const getQuotationFileName = (item: any) => {
     item?.filename ??
     null
   );
+};
+
+const getAttachmentS3Key = (item: any) => {
+  return item?.attachmentS3Key ?? null;
 };

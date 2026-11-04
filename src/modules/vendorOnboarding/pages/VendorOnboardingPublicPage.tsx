@@ -11,9 +11,13 @@ import {
 	useVendorCreationForm,
 } from "../hooks/useVendorCreationForm";
 import { getPublicPageStatusContent } from "../../../content/publicPageStatus.content";
+import { vendorContent } from "../utils/vendor.content";
 
 const PUBLIC_VENDOR_SESSION_KEY = "vendor-onboarding-session-code";
 const PUBLIC_SESSION_END_DELAY_MS = 2500;
+
+// Page title comes from content/vendor.content.en.json -> formOne.title
+const pageTitle = vendorContent.formOne.title;
 
 const getSavedSessionCode = (): string => {
 	if (typeof window === "undefined") return "";
@@ -74,7 +78,7 @@ const VendorOnboardingPublicPage = () => {
 
 	if (form.isLoading) {
 		return (
-			<PublicPagesLayout className="public-page-status">
+			<PublicPagesLayout className="public-page-status" title={pageTitle}>
 				<PublicPageStatusCard
 					variant="loading"
 					Icon={LoaderCircle}
@@ -89,7 +93,7 @@ const VendorOnboardingPublicPage = () => {
 
 	if (form.isError) {
 		return (
-			<PublicPagesLayout className="public-page-status">
+			<PublicPagesLayout className="public-page-status" title={pageTitle}>
 				<PublicPageStatusCard
 					variant="warning"
 					Icon={TriangleAlert}
@@ -104,7 +108,7 @@ const VendorOnboardingPublicPage = () => {
 
 	if (submitted) {
 		return (
-			<PublicPagesLayout className="public-page-status">
+			<PublicPagesLayout className="public-page-status" title={pageTitle}>
 				<PublicPageStatusCard
 					variant="success"
 					Icon={CheckCircle2}
@@ -123,8 +127,8 @@ const VendorOnboardingPublicPage = () => {
 	}
 
 	return (
-		<PublicPagesLayout>
-			<Card title="Domestic Vendor Onboarding Form">
+		<PublicPagesLayout title={pageTitle}>
+			<Card className="vendor-public-form-card" padding="spacious">
 				<VendorCreationFormProvider value={form}>
 					<VendorCreationFormOne
 						mode="edit"

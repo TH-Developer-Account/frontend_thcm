@@ -13,6 +13,9 @@ type Props = WorkFlowProps & {
 	stageErrors: WorkflowStageErrors[];
 	stageFormError: string | null;
 	onClearBasicError: (key: keyof WorkflowGenErrors) => void;
+	// True on the edit page — the shared/personal template type is fixed once
+	// a workflow exists, so the form doesn't offer it again.
+	isEditing?: boolean;
 };
 
 const WorkflowCreateMain = ({
@@ -38,9 +41,10 @@ const WorkflowCreateMain = ({
 	categoryOptions,
 	showCategory,
 	showStatus,
+	isEditing = false,
 }: Props) => {
 	return (
-		<div className="w-full h-full">
+		<div className="workflow-create-main">
 			{currentStep === 1 && (
 				<WorkFlowGenForm
 					basics={basics}
@@ -51,6 +55,7 @@ const WorkflowCreateMain = ({
 					categoryOptions={categoryOptions}
 					showCategory={showCategory}
 					showStatus={showStatus}
+					isEditing={isEditing}
 				/>
 			)}
 

@@ -29,7 +29,6 @@ export const CRF_CATEGORIES = [
 
 export type CrfCategory = (typeof CRF_CATEGORIES)[number]["value"];
 
-export const CRF_PAGE_SIZE = 8;
 /* ========================================================================== */
 /*                         Artwork (digital) resolution                       */
 /* ========================================================================== */
@@ -227,6 +226,12 @@ export type CrfStatus =
 	| "OPEN"
 	| "APPROVED"
 	| "STOCK_SHORTFALL"
+	// The post-approval Shopify stock check couldn't reach the store (THCM
+	// Shop down/unreachable) — the CRF never made it to APPROVED/
+	// STOCK_SHORTFALL. Distinct from ORDER_FAILED: this is a failure to
+	// CHECK stock, not a failure to PLACE an already-confirmed order.
+	// Mirrors ORDER_FAILED's retry shape exactly (see CrfPermissions.canRetryStockCheck).
+	| "STOCK_CHECK_FAILED"
 	| "ORDER_FAILED"
 	| "ORDERED"
 	| "CLOSED";
@@ -245,10 +250,9 @@ export type ApiCrfOrder = {
 	crfId: string;
 	shopifyOrderId: string;
 	totalPrice: number;
-	/** Plain amount, not a GST document — see crfOrder.service.ts. Null when
-	 *  nothing was accepted as a shortfall. */
 	debitNoteAmount: number | null;
-	status: "ORDERED" | "CANCELLED";
+	status: "ACTIVE" | "ORDERED" | "CANCELLED";
+	placedAt?: string;
 	lines: CrfOrderLineRecord[];
 };
 
@@ -269,6 +273,14 @@ export type CrfPermissions = {
 	canEditDispatchDetails: boolean; // recipient + addresses — APPROVED/STOCK_SHORTFALL/ORDER_FAILED, owner
 	canPlaceOrder: boolean; // APPROVED/STOCK_SHORTFALL, owner
 	canRetryOrder: boolean; // ORDER_FAILED — owner or admin
+	// STOCK_CHECK_FAILED — the post-approval Shopify stock check couldn't
+	// reach the store. Mirrors canRetryOrder exactly: same audience (owner
+	// or admin), same shape, just a different failure point in the
+	// pipeline (checking stock vs. placing the order). Deliberately NOT
+	// folded into canEditDispatchDetails — a stock-check failure has
+	// nothing to do with the recipient/address, so the dispatch form stays
+	// gated to its existing statuses.
+	canRetryStockCheck: boolean; // STOCK_CHECK_FAILED — owner or admin
 	canCancelOrder: boolean; // ORDERED — owner or admin
 	canMarkItemDelivered: boolean; // deferred — no endpoint/UI yet
 	canView: boolean;
@@ -279,8 +291,30 @@ export type CrfDetail = {
 	id: string;
 	epcId: string;
 	status: CrfStatus;
-	/** Souvenir line value at the moment of approval — the swap budget cap. */
 	souvenirTotalAtApproval: number | null;
+	shortfallAmount: number | null;
+
+	/* Saved dispatch details (null until saved). */
+	recipientType?: string | null;
+	recipientName?: string | null;
+	recipientPhone?: string | null;
+	recipientEmail?: string | null;
+	recipientOrganisation?: string | null;
+	recipientUserId?: string | null;
+	recipientContactId?: string | null;
+	deliveryInstructions?: string | null;
+	requiredByDate?: string | null;
+	addressCompany?: string | null;
+	addressLine1?: string | null;
+	addressLine2?: string | null;
+	addressLandmark?: string | null;
+	addressCity?: string | null;
+	addressDistrict?: string | null;
+	addressState?: string | null;
+	addressPincode?: string | null;
+	addressCountry?: string | null;
+	addressGstin?: string | null;
+
 	items: ApiCrfItem[];
 	order: ApiCrfOrder | null;
 	permissions: CrfPermissions;

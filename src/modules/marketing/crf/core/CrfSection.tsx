@@ -1,11 +1,11 @@
-// activity-planner/components/activityFormView/CrfSection.tsx
+// crf/core/CrfSection.tsx
 // EPC-side adapter for the CRF module: shows the CRF of an EPC and refreshes
-// the EPC after the CRF is saved. Moved from forms/CRF/CrfSection.tsx.
+// the EPC after the CRF is saved.
 //
 // Readonly view: a saved souvenir line only carries { sku, requestedQty,
-// status } (see crf.types.ts), so — same as the edit form — this backfills
-// title/image/price for the souvenir lines via a live catalog lookup before
-// handing rows to <LineTableView />, instead of showing bare SKUs.
+// status }, so — same as the edit form — this backfills title/image/price for
+// the souvenir lines via a live catalog lookup before handing them to
+// <CrfView />, instead of showing bare SKUs.
 
 import React from "react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,16 +16,18 @@ import { useSouvenirStockBySkusQuery } from "../shop/api";
 import {
 	backfillSouvenirDisplayFields,
 	mapCrfLineItemsToFormItems,
-	mapCrfLineItemsToTableRows,
 } from "./mapper";
 import CrfForm from "./CrfForm";
-import LineTableView from "../../activity-planner/components/activityFormView/LineTableView";
+import CrfView from "./CrfView";
+import type { CrfStatus } from "./types";
 
 export type CrfSectionProps = {
 	epcData: EpcDetailResponse;
 	isEditing: boolean;
 	onCancel: () => void;
 	onSuccess: () => Promise<void>;
+	/** Read-only view only: shows a "Go to CRF Order" button in the card header. */
+	onGoToOrder?: () => void;
 };
 
 const CrfSection = ({
@@ -33,6 +35,7 @@ const CrfSection = ({
 	isEditing,
 	onCancel,
 	onSuccess,
+	onGoToOrder,
 }: CrfSectionProps) => {
 	const queryClient = useQueryClient();
 	const crf = epcData.crf;
@@ -58,13 +61,15 @@ const CrfSection = ({
 	const displayItems = React.useMemo(
 		() =>
 			souvenirBackfillQuery.data
-				? backfillSouvenirDisplayFields(formItems, souvenirBackfillQuery.data.data)
+				? backfillSouvenirDisplayFields(
+						formItems,
+						souvenirBackfillQuery.data.data,
+					)
 				: formItems,
 		[formItems, souvenirBackfillQuery.data],
 	);
 
 	const handleSaved = async () => {
-		// Previously done inside the CRF mutations.
 		void queryClient.invalidateQueries({
 			queryKey: epcKeys.detail(epcData.id),
 		});
@@ -90,11 +95,15 @@ const CrfSection = ({
 		);
 	}
 
+	// `title={null}`: the host tab already titles this section ("CRF Details"),
+	// so the card shows just the status pill + "Go to CRF Order". Drop the prop
+	// to render the design's own "CRF Details" heading instead.
 	return (
-		<LineTableView
-			data={mapCrfLineItemsToTableRows(displayItems)}
-			showGrandTotal
-			grandTotalLabel="CRF Grand Total:"
+		<CrfView
+			items={displayItems}
+			status={crf.status as CrfStatus | undefined}
+			title={null}
+			onGoToOrder={onGoToOrder}
 		/>
 	);
 };

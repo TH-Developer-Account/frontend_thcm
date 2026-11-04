@@ -19,3 +19,18 @@ export type User = {
 	profilePictureUrl?: string;
 	fullName?: string;
 };
+export interface AuthUser {
+	id: string;
+	email: string;
+	first_name: string;
+	last_name: string;
+	phone_number: string;
+	role?: "ADMIN" | "DEALER" | "EMPLOYEE" | undefined;
+	profile_image?: string;
+	designation?: string;
+	department?: string;
+	zone?: string;
+	designationId?: string | null;
+	zones?: string[];
+	branch?: string | null;
+}

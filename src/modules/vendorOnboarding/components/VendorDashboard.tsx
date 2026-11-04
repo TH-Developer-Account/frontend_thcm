@@ -8,7 +8,11 @@ import {
 } from "lucide-react";
 
 import Card from "../../../components/common/Card";
+import { vendorContent } from "../utils/vendor.content";
 import { useVendorDashboard } from "../hooks/useVendorDashboard";
+
+// Copy lives in content/vendor.content.en.json -> dashboard.*, common.*
+const content = vendorContent.dashboard;
 
 // MetricCard now handles its own error/loading state
 type MetricCardProps = {
@@ -40,11 +44,13 @@ const MetricCard = ({
 				{isError ? (
 					<p className="mt-2 flex items-center gap-1.5 text-sm text-red-500">
 						<CircleAlert size={14} aria-hidden="true" />
-						Unable to load
+						{content.unableToLoad}
 					</p>
 				) : (
 					<p className="mt-2 text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
-						{isLoading ? "—" : value.toLocaleString("en-IN")}
+						{isLoading
+							? vendorContent.common.emptyValue
+							: value.toLocaleString("en-IN")}
 					</p>
 				)}
 
@@ -71,7 +77,7 @@ export default function VendorDashboard() {
 				className="grid min-h-72 place-items-center text-sm text-slate-500"
 				role="status"
 			>
-				Loading vendor dashboard...
+				{content.loading}
 			</div>
 		);
 	}
@@ -91,59 +97,59 @@ export default function VendorDashboard() {
 						className={isRefreshing ? "animate-spin" : undefined}
 						aria-hidden="true"
 					/>
-					{isRefreshing ? "Refreshing" : "Refresh"}
+					{isRefreshing ? content.refreshing : content.refresh}
 				</button>
 			</div>
 
 			<section
 				className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
-				aria-label="Vendor onboarding summary"
+				aria-label={content.summaryAriaLabel}
 			>
 				<MetricCard
-					title="Total onboardings"
+					title={content.metrics.total.title}
 					value={metrics.total.value}
 					isLoading={metrics.total.isLoading}
 					isError={metrics.total.isError}
-					description="All vendor onboarding records"
+					description={content.metrics.total.description}
 					icon={ClipboardList}
 					iconClassName="bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-300"
 				/>
 				<MetricCard
-					title="Pending on me"
+					title={content.metrics.pending.title}
 					value={metrics.pending.value}
 					isLoading={metrics.pending.isLoading}
 					isError={metrics.pending.isError}
-					description="Requests waiting for your action"
+					description={content.metrics.pending.description}
 					icon={Clock3}
 					iconClassName="bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300"
 				/>
 				<MetricCard
-					title="Approved by me"
+					title={content.metrics.approved.title}
 					value={metrics.approved.value}
 					isLoading={metrics.approved.isLoading}
 					isError={metrics.approved.isError}
-					description="Requests you have approved"
+					description={content.metrics.approved.description}
 					icon={BadgeCheck}
 					iconClassName="bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300"
 				/>
 				<MetricCard
-					title="Created by me"
+					title={content.metrics.created.title}
 					value={metrics.created.value}
 					isLoading={metrics.created.isLoading}
 					isError={metrics.created.isError}
-					description="Requests initiated by you"
+					description={content.metrics.created.description}
 					icon={UserRoundPlus}
 					iconClassName="bg-violet-50 text-violet-600 dark:bg-violet-500/10 dark:text-violet-300"
 				/>
 			</section>
 
 			<section className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
-				<Card title="Recent vendor onboardings">
+				<Card title={content.recentOnboardings}>
 					{isTableError ? (
 						<div className="flex flex-col items-center gap-3 py-10 text-center">
 							<CircleAlert className="text-red-500" aria-hidden="true" />
 							<p className="font-medium text-slate-900 dark:text-white">
-								Unable to load recent onboardings
+								{content.unableToLoadRecent}
 							</p>
 							<button
 								type="button"
@@ -151,7 +157,7 @@ export default function VendorDashboard() {
 								className="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm font-medium dark:border-slate-700"
 							>
 								<RefreshCw size={16} aria-hidden="true" />
-								Retry
+								{content.retry}
 							</button>
 						</div>
 					) : (
@@ -161,7 +167,7 @@ export default function VendorDashboard() {
 					)}
 				</Card>
 
-				<Card title="Status overview">{/* unchanged */}</Card>
+				<Card title={content.statusOverview}>{/* unchanged */}</Card>
 			</section>
 		</div>
 	);

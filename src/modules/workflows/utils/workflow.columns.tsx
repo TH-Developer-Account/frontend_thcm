@@ -14,13 +14,13 @@ type WorkflowColumnActions = {
 	onEdit: (workflow: WorkflowRow) => void;
 	onDelete: (workflow: WorkflowRow) => void;
 	onView: (workflow: WorkflowRow) => void;
-};
 
-// Admin templates (ownerType "ADMIN", or missing/unrecognized — fail
-// closed toward view-only rather than accidentally editable) can only be
-// viewed. Only a user's own templates (ownerType "USER") are editable.
-const isEditableTemplate = (workflow: WorkflowRow): boolean =>
-	workflow.ownerType === "USER";
+	// Decided by useWorkflowPermissions().canEditWorkflow:
+	//  - personal (USER) templates → editable
+	//  - admin (shared) templates  → editable by the admin of that app only
+	//  - anything else             → view-only
+	canEdit: (workflow: WorkflowRow) => boolean;
+};
 
 const formatWorkflowDate = (value: WorkflowRow["lastUpdated"]): string => {
 	if (!value) return "—";
@@ -35,6 +35,7 @@ export const getWorkflowColumns = ({
 	onEdit,
 	onDelete,
 	onView,
+	canEdit,
 }: WorkflowColumnActions): ColumnDef<WorkflowRow>[] => [
 	{
 		accessorKey: "name",
@@ -94,7 +95,7 @@ export const getWorkflowColumns = ({
 		enableSorting: false,
 		cell: ({ row }) => {
 			const workflow = row.original;
-			const editable = isEditableTemplate(workflow);
+			const isPersonalTemplate = workflow.ownerType === "USER";
 
 			const actions: ActionMenuItem<WorkflowRow>[] = [
 				// View is read-only, so it's available for every workflow —
@@ -113,23 +114,26 @@ export const getWorkflowColumns = ({
 					label: "Assign Users",
 					Icon: UserPlus,
 					onClick: onAssign,
-					hidden: editable, // only applicable to admin templates, not self-assigned USER templates
+					hidden: isPersonalTemplate, // only applicable to admin templates, not self-assigned USER templates
 					variant: "danger",
 				},
 				{
+					// Now shown for admin templates too (admin of that app / super
+					// admin). Everyone else still gets view-only on admin templates.
 					id: "edit",
 					label: "Edit",
 					Icon: Edit,
 					onClick: onEdit,
-					hidden: !editable,
+					hidden: !canEdit(workflow),
 					variant: "danger",
 				},
 				{
+					// Unchanged: delete stays limited to personal templates.
 					id: "delete",
 					label: "Delete",
 					Icon: Trash,
 					onClick: onDelete,
-					hidden: !editable,
+					hidden: !isPersonalTemplate,
 					variant: "danger",
 				},
 			];

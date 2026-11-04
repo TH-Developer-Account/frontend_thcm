@@ -1,5 +1,6 @@
 import type { SidebarItem } from "../../layout/layout.types";
 import { Users } from "lucide-react";
+import { vendorContent } from "./utils/vendor.content";
 
 export const vendorSidebar: SidebarItem[] = [
 	// {
@@ -11,7 +12,7 @@ export const vendorSidebar: SidebarItem[] = [
 
 	{
 		id: "vendorOnboardingListing",
-		label: "Vendor Onboarding Listing",
+		label: vendorContent.sidebar.vendorOnboardingListing,
 		icon: <Users size={18} />,
 		permission: {
 			app: "VENDOR_ONBOARDING",

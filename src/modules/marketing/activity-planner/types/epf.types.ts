@@ -43,6 +43,12 @@ export type EpfLineItemPayload = {
 	total?: number;
 	description?: string;
 	category?: "EVENT_OVERHEAD";
+
+	// Optional — set only when the proposer uploaded a file via
+	// POST /epf/line-item/attachment first (see LineItemTable's
+	// onUploadAttachment prop / epf.payload.ts's buildLineItemPayload).
+	attachmentS3Key?: string;
+	attachmentFileName?: string;
 };
 
 export type EpfCreatePayload = {

@@ -2,7 +2,7 @@
 // Activity Planner detail-page controller + its sub-hooks
 // (permissions, clarified resubmission, deviation resubmission).
 import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { getWorkflowCommentContext } from "../../../../components/ui/comments/comments.helper";
 import { useToast } from "../../../../context/Auth/AuthContext";
 import { useAuth } from "../../../../context/Auth/useAuth";
@@ -135,12 +135,16 @@ type UseDeviationResubmissionArgs = {
 	epcData?: EpcDetailResponse | null;
 	permissions: ActivityPermissions;
 	onRefresh: () => Promise<unknown>;
+	// Re-reads the EPC so the workflow id used below is never stale right
+	// after the deviation itself has been saved.
+	refetchEpc: () => Promise<{ data?: EpcDetailResponse | null }>;
 	appId?: string | null;
 };
 
 export const useDeviationResubmission = ({
 	epcData,
 	onRefresh,
+	refetchEpc,
 	permissions,
 	appId,
 }: UseDeviationResubmissionArgs) => {
@@ -152,6 +156,7 @@ export const useDeviationResubmission = ({
 	const isDeviationPending = permissions.isDeviationPending;
 	const canSubmitDeviationUpdate = permissions.canSubmitDeviationUpdate;
 
+	// Existing flow: resubmit after a deviation clarification.
 	const submitDeviationUpdate = async () => {
 		if (!workflowId) {
 			showApiErrorToast(showToast, "No active workflow found.");
@@ -189,8 +194,32 @@ export const useDeviationResubmission = ({
 			);
 		}
 	};
+
+	// New flow: called by EventOutcome right after a deviated amount is saved.
+	// Restarts approval from the first stage. Throws on failure so the caller
+	// can report "deviation saved, approval not restarted" accurately.
+	const activateDeviationWorkflow = async (deviatedAmount: number) => {
+		const { data: fresh } = await refetchEpc();
+		const freshWorkflowId = fresh?.activeWorkflow?.id;
+		if (!freshWorkflowId) {
+			throw new Error("No active workflow found to restart.");
+		}
+
+		await submitDeviationMutation.mutateAsync({
+			workflowId: freshWorkflowId,
+			eventProposalId: fresh?.id,
+			workspaceId: workspaceId ?? undefined,
+			appId: appId ?? undefined,
+			// CONFIRM: deviated amount vs. revised total (eventBudget + deviation)
+			// is what the workflow's budget criterion expects.
+			newBudget: deviatedAmount,
+		});
+		await onRefresh();
+	};
+
 	return {
 		submitDeviationUpdate,
+		activateDeviationWorkflow,
 		isDeviationPending,
 		isSubmittingDeviationUpdate: submitDeviationMutation.isPending,
 		canSubmitDeviationUpdate,
@@ -711,7 +740,7 @@ export const useActivityPlanner = (
 			setWorkflowAction(action);
 
 			try {
-				const { message } =
+				const { message, data } =
 					action === "approve"
 						? await workflowApi.approveStage(currentStageId, trimmedReason)
 						: await workflowApi.clarifyStage(currentStageId, trimmedReason);
@@ -726,7 +755,31 @@ export const useActivityPlanner = (
 							: "Sent for clarification."),
 				});
 
+				// Approval itself never fails here — approveStage's transaction
+				// always commits (see workflow.service.ts); only a post-final-
+				// approval hook can report a problem of its own, on `data`
+				// (workflowApi.approveStage's ApproveStageResult). Today the one
+				// such outcome is EVENT_PROPOSAL's stock check failing to reach
+				// Shopify, so it gets its own toast rather than being folded into
+				// (or replacing) the success toast above — the approval succeeded,
+				// this is a separate, still-actionable problem. The actual retry
+				// control lives on the CRF Order section (CrfOrderSection.tsx's
+				// STOCK_CHECK_FAILED branch) once handleWorkflowUpdate below
+				// refreshes this page's data, not here.
+				if (
+					action === "approve" &&
+					(data as { stockCheckFailed?: boolean } | undefined)?.stockCheckFailed
+				) {
+					showToast({
+						type: "warning",
+						title: "Souvenir stock check failed",
+						description:
+							"The EPC was approved, but we couldn't reach the souvenir store to confirm stock. Retry the check from the CRF Order tab once the store is back up.",
+					});
+				}
+
 				await handleWorkflowUpdate();
+				navigate(EPC_LISTING_PATH);
 			} catch (error) {
 				showToast({
 					type: "error",
@@ -743,7 +796,13 @@ export const useActivityPlanner = (
 				setWorkflowAction(null);
 			}
 		},
-		[currentStageId, canActOnCurrentStage, showToast, handleWorkflowUpdate],
+		[
+			currentStageId,
+			canActOnCurrentStage,
+			showToast,
+			handleWorkflowUpdate,
+			navigate,
+		],
 	);
 
 	const handleApproveWorkflow = React.useCallback(
@@ -796,6 +855,7 @@ export const useActivityPlanner = (
 		epcData: epcData ?? null,
 		permissions,
 		onRefresh: handleRefresh,
+		refetchEpc: refetch,
 		appId,
 	});
 

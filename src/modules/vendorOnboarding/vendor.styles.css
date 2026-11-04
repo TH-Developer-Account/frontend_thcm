@@ -1,19 +1,224 @@
+/* =====================================================
+   VENDOR MODULE STYLES
+   Sections:
+   0. Spacing token (one gap for every form field)
+   1. Initiation page layout, field grid, next-steps panel
+   2. Onboarding form (grid, actions, read-only, summary)
+   3. Enclosure uploads and file preview modal
+   4. Listing
+   5. Consent / messages
+   6. Summary heading
+   7. Unlayered: workflow mobile rules, approval actions bar
+===================================================== */
+
+/* =====================================================
+   0. SPACING TOKEN
+   --vendor-field-gap is THE gap between any two form fields,
+   horizontally and vertically, on every breakpoint. Grids, the
+   form itself, the textarea row, the initiation grid, the upload
+   grid and .vendor-field-stack all read this one value, and no
+   breakpoint overrides it. Change it here to retune the whole form.
+===================================================== */
+
+:root {
+	--vendor-field-gap: var(--space-4);
+}
+
 @layer components {
 	/* =====================================================
-	   VENDOR ONBOARDING FORM
+	   1. INITIATION — PAGE LAYOUT (form + side panel)
+	===================================================== */
+
+	.vendor-initiation-layout {
+		display: block;
+		width: 100%;
+		min-width: 0;
+	}
+
+	.vendor-initiation-layout > * {
+		min-width: 0;
+	}
+
+	.vendor-next-steps {
+		display: none;
+	}
+
+	@media (min-width: 768px) {
+		.vendor-initiation-layout-with-aside {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) clamp(16rem, 32%, 26rem);
+			align-items: start;
+			gap: var(--space-4);
+		}
+
+		.vendor-next-steps {
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-4);
+
+			padding: var(--space-5);
+
+			border: var(--border-width-default) solid var(--color-border-default);
+			border-radius: var(--radius-lg);
+
+			background-color: var(--color-bg-surface);
+			color: var(--color-text-primary);
+			box-shadow: var(--shadow-xs);
+		}
+	}
+
+	/* ---------- Fields grid ----------
+	   Responds to the width of the form card, not the viewport:
+	   < 36rem  → 1 column
+	   ≥ 36rem  → 2 columns
+	   ≥ 52rem  → 3 columns
+	*/
+
+	.vendor-initiation-fields {
+		container-type: inline-size;
+		container-name: vendor-initiation;
+
+		width: 100%;
+		min-width: 0;
+	}
+
+	.vendor-initiation-grid {
+		display: grid;
+		width: 100%;
+		min-width: 0;
+		grid-template-columns: minmax(0, 1fr);
+		align-items: start;
+		gap: var(--vendor-field-gap);
+
+		padding: 0 var(--space-3);
+	}
+
+	.vendor-initiation-grid > * {
+		min-width: 0;
+	}
+
+	.vendor-initiation-grid .form-field {
+		width: 100%;
+		min-width: 0;
+	}
+
+	@container vendor-initiation (min-width: 36rem) {
+		.vendor-initiation-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	@container vendor-initiation (min-width: 52rem) {
+		.vendor-initiation-grid {
+			grid-template-columns:
+				minmax(0, 1fr)
+				minmax(0, 1fr)
+				minmax(0, 1.25fr);
+		}
+	}
+
+	/* Action row aligns with the fields (tablet and up) */
+	@media (min-width: 640px) {
+		.vendor-initiation-form .vendor-onboarding-form-actions {
+			padding-inline: var(--space-3);
+		}
+	}
+
+	/* ---------- "What happens next" panel ---------- */
+
+	.vendor-next-steps-title {
+		margin: 0;
+
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-semibold);
+		line-height: var(--line-height-tight);
+	}
+
+	.vendor-next-steps-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+
+		margin: 0;
+		padding: 0;
+
+		list-style: none;
+	}
+
+	.vendor-next-steps-item {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-3);
+	}
+
+	.vendor-next-steps-number {
+		display: inline-flex;
+		width: 2rem;
+		height: 2rem;
+		flex: 0 0 auto;
+		align-items: center;
+		justify-content: center;
+
+		border: var(--border-width-default) solid var(--color-brand-soft);
+		border-radius: var(--radius-full);
+
+		background-color: var(--color-brand-subtle);
+		color: var(--color-brand-active);
+
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-semibold);
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.vendor-next-steps-copy {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-0-5);
+	}
+
+	.vendor-next-steps-item-title {
+		margin: 0;
+
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+	}
+
+	.vendor-next-steps-item-description {
+		margin: 0;
+
+		color: var(--color-text-secondary);
+
+		font-size: var(--font-size-xs);
+		line-height: var(--line-height-normal);
+
+		overflow-wrap: anywhere;
+	}
+
+	/* =====================================================
+	   2. VENDOR ONBOARDING FORM
 	===================================================== */
 
 	.vendor-onboarding-step-progress {
 		margin-bottom: var(--space-6);
 	}
 
+	/* Vertical gap between form rows = the shared field gap. The grids below
+	   have no vertical padding of their own, so the space between any two
+	   rows/fields is exactly --vendor-field-gap. */
 	.vendor-onboarding-form,
 	.vendor-summary-form {
 		display: flex;
 		width: 100%;
 		min-width: 0;
 		flex-direction: column;
-		gap: var(--space-2);
+		gap: var(--vendor-field-gap);
 
 		background-color: var(--color-bg-surface);
 		color: var(--color-text-primary);
@@ -21,14 +226,7 @@
 
 	/*
 	 * SHARED PAGE GRID
-	 * Every form section (vendor info, bank, GSTIN row) uses the same
-	 * 4 equal columns, the same gap and the same side gutter, so columns
-	 * line up from top to bottom of the page. The uploads and the
-	 * MSME/NDA row use the exact same values.
-	 *
-	 * Desktop: 4 columns
-	 * Tablet: 2 columns
-	 * Mobile: 1 column
+	 * Desktop: 4 columns | Tablet: 2 columns | Mobile: 1 column
 	 */
 	.vendor-onboarding-form-grid-parent,
 	.vendor-onboarding-form-grid {
@@ -37,9 +235,9 @@
 		min-width: 0;
 		grid-template-columns: repeat(4, minmax(0, 1fr));
 		align-items: start;
-		gap: var(--space-2) var(--space-4);
+		gap: var(--vendor-field-gap);
 
-		padding: var(--space-2) var(--space-4);
+		padding: 0 var(--space-4);
 	}
 
 	.vendor-onboarding-form-grid-parent > *,
@@ -47,44 +245,43 @@
 		min-width: 0;
 	}
 
-	/*
-	 * The child wrapper no longer creates its own grid. Its fields sit
-	 * directly in the parent's 4 columns (columns 1-3).
-	 */
+	/* A select with its certificate upload directly underneath it.
+	   Same gap as every other pair of fields. */
+	.vendor-field-stack {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--vendor-field-gap);
+	}
+
+	/* Child wrapper fields sit directly in the parent's columns 1-3 */
 	.vendor-onboarding-form-grid-child {
 		display: contents;
 	}
 
-	/*
-	 * The textarea block takes column 4 and spans both field rows.
-	 */
+	/* Textarea block takes column 4 and spans both field rows */
 	.vendor-onboarding-form-grid-parent
 		> :not(.vendor-onboarding-form-grid-child) {
 		grid-column: 4;
 		grid-row: 1 / span 2;
 	}
 
-	.vendor-form-textarea > * {
-		min-width: 0;
-	}
-
-	/*
-	 * Form Two long text fields.
-	 */
+	/* Form Two long text fields */
 	.vendor-form-textarea {
 		display: grid;
 		width: 100%;
 		min-width: 0;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		align-items: start;
-		gap: var(--space-4);
+		gap: var(--vendor-field-gap);
 
-		padding: var(--space-3) var(--space-4) var(--space-4);
+		padding: 0 var(--space-4);
 	}
 
-	/*
-	 * Ensure textareas use the entire available grid column.
-	 */
+	.vendor-form-textarea > * {
+		min-width: 0;
+	}
+
 	.vendor-form-textarea .form-field,
 	.vendor-onboarding-form-grid-parent .form-field {
 		width: 100%;
@@ -98,9 +295,7 @@
 		resize: vertical;
 	}
 
-	/*
-	 * Read-only multiline values should fill their grid cell.
-	 */
+	/* Read-only multiline values fill their grid cell */
 	.form-readonly-value-multiline {
 		width: 100%;
 		min-width: 0;
@@ -110,14 +305,13 @@
 		overflow-wrap: anywhere;
 	}
 
-	/* =====================================================
-	   FORM ACTIONS
-	===================================================== */
+	/* ---------- Form actions ---------- */
 
 	.vendor-onboarding-form-actions {
 		display: flex;
 		width: 100%;
 		min-width: 0;
+		box-sizing: border-box;
 		align-items: center;
 		justify-content: space-between;
 		gap: var(--space-3);
@@ -126,20 +320,33 @@
 	.vendor-onboarding-form-actions-end {
 		display: flex;
 		min-width: 0;
+		flex-direction: row;
 		align-items: center;
 		justify-content: flex-end;
 		gap: var(--space-2);
 	}
 
-	/*
-	 * Covers the action class used in Form One.
-	 */
+	/* Action bar used in Form One (Back on the left, Save as Draft + Submit
+	   grouped on the right) */
 	.bottom-buttons-bar-between {
 		display: flex;
 		width: 100%;
 		min-width: 0;
+		box-sizing: border-box;
 		align-items: center;
 		justify-content: space-between;
+		gap: var(--space-2);
+	}
+
+	/* The right-hand group. It had no rule before, so on a phone it
+	   overflowed the bar and clipped the buttons at the screen edge. */
+	.bottom-buttons-bar-end {
+		display: flex;
+		min-width: 0;
+		max-width: 100%;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: flex-end;
 		gap: var(--space-2);
 	}
 
@@ -148,9 +355,7 @@
 		justify-content: flex-end;
 	}
 
-	/* =====================================================
-	   READ-ONLY FIELD
-	===================================================== */
+	/* ---------- Read-only field ---------- */
 
 	.form-readonly-field {
 		width: 100%;
@@ -180,10 +385,7 @@
 		word-break: break-word;
 	}
 
-	/*
-	 * Legacy classes can remain temporarily while other forms migrate to
-	 * the shared ReadOnlyField component.
-	 */
+	/* Legacy classes: remove once all forms use ReadOnlyField */
 	.vendor-detail-field {
 		display: grid;
 		width: 100%;
@@ -229,9 +431,7 @@
 		word-break: break-word;
 	}
 
-	/* =====================================================
-	   SUMMARY / REVIEW PAGE
-	===================================================== */
+	/* ---------- Summary / review page ---------- */
 
 	.vendor-summary-intro {
 		display: flex;
@@ -309,6 +509,7 @@
 		padding: var(--space-2);
 		@apply flex justify-between items-center;
 	}
+
 	.vendor-summary-block-title {
 		margin: 0;
 		padding: var(--space-2) var(--space-3);
@@ -349,9 +550,7 @@
 		line-height: var(--line-height-normal);
 	}
 
-	/* =====================================================
-	   APPROVAL PANEL
-	===================================================== */
+	/* ---------- Approval panel ---------- */
 
 	.vendor-approval-panel {
 		display: flex;
@@ -378,20 +577,19 @@
 	}
 
 	.vendor-onboarding-msme-section {
-		@apply grid grid-cols-2 gap-4;
-	}
-	.padding {
-		padding: var(--space-3) var(--space-4) var(--space-4);
+		@apply grid grid-cols-2;
+		gap: var(--vendor-field-gap);
 	}
 
-	/* =====================================================
-	   COMPLIANCE ROW (MSME / NDA)
-	   Same 4-column grid, gap and gutter as the rest of the page,
-	   so each card takes exactly one column.
-	===================================================== */
+	.padding {
+		padding: 0 var(--space-4);
+	}
+
+	/* ---------- Compliance row (MSME / NDA) ---------- */
 
 	.vendor-compliance-grid {
-		@apply grid grid-cols-1 items-start gap-x-4 gap-y-2 px-4 py-2 sm:grid-cols-2;
+		@apply grid grid-cols-1 items-start px-4 sm:grid-cols-2;
+		gap: var(--vendor-field-gap);
 	}
 
 	.vendor-compliance-card {
@@ -399,7 +597,8 @@
 	}
 
 	.vendor-compliance-card-grid {
-		@apply grid min-w-0 grid-cols-1 items-start gap-4;
+		@apply grid min-w-0 grid-cols-1 items-start;
+		gap: var(--vendor-field-gap);
 	}
 
 	.vendor-compliance-upload {
@@ -410,24 +609,22 @@
 		@apply min-h-[6rem];
 	}
 
-	/* =====================================================
-	   TABLET
-	===================================================== */
+	/* ---------- Form responsive: tablet ---------- */
 
 	@media (max-width: 1023px) {
 		.vendor-onboarding-step-progress {
 			margin-bottom: var(--space-4);
 		}
 
+		/* Columns drop to 2; the gap stays --vendor-field-gap */
 		.vendor-onboarding-form-grid-parent,
 		.vendor-onboarding-form-grid,
 		.vendor-form-textarea {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: var(--space-3);
 			padding-inline: var(--space-3);
 		}
 
-		/* Textarea block goes full width under the fields. */
+		/* Textarea block goes full width under the fields */
 		.vendor-onboarding-form-grid-parent
 			> :not(.vendor-onboarding-form-grid-child) {
 			grid-column: 1 / -1;
@@ -445,28 +642,25 @@
 		}
 	}
 
-	/* =====================================================
-	   MOBILE
-	===================================================== */
+	/* ---------- Form responsive: mobile ---------- */
 
 	@media (max-width: 639px) {
 		.vendor-onboarding-step-progress {
 			margin-bottom: var(--space-3);
 		}
 
-		.vendor-onboarding-form,
-		.vendor-summary-form {
-			gap: var(--space-3);
-		}
-
+		/* One column; vertical/horizontal gap is still --vendor-field-gap
+		   (no mobile override, so fields are never tighter than on desktop) */
 		.vendor-onboarding-form-grid-parent,
 		.vendor-onboarding-form-grid,
 		.vendor-form-textarea {
 			grid-template-columns: minmax(0, 1fr);
-			gap: var(--space-3);
-			padding: var(--space-3);
+			padding-inline: var(--space-3);
 		}
 
+		/* Back below, primary group above; every button full width.
+		   Each wrapper is width-bound so nothing can poke past the
+		   screen edge. */
 		.vendor-onboarding-form-actions {
 			align-items: stretch;
 			flex-direction: column-reverse;
@@ -475,9 +669,14 @@
 			padding: var(--space-3);
 		}
 
-		.vendor-onboarding-form-actions-end {
+		.vendor-onboarding-form-actions-end,
+		.bottom-buttons-bar-end {
 			width: 100%;
+			max-width: 100%;
 			flex-direction: column-reverse;
+			flex-wrap: nowrap;
+			align-items: stretch;
+			justify-content: flex-start;
 			gap: var(--space-2);
 		}
 
@@ -492,10 +691,23 @@
 		}
 
 		.vendor-onboarding-form-actions .button-wrapper,
+		.bottom-buttons-bar-between .button-wrapper {
+			display: flex;
+			width: 100%;
+			min-width: 0;
+		}
+
 		.vendor-onboarding-form-actions .button-base,
-		.bottom-buttons-bar-between .button-wrapper,
 		.bottom-buttons-bar-between .button-base {
 			width: 100%;
+			min-width: 0;
+			max-width: 100%;
+			justify-content: center;
+		}
+
+		/* Long consent text wraps; keep the checkbox on its first line */
+		.vendor-dpdp-consent-control {
+			align-items: flex-start;
 		}
 
 		.form-readonly-value {
@@ -553,9 +765,7 @@
 		}
 	}
 
-	/* =====================================================
-	   SMALL MOBILE
-	===================================================== */
+	/* ---------- Form responsive: small mobile ---------- */
 
 	@media (max-width: 380px) {
 		.vendor-onboarding-form-grid-parent,
@@ -583,19 +793,16 @@
 			height: var(--control-height-sm);
 		}
 	}
-}
 
-@layer components {
 	/* =====================================================
-	   ENCLOSURE UPLOADS
-	   Same gap and gutter as .vendor-onboarding-form-grid
+	   3. ENCLOSURE UPLOADS + FILE PREVIEW MODAL
 	===================================================== */
 
 	.vendor-enclosure-upload-grid {
 		display: grid;
 		grid-template-columns: repeat(1, minmax(0, 1fr));
-		gap: var(--space-2) var(--space-4);
-		padding: var(--space-2) var(--space-4);
+		gap: var(--vendor-field-gap);
+		padding: 0 var(--space-4);
 	}
 
 	.vendor-enclosure-upload-card {
@@ -608,7 +815,7 @@
 
 	.vendor-enclosure-upload-field {
 		margin: 0;
-		@apply py-1 px-0;
+		@apply py-0 px-0;
 	}
 
 	.vendor-enclosure-upload-field .form-label-row {
@@ -623,12 +830,6 @@
 
 	.vendor-enclosure-upload-height {
 		min-height: 3.5rem;
-	}
-
-	.vendor-enclosure-upload-field .file-upload-empty,
-	.vendor-enclosure-upload-field .file-upload-preview {
-		min-height: 6.5rem;
-		border-radius: var(--radius-xs);
 	}
 
 	.vendor-enclosure-upload-field .file-upload-empty-copy {
@@ -789,9 +990,11 @@
 			transition: none;
 		}
 	}
-}
 
-@layer components {
+	/* =====================================================
+	   4. LISTING
+	===================================================== */
+
 	.vendor-listing-card {
 		width: 100%;
 		min-width: 0;
@@ -906,9 +1109,11 @@
 			padding-inline: var(--space-1-5);
 		}
 	}
-}
 
-@layer components {
+	/* =====================================================
+	   5. FORM MESSAGE + DPDP CONSENT
+	===================================================== */
+
 	.vendor-onboarding-form-message {
 		display: flex;
 		width: 100%;
@@ -942,6 +1147,7 @@
 		min-width: 0;
 		overflow-wrap: anywhere;
 	}
+
 	.vendor-onboarding-submit-section {
 		margin-top: var(--space-5);
 		padding-top: var(--space-4);
@@ -955,12 +1161,13 @@
 
 	.vendor-dpdp-consent-control {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		gap: var(--space-2);
 
-		color: var(--color-text-secondary);
+		color: var(--color-text-primary);
 
-		font-size: var(--font-size-xs);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-medium);
 		line-height: var(--line-height-normal);
 		cursor: pointer;
 	}
@@ -1057,43 +1264,13 @@
 		line-height: var(--line-height-normal);
 		cursor: pointer;
 	}
-}
 
-.vendor-onboarding-form-actions-end {
-	display: flex;
-	align-items: center;
-	gap: var(--space-2);
-}
+	/* =====================================================
+	   6. SUMMARY VIEW HEADING
+	   Desktop: [←] Vendor Onboarding / VON-… / Name   [badge]
+	   Mobile:  stacked title, ref, name
+	===================================================== */
 
-@media (max-width: 767px) {
-	.workflow-save-options {
-		grid-template-columns: minmax(0, 1fr);
-	}
-
-	.workflow-customise-actions {
-		align-items: stretch;
-		flex-direction: column;
-	}
-
-	.vendor-onboarding-form-actions-end,
-	.vendor-onboarding-form-actions-end > button {
-		width: 100%;
-	}
-
-	.vendor-onboarding-form-actions-end {
-		display: grid;
-	}
-}
-
-/* -------------------------------------------------------------------------- */
-/* Summary view heading                                                        */
-/*   Desktop: [←] Vendor Onboarding / VON-… / Name              [badge]       */
-/*   Mobile:  [←] Vendor Onboarding                              [badge]       */
-/*                VON-…                                                        */
-/*                Name                                                         */
-/* -------------------------------------------------------------------------- */
-
-@layer components {
 	.vendor-summary-heading {
 		display: grid;
 		width: 100%;
@@ -1136,11 +1313,12 @@
 
 	.vendor-summary-heading-meta > span {
 		min-width: 0;
-		overflow-wrap: anywhere;
+		overflow-wrap: normal;
+		word-break: normal;
 	}
 
-	/* Separator lives on the item it introduces, so a wrapped line never
-	   ends with a stray "/". */
+	/* Separator lives on the item it introduces, so a wrapped line
+	   never ends with a stray "/" */
 	.vendor-summary-heading-meta > span::before {
 		content: "/";
 		margin-inline: var(--space-2);
@@ -1180,111 +1358,153 @@
 	}
 }
 
-/* -------------------------------------------------------------------------- */
-/* Approval actions bar                                                        */
-/*                                                                             */
-/* > 900px                                                                     */
-/*   approver : Back [ reason — fills the row ........... ] [Clarify][Approve] */
-/*   proposer : Back ................................ [Accept/Send back/Submit]*/
-/* 481–900px                                                                   */
-/*   approver : [ reason — full width ........................................ ]*/
-/*              Back ...................................... [Clarify][Approve] */
-/* ≤ 480px                                                                     */
-/*              [ reason — full width ]                                        */
-/*              [ Clarify ][ Approve ]   (equal widths)                        */
-/*              [ Back — full width  ]                                         */
-/* ≤ 380px    action buttons stack one per row                                 */
-/* -------------------------------------------------------------------------- */
+/* =====================================================
+   7. UNLAYERED
+===================================================== */
 
-.approval-actions-bar {
-	display: flex;
-	width: 100%;
-	min-width: 0;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--space-3);
+/* Workflow mobile rules (kept unlayered so they keep winning) */
+@media (max-width: 767px) {
+	.workflow-save-options {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.workflow-customise-actions {
+		align-items: stretch;
+		flex-direction: column;
+	}
 }
 
-.approval-actions-bar-end {
-	display: flex;
-	min-width: 0;
-	flex: none;
-	align-items: center;
+/* =====================================================
+   VENDOR SUMMARY CARD HEADER
+   Scoped to this card only (via headerClassName), so no other
+   Card in the app is affected. Keep OUTSIDE any @layer so it
+   beats Card's responsive rules.
+
+   Title block first; Export + expand-all share the row when
+   there is room, otherwise they wrap below, right-aligned.
+===================================================== */
+
+.vendor-summary-card-header {
+	flex-direction: row;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	justify-content: space-between;
 	gap: var(--space-2);
 }
 
-/* Bottom-aligned so the buttons line up with the textarea's hint line
-   rather than its label. */
-.approval-actions-bar--approver {
-	align-items: flex-end;
-	justify-content: flex-start;
-}
-
-.approval-actions-bar--approver .approval-reason-inline {
-	flex: 1 1 auto;
+.vendor-summary-card-header .ui-card-header-copy {
 	min-width: 0;
+	flex: 1 1 16rem;
 }
 
-.approval-reason-inline textarea {
-	min-height: unset;
-	resize: none;
+.vendor-summary-card-header .ui-card-actions {
+	width: auto;
+	flex: 0 0 auto;
+	flex-wrap: nowrap;
+	margin-left: auto;
+	justify-content: flex-end;
 }
 
-@media (max-width: 900px) {
-	.approval-actions-bar {
-		flex-wrap: wrap;
+/* =====================================================
+   VENDOR PUBLIC FORM + DOCUMENT UPLOADS
+   Unlayered so these beat Tailwind utilities used inside
+   FileUploadField (min-h-12, py-1.5, size-9 …).
+===================================================== */
+
+@layer components {
+	/* Public form: room above row 1 so helper tooltips aren't clipped */
+	.vendor-public-form-card .vendor-onboarding-form {
+		padding-top: var(--space-6);
+	}
+
+	/* Empty AND filled upload boxes match input/select height */
+	.vendor-onboarding-form .vendor-enclosure-upload-height {
+		min-height: var(--control-height-md);
+	}
+
+	.vendor-onboarding-form .vendor-enclosure-upload-field .file-upload-empty,
+	.vendor-onboarding-form .vendor-enclosure-upload-field .file-upload-preview {
+		box-sizing: border-box;
+		height: var(--control-height-md);
+		min-height: var(--control-height-md);
+		border-radius: var(--radius-xs);
+	}
+
+	.vendor-onboarding-form .vendor-enclosure-upload-field .file-upload-empty {
+		padding-block: 0;
+	}
+
+	/* Filled: icon + name/type on the left, actions on the right, one row */
+	.vendor-onboarding-form .vendor-enclosure-upload-field .file-upload-preview {
+		display: flex;
 		align-items: center;
-		row-gap: var(--space-3);
+		gap: var(--space-2);
+		padding: 0 var(--space-2);
 	}
 
-	/* Reason moves to its own full-width row above everything else. */
-	.approval-actions-bar--approver .approval-reason-inline {
-		order: -1;
-		flex: 1 1 100%;
-		width: 100%;
-	}
-
-	.approval-actions-bar-end {
+	.vendor-onboarding-form
+		.vendor-enclosure-upload-field
+		.file-upload-preview-body {
 		flex: 1 1 auto;
-		flex-wrap: wrap;
-		justify-content: flex-end;
+		min-width: 0;
+		min-height: 0;
+		padding: 0;
+	}
+
+	.vendor-onboarding-form
+		.vendor-enclosure-upload-field
+		.file-upload-preview-thumbnail {
+		width: 1.75rem;
+		height: 1.75rem;
+	}
+
+	.vendor-onboarding-form
+		.vendor-enclosure-upload-field
+		.file-upload-file-meta {
+		margin-top: 0;
+	}
+
+	.vendor-onboarding-form
+		.vendor-enclosure-upload-field
+		.file-upload-preview-actions {
+		flex: 0 0 auto;
+		margin-left: auto;
 	}
 }
+/* =====================================================
+	   FORM ONE — "Documents" section (view mode only)
+	   In view mode every certificate is rendered together in this section,
+	   below all the form fields. Address blocks and the field grids keep
+	   their existing layout. The section is not rendered in edit mode.
+	===================================================== */
+.vendor-form-documents {
+	margin-top: var(--space-2);
+	padding-top: var(--space-3);
 
-@media (max-width: 480px) {
-	/* Actions take a full row with equal-width buttons … */
-	.approval-actions-bar-end {
-		order: 1;
-		flex: 1 1 100%;
-		flex-wrap: nowrap;
-	}
+	border-top: var(--border-width-default) solid var(--color-border-subtle);
+}
 
-	.approval-actions-bar-end > * {
-		flex: 1 1 0;
-		min-width: 0;
-	}
+.vendor-form-documents-title {
+	margin: 0 0 var(--space-1);
+	/* Same side padding as .vendor-onboarding-form-grid so it lines up */
+	padding-inline: var(--space-4);
 
-	/* … and Back drops to the bottom, full width. */
-	.approval-actions-bar > :first-child {
-		order: 2;
-		flex: 1 1 100%;
-	}
+	color: var(--color-text-secondary);
 
-	.approval-actions-bar-end .button-wrapper,
-	.approval-actions-bar-end .button-base,
-	.approval-actions-bar > :first-child .button-base,
-	.approval-actions-bar > .button-base:first-child {
-		width: 100%;
+	font-size: var(--font-size-xs);
+	font-weight: var(--font-weight-semibold);
+	letter-spacing: var(--tracking-wide);
+	text-transform: uppercase;
+}
+
+@media (max-width: 1023px) {
+	.vendor-form-documents-title {
+		padding-inline: var(--space-3);
 	}
 }
 
 @media (max-width: 380px) {
-	.approval-actions-bar-end {
-		flex-direction: column;
-	}
-
-	.approval-actions-bar-end > * {
-		flex: none;
-		width: 100%;
+	.vendor-form-documents-title {
+		padding-inline: var(--space-2);
 	}
 }

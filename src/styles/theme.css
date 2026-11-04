@@ -118,7 +118,7 @@
 
 		--page-section-content-gap: var(--layout-section-gap);
 
-		--page-header-title-size: var(--font-size-xl);
+		--page-header-title-size: var(--font-size-3xl);
 		--page-header-title-line-height: var(--line-height-tight);
 		--page-header-title-tracking: var(--tracking-title);
 		--page-header-subtitle-size: var(--font-size-sm);

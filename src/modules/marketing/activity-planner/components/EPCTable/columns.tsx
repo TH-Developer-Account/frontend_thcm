@@ -4,10 +4,10 @@ import { Link } from "react-router-dom";
 
 import { trimText } from "../../../../../utils/format";
 import type { EpcListItem } from "../../types/epc.types";
-import { ACTIVITY_PLANNER_ROUTES } from "../../utils/constant";
+
 import { canOpenEpcView } from "../../forms/EPC/epc.utils";
 import { formatDate } from "../../utils/formatters";
-
+import { getEpcOpenRoute } from "../../utils/epcClarification";
 import EPCActionMenu from "./EPCActionMenu";
 import { formatPendingOn } from "../../../../../utils/statusAlert.helper";
 import { Badge } from "../../../../../components/common/Badge";
@@ -42,8 +42,15 @@ const hasEventStarted = (eventFromDate?: string | null) => {
 
 const canCreateLead = (row: EpcListItem) =>
 	row.status?.toUpperCase() === "APPROVED" ||
-	(row.status?.toUpperCase() === "CONDUCTED" &&
-		hasEventStarted(row.event_from_date));
+	(row.status?.toUpperCase() === "CONDUCTED" && true);
+
+// "View all leads" is useful only once leads can exist (event approved /
+// conducted) or already do (leads were added at some point, e.g. before the
+// event was marked Not Conducted).
+const canViewLeads = (row: EpcListItem) => {
+	const status = row.status?.toUpperCase();
+	return status === "APPROVED" || status === "CONDUCTED";
+};
 
 const canCreateMachineStudy = (row: EpcListItem) =>
 	row.status?.toUpperCase() === "APPROVED" ||
@@ -78,9 +85,14 @@ export const getEPCColumns = ({
 				);
 			}
 
+			// Not finally submitted → continue in the stepper (EPC Details step).
+			// Submitted → the read-only view page.
+			const { to, state } = getEpcOpenRoute(row.original, currentUserId);
+
 			return (
 				<Link
-					to={ACTIVITY_PLANNER_ROUTES.detail(row.original.id)}
+					to={to}
+					state={state}
 					className="epc-number-link"
 					onClick={(e) => e.stopPropagation()}
 				>
@@ -159,6 +171,7 @@ export const getEPCColumns = ({
 					// The menu needs currentUserId to decide Edit / Add CRF / Add EPF.
 					currentUserId={currentUserId}
 					canCreateLead={canCreateLead(epc)}
+					canViewLeads={canViewLeads(epc)}
 					onLeadCreate={onLeadCreate}
 					canCreateMachineStudy={canCreateMachineStudy(epc)}
 					onMachineStudyCreate={onMachineStudyCreate}

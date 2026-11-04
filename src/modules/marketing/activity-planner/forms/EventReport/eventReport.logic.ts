@@ -1,5 +1,5 @@
 import type {
-	EpcDetailResponse,
+	// EpcDetailResponse,
 	ReportStatus,
 	EventReportDetail,
 } from "../../types/epc.types";
@@ -73,7 +73,8 @@ export const getEventReportSectionState = ({
 		Boolean(isProposer) && isReportCreated && isClarificationRequested;
 	const canProposerRetry =
 		Boolean(isProposer) && isReportCreated && isGenerationFailed;
-	const canDownload = isReportCreated && isSubmitted && Boolean(report?.pdfUrl);
+	const canDownload =
+		isReportCreated && (isSubmitted || isValidated) && Boolean(report?.pdfUrl);
 	const canValidatorValidate =
 		Boolean(isValidator) && isSubmitted && Boolean(report?.id);
 	const canValidatorClarify = canValidatorValidate;

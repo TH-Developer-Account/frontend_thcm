@@ -26,6 +26,7 @@ import type {
 	WorkflowBasics,
 	WorkflowApprover,
 	WorkflowGenErrors,
+	WorkflowOwnerType,
 	WorkflowStage,
 	WorkflowStageErrors,
 } from "../types/types";
@@ -40,6 +41,7 @@ import { PageHeader } from "../../../components/ui/PageHeader";
 import { StepProgress } from "../../../components/ui/StepProgress";
 import { getWorkflowErrorMessage, workflowApi } from "../api/workflow.api";
 import { useSaveWorkflowMutation } from "../context/useWorkflowMutations";
+import { useWorkflowPermissions } from "../hooks/useWorkflowPermissions";
 import { useAppLookup } from "../../../common/common.app.helper";
 
 const WorkflowCreatePage = () => {
@@ -49,6 +51,12 @@ const WorkflowCreatePage = () => {
 	const { getAppName } = useAppLookup();
 	const location = useLocation();
 	const navigate = useNavigate();
+	const {
+		isWorkflowAdmin,
+		creatableApps,
+		canManageAppById,
+		isVendorOnboardingAppId,
+	} = useWorkflowPermissions();
 	const isUserCreatedWorkflow =
 		!id &&
 		(location.state as { workflowType?: string } | null)?.workflowType ===
@@ -69,6 +77,14 @@ const WorkflowCreatePage = () => {
 		category: "",
 	});
 
+	// Owner + app of the workflow being edited, kept so the page can block an
+	// edit the user isn't allowed to make (e.g. a shared template of an app
+	// they don't administer) before they type anything.
+	const [loadedWorkflow, setLoadedWorkflow] = useState<{
+		ownerType?: WorkflowOwnerType;
+		appId?: string;
+	} | null>(null);
+
 	const [stages, setStages] = useState<WorkflowStage[]>([]);
 	const [basicErrors, setBasicErrors] = useState<WorkflowGenErrors>({});
 	const [stageErrors, setStageErrors] = useState<WorkflowStageErrors[]>([]);
@@ -79,6 +95,15 @@ const WorkflowCreatePage = () => {
 		{ id: 2, label: "Approval stages" },
 		{ id: 3, label: "Review & Submit" },
 	];
+
+	// Creating a workflow is for admins. A non-admin only gets here through the
+	// user-created (vendor) flow, which passes `workflowType: "USERCREATED"`.
+	useEffect(() => {
+		if (isLoading || id || isWorkflowAdmin || isUserCreatedWorkflow) return;
+
+		navigate("/workflow/listing", { replace: true });
+	}, [id, isLoading, isUserCreatedWorkflow, isWorkflowAdmin, navigate]);
+
 	useEffect(() => {
 		if (!id) return;
 
@@ -94,6 +119,10 @@ const WorkflowCreatePage = () => {
 
 				setBasics(mapBasics(workflow));
 				setStages(mapStages(workflow.stages ?? []));
+				setLoadedWorkflow({
+					ownerType: workflow.ownerType,
+					appId: workflow.appId,
+				});
 			} catch (error) {
 				console.error("Failed to fetch workflow", error);
 			} finally {
@@ -103,6 +132,26 @@ const WorkflowCreatePage = () => {
 
 		fetchWorkflow();
 	}, [id]);
+
+	// Editing a shared (admin) template needs admin rights on its app. The
+	// server enforces this too; this just avoids showing a form that can only
+	// end in a "no permission" error.
+	useEffect(() => {
+		if (isLoading || !loadedWorkflow) return;
+
+		if (
+			loadedWorkflow.ownerType === "ADMIN" &&
+			!canManageAppById(loadedWorkflow.appId)
+		) {
+			showToast({
+				type: "error",
+				title: "Not allowed",
+				description: "Only an admin of this app can edit a shared workflow.",
+			});
+			navigate("/workflow/listing", { replace: true });
+		}
+	}, [canManageAppById, isLoading, loadedWorkflow, navigate, showToast]);
+
 	useEffect(() => {
 		if (!basics.app || basics.appDesc) return;
 
@@ -111,6 +160,34 @@ const WorkflowCreatePage = () => {
 
 		setBasics((prev) => ({ ...prev, appDesc: appName }));
 	}, [basics.app, basics.appDesc, getAppName]);
+
+	// Personal workflows are Vendor Onboarding only, so for non-admins (and the
+	// user-created flow) the app is pre-selected instead of left for them to
+	// find in a one-item dropdown.
+	useEffect(() => {
+		if (id || isLoading || basics.app) return;
+		if (isWorkflowAdmin && !isUserCreatedWorkflow) return;
+
+		const vendorApp = creatableApps.find((app) =>
+			isVendorOnboardingAppId(app.appId),
+		);
+		if (!vendorApp) return;
+
+		setBasics((prev) => ({
+			...prev,
+			app: vendorApp.appId,
+			appDesc: vendorApp.appName,
+			scope: "USER",
+		}));
+	}, [
+		basics.app,
+		creatableApps,
+		id,
+		isLoading,
+		isUserCreatedWorkflow,
+		isVendorOnboardingAppId,
+		isWorkflowAdmin,
+	]);
 
 	const totalApprovers = useMemo(
 		() => stages.reduce((sum, stage) => sum + stage.approvers.length, 0),
@@ -131,10 +208,27 @@ const WorkflowCreatePage = () => {
 		[stages],
 	);
 
-	const appOptions = useMemo(
-		() => formatApps(accessibleApps),
-		[accessibleApps],
-	);
+	// App dropdown:
+	//  - editing           → every app the user can reach (unchanged)
+	//  - user-created flow → Vendor Onboarding only
+	//  - creating          → apps the user administers + Vendor Onboarding
+	const appOptions = useMemo(() => {
+		if (id) return formatApps(accessibleApps);
+
+		if (isUserCreatedWorkflow) {
+			return formatApps(
+				creatableApps.filter((app) => isVendorOnboardingAppId(app.appId)),
+			);
+		}
+
+		return formatApps(creatableApps);
+	}, [
+		accessibleApps,
+		creatableApps,
+		id,
+		isUserCreatedWorkflow,
+		isVendorOnboardingAppId,
+	]);
 
 	const showCategory = basics.appDesc === MARKETING_ACTIVITY_PLANNER_APP_NAME;
 
@@ -301,6 +395,18 @@ const WorkflowCreatePage = () => {
 	const handleNext = () => {
 		if (currentStep === 1) {
 			const errors = validateWorkflowBasics(basics);
+
+			// Creating: the app must be one the user administers (shared
+			// template) or Vendor Onboarding (personal template).
+			if (
+				!id &&
+				basics.app &&
+				!canManageAppById(basics.app) &&
+				!isVendorOnboardingAppId(basics.app)
+			) {
+				errors.app =
+					"Personal workflows are only available for Vendor Onboarding";
+			}
 
 			if (Object.keys(errors).length > 0) {
 				setBasicErrors(errors);
@@ -492,6 +598,7 @@ const WorkflowCreatePage = () => {
 						categoryOptions={budgetCategories}
 						showCategory={showCategory}
 						showStatus={showStatus}
+						isEditing={Boolean(id)}
 					/>
 
 					<WorkflowCreateSidebar
@@ -499,6 +606,7 @@ const WorkflowCreatePage = () => {
 						stageCount={stages.length}
 						approverCount={totalApprovers}
 						minApprovers={minApprovers}
+						showTemplateType={!id}
 					/>
 				</div>
 			</Card>

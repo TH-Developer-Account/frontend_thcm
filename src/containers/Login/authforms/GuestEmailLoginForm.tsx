@@ -29,7 +29,7 @@ const GuestEmailLoginForm = () => {
 	const onSubmit = async (values: GuestEmailLoginFormValues) => {
 		try {
 			await loginWithPassword(normalizeEmail(values.email), values.password);
-			navigate("/guest/medi-claim/create");
+			navigate("/guest/medi-claim/listing");
 		} catch {
 			// toast already shown by GuestAuthProvider
 		}

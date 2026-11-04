@@ -1,12 +1,12 @@
 import type { SidebarItem } from "../../layout/layout.types";
 import {
   Home,
-  Settings,
   Database,
   Users,
   User,
   BriefcaseBusinessIcon,
   ShieldCheck,
+  ScaleIcon,
 } from "lucide-react";
 
 export const adminSidebar: SidebarItem[] = [
@@ -42,6 +42,12 @@ export const adminSidebar: SidebarItem[] = [
     link: "/admin/masters",
   },
   {
+    id: "authority-schedule",
+    label: "Schedule of Authority",
+    icon: <ScaleIcon size={18} />,
+    link: "/admin/authority-schedule",
+  },
+  {
     id: "business-partners",
     label: "Business Partners",
     icon: <BriefcaseBusinessIcon size={18} />,
@@ -58,11 +64,5 @@ export const adminSidebar: SidebarItem[] = [
     label: "C4C Data",
     icon: <Database size={18} />,
     link: "/admin/c4c",
-  },
-  {
-    id: "settings",
-    label: "Settings",
-    icon: <Settings size={18} />,
-    link: "/admin/profile",
   },
 ];

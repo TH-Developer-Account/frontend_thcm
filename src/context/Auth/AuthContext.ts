@@ -1,18 +1,7 @@
 import { createContext, useContext } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { ToastInput } from "../Toast/toast.types";
-
-export interface User {
-	id: string;
-	email: string;
-	first_name: string;
-	last_name: string;
-	phone_number: string;
-	role?: "ADMIN" | "DEALER" | "EMPLOYEE" | undefined;
-	profile_image?: string;
-	designation?: string;
-	department?: string;
-}
+import type { AuthUser } from "../../common/common.types";
 
 export interface ToastContextType {
 	showToast: ShowToastFn;
@@ -41,7 +30,7 @@ export type AccessSession = {
 };
 
 export interface AuthContextType {
-	user: User | null;
+	user: AuthUser | null;
 	login: (
 		email: string,
 		password: string,
@@ -49,7 +38,7 @@ export interface AuthContextType {
 	logout: () => void;
 	resetPassword: (currentPassword: string, newPassword: string) => void;
 	isLoading: boolean;
-	setUser: Dispatch<SetStateAction<User | null>>;
+	setUser: Dispatch<SetStateAction<AuthUser | null>>;
 	workspaceId: string | null;
 	hydrateSession: () => Promise<void>;
 

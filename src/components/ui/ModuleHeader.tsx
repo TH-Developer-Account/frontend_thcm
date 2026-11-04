@@ -35,7 +35,7 @@ function ModuleHeader() {
 		<div className="home-header-content">
 			<div className="flex min-w-0 items-center gap-3">
 				<NavLink
-					to={isGuestRoute ? "/guest/medi-claim/create" : "/"}
+					to={isGuestRoute ? "/guest/medi-claim/listing" : "/"}
 					aria-label="Go to home"
 					className="inline-flex shrink-0 items-center"
 				>

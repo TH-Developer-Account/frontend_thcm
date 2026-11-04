@@ -22,13 +22,12 @@ import {
 } from "./schema";
 import { getLinePricing, sumPricing } from "../shop/mapper";
 import { CrfImage } from "./Media";
-import LoadMoreBar from "./LoadMoreBar";
+import LoadMoreBar, { CRF_GRID_PAGE_SIZE } from "./LoadMoreBar";
 import SouvenirCatalog from "../shop/SouvenirCatalog";
 import {
 	ARTWORK_CUSTOM_PRESET,
 	ARTWORK_RESOLUTION_PRESETS,
 	CRF_CATEGORIES,
-	CRF_PAGE_SIZE,
 	type ArtworkResolutionPreset,
 	type CrfCategory,
 	type CrfLineItem,
@@ -66,6 +65,10 @@ export type CrfCatalogProps = {
 
 /** Lines shown in the summary card before "Load more". */
 export const CRF_SUMMARY_PAGE_SIZE = 5;
+
+// CRF_GRID_PAGE_SIZE (cards per tab before "Load more") lives in LoadMoreBar.tsx
+// so the Souvenirs grid can use it without a circular import.
+export { CRF_GRID_PAGE_SIZE };
 
 /* ========================================================================== */
 /*                                  Helpers                                   */
@@ -814,13 +817,16 @@ export default function CrfCatalog({
 
 	/* ------------------------------ Load more ---------------------------- */
 
-	// Cards on screen; goes back to one page when the tab or search changes.
+	// Cards on screen: CRF_GRID_PAGE_SIZE to start with, +CRF_GRID_PAGE_SIZE per
+	// "Load more" click; goes back to the first page when the tab or search
+	// changes.
 	const pageKey = `${activeCategory}|${query}`;
 	const [visible, setVisible] = React.useState({
 		key: pageKey,
-		count: CRF_PAGE_SIZE,
+		count: CRF_GRID_PAGE_SIZE,
 	});
-	const visibleCount = visible.key === pageKey ? visible.count : CRF_PAGE_SIZE;
+	const visibleCount =
+		visible.key === pageKey ? visible.count : CRF_GRID_PAGE_SIZE;
 	const shownProducts = products.slice(0, visibleCount);
 
 	/* --------------------- Mutations (printed / artwork) ----------------- */
@@ -974,7 +980,7 @@ export default function CrfCatalog({
 								onClick={() =>
 									setVisible({
 										key: pageKey,
-										count: visibleCount + CRF_PAGE_SIZE,
+										count: visibleCount + CRF_GRID_PAGE_SIZE,
 									})
 								}
 							/>

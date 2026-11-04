@@ -1,7 +1,18 @@
-import { Banknote, HandCoins, Users } from "lucide-react";
+// forms/EPF/EpfFormFields.tsx
+// Participants · Dealer Info · Budget as Card `sections` (collapsible).
+//
+// The sections are returned by a hook instead of being rendered here, so the
+// host (EpfForm) can put them in the SAME Card as Budget Summary and Event Cost
+// Overheads — one Card, five collapsible sections, one "Collapse all" toggle.
+import { useState } from "react";
+
 import FormInput from "../../../../../components/forms/FormInput";
+import type { CardSection } from "../../../../../components/common/Card";
 import type { EpfFormValues } from "../../types/epf.types";
-import FormHeader from "../../../../../components/ui/FormHeader";
+import BusinessPartnerAsyncSelect, {
+	type BusinessPartnerOption,
+} from "../../../../admin/users/BusinessPartnerAsyncSelect";
+import { Banknote, HandCoins, Users } from "lucide-react";
 
 type EpfFormInfoProps = {
 	values: EpfFormValues;
@@ -10,114 +21,138 @@ type EpfFormInfoProps = {
 	eventCost: number;
 };
 
-export default function EpfFormFields({
+export function useEpfFormSections({
 	values,
 	errors = {},
 	handleChange,
 	eventCost,
-}: EpfFormInfoProps) {
-	return (
-		<div className="epf-form-grid text-left text-xs lg:text-sm">
-			<div className="epf-form-grid epf-form-grid--top">
-				<section className="epf-form-block">
-					<FormHeader title="Participants" Icon={Users} />
-					<div className="epf-form-fields epf-form-fields--3">
-						<FormInput
-							name="externalParticipants"
-							label="External Participants"
-							type="number"
-							min={0}
-							placeholder="0"
-							required
-							value={values.externalParticipants}
-							error={errors.externalParticipants}
-							onChange={(e) =>
-								handleChange("externalParticipants", e.target.value)
-							}
-						/>
-						<FormInput
-							name="internalParticipants"
-							label="Internal Participants"
-							type="number"
-							min={0}
-							placeholder="0"
-							required
-							value={values.internalParticipants}
-							error={errors.internalParticipants}
-							onChange={(e) =>
-								handleChange("internalParticipants", e.target.value)
-							}
-						/>
-						<FormInput
-							name="totalParticipants"
-							label="Total Participants"
-							readOnly
-							disabled
-							value={values.totalParticipants}
-							error={errors.totalParticipants}
-							onChange={(e) =>
-								handleChange("totalParticipants", e.target.value)
-							}
-						/>
-					</div>
-				</section>
+}: EpfFormInfoProps): CardSection[] {
+	// Keeps the picked BP (id + type) so the select can show it; the form itself
+	// only stores the name in `dealerName`, which is what the API takes today.
+	const [dealerOption, setDealerOption] =
+		useState<BusinessPartnerOption | null>(null);
 
-				<section className="epf-form-block">
-					<FormHeader title="Dealer Info" Icon={HandCoins} />
-					<div className="epf-form-fields epf-form-fields--dealer">
-						<FormInput
+	const dealerValue: BusinessPartnerOption | null = values.dealerName
+		? dealerOption?.label === values.dealerName
+			? dealerOption
+			: { value: values.dealerName, label: values.dealerName } // saved EPF / after Reset
+		: null;
+
+	return [
+		/* ------------------------------ Participants ------------------------------ */
+		{
+			id: "participants",
+			title: "Participants",
+			Icon: Users,
+			children: (
+				<div className="epf-card-fields">
+					<FormInput
+						name="externalParticipants"
+						label="External Participants"
+						type="number"
+						min={0}
+						placeholder="0"
+						required
+						value={values.externalParticipants}
+						error={errors.externalParticipants}
+						onChange={(e) =>
+							handleChange("externalParticipants", e.target.value)
+						}
+					/>
+					<FormInput
+						name="internalParticipants"
+						label="Internal Participants"
+						type="number"
+						min={0}
+						placeholder="0"
+						required
+						value={values.internalParticipants}
+						error={errors.internalParticipants}
+						onChange={(e) =>
+							handleChange("internalParticipants", e.target.value)
+						}
+					/>
+					<FormInput
+						name="totalParticipants"
+						label="Total Participants"
+						readOnly
+						disabled
+						value={values.totalParticipants}
+						error={errors.totalParticipants}
+						onChange={(e) => handleChange("totalParticipants", e.target.value)}
+					/>
+				</div>
+			),
+		},
+
+		/* ------------------------------ Dealer info ------------------------------ */
+		{
+			id: "dealer",
+			title: "Dealer Info",
+			Icon: HandCoins,
+			children: (
+				<div className="epf-card-fields epf-card-fields--2">
+					<div className="epf-card-field-wide">
+						<BusinessPartnerAsyncSelect
 							name="dealerName"
 							label="Dealer Name"
-							value={values.dealerName}
+							placeholder="Search dealer..."
+							value={dealerValue}
 							error={errors.dealerName}
-							onChange={(e) => handleChange("dealerName", e.target.value)}
-						/>
-						<FormInput
-							name="dealerPercent"
-							label="Dealer (%)"
-							type="number"
-							min={0}
-							max={100}
-							value={values.dealerPercent}
-							error={errors.dealerPercent}
-							onChange={(e) => handleChange("dealerPercent", e.target.value)}
-						/>
-						<FormInput
-							name="tataHitachiPercent"
-							label="Tata Hitachi (%)"
-							readOnly
-							disabled
-							value={values.tataHitachiPercent}
-							error={errors.tataHitachiPercent}
-							onChange={(e) =>
-								handleChange("tataHitachiPercent", e.target.value)
-							}
-						/>
-						<FormInput
-							name="dealerShare"
-							label="Dealer Share"
-							readOnly
-							disabled
-							value={values.dealerShare}
-							error={errors.dealerShare}
-							onChange={(e) => handleChange("dealerShare", e.target.value)}
-						/>
-						<FormInput
-							name="tataHitachiShare"
-							label="Tata Hitachi Share"
-							readOnly
-							disabled
-							value={values.tataHitachiShare}
-							error={errors.tataHitachiShare}
-							onChange={(e) => handleChange("tataHitachiShare", e.target.value)}
+							onChange={(option) => {
+								setDealerOption(option);
+								handleChange("dealerName", option?.label ?? "");
+							}}
 						/>
 					</div>
-				</section>
-			</div>
+					<FormInput
+						name="dealerPercent"
+						label="Dealer (%)"
+						type="number"
+						min={0}
+						max={100}
+						value={values.dealerPercent}
+						error={errors.dealerPercent}
+						onChange={(e) => handleChange("dealerPercent", e.target.value)}
+					/>
+					<FormInput
+						name="tataHitachiPercent"
+						label="Tata Hitachi (%)"
+						readOnly
+						disabled
+						value={values.tataHitachiPercent}
+						error={errors.tataHitachiPercent}
+						onChange={(e) => handleChange("tataHitachiPercent", e.target.value)}
+					/>
+					<FormInput
+						name="dealerShare"
+						label="Dealer Share"
+						readOnly
+						disabled
+						value={values.dealerShare}
+						error={errors.dealerShare}
+						onChange={(e) => handleChange("dealerShare", e.target.value)}
+					/>
+					<FormInput
+						name="tataHitachiShare"
+						label="Tata Hitachi Share"
+						readOnly
+						disabled
+						value={values.tataHitachiShare}
+						error={errors.tataHitachiShare}
+						onChange={(e) => handleChange("tataHitachiShare", e.target.value)}
+					/>
+				</div>
+			),
+		},
 
-			<section className="epf-form-block">
-				<FormHeader title="Budget" Icon={Banknote} />
-				<div className="epf-form-fields epf-form-fields--budget">
+		/* -------------------------------- Budget -------------------------------- */
+		{
+			id: "budget",
+			title: "Budget",
+			Icon: Banknote,
+			children: (
+				<div className="epf-card-fields epf-card-fields--2">
 					<FormInput
 						name="crfTotal"
 						label="CRF Total (₹)"
@@ -179,7 +214,7 @@ export default function EpfFormFields({
 						}
 					/>
 				</div>
-			</section>
-		</div>
-	);
+			),
+		},
+	];
 }

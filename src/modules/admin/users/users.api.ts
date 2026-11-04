@@ -97,6 +97,7 @@ export const userApi = {
       search,
       pageSize: USER_LIST_MAX_PAGE_SIZE,
       signal,
+      status: "Active",
     });
     return page.rows;
   },

@@ -9,18 +9,21 @@ type MedicalClaimInitiationPageProps = {
 	mode?: MedicalClaimInitiationFormMode;
 };
 
-const MedicalClaimInitiationPage = ({ mode }: MedicalClaimInitiationPageProps) => {
+const MedicalClaimInitiationPage = ({
+	mode,
+}: MedicalClaimInitiationPageProps) => {
 	const navigate = useNavigate();
-	const { initiationId, claimId } = useParams<{ initiationId?: string; claimId?: string }>();
-	const resolvedId = initiationId ?? claimId;
+	const { claimId } = useParams<{ claimId: string }>();
 
 	const isViewMode = mode === "view";
+
 	const pageTitle = isViewMode
 		? "Medical Claim Initiation Details"
 		: "Medical Claim Initiation Form";
-	const listingHref = isViewMode
-		? "/medi-claim/listing?tab=initiation"
-		: "/medi-claim/listing?tab=claims";
+
+	const handleBackToListing = () => {
+		navigate("/medi-claim/listing?tab=claims");
+	};
 
 	return (
 		<PageSectionLayout>
@@ -30,22 +33,35 @@ const MedicalClaimInitiationPage = ({ mode }: MedicalClaimInitiationPageProps) =
 					variant: "breadcrumbs",
 					ariaLabel: pageTitle,
 					breadcrumbs: [
-						{ label: "Home Screen", href: "/" },
-						{ label: "Medical Reimbursement Claims", href: listingHref },
-						{ label: pageTitle },
+						{
+							label: "Home Screen",
+							href: "/",
+						},
+						{
+							label: "Medical Reimbursement Claims",
+							href: "/medi-claim/listing?tab=claims",
+						},
+						{
+							label: pageTitle,
+						},
 					],
 					separator: "›",
 				}}
 			/>
 
-			{/* Single initiation navigates to the "Awaiting employee" tab on
-			    success (inside the hook); bulk import stays on this page so
-			    the import result can be read. */}
+			{!isViewMode ? (
+				<p className="mb-3 text-sm text-iron">
+					Start one claim, or import many at once. Each employee gets a secure
+					link to submit their claim.
+				</p>
+			) : null}
+
 			<MedicalClaimInitiationForm
-				claimId={resolvedId}
+				claimId={claimId}
 				mode={mode}
-				onCancel={() => navigate(listingHref)}
-				onBack={() => navigate(listingHref)}
+				onCancel={handleBackToListing}
+				onSuccess={handleBackToListing}
+				onBack={handleBackToListing}
 			/>
 		</PageSectionLayout>
 	);

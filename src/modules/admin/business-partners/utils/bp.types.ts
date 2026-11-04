@@ -11,6 +11,7 @@ export const BUSINESS_PARTNER_TYPE_OPTIONS: SelectOption<BusinessPartnerType>[] 
 		{ label: "Customer", value: "CUSTOMER" },
 		{ label: "TATA-Hitachi", value: "TATA-Hitachi" },
 		{ label: "Plant", value: "PLANT" },
+		{ label: "TCS", value: "TCS" },
 	];
 export const OFFICE_TYPE_OPTIONS: SelectOption<BusinessPartnerOfficeType>[] = [
 	{ label: "Head Office", value: "HEAD_OFFICE" },
@@ -29,7 +30,8 @@ export type BusinessPartnerType =
 	| "DEALER"
 	| "CUSTOMER"
 	| "TATA-Hitachi"
-	| "PLANT";
+	| "PLANT"
+	| "TCS";
 
 export type BusinessPartnerEntityType =
 	| "COMPANY"

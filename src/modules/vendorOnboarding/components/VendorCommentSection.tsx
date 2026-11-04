@@ -6,6 +6,7 @@ import {
 	type MentionableUserInput,
 } from "../../../components/ui/comments";
 import { useAuth } from "../../../context/Auth/useAuth";
+import { vendorContent } from "../utils/vendor.content";
 import type { ApprovalStageLike } from "../../workflows/types/types";
 
 type VendorCommentSectionProps = {
@@ -51,8 +52,8 @@ const VendorCommentSection = ({
 				ccEmails={commentContext.ccEmails}
 				currentUserId={user?.id}
 				refreshKey={refreshKey}
-				emptyTitle="No comments yet"
-				emptyDescription="Comments about this vendor request will appear here."
+				emptyTitle={vendorContent.listing.comments.emptyTitle}
+				emptyDescription={vendorContent.listing.comments.emptyDescription}
 			/>
 		</>
 	);

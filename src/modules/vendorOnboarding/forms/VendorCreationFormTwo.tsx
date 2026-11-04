@@ -12,6 +12,7 @@ import type {
 } from "../types/vendorOnboarding.types";
 import { useOptionalVendorCreationFormContext } from "../hooks/useVendorCreationForm";
 import type { Option } from "../../../components/forms/input.types";
+import { vendorContent } from "../utils/vendor.content";
 import {
 	companyCodeOptions,
 	materialSubTypeOptions,
@@ -22,6 +23,11 @@ import {
 	vendorCategoryOptions,
 	vendorTypeOptions,
 } from "../utils/vendor.constant";
+
+// All on-screen copy lives in content/vendor.content.en.json
+// (formTwo.fields.*, buttons.*, common.*). Nothing below is hardcoded.
+const { fields } = vendorContent.formTwo;
+const { buttons, common } = vendorContent;
 
 export type VendorCreationFormTwoProps = {
 	mode?: VendorFormMode;
@@ -46,16 +52,14 @@ export type VendorCreationFormTwoProps = {
 	vendorCodeLoading?: boolean;
 };
 
-const toSelectOptions = (values: string[]): Option[] =>
-	values.map((value) => ({
-		label: value,
-		value,
-	}));
-
 const getSelectedOption = (options: Option[], value?: string): Option | null =>
 	options.find((option) => option.value === value) ?? null;
 
-const yesNoOptions = toSelectOptions(["Yes", "No"]);
+// Stored values stay "Yes" / "No"; only the visible label comes from content.
+const yesNoOptions: Option[] = [
+	{ label: common.yes, value: "Yes" },
+	{ label: common.no, value: "No" },
+];
 
 const VendorCreationFormTwo = ({
 	mode = "edit",
@@ -100,13 +104,11 @@ const VendorCreationFormTwo = ({
 						<FormInput
 							mode={vendorCodeMode}
 							name="vendorCode"
-							label="Vendor Code"
+							label={fields.vendorCode.label}
 							value={values.vendorCode ?? ""}
 							error={canEditVendorCode ? errors.vendorCode : undefined}
 							helperText={
-								canEditVendorCode
-									? "Enter or update the vendor code."
-									: undefined
+								canEditVendorCode ? fields.vendorCode.helperText : undefined
 							}
 							disabled={vendorCodeLoading}
 							onChange={(event) => {
@@ -121,26 +123,26 @@ const VendorCreationFormTwo = ({
 					<SelectInput
 						mode={fieldMode}
 						name="vendorType"
-						label="Vendor Type"
+						label={fields.vendorType.label}
 						success={
 							fieldMode === "edit" &&
 							!errors.vendorType &&
 							Boolean(values.vendorType)
 						}
-						placeholder="Select vendor type"
+						placeholder={fields.vendorType.placeholder}
 						options={vendorTypeOptions}
 						value={getSelectedOption(vendorTypeOptions, values.vendorType)}
 						required
 						error={errors.vendorType}
-						helperText="Choose whether the vendor is PO based, non-PO based, or not applicable."
+						helperText={fields.vendorType.helperText}
 						onChange={(option) => onChange?.("vendorType", option?.value ?? "")}
 					/>
 
 					<SelectInput
 						mode={fieldMode}
 						name="companyCode"
-						label="Company Code"
-						placeholder="Select company code"
+						label={fields.companyCode.label}
+						placeholder={fields.companyCode.placeholder}
 						options={companyCodeOptions}
 						value={getSelectedOption(companyCodeOptions, values.companyCode)}
 						required
@@ -150,7 +152,7 @@ const VendorCreationFormTwo = ({
 							!errors.companyCode &&
 							Boolean(values.companyCode)
 						}
-						helperText="Select the applicable THCM company code."
+						helperText={fields.companyCode.helperText}
 						onChange={(option) =>
 							onChange?.("companyCode", option?.value ?? "")
 						}
@@ -159,8 +161,8 @@ const VendorCreationFormTwo = ({
 					<SelectInput
 						mode={fieldMode}
 						name="purchaseOrg"
-						label="Purchase Org"
-						placeholder="Select purchase organization"
+						label={fields.purchaseOrg.label}
+						placeholder={fields.purchaseOrg.placeholder}
 						options={purchaseOrgOptions}
 						value={getSelectedOption(purchaseOrgOptions, values.purchaseOrg)}
 						required
@@ -170,7 +172,7 @@ const VendorCreationFormTwo = ({
 							!errors.purchaseOrg &&
 							Boolean(values.purchaseOrg)
 						}
-						helperText="Select the purchase organization applicable to this vendor."
+						helperText={fields.purchaseOrg.helperText}
 						onChange={(option) =>
 							onChange?.("purchaseOrg", option?.value ?? "")
 						}
@@ -179,8 +181,8 @@ const VendorCreationFormTwo = ({
 					<SelectInput
 						mode={fieldMode}
 						name="paymentTerm"
-						label="Payment Term"
-						placeholder="Select Payment Term"
+						label={fields.paymentTerm.label}
+						placeholder={fields.paymentTerm.placeholder}
 						options={paymentTermOptions}
 						value={getSelectedOption(paymentTermOptions, values.paymentTerm)}
 						required
@@ -190,7 +192,7 @@ const VendorCreationFormTwo = ({
 							Boolean(values.paymentTerm)
 						}
 						error={errors.paymentTerm}
-						helperText="Select proprietary, non-proprietary, or not applicable."
+						helperText={fields.paymentTerm.helperText}
 						onChange={(option) =>
 							onChange?.("paymentTerm", option?.value ?? "")
 						}
@@ -198,22 +200,22 @@ const VendorCreationFormTwo = ({
 					<SelectInput
 						mode={fieldMode}
 						name="tds"
-						label="TDS"
-						placeholder="Select TDS"
+						label={fields.tds.label}
+						placeholder={fields.tds.placeholder}
 						options={tdsOptions}
 						value={getSelectedOption(tdsOptions, values.tds)}
 						required
 						error={errors.tds}
 						success={fieldMode === "edit" && !errors.tds && Boolean(values.tds)}
-						helperText="Select the applicable TDS section."
+						helperText={fields.tds.helperText}
 						onChange={(option) => onChange?.("tds", option?.value ?? "")}
 					/>
 
 					<SelectInput
 						mode={fieldMode}
 						name="vendorCategory"
-						label="Vendor Category"
-						placeholder="Select vendor category"
+						label={fields.vendorCategory.label}
+						placeholder={fields.vendorCategory.placeholder}
 						options={vendorCategoryOptions}
 						value={getSelectedOption(
 							vendorCategoryOptions,
@@ -226,7 +228,7 @@ const VendorCreationFormTwo = ({
 							Boolean(values.vendorCategory)
 						}
 						error={errors.vendorCategory}
-						helperText="Select the category applicable to this vendor."
+						helperText={fields.vendorCategory.helperText}
 						onChange={(option) =>
 							onChange?.("vendorCategory", option?.value ?? "")
 						}
@@ -235,8 +237,8 @@ const VendorCreationFormTwo = ({
 					<SelectInput
 						mode={fieldMode}
 						name="materialType"
-						label="Material Type"
-						placeholder="Select material type"
+						label={fields.materialType.label}
+						placeholder={fields.materialType.placeholder}
 						options={materialTypeOptions}
 						value={getSelectedOption(materialTypeOptions, values.materialType)}
 						required
@@ -246,7 +248,7 @@ const VendorCreationFormTwo = ({
 							!errors.materialType &&
 							Boolean(values.materialType)
 						}
-						helperText="Select direct, indirect, or not applicable."
+						helperText={fields.materialType.helperText}
 						onChange={(option) =>
 							onChange?.("materialType", option?.value ?? "")
 						}
@@ -255,8 +257,8 @@ const VendorCreationFormTwo = ({
 					<SelectInput
 						mode={fieldMode}
 						name="materialSubType"
-						label="Material Sub Type"
-						placeholder="Select material sub type"
+						label={fields.materialSubType.label}
+						placeholder={fields.materialSubType.placeholder}
 						options={materialSubTypeOptions}
 						value={getSelectedOption(
 							materialSubTypeOptions,
@@ -269,7 +271,7 @@ const VendorCreationFormTwo = ({
 							Boolean(values.materialSubType)
 						}
 						error={errors.materialSubType}
-						helperText="Select proprietary, non-proprietary, or not applicable."
+						helperText={fields.materialSubType.helperText}
 						onChange={(option) =>
 							onChange?.("materialSubType", option?.value ?? "")
 						}
@@ -278,8 +280,8 @@ const VendorCreationFormTwo = ({
 					<SelectInput
 						mode={fieldMode}
 						name="vendorSelfAssessmentObtained"
-						label="Vendor Self Assessment Form Obtained?"
-						placeholder="Select option"
+						label={fields.vendorSelfAssessmentObtained.label}
+						placeholder={fields.vendorSelfAssessmentObtained.placeholder}
 						options={yesNoOptions}
 						value={getSelectedOption(
 							yesNoOptions,
@@ -292,7 +294,7 @@ const VendorCreationFormTwo = ({
 							Boolean(values.vendorSelfAssessmentObtained)
 						}
 						error={errors.vendorSelfAssessmentObtained}
-						helperText="Confirm whether vendor self assessment form is obtained."
+						helperText={fields.vendorSelfAssessmentObtained.helperText}
 						onChange={(option) =>
 							onChange?.("vendorSelfAssessmentObtained", option?.value ?? "")
 						}
@@ -301,8 +303,8 @@ const VendorCreationFormTwo = ({
 					<SelectInput
 						mode={fieldMode}
 						name="gpaObtained"
-						label="General Purpose Agreement Obtained?"
-						placeholder="Select option"
+						label={fields.gpaObtained.label}
+						placeholder={fields.gpaObtained.placeholder}
 						options={yesNoOptions}
 						value={getSelectedOption(yesNoOptions, values.gpaObtained)}
 						required
@@ -312,7 +314,7 @@ const VendorCreationFormTwo = ({
 							!errors.gpaObtained &&
 							Boolean(values.gpaObtained)
 						}
-						helperText="Confirm whether GPA is obtained."
+						helperText={fields.gpaObtained.helperText}
 						onChange={(option) =>
 							onChange?.("gpaObtained", option?.value ?? "")
 						}
@@ -321,8 +323,8 @@ const VendorCreationFormTwo = ({
 					<SelectInput
 						mode={fieldMode}
 						name="relatedPartyToThcm"
-						label="Is it Related Party to THCM?"
-						placeholder="Select option"
+						label={fields.relatedPartyToThcm.label}
+						placeholder={fields.relatedPartyToThcm.placeholder}
 						options={yesNoOptions}
 						value={getSelectedOption(yesNoOptions, values.relatedPartyToThcm)}
 						required
@@ -332,7 +334,7 @@ const VendorCreationFormTwo = ({
 							!errors.relatedPartyToThcm &&
 							Boolean(values.relatedPartyToThcm)
 						}
-						helperText="Confirm whether vendor is a related party to THCM."
+						helperText={fields.relatedPartyToThcm.helperText}
 						onChange={(option) =>
 							onChange?.("relatedPartyToThcm", option?.value ?? "")
 						}
@@ -341,8 +343,8 @@ const VendorCreationFormTwo = ({
 					<SelectInput
 						mode={fieldMode}
 						name="vendorAuditReportPrepared"
-						label="Vendor Audit Report Prepared?"
-						placeholder="Select option"
+						label={fields.vendorAuditReportPrepared.label}
+						placeholder={fields.vendorAuditReportPrepared.placeholder}
 						options={yesNoOptions}
 						value={getSelectedOption(
 							yesNoOptions,
@@ -355,7 +357,7 @@ const VendorCreationFormTwo = ({
 							Boolean(values.vendorAuditReportPrepared)
 						}
 						error={errors.vendorAuditReportPrepared}
-						helperText="Confirm whether vendor audit report is prepared."
+						helperText={fields.vendorAuditReportPrepared.helperText}
 						onChange={(option) =>
 							onChange?.("vendorAuditReportPrepared", option?.value ?? "")
 						}
@@ -366,7 +368,7 @@ const VendorCreationFormTwo = ({
 					<TextareaInput
 						mode={fieldMode}
 						name="natureOfService"
-						label="Nature of Service"
+						label={fields.natureOfService.label}
 						value={values.natureOfService ?? ""}
 						required
 						error={errors.natureOfService}
@@ -375,7 +377,7 @@ const VendorCreationFormTwo = ({
 							!errors.natureOfService &&
 							Boolean(values.natureOfService)
 						}
-						helperText="Describe the nature of services provided by the vendor."
+						helperText={fields.natureOfService.helperText}
 						onChange={(event) =>
 							onChange?.("natureOfService", event.target.value)
 						}
@@ -384,7 +386,7 @@ const VendorCreationFormTwo = ({
 					<TextareaInput
 						mode={fieldMode}
 						name="reasonForOnboarding"
-						label="Reason for Onboarding of Vendor"
+						label={fields.reasonForOnboarding.label}
 						value={values.reasonForOnboarding ?? ""}
 						required
 						error={errors.reasonForOnboarding}
@@ -393,7 +395,7 @@ const VendorCreationFormTwo = ({
 							!errors.reasonForOnboarding &&
 							Boolean(values.reasonForOnboarding)
 						}
-						helperText="Explain why this vendor is being onboarded."
+						helperText={fields.reasonForOnboarding.helperText}
 						onChange={(event) =>
 							onChange?.("reasonForOnboarding", event.target.value)
 						}
@@ -403,7 +405,7 @@ const VendorCreationFormTwo = ({
 					<div className="vendor-onboarding-form-actions">
 						<Button
 							type="button"
-							text="Back"
+							text={buttons.back}
 							size="sm"
 							Icon={ArrowLeft}
 							iconPosition="left"
@@ -416,7 +418,7 @@ const VendorCreationFormTwo = ({
 						<div className="vendor-onboarding-form-actions-end">
 							{/* <Button
 								type="button"
-								text="Reset"
+								text={buttons.reset}
 								Icon={RefreshCcw}
 								size="sm"
 								appearance="standard"
@@ -427,7 +429,7 @@ const VendorCreationFormTwo = ({
 
 							{/* <Button
 								type="button"
-								text={loading ? "Saving..." : "Save as Draft"}
+								text={loading ? buttons.saving : buttons.saveAsDraft}
 								Icon={Save}
 								size="sm"
 								appearance="standard"
@@ -438,7 +440,7 @@ const VendorCreationFormTwo = ({
 
 							<Button
 								type="button"
-								text={loading ? "Saving..." : "Save & Proceed"}
+								text={loading ? buttons.saving : buttons.saveAndProceed}
 								size="sm"
 								Icon={ArrowRight}
 								iconPosition="right"

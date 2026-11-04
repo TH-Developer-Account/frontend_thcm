@@ -4,7 +4,6 @@ import logo from "../assets/thcm-logo/th-brand-logo.png";
 type PublicPagesLayoutProps = {
 	children: ReactNode;
 	className?: string;
-	/** Page name shown in the middle of the header (e.g. "Medical Claim Form"). */
 	title?: ReactNode;
 };
 
@@ -20,9 +19,12 @@ export const PublicPagesLayout = ({
 		<div className="public-pages-layout">
 			<header className="header-public relative bg-white">
 				<div className="public-page-brand">
-					<a className="home-brand" href="/" aria-label="Tata Hitachi home">
+					<div className="home-brand" aria-label="Tata Hitachi home">
 						<img src={logo} alt="Tata Hitachi" />
-					</a>
+					</div>
+
+					{/* Mirrors the logo column so the title stays centred */}
+					<div className="public-page-brand-spacer" aria-hidden="true" />
 				</div>
 
 				{title ? (

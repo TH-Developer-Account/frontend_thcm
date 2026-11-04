@@ -12,6 +12,7 @@ import { Modal } from "../../../components/common/Modal";
 import { CardEmpty } from "../../../components/ui/CardSkeleton";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
+import { vendorContent } from "../utils/vendor.content";
 
 import VendorCreationSummaryForm from "../forms/VendorCreationSummaryForm";
 import {
@@ -19,6 +20,10 @@ import {
 	useVendorCreationForm,
 } from "../hooks/useVendorCreationForm";
 import { AuditLogSection } from "../../../components/ui/audit";
+
+// Copy lives in content/vendor.content.en.json -> pages.*, buttons.*, listing.audit.*, audit.*
+const { breadcrumbs } = vendorContent.pages;
+const viewContent = vendorContent.pages.formView;
 
 type VendorOnboardingReadOnlyViewProps = {
 	onboardingId: string;
@@ -52,35 +57,32 @@ const VendorOnboardingReadOnlyView = ({
 
 	const pageNavigation = {
 		variant: "breadcrumbs" as const,
-		ariaLabel: "Vendor Onboarding Details",
+		ariaLabel: viewContent.title,
 		breadcrumbs: [
 			{
-				label: "Home Screen",
+				label: breadcrumbs.home,
 				href: "/",
 			},
 			{
-				label: "Vendors Listing",
+				label: breadcrumbs.vendorsListing,
 				href: "/vendor-onboarding/listing?tab=onboarding",
 			},
 			{
-				label: "Vendor Form View",
+				label: breadcrumbs.formView,
 			},
 		],
-		separator: "›",
+		separator: vendorContent.common.breadcrumbSeparator,
 	};
 
 	if (isLoading) {
 		return (
 			<PageSectionLayout>
 				<PageHeader
-					headerText="Vendor Onboarding Details"
+					headerText={viewContent.title}
 					navigation={pageNavigation}
 				/>
 
-				<CardEmpty
-					title="Loading vendor onboarding details..."
-					Icon={LoaderIcon}
-				/>
+				<CardEmpty title={viewContent.loading} Icon={LoaderIcon} />
 			</PageSectionLayout>
 		);
 	}
@@ -89,14 +91,11 @@ const VendorOnboardingReadOnlyView = ({
 		return (
 			<PageSectionLayout>
 				<PageHeader
-					headerText="Vendor Onboarding Details"
+					headerText={viewContent.title}
 					navigation={pageNavigation}
 				/>
 
-				<CardEmpty
-					title="Unable to load the vendor onboarding details."
-					Icon={CircleX}
-				/>
+				<CardEmpty title={viewContent.error} Icon={CircleX} />
 			</PageSectionLayout>
 		);
 	}
@@ -119,10 +118,10 @@ const VendorOnboardingReadOnlyView = ({
 						<AuditLogSection
 							subjectType="VENDOR_ONBOARDING"
 							subjectId={onboardingId}
-							entityName="vendor onboarding request"
+							entityName={vendorContent.audit.entityName}
 							// refreshKey={refreshKey}
-							emptyTitle="No vendor activity yet"
-							emptyDescription="Vendor onboarding activity will appear here."
+							emptyTitle={vendorContent.listing.audit.emptyTitle}
+							emptyDescription={vendorContent.listing.audit.emptyDescription}
 						/>
 					}
 				/>
@@ -130,14 +129,14 @@ const VendorOnboardingReadOnlyView = ({
 
 			<Modal
 				open={pdfPreviewOpen}
-				title="Vendor Details PDF"
+				title={viewContent.pdfTitle}
 				size="xl"
 				onClose={closePdfPreview}
 				footer_actions={
 					<>
 						<Button
 							type="button"
-							text="Close"
+							text={vendorContent.buttons.close}
 							size="sm"
 							appearance="standard"
 							variant="outline"
@@ -146,7 +145,11 @@ const VendorOnboardingReadOnlyView = ({
 
 						<Button
 							type="button"
-							text={isDownloadingPdf ? "Downloading…" : "Download PDF"}
+							text={
+								isDownloadingPdf
+									? vendorContent.buttons.downloadingPdf
+									: vendorContent.buttons.downloadPdf
+							}
 							Icon={FileDown}
 							iconPosition="left"
 							size="sm"
@@ -161,7 +164,7 @@ const VendorOnboardingReadOnlyView = ({
 				{pdfUrl ? (
 					<iframe
 						src={pdfUrl}
-						title="Vendor details PDF preview"
+						title={viewContent.pdfIframeTitle}
 						className="h-[70vh] w-full rounded-md border border-gray-200"
 					/>
 				) : (
@@ -169,7 +172,7 @@ const VendorOnboardingReadOnlyView = ({
 						className="flex h-[70vh] items-center justify-center"
 						role="status"
 					>
-						Preparing PDF preview...
+						{viewContent.pdfPreparing}
 					</div>
 				)}
 			</Modal>
@@ -185,11 +188,11 @@ const VendorOnboardingFormView = () => {
 	if (!onboardingId) {
 		return (
 			<PageSectionLayout>
-				<PageHeader headerText="Vendor Onboarding Details" />
+				<PageHeader headerText={viewContent.title} />
 
 				<Card>
 					<div className="vendor-onboarding-view-state" role="alert">
-						Vendor onboarding request ID was not found.
+						{viewContent.missingId}
 					</div>
 				</Card>
 			</PageSectionLayout>

@@ -55,7 +55,7 @@ const baseBasicInfoSchema = z.object({
 	// Password input is commented out in CreateUserForm, so it must not be
 	// required here. Re-add a create-only rule when that field returns.
 	password: z.string().optional(),
-	userType: z.enum(["Select", "THCM", "DEALER", "CUSTOMER"]).optional(),
+	userType: z.enum(["Select", "THCM", "DEALER", "CUSTOMER", "TCS"]).optional(),
 	grade: z.string().optional(),
 	isActive: z.boolean().optional(),
 });
@@ -87,21 +87,34 @@ export const buildUserBasicInfoSchema = (mode: "create" | "edit") =>
 					.refine(isBeforeToday, { message: JOINED_ON_PAST_MESSAGE }),
 			});
 
+// branch/designation/division/costCenter are FK ids (pickers sourced from
+// the Masters), and zoneIds is a multi-select — a user can hold more than
+// one zone — so it's validated as a non-empty array rather than a required
+// string. location is plain free text again (not a master-backed FK —
+// see decisions-and-learnings.md), so it's validated the same way as the
+// other plain text fields below.
+// Optional text: allowed to be empty, still trimmed when provided.
+const optionalText = z.string().trim().optional();
+
 export const userOrganizationSchema = z.object({
-	region: requiredText("Region"),
+	location: requiredText("Location"),
 	address: requiredText("Address"),
-	zone: requiredText("Zone"),
-	branch: requiredText("Branch"),
+	zoneIds: z.array(z.string()).min(1, "Select at least one zone."),
+	branchId: requiredText("Branch"),
 	department: requiredText("Department"),
-	role: requiredText("Role"),
-	designation: requiredText("Designation"),
+	designationId: requiredText("Designation"),
+	divisionId: requiredText("Division"),
+	costCenterId: requiredText("Cost Center"),
 	vertical: requiredText("Vertical"),
-	managerCode1: requiredText("Manager Code 1"),
-	managerCode2: requiredText("Manager Code 2"),
-	bydId: requiredText("BYD ID"),
-	s4Id: requiredText("S4 ID"),
-	tallyId: requiredText("Tally ID"),
-	c4cId: requiredText("C4C ID"),
+
+	// Not mandatory
+	role: optionalText,
+	managerCode1: optionalText,
+	managerCode2: optionalText,
+	bydId: optionalText,
+	s4Id: optionalText,
+	tallyId: optionalText,
+	c4cId: optionalText,
 });
 
 export type UserBasicInfoFormValues = z.infer<

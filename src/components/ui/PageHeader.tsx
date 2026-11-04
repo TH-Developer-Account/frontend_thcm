@@ -37,6 +37,11 @@ export const PageHeader = ({
 
 	return (
 		<header className={joinClassNames("page-header", className)}>
+			{navigation ? (
+				<div className="page-header-navigation">
+					<PageNavigation {...navigation} />
+				</div>
+			) : null}
 			{hasPrimaryContent ? (
 				<div
 					className={joinClassNames("page-header-primary", contentClassName)}
@@ -67,12 +72,6 @@ export const PageHeader = ({
 							<div className="page-header-extra">{headerChildren}</div>
 						) : null}
 					</div>
-
-					{navigation ? (
-						<div className="page-header-navigation">
-							<PageNavigation {...navigation} />
-						</div>
-					) : null}
 				</div>
 			) : null}
 

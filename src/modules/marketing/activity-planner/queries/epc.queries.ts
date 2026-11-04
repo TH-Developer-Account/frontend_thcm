@@ -181,15 +181,30 @@ export const useCreateEpcMutation = () => {
 
 	return useMutation({
 		mutationFn: (payload: EpcCreatePayload) => epcApi.create(payload),
-		onSuccess: async (createdEpc) => {
-			await queryClient.invalidateQueries({ queryKey: epcKeys.lists() });
-
+		// Returned so mutateAsync resolves only after the listing is fresh.
+		onSuccess: (createdEpc) => {
 			const createdEpcId =
 				createdEpc?.id ?? createdEpc?.eventProposal?.id ?? createdEpc?.epc?.id;
 
+			// Do NOT seed the detail cache with the create response. POST /epc
+			// returns the bare record, while GET /epc/:id returns the full shape
+			// (event_name, branch, crf, epf, activeWorkflow …). Seeding it, with
+			// the detail query's 60s staleTime, made the next page render thin
+			// data until a manual refresh. Dropping the entry makes that page
+			// fetch the real detail on mount.
 			if (createdEpcId) {
-				queryClient.setQueryData(epcKeys.detail(createdEpcId), createdEpc);
+				queryClient.removeQueries({
+					queryKey: epcKeys.detail(createdEpcId),
+					exact: true,
+				});
 			}
+
+			// The listing isn't mounted while the user is on the create screen, so
+			// refetch inactive list queries too — not just mark them stale.
+			return queryClient.invalidateQueries({
+				queryKey: epcKeys.lists(),
+				refetchType: "all",
+			});
 		},
 	});
 };

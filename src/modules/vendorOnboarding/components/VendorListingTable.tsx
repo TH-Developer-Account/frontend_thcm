@@ -7,6 +7,7 @@ import { SearchInput } from "../../../components/forms/SearchInput";
 import { FilterTabs } from "../../../components/ui/FilterTabs";
 import DataTable from "../../../components/ui/tables/DataTable/DataTable";
 import DataTableSkeleton from "../../../components/ui/tables/Skeletons/DataTableSkeleton";
+import { vendorContent, formatVendorMessage } from "../utils/vendor.content";
 
 import {
 	getOnboardingEmptyContent,
@@ -65,6 +66,9 @@ type VendorListingTableProps = VendorOnboardingListingTableProps;
 
 const SKELETON_ROW_COUNT = 8;
 
+// Copy lives in content/vendor.content.en.json -> listing.table.*, buttons.*
+const tableContent = vendorContent.listing.table;
+
 export default function VendorListingTable(props: VendorListingTableProps) {
 	const {
 		filterTabs,
@@ -101,6 +105,8 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 		[resolvedFilterTabs],
 	);
 
+	const showFilterTabs = normalizedFilterTabs.length > 0;
+
 	const onboardingColumns = useMemo(
 		() =>
 			getVendorOnboardingColumns({
@@ -120,27 +126,35 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 		<Card
 			className="vendor-listing-card"
 			title={
-				<FilterTabs
-					id={`${props.listingType}-vendor-listing-filter-tabs`}
-					ariaLabel="Filter vendor onboarding listings"
-					items={normalizedFilterTabs}
-					value={selectedFilter}
-					onChange={onFilterChange}
-					variant="underline"
-					className="border-b-none px-0 py-0"
-				/>
+				showFilterTabs ? (
+					<FilterTabs
+						id={`${props.listingType}-vendor-listing-filter-tabs`}
+						ariaLabel={tableContent.filterAriaLabel}
+						items={normalizedFilterTabs}
+						value={selectedFilter}
+						onChange={onFilterChange}
+						variant="underline"
+						className="border-b-none px-0 py-0"
+					/>
+				) : undefined
 			}
 			actions={
 				<>
 					<SearchInput
 						value={search}
 						onChange={onSearchChange}
-						placeholder={`${searchPlaceholder} by name`}
+						placeholder={formatVendorMessage(tableContent.searchWithSuffix, {
+							placeholder: searchPlaceholder,
+						})}
 					/>
 
 					<Button
 						type="button"
-						text={isExporting ? "Exporting..." : "Export"}
+						text={
+							isExporting
+								? vendorContent.buttons.exporting
+								: vendorContent.buttons.export
+						}
 						Icon={FileDown}
 						iconPosition="left"
 						iconSize={16}
@@ -183,7 +197,7 @@ export default function VendorListingTable(props: VendorListingTableProps) {
 
 				{isFetching && !isLoading ? (
 					<span className="sr-only" role="status" aria-live="polite">
-						Refreshing vendor records
+						{tableContent.refreshingStatus}
 					</span>
 				) : null}
 			</section>

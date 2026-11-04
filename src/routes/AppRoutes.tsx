@@ -19,6 +19,9 @@ import DealerAuditRoutes from "./DealerAuditRoutes";
 
 const ForbiddenPage = lazy(() => import("../Forbidden"));
 const HomeScreen = lazy(() => import("../containers/HomeScreen"));
+const MyProfilePage = lazy(
+	() => import("../modules/settings/UserProfile/UserProfile"),
+);
 const ForgotPasswordPage = lazy(() =>
 	import("../containers/Login/pages/ForgotPasswordPage").then((m) => ({
 		default: m.ForgotPasswordPage,
@@ -54,6 +57,16 @@ const AuthenticatedRoutes = () => {
 				</Route>
 
 				<Route element={<MainContentWrapper />}>
+					{/* Any signed-in user can open their own profile, so it lives
+					    outside /admin and is guarded like the home page. */}
+					<Route
+						path="/profile"
+						element={
+							<ProtectedRoute>
+								<MyProfilePage />
+							</ProtectedRoute>
+						}
+					/>
 					<Route path="/marketing/*" element={<MarketingRoutes />} />
 					<Route path="/admin/*" element={<AdminRoutes />} />
 					<Route path="/vendor-onboarding/*" element={<VendorRoutes />} />

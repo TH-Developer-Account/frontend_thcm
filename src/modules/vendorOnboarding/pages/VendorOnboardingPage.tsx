@@ -13,6 +13,11 @@ import {
 	useVendorCreationForm,
 } from "../hooks/useVendorCreationForm";
 import CustomizedWorkflowSection from "../../workflows/components/CustomizedWorkflowSection";
+import { vendorContent } from "../utils/vendor.content";
+
+// Copy lives in content/vendor.content.en.json -> formOne.title, pages.*, buttons.*
+const pageTitle = vendorContent.formOne.title;
+const { breadcrumbs, onboardingForm } = vendorContent.pages;
 
 const VendorOnboardingPage = () => {
 	const { onboardingId } = useParams<{
@@ -45,31 +50,31 @@ const VendorOnboardingPage = () => {
 	return (
 		<PageSectionLayout>
 			<PageHeader
-				headerText="Domestic Vendor Onboarding Form"
+				headerText={pageTitle}
 				navigation={{
 					variant: "breadcrumbs",
-					ariaLabel: "Domestic Vendor Onboarding Form",
+					ariaLabel: pageTitle,
 					breadcrumbs: [
 						{
-							label: "Home Screen",
+							label: breadcrumbs.home,
 							href: "/",
 						},
 						{
-							label: "Vendors Listing",
+							label: breadcrumbs.vendorsListing,
 							href: "/vendor-onboarding/listing?tab=onboarding",
 						},
 						{
-							label: "Domestic Vendor Onboarding Form",
+							label: pageTitle,
 						},
 					],
-					separator: "›",
+					separator: vendorContent.common.breadcrumbSeparator,
 				}}
 			/>
 
 			{form.isLoading ? (
-				<div role="status">Loading vendor onboarding details...</div>
+				<div role="status">{onboardingForm.loading}</div>
 			) : form.isError ? (
-				<div role="alert">Unable to load vendor onboarding details.</div>
+				<div role="alert">{onboardingForm.error}</div>
 			) : (
 				<Card>
 					<VendorCreationFormProvider value={form}>
@@ -77,7 +82,7 @@ const VendorOnboardingPage = () => {
 							steps={form.vendorOnboardingSteps}
 							currentStep={form.currentStep}
 							className="vendor-onboarding-step-progress"
-							ariaLabel="Vendor onboarding progress"
+							ariaLabel={onboardingForm.progressAriaLabel}
 						/>
 
 						{form.currentStep === 1 ? (
@@ -86,7 +91,11 @@ const VendorOnboardingPage = () => {
 								canEdit={form.canEditFormOne}
 								requireDocuments={form.canEditFormOne}
 								requireDpdpConsent={false}
-								actionText={isExistingRequest ? "Next" : "Save & Proceed"}
+								actionText={
+									isExistingRequest
+										? vendorContent.buttons.next
+										: vendorContent.buttons.saveAndProceed
+								}
 								onSubmit={form.handleSaveFormOne}
 								onBack={isExistingRequest ? handleBackToListing : undefined}
 							/>

@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Button from "../../../components/common/Button";
 import { Modal } from "../../../components/common/Modal";
 import FormInput from "../../../components/forms/FormInput";
-import { vendorContent } from "../../../content/vendor.content";
+import { vendorContent } from "../utils/vendor.content";
 import {
 	vendorCodeModalSchema,
 	type VendorCodeModalValues,

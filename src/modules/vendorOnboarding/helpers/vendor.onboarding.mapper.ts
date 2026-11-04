@@ -19,6 +19,7 @@ import {
 	type VendorUpdatePayload,
 } from "../types/vendorOnboarding.types";
 import {
+	toNationalMobile,
 	toNullableBoolean,
 	toNullableEmail,
 	toNullableMobileDigits,
@@ -26,6 +27,10 @@ import {
 	toNullableUpperCase,
 	toYesNo,
 } from "./vendor.onboarding.helper";
+import {
+	NOT_APPLICABLE,
+	isNotApplicable,
+} from "./vendor.onboarding.validations";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared types
@@ -67,6 +72,42 @@ export const getCreatedById = (createdBy: unknown): string => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GST / Incorporation applicability  (UI label <-> backend boolean)
+// ─────────────────────────────────────────────────────────────────────────────
+// Backend stores these as Boolean?:
+//   true  = applicable, false = N/A (certificate not required),
+//   null  = never chosen (backend treats as applicable).
+// The form selects work with "Applicable" | "N/A" | "".
+
+const APPLICABLE_LABEL = "Applicable";
+
+export const toApplicabilityBoolean = (
+	value?: boolean | string | null,
+): boolean | null => {
+	if (typeof value === "boolean") return value;
+	if (value === APPLICABLE_LABEL || value === "true") return true;
+	if (value === "false") return false;
+	if (typeof value === "string" && isNotApplicable(value)) return false;
+	return null;
+};
+
+export const toApplicabilityLabel = (
+	value?: boolean | string | null,
+): string => {
+	const applicable = toApplicabilityBoolean(value);
+	if (applicable === null) return "";
+	return applicable ? APPLICABLE_LABEL : NOT_APPLICABLE;
+};
+
+// Backend's parseApplicability() treats "" as true (only "false" means N/A),
+// so an unchosen (null) value must be left out of multipart bodies instead of
+// being sent as "". Omitted = "not sent" = backend keeps what it has.
+const OMIT_WHEN_NULL_KEYS = new Set<string>([
+	"gstApplicability",
+	"incorporationApplicability",
+]);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // normalizePublicFormOneValues
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -91,6 +132,8 @@ export const normalizePublicFormOneValues = (
 	) as VendorCreationFormOneValues & {
 		msmeVendor?: boolean | string | null;
 		ndaObtained?: boolean | string | null;
+		gstApplicability?: boolean | string | null;
+		incorporationApplicability?: boolean | string | null;
 	};
 
 	return {
@@ -100,9 +143,16 @@ export const normalizePublicFormOneValues = (
 		vendorReferenceName:
 			source.vendorReferenceName ?? data.vendorReferenceName ?? "",
 		email: source.email ?? data.email ?? "",
-		mobile: source.mobile ?? data.mobile ?? "",
+		// The prefilled mobile can carry the country code ("+91…" / "91…");
+		// the form only holds the 10-digit national number.
+		mobile: toNationalMobile(source.mobile ?? data.mobile ?? ""),
 		msmeVendor: toYesNo(source.msmeVendor),
 		ndaObtained: toYesNo(source.ndaObtained),
+		// Backend returns true | false | null -> "Applicable" | "N/A" | "".
+		gstApplicability: toApplicabilityLabel(source.gstApplicability),
+		incorporationApplicability: toApplicabilityLabel(
+			source.incorporationApplicability,
+		),
 	};
 };
 
@@ -207,10 +257,13 @@ export const buildVendorUpdatePayload = (
 	city: toNullableString(values.city),
 	pinCode: toNullableString(values.pinCode),
 	address: toNullableString(values.address),
-	mobile: toNullableMobileDigits(values.mobile),
+	// National number only: a stored "+91…" / "91…" value and the 10-digit
+	// form value must map to the same payload, or every save would diff.
+	mobile: toNullableMobileDigits(toNationalMobile(values.mobile)),
 	email: toNullableEmail(values.email),
 	msmeVendor: toNullableBoolean(values.msmeVendor),
-	msmeCertAttached: toNullableBoolean(values.msmeCertificateAttached),
+	// NOTE: msmeCertAttached is intentionally NOT sent — the backend has no such
+	// column; MSME certificate presence is derived from the uploaded document.
 	bankName: toNullableString(values.bankName),
 	bankBranch: toNullableString(values.bankBranch),
 	ifscCode: toNullableUpperCase(values.ifscCode),
@@ -221,6 +274,11 @@ export const buildVendorUpdatePayload = (
 	// column and must never receive it. If you're adding a new field to
 	// this payload, don't reflexively include confirmAccountNumber too.
 	gstin: toNullableUpperCase(values.gstin),
+	// Booleans on the backend: true = Applicable, false = N/A, null = not chosen.
+	gstApplicability: toApplicabilityBoolean(values.gstApplicability),
+	incorporationApplicability: toApplicabilityBoolean(
+		values.incorporationApplicability,
+	),
 	pan: toNullableUpperCase(values.pan),
 	entityRegNo: toNullableString(values.entityRegNo),
 	ndaObtained: toNullableBoolean(values.ndaObtained),
@@ -321,6 +379,8 @@ export const buildInternalUpdateFormData = (
 	const formData = new FormData();
 
 	Object.entries(payload).forEach(([key, value]) => {
+		if (value === null && OMIT_WHEN_NULL_KEYS.has(key)) return;
+
 		formData.append(
 			key,
 			value === null || value === undefined ? "" : String(value),
@@ -384,7 +444,8 @@ export const normalizeVendorOnboardingResponse = (
 			vendorReferenceName: raw.vendorReferenceName ?? "",
 			address: raw.address ?? "",
 			msmeVendor: toYesNo(raw.msmeVendor),
-			msmeCertificateAttached: toYesNo(raw.msmeCertAttached),
+			// Not a backend column — derived from the uploaded document.
+			msmeCertificateAttached: getDocumentStatus("MSME_CERTIFICATE"),
 			city: raw.city ?? "",
 			pinCode: raw.pinCode ?? "",
 			state: raw.state ?? "",
@@ -397,6 +458,10 @@ export const normalizeVendorOnboardingResponse = (
 			accountNumber: raw.accountNumber ?? "",
 			confirmAccountNumber: raw.accountNumber ?? "",
 			gstin: raw.gstin ?? "",
+			gstApplicability: toApplicabilityLabel(raw.gstApplicability),
+			incorporationApplicability: toApplicabilityLabel(
+				raw.incorporationApplicability,
+			),
 			pan: raw.pan ?? "",
 			entityRegNo: raw.entityRegNo ?? "",
 			gstCertificate: getDocumentStatus("GST_CERTIFICATE"),
@@ -454,6 +519,8 @@ export const buildPublicFormData = (
 	const payload = buildVendorUpdatePayload(values);
 
 	Object.entries(payload).forEach(([key, value]) => {
+		if (value === null && OMIT_WHEN_NULL_KEYS.has(key)) return;
+
 		formData.append(key, value === null ? "" : String(value));
 	});
 
