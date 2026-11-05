@@ -2,7 +2,6 @@
 import type { FormEventHandler } from "react";
 import { FormProvider, type UseFormReturn } from "react-hook-form";
 
-import Card from "../../../../components/common/Card";
 import FormInput from "../../../../components/forms/FormInput";
 import TextareaInput from "../../../../components/forms/TextareaInput";
 import AuditTemplateConfiguredField from "./AuditTemplateConfiguredField";
@@ -44,18 +43,16 @@ export default function AuditTemplateDetailsStep({
 				aria-labelledby="template-details-title"
 			>
 				<div className=" grid grid-cols-1 gap-4 sm:grid-cols-2">
-					<div className="sm:col-span-2">
-						<FormInput
-							id="template-name"
-							label="Template name"
-							required
-							placeholder={namePlaceholder}
-							maxLength={TEMPLATE_NAME_MAX_LENGTH}
-							disabled={disabled}
-							error={errors.name?.message}
-							{...register("name")}
-						/>
-					</div>
+					<FormInput
+						id="template-name"
+						label="Template name"
+						required
+						placeholder={namePlaceholder}
+						maxLength={TEMPLATE_NAME_MAX_LENGTH}
+						disabled={disabled}
+						error={errors.name?.message}
+						{...register("name")}
+					/>
 
 					{detailFields.map((config) => (
 						<div

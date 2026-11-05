@@ -115,7 +115,6 @@ export const mapDealerChecklistTemplateResponse = (
 	name: response.name,
 	description: response.description ?? "",
 	facilityType: response.facility_type ?? null,
-	auditCategory: response.audit_category ?? null,
 	status: response.status,
 	version: response.version,
 	createdAt: response.created_at,
@@ -133,7 +132,6 @@ export const mapDealerChecklistTemplateListItemResponse = (
 	name: response.name,
 	description: response.description ?? "",
 	facilityType: response.facility_type ?? null,
-	auditCategory: response.audit_category ?? null,
 	status: response.status,
 	version: response.version,
 	sectionCount: response.section_count ?? 0,
@@ -195,7 +193,6 @@ export const mapDealerTemplateToBuilderValues = (
 			description: template.description,
 			fields: {
 				[DEALER_DETAIL_FIELD_KEYS.facilityType]: template.facilityType ?? "",
-				[DEALER_DETAIL_FIELD_KEYS.auditCategory]: template.auditCategory ?? "",
 			},
 		},
 		// A draft saved from the Details step has no sections yet — give the
@@ -264,14 +261,11 @@ export const mapBuilderValuesToCreateDealerTemplatePayload = (
 ): CreateDealerChecklistTemplatePayload => {
 	const facilityType =
 		values.details.fields[DEALER_DETAIL_FIELD_KEYS.facilityType] ?? "";
-	const auditCategory =
-		values.details.fields[DEALER_DETAIL_FIELD_KEYS.auditCategory] ?? "";
 
 	return {
 		name: values.details.name.trim(),
 		description: toNullableText(values.details.description),
 		facility_type: isDealerFacilityType(facilityType) ? facilityType : null,
-		audit_category: toNullableText(auditCategory),
 		sections: values.sections
 			.filter((section) => !isBlankSection(section))
 			.map((section, index) => mapSectionToPayload(section, index + 1)),
@@ -291,9 +285,6 @@ export const mapBuilderValuesToUpdateDealerTemplatePayload = (
 const facilityTypeField = DEALER_TEMPLATE_DETAIL_FIELDS.find(
 	(config) => config.key === DEALER_DETAIL_FIELD_KEYS.facilityType,
 );
-const auditCategoryField = DEALER_TEMPLATE_DETAIL_FIELDS.find(
-	(config) => config.key === DEALER_DETAIL_FIELD_KEYS.auditCategory,
-);
 
 export const mapDealerTemplateListItemToRow = (
 	item: DealerChecklistTemplateListItem,
@@ -312,9 +303,6 @@ export const mapDealerTemplateListItemToRow = (
 		[DEALER_DETAIL_FIELD_KEYS.facilityType]: facilityTypeField
 			? getFieldOptionLabel(facilityTypeField, item.facilityType ?? "")
 			: "",
-		[DEALER_DETAIL_FIELD_KEYS.auditCategory]: auditCategoryField
-			? getFieldOptionLabel(auditCategoryField, item.auditCategory ?? "")
-			: "",
 	},
 });
 
@@ -327,7 +315,6 @@ export const DEFAULT_DEALER_TEMPLATE_LIST_PARAMS: DealerChecklistTemplateListPar
 		search: "",
 		statuses: [],
 		facilityTypes: [],
-		auditCategories: [],
 		sortBy: "updatedAt",
 		sortOrder: "desc",
 	};
@@ -343,16 +330,14 @@ export const normalizeDealerTemplateListParams = (
 	search: params.search.trim().replace(/\s+/g, " "),
 	statuses: uniqueSorted(params.statuses),
 	facilityTypes: uniqueSorted(params.facilityTypes),
-	auditCategories: uniqueSorted(params.auditCategories),
 	sortBy: params.sortBy,
 	sortOrder: params.sortOrder,
 });
 
 export const mapFiltersToListParams = (
 	filters: DealerChecklistLibraryFilters,
-): Pick<DealerChecklistTemplateListParams, "facilityTypes" | "auditCategories"> => ({
+): Pick<DealerChecklistTemplateListParams, "facilityTypes"> => ({
 	facilityTypes: filters.facilityTypes.filter(isDealerFacilityType),
-	auditCategories: [...filters.auditCategories],
 });
 
 const SORT_FIELD_TO_API: Record<DealerChecklistTemplateListParams["sortBy"], string> =
@@ -377,7 +362,5 @@ export const mapDealerTemplateListParamsToQuery = (
 	if (params.statuses.length) query.status = params.statuses.join(",");
 	if (params.facilityTypes.length)
 		query.facility_type = params.facilityTypes.join(",");
-	if (params.auditCategories.length)
-		query.audit_category = params.auditCategories.join(",");
 	return query;
 };

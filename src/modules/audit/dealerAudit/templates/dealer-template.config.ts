@@ -23,14 +23,6 @@ export const DEALER_FACILITY_TYPE_OPTIONS: ReadonlyArray<{
 	{ value: "BRANCH_OFFICE", label: "Branch Office" },
 ];
 
-export const DEALER_AUDIT_CATEGORY_OPTIONS = [
-	{ value: "FACILITY", label: "Facility & Infrastructure" },
-	{ value: "WORKSHOP", label: "Service Workshop" },
-	{ value: "WAREHOUSE", label: "Parts Warehouse" },
-	{ value: "SALES", label: "Sales Process" },
-	{ value: "SAFETY", label: "Safety & Environment" },
-] as const;
-
 export const DEALER_PARAMETER_FUNCTION_OPTIONS: ReadonlyArray<{
 	value: DealerParameterFunction;
 	label: string;
@@ -52,7 +44,6 @@ export const DEALER_PARAMETER_CATEGORY_OPTIONS: ReadonlyArray<{
 /** Keys used in AuditTemplateDetailsFormValues.fields */
 export const DEALER_DETAIL_FIELD_KEYS = {
 	facilityType: "facilityType",
-	auditCategory: "auditCategory",
 } as const;
 
 /** Keys used in AuditTemplateParameterFormValues.attributes */
@@ -70,12 +61,6 @@ export const DEALER_TEMPLATE_DETAIL_FIELDS: readonly AuditTemplateSelectFieldCon
 			required: true,
 			options: DEALER_FACILITY_TYPE_OPTIONS,
 			helperText: "Audits for this facility type will use this template.",
-		},
-		{
-			type: "select",
-			key: DEALER_DETAIL_FIELD_KEYS.auditCategory,
-			label: "Audit category",
-			options: DEALER_AUDIT_CATEGORY_OPTIONS,
 		},
 	];
 

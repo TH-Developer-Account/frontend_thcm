@@ -63,7 +63,6 @@ const PUBLISHED_TEMPLATES = {
 	search: "",
 	statuses: ["PUBLISHED"],
 	facilityTypes: [],
-	auditCategories: [],
 	sortBy: "name",
 	sortOrder: "asc",
 } as const;
@@ -95,8 +94,7 @@ export default function CreateAuditCyclePage() {
 		...PUBLISHED_TEMPLATES,
 		statuses: [...PUBLISHED_TEMPLATES.statuses],
 		facilityTypes: [],
-		auditCategories: [],
-	});
+		});
 	const dealers = useDealerOptions();
 	const workload = useReviewerWorkload(stepIndex >= 2);
 	const launch = useLaunchAuditCycle();

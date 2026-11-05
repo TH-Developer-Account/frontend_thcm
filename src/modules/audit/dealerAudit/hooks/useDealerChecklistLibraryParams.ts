@@ -32,7 +32,6 @@ const PARAM = {
 	search: "q",
 	status: "status",
 	facility: "facility",
-	category: "category",
 	sortBy: "sort",
 	sortOrder: "order",
 } as const;
@@ -58,7 +57,6 @@ export function useDealerChecklistLibraryParams() {
 
 	const filters: DealerChecklistLibraryFilters = {
 		facilityTypes: readList(searchParams.get(PARAM.facility)),
-		auditCategories: readList(searchParams.get(PARAM.category)),
 	};
 
 	const sortByParam = searchParams.get(PARAM.sortBy) ?? "";
@@ -138,11 +136,8 @@ export function useDealerChecklistLibraryParams() {
 				...(patch.facilityTypes
 					? { facility: patch.facilityTypes.join(",") || null }
 					: {}),
-				...(patch.auditCategories
-					? { category: patch.auditCategories.join(",") || null }
-					: {}),
 			}),
-		clearFilters: () => updateParams({ facility: null, category: null }),
+		clearFilters: () => updateParams({ facility: null }),
 		setSort: (
 			nextSortBy: DealerChecklistTemplateListParams["sortBy"] | null,
 			nextOrder: DealerChecklistTemplateListParams["sortOrder"],

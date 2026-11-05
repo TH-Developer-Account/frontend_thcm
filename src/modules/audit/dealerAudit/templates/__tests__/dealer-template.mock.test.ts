@@ -14,7 +14,7 @@ describe("mock adapter honours the API contract", () => {
 
 	it("rejects stale versions with 409 and bumps version when editing published", async () => {
 		const t = await mockDealerTemplateApi.getTemplate("tpl-ho-infra");
-		const payload = { name: t.name, description: null, facility_type: t.facilityType, audit_category: t.auditCategory, sections: [] };
+		const payload = { name: t.name, description: null, facility_type: t.facilityType, sections: [] };
 		await expect(mockDealerTemplateApi.updateTemplate({ templateId: t.id, payload: { ...payload, version: 1 } })).rejects.toMatchObject({ response: { status: 409 } });
 		const updated = await mockDealerTemplateApi.updateTemplate({ templateId: t.id, payload: { ...payload, version: t.version } });
 		expect(updated.version).toBe(t.version + 1);

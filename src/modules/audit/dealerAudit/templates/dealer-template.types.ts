@@ -51,7 +51,6 @@ export interface DealerChecklistTemplateResponse {
 	name: string;
 	description: string | null;
 	facility_type: DealerFacilityType | null;
-	audit_category: string | null;
 	status: TemplateLifecycleStatus;
 	version: number;
 	created_at: string;
@@ -65,7 +64,6 @@ export interface DealerChecklistTemplateListItemResponse {
 	name: string;
 	description: string | null;
 	facility_type: DealerFacilityType | null;
-	audit_category: string | null;
 	status: TemplateLifecycleStatus;
 	version: number;
 	section_count: number;
@@ -125,7 +123,6 @@ export interface DealerChecklistTemplate {
 	name: string;
 	description: string;
 	facilityType: DealerFacilityType | null;
-	auditCategory: string | null;
 	status: TemplateLifecycleStatus;
 	version: number;
 	createdAt: string;
@@ -139,7 +136,6 @@ export interface DealerChecklistTemplateListItem {
 	name: string;
 	description: string;
 	facilityType: DealerFacilityType | null;
-	auditCategory: string | null;
 	status: TemplateLifecycleStatus;
 	version: number;
 	sectionCount: number;
@@ -185,7 +181,6 @@ export interface CreateDealerChecklistTemplatePayload {
 	name: string;
 	description: string | null;
 	facility_type: DealerFacilityType | null;
-	audit_category: string | null;
 	sections: DealerChecklistSectionPayload[];
 }
 
@@ -203,7 +198,6 @@ export interface DealerChecklistTemplateListParams {
 	search: string;
 	statuses: TemplateLifecycleStatus[];
 	facilityTypes: DealerFacilityType[];
-	auditCategories: string[];
 	sortBy: AuditTemplateSortField;
 	sortOrder: SortOrder;
 }
@@ -216,5 +210,4 @@ export interface UpdateDealerChecklistTemplateVariables {
 /** FilterDropdown state for the library (string[] keys only). */
 export interface DealerChecklistLibraryFilters {
 	facilityTypes: string[];
-	auditCategories: string[];
 }

@@ -430,6 +430,7 @@
 		min-width: 0;
 		flex-direction: column;
 		align-items: flex-start;
+		width: 100%;
 	}
 
 	.action-card-title {

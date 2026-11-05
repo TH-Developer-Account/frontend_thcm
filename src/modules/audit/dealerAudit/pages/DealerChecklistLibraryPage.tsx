@@ -21,7 +21,6 @@ import { useDealerChecklistLibraryParams } from "../hooks/useDealerChecklistLibr
 // 	useDeleteDealerChecklistTemplate,
 // } from "../hooks/useDealerChecklistTemplates";
 import {
-	DEALER_AUDIT_CATEGORY_OPTIONS,
 	DEALER_DETAIL_FIELD_KEYS,
 	DEALER_FACILITY_TYPE_OPTIONS,
 } from "../templates/dealer-template.config";
@@ -36,18 +35,10 @@ const FILTER_SECTIONS: readonly FilterSection<DealerChecklistLibraryFilters>[] =
 			options: DEALER_FACILITY_TYPE_OPTIONS,
 			columns: 1,
 		},
-		{
-			type: "checkbox",
-			key: "auditCategories",
-			label: "Audit category",
-			options: DEALER_AUDIT_CATEGORY_OPTIONS,
-			columns: 1,
-		},
 	];
 
 const FIELD_COLUMNS = [
 	{ key: DEALER_DETAIL_FIELD_KEYS.facilityType, header: "Facility type" },
-	{ key: DEALER_DETAIL_FIELD_KEYS.auditCategory, header: "Category" },
 ];
 
 export default function DealerChecklistLibraryPage() {

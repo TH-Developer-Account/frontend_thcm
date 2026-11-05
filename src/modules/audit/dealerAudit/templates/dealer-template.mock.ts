@@ -82,7 +82,6 @@ seed({
 	name: "Head Office — Facility & Infrastructure",
 	description: "Standard assessment for dealer head office customer and parts areas.",
 	facility_type: "HEAD_OFFICE",
-	audit_category: "FACILITY",
 	status: "PUBLISHED",
 	version: 3,
 	created_at: "2026-06-02T09:00:00.000Z",
@@ -122,7 +121,6 @@ seed({
 	name: "Branch Office — Facility & Infrastructure",
 	description: "Branch office variant with residential / commercial checks.",
 	facility_type: "BRANCH_OFFICE",
-	audit_category: "FACILITY",
 	status: "DRAFT",
 	version: 1,
 	created_at: "2026-09-20T09:00:00.000Z",
@@ -149,7 +147,6 @@ seed({
 	name: "Service Workshop Operations",
 	description: "Tools, bay discipline, PPE and technician process checks.",
 	facility_type: "BRANCH_OFFICE",
-	audit_category: "WORKSHOP",
 	status: "ARCHIVED",
 	version: 2,
 	created_at: "2026-03-10T09:00:00.000Z",
@@ -207,7 +204,6 @@ const toListItem = (
 		name: template.name,
 		description: template.description,
 		facility_type: template.facility_type,
-		audit_category: template.audit_category,
 		status: template.status,
 		version: template.version,
 		section_count: template.sections?.length ?? 0,
@@ -245,12 +241,6 @@ export const mockDealerTemplateApi: DealerTemplateApi = {
 					!params.facilityTypes.length ||
 					(template.facility_type !== null &&
 						params.facilityTypes.includes(template.facility_type)),
-			)
-			.filter(
-				(template) =>
-					!params.auditCategories.length ||
-					(template.audit_category !== null &&
-						params.auditCategories.includes(template.audit_category)),
 			)
 			.filter(
 				(template) =>
@@ -305,7 +295,6 @@ export const mockDealerTemplateApi: DealerTemplateApi = {
 			name: payload.name,
 			description: payload.description,
 			facility_type: payload.facility_type,
-			audit_category: payload.audit_category,
 			status: "DRAFT",
 			version: 1,
 			created_at: nowIso(),
@@ -333,7 +322,6 @@ export const mockDealerTemplateApi: DealerTemplateApi = {
 			name: payload.name,
 			description: payload.description,
 			facility_type: payload.facility_type,
-			audit_category: payload.audit_category,
 			status: "DRAFT",
 			version: nextVersion,
 			updated_at: nowIso(),
