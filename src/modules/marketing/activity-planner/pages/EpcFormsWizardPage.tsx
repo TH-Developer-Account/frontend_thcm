@@ -3,9 +3,8 @@
 //
 //   Step 1 — EPC Details : edit form
 //   Step 2 — CRF         : create (optional, can be skipped) · edit (clarified) · or read-only
-//   Step 3 — EPF & Submit: first submission → save EPF → Schedule of Authority
-//                          finalize (auto-approve if eligible, else preview +
-//                          assign a workflow for the Tata Hitachi share).
+//   Step 3 — EPF & Submit: first submission → save EPF → preview + assign a
+//                          workflow for the Tata Hitachi share.
 //                          Clarified edit    → save EPF → restart the same workflow
 //                                              at stage 1 ("Resubmit").
 //
