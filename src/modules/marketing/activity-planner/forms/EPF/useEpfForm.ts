@@ -4,15 +4,16 @@
 // ONE-CLICK SUBMIT (when `submitWithWorkflow` is set, i.e. in the wizard):
 //
 //   1. Save the EPF (create, or update if it already exists).
-//   2. Preview the approval workflow that matches `tataHitachiShare` (the
-//      Tata Hitachi share only, dealer share excluded — not the full event
-//      cost; workflow-template matching is scoped to what Tata Hitachi
-//      itself is on the hook for).
+//   2. Preview the approval workflow that matches the EPC's zone and
+//      `tataHitachiShare` (the Tata Hitachi share only, dealer share
+//      excluded — not the full event cost; workflow-template matching is
+//      scoped to what Tata Hitachi itself is on the hook for, and to the
+//      EPC's zone first, then that amount).
 //   3. A matching template was found → assign it, the EPC is now pending
 //      on that workflow's first stage.
 //      No matching template → nothing is assigned. The EPF stays saved;
 //      clicking Submit again re-saves and retries only this step once an
-//      administrator sets up a workflow for the amount.
+//      administrator sets up a workflow for the zone/amount.
 //
 // The "Approval Workflow" section below the form previews this live, as
 // the amount changes, so the creator can see before submitting whether a
@@ -88,6 +89,17 @@ export type EpfFormProps = {
   initialData?: EpfDetailResponse | null;
   crfData?: EpfCrfData;
   budgetMasterId?: string | null;
+  /**
+   * The EPC's zone, as a region_code (not a Zone id) — resolved by the
+   * caller (EpcFormsWizardPage) from `epcData.region_id` via master data,
+   * the same way `budgetMasterId` is resolved before reaching this hook.
+   * Workflow-template matching tries this first, then falls back to
+   * budget-only matching (see templateMatchResolvers.EVENT_PROPOSAL
+   * server-side). Optional and unresolved here on purpose: neither
+   * `EpcDetailEpf` nor `CrfDetail` carries a zone code of its own, so
+   * there is no further fallback chain to add, unlike budgetMasterId's.
+   */
+  epcZoneCode?: string | null;
   onSuccess?: (data?: any) => void | Promise<void>;
   onCancel?: () => void;
   isClarifiedUpdate?: boolean;
@@ -188,6 +200,7 @@ export const useEpfForm = ({
   initialData,
   crfData,
   budgetMasterId: propBudgetMasterId,
+  epcZoneCode: propEpcZoneCode,
   onSuccess,
   submitWithWorkflow = false,
   onRequestWorkflow,
@@ -205,6 +218,10 @@ export const useEpfForm = ({
   const epcId = propEpcId ?? storedInfo?.epcId ?? null;
   const crfId = propCrfId ?? storedInfo?.crfId ?? null;
   const epfId = propEpfId ?? storedInfo?.epfId ?? null;
+  // No fallback chain here (unlike budgetMasterId above) — confirmed neither
+  // EpcDetailEpf nor CrfDetail carries a zone code, so the caller is the
+  // only source.
+  const epcZoneCode = propEpcZoneCode ?? null;
 
   const isEditMode = mode === "edit" || Boolean(epfId);
 
@@ -359,7 +376,7 @@ export const useEpfForm = ({
         subjectType: SUBJECT_TYPE,
         workspaceId: workspaceId as string,
         appId: appId as string,
-        criteria: { budget },
+        criteria: { budget, zone: epcZoneCode ?? undefined },
       });
 
       return (
@@ -368,7 +385,7 @@ export const useEpfForm = ({
         }) ?? []
       );
     },
-    [appId, workspaceId],
+    [appId, workspaceId, epcZoneCode],
   );
 
   const [livePreview, setLivePreview] = React.useState<{
@@ -646,7 +663,10 @@ export const useEpfForm = ({
               subjectId: epcId,
               workspaceId: workspaceId as string,
               appId: appId as string,
-              criteria: { budget: tataHitachiShare },
+              criteria: {
+                budget: tataHitachiShare,
+                zone: epcZoneCode ?? undefined,
+              },
             });
           } catch (assignError) {
             console.error("EPC workflow assignment failed:", assignError);
@@ -747,6 +767,7 @@ export const useEpfForm = ({
       displayValues,
       epcId,
       epfId,
+      epcZoneCode,
       eventCost,
       fetchPreviewRows,
       navigate,

@@ -4,7 +4,7 @@
 //   Step 1 — EPC Details : edit form
 //   Step 2 — CRF         : create (optional, can be skipped) · edit (clarified) · or read-only
 //   Step 3 — EPF & Submit: first submission → save EPF → preview + assign a
-//                          workflow for the Tata Hitachi share.
+//                          workflow for the EPC's zone, then the Tata Hitachi share.
 //                          Clarified edit    → save EPF → restart the same workflow
 //                                              at stage 1 ("Resubmit").
 //
@@ -45,6 +45,7 @@ import { clearStoredEpcInfo } from "../utils/common";
 import { isEpcSubmitted } from "../forms/EPC/epc.utils";
 import { isEpcClarified } from "../utils/epcClarification";
 import EpcForm from "../forms/EPC/EpcForm";
+import { useMasterData } from "../../../../hooks/useMasterData";
 
 const STEP = { EPC: 1, CRF: 2, EPF: 3 } as const;
 type WizardStep = (typeof STEP)[keyof typeof STEP];
@@ -102,6 +103,19 @@ const EpcFormsWizardPage = () => {
 
   const { data: epcData, isLoading, isError } = useEpcDetailQuery(id);
   const permissions = useActivityPermissions({ epcData: epcData ?? null });
+  const { data: masters } = useMasterData();
+
+  // The EPC's zone, resolved from its region_id (a Zone UUID) to the
+  // region_code workflow templates are matched against (metaData_2).
+  // EpcDetailResponse carries only the UUID — the code lives in master
+  // data, same relationship as budget_master_id vs. Budget Summary's own
+  // master-data lookup.
+  const epcZoneCode = React.useMemo(
+    () =>
+      masters?.zones?.find((zone) => zone.value === epcData?.region_id)?.code ??
+      null,
+    [masters?.zones, epcData?.region_id],
+  );
 
   React.useEffect(() => {
     clearStoredEpcInfo();
@@ -329,6 +343,7 @@ const EpcFormsWizardPage = () => {
               crfId={epcData.crf?.id ?? null}
               crfData={epcData.crf}
               budgetMasterId={epcData.budget_master_id}
+              epcZoneCode={epcZoneCode}
               submitLabel="Resubmit"
               isClarifiedUpdate
               activeWorkflowId={activeWorkflowId}
@@ -371,6 +386,7 @@ const EpcFormsWizardPage = () => {
             crfId={epcData.crf?.id ?? null}
             crfData={epcData.crf}
             budgetMasterId={epcData.budget_master_id}
+            epcZoneCode={epcZoneCode}
             submitLabel="Submit"
             submitWithWorkflow
             footerStart={backButton}
