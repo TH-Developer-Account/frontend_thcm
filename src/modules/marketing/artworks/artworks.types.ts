@@ -1,11 +1,16 @@
 // artworks/artworks.types.ts
 // Contract for the Artworks API (GET /artworks, GET /artworks/:id,
-// GET /artworks/by-epc/:epcId, PUT /artworks/:id/links). Mirrors
+// GET /artworks/by-epc/:epcId, PUT /artworks/:id/links,
+// POST /artworks/:id/items/:itemId/request-edit,
+// POST /artworks/:id/items/:itemId/remind). Mirrors
 // artworks.services.ts on the backend; a contract change only touches this
 // file + artworks.api.ts.
 
 /** How far along the links are. */
 export type ArtworkRequestStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED";
+
+/** Per-item state. EDIT_REQUESTED puts the item back in the team's bucket. */
+export type ArtworkItemStatus = "AWAITING_LINK" | "LINK_SHARED" | "EDIT_REQUESTED";
 
 /** What the event looks like right now — derived live from the EPC. */
 export type ArtworkEventState =
@@ -33,6 +38,8 @@ export type ArtworkSummary = {
 	status: ArtworkRequestStatus;
 	itemCount: number;
 	sharedCount: number;
+	/** Items whose requester asked for changes and are waiting on the team. */
+	editRequestedCount?: number;
 	requestedByName: string | null;
 	createdAt: string; // ISO
 	eventState: ArtworkEventState;
@@ -42,6 +49,27 @@ export type ArtworkSummary = {
 	canShare: boolean;
 };
 
+/** Reference image the requester attached to a custom artwork. */
+export type ArtworkAttachment = {
+	id: string;
+	fileName: string;
+	description: string | null;
+	sizeBytes: number;
+	/** Pre-signed, short-lived — never store. */
+	url: string;
+};
+
+/** One "request edits" round on an item. */
+export type ArtworkEditRound = {
+	id: string;
+	note: string;
+	previousLink: string | null;
+	requestedByName: string | null;
+	createdAt: string; // ISO
+	/** Set when the team shares the updated link. */
+	resolvedAt: string | null; // ISO
+};
+
 export type ArtworkItem = {
 	id: string;
 	title: string;
@@ -49,6 +77,9 @@ export type ArtworkItem = {
 	description: string | null;
 	/** Custom size / brief rather than a standard catalog artwork. */
 	isCustom?: boolean;
+	/** Product / type picked on the request form (e.g. "Banner" / "Custom"). */
+	productName?: string | null;
+	artworkType?: string | null;
 	quantity: number;
 	width: string | null;
 	height: string | null;
@@ -57,6 +88,11 @@ export type ArtworkItem = {
 	linkNote: string | null;
 	sharedAt: string | null; // ISO
 	sharedByName: string | null;
+	status?: ArtworkItemStatus;
+	attachments?: ArtworkAttachment[];
+	editRounds?: ArtworkEditRound[];
+	/** Last "remind team" press — drives the 24 h cool-down. */
+	lastReminderAt?: string | null; // ISO
 };
 
 export type ArtworkTimelineAction =
@@ -65,7 +101,9 @@ export type ArtworkTimelineAction =
 	| "LINKS_SHARED"
 	| "LINKS_CLEARED"
 	| "COMPLETED"
-	| "REMINDER_SENT";
+	| "REMINDER_SENT"
+	| "EDIT_REQUESTED"
+	| "LINK_UPDATED";
 
 export type ArtworkTimelineEntry = {
 	id: string;
@@ -80,6 +118,12 @@ export type ArtworkPermissions = {
 	canView: boolean;
 	/** Marketing team, and the event is still approved-not-conducted. */
 	canShareLinks: boolean;
+	/** Proposer, and at least one item has a shared link. */
+	canRequestEdit?: boolean;
+	/** Proposer, and at least one item is still waiting on the team. */
+	canRemind?: boolean;
+	/** Edit rounds allowed per item (backend constant). */
+	maxEditRounds?: number;
 };
 
 export type ArtworkDetail = ArtworkSummary & {
@@ -102,6 +146,19 @@ export type ShareLinkInput = {
 	itemId: string;
 	link: string | null;
 	note?: string | null;
+};
+
+/** POST /artworks/:id/items/:itemId/request-edit — note is 5–1000 chars. */
+export type RequestEditInput = {
+	id: string;
+	itemId: string;
+	note: string;
+};
+
+/** POST /artworks/:id/items/:itemId/remind — one per item per 24 h. */
+export type RemindInput = {
+	id: string;
+	itemId: string;
 };
 
 /* ========================================================================== */

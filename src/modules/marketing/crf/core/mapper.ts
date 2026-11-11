@@ -195,6 +195,18 @@ export const mapCrfLineItemsToFormItems = (
 				height: item.height !== null ? Number(item.height) : undefined,
 				unit: item.unit ?? "px",
 				resolutionPreset: "CUSTOM",
+
+				// Request-form fields (all absent on a request saved before the form).
+				artworkProductId: item.productId ?? null,
+				artworkProductName: item.productName ?? null,
+				artworkType: (item.artworkType as CrfLineItem["artworkType"]) ?? null,
+				attachments: (item.attachments ?? []).map((file) => ({
+					key: file.key,
+					fileName: file.fileName,
+					sizeBytes: file.sizeBytes,
+					description: file.description ?? "",
+					url: file.url,
+				})),
 			};
 		}
 
@@ -361,6 +373,19 @@ const buildCustomArtworkItemInput = (
 	height: String(item.height ?? ""),
 	unit: item.unit || "px",
 	description: (item.description ?? "").trim(),
+	// Request form. A line saved before the form existed has no product/type;
+	// those are simply left out so the backend keeps them as they were.
+	title: (item.label ?? "").trim(),
+	...(item.artworkProductId ? { productId: item.artworkProductId } : {}),
+	...(item.artworkType ? { artworkType: item.artworkType } : {}),
+	attachments: (item.attachments ?? []).map((file) => ({
+		key: file.key,
+		fileName: file.fileName,
+		sizeBytes: file.sizeBytes,
+		...(file.description.trim()
+			? { description: file.description.trim() }
+			: {}),
+	})),
 });
 
 /**
@@ -374,7 +399,8 @@ const buildCustomArtworkItemInput = (
  */
 export const buildCrfItemInput = (item: CrfLineItem): CrfItemInput => {
 	if (item.category === SOUVENIR) return buildShopifyItemInput(item);
-	// Custom artwork: size + description only, never a productId or a price.
+	// Custom artwork: request-form fields + size + description. The productId
+	// here is the artwork the request is based on, never a price source.
 	if (item.category === ARTWORK && item.isCustom) {
 		return buildCustomArtworkItemInput(item);
 	}

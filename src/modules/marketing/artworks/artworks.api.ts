@@ -8,6 +8,8 @@
 //   GET /artworks/:id                                            (marketing / proposer)
 //   GET /artworks/by-epc/:epcId        data: null when the EPC has none
 //   PUT /artworks/:id/links  { links: [{ itemId, link, note? }] } (marketing)
+//   POST /artworks/:id/items/:itemId/request-edit { note }       (proposer)
+//   POST /artworks/:id/items/:itemId/remind                      (proposer, 1 / 24 h)
 //
 // MOCK-LAYER: the "Use mock data" checkbox (ArtworkMockToggle) switches this
 // whole file between the real API and the in-memory adapter at runtime. Lines
@@ -27,6 +29,8 @@ import type {
 	ArtworkDetail,
 	ArtworkListParams,
 	ArtworkListResponse,
+	RemindInput,
+	RequestEditInput,
 	ShareLinkInput,
 } from "./artworks.types";
 
@@ -66,6 +70,28 @@ const realApi = {
 		} = await ServerAxios.put(`/artworks/${id}/links`, { links });
 		return data;
 	},
+
+	/** Proposer asks for changes on ONE shared link. Backend emails the team. */
+	requestEdit: async (
+		id: string,
+		itemId: string,
+		note: string,
+	): Promise<{ id: string; status: string }> => {
+		const {
+			data: { data },
+		} = await ServerAxios.post(`/artworks/${id}/items/${itemId}/request-edit`, {
+			note,
+		});
+		return data;
+	},
+
+	/** Nudge the team about an item still waiting for a link. */
+	remind: async (id: string, itemId: string): Promise<{ id: string }> => {
+		const {
+			data: { data },
+		} = await ServerAxios.post(`/artworks/${id}/items/${itemId}/remind`);
+		return data;
+	},
 };
 
 // MOCK-LAYER: picked per call so the checkbox takes effect immediately.
@@ -78,6 +104,18 @@ export const artworkApi: typeof realApi = {
 	get: (id) => activeApi().get(id),
 	getByEpc: (epcId) => activeApi().getByEpc(epcId),
 	shareLinks: (id, links) => activeApi().shareLinks(id, links),
+	// MOCK-LAYER: artworkMockApi must implement these two too (see note in the
+	// hand-off); until it does, mock mode fails loudly instead of silently.
+	requestEdit: (id, itemId, note) => {
+		const api = activeApi() as Partial<typeof realApi>;
+		if (!api.requestEdit) throw new Error("Mock API: requestEdit not implemented");
+		return api.requestEdit(id, itemId, note);
+	},
+	remind: (id, itemId) => {
+		const api = activeApi() as Partial<typeof realApi>;
+		if (!api.remind) throw new Error("Mock API: remind not implemented");
+		return api.remind(id, itemId);
+	},
 };
 
 /* ========================================================================== */
@@ -149,6 +187,19 @@ export function useShareArtworkLinksMutation() {
 	});
 }
 
+export function useRequestArtworkEditMutation() {
+	return useMutation({
+		mutationFn: ({ id, itemId, note }: RequestEditInput) =>
+			artworkApi.requestEdit(id, itemId, note),
+	});
+}
+
+export function useRemindArtworkTeamMutation() {
+	return useMutation({
+		mutationFn: ({ id, itemId }: RemindInput) => artworkApi.remind(id, itemId),
+	});
+}
+
 /* ========================================================================== */
 /*                                 Audit trail                                */
 /* ========================================================================== */
@@ -190,4 +241,6 @@ export const ARTWORK_AUDIT_MESSAGES = {
 	LINKS_CLEARED: "removed artwork links",
 	COMPLETED: "shared every artwork link",
 	REMINDER_SENT: "sent a reminder to the marketing team",
+	EDIT_REQUESTED: "requested changes to an artwork",
+	LINK_UPDATED: "shared an updated artwork link",
 } as const;

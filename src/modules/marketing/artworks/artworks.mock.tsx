@@ -111,6 +111,9 @@ export function ArtworkMockToggle() {
 /*                                 2. Mock data                               */
 /* ========================================================================== */
 
+const MAX_EDIT_ROUNDS = 5;
+const REMIND_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+
 const delay = <T,>(value: T, ms = 250) =>
 	new Promise<T>((resolve) => setTimeout(() => resolve(value), ms));
 
@@ -165,8 +168,11 @@ const timingOf = (
 	return { eventState, daysUntil: days, canShare: true };
 };
 
+/** A link counts only while no change request is open on it. */
+const isShared = (i: ArtworkItem) => Boolean(i.link) && i.status !== "EDIT_REQUESTED";
+
 const statusOf = (items: ArtworkItem[]): ArtworkRequestStatus => {
-	const shared = items.filter((i) => i.link).length;
+	const shared = items.filter(isShared).length;
 	if (shared === 0) return "PENDING";
 	return shared === items.length ? "COMPLETED" : "IN_PROGRESS";
 };
@@ -205,6 +211,10 @@ const item = (
 	unit: "px",
 	link: shared ? LINK(shared) : null,
 	linkNote: null,
+	status: shared ? "LINK_SHARED" : "AWAITING_LINK",
+	editRounds: [],
+	attachments: [],
+	lastReminderAt: null,
 	sharedAt: shared ? isoDaysFromNow(-1, 14) : null,
 	sharedByName: shared ? "Demo marketing" : null,
 });
@@ -222,6 +232,17 @@ const INVITE = (n: number, i: number, shared?: string) =>
 const CUSTOM_WALL = (n: number, i: number): ArtworkItem => ({
 	...item(n, i, "Custom LED wall loop", "5120", "1080", 1),
 	isCustom: true,
+	productName: "Event stage banner",
+	artworkType: "Custom artwork",
+	attachments: [
+		{
+			id: "mock-att-1",
+			fileName: "wall-layout.png",
+			description: "Rough layout, logos on the right",
+			sizeBytes: 182_000,
+			url: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96'><rect width='96' height='96' fill='%23e5e7eb'/><text x='48' y='54' font-size='14' text-anchor='middle' fill='%236b7280'>ref</text></svg>",
+		},
+	],
 	description:
 		"Ultra-wide LED wall loop for the demo arena. Brand colours, dealer logos on the right, event date and venue in the first 5 seconds. Deliver as MP4 (30 s loop) and a PNG poster frame.",
 });
@@ -388,7 +409,8 @@ const toSummary = (r: MockRow): ArtworkSummary => ({
 	eventToDate: isoDaysFromNow(r.fromInDays + r.lengthDays - 1, 18),
 	status: statusOf(r.items),
 	itemCount: r.items.length,
-	sharedCount: r.items.filter((i) => i.link).length,
+	sharedCount: r.items.filter(isShared).length,
+	editRequestedCount: r.items.filter((i) => i.status === "EDIT_REQUESTED").length,
 	requestedByName: r.requestedByName,
 	createdAt: isoDaysFromNow(-r.createdDaysAgo, 15),
 	...timingOf(r),
@@ -402,7 +424,14 @@ const toDetail = (r: MockRow): ArtworkDetail => {
 		items: r.items,
 		timeline: r.timeline,
 		// The real backend also requires ARTWORK write; the mock grants it.
-		permissions: { canView: true, canShareLinks: summary.canShare },
+		permissions: {
+			canView: true,
+			canShareLinks: summary.canShare,
+			// The mock user is both requester and team member.
+			canRequestEdit: r.items.some((i) => i.link && i.status !== "EDIT_REQUESTED"),
+			canRemind: r.items.some((i) => !i.link || i.status === "EDIT_REQUESTED"),
+			maxEditRounds: MAX_EDIT_ROUNDS,
+		},
 	};
 };
 
@@ -489,22 +518,34 @@ export const artworkMockApi = {
 		const wasComplete = statusOf(target.items) === "COMPLETED";
 		const setNow: string[] = [];
 		const clearedNow: string[] = [];
+		const updatedNow: string[] = [];
 
 		const items = target.items.map((existing) => {
 			const input = links.find((l) => l.itemId === existing.id);
 			if (!input) return existing;
 			const link = input.link?.trim() || null;
-			if (link === existing.link) return existing;
-			(link ? setNow : clearedNow).push(existing.title);
+			const wasEditRequested = existing.status === "EDIT_REQUESTED";
+			// Same URL is fine when the requester asked for changes (file replaced in place).
+			if (link === existing.link && !wasEditRequested) return existing;
+			if (wasEditRequested && link) {
+				updatedNow.push(existing.title);
+			} else {
+				(link ? setNow : clearedNow).push(existing.title);
+			}
+			const nowIso = new Date().toISOString();
 			return {
 				...existing,
 				link,
-				sharedAt: link ? new Date().toISOString() : null,
+				sharedAt: link ? nowIso : null,
 				sharedByName: link ? "Demo marketing" : null,
+				status: link ? ("LINK_SHARED" as const) : ("AWAITING_LINK" as const),
+				editRounds: (existing.editRounds ?? []).map((round) =>
+					round.resolvedAt || !link ? round : { ...round, resolvedAt: nowIso },
+				),
 			};
 		});
 
-		if (setNow.length + clearedNow.length === 0) {
+		if (setNow.length + clearedNow.length + updatedNow.length === 0) {
 			throw new Error("No changes to save");
 		}
 
@@ -521,6 +562,7 @@ export const artworkMockApi = {
 
 		const timeline = [...target.timeline];
 		if (setNow.length) timeline.push(now("LINKS_SHARED", setNow));
+		if (updatedNow.length) timeline.push(now("LINK_UPDATED", updatedNow));
 		if (clearedNow.length) timeline.push(now("LINKS_CLEARED", clearedNow));
 		if (!wasComplete && statusOf(items) === "COMPLETED") {
 			timeline.push(now("COMPLETED"));
@@ -528,5 +570,88 @@ export const artworkMockApi = {
 
 		store = store.map((r) => (r.id === id ? { ...r, items, timeline } : r));
 		return delay({ id, status: statusOf(items) as string });
+	},
+	/** Requester asks for changes on one shared artwork. */
+	requestEdit: async (id: string, itemId: string, note: string) => {
+		const target = find(id);
+		if (!timingOf(target).canShare) {
+			throw new Error("Edits can only be requested while the event is approved");
+		}
+		const existing = target.items.find((i) => i.id === itemId);
+		if (!existing) throw new Error(`Unknown artwork line "${itemId}"`);
+		if (!existing.link) throw new Error("There is no shared link to edit yet");
+		if (existing.status === "EDIT_REQUESTED") {
+			throw new Error("An edit request is already open for this artwork");
+		}
+		const text = note.trim();
+		if (text.length < 5 || text.length > 1000) {
+			throw new Error("Describe the change in 5 to 1000 characters");
+		}
+		if ((existing.editRounds?.length ?? 0) >= MAX_EDIT_ROUNDS) {
+			throw new Error(`You can request edits ${MAX_EDIT_ROUNDS} times per artwork`);
+		}
+
+		const nowIso = new Date().toISOString();
+		const items = target.items.map((i) =>
+			i.id === itemId
+				? {
+						...i,
+						status: "EDIT_REQUESTED" as const,
+						editRounds: [
+							...(i.editRounds ?? []),
+							{
+								id: crypto.randomUUID(),
+								note: text,
+								previousLink: i.link,
+								requestedByName: target.proposer.name,
+								createdAt: nowIso,
+								resolvedAt: null,
+							},
+						],
+					}
+				: i,
+		);
+		const timeline = [
+			...target.timeline,
+			{
+				id: crypto.randomUUID(),
+				action: "EDIT_REQUESTED" as const,
+				byName: target.proposer.name,
+				at: nowIso,
+				metadata: { items: [existing.title] },
+			},
+		];
+		store = store.map((r) => (r.id === id ? { ...r, items, timeline } : r));
+		return delay({ id, itemId });
+	},
+
+	/** Requester nudges the team (one per artwork per 24 h). */
+	remind: async (id: string, itemId: string) => {
+		const target = find(id);
+		const existing = target.items.find((i) => i.id === itemId);
+		if (!existing) throw new Error(`Unknown artwork line "${itemId}"`);
+		if (existing.link && existing.status !== "EDIT_REQUESTED") {
+			throw new Error("Nothing is pending on this artwork");
+		}
+		const last = existing.lastReminderAt ? new Date(existing.lastReminderAt).getTime() : 0;
+		if (Date.now() - last < REMIND_COOLDOWN_MS) {
+			throw new Error("You already reminded the team in the last 24 hours");
+		}
+		const nowIso = new Date().toISOString();
+		const items = target.items.map((i) =>
+			i.id === itemId ? { ...i, lastReminderAt: nowIso } : i,
+		);
+		const timeline = [
+			...target.timeline,
+			{
+				id: crypto.randomUUID(),
+				action: "REMINDER_SENT" as const,
+				byName: target.proposer.name,
+				at: nowIso,
+				metadata: { items: [existing.title] },
+			},
+		];
+		store = store.map((r) => (r.id === id ? { ...r, items, timeline } : r));
+		return delay({ id, itemId });
 	},
 };

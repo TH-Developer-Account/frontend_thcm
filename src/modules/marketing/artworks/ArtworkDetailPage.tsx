@@ -125,10 +125,19 @@ export default function ArtworkDetailPage() {
 	const timing = getEventTiming(request.eventState, request.daysUntil);
 	const pendingCount = request.itemCount - request.sharedCount;
 
-	const valueOf = (item: ArtworkItem) => drafts[item.id] ?? item.link ?? "";
-	const dirtyItems = request.items.filter(
-		(item) => item.id in drafts && drafts[item.id].trim() !== (item.link ?? ""),
-	);
+	const isEditRequested = (item: ArtworkItem) => item.status === "EDIT_REQUESTED";
+
+	// An item the requester asked to change starts with an EMPTY box: the team
+	// pastes the updated link there (even if it is the same URL re-uploaded),
+	// and that save is what notifies the requester.
+	const valueOf = (item: ArtworkItem) =>
+		drafts[item.id] ?? (isEditRequested(item) ? "" : (item.link ?? ""));
+	const dirtyItems = request.items.filter((item) => {
+		if (!(item.id in drafts)) return false;
+		const draft = drafts[item.id].trim();
+		return isEditRequested(item) ? draft !== "" : draft !== (item.link ?? "");
+	});
+	const editRequestCount = request.items.filter(isEditRequested).length;
 
 	/* ------------------------------ Actions ------------------------------- */
 
@@ -194,12 +203,51 @@ export default function ArtworkDetailPage() {
 					<strong>
 						{item.title} {item.isCustom ? <ArtworkCustomBadge /> : null}
 					</strong>
+					{item.productName || item.artworkType ? (
+						<small>
+							{[item.productName, item.artworkType].filter(Boolean).join(" · ")}
+						</small>
+					) : null}
 					{item.description ? (
 						<small>
 							{item.isCustom ? "Brief: " : ""}
 							{item.description}
 						</small>
 					) : null}
+
+					{item.attachments?.length ? (
+						<span className="artwork-thumbs">
+							{item.attachments.map((file) => (
+								<a
+									key={file.id}
+									href={file.url}
+									target="_blank"
+									rel="noopener noreferrer"
+									title={
+										file.description
+											? `${file.fileName} — ${file.description}`
+											: file.fileName
+									}
+								>
+									<img src={file.url} alt={file.fileName} />
+								</a>
+							))}
+						</span>
+					) : null}
+
+					{/* The requester's open change request, newest round. */}
+					{isEditRequested(item)
+						? (() => {
+								const round = item.editRounds?.find((r) => !r.resolvedAt);
+								return round ? (
+									<span className="artwork-edit-flag">
+										<strong>Edits requested</strong> by{" "}
+										{round.requestedByName ?? "the requester"} —{" "}
+										{round.note}
+									</span>
+								) : null;
+							})()
+						: null}
 				</div>
 			),
 		},
@@ -227,12 +275,14 @@ export default function ArtworkDetailPage() {
 							name={`artwork-link-${item.id}`}
 							aria-label={`Link for ${item.title}`}
 							type="url"
-							placeholder="https://…"
+							placeholder={
+								isEditRequested(item) ? "Paste the updated link…" : "https://…"
+							}
 							value={valueOf(item)}
 							error={errors[item.id]}
 							onChange={(event) => handleChange(item, event.target.value)}
 						/>
-						{item.link && !(item.id in drafts) ? (
+						{item.link && !(item.id in drafts) && !isEditRequested(item) ? (
 							<a
 								className="artwork-link-open"
 								href={item.link}
@@ -288,6 +338,17 @@ export default function ArtworkDetailPage() {
 							pendingCount === 1 ? "link is" : "links are"
 						} still pending`}
 						description="Share a link for each artwork below so the proposer can use them."
+					/>
+				) : null}
+
+				{request.canShare && editRequestCount > 0 ? (
+					<Alert
+						type="banner"
+						variant="warning"
+						title={`${editRequestCount} ${
+							editRequestCount === 1 ? "artwork has" : "artworks have"
+						} edit requests from the requester`}
+						description="Paste the updated link in the same box and save. The requester is notified by email."
 					/>
 				) : null}
 

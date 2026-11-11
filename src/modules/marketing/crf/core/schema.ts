@@ -17,6 +17,7 @@ import { z } from "zod";
 import {
 	ARTWORK_CUSTOM_PRESET,
 	ARTWORK_RESOLUTION_PRESETS,
+	ARTWORK_TYPES,
 	CRF_CATEGORIES,
 	type CrfCategory,
 	type CrfLineItem,
@@ -39,11 +40,18 @@ export const CRF_LIMITS = {
 	MAX_PIXELS: 20_000,
 	/** Max free-text description length. */
 	MAX_DESCRIPTION: 500,
+	/** Label of a custom artwork request. */
+	MAX_LABEL: 120,
+	/** Reference images per artwork request / description of each. */
+	MAX_ATTACHMENTS: 5,
+	MAX_ATTACHMENT_DESCRIPTION: 200,
 	/** Decimal places allowed for money and dimensions. */
 	DECIMALS: 2,
 } as const;
 
 /** Artworks are digital → pixels. */
+const ARTWORK_TYPE_VALUES: string[] = ARTWORK_TYPES.map((type) => type.value);
+
 export const ARTWORK_UNIT = "px" as const;
 /** Physical units: custom artwork requests, and CRFs saved before artworks went digital. */
 export const ARTWORK_LEGACY_UNITS = ["mm", "cm", "in", "ft", "m"] as const;
@@ -88,6 +96,12 @@ export const CRF_MESSAGES = {
 		`${label} can have at most ${decimals} decimal places.`,
 	unitInvalid: "Select a valid unit.",
 	customDescriptionRequired: "Describe the artwork you need.",
+	artworkProductRequired: "Select an artwork.",
+	artworkTypeRequired: "Select the type of artwork.",
+	labelRequired: "Give this artwork a label.",
+	labelTooLong: `Label cannot exceed ${CRF_LIMITS.MAX_LABEL} characters.`,
+	tooManyAttachments: `You can attach at most ${CRF_LIMITS.MAX_ATTACHMENTS} images.`,
+	attachmentDescriptionTooLong: `Image description cannot exceed ${CRF_LIMITS.MAX_ATTACHMENT_DESCRIPTION} characters.`,
 	resolutionRequired:
 		"Select a resolution, or choose Custom and enter width × height.",
 	pixelsWhole: "Width and height must be whole pixels.",
@@ -283,6 +297,24 @@ const lineItemFieldsSchema = z.object({
 		),
 	/** Custom artwork request (no catalog product). */
 	isCustom: z.boolean().nullish(),
+	/* ---- Artwork request form (rules in getArtworkIssues) ---- */
+	artworkProductId: z.string().nullish(),
+	artworkProductName: z.string().nullish(),
+	artworkType: z.string().nullish(),
+	attachments: z
+		.array(
+			z.object({
+				key: z.string(),
+				fileName: z.string(),
+				sizeBytes: z.number(),
+				description: z
+					.string()
+					.nullish()
+					.transform((v) => (v ?? "").trim()),
+				url: z.string().nullish(),
+			}),
+		)
+		.nullish(),
 
 	/* ---- Souvenir (store) snapshot — rules in getSouvenirIssues ---- */
 	sku: z.string().trim().nullish(),
@@ -314,6 +346,55 @@ const getArtworkIssues = (raw: unknown): Issue[] => {
 	const issues: Issue[] = [];
 
 	if (isCustom) {
+		// Lines saved before the request form existed have neither a product
+		// nor a type; they stay editable without being forced to pick them.
+		const isLegacy =
+			!isBlank(item.id) &&
+			isBlank(item.artworkProductId) &&
+			isBlank(item.artworkType);
+
+		if (!isLegacy) {
+			if (isBlank(item.artworkProductId)) {
+				issues.push({
+					path: ["artworkProductId"],
+					message: CRF_MESSAGES.artworkProductRequired,
+				});
+			}
+			if (
+				isBlank(item.artworkType) ||
+				!ARTWORK_TYPE_VALUES.includes(String(item.artworkType))
+			) {
+				issues.push({
+					path: ["artworkType"],
+					message: CRF_MESSAGES.artworkTypeRequired,
+				});
+			}
+			if (isBlank(item.label)) {
+				issues.push({ path: ["label"], message: CRF_MESSAGES.labelRequired });
+			} else if (String(item.label).trim().length > CRF_LIMITS.MAX_LABEL) {
+				issues.push({ path: ["label"], message: CRF_MESSAGES.labelTooLong });
+			}
+		}
+
+		const attachments = Array.isArray(item.attachments) ? item.attachments : [];
+		if (attachments.length > CRF_LIMITS.MAX_ATTACHMENTS) {
+			issues.push({
+				path: ["attachments"],
+				message: CRF_MESSAGES.tooManyAttachments,
+			});
+		} else if (
+			attachments.some(
+				(file) =>
+					String((file as { description?: unknown })?.description ?? "").trim()
+						.length > CRF_LIMITS.MAX_ATTACHMENT_DESCRIPTION,
+			)
+		) {
+			issues.push({
+				path: ["attachments"],
+				message: CRF_MESSAGES.attachmentDescriptionTooLong,
+			});
+		}
+
 		if (isBlank(item.width)) {
 			issues.push({ path: ["width"], message: CRF_MESSAGES.required("Width") });
 		}
@@ -424,6 +505,10 @@ const normalizeLineItem = (item: z.output<typeof lineItemFieldsSchema>) => {
 		unit,
 		resolutionPreset,
 		isCustom,
+		artworkProductId,
+		artworkProductName,
+		artworkType,
+		attachments,
 		sku,
 		variantId,
 		shopifyProductId,
@@ -452,7 +537,16 @@ const normalizeLineItem = (item: z.output<typeof lineItemFieldsSchema>) => {
 					resolutionPreset:
 						(resolutionPreset as CrfLineItem["resolutionPreset"]) ??
 						ARTWORK_CUSTOM_PRESET,
-					...(isCustom ? { isCustom: true as const } : {}),
+					...(isCustom
+						? {
+								isCustom: true as const,
+								artworkProductId: artworkProductId ?? null,
+								artworkProductName: artworkProductName ?? null,
+								artworkType:
+									(artworkType as CrfLineItem["artworkType"]) ?? null,
+								attachments: attachments ?? [],
+							}
+						: {}),
 				}
 			: {}),
 
@@ -618,7 +712,11 @@ export type CrfLineItemField =
 	| "height"
 	| "unit"
 	| "description"
-	| "category";
+	| "category"
+	| "label"
+	| "artworkProductId"
+	| "artworkType"
+	| "attachments";
 
 /**
  * Errors shaped for the UI:

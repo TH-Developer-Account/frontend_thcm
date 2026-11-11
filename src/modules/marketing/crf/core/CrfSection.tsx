@@ -10,6 +10,7 @@
 import React from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { ArtworkLinksPanel } from "../../artworks";
 import { epcKeys } from "../../activity-planner/queries/epc.queries";
 import type { EpcDetailResponse } from "../../activity-planner/types/epc.types";
 import { useSouvenirStockBySkusQuery } from "../shop/api";
@@ -98,13 +99,24 @@ const CrfSection = ({
 	// `title={null}`: the host tab already titles this section ("CRF Details"),
 	// so the card shows just the status pill + "Go to CRF Order". Drop the prop
 	// to render the design's own "CRF Details" heading instead.
+	const hasArtworkRequests = (crf.items ?? []).some(
+		(item) => item.category === "ARTWORK" && item.source === "CUSTOM",
+	);
+
 	return (
-		<CrfView
-			items={displayItems}
-			status={crf.status as CrfStatus | undefined}
-			title={null}
-			onGoToOrder={onGoToOrder}
-		/>
+		<>
+			<CrfView
+				items={displayItems}
+				status={crf.status as CrfStatus | undefined}
+				title={null}
+				onGoToOrder={onGoToOrder}
+			/>
+
+			{/* Links from the artwork team, plus Request edits / Remind. The panel
+			    fetches by EPC and renders nothing until a request exists (it is
+			    created when the EPC is finally approved). */}
+			{hasArtworkRequests ? <ArtworkLinksPanel epcId={epcData.id} /> : null}
+		</>
 	);
 };
 

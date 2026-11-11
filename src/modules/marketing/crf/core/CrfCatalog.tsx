@@ -903,6 +903,13 @@ export default function CrfCatalog({
 	);
 	const showCustom = isArtworkTab && (!readOnly || customEntries.length > 0);
 
+	// "Artwork" dropdown of the request form: every ARTWORK product, ignoring
+	// the grid search (that only filters the tiles below).
+	const artworkProductOptions = React.useMemo(
+		() => options.find((group) => group.label === "ARTWORK")?.options ?? [],
+		[options],
+	);
+
 	const addCustom = React.useCallback(
 		() => onChange((previous) => [...previous, createCustomLine()]),
 		[onChange],
@@ -977,12 +984,13 @@ export default function CrfCatalog({
 												>
 													<CustomArtworkTile
 														line={item}
+														productOptions={artworkProductOptions}
 														lineErrors={lineErrors}
 														readOnly={readOnly}
 														onPatch={(patch) => patchProduct(item.value, patch)}
 													>
 														<QuantityControls
-															label={`Custom artwork ${position + 1}`}
+															label={`Artwork request ${position + 1}`}
 															line={item}
 															invalid={Boolean(lineErrors?.quantity)}
 															readOnly={readOnly}

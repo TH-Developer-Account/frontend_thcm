@@ -44,6 +44,7 @@ import {
 } from "./schema";
 import {
 	CRF_CATEGORIES,
+	getArtworkTypeLabel,
 	type CrfCategory,
 	type CrfLineItem,
 	type CrfStatus,
@@ -113,6 +114,16 @@ const getDetail = (item: CrfLineItem) => {
 const CODE_LABEL: Record<string, string> = {
 	SOUVENIR: "SKU",
 };
+
+/** Artwork request: "Banner · Custom artwork · 1920 × 1080 px". */
+const getRequestMeta = (item: CrfLineItem) =>
+	[
+		item.artworkProductName,
+		getArtworkTypeLabel(item.artworkType),
+		getDetail(item),
+	]
+		.filter(Boolean)
+		.join(" · ");
 
 /** "SKU BS01153" for souvenirs, "Part no. 1234" for everything else. */
 const getCodeText = (item: CrfLineItem) => {
@@ -335,9 +346,12 @@ export default function CrfView({
 								</div>
 
 								{lines.map((item, index) => {
-									const meta = [getCodeText(item), getDetail(item)]
-										.filter(Boolean)
-										.join(" · ");
+									const meta =
+										item.category === "ARTWORK" && item.isCustom
+											? getRequestMeta(item)
+											: [getCodeText(item), getDetail(item)]
+													.filter(Boolean)
+													.join(" · ");
 									const description = getDescription(item);
 
 									return (
@@ -367,6 +381,27 @@ export default function CrfView({
 															title={description}
 														>
 															{description}
+														</span>
+													) : null}
+													{item.isCustom && item.attachments?.length ? (
+														<span className="crf-details-attachments">
+															{item.attachments.map((file) =>
+																file.url ? (
+																	<a
+																		key={file.key}
+																		href={file.url}
+																		target="_blank"
+																		rel="noopener noreferrer"
+																		title={
+																			file.description
+																				? `${file.fileName} — ${file.description}`
+																				: file.fileName
+																		}
+																	>
+																		<img src={file.url} alt={file.fileName} />
+																	</a>
+																) : null,
+															)}
 														</span>
 													) : null}
 												</div>
