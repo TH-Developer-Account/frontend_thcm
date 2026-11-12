@@ -6,6 +6,7 @@ export type UserApiResponse = {
 	last_name?: string;
 	email?: string;
 	phone_number?: string;
+	userType?: string | null;
 };
 export type User = {
 	id: string;
@@ -18,6 +19,7 @@ export type User = {
 	manager?: string;
 	profilePictureUrl?: string;
 	fullName?: string;
+	userType?: string | null;
 };
 export interface AuthUser {
 	id: string;
@@ -33,4 +35,5 @@ export interface AuthUser {
 	designationId?: string | null;
 	zones?: string[];
 	branch?: string | null;
+	userType?: string | null;
 }

@@ -4,22 +4,13 @@
 //   · Approval Workflow (only when `submitWithWorkflow`)
 // with the actions in the card footer.
 //
-//   footer:  [footerStart…] [Draft saved 10:42]   [gate message] [Cancel] [Reset] [Submit]
+//   footer:  [footerStart…] [Draft saved 10:42]   [Cancel] [Reset] [Submit]
 //
-// With `submitWithWorkflow`, the "Approval Workflow" section below is now a
-// strict, manually-triggered gate (useEpfForm.ts's authorityCheck /
-// workflowPreview) rather than something that ran automatically as you
-// typed:
-//   1. "Check Authority" — against the live Tata Hitachi share. Must be
-//      re-run any time that amount changes (results are pinned to the
-//      amount they were checked against).
-//   2. "Preview Workflow" — only shown once Check Authority says a workflow
-//      is actually needed (authorized to propose, not auto-approved).
-//   3. Submit stays disabled until both have passed for the CURRENT amount
-//      (see `authorityBlocksSubmit`). The server-side decision at submit
-//      time (finalizeEpc) remains authoritative regardless — this gate
-//      exists so the EPF is never saved as SUBMITTED for an amount the
-//      creator isn't authorized for in the first place.
+// With `submitWithWorkflow`, the "Approval Workflow" section below previews
+// automatically as the Tata Hitachi share changes (useEpfForm.ts's
+// `workflowPreview`) — no manual step required. Submit itself re-previews
+// and assigns the matching workflow; if none matches, the EPF stays saved
+// and Submit can be retried once an administrator sets one up.
 //
 // The budget info is fetched separately and can be slow / fail on its own, so
 // the Card is NEVER put in a full "Loading content…" state: every section
@@ -75,9 +66,7 @@ export default function EpfForm(props: EpfFormCardProps) {
     epcId,
     isEditMode,
     draftSavedAt,
-    authorityCheck,
     workflowPreview,
-    authorityBlocksSubmit,
     loading,
     budgetLoading,
     budgetError,
@@ -114,112 +103,32 @@ export default function EpfForm(props: EpfFormCardProps) {
   // or the dealer percentage.
   const shares = calculateBudgetShares(values, eventCost);
 
-  /** One short line summarizing where the gate currently stands, shown in
-   *  the footer next to Submit. Null once nothing's blocking it. */
-  const gateMessage: string | null = !submitWithWorkflow
-    ? null
-    : !authorityCheck.checked
-      ? 'Click "Check Authority" below before submitting.'
-      : !authorityCheck.proposerEligible
-        ? "Not authorized to submit this amount."
-        : authorityCheck.needsWorkflow && !workflowPreview.hasWorkflow
-          ? 'Click "Preview Workflow" below before submitting.'
-          : null;
-
-  const renderAuthoritySection = () => {
+  const renderWorkflowSection = () => {
     if (eventCost <= 0) {
       return (
         <p className="text-sm text-[var(--color-text-muted)]">
-          Add event cost items to check your Schedule of Authority eligibility.
+          Add event cost items to preview the approval workflow for this amount.
         </p>
       );
     }
 
-    // Amount changed since the last check (or it was never run) — the
-    // previous result, if any, no longer applies to this amount.
-    if (!authorityCheck.checked) {
-      return (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm text-[var(--color-text-muted)]" role="status">
-            {authorityCheck.checking
-              ? "Checking your authority for this amount..."
-              : "Check whether you're authorized to submit this amount before continuing."}
-          </p>
-          <Button
-            type="button"
-            text={authorityCheck.checking ? "Checking..." : "Check Authority"}
-            onClick={() => void authorityCheck.run()}
-            Icon={ShieldCheck}
-            size="sm"
-            appearance="standard"
-            variant="outline"
-            disabled={authorityCheck.checking}
-          />
-        </div>
-      );
-    }
-
-    if (!authorityCheck.proposerEligible) {
-      return (
-        <p className="text-sm text-[var(--color-danger)]" role="alert">
-          {authorityCheck.authorityLimitLabel
-            ? `You are not authorized to submit an amount in the "${authorityCheck.authorityLimitLabel}" band. This exceeds your assigned limit.`
-            : "You are not authorized to submit an Event Proposal for this amount."}
-        </p>
-      );
-    }
-
-    if (!authorityCheck.needsWorkflow) {
-      return (
-        <p className="text-sm text-[var(--color-success)]" role="status">
-          You're authorized to approve this amount directly — no workflow is
-          required.
-        </p>
-      );
-    }
-
-    // Authorized to propose, not auto-approved → a workflow preview is
-    // required before Submit unlocks.
     if (!workflowPreview.checked) {
       return (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm text-[var(--color-text-muted)]" role="status">
-            {workflowPreview.loading
-              ? "Loading approval workflow..."
-              : "You're authorized to submit this amount, but it needs an approval workflow. Preview it before submitting."}
-          </p>
-          <Button
-            type="button"
-            text={workflowPreview.loading ? "Loading..." : "Preview Workflow"}
-            onClick={() => void workflowPreview.run()}
-            Icon={ShieldCheck}
-            size="sm"
-            appearance="standard"
-            variant="outline"
-            disabled={workflowPreview.loading}
-          />
-        </div>
+        <p className="text-sm text-[var(--color-text-muted)]" role="status">
+          {workflowPreview.loading
+            ? "Loading approval workflow..."
+            : "Previewing the approval workflow for this amount..."}
+        </p>
       );
     }
 
     if (workflowPreview.error || !workflowPreview.hasWorkflow) {
       return (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm text-[var(--color-danger)]" role="alert">
-            No approval workflow template currently matches this amount. Ask
-            your administrator to set one up, then check again.
-          </p>
-          <Button
-            type="button"
-            text="Check again"
-            onClick={() => void workflowPreview.run()}
-            Icon={RefreshCcw}
-            size="sm"
-            appearance="standard"
-            variant="outline"
-            disabled={workflowPreview.loading}
-          />
-        </div>
+        <p className="text-sm text-[var(--color-danger)]" role="alert">
+          No approval workflow template currently matches this amount. Ask your
+          administrator to set one up, then adjust the amount or try submitting
+          again.
+        </p>
       );
     }
 
@@ -280,7 +189,7 @@ export default function EpfForm(props: EpfFormCardProps) {
             title: "Approval Workflow",
             Icon: ShieldCheck,
             className: "epf-section--full",
-            children: renderAuthoritySection(),
+            children: renderWorkflowSection(),
           } satisfies CardSection,
         ]
       : []),
@@ -306,12 +215,6 @@ export default function EpfForm(props: EpfFormCardProps) {
       </div>
 
       <div className="flex flex-wrap items-center justify-end gap-2">
-        {gateMessage && (
-          <p className="text-sm text-[var(--color-text-muted)]" role="status">
-            {gateMessage}
-          </p>
-        )}
-
         {onCancel && (
           <Button
             type="button"
@@ -344,9 +247,7 @@ export default function EpfForm(props: EpfFormCardProps) {
           appearance="standard"
           variant="brand"
           Icon={isEditMode && !submitWithWorkflow ? Save : ArrowRight}
-          disabled={
-            submitting || loading || attachmentBusy || authorityBlocksSubmit
-          }
+          disabled={submitting || loading || attachmentBusy}
         />
       </div>
     </div>

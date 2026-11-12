@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
+	CheckLine,
 	ChevronDown,
 	ChevronUp,
 	GitFork,
@@ -14,7 +15,10 @@ import { Alert } from "../../../components/common/Alert";
 import { Modal } from "../../../components/common/Modal";
 import { FilterTabs } from "../../../components/ui/FilterTabs";
 
-import { workflowListFilterOptions } from "../utils/workflow.constants";
+import {
+	USER_CREATED_WORKFLOW_NAV_STATE,
+	workflowListFilterOptions,
+} from "../utils/workflow.constants";
 import type {
 	WorkflowListScope,
 	WorkflowSummary,
@@ -172,7 +176,7 @@ export function WorkflowFetchList({
 												type="button"
 												appearance="standard"
 												variant="outline"
-												Icon={Paperclip}
+												Icon={CheckLine}
 												text="Attach"
 												disabled={disabled}
 												onClick={() => onAttach(workflow)}
@@ -267,7 +271,14 @@ export function WorkflowFetchList({
 						label: "Continue",
 						onClick: () => {
 							setIsCreateConfirmOpen(false);
-							navigate("/workflow/create-workflows");
+							// This entry point only ever creates a personal, one-time/
+							// template workflow scoped to the current record's flow —
+							// never a shared admin template — so it always asks
+							// WorkflowCreatePage for its USERCREATED branch, regardless
+							// of whether the viewer also happens to administer an app.
+							navigate("/workflow/create-workflows", {
+								state: USER_CREATED_WORKFLOW_NAV_STATE,
+							});
 						},
 					}}
 					secondaryAction={{

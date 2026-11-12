@@ -6,7 +6,6 @@ import {
   User,
   BriefcaseBusinessIcon,
   ShieldCheck,
-  ScaleIcon,
 } from "lucide-react";
 
 export const adminSidebar: SidebarItem[] = [
@@ -40,12 +39,6 @@ export const adminSidebar: SidebarItem[] = [
     label: "Masters",
     icon: <Database size={18} />,
     link: "/admin/masters",
-  },
-  {
-    id: "authority-schedule",
-    label: "Schedule of Authority",
-    icon: <ScaleIcon size={18} />,
-    link: "/admin/authority-schedule",
   },
   {
     id: "business-partners",

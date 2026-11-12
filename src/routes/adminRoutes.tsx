@@ -30,9 +30,6 @@ const CreateBusinessPartner = lazy(
 const BusinessPartnerView = lazy(
   () => import("../modules/admin/business-partners/BusinessPartnerView"),
 );
-const AuthoritySchedulePage = lazy(
-  () => import("../modules/admin/authority-schedule/AuthoritySchedulePage"),
-);
 
 // The signed-in user's own profile is no longer here: it is served at
 // /profile (see AppRoutes) so non-admin users can reach it.
@@ -54,14 +51,6 @@ export default function AdminRoutes() {
             element={
               <div className="overflow-y-auto scrollbar-sleek">
                 <MastersPage />
-              </div>
-            }
-          />
-          <Route
-            path="authority-schedule"
-            element={
-              <div className="overflow-y-auto scrollbar-sleek">
-                <AuthoritySchedulePage />
               </div>
             }
           />

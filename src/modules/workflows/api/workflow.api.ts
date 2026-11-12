@@ -88,20 +88,6 @@ type ApiEnvelope<T> = {
   message?: string;
 };
 
-// Shared shape for both Schedule of Authority eligibility checks —
-// checkAuthorityForAmount (pre-save, against a bare amount) and
-// getEpcAuthorityEligibility (against a saved EPC's amount). Both mirror
-// the backend's AuthorityEligibility (authorityLimit.helper.ts) exactly,
-// so a caller never needs to distinguish which endpoint it came from.
-export type AuthorityEligibilityResult = {
-  /** Eligible APPROVER → auto-approved, no workflow needed. */
-  eligible: boolean;
-  /** Eligible PROPOSER → authorized to submit this amount at all. False
-   *  is a hard rejection — never a signal to fall back to a workflow. */
-  proposerEligible: boolean;
-  authorityLimitLabel: string | null;
-};
-
 // What approveStage's response `data` can carry, on top of the usual
 // success/message envelope. Only populated when the approval just resolved
 // is a workflow's FINAL stage AND that subject type has a post-final-
@@ -575,47 +561,6 @@ export const workflowApi = {
     );
 
     return data;
-  },
-
-  // ── Schedule of Authority (SOA) ─────────────────────────────────────────
-  // checkAuthorityForAmount: pre-save, EPC-agnostic check against a bare
-  // amount — used by the EPF form's manual "Check Authority" button,
-  // BEFORE anything is saved. Must be re-run any time the amount changes;
-  // a result is only valid for the exact amount it was checked against.
-  // getEpcAuthorityEligibility: same shape, but against a SAVED EPC's
-  // amount — only meaningful once an EPF already exists for that EPC.
-  // finalizeEpc: the committing call Final Submit makes FIRST. If
-  // `data.bypassed` is true the EPC was auto-approved server-side and no
-  // workflow exists — the caller must not fall back to assignWorkflow.
-  checkAuthorityForAmount: async (
-    amount: number,
-  ): Promise<AuthorityEligibilityResult> => {
-    const response = await ServerAxios.get<
-      ApiEnvelope<AuthorityEligibilityResult>
-    >(`/epc/authority-check`, { params: { amount } });
-    return unwrapEnvelope<AuthorityEligibilityResult>(response.data).data;
-  },
-
-  getEpcAuthorityEligibility: async (
-    epcId: string,
-  ): Promise<AuthorityEligibilityResult> => {
-    const response = await ServerAxios.get<
-      ApiEnvelope<AuthorityEligibilityResult>
-    >(`/epc/${encodeURIComponent(epcId)}/authority-check`);
-    return unwrapEnvelope<AuthorityEligibilityResult>(response.data).data;
-  },
-
-  finalizeEpc: async (
-    epcId: string,
-  ): Promise<
-    ApiEnvelope<{ bypassed: boolean; stockCheckFailed?: boolean }>
-  > => {
-    const response = await ServerAxios.post<
-      ApiEnvelope<{ bypassed: boolean; stockCheckFailed?: boolean }>
-    >(`/epc/${encodeURIComponent(epcId)}/finalize`);
-    return unwrapEnvelope<{ bypassed: boolean; stockCheckFailed?: boolean }>(
-      response.data,
-    );
   },
 
   submitDeviationUpdatedForm: async (payload: {

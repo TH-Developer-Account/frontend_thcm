@@ -13,6 +13,7 @@ import {
 export type HomeActionAccess =
 	| { kind: "app"; appKey: string }
 	| { kind: "everyone" }
+	| { kind: "internal" }
 	| { kind: "administration" };
 
 export type HomeAction = {
