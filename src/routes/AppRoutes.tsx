@@ -15,6 +15,7 @@ import VendorRoutes from "./VendorRoutes";
 import WorkflowRoutes from "./workflowRoutes";
 import { GuestRoutesWrapper } from "./guestRoutes";
 import FullScreenLoader from "./FullScreenLoader";
+import CppRoutes from "./cpp.routes";
 
 const ForbiddenPage = lazy(() => import("../Forbidden"));
 const HomeScreen = lazy(() => import("../containers/HomeScreen"));
@@ -71,6 +72,7 @@ const AuthenticatedRoutes = () => {
 					<Route path="/vendor-onboarding/*" element={<VendorRoutes />} />
 					<Route path="/workflow/*" element={<WorkflowRoutes />} />
 					<Route path="/medi-claim/*" element={<MedicalRoutes />} />
+					<Route path="/cpp/*" element={<CppRoutes />} />
 				</Route>
 			</Routes>
 		</SessionTimeoutProvider>

@@ -4,6 +4,7 @@ import {
 	Hospital,
 	Megaphone,
 	MonitorCog,
+	ReceiptIndianRupee,
 	UserCheck,
 } from "lucide-react";
 
@@ -12,6 +13,7 @@ import {
 export type HomeActionAccess =
 	| { kind: "app"; appKey: string }
 	| { kind: "everyone" }
+	| { kind: "internal" }
 	| { kind: "administration" };
 
 export type HomeAction = {
@@ -49,12 +51,22 @@ export const actions: HomeAction[] = [
 		isActive: false,
 	},
 	{
+		icon: ReceiptIndianRupee,
+		title: "Contract Price Procurement",
+		description:
+			"Raise and track contract price approvals (CPP) with suppliers.",
+		// No listing page yet — points at the create page until it exists.
+		path: "/cpp/requests/create",
+		access: { kind: "app", appKey: "CPP" },
+		isActive: false,
+	},
+	{
 		icon: UserCheck,
 		title: "Workflows",
 		description:
 			"Manage vendor registration, verification, and approval processes.",
 		path: "/workflow/listing",
-		access: { kind: "everyone" },
+		access: { kind: "internal" },
 		isActive: false,
 	},
 	{

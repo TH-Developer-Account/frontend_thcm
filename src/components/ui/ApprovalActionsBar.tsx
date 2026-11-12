@@ -57,6 +57,14 @@ export type ApprovalActionsBarProps = {
 	canSubmit?: boolean;
 	onSubmit?: () => void | Promise<void>;
 
+	// Proposer variant only — OPT-IN, both default to off so no existing
+	// caller changes. Used by "create" pages that need Cancel / Save draft
+	// next to Submit (e.g. the CPP request page).
+	canCancel?: boolean;
+	onCancel?: () => void | Promise<void>;
+	canSaveDraft?: boolean;
+	onSaveDraft?: () => void | Promise<void>;
+
 	loading?: boolean;
 	// Approve/Clarify stay disabled until the trimmed reason reaches this
 	// length. Defaults to 3 to match the workflow API's validation, so the
@@ -71,6 +79,8 @@ export type ApprovalActionsBarProps = {
 	acceptAndCloseLabel?: string;
 	submitLabel?: string;
 	backLabel?: string;
+	cancelLabel?: string;
+	saveDraftLabel?: string;
 
 	reasonLabel?: string;
 	reasonPlaceholder?: string;
@@ -98,27 +108,6 @@ const getReasonHint = (
 	return `${length}/${maxLength}`;
 };
 
-// Small (i) with a hover/focus tooltip. A disabled button doesn't receive
-// hover events in most browsers, so the reason lives on this icon.
-// const InfoTip = ({ text }: { text: string }) => (
-// 	<span className="group relative inline-flex">
-// 		<span
-// 			tabIndex={0}
-// 			role="img"
-// 			aria-label={text}
-// 			className="inline-flex cursor-help items-center text-amber-600 outline-none focus-visible:ring-2 focus-visible:ring-amber-400 rounded-full"
-// 		>
-// 			<Info aria-hidden="true" size={16} />
-// 		</span>
-// 		<span
-// 			role="tooltip"
-// 			className="pointer-events-none absolute bottom-full right-0 z-20 mb-2 hidden w-56 rounded-md bg-iron-dark px-2.5 py-1.5 text-xs leading-snug text-white shadow-lg group-hover:block group-focus-within:block"
-// 		>
-// 			{text}
-// 		</span>
-// 	</span>
-// );
-
 const ApprovalActionsBar = ({
 	variant,
 	layout = "bar",
@@ -140,6 +129,10 @@ const ApprovalActionsBar = ({
 	onAcceptAndClose,
 	canSubmit = false,
 	onSubmit,
+	canCancel = false,
+	onCancel,
+	canSaveDraft = false,
+	onSaveDraft,
 	loading = false,
 	minReasonLength = DEFAULT_MIN_REASON_LENGTH,
 	maxReasonLength = DEFAULT_MAX_REASON_LENGTH,
@@ -149,6 +142,8 @@ const ApprovalActionsBar = ({
 	acceptAndCloseLabel = "Accept & Close",
 	submitLabel = "Final Submit",
 	backLabel = "Back",
+	cancelLabel = "Cancel",
+	saveDraftLabel = "Save draft",
 	reasonLabel = "",
 	reasonPlaceholder = "Add a reason more than 2 characters",
 }: ApprovalActionsBarProps) => {
@@ -161,6 +156,8 @@ const ApprovalActionsBar = ({
 	const showAcceptAndClose =
 		canAcceptAndClose && typeof onAcceptAndClose === "function";
 	const showSubmit = canSubmit && typeof onSubmit === "function";
+	const showCancel = canCancel && typeof onCancel === "function";
+	const showSaveDraft = canSaveDraft && typeof onSaveDraft === "function";
 
 	const resolvedVariant: ApprovalActionsBarVariant =
 		variant ?? (showApprove || showClarify ? "approver" : "proposer");
@@ -169,7 +166,11 @@ const ApprovalActionsBar = ({
 
 	const hasAnyAction = isApproverView
 		? showApprove || showClarify
-		: showSendBack || showAcceptAndClose || showSubmit;
+		: showSendBack ||
+			showAcceptAndClose ||
+			showSubmit ||
+			showCancel ||
+			showSaveDraft;
 
 	if (!hasAnyAction && !showBack) return null;
 
@@ -342,6 +343,31 @@ const ApprovalActionsBar = ({
 			{backButton}
 
 			<div className="approval-actions-bar-end">
+				{showCancel ? (
+					<Button
+						type="button"
+						text={cancelLabel}
+						size="sm"
+						appearance="standard"
+						variant="outline"
+						disabled={isBusy}
+						onClick={() => void onCancel?.()}
+					/>
+				) : null}
+
+				{showSaveDraft ? (
+					<Button
+						type="button"
+						text={saveDraftLabel}
+						size="sm"
+						appearance="standard"
+						variant="outline"
+						Icon={Save}
+						disabled={isBusy}
+						onClick={() => void onSaveDraft?.()}
+					/>
+				) : null}
+
 				{showAcceptAndClose ? (
 					<Button
 						type="button"
@@ -375,7 +401,7 @@ const ApprovalActionsBar = ({
 						size="sm"
 						appearance="standard"
 						variant="brand"
-						Icon={Save}
+						Icon={showSaveDraft ? Send : Save}
 						disabled={isBusy}
 						onClick={() => void onSubmit?.()}
 					/>
