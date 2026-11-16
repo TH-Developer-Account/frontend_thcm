@@ -14,7 +14,10 @@ import {
 	mapDealerTemplateListItemToRow,
 	normalizeDealerTemplateListParams,
 } from "../templates/dealer-template.mappers";
-import type { DealerChecklistTemplateListParams } from "../templates/dealer-template.types";
+import type {
+	DealerChecklistTemplate,
+	DealerChecklistTemplateListParams,
+} from "../templates/dealer-template.types";
 
 /** Server-side paginated / sorted / filtered template list. */
 export function useDealerChecklistTemplates(
@@ -68,5 +71,77 @@ export function useDeleteDealerChecklistTemplate() {
 		},
 		// Error is rendered inside the confirm dialog (see page), not toasted,
 		// so the user keeps context and can retry.
+	});
+}
+
+/**
+ * A lifecycle change on one version (archive / new draft) can also change
+ * its siblings (publishing archives the previous version), so every other
+ * cached detail is marked stale. The changed template itself is written
+ * straight into the cache from the response.
+ */
+function useCacheLifecycleResult() {
+	const queryClient = useQueryClient();
+
+	return (template: DealerChecklistTemplate) => {
+		void queryClient.invalidateQueries({
+			queryKey: dealerAuditKeys.templateDetails(),
+			refetchType: "none",
+		});
+		queryClient.setQueryData(
+			dealerAuditKeys.templateDetail(template.id),
+			template,
+		);
+		void queryClient.invalidateQueries({
+			queryKey: dealerAuditKeys.templateLists(),
+		});
+	};
+}
+
+/** PUBLISHED → ARCHIVED. Error is shown inside the confirm dialog. */
+export function useArchiveDealerChecklistTemplate() {
+	const { showToast } = useToast();
+	const cacheResult = useCacheLifecycleResult();
+
+	return useMutation({
+		mutationFn: (templateId: string) =>
+			dealerTemplateApi.archiveTemplate(templateId),
+		onSuccess: (template) => {
+			cacheResult(template);
+			showToast({
+				type: "success",
+				title: "Template archived",
+				description: `"${template.name}" v${template.version} can no longer be used for new audits.`,
+			});
+		},
+	});
+}
+
+/**
+ * PUBLISHED / ARCHIVED → next DRAFT version. The caller navigates to the
+ * returned draft's editor. Errors (e.g. "a draft already exists") are
+ * toasted with the server's own message.
+ */
+export function useCreateDealerChecklistTemplateVersion() {
+	const { showToast } = useToast();
+	const cacheResult = useCacheLifecycleResult();
+
+	return useMutation({
+		mutationFn: (templateId: string) =>
+			dealerTemplateApi.createNewDraft(templateId),
+		onSuccess: (draft) => {
+			cacheResult(draft);
+			showToast({
+				type: "success",
+				title: `Draft v${draft.version} created`,
+				description: "Make your changes, then publish when ready.",
+			});
+		},
+		onError: (error) =>
+			showToast({
+				type: "error",
+				title: "New version not created",
+				description: getAuditActionErrorMessage(error, "template"),
+			}),
 	});
 }

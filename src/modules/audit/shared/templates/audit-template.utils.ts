@@ -53,6 +53,7 @@ export const createEmptyParameter = (
 	evidenceRequired: false,
 	minEvidenceCount: TEMPLATE_DEFAULT_MIN_EVIDENCE,
 	maxEvidenceCount: TEMPLATE_DEFAULT_MAX_EVIDENCE,
+	referencePhoto: null,
 });
 
 export const createEmptySection = (

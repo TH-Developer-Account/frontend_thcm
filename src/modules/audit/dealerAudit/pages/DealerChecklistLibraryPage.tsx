@@ -16,6 +16,8 @@ import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
 import { useDealerAuditAccess } from "../hooks/useDealerAuditAccess";
 import { useDealerChecklistLibraryParams } from "../hooks/useDealerChecklistLibraryParams";
 import {
+	useArchiveDealerChecklistTemplate,
+	useCreateDealerChecklistTemplateVersion,
 	useDealerChecklistTemplates,
 	useDeleteDealerChecklistTemplate,
 } from "../hooks/useDealerChecklistTemplates";
@@ -48,7 +50,12 @@ export default function DealerChecklistLibraryPage() {
 
 	const templates = useDealerChecklistTemplates(listParams);
 	const deleteMutation = useDeleteDealerChecklistTemplate();
+	const archiveMutation = useArchiveDealerChecklistTemplate();
+	const newVersionMutation = useCreateDealerChecklistTemplateVersion();
+
 	const [templatePendingDelete, setTemplatePendingDelete] =
+		useState<AuditTemplateListRow | null>(null);
+	const [templatePendingArchive, setTemplatePendingArchive] =
 		useState<AuditTemplateListRow | null>(null);
 
 	// If a delete empties the last page, step back to the last real page.
@@ -67,17 +74,32 @@ export default function DealerChecklistLibraryPage() {
 				// Dealer checklists are a flat list — no Sections column.
 				showSectionCount: false,
 				actions: {
+					// Edit / Delete only appear on drafts; published and archived
+					// versions are immutable (New version / Archive instead).
 					canEdit: permissions.canManageTemplates,
 					canDelete: permissions.canManageTemplates,
+					canCreateVersion: permissions.canManageTemplates,
+					canArchive: permissions.canManageTemplates,
 					onView: (row) => navigate(DEALER_AUDIT_ROUTES.template.view(row.id)),
 					onEdit: (row) => navigate(DEALER_AUDIT_ROUTES.template.edit(row.id)),
 					onDelete: (row) => {
 						deleteMutation.reset();
 						setTemplatePendingDelete(row);
 					},
+					onArchive: (row) => {
+						archiveMutation.reset();
+						setTemplatePendingArchive(row);
+					},
+					onNewVersion: (row) => {
+						if (newVersionMutation.isPending) return;
+						newVersionMutation.mutate(row.id, {
+							onSuccess: (draft) =>
+								navigate(DEALER_AUDIT_ROUTES.template.edit(draft.id)),
+						});
+					},
 				},
 			}),
-		// deleteMutation.reset is stable across renders.
+		// Mutation `reset` / `mutate` / `isPending` are read at click time.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 		[navigate, permissions.canManageTemplates],
 	);
@@ -103,8 +125,12 @@ export default function DealerChecklistLibraryPage() {
 		});
 	};
 
-	const isPublishedPendingDelete =
-		templatePendingDelete?.status === "PUBLISHED";
+	const handleConfirmArchive = () => {
+		if (!templatePendingArchive || archiveMutation.isPending) return;
+		archiveMutation.mutate(templatePendingArchive.id, {
+			onSuccess: () => setTemplatePendingArchive(null),
+		});
+	};
 
 	return (
 		<>
@@ -141,16 +167,13 @@ export default function DealerChecklistLibraryPage() {
 				}
 			/>
 
+			{/* Delete — drafts only (the server also refuses templates used by audits). */}
 			<AuditConfirmModal
 				open={Boolean(templatePendingDelete)}
-				title="Delete checklist template?"
+				title="Delete draft?"
 				warningTitle="This action cannot be undone"
-				warningDescription={
-					isPublishedPendingDelete
-						? "This template is published. Audits already created keep their checklist version, but new audits can no longer use it."
-						: "The template and all of its parameters will be permanently removed."
-				}
-				confirmLabel="Delete template"
+				warningDescription="The draft and all of its parameters will be permanently removed."
+				confirmLabel="Delete draft"
 				isConfirming={deleteMutation.isPending}
 				errorMessage={
 					deleteMutation.isError
@@ -161,15 +184,42 @@ export default function DealerChecklistLibraryPage() {
 				onClose={() => setTemplatePendingDelete(null)}
 			>
 				{templatePendingDelete ? (
-					<p className="text-body-sm text-(--color-text-primary)">
-						<span className="font-semibold">{templatePendingDelete.name}</span>{" "}
-						<span className="text-(--color-text-secondary)">
-							· v{templatePendingDelete.version} ·{" "}
-							{templatePendingDelete.parameterCount} parameters
-						</span>
-					</p>
+					<TemplateSummaryLine template={templatePendingDelete} />
+				) : null}
+			</AuditConfirmModal>
+
+			{/* Archive — published only. */}
+			<AuditConfirmModal
+				open={Boolean(templatePendingArchive)}
+				tone="warning"
+				title="Archive template?"
+				warningTitle="It will no longer be available for new audits"
+				warningDescription="Audits already created keep their checklist version. You can create a new version from it later."
+				confirmLabel="Archive template"
+				isConfirming={archiveMutation.isPending}
+				errorMessage={
+					archiveMutation.isError
+						? getAuditActionErrorMessage(archiveMutation.error, "template")
+						: null
+				}
+				onConfirm={handleConfirmArchive}
+				onClose={() => setTemplatePendingArchive(null)}
+			>
+				{templatePendingArchive ? (
+					<TemplateSummaryLine template={templatePendingArchive} />
 				) : null}
 			</AuditConfirmModal>
 		</>
+	);
+}
+
+function TemplateSummaryLine({ template }: { template: AuditTemplateListRow }) {
+	return (
+		<p className="text-body-sm text-(--color-text-primary)">
+			<span className="font-semibold">{template.name}</span>{" "}
+			<span className="text-(--color-text-secondary)">
+				· v{template.version} · {template.parameterCount} parameters
+			</span>
+		</p>
 	);
 }

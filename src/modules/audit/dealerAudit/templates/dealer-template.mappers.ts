@@ -11,6 +11,7 @@
 //   • reading: all parameters go into ONE form section
 //   • writing: every section's parameters are flattened into `parameters[]`
 
+import { getFileNameFromUrl } from "../../../../components/ui/FileUpload/fileUpload.helpers";
 import type { ServerFieldError } from "../../shared/audit-error.utils";
 import {
 	TEMPLATE_DEFAULT_MAX_EVIDENCE,
@@ -106,6 +107,15 @@ const mapParameterToForm = (
 	evidenceRequired: parameter.evidenceRequired,
 	minEvidenceCount: parameter.minEvidenceCount ?? TEMPLATE_DEFAULT_MIN_EVIDENCE,
 	maxEvidenceCount: parameter.maxEvidenceCount ?? TEMPLATE_DEFAULT_MAX_EVIDENCE,
+	// The key lives in the form, so it survives re-saves, new drafts and
+	// duplicates without any side lookup.
+	referencePhoto: parameter.referencePhotoKey
+		? {
+				key: parameter.referencePhotoKey,
+				url: parameter.referencePhotoUrl ?? "",
+				name: getFileNameFromUrl(parameter.referencePhotoKey, "Reference image"),
+			}
+		: null,
 });
 
 export const mapDealerTemplateToBuilderValues = (
@@ -137,26 +147,8 @@ export const mapDealerTemplateToBuilderValues = (
 const isBlankParameter = (parameter: AuditTemplateParameterFormValues) =>
 	!parameter.title.trim() && !parameter.guidance.trim();
 
-/**
- * `photoKeys` carries each saved parameter's reference photo (serverId → key).
- * The builder form does not edit photos yet, so without this a re-save would
- * silently drop them.
- */
-export type ReferencePhotoKeys = ReadonlyMap<string, string | null>;
-
-export const getReferencePhotoKeys = (
-	template: DealerChecklistTemplate | null,
-): ReferencePhotoKeys =>
-	new Map(
-		(template?.parameters ?? []).map((parameter) => [
-			parameter.id,
-			parameter.referencePhotoKey,
-		]),
-	);
-
 const mapParameterToPayload = (
 	parameter: AuditTemplateParameterFormValues,
-	photoKeys: ReferencePhotoKeys,
 ): DealerChecklistParameterPayload => {
 	const title = parameter.title.trim();
 
@@ -186,15 +178,12 @@ const mapParameterToPayload = (
 		maxEvidenceCount: parameter.evidenceRequired
 			? parameter.maxEvidenceCount
 			: null,
-		referencePhotoKey: parameter.serverId
-			? (photoKeys.get(parameter.serverId) ?? null)
-			: null,
+		referencePhotoKey: parameter.referencePhoto?.key ?? null,
 	};
 };
 
 export const mapBuilderValuesToCreateDealerTemplatePayload = (
 	values: AuditTemplateBuilderValues,
-	photoKeys: ReferencePhotoKeys = new Map(),
 ): CreateDealerChecklistTemplatePayload => {
 	const facilityType =
 		values.details.fields[DEALER_DETAIL_FIELD_KEYS.facilityType] ?? "";
@@ -206,19 +195,17 @@ export const mapBuilderValuesToCreateDealerTemplatePayload = (
 		parameters: values.sections
 			.flatMap((section) => section.parameters)
 			.filter((parameter) => !isBlankParameter(parameter))
-			.map((parameter) => mapParameterToPayload(parameter, photoKeys)),
+			.map(mapParameterToPayload),
 	};
 };
 
 export const mapBuilderValuesToUpdateDealerTemplatePayload = (
 	values: AuditTemplateBuilderValues,
 	expectedUpdatedAt: string | null,
-	photoKeys: ReferencePhotoKeys = new Map(),
 ): UpdateDealerChecklistTemplatePayload => ({
-	...mapBuilderValuesToCreateDealerTemplatePayload(values, photoKeys),
+	...mapBuilderValuesToCreateDealerTemplatePayload(values),
 	expectedUpdatedAt,
 });
-
 
 // ── Server validation errors → form fields ────────────────────────────
 
@@ -242,6 +229,7 @@ const PARAMETER_FIELD_TO_FORM: Record<string, string> = {
 	checkPoint: "guidance",
 	minEvidenceCount: "minEvidenceCount",
 	maxEvidenceCount: "maxEvidenceCount",
+	referencePhotoKey: "referencePhoto",
 };
 
 /**

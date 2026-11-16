@@ -47,11 +47,22 @@ export const formatAuditDateTime = (
 		: fallback;
 };
 
-/** yyyy-mm-dd in LOCAL time, for <input type="date">. */
+/** yyyy-mm-dd in LOCAL time — the value format the due-date forms store. */
 export const toDateInputValue = (date: Date): string => {
 	const month = String(date.getMonth() + 1).padStart(2, "0");
 	const day = String(date.getDate()).padStart(2, "0");
 	return `${date.getFullYear()}-${month}-${day}`;
+};
+
+/**
+ * Inverse of toDateInputValue: yyyy-mm-dd → local Date (midnight), or
+ * undefined for empty / malformed input. Used to feed the DatePickerInput.
+ */
+export const fromDateInputValue = (value: string): Date | undefined => {
+	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+	if (!match) return undefined;
+	const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+	return Number.isNaN(date.getTime()) ? undefined : date;
 };
 
 export const formatPercent = (value: number): string =>

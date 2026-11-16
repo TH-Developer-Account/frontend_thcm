@@ -14,16 +14,19 @@ import {
 	type FormEventHandler,
 	type ReactNode,
 } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 
 import Button from "../../../../components/common/Button";
+import DatePickerInput from "../../../../components/common/DatePickerInput";
 import { Modal } from "../../../../components/common/Modal";
-import FormInput from "../../../../components/forms/FormInput";
 import SelectInput from "../../../../components/forms/SelectInput";
 import TextareaInput from "../../../../components/forms/TextareaInput";
 import { DEALER_AUDIT_RULES } from "../dealer-audit.config";
 import { dealerAuditContent as content } from "../dealer-audit.content";
-import { toDateInputValue } from "../../shared/execution/audit-execution.format";
+import {
+	fromDateInputValue,
+	toDateInputValue,
+} from "../../shared/execution/audit-execution.format";
 import {
 	approveAuditSchema,
 	raiseClarificationSchema,
@@ -530,19 +533,27 @@ export function ReAuditDialog({
 }: DialogBaseProps<ReAuditFormValues>) {
 	const { isSubmitting, errorMessage, run, clear } = useSubmitState(onClose);
 	const schema = useMemo(() => reAuditSchema(), []);
+	// The date picker keeps its own copy of an empty value, so it is
+	// remounted whenever the dialog resets to make sure it shows no old date.
+	const [pickerKey, setPickerKey] = useState(0);
 	const {
 		register,
 		handleSubmit,
 		reset,
+		control,
 		formState: { errors },
 	} = useForm<ReAuditFormValues>({
 		resolver: zodResolver(schema),
 		defaultValues: { reason: "", dueDate: "" },
 	});
 
+	const dueDate = useWatch({ control, name: "dueDate" });
+	const dueDateValue = useMemo(() => fromDateInputValue(dueDate), [dueDate]);
+
 	useEffect(() => {
 		if (open) {
 			reset({ reason: "", dueDate: "" });
+			setPickerKey((current) => current + 1);
 			clear();
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -570,13 +581,23 @@ export function ReAuditDialog({
 				disabled={isSubmitting}
 				{...register("reason")}
 			/>
-			<FormInput
-				type="date"
-				label={text.reAudit.dueDateLabel}
-				min={toDateInputValue(new Date())}
-				error={errors.dueDate?.message}
-				disabled={isSubmitting}
-				{...register("dueDate")}
+			<Controller
+				control={control}
+				name="dueDate"
+				render={({ field }) => (
+					<DatePickerInput
+						key={pickerKey}
+						mode="single"
+						label={text.reAudit.dueDateLabel}
+						disablePast
+						disabled={isSubmitting}
+						value={dueDateValue}
+						onChange={(date) =>
+							field.onChange(date instanceof Date ? toDateInputValue(date) : "")
+						}
+						error={errors.dueDate?.message}
+					/>
+				)}
 			/>
 		</DialogFrame>
 	);

@@ -6,9 +6,17 @@
 //
 // Column ids for sortable columns MUST match AuditTemplateSortField —
 // the page maps TanStack SortingState → server sort params by id.
+//
+// Row actions follow the template lifecycle ONLY when the module passes
+// `onNewVersion` / `onArchive` (Dealer does). Without them the menu keeps
+// its original behaviour (View / Edit / Delete for every row).
+//
+//   DRAFT      View · Edit · Delete
+//   PUBLISHED  View · New version · Archive
+//   ARCHIVED   View · New version
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Eye, Pencil, Trash2 } from "lucide-react";
+import { Archive, Eye, FilePlus2, Pencil, Trash2 } from "lucide-react";
 
 import ActionMenu, {
 	type ActionMenuItem,
@@ -36,6 +44,12 @@ export interface AuditTemplateRowActions {
 	onDelete: (row: AuditTemplateListRow) => void;
 	canEdit: boolean;
 	canDelete: boolean;
+	/** Copy a PUBLISHED / ARCHIVED template into the next draft version. */
+	onNewVersion?: (row: AuditTemplateListRow) => void;
+	/** Retire a PUBLISHED template. */
+	onArchive?: (row: AuditTemplateListRow) => void;
+	canCreateVersion?: boolean;
+	canArchive?: boolean;
 }
 
 export const SORTABLE_TEMPLATE_COLUMNS: readonly AuditTemplateSortField[] = [
@@ -62,24 +76,48 @@ export function createAuditTemplateColumns({
 	/** Dealer Audit has no sections, so it hides this column. */
 	showSectionCount?: boolean;
 }): ColumnDef<AuditTemplateListRow>[] {
-	const menuItems: ActionMenuItem<AuditTemplateListRow>[] = [
-		{ id: "view", label: "View", Icon: Eye, onClick: actions.onView },
-		{
-			id: "edit",
-			label: "Edit",
-			Icon: Pencil,
-			hidden: !actions.canEdit,
-			onClick: actions.onEdit,
-		},
-		{
-			id: "delete",
-			label: "Delete",
-			Icon: Trash2,
-			variant: "danger",
-			hidden: !actions.canDelete,
-			onClick: actions.onDelete,
-		},
-	];
+	const followsLifecycle = Boolean(actions.onNewVersion || actions.onArchive);
+
+	const buildMenuItems = (
+		row: AuditTemplateListRow,
+	): ActionMenuItem<AuditTemplateListRow>[] => {
+		const isDraft = row.status === "DRAFT";
+		const isPublished = row.status === "PUBLISHED";
+
+		return [
+			{ id: "view", label: "View", Icon: Eye, onClick: actions.onView },
+			{
+				id: "edit",
+				label: "Edit",
+				Icon: Pencil,
+				hidden: !actions.canEdit || (followsLifecycle && !isDraft),
+				onClick: actions.onEdit,
+			},
+			{
+				id: "new-version",
+				label: "New version",
+				Icon: FilePlus2,
+				hidden:
+					!actions.onNewVersion || !actions.canCreateVersion || isDraft,
+				onClick: (target) => actions.onNewVersion?.(target),
+			},
+			{
+				id: "archive",
+				label: "Archive",
+				Icon: Archive,
+				hidden: !actions.onArchive || !actions.canArchive || !isPublished,
+				onClick: (target) => actions.onArchive?.(target),
+			},
+			{
+				id: "delete",
+				label: "Delete",
+				Icon: Trash2,
+				variant: "danger",
+				hidden: !actions.canDelete || (followsLifecycle && !isDraft),
+				onClick: actions.onDelete,
+			},
+		];
+	};
 
 	const sectionCountColumn: ColumnDef<AuditTemplateListRow> = {
 		id: "sectionCount",
@@ -178,7 +216,7 @@ export function createAuditTemplateColumns({
 				>
 					<ActionMenu
 						row={row.original}
-						actions={menuItems}
+						actions={buildMenuItems(row.original)}
 						size="sm"
 						ariaLabel={`Actions for ${row.original.name}`}
 					/>

@@ -1,11 +1,19 @@
 // modules/audit/shared/templates/AuditTemplateParameterEditor.tsx
+import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Copy, Trash2 } from "lucide-react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 
 import Button from "../../../../components/common/Button";
-import Toggle from "../../../../components/common/Toggle";
 import FormInput from "../../../../components/forms/FormInput";
+import Radio, { type RadioOption } from "../../../../components/forms/Radio";
 import TextareaInput from "../../../../components/forms/TextareaInput";
+import { FileUploadField } from "../../../../components/ui/FileUpload/FileUploadField";
+import {
+	createRemoteFileUploadValue,
+	revokeFilePreview,
+} from "../../../../components/ui/FileUpload/fileUpload.helpers";
+import type { FileUploadValue } from "../../../../components/ui/FileUpload/fileUpload.types";
+import { getAuditActionErrorMessage } from "../audit-error.utils";
 import AuditTemplateConfiguredField from "./AuditTemplateConfiguredField";
 import AuditTemplateScoringMatrix from "./AuditTemplateScoringMatrix";
 import {
@@ -13,7 +21,11 @@ import {
 	PARAMETER_TITLE_MAX_LENGTH,
 	TEMPLATE_EVIDENCE_MAX_LIMIT,
 } from "./audit-template.constants";
-import type { AuditTemplateLayout } from "./audit-template.schemas";
+import type {
+	AuditTemplateLayout,
+	AuditTemplatePhotoUploader,
+	AuditTemplateReferencePhoto,
+} from "./audit-template.schemas";
 import type {
 	AuditTemplateBuildFormValues,
 	AuditTemplateFieldConfig,
@@ -37,10 +49,112 @@ type Props = {
 	 */
 	bare?: boolean;
 	disabled?: boolean;
+	/**
+	 * Uploads a reference image and resolves with its storage key + URL.
+	 * Passing it turns on the optional "Reference image" field; modules that
+	 * have no reference images (Factory) simply do not pass it.
+	 */
+	onUploadReferencePhoto?: AuditTemplatePhotoUploader;
 	onMove: (fromIndex: number, toIndex: number) => void;
 	onRemove: (index: number) => void;
 	onDuplicate?: (index: number) => void;
 };
+
+const EVIDENCE_OPTIONS: RadioOption[] = [
+	{ label: "Yes", value: "yes" },
+	{ label: "No", value: "no" },
+];
+
+// ── Reference image (optional) ────────────────────────────────────────
+
+type ReferencePhotoFieldProps = {
+	value: AuditTemplateReferencePhoto | null;
+	upload: AuditTemplatePhotoUploader;
+	disabled: boolean;
+	error?: string;
+	onChange: (value: AuditTemplateReferencePhoto | null) => void;
+};
+
+/**
+ * Wraps the common FileUploadField. The file is uploaded as soon as it is
+ * picked, and only the returned key / URL goes into the form — so nothing
+ * breaks when the user moves between builder steps, and a failed upload
+ * never blocks saving the checklist (the image is optional).
+ */
+function ReferencePhotoField({
+	value,
+	upload,
+	disabled,
+	error,
+	onChange,
+}: ReferencePhotoFieldProps) {
+	const [isUploading, setIsUploading] = useState(false);
+	const [uploadError, setUploadError] = useState<string | null>(null);
+
+	const fileValue = useMemo<FileUploadValue | null>(
+		() =>
+			value
+				? createRemoteFileUploadValue({
+						id: value.key,
+						url: value.url,
+						name: value.name,
+					})
+				: null,
+		[value],
+	);
+
+	const handleChange = async (next: FileUploadValue | null) => {
+		setUploadError(null);
+
+		// Removed.
+		if (!next) {
+			onChange(null);
+			return;
+		}
+
+		// Only a freshly picked file needs uploading.
+		const file = next.file;
+		if (!file) return;
+
+		setIsUploading(true);
+		try {
+			const uploaded = await upload(file);
+			onChange({ key: uploaded.key, url: uploaded.url, name: file.name });
+		} catch (uploadFailure) {
+			setUploadError(getAuditActionErrorMessage(uploadFailure, "template"));
+		} finally {
+			// The local preview is no longer needed once uploaded (or failed).
+			revokeFilePreview(next);
+			setIsUploading(false);
+		}
+	};
+
+	return (
+		<div className="rounded-lg border border-(--color-border-default) bg-(--color-bg-surface) p-3">
+			<FileUploadField
+				kind="image"
+				label="Reference image (optional)"
+				tooltip="An example photo for this parameter. JPG or PNG, up to 5 MB."
+				value={fileValue}
+				previewVariant="card"
+				disabled={disabled || isUploading}
+				error={uploadError ?? error}
+				onChange={(next) => void handleChange(next)}
+			/>
+			{isUploading ? (
+				<p
+					className="mt-1.5 text-xs text-(--color-text-secondary)"
+					role="status"
+					aria-live="polite"
+				>
+					Uploading image…
+				</p>
+			) : null}
+		</div>
+	);
+}
+
+// ── Parameter editor ──────────────────────────────────────────────────
 
 export default function AuditTemplateParameterEditor({
 	sectionIndex,
@@ -50,6 +164,7 @@ export default function AuditTemplateParameterEditor({
 	layout = "sections",
 	bare = false,
 	disabled = false,
+	onUploadReferencePhoto,
 	onMove,
 	onRemove,
 	onDuplicate,
@@ -132,12 +247,14 @@ export default function AuditTemplateParameterEditor({
 					control={control}
 					name={`${basePath}.evidenceRequired`}
 					render={({ field }) => (
-						<Toggle
-							checked={field.value}
-							onChange={field.onChange}
+						<Radio
+							name={`${idPrefix}-evidence-required`}
+							groupLabel="Photo evidence required"
+							helperText="When Yes, the auditor must attach photos for this parameter."
+							options={EVIDENCE_OPTIONS}
+							selectedValue={field.value ? "yes" : "no"}
+							onChange={(next) => field.onChange(next === "yes")}
 							disabled={disabled}
-							size="sm"
-							label="Photo evidence required"
 						/>
 					)}
 				/>
@@ -175,6 +292,22 @@ export default function AuditTemplateParameterEditor({
 					</div>
 				) : null}
 			</div>
+
+			{onUploadReferencePhoto ? (
+				<Controller
+					control={control}
+					name={`${basePath}.referencePhoto`}
+					render={({ field }) => (
+						<ReferencePhotoField
+							value={field.value ?? null}
+							upload={onUploadReferencePhoto}
+							disabled={disabled}
+							error={parameterErrors?.referencePhoto?.message}
+							onChange={field.onChange}
+						/>
+					)}
+				/>
+			) : null}
 
 			<p className="text-xs text-(--color-text-secondary)">
 				Remarks are always available to the auditor and are optional.

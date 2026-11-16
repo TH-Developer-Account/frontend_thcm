@@ -8072,3 +8072,269 @@
 	overflow-wrap: normal;
 	word-break: normal;
 }
+
+/* =====================================================
+   TEMPLATE VIEW — expandable section cards + line items
+   Paste at the END of styles/components.css
+===================================================== */
+
+@layer components {
+	.ui-template-view-toolbar {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+	}
+
+	.ui-template-view-search {
+		max-width: 24rem;
+		flex: 1 1 14rem;
+	}
+
+	.ui-template-view-count {
+		margin: 0;
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
+	}
+
+	/* Section cards sit in a single Card; rows own their padding */
+	.ui-template-view-card .ui-card-sections {
+		gap: var(--space-3);
+	}
+
+	.ui-template-view-section-body {
+		padding: 0;
+	}
+
+	.ui-template-view-section-icon {
+		color: var(--color-icon-brand);
+	}
+
+	.ui-template-view-list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.ui-template-view-item + .ui-template-view-item {
+		border-top: var(--border-width-default) solid var(--color-border-subtle);
+	}
+
+	/* ---------- Row ---------- */
+
+	.ui-template-view-row {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		align-items: center;
+		gap: var(--space-3);
+		padding: var(--space-3) var(--space-4);
+
+		border: 0;
+		background: transparent;
+		color: inherit;
+		text-align: left;
+		cursor: pointer;
+
+		transition: background-color var(--duration-fast) var(--ease-standard);
+	}
+
+	.ui-template-view-row:hover {
+		background-color: var(--color-bg-surface-hover);
+	}
+
+	.ui-template-view-row:focus-visible {
+		outline: 2px solid var(--color-brand);
+		outline-offset: -2px;
+	}
+
+	.ui-template-view-index {
+		display: grid;
+		width: 2rem;
+		height: 2rem;
+		flex: 0 0 auto;
+		place-items: center;
+
+		border-radius: var(--radius-full);
+		background-color: var(--color-bg-surface-muted);
+		color: var(--color-text-secondary);
+
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.ui-template-view-copy {
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+		gap: var(--space-0-5);
+	}
+
+	.ui-template-view-title {
+		color: var(--color-text-primary);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-semibold);
+		line-height: var(--line-height-tight);
+		overflow-wrap: anywhere;
+	}
+
+	.ui-template-view-description {
+		display: -webkit-box;
+		overflow: hidden;
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
+		line-height: var(--line-height-normal);
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 1;
+	}
+
+	.ui-template-view-item[data-open="true"] .ui-template-view-description {
+		-webkit-line-clamp: 2;
+	}
+
+	.ui-template-view-meta {
+		display: inline-flex;
+		flex: 0 0 auto;
+		align-items: center;
+		gap: var(--space-1-5);
+	}
+
+	.ui-template-view-chevron {
+		flex: 0 0 auto;
+		color: var(--color-icon-muted);
+		transition: transform var(--transition-fast);
+	}
+
+	.ui-template-view-item[data-open="true"] .ui-template-view-chevron {
+		transform: rotate(90deg);
+		color: var(--color-icon-brand);
+	}
+
+	/* ---------- Expanded panel ---------- */
+
+	.ui-template-view-panel {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 11rem;
+		gap: var(--space-4);
+
+		/* Align with the title: row padding + index circle + gap */
+		padding: var(--space-1) var(--space-4) var(--space-4)
+			calc(var(--space-4) + 2rem + var(--space-3));
+	}
+
+	.ui-template-view-panel[hidden] {
+		display: none;
+	}
+
+	.ui-template-view-panel-main {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	.ui-template-view-label {
+		margin: 0 0 var(--space-1);
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-semibold);
+	}
+
+	.ui-template-view-value {
+		margin: 0;
+		color: var(--color-text-primary);
+		font-size: var(--font-size-sm);
+		line-height: var(--line-height-normal);
+		overflow-wrap: anywhere;
+	}
+
+	.ui-template-view-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1-5);
+	}
+
+	.ui-template-view-table {
+		width: 100%;
+		max-width: 32rem;
+		border-collapse: collapse;
+		font-size: var(--font-size-xs);
+	}
+
+	.ui-template-view-table th,
+	.ui-template-view-table td {
+		padding: var(--space-1) var(--space-2) var(--space-1) 0;
+		text-align: left;
+		vertical-align: top;
+		color: var(--color-text-primary);
+	}
+
+	.ui-template-view-table thead th {
+		color: var(--color-text-secondary);
+		font-weight: var(--font-weight-semibold);
+		border-bottom: var(--border-width-default) solid var(--color-border-subtle);
+	}
+
+	.ui-template-view-table-score {
+		width: 3.5rem;
+		font-weight: var(--font-weight-semibold);
+	}
+
+	.ui-template-view-photo-link {
+		display: block;
+		overflow: hidden;
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-sm);
+	}
+
+	.ui-template-view-photo {
+		display: block;
+		width: 100%;
+		aspect-ratio: 4 / 3;
+		object-fit: cover;
+	}
+
+	.ui-template-view-photo-empty {
+		display: flex;
+		aspect-ratio: 4 / 3;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-1);
+
+		border: var(--border-width-default) dashed var(--color-border-default);
+		border-radius: var(--radius-sm);
+		color: var(--color-text-muted);
+		font-size: var(--font-size-xs);
+		text-align: center;
+	}
+
+	@media (max-width: 767px) {
+		.ui-template-view-row {
+			padding-inline: var(--space-3);
+		}
+
+		/* Chip is repeated inside the panel on small screens */
+		.ui-template-view-meta {
+			display: none;
+		}
+
+		.ui-template-view-panel {
+			grid-template-columns: minmax(0, 1fr);
+			padding: var(--space-1) var(--space-3) var(--space-3);
+		}
+
+		.ui-template-view-panel-photo {
+			max-width: 12rem;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.ui-template-view-chevron,
+		.ui-template-view-row {
+			transition: none;
+		}
+	}
+}

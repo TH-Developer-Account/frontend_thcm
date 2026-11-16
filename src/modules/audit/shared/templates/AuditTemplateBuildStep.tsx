@@ -9,7 +9,10 @@ import {
 
 import Button from "../../../../components/common/Button";
 import AuditTemplateSectionCard from "./AuditTemplateSectionCard";
-import type { AuditTemplateLayout } from "./audit-template.schemas";
+import type {
+	AuditTemplateLayout,
+	AuditTemplatePhotoUploader,
+} from "./audit-template.schemas";
 import type {
 	AuditTemplateBuildFormValues,
 	AuditTemplateFieldConfig,
@@ -25,6 +28,8 @@ type Props = {
 	layout?: AuditTemplateLayout;
 	onSubmit: FormEventHandler<HTMLFormElement>;
 	disabled?: boolean;
+	/** Turns on the optional "Reference image" field for each parameter. */
+	onUploadReferencePhoto?: AuditTemplatePhotoUploader;
 };
 
 export default function AuditTemplateBuildStep({
@@ -33,6 +38,7 @@ export default function AuditTemplateBuildStep({
 	layout = "sections",
 	onSubmit,
 	disabled = false,
+	onUploadReferencePhoto,
 }: Props) {
 	const { control, formState } = form;
 	const isFlat = layout === "flat";
@@ -62,6 +68,7 @@ export default function AuditTemplateBuildStep({
 							parameterFields={parameterFields}
 							layout={layout}
 							disabled={disabled}
+							onUploadReferencePhoto={onUploadReferencePhoto}
 							onRemove={remove}
 							onMove={move}
 						/>

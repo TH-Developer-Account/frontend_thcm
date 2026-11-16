@@ -3,22 +3,26 @@
 // Admin / audit manager: pick a published checklist, a period (quarter or
 // year), a reviewer and the dealers. One audit is created per dealer. The
 // backend rejects duplicates (same dealer, facility, type and period).
-
+import { useMemo, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 
 import { Alert } from "../../../../components/common/Alert";
 import Button from "../../../../components/common/Button";
 import Card from "../../../../components/common/Card";
-import FormInput from "../../../../components/forms/FormInput";
-import MultiSelectInput from "../../../../components/forms/MultiSelectInput";
+import DatePickerInput from "../../../../components/common/DatePickerInput";
+import UserAsyncSelect, {
+	type UserOption,
+} from "../../../../components/forms/AsyncSelect";
 import SelectInput from "../../../../components/forms/SelectInput";
 import PageNavigation from "../../../../components/ui/PageNavigation/PageNavigation";
 import PageSectionLayout from "../../../../layout/PageSectionLayout";
 import { dealerAuditContent as content } from "../dealer-audit.content";
-import { toDateInputValue } from "../../shared/execution/audit-execution.format";
+import {
+	fromDateInputValue,
+	toDateInputValue,
+} from "../../shared/execution/audit-execution.format";
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
 import { createDealerAuditSchema } from "../dealer-audit.schemas";
 import {
@@ -32,9 +36,11 @@ import type {
 	DealerAuditQuarter,
 } from "../dealer-audit.types";
 import { useCreateDealerAudits } from "../hooks/useDealerAuditMutations";
-import { useDealerOptions, useReviewerOptions } from "../hooks/useDealerAudits";
 import { useDealerChecklistTemplates } from "../hooks/useDealerChecklistTemplates";
 import { getAuditActionErrorMessage } from "../../shared/audit-error.utils";
+import BusinessPartnerAsyncSelect, {
+	type BusinessPartnerOption,
+} from "../../../admin/users/BusinessPartnerAsyncSelect";
 
 const text = content.ui.create;
 
@@ -48,7 +54,6 @@ const PUBLISHED_TEMPLATE_PARAMS = {
 	search: "",
 	statuses: ["PUBLISHED"],
 	facilityTypes: [],
-	auditCategories: [],
 	sortBy: "name",
 	sortOrder: "asc",
 } as const;
@@ -59,23 +64,22 @@ export default function CreateDealerAuditPage() {
 		...PUBLISHED_TEMPLATE_PARAMS,
 		statuses: [...PUBLISHED_TEMPLATE_PARAMS.statuses],
 		facilityTypes: [],
-		auditCategories: [],
 	});
-	const dealers = useDealerOptions();
-	const reviewers = useReviewerOptions();
 	const {
 		mutateAsync: createAudits,
 		isPending,
 		error,
 		reset,
 	} = useCreateDealerAudits();
-
+	const [reviewer, setReviewer] = useState<UserOption | null>(null);
+	const [selectedDealers, setSelectedDealers] = useState<
+		BusinessPartnerOption[]
+	>([]);
 	const schema = useMemo(() => createDealerAuditSchema(), []);
 	const currentPeriod = useMemo(() => getPeriodOf(new Date(), "QUARTERLY"), []);
 
 	const {
 		control,
-		register,
 		handleSubmit,
 		setValue,
 		formState: { errors },
@@ -93,6 +97,9 @@ export default function CreateDealerAuditPage() {
 	});
 
 	const periodType = useWatch({ control, name: "periodType" });
+	const dueDate = useWatch({ control, name: "dueDate" });
+	// The form keeps yyyy-mm-dd; the date picker works with a Date.
+	const dueDateValue = useMemo(() => fromDateInputValue(dueDate), [dueDate]);
 
 	const templateOptions = useMemo(
 		() =>
@@ -101,26 +108,6 @@ export default function CreateDealerAuditPage() {
 				label: `${row.name} · v${row.version}`,
 			})),
 		[templates.rows],
-	);
-	const reviewerOptions = useMemo(
-		() =>
-			(reviewers.data ?? []).map((reviewer) => ({
-				value: reviewer.id,
-				label: reviewer.designation
-					? `${reviewer.name} — ${reviewer.designation}`
-					: reviewer.name,
-			})),
-		[reviewers.data],
-	);
-	const dealerOptions = useMemo(
-		() =>
-			(dealers.data ?? []).map((dealer) => ({
-				value: dealer.id,
-				label: [dealer.name, dealer.code, dealer.location]
-					.filter(Boolean)
-					.join(" · "),
-			})),
-		[dealers.data],
 	);
 	const periodTypeOptions = PERIOD_TYPES.map((value) => ({
 		value,
@@ -149,8 +136,7 @@ export default function CreateDealerAuditPage() {
 		}
 	});
 
-	const hasMasterError =
-		templates.isError || dealers.isError || reviewers.isError;
+	const hasMasterError = templates.isError;
 
 	return (
 		<PageSectionLayout className="audit-page audit-page-narrow">
@@ -186,8 +172,6 @@ export default function CreateDealerAuditPage() {
 							label: text.retry,
 							onClick: () => {
 								void templates.refetch();
-								void dealers.refetch();
-								void reviewers.refetch();
 							},
 						}}
 					/>
@@ -317,14 +301,25 @@ export default function CreateDealerAuditPage() {
 								)}
 							/>
 						) : null}
-						<FormInput
-							type="date"
-							label={text.dueDate}
-							required
-							min={toDateInputValue(new Date())}
-							disabled={isPending}
-							error={errors.dueDate?.message}
-							{...register("dueDate")}
+						<Controller
+							control={control}
+							name="dueDate"
+							render={({ field }) => (
+								<DatePickerInput
+									mode="single"
+									label={text.dueDate}
+									required
+									disablePast
+									disabled={isPending}
+									value={dueDateValue}
+									onChange={(date) =>
+										field.onChange(
+											date instanceof Date ? toDateInputValue(date) : "",
+										)
+									}
+									error={errors.dueDate?.message}
+								/>
+							)}
 						/>
 					</div>
 					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-2">
@@ -332,22 +327,18 @@ export default function CreateDealerAuditPage() {
 							control={control}
 							name="reviewerId"
 							render={({ field }) => (
-								<SelectInput
+								<UserAsyncSelect
+									name="reviewerId"
 									label={text.reviewer}
 									required
-									options={reviewerOptions}
-									value={
-										reviewerOptions.find(
-											(option) => option.value === field.value,
-										) ?? null
-									}
-									onChange={(option) => field.onChange(option?.value ?? "")}
-									isDisabled={isPending || reviewers.isLoading}
-									placeholder={
-										reviewers.isLoading
-											? text.loading
-											: text.reviewerPlaceholder
-									}
+									userType="THCM"
+									value={reviewer}
+									onChange={(user) => {
+										setReviewer(user);
+										field.onChange(user?.value ?? "");
+									}}
+									isDisabled={isPending}
+									placeholder={text.reviewerPlaceholder}
 									error={errors.reviewerId?.message}
 								/>
 							)}
@@ -358,20 +349,20 @@ export default function CreateDealerAuditPage() {
 							name="dealerIds"
 							render={({ field }) => (
 								<div className="space-y-2">
-									<MultiSelectInput
+									<BusinessPartnerAsyncSelect
+										name="dealerIds"
 										label={text.dealers}
 										required
-										options={dealerOptions}
-										value={dealerOptions.filter((option) =>
-											field.value.includes(option.value),
-										)}
-										onValueChange={({ value }) =>
-											field.onChange(value.map((option) => option.value))
-										}
-										isDisabled={isPending || dealers.isLoading}
-										placeholder={
-											dealers.isLoading ? text.loading : text.dealersPlaceholder
-										}
+										isMulti
+										isActive
+										bpType="DEALER"
+										value={selectedDealers}
+										onChange={(next) => {
+											setSelectedDealers(next);
+											field.onChange(next.map((option) => option.value));
+										}}
+										isDisabled={isPending}
+										placeholder={text.dealersPlaceholder}
 										error={errors.dealerIds?.message}
 									/>
 									<div className="flex items-center justify-between gap-2">
@@ -381,30 +372,18 @@ export default function CreateDealerAuditPage() {
 												String(field.value.length),
 											)}
 										</span>
-										<div className="flex gap-2">
-											<Button
-												type="button"
-												text={text.selectAllDealers}
-												appearance="standard"
-												variant="outline"
-												size="sm"
-												disabled={isPending || dealerOptions.length === 0}
-												onClick={() =>
-													field.onChange(
-														dealerOptions.map((option) => option.value),
-													)
-												}
-											/>
-											<Button
-												type="button"
-												text={text.clearDealers}
-												appearance="standard"
-												variant="outline"
-												size="sm"
-												disabled={isPending || field.value.length === 0}
-												onClick={() => field.onChange([])}
-											/>
-										</div>
+										<Button
+											type="button"
+											text={text.clearDealers}
+											appearance="standard"
+											variant="outline"
+											size="sm"
+											disabled={isPending || field.value.length === 0}
+											onClick={() => {
+												setSelectedDealers([]);
+												field.onChange([]);
+											}}
+										/>
 									</div>
 								</div>
 							)}

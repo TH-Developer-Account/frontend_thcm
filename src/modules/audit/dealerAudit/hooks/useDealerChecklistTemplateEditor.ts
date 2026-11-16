@@ -7,9 +7,16 @@
 // Save flow:
 //   first save            → POST  /dealer-audit/templates            (DRAFT v1)
 //   later saves (draft)   → PATCH /dealer-audit/templates/:id        (sends expectedUpdatedAt)
-//   editing a published / archived template
-//                         → POST  /templates/:id/new-draft, then PATCH the new draft
 //   publish               → save, then POST /templates/:id/publish
+//
+// Published / archived versions are immutable. They are opened read-only
+// (`isReadOnlyVersion`) and changed through "New version" (library / view
+// page), which creates the next draft and opens THAT draft here. The
+// new-draft-on-save branch below is only a safety net for a stale tab.
+//
+// Reference images are uploaded the moment they are picked
+// (POST /templates/reference-photos); the form then holds only the returned
+// key, which is saved with the parameter.
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,13 +25,13 @@ import { useToast } from "../../../../context/Auth/AuthContext";
 import {
 	getApiFieldErrors,
 	getAuditActionErrorMessage,
+	getHttpStatus,
 	type ServerFieldError,
 } from "../../shared/audit-error.utils";
 import type { AuditTemplateBuilderValues } from "../../shared/templates/audit.template.types";
 import { dealerAuditKeys } from "../dealer-audit.queries";
 import { dealerTemplateApi } from "../templates/dealer-template.api";
 import {
-	getReferencePhotoKeys,
 	mapBuilderValuesToCreateDealerTemplatePayload,
 	mapBuilderValuesToUpdateDealerTemplatePayload,
 	mapDealerTemplateToBuilderValues,
@@ -54,6 +61,10 @@ const formatSavedLabel = (isoDate: string | null): string | null => {
 	})}`;
 };
 
+/** "…was updated by another user." → "…was updated by another user" */
+const withoutTrailingPunctuation = (message: string): string =>
+	message.replace(/[.\s]+$/, "");
+
 export function useDealerChecklistTemplateEditor(
 	templateId: string | undefined,
 ) {
@@ -68,6 +79,18 @@ export function useDealerChecklistTemplateEditor(
 	const [isPublishFlow, setIsPublishFlow] = useState(false);
 	const currentTemplate = savedTemplate ?? detailQuery.data ?? null;
 
+	// Status of the version this page was OPENED on. Publishing from here
+	// flips the cached status to PUBLISHED, which must not turn the page
+	// read-only mid-flow, so it is captured once per template.
+	const [loaded, setLoaded] = useState<{
+		id: string;
+		status: DealerChecklistTemplate["status"];
+	} | null>(null);
+	if (detailQuery.data && loaded?.id !== detailQuery.data.id) {
+		setLoaded({ id: detailQuery.data.id, status: detailQuery.data.status });
+	}
+	const isReadOnlyVersion = loaded !== null && loaded.status !== "DRAFT";
+
 	// Read once by the builder on mount; memoized so client ids stay stable.
 	const initialValues = useMemo(
 		() =>
@@ -79,6 +102,12 @@ export function useDealerChecklistTemplateEditor(
 
 	const cacheSavedTemplate = (template: DealerChecklistTemplate) => {
 		setSavedTemplate(template);
+		// Publishing archives the previous version, so other cached details
+		// are stale. Marked only — nothing refetches until it is opened.
+		void queryClient.invalidateQueries({
+			queryKey: dealerAuditKeys.templateDetails(),
+			refetchType: "none",
+		});
 		queryClient.setQueryData(
 			dealerAuditKeys.templateDetail(template.id),
 			template,
@@ -96,11 +125,8 @@ export function useDealerChecklistTemplateEditor(
 				);
 			}
 
-			// Published / archived versions are immutable: editing one starts
-			// the next draft version, then the changes are saved onto it.
-			// (Photo keys are looked up from the version the form was loaded
-			// from, so they must be read BEFORE switching to the new draft.)
-			const photoKeys = getReferencePhotoKeys(currentTemplate);
+			// Safety net: a published / archived version is immutable, so a
+			// stale tab starts the next draft and saves onto that instead.
 			const target =
 				currentTemplate.status === "DRAFT"
 					? currentTemplate
@@ -111,7 +137,6 @@ export function useDealerChecklistTemplateEditor(
 				payload: mapBuilderValuesToUpdateDealerTemplatePayload(
 					values,
 					target.updatedAt,
-					photoKeys,
 				),
 			});
 		},
@@ -126,6 +151,7 @@ export function useDealerChecklistTemplateEditor(
 
 	// Toast shows the server's real message (e.g. "A template with this name
 	// already exists…"); field errors are also pushed onto the form fields.
+	// A 409 means someone else saved first: say so and how to recover.
 	const showError = (
 		error: unknown,
 		title: string,
@@ -133,10 +159,15 @@ export function useDealerChecklistTemplateEditor(
 	) => {
 		const fieldErrors = getApiFieldErrors(error);
 		if (fieldErrors.length > 0) applyServerErrors?.(fieldErrors);
+
+		const message = getAuditActionErrorMessage(error, TEMPLATE_SUBJECT);
+		const isConflict = getHttpStatus(error) === 409;
 		showToast({
 			type: "error",
-			title,
-			description: getAuditActionErrorMessage(error, TEMPLATE_SUBJECT),
+			title: isConflict ? "Template was changed elsewhere" : title,
+			description: isConflict
+				? `${withoutTrailingPunctuation(message)}. Reload the page to get the latest version; edits not saved here will be lost.`
+				: message,
 		});
 	};
 
@@ -177,9 +208,15 @@ export function useDealerChecklistTemplateEditor(
 		}
 	};
 
+	/** Uploads one reference image; the builder stores the returned key. */
+	const uploadReferencePhoto = (file: File) =>
+		dealerTemplateApi.uploadReferencePhoto(file);
+
 	return {
 		template: currentTemplate,
 		initialValues,
+		/** Opened on a PUBLISHED / ARCHIVED version — send to the view page. */
+		isReadOnlyVersion,
 		isLoading: Boolean(templateId) && detailQuery.isLoading,
 		isError: detailQuery.isError,
 		loadErrorMessage: detailQuery.isError
@@ -191,5 +228,6 @@ export function useDealerChecklistTemplateEditor(
 		lastSavedLabel: formatSavedLabel(savedTemplate?.updatedAt ?? null),
 		saveDraft,
 		publish,
+		uploadReferencePhoto,
 	};
 }

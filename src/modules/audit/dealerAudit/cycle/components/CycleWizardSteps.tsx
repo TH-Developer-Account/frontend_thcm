@@ -9,10 +9,14 @@ import { useMemo, useState } from "react";
 
 import { Alert } from "../../../../../components/common/Alert";
 import Button from "../../../../../components/common/Button";
+import DatePickerInput from "../../../../../components/common/DatePickerInput";
 import FormInput from "../../../../../components/forms/FormInput";
 import SelectInput from "../../../../../components/forms/SelectInput";
 import TextareaInput from "../../../../../components/forms/TextareaInput";
-import { toDateInputValue } from "../../../shared/execution/audit-execution.format";
+import {
+	fromDateInputValue,
+	toDateInputValue,
+} from "../../../shared/execution/audit-execution.format";
 import { dealerAuditContent as auditContent } from "../../dealer-audit.content";
 import { formatPeriodLabel, getSelectableYears } from "../../dealer-audit.sla";
 import type {
@@ -79,6 +83,11 @@ export function CycleDetailsStep({
 		value: String(quarter),
 		label: auditContent.ui.list.quarters[quarter],
 	}));
+	// The wizard keeps yyyy-mm-dd; the date picker works with a Date.
+	const dueDateValue = useMemo(
+		() => fromDateInputValue(values.dueDate),
+		[values.dueDate],
+	);
 
 	return (
 		<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -151,15 +160,19 @@ export function CycleDetailsStep({
 				/>
 			) : null}
 
-			<FormInput
-				type="date"
+			<DatePickerInput
+				mode="single"
 				label={text.fields.dueDate}
 				required
-				min={toDateInputValue(new Date())}
-				value={values.dueDate}
+				disablePast
 				disabled={isDisabled}
+				value={dueDateValue}
+				onChange={(date) =>
+					onChange({
+						dueDate: date instanceof Date ? toDateInputValue(date) : "",
+					})
+				}
 				error={errors.dueDate}
-				onChange={(event) => onChange({ dueDate: event.target.value })}
 			/>
 
 			<div className="sm:col-span-2">

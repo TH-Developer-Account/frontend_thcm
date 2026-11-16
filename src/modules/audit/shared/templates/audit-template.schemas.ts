@@ -197,6 +197,33 @@ export const validateScoreLevels = (
 	});
 };
 
+// ── Reference photo ───────────────────────────────────────────────────
+
+/**
+ * Optional example image for a parameter (Dealer Audit). Only the uploaded
+ * file's reference is kept in the form — never a File or blob URL — so it
+ * survives moving between builder steps.
+ */
+export const auditTemplateReferencePhotoSchema = z.object({
+	/** Storage key returned by the upload; this is what gets saved. */
+	key: z.string(),
+	/** Preview URL (may be empty when the server could not sign one). */
+	url: z.string(),
+	name: z.string(),
+});
+
+export type AuditTemplateReferencePhoto = z.infer<
+	typeof auditTemplateReferencePhotoSchema
+>;
+
+/**
+ * Module-supplied upload call. When a module passes one to the builder the
+ * "Reference image" field appears; without it (Factory Audit) it is hidden.
+ */
+export type AuditTemplatePhotoUploader = (
+	file: File,
+) => Promise<{ key: string; url: string }>;
+
 // ── Parameter ─────────────────────────────────────────────────────────
 
 export const auditTemplateParameterSchema = z.object({
@@ -225,6 +252,8 @@ export const auditTemplateParameterSchema = z.object({
 	evidenceRequired: z.boolean(),
 	minEvidenceCount: numberOrEmpty,
 	maxEvidenceCount: numberOrEmpty,
+	/** Optional. Absent for modules that do not use reference images. */
+	referencePhoto: auditTemplateReferencePhotoSchema.nullable().optional(),
 });
 
 type ParameterShape = z.infer<typeof auditTemplateParameterSchema>;

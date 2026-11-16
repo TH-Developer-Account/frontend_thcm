@@ -42,6 +42,7 @@ import {
 	createAuditTemplateBuildSchema,
 	createAuditTemplateDetailsSchema,
 	type AuditTemplateLayout,
+	type AuditTemplatePhotoUploader,
 } from "./audit-template.schemas";
 import type {
 	AuditTemplateBuildFormValues,
@@ -74,6 +75,13 @@ export interface AuditTemplateBuilderProps {
 	/** Existing template (edit mode). Read once on mount — remount with a `key` to reload. */
 	initialValues?: AuditTemplateBuilderValues;
 	namePlaceholder?: string;
+
+	/**
+	 * Uploads a parameter's reference image and resolves with its storage
+	 * key + URL. Passing it shows the optional "Reference image" field on
+	 * every parameter; leave it out (Factory Audit) to hide the field.
+	 */
+	onUploadReferencePhoto?: AuditTemplatePhotoUploader;
 
 	/** Rendered above the step progress (e.g. "editing a published version" notice). */
 	notice?: ReactNode;
@@ -112,6 +120,7 @@ export default function AuditTemplateBuilder({
 	layout = "sections",
 	initialValues,
 	namePlaceholder,
+	onUploadReferencePhoto,
 	notice,
 	isSaving = false,
 	isPublishing = false,
@@ -278,6 +287,78 @@ export default function AuditTemplateBuilder({
 		void handleContinue();
 	};
 
+	const isReviewStep = step === "review";
+	// Wireframe: Details → Cancel · Build → Back · Review → Cancel + Back.
+	const showCancel = step !== "build";
+	const showBack = step !== "details";
+
+	const footerContent = (
+		<div className="flex w-full flex-wrap items-center justify-between gap-2">
+			<div className="flex items-center gap-3">
+				{showCancel ? (
+					<Button
+						text="Cancel"
+						variant="outline"
+						disabled={isBusy}
+						onClick={handleCancel}
+					/>
+				) : null}
+				{showBack ? (
+					<Button
+						text="Back"
+						variant="outline"
+						Icon={ArrowLeft}
+						disabled={isBusy}
+						onClick={handleBack}
+					/>
+				) : null}
+				<span
+					className="hidden text-xs text-(--color-text-secondary) sm:inline"
+					aria-live="polite"
+				>
+					{isSaving
+						? "Saving…"
+						: isDirty
+							? "Unsaved changes"
+							: (lastSavedLabel ?? "")}
+				</span>
+			</div>
+
+			<div className="flex items-center gap-2">
+				{isReviewStep ? (
+					<>
+						<Button
+							text="Save draft"
+							variant="outline"
+							Icon={Save}
+							loading={isSaving}
+							disabled={isBusy}
+							onClick={() => void handleSaveDraft()}
+						/>
+						<Button
+							text="Publish checklist"
+							variant="brand"
+							Icon={Check}
+							iconPosition="right"
+							loading={isPublishing}
+							disabled={isBusy}
+							onClick={() => void handlePublish()}
+						/>
+					</>
+				) : (
+					<Button
+						text="Continue"
+						variant="brand"
+						Icon={ArrowRight}
+						iconPosition="right"
+						disabled={isBusy}
+						onClick={() => void handleContinue()}
+					/>
+				)}
+			</div>
+		</div>
+	);
+
 	return (
 		<div className="">
 			{notice ? <div className="mb-4">{notice}</div> : null}
@@ -287,101 +368,46 @@ export default function AuditTemplateBuilder({
 				currentStep={stepIndex + 1}
 				ariaLabel="Template builder progress"
 			/>
-			<Card
-				footer={
-					<div className="flex flex-wrap items-center justify-between gap-2 w-full">
-						<div className="flex items-center gap-3">
-							{step === "details" ? (
-								<Button
-									text="Cancel"
-									variant="outline"
-									disabled={isBusy}
-									onClick={handleCancel}
-								/>
-							) : (
-								<Button
-									text="Back"
-									variant="outline"
-									Icon={ArrowLeft}
-									disabled={isBusy}
-									onClick={handleBack}
-								/>
-							)}
-							<span
-								className="hidden text-xs text-(--color-text-secondary) sm:inline"
-								aria-live="polite"
-							>
-								{isSaving
-									? "Saving…"
-									: isDirty
-										? "Unsaved changes"
-										: (lastSavedLabel ?? "")}
-							</span>
-						</div>
 
-						<div className="flex items-center gap-2">
-							{step === "review" ? (
-								<>
-									<Button
-										text="Save draft"
-										variant="outline"
-										Icon={Save}
-										loading={isSaving}
-										disabled={isBusy}
-										onClick={() => void handleSaveDraft()}
-									/>
-									<Button
-										text="Publish"
-										variant="brand"
-										Icon={Check}
-										loading={isPublishing}
-										disabled={isBusy}
-										onClick={() => void handlePublish()}
-									/>
-								</>
-							) : (
-								<Button
-									text="Continue"
-									variant="brand"
-									Icon={ArrowRight}
-									iconPosition="right"
-									disabled={isBusy}
-									onClick={() => void handleContinue()}
-								/>
-							)}
-						</div>
-					</div>
-				}
-			>
-				{step === "details" ? (
-					<AuditTemplateDetailsStep
-						form={detailsForm}
-						detailFields={detailFields}
-						namePlaceholder={namePlaceholder}
-						disabled={isBusy}
-						onSubmit={handleStepSubmit}
-					/>
-				) : null}
-
-				{step === "build" ? (
-					<AuditTemplateBuildStep
-						form={buildForm}
-						parameterFields={parameterFields}
-						layout={layout}
-						disabled={isBusy}
-						onSubmit={handleStepSubmit}
-					/>
-				) : null}
-
-				{step === "review" ? (
+			{isReviewStep ? (
+				// Wireframe: group cards and the summary sit on the page, and the
+				// action bar is its own card underneath.
+				<div className="space-y-4">
 					<AuditTemplatePreview
+						variant="review"
 						values={collectValues()}
 						detailFields={detailFields}
 						parameterFields={parameterFields}
 						layout={layout}
 					/>
-				) : null}
-			</Card>
+					<Card variant="outlined" padding="compact">
+						{footerContent}
+					</Card>
+				</div>
+			) : (
+				<Card footer={footerContent}>
+					{step === "details" ? (
+						<AuditTemplateDetailsStep
+							form={detailsForm}
+							detailFields={detailFields}
+							namePlaceholder={namePlaceholder}
+							disabled={isBusy}
+							onSubmit={handleStepSubmit}
+						/>
+					) : null}
+
+					{step === "build" ? (
+						<AuditTemplateBuildStep
+							form={buildForm}
+							parameterFields={parameterFields}
+							layout={layout}
+							disabled={isBusy}
+							onUploadReferencePhoto={onUploadReferencePhoto}
+							onSubmit={handleStepSubmit}
+						/>
+					) : null}
+				</Card>
+			)}
 
 			<AuditConfirmModal
 				open={isDiscardOpen}

@@ -3,11 +3,14 @@
 // Create (/checklist/create) and edit (/checklist/:templateId/edit).
 // Thin route-level wrapper: loads data, supplies Dealer field config,
 // wires navigation. All builder behaviour lives in the shared builder.
+//
+// Only DRAFT versions are editable. Opening the edit URL of a published or
+// archived version (old link, bookmark) redirects to the read-only view,
+// where "New version" starts the next draft.
 
-import { useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { FileWarning } from "lucide-react";
 
-import { Alert } from "../../../../components/common/Alert";
 import Button from "../../../../components/common/Button";
 import {
 	CardEmpty,
@@ -31,6 +34,12 @@ export default function CreateChecklistTemplatePage() {
 	const editor = useDealerChecklistTemplateEditor(templateId);
 
 	const goToLibrary = () => navigate(DEALER_AUDIT_ROUTES.template.list);
+
+	if (isEditMode && templateId && editor.isReadOnlyVersion) {
+		return (
+			<Navigate to={DEALER_AUDIT_ROUTES.template.view(templateId)} replace />
+		);
+	}
 
 	const header = (
 		<PageHeader>
@@ -85,8 +94,6 @@ export default function CreateChecklistTemplatePage() {
 		);
 	}
 
-	const isPublishedVersion = editor.template?.status === "PUBLISHED";
-
 	return (
 		<PageSectionLayout className="dealer-audit-page">
 			{header}
@@ -99,16 +106,8 @@ export default function CreateChecklistTemplatePage() {
 				parameterFields={DEALER_TEMPLATE_PARAMETER_FIELDS}
 				initialValues={editor.initialValues}
 				namePlaceholder="e.g. Dealer Facility Audit — FY 2026-27"
-				notice={
-					isPublishedVersion ? (
-						<Alert
-							variant="info"
-							type="banner"
-							title={`Editing published version v${editor.template?.version}`}
-							description="Saving creates a new draft version. Audits already created keep the version they started with."
-						/>
-					) : null
-				}
+				// Optional reference image per parameter.
+				onUploadReferencePhoto={editor.uploadReferencePhoto}
 				isSaving={editor.isSaving}
 				isPublishing={editor.isPublishing}
 				lastSavedLabel={editor.lastSavedLabel}

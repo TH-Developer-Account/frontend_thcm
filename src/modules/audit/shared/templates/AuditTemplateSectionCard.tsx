@@ -14,7 +14,10 @@ import FormInput from "../../../../components/forms/FormInput";
 import { SearchInput } from "../../../../components/forms/SearchInput";
 import AuditTemplateParameterEditor from "./AuditTemplateParameterEditor";
 import { SECTION_NAME_MAX_LENGTH } from "./audit-template.constants";
-import type { AuditTemplateLayout } from "./audit-template.schemas";
+import type {
+	AuditTemplateLayout,
+	AuditTemplatePhotoUploader,
+} from "./audit-template.schemas";
 import type {
 	AuditTemplateBuildFormValues,
 	AuditTemplateFieldConfig,
@@ -34,6 +37,8 @@ type Props = {
 	parameterFields: readonly AuditTemplateFieldConfig[];
 	layout?: AuditTemplateLayout;
 	disabled?: boolean;
+	/** Turns on the optional "Reference image" field for each parameter. */
+	onUploadReferencePhoto?: AuditTemplatePhotoUploader;
 	onRemove: (index: number) => void;
 	onMove: (fromIndex: number, toIndex: number) => void;
 };
@@ -62,6 +67,7 @@ export default function AuditTemplateSectionCard({
 	parameterFields,
 	layout = "sections",
 	disabled = false,
+	onUploadReferencePhoto,
 	onRemove,
 	onMove,
 }: Props) {
@@ -141,6 +147,7 @@ export default function AuditTemplateSectionCard({
 						parameterFields={parameterFields}
 						layout={layout}
 						disabled={disabled}
+						onUploadReferencePhoto={onUploadReferencePhoto}
 						onMove={move}
 						onRemove={remove}
 						onDuplicate={handleDuplicate}
@@ -249,6 +256,7 @@ export default function AuditTemplateSectionCard({
 							layout={layout}
 							bare
 							disabled={disabled}
+							onUploadReferencePhoto={onUploadReferencePhoto}
 							onMove={move}
 							onRemove={remove}
 							onDuplicate={handleDuplicate}
