@@ -68,9 +68,14 @@ const DealerChecklistTemplateViewPage = lazy(
 		import("../modules/audit/dealerAudit/pages/DealerChecklistTemplateViewPage"),
 );
 
-/** "/audit/dealer/audits/create" -> "audits/create" (relative to the /audit/dealer/* parent). */
+/**
+ * "/audit/dealer/audits/create" -> "audits/create" (relative to the /audit/dealer/* parent).
+ * The route helpers encodeURIComponent() their ids, which turns the ":templateId" /
+ * ":auditId" placeholders into "%3AtemplateId" and stops React Router matching them
+ * as params, so decode them back here.
+ */
 const toRelativePath = (absolutePath: string): string =>
-	absolutePath.replace(`${DEALER_AUDIT_ROUTES.root}/`, "");
+	decodeURIComponent(absolutePath.replace(`${DEALER_AUDIT_ROUTES.root}/`, ""));
 
 const PageFallback = () => (
 	<div

@@ -5,19 +5,26 @@
 // `templateId` undefined → creating a new template.
 //
 // Save flow:
-//   first save  → POST  /dealer-audit/templates        (creates DRAFT v1)
-//   later saves → PATCH /dealer-audit/templates/:id    (draft only)
-//   publish     → save, then POST /templates/:id/publish
+//   first save            → POST  /dealer-audit/templates            (DRAFT v1)
+//   later saves (draft)   → PATCH /dealer-audit/templates/:id        (sends expectedUpdatedAt)
+//   editing a published / archived template
+//                         → POST  /templates/:id/new-draft, then PATCH the new draft
+//   publish               → save, then POST /templates/:id/publish
 
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useToast } from "../../../../context/Auth/AuthContext";
-import { getAuditActionErrorMessage } from "../../shared/audit-error.utils";
+import {
+	getApiFieldErrors,
+	getAuditActionErrorMessage,
+	type ServerFieldError,
+} from "../../shared/audit-error.utils";
 import type { AuditTemplateBuilderValues } from "../../shared/templates/audit.template.types";
 import { dealerAuditKeys } from "../dealer-audit.queries";
 import { dealerTemplateApi } from "../templates/dealer-template.api";
 import {
+	getReferencePhotoKeys,
 	mapBuilderValuesToCreateDealerTemplatePayload,
 	mapBuilderValuesToUpdateDealerTemplatePayload,
 	mapDealerTemplateToBuilderValues,
@@ -82,52 +89,80 @@ export function useDealerChecklistTemplateEditor(
 	};
 
 	const saveMutation = useMutation({
-		mutationFn: (values: AuditTemplateBuilderValues) =>
-			currentTemplate
-				? dealerTemplateApi.updateTemplate({
-						templateId: currentTemplate.id,
-						payload: mapBuilderValuesToUpdateDealerTemplatePayload(
-							values,
-							currentTemplate.version,
-						),
-					})
-				: dealerTemplateApi.createTemplate(
-						mapBuilderValuesToCreateDealerTemplatePayload(values),
-					),
+		mutationFn: async (values: AuditTemplateBuilderValues) => {
+			if (!currentTemplate) {
+				return dealerTemplateApi.createTemplate(
+					mapBuilderValuesToCreateDealerTemplatePayload(values),
+				);
+			}
+
+			// Published / archived versions are immutable: editing one starts
+			// the next draft version, then the changes are saved onto it.
+			// (Photo keys are looked up from the version the form was loaded
+			// from, so they must be read BEFORE switching to the new draft.)
+			const photoKeys = getReferencePhotoKeys(currentTemplate);
+			const target =
+				currentTemplate.status === "DRAFT"
+					? currentTemplate
+					: await dealerTemplateApi.createNewDraft(currentTemplate.id);
+
+			return dealerTemplateApi.updateTemplate({
+				templateId: target.id,
+				payload: mapBuilderValuesToUpdateDealerTemplatePayload(
+					values,
+					target.updatedAt,
+					photoKeys,
+				),
+			});
+		},
 		onSuccess: cacheSavedTemplate,
 	});
 
 	const publishMutation = useMutation({
-		mutationFn: (id: string) => dealerTemplateApi.publishTemplate(id),
+		mutationFn: (template: DealerChecklistTemplate) =>
+			dealerTemplateApi.publishTemplate(template.id, template.updatedAt),
 		onSuccess: cacheSavedTemplate,
 	});
 
-	const showError = (error: unknown, title: string) =>
+	// Toast shows the server's real message (e.g. "A template with this name
+	// already exists…"); field errors are also pushed onto the form fields.
+	const showError = (
+		error: unknown,
+		title: string,
+		applyServerErrors?: (errors: ServerFieldError[]) => void,
+	) => {
+		const fieldErrors = getApiFieldErrors(error);
+		if (fieldErrors.length > 0) applyServerErrors?.(fieldErrors);
 		showToast({
 			type: "error",
 			title,
 			description: getAuditActionErrorMessage(error, TEMPLATE_SUBJECT),
 		});
+	};
 
 	const saveDraft = async (
 		values: AuditTemplateBuilderValues,
+		applyServerErrors?: (errors: ServerFieldError[]) => void,
 	): Promise<AuditTemplateBuilderValues | null> => {
 		if (saveMutation.isPending || publishMutation.isPending) return null;
 		try {
 			const template = await saveMutation.mutateAsync(values);
 			return mapDealerTemplateToBuilderValues(template);
 		} catch (error) {
-			showError(error, "Draft not saved");
+			showError(error, "Draft not saved", applyServerErrors);
 			return null;
 		}
 	};
 
-	const publish = async (values: AuditTemplateBuilderValues): Promise<boolean> => {
+	const publish = async (
+		values: AuditTemplateBuilderValues,
+		applyServerErrors?: (errors: ServerFieldError[]) => void,
+	): Promise<boolean> => {
 		if (saveMutation.isPending || publishMutation.isPending) return false;
 		setIsPublishFlow(true);
 		try {
 			const saved = await saveMutation.mutateAsync(values);
-			await publishMutation.mutateAsync(saved.id);
+			await publishMutation.mutateAsync(saved);
 			showToast({
 				type: "success",
 				title: "Template published",
@@ -135,7 +170,7 @@ export function useDealerChecklistTemplateEditor(
 			});
 			return true;
 		} catch (error) {
-			showError(error, "Template not published");
+			showError(error, "Template not published", applyServerErrors);
 			return false;
 		} finally {
 			setIsPublishFlow(false);
@@ -153,7 +188,7 @@ export function useDealerChecklistTemplateEditor(
 		refetch: detailQuery.refetch,
 		isSaving: saveMutation.isPending && !isPublishFlow,
 		isPublishing: isPublishFlow,
-		lastSavedLabel: formatSavedLabel(savedTemplate?.updatedAt ?? savedTemplate?.createdAt ?? null),
+		lastSavedLabel: formatSavedLabel(savedTemplate?.updatedAt ?? null),
 		saveDraft,
 		publish,
 	};

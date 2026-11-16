@@ -5,8 +5,14 @@
 
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 
+/** One per-field validation message from a 422 response. */
+export interface ServerFieldError {
+	path: string;
+	message: string;
+}
+
 type ErrorWithResponse = {
-	response?: { status?: number };
+	response?: { status?: number; data?: { errors?: unknown } };
 	code?: string;
 	name?: string;
 };
@@ -21,6 +27,40 @@ export const isAbortError = (error: unknown): boolean =>
 	error !== null &&
 	((error as ErrorWithResponse).name === "AbortError" ||
 		(error as ErrorWithResponse).code === "ERR_CANCELED");
+
+/**
+ * Field-level messages from a 422 response
+ * (`{ errors: [{ path, message }] }`). Empty when the error has none.
+ */
+export function getApiFieldErrors(error: unknown): ServerFieldError[] {
+	if (typeof error !== "object" || error === null) return [];
+	const errors = (error as ErrorWithResponse).response?.data?.errors;
+	if (!Array.isArray(errors)) return [];
+	return errors.filter(
+		(item): item is ServerFieldError =>
+			typeof item === "object" &&
+			item !== null &&
+			typeof (item as ServerFieldError).message === "string",
+	);
+}
+
+/** "parameters.2.title" -> "Parameter 3: " so the user knows where to look. */
+const describeFieldPath = (path: string): string => {
+	const match = /^parameters\.(\d+)\./.exec(path);
+	return match ? `Parameter ${Number(match[1]) + 1}: ` : "";
+};
+
+const MAX_SUMMARISED_FIELD_ERRORS = 3;
+
+/** One readable line for toasts: the real messages, not "fix the fields". */
+export function summarizeFieldErrors(errors: readonly ServerFieldError[]): string {
+	const lines = Array.from(
+		new Set(errors.map((e) => `${describeFieldPath(e.path)}${e.message}`)),
+	);
+	const shown = lines.slice(0, MAX_SUMMARISED_FIELD_ERRORS).join(" · ");
+	const extra = lines.length - MAX_SUMMARISED_FIELD_ERRORS;
+	return extra > 0 ? `${shown} (+${extra} more)` : shown;
+}
 
 const isNetworkError = (error: unknown): boolean =>
 	typeof error === "object" &&
@@ -42,12 +82,22 @@ export function getAuditActionErrorMessage(
 		case 404:
 			return `This ${subject} could not be found or is no longer available.`;
 		case 409:
-			return `This ${subject} was updated by another user. Refresh before continuing.`;
-		case 422:
+			// The server explains WHY (stale save, draft already exists, used by
+			// audits…), so prefer its message over a generic one.
+			return getApiErrorMessage(
+				error,
+				`This ${subject} was updated by another user. Refresh before continuing.`,
+			);
+		case 422: {
+			// The server says exactly what is wrong; show that, not a generic
+			// "fix the highlighted fields".
+			const fieldErrors = getApiFieldErrors(error);
+			if (fieldErrors.length > 0) return summarizeFieldErrors(fieldErrors);
 			return getApiErrorMessage(
 				error,
 				"Review the highlighted fields and complete the required information.",
 			);
+		}
 		default:
 			return getApiErrorMessage(error, "Something went wrong. Please retry.");
 	}

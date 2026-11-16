@@ -9,6 +9,10 @@
 //
 // The builder knows nothing about Dealer vs Factory payloads — it emits
 // AuditTemplateBuilderValues and the module's mapper does the rest.
+//
+// Nothing is sent to the server while moving between Details and Build:
+// "Continue" only validates the current step and keeps the values in the
+// forms. The API is called from the Review step only (Save draft / Publish).
 
 import {
 	useEffect,
@@ -24,6 +28,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Button from "../../../../components/common/Button";
 import Card from "../../../../components/common/Card";
 import { StepProgress } from "../../../../components/ui/StepProgress";
+import type { ServerFieldError } from "../audit-error.utils";
 import AuditConfirmModal from "../components/AuditConfirmModal";
 import AuditTemplateBuildStep from "./AuditTemplateBuildStep";
 import AuditTemplateDetailsStep from "./AuditTemplateDetailsStep";
@@ -36,6 +41,7 @@ import {
 import {
 	createAuditTemplateBuildSchema,
 	createAuditTemplateDetailsSchema,
+	type AuditTemplateLayout,
 } from "./audit-template.schemas";
 import type {
 	AuditTemplateBuildFormValues,
@@ -45,11 +51,26 @@ import type {
 } from "./audit.template.types";
 import { createEmptyBuilderValues } from "./audit-template.utils";
 
+/** Where each server validation message belongs in the two builder forms. */
+export interface MappedServerFieldErrors {
+	details: ReadonlyArray<{ name: string; message: string }>;
+	build: ReadonlyArray<{ name: string; message: string }>;
+}
+
+/** Handed to onSaveDraft / onPublish so the hook can report 422 field errors. */
+export type ApplyServerFieldErrors = (errors: ServerFieldError[]) => void;
+
 export interface AuditTemplateBuilderProps {
 	/** Template-level fields (facility type, category, plant …). */
 	detailFields: readonly AuditTemplateFieldConfig[];
 	/** Parameter-level fields (function area, category, severity …). */
 	parameterFields: readonly AuditTemplateFieldConfig[];
+	/**
+	 * "sections" (default) groups parameters into named sections.
+	 * "flat" hides sections: one parameter list, grouped by the first
+	 * parameter field (Function) in the review.
+	 */
+	layout?: AuditTemplateLayout;
 	/** Existing template (edit mode). Read once on mount — remount with a `key` to reload. */
 	initialValues?: AuditTemplateBuilderValues;
 	namePlaceholder?: string;
@@ -68,13 +89,27 @@ export interface AuditTemplateBuilderProps {
 	 */
 	onSaveDraft: (
 		values: AuditTemplateBuilderValues,
+		applyServerErrors: ApplyServerFieldErrors,
 	) => Promise<AuditTemplateBuilderValues | null>;
-	onPublish: (values: AuditTemplateBuilderValues) => Promise<void>;
+	onPublish: (
+		values: AuditTemplateBuilderValues,
+		applyServerErrors: ApplyServerFieldErrors,
+	) => Promise<unknown>;
+	/**
+	 * Translates the server's `{ path, message }` validation errors (payload
+	 * paths like "parameters.2.title") into form field names. Without it,
+	 * server errors are only shown in the toast.
+	 */
+	mapServerErrors?: (
+		errors: readonly ServerFieldError[],
+		values: AuditTemplateBuilderValues,
+	) => MappedServerFieldErrors;
 }
 
 export default function AuditTemplateBuilder({
 	detailFields,
 	parameterFields,
+	layout = "sections",
 	initialValues,
 	namePlaceholder,
 	notice,
@@ -84,6 +119,7 @@ export default function AuditTemplateBuilder({
 	onCancel,
 	onSaveDraft,
 	onPublish,
+	mapServerErrors,
 }: AuditTemplateBuilderProps) {
 	const [defaults] = useState<AuditTemplateBuilderValues>(
 		() =>
@@ -103,8 +139,8 @@ export default function AuditTemplateBuilder({
 		[detailFields],
 	);
 	const buildSchema = useMemo(
-		() => createAuditTemplateBuildSchema(parameterFields),
-		[parameterFields],
+		() => createAuditTemplateBuildSchema(parameterFields, layout),
+		[parameterFields, layout],
 	);
 
 	const detailsForm = useForm<AuditTemplateDetailsFormValues>({
@@ -170,6 +206,26 @@ export default function AuditTemplateBuilder({
 		return true;
 	};
 
+	/**
+	 * Puts the server's field messages next to the fields they belong to and
+	 * jumps to the first step that has one (Details wins over Build).
+	 */
+	const applyServerErrors: ApplyServerFieldErrors = (errors) => {
+		if (!mapServerErrors || errors.length === 0) return;
+		const mapped = mapServerErrors(errors, collectValues());
+
+		mapped.details.forEach(({ name, message }) =>
+			detailsForm.setError(name as never, { type: "server", message }),
+		);
+		mapped.build.forEach(({ name, message }) =>
+			buildForm.setError(name as never, { type: "server", message }),
+		);
+
+		if (mapped.details.length > 0) setStep("details");
+		else if (mapped.build.length > 0) setStep("build");
+		window.scrollTo({ top: 0, behavior: "smooth" });
+	};
+
 	const handleContinue = async () => {
 		if (step === "details") {
 			const isValid = await detailsForm.trigger(undefined, {
@@ -189,7 +245,7 @@ export default function AuditTemplateBuilder({
 		const isValid = await validateReachedSteps({ requireBuild: false });
 		if (!isValid) return;
 
-		const savedValues = await onSaveDraft(collectValues());
+		const savedValues = await onSaveDraft(collectValues(), applyServerErrors);
 		if (!savedValues) return;
 
 		// Sync with server ids and clear the dirty flag.
@@ -197,27 +253,11 @@ export default function AuditTemplateBuilder({
 		buildForm.reset({ sections: savedValues.sections });
 	};
 
-	const handleSaveAndContinue = async () => {
-		if (isBusy) return;
-		const isValid =
-			step === "details"
-				? await detailsForm.trigger(undefined, { shouldFocus: true })
-				: await buildForm.trigger(undefined, { shouldFocus: true });
-		if (!isValid) return;
-
-		const savedValues = await onSaveDraft(collectValues());
-		if (!savedValues) return;
-
-		detailsForm.reset(savedValues.details);
-		buildForm.reset({ sections: savedValues.sections });
-		goToStep(step === "details" ? "build" : "review");
-	};
-
 	const handlePublish = async () => {
 		if (isBusy) return;
 		const isValid = await validateReachedSteps({ requireBuild: true });
 		if (!isValid) return;
-		await onPublish(collectValues());
+		await onPublish(collectValues(), applyServerErrors);
 	};
 
 	const handleCancel = () => {
@@ -280,31 +320,33 @@ export default function AuditTemplateBuilder({
 						</div>
 
 						<div className="flex items-center gap-2">
-							<Button
-								text="Save draft"
-								variant="outline"
-								Icon={Save}
-								loading={isSaving}
-								disabled={isBusy}
-								onClick={() => void handleSaveDraft()}
-							/>
 							{step === "review" ? (
-								<Button
-									text="Publish"
-									variant="brand"
-									Icon={Check}
-									loading={isPublishing}
-									disabled={isBusy}
-									onClick={() => void handlePublish()}
-								/>
+								<>
+									<Button
+										text="Save draft"
+										variant="outline"
+										Icon={Save}
+										loading={isSaving}
+										disabled={isBusy}
+										onClick={() => void handleSaveDraft()}
+									/>
+									<Button
+										text="Publish"
+										variant="brand"
+										Icon={Check}
+										loading={isPublishing}
+										disabled={isBusy}
+										onClick={() => void handlePublish()}
+									/>
+								</>
 							) : (
 								<Button
-									text="Save & continue"
+									text="Continue"
 									variant="brand"
 									Icon={ArrowRight}
 									iconPosition="right"
 									disabled={isBusy}
-									onClick={() => void handleSaveAndContinue()}
+									onClick={() => void handleContinue()}
 								/>
 							)}
 						</div>
@@ -325,6 +367,7 @@ export default function AuditTemplateBuilder({
 					<AuditTemplateBuildStep
 						form={buildForm}
 						parameterFields={parameterFields}
+						layout={layout}
 						disabled={isBusy}
 						onSubmit={handleStepSubmit}
 					/>
@@ -335,6 +378,7 @@ export default function AuditTemplateBuilder({
 						values={collectValues()}
 						detailFields={detailFields}
 						parameterFields={parameterFields}
+						layout={layout}
 					/>
 				) : null}
 			</Card>

@@ -15,11 +15,10 @@ import type { AuditTemplateListRow } from "../../shared/templates/audit.template
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
 import { useDealerAuditAccess } from "../hooks/useDealerAuditAccess";
 import { useDealerChecklistLibraryParams } from "../hooks/useDealerChecklistLibraryParams";
-// TODO: re-enable when the checklist template API is ready
-// import {
-// 	useDealerChecklistTemplates,
-// 	useDeleteDealerChecklistTemplate,
-// } from "../hooks/useDealerChecklistTemplates";
+import {
+	useDealerChecklistTemplates,
+	useDeleteDealerChecklistTemplate,
+} from "../hooks/useDealerChecklistTemplates";
 import {
 	DEALER_DETAIL_FIELD_KEYS,
 	DEALER_FACILITY_TYPE_OPTIONS,
@@ -47,29 +46,8 @@ export default function DealerChecklistLibraryPage() {
 	const libraryParams = useDealerChecklistLibraryParams();
 	const { listParams } = libraryParams;
 
-	// TODO: re-enable when the API is ready
-	// const templates = useDealerChecklistTemplates(listParams);
-	// const deleteMutation = useDeleteDealerChecklistTemplate();
-
-	// Temporary stubs, no network calls
-	const templates = {
-		rows: [] as AuditTemplateListRow[],
-		isLoading: false,
-		isFetching: false,
-		errorMessage: null as string | null,
-		totalPages: 0,
-		totalItems: 0,
-		refetch: async () => undefined,
-	};
-
-	const deleteMutation = {
-		reset: () => {},
-		mutate: (_id: string, options?: { onSuccess?: () => void }) =>
-			options?.onSuccess?.(),
-		isPending: false,
-		isError: false,
-		error: null as unknown,
-	};
+	const templates = useDealerChecklistTemplates(listParams);
+	const deleteMutation = useDeleteDealerChecklistTemplate();
 	const [templatePendingDelete, setTemplatePendingDelete] =
 		useState<AuditTemplateListRow | null>(null);
 
@@ -86,6 +64,8 @@ export default function DealerChecklistLibraryPage() {
 		() =>
 			createAuditTemplateColumns({
 				fieldColumns: FIELD_COLUMNS,
+				// Dealer checklists are a flat list — no Sections column.
+				showSectionCount: false,
 				actions: {
 					canEdit: permissions.canManageTemplates,
 					canDelete: permissions.canManageTemplates,
@@ -168,7 +148,7 @@ export default function DealerChecklistLibraryPage() {
 				warningDescription={
 					isPublishedPendingDelete
 						? "This template is published. Audits already created keep their checklist version, but new audits can no longer use it."
-						: "The template and all of its sections and parameters will be permanently removed."
+						: "The template and all of its parameters will be permanently removed."
 				}
 				confirmLabel="Delete template"
 				isConfirming={deleteMutation.isPending}

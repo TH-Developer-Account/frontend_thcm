@@ -1,19 +1,15 @@
 // modules/audit/dealerAudit/templates/dealer-template.config.ts
 //
 // Dealer Audit's field configuration for the shared template builder.
-// Add / remove a dropdown here — the builder UI, zod validation, preview
-// and listing columns pick it up automatically.
+// Add / remove a dropdown option here — the builder UI, zod validation,
+// preview and listing columns pick it up automatically.
 //
-// ASSUMPTION: options are static until a master-data endpoint exists.
-// When it does, build these configs from useMasterData() in the page and
-// pass them down — the builder API does not change.
+// Function and Category are plain text on the server: the option `value`
+// IS the text that is stored, so keep values human-readable and stable
+// (renaming one does not rename rows that are already saved).
 
 import type { AuditTemplateSelectFieldConfig } from "../../shared/templates/audit.template.types";
-import type {
-	DealerFacilityType,
-	DealerParameterCategory,
-	DealerParameterFunction,
-} from "./dealer-template.types";
+import type { DealerFacilityType } from "./dealer-template.types";
 
 export const DEALER_FACILITY_TYPE_OPTIONS: ReadonlyArray<{
 	value: DealerFacilityType;
@@ -24,21 +20,21 @@ export const DEALER_FACILITY_TYPE_OPTIONS: ReadonlyArray<{
 ];
 
 export const DEALER_PARAMETER_FUNCTION_OPTIONS: ReadonlyArray<{
-	value: DealerParameterFunction;
+	value: string;
 	label: string;
 }> = [
-	{ value: "COMMON", label: "Common" },
-	{ value: "SALES", label: "Sales" },
-	{ value: "SERVICE", label: "Service" },
-	{ value: "PARTS", label: "Parts" },
+	{ value: "Common", label: "Common" },
+	{ value: "Sales", label: "Sales" },
+	{ value: "Service", label: "Service" },
+	{ value: "Parts", label: "Parts" },
 ];
 
 export const DEALER_PARAMETER_CATEGORY_OPTIONS: ReadonlyArray<{
-	value: DealerParameterCategory;
+	value: string;
 	label: string;
 }> = [
-	{ value: "INFRA", label: "Infra" },
-	{ value: "PROCESS", label: "Process" },
+	{ value: "Infra", label: "Infra" },
+	{ value: "Process", label: "Process" },
 ];
 
 /** Keys used in AuditTemplateDetailsFormValues.fields */

@@ -2,7 +2,7 @@
 //
 // One zod schema per builder form:
 //   • Details step  → createAuditTemplateDetailsSchema(detailFields)
-//   • Build step    → createAuditTemplateBuildSchema(parameterFields)
+//   • Build step    → createAuditTemplateBuildSchema(parameterFields, layout)
 // Each module passes its own field configs, so a Factory Audit
 // "plant type" or a Dealer Audit "facility type" is validated here
 // without the schema knowing either module exists.
@@ -23,6 +23,13 @@ import {
 	TEMPLATE_SCORE_MIN,
 } from "./audit-template.constants";
 import type { AuditTemplateFieldConfig } from "./audit.template.types";
+
+/**
+ * "sections" — checklist is grouped into named sections (Factory Audit).
+ * "flat"     — one flat list of parameters; sections are hidden and their
+ *              names are optional (Dealer Audit).
+ */
+export type AuditTemplateLayout = "sections" | "flat";
 
 // Number inputs registered with `valueAsNumber` yield NaN when empty.
 // NaN is accepted by the shape and rejected by the refinements below, so
@@ -272,17 +279,24 @@ export const createAuditTemplateParameterSchema = (
 
 // ── Section / Build step ──────────────────────────────────────────────
 
+const sectionNameMaxMessage = `Section name cannot exceed ${SECTION_NAME_MAX_LENGTH} characters`;
+
+const requiredSectionName = z
+	.string()
+	.trim()
+	.min(1, "Section name is required")
+	.max(SECTION_NAME_MAX_LENGTH, sectionNameMaxMessage);
+
+/** Flat layout: the section is an implicit, hidden container. */
+const optionalSectionName = z
+	.string()
+	.trim()
+	.max(SECTION_NAME_MAX_LENGTH, sectionNameMaxMessage);
+
 const sectionBase = {
 	id: z.string(),
 	serverId: z.string().nullable(),
-	name: z
-		.string()
-		.trim()
-		.min(1, "Section name is required")
-		.max(
-			SECTION_NAME_MAX_LENGTH,
-			`Section name cannot exceed ${SECTION_NAME_MAX_LENGTH} characters`,
-		),
+	name: requiredSectionName,
 };
 
 export const auditTemplateSectionSchema = z.object({
@@ -319,20 +333,30 @@ const validateUniqueSectionNames = (
 
 export const createAuditTemplateBuildSchema = (
 	parameterFields: readonly AuditTemplateFieldConfig[],
-) =>
-	z
+	layout: AuditTemplateLayout = "sections",
+) => {
+	const isFlat = layout === "flat";
+
+	return z
 		.object({
 			sections: z
 				.array(
 					z.object({
 						...sectionBase,
+						name: isFlat ? optionalSectionName : requiredSectionName,
 						parameters: z
 							.array(createAuditTemplateParameterSchema(parameterFields))
-							.min(1, "Add at least one parameter to this section"),
+							.min(
+								1,
+								isFlat
+									? "Add at least one parameter"
+									: "Add at least one parameter to this section",
+							),
 					}),
 				)
 				.min(1, "Add at least one section"),
 		})
 		.superRefine((values, ctx) => {
-			validateUniqueSectionNames(values.sections, ctx);
+			if (!isFlat) validateUniqueSectionNames(values.sections, ctx);
 		});
+};

@@ -1,10 +1,17 @@
 // modules/audit/dealerAudit/templates/dealer-template.mappers.ts
 //
 // Dealer template shape conversion — the ONLY place that knows both the
-// Dealer API contract and the shared builder form shape.
+// Dealer domain model and the shared builder form shape.
 //
-//   response ──▶ domain ──▶ builder form values ──▶ create/update payload
+//   backend ──▶ domain ──▶ builder form values ──▶ create/update payload
+//                (see dealer-template.backend.ts for the first arrow)
+//
+// Dealer checklists are one flat parameter list. The shared builder still
+// holds them as a single hidden section, so:
+//   • reading: all parameters go into ONE form section
+//   • writing: every section's parameters are flattened into `parameters[]`
 
+import type { ServerFieldError } from "../../shared/audit-error.utils";
 import {
 	TEMPLATE_DEFAULT_MAX_EVIDENCE,
 	TEMPLATE_DEFAULT_MIN_EVIDENCE,
@@ -13,7 +20,6 @@ import type {
 	AuditTemplateBuilderValues,
 	AuditTemplateListRow,
 	AuditTemplateParameterFormValues,
-	AuditTemplateSectionFormValues,
 } from "../../shared/templates/audit.template.types";
 import {
 	createClientId,
@@ -32,124 +38,47 @@ import {
 	DEALER_TEMPLATE_PARAMETER_FIELDS,
 } from "./dealer-template.config";
 import type {
-	ApiPaginatedEnvelope,
 	CreateDealerChecklistTemplatePayload,
 	DealerChecklistLibraryFilters,
 	DealerChecklistParameter,
 	DealerChecklistParameterPayload,
-	DealerChecklistParameterResponse,
-	DealerChecklistSection,
-	DealerChecklistSectionPayload,
-	DealerChecklistSectionResponse,
 	DealerChecklistTemplate,
 	DealerChecklistTemplateListItem,
-	DealerChecklistTemplateListItemResponse,
 	DealerChecklistTemplateListParams,
-	DealerChecklistTemplateResponse,
 	DealerFacilityType,
-	DealerParameterCategory,
-	DealerParameterFunction,
-	PaginatedResult,
 	UpdateDealerChecklistTemplatePayload,
 } from "./dealer-template.types";
 
-// ── Type guards (narrow free-form form strings to API enums) ──────────
+// ── Helpers ───────────────────────────────────────────────────────────
 
 const isDealerFacilityType = (value: string): value is DealerFacilityType =>
 	DEALER_FACILITY_TYPE_OPTIONS.some((option) => option.value === value);
-
-const isDealerParameterFunction = (
-	value: string,
-): value is DealerParameterFunction =>
-	DEALER_PARAMETER_FUNCTION_OPTIONS.some((option) => option.value === value);
-
-const isDealerParameterCategory = (
-	value: string,
-): value is DealerParameterCategory =>
-	DEALER_PARAMETER_CATEGORY_OPTIONS.some((option) => option.value === value);
-
-const bySequence = <T extends { sequence: number }>(a: T, b: T) =>
-	a.sequence - b.sequence;
 
 const toNullableText = (value: string): string | null => {
 	const trimmed = value.trim();
 	return trimmed ? trimmed : null;
 };
 
-// ── Response → domain ─────────────────────────────────────────────────
-
-export const mapDealerChecklistParameterResponse = (
-	response: DealerChecklistParameterResponse,
-): DealerChecklistParameter => ({
-	id: response.id,
-	sequence: response.sequence,
-	title: response.title,
-	guidance: response.guidance ?? "",
-	functionArea: response.function_area ?? null,
-	category: response.category ?? null,
-	isScored: response.is_scored,
-	scoreLevels: (response.score_levels ?? []).map((level) => ({
-		score: level.score,
-		criteria: level.criteria,
-	})),
-	evidenceRequired: response.evidence_required,
-	minEvidenceCount: response.min_evidence_count ?? null,
-	maxEvidenceCount: response.max_evidence_count ?? null,
-});
-
-export const mapDealerChecklistSectionResponse = (
-	response: DealerChecklistSectionResponse,
-): DealerChecklistSection => ({
-	id: response.id,
-	sequence: response.sequence,
-	name: response.name,
-	parameters: (response.parameters ?? [])
-		.map(mapDealerChecklistParameterResponse)
-		.sort(bySequence),
-});
-
-export const mapDealerChecklistTemplateResponse = (
-	response: DealerChecklistTemplateResponse,
-): DealerChecklistTemplate => ({
-	id: response.id,
-	name: response.name,
-	description: response.description ?? "",
-	facilityType: response.facility_type ?? null,
-	status: response.status,
-	version: response.version,
-	createdAt: response.created_at,
-	updatedAt: response.updated_at ?? null,
-	updatedByName: response.updated_by_name ?? null,
-	sections: (response.sections ?? [])
-		.map(mapDealerChecklistSectionResponse)
-		.sort(bySequence),
-});
-
-export const mapDealerChecklistTemplateListItemResponse = (
-	response: DealerChecklistTemplateListItemResponse,
-): DealerChecklistTemplateListItem => ({
-	id: response.id,
-	name: response.name,
-	description: response.description ?? "",
-	facilityType: response.facility_type ?? null,
-	status: response.status,
-	version: response.version,
-	sectionCount: response.section_count ?? 0,
-	parameterCount: response.parameter_count ?? 0,
-	totalPoints: response.total_points ?? 0,
-	updatedAt: response.updated_at ?? null,
-	updatedByName: response.updated_by_name ?? null,
-});
-
-export const mapDealerChecklistTemplateListResponse = (
-	response: ApiPaginatedEnvelope<DealerChecklistTemplateListItemResponse>,
-): PaginatedResult<DealerChecklistTemplateListItem> => ({
-	items: (response.data ?? []).map(mapDealerChecklistTemplateListItemResponse),
-	page: response.meta?.page ?? 1,
-	pageSize: response.meta?.page_size ?? 0,
-	totalItems: response.meta?.total_items ?? 0,
-	totalPages: response.meta?.total_pages ?? 0,
-});
+/**
+ * Function / Category are free text on the server, so rows saved earlier may
+ * differ in case from today's option values ("INFRA" vs "Infra"). Map those
+ * back onto the matching option; anything else is kept as-is so no data is
+ * lost (the Select simply asks the user to pick a valid option).
+ */
+const toOptionValue = (
+	options: ReadonlyArray<{ value: string; label: string }>,
+	raw: string | null,
+): string => {
+	const text = (raw ?? "").trim();
+	if (!text) return "";
+	const lower = text.toLowerCase();
+	const match = options.find(
+		(option) =>
+			option.value.toLowerCase() === lower ||
+			option.label.toLowerCase() === lower,
+	);
+	return match ? match.value : text;
+};
 
 // ── Domain → builder form values ──────────────────────────────────────
 
@@ -161,8 +90,14 @@ const mapParameterToForm = (
 	title: parameter.title,
 	guidance: parameter.guidance,
 	attributes: {
-		[DEALER_PARAMETER_FIELD_KEYS.functionArea]: parameter.functionArea ?? "",
-		[DEALER_PARAMETER_FIELD_KEYS.category]: parameter.category ?? "",
+		[DEALER_PARAMETER_FIELD_KEYS.functionArea]: toOptionValue(
+			DEALER_PARAMETER_FUNCTION_OPTIONS,
+			parameter.functionArea,
+		),
+		[DEALER_PARAMETER_FIELD_KEYS.category]: toOptionValue(
+			DEALER_PARAMETER_CATEGORY_OPTIONS,
+			parameter.category,
+		),
 	},
 	isScored: parameter.isScored,
 	scoreLevels: sortScoreLevels(parameter.scoreLevels).map((level) =>
@@ -173,91 +108,93 @@ const mapParameterToForm = (
 	maxEvidenceCount: parameter.maxEvidenceCount ?? TEMPLATE_DEFAULT_MAX_EVIDENCE,
 });
 
-const mapSectionToForm = (
-	section: DealerChecklistSection,
-): AuditTemplateSectionFormValues => ({
-	id: createClientId(),
-	serverId: section.id,
-	name: section.name,
-	parameters: section.parameters.map(mapParameterToForm),
-});
-
 export const mapDealerTemplateToBuilderValues = (
 	template: DealerChecklistTemplate,
-): AuditTemplateBuilderValues => {
-	const sections = template.sections.map(mapSectionToForm);
-
-	return {
-		details: {
-			name: template.name,
-			description: template.description,
-			fields: {
-				[DEALER_DETAIL_FIELD_KEYS.facilityType]: template.facilityType ?? "",
-			},
+): AuditTemplateBuilderValues => ({
+	details: {
+		name: template.name,
+		description: template.description,
+		fields: {
+			[DEALER_DETAIL_FIELD_KEYS.facilityType]: template.facilityType ?? "",
 		},
-		// A draft saved from the Details step has no sections yet — give the
-		// Build step a blank one to start from (UI-only, never persisted blank).
-		sections: sections.length
-			? sections
-			: [createEmptySection(DEALER_TEMPLATE_PARAMETER_FIELDS)],
-	};
-};
+	},
+	// A draft saved from the Details step has no parameters yet — give the
+	// Build step one blank row to start from (UI-only, never persisted blank).
+	sections: template.parameters.length
+		? [
+				{
+					id: createClientId(),
+					serverId: null,
+					name: "",
+					parameters: template.parameters.map(mapParameterToForm),
+				},
+			]
+		: [createEmptySection(DEALER_TEMPLATE_PARAMETER_FIELDS)],
+});
 
 // ── Builder form values → payload ─────────────────────────────────────
 
 const isBlankParameter = (parameter: AuditTemplateParameterFormValues) =>
 	!parameter.title.trim() && !parameter.guidance.trim();
 
-/** A section the user never touched (default blank row) is not sent. */
-const isBlankSection = (section: AuditTemplateSectionFormValues) =>
-	!section.name.trim() && section.parameters.every(isBlankParameter);
+/**
+ * `photoKeys` carries each saved parameter's reference photo (serverId → key).
+ * The builder form does not edit photos yet, so without this a re-save would
+ * silently drop them.
+ */
+export type ReferencePhotoKeys = ReadonlyMap<string, string | null>;
+
+export const getReferencePhotoKeys = (
+	template: DealerChecklistTemplate | null,
+): ReferencePhotoKeys =>
+	new Map(
+		(template?.parameters ?? []).map((parameter) => [
+			parameter.id,
+			parameter.referencePhotoKey,
+		]),
+	);
 
 const mapParameterToPayload = (
 	parameter: AuditTemplateParameterFormValues,
-	sequence: number,
+	photoKeys: ReferencePhotoKeys,
 ): DealerChecklistParameterPayload => {
-	const functionArea =
-		parameter.attributes[DEALER_PARAMETER_FIELD_KEYS.functionArea] ?? "";
-	const category = parameter.attributes[DEALER_PARAMETER_FIELD_KEYS.category] ?? "";
+	const title = parameter.title.trim();
 
 	return {
 		...(parameter.serverId ? { id: parameter.serverId } : {}),
-		sequence,
-		title: parameter.title.trim(),
-		guidance: toNullableText(parameter.guidance),
-		function_area: isDealerParameterFunction(functionArea) ? functionArea : null,
-		category: isDealerParameterCategory(category) ? category : null,
-		is_scored: parameter.isScored,
-		score_levels: parameter.isScored
+		functionName: toNullableText(
+			parameter.attributes[DEALER_PARAMETER_FIELD_KEYS.functionArea] ?? "",
+		),
+		categoryName: toNullableText(
+			parameter.attributes[DEALER_PARAMETER_FIELD_KEYS.category] ?? "",
+		),
+		title,
+		// Check point is mandatory server-side; fall back to the title when no
+		// guidance was typed (the read side hides it again).
+		checkPoint: parameter.guidance.trim() || title,
+		isScored: parameter.isScored,
+		scoreLevels: parameter.isScored
 			? sortScoreLevels(parameter.scoreLevels).map((level) => ({
 					score: level.score,
 					criteria: level.criteria.trim(),
 				}))
 			: [],
-		evidence_required: parameter.evidenceRequired,
-		min_evidence_count: parameter.evidenceRequired
+		evidenceRequired: parameter.evidenceRequired,
+		minEvidenceCount: parameter.evidenceRequired
 			? parameter.minEvidenceCount
 			: null,
-		max_evidence_count: parameter.evidenceRequired
+		maxEvidenceCount: parameter.evidenceRequired
 			? parameter.maxEvidenceCount
+			: null,
+		referencePhotoKey: parameter.serverId
+			? (photoKeys.get(parameter.serverId) ?? null)
 			: null,
 	};
 };
 
-const mapSectionToPayload = (
-	section: AuditTemplateSectionFormValues,
-	sequence: number,
-): DealerChecklistSectionPayload => ({
-	...(section.serverId ? { id: section.serverId } : {}),
-	sequence,
-	name: section.name.trim(),
-	parameters: section.parameters
-		.filter((parameter) => !isBlankParameter(parameter))
-		.map((parameter, index) => mapParameterToPayload(parameter, index + 1)),
-});
-
 export const mapBuilderValuesToCreateDealerTemplatePayload = (
 	values: AuditTemplateBuilderValues,
+	photoKeys: ReferencePhotoKeys = new Map(),
 ): CreateDealerChecklistTemplatePayload => {
 	const facilityType =
 		values.details.fields[DEALER_DETAIL_FIELD_KEYS.facilityType] ?? "";
@@ -265,20 +202,130 @@ export const mapBuilderValuesToCreateDealerTemplatePayload = (
 	return {
 		name: values.details.name.trim(),
 		description: toNullableText(values.details.description),
-		facility_type: isDealerFacilityType(facilityType) ? facilityType : null,
-		sections: values.sections
-			.filter((section) => !isBlankSection(section))
-			.map((section, index) => mapSectionToPayload(section, index + 1)),
+		facilityType: isDealerFacilityType(facilityType) ? facilityType : null,
+		parameters: values.sections
+			.flatMap((section) => section.parameters)
+			.filter((parameter) => !isBlankParameter(parameter))
+			.map((parameter) => mapParameterToPayload(parameter, photoKeys)),
 	};
 };
 
 export const mapBuilderValuesToUpdateDealerTemplatePayload = (
 	values: AuditTemplateBuilderValues,
-	version: number,
+	expectedUpdatedAt: string | null,
+	photoKeys: ReferencePhotoKeys = new Map(),
 ): UpdateDealerChecklistTemplatePayload => ({
-	...mapBuilderValuesToCreateDealerTemplatePayload(values),
-	version,
+	...mapBuilderValuesToCreateDealerTemplatePayload(values, photoKeys),
+	expectedUpdatedAt,
 });
+
+
+// ── Server validation errors → form fields ────────────────────────────
+
+export interface FormFieldErrorTarget {
+	/** react-hook-form field name inside the Details or Build form. */
+	name: string;
+	message: string;
+}
+
+export interface MappedServerErrors {
+	details: FormFieldErrorTarget[];
+	build: FormFieldErrorTarget[];
+	/** Messages with no matching field (shown in the toast only). */
+	unmapped: ServerFieldError[];
+}
+
+const PARAMETER_FIELD_TO_FORM: Record<string, string> = {
+	functionName: `attributes.${DEALER_PARAMETER_FIELD_KEYS.functionArea}`,
+	categoryName: `attributes.${DEALER_PARAMETER_FIELD_KEYS.category}`,
+	title: "title",
+	checkPoint: "guidance",
+	minEvidenceCount: "minEvidenceCount",
+	maxEvidenceCount: "maxEvidenceCount",
+};
+
+/**
+ * The payload is a flat, blank-filtered list, so `parameters.3` is not
+ * necessarily form row 3. Rebuild the same ordering to find the real
+ * (section, row) the server meant.
+ */
+const getPayloadParameterPositions = (
+	values: AuditTemplateBuilderValues,
+): Array<{ sectionIndex: number; parameterIndex: number }> =>
+	values.sections.flatMap((section, sectionIndex) =>
+		section.parameters
+			.map((parameter, parameterIndex) => ({
+				parameter,
+				sectionIndex,
+				parameterIndex,
+			}))
+			.filter(({ parameter }) => !isBlankParameter(parameter))
+			.map(({ sectionIndex, parameterIndex }) => ({
+				sectionIndex,
+				parameterIndex,
+			})),
+	);
+
+export const mapServerErrorsToFormErrors = (
+	errors: readonly ServerFieldError[],
+	values: AuditTemplateBuilderValues,
+): MappedServerErrors => {
+	const result: MappedServerErrors = { details: [], build: [], unmapped: [] };
+	const positions = getPayloadParameterPositions(values);
+
+	for (const error of errors) {
+		if (error.path === "name" || error.path === "description") {
+			result.details.push({ name: error.path, message: error.message });
+			continue;
+		}
+		if (error.path === "officeType") {
+			result.details.push({
+				name: `fields.${DEALER_DETAIL_FIELD_KEYS.facilityType}`,
+				message: error.message,
+			});
+			continue;
+		}
+
+		const parameterMatch = /^parameters\.(\d+)\.(.+)$/.exec(error.path);
+		const position = parameterMatch ? positions[Number(parameterMatch[1])] : undefined;
+		if (!parameterMatch || !position) {
+			result.unmapped.push(error);
+			continue;
+		}
+
+		const base = `sections.${position.sectionIndex}.parameters.${position.parameterIndex}`;
+		const rest = parameterMatch[2];
+		const levelMatch = /^scoreLevels\.(\d+)\.(score|criteria)$/.exec(rest);
+
+		if (levelMatch) {
+			// Server order is score-sorted; the form's level order can differ.
+			const sorted = sortScoreLevels(
+				values.sections[position.sectionIndex].parameters[position.parameterIndex]
+					.scoreLevels,
+			);
+			const formLevelIndex = values.sections[position.sectionIndex].parameters[
+				position.parameterIndex
+			].scoreLevels.indexOf(sorted[Number(levelMatch[1])]);
+			if (formLevelIndex >= 0) {
+				result.build.push({
+					name: `${base}.scoreLevels.${formLevelIndex}.${levelMatch[2]}`,
+					message: error.message,
+				});
+				continue;
+			}
+		}
+
+		const formField = PARAMETER_FIELD_TO_FORM[rest];
+		if (formField) {
+			result.build.push({ name: `${base}.${formField}`, message: error.message });
+		} else {
+			// e.g. "scoreLevels" (needs at least one level): put it on the title.
+			result.build.push({ name: `${base}.title`, message: error.message });
+		}
+	}
+
+	return result;
+};
 
 // ── Listing ───────────────────────────────────────────────────────────
 
@@ -294,7 +341,8 @@ export const mapDealerTemplateListItemToRow = (
 	description: item.description,
 	status: item.status,
 	version: item.version,
-	sectionCount: item.sectionCount,
+	// Dealer checklists are a flat list; the Sections column is hidden.
+	sectionCount: item.parameterCount > 0 ? 1 : 0,
 	parameterCount: item.parameterCount,
 	totalPoints: item.totalPoints,
 	updatedAt: item.updatedAt,
@@ -339,28 +387,3 @@ export const mapFiltersToListParams = (
 ): Pick<DealerChecklistTemplateListParams, "facilityTypes"> => ({
 	facilityTypes: filters.facilityTypes.filter(isDealerFacilityType),
 });
-
-const SORT_FIELD_TO_API: Record<DealerChecklistTemplateListParams["sortBy"], string> =
-	{
-		name: "name",
-		status: "status",
-		version: "version",
-		updatedAt: "updated_at",
-	};
-
-/** Query-string shape sent to GET /templates. */
-export const mapDealerTemplateListParamsToQuery = (
-	params: DealerChecklistTemplateListParams,
-): Record<string, string | number> => {
-	const query: Record<string, string | number> = {
-		page: params.page,
-		page_size: params.pageSize,
-		sort_by: SORT_FIELD_TO_API[params.sortBy],
-		sort_order: params.sortOrder,
-	};
-	if (params.search) query.search = params.search;
-	if (params.statuses.length) query.status = params.statuses.join(",");
-	if (params.facilityTypes.length)
-		query.facility_type = params.facilityTypes.join(",");
-	return query;
-};

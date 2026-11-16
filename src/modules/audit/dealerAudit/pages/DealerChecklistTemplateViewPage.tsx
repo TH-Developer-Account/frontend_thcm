@@ -94,6 +94,7 @@ export default function DealerChecklistTemplateViewPage() {
 			) : (
 				<AuditTemplatePreview
 					values={previewValues}
+					layout="flat"
 					detailFields={DEALER_TEMPLATE_DETAIL_FIELDS}
 					parameterFields={DEALER_TEMPLATE_PARAMETER_FIELDS}
 					summaryTitle="Template summary"

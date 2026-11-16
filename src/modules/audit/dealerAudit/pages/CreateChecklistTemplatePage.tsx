@@ -22,6 +22,7 @@ import {
 	DEALER_TEMPLATE_DETAIL_FIELDS,
 	DEALER_TEMPLATE_PARAMETER_FIELDS,
 } from "../templates/dealer-template.config";
+import { mapServerErrorsToFormErrors } from "../templates/dealer-template.mappers";
 
 export default function CreateChecklistTemplatePage() {
 	const navigate = useNavigate();
@@ -92,6 +93,8 @@ export default function CreateChecklistTemplatePage() {
 			<AuditTemplateBuilder
 				// Remount if the route switches between templates.
 				key={templateId ?? "new"}
+				// Dealer checklists are a flat list: Function → Category → Parameter.
+				layout="flat"
 				detailFields={DEALER_TEMPLATE_DETAIL_FIELDS}
 				parameterFields={DEALER_TEMPLATE_PARAMETER_FIELDS}
 				initialValues={editor.initialValues}
@@ -111,10 +114,11 @@ export default function CreateChecklistTemplatePage() {
 				lastSavedLabel={editor.lastSavedLabel}
 				onCancel={goToLibrary}
 				onSaveDraft={editor.saveDraft}
-				onPublish={async (values) => {
-					const isPublished = await editor.publish(values);
+				onPublish={async (values, applyServerErrors) => {
+					const isPublished = await editor.publish(values, applyServerErrors);
 					if (isPublished) goToLibrary();
 				}}
+				mapServerErrors={mapServerErrorsToFormErrors}
 			/>
 		</PageSectionLayout>
 	);

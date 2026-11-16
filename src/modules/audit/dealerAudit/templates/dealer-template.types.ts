@@ -1,12 +1,10 @@
 // modules/audit/dealerAudit/templates/dealer-template.types.ts
 //
-// Dealer Audit checklist-template contracts. Deliberately NOT shared with
-// Factory Audit — the two modules persist templates in different tables
-// with different columns. Only the builder form shape is shared.
+// Dealer Audit checklist-template contracts (domain + request payloads).
+// Deliberately NOT shared with Factory Audit — the two modules persist
+// templates in different tables. Only the builder form shape is shared.
 //
-// ASSUMPTION: field names below follow the snake_case convention used by
-// other MAP endpoints. Align with the backend contract when it lands —
-// only this file and dealer-template.mappers.ts should need to change.
+// Raw backend shapes live in dealer-template.backend.ts.
 
 import type {
 	AuditTemplateSortField,
@@ -15,80 +13,11 @@ import type {
 } from "../../shared/templates/audit.template.types";
 
 export type DealerFacilityType = "HEAD_OFFICE" | "BRANCH_OFFICE";
-export type DealerParameterFunction = "COMMON" | "SALES" | "SERVICE" | "PARTS";
-export type DealerParameterCategory = "INFRA" | "PROCESS";
 
-// ── Raw API responses ─────────────────────────────────────────────────
-
-export interface DealerScoreLevelResponse {
-	score: number;
-	criteria: string;
-}
-
-export interface DealerChecklistParameterResponse {
-	id: string;
-	sequence: number;
-	title: string;
-	guidance: string | null;
-	function_area: DealerParameterFunction | null;
-	category: DealerParameterCategory | null;
-	is_scored: boolean;
-	score_levels: DealerScoreLevelResponse[] | null;
-	evidence_required: boolean;
-	min_evidence_count: number | null;
-	max_evidence_count: number | null;
-}
-
-export interface DealerChecklistSectionResponse {
-	id: string;
-	sequence: number;
-	name: string;
-	parameters: DealerChecklistParameterResponse[] | null;
-}
-
-export interface DealerChecklistTemplateResponse {
-	id: string;
-	name: string;
-	description: string | null;
-	facility_type: DealerFacilityType | null;
-	status: TemplateLifecycleStatus;
-	version: number;
-	created_at: string;
-	updated_at: string | null;
-	updated_by_name: string | null;
-	sections: DealerChecklistSectionResponse[] | null;
-}
-
-export interface DealerChecklistTemplateListItemResponse {
-	id: string;
-	name: string;
-	description: string | null;
-	facility_type: DealerFacilityType | null;
-	status: TemplateLifecycleStatus;
-	version: number;
-	section_count: number;
-	parameter_count: number;
-	total_points: number;
-	updated_at: string | null;
-	updated_by_name: string | null;
-}
-
-export interface ApiPaginationMeta {
-	page: number;
-	page_size: number;
-	total_items: number;
-	total_pages: number;
-}
-
-export interface ApiEnvelope<T> {
-	success?: boolean;
-	message?: string;
-	data: T;
-}
-
-export interface ApiPaginatedEnvelope<T> extends ApiEnvelope<T[]> {
-	meta: ApiPaginationMeta;
-}
+// Function and Category are plain text on the server. The allowed values
+// are maintained in dealer-template.config.ts.
+export type DealerParameterFunction = string;
+export type DealerParameterCategory = string;
 
 // ── Normalized domain models ──────────────────────────────────────────
 
@@ -109,13 +38,8 @@ export interface DealerChecklistParameter {
 	evidenceRequired: boolean;
 	minEvidenceCount: number | null;
 	maxEvidenceCount: number | null;
-}
-
-export interface DealerChecklistSection {
-	id: string;
-	sequence: number;
-	name: string;
-	parameters: DealerChecklistParameter[];
+	referencePhotoKey: string | null;
+	referencePhotoUrl: string | null;
 }
 
 export interface DealerChecklistTemplate {
@@ -125,10 +49,11 @@ export interface DealerChecklistTemplate {
 	facilityType: DealerFacilityType | null;
 	status: TemplateLifecycleStatus;
 	version: number;
-	createdAt: string;
+	totalScore: number;
+	/** Also the optimistic-concurrency token sent back on save. */
 	updatedAt: string | null;
 	updatedByName: string | null;
-	sections: DealerChecklistSection[];
+	parameters: DealerChecklistParameter[];
 }
 
 export interface DealerChecklistTemplateListItem {
@@ -138,7 +63,6 @@ export interface DealerChecklistTemplateListItem {
 	facilityType: DealerFacilityType | null;
 	status: TemplateLifecycleStatus;
 	version: number;
-	sectionCount: number;
 	parameterCount: number;
 	totalPoints: number;
 	updatedAt: string | null;
@@ -158,36 +82,29 @@ export interface PaginatedResult<T> {
 export interface DealerChecklistParameterPayload {
 	/** Present only for parameters that already exist on the server. */
 	id?: string;
-	sequence: number;
+	functionName: string | null;
+	categoryName: string | null;
 	title: string;
-	guidance: string | null;
-	function_area: DealerParameterFunction | null;
-	category: DealerParameterCategory | null;
-	is_scored: boolean;
-	score_levels: DealerScoreLevelResponse[];
-	evidence_required: boolean;
-	min_evidence_count: number | null;
-	max_evidence_count: number | null;
-}
-
-export interface DealerChecklistSectionPayload {
-	id?: string;
-	sequence: number;
-	name: string;
-	parameters: DealerChecklistParameterPayload[];
+	checkPoint: string;
+	isScored: boolean;
+	scoreLevels: DealerScoreLevel[];
+	evidenceRequired: boolean;
+	minEvidenceCount: number | null;
+	maxEvidenceCount: number | null;
+	referencePhotoKey: string | null;
 }
 
 export interface CreateDealerChecklistTemplatePayload {
 	name: string;
 	description: string | null;
-	facility_type: DealerFacilityType | null;
-	sections: DealerChecklistSectionPayload[];
+	facilityType: DealerFacilityType | null;
+	parameters: DealerChecklistParameterPayload[];
 }
 
 export interface UpdateDealerChecklistTemplatePayload
 	extends CreateDealerChecklistTemplatePayload {
-	/** Optimistic-concurrency guard — server returns 409 on mismatch. */
-	version: number;
+	/** Optimistic-concurrency guard — server returns 409 when stale. */
+	expectedUpdatedAt: string | null;
 }
 
 // ── Query params / mutation variables ─────────────────────────────────

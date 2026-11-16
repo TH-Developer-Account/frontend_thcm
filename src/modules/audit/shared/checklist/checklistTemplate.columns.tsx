@@ -55,9 +55,12 @@ const numberMeta = { align: "right" as const };
 export function createAuditTemplateColumns({
 	fieldColumns,
 	actions,
+	showSectionCount = true,
 }: {
 	fieldColumns: readonly AuditTemplateFieldColumn[];
 	actions: AuditTemplateRowActions;
+	/** Dealer Audit has no sections, so it hides this column. */
+	showSectionCount?: boolean;
 }): ColumnDef<AuditTemplateListRow>[] {
 	const menuItems: ActionMenuItem<AuditTemplateListRow>[] = [
 		{ id: "view", label: "View", Icon: Eye, onClick: actions.onView },
@@ -77,6 +80,14 @@ export function createAuditTemplateColumns({
 			onClick: actions.onDelete,
 		},
 	];
+
+	const sectionCountColumn: ColumnDef<AuditTemplateListRow> = {
+		id: "sectionCount",
+		accessorKey: "sectionCount",
+		header: "Sections",
+		enableSorting: false,
+		meta: numberMeta,
+	};
 
 	return [
 		{
@@ -117,13 +128,7 @@ export function createAuditTemplateColumns({
 				/>
 			),
 		},
-		{
-			id: "sectionCount",
-			accessorKey: "sectionCount",
-			header: "Sections",
-			enableSorting: false,
-			meta: numberMeta,
-		},
+		...(showSectionCount ? [sectionCountColumn] : []),
 		{
 			id: "parameterCount",
 			accessorKey: "parameterCount",

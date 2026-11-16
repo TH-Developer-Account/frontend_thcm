@@ -9,6 +9,7 @@ import {
 
 import Button from "../../../../components/common/Button";
 import AuditTemplateSectionCard from "./AuditTemplateSectionCard";
+import type { AuditTemplateLayout } from "./audit-template.schemas";
 import type {
 	AuditTemplateBuildFormValues,
 	AuditTemplateFieldConfig,
@@ -21,6 +22,7 @@ import {
 type Props = {
 	form: UseFormReturn<AuditTemplateBuildFormValues>;
 	parameterFields: readonly AuditTemplateFieldConfig[];
+	layout?: AuditTemplateLayout;
 	onSubmit: FormEventHandler<HTMLFormElement>;
 	disabled?: boolean;
 };
@@ -28,10 +30,12 @@ type Props = {
 export default function AuditTemplateBuildStep({
 	form,
 	parameterFields,
+	layout = "sections",
 	onSubmit,
 	disabled = false,
 }: Props) {
 	const { control, formState } = form;
+	const isFlat = layout === "flat";
 
 	const { fields, append, remove, move } = useFieldArray({
 		control,
@@ -41,16 +45,22 @@ export default function AuditTemplateBuildStep({
 
 	const sectionsError = getArrayErrorMessage(formState.errors.sections);
 
+	// Flat layout shows one continuous parameter list. The form model still
+	// holds a single implicit section, so the mappers and payloads are
+	// unchanged; any extra legacy sections are merged by the module mapper.
+	const visibleFields = isFlat ? fields.slice(0, 1) : fields;
+
 	return (
 		<FormProvider {...form}>
 			<form noValidate onSubmit={onSubmit} aria-label="Build checklist">
 				<div className="space-y-4">
-					{fields.map((field, sectionIndex) => (
+					{visibleFields.map((field, sectionIndex) => (
 						<AuditTemplateSectionCard
 							key={field.fieldKey}
 							sectionIndex={sectionIndex}
 							sectionCount={fields.length}
 							parameterFields={parameterFields}
+							layout={layout}
 							disabled={disabled}
 							onRemove={remove}
 							onMove={move}
@@ -63,14 +73,16 @@ export default function AuditTemplateBuildStep({
 						</p>
 					) : null}
 
-					<Button
-						text="Add another section"
-						variant="outline"
-						Icon={Plus}
-						className="w-full border-dashed"
-						disabled={disabled}
-						onClick={() => append(createEmptySection(parameterFields))}
-					/>
+					{!isFlat ? (
+						<Button
+							text="Add another section"
+							variant="outline"
+							Icon={Plus}
+							className="w-full border-dashed"
+							disabled={disabled}
+							onClick={() => append(createEmptySection(parameterFields))}
+						/>
+					) : null}
 				</div>
 			</form>
 		</FormProvider>

@@ -1,309 +1,209 @@
 // modules/audit/dealerAudit/templates/dealer-template.backend.ts
 //
-// Adapter between the REAL backend contract (Express + Prisma, camelCase,
-// flat `items[]`) and the frontend domain model (sections → parameters).
-// The rest of the UI never sees backend shapes.
-//
-// ASSUMPTIONS (confirm with backend):
-//  - Read responses are the Prisma rows: { id, name, officeType, status,
-//    version, isActive, createdAt, updatedAt, items[] }.
-//  - Item fields are exactly the ItemInput fields plus `id`.
-//  - function_area, score levels (beyond max score + guidance) and evidence
-//    min/max are NOT persisted yet — they arrive with the scoring-matrix
-//    change. Until then they are not round-tripped.
+// Raw backend contract (camelCase, flat `parameters[]`) and its mapping to
+// the frontend domain model. See claude/dealer-audit-template-api-contract.md.
+// The rest of the UI never sees these shapes.
 
-import { TEMPLATE_DEFAULT_MAX_EVIDENCE, TEMPLATE_DEFAULT_MIN_EVIDENCE } from "../../shared/templates/audit-template.constants";
 import type { TemplateLifecycleStatus } from "../../shared/templates/audit.template.types";
 import type {
 	CreateDealerChecklistTemplatePayload,
 	DealerChecklistParameter,
-	DealerChecklistSection,
 	DealerChecklistTemplate,
 	DealerChecklistTemplateListItem,
 	DealerChecklistTemplateListParams,
 	DealerFacilityType,
-	DealerParameterCategory,
 	PaginatedResult,
+	UpdateDealerChecklistTemplatePayload,
 } from "./dealer-template.types";
 
 // ── Backend contract ──────────────────────────────────────────────────
 
-export interface BackendChecklistItemResponse {
+export interface BackendEnvelope<T> {
+	success?: boolean;
+	message?: string;
+	data: T;
+}
+
+export interface BackendScoreLevel {
+	score: number;
+	criteria: string;
+}
+
+export interface BackendParameter {
 	id: string;
 	order: number;
-	sectionName: string | null;
-	label: string;
+	functionName: string | null;
+	categoryName: string | null;
+	title: string;
 	checkPoint: string | null;
-	category: DealerParameterCategory | null;
-	requiresScore: boolean | null;
-	requiresEvidence: boolean | null;
-	maxScore: number | null;
-	scoringGuidance: string | null;
+	isScored: boolean;
+	scoreLevels: BackendScoreLevel[] | null;
+	evidenceRequired: boolean;
+	minEvidenceCount: number | null;
+	maxEvidenceCount: number | null;
+	referencePhotoKey: string | null;
+	referencePhotoUrl: string | null;
 }
 
-export interface BackendChecklistTemplateResponse {
+export interface BackendTemplate {
 	id: string;
 	name: string;
+	description: string | null;
 	officeType: DealerFacilityType | null;
-	status: "DRAFT" | "PUBLISHED";
+	status: TemplateLifecycleStatus;
 	version: number;
-	isActive: boolean;
-	createdAt: string;
+	totalScore: number | null;
 	updatedAt: string | null;
-	items?: BackendChecklistItemResponse[] | null;
+	updatedByName: string | null;
+	parameters: BackendParameter[] | null;
 }
 
-export interface BackendItemInput {
-	order: number;
-	sectionName: string;
-	label: string;
-	checkPoint: string;
-	category?: DealerParameterCategory;
-	requiresScore: boolean;
-	requiresEvidence: boolean;
-	maxScore?: number;
-	scoringGuidance?: string;
-}
-
-export interface BackendCreateTemplateBody {
+export interface BackendListItem {
+	id: string;
 	name: string;
+	description: string | null;
+	officeType: DealerFacilityType | null;
+	status: TemplateLifecycleStatus;
+	version: number;
+	parameterCount: number | null;
+	totalScore: number | null;
+	updatedAt: string | null;
+	updatedByName: string | null;
+}
+
+export interface BackendListResponse {
+	success?: boolean;
+	data: BackendListItem[] | null;
+	meta?: {
+		page: number;
+		pageSize: number;
+		total: number;
+		totalPages: number;
+	};
+}
+
+export interface BackendTemplateBody {
+	name: string;
+	description: string | null;
 	officeType: DealerFacilityType;
-	items: BackendItemInput[];
+	parameters: CreateDealerChecklistTemplatePayload["parameters"];
+	expectedUpdatedAt?: string;
 }
 
-export interface BackendUpdateTemplateBody {
-	name?: string;
-	items?: BackendItemInput[];
+export interface BackendReferencePhoto {
+	key: string;
+	url: string;
 }
-
-// ── Placeholder item ──────────────────────────────────────────────────
-//
-// TEMPORARY: POST /templates rejects an empty `items` array, but the
-// Details step only has name + facility type. A draft with no parameters
-// yet carries ONE placeholder item, hidden again on read. Remove this
-// (and the filter below) once the backend accepts empty drafts.
-
-export const DRAFT_PLACEHOLDER_MARKER = "__DRAFT_PLACEHOLDER__";
-
-const PLACEHOLDER_ITEM: BackendItemInput = {
-	order: 1,
-	sectionName: DRAFT_PLACEHOLDER_MARKER,
-	label: DRAFT_PLACEHOLDER_MARKER,
-	checkPoint: DRAFT_PLACEHOLDER_MARKER,
-	requiresScore: false,
-	requiresEvidence: false,
-};
-
-const isPlaceholderItem = (item: BackendChecklistItemResponse) =>
-	item.sectionName === DRAFT_PLACEHOLDER_MARKER ||
-	item.label === DRAFT_PLACEHOLDER_MARKER;
 
 // ── Response → domain ─────────────────────────────────────────────────
 
-const UNSECTIONED = "General";
-
-const mapStatus = (
-	template: BackendChecklistTemplateResponse,
-): TemplateLifecycleStatus => {
-	if (template.status === "DRAFT") return "DRAFT";
-	return template.isActive ? "PUBLISHED" : "ARCHIVED";
-};
-
-const mapItemToParameter = (
-	item: BackendChecklistItemResponse,
-	sequence: number,
-): DealerChecklistParameter => {
-	const isScored = Boolean(item.requiresScore);
-	const checkPoint = item.checkPoint ?? "";
-	return {
-		id: item.id,
-		sequence,
-		title: item.label,
-		// checkPoint is mandatory server-side; when it merely mirrors the
-		// label (no guidance was entered) show an empty guidance field.
-		guidance: checkPoint === item.label ? "" : checkPoint,
-		functionArea: null,
-		category: item.category ?? null,
-		isScored,
-		// Only the max score + guidance are stored today; surface them as the
-		// single top level so a re-save does not lose them.
-		scoreLevels:
-			isScored && item.maxScore != null
-				? [{ score: item.maxScore, criteria: item.scoringGuidance ?? "" }]
-				: [],
-		evidenceRequired: Boolean(item.requiresEvidence),
-		minEvidenceCount: item.requiresEvidence
-			? TEMPLATE_DEFAULT_MIN_EVIDENCE
-			: null,
-		maxEvidenceCount: item.requiresEvidence
-			? TEMPLATE_DEFAULT_MAX_EVIDENCE
-			: null,
-	};
-};
-
-const groupItemsIntoSections = (
-	items: readonly BackendChecklistItemResponse[],
-): DealerChecklistSection[] => {
-	const sections: DealerChecklistSection[] = [];
-	const byName = new Map<string, DealerChecklistSection>();
-
-	[...items]
-		.filter((item) => !isPlaceholderItem(item))
-		.sort((a, b) => a.order - b.order)
-		.forEach((item) => {
-			const name = item.sectionName?.trim() || UNSECTIONED;
-			let section = byName.get(name);
-			if (!section) {
-				section = {
-					// Sections are not entities server-side; the name is the key.
-					id: `section:${name}`,
-					sequence: sections.length + 1,
-					name,
-					parameters: [],
-				};
-				byName.set(name, section);
-				sections.push(section);
-			}
-			section.parameters.push(
-				mapItemToParameter(item, section.parameters.length + 1),
-			);
-		});
-
-	return sections;
-};
+const mapParameter = (parameter: BackendParameter): DealerChecklistParameter => ({
+	id: parameter.id,
+	sequence: parameter.order,
+	title: parameter.title,
+	// checkPoint is mandatory server-side; the builder fills it with the title
+	// when no guidance was typed, so show that case as an empty guidance field.
+	guidance:
+		parameter.checkPoint && parameter.checkPoint !== parameter.title
+			? parameter.checkPoint
+			: "",
+	functionArea: parameter.functionName ?? null,
+	category: parameter.categoryName ?? null,
+	isScored: parameter.isScored,
+	scoreLevels: (parameter.scoreLevels ?? []).map((level) => ({
+		score: level.score,
+		criteria: level.criteria,
+	})),
+	evidenceRequired: parameter.evidenceRequired,
+	minEvidenceCount: parameter.minEvidenceCount ?? null,
+	maxEvidenceCount: parameter.maxEvidenceCount ?? null,
+	referencePhotoKey: parameter.referencePhotoKey ?? null,
+	referencePhotoUrl: parameter.referencePhotoUrl ?? null,
+});
 
 export const mapBackendTemplateToDomain = (
-	response: BackendChecklistTemplateResponse,
+	response: BackendTemplate,
 ): DealerChecklistTemplate => ({
 	id: response.id,
 	name: response.name,
-	description: "",
+	description: response.description ?? "",
 	facilityType: response.officeType ?? null,
-	status: mapStatus(response),
+	status: response.status,
 	version: response.version,
-	createdAt: response.createdAt,
+	totalScore: response.totalScore ?? 0,
 	updatedAt: response.updatedAt ?? null,
-	updatedByName: null,
-	sections: groupItemsIntoSections(response.items ?? []),
+	updatedByName: response.updatedByName ?? null,
+	parameters: [...(response.parameters ?? [])]
+		.sort((a, b) => a.order - b.order)
+		.map(mapParameter),
 });
 
-export const mapBackendTemplateToListItem = (
-	response: BackendChecklistTemplateResponse,
-): DealerChecklistTemplateListItem => {
-	const template = mapBackendTemplateToDomain(response);
-	const parameters = template.sections.flatMap((section) => section.parameters);
-	return {
-		id: template.id,
-		name: template.name,
-		description: template.description,
-		facilityType: template.facilityType,
-		status: template.status,
-		version: template.version,
-		sectionCount: template.sections.length,
-		parameterCount: parameters.length,
-		totalPoints: parameters.reduce(
-			(sum, parameter) =>
-				sum + Math.max(0, ...parameter.scoreLevels.map((level) => level.score)),
-			0,
-		),
-		updatedAt: template.updatedAt,
-		updatedByName: null,
-	};
-};
+const mapListItem = (item: BackendListItem): DealerChecklistTemplateListItem => ({
+	id: item.id,
+	name: item.name,
+	description: item.description ?? "",
+	facilityType: item.officeType ?? null,
+	status: item.status,
+	version: item.version,
+	parameterCount: item.parameterCount ?? 0,
+	totalPoints: item.totalScore ?? 0,
+	updatedAt: item.updatedAt ?? null,
+	updatedByName: item.updatedByName ?? null,
+});
+
+export const mapBackendListToPaginated = (
+	response: BackendListResponse,
+): PaginatedResult<DealerChecklistTemplateListItem> => ({
+	items: (response.data ?? []).map(mapListItem),
+	page: response.meta?.page ?? 1,
+	pageSize: response.meta?.pageSize ?? 0,
+	totalItems: response.meta?.total ?? 0,
+	totalPages: response.meta?.totalPages ?? 0,
+});
 
 // ── Domain payload → backend body ─────────────────────────────────────
 
-const flattenToItems = (
-	payload: CreateDealerChecklistTemplatePayload,
-): BackendItemInput[] => {
-	const items: BackendItemInput[] = [];
-
-	payload.sections.forEach((section) => {
-		section.parameters.forEach((parameter) => {
-			const topLevel = [...parameter.score_levels].sort(
-				(a, b) => b.score - a.score,
-			)[0];
-			items.push({
-				order: items.length + 1,
-				sectionName: section.name || UNSECTIONED,
-				label: parameter.title,
-				checkPoint: parameter.guidance ?? parameter.title,
-				...(parameter.category ? { category: parameter.category } : {}),
-				requiresScore: parameter.is_scored,
-				requiresEvidence: parameter.evidence_required,
-				...(parameter.is_scored && topLevel
-					? {
-							maxScore: topLevel.score,
-							...(topLevel.criteria
-								? { scoringGuidance: topLevel.criteria }
-								: {}),
-						}
-					: {}),
-			});
-		});
-	});
-
-	return items.length ? items : [PLACEHOLDER_ITEM];
-};
-
 export const mapCreatePayloadToBackendBody = (
 	payload: CreateDealerChecklistTemplatePayload,
-): BackendCreateTemplateBody => {
-	if (!payload.facility_type) {
+): BackendTemplateBody => {
+	if (!payload.facilityType) {
 		// The Details step validates this; fail loudly rather than send junk.
 		throw new Error("Facility type is required to save a checklist draft.");
 	}
 	return {
 		name: payload.name,
-		officeType: payload.facility_type,
-		items: flattenToItems(payload),
+		description: payload.description,
+		officeType: payload.facilityType,
+		parameters: payload.parameters,
 	};
 };
 
 export const mapUpdatePayloadToBackendBody = (
-	payload: CreateDealerChecklistTemplatePayload,
-): BackendUpdateTemplateBody => ({
-	name: payload.name,
-	items: flattenToItems(payload),
+	payload: UpdateDealerChecklistTemplatePayload,
+): BackendTemplateBody => ({
+	...mapCreatePayloadToBackendBody(payload),
+	...(payload.expectedUpdatedAt
+		? { expectedUpdatedAt: payload.expectedUpdatedAt }
+		: {}),
 });
 
-// ── List: backend returns a plain array, so page/search/sort client-side ──
+// ── List params → query string ────────────────────────────────────────
 
-const SORTERS: Record<
-	DealerChecklistTemplateListParams["sortBy"],
-	(a: DealerChecklistTemplateListItem, b: DealerChecklistTemplateListItem) => number
-> = {
-	name: (a, b) => a.name.localeCompare(b.name),
-	status: (a, b) => a.status.localeCompare(b.status),
-	version: (a, b) => a.version - b.version,
-	updatedAt: (a, b) => (a.updatedAt ?? "").localeCompare(b.updatedAt ?? ""),
-};
-
-export const paginateBackendTemplates = (
-	rows: readonly BackendChecklistTemplateResponse[],
+export const mapListParamsToQuery = (
 	params: DealerChecklistTemplateListParams,
-): PaginatedResult<DealerChecklistTemplateListItem> => {
-	const search = params.search.toLowerCase();
-	const filtered = rows
-		.map(mapBackendTemplateToListItem)
-		.filter(
-			(row) =>
-				(!search || row.name.toLowerCase().includes(search)) &&
-				(!params.statuses.length || params.statuses.includes(row.status)) &&
-				(!params.facilityTypes.length ||
-					(row.facilityType !== null &&
-						params.facilityTypes.includes(row.facilityType))),
-		)
-		.sort(SORTERS[params.sortBy]);
-
-	if (params.sortOrder === "desc") filtered.reverse();
-
-	const start = (params.page - 1) * params.pageSize;
-	return {
-		items: filtered.slice(start, start + params.pageSize),
+): Record<string, string | number> => {
+	const query: Record<string, string | number> = {
 		page: params.page,
 		pageSize: params.pageSize,
-		totalItems: filtered.length,
-		totalPages: Math.ceil(filtered.length / params.pageSize),
+		sortBy: params.sortBy,
+		sortOrder: params.sortOrder,
 	};
+	if (params.search) query.search = params.search;
+	// The backend filters by ONE status / facility type. The library UI only
+	// ever sends one status (tabs) and two facility types exist, so selecting
+	// both is the same as no filter.
+	if (params.statuses.length === 1) query.status = params.statuses[0];
+	if (params.facilityTypes.length === 1)
+		query.officeType = params.facilityTypes[0];
+	return query;
 };
