@@ -15,7 +15,7 @@ import VendorRoutes from "./VendorRoutes";
 import WorkflowRoutes from "./workflowRoutes";
 import { GuestRoutesWrapper } from "./guestRoutes";
 import FullScreenLoader from "./FullScreenLoader";
-import CppRoutes from "./cpp.routes";
+import CppRoutes from "./cppRoutes";
 
 const ForbiddenPage = lazy(() => import("../Forbidden"));
 const HomeScreen = lazy(() => import("../containers/HomeScreen"));

@@ -11,6 +11,7 @@ import { workflowSidebar } from "../modules/workflows/utils/workflow.sidebar";
 import { medicalClaimSidebar } from "../modules/medicalReimbursment/utils/medical-claim.sidebar";
 import { guestSidebar } from "../modules/guest/GuestSidebar";
 import Header from "../components/ui/Header";
+import { cppSidebar } from "../modules/cpp/utils/cpp.sidebar";
 
 const MOBILE_SIDEBAR_QUERY = "(max-width: 767px)";
 
@@ -70,6 +71,7 @@ export default function MainContentWrapper() {
 		if (path.startsWith("/guest")) {
 			return guestSidebar;
 		}
+		if (path.startsWith("/cpp")) return cppSidebar;
 
 		return [];
 	}, [location.pathname]);

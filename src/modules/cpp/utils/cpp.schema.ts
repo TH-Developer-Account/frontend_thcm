@@ -79,7 +79,11 @@ export const cppSchema = z
 		}),
 		financial: z.object({
 			noChange: z.boolean(),
-			plantSplit: z.object({ DWD: z.string(), KGP: z.string(), SPARE: z.string() }),
+			plantSplit: z.object({
+				DWD: z.string(),
+				KGP: z.string(),
+				SPARE: z.string(),
+			}),
 		}),
 		workflow: z.object({
 			models: z.array(z.string()).min(1, "Select at least one model"),
@@ -106,7 +110,8 @@ export const cppSchema = z
 		if (values.workflow.pricingCondition === AMORTISED_CONDITION) {
 			values.amortisation.forEach((row, index) => {
 				(["partNo", "amount", "qty"] as const).forEach((key) => {
-					const ok = key === "partNo" ? row.partNo.trim() : toNum(row[key]) !== null;
+					const ok =
+						key === "partNo" ? row.partNo.trim() : toNum(row[key]) !== null;
 					if (!ok) {
 						ctx.addIssue({
 							code: "custom",
