@@ -1,6 +1,7 @@
 import { FileClock, FilePen } from "lucide-react";
 
 import type {
+	CppConditionOption,
 	CppListingTab,
 	CppStatus,
 	CppStatusFilter,
@@ -12,6 +13,135 @@ export const CPP_STATUS_LABELS: Record<CppStatus, string> = {
 	CLARIFICATION_REQUESTED: "Clarification Requested",
 	APPROVED: "Approved",
 };
+
+export const CPP_CATEGORY_LABELS: Record<string, string> = {
+	CFM: "Casting Forging & Machining (CFM)",
+	SM: "Sheet Metal (SM)",
+	FAB: "Fabrication (FAB)",
+	DOMP: "Domastic Proprietory (DOMP)",
+	ERH: "Electrical Electronics Rubber Hoses and Pipes (ERH)",
+	Indirect: "Indirect",
+	IMPORT_HCM: "Import HCM",
+	IMPORT_NON_HCM: "Import NON HCM",
+	SPARES: "Spare Parts (Spares)",
+	STEEL: "Steel",
+};
+
+export const CPP_PLANTS: Record<string, string> = {
+	DWD: "DWD",
+	KGP: "KGP",
+	Spares: "Spares",
+};
+
+/* ------------------- dropdown options (frontend for now) ------------------ */
+// Swap these for master-data API calls later; the form only needs
+// { label, value } pairs, so nothing else changes.
+
+export const CPP_CATEGORY_OPTIONS = Object.entries(CPP_CATEGORY_LABELS).map(
+	([value, label]) => ({ value, label }),
+);
+
+export const CPP_PLANT_OPTIONS = Object.entries(CPP_PLANTS).map(
+	([value, label]) => ({ value, label }),
+);
+
+/** Codes follow the structure decisions (D17): STANDARD / SUBCONTRACTING. */
+export const CPP_PRICE_TYPE_OPTIONS = [
+	{ value: "STANDARD", label: "Standard" },
+	{ value: "SUBCONTRACTING", label: "Subcontracting (MASOP)" },
+];
+
+/**
+ * "Conditions" = the nine sheets of the CPP approval-flow workbook.
+ * `group` limits which conditions a category can pick.
+ * `partBasis` / `amountBasis` say which values the approval bands read, so the
+ * purchasing step only asks for what the chosen condition needs.
+ */
+export const CPP_CONDITIONS: CppConditionOption[] = [
+	{
+		value: "FIRST_TIME_REGULAR",
+		label: "First time & Regular Purchase",
+		sheet: "1.First time & Regular Purchase",
+		group: "DIRECT",
+		partBasis: "PART_VALUE",
+		amountBasis: "ANNUALISED_VALUE",
+	},
+	{
+		value: "PRICE_CHANGE",
+		label: "Price Change",
+		sheet: "2 .Price Change",
+		group: "DIRECT",
+		partBasis: "VARIATION_PCT",
+		amountBasis: "ANNUALISED_IMPACT",
+	},
+	{
+		value: "STEEL_COMMODITY",
+		label: "Steel Commodity Price Change",
+		sheet: "3. Steel Commodity Price Change",
+		group: "DIRECT",
+		partBasis: null,
+		amountBasis: "ACTUAL_IMPACT",
+	},
+	{
+		value: "EMERGENCY_ONETIME",
+		label: "Emergency Onetime Purchase",
+		sheet: "4. Emergency Onetime Purchase",
+		group: "DIRECT",
+		partBasis: null,
+		amountBasis: "ANNUALISED_VALUE",
+	},
+	{
+		value: "PROTOTYPE",
+		label: "Prototype Development",
+		sheet: "5. Prototype Development",
+		group: "DIRECT",
+		partBasis: "PART_VALUE",
+		amountBasis: "ANNUALISED_VALUE",
+	},
+	{
+		value: "FIRST_TIME_INDIRECT",
+		label: "First time Indirect Material",
+		sheet: "6. First time Indirect Material",
+		group: "INDIRECT",
+		partBasis: null,
+		amountBasis: "ANNUALISED_VALUE",
+	},
+	{
+		value: "PRICE_VARIATION_INDIRECT",
+		label: "Price Variation Indirect",
+		sheet: "7. Price Variation Indirect",
+		group: "INDIRECT",
+		partBasis: null,
+		amountBasis: "ANNUALISED_IMPACT",
+	},
+	{
+		value: "ONETIME_INDIRECT",
+		label: "One Time Purchase of Indirect",
+		sheet: "8.One Time Purchase of indirect",
+		group: "INDIRECT",
+		partBasis: null,
+		amountBasis: "ANNUALISED_VALUE",
+	},
+	{
+		value: "CRUDE_OIL",
+		label: "Crude Oil",
+		sheet: "9. Crude Oil",
+		group: "INDIRECT",
+		partBasis: null,
+		amountBasis: "ANNUALISED_IMPACT",
+	},
+];
+
+export const CPP_PART_BASIS_LABELS = {
+	PART_VALUE: "Highest value per part (₹)",
+	VARIATION_PCT: "Highest price variation (%)",
+} as const;
+
+export const CPP_AMOUNT_BASIS_LABELS = {
+	ANNUALISED_VALUE: "Annualised value (₹)",
+	ANNUALISED_IMPACT: "Annualised impact (₹)",
+	ACTUAL_IMPACT: "Actual impact (₹)",
+} as const;
 
 /**
  * "Pending on me" / "Approved by me" tabs are added with the workflow:

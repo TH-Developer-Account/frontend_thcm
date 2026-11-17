@@ -66,7 +66,7 @@ export const actions: HomeAction[] = [
 		description:
 			"Manage vendor registration, verification, and approval processes.",
 		path: "/workflow/listing",
-		access: { kind: "internal" },
+		access: { kind: "everyone" },
 		isActive: false,
 	},
 	{

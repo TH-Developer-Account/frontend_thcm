@@ -5,6 +5,7 @@ import { Controller, get, useFormContext } from "react-hook-form";
 
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/forms/FormInput";
+import MultiSelectInput from "../../../components/forms/MultiSelectInput";
 import SelectInput from "../../../components/forms/SelectInput";
 
 export const useFieldError = (name: string): string | undefined => {
@@ -72,6 +73,48 @@ export const RhfSelect = ({ name, options, ...props }: RhfSelectProps) => {
 					error={message}
 				/>
 			)}
+		/>
+	);
+};
+
+type RhfMultiSelectProps = {
+	name: string;
+	label?: string;
+	options: Option[];
+	required?: boolean;
+	placeholder?: string;
+	isDisabled?: boolean;
+	className?: string;
+};
+
+/** Multi-select dropdown. Form value is string[] (the option values). */
+export const RhfMultiSelect = ({
+	name,
+	options,
+	...props
+}: RhfMultiSelectProps) => {
+	const { control } = useFormContext();
+	const message = useFieldError(name);
+
+	return (
+		<Controller
+			name={name}
+			control={control}
+			render={({ field }) => {
+				const selected: string[] = field.value ?? [];
+				return (
+					<MultiSelectInput
+						{...props}
+						name={name}
+						options={options}
+						value={options.filter((option) => selected.includes(option.value))}
+						onValueChange={({ value }) =>
+							field.onChange(value.map((option) => String(option.value)))
+						}
+						error={message}
+					/>
+				);
+			}}
 		/>
 	);
 };

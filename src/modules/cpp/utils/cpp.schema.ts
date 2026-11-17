@@ -1,17 +1,15 @@
 // utils/cpp.schema.ts — zod rules for SUBMIT. "Save draft" skips validation.
+// The wizard also runs this schema per step (form.trigger on that step's fields).
 import { z } from "zod";
 
 import {
-	AMORTISED_CONDITION,
-	CPP_PLANTS,
 	MIN_JUSTIFICATION,
-	sumPlantSplit,
+	getCondition,
+	isConditionAllowed,
 	toNum,
 } from "./cpp.utils";
 
 const required = (message: string) => z.string().trim().min(1, message);
-const rate = (message: string) =>
-	z.string().refine((value) => toNum(value) !== null, message);
 
 const supplier = z.object({
 	partnerId: z.string(),
@@ -24,46 +22,55 @@ const requiredSupplier = supplier.extend({
 	name: required("Supplier name is required"),
 });
 
-const part = z.object({
-	partNo: required("Required"),
-	description: required("Required"),
-	uom: required("Required"),
-	existingRate: rate("Required"),
-	existingWef: z.string(),
-	quotedRate: rate("Required"),
-	quotedWef: z.string(),
-	finalRate: rate("Required"),
-	finalWef: z.string(),
-	qtyReceived: z.string(),
-	qtyRemaining: z.string(),
-	qtyAnnual: z.string(),
-});
-
-const amortRow = z.object({
-	partNo: z.string(),
-	amount: z.string(),
-	qty: z.string(),
-	perMachineQty: z.string(),
-});
+const positive = (value: string) => {
+	const parsed = toNum(value);
+	return parsed !== null && parsed > 0;
+};
 
 export const cppSchema = z
 	.object({
+		/* step 1 */
+		category: required("Select a category"),
+		plant: required("Select a plant"),
+		condition: required("Select a condition"),
 		materialType: z.enum(["", "Direct", "Indirect"]),
-		reason: required("Select a reason"),
 		effects: z.array(z.enum(["Quality", "Cost", "Delivery"])),
+		reason: required("Select a reason"),
+		priceType: required("Select a price type"),
+		justification: z
+			.string()
+			.trim()
+			.min(MIN_JUSTIFICATION, `Enter at least ${MIN_JUSTIFICATION} characters`),
 		aribaRef: z.string(),
 		initiationDate: z.string(),
+		workflow: z.object({
+			models: z.array(z.string()).min(1, "Select at least one model"),
+			plants: z.array(z.enum(["DWD", "KGP", "SPARE"])),
+			pricingCondition: required("Select a pricing condition"),
+			spares: z.boolean(),
+			authority: z.string(),
+		}),
+
+		/* step 2 */
 		suppliers: z.object({
 			existing: requiredSupplier,
 			other: supplier,
 			recommended: requiredSupplier,
 		}),
-		parts: z.array(part).min(1, "Add at least one part"),
-		amortisation: z.array(amortRow),
+		// The attached Excel — checked in superRefine below.
+		purchasingFile: z.any(),
+		approvalValues: z.object({
+			partValue: z.string(),
+			variationPct: z.string(),
+			amount: z.string(),
+		}),
+
+		/* remaining steps */
 		other: z.object({
 			remarks: z.string(),
-			attachments: z.record(z.string(), z.boolean()),
 		}),
+		// Optional per document; which ones are needed depends on the condition.
+		attachments: z.record(z.string(), z.any()),
 		masterData: z.object({
 			materialGroup: z.string(),
 			materialType: z.string(),
@@ -77,6 +84,10 @@ export const cppSchema = z
 			plants: z.array(z.enum(["DWD", "KGP", "SPARE"])),
 			note: z.string(),
 		}),
+
+		/* not rendered in the wizard — kept so older tabs still type-check */
+		parts: z.array(z.any()),
+		amortisation: z.array(z.any()),
 		financial: z.object({
 			noChange: z.boolean(),
 			plantSplit: z.object({
@@ -85,17 +96,6 @@ export const cppSchema = z
 				SPARE: z.string(),
 			}),
 		}),
-		workflow: z.object({
-			models: z.array(z.string()).min(1, "Select at least one model"),
-			plants: z.array(z.enum(["DWD", "KGP", "SPARE"])),
-			pricingCondition: required("Select a pricing condition"),
-			spares: z.boolean(),
-			authority: required("Select the approving authority"),
-		}),
-		justification: z
-			.string()
-			.trim()
-			.min(MIN_JUSTIFICATION, `Enter at least ${MIN_JUSTIFICATION} characters`),
 	})
 	.superRefine((values, ctx) => {
 		if (!values.materialType) {
@@ -106,32 +106,52 @@ export const cppSchema = z
 			});
 		}
 
-		// Amortisation rows are only mandatory for an amortised price.
-		if (values.workflow.pricingCondition === AMORTISED_CONDITION) {
-			values.amortisation.forEach((row, index) => {
-				(["partNo", "amount", "qty"] as const).forEach((key) => {
-					const ok =
-						key === "partNo" ? row.partNo.trim() : toNum(row[key]) !== null;
-					if (!ok) {
-						ctx.addIssue({
-							code: "custom",
-							path: ["amortisation", index, key],
-							message: "Required",
-						});
-					}
-				});
+		const condition = getCondition(values.condition);
+		if (
+			condition &&
+			values.category &&
+			!isConditionAllowed(values.condition, values.category)
+		) {
+			ctx.addIssue({
+				code: "custom",
+				path: ["condition"],
+				message: "This condition does not apply to the selected category",
 			});
 		}
 
-		// Plant split must add up to 100% once the user starts using it.
-		const split = values.financial.plantSplit;
-		const used = CPP_PLANTS.some((plant) => split[plant].trim() !== "");
-		if (used && Math.abs(sumPlantSplit(split) - 100) > 0.01) {
+		if (!values.purchasingFile) {
 			ctx.addIssue({
 				code: "custom",
-				path: ["financial", "plantSplit"],
-				message: "Plant split must add up to 100%",
+				path: ["purchasingFile"],
+				message: "Attach the purchasing details Excel",
 			});
+		}
+
+		// Approval bands need real numbers. Zero / blank is blocked (open question Q9).
+		if (condition) {
+			const { partValue, variationPct, amount } = values.approvalValues;
+			const message = "Enter a value greater than 0";
+			if (condition.partBasis === "PART_VALUE" && !positive(partValue)) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["approvalValues", "partValue"],
+					message,
+				});
+			}
+			if (condition.partBasis === "VARIATION_PCT" && !positive(variationPct)) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["approvalValues", "variationPct"],
+					message,
+				});
+			}
+			if (!positive(amount)) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["approvalValues", "amount"],
+					message,
+				});
+			}
 		}
 	});
 

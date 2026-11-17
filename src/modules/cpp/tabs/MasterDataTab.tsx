@@ -1,21 +1,15 @@
 // tabs/MasterDataTab.tsx — extra info for the master data controller.
+// Price type and applicable plants now live in Basic details (step 1).
 import { Controller, useFormContext } from "react-hook-form";
 
 import Card from "../../../components/common/Card";
 import TextareaInput from "../../../components/forms/TextareaInput";
-import {
-	RhfChips,
-	RhfInput,
-	RhfSelect,
-	toOptions,
-} from "../components/CppFields";
+import { RhfInput, RhfSelect, toOptions } from "../components/CppFields";
 import type { CppFormValues } from "../types/cpp.types";
 import {
-	CPP_PLANTS,
 	INCO_TERMS,
 	MATERIAL_GROUPS,
 	MATERIAL_TYPES,
-	PRICE_TYPES,
 	TAX_CODES,
 	YES_NO,
 } from "../utils/cpp.utils";
@@ -25,8 +19,8 @@ const MasterDataTab = () => {
 
 	return (
 		<Card
-			title="Extra info for master data"
-			subtitle="Sample fields — to be confirmed with the master data team"
+			title="Master data"
+			subtitle="Extra info for the master data team — sample fields, to be confirmed"
 			size="small"
 		>
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -44,11 +38,6 @@ const MasterDataTab = () => {
 					name="masterData.purchasingGroup"
 					label="Purchasing group"
 					placeholder="e.g. D07"
-				/>
-				<RhfSelect
-					name="masterData.priceType"
-					label="Price type"
-					options={toOptions(PRICE_TYPES)}
 				/>
 				<RhfSelect
 					name="masterData.incoTerms"
@@ -74,11 +63,6 @@ const MasterDataTab = () => {
 					name="masterData.updateSourceList"
 					label="Update source list"
 					options={toOptions(YES_NO)}
-				/>
-				<RhfChips
-					name="masterData.plants"
-					label="Plants"
-					options={CPP_PLANTS}
 				/>
 
 				<div className="sm:col-span-2 lg:col-span-3">

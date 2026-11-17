@@ -1,12 +1,16 @@
 // utils/cpp.utils.ts — constants, defaults and calculations for the CPP form.
 import type {
 	CppAmortRow,
+	CppConditionGroup,
+	CppConditionOption,
 	CppFormValues,
 	CppPartRow,
 	CppPlant,
+	CppStep,
 	CppSupplier,
 	CppTabKey,
 } from "../types/cpp.types";
+import { CPP_CONDITIONS } from "./cpp.constants";
 
 /* ------------------------------ constants ------------------------------ */
 
@@ -97,8 +101,9 @@ export const TAX_CODES = ["GST 5%", "GST 12%", "GST 18%", "GST 28%"];
 export const YES_NO = ["Yes", "No"];
 export const UOM_OPTIONS = ["NOS", "KG", "MTR", "SET", "LTR"];
 
-export const MIN_JUSTIFICATION = 50;
+export const MIN_JUSTIFICATION = 10;
 
+// Older tab list — still exported for anything that imports it.
 export const CPP_TABS: { value: CppTabKey; label: string }[] = [
 	{ value: "purchasing", label: "Purchasing Details" },
 	{ value: "financial", label: "Financial Impact" },
@@ -109,8 +114,47 @@ export const CPP_TABS: { value: CppTabKey; label: string }[] = [
 	{ value: "workflow", label: "Workflow" },
 ];
 
+/** Create CPP wizard. Financial Impact / Amortisation / Tracker are not steps:
+ * their numbers now come from the attached Excel, not from typed line items. */
+export const CPP_STEPS: CppStep[] = [
+	{ id: 1, key: "basic", label: "Basic details" },
+	{ id: 2, key: "purchasing", label: "Purchasing details" },
+	{ id: 3, key: "master", label: "Master data" },
+	{ id: 4, key: "other", label: "Other data" },
+	{ id: 5, key: "attachments", label: "Attachments" },
+	{ id: 6, key: "workflow", label: "Review & workflow" },
+];
+
 // Material Cost Tracker is built disabled behind this flag.
 export const MATERIAL_COST_TRACKER_ENABLED = false;
+
+/* ----------------------- category / condition rules ---------------------- */
+
+export const getCondition = (code: string): CppConditionOption | undefined =>
+	CPP_CONDITIONS.find((condition) => condition.value === code);
+
+/** Indirect category → indirect sheets; every other category → direct sheets. */
+export const getConditionGroup = (category: string): CppConditionGroup =>
+	category === "Indirect" ? "INDIRECT" : "DIRECT";
+
+export const getConditionOptions = (
+	category: string,
+): { label: string; value: string }[] =>
+	category
+		? CPP_CONDITIONS.filter(
+				(condition) => condition.group === getConditionGroup(category),
+			).map(({ value, label }) => ({ value, label }))
+		: [];
+
+export const isConditionAllowed = (
+	condition: string,
+	category: string,
+): boolean =>
+	getConditionOptions(category).some((option) => option.value === condition);
+
+/** Spares flow. Assumption (open question Q3): category = Spares OR plant = Spares. */
+export const isSpareRequest = (category: string, plant: string): boolean =>
+	category === "SPARES" || plant === "Spares";
 
 /* ------------------------------ defaults ------------------------------- */
 
@@ -144,9 +188,14 @@ export const emptyAmort = (): CppAmortRow => ({
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
 export const getDefaultValues = (): CppFormValues => ({
+	category: "",
+	plant: "",
+	condition: "",
 	materialType: "",
-	reason: "",
 	effects: [],
+	reason: "",
+	priceType: "STANDARD",
+	justification: "",
 	aribaRef: "",
 	initiationDate: todayISO(),
 	suppliers: {
@@ -154,12 +203,10 @@ export const getDefaultValues = (): CppFormValues => ({
 		other: emptySupplier(),
 		recommended: emptySupplier(),
 	},
-	parts: [emptyPart()],
-	amortisation: [emptyAmort()],
-	other: {
-		remarks: "",
-		attachments: Object.fromEntries(CPP_ATTACHMENTS.map((a) => [a.key, false])),
-	},
+	purchasingFile: null,
+	approvalValues: { partValue: "", variationPct: "", amount: "" },
+	other: { remarks: "" },
+	attachments: Object.fromEntries(CPP_ATTACHMENTS.map((a) => [a.key, null])),
 	masterData: {
 		materialGroup: "",
 		materialType: "",
@@ -173,6 +220,9 @@ export const getDefaultValues = (): CppFormValues => ({
 		plants: [],
 		note: "",
 	},
+	// No typed line items any more — the Excel carries them.
+	parts: [],
+	amortisation: [],
 	financial: { noChange: false, plantSplit: { DWD: "", KGP: "", SPARE: "" } },
 	workflow: {
 		models: [],
@@ -181,7 +231,6 @@ export const getDefaultValues = (): CppFormValues => ({
 		spares: false,
 		authority: "",
 	},
-	justification: "",
 });
 
 /* ---------------------------- calculations ----------------------------- */
@@ -198,6 +247,15 @@ export const formatINR = (value: number | null): string =>
 				minimumFractionDigits: 2,
 				maximumFractionDigits: 2,
 			})}`;
+
+/** ₹ in the units the approval circular uses (Lacs / Cr). */
+export const formatLacs = (value: number | null): string => {
+	if (value === null) return "—";
+	const abs = Math.abs(value);
+	return abs >= 1e7
+		? `₹ ${(value / 1e7).toFixed(2)} Cr`
+		: `₹ ${(value / 1e5).toFixed(2)} Lacs`;
+};
 
 export const formatPct = (value: number | null): string =>
 	value === null ? "—" : `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;

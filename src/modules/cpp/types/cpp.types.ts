@@ -1,3 +1,5 @@
+import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
+
 export type CppStatus =
 	| "DRAFT"
 	| "IN_PROGRESS"
@@ -23,6 +25,40 @@ export type CppTabKey =
 	| "master"
 	| "other"
 	| "workflow";
+
+/** Steps of the Create CPP wizard (the old tab keys are left untouched). */
+export type CppStepKey =
+	| "basic"
+	| "purchasing"
+	| "master"
+	| "other"
+	| "attachments"
+	| "workflow";
+
+export type CppStep = { id: number; key: CppStepKey; label: string };
+
+/** Which conditions a category can pick (Indirect category → indirect sheets). */
+export type CppConditionGroup = "DIRECT" | "INDIRECT";
+
+/** What the first approval band reads. null = the sheet has no first band. */
+export type CppPartBasis = "PART_VALUE" | "VARIATION_PCT" | null;
+
+/** What the amount band reads. */
+export type CppAmountBasis =
+	| "ANNUALISED_VALUE"
+	| "ANNUALISED_IMPACT"
+	| "ACTUAL_IMPACT";
+
+export type CppConditionOption = {
+	/** Stable code the backend resolver will match on. */
+	value: string;
+	label: string;
+	/** Workbook sheet this condition maps to (traceability). */
+	sheet: string;
+	group: CppConditionGroup;
+	partBasis: CppPartBasis;
+	amountBasis: CppAmountBasis;
+};
 
 export type CppSupplier = {
 	partnerId: string;
@@ -55,22 +91,41 @@ export type CppAmortRow = {
 };
 
 export type CppFormValues = {
+	/* --- step 1: basic details --- */
+	category: string;
+	plant: string;
+	/** Workbook sheet code, see CPP_CONDITIONS. */
+	condition: string;
 	materialType: "" | "Direct" | "Indirect";
-	reason: string;
+	/** "Commodity price adjustment – effect on" (Quality / Cost / Delivery). */
 	effects: CppEffect[];
+	reason: string;
+	priceType: string;
+	justification: string;
 	aribaRef: string;
 	initiationDate: string;
+
+	/* --- step 2: purchasing details --- */
 	suppliers: {
 		existing: CppSupplier;
 		other: CppSupplier;
 		recommended: CppSupplier;
 	};
-	parts: CppPartRow[];
-	amortisation: CppAmortRow[];
+	/** The attached purchasing-details Excel. Not parsed or stored by the app. */
+	purchasingFile: FileUploadValue | null;
+	/** Typed by the requester; only the values the chosen condition needs. */
+	approvalValues: {
+		partValue: string;
+		variationPct: string;
+		amount: string;
+	};
+
+	/* --- remaining steps --- */
 	other: {
 		remarks: string;
-		attachments: Record<string, boolean>;
 	};
+	/** Supporting documents, keyed by CPP_ATTACHMENTS key. Sent to TCS on approval. */
+	attachments: Record<string, FileUploadValue | null>;
 	masterData: {
 		materialGroup: string;
 		materialType: string;
@@ -84,18 +139,24 @@ export type CppFormValues = {
 		plants: CppPlant[];
 		note: string;
 	};
+
+	/* --- kept so the older tabs still compile; not rendered in the wizard --- */
+	parts: CppPartRow[];
+	amortisation: CppAmortRow[];
 	financial: {
 		noChange: boolean;
 		plantSplit: Record<CppPlant, string>;
 	};
 	workflow: {
+		/** Step 1 "Models" */
 		models: string[];
+		/** Step 1 "Applicable plants" */
 		plants: CppPlant[];
+		/** Step 1 "Pricing condition" */
 		pricingCondition: string;
 		spares: boolean;
 		authority: string;
 	};
-	justification: string;
 };
 
 /** Decimals arrive as strings from Prisma/JSON. */

@@ -1,164 +1,103 @@
-// tabs/WorkflowTab.tsx — master controller for routing.
-// Approval flow = admin-assigned template for the chosen authority, shown with
-// the existing ApprovalTable. Templates below are MOCK until the CPP workflow
-// subject type exists on the backend (then use workflowApi.listForModule +
-// mapWorkflowStagesToApprovalRows instead of MOCK_TEMPLATES).
-import { Controller, useFormContext, useWatch } from "react-hook-form";
+// tabs/WorkflowTab.tsx — wizard last step: review of what decides the approval flow.
+// The approval chain itself is resolved by the backend on submit (category +
+// plant + condition + value band), so there is no manual authority picker here.
+// Once the CPP workflow subject type exists, render the resolved chain below
+// with the existing ApprovalTable (workflowApi preview).
+import type { ReactNode } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 
-import { Alert } from "../../../components/common/Alert";
 import Card from "../../../components/common/Card";
-import Checkbox from "../../../components/forms/Checkbox";
-import Radio from "../../../components/forms/Radio";
-import { ApprovalTable } from "../../workflows";
-import type { ApprovalTableRow } from "../../workflows/types/types";
-import {
-	RhfChips,
-	RhfSelect,
-	toOptions,
-	useFieldError,
-} from "../components/CppFields";
 import type { CppFormValues } from "../types/cpp.types";
 import {
-	CPP_AUTHORITIES,
-	CPP_MODELS,
-	CPP_PLANTS,
+	CPP_AMOUNT_BASIS_LABELS,
+	CPP_CATEGORY_LABELS,
+	CPP_PART_BASIS_LABELS,
+	CPP_PRICE_TYPE_OPTIONS,
+} from "../utils/cpp.constants";
+import {
 	CPP_PRICING_CONDITIONS,
+	formatLacs,
+	getCondition,
+	isSpareRequest,
+	toNum,
 } from "../utils/cpp.utils";
 
-const stage = (
-	id: string,
-	name: string,
-	designation: string,
-	order: number,
-) => ({
-	id,
-	stage: order,
-	stageName: `Stage ${order}`,
-	name,
-	email: `${name.toLowerCase().replace(/\s+/g, ".")}@example.com`,
-	designation,
-	strategy: "Sequential",
-	minApprovals: 1,
-	totalApprovers: 1,
-	status: "PENDING",
-	approvers: [
-		{
-			id: `${id}-a`,
-			name,
-			email: `${name.toLowerCase().replace(/\s+/g, ".")}@example.com`,
-			designation,
-			isExternal: false,
-			status: "PENDING",
-		},
-	],
-});
-
-// MOCK — shape follows ApprovalTableRow as used by ApprovalTable; cast because
-// the real rows come from mapWorkflowStagesToApprovalRows.
-const MOCK_TEMPLATES: Record<string, ApprovalTableRow[]> = {
-	SCM: [
-		stage("scm-1", "Category Owner", "Category Head", 1),
-		stage("scm-2", "Head SCM", "Head, SCM", 2),
-	],
-	CPP: [
-		stage("cpp-1", "Category Owner", "Category Head", 1),
-		stage("cpp-2", "Head SCM", "Head, SCM", 2),
-		stage("cpp-3", "CPP Chairman", "Chairman", 3),
-	],
-	MD: [
-		stage("md-1", "Head SCM", "Head, SCM", 1),
-		stage("md-2", "Managing Director", "MD", 2),
-	],
-	Spare: [
-		stage("sp-1", "Spares Owner", "Head Parts", 1),
-		stage("sp-2", "Head SCM", "Head, SCM", 2),
-	],
-} as unknown as Record<string, ApprovalTableRow[]>;
+const Row = ({ label, value }: { label: string; value: ReactNode }) => (
+	<div className="flex flex-col gap-0.5">
+		<dt className="text-xs text-slate-500">{label}</dt>
+		<dd className="text-sm font-medium text-slate-900">{value || "—"}</dd>
+	</div>
+);
 
 const WorkflowTab = () => {
 	const { control } = useFormContext<CppFormValues>();
-	const authority = useWatch({ control, name: "workflow.authority" });
-	const pricingError = useFieldError("workflow.pricingCondition");
+	const values = useWatch({ control }) as CppFormValues;
+
+	const condition = getCondition(values.condition);
+	const pricing = CPP_PRICING_CONDITIONS.find(
+		(item) => item.value === values.workflow?.pricingCondition,
+	);
+	const priceType = CPP_PRICE_TYPE_OPTIONS.find(
+		(item) => item.value === values.priceType,
+	);
+	const spare = isSpareRequest(values.category, values.plant);
+	const partBasis = condition?.partBasis;
+	const partValue =
+		partBasis === "VARIATION_PCT"
+			? values.approvalValues?.variationPct
+				? `${values.approvalValues.variationPct}%`
+				: ""
+			: formatLacs(toNum(values.approvalValues?.partValue));
 
 	return (
-		<div className="flex flex-col gap-4">
-			<Card
-				title="Workflow – master controller"
-				subtitle="Decides which approval workflow runs"
-				size="small"
-			>
-				<div className="grid gap-5 lg:grid-cols-2">
-					<RhfChips
-						name="workflow.models"
-						label="Models"
-						required
-						options={CPP_MODELS}
+		<Card size="small">
+			<div className="flex flex-col gap-5">
+				<dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+					<Row
+						label="Category"
+						value={CPP_CATEGORY_LABELS[values.category] ?? values.category}
 					/>
-					<RhfChips
-						name="workflow.plants"
-						label="Applicable plants"
-						options={CPP_PLANTS}
-					/>
-
-					<div className="lg:col-span-2">
-						<Controller
-							name="workflow.pricingCondition"
-							control={control}
-							render={({ field }) => (
-								<Radio
-									name="workflow.pricingCondition"
-									groupLabel="Pricing condition"
-									required
-									options={CPP_PRICING_CONDITIONS}
-									selectedValue={field.value}
-									onChange={field.onChange}
-									error={pricingError}
-								/>
-							)}
+					<Row label="Plant" value={values.plant} />
+					<Row label="Condition" value={condition?.label} />
+					<Row label="Spares flow" value={spare ? "Yes" : "No"} />
+					{partBasis ? (
+						<Row label={CPP_PART_BASIS_LABELS[partBasis]} value={partValue} />
+					) : null}
+					{condition ? (
+						<Row
+							label={CPP_AMOUNT_BASIS_LABELS[condition.amountBasis]}
+							value={formatLacs(toNum(values.approvalValues?.amount))}
 						/>
-					</div>
-
-					<Controller
-						name="workflow.spares"
-						control={control}
-						render={({ field }) => (
-							<Checkbox
-								label="Applies to spares"
-								checked={field.value}
-								onChange={field.onChange}
-							/>
-						)}
+					) : null}
+					<Row label="Material type" value={values.materialType} />
+					<Row label="Reason" value={values.reason} />
+					<Row label="Models" value={values.workflow?.models?.join(", ")} />
+					<Row
+						label="Applicable plants"
+						value={values.workflow?.plants?.join(", ")}
 					/>
-					<RhfSelect
-						name="workflow.authority"
-						label="Approving authority"
-						required
-						options={toOptions(CPP_AUTHORITIES)}
+					<Row label="Price type" value={priceType?.label} />
+					<Row label="Pricing condition" value={pricing?.label} />
+					<Row
+						label="Recommended supplier"
+						value={values.suppliers?.recommended?.name}
 					/>
-				</div>
-			</Card>
+					<Row label="Purchasing Excel" value={values.purchasingFile?.name} />
+					<Row
+						label="Attachments"
+						value={`${
+							Object.values(values.attachments ?? {}).filter(Boolean).length
+						} file(s)`}
+					/>
+				</dl>
 
-			<Alert
-				variant="warning"
-				type="banner"
-				title="Approving authority is selected manually"
-				description="Auto-routing from the CPP circular (value bands, purchase type, plant) is planned for a later phase."
-			/>
-			<Card
-				title="Approval flow"
-				subtitle={
-					authority
-						? `Template assigned for ${authority}`
-						: "Select an approving authority to preview the flow"
-				}
-			>
-				<ApprovalTable
-					rows={authority ? (MOCK_TEMPLATES[authority] ?? []) : []}
-					hiddenColumns={["status"]}
-					defaultExpanded
-				/>
-			</Card>
-		</div>
+				<p className="text-sm text-slate-600">
+					The approval flow (stages and approvers) is assigned automatically on
+					submit from the admin-maintained workflow settings. Approved requests
+					are sent to TCS with the attached files.
+				</p>
+			</div>
+		</Card>
 	);
 };
 
