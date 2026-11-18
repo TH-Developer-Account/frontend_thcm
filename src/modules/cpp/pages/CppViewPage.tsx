@@ -16,6 +16,13 @@ import { mimeFromName, toNumber } from "../helpers/cpp.mapper";
 import type { CppAttachment, CppSectionKey } from "../types/cpp.types";
 import { CPP_CATEGORY_LABELS, CPP_STATUS } from "../utils/cpp.constants";
 import { CPP_ATTACHMENTS, getCondition } from "../utils/cpp.utils";
+import { ClipboardClock } from "lucide-react";
+import { CardEmpty } from "../../../components/ui/CardSkeleton";
+import { useAuth } from "../../../context/Auth/useAuth";
+import {
+	ApprovalWorkflowTableContent,
+	getWorkflowApproverData,
+} from "../../workflows";
 
 const LISTING_URL = "/cpp/listing";
 
@@ -66,6 +73,11 @@ const CppViewPage = () => {
 	const section = (key: CppSectionKey): Record<string, unknown> =>
 		cpp?.sections.find((s) => s.key === key)?.data ?? {};
 
+	const { user } = useAuth();
+	const workflowData = useMemo(
+		() => getWorkflowApproverData((cpp as any)?.activeWorkflow ?? null, user),
+		[cpp, user],
+	);
 	const header = (
 		<PageHeader
 			headerText={cpp ? `CPP Request ${cpp.referenceNumber}` : "CPP Request"}
@@ -339,6 +351,20 @@ const CppViewPage = () => {
 					// Added with the workflow: approval workflow, comments, audit trail.
 				]}
 			/>
+			<Card title="Approval workflow" size="small">
+				{workflowData.stages.length > 0 ? (
+					<ApprovalWorkflowTableContent
+						stages={workflowData.stages}
+						showEmptyState={false}
+					/>
+				) : (
+					<CardEmpty
+						title="No workflow yet"
+						description="This request has not been submitted."
+						Icon={ClipboardClock}
+					/>
+				)}
+			</Card>
 		</PageSectionLayout>
 	);
 };

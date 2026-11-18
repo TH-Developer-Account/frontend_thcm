@@ -15,17 +15,20 @@ const idUrl = (id: string) => `${CPP_URL}/${encodeURIComponent(id)}`;
 
 export const cppApi = {
 	list: async (params: CppListingParams): Promise<CppListingResult> => {
-		const { data: body } = await ServerAxios.get<CppListingApiResponse>(CPP_URL, {
-			params: {
-				tab: params.tab,
-				search: params.search?.trim() || undefined,
-				status: params.status,
-				page_index: params.pageIndex,
-				page_size: params.pageSize,
-				sortBy: params.sortBy,
-				sortOrder: params.sortOrder,
+		const { data: body } = await ServerAxios.get<CppListingApiResponse>(
+			CPP_URL,
+			{
+				params: {
+					tab: params.tab,
+					search: params.search?.trim() || undefined,
+					status: params.status,
+					page_index: params.pageIndex,
+					page_size: params.pageSize,
+					sortBy: params.sortBy,
+					sortOrder: params.sortOrder,
+				},
 			},
-		});
+		);
 
 		const rows = body.data ?? [];
 		return {
@@ -41,14 +44,36 @@ export const cppApi = {
 		return data.data;
 	},
 
-	create: async (payload: CppRequestPayload = {}): Promise<CppMutationResponse> => {
-		const { data } = await ServerAxios.post<CppMutationResponse>(CPP_URL, payload);
+	create: async (
+		payload: CppRequestPayload = {},
+	): Promise<CppMutationResponse> => {
+		const { data } = await ServerAxios.post<CppMutationResponse>(
+			CPP_URL,
+			payload,
+		);
 		return data;
 	},
-
+	submit: async (
+		id: string,
+	): Promise<{ workflowId: string; ruleId: string; stages: number }> => {
+		const { data } = await ServerAxios.post<{
+			data: { workflowId: string; ruleId: string; stages: number };
+		}>(`${CPP_URL}/${encodeURIComponent(id)}/submit`);
+		return data.data;
+	},
+	previewApproval: async (id: string) => {
+		const { data } = await ServerAxios.get(`${idUrl(id)}/approval-preview`);
+		return data.data;
+	},
 	/** Only the keys you send change; a section sent again replaces that whole section. */
-	update: async (id: string, payload: CppRequestPayload): Promise<CppMutationResponse> => {
-		const { data } = await ServerAxios.put<CppMutationResponse>(idUrl(id), payload);
+	update: async (
+		id: string,
+		payload: CppRequestPayload,
+	): Promise<CppMutationResponse> => {
+		const { data } = await ServerAxios.put<CppMutationResponse>(
+			idUrl(id),
+			payload,
+		);
 		return data;
 	},
 

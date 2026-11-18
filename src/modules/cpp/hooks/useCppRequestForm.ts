@@ -4,8 +4,8 @@
 //              -> upload new files / delete removed files
 //              -> re-fetch the detail, so the form shows what the server stored
 //                 (attachments, derived fields).
-// Submit:      validates every step, saves, then (workflow step, not built yet)
-//              will call POST /cpp/:id/submit.
+// Submit:      validates every step, saves, then calls POST /cpp/:id/submit
+//              (the server picks the approval band and starts the workflow).
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	useForm,
@@ -20,7 +20,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useToast } from "../../../context/Auth/AuthContext";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { cppApi } from "../api/cpp.api";
-import { detailToForm, formToPayload, pendingFileChanges } from "../helpers/cpp.mapper";
+import {
+	detailToForm,
+	formToPayload,
+	pendingFileChanges,
+} from "../helpers/cpp.mapper";
 import type { CppDetail, CppFormValues, CppStepKey } from "../types/cpp.types";
 import { cppKeys, useCppDetail, useCppMutations } from "./useCppMutations";
 import { CPP_STATUS } from "../utils/cpp.constants";
@@ -89,7 +93,8 @@ export const getStepsWithErrors = (
 };
 
 const scrollToTop = () => {
-	if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+	if (typeof window !== "undefined")
+		window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
 export const useCppRequestForm = () => {
@@ -97,8 +102,12 @@ export const useCppRequestForm = () => {
 	const { id: routeId } = useParams<{ id: string }>();
 	const { showToast } = useToast();
 	const queryClient = useQueryClient();
-	const { createMutation, updateMutation, uploadAttachmentMutation, deleteAttachmentMutation } =
-		useCppMutations();
+	const {
+		createMutation,
+		updateMutation,
+		uploadAttachmentMutation,
+		deleteAttachmentMutation,
+	} = useCppMutations();
 	const [stepIndex, setStepIndex] = useState(0);
 	const [busy, setBusy] = useState(false);
 
@@ -163,57 +172,69 @@ export const useCppRequestForm = () => {
 	 * Saves everything and returns the fresh server copy (or null on failure —
 	 * the toast has already been shown).
 	 */
-	const persist = useCallback(async (values: CppFormValues): Promise<CppDetail | null> => {
-		try {
-			let current = serverRef.current;
-			if (!current) {
-				const created = await createMutation.mutateAsync(formToPayload(values));
-				current = created.data;
-			} else {
-				const updated = await updateMutation.mutateAsync({
-					id: current.id,
-					payload: formToPayload(values),
+	const persist = useCallback(
+		async (values: CppFormValues): Promise<CppDetail | null> => {
+			try {
+				let current = serverRef.current;
+				if (!current) {
+					const created = await createMutation.mutateAsync(
+						formToPayload(values),
+					);
+					current = created.data;
+				} else {
+					const updated = await updateMutation.mutateAsync({
+						id: current.id,
+						payload: formToPayload(values),
+					});
+					current = updated.data;
+				}
+
+				// Files: one request each; re-read the detail at the end so the form shows
+				// exactly what the server stored.
+				let filesChanged = false;
+				for (const change of pendingFileChanges(values, current.attachments)) {
+					filesChanged = true;
+					if (change.kind === "delete")
+						await deleteAttachmentMutation.mutateAsync({
+							id: current.id,
+							attachmentId: change.attachmentId,
+						});
+					else
+						await uploadAttachmentMutation.mutateAsync({
+							id: current.id,
+							file: change.file,
+							type: change.slot,
+						});
+				}
+				const fresh = filesChanged ? await cppApi.getById(current.id) : current;
+
+				serverRef.current = fresh;
+				queryClient.setQueryData(cppKeys.detail(fresh.id), fresh);
+				loadedIdRef.current = fresh.id;
+				form.reset(detailToForm(fresh), { keepErrors: true });
+				if (!routeId) navigate(`/cpp/${fresh.id}/edit`, { replace: true });
+				return fresh;
+			} catch (error) {
+				showToast({
+					type: "error",
+					title: "Could not save",
+					description: getApiErrorMessage(error, "Please try again."),
 				});
-				current = updated.data;
+				return null;
 			}
-
-			// Files: one request each; re-read the detail at the end so the form shows
-			// exactly what the server stored.
-			let filesChanged = false;
-			for (const change of pendingFileChanges(values, current.attachments)) {
-				filesChanged = true;
-				if (change.kind === "delete")
-					await deleteAttachmentMutation.mutateAsync({ id: current.id, attachmentId: change.attachmentId });
-				else
-					await uploadAttachmentMutation.mutateAsync({ id: current.id, file: change.file, type: change.slot });
-			}
-			const fresh = filesChanged ? await cppApi.getById(current.id) : current;
-
-			serverRef.current = fresh;
-			queryClient.setQueryData(cppKeys.detail(fresh.id), fresh);
-			loadedIdRef.current = fresh.id;
-			form.reset(detailToForm(fresh), { keepErrors: true });
-			if (!routeId) navigate(`/cpp/${fresh.id}/edit`, { replace: true });
-			return fresh;
-		} catch (error) {
-			showToast({
-				type: "error",
-				title: "Could not save",
-				description: getApiErrorMessage(error, "Please try again."),
-			});
-			return null;
-		}
-	}, [
-		createMutation,
-		deleteAttachmentMutation,
-		form,
-		navigate,
-		queryClient,
-		routeId,
-		showToast,
-		updateMutation,
-		uploadAttachmentMutation,
-	]);
+		},
+		[
+			createMutation,
+			deleteAttachmentMutation,
+			form,
+			navigate,
+			queryClient,
+			routeId,
+			showToast,
+			updateMutation,
+			uploadAttachmentMutation,
+		],
+	);
 
 	const saveDraft = useCallback(async () => {
 		setBusy(true);
@@ -235,13 +256,28 @@ export const useCppRequestForm = () => {
 			setBusy(true);
 			try {
 				const saved = await persist(values);
-				// TODO(workflow step): POST /cpp/:id/submit, then navigate to the view page.
-				if (saved)
+				if (!saved) return;
+				try {
+					await cppApi.submit(saved.id);
+					void queryClient.invalidateQueries({ queryKey: cppKeys.lists() });
+					void queryClient.invalidateQueries({
+						queryKey: cppKeys.detail(saved.id),
+					});
 					showToast({
 						type: "success",
-						title: "Saved and validated",
-						description: `${saved.referenceNumber} is ready. Sending for approval is enabled with the workflow step.`,
+						title: "Submitted for approval",
+						description: saved.referenceNumber,
 					});
+					navigate(`/cpp/${saved.id}/view`, { replace: true });
+				} catch (error) {
+					// The draft is saved; the message says what blocks the approval
+					// (for example a role with nobody assigned in the approval matrix).
+					showToast({
+						type: "error",
+						title: "Saved, but could not submit",
+						description: getApiErrorMessage(error, "Please try again."),
+					});
+				}
 			} finally {
 				setBusy(false);
 			}
@@ -267,7 +303,9 @@ export const useCppRequestForm = () => {
 		busy,
 		isEditing: Boolean(routeId),
 		isLoading: Boolean(routeId) && detailQuery.isLoading,
-		loadError: detailQuery.isError ? getApiErrorMessage(detailQuery.error, "Unable to load this request.") : null,
+		loadError: detailQuery.isError
+			? getApiErrorMessage(detailQuery.error, "Unable to load this request.")
+			: null,
 		referenceNumber: serverRef.current?.referenceNumber ?? null,
 		goNext,
 		goBack,
