@@ -82,7 +82,7 @@ const CppListingPage = () => {
 					iconSize={16}
 					size="sm"
 					variant="brand"
-					onClick={() => navigate("/cpp/requests/create")}
+					onClick={() => navigate("/cpp/create")}
 				/>
 			</PageHeader>
 

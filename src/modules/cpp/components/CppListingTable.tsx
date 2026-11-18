@@ -44,7 +44,8 @@ interface CppListingTableProps {
 
 const SKELETON_ROW_COUNT = 8;
 
-const SEARCH_PLACEHOLDER = "Search by reference, title, supplier or part number";
+// The server searches reference number, recommended supplier name and code.
+const SEARCH_PLACEHOLDER = "Search by reference number or supplier";
 
 export default function CppListingTable({
 	selectedFilter,

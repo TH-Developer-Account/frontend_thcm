@@ -3,7 +3,8 @@
 //   Step 2  Purchasing details  (suppliers, purchasing Excel, approval values)
 //   Step 3  Master data
 //   Step 4  Other data
-//   Step 5  Review & workflow   → Submit
+//   Step 5  Attachments
+//   Step 6  Review & workflow   → Submit
 // "Next" validates the current step; "Submit" validates everything and jumps to
 // the first step with an error.
 import type { ComponentType } from "react";
@@ -14,10 +15,8 @@ import Button from "../../../components/common/Button";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { StepProgress } from "../../../components/ui/StepProgress";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
-import {
-	CPP_LISTING_PATH,
-	useCppRequestForm,
-} from "../hooks/useCppRequestForm";
+import { CPP_LISTING_PATH, useCppRequestForm } from "../hooks/useCppRequestForm";
+import AttachmentsTab from "../tabs/AttachmentsTab";
 import BasicDetailsTab from "../tabs/BasicDetailsTab";
 import MasterDataTab from "../tabs/MasterDataTab";
 import OtherDataTab from "../tabs/OtherDataTab";
@@ -25,7 +24,6 @@ import PurchasingDetailsTab from "../tabs/PurchasingDetailsTab";
 import WorkflowTab from "../tabs/WorkflowTab";
 import type { CppStepKey } from "../types/cpp.types";
 import { CPP_STEPS } from "../utils/cpp.utils";
-import AttachmentsTab from "../tabs/AttachmentsTab";
 
 const STEP_BODY: Record<CppStepKey, ComponentType> = {
 	basic: BasicDetailsTab,
@@ -43,6 +41,10 @@ const CppRequestCreatePage = () => {
 		isFirst,
 		isLast,
 		busy,
+		isEditing,
+		isLoading,
+		loadError,
+		referenceNumber,
 		goNext,
 		goBack,
 		saveDraft,
@@ -55,33 +57,43 @@ const CppRequestCreatePage = () => {
 	return (
 		<PageSectionLayout>
 			<PageHeader
-				headerText="Create new CPP request"
+				headerText={isEditing ? `Edit CPP request${referenceNumber ? ` · ${referenceNumber}` : ""}` : "Create new CPP request"}
 				navigation={{
 					variant: "breadcrumbs",
 					ariaLabel: "Create CPP request page location",
 					breadcrumbs: [
 						{ label: "Home Screen", href: "/" },
 						{ label: "CPP requests", href: CPP_LISTING_PATH },
-						{ label: "New request" },
+						{ label: isEditing ? "Edit request" : "New request" },
 					],
 					separator: "›",
 				}}
 			/>
 
+			{loadError ? (
+				<div role="alert" className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+					{loadError}
+				</div>
+			) : isLoading ? (
+				<div className="px-4 py-10 text-center text-sm text-slate-500">Loading request…</div>
+			) : null}
+
 			<FormProvider {...form}>
 				{/* div, not <form>: Enter / step buttons must never trigger submit. */}
-				<div className="flex flex-col gap-4 mt-4">
-					<StepProgress
-						steps={CPP_STEPS}
-						currentStep={step.id}
-						ariaLabel="CPP request steps"
-					/>
+				<div className={`flex flex-col gap-4 ${isLoading || loadError ? "pointer-events-none opacity-40" : ""}`}>
+					<div className="rounded-md border border-slate-200 bg-white px-4 py-3">
+						<StepProgress
+							steps={CPP_STEPS}
+							currentStep={step.id}
+							ariaLabel="CPP request steps"
+						/>
+					</div>
 
 					<div role="region" aria-label={step.label}>
 						<ActiveStep />
 					</div>
 
-					<div>
+					<div className="sticky bottom-0 z-20 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 bg-white px-4 py-3">
 						<div className="flex flex-wrap items-center gap-2">
 							<Button
 								type="button"

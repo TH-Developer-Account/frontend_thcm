@@ -101,7 +101,7 @@ export const TAX_CODES = ["GST 5%", "GST 12%", "GST 18%", "GST 28%"];
 export const YES_NO = ["Yes", "No"];
 export const UOM_OPTIONS = ["NOS", "KG", "MTR", "SET", "LTR"];
 
-export const MIN_JUSTIFICATION = 10;
+export const MIN_JUSTIFICATION = 50;
 
 // Older tab list — still exported for anything that imports it.
 export const CPP_TABS: { value: CppTabKey; label: string }[] = [
@@ -139,12 +139,19 @@ export const getConditionGroup = (category: string): CppConditionGroup =>
 
 export const getConditionOptions = (
 	category: string,
-): { label: string; value: string }[] =>
-	category
-		? CPP_CONDITIONS.filter(
-				(condition) => condition.group === getConditionGroup(category),
-			).map(({ value, label }) => ({ value, label }))
-		: [];
+): { label: string; value: string }[] => {
+	if (!category) return [];
+	// Steel category has exactly one scenario, and that scenario is Steel-only.
+	if (category === "STEEL")
+		return CPP_CONDITIONS.filter((c) => c.value === "STEEL_COMMODITY").map(
+			({ value, label }) => ({ value, label }),
+		);
+	return CPP_CONDITIONS.filter(
+		(condition) =>
+			condition.group === getConditionGroup(category) &&
+			condition.value !== "STEEL_COMMODITY",
+	).map(({ value, label }) => ({ value, label }));
+};
 
 export const isConditionAllowed = (
 	condition: string,
@@ -196,7 +203,6 @@ export const getDefaultValues = (): CppFormValues => ({
 	reason: "",
 	priceType: "STANDARD",
 	justification: "",
-	aribaRef: "",
 	initiationDate: todayISO(),
 	suppliers: {
 		existing: emptySupplier(),

@@ -33,8 +33,8 @@ const SupplierBlock = ({
 	const base = `suppliers.${keyName}` as const;
 
 	return (
-		<div className=" p-1">
-			<div className="mb-2 text-md font-semibold text-slate-700">{title}</div>
+		<div className="rounded-md border border-slate-200 p-3">
+			<div className="mb-2 text-xs font-semibold text-slate-700">{title}</div>
 			<div className="grid gap-3">
 				{/* Plain input for now — swap for BusinessPartnerAsyncSelect later. */}
 				<RhfInput
@@ -76,46 +76,46 @@ const ApprovalValuesFields = () => {
 		}
 	}, [condition?.partBasis, setValue]);
 
-	if (!condition) {
-		return (
-			<p className="text-sm text-slate-500">
-				Select a condition in Basic details to see the values needed.
-			</p>
-		);
-	}
-
 	return (
-		<div className="grid gap-4 sm:grid-cols-2">
-			{condition.partBasis === "PART_VALUE" ? (
-				<div className="flex flex-col gap-1">
-					<RhfInput
-						name="approvalValues.partValue"
-						label={CPP_PART_BASIS_LABELS.PART_VALUE}
-						required
-						inputMode="decimal"
-					/>
-					<AmountHint name="partValue" />
+		<>
+			{!condition ? (
+				<p className="text-sm text-slate-500">
+					Select a condition in Basic details to see the values needed.
+				</p>
+			) : (
+				<div className="grid gap-4 sm:grid-cols-2">
+					{condition.partBasis === "PART_VALUE" ? (
+						<div className="flex flex-col gap-1">
+							<RhfInput
+								name="approvalValues.partValue"
+								label={CPP_PART_BASIS_LABELS.PART_VALUE}
+								required
+								inputMode="decimal"
+							/>
+							<AmountHint name="partValue" />
+						</div>
+					) : null}
+					{condition.partBasis === "VARIATION_PCT" ? (
+						<RhfInput
+							name="approvalValues.variationPct"
+							label={CPP_PART_BASIS_LABELS.VARIATION_PCT}
+							required
+							inputMode="decimal"
+							placeholder="Absolute %, e.g. 12.5"
+						/>
+					) : null}
+					<div className="flex flex-col gap-1">
+						<RhfInput
+							name="approvalValues.amount"
+							label={CPP_AMOUNT_BASIS_LABELS[condition.amountBasis]}
+							required
+							inputMode="decimal"
+						/>
+						<AmountHint name="amount" />
+					</div>
 				</div>
-			) : null}
-			{condition.partBasis === "VARIATION_PCT" ? (
-				<RhfInput
-					name="approvalValues.variationPct"
-					label={CPP_PART_BASIS_LABELS.VARIATION_PCT}
-					required
-					inputMode="decimal"
-					placeholder="Absolute %, e.g. 12.5"
-				/>
-			) : null}
-			<div className="flex flex-col gap-1">
-				<RhfInput
-					name="approvalValues.amount"
-					label={CPP_AMOUNT_BASIS_LABELS[condition.amountBasis]}
-					required
-					inputMode="decimal"
-				/>
-				<AmountHint name="amount" />
-			</div>
-		</div>
+			)}
+		</>
 	);
 };
 

@@ -46,11 +46,8 @@ export const cppApi = {
 		return data;
 	},
 
-	/** Send the rowVersion you loaded; a 409 means someone else saved first. */
-	update: async (
-		id: string,
-		payload: CppRequestPayload & { rowVersion: number },
-	): Promise<CppMutationResponse> => {
+	/** Only the keys you send change; a section sent again replaces that whole section. */
+	update: async (id: string, payload: CppRequestPayload): Promise<CppMutationResponse> => {
 		const { data } = await ServerAxios.put<CppMutationResponse>(idUrl(id), payload);
 		return data;
 	},

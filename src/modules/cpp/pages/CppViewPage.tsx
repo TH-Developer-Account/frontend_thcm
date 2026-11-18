@@ -6,16 +6,16 @@ import Card from "../../../components/common/Card";
 import Button from "../../../components/common/Button";
 import { Badge } from "../../../components/common/Badge";
 import ReadOnlyField from "../../../components/forms/ReadOnlyField";
-import SimpleViewTable, {
-	type SimpleTableColumn,
-} from "../../../components/ui/tables/SimpleViewTable";
+import SimpleViewTable from "../../../components/ui/tables/SimpleViewTable";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 
 import { useCppDetail } from "../hooks/useCppMutations";
-import { toNumber } from "../helpers/cpp.mapper";
-import type { CppAttachment, CppItem } from "../types/cpp.types";
+import { mimeFromName, toNumber } from "../helpers/cpp.mapper";
+import type { CppAttachment, CppSectionKey } from "../types/cpp.types";
+import { CPP_CATEGORY_LABELS, CPP_STATUS } from "../utils/cpp.constants";
+import { CPP_ATTACHMENTS, getCondition } from "../utils/cpp.utils";
 
 const LISTING_URL = "/cpp/listing";
 
@@ -24,7 +24,6 @@ const inr = new Intl.NumberFormat("en-IN", {
 	currency: "INR",
 	maximumFractionDigits: 2,
 });
-const plain = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 4 });
 const dateFormatter = new Intl.DateTimeFormat("en-IN", {
 	day: "2-digit",
 	month: "short",
@@ -35,46 +34,28 @@ const money = (value: unknown): string => {
 	const n = toNumber(value as string | number | null);
 	return n === null ? "--" : inr.format(n);
 };
-const num = (value: unknown): string => {
-	const n = toNumber(value as string | number | null);
-	return n === null ? "--" : plain.format(n);
-};
 const date = (value?: string | null): string => {
 	if (!value) return "--";
 	const d = new Date(value);
 	return Number.isNaN(d.getTime()) ? "--" : dateFormatter.format(d);
 };
+const str = (value: unknown): string => {
+	if (Array.isArray(value)) return value.join(", ") || "--";
+	return typeof value === "string" && value.trim() ? value : "--";
+};
 
 const GRID = "grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3";
 
-/** Same formulas as the F02 sheet and the server roll-ups. */
-const difference = (item: CppItem): number | null => {
-	const existing = toNumber(item.existingPrice);
-	const next = toNumber(item.newPrice);
-	return existing === null || next === null ? null : next - existing;
+type Supplier = { name?: string; code?: string };
+const supplierText = (s: unknown): string => {
+	const { name, code } = (s ?? {}) as Supplier;
+	return [code, name].filter(Boolean).join(" · ") || "--";
 };
 
-const ITEM_COLUMNS: SimpleTableColumn<CppItem>[] = [
-	{ key: "lineNo", header: "#", minWidth: 48, render: (i) => i.lineNo },
-	{ key: "plantCode", header: "Plant", render: (i) => i.plantCode ?? "--" },
-	{ key: "partNo", header: "Part No.", minWidth: 120, render: (i) => i.partNo ?? "--" },
-	{ key: "description", header: "Description", minWidth: 200, render: (i) => i.description ?? "--" },
-	{ key: "existingPrice", header: "Existing Price", align: "right", render: (i) => num(i.existingPrice) },
-	{ key: "newPrice", header: "New Price", align: "right", render: (i) => num(i.newPrice) },
-	{
-		key: "difference",
-		header: "Difference",
-		align: "right",
-		render: (i) => {
-			const d = difference(i);
-			return d === null ? "--" : plain.format(d);
-		},
-	},
-	{ key: "effectiveFrom", header: "Effective From", minWidth: 110, render: (i) => date(i.effectiveFrom) },
-	{ key: "receivedQty", header: "Received Qty", align: "right", render: (i) => num(i.receivedQty) },
-	{ key: "abpVolume", header: "ABP Volume", align: "right", render: (i) => num(i.abpVolume) },
-	{ key: "qtyPerMachine", header: "Qty / M/C", align: "right", render: (i) => num(i.qtyPerMachine) },
-];
+const attachmentLabel = (type: string): string =>
+	type === "purchasingFile"
+		? "Purchasing details (Excel)"
+		: (CPP_ATTACHMENTS.find((item) => item.key === type)?.label ?? type);
 
 const CppViewPage = () => {
 	const navigate = useNavigate();
@@ -82,6 +63,8 @@ const CppViewPage = () => {
 	const { data: cpp, isLoading, isError, error, refetch } = useCppDetail(id);
 
 	const attachments = useMemo(() => cpp?.attachments ?? [], [cpp]);
+	const section = (key: CppSectionKey): Record<string, unknown> =>
+		cpp?.sections.find((s) => s.key === key)?.data ?? {};
 
 	const header = (
 		<PageHeader
@@ -108,7 +91,7 @@ const CppViewPage = () => {
 				size="sm"
 				onClick={() => navigate(LISTING_URL)}
 			/>
-			{cpp?.status === "DRAFT" ? (
+			{cpp?.status === CPP_STATUS.DRAFT ? (
 				<Button
 					type="button"
 					text="Continue editing"
@@ -155,86 +138,64 @@ const CppViewPage = () => {
 		);
 	}
 
+	const basic = section("basic");
+	const purchasing = section("purchasing");
+	const master = section("master");
+	const other = section("other");
+	const workflow = (basic.workflow ?? {}) as Record<string, unknown>;
+	const suppliers = (purchasing.suppliers ?? {}) as Record<string, unknown>;
+
 	return (
 		<PageSectionLayout>
 			{header}
 
 			<Card
-				title={cpp.title?.trim() || "Untitled request"}
-				subtitle={`${cpp.formatVersion} · Last updated ${date(cpp.updated_at)}`}
+				title={getCondition(cpp.condition ?? "")?.label ?? "CPP request"}
+				subtitle={`Last updated ${date(cpp.updated_at)}`}
 				actions={<Badge status={cpp.status} />}
 			>
 				<div className={GRID}>
 					<ReadOnlyField label="Reference Number" value={cpp.referenceNumber} />
-					<ReadOnlyField label="Initiated By" value={cpp.initiatedBy?.name} />
+					<ReadOnlyField
+						label="Category"
+						value={CPP_CATEGORY_LABELS[cpp.category ?? ""] ?? cpp.category}
+					/>
+					<ReadOnlyField label="Plant" value={cpp.plant} />
 					<ReadOnlyField label="Created On" value={date(cpp.created_at)} />
+					<ReadOnlyField label="Submitted On" value={date(cpp.submittedAt)} />
 				</div>
 			</Card>
 
 			<Card
 				sections={[
 					{
-						id: "classification",
-						title: "Request details",
+						id: "basic",
+						title: "Basic details",
 						children: (
 							<div className={GRID}>
-								<ReadOnlyField label="Material Category" value={cpp.materialCategory} />
-								<ReadOnlyField label="Request Type" value={cpp.requestType} />
-								<ReadOnlyField label="Reason for Price Update" value={cpp.reasonCode} />
-								<ReadOnlyField label="Effect" value={cpp.effectQcd.join(", ")} />
-								<ReadOnlyField label="Pricing Condition" value={cpp.pricingCondition} />
-								<ReadOnlyField label="Price Type" value={cpp.priceType} />
-								<ReadOnlyField label="Plants" value={cpp.plantCodes.join(", ")} />
-								<ReadOnlyField label="Models" value={cpp.models} />
-							</div>
-						),
-					},
-					{
-						id: "supplier",
-						title: "Supplier",
-						children: (
-							<div className={GRID}>
-								<ReadOnlyField label="Supplier Code" value={cpp.supplierCode} />
-								<ReadOnlyField label="Supplier Name" value={cpp.supplierName} />
-								<span />
-								<ReadOnlyField label="Existing Supplier Code" value={cpp.existingSupplierCode} />
-								<ReadOnlyField label="Existing Supplier Name" value={cpp.existingSupplierName} />
-							</div>
-						),
-					},
-					{
-						id: "items",
-						title: "Price details",
-						subtitle: `${cpp.itemCount} line${cpp.itemCount === 1 ? "" : "s"}`,
-						children: (
-							<SimpleViewTable<CppItem>
-								ariaLabel="CPP price lines"
-								data={cpp.items}
-								columns={ITEM_COLUMNS}
-								getRowId={(item) => item.id}
-								maxHeight="520px"
-								emptyTitle="No price lines added"
-								emptyDescription="This request has no part lines yet."
-							/>
-						),
-					},
-					{
-						id: "impact",
-						title: "Impact summary",
-						children: (
-							<div className={GRID}>
-								<ReadOnlyField label="Highest Part Value" value={money(cpp.maxPartValue)} />
-								<ReadOnlyField label="Annualised Value" value={money(cpp.annualisedValue)} />
 								<ReadOnlyField
-									label="Max Price Variation"
-									value={
-										toNumber(cpp.maxVariationPct) === null
-											? "--"
-											: `${plain.format(toNumber(cpp.maxVariationPct) as number)} %`
-									}
+									label="Material Type"
+									value={str(basic.materialType)}
 								/>
-								<ReadOnlyField label="Actual Impact" value={money(cpp.actualImpact)} />
-								<ReadOnlyField label="Annualised Impact" value={money(cpp.annualisedImpact)} />
+								<ReadOnlyField label="Reason" value={str(basic.reason)} />
+								<ReadOnlyField label="Effect" value={str(basic.effects)} />
+								<ReadOnlyField
+									label="Price Type"
+									value={str(basic.priceType)}
+								/>
+								<ReadOnlyField
+									label="Pricing Condition"
+									value={str(workflow.pricingCondition)}
+								/>
+								<ReadOnlyField label="Models" value={str(workflow.models)} />
+								<ReadOnlyField
+									label="Applicable Plants"
+									value={str(workflow.plants)}
+								/>
+								<ReadOnlyField
+									label="Initiation Date"
+									value={date(str(basic.initiationDate))}
+								/>
 							</div>
 						),
 					},
@@ -242,7 +203,103 @@ const CppViewPage = () => {
 						id: "justification",
 						title: "Justification",
 						children: (
-							<ReadOnlyField value={cpp.justification} valueClassName="whitespace-pre-wrap" />
+							<ReadOnlyField
+								value={str(basic.justification)}
+								valueClassName="whitespace-pre-wrap"
+							/>
+						),
+					},
+					{
+						id: "purchasing",
+						title: "Purchasing details",
+						children: (
+							<div className={GRID}>
+								<ReadOnlyField
+									label="Existing Supplier"
+									value={supplierText(suppliers.existing)}
+								/>
+								<ReadOnlyField
+									label="Other Supplier"
+									value={supplierText(suppliers.other)}
+								/>
+								<ReadOnlyField
+									label="Recommended Supplier"
+									value={supplierText(suppliers.recommended)}
+								/>
+								<ReadOnlyField
+									label="Highest Value per Part"
+									value={money(cpp.maxPartValue)}
+								/>
+								<ReadOnlyField
+									label="Highest Price Variation"
+									value={
+										cpp.maxVariationPct === null
+											? "--"
+											: `${cpp.maxVariationPct} %`
+									}
+								/>
+								<ReadOnlyField
+									label="Annualised Value"
+									value={money(cpp.annualisedValue)}
+								/>
+								<ReadOnlyField
+									label="Annualised Impact"
+									value={money(cpp.annualisedImpact)}
+								/>
+								<ReadOnlyField
+									label="Actual Impact"
+									value={money(cpp.actualImpact)}
+								/>
+							</div>
+						),
+					},
+					{
+						id: "master",
+						title: "Master data",
+						children: (
+							<div className={GRID}>
+								<ReadOnlyField
+									label="Material Group"
+									value={str(master.materialGroup)}
+								/>
+								<ReadOnlyField
+									label="Material Type"
+									value={str(master.materialType)}
+								/>
+								<ReadOnlyField
+									label="Purchasing Group"
+									value={str(master.purchasingGroup)}
+								/>
+								<ReadOnlyField
+									label="Inco Terms"
+									value={str(master.incoTerms)}
+								/>
+								<ReadOnlyField label="Tax Code" value={str(master.taxCode)} />
+								<ReadOnlyField
+									label="Store Location"
+									value={str(master.storeLocation)}
+								/>
+								<ReadOnlyField
+									label="Valid From"
+									value={date(str(master.validFrom))}
+								/>
+								<ReadOnlyField
+									label="Update Source List"
+									value={str(master.updateSourceList)}
+								/>
+								<ReadOnlyField label="Note" value={str(master.note)} />
+							</div>
+						),
+					},
+					{
+						id: "other",
+						title: "Other data",
+						children: (
+							<ReadOnlyField
+								label="Remarks"
+								value={str(other.remarks)}
+								valueClassName="whitespace-pre-wrap"
+							/>
 						),
 					},
 					{
@@ -255,26 +312,31 @@ const CppViewPage = () => {
 								data={attachments}
 								getRowId={(a) => a.id}
 								columns={[
-									{ key: "type", header: "Type", render: (a) => a.type },
 									{
-										key: "size",
-										header: "Size",
-										align: "right",
-										render: (a) => `${Math.max(1, Math.round(a.size / 1024))} KB`,
+										key: "type",
+										header: "Document",
+										render: (a) => attachmentLabel(a.type),
 									},
-									{ key: "uploadedAt", header: "Uploaded On", render: (a) => date(a.uploadedAt) },
+									{
+										key: "uploadedAt",
+										header: "Uploaded On",
+										render: (a) => date(a.uploadedAt),
+									},
 								]}
 								fileColumn={{
 									header: "File",
-									accessor: (a) => ({ name: a.fileName, url: a.url, mimeType: a.mimeType }),
+									accessor: (a) => ({
+										name: a.fileName,
+										url: a.url,
+										mimeType: mimeFromName(a.fileName),
+									}),
 								}}
 								emptyTitle="No attachments"
 								emptyDescription="No supporting documents were uploaded."
 							/>
 						),
 					},
-					// Added with the workflow: approval workflow, comments, audit trail
-					// (ApprovalWorkflowTableContent, CommentsSection, AuditLogSection).
+					// Added with the workflow: approval workflow, comments, audit trail.
 				]}
 			/>
 		</PageSectionLayout>

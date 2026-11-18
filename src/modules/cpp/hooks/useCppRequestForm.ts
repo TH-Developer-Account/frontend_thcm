@@ -1,7 +1,12 @@
-// hooks/useCppRequestForm.ts — form, wizard steps, and the (mock) save / submit actions.
-// Save draft / Submit only console.log the data for now; swap the two TODO
-// lines for the real API calls once the CPP endpoints exist.
-import { useCallback, useState } from "react";
+// hooks/useCppRequestForm.ts — form, wizard steps, and the real save flow.
+//
+// Save draft:  POST /cpp (first save) or PUT /cpp/:id
+//              -> upload new files / delete removed files
+//              -> re-fetch the detail, so the form shows what the server stored
+//                 (attachments, derived fields).
+// Submit:      validates every step, saves, then (workflow step, not built yet)
+//              will call POST /cpp/:id/submit.
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	useForm,
 	type FieldErrors,
@@ -9,15 +14,20 @@ import {
 	type Resolver,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useParams } from "react-router-dom";
 
 import { useToast } from "../../../context/Auth/AuthContext";
-import type { CppFormValues, CppStepKey } from "../types/cpp.types";
-import { CPP_CONDITIONS } from "../utils/cpp.constants";
+import { getApiErrorMessage } from "../../../utils/apiError.helper";
+import { cppApi } from "../api/cpp.api";
+import { detailToForm, formToPayload, pendingFileChanges } from "../helpers/cpp.mapper";
+import type { CppDetail, CppFormValues, CppStepKey } from "../types/cpp.types";
+import { cppKeys, useCppDetail, useCppMutations } from "./useCppMutations";
+import { CPP_STATUS } from "../utils/cpp.constants";
 import { cppSchema } from "../utils/cpp.schema";
 import { CPP_STEPS, getDefaultValues } from "../utils/cpp.utils";
 
-export const CPP_LISTING_PATH = "/cpp/requests";
+export const CPP_LISTING_PATH = "/cpp/listing";
 
 // Fields each step owns — "Next" validates exactly these.
 const STEP_FIELDS: Record<CppStepKey, FieldPath<CppFormValues>[]> = {
@@ -43,7 +53,6 @@ const STEP_FIELDS: Record<CppStepKey, FieldPath<CppFormValues>[]> = {
 		"approvalValues.amount",
 	],
 	master: [],
-	// STEP_FIELDS
 	other: [],
 	attachments: [],
 	workflow: [],
@@ -80,15 +89,22 @@ export const getStepsWithErrors = (
 };
 
 const scrollToTop = () => {
-	if (typeof window !== "undefined")
-		window.scrollTo({ top: 0, behavior: "smooth" });
+	if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
 export const useCppRequestForm = () => {
 	const navigate = useNavigate();
+	const { id: routeId } = useParams<{ id: string }>();
 	const { showToast } = useToast();
+	const queryClient = useQueryClient();
+	const { createMutation, updateMutation, uploadAttachmentMutation, deleteAttachmentMutation } =
+		useCppMutations();
 	const [stepIndex, setStepIndex] = useState(0);
 	const [busy, setBusy] = useState(false);
+
+	/** What the server holds right now — needed for the file diff. */
+	const serverRef = useRef<CppDetail | null>(null);
+	const loadedIdRef = useRef<string | null>(null);
 
 	const form = useForm<CppFormValues>({
 		defaultValues: getDefaultValues(),
@@ -96,6 +112,20 @@ export const useCppRequestForm = () => {
 		mode: "onSubmit",
 		reValidateMode: "onChange",
 	});
+
+	/* ---- editing an existing draft: load once, then the form owns the data ---- */
+	const detailQuery = useCppDetail(routeId ?? "");
+	useEffect(() => {
+		const detail = detailQuery.data;
+		if (!routeId || !detail || loadedIdRef.current === detail.id) return;
+		if (detail.status !== CPP_STATUS.DRAFT) {
+			navigate(`/cpp/${detail.id}/view`, { replace: true });
+			return;
+		}
+		loadedIdRef.current = detail.id;
+		serverRef.current = detail;
+		form.reset(detailToForm(detail));
+	}, [detailQuery.data, form, navigate, routeId]);
 
 	const step = CPP_STEPS[stepIndex];
 	const isFirst = stepIndex === 0;
@@ -129,41 +159,94 @@ export const useCppRequestForm = () => {
 		scrollToTop();
 	}, [form, showToast, step.key]);
 
+	/**
+	 * Saves everything and returns the fresh server copy (or null on failure —
+	 * the toast has already been shown).
+	 */
+	const persist = useCallback(async (values: CppFormValues): Promise<CppDetail | null> => {
+		try {
+			let current = serverRef.current;
+			if (!current) {
+				const created = await createMutation.mutateAsync(formToPayload(values));
+				current = created.data;
+			} else {
+				const updated = await updateMutation.mutateAsync({
+					id: current.id,
+					payload: formToPayload(values),
+				});
+				current = updated.data;
+			}
+
+			// Files: one request each; re-read the detail at the end so the form shows
+			// exactly what the server stored.
+			let filesChanged = false;
+			for (const change of pendingFileChanges(values, current.attachments)) {
+				filesChanged = true;
+				if (change.kind === "delete")
+					await deleteAttachmentMutation.mutateAsync({ id: current.id, attachmentId: change.attachmentId });
+				else
+					await uploadAttachmentMutation.mutateAsync({ id: current.id, file: change.file, type: change.slot });
+			}
+			const fresh = filesChanged ? await cppApi.getById(current.id) : current;
+
+			serverRef.current = fresh;
+			queryClient.setQueryData(cppKeys.detail(fresh.id), fresh);
+			loadedIdRef.current = fresh.id;
+			form.reset(detailToForm(fresh), { keepErrors: true });
+			if (!routeId) navigate(`/cpp/${fresh.id}/edit`, { replace: true });
+			return fresh;
+		} catch (error) {
+			showToast({
+				type: "error",
+				title: "Could not save",
+				description: getApiErrorMessage(error, "Please try again."),
+			});
+			return null;
+		}
+	}, [
+		createMutation,
+		deleteAttachmentMutation,
+		form,
+		navigate,
+		queryClient,
+		routeId,
+		showToast,
+		updateMutation,
+		uploadAttachmentMutation,
+	]);
+
 	const saveDraft = useCallback(async () => {
 		setBusy(true);
 		try {
-			// TODO: replace with cppApi.saveDraft(values)
-			console.log("[CPP] Save draft →", form.getValues());
-			showToast({
-				type: "success",
-				title: "Draft saved",
-				description: "Check the console for the saved data.",
-			});
+			const saved = await persist(form.getValues());
+			if (saved)
+				showToast({
+					type: "success",
+					title: "Draft saved",
+					description: saved.referenceNumber,
+				});
 		} finally {
 			setBusy(false);
 		}
-	}, [form, showToast]);
+	}, [form, persist, showToast]);
 
 	const submit = form.handleSubmit(
 		async (values) => {
 			setBusy(true);
 			try {
-				// TODO: replace with cppApi.submit(values) (+ workflow attach)
-				console.log("[CPP] Submit for approval →", values);
-				const condition = CPP_CONDITIONS.find(
-					(c) => c.value === values.condition,
-				);
-				showToast({
-					type: "success",
-					title: "Submitted",
-					description: `${condition?.label ?? "CPP"} request sent for approval (mock).`,
-				});
+				const saved = await persist(values);
+				// TODO(workflow step): POST /cpp/:id/submit, then navigate to the view page.
+				if (saved)
+					showToast({
+						type: "success",
+						title: "Saved and validated",
+						description: `${saved.referenceNumber} is ready. Sending for approval is enabled with the workflow step.`,
+					});
 			} finally {
 				setBusy(false);
 			}
 		},
 		(errors) => {
-			console.log("[CPP] Submit blocked — validation errors →", errors);
 			const firstStep = getStepsWithErrors(errors)[0];
 			if (firstStep) goToStep(firstStep);
 			showToast({
@@ -174,10 +257,7 @@ export const useCppRequestForm = () => {
 		},
 	);
 
-	const cancel = useCallback(() => {
-		console.log("[CPP] Cancel →", form.getValues());
-		navigate(CPP_LISTING_PATH);
-	}, [form, navigate]);
+	const cancel = useCallback(() => navigate(CPP_LISTING_PATH), [navigate]);
 
 	return {
 		form,
@@ -185,6 +265,10 @@ export const useCppRequestForm = () => {
 		isFirst,
 		isLast,
 		busy,
+		isEditing: Boolean(routeId),
+		isLoading: Boolean(routeId) && detailQuery.isLoading,
+		loadError: detailQuery.isError ? getApiErrorMessage(detailQuery.error, "Unable to load this request.") : null,
+		referenceNumber: serverRef.current?.referenceNumber ?? null,
 		goNext,
 		goBack,
 		saveDraft,

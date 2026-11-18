@@ -1,10 +1,12 @@
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 
-export type CppStatus =
-	| "DRAFT"
-	| "IN_PROGRESS"
-	| "CLARIFICATION_REQUESTED"
-	| "APPROVED";
+/**
+ * Status is a plain string end to end (the DB column is a String, not an enum),
+ * so a status added on the server never breaks the build. The known values and
+ * their labels live in CPP_STATUS / CPP_STATUS_LABELS (utils/cpp.constants.ts);
+ * anything unknown is shown as its raw value.
+ */
+export type CppStatus = string;
 
 export type CppListingTab = "myRequests" | "drafts";
 
@@ -102,7 +104,6 @@ export type CppFormValues = {
 	reason: string;
 	priceType: string;
 	justification: string;
-	aribaRef: string;
 	initiationDate: string;
 
 	/* --- step 2: purchasing details --- */
@@ -159,24 +160,37 @@ export type CppFormValues = {
 	};
 };
 
+/* ------------------------------ API contract ----------------------------- */
+// Mirrors the backend (cpp.helper.ts / cpp.sections.ts). Every tab is saved as
+// one { key, label, data } section — the same shape as the attachments list.
+
 /** Decimals arrive as strings from Prisma/JSON. */
 export type DecimalValue = string | number | null;
+
+export type CppSectionKey = "basic" | "purchasing" | "master" | "other";
+
+export type CppSection = {
+	key: CppSectionKey;
+	label: string;
+	data: Record<string, unknown>;
+};
 
 export type CppListItem = {
 	id: string;
 	referenceNumber: string;
-	title: string | null;
 	status: CppStatus | string;
-	materialCategory: string | null;
-	requestType: string | null;
+	category: string | null;
+	plant: string | null;
+	condition: string | null;
+	isSpare: boolean;
 	reasonCode: string | null;
 	supplierCode: string | null;
 	supplierName: string | null;
-	plantCodes: string[];
-	itemCount: number;
-	actualImpact: DecimalValue;
-	annualisedImpact: DecimalValue;
+	maxPartValue: DecimalValue;
 	maxVariationPct: DecimalValue;
+	annualisedValue: DecimalValue;
+	annualisedImpact: DecimalValue;
+	actualImpact: DecimalValue;
 	submittedAt: string | null;
 	created_at: string;
 	updated_at: string;
@@ -185,22 +199,23 @@ export type CppListItem = {
 export type CppListingRow = {
 	id: string;
 	referenceNumber: string;
-	title: string;
 	status: string;
-	materialCategory: string;
-	requestType: string;
+	category: string;
+	plant: string;
+	condition: string;
 	supplier: string;
-	plants: string;
-	itemCount: number;
-	actualImpact: number | null;
-	annualisedImpact: number | null;
+	reason: string;
+	/** Whichever amount the condition's bands read (annualised value / impact / actual impact). */
+	amount: number | null;
+	amountLabel: string;
+	isSpare: boolean;
 	updatedAt: string;
 };
 
 export type CppListingParams = {
 	tab: CppListingTab;
 	search?: string;
-	status?: CppStatus;
+	status?: string;
 	pageIndex: number;
 	pageSize: number;
 	sortBy?: string;
@@ -222,135 +237,114 @@ export type CppListingApiResponse = {
 	page_size: number;
 };
 
-export type CppItem = {
-	id: string;
-	lineNo: number;
-	plantCode: string | null;
-	partNo: string | null;
-	oldPartNo: string | null;
-	description: string | null;
-	uom: string | null;
-	model: string | null;
-	existingPrice: DecimalValue;
-	existingWef: string | null;
-	quotedPrice: DecimalValue;
-	otherQuotedPrice: DecimalValue;
-	newPrice: DecimalValue;
-	effectiveFrom: string | null;
-	validTo: string | null;
-	receivedQty: DecimalValue;
-	remainingQty: DecimalValue;
-	abpVolume: DecimalValue;
-	qtyPerMachine: DecimalValue;
-	poRef: string | null;
-	materialMasterChange: string | null;
-	priceInclAmort: DecimalValue;
-	amortCutoffDate: string | null;
-	amortQty: DecimalValue;
-	priceAfterAmort: DecimalValue;
-};
-
 export type CppAttachment = {
 	id: string;
+	/** "purchasingFile" or a CPP_ATTACHMENTS key. */
 	type: string;
 	fileName: string;
-	mimeType: string;
-	size: number;
 	uploadedAt: string;
 	/** Signed URL, only present on responses. */
 	url?: string;
 };
 
-export type CppDetail = {
-	id: string;
-	referenceNumber: string;
-	status: CppStatus | string;
-	formatVersion: string;
-	rowVersion: number;
-	title: string | null;
-	materialCategory: string | null;
-	requestType: string | null;
-	reasonCode: string | null;
-	effectQcd: string[];
-	pricingCondition: string | null;
-	priceType: string | null;
-	plantCodes: string[];
-	models: string | null;
-	supplierCode: string | null;
-	supplierName: string | null;
-	existingSupplierCode: string | null;
-	existingSupplierName: string | null;
-	itemCount: number;
-	maxPartValue: DecimalValue;
-	annualisedValue: DecimalValue;
-	actualImpact: DecimalValue;
-	annualisedImpact: DecimalValue;
-	maxVariationPct: DecimalValue;
-	justification: string | null;
-	details: Record<string, unknown> | null;
+export type CppDetail = CppListItem & {
+	/** Always all four sections, in tab order, every field present. */
+	sections: CppSection[];
 	attachments: CppAttachment[];
-	items: CppItem[];
-	submittedAt: string | null;
-	created_at: string;
-	updated_at: string;
-	initiatedBy?: { id: string; name: string | null; email: string | null };
 };
 
-/** Body of POST /cpp and PUT /cpp/:id — the contract the Create CPP form saves to. */
-export type CppItemPayload = Partial<
-	Omit<
-		CppItem,
-		| "id"
-		| "lineNo"
-		| "existingPrice"
-		| "quotedPrice"
-		| "otherQuotedPrice"
-		| "newPrice"
-		| "receivedQty"
-		| "remainingQty"
-		| "abpVolume"
-		| "qtyPerMachine"
-		| "priceInclAmort"
-		| "amortQty"
-		| "priceAfterAmort"
-	>
-> & {
-	existingPrice?: number | string | null;
-	quotedPrice?: number | string | null;
-	otherQuotedPrice?: number | string | null;
-	newPrice?: number | string | null;
-	receivedQty?: number | string | null;
-	remainingQty?: number | string | null;
-	abpVolume?: number | string | null;
-	qtyPerMachine?: number | string | null;
-	priceInclAmort?: number | string | null;
-	amortQty?: number | string | null;
-	priceAfterAmort?: number | string | null;
-};
-
+/** Body of POST /cpp and PUT /cpp/:id. */
 export type CppRequestPayload = {
-	/** Required on update. */
-	rowVersion?: number;
-	title?: string | null;
-	materialCategory?: string | null;
-	requestType?: string | null;
-	reasonCode?: string | null;
-	effectQcd?: string[] | null;
-	pricingCondition?: string | null;
-	priceType?: string | null;
-	plantCodes?: string[] | null;
-	models?: string | null;
-	supplierCode?: string | null;
-	supplierName?: string | null;
-	existingSupplierCode?: string | null;
-	existingSupplierName?: string | null;
-	justification?: string | null;
-	details?: Record<string, unknown> | null;
-	items?: CppItemPayload[];
+	category?: string | null;
+	plant?: string | null;
+	condition?: string | null;
+	sections?: Array<{
+		key: CppSectionKey;
+		label?: string;
+		data: Record<string, unknown>;
+	}>;
 };
 
 export type CppMutationResponse = {
 	success: boolean;
 	message?: string;
 	data: CppDetail;
+};
+
+/* ----------------------------- approval matrix ---------------------------- */
+
+export type CppSlotScope = "ALL" | "KGP" | "DWD";
+
+export type CppPerson = {
+	id: string;
+	name: string | null;
+	email: string | null;
+};
+
+export type CppMatrixRole = {
+	key: string;
+	label: string;
+	group: string;
+	/** PLANT = one assignment each for KGP and DWD; ALL = a single assignment. */
+	scope: "PLANT" | "ALL";
+	scopes: CppSlotScope[];
+	assignable: boolean;
+	observer: boolean;
+	note: string | null;
+	/** How many of the 71 workflow bands use this role. */
+	usedByBands: number;
+};
+
+export type CppMatrixAssignment = {
+	roleKey: string;
+	scope: CppSlotScope;
+	users: CppPerson[];
+};
+
+export type CppCoverageIssue = {
+	roleKey: string;
+	scope: string;
+	severity: "error" | "warning";
+	message: string;
+};
+
+export type CppApprovalMatrix = {
+	roles: CppMatrixRole[];
+	assignments: CppMatrixAssignment[];
+	coverage: CppCoverageIssue[];
+	updatedAt: string | null;
+};
+
+export type CppMatrixSlotUpdate = {
+	roleKey: string;
+	scope: CppSlotScope;
+	userIds: string[];
+};
+
+export type CppChainStep = {
+	stage: "WF1" | "WF2";
+	kind:
+		| "PROPOSER"
+		| "RECOMMENDER"
+		| "CHECKER"
+		| "APPROVER"
+		| "COMMITTEE"
+		| "REPORTING";
+	label: string;
+	title: string;
+	roleKeys: string[];
+	mode?: "ANY_ONE";
+	required?: number;
+	variants?: Record<string, string>;
+	alsoPriceFeeding?: boolean;
+};
+
+export type CppChain = {
+	ruleId: string;
+	sheet: string;
+	block: "MAIN" | "SPARES";
+	bandLabel: string;
+	wf1: CppChainStep[];
+	wf2: CppChainStep[];
+	priceFeeding: { roleKey: string; implied: boolean };
 };

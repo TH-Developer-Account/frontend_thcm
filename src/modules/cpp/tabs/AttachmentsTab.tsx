@@ -13,7 +13,7 @@ const AttachmentsTab = () => {
 
 	return (
 		<Card size="small">
-			<div className="grid gap-4 lg:grid-cols-4">
+			<div className="grid gap-4 lg:grid-cols-2">
 				{CPP_ATTACHMENTS.map((item) => (
 					<Controller
 						key={item.key}
@@ -26,7 +26,7 @@ const AttachmentsTab = () => {
 								label={item.label}
 								description="PDF, Excel, Word or image"
 								error={fieldState.error?.message}
-								// heightClassName="h-[100px]"
+								heightClassName="h-[100px]"
 							/>
 						)}
 					/>

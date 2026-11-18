@@ -5,6 +5,8 @@ import { NavLink } from "react-router-dom";
 import Button from "../../../components/common/Button";
 import { Badge } from "../../../components/common/Badge";
 import type { CppListingRow, CppListingTab } from "../types/cpp.types";
+import { CPP_CATEGORY_LABELS, CPP_STATUS } from "./cpp.constants";
+import { getCondition } from "./cpp.utils";
 
 const currencyFormatter = new Intl.NumberFormat("en-IN", {
 	style: "currency",
@@ -28,7 +30,13 @@ const formatDate = (value: string): string => {
 
 /** Drafts open in the form; everything else opens the read-only view. */
 export const getCppRowRoute = (row: Pick<CppListingRow, "id" | "status">) =>
-	row.status === "DRAFT" ? `/cpp/${row.id}/edit` : `/cpp/${row.id}/view`;
+	row.status === CPP_STATUS.DRAFT ? `/cpp/${row.id}/edit` : `/cpp/${row.id}/view`;
+
+const clip = (text: string, className = "max-w-56") => (
+	<span className={`block truncate ${className}`} title={text}>
+		{text}
+	</span>
+);
 
 export const getCppListingColumns = ({
 	onView,
@@ -50,31 +58,43 @@ export const getCppListingColumns = ({
 		),
 	},
 	{
-		accessorKey: "title",
-		header: "Title",
+		accessorKey: "category",
+		header: "Category",
+		cell: ({ row }) =>
+			clip(CPP_CATEGORY_LABELS[row.original.category] ?? row.original.category),
+	},
+	{
+		accessorKey: "condition",
+		header: "Condition",
+		cell: ({ row }) =>
+			clip(getCondition(row.original.condition)?.label ?? row.original.condition),
+	},
+	{
+		accessorKey: "plant",
+		header: "Plant",
 		cell: ({ row }) => (
-			<span className="block max-w-56 truncate" title={row.original.title}>
-				{row.original.title}
+			<span>
+				{row.original.plant}
+				{row.original.isSpare && row.original.plant !== "Spares" ? " (Spares)" : ""}
 			</span>
 		),
 	},
 	{
 		accessorKey: "supplier",
-		header: "Supplier",
+		header: "Recommended Supplier",
+		cell: ({ row }) => clip(row.original.supplier),
+	},
+	{
+		accessorKey: "amount",
+		header: "Amount",
 		cell: ({ row }) => (
-			<span className="block max-w-56 truncate" title={row.original.supplier}>
-				{row.original.supplier}
+			<span title={row.original.amountLabel}>
+				{formatCurrency(row.original.amount)}
+				{row.original.amount !== null ? (
+					<span className="ml-1 text-xs text-slate-400">{row.original.amountLabel}</span>
+				) : null}
 			</span>
 		),
-	},
-	{ accessorKey: "materialCategory", header: "Material Category" },
-	{ accessorKey: "requestType", header: "Request Type" },
-	{ accessorKey: "plants", header: "Plants" },
-	{ accessorKey: "itemCount", header: "Lines" },
-	{
-		accessorKey: "annualisedImpact",
-		header: "Annualised Impact",
-		cell: ({ row }) => formatCurrency(row.original.annualisedImpact),
 	},
 	{
 		accessorKey: "status",
@@ -91,7 +111,7 @@ export const getCppListingColumns = ({
 		header: "Actions",
 		enableSorting: false,
 		cell: ({ row }) => {
-			const isDraft = row.original.status === "DRAFT";
+			const isDraft = row.original.status === CPP_STATUS.DRAFT;
 			return (
 				<Button
 					type="button"

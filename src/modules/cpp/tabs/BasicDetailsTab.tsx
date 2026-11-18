@@ -26,7 +26,7 @@ import {
 import {
 	CPP_EFFECTS,
 	CPP_MODELS,
-	// CPP_PLANTS,
+	CPP_PLANTS,
 	CPP_PRICING_CONDITIONS,
 	CPP_REASONS,
 	MIN_JUSTIFICATION,
@@ -56,39 +56,39 @@ const RoutingFields = () => {
 		if (condition && !isConditionAllowed(condition, category)) {
 			setValue("condition", "", { shouldDirty: true });
 		}
+		// Steel has a single scenario, so there is nothing to choose.
+		if (category === "STEEL") {
+			setValue("condition", "STEEL_COMMODITY", { shouldDirty: true });
+		}
 	}, [category, getValues, setValue]);
 
 	return (
-		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-			<RhfSelect
-				name="category"
-				label="Category"
-				required
-				placeholder="Select category"
-				options={CPP_CATEGORY_OPTIONS}
-			/>
-			<RhfSelect
-				name="plant"
-				label="Plant"
-				required
-				placeholder="Select plant"
-				options={CPP_PLANT_OPTIONS}
-			/>
-			<RhfSelect
-				name="condition"
-				label="Conditions"
-				required
-				placeholder={category ? "Select condition" : "Select category first"}
-				isDisabled={!category}
-				options={conditionOptions}
-			/>
-			<RhfInput
-				name="initiationDate"
-				label="CPP initiation date"
-				type="date"
-				disabled
-			/>
-		</div>
+		<>
+			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+				<RhfSelect
+					name="category"
+					label="Category"
+					required
+					placeholder="Select category"
+					options={CPP_CATEGORY_OPTIONS}
+				/>
+				<RhfSelect
+					name="plant"
+					label="Plant"
+					required
+					placeholder="Select plant"
+					options={CPP_PLANT_OPTIONS}
+				/>
+				<RhfSelect
+					name="condition"
+					label="Conditions"
+					required
+					placeholder={category ? "Select condition" : "Select category first"}
+					isDisabled={!category}
+					options={conditionOptions}
+				/>
+			</div>
+		</>
 	);
 };
 
@@ -105,109 +105,118 @@ const RequestDetailsFields = () => {
 	}, [isNewPart, setValue]);
 
 	return (
-		<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-			<Controller
-				name="materialType"
-				control={control}
-				render={({ field }) => (
-					<Radio
-						name="materialType"
-						groupLabel="Material type"
-						required
-						options={[
-							{ label: "Direct", value: "Direct" },
-							{ label: "Indirect", value: "Indirect" },
-						]}
-						selectedValue={field.value}
-						onChange={field.onChange}
-						error={typeError}
-					/>
-				)}
-			/>
-
-			<div className="lg:col-span-2">
-				<span className="form-label">
-					Commodity price adjustment – effect on
-				</span>
+		<>
+			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 				<Controller
-					name="effects"
-					control={control}
-					render={({ field }) => (
-						<div className="mt-2 flex flex-row flex-wrap items-center gap-x-8 gap-y-2">
-							{CPP_EFFECTS.map((effect) => (
-								<div key={effect} className="w-auto shrink-0">
-									<Checkbox
-										label={effect}
-										disabled={isNewPart}
-										checked={field.value.includes(effect)}
-										onChange={(checked) =>
-											field.onChange(
-												checked
-													? [...field.value, effect]
-													: field.value.filter((item) => item !== effect),
-											)
-										}
-									/>
-								</div>
-							))}
-						</div>
-					)}
-				/>
-				{isNewPart ? (
-					<p className="form-helper-text">
-						Effect applies to existing materials only.
-					</p>
-				) : null}
-			</div>
-
-			<RhfSelect
-				name="reason"
-				label="Reason for price update"
-				required
-				placeholder="Select reason"
-				options={toOptions(CPP_REASONS)}
-				className="lg:col-span-2"
-			/>
-			<RhfMultiSelect
-				name="workflow.models"
-				label="Models"
-				required
-				placeholder="Select models"
-				options={toOptions(CPP_MODELS)}
-				className="lg:col-span-2"
-			/>
-
-			{/* <RhfChips
-				name="workflow.plants"
-				label="Applicable plants"
-				options={CPP_PLANTS}
-			/> */}
-			<RhfSelect
-				name="priceType"
-				label="Price type"
-				required
-				placeholder="Select price type"
-				options={CPP_PRICE_TYPE_OPTIONS}
-			/>
-
-			<div className="sm:col-span-2 lg:col-span-4">
-				<Controller
-					name="workflow.pricingCondition"
+					name="materialType"
 					control={control}
 					render={({ field }) => (
 						<Radio
-							name="workflow.pricingCondition"
-							groupLabel="Pricing condition"
+							name="materialType"
+							groupLabel="Material type"
 							required
-							options={CPP_PRICING_CONDITIONS}
+							options={[
+								{ label: "Direct", value: "Direct" },
+								{ label: "Indirect", value: "Indirect" },
+							]}
 							selectedValue={field.value}
 							onChange={field.onChange}
-							error={pricingError}
+							error={typeError}
 						/>
 					)}
 				/>
+
+				<div className="lg:col-span-2">
+					<span className="form-label">
+						Commodity price adjustment – effect on
+					</span>
+					<Controller
+						name="effects"
+						control={control}
+						render={({ field }) => (
+							<div className="mt-2 flex flex-row flex-wrap items-center gap-x-8 gap-y-2">
+								{CPP_EFFECTS.map((effect) => (
+									<div key={effect} className="w-auto shrink-0">
+										<Checkbox
+											label={effect}
+											disabled={isNewPart}
+											checked={field.value.includes(effect)}
+											onChange={(checked) =>
+												field.onChange(
+													checked
+														? [...field.value, effect]
+														: field.value.filter((item) => item !== effect),
+												)
+											}
+										/>
+									</div>
+								))}
+							</div>
+						)}
+					/>
+					{isNewPart ? (
+						<p className="form-helper-text">
+							Effect applies to existing materials only.
+						</p>
+					) : null}
+				</div>
+
+				<RhfInput
+					name="initiationDate"
+					label="CPP initiation date"
+					type="date"
+					disabled
+				/>
+
+				<RhfSelect
+					name="reason"
+					label="Reason for price update"
+					required
+					placeholder="Select reason"
+					options={toOptions(CPP_REASONS)}
+					className="lg:col-span-2"
+				/>
+				<RhfMultiSelect
+					name="workflow.models"
+					label="Models"
+					required
+					placeholder="Select models"
+					options={toOptions(CPP_MODELS)}
+					className="lg:col-span-2"
+				/>
+
+				<RhfChips
+					name="workflow.plants"
+					label="Applicable plants"
+					options={CPP_PLANTS}
+				/>
+				<RhfSelect
+					name="priceType"
+					label="Price type"
+					required
+					placeholder="Select price type"
+					options={CPP_PRICE_TYPE_OPTIONS}
+				/>
+
+				<div className="sm:col-span-2 lg:col-span-4">
+					<Controller
+						name="workflow.pricingCondition"
+						control={control}
+						render={({ field }) => (
+							<Radio
+								name="workflow.pricingCondition"
+								groupLabel="Pricing condition"
+								required
+								options={CPP_PRICING_CONDITIONS}
+								selectedValue={field.value}
+								onChange={field.onChange}
+								error={pricingError}
+							/>
+						)}
+					/>
+				</div>
 			</div>
-		</div>
+		</>
 	);
 };
 
@@ -215,23 +224,25 @@ const JustificationField = () => {
 	const { control } = useFormContext<CppFormValues>();
 
 	return (
-		<Controller
-			name="justification"
-			control={control}
-			render={({ field, fieldState }) => (
-				<TextareaInput
-					{...field}
-					label="Justification for this price change"
-					required
-					rows={10}
-					maxLength={2000}
-					placeholder={`Explain the reason, negotiation outcome and why the recommended supplier was chosen (min. ${MIN_JUSTIFICATION} characters)`}
-					error={fieldState.error?.message}
-					helperText={`${field.value.trim().length} / ${MIN_JUSTIFICATION} min`}
-					isTooltip={false}
-				/>
-			)}
-		/>
+		<>
+			<Controller
+				name="justification"
+				control={control}
+				render={({ field, fieldState }) => (
+					<TextareaInput
+						{...field}
+						label="Justification for this price change"
+						required
+						rows={5}
+						maxLength={2000}
+						placeholder={`Explain the reason, negotiation outcome and why the recommended supplier was chosen (min. ${MIN_JUSTIFICATION} characters)`}
+						error={fieldState.error?.message}
+						helperText={`${field.value.trim().length} / ${MIN_JUSTIFICATION} min`}
+						isTooltip={false}
+					/>
+				)}
+			/>
+		</>
 	);
 };
 

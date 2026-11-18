@@ -41,7 +41,6 @@ export const cppSchema = z
 			.string()
 			.trim()
 			.min(MIN_JUSTIFICATION, `Enter at least ${MIN_JUSTIFICATION} characters`),
-		aribaRef: z.string(),
 		initiationDate: z.string(),
 		workflow: z.object({
 			models: z.array(z.string()).min(1, "Select at least one model"),

@@ -41,15 +41,9 @@ export const useCppMutations = () => {
 	});
 
 	const updateMutation = useMutation({
-		mutationFn: ({
-			id,
-			payload,
-		}: {
-			id: string;
-			payload: CppRequestPayload & { rowVersion: number };
-		}) => cppApi.update(id, payload),
+		mutationFn: ({ id, payload }: { id: string; payload: CppRequestPayload }) =>
+			cppApi.update(id, payload),
 		onSuccess: ({ data }) => {
-			// The response carries the new rowVersion — keep the cache current.
 			queryClient.setQueryData(cppKeys.detail(data.id), data);
 			void invalidateLists();
 		},

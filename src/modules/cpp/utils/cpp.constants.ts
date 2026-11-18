@@ -3,16 +3,33 @@ import { FileClock, FilePen } from "lucide-react";
 import type {
 	CppConditionOption,
 	CppListingTab,
-	CppStatus,
 	CppStatusFilter,
 } from "../types/cpp.types";
 
-export const CPP_STATUS_LABELS: Record<CppStatus, string> = {
-	DRAFT: "Draft",
-	IN_PROGRESS: "In Progress",
-	CLARIFICATION_REQUESTED: "Clarification Requested",
-	APPROVED: "Approved",
+/**
+ * Known request statuses. The server stores status as a plain string, so a new
+ * status = one line here + one label below; nothing else has to change.
+ * DRAFT -> IN_PROGRESS -> (CLARIFICATION_REQUESTED) -> PRICE_FEEDING -> COMPLETED
+ */
+export const CPP_STATUS = {
+	DRAFT: "DRAFT",
+	IN_PROGRESS: "IN_PROGRESS",
+	CLARIFICATION_REQUESTED: "CLARIFICATION_REQUESTED",
+	PRICE_FEEDING: "PRICE_FEEDING",
+	COMPLETED: "COMPLETED",
+} as const;
+
+export const CPP_STATUS_LABELS: Record<string, string> = {
+	[CPP_STATUS.DRAFT]: "Draft",
+	[CPP_STATUS.IN_PROGRESS]: "In Progress",
+	[CPP_STATUS.CLARIFICATION_REQUESTED]: "Clarification Requested",
+	[CPP_STATUS.PRICE_FEEDING]: "Price Feeding",
+	[CPP_STATUS.COMPLETED]: "Completed",
 };
+
+/** Label for any status, including ones this build does not know yet. */
+export const getCppStatusLabel = (status: string): string =>
+	CPP_STATUS_LABELS[status] ?? status.replace(/_/g, " ");
 
 export const CPP_CATEGORY_LABELS: Record<string, string> = {
 	CFM: "Casting Forging & Machining (CFM)",
@@ -176,7 +193,10 @@ export const getCppStatusOptionsForTab = (
 	tab: CppListingTab,
 ): CppStatusOption[] => {
 	if (tab === "drafts") return [];
-	const statuses = Object.keys(CPP_STATUS_LABELS) as CppStatus[];
+	// Draft has its own tab, so "My requests" filters only the submitted statuses.
+	const statuses = Object.keys(CPP_STATUS_LABELS).filter(
+		(status) => status !== CPP_STATUS.DRAFT,
+	);
 	return [
 		{ label: "All statuses", value: "all" },
 		...statuses.map((value) => ({ label: CPP_STATUS_LABELS[value], value })),
