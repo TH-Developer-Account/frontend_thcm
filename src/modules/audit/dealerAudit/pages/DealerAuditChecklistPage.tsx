@@ -34,7 +34,10 @@ import {
 	useAuditPermissions,
 	useDealerAuditSession,
 } from "../hooks/useDealerAuditAccess";
-import { useDealerAudit, useDealerAuditChecklist } from "../hooks/useDealerAudits";
+import {
+	useDealerAudit,
+	useDealerAuditChecklist,
+} from "../hooks/useDealerAudits";
 import { getAuditActionErrorMessage } from "../../shared/audit-error.utils";
 
 const text = content.ui.checklist;
@@ -65,7 +68,8 @@ export default function DealerAuditChecklistPage() {
 	const isReviewing = mode === "REVIEW";
 
 	const progress = useMemo(
-		() => (isReviewing ? getReviewProgress(items) : getChecklistProgress(items)),
+		() =>
+			isReviewing ? getReviewProgress(items) : getChecklistProgress(items),
 		[isReviewing, items],
 	);
 
@@ -101,8 +105,7 @@ export default function DealerAuditChecklistPage() {
 				.map((section) => ({
 					...section,
 					items: section.items.filter(
-						(item) =>
-							filter === "ALL" || (filter === "DONE") === isDone(item),
+						(item) => filter === "ALL" || (filter === "DONE") === isDone(item),
 					),
 				}))
 				.filter((section) => section.items.length > 0),
@@ -127,6 +130,7 @@ export default function DealerAuditChecklistPage() {
 			<PageSectionLayout className="audit-page">
 				<Alert
 					variant="error"
+					type="banner"
 					title={text.errorTitle}
 					description={getAuditActionErrorMessage(error, "checklist")}
 					primaryAction={{

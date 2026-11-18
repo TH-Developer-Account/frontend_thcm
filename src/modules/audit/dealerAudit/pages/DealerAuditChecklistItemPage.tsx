@@ -24,7 +24,10 @@ import {
 } from "../dealer-audit.permissions";
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
 import { isClarificationStatus } from "../dealer-audit.status";
-import type { DealerAudit, DealerAuditChecklistItem } from "../dealer-audit.types";
+import type {
+	DealerAudit,
+	DealerAuditChecklistItem,
+} from "../dealer-audit.types";
 import {
 	flattenChecklistItems,
 	getChecklistProgress,
@@ -43,10 +46,11 @@ import ReviewItemForm from "../../shared/execution/components/ReviewItemForm";
 import ReviewResultPanel from "../../shared/execution/components/ReviewResultPanel";
 import SaveStatusIndicator from "../../shared/execution/components/SaveStatusIndicator";
 import SelfAssessmentForm from "../../shared/execution/components/SelfAssessmentForm";
+import { useAuditPermissions } from "../hooks/useDealerAuditAccess";
 import {
-	useAuditPermissions,
-} from "../hooks/useDealerAuditAccess";
-import { useDealerAudit, useDealerAuditChecklist } from "../hooks/useDealerAudits";
+	useDealerAudit,
+	useDealerAuditChecklist,
+} from "../hooks/useDealerAudits";
 import { useChecklistItemDraft } from "../hooks/useChecklistItemDraft";
 import { useEvidenceUploader } from "../hooks/useEvidenceUploader";
 import { useReviewItemDraft } from "../hooks/useReviewItemDraft";
@@ -77,7 +81,8 @@ function useItemNavigation(
 	/** Where a target leads; null = nowhere (no neighbour). */
 	const getPath = useCallback(
 		(target: ItemNavigationTarget): string | null => {
-			if (target === "list") return DEALER_AUDIT_ROUTES.execution.checklist(auditId);
+			if (target === "list")
+				return DEALER_AUDIT_ROUTES.execution.checklist(auditId);
 			const id = target === "next" ? nextId : previousId;
 			return id ? DEALER_AUDIT_ROUTES.execution.item(auditId, id) : null;
 		},
@@ -143,7 +148,9 @@ function SelfWorkspace({
 	return (
 		<ChecklistItemShell
 			heading={audit.dealerName}
-			subheading={[audit.auditNumber, audit.location].filter(Boolean).join(" · ")}
+			subheading={[audit.auditNumber, audit.location]
+				.filter(Boolean)
+				.join(" · ")}
 			item={item}
 			index={index}
 			total={total}
@@ -244,7 +251,9 @@ function ReviewWorkspace({
 	return (
 		<ChecklistItemShell
 			heading={audit.dealerName}
-			subheading={[audit.auditNumber, audit.location].filter(Boolean).join(" · ")}
+			subheading={[audit.auditNumber, audit.location]
+				.filter(Boolean)
+				.join(" · ")}
 			item={item}
 			index={index}
 			total={total}
@@ -312,7 +321,9 @@ function ReadOnlyWorkspace({
 	return (
 		<ChecklistItemShell
 			heading={audit.dealerName}
-			subheading={[audit.auditNumber, audit.location].filter(Boolean).join(" · ")}
+			subheading={[audit.auditNumber, audit.location]
+				.filter(Boolean)
+				.join(" · ")}
 			item={item}
 			index={index}
 			total={total}
@@ -383,11 +394,15 @@ export default function DealerAuditChecklistItemPage() {
 
 	const progress = useMemo(
 		() =>
-			mode === "REVIEW" ? getReviewProgress(items) : getChecklistProgress(items),
+			mode === "REVIEW"
+				? getReviewProgress(items)
+				: getChecklistProgress(items),
 		[items, mode],
 	);
 
-	const listPath = auditId ? DEALER_AUDIT_ROUTES.execution.checklist(auditId) : "";
+	const listPath = auditId
+		? DEALER_AUDIT_ROUTES.execution.checklist(auditId)
+		: "";
 
 	if (auditQuery.isLoading || checklistQuery.isLoading) {
 		return (
@@ -404,6 +419,7 @@ export default function DealerAuditChecklistItemPage() {
 			<PageSectionLayout className="audit-page audit-page-narrow">
 				<Alert
 					variant="error"
+					type="banner"
 					title={text.errorTitle}
 					description={getAuditActionErrorMessage(
 						auditQuery.error ?? checklistQuery.error,
@@ -437,7 +453,9 @@ export default function DealerAuditChecklistItemPage() {
 		return (
 			<PageSectionLayout className="audit-page audit-page-narrow">
 				<Card title={text.notFoundTitle}>
-					<p className="mb-3 text-sm text-slate-600">{text.notFoundDescription}</p>
+					<p className="mb-3 text-sm text-slate-600">
+						{text.notFoundDescription}
+					</p>
 					<Button
 						type="button"
 						text={text.backToList}
@@ -467,7 +485,9 @@ export default function DealerAuditChecklistItemPage() {
 
 	// `key` gives every parameter its own draft state.
 	if (mode === "SELF") {
-		return <SelfWorkspace key={item.id} {...common} editable={canEditThisItem} />;
+		return (
+			<SelfWorkspace key={item.id} {...common} editable={canEditThisItem} />
+		);
 	}
 	if (mode === "REVIEW") {
 		return <ReviewWorkspace key={item.id} {...common} />;

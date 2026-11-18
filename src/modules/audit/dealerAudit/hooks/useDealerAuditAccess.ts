@@ -1,11 +1,13 @@
 import { useMemo } from "react";
-import { setMockActor } from "../dealer-audit.mock";
 import {
 	getDealerAuditPermissions,
 	resolveAuditPermissions,
 	type DealerAuditPermissions,
 } from "../dealer-audit.permissions";
-import type { DealerAuditListItem, DealerAuditRole } from "../dealer-audit.types";
+import type {
+	DealerAuditListItem,
+	DealerAuditRole,
+} from "../dealer-audit.types";
 import { useCurrentDealerAuditRole } from "./useCurrentDealerAuditRole";
 
 export interface DealerAuditSession {
@@ -19,10 +21,6 @@ export interface DealerAuditSession {
 
 export function useDealerAuditSession(): DealerAuditSession {
 	const { role, isLoading, userId, dealerId } = useCurrentDealerAuditRole();
-
-	// TEMP MOCK: tells the in-memory backend who is asking so it can scope
-	// results like the real API will. Delete with dealer-audit.mock.ts.
-	if (role) setMockActor({ role, userId, dealerId });
 
 	const permissions = useMemo(() => getDealerAuditPermissions(role), [role]);
 	return { role, isLoading, userId, dealerId, permissions };

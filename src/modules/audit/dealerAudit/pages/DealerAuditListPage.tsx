@@ -291,6 +291,7 @@ export default function DealerAuditListPage() {
 					{audits.isError ? (
 						<Alert
 							variant="error"
+							type="banner"
 							title={text.errorTitle}
 							description={audits.errorMessage ?? undefined}
 							primaryAction={{

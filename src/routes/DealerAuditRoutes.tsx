@@ -9,9 +9,6 @@ import { DEALER_AUDIT_ROUTES } from "../modules/audit/dealerAudit";
 const DealerAuditListPage = lazy(
 	() => import("../modules/audit/dealerAudit/pages/DealerAuditListPage"),
 );
-const CreateDealerAuditPage = lazy(
-	() => import("../modules/audit/dealerAudit/pages/CreateDealerAuditPage"),
-);
 const DealerAuditDetailPage = lazy(
 	() => import("../modules/audit/dealerAudit/pages/DealerAuditDetailPage"),
 );
@@ -127,7 +124,7 @@ export default function DealerAuditRoutes() {
 			/>
 			<Route
 				path={toRelativePath(DEALER_AUDIT_ROUTES.audits.create)}
-				element={guarded("canCreateAudit", <CreateDealerAuditPage />)}
+				element={guarded("canCreateAudit", <CreateAuditCyclePage />)}
 			/>
 			<Route
 				path={toRelativePath(DEALER_AUDIT_ROUTES.audits.detail(":auditId"))}

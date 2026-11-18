@@ -79,9 +79,14 @@ export const cycleReviewersSchema = z
 	.object({
 		dealerIds: z.array(z.string()),
 		reviewerByDealer: z.record(z.string(), z.string()),
+		fallbackReviewerId: z.string(),
 	})
 	.superRefine((values, ctx) => {
-		if (countUnassigned(values.dealerIds, values.reviewerByDealer) > 0) {
+		// A fallback reviewer covers every dealer left without one.
+		if (
+			values.fallbackReviewerId === "" &&
+			countUnassigned(values.dealerIds, values.reviewerByDealer) > 0
+		) {
 			ctx.addIssue({
 				code: "custom",
 				path: ["reviewerByDealer"],
@@ -92,7 +97,6 @@ export const cycleReviewersSchema = z
 
 export type CycleStepErrors = Readonly<Record<string, string>>;
 
-/** Flattens a zod result into { fieldPath: firstMessage }. */
 interface ParseResultLike {
 	success: boolean;
 	error?: {
@@ -103,7 +107,7 @@ interface ParseResultLike {
 	};
 }
 
-/** Flattens a zod result into { fieldPath: firstMessage }. */
+/** Flattens a zod result into { fieldPath: firstMessage }. Works on zod v3 and v4. */
 export const toStepErrors = (result: ParseResultLike): CycleStepErrors => {
 	if (result.success || !result.error) return {};
 	const errors: Record<string, string> = {};
@@ -146,6 +150,7 @@ export const validateCycleReviewers = (
 		cycleReviewersSchema.safeParse({
 			dealerIds: values.dealerIds,
 			reviewerByDealer: values.reviewerByDealer,
+			fallbackReviewerId: values.fallbackReviewerId,
 		}),
 	);
 

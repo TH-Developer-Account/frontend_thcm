@@ -12,7 +12,10 @@ import Card from "../../../../components/common/Card";
 import PageNavigation from "../../../../components/ui/PageNavigation/PageNavigation";
 import PageSectionLayout from "../../../../layout/PageSectionLayout";
 import { dealerAuditContent as content } from "../dealer-audit.content";
-import { formatAuditDate, formatAuditDateTime } from "../../shared/execution/audit-execution.format";
+import {
+	formatAuditDate,
+	formatAuditDateTime,
+} from "../../shared/execution/audit-execution.format";
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
 import { formatPeriodLabel } from "../dealer-audit.sla";
 import {
@@ -47,7 +50,13 @@ import Button from "../../../../components/common/Button";
 
 const text = content.ui.detail;
 
-function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+function DetailRow({
+	label,
+	children,
+}: {
+	label: string;
+	children: React.ReactNode;
+}) {
 	return (
 		<div className="min-w-0">
 			<dt className="text-xs text-(--color-text-secondary)">{label}</dt>
@@ -67,7 +76,10 @@ export default function DealerAuditDetailPage() {
 	const checklistQuery = useDealerAuditChecklist(auditId);
 	const audit = auditQuery.data;
 	const permissions = useAuditPermissions(audit);
-	const historyQuery = useDealerAuditHistory(auditId, permissions.canViewHistory);
+	const historyQuery = useDealerAuditHistory(
+		auditId,
+		permissions.canViewHistory,
+	);
 	const reminders = useAuditReminders(
 		audit,
 		role === "DEALER" ? "DEALER" : "INTERNAL",
@@ -123,6 +135,7 @@ export default function DealerAuditDetailPage() {
 				{backNavigation}
 				<Alert
 					variant="error"
+					type="banner"
 					title={text.errorTitle}
 					description={getAuditActionErrorMessage(auditQuery.error, "audit")}
 					primaryAction={{
@@ -148,7 +161,8 @@ export default function DealerAuditDetailPage() {
 	}
 
 	const showFinalScore =
-		permissions.canViewReviewerAssessment || isReportAvailableStatus(audit.status);
+		permissions.canViewReviewerAssessment ||
+		isReportAvailableStatus(audit.status);
 	const progress =
 		permissions.canReview && reviewProgress ? reviewProgress : selfProgress;
 	const progressLabel = permissions.canReview

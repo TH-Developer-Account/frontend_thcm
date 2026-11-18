@@ -24,7 +24,10 @@ import {
 	formatDealerAuditMessage as format,
 } from "../dealer-audit.content";
 import { getAuditActionErrorMessage } from "../../shared/audit-error.utils";
-import { formatAuditDateTime, formatPercent } from "../../shared/execution/audit-execution.format";
+import {
+	formatAuditDateTime,
+	formatPercent,
+} from "../../shared/execution/audit-execution.format";
 import { flattenChecklistItems } from "../../shared/execution/audit-execution.utils";
 import AuditStatusBadge from "../components/AuditStatusBadge";
 import { DeficiencyList } from "../cycle/components/AuditReviewSections";
@@ -49,15 +52,23 @@ export default function DealerAuditReportPage() {
 	const { auditId } = useParams();
 	const auditQuery = useDealerAudit(auditId);
 	const permissions = useAuditPermissions(auditQuery.data);
-	const reportQuery = useDealerAuditReport(auditId, permissions.canDownloadReport);
+	const reportQuery = useDealerAuditReport(
+		auditId,
+		permissions.canDownloadReport,
+	);
 	const checklistQuery = useDealerAuditChecklist(auditId);
-	const historyQuery = useDealerAuditHistory(auditId, permissions.canViewHistory);
+	const historyQuery = useDealerAuditHistory(
+		auditId,
+		permissions.canViewHistory,
+	);
 	const [isResendOpen, setIsResendOpen] = useState(false);
 	const report = reportQuery.data;
 
 	const items = useMemo(
 		() =>
-			checklistQuery.data ? flattenChecklistItems(checklistQuery.data.sections) : [],
+			checklistQuery.data
+				? flattenChecklistItems(checklistQuery.data.sections)
+				: [],
 		[checklistQuery.data],
 	);
 
@@ -66,11 +77,18 @@ export default function DealerAuditReportPage() {
 			variant="button"
 			direction="back"
 			ariaLabel={text.back}
-			to={auditId ? DEALER_AUDIT_ROUTES.audits.detail(auditId) : DEALER_AUDIT_ROUTES.audits.list}
+			to={
+				auditId
+					? DEALER_AUDIT_ROUTES.audits.detail(auditId)
+					: DEALER_AUDIT_ROUTES.audits.list
+			}
 		/>
 	);
 
-	if (auditQuery.isLoading || (permissions.canDownloadReport && reportQuery.isLoading)) {
+	if (
+		auditQuery.isLoading ||
+		(permissions.canDownloadReport && reportQuery.isLoading)
+	) {
 		return (
 			<PageSectionLayout className="audit-page audit-page-narrow">
 				<p className="text-sm text-slate-600" role="status">
@@ -87,6 +105,7 @@ export default function DealerAuditReportPage() {
 				<Alert
 					variant="error"
 					title={text.errorTitle}
+					type="banner"
 					description={getAuditActionErrorMessage(
 						auditQuery.error ?? reportQuery.error,
 						"report",
@@ -149,7 +168,9 @@ export default function DealerAuditReportPage() {
 				<Card variant="outlined" padding="default">
 					<div className="flex flex-wrap items-end justify-between gap-4">
 						<div>
-							<p className="text-xs text-(--color-text-secondary)">{text.finalScore}</p>
+							<p className="text-xs text-(--color-text-secondary)">
+								{text.finalScore}
+							</p>
 							<p className="text-3xl font-bold tabular-nums text-(--color-text-primary)">
 								{finalScore}
 								<span className="text-lg font-medium text-(--color-text-secondary)">
@@ -162,7 +183,9 @@ export default function DealerAuditReportPage() {
 						</div>
 						{report.selfScore !== null ? (
 							<div className="text-right">
-								<p className="text-xs text-(--color-text-secondary)">{text.selfScore}</p>
+								<p className="text-xs text-(--color-text-secondary)">
+									{text.selfScore}
+								</p>
 								<p className="text-lg font-semibold tabular-nums">
 									{report.selfScore}/{report.maxScore}
 								</p>
@@ -198,7 +221,9 @@ export default function DealerAuditReportPage() {
 											{section.score}/{section.maxScore}
 										</td>
 										<td className="py-2 text-right tabular-nums">
-											{formatPercent(toPercent(section.score, section.maxScore))}
+											{formatPercent(
+												toPercent(section.score, section.maxScore),
+											)}
 										</td>
 									</tr>
 								))}
@@ -210,6 +235,7 @@ export default function DealerAuditReportPage() {
 				{checklistQuery.isError ? (
 					<Alert
 						variant="warning"
+						type="banner"
 						title={cycleContent.common.loadError}
 						primaryAction={{
 							label: cycleContent.common.retry,
@@ -225,11 +251,20 @@ export default function DealerAuditReportPage() {
 					/>
 				)}
 
-				{permissions.canViewHistory && historyQuery.data && historyQuery.data.length > 0 ? (
-					<Card variant="outlined" title={cycleContent.reports.auditTrail} padding="compact">
+				{permissions.canViewHistory &&
+				historyQuery.data &&
+				historyQuery.data.length > 0 ? (
+					<Card
+						variant="outlined"
+						title={cycleContent.reports.auditTrail}
+						padding="compact"
+					>
 						<ol className="space-y-3">
 							{historyQuery.data.map((entry) => (
-								<li key={entry.id} className="border-l-2 border-(--color-border-default) pl-3">
+								<li
+									key={entry.id}
+									className="border-l-2 border-(--color-border-default) pl-3"
+								>
 									<p className="text-sm font-medium">
 										{entry.actorName}
 										{entry.actorRole ? ` · ${entry.actorRole}` : ""}
@@ -247,7 +282,9 @@ export default function DealerAuditReportPage() {
 				) : null}
 
 				<p className="text-xs text-(--color-text-secondary)">
-					{format(text.generated, { date: formatAuditDateTime(report.generatedAt) })}
+					{format(text.generated, {
+						date: formatAuditDateTime(report.generatedAt),
+					})}
 				</p>
 
 				<div className="flex flex-wrap gap-2 print:hidden">
@@ -277,7 +314,11 @@ export default function DealerAuditReportPage() {
 							appearance="standard"
 							variant="brand"
 							onClick={() =>
-								window.open(report.downloadUrl ?? "", "_blank", "noopener,noreferrer")
+								window.open(
+									report.downloadUrl ?? "",
+									"_blank",
+									"noopener,noreferrer",
+								)
 							}
 						/>
 					) : null}

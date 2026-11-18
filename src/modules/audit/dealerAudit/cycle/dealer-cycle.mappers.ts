@@ -3,6 +3,8 @@
 // Shape conversion only: Response → domain, FormValues → Payload.
 // No UI strings, no business rules (those live in dealer-cycle.logic.ts).
 
+import type { DealerAuditDealerOption } from "../dealer-audit.types";
+import type { DealerFacilityType } from "../templates/dealer-template.types";
 import { formatPeriodLabel } from "../dealer-audit.sla";
 import type {
 	AuditCycleLaunchResponse,
@@ -70,7 +72,52 @@ export const mapResendResponse = (
 
 // ── FormValues / Variables → Payload ──────────────────────────────────
 
-/** Only dealers that are selected AND have a reviewer are sent. */
+const asText = (value: unknown): string | null =>
+	typeof value === "string" && value.trim() !== "" ? value.trim() : null;
+
+const asFacility = (value: unknown): DealerFacilityType | null => {
+	const text =
+		asText(value)
+			?.toUpperCase()
+			.replace(/[\s-]+/g, "_") ?? null;
+	if (text === "HEAD_OFFICE" || text === "HO") return "HEAD_OFFICE";
+	if (text === "BRANCH_OFFICE" || text === "BO") return "BRANCH_OFFICE";
+	return null;
+};
+
+/**
+ * A row from the business-partner module's own list API (businessPartnerApi.list)
+ * → dealer option. Read loosely on purpose: this module does not own that row
+ * type, so a renamed field there degrades to "empty" instead of a crash.
+ * Rows that are inactive or clearly not a DEALER partner come back as null.
+ */
+export const mapBusinessPartnerToDealerOption = (
+	item: unknown,
+): DealerAuditDealerOption | null => {
+	const row = (item ?? {}) as Record<string, unknown>;
+	const id = asText(row.id);
+	const name = asText(row.bpName) ?? asText(row.name) ?? asText(row.bp_name);
+	if (!id || !name) return null;
+
+	// Lenient on purpose: accepts "DEALER", "Dealer", "Dealership" and so on.
+	// Rows with no type at all are kept.
+	const type = asText(row.bpType) ?? asText(row.bp_type) ?? asText(row.type);
+	if (type && !type.toUpperCase().includes("DEALER")) return null;
+	if (row.isActive === false) return null;
+
+	return {
+		id,
+		code: asText(row.bpShortName) ?? asText(row.code) ?? asText(row.bpId),
+		name,
+		location: asText(row.city) ?? asText(row.location) ?? "",
+		facilityType: asFacility(row.officeType ?? row.office_type),
+		zone: asText(row.zone) ?? asText(row.region),
+		state: asText(row.state),
+		lastAudit: null,
+	};
+};
+
+/** Selected dealers get their own reviewer, else the fallback reviewer. */
 export const mapFormToCreateCyclePayload = (
 	values: CreateAuditCycleFormValues,
 ): CreateAuditCyclePayload => {
@@ -88,7 +135,8 @@ export const mapFormToCreateCyclePayload = (
 		}),
 		due_date: values.dueDate,
 		assignments: values.dealerIds.flatMap((dealerId) => {
-			const reviewerId = values.reviewerByDealer[dealerId];
+			const reviewerId =
+				values.reviewerByDealer[dealerId] || values.fallbackReviewerId;
 			return reviewerId
 				? [{ dealer_id: dealerId, reviewer_id: reviewerId }]
 				: [];

@@ -118,7 +118,8 @@ export const computeTrackerSummary = (
 		else if (isReviewOpenStatus(item.status)) awaitingReview += 1;
 		else if (isClarificationStatus(item.status)) clarification += 1;
 		else if (isAwaitingApprovalStatus(item.status)) awaitingApproval += 1;
-		else if (item.status === "CLOSED" || item.status === "APPROVED") closed += 1;
+		else if (item.status === "CLOSED" || item.status === "APPROVED")
+			closed += 1;
 
 		if (isAuditOverdue(item, now)) overdue += 1;
 
@@ -145,6 +146,9 @@ export const computeTrackerSummary = (
 };
 
 // ── Eligibility ───────────────────────────────────────────────────────
+// NOTE: the cycle wizard now gets eligibility from the server
+// (GET /dealer-audit/cycles/dealer-candidates). This helper is kept for its
+// tests and for any screen that still wants a client-side check.
 
 const isSamePeriod = (a: DealerAuditPeriod, b: DealerAuditPeriod): boolean =>
 	a.type === b.type && a.year === b.year && a.quarter === b.quarter;
@@ -222,29 +226,25 @@ export const computeReviewerWorkload = (
 };
 
 /**
- * Spreads dealers over reviewers, always giving the next dealer to the
- * reviewer with the lightest load (existing open audits + this cycle).
- * Dealers that already have a reviewer in `keep` are left untouched.
- * Deterministic: ties break on reviewer name, then id.
- *
- * NOTE: zone/region matching needs zone on both dealer and reviewer; the
- * option contracts carry neither today, so it is not applied here.
+ * Spreads dealers across reviewers. Zone-aware: a dealer goes to a reviewer
+ * who covers its zone when one exists, otherwise to any reviewer. Within the
+ * candidates it picks the lightest load (reviewer.openAudits + dealers given
+ * in this run). Dealers in `keep` are left untouched. Deterministic: ties
+ * break on reviewer name, then id.
  */
 export const autoAssignReviewers = (input: {
 	dealerIds: readonly string[];
 	reviewers: readonly DealerAuditReviewerOption[];
-	workload: readonly ReviewerWorkload[];
+	/** dealerId -> zone. Missing / null = no zone preference. */
+	dealerZones?: Readonly<Record<string, string | null | undefined>>;
 	keep?: Readonly<Record<string, string>>;
 }): Record<string, string> => {
-	const { dealerIds, reviewers, workload, keep = {} } = input;
+	const { dealerIds, reviewers, dealerZones = {}, keep = {} } = input;
 	const result: Record<string, string> = {};
 	if (reviewers.length === 0) return result;
 
 	const load = new Map<string, number>(
-		reviewers.map((reviewer) => [
-			reviewer.id,
-			workload.find((entry) => entry.reviewerId === reviewer.id)?.openAudits ?? 0,
-		]),
+		reviewers.map((reviewer) => [reviewer.id, reviewer.openAudits]),
 	);
 	const order = [...reviewers].sort(
 		(a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
@@ -261,8 +261,13 @@ export const autoAssignReviewers = (input: {
 
 	for (const dealerId of dealerIds) {
 		if (result[dealerId]) continue;
-		let best = order[0];
-		for (const candidate of order) {
+		const zone = dealerZones[dealerId];
+		const inZone = zone
+			? order.filter((reviewer) => reviewer.zones.includes(zone))
+			: [];
+		const pool = inZone.length > 0 ? inZone : order;
+		let best = pool[0];
+		for (const candidate of pool) {
 			if ((load.get(candidate.id) ?? 0) < (load.get(best.id) ?? 0)) {
 				best = candidate;
 			}
@@ -331,9 +336,10 @@ export const buildAuditsCsv = (
 		item.finalScore,
 		item.maxScore,
 	]);
-	return [header, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
+	return [header, ...rows]
+		.map((row) => row.map(csvCell).join(","))
+		.join("\r\n");
 };
-
 
 // ── Scoring views (status page, review summary, approval, report) ─────
 
@@ -343,7 +349,9 @@ const sumScored = (
 ): number | null => {
 	const scored = items.filter((item) => item.isScored);
 	const hasAny = scored.some((item) => pick(item) !== null);
-	return hasAny ? scored.reduce((acc, item) => acc + (pick(item) ?? 0), 0) : null;
+	return hasAny
+		? scored.reduce((acc, item) => acc + (pick(item) ?? 0), 0)
+		: null;
 };
 
 /** One row per section: dealer / reviewer / final, ready for <ScoreMatrix>. */
@@ -359,9 +367,15 @@ export const buildScoreMatrixRows = (
 			id: section.id,
 			label: section.name,
 			dealerScore: sumScored(section.items, (item) => item.self.score),
-			reviewerScore: sumScored(section.items, (item) => item.review?.score ?? null),
+			reviewerScore: sumScored(
+				section.items,
+				(item) => item.review?.score ?? null,
+			),
 			finalScore: hasAnyScore
-				? scored.reduce((acc, item) => acc + resolveFinalItemScore(item).score, 0)
+				? scored.reduce(
+						(acc, item) => acc + resolveFinalItemScore(item).score,
+						0,
+					)
 				: null,
 			maxScore: scored.reduce((acc, item) => acc + item.maxScore, 0),
 		};
@@ -382,10 +396,16 @@ export const getScoreDrops = (
 		.flatMap((item): ScoreDropEntry[] => {
 			const dealerScore = item.self.score;
 			const reviewerScore = item.review?.score ?? null;
-			if (dealerScore === null || reviewerScore === null || reviewerScore >= dealerScore) {
+			if (
+				dealerScore === null ||
+				reviewerScore === null ||
+				reviewerScore >= dealerScore
+			) {
 				return [];
 			}
-			return [{ item, dealerScore, reviewerScore, drop: dealerScore - reviewerScore }];
+			return [
+				{ item, dealerScore, reviewerScore, drop: dealerScore - reviewerScore },
+			];
 		})
 		.sort((a, b) => b.drop - a.drop || a.item.sequence - b.item.sequence);
 
@@ -415,7 +435,6 @@ export const getClarificationCandidates = (
 ): AuditChecklistItem[] =>
 	items.filter((item) => item.review?.decision === "CLARIFICATION_REQUIRED");
 
-
 // ── "My audits": one clear next step per audit ───────────────────────
 
 export type DealerPrimaryActionKey =
@@ -442,7 +461,10 @@ export const getDealerPrimaryAction = (
 
 /** Audits that need the dealer to act come first, then by due date. */
 export const sortAuditsForDealer = <
-	T extends Pick<DealerAuditListItem, "status" | "dueAt" | "completedItems" | "totalItems">,
+	T extends Pick<
+		DealerAuditListItem,
+		"status" | "dueAt" | "completedItems" | "totalItems"
+	>,
 >(
 	audits: readonly T[],
 ): T[] => {
@@ -458,7 +480,6 @@ export const sortAuditsForDealer = <
 		return aDue - bDue;
 	});
 };
-
 
 /** 1-based step on the 4-step progress bar; 0 = no progress bar (ended early). */
 export const getAuditProgressStep = (status: DealerAuditStatus): number => {

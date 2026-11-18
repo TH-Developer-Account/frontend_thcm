@@ -15,10 +15,12 @@
 // real contract lands.
 
 import type {
+	DealerAuditDealerOption,
 	DealerAuditPeriodType,
 	DealerAuditQuarter,
 	DealerAuditStatus,
 } from "../dealer-audit.types";
+import type { DealerFacilityType } from "../templates/dealer-template.types";
 
 // ── Eligibility ───────────────────────────────────────────────────────
 
@@ -113,6 +115,21 @@ export interface CreateAuditCycleFormValues extends CycleDetailsFormValues {
 	dealerIds: string[];
 	/** dealerId → reviewerId. Missing key = not assigned yet. */
 	reviewerByDealer: Record<string, string>;
+	/** Reviewer used for dealers left without one. "" = no fallback. */
+	fallbackReviewerId: string;
+}
+
+/** How a dealer's reviewer was chosen. UI only, never sent to the server. */
+export type ReviewerAssignSource = "AUTO" | "MANUAL";
+
+// ── Dealer candidates (step 2) ────────────────────────────────────────
+
+export interface DealerCandidatesParams {
+	periodType: DealerAuditPeriodType;
+	year: number;
+	quarter: DealerAuditQuarter | null;
+	/** Template facility type (HO/BO). When set, other facilities are ineligible. */
+	templateFacilityType?: DealerFacilityType | null;
 }
 
 export interface CreateAuditCyclePayload {
@@ -181,5 +198,10 @@ export interface ResendReportResponse {
 }
 
 // ── Param helpers re-exported for convenience ─────────────────────────
+
+export interface DealerCandidates {
+	dealers: DealerAuditDealerOption[];
+	eligibility: DealerEligibility[];
+}
 
 export type { DealerAuditStatus };

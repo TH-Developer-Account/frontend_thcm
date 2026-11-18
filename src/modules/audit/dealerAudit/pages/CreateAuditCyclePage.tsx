@@ -1,8 +1,8 @@
 // modules/audit/dealerAudit/pages/CreateAuditCyclePage.tsx
 //
 // Four-step wizard that launches an audit cycle:
-//   1 Details → 2 Dealers (ineligible shown with reasons) →
-//   3 Reviewers (auto-assign available) → 4 Confirm & launch.
+//   1 Cycle details → 2 Select dealers (all business partners, eligibility
+//   from the server) → 3 Assign reviewers → 4 Confirm & launch.
 //
 // State is one local draft (cross-step, not server state). Each "Next"
 // validates only the current step; "Launch" re-validates everything and
@@ -40,15 +40,15 @@ import {
 import type {
 	CreateAuditCycleFormValues,
 	CycleWizardStepId,
+	ReviewerAssignSource,
 } from "../cycle/dealer-cycle.types";
 import {
-	useDealerEligibility,
+	useDealerCandidates,
 	useLaunchAuditCycle,
 	useReviewerWorkload,
 } from "../cycle/hooks/useDealerCycle";
 import { DEALER_AUDIT_ROUTES } from "../dealer-audit.routes";
 import { getPeriodOf } from "../dealer-audit.sla";
-import { useDealerOptions } from "../hooks/useDealerAudits";
 import { useDealerChecklistTemplates } from "../hooks/useDealerChecklistTemplates";
 
 const text = content.wizard;
@@ -86,6 +86,7 @@ const createInitialValues = (): CreateAuditCycleFormValues => {
 		dueDate: "",
 		dealerIds: [],
 		reviewerByDealer: {},
+		fallbackReviewerId: "",
 	};
 };
 
@@ -95,6 +96,10 @@ export default function CreateAuditCyclePage() {
 		useState<CreateAuditCycleFormValues>(createInitialValues);
 	const [stepIndex, setStepIndex] = useState(0);
 	const [errors, setErrors] = useState<CycleStepErrors>({});
+	// How each reviewer was chosen (Auto / Manual). Display only, never sent.
+	const [sourceByDealer, setSourceByDealer] = useState<
+		Record<string, ReviewerAssignSource>
+	>({});
 	const [isDirty, setIsDirty] = useState(false);
 	const step = STEP_ORDER[stepIndex];
 
@@ -103,7 +108,6 @@ export default function CreateAuditCyclePage() {
 		statuses: [...PUBLISHED_TEMPLATES.statuses],
 		facilityTypes: [],
 	});
-	const dealers = useDealerOptions();
 	const workload = useReviewerWorkload(stepIndex >= 2);
 	const launch = useLaunchAuditCycle();
 
@@ -116,24 +120,31 @@ export default function CreateAuditCyclePage() {
 		}),
 		[values.periodType, values.year, values.quarter],
 	);
-	const dealerList = useMemo(() => dealers.data ?? [], [dealers.data]);
+	const periodShort =
+		values.periodType === "YEARLY"
+			? `FY ${values.year}`
+			: `Q${values.quarter ?? ""}`;
 
-	const eligibility = useDealerEligibility({
+	const candidates = useDealerCandidates({
 		enabled: stepIndex >= 1,
 		templateId: values.templateId,
 		period,
-		templateFacilityType: template?.facilityType ?? null,
-		dealers: dealerList,
 	});
+	const dealerList = candidates.dealers;
+	const zoneByDealer = useMemo(
+		() =>
+			Object.fromEntries(dealerList.map((dealer) => [dealer.id, dealer.zone])),
+		[dealerList],
+	);
 
 	const ineligibleIds = useMemo(
 		() =>
 			new Set(
-				eligibility.eligibility
+				candidates.eligibility
 					.filter((e) => !e.isEligible)
 					.map((e) => e.dealerId),
 			),
-		[eligibility.eligibility],
+		[candidates.eligibility],
 	);
 
 	// A dealer that became ineligible (period / checklist changed after it was
@@ -212,15 +223,48 @@ export default function CreateAuditCyclePage() {
 		setStepIndex((index) => index - 1);
 	};
 
+	/** Zone-aware, load-balanced. Hand-picked reviewers are left alone. */
 	const handleAutoAssign = (): void => {
-		patch({
-			reviewerByDealer: autoAssignReviewers({
-				dealerIds: effectiveValues.dealerIds,
-				reviewers: workload.reviewers,
-				workload: workload.workload,
-				keep: values.reviewerByDealer,
+		const manual = Object.fromEntries(
+			effectiveValues.dealerIds.flatMap((id) => {
+				const reviewerId = values.reviewerByDealer[id];
+				return reviewerId && sourceByDealer[id] !== "AUTO"
+					? [[id, reviewerId]]
+					: [];
 			}),
+		);
+		const assigned = autoAssignReviewers({
+			dealerIds: effectiveValues.dealerIds,
+			reviewers: workload.reviewers,
+			dealerZones: zoneByDealer,
+			keep: manual,
 		});
+		setSourceByDealer((current) => ({
+			...current,
+			...Object.fromEntries(
+				Object.keys(assigned).map((id) => [
+					id,
+					id in manual ? "MANUAL" : "AUTO",
+				]),
+			),
+		}));
+		patch({ reviewerByDealer: assigned });
+	};
+
+	const setReviewers = (
+		dealerIds: readonly string[],
+		reviewerId: string,
+	): void => {
+		const next = { ...values.reviewerByDealer };
+		for (const id of dealerIds) {
+			if (reviewerId) next[id] = reviewerId;
+			else delete next[id];
+		}
+		setSourceByDealer((current) => ({
+			...current,
+			...Object.fromEntries(dealerIds.map((id) => [id, "MANUAL" as const])),
+		}));
+		patch({ reviewerByDealer: next });
 	};
 
 	const handleLaunch = async (): Promise<void> => {
@@ -242,10 +286,10 @@ export default function CreateAuditCyclePage() {
 
 	const isLast = step === "CONFIRM";
 	const hasMasterError =
-		templates.isError || dealers.isError || eligibility.isError;
+		templates.isError || candidates.isError || workload.isError;
 
 	return (
-		<PageSectionLayout className="audit-page audit-page-narrow">
+		<PageSectionLayout className="audit-page">
 			<header className="flex items-start gap-3">
 				<PageNavigation
 					variant="button"
@@ -254,6 +298,9 @@ export default function CreateAuditCyclePage() {
 					to={DEALER_AUDIT_ROUTES.tracker}
 				/>
 				<div>
+					<p className="text-xs font-semibold tracking-wide text-(--color-text-secondary)">
+						{text.eyebrow}
+					</p>
 					<h1 className="text-lg font-semibold text-(--color-text-primary)">
 						{text.title}
 					</h1>
@@ -273,8 +320,8 @@ export default function CreateAuditCyclePage() {
 							label: content.common.retry,
 							onClick: () => {
 								void templates.refetch();
-								void dealers.refetch();
-								void eligibility.refetch();
+								void candidates.refetch();
+								void workload.refetch();
 							},
 						}}
 					/>
@@ -303,6 +350,16 @@ export default function CreateAuditCyclePage() {
 								disabled={launch.isPending}
 								onClick={handleBack}
 							/>
+							{step === "DEALERS" ? (
+								<p
+									className="text-sm text-(--color-text-secondary)"
+									aria-live="polite"
+								>
+									{format(text.dealers.footerSelected, {
+										count: effectiveValues.dealerIds.length,
+									})}
+								</p>
+							) : null}
 							{isLast ? (
 								<Button
 									type="button"
@@ -317,7 +374,7 @@ export default function CreateAuditCyclePage() {
 							) : (
 								<Button
 									type="button"
-									text={text.next}
+									text={text.nextLabels[step]}
 									Icon={ArrowRight}
 									iconPosition="right"
 									appearance="standard"
@@ -356,11 +413,13 @@ export default function CreateAuditCyclePage() {
 						{step === "DEALERS" ? (
 							<CycleDealersStep
 								dealers={dealerList}
-								eligibility={eligibility.eligibility}
+								eligibility={candidates.eligibility}
 								selectedIds={effectiveValues.dealerIds}
 								error={errors.dealerIds}
-								isLoading={dealers.isLoading || eligibility.isLoading}
+								isLoading={candidates.isLoading}
 								isDisabled={launch.isPending}
+								periodType={values.periodType}
+								periodShort={periodShort}
 								onChange={(dealerIds) => patch({ dealerIds })}
 							/>
 						) : null}
@@ -369,29 +428,19 @@ export default function CreateAuditCyclePage() {
 							<CycleReviewersStep
 								dealers={dealerList}
 								reviewers={workload.reviewers}
-								workload={workload.workload}
 								selectedIds={effectiveValues.dealerIds}
 								reviewerByDealer={values.reviewerByDealer}
+								sourceByDealer={sourceByDealer}
+								fallbackReviewerId={values.fallbackReviewerId}
 								error={errors.reviewerByDealer}
 								isDisabled={launch.isPending || workload.isLoading}
 								onAutoAssign={handleAutoAssign}
 								onChange={(dealerId, reviewerId) =>
-									patch({
-										reviewerByDealer: {
-											...values.reviewerByDealer,
-											[dealerId]: reviewerId,
-										},
-									})
+									setReviewers([dealerId], reviewerId)
 								}
-								onBulkChange={(dealerIds, reviewerId) =>
-									patch({
-										reviewerByDealer: {
-											...values.reviewerByDealer,
-											...Object.fromEntries(
-												dealerIds.map((id) => [id, reviewerId]),
-											),
-										},
-									})
+								onBulkChange={setReviewers}
+								onFallbackChange={(fallbackReviewerId) =>
+									patch({ fallbackReviewerId })
 								}
 							/>
 						) : null}

@@ -27,6 +27,29 @@ import type { LivePhotoValue } from "../shared/checklist/evidence.types";
 
 export type { PaginatedResult } from "./templates/dealer-template.types";
 
+// ── API envelopes (audit instances, snake_case) ───────────────────────
+// Defined here because the template module only exports PaginatedResult.
+
+export interface ApiEnvelope<T> {
+	success?: boolean;
+	message?: string;
+	data: T;
+}
+
+export interface ApiPaginationMeta {
+	page: number;
+	page_size: number;
+	total_items: number;
+	total_pages: number;
+}
+
+export interface ApiPaginatedEnvelope<T> {
+	success?: boolean;
+	message?: string;
+	data: T[] | null;
+	meta: ApiPaginationMeta;
+}
+
 // ── Shared execution shapes ───────────────────────────────────────────
 // The item / evidence / section / form shapes are identical for Dealer and
 // Factory Audit and live in shared/execution. The Dealer* names are kept so
@@ -303,6 +326,10 @@ export interface DealerAuditReviewerOptionResponse {
 	id: string;
 	name: string;
 	designation: string | null;
+	/** Zones this reviewer covers. Missing = covers any zone. */
+	zones?: string[] | null;
+	/** Open (not closed/cancelled) audits currently assigned. */
+	open_audits?: number | null;
 }
 
 /** Result of saving one item (raw). */
@@ -422,6 +449,8 @@ export interface DealerAuditReviewerOption {
 	id: string;
 	name: string;
 	designation: string | null;
+	zones: string[];
+	openAudits: number;
 }
 
 /** Result of saving one item — enough to patch the cache without a refetch. */

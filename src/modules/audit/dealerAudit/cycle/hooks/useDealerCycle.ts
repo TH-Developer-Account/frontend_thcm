@@ -10,7 +10,6 @@ import {
 	useQuery,
 	useQueryClient,
 } from "@tanstack/react-query";
-import { useMemo } from "react";
 
 import { useToast } from "../../../../../context/Auth/AuthContext";
 import { dealerAuditKeys } from "../../dealer-audit.queries";
@@ -18,23 +17,20 @@ import type {
 	DealerAuditDealerOption,
 	DealerAuditPeriod,
 } from "../../dealer-audit.types";
-import type { DealerFacilityType } from "../../templates/dealer-template.types";
+import { useReviewerOptions } from "../../hooks/useDealerAudits";
 import { dealerCycleApi } from "../dealer-cycle.api";
 import {
 	dealerCycleContent as content,
 	formatCycleMessage as format,
 } from "../dealer-cycle.content";
-import { computeDealerEligibility, computeReviewerWorkload } from "../dealer-cycle.logic";
 import { dealerCycleKeys } from "../dealer-cycle.queries";
 import type {
 	AuditTrackerSummaryParams,
 	CreateAuditCycleFormValues,
 	DealerEligibility,
 	ResendReportVariables,
-	ReviewerWorkload,
 	SendReminderVariables,
 } from "../dealer-cycle.types";
-import { useReviewerOptions } from "../../hooks/useDealerAudits";
 
 // ── Reads ─────────────────────────────────────────────────────────────
 
@@ -59,71 +55,58 @@ export function useReviewQueueCounts(enabled = true) {
 const periodKey = (period: DealerAuditPeriod): string =>
 	`${period.type}:${period.year}:${period.quarter ?? "-"}`;
 
+// Module-level so "no data yet" keeps one identity between renders.
+const NO_DEALERS: DealerAuditDealerOption[] = [];
+const NO_ELIGIBILITY: DealerEligibility[] = [];
+
 /**
- * Who can be added to a cycle for this period + checklist. Derived from the
- * audits that already exist for the period (see computeDealerEligibility).
+ * Every active dealer business partner for the dealer step, plus whether each
+ * can be audited for this period (computed from existing audits).
  */
-export function useDealerEligibility(input: {
+export function useDealerCandidates(input: {
 	enabled: boolean;
 	templateId: string;
 	period: DealerAuditPeriod;
-	templateFacilityType: DealerFacilityType | null;
-	dealers: readonly DealerAuditDealerOption[];
 }) {
-	const { enabled, templateId, period, templateFacilityType, dealers } = input;
+	const { enabled, templateId, period } = input;
 
-	const audits = useQuery({
+	const query = useQuery({
 		queryKey: dealerCycleKeys.eligibility(templateId, periodKey(period)),
-		queryFn: () =>
-			dealerCycleApi.getAllAudits({
-				periodType: period.type,
-				year: period.year,
-				quarter: period.quarter,
-			}),
-		enabled: enabled && templateId !== "",
+		queryFn: ({ signal }) =>
+			dealerCycleApi.getDealerCandidates(
+				{
+					periodType: period.type,
+					year: period.year,
+					quarter: period.quarter,
+				},
+				signal,
+			),
+		// The dealer list no longer depends on the template, so only the step gates it.
+		enabled,
 		staleTime: 30_000,
 	});
 
-	const eligibility = useMemo<DealerEligibility[]>(
-		() =>
-			computeDealerEligibility({
-				dealers,
-				existingAudits: audits.data ?? [],
-				period,
-				templateFacilityType,
-			}),
-		[dealers, audits.data, period, templateFacilityType],
-	);
-
 	return {
-		eligibility,
-		isLoading: audits.isLoading,
-		isError: audits.isError,
-		refetch: audits.refetch,
+		dealers: query.data?.dealers ?? NO_DEALERS,
+		eligibility: query.data?.eligibility ?? NO_ELIGIBILITY,
+		isLoading: query.isLoading,
+		isError: query.isError,
+		refetch: query.refetch,
 	};
 }
 
-/** Open-audit count per reviewer, for the assignment step. */
+/**
+ * Reviewers for the assignment step. Each option already carries the zones it
+ * covers and its open-audit count, so no second request is needed.
+ */
 export function useReviewerWorkload(enabled: boolean) {
 	const reviewers = useReviewerOptions(enabled);
 
-	const audits = useQuery({
-		queryKey: dealerCycleKeys.workload(),
-		queryFn: () => dealerCycleApi.getAllAudits({}),
-		enabled,
-		staleTime: 60_000,
-	});
-
-	const workload = useMemo<ReviewerWorkload[]>(
-		() => computeReviewerWorkload(reviewers.data ?? [], audits.data ?? []),
-		[reviewers.data, audits.data],
-	);
-
 	return {
 		reviewers: reviewers.data ?? [],
-		workload,
-		isLoading: reviewers.isLoading || audits.isLoading,
-		isError: reviewers.isError || audits.isError,
+		isLoading: reviewers.isLoading,
+		isError: reviewers.isError,
+		refetch: reviewers.refetch,
 	};
 }
 
@@ -138,12 +121,19 @@ export function useLaunchAuditCycle() {
 			dealerCycleApi.launchCycle(values),
 		onSuccess: (result) => {
 			// Lists, KPIs and queue counts all change; nothing outside audits does.
-			void queryClient.invalidateQueries({ queryKey: dealerAuditKeys.audits() });
+			void queryClient.invalidateQueries({
+				queryKey: dealerAuditKeys.audits(),
+			});
 			void queryClient.invalidateQueries({ queryKey: dealerCycleKeys.all });
+			void queryClient.invalidateQueries({
+				queryKey: dealerAuditKeys.reviewerOptions(),
+			});
 			showToast({
 				type: "success",
 				title: content.wizard.title,
-				description: format(content.wizard.success, { count: result.createdCount }),
+				description: format(content.wizard.success, {
+					count: result.createdCount,
+				}),
 			});
 		},
 	});
@@ -159,7 +149,9 @@ export function useSendReminders() {
 			showToast({
 				type: "success",
 				title: content.tracker.actions.remind,
-				description: format(content.tracker.reminderSent, { count: result.sentCount }),
+				description: format(content.tracker.reminderSent, {
+					count: result.sentCount,
+				}),
 			});
 		},
 	});

@@ -11,7 +11,10 @@ const text = content.common;
 
 export function PageLoading({ label }: { label?: string }) {
 	return (
-		<p className="py-10 text-center text-sm text-(--color-text-secondary)" role="status">
+		<p
+			className="py-10 text-center text-sm text-(--color-text-secondary)"
+			role="status"
+		>
 			{label ?? "Loading…"}
 		</p>
 	);
@@ -27,6 +30,7 @@ export function PageError({
 	return (
 		<Alert
 			variant="error"
+			type="banner"
 			title={text.loadError}
 			description={message ?? undefined}
 			primaryAction={{ label: text.retry, onClick: onRetry }}
@@ -35,7 +39,13 @@ export function PageError({
 }
 
 export function PageNoAccess() {
-	return <Alert variant="info" title={text.noAccess} description={text.noAccessHelp} />;
+	return (
+		<Alert
+			variant="info"
+			title={text.noAccess}
+			description={text.noAccessHelp}
+		/>
+	);
 }
 
 export function PageEmpty({ title, help }: { title: string; help?: string }) {

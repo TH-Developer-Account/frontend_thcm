@@ -47,7 +47,10 @@ import {
 	canRemindAudit,
 	isAuditOverdue,
 } from "../cycle/dealer-cycle.logic";
-import { useSendReminders, useTrackerSummary } from "../cycle/hooks/useDealerCycle";
+import {
+	useSendReminders,
+	useTrackerSummary,
+} from "../cycle/hooks/useDealerCycle";
 import AuditDueLabel from "../components/AuditDueLabel";
 import AuditStatusBadge from "../components/AuditStatusBadge";
 import {
@@ -63,7 +66,10 @@ import {
 	isReportAvailableStatus,
 	isTerminalAuditStatus,
 } from "../dealer-audit.status";
-import type { DealerAuditListItem, DealerAuditQuarter } from "../dealer-audit.types";
+import type {
+	DealerAuditListItem,
+	DealerAuditQuarter,
+} from "../dealer-audit.types";
 import { useDealerAuditSession } from "../hooks/useDealerAuditAccess";
 import { useDealerAuditListParams } from "../hooks/useDealerAuditListParams";
 import { useReassignReviewer } from "../hooks/useDealerAuditMutations";
@@ -112,7 +118,8 @@ export default function AuditTrackerPage() {
 	const reminders = useSendReminders();
 	const reassign = useReassignReviewer();
 
-	const [reassignTarget, setReassignTarget] = useState<DealerAuditListItem | null>(null);
+	const [reassignTarget, setReassignTarget] =
+		useState<DealerAuditListItem | null>(null);
 	const [isRemindAllOpen, setIsRemindAllOpen] = useState(false);
 	const [actionError, setActionError] = useState<string | null>(null);
 	const [isExporting, setIsExporting] = useState(false);
@@ -140,22 +147,61 @@ export default function AuditTrackerPage() {
 	const quarterOptions = useMemo<FilterOption[]>(
 		() => [
 			{ value: ALL_VALUE, label: listText.allQuarters },
-			...QUARTERS.map((q) => ({ value: String(q), label: listText.quarters[q] })),
+			...QUARTERS.map((q) => ({
+				value: String(q),
+				label: listText.quarters[q],
+			})),
 		],
 		[],
 	);
 
 	const kpis = useMemo<Kpi[]>(() => {
 		const s = summary.data;
-		const n = (value: number | undefined): string => (s ? String(value ?? 0) : "—");
+		const n = (value: number | undefined): string =>
+			s ? String(value ?? 0) : "—";
 		return [
-			{ id: "total", label: text.kpi.total, value: n(s?.total), Icon: ClipboardList },
-			{ id: "notStarted", label: text.kpi.notStarted, value: n(s?.notStarted), Icon: Hourglass },
-			{ id: "inProgress", label: text.kpi.inProgress, value: n(s?.inProgress), Icon: Pencil },
-			{ id: "awaitingReview", label: text.kpi.awaitingReview, value: n(s?.awaitingReview), Icon: Eye },
-			{ id: "clarification", label: text.kpi.clarification, value: n(s?.clarification), Icon: MessageSquareWarning },
-			{ id: "awaitingApproval", label: text.kpi.awaitingApproval, value: n(s?.awaitingApproval), Icon: FileCheck2 },
-			{ id: "closed", label: text.kpi.closed, value: n(s?.closed), Icon: CheckCircle2 },
+			{
+				id: "total",
+				label: text.kpi.total,
+				value: n(s?.total),
+				Icon: ClipboardList,
+			},
+			{
+				id: "notStarted",
+				label: text.kpi.notStarted,
+				value: n(s?.notStarted),
+				Icon: Hourglass,
+			},
+			{
+				id: "inProgress",
+				label: text.kpi.inProgress,
+				value: n(s?.inProgress),
+				Icon: Pencil,
+			},
+			{
+				id: "awaitingReview",
+				label: text.kpi.awaitingReview,
+				value: n(s?.awaitingReview),
+				Icon: Eye,
+			},
+			{
+				id: "clarification",
+				label: text.kpi.clarification,
+				value: n(s?.clarification),
+				Icon: MessageSquareWarning,
+			},
+			{
+				id: "awaitingApproval",
+				label: text.kpi.awaitingApproval,
+				value: n(s?.awaitingApproval),
+				Icon: FileCheck2,
+			},
+			{
+				id: "closed",
+				label: text.kpi.closed,
+				value: n(s?.closed),
+				Icon: CheckCircle2,
+			},
 			{
 				id: "overdue",
 				label: text.kpi.overdue,
@@ -166,7 +212,10 @@ export default function AuditTrackerPage() {
 			{
 				id: "average",
 				label: text.kpi.averageScore,
-				value: s?.averageScorePercent != null ? formatPercent(s.averageScorePercent) : "—",
+				value:
+					s?.averageScorePercent != null
+						? formatPercent(s.averageScorePercent)
+						: "—",
 				Icon: CheckCircle2,
 			},
 		];
@@ -178,13 +227,18 @@ export default function AuditTrackerPage() {
 		setActionError(null);
 		reminders.mutate(
 			{ auditIds: [audit.id] },
-			{ onError: (error) => setActionError(getAuditActionErrorMessage(error, "reminder")) },
+			{
+				onError: (error) =>
+					setActionError(getAuditActionErrorMessage(error, "reminder")),
+			},
 		);
 	};
 
 	const handleRemindAllOverdue = async (): Promise<void> => {
 		const all = await dealerCycleApi.getAllAudits({ ...params.listParams });
-		const targets = all.filter((audit) => isAuditOverdue(audit) && canRemindAudit(audit));
+		const targets = all.filter(
+			(audit) => isAuditOverdue(audit) && canRemindAudit(audit),
+		);
 		if (targets.length === 0) return;
 		await reminders.mutateAsync({ auditIds: targets.map((audit) => audit.id) });
 	};
@@ -223,7 +277,8 @@ export default function AuditTrackerPage() {
 			id: "reassign",
 			label: text.actions.reassign,
 			Icon: UserCog,
-			hidden: !permissions.canReassignReviewer || isTerminalAuditStatus(audit.status),
+			hidden:
+				!permissions.canReassignReviewer || isTerminalAuditStatus(audit.status),
 			onClick: () => setReassignTarget(audit),
 		},
 		{
@@ -244,7 +299,9 @@ export default function AuditTrackerPage() {
 					<div className="min-w-0">
 						<p className="truncate font-medium">{row.original.dealerName}</p>
 						<p className="truncate text-xs text-slate-500">
-							{[row.original.dealerCode, row.original.location].filter(Boolean).join(" · ")}
+							{[row.original.dealerCode, row.original.location]
+								.filter(Boolean)
+								.join(" · ")}
 						</p>
 					</div>
 				),
@@ -270,14 +327,18 @@ export default function AuditTrackerPage() {
 				id: "dueAt",
 				header: listText.columns.due,
 				cell: ({ row }) => (
-					<AuditDueLabel status={row.original.status} dueAt={row.original.dueAt} />
+					<AuditDueLabel
+						status={row.original.status}
+						dueAt={row.original.dueAt}
+					/>
 				),
 			},
 			{
 				id: "progress",
 				header: listText.columns.progress,
 				enableSorting: false,
-				cell: ({ row }) => `${row.original.completedItems}/${row.original.totalItems}`,
+				cell: ({ row }) =>
+					`${row.original.completedItems}/${row.original.totalItems}`,
 			},
 			{
 				id: "actions",
@@ -297,7 +358,10 @@ export default function AuditTrackerPage() {
 	);
 
 	const sorting = [
-		{ id: params.listParams.sortBy, desc: params.listParams.sortOrder === "desc" },
+		{
+			id: params.listParams.sortBy,
+			desc: params.listParams.sortOrder === "desc",
+		},
 	];
 
 	return (
@@ -309,7 +373,10 @@ export default function AuditTrackerPage() {
 					<Alert
 						variant="error"
 						title={content.common.loadError}
-						primaryAction={{ label: content.common.retry, onClick: () => void summary.refetch() }}
+						primaryAction={{
+							label: content.common.retry,
+							onClick: () => void summary.refetch(),
+						}}
 					/>
 				) : (
 					<ul
@@ -329,7 +396,9 @@ export default function AuditTrackerPage() {
 									<kpi.Icon size={14} aria-hidden="true" />
 									<span className="break-words">{kpi.label}</span>
 								</div>
-								<p className="mt-1 text-2xl font-bold tabular-nums">{kpi.value}</p>
+								<p className="mt-1 text-2xl font-bold tabular-nums">
+									{kpi.value}
+								</p>
 							</li>
 						))}
 					</ul>
@@ -382,11 +451,17 @@ export default function AuditTrackerPage() {
 								name="status"
 								aria-label={listText.filters.status}
 								options={statusOptions}
-								value={statusOptions.find((o) => o.value === (params.status ?? ALL_VALUE)) ?? null}
+								value={
+									statusOptions.find(
+										(o) => o.value === (params.status ?? ALL_VALUE),
+									) ?? null
+								}
 								onChange={(option) =>
 									params.setStatus(
 										option && option.value !== ALL_VALUE
-											? (AUDIT_STATUS_FILTER_ORDER.find((s) => s === option.value) ?? null)
+											? (AUDIT_STATUS_FILTER_ORDER.find(
+													(s) => s === option.value,
+												) ?? null)
 											: null,
 									)
 								}
@@ -396,11 +471,15 @@ export default function AuditTrackerPage() {
 								options={yearOptions}
 								value={
 									yearOptions.find(
-										(o) => o.value === (params.year === null ? ALL_VALUE : String(params.year)),
+										(o) =>
+											o.value ===
+											(params.year === null ? ALL_VALUE : String(params.year)),
 									) ?? null
 								}
 								onChange={(option) =>
-									params.setYear(option && option.value ? Number(option.value) : null)
+									params.setYear(
+										option && option.value ? Number(option.value) : null,
+									)
 								}
 							/>
 							<SelectInput
@@ -408,11 +487,17 @@ export default function AuditTrackerPage() {
 								options={quarterOptions}
 								value={
 									quarterOptions.find(
-										(o) => o.value === (params.quarter === null ? ALL_VALUE : String(params.quarter)),
+										(o) =>
+											o.value ===
+											(params.quarter === null
+												? ALL_VALUE
+												: String(params.quarter)),
 									) ?? null
 								}
 								onChange={(option) =>
-									params.setQuarter(QUARTERS.find((q) => String(q) === option?.value) ?? null)
+									params.setQuarter(
+										QUARTERS.find((q) => String(q) === option?.value) ?? null,
+									)
 								}
 							/>
 						</div>
@@ -435,10 +520,14 @@ export default function AuditTrackerPage() {
 						{actionError ? <Alert variant="error" title={actionError} /> : null}
 						{audits.isError ? (
 							<Alert
+								type="banner"
 								variant="error"
 								title={listText.errorTitle}
 								description={audits.errorMessage ?? undefined}
-								primaryAction={{ label: listText.retry, onClick: () => void audits.refetch() }}
+								primaryAction={{
+									label: listText.retry,
+									onClick: () => void audits.refetch(),
+								}}
 							/>
 						) : null}
 
@@ -456,11 +545,12 @@ export default function AuditTrackerPage() {
 								onPageSizeChange={params.setPageSize}
 								sorting={sorting}
 								onSortingChange={(updater) => {
-									const next = typeof updater === "function" ? updater(sorting) : updater;
+									const next =
+										typeof updater === "function" ? updater(sorting) : updater;
 									const [first] = next;
-									const field = (["dueAt", "updatedAt", "dealerName", "status"] as const).find(
-										(f) => f === first?.id,
-									);
+									const field = (
+										["dueAt", "updatedAt", "dealerName", "status"] as const
+									).find((f) => f === first?.id);
 									if (!first || !field) {
 										params.setSort("updatedAt", "desc");
 										return;
@@ -468,7 +558,9 @@ export default function AuditTrackerPage() {
 									params.setSort(field, first.desc ? "desc" : "asc");
 								}}
 								getRowId={(row) => row.id}
-								onRowClick={(row) => navigate(DEALER_AUDIT_ROUTES.audits.detail(row.id))}
+								onRowClick={(row) =>
+									navigate(DEALER_AUDIT_ROUTES.audits.detail(row.id))
+								}
 								emptyTitle={listText.emptyTitle}
 								emptyDescription={listText.emptyDescription}
 								ariaLabel={listText.tableLabel}
@@ -476,7 +568,10 @@ export default function AuditTrackerPage() {
 							/>
 						</div>
 
-						<ul className="grid gap-3 md:hidden" aria-label={listText.tableLabel}>
+						<ul
+							className="grid gap-3 md:hidden"
+							aria-label={listText.tableLabel}
+						>
 							{audits.isLoading ? (
 								<li className="text-sm text-slate-600" role="status">
 									{listText.loading}
@@ -495,7 +590,8 @@ export default function AuditTrackerPage() {
 											primaryAction={{
 												label: text.actions.open,
 												Icon: Eye,
-												onClick: () => navigate(DEALER_AUDIT_ROUTES.audits.detail(audit.id)),
+												onClick: () =>
+													navigate(DEALER_AUDIT_ROUTES.audits.detail(audit.id)),
 											}}
 											secondary={
 												<ActionMenu<DealerAuditListItem>
@@ -519,14 +615,20 @@ export default function AuditTrackerPage() {
 				onClose={() => setReassignTarget(null)}
 				onSubmit={async ({ reviewerId, reason }) => {
 					if (!reassignTarget) return;
-					await reassign.mutateAsync({ auditId: reassignTarget.id, reviewerId, reason });
+					await reassign.mutateAsync({
+						auditId: reassignTarget.id,
+						reviewerId,
+						reason,
+					});
 				}}
 			/>
 
 			<ConfirmActionDialog
 				open={isRemindAllOpen}
 				title={text.remindOverdue}
-				description={format(text.remindOverdueBody, { count: summary.data?.overdue ?? 0 })}
+				description={format(text.remindOverdueBody, {
+					count: summary.data?.overdue ?? 0,
+				})}
 				confirmText={text.actions.remind}
 				onClose={() => setIsRemindAllOpen(false)}
 				onConfirm={handleRemindAllOverdue}
