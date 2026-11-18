@@ -13,7 +13,6 @@ import type { LivePhotoValue } from "../shared/checklist/evidence.types";
 import { mapEvidenceToPhoto } from "../shared/execution/audit-execution.mappers";
 import { DEALER_AUDIT_RULES } from "./dealer-audit.config";
 import type {
-	ApiPaginatedEnvelope,
 	ChecklistItemFormValues,
 	CreateDealerAuditFormValues,
 	CreateDealerAuditPayload,
@@ -302,6 +301,16 @@ export const mapDealerOptionResponse = (
 	name: response.name,
 	location: response.location ?? EMPTY_LOCATION,
 	facilityType: response.facility_type ?? null,
+	zone: response.zone ?? null,
+	state: response.state ?? null,
+	lastAudit: response.last_audit
+		? {
+				periodLabel: response.last_audit.period_label,
+				closedAt: response.last_audit.closed_at ?? null,
+				finalScore: response.last_audit.final_score ?? null,
+				maxScore: response.last_audit.max_score ?? null,
+			}
+		: null,
 });
 
 export const mapReviewerOptionResponse = (

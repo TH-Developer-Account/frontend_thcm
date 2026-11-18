@@ -22,11 +22,11 @@ export const dealerCycleContent = {
 			},
 			DEALERS: {
 				label: "Dealers",
-				help: "Tick the dealers you want to audit.",
+				help: "Tick the dealers you want to audit. Use the filters to narrow the list.",
 			},
 			REVIEWERS: {
 				label: "Reviewers",
-				help: "Choose who will check each dealer. Or let us do it for you.",
+				help: "Filter by zone, then choose a reviewer for each dealer or for all shown.",
 			},
 			CONFIRM: {
 				label: "Confirm",
@@ -48,21 +48,55 @@ export const dealerCycleContent = {
 			year: "Financial year",
 			quarter: "Quarter",
 			dueDate: "Dealer must finish by",
-			notes: "Notes for reviewers (optional)",
+		},
+		facility: {
+			short: { HO: "HO", BO: "BO" },
+			long: { HO: "Head office (HO)", BO: "Branch office (BO)" },
+		},
+		filters: {
+			zone: "Zone",
+			state: "State",
+			facility: "Facility",
+			sortBy: "Sort by",
+			sortName: "Name",
+			sortZone: "Zone",
+			allZones: "All zones",
+			allStates: "All states",
+			allFacilities: "All facilities",
+		},
+		pagination: {
+			showing: "Showing {from}–{to} of {total}",
+			previous: "Previous",
+			next: "Next",
+			pageOf: "Page {current} of {total}",
 		},
 		dealers: {
-			searchPlaceholder: "Search by dealer name, code or place",
-			selectAll: "Select all eligible dealers",
+			searchPlaceholder: "Search by dealer name, code, place, zone or state",
+			selectAll: "Select all eligible",
 			clearAll: "Clear selection",
 			selectedCount: "{count} selected",
-			eligibleCount: "{count} can be audited",
-			ineligibleCount: "{count} cannot be audited now",
-			ineligibleHeading: "Cannot be added",
-			empty: "No dealers match your search.",
+			eligibleInList: "{count} of {total} in this list can be audited",
+			selectRow: "Select {dealer}",
+			eligible: "Eligible",
+			noLastAudit: "No audit yet",
+			empty: "No dealers match your search or filters.",
+			columns: {
+				select: "Select",
+				dealer: "Dealer / Location",
+				facility: "Facility",
+				zone: "Zone",
+				lastAudit: "Last audit",
+				eligibility: "Eligibility",
+			},
 		},
 		ineligible: {
 			ALREADY_AUDITED: "Already has audit {auditNumber} for this period.",
-			FACILITY_MISMATCH: "This dealer's facility type does not match the checklist.",
+			FACILITY_MISMATCH:
+				"This dealer's facility type does not match the checklist.",
+		} satisfies Record<DealerIneligibleReason, string>,
+		ineligibleShort: {
+			ALREADY_AUDITED: "Audit {auditNumber} exists",
+			FACILITY_MISMATCH: "Facility mismatch",
 		} satisfies Record<DealerIneligibleReason, string>,
 		reviewers: {
 			autoAssign: "Assign automatically",
@@ -71,6 +105,14 @@ export const dealerCycleContent = {
 			unassigned: "Choose a reviewer",
 			workload: "{count} open audits",
 			reviewerFor: "Reviewer for {dealer}",
+			bulkLabel: "Reviewer for all dealers shown",
+			bulkApply: "Apply to {count} shown",
+			empty: "No selected dealers in this zone.",
+			columns: {
+				dealer: "Dealer / Location",
+				zone: "Zone",
+				reviewer: "Reviewer",
+			},
 		},
 		confirm: {
 			heading: "Ready to launch?",
@@ -83,7 +125,8 @@ export const dealerCycleContent = {
 			editStep: "Change",
 		},
 		success: "Audit cycle launched for {count} dealers.",
-		error: "The audit cycle could not be launched. Nothing was created. Please try again.",
+		error:
+			"The audit cycle could not be launched. Nothing was created. Please try again.",
 		leaveWarning: "You have unsaved choices. Leave this page?",
 	},
 
@@ -95,7 +138,6 @@ export const dealerCycleContent = {
 		dueDateRequired: "Choose the due date.",
 		dueDateInvalid: "Enter a valid date.",
 		dueDatePast: "The due date cannot be in the past.",
-		notesTooLong: "Keep notes under {max} characters.",
 		dealersRequired: "Tick at least one dealer.",
 		dealersIneligible: "Remove dealers that cannot be audited.",
 		reviewersMissing: "Choose a reviewer for every dealer.",
@@ -107,7 +149,8 @@ export const dealerCycleContent = {
 		newCycle: "New audit cycle",
 		downloadSummary: "Download summary",
 		remindOverdue: "Remind all overdue",
-		remindOverdueBody: "We will send a reminder to the {count} dealers whose audit is overdue.",
+		remindOverdueBody:
+			"We will send a reminder to the {count} dealers whose audit is overdue.",
 		kpi: {
 			total: "All audits",
 			notStarted: "Not started",
@@ -154,12 +197,14 @@ export const dealerCycleContent = {
 
 	submit: {
 		title: "Submit your audit",
-		subtitle: "Check that everything is complete, then send it to the reviewer.",
+		subtitle:
+			"Check that everything is complete, then send it to the reviewer.",
 		allDone: "Everything is complete. You can submit now.",
 		notDone: "{count} items still need your attention.",
 		fixItem: "Go to item",
 		confirmTitle: "Submit this audit?",
-		confirmBody: "After you submit, you cannot change your answers unless the reviewer asks you to.",
+		confirmBody:
+			"After you submit, you cannot change your answers unless the reviewer asks you to.",
 		confirmAction: "Yes, submit",
 		submit: "Submit audit",
 		success: "Your audit has been submitted.",
@@ -184,12 +229,14 @@ export const dealerCycleContent = {
 			IN_PROGRESS: "The dealer is filling in the checklist.",
 			SUBMITTED: "Waiting for the reviewer to start.",
 			UNDER_REVIEW: "The reviewer is checking the answers.",
-			CLARIFICATION_REQUIRED: "The dealer needs to answer the reviewer's questions.",
+			CLARIFICATION_REQUIRED:
+				"The dealer needs to answer the reviewer's questions.",
 			RECTIFICATION_IN_PROGRESS: "The dealer is fixing the flagged items.",
 			RESUBMITTED: "Waiting for the reviewer to check the updated answers.",
 			PENDING_APPROVAL: "Waiting for the approver to decide.",
 			APPROVED: "The audit is approved. The report is ready.",
-			IMPROVEMENT_REQUIRED: "The audit is complete. Some items need improvement.",
+			IMPROVEMENT_REQUIRED:
+				"The audit is complete. Some items need improvement.",
 			CLOSED: "This audit is complete.",
 			REJECTED: "This audit was rejected.",
 			EXPIRED: "The time to finish this audit has passed.",
@@ -208,7 +255,11 @@ export const dealerCycleContent = {
 				COMPLETED: "Completed",
 			} satisfies Record<ReviewQueueTab, string>,
 			empty: "Nothing here right now.",
-			action: { start: "Start review", continue: "Continue review", view: "View" },
+			action: {
+				start: "Start review",
+				continue: "Continue review",
+				view: "View",
+			},
 		},
 		approver: {
 			title: "Waiting for your approval",
@@ -224,7 +275,8 @@ export const dealerCycleContent = {
 		scoreChanges: "Items you scored lower than the dealer",
 		noChanges: "You agreed with every dealer score.",
 		clarifications: "Items sent back for clarification",
-		openClarifications: "Items waiting for the dealer must be answered before you can finish.",
+		openClarifications:
+			"Items waiting for the dealer must be answered before you can finish.",
 		submit: "Send for approval",
 		confirmTitle: "Send this review for approval?",
 		confirmBody: "You cannot change your scores after this.",

@@ -53,8 +53,16 @@ import { useDealerChecklistTemplates } from "../hooks/useDealerChecklistTemplate
 
 const text = content.wizard;
 
-const STEP_ORDER: readonly CycleWizardStepId[] = ["DETAILS", "DEALERS", "REVIEWERS", "CONFIRM"];
-const STEPS = STEP_ORDER.map((id, index) => ({ id: index + 1, label: text.steps[id].label }));
+const STEP_ORDER: readonly CycleWizardStepId[] = [
+	"DETAILS",
+	"DEALERS",
+	"REVIEWERS",
+	"CONFIRM",
+];
+const STEPS = STEP_ORDER.map((id, index) => ({
+	id: index + 1,
+	label: text.steps[id].label,
+}));
 
 // Module-level so the template query key stays stable between renders.
 const PUBLISHED_TEMPLATES = {
@@ -76,7 +84,6 @@ const createInitialValues = (): CreateAuditCycleFormValues => {
 		year: period.year,
 		quarter: period.quarter,
 		dueDate: "",
-		notes: "",
 		dealerIds: [],
 		reviewerByDealer: {},
 	};
@@ -84,7 +91,8 @@ const createInitialValues = (): CreateAuditCycleFormValues => {
 
 export default function CreateAuditCyclePage() {
 	const navigate = useNavigate();
-	const [values, setValues] = useState<CreateAuditCycleFormValues>(createInitialValues);
+	const [values, setValues] =
+		useState<CreateAuditCycleFormValues>(createInitialValues);
 	const [stepIndex, setStepIndex] = useState(0);
 	const [errors, setErrors] = useState<CycleStepErrors>({});
 	const [isDirty, setIsDirty] = useState(false);
@@ -94,7 +102,7 @@ export default function CreateAuditCyclePage() {
 		...PUBLISHED_TEMPLATES,
 		statuses: [...PUBLISHED_TEMPLATES.statuses],
 		facilityTypes: [],
-		});
+	});
 	const dealers = useDealerOptions();
 	const workload = useReviewerWorkload(stepIndex >= 2);
 	const launch = useLaunchAuditCycle();
@@ -119,7 +127,12 @@ export default function CreateAuditCyclePage() {
 	});
 
 	const ineligibleIds = useMemo(
-		() => new Set(eligibility.eligibility.filter((e) => !e.isEligible).map((e) => e.dealerId)),
+		() =>
+			new Set(
+				eligibility.eligibility
+					.filter((e) => !e.isEligible)
+					.map((e) => e.dealerId),
+			),
 		[eligibility.eligibility],
 	);
 
@@ -135,7 +148,10 @@ export default function CreateAuditCyclePage() {
 
 	const templateOptions = useMemo(
 		() =>
-			templates.rows.map((row) => ({ value: row.id, label: `${row.name} · v${row.version}` })),
+			templates.rows.map((row) => ({
+				value: row.id,
+				label: `${row.name} · v${row.version}`,
+			})),
 		[templates.rows],
 	);
 
@@ -149,11 +165,14 @@ export default function CreateAuditCyclePage() {
 		return () => window.removeEventListener("beforeunload", handler);
 	}, [isDirty, launch.isPending]);
 
-	const patch = useCallback((change: Partial<CreateAuditCycleFormValues>): void => {
-		setValues((current) => ({ ...current, ...change }));
-		setIsDirty(true);
-		setErrors({});
-	}, []);
+	const patch = useCallback(
+		(change: Partial<CreateAuditCycleFormValues>): void => {
+			setValues((current) => ({ ...current, ...change }));
+			setIsDirty(true);
+			setErrors({});
+		},
+		[],
+	);
 
 	const validateStep = (id: CycleWizardStepId): CycleStepErrors => {
 		switch (id) {
@@ -222,7 +241,8 @@ export default function CreateAuditCyclePage() {
 	};
 
 	const isLast = step === "CONFIRM";
-	const hasMasterError = templates.isError || dealers.isError || eligibility.isError;
+	const hasMasterError =
+		templates.isError || dealers.isError || eligibility.isError;
 
 	return (
 		<PageSectionLayout className="audit-page audit-page-narrow">
@@ -234,8 +254,12 @@ export default function CreateAuditCyclePage() {
 					to={DEALER_AUDIT_ROUTES.tracker}
 				/>
 				<div>
-					<h1 className="text-lg font-semibold text-(--color-text-primary)">{text.title}</h1>
-					<p className="text-sm text-(--color-text-secondary)">{text.subtitle}</p>
+					<h1 className="text-lg font-semibold text-(--color-text-primary)">
+						{text.title}
+					</h1>
+					<p className="text-sm text-(--color-text-secondary)">
+						{text.subtitle}
+					</p>
 				</div>
 			</header>
 
@@ -308,9 +332,14 @@ export default function CreateAuditCyclePage() {
 					<div className="space-y-4">
 						<div aria-live="polite">
 							<p className="text-xs font-medium text-(--color-text-secondary)">
-								{format(text.stepOf, { current: stepIndex + 1, total: STEP_ORDER.length })}
+								{format(text.stepOf, {
+									current: stepIndex + 1,
+									total: STEP_ORDER.length,
+								})}
 							</p>
-							<p className="text-sm text-(--color-text-primary)">{text.steps[step].help}</p>
+							<p className="text-sm text-(--color-text-primary)">
+								{text.steps[step].help}
+							</p>
 						</div>
 
 						{step === "DETAILS" ? (
@@ -348,7 +377,20 @@ export default function CreateAuditCyclePage() {
 								onAutoAssign={handleAutoAssign}
 								onChange={(dealerId, reviewerId) =>
 									patch({
-										reviewerByDealer: { ...values.reviewerByDealer, [dealerId]: reviewerId },
+										reviewerByDealer: {
+											...values.reviewerByDealer,
+											[dealerId]: reviewerId,
+										},
+									})
+								}
+								onBulkChange={(dealerIds, reviewerId) =>
+									patch({
+										reviewerByDealer: {
+											...values.reviewerByDealer,
+											...Object.fromEntries(
+												dealerIds.map((id) => [id, reviewerId]),
+											),
+										},
 									})
 								}
 							/>
@@ -357,7 +399,9 @@ export default function CreateAuditCyclePage() {
 						{step === "CONFIRM" ? (
 							<CycleConfirmStep
 								values={effectiveValues}
-								templateLabel={template ? `${template.name} · v${template.version}` : "—"}
+								templateLabel={
+									template ? `${template.name} · v${template.version}` : "—"
+								}
 								reviewers={workload.reviewers}
 								onEditStep={goTo}
 							/>
@@ -367,7 +411,10 @@ export default function CreateAuditCyclePage() {
 							<Alert
 								variant="error"
 								title={text.error}
-								description={getAuditActionErrorMessage(launch.error, "audit cycle")}
+								description={getAuditActionErrorMessage(
+									launch.error,
+									"audit cycle",
+								)}
 							/>
 						) : null}
 					</div>

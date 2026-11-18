@@ -25,12 +25,7 @@ import type {
 } from "./templates/dealer-template.types";
 import type { LivePhotoValue } from "../shared/checklist/evidence.types";
 
-export type {
-	ApiEnvelope,
-	ApiPaginatedEnvelope,
-	ApiPaginationMeta,
-	PaginatedResult,
-} from "./templates/dealer-template.types";
+export type { PaginatedResult } from "./templates/dealer-template.types";
 
 // ── Shared execution shapes ───────────────────────────────────────────
 // The item / evidence / section / form shapes are identical for Dealer and
@@ -284,12 +279,24 @@ export interface DealerAuditReportResponse {
 	download_url: string | null;
 }
 
+export interface DealerAuditLastAuditResponse {
+	period_label: string;
+	closed_at: string | null;
+	final_score: number | null;
+	max_score: number | null;
+}
+
 export interface DealerAuditDealerOptionResponse {
 	id: string;
 	code: string | null;
 	name: string;
 	location: string | null;
+	/** Office type of the business partner: "HO" | "BO". */
 	facility_type: DealerFacilityType | null;
+	/** Optional so the existing mock still type-checks. */
+	zone?: string | null;
+	state?: string | null;
+	last_audit?: DealerAuditLastAuditResponse | null;
 }
 
 export interface DealerAuditReviewerOptionResponse {
@@ -393,12 +400,22 @@ export interface DealerAuditReport {
 	downloadUrl: string | null;
 }
 
+export interface DealerAuditLastAudit {
+	periodLabel: string;
+	closedAt: string | null;
+	finalScore: number | null;
+	maxScore: number | null;
+}
+
 export interface DealerAuditDealerOption {
 	id: string;
 	code: string | null;
 	name: string;
 	location: string;
 	facilityType: DealerFacilityType | null;
+	zone: string | null;
+	state: string | null;
+	lastAudit: DealerAuditLastAudit | null;
 }
 
 export interface DealerAuditReviewerOption {

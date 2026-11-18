@@ -102,7 +102,6 @@ export interface CycleDetailsFormValues {
 	quarter: DealerAuditQuarter | null;
 	/** yyyy-mm-dd */
 	dueDate: string;
-	notes: string;
 }
 
 export interface CycleAssignment {
@@ -122,8 +121,9 @@ export interface CreateAuditCyclePayload {
 	period_type: DealerAuditPeriodType;
 	period_year: number;
 	period_quarter: DealerAuditQuarter | null;
+	/** Plain string for now, e.g. "Q3 FY 2026-27". Stored as sent. */
+	period_label: string;
 	due_date: string;
-	notes: string | null;
 	assignments: Array<{ dealer_id: string; reviewer_id: string }>;
 }
 

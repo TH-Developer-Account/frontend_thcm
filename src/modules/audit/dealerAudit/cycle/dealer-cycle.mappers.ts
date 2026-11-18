@@ -3,6 +3,7 @@
 // Shape conversion only: Response → domain, FormValues → Payload.
 // No UI strings, no business rules (those live in dealer-cycle.logic.ts).
 
+import { formatPeriodLabel } from "../dealer-audit.sla";
 import type {
 	AuditCycleLaunchResponse,
 	AuditCycleLaunchResult,
@@ -72,19 +73,28 @@ export const mapResendResponse = (
 /** Only dealers that are selected AND have a reviewer are sent. */
 export const mapFormToCreateCyclePayload = (
 	values: CreateAuditCycleFormValues,
-): CreateAuditCyclePayload => ({
-	name: values.name.trim(),
-	template_id: values.templateId,
-	period_type: values.periodType,
-	period_year: values.year,
-	period_quarter: values.periodType === "QUARTERLY" ? values.quarter : null,
-	due_date: values.dueDate,
-	notes: values.notes.trim() === "" ? null : values.notes.trim(),
-	assignments: values.dealerIds.flatMap((dealerId) => {
-		const reviewerId = values.reviewerByDealer[dealerId];
-		return reviewerId ? [{ dealer_id: dealerId, reviewer_id: reviewerId }] : [];
-	}),
-});
+): CreateAuditCyclePayload => {
+	const quarter = values.periodType === "QUARTERLY" ? values.quarter : null;
+	return {
+		name: values.name.trim(),
+		template_id: values.templateId,
+		period_type: values.periodType,
+		period_year: values.year,
+		period_quarter: quarter,
+		period_label: formatPeriodLabel({
+			type: values.periodType,
+			year: values.year,
+			quarter,
+		}),
+		due_date: values.dueDate,
+		assignments: values.dealerIds.flatMap((dealerId) => {
+			const reviewerId = values.reviewerByDealer[dealerId];
+			return reviewerId
+				? [{ dealer_id: dealerId, reviewer_id: reviewerId }]
+				: [];
+		}),
+	};
+};
 
 export const mapReminderToPayload = (
 	variables: SendReminderVariables,
