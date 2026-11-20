@@ -44,6 +44,27 @@ export const getWorkflowColumns = ({
 			<div className="workflow-table-primary">{row.original.name || "—"}</div>
 		),
 	},
+
+	{
+		accessorKey: "description",
+		header: "Description",
+		enableSorting: false,
+		cell: ({ row }) => {
+			const description = row.original.description?.trim();
+
+			if (!description) return null;
+
+			return (
+				<div
+					className="workflow-table-primary line-clamp-2 max-w-md whitespace-normal"
+					title={description}
+				>
+					{description}
+				</div>
+			);
+		},
+	},
+
 	{
 		accessorKey: "appName",
 		header: "App Name",

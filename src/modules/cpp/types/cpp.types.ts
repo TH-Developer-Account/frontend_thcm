@@ -8,7 +8,11 @@ import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUplo
  */
 export type CppStatus = string;
 
-export type CppListingTab = "myRequests" | "drafts";
+export type CppListingTab =
+	| "myRequests"
+	| "drafts"
+	| "pendingOnMe"
+	| "approvedByMe";
 
 export type CppStatusFilter = "all" | CppStatus;
 
@@ -28,10 +32,15 @@ export type CppTabKey =
 	| "other"
 	| "workflow";
 
-/** Steps of the Create CPP wizard (the old tab keys are left untouched). */
+/**
+ * Steps of the Create CPP wizard. "amortisation" is only in the stepper when
+ * the pricing condition is PB50 (see getCppSteps in utils/cpp.utils.ts).
+ */
 export type CppStepKey =
 	| "basic"
 	| "purchasing"
+	| "amortisation"
+	| "volumes"
 	| "master"
 	| "other"
 	| "attachments"
@@ -85,11 +94,67 @@ export type CppPartRow = {
 	qtyAnnual: string;
 };
 
+/* --- plant / spares master data ("For Plants" / "For Spares" in the format) --- */
+
+/** PLANT = DWD 1006 / KGP 3006 · SPARE = KGP WH 8445 / DWD WH 8580 / NGP 8400. */
+export type CppLocationGroup = "PLANT" | "SPARE";
+
+/**
+ * One SAP plant code. Plant code + purchasing group go into both TCS text
+ * files (ZINFOUPDATE_ME11 and ZCHANGEINFO).
+ */
+export type CppLocationRow = {
+	code: string;
+	name: string;
+	group: CppLocationGroup;
+	applicable: boolean;
+	incoTerms: string;
+	purchasingGroup: string;
+	taxCode: string;
+	/** Plants only. */
+	storeLocation: string;
+	/** Spares only — P&F (%). */
+	pfPct: string;
+};
+
+/* --- amortisation ("In case of Amortisation Only") --- */
+
 export type CppAmortRow = {
 	partNo: string;
-	amount: string;
-	qty: string;
-	perMachineQty: string;
+	priceInclAmort: string;
+	cutoffDate: string;
+	amortQty: string;
+	priceAfterAmort: string;
+};
+
+/* --- volumes & impact (all optional) --- */
+
+/** "Volumes Taken For Calculation": a / b for actual, c for annualised. */
+export type CppVolumeRow = {
+	/** Rcvd qty (till date) = a */
+	received: string;
+	/** Remaining qty = b */
+	remaining: string;
+	/** Qty/mc × ABP nos = c */
+	annual: string;
+};
+
+/** "Per Machine Impact" — ₹ per machine. */
+export type CppPerMachineRow = {
+	plant: string;
+	model: string;
+	withAmort: string;
+	withoutAmort: string;
+};
+
+/** "Material Cost Tracker" — all values in ₹ lakhs. */
+export type CppCostTrackerRow = {
+	model: string;
+	perMachineImpact: string;
+	budgetedIncrease: string;
+	statusYtd: string;
+	budgetedMaterialCost: string;
+	materialCostYtd: string;
 };
 
 export type CppFormValues = {
@@ -121,6 +186,14 @@ export type CppFormValues = {
 		amount: string;
 	};
 
+	/* --- amortisation step (PB50 only) --- */
+	amortisation: CppAmortRow[];
+
+	/* --- volumes & impact step (optional) --- */
+	volumes: Record<CppPlant, CppVolumeRow>;
+	perMachineImpact: CppPerMachineRow[];
+	costTracker: CppCostTrackerRow[];
+
 	/* --- remaining steps --- */
 	other: {
 		remarks: string;
@@ -130,6 +203,7 @@ export type CppFormValues = {
 	masterData: {
 		materialGroup: string;
 		materialType: string;
+		/** Older single-value fields — now per plant code in plantDetails. */
 		purchasingGroup: string;
 		priceType: string;
 		incoTerms: string;
@@ -139,11 +213,12 @@ export type CppFormValues = {
 		updateSourceList: string;
 		plants: CppPlant[];
 		note: string;
+		/** All five codes; the step shows the group that matches `plant`. */
+		plantDetails: CppLocationRow[];
 	};
 
 	/* --- kept so the older tabs still compile; not rendered in the wizard --- */
 	parts: CppPartRow[];
-	amortisation: CppAmortRow[];
 	financial: {
 		noChange: boolean;
 		plantSplit: Record<CppPlant, string>;
@@ -151,7 +226,7 @@ export type CppFormValues = {
 	workflow: {
 		/** Step 1 "Models" */
 		models: string[];
-		/** Step 1 "Applicable plants" */
+		/** No longer shown — the Plant dropdown + plantDetails replace it. */
 		plants: CppPlant[];
 		/** Step 1 "Pricing condition" */
 		pricingCondition: string;
@@ -167,7 +242,13 @@ export type CppFormValues = {
 /** Decimals arrive as strings from Prisma/JSON. */
 export type DecimalValue = string | number | null;
 
-export type CppSectionKey = "basic" | "purchasing" | "master" | "other";
+export type CppSectionKey =
+	| "basic"
+	| "purchasing"
+	| "amortisation"
+	| "volumes"
+	| "master"
+	| "other";
 
 export type CppSection = {
 	key: CppSectionKey;
@@ -248,7 +329,7 @@ export type CppAttachment = {
 };
 
 export type CppDetail = CppListItem & {
-	/** Always all four sections, in tab order, every field present. */
+	/** Always every section, in tab order, every field present. */
 	sections: CppSection[];
 	attachments: CppAttachment[];
 };

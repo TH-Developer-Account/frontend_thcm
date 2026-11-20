@@ -1,9 +1,10 @@
 // tabs/MasterDataTab.tsx — extra info for the master data controller.
 // Price type and applicable plants now live in Basic details (step 1).
+// Plain content: the parent card in CppRequestCreatePage provides the surface.
 import { Controller, useFormContext } from "react-hook-form";
 
-import Card from "../../../components/common/Card";
 import TextareaInput from "../../../components/forms/TextareaInput";
+import CppSection from "../components/CppSection";
 import { RhfInput, RhfSelect, toOptions } from "../components/CppFields";
 import type { CppFormValues } from "../types/cpp.types";
 import {
@@ -18,10 +19,9 @@ const MasterDataTab = () => {
 	const { control } = useFormContext<CppFormValues>();
 
 	return (
-		<Card
+		<CppSection
 			title="Master data"
 			subtitle="Extra info for the master data team — sample fields, to be confirmed"
-			size="small"
 		>
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 				<RhfSelect
@@ -79,7 +79,7 @@ const MasterDataTab = () => {
 					/>
 				</div>
 			</div>
-		</Card>
+		</CppSection>
 	);
 };
 

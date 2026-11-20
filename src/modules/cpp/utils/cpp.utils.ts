@@ -3,12 +3,18 @@ import type {
 	CppAmortRow,
 	CppConditionGroup,
 	CppConditionOption,
+	CppCostTrackerRow,
 	CppFormValues,
+	CppLocationGroup,
+	CppLocationRow,
 	CppPartRow,
+	CppPerMachineRow,
 	CppPlant,
 	CppStep,
+	CppStepKey,
 	CppSupplier,
 	CppTabKey,
+	CppVolumeRow,
 } from "../types/cpp.types";
 import { CPP_CONDITIONS } from "./cpp.constants";
 
@@ -47,6 +53,22 @@ export const CPP_PLANT_CODES: Record<CppPlant, string> = {
 	SPARE: "Spares",
 };
 export const CPP_AUTHORITIES = ["SCM", "CPP", "MD", "Spare"];
+
+/**
+ * SAP plant codes from "Applicable Plant(s)" in the CPP format.
+ * PLANT rows show for Plant = DWD / KGP, SPARE rows for Plant = Spares.
+ */
+export const CPP_LOCATIONS: ReadonlyArray<{
+	code: string;
+	name: string;
+	group: CppLocationGroup;
+}> = [
+	{ code: "1006", name: "DWD", group: "PLANT" },
+	{ code: "3006", name: "KGP", group: "PLANT" },
+	{ code: "8445", name: "KGP WH", group: "SPARE" },
+	{ code: "8580", name: "DWD WH", group: "SPARE" },
+	{ code: "8400", name: "NGP", group: "SPARE" },
+];
 
 export const CPP_PRICING_CONDITIONS = [
 	{
@@ -103,6 +125,9 @@ export const UOM_OPTIONS = ["NOS", "KG", "MTR", "SET", "LTR"];
 
 export const MIN_JUSTIFICATION = 50;
 
+/** Row cap for the amortisation / per-machine / tracker tables (backend allows the same). */
+export const CPP_MAX_TABLE_ROWS = 20;
+
 // Older tab list — still exported for anything that imports it.
 export const CPP_TABS: { value: CppTabKey; label: string }[] = [
 	{ value: "purchasing", label: "Purchasing Details" },
@@ -114,19 +139,34 @@ export const CPP_TABS: { value: CppTabKey; label: string }[] = [
 	{ value: "workflow", label: "Workflow" },
 ];
 
-/** Create CPP wizard. Financial Impact / Amortisation / Tracker are not steps:
- * their numbers now come from the attached Excel, not from typed line items. */
-export const CPP_STEPS: CppStep[] = [
-	{ id: 1, key: "basic", label: "Basic details" },
-	{ id: 2, key: "purchasing", label: "Purchasing details" },
-	{ id: 3, key: "master", label: "Master data" },
-	{ id: 4, key: "other", label: "Other data" },
-	{ id: 5, key: "attachments", label: "Attachments" },
-	{ id: 6, key: "workflow", label: "Review & workflow" },
+/* ------------------------------ wizard steps ----------------------------- */
+
+const CPP_STEP_DEFS: { key: CppStepKey; label: string }[] = [
+	{ key: "basic", label: "Basic details" },
+	{ key: "purchasing", label: "Purchasing details" },
+	{ key: "amortisation", label: "Amortisation" },
+	{ key: "volumes", label: "Volumes & impact" },
+	{ key: "master", label: "Master data" },
+	{ key: "other", label: "Other data" },
+	{ key: "attachments", label: "Attachments" },
+	{ key: "workflow", label: "Review & workflow" },
 ];
 
-// Material Cost Tracker is built disabled behind this flag.
-export const MATERIAL_COST_TRACKER_ENABLED = false;
+/**
+ * Steps for the current form. Amortisation is only a step when the pricing
+ * condition is PB50. Ids are renumbered so the stepper always reads 1…n.
+ */
+export const getCppSteps = (pricingCondition: string): CppStep[] =>
+	CPP_STEP_DEFS.filter(
+		(step) =>
+			step.key !== "amortisation" || pricingCondition === AMORTISED_CONDITION,
+	).map((step, index) => ({ ...step, id: index + 1 }));
+
+/** Steps without amortisation — kept for anything that imports the old constant. */
+export const CPP_STEPS: CppStep[] = getCppSteps("");
+
+// Material Cost Tracker is now part of the "Volumes & impact" step.
+export const MATERIAL_COST_TRACKER_ENABLED = true;
 
 /* ----------------------- category / condition rules ---------------------- */
 
@@ -163,6 +203,37 @@ export const isConditionAllowed = (
 export const isSpareRequest = (category: string, plant: string): boolean =>
 	category === "SPARES" || plant === "Spares";
 
+/* --------------------------- plant / spare codes -------------------------- */
+
+/** Plant dropdown → which table shows in Master data. */
+export const getLocationGroup = (plant: string): CppLocationGroup | null => {
+	if (!plant) return null;
+	return plant === "Spares" ? "SPARE" : "PLANT";
+};
+
+/** The request's own plant code is always applicable (DWD → 1006, KGP → 3006). */
+export const getOwnLocationCode = (plant: string): string | null =>
+	CPP_LOCATIONS.find(
+		(location) => location.group === "PLANT" && location.name === plant,
+	)?.code ?? null;
+
+export const isLocationApplicable = (
+	row: CppLocationRow,
+	plant: string,
+): boolean => row.applicable || row.code === getOwnLocationCode(plant);
+
+/** Rows of the plant's group that apply — what is saved and sent to TCS. */
+export const getApplicableLocations = (
+	rows: CppLocationRow[],
+	plant: string,
+): CppLocationRow[] => {
+	const group = getLocationGroup(plant);
+	if (!group) return [];
+	return rows.filter(
+		(row) => row.group === group && isLocationApplicable(row, plant),
+	);
+};
+
 /* ------------------------------ defaults ------------------------------- */
 
 export const emptySupplier = (): CppSupplier => ({
@@ -187,10 +258,46 @@ export const emptyPart = (): CppPartRow => ({
 });
 export const emptyAmort = (): CppAmortRow => ({
 	partNo: "",
-	amount: "",
-	qty: "",
-	perMachineQty: "",
+	priceInclAmort: "",
+	cutoffDate: "",
+	amortQty: "",
+	priceAfterAmort: "",
 });
+export const emptyVolume = (): CppVolumeRow => ({
+	received: "",
+	remaining: "",
+	annual: "",
+});
+export const emptyPerMachine = (): CppPerMachineRow => ({
+	plant: "",
+	model: "",
+	withAmort: "",
+	withoutAmort: "",
+});
+export const emptyCostTracker = (): CppCostTrackerRow => ({
+	model: "",
+	perMachineImpact: "",
+	budgetedIncrease: "",
+	statusYtd: "",
+	budgetedMaterialCost: "",
+	materialCostYtd: "",
+});
+export const emptyLocations = (): CppLocationRow[] =>
+	CPP_LOCATIONS.map((location) => ({
+		...location,
+		applicable: false,
+		incoTerms: "",
+		purchasingGroup: "",
+		taxCode: "",
+		storeLocation: "",
+		pfPct: "",
+	}));
+
+/** True when every text cell of a table row is empty (such rows are not saved). */
+export const isBlankRow = (row: object): boolean =>
+	Object.values(row).every(
+		(value) => typeof value !== "string" || value.trim() === "",
+	);
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
@@ -211,6 +318,10 @@ export const getDefaultValues = (): CppFormValues => ({
 	},
 	purchasingFile: null,
 	approvalValues: { partValue: "", variationPct: "", amount: "" },
+	amortisation: [emptyAmort()],
+	volumes: { DWD: emptyVolume(), KGP: emptyVolume(), SPARE: emptyVolume() },
+	perMachineImpact: [emptyPerMachine()],
+	costTracker: [emptyCostTracker()],
 	other: { remarks: "" },
 	attachments: Object.fromEntries(CPP_ATTACHMENTS.map((a) => [a.key, null])),
 	masterData: {
@@ -225,10 +336,10 @@ export const getDefaultValues = (): CppFormValues => ({
 		updateSourceList: "",
 		plants: [],
 		note: "",
+		plantDetails: emptyLocations(),
 	},
 	// No typed line items any more — the Excel carries them.
 	parts: [],
-	amortisation: [],
 	financial: { noChange: false, plantSplit: { DWD: "", KGP: "", SPARE: "" } },
 	workflow: {
 		models: [],
@@ -246,6 +357,10 @@ export const toNum = (value: string | undefined | null): number | null => {
 	return Number.isNaN(parsed) ? null : parsed;
 };
 
+/** Same rule as the backend decimal check: optional minus, digits, optional decimals. */
+export const isNumberText = (value: string): boolean =>
+	/^-?\d+(\.\d+)?$/.test(value.replace(/[,\s₹]/g, ""));
+
 export const formatINR = (value: number | null): string =>
 	value === null
 		? "—"
@@ -262,6 +377,11 @@ export const formatLacs = (value: number | null): string => {
 		? `₹ ${(value / 1e7).toFixed(2)} Cr`
 		: `₹ ${(value / 1e5).toFixed(2)} Lacs`;
 };
+
+export const formatQty = (value: number | null): string =>
+	value === null
+		? "—"
+		: value.toLocaleString("en-IN", { maximumFractionDigits: 2 });
 
 export const formatPct = (value: number | null): string =>
 	value === null ? "—" : `${value > 0 ? "+" : ""}${value.toFixed(2)}%`;
@@ -321,16 +441,26 @@ export const calcTotals = (parts: CppPartRow[], noChange: boolean) =>
 		{ existingValue: 0, actual: 0, annual: 0 },
 	);
 
+/**
+ * Amortisation per unit = price incl. amort − price after amort.
+ * Total recovered = per unit × amortised qty.
+ */
 export const calcAmort = (row: CppAmortRow) => {
-	const amount = toNum(row.amount);
-	const qty = toNum(row.qty);
-	const perMachine = toNum(row.perMachineQty);
-	const perUnit = amount !== null && qty ? amount / qty : null;
+	const incl = toNum(row.priceInclAmort);
+	const after = toNum(row.priceAfterAmort);
+	const qty = toNum(row.amortQty);
+	const perUnit = incl !== null && after !== null ? incl - after : null;
 	return {
 		perUnit,
-		perMachine:
-			perUnit !== null && perMachine !== null ? perUnit * perMachine : null,
+		total: perUnit !== null && qty !== null ? perUnit * qty : null,
 	};
+};
+
+/** a + b, or null when both are blank. */
+export const actualQty = (row: CppVolumeRow): number | null => {
+	const a = toNum(row.received);
+	const b = toNum(row.remaining);
+	return a === null && b === null ? null : (a ?? 0) + (b ?? 0);
 };
 
 /** Sum of the typed plant-split percentages (blank counts as 0). */

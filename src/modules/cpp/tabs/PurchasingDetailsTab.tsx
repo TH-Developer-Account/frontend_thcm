@@ -2,10 +2,10 @@
 // Suppliers + the purchasing-details Excel upload. The app does not capture or
 // store line items: the Excel is attached and handed to TCS after approval.
 // "Approval values" are the few numbers the approval matrix needs to pick a band.
+// Plain content: the parent card in CppRequestCreatePage provides the surface.
 import { useEffect } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 
-import Card from "../../../components/common/Card";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
 import { RhfInput } from "../components/CppFields";
 import type { CppFormValues } from "../types/cpp.types";
@@ -123,34 +123,31 @@ const PurchasingDetailsTab = () => {
 	const { control } = useFormContext<CppFormValues>();
 
 	return (
-		<Card size="small">
-			<div className="flex flex-col gap-6">
-				<div className="grid gap-4 lg:grid-cols-3">
-					{SUPPLIERS.map((s) => (
-						<SupplierBlock key={s.key} keyName={s.key} title={s.title} />
-					))}
-				</div>
-
-				<Controller
-					name="purchasingFile"
-					control={control}
-					render={({ field, fieldState }) => (
-						<FileUploadField
-							value={field.value}
-							onChange={(file) => field.onChange(file)}
-							kind="spreadsheet"
-							label="Purchasing details (Excel)"
-							description="Purchasing details as attached in the Excel (Purchase Info Record). Supported formats: XLSX, XLS and CSV"
-							required
-							error={fieldState.error?.message}
-							heightClassName="h-[100px]"
-						/>
-					)}
-				/>
-
-				<ApprovalValuesFields />
+		<div className="flex flex-col gap-6">
+			<div className="grid gap-4 lg:grid-cols-3">
+				{SUPPLIERS.map((s) => (
+					<SupplierBlock key={s.key} keyName={s.key} title={s.title} />
+				))}
 			</div>
-		</Card>
+
+			<Controller
+				name="purchasingFile"
+				control={control}
+				render={({ field, fieldState }) => (
+					<FileUploadField
+						value={field.value}
+						onChange={(file) => field.onChange(file)}
+						kind="spreadsheet"
+						label="Purchasing details (Excel)"
+						description="Purchasing details as attached in the Excel (Purchase Info Record). Supported formats: XLSX, XLS and CSV"
+						required
+						error={fieldState.error?.message}
+					/>
+				)}
+			/>
+
+			<ApprovalValuesFields />
+		</div>
 	);
 };
 

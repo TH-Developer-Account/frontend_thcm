@@ -18,6 +18,7 @@ export type FileUploadValue = {
 	sizeLabel: string;
 	isLocal: boolean;
 	caption?: string;
+	uploadedAt?: string;
 };
 
 export type RemoteFileUploadValue = Omit<

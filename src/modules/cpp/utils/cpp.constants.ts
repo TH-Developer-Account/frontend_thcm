@@ -1,4 +1,4 @@
-import { FileClock, FilePen } from "lucide-react";
+import { CheckCheck, FileClock, FilePen, Hourglass } from "lucide-react";
 
 import type {
 	CppConditionOption,
@@ -161,8 +161,9 @@ export const CPP_AMOUNT_BASIS_LABELS = {
 } as const;
 
 /**
- * "Pending on me" / "Approved by me" tabs are added with the workflow:
- * they need the approval tables, exactly like the medical claim listing.
+ * Listing tabs, same idea as the medical claim listing:
+ *   My requests / Drafts      -> requests I created
+ *   Pending on me / Approved by me -> other people's requests where I am an approver
  */
 export const CPP_LISTING_FILTER_TABS = [
 	{
@@ -179,6 +180,20 @@ export const CPP_LISTING_FILTER_TABS = [
 		tooltipLabel: "CPP requests I have saved but not submitted",
 		Icon: FilePen,
 	},
+	{
+		value: "pendingOnMe",
+		label: "Pending on me",
+		shortLabel: "Pending",
+		tooltipLabel: "CPP requests waiting for my approval",
+		Icon: Hourglass,
+	},
+	{
+		value: "approvedByMe",
+		label: "Approved by me",
+		shortLabel: "Approved",
+		tooltipLabel: "CPP requests I have approved",
+		Icon: CheckCheck,
+	},
 ] as const satisfies ReadonlyArray<{
 	value: CppListingTab;
 	label: string;
@@ -192,7 +207,9 @@ export type CppStatusOption = { label: string; value: CppStatusFilter };
 export const getCppStatusOptionsForTab = (
 	tab: CppListingTab,
 ): CppStatusOption[] => {
-	if (tab === "drafts") return [];
+	// Drafts have no status to filter; the approver tabs are already narrowed by
+	// the approval itself (waiting on me / approved by me).
+	if (tab !== "myRequests") return [];
 	// Draft has its own tab, so "My requests" filters only the submitted statuses.
 	const statuses = Object.keys(CPP_STATUS_LABELS).filter(
 		(status) => status !== CPP_STATUS.DRAFT,
@@ -204,4 +221,17 @@ export const getCppStatusOptionsForTab = (
 };
 
 export const DEFAULT_CPP_TAB: CppListingTab = "myRequests";
-export const CPP_LISTING_TABS: CppListingTab[] = ["myRequests", "drafts"];
+export const CPP_LISTING_TABS: CppListingTab[] = [
+	"myRequests",
+	"drafts",
+	"pendingOnMe",
+	"approvedByMe",
+];
+
+/** Empty-table text per tab. */
+export const CPP_EMPTY_DESCRIPTIONS: Record<CppListingTab, string> = {
+	myRequests: "You have not created any CPP requests yet.",
+	drafts: "You have no saved drafts.",
+	pendingOnMe: "No CPP requests are waiting for your approval.",
+	approvedByMe: "You have not approved any CPP requests yet.",
+};

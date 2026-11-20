@@ -1,13 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { cppMatrixApi } from "../api/cpp.matrix.api";
-import type { CppApprovalMatrix, CppMatrixSlotUpdate } from "../types/cpp.types";
+import type {
+	CppMatrixMutationResult,
+	CppMatrixSlotUpdate,
+} from "../types/cpp.types";
 import { useDebouncedValue } from "../../medicalReimbursment/hooks/useDebouncedValue";
 
 export const cppMatrixKeys = {
 	matrix: ["cpp", "approval-matrix"] as const,
 	chains: ["cpp", "approval-matrix", "chains"] as const,
-	users: (search: string) => ["cpp", "approval-matrix", "users", search] as const,
+	users: (search: string) =>
+		["cpp", "approval-matrix", "users", search] as const,
 };
 
 export const useCppMatrix = () => {
@@ -20,21 +24,29 @@ export const useCppMatrix = () => {
 		refetchOnWindowFocus: false,
 	});
 
-	const keepFresh = (matrix: CppApprovalMatrix) =>
-		queryClient.setQueryData(cppMatrixKeys.matrix, matrix);
+	const keepFresh = (result: CppMatrixMutationResult) =>
+		queryClient.setQueryData(cppMatrixKeys.matrix, result.matrix);
 
 	const saveMutation = useMutation({
-		mutationFn: (assignments: CppMatrixSlotUpdate[]) => cppMatrixApi.save(assignments),
+		mutationFn: (assignments: CppMatrixSlotUpdate[]) =>
+			cppMatrixApi.save(assignments),
 		onSuccess: keepFresh,
 	});
 
 	const replaceMutation = useMutation({
-		mutationFn: ({ fromUserId, toUserId }: { fromUserId: string; toUserId: string }) =>
-			cppMatrixApi.replaceUser(fromUserId, toUserId),
+		mutationFn: ({
+			fromUserId,
+			toUserId,
+		}: {
+			fromUserId: string;
+			toUserId: string;
+		}) => cppMatrixApi.replaceUser(fromUserId, toUserId),
 		onSuccess: keepFresh,
 	});
 
-	return { matrixQuery, saveMutation, replaceMutation };
+	const syncMutation = useMutation({ mutationFn: cppMatrixApi.syncTemplates });
+
+	return { matrixQuery, saveMutation, replaceMutation, syncMutation };
 };
 
 export const useCppChains = () =>

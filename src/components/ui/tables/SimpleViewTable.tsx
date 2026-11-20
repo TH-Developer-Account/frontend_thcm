@@ -224,7 +224,7 @@ export default function SimpleViewTable<T>({
 	title,
 	headerActions,
 	maxHeight = "420px",
-	defaultColumnMinWidth = 96,
+	defaultColumnMinWidth = 80,
 	className = "",
 	ariaLabel = "Table",
 }: SimpleTableProps<T>) {

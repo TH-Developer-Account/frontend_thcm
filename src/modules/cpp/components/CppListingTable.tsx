@@ -15,6 +15,7 @@ import type {
 	CppStatusFilter,
 } from "../types/cpp.types";
 import {
+	CPP_EMPTY_DESCRIPTIONS,
 	CPP_LISTING_FILTER_TABS,
 	type CppStatusOption,
 } from "../utils/cpp.constants";
@@ -40,6 +41,8 @@ interface CppListingTableProps {
 	onPageChange: (pageIndex: number) => void;
 	onPageSizeChange: (pageSize: number) => void;
 	onViewRow: (row: CppListingRow) => void;
+	onEditRow?: (row: CppListingRow) => void;
+	currentUserId?: string;
 }
 
 const SKELETON_ROW_COUNT = 8;
@@ -67,10 +70,18 @@ export default function CppListingTable({
 	onPageChange,
 	onPageSizeChange,
 	onViewRow,
+	onEditRow,
+	currentUserId,
 }: CppListingTableProps) {
 	const columns = useMemo(
-		() => getCppListingColumns({ onView: onViewRow, tab: selectedFilter }),
-		[onViewRow, selectedFilter],
+		() =>
+			getCppListingColumns({
+				onView: onViewRow,
+				onEdit: onEditRow,
+				tab: selectedFilter,
+				currentUserId,
+			}),
+		[onViewRow, onEditRow, selectedFilter, currentUserId],
 	);
 
 	return (
@@ -155,9 +166,7 @@ export default function CppListingTable({
 						emptyDescription={
 							search || status !== "all"
 								? "No CPP requests match this search or status."
-								: selectedFilter === "drafts"
-									? "You have no saved drafts."
-									: "You have not created any CPP requests yet."
+								: CPP_EMPTY_DESCRIPTIONS[selectedFilter]
 						}
 					/>
 				)}

@@ -3,10 +3,10 @@
 // plant + condition + value band), so there is no manual authority picker here.
 // Once the CPP workflow subject type exists, render the resolved chain below
 // with the existing ApprovalTable (workflowApi preview).
+// Plain content: the parent card in CppRequestCreatePage provides the surface.
 import type { ReactNode } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
-import Card from "../../../components/common/Card";
 import type { CppFormValues } from "../types/cpp.types";
 import {
 	CPP_AMOUNT_BASIS_LABELS,
@@ -50,54 +50,52 @@ const WorkflowTab = () => {
 			: formatLacs(toNum(values.approvalValues?.partValue));
 
 	return (
-		<Card size="small">
-			<div className="flex flex-col gap-5">
-				<dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+		<div className="flex flex-col gap-5">
+			<dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+				<Row
+					label="Category"
+					value={CPP_CATEGORY_LABELS[values.category] ?? values.category}
+				/>
+				<Row label="Plant" value={values.plant} />
+				<Row label="Condition" value={condition?.label} />
+				<Row label="Spares flow" value={spare ? "Yes" : "No"} />
+				{partBasis ? (
+					<Row label={CPP_PART_BASIS_LABELS[partBasis]} value={partValue} />
+				) : null}
+				{condition ? (
 					<Row
-						label="Category"
-						value={CPP_CATEGORY_LABELS[values.category] ?? values.category}
+						label={CPP_AMOUNT_BASIS_LABELS[condition.amountBasis]}
+						value={formatLacs(toNum(values.approvalValues?.amount))}
 					/>
-					<Row label="Plant" value={values.plant} />
-					<Row label="Condition" value={condition?.label} />
-					<Row label="Spares flow" value={spare ? "Yes" : "No"} />
-					{partBasis ? (
-						<Row label={CPP_PART_BASIS_LABELS[partBasis]} value={partValue} />
-					) : null}
-					{condition ? (
-						<Row
-							label={CPP_AMOUNT_BASIS_LABELS[condition.amountBasis]}
-							value={formatLacs(toNum(values.approvalValues?.amount))}
-						/>
-					) : null}
-					<Row label="Material type" value={values.materialType} />
-					<Row label="Reason" value={values.reason} />
-					<Row label="Models" value={values.workflow?.models?.join(", ")} />
-					<Row
-						label="Applicable plants"
-						value={values.workflow?.plants?.join(", ")}
-					/>
-					<Row label="Price type" value={priceType?.label} />
-					<Row label="Pricing condition" value={pricing?.label} />
-					<Row
-						label="Recommended supplier"
-						value={values.suppliers?.recommended?.name}
-					/>
-					<Row label="Purchasing Excel" value={values.purchasingFile?.name} />
-					<Row
-						label="Attachments"
-						value={`${
-							Object.values(values.attachments ?? {}).filter(Boolean).length
-						} file(s)`}
-					/>
-				</dl>
+				) : null}
+				<Row label="Material type" value={values.materialType} />
+				<Row label="Reason" value={values.reason} />
+				<Row label="Models" value={values.workflow?.models?.join(", ")} />
+				<Row
+					label="Applicable plants"
+					value={values.workflow?.plants?.join(", ")}
+				/>
+				<Row label="Price type" value={priceType?.label} />
+				<Row label="Pricing condition" value={pricing?.label} />
+				<Row
+					label="Recommended supplier"
+					value={values.suppliers?.recommended?.name}
+				/>
+				<Row label="Purchasing Excel" value={values.purchasingFile?.name} />
+				<Row
+					label="Attachments"
+					value={`${
+						Object.values(values.attachments ?? {}).filter(Boolean).length
+					} file(s)`}
+				/>
+			</dl>
 
-				<p className="text-sm text-slate-600">
-					The approval flow (stages and approvers) is assigned automatically on
-					submit from the admin-maintained workflow settings. Approved requests
-					are sent to TCS with the attached files.
-				</p>
-			</div>
-		</Card>
+			<p className="text-sm text-slate-600">
+				The approval flow (stages and approvers) is assigned automatically on
+				submit from the admin-maintained workflow settings. Approved requests
+				are sent to TCS with the attached files.
+			</p>
+		</div>
 	);
 };
 

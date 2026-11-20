@@ -3,13 +3,26 @@
 import { z } from "zod";
 
 import {
+	AMORTISED_CONDITION,
 	MIN_JUSTIFICATION,
 	getCondition,
+	getLocationGroup,
+	isBlankRow,
 	isConditionAllowed,
+	isLocationApplicable,
+	isNumberText,
 	toNum,
 } from "./cpp.utils";
 
 const required = (message: string) => z.string().trim().min(1, message);
+
+/** Optional number: blank is fine, anything typed must be a number. */
+const optionalNumber = z
+	.string()
+	.refine(
+		(value) => value.trim() === "" || isNumberText(value),
+		"Enter a number",
+	);
 
 const supplier = z.object({
 	partnerId: z.string(),
@@ -24,8 +37,35 @@ const requiredSupplier = supplier.extend({
 
 const positive = (value: string) => {
 	const parsed = toNum(value);
-	return parsed !== null && parsed > 0;
+	return parsed !== null && isNumberText(value) && parsed > 0;
 };
+
+const locationRow = z.object({
+	code: z.string(),
+	name: z.string(),
+	group: z.enum(["PLANT", "SPARE"]),
+	applicable: z.boolean(),
+	incoTerms: z.string(),
+	purchasingGroup: z.string(),
+	taxCode: z.string(),
+	storeLocation: z.string(),
+	pfPct: optionalNumber,
+});
+
+// Amortisation cells are checked in superRefine — only when PB50 is picked.
+const amortRow = z.object({
+	partNo: z.string(),
+	priceInclAmort: z.string(),
+	cutoffDate: z.string(),
+	amortQty: z.string(),
+	priceAfterAmort: z.string(),
+});
+
+const volumeRow = z.object({
+	received: optionalNumber,
+	remaining: optionalNumber,
+	annual: optionalNumber,
+});
 
 export const cppSchema = z
 	.object({
@@ -64,6 +104,30 @@ export const cppSchema = z
 			amount: z.string(),
 		}),
 
+		/* amortisation (PB50 only) */
+		amortisation: z.array(amortRow),
+
+		/* volumes & impact — every table is optional */
+		volumes: z.object({ DWD: volumeRow, KGP: volumeRow, SPARE: volumeRow }),
+		perMachineImpact: z.array(
+			z.object({
+				plant: z.string(),
+				model: z.string(),
+				withAmort: optionalNumber,
+				withoutAmort: optionalNumber,
+			}),
+		),
+		costTracker: z.array(
+			z.object({
+				model: z.string(),
+				perMachineImpact: optionalNumber,
+				budgetedIncrease: optionalNumber,
+				statusYtd: optionalNumber,
+				budgetedMaterialCost: optionalNumber,
+				materialCostYtd: optionalNumber,
+			}),
+		),
+
 		/* remaining steps */
 		other: z.object({
 			remarks: z.string(),
@@ -82,11 +146,11 @@ export const cppSchema = z
 			updateSourceList: z.string(),
 			plants: z.array(z.enum(["DWD", "KGP", "SPARE"])),
 			note: z.string(),
+			plantDetails: z.array(locationRow),
 		}),
 
 		/* not rendered in the wizard — kept so older tabs still type-check */
 		parts: z.array(z.any()),
-		amortisation: z.array(z.any()),
 		financial: z.object({
 			noChange: z.boolean(),
 			plantSplit: z.object({
@@ -151,6 +215,67 @@ export const cppSchema = z
 					message,
 				});
 			}
+		}
+
+		/* ---- amortisation: required only for PB50 ----
+		 * Every filled row is checked. If no row is filled, the first row is
+		 * checked, so its cells go red and the step shows "add at least one part". */
+		if (values.workflow.pricingCondition === AMORTISED_CONDITION) {
+			const noneFilled = values.amortisation.every(isBlankRow);
+			values.amortisation.forEach((row, index) => {
+				if (isBlankRow(row) && !(noneFilled && index === 0)) return;
+				const at = (field: keyof typeof row, message: string) =>
+					ctx.addIssue({
+						code: "custom",
+						path: ["amortisation", index, field],
+						message,
+					});
+				if (!row.partNo.trim()) at("partNo", "Enter the part number");
+				if (!positive(row.priceInclAmort))
+					at("priceInclAmort", "Enter a price greater than 0");
+				if (!positive(row.amortQty))
+					at("amortQty", "Enter a quantity greater than 0");
+				if (!row.priceAfterAmort.trim() || !isNumberText(row.priceAfterAmort))
+					at("priceAfterAmort", "Enter the price after amortisation");
+				else if (
+					positive(row.priceInclAmort) &&
+					(toNum(row.priceAfterAmort) ?? 0) >= (toNum(row.priceInclAmort) ?? 0)
+				)
+					at(
+						"priceAfterAmort",
+						"Must be lower than the price incl. amortisation",
+					);
+			});
+		}
+
+		/* ---- plant / spares details: purchasing group is needed for the TCS files ---- */
+		const group = getLocationGroup(values.plant);
+		if (group) {
+			const rows = values.masterData.plantDetails;
+			const inGroup = rows
+				.map((row, index) => ({ row, index }))
+				.filter(({ row }) => row.group === group);
+			const applicable = inGroup.filter(({ row }) =>
+				isLocationApplicable(row, values.plant),
+			);
+			if (applicable.length === 0 && inGroup[0]) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["masterData", "plantDetails", inGroup[0].index, "applicable"],
+					message:
+						group === "SPARE"
+							? "Select at least one warehouse"
+							: "Select at least one plant",
+				});
+			}
+			applicable.forEach(({ row, index }) => {
+				if (!row.purchasingGroup.trim())
+					ctx.addIssue({
+						code: "custom",
+						path: ["masterData", "plantDetails", index, "purchasingGroup"],
+						message: "Enter the purchasing group",
+					});
+			});
 		}
 	});
 

@@ -14,12 +14,23 @@ import type {
 	CppFormValues,
 	CppListItem,
 	CppListingRow,
+	CppLocationRow,
 	CppRequestPayload,
 	CppSection,
 	CppSectionKey,
 	DecimalValue,
 } from "../types/cpp.types";
-import { CPP_ATTACHMENTS, getDefaultValues } from "../utils/cpp.utils";
+import {
+	AMORTISED_CONDITION,
+	CPP_ATTACHMENTS,
+	emptyAmort,
+	emptyCostTracker,
+	emptyLocations,
+	emptyPerMachine,
+	getApplicableLocations,
+	getDefaultValues,
+	isBlankRow,
+} from "../utils/cpp.utils";
 
 export const CPP_PURCHASING_FILE_TYPE = "purchasingFile";
 
@@ -42,12 +53,40 @@ export const toNumber = (value: DecimalValue | undefined): number | null => {
 const text = (value: unknown): string =>
 	typeof value === "string" ? value.trim() : "";
 
+/** Trims every string cell of a row. */
+const trimRow = <T extends object>(row: T): T =>
+	Object.fromEntries(
+		Object.entries(row).map(([key, value]) => [
+			key,
+			typeof value === "string" ? value.trim() : value,
+		]),
+	) as T;
+
+/** Table rows that have something typed in them. */
+const filledRows = <T extends object>(rows: T[] | undefined): T[] =>
+	(rows ?? []).filter((row) => !isBlankRow(row)).map(trimRow);
+
 const supplier = (value: CppFormValues["suppliers"]["existing"]) => ({
 	partnerId: text(value.partnerId),
 	name: text(value.name),
 	code: text(value.code),
 	manual: value.manual === true,
 });
+
+/** Only the applicable codes of the plant's group are saved ("applicable" is implied). */
+const plantDetailsPayload = (values: CppFormValues) =>
+	getApplicableLocations(values.masterData.plantDetails, values.plant).map(
+		(row) => ({
+			code: row.code,
+			name: row.name,
+			group: row.group,
+			incoTerms: text(row.incoTerms),
+			purchasingGroup: text(row.purchasingGroup),
+			taxCode: text(row.taxCode),
+			storeLocation: row.group === "PLANT" ? text(row.storeLocation) : "",
+			pfPct: row.group === "SPARE" ? text(row.pfPct) : "",
+		}),
+	);
 
 /** Plain data of each wizard tab. Only fields the server stores are sent. */
 export const formToSections = (
@@ -85,6 +124,28 @@ export const formToSections = (
 		},
 	},
 	{
+		key: "amortisation",
+		// Switching away from PB50 clears whatever was typed before.
+		data: {
+			rows:
+				values.workflow.pricingCondition === AMORTISED_CONDITION
+					? filledRows(values.amortisation)
+					: [],
+		},
+	},
+	{
+		key: "volumes",
+		data: {
+			volumes: {
+				DWD: trimRow(values.volumes.DWD),
+				KGP: trimRow(values.volumes.KGP),
+				SPARE: trimRow(values.volumes.SPARE),
+			},
+			perMachineImpact: filledRows(values.perMachineImpact),
+			costTracker: filledRows(values.costTracker),
+		},
+	},
+	{
 		key: "master",
 		data: {
 			materialGroup: text(values.masterData.materialGroup),
@@ -96,6 +157,7 @@ export const formToSections = (
 			validFrom: values.masterData.validFrom,
 			updateSourceList: text(values.masterData.updateSourceList),
 			note: text(values.masterData.note),
+			plantDetails: plantDetailsPayload(values),
 		},
 	},
 	{ key: "other", data: { remarks: text(values.other.remarks) } },
@@ -142,6 +204,7 @@ export const attachmentToFileValue = (
 	extension: extensionOf(attachment.fileName),
 	sizeLabel: "",
 	isLocal: false,
+	uploadedAt: attachment.uploadedAt,
 });
 
 const fileForSlot = (
@@ -206,10 +269,42 @@ const pick = <T extends object>(base: T, source: unknown): T => {
 	return out as T;
 };
 
+/** Stored rows -> form rows; always at least one (empty) row so the table has an input line. */
+const pickRows = <T extends object>(source: unknown, empty: () => T): T[] => {
+	const rows = Array.isArray(source)
+		? source.map((row) => pick(empty(), row))
+		: [];
+	return rows.length ? rows : [empty()];
+};
+
+/** Stored codes are applicable; every other code comes back blank. */
+const locationsFromStored = (source: unknown): CppLocationRow[] => {
+	const stored = Array.isArray(source) ? source : [];
+	return emptyLocations().map((row) => {
+		const match = stored.find(
+			(item) =>
+				typeof item === "object" &&
+				item !== null &&
+				(item as { code?: unknown }).code === row.code,
+		);
+		return match
+			? {
+					...pick(row, match),
+					code: row.code,
+					name: row.name,
+					group: row.group,
+					applicable: true,
+				}
+			: row;
+	});
+};
+
 export const detailToForm = (detail: CppDetail): CppFormValues => {
 	const defaults = getDefaultValues();
 	const basic = sectionData(detail.sections, "basic");
 	const purchasing = sectionData(detail.sections, "purchasing");
+	const amortisation = sectionData(detail.sections, "amortisation");
+	const volumes = sectionData(detail.sections, "volumes");
 	const master = sectionData(detail.sections, "master");
 	const other = sectionData(detail.sections, "other");
 
@@ -245,6 +340,10 @@ export const detailToForm = (detail: CppDetail): CppFormValues => {
 		suppliers: pick(defaults.suppliers, purchasing.suppliers),
 		approvalValues: pick(defaults.approvalValues, purchasing.approvalValues),
 		purchasingFile: files[CPP_PURCHASING_FILE_TYPE] ?? null,
+		amortisation: pickRows(amortisation.rows, emptyAmort),
+		volumes: pick(defaults.volumes, volumes.volumes),
+		perMachineImpact: pickRows(volumes.perMachineImpact, emptyPerMachine),
+		costTracker: pickRows(volumes.costTracker, emptyCostTracker),
 		masterData: {
 			...defaults.masterData,
 			...pick(
@@ -261,6 +360,7 @@ export const detailToForm = (detail: CppDetail): CppFormValues => {
 				},
 				master,
 			),
+			plantDetails: locationsFromStored(master.plantDetails),
 		},
 		other: pick(defaults.other, other),
 		attachments: Object.fromEntries(

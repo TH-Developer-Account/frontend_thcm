@@ -1,0 +1,211 @@
+/* =========================================================
+   CPP VIEW PAGE  (utils/cpp.view.css)
+   Same layout as the EPC detail page (.activity-form-view):
+   header · basic details · tabs · tab card | Audit Trail + actions.
+   Imported by pages/CppViewPage.tsx.
+========================================================= */
+
+@layer components {
+	.cpp-view {
+		/* Tune to match the app shell height (top nav + page padding). */
+		--cpp-sticky-top: var(--space-4);
+		--cpp-side-offset: 9rem;
+
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	/* ---------------- Header ---------------- */
+
+	.cpp-view-header {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2) var(--space-4);
+		padding: var(--space-3) var(--space-4);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-lg);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.cpp-view-header-copy {
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	.cpp-view-title-row {
+		display: flex;
+		min-width: 0;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.cpp-view-title {
+		min-width: 0;
+		margin: 0;
+		overflow: hidden;
+
+		color: var(--color-text-primary);
+		font-size: var(--font-size-lg);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.cpp-view-subtitle {
+		margin: var(--space-1) 0 0;
+		overflow: hidden;
+
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
+		font-variant-numeric: tabular-nums;
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* ---------------- Tabs ---------------- */
+
+	.cpp-view-tabs {
+		max-width: 100%;
+		overflow-x: auto;
+		scrollbar-width: none;
+		padding: 0 var(--space-4);
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-lg);
+		background-color: var(--color-bg-surface);
+	}
+
+	.cpp-view-tabs::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* ---------------- Body ---------------- */
+
+	.cpp-view-body {
+		display: grid;
+		min-width: 0;
+		grid-template-columns: minmax(0, 1fr);
+		align-items: start;
+		gap: var(--space-4);
+	}
+
+	@media (min-width: 1024px) {
+		.cpp-view-body.has-side-panels {
+			grid-template-columns: minmax(0, 1fr) minmax(18rem, 22rem);
+			gap: var(--space-3);
+		}
+	}
+
+	.cpp-view-main {
+		min-width: 0;
+	}
+
+	.cpp-view-tab-body {
+		padding: var(--space-1) 0;
+	}
+
+	/* ---------------- Side column ---------------- */
+
+	.cpp-view-side {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	@media (min-width: 1024px) {
+		/* Sticky and exactly one screen tall (below the top bar).
+		   The Audit Trail takes the room left by the decision card and scrolls. */
+		.cpp-view-side {
+			position: sticky;
+			top: var(--cpp-sticky-top);
+			height: calc(100vh - var(--cpp-side-offset));
+		}
+	}
+
+	/* Audit Trail card: fills the side column and scrolls inside it. */
+	.cpp-view-panel {
+		display: flex;
+		min-height: 0;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.cpp-view-panel.ui-card-accordion-expanded {
+		flex: 1 1 0;
+		min-height: 10rem;
+	}
+
+	/* The card's wrapper and body sit below its header. Keep them a flex chain
+	   so the list gets a bounded height and its own scrollbar. */
+	.cpp-view-panel > :not(:first-child) {
+		display: flex;
+		min-height: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+	}
+
+	.cpp-view-panel > [hidden] {
+		display: none;
+	}
+
+	@media (max-width: 1023px) {
+		.cpp-view-panel.ui-card-accordion-expanded {
+			height: 40rem;
+		}
+	}
+
+	.cpp-view-panel-title {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.cpp-view-panel-body {
+		display: flex;
+		min-height: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+		overflow-y: auto;
+	}
+
+	.cpp-view-panel .comments-section {
+		flex: 1 1 auto;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+
+	.cpp-view-panel .comments-list {
+		max-height: none;
+		min-height: 0;
+		flex: 1 1 auto;
+		overflow-y: auto;
+	}
+
+	.cpp-view-panel .comments-empty {
+		min-height: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+		justify-content: center;
+		border: 0;
+		border-radius: 0;
+		background-color: transparent;
+		box-shadow: none;
+		text-align: center;
+	}
+}

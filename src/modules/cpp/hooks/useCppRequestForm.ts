@@ -6,18 +6,28 @@
 //                 (attachments, derived fields).
 // Submit:      validates every step, saves, then calls POST /cpp/:id/submit
 //              (the server picks the approval band and starts the workflow).
-import { useCallback, useEffect, useRef, useState } from "react";
+// Resubmit:    same page, opened on a CLARIFICATION_REQUESTED request by the
+//              proposer. Every step is editable; "Resubmit" validates every step,
+//              saves (PUT /cpp/:id), then calls POST /cpp/:id/resubmit (the server
+//              picks the band again from the edited data and restarts the workflow).
+//
+// Steps are dynamic: the Amortisation step is only there when the pricing
+// condition is PB50 (getCppSteps). The pricing condition is picked in step 1,
+// so the steps after it never change under the user's feet.
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
 	useForm,
+	useWatch,
 	type FieldErrors,
 	type FieldPath,
 	type Resolver,
 } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
-import { useToast } from "../../../context/Auth/AuthContext";
+import { useAuth, useToast } from "../../../context/Auth/AuthContext";
+import { ServerAxios } from "../../../services/ServerAxios";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { cppApi } from "../api/cpp.api";
 import {
@@ -25,13 +35,26 @@ import {
 	formToPayload,
 	pendingFileChanges,
 } from "../helpers/cpp.mapper";
-import type { CppDetail, CppFormValues, CppStepKey } from "../types/cpp.types";
+import type {
+	CppDetail,
+	CppFormValues,
+	CppStep,
+	CppStepKey,
+} from "../types/cpp.types";
 import { cppKeys, useCppDetail, useCppMutations } from "./useCppMutations";
 import { CPP_STATUS } from "../utils/cpp.constants";
 import { cppSchema } from "../utils/cpp.schema";
-import { CPP_STEPS, getDefaultValues } from "../utils/cpp.utils";
+import { getCppSteps, getDefaultValues } from "../utils/cpp.utils";
 
 export const CPP_LISTING_PATH = "/cpp/listing";
+
+const CLARIFICATION_STATUS = "CLARIFICATION_REQUESTED";
+
+type ResubmitResponse = {
+	success: boolean;
+	message?: string;
+	data: { workflowId: string; ruleId: string; stages: number };
+};
 
 // Fields each step owns — "Next" validates exactly these.
 const STEP_FIELDS: Record<CppStepKey, FieldPath<CppFormValues>[]> = {
@@ -45,7 +68,6 @@ const STEP_FIELDS: Record<CppStepKey, FieldPath<CppFormValues>[]> = {
 		"justification",
 		"priceType",
 		"workflow.models",
-		"workflow.plants",
 		"workflow.pricingCondition",
 	],
 	purchasing: [
@@ -56,7 +78,10 @@ const STEP_FIELDS: Record<CppStepKey, FieldPath<CppFormValues>[]> = {
 		"approvalValues.variationPct",
 		"approvalValues.amount",
 	],
-	master: [],
+	amortisation: ["amortisation"],
+	// Optional tables — only number format is checked.
+	volumes: ["volumes", "perMachineImpact", "costTracker"],
+	master: ["masterData.plantDetails"],
 	other: [],
 	attachments: [],
 	workflow: [],
@@ -76,6 +101,10 @@ const STEP_FOR_KEY: Record<string, CppStepKey> = {
 	suppliers: "purchasing",
 	purchasingFile: "purchasing",
 	approvalValues: "purchasing",
+	amortisation: "amortisation",
+	volumes: "volumes",
+	perMachineImpact: "volumes",
+	costTracker: "volumes",
 	masterData: "master",
 	other: "other",
 	attachments: "attachments",
@@ -83,13 +112,14 @@ const STEP_FOR_KEY: Record<string, CppStepKey> = {
 
 export const getStepsWithErrors = (
 	errors: FieldErrors<CppFormValues>,
+	steps: CppStep[],
 ): CppStepKey[] => {
 	const found = new Set<CppStepKey>();
 	Object.keys(errors).forEach((key) => {
 		const step = STEP_FOR_KEY[key];
 		if (step) found.add(step);
 	});
-	return CPP_STEPS.map((step) => step.key).filter((key) => found.has(key));
+	return steps.map((step) => step.key).filter((key) => found.has(key));
 };
 
 const scrollToTop = () => {
@@ -100,6 +130,7 @@ const scrollToTop = () => {
 export const useCppRequestForm = () => {
 	const navigate = useNavigate();
 	const { id: routeId } = useParams<{ id: string }>();
+	const { user } = useAuth();
 	const { showToast } = useToast();
 	const queryClient = useQueryClient();
 	const {
@@ -108,8 +139,56 @@ export const useCppRequestForm = () => {
 		uploadAttachmentMutation,
 		deleteAttachmentMutation,
 	} = useCppMutations();
+
+	/* ---- resubmit: restart the SAME workflow at stage 1 after a clarification ----
+	 * The server re-picks the band and approvers from the saved data, so no
+	 * workflow id or template is sent from the browser. */
+	const resubmitMutation = useMutation({
+		mutationFn: async (id: string) => {
+			const { data } = await ServerAxios.post<ResubmitResponse>(
+				`/cpp/${encodeURIComponent(id)}/resubmit`,
+			);
+			return data;
+		},
+		onSuccess: async (response, id) => {
+			await Promise.all([
+				queryClient.invalidateQueries({ queryKey: cppKeys.detail(id) }),
+				queryClient.invalidateQueries({ queryKey: cppKeys.lists() }),
+			]);
+			showToast({
+				type: "success",
+				title: "Resubmitted",
+				description:
+					response.message ?? "Approval restarts from the first stage.",
+			});
+		},
+		onError: (error) =>
+			showToast({
+				type: "error",
+				title: "Changes saved, not resubmitted",
+				description: getApiErrorMessage(
+					error,
+					"Unable to restart the approval. Please try again.",
+				),
+			}),
+	});
+
+	/** Resolves true when the request is back in approval (toast already shown). */
+	const resubmit = useCallback(
+		async (id: string): Promise<boolean> => {
+			try {
+				await resubmitMutation.mutateAsync(id);
+				return true;
+			} catch {
+				return false;
+			}
+		},
+		[resubmitMutation],
+	);
 	const [stepIndex, setStepIndex] = useState(0);
 	const [busy, setBusy] = useState(false);
+	/** True while editing a request the approver sent back for clarification. */
+	const [isResubmit, setIsResubmit] = useState(false);
 
 	/** What the server holds right now — needed for the file diff. */
 	const serverRef = useRef<CppDetail | null>(null);
@@ -122,36 +201,64 @@ export const useCppRequestForm = () => {
 		reValidateMode: "onChange",
 	});
 
-	/* ---- editing an existing draft: load once, then the form owns the data ---- */
+	/* ---- steps follow the pricing condition (PB50 adds Amortisation) ---- */
+	const pricingCondition = useWatch({
+		control: form.control,
+		name: "workflow.pricingCondition",
+	});
+	const steps = useMemo(
+		() => getCppSteps(pricingCondition ?? ""),
+		[pricingCondition],
+	);
+	const safeIndex = Math.min(stepIndex, steps.length - 1);
+
+	/* ---- editing an existing request: load once, then the form owns the data ---- */
 	const detailQuery = useCppDetail(routeId ?? "");
 	useEffect(() => {
 		const detail = detailQuery.data;
 		if (!routeId || !detail || loadedIdRef.current === detail.id) return;
-		if (detail.status !== CPP_STATUS.DRAFT) {
+
+		// Only drafts and clarification requests are editable, and only by the
+		// proposer (same rule as the approval flow in the other modules).
+		const status = String(detail.status);
+		const detailRecord = detail as unknown as {
+			initiatedById?: string;
+			initiatedBy?: { id?: string } | null;
+		};
+		const ownerId = detailRecord.initiatedById ?? detailRecord.initiatedBy?.id;
+		const isClarification = status === CLARIFICATION_STATUS;
+		const isDraft = status === CPP_STATUS.DRAFT;
+		const notOwner = Boolean(ownerId && user?.id && ownerId !== user.id);
+
+		if ((!isDraft && !isClarification) || (isClarification && notOwner)) {
 			navigate(`/cpp/${detail.id}/view`, { replace: true });
 			return;
 		}
 		loadedIdRef.current = detail.id;
 		serverRef.current = detail;
+		setIsResubmit(isClarification);
 		form.reset(detailToForm(detail));
-	}, [detailQuery.data, form, navigate, routeId]);
+	}, [detailQuery.data, form, navigate, routeId, user?.id]);
 
-	const step = CPP_STEPS[stepIndex];
-	const isFirst = stepIndex === 0;
-	const isLast = stepIndex === CPP_STEPS.length - 1;
+	const step = steps[safeIndex];
+	const isFirst = safeIndex === 0;
+	const isLast = safeIndex === steps.length - 1;
 
-	const goToStep = useCallback((key: CppStepKey) => {
-		const index = CPP_STEPS.findIndex((item) => item.key === key);
-		if (index >= 0) {
-			setStepIndex(index);
-			scrollToTop();
-		}
-	}, []);
+	const goToStep = useCallback(
+		(key: CppStepKey) => {
+			const index = steps.findIndex((item) => item.key === key);
+			if (index >= 0) {
+				setStepIndex(index);
+				scrollToTop();
+			}
+		},
+		[steps],
+	);
 
 	const goBack = useCallback(() => {
-		setStepIndex((index) => Math.max(index - 1, 0));
+		setStepIndex((index) => Math.max(Math.min(index, steps.length - 1) - 1, 0));
 		scrollToTop();
-	}, []);
+	}, [steps.length]);
 
 	const goNext = useCallback(async () => {
 		const fields = STEP_FIELDS[step.key];
@@ -164,9 +271,11 @@ export const useCppRequestForm = () => {
 			});
 			return;
 		}
-		setStepIndex((index) => Math.min(index + 1, CPP_STEPS.length - 1));
+		setStepIndex((index) =>
+			Math.min(Math.min(index, steps.length - 1) + 1, steps.length - 1),
+		);
 		scrollToTop();
-	}, [form, showToast, step.key]);
+	}, [form, showToast, step.key, steps.length]);
 
 	/**
 	 * Saves everything and returns the fresh server copy (or null on failure —
@@ -243,13 +352,13 @@ export const useCppRequestForm = () => {
 			if (saved)
 				showToast({
 					type: "success",
-					title: "Draft saved",
+					title: isResubmit ? "Changes saved" : "Draft saved",
 					description: saved.referenceNumber,
 				});
 		} finally {
 			setBusy(false);
 		}
-	}, [form, persist, showToast]);
+	}, [form, isResubmit, persist, showToast]);
 
 	const submit = form.handleSubmit(
 		async (values) => {
@@ -257,6 +366,17 @@ export const useCppRequestForm = () => {
 			try {
 				const saved = await persist(values);
 				if (!saved) return;
+
+				// Clarification: the changes are saved; now restart the approval.
+				// resubmit() shows its own success / error toast and refreshes
+				// the detail and listing. On failure the user stays here with the
+				// changes saved and can press Resubmit again.
+				if (isResubmit) {
+					const ok = await resubmit(saved.id);
+					if (ok) navigate(`/cpp/${saved.id}/view`, { replace: true });
+					return;
+				}
+
 				try {
 					await cppApi.submit(saved.id);
 					void queryClient.invalidateQueries({ queryKey: cppKeys.lists() });
@@ -283,7 +403,7 @@ export const useCppRequestForm = () => {
 			}
 		},
 		(errors) => {
-			const firstStep = getStepsWithErrors(errors)[0];
+			const firstStep = getStepsWithErrors(errors, steps)[0];
 			if (firstStep) goToStep(firstStep);
 			showToast({
 				type: "error",
@@ -293,15 +413,26 @@ export const useCppRequestForm = () => {
 		},
 	);
 
-	const cancel = useCallback(() => navigate(CPP_LISTING_PATH), [navigate]);
+	const cancel = useCallback(
+		() =>
+			navigate(
+				isResubmit && serverRef.current
+					? `/cpp/${serverRef.current.id}/view`
+					: CPP_LISTING_PATH,
+			),
+		[isResubmit, navigate],
+	);
 
 	return {
 		form,
+		steps,
 		step,
 		isFirst,
 		isLast,
 		busy,
 		isEditing: Boolean(routeId),
+		/** Editing a request sent back for clarification — show "Resubmit". */
+		isResubmit,
 		isLoading: Boolean(routeId) && detailQuery.isLoading,
 		loadError: detailQuery.isError
 			? getApiErrorMessage(detailQuery.error, "Unable to load this request.")

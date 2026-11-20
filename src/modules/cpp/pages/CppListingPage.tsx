@@ -5,12 +5,13 @@ import { FilePlusCorner } from "lucide-react";
 import CppListingTable from "../components/CppListingTable";
 import { useCppListing } from "../hooks/useCppListing";
 import { toCppListingRow } from "../helpers/cpp.mapper";
-import { getCppRowRoute } from "../utils/cpp.columns";
+import { getCppEditRoute, getCppRowRoute } from "../utils/cpp.columns";
 import { CPP_LISTING_TABS, DEFAULT_CPP_TAB } from "../utils/cpp.constants";
 import type { CppListingRow, CppListingTab } from "../types/cpp.types";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import Button from "../../../components/common/Button";
+import { useAuth } from "../../../context/Auth/AuthContext";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 
 const toTab = (value: string | null): CppListingTab =>
@@ -20,6 +21,7 @@ const toTab = (value: string | null): CppListingTab =>
 
 const CppListingPage = () => {
 	const navigate = useNavigate();
+	const { user } = useAuth();
 	const [searchParams, setSearchParams] = useSearchParams();
 	const tabParam = searchParams.get("tab");
 	const urlTab = toTab(tabParam);
@@ -60,6 +62,12 @@ const CppListingPage = () => {
 		[navigate],
 	);
 
+	// Edit opens the stepper form (drafts, and clarification requests).
+	const handleEditRow = useCallback(
+		(row: CppListingRow) => navigate(getCppEditRoute(row)),
+		[navigate],
+	);
+
 	return (
 		<PageSectionLayout>
 			<PageHeader
@@ -73,18 +81,19 @@ const CppListingPage = () => {
 					],
 					separator: "›",
 				}}
-			>
-				<Button
-					type="button"
-					text="Create CPP Request"
-					Icon={FilePlusCorner}
-					iconPosition="left"
-					iconSize={16}
-					size="sm"
-					variant="brand"
-					onClick={() => navigate("/cpp/create")}
-				/>
-			</PageHeader>
+				headerChildren={
+					<Button
+						type="button"
+						text="Create CPP Request"
+						Icon={FilePlusCorner}
+						iconPosition="left"
+						iconSize={16}
+						size="sm"
+						variant="brand"
+						onClick={() => navigate("/cpp/create")}
+					/>
+				}
+			></PageHeader>
 
 			<CppListingTable
 				selectedFilter={listing.tab}
@@ -109,6 +118,8 @@ const CppListingPage = () => {
 				onPageChange={listing.setPageIndex}
 				onPageSizeChange={listing.handlePageSizeChange}
 				onViewRow={handleViewRow}
+				onEditRow={handleEditRow}
+				currentUserId={user?.id}
 			/>
 		</PageSectionLayout>
 	);
