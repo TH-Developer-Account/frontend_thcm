@@ -15,6 +15,7 @@ import type {
 	CppListItem,
 	CppListingRow,
 	CppLocationRow,
+	CppPlant,
 	CppRequestPayload,
 	CppSection,
 	CppSectionKey,
@@ -23,10 +24,12 @@ import type {
 import {
 	AMORTISED_CONDITION,
 	CPP_ATTACHMENTS,
+	CPP_PLANTS,
 	emptyAmort,
 	emptyCostTracker,
 	emptyLocations,
 	emptyPerMachine,
+	emptyPlantPrice,
 	getApplicableLocations,
 	getDefaultValues,
 	isBlankRow,
@@ -34,7 +37,7 @@ import {
 
 export const CPP_PURCHASING_FILE_TYPE = "purchasingFile";
 
-/** Every slot that can hold a file: the purchasing Excel + the 10 supporting documents. */
+/** Every slot that can hold a file: the purchasing Excel + the attachment slots (incl. summary sheet). */
 export const CPP_FILE_SLOTS = [
 	CPP_PURCHASING_FILE_TYPE,
 	...CPP_ATTACHMENTS.map((item) => item.key),
@@ -73,7 +76,7 @@ const supplier = (value: CppFormValues["suppliers"]["existing"]) => ({
 	manual: value.manual === true,
 });
 
-/** Only the applicable codes of the plant's group are saved ("applicable" is implied). */
+/** Only the applicable codes of the plant's group are saved (applicable is implied). */
 const plantDetailsPayload = (values: CppFormValues) =>
 	getApplicableLocations(values.masterData.plantDetails, values.plant).map(
 		(row) => ({
@@ -87,6 +90,19 @@ const plantDetailsPayload = (values: CppFormValues) =>
 			pfPct: row.group === "SPARE" ? text(row.pfPct) : "",
 		}),
 	);
+
+/** Workflow plants come from the applicable Master data rows, not a separate picker. */
+const workflowPlantsOf = (values: CppFormValues): CppPlant[] => {
+	const rows = getApplicableLocations(
+		values.masterData.plantDetails,
+		values.plant,
+	);
+	return CPP_PLANTS.filter((plant) =>
+		plant === "SPARE"
+			? rows.some((row) => row.group === "SPARE")
+			: rows.some((row) => row.group === "PLANT" && row.name === plant),
+	);
+};
 
 /** Plain data of each wizard tab. Only fields the server stores are sent. */
 export const formToSections = (
@@ -103,7 +119,7 @@ export const formToSections = (
 			initiationDate: values.initiationDate,
 			workflow: {
 				models: values.workflow.models,
-				plants: values.workflow.plants,
+				plants: workflowPlantsOf(values),
 				pricingCondition: text(values.workflow.pricingCondition),
 			},
 		},
@@ -160,7 +176,27 @@ export const formToSections = (
 			plantDetails: plantDetailsPayload(values),
 		},
 	},
-	{ key: "other", data: { remarks: text(values.other.remarks) } },
+	{
+		key: "financial",
+		data: {
+			plants: values.financial.plants,
+			totalActualPct: text(values.financial.totalActualPct),
+			totalAnnualisedPct: text(values.financial.totalAnnualisedPct),
+		},
+	},
+	{
+		key: "other",
+		data: {
+			remarks: text(values.other.remarks),
+			checklist: Object.fromEntries(
+				Object.entries(values.other.checklist).map(([key, answer]) => [
+					key,
+					text(answer),
+				]),
+			),
+			plantPrices: filledRows(values.other.plantPrices),
+		},
+	},
 ];
 
 export const formToPayload = (values: CppFormValues): CppRequestPayload => ({
@@ -194,7 +230,7 @@ export const mimeFromName = (fileName: string): string =>
 /** A file that already lives on the server, shaped for FileUploadField. */
 export const attachmentToFileValue = (
 	attachment: CppAttachment,
-): FileUploadValue => ({
+): FileUploadValue & { partRowCount?: number } => ({
 	id: attachment.id,
 	file: null,
 	url: attachment.url ?? "",
@@ -205,6 +241,7 @@ export const attachmentToFileValue = (
 	sizeLabel: "",
 	isLocal: false,
 	uploadedAt: attachment.uploadedAt,
+	partRowCount: attachment.partRowCount,
 });
 
 const fileForSlot = (
@@ -307,6 +344,7 @@ export const detailToForm = (detail: CppDetail): CppFormValues => {
 	const volumes = sectionData(detail.sections, "volumes");
 	const master = sectionData(detail.sections, "master");
 	const other = sectionData(detail.sections, "other");
+	const financial = sectionData(detail.sections, "financial");
 
 	const files = Object.fromEntries(
 		detail.attachments.map((item) => [item.type, attachmentToFileValue(item)]),
@@ -337,6 +375,7 @@ export const detailToForm = (detail: CppDetail): CppFormValues => {
 				basic.workflow,
 			),
 		},
+		financial: pick(defaults.financial, financial),
 		suppliers: pick(defaults.suppliers, purchasing.suppliers),
 		approvalValues: pick(defaults.approvalValues, purchasing.approvalValues),
 		purchasingFile: files[CPP_PURCHASING_FILE_TYPE] ?? null,
@@ -362,7 +401,13 @@ export const detailToForm = (detail: CppDetail): CppFormValues => {
 			),
 			plantDetails: locationsFromStored(master.plantDetails),
 		},
-		other: pick(defaults.other, other),
+		other: {
+			...pick(defaults.other, other),
+			// Each stored row is shaped like the form row; an absent list stays empty.
+			plantPrices: Array.isArray(other.plantPrices)
+				? other.plantPrices.map((row) => pick(emptyPlantPrice(), row))
+				: [],
+		},
 		attachments: Object.fromEntries(
 			CPP_ATTACHMENTS.map((item) => [item.key, files[item.key] ?? null]),
 		),

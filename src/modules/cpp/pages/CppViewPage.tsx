@@ -1,8 +1,9 @@
 // pages/CppViewPage.tsx — CPP request detail ("view") page.
+// Opens on the price approval sheet (CppPdfView), drawn from the saved request.
+// "View details" switches to the form view: left tab nav · main tab card · right Decision + Audit Trail.
 // The form tabs are the same components as the create wizard, rendered
 // read-only: the saved request is loaded into a form (detailToForm) and the
-// tabs run in view mode (CppReadOnlyProvider). This page only adds the header,
-// the tab bar, the approval workflow and comments, and the audit / decision column.
+// tabs run in view mode (CppReadOnlyProvider).
 // Amortisation is listed only when the pricing condition is the amortised one.
 import { useMemo, useState, type ReactNode } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -24,7 +25,6 @@ import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
 import ApprovalActionsBar from "../../../components/ui/ApprovalActionsBar";
 import { CardEmpty } from "../../../components/ui/CardSkeleton";
-import { FilterTabs } from "../../../components/ui/FilterTabs";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { AuditLogSection } from "../../../components/ui/audit";
 import {
@@ -37,7 +37,6 @@ import { useAuth } from "../../../context/Auth/useAuth";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import {
-	ApprovalWorkflowTableContent,
 	getWorkflowApproverData,
 	type ActiveWorkflowLike,
 	type ApprovalStageLike,
@@ -47,7 +46,9 @@ import {
 	useClarifyWorkflowStageMutation,
 } from "../../workflows/context/useWorkflowMutations";
 
+import CppPdfView, { type CppPdfStage } from "../components/CppPdfView";
 import { CppReadOnlyProvider } from "../components/CppFields";
+import CppWorkflowTable from "../components/CppWorkflowTable";
 import { detailToForm } from "../helpers/cpp.mapper";
 import { useCppDetail } from "../hooks/useCppMutations";
 import type { CppDetail, CppFormValues } from "../types/cpp.types";
@@ -67,6 +68,8 @@ const LISTING_URL = "/cpp/listing";
 const EDITABLE_STATUSES = ["DRAFT", "CLARIFICATION_REQUESTED"];
 /** Subject type the workflow, audit and comment APIs know CPP requests by. */
 const CPP_SUBJECT_TYPE = "CPP_REQUEST";
+/** Every viewer opens on the sheet; "details" shows the form view. */
+type CppViewMode = "pdf" | "details";
 
 /* -------------------------------- workflow ------------------------------- */
 
@@ -138,6 +141,7 @@ const CppViewPage = () => {
 	const [activeTab, setActiveTab] = useState<CppViewTab>("basic");
 	const [actionBusy, setActionBusy] = useState(false);
 	const [refreshKey, setRefreshKey] = useState(0);
+	const [viewMode, setViewMode] = useState<CppViewMode>("pdf");
 
 	/* The saved request, as the form values the wizard tabs read. */
 	const formValues = useMemo(
@@ -405,10 +409,7 @@ const CppViewPage = () => {
 								<h3 className="mb-2 text-sm font-semibold text-slate-700">
 									{PART_TITLES[key] ?? key}
 								</h3>
-								<ApprovalWorkflowTableContent
-									stages={stages}
-									showEmptyState={false}
-								/>
+								<CppWorkflowTable stages={stages} />
 							</section>
 						))}
 					</div>
@@ -446,27 +447,60 @@ const CppViewPage = () => {
 	const isSubmitted = cpp.status !== "DRAFT";
 	const showSideColumn = isSubmitted;
 
+	const toggleBar = (
+		<div className="mb-3 flex justify-end">
+			<Button
+				type="button"
+				text={viewMode === "pdf" ? "View details" : "Back to sheet"}
+				size="sm"
+				appearance="standard"
+				variant="outline"
+				onClick={() => setViewMode(viewMode === "pdf" ? "details" : "pdf")}
+			/>
+		</div>
+	);
+
+	const sheet = formValues ? (
+		<CppPdfView
+			values={formValues}
+			referenceNumber={cpp.referenceNumber}
+			stages={workflowData.stages as unknown as CppPdfStage[]}
+			initiatedBy={cpp.initiatedBy?.name ?? cpp.initiatedBy?.email ?? null}
+		/>
+	) : null;
+
 	return (
 		<PageSectionLayout>
 			{header}
-			<div className="cpp-view">
-				{/* ── Tabs (Basic Details first) ── */}
-				<FilterTabs
-					id="cpp-view-tabs"
-					ariaLabel="CPP request sections"
-					items={tabs}
-					value={currentTab}
-					onChange={setActiveTab}
-					className="border-b-none px-0 py-0"
-					variant="soft"
-				/>
-
-				{/* ── Body: parent tab card (left) · audit + actions (right) ── */}
+			{toggleBar}
+			{viewMode === "pdf" ? sheet : null}
+			<div className="cpp-view" hidden={viewMode === "pdf"}>
+				{/* ── Body: left tab nav · tab card (main) · decision + audit (right) ── */}
 				<div
 					className={["cpp-view-body", showSideColumn && "has-side-panels"]
 						.filter(Boolean)
 						.join(" ")}
 				>
+					<nav className="cpp-view-nav" aria-label="CPP request sections">
+						<ul className="cpp-view-nav-list">
+							{tabs.map((tab) => {
+								const active = tab.value === currentTab;
+								return (
+									<li key={tab.value}>
+										<button
+											type="button"
+											className={`cpp-view-nav-item${active ? " is-active" : ""}`}
+											aria-current={active ? "page" : undefined}
+											onClick={() => setActiveTab(tab.value)}
+										>
+											{tab.label}
+										</button>
+									</li>
+								);
+							})}
+						</ul>
+					</nav>
+
 					<div className="cpp-view-main min-w-0">
 						<Card padding="default">
 							<FormProvider {...viewForm}>
@@ -480,6 +514,25 @@ const CppViewPage = () => {
 							className="cpp-view-side"
 							aria-label="Decision and audit trail"
 						>
+							{/* Approver only, and only while they can act on this stage. */}
+							{showDecisionCard ? (
+								<>
+									<span className="cpp-view-awaiting">
+										Awaiting your approval
+									</span>
+									<ApprovalActionsBar
+										variant="approver"
+										layout="card"
+										showBack={false}
+										canApprove={workflowData.canActNow}
+										canClarify={workflowData.canActNow}
+										onApprove={(reason) => runStageAction("approve", reason)}
+										onClarify={(reason) => runStageAction("clarify", reason)}
+										loading={actionBusy}
+									/>
+								</>
+							) : null}
+
 							<Card
 								className="cpp-view-panel"
 								accordion
@@ -502,20 +555,6 @@ const CppViewPage = () => {
 									emptyDescription="CPP request activity will appear here."
 								/>
 							</Card>
-
-							{/* Approver only, and only while they can act on this stage. */}
-							{showDecisionCard ? (
-								<ApprovalActionsBar
-									variant="approver"
-									layout="card"
-									showBack={false}
-									canApprove={workflowData.canActNow}
-									canClarify={workflowData.canActNow}
-									onApprove={(reason) => runStageAction("approve", reason)}
-									onClarify={(reason) => runStageAction("clarify", reason)}
-									loading={actionBusy}
-								/>
-							) : null}
 						</aside>
 					) : null}
 				</div>

@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import {
 	AMORTISED_CONDITION,
+	CPP_CHECKLIST,
 	MIN_JUSTIFICATION,
 	getCondition,
 	getLocationGroup,
@@ -67,6 +68,12 @@ const volumeRow = z.object({
 	annual: optionalNumber,
 });
 
+const plantPriceRow = z.object({
+	plant: z.string(),
+	partNumber: z.string(),
+	price: z.string(),
+});
+
 export const cppSchema = z
 	.object({
 		/* step 1 */
@@ -96,8 +103,8 @@ export const cppSchema = z
 			other: supplier,
 			recommended: requiredSupplier,
 		}),
-		// The attached Excel — checked in superRefine below.
-		purchasingFile: z.any(),
+		// Retired: the purchasing Excel is no longer uploaded. Kept so older requests still parse.
+		purchasingFile: z.any().nullish(),
 		approvalValues: z.object({
 			partValue: z.string(),
 			variationPct: z.string(),
@@ -131,8 +138,10 @@ export const cppSchema = z
 		/* remaining steps */
 		other: z.object({
 			remarks: z.string(),
+			checklist: z.record(z.string(), z.string()),
+			plantPrices: z.array(plantPriceRow),
 		}),
-		// Optional per document; which ones are needed depends on the condition.
+		// Optional per document; the Mandatory Check List and summary sheet are checked below.
 		attachments: z.record(z.string(), z.any()),
 		masterData: z.object({
 			materialGroup: z.string(),
@@ -140,6 +149,8 @@ export const cppSchema = z
 			purchasingGroup: z.string(),
 			priceType: z.string(),
 			incoTerms: z.string(),
+			// Not rendered any more — the tax code is per applicable row in
+			// plantDetails, checked in superRefine below.
 			taxCode: z.string(),
 			storeLocation: z.string(),
 			validFrom: z.string(),
@@ -158,6 +169,9 @@ export const cppSchema = z
 				KGP: z.string(),
 				SPARE: z.string(),
 			}),
+			plants: z.any(),
+			totalActualPct: z.string(),
+			totalAnnualisedPct: z.string(),
 		}),
 	})
 	.superRefine((values, ctx) => {
@@ -182,13 +196,50 @@ export const cppSchema = z
 			});
 		}
 
-		if (!values.purchasingFile) {
+		// Summary sheet (part info) is mandatory.
+		if (!values.attachments.partSummary) {
 			ctx.addIssue({
 				code: "custom",
-				path: ["purchasingFile"],
-				message: "Attach the purchasing details Excel",
+				path: ["attachments", "partSummary"],
+				message:
+					"This field is mandatory. Upload the summary sheet (part info).",
 			});
 		}
+
+		// Mandatory Check List: every row needs Yes, No or NA.
+		CPP_CHECKLIST.forEach((item) => {
+			const answer = values.other.checklist[item.key] ?? "";
+			if (!["Yes", "No", "NA"].includes(answer)) {
+				ctx.addIssue({
+					code: "custom",
+					path: ["other", "checklist", item.key],
+					message: "This field is mandatory. Answer Yes, No or NA.",
+				});
+			}
+		});
+
+		// Other plant prices: a filled row needs a plant, a part number and a number.
+		values.other.plantPrices.forEach((row, index) => {
+			if (isBlankRow(row)) return;
+			if (!row.plant.trim())
+				ctx.addIssue({
+					code: "custom",
+					path: ["other", "plantPrices", index, "plant"],
+					message: "Enter the plant",
+				});
+			if (!row.partNumber.trim())
+				ctx.addIssue({
+					code: "custom",
+					path: ["other", "plantPrices", index, "partNumber"],
+					message: "Enter the part number",
+				});
+			if (!positive(row.price))
+				ctx.addIssue({
+					code: "custom",
+					path: ["other", "plantPrices", index, "price"],
+					message: "Enter a price greater than 0",
+				});
+		});
 
 		// Approval bands need real numbers. Zero / blank is blocked (open question Q9).
 		if (condition) {
@@ -248,7 +299,8 @@ export const cppSchema = z
 			});
 		}
 
-		/* ---- plant / spares details: purchasing group is needed for the TCS files ---- */
+		/* ---- plant / spares details: purchasing group and tax code are needed
+		 * for the TCS files, on every applicable row ---- */
 		const group = getLocationGroup(values.plant);
 		if (group) {
 			const rows = values.masterData.plantDetails;
@@ -274,6 +326,12 @@ export const cppSchema = z
 						code: "custom",
 						path: ["masterData", "plantDetails", index, "purchasingGroup"],
 						message: "Enter the purchasing group",
+					});
+				if (!row.taxCode.trim())
+					ctx.addIssue({
+						code: "custom",
+						path: ["masterData", "plantDetails", index, "taxCode"],
+						message: "Select a tax code",
 					});
 			});
 		}

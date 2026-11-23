@@ -157,6 +157,24 @@ export type CppCostTrackerRow = {
 	materialCostYtd: string;
 };
 
+/** "Financial Impact" box of the CPP format — one row per plant (typed). */
+export type CppFinancialPlantRow = {
+	actualInr: string;
+	actualPct: string;
+	annualisedInr: string;
+	annualisedPct: string;
+};
+
+/** Mandatory Check List answer. Blank until the requester answers. */
+export type CppChecklistValue = "" | "Yes" | "No" | "NA";
+
+/** "Price in Other Plant Location (if any)". */
+export type CppOtherPlantPriceRow = {
+	plant: string;
+	partNumber: string;
+	price: string;
+};
+
 export type CppFormValues = {
 	/* --- step 1: basic details --- */
 	category: string;
@@ -197,6 +215,10 @@ export type CppFormValues = {
 	/* --- remaining steps --- */
 	other: {
 		remarks: string;
+		/** Mandatory Check List answers, keyed by CPP_CHECKLIST key. */
+		checklist: Record<string, CppChecklistValue>;
+		/** "Price in Other Plant Location (if any)". */
+		plantPrices: CppOtherPlantPriceRow[];
 	};
 	/** Supporting documents, keyed by CPP_ATTACHMENTS key. Sent to TCS on approval. */
 	attachments: Record<string, FileUploadValue | null>;
@@ -217,11 +239,15 @@ export type CppFormValues = {
 		plantDetails: CppLocationRow[];
 	};
 
-	/* --- kept so the older tabs still compile; not rendered in the wizard --- */
+	/* --- kept so the older tabs still compile --- */
 	parts: CppPartRow[];
 	financial: {
 		noChange: boolean;
 		plantSplit: Record<CppPlant, string>;
+		/** Financial Impact box: per plant, as in the Excel. */
+		plants: Record<CppPlant, CppFinancialPlantRow>;
+		totalActualPct: string;
+		totalAnnualisedPct: string;
 	};
 	workflow: {
 		/** Step 1 "Models" */
@@ -248,6 +274,7 @@ export type CppSectionKey =
 	| "amortisation"
 	| "volumes"
 	| "master"
+	| "financial"
 	| "other";
 
 export type CppSection = {
@@ -326,6 +353,8 @@ export type CppAttachment = {
 	uploadedAt: string;
 	/** Signed URL, only present on responses. */
 	url?: string;
+	/** Summary sheet only: part rows read at upload. */
+	partRowCount?: number;
 };
 
 export type CppDetail = CppListItem & {

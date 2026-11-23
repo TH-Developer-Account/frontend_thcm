@@ -1,13 +1,20 @@
 // tabs/PurchasingDetailsTab.tsx — wizard step 2.
-// Suppliers + the purchasing-details Excel upload. The app does not capture or
-// store line items: the Excel is attached and handed to TCS after approval.
+// Suppliers, the purchasing-details Excel upload, and the summary sheet (part info)
+// which opens a modal with the expected format. The app does not capture or store
+// line items: the Excel is attached and handed to TCS after approval.
 // "Approval values" are the few numbers the approval matrix needs to pick a band.
 // Plain content: the parent card in CppRequestCreatePage provides the surface.
-import { useEffect } from "react";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { useEffect, useState } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 
-import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
-import { RhfInput } from "../components/CppFields";
+import Button from "../../../components/common/Button";
+import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
+import PartSummaryModal from "../components/PartSummaryModal";
+import {
+	RhfInput,
+	useCppReadOnly,
+	useFieldError,
+} from "../components/CppFields";
 import type { CppFormValues } from "../types/cpp.types";
 import {
 	CPP_AMOUNT_BASIS_LABELS,
@@ -119,6 +126,50 @@ const ApprovalValuesFields = () => {
 	);
 };
 
+/** Summary sheet (part info): a status line plus a button that opens the format modal. */
+const PartSummaryField = () => {
+	const { control } = useFormContext<CppFormValues>();
+	const readOnly = useCppReadOnly();
+	const [open, setOpen] = useState(false);
+	const file = useWatch({ control, name: "attachments.partSummary" }) as
+		| FileUploadValue
+		| null
+		| undefined;
+	const error = useFieldError("attachments.partSummary");
+
+	const status = file
+		? file.name
+		: readOnly
+			? "Not uploaded"
+			: "Not uploaded yet. This field is mandatory.";
+
+	return (
+		<div className="flex flex-col gap-2 rounded-md border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between">
+			<div className="flex flex-col gap-0.5">
+				<span className="text-sm font-semibold text-slate-900">
+					Summary sheet (part info)
+					{readOnly ? null : <span className="form-required"> *</span>}
+				</span>
+				<span className="text-xs text-slate-500 break-all">{status}</span>
+				{error && !readOnly ? (
+					<span className="form-error-text" role="alert">
+						{error}
+					</span>
+				) : null}
+			</div>
+			<Button
+				type="button"
+				text={readOnly ? "View format" : "Summary / part info"}
+				size="sm"
+				appearance="standard"
+				variant="outline"
+				onClick={() => setOpen(true)}
+			/>
+			<PartSummaryModal open={open} onClose={() => setOpen(false)} />
+		</div>
+	);
+};
+
 const PurchasingDetailsTab = () => {
 	const { control } = useFormContext<CppFormValues>();
 
@@ -130,21 +181,7 @@ const PurchasingDetailsTab = () => {
 				))}
 			</div>
 
-			<Controller
-				name="purchasingFile"
-				control={control}
-				render={({ field, fieldState }) => (
-					<FileUploadField
-						value={field.value}
-						onChange={(file) => field.onChange(file)}
-						kind="spreadsheet"
-						label="Purchasing details (Excel)"
-						description="Purchasing details as attached in the Excel (Purchase Info Record). Supported formats: XLSX, XLS and CSV"
-						required
-						error={fieldState.error?.message}
-					/>
-				)}
-			/>
+			<PartSummaryField />
 
 			<ApprovalValuesFields />
 		</div>

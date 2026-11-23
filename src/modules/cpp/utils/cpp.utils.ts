@@ -4,9 +4,11 @@ import type {
 	CppConditionGroup,
 	CppConditionOption,
 	CppCostTrackerRow,
+	CppFinancialPlantRow,
 	CppFormValues,
 	CppLocationGroup,
 	CppLocationRow,
+	CppOtherPlantPriceRow,
 	CppPartRow,
 	CppPerMachineRow,
 	CppPlant,
@@ -94,8 +96,13 @@ export const CPP_PRICING_CONDITIONS = [
 ];
 export const AMORTISED_CONDITION = "PB50";
 
-// From "Attachments Required" in the CPP format (THX11-D07-F02).
+/**
+ * Attachment slots. "annualisedImpact" and the first seven are the Mandatory
+ * Check List (see CPP_CHECKLIST); the rest are supporting documents; "partSummary"
+ * is the summary sheet (part info) uploaded from the Purchasing details tab.
+ */
 export const CPP_ATTACHMENTS = [
+	{ key: "annualisedImpact", label: "Annualized impact calculation" },
 	{ key: "modelImpact", label: "Model wise impact calculation" },
 	{ key: "zbc", label: "ZBC calculation" },
 	{ key: "commodityTrend", label: "Commodity price trend" },
@@ -106,7 +113,32 @@ export const CPP_ATTACHMENTS = [
 	{ key: "oldCost", label: "Old cost details with workings" },
 	{ key: "clpSpares", label: "CLP for spares" },
 	{ key: "steelApproval", label: "Steel rate approvals" },
+	{ key: "partSummary", label: "Summary sheet (part info)" },
 ] as const;
+
+/**
+ * Mandatory Check List (Attachments tab). Each row has a Yes / No / NA answer
+ * and an upload button. Every row must be answered before submit.
+ */
+export const CPP_CHECKLIST = [
+	{ key: "annualisedImpact", label: "Annualized Impact Cal." },
+	{ key: "modelImpact", label: "Model wise Impact Cal." },
+	{ key: "zbc", label: "ZBC Calculation" },
+	{ key: "commodityTrend", label: "Commodity Price Trend" },
+	{ key: "ecn", label: "ECN attached" },
+	{ key: "nesting", label: "Nesting Calculation" },
+	{ key: "comparativeQuote", label: "Comparative Quote./Ana." },
+] as const;
+
+/** The checklist rows' attachment keys. */
+const CHECKLIST_KEYS: ReadonlyArray<string> = CPP_CHECKLIST.map(
+	(item) => item.key,
+);
+
+/** Supporting documents: the attachments that are not checklist rows or the summary. */
+export const CPP_SUPPORTING_DOCS = CPP_ATTACHMENTS.filter(
+	(item) => !CHECKLIST_KEYS.includes(item.key) && item.key !== "partSummary",
+);
 
 // Sample master-data lists — replace with master APIs when available.
 export const MATERIAL_GROUPS = [
@@ -119,7 +151,7 @@ export const MATERIAL_GROUPS = [
 export const MATERIAL_TYPES = ["ROH", "HALB", "ERSA"];
 export const PRICE_TYPES = ["Standard", "Moving average"];
 export const INCO_TERMS = ["EXW", "FOR", "CIF", "DAP"];
-export const TAX_CODES = ["GST 5%", "GST 12%", "GST 18%", "GST 28%"];
+export const TAX_CODES = ["BA", "BB", "VA", "N/A"];
 export const YES_NO = ["Yes", "No"];
 export const UOM_OPTIONS = ["NOS", "KG", "MTR", "SET", "LTR"];
 
@@ -130,11 +162,11 @@ export const CPP_MAX_TABLE_ROWS = 20;
 
 // Older tab list — still exported for anything that imports it.
 export const CPP_TABS: { value: CppTabKey; label: string }[] = [
+	{ value: "master", label: "Master Data" },
 	{ value: "purchasing", label: "Purchasing Details" },
 	{ value: "financial", label: "Financial Impact" },
 	{ value: "amortisation", label: "Amortisation" },
 	{ value: "tracker", label: "Material Cost Tracker" },
-	{ value: "master", label: "Master Data" },
 	{ value: "other", label: "Other Data" },
 	{ value: "workflow", label: "Workflow" },
 ];
@@ -143,10 +175,10 @@ export const CPP_TABS: { value: CppTabKey; label: string }[] = [
 
 const CPP_STEP_DEFS: { key: CppStepKey; label: string }[] = [
 	{ key: "basic", label: "Basic details" },
+	{ key: "master", label: "Master data" },
 	{ key: "purchasing", label: "Purchasing details" },
 	{ key: "amortisation", label: "Amortisation" },
 	{ key: "volumes", label: "Volumes & impact" },
-	{ key: "master", label: "Master data" },
 	{ key: "other", label: "Other data" },
 	{ key: "attachments", label: "Attachments" },
 	{ key: "workflow", label: "Review & workflow" },
@@ -282,6 +314,17 @@ export const emptyCostTracker = (): CppCostTrackerRow => ({
 	budgetedMaterialCost: "",
 	materialCostYtd: "",
 });
+export const emptyFinancialPlant = (): CppFinancialPlantRow => ({
+	actualInr: "",
+	actualPct: "",
+	annualisedInr: "",
+	annualisedPct: "",
+});
+export const emptyPlantPrice = (): CppOtherPlantPriceRow => ({
+	plant: "",
+	partNumber: "",
+	price: "",
+});
 export const emptyLocations = (): CppLocationRow[] =>
 	CPP_LOCATIONS.map((location) => ({
 		...location,
@@ -322,7 +365,11 @@ export const getDefaultValues = (): CppFormValues => ({
 	volumes: { DWD: emptyVolume(), KGP: emptyVolume(), SPARE: emptyVolume() },
 	perMachineImpact: [emptyPerMachine()],
 	costTracker: [emptyCostTracker()],
-	other: { remarks: "" },
+	other: {
+		remarks: "",
+		checklist: Object.fromEntries(CHECKLIST_KEYS.map((key) => [key, ""])),
+		plantPrices: [],
+	},
 	attachments: Object.fromEntries(CPP_ATTACHMENTS.map((a) => [a.key, null])),
 	masterData: {
 		materialGroup: "",
@@ -340,7 +387,17 @@ export const getDefaultValues = (): CppFormValues => ({
 	},
 	// No typed line items any more — the Excel carries them.
 	parts: [],
-	financial: { noChange: false, plantSplit: { DWD: "", KGP: "", SPARE: "" } },
+	financial: {
+		noChange: false,
+		plantSplit: { DWD: "", KGP: "", SPARE: "" },
+		plants: {
+			DWD: emptyFinancialPlant(),
+			KGP: emptyFinancialPlant(),
+			SPARE: emptyFinancialPlant(),
+		},
+		totalActualPct: "",
+		totalAnnualisedPct: "",
+	},
 	workflow: {
 		models: [],
 		plants: [],
