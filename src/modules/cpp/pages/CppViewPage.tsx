@@ -1,6 +1,6 @@
 // pages/CppViewPage.tsx — CPP request detail ("view") page.
-// Opens on the price approval sheet (CppPdfView), drawn from the saved request.
-// "View details" switches to the form view: left tab nav · main tab card · right Decision + Audit Trail.
+// Left tab nav · main tab card · right Decision + Audit Trail.
+// The "CPP Document" tab shows the price approval sheet (CppPdfView), drawn from the saved request.
 // The form tabs are the same components as the create wizard, rendered
 // read-only: the saved request is loaded into a form (detailToForm) and the
 // tabs run in view mode (CppReadOnlyProvider).
@@ -68,8 +68,6 @@ const LISTING_URL = "/cpp/listing";
 const EDITABLE_STATUSES = ["DRAFT", "CLARIFICATION_REQUESTED"];
 /** Subject type the workflow, audit and comment APIs know CPP requests by. */
 const CPP_SUBJECT_TYPE = "CPP_REQUEST";
-/** Every viewer opens on the sheet; "details" shows the form view. */
-type CppViewMode = "pdf" | "details";
 
 /* -------------------------------- workflow ------------------------------- */
 
@@ -115,6 +113,7 @@ type CppViewDetail = Omit<CppDetail, "initiatedBy"> & {
 /* --------------------------------- tabs ---------------------------------- */
 
 type CppViewTab =
+	| "document"
 	| "basic"
 	| "purchasing"
 	| "financial"
@@ -138,16 +137,31 @@ const CppViewPage = () => {
 
 	const approveStage = useApproveWorkflowStageMutation();
 	const clarifyStage = useClarifyWorkflowStageMutation();
-	const [activeTab, setActiveTab] = useState<CppViewTab>("basic");
+	const [activeTab, setActiveTab] = useState<CppViewTab>("document");
 	const [actionBusy, setActionBusy] = useState(false);
 	const [refreshKey, setRefreshKey] = useState(0);
-	const [viewMode, setViewMode] = useState<CppViewMode>("pdf");
 
 	/* The saved request, as the form values the wizard tabs read. */
 	const formValues = useMemo(
 		() => (cpp ? detailToForm(cpp as unknown as CppDetail) : undefined),
 		[cpp],
 	);
+
+	// TEMP DEBUG — remove after checking
+	console.log(
+		"[CPP debug]",
+		JSON.stringify(
+			{
+				rawBasicData: cpp?.sections?.find((s) => s.key === "basic")?.data,
+				initiationDate: formValues?.initiationDate,
+				suppliers: formValues?.suppliers,
+				approvalValues: formValues?.approvalValues,
+			},
+			null,
+			2,
+		),
+	);
+
 	const viewForm = useForm<CppFormValues>({
 		defaultValues: getDefaultValues(),
 		values: formValues,
@@ -165,6 +179,12 @@ const CppViewPage = () => {
 	const workflowParts = useMemo(
 		() => splitStages(workflowData.stages as ApprovalStageLike[]),
 		[workflowData.stages],
+	);
+	/* Every stage, with the "WF1 · " / "WF2 · " tag removed, for the sheet's approver blocks. */
+	const pdfStages = useMemo(
+		() =>
+			workflowParts.flatMap(([, stages]) => stages) as unknown as CppPdfStage[],
+		[workflowParts],
 	);
 
 	const creator = cpp?.initiatedBy?.id
@@ -191,6 +211,7 @@ const CppViewPage = () => {
 
 	const tabs = useMemo(() => {
 		const list: { value: CppViewTab; label: string }[] = [
+			{ value: "document", label: "CPP Document" },
 			{ value: "basic", label: "Basic Details" },
 			{ value: "purchasing", label: "Purchasing Details" },
 			{ value: "financial", label: "Financial Impact" },
@@ -235,9 +256,9 @@ const CppViewPage = () => {
 		},
 		{
 			id: "export-changeinfo",
-			label: exportBusy === "text" ? "Exporting…" : "ZCHANGEINFO",
+			label: exportBusy === "changeinfo" ? "Exporting…" : "ZCHANGEINFO",
 			Icon: FileCode,
-			onClick: () => void exportAs("text"),
+			onClick: () => void exportAs("changeinfo"),
 			disabled: exportBusy !== null,
 		},
 	];
@@ -290,7 +311,7 @@ const CppViewPage = () => {
 				ariaLabel: "CPP request location",
 				breadcrumbs: [
 					{ label: "Home Screen", href: "/" },
-					{ label: "Contract Price Procurement", href: LISTING_URL },
+					{ label: "Contract & Price Panel Committe", href: LISTING_URL },
 					{ label: cpp?.referenceNumber ?? "CPP Request" },
 				],
 				separator: "›",
@@ -377,6 +398,18 @@ const CppViewPage = () => {
 
 	const renderTab = (): ReactNode => {
 		switch (currentTab) {
+			case "document":
+				return formValues ? (
+					<CppPdfView
+						values={formValues}
+						referenceNumber={cpp.referenceNumber}
+						stages={pdfStages}
+						initiatedBy={
+							cpp.initiatedBy?.name ?? cpp.initiatedBy?.email ?? null
+						}
+					/>
+				) : null;
+
 			case "basic":
 				return <BasicDetailsTab />;
 
@@ -445,36 +478,15 @@ const CppViewPage = () => {
 	/* -------------------------------- render ------------------------------ */
 
 	const isSubmitted = cpp.status !== "DRAFT";
-	const showSideColumn = isSubmitted;
+	// const showSideColumn = isSubmitted;
 
-	const toggleBar = (
-		<div className="mb-3 flex justify-end">
-			<Button
-				type="button"
-				text={viewMode === "pdf" ? "View details" : "Back to sheet"}
-				size="sm"
-				appearance="standard"
-				variant="outline"
-				onClick={() => setViewMode(viewMode === "pdf" ? "details" : "pdf")}
-			/>
-		</div>
-	);
-
-	const sheet = formValues ? (
-		<CppPdfView
-			values={formValues}
-			referenceNumber={cpp.referenceNumber}
-			stages={workflowData.stages as unknown as CppPdfStage[]}
-			initiatedBy={cpp.initiatedBy?.name ?? cpp.initiatedBy?.email ?? null}
-		/>
-	) : null;
+	const isDocumentTab = currentTab === "document";
+	const showSideColumn = isSubmitted && !isDocumentTab;
 
 	return (
 		<PageSectionLayout>
 			{header}
-			{toggleBar}
-			{viewMode === "pdf" ? sheet : null}
-			<div className="cpp-view" hidden={viewMode === "pdf"}>
+			<div className="cpp-view">
 				{/* ── Body: left tab nav · tab card (main) · decision + audit (right) ── */}
 				<div
 					className={["cpp-view-body", showSideColumn && "has-side-panels"]
@@ -520,16 +532,19 @@ const CppViewPage = () => {
 									<span className="cpp-view-awaiting">
 										Awaiting your approval
 									</span>
-									<ApprovalActionsBar
-										variant="approver"
-										layout="card"
-										showBack={false}
-										canApprove={workflowData.canActNow}
-										canClarify={workflowData.canActNow}
-										onApprove={(reason) => runStageAction("approve", reason)}
-										onClarify={(reason) => runStageAction("clarify", reason)}
-										loading={actionBusy}
-									/>
+									{/* // In the main column, above the tab card: */}
+									{isDocumentTab && showDecisionCard ? (
+										<ApprovalActionsBar
+											variant="approver"
+											layout="card"
+											showBack={false}
+											canApprove={workflowData.canActNow}
+											canClarify={workflowData.canActNow}
+											onApprove={(reason) => runStageAction("approve", reason)}
+											onClarify={(reason) => runStageAction("clarify", reason)}
+											loading={actionBusy}
+										/>
+									) : null}
 								</>
 							) : null}
 

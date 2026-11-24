@@ -11,6 +11,10 @@
 //              saves (PUT /cpp/:id), then calls POST /cpp/:id/resubmit (the server
 //              picks the band again from the edited data and restarts the workflow).
 //
+// Who may open this page: only the proposer, and only for a draft or a request
+// sent back for clarification (utils/cpp.permissions.ts). Anyone else is sent to
+// the view page.
+//
 // Steps are dynamic: the Amortisation step is only there when the pricing
 // condition is PB50 (getCppSteps). The pricing condition is picked in step 1,
 // so the steps after it never change under the user's feet.
@@ -42,13 +46,15 @@ import type {
 	CppStepKey,
 } from "../types/cpp.types";
 import { cppKeys, useCppDetail, useCppMutations } from "./useCppMutations";
-import { CPP_STATUS } from "../utils/cpp.constants";
+import {
+	useCppPermissions,
+	type CppPermissionRecord,
+} from "./useCppPermissions";
 import { cppSchema } from "../utils/cpp.schema";
+import { CPP_CLARIFICATION_STATUS } from "../helpers/cpp.permissions";
 import { getCppSteps, getDefaultValues } from "../utils/cpp.utils";
 
 export const CPP_LISTING_PATH = "/cpp/listing";
-
-const CLARIFICATION_STATUS = "CLARIFICATION_REQUESTED";
 
 type ResubmitResponse = {
 	success: boolean;
@@ -214,31 +220,34 @@ export const useCppRequestForm = () => {
 
 	/* ---- editing an existing request: load once, then the form owns the data ---- */
 	const detailQuery = useCppDetail(routeId ?? "");
+	const permissions = useCppPermissions(
+		detailQuery.data as unknown as CppPermissionRecord | undefined,
+	);
 	useEffect(() => {
 		const detail = detailQuery.data;
 		if (!routeId || !detail || loadedIdRef.current === detail.id) return;
+		// The proposer check needs the signed-in user, so wait for it.
+		if (!user?.id) return;
 
-		// Only drafts and clarification requests are editable, and only by the
-		// proposer (same rule as the approval flow in the other modules).
-		const status = String(detail.status);
-		const detailRecord = detail as unknown as {
-			initiatedById?: string;
-			initiatedBy?: { id?: string } | null;
-		};
-		const ownerId = detailRecord.initiatedById ?? detailRecord.initiatedBy?.id;
-		const isClarification = status === CLARIFICATION_STATUS;
-		const isDraft = status === CPP_STATUS.DRAFT;
-		const notOwner = Boolean(ownerId && user?.id && ownerId !== user.id);
-
-		if ((!isDraft && !isClarification) || (isClarification && notOwner)) {
+		// Only the proposer edits, and only a draft or a request sent back for
+		// clarification. Everyone else is sent to the view page.
+		if (!permissions.canEdit) {
 			navigate(`/cpp/${detail.id}/view`, { replace: true });
 			return;
 		}
+
 		loadedIdRef.current = detail.id;
 		serverRef.current = detail;
-		setIsResubmit(isClarification);
+		setIsResubmit(String(detail.status) === CPP_CLARIFICATION_STATUS);
 		form.reset(detailToForm(detail));
-	}, [detailQuery.data, form, navigate, routeId, user?.id]);
+	}, [
+		detailQuery.data,
+		form,
+		navigate,
+		permissions.canEdit,
+		routeId,
+		user?.id,
+	]);
 
 	const step = steps[safeIndex];
 	const isFirst = safeIndex === 0;

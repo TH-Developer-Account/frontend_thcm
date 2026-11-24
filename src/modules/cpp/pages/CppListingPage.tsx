@@ -71,13 +71,13 @@ const CppListingPage = () => {
 	return (
 		<PageSectionLayout>
 			<PageHeader
-				headerText="Contract Price Procurement"
+				headerText="Contract & Price Panel Committe"
 				navigation={{
 					variant: "breadcrumbs",
 					ariaLabel: "CPP listing location",
 					breadcrumbs: [
 						{ label: "Home Screen", href: "/" },
-						{ label: "Contract Price Procurement" },
+						{ label: "Contract & Price Panel Committe" },
 					],
 					separator: "›",
 				}}

@@ -566,10 +566,9 @@
 }
 
 .cpp-pdf-row-mid {
-	grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) minmax(
-			0,
-			1.05fr
-		) minmax(0, 0.8fr);
+	grid-template-columns:
+		minmax(0, 1fr) minmax(0, 1.05fr) minmax(0, 1.05fr)
+		minmax(0, 0.8fr);
 }
 
 .cpp-pdf-row-body {
@@ -713,5 +712,20 @@
 		min-width: 0;
 		border: 0;
 		padding: 0;
+	}
+}
+/* =========================================================
+   CPP NON-EDITABLE FIELDS (utils/cpp.locked.css)
+   Fields a viewer cannot change keep their text bright and bold.
+   They are not greyed out the way disabled inputs are.
+   Scoped to the view page body, so the create / edit wizard is unchanged.
+   Imported by pages/CppViewPage.tsx.
+========================================================= */
+
+@layer components {
+	.cpp-view-main .form-readonly-value {
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-primary);
+		font-weight: var(--font-weight-medium);
 	}
 }

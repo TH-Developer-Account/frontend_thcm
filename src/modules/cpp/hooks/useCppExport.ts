@@ -1,7 +1,8 @@
-// hooks/useCppExport.ts — Export PDF / Excel / Text file for one CPP request.
-//   PDF   -> GET /pdf/CPP_REQUEST/:id/url   (presigned link, fetched as a blob)
-//   Excel -> GET /cpp/:id/export/excel
-//   Text  -> GET /cpp/:id/export/text
+// hooks/useCppExport.ts — Export PDF / Excel / Text files for one CPP request.
+//   PDF           -> GET /pdf/CPP_REQUEST/:id/url        (presigned link, fetched as a blob)
+//   Excel         -> GET /cpp/:id/export/excel
+//   Text          -> GET /cpp/:id/export/text            (ZINFOUPDATE_ME11)
+//   ZCHANGEINFO   -> GET /cpp/:id/export/text?file=changeinfo
 // All logic lives here; the page only renders the menu.
 import { useCallback, useState } from "react";
 
@@ -10,7 +11,7 @@ import { useToast } from "../../../context/Auth/AuthContext";
 import { ServerAxios } from "../../../services/ServerAxios";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 
-export type CppExportKind = "pdf" | "excel" | "text";
+export type CppExportKind = "pdf" | "excel" | "text" | "changeinfo";
 
 const pdfApi = createPdfApi<"CPP_REQUEST">();
 
@@ -18,11 +19,24 @@ const LABELS: Record<CppExportKind, string> = {
 	pdf: "PDF",
 	excel: "Excel",
 	text: "text file",
+	changeinfo: "ZCHANGEINFO text file",
 };
 const EXTENSIONS: Record<CppExportKind, string> = {
 	pdf: "pdf",
 	excel: "xlsx",
 	text: "txt",
+	changeinfo: "txt",
+};
+/** File name prefix for the text downloads, matching the server's SAP file names. */
+const FILE_PREFIX: Partial<Record<CppExportKind, string>> = {
+	text: "ZINFOUPDATE_ME11",
+	changeinfo: "ZCHANGEINFO",
+};
+/** Server route for each non-PDF export. */
+const ENDPOINTS: Record<Exclude<CppExportKind, "pdf">, string> = {
+	excel: "export/excel",
+	text: "export/text",
+	changeinfo: "export/text?file=changeinfo",
 };
 
 const triggerDownload = (href: string, fileName: string, newTab = false) => {
@@ -69,7 +83,11 @@ export const useCppExport = (cppId: string, referenceNumber?: string) => {
 		async (kind: CppExportKind) => {
 			if (!cppId || busy) return;
 			setBusy(kind);
-			const fileName = `${referenceNumber ?? cppId}.${EXTENSIONS[kind]}`;
+			const ref = referenceNumber ?? cppId;
+			const prefix = FILE_PREFIX[kind];
+			const fileName = prefix
+				? `${prefix}-${ref}.${EXTENSIONS[kind]}`
+				: `${ref}.${EXTENSIONS[kind]}`;
 			try {
 				if (kind === "pdf") {
 					const url = await pdfApi.getPdfUrl("CPP_REQUEST", cppId);
@@ -84,7 +102,7 @@ export const useCppExport = (cppId: string, referenceNumber?: string) => {
 					}
 				} else {
 					const { data } = await ServerAxios.get<Blob>(
-						`/cpp/${encodeURIComponent(cppId)}/export/${kind}`,
+						`/cpp/${encodeURIComponent(cppId)}/${ENDPOINTS[kind]}`,
 						{ responseType: "blob" },
 					);
 					saveBlob(data, fileName);

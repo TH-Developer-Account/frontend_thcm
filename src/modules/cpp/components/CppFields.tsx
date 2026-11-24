@@ -4,12 +4,16 @@
 // View mode: tab content rendered inside <CppReadOnlyProvider value> shows every
 // field read-only. The wrappers switch the shared components into their own
 // view mode (ReadOnlyField), so tabs never need a second, view-only layout.
+// Every control in a CPP tab must go through these wrappers (or honour
+// useCppReadOnly), so a raw input never stays editable for a viewer.
 import { createContext, useContext, type ComponentProps } from "react";
 import { Controller, get, useFormContext, useWatch } from "react-hook-form";
 
 import Button from "../../../components/common/Button";
+import Checkbox from "../../../components/forms/Checkbox";
 import FormInput from "../../../components/forms/FormInput";
 import MultiSelectInput from "../../../components/forms/MultiSelectInput";
+import Radio from "../../../components/forms/Radio";
 import ReadOnlyField from "../../../components/forms/ReadOnlyField";
 import SelectInput from "../../../components/forms/SelectInput";
 
@@ -38,37 +42,27 @@ type RhfInputProps = Omit<
 	cell?: boolean;
 };
 
-/** "2026-11-20" -> "20 Nov 2026" for view mode. Anything else returns undefined. */
-const formatViewDate = (value: unknown): string | undefined => {
-	if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value))
-		return undefined;
-	return new Date(`${value}T00:00:00`).toLocaleDateString("en-IN", {
-		day: "2-digit",
-		month: "short",
-		year: "numeric",
-	});
-};
-
 export const RhfInput = ({ name, cell, ...props }: RhfInputProps) => {
 	const { register, control } = useFormContext();
 	const message = useFieldError(name);
 	const readOnly = useCppReadOnly();
-	// View mode has no registered DOM input to read from, so watch the saved value.
+	// View mode renders no real <input>, so register()'s ref never receives the
+	// value. Read it here and pass it explicitly (same pattern as the vendor
+	// onboarding form). Edit mode keeps register() so typing stays uncontrolled.
 	const current = useWatch({ control, name });
 
 	return (
 		<FormInput
 			{...props}
 			mode={readOnly ? "view" : props.mode}
-			value={readOnly ? current : undefined}
-			readOnlyValue={
-				readOnly && props.type === "date"
-					? formatViewDate(current)
-					: props.readOnlyValue
-			}
 			// type="date" defaults min to today in FormInput; CPP needs past dates too.
 			{...(props.type === "date" ? { min: props.min ?? "" } : {})}
-			{...register(name)}
+			{...(readOnly
+				? {
+						value:
+							current === null || current === undefined ? "" : String(current),
+					}
+				: register(name))}
 			error={readOnly || cell ? undefined : message}
 			className={[
 				props.className,
@@ -92,48 +86,32 @@ type RhfSelectProps = {
 	required?: boolean;
 	placeholder?: string;
 	isDisabled?: boolean;
-	/** Applied to the wrapper, so the field can span grid columns. */
 	className?: string;
-	/** Small text under the field: what the choice affects. Hidden in view mode and while an error shows. */
-	helperText?: string;
 };
 
-export const RhfSelect = ({
-	name,
-	options,
-	helperText,
-	className,
-	...props
-}: RhfSelectProps) => {
+export const RhfSelect = ({ name, options, ...props }: RhfSelectProps) => {
 	const { control } = useFormContext();
 	const message = useFieldError(name);
 	const readOnly = useCppReadOnly();
 
 	return (
-		<div className={className}>
-			<Controller
-				name={name}
-				control={control}
-				render={({ field }) => (
-					<SelectInput
-						{...props}
-						name={name}
-						mode={readOnly ? "view" : "edit"}
-						options={options}
-						value={
-							options.find((option) => option.value === field.value) ?? null
-						}
-						onChange={(option: Option | null) =>
-							field.onChange(option?.value ?? "")
-						}
-						error={readOnly ? undefined : message}
-					/>
-				)}
-			/>
-			{helperText && !readOnly && !message ? (
-				<p className="form-helper-text">{helperText}</p>
-			) : null}
-		</div>
+		<Controller
+			name={name}
+			control={control}
+			render={({ field }) => (
+				<SelectInput
+					{...props}
+					name={name}
+					mode={readOnly ? "view" : "edit"}
+					options={options}
+					value={options.find((option) => option.value === field.value) ?? null}
+					onChange={(option: Option | null) =>
+						field.onChange(option?.value ?? "")
+					}
+					error={readOnly ? undefined : message}
+				/>
+			)}
+		/>
 	);
 };
 
@@ -144,18 +122,13 @@ type RhfMultiSelectProps = {
 	required?: boolean;
 	placeholder?: string;
 	isDisabled?: boolean;
-	/** Applied to the wrapper, so the field can span grid columns. */
 	className?: string;
-	/** Small text under the field. Hidden in view mode and while an error shows. */
-	helperText?: string;
 };
 
 /** Multi-select dropdown. Form value is string[] (the option values). */
 export const RhfMultiSelect = ({
 	name,
 	options,
-	helperText,
-	className,
 	...props
 }: RhfMultiSelectProps) => {
 	const { control } = useFormContext();
@@ -163,46 +136,40 @@ export const RhfMultiSelect = ({
 	const readOnly = useCppReadOnly();
 
 	return (
-		<div className={className}>
-			<Controller
-				name={name}
-				control={control}
-				render={({ field }) => {
-					const selected: string[] = field.value ?? [];
+		<Controller
+			name={name}
+			control={control}
+			render={({ field }) => {
+				const selected: string[] = field.value ?? [];
 
-					if (readOnly) {
-						return (
-							<ReadOnlyField
-								label={props.label}
-								required={props.required}
-								value={options
-									.filter((option) => selected.includes(option.value))
-									.map((option) => option.label)
-									.join(", ")}
-							/>
-						);
-					}
-
+				if (readOnly) {
 					return (
-						<MultiSelectInput
-							{...props}
-							name={name}
-							options={options}
-							value={options.filter((option) =>
-								selected.includes(option.value),
-							)}
-							onValueChange={({ value }) =>
-								field.onChange(value.map((option) => String(option.value)))
-							}
-							error={message}
+						<ReadOnlyField
+							label={props.label}
+							required={props.required}
+							className={props.className}
+							value={options
+								.filter((option) => selected.includes(option.value))
+								.map((option) => option.label)
+								.join(", ")}
 						/>
 					);
-				}}
-			/>
-			{helperText && !readOnly && !message ? (
-				<p className="form-helper-text">{helperText}</p>
-			) : null}
-		</div>
+				}
+
+				return (
+					<MultiSelectInput
+						{...props}
+						name={name}
+						options={options}
+						value={options.filter((option) => selected.includes(option.value))}
+						onValueChange={({ value }) =>
+							field.onChange(value.map((option) => String(option.value)))
+						}
+						error={message}
+					/>
+				);
+			}}
+		/>
 	);
 };
 
@@ -281,6 +248,109 @@ export const RhfChips = ({
 								{message}
 							</p>
 						) : null}
+					</div>
+				);
+			}}
+		/>
+	);
+};
+
+type RhfRadioProps = {
+	name: string;
+	groupLabel?: string;
+	options: Option[];
+	required?: boolean;
+};
+
+/** Single-pick radio group. Shows the chosen label only in view mode. */
+export const RhfRadio = ({
+	name,
+	groupLabel,
+	options,
+	required,
+}: RhfRadioProps) => {
+	const { control } = useFormContext();
+	const message = useFieldError(name);
+	const readOnly = useCppReadOnly();
+
+	return (
+		<Controller
+			name={name}
+			control={control}
+			render={({ field }) =>
+				readOnly ? (
+					<ReadOnlyField
+						label={groupLabel}
+						required={required}
+						value={
+							options.find((option) => option.value === field.value)?.label
+						}
+					/>
+				) : (
+					<Radio
+						name={name}
+						groupLabel={groupLabel}
+						required={required}
+						options={options}
+						selectedValue={field.value}
+						onChange={field.onChange}
+						error={message}
+					/>
+				)
+			}
+		/>
+	);
+};
+
+type RhfCheckGroupProps = {
+	name: string;
+	label?: string;
+	options: readonly string[];
+	disabled?: boolean;
+};
+
+/** Multi-pick checkboxes. Shows the picked values only in view mode. */
+export const RhfCheckGroup = ({
+	name,
+	label,
+	options,
+	disabled,
+}: RhfCheckGroupProps) => {
+	const { control } = useFormContext();
+	const readOnly = useCppReadOnly();
+
+	return (
+		<Controller
+			name={name}
+			control={control}
+			render={({ field }) => {
+				const selected: string[] = field.value ?? [];
+
+				if (readOnly) {
+					return <ReadOnlyField label={label} value={selected.join(", ")} />;
+				}
+
+				return (
+					<div className="flex flex-col gap-2">
+						{label ? <span className="form-label">{label}</span> : null}
+						<div className="flex flex-row flex-wrap items-center gap-x-8 gap-y-2">
+							{options.map((option) => (
+								<div key={option} className="w-auto shrink-0">
+									<Checkbox
+										label={option}
+										disabled={disabled}
+										checked={selected.includes(option)}
+										onChange={(checked) =>
+											field.onChange(
+												checked
+													? [...selected, option]
+													: selected.filter((item) => item !== option),
+											)
+										}
+									/>
+								</div>
+							))}
+						</div>
 					</div>
 				);
 			}}

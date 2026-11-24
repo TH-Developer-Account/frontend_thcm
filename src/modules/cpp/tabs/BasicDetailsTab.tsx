@@ -1,21 +1,23 @@
 // tabs/BasicDetailsTab.tsx — wizard step 1.
 // category · plant · conditions · commodity · reason · material type ·
-// models · price type · pricing condition · justification.
+// models · applicable plants · price type · pricing condition · justification.
 // These decide which approval workflow runs, so they come first.
-// Applicable plants are picked in Master data only; the workflow plants are
-// derived from those rows when the request is saved (see cpp.mapper.ts).
 // Plain content: the parent card in CppRequestCreatePage provides the surface.
+// Every control goes through the read-only-aware wrappers in CppFields, so on
+// the view page (CppReadOnlyProvider) nothing here stays editable.
 import { useEffect, useMemo } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 
-import Checkbox from "../../../components/forms/Checkbox";
-import Radio from "../../../components/forms/Radio";
 import TextareaInput from "../../../components/forms/TextareaInput";
 import {
+	RhfChips,
+	RhfCheckGroup,
 	RhfInput,
 	RhfMultiSelect,
+	RhfRadio,
 	RhfSelect,
 	toOptions,
+	useCppReadOnly,
 	useFieldError,
 } from "../components/CppFields";
 import type { CppFormValues } from "../types/cpp.types";
@@ -27,6 +29,7 @@ import {
 import {
 	CPP_EFFECTS,
 	CPP_MODELS,
+	CPP_PLANTS,
 	CPP_PRICING_CONDITIONS,
 	CPP_REASONS,
 	MIN_JUSTIFICATION,
@@ -95,8 +98,6 @@ const RoutingFields = () => {
 const RequestDetailsFields = () => {
 	const { control, setValue } = useFormContext<CppFormValues>();
 	const reason = useWatch({ control, name: "reason" });
-	const typeError = useFieldError("materialType");
-	const pricingError = useFieldError("workflow.pricingCondition");
 	const isNewPart = reason === NEW_PART_REASON;
 
 	// Effect (Q/C/D) applies to existing materials only.
@@ -107,52 +108,22 @@ const RequestDetailsFields = () => {
 	return (
 		<>
 			<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-				<Controller
+				<RhfRadio
 					name="materialType"
-					control={control}
-					render={({ field }) => (
-						<Radio
-							name="materialType"
-							groupLabel="Material type"
-							required
-							options={[
-								{ label: "Direct", value: "Direct" },
-								{ label: "Indirect", value: "Indirect" },
-							]}
-							selectedValue={field.value}
-							onChange={field.onChange}
-							error={typeError}
-						/>
-					)}
+					groupLabel="Material type"
+					required
+					options={[
+						{ label: "Direct", value: "Direct" },
+						{ label: "Indirect", value: "Indirect" },
+					]}
 				/>
 
 				<div className="lg:col-span-2">
-					<span className="form-label">
-						Commodity price adjustment – effect on
-					</span>
-					<Controller
+					<RhfCheckGroup
 						name="effects"
-						control={control}
-						render={({ field }) => (
-							<div className="mt-2 flex flex-row flex-wrap items-center gap-x-8 gap-y-2">
-								{CPP_EFFECTS.map((effect) => (
-									<div key={effect} className="w-auto shrink-0">
-										<Checkbox
-											label={effect}
-											disabled={isNewPart}
-											checked={field.value.includes(effect)}
-											onChange={(checked) =>
-												field.onChange(
-													checked
-														? [...field.value, effect]
-														: field.value.filter((item) => item !== effect),
-												)
-											}
-										/>
-									</div>
-								))}
-							</div>
-						)}
+						label="Commodity price adjustment – effect on"
+						options={CPP_EFFECTS}
+						disabled={isNewPart}
 					/>
 					{isNewPart ? (
 						<p className="form-helper-text">
@@ -185,6 +156,11 @@ const RequestDetailsFields = () => {
 					className="lg:col-span-2"
 				/>
 
+				<RhfChips
+					name="workflow.plants"
+					label="Applicable plants"
+					options={CPP_PLANTS}
+				/>
 				<RhfSelect
 					name="priceType"
 					label="Price type"
@@ -194,20 +170,11 @@ const RequestDetailsFields = () => {
 				/>
 
 				<div className="sm:col-span-2 lg:col-span-4">
-					<Controller
+					<RhfRadio
 						name="workflow.pricingCondition"
-						control={control}
-						render={({ field }) => (
-							<Radio
-								name="workflow.pricingCondition"
-								groupLabel="Pricing condition"
-								required
-								options={CPP_PRICING_CONDITIONS}
-								selectedValue={field.value}
-								onChange={field.onChange}
-								error={pricingError}
-							/>
-						)}
+						groupLabel="Pricing condition"
+						required
+						options={CPP_PRICING_CONDITIONS}
 					/>
 				</div>
 			</div>
@@ -217,6 +184,7 @@ const RequestDetailsFields = () => {
 
 const JustificationField = () => {
 	const { control } = useFormContext<CppFormValues>();
+	const readOnly = useCppReadOnly();
 
 	return (
 		<>
@@ -226,12 +194,13 @@ const JustificationField = () => {
 				render={({ field, fieldState }) => (
 					<TextareaInput
 						{...field}
+						{...(readOnly ? { mode: "view" as const } : {})}
 						label="Justification for this price change"
 						required
 						rows={5}
 						maxLength={2000}
 						placeholder={`Explain the reason, negotiation outcome and why the recommended supplier was chosen (min. ${MIN_JUSTIFICATION} characters)`}
-						error={fieldState.error?.message}
+						error={readOnly ? undefined : fieldState.error?.message}
 						helperText={`${field.value.trim().length} / ${MIN_JUSTIFICATION} min`}
 						isTooltip={false}
 					/>

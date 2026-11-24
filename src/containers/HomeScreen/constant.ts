@@ -52,7 +52,7 @@ export const actions: HomeAction[] = [
 	},
 	{
 		icon: ReceiptIndianRupee,
-		title: "Contract Price Procurement",
+		title: "Contract & Price Panel Committe",
 		description:
 			"Raise and track contract price approvals (CPP) with suppliers.",
 		// No listing page yet — points at the create page until it exists.

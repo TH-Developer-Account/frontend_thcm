@@ -944,7 +944,7 @@ const CppApprovalMatrixPage = () => {
 					ariaLabel: "CPP approval matrix location",
 					breadcrumbs: [
 						{ label: "Home Screen", href: "/" },
-						{ label: "Contract Price Procurement", href: "/cpp/listing" },
+						{ label: "Contract & Price Panel Committe", href: "/cpp/listing" },
 						{ label: "Approval matrix" },
 					],
 					separator: "›",
