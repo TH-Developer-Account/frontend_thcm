@@ -493,7 +493,12 @@ const CppViewPage = () => {
 						.filter(Boolean)
 						.join(" ")}
 				>
-					<nav className="cpp-view-nav" aria-label="CPP request sections">
+					<Card
+						as="nav"
+						aria-label="CPP request sections"
+						title="Request Details"
+						padding="compact"
+					>
 						<ul className="cpp-view-nav-list">
 							{tabs.map((tab) => {
 								const active = tab.value === currentTab;
@@ -511,7 +516,7 @@ const CppViewPage = () => {
 								);
 							})}
 						</ul>
-					</nav>
+					</Card>
 
 					<div className="cpp-view-main min-w-0">
 						<Card padding="default">
