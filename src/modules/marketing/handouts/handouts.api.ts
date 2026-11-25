@@ -155,16 +155,22 @@ export function useHandoutQuery(id: string | undefined) {
 }
 
 /**
- * The two fixed roles, for the New Handout review step's Approval Workflow
- * display. A long staleTime is deliberate: unlike a live approval queue,
- * who the configured approver/delivery person is essentially never changes
- * mid-session, so there's no reason to refetch it on every render.
+ * The two fixed roles, for an Approval Workflow display. A long staleTime
+ * is deliberate: unlike a live approval queue, who the configured
+ * approver/delivery person is essentially never changes mid-session, so
+ * there's no reason to refetch it on every render.
+ *
+ * `enabled` defaults to true (callers that always need it, such as
+ * HandoutDetailPage, need not pass anything). NewHandoutPage passes
+ * `step === STEP.REVIEW` so the wizard doesn't fetch this before the
+ * person has actually reached the step that shows it.
  */
-export function useHandoutApprovalWorkflowQuery() {
+export function useHandoutApprovalWorkflowQuery(enabled = true) {
   return useQuery({
     queryKey: handoutKeys.approvalWorkflow(),
     queryFn: () => handoutApi.getApprovalWorkflow(),
     staleTime: 5 * 60 * 1000,
+    enabled,
   });
 }
 

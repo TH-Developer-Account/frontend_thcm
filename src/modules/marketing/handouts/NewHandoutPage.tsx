@@ -122,9 +122,14 @@ function NewHandoutPageBody({
   const { values, errors, setField, setAddressField, itemErrors } = form;
 
   // The real approver / delivery person for the review step's Approval
-  // Workflow table — fetched once up front rather than only when the
-  // wizard reaches step 3, so it's already in cache by the time it does.
-  const approvalWorkflowQuery = useHandoutApprovalWorkflowQuery();
+  // Workflow table. Gated on the Review step itself — most of a wizard
+  // session never gets there (someone fills in Details or Items and
+  // abandons), so there's no reason to fetch it any earlier. Once
+  // fetched it's cached, so stepping back and forward to Review again
+  // doesn't refetch.
+  const approvalWorkflowQuery = useHandoutApprovalWorkflowQuery(
+    step === STEP.REVIEW,
+  );
   const approvalRows = mapHandoutApprovalWorkflowToRows(
     approvalWorkflowQuery.data,
   );
