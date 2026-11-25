@@ -29,7 +29,8 @@ const Checkbox: React.FC<CheckboxProps> = ({
 	disabled = false,
 	required = false,
 	size = 18,
-	color = "#f35a00",
+	// Theme-aware default. Callers may still pass any CSS colour (hex, rgb, var()).
+	color = "var(--color-brand)",
 	className = "",
 	style = {},
 	error,
@@ -65,10 +66,14 @@ const Checkbox: React.FC<CheckboxProps> = ({
 		: checked
 			? color
 			: indeterminate
-				? `${color}22`
+				? `color-mix(in srgb, ${color} 13%, transparent)`
 				: undefined;
 
-	const iconColor = hasError ? "var(--color-error)" : checked ? "#fff" : color;
+	const iconColor = hasError
+		? "var(--color-error)"
+		: checked
+			? "var(--color-brand-foreground)"
+			: color;
 
 	return (
 		<div
@@ -118,9 +123,11 @@ const Checkbox: React.FC<CheckboxProps> = ({
 							borderRadius: 4,
 							borderColor,
 							backgroundColor,
-							boxShadow:
+							// Glow via a CSS variable, not inline box-shadow: an inline
+							// box-shadow overrode the keyboard focus ring.
+							["--checkbox-glow" as string]:
 								checked && !hasError && !disabled
-									? `0 1px 6px ${color}44`
+									? `0 1px 6px color-mix(in srgb, ${color} 27%, transparent)`
 									: "none",
 						}}
 					>

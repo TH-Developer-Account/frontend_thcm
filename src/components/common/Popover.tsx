@@ -13,7 +13,14 @@ import {
 	FloatingPortal,
 	type Placement,
 } from "@floating-ui/react";
-import { type ReactNode, useState } from "react";
+import {
+	cloneElement,
+	isValidElement,
+	type ReactElement,
+	type ReactNode,
+	type Ref,
+	useState,
+} from "react";
 
 interface PopoverProps {
 	trigger: ReactNode;
@@ -70,17 +77,36 @@ export default function Popover({
 		role,
 	]);
 
+	// A native <button>/<a> trigger gets the ARIA state and ref itself.
+	// Anything else is wrapped in a focusable role="button": the old plain
+	// <div> carried aria-expanded (invalid on a div) and could not be
+	// reached or opened from the keyboard.
+	const nativeTrigger =
+		isValidElement(trigger) &&
+		(trigger.type === "button" || trigger.type === "a")
+			? (trigger as ReactElement<Record<string, unknown> & { ref?: Ref<Element> }>)
+			: null;
+
 	return (
 		<>
-			<div
-				ref={refs.setReference}
-				className={["popover-trigger", triggerClassName]
-					.filter(Boolean)
-					.join(" ")}
-				{...getReferenceProps()}
-			>
-				{trigger}
-			</div>
+			{nativeTrigger ? (
+				cloneElement(nativeTrigger, {
+					ref: refs.setReference,
+					...getReferenceProps(nativeTrigger.props),
+				})
+			) : (
+				<div
+					ref={refs.setReference}
+					role="button"
+					tabIndex={0}
+					className={["popover-trigger", triggerClassName]
+						.filter(Boolean)
+						.join(" ")}
+					{...getReferenceProps()}
+				>
+					{trigger}
+				</div>
+			)}
 
 			{open && (
 				<FloatingPortal>

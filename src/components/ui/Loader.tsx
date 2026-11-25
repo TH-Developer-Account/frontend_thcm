@@ -5,7 +5,7 @@ const Loader = () => {
 				{/* Loader */}
 				<div className="flex flex-col items-center gap-3">
 					{/* Spinner */}
-					<div className="w-8 h-8 border-2 border-orange-300 border-t-orange-600 rounded-full animate-spin"></div>
+					<div className="w-8 h-8 border-2 border-accent-300 border-t-accent-600 rounded-full animate-spin"></div>
 				</div>
 			</div>
 		</div>

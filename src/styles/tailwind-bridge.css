@@ -40,6 +40,32 @@
 	--color-accent-subtle: var(--color-brand-subtle);
 	--color-accent-text: var(--color-text-brand);
 	--color-on-accent: var(--color-brand-foreground);
+	/* Brand ramp (theme-aware replacement for orange-*):  bg-accent-50  border-accent-200  text-accent-700 …
+	   Use this instead of bg-orange-* / text-orange-*. text on white needs accent-700 or darker. */
+	--color-accent-50: var(--color-brand-50);
+	--color-accent-100: var(--color-brand-100);
+	--color-accent-200: var(--color-brand-200);
+	--color-accent-300: var(--color-brand-300);
+	--color-accent-400: var(--color-brand-400);
+	--color-accent-500: var(--color-brand-500);
+	--color-accent-600: var(--color-brand-600);
+	--color-accent-700: var(--color-brand-700);
+	--color-accent-800: var(--color-brand-800);
+	--color-accent-900: var(--color-brand-900);
+
+	/* Solid fills under white text (AA):  bg-accent-solid  hover:bg-accent-solid-hover  text-on-accent-solid */
+	--color-accent-solid: var(--color-brand-solid);
+	--color-accent-solid-hover: var(--color-brand-solid-hover);
+	--color-on-accent-solid: var(--color-brand-solid-foreground);
+	/* Secondary brand:  bg-accent-secondary  text-on-accent-secondary */
+	--color-accent-secondary: var(--color-brand-secondary);
+	--color-on-accent-secondary: var(--color-brand-secondary-foreground);
+
+	/* Interaction:  ring-focus  border-focus  border-line-interactive  text-fg-label  bg-surface-readonly */
+	--color-focus: var(--color-focus-ring);
+	--color-line-interactive: var(--color-border-interactive);
+	--color-fg-label: var(--color-text-label);
+	--color-surface-readonly: var(--color-bg-readonly);
 
 	/* Feedback:  text-danger  bg-danger-bg  border-danger-line  (same for positive / caution / notice) */
 	--color-positive: var(--color-success);
@@ -60,6 +86,19 @@
 	--color-caution-text: var(--color-status-pending-text);
 	--color-danger-text: var(--color-status-rejected-text);
 	--color-notice-text: var(--color-status-info-text);
+
+	/* Type scale: Tailwind text-* utilities read the design tokens, so the 194
+	   text-xs / text-sm uses in TSX get real sizes (were 8.4px / 9.8px). */
+	--text-xs: var(--font-size-2xs); /* 12px */
+	--text-sm: var(--font-size-sm); /* 14px */
+	--text-base: var(--font-size-md); /* 16px */
+	--text-lg: var(--font-size-lg); /* 18px */
+	--text-xl: var(--font-size-xl); /* 20px */
+	--text-2xl: var(--font-size-2xl); /* 22px */
+	--text-3xl: var(--font-size-3xl); /* 26px */
+	--text-4xl: var(--font-size-4xl); /* 30px */
+	--text-5xl: var(--font-size-5xl);
+	--text-6xl: var(--font-size-6xl);
 
 	/* Loading placeholders:  bg-skeleton */
 	--color-skeleton: var(--color-skeleton-base);

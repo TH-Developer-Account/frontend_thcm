@@ -10,10 +10,14 @@
 	   Full-screen visual background + centered form
 	===================================================== */
 
+	/* Batch 13: the page scrolls when the form is taller than the viewport
+	   (was a fixed 100dvh + overflow hidden, which clipped long forms such
+	   as reset password with the policy list open). */
 	.auth-layout {
-		@apply relative min-h-dvh w-full overflow-hidden;
+		@apply relative min-h-dvh w-full;
 
-		height: 100dvh;
+		overflow-x: hidden;
+		overflow-y: auto;
 		background-color: var(--color-bg-darker);
 		color: var(--color-text-primary);
 	}
@@ -23,7 +27,7 @@
 	===================================================== */
 
 	.auth-visual {
-		@apply relative block h-full min-h-dvh w-full overflow-hidden;
+		@apply relative block min-h-dvh w-full overflow-hidden;
 
 		background-color: var(--color-bg-darker);
 		color: var(--color-text-inverse);
@@ -114,8 +118,8 @@
 	===================================================== */
 
 	.auth-visual-content {
-		@apply relative flex h-full min-h-dvh w-full
-			flex-col px-5 py-6
+		@apply relative flex min-h-dvh w-full
+			flex-col gap-6 px-5 py-6
 			sm:px-8 sm:py-8
 			lg:px-10 lg:py-8
 			xl:px-14 xl:py-10;
@@ -149,13 +153,13 @@
 	   inside .auth-visual-content.
 	===================================================== */
 
+	/* In normal flow, centred by auto margins between logo and footer.
+	   It used to be absolutely centred, so a tall card overlapped the logo
+	   and footer on laptop-height screens. */
 	.auth-visual-content > .auth-card {
-		position: absolute;
+		position: relative;
 
-		top: 50%;
-		left: 50%;
-
-		transform: translate(-50%, -50%);
+		margin: auto;
 	}
 
 	/* =====================================================
@@ -173,7 +177,7 @@
 		font-size: var(--font-size-xs);
 		font-weight: var(--font-weight-regular);
 		letter-spacing: var(--tracking-eyebrow);
-		color: var(--color-orange-300);
+		color: var(--color-brand-300);
 	}
 
 	.auth-visual-title {
@@ -207,10 +211,12 @@
 
 		border-color: var(--color-border-inverse-subtle);
 
-		color: var(--color-neutral-400);
+		/* The auth visual is light in both themes (white overlay), so the
+		   footer needs a fixed dark grey. neutral-400 was nearly invisible. */
+		color: var(--color-neutral-700);
 
 		font-family: var(--font-mono);
-		font-size: var(--font-size-2xs);
+		font-size: var(--font-size-xs); /* was 2xs: unreadably small */
 		letter-spacing: var(--tracking-wide);
 	}
 
@@ -292,9 +298,9 @@
 		width: 1.25rem;
 		height: 1.25rem;
 
-		border-left: var(--border-width-default) solid var(--color-orange-200);
+		border-left: var(--border-width-default) solid var(--color-brand-200);
 
-		border-bottom: var(--border-width-default) solid var(--color-orange-200);
+		border-bottom: var(--border-width-default) solid var(--color-brand-200);
 
 		content: "";
 	}
@@ -303,7 +309,7 @@
 		@apply mt-5 text-center uppercase;
 
 		font-family: var(--font-mono);
-		font-size: var(--font-size-2xs);
+		font-size: var(--font-size-xs);
 		letter-spacing: var(--tracking-wide);
 		color: var(--color-text-muted);
 	}
@@ -354,18 +360,28 @@
 		font-size: var(--font-size-sm);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-normal);
-		color: var(--color-text-muted);
+		color: var(--color-text-secondary); /* was muted */
+	}
+
+	/* Headings that receive focus programmatically (e.g. result panels) */
+	.auth-focus-target:focus {
+		outline: none;
+	}
+
+	.auth-focus-target:focus-visible {
+		border-radius: var(--radius-xs, 2px);
+		box-shadow: var(--shadow-focus-brand);
 	}
 
 	.auth-form-icon {
 		@apply mb-4 inline-flex h-11 w-11
 			items-center justify-center border;
 
-		border-color: var(--color-orange-200);
+		border-color: var(--color-brand-200);
 		border-radius: var(--radius-sm);
 
 		background-color: var(--color-brand-subtle);
-		color: var(--color-brand);
+		color: var(--color-icon-brand);
 	}
 
 	/* =====================================================
@@ -384,7 +400,7 @@
 			transition-colors duration-200
 			focus-visible:outline-none;
 
-		color: var(--color-text-muted);
+		color: var(--color-text-secondary); /* was muted */
 	}
 
 	.auth-tab:hover {
@@ -401,6 +417,7 @@
 
 	.auth-tab-active {
 		color: var(--color-text-primary);
+		font-weight: var(--font-weight-semibold);
 	}
 
 	.auth-tab-active::after {
@@ -475,7 +492,7 @@
 
 		font-size: var(--font-size-xs);
 		line-height: var(--line-height-normal);
-		color: var(--color-text-muted);
+		color: var(--color-text-secondary);
 	}
 
 	.auth-form-error {
@@ -510,7 +527,7 @@
 	.auth-otp-description {
 		font-size: var(--font-size-sm);
 		line-height: var(--line-height-normal);
-		color: var(--color-text-muted);
+		color: var(--color-text-secondary);
 	}
 
 	.auth-otp-description strong {
@@ -534,7 +551,7 @@
 	.auth-password-rule {
 		@apply flex items-center gap-2 text-xs;
 
-		color: var(--color-text-muted);
+		color: var(--color-text-secondary);
 	}
 
 	.auth-password-rule svg {
@@ -673,8 +690,6 @@
 
 		.auth-visual-footer {
 			@apply gap-3 pt-3;
-
-			font-size: var(--font-size-2xs);
 		}
 	}
 
@@ -1346,7 +1361,7 @@
 	.app-sidebar-item:focus-visible {
 		outline: none;
 		border-color: var(--color-border-brand);
-		box-shadow: var(--shadow-focus-brand);
+		box-shadow: var(--shadow-focus-strong);
 	}
 
 	/* =====================================================
@@ -1356,8 +1371,8 @@
 	.app-sidebar-item-active {
 		border-color: var(--color-brand-soft);
 		background-color: var(--color-brand-subtle);
-		color: var(--color-brand-active);
-		font-weight: var(--font-weight-medium);
+		color: var(--color-nav-text-active);
+		font-weight: var(--font-weight-semibold);
 	}
 
 	.app-sidebar-item-active::before {
@@ -1381,11 +1396,27 @@
 	.app-sidebar-item-active:hover {
 		border-color: var(--color-brand-soft);
 		background-color: var(--color-brand-subtle);
-		color: var(--color-brand-active);
+		color: var(--color-text-brand);
 	}
 
 	.app-sidebar-item-active:hover .app-sidebar-icon {
 		color: var(--color-icon-brand);
+	}
+
+	/* Parent whose child is the current page: brand icon + semibold, so the
+	   location still shows when the group is closed or the sidebar collapsed. */
+	.app-sidebar-item.app-sidebar-item-contains-active {
+		color: var(--color-nav-text-active);
+		font-weight: var(--font-weight-semibold);
+	}
+
+	.app-sidebar-item.app-sidebar-item-contains-active .app-sidebar-icon {
+		color: var(--color-icon-brand);
+	}
+
+	.app-sidebar-collapsed .app-sidebar-item-contains-active {
+		border-color: var(--color-brand-soft);
+		background-color: var(--color-brand-subtle);
 	}
 
 	/* =====================================================
@@ -1436,7 +1467,7 @@
 		align-items: center;
 		justify-content: center;
 
-		color: var(--color-steel-blue);
+		color: var(--color-sidebar-icon);
 
 		transition: color var(--duration-fast) var(--ease-standard);
 	}
@@ -1606,7 +1637,7 @@
 	.app-sidebar-child-link:focus-visible {
 		outline: none;
 		border-color: var(--color-border-brand);
-		box-shadow: var(--shadow-focus-brand);
+		box-shadow: var(--shadow-focus-strong);
 	}
 
 	/*
@@ -1619,8 +1650,8 @@
 	.app-sidebar-child-link-active {
 		border-color: var(--color-brand-soft);
 		background-color: var(--color-brand-subtle);
-		color: var(--color-brand-active);
-		font-weight: var(--font-weight-medium);
+		color: var(--color-nav-text-active);
+		font-weight: var(--font-weight-semibold);
 	}
 
 	.app-sidebar-child-link-active::before {
@@ -1644,7 +1675,7 @@
 	.app-sidebar-child-link-active:hover {
 		border-color: var(--color-brand-soft);
 		background-color: var(--color-brand-subtle);
-		color: var(--color-brand-active);
+		color: var(--color-text-brand);
 	}
 
 	.app-sidebar-child-link-active:hover .app-sidebar-child-icon {
@@ -2718,12 +2749,67 @@
 
 		font-family: var(--font-sans);
 		font-size: var(--page-header-title-size);
-		font-weight: var(--font-weight-medium);
+		font-weight: var(--page-header-title-weight);
 		line-height: var(--page-header-title-line-height);
 		letter-spacing: var(--page-header-title-tracking);
 
 		overflow-wrap: anywhere;
 		text-wrap: balance;
+	}
+
+	.page-header-title-row {
+		display: flex;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2) var(--space-3);
+	}
+
+	.page-header-status {
+		display: inline-flex;
+		flex: 0 0 auto;
+		align-items: center;
+	}
+
+	/* Reference · Initiated by · Date — label muted, value primary */
+	.page-header-meta-list {
+		display: flex;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--space-1) var(--space-4);
+		margin: 0;
+		font-size: var(--font-size-xs);
+		line-height: var(--line-height-normal);
+	}
+
+	.page-header-meta-item {
+		display: inline-flex;
+		min-width: 0;
+		align-items: baseline;
+		gap: var(--space-1);
+	}
+
+	.page-header-meta-item + .page-header-meta-item::before {
+		margin-inline-end: var(--space-3);
+		color: var(--color-text-subtle);
+		content: "·";
+	}
+
+	.page-header-meta-label {
+		color: var(--page-header-meta-color);
+	}
+
+	.page-header-meta-label::after {
+		content: ":";
+	}
+
+	.page-header-meta-value {
+		margin: 0;
+		color: var(--color-text-primary);
+		font-weight: var(--font-weight-medium);
+		font-variant-numeric: tabular-nums;
+		overflow-wrap: anywhere;
 	}
 
 	.page-header-subtitle,
@@ -3167,6 +3253,7 @@
 		flex: 0 0 auto;
 		padding: var(--space-2) var(--public-page-gutter);
 		border-bottom: 0.5px solid var(--color-border);
+		background-color: var(--color-bg-surface);
 	}
 
 	.public-page-brand {
@@ -3198,6 +3285,7 @@
 		flex: 0 0 auto;
 		padding: var(--space-2) var(--public-page-gutter);
 		border-bottom: 0.5px solid var(--color-border);
+		background-color: var(--color-bg-surface);
 	}
 
 	/*
@@ -3311,6 +3399,7 @@
 	.public-page-footer {
 		width: 100%;
 		flex: 0 0 auto;
+		background-color: var(--color-bg-surface); /* was bg-white in JSX: wrong in dark mode */
 		padding: 16px var(--public-page-gutter);
 		text-align: center;
 		font-size: max(1.1rem, 11px);

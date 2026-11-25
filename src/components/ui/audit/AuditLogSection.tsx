@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, ClipboardList } from "lucide-react";
+import { AlertCircle, ArrowRight, ClipboardList } from "lucide-react";
 
 import { formatDateTime } from "../../../utils/format";
 
@@ -25,7 +25,8 @@ import "./audit.css";
 /* Constants                                                                  */
 /* -------------------------------------------------------------------------- */
 
-const DEFAULT_MESSAGE_TRUNCATE_LENGTH = 50;
+// 50 cut most remarks mid-sentence; 140 keeps a typical approval remark whole.
+const DEFAULT_MESSAGE_TRUNCATE_LENGTH = 140;
 
 type AuditTone = "brand" | "success" | "warning" | "danger";
 
@@ -60,30 +61,59 @@ const isSameDay = (a: Date, b: Date) =>
 	a.getMonth() === b.getMonth() &&
 	a.getDate() === b.getDate();
 
-const formatCompactTime = (value: string): string => {
+const formatTimeOnly = (value: string): string => {
 	const date = new Date(value);
 	if (Number.isNaN(date.getTime())) return "";
+	return date.toLocaleTimeString("en-IN", {
+		hour: "2-digit",
+		minute: "2-digit",
+		hour12: true,
+	});
+};
+
+/* -------------------------------------------------------------------------- */
+/* Day groups: "Today" / "Yesterday" / "24 Nov 2026", newest order preserved  */
+/* -------------------------------------------------------------------------- */
+
+const UNKNOWN_DAY = "unknown";
+
+const dayKey = (value?: string): string => {
+	const date = value ? new Date(value) : null;
+	if (!date || Number.isNaN(date.getTime())) return UNKNOWN_DAY;
+	return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+};
+
+const formatDayLabel = (value?: string): string => {
+	const date = value ? new Date(value) : null;
+	if (!date || Number.isNaN(date.getTime())) return "Date not recorded";
 
 	const now = new Date();
 	const yesterday = new Date(now);
 	yesterday.setDate(now.getDate() - 1);
 
-	const time = date.toLocaleTimeString("en-IN", {
-		hour: "2-digit",
-		minute: "2-digit",
-		hour12: true,
-	});
+	if (isSameDay(date, now)) return "Today";
+	if (isSameDay(date, yesterday)) return "Yesterday";
 
-	if (isSameDay(date, now)) return `Today, ${time}`;
-	if (isSameDay(date, yesterday)) return `Yesterday, ${time}`;
-
-	const day = date.toLocaleDateString("en-IN", {
+	return date.toLocaleDateString("en-IN", {
+		weekday: "short",
 		day: "2-digit",
 		month: "short",
-		...(date.getFullYear() !== now.getFullYear() && { year: "numeric" }),
+		year: "numeric",
 	});
+};
 
-	return `${day}, ${time}`;
+const groupByDay = (entries: AuditLogEntry[]) => {
+	const groups: Array<{ key: string; label: string; entries: AuditLogEntry[] }> = [];
+	for (const entry of entries) {
+		const key = dayKey(entry.createdAt);
+		const last = groups[groups.length - 1];
+		if (last && last.key === key) {
+			last.entries.push(entry);
+		} else {
+			groups.push({ key, label: formatDayLabel(entry.createdAt), entries: [entry] });
+		}
+	}
+	return groups;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -177,7 +207,7 @@ const AuditLogRow = React.memo(function AuditLogRow({
 							dateTime={entry.createdAt}
 							title={formatDateTime(entry.createdAt)}
 						>
-							{formatCompactTime(entry.createdAt)}
+							{formatTimeOnly(entry.createdAt)}
 						</time>
 					</>
 				) : null}
@@ -234,6 +264,8 @@ export default function AuditLogSection({
 		data: entries = [],
 		isLoading,
 		error,
+		refetch,
+		isFetching,
 	} = useQuery({
 		queryKey,
 		queryFn: () =>
@@ -248,23 +280,32 @@ export default function AuditLogSection({
 		refetchOnReconnect: false,
 	});
 
-	const loadError = error
-		? error instanceof Error
-			? error.message
-			: "Unable to load activity log"
-		: null;
+	// Raw API messages are not shown to users; the error is still in devtools.
+	const hasLoadError = Boolean(error);
+	const groups = React.useMemo(() => groupByDay(entries), [entries]);
 
 	return (
 		<section aria-label={title} className="comments-body">
 			{isLoading ? (
 				<CardSkeleton />
-			) : loadError ? (
-				<CardEmpty
-					title="Unable to load activity"
-					description={loadError}
-					Icon={ClipboardList}
-					iconSize={20}
-				/>
+			) : hasLoadError ? (
+				<div className="audit-timeline-error" role="alert">
+					<AlertCircle aria-hidden="true" className="audit-timeline-error-icon" />
+					<div className="audit-timeline-error-copy">
+						<p className="audit-timeline-error-title">Couldn't load the activity log</p>
+						<p className="audit-timeline-error-text">
+							The record itself is fine. Try again in a moment.
+						</p>
+						<button
+							type="button"
+							className="button-base button-standard button-outline button-sm"
+							onClick={() => void refetch()}
+							disabled={isFetching}
+						>
+							{isFetching ? "Retrying…" : "Try again"}
+						</button>
+					</div>
+				</div>
 			) : entries.length === 0 ? (
 				<CardEmpty
 					title={emptyTitle}
@@ -275,19 +316,38 @@ export default function AuditLogSection({
 			) : (
 				<div className="comments-section">
 					<div className="comments-list scrollbar-sleek">
-						<ol className="audit-timeline">
-							{entries.map((entry) => (
-								<AuditLogRow
-									key={entry.id}
-									entry={entry}
-									entityName={entityName}
-									actionMessages={actionMessages}
-									formatMessage={formatMessage}
-									anonymousActorLabel={anonymousActorLabel}
-									messageTruncateLength={messageTruncateLength}
-								/>
+						<div className="audit-timeline-groups">
+							{groups.map((group) => (
+								<section
+									key={group.key}
+									className="audit-timeline-group"
+									aria-label={group.label}
+								>
+									<h4 className="audit-timeline-date">
+										{group.label}
+										<span className="audit-timeline-date-count">
+											{group.entries.length}
+											<span className="sr-only">
+												{group.entries.length === 1 ? " event" : " events"}
+											</span>
+										</span>
+									</h4>
+									<ol className="audit-timeline">
+										{group.entries.map((entry) => (
+											<AuditLogRow
+												key={entry.id}
+												entry={entry}
+												entityName={entityName}
+												actionMessages={actionMessages}
+												formatMessage={formatMessage}
+												anonymousActorLabel={anonymousActorLabel}
+												messageTruncateLength={messageTruncateLength}
+											/>
+										))}
+									</ol>
+								</section>
 							))}
-						</ol>
+						</div>
 					</div>
 				</div>
 			)}

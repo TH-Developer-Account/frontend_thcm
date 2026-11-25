@@ -12,8 +12,8 @@ import type {
 } from "react-select";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 
-import HelperTooltip from "../common/HelperTooltip";
-import ReadOnlyField from "./ReadOnlyField";
+import ReadOnlyField, { type ReadOnlyEmptyReason } from "./ReadOnlyField";
+import { FieldLabel, FieldMessage, getFieldA11y } from "./FieldParts";
 import type { FormFieldMode } from "./input.types";
 import { CircleCheck } from "lucide-react";
 
@@ -35,6 +35,10 @@ interface SelectInputProps<T extends BaseOption> extends Props<
 	helperText?: string;
 	isTooltip?: boolean;
 	required?: boolean;
+	/** `true` shows "(optional)"; a string replaces the text. Ignored when required. */
+	optional?: boolean | string;
+	/** Non-blocking advisory message shown when there is no error. */
+	warning?: string;
 	mode?: FormFieldMode;
 	success?: boolean;
 
@@ -47,6 +51,8 @@ interface SelectInputProps<T extends BaseOption> extends Props<
 	 * Value displayed when no option is selected in view mode.
 	 */
 	emptyReadOnlyValue?: ReactNode;
+	/** View mode: why nothing is selected. Default "not-provided". */
+	emptyReadOnlyReason?: ReadOnlyEmptyReason;
 
 	/**
 	 * Browser autofill (and paste) writes a whole value into react-select's
@@ -117,9 +123,12 @@ export default function SelectInput<T extends BaseOption>({
 	helperText,
 	isTooltip = true,
 	required = false,
+	optional,
+	warning,
 	mode = "edit",
 	readOnlyValue,
-	emptyReadOnlyValue = "--",
+	emptyReadOnlyValue,
+	emptyReadOnlyReason,
 	selectOnAutofill = true,
 
 	id,
@@ -160,15 +169,14 @@ export default function SelectInput<T extends BaseOption>({
 	const resolvedInputId =
 		inputId ?? id ?? name ?? `select-input-${generatedId}`;
 
-	const errorId = `${resolvedInputId}-error`;
-	const helperId = `${resolvedInputId}-helper`;
-
-	const describedBy = [
-		error ? errorId : undefined,
-		helperText && !isTooltip ? helperId : undefined,
-	]
-		.filter(Boolean)
-		.join(" ");
+	const a11y = getFieldA11y({
+		fieldId: resolvedInputId,
+		error,
+		warning,
+		helperText,
+		isTooltip,
+	});
+	const hasWarning = Boolean(a11y.visibleWarning);
 
 	const resolvedPortalTarget =
 		menuPortalTarget !== undefined
@@ -231,6 +239,7 @@ export default function SelectInput<T extends BaseOption>({
 				helperText={helperText}
 				isTooltip={isTooltip}
 				emptyValue={emptyReadOnlyValue}
+				emptyReason={emptyReadOnlyReason}
 				className={className}
 			/>
 		);
@@ -242,26 +251,20 @@ export default function SelectInput<T extends BaseOption>({
 				"form-field",
 				"select-field",
 				error && "has-error",
+				hasWarning && "has-warning",
 				isDisabled && "is-disabled",
 			)}
 		>
-			{label ? (
-				<div className="form-label-row">
-					<label htmlFor={resolvedInputId} className="form-label">
-						{label}
-
-						{required ? (
-							<span className="form-required" aria-hidden="true">
-								*
-							</span>
-						) : null}
-					</label>
-
-					{helperText && isTooltip && !error ? (
-						<HelperTooltip label={label} text={helperText} />
-					) : null}
-				</div>
-			) : null}
+			<FieldLabel
+				htmlFor={resolvedInputId}
+				label={label}
+				required={required}
+				optional={optional}
+				helperText={helperText}
+				isTooltip={isTooltip}
+				hasError={Boolean(error)}
+				tooltipId={a11y.tooltipId}
+			/>
 
 			<div className="form-input-wrapper">
 				<Select<T, false, GroupBase<T>>
@@ -284,6 +287,7 @@ export default function SelectInput<T extends BaseOption>({
 					className={joinClassNames(
 						"react-select-container",
 						error && "react-select-container-error",
+						hasWarning && "react-select-container-warning",
 						isDisabled && "react-select-container-disabled",
 						className,
 						success && !error && "react-select-container-success",
@@ -293,8 +297,8 @@ export default function SelectInput<T extends BaseOption>({
 					menuPlacement={menuPlacement}
 					aria-invalid={error ? "true" : undefined}
 					aria-required={required || undefined}
-					aria-describedby={describedBy || undefined}
-					aria-errormessage={error ? errorId : undefined}
+					aria-describedby={a11y.describedBy}
+					aria-errormessage={error ? a11y.errorId : undefined}
 					components={{
 						...selectProps.components,
 						Input: NoAutofillInput,
@@ -314,15 +318,12 @@ export default function SelectInput<T extends BaseOption>({
 				) : null}
 			</div>
 
-			{error ? (
-				<p id={errorId} className="form-error-text" role="alert">
-					{error}
-				</p>
-			) : helperText && !isTooltip ? (
-				<p id={helperId} className="form-helper-text">
-					{helperText}
-				</p>
-			) : null}
+			<FieldMessage
+				a11y={a11y}
+				error={error}
+				helperText={helperText}
+				isTooltip={isTooltip}
+			/>
 		</div>
 	);
 }

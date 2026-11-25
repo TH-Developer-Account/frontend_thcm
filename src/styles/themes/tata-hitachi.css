@@ -1,0 +1,40 @@
+/* =========================================================
+   BRAND THEME — TATA HITACHI (default production theme)
+
+   A brand theme sets ONLY the brand ramp below. Every
+   semantic token in color.css (buttons, focus rings, active
+   nav, selected rows, status-draft, links, PDF accents …)
+   is derived from this ramp, so nothing else has to change
+   to re-brand the application.
+
+   Applies with no attribute, or with:
+     <html data-brand="tata-hitachi">
+
+   Light/dark mode is a separate axis: [data-theme="dark"].
+   The two combine freely.
+========================================================= */
+@layer base {
+	:root,
+	:root[data-brand="tata-hitachi"] {
+		/* Primary brand ramp → Tata Hitachi orange */
+		--color-brand-50: var(--color-orange-50);
+		--color-brand-100: var(--color-orange-100);
+		--color-brand-200: var(--color-orange-200);
+		--color-brand-300: var(--color-orange-300);
+		--color-brand-400: var(--color-orange-400);
+		--color-brand-500: var(--color-orange-500); /* #f35a00 — the brand colour */
+		--color-brand-600: var(--color-orange-600);
+		--color-brand-700: var(--color-orange-700); /* white text passes AA on this */
+		--color-brand-800: var(--color-orange-800);
+		--color-brand-900: var(--color-orange-900);
+
+		/* Secondary brand colour → industrial black */
+		--color-brand-secondary-base: var(--color-iron-dark);
+		--color-brand-secondary-strong: var(--color-iron);
+
+		/* Brand-tinted surfaces used only in dark mode */
+		--color-brand-tint-dark: #28170e;
+		--color-brand-tint-dark-strong: #4a2410;
+		--color-brand-border-dark: #7c2d12;
+	}
+}

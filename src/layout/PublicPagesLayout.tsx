@@ -17,9 +17,10 @@ export const PublicPagesLayout = ({
 }: PublicPagesLayoutProps) => {
 	return (
 		<div className="public-pages-layout">
-			<header className="header-public relative bg-white">
+			<header className="header-public relative">
 				<div className="public-page-brand">
-					<div className="home-brand" aria-label="Tata Hitachi home">
+					{/* Plain wrapper: an aria-label on a div without a role is ignored */}
+					<div className="home-brand">
 						<img src={logo} alt="Tata Hitachi" />
 					</div>
 
@@ -30,7 +31,7 @@ export const PublicPagesLayout = ({
 				{title ? (
 					// Centred on the header itself (not between logo and edge), and
 					// kept narrow enough that it never runs into the logo.
-					<h1 className="pointer-events-none absolute left-1/2 top-1/2 m-0 max-w-[50%] -translate-x-1/2 -translate-y-1/2 truncate text-center text-base font-semibold tracking-tight text-iron-dark sm:text-lg">
+					<h1 className="pointer-events-none absolute left-1/2 top-1/2 m-0 max-w-[50%] -translate-x-1/2 -translate-y-1/2 truncate text-center text-base font-semibold tracking-tight text-fg sm:text-lg">
 						{title}
 					</h1>
 				) : null}
@@ -44,7 +45,7 @@ export const PublicPagesLayout = ({
 				</div>
 			</main>
 
-			<footer className="public-page-footer bg-white">
+			<footer className="public-page-footer">
 				Tata Hitachi Construction Machinery
 			</footer>
 		</div>

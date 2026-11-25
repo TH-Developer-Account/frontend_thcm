@@ -9,12 +9,65 @@
 	color: var(--color-icon-brand);
 }
 
-.bottom-buttons-bar-end {
-	@apply flex items-center justify-end gap-4 w-full;
+/* Form action bars. Promoted from vendor.styles.css, which redefined them
+   for every screen: wrapping on desktop, and on phones the buttons stack
+   full width with the primary action on top. CPP, Medical, Workflow and
+   BP forms get the same mobile behaviour now. */
+.bottom-buttons-bar-between {
+	display: flex;
+	width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--space-3);
 }
 
-.bottom-buttons-bar-between {
-	@apply flex items-center justify-between gap-4 w-full;
+.bottom-buttons-bar-end {
+	display: flex;
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--space-2);
+}
+
+/* Right-hand group nested inside a "between" bar */
+.bottom-buttons-bar-between > .bottom-buttons-bar-between,
+.bottom-buttons-bar-between > .bottom-buttons-bar-end {
+	width: auto;
+	justify-content: flex-end;
+}
+
+@media (max-width: 639px) {
+	.bottom-buttons-bar-between,
+	.bottom-buttons-bar-between > .bottom-buttons-bar-between,
+	.bottom-buttons-bar-between > .bottom-buttons-bar-end,
+	.bottom-buttons-bar-end {
+		width: 100%;
+		flex-direction: column-reverse;
+		flex-wrap: nowrap;
+		align-items: stretch;
+		justify-content: flex-start;
+		gap: var(--space-2);
+	}
+
+	.bottom-buttons-bar-between .button-wrapper,
+	.bottom-buttons-bar-end .button-wrapper {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+	}
+
+	.bottom-buttons-bar-between .button-base,
+	.bottom-buttons-bar-end .button-base {
+		width: 100%;
+		min-width: 0;
+		max-width: 100%;
+		justify-content: center;
+	}
 }
 
 /* =====================================================
@@ -211,7 +264,7 @@
 	}
 
 	.file-download-link {
-		color: var(--color-brand);
+		color: var(--color-text-link);
 	}
 
 	.file-download-dismiss {
@@ -497,12 +550,12 @@
 		.pending-on-status-more[aria-expanded="true"] {
 			border-color: var(--color-brand);
 			background-color: var(--color-brand-subtle);
-			color: var(--color-brand);
+			color: var(--color-text-brand);
 		}
 		.pending-on-status-more:hover,
 		.pending-on-status-more:focus-visible {
 			border-color: var(--color-brand);
-			color: var(--color-brand);
+			color: var(--color-text-brand);
 		}
 
 		.pending-on-popover {
@@ -747,5 +800,97 @@
 		display: flex;
 		width: 100%;
 		justify-content: center;
+	}
+}
+
+/* =====================================================
+   APPROVER DECISION CARD  (components/ui/ApprovalActionsBar)
+   Moved from activity-planner.styles.css (module CSS owned a shared class).
+===================================================== */
+
+@layer components {
+	/* ---------------- Approver decision card ---------------- */
+
+	/* Brand-tinted border so the one thing the approver must do stands out. */
+	.approval-decision-card {
+		display: flex;
+		flex: 0 0 auto;
+		flex-direction: column;
+		gap: var(--space-3);
+
+		padding: var(--space-4);
+
+		border: var(--border-width-default) solid
+			color-mix(in srgb, var(--color-brand) 35%, var(--color-border-default));
+		border-radius: var(--radius-lg);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.approval-decision-card-head {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	/* Was brand-500 uppercase tracked (3.3:1, hard to read). */
+	.approval-decision-card-eyebrow {
+		color: var(--color-text-brand);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-semibold);
+	}
+
+	.approval-decision-card-title {
+		margin: 0;
+
+		color: var(--color-text-primary);
+		font-size: var(--font-size-md, var(--font-size-sm));
+		font-weight: var(--font-weight-semibold);
+		line-height: var(--line-height-tight);
+	}
+
+	.approval-decision-card-subtitle {
+		margin: 0;
+
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
+	}
+
+	/* Stacked, full-width: Approve on top, Send for Clarification under it. */
+	.approval-decision-card-actions {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.approval-decision-card-actions > * {
+		width: 100%;
+		justify-content: center;
+	}
+
+	/* Proposer variant of ApprovalActionsBar inside the card: drop its own
+	   footer chrome, stack the buttons full width. */
+	.approval-decision-card .approval-actions-bar {
+		width: 100%;
+		padding: 0;
+		border: 0;
+		background: none;
+		box-shadow: none;
+	}
+
+	.approval-decision-card .approval-actions-bar > span:empty {
+		display: none;
+	}
+
+	.approval-decision-card .approval-actions-bar-end {
+		width: 100%;
+		flex-direction: column;
+		align-items: stretch;
+		gap: var(--space-2);
+	}
+
+	.approval-decision-card .approval-actions-bar-end > * {
+		width: 100%;
+		justify-content: end;
 	}
 }

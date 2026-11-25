@@ -357,6 +357,7 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 				"form-field",
 				"file-upload-field",
 				isMultiple && "file-upload-field--multiple",
+				renderedError && "has-error",
 				className,
 			)}
 		>
@@ -385,6 +386,9 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 				accept={accept}
 				multiple={isMultiple && replacingId === null}
 				className="file-upload-native-input"
+				// Not a Tab stop: it is visually hidden and the visible
+				// "Choose a file" button opens it. (The label still targets it.)
+				tabIndex={-1}
 				disabled={disabled || readonly}
 				aria-invalid={Boolean(renderedError)}
 				aria-describedby={renderedError ? errorId : undefined}
@@ -396,10 +400,10 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 					className={joinClassNames(
 						"file-upload-list",
 						previewVariant === "line"
-							? "flex flex-col gap-1.5"
+							? "file-upload-list--lines"
 							: isMultiple
 								? "file-upload-list--grid"
-								: "flex flex-col gap-2",
+								: "file-upload-list--stack",
 					)}
 				>
 					{values.map((item, index) => (
@@ -428,7 +432,7 @@ export const FileUploadField = React.memo((props: FileUploadFieldProps) => {
 					{isMultiple && canAddMore && !readonly ? (
 						<button
 							type="button"
-							className="file-upload-add-more flex min-h-10 w-full items-center justify-between rounded-lg border border-dashed border-slate-300 px-3 text-xs font-medium text-slate-700 transition-colors hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-60"
+							className="file-upload-add-more"
 							disabled={disabled}
 							onClick={(event) => openFilePicker(event)}
 						>
@@ -515,10 +519,10 @@ const FileUploadPreviewCard = React.memo(
 
 		if (variant === "line") {
 			return (
-				<div className="file-upload-preview-line flex items-center justify-between gap-2 rounded-md border border-slate-200 bg-white px-3 py-2">
+				<div className="file-upload-preview-line">
 					<button
 						type="button"
-						className="file-upload-line-name min-w-0 flex-1 truncate text-left text-xs font-medium text-slate-900 hover:text-brand hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+						className="file-upload-line-name"
 						title={value.name}
 						disabled={!value.url}
 						onClick={(event) => {
@@ -531,7 +535,7 @@ const FileUploadPreviewCard = React.memo(
 					</button>
 
 					{showActions ? (
-						<div className="file-upload-preview-actions ml-auto flex shrink-0 items-center gap-1">
+						<div className="file-upload-preview-actions">
 							{!readonly && !disabled ? (
 								<Button
 									type="button"
@@ -592,14 +596,13 @@ const FileUploadPreviewCard = React.memo(
 			<div
 				className={joinClassNames(
 					"file-upload-preview",
-					"overflow-hidden rounded-lg border border-slate-200 bg-white",
 					showImagePreview && "file-upload-preview-image",
 					heightClassName,
 					// readonly && "flex",
 				)}
 			>
-				<div className="file-upload-preview-body flex min-h-2 items-center gap-2 px-2.5 py-1.5">
-					<div className="file-upload-preview-thumbnail flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-slate-100 text-slate-600">
+				<div className="file-upload-preview-body">
+					<div className="file-upload-preview-thumbnail">
 						{showImagePreview ? (
 							<img
 								src={value.url}
@@ -618,7 +621,7 @@ const FileUploadPreviewCard = React.memo(
 						)}
 					</div>
 
-					<div className="file-upload-document-copy min-w-0 flex-1">
+					<div className="file-upload-document-copy">
 						<p className="file-upload-file-name" title={value.name}>
 							{value.name}
 						</p>
@@ -633,7 +636,7 @@ const FileUploadPreviewCard = React.memo(
 					</div>
 				</div>
 				{showActions ? (
-					<div className="file-upload-preview-actions ml-auto flex shrink-0 items-center gap-1">
+					<div className="file-upload-preview-actions">
 						{!readonly && !disabled ? (
 							<Button
 								type="button"
@@ -661,7 +664,6 @@ const FileUploadPreviewCard = React.memo(
 							Icon={Eye}
 							iconSize={18}
 							size="sm"
-							aria-hidden="true"
 						/>
 
 						{showDownload ? (
@@ -805,23 +807,21 @@ const FileUploadEmptyState = React.memo(
 			type="button"
 			disabled={disabled}
 			onClick={onClick}
-			className={joinClassNames(
-				"file-upload-empty flex min-h-12 w-full items-center justify-between gap-3 rounded-lg border border-dashed border-slate-300 bg-white px-2.5 py-1.5 text-left transition-colors hover:border-brand disabled:cursor-not-allowed disabled:opacity-60",
-				heightClassName,
-			)}
+			className={joinClassNames("file-upload-empty", heightClassName)}
 		>
-			<span className="file-upload-empty-copy min-w-0">
-				<span className="file-upload-empty-title block truncate text-xs font-normal text-slate-900">
-					Upload file
-				</span>
-				<span className="file-upload-empty-description sr-only">
-					{description ??
-						(multiple ? "Select one or more files" : "Select a file to upload")}
-				</span>
+			<span className="file-upload-empty-icon">
+				<Upload aria-hidden="true" />
 			</span>
 
-			<span className="file-upload-empty-icon flex size-8 shrink-0 items-center justify-center rounded-md bg-slate-50 text-slate-600">
-				<Upload className="size-4" aria-hidden="true" />
+			<span className="file-upload-empty-copy">
+				<span className="file-upload-empty-title">
+					{multiple ? "Choose files" : "Choose a file"}
+				</span>
+				{/* Was screen-reader-only: sighted users never saw formats or limits. */}
+				<span className="file-upload-empty-description">
+					{description ??
+						(multiple ? "Select one or more files to upload" : "Select a file to upload")}
+				</span>
 			</span>
 		</button>
 	),

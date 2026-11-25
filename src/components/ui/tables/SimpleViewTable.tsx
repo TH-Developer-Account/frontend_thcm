@@ -167,10 +167,11 @@ export interface SimpleTableProps<T> {
 // Helpers
 // ---------------------------------------------------------------------------
 
+// Right-aligned columns are treated as numeric: tabular figures so digits line up.
 const getAlignClass = (align?: SimpleTableAlign): string => {
-	if (align === "right") return "text-right";
-	if (align === "center") return "text-center";
-	return "text-left";
+	if (align === "right") return "simple-table-align-right";
+	if (align === "center") return "simple-table-align-center";
+	return "simple-table-align-left";
 };
 
 const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "svg"];
@@ -291,6 +292,11 @@ export default function SimpleViewTable<T>({
 		(selectable ? 1 : 0) +
 		(fileColumn ? 1 : 0) +
 		(hasActions ? 1 : 0);
+	// The data columns share 100% via percentages, so any column without an
+	// explicit width collapsed to 0px (file names and action icons wrapped one
+	// character per line). Give the extra columns real default widths.
+	const fileColumnWidth = fileColumn?.width ?? "11rem";
+	const actionsColumnWidth = `${Math.max(1, actions?.length ?? 0) * 2.25 + 1.5}rem`;
 	const totalWidthUnits = columns.reduce(
 		(total, column) => total + (column.widthUnits ?? 1),
 		0,
@@ -311,7 +317,7 @@ export default function SimpleViewTable<T>({
 			{title || headerActions ? (
 				<div className="flex items-center justify-between gap-3">
 					{title ? (
-						<div className="text-sm font-semibold">{title}</div>
+						<div className="simple-table-title">{title}</div>
 					) : (
 						<span />
 					)}
@@ -322,14 +328,14 @@ export default function SimpleViewTable<T>({
 			) : null}
 
 			<div
-				className="min-w-0 overflow-auto rounded-md border border-slate-200 scrollbar-sleek"
+				className="simple-table-scroll scrollbar-sleek"
 				style={{ maxHeight }}
 				role="region"
 				aria-label={ariaLabel}
 				tabIndex={0}
 			>
 				<table
-					className="w-full table-fixed border-collapse text-sm"
+					className="simple-table"
 					style={{ minWidth: `${tableMinWidth}px` }}
 				>
 					<colgroup>
@@ -346,15 +352,16 @@ export default function SimpleViewTable<T>({
 							/>
 						))}
 
-						{fileColumn ? <col style={{ width: fileColumn.width }} /> : null}
-						{hasActions ? <col /> : null}
+						{fileColumn ? <col style={{ width: fileColumnWidth }} /> : null}
+						{hasActions ? <col style={{ width: actionsColumnWidth }} /> : null}
 					</colgroup>
-					<thead className="sticky top-0 z-10  bg-slate-50 shadow-[inset_0_-1px_0_theme(colors.slate.200)]">
+					<thead className="simple-table-head">
 						<tr>
 							{selectable ? (
-								<th className="w-10 px-3 py-2 text-left text-slate-800">
+								<th className="simple-table-th simple-table-select-cell">
 									<input
 										ref={headerCheckboxRef}
+										className="data-table-checkbox"
 										type="checkbox"
 										aria-label="Select all rows"
 										checked={allSelected}
@@ -369,7 +376,7 @@ export default function SimpleViewTable<T>({
 									key={column.key}
 									scope="col"
 									className={[
-										"px-3 py-2 font-medium text-slate-600",
+										"simple-table-th",
 										getAlignClass(column.align),
 										column.className,
 									]
@@ -383,17 +390,16 @@ export default function SimpleViewTable<T>({
 
 							{fileColumn ? (
 								<th
-									className="px-3 py-2 text-left font-medium text-slate-600"
-									style={
-										fileColumn.width ? { width: fileColumn.width } : undefined
-									}
+									scope="col"
+									className="simple-table-th simple-table-align-left"
+									style={{ width: fileColumnWidth }}
 								>
 									{fileColumn.header ?? "Attachment"}
 								</th>
 							) : null}
 
 							{hasActions ? (
-								<th className="px-3 py-2 text-left font-medium text-slate-600">
+								<th scope="col" className="simple-table-th simple-table-align-left">
 									{actionsHeader}
 								</th>
 							) : null}
@@ -403,11 +409,15 @@ export default function SimpleViewTable<T>({
 					<tbody>
 						{loading ? (
 							Array.from({ length: skeletonRows }).map((_, rowIndex) => (
-								<tr key={`skeleton-${rowIndex}`} aria-hidden="true">
+								<tr
+									key={`skeleton-${rowIndex}`}
+									className="simple-table-row"
+									aria-hidden="true"
+								>
 									{Array.from({ length: Math.max(1, columnCount) }).map(
 										(__, colIndex) => (
-											<td key={colIndex} className="px-3 py-3">
-												<div className="h-4 w-full animate-pulse rounded bg-slate-100" />
+											<td key={colIndex} className="simple-table-td">
+												<div className="data-table-skeleton" />
 											</td>
 										),
 									)}
@@ -417,17 +427,17 @@ export default function SimpleViewTable<T>({
 							<tr>
 								<td
 									colSpan={Math.max(1, columnCount)}
-									className="px-3 py-10 text-center"
+									className="simple-table-empty"
 								>
-									<p className="empty-title">{emptyTitle}</p>
+									<p className="data-table-empty-title">{emptyTitle}</p>
 									{emptyDescription ? (
-										<p className="mt-1 mb-1 text-sm text-slate-500">
+										<p className="data-table-empty-description">
 											{emptyDescription}
 										</p>
 									) : null}
-									<div className="empty-content-actions mt-2">
-										{emptyContent ? emptyContent : null}
-									</div>
+									{emptyContent ? (
+										<div className="empty-content-actions">{emptyContent}</div>
+									) : null}
 								</td>
 							</tr>
 						) : (
@@ -441,14 +451,14 @@ export default function SimpleViewTable<T>({
 									<tr
 										key={rowId}
 										className={[
-											"border-t border-slate-100",
-											isInteractive ? "cursor-pointer hover:bg-slate-50" : "",
-											isSelected ? "bg-brand/5" : "",
+											"simple-table-row",
+											isInteractive ? "is-interactive" : "",
+											isSelected ? "is-selected" : "",
 										]
 											.filter(Boolean)
 											.join(" ")}
 										tabIndex={isInteractive ? 0 : undefined}
-										onClick={() => onRowClick?.(item)}
+										onClick={isInteractive ? () => onRowClick?.(item) : undefined}
 										onKeyDown={
 											isInteractive
 												? (event) => {
@@ -462,10 +472,11 @@ export default function SimpleViewTable<T>({
 									>
 										{selectable ? (
 											<td
-												className="px-3 py-2"
+												className="simple-table-td simple-table-select-cell"
 												onClick={(event) => event.stopPropagation()}
 											>
 												<input
+													className="data-table-checkbox"
 													type="checkbox"
 													aria-label={`Select row ${index + 1}`}
 													checked={isSelected}
@@ -478,7 +489,7 @@ export default function SimpleViewTable<T>({
 											<td
 												key={column.key}
 												className={[
-													"px-3 py-2 align-middle",
+													"simple-table-td",
 													getAlignClass(column.align),
 													column.className,
 												]
@@ -490,15 +501,15 @@ export default function SimpleViewTable<T>({
 										))}
 
 										{fileColumn ? (
-											<td className="px-3 py-2">
+											<td className="simple-table-td">
 												{file?.url ? (
 													<FilePreviewCell
 														file={file}
 														onPreview={() => setPreviewTarget(file)}
 													/>
 												) : (
-													<span className="text-slate-400">
-														{file?.name ?? "--"}
+													<span className="readonly-empty">
+														{file?.name ?? "No attachment"}
 													</span>
 												)}
 											</td>
@@ -506,7 +517,7 @@ export default function SimpleViewTable<T>({
 
 										{hasActions ? (
 											<td
-												className="px-3 py-2"
+												className="simple-table-td"
 												onClick={(event) => event.stopPropagation()}
 											>
 												<div className="flex items-center gap-1.5">
@@ -535,15 +546,15 @@ export default function SimpleViewTable<T>({
 					</tbody>
 
 					{!loading && data.length > 0 && hasFooter ? (
-						<tfoot className="sticky bottom-0 z-10 bg-slate-50 shadow-[inset_0_1px_0_theme(colors.slate.200)]">
+						<tfoot className="simple-table-foot">
 							<tr>
-								{selectable ? <td className="px-3 py-3" /> : null}
+								{selectable ? <td className="simple-table-foot-cell" /> : null}
 
 								{columns.map((column) => (
 									<td
 										key={column.key}
 										className={[
-											"px-3 py-3 font-semibold text-slate-800",
+											"simple-table-foot-cell",
 											getAlignClass(column.align),
 											column.className,
 										]
@@ -556,8 +567,8 @@ export default function SimpleViewTable<T>({
 									</td>
 								))}
 
-								{fileColumn ? <td className="px-3 py-3" /> : null}
-								{hasActions ? <td className="px-3 py-3" /> : null}
+								{fileColumn ? <td className="simple-table-foot-cell" /> : null}
+								{hasActions ? <td className="simple-table-foot-cell" /> : null}
 							</tr>
 						</tfoot>
 					) : null}
@@ -595,7 +606,7 @@ export default function SimpleViewTable<T>({
 							href={previewTarget.url ?? undefined}
 							target="_blank"
 							rel="noopener noreferrer"
-							className="mt-3 text-brand underline-offset-2 hover:underline"
+							className="mt-3 text-accent-text underline-offset-2 hover:underline"
 						>
 							Open file in new tab
 						</a>
@@ -627,7 +638,7 @@ function FilePreviewCell({
 		<div className="flex max-w-52 items-center gap-1.5">
 			<button
 				type="button"
-				className="min-w-0 flex-1 truncate text-left text-brand underline-offset-2 hover:underline"
+				className="min-w-0 flex-1 truncate text-left text-accent-text underline-offset-2 hover:underline"
 				title={`View ${file.name}`}
 				onClick={openPreview}
 			>
@@ -636,7 +647,7 @@ function FilePreviewCell({
 
 			<button
 				type="button"
-				className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-600 transition-colors hover:border-brand hover:text-brand"
+				className="simple-table-file-button"
 				title={`View ${file.name}`}
 				aria-label={`View ${file.name}`}
 				onClick={openPreview}

@@ -3,8 +3,18 @@ import type { ReactNode } from "react";
 import PageNavigation from "./PageNavigation/PageNavigation";
 import type { PageNavigationProps } from "./PageNavigation/pageNavigation.types";
 
+export type PageHeaderMetaItem = {
+	/** Short label, e.g. "Initiated". Omit for a bare value. */
+	label?: string;
+	value: ReactNode;
+};
+
 type PageHeaderProps = {
 	headerText?: string;
+	/** Status badge (or any node) shown beside the title, e.g. <Badge>Pending</Badge>. */
+	status?: ReactNode;
+	/** Key facts under the title: reference, initiator, dates. Rendered as a <dl>. */
+	metaItems?: readonly PageHeaderMetaItem[];
 	subtitleText?: string;
 	metaText?: string | null;
 	className?: string;
@@ -22,6 +32,8 @@ const joinClassNames = (
 
 export const PageHeader = ({
 	headerText,
+	status,
+	metaItems,
 	subtitleText,
 	metaText,
 	className = "",
@@ -32,7 +44,12 @@ export const PageHeader = ({
 	navigation,
 	textAlign = "left",
 }: PageHeaderProps) => {
-	const hasCopy = Boolean(headerText || subtitleText || metaText);
+	const visibleMeta = (metaItems ?? []).filter(
+		(item) => item.value !== null && item.value !== undefined && item.value !== "",
+	);
+	const hasCopy = Boolean(
+		headerText || subtitleText || metaText || visibleMeta.length > 0,
+	);
 	const hasPrimaryContent = Boolean(hasCopy || headerChildren || navigation);
 
 	return (
@@ -55,7 +72,14 @@ export const PageHeader = ({
 								)}
 							>
 								{headerText ? (
-									<h2 className="page-header-title">{headerText}</h2>
+									status ? (
+										<div className="page-header-title-row">
+											<h2 className="page-header-title">{headerText}</h2>
+											<span className="page-header-status">{status}</span>
+										</div>
+									) : (
+										<h2 className="page-header-title">{headerText}</h2>
+									)
 								) : null}
 
 								{subtitleText ? (
@@ -64,6 +88,24 @@ export const PageHeader = ({
 
 								{metaText ? (
 									<p className="page-header-meta">{metaText}</p>
+								) : null}
+
+								{visibleMeta.length > 0 ? (
+									<dl className="page-header-meta-list">
+										{visibleMeta.map((item, index) => (
+											<div
+												key={item.label ?? index}
+												className="page-header-meta-item"
+											>
+												{item.label ? (
+													<dt className="page-header-meta-label">
+														{item.label}
+													</dt>
+												) : null}
+												<dd className="page-header-meta-value">{item.value}</dd>
+											</div>
+										))}
+									</dl>
 								) : null}
 							</div>
 						) : null}

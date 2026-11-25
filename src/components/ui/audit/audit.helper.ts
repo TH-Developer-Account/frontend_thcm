@@ -132,9 +132,11 @@ const DEFAULT_AUDIT_ACTION_LABELS: Record<NormalizedAuditAction, string> = {
 	VALIDATED: "Validated",
 	APPROVED: "Approved",
 	REJECTED: "Rejected",
-	CLARIFY: "Clarified ",
-	CLARIFICATION_REQUESTED: "Clarified",
-	DEVIATION_RAISED: "Deviated",
+	// Display wording only. These events mean an approver *asked* for
+	// clarification; "Clarified" read as if the question had been answered.
+	CLARIFY: "Requested clarification",
+	CLARIFICATION_REQUESTED: "Requested clarification",
+	DEVIATION_RAISED: "Raised deviation",
 	ACCEPTED: "Accepted",
 	CLOSED: "Closed",
 	WORKFLOW_ASSIGNED: "Assigned workflow",

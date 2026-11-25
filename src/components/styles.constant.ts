@@ -1,60 +1,15 @@
 import type { ToastStyle, ToastVariant } from "../context/Toast/toast.types";
+import { TONE_BADGE_CLASS, resolveStatusTone, resolveVariantTone } from "./common/status";
 
-const normalizeStyleKey = (value?: string | null) =>
-	String(value ?? "")
-		.trim()
-		.toLowerCase()
-		.replace(/[\s-]+/g, "_");
-
-const STATUS_STYLE_MAP: Record<string, string> = {
-	approved: "badge-success",
-	completed: "badge-success",
-	conducted: "badge-success",
-	validated: "badge-success",
-	report_validated: "badge-success",
-	pending: "badge-pending",
-	draft: "badge-pending",
-	submitted: "badge-info",
-	in_progress: "badge-info",
-	report_submitted: "badge-info",
-	report_resubmitted: "badge-info",
-	clarify: "badge-warning",
-	clarified: "badge-warning",
-	clarification_requested: "badge-warning",
-	report_clarification_requested: "badge-warning",
-	rejected: "badge-danger",
-	cancelled: "badge-danger",
-	failed: "badge-danger",
-	not_conducted: "badge-danger",
-	deviation_raised: "badge-danger",
-	deviation_in_progress: "badge-warning",
-	closed: "badge-neutral",
-	epc_closed: "badge-neutral",
-	superseded: "badge-neutral",
-};
-
+// Status/variant → badge class now lives in ./common/status.ts (single source).
+// These wrappers stay for backward compatibility.
 export const resolveStatusStyle = ({ status }: { status?: string | null }) =>
-	STATUS_STYLE_MAP[normalizeStyleKey(status)] ?? "badge";
+	TONE_BADGE_CLASS[resolveStatusTone(status) ?? "neutral"];
 
-const VARIANT_STYLE_MAP: Record<string, string> = {
-	brand: "badge-brand",
-	primary: "badge-brand",
-	outline: "badge-outline",
-	success: "badge-success",
-	active: "badge-success",
-	passed: "badge-success",
-	danger: "badge-danger",
-	inactive: "badge-neutral",
-	failed: "badge-danger",
-	warning: "badge-warning",
-	pending: "badge-pending",
-	info: "badge-info",
-	neutral: "badge-neutral",
-	disable: "badge-neutral",
+export const resolveVariantStyle = ({ variant }: { variant?: string | null }) => {
+	const tone = resolveVariantTone(variant);
+	return tone ? TONE_BADGE_CLASS[tone] : "badge-outline";
 };
-
-export const resolveVariantStyle = ({ variant }: { variant?: string | null }) =>
-	VARIANT_STYLE_MAP[normalizeStyleKey(variant)] ?? "badge-outline";
 
 export const toastStyles: Record<ToastVariant, ToastStyle> = {
 	success: {

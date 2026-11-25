@@ -5,8 +5,8 @@ import React, {
 } from "react";
 import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 
-import HelperTooltip from "../common/HelperTooltip";
 import ReadOnlyField from "./ReadOnlyField";
+import { FieldLabel, FieldMessage, getFieldA11y } from "./FieldParts";
 import type { TextareaProps } from "./input.types";
 import { CircleCheck } from "lucide-react";
 
@@ -45,11 +45,14 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 		required = false,
 		disabled = false,
 		helperText,
+		optional,
+		warning,
 		isTooltip = true,
 		mode = "edit",
 		readOnlyValue,
 		success,
-		emptyReadOnlyValue = "--",
+		emptyReadOnlyValue,
+		emptyReadOnlyReason,
 		...otherProps
 	},
 	ref,
@@ -57,17 +60,16 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 	const generatedId = useId();
 
 	const textareaId = id ?? name ?? `textarea-${generatedId}`;
-	const errorId = `${textareaId}-error`;
-	const helperId = `${textareaId}-helper`;
+	const a11y = getFieldA11y({
+		fieldId: textareaId,
+		error,
+		warning,
+		helperText,
+		isTooltip,
+	});
+	const hasWarning = Boolean(a11y.visibleWarning);
 
 	const resolvedSuccess = success && !error;
-
-	const describedBy = [
-		error ? errorId : undefined,
-		helperText && !isTooltip ? helperId : undefined,
-	]
-		.filter(Boolean)
-		.join(" ");
 
 	if (mode === "view") {
 		return (
@@ -78,8 +80,9 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 				helperText={helperText}
 				isTooltip={isTooltip}
 				emptyValue={emptyReadOnlyValue}
+				emptyReason={emptyReadOnlyReason}
+				valueType="multiline"
 				className={className}
-				valueClassName="form-readonly-value-multiline"
 			/>
 		);
 	}
@@ -90,25 +93,19 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 				"form-field",
 				disabled && "is-disabled",
 				error && "has-error",
+				hasWarning && "has-warning",
 			)}
 		>
-			{label ? (
-				<div className="form-label-row">
-					<label htmlFor={textareaId} className="form-label">
-						{label}
-
-						{required ? (
-							<span className="form-required" aria-hidden="true">
-								*
-							</span>
-						) : null}
-					</label>
-
-					{helperText && isTooltip && !error ? (
-						<HelperTooltip label={label} text={helperText} />
-					) : null}
-				</div>
-			) : null}
+			<FieldLabel
+				htmlFor={textareaId}
+				label={label}
+				required={required}
+				optional={optional}
+				helperText={helperText}
+				isTooltip={isTooltip}
+				hasError={Boolean(error)}
+				tooltipId={a11y.tooltipId}
+			/>
 
 			<div className="form-input-wrapper">
 				<textarea
@@ -122,11 +119,12 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 					required={required}
 					maxLength={otherProps.maxLength ?? 500}
 					aria-invalid={error ? "true" : undefined}
-					aria-describedby={describedBy || undefined}
-					aria-errormessage={error ? errorId : undefined}
+					aria-describedby={a11y.describedBy}
+					aria-errormessage={error ? a11y.errorId : undefined}
 					className={joinClassNames(
 						"form-textarea",
 						error && "form-input-error",
+						hasWarning && "form-input-warning",
 						disabled && "form-input-disabled",
 						className,
 						resolvedSuccess && "form-input-success",
@@ -149,15 +147,12 @@ const Textarea: ForwardRefRenderFunction<HTMLTextAreaElement, TextareaProps> = (
 				) : null}
 			</div>
 
-			{error ? (
-				<p id={errorId} className="form-error-text" role="alert">
-					{error}
-				</p>
-			) : helperText && !isTooltip ? (
-				<p id={helperId} className="form-helper-text">
-					{helperText}
-				</p>
-			) : null}
+			<FieldMessage
+				a11y={a11y}
+				error={error}
+				helperText={helperText}
+				isTooltip={isTooltip}
+			/>
 		</div>
 	);
 };

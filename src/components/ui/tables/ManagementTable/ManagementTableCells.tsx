@@ -66,6 +66,7 @@ export function ManagementAvatarGroup({
 				`management-avatar-group-${size}`,
 				className,
 			)}
+			role="group"
 			aria-label={`${items.length} members`}
 		>
 			{visibleItems.map((item) => (

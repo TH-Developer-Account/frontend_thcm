@@ -49,8 +49,10 @@ export function Modal({
 	ariaLabel,
 	ariaDescribedBy,
 	closeOnOverlayClick = true,
+	description,
 }: ModalProps) {
 	const generatedTitleId = React.useId();
+	const generatedDescriptionId = React.useId();
 	const modalRef = React.useRef<HTMLDivElement>(null);
 	const onCloseRef = React.useRef(onClose);
 
@@ -216,6 +218,12 @@ export function Modal({
 		!isShellMode && Boolean(title || header_children || onClose);
 	const hasFooter = !isShellMode && Boolean(footer_children || footer_actions);
 	const labelledBy = title && !isShellMode ? generatedTitleId : undefined;
+	const showDescription =
+		Boolean(description) && !isShellMode && !header_children;
+	const describedBy =
+		[ariaDescribedBy, showDescription ? generatedDescriptionId : undefined]
+			.filter(Boolean)
+			.join(" ") || undefined;
 
 	const handleOverlayMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
 		if (
@@ -245,7 +253,7 @@ export function Modal({
 				aria-modal="true"
 				aria-labelledby={labelledBy}
 				aria-label={!labelledBy ? ariaLabel : undefined}
-				aria-describedby={ariaDescribedBy}
+				aria-describedby={describedBy}
 				tabIndex={-1}
 				onMouseDown={(event) => event.stopPropagation()}
 			>
@@ -259,11 +267,21 @@ export function Modal({
 											{title}
 										</h2>
 									) : null}
+									{showDescription ? (
+										<p
+											id={generatedDescriptionId}
+											className="modal-description"
+										>
+											{description}
+										</p>
+									) : null}
 								</>
 							)}
 						</div>
 
 						{onClose ? (
+							// Neutral close: an orange icon button competed with the
+							// dialog's primary action.
 							<Button
 								type="button"
 								onClick={() => onCloseRef.current?.()}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
@@ -22,6 +22,15 @@ const ForgotPasswordForm = () => {
 
   const [submitted, setSubmitted] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
+  const [formError, setFormError] = useState<string | undefined>();
+
+  // The form is swapped for the result panel; move focus to its heading so
+  // keyboard and screen-reader users land on the confirmation, not <body>.
+  const resultHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (submitted) resultHeadingRef.current?.focus();
+  }, [submitted]);
 
   const {
     register,
@@ -36,6 +45,7 @@ const ForgotPasswordForm = () => {
 
   const onSubmit = async (values: ForgotPasswordFormValues) => {
     const email = normalizeEmail(values.email);
+    setFormError(undefined);
 
     try {
       const response = await ServerAxios.post(
@@ -54,13 +64,17 @@ const ForgotPasswordForm = () => {
           "If the email exists, a password reset link has been sent.",
       });
     } catch (error: unknown) {
+      const message = getApiErrorMessage(
+        error,
+        "Unable to send the password reset link.",
+      );
+
+      setFormError(message);
+
       showToast({
         type: "error",
         title: "Request failed",
-        description: getApiErrorMessage(
-          error,
-          "Unable to send the password reset link.",
-        ),
+        description: message,
       });
     }
   };
@@ -75,7 +89,13 @@ const ForgotPasswordForm = () => {
         <header className="auth-form-header">
           <p className="auth-form-eyebrow">Request accepted</p>
 
-          <h2 className="auth-form-title">Check your email</h2>
+          <h1
+            ref={resultHeadingRef}
+            tabIndex={-1}
+            className="auth-form-title auth-focus-target"
+          >
+            Check your email
+          </h1>
 
           <p className="auth-form-description">
             If an account is registered for <strong>{submittedEmail}</strong>, a
@@ -99,7 +119,7 @@ const ForgotPasswordForm = () => {
 
         <p className="auth-form-eyebrow">Password recovery</p>
 
-        <h2 className="auth-form-title">Forgot your password?</h2>
+        <h1 className="auth-form-title">Forgot your password?</h1>
 
         <p className="auth-form-description">
           Enter your registered email address and we will send you a secure
@@ -117,6 +137,12 @@ const ForgotPasswordForm = () => {
           required
           {...register("email")}
         />
+
+        {formError ? (
+          <p className="auth-form-error" role="alert">
+            {formError}
+          </p>
+        ) : null}
 
         <Button
           type="submit"

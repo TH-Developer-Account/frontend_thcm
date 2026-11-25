@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
@@ -5,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import Button from "../../../components/common/Button";
 import FormInput from "../../../components/forms/FormInput";
 import { useGuestAuth } from "../../../context/Auth/useGuestAuth";
+import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { normalizeEmail } from "../../../utils/format";
 import {
 	guestEmailLoginSchema,
@@ -14,6 +16,7 @@ import {
 const GuestEmailLoginForm = () => {
 	const navigate = useNavigate();
 	const { loginWithPassword } = useGuestAuth();
+	const [formError, setFormError] = useState<string | undefined>();
 
 	const {
 		register,
@@ -27,11 +30,17 @@ const GuestEmailLoginForm = () => {
 	});
 
 	const onSubmit = async (values: GuestEmailLoginFormValues) => {
+		setFormError(undefined);
+
 		try {
 			await loginWithPassword(normalizeEmail(values.email), values.password);
 			navigate("/guest/medi-claim/listing");
-		} catch {
-			// toast already shown by GuestAuthProvider
+		} catch (error: unknown) {
+			// Toast is already shown by GuestAuthProvider; keep an inline copy
+			// so the reason stays on screen.
+			setFormError(
+				getApiErrorMessage(error, "Unable to sign in. Check your credentials."),
+			);
 		}
 	};
 
@@ -58,6 +67,12 @@ const GuestEmailLoginForm = () => {
 					{...register("password")}
 				/>
 			</div>
+
+			{formError ? (
+				<p className="auth-form-error" role="alert">
+					{formError}
+				</p>
+			) : null}
 
 			<Button
 				text={isSubmitting ? "Signing in..." : "Sign in"}

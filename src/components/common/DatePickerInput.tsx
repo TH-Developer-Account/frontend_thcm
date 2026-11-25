@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DayPicker, type DateRange } from "react-day-picker";
 import { CalendarDaysIcon } from "@heroicons/react/24/outline";
-import "react-day-picker/dist/style.css";
+// react-day-picker/dist/style.css is intentionally not imported: it is
+// unlayered, so it overrode every design-system rule (today, outside days,
+// weights). All calendar styling lives in components.css → DATE PICKER.
 
 import Button from "./Button";
 import HelperTooltip from "./HelperTooltip";
@@ -63,36 +65,39 @@ function getDisplayValue(
 	return "";
 }
 
+// react-day-picker v9 class keys → semantic classes (styles/components.css
+// → DATE PICKER). v9 puts state classes (today, selected, outside, range_*)
+// on the day CELL (<td>); the clickable element is day_button.
+// (The keys used before — caption, head_row, day_today … — are v8 names that
+// v9 ignores; the calendar only looked right while the library stylesheet
+// was imported, and that stylesheet is unlayered, so it overrode the design
+// system.)
 const calendarClassNames = {
-	months: "flex flex-col gap-2 sm:flex-row",
-	month: "space-y-1",
-
-	caption: "relative flex items-center justify-center px-8 py-1.5",
-	caption_label: "mx-auto text-[11px] font-bold text-orange-700 items-center",
-
-	nav: "absolute inset-x-0 top-1.5 flex items-center justify-between px-1",
-	nav_button:
-		"flex h-4 w-4 items-center justify-center rounded-full border border-orange-200 bg-white text-orange-600 shadow-sm transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700",
-	nav_button_previous: "absolute left-0",
-	nav_button_next: "absolute right-0",
-
-	table: "w-full border-collapse",
-	head_row: "flex",
-	head_cell: "w-3 text-center text-[8px] font-semibold text-gray-400",
-
-	cell: "h-3 w-3 p-0 text-center",
-
-	day: "h-3 w-3 rounded text-[9px] font-medium text-gray-700 transition hover:bg-orange-50 hover:text-orange-600",
-
-	row: "mt-0.5 flex w-full",
-
-	day_today:
-		"relative border border-orange-500 bg-orange-100 text-orange-700 font-extrabold shadow-[0_0_0_3px_rgba(243,90,0,0.16)] after:absolute after:bottom-[2px] after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-orange-600",
-
-	day_selected: "bg-orange-500 text-white hover:bg-orange-500 hover:text-white",
-
-	day_outside: "text-gray-300 opacity-60",
-	day_disabled: "text-gray-300 opacity-40 cursor-not-allowed",
+	root: "date-picker-root",
+	months: "date-picker-months",
+	month: "date-picker-month",
+	month_caption: "date-picker-caption",
+	caption_label: "date-picker-caption-label",
+	nav: "date-picker-nav",
+	button_previous: "date-picker-nav-button",
+	button_next: "date-picker-nav-button",
+	chevron: "date-picker-chevron",
+	month_grid: "date-picker-table",
+	weekdays: "date-picker-head-row",
+	weekday: "date-picker-head-cell",
+	weeks: "date-picker-weeks",
+	week: "date-picker-row",
+	day: "date-picker-cell",
+	day_button: "date-picker-day",
+	today: "is-today",
+	selected: "is-selected",
+	outside: "is-outside",
+	disabled: "is-disabled",
+	hidden: "is-hidden",
+	focused: "is-focused",
+	range_start: "is-range-start",
+	range_middle: "is-range-middle",
+	range_end: "is-range-end",
 };
 
 export default function DatePickerInput({
@@ -147,6 +152,9 @@ export default function DatePickerInput({
 	const errorId = label
 		? `${label.replace(/\s+/g, "-").toLowerCase()}-error`
 		: undefined;
+	const fieldId = useId();
+	const labelId = `${fieldId}-label`;
+	const valueId = `${fieldId}-value`;
 
 	const canApply =
 		mode === "single"
@@ -225,6 +233,22 @@ export default function DatePickerInput({
 		};
 	}, [finalNumberOfMonths, mode, open]);
 
+	// Esc closes the calendar without applying and returns focus to the field.
+	useEffect(() => {
+		if (!open) return;
+
+		const handleKeyDown = (event: KeyboardEvent) => {
+			if (event.key !== "Escape") return;
+			event.preventDefault();
+			setDraftValue(selectedValue);
+			setOpen(false);
+			buttonRef.current?.focus();
+		};
+
+		document.addEventListener("keydown", handleKeyDown);
+		return () => document.removeEventListener("keydown", handleKeyDown);
+	}, [open, selectedValue]);
+
 	const handleOpen = () => {
 		if (disabled) return;
 
@@ -269,7 +293,9 @@ export default function DatePickerInput({
 							maxWidth: `calc(100vw - ${VIEWPORT_GAP * 2}px)`,
 							maxHeight: `calc(100dvh - ${VIEWPORT_GAP * 2}px)`,
 						}}
-						className="fixed z-[9999] overflow-auto rounded-lg border border-gray-200 bg-white p-1.5 shadow-lg"
+						className="date-picker-popover"
+						role="dialog"
+						aria-label={label ? `Choose ${label.toLowerCase()}` : "Choose a date"}
 					>
 						{mode === "single" ? (
 							<DayPicker
@@ -295,33 +321,20 @@ export default function DatePickerInput({
 								numberOfMonths={finalNumberOfMonths}
 								showOutsideDays
 								disabled={disabledDays}
-								classNames={{
-									...calendarClassNames,
-									day_range_start:
-										"bg-orange-500 text-white rounded-l-md rounded-r-none hover:bg-orange-500 hover:text-white",
-									day_range_end:
-										"bg-orange-500 text-white rounded-r-md rounded-l-none hover:bg-orange-500 hover:text-white",
-									day_range_middle:
-										"bg-orange-100 text-orange-700 rounded-none hover:bg-orange-100 hover:text-orange-700",
-								}}
+								classNames={calendarClassNames}
 							/>
 						)}
 
-						<div className="mt-1.5 flex items-center justify-end gap-1.5 border-t border-gray-100 pt-1.5">
-							<Button
-								type="button"
-								onClick={handleCancel}
-								text="Cancel"
-								className="px-2 py-1 text-[10px]"
-							/>
+						<div className="date-picker-footer">
+							<Button type="button" size="sm" onClick={handleCancel} text="Cancel" />
 
 							<Button
 								type="button"
+								size="sm"
 								onClick={handleApply}
 								disabled={!canApply}
 								text="Apply"
 								variant="brand"
-								className="px-2 py-1 text-[10px]"
 							/>
 						</div>
 					</div>,
@@ -333,7 +346,9 @@ export default function DatePickerInput({
 		<div ref={wrapperRef} className={`form-field ${className}`}>
 			{label ? (
 				<div className="form-label-row">
-					<label className="form-label">{label}</label>
+					<span className="form-label" id={labelId}>
+						{label}
+					</span>
 
 					{helperText && isTooltip && !error ? (
 						<HelperTooltip label={label} text={helperText} />
@@ -349,17 +364,23 @@ export default function DatePickerInput({
 					onClick={() => (open ? handleCancel() : handleOpen())}
 					aria-invalid={!!error}
 					aria-describedby={error ? errorId : undefined}
+					aria-labelledby={label ? `${labelId} ${valueId}` : undefined}
+					aria-haspopup="dialog"
+					aria-expanded={open}
 					className={`
 						form-input flex  w-full items-center justify-between  
 						${error ? "form-input-error" : ""}
 						${disabled ? "form-input-disabled" : ""}
 					`}
 				>
-					<span className={displayValue ? "text-gray-900" : "text-gray-400"}>
+					<span
+						id={valueId}
+						className={displayValue ? "date-picker-value" : "date-picker-placeholder"}
+					>
 						{displayValue || finalPlaceholder}
 					</span>
 
-					<CalendarDaysIcon className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+					<CalendarDaysIcon className="date-picker-trigger-icon" aria-hidden="true" />
 				</button>
 			</div>
 

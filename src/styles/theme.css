@@ -47,7 +47,8 @@
 		--radius-full: 9999px;
 		--form-radius: var(--radius-md);
 		--card-radius: var(--radius-lg);
-		--button-radius: var(--radius-md);
+		--button-radius: var(--radius-xs); /* now consumed by every .button-base appearance (was md, used only by .auth-primary-link) */
+		--input-radius: var(--radius-xs); /* consumed by inputs, selects, search, OTP, phone */
 		--badge-radius: var(--radius-full);
 		--chip-radius: var(--radius-full);
 
@@ -57,16 +58,26 @@
 		--shadow-lg: 0 12px 28px rgb(15 23 42 / 12%);
 		--shadow-xl: 0 20px 44px rgb(15 23 42 / 16%);
 		--shadow-overlay: 0 24px 60px rgb(15 23 42 / 24%);
-		--shadow-focus-brand: 0 0 0 3px rgb(243 90 0 / 18%);
-		--shadow-focus-error: 0 0 0 3px rgb(220 38 38 / 16%);
-		--shadow-focus-success: 0 0 0 3px rgb(21 128 61 / 16%);
+		/* Focus halos derive from the live tokens, so they follow the brand theme
+		   (was a hard-coded rgb(243 90 0 / 18%) that stayed orange in every theme). */
+		--shadow-focus-brand: 0 0 0 3px
+			color-mix(in srgb, var(--color-focus-ring) 28%, transparent);
+		--shadow-focus-error: 0 0 0 3px
+			color-mix(in srgb, var(--color-error) 22%, transparent);
+		--shadow-focus-success: 0 0 0 3px
+			color-mix(in srgb, var(--color-success) 22%, transparent);
+		/* Solid two-ring indicator for keyboard focus on buttons, links and nav
+		   (surface gap + 2px brand ring: clearly visible on any background). */
+		--shadow-focus-strong:
+			0 0 0 2px var(--color-bg-surface), 0 0 0 4px var(--color-focus-ring);
 
 		--control-height-xs: 2rem;
 		--control-height-sm: 2.5rem;
 		--control-height-md: 2.75rem; /* 44px — meets the minimum comfortable tap target */
 		--control-height-lg: 3rem;
 		--control-height-xl: 3.25rem;
-		--tap-target-min: 2.75rem; /* 44px, for icon buttons / checkboxes / radios */
+		--tap-target-min: 2.75rem;
+		--control-check-size: 1.25rem; /* 14px checkbox box */ /* 44px, for icon buttons / checkboxes / radios */
 
 		--duration-instant: 50ms;
 		--duration-fast: 120ms;
@@ -119,6 +130,7 @@
 		--page-section-content-gap: var(--layout-section-gap);
 
 		--page-header-title-size: var(--font-size-3xl);
+		--page-header-title-weight: var(--font-weight-semibold); /* was medium */
 		--page-header-title-line-height: var(--line-height-tight);
 		--page-header-title-tracking: var(--tracking-title);
 		--page-header-subtitle-size: var(--font-size-sm);
@@ -197,7 +209,15 @@
 	:root {
 		/* ONE place for app density. Effective value before this pass was 70%
 		   (typography.css loaded after globals.css 80%). Change here only. */
-		--root-font-size: 70%;
+		/* Spacing/control density only. Text sizes are decoupled from this
+		   (typography.css divides by --root-scale), so changing density never
+		   shrinks or grows text. */
+		--root-scale: 0.7;
+		/* ONE knob for all text size. 1 = the px values written in typography.css.
+		   0.875 = the agreed middle ground (body/table 12.25px, labels 12.25px,
+		   helper 10.5px, page title 22.75px). Tune here only. */
+		--type-scale: 0.875;
+		--root-font-size: calc(var(--root-scale) * 100%);
 
 		--border-width-thick: var(--border-width-strong);
 		--space-20: 5rem;

@@ -42,11 +42,11 @@ const NotificationItem = ({
 	return (
 		<div
 			className={[
-				"flex w-full items-start gap-2 border-b border-gray-100",
+				"flex w-full items-start gap-2 border-b border-line-subtle",
 				"px-3 py-2 last:border-b-0 transition-colors",
 				notification.isRead
-					? "hover:bg-gray-50"
-					: "bg-orange-50 hover:bg-orange-100/70",
+					? "hover:bg-surface-hover"
+					: "bg-accent-50 hover:bg-accent-100/70",
 			].join(" ")}
 		>
 			<div className="min-w-0 flex-1">
@@ -56,20 +56,20 @@ const NotificationItem = ({
 					className="block w-full min-w-0 text-left"
 				>
 					{appKey && (
-						<span className="mb-0.5 block text-[0.625rem] font-semibold uppercase tracking-wide text-orange-500">
+						<span className="mb-0.5 block text-xs font-semibold uppercase tracking-wide text-accent-700">
 							{appKey}
 						</span>
 					)}
 
-					<span className="block text-xs font-medium leading-snug text-gray-900">
+					<span className="block text-xs font-medium leading-snug text-fg">
 						{notification.title}
 					</span>
 
-					<span className="mt-0.5 line-clamp-2 block text-[0.6875rem] text-gray-500">
+					<span className="mt-0.5 line-clamp-2 block text-xs text-fg-secondary">
 						{notification.body}
 					</span>
 
-					<span className="mt-1 block text-[0.625rem] text-gray-400">
+					<span className="mt-1 block text-xs text-fg-muted">
 						{formatTimeAgo(notification.createdAt)}
 					</span>
 				</button>
@@ -79,10 +79,10 @@ const NotificationItem = ({
 						type="button"
 						onClick={() => onDownload(notification)}
 						className={[
-							"mt-1.5 rounded border border-orange-200 px-2 py-1",
-							"text-[0.6875rem] font-medium text-orange-600",
-							"hover:bg-orange-50 focus-visible:outline-none",
-							"focus-visible:ring-2 focus-visible:ring-orange-500",
+							"mt-1.5 rounded border border-accent-200 px-2 py-1",
+							"text-xs font-medium text-accent-700",
+							"hover:bg-accent-50 focus-visible:outline-none",
+							"focus-visible:ring-2 focus-visible:ring-focus",
 						].join(" ")}
 					>
 						Download
@@ -93,7 +93,7 @@ const NotificationItem = ({
 			{!notification.isRead && (
 				<span
 					aria-label="Unread"
-					className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-orange-500"
+					className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent-500"
 				/>
 			)}
 		</div>
@@ -191,10 +191,13 @@ export default function NotificationBell() {
 				aria-haspopup="dialog"
 				onClick={() => setIsOpen((current) => !current)}
 				className={[
-					"relative flex h-8 w-8 items-center justify-center rounded-full",
-					"text-black transition-colors hover:bg-black/10",
+					// Size lives in .notification-bell-trigger (CSS vars) so layouts
+					// can resize it — utility classes can't be overridden from CSS.
+					// text-fg, not text-black: the bell was invisible in dark mode.
+					"notification-bell-trigger relative flex items-center justify-center rounded-full",
+					"text-fg transition-colors hover:bg-surface-hover",
 					"focus-visible:outline-none focus-visible:ring-2",
-					"focus-visible:ring-orange-500",
+					"focus-visible:ring-focus",
 				].join(" ")}
 			>
 				<svg
@@ -205,7 +208,6 @@ export default function NotificationBell() {
 					strokeWidth="2"
 					strokeLinecap="round"
 					strokeLinejoin="round"
-					className="h-5 w-5"
 				>
 					<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
 					<path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -217,8 +219,8 @@ export default function NotificationBell() {
 						className={[
 							"absolute right-0 top-0 flex h-4 min-w-4",
 							"items-center justify-center rounded-full px-1",
-							"border border-white bg-orange-500",
-							"text-[0.625rem] font-semibold leading-none text-white",
+							"border border-white bg-accent-solid",
+							"text-xs font-semibold leading-none text-white",
 						].join(" ")}
 					>
 						{unreadCount > 9 ? "9+" : unreadCount}
@@ -234,17 +236,17 @@ export default function NotificationBell() {
 					className={[
 						"absolute right-0 top-10 z-50 overflow-hidden",
 						"w-[22rem] max-w-[calc(100vw-1rem)]",
-						"rounded-lg border border-gray-200 bg-white shadow-lg",
+						"rounded-lg border border-line bg-surface shadow-lg",
 					].join(" ")}
 				>
-					<div className="flex items-center justify-between border-b border-gray-100 px-3 py-2">
-						<p className="text-xs font-semibold text-gray-900">Notifications</p>
+					<div className="flex items-center justify-between border-b border-line-subtle px-3 py-2">
+						<p className="text-xs font-semibold text-fg">Notifications</p>
 
 						{unreadCount > 0 && (
 							<button
 								type="button"
 								onClick={() => void markAllAsRead()}
-								className="text-[0.6875rem] font-medium text-orange-500 hover:underline"
+								className="text-xs font-medium text-accent-700 hover:underline"
 							>
 								Mark all as read
 							</button>
@@ -253,7 +255,7 @@ export default function NotificationBell() {
 
 					<div className="max-h-[21rem] overflow-y-auto">
 						{notifications.length === 0 ? (
-							<p className="px-3 py-8 text-center text-xs text-gray-400">
+							<p className="px-3 py-8 text-center text-xs text-fg-muted">
 								All caught up
 							</p>
 						) : (

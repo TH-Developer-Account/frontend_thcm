@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
@@ -18,6 +19,10 @@ const EmailLoginForm = () => {
 	const { login } = useAuth();
 	const { showToast } = useToast();
 
+	// Persistent inline copy of the failure: a toast alone disappears and is
+	// easy to miss (design-system rule: toasts never carry the only message).
+	const [formError, setFormError] = useState<string | undefined>();
+
 	const {
 		register,
 		handleSubmit,
@@ -30,6 +35,8 @@ const EmailLoginForm = () => {
 	});
 
 	const onSubmit = async (values: EmailLoginFormValues) => {
+		setFormError(undefined);
+
 		try {
 			// Sanitize at the API boundary, not the field — the input keeps
 			// showing exactly what the user typed.
@@ -37,13 +44,17 @@ const EmailLoginForm = () => {
 
 			navigate(result.requiresPasswordReset ? "/reset-password" : "/");
 		} catch (error: unknown) {
+			const message = getApiErrorMessage(
+				error,
+				"Unable to sign in. Check your credentials.",
+			);
+
+			setFormError(message);
+
 			showToast({
 				type: "error",
 				title: "Sign-in failed",
-				description: getApiErrorMessage(
-					error,
-					"Unable to sign in. Check your credentials.",
-				),
+				description: message,
 			});
 		}
 	};
@@ -79,6 +90,12 @@ const EmailLoginForm = () => {
 					Forgot password?
 				</Link>
 			</div>
+
+			{formError ? (
+				<p className="auth-form-error" role="alert">
+					{formError}
+				</p>
+			) : null}
 
 			<Button
 				text={isSubmitting ? "Signing in..." : "Sign in"}

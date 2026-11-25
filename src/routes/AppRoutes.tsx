@@ -40,7 +40,9 @@ const ReimbursementClaimPublicPage = lazy(
 const VendorOnboardingPublicPage = lazy(
 	() => import("../modules/vendorOnboarding/pages/VendorOnboardingPublicPage"),
 );
-
+const DesignSystemPlayground = import.meta.env.DEV
+	? lazy(() => import("../dev/DesignSystemPlayground"))
+	: null;
 const AuthenticatedRoutes = () => {
 	return (
 		<SessionTimeoutProvider>
@@ -73,6 +75,13 @@ const AuthenticatedRoutes = () => {
 					<Route path="/workflow/*" element={<WorkflowRoutes />} />
 					<Route path="/medi-claim/*" element={<MedicalRoutes />} />
 					<Route path="/cpp/*" element={<CppRoutes />} />
+
+					{DesignSystemPlayground ? (
+						<Route
+							path="/dev/design-system"
+							element={<DesignSystemPlayground />}
+						/>
+					) : null}
 				</Route>
 			</Routes>
 		</SessionTimeoutProvider>

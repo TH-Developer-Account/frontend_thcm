@@ -1,24 +1,75 @@
+// Badge — a status or label pill.
+//
+// Tone comes from one place (./status.ts):
+//   explicit `variant` → its tone
+//   otherwise `status` → the central status map
+//   unknown → neutral (previously every unknown status turned amber)
+// The label is always text, so colour is never the only signal; `withIcon`
+// adds a matching icon for tables and dense lists.
+import type { ComponentType, SVGProps } from "react";
 import {
-	getStatusLabel,
-	getStatusVariant,
-} from "../../modules/marketing/activity-planner/utils/formatters";
-import { resolveStatusStyle, resolveVariantStyle } from "../styles.constant";
+	AlertTriangle,
+	CheckCircle2,
+	Clock,
+	Info,
+	MinusCircle,
+	XCircle,
+} from "lucide-react";
+
+import {
+	TONE_BADGE_CLASS,
+	formatStatusLabel,
+	resolveStatusTone,
+	resolveVariantTone,
+	type StatusTone,
+} from "./status";
 import type { BadgeProps } from "./common.types";
 
-const normalizeStatus = (status?: string | null) =>
-	status?.toLowerCase().trim() ?? "";
+const TONE_ICONS: Partial<Record<StatusTone, ComponentType<SVGProps<SVGSVGElement>>>> = {
+	success: CheckCircle2,
+	danger: XCircle,
+	warning: AlertTriangle,
+	pending: Clock,
+	info: Info,
+	neutral: MinusCircle,
+};
 
-export function Badge({ children, status, variant, text }: BadgeProps) {
-	const label =
-		text ?? children ?? getStatusLabel(status) ?? getStatusVariant(variant);
+export function Badge({
+	children,
+	status,
+	variant,
+	text,
+	withIcon = false,
+	size = "md",
+	className,
+}: BadgeProps) {
+	const label = text ?? children ?? (formatStatusLabel(status) || "Not set");
 
-	const resolvedVariant = variant ?? getStatusVariant(status);
+	// An explicit variant that isn't in the map (e.g. "outline") keeps its old look.
+	const variantTone = variant ? resolveVariantTone(variant) : undefined;
+	const tone: StatusTone | undefined = variant
+		? variantTone
+		: (resolveStatusTone(status) ?? "neutral");
 
-	const normalizedStatus = normalizeStatus(status);
-	const normalizedVariant = normalizeStatus(resolvedVariant);
+	const toneClass = tone ? TONE_BADGE_CLASS[tone] : "badge-outline";
 
-	const styleClass = resolveStatusStyle({ status: normalizedStatus });
-	const variantClass = resolveVariantStyle({ variant: normalizedVariant });
+	const Icon = withIcon && tone ? TONE_ICONS[tone] : undefined;
 
-	return <span className={`badge ${styleClass} ${variantClass}`}>{label}</span>;
+	return (
+		<span
+			className={[
+				"badge",
+				toneClass,
+				size === "sm" ? "badge-sm" : "",
+				className ?? "",
+			]
+				.filter(Boolean)
+				.join(" ")}
+		>
+			{Icon ? <Icon className="badge-icon" aria-hidden="true" /> : null}
+			{label}
+		</span>
+	);
 }
+
+export default Badge;

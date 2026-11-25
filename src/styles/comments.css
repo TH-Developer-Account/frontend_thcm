@@ -158,7 +158,7 @@
 	}
 
 	.comment-submeta {
-		color: var(--color-text-tertiary);
+		color: var(--color-text-secondary); /* tertiary was 4.4:1 on the own-comment tint */
 		font-size: var(--font-size-2xs);
 		line-height: var(--line-height-tight);
 		white-space: nowrap;
@@ -567,5 +567,64 @@
 		.rich-textarea {
 			transition-duration: 0.01ms;
 		}
+	}
+}
+
+/* =====================================================
+   COMMENTS — load error + "You" tag (Batch 9)
+===================================================== */
+
+@layer components {
+	.comments-load-error {
+		display: flex;
+		gap: var(--space-2);
+		margin: var(--space-2);
+		padding: var(--space-3);
+		border: var(--border-width-default) solid var(--color-error-border);
+		border-left: var(--feedback-rail-width) solid var(--feedback-error-fg);
+		border-radius: var(--radius-md);
+		background-color: var(--color-error-bg);
+	}
+
+	.comments-load-error-icon {
+		width: 1.125rem;
+		height: 1.125rem;
+		flex: 0 0 auto;
+		color: var(--feedback-error-fg);
+	}
+
+	.comments-load-error-copy {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--space-1);
+	}
+
+	.comments-load-error-title {
+		margin: 0;
+		color: var(--color-text-primary);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-semibold);
+	}
+
+	.comments-load-error-text {
+		margin: 0 0 var(--space-1);
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
+	}
+
+	.comment-you {
+		display: inline-flex;
+		margin-left: var(--space-1-5);
+		padding: 0 var(--space-1-5);
+		border: var(--border-width-default) solid var(--color-brand-soft);
+		border-radius: var(--radius-full);
+		background-color: var(--color-brand-subtle);
+		color: var(--color-text-brand);
+		font-size: var(--font-size-3xs);
+		font-weight: var(--font-weight-semibold);
+		line-height: 1.6;
+		vertical-align: middle;
 	}
 }
