@@ -15,10 +15,12 @@ import type { ReimbursementClaimListItem } from "./reimbursementClaim.types";
 const ReimbursementClaimListingPage = () => {
 	const navigate = useNavigate();
 	const listing = useReimbursementClaimListing({ initialTab: "createdByMe" });
-	const profileQuery = useGuestClaimProfileQuery();
+	// Warm the cache so the create form opens instantly.
+	useGuestClaimProfileQuery();
 
 	const handleViewRow = useCallback(
-		(row: ReimbursementClaimListItem) => navigate(`/guest/medi-claim/${row.id}`),
+		(row: ReimbursementClaimListItem) =>
+			navigate(`/guest/medi-claim/${row.id}`),
 		[navigate],
 	);
 
@@ -27,15 +29,15 @@ const ReimbursementClaimListingPage = () => {
 			<PageHeader
 				headerText="Medical Reimbursement Forms"
 				headerChildren={
-					profileQuery.data?.canCreate ? (
-						<Button
-							text="Create New"
-							appearance="standard"
-							variant="brand"
-							Icon={Plus}
-							onClick={() => navigate("/guest/medi-claim/create")}
-						/>
-					) : undefined
+					<Button
+						text="Create New Claim"
+						appearance="standard"
+						variant="brand"
+						Icon={Plus}
+						// Opens the claim form directly, prefilled from the retiree's
+						// earlier claims (settled + on-hold amounts).
+						onClick={() => navigate("/guest/medi-claim/create")}
+					/>
 				}
 			/>
 
@@ -48,7 +50,10 @@ const ReimbursementClaimListingPage = () => {
 				isLoading={listing.isLoading}
 				isFetching={listing.isFetching}
 				isError={listing.isError}
-				errorMessage={getApiErrorMessage(listing.error, "Unable to load your claims.")}
+				errorMessage={getApiErrorMessage(
+					listing.error,
+					"Unable to load your claims.",
+				)}
 				onRetry={() => void listing.refetch()}
 				pageIndex={listing.pageIndex}
 				pageSize={listing.pageSize}

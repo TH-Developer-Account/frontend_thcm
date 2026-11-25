@@ -1,0 +1,652 @@
+/* =========================================================
+   MASTERS — hub + split view
+   Plain CSS on the existing design tokens (no @apply, so it needs no
+   Tailwind reference). Prefix: mh-
+   Breakpoints match the app shell: phones <= 767px.
+========================================================= */
+@layer components {
+	.mh {
+		position: relative;
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-3);
+		color: var(--color-text-primary);
+	}
+
+	.mh-header {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.mh-title {
+		margin: 0;
+		font-size: var(--page-header-title-size, 1.5rem);
+		font-weight: var(--font-weight-medium);
+		line-height: 1.2;
+	}
+
+	.mh-subtitle {
+		margin: 0;
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+	}
+
+	/* ---------- Buttons ---------- */
+	.mh-btn {
+		display: inline-flex;
+		min-height: var(--control-height-md, 2.25rem);
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-1);
+		padding-inline: var(--space-3);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-md);
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-primary);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		white-space: nowrap;
+		cursor: pointer;
+
+		transition:
+			background-color var(--duration-fast) var(--ease-standard),
+			border-color var(--duration-fast) var(--ease-standard);
+	}
+
+	.mh-btn:hover:not(:disabled) {
+		background-color: var(--color-bg-surface-hover);
+	}
+
+	.mh-btn:focus-visible,
+	.mh-card:focus-visible,
+	.mh-back:focus-visible,
+	.mh-close:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.mh-btn:disabled {
+		cursor: not-allowed;
+		opacity: 0.55;
+	}
+
+	.mh-btn--brand {
+		border-color: var(--color-brand);
+		background-color: var(--color-brand);
+		color: var(--color-brand-foreground, #fff);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.mh-btn--brand:hover:not(:disabled) {
+		background-color: var(--color-brand-hover, var(--color-brand-active));
+	}
+
+	/* ---------- Hub ---------- */
+	.mh-hub {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+		gap: var(--space-3);
+	}
+
+	/* 3 x 3 on desktop (9 masters); 2 columns on tablet. */
+	@media (min-width: 1024px) {
+		.mh-hub {
+			grid-template-columns: repeat(6, minmax(0, 1fr));
+		}
+	}
+
+	.mh-card {
+		position: relative;
+		display: flex;
+		min-width: 0;
+		min-height: 5.25rem;
+		flex-direction: column;
+		justify-content: space-between;
+		gap: var(--space-2);
+		padding: var(--space-3);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-lg);
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-primary);
+		text-align: left;
+		cursor: pointer;
+
+		transition:
+			background-color var(--duration-fast) var(--ease-standard),
+			border-color var(--duration-fast) var(--ease-standard);
+	}
+
+	.mh-card:hover {
+		background-color: var(--color-bg-surface-hover);
+	}
+
+	.mh-card.is-active {
+		border-color: var(--color-border-brand, var(--color-brand));
+		background-color: var(--color-brand-subtle);
+	}
+
+	.mh-card-top {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: var(--space-2);
+	}
+
+	.mh-card-title {
+		min-width: 0;
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.mh-card.is-active .mh-card-title {
+		color: var(--color-brand-active);
+	}
+
+	.mh-card-count {
+		font-size: var(--font-size-lg, 1.125rem);
+		font-weight: var(--font-weight-medium);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.mh-card-meta {
+		font-size: var(--font-size-xs);
+		color: var(--color-text-secondary);
+	}
+
+	.mh-card-chevron {
+		display: none;
+	}
+
+	/* ---------- Split ---------- */
+	/* Table : form = 2fr : 1fr (swap to 1fr 2fr for the reverse). */
+	.mh-split {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		min-width: 0;
+		align-items: stretch;
+		gap: var(--space-3);
+	}
+
+	.mh-list,
+	.mh-detail {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		overflow: hidden;
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-lg);
+		background-color: var(--color-bg-surface);
+	}
+
+	.mh-list {
+		/* The list scrolls inside; the page does not jump as pages change. */
+		max-height: clamp(26rem, calc(100dvh - 20rem), 48rem);
+	}
+
+	.mh-detail {
+		min-width: 0;
+	}
+
+	.mh-list-head {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-3);
+		border-bottom: var(--border-width-default) solid var(--color-border-default);
+	}
+
+	.mh-list-title {
+		min-width: 0;
+		margin: 0 auto 0 0;
+		font-size: var(--font-size-base);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.mh-list-count {
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-regular);
+		color: var(--color-text-secondary);
+	}
+
+	.mh-list-tools {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		border-bottom: var(--border-width-default) solid
+			var(--color-border-subtle, var(--color-border-default));
+	}
+
+	.mh-search input {
+		width: 100%;
+		min-height: var(--control-height-md, 2.25rem);
+		padding-inline: var(--space-2);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-md);
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-primary);
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+	}
+
+	.mh-search input:focus-visible {
+		outline: none;
+		border-color: var(--color-border-brand, var(--color-brand));
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.mh-rows {
+		min-height: 0;
+		flex: 1 1 auto;
+		/* Wide tables scroll sideways instead of squeezing columns. */
+		overflow: auto;
+		scrollbar-width: thin;
+		scrollbar-color: var(--color-scrollbar-thumb) transparent;
+	}
+
+	.mh-rows[aria-busy="true"] {
+		opacity: 0.7;
+	}
+
+	.mh-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: var(--font-size-sm);
+	}
+
+	.mh-table th {
+		position: sticky;
+		top: 0;
+		z-index: 1;
+		padding: var(--space-2) var(--space-3);
+		background-color: var(--color-bg-surface-subtle, var(--color-bg-surface));
+		border-bottom: var(--border-width-default) solid var(--color-border-default);
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		text-align: left;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		white-space: nowrap;
+	}
+
+	.mh-table td {
+		max-width: 22rem;
+		padding: var(--space-2) var(--space-3);
+		border-bottom: var(--border-width-default) solid
+			var(--color-border-subtle, var(--color-border-default));
+		color: var(--color-text-primary);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.mh-table .is-right {
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.mh-table tbody tr {
+		cursor: pointer;
+	}
+
+	.mh-table tbody tr:hover {
+		background-color: var(--color-bg-surface-hover);
+	}
+
+	.mh-table tbody tr:focus-visible {
+		outline: 2px solid var(--color-brand);
+		outline-offset: -2px;
+	}
+
+	.mh-table tbody tr.is-selected {
+		background-color: var(--color-brand-subtle);
+	}
+
+	.mh-table tbody tr.is-selected td:first-child {
+		box-shadow: inset 3px 0 0 var(--color-brand);
+	}
+
+	.mh-pager {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2);
+		padding: var(--space-2) var(--space-3);
+		border-top: var(--border-width-default) solid var(--color-border-default);
+		font-size: var(--font-size-xs);
+		color: var(--color-text-secondary);
+	}
+
+	.mh-pager > div {
+		display: flex;
+		gap: var(--space-1);
+	}
+
+	/* ---------- Pills ---------- */
+	.mh-pill {
+		display: inline-block;
+		flex: none;
+		padding: 0.125rem var(--space-2);
+		border-radius: var(--radius-full);
+		font-size: var(--font-size-2xs, 0.6875rem);
+		font-weight: var(--font-weight-medium);
+		vertical-align: middle;
+	}
+
+	.mh-pill--active {
+		background-color: var(--color-success-bg);
+		color: var(--color-success);
+	}
+
+	.mh-pill--inactive {
+		background-color: var(--color-bg-surface-muted);
+		color: var(--color-text-secondary);
+	}
+
+	/* ---------- Empty ---------- */
+	.mh-empty {
+		display: flex;
+		min-height: 8rem;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-2);
+		padding: var(--space-4);
+		font-size: var(--font-size-sm);
+		color: var(--color-text-secondary);
+		text-align: center;
+	}
+
+	.mh-empty p {
+		margin: 0;
+	}
+
+	.mh-empty--detail {
+		min-height: 14rem;
+		flex: 1;
+	}
+
+	/* ---------- Form ---------- */
+	.mh-form {
+		display: flex;
+		min-height: 0;
+		flex: 1;
+		flex-direction: column;
+	}
+
+	.mh-form-head {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-3) var(--space-4);
+		border-bottom: var(--border-width-default) solid var(--color-border-default);
+		background-color: var(--color-bg-surface-subtle, var(--color-bg-surface));
+	}
+
+	.mh-form-heading {
+		min-width: 0;
+		flex: 1;
+	}
+
+	.mh-eyebrow {
+		display: block;
+		font-family: var(--font-mono);
+		font-size: var(--font-size-2xs, 0.6875rem);
+		letter-spacing: var(--tracking-eyebrow, 0.06em);
+		text-transform: uppercase;
+		color: var(--color-text-brand, var(--color-brand-active));
+	}
+
+	.mh-form-title {
+		margin: 2px 0 0;
+		overflow-wrap: anywhere;
+		font-size: var(--font-size-lg, 1.125rem);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.mh-back,
+	.mh-close {
+		display: inline-flex;
+		width: var(--control-height-lg, 2.5rem);
+		height: var(--control-height-lg, 2.5rem);
+		flex: none;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+		border: 0;
+		border-radius: var(--radius-md);
+		background-color: transparent;
+		color: var(--color-icon-primary, var(--color-text-primary));
+		font-size: 1.5rem;
+		line-height: 1;
+		cursor: pointer;
+	}
+
+	.mh-back:hover,
+	.mh-close:hover {
+		background-color: var(--color-bg-surface-hover);
+	}
+
+	/* Back is phone-only; close is desktop-only. */
+	.mh-back {
+		display: none;
+	}
+
+	.mh-form-body {
+		display: flex;
+		min-height: 0;
+		flex: 1;
+		flex-direction: column;
+		gap: var(--space-4);
+		padding: var(--space-4);
+		overflow-y: auto;
+	}
+
+	.mh-fields {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: var(--space-3);
+	}
+
+	.mh-field {
+		min-width: 0;
+	}
+
+	.mh-field--wide {
+		grid-column: 1 / -1;
+	}
+
+	.mh-meta {
+		margin: 0;
+		font-size: var(--font-size-xs);
+		color: var(--color-text-muted);
+	}
+
+	.mh-form-actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-3) var(--space-4);
+		border-top: var(--border-width-default) solid var(--color-border-default);
+		background-color: var(--color-bg-surface);
+	}
+
+	/* ---------- Toast ---------- */
+	.mh-toast {
+		position: fixed;
+		right: var(--space-4);
+		bottom: var(--space-4);
+		z-index: var(--z-toast, 1000);
+		max-width: min(24rem, calc(100vw - 2rem));
+		padding: var(--space-3) var(--space-4);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-md);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-lg);
+		font-size: var(--font-size-sm);
+	}
+
+	.mh-toast--success {
+		border-color: var(--color-success-border, var(--color-success));
+		color: var(--color-success);
+	}
+
+	.mh-toast--error {
+		border-color: var(--color-error-border, var(--color-error));
+		color: var(--color-error);
+	}
+
+	/* ---------- Tablet ---------- */
+	@media (max-width: 1023px) {
+		.mh-split {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.mh-form-body,
+		.mh-form-head,
+		.mh-form-actions {
+			padding-inline: var(--space-3);
+		}
+	}
+
+	/* ---------- Phone: one pane at a time ---------- */
+	@media (max-width: 767px) {
+		.mh-header {
+			display: none;
+		}
+
+		.mh-list,
+		.mh-detail {
+			max-height: none;
+			border-radius: var(--radius-md);
+		}
+
+		.mh-rows {
+			overflow-x: auto;
+			overflow-y: visible;
+		}
+
+		/* Let long text wrap so every column fits the screen. */
+		.mh-table td {
+			max-width: none;
+			white-space: normal;
+			overflow-wrap: break-word;
+		}
+
+		.mh-table td:first-child {
+			white-space: nowrap;
+		}
+
+		.mh-back {
+			display: inline-flex;
+		}
+
+		.mh-close {
+			display: none;
+		}
+
+		.mh[data-pane="hub"] .mh-header {
+			display: flex;
+		}
+
+		.mh[data-pane="hub"] .mh-split,
+		.mh[data-pane="list"] .mh-hub,
+		.mh[data-pane="list"] .mh-detail,
+		.mh[data-pane="form"] .mh-hub,
+		.mh[data-pane="form"] .mh-list {
+			display: none;
+		}
+
+		/* Hub becomes a stacked list of rows. */
+		.mh-hub {
+			grid-template-columns: minmax(0, 1fr);
+			gap: var(--space-2);
+		}
+
+		.mh-card {
+			display: grid;
+			min-height: 4.25rem;
+			grid-template-columns: minmax(0, 1fr) auto auto;
+			grid-template-areas:
+				"title count chevron"
+				"meta count chevron";
+			align-items: center;
+			column-gap: var(--space-3);
+			row-gap: 2px;
+			border-radius: var(--radius-md);
+		}
+
+		/* Let title + count be placed directly on the card grid. */
+		.mh-card-top {
+			display: contents;
+		}
+
+		.mh-card-title {
+			grid-area: title;
+		}
+
+		.mh-card-count {
+			grid-area: count;
+		}
+
+		.mh-card-meta {
+			grid-area: meta;
+		}
+
+		.mh-card-chevron {
+			display: inline;
+			grid-area: chevron;
+			color: var(--color-text-secondary);
+			font-size: 1.125rem;
+		}
+
+		.mh-fields {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.mh-table td,
+		.mh-table th {
+			padding-block: var(--space-3);
+		}
+
+		.mh-btn,
+		.mh-search input {
+			min-height: 2.75rem;
+		}
+
+		.mh-form-actions {
+			position: sticky;
+			bottom: 0;
+			padding-bottom: max(var(--space-3), env(safe-area-inset-bottom));
+		}
+
+		.mh-form-actions .mh-btn {
+			flex: 1 1 auto;
+		}
+
+		.mh-toast {
+			right: var(--space-3);
+			bottom: max(var(--space-3), env(safe-area-inset-bottom));
+			left: var(--space-3);
+			max-width: none;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.mh-btn,
+		.mh-card {
+			transition-duration: 0.01ms;
+		}
+	}
+}

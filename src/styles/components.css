@@ -2958,7 +2958,9 @@
 	}
 
 	.toggle-input:checked ~ .toggle-thumb {
-		transform: translateX(calc(var(--toggle-w, 2.75rem) - var(--toggle-h, 1.5rem)));
+		transform: translateX(
+			calc(var(--toggle-w, 2.75rem) - var(--toggle-h, 1.5rem))
+		);
 	}
 
 	.toggle-input:focus-visible ~ .toggle-track {
@@ -4282,7 +4284,8 @@
 	/* Relied on the browser default ring, invisible on dark surfaces. */
 	.accordion-trigger:focus-visible {
 		outline: none;
-		box-shadow: inset 0 0 0 var(--border-width-strong) var(--color-focus-ring, var(--color-brand));
+		box-shadow: inset 0 0 0 var(--border-width-strong)
+			var(--color-focus-ring, var(--color-brand));
 	}
 
 	.accordion-title {
@@ -4904,7 +4907,6 @@
 		@apply text-xs;
 		color: var(--workflow-muted);
 	}
-
 }
 
 /* =====================================================
@@ -9547,7 +9549,10 @@
 
 	@media (max-width: 1023px) {
 		.metric-grid {
-			grid-template-columns: repeat(min(var(--metric-grid-cols, 4), 2), minmax(0, 1fr));
+			grid-template-columns: repeat(
+				min(var(--metric-grid-cols, 4), 2),
+				minmax(0, 1fr)
+			);
 		}
 	}
 
@@ -9567,7 +9572,8 @@
 		gap: var(--space-1-5);
 
 		padding: var(--space-4);
-		border: var(--border-width-default) solid var(--card-border, var(--color-border-subtle));
+		border: var(--border-width-default) solid
+			var(--card-border, var(--color-border-subtle));
 		border-top: var(--border-width-stronger, 3px) solid var(--metric-accent);
 		border-radius: var(--radius-md);
 

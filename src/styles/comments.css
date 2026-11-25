@@ -158,7 +158,9 @@
 	}
 
 	.comment-submeta {
-		color: var(--color-text-secondary); /* tertiary was 4.4:1 on the own-comment tint */
+		color: var(
+			--color-text-secondary
+		); /* tertiary was 4.4:1 on the own-comment tint */
 		font-size: var(--font-size-2xs);
 		line-height: var(--line-height-tight);
 		white-space: nowrap;
@@ -567,6 +569,207 @@
 		.rich-textarea {
 			transition-duration: 0.01ms;
 		}
+	}
+
+	/* =========================================================
+	   MOVED FROM THE GLOBAL STYLESHEET
+	   composer wrapper · empty · loading · error · rich-textarea error
+	========================================================= */
+
+	.comments-create-input {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.comments-create-input .form-field {
+		margin: 0;
+	}
+
+	/* ---------- Empty / loading / error ---------- */
+
+	.comments-empty {
+		display: flex;
+		@apply min-h-20;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-3);
+
+		padding: var(--space-2);
+
+		background-color: var(--comment-empty-bg);
+		color: var(--color-icon-muted);
+		text-align: left;
+	}
+
+	.comments-empty > svg {
+		flex: 0 0 auto;
+	}
+
+	.comments-empty-copy {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-0-5);
+	}
+
+	.comments-empty p {
+		margin: 0;
+
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+	}
+
+	.comments-empty span {
+		color: var(--color-text-muted);
+
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+	}
+
+	.comments-loading {
+		display: flex;
+		min-height: 7rem;
+		flex-direction: column;
+		gap: var(--space-2);
+
+		padding: var(--space-3);
+	}
+
+	.comments-loading div {
+		width: min(70%, 34rem);
+		height: 2.5rem;
+
+		border-radius: var(--radius-sm);
+
+		background: linear-gradient(
+			90deg,
+			var(--comment-skeleton-start),
+			var(--comment-skeleton-mid),
+			var(--comment-skeleton-start)
+		);
+		background-size: 200% 100%;
+
+		animation: comment-pulse 1.2s var(--ease-standard) infinite;
+	}
+
+	.comments-loading div:nth-child(even) {
+		margin-left: auto;
+	}
+
+	/* Shared by .comments-loading and .block-loading */
+	@keyframes comment-pulse {
+		from {
+			background-position: 200% 0;
+		}
+
+		to {
+			background-position: -200% 0;
+		}
+	}
+
+	.comments-error {
+		margin: var(--space-2) var(--space-3);
+		padding: var(--space-2) var(--space-3);
+
+		border: var(--border-width-default) solid var(--color-error-border);
+		border-radius: var(--radius-sm);
+
+		background-color: var(--color-error-bg);
+		color: var(--color-error);
+
+		font-size: var(--font-size-xs);
+		line-height: var(--line-height-normal);
+	}
+
+	.rich-textarea-error {
+		border-color: var(--color-error);
+	}
+
+	.rich-textarea-error:focus-within {
+		border-color: var(--color-error);
+		box-shadow: var(--shadow-focus-error);
+	}
+
+	.rich-textarea-menu-item:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.rich-textarea-menu-item > svg {
+		flex: 0 0 auto;
+		color: var(--color-icon-secondary);
+	}
+
+	@media (max-width: 420px) {
+		.comments-empty {
+			align-items: flex-start;
+			padding: var(--space-3);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.comments-loading div {
+			transition-duration: 0.01ms;
+			animation-duration: 0.01ms;
+			animation-iteration-count: 1;
+		}
+	}
+
+	/* =========================================================
+	   FILL-PANEL MODE
+	   Use when the comments / audit list sits inside a fixed-height
+	   panel (e.g. the audit trail card in the side column): the list
+	   takes the remaining height and scrolls on its own.
+	   Opt in with the "comments-fill" class on the panel (or on the
+	   Card). ".activity-form-view-panel--audit" is kept as an alias so
+	   existing markup keeps working.
+	========================================================= */
+
+	:is(.comments-fill, .activity-form-view-panel--audit) .comments-body,
+	:is(.comments-fill, .activity-form-view-panel--audit) .comments-section {
+		display: flex;
+		height: 100%;
+		min-height: 0;
+		flex-direction: column;
+	}
+
+	/* The inner box is the panel itself here: no second border. */
+	:is(.comments-fill, .activity-form-view-panel--audit) .comments-section {
+		flex: 1 1 auto;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+
+	/* Lift the min(24rem, 45vh) cap on .comments-list so it takes the
+	   remaining height of the panel. */
+	:is(.comments-fill, .activity-form-view-panel--audit) .comments-list {
+		max-height: none;
+		min-height: 0;
+		flex: 1 1 auto;
+		overflow-y: auto;
+	}
+
+	/* Empty log: only the message, centred. */
+	:is(.comments-fill, .activity-form-view-panel--audit) .comments-empty {
+		min-height: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+		justify-content: center;
+
+		border: 0;
+		border-radius: 0;
+		background-color: transparent;
+		box-shadow: none;
+		text-align: center;
+	}
+
+	:is(.comments-fill, .activity-form-view-panel--audit) .comments-empty-copy {
+		align-items: center;
 	}
 }
 

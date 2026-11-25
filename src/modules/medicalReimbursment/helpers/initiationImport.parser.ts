@@ -18,33 +18,45 @@ import { medicalClaimInitiationSchema } from "../utils/reimbursementClaim.schema
 
 export const MAX_IMPORT_ROWS = 1000;
 
-export const INITIATION_IMPORT_COLUMNS: Array<keyof MedicalClaimInitiationPayload> = [
-	"employeeName",
-	"ticketNumber",
-	"email",
-	"mobile",
-];
+export const INITIATION_IMPORT_COLUMNS: Array<
+	keyof MedicalClaimInitiationPayload
+> = ["employeeName", "ticketNumber", "email", "mobile"];
 
 const HEADER_ALIASES: Record<keyof MedicalClaimInitiationPayload, string[]> = {
 	employeeName: ["employeename", "name", "fullname"],
-	ticketNumber: ["ticketnumber", "ticketno", "ticket", "retireecode", "employeecode"],
+	ticketNumber: [
+		"ticketnumber",
+		"ticketno",
+		"ticket",
+		"retireecode",
+		"employeecode",
+	],
 	email: ["email", "employeeemail", "emailaddress"],
-	mobile: ["mobile", "phone", "phonenumber", "mobilenumber", "employeephonenumber"],
+	mobile: [
+		"mobile",
+		"phone",
+		"phonenumber",
+		"mobilenumber",
+		"employeephonenumber",
+	],
 };
 
-const normaliseHeader = (header: string) =>
-	header.toLowerCase().replace(/[\s_\-*]+/g, "");
-
-export const COLUMN_LABELS: Record<keyof MedicalClaimInitiationPayload, string> = {
+const COLUMN_LABELS: Record<keyof MedicalClaimInitiationPayload, string> = {
 	employeeName: "Employee Name",
 	ticketNumber: "Ticket Number",
 	email: "Email",
 	mobile: "Mobile",
 };
 
+const normaliseHeader = (header: string) =>
+	header.toLowerCase().replace(/[\s_\-*]+/g, "");
+
 /** Maps a sheet header row to our canonical fields. */
 export function resolveColumns(headers: string[]) {
-	const byField = {} as Record<keyof MedicalClaimInitiationPayload, string | undefined>;
+	const byField = {} as Record<
+		keyof MedicalClaimInitiationPayload,
+		string | undefined
+	>;
 	for (const field of INITIATION_IMPORT_COLUMNS) {
 		byField[field] = headers.find((header) =>
 			HEADER_ALIASES[field].includes(normaliseHeader(header)),
@@ -57,11 +69,11 @@ export function resolveColumns(headers: string[]) {
 const cellToString = (value: unknown): string => {
 	if (value === null || value === undefined) return "";
 	// Excel stores phone numbers as numbers: 9876543210 → "9876543210".
-	if (typeof value === "number") return Number.isInteger(value) ? String(value) : String(value);
+	if (typeof value === "number") return String(value);
 	return String(value).trim();
 };
 
-/** Validates already-extracted rows. Pure — unit-tested. */
+/** Validates already-extracted rows. Pure — no I/O. */
 export function validateInitiationRows(
 	records: Array<Record<string, unknown>>,
 	headers: string[],
@@ -98,7 +110,8 @@ export function validateInitiationRows(
 
 	const rows: ParsedInitiationRow[] = [];
 	records.forEach((record, index) => {
-		if (!Object.values(record).some((value) => cellToString(value) !== "")) return;
+		if (!Object.values(record).some((value) => cellToString(value) !== ""))
+			return;
 		const rowNumber = index + 2; // header is row 1
 
 		const values: MedicalClaimInitiationPayload = {
@@ -112,7 +125,9 @@ export function validateInitiationRows(
 		const result = medicalClaimInitiationSchema.safeParse(values);
 		if (!result.success) {
 			for (const issue of result.error.issues) {
-				const key = String(issue.path[0]) as keyof MedicalClaimInitiationPayload;
+				const key = String(
+					issue.path[0],
+				) as keyof MedicalClaimInitiationPayload;
 				if (!errors[key]) errors[key] = issue.message;
 			}
 		}
@@ -127,7 +142,8 @@ export function validateInitiationRows(
 			if (dupTicket) errors.ticketNumber = `Duplicate of row ${dupTicket}.`;
 			if (!dupEmail) seenEmail.set(normalised.email, rowNumber);
 			if (!dupMobile) seenMobile.set(normalised.mobile, rowNumber);
-			if (!dupTicket) seenTicket.set(normalised.ticketNumber.toUpperCase(), rowNumber);
+			if (!dupTicket)
+				seenTicket.set(normalised.ticketNumber.toUpperCase(), rowNumber);
 		}
 
 		const isValid = Object.keys(errors).length === 0;
@@ -144,7 +160,9 @@ export function validateInitiationRows(
 	};
 }
 
-export async function parseInitiationImportFile(file: File): Promise<ParsedInitiationFile> {
+export async function parseInitiationImportFile(
+	file: File,
+): Promise<ParsedInitiationFile> {
 	let workbook: XLSX.WorkBook;
 	try {
 		workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
@@ -154,7 +172,9 @@ export async function parseInitiationImportFile(file: File): Promise<ParsedIniti
 			rows: [],
 			validCount: 0,
 			invalidCount: 0,
-			fileErrors: ["This file could not be read. Upload an .xlsx, .xls or .csv file."],
+			fileErrors: [
+				"This file could not be read. Upload an .xlsx, .xls or .csv file.",
+			],
 		};
 	}
 
@@ -199,11 +219,16 @@ export function buildInitiationImportFile(
 	const valid = rows.filter((row) => row.isValid);
 	const sheet = XLSX.utils.aoa_to_sheet([
 		INITIATION_IMPORT_COLUMNS,
-		...valid.map((row) => INITIATION_IMPORT_COLUMNS.map((field) => row.values[field])),
+		...valid.map((row) =>
+			INITIATION_IMPORT_COLUMNS.map((field) => row.values[field]),
+		),
 	]);
 	const workbook = XLSX.utils.book_new();
 	XLSX.utils.book_append_sheet(workbook, sheet, "Medical Initiations");
-	const buffer = XLSX.write(workbook, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
+	const buffer = XLSX.write(workbook, {
+		type: "array",
+		bookType: "xlsx",
+	}) as ArrayBuffer;
 	const name = originalName.replace(/\.(xlsx|xls|csv)$/i, "") + ".xlsx";
 	return new File([buffer], name, {
 		type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

@@ -314,7 +314,7 @@ export default function AuditLogSection({
 					iconSize={20}
 				/>
 			) : (
-				<div className="comments-section">
+				<div className="comments-section border-none">
 					<div className="comments-list scrollbar-sleek">
 						<div className="audit-timeline-groups">
 							{groups.map((group) => (

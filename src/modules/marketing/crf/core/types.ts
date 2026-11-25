@@ -29,6 +29,60 @@ export const CRF_CATEGORIES = [
 
 export type CrfCategory = (typeof CRF_CATEGORIES)[number]["value"];
 
+/** Custom artwork request (no catalog product behind the line). */
+export const CUSTOM_ARTWORK_LABEL = "Custom artwork";
+/** `value` prefix of a custom line (the form needs a non-empty, unique value). */
+export const CUSTOM_ARTWORK_ID_PREFIX = "custom-";
+
+/* ========================================================================== */
+/*                        Artwork request (custom) form                       */
+/* ========================================================================== */
+
+/** "Type of artwork" picked after the product on the request form. */
+export const ARTWORK_TYPES = [
+	{
+		value: "STANDARD",
+		label: "Standard artwork",
+		hint: "An existing layout, filled in with this event's details.",
+	},
+	{
+		value: "CUSTOM",
+		label: "Custom artwork",
+		hint: "A new design made to your brief — attach references below.",
+	},
+	{
+		value: "LANGUAGE_VERSION",
+		label: "Language version",
+		hint: "An existing artwork re-made in another language.",
+	},
+] as const;
+
+export type ArtworkType = (typeof ARTWORK_TYPES)[number]["value"];
+
+export const getArtworkTypeLabel = (value?: string | null) =>
+	ARTWORK_TYPES.find((type) => type.value === value)?.label ?? null;
+
+/** Reference images a requester can attach to one artwork request. */
+export const ARTWORK_ATTACHMENT_LIMITS = {
+	MAX_FILES: 5,
+	MAX_BYTES: 5 * 1024 * 1024, // 5 MB per image
+	MAX_DESCRIPTION: 200,
+	ACCEPT: ["image/jpeg", "image/png", "image/webp"],
+} as const;
+
+/**
+ * One reference image. `key` is the storage key returned by the upload
+ * endpoint — it is what the CRF save sends. `url` is a short-lived signed
+ * link used only to show a thumbnail (never sent back).
+ */
+export type CrfArtworkAttachment = {
+	key: string;
+	fileName: string;
+	sizeBytes: number;
+	description: string;
+	url?: string | null;
+};
+
 /* ========================================================================== */
 /*                         Artwork (digital) resolution                       */
 /* ========================================================================== */
@@ -167,6 +221,17 @@ export type CrfLineItem = LineItemOption & {
 
 	/* ---- Artwork ---- */
 	resolutionPreset?: ArtworkResolutionPreset;
+	/** Custom artwork request: size + description typed by the user, no catalog
+	 *  product. Sent as a CUSTOM_ARTWORK item (see CrfCustomArtworkItemInput). */
+	isCustom?: boolean;
+	/** Request form: the catalog artwork this request is based on
+	 *  (ProductMaster id, category ARTWORK) and its display name. */
+	artworkProductId?: string | null;
+	artworkProductName?: string | null;
+	/** Request form: standard / custom / language version. */
+	artworkType?: ArtworkType | null;
+	/** Request form: reference images (max 5). */
+	attachments?: CrfArtworkAttachment[];
 };
 
 /* ========================================================================== */
@@ -220,7 +285,35 @@ export type CrfShopifyItem = {
 	status: "REQUESTED" | "OUT_OF_STOCK" | "REMOVED" | "ORDERED" | "DEBITED";
 };
 
-export type ApiCrfItem = CrfCatalogItem | CrfShopifyItem;
+/** A custom artwork line — backend's "CUSTOM" source. Unpriced (rate/amount 0). */
+export type CrfCustomArtworkItem = {
+	id: string;
+	category: "ARTWORK";
+	source: "CUSTOM";
+	quantity: number;
+	rate: number;
+	amount: number;
+	/** The requester's label for this artwork. */
+	title: string | null;
+	description: string | null;
+	width: string | null;
+	height: string | null;
+	unit: string | null;
+	/** Request form fields — null on a request saved before the form existed. */
+	productId?: string | null;
+	productName?: string | null;
+	artworkType?: string | null;
+	attachments?: Array<{
+		key: string;
+		fileName: string;
+		sizeBytes: number;
+		description: string | null;
+		/** Signed, short-lived. */
+		url: string | null;
+	}>;
+};
+
+export type ApiCrfItem = CrfCatalogItem | CrfShopifyItem | CrfCustomArtworkItem;
 
 export type CrfStatus =
 	| "OPEN"
@@ -351,7 +444,39 @@ export type CrfShopifyItemInput = {
 	rate: number;
 };
 
-export type CrfItemInput = CrfCatalogItemInput | CrfShopifyItemInput;
+/** Custom artwork line — matches backend's CustomArtworkCrfItemInput. */
+export type CrfCustomArtworkItemInput = {
+	kind: "CUSTOM_ARTWORK";
+	quantity: number;
+	width: string;
+	height: string;
+	unit: string;
+	description: string;
+	/** Label typed by the requester (stored as the line's title). */
+	title: string;
+	/** Catalog artwork the request is based on. */
+	productId?: string;
+	artworkType?: ArtworkType;
+	attachments?: Array<{
+		key: string;
+		fileName: string;
+		sizeBytes: number;
+		description?: string;
+	}>;
+};
+
+/** POST /crf/artwork-attachments → data. */
+export type CrfArtworkUpload = {
+	key: string;
+	fileName: string;
+	sizeBytes: number;
+	url: string | null;
+};
+
+export type CrfItemInput =
+	| CrfCatalogItemInput
+	| CrfShopifyItemInput
+	| CrfCustomArtworkItemInput;
 
 /** POST /crf, PUT /crf/:crfId body. */
 export type CrfPayload = {

@@ -5,6 +5,10 @@ import { CheckCircle2, LoaderCircle, Mail, TriangleAlert } from "lucide-react";
 import PublicPageStatusCard from "../../../components/common/PublicPageStatusCard";
 import PublicPagesLayout from "../../../layout/PublicPagesLayout";
 import ReimbursementClaimForm from "../components/ReimbursementClaimForm";
+import { ClaimActionsCard } from "../components/ClaimActions";
+import ClaimEligibilityLedger from "../components/ClaimEligibilityLedger";
+import ClaimEmployeeCard from "../components/ClaimEmployeeCard";
+import ClaimHeadsCard from "../components/ClaimHeadsCard";
 import type {
 	ReimbursementClaimFormValues,
 	ReimbursementClaimSubmission,
@@ -22,6 +26,7 @@ import {
 	deriveAnnualCap,
 	toMedicalClaimFormValues,
 	toMedicalClaimLineItems,
+	toEligibilityHoldProps,
 } from "../helpers/medicalClaimListing.mapper";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { normalizeIndianMobile } from "../../guest/guestAuth/guestLogin.schemas";
@@ -80,7 +85,7 @@ interface ReimbursementClaimPublicPageProps {
 
 /**
  * First-touch claim form for the retired employee (emailed link
- * /medical-claim-form/:token). They fill + save drafts + submit; they never
+ * /medi-claim/public/:token). They fill + save drafts + submit; they never
  * see or touch line-item review columns.
  */
 const ReimbursementClaimPublicPage = ({
@@ -108,7 +113,6 @@ const ReimbursementClaimPublicPage = ({
 	);
 	const submitMutation = useSubmitPublicMedicalClaimMutation();
 	const draftMutation = useSavePublicMedicalClaimDraftMutation();
-
 	React.useEffect(() => {
 		if (!submitted) return;
 		const timerId = window.setTimeout(
@@ -119,6 +123,8 @@ const ReimbursementClaimPublicPage = ({
 	}, [submitted]);
 
 	const publicClaim = claimQuery.data;
+
+	const holdProps = toEligibilityHoldProps(publicClaim);
 
 	const permissions = useMedicalClaimPermissions({
 		context: "public",
@@ -276,6 +282,9 @@ const ReimbursementClaimPublicPage = ({
 		);
 	}
 
+	// PUBLIC VIEW layout: one column. No tabs, no sidebar, and no audit,
+	// comments or workflow (the guest never sees them). The eligibility bar is
+	// in a sticky side rail so the balance and any over-limit warning stay in view.
 	return (
 		<PublicPagesLayout title={PAGE_TITLE}>
 			<ReimbursementClaimForm
@@ -283,6 +292,7 @@ const ReimbursementClaimPublicPage = ({
 				mode={permissions.mode}
 				canEdit={permissions.canEditClaim}
 				actorRole={permissions.actorRole}
+				isClaimant
 				canApprove={false}
 				canClarify={false}
 				canReviewLineItems={false}
@@ -295,7 +305,32 @@ const ReimbursementClaimPublicPage = ({
 				submitSuccessMessage="Your medical claim has been submitted for approval."
 				onSubmit={permissions.canSubmit ? handleSubmit : undefined}
 				onSaveDraft={permissions.canSaveDraft ? handleSaveDraft : undefined}
-			/>
+				eligibilityPendingAmount={holdProps.eligibilityPendingAmount}
+				hospitalisationSummary={holdProps.hospitalisationSummary}
+				// Over-limit claims can be submitted after a confirmation (the
+				// bar and the bill rows already warn); HR decides the approved amount.
+				enforceEligibilityLimit={false}
+			>
+				<div className="mx-auto flex w-full max-w-8xl flex-col gap-4 lg:flex-row lg:items-start">
+					<form
+						className="flex min-w-0 flex-1 flex-col gap-4"
+						noValidate
+						onSubmit={(event) => event.preventDefault()}
+					>
+						<ClaimEmployeeCard />
+						<ClaimHeadsCard actionsVariant="none" />
+					</form>
+
+					{/* Ledger rail: eligibility and the actions stay in view. */}
+					<aside
+						aria-label="Eligibility and actions"
+						className="flex w-full shrink-0 flex-col gap-3 lg:sticky lg:top-4 lg:w-80 xl:w-[340px]"
+					>
+						<ClaimEligibilityLedger />
+						<ClaimActionsCard />
+					</aside>
+				</div>
+			</ReimbursementClaimForm>
 		</PublicPagesLayout>
 	);
 };
