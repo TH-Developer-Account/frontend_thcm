@@ -1,42 +1,23 @@
 // forms/EPF/useEpfForm.ts
 // EPF form controller.
 //
-// ONE-CLICK SUBMIT (when `submitWithWorkflow` is set, i.e. in the wizard)
-// is now a strict three-step gate, in order:
+// ONE-CLICK SUBMIT (when `submitWithWorkflow` is set, i.e. in the wizard):
 //
-//   1. CHECK AUTHORITY (manual — the "Check Authority" button). Calls the
-//      Schedule of Authority (SOA) for the live, UNSAVED `tataHitachiShare`.
-//      Must be re-run any time that amount changes — a result only counts
-//      for the exact amount it was checked against (see `authorityCheck`
-//      below). Not authorized to even propose this amount → Submit stays
-//      disabled, no matter what; there is no escalation path for an amount
-//      you aren't authorized to create in the first place.
-//   2. PREVIEW WORKFLOW (manual — only shown/relevant when authorized to
-//      propose but NOT auto-approved, i.e. a workflow is actually needed).
-//      Must find a template for the same amount before Submit unlocks.
-//   3. SUBMIT — only reachable once 1 (and 2, if it applies) have passed
-//      for the CURRENT amount. Only then do we:
-//        a. save the EPF (create, or update if it already exists)
-//        b. finalize the EPC — the server-side SOA decision is still the
-//           authoritative one (see epc.controller.ts's
-//           finalizeEventProposal); the checks above are a frontend
-//           courtesy so the EPF is never saved as SUBMITTED for an amount
-//           the creator isn't authorized for, but the backend enforces the
-//           same rule independently.
-//        c. not auto-approved → assign the workflow previewed in step 2.
+//   1. Save the EPF (create, or update if it already exists).
+//   2. Preview the approval workflow that matches the EPC's zone and
+//      `tataHitachiShare` (the Tata Hitachi share only, dealer share
+//      excluded — not the full event cost; workflow-template matching is
+//      scoped to what Tata Hitachi itself is on the hook for, and to the
+//      EPC's zone first, then that amount).
+//   3. A matching template was found → assign it, the EPC is now pending
+//      on that workflow's first stage.
+//      No matching template → nothing is assigned. The EPF stays saved;
+//      clicking Submit again re-saves and retries only this step once an
+//      administrator sets up a workflow for the zone/amount.
 //
-// WHY THE GATE MOVED BEFORE SAVING: previously Submit saved the EPF with
-// status SUBMITTED FIRST and only found out via finalize whether that was
-// allowed. When it wasn't, the EPF/EPC was left stuck at status SUBMITTED
-// with no active workflow — "pending on proposer" with no way to resolve
-// it short of lowering the amount. Checking authority before saving
-// anything avoids ever reaching that state in the normal flow.
-//
-// BUDGET USED FOR SOA / TEMPLATE MATCHING: `tataHitachiShare` (the Tata
-// Hitachi share only, dealer share excluded) — not the full event cost.
-// SOA authority and workflow-template bands are both scoped to what Tata
-// Hitachi itself is on the hook for, so this must be the same amount
-// `authorityLimit.helper.ts` / `evaluateBudget` (budgetMap) will see.
+// The "Approval Workflow" section below the form previews this live, as
+// the amount changes, so the creator can see before submitting whether a
+// workflow will be found.
 //
 // DRAFT (create mode only): what the user types is autosaved locally (per EPC)
 // so a refresh / Back doesn't lose it. Only user-entered fields are stored;
@@ -108,63 +89,36 @@ export type EpfFormProps = {
   initialData?: EpfDetailResponse | null;
   crfData?: EpfCrfData;
   budgetMasterId?: string | null;
+  /**
+   * The EPC's zone, as a region_code (not a Zone id) — resolved by the
+   * caller (EpcFormsWizardPage) from `epcData.region_id` via master data,
+   * the same way `budgetMasterId` is resolved before reaching this hook.
+   * Workflow-template matching tries this first, then falls back to
+   * budget-only matching (see templateMatchResolvers.EVENT_PROPOSAL
+   * server-side). Optional and unresolved here on purpose: neither
+   * `EpcDetailEpf` nor `CrfDetail` carries a zone code of its own, so
+   * there is no further fallback chain to add, unlike budgetMasterId's.
+   */
+  epcZoneCode?: string | null;
   onSuccess?: (data?: any) => void | Promise<void>;
   onCancel?: () => void;
   isClarifiedUpdate?: boolean;
   activeWorkflowId?: string | null;
-  /**
-   * Submit = Check Authority → (if needed) Preview Workflow → save EPF →
-   * Schedule of Authority finalize → (if not bypassed) assign the
-   * previewed workflow. See this file's header for the full gate order.
-   */
+  /** Submit = save EPF → preview + assign the matching workflow. */
   submitWithWorkflow?: boolean;
   /** "Request workflow" clicked because none exists. Host navigates to listing. */
   onRequestWorkflow?: () => void | Promise<void>;
 };
 
-/** Result of the manual "Check Authority" action, pinned to the amount it
- *  was run against — see `EpfAuthorityCheck.checked` for why that matters. */
-type AuthorityCheckState = {
-  amount: number;
-  eligible: boolean;
-  proposerEligible: boolean;
-  authorityLimitLabel: string | null;
-};
-
-export type EpfAuthorityCheck = {
+export type EpfWorkflowPreview = {
   /** Only relevant when `submitWithWorkflow` is on. */
   enabled: boolean;
-  /** True only once a check has been run AND the amount hasn't changed
-   *  since. False here means "stale or never run" — re-run before relying
-   *  on `eligible` / `proposerEligible` / `needsWorkflow`. */
-  checked: boolean;
-  checking: boolean;
-  /** Eligible APPROVER → auto-approved, no workflow needed. Meaningless
-   *  unless `checked` is true. */
-  eligible: boolean;
-  /** Eligible PROPOSER → authorized to submit this amount at all. False
-   *  is a hard rejection, never a signal to preview a workflow instead.
-   *  Meaningless unless `checked` is true. */
-  proposerEligible: boolean;
-  authorityLimitLabel: string | null;
-  /** Authorized to propose, but not auto-approved — a workflow preview is
-   *  required before Submit unlocks. Meaningless unless `checked` is true. */
-  needsWorkflow: boolean;
-  run: () => Promise<void>;
-};
-
-export type EpfWorkflowPreview = {
-  /** Only worth showing once the authority check says a workflow is
-   *  actually needed (`authorityCheck.needsWorkflow`). */
-  visible: boolean;
-  /** True only once a preview has been run AND the amount hasn't changed
-   *  since (same staleness rule as the authority check). */
+  /** True once a preview has been fetched for the CURRENT amount. */
   checked: boolean;
   loading: boolean;
   error: unknown;
   rows: any[];
   hasWorkflow: boolean;
-  run: () => Promise<void>;
 };
 
 type UseEpfFormResult = {
@@ -186,11 +140,7 @@ type UseEpfFormResult = {
   isEditMode: boolean;
   /** When the local draft was last written (create mode only), else null. */
   draftSavedAt: number | null;
-  authorityCheck: EpfAuthorityCheck;
   workflowPreview: EpfWorkflowPreview;
-  /** True while `submitWithWorkflow` and the gate above isn't satisfied yet
-   *  for the current amount — the host disables Submit on this. */
-  authorityBlocksSubmit: boolean;
   handleChange: (name: keyof EpfFormValues, value: string) => void;
   handleReset: () => void;
   handleSubmit: (status: EpfStatus) => Promise<void>;
@@ -216,6 +166,7 @@ const numericFields = new Set<keyof EpfFormValues>([
 ]);
 
 const DRAFT_DEBOUNCE_MS = 600;
+const PREVIEW_DEBOUNCE_MS = 600;
 
 const parseFieldValue = (name: keyof EpfFormValues, value: string) => {
   if (!numericFields.has(name)) return value;
@@ -249,6 +200,7 @@ export const useEpfForm = ({
   initialData,
   crfData,
   budgetMasterId: propBudgetMasterId,
+  epcZoneCode: propEpcZoneCode,
   onSuccess,
   submitWithWorkflow = false,
   onRequestWorkflow,
@@ -266,6 +218,10 @@ export const useEpfForm = ({
   const epcId = propEpcId ?? storedInfo?.epcId ?? null;
   const crfId = propCrfId ?? storedInfo?.crfId ?? null;
   const epfId = propEpfId ?? storedInfo?.epfId ?? null;
+  // No fallback chain here (unlike budgetMasterId above) — confirmed neither
+  // EpcDetailEpf nor CrfDetail carries a zone code, so the caller is the
+  // only source.
+  const epcZoneCode = propEpcZoneCode ?? null;
 
   const isEditMode = mode === "edit" || Boolean(epfId);
 
@@ -388,8 +344,8 @@ export const useEpfForm = ({
     return overheadTotal + Number(values.crfTotal || 0);
   }, [costItems, values.crfTotal]);
 
-  /** Dealer/Tata Hitachi split of `eventCost`. SOA and workflow-template
-   *  matching are both scoped to `tataHitachiShare` (see file header). */
+  /** Dealer/Tata Hitachi split of `eventCost`. Workflow-template matching
+   *  is scoped to `tataHitachiShare` (see file header). */
   const budgetShares = React.useMemo(
     () => calculateBudgetShares(values, eventCost),
     [values, eventCost],
@@ -407,76 +363,12 @@ export const useEpfForm = ({
     };
   }, [values, budgetShares]);
 
-  /* ----------------------- Step 1: Check Authority -------------------------- */
-  // Manual, pre-save, EPC-agnostic: checks the live `tataHitachiShare`
-  // directly, so the creator finds out BEFORE saving/submitting anything.
-  // Pinned to the amount it ran against — any later change to the amount
-  // makes `checked` false again until re-run (see EpfAuthorityCheck's doc
-  // comment). This is a frontend courtesy; finalizeEpc (step 3b) remains
-  // the authoritative server-side decision.
-
-  const [authorityCheckState, setAuthorityCheckState] =
-    React.useState<AuthorityCheckState | null>(null);
-  const [checkingAuthority, setCheckingAuthority] = React.useState(false);
-
-  const authorityChecked =
-    authorityCheckState !== null &&
-    authorityCheckState.amount === tataHitachiShare;
-
-  const needsWorkflow =
-    authorityChecked &&
-    authorityCheckState!.proposerEligible &&
-    !authorityCheckState!.eligible;
-
-  const handleCheckAuthority = React.useCallback(async () => {
-    if (!(tataHitachiShare > 0)) {
-      showToast({
-        type: "error",
-        title: "Cannot check authority",
-        description:
-          "Add event cost items first so there's an amount to check.",
-      });
-      return;
-    }
-
-    setCheckingAuthority(true);
-    try {
-      const result =
-        await workflowApi.checkAuthorityForAmount(tataHitachiShare);
-      setAuthorityCheckState({ amount: tataHitachiShare, ...result });
-    } catch (error) {
-      showToast({
-        type: "error",
-        title: "Could not check authority",
-        description: getWorkflowErrorMessage(
-          error,
-          "Unable to check your Schedule of Authority eligibility.",
-        ),
-      });
-    } finally {
-      setCheckingAuthority(false);
-    }
-  }, [showToast, tataHitachiShare]);
-
-  const authorityCheck: EpfAuthorityCheck = {
-    enabled: submitWithWorkflow,
-    checked: authorityChecked,
-    checking: checkingAuthority,
-    eligible: authorityChecked ? authorityCheckState!.eligible : false,
-    proposerEligible: authorityChecked
-      ? authorityCheckState!.proposerEligible
-      : false,
-    authorityLimitLabel: authorityChecked
-      ? authorityCheckState!.authorityLimitLabel
-      : null,
-    needsWorkflow,
-    run: handleCheckAuthority,
-  };
-
-  /* ----------------------- Step 2: Preview Workflow -------------------------- */
-  // Manual, only meaningful once Step 1 says a workflow is actually needed.
-  // Same staleness rule as the authority check: a result only counts for
-  // the exact amount it was fetched for.
+  /* ------------------------- Approval Workflow preview ---------------------- */
+  // Automatic: re-previewed any time `tataHitachiShare` settles on a new
+  // value (debounced the same way the draft autosave is), so the creator
+  // can see the approval chain — or find out none exists yet — before
+  // hitting Submit. Submit re-fetches this itself rather than trusting a
+  // possibly-stale value, so there's no race between typing and clicking.
 
   const fetchPreviewRows = React.useCallback(
     async (budget: number) => {
@@ -484,7 +376,7 @@ export const useEpfForm = ({
         subjectType: SUBJECT_TYPE,
         workspaceId: workspaceId as string,
         appId: appId as string,
-        criteria: { budget },
+        criteria: { budget, zone: epcZoneCode ?? undefined },
       });
 
       return (
@@ -493,56 +385,67 @@ export const useEpfForm = ({
         }) ?? []
       );
     },
-    [appId, workspaceId],
+    [appId, workspaceId, epcZoneCode],
   );
 
-  const [workflowPreviewState, setWorkflowPreviewState] = React.useState<{
+  const [livePreview, setLivePreview] = React.useState<{
     amount: number;
     rows: any[];
     error: unknown;
   } | null>(null);
-  const [previewingWorkflow, setPreviewingWorkflow] = React.useState(false);
+  const [previewLoading, setPreviewLoading] = React.useState(false);
+
+  React.useEffect(() => {
+    if (
+      !submitWithWorkflow ||
+      !(tataHitachiShare > 0) ||
+      !workspaceId ||
+      !appId
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setPreviewLoading(true);
+      fetchPreviewRows(tataHitachiShare)
+        .then((rows) => {
+          if (cancelled) return;
+          setLivePreview({ amount: tataHitachiShare, rows, error: null });
+        })
+        .catch((error) => {
+          if (cancelled) return;
+          setLivePreview({ amount: tataHitachiShare, rows: [], error });
+        })
+        .finally(() => {
+          if (!cancelled) setPreviewLoading(false);
+        });
+    }, PREVIEW_DEBOUNCE_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [
+    submitWithWorkflow,
+    tataHitachiShare,
+    workspaceId,
+    appId,
+    fetchPreviewRows,
+  ]);
 
   const previewChecked =
-    workflowPreviewState !== null &&
-    workflowPreviewState.amount === tataHitachiShare;
-
-  const handlePreviewWorkflow = React.useCallback(async () => {
-    if (!(tataHitachiShare > 0) || !workspaceId || !appId) return;
-
-    setPreviewingWorkflow(true);
-    try {
-      const rows = await fetchPreviewRows(tataHitachiShare);
-      setWorkflowPreviewState({ amount: tataHitachiShare, rows, error: null });
-    } catch (error) {
-      setWorkflowPreviewState({ amount: tataHitachiShare, rows: [], error });
-    } finally {
-      setPreviewingWorkflow(false);
-    }
-  }, [appId, fetchPreviewRows, tataHitachiShare, workspaceId]);
-
-  const previewRows = previewChecked ? workflowPreviewState!.rows : [];
-  const previewError = previewChecked ? workflowPreviewState!.error : null;
+    livePreview !== null && livePreview.amount === tataHitachiShare;
 
   const workflowPreview: EpfWorkflowPreview = {
-    visible: submitWithWorkflow && needsWorkflow,
+    enabled: submitWithWorkflow,
     checked: previewChecked,
-    loading: previewingWorkflow,
-    error: previewError,
-    rows: previewRows,
-    hasWorkflow: previewChecked && !previewError && previewRows.length > 0,
-    run: handlePreviewWorkflow,
+    loading: previewLoading,
+    error: previewChecked ? livePreview!.error : null,
+    rows: previewChecked ? livePreview!.rows : [],
+    hasWorkflow:
+      previewChecked && !livePreview!.error && livePreview!.rows.length > 0,
   };
-
-  /** Submit stays disabled until the gate above is satisfied for the
-   *  CURRENT amount. Edit-only saves (no `submitWithWorkflow`) skip this
-   *  entirely — SOA only gates the one-click wizard submit. */
-  const authorityBlocksSubmit =
-    submitWithWorkflow &&
-    (!authorityCheck.checked ||
-      !authorityCheck.proposerEligible ||
-      (authorityCheck.needsWorkflow &&
-        (!workflowPreview.checked || !workflowPreview.hasWorkflow)));
 
   /* --------------------------- Loading flags ------------------------------- */
 
@@ -701,39 +604,6 @@ export const useEpfForm = ({
             });
             return;
           }
-
-          /* ── Schedule of Authority gate — BEFORE anything is saved.
-           * Nothing gets written as SUBMITTED unless the creator is
-           * authorized for the CURRENT amount, and (if a workflow is
-           * needed) a template has been previewed for it. See this
-           * file's header for why this moved ahead of the save. ── */
-          if (authorityBlocksSubmit) {
-            if (!authorityCheck.checked) {
-              showToast({
-                type: "error",
-                title: "Check authority first",
-                description:
-                  'Click "Check Authority" for the current amount before submitting.',
-              });
-            } else if (!authorityCheck.proposerEligible) {
-              showToast({
-                type: "error",
-                title: "Cannot submit",
-                description: authorityCheck.authorityLimitLabel
-                  ? `You are not authorized to submit an amount in the "${authorityCheck.authorityLimitLabel}" band. This exceeds your assigned limit.`
-                  : "You are not authorized to submit an Event Proposal for this amount.",
-              });
-            } else {
-              showToast({
-                type: "error",
-                title: "Preview workflow first",
-                description: !workflowPreview.checked
-                  ? 'Click "Preview Workflow" to see the approval flow for this amount before submitting.'
-                  : "No approval workflow is assigned to this amount yet. Ask your administrator to set one up, then check again.",
-              });
-            }
-            return;
-          }
         }
 
         /* ── Step 1: save the EPF (create, or update if it exists). ───── */
@@ -770,59 +640,36 @@ export const useEpfForm = ({
         clearEpfDraft(epcId);
         setDraftSavedAt(null);
 
-        /* ── Step 2: Schedule of Authority finalize — the real submit. ──
-         * Always tries SOA auto-approval first, against the amount just
-         * saved. Only when it declines (`bypassed === false`) do we fall
-         * back to assigning the workflow already previewed above —
-         * reusing those rows rather than re-fetching, since we already
-         * confirmed one exists as part of the gate. */
-        let bypassedBySOA = false;
-
+        /* ── Step 2: preview + assign the matching workflow. ──────────── */
+        // Always re-fetched fresh here rather than trusting the live
+        // preview's state — avoids a race if the amount just settled.
         if (submitWithWorkflow) {
           setAssigning(true);
           try {
-            const finalizeResult = await workflowApi.finalizeEpc(epcId);
-            bypassedBySOA = Boolean(finalizeResult.data.bypassed);
+            const rows = await fetchPreviewRows(tataHitachiShare);
 
-            if (!bypassedBySOA) {
-              let rows = previewChecked ? workflowPreviewState!.rows : [];
-
-              if (rows.length === 0) {
-                try {
-                  rows = await fetchPreviewRows(tataHitachiShare);
-                } catch (previewError) {
-                  showToast({
-                    type: "error",
-                    title: "EPF saved, not submitted",
-                    description: getWorkflowErrorMessage(
-                      previewError,
-                      "Unable to find an approval workflow for this amount.",
-                    ),
-                  });
-                  return;
-                }
-              }
-
-              if (rows.length === 0) {
-                showToast({
-                  type: "error",
-                  title: "EPF saved, not submitted",
-                  description:
-                    "No approval workflow is assigned to this amount yet. Ask your administrator to set one up, then submit again.",
-                });
-                return;
-              }
-
-              await workflowApi.assignWorkflow({
-                subjectType: SUBJECT_TYPE,
-                subjectId: epcId,
-                workspaceId: workspaceId as string,
-                appId: appId as string,
-                criteria: { budget: tataHitachiShare },
+            if (rows.length === 0) {
+              showToast({
+                type: "error",
+                title: "EPF saved, not submitted",
+                description:
+                  "No approval workflow is assigned to this amount yet. Ask your administrator to set one up, then submit again.",
               });
+              return;
             }
-          } catch (finalizeError) {
-            console.error("EPC finalize/assign failed:", finalizeError);
+
+            await workflowApi.assignWorkflow({
+              subjectType: SUBJECT_TYPE,
+              subjectId: epcId,
+              workspaceId: workspaceId as string,
+              appId: appId as string,
+              criteria: {
+                budget: tataHitachiShare,
+                zone: epcZoneCode ?? undefined,
+              },
+            });
+          } catch (assignError) {
+            console.error("EPC workflow assignment failed:", assignError);
 
             await queryClient.invalidateQueries({
               queryKey: epcKeys.detail(epcId),
@@ -832,7 +679,7 @@ export const useEpfForm = ({
               type: "error",
               title: "EPF saved, not submitted",
               description: getWorkflowErrorMessage(
-                finalizeError,
+                assignError,
                 "Unable to submit the EPC.",
               ),
             });
@@ -887,9 +734,7 @@ export const useEpfForm = ({
           description: isClarifiedUpdate
             ? "Resubmitted. Approval restarts from the first stage."
             : submitWithWorkflow
-              ? bypassedBySOA
-                ? "Submitted. EPC auto-approved under the Schedule of Authority — no workflow was required."
-                : "Submitted. The approval workflow has started."
+              ? "Submitted. The approval workflow has started."
               : currentEpfId
                 ? "EPF updated successfully."
                 : "EPF saved successfully.",
@@ -916,30 +761,27 @@ export const useEpfForm = ({
     },
     [
       appId,
-      authorityBlocksSubmit,
-      authorityCheck.authorityLimitLabel,
-      authorityCheck.checked,
-      authorityCheck.proposerEligible,
       costItems,
       createEpfMutation,
       crfId,
       displayValues,
       epcId,
       epfId,
+      epcZoneCode,
       eventCost,
       fetchPreviewRows,
       navigate,
       onSuccess,
-      previewChecked,
       queryClient,
       showToast,
       submitWithWorkflow,
       submitting,
       tataHitachiShare,
       updateEpfMutation,
-      workflowPreview.checked,
-      workflowPreviewState,
       workspaceId,
+      isClarifiedUpdate,
+      activeWorkflowId,
+      clarifiedResubmitMutation,
     ],
   );
 
@@ -959,9 +801,7 @@ export const useEpfForm = ({
     epfId,
     isEditMode,
     draftSavedAt: isEditMode ? null : draftSavedAt,
-    authorityCheck,
     workflowPreview,
-    authorityBlocksSubmit,
     handleChange,
     handleReset,
     handleSubmit,

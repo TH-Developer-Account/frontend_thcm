@@ -1,6 +1,10 @@
 import { ClipboardCheck, ClipboardList } from "lucide-react";
 import type { AppSummary } from "../../../context/Auth/AuthContext";
-import type { BudgetCategory, WorkflowSelectOption } from "../types/types";
+import type {
+  BudgetCategory,
+  WorkflowSelectOption,
+  WorkflowType,
+} from "../types/types";
 
 // App name used to gate the budget-category field on the workflow form.
 // Compared against `basics.appDesc`.
@@ -10,6 +14,18 @@ export const MARKETING_ACTIVITY_PLANNER_APP_NAME = "Marketing Activity Planner";
 // Matching is done on a normalised key OR name (see isVendorOnboardingApp), so
 // "Vendor Onboarding", "vendor-onboarding" and "VENDOR_ONBOARDING" all match.
 export const VENDOR_ONBOARDING_APP_NAME = "Vendor Onboarding";
+
+// Router-state flag read by WorkflowCreatePage (`isUserCreatedWorkflow`) to
+// switch it into the personal/"user-created" flow — Vendor Onboarding app
+// pre-selected, workflowApi.createUser on submit — instead of the admin
+// shared-template flow. Single source of truth for every "Create Workflow"
+// entry point that should only ever create a personal workflow (never a
+// shared template), so the two can't drift if the flag's shape changes.
+export const USER_CREATED_WORKFLOW_NAV_STATE: {
+  workflowType: WorkflowType;
+} = {
+  workflowType: "USERCREATED",
+};
 
 const normaliseAppIdentifier = (value?: string | null): string =>
   (value ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
