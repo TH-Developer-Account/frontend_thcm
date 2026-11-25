@@ -5,6 +5,7 @@
 //
 //   POST /handouts                  create + submit for approval
 //   GET  /handouts?view=mine|approve|deliver&status&search&page&pageSize
+//   GET  /handouts/approval-workflow   the two fixed roles, resolved to real users
 //   GET  /handouts/:id              detail + server-computed `permissions`
 //   POST /handouts/:id/approve
 //   POST /handouts/:id/reject   { reason }   approver rejects outright
@@ -25,6 +26,7 @@ import { crfShopApi, crfShopKeys } from "../crf";
 import type {
   CreateHandoutPayload,
   DeliverHandoutPayload,
+  HandoutApprovalWorkflow,
   HandoutDetail,
   HandoutItem,
   HandoutListParams,
@@ -48,6 +50,14 @@ const realApi = {
     const {
       data: { data },
     } = await ServerAxios.get(`/handouts/${id}`);
+    return data;
+  },
+
+  /** The two fixed roles (approver, delivery person), resolved to real users. */
+  getApprovalWorkflow: async (): Promise<HandoutApprovalWorkflow> => {
+    const {
+      data: { data },
+    } = await ServerAxios.get("/handouts/approval-workflow");
     return data;
   },
 
@@ -107,6 +117,7 @@ export const handoutKeys = {
     [...handoutKeys.all, "list", params] as const,
   detail: (id: string) => [...handoutKeys.all, "detail", id] as const,
   stock: (skuKey: string) => [...handoutKeys.all, "stock", skuKey] as const,
+  approvalWorkflow: () => [...handoutKeys.all, "approval-workflow"] as const,
 };
 
 /* ========================================================================== */
@@ -140,6 +151,20 @@ export function useHandoutQuery(id: string | undefined) {
     queryKey: handoutKeys.detail(id ?? ""),
     queryFn: () => handoutApi.get(id as string),
     enabled: Boolean(id),
+  });
+}
+
+/**
+ * The two fixed roles, for the New Handout review step's Approval Workflow
+ * display. A long staleTime is deliberate: unlike a live approval queue,
+ * who the configured approver/delivery person is essentially never changes
+ * mid-session, so there's no reason to refetch it on every render.
+ */
+export function useHandoutApprovalWorkflowQuery() {
+  return useQuery({
+    queryKey: handoutKeys.approvalWorkflow(),
+    queryFn: () => handoutApi.getApprovalWorkflow(),
+    staleTime: 5 * 60 * 1000,
   });
 }
 

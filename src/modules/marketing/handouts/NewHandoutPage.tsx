@@ -1,4 +1,3 @@
-// Target: modules/marketing/handouts/NewHandoutPage.tsx
 // handouts/NewHandoutPage.tsx
 // "New handout request" as a stepper wizard (same pattern as the EPC / vendor
 // forms: StepProgress + one Card per step with a Back / Next footer).
@@ -35,8 +34,13 @@ import { PageHeader } from "../../../components/ui/PageHeader";
 import { StepProgress } from "../../../components/ui/StepProgress";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
 import { CRF_CATEGORIES, CrfCatalog, crfSearchPlaceholder } from "../crf";
+import { ApprovalTable } from "../../workflows/components/ApprovalTable";
 
-import { useHandoutQuery } from "./handouts.api";
+import { mapHandoutApprovalWorkflowToRows } from "./handoutApprovalWorkflow.mapper";
+import {
+  useHandoutApprovalWorkflowQuery,
+  useHandoutQuery,
+} from "./handouts.api";
 import { HANDOUTS_BASE_PATH } from "./handouts.constants";
 import HandoutDetailsFields from "./HandoutDetailsFields";
 import type { HandoutDetail, HandoutItem } from "./handouts.types";
@@ -59,6 +63,11 @@ const STEPS = [
   { id: STEP.ITEMS, label: "CRF Items" },
   { id: STEP.REVIEW, label: "Review & Submit" },
 ];
+
+// Mirrors EPC's own review-step convention in WorkflowViewForm.tsx
+// (HIDDEN_DRAFT_COLUMNS = ["status"]): at review time nothing has happened
+// yet, so there is no per-approver status to show.
+const HIDDEN_REVIEW_COLUMNS = ["status"] as const;
 
 const toNumber = (value: unknown) => {
   const parsed = Number(value);
@@ -116,6 +125,14 @@ function NewHandoutPageBody({
   );
 
   const { values, errors, setField, setAddressField, itemErrors } = form;
+
+  // The real approver / delivery person for the review step's Approval
+  // Workflow table — fetched once up front rather than only when the
+  // wizard reaches step 3, so it's already in cache by the time it does.
+  const approvalWorkflowQuery = useHandoutApprovalWorkflowQuery();
+  const approvalRows = mapHandoutApprovalWorkflowToRows(
+    approvalWorkflowQuery.data,
+  );
 
   // Any failed validation (Next or Submit) lands on the step that holds it.
   useEffect(() => {
@@ -300,29 +317,32 @@ function NewHandoutPageBody({
 
           <section className="min-w-0">
             <FormHeader title="Approval Workflow" Icon={Truck} />
-            {/* Handouts have a fixed two-stage flow (no workflow-engine
-			    template), so it is shown as is. */}
-            <ol className="handout-timeline px-3">
-              <li>
-                <span className="handout-timeline-dot" aria-hidden="true" />
-                <div>
-                  <strong>1. Approval</strong> by the Marketing Head
-                  <small>
-                    Single step. The request is approved, rejected, or sent back
-                    for clarification.
-                  </small>
-                </div>
-              </li>
-              <li>
-                <span className="handout-timeline-dot" aria-hidden="true" />
-                <div>
-                  <strong>2. Hand delivery</strong> by the delivery team
-                  <small>
-                    Items are verified and handed over, then the request closes.
-                  </small>
-                </div>
-              </li>
-            </ol>
+            {/* Handouts have a fixed two-stage flow with no workflow-engine
+                template behind it, so this is EPC's own ApprovalTable
+                component (modules/workflows/components/ApprovalTable.tsx)
+                fed GET /handouts/approval-workflow's real response — the
+                actual configured approver and delivery person, mapped by
+                handoutApprovalWorkflow.mapper.ts — rather than a hardcoded
+                label. The "status" column is hidden the same way EPC hides
+                it at its own review step (WorkflowViewForm.tsx's
+                HIDDEN_DRAFT_COLUMNS): nothing has happened yet, so there's
+                nothing to show there. */}
+            <div className="px-3">
+              <ApprovalTable
+                data={approvalRows}
+                hiddenColumns={[...HIDDEN_REVIEW_COLUMNS]}
+                emptyTitle={
+                  approvalWorkflowQuery.isLoading
+                    ? "Loading approval workflow…"
+                    : "Approval workflow unavailable"
+                }
+                emptyDescription={
+                  approvalWorkflowQuery.isLoading
+                    ? undefined
+                    : "The approver and delivery team could not be loaded right now."
+                }
+              />
+            </div>
           </section>
         </div>
       </Card>
