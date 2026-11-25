@@ -27,6 +27,7 @@ export default function Avatar({
 			<span
 				tabIndex={isTooltip ? 0 : undefined}
 				className={joinClassNames("avatar", sizeClasses[size], className)}
+				role="img"
 				aria-label={fullName}
 			>
 				{imageUrl ? (

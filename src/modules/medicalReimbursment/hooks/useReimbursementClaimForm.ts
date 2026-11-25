@@ -6,7 +6,6 @@ import {
 	useMemo,
 	useRef,
 	useState,
-	type ReactNode,
 } from "react";
 
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
@@ -14,19 +13,25 @@ import { useToast } from "../../../context/Auth/AuthContext";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { createClaimHeadRow } from "../helpers/reimbursementClaimForm.helper";
 import {
-	approvalReasonSchema,
-	clarificationReasonSchema,
 	createClaimHeadRowSchema,
 	createReimbursementClaimSubmitSchema,
 	deriveEligibility,
 	firstErrorMessage,
 	lineItemApprovalSchema,
-	lineItemRemarksSchema,
 	reimbursementClaimDraftSchema,
 	toFieldErrors,
 	toRowErrors,
 } from "../utils/reimbursementClaim.schemas";
-import { FALLBACK_GRADE_OPTIONS } from "../utils/gradeEligibility.constants";
+import {
+	HOSPITALISATION_ANNUAL_CAP,
+	NO_GRADE_OPTIONS,
+	isHospitalisationGrade,
+} from "../utils/gradeEligibility.constants";
+
+import {
+	HOSPITALISATION_CLAIM_HEAD,
+	getClaimHeadOptions,
+} from "../utils/claimHead.constants";
 import {
 	EMPTY_CLAIM_ATTACHMENTS,
 	type ApprovalStage,
@@ -36,6 +41,7 @@ import {
 	type ClaimHeadValidationErrors,
 	type CoverageType,
 	type GradeOption,
+	type HospitalisationSummary,
 	type ReimbursementClaimActor,
 	type ReimbursementClaimAttachments,
 	type ReimbursementClaimFormErrors,
@@ -44,9 +50,6 @@ import {
 	type ReimbursementClaimSubmission,
 } from "../types/reimbursementClaim.types";
 import { getEligibilityPeriodLabel } from "../utils/mediclaimBackend.config";
-
-/** @deprecated use gradeOptions from useGradeOptions — kept for old imports. */
-export const GRADE_OPTIONS = FALLBACK_GRADE_OPTIONS;
 
 export const COVERAGE_OPTIONS: Array<{ label: string; value: CoverageType }> = [
 	{ label: "Self", value: "SELF" },
@@ -76,7 +79,8 @@ export const EMPTY_REIMBURSEMENT_CLAIM_VALUES: ReimbursementClaimFormValues = {
 
 export type ApprovedBillAmountPayload = ClaimHeadRow;
 
-export type ReasonAction = "approve" | "clarify";
+/** Where a line's remarks are in the auto-save cycle (reviewer only). */
+export type RemarksSaveStatus = "idle" | "saving" | "saved" | "error";
 
 export interface UseReimbursementClaimFormArgs {
 	referenceNumber?: string;
@@ -108,10 +112,13 @@ export interface UseReimbursementClaimFormArgs {
 	canReviewLineItems?: boolean;
 	/** Hide the review columns entirely (claimant filling a fresh claim). */
 	hideReviewColumns?: boolean;
+	/**
+	 * true for the claimant views (public link, guest portal). A claimant can
+	 * never review line items: no approved amount, no Approve checkbox, and
+	 * remarks are read-only.
+	 */
+	isClaimant?: boolean;
 	isExternalApprover?: boolean;
-	commentsSection?: ReactNode;
-	auditSection?: ReactNode;
-	workflowSection?: ReactNode;
 	approvalActionLoading?: boolean;
 	onApproveStage?: (reason: string) => void | Promise<void>;
 	onClarifyStage?: (reason: string) => void | Promise<void>;
@@ -121,8 +128,18 @@ export interface UseReimbursementClaimFormArgs {
 	onLineItemUnapprove?: (
 		payload: ApprovedBillAmountPayload,
 	) => void | Promise<void>;
+	/** Saves ONE line's remarks. Used only when no batch saver is given. */
 	onLineItemRemarksSave?: (
 		payload: ApprovedBillAmountPayload,
+	) => void | Promise<void>;
+	/**
+	 * Saves the remarks of several lines in ONE request. Powers the remarks
+	 * auto-save (on blur) and the flush before Approve / Send for
+	 * Clarification. When omitted, onLineItemRemarksSave is called once per
+	 * line instead.
+	 */
+	onLineItemRemarksBatchSave?: (
+		payload: ApprovedBillAmountPayload[],
 	) => void | Promise<void>;
 	/** Claim-level close (initiator / external approver once APPROVED). */
 	canClose?: boolean;
@@ -131,10 +148,19 @@ export interface UseReimbursementClaimFormArgs {
 	/** Clarification reason shown to the claimant. */
 	correctionReason?: string | null;
 	/**
-	 * Amount submitted / under review in OTHER claims this year, not yet
-	 * settled. THCM pages only; undefined hides the "THCM only" block.
+	 * Amount ON HOLD in the retiree's OTHER submitted-but-unsettled claims
+	 * (API: liveEligibility.inProgressAmount). It is subtracted from the
+	 * available balance — so a second claim can't spend money a first claim
+	 * is still holding. Pass it on every page (public, guest, THCM); leaving
+	 * it undefined means "nothing on hold".
 	 */
 	eligibilityPendingAmount?: number;
+	/**
+	 * Hospitalisation bucket for EG grades (API: liveEligibility
+	 * .hospitalisation). Omit to fall back to the full ₹1.25 lakh limit with
+	 * nothing used.
+	 */
+	hospitalisationSummary?: HospitalisationSummary | null;
 	/** Label for the eligibility year, e.g. "FY 2026-27". */
 	eligibilityPeriodLabel?: string;
 	/** true → submit is blocked when the claimed total exceeds the balance. */
@@ -211,10 +237,15 @@ const withDeclarationDateDefault = (
 /**
  * Server rows win, except review input still being typed: on a row the
  * server hasn't approved, a non-empty local approved amount / remark is kept.
+ *
+ * `keepLocalRemarksFor` lists rows whose local remark has NOT reached the
+ * server yet (typed, or cleared on purpose). Their remark is kept even when
+ * empty, so a refetch can't bring back text the reviewer just deleted.
  */
 export const mergeReviewedLineItems = (
 	local: ClaimHeadRow[],
 	server: ClaimHeadRow[],
+	keepLocalRemarksFor?: ReadonlySet<string>,
 ): ClaimHeadRow[] => {
 	const localById = new Map(local.map((item) => [item.id, item]));
 	return server.map((row) => {
@@ -222,12 +253,14 @@ export const mergeReviewedLineItems = (
 		if (!mine || row.approvalStatus === "APPROVED") return { ...row };
 		const typedAmount = mine.approvedClaimAmount?.toString().trim();
 		const typedRemarks = mine.remarks?.trim();
+		const keepRemarks =
+			Boolean(typedRemarks) || Boolean(keepLocalRemarksFor?.has(row.id));
 		return {
 			...row,
 			approvedClaimAmount: typedAmount
 				? mine.approvedClaimAmount
 				: row.approvedClaimAmount,
-			remarks: typedRemarks ? mine.remarks : row.remarks,
+			remarks: keepRemarks ? mine.remarks : row.remarks,
 		};
 	});
 };
@@ -257,6 +290,33 @@ const errorMessage = (error: unknown, fallback: string) =>
 		error instanceof Error && error.message ? error.message : fallback,
 	);
 
+const roundMoney = (value: number) => Math.round(value * 100) / 100;
+
+/** A remark as the server stores it: trimmed, "" when empty. */
+const normalizeRemarks = (value?: string | null): string =>
+	(value ?? "").trim();
+
+/** Copy of a status map with `ids` set to `status`. */
+const withRemarksStatus = (
+	current: Record<string, RemarksSaveStatus>,
+	ids: string[],
+	status: RemarksSaveStatus,
+): Record<string, RemarksSaveStatus> => {
+	const next = { ...current };
+	ids.forEach((id) => {
+		next[id] = status;
+	});
+	return next;
+};
+
+const SETTLED_LABELS = new Set(["APPROVED", "CLOSED"]);
+
+/** What a bill counts for against the limit: approved amount once settled. */
+const countedAmount = (item: ClaimHeadRow, settled: boolean): number =>
+	settled && item.approvalStatus === "APPROVED"
+		? Number(resolveApprovedAmount(item)) || 0
+		: Number(item.amount) || 0;
+
 export function useReimbursementClaimForm({
 	mode = "edit",
 	canEdit = true,
@@ -277,10 +337,8 @@ export function useReimbursementClaimForm({
 	canClarify = false,
 	canReviewLineItems: canReviewLineItemsProp,
 	hideReviewColumns = false,
+	isClaimant = false,
 	isExternalApprover = false,
-	commentsSection,
-	auditSection,
-	workflowSection,
 	approvalActionLoading = false,
 	onApproveStage,
 	onClarifyStage,
@@ -288,11 +346,13 @@ export function useReimbursementClaimForm({
 	onLineItemUnapprove,
 	referenceNumber,
 	onLineItemRemarksSave,
+	onLineItemRemarksBatchSave,
 	canClose = false,
 	onCloseClaim,
 	isClosing = false,
 	correctionReason,
 	eligibilityPendingAmount,
+	hospitalisationSummary,
 	eligibilityPeriodLabel,
 	enforceEligibilityLimit = true,
 }: UseReimbursementClaimFormArgs) {
@@ -302,9 +362,7 @@ export function useReimbursementClaimForm({
 		mode === "view" || !canEdit || actorRole === "externalApprover";
 	const shouldAutofillDeclarationDate = !isReadOnly;
 
-	const gradeOptions = gradeOptionsProp?.length
-		? gradeOptionsProp
-		: FALLBACK_GRADE_OPTIONS;
+	const gradeOptions = gradeOptionsProp ?? NO_GRADE_OPTIONS;
 
 	const [values, setValues] = useState<ReimbursementClaimFormValues>(() =>
 		withDeclarationDateDefault(
@@ -330,12 +388,36 @@ export function useReimbursementClaimForm({
 	const [savingClaimId, setSavingClaimId] = useState<string | null>(null);
 	const [deletingClaimId, setDeletingClaimId] = useState<string | null>(null);
 	const [approvingClaimId, setApprovingClaimId] = useState<string | null>(null);
-	const [savingRemarksId, setSavingRemarksId] = useState<string | null>(null);
+	const [remarksStatus, setRemarksStatus] = useState<
+		Record<string, RemarksSaveStatus>
+	>({});
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isSavingDraft, setIsSavingDraft] = useState(false);
 	const [mutationError, setMutationError] = useState<string | null>(null);
-	const [clarifyModalOpen, setClarifyModalOpen] = useState(false);
 	const [clarifyLoading, setClarifyLoading] = useState(false);
+
+	/**
+	 * The remark each line has ON THE SERVER (trimmed). A line is "dirty" —
+	 * needs saving — when what is typed differs from this. A stable Map kept
+	 * in state so it survives renders without causing them.
+	 */
+	const [lastSavedRemarks] = useState(
+		() =>
+			new Map<string, string>(
+				initialLineItems.map((item) => [
+					item.id,
+					normalizeRemarks(item.remarks),
+				]),
+			),
+	);
+
+	/** true when this line's remark still has to be saved. */
+	const isRemarksDirty = useCallback(
+		(row: ClaimHeadRow): boolean =>
+			row.approvalStatus !== "APPROVED" &&
+			normalizeRemarks(row.remarks) !== (lastSavedRemarks.get(row.id) ?? ""),
+		[lastSavedRemarks],
+	);
 
 	const initialValuesKey = useMemo(
 		() => JSON.stringify(initialValues ?? {}),
@@ -381,12 +463,20 @@ export function useReimbursementClaimForm({
 	useEffect(() => {
 		if (syncedLineItemsKey.current === initialLineItemsKey) return;
 		syncedLineItemsKey.current = initialLineItemsKey;
+		// Whatever the server now holds is what is "saved".
+		initialLineItems.forEach((item) => {
+			lastSavedRemarks.set(item.id, normalizeRemarks(item.remarks));
+		});
 		if (canReviewLineItemsProp ?? canApprove) {
 			// Reviewer refetch after a line-item action: take the server's
 			// rows, but keep amounts/remarks still being typed on rows the
 			// server hasn't approved yet.
 			setSavedClaims((current) =>
-				mergeReviewedLineItems(current, initialLineItems),
+				mergeReviewedLineItems(
+					current,
+					initialLineItems,
+					new Set(current.filter(isRemarksDirty).map((row) => row.id)),
+				),
 			);
 			return;
 		}
@@ -399,6 +489,8 @@ export function useReimbursementClaimForm({
 		canReviewLineItemsProp,
 		initialLineItems,
 		initialLineItemsKey,
+		isRemarksDirty,
+		lastSavedRemarks,
 	]);
 
 	const selectedGrade = useMemo(
@@ -408,27 +500,89 @@ export function useReimbursementClaimForm({
 	/** null when the grade has no known cap — panel + limit check adapt. */
 	const resolvedEligibleAmount: number | null =
 		selectedGrade?.eligibility ?? null;
+
+	// ---- Hospitalisation (EG grades only, separate limit) ----
+	const allowsHospitalisation = isHospitalisationGrade(values.grade);
+	const claimHeadOptions = useMemo(
+		() => getClaimHeadOptions(allowsHospitalisation),
+		[allowsHospitalisation],
+	);
+
+	// Bills split into the two buckets — each has its own limit.
 	const lineItemsTotal = useMemo(
 		() =>
-			Math.round(
+			roundMoney(
 				savedClaims.reduce(
 					(total, item) => total + (Number(item.amount) || 0),
 					0,
-				) * 100,
-			) / 100,
+				),
+			),
 		[savedClaims],
+	);
+	const isSettledClaim = SETTLED_LABELS.has(
+		(statusLabel ?? "").trim().toUpperCase(),
+	);
+
+	const hospitalisationTotal = useMemo(
+		() =>
+			roundMoney(
+				savedClaims
+					.filter((item) => item.claimHead === HOSPITALISATION_CLAIM_HEAD)
+					.reduce(
+						(total, item) => total + countedAmount(item, isSettledClaim),
+						0,
+					),
+			),
+		[savedClaims, isSettledClaim],
+	);
+	const standardTotal = useMemo(
+		() =>
+			roundMoney(
+				savedClaims
+					.filter((item) => item.claimHead !== HOSPITALISATION_CLAIM_HEAD)
+					.reduce(
+						(total, item) => total + countedAmount(item, isSettledClaim),
+						0,
+					),
+			),
+		[savedClaims, isSettledClaim],
 	);
 
 	// ---- Eligibility (drives the side panel; same numbers for guest + THCM) ----
 	const settledAmount = Number(values.companySettledAmount) || 0;
+	/** On hold in the retiree's other in-progress claims. */
+	const heldAmount = Math.max(Number(eligibilityPendingAmount) || 0, 0);
 	const eligibility = useMemo(
 		() =>
 			deriveEligibility(
-				{ totalEligible: resolvedEligibleAmount ?? 0, settled: settledAmount },
-				lineItemsTotal,
+				{
+					totalEligible: resolvedEligibleAmount ?? 0,
+					settled: settledAmount,
+					held: heldAmount,
+				},
+				standardTotal,
 			),
-		[lineItemsTotal, resolvedEligibleAmount, settledAmount],
+		[heldAmount, resolvedEligibleAmount, settledAmount, standardTotal],
 	);
+
+	/** null for non-EG grades — they have no hospitalisation cover. */
+	const hospitalisation = useMemo(() => {
+		if (!allowsHospitalisation) return null;
+		const cap = hospitalisationSummary?.annualCap ?? HOSPITALISATION_ANNUAL_CAP;
+		const settled = hospitalisationSummary?.alreadySettled ?? 0;
+		const held = hospitalisationSummary?.inProgressAmount ?? 0;
+		const remaining = Math.max(cap - settled - held, 0);
+		return {
+			cap,
+			settled,
+			held,
+			remaining,
+			claimingNow: hospitalisationTotal,
+			balanceAfter: remaining - hospitalisationTotal,
+			isOverLimit: hospitalisationTotal > remaining + 0.001,
+		};
+	}, [allowsHospitalisation, hospitalisationSummary, hospitalisationTotal]);
+
 	const resolvedEligibilityPeriodLabel =
 		eligibilityPeriodLabel ?? getEligibilityPeriodLabel();
 
@@ -441,25 +595,41 @@ export function useReimbursementClaimForm({
 		() =>
 			createReimbursementClaimSubmitSchema({
 				allowedGrades,
+				allowHospitalisation: allowsHospitalisation,
+				// Available = limit − settled − on hold in other claims.
 				remainingAmount: eligibility.remaining,
+				heldAmount,
+				hospitalisationRemainingAmount: hospitalisation?.remaining,
+				hospitalisationHeldAmount: hospitalisation?.held,
 				// Without a known cap we can't know the limit, so don't block.
 				enforceRemaining:
 					enforceEligibilityLimit && resolvedEligibleAmount !== null,
 			}),
 		[
 			allowedGrades,
+			allowsHospitalisation,
 			eligibility.remaining,
 			enforceEligibilityLimit,
+			heldAmount,
+			hospitalisation?.held,
+			hospitalisation?.remaining,
 			resolvedEligibleAmount,
 		],
 	);
-	const rowSchema = useMemo(() => createClaimHeadRowSchema(), []);
+	const rowSchema = useMemo(
+		() =>
+			createClaimHeadRowSchema({ allowHospitalisation: allowsHospitalisation }),
+		[allowsHospitalisation],
+	);
 
 	const canEditClaimForm = !isReadOnly;
 	const fieldMode: ReimbursementClaimFormMode = isReadOnly ? "view" : "edit";
 	const claimStatusLabel =
 		statusLabel ?? deriveClaimStatusLabel(approvalStages);
-	const canReviewLineItems = canReviewLineItemsProp ?? canApprove;
+	// Only the current internal approver reviews line items. A claimant (or
+	// anyone editing the claim) never does, whatever the page passes.
+	const canReviewLineItems =
+		!isClaimant && !canEditClaimForm && (canReviewLineItemsProp ?? canApprove);
 	const isLineItemReviewLocked = !canReviewLineItems;
 	const isLoading = isSubmitting || isSavingDraft;
 
@@ -471,6 +641,157 @@ export function useReimbursementClaimForm({
 			return next;
 		});
 	}, []);
+
+	/* ------------------------- Remarks auto-save -------------------------- */
+
+	// How remarks reach the server: one batch call when the page provides it,
+	// otherwise one call per line.
+	const remarksSaver = useMemo(() => {
+		if (onLineItemRemarksBatchSave) return onLineItemRemarksBatchSave;
+		if (onLineItemRemarksSave) {
+			return async (rows: ApprovedBillAmountPayload[]) => {
+				for (const row of rows) {
+					await onLineItemRemarksSave(row);
+				}
+			};
+		}
+		return undefined;
+	}, [onLineItemRemarksBatchSave, onLineItemRemarksSave]);
+
+	// Latest values for code that runs later (queued saves, unload handlers):
+	// they must read what is on screen NOW, not what a stale closure captured.
+	const savedClaimsRef = useRef(savedClaims);
+	const canReviewRemarksRef = useRef(canReviewLineItems);
+	const remarksSaverRef = useRef(remarksSaver);
+	useEffect(() => {
+		savedClaimsRef.current = savedClaims;
+		canReviewRemarksRef.current = canReviewLineItems;
+		remarksSaverRef.current = remarksSaver;
+	});
+
+	// Saves run strictly one after another, so two requests can never cross
+	// and an older text can never overwrite a newer one.
+	const remarksQueueRef = useRef<Promise<unknown>>(Promise.resolve());
+	const pendingRemarkSavesRef = useRef(0);
+
+	/**
+	 * Saves the remarks of the lines that changed (all of them, or just
+	 * `ids`) in one request. Resolves true when everything is on the server
+	 * (or there was nothing to save), false when the save failed.
+	 */
+	const flushRemarks = useCallback(
+		(ids?: string[]): Promise<boolean> => {
+			const task = async (): Promise<boolean> => {
+				const saver = remarksSaverRef.current;
+				if (!saver || !canReviewRemarksRef.current) return true;
+
+				// Read the rows INSIDE the queue: a save that ran just before
+				// this one may already have stored some of these remarks.
+				const dirtyRows = savedClaimsRef.current.filter(
+					(row) => (!ids || ids.includes(row.id)) && isRemarksDirty(row),
+				);
+				if (dirtyRows.length === 0) return true;
+
+				const payload = dirtyRows.map((row) => ({
+					...row,
+					remarks: normalizeRemarks(row.remarks),
+				}));
+				const sentIds = payload.map((row) => row.id);
+				setRemarksStatus((current) =>
+					withRemarksStatus(current, sentIds, "saving"),
+				);
+
+				try {
+					await saver(payload);
+					payload.forEach((row) => {
+						lastSavedRemarks.set(row.id, row.remarks);
+					});
+					// "Saved" only for lines still showing the text that was
+					// sent; a line edited meanwhile goes back to idle.
+					const stillCurrent = sentIds.filter((id) => {
+						const sent = payload.find((row) => row.id === id);
+						const live = savedClaimsRef.current.find((row) => row.id === id);
+						return (
+							sent && live && normalizeRemarks(live.remarks) === sent.remarks
+						);
+					});
+					const edited = sentIds.filter((id) => !stillCurrent.includes(id));
+					setRemarksStatus((current) =>
+						withRemarksStatus(
+							withRemarksStatus(current, stillCurrent, "saved"),
+							edited,
+							"idle",
+						),
+					);
+					return true;
+				} catch {
+					setRemarksStatus((current) =>
+						withRemarksStatus(current, sentIds, "error"),
+					);
+					return false;
+				}
+			};
+
+			pendingRemarkSavesRef.current += 1;
+			const run = remarksQueueRef.current.then(task);
+			remarksQueueRef.current = run.then(
+				() => undefined,
+				() => undefined,
+			);
+			return run.finally(() => {
+				pendingRemarkSavesRef.current -= 1;
+			});
+		},
+		[isRemarksDirty, lastSavedRemarks],
+	);
+
+	/**
+	 * Saves every unsaved remark before an action that depends on them
+	 * (Approve / Send for Clarification). Toasts and resolves false when the
+	 * save fails, so the caller can stop instead of acting on missing data.
+	 */
+	const flushPendingRemarks = useCallback(async (): Promise<boolean> => {
+		const saved = await flushRemarks();
+		if (!saved) {
+			showToast({
+				type: "error",
+				title: "Remarks not saved",
+				description:
+					"Your remarks couldn't be saved, so nothing was sent. Please try again.",
+			});
+		}
+		return saved;
+	}, [flushRemarks, showToast]);
+
+	// Leaving the page (close tab / refresh) with a remark not yet saved asks
+	// for confirmation. Normal use never gets here: each remark is saved the
+	// moment the reviewer leaves its box.
+	useEffect(() => {
+		if (!canReviewLineItems) return;
+		const warnBeforeUnload = (event: BeforeUnloadEvent) => {
+			const unsaved =
+				pendingRemarkSavesRef.current > 0 ||
+				savedClaimsRef.current.some(isRemarksDirty);
+			if (!unsaved) return;
+			event.preventDefault();
+			event.returnValue = "";
+		};
+		window.addEventListener("beforeunload", warnBeforeUnload);
+		return () => window.removeEventListener("beforeunload", warnBeforeUnload);
+	}, [canReviewLineItems, isRemarksDirty]);
+
+	// Navigating away inside the app unmounts the page without a blur: save
+	// whatever is still unsaved.
+	const flushRemarksRef = useRef(flushRemarks);
+	useEffect(() => {
+		flushRemarksRef.current = flushRemarks;
+	});
+	useEffect(
+		() => () => {
+			void flushRemarksRef.current();
+		},
+		[],
+	);
 
 	// Grade comes from HR records (User.grade / legacy data) at initiation.
 	// When it's on record, the claimant can't change it — the backend trusts
@@ -729,7 +1050,22 @@ export function useReimbursementClaimForm({
 
 			setApprovingClaimId(claim.id);
 			try {
-				await onLineItemApprove({ ...claim, approvedClaimAmount });
+				// The remark must be on the server BEFORE the line is approved
+				// (the field locks once approved). This also waits for an
+				// auto-save already running for this line.
+				const remarksSaved = await flushRemarks([claim.id]);
+				if (!remarksSaved) {
+					showToast({
+						type: "error",
+						title: "Remarks not saved",
+						description:
+							"This line wasn't approved because its remarks couldn't be saved. Please try again.",
+					});
+					return;
+				}
+				const latest =
+					savedClaimsRef.current.find((row) => row.id === claim.id) ?? claim;
+				await onLineItemApprove({ ...latest, approvedClaimAmount });
 				setRowReviewState(claim.id, {
 					approvalStatus: "APPROVED",
 					approved: true,
@@ -753,6 +1089,7 @@ export function useReimbursementClaimForm({
 		[
 			canReviewLineItems,
 			clearClaimError,
+			flushRemarks,
 			onLineItemApprove,
 			setRowReviewState,
 			showToast,
@@ -767,62 +1104,41 @@ export function useReimbursementClaimForm({
 					claim.id === id ? { ...claim, remarks: value } : claim,
 				),
 			);
+			// Edited again: any "Saved" / error label no longer applies.
+			setRemarksStatus((current) =>
+				current[id] && current[id] !== "idle"
+					? withRemarksStatus(current, [id], "idle")
+					: current,
+			);
 			clearClaimError(`remarks-${id}`);
 		},
 		[canReviewLineItems, clearClaimError],
 	);
 
+	/** The reviewer left the remarks box: save it (no-op when unchanged). */
+	const handleRemarksBlur = useCallback(
+		(id: string) => {
+			if (!canReviewLineItems) return;
+			void flushRemarks([id]);
+		},
+		[canReviewLineItems, flushRemarks],
+	);
+
+	/** Retry after a failed auto-save. */
 	const handleSaveRemarks = useCallback(
 		async (claimId: string) => {
-			if (!canReviewLineItems || !onLineItemRemarksSave) return;
-
-			const claim = savedClaims.find((item) => item.id === claimId);
-			if (!claim || claim.approvalStatus === "APPROVED") return;
-
-			const validation = lineItemRemarksSchema.safeParse({
-				remarks: claim.remarks ?? "",
-			});
-			if (!validation.success) {
-				setClaimErrors((current) => ({
-					...current,
-					[`remarks-${claimId}`]: firstErrorMessage(validation.error),
-				}));
-				return;
-			}
-
-			const trimmedRemarks = validation.data.remarks;
-			clearClaimError(`remarks-${claimId}`);
-			setSavingRemarksId(claimId);
-
-			try {
-				await onLineItemRemarksSave({ ...claim, remarks: trimmedRemarks });
-				setRowReviewState(claimId, { remarks: trimmedRemarks });
-				showToast({
-					type: "success",
-					title: "Remarks saved",
-					description: "The bill remarks have been updated.",
-				});
-			} catch (error) {
-				showToast({
-					type: "error",
-					title: "Unable to save remarks",
-					description: errorMessage(
-						error,
-						"Unable to save remarks. Please try again.",
-					),
-				});
-			} finally {
-				setSavingRemarksId(null);
-			}
+			if (!canReviewLineItems) return;
+			await flushRemarks([claimId]);
 		},
-		[
-			canReviewLineItems,
-			clearClaimError,
-			onLineItemRemarksSave,
-			savedClaims,
-			setRowReviewState,
-			showToast,
-		],
+		[canReviewLineItems, flushRemarks],
+	);
+
+	/** Line currently being saved (first one), for callers that show a spinner. */
+	const savingRemarksId = useMemo(
+		() =>
+			Object.keys(remarksStatus).find((id) => remarksStatus[id] === "saving") ??
+			null,
+		[remarksStatus],
 	);
 
 	const buildSubmission = useCallback(
@@ -989,36 +1305,33 @@ export function useReimbursementClaimForm({
 		return `Flagged line items:\n${lines.join("\n")}`;
 	}, [savedClaims]);
 
-	/** Validates an approve / clarify reason; returns an error or null. */
-	const validateReason = useCallback(
-		(action: ReasonAction, reason: string): string | null => {
-			const schema =
-				action === "clarify" ? clarificationReasonSchema : approvalReasonSchema;
-			const result = schema.safeParse({ reason });
-			return result.success ? null : firstErrorMessage(result.error);
-		},
-		[],
-	);
-
 	const handleClarifyConfirm = useCallback(
 		async (reason: string) => {
 			if (!onClarifyStage) return;
 			setClarifyLoading(true);
 			try {
+				// Every remark typed on the lines is saved first; if that fails
+				// nothing is sent (the reviewer was already told why).
+				if (!(await flushPendingRemarks())) {
+					throw new Error("Remarks could not be saved.");
+				}
 				await onClarifyStage(reason.trim());
-				setClarifyModalOpen(false);
 			} finally {
 				setClarifyLoading(false);
 			}
 		},
-		[onClarifyStage],
+		[flushPendingRemarks, onClarifyStage],
 	);
 
 	const handleApproveStage = useCallback(
 		async (reason: string) => {
-			await onApproveStage?.(reason.trim());
+			if (!onApproveStage) return;
+			if (!(await flushPendingRemarks())) {
+				throw new Error("Remarks could not be saved.");
+			}
+			await onApproveStage(reason.trim());
 		},
-		[onApproveStage],
+		[flushPendingRemarks, onApproveStage],
 	);
 
 	const allLineItemsApproved =
@@ -1026,16 +1339,6 @@ export function useReimbursementClaimForm({
 		savedClaims.every((item) => item.approvalStatus === "APPROVED");
 	const canCompleteStage =
 		canApprove && (isExternalApprover || allLineItemsApproved);
-	const approvedTotal = useMemo(
-		() =>
-			savedClaims
-				.filter((item) => item.approvalStatus === "APPROVED")
-				.reduce(
-					(sum, item) => sum + (Number(resolveApprovedAmount(item)) || 0),
-					0,
-				),
-		[savedClaims],
-	);
 
 	const handleReset = useCallback(() => {
 		setValues(
@@ -1074,7 +1377,6 @@ export function useReimbursementClaimForm({
 		isSubmitting,
 		isSavingDraft,
 		mutationError,
-		clarifyModalOpen,
 		clarifyLoading,
 		gradeOptions,
 		selectedGrade,
@@ -1083,9 +1385,17 @@ export function useReimbursementClaimForm({
 		settledAmount,
 		eligibility,
 		eligibilityPeriodLabel: resolvedEligibilityPeriodLabel,
-		pendingAmount: eligibilityPendingAmount,
+		/** On hold in the retiree's other in-progress claims (0 when none). */
+		heldAmount,
+		/** Claim head options for this grade — hospitalisation for EG only. */
+		claimHeadOptions,
+		allowsHospitalisation,
+		/** Separate hospitalisation limit; null for non-EG grades. */
+		hospitalisation,
+		/** Bills on this claim split by bucket. */
+		standardTotal,
+		hospitalisationTotal,
 		lineItemsTotal,
-		approvedTotal,
 		isReadOnly,
 		canEditClaimForm,
 		fieldMode,
@@ -1093,6 +1403,7 @@ export function useReimbursementClaimForm({
 		canReviewLineItems,
 		isLineItemReviewLocked,
 		hideReviewColumns,
+		isClaimant,
 		allLineItemsApproved,
 		canCompleteStage,
 		mode,
@@ -1112,13 +1423,14 @@ export function useReimbursementClaimForm({
 		onBack,
 		submittedMessage,
 		actionText,
-		commentsSection,
-		auditSection,
-		workflowSection,
 		handleRemarksChange,
+		handleRemarksBlur,
 		handleSaveRemarks,
+		flushPendingRemarks,
+		/** Per line: idle | saving | saved | error — drives the small label under the remarks box. */
+		remarksStatus,
 		savingRemarksId,
-		hasLineItemRemarksSaveAction: Boolean(onLineItemRemarksSave),
+		hasLineItemRemarksSaveAction: Boolean(remarksSaver),
 		hasSubmitAction: Boolean(onSubmit),
 		hasSaveDraftAction: Boolean(onSaveDraft),
 		hasApproveStageAction: Boolean(onApproveStage),
@@ -1136,9 +1448,7 @@ export function useReimbursementClaimForm({
 		handleSubmit,
 		handleSaveDraft,
 		handleReset,
-		setClarifyModalOpen,
 		buildClarifyReasonPrefix,
-		validateReason,
 		handleClarifyConfirm,
 		handleApproveStage,
 		handleCloseClaim: onCloseClaim,

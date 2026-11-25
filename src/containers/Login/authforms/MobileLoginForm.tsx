@@ -30,6 +30,9 @@ const MobileLoginForm = () => {
 	const [secondsLeft, setSecondsLeft] = useState(30);
 	const [loading, setLoading] = useState(false);
 
+	// Inline copy of the last failure (toasts disappear; this stays).
+	const [formError, setFormError] = useState<string | undefined>();
+
 	// The confirmed mobile number carries across steps (needed to display
 	// "Enter the code sent to X" on step 2 and as the verify-OTP payload) —
 	// this is cross-step data, not validation, so it stays outside both
@@ -59,6 +62,7 @@ const MobileLoginForm = () => {
 
 	const requestOtp = async (mobile: string): Promise<boolean> => {
 		setLoading(true);
+		setFormError(undefined);
 
 		try {
 			await ServerAxios.post(`${API_BASE_URL}${api_routes.send_otp}`, {
@@ -76,10 +80,14 @@ const MobileLoginForm = () => {
 
 			return true;
 		} catch (error: unknown) {
+			const message = getApiErrorMessage(error, "User not found");
+
+			setFormError(message);
+
 			showToast({
 				type: "error",
 				title: "Unable to send OTP",
-				description: getApiErrorMessage(error, "User not found"),
+				description: message,
 			});
 
 			return false;
@@ -94,6 +102,7 @@ const MobileLoginForm = () => {
 
 	const onOtpSubmit = async (values: OtpVerifyFormValues) => {
 		setLoading(true);
+		setFormError(undefined);
 
 		try {
 			const response = await ServerAxios.post(
@@ -122,10 +131,14 @@ const MobileLoginForm = () => {
 				description: "You have logged in successfully.",
 			});
 		} catch (error: unknown) {
+			const message = getApiErrorMessage(error, "Invalid OTP");
+
+			setFormError(message);
+
 			showToast({
 				type: "error",
 				title: "Verification failed",
-				description: getApiErrorMessage(error, "Invalid OTP"),
+				description: message,
 			});
 		} finally {
 			setLoading(false);
@@ -145,9 +158,16 @@ const MobileLoginForm = () => {
 	const handleChangeMobile = () => {
 		setMobileStep("enterMobile");
 		setConfirmedMobile("");
+		setFormError(undefined);
 		otpForm.reset({ otp: "" });
 		mobileForm.reset({ mobile: "" });
 	};
+
+	const errorBanner = formError ? (
+		<p className="auth-form-error" role="alert">
+			{formError}
+		</p>
+	) : null;
 
 	if (mobileStep === "verifyOtp") {
 		return (
@@ -176,6 +196,8 @@ const MobileLoginForm = () => {
 						/>
 					)}
 				/>
+
+				{errorBanner}
 
 				<Button
 					type="submit"
@@ -222,6 +244,10 @@ const MobileLoginForm = () => {
 				placeholder="Enter 10-digit mobile number"
 				required
 				error={mobileForm.formState.errors.mobile?.message}
+				// Visible helper (isTooltip={false}), linked to the input
+				// through aria-describedby; it used to be a loose <p>.
+				helperText="A one-time password will be sent to your registered mobile number."
+				isTooltip={false}
 				maxLength={10}
 				inputPrefix="+91"
 				{...mobileForm.register("mobile", {
@@ -237,9 +263,7 @@ const MobileLoginForm = () => {
 				})}
 			/>
 
-			<p className="auth-field-helper">
-				A one-time password will be sent to your registered mobile number.
-			</p>
+			{errorBanner}
 
 			<Button
 				text={loading ? "Sending OTP..." : "Continue"}

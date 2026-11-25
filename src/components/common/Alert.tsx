@@ -1,8 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentType, type SVGProps } from "react";
+import {
+	AlertTriangle,
+	CheckCircle2,
+	Info,
+	X,
+	XCircle,
+} from "lucide-react";
 import { styles } from "../styles.constant";
-import type { AlertCardProps } from "./common.types";
+import type { AlertCardProps, AlertVariant } from "./common.types";
 import Button from "./Button";
-import { X } from "lucide-react";
+
+// Semantic icons (previously the text glyphs "!", "i", "×", "✓").
+const ALERT_ICONS: Record<AlertVariant, ComponentType<SVGProps<SVGSVGElement>>> = {
+	info: Info,
+	success: CheckCircle2,
+	warning: AlertTriangle,
+	error: XCircle,
+};
 
 const joinClassNames = (
 	...classNames: Array<string | false | null | undefined>
@@ -13,13 +27,18 @@ export function Alert({
 	type = "box",
 	title,
 	description,
+	children,
+	titleAs: TitleTag = "h3",
+	className,
+	id,
 	primaryAction,
 	secondaryAction,
 	dismissible = false,
 	autoHideMs,
 	onDismiss,
 }: AlertCardProps) {
-	const { icon, iconBg } = styles[variant];
+	const { iconBg } = styles[variant];
+	const Icon = ALERT_ICONS[variant];
 	const [isVisible, setIsVisible] = useState(true);
 
 	const isBanner = type === "banner";
@@ -48,10 +67,12 @@ export function Alert({
 
 	return (
 		<div
+			id={id}
 			className={joinClassNames(
 				"alert",
 				isBanner ? "alert-banner" : "alert-box",
 				`alert-${variant}`,
+				className,
 			)}
 			role={variant === "error" || variant === "warning" ? "alert" : "status"}
 		>
@@ -59,15 +80,23 @@ export function Alert({
 				className={joinClassNames("alert-icon-wrapper", !isBanner && iconBg)}
 				aria-hidden="true"
 			>
-				<span className="alert-icon">{icon}</span>
+				<span className="alert-icon">
+					<Icon />
+				</span>
 			</div>
 
 			<div className="alert-content">
-				<h3 className="alert-title">{title}</h3>
+				<TitleTag className="alert-title">{title}</TitleTag>
 
 				{description ? (
-					<p className="alert-description">{description}</p>
+					typeof description === "string" || typeof description === "number" ? (
+						<p className="alert-description">{description}</p>
+					) : (
+						<div className="alert-description">{description}</div>
+					)
 				) : null}
+
+				{children ? <div className="alert-body">{children}</div> : null}
 			</div>
 
 			{hasActions ? (

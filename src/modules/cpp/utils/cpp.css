@@ -113,17 +113,6 @@
 
 	/* ---------------- Left tab nav ---------------- */
 
-	.cpp-view-nav {
-		min-width: 0;
-		padding: var(--space-2);
-
-		border: var(--border-width-default) solid var(--color-border-default);
-		border-radius: var(--radius-lg);
-
-		background-color: var(--color-bg-surface);
-		box-shadow: var(--shadow-xs);
-	}
-
 	.cpp-view-nav-list {
 		display: flex;
 		margin: 0;
@@ -185,11 +174,6 @@
 	}
 
 	@media (min-width: 1024px) {
-		.cpp-view-nav {
-			position: sticky;
-			top: var(--cpp-sticky-top);
-		}
-
 		.cpp-view-nav-list {
 			flex-direction: column;
 			overflow: visible;
@@ -491,8 +475,8 @@
 	display: inline-block;
 	width: fit-content;
 	padding: 0 0.375rem;
-	background: #ea580c;
-	color: #ffffff;
+	background: var(--color-brand-solid);
+	color: var(--color-brand-solid-foreground);
 	font-size: 0.5625rem;
 	font-style: italic;
 }

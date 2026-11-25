@@ -1,0 +1,61 @@
+/* =========================================================
+   BRAND THEME — PINK & VIOLET (verification / demo theme)
+
+   Proves that the brand can be changed in one place.
+   Not used in production. Activate with:
+     document.documentElement.dataset.brand = "pink-violet";
+   or for a build:  VITE_BRAND_THEME=pink-violet
+
+   Primitives are namespaced --palette-* so they do not
+   override Tailwind's own pink and violet utilities that
+   feature code may already use.
+
+   Contrast (checked):
+     white on brand-700 #be185d ........ 6.04:1  (solid buttons)
+     brand-700 on brand-50 #fdf2f8 ...... 5.53:1  (active nav text)
+     brand-500 #ec4899 on white ......... 3.53:1  (borders, rails, focus)
+     white on secondary #5b21b6 ......... 8.98:1
+========================================================= */
+@layer base {
+	:root[data-brand="pink-violet"] {
+		--palette-pink-50: #fdf2f8;
+		--palette-pink-100: #fce7f3;
+		--palette-pink-200: #fbcfe8;
+		--palette-pink-300: #f9a8d4;
+		--palette-pink-400: #f472b6;
+		--palette-pink-500: #ec4899;
+		--palette-pink-600: #db2777;
+		--palette-pink-700: #be185d;
+		--palette-pink-800: #9d174d;
+		--palette-pink-900: #831843;
+		--palette-violet-800: #5b21b6;
+		--palette-violet-900: #4c1d95;
+
+		--color-brand-50: var(--palette-pink-50);
+		--color-brand-100: var(--palette-pink-100);
+		--color-brand-200: var(--palette-pink-200);
+		--color-brand-300: var(--palette-pink-300);
+		--color-brand-400: var(--palette-pink-400);
+		--color-brand-500: var(--palette-pink-500);
+		--color-brand-600: var(--palette-pink-600);
+		--color-brand-700: var(--palette-pink-700);
+		--color-brand-800: var(--palette-pink-800);
+		--color-brand-900: var(--palette-pink-900);
+
+		--color-brand-secondary-base: var(--palette-violet-800);
+		--color-brand-secondary-strong: var(--palette-violet-900);
+
+		--color-brand-tint-dark: #2b1020;
+		--color-brand-tint-dark-strong: #4a1030;
+		--color-brand-border-dark: var(--palette-pink-900);
+	}
+}
+
+/* Dark mode: pink-700 (#be185d) was 2.9:1 against the dark surfaces as a
+   filled mark (current step, toggle, selected day). #cf2470 keeps white
+   text at 5.1:1 and stands 3.5:1 off the surface. */
+@layer base {
+	:root[data-brand="pink-violet"][data-theme="dark"] {
+		--color-brand-solid: #cf2470;
+	}
+}

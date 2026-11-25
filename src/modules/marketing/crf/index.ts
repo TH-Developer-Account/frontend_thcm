@@ -74,6 +74,8 @@ export {
 	CRF_MESSAGES,
 	crfFormSchema,
 	crfLineItemSchema,
+	EMPTY_CRF_ERRORS,
+	getFirstCrfErrorMessage,
 	formatArtworkSize,
 	formatCrfAmount,
 	formatCrfQuantity,
@@ -116,6 +118,7 @@ export {
 // order polling — see order/types.ts's header comment for what changed.
 
 export { default as CrfOrderSection } from "./order/CrfOrderSection";
+export { crfSearchPlaceholder } from "./core/CrfCatalog";
 export type { CrfOrderSectionProps } from "./order/CrfOrderSection";
 
 export {

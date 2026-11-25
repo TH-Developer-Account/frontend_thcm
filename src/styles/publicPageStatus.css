@@ -204,7 +204,7 @@
 
 		border-radius: var(--radius-sm);
 
-		color: var(--color-brand);
+		color: var(--color-text-brand);
 
 		font-size: var(--font-size-sm);
 		font-weight: var(--font-weight-medium);
@@ -217,7 +217,7 @@
 
 	.public-page-status-link:hover {
 		background-color: var(--color-brand-subtle);
-		color: var(--color-brand-active);
+		color: var(--color-text-brand);
 	}
 
 	.public-page-status-link:focus-visible {

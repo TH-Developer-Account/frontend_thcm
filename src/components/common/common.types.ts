@@ -20,6 +20,8 @@ export interface TabItem<T extends string> {
 	label: string;
 	value: T;
 	badge?: React.ReactNode;
+	/** Shown but not selectable; skipped by arrow-key navigation. */
+	disabled?: boolean;
 }
 
 type TabsBarBaseProps<T extends string> = {
@@ -81,6 +83,8 @@ export type ModalProps = {
 	ariaLabel?: string;
 	ariaDescribedBy?: string;
 	closeOnOverlayClick?: boolean;
+	/** One line under the title (what this dialog is for). Wired to aria-describedby. */
+	description?: ReactNode;
 };
 
 export type CardProps = {
@@ -185,9 +189,15 @@ export type NavigateButtonProps = {
 
 export interface BadgeProps {
 	children?: React.ReactNode;
+	/** Backend status, e.g. "CLARIFICATION_REQUESTED". Tone + label come from components/common/status.ts. */
 	status?: string | null;
+	/** Explicit tone: success · danger · warning · pending · info · neutral · brand/primary · outline. */
 	variant?: string | null;
 	text?: string;
+	/** Adds a tone icon before the label. */
+	withIcon?: boolean;
+	size?: "sm" | "md";
+	className?: string;
 }
 
 export interface AvatarProps {
@@ -212,7 +222,14 @@ export type AlertCardProps = {
 	variant: AlertVariant;
 	type?: AlertType;
 	title: string;
-	description?: string;
+	/** Text, or richer content such as a link. */
+	description?: React.ReactNode;
+	/** Extra content under the description, e.g. a list of missing fields. */
+	children?: React.ReactNode;
+	/** Heading level for the title, to fit the page outline. Default h3. */
+	titleAs?: "h2" | "h3" | "h4" | "p";
+	className?: string;
+	id?: string;
 	primaryAction?: AlertAction;
 	secondaryAction?: AlertAction;
 	dismissible?: boolean;

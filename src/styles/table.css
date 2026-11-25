@@ -154,8 +154,8 @@
 	}
 
 	.data-table-scroll:focus-visible {
-		outline: none;
-		box-shadow: inset var(--shadow-focus-brand);
+		outline: var(--border-width-strong) solid var(--color-focus-ring);
+		outline-offset: calc(var(--border-width-strong) * -1);
 	}
 
 	.data-table-scroll::-webkit-scrollbar {
@@ -281,7 +281,7 @@
 
 		font-family: var(--font-sans);
 		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-medium);
+		font-weight: var(--table-header-weight);
 		line-height: var(--line-height-tight);
 		letter-spacing: var(--tracking-normal);
 		text-align: left;
@@ -403,6 +403,7 @@
 
 	.data-table-row-selected {
 		background-color: var(--color-table-row-selected);
+		box-shadow: inset var(--border-width-strong) 0 0 var(--color-brand);
 	}
 
 	.data-table-row-selected:hover {
@@ -424,7 +425,7 @@
 		border-bottom: var(--border-width-default) solid var(--table-border);
 
 		background-color: inherit;
-		color: var(--color-text-secondary);
+		color: var(--table-cell-text);
 
 		font-family: var(--font-sans);
 		font-size: var(--font-size-sm);
@@ -544,6 +545,13 @@
 	}
 
 	.data-table-number {
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* Financial values: right-aligned columns already use .data-table-align-right */
+	.data-table-money {
+		color: var(--color-text-primary);
+		font-weight: var(--font-weight-medium);
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -883,9 +891,11 @@
 		-webkit-overflow-scrolling: touch;
 	}
 
+	/* Outline, not an inset box-shadow: the table's opaque cells paint over
+	   inset shadows, so the scroll region showed no focus at all. */
 	.management-table-scroll:focus-visible {
-		outline: none;
-		box-shadow: inset var(--shadow-focus-brand);
+		outline: var(--border-width-strong) solid var(--color-focus-ring);
+		outline-offset: calc(var(--border-width-strong) * -1);
 	}
 
 	.management-table {
@@ -923,7 +933,7 @@
 		color: var(--table-header-text);
 
 		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-medium);
+		font-weight: var(--table-header-weight);
 		line-height: var(--line-height-tight);
 		text-align: left;
 		white-space: nowrap;
@@ -971,7 +981,7 @@
 	.management-table-cell {
 		padding: var(--space-3) var(--space-4);
 		background-color: inherit;
-		color: var(--color-text-secondary);
+		color: var(--table-cell-text);
 		vertical-align: middle;
 	}
 
@@ -989,6 +999,7 @@
 	}
 
 	.management-table-align-right {
+		font-variant-numeric: tabular-nums;
 		text-align: right;
 	}
 
@@ -1052,7 +1063,7 @@
 		border: var(--border-width-default) solid var(--color-border-default);
 		border-radius: var(--radius-full);
 		background-color: var(--color-brand-subtle);
-		color: var(--color-brand-active);
+		color: var(--color-text-brand);
 
 		font-size: var(--font-size-xs);
 		font-weight: var(--font-weight-medium);
@@ -1110,13 +1121,16 @@
 		overflow: hidden;
 		margin-left: calc(var(--space-2) * -1);
 
+		/* Circles were near-white on white with a table-coloured border, so
+		   only bare letters showed. Muted fill + a visible ring now. */
 		border: 2px solid var(--table-bg);
 		border-radius: var(--radius-full);
-		background-color: var(--color-bg-surface-muted);
-		color: var(--color-text-secondary);
+		background-color: var(--color-bg-muted);
+		box-shadow: 0 0 0 1px var(--color-border-default);
+		color: var(--color-text-primary);
 
-		font-size: var(--font-size-3xs);
-		font-weight: var(--font-weight-medium);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-semibold);
 	}
 
 	.management-avatar-group-item img {
@@ -1131,18 +1145,18 @@
 	}
 
 	.management-avatar-group-sm .management-avatar-group-item {
-		width: 1.5rem;
-		height: 1.5rem;
-	}
-
-	.management-avatar-group-md .management-avatar-group-item {
 		width: 1.875rem;
 		height: 1.875rem;
 	}
 
+	.management-avatar-group-md .management-avatar-group-item {
+		width: 2.25rem;
+		height: 2.25rem;
+	}
+
 	.management-avatar-group-overflow {
-		background-color: var(--color-bg-surface-muted);
-		color: var(--color-text-muted);
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-secondary);
 	}
 
 	.management-table-skeleton {
@@ -1235,6 +1249,326 @@
 			transition-duration: 0.01ms;
 			animation-duration: 0.01ms;
 			animation-iteration-count: 1;
+		}
+	}
+}
+
+/* =====================================================
+   BATCH 7 — DATA TABLE OPTIONS
+   Opt-in via DataTable props / columnDef.meta:
+   numeric · emphasis · truncate · editable · striped · compact ·
+   stickyFirstColumn · footer totals · error state.
+===================================================== */
+
+@layer components {
+	/* ---------- Grouped headers (colSpan > 1) ---------- */
+	.data-table-head-group {
+		border-bottom-color: var(--table-border);
+		text-align: center;
+	}
+
+	.data-table-head-group .data-table-head-content {
+		justify-content: center;
+	}
+
+	/* ---------- Column meta ---------- */
+	.data-table-cell-numeric {
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+	}
+
+	.data-table-cell-emphasis {
+		color: var(--color-text-primary);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.data-table-cell-truncate .data-table-cell-inner {
+		display: block;
+		max-width: var(--table-truncate-max);
+		overflow: hidden;
+		line-height: 2.5rem;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		overflow-wrap: normal;
+	}
+
+	/* Editable cells: input surface + a visible inset edge, so a grid reads
+	   as "fill these in" next to read-only columns. */
+	.data-table-cell-editable {
+		background-color: var(--table-editable-bg);
+		box-shadow: inset 0 0 0 var(--border-width-default) var(--table-border);
+	}
+
+	.data-table-cell-editable .data-table-cell-inner {
+		padding-block: var(--space-1);
+	}
+
+	.data-table-cell-editable :where(.form-field) {
+		width: 100%;
+		margin: 0;
+	}
+
+	.data-table-cell-editable:focus-within {
+		position: relative;
+		z-index: 1;
+		box-shadow: inset 0 0 0 var(--border-width-strong) var(--color-input-border-focus, var(--color-brand));
+	}
+
+	/* ---------- Striped ---------- */
+	.data-table-striped .data-table-body .data-table-row:nth-child(even) {
+		background-color: var(--table-striped-bg);
+	}
+
+	.data-table-striped .data-table-body .data-table-row:hover {
+		background-color: var(--table-row-hover);
+	}
+
+	/* ---------- Compact ---------- */
+	.data-table-compact .data-table-head-row,
+	.data-table-compact .data-table-head-cell {
+		height: var(--control-height-md);
+	}
+
+	.data-table-compact .data-table-head-content,
+	.data-table-compact .data-table-sort-button {
+		min-height: var(--control-height-md);
+		padding-block: var(--space-1);
+	}
+
+	.data-table-compact .data-table-cell-inner {
+		min-height: 2rem;
+		padding-block: 0.125rem;
+	}
+
+	.data-table-compact .data-table-cell-truncate .data-table-cell-inner {
+		line-height: 2rem;
+	}
+
+	/* ---------- Sticky first column ---------- */
+	.data-table-sticky-first .data-table-head-cell:first-child,
+	.data-table-sticky-first .data-table-cell:first-child,
+	.data-table-sticky-first .data-table-foot-cell:first-child {
+		position: sticky;
+		left: 0;
+		z-index: 1;
+		box-shadow: var(--table-sticky-shadow);
+	}
+
+	.data-table-sticky-first .data-table-cell:first-child {
+		background-color: inherit;
+	}
+
+	.data-table-sticky-first .data-table-head-cell:first-child {
+		z-index: calc(var(--z-raised) + 1);
+	}
+
+	/* ---------- Footer: subtotals / grand totals ---------- */
+	.data-table-foot {
+		position: sticky;
+		bottom: 0;
+		z-index: var(--z-raised);
+	}
+
+	.data-table-foot-cell {
+		padding: 0;
+
+		border-top: var(--border-width-strong) solid var(--table-footer-border);
+
+		background-color: var(--table-footer-bg);
+		color: var(--table-footer-text);
+
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-semibold);
+		line-height: var(--line-height-tight);
+		vertical-align: middle;
+	}
+
+	.data-table-foot-cell .data-table-cell-inner {
+		padding-inline: var(--space-2);
+	}
+
+	/* ---------- Empty / error states ---------- */
+	.data-table-empty-icon {
+		width: 1.75rem;
+		height: 1.75rem;
+		margin-bottom: var(--space-1);
+		color: var(--color-text-muted);
+		stroke-width: 1.5;
+	}
+
+	.data-table-empty-action {
+		margin-top: var(--space-2);
+	}
+
+	.data-table-error-state .data-table-empty-icon,
+	.data-table-error-state .data-table-empty-title {
+		color: var(--color-status-rejected-text);
+	}
+
+	.data-table-error-state .data-table-empty-description {
+		color: var(--color-text-secondary);
+	}
+
+	/* =====================================================
+	   SIMPLE VIEW TABLE  (components/ui/tables/SimpleViewTable)
+	   Same tokens as DataTable, so both read as one system.
+	===================================================== */
+
+	.simple-table-title {
+		color: var(--color-text-primary);
+		font-size: var(--font-size-md);
+		font-weight: var(--font-weight-semibold);
+	}
+
+	.simple-table-scroll {
+		min-width: 0;
+		overflow: auto;
+		border: var(--border-width-default) solid var(--table-border);
+		border-radius: var(--radius-md);
+		background-color: var(--table-bg);
+	}
+
+	.simple-table-scroll:focus-visible {
+		outline: var(--border-width-strong) solid var(--color-focus-ring);
+		outline-offset: calc(var(--border-width-strong) * -1);
+	}
+
+	.simple-table {
+		width: 100%;
+		border-collapse: separate;
+		border-spacing: 0;
+		table-layout: fixed;
+		color: var(--table-cell-text);
+		font-family: var(--font-sans);
+		font-size: var(--font-size-sm);
+		line-height: var(--line-height-normal);
+	}
+
+	.simple-table-head {
+		position: sticky;
+		top: 0;
+		z-index: var(--z-raised);
+	}
+
+	.simple-table-th {
+		padding: var(--space-2) var(--space-3);
+		border-bottom: var(--border-width-default) solid var(--table-border);
+		background-color: var(--table-header-bg);
+		color: var(--table-header-text);
+		font-size: var(--font-size-xs);
+		font-weight: var(--table-header-weight);
+		line-height: var(--line-height-tight);
+		vertical-align: middle;
+	}
+
+	.simple-table-td {
+		padding: var(--space-2) var(--space-3);
+		border-bottom: var(--border-width-default) solid var(--table-border);
+		vertical-align: middle;
+		overflow-wrap: anywhere;
+	}
+
+	.simple-table-row:last-child .simple-table-td {
+		border-bottom: 0;
+	}
+
+	.simple-table-row {
+		background-color: var(--table-bg);
+		transition: background-color var(--duration-fast) var(--ease-standard);
+	}
+
+	.simple-table-row.is-interactive {
+		cursor: pointer;
+	}
+
+	.simple-table-row.is-interactive:hover {
+		background-color: var(--table-row-hover);
+	}
+
+	.simple-table-row.is-interactive:focus-visible {
+		outline: none;
+		box-shadow: inset var(--shadow-focus-brand);
+	}
+
+	.simple-table-row.is-selected,
+	.simple-table-row.is-selected:hover {
+		background-color: var(--color-table-row-selected);
+		box-shadow: inset var(--border-width-strong) 0 0 var(--color-brand);
+	}
+
+	.simple-table-align-left {
+		text-align: left;
+	}
+
+	.simple-table-align-center {
+		text-align: center;
+	}
+
+	.simple-table-align-right {
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		overflow-wrap: normal;
+	}
+
+	.simple-table-select-cell {
+		width: 2.5rem;
+	}
+
+	.simple-table-empty {
+		padding: var(--space-8) var(--space-4);
+		text-align: center;
+	}
+
+	.simple-table-empty .empty-content-actions {
+		margin-top: var(--space-2);
+	}
+
+	.simple-table-foot {
+		position: sticky;
+		bottom: 0;
+		z-index: var(--z-raised);
+	}
+
+	.simple-table-foot-cell {
+		padding: var(--space-2-5, 0.625rem) var(--space-3);
+		border-top: var(--border-width-strong) solid var(--table-footer-border);
+		background-color: var(--table-footer-bg);
+		color: var(--table-footer-text);
+		font-weight: var(--font-weight-semibold);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.simple-table-file-button {
+		display: inline-flex;
+		width: 1.75rem;
+		height: 1.75rem;
+		flex: none;
+		align-items: center;
+		justify-content: center;
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-sm);
+		background: var(--color-bg-surface);
+		color: var(--color-text-secondary);
+		cursor: pointer;
+		transition:
+			border-color var(--duration-fast) var(--ease-standard),
+			color var(--duration-fast) var(--ease-standard);
+	}
+
+	.simple-table-file-button:hover {
+		border-color: var(--color-brand);
+		color: var(--color-text-brand);
+	}
+
+	.simple-table-file-button:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-focus-strong);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.simple-table-row {
+			transition: none;
 		}
 	}
 }

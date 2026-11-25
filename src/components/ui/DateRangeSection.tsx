@@ -53,10 +53,10 @@ const DateRangeSection = ({ fromDate, toDate }: DateRangeProps) => {
 					</time>
 				</div>
 
-				<div
-					className="date-range-center"
-					aria-label={`Duration: ${schedule.durationLabel}`}
-				>
+				{/* aria-label on a plain div is ignored; the duration is read out
+				    from visually hidden text instead. */}
+				<div className="date-range-center">
+					<span className="sr-only">Duration: {schedule.durationLabel}</span>
 					<div className="date-range-line-wrap" aria-hidden="true">
 						<span className="date-range-start-dot" />
 						<span className="date-range-line" />

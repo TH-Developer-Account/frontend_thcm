@@ -1,6 +1,6 @@
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageCircle } from "lucide-react";
+import { AlertCircle, MessageCircle } from "lucide-react";
 
 import Avatar from "../../common/Avatar";
 import { useToast } from "../../../context/Auth/AuthContext";
@@ -148,7 +148,10 @@ const CommentCard = React.memo(function CommentCard({
 						)}
 					>
 						<div className="comment-meta">
-							<p className="comment-author">{getAuthorName(comment)}</p>
+							<p className="comment-author">
+								{getAuthorName(comment)}
+								{isSelf ? <span className="comment-you">You</span> : null}
+							</p>
 							<time className="comment-submeta" dateTime={comment.createdAt}>
 								{formatDateTime(comment.createdAt)}
 							</time>
@@ -229,6 +232,8 @@ export default function CommentsSection({
 		data: comments = [],
 		isLoading,
 		error,
+		refetch,
+		isFetching,
 	} = useQuery({
 		queryKey,
 		queryFn: () => api.getComments({ subjectType, subjectId }),
@@ -239,11 +244,8 @@ export default function CommentsSection({
 		refetchOnReconnect: false,
 	});
 
-	const loadError = error
-		? error instanceof Error
-			? error.message
-			: "Unable to load comments"
-		: null;
+	// Raw API messages are not shown to users (they stay in devtools).
+	const loadError = Boolean(error);
 
 	React.useEffect(() => {
 		onCommentsChangeRef.current?.(comments);
@@ -286,17 +288,16 @@ export default function CommentsSection({
 				setToEmails([]);
 				showToast({
 					type: "success",
-					title: "Success",
-					description: response.message,
+					title: "Comment posted",
+					description: to.length
+						? `${to.length} mentioned ${to.length === 1 ? "person was" : "people were"} notified.`
+						: undefined,
 				});
 			} catch (createError) {
 				showToast({
 					type: "error",
-					title: "Error",
-					description:
-						createError instanceof Error
-							? createError.message
-							: "Error while adding the comment",
+					title: "Comment not posted",
+					description: "Your text is still in the box. Check your connection and try again.",
 				});
 				throw createError;
 			}
@@ -322,12 +323,21 @@ export default function CommentsSection({
 				{isLoading ? (
 					<CardSkeleton />
 				) : loadError ? (
-					<CardEmpty
-						title="Unable to load comments"
-						description={loadError}
-						Icon={MessageCircle}
-						iconSize={20}
-					/>
+					<div className="comments-load-error" role="alert">
+						<AlertCircle aria-hidden="true" className="comments-load-error-icon" />
+						<div className="comments-load-error-copy">
+							<p className="comments-load-error-title">Couldn't load comments</p>
+							<p className="comments-load-error-text">Try again in a moment.</p>
+							<button
+								type="button"
+								className="button-base button-standard button-outline button-sm"
+								onClick={() => void refetch()}
+								disabled={isFetching}
+							>
+								{isFetching ? "Retrying…" : "Try again"}
+							</button>
+						</div>
+					</div>
 				) : comments.length === 0 ? (
 					<CardEmpty
 						title={emptyTitle}
@@ -356,7 +366,7 @@ export default function CommentsSection({
 			{canComment ? (
 				<footer className="comments-create">
 					<CommentInput
-						disabled={isLoading || Boolean(loadError)}
+						disabled={isLoading || loadError}
 						onSubmit={handleCreate}
 						mentionableUsers={mentionableUsers}
 						onMentionInsert={handleMentionInsert}

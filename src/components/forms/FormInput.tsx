@@ -10,8 +10,8 @@ import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 import { CircleCheck } from "lucide-react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
-import HelperTooltip from "../common/HelperTooltip";
 import type { InputProps } from "./input.types";
+import { FieldLabel, FieldMessage, getFieldA11y } from "./FieldParts";
 import ReadOnlyField from "./ReadOnlyField";
 import { validateFormValue } from "../../utils/form.validation";
 
@@ -66,6 +66,8 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 			className = "",
 			disabled = false,
 			helperText,
+			optional,
+			warning,
 			placeholder,
 			isTooltip = true,
 			min,
@@ -73,10 +75,15 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 			success,
 			invalidRadio,
 			readOnlyValue,
-			emptyReadOnlyValue = "--",
+			emptyReadOnlyValue,
+			emptyReadOnlyReason,
 			validation,
 			onBlur,
 			onChange,
+			// Declared in InputProps but never rendered before Batch 13, so
+			// "+91" leaked onto the <input> as an unknown `inputprefix`
+			// attribute and never appeared.
+			inputPrefix,
 			...nativeInputProps
 		},
 		ref,
@@ -88,7 +95,6 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 
 		const inputId = id ?? name ?? `form-input-${generatedId}`;
 		const errorId = `${inputId}-error`;
-		const helperId = `${inputId}-helper`;
 
 		const isViewMode = mode === "view";
 		const isPassword = type === "password";
@@ -104,12 +110,14 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 
 		const resolvedSuccess = success && !resolvedError;
 
-		const describedBy = [
-			resolvedError ? errorId : undefined,
-			helperText && !isTooltip ? helperId : undefined,
-		]
-			.filter(Boolean)
-			.join(" ");
+		const a11y = getFieldA11y({
+			fieldId: inputId,
+			error: resolvedError || undefined,
+			warning,
+			helperText,
+			isTooltip,
+		});
+		const hasWarning = Boolean(a11y.visibleWarning);
 
 		const resolvedMin = type === "date" ? (min ?? getTodayDate()) : min;
 
@@ -165,6 +173,10 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 					helperText={helperText}
 					isTooltip={isTooltip}
 					emptyValue={emptyReadOnlyValue}
+					emptyReason={emptyReadOnlyReason}
+					valueType={
+						type === "number" ? "numeric" : type === "date" ? "date" : "text"
+					}
 					className={className}
 				/>
 			);
@@ -226,34 +238,35 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 					"form-field",
 					disabled && "is-disabled",
 					resolvedError && "has-error",
+					hasWarning && "has-warning",
 					resolvedSuccess && "is-valid",
 				)}
 			>
-				{label ? (
-					<div className="form-label-row">
-						<label htmlFor={inputId} className="form-label">
-							{label}
-
-							{required ? (
-								<span className="form-required" aria-hidden="true">
-									*
-								</span>
-							) : null}
-						</label>
-
-						{helperText && isTooltip && !resolvedError ? (
-							<HelperTooltip label={label} text={helperText} />
-						) : null}
-					</div>
-				) : null}
+				<FieldLabel
+					htmlFor={inputId}
+					label={label}
+					required={required}
+					optional={optional}
+					helperText={helperText}
+					isTooltip={isTooltip}
+					hasError={Boolean(resolvedError)}
+					tooltipId={a11y.tooltipId}
+				/>
 
 				<div
 					className={joinClassNames(
 						"form-input-wrapper",
 						isPassword && "has-password-toggle",
 						(resolvedError || resolvedSuccess) && "has-status-icon",
+						inputPrefix != null && "has-prefix",
 					)}
 				>
+					{inputPrefix != null ? (
+						<span id={`${inputId}-prefix`} className="form-input-prefix">
+							{inputPrefix}
+						</span>
+					) : null}
+
 					<input
 						{...nativeInputProps}
 						ref={ref}
@@ -278,7 +291,11 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 						onChange={handleChange}
 						onBlur={handleBlur}
 						aria-invalid={resolvedError ? "true" : undefined}
-						aria-describedby={describedBy || undefined}
+						aria-describedby={
+							[inputPrefix != null ? `${inputId}-prefix` : undefined, a11y.describedBy]
+								.filter(Boolean)
+								.join(" ") || undefined
+						}
 						className={joinClassNames(
 							"form-input",
 							(resolvedError || resolvedSuccess || isPassword) &&
@@ -287,6 +304,7 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 								(resolvedError || resolvedSuccess) &&
 								"form-input-with-status-and-toggle",
 							resolvedError && "form-input-error",
+							hasWarning && "form-input-warning",
 							resolvedSuccess && "form-input-success",
 							disabled && "form-input-disabled",
 							className,
@@ -321,15 +339,12 @@ const FormInput = forwardRef<HTMLInputElement, InputProps>(
 					) : null}
 				</div>
 
-				{resolvedError ? (
-					<p id={errorId} className="form-error-text" role="alert">
-						{resolvedError}
-					</p>
-				) : helperText && !isTooltip ? (
-					<p id={helperId} className="form-helper-text">
-						{helperText}
-					</p>
-				) : null}
+				<FieldMessage
+					a11y={a11y}
+					error={resolvedError || undefined}
+					helperText={helperText}
+					isTooltip={isTooltip}
+				/>
 			</div>
 		);
 	},

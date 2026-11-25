@@ -3,12 +3,11 @@ import { useState } from "react";
 import { AuthLayout } from "../../../layout/AuthLayout";
 import GuestEmailLoginForm from "../authforms/GuestEmailLoginForm";
 import GuestMobileLoginForm from "../authforms/GuestMobileLoginForm";
+import { AuthMethodTabs, type AuthMethod } from "../components/AuthMethodTabs";
 import logo from "../../../assets/thcm-logo/th-brand-logo.png";
 
-type LoginTab = "email" | "mobile";
-
 const GuestLoginPage = () => {
-  const [activeTab, setActiveTab] = useState<LoginTab>("email");
+  const [activeTab, setActiveTab] = useState<AuthMethod>("email");
 
   return (
     <AuthLayout
@@ -23,52 +22,20 @@ const GuestLoginPage = () => {
 
         <p className="auth-form-eyebrow">Welcome back</p>
 
-        <h2 className="auth-form-title">Sign in to your account</h2>
+        <h1 className="auth-form-title">Sign in to your account</h1>
 
         <p className="auth-form-description">
           Enter your registered credentials to continue.
         </p>
       </header>
 
-      <div className="auth-tabs" role="tablist" aria-label="Login method">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "email"}
-          className={[
-            "auth-tab",
-            activeTab === "email" ? "auth-tab-active" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          onClick={() => setActiveTab("email")}
-        >
-          Email
-        </button>
-
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "mobile"}
-          className={[
-            "auth-tab",
-            activeTab === "mobile" ? "auth-tab-active" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          onClick={() => setActiveTab("mobile")}
-        >
-          Mobile
-        </button>
-      </div>
-
-      <div className="auth-tab-panel">
+      <AuthMethodTabs value={activeTab} onChange={setActiveTab}>
         {activeTab === "email" ? (
           <GuestEmailLoginForm />
         ) : (
           <GuestMobileLoginForm />
         )}
-      </div>
+      </AuthMethodTabs>
     </AuthLayout>
   );
 };

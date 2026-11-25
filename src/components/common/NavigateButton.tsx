@@ -55,7 +55,9 @@ const NavigateButton: React.FC<NavigateButtonProps> = ({
 		<button
 			type="button"
 			onClick={handleClick}
-			className={`workflow-create-badge ${className}`}
+			// Own shared class: it used .workflow-create-badge from the workflows
+			// module's CSS (brand-700 text, 3.3:1 on the dark tint, no focus ring).
+			className={["navigate-button", className].filter(Boolean).join(" ")}
 		>
 			{iconPosition === "left" && LeftIcon && <LeftIcon size={iconSize} />}
 

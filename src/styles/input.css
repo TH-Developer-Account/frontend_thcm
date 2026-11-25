@@ -70,11 +70,21 @@ FORM CONTAINER AND LAYOUT
 		@apply min-w-0;
 
 		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
-		font-weight: var(--font-weight-medium);
+		font-size: var(--field-label-size);
+		font-weight: var(--field-label-weight);
 		line-height: var(--line-height-tight);
 
-		color: var(--color-text-secondary);
+		color: var(--field-label);
+
+		transition: color var(--duration-fast) var(--ease-standard);
+	}
+
+	/* Active-field cue: the label of the field being edited takes the brand
+	   text colour, so users always see which field is active. Errors keep red. */
+	.form-field:not(.has-error):not(.is-disabled):focus-within
+		> .form-label-row
+		.form-label {
+		color: var(--field-label-active);
 	}
 
 	.form-required {
@@ -256,14 +266,14 @@ FORM CONTAINER AND LAYOUT
 
 		border-width: var(--border-width-default);
 		border-color: var(--color-input-border);
-		border-radius: var(--radius-xs);
+		border-radius: var(--input-radius);
 
 		background-color: var(--color-input-bg);
 		color: var(--color-input-text);
 		box-shadow: none;
 
 		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-tight);
 
@@ -312,13 +322,15 @@ FORM CONTAINER AND LAYOUT
 		background-color: var(--color-input-bg);
 	}
 
+	/* ACTIVE FIELD — was a slightly darker grey with no ring (client complaint).
+	   Now: brand border + soft brand halo. box-shadow, so no layout shift. */
 	.form-input:focus,
 	.form-textarea:focus,
 	.form-date:focus,
 	.form-native-select:focus {
-		border-color: var(--color-input-border-hover);
+		border-color: var(--field-border-focus);
 		background-color: var(--color-input-bg);
-		box-shadow: none;
+		box-shadow: var(--field-focus-ring);
 	}
 
 	/* =====================================================
@@ -350,9 +362,9 @@ FORM CONTAINER AND LAYOUT
 		background-color: var(--color-error-bg);
 	}
 
+	/* Error placeholders: error text colour at full opacity (was 65% red, 2.8:1). */
 	.form-input-error::placeholder {
-		color: var(--color-error);
-		opacity: 0.65;
+		color: var(--feedback-error-fg);
 	}
 
 	.form-input-error:hover:not(:disabled) {
@@ -361,7 +373,7 @@ FORM CONTAINER AND LAYOUT
 
 	.form-input-error:focus {
 		border-color: var(--color-error);
-		box-shadow: none;
+		box-shadow: var(--shadow-focus-error);
 	}
 
 	/* =====================================================
@@ -387,6 +399,7 @@ FORM CONTAINER AND LAYOUT
 	.form-input-success:focus {
 		border-color: var(--color-success);
 		background-color: var(--color-success-bg-soft);
+		box-shadow: var(--shadow-focus-success);
 	}
 
 	.form-success-icon {
@@ -489,8 +502,10 @@ FORM CONTAINER AND LAYOUT
 		top: 50%;
 		right: var(--space-2);
 
-		width: 1.75rem;
-		height: 1.75rem;
+		/* max(): 1.75rem is only 19.6px at the 0.7 root scale; WCAG 2.5.8
+		   needs a 24px target (password show/hide, clear buttons). */
+		width: max(1.75rem, 24px);
+		height: max(1.75rem, 24px);
 
 		border-radius: var(--radius-xs);
 		background-color: transparent;
@@ -572,7 +587,7 @@ FORM CONTAINER AND LAYOUT
 
 	.form-radio-label {
 		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-tight);
 		color: var(--color-text-secondary);
@@ -618,7 +633,7 @@ FORM CONTAINER AND LAYOUT
 		border-color: var(--color-brand);
 		box-shadow:
 			inset 0 0 0 0.18rem var(--color-clean-white),
-			0 0 0 2px var(--color-brand-subtle);
+			var(--shadow-focus-brand);
 	}
 
 	.form-radio-input-error {
@@ -763,13 +778,13 @@ FORM CONTAINER AND LAYOUT
 	.form-native-select-compact {
 		min-height: var(--control-height-sm);
 		padding-inline: var(--space-2);
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 	}
 
 	.form-textarea-compact {
 		min-height: 4.75rem;
 		padding: var(--space-1-5) var(--space-2);
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 	}
 
 	/* =====================================================
@@ -853,7 +868,7 @@ REACT SELECT CONTAINER
 		@apply relative w-full min-w-0;
 
 		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 		font-weight: var(--font-weight-regular);
 		color: var(--color-input-text);
 	}
@@ -872,7 +887,7 @@ REACT SELECT CONTAINER
 
 		border-width: var(--border-width-default);
 		border-color: var(--color-input-border);
-		border-radius: var(--radius-xs);
+		border-radius: var(--input-radius);
 
 		background-color: var(--color-input-bg);
 		color: var(--color-input-text);
@@ -892,14 +907,17 @@ REACT SELECT CONTAINER
 		background-color: var(--color-input-bg);
 	}
 
-	.react-select__control--is-focused {
-		border-color: var(--color-input-border-hover);
+	.react-select__control--is-focused,
+	.react-select__control--is-focused:hover:not(
+			.react-select__control--is-disabled
+		) {
+		border-color: var(--field-border-focus);
 		background-color: var(--color-input-bg);
-		box-shadow: none;
+		box-shadow: var(--field-focus-ring);
 	}
 
 	.react-select__control--menu-is-open {
-		border-color: var(--color-input-border-hover);
+		border-color: var(--field-border-focus);
 	}
 
 	/* Keep error icon clear of the indicators. */
@@ -916,15 +934,18 @@ REACT SELECT CONTAINER
 		background-color: var(--color-error-bg);
 	}
 
-	.react-select-container-error .react-select__control--is-focused {
+	.react-select-container-error .react-select__control--is-focused,
+	.react-select-container-error
+		.react-select__control--is-focused:hover:not(
+			.react-select__control--is-disabled
+		) {
 		border-color: var(--color-error);
 		background-color: var(--color-error-bg);
-		box-shadow: none;
+		box-shadow: var(--shadow-focus-error);
 	}
 
 	.react-select-container-error .react-select__placeholder {
-		color: var(--color-error);
-		opacity: 0.65;
+		color: var(--feedback-error-fg);
 	}
 	/* Keep error icon clear of the indicators. */
 	.react-select-container-success .react-select__control {
@@ -942,7 +963,7 @@ REACT SELECT CONTAINER
 
 	.react-select-container-success .react-select__control--is-focused {
 		border-color: var(--color-success);
-		box-shadow: none;
+		box-shadow: var(--shadow-focus-success);
 	}
 	/* Browser autofill / saved values */
 	.react-select-container-success:-webkit-autofill {
@@ -986,7 +1007,7 @@ REACT SELECT CONTAINER
 
 		color: var(--color-input-text);
 		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 		font-weight: var(--font-weight-regular);
 		line-height: 1;
 	}
@@ -1005,7 +1026,7 @@ REACT SELECT CONTAINER
 
 		color: var(--color-input-placeholder);
 		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-tight);
 	}
@@ -1017,7 +1038,7 @@ REACT SELECT CONTAINER
 
 		color: var(--color-input-text);
 		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-tight);
 	}
@@ -1162,7 +1183,7 @@ REACT SELECT CONTAINER
 		color: var(--color-text-secondary);
 
 		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-tight);
 
@@ -1204,14 +1225,14 @@ REACT SELECT CONTAINER
 	.react-select__option--is-selected {
 		position: relative;
 		background-color: var(--color-brand-subtle);
-		color: var(--color-brand-active);
+		color: var(--color-text-brand);
 		font-weight: var(--font-weight-medium);
 	}
 
 	.react-select__option--is-selected.react-select__option--is-focused,
 	.react-select__option--is-selected:hover {
 		background-color: var(--color-brand-subtle);
-		color: var(--color-brand-active);
+		color: var(--color-text-brand);
 	}
 
 	/*
@@ -1367,7 +1388,7 @@ REACT SELECT CONTAINER
 	.react-select-compact .react-select__single-value,
 	.react-select-compact .react-select__input-container,
 	.react-select-compact .react-select__option {
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 	}
 
 	.react-select-compact .react-select__indicator {
@@ -1398,6 +1419,7 @@ REACT SELECT CONTAINER
 		border-width: var(--border-width-default);
 		border-color: var(--color-brand);
 		background-color: var(--color-input-bg);
+		box-shadow: var(--checkbox-glow, none);
 		box-sizing: border-box;
 	}
 
@@ -1414,10 +1436,12 @@ REACT SELECT CONTAINER
 		border-color: var(--color-input-border-hover);
 	}
 
-	.checkbox-enabled:focus-visible {
-		outline: none;
-		border-color: var(--color-input-border-hover);
-		box-shadow: none;
+	/* The visual box is a sibling of the (transparent) input that actually
+	   takes focus. The old rule targeted the box itself, which is never
+	   focused, so checkboxes had no visible keyboard focus. */
+	.checkbox-field input:focus-visible + .checkbox-enabled {
+		border-color: var(--field-border-focus);
+		box-shadow: var(--shadow-focus-strong);
 	}
 
 	.checkbox-error {
@@ -1435,9 +1459,10 @@ REACT SELECT CONTAINER
 		color: var(--color-error);
 	}
 
-	.checkbox-error.checkbox-enabled:focus-visible {
+	.checkbox-field input:focus-visible + .checkbox-error.checkbox-enabled {
 		border-color: var(--color-error);
 		background-color: var(--color-error-bg);
+		box-shadow: var(--shadow-focus-error);
 	}
 
 	.checkbox-error.checkbox-disabled {
@@ -1468,7 +1493,7 @@ REACT SELECT CONTAINER
 
 		border-width: var(--border-width-default);
 		border-color: var(--color-input-border);
-		border-radius: var(--radius-xs);
+		border-radius: var(--input-radius);
 
 		background-color: var(--color-input-bg);
 		color: var(--color-input-text);
@@ -1477,7 +1502,8 @@ REACT SELECT CONTAINER
 		transition:
 			border-color var(--duration-fast) var(--ease-standard),
 			background-color var(--duration-fast) var(--ease-standard),
-			color var(--duration-fast) var(--ease-standard);
+			color var(--duration-fast) var(--ease-standard),
+			box-shadow var(--duration-fast) var(--ease-standard);
 	}
 
 	.search-input-control:hover:not(.is-disabled) {
@@ -1487,10 +1513,10 @@ REACT SELECT CONTAINER
 	}
 
 	.search-input-control:focus-within:not(.is-disabled) {
-		border-color: var(--color-input-border-hover);
+		border-color: var(--field-border-focus);
 		background-color: var(--color-input-bg);
 		outline: none;
-		box-shadow: none;
+		box-shadow: var(--field-focus-ring);
 	}
 
 	.search-input-control.is-disabled {
@@ -1527,7 +1553,7 @@ REACT SELECT CONTAINER
 		box-shadow: none;
 
 		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-tight);
 	}
@@ -1605,7 +1631,7 @@ REACT SELECT CONTAINER
 	}
 	.select-option-primary {
 		@apply overflow-hidden text-ellipsis whitespace-nowrap;
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 		font-weight: var(--font-weight-medium);
 		color: inherit;
 	}
@@ -1628,8 +1654,9 @@ REACT SELECT CONTAINER
 	}
 	.checkbox-control {
 		@apply m-0 mt-px shrink-0 appearance-none border;
-		width: 1rem;
-		height: 1rem;
+		/* was 1rem (11.2px) beside 14px labels */
+		width: var(--control-check-size);
+		height: var(--control-check-size);
 		border-width: var(--border-width-default);
 		border-color: var(--color-input-border);
 		border-radius: var(--radius-xs);
@@ -1641,8 +1668,8 @@ REACT SELECT CONTAINER
 	}
 	.checkbox-control:focus-visible {
 		outline: none;
-		border-color: var(--color-input-border-hover);
-		box-shadow: none;
+		border-color: var(--field-border-focus);
+		box-shadow: var(--field-focus-ring);
 	}
 	.checkbox-control:checked,
 	.checkbox-control:indeterminate {
@@ -1671,7 +1698,7 @@ REACT SELECT CONTAINER
 	}
 	.checkbox-label {
 		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-normal);
 		color: var(--color-text-secondary);
@@ -1693,7 +1720,7 @@ REACT SELECT CONTAINER
 	.checkbox-field.has-error .checkbox-control:focus-visible {
 		border-color: var(--color-error);
 		background-color: var(--color-error-bg);
-		box-shadow: none;
+		box-shadow: var(--shadow-focus-error);
 	}
 	.checkbox-field.has-error .checkbox-control:disabled {
 		border-width: var(--border-width-default);
@@ -1728,7 +1755,7 @@ OTP INPUT
 
 		border-width: var(--border-width-default);
 		border-color: var(--color-input-border);
-		border-radius: var(--radius-xs);
+		border-radius: var(--input-radius);
 
 		background-color: var(--color-input-bg);
 		color: var(--color-input-text);
@@ -1753,8 +1780,8 @@ OTP INPUT
 	.otp-input:focus,
 	.otp-input:focus-visible {
 		outline: none;
-		border-color: var(--color-input-border-hover);
-		box-shadow: none;
+		border-color: var(--field-border-focus);
+		box-shadow: var(--field-focus-ring);
 	}
 
 	.otp-input::selection {
@@ -1770,6 +1797,11 @@ OTP INPUT
 	.otp-input.otp-error:focus,
 	.otp-input.otp-error:focus-visible {
 		border-color: var(--color-error-hover);
+	}
+
+	.otp-input.otp-error:focus,
+	.otp-input.otp-error:focus-visible {
+		box-shadow: var(--shadow-focus-error);
 	}
 
 	.otp-input:disabled {
@@ -1793,7 +1825,7 @@ OTP INPUT
 	}
 
 	.otp-timer {
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 		color: var(--color-text-muted);
 	}
 
@@ -1816,10 +1848,14 @@ OTP INPUT
 }
 
 /* =====================================================
-FORM READONLY INPUT
-===================================================== */
-/* =====================================================
-   FORM READONLY INPUT
+   FORM READ-ONLY VALUE  (ReadOnlyField / ReadOnlyGrid)
+   Read-only is not disabled. Submitted values are the content of a view
+   screen: strong primary text on a soft surface. Disabled inputs are grey
+   with faded text and a not-allowed cursor.
+   - boxed (default): soft surface + hairline border, at least control height
+   - plain (inside ReadOnlyGrid): label over value, no box
+   Values wrap instead of scrolling inside a one-line box, so the full
+   value is always readable.
 ===================================================== */
 
 @layer components {
@@ -1829,86 +1865,233 @@ FORM READONLY INPUT
 	}
 
 	.form-readonly-value {
+		position: relative;
 		display: flex;
 		width: 100%;
 		min-width: 0;
-		height: var(--control-height-xs);
-		min-height: var(--control-height-xs);
-		max-height: var(--control-height-xs);
+		min-height: var(--control-height-md);
 		align-items: center;
+		gap: var(--space-2);
+		margin: 0; /* <dd> inside ReadOnlyGrid */
 
-		padding: var(--space-2) var(--space-3);
+		padding: var(--space-1-5, 0.375rem) var(--space-3);
 
-		overflow-x: hidden;
-		overflow-y: auto;
+		border: var(--border-width-default) solid var(--field-readonly-border);
+		border-radius: var(--input-radius, var(--radius-sm));
 
-		border: var(--border-width-default) solid var(--color-border-default);
-		border-radius: var(--radius-sm);
+		background-color: var(--field-readonly-bg);
+		color: var(--field-readonly-text);
 
-		background-color: var(--color-bg-surface-subtle);
-		color: var(--color-text-primary);
-
-		font-size: var(--font-size-sm);
-		font-weight: var(--font-weight-regular);
-		line-height: var(--line-height-normal);
+		font-size: var(--field-font-size);
+		font-weight: var(--field-readonly-weight);
+		line-height: var(--line-height-tight);
 
 		overflow-wrap: anywhere;
 		word-break: break-word;
 		white-space: pre-wrap;
+	}
 
+	.form-readonly-value-text {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	/* ---- plain: label over value, no box (grids, summaries) ---- */
+	.form-readonly-value-plain,
+	.readonly-grid-plain .form-readonly-value {
+		min-height: 0;
+		padding: 0;
+		border-color: transparent;
+		background-color: transparent;
+	}
+
+	/* plain values hug their text, so the copy button sits beside the value */
+	.form-readonly-value-plain .form-readonly-value-text,
+	.readonly-grid-plain .form-readonly-value-text {
+		flex: 0 1 auto;
+	}
+
+	/* ---- numbers, money, dates: tabular figures so digits line up ---- */
+	.form-readonly-value-numeric {
+		font-variant-numeric: tabular-nums;
+		font-feature-settings: "tnum" 1;
+	}
+
+	.form-readonly-value-currency {
+		font-weight: var(--font-weight-semibold);
+		white-space: nowrap;
+	}
+
+	/* ---- long text: grows with content, scrolls only past the cap ---- */
+	.form-readonly-value-multiline {
+		align-items: flex-start;
+		max-height: var(--field-readonly-multiline-max);
+		padding-block: var(--space-2);
+		overflow-y: auto;
+		line-height: var(--line-height-normal);
+		font-weight: var(--font-weight-regular);
 		scrollbar-width: thin;
 		scrollbar-color: var(--color-border-hover) transparent;
 	}
 
-	.form-readonly-value::-webkit-scrollbar {
-		width: 0.375rem;
-		height: 0.375rem;
+	.readonly-grid-plain .form-readonly-value-multiline,
+	.form-readonly-value-plain.form-readonly-value-multiline {
+		max-height: none;
+		overflow: visible;
+		padding-block: 0;
 	}
 
-	.form-readonly-value::-webkit-scrollbar-track {
-		background: transparent;
+	/* ---- empty states: say why, never an ambiguous dash ---- */
+	.readonly-empty {
+		color: var(--field-readonly-empty);
+		font-weight: var(--font-weight-regular);
+		font-style: italic;
 	}
 
-	.form-readonly-value::-webkit-scrollbar-thumb {
-		border-radius: var(--radius-full);
-		background-color: var(--color-border-hover);
+	.readonly-empty-pending {
+		color: var(--field-readonly-pending);
 	}
 
-	.form-readonly-value::-webkit-scrollbar-thumb:hover {
-		background-color: var(--color-text-muted);
+	.readonly-empty-error {
+		color: var(--field-readonly-error);
+		font-style: normal;
+		font-weight: var(--font-weight-medium);
 	}
 
-	/*
-	 * Used by TextareaInput in view mode.
-	 * Keeps the textarea-sized field stable and scrollable.
-	 */
-	.form-readonly-value-multiline {
-		height: 8.2rem;
-		min-height: 6rem;
-		max-height: 10rem;
-		align-items: flex-start !important;
-		overflow-y: auto;
+	.readonly-empty-loading {
+		display: block;
+		width: min(10rem, 70%);
+		height: 0.75em;
+		border-radius: var(--radius-xs);
+		background: linear-gradient(
+			90deg,
+			var(--color-skeleton-base) 0%,
+			var(--color-skeleton-highlight) 50%,
+			var(--color-skeleton-base) 100%
+		);
+		background-size: 200% 100%;
+		animation: readonly-shimmer 1.4s ease-in-out infinite;
 	}
 
+	@keyframes readonly-shimmer {
+		from { background-position: 100% 0; }
+		to { background-position: -100% 0; }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.readonly-empty-loading {
+			animation: none;
+		}
+	}
+
+	/* Fallback for hand-written <div class="form-readonly-value"></div> */
 	.form-readonly-value:empty::before {
-		content: "--";
+		content: "Not provided";
+		color: var(--field-readonly-empty);
+		font-weight: var(--font-weight-regular);
+		font-style: italic;
+	}
+
+	/* ---- multiple values as chips ---- */
+	.form-readonly-value-chips {
+		padding-block: var(--space-1);
+	}
+
+	.form-readonly-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1-5, 0.375rem);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.form-readonly-chip {
+		display: inline-flex;
+		align-items: center;
+		max-width: 100%;
+		padding: 0.125rem var(--space-2);
+		border: var(--border-width-default) solid var(--field-readonly-chip-border);
+		border-radius: var(--radius-full);
+		background-color: var(--field-readonly-chip-bg);
+		color: var(--field-readonly-chip-text);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+	}
+
+	/* ---- copy button ---- */
+	.form-readonly-copy {
+		display: inline-flex;
+		flex: none;
+		align-items: center;
+		justify-content: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		margin-inline-end: calc(var(--space-1) * -1);
+		border: 0;
+		border-radius: var(--radius-xs);
+		background: transparent;
+		color: var(--color-text-muted);
+		cursor: pointer;
+		transition:
+			color var(--duration-fast) var(--ease-standard),
+			background-color var(--duration-fast) var(--ease-standard);
+	}
+
+	.form-readonly-copy:hover {
+		background-color: var(--color-bg-surface-hover);
+		color: var(--color-text-primary);
+	}
+
+	.form-readonly-copy:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-focus-strong);
+	}
+
+	.form-readonly-copy.is-copied {
+		color: var(--color-status-approved-text);
+	}
+
+	/* ---- key-value grid ---- */
+	.readonly-grid {
+		display: grid;
+		grid-template-columns: repeat(var(--readonly-grid-cols, 3), minmax(0, 1fr));
+		gap: var(--space-4) var(--space-6);
+		margin: 0;
+	}
+
+	.readonly-grid-plain .form-label {
 		color: var(--color-text-secondary);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.readonly-grid .form-label-row {
+		margin: 0;
+	}
+
+	.readonly-span-full {
+		grid-column: 1 / -1;
+	}
+
+	@media (max-width: 1023px) {
+		.readonly-grid {
+			grid-template-columns: repeat(min(var(--readonly-grid-cols, 3), 2), minmax(0, 1fr));
+		}
 	}
 
 	@media (max-width: 639px) {
-		.form-readonly-value {
-			height: var(--control-height-md);
-			min-height: var(--control-height-md);
-			max-height: var(--control-height-md);
+		.readonly-grid {
+			grid-template-columns: minmax(0, 1fr);
+			gap: var(--space-3);
 		}
 
-		.form-readonly-value-multiline {
-			height: 8.2rem;
-			min-height: 5rem;
-			max-height: 10rem;
+		.form-readonly-value {
+			padding-inline: var(--space-2);
 		}
 	}
 }
+
 /* =====================================================
    PHONE INPUT
    Country code attached to the number as ONE control.
@@ -1928,14 +2111,15 @@ FORM READONLY INPUT
 		box-sizing: border-box;
 
 		border: var(--border-width-default) solid var(--color-input-border);
-		border-radius: var(--radius-xs);
+		border-radius: var(--input-radius);
 
 		background-color: var(--color-input-bg);
 		color: var(--color-input-text);
 
 		transition:
 			border-color var(--duration-fast) var(--ease-standard),
-			background-color var(--duration-fast) var(--ease-standard);
+			background-color var(--duration-fast) var(--ease-standard),
+			box-shadow var(--duration-fast) var(--ease-standard);
 	}
 
 	.phone-input-group:hover:not(.is-disabled) {
@@ -1943,7 +2127,8 @@ FORM READONLY INPUT
 	}
 
 	.phone-input-group:focus-within:not(.is-disabled) {
-		border-color: var(--color-input-border-focus);
+		border-color: var(--field-border-focus);
+		box-shadow: var(--field-focus-ring);
 	}
 
 	/* ---------- Attached country-code segment ---------- */
@@ -1964,7 +2149,7 @@ FORM READONLY INPUT
 		color: var(--color-text-secondary);
 
 		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-tight);
 		white-space: nowrap;
@@ -2041,7 +2226,7 @@ FORM READONLY INPUT
 		box-shadow: none;
 
 		font-family: var(--font-sans);
-		font-size: var(--font-size-xs);
+		font-size: var(--field-font-size);
 		font-weight: var(--font-weight-regular);
 		line-height: var(--line-height-tight);
 		font-variant-numeric: tabular-nums;
@@ -2082,6 +2267,7 @@ FORM READONLY INPUT
 
 	.phone-input-group.has-error:focus-within:not(.is-disabled) {
 		border-color: var(--color-error);
+		box-shadow: var(--shadow-focus-error);
 	}
 
 	.phone-input-group.has-error .phone-input-prefix {
@@ -2089,8 +2275,7 @@ FORM READONLY INPUT
 	}
 
 	.phone-input-group.has-error .phone-input-field::placeholder {
-		color: var(--color-error);
-		opacity: 0.65;
+		color: var(--feedback-error-fg);
 	}
 
 	.phone-input-group.has-error .phone-input-field:-webkit-autofill {
@@ -2155,5 +2340,168 @@ FORM READONLY INPUT
 		.phone-input-group {
 			transition-duration: 0.01ms;
 		}
+	}
+}
+
+/* =====================================================
+   FORM SYSTEM — batch 4
+   Optional marker, warning state, validation summary.
+   Warning = advisory only (amber); error = blocking (red).
+===================================================== */
+@layer components {
+	/* ---------- Optional marker ---------- */
+	.form-optional {
+		margin-left: var(--space-1);
+
+		color: var(--color-text-muted);
+
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+	}
+
+	/* ---------- Warning state ---------- */
+	.form-input-warning,
+	.form-textarea.form-input-warning,
+	.react-select-container-warning .react-select__control {
+		border-color: var(--color-warning);
+		background-color: var(--color-warning-bg);
+	}
+
+	.form-input-warning:focus,
+	.react-select-container-warning .react-select__control--is-focused {
+		border-color: var(--color-warning);
+		box-shadow: 0 0 0 3px
+			color-mix(in srgb, var(--color-warning) 22%, transparent);
+	}
+
+	.form-warning-text {
+		display: flex;
+		align-items: flex-start;
+		gap: var(--space-1);
+
+		margin: 0;
+
+		color: var(--color-status-pending-text);
+
+		font-family: var(--font-sans);
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+		text-align: left;
+	}
+
+	.form-warning-icon {
+		width: 0.875rem;
+		height: 0.875rem;
+		flex: 0 0 auto;
+		margin-top: 0.0625rem;
+	}
+
+	/* The active-field label cue gives way to the warning colour */
+	.form-field.has-warning:focus-within > .form-label-row .form-label {
+		color: var(--color-status-pending-text);
+	}
+
+	/* ---------- Validation summary ---------- */
+	.form-validation-summary {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-2);
+
+		padding: var(--space-3) var(--space-4);
+
+		border: var(--border-width-default) solid var(--color-error-border);
+		border-left: var(--border-width-stronger) solid var(--color-error);
+		border-radius: var(--radius-md);
+
+		background-color: var(--color-error-bg);
+		color: var(--color-text-primary);
+
+		outline: none;
+	}
+
+	.form-validation-summary:focus-visible {
+		box-shadow: var(--shadow-focus-error);
+	}
+
+	.form-validation-summary-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.form-validation-summary-icon {
+		width: 1rem;
+		height: 1rem;
+		flex: 0 0 auto;
+		color: var(--color-error);
+	}
+
+	.form-validation-summary-title {
+		margin: 0;
+
+		color: var(--color-status-rejected-text);
+
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-semibold);
+		line-height: var(--line-height-tight);
+	}
+
+	.form-validation-summary-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+
+		margin: 0;
+		padding: 0 0 0 calc(1rem + var(--space-2));
+
+		list-style: none;
+	}
+
+	.form-validation-summary-link {
+		display: inline-flex;
+		max-width: 100%;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--space-1);
+
+		padding: 0;
+
+		border: 0;
+		border-radius: var(--radius-xs);
+		background: transparent;
+
+		color: var(--color-text-primary);
+
+		font: inherit;
+		font-size: var(--font-size-xs);
+		text-align: left;
+
+		cursor: pointer;
+	}
+
+	.form-validation-summary-field {
+		font-weight: var(--font-weight-semibold);
+		text-decoration: underline;
+		text-underline-offset: 0.18em;
+	}
+
+	.form-validation-summary-field::after {
+		content: ":";
+	}
+
+	.form-validation-summary-message {
+		color: var(--color-text-secondary);
+	}
+
+	.form-validation-summary-link:hover .form-validation-summary-field {
+		color: var(--color-status-rejected-text);
+	}
+
+	.form-validation-summary-link:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-focus-strong);
 	}
 }

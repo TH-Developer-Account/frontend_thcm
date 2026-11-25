@@ -9,12 +9,35 @@ import {
 	type PaginationState,
 	type SortingState,
 } from "@tanstack/react-table";
-import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
+import { AlertCircle, ChevronDown, ChevronUp, ChevronsUpDown, Inbox } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 
 import Pagination from "../../../common/Pagination";
 
 export type DataTableMinWidth = "none" | "sm" | "md" | "lg" | "xl";
+
+/**
+ * Per-column options, set on `columnDef.meta`. Every field is optional.
+ *
+ *   { accessorKey: "amount", header: "Amount", footer: () => total,
+ *     meta: { numeric: true, emphasis: true } }
+ */
+export type DataTableColumnMeta = {
+	headerClassName?: string;
+	cellClassName?: string;
+	align?: "left" | "center" | "right";
+	/** Right-aligned with tabular figures (amounts, counts, percentages). */
+	numeric?: boolean;
+	/** Primary text + medium weight: the column a reader scans for (totals, names). */
+	emphasis?: boolean;
+	/** One line with ellipsis; the full text shows on hover (string/number values). */
+	truncate?: boolean;
+	/** Cell holds an input: tighter padding, visible editable affordance. */
+	editable?: boolean;
+};
+
+const readMeta = (meta: unknown): DataTableColumnMeta | undefined =>
+	meta as DataTableColumnMeta | undefined;
 
 export interface DataTableProps<T extends object> {
 	data: T[];
@@ -37,6 +60,27 @@ export interface DataTableProps<T extends object> {
 
 	emptyTitle?: string;
 	emptyDescription?: string;
+	/** Optional button/link under the empty message (e.g. "Clear filters"). */
+	emptyAction?: ReactNode;
+
+	/**
+	 * Load failure. Shown in place of rows (and instead of the empty state),
+	 * so a failed request never reads as "No records found".
+	 */
+	error?: ReactNode;
+	onRetry?: () => void;
+
+	/** Alternate row tint for wide, dense tables. */
+	striped?: boolean;
+	/** "compact" trims row height for dense financial grids. */
+	density?: "comfortable" | "compact";
+	/** Keeps the first column visible while the table scrolls sideways. */
+	stickyFirstColumn?: boolean;
+	/**
+	 * Renders a <tfoot> from each column's `footer` (subtotals, grand totals).
+	 * Default: on whenever any column defines a footer.
+	 */
+	showFooter?: boolean;
 
 	scrollTargetId?: string;
 	className?: string;
@@ -105,6 +149,15 @@ function DataTable<T extends object>({
 
 	emptyTitle = "No records found",
 	emptyDescription = "Try adjusting your filters or search.",
+	emptyAction,
+
+	error,
+	onRetry,
+
+	striped = false,
+	density = "comfortable",
+	stickyFirstColumn = false,
+	showFooter,
 
 	scrollTargetId = "data-table-scroll",
 	className = "",
@@ -179,6 +232,13 @@ function DataTable<T extends object>({
 
 	const visibleColumnCount = table.getVisibleLeafColumns().length;
 
+	const hasColumnFooter = table
+		.getVisibleLeafColumns()
+		.some((column) => column.columnDef.footer !== undefined);
+	const renderFooter =
+		(showFooter ?? hasColumnFooter) && !loading && !error && rows.length > 0;
+	const hasError = Boolean(error);
+
 	const resolvedPageIndex = manualPagination
 		? pageIndex
 		: table.getState().pagination.pageIndex;
@@ -229,6 +289,9 @@ function DataTable<T extends object>({
 					className={joinClassNames(
 						"data-table",
 						getMinWidthClass(minWidth),
+						striped && "data-table-striped",
+						density === "compact" && "data-table-compact",
+						stickyFirstColumn && "data-table-sticky-first",
 						tableClassName,
 					)}
 				>
@@ -240,29 +303,29 @@ function DataTable<T extends object>({
 
 									const sortedState = header.column.getIsSorted();
 
-									const columnMeta = header.column.columnDef.meta as
-										| {
-												headerClassName?: string;
-												cellClassName?: string;
-												align?: "left" | "center" | "right";
-										  }
-										| undefined;
+									const columnMeta = readMeta(header.column.columnDef.meta);
 
 									return (
 										<th
 											key={header.id}
 											scope="col"
+											colSpan={header.colSpan > 1 ? header.colSpan : undefined}
 											className={joinClassNames(
 												"data-table-head-cell",
-												getAlignmentClass(columnMeta?.align),
+												getAlignmentClass(
+													columnMeta?.align ?? (columnMeta?.numeric ? "right" : undefined),
+												),
+												header.colSpan > 1 && "data-table-head-group",
 												columnMeta?.headerClassName,
 											)}
 											aria-sort={
-												sortedState === "asc"
-													? "ascending"
-													: sortedState === "desc"
-														? "descending"
-														: "none"
+												!canSort
+													? undefined
+													: sortedState === "asc"
+														? "ascending"
+														: sortedState === "desc"
+															? "descending"
+															: "none"
 											}
 										>
 											{header.isPlaceholder ? null : canSort ? (
@@ -340,6 +403,32 @@ function DataTable<T extends object>({
 									))}
 								</tr>
 							))
+						) : hasError ? (
+							<tr className="data-table-empty-row">
+								<td
+									colSpan={Math.max(1, visibleColumnCount)}
+									className="data-table-empty-state data-table-error-state"
+								>
+									<div className="data-table-empty-state-inner" role="alert">
+										<AlertCircle className="data-table-empty-icon" aria-hidden="true" />
+										<p className="data-table-empty-title">Couldn't load this data</p>
+										{typeof error === "string" || typeof error === "number" ? (
+											<p className="data-table-empty-description">{error}</p>
+										) : error === true ? null : (
+											<div className="data-table-empty-description">{error}</div>
+										)}
+										{onRetry ? (
+											<button
+												type="button"
+												className="button-base button-standard button-outline button-sm data-table-empty-action"
+												onClick={onRetry}
+											>
+												Try again
+											</button>
+										) : null}
+									</div>
+								</td>
+							</tr>
 						) : rows.length === 0 ? (
 							<tr className="data-table-empty-row">
 								<td
@@ -347,12 +436,17 @@ function DataTable<T extends object>({
 									className="data-table-empty-state"
 								>
 									<div className="data-table-empty-state-inner">
+										<Inbox className="data-table-empty-icon" aria-hidden="true" />
 										<p className="data-table-empty-title">{emptyTitle}</p>
 
 										{emptyDescription ? (
 											<p className="data-table-empty-description">
 												{emptyDescription}
 											</p>
+										) : null}
+
+										{emptyAction ? (
+											<div className="data-table-empty-action">{emptyAction}</div>
 										) : null}
 									</div>
 								</td>
@@ -388,13 +482,14 @@ function DataTable<T extends object>({
 										}
 									>
 										{row.getVisibleCells().map((cell) => {
-											const columnMeta = cell.column.columnDef.meta as
-												| {
-														headerClassName?: string;
-														cellClassName?: string;
-														align?: "left" | "center" | "right";
-												  }
-												| undefined;
+											const columnMeta = readMeta(cell.column.columnDef.meta);
+											const rawValue = columnMeta?.truncate
+												? cell.getValue()
+												: undefined;
+											const cellTitle =
+												typeof rawValue === "string" || typeof rawValue === "number"
+													? String(rawValue)
+													: undefined;
 
 											const isActionColumn =
 												cell.column.id === "action" ||
@@ -408,11 +503,18 @@ function DataTable<T extends object>({
 														isActionColumn
 															? "data-table-cell-action"
 															: "data-table-cell-text",
-														getAlignmentClass(columnMeta?.align),
+														getAlignmentClass(
+															columnMeta?.align ??
+																(columnMeta?.numeric ? "right" : undefined),
+														),
+														columnMeta?.numeric && "data-table-cell-numeric",
+														columnMeta?.emphasis && "data-table-cell-emphasis",
+														columnMeta?.truncate && "data-table-cell-truncate",
+														columnMeta?.editable && "data-table-cell-editable",
 														columnMeta?.cellClassName,
 													)}
 												>
-													<div className="data-table-cell-inner">
+													<div className="data-table-cell-inner" title={cellTitle}>
 														{flexRender(
 															cell.column.columnDef.cell,
 															cell.getContext(),
@@ -426,6 +528,51 @@ function DataTable<T extends object>({
 							})
 						)}
 					</tbody>
+
+					{renderFooter ? (
+						<tfoot className="data-table-foot">
+							{table
+								.getFooterGroups()
+								// Grouped headers add footer rows with nothing in them; skip those.
+								.filter((footerGroup) =>
+									footerGroup.headers.some(
+										(header) =>
+											!header.isPlaceholder &&
+											header.column.columnDef.footer !== undefined,
+									),
+								)
+								.map((footerGroup) => (
+								<tr key={footerGroup.id} className="data-table-foot-row">
+									{footerGroup.headers.map((header) => {
+										const columnMeta = readMeta(header.column.columnDef.meta);
+										return (
+											<td
+												key={header.id}
+												colSpan={header.colSpan > 1 ? header.colSpan : undefined}
+												className={joinClassNames(
+													"data-table-foot-cell",
+													getAlignmentClass(
+														columnMeta?.align ??
+															(columnMeta?.numeric ? "right" : undefined),
+													),
+													columnMeta?.numeric && "data-table-cell-numeric",
+												)}
+											>
+												<div className="data-table-cell-inner">
+													{header.isPlaceholder
+														? null
+														: flexRender(
+																header.column.columnDef.footer,
+																header.getContext(),
+															)}
+												</div>
+											</td>
+										);
+									})}
+								</tr>
+							))}
+						</tfoot>
+					) : null}
 				</table>
 			</div>
 

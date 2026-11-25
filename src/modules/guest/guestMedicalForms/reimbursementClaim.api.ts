@@ -1,7 +1,7 @@
 import { GuestAxios } from "../../../services/GuestAxios";
-import { PublicAxios } from "../../../services/PublicAxios";
 import { MEDICLAIM_BACKEND } from "../../medicalReimbursment/utils/mediclaimBackend.config";
 
+import type { LiveEligibility } from "../../medicalReimbursment/types/reimbursementClaim.types";
 import type {
 	GradeEligibilityRow,
 	MedicalClaimDetail,
@@ -14,9 +14,7 @@ import type {
 	ReimbursementClaimListResponse,
 } from "./reimbursementClaim.types";
 
-const CLAIM_URL = "/medi-claim";
-const GUEST_URL = `${CLAIM_URL}/guest`;
-const PUBLIC_URL = `${CLAIM_URL}/public`;
+const GUEST_URL = "/medi-claim/guest";
 
 type ApiDataResponse<T> = {
 	success: boolean;
@@ -63,7 +61,9 @@ export const mapGuestListResponse = (
 	const rawRows = Array.isArray(body?.data) ? body!.data : [];
 
 	const items: ReimbursementClaimListItem[] = rawRows.map((row) => {
-		const status = String(row.status ?? "").trim().toUpperCase();
+		const status = String(row.status ?? "")
+			.trim()
+			.toUpperCase();
 		const billCount = row.billCount ?? 0;
 		return {
 			id: row.id,
@@ -76,8 +76,11 @@ export const mapGuestListResponse = (
 			ticketNumber: row.ticketNumber ?? "",
 			claimFor: (row.claimCover ?? "SELF") as ClaimFor,
 			totalApprovedAmount: toNumber(row.totalApprovedAmount),
-			approvedBillsLabel: billCount ? `${row.approvedBillCount ?? 0} / ${billCount}` : "—",
-			isApproved: row.isApproved ?? (status === "APPROVED" || status === "CLOSED"),
+			approvedBillsLabel: billCount
+				? `${row.approvedBillCount ?? 0} / ${billCount}`
+				: "—",
+			isApproved:
+				row.isApproved ?? (status === "APPROVED" || status === "CLOSED"),
 			remarks: row.remarks?.trim() || "",
 		};
 	});
@@ -88,8 +91,8 @@ export const mapGuestListResponse = (
 		const search = params.search?.trim().toLowerCase();
 		const filtered = search
 			? items.filter((item) =>
-					[item.claimNumber, item.employeeName, item.ticketNumber].some((value) =>
-						value?.toLowerCase().includes(search),
+					[item.claimNumber, item.employeeName, item.ticketNumber].some(
+						(value) => value?.toLowerCase().includes(search),
 					),
 				)
 			: items;
@@ -129,11 +132,12 @@ export type GuestClaimProfile = {
 	email?: string | null;
 	alreadySettled?: number | null;
 	eligibleAmount?: number | null;
+	/** Live cap / settled / on-hold numbers (same shape as on a claim GET). */
+	liveEligibility?: LiveEligibility | null;
 };
 
 export const guestReimburseClaimApi = {
 	getProfile: async (): Promise<GuestClaimProfile> => {
-		if (!MEDICLAIM_BACKEND.guestCreateClaim) return { canCreate: false };
 		const response = await GuestAxios.get<ApiDataResponse<GuestClaimProfile>>(
 			`${GUEST_URL}/profile`,
 		);
@@ -143,16 +147,15 @@ export const guestReimburseClaimApi = {
 	guestList: async (
 		params: ReimbursementClaimListParams,
 	): Promise<ReimbursementClaimListResponse> => {
-		const response = await GuestAxios.get<ApiListResponse<RawGuestMedicalClaimRow>>(
-			GUEST_URL,
-			{
-				params: {
-					search: params.search?.trim() || undefined,
-					page_index: params.pageIndex,
-					page_size: params.pageSize,
-				},
+		const response = await GuestAxios.get<
+			ApiListResponse<RawGuestMedicalClaimRow>
+		>(GUEST_URL, {
+			params: {
+				search: params.search?.trim() || undefined,
+				page_index: params.pageIndex,
+				page_size: params.pageSize,
 			},
-		);
+		});
 		return mapGuestListResponse(response.data, params);
 	},
 
@@ -165,17 +168,14 @@ export const guestReimburseClaimApi = {
 
 	listGrades: async (): Promise<GradeEligibilityRow[]> => {
 		if (!MEDICLAIM_BACKEND.gradesEndpoint) return [];
-		const response = await GuestAxios.get<ApiDataResponse<GradeEligibilityRow[]>>(
-			`${GUEST_URL}/grades`,
-		);
+		const response = await GuestAxios.get<
+			ApiDataResponse<GradeEligibilityRow[]>
+		>(`${GUEST_URL}/grades`);
 		return Array.isArray(response.data?.data) ? response.data.data : [];
 	},
 
 	/** A logged-in retiree starts a new claim (POST /guest/submit). */
 	createGuest: async (formData: FormData): Promise<MedicalClaimDetail> => {
-		if (!MEDICLAIM_BACKEND.guestCreateClaim) {
-			throw new Error("New claims are started by HR. Please contact HR to raise a new claim.");
-		}
 		const response = await GuestAxios.post<ApiDataResponse<MedicalClaimDetail>>(
 			`${GUEST_URL}/submit`,
 			formData,
@@ -187,51 +187,9 @@ export const guestReimburseClaimApi = {
 		claimId: string,
 		formData: FormData,
 	): Promise<MedicalClaimDetail | undefined> => {
-		const response = await GuestAxios.patch<ApiDataResponse<MedicalClaimDetail>>(
-			`${GUEST_URL}/${encodeURIComponent(claimId)}/resubmit`,
-			formData,
-		);
-		return response.data?.data;
-	},
-};
-
-/**
- * Public claim endpoints use the emailed link token and do not require a
- * guest-authenticated Axios client.
- */
-export const publicReimburseClaimApi = {
-	getByToken: async (token: string): Promise<MedicalClaimDetail> => {
-		const response = await PublicAxios.get<ApiDataResponse<MedicalClaimDetail>>(
-			`${PUBLIC_URL}/${encodeURIComponent(token)}`,
-		);
-		return response.data.data;
-	},
-
-	listGrades: async (token: string): Promise<GradeEligibilityRow[]> => {
-		if (!MEDICLAIM_BACKEND.gradesEndpoint) return [];
-		const response = await PublicAxios.get<ApiDataResponse<GradeEligibilityRow[]>>(
-			`${PUBLIC_URL}/${encodeURIComponent(token)}/grades`,
-		);
-		return Array.isArray(response.data?.data) ? response.data.data : [];
-	},
-
-	submit: async (token: string, formData: FormData): Promise<string> => {
-		const response = await PublicAxios.post<ApiDataResponse<unknown>>(
-			`${PUBLIC_URL}/${encodeURIComponent(token)}/submit`,
-			formData,
-		);
-		return response.data.message ?? "Claim submitted successfully";
-	},
-
-	/** Returns the saved claim (with server bill ids) so the form can re-sync. */
-	saveDraft: async (
-		token: string,
-		formData: FormData,
-	): Promise<MedicalClaimDetail | undefined> => {
-		const response = await PublicAxios.patch<ApiDataResponse<MedicalClaimDetail>>(
-			`${PUBLIC_URL}/${encodeURIComponent(token)}/draft`,
-			formData,
-		);
+		const response = await GuestAxios.patch<
+			ApiDataResponse<MedicalClaimDetail>
+		>(`${GUEST_URL}/${encodeURIComponent(claimId)}/resubmit`, formData);
 		return response.data?.data;
 	},
 };

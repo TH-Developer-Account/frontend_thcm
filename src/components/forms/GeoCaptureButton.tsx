@@ -51,12 +51,12 @@ export function GeoCaptureButton() {
       <button
         type="button"
         onClick={startCapture}
-        className="flex flex-col items-center justify-center gap-2 w-full py-6 sm:py-8 min-h-[44px] border-2 border-dashed border-gray-300 rounded-lg hover:border-orange-400 hover:bg-orange-50 active:bg-orange-100 transition-colors"
+        className="flex flex-col items-center justify-center gap-2 w-full py-6 sm:py-8 min-h-[44px] border-2 border-dashed border-line-interactive rounded-lg hover:border-accent-400 hover:bg-accent-50 active:bg-accent-100 transition-colors"
       >
-        <span className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-orange-100 text-orange-600">
+        <span className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-accent-100 text-accent-700">
           <Camera size={22} strokeWidth={2} />
         </span>
-        <span className="text-sm font-medium text-gray-700 text-center px-4">
+        <span className="text-sm font-medium text-fg text-center px-4">
           Capture photo with location
         </span>
       </button>
@@ -93,7 +93,7 @@ export function GeoCaptureButton() {
         <button
           type="button"
           onClick={reset}
-          className="mt-3 min-h-[44px] px-4 text-sm font-medium text-orange-600 hover:text-orange-700"
+          className="mt-3 min-h-[44px] px-4 text-sm font-medium text-accent-700 hover:text-accent-800"
         >
           Try again
         </button>
@@ -103,7 +103,7 @@ export function GeoCaptureButton() {
 
   if (state.status === "captured") {
     return (
-      <div className="border border-gray-200 rounded-lg overflow-hidden">
+      <div className="border border-line rounded-lg overflow-hidden">
         {photoPreviewUrl && (
           <img
             src={photoPreviewUrl}
@@ -111,7 +111,7 @@ export function GeoCaptureButton() {
             className="w-full h-40 sm:h-48 object-cover"
           />
         )}
-        <div className="p-3 flex items-center gap-2 text-sm text-gray-600 border-t border-gray-100">
+        <div className="p-3 flex items-center gap-2 text-sm text-fg-secondary border-t border-line-subtle">
           <MapPin size={16} className="shrink-0" />
           <span className="truncate">
             {state.payload.coordinates.latitude.toFixed(5)},{" "}
@@ -120,7 +120,7 @@ export function GeoCaptureButton() {
         </div>
 
         {submitError && (
-          <p className="px-3 pb-2 text-sm text-red-600">{submitError}</p>
+          <p className="px-3 pb-2 text-sm text-danger-text">{submitError}</p>
         )}
 
         <div className="flex flex-col sm:flex-row gap-2 p-3 pt-0">
@@ -128,7 +128,7 @@ export function GeoCaptureButton() {
             type="button"
             onClick={reset}
             disabled={isSubmitting}
-            className="flex-1 min-h-[44px] text-sm font-medium border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+            className="flex-1 min-h-[44px] text-sm font-medium border border-line-interactive rounded-md hover:bg-surface-hover disabled:opacity-50"
           >
             Retake
           </button>
@@ -136,7 +136,7 @@ export function GeoCaptureButton() {
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="flex-1 min-h-[44px] text-sm font-medium text-white bg-orange-600 rounded-md hover:bg-orange-700 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 min-h-[44px] text-sm font-medium text-white bg-accent-solid rounded-md hover:bg-accent-solid-hover disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {isSubmitting && <Loader2 size={16} className="animate-spin" />}
             {isSubmitting ? "Submitting…" : "Submit"}
@@ -156,7 +156,7 @@ export function GeoCaptureButton() {
         <button
           type="button"
           onClick={reset}
-          className="mt-3 min-h-[44px] px-4 text-sm font-medium text-orange-600 hover:text-orange-700"
+          className="mt-3 min-h-[44px] px-4 text-sm font-medium text-accent-700 hover:text-accent-800"
         >
           Retake
         </button>
@@ -192,7 +192,7 @@ function StatusPanel({
   children?: React.ReactNode;
 }) {
   const toneClasses =
-    tone === "error" ? "text-red-600 bg-red-50" : "text-gray-500 bg-gray-50";
+    tone === "error" ? "text-danger-text bg-danger-bg" : "text-fg-secondary bg-surface-subtle";
 
   return (
     <div

@@ -8,7 +8,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import type { CrfDetail, CrfPayload } from "./types";
+import type { CrfArtworkUpload, CrfDetail, CrfPayload } from "./types";
 import { ServerAxios } from "../../../../services/ServerAxios";
 import type { Product } from "../../shared/lineItem.types";
 
@@ -37,6 +37,25 @@ export const crfApi = {
 		const {
 			data: { data },
 		} = await ServerAxios.put(`/crf/${crfId}`, payload);
+
+		return data;
+	},
+
+	/**
+	 * Uploads ONE reference image for an artwork request (multipart, field
+	 * "file"). Returns the storage key the CRF save then references — the file
+	 * is uploaded as soon as it is picked because PUT /crf replaces every line,
+	 * so files can't ride along with the save itself.
+	 */
+	uploadArtworkAttachment: async (file: File): Promise<CrfArtworkUpload> => {
+		const body = new FormData();
+		body.append("file", file);
+
+		const {
+			data: { data },
+		} = await ServerAxios.post("/crf/artwork-attachments", body, {
+			headers: { "Content-Type": "multipart/form-data" },
+		});
 
 		return data;
 	},
@@ -98,6 +117,12 @@ export function useCrfDetailQuery(crfId: string | null, enabled = true) {
 		queryKey: crfKeys.detail(crfId ?? ""),
 		queryFn: () => crfApi.getById(crfId as string),
 		enabled: enabled && Boolean(crfId),
+	});
+}
+
+export function useUploadArtworkAttachmentMutation() {
+	return useMutation({
+		mutationFn: (file: File) => crfApi.uploadArtworkAttachment(file),
 	});
 }
 

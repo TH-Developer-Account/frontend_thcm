@@ -1,10 +1,16 @@
 import * as React from "react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useForm, type SubmitErrorHandler } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { useToast } from "../../../context/Auth/AuthContext";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
-import { DEFAULT_COUNTRY_CODE, joinMobile } from "../../../utils/phone";
+import {
+	DEFAULT_COUNTRY_CODE,
+	joinMobile,
+	splitMobile,
+} from "../../../utils/phone";
 import {
 	useInitiateMedicalClaimMutation,
 	useMedicalClaimDetailQuery,
@@ -12,7 +18,6 @@ import {
 } from "./useMedicalClaimMutations";
 import type {
 	MedicalClaimImportProgress,
-	MedicalClaimInitiationErrors,
 	MedicalClaimInitiationPayload,
 	MedicalClaimInitiationValues,
 	ParsedInitiationFile,
@@ -21,9 +26,9 @@ import type { MedicalClaimDetail } from "../types/medicalClaimListing.types";
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 import { medicalClaimApi } from "../api/medicalClaim.api";
 import {
-	firstErrorMessage,
-	medicalClaimInitiationSchema,
-	toFieldErrors,
+	medicalClaimInitiationFormSchema,
+	toNationalMobile,
+	type MedicalClaimInitiationFormValues,
 } from "../utils/reimbursementClaim.schemas";
 import {
 	buildInitiationImportFile,
@@ -39,20 +44,10 @@ const EMPTY_VALUES: MedicalClaimInitiationValues = {
 	ticketNumber: "",
 };
 
-/**
- * medicalClaimInitiationSchema's mobile rule is India-only (10 digits). For
- * other countries the schema still checks every other field (with this
- * stand-in number) and the typed number is checked against the pattern below.
- */
-const SCHEMA_PLACEHOLDER_MOBILE = "9999999999";
-const OTHER_COUNTRY_MOBILE_PATTERN = /^\d{6,14}$/;
-
 type UseMedicalClaimInitiationArgs = {
 	claimId?: string;
 	initialValues?: Partial<MedicalClaimInitiationValues>;
 	shouldFetchDetails?: boolean;
-	/** Selected phone country code, e.g. "+91". `values.mobile` stays the national number. */
-	countryCode?: string;
 	onSubmitSuccess?: () => void | Promise<void>;
 };
 
@@ -71,21 +66,32 @@ const mapDetailToForm = (
 	referenceNumber: response?.referenceNumber ?? "",
 });
 
-const toPayload = (
-	values: MedicalClaimInitiationValues,
-): MedicalClaimInitiationPayload => ({
-	employeeName: values.employeeName,
-	email: values.email,
-	mobile: values.mobile,
-	ticketNumber: values.ticketNumber,
-});
+/**
+ * Stored claim (mobile = "9845012345" or a legacy "+919845012345") -> form
+ * values (countryCode = "+91", mobile = "9845012345"). Every path that fills
+ * the form (defaults, detail load, reset) goes through this one function.
+ */
+const toFormValues = (
+	source: MedicalClaimInitiationValues,
+): MedicalClaimInitiationFormValues => {
+	const { countryCode, mobile } = splitMobile(source.mobile ?? "");
+
+	return {
+		employeeName: source.employeeName ?? "",
+		ticketNumber: source.ticketNumber ?? "",
+		email: source.email ?? "",
+		countryCode,
+		mobile,
+		status: source.status,
+		referenceNumber: source.referenceNumber,
+	};
+};
 
 /** Single-claim initiation (create) and the initiation detail view (resend). */
 export const useMedicalClaimInitiation = ({
 	claimId,
 	initialValues,
 	shouldFetchDetails = false,
-	countryCode = DEFAULT_COUNTRY_CODE,
 	onSubmitSuccess,
 }: UseMedicalClaimInitiationArgs = {}) => {
 	const navigate = useNavigate();
@@ -97,14 +103,25 @@ export const useMedicalClaimInitiation = ({
 	}>();
 	const resolvedClaimId =
 		claimId ?? params.initiationId ?? params.claimId ?? params.id ?? "";
-	const isDefaultCountry = countryCode === DEFAULT_COUNTRY_CODE;
 	const initialResolvedValues = useMemo(
 		() => ({ ...EMPTY_VALUES, ...initialValues }),
 		[initialValues],
 	);
-	const [values, setValues] = useState(initialResolvedValues);
-	const [originalValues, setOriginalValues] = useState(initialResolvedValues);
-	const [errors, setErrors] = useState<MedicalClaimInitiationErrors>({});
+
+	const {
+		register,
+		handleSubmit,
+		reset,
+		control,
+		formState: { errors, isDirty, isSubmitting: isFormSubmitting },
+	} = useForm<MedicalClaimInitiationFormValues>({
+		resolver: zodResolver(medicalClaimInitiationFormSchema),
+		// Validate on every keystroke so errors appear as the user types.
+		mode: "onChange",
+		reValidateMode: "onChange",
+		defaultValues: toFormValues(initialResolvedValues),
+	});
+
 	const detailQuery = useMedicalClaimDetailQuery(
 		resolvedClaimId,
 		shouldFetchDetails,
@@ -114,95 +131,56 @@ export const useMedicalClaimInitiation = ({
 
 	React.useEffect(() => {
 		if (!shouldFetchDetails || !detailQuery.data) return;
-		const mapped = mapDetailToForm(detailQuery.data);
-		setValues(mapped);
-		setOriginalValues(mapped);
-		setErrors({});
-	}, [detailQuery.data, shouldFetchDetails]);
+		reset(toFormValues(mapDetailToForm(detailQuery.data)));
+	}, [detailQuery.data, shouldFetchDetails, reset]);
 
 	React.useEffect(() => {
 		if (shouldFetchDetails) return;
-		setValues(initialResolvedValues);
-		setOriginalValues(initialResolvedValues);
-		setErrors({});
-	}, [initialResolvedValues, shouldFetchDetails]);
+		reset(toFormValues(initialResolvedValues));
+	}, [initialResolvedValues, shouldFetchDetails, reset]);
 
-	const isDirty = useMemo(
-		() => JSON.stringify(values) !== JSON.stringify(originalValues),
-		[originalValues, values],
-	);
+	const isSubmitting = isFormSubmitting || initiateMutation.isPending;
 
-	const handleChange = <K extends keyof MedicalClaimInitiationPayload>(
-		key: K,
-		value: MedicalClaimInitiationPayload[K],
+	const handleReset = () => {
+		reset();
+	};
+
+	/** Called by handleSubmit when validation fails: keep the old summary toast. */
+	const onInvalid: SubmitErrorHandler<MedicalClaimInitiationFormValues> = (
+		fieldErrors,
 	) => {
-		setValues((current) => ({ ...current, [key]: value }));
-		setErrors((current) => ({ ...current, [key]: undefined }));
-	};
-
-	/**
-	 * Runs the schema on the form values (national number) and, for countries
-	 * other than the default, swaps the India-only mobile rule for a generic
-	 * digits check.
-	 */
-	const validateValues = () => {
-		const payload = toPayload(values);
-		const result = medicalClaimInitiationSchema.safeParse(
-			isDefaultCountry
-				? payload
-				: { ...payload, mobile: SCHEMA_PLACEHOLDER_MOBILE },
-		);
-		const fieldErrors: MedicalClaimInitiationErrors = result.success
-			? {}
-			: (toFieldErrors(result.error) as MedicalClaimInitiationErrors);
-
-		if (!isDefaultCountry) {
-			const nationalNumber = values.mobile.trim();
-			if (!nationalNumber) {
-				fieldErrors.mobile = "Phone number is required.";
-			} else if (!OTHER_COUNTRY_MOBILE_PATTERN.test(nationalNumber)) {
-				fieldErrors.mobile = "Enter a valid mobile number.";
-			}
-		}
-
-		return { result, fieldErrors };
-	};
-
-	/** Validates one field on blur so mistakes show before submit. */
-	const handleBlur = (key: keyof MedicalClaimInitiationPayload) => {
-		const { fieldErrors } = validateValues();
-		if (fieldErrors[key] && String(values[key] ?? "").trim()) {
-			setErrors((current) => ({ ...current, [key]: fieldErrors[key] }));
-		}
-	};
-
-	const validate = () => {
-		const { result, fieldErrors } = validateValues();
-		if (result.success && Object.keys(fieldErrors).length === 0) {
-			setErrors({});
-			// The API gets the full number: "+<country code><national number>".
-			return {
-				...result.data,
-				mobile: joinMobile(countryCode, values.mobile.trim()),
-			};
-		}
-		setErrors(fieldErrors);
+		const firstMessage = Object.values(fieldErrors)
+			.map((error) => (error as { message?: string } | undefined)?.message)
+			.find(Boolean);
 		showToast({
 			type: "error",
 			title: "Please fix the highlighted fields",
-			description:
-				!result.success && isDefaultCountry
-					? firstErrorMessage(result.error)
-					: (Object.values(fieldErrors).find(Boolean) ??
-						"Please check the details and try again."),
+			description: firstMessage ?? "Please check the details and try again.",
 		});
-		return null;
 	};
 
-	const handleSubmit = async () => {
+	const onValid = async (formValues: MedicalClaimInitiationFormValues) => {
 		if (initiateMutation.isPending) return;
-		const payload = validate();
-		if (!payload) return;
+
+		// The split fields are recombined here so the API payload shape is
+		// unchanged: `mobile` is still a single string.
+		const nationalMobile = toNationalMobile(
+			formValues.countryCode,
+			formValues.mobile,
+		);
+		const payload: MedicalClaimInitiationPayload = {
+			employeeName: formValues.employeeName,
+			ticketNumber: formValues.ticketNumber,
+			email: formValues.email,
+			// India: the 10-digit national number — the same form the guest
+			// login, the public claim form and the bulk import use, so the guest
+			// identity (keyed by mobile) always matches. Other countries keep
+			// the full "+<country code><national number>".
+			mobile:
+				formValues.countryCode === DEFAULT_COUNTRY_CODE
+					? nationalMobile
+					: joinMobile(formValues.countryCode, nationalMobile),
+		};
 
 		try {
 			const response = await initiateMutation.mutateAsync(payload);
@@ -217,8 +195,7 @@ export const useMedicalClaimInitiation = ({
 					response?.message ??
 					"The medical claim was initiated and the access link was sent successfully.",
 			});
-			setValues(EMPTY_VALUES);
-			setOriginalValues(EMPTY_VALUES);
+			reset(toFormValues(EMPTY_VALUES));
 			navigate("/medi-claim/listing?tab=initiation");
 		} catch (error) {
 			// The current backend saves the claim BEFORE emailing the link, so
@@ -257,29 +234,21 @@ export const useMedicalClaimInitiation = ({
 		}
 	};
 
-	const handleReset = () => {
-		setValues(originalValues);
-		setErrors({});
-	};
-
 	return {
-		values,
+		register,
+		control,
 		errors,
-		resolvedClaimId,
 		isDirty,
-		isSubmitting: initiateMutation.isPending,
+		isSubmitting,
 		isResendingLink: resendLinkMutation.isPending,
 		isDetailLoading: detailQuery.isLoading,
-		isDetailFetching: detailQuery.isFetching,
-		isDetailError: detailQuery.isError,
-		detailError: detailQuery.error,
-		handleChange,
-		handleBlur,
 		handleReset,
+		// Exposed raw (not pre-applied): the form calls
+		// `handleSubmit(onValid, onInvalid)` inline in its event handlers.
 		handleSubmit,
+		onValid,
+		onInvalid,
 		handleResendLink,
-		initiateMutation,
-		resendLinkMutation,
 	};
 };
 
@@ -297,7 +266,7 @@ const MAX_POLL_DURATION_MS = 10 * 60_000;
 /**
  * Bulk initiation from an Excel/CSV file:
  *  1. The file is parsed and every row validated IN THE BROWSER (same zod
- *     schema as the single form + duplicate checks) and shown in a preview.
+ *     schema as the single form + duplicate checks).
  *  2. Only valid rows are uploaded (a clean xlsx is generated), so nothing
  *     is created or emailed for rows HR hasn't fixed.
  *  3. The import job is polled until it completes; the result summary and
@@ -307,7 +276,6 @@ export function useMedicalClaimInitiationImport({
 	onImportSuccess,
 }: UseMedicalClaimInitiationImportOptions = {}) {
 	const { showToast } = useToast();
-	const [isImportModalOpen, setIsImportModalOpen] = React.useState(false);
 	const [importFile, setImportFile] = React.useState<FileUploadValue | null>(
 		null,
 	);
@@ -333,17 +301,6 @@ export function useMedicalClaimInitiationImport({
 		setImportFileError(undefined);
 		setParsedFile(null);
 	}, []);
-
-	const openImportModal = React.useCallback(() => {
-		resetSelection();
-		setIsImportModalOpen(true);
-	}, [resetSelection]);
-
-	const closeImportModal = React.useCallback(() => {
-		if (isImporting) return;
-		setIsImportModalOpen(false);
-		resetSelection();
-	}, [isImporting, resetSelection]);
 
 	const handleImportFileChange = React.useCallback(
 		async (value: FileUploadValue | null) => {
@@ -491,7 +448,6 @@ export function useMedicalClaimInitiationImport({
 			});
 
 			const { jobId } = await medicalClaimApi.enqueueInitiationImport(formData);
-			setIsImportModalOpen(false);
 			resetSelection();
 			await pollStatus(jobId, Date.now(), parsedFile.invalidCount);
 		} catch (error) {
@@ -519,17 +475,13 @@ export function useMedicalClaimInitiationImport({
 	);
 
 	return {
-		isImportModalOpen,
 		importFile,
 		importFileError,
-		parsedFile,
 		isParsing,
 		canImport,
 		progress,
 		isImporting,
 
-		openImportModal,
-		closeImportModal,
 		handleImportFileChange,
 		handleImportFile,
 		clearProgress,

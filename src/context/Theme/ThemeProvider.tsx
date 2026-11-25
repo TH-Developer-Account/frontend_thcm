@@ -1,6 +1,7 @@
 import {
 	useCallback,
 	useEffect,
+	useLayoutEffect,
 	useMemo,
 	useState,
 	type ReactNode,
@@ -44,10 +45,15 @@ const getStoredTheme = (): Theme | null => {
 // };
 
 export const ThemeProvider = ({ children }: ThemeProviderProps) => {
-	const [theme, setThemeState] = useState<Theme>("light");
+	// Was useState("light"): the stored choice was never read, so dark mode
+	// reset to light on every reload. Light stays the default when nothing
+	// is stored (system detection remains off, as before).
+	const [theme, setThemeState] = useState<Theme>(() => getStoredTheme() ?? "light");
 	const [isSystemTheme, setIsSystemTheme] = useState(() => !getStoredTheme());
 
-	useEffect(() => {
+	// Layout effect: applied before paint, so a dark-mode user does not see
+	// a flash of the light theme on load.
+	useLayoutEffect(() => {
 		const root = document.documentElement;
 
 		root.dataset.theme = theme;

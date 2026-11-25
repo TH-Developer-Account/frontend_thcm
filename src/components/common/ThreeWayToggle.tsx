@@ -131,7 +131,8 @@ const ThreeWayToggle = <T extends string>({
 							/>
 						) : null}
 
-						<span className="three-way-toggle-label">{option.shortLabel}</span>
+						{/* Was option.shortLabel: options without one showed no text on desktop. */}
+						<span className="three-way-toggle-label">{option.label}</span>
 
 						<span className="three-way-toggle-short-label">
 							{option.shortLabel ?? option.label}

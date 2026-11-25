@@ -1,24 +1,31 @@
 /* Central application typography. */
 @layer base {
 	:root {
-		--font-sans:
+		/* Font options. Pick the default with --font-sans, or switch at runtime:
+		     <html data-font="arial">   (no attribute = Outfit) */
+		--font-family-outfit:
 			"Outfit", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
 			"Segoe UI", sans-serif;
+		--font-family-arial: Arial, Helvetica, sans-serif;
+		--font-sans: var(--font-family-outfit);
 		--font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
 
-		--font-size-3xs: 0.6875rem; /* 11px, was 10px */
-		--font-size-2xs: 0.75rem; /* 12px, was 11px */
-		--font-size-xs: 0.875rem; /* 14px, was 12px — form labels/inputs/table cells live here */
-		--font-size-sm: 0.9375rem; /* 15px, was 13px */
-		--font-size-base: 1rem; /* 16px, was 14px — body default, WCAG-comfortable */
-		--font-size-md: 1.0625rem; /* 17px, was 15px */
-		--font-size-lg: 1.125rem; /* 18px, was 16px */
-		--font-size-xl: 1.25rem; /* 20px, was 18px */
-		--font-size-2xl: 1.375rem; /* 22px, was 20px */
-		--font-size-3xl: 1.625rem; /* 26px, was 24px */
-		--font-size-4xl: 1.875rem;
-		--font-size-5xl: 2.25rem;
-		--font-size-6xl: 3rem;
+		/* Type scale: base px-equivalents × --type-scale (theme.css) (relative to the user's browser font size,
+		   so browser zoom/text-size settings still work). Before this, the 70% root
+		   shrank every size by 30% — labels rendered at 9.8px, helper text at 8.4px. */
+		--font-size-3xs: calc(11rem / 16 / var(--root-scale) * var(--type-scale)); /* 11px (was 7.7px) — micro labels */
+		--font-size-2xs: calc(12rem / 16 / var(--root-scale) * var(--type-scale)); /* 12px (was 8.4px) — helper text, badges, metadata */
+		--font-size-xs: calc(13rem / 16 / var(--root-scale) * var(--type-scale)); /* 13px (was 9.8px) — table headers, small controls */
+		--font-size-sm: calc(14rem / 16 / var(--root-scale) * var(--type-scale)); /* 14px (was 10.5px) — body, labels, inputs, table cells, buttons */
+		--font-size-base: calc(15rem / 16 / var(--root-scale) * var(--type-scale)); /* 15px (was 11.2px) — emphasised body */
+		--font-size-md: calc(16rem / 16 / var(--root-scale) * var(--type-scale)); /* 16px (was 11.9px) — subsection headings */
+		--font-size-lg: calc(18rem / 16 / var(--root-scale) * var(--type-scale)); /* 18px (was 12.6px) — card / section headings */
+		--font-size-xl: calc(20rem / 16 / var(--root-scale) * var(--type-scale)); /* 20px (was 14px) */
+		--font-size-2xl: calc(22rem / 16 / var(--root-scale) * var(--type-scale)); /* 22px (was 15.4px) — metric values */
+		--font-size-3xl: calc(26rem / 16 / var(--root-scale) * var(--type-scale)); /* 26px (was 18.2px) — page titles */
+		--font-size-4xl: calc(30rem / 16 / var(--root-scale) * var(--type-scale)); /* 30px (was 21px) */
+		--font-size-5xl: calc(36rem / 16 / var(--root-scale) * var(--type-scale)); /* 36px (was 25.2px) */
+		--font-size-6xl: calc(48rem / 16 / var(--root-scale) * var(--type-scale)); /* 48px (was 33.6px) */
 		--font-size-display: clamp(
 			var(--font-size-4xl),
 			3vw + 1rem,
@@ -49,6 +56,7 @@
 		--font-weight-regular: 400;
 		--font-weight-medium: 500;
 		--font-weight-semibold: 600;
+		--font-weight-bold: 700; /* display headings (home hero, module titles) */
 		--font-weight-small: var(--font-weight-regular);
 		--type-control-weight: var(--font-weight-medium);
 
@@ -87,8 +95,8 @@
 
 	html {
 		font-family: var(--font-sans);
-		/* Keep this aligned with the compact root density in globals.css. */
-		font-size: 70%;
+		/* App density knob lives in theme.css (--root-font-size). Value unchanged (70%). */
+		font-size: var(--root-font-size, 70%);
 		font-synthesis: none;
 		text-rendering: optimizeLegibility;
 		-webkit-font-smoothing: antialiased;
@@ -232,7 +240,7 @@
 	.card-title,
 	.panel-title {
 		font-size: var(--font-size-card-title);
-		font-weight: 500;
+		font-weight: var(--font-weight-semibold);
 		line-height: var(--line-height-tight);
 		color: var(--color-text-primary);
 	}
@@ -265,10 +273,10 @@
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-1);
-		font-size: var(--font-size-xs);
+		font-size: var(--field-label-size);
 		font-weight: 500;
 		line-height: var(--line-height-compact);
-		color: var(--color-text-secondary);
+		color: var(--color-text-label);
 	}
 	.field-label-required::after,
 	.form-label-required::after {
@@ -316,7 +324,7 @@
 	.text-table-header,
 	.table-header-text {
 		font-size: var(--font-size-xs);
-		font-weight: 500;
+		font-weight: var(--font-weight-semibold);
 		line-height: var(--line-height-tight);
 		color: var(--color-table-header-text);
 	}
@@ -352,6 +360,23 @@
 		font-size: var(--font-size-2xs);
 		color: var(--color-text-muted);
 	}
+	/* Financial / numeric values: aligned digits, emphasised weight */
+	.text-numeric,
+	.text-money {
+		font-variant-numeric: tabular-nums;
+	}
+	.text-money {
+		font-weight: var(--font-weight-semibold);
+		color: var(--color-text-primary);
+	}
+	.text-metric {
+		font-size: var(--font-size-2xl);
+		font-weight: var(--font-weight-semibold);
+		line-height: var(--line-height-heading);
+		font-variant-numeric: tabular-nums;
+		color: var(--color-text-primary);
+	}
+
 	.text-technical,
 	.technical-text,
 	.text-id,
@@ -389,17 +414,21 @@
 		flex-direction: column;
 		gap: var(--space-1);
 	}
+	/* Label/value pair for hand-built detail views. Matches ReadOnlyField:
+	   label like a form label, value in strong primary text. (bp.css used to
+	   override these globally with a smaller, fainter value.) */
 	.detail-label {
-		font-size: var(--font-size-xs);
-		font-weight: 500;
-		letter-spacing: var(--tracking-wide);
-		/* text-transform: uppercase; */
-		color: var(--color-text-muted);
+		margin-bottom: var(--space-1);
+		color: var(--color-text-label);
+		font-size: var(--field-label-size);
+		font-weight: var(--field-label-weight);
+		overflow-wrap: anywhere;
 	}
 	.detail-value {
 		min-width: 0;
-		font-size: var(--font-size-base);
 		color: var(--color-text-primary);
+		font-size: var(--field-font-size);
+		font-weight: var(--field-readonly-weight);
 		overflow-wrap: anywhere;
 	}
 }
@@ -445,3 +474,12 @@
 /* Body text no longer shrinks on small viewports — keeping it at
    --font-size-base (16px) matters more for readability than density
    on the tablets this audience tends to use. */
+
+/* Font option: Arial / Helvetica (system font, nothing to download).
+   Arial ships only Regular (400) and Bold (700): 500 renders as 400 and
+   600 renders as 700. Labels still differ from values by colour. */
+@layer base {
+	:root[data-font="arial"] {
+		--font-sans: var(--font-family-arial);
+	}
+}

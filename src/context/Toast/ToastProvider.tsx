@@ -50,7 +50,12 @@ export default function ToastProvider({
 		<ToastContext.Provider value={{ showToast }}>
 			{children}
 
+			{/* Live region: always mounted, so screen readers announce new toasts. */}
 			<div
+				role="region"
+				aria-label="Notifications"
+				aria-live="polite"
+				aria-relevant="additions"
 				className="fixed z-50
 				top-3 right-3
 				sm:top-4 sm:right-4

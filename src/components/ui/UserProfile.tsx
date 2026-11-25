@@ -29,16 +29,21 @@ const UserProfile = ({ user, onLogOut }: UserProfileProps) => {
 		<div className="flex gap-1 items-center justify-end">
 			<NotificationBell />
 			<Menu as="div" className="user-menu">
+				{/* Name comes from the visible user name. The avatar initials are
+				    hidden from assistive tech so they aren't read twice; on mobile
+				    the name is visually hidden (still announced) via CSS. */}
 				<MenuButton className="user-menu-trigger">
 					<span className="user-menu-name">{displayName}</span>
 
-					<Avatar
-						firstName={firstName}
-						lastName={lastName}
-						imageUrl=""
-						size="md"
-						isTooltip={false}
-					/>
+					<span aria-hidden="true" className="contents">
+						<Avatar
+							firstName={firstName}
+							lastName={lastName}
+							imageUrl=""
+							size="md"
+							isTooltip={false}
+						/>
+					</span>
 
 					<ChevronDown
 						aria-hidden="true"
@@ -50,13 +55,15 @@ const UserProfile = ({ user, onLogOut }: UserProfileProps) => {
 
 				<MenuItems anchor="bottom end" transition className="user-menu-panel">
 					<div className="user-menu-summary">
-						<Avatar
-							firstName={firstName}
-							lastName={lastName}
-							imageUrl=""
-							size="md"
-							isTooltip={false}
-						/>
+						<span aria-hidden="true" className="contents">
+							<Avatar
+								firstName={firstName}
+								lastName={lastName}
+								imageUrl=""
+								size="md"
+								isTooltip={false}
+							/>
+						</span>
 
 						<div className="user-menu-summary-copy">
 							<span className="user-menu-summary-name">{displayName}</span>

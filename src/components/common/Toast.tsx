@@ -1,6 +1,14 @@
 import React from "react";
-import { type ToastProps } from "../../context/Toast/toast.types";
+import { AlertTriangle, CheckCircle2, Info, X, XCircle } from "lucide-react";
+import { type ToastProps, type ToastVariant } from "../../context/Toast/toast.types";
 import { toastStyles } from "../styles.constant";
+
+const TOAST_ICONS: Record<ToastVariant, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
+	info: Info,
+	success: CheckCircle2,
+	warning: AlertTriangle,
+	error: XCircle,
+};
 
 export const Toast: React.FC<ToastProps> = ({
 	type = "info",
@@ -14,11 +22,16 @@ export const Toast: React.FC<ToastProps> = ({
 	if (!type) return null;
 
 	const styles = toastStyles[type];
+	const Icon = TOAST_ICONS[type];
 
+	// The provider's container is a polite live region; errors interrupt.
 	return (
-		<div className={`toast ${styles.wrapper} ${className}`}>
+		<div
+			className={`toast ${styles.wrapper} ${className}`}
+			role={type === "error" ? "alert" : undefined}
+		>
 			<div className={`toast-icon ${styles.iconBg}`} aria-hidden="true">
-				<span className="toast-icon-symbol">{styles.icon}</span>
+				<Icon className="toast-icon-svg" />
 			</div>
 
 			<div className="toast-content">
@@ -43,7 +56,7 @@ export const Toast: React.FC<ToastProps> = ({
 					className="toast-close"
 					aria-label="Close notification"
 				>
-					✕
+					<X aria-hidden="true" />
 				</button>
 			)}
 		</div>

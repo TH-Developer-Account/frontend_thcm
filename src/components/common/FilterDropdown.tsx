@@ -1,4 +1,4 @@
-import { ChevronDown, Filter, X } from "lucide-react";
+import { Check, ChevronDown, Filter, X } from "lucide-react";
 import {
 	useEffect,
 	useId,
@@ -9,7 +9,6 @@ import {
 } from "react";
 
 import Button from "./Button";
-import Checkbox from "../forms/Checkbox";
 
 export type FilterOption = {
 	label: string;
@@ -138,13 +137,16 @@ const CheckboxList = ({
 					)}
 					onClick={() => onToggle(option.value)}
 				>
-					<span className="filter-dropdown-option-checkbox" aria-hidden="true">
-						<Checkbox
-							label=""
-							checked={isSelected}
-							onChange={() => undefined}
-							size={14}
-						/>
+					{/* Visual box only: the button is the checkbox (role + aria-checked).
+					    A real <Checkbox> here was a second focusable control inside it. */}
+					<span
+						className={joinClassNames(
+							"filter-dropdown-option-box",
+							isSelected && "is-checked",
+						)}
+						aria-hidden="true"
+					>
+						{isSelected ? <Check strokeWidth={3} /> : null}
 					</span>
 
 					<span className="filter-dropdown-option-label">{option.label}</span>

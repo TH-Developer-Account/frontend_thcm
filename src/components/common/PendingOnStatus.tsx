@@ -27,7 +27,10 @@ const PendingOnStatus = ({
 
 	// Not pending on approvers, or few enough to show in full
 	if (approverNames.length <= maxVisible) {
-		return <Badge status={formatPendingOn(pendingOn, status)} />;
+		// Sentence as text (keeps "Pending on" casing); tone from the real
+		// status. Passing the sentence as `status` made it an unknown status:
+		// title-cased ("Pending On") and neutral instead of pending.
+		return <Badge text={formatPendingOn(pendingOn, status)} status={status} />;
 	}
 
 	const visibleNames = approverNames.slice(0, maxVisible);
@@ -35,7 +38,7 @@ const PendingOnStatus = ({
 
 	return (
 		<div className="pending-on-status" onClick={stopRowClick}>
-			<Badge status={`Pending on ${visibleNames.join(", ")}...`} />
+			<Badge text={`Pending on ${visibleNames.join(", ")}…`} status={status} />
 
 			<Popover
 				open={isOpen}
@@ -47,10 +50,12 @@ const PendingOnStatus = ({
 						type="button"
 						className="pending-on-status-more"
 						aria-expanded={isOpen}
+						// The name starts with the visible "+N" (WCAG 2.5.3), so voice
+						// users can say what they see.
 						aria-label={
 							isOpen
-								? "Hide pending approvers"
-								: `View all ${approverNames.length} pending approvers`
+								? `-${remainingCount}, hide pending approvers`
+								: `+${remainingCount} more, view all ${approverNames.length} pending approvers`
 						}
 					>
 						{isOpen ? `-${remainingCount}` : `+${remainingCount}`}

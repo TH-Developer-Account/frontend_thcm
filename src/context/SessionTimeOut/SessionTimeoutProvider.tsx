@@ -46,10 +46,11 @@ export const SessionTimeoutProvider: React.FC<{
 				dialogRole="alertdialog"
 				ariaLabel="Inactive session confirmation"
 			>
+				{/* warning, not info: the user must act or lose the session */}
 				<Alert
-					variant="info"
-					title="You're idle"
-					description="You have been inactive. Your session will expire soon."
+					variant="warning"
+					title="Are you still there?"
+					description="You have been inactive for a while. Your session will expire soon — choose Continue to stay signed in."
 					primaryAction={{
 						label: "Continue",
 						onClick: handleContinue,

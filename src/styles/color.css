@@ -4,7 +4,12 @@
 ========================================================= */
 @layer base {
 	:root {
-		/* Brand */
+		/* =================================================
+		   TIER 1 — PRIMITIVES (raw values, no meaning)
+		   The brand RAMP that semantics consume lives in
+		   styles/themes/*.css (--color-brand-50 … 900).
+		================================================= */
+		/* Tata Hitachi orange */
 		--color-orange-50: #fff4ed;
 		--color-orange-100: #ffd6b8;
 		--color-orange-200: #ffb07a;
@@ -12,9 +17,28 @@
 		--color-orange-400: #f36518;
 		--color-orange-500: #f35a00;
 		--color-orange-600: #d44e00;
-		--color-orange-700: #c44800;
+		--color-orange-700: #c2410c; /* was #c44800 (4.48:1 on the page bg); the brief's "primary strong" */
 		--color-orange-800: #9e3800;
 		--color-orange-900: #7a2d00;
+
+		/* DEFAULT BRAND RAMP (Tata Hitachi). Every brand-dependent semantic token
+		   reads these. Defined here so the app keeps its colours even if a theme
+		   file is not imported. Alternate brands override them in styles/themes/*.css. */
+		--color-brand-50: var(--color-orange-50);
+		--color-brand-100: var(--color-orange-100);
+		--color-brand-200: var(--color-orange-200);
+		--color-brand-300: var(--color-orange-300);
+		--color-brand-400: var(--color-orange-400);
+		--color-brand-500: var(--color-orange-500);
+		--color-brand-600: var(--color-orange-600);
+		--color-brand-700: var(--color-orange-700);
+		--color-brand-800: var(--color-orange-800);
+		--color-brand-900: var(--color-orange-900);
+		--color-brand-secondary-base: var(--color-iron-dark);
+		--color-brand-secondary-strong: var(--color-iron);
+		--color-brand-tint-dark: #28170e;
+		--color-brand-tint-dark-strong: #4a2410;
+		--color-brand-border-dark: #7c2d12;
 
 		/* Neutral primitives */
 		--color-neutral-0: #ffffff;
@@ -23,7 +47,9 @@
 		--color-neutral-200: #e2e8f0;
 		--color-neutral-300: #cbd5e1;
 		--color-neutral-400: #94a3b8;
+		--color-neutral-450: #7a889d; /* control borders: 3.6:1 on white, 3.3:1 on the page bg (#8391a5 was 2.9:1 there) */
 		--color-neutral-500: #64748b;
+		--color-neutral-550: #58657a; /* tertiary text / placeholders: ≥4.8:1 on every light surface (500 was 4.3:1 on tints) */
 		--color-neutral-600: #475569;
 		--color-neutral-700: #334155;
 		--color-neutral-800: #1e293b;
@@ -54,21 +80,41 @@
 		--color-blue-600: #2563eb;
 		--color-blue-700: #1d4ed8;
 
+		/* =================================================
+		   TIER 2 — SEMANTICS
+		   Rule: brand-dependent tokens reference ONLY the
+		   brand ramp (--color-brand-50…900, --color-brand-secondary-*)
+		   so a theme file can re-brand the whole app.
+		================================================= */
+
 		/* Brand semantics */
-		--color-brand: var(--color-orange-500);
-		--color-brand-hover: var(--color-orange-600);
-		--color-brand-active: var(--color-orange-700);
-		--color-brand-soft: var(--color-orange-100);
-		--color-brand-subtle: var(--color-orange-50);
+		--color-brand: var(--color-brand-500); /* accents: rails, borders, icons, focus (non-text, ≥3:1) */
+		--color-brand-hover: var(--color-brand-600);
+		--color-brand-active: var(--color-brand-700);
+		--color-brand-soft: var(--color-brand-100);
+		--color-brand-subtle: var(--color-brand-50);
 		--color-brand-foreground: var(--color-clean-white);
 
+		/* Solid brand fills that carry white text (primary buttons, badges, active toggles).
+		   brand-500 + white = 3.35:1 (fails AA); brand-700 + white = 4.91:1 (passes). */
+		--color-brand-solid: var(--color-brand-700);
+		--color-brand-solid-hover: var(--color-brand-800);
+		--color-brand-solid-active: var(--color-brand-900);
+		--color-brand-solid-foreground: var(--color-clean-white);
+
+		/* Secondary brand colour (Tata Hitachi: industrial black) */
+		--color-brand-secondary: var(--color-brand-secondary-base);
+		--color-brand-secondary-hover: var(--color-brand-secondary-strong);
+		--color-brand-secondary-foreground: var(--color-clean-white);
+
 		/* Surfaces */
-		--color-bg-page: var(--color-neutral-50);
+		--color-bg-page: var(--color-neutral-100); /* was neutral-50: white cards now separate from the page */
 		--color-bg-surface: var(--color-clean-white);
 		--color-bg-surface-subtle: #fbfcfd;
 		--color-bg-surface-muted: var(--color-neutral-100);
 		--color-bg-surface-hover: var(--color-neutral-100);
-		--color-bg-surface-active: var(--color-orange-50);
+		--color-bg-surface-active: var(--color-brand-50);
+		--color-bg-readonly: var(--color-neutral-50); /* submitted values: not white like inputs, not grey like disabled */
 		--color-bg-disabled: var(--color-neutral-200);
 		--color-bg-dark: var(--color-iron);
 		--color-bg-darker: var(--color-iron-dark);
@@ -76,22 +122,24 @@
 
 		/* Text */
 		--color-text-primary: var(--color-neutral-900);
-		--color-text-secondary: var(--color-neutral-600);
-		--color-text-muted: var(--color-neutral-500);
-		--color-text-tertiary: var(--color-neutral-500);
-		--color-text-subtle: var(--color-neutral-400);
-		--color-text-disabled: var(--color-neutral-400);
+		--color-text-label: var(--color-neutral-800); /* form labels, key names (new) */
+		--color-text-secondary: var(--color-neutral-700); /* was 600 */
+		--color-text-muted: var(--color-neutral-600); /* was 500: 4.3:1 on muted bg → 6.9:1 */
+		--color-text-tertiary: var(--color-neutral-550);
+		--color-text-subtle: var(--color-neutral-500); /* was 400 (2.6:1) */
+		--color-text-disabled: var(--color-neutral-400); /* disabled text is exempt from 1.4.3 */
 		--color-text-inverse: var(--color-clean-white);
-		--color-text-brand: var(--color-orange-600);
-		--color-text-link: var(--color-orange-600);
-		--color-text-link-hover: var(--color-orange-700);
+		--color-text-brand: var(--color-brand-700); /* was 600 (4.3:1) → 4.9:1 */
+		--color-text-link: var(--color-brand-700);
+		--color-text-link-hover: var(--color-brand-800);
 
 		/* Borders */
 		--color-border-default: var(--color-neutral-200);
 		--color-border-subtle: var(--color-neutral-100);
 		--color-border-strong: var(--color-neutral-300);
 		--color-border-hover: var(--color-neutral-400);
-		--color-border-brand: var(--color-orange-500);
+		--color-border-brand: var(--color-brand-500);
+		--color-border-interactive: var(--color-neutral-450); /* control boundaries, 3.2:1 */
 		--color-border-disabled: var(--color-neutral-200);
 		--color-border-dark: var(--color-neutral-700);
 		--color-border-inverse-subtle: rgb(255 255 255 / 18%);
@@ -101,22 +149,27 @@
 		--color-icon-secondary: var(--color-neutral-500);
 		--color-icon-muted: var(--color-neutral-400);
 		--color-icon-disabled: var(--color-neutral-300);
-		--color-icon-brand: var(--color-orange-500);
+		--color-icon-brand: var(--color-brand-500);
 		--color-icon-inverse: var(--color-clean-white);
 
 		/* Forms */
 		--color-input-bg: var(--color-clean-white);
 		--color-input-text: var(--color-neutral-900);
-		--color-input-placeholder: var(--color-neutral-400);
-		--color-input-border: var(--color-neutral-300);
-		--color-input-border-hover: var(--color-neutral-400);
-		--color-input-border-focus: var(--color-orange-500);
+		--color-input-placeholder: var(--color-neutral-550); /* was 400 (2.6:1), then 500 (4.3:1 on tints) */
+		--color-input-border: var(--color-border-interactive); /* was neutral-300 (1.5:1) → 3.2:1 */
+		--color-input-border-hover: var(--color-neutral-600);
+		--color-input-border-focus: var(--color-brand-500);
+		--color-input-label-active: var(--color-text-brand);
 		--color-input-bg-disabled: var(--color-neutral-100);
 		--color-input-text-disabled: var(--color-neutral-400);
 
 		/* Feedback */
 		--color-success: var(--color-green-600);
 		--color-success-hover: var(--color-green-700);
+		--color-success-solid: var(--color-green-700); /* filled buttons/marks: white 7:1 */
+		--color-success-solid-hover: #14532d;
+		--color-warning-solid: var(--color-amber-700); /* white 5.0:1 (amber-600 was 3.2:1) */
+		--color-warning-solid-hover: #92400e;
 		--color-success-bg-soft: var(--color-green-soft);
 		--color-success-bg: var(--color-green-50);
 		--color-success-border: #bbf7d0;
@@ -126,6 +179,8 @@
 		--color-warning-border: #fde68a;
 		--color-error: var(--color-red-600);
 		--color-error-hover: var(--color-red-700);
+		--color-error-solid: var(--color-red-600); /* filled danger buttons: white text 4.8:1 */
+		--color-error-solid-hover: var(--color-red-700);
 		--color-error-bg: var(--color-red-50);
 		--color-error-border: #fecaca;
 		--color-info: var(--color-blue-600);
@@ -143,9 +198,9 @@
 		--color-status-rejected-text: var(--color-red-700);
 		--color-status-rejected-bg: var(--color-red-50);
 		--color-status-rejected-border: #fecaca;
-		--color-status-draft-text: var(--color-orange-700);
-		--color-status-draft-bg: var(--color-orange-50);
-		--color-status-draft-border: var(--color-orange-200);
+		--color-status-draft-text: var(--color-brand-700);
+		--color-status-draft-bg: var(--color-brand-50);
+		--color-status-draft-border: var(--color-brand-200);
 		--color-status-inactive-text: var(--color-neutral-600);
 		--color-status-inactive-bg: var(--color-neutral-100);
 		--color-status-inactive-border: var(--color-neutral-300);
@@ -154,39 +209,39 @@
 		--color-status-info-border: #bfdbfe;
 
 		/* Interaction */
-		--color-focus-ring: var(--color-orange-500);
-		--color-selection-bg: var(--color-orange-100);
+		--color-focus-ring: var(--color-brand-500);
+		--color-selection-bg: var(--color-brand-100);
 		--color-selection-text: var(--color-neutral-900);
 
 		/* Data display */
 		--color-table-bg: var(--color-clean-white);
-		--color-table-header-bg: var(--color-neutral-50);
-		--color-table-header-text: var(--color-neutral-600);
-		--color-table-row-hover: var(--color-neutral-50);
-		--color-table-row-selected: var(--color-orange-50);
+		--color-table-header-bg: var(--color-neutral-100); /* was 50: header now reads as a band */
+		--color-table-header-text: var(--color-neutral-700); /* was 600 */
+		--color-table-row-hover: var(--color-neutral-100); /* was 50 (invisible on white) */
+		--color-table-row-selected: var(--color-brand-50);
 		--color-table-border: var(--color-neutral-200);
-		--color-table-striped: #fbfcfd;
+		--color-table-striped: var(--color-neutral-50); /* was #fbfcfd: indistinguishable from white */
 
 		/* Navigation */
 		--color-nav-text: var(--color-neutral-600);
 		--color-nav-text-hover: var(--color-neutral-900);
-		--color-nav-text-active: var(--color-orange-600);
+		--color-nav-text-active: var(--color-brand-700);
 		--color-nav-bg-hover: var(--color-neutral-100);
-		--color-nav-bg-active: var(--color-orange-50);
+		--color-nav-bg-active: var(--color-brand-50);
 		--color-bg-sidebar: var(--color-clean-white);
 		--color-bg-sidebar-hover: var(--color-neutral-100);
-		--color-bg-sidebar-active: var(--color-orange-50);
+		--color-bg-sidebar-active: var(--color-brand-50);
 		--color-bg-sidebar-expanded: var(--color-neutral-100);
-		--color-sidebar-text: var(--color-neutral-600);
+		--color-sidebar-text: var(--color-neutral-700);
 		--color-sidebar-text-hover: var(--color-neutral-900);
-		--color-sidebar-text-active: var(--color-orange-700);
+		--color-sidebar-text-active: var(--color-brand-700);
 		--color-sidebar-icon: var(--color-neutral-500);
-		--color-sidebar-icon-active: var(--color-orange-500);
+		--color-sidebar-icon-active: var(--color-brand-500);
 		--color-sidebar-border-hover: var(--color-neutral-200);
-		--color-sidebar-border-active: var(--color-orange-500);
+		--color-sidebar-border-active: var(--color-brand-500);
 		--color-sidebar-child-border: var(--color-neutral-200);
-		--color-sidebar-child-border-active: var(--color-orange-500);
-		--color-sidebar-child-bg-active: var(--color-orange-50);
+		--color-sidebar-child-border-active: var(--color-brand-500);
+		--color-sidebar-child-bg-active: var(--color-brand-50);
 
 		/* Utilities */
 		--color-scrollbar-track: transparent;
@@ -224,28 +279,36 @@
 		--color-bg-surface-subtle: #151f2e;
 		--color-bg-surface-muted: #1e293b;
 		--color-bg-surface-hover: #1e293b;
-		--color-bg-surface-active: #28170e;
+		--color-bg-surface-active: var(--color-brand-tint-dark);
+		/* Brand tints were never overridden: outline buttons, active nav and
+		   selected chips stayed pale orange/pink on dark surfaces. */
+		--color-brand-subtle: var(--color-brand-tint-dark);
+		--color-brand-soft: var(--color-brand-tint-dark-strong);
+		--color-bg-readonly: #151f2e;
 		--color-bg-disabled: #253044;
 		--color-bg-dark: #111827;
 		--color-bg-darker: #020617;
 		--color-bg-overlay: rgb(2 6 23 / 72%);
 
 		--color-text-primary: #f8fafc;
+		--color-text-label: #e2e8f0;
 		--color-text-secondary: #cbd5e1;
 		--color-text-muted: #94a3b8;
 		--color-text-tertiary: #94a3b8;
 		--color-text-subtle: #64748b;
 		--color-text-disabled: #64748b;
 		--color-text-inverse: #0f172a;
-		--color-text-brand: var(--color-orange-300);
-		--color-text-link: var(--color-orange-300);
-		--color-text-link-hover: var(--color-orange-200);
+		--color-text-brand: var(--color-brand-300);
+		--color-nav-text-active: var(--color-brand-300); /* was never overridden: brand-700 on dark nav tint was 3.5:1 */
+		--color-text-link: var(--color-brand-300);
+		--color-text-link-hover: var(--color-brand-200);
 
 		--color-border-default: #273449;
 		--color-border-subtle: #1e293b;
 		--color-border-strong: #334155;
 		--color-border-hover: #475569;
 		--color-border-disabled: #273449;
+		--color-border-interactive: #64748b;
 
 		--color-icon-primary: #cbd5e1;
 		--color-icon-secondary: #94a3b8;
@@ -254,9 +317,9 @@
 
 		--color-input-bg: #111827;
 		--color-input-text: #f8fafc;
-		--color-input-placeholder: #64748b;
-		--color-input-border: #334155;
-		--color-input-border-hover: #475569;
+		--color-input-placeholder: #94a3b8; /* was #64748b (3.7:1 on #111827) */
+		--color-input-border: var(--color-border-interactive); /* was #334155 (≈1.6:1 on #111827) */
+		--color-input-border-hover: #94a3b8;
 		--color-input-bg-disabled: #1e293b;
 		--color-input-text-disabled: #64748b;
 
@@ -264,32 +327,32 @@
 		--color-table-header-bg: #0f172a;
 		--color-table-header-text: #cbd5e1;
 		--color-table-row-hover: #172033;
-		--color-table-row-selected: #28170e;
+		--color-table-row-selected: var(--color-brand-tint-dark);
 		--color-table-border: #273449;
 		--color-table-striped: #151f2e;
 
 		--color-nav-text: #cbd5e1;
 		--color-nav-text-hover: #f8fafc;
 		--color-nav-bg-hover: #1e293b;
-		--color-nav-bg-active: #28170e;
+		--color-nav-bg-active: var(--color-brand-tint-dark);
 		--color-bg-sidebar: #111827;
 		--color-bg-sidebar-hover: #1e293b;
-		--color-bg-sidebar-active: #28170e;
+		--color-bg-sidebar-active: var(--color-brand-tint-dark);
 		--color-bg-sidebar-expanded: #1e293b;
 		--color-sidebar-text: #cbd5e1;
 		--color-sidebar-text-hover: #f8fafc;
-		--color-sidebar-text-active: var(--color-orange-300);
+		--color-sidebar-text-active: var(--color-brand-300);
 		--color-sidebar-icon: #94a3b8;
-		--color-sidebar-icon-active: var(--color-orange-400);
+		--color-sidebar-icon-active: var(--color-brand-400);
 		--color-sidebar-border-hover: #334155;
 		--color-sidebar-child-border: #273449;
-		--color-sidebar-child-bg-active: #28170e;
+		--color-sidebar-child-bg-active: var(--color-brand-tint-dark);
 
 		--color-scrollbar-thumb: #475569;
 		--color-scrollbar-thumb-hover: #64748b;
 		--color-skeleton-base: #273449;
 		--color-skeleton-highlight: #334155;
-		--color-selection-bg: #4a2410;
+		--color-selection-bg: var(--color-brand-tint-dark-strong);
 		--color-selection-text: #f8fafc;
 
 		--color-status-approved-text: #86efac;
@@ -301,9 +364,9 @@
 		--color-status-rejected-text: #fca5a5;
 		--color-status-rejected-bg: #321313;
 		--color-status-rejected-border: #991b1b;
-		--color-status-draft-text: var(--color-orange-300);
-		--color-status-draft-bg: #28170e;
-		--color-status-draft-border: #7c2d12;
+		--color-status-draft-text: var(--color-brand-300);
+		--color-status-draft-bg: var(--color-brand-tint-dark);
+		--color-status-draft-border: var(--color-brand-border-dark);
 		--color-status-inactive-text: #94a3b8;
 		--color-status-inactive-bg: #1e293b;
 		--color-status-inactive-border: #334155;
@@ -313,6 +376,11 @@
 
 		--color-success: #4ade80;
 		--color-success-hover: #22c55e;
+		--color-success-bg-soft: #0f2419;
+		--color-success-solid: #15803d; /* white text 5.0:1, 3.4:1 off the dark surface */
+		--color-success-solid-hover: #166534;
+		--color-warning-solid: #b45309; /* white 5.0:1 (#fbbf24-family warning was ~1.7:1) */
+		--color-warning-solid-hover: #92400e; /* was never overridden: validated fields stayed white in dark mode */
 		--color-success-bg: #0f2d1a;
 		--color-success-border: #166534;
 		--color-warning: #fbbf24;
@@ -321,6 +389,9 @@
 		--color-warning-border: #92400e;
 		--color-error: #f87171;
 		--color-error-hover: #ef4444;
+		/* #f87171 with white text was 2.8:1 on danger buttons */
+		--color-error-solid: #dc2626;
+		--color-error-solid-hover: #b91c1c;
 		--color-error-bg: #321313;
 		--color-error-border: #991b1b;
 		--color-info: #60a5fa;
@@ -361,10 +432,7 @@
 		/* ---- Scale aliases that components.css already uses but were never declared ----
 		   (soft / softest button variants, status chips). Built ONLY from existing themed
 		   tokens, so dark mode follows automatically. 50 and 100 share a value on purpose. */
-		--color-brand-50: var(--color-brand-subtle);
-		--color-brand-100: var(--color-brand-soft);
-		--color-brand-200: var(--color-orange-200);
-		--color-brand-700: var(--color-brand-active);
+		/* --color-brand-50/100/200/700 are now the theme ramp (styles/themes/*.css). Same values as before. */
 
 		--color-success-50: var(--color-success-bg);
 		--color-success-100: var(--color-success-bg);
@@ -428,12 +496,12 @@
 		--pdf-surface-muted: var(--color-neutral-100);
 		--pdf-surface-header: var(--color-neutral-50);
 		--pdf-surface-end: var(--color-neutral-50);
-		--pdf-hero-bg-start: var(--color-orange-50);
-		--pdf-brand: var(--color-orange-500);
-		--pdf-brand-dark: var(--color-orange-700);
-		--pdf-status-bg: var(--color-orange-50);
-		--pdf-status-border: var(--color-orange-200);
-		--pdf-status-text: var(--color-orange-700);
+		--pdf-hero-bg-start: var(--color-brand-50);
+		--pdf-brand: var(--color-brand-500);
+		--pdf-brand-dark: var(--color-brand-700);
+		--pdf-status-bg: var(--color-brand-50);
+		--pdf-status-border: var(--color-brand-200);
+		--pdf-status-text: var(--color-brand-700);
 		--pdf-shadow: var(--shadow-lg);
 		--pdf-shadow-xs: var(--shadow-xs);
 	}

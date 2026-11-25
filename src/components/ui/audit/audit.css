@@ -38,14 +38,16 @@
 		padding-left: calc(var(--audit-dot-size) + var(--space-2));
 	}
 
+	/* Tones use the status text tokens (≥3:1 as a ring on the surface).
+	   --color-danger never existed, so rejected events fell back to raw hex. */
 	.audit-timeline-item--success {
-		--audit-tone: var(--color-success, #16a34a);
+		--audit-tone: var(--feedback-success-fg);
 	}
 	.audit-timeline-item--warning {
-		--audit-tone: var(--color-warning, #f59e0b);
+		--audit-tone: var(--feedback-warning-fg);
 	}
 	.audit-timeline-item--danger {
-		--audit-tone: var(--color-danger, #dc2626);
+		--audit-tone: var(--feedback-error-fg);
 	}
 
 	/* Hollow ring dot, sits on the rail */
@@ -75,7 +77,7 @@
 	.audit-timeline-action {
 		min-width: 0;
 		color: var(--color-text-primary);
-		font-size: var(--font-size-xs);
+		font-size: var(--font-size-sm);
 		font-weight: var(--font-weight-semibold, 600);
 		line-height: var(--line-height-tight);
 		overflow-wrap: anywhere;
@@ -107,7 +109,7 @@
 		margin-top: 2px;
 
 		color: var(--color-text-muted);
-		font-size: var(--font-size-2xs);
+		font-size: var(--font-size-xs);
 		line-height: var(--line-height-normal);
 		font-variant-numeric: tabular-nums;
 	}
@@ -130,10 +132,11 @@
 		padding: var(--space-1) var(--space-2);
 
 		border-radius: var(--radius-sm);
+		border-left: var(--border-width-strong) solid var(--audit-tone);
 		background-color: var(--color-bg-surface-subtle);
 		color: var(--color-text-secondary);
 
-		font-size: var(--font-size-2xs);
+		font-size: var(--font-size-xs);
 		line-height: var(--line-height-normal);
 	}
 
@@ -154,7 +157,7 @@
 		padding: 0;
 		border: 0;
 		background: none;
-		color: var(--color-brand);
+		color: var(--color-text-brand); /* brand-500 was 3.3:1 on the detail box */
 		font-size: inherit;
 		font-weight: var(--font-weight-medium);
 		cursor: pointer;
@@ -165,8 +168,86 @@
 	}
 
 	.audit-timeline-readmore:focus-visible {
-		outline: 2px solid var(--color-brand);
-		outline-offset: 2px;
+		outline: none;
 		border-radius: 2px;
+		box-shadow: var(--shadow-focus-strong);
+	}
+
+	/* ---------- Day groups ---------- */
+	.audit-timeline-groups {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	.audit-timeline-group {
+		min-width: 0;
+	}
+
+	.audit-timeline-date {
+		position: sticky;
+		top: 0;
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		margin: 0 0 var(--space-2);
+		padding: var(--space-1) var(--space-1);
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-semibold);
+		line-height: var(--line-height-tight);
+	}
+
+	.audit-timeline-date-count {
+		display: inline-flex;
+		min-width: 1.25rem;
+		justify-content: center;
+		padding: 0 var(--space-1);
+		border-radius: var(--radius-full);
+		background-color: var(--color-bg-muted);
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-2xs);
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* ---------- Load error ---------- */
+	.audit-timeline-error {
+		display: flex;
+		gap: var(--space-2);
+		padding: var(--space-3);
+		border: var(--border-width-default) solid var(--color-error-border);
+		border-left: var(--feedback-rail-width) solid var(--feedback-error-fg);
+		border-radius: var(--radius-md);
+		background-color: var(--color-error-bg);
+	}
+
+	.audit-timeline-error-icon {
+		width: 1.125rem;
+		height: 1.125rem;
+		flex: 0 0 auto;
+		color: var(--feedback-error-fg);
+	}
+
+	.audit-timeline-error-copy {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: var(--space-1);
+	}
+
+	.audit-timeline-error-title {
+		margin: 0;
+		color: var(--color-text-primary);
+		font-size: var(--font-size-sm);
+		font-weight: var(--font-weight-semibold);
+	}
+
+	.audit-timeline-error-text {
+		margin: 0 0 var(--space-1);
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
 	}
 }

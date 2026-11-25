@@ -35,9 +35,9 @@ function Header() {
 			<NavLink
 				to={isGuestRoute ? "/guest/medi-claim/listing" : "/"}
 				className="home-brand"
-				aria-label="Go to home"
+				aria-label="Tata Hitachi — go to home"
 			>
-				<img src={logo} alt="logo" />
+				<img src={logo} alt="" />
 			</NavLink>
 
 			{isGuestRoute ? <GuestHeaderActions /> : <StaffHeaderActions />}

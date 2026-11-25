@@ -7,6 +7,7 @@ import Button from "../../../components/common/Button";
 import FormInput from "../../../components/forms/FormInput";
 import OtpInput from "../../../components/forms/OtpInput";
 import { useGuestAuth } from "../../../context/Auth/useGuestAuth";
+import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import { normalizeMobileNumber } from "../../../utils/format";
 import { MOBILE_REGEX } from "../constant";
 import {
@@ -27,6 +28,8 @@ const GuestMobileLoginForm = () => {
 	const [otpTimerActive, setOtpTimerActive] = useState(true);
 	const [secondsLeft, setSecondsLeft] = useState(30);
 	const [confirmedMobile, setConfirmedMobile] = useState("");
+	// Inline copy of the last failure; GuestAuthProvider already toasts.
+	const [formError, setFormError] = useState<string | undefined>();
 
 	const mobileForm = useForm<MobileEntryFormValues>({
 		resolver: zodResolver(mobileEntrySchema),
@@ -47,13 +50,15 @@ const GuestMobileLoginForm = () => {
 
 	const requestOtp = async (mobile: string): Promise<boolean> => {
 		setLoading(true);
+		setFormError(undefined);
 
 		try {
 			await sendOtp(mobile);
 			setConfirmedMobile(mobile);
 			setStep("verifyOtp");
 			return true;
-		} catch {
+		} catch (error: unknown) {
+			setFormError(getApiErrorMessage(error, "Unable to send OTP."));
 			return false; // toast already shown by GuestAuthProvider
 		} finally {
 			setLoading(false);
@@ -66,12 +71,14 @@ const GuestMobileLoginForm = () => {
 
 	const onOtpSubmit = async (values: OtpVerifyFormValues) => {
 		setLoading(true);
+		setFormError(undefined);
 
 		try {
 			await verifyOtp(confirmedMobile, values.otp);
 			navigate("/guest/medi-claim/listing");
-		} catch {
+		} catch (error: unknown) {
 			// toast already shown by GuestAuthProvider
+			setFormError(getApiErrorMessage(error, "Invalid OTP"));
 		} finally {
 			setLoading(false);
 		}
@@ -86,6 +93,12 @@ const GuestMobileLoginForm = () => {
 			otpForm.reset({ otp: "" });
 		}
 	};
+
+	const errorBanner = formError ? (
+		<p className="auth-form-error" role="alert">
+			{formError}
+		</p>
+	) : null;
 
 	if (step === "verifyOtp") {
 		return (
@@ -114,6 +127,8 @@ const GuestMobileLoginForm = () => {
 					)}
 				/>
 
+				{errorBanner}
+
 				<Button
 					type="submit"
 					appearance="cta"
@@ -139,6 +154,7 @@ const GuestMobileLoginForm = () => {
 						onClick={() => {
 							setStep("enterMobile");
 							setConfirmedMobile("");
+							setFormError(undefined);
 							otpForm.reset({ otp: "" });
 							mobileForm.reset({ mobile: "" });
 						}}
@@ -164,6 +180,8 @@ const GuestMobileLoginForm = () => {
 				placeholder="Enter 10-digit mobile number"
 				required
 				error={mobileForm.formState.errors.mobile?.message}
+				helperText="A one-time password will be sent to your registered mobile number."
+				isTooltip={false}
 				maxLength={10}
 				inputPrefix="+91"
 				{...mobileForm.register("mobile", {
@@ -175,9 +193,7 @@ const GuestMobileLoginForm = () => {
 				})}
 			/>
 
-			<p className="auth-field-helper">
-				A one-time password will be sent to your registered mobile number.
-			</p>
+			{errorBanner}
 
 			<Button
 				text={loading ? "Sending OTP..." : "Continue"}

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, Circle, ShieldCheck } from "lucide-react";
@@ -21,6 +21,7 @@ const ResetPasswordForm = () => {
 	const { token } = useParams<{ token: string }>();
 	const { resetPassword } = useAuth();
 	const { showToast } = useToast();
+	const policyTitleId = useId();
 
 	const [generalError, setGeneralError] = useState<string | undefined>();
 	const [showPolicy, setShowPolicy] = useState(false);
@@ -98,9 +99,9 @@ const ResetPasswordForm = () => {
 
 				<p className="auth-form-eyebrow">Security control</p>
 
-				<h2 className="auth-form-title">
+				<h1 className="auth-form-title">
 					{token ? "Create a new password" : "Change your password"}
-				</h2>
+				</h1>
 
 				<p className="auth-form-description">
 					Use a secure password that meets all enterprise policy requirements.
@@ -135,30 +136,42 @@ const ResetPasswordForm = () => {
 					/>
 
 					{!isPasswordValid && showPolicy ? (
-						<ul className="auth-password-policy">
-							{PasswordPolicy.map((rule) => {
-								const passed = rule.test(newPasswordValue);
+						<div className="auth-password-policy-wrap">
+							<p id={policyTitleId} className="sr-only">
+								Password requirements
+							</p>
+							<ul
+								className="auth-password-policy"
+								aria-labelledby={policyTitleId}
+							>
+								{PasswordPolicy.map((rule) => {
+									const passed = rule.test(newPasswordValue);
 
-								return (
-									<li
-										key={rule.label}
-										className={
-											passed
-												? "auth-password-rule auth-password-rule-valid"
-												: "auth-password-rule"
-										}
-									>
-										{passed ? (
-											<Check aria-hidden="true" size={14} />
-										) : (
-											<Circle aria-hidden="true" size={8} fill="currentColor" />
-										)}
+									return (
+										<li
+											key={rule.label}
+											className={
+												passed
+													? "auth-password-rule auth-password-rule-valid"
+													: "auth-password-rule"
+											}
+										>
+											{passed ? (
+												<Check aria-hidden="true" size={14} />
+											) : (
+												<Circle aria-hidden="true" size={8} fill="currentColor" />
+											)}
 
-										<span>{rule.label}</span>
-									</li>
-								);
-							})}
-						</ul>
+											<span>{rule.label}</span>
+											{/* Icon and colour are visual only; state in text too */}
+											<span className="sr-only">
+												{passed ? " — met" : " — not met"}
+											</span>
+										</li>
+									);
+								})}
+							</ul>
+						</div>
 					) : null}
 
 					<FormInput

@@ -29,7 +29,8 @@ export default function FormHeader({
 					/>
 				)}
 
-				<h3 className="truncate text-sm font-semibold tracking-tight text-[var(--color-brand)]">
+				{/* Title in text-brand: brand-500 was 3.3:1 on white. */}
+				<h3 className="truncate text-sm font-semibold tracking-tight text-[var(--color-text-brand)]">
 					{title}
 				</h3>
 			</div>

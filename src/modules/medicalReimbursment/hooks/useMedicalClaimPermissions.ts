@@ -17,7 +17,7 @@ import { MEDICLAIM_BACKEND } from "../utils/mediclaimBackend.config";
  * ----------------------------------------------------------------------------
  *
  * Three ways into a claim:
- *   - "public"   → retired employee via the token link (/medical-claim-form/:token)
+ *   - "public"   → retired employee via the token link (/medi-claim/public/:token)
  *   - "guest"    → retired employee logged into the guest portal
  *   - "internal" → THCM user (initiator / workflow approver)
  *
@@ -27,8 +27,6 @@ import { MEDICLAIM_BACKEND } from "../utils/mediclaimBackend.config";
  */
 
 export type MedicalClaimAccessContext = "public" | "guest" | "internal";
-
-export { GUEST_EDITABLE_STATUSES, PUBLIC_EDITABLE_STATUSES };
 
 /** The subset of getWorkflowApproverData()'s result this hook needs. */
 export type MedicalClaimWorkflowAccess = {

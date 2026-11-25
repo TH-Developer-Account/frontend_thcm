@@ -11,7 +11,7 @@ import { ExclamationCircleIcon } from "@heroicons/react/24/outline";
 import { ChevronDown, CircleCheck } from "lucide-react";
 
 import HelperTooltip from "../common/HelperTooltip";
-import ReadOnlyField from "./ReadOnlyField";
+import ReadOnlyField, { type ReadOnlyEmptyReason } from "./ReadOnlyField";
 
 export type PhoneCountryOption = {
 	/** Value stored in the form, e.g. "+91". */
@@ -52,6 +52,8 @@ export type PhoneInputProps = Omit<
 	/** View mode: overrides the default "<code> <number>" text. */
 	readOnlyValue?: ReactNode;
 	emptyReadOnlyValue?: ReactNode;
+	/** View mode: why the number is missing. Default "not-provided". */
+	emptyReadOnlyReason?: ReadOnlyEmptyReason;
 
 	countryCodes: readonly PhoneCountryOption[];
 	/** Selected code, used to render the attached segment. */
@@ -84,7 +86,8 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
 			/* Applied to the outer wrapper (layout), not to the <input>. */
 			className = "",
 			readOnlyValue,
-			emptyReadOnlyValue = "--",
+			emptyReadOnlyValue,
+			emptyReadOnlyReason,
 			countryCodes,
 			countryCodeValue,
 			countryCodeProps,
@@ -135,6 +138,7 @@ const PhoneInput = forwardRef<HTMLInputElement, PhoneInputProps>(
 					helperText={helperText}
 					isTooltip={isTooltip}
 					emptyValue={emptyReadOnlyValue}
+					emptyReason={emptyReadOnlyReason}
 					className={className}
 				/>
 			);

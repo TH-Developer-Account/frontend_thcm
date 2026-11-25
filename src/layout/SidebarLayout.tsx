@@ -90,6 +90,8 @@ export const SidebarLayout = ({
 					{items.map((item) => {
 						const hasChildren = Boolean(item.children?.length);
 						const isExpanded = openItem === item.id;
+						const containsActive =
+							hasChildren && containsActivePath(item, location.pathname);
 
 						return (
 							<div className="app-sidebar-group" key={item.id}>
@@ -97,9 +99,13 @@ export const SidebarLayout = ({
 									<button
 										type="button"
 										onClick={() => handleParentClick(item.id)}
-										className={`app-sidebar-item app-sidebar-parent ${
-											isExpanded ? "app-sidebar-item-expanded" : ""
-										}`}
+										className={[
+											"app-sidebar-item app-sidebar-parent",
+											isExpanded ? "app-sidebar-item-expanded" : "",
+											containsActive ? "app-sidebar-item-contains-active" : "",
+										]
+											.filter(Boolean)
+											.join(" ")}
 										aria-expanded={isOpen && isExpanded}
 										aria-controls={`sidebar-children-${item.id}`}
 										title={!isOpen ? item.label : undefined}

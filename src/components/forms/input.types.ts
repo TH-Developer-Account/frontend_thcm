@@ -1,6 +1,7 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
 import React, { type TextareaHTMLAttributes } from "react";
 import type { ValidationRules } from "../../utils/form.validation";
+import type { ReadOnlyEmptyReason } from "./ReadOnlyField";
 
 export type FormFieldMode = "edit" | "view";
 
@@ -9,6 +10,17 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	error?: string;
 	helperText?: string;
 	isTooltip?: boolean;
+	/**
+	 * Marks the field as optional: `true` shows "(optional)", a string
+	 * replaces that text. Ignored when `required` is true.
+	 */
+	optional?: boolean | string;
+	/**
+	 * Non-blocking advisory message (amber) shown under the field when
+	 * there is no error, e.g. "Amount exceeds the usual range".
+	 * It does not affect validation or submission.
+	 */
+	warning?: string;
 	validation?: ValidationRules;
 	/**
 	 * "edit" renders the native input.
@@ -26,6 +38,11 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	 * Value shown when view mode has no usable value.
 	 */
 	emptyReadOnlyValue?: ReactNode;
+	/**
+	 * View mode: why the value is missing ("not-applicable", "pending", ...).
+	 * Default "not-provided". Ignored when emptyReadOnlyValue is set.
+	 */
+	emptyReadOnlyReason?: ReadOnlyEmptyReason;
 	success?: boolean;
 	invalidRadio?: string;
 	/**
@@ -85,6 +102,17 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
 	error?: string;
 	helperText?: string;
 	isTooltip?: boolean;
+	/**
+	 * Marks the field as optional: `true` shows "(optional)", a string
+	 * replaces that text. Ignored when `required` is true.
+	 */
+	optional?: boolean | string;
+	/**
+	 * Non-blocking advisory message (amber) shown under the field when
+	 * there is no error, e.g. "Amount exceeds the usual range".
+	 * It does not affect validation or submission.
+	 */
+	warning?: string;
 
 	mode?: FormFieldMode;
 	success?: boolean;
@@ -98,4 +126,9 @@ export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElemen
 	 * Fallback displayed when the view-mode value is empty.
 	 */
 	emptyReadOnlyValue?: ReactNode;
+	/**
+	 * View mode: why the value is missing ("not-applicable", "pending", ...).
+	 * Default "not-provided". Ignored when emptyReadOnlyValue is set.
+	 */
+	emptyReadOnlyReason?: ReadOnlyEmptyReason;
 }

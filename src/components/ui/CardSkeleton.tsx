@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 type CardEmptyProps = {
 	title?: string;
@@ -8,6 +8,8 @@ type CardEmptyProps = {
 	iconPosition?: "left" | "right";
 	iconSize?: number;
 	iconColor?: CSSProperties["color"];
+	/** Optional next step, e.g. an "Add comment" or "Upload" button. */
+	action?: ReactNode;
 };
 
 export const CardEmpty = ({
@@ -16,21 +18,20 @@ export const CardEmpty = ({
 	Icon,
 	iconSize,
 	iconColor,
+	action,
 }: CardEmptyProps) => {
 	const iconStyle = iconColor ? { color: iconColor } : undefined;
 	return (
 		<div className="empty-block">
 			{Icon ? (
-				<Icon
-					aria-hidden="true"
-					className="button-leading-icon"
-					size={iconSize}
-					style={iconStyle}
-				/>
+				<span className="empty-block-icon">
+					<Icon aria-hidden="true" size={iconSize} style={iconStyle} />
+				</span>
 			) : null}
 			<div className="empty-block-copy">
-				<p>{title}</p>
-				<span>{description}</span>
+				{title ? <p>{title}</p> : null}
+				{description ? <span>{description}</span> : null}
+				{action ? <div className="empty-block-action">{action}</div> : null}
 			</div>
 		</div>
 	);

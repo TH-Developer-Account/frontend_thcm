@@ -125,8 +125,8 @@ const buildColumns = (
 ): TableColumn[] => [
 	{
 		key: "stage",
-		header: "Stage",
-		align: "center",
+		header: "SL.No",
+		align: "left",
 		render: (row) => {
 			const { isExpandable, isExpanded, toggle } = getRowView(row);
 			const stageNumber = row.stageOrder ?? "--";
@@ -155,7 +155,8 @@ const buildColumns = (
 
 	{
 		key: "type",
-		header: "Type",
+		header: "Stage Name",
+		widthUnits: 1,
 		render: (row) => (
 			<span className="approval-table-primary-value">
 				{row.stageName || "--"}

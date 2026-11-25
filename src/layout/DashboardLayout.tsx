@@ -1,6 +1,7 @@
 import { HeaderLayout } from "./HeaderLayout";
-import { MainLayout } from "./MainLayout";
+import { MainLayout, MAIN_CONTENT_ID } from "./MainLayout";
 import { SidebarLayout } from "./SidebarLayout";
+import { SkipLink } from "./SkipLink";
 import type { DashboardLayoutProps } from "./layout.types";
 
 export const DashboardLayout = ({
@@ -13,6 +14,8 @@ export const DashboardLayout = ({
 }: DashboardLayoutProps) => {
 	return (
 		<div className="app-layout">
+			<SkipLink targetId={MAIN_CONTENT_ID} />
+
 			<HeaderLayout
 				isSidebarOpen={isSidebarOpen}
 				onToggleSidebar={onToggleSidebar}
