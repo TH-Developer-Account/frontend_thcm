@@ -1,3 +1,4 @@
+// Target: modules/marketing/handouts/NewHandoutPage.tsx
 // handouts/NewHandoutPage.tsx
 // "New handout request" as a stepper wizard (same pattern as the EPC / vendor
 // forms: StepProgress + one Card per step with a Back / Next footer).
@@ -205,7 +206,7 @@ function NewHandoutPageBody({
         }
       >
         {/* The Request list replaces CrfCatalog's own cart, which
-				    handouts.css hides inside .handout-catalog. */}
+		    handouts.css hides inside .handout-catalog. */}
         <div className="handout-catalog">
           <CrfCatalog
             options={[]}
@@ -300,7 +301,7 @@ function NewHandoutPageBody({
           <section className="min-w-0">
             <FormHeader title="Approval Workflow" Icon={Truck} />
             {/* Handouts have a fixed two-stage flow (no workflow-engine
-						    template), so it is shown as is. */}
+			    template), so it is shown as is. */}
             <ol className="handout-timeline px-3">
               <li>
                 <span className="handout-timeline-dot" aria-hidden="true" />
@@ -391,10 +392,6 @@ function NewHandoutPageBody({
           ariaLabel: "New handout page location",
           breadcrumbs: [
             { label: "Home Screen", href: "/" },
-            {
-              label: "EPC Listing",
-              href: "/marketing/activity-planner/listing",
-            },
             { label: "Handouts", href: HANDOUTS_BASE_PATH },
             { label: isResubmitMode ? "Resubmit" : "New request" },
           ],
