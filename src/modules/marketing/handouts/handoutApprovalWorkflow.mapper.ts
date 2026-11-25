@@ -17,8 +17,8 @@
 //     null (and the caller hides the whole "status" column, same as EPC's
 //     own review step hides it for a draft).
 //   - HandoutDetailPage views a real request that already has a status —
-//     handoutStatus IS passed, and each stage's status is derived from it,
-//     the same way EPC derives a real stage's status from its
+//     handoutStatus IS passed, and each stage's status comes from the
+//     table below, the same way EPC derives a real stage's status from its
 //     WorkflowInstance rather than leaving it blank.
 
 import type { ApprovalTableRow } from "../../workflows/types/types";
@@ -28,52 +28,30 @@ import type { HandoutApprovalWorkflow, HandoutStatus } from "./handouts.types";
 // "IN_PROGRESS") so the shared ApprovalTable's Badge renders with the same
 // colors/meaning it already uses for EPC — not a Handouts-specific palette.
 type HandoutStageStatusToken =
-  | "PENDING"
   | "IN_PROGRESS"
   | "APPROVED"
   | "REJECTED"
   | "CLARIFIED";
 
-const deriveApprovalStageStatus = (
-  handoutStatus: HandoutStatus,
-): HandoutStageStatusToken | null => {
-  switch (handoutStatus) {
-    case "PENDING_APPROVAL":
-      return "IN_PROGRESS"; // waiting on the approver right now
-    case "APPROVED":
-    case "CLOSED":
-    case "CANNOT_FULFIL":
-      // All three mean the approver already said yes — CANNOT_FULFIL is a
-      // delivery-stage outcome, not a reversal of the approval.
-      return "APPROVED";
-    case "REJECTED":
-      return "REJECTED";
-    case "CLARIFICATION_REQUESTED":
-      return "CLARIFIED";
-    case "CANCELLED":
-      // The requester withdrew it before the approver acted — closest
-      // available tone to "did not go through".
-      return "REJECTED";
-    default:
-      return null;
-  }
+type StageStatusPair = {
+  approval: HandoutStageStatusToken | null;
+  delivery: HandoutStageStatusToken | null;
 };
 
-const deriveDeliveryStageStatus = (
-  handoutStatus: HandoutStatus,
-): HandoutStageStatusToken | null => {
-  switch (handoutStatus) {
-    case "APPROVED":
-      return "IN_PROGRESS"; // waiting on the delivery team right now
-    case "CLOSED":
-      return "APPROVED"; // hand-delivered, request closed
-    case "CANNOT_FULFIL":
-      return "REJECTED";
-    default:
-      // PENDING_APPROVAL, REJECTED, CLARIFICATION_REQUESTED, CANCELLED —
-      // the delivery stage was never reached.
-      return null;
-  }
+// One row per HandoutStatus, both stages' outcomes side by side — the
+// whole state machine in one place instead of two parallel switches.
+const STAGE_STATUS_BY_HANDOUT_STATUS: Record<HandoutStatus, StageStatusPair> = {
+  PENDING_APPROVAL: { approval: "IN_PROGRESS", delivery: null },
+  CLARIFICATION_REQUESTED: { approval: "CLARIFIED", delivery: null },
+  REJECTED: { approval: "REJECTED", delivery: null },
+  // Requester withdrew it before the approver acted — closest available
+  // tone to "did not go through".
+  CANCELLED: { approval: "REJECTED", delivery: null },
+  // Approver said yes; delivery is now in progress.
+  APPROVED: { approval: "APPROVED", delivery: "IN_PROGRESS" },
+  // A delivery-stage outcome, not a reversal of the approval.
+  CANNOT_FULFIL: { approval: "APPROVED", delivery: "REJECTED" },
+  CLOSED: { approval: "APPROVED", delivery: "APPROVED" },
 };
 
 export type MapHandoutApprovalWorkflowOptions = {
@@ -87,34 +65,40 @@ export const mapHandoutApprovalWorkflowToRows = (
 ): ApprovalTableRow[] => {
   if (!workflow) return [];
 
+  const stageStatus = options.handoutStatus
+    ? STAGE_STATUS_BY_HANDOUT_STATUS[options.handoutStatus]
+    : null;
+
   return workflow.stages.map((stage) => {
-    const status = options.handoutStatus
+    const status = stageStatus
       ? stage.stageOrder === 1
-        ? deriveApprovalStageStatus(options.handoutStatus)
-        : deriveDeliveryStageStatus(options.handoutStatus)
+        ? stageStatus.approval
+        : stageStatus.delivery
       : null;
+
+    // Each stage has exactly one responsible person, reused for both the
+    // row's own display fields and its single approver entry.
+    const person = {
+      name: stage.name,
+      email: stage.email,
+      designation: stage.designation,
+    };
 
     return {
       id: `handout-stage-${stage.stageOrder}`,
       stageOrder: stage.stageOrder,
       stageName: stage.stageName,
-      // Each stage has exactly one responsible person — not a
-      // template-derived ANY/ALL/SOME rule, so the label stays fixed
-      // rather than being computed the way EPC's getApprovalStrategyLabel
-      // is.
+      // Not a template-derived ANY/ALL/SOME rule — one person per stage —
+      // so the label stays fixed rather than computed.
       strategy: "Single approver",
       minApprovals: 1,
       totalApprovers: 1,
-      name: stage.name,
-      email: stage.email,
-      designation: stage.designation,
       status,
+      ...person,
       approvers: [
         {
           id: `handout-approver-${stage.stageOrder}`,
-          name: stage.name,
-          email: stage.email,
-          designation: stage.designation,
+          ...person,
           minApprovals: 1,
           status,
         },

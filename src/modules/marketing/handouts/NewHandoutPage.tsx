@@ -64,11 +64,6 @@ const STEPS = [
   { id: STEP.REVIEW, label: "Review & Submit" },
 ];
 
-// Mirrors EPC's own review-step convention in WorkflowViewForm.tsx
-// (HIDDEN_DRAFT_COLUMNS = ["status"]): at review time nothing has happened
-// yet, so there is no per-approver status to show.
-const HIDDEN_REVIEW_COLUMNS = ["status"] as const;
-
 const toNumber = (value: unknown) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -328,9 +323,13 @@ function NewHandoutPageBody({
                 HIDDEN_DRAFT_COLUMNS): nothing has happened yet, so there's
                 nothing to show there. */}
             <div className="px-3">
+              {/* Mirrors EPC's own review-step convention in
+                  WorkflowViewForm.tsx (HIDDEN_DRAFT_COLUMNS = ["status"]):
+                  at review time nothing has happened yet, so there is no
+                  per-approver status to show. */}
               <ApprovalTable
                 data={approvalRows}
-                hiddenColumns={[...HIDDEN_REVIEW_COLUMNS]}
+                hiddenColumns={["status"]}
                 emptyTitle={
                   approvalWorkflowQuery.isLoading
                     ? "Loading approval workflow…"
