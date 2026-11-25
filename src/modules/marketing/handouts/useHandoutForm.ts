@@ -1,255 +1,328 @@
 // handouts/useHandoutForm.ts
-// State + submit flow of the "New handout request" page.
+// State + submit flow of the "New handout request" page — also reused,
+// pre-filled, for Resubmit (same wizard, posts to /resubmit instead of the
+// create endpoint once a clarified request is edited and resent).
 //
 // Details are validated with handouts.schema.ts. The souvenir lines are the
 // CRF's own CrfLineItem cart, validated with the CRF's validateCrfForm, so
 // quantity / SKU / stock rules are identical to a CRF souvenir line.
 //
 // Submit order:  validate → live stock check (display only, soft-fails) →
-// POST /handouts → refresh lists → back to the Handouts page.
+// POST /handouts (or /handouts/:id/resubmit) → refresh lists → back to the
+// Handouts page (or the request's own detail page, in resubmit mode).
 
 import {
-	useCallback,
-	useState,
-	type Dispatch,
-	type SetStateAction,
+  useCallback,
+  useState,
+  type Dispatch,
+  type SetStateAction,
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
 import { useToast } from "../../../context/Auth/AuthContext";
 import {
-	showApiErrorToast,
-	showSuccessToast,
-	showWarningToast,
+  showApiErrorToast,
+  showSuccessToast,
+  showWarningToast,
 } from "../../../utils/apiError.helper";
 import {
-	EMPTY_CRF_ERRORS,
-	getFirstCrfErrorMessage,
-	useStockCheckMutation,
-	validateCrfForm,
-	type CrfFormErrors,
-	type CrfLineItem,
+  EMPTY_CRF_ERRORS,
+  getFirstCrfErrorMessage,
+  useStockCheckMutation,
+  validateCrfForm,
+  type CrfFormErrors,
+  type CrfLineItem,
 } from "../crf";
 
-import { handoutKeys, useCreateHandoutMutation } from "./handouts.api";
+import {
+  handoutKeys,
+  useCreateHandoutMutation,
+  useResubmitHandoutMutation,
+} from "./handouts.api";
 import { HANDOUT_LIMITS, HANDOUTS_BASE_PATH } from "./handouts.constants";
 import {
-	EMPTY_HANDOUT_DETAILS,
-	HANDOUT_MESSAGES,
-	handoutDetailsSchema,
-	parseWithFieldErrors,
-	type HandoutDetailsErrors,
-	type HandoutDetailsField,
-	type HandoutDetailsValues,
+  detailsFromHandout,
+  EMPTY_HANDOUT_DETAILS,
+  HANDOUT_MESSAGES,
+  handoutDetailsSchema,
+  handoutShippingAddressSchema,
+  parseWithFieldErrors,
+  type HandoutDetailsErrors,
+  type HandoutDetailsField,
+  type HandoutDetailsValues,
+  type HandoutShippingAddressField,
 } from "./handouts.schema";
-import type { CreateHandoutPayload } from "./handouts.types";
+import type { CreateHandoutPayload, HandoutDetail } from "./handouts.types";
 
 // The CRF validator wants an EPC id; a handout has none, so a fixed marker.
 const NO_EPC = "HANDOUT";
 
 const toNumber = (value: unknown) => {
-	const parsed = Number(value);
-	return Number.isFinite(parsed) ? parsed : 0;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
 };
 
-export function useHandoutForm() {
-	const navigate = useNavigate();
-	const queryClient = useQueryClient();
-	const { showToast } = useToast();
+/** Builds the wizard's initial cart from an existing (clarified) request. */
+const itemsFromHandout = (handout: HandoutDetail): CrfLineItem[] =>
+  handout.items.map((line) => ({
+    value: line.sku,
+    sku: line.sku,
+    label: line.title,
+    variantTitle: line.variantTitle,
+    imageUrl: line.imageUrl,
+    quantity: line.quantity,
+    rate: line.rate,
+  })) as CrfLineItem[];
 
-	const createHandout = useCreateHandoutMutation();
-	const stockCheck = useStockCheckMutation();
+type UseHandoutFormOptions = {
+  /** Present only on the Resubmit flow — the clarified request being edited. */
+  resubmit?: { id: string; initial: HandoutDetail };
+};
 
-	const [values, setValues] = useState<Required<HandoutDetailsValues>>(
-		EMPTY_HANDOUT_DETAILS,
-	);
-	const [errors, setErrors] = useState<HandoutDetailsErrors>({});
-	const [items, setItemsState] = useState<CrfLineItem[]>([]);
-	const [itemErrors, setItemErrors] = useState<CrfFormErrors>(EMPTY_CRF_ERRORS);
+export function useHandoutForm(options: UseHandoutFormOptions = {}) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { showToast } = useToast();
+  const resubmitTarget = options.resubmit;
 
-	const setField = useCallback((name: HandoutDetailsField, value: string) => {
-		setValues((previous) => ({ ...previous, [name]: value }));
-		setErrors((previous) =>
-			previous[name] ? { ...previous, [name]: undefined } : previous,
-		);
-	}, []);
+  const createHandout = useCreateHandoutMutation();
+  const resubmitHandout = useResubmitHandoutMutation();
+  const stockCheck = useStockCheckMutation();
 
-	// Same signature CrfCatalog expects; editing the cart clears stale errors.
-	const setItems: Dispatch<SetStateAction<CrfLineItem[]>> = useCallback(
-		(update) => {
-			setItemsState(update);
-			setItemErrors(EMPTY_CRF_ERRORS);
-		},
-		[],
-	);
+  const [values, setValues] = useState<Required<HandoutDetailsValues>>(() =>
+    resubmitTarget
+      ? detailsFromHandout(resubmitTarget.initial)
+      : EMPTY_HANDOUT_DETAILS,
+  );
+  const [errors, setErrors] = useState<HandoutDetailsErrors>({});
+  const [items, setItemsState] = useState<CrfLineItem[]>(() =>
+    resubmitTarget ? itemsFromHandout(resubmitTarget.initial) : [],
+  );
+  const [itemErrors, setItemErrors] = useState<CrfFormErrors>(EMPTY_CRF_ERRORS);
 
-	/** Validates the cart; an empty cart gets the handout wording. */
-	const validateItems = useCallback((lines: CrfLineItem[]) => {
-		if (lines.length === 0) {
-			return {
-				success: false as const,
-				errors: { form: HANDOUT_MESSAGES.itemsRequired, items: {} },
-			};
-		}
-		if (lines.length > HANDOUT_LIMITS.MAX_ITEMS) {
-			return {
-				success: false as const,
-				errors: { form: HANDOUT_MESSAGES.tooManyItems, items: {} },
-			};
-		}
-		return validateCrfForm({ epcId: NO_EPC, lineItems: lines });
-	}, []);
+  const setField = useCallback((name: HandoutDetailsField, value: string) => {
+    setValues((previous) => ({ ...previous, [name]: value }));
+    setErrors((previous) =>
+      previous[name] ? { ...previous, [name]: undefined } : previous,
+    );
+  }, []);
 
-	/** Wizard step 1: validates the details only (errors show inline). */
-	const validateDetails = useCallback(() => {
-		const details = parseWithFieldErrors(handoutDetailsSchema, values);
-		setErrors(details.success ? {} : (details.errors as HandoutDetailsErrors));
-		return details.success;
-	}, [values]);
+  const setAddressField = useCallback(
+    (name: HandoutShippingAddressField, value: string) => {
+      setValues((previous) => ({
+        ...previous,
+        shippingAddress: { ...previous.shippingAddress, [name]: value },
+      }));
+      setErrors((previous) =>
+        previous[`shippingAddress.${name}`]
+          ? { ...previous, [`shippingAddress.${name}`]: undefined }
+          : previous,
+      );
+    },
+    [],
+  );
 
-	/** Wizard step 2: validates the cart only. */
-	const validateItemsStep = useCallback(() => {
-		const result = validateItems(items);
-		setItemErrors(result.errors);
-		return result.success;
-	}, [items, validateItems]);
+  // Same signature CrfCatalog expects; editing the cart clears stale errors.
+  const setItems: Dispatch<SetStateAction<CrfLineItem[]>> = useCallback(
+    (update) => {
+      setItemsState(update);
+      setItemErrors(EMPTY_CRF_ERRORS);
+    },
+    [],
+  );
 
-	/**
-	 * Live stock for the cart. Returns the cart with availableQty / stockStatus
-	 * filled in, or null when the store could not be reached (soft-fail: stock
-	 * is not reserved anyway and the approver re-checks it).
-	 */
-	const refreshStock = useCallback(
-		async (lines: CrfLineItem[]): Promise<CrfLineItem[] | null> => {
-			const perSku = new Map<string, number>();
-			for (const line of lines) {
-				if (!line.sku) continue;
-				perSku.set(
-					line.sku,
-					(perSku.get(line.sku) ?? 0) + toNumber(line.quantity),
-				);
-			}
+  /** Validates the cart; an empty cart gets the handout wording. */
+  const validateItems = useCallback((lines: CrfLineItem[]) => {
+    if (lines.length === 0) {
+      return {
+        success: false as const,
+        errors: { form: HANDOUT_MESSAGES.itemsRequired, items: {} },
+      };
+    }
+    if (lines.length > HANDOUT_LIMITS.MAX_ITEMS) {
+      return {
+        success: false as const,
+        errors: { form: HANDOUT_MESSAGES.tooManyItems, items: {} },
+      };
+    }
+    return validateCrfForm({ epcId: NO_EPC, lineItems: lines });
+  }, []);
 
-			try {
-				const result = await stockCheck.mutateAsync(
-					[...perSku.entries()].map(([sku, quantity]) => ({ sku, quantity })),
-				);
-				const bySku = new Map(result.lines.map((line) => [line.sku, line]));
-				return lines.map((line) => {
-					const found = line.sku ? bySku.get(line.sku) : undefined;
-					return found
-						? {
-								...line,
-								availableQty: found.available,
-								stockStatus: found.status,
-							}
-						: line;
-				});
-			} catch {
-				showWarningToast(
-					showToast,
-					"Stock could not be verified right now. The approver will see live stock.",
-					"Stock check skipped",
-				);
-				return null;
-			}
-		},
-		[showToast, stockCheck],
-	);
+  /** Wizard step 1: validates the details only (errors show inline). */
+  const validateDetails = useCallback(() => {
+    const details = parseWithFieldErrors(handoutDetailsSchema, values);
+    setErrors(details.success ? {} : (details.errors as HandoutDetailsErrors));
+    return details.success;
+  }, [values]);
 
-	const submit = useCallback(async () => {
-		const details = parseWithFieldErrors(handoutDetailsSchema, values);
-		const firstPass = validateItems(items);
+  /** Wizard step 2: validates the cart only. */
+  const validateItemsStep = useCallback(() => {
+    const result = validateItems(items);
+    setItemErrors(result.errors);
+    return result.success;
+  }, [items, validateItems]);
 
-		setErrors(details.success ? {} : (details.errors as HandoutDetailsErrors));
-		setItemErrors(firstPass.errors);
+  /**
+   * Live stock for the cart. Returns the cart with availableQty / stockStatus
+   * filled in, or null when the store could not be reached (soft-fail: stock
+   * is not reserved anyway and the approver re-checks it).
+   */
+  const refreshStock = useCallback(
+    async (lines: CrfLineItem[]): Promise<CrfLineItem[] | null> => {
+      const perSku = new Map<string, number>();
+      for (const line of lines) {
+        if (!line.sku) continue;
+        perSku.set(
+          line.sku,
+          (perSku.get(line.sku) ?? 0) + toNumber(line.quantity),
+        );
+      }
 
-		if (!details.success || !firstPass.success) {
-			showToast({
-				type: "error",
-				title: "Check the request",
-				description: !details.success
-					? Object.values(details.errors)[0]
-					: (getFirstCrfErrorMessage(firstPass.errors, items) ??
-						HANDOUT_MESSAGES.itemsRequired),
-			});
-			return;
-		}
+      try {
+        const result = await stockCheck.mutateAsync(
+          [...perSku.entries()].map(([sku, quantity]) => ({ sku, quantity })),
+        );
+        const bySku = new Map(result.lines.map((line) => [line.sku, line]));
+        return lines.map((line) => {
+          const found = line.sku ? bySku.get(line.sku) : undefined;
+          return found
+            ? {
+                ...line,
+                availableQty: found.available,
+                stockStatus: found.status,
+              }
+            : line;
+        });
+      } catch {
+        showWarningToast(
+          showToast,
+          "Stock could not be verified right now. The approver will see live stock.",
+          "Stock check skipped",
+        );
+        return null;
+      }
+    },
+    [showToast, stockCheck],
+  );
 
-		// Fresh stock, then the same rules again (now with availableQty).
-		const refreshed = await refreshStock(items);
-		const lines = refreshed ?? items;
-		if (refreshed) {
-			setItemsState(refreshed);
-			const secondPass = validateItems(refreshed);
-			if (!secondPass.success) {
-				setItemErrors(secondPass.errors);
-				showToast({
-					type: "error",
-					title: "Some items are short",
-					description:
-						getFirstCrfErrorMessage(secondPass.errors, refreshed) ??
-						"Reduce the quantity or remove the item.",
-				});
-				return;
-			}
-		}
+  const submit = useCallback(async () => {
+    const details = parseWithFieldErrors(handoutDetailsSchema, values);
+    const firstPass = validateItems(items);
 
-		const payload: CreateHandoutPayload = {
-			purpose: details.data.purpose,
-			requiredBy: details.data.requiredBy,
-			deliverTo: details.data.deliverTo,
-			contactPhone: details.data.contactPhone,
-			remarks: details.data.remarks || undefined,
-			items: lines.map((line) => ({
-				sku: line.sku as string,
-				quantity: toNumber(line.quantity),
-				title: line.label || undefined,
-				variantTitle: line.variantTitle || undefined,
-				imageUrl: line.imageUrl || undefined,
-				rate: toNumber(line.rate),
-			})),
-		};
+    setErrors(details.success ? {} : (details.errors as HandoutDetailsErrors));
+    setItemErrors(firstPass.errors);
 
-		try {
-			const created = await createHandout.mutateAsync(payload);
-			await queryClient.invalidateQueries({ queryKey: handoutKeys.all });
-			showSuccessToast(
-				showToast,
-				`Request ${created.requestNumber} was submitted for approval.`,
-				"Handout requested",
-			);
-			navigate(HANDOUTS_BASE_PATH);
-		} catch (error) {
-			showApiErrorToast(
-				showToast,
-				error,
-				"The handout request could not be submitted.",
-				"Unable to submit",
-			);
-		}
-	}, [
-		createHandout,
-		items,
-		navigate,
-		queryClient,
-		refreshStock,
-		showToast,
-		validateItems,
-		values,
-	]);
+    if (!details.success || !firstPass.success) {
+      showToast({
+        type: "error",
+        title: "Check the request",
+        description: !details.success
+          ? Object.values(details.errors)[0]
+          : (getFirstCrfErrorMessage(firstPass.errors, items) ??
+            HANDOUT_MESSAGES.itemsRequired),
+      });
+      return;
+    }
 
-	return {
-		values,
-		errors,
-		setField,
-		items,
-		setItems,
-		itemErrors,
-		validateDetails,
-		validateItemsStep,
-		submit,
-		submitting: createHandout.isPending || stockCheck.isPending,
-	};
+    // Fresh stock, then the same rules again (now with availableQty).
+    const refreshed = await refreshStock(items);
+    const lines = refreshed ?? items;
+    if (refreshed) {
+      setItemsState(refreshed);
+      const secondPass = validateItems(refreshed);
+      if (!secondPass.success) {
+        setItemErrors(secondPass.errors);
+        showToast({
+          type: "error",
+          title: "Some items are short",
+          description:
+            getFirstCrfErrorMessage(secondPass.errors, refreshed) ??
+            "Reduce the quantity or remove the item.",
+        });
+        return;
+      }
+    }
+
+    const payload: CreateHandoutPayload = {
+      purpose: details.data.purpose,
+      requiredBy: details.data.requiredBy,
+      deliverTo: details.data.deliverTo,
+      contactPhone: details.data.contactPhone,
+      remarks: details.data.remarks || undefined,
+      fulfillmentType: details.data.fulfillmentType,
+      shippingAddress:
+        details.data.fulfillmentType === "SHIPPED"
+          ? handoutShippingAddressSchema.parse(details.data.shippingAddress)
+          : undefined,
+      items: lines.map((line) => ({
+        sku: line.sku as string,
+        quantity: toNumber(line.quantity),
+        title: line.label || undefined,
+        variantTitle: line.variantTitle || undefined,
+        imageUrl: line.imageUrl || undefined,
+        rate: toNumber(line.rate),
+      })),
+    };
+
+    try {
+      if (resubmitTarget) {
+        await resubmitHandout.mutateAsync({ id: resubmitTarget.id, payload });
+        await queryClient.invalidateQueries({ queryKey: handoutKeys.all });
+        showSuccessToast(
+          showToast,
+          `${resubmitTarget.initial.requestNumber} was resubmitted for approval.`,
+          "Request resubmitted",
+        );
+        navigate(`${HANDOUTS_BASE_PATH}/${resubmitTarget.id}`);
+      } else {
+        const created = await createHandout.mutateAsync(payload);
+        await queryClient.invalidateQueries({ queryKey: handoutKeys.all });
+        showSuccessToast(
+          showToast,
+          `Request ${created.requestNumber} was submitted for approval.`,
+          "Handout requested",
+        );
+        navigate(HANDOUTS_BASE_PATH);
+      }
+    } catch (error) {
+      showApiErrorToast(
+        showToast,
+        error,
+        resubmitTarget
+          ? "The handout request could not be resubmitted."
+          : "The handout request could not be submitted.",
+        "Unable to submit",
+      );
+    }
+  }, [
+    createHandout,
+    items,
+    navigate,
+    queryClient,
+    refreshStock,
+    resubmitHandout,
+    resubmitTarget,
+    showToast,
+    validateItems,
+    values,
+  ]);
+
+  return {
+    values,
+    errors,
+    setField,
+    setAddressField,
+    items,
+    setItems,
+    itemErrors,
+    validateDetails,
+    validateItemsStep,
+    submit,
+    isResubmit: Boolean(resubmitTarget),
+    submitting:
+      createHandout.isPending ||
+      resubmitHandout.isPending ||
+      stockCheck.isPending,
+  };
 }

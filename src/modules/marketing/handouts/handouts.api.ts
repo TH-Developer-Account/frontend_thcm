@@ -7,35 +7,29 @@
 //   GET  /handouts?view=mine|approve|deliver&status&search&page&pageSize
 //   GET  /handouts/:id              detail + server-computed `permissions`
 //   POST /handouts/:id/approve
+//   POST /handouts/:id/reject   { reason }   approver rejects outright
 //   POST /handouts/:id/clarify  { reason }   approver sends it back to the requester
+//   POST /handouts/:id/cancel   { reason }   requester withdraws the request
+//   POST /handouts/:id/resubmit payload       requester edits and resends after clarification
 //   POST /handouts/:id/cannot-fulfil { reason }   delivery team: no stock / cannot deliver
 //   POST /handouts/:id/deliver  { handedToName, deliveredOn, note?, checkedSkus }
 //
 // Souvenir availability is NOT a handouts endpoint: it reuses the CRF shop's
 // display-only POST /crf-shop/stock-check (never a reservation).
-//
-// MOCK-LAYER: the "Use mock data" checkbox (HandoutMockToggle) switches this
-// whole file between the real API and the in-memory adapter at runtime. Lines
-// tagged MOCK-LAYER are the only mock-related changes; delete them (and the
-// mock files) when the backend is live.
 
-import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import type { AuditApiAdapter } from "../../../components/ui/audit/audit.types";
 import { ServerAxios } from "../../../services/ServerAxios";
 import { crfShopApi, crfShopKeys } from "../crf";
-import { handoutMockApi } from "./handouts.mock"; // MOCK-LAYER
-import {
-	isHandoutMockEnabled, // MOCK-LAYER
-	useHandoutMockMode, // MOCK-LAYER
-} from "./handouts.mockMode";
 import type {
-	CreateHandoutPayload,
-	DeliverHandoutPayload,
-	HandoutDetail,
-	HandoutItem,
-	HandoutListParams,
-	HandoutListResponse,
+  CreateHandoutPayload,
+  DeliverHandoutPayload,
+  HandoutDetail,
+  HandoutItem,
+  HandoutListParams,
+  HandoutListResponse,
+  ResubmitHandoutPayload,
 } from "./handouts.types";
 
 /* ========================================================================== */
@@ -43,81 +37,76 @@ import type {
 /* ========================================================================== */
 
 const realApi = {
-	list: async (params: HandoutListParams): Promise<HandoutListResponse> => {
-		const {
-			data: { data },
-		} = await ServerAxios.get("/handouts", { params });
-		return data;
-	},
+  list: async (params: HandoutListParams): Promise<HandoutListResponse> => {
+    const {
+      data: { data },
+    } = await ServerAxios.get("/handouts", { params });
+    return data;
+  },
 
-	get: async (id: string): Promise<HandoutDetail> => {
-		const {
-			data: { data },
-		} = await ServerAxios.get(`/handouts/${id}`);
-		return data;
-	},
+  get: async (id: string): Promise<HandoutDetail> => {
+    const {
+      data: { data },
+    } = await ServerAxios.get(`/handouts/${id}`);
+    return data;
+  },
 
-	create: async (
-		payload: CreateHandoutPayload,
-	): Promise<{ id: string; requestNumber: string }> => {
-		const {
-			data: { data },
-		} = await ServerAxios.post("/handouts", payload);
-		return data;
-	},
+  create: async (
+    payload: CreateHandoutPayload,
+  ): Promise<{ id: string; requestNumber: string }> => {
+    const {
+      data: { data },
+    } = await ServerAxios.post("/handouts", payload);
+    return data;
+  },
 
-	approve: async (id: string): Promise<void> => {
-		await ServerAxios.post(`/handouts/${id}/approve`);
-	},
+  approve: async (id: string): Promise<void> => {
+    await ServerAxios.post(`/handouts/${id}/approve`);
+  },
 
-	clarify: async (id: string, reason: string): Promise<void> => {
-		await ServerAxios.post(`/handouts/${id}/clarify`, { reason });
-	},
+  reject: async (id: string, reason: string): Promise<void> => {
+    await ServerAxios.post(`/handouts/${id}/reject`, { reason });
+  },
 
-	cannotFulfil: async (id: string, reason: string): Promise<void> => {
-		await ServerAxios.post(`/handouts/${id}/cannot-fulfil`, { reason });
-	},
+  clarify: async (id: string, reason: string): Promise<void> => {
+    await ServerAxios.post(`/handouts/${id}/clarify`, { reason });
+  },
 
-	deliver: async (
-		id: string,
-		payload: DeliverHandoutPayload,
-	): Promise<void> => {
-		await ServerAxios.post(`/handouts/${id}/deliver`, payload);
-	},
+  cancel: async (id: string, reason: string): Promise<void> => {
+    await ServerAxios.post(`/handouts/${id}/cancel`, { reason });
+  },
+
+  resubmit: async (
+    id: string,
+    payload: ResubmitHandoutPayload,
+  ): Promise<void> => {
+    await ServerAxios.post(`/handouts/${id}/resubmit`, payload);
+  },
+
+  cannotFulfil: async (id: string, reason: string): Promise<void> => {
+    await ServerAxios.post(`/handouts/${id}/cannot-fulfil`, { reason });
+  },
+
+  deliver: async (
+    id: string,
+    payload: DeliverHandoutPayload,
+  ): Promise<void> => {
+    await ServerAxios.post(`/handouts/${id}/deliver`, payload);
+  },
 };
 
-// MOCK-LAYER: picked per call so the checkbox takes effect immediately.
-// When removing the mock layer, replace this block with:
-//   export const handoutApi = realApi;
-const activeApi = () => (isHandoutMockEnabled() ? handoutMockApi : realApi);
-
-export const handoutApi: typeof realApi = {
-	list: (params) => activeApi().list(params),
-	get: (id) => activeApi().get(id),
-	create: (payload) => activeApi().create(payload),
-	approve: (id) => activeApi().approve(id),
-	clarify: (id, reason) => activeApi().clarify(id, reason),
-	cannotFulfil: (id, reason) => activeApi().cannotFulfil(id, reason),
-	deliver: (id, payload) => activeApi().deliver(id, payload),
-};
+export const handoutApi = realApi;
 
 /* ========================================================================== */
 /*                                    Keys                                    */
 /* ========================================================================== */
 
-// MOCK-LAYER: mock and real data get separate cache entries so flipping the
-// checkbox never shows one side's data under the other. `all` is unchanged, so
-// `invalidateQueries({ queryKey: handoutKeys.all })` still refreshes both.
-const modeTag = () => (isHandoutMockEnabled() ? "mock" : "live");
-
 export const handoutKeys = {
-	all: ["handouts"] as const,
-	list: (params: HandoutListParams) =>
-		[...handoutKeys.all, modeTag(), "list", params] as const,
-	detail: (id: string) =>
-		[...handoutKeys.all, modeTag(), "detail", id] as const,
-	stock: (skuKey: string) =>
-		[...handoutKeys.all, modeTag(), "stock", skuKey] as const,
+  all: ["handouts"] as const,
+  list: (params: HandoutListParams) =>
+    [...handoutKeys.all, "list", params] as const,
+  detail: (id: string) => [...handoutKeys.all, "detail", id] as const,
+  stock: (skuKey: string) => [...handoutKeys.all, "stock", skuKey] as const,
 };
 
 /* ========================================================================== */
@@ -125,56 +114,93 @@ export const handoutKeys = {
 /* ========================================================================== */
 
 export function useHandoutsQuery(params: HandoutListParams) {
-	useHandoutMockMode(); // MOCK-LAYER: re-render (and re-key) when the checkbox flips
-	return useQuery({
-		queryKey: handoutKeys.list(params),
-		queryFn: () => handoutApi.list(params),
-		// Keep the old page on screen while the next one loads (no table flash).
-		placeholderData: keepPreviousData,
-	});
+  return useQuery({
+    queryKey: handoutKeys.list(params),
+    queryFn: () => handoutApi.list(params),
+    // Keep the old page on screen while the next *page of the same queue*
+    // loads (no table flash) — but NOT across a `view` change. "mine",
+    // "approve" and "deliver" are separate RBAC-scoped queues (see
+    // handouts.services.ts listHandouts), so showing the previous queue's
+    // rows while a different one loads would be showing the wrong data
+    // under the new tab's header, not just a stale page of the right data.
+    placeholderData: (previousData, previousQuery) =>
+      previousQuery?.queryKey[2]?.view === params.view
+        ? previousData
+        : undefined,
+    // listHandouts rejects view=approve/deliver with a 403 for anyone who
+    // isn't the configured approver/delivery person (by design, not a
+    // transient failure) — retrying would just repeat the same 403 a few
+    // times while the UI sits on stale data in the meantime.
+    retry: false,
+  });
 }
 
 export function useHandoutQuery(id: string | undefined) {
-	useHandoutMockMode(); // MOCK-LAYER
-	return useQuery({
-		queryKey: handoutKeys.detail(id ?? ""),
-		queryFn: () => handoutApi.get(id as string),
-		enabled: Boolean(id),
-	});
+  return useQuery({
+    queryKey: handoutKeys.detail(id ?? ""),
+    queryFn: () => handoutApi.get(id as string),
+    enabled: Boolean(id),
+  });
 }
 
 export function useCreateHandoutMutation() {
-	return useMutation({ mutationFn: handoutApi.create });
+  return useMutation({ mutationFn: handoutApi.create });
 }
 
 export function useApproveHandoutMutation() {
-	return useMutation({ mutationFn: (id: string) => handoutApi.approve(id) });
+  return useMutation({ mutationFn: (id: string) => handoutApi.approve(id) });
+}
+
+export function useRejectHandoutMutation() {
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      handoutApi.reject(id, reason),
+  });
 }
 
 export function useClarifyHandoutMutation() {
-	return useMutation({
-		mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-			handoutApi.clarify(id, reason),
-	});
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      handoutApi.clarify(id, reason),
+  });
+}
+
+export function useCancelHandoutMutation() {
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      handoutApi.cancel(id, reason),
+  });
+}
+
+export function useResubmitHandoutMutation() {
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: ResubmitHandoutPayload;
+    }) => handoutApi.resubmit(id, payload),
+  });
 }
 
 export function useCannotFulfilHandoutMutation() {
-	return useMutation({
-		mutationFn: ({ id, reason }: { id: string; reason: string }) =>
-			handoutApi.cannotFulfil(id, reason),
-	});
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      handoutApi.cannotFulfil(id, reason),
+  });
 }
 
 export function useDeliverHandoutMutation() {
-	return useMutation({
-		mutationFn: ({
-			id,
-			payload,
-		}: {
-			id: string;
-			payload: DeliverHandoutPayload;
-		}) => handoutApi.deliver(id, payload),
-	});
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: DeliverHandoutPayload;
+    }) => handoutApi.deliver(id, payload),
+  });
 }
 
 /**
@@ -183,25 +209,20 @@ export function useDeliverHandoutMutation() {
  * lines of the same SKU are compared with the stock once.
  */
 export function useHandoutStockQuery(items: HandoutItem[], enabled = true) {
-	useHandoutMockMode(); // MOCK-LAYER
+  const bySku = new Map<string, number>();
+  for (const item of items) {
+    bySku.set(item.sku, (bySku.get(item.sku) ?? 0) + item.quantity);
+  }
+  const lines = [...bySku.entries()]
+    .map(([sku, quantity]) => ({ sku, quantity }))
+    .sort((a, b) => a.sku.localeCompare(b.sku));
 
-	const bySku = new Map<string, number>();
-	for (const item of items) {
-		bySku.set(item.sku, (bySku.get(item.sku) ?? 0) + item.quantity);
-	}
-	const lines = [...bySku.entries()]
-		.map(([sku, quantity]) => ({ sku, quantity }))
-		.sort((a, b) => a.sku.localeCompare(b.sku));
-
-	return useQuery({
-		queryKey: [...crfShopKeys.all, "handout-stock", modeTag(), lines] as const, // MOCK-LAYER: modeTag()
-		queryFn: () =>
-			isHandoutMockEnabled() // MOCK-LAYER: mock stock when the checkbox is on
-				? handoutMockApi.stockCheck(lines)
-				: crfShopApi.stockCheck(lines),
-		enabled: enabled && lines.length > 0,
-		staleTime: 30 * 1000,
-	});
+  return useQuery({
+    queryKey: [...crfShopKeys.all, "handout-stock", lines] as const,
+    queryFn: () => crfShopApi.stockCheck(lines),
+    enabled: enabled && lines.length > 0,
+    staleTime: 30 * 1000,
+  });
 }
 
 /* ========================================================================== */
@@ -214,28 +235,29 @@ export function useHandoutStockQuery(items: HandoutItem[], enabled = true) {
 export const HANDOUT_AUDIT_SUBJECT = "HANDOUT_REQUEST";
 
 export const handoutAuditApi: AuditApiAdapter = {
-	getAuditLog: async ({ subjectId }) => {
-		const handout = await handoutApi.get(subjectId);
+  getAuditLog: async ({ subjectId }) => {
+    const handout = await handoutApi.get(subjectId);
 
-		return handout.timeline.map((entry) => {
-			const [first = "", ...rest] = entry.byName.trim().split(/\s+/);
-			return {
-				id: entry.id,
-				action: entry.action,
-				metadata: entry.comment ? { reason: entry.comment } : null,
-				actor: {
-					id: entry.id,
-					first_name: first,
-					last_name: rest.join(" "),
-				},
-				createdAt: entry.at,
-			};
-		});
-	},
+    return handout.timeline.map((entry) => {
+      const [first = "", ...rest] = entry.byName.trim().split(/\s+/);
+      return {
+        id: entry.id,
+        action: entry.action,
+        metadata: entry.comment ? { reason: entry.comment } : null,
+        actor: {
+          id: entry.id,
+          first_name: first,
+          last_name: rest.join(" "),
+        },
+        createdAt: entry.at,
+      };
+    });
+  },
 };
 
-/** Wording for the one action the shared audit messages don't know. */
+/** Wording for the actions the shared audit messages don't know. */
 export const HANDOUT_AUDIT_MESSAGES = {
-	DELIVERED: "hand delivered and closed the handout request",
-	CANNOT_FULFIL: "marked the handout request as cannot be fulfilled",
+  DELIVERED: "hand delivered and closed the handout request",
+  CANNOT_FULFIL: "marked the handout request as cannot be fulfilled",
+  RESUBMITTED: "resubmitted the handout request",
 } as const;
