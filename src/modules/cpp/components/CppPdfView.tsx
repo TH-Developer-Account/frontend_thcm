@@ -1,17 +1,50 @@
 // components/CppPdfView.tsx — the CPP request drawn as the Tata Hitachi price approval sheet (page 1
 // of the "WS" approval PDF). Landscape, same block order and labels, filled from the saved request.
 // Nothing is generated or downloaded per view.
+//
+// Part rows come from the uploaded summary sheet (values.summaryParts, read by the
+// server). As on the paper form, at most 5 parts are listed; the rest are in the sheet.
+// Layout is compact: the attribute boxes (models, plants, price type, pricing
+// condition, For Plants / For Spares) run in one row, so the justification and
+// material cost tracker no longer sit next to a tall empty column.
 import type { ReactNode } from "react";
 
-import type { CppFormValues } from "../types/cpp.types";
+import type { CppFormValues, CppPartRow } from "../types/cpp.types";
+
+/** The columns of the sheet's part table. */
+type PdfPartRow = Pick<
+	CppPartRow,
+	| "partNo"
+	| "description"
+	| "uom"
+	| "existingRate"
+	| "existingWef"
+	| "quotedRate"
+	| "quotedWef"
+	| "finalRate"
+	| "finalWef"
+>;
 
 const DASH = "--";
+/** "For more than 5 parts, please use summary sheet" (CPP format). */
+const MAX_SHEET_PARTS = 5;
 const PLANTS = ["DWD", "KGP", "SPARE"] as const;
 const PRICING_OPTIONS = [
 	{ code: "PB00", label: "Regular" },
 	{ code: "PB50", label: "Amortised" },
 	{ code: "PB25", label: "One Time" },
 	{ code: "PB75", label: "Provisional" },
+] as const;
+
+/** Mandatory Check List rows: sheet label + the key the answer is saved under. */
+const CHECKLIST_ROWS = [
+	{ key: "annualisedImpact", label: "1) Annualized Impact Cal." },
+	{ key: "modelImpact", label: "2) Model wise Impact Cal." },
+	{ key: "zbc", label: "3) ZBC Calculation" },
+	{ key: "commodityTrend", label: "4) Commodity Price Trend" },
+	{ key: "ecn", label: "5) ECN attached" },
+	{ key: "nesting", label: "6) Nesting Calculation" },
+	{ key: "comparativeQuote", label: "7) Comparative Quote./Ana." },
 ] as const;
 
 type PdfApprover = {
@@ -35,8 +68,21 @@ type CppPdfViewProps = {
 	initiatedBy?: string | null;
 };
 
-const text = (value?: string | null): string =>
-	value && value.trim() ? value : DASH;
+const text = (value?: string | number | null): string => {
+	if (value === null || value === undefined) return DASH;
+	const out = String(value);
+	return out.trim() ? out : DASH;
+};
+
+const INR = new Intl.NumberFormat("en-IN", { maximumFractionDigits: 2 });
+
+/** A saved amount with Indian digit grouping; non-numbers are shown as typed. */
+const amount = (value?: string | number | null): string => {
+	const raw = text(value);
+	if (raw === DASH) return DASH;
+	const parsed = Number(raw);
+	return Number.isFinite(parsed) ? INR.format(parsed) : raw;
+};
 
 const nameOf = (approver: PdfApprover | undefined): string =>
 	[approver?.first_name, approver?.last_name]
@@ -81,6 +127,13 @@ const Box = ({
 	</div>
 );
 
+type FinancialCell = {
+	actualInr?: string;
+	actualPct?: string;
+	annualisedInr?: string;
+	annualisedPct?: string;
+};
+
 const CppPdfView = ({
 	values,
 	referenceNumber,
@@ -88,7 +141,25 @@ const CppPdfView = ({
 	initiatedBy,
 }: CppPdfViewProps) => {
 	const effects = values.effects ?? [];
-	const parts = values.parts ?? [];
+	const summaryParts = values.summaryParts ?? [];
+	const sheetRows: PdfPartRow[] = summaryParts
+		.slice(0, MAX_SHEET_PARTS)
+		.map((part) => ({
+		partNo: part.partNo,
+		description: part.description,
+		uom: part.uom,
+		existingRate: part.existingPrice,
+		existingWef: "",
+		quotedRate: "",
+		quotedWef: "",
+		finalRate: part.newPrice,
+		finalWef: part.effectiveDate,
+	}));
+	// Older requests typed their parts by hand; use them when there is no sheet.
+	const parts: PdfPartRow[] = sheetRows.length
+		? sheetRows
+		: (values.parts ?? []);
+	const moreParts = Math.max(0, summaryParts.length - MAX_SHEET_PARTS);
 	const amortisation = values.amortisation ?? [];
 	const perMachine = values.perMachineImpact ?? [];
 	const costTracker = values.costTracker ?? [];
@@ -102,10 +173,28 @@ const CppPdfView = ({
 		(p) => p.group === "SPARE" && p.applicable,
 	);
 
+	const financialPlants = (values.financial?.plants ?? {}) as Record<
+		string,
+		FinancialCell | undefined
+	>;
+	const checklist = values.other?.checklist ?? {};
+	const plantPrices = (values.other?.plantPrices ?? []).filter(
+		(row) => row && (row.plant || row.partNumber || row.price),
+	);
+
 	const checkedBy = approversFor(stages, /^checker/i);
 	const recommendedBy = approversFor(stages, /^recommender/i);
 	const approvedBy = approversFor(stages, /^approver-[123]/i);
 	const committee = approversFor(stages, /committee/i);
+	// No authority is typed on the form: the last approval stage is the authority.
+	const lastStage = [...stages]
+		.filter((stage) => !/price feeding|tcs/i.test(stage.stageName ?? ""))
+		.sort((a, b) => (a.stageOrder ?? 0) - (b.stageOrder ?? 0))
+		.pop();
+	const authority =
+		values.workflow?.authority?.trim() ||
+		lastStage?.stageName?.split("·").pop()?.trim() ||
+		"";
 	const chairman = approversFor(stages, /chairman/i);
 
 	const signed = (people: { name: string; designation: string }[]) =>
@@ -219,21 +308,27 @@ const CppPdfView = ({
 							</tr>
 						</thead>
 						<tbody>
-							{(parts.length ? parts : [null, null, null]).map(
-								(part, index) => (
-									<tr key={index}>
-										<td>{text(part?.partNo)}</td>
-										<td>{text(part?.description)}</td>
-										<td>{text(part?.uom)}</td>
-										<td>{text(part?.existingRate)}</td>
-										<td>{text(part?.existingWef)}</td>
-										<td>{text(part?.quotedRate)}</td>
-										<td>{text(part?.quotedWef)}</td>
-										<td>{text(part?.finalRate)}</td>
-										<td>{text(part?.finalWef)}</td>
-									</tr>
-								),
-							)}
+							{(parts.length ? parts : [null]).map((part, index) => (
+								<tr key={index}>
+									<td>{text(part?.partNo)}</td>
+									<td>{text(part?.description)}</td>
+									<td>{text(part?.uom)}</td>
+									<td>{amount(part?.existingRate)}</td>
+									<td>{text(part?.existingWef)}</td>
+									<td>{amount(part?.quotedRate)}</td>
+									<td>{text(part?.quotedWef)}</td>
+									<td>{amount(part?.finalRate)}</td>
+									<td>{text(part?.finalWef)}</td>
+								</tr>
+							))}
+							{moreParts > 0 ? (
+								<tr>
+									<td colSpan={9} className="cpp-pdf-note">
+										+ {moreParts} more part{moreParts === 1 ? "" : "s"} — see
+										the summary sheet ({summaryParts.length} in total)
+									</td>
+								</tr>
+							) : null}
 						</tbody>
 					</table>
 				</Box>
@@ -257,18 +352,18 @@ const CppPdfView = ({
 							{PLANTS.map((plant) => (
 								<tr key={plant}>
 									<td>{plant}</td>
-									<td>{DASH}</td>
-									<td>{DASH}</td>
-									<td>{text(values.financial?.plantSplit?.[plant])}</td>
-									<td>{DASH}</td>
+									<td>{amount(financialPlants[plant]?.actualInr)}</td>
+									<td>{text(financialPlants[plant]?.actualPct)}</td>
+									<td>{amount(financialPlants[plant]?.annualisedInr)}</td>
+									<td>{text(financialPlants[plant]?.annualisedPct)}</td>
 								</tr>
 							))}
 							<tr className="cpp-pdf-total">
 								<td>Total</td>
 								<td>{DASH}</td>
-								<td>{DASH}</td>
-								<td>{text(values.approvalValues?.amount)}</td>
-								<td>{DASH}</td>
+								<td>{text(values.financial?.totalActualPct)}</td>
+								<td>{amount(values.approvalValues?.amount)}</td>
+								<td>{text(values.financial?.totalAnnualisedPct)}</td>
 							</tr>
 						</tbody>
 					</table>
@@ -289,14 +384,14 @@ const CppPdfView = ({
 							</tr>
 						</thead>
 						<tbody>
-							{(amortisation.length ? amortisation : [null, null]).map(
+							{(amortisation.length ? amortisation : [null]).map(
 								(row, index) => (
 									<tr key={index}>
 										<td>{text(row?.partNo)}</td>
-										<td>{text(row?.priceInclAmort)}</td>
+										<td>{amount(row?.priceInclAmort)}</td>
 										<td>{dateOf(row?.cutoffDate)}</td>
 										<td>{text(row?.amortQty)}</td>
-										<td>{text(row?.priceAfterAmort)}</td>
+										<td>{amount(row?.priceAfterAmort)}</td>
 									</tr>
 								),
 							)}
@@ -315,13 +410,13 @@ const CppPdfView = ({
 							</tr>
 						</thead>
 						<tbody>
-							{(perMachine.length ? perMachine : [null, null]).map(
+							{(perMachine.length ? perMachine : [null]).map(
 								(row, index) => (
 									<tr key={index}>
 										<td>{text(row?.plant)}</td>
 										<td>{text(row?.model)}</td>
-										<td>{text(row?.withAmort)}</td>
-										<td>{text(row?.withoutAmort)}</td>
+										<td>{amount(row?.withAmort)}</td>
+										<td>{amount(row?.withoutAmort)}</td>
 									</tr>
 								),
 							)}
@@ -386,118 +481,119 @@ const CppPdfView = ({
 							</tr>
 						</thead>
 						<tbody>
-							<tr>
-								<td>{DASH}</td>
-								<td>{DASH}</td>
-								<td>{DASH}</td>
-							</tr>
+							{(plantPrices.length ? plantPrices : [null]).map(
+								(row, index) => (
+									<tr key={index}>
+										<td>{text(row?.plant)}</td>
+										<td>{text(row?.partNumber)}</td>
+										<td>{amount(row?.price)}</td>
+									</tr>
+								),
+							)}
 						</tbody>
 					</table>
 				</Box>
 			</div>
 
-			{/* ── Models & plants · justification · material cost tracker ── */}
-			<div className="cpp-pdf-row cpp-pdf-row-body">
-				<div className="cpp-pdf-col-left">
+			{/* ── Attributes: models · plants · price type · pricing · plants / spares ── */}
+			<div className="cpp-pdf-row cpp-pdf-row-attrs">
+				<div className="cpp-pdf-stack">
 					<Box caption="Models">
 						<div className="cpp-pdf-value">
 							{models.length ? models.join(", ") : DASH}
 						</div>
 					</Box>
-					<Box caption="Applicable Plant(s) (Y/N)">
-						<table className="cpp-pdf-table">
-							<tbody>
-								{plantDetails.map((plant) => (
-									<tr key={plant.code}>
-										<td>{text(plant.name)}</td>
-										<td>{text(plant.code)}</td>
-										<td>{plant.applicable ? "Yes" : "No"}</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</Box>
 					<Box caption="Price Type">
 						<div className="cpp-pdf-value">{text(values.priceType)}</div>
 					</Box>
-					<Box caption="Pricing Condition">
-						<table className="cpp-pdf-table">
-							<tbody>
-								{PRICING_OPTIONS.map((option) => (
-									<tr key={option.code}>
-										<td>{option.code}</td>
-										<td>
-											{option.label}
-											{option.code === selectedPricing ? " ✓" : ""}
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
-					</Box>
-					<Box caption="For Plants">
-						<div className="cpp-pdf-kv">
-							<span>Inco Terms</span>
-							<span>{text(plantRow?.incoTerms)}</span>
-							<span>Purch. Grp.</span>
-							<span>{text(plantRow?.purchasingGroup)}</span>
-							<span>Tax Code</span>
-							<span>{text(plantRow?.taxCode)}</span>
-							<span>Store Loc.</span>
-							<span>{text(plantRow?.storeLocation)}</span>
-						</div>
-					</Box>
-					<Box caption="For Spares">
-						<div className="cpp-pdf-kv">
-							<span>Inco Terms</span>
-							<span>{text(spareRow?.incoTerms)}</span>
-							<span>P&amp;F (%)</span>
-							<span>{text(spareRow?.pfPct)}</span>
-							<span>Tax Code</span>
-							<span>{text(spareRow?.taxCode)}</span>
-						</div>
-					</Box>
 				</div>
-
-				<div className="cpp-pdf-col-mid">
-					<Box caption="Justification">
-						<div className="cpp-pdf-justification">
-							{text(values.justification)}
-						</div>
-					</Box>
-				</div>
-
-				<div className="cpp-pdf-col-right">
-					<Box caption="Material Cost Tracker (all value in lakhs INR)">
-						<table className="cpp-pdf-table">
-							<thead>
-								<tr>
-									<th>Model</th>
-									<th>Per Machine Impact</th>
-									<th>Budgeted increase in Price (Per M/c – FY16)</th>
-									<th>Status YTD (FY19)</th>
-									<th>Budgeted Material Cost</th>
-									<th>Material Cost YTD</th>
+				<Box caption="Applicable Plant(s) (Y/N)">
+					<table className="cpp-pdf-table">
+						<tbody>
+							{plantDetails.map((plant) => (
+								<tr key={plant.code}>
+									<td>{text(plant.name)}</td>
+									<td>{text(plant.code)}</td>
+									<td>{plant.applicable ? "Yes" : "No"}</td>
 								</tr>
-							</thead>
-							<tbody>
-								{(costTracker.length
-									? costTracker
-									: [null, null, null, null]
-								).map((row, index) => (
+							))}
+						</tbody>
+					</table>
+				</Box>
+				<Box caption="Pricing Condition">
+					<table className="cpp-pdf-table">
+						<tbody>
+							{PRICING_OPTIONS.map((option) => (
+								<tr key={option.code}>
+									<td>{option.code}</td>
+									<td>
+										{option.label}
+										{option.code === selectedPricing ? " ✓" : ""}
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</Box>
+				<Box caption="For Plants">
+					<div className="cpp-pdf-kv">
+						<span>Inco Terms</span>
+						<span>{text(plantRow?.incoTerms)}</span>
+						<span>Purch. Grp.</span>
+						<span>{text(plantRow?.purchasingGroup)}</span>
+						<span>Tax Code</span>
+						<span>{text(plantRow?.taxCode)}</span>
+						<span>Store Loc.</span>
+						<span>{text(plantRow?.storeLocation)}</span>
+					</div>
+				</Box>
+				<Box caption="For Spares">
+					<div className="cpp-pdf-kv">
+						<span>Inco Terms</span>
+						<span>{text(spareRow?.incoTerms)}</span>
+						<span>P&amp;F (%)</span>
+						<span>{text(spareRow?.pfPct)}</span>
+						<span>Tax Code</span>
+						<span>{text(spareRow?.taxCode)}</span>
+					</div>
+				</Box>
+			</div>
+
+			{/* ── Justification · material cost tracker ── */}
+			<div className="cpp-pdf-row cpp-pdf-row-body">
+				<Box caption="Justification">
+					<div className="cpp-pdf-justification">
+						{text(values.justification)}
+					</div>
+				</Box>
+				<Box caption="Material Cost Tracker (all value in lakhs INR)">
+					<table className="cpp-pdf-table">
+						<thead>
+							<tr>
+								<th>Model</th>
+								<th>Per Machine Impact</th>
+								<th>Budgeted increase in Price (Per M/c – FY16)</th>
+								<th>Status YTD (FY19)</th>
+								<th>Budgeted Material Cost</th>
+								<th>Material Cost YTD</th>
+							</tr>
+						</thead>
+						<tbody>
+							{(costTracker.length ? costTracker : [null]).map(
+								(row, index) => (
 									<tr key={index}>
 										<td>{text(row?.model)}</td>
 										<td>{text(row?.perMachineImpact)}</td>
 										<td>{text(row?.budgetedIncrease)}</td>
 										<td>{text(row?.statusYtd)}</td>
 										<td>{text(row?.budgetedMaterialCost)}</td>
-										<td>{text(row?.materialCostYtd)}</td>
+										<td>{amount(row?.materialCostYtd)}</td>
 									</tr>
-								))}
-							</tbody>
-						</table>
-					</Box>
-				</div>
+								),
+							)}
+						</tbody>
+					</table>
+				</Box>
 			</div>
 
 			{/* ── Approval block ── */}
@@ -525,7 +621,7 @@ const CppPdfView = ({
 
 				<Box caption="Approving Authority" className="cpp-pdf-authority">
 					<div className="cpp-pdf-value">
-						{text(values.workflow?.authority)}
+						{text(authority)}
 					</div>
 					<div className="cpp-pdf-sign-grid cpp-pdf-sign-grid-wide">
 						<div>
@@ -550,18 +646,10 @@ const CppPdfView = ({
 							</tr>
 						</thead>
 						<tbody>
-							{[
-								"1) Annualized Impact Cal.",
-								"2) Model wise Impact Cal.",
-								"3) ZBC Calculation",
-								"4) Commodity Price Trend",
-								"5) ECN attached",
-								"6) Nesting Calculation",
-								"7) Comparative Quote./Ana.",
-							].map((item) => (
-								<tr key={item}>
-									<td>{item}</td>
-									<td>{DASH}</td>
+							{CHECKLIST_ROWS.map((item) => (
+								<tr key={item.key}>
+									<td>{item.label}</td>
+									<td>{text(checklist[item.key])}</td>
 								</tr>
 							))}
 						</tbody>

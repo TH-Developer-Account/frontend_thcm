@@ -6,9 +6,9 @@ import ActionMenu, {
 	type ActionMenuItem,
 } from "../../../components/common/ActionMenu";
 import { Badge } from "../../../components/common/Badge";
+import PendingOnStatus from "../../../components/common/PendingOnStatus";
 import type { CppListingRow, CppListingTab } from "../types/cpp.types";
 import { CPP_CATEGORY_LABELS, CPP_STATUS } from "./cpp.constants";
-import { getCondition } from "./cpp.utils";
 
 const CLARIFICATION_STATUS = "CLARIFICATION_REQUESTED";
 
@@ -56,7 +56,7 @@ export const canEditCppRow = (
 	if (status !== CPP_STATUS.DRAFT && status !== CLARIFICATION_STATUS)
 		return false;
 	if (tab === "myRequests" || tab === "drafts") return true;
-	const ownerId = (row as { initiatedById?: string }).initiatedById;
+	const ownerId = row.initiatedById;
 	return Boolean(ownerId && currentUserId && ownerId === currentUserId);
 };
 
@@ -76,111 +76,143 @@ export const getCppListingColumns = ({
 	onEdit?: (row: CppListingRow) => void;
 	tab?: CppListingTab;
 	currentUserId?: string;
-}): ColumnDef<CppListingRow>[] => [
-	{
-		accessorKey: "referenceNumber",
-		header: "Reference Number",
-		meta: {
-			headerClassName: "vendor-reference-number",
-			cellClassName: "vendor-reference-number",
-		},
-		cell: ({ row }) => (
-			<NavLink to={getCppRowRoute(row.original)} className="epc-number-link">
-				{row.original.referenceNumber}
-			</NavLink>
-		),
-	},
-	{
-		accessorKey: "category",
-		header: "Category",
-		cell: ({ row }) =>
-			clip(CPP_CATEGORY_LABELS[row.original.category] ?? row.original.category),
-	},
-	{
-		accessorKey: "condition",
-		header: "Condition",
-		cell: ({ row }) =>
-			clip(
-				getCondition(row.original.condition)?.label ?? row.original.condition,
+}): ColumnDef<CppListingRow>[] => {
+	const columns: ColumnDef<CppListingRow>[] = [
+		{
+			accessorKey: "referenceNumber",
+			header: "Reference Number",
+			meta: {
+				headerClassName: "vendor-reference-number",
+				cellClassName: "vendor-reference-number",
+			},
+			cell: ({ row }) => (
+				<NavLink to={getCppRowRoute(row.original)} className="epc-number-link">
+					{row.original.referenceNumber}
+				</NavLink>
 			),
-	},
-	{
-		accessorKey: "plant",
-		header: "Plant",
-		cell: ({ row }) => (
-			<span>
-				{row.original.plant}
-				{row.original.isSpare && row.original.plant !== "Spares"
-					? " (Spares)"
-					: ""}
-			</span>
-		),
-	},
-	{
-		accessorKey: "supplier",
-		header: "Recommended Supplier",
-		cell: ({ row }) => clip(row.original.supplier),
-	},
-	{
-		accessorKey: "amount",
-		header: "Amount",
-		cell: ({ row }) => (
-			<span title={row.original.amountLabel}>
-				{formatCurrency(row.original.amount)}
-				{row.original.amount !== null ? (
-					<span className="ml-1 text-xs text-slate-400">
-						{row.original.amountLabel}
-					</span>
-				) : null}
-			</span>
-		),
-	},
-	{
-		accessorKey: "status",
-		header: "Status",
-		cell: ({ row }) => <Badge status={row.original.status} />,
-	},
-	{
-		accessorKey: "updatedAt",
-		header: "Last Updated",
-		cell: ({ row }) => formatDate(row.original.updatedAt),
-	},
-	{
-		id: "actions",
-		header: "Actions",
-		enableSorting: false,
-		size: 80,
-		cell: ({ row }) => {
-			const record = row.original;
-			const showEdit =
-				Boolean(onEdit) && canEditCppRow(record, { tab, currentUserId });
-
-			const actions: ActionMenuItem<CppListingRow>[] = [
-				{
-					id: "view",
-					label: "View",
-					Icon: Eye,
-					onClick: (r) => onView(r),
-				},
-				{
-					id: "edit",
-					label:
-						String(record.status) === CLARIFICATION_STATUS
-							? "Edit for clarification"
-							: "Edit",
-					Icon: Pencil,
-					onClick: (r) => onEdit?.(r),
-					hidden: !showEdit,
-				},
-			];
-
-			return (
-				<ActionMenu<CppListingRow>
-					row={record}
-					actions={actions}
-					ariaLabel={`Actions for ${record.referenceNumber}`}
-				/>
-			);
 		},
-	},
-];
+		{
+			accessorKey: "category",
+			header: "Category",
+			// Wider than the other text columns: labels like "Electrical Electronics
+			// Rubber Hoses and Pipes (ERH)" were cut short. Width rule in cpp.css.
+			size: 320,
+			meta: {
+				headerClassName: "cpp-col-category",
+				cellClassName: "cpp-col-category",
+			},
+			cell: ({ row }) =>
+				clip(
+					CPP_CATEGORY_LABELS[row.original.category] ?? row.original.category,
+					"max-w-80",
+				),
+		},
+		// {
+		// 	accessorKey: "condition",
+		// 	header: "Condition",
+		// 	cell: ({ row }) =>
+		// 		clip(
+		// 			getCondition(row.original.condition)?.label ?? row.original.condition,
+		// 		),
+		// },
+		{
+			accessorKey: "plant",
+			header: "Plant",
+			cell: ({ row }) => (
+				<span>
+					{row.original.plant}
+					{row.original.isSpare && row.original.plant !== "Spares"
+						? " (Spares)"
+						: ""}
+				</span>
+			),
+		},
+		// {
+		// 	accessorKey: "supplier",
+		// 	header: "Recommended Supplier",
+		// 	cell: ({ row }) => clip(row.original.supplier),
+		// },
+		{
+			accessorKey: "amount",
+			header: "Amount",
+			cell: ({ row }) => (
+				<span title={row.original.amountLabel}>
+					{formatCurrency(row.original.amount)}
+					{row.original.amount !== null ? (
+						<span className="ml-1 text-xs text-slate-400">
+							{/* {row.original.amountLabel} */}
+						</span>
+					) : null}
+				</span>
+			),
+		},
+		// {
+		// 	accessorKey: "status",
+		// 	header: "Status",
+		// 	cell: ({ row }) => <Badge status={row.original.status} />,
+		// },
+		{
+			id: "pendingOn",
+			header: "Status",
+			enableSorting: false,
+			// Drafts tab: plain status badge ("Draft"); a draft has no approver yet.
+			// Other tabs: same component as the vendor listing: "Pending on <approver>"
+			// (+N popover when several), "Pending on Proposer" for a clarification,
+			// otherwise the status label. pendingOn comes from the list API (resolveCppPendingOn).
+			cell: ({ row }) =>
+				tab === "drafts" ? (
+					<Badge status={row.original.status} />
+				) : (
+					<PendingOnStatus
+						pendingOn={row.original.pendingOn}
+						status={row.original.status}
+					/>
+				),
+		},
+		{
+			accessorKey: "updatedAt",
+			header: "Last Updated",
+			cell: ({ row }) => formatDate(row.original.updatedAt),
+		},
+		{
+			id: "actions",
+			header: "Actions",
+			enableSorting: false,
+			size: 80,
+			cell: ({ row }) => {
+				const record = row.original;
+				const showEdit =
+					Boolean(onEdit) && canEditCppRow(record, { tab, currentUserId });
+
+				const actions: ActionMenuItem<CppListingRow>[] = [
+					{
+						id: "view",
+						label: "View",
+						Icon: Eye,
+						onClick: (r) => onView(r),
+					},
+					{
+						id: "edit",
+						label:
+							String(record.status) === CLARIFICATION_STATUS
+								? "Edit for clarification"
+								: "Edit",
+						Icon: Pencil,
+						onClick: (r) => onEdit?.(r),
+						hidden: !showEdit,
+					},
+				];
+
+				return (
+					<ActionMenu<CppListingRow>
+						row={record}
+						actions={actions}
+						ariaLabel={`Actions for ${record.referenceNumber}`}
+					/>
+				);
+			},
+		},
+	];
+
+	return columns;
+};

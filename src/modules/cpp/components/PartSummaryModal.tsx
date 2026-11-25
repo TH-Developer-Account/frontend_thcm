@@ -1,10 +1,11 @@
 // components/PartSummaryModal.tsx — "Summary / part info" for the purchasing step.
 // Shows the expected format of the summary sheet, the blank template to fill in, and
 // (in edit mode) the upload. After a save the modal shows how many part rows the server
-// read from the sheet.
+// read from the sheet, and the saved sheet can be downloaded (edit and view mode).
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 
+import { Alert } from "../../../components/common/Alert";
 import Button from "../../../components/common/Button";
 import { Modal } from "../../../components/common/Modal";
 import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadField";
@@ -13,6 +14,7 @@ import { useToast } from "../../../context/Auth/AuthContext";
 import { ServerAxios } from "../../../services/ServerAxios";
 import { getApiErrorMessage } from "../../../utils/apiError.helper";
 import type { CppFormValues } from "../types/cpp.types";
+import { canDownload, downloadCppFile } from "../utils/cpp.files";
 import { useCppReadOnly, useFieldError } from "./CppFields";
 import { Download } from "lucide-react";
 
@@ -101,6 +103,20 @@ const PartSummaryModal = ({
 	// Only a saved sheet has a row count; a file picked but not yet saved does not.
 	const rowCount =
 		current && !current.isLocal ? current.partRowCount : undefined;
+	const savedFile = current && !current.isLocal && canDownload(current) ? current : null;
+	const downloadSaved = savedFile ? (
+		<Button
+			type="button"
+			text="Download uploaded sheet"
+			size="sm"
+			appearance="standard"
+			variant="outline"
+			Icon={Download}
+			onClick={() =>
+				void downloadCppFile({ name: savedFile.name, url: savedFile.url })
+			}
+		/>
+	) : null;
 	const rowCountText =
 		current && current.isLocal
 			? "The rows are read when you save the request."
@@ -174,12 +190,7 @@ const PartSummaryModal = ({
 				)}
 
 				{error && !readOnly ? (
-					<div
-						role="alert"
-						className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800"
-					>
-						{error}
-					</div>
+					<Alert variant="error" title="Summary sheet" description={error} />
 				) : null}
 
 				<div className="overflow-x-auto rounded-md border border-slate-200 scrollbar-sleek">
@@ -211,7 +222,7 @@ const PartSummaryModal = ({
 						</thead>
 						<tbody>
 							<tr>
-								<td colSpan={columnCount} className="px-3 py-2 text-slate-500">
+								<td colSpan={columnCount} className="px-3 py-2 text-fg-muted">
 									Data rows go below the sub-header, one row per part and plant.
 								</td>
 							</tr>
@@ -231,6 +242,7 @@ const PartSummaryModal = ({
 						{rowCountText ? (
 							<p className="text-slate-600">{rowCountText}</p>
 						) : null}
+						{downloadSaved ? <div className="mt-2">{downloadSaved}</div> : null}
 					</div>
 				) : (
 					<div className="flex flex-col gap-1">
@@ -252,6 +264,7 @@ const PartSummaryModal = ({
 						{rowCountText ? (
 							<p className="text-sm text-slate-600">{rowCountText}</p>
 						) : null}
+						{downloadSaved ? <div>{downloadSaved}</div> : null}
 					</div>
 				)}
 

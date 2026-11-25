@@ -108,7 +108,17 @@
 	}
 
 	.cpp-view-main {
+		display: flex;
 		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-3);
+	}
+
+	/* Approver decision card, top of the side column */
+	.cpp-view-decision {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
 	}
 
 	/* ---------------- Left tab nav ---------------- */
@@ -698,6 +708,10 @@
 		padding: 0;
 	}
 }
+.cpp-col-category {
+	min-width: 18rem;
+	width: 20rem;
+}
 /* =========================================================
    CPP NON-EDITABLE FIELDS (utils/cpp.locked.css)
    Fields a viewer cannot change keep their text bright and bold.
@@ -706,10 +720,6 @@
    Imported by pages/CppViewPage.tsx.
 ========================================================= */
 
-@layer components {
-	.cpp-view-main .form-readonly-value {
-		background-color: var(--color-bg-surface);
-		color: var(--color-text-primary);
-		font-weight: var(--font-weight-medium);
-	}
-}
+/* Removed in design-system batch 5: the shared .form-readonly-value now
+   sets strong primary text on the read-only surface for every view screen,
+   so CPP no longer needs its own white override. */

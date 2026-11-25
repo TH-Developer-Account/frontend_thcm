@@ -3,29 +3,24 @@
 // Save draft:  POST /cpp (first save) or PUT /cpp/:id
 //              -> upload new files / delete removed files
 //              -> re-fetch the detail, so the form shows what the server stored
-//                 (attachments, derived fields).
-// Submit:      validates every step, saves, then calls POST /cpp/:id/submit
-//              (the server picks the approval band and starts the workflow).
+//                 (attachments, summary sheet parts, derived fields).
+// Next:        validates ONLY the current step (utils/cpp.steps.ts), shows the
+//              inline errors and focuses the first invalid field of the step.
+// Submit:      validates every step. On failure it opens the step that holds the
+//              FIRST invalid field (step order, then screen order) and focuses
+//              that field. Otherwise saves, then POST /cpp/:id/submit.
 // Resubmit:    same page, opened on a CLARIFICATION_REQUESTED request by the
-//              proposer. Every step is editable; "Resubmit" validates every step,
-//              saves (PUT /cpp/:id), then calls POST /cpp/:id/resubmit (the server
-//              picks the band again from the edited data and restarts the workflow).
+//              proposer. "Resubmit" validates, saves (PUT /cpp/:id), then calls
+//              POST /cpp/:id/resubmit (the server picks the band again).
 //
 // Who may open this page: only the proposer, and only for a draft or a request
-// sent back for clarification (utils/cpp.permissions.ts). Anyone else is sent to
-// the view page.
+// sent back for clarification (helpers/cpp.permissions.ts). Anyone else is sent
+// to the view page.
 //
 // Steps are dynamic: the Amortisation step is only there when the pricing
-// condition is PB50 (getCppSteps). The pricing condition is picked in step 1,
-// so the steps after it never change under the user's feet.
+// condition is PB50 (getCppSteps).
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-	useForm,
-	useWatch,
-	type FieldErrors,
-	type FieldPath,
-	type Resolver,
-} from "react-hook-form";
+import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
@@ -39,12 +34,7 @@ import {
 	formToPayload,
 	pendingFileChanges,
 } from "../helpers/cpp.mapper";
-import type {
-	CppDetail,
-	CppFormValues,
-	CppStep,
-	CppStepKey,
-} from "../types/cpp.types";
+import type { CppDetail, CppFormValues, CppStepKey } from "../types/cpp.types";
 import { cppKeys, useCppDetail, useCppMutations } from "./useCppMutations";
 import {
 	useCppPermissions,
@@ -53,6 +43,12 @@ import {
 import { cppSchema } from "../utils/cpp.schema";
 import { CPP_CLARIFICATION_STATUS } from "../helpers/cpp.permissions";
 import { getCppSteps, getDefaultValues } from "../utils/cpp.utils";
+import {
+	firstErrorPath,
+	focusField,
+	stepOfPath,
+	stepTriggerPaths,
+} from "../utils/cpp.steps";
 
 export const CPP_LISTING_PATH = "/cpp/listing";
 
@@ -62,71 +58,8 @@ type ResubmitResponse = {
 	data: { workflowId: string; ruleId: string; stages: number };
 };
 
-// Fields each step owns — "Next" validates exactly these.
-const STEP_FIELDS: Record<CppStepKey, FieldPath<CppFormValues>[]> = {
-	basic: [
-		"category",
-		"plant",
-		"condition",
-		"materialType",
-		"effects",
-		"reason",
-		"justification",
-		"priceType",
-		"workflow.models",
-		"workflow.pricingCondition",
-	],
-	purchasing: [
-		"suppliers.existing.name",
-		"suppliers.recommended.name",
-		"purchasingFile",
-		"approvalValues.partValue",
-		"approvalValues.variationPct",
-		"approvalValues.amount",
-	],
-	amortisation: ["amortisation"],
-	// Optional tables — only number format is checked.
-	volumes: ["volumes", "perMachineImpact", "costTracker"],
-	master: ["masterData.plantDetails"],
-	other: [],
-	attachments: [],
-	workflow: [],
-};
-
-// Which step owns which top-level form key (for jump-to-first-error on submit).
-const STEP_FOR_KEY: Record<string, CppStepKey> = {
-	category: "basic",
-	plant: "basic",
-	condition: "basic",
-	materialType: "basic",
-	effects: "basic",
-	reason: "basic",
-	justification: "basic",
-	priceType: "basic",
-	workflow: "basic",
-	suppliers: "purchasing",
-	purchasingFile: "purchasing",
-	approvalValues: "purchasing",
-	amortisation: "amortisation",
-	volumes: "volumes",
-	perMachineImpact: "volumes",
-	costTracker: "volumes",
-	masterData: "master",
-	other: "other",
-	attachments: "attachments",
-};
-
-export const getStepsWithErrors = (
-	errors: FieldErrors<CppFormValues>,
-	steps: CppStep[],
-): CppStepKey[] => {
-	const found = new Set<CppStepKey>();
-	Object.keys(errors).forEach((key) => {
-		const step = STEP_FOR_KEY[key];
-		if (step) found.add(step);
-	});
-	return steps.map((step) => step.key).filter((key) => found.has(key));
-};
+/** Wait for the step to render (and the summary to settle) before focusing. */
+const FOCUS_DELAY_MS = 120;
 
 const scrollToTop = () => {
 	if (typeof window !== "undefined")
@@ -146,9 +79,7 @@ export const useCppRequestForm = () => {
 		deleteAttachmentMutation,
 	} = useCppMutations();
 
-	/* ---- resubmit: restart the SAME workflow at stage 1 after a clarification ----
-	 * The server re-picks the band and approvers from the saved data, so no
-	 * workflow id or template is sent from the browser. */
+	/* ---- resubmit: restart the SAME workflow at stage 1 after a clarification ---- */
 	const resubmitMutation = useMutation({
 		mutationFn: async (id: string) => {
 			const { data } = await ServerAxios.post<ResubmitResponse>(
@@ -195,6 +126,10 @@ export const useCppRequestForm = () => {
 	const [busy, setBusy] = useState(false);
 	/** True while editing a request the approver sent back for clarification. */
 	const [isResubmit, setIsResubmit] = useState(false);
+	/** Field to focus once its step is on screen. */
+	const [focusTarget, setFocusTarget] = useState<{ path: string } | null>(
+		null,
+	);
 
 	/** What the server holds right now — needed for the file diff. */
 	const serverRef = useRef<CppDetail | null>(null);
@@ -205,6 +140,8 @@ export const useCppRequestForm = () => {
 		resolver: zodResolver(cppSchema) as unknown as Resolver<CppFormValues>,
 		mode: "onSubmit",
 		reValidateMode: "onChange",
+		// Focus is handled by focusTarget below, after the right step renders.
+		shouldFocusError: false,
 	});
 
 	/* ---- steps follow the pricing condition (PB50 adds Amortisation) ---- */
@@ -253,15 +190,33 @@ export const useCppRequestForm = () => {
 	const isFirst = safeIndex === 0;
 	const isLast = safeIndex === steps.length - 1;
 
+	/* ---- focus the requested field once its step has rendered ---- */
+	useEffect(() => {
+		if (!focusTarget) return;
+		const timer = window.setTimeout(() => {
+			if (!focusField(focusTarget.path)) scrollToTop();
+			setFocusTarget(null);
+		}, FOCUS_DELAY_MS);
+		return () => window.clearTimeout(timer);
+	}, [focusTarget, step.key]);
+
 	const goToStep = useCallback(
 		(key: CppStepKey) => {
 			const index = steps.findIndex((item) => item.key === key);
-			if (index >= 0) {
-				setStepIndex(index);
-				scrollToTop();
-			}
+			if (index >= 0) setStepIndex(index);
+			return index >= 0;
 		},
 		[steps],
+	);
+
+	/** Opens the step that owns `path` and focuses the field. */
+	const showField = useCallback(
+		(path: string) => {
+			const key = stepOfPath(path);
+			if (key) goToStep(key);
+			setFocusTarget({ path });
+		},
+		[goToStep],
 	);
 
 	const goBack = useCallback(() => {
@@ -270,9 +225,13 @@ export const useCppRequestForm = () => {
 	}, [steps.length]);
 
 	const goNext = useCallback(async () => {
-		const fields = STEP_FIELDS[step.key];
-		const valid = fields.length ? await form.trigger(fields) : true;
+		const fields = stepTriggerPaths(step.key);
+		const valid = fields.length
+			? await form.trigger(fields, { shouldFocus: false })
+			: true;
 		if (!valid) {
+			const path = firstErrorPath(form.formState.errors, steps, step.key);
+			if (path) setFocusTarget({ path });
 			showToast({
 				type: "error",
 				title: "Fix the highlighted fields",
@@ -284,7 +243,7 @@ export const useCppRequestForm = () => {
 			Math.min(Math.min(index, steps.length - 1) + 1, steps.length - 1),
 		);
 		scrollToTop();
-	}, [form, showToast, step.key, steps.length]);
+	}, [form, showToast, step.key, steps]);
 
 	/**
 	 * Saves everything and returns the fresh server copy (or null on failure —
@@ -308,7 +267,7 @@ export const useCppRequestForm = () => {
 				}
 
 				// Files: one request each; re-read the detail at the end so the form shows
-				// exactly what the server stored.
+				// exactly what the server stored (incl. the parts read from the summary sheet).
 				let filesChanged = false;
 				for (const change of pendingFileChanges(values, current.attachments)) {
 					filesChanged = true;
@@ -377,9 +336,6 @@ export const useCppRequestForm = () => {
 				if (!saved) return;
 
 				// Clarification: the changes are saved; now restart the approval.
-				// resubmit() shows its own success / error toast and refreshes
-				// the detail and listing. On failure the user stays here with the
-				// changes saved and can press Resubmit again.
 				if (isResubmit) {
 					const ok = await resubmit(saved.id);
 					if (ok) navigate(`/cpp/${saved.id}/view`, { replace: true });
@@ -412,8 +368,8 @@ export const useCppRequestForm = () => {
 			}
 		},
 		(errors) => {
-			const firstStep = getStepsWithErrors(errors, steps)[0];
-			if (firstStep) goToStep(firstStep);
+			const path = firstErrorPath(errors, steps);
+			if (path) showField(path);
 			showToast({
 				type: "error",
 				title: "Fix the highlighted fields",
@@ -449,6 +405,8 @@ export const useCppRequestForm = () => {
 		referenceNumber: serverRef.current?.referenceNumber ?? null,
 		goNext,
 		goBack,
+		goToStep,
+		showField,
 		saveDraft,
 		submit,
 		cancel,

@@ -5,6 +5,12 @@
 // read-only: the saved request is loaded into a form (detailToForm) and the
 // tabs run in view mode (CppReadOnlyProvider).
 // Amortisation is listed only when the pricing condition is the amortised one.
+//
+// Read-only form: <CppViewForm> creates the form WITH the saved values as its
+// defaults and is re-mounted (key) whenever the detail is re-fetched. The old
+// `useForm({ values })` filled the form in an effect AFTER the tabs mounted, so
+// useWatch in a tab opened later could read the empty defaults (Material Cost
+// Tracker showed "No tracker rows", other tabs showed "--").
 import { useMemo, useState, type ReactNode } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
@@ -22,6 +28,7 @@ import ActionMenu, {
 	type ActionMenuItem,
 } from "../../../components/common/ActionMenu";
 import Button from "../../../components/common/Button";
+import Badge from "../../../components/common/Badge";
 import Card from "../../../components/common/Card";
 import ApprovalActionsBar from "../../../components/ui/ApprovalActionsBar";
 import { CardEmpty } from "../../../components/ui/CardSkeleton";
@@ -52,7 +59,7 @@ import CppWorkflowTable from "../components/CppWorkflowTable";
 import { detailToForm } from "../helpers/cpp.mapper";
 import { useCppDetail } from "../hooks/useCppMutations";
 import type { CppDetail, CppFormValues } from "../types/cpp.types";
-import { AMORTISED_CONDITION, getDefaultValues } from "../utils/cpp.utils";
+import { AMORTISED_CONDITION } from "../utils/cpp.utils";
 import AmortisationTab from "../tabs/AmortisationTab";
 import AttachmentsTab from "../tabs/AttachmentsTab";
 import BasicDetailsTab from "../tabs/BasicDetailsTab";
@@ -110,6 +117,24 @@ type CppViewDetail = Omit<CppDetail, "initiatedBy"> & {
 	createdBy?: MentionableUserInput | null;
 };
 
+/* ---------------------------- read-only form ----------------------------- */
+
+/** Holds the saved request as a read-only form. Re-mount (key) to load new data. */
+const CppViewForm = ({
+	values,
+	children,
+}: {
+	values: CppFormValues;
+	children: ReactNode;
+}) => {
+	const form = useForm<CppFormValues>({ defaultValues: values });
+	return (
+		<FormProvider {...form}>
+			<CppReadOnlyProvider value>{children}</CppReadOnlyProvider>
+		</FormProvider>
+	);
+};
+
 /* --------------------------------- tabs ---------------------------------- */
 
 type CppViewTab =
@@ -130,7 +155,8 @@ const CppViewPage = () => {
 	const { user } = useAuth();
 	const { showToast } = useToast();
 	const { id = "" } = useParams<{ id: string }>();
-	const { data, isLoading, isError, error, refetch } = useCppDetail(id);
+	const { data, isLoading, isError, error, refetch, dataUpdatedAt } =
+		useCppDetail(id);
 	const cpp = data as unknown as CppViewDetail | undefined;
 
 	const { exportAs, exportBusy } = useCppExport(id, cpp?.referenceNumber);
@@ -146,26 +172,6 @@ const CppViewPage = () => {
 		() => (cpp ? detailToForm(cpp as unknown as CppDetail) : undefined),
 		[cpp],
 	);
-
-	// TEMP DEBUG — remove after checking
-	console.log(
-		"[CPP debug]",
-		JSON.stringify(
-			{
-				rawBasicData: cpp?.sections?.find((s) => s.key === "basic")?.data,
-				initiationDate: formValues?.initiationDate,
-				suppliers: formValues?.suppliers,
-				approvalValues: formValues?.approvalValues,
-			},
-			null,
-			2,
-		),
-	);
-
-	const viewForm = useForm<CppFormValues>({
-		defaultValues: getDefaultValues(),
-		values: formValues,
-	});
 
 	const activeWorkflow = cpp?.activeWorkflow ?? null;
 	const attachments = useMemo(() => cpp?.attachments ?? [], [cpp]);
@@ -306,12 +312,25 @@ const CppViewPage = () => {
 	const header = (
 		<PageHeader
 			headerText={cpp ? `CPP Request ${cpp.referenceNumber}` : "CPP Request"}
+			status={cpp ? <Badge status={String(cpp.status)} withIcon /> : undefined}
+			// metaItems={
+			// 	cpp
+			// 		? [
+			// 				{
+			// 					label: "Initiated by",
+			// 					value: cpp.initiatedBy?.name ?? cpp.initiatedBy?.email,
+			// 				},
+			// 				{ label: "Initiation date", value: formValues?.initiationDate },
+			// 				{ label: "Plant", value: cpp.plant },
+			// 			]
+			// 		: undefined
+			// }
 			navigation={{
 				variant: "breadcrumbs",
 				ariaLabel: "CPP request location",
 				breadcrumbs: [
 					{ label: "Home Screen", href: "/" },
-					{ label: "Contract & Price Panel Committe", href: LISTING_URL },
+					{ label: "Contract & Price Panel Committee", href: LISTING_URL },
 					{ label: cpp?.referenceNumber ?? "CPP Request" },
 				],
 				separator: "›",
@@ -439,10 +458,13 @@ const CppViewPage = () => {
 					<div className="flex flex-col gap-6">
 						{workflowParts.map(([key, stages]) => (
 							<section key={key} aria-label={PART_TITLES[key] ?? key}>
-								<h3 className="mb-2 text-sm font-semibold text-slate-700">
+								<h3 className="mb-2 text-base font-semibold text-fg">
 									{PART_TITLES[key] ?? key}
 								</h3>
-								<CppWorkflowTable stages={stages} />
+								<CppWorkflowTable
+									stages={stages}
+									currentStageId={workflowData.currentStage?.id ?? null}
+								/>
 							</section>
 						))}
 					</div>
@@ -478,8 +500,8 @@ const CppViewPage = () => {
 	/* -------------------------------- render ------------------------------ */
 
 	const isSubmitted = cpp.status !== "DRAFT";
-	// const showSideColumn = isSubmitted;
-
+	/* The document sheet is wide, so it gets the full width: no side column
+	   on that tab. Decision + audit trail sit in the side column elsewhere. */
 	const isDocumentTab = currentTab === "document";
 	const showSideColumn = isSubmitted && !isDocumentTab;
 
@@ -519,10 +541,15 @@ const CppViewPage = () => {
 					</Card>
 
 					<div className="cpp-view-main min-w-0">
-						<Card padding="default">
-							<FormProvider {...viewForm}>
-								<CppReadOnlyProvider value>{renderTab()}</CppReadOnlyProvider>
-							</FormProvider>
+						<Card padding="spacious">
+							{formValues ? (
+								<CppViewForm
+									key={`${cpp.id}:${dataUpdatedAt}`}
+									values={formValues}
+								>
+									{renderTab()}
+								</CppViewForm>
+							) : null}
 						</Card>
 					</div>
 
@@ -533,24 +560,18 @@ const CppViewPage = () => {
 						>
 							{/* Approver only, and only while they can act on this stage. */}
 							{showDecisionCard ? (
-								<>
-									<span className="cpp-view-awaiting">
-										Awaiting your approval
-									</span>
-									{/* // In the main column, above the tab card: */}
-									{isDocumentTab && showDecisionCard ? (
-										<ApprovalActionsBar
-											variant="approver"
-											layout="card"
-											showBack={false}
-											canApprove={workflowData.canActNow}
-											canClarify={workflowData.canActNow}
-											onApprove={(reason) => runStageAction("approve", reason)}
-											onClarify={(reason) => runStageAction("clarify", reason)}
-											loading={actionBusy}
-										/>
-									) : null}
-								</>
+								<div className="cpp-view-decision">
+									<ApprovalActionsBar
+										variant="approver"
+										layout="card"
+										showBack={false}
+										canApprove={workflowData.canActNow}
+										canClarify={workflowData.canActNow}
+										onApprove={(reason) => runStageAction("approve", reason)}
+										onClarify={(reason) => runStageAction("clarify", reason)}
+										loading={actionBusy}
+									/>
+								</div>
 							) : null}
 
 							<Card

@@ -8,7 +8,12 @@ import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
 import Button from "../../../components/common/Button";
 import Card from "../../../components/common/Card";
-import { RhfInput, RhfSelect, toOptions } from "../components/CppFields";
+import {
+	RhfAmountInput,
+	RhfInput,
+	RhfSelect,
+	toOptions,
+} from "../components/CppFields";
 import type { CppFormValues } from "../types/cpp.types";
 import {
 	CPP_MAX_TABLE_ROWS,
@@ -215,20 +220,18 @@ const PerMachineTable = () => {
 									/>
 								</td>
 								<td className="px-1.5 py-1.5">
-									<RhfInput
+									<RhfAmountInput
 										cell
 										name={`perMachineImpact.${index}.withAmort`}
 										aria-label={`Impact with amortisation row ${index + 1}`}
-										inputMode="decimal"
 										className="w-full min-w-[130px] text-right"
 									/>
 								</td>
 								<td className="px-1.5 py-1.5">
-									<RhfInput
+									<RhfAmountInput
 										cell
 										name={`perMachineImpact.${index}.withoutAmort`}
 										aria-label={`Impact without amortisation row ${index + 1}`}
-										inputMode="decimal"
 										className="w-full min-w-[130px] text-right"
 									/>
 								</td>
@@ -303,11 +306,11 @@ const CostTrackerTable = () => {
 								</td>
 								{TRACKER_COLUMNS.map((column) => (
 									<td key={column.key} className="px-1.5 py-1.5">
-										<RhfInput
+										<RhfAmountInput
 											cell
+											words="none"
 											name={`costTracker.${index}.${column.key}`}
 											aria-label={`${column.label} row ${index + 1}`}
-											inputMode="decimal"
 											className="w-full min-w-[120px] text-right"
 										/>
 									</td>
@@ -336,7 +339,7 @@ const CostTrackerTable = () => {
 /* ------------------------------------ step ----------------------------------- */
 
 const VolumesImpactTab = () => (
-	<div className="flex flex-col gap-4">
+	<div className="flex flex-col gap-3">
 		<VolumesTable />
 		<PerMachineTable />
 		<CostTrackerTable />

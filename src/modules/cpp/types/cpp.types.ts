@@ -1,4 +1,5 @@
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
+import type { PendingOn } from "../../../utils/statusAlert.helper";
 
 /**
  * Status is a plain string end to end (the DB column is a String, not an enum),
@@ -92,6 +93,31 @@ export type CppPartRow = {
 	qtyReceived: string;
 	qtyRemaining: string;
 	qtyAnnual: string;
+};
+
+/**
+ * One data row of the uploaded summary sheet (part info), as the server read it.
+ * Same columns as the sheet (see PartSummaryModal FORMAT_GROUPS). Read-only in the
+ * form: it comes back from GET /cpp/:id as `parts` and is never sent in a save.
+ */
+export type CppSummaryPart = {
+	slNo: string;
+	plant: string;
+	model: string;
+	partNo: string;
+	description: string;
+	uom: string;
+	existingPrice: string;
+	newPrice: string;
+	difference: string;
+	currentPo: string;
+	effectiveDate: string;
+	receivedQty: string;
+	actualImpact: string;
+	abpVolume: string;
+	qtyPerMachine: string;
+	annualisedImpact: string;
+	changePct: string;
 };
 
 /* --- plant / spares master data ("For Plants" / "For Spares" in the format) --- */
@@ -197,12 +223,21 @@ export type CppFormValues = {
 	};
 	/** The attached purchasing-details Excel. Not parsed or stored by the app. */
 	purchasingFile: FileUploadValue | null;
-	/** Typed by the requester; only the values the chosen condition needs. */
+	/**
+	 * Raw numbers (no commas) — exactly what is sent to the API.
+	 * `partValuePart` / `amountPart` hold the summary-sheet part the value was
+	 * picked from (partKey: "PLANT::PARTNO"), blank when typed by hand.
+	 */
 	approvalValues: {
 		partValue: string;
 		variationPct: string;
 		amount: string;
+		partValuePart: string;
+		amountPart: string;
 	};
+
+	/** Summary sheet rows read by the server. Read-only; never sent in a save. */
+	summaryParts: CppSummaryPart[];
 
 	/* --- amortisation step (PB50 only) --- */
 	amortisation: CppAmortRow[];
@@ -283,6 +318,13 @@ export type CppSection = {
 	data: Record<string, unknown>;
 };
 
+/** The person who created the request (GET /cpp/:id and the listing). */
+export type CppInitiator = {
+	id: string;
+	name: string | null;
+	email: string | null;
+};
+
 export type CppListItem = {
 	id: string;
 	referenceNumber: string;
@@ -302,6 +344,9 @@ export type CppListItem = {
 	submittedAt: string | null;
 	created_at: string;
 	updated_at: string;
+	initiatedById?: string | null;
+	/** Who has to act now (listing only). Same shape as the other modules. */
+	pendingOn?: PendingOn | null;
 };
 
 export type CppListingRow = {
@@ -318,6 +363,8 @@ export type CppListingRow = {
 	amountLabel: string;
 	isSpare: boolean;
 	updatedAt: string;
+	initiatedById?: string | null;
+	pendingOn: PendingOn | null;
 };
 
 export type CppListingParams = {
@@ -361,6 +408,9 @@ export type CppDetail = CppListItem & {
 	/** Always every section, in tab order, every field present. */
 	sections: CppSection[];
 	attachments: CppAttachment[];
+	initiatedBy?: CppInitiator | null;
+	/** Rows of the saved summary sheet. Absent until the sheet is uploaded. */
+	parts?: Array<Partial<Record<keyof CppSummaryPart, string | number | null>>>;
 };
 
 /** Body of POST /cpp and PUT /cpp/:id. */

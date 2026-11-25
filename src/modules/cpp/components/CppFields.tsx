@@ -6,7 +6,17 @@
 // view mode (ReadOnlyField), so tabs never need a second, view-only layout.
 // Every control in a CPP tab must go through these wrappers (or honour
 // useCppReadOnly), so a raw input never stays editable for a viewer.
-import { createContext, useContext, type ComponentProps } from "react";
+//
+// Every wrapper renders inside a <FieldAnchor name>, a `display: contents` div
+// carrying data-cpp-field. utils/cpp.steps.ts → focusField() uses it to scroll
+// to and focus the first invalid field after "Next" or "Submit".
+import {
+	createContext,
+	useContext,
+	useState,
+	type ComponentProps,
+	type ReactNode,
+} from "react";
 import { Controller, get, useFormContext, useWatch } from "react-hook-form";
 
 import Button from "../../../components/common/Button";
@@ -16,6 +26,11 @@ import MultiSelectInput from "../../../components/forms/MultiSelectInput";
 import Radio from "../../../components/forms/Radio";
 import ReadOnlyField from "../../../components/forms/ReadOnlyField";
 import SelectInput from "../../../components/forms/SelectInput";
+import {
+	amountInWords,
+	cleanAmountInput,
+	formatAmountText,
+} from "../utils/cpp.amount";
 
 const CppReadOnlyContext = createContext(false);
 
@@ -33,12 +48,25 @@ export const useFieldError = (name: string): string | undefined => {
 	return error?.message;
 };
 
+/** Marks where a field is drawn, so a failed check can scroll to and focus it. */
+export const FieldAnchor = ({
+	name,
+	children,
+}: {
+	name: string;
+	children: ReactNode;
+}) => (
+	<div data-cpp-field={name} className="contents">
+		{children}
+	</div>
+);
+
 type RhfInputProps = Omit<
 	ComponentProps<typeof FormInput>,
 	"name" | "error"
 > & {
 	name: string;
-	/** Table-cell mode: red border only, no message line under the input. */
+	/** Table-cell mode: compact, the message sits right under the cell. */
 	cell?: boolean;
 };
 
@@ -52,25 +80,114 @@ export const RhfInput = ({ name, cell, ...props }: RhfInputProps) => {
 	const current = useWatch({ control, name });
 
 	return (
-		<FormInput
-			{...props}
-			mode={readOnly ? "view" : props.mode}
-			// type="date" defaults min to today in FormInput; CPP needs past dates too.
-			{...(props.type === "date" ? { min: props.min ?? "" } : {})}
-			{...(readOnly
-				? {
-						value:
-							current === null || current === undefined ? "" : String(current),
-					}
-				: register(name))}
-			error={readOnly || cell ? undefined : message}
-			className={[
-				props.className,
-				cell && message && !readOnly ? "form-input-error" : "",
-			]
-				.filter(Boolean)
-				.join(" ")}
-		/>
+		<FieldAnchor name={name}>
+			<FormInput
+				{...props}
+				mode={readOnly ? "view" : props.mode}
+				// type="date" defaults min to today in FormInput; CPP needs past dates too.
+				{...(props.type === "date" ? { min: props.min ?? "" } : {})}
+				{...(readOnly
+					? {
+							value:
+								current === null || current === undefined ? "" : String(current),
+						}
+					: register(name))}
+				error={readOnly ? undefined : message}
+				className={[props.className, cell ? "cpp-cell-input" : ""]
+					.filter(Boolean)
+					.join(" ")}
+			/>
+		</FieldAnchor>
+	);
+};
+
+type RhfAmountInputProps = Omit<
+	RhfInputProps,
+	"type" | "inputMode" | "value" | "onChange"
+> & {
+	/**
+	 * Where the amount in words goes: "below" the field (default), as a
+	 * "tooltip" (default for table cells), or "none" — use "none" for values that
+	 * are not plain rupees (e.g. ₹ lakhs), where words would read wrong.
+	 */
+	words?: "below" | "tooltip" | "none";
+};
+
+/**
+ * Money input. The form value is the raw number ("1250000.5") — that is what the
+ * API gets. While typing the raw text is shown; on blur it shows Indian commas
+ * ("12,50,000.5"). The amount in words sits under the field.
+ */
+export const RhfAmountInput = ({
+	name,
+	cell,
+	words = cell ? "tooltip" : "below",
+	...props
+}: RhfAmountInputProps) => {
+	const { control } = useFormContext();
+	const message = useFieldError(name);
+	const readOnly = useCppReadOnly();
+	const [focused, setFocused] = useState(false);
+
+	return (
+		<FieldAnchor name={name}>
+			<Controller
+				name={name}
+				control={control}
+				render={({ field }) => {
+					const raw =
+						field.value === null || field.value === undefined
+							? ""
+							: String(field.value);
+					const inWords = words === "none" ? "" : amountInWords(raw);
+					const helper = words === "below" && inWords ? inWords : undefined;
+					const className = [
+						props.className,
+						cell ? "cpp-cell-input" : "",
+						"tabular-nums",
+					]
+						.filter(Boolean)
+						.join(" ");
+
+					if (readOnly)
+						return (
+							<FormInput
+								{...props}
+								name={name}
+								mode="view"
+								value={formatAmountText(raw)}
+								helperText={helper}
+								isTooltip={false}
+								className={className}
+							/>
+						);
+
+					return (
+						<FormInput
+							{...props}
+							ref={field.ref}
+							name={name}
+							inputMode="decimal"
+							autoComplete="off"
+							value={focused ? raw : formatAmountText(raw)}
+							onFocus={() => setFocused(true)}
+							onChange={(event) =>
+								field.onChange(cleanAmountInput(event.target.value))
+							}
+							onBlur={() => {
+								setFocused(false);
+								field.onBlur();
+							}}
+							title={inWords || undefined}
+							error={message}
+							helperText={helper}
+							isTooltip={false}
+							className={className}
+						/>
+					);
+				}}
+			/>
+		</FieldAnchor>
 	);
 };
 
@@ -95,23 +212,26 @@ export const RhfSelect = ({ name, options, ...props }: RhfSelectProps) => {
 	const readOnly = useCppReadOnly();
 
 	return (
-		<Controller
-			name={name}
-			control={control}
-			render={({ field }) => (
-				<SelectInput
-					{...props}
-					name={name}
-					mode={readOnly ? "view" : "edit"}
-					options={options}
-					value={options.find((option) => option.value === field.value) ?? null}
-					onChange={(option: Option | null) =>
-						field.onChange(option?.value ?? "")
-					}
-					error={readOnly ? undefined : message}
-				/>
-			)}
-		/>
+		<FieldAnchor name={name}>
+			<Controller
+				name={name}
+				control={control}
+				render={({ field }) => (
+					<SelectInput
+						{...props}
+						name={name}
+						inputId={name}
+						mode={readOnly ? "view" : "edit"}
+						options={options}
+						value={options.find((option) => option.value === field.value) ?? null}
+						onChange={(option: Option | null) =>
+							field.onChange(option?.value ?? "")
+						}
+						error={readOnly ? undefined : message}
+					/>
+				)}
+			/>
+		</FieldAnchor>
 	);
 };
 
@@ -136,40 +256,42 @@ export const RhfMultiSelect = ({
 	const readOnly = useCppReadOnly();
 
 	return (
-		<Controller
-			name={name}
-			control={control}
-			render={({ field }) => {
-				const selected: string[] = field.value ?? [];
+		<FieldAnchor name={name}>
+			<Controller
+				name={name}
+				control={control}
+				render={({ field }) => {
+					const selected: string[] = field.value ?? [];
 
-				if (readOnly) {
+					if (readOnly) {
+						return (
+							<ReadOnlyField
+								label={props.label}
+								required={props.required}
+								className={props.className}
+								value={options
+									.filter((option) => selected.includes(option.value))
+									.map((option) => option.label)
+									.join(", ")}
+							/>
+						);
+					}
+
 					return (
-						<ReadOnlyField
-							label={props.label}
-							required={props.required}
-							className={props.className}
-							value={options
-								.filter((option) => selected.includes(option.value))
-								.map((option) => option.label)
-								.join(", ")}
+						<MultiSelectInput
+							{...props}
+							name={name}
+							options={options}
+							value={options.filter((option) => selected.includes(option.value))}
+							onValueChange={({ value }) =>
+								field.onChange(value.map((option) => String(option.value)))
+							}
+							error={message}
 						/>
 					);
-				}
-
-				return (
-					<MultiSelectInput
-						{...props}
-						name={name}
-						options={options}
-						value={options.filter((option) => selected.includes(option.value))}
-						onValueChange={({ value }) =>
-							field.onChange(value.map((option) => String(option.value)))
-						}
-						error={message}
-					/>
-				);
-			}}
-		/>
+				}}
+			/>
+		</FieldAnchor>
 	);
 };
 
@@ -194,64 +316,66 @@ export const RhfChips = ({
 	const readOnly = useCppReadOnly();
 
 	return (
-		<Controller
-			name={name}
-			control={control}
-			render={({ field }) => {
-				const selected: string[] = field.value ?? [];
+		<FieldAnchor name={name}>
+			<Controller
+				name={name}
+				control={control}
+				render={({ field }) => {
+					const selected: string[] = field.value ?? [];
 
-				if (readOnly) {
+					if (readOnly) {
+						return (
+							<ReadOnlyField
+								label={label}
+								required={required}
+								value={selected.join(", ")}
+							/>
+						);
+					}
+
 					return (
-						<ReadOnlyField
-							label={label}
-							required={required}
-							value={selected.join(", ")}
-						/>
-					);
-				}
-
-				return (
-					<div className="form-field">
-						{label ? (
-							<div className="form-label-row">
-								<span className="form-label">
-									{label}
-									{required ? <span className="form-required"> *</span> : null}
-								</span>
+						<div className="form-field">
+							{label ? (
+								<div className="form-label-row">
+									<span className="form-label">
+										{label}
+										{required ? <span className="form-required"> *</span> : null}
+									</span>
+								</div>
+							) : null}
+							<div className="flex flex-wrap gap-2">
+								{options.map((option) => {
+									const active = selected.includes(option);
+									return (
+										<Button
+											key={option}
+											type="button"
+											text={option}
+											size="sm"
+											appearance="toggle"
+											active={active}
+											disabled={disabled}
+											onClick={() =>
+												field.onChange(
+													active
+														? selected.filter((item) => item !== option)
+														: [...selected, option],
+												)
+											}
+										/>
+									);
+								})}
 							</div>
-						) : null}
-						<div className="flex flex-wrap gap-2">
-							{options.map((option) => {
-								const active = selected.includes(option);
-								return (
-									<Button
-										key={option}
-										type="button"
-										text={option}
-										size="sm"
-										appearance="toggle"
-										active={active}
-										disabled={disabled}
-										onClick={() =>
-											field.onChange(
-												active
-													? selected.filter((item) => item !== option)
-													: [...selected, option],
-											)
-										}
-									/>
-								);
-							})}
+							{message ? (
+								<p className="form-error-text" role="alert">
+									{message}
+								</p>
+							) : null}
 						</div>
-						{message ? (
-							<p className="form-error-text" role="alert">
-								{message}
-							</p>
-						) : null}
-					</div>
-				);
-			}}
-		/>
+					);
+				}}
+			/>
+		</FieldAnchor>
 	);
 };
 
@@ -274,31 +398,33 @@ export const RhfRadio = ({
 	const readOnly = useCppReadOnly();
 
 	return (
-		<Controller
-			name={name}
-			control={control}
-			render={({ field }) =>
-				readOnly ? (
-					<ReadOnlyField
-						label={groupLabel}
-						required={required}
-						value={
-							options.find((option) => option.value === field.value)?.label
-						}
-					/>
-				) : (
-					<Radio
-						name={name}
-						groupLabel={groupLabel}
-						required={required}
-						options={options}
-						selectedValue={field.value}
-						onChange={field.onChange}
-						error={message}
-					/>
-				)
-			}
-		/>
+		<FieldAnchor name={name}>
+			<Controller
+				name={name}
+				control={control}
+				render={({ field }) =>
+					readOnly ? (
+						<ReadOnlyField
+							label={groupLabel}
+							required={required}
+							value={
+								options.find((option) => option.value === field.value)?.label
+							}
+						/>
+					) : (
+						<Radio
+							name={name}
+							groupLabel={groupLabel}
+							required={required}
+							options={options}
+							selectedValue={field.value}
+							onChange={field.onChange}
+							error={message}
+						/>
+					)
+				}
+			/>
+		</FieldAnchor>
 	);
 };
 
@@ -317,43 +443,51 @@ export const RhfCheckGroup = ({
 	disabled,
 }: RhfCheckGroupProps) => {
 	const { control } = useFormContext();
+	const message = useFieldError(name);
 	const readOnly = useCppReadOnly();
 
 	return (
-		<Controller
-			name={name}
-			control={control}
-			render={({ field }) => {
-				const selected: string[] = field.value ?? [];
+		<FieldAnchor name={name}>
+			<Controller
+				name={name}
+				control={control}
+				render={({ field }) => {
+					const selected: string[] = field.value ?? [];
 
-				if (readOnly) {
-					return <ReadOnlyField label={label} value={selected.join(", ")} />;
-				}
+					if (readOnly) {
+						return <ReadOnlyField label={label} value={selected.join(", ")} />;
+					}
 
-				return (
-					<div className="flex flex-col gap-2">
-						{label ? <span className="form-label">{label}</span> : null}
-						<div className="flex flex-row flex-wrap items-center gap-x-8 gap-y-2">
-							{options.map((option) => (
-								<div key={option} className="w-auto shrink-0">
-									<Checkbox
-										label={option}
-										disabled={disabled}
-										checked={selected.includes(option)}
-										onChange={(checked) =>
-											field.onChange(
-												checked
-													? [...selected, option]
-													: selected.filter((item) => item !== option),
-											)
-										}
-									/>
-								</div>
-							))}
+					return (
+						<div className="flex flex-col gap-2">
+							{label ? <span className="form-label">{label}</span> : null}
+							<div className="flex flex-row flex-wrap items-center gap-x-8 gap-y-2">
+								{options.map((option) => (
+									<div key={option} className="w-auto shrink-0">
+										<Checkbox
+											label={option}
+											disabled={disabled}
+											checked={selected.includes(option)}
+											onChange={(checked) =>
+												field.onChange(
+													checked
+														? [...selected, option]
+														: selected.filter((item) => item !== option),
+												)
+											}
+										/>
+									</div>
+								))}
+							</div>
+							{message ? (
+								<p className="form-error-text" role="alert">
+									{message}
+								</p>
+							) : null}
 						</div>
-					</div>
-				);
-			}}
-		/>
+					);
+				}}
+			/>
+		</FieldAnchor>
 	);
 };

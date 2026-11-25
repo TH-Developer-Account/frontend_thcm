@@ -1,7 +1,15 @@
-// utils/cpp.schema.ts — zod rules for SUBMIT. "Save draft" skips validation.
-// The wizard also runs this schema per step (form.trigger on that step's fields).
+// utils/cpp.schema.ts — every rule a CPP request must meet before SUBMIT.
+// "Save draft" skips validation.
+//
+// Why one plain function instead of a zod object + superRefine:
+// zod runs superRefine only when the whole base object already parses. So one
+// blank field in a LATER step hid every cross-field check (part value, summary
+// sheet, plant rows…) of the step being checked, and "Next" let the user through.
+// collectCppIssues() always returns every problem, so "Next" (form.trigger on the
+// step's paths) and "Submit" see the same, complete list.
 import { z } from "zod";
 
+import type { CppFormValues } from "../types/cpp.types";
 import {
 	AMORTISED_CONDITION,
 	CPP_CHECKLIST,
@@ -15,326 +23,186 @@ import {
 	toNum,
 } from "./cpp.utils";
 
-const required = (message: string) => z.string().trim().min(1, message);
+/** A document must be attached when a check list row is answered "Yes". */
+export const CHECKLIST_DOC_REQUIRED_ON_YES = true;
 
-/** Optional number: blank is fine, anything typed must be a number. */
-const optionalNumber = z
-	.string()
-	.refine(
-		(value) => value.trim() === "" || isNumberText(value),
-		"Enter a number",
-	);
+/** ME11 needs the recommended supplier's vendor code. */
+export const RECOMMENDED_CODE_REQUIRED = true;
 
-const supplier = z.object({
-	partnerId: z.string(),
-	name: z.string(),
-	code: z.string(),
-	manual: z.boolean(),
-});
+export type CppIssue = { path: (string | number)[]; message: string };
 
-const requiredSupplier = supplier.extend({
-	name: required("Supplier name is required"),
-});
+const blank = (value: unknown) => String(value ?? "").trim() === "";
 
 const positive = (value: string) => {
 	const parsed = toNum(value);
 	return parsed !== null && isNumberText(value) && parsed > 0;
 };
 
-const locationRow = z.object({
-	code: z.string(),
-	name: z.string(),
-	group: z.enum(["PLANT", "SPARE"]),
-	applicable: z.boolean(),
-	incoTerms: z.string(),
-	purchasingGroup: z.string(),
-	taxCode: z.string(),
-	storeLocation: z.string(),
-	pfPct: optionalNumber,
-});
+const optionalNumberOk = (value: unknown) =>
+	blank(value) || isNumberText(String(value));
 
-// Amortisation cells are checked in superRefine — only when PB50 is picked.
-const amortRow = z.object({
-	partNo: z.string(),
-	priceInclAmort: z.string(),
-	cutoffDate: z.string(),
-	amortQty: z.string(),
-	priceAfterAmort: z.string(),
-});
+export const collectCppIssues = (values: CppFormValues): CppIssue[] => {
+	const issues: CppIssue[] = [];
+	const add = (path: CppIssue["path"], message: string) =>
+		issues.push({ path, message });
 
-const volumeRow = z.object({
-	received: optionalNumber,
-	remaining: optionalNumber,
-	annual: optionalNumber,
-});
+	/* ------------------------------ basic details ----------------------------- */
+	if (blank(values.category)) add(["category"], "Select a category");
+	if (blank(values.plant)) add(["plant"], "Select a plant");
+	if (blank(values.condition)) add(["condition"], "Select a condition");
+	else if (
+		!blank(values.category) &&
+		!isConditionAllowed(values.condition, values.category)
+	)
+		add(["condition"], "This condition does not apply to the selected category");
+	if (!values.materialType) add(["materialType"], "Select Direct or Indirect");
+	if (blank(values.reason)) add(["reason"], "Select a reason");
+	if (blank(values.priceType)) add(["priceType"], "Select a price type");
+	if ((values.workflow?.models ?? []).length === 0)
+		add(["workflow", "models"], "Select at least one model");
+	if (blank(values.workflow?.pricingCondition))
+		add(["workflow", "pricingCondition"], "Select a pricing condition");
+	if (String(values.justification ?? "").trim().length < MIN_JUSTIFICATION)
+		add(["justification"], `Enter at least ${MIN_JUSTIFICATION} characters`);
 
-const plantPriceRow = z.object({
-	plant: z.string(),
-	partNumber: z.string(),
-	price: z.string(),
-});
+	/* ---------------------------- purchasing details -------------------------- */
+	if (blank(values.suppliers?.existing?.name))
+		add(["suppliers", "existing", "name"], "Supplier name is required");
+	if (blank(values.suppliers?.recommended?.name))
+		add(["suppliers", "recommended", "name"], "Supplier name is required");
+	if (RECOMMENDED_CODE_REQUIRED && blank(values.suppliers?.recommended?.code))
+		add(["suppliers", "recommended", "code"], "Vendor code is required");
 
-export const cppSchema = z
-	.object({
-		/* step 1 */
-		category: required("Select a category"),
-		plant: required("Select a plant"),
-		condition: required("Select a condition"),
-		materialType: z.enum(["", "Direct", "Indirect"]),
-		effects: z.array(z.enum(["Quality", "Cost", "Delivery"])),
-		reason: required("Select a reason"),
-		priceType: required("Select a price type"),
-		justification: z
-			.string()
-			.trim()
-			.min(MIN_JUSTIFICATION, `Enter at least ${MIN_JUSTIFICATION} characters`),
-		initiationDate: z.string(),
-		workflow: z.object({
-			models: z.array(z.string()).min(1, "Select at least one model"),
-			plants: z.array(z.enum(["DWD", "KGP", "SPARE"])),
-			pricingCondition: required("Select a pricing condition"),
-			spares: z.boolean(),
-			authority: z.string(),
-		}),
+	if (!values.attachments?.partSummary)
+		add(["attachments", "partSummary"], "Upload the summary sheet (part info)");
 
-		/* step 2 */
-		suppliers: z.object({
-			existing: requiredSupplier,
-			other: supplier,
-			recommended: requiredSupplier,
-		}),
-		// Retired: the purchasing Excel is no longer uploaded. Kept so older requests still parse.
-		purchasingFile: z.any().nullish(),
-		approvalValues: z.object({
-			partValue: z.string(),
-			variationPct: z.string(),
-			amount: z.string(),
-		}),
+	const condition = getCondition(values.condition);
+	if (condition) {
+		const approval = values.approvalValues;
+		const hasParts = (values.summaryParts ?? []).length > 0;
+		const message = "Enter a value greater than 0";
 
-		/* amortisation (PB50 only) */
-		amortisation: z.array(amortRow),
-
-		/* volumes & impact — every table is optional */
-		volumes: z.object({ DWD: volumeRow, KGP: volumeRow, SPARE: volumeRow }),
-		perMachineImpact: z.array(
-			z.object({
-				plant: z.string(),
-				model: z.string(),
-				withAmort: optionalNumber,
-				withoutAmort: optionalNumber,
-			}),
-		),
-		costTracker: z.array(
-			z.object({
-				model: z.string(),
-				perMachineImpact: optionalNumber,
-				budgetedIncrease: optionalNumber,
-				statusYtd: optionalNumber,
-				budgetedMaterialCost: optionalNumber,
-				materialCostYtd: optionalNumber,
-			}),
-		),
-
-		/* remaining steps */
-		other: z.object({
-			remarks: z.string(),
-			checklist: z.record(z.string(), z.string()),
-			plantPrices: z.array(plantPriceRow),
-		}),
-		// Optional per document; the Mandatory Check List and summary sheet are checked below.
-		attachments: z.record(z.string(), z.any()),
-		masterData: z.object({
-			materialGroup: z.string(),
-			materialType: z.string(),
-			purchasingGroup: z.string(),
-			priceType: z.string(),
-			incoTerms: z.string(),
-			// Not rendered any more — the tax code is per applicable row in
-			// plantDetails, checked in superRefine below.
-			taxCode: z.string(),
-			storeLocation: z.string(),
-			validFrom: z.string(),
-			updateSourceList: z.string(),
-			plants: z.array(z.enum(["DWD", "KGP", "SPARE"])),
-			note: z.string(),
-			plantDetails: z.array(locationRow),
-		}),
-
-		/* not rendered in the wizard — kept so older tabs still type-check */
-		parts: z.array(z.any()),
-		financial: z.object({
-			noChange: z.boolean(),
-			plantSplit: z.object({
-				DWD: z.string(),
-				KGP: z.string(),
-				SPARE: z.string(),
-			}),
-			plants: z.any(),
-			totalActualPct: z.string(),
-			totalAnnualisedPct: z.string(),
-		}),
-	})
-	.superRefine((values, ctx) => {
-		if (!values.materialType) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["materialType"],
-				message: "Select Direct or Indirect",
-			});
+		if (condition.partBasis === "PART_VALUE") {
+			if (hasParts && blank(approval.partValuePart))
+				add(["approvalValues", "partValuePart"], "Select the part");
+			else if (!positive(approval.partValue))
+				add(["approvalValues", "partValue"], message);
 		}
+		if (condition.partBasis === "VARIATION_PCT" && !positive(approval.variationPct))
+			add(["approvalValues", "variationPct"], message);
 
-		const condition = getCondition(values.condition);
-		if (
-			condition &&
-			values.category &&
-			!isConditionAllowed(values.condition, values.category)
-		) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["condition"],
-				message: "This condition does not apply to the selected category",
-			});
-		}
+		if (hasParts && blank(approval.amountPart))
+			add(["approvalValues", "amountPart"], "Select the part");
+		else if (!positive(approval.amount))
+			add(["approvalValues", "amount"], message);
+	}
 
-		// Summary sheet (part info) is mandatory.
-		if (!values.attachments.partSummary) {
-			ctx.addIssue({
-				code: "custom",
-				path: ["attachments", "partSummary"],
-				message:
-					"This field is mandatory. Upload the summary sheet (part info).",
-			});
-		}
-
-		// Mandatory Check List: every row needs Yes, No or NA.
-		CPP_CHECKLIST.forEach((item) => {
-			const answer = values.other.checklist[item.key] ?? "";
-			if (!["Yes", "No", "NA"].includes(answer)) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["other", "checklist", item.key],
-					message: "This field is mandatory. Answer Yes, No or NA.",
-				});
-			}
+	/* ------------------------- amortisation (PB50 only) ----------------------- */
+	if (values.workflow?.pricingCondition === AMORTISED_CONDITION) {
+		const rows = values.amortisation ?? [];
+		const noneFilled = rows.every(isBlankRow);
+		rows.forEach((row, index) => {
+			if (isBlankRow(row) && !(noneFilled && index === 0)) return;
+			const at = (field: keyof typeof row, text: string) =>
+				add(["amortisation", index, field], text);
+			if (blank(row.partNo)) at("partNo", "Enter the part number");
+			if (!positive(row.priceInclAmort))
+				at("priceInclAmort", "Enter a price greater than 0");
+			if (blank(row.cutoffDate)) at("cutoffDate", "Enter the cut-off date");
+			if (!positive(row.amortQty)) at("amortQty", "Enter a quantity greater than 0");
+			if (blank(row.priceAfterAmort) || !isNumberText(row.priceAfterAmort))
+				at("priceAfterAmort", "Enter the price after amortisation");
+			else if (
+				positive(row.priceInclAmort) &&
+				(toNum(row.priceAfterAmort) ?? 0) >= (toNum(row.priceInclAmort) ?? 0)
+			)
+				at("priceAfterAmort", "Must be lower than the price incl. amortisation");
 		});
+	}
 
-		// Other plant prices: a filled row needs a plant, a part number and a number.
-		values.other.plantPrices.forEach((row, index) => {
-			if (isBlankRow(row)) return;
-			if (!row.plant.trim())
-				ctx.addIssue({
-					code: "custom",
-					path: ["other", "plantPrices", index, "plant"],
-					message: "Enter the plant",
-				});
-			if (!row.partNumber.trim())
-				ctx.addIssue({
-					code: "custom",
-					path: ["other", "plantPrices", index, "partNumber"],
-					message: "Enter the part number",
-				});
-			if (!positive(row.price))
-				ctx.addIssue({
-					code: "custom",
-					path: ["other", "plantPrices", index, "price"],
-					message: "Enter a price greater than 0",
-				});
-		});
-
-		// Approval bands need real numbers. Zero / blank is blocked (open question Q9).
-		if (condition) {
-			const { partValue, variationPct, amount } = values.approvalValues;
-			const message = "Enter a value greater than 0";
-			if (condition.partBasis === "PART_VALUE" && !positive(partValue)) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["approvalValues", "partValue"],
-					message,
-				});
-			}
-			if (condition.partBasis === "VARIATION_PCT" && !positive(variationPct)) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["approvalValues", "variationPct"],
-					message,
-				});
-			}
-			if (!positive(amount)) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["approvalValues", "amount"],
-					message,
-				});
-			}
-		}
-
-		/* ---- amortisation: required only for PB50 ----
-		 * Every filled row is checked. If no row is filled, the first row is
-		 * checked, so its cells go red and the step shows "add at least one part". */
-		if (values.workflow.pricingCondition === AMORTISED_CONDITION) {
-			const noneFilled = values.amortisation.every(isBlankRow);
-			values.amortisation.forEach((row, index) => {
-				if (isBlankRow(row) && !(noneFilled && index === 0)) return;
-				const at = (field: keyof typeof row, message: string) =>
-					ctx.addIssue({
-						code: "custom",
-						path: ["amortisation", index, field],
-						message,
-					});
-				if (!row.partNo.trim()) at("partNo", "Enter the part number");
-				if (!positive(row.priceInclAmort))
-					at("priceInclAmort", "Enter a price greater than 0");
-				if (!positive(row.amortQty))
-					at("amortQty", "Enter a quantity greater than 0");
-				if (!row.priceAfterAmort.trim() || !isNumberText(row.priceAfterAmort))
-					at("priceAfterAmort", "Enter the price after amortisation");
-				else if (
-					positive(row.priceInclAmort) &&
-					(toNum(row.priceAfterAmort) ?? 0) >= (toNum(row.priceInclAmort) ?? 0)
-				)
-					at(
-						"priceAfterAmort",
-						"Must be lower than the price incl. amortisation",
-					);
-			});
-		}
-
-		/* ---- plant / spares details: purchasing group and tax code are needed
-		 * for the TCS files, on every applicable row ---- */
-		const group = getLocationGroup(values.plant);
-		if (group) {
-			const rows = values.masterData.plantDetails;
-			const inGroup = rows
-				.map((row, index) => ({ row, index }))
-				.filter(({ row }) => row.group === group);
-			const applicable = inGroup.filter(({ row }) =>
-				isLocationApplicable(row, values.plant),
-			);
-			if (applicable.length === 0 && inGroup[0]) {
-				ctx.addIssue({
-					code: "custom",
-					path: ["masterData", "plantDetails", inGroup[0].index, "applicable"],
-					message:
-						group === "SPARE"
-							? "Select at least one warehouse"
-							: "Select at least one plant",
-				});
-			}
-			applicable.forEach(({ row, index }) => {
-				if (!row.purchasingGroup.trim())
-					ctx.addIssue({
-						code: "custom",
-						path: ["masterData", "plantDetails", index, "purchasingGroup"],
-						message: "Enter the purchasing group",
-					});
-				if (!row.taxCode.trim())
-					ctx.addIssue({
-						code: "custom",
-						path: ["masterData", "plantDetails", index, "taxCode"],
-						message: "Select a tax code",
-					});
-			});
-		}
+	/* ------------------- volumes & impact (optional, numbers only) ------------ */
+	for (const plant of ["DWD", "KGP", "SPARE"] as const) {
+		const row = values.volumes?.[plant];
+		for (const field of ["received", "remaining", "annual"] as const)
+			if (row && !optionalNumberOk(row[field]))
+				add(["volumes", plant, field], "Enter a number");
+	}
+	(values.perMachineImpact ?? []).forEach((row, index) => {
+		for (const field of ["withAmort", "withoutAmort"] as const)
+			if (!optionalNumberOk(row[field]))
+				add(["perMachineImpact", index, field], "Enter a number");
+	});
+	(values.costTracker ?? []).forEach((row, index) => {
+		for (const field of [
+			"perMachineImpact",
+			"budgetedIncrease",
+			"statusYtd",
+			"budgetedMaterialCost",
+			"materialCostYtd",
+		] as const)
+			if (!optionalNumberOk(row[field]))
+				add(["costTracker", index, field], "Enter a number");
 	});
 
-export type CppSchemaValues = z.infer<typeof cppSchema>;
+	/* ------------------------------- master data ------------------------------ */
+	const group = getLocationGroup(values.plant);
+	if (group) {
+		const inGroup = (values.masterData?.plantDetails ?? [])
+			.map((row, index) => ({ row, index }))
+			.filter(({ row }) => row.group === group);
+		const applicable = inGroup.filter(({ row }) =>
+			isLocationApplicable(row, values.plant),
+		);
+		if (applicable.length === 0 && inGroup[0])
+			add(
+				["masterData", "plantDetails", inGroup[0].index, "applicable"],
+				group === "SPARE"
+					? "Select at least one warehouse"
+					: "Select at least one plant",
+			);
+		applicable.forEach(({ row, index }) => {
+			if (blank(row.purchasingGroup))
+				add(
+					["masterData", "plantDetails", index, "purchasingGroup"],
+					"Enter the purchasing group",
+				);
+			if (blank(row.taxCode))
+				add(["masterData", "plantDetails", index, "taxCode"], "Select the tax code");
+			if (!optionalNumberOk(row.pfPct))
+				add(["masterData", "plantDetails", index, "pfPct"], "Enter a number");
+		});
+	}
+
+	/* -------------------------------- other data ------------------------------ */
+	(values.other?.plantPrices ?? []).forEach((row, index) => {
+		if (!optionalNumberOk(row.price))
+			add(["other", "plantPrices", index, "price"], "Enter a number");
+	});
+
+	/* ------------------------ attachments: check list ------------------------- */
+	for (const item of CPP_CHECKLIST) {
+		const answer = values.other?.checklist?.[item.key] ?? "";
+		if (!answer) add(["other", "checklist", item.key], "Choose Yes, No or NA");
+		else if (
+			CHECKLIST_DOC_REQUIRED_ON_YES &&
+			answer === "Yes" &&
+			!values.attachments?.[item.key]
+		)
+			add(["attachments", item.key], "Attach the document for this item");
+	}
+
+	return issues;
+};
+
+/**
+ * zodResolver wrapper: no shape checks (the form owns the shape), every rule in
+ * collectCppIssues. The parsed value is the form values unchanged.
+ */
+export const cppSchema = z
+	.custom<CppFormValues>(() => true)
+	.superRefine((values, ctx) => {
+		for (const issue of collectCppIssues(values))
+			ctx.addIssue({ code: "custom", path: issue.path, message: issue.message });
+	});
+
+export type CppSchemaValues = CppFormValues;

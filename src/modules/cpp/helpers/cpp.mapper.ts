@@ -34,6 +34,7 @@ import {
 	getDefaultValues,
 	isBlankRow,
 } from "../utils/cpp.utils";
+import { toSummaryParts } from "../utils/cpp.parts";
 
 export const CPP_PURCHASING_FILE_TYPE = "purchasingFile";
 
@@ -132,10 +133,13 @@ export const formToSections = (
 				other: supplier(values.suppliers.other),
 				recommended: supplier(values.suppliers.recommended),
 			},
+			// Raw numbers only (the amount inputs never store commas).
 			approvalValues: {
 				partValue: text(values.approvalValues.partValue),
 				variationPct: text(values.approvalValues.variationPct),
 				amount: text(values.approvalValues.amount),
+				partValuePart: text(values.approvalValues.partValuePart),
+				amountPart: text(values.approvalValues.amountPart),
 			},
 		},
 	},
@@ -379,6 +383,8 @@ export const detailToForm = (detail: CppDetail): CppFormValues => {
 		suppliers: pick(defaults.suppliers, purchasing.suppliers),
 		approvalValues: pick(defaults.approvalValues, purchasing.approvalValues),
 		purchasingFile: files[CPP_PURCHASING_FILE_TYPE] ?? null,
+		// Rows the server read from the summary sheet (read-only, never saved back).
+		summaryParts: toSummaryParts(detail.parts),
 		amortisation: pickRows(amortisation.rows, emptyAmort),
 		volumes: pick(defaults.volumes, volumes.volumes),
 		perMachineImpact: pickRows(volumes.perMachineImpact, emptyPerMachine),
@@ -448,5 +454,7 @@ export const toCppListingRow = (item: CppListItem): CppListingRow => {
 		amountLabel: label,
 		isSpare: item.isSpare,
 		updatedAt: item.updated_at,
+		initiatedById: item.initiatedById ?? null,
+		pendingOn: item.pendingOn ?? null,
 	};
 };

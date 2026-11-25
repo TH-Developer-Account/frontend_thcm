@@ -5,6 +5,9 @@
 		--app-surface: var(--color-bg-surface);
 		--app-text: var(--color-text-primary);
 		--app-border: var(--color-border-default);
+		/* One header rule for the home page AND every module page (.app-header, .home-layout-header). */
+		--app-header-border-width: var(--border-width-strong);
+		--app-header-border-color: var(--color-brand);
 
 		--auth-panel-bg: var(--color-bg-page);
 		--auth-card-bg: var(--color-bg-surface);
@@ -17,7 +20,9 @@
 		--card-bg-hover: var(--color-bg-surface-hover);
 		--card-text: var(--color-text-primary);
 		--card-subtitle-text: var(--color-text-muted);
-		--card-border: var(--color-border-strong); /* was border-default: cards now read as distinct surfaces */
+		--card-border: var(
+			--color-border-strong
+		); /* was border-default: cards now read as distinct surfaces */
 		--card-border-subtle: var(--color-border-subtle);
 		--card-border-hover: var(--color-brand-hover);
 		--card-header-bg: var(--color-bg-surface);
@@ -62,9 +67,15 @@
 		--field-readonly-border: var(--color-border-subtle);
 		--field-readonly-text: var(--color-text-primary);
 		--field-readonly-weight: var(--font-weight-medium);
-		--field-readonly-empty: var(--color-text-muted); /* "Not provided", "Not applicable" */
-		--field-readonly-pending: var(--color-status-pending-text); /* "Not yet calculated" */
-		--field-readonly-error: var(--color-status-rejected-text); /* "Failed to load" */
+		--field-readonly-empty: var(
+			--color-text-muted
+		); /* "Not provided", "Not applicable" */
+		--field-readonly-pending: var(
+			--color-status-pending-text
+		); /* "Not yet calculated" */
+		--field-readonly-error: var(
+			--color-status-rejected-text
+		); /* "Failed to load" */
 		--field-readonly-chip-bg: var(--color-bg-surface);
 		--field-readonly-chip-border: var(--color-border-default);
 		--field-readonly-chip-text: var(--color-text-primary);
@@ -82,7 +93,9 @@
 		--step-ring-width: 0.25rem;
 		--step-current-ring: var(--color-brand-soft);
 		--step-current-text: var(--color-text-brand);
-		--step-upcoming-border: var(--color-border-interactive); /* 3.2:1 non-text contrast */
+		--step-upcoming-border: var(
+			--color-border-interactive
+		); /* 3.2:1 non-text contrast */
 		--step-complete-bg: var(--color-success-solid);
 		--step-invalid-bg: var(--color-error-bg);
 		--step-invalid-border: var(--color-error);
@@ -125,8 +138,12 @@
 		--table-row-hover: var(--color-table-row-hover);
 		--table-border: var(--color-table-border);
 		--table-cell-text: var(--color-text-secondary);
-		--table-footer-bg: var(--color-table-header-bg); /* totals band matches the header */
-		--table-footer-border: var(--color-border-interactive); /* 2px rule above totals */
+		--table-footer-bg: var(
+			--color-table-header-bg
+		); /* totals band matches the header */
+		--table-footer-border: var(
+			--color-border-interactive
+		); /* 2px rule above totals */
 		--table-footer-text: var(--color-text-primary);
 		--table-striped-bg: var(--color-table-striped);
 		--table-editable-bg: var(--color-bg-input);

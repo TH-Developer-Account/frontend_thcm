@@ -220,8 +220,8 @@ const MasterDataTab = () => {
 
 	return (
 		<CppSection
-			title="Master data"
-			subtitle="Details for each plant or warehouse that the price applies to"
+		// title="Master data"
+		// subtitle="Details for each plant or warehouse that the price applies to"
 		>
 			<div className="space-y-6">
 				<div>

@@ -343,10 +343,11 @@ button {
 	}
 
 	.main-contact-default-badge {
-		@apply inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-medium;
+		@apply inline-flex shrink-0 items-center rounded-full px-2 py-0.5 font-medium;
 		border: var(--border-width-default) solid var(--color-brand-soft);
 		background-color: var(--color-brand-softest);
-		color: var(--color-brand);
+		color: var(--color-text-brand);
+		font-size: var(--font-size-2xs);
 	}
 
 	.main-contact-list-meta-grid {
@@ -504,10 +505,11 @@ button {
 	}
 
 	.bp-address-default-badge {
-		@apply inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[10px] font-medium;
+		@apply inline-flex shrink-0 items-center rounded-full px-2 py-0.5 font-medium;
 		border: var(--border-width-default) solid var(--color-brand-soft);
 		background-color: var(--color-brand-softest);
-		color: var(--color-brand);
+		color: var(--color-text-brand);
+		font-size: var(--font-size-2xs);
 	}
 
 	.bp-address-list-container {

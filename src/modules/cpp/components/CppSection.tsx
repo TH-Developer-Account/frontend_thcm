@@ -16,7 +16,7 @@ const CppSection = ({
 	className = "",
 	children,
 }: CppSectionProps) => (
-	<section className={`flex flex-col gap-3 ${className}`.trim()}>
+	<section className={`flex flex-col gap-2 ${className}`.trim()}>
 		{title || subtitle ? (
 			<header className="flex flex-col gap-0.5">
 				{title ? (

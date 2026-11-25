@@ -873,7 +873,9 @@
 
 		padding-inline: var(--space-3);
 
-		border-bottom: var(--border-width-default) solid var(--color-border-default);
+		/* Shared with .home-layout-header (token.css) */
+		border-bottom: var(--app-header-border-width) solid
+			var(--app-header-border-color);
 
 		background-color: var(--color-bg-surface);
 		box-shadow: var(--shadow-xs);
@@ -3399,7 +3401,9 @@
 	.public-page-footer {
 		width: 100%;
 		flex: 0 0 auto;
-		background-color: var(--color-bg-surface); /* was bg-white in JSX: wrong in dark mode */
+		background-color: var(
+			--color-bg-surface
+		); /* was bg-white in JSX: wrong in dark mode */
 		padding: 16px var(--public-page-gutter);
 		text-align: center;
 		font-size: max(1.1rem, 11px);

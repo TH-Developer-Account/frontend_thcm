@@ -1,7 +1,9 @@
 // tabs/AttachmentsTab.tsx — wizard step 7 (Attachments), and the Attachments tab of the view page.
 // Edit: the Mandatory Check List (Yes / No / NA and an upload per row), then the supporting documents.
-// View: one table of every item with its answer and file, with View (modal) and Download.
-// The summary sheet (part info) is uploaded from Purchasing details, not here.
+// View: one table of every item with its answer and file, with View (modal) and Download —
+// the summary sheet (part info) and the purchasing Excel are listed first.
+// The summary sheet is uploaded from Purchasing details, not here.
+// Each answer and upload sits in a FieldAnchor, so a failed check focuses that row.
 // Plain content: the parent card provides the surface.
 import { useState } from "react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
@@ -13,7 +15,12 @@ import { FileUploadField } from "../../../components/ui/FileUpload/FileUploadFie
 import type { FileUploadValue } from "../../../components/ui/FileUpload/fileUpload.types";
 import SimpleViewTable from "../../../components/ui/tables/SimpleViewTable";
 import CppSection from "../components/CppSection";
-import { useCppReadOnly, useFieldError } from "../components/CppFields";
+import {
+	FieldAnchor,
+	useCppReadOnly,
+	useFieldError,
+} from "../components/CppFields";
+import { downloadCppFile } from "../utils/cpp.files";
 import type { CppChecklistValue, CppFormValues } from "../types/cpp.types";
 import { CPP_CHECKLIST, CPP_SUPPORTING_DOCS } from "../utils/cpp.utils";
 
@@ -40,25 +47,6 @@ const isImage = (file: FileUploadValue): boolean =>
 
 const isPdf = (file: FileUploadValue): boolean =>
 	file.type === "application/pdf" || extensionOf(file.name) === "pdf";
-
-/** Saves the file under its own name; opens it in a new tab if the fetch is blocked. */
-const downloadFile = async (file: FileUploadValue): Promise<void> => {
-	if (!file.url) return;
-	try {
-		const response = await fetch(file.url);
-		if (!response.ok) throw new Error(`HTTP ${response.status}`);
-		const objectUrl = URL.createObjectURL(await response.blob());
-		const link = document.createElement("a");
-		link.href = objectUrl;
-		link.download = file.name || "download";
-		document.body.appendChild(link);
-		link.click();
-		link.remove();
-		window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-	} catch {
-		window.open(file.url, "_blank", "noopener,noreferrer");
-	}
-};
 
 /** Yes / No / NA toggles for one Mandatory Check List row. */
 const ChecklistAnswer = ({
@@ -146,6 +134,10 @@ const AttachmentsTab = () => {
 	const attachments = useWatch({ control, name: "attachments" }) as
 		| Record<string, FileUploadValue | null>
 		| undefined;
+	const purchasingFile = useWatch({ control, name: "purchasingFile" }) as
+		| FileUploadValue
+		| null
+		| undefined;
 	const checklist = useWatch({ control, name: "other.checklist" }) as
 		| Record<string, string>
 		| undefined;
@@ -153,6 +145,22 @@ const AttachmentsTab = () => {
 
 	if (readOnly) {
 		const rows: ViewRow[] = [
+			{
+				key: "partSummary",
+				label: "Summary sheet (part info)",
+				answer: "—",
+				file: attachments?.partSummary ?? null,
+			},
+			...(purchasingFile
+				? [
+						{
+							key: "purchasingFile",
+							label: "Purchasing details Excel",
+							answer: "—",
+							file: purchasingFile,
+						},
+					]
+				: []),
 			...CPP_CHECKLIST.map((item) => ({
 				key: item.key,
 				label: item.label,
@@ -222,7 +230,11 @@ const AttachmentsTab = () => {
 							icon: Download,
 							label: "Download",
 							onClick: (row) => {
-								if (row.file) void downloadFile(row.file);
+								if (row.file)
+									void downloadCppFile({
+										name: row.file.name,
+										url: row.file.url,
+									});
 							},
 							disabled: (row) => !row.file?.url,
 						},
@@ -273,7 +285,7 @@ const AttachmentsTab = () => {
 	}
 
 	return (
-		<div className="flex flex-col gap-6">
+		<div className="flex flex-col gap-4">
 			<CppSection
 				title="Mandatory check list"
 				subtitle="Answer every row with Yes, No or NA. Attach the document where it applies. This field is mandatory."
@@ -287,15 +299,19 @@ const AttachmentsTab = () => {
 					{CPP_CHECKLIST.map((item, index) => (
 						<div
 							key={item.key}
-							className="grid gap-3 p-3 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1.2fr)] lg:items-start"
+							className="grid gap-2 px-3 py-2 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1.2fr)] lg:items-start"
 						>
 							<div className="text-sm font-medium text-slate-900">
 								<span className="text-slate-500">{index + 1}. </span>
 								{item.label}
 								<span className="form-required"> *</span>
 							</div>
-							<ChecklistAnswer itemKey={item.key} label={item.label} />
-							<AttachmentSlot itemKey={item.key} label="Upload document" />
+							<FieldAnchor name={`other.checklist.${item.key}`}>
+								<ChecklistAnswer itemKey={item.key} label={item.label} />
+							</FieldAnchor>
+							<FieldAnchor name={`attachments.${item.key}`}>
+								<AttachmentSlot itemKey={item.key} label="Upload document" />
+							</FieldAnchor>
 						</div>
 					))}
 				</div>
@@ -305,13 +321,11 @@ const AttachmentsTab = () => {
 				title="Supporting documents"
 				subtitle="Optional. Attach any of these that apply to the request."
 			>
-				<div className="grid gap-4 lg:grid-cols-2">
+				<div className="grid gap-3 lg:grid-cols-2">
 					{CPP_SUPPORTING_DOCS.map((item) => (
-						<AttachmentSlot
-							key={item.key}
-							itemKey={item.key}
-							label={item.label}
-						/>
+						<FieldAnchor key={item.key} name={`attachments.${item.key}`}>
+							<AttachmentSlot itemKey={item.key} label={item.label} />
+						</FieldAnchor>
 					))}
 				</div>
 			</CppSection>

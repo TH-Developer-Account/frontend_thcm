@@ -2,20 +2,25 @@
    HOME SCREEN
    Header-only landing layout without sidebar.
 
+   Batch 15 — aligned with the app:
+   - Every font size, weight and colour now comes from the shared
+     tokens (typography.css / color.css / token.css), the same ones
+     PageHeader, buttons, inputs and cards use. No home-only type scale.
+   - Header uses the shared user menu, avatar, bell and logo styles,
+     so it is identical to the module header.
+   - --home-px is kept for LAYOUT GEOMETRY ONLY (hero height, icon tile,
+     card min-height, gaps). Never use it for text.
+   - Layout, hero artwork, brand washes and card structure unchanged.
+
    Token ownership:
    - color.css
    - token.css
    - theme.css
+   - typography.css
 ========================================================= */
 
 @layer base {
-	:root {
-		--font-home-sans: "Barlow", var(--font-sans);
-		--font-home-display: "Barlow Condensed", "Barlow", var(--font-sans);
-
-	}
-
-	/* Home-only density. Keep the application root and shared tokens unchanged. */
+	/* Geometry unit for the home layout (not for text). */
 	.home-layout,
 	.home-screen {
 		--home-scale: 1.1;
@@ -37,13 +42,16 @@
 		flex-direction: column;
 		overflow: hidden;
 
-		background-color: var(--home-page-bg);
-		color: var(--home-title);
+		background-color: var(--app-bg);
+		color: var(--color-text-primary);
 		font-family: var(--font-sans);
 	}
 
 	/* =====================================================
 	   HOME HEADER
+	   Same height, border, logo, bell, avatar and user menu
+	   as the module header (.app-header). Only difference:
+	   no sidebar toggle.
 	===================================================== */
 
 	.home-layout-header {
@@ -52,16 +60,16 @@
 
 		display: flex;
 		width: 100%;
-		height: var(--header-height);
 		min-width: 0;
 		min-height: var(--header-height);
-		flex: 0 0 var(--header-height);
+		flex: 0 0 auto;
 		align-items: center;
 		overflow: visible;
 
-		border-bottom: var(--border-width-strong) solid var(--color-brand);
+		border-bottom: var(--app-header-border-width) solid
+			var(--app-header-border-color);
 
-		background-color: var(--home-header-bg);
+		background-color: var(--color-bg-surface);
 		box-shadow: var(--shadow-xs);
 	}
 
@@ -72,7 +80,7 @@
 		min-width: 0;
 		align-items: center;
 
-		padding-inline: var(--space-7);
+		padding-inline: var(--home-gutter, var(--space-6));
 	}
 
 	/*
@@ -99,100 +107,24 @@
 		gap: var(--space-3);
 	}
 
-	/* =====================================================
-	   HOME BRAND / LOGO
-	===================================================== */
-
 	.home-brand {
 		display: inline-flex;
 		min-width: 0;
 		flex: 0 1 auto;
 		align-items: center;
 
-		color: var(--home-title);
+		color: var(--color-text-primary);
 		text-decoration: none;
-	}
-
-	.home-brand img,
-	.home-layout-header .logo-img {
-		display: block;
-		width: auto;
-		/* max-width: 11rem; */
-		/* height: 2rem; */
-
-		object-fit: contain;
-		object-position: left center;
-	}
-
-	/* Home header (Batch 14): taller bar, larger logo, round avatar,
-	   name in normal case — per the home screen design. */
-	.home-layout-header {
-		height: calc(60 * var(--home-px));
-		min-height: calc(60 * var(--home-px));
-		flex-basis: calc(60 * var(--home-px));
-	}
-
-	.home-layout-header .home-brand img {
-		height: calc(44 * var(--home-px));
-	}
-
-	.home-layout-header .notification-bell-trigger {
-		--notification-bell-size: calc(36 * var(--home-px));
-		--notification-bell-icon: calc(22 * var(--home-px));
 	}
 
 	.home-brand:focus-visible {
 		outline: none;
-		box-shadow: var(--shadow-focus-brand);
+		box-shadow: var(--shadow-focus-strong);
 	}
 
-	/* =====================================================
-	   HEADER USER MENU
-	===================================================== */
-
-	.home-layout-header .user-menu-trigger {
-		min-height: var(--control-height-md);
-		padding: var(--space-1);
-
-		border: var(--border-width-default) solid transparent;
-		border-radius: var(--radius-xs);
-
-		background-color: transparent;
-		color: var(--home-user-text);
-
-		font-family: var(--font-sans);
-		font-size: calc(14 * var(--home-px));
-		font-weight: var(--font-weight-medium);
-		letter-spacing: normal;
-		text-transform: none;
-	}
-
-	.home-layout-header .user-menu-trigger:hover {
-		border-color: var(--color-border-default);
-		background-color: var(--color-bg-surface-hover);
-		color: var(--color-text-primary);
-	}
-
-	.home-layout-header .user-menu-trigger:focus-visible {
-		outline: none;
-		box-shadow: var(--shadow-focus-strong); /* was no indicator at all */
-	}
-
-	.home-layout-header .avatar {
-		width: calc(36 * var(--home-px)) !important;
-		height: calc(36 * var(--home-px)) !important;
-
-		border-radius: var(--radius-full);
-
-		/* white initials need the solid (button) orange: brand was 3.3:1 */
-		background-color: var(--button-primary-bg);
-		color: var(--button-primary-text);
-
-		font-family: var(--font-sans);
-		font-size: calc(14 * var(--home-px));
-		font-weight: var(--font-weight-semibold);
-		letter-spacing: 0.02em;
-	}
+	/* Logo, bell, avatar and user-menu trigger: no home overrides.
+	   They inherit the shared rules (layout.css .home-brand img,
+	   components.css .avatar / .user-menu-trigger, NotificationBell). */
 
 	/* =====================================================
 	   HOME SCROLL REGION
@@ -208,7 +140,7 @@
 		overflow-x: hidden;
 		overflow-y: auto;
 
-		background-color: var(--home-page-bg);
+		background-color: var(--app-bg);
 
 		overscroll-behavior-y: contain;
 	}
@@ -218,6 +150,14 @@
 	===================================================== */
 
 	.home-screen {
+		--home-decor-size: calc(44 * var(--home-px));
+		--home-gutter: clamp(var(--space-4), 2.5vw, calc(32 * var(--home-px)));
+		--home-max: 100%;
+
+		/* Soft brand washes that work in light and dark */
+		--home-wash-1: color-mix(in srgb, var(--color-brand) 7%, transparent);
+		--home-wash-2: color-mix(in srgb, var(--color-brand) 12%, transparent);
+
 		display: flex;
 		width: 100%;
 		min-width: 0;
@@ -226,36 +166,18 @@
 		flex-direction: column;
 		overflow-x: hidden;
 
-		background-color: var(--home-page-bg);
-		color: var(--home-title);
+		background-color: var(--app-bg);
+		color: var(--color-text-primary);
 		font-family: var(--font-sans);
 	}
 
-	/* =====================================================
-	   HOME SCREEN v2 (Batch 14)
-	   Date strip → hero (eyebrow, welcome, intro, search,
-	   image slot) → module cards with icon, badge, CTA and
-	   a faded decorative icon.
-	===================================================== */
-
-	.home-screen {
-		--home-icon-tile: calc(48 * var(--home-px));
-		--home-decor-size: calc(48 * var(--home-px));
-		--home-gutter: clamp(var(--space-4), 2.5vw, calc(32 * var(--home-px)));
-		--home-max: 100%;
-
-		/* Soft brand washes that work in light and dark */
-		--home-wash-1: color-mix(in srgb, var(--color-brand) 7%, transparent);
-		--home-wash-2: color-mix(in srgb, var(--color-brand) 12%, transparent);
-	}
-
-	/* ---------- Date strip ---------- */
+	/* ---------- Date strip (page meta) ---------- */
 
 	.home-subheader {
 		width: 100%;
 		min-width: 0;
-		border-bottom: var(--border-width-default) solid var(--home-divider);
-		background-color: var(--home-subheader-bg);
+		border-bottom: var(--border-width-default) solid var(--color-border-default);
+		background-color: var(--color-bg-surface-subtle);
 	}
 
 	.home-subheader-content {
@@ -270,15 +192,16 @@
 		padding-inline: var(--home-gutter);
 	}
 
+	/* = .page-header-meta */
 	.home-meta {
 		min-width: 0;
 		margin: 0;
 
-		color: var(--color-text-secondary);
-		font-size: calc(12 * var(--home-px));
+		color: var(--page-header-meta-color);
+		font-size: var(--page-header-meta-size);
 		font-weight: var(--font-weight-regular);
 		font-variant-numeric: tabular-nums;
-		line-height: 1.4;
+		line-height: var(--line-height-normal);
 	}
 
 	/* ---------- Hero ---------- */
@@ -292,9 +215,9 @@
 		/* Artwork already includes the diagonal bands. Keep the surrounding
 		   surface theme-aware and blend its warm wash into the page. */
 		background:
-			linear-gradient(to bottom, transparent 65%, var(--home-page-bg) 100%),
+			linear-gradient(to bottom, transparent 65%, var(--app-bg) 100%),
 			radial-gradient(ellipse at 83% 12%, var(--home-wash-2), transparent 62%),
-			linear-gradient(90deg, var(--home-page-bg) 30%, var(--home-wash-1) 100%);
+			linear-gradient(90deg, var(--app-bg) 30%, var(--home-wash-1) 100%);
 	}
 
 	.home-hero-inner {
@@ -304,13 +227,17 @@
 		display: flex;
 		width: 100%;
 		max-width: var(--home-max);
-		min-height: clamp(calc(210 * var(--home-px)), 14vw, calc(250 * var(--home-px)));
+		min-height: clamp(
+			calc(210 * var(--home-px)),
+			14vw,
+			calc(250 * var(--home-px))
+		);
 		flex-direction: column;
 		justify-content: center;
 		gap: var(--space-2);
 
 		margin-inline: auto;
-		padding: calc(24 * var(--home-px)) var(--home-gutter) calc(24 * var(--home-px));
+		padding: calc(24 * var(--home-px)) var(--home-gutter);
 	}
 
 	.home-hero-copy {
@@ -320,46 +247,51 @@
 		gap: var(--space-2);
 	}
 
+	/* = .text-eyebrow, in brand text colour */
 	.home-eyebrow {
 		margin: 0;
 
 		color: var(--color-text-brand);
 
 		font-family: var(--font-sans);
-		font-size: calc(12 * var(--home-px));
+		font-size: var(--font-size-2xs);
 		font-weight: var(--font-weight-semibold);
-		letter-spacing: 0.08em;
-		line-height: 1.2;
+		letter-spacing: var(--tracking-eyebrow);
+		line-height: var(--line-height-heading);
 		text-transform: uppercase;
 	}
 
+	/* Same weight, colour and tracking as .page-header-title;
+	   one step larger because it is the landing greeting. */
 	.home-hero-title {
 		margin: 0;
 
-		color: var(--color-text-primary);
+		color: var(--page-header-title-color);
 
 		font-family: var(--font-sans);
-		font-size: clamp(calc(24 * var(--home-px)), 2.4vw, calc(32 * var(--home-px)));
-		font-weight: var(--font-weight-bold);
-		letter-spacing: -0.02em;
-		line-height: 1.1;
+		font-size: var(--font-size-4xl);
+		font-weight: var(--page-header-title-weight);
+		letter-spacing: var(--tracking-heading);
+		line-height: var(--line-height-heading);
 	}
 
 	.home-hero-name {
 		color: var(--color-text-brand);
 	}
 
+	/* = .page-header-subtitle */
 	.home-hero-description {
 		max-width: calc(640 * var(--home-px));
 		margin: 0;
 
-		color: var(--color-text-secondary);
+		color: var(--page-header-subtitle-color);
 
-		font-size: calc(14 * var(--home-px));
-		line-height: 1.45;
+		font-size: var(--font-size-base);
+		line-height: var(--line-height-relaxed);
 	}
 
-	/* Search */
+	/* ---------- Search (= .search-input-control) ---------- */
+
 	.home-search {
 		position: relative;
 
@@ -371,10 +303,10 @@
 	.home-search-icon {
 		position: absolute;
 		top: 50%;
-		left: var(--space-3-5);
+		left: var(--space-3);
 
-		width: calc(18 * var(--home-px));
-		height: calc(18 * var(--home-px));
+		width: var(--font-size-md);
+		height: var(--font-size-md);
 
 		color: var(--color-icon-secondary);
 
@@ -384,19 +316,21 @@
 
 	.home-search-input {
 		width: 100%;
-		height: calc(40 * var(--home-px));
+		height: var(--control-height-md);
 
-		padding-inline: calc(44 * var(--home-px)) calc(40 * var(--home-px));
+		padding-inline: calc(var(--space-3) + var(--font-size-md) + var(--space-2))
+			calc(var(--control-height-sm) + var(--space-2));
 
-		border: var(--border-width-default) solid var(--color-border-default);
-		border-radius: var(--radius-lg);
+		border: var(--border-width-default) solid var(--field-border);
+		border-radius: var(--input-radius);
 
-		background-color: var(--color-bg-surface);
-		box-shadow: var(--shadow-sm);
-		color: var(--color-text-primary);
+		background-color: var(--field-bg);
+		box-shadow: var(--shadow-xs);
+		color: var(--field-text);
 
 		font-family: var(--font-sans);
-		font-size: calc(14 * var(--home-px));
+		font-size: var(--field-font-size);
+		font-weight: var(--font-weight-regular);
 
 		transition:
 			border-color var(--duration-fast) var(--ease-standard),
@@ -404,7 +338,7 @@
 	}
 
 	.home-search-input::placeholder {
-		color: var(--color-text-muted);
+		color: var(--field-placeholder);
 	}
 
 	/* hide the native WebKit clear: we render our own */
@@ -413,28 +347,32 @@
 	}
 
 	.home-search-input:hover {
-		border-color: var(--color-border-hover);
+		border-color: var(--field-border-hover);
 	}
 
 	.home-search-input:focus {
 		outline: none;
 		border-color: var(--field-border-focus);
-		box-shadow: var(--shadow-focus-strong);
+		box-shadow: var(--field-focus-ring);
+	}
+
+	.home-search:focus-within .home-search-icon {
+		color: var(--color-icon-primary);
 	}
 
 	.home-search-clear {
 		position: absolute;
 		top: 50%;
-		right: var(--space-3);
+		right: var(--space-2);
 
 		display: inline-flex;
-		width: calc(32 * var(--home-px));
-		height: calc(32 * var(--home-px));
+		width: var(--control-height-sm);
+		height: var(--control-height-sm);
 		align-items: center;
 		justify-content: center;
 
 		border: 0;
-		border-radius: var(--radius-md);
+		border-radius: var(--button-radius);
 		background: transparent;
 		color: var(--color-icon-secondary);
 
@@ -452,8 +390,7 @@
 		box-shadow: var(--shadow-focus-strong);
 	}
 
-	/* Hero artwork: use home-hero.webp as the existing image's src.
-	   Its transparency already fades the actual left and bottom edges.
+	/* Hero artwork: transparency already fades the left and bottom edges.
 	   Keep the image's intrinsic proportions; no cover, zoom or extra mask. */
 	.home-hero-media {
 		position: absolute;
@@ -498,7 +435,7 @@
 	.home-module-grid {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: calc(16 * var(--home-px));
+		gap: var(--layout-card-gap);
 		margin: 0;
 		padding: 0;
 		list-style: none;
@@ -509,29 +446,31 @@
 		min-width: 0;
 	}
 
-	/* ---------- Module card ---------- */
+	/* ---------- Module card (surface = .ui-card) ---------- */
 
 	.home-module-card {
 		position: relative;
 		isolation: isolate;
 		overflow: hidden;
 
+		/* Compact tile (Batch 15b): one column, no leading icon tile.
+		   The faded corner icon is the only illustration. */
 		display: grid;
 		width: 100%;
-		min-height: calc(170 * var(--home-px));
-		grid-template-columns: var(--home-icon-tile) minmax(0, 1fr);
+		min-height: calc(124 * var(--home-px));
+		grid-template-columns: minmax(0, 1fr);
 		grid-template-rows: auto auto 1fr;
-		column-gap: calc(16 * var(--home-px));
-		row-gap: var(--space-2);
+		row-gap: var(--space-1-5);
 		align-content: start;
 
-		padding: calc(16 * var(--home-px));
+		padding: var(--space-4);
 
-		border: var(--border-width-default) solid var(--home-card-border);
-		border-radius: var(--radius-lg);
+		border: var(--border-width-default) solid var(--card-border);
+		border-radius: var(--card-radius);
 
-		background-color: var(--home-card-bg);
-		box-shadow: var(--shadow-sm);
+		background-color: var(--card-bg);
+		color: var(--card-text);
+		box-shadow: var(--card-shadow);
 
 		transition:
 			border-color var(--duration-fast) var(--ease-standard),
@@ -568,26 +507,14 @@
 		box-shadow: var(--shadow-md);
 	}
 
+	/* Leading icon tile removed from the design. Hidden here so Card.tsx
+	   keeps working unchanged; delete the element there when convenient. */
 	.home-module-icon {
-		display: inline-flex;
-		width: var(--home-icon-tile);
-		height: var(--home-icon-tile);
-		grid-row: 1 / span 2;
-		align-items: center;
-		justify-content: center;
-
-		border-radius: var(--radius-lg);
-		background-color: var(--color-brand-subtle);
-		color: var(--color-icon-brand);
-	}
-
-	.home-module-icon svg {
-		width: calc(24 * var(--home-px));
-		height: calc(24 * var(--home-px));
+		display: none;
 	}
 
 	.home-module-heading {
-		grid-column: 2;
+		grid-column: 1;
 		display: flex;
 		min-width: 0;
 		align-items: flex-start;
@@ -596,6 +523,7 @@
 		gap: var(--space-1-5);
 	}
 
+	/* Subsection heading: sentence/title case, not uppercase */
 	.home-module-title {
 		margin: 0;
 		min-width: 0;
@@ -604,72 +532,82 @@
 		color: var(--color-text-primary);
 
 		font-family: var(--font-sans);
-		font-size: calc(15 * var(--home-px));
-		font-weight: var(--font-weight-bold);
-		letter-spacing: -0.005em;
-		line-height: 1.25;
-		text-transform: uppercase;
+		font-size: var(--font-size-md);
+		font-weight: var(--font-weight-semibold);
+		letter-spacing: var(--tracking-title);
+		line-height: var(--line-height-tight);
+		text-transform: none;
 	}
 
+	/* = .badge, brand tone */
 	.home-module-badge {
 		display: inline-flex;
 		flex: 0 0 auto;
 		align-items: center;
-		gap: var(--space-1-5);
+		gap: var(--space-1);
 
 		padding: var(--space-0-5) var(--space-2);
 
-		border-radius: var(--radius-full);
+		border: var(--border-width-default) solid var(--color-brand-soft);
+		border-radius: var(--badge-radius);
 		background-color: var(--color-brand-subtle);
 		color: var(--color-text-brand);
 
-		font-size: calc(11 * var(--home-px));
+		font-size: var(--font-size-2xs);
 		font-weight: var(--font-weight-medium);
 		line-height: 1.3;
 		white-space: nowrap;
 	}
 
 	.home-module-badge svg {
-		width: calc(12 * var(--home-px));
-		height: calc(12 * var(--home-px));
+		width: var(--font-size-2xs);
+		height: var(--font-size-2xs);
 		flex: 0 0 auto;
 		fill: currentColor;
 	}
 
+	/* = .card-description, in secondary text */
 	.home-module-description {
-		grid-column: 2;
+		grid-column: 1;
 		margin: 0;
-		max-width: calc(330 * var(--home-px));
+		/* keep clear of the corner icon */
+		max-width: min(
+			calc(330 * var(--home-px)),
+			calc(100% - var(--home-decor-size) - var(--space-3))
+		);
 
 		color: var(--color-text-secondary);
 
-		font-size: calc(13 * var(--home-px));
-		line-height: 1.45;
+		font-size: var(--font-size-sm);
+		line-height: var(--line-height-normal);
 	}
 
+	/* = <Button variant="outline" size="sm"> */
 	.home-module-cta {
 		position: static;
 
 		display: inline-flex;
-		grid-column: 2;
+		grid-column: 1;
 		justify-self: start;
 		align-self: end;
 		align-items: center;
 		gap: var(--space-2);
 
-		min-height: calc(32 * var(--home-px));
+		min-height: var(--control-height-sm);
 		margin-top: var(--space-2);
-		padding-inline: calc(14 * var(--home-px));
+		padding: var(--space-1-5) var(--space-3);
 
-		border: var(--border-width-default) solid var(--button-primary-bg);
-		border-radius: var(--radius-md);
+		border: var(--border-width-default) solid var(--color-brand);
+		border-radius: var(--button-radius);
 
 		background-color: var(--color-bg-surface);
 		color: var(--color-text-brand);
+		box-shadow: var(--shadow-xs);
 
 		font-family: var(--font-sans);
-		font-size: calc(13 * var(--home-px));
-		font-weight: var(--font-weight-semibold);
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		line-height: 1;
 
 		cursor: pointer;
 		transition:
@@ -688,8 +626,8 @@
 	}
 
 	.home-module-cta svg {
-		width: calc(14 * var(--home-px));
-		height: calc(14 * var(--home-px));
+		width: var(--font-size-sm);
+		height: var(--font-size-sm);
 		transition: transform var(--duration-fast) var(--ease-standard);
 	}
 
@@ -708,8 +646,8 @@
 
 	.home-module-decor {
 		position: absolute;
-		right: calc(14 * var(--home-px));
-		bottom: calc(12 * var(--home-px));
+		right: var(--space-4);
+		bottom: var(--space-3);
 		z-index: -1;
 
 		color: var(--color-brand);
@@ -736,9 +674,9 @@
 
 		padding: var(--space-8) var(--space-4);
 
-		border: var(--border-width-default) dashed var(--color-border-default);
-		border-radius: var(--radius-lg);
-		background-color: var(--color-bg-surface);
+		border: var(--border-width-default) dashed var(--card-border);
+		border-radius: var(--card-radius);
+		background-color: var(--card-bg);
 
 		text-align: center;
 	}
@@ -763,7 +701,7 @@
 		padding: var(--space-1) var(--space-2);
 
 		border: 0;
-		border-radius: var(--radius-sm);
+		border-radius: var(--button-radius);
 		background: transparent;
 		color: var(--color-text-link);
 
@@ -773,6 +711,7 @@
 	}
 
 	.home-empty-action:hover {
+		color: var(--color-text-link-hover);
 		text-decoration: underline;
 	}
 
@@ -803,13 +742,6 @@
 			overflow: visible;
 		}
 
-		.home-layout-header {
-			position: relative;
-			height: var(--header-height);
-			min-height: var(--header-height);
-			flex-basis: var(--header-height);
-		}
-
 		.home-layout-main {
 			min-height: 0;
 			flex: 1 0 auto;
@@ -833,6 +765,10 @@
 		.home-hero-copy {
 			max-width: 100%;
 		}
+
+		.home-hero-title {
+			font-size: var(--font-size-2xl);
+		}
 	}
 
 	@media (max-width: 640px) {
@@ -845,8 +781,7 @@
 		}
 
 		.home-module-card {
-			column-gap: var(--space-4);
-			padding: var(--space-5);
+			padding: var(--space-3-5);
 		}
 
 		.home-module-heading {
@@ -858,20 +793,6 @@
 	@media (max-width: 380px) {
 		.home-layout-header-inner {
 			padding-inline: var(--space-3);
-		}
-
-		.home-module-card {
-			grid-template-columns: 1fr;
-		}
-
-		.home-module-icon {
-			grid-row: auto;
-		}
-
-		.home-module-heading,
-		.home-module-description,
-		.home-module-cta {
-			grid-column: 1;
 		}
 	}
 

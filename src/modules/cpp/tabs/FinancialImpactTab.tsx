@@ -10,7 +10,11 @@
 import { useFormContext, useWatch } from "react-hook-form";
 
 import CppSection from "../components/CppSection";
-import { RhfInput, useCppReadOnly } from "../components/CppFields";
+import {
+	RhfAmountInput,
+	RhfInput,
+	useCppReadOnly,
+} from "../components/CppFields";
 import type { CppFormValues, CppPlant } from "../types/cpp.types";
 
 /** Row order as in the Excel. */
@@ -48,7 +52,7 @@ const Tile = ({
 	value: string;
 	hint: string;
 }) => (
-	<div className="rounded-md border border-slate-200 bg-white p-4">
+	<div className="rounded-md border border-slate-200 bg-white px-3 py-2">
 		<div className="text-xs text-slate-600">{title}</div>
 		<div className="mt-1 text-xl font-semibold">{value}</div>
 		<div className="text-xs text-slate-500">{hint}</div>
@@ -70,7 +74,7 @@ const FinancialImpactTab = () => {
 	const annualised = sumOf("annualisedInr");
 
 	return (
-		<div className="flex flex-col gap-6">
+		<div className="flex flex-col gap-4">
 			<div className="grid gap-3 sm:grid-cols-2">
 				<Tile
 					title="Actual impact"
@@ -131,11 +135,10 @@ const FinancialImpactTab = () => {
 									) : (
 										<>
 											<td className="px-1.5 py-1.5">
-												<RhfInput
+												<RhfAmountInput
 													cell
 													name={`financial.plants.${plant}.actualInr`}
 													aria-label={`${plant} actual impact in rupees`}
-													inputMode="decimal"
 													className="w-[140px] text-right"
 												/>
 											</td>
@@ -149,11 +152,10 @@ const FinancialImpactTab = () => {
 												/>
 											</td>
 											<td className="px-1.5 py-1.5">
-												<RhfInput
+												<RhfAmountInput
 													cell
 													name={`financial.plants.${plant}.annualisedInr`}
 													aria-label={`${plant} annualised impact in rupees`}
-													inputMode="decimal"
 													className="w-[140px] text-right"
 												/>
 											</td>

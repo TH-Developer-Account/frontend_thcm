@@ -7,7 +7,11 @@ import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
 import { Alert } from "../../../components/common/Alert";
 import Button from "../../../components/common/Button";
-import { RhfInput, useCppReadOnly } from "../components/CppFields";
+import {
+	RhfAmountInput,
+	RhfInput,
+	useCppReadOnly,
+} from "../components/CppFields";
 import CppSection from "../components/CppSection";
 import type { CppFormValues } from "../types/cpp.types";
 import { calcAmort, emptyAmort, formatINR } from "../utils/cpp.utils";
@@ -24,7 +28,7 @@ const AmortisationTab = () => {
 	return (
 		<CppSection title="Amortisation" subtitle="In case of amortisation only">
 			{readOnly ? null : (
-				<div className="mb-4">
+				<div className="mb-2">
 					<Alert
 						type="banner"
 						variant="info"
@@ -69,11 +73,10 @@ const AmortisationTab = () => {
 										/>
 									</td>
 									<td className="px-1.5 py-1.5">
-										<RhfInput
+										<RhfAmountInput
 											cell
 											name={`amortisation.${index}.priceInclAmort`}
 											aria-label="Price incl. amortisation"
-											inputMode="decimal"
 											className="w-[140px] text-right"
 										/>
 									</td>
@@ -96,11 +99,10 @@ const AmortisationTab = () => {
 										/>
 									</td>
 									<td className="px-1.5 py-1.5">
-										<RhfInput
+										<RhfAmountInput
 											cell
 											name={`amortisation.${index}.priceAfterAmort`}
 											aria-label="Price after amortisation"
-											inputMode="decimal"
 											className="w-[140px] text-right"
 										/>
 									</td>

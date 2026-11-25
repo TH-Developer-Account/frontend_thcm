@@ -470,7 +470,10 @@
 @layer base {
 	:root {
 		/* Names used by module CSS that were never declared */
+		--color-surface: var(--color-bg-surface);                        /* workflow.css, marketing */
 		--color-surface-raised: var(--color-bg-surface);                 /* workflow.css */
+		--color-text-warning: var(--color-status-pending-text);          /* user-profile.styles.css */
+		--shadow-modal: var(--shadow-overlay);                           /* vendor.styles.css */
 		--color-approved-bg: var(--color-status-approved-bg);            /* vendor_styles.css */
 		--color-approved-text: var(--color-status-approved-text);
 		--color-bg-brand-soft: var(--color-bg-surface-active);           /* master_styles.css: active/selected rows (themed) */

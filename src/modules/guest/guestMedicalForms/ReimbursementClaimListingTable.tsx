@@ -2,6 +2,7 @@ import { useMemo } from "react";
 
 import Card from "../../../components/common/Card";
 import Button from "../../../components/common/Button";
+import { Alert } from "../../../components/common/Alert";
 import { SearchInput } from "../../../components/forms/SearchInput";
 import DataTable from "../../../components/ui/tables/DataTable/DataTable";
 import DataTableSkeleton from "../../../components/ui/tables/Skeletons/DataTableSkeleton";
@@ -70,8 +71,13 @@ const ReimbursementClaimListingTable = ({
 				{isLoading ? (
 					<DataTableSkeleton rows={SKELETON_ROW_COUNT} columns={columns.length} showPagination />
 				) : isError ? (
-					<div className="flex flex-col items-start gap-3 p-4" role="alert">
-						<p className="text-sm text-rejected">{errorMessage ?? "Unable to load your claims."}</p>
+					<div className="flex flex-col items-start gap-3 p-4">
+						<Alert
+							type="banner"
+							variant="error"
+							title="Unable to load your claims"
+							description={errorMessage ?? "Please try again."}
+						/>
 						{onRetry ? (
 							<Button type="button" text="Retry" size="sm" appearance="standard" variant="outline" onClick={onRetry} />
 						) : null}

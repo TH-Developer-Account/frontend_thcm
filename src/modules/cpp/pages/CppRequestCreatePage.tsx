@@ -1,20 +1,23 @@
 // pages/CppRequestCreatePage.tsx — "Create new CPP request" stepper wizard.
 //   Step  Basic details       (routing fields, request details, justification)
-//   Step  Purchasing details  (suppliers, purchasing Excel, approval values)
+//   Step  Purchasing details  (suppliers, summary sheet, approval values)
 //   Step  Amortisation        (only when pricing condition = PB50)
 //   Step  Volumes & impact    (volumes, per machine impact, material cost tracker — optional)
 //   Step  Master data         (plant / spares details for the selected plant)
 //   Step  Other data
 //   Step  Attachments
 //   Step  Review & workflow   → Submit
-// "Next" validates the current step; "Submit" validates everything and jumps to
-// the first step with an error. Step numbers are recalculated when Amortisation
-// comes or goes.
+// "Next" validates the current step and focuses its first invalid field.
+// "Submit" validates everything, opens the step with the FIRST invalid field and
+// focuses it. Which step owns which field: utils/cpp.steps.ts (one map).
 import type { ComponentType } from "react";
 import { ArrowLeft, ArrowRight, Check, Save } from "lucide-react";
 import { FormProvider } from "react-hook-form";
 
+import { Alert } from "../../../components/common/Alert";
 import Button from "../../../components/common/Button";
+import Card from "../../../components/common/Card";
+import FormValidationSummary from "../../../components/forms/FormValidationSummary";
 import { PageHeader } from "../../../components/ui/PageHeader";
 import { StepProgress } from "../../../components/ui/StepProgress";
 import PageSectionLayout from "../../../layout/PageSectionLayout";
@@ -31,7 +34,7 @@ import PurchasingDetailsTab from "../tabs/PurchasingDetailsTab";
 import VolumesImpactTab from "../tabs/VolumesImpactTab";
 import WorkflowTab from "../tabs/WorkflowTab";
 import type { CppStepKey } from "../types/cpp.types";
-import Card from "../../../components/common/Card";
+import { errorsOfStep, stepsWithErrors } from "../utils/cpp.steps";
 
 const STEP_BODY: Record<CppStepKey, ComponentType> = {
 	basic: BasicDetailsTab,
@@ -44,6 +47,31 @@ const STEP_BODY: Record<CppStepKey, ComponentType> = {
 	workflow: WorkflowTab,
 };
 
+/** Readable names for the summary; anything else uses its path. */
+const SUMMARY_FIELDS = [
+	{ name: "category", label: "Category" },
+	{ name: "plant", label: "Plant" },
+	{ name: "condition", label: "Conditions" },
+	{ name: "materialType", label: "Material type" },
+	{ name: "reason", label: "Reason for price update" },
+	{ name: "workflow.models", label: "Models" },
+	{ name: "priceType", label: "Price type" },
+	{ name: "workflow.pricingCondition", label: "Pricing condition" },
+	{ name: "justification", label: "Justification" },
+	{ name: "suppliers.existing.name", label: "Existing supplier name" },
+	{ name: "suppliers.recommended.name", label: "Recommended supplier name" },
+	{ name: "suppliers.recommended.code", label: "Recommended vendor code" },
+	{ name: "attachments.partSummary", label: "Summary sheet (part info)" },
+	{
+		name: "approvalValues.partValuePart",
+		label: "Part for highest part value",
+	},
+	{ name: "approvalValues.partValue", label: "Highest part value" },
+	{ name: "approvalValues.variationPct", label: "Variation %" },
+	{ name: "approvalValues.amountPart", label: "Part for the amount" },
+	{ name: "approvalValues.amount", label: "Amount" },
+];
+
 const CppRequestCreatePage = () => {
 	const {
 		form,
@@ -53,6 +81,7 @@ const CppRequestCreatePage = () => {
 		isLast,
 		busy,
 		isEditing,
+		isResubmit,
 		isLoading,
 		loadError,
 		referenceNumber,
@@ -65,6 +94,17 @@ const CppRequestCreatePage = () => {
 
 	const ActiveStep = STEP_BODY[step.key];
 
+	/* Steps that still hold an error are marked in the stepper; the current
+	   step shows its own errors inline and in the summary. */
+	const { errors, submitCount } = form.formState;
+	const invalidSteps = stepsWithErrors(errors);
+	const stepsWithStatus = steps.map((item) =>
+		invalidSteps.has(item.key) && item.id !== step.id
+			? { ...item, status: "invalid" as const }
+			: item,
+	);
+	const currentStepErrors = errorsOfStep(errors, step.key);
+
 	return (
 		<PageSectionLayout>
 			<PageHeader
@@ -73,6 +113,7 @@ const CppRequestCreatePage = () => {
 						? `Edit CPP request${referenceNumber ? ` · ${referenceNumber}` : ""}`
 						: "Create new CPP request"
 				}
+				subtitleText={`Step ${steps.findIndex((item) => item.id === step.id) + 1} of ${steps.length} · ${step.label}`}
 				navigation={{
 					variant: "breadcrumbs",
 					ariaLabel: "Create CPP request page location",
@@ -86,22 +127,32 @@ const CppRequestCreatePage = () => {
 			/>
 
 			{loadError ? (
-				<div
-					role="alert"
-					className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-				>
-					{loadError}
-				</div>
+				<Alert
+					variant="error"
+					title="Unable to load this request"
+					description={loadError}
+				/>
 			) : isLoading ? (
-				<div className="px-4 py-10 text-center text-sm text-slate-500">
+				<p
+					role="status"
+					className="px-4 py-10 text-center text-sm text-fg-muted"
+				>
 					Loading request…
-				</div>
+				</p>
 			) : null}
 
 			<FormProvider {...form}>
 				{/* div, not <form>: Enter / step buttons must never trigger submit. */}
-
 				<Card
+					title={
+						<StepProgress
+							steps={stepsWithStatus}
+							currentStep={step.id}
+							ariaLabel="CPP request steps"
+						/>
+					}
+					headerClassName="border-none pb-1"
+					padding="spacious"
 					footer={
 						<div className="bottom-buttons-bar-between">
 							<div className="flex flex-wrap items-center gap-2">
@@ -142,7 +193,7 @@ const CppRequestCreatePage = () => {
 								{isLast ? (
 									<Button
 										type="button"
-										text="Submit for approval"
+										text={isResubmit ? "Resubmit" : "Submit for approval"}
 										Icon={Check}
 										size="sm"
 										appearance="standard"
@@ -167,12 +218,14 @@ const CppRequestCreatePage = () => {
 					}
 				>
 					<div
-						className={`flex flex-col gap-4 ${isLoading || loadError ? "pointer-events-none opacity-40" : ""}`}
+						className={`flex flex-col gap-3 ${isLoading || loadError ? "pointer-events-none opacity-40" : ""}`}
 					>
-						<StepProgress
-							steps={steps}
-							currentStep={step.id}
-							ariaLabel="CPP request steps"
+						{/* Only this step's problems; other steps are marked in the stepper. */}
+						<FormValidationSummary
+							errors={currentStepErrors}
+							fields={SUMMARY_FIELDS}
+							title="Please fix these before continuing"
+							focusKey={submitCount}
 						/>
 
 						<div role="region" aria-label={step.label}>

@@ -4,7 +4,11 @@ import { Controller, useFieldArray, useFormContext } from "react-hook-form";
 
 import Button from "../../../components/common/Button";
 import TextareaInput from "../../../components/forms/TextareaInput";
-import { RhfInput, useCppReadOnly } from "../components/CppFields";
+import {
+	RhfAmountInput,
+	RhfInput,
+	useCppReadOnly,
+} from "../components/CppFields";
 import CppSection from "../components/CppSection";
 import type { CppFormValues } from "../types/cpp.types";
 import { CPP_MAX_TABLE_ROWS, emptyPlantPrice } from "../utils/cpp.utils";
@@ -35,10 +39,10 @@ const PlantPriceRow = ({
 				/>
 			</td>
 			<td className="px-1.5 py-1.5">
-				<RhfInput
+				<RhfAmountInput
+					cell
 					name={`other.plantPrices.${index}.price`}
 					aria-label={`Row ${index + 1} price in rupees`}
-					inputMode="decimal"
 					className="text-right"
 					placeholder="0.00"
 				/>
@@ -67,7 +71,7 @@ const OtherDataTab = () => {
 	const rowLimitReached = fields.length >= CPP_MAX_TABLE_ROWS;
 
 	return (
-		<div className="flex flex-col gap-6">
+		<div className="flex flex-col gap-4">
 			<Controller
 				name="other.remarks"
 				control={control}

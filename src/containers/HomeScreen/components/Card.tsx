@@ -39,10 +39,7 @@ function ActionCard({
 
 	return (
 		<article
-			className={[
-				"home-module-card",
-				isActive ? "home-module-card-active" : "",
-			]
+			className={["home-module-card", isActive ? "home-module-card-active" : ""]
 				.filter(Boolean)
 				.join(" ")}
 		>
