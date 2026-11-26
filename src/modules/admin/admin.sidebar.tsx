@@ -46,16 +46,16 @@ export const adminSidebar: SidebarItem[] = [
     icon: <BriefcaseBusinessIcon size={18} />,
     link: "/admin/business-partners",
   },
-  {
-    id: "bydesign",
-    label: "By Design Data",
-    icon: <Database size={18} />,
-    link: "/admin/bydesign",
-  },
-  {
-    id: "c4c",
-    label: "C4C Data",
-    icon: <Database size={18} />,
-    link: "/admin/c4c",
-  },
+  // {
+  //   id: "bydesign",
+  //   label: "By Design Data",
+  //   icon: <Database size={18} />,
+  //   link: "/admin/bydesign",
+  // },
+  // {
+  //   id: "c4c",
+  //   label: "C4C Data",
+  //   icon: <Database size={18} />,
+  //   link: "/admin/c4c",
+  // },
 ];

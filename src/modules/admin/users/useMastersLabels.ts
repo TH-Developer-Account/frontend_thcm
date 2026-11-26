@@ -2,24 +2,28 @@ import { useCallback } from "react";
 
 import { useMasterData } from "../../../hooks/useMasterData";
 
-type MasterKey = "regions" | "branches" | "departments";
+// "departments" replaced by "divisions" — Division took over Department's
+// org-unit-master role everywhere (see decisions-and-learnings.md). Callers
+// still pass whichever stored value they have (e.g. a user's `department`
+// field); only the master-list key they look it up against changed.
+type MasterKey = "regions" | "branches" | "divisions";
 
 type MasterLike = { value: string; code?: string; label: string };
 
 const UUID_PATTERN =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Same matching rule as CreateUserForm / useUserInfo: id, code or label.
 const matchMaster = <T extends MasterLike>(
-	options: T[] | undefined,
-	stored: string,
+  options: T[] | undefined,
+  stored: string,
 ): T | undefined =>
-	(options ?? []).find(
-		(option) =>
-			option.value === stored ||
-			option.code === stored ||
-			option.label === stored,
-	);
+  (options ?? []).find(
+    (option) =>
+      option.value === stored ||
+      option.code === stored ||
+      option.label === stored,
+  );
 
 /**
  * Resolves a stored zone / branch / department value to its master label,
@@ -34,20 +38,20 @@ const matchMaster = <T extends MasterLike>(
  * dependency array of any memoised table columns.
  */
 export const useMasterLabels = () => {
-	const { data: masters, isLoading } = useMasterData();
+  const { data: masters, isLoading } = useMasterData();
 
-	const getLabel = useCallback(
-		(key: MasterKey, stored?: string | null, fallback = "--"): string => {
-			const value = stored?.trim();
-			if (!value) return fallback;
+  const getLabel = useCallback(
+    (key: MasterKey, stored?: string | null, fallback = "--"): string => {
+      const value = stored?.trim();
+      if (!value) return fallback;
 
-			const match = matchMaster(masters?.[key], value);
-			if (match) return match.label;
+      const match = matchMaster(masters?.[key], value);
+      if (match) return match.label;
 
-			return UUID_PATTERN.test(value) ? fallback : value;
-		},
-		[masters],
-	);
+      return UUID_PATTERN.test(value) ? fallback : value;
+    },
+    [masters],
+  );
 
-	return { getLabel, isLoading };
+  return { getLabel, isLoading };
 };
