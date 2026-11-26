@@ -105,12 +105,12 @@ export default function MyAuditsPage() {
 									showScore={audit.finalScore !== null}
 									note={
 										audit.openClarificationCount > 0 ? (
-											<span className="flex items-center gap-1.5 text-sm font-medium text-amber-800">
+											<span className="flex items-center gap-1.5 text-sm font-medium text-caution-text">
 												<Wrench className="size-4" aria-hidden="true" />
 												{text.reviewerRemarks} ({audit.openClarificationCount})
 											</span>
 										) : getDealerPrimaryAction(audit) === "viewReport" ? (
-											<span className="flex items-center gap-1.5 text-sm text-emerald-800">
+											<span className="flex items-center gap-1.5 text-sm text-positive-text">
 												<CheckCircle2 className="size-4" aria-hidden="true" />
 												{content.status.next[audit.status]}
 											</span>

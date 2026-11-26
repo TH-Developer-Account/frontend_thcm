@@ -11,10 +11,7 @@ const text = content.common;
 
 export function PageLoading({ label }: { label?: string }) {
 	return (
-		<p
-			className="py-10 text-center text-sm text-(--color-text-secondary)"
-			role="status"
-		>
+		<p className="py-10 text-center text-sm text-fg-secondary" role="status">
 			{label ?? "Loading…"}
 		</p>
 	);
@@ -42,6 +39,7 @@ export function PageNoAccess() {
 	return (
 		<Alert
 			variant="info"
+			type="banner"
 			title={text.noAccess}
 			description={text.noAccessHelp}
 		/>
@@ -50,11 +48,9 @@ export function PageNoAccess() {
 
 export function PageEmpty({ title, help }: { title: string; help?: string }) {
 	return (
-		<div className="rounded-xl border border-dashed border-(--color-border-default) px-4 py-10 text-center">
-			<p className="text-base font-semibold">{title}</p>
-			{help ? (
-				<p className="mt-1 text-sm text-(--color-text-secondary)">{help}</p>
-			) : null}
+		<div className="rounded-xl border border-dashed border-line-strong bg-surface px-4 py-10 text-center">
+			<p className="text-base font-semibold text-fg">{title}</p>
+			{help ? <p className="mt-1 text-sm text-fg-secondary">{help}</p> : null}
 		</div>
 	);
 }

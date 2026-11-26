@@ -91,7 +91,7 @@ export default function DealerAuditReportPage() {
 	) {
 		return (
 			<PageSectionLayout className="audit-page audit-page-narrow">
-				<p className="text-sm text-slate-600" role="status">
+				<p className="text-sm text-fg-secondary" role="status">
 					{text.loading}
 				</p>
 			</PageSectionLayout>
@@ -144,10 +144,10 @@ export default function DealerAuditReportPage() {
 			<header className="flex flex-wrap items-start gap-3">
 				{back}
 				<div className="min-w-0 flex-1">
-					<h1 className="break-words text-lg font-semibold text-(--color-text-primary)">
+					<h1 className="break-words text-xl font-semibold text-fg">
 						{text.title}
 					</h1>
-					<p className="text-sm text-(--color-text-secondary)">
+					<p className="text-sm text-fg-secondary">
 						{report.dealerName}
 						{report.dealerCode ? ` (${report.dealerCode})` : ""} ·{" "}
 						{formatPeriodLabel(report.period)}
@@ -168,25 +168,25 @@ export default function DealerAuditReportPage() {
 				<Card variant="outlined" padding="default">
 					<div className="flex flex-wrap items-end justify-between gap-4">
 						<div>
-							<p className="text-xs text-(--color-text-secondary)">
+							<p className="text-xs font-medium text-fg-secondary">
 								{text.finalScore}
 							</p>
-							<p className="text-3xl font-bold tabular-nums text-(--color-text-primary)">
+							<p className="text-3xl font-bold tabular-nums text-fg">
 								{finalScore}
-								<span className="text-lg font-medium text-(--color-text-secondary)">
+								<span className="text-lg font-medium text-fg-secondary">
 									/{report.maxScore}
 								</span>
 							</p>
-							<p className="text-sm text-(--color-text-secondary)">
+							<p className="text-sm font-medium tabular-nums text-fg-secondary">
 								{formatPercent(finalPercent)}
 							</p>
 						</div>
 						{report.selfScore !== null ? (
 							<div className="text-right">
-								<p className="text-xs text-(--color-text-secondary)">
+								<p className="text-xs font-medium text-fg-secondary">
 									{text.selfScore}
 								</p>
-								<p className="text-lg font-semibold tabular-nums">
+								<p className="text-lg font-semibold tabular-nums text-fg">
 									{report.selfScore}/{report.maxScore}
 								</p>
 							</div>
@@ -198,29 +198,28 @@ export default function DealerAuditReportPage() {
 					<div className="overflow-x-auto">
 						<table className="w-full text-sm">
 							<thead>
-								<tr className="text-left text-xs text-(--color-text-secondary)">
-									<th scope="col" className="py-1 pr-3 font-medium">
+								<tr className="bg-surface-muted text-left text-xs text-fg-label">
+									<th scope="col" className="px-3 py-2 font-semibold">
 										{text.section}
 									</th>
-									<th scope="col" className="py-1 pr-3 text-right font-medium">
+									<th scope="col" className="px-3 py-2 text-right font-semibold">
 										{text.score}
 									</th>
-									<th scope="col" className="py-1 text-right font-medium">
+									<th scope="col" className="px-3 py-2 text-right font-semibold">
 										{text.percent}
 									</th>
 								</tr>
 							</thead>
 							<tbody>
 								{report.sections.map((section) => (
-									<tr
-										key={section.sectionId}
-										className="border-t border-(--color-border-default)"
-									>
-										<td className="py-2 pr-3 break-words">{section.name}</td>
-										<td className="py-2 pr-3 text-right tabular-nums">
+									<tr key={section.sectionId} className="border-t border-line">
+										<td className="px-3 py-2 break-words text-fg">
+											{section.name}
+										</td>
+										<td className="px-3 py-2 text-right tabular-nums text-fg">
 											{section.score}/{section.maxScore}
 										</td>
-										<td className="py-2 text-right tabular-nums">
+										<td className="px-3 py-2 text-right font-medium tabular-nums text-fg">
 											{formatPercent(
 												toPercent(section.score, section.maxScore),
 											)}
@@ -261,19 +260,18 @@ export default function DealerAuditReportPage() {
 					>
 						<ol className="space-y-3">
 							{historyQuery.data.map((entry) => (
-								<li
-									key={entry.id}
-									className="border-l-2 border-(--color-border-default) pl-3"
-								>
-									<p className="text-sm font-medium">
+								<li key={entry.id} className="border-l-2 border-line-strong pl-3">
+									<p className="text-sm font-medium text-fg">
 										{entry.actorName}
 										{entry.actorRole ? ` · ${entry.actorRole}` : ""}
 									</p>
-									<p className="text-xs text-(--color-text-secondary)">
+									<p className="text-xs text-fg-secondary">
 										{formatAuditDateTime(entry.occurredAt)}
 									</p>
 									{entry.comment ? (
-										<p className="mt-1 break-words text-sm">{entry.comment}</p>
+										<p className="mt-1 break-words text-sm text-fg">
+											{entry.comment}
+										</p>
 									) : null}
 								</li>
 							))}
@@ -281,7 +279,7 @@ export default function DealerAuditReportPage() {
 					</Card>
 				) : null}
 
-				<p className="text-xs text-(--color-text-secondary)">
+				<p className="text-xs text-fg-secondary">
 					{format(text.generated, {
 						date: formatAuditDateTime(report.generatedAt),
 					})}

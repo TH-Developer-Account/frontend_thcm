@@ -57,15 +57,15 @@ const SHOW_ZONE_FILTERS = false;
 const FACILITY_SHORT: Record<string, string> = text.facility.short;
 const FACILITY_LONG: Record<string, string> = text.facility.long;
 
-const CELL_HEAD =
-	"px-3 py-2 text-left text-xs font-semibold text-(--color-text-secondary)";
-const CELL = "px-3 py-3 align-middle text-sm";
+const CELL_HEAD = "px-3 py-2 text-left text-xs font-semibold text-fg-label";
+const CELL = "px-3 py-3 align-middle text-sm text-fg";
 const TABLE_WRAP = "overflow-x-auto";
+const PANEL = "overflow-hidden rounded-lg border border-line bg-surface";
 const PILL =
 	"inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium";
-const PILL_GREEN = `${PILL} border-emerald-200 bg-emerald-50 text-emerald-700`;
-const PILL_AMBER = `${PILL} border-amber-300 bg-amber-50 text-amber-800`;
-const PILL_GREY = `${PILL} border-slate-300 bg-slate-50 text-slate-700`;
+const PILL_GREEN = `${PILL} border-positive-line bg-positive-bg text-positive-text`;
+const PILL_AMBER = `${PILL} border-caution-line bg-caution-bg text-caution-text`;
+const PILL_GREY = `${PILL} border-line-strong bg-surface-muted text-fg-secondary`;
 
 interface Option {
 	value: string;
@@ -125,7 +125,7 @@ function SearchBox({
 			<Search
 				size={16}
 				aria-hidden="true"
-				className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+				className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted"
 			/>
 			<input
 				type="search"
@@ -133,7 +133,7 @@ function SearchBox({
 				onChange={(event) => onChange(event.target.value)}
 				placeholder={placeholder}
 				aria-label={placeholder}
-				className="h-11 w-full rounded-md border border-(--color-border-default) pl-9 pr-3 text-sm"
+				className="h-11 w-full rounded-md border border-line-interactive bg-surface pl-9 pr-3 text-sm text-fg placeholder:text-fg-subtle focus-visible:border-accent focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-focus"
 			/>
 		</div>
 	);
@@ -188,7 +188,7 @@ function Pager({
 			<p
 				role="status"
 				aria-live="polite"
-				className="text-sm text-(--color-text-secondary)"
+				className="text-sm tabular-nums text-fg-secondary"
 			>
 				{format(text.pagination.showing, { from, to, total })}
 			</p>
@@ -240,7 +240,9 @@ function SortHeader({
 			<button
 				type="button"
 				onClick={onClick}
-				className="inline-flex items-center gap-1 font-semibold hover:text-(--color-text-primary)"
+				className={`inline-flex items-center gap-1 rounded-sm font-semibold hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus ${
+					active ? "text-accent-text" : ""
+				}`}
 			>
 				{label}
 				<span aria-hidden="true" className="w-3 text-[10px]">
@@ -589,14 +591,14 @@ export function CycleDealersStep({
 				/>
 			</div>
 
-			<div className="overflow-hidden rounded-lg border border-(--color-border-default)">
+			<div className={PANEL}>
 				<div
 					role="status"
 					aria-live="polite"
-					className="flex flex-wrap items-center justify-between gap-2 bg-orange-50 px-3 py-2.5 text-sm"
+					className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-accent-subtle px-3 py-2.5 text-sm text-fg"
 				>
 					<p>
-						<strong>
+						<strong className="tabular-nums">
 							{format(text.dealers.bannerCount, {
 								selected: selectedInRows,
 								total: rows.length,
@@ -614,7 +616,7 @@ export function CycleDealersStep({
 						{hasFilters ? (
 							<button
 								type="button"
-								className="font-medium text-(--color-text-secondary) hover:underline"
+								className="rounded-sm font-medium text-fg-secondary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
 								onClick={() =>
 									filter(() => {
 										setSearch("");
@@ -629,7 +631,7 @@ export function CycleDealersStep({
 						) : null}
 						<button
 							type="button"
-							className="font-medium text-orange-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+							className="rounded-sm font-semibold text-accent-text hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50"
 							disabled={isDisabled || eligibleRows.length === 0}
 							onClick={allEligibleSelected ? clearMatching : selectAllMatching}
 						>
@@ -650,13 +652,13 @@ export function CycleDealersStep({
 
 				{isLoading ? (
 					<p
-						className="px-3 py-6 text-center text-sm text-slate-600"
+						className="px-3 py-6 text-center text-sm text-fg-secondary"
 						role="status"
 					>
 						{auditContent.ui.create.loading}
 					</p>
 				) : rows.length === 0 ? (
-					<p className="px-3 py-6 text-center text-sm text-slate-600">
+					<p className="px-3 py-6 text-center text-sm text-fg-secondary">
 						{text.dealers.empty}
 					</p>
 				) : (
@@ -664,7 +666,7 @@ export function CycleDealersStep({
 						<div className={TABLE_WRAP}>
 							<table className="w-full min-w-[46rem] border-collapse">
 								<thead>
-									<tr className="border-b border-(--color-border-default)">
+									<tr className="border-b border-line bg-surface-muted">
 										<th scope="col" className="w-12 px-3 py-2">
 											<span className="sr-only">
 												{text.dealers.columns.select}
@@ -696,7 +698,7 @@ export function CycleDealersStep({
 										</th>
 									</tr>
 								</thead>
-								<tbody className="divide-y divide-(--color-border-default)">
+								<tbody className="divide-y divide-line">
 									{paged.rows.map((dealer) => {
 										const entry = byId.get(dealer.id);
 										const eligible = entry?.isEligible ?? true;
@@ -704,13 +706,19 @@ export function CycleDealersStep({
 										return (
 											<tr
 												key={dealer.id}
-												className={eligible ? "hover:bg-slate-50" : ""}
+												className={
+													selected.has(dealer.id)
+														? "bg-accent-subtle"
+														: eligible
+															? "hover:bg-surface-hover"
+															: "bg-surface-muted"
+												}
 											>
 												<td className="px-3 py-1">
 													<label className="flex min-h-11 cursor-pointer items-center justify-center">
 														<input
 															type="checkbox"
-															className="size-5"
+															className="size-5 accent-[var(--color-brand-solid)]"
 															aria-label={format(text.dealers.selectRow, {
 																dealer: dealer.name,
 															})}
@@ -762,7 +770,7 @@ export function CycleDealersStep({
 								</tbody>
 							</table>
 						</div>
-						<div className="border-t border-(--color-border-default)">
+						<div className="border-t border-line">
 							<Pager
 								page={paged.page}
 								totalPages={paged.totalPages}
@@ -985,9 +993,9 @@ export function CycleReviewersStep({
 					</p>
 				) : null}
 
-				<div className="overflow-hidden rounded-lg border border-(--color-border-default)">
+				<div className={PANEL}>
 					{rows.length === 0 ? (
-						<p className="px-3 py-6 text-center text-sm text-slate-600">
+						<p className="px-3 py-6 text-center text-sm text-fg-secondary">
 							{text.reviewers.empty}
 						</p>
 					) : (
@@ -995,7 +1003,7 @@ export function CycleReviewersStep({
 							<div className={TABLE_WRAP}>
 								<table className="w-full min-w-[40rem] border-collapse">
 									<thead>
-										<tr className="border-b border-(--color-border-default) bg-slate-50">
+										<tr className="border-b border-line bg-surface-muted">
 											<th scope="col" className={CELL_HEAD}>
 												{text.reviewers.columns.dealer}
 											</th>
@@ -1010,11 +1018,11 @@ export function CycleReviewersStep({
 											</th>
 										</tr>
 									</thead>
-									<tbody className="divide-y divide-(--color-border-default)">
+									<tbody className="divide-y divide-line">
 										{paged.rows.map(({ id, dealer }) => {
 											const name = dealer ? dealerTitle(dealer) : id;
 											return (
-												<tr key={id}>
+												<tr key={id} className="hover:bg-surface-hover">
 													<td className={`${CELL} font-semibold`}>
 														<span className="block break-words">{name}</span>
 													</td>
@@ -1044,16 +1052,16 @@ export function CycleReviewersStep({
 								</table>
 							</div>
 							{unassigned > 0 ? (
-								<p className="flex items-center gap-2 border-t border-(--color-border-default) px-3 py-2.5 text-sm text-slate-700">
+								<p className="flex items-center gap-2 border-t border-caution-line bg-caution-bg px-3 py-2.5 text-sm text-fg">
 									<Info
 										size={16}
 										aria-hidden="true"
-										className="shrink-0 text-amber-700"
+										className="shrink-0 text-caution-text"
 									/>
 									{format(text.reviewers.missingWarning, { count: unassigned })}
 								</p>
 							) : null}
-							<div className="border-t border-(--color-border-default)">
+							<div className="border-t border-line">
 								<Pager
 									page={paged.page}
 									totalPages={paged.totalPages}
@@ -1072,9 +1080,9 @@ export function CycleReviewersStep({
 			<aside className="space-y-4">
 				<section
 					aria-label={text.reviewers.workloadTitle}
-					className="rounded-lg border border-(--color-border-default) p-4"
+					className="rounded-lg border border-line bg-surface p-4 shadow-sm"
 				>
-					<h3 className="text-sm font-semibold">
+					<h3 className="text-sm font-semibold text-fg">
 						{text.reviewers.workloadTitle}
 					</h3>
 					<ul className="mt-3 space-y-3">
@@ -1082,15 +1090,15 @@ export function CycleReviewersStep({
 							const count = perReviewer.get(reviewer.id) ?? 0;
 							return (
 								<li key={reviewer.id}>
-									<div className="flex items-baseline justify-between gap-2 text-sm">
+									<div className="flex items-baseline justify-between gap-2 text-sm text-fg">
 										<span className="min-w-0 break-words">{reviewer.name}</span>
-										<span className="shrink-0 text-xs text-(--color-text-secondary)">
+										<span className="shrink-0 text-xs font-medium tabular-nums text-fg-secondary">
 											{format(text.reviewers.workloadCount, { count })}
 										</span>
 									</div>
-									<div className="mt-1 h-1.5 rounded-full bg-slate-200">
+									<div className="mt-1 h-1.5 rounded-full bg-line">
 										<div
-											className="h-full rounded-full bg-orange-500"
+											className="h-full rounded-full bg-accent"
 											style={{ width: `${(count / barMax) * 100}%` }}
 										/>
 									</div>
@@ -1098,15 +1106,15 @@ export function CycleReviewersStep({
 							);
 						})}
 						<li>
-							<div className="flex items-baseline justify-between gap-2 text-sm">
+							<div className="flex items-baseline justify-between gap-2 text-sm text-fg">
 								<span>{text.reviewers.unassignedRow}</span>
-								<span className="shrink-0 text-xs text-(--color-text-secondary)">
+								<span className="shrink-0 text-xs font-medium tabular-nums text-fg-secondary">
 									{format(text.reviewers.workloadCount, { count: unassigned })}
 								</span>
 							</div>
-							<div className="mt-1 h-1.5 rounded-full bg-slate-200">
+							<div className="mt-1 h-1.5 rounded-full bg-line">
 								<div
-									className="h-full rounded-full bg-amber-400"
+									className="h-full rounded-full bg-caution-text"
 									style={{ width: `${(unassigned / barMax) * 100}%` }}
 								/>
 							</div>
@@ -1116,9 +1124,9 @@ export function CycleReviewersStep({
 
 				<section
 					aria-label={text.reviewers.fallbackTitle}
-					className="rounded-lg border border-(--color-border-default) p-4"
+					className="rounded-lg border border-line bg-surface p-4 shadow-sm"
 				>
-					<h3 className="text-sm font-semibold">
+					<h3 className="text-sm font-semibold text-fg">
 						{text.reviewers.fallbackTitle}
 					</h3>
 					<div className="mt-3">
@@ -1132,7 +1140,7 @@ export function CycleReviewersStep({
 							isClearable
 						/>
 					</div>
-					<p className="mt-2 text-xs text-(--color-text-secondary)">
+					<p className="mt-2 text-xs text-fg-secondary">
 						{text.reviewers.fallbackHelp}
 					</p>
 				</section>
@@ -1209,22 +1217,26 @@ export function CycleConfirmStep({
 	return (
 		<div className="space-y-4">
 			<div>
-				<h3 className="text-base font-semibold">{c.heading}</h3>
-				<p className="text-sm text-(--color-text-secondary)">{c.body}</p>
-				<p className="mt-1 break-words text-sm font-medium">{values.name}</p>
+				<h3 className="text-lg font-semibold text-fg">{c.heading}</h3>
+				<p className="text-sm text-fg-secondary">{c.body}</p>
+				<p className="mt-1 break-words text-sm font-semibold text-fg">
+					{values.name}
+				</p>
 			</div>
 
-			<dl className="divide-y divide-(--color-border-default) rounded-lg border border-(--color-border-default)">
+			<dl className="divide-y divide-line rounded-lg border border-line bg-surface">
 				{rows.map((row) => (
 					<div
 						key={row.label}
 						className="flex items-center justify-between gap-3 px-3 py-2"
 					>
 						<div className="min-w-0">
-							<dt className="text-xs text-(--color-text-secondary)">
+							<dt className="text-xs font-medium text-fg-secondary">
 								{row.label}
 							</dt>
-							<dd className="break-words text-sm font-medium">{row.value}</dd>
+							<dd className="break-words text-sm font-semibold text-fg">
+								{row.value}
+							</dd>
 						</div>
 						<Button
 							type="button"
@@ -1238,15 +1250,15 @@ export function CycleConfirmStep({
 				))}
 				<div className="flex items-start justify-between gap-3 px-3 py-2">
 					<div className="min-w-0">
-						<dt className="text-xs text-(--color-text-secondary)">
+						<dt className="text-xs font-medium text-fg-secondary">
 							{c.reviewers}
 						</dt>
-						<dd className="text-sm">
+						<dd className="text-sm text-fg">
 							<ul className="mt-1 space-y-0.5">
 								{perReviewer.map((entry) => (
 									<li key={entry.id} className="break-words">
-										<span className="font-medium">{entry.name}</span> —{" "}
-										{entry.count}
+										<span className="font-semibold">{entry.name}</span> —{" "}
+										<span className="tabular-nums">{entry.count}</span>
 									</li>
 								))}
 							</ul>

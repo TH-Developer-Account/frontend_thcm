@@ -30,6 +30,10 @@ import {
 const matrixLabels: ScoreMatrixLabels = content.scoreMatrix;
 const text = content.review;
 
+/** Amber chip used for "score lowered" and "needs improvement" values. */
+const CAUTION_CHIP =
+	"rounded-md border border-caution-line bg-caution-bg px-2 py-0.5 text-xs font-semibold tabular-nums text-caution-text";
+
 // ── Score overview ────────────────────────────────────────────────────
 
 interface ScoreOverviewProps {
@@ -72,30 +76,33 @@ export function ScoreChangeList({ items, title }: ScoreChangeListProps) {
 	return (
 		<Card variant="outlined" title={title ?? text.scoreChangesTitle} padding="compact">
 			{drops.length === 0 ? (
-				<p className="text-sm text-(--color-text-secondary)">
+				<p className="text-sm text-fg-secondary">
 					{content.reviewSummary.noChanges}
 				</p>
 			) : (
-				<ul className="divide-y divide-(--color-border-default)">
+				<ul className="divide-y divide-line">
 					{drops.map(({ item, dealerScore, reviewerScore, drop }) => (
 						<li key={item.id} className="space-y-1 py-3 first:pt-0 last:pb-0">
-							<p className="break-words text-sm font-medium">
+							<p className="break-words text-sm font-medium text-fg">
 								{item.sequence}. {item.title}
 							</p>
 							<p className="flex flex-wrap items-center gap-2 text-sm">
-								<ArrowDown className="size-4 text-amber-700" aria-hidden="true" />
-								<span className="font-semibold tabular-nums">
+								<ArrowDown
+									className="size-4 text-caution-text"
+									aria-hidden="true"
+								/>
+								<span className="font-semibold tabular-nums text-fg">
 									{format(text.scoreChangeLine, {
 										dealer: dealerScore,
 										reviewer: reviewerScore,
 									})}
 								</span>
-								<span className="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">
-									−{drop}
-								</span>
+								<span className={CAUTION_CHIP}>−{drop}</span>
 							</p>
-							<p className="break-words text-sm text-(--color-text-secondary)">
-								<span className="font-medium">{text.reasonLabel}: </span>
+							<p className="break-words text-sm text-fg-secondary">
+								<span className="font-medium text-fg-label">
+									{text.reasonLabel}:{" "}
+								</span>
 								{item.review?.scoreChangeReason ?? text.noReason}
 							</p>
 						</li>
@@ -115,7 +122,7 @@ export function EvidenceGallery({
 }) {
 	if (evidence.length === 0) {
 		return (
-			<p className="flex items-center gap-1.5 text-xs text-(--color-text-secondary)">
+			<p className="flex items-center gap-1.5 text-xs text-fg-secondary">
 				<Camera className="size-4" aria-hidden="true" />
 				{text.noEvidence}
 			</p>
@@ -126,7 +133,7 @@ export function EvidenceGallery({
 			{evidence.map((photo) => (
 				<li
 					key={photo.id}
-					className="space-y-2 rounded-lg border border-(--color-border-default) p-2"
+					className="space-y-2 rounded-lg border border-line bg-surface p-2"
 				>
 					<a
 						href={photo.url}
@@ -179,30 +186,30 @@ export function DeficiencyList({
 	return (
 		<Card variant="outlined" title={title ?? text.deficienciesTitle} padding="compact">
 			{deficiencies.length === 0 ? (
-				<p className="text-sm text-(--color-text-secondary)">
+				<p className="text-sm text-fg-secondary">
 					{emptyText ?? content.reports.noDeficiencies}
 				</p>
 			) : (
-				<ul className="divide-y divide-(--color-border-default)">
+				<ul className="divide-y divide-line">
 					{deficiencies.map(({ item, finalScore }) => (
 						<li key={item.id} className="space-y-2 py-3 first:pt-0 last:pb-0">
 							<div className="flex flex-wrap items-start justify-between gap-2">
-								<p className="min-w-0 break-words text-sm font-medium">
+								<p className="min-w-0 break-words text-sm font-medium text-fg">
 									{item.sequence}. {item.title}
 								</p>
-								<span className="rounded-md bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">
+								<span className={CAUTION_CHIP}>
 									{format(text.deficiencyScore, {
 										score: finalScore,
 										max: item.maxScore,
 									})}
 								</span>
 							</div>
-							<p className="text-xs text-(--color-text-secondary)">
-								{item.sectionName}
-							</p>
+							<p className="text-xs text-fg-secondary">{item.sectionName}</p>
 							{showReviewerNote && item.review?.remarks ? (
-								<p className="break-words text-sm">
-									<span className="font-medium">{text.reviewerRemark}: </span>
+								<p className="break-words text-sm text-fg">
+									<span className="font-medium text-fg-label">
+										{text.reviewerRemark}:{" "}
+									</span>
 									{item.review.remarks}
 								</p>
 							) : null}

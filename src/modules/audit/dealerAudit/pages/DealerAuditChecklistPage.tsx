@@ -117,7 +117,7 @@ export default function DealerAuditChecklistPage() {
 	if (auditQuery.isLoading || checklistQuery.isLoading) {
 		return (
 			<PageSectionLayout className="audit-page">
-				<p className="text-sm text-slate-600" role="status">
+				<p className="text-sm text-fg-secondary" role="status">
 					{text.loading}
 				</p>
 			</PageSectionLayout>
@@ -167,10 +167,10 @@ export default function DealerAuditChecklistPage() {
 					to={detailPath}
 				/>
 				<div className="min-w-0 flex-1">
-					<h1 className="break-words text-lg font-semibold text-(--color-text-primary)">
+					<h1 className="break-words text-xl font-semibold text-fg">
 						{audit.dealerName}
 					</h1>
-					<p className="text-sm text-(--color-text-secondary)">
+					<p className="text-sm text-fg-secondary">
 						{audit.auditNumber} · {formatPeriodLabel(audit.period)}
 					</p>
 				</div>
@@ -196,7 +196,7 @@ export default function DealerAuditChecklistPage() {
 				/>
 
 				{visibleSections.length === 0 ? (
-					<p className="rounded-lg border border-dashed border-(--color-border-default) p-4 text-center text-sm text-slate-600">
+					<p className="rounded-lg border border-dashed border-line-strong bg-surface p-4 text-center text-sm text-fg-secondary">
 						{items.length === 0 ? text.empty : text.emptyFiltered}
 					</p>
 				) : (

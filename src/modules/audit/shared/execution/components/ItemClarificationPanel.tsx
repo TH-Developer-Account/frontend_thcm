@@ -66,16 +66,16 @@ export default function ItemClarificationPanel({
 	return (
 		<section
 			aria-label={text.heading}
-			className="space-y-3 rounded-lg border border-orange-200 bg-orange-50 p-3"
+			className="space-y-3 rounded-lg border border-caution-line border-l-4 bg-caution-bg p-3"
 		>
-			<h3 className="flex items-center gap-2 text-sm font-semibold text-orange-900">
+			<h3 className="flex items-center gap-2 text-sm font-semibold text-caution-text">
 				<MessageSquareWarning className="size-4" aria-hidden="true" />
 				{isOpen ? text.openHeading : text.respondedHeading}
 			</h3>
 
-			<div className="text-sm text-slate-800">
+			<div className="text-sm text-fg">
 				<p className="whitespace-pre-wrap break-words">{clarification.remarks}</p>
-				<p className="mt-1 text-xs text-slate-600">
+				<p className="mt-1 text-xs text-fg-secondary tabular-nums">
 					{formatAuditDateTime(clarification.raisedAt)}
 					{clarification.dueAt
 						? ` · ${text.dueLabel} ${formatAuditDateTime(clarification.dueAt)}`
@@ -84,8 +84,8 @@ export default function ItemClarificationPanel({
 			</div>
 
 			{clarification.response ? (
-				<div className="rounded-md bg-white p-2 text-sm">
-					<p className="text-xs font-medium text-slate-600">
+				<div className="rounded-md border border-line bg-surface p-2 text-sm text-fg">
+					<p className="text-xs font-medium text-fg-secondary">
 						{text.yourResponse}
 					</p>
 					<p className="whitespace-pre-wrap break-words">

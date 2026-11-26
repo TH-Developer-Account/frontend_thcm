@@ -37,7 +37,7 @@ export default function AuditHistoryPanel({
 }: AuditHistoryPanelProps) {
 	if (isLoading) {
 		return (
-			<p className="text-sm text-(--color-text-secondary)" role="status">
+			<p className="text-sm text-fg-secondary" role="status">
 				{text.loading}
 			</p>
 		);
@@ -46,7 +46,7 @@ export default function AuditHistoryPanel({
 	if (isError) {
 		return (
 			<div className="space-y-2" role="alert">
-				<p className="text-sm text-red-700">{text.failed}</p>
+				<p className="text-sm font-medium text-danger-text">{text.failed}</p>
 				<Button
 					type="button"
 					text={text.retry}
@@ -60,9 +60,7 @@ export default function AuditHistoryPanel({
 	}
 
 	if (entries.length === 0) {
-		return (
-			<p className="text-sm text-(--color-text-secondary)">{text.empty}</p>
-		);
+		return <p className="text-sm text-fg-secondary">{text.empty}</p>;
 	}
 
 	return (
@@ -70,26 +68,26 @@ export default function AuditHistoryPanel({
 			{entries.map((entry) => (
 				<li key={entry.id} className="flex gap-3">
 					<History
-						className="mt-0.5 size-4 shrink-0 text-(--color-text-secondary)"
+						className="mt-0.5 size-4 shrink-0 text-accent-text"
 						aria-hidden="true"
 					/>
 					<div className="min-w-0 text-sm">
-						<p className="font-medium text-(--color-text-primary)">
+						<p className="font-medium text-fg">
 							{resolveActionLabel(entry.action)}
 							{entry.fromStatus && entry.toStatus ? (
-								<span className="ml-1 text-xs font-normal text-(--color-text-secondary)">
+								<span className="ml-1 text-xs font-normal text-fg-secondary">
 									({getStatusLabel(entry.fromStatus)} →{" "}
 									{getStatusLabel(entry.toStatus)})
 								</span>
 							) : null}
 						</p>
-						<p className="text-xs text-(--color-text-secondary)">
+						<p className="text-xs text-fg-secondary">
 							{entry.actorName}
 							{entry.actorRole ? ` · ${entry.actorRole}` : ""} ·{" "}
 							{formatAuditDateTime(entry.occurredAt)}
 						</p>
 						{entry.comment ? (
-							<p className="mt-1 whitespace-pre-wrap break-words text-slate-700">
+							<p className="mt-1 whitespace-pre-wrap break-words text-sm text-fg">
 								{entry.comment}
 							</p>
 						) : null}

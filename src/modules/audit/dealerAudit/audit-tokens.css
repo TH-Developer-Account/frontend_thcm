@@ -1,0 +1,49 @@
+/* modules/audit/dealerAudit/audit-tokens.css
+ *
+ * Import AFTER checklist-card.css in src/index.css:
+ *   @import "./modules/audit/dealerAudit/checklist-card.css";
+ *   @import "./modules/audit/dealerAudit/audit-tokens.css";
+ *
+ * checklist-card.css falls back to hard-coded navy/blue-grey values
+ * (#08234a, #d7e0eb, #475569 ...) and to two tokens that do not exist
+ * (--color-success-soft, --color-success-dark). This file points those
+ * spots at real semantic tokens. checklist-card.css itself is unchanged.
+ */
+
+/* Score selector: the selected state uses the themed success colours. */
+.score-selector {
+	--score-selected: var(--color-success);
+	--score-selected-soft: var(--color-success-bg);
+	--score-selected-ink: var(--color-status-approved-text);
+}
+
+.score-selector-option[data-selected="true"] {
+	box-shadow:
+		0 0 0 2px color-mix(in srgb, var(--score-selected) 22%, transparent),
+		var(--shadow-sm, 0 1px 2px rgb(15 23 42 / 8%));
+}
+
+/* Hovered, clickable checklist cards: neutral border mix, neutral shadow. */
+.checklist-card {
+	box-shadow: var(--card-shadow, 0 1px 3px rgb(15 23 42 / 8%));
+}
+
+.checklist-card-interactive:hover {
+	border-color: color-mix(
+		in srgb,
+		var(--checklist-accent) 40%,
+		var(--color-border-default)
+	);
+	box-shadow: var(--shadow-md, 0 6px 16px rgb(15 23 42 / 10%));
+}
+
+.checklist-card-icon {
+	background: var(--color-brand-subtle);
+}
+
+/* Owner overflow bubble ("+3"): themed instead of fixed white/slate. */
+.checklist-card-owner-overflow {
+	border-color: var(--color-bg-surface);
+	color: var(--color-text-inverse);
+	background: var(--color-text-secondary);
+}

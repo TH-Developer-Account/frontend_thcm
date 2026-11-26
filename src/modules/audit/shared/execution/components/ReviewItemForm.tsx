@@ -74,7 +74,7 @@ export default function ReviewItemForm({
 	return (
 		<div className="space-y-5">
 			<fieldset className="space-y-2" data-no-swipe>
-				<legend className="text-sm font-medium text-(--color-text-primary)">
+				<legend className="text-sm font-medium text-fg-label">
 					{text.decisionLabel}
 				</legend>
 				<div
@@ -108,11 +108,11 @@ export default function ReviewItemForm({
 
 			{item.isScored ? (
 				<fieldset className="space-y-2">
-					<legend className="text-sm font-medium text-(--color-text-primary)">
+					<legend className="text-sm font-medium text-fg-label">
 						{text.scoreLabel}
 					</legend>
 					{blockedScores.length > 0 ? (
-						<p className="text-xs text-slate-600">
+						<p className="text-xs text-fg-secondary">
 							{format(text.scoreDropRule, {
 								self: item.self.score ?? 0,
 								min: minScore ?? 0,
@@ -141,8 +141,8 @@ export default function ReviewItemForm({
 							role={isSentForClarification ? "status" : "alert"}
 							className={`rounded-lg border-2 p-3 text-sm ${
 								isSentForClarification
-									? "border-emerald-300 bg-emerald-50 text-emerald-900"
-									: "border-amber-400 bg-amber-50 text-amber-900"
+									? "border-positive-line bg-positive-bg text-positive-text"
+									: "border-caution-line bg-caution-bg text-caution-text"
 							}`}
 						>
 							<p className="flex items-start gap-2 font-semibold">
@@ -155,7 +155,7 @@ export default function ReviewItemForm({
 									? text.scoreDropSentTitle
 									: format(text.scoreDropTitle, { max: maxDrop })}
 							</p>
-							<p className="mt-1">
+							<p className="mt-1 text-fg">
 								{isSentForClarification
 									? text.scoreDropSentBody
 									: format(text.scoreDropBody, { max: maxDrop })}
@@ -164,7 +164,7 @@ export default function ReviewItemForm({
 								<button
 									type="button"
 									onClick={handleSendForClarification}
-									className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md bg-amber-600 px-4 text-sm font-semibold text-white hover:bg-amber-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-900"
+									className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-md bg-caution-text px-4 text-sm font-semibold text-white hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
 								>
 									<Send className="size-4" aria-hidden="true" />
 									{text.scoreDropAction}

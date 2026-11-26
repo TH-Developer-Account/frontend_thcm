@@ -242,7 +242,7 @@ export const EvidenceCaptureField = React.memo(function EvidenceCaptureField({
 	return (
 		<div className="form-field live-photo-upload-field" data-no-swipe>
 			{!isOnline ? (
-				<p className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-amber-700">
+				<p className="mb-2 inline-flex items-center gap-1 text-xs font-medium text-caution-text">
 					<WifiOff className="size-3.5" aria-hidden="true" />
 					{text.offlineNotice}
 				</p>
@@ -250,7 +250,7 @@ export const EvidenceCaptureField = React.memo(function EvidenceCaptureField({
 
 			{!readOnly ? (
 				<>
-					<p className="mb-2 text-xs text-slate-600">
+					<p className="mb-2 text-xs text-fg-secondary">
 						{text.permissionHint}
 					</p>
 					<input
@@ -274,7 +274,7 @@ export const EvidenceCaptureField = React.memo(function EvidenceCaptureField({
 						type="button"
 						onClick={openCamera}
 						disabled={!canCapture}
-						className="inline-flex min-h-11 items-center gap-2 rounded-md border border-slate-300 bg-white px-3 text-xs font-semibold text-slate-700 transition-colors hover:border-brand hover:text-brand disabled:cursor-not-allowed disabled:opacity-50"
+						className="inline-flex min-h-11 items-center gap-2 rounded-md border border-line-strong bg-surface px-3 text-xs font-semibold text-fg-label transition-colors hover:border-accent hover:text-accent-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50"
 					>
 						{isCapturing ? (
 							<Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -291,7 +291,7 @@ export const EvidenceCaptureField = React.memo(function EvidenceCaptureField({
 					</button>
 				) : null}
 
-				<span className="text-xs text-slate-600">
+				<span className="text-xs font-medium tabular-nums text-fg-secondary">
 					{format(text.counter, { count: uploadedCount, max: maxFiles })}
 					{required && uploadedCount < minFiles
 						? ` · ${format(text.minimumRequired, { min: minFiles })}`
@@ -333,12 +333,12 @@ export const EvidenceCaptureField = React.memo(function EvidenceCaptureField({
 						<img
 							src={previewPhoto.url}
 							alt={format(text.photoAlt, { name: previewPhoto.name })}
-							className="max-h-[75vh] w-full rounded-lg bg-slate-950 object-contain"
+							className="max-h-[75vh] w-full rounded-lg bg-black object-contain"
 						/>
 						{previewPhoto.location ? (
-							<p className="flex items-start gap-1.5 text-xs text-slate-600">
+							<p className="flex items-start gap-1.5 text-xs text-fg-secondary">
 								<MapPin className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-								<span>
+								<span className="tabular-nums">
 									{formatCoordinates(previewPhoto.location)} ·{" "}
 									{new Date(previewPhoto.location.capturedAt).toLocaleString()}
 								</span>
@@ -376,11 +376,11 @@ const PhotoCard = React.memo(function PhotoCard({
 
 	return (
 		<div className="w-24 sm:w-28">
-			<div className="group relative size-24 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 sm:size-28">
+			<div className="group relative size-24 overflow-hidden rounded-lg border border-line bg-surface-muted sm:size-28">
 				<button
 					type="button"
 					onClick={onPreview}
-					className="block size-full overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-inset"
+					className="block size-full overflow-hidden focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus"
 					aria-label={format(text.viewPhoto, { name: photo.name })}
 				>
 					<img
@@ -397,7 +397,7 @@ const PhotoCard = React.memo(function PhotoCard({
 				{!readOnly && !disabled && !isUploading ? (
 					<button
 						type="button"
-						className="absolute top-1 right-1 inline-flex size-8 items-center justify-center rounded-md bg-black/65 text-white transition-colors hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+						className="absolute top-1 right-1 inline-flex size-8 items-center justify-center rounded-md bg-black/65 text-white transition-colors hover:bg-danger-text focus-visible:outline-2 focus-visible:outline-white"
 						aria-label={format(text.removePhoto, { name: photo.name })}
 						onClick={onRemove}
 					>
@@ -415,7 +415,7 @@ const PhotoCard = React.memo(function PhotoCard({
 						aria-valuenow={photo.uploadProgress ?? 0}
 					>
 						<div
-							className="h-full bg-brand transition-[width]"
+							className="h-full bg-accent transition-[width]"
 							style={{ width: `${photo.uploadProgress ?? 0}%` }}
 						/>
 					</div>
@@ -424,34 +424,34 @@ const PhotoCard = React.memo(function PhotoCard({
 
 			{/* Status is always text + icon, never colour alone. */}
 			<p
-				className="mt-1 flex items-center gap-1 text-[11px] leading-tight"
+				className="mt-1 flex items-center gap-1 text-xs font-medium leading-tight"
 				aria-live="polite"
 			>
 				{isUploading ? (
 					<>
-						<Loader2 className="size-3 animate-spin text-slate-600" aria-hidden="true" />
-						<span className="text-slate-600">{text.uploading}</span>
+						<Loader2 className="size-3 animate-spin text-fg-secondary" aria-hidden="true" />
+						<span className="text-fg-secondary">{text.uploading}</span>
 					</>
 				) : isFailed ? (
 					<>
-						<AlertTriangle className="size-3 text-red-700" aria-hidden="true" />
-						<span className="text-red-700">{text.failed}</span>
+						<AlertTriangle className="size-3 text-danger-text" aria-hidden="true" />
+						<span className="text-danger-text">{text.failed}</span>
 					</>
 				) : isQueued ? (
 					<>
-						<WifiOff className="size-3 text-amber-700" aria-hidden="true" />
-						<span className="text-amber-700">{text.queued}</span>
+						<WifiOff className="size-3 text-caution-text" aria-hidden="true" />
+						<span className="text-caution-text">{text.queued}</span>
 					</>
 				) : (
 					<>
-						<CheckCircle2 className="size-3 text-emerald-700" aria-hidden="true" />
-						<span className="text-emerald-700">{text.uploaded}</span>
+						<CheckCircle2 className="size-3 text-positive-text" aria-hidden="true" />
+						<span className="text-positive-text">{text.uploaded}</span>
 					</>
 				)}
 			</p>
 
 			{photo.uploadError ? (
-				<p className="mt-0.5 text-[11px] leading-tight text-red-700" role="alert">
+				<p className="mt-0.5 text-xs leading-tight text-danger-text" role="alert">
 					{photo.uploadError}
 				</p>
 			) : null}
@@ -460,7 +460,7 @@ const PhotoCard = React.memo(function PhotoCard({
 				<button
 					type="button"
 					onClick={onRetry}
-					className="mt-1 inline-flex min-h-8 items-center gap-1 rounded border border-slate-300 bg-white px-2 text-[11px] font-semibold text-slate-700 hover:border-brand hover:text-brand"
+					className="mt-1 inline-flex min-h-8 items-center gap-1 rounded border border-line-strong bg-surface px-2 text-xs font-semibold text-fg-label hover:border-accent hover:text-accent-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
 				>
 					<RefreshCw className="size-3" aria-hidden="true" />
 					{text.retry}

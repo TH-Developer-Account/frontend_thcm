@@ -297,8 +297,10 @@ export default function AuditTrackerPage() {
 				header: listText.columns.dealer,
 				cell: ({ row }) => (
 					<div className="min-w-0">
-						<p className="truncate font-medium">{row.original.dealerName}</p>
-						<p className="truncate text-xs text-slate-500">
+						<p className="truncate font-medium text-fg">
+							{row.original.dealerName}
+						</p>
+						<p className="truncate text-xs text-fg-muted">
 							{[row.original.dealerCode, row.original.location]
 								.filter(Boolean)
 								.join(" · ")}
@@ -337,8 +339,11 @@ export default function AuditTrackerPage() {
 				id: "progress",
 				header: listText.columns.progress,
 				enableSorting: false,
-				cell: ({ row }) =>
-					`${row.original.completedItems}/${row.original.totalItems}`,
+				cell: ({ row }) => (
+					<span className="tabular-nums">
+						{`${row.original.completedItems}/${row.original.totalItems}`}
+					</span>
+				),
 			},
 			{
 				id: "actions",
@@ -388,15 +393,23 @@ export default function AuditTrackerPage() {
 								key={kpi.id}
 								className={
 									kpi.emphasis
-										? "rounded-lg border border-red-300 bg-red-50 p-3"
-										: "rounded-lg border border-(--color-border-default) bg-white p-3"
+										? "rounded-lg border border-danger-line bg-danger-bg p-3"
+										: "rounded-lg border border-line bg-surface p-3 shadow-sm"
 								}
 							>
-								<div className="flex items-center gap-1.5 text-xs text-(--color-text-secondary)">
+								<div
+									className={`flex items-center gap-1.5 text-xs font-medium ${
+										kpi.emphasis ? "text-danger-text" : "text-fg-secondary"
+									}`}
+								>
 									<kpi.Icon size={14} aria-hidden="true" />
 									<span className="break-words">{kpi.label}</span>
 								</div>
-								<p className="mt-1 text-2xl font-bold tabular-nums">
+								<p
+									className={`mt-1 text-2xl font-bold tabular-nums ${
+										kpi.emphasis ? "text-danger-text" : "text-fg"
+									}`}
+								>
 									{kpi.value}
 								</p>
 							</li>
@@ -573,12 +586,12 @@ export default function AuditTrackerPage() {
 							aria-label={listText.tableLabel}
 						>
 							{audits.isLoading ? (
-								<li className="text-sm text-slate-600" role="status">
+								<li className="text-sm text-fg-secondary" role="status">
 									{listText.loading}
 								</li>
 							) : audits.items.length === 0 ? (
-								<li className="rounded-lg border border-dashed border-(--color-border-default) p-4 text-center text-sm text-slate-600">
-									<p className="font-medium">{listText.emptyTitle}</p>
+								<li className="rounded-lg border border-dashed border-line-strong bg-surface p-4 text-center text-sm text-fg-secondary">
+									<p className="font-medium text-fg">{listText.emptyTitle}</p>
 									<p>{listText.emptyDescription}</p>
 								</li>
 							) : (

@@ -4,7 +4,6 @@ import {
 	ClipboardList,
 	FileCheck2,
 	FilePlus,
-	Gavel,
 	Home,
 	LayoutDashboard,
 	ListChecks,
@@ -17,9 +16,17 @@ import {
 
 import type { SidebarItem } from "../../../layout/layout.types";
 import { DEALER_AUDIT_ROUTES } from "./dealer-audit.routes";
+import {
+	DEALER_AUDIT_APP_KEY as app,
+	DEALER_AUDIT_MODULES,
+} from "./hooks/useCurrentDealerAuditRole";
 
-const READ = { app: "MAP", module: "DealerAudit", action: "read" } as const;
-const WRITE = { app: "MAP", module: "DealerAudit", action: "write" } as const;
+const { admin, review, dealer } = DEALER_AUDIT_MODULES;
+
+const READ = { app, module: admin, action: "read" } as const;
+const WRITE = { app, module: admin, action: "write" } as const;
+const REVIEW = { app, module: review, action: "write" } as const;
+const DEALER = { app, module: dealer, action: "read" } as const;
 
 /**
  * Sidebar visibility is a convenience only. Page access is enforced by
@@ -44,21 +51,14 @@ export const dealerAuditSidebar: SidebarItem[] = [
 		label: "My Audits",
 		icon: <ClipboardCheck size={20} />,
 		link: DEALER_AUDIT_ROUTES.myAudits,
-		permission: READ,
+		permission: DEALER,
 	},
 	{
 		id: "review-queue",
 		label: "Review Queue",
 		icon: <UserCheck size={20} />,
 		link: DEALER_AUDIT_ROUTES.reviewQueue,
-		permission: READ,
-	},
-	{
-		id: "approvals",
-		label: "Approvals",
-		icon: <Gavel size={20} />,
-		link: DEALER_AUDIT_ROUTES.approvals,
-		permission: READ,
+		permission: REVIEW,
 	},
 	{
 		id: "tracker",

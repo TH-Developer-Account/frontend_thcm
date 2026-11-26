@@ -82,7 +82,6 @@ export default function ChecklistLibrary<TFilters extends object>({
 	rows,
 	columns,
 	isLoading,
-	isFetching = false,
 	errorMessage,
 	onRetry,
 	search,
@@ -98,7 +97,6 @@ export default function ChecklistLibrary<TFilters extends object>({
 	pageIndex,
 	pageSize,
 	pageCount,
-	totalItems,
 	onPageChange,
 	onPageSizeChange,
 	onRowClick,
@@ -115,13 +113,9 @@ export default function ChecklistLibrary<TFilters extends object>({
 			<PageHeader>
 				<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 					<div className="flex flex-col gap-1">
-						<span className="text-eyebrow text-(--color-brand)">{eyebrow}</span>
-						<h1 className="text-page-title text-(--color-text-primary)">
-							{title}
-						</h1>
-						<p className="text-body-sm text-(--color-text-secondary)">
-							{subtitle}
-						</p>
+						<span className="text-eyebrow text-accent-text">{eyebrow}</span>
+						<h1 className="text-page-title text-fg">{title}</h1>
+						<p className="text-body-sm text-fg-secondary">{subtitle}</p>
 					</div>
 
 					{canCreate ? (
@@ -157,14 +151,6 @@ export default function ChecklistLibrary<TFilters extends object>({
 							placeholder="Search by template name or description"
 							containerClassName="min-w-0 w-full sm:w-80"
 						/>
-						{/* <span
-							className="text-body-sm text-(--color-text-secondary)"
-							aria-live="polite"
-						>
-							{isFetching && !isLoading
-								? "Updating…"
-								: `${totalItems} template${totalItems === 1 ? "" : "s"}`}
-						</span> */}
 						<FilterDropdown<TFilters>
 							filters={filters}
 							sections={filterSections}

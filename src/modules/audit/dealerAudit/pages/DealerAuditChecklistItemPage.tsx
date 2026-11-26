@@ -164,7 +164,7 @@ function SelfWorkspace({
 				editable ? (
 					<div className="space-y-1">
 						{draft.isUploading ? (
-							<p className="text-xs text-slate-600" role="status">
+							<p className="text-xs font-medium text-fg-secondary" role="status">
 								{text.uploadingHint}
 							</p>
 						) : null}
@@ -407,7 +407,7 @@ export default function DealerAuditChecklistItemPage() {
 	if (auditQuery.isLoading || checklistQuery.isLoading) {
 		return (
 			<PageSectionLayout className="audit-page audit-page-narrow">
-				<p className="text-sm text-slate-600" role="status">
+				<p className="text-sm text-fg-secondary" role="status">
 					{text.loading}
 				</p>
 			</PageSectionLayout>
@@ -453,7 +453,7 @@ export default function DealerAuditChecklistItemPage() {
 		return (
 			<PageSectionLayout className="audit-page audit-page-narrow">
 				<Card title={text.notFoundTitle}>
-					<p className="mb-3 text-sm text-slate-600">
+					<p className="mb-3 text-sm text-fg-secondary">
 						{text.notFoundDescription}
 					</p>
 					<Button

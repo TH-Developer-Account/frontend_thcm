@@ -59,10 +59,8 @@ function DetailRow({
 }) {
 	return (
 		<div className="min-w-0">
-			<dt className="text-xs text-(--color-text-secondary)">{label}</dt>
-			<dd className="break-words text-sm text-(--color-text-primary)">
-				{children}
-			</dd>
+			<dt className="text-xs font-medium text-fg-secondary">{label}</dt>
+			<dd className="break-words text-sm font-medium text-fg">{children}</dd>
 		</div>
 	);
 }
@@ -122,7 +120,7 @@ export default function DealerAuditDetailPage() {
 	if (auditQuery.isLoading) {
 		return (
 			<PageSectionLayout className="audit-page">
-				<p className="text-sm text-slate-600" role="status">
+				<p className="text-sm text-fg-secondary" role="status">
 					{text.loading}
 				</p>
 			</PageSectionLayout>
@@ -174,10 +172,10 @@ export default function DealerAuditDetailPage() {
 			<header className="flex flex-wrap items-start gap-3">
 				{backNavigation}
 				<div className="min-w-0 flex-1">
-					<h1 className="break-words text-lg font-semibold text-(--color-text-primary)">
+					<h1 className="break-words text-xl font-semibold text-fg">
 						{audit.dealerName}
 					</h1>
-					<p className="text-sm text-(--color-text-secondary)">
+					<p className="text-sm text-fg-secondary">
 						{audit.auditNumber} · {formatPeriodLabel(audit.period)}
 					</p>
 				</div>
@@ -276,7 +274,7 @@ export default function DealerAuditDetailPage() {
 								finalTotals={showFinalScore ? finalTotals : null}
 							/>
 						) : checklistQuery.isLoading ? (
-							<p className="text-sm text-slate-600" role="status">
+							<p className="text-sm text-fg-secondary" role="status">
 								{text.loadingChecklist}
 							</p>
 						) : null}

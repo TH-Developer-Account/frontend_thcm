@@ -113,7 +113,7 @@ export default function ScoreLevelSelector({
 							data-selected={isSelected}
 							data-blocked={blocked || undefined}
 						>
-							<span className="score-selector-value inline-flex items-center gap-1 text-sm font-semibold">
+							<span className="score-selector-value inline-flex items-center gap-1 text-sm font-semibold tabular-nums">
 								{option.score}
 								{blocked ? <Lock className="size-3" aria-hidden="true" /> : null}
 							</span>
@@ -123,7 +123,10 @@ export default function ScoreLevelSelector({
 			</div>
 
 			{selected?.criteria ? (
-				<p className="text-xs text-slate-600" aria-live="polite">
+				<p
+					className="rounded-md bg-surface-muted px-3 py-2 text-sm text-fg-secondary"
+					aria-live="polite"
+				>
 					{selected.criteria}
 				</p>
 			) : null}

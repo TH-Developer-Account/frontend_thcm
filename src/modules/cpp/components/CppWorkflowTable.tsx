@@ -15,7 +15,7 @@ const EMPTY = "--";
 const AVATAR_TONES = 4;
 
 const PENDING_ROW_CLASS =
-	"bg-[var(--color-brand-subtle,#fff7ed)] shadow-[inset_3px_0_0_var(--color-brand,#ea580c)]";
+	"bg-[color-mix(in_srgb,var(--color-brand-subtle,#fff7ed)_50%,white)] shadow-[inset_2px_0_0_color-mix(in_srgb,var(--color-brand,#ea580c)_70%,white)]";
 
 const PENDING_TAG_CLASS =
 	"ml-2 inline-flex items-center whitespace-nowrap rounded-full border border-[var(--color-brand,#ea580c)] bg-white px-2 align-middle text-[11px] font-medium leading-5 text-[#c2410c]";
@@ -168,10 +168,7 @@ type CppWorkflowTableProps = {
 	currentStageId?: string | null;
 };
 
-const CppWorkflowTable = ({
-	stages,
-	currentStageId,
-}: CppWorkflowTableProps) => {
+const CppWorkflowTable = ({ stages, currentStageId }: CppWorkflowTableProps) => {
 	const lines = useMemo(
 		() => toLines(stages, currentStageId),
 		[stages, currentStageId],
@@ -202,7 +199,7 @@ const CppWorkflowTable = ({
 									<span className="cpp-wf-stage-text">
 										{line.stageName}
 										{line.isPending ? (
-											<span className={PENDING_TAG_CLASS}></span>
+											<span className={PENDING_TAG_CLASS}>Pending here</span>
 										) : null}
 									</span>
 								</span>

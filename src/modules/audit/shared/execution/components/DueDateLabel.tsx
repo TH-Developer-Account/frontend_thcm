@@ -27,28 +27,28 @@ export default function DueDateLabel({
 	daysUntilDue,
 }: DueDateLabelProps) {
 	if (!dueAt) {
-		return <span className="text-xs text-slate-500">{text.notSet}</span>;
+		return <span className="text-xs text-fg-muted">{text.notSet}</span>;
 	}
 
 	const dateLabel = formatAuditDate(dueAt);
 
 	if (slaState === "OVERDUE" && daysUntilDue !== null) {
 		return (
-			<span className="inline-flex flex-col text-xs font-medium text-red-700">
+			<span className="inline-flex flex-col text-xs font-semibold text-danger-text">
 				<span className="inline-flex items-center gap-1">
 					<TriangleAlert className="size-3.5" aria-hidden="true" />
 					{format(text.overdueBy, {
 						distance: formatDaysDistance(daysUntilDue),
 					})}
 				</span>
-				<span className="font-normal text-slate-500">{dateLabel}</span>
+				<span className="font-normal text-fg-muted">{dateLabel}</span>
 			</span>
 		);
 	}
 
 	if (slaState === "DUE_SOON" && daysUntilDue !== null) {
 		return (
-			<span className="inline-flex flex-col text-xs font-medium text-amber-700">
+			<span className="inline-flex flex-col text-xs font-semibold text-caution-text">
 				<span className="inline-flex items-center gap-1">
 					<CalendarClock className="size-3.5" aria-hidden="true" />
 					{daysUntilDue === 0
@@ -57,10 +57,10 @@ export default function DueDateLabel({
 								distance: formatDaysDistance(daysUntilDue),
 							})}
 				</span>
-				<span className="font-normal text-slate-500">{dateLabel}</span>
+				<span className="font-normal text-fg-muted">{dateLabel}</span>
 			</span>
 		);
 	}
 
-	return <span className="text-xs text-slate-700">{dateLabel}</span>;
+	return <span className="text-xs text-fg-secondary">{dateLabel}</span>;
 }

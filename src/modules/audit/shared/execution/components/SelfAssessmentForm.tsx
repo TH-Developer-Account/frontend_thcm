@@ -43,9 +43,9 @@ export default function SelfAssessmentForm({
 		<div className="space-y-5">
 			{item.isScored ? (
 				<fieldset className="space-y-2">
-					<legend className="text-sm font-medium text-(--color-text-primary)">
+					<legend className="text-sm font-medium text-fg-label">
 						{text.scoreLabel}
-						<span className="ml-1 text-xs font-normal text-(--color-text-secondary)">
+						<span className="ml-1 text-xs font-normal text-fg-secondary">
 							{format(text.scoreRange, {
 								min: item.minScore,
 								max: item.maxScore,
@@ -75,7 +75,7 @@ export default function SelfAssessmentForm({
 					error={draft.errors.remarks}
 					onChange={(event) => draft.setRemarks(event.target.value)}
 				/>
-				<p className="mt-1 text-right text-xs text-(--color-text-secondary)">
+				<p className="mt-1 text-right text-xs tabular-nums text-fg-secondary">
 					{remarksLength}/{AUDIT_EXECUTION_RULES.text.remarksMaxLength}
 				</p>
 			</div>

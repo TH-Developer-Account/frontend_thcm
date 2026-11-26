@@ -458,6 +458,7 @@ export default function CreateAuditCyclePage() {
 
 						{launch.error ? (
 							<Alert
+								type="banner"
 								variant="error"
 								title={text.error}
 								description={getAuditActionErrorMessage(

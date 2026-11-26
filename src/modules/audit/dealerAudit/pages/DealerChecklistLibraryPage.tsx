@@ -215,9 +215,9 @@ export default function DealerChecklistLibraryPage() {
 
 function TemplateSummaryLine({ template }: { template: AuditTemplateListRow }) {
 	return (
-		<p className="text-body-sm text-(--color-text-primary)">
+		<p className="text-body-sm text-fg">
 			<span className="font-semibold">{template.name}</span>{" "}
-			<span className="text-(--color-text-secondary)">
+			<span className="text-fg-secondary tabular-nums">
 				· v{template.version} · {template.parameterCount} parameters
 			</span>
 		</p>

@@ -1,12 +1,14 @@
 import { useMemo } from "react";
 import { useAuth } from "../../../../context/Auth/useAuth";
-import { resolveDealerAuditRole } from "../dealer-audit.access";
+import {
+	DEALER_AUDIT_APP_KEY,
+	DEALER_AUDIT_MODULES,
+	resolveDealerAuditRole,
+} from "../dealer-audit.access";
 import type { DealerAuditRole } from "../dealer-audit.types";
 
-// Dealer Audit's registered app/module keys — must match whatever the
-// backend and sidebar.tsx use for this module's permission rows.
-const DEALER_AUDIT_APP_KEY = "MAP";
-const DEALER_AUDIT_MODULE_KEY = "DealerAudit";
+// Re-exported so the sidebar can keep importing the keys from here.
+export { DEALER_AUDIT_APP_KEY, DEALER_AUDIT_MODULES };
 
 export interface CurrentDealerAuditRole {
 	role: DealerAuditRole | undefined;
@@ -27,22 +29,25 @@ export interface CurrentDealerAuditRole {
 export function useCurrentDealerAuditRole(): CurrentDealerAuditRole {
 	const { user, isLoading, isSuperAdmin, can, canManageApp } = useAuth();
 
-	const userRole = user?.role;
+	const userType = user?.userType;
 	const designation = user?.designation;
 	const userId = user?.id ?? null;
 
-	const role = useMemo(
-		() =>
-			resolveDealerAuditRole({
-				userRole,
-				designation,
-				isSuperAdmin,
-				canManageApp: canManageApp(DEALER_AUDIT_APP_KEY),
-				canWrite: can("write", DEALER_AUDIT_APP_KEY, DEALER_AUDIT_MODULE_KEY),
-				canRead: can("read", DEALER_AUDIT_APP_KEY, DEALER_AUDIT_MODULE_KEY),
-			}),
-		[userRole, designation, isSuperAdmin, can, canManageApp],
-	);
+	const role = useMemo(() => {
+		const app = DEALER_AUDIT_APP_KEY;
+		const { admin, review, dealer } = DEALER_AUDIT_MODULES;
+		// A dealer login is always a dealer, whatever else it was granted.
+		const internal = userType !== "DEALER";
+
+		return resolveDealerAuditRole({
+			designation: internal ? designation : undefined,
+			isAppAdmin: internal && (isSuperAdmin || canManageApp(app)),
+			canAdminRead: internal && can("read", app, admin),
+			canAdminWrite: internal && can("write", app, admin),
+			canReview: internal && can("write", app, review),
+			isDealer: can("read", app, dealer) || can("write", app, dealer),
+		});
+	}, [userType, designation, isSuperAdmin, can, canManageApp]);
 
 	return { role, isLoading, userId, dealerId: null };
 }

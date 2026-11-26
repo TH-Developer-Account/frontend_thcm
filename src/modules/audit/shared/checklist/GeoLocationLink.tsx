@@ -73,13 +73,13 @@ export default function GeoLocationLink({
 	};
 
 	return (
-		<div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-slate-600">
+		<div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-fg-secondary">
 			<MapPin className="size-3.5 shrink-0" aria-hidden="true" />
 			<a
 				href={buildGoogleMapsUrl(location)}
 				target="_blank"
 				rel="noopener noreferrer"
-				className="inline-flex min-h-8 items-center gap-1 font-semibold text-brand underline-offset-2 hover:underline"
+				className="inline-flex min-h-8 items-center gap-1 rounded-sm font-semibold tabular-nums text-accent-text underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
 			>
 				{coordinates}
 				<ExternalLink className="size-3" aria-hidden="true" />
@@ -88,7 +88,7 @@ export default function GeoLocationLink({
 			<button
 				type="button"
 				onClick={handleCopy}
-				className="inline-flex min-h-8 items-center gap-1 rounded border border-slate-300 bg-white px-2 font-semibold text-slate-700 hover:border-brand hover:text-brand"
+				className="inline-flex min-h-8 items-center gap-1 rounded border border-line-strong bg-surface px-2 font-semibold text-fg-label hover:border-accent hover:text-accent-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
 			>
 				{copied ? (
 					<Check className="size-3" aria-hidden="true" />
@@ -98,7 +98,9 @@ export default function GeoLocationLink({
 				<span aria-live="polite">{copied ? text.copied : text.copyCoordinates}</span>
 			</button>
 			{showTime ? (
-				<span>{new Date(location.capturedAt).toLocaleString()}</span>
+				<span className="text-fg-muted">
+					{new Date(location.capturedAt).toLocaleString()}
+				</span>
 			) : null}
 		</div>
 	);

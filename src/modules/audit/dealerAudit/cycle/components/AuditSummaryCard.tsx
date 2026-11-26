@@ -54,14 +54,16 @@ export default function AuditSummaryCard({
 			: null;
 
 	return (
-		<article className="flex h-full flex-col gap-3 rounded-xl border border-(--color-border-default) bg-white p-4">
+		<article className="flex h-full flex-col gap-3 rounded-xl border border-line bg-surface p-4 shadow-sm">
 			<header className="flex items-start justify-between gap-3">
 				<div className="min-w-0">
-					<h3 className="break-words text-base font-semibold">{audit.dealerName}</h3>
-					<p className="break-words text-xs text-slate-500">
+					<h3 className="break-words text-base font-semibold text-fg">
+						{audit.dealerName}
+					</h3>
+					<p className="break-words text-xs text-fg-secondary">
 						{[audit.dealerCode, audit.location].filter(Boolean).join(" · ")}
 					</p>
-					<p className="mt-0.5 text-xs text-slate-500">
+					<p className="mt-0.5 text-xs text-fg-secondary">
 						{audit.auditNumber} · {formatPeriodLabel(audit.period)}
 					</p>
 				</div>
@@ -71,22 +73,24 @@ export default function AuditSummaryCard({
 			<div className="flex flex-wrap items-center justify-between gap-2 text-sm">
 				<AuditDueLabel status={audit.status} dueAt={audit.dueAt} />
 				{showReviewer && audit.assignedReviewer ? (
-					<span className="text-xs text-slate-600">{audit.assignedReviewer.name}</span>
+					<span className="text-xs text-fg-secondary">
+						{audit.assignedReviewer.name}
+					</span>
 				) : null}
 			</div>
 
 			<div>
-				<div className="mb-1 flex items-center justify-between text-xs text-slate-600">
+				<div className="mb-1 flex items-center justify-between text-xs text-fg-secondary">
 					<span>
 						{formatCycleMessage(text.progress, {
 							done: audit.completedItems,
 							total: audit.totalItems,
 						})}
 					</span>
-					<span className="tabular-nums">{percent}%</span>
+					<span className="font-medium tabular-nums text-fg">{percent}%</span>
 				</div>
 				<div
-					className="h-2 overflow-hidden rounded-full bg-slate-200"
+					className="h-2 overflow-hidden rounded-full bg-line"
 					role="progressbar"
 					aria-valuemin={0}
 					aria-valuemax={100}
@@ -96,16 +100,18 @@ export default function AuditSummaryCard({
 						total: audit.totalItems,
 					})}
 				>
-					<div className="h-full bg-(--color-brand)" style={{ width: `${percent}%` }} />
+					<div className="h-full bg-accent" style={{ width: `${percent}%` }} />
 				</div>
 			</div>
 
 			{showScore && score !== null ? (
 				<p className="text-sm tabular-nums">
-					<span className="font-semibold">{score}</span>
-					<span className="text-slate-500">/{audit.maxScore}</span>
+					<span className="text-lg font-semibold text-fg">{score}</span>
+					<span className="text-fg-secondary">/{audit.maxScore}</span>
 					{scorePercent !== null ? (
-						<span className="ml-2 text-xs text-slate-600">{formatPercent(scorePercent)}</span>
+						<span className="ml-2 text-xs font-medium text-fg-secondary">
+							{formatPercent(scorePercent)}
+						</span>
 					) : null}
 				</p>
 			) : null}

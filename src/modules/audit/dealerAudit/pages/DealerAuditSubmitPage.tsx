@@ -112,21 +112,21 @@ export default function DealerAuditSubmitPage() {
 
 			<div className="audit-stack">
 				<Card variant="outlined" padding="default">
-					<p className="text-sm font-medium">
+					<p className="text-sm font-medium tabular-nums text-fg">
 						{format(content.myAudits.progress, {
 							done: audit.completedItems,
 							total: audit.totalItems,
 						})}
 					</p>
 					<div
-						className="mt-2 h-3 overflow-hidden rounded-full bg-slate-100"
+						className="mt-2 h-3 overflow-hidden rounded-full bg-line"
 						role="progressbar"
 						aria-valuemin={0}
 						aria-valuemax={audit.totalItems}
 						aria-valuenow={audit.completedItems}
 					>
 						<div
-							className="h-full rounded-full bg-emerald-600"
+							className="h-full rounded-full bg-positive"
 							style={{
 								width: `${audit.totalItems > 0 ? Math.round((audit.completedItems / audit.totalItems) * 100) : 0}%`,
 							}}

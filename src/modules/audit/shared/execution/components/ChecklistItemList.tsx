@@ -31,10 +31,10 @@ const STATE_ICON: Record<
 };
 
 const STATE_CLASS: Record<ItemWorkState, string> = {
-	CLARIFICATION_OPEN: "text-orange-700",
-	CLARIFICATION_RESPONDED: "text-blue-700",
-	COMPLETE: "text-green-700",
-	PENDING: "text-slate-500",
+	CLARIFICATION_OPEN: "text-caution-text",
+	CLARIFICATION_RESPONDED: "text-notice-text",
+	COMPLETE: "text-positive-text",
+	PENDING: "text-fg-muted",
 };
 
 interface ChecklistItemListProps {
@@ -65,15 +65,15 @@ export default function ChecklistItemList({
 						<header className="mb-2 flex items-baseline justify-between gap-2">
 							<h3
 								id={`section-${section.id}`}
-								className="text-sm font-semibold text-(--color-text-primary)"
+								className="text-sm font-semibold text-fg"
 							>
 								{section.name}
 							</h3>
-							<span className="shrink-0 text-xs text-(--color-text-secondary)">
+							<span className="shrink-0 text-xs font-medium tabular-nums text-fg-secondary">
 								{progress.completed}/{progress.total}
 							</span>
 						</header>
-						<ul className="divide-y divide-(--color-border-default) overflow-hidden rounded-lg border border-(--color-border-default)">
+						<ul className="divide-y divide-line overflow-hidden rounded-lg border border-line bg-surface">
 							{section.items.map((item) => {
 								const state = getItemWorkState(item);
 								const StateIcon = STATE_ICON[state];
@@ -82,18 +82,18 @@ export default function ChecklistItemList({
 									<li key={item.id}>
 										{renderLink(
 											item,
-											`flex min-h-14 items-center gap-3 px-3 py-2 hover:bg-(--color-bg-muted) focus-visible:outline-2 ${
-												isHighlighted ? "bg-red-50" : ""
+											`flex min-h-14 items-center gap-3 px-3 py-2 hover:bg-surface-hover focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-focus ${
+												isHighlighted ? "bg-danger-bg" : ""
 											}`,
 											<>
 												<StateIcon
 													className={`size-5 shrink-0 ${STATE_CLASS[state]}`}
 												/>
 												<span className="min-w-0 flex-1">
-													<span className="block break-words text-sm font-medium text-(--color-text-primary)">
+													<span className="block break-words text-sm font-medium text-fg">
 														{item.sequence}. {item.title}
 													</span>
-													<span className="block text-xs text-(--color-text-secondary)">
+													<span className="block text-xs text-fg-secondary">
 														{text.states[state]}
 														{showReviewer &&
 														item.review &&
@@ -104,13 +104,13 @@ export default function ChecklistItemList({
 												</span>
 												{item.isScored ? (
 													<span className="shrink-0 text-right text-xs tabular-nums">
-														<span className="block font-semibold text-(--color-text-primary)">
+														<span className="block text-sm font-semibold text-fg">
 															{formatScore(item.self.score, item.maxScore)}
 														</span>
 														{showReviewer &&
 														item.review?.score !== undefined &&
 														item.review?.score !== null ? (
-															<span className="block text-(--color-text-secondary)">
+															<span className="block text-fg-secondary">
 																{text.reviewerScorePrefix}{" "}
 																{formatScore(item.review.score, item.maxScore)}
 															</span>

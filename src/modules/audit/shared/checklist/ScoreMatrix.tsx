@@ -72,7 +72,7 @@ function Delta({
 	const diff = to - from;
 	if (diff === 0) {
 		return (
-			<span className="inline-flex items-center gap-1 text-xs text-slate-500">
+			<span className="inline-flex items-center gap-1 text-xs text-fg-muted">
 				<Minus size={12} aria-hidden="true" />
 				<span className="sr-only">{labels.same}</span>
 			</span>
@@ -84,8 +84,8 @@ function Delta({
 		<span
 			className={
 				lower
-					? "inline-flex items-center gap-0.5 text-xs font-medium text-amber-700"
-					: "inline-flex items-center gap-0.5 text-xs font-medium text-emerald-700"
+					? "inline-flex items-center gap-0.5 text-xs font-semibold tabular-nums text-caution-text"
+					: "inline-flex items-center gap-0.5 text-xs font-semibold tabular-nums text-positive-text"
 			}
 		>
 			{lower ? (
@@ -111,12 +111,12 @@ function ScoreCell({
 	labels: ScoreMatrixLabels;
 }) {
 	if (score === null) {
-		return <span className="text-slate-400">{labels.notScored}</span>;
+		return <span className="text-fg-muted">{labels.notScored}</span>;
 	}
 	return (
 		<span className="tabular-nums">
-			<span className="font-semibold">{score}</span>
-			<span className="text-slate-500">/{max}</span>
+			<span className="font-semibold text-fg">{score}</span>
+			<span className="text-fg-muted">/{max}</span>
 		</span>
 	);
 }
@@ -148,20 +148,20 @@ export default function ScoreMatrix({
 			<div className="hidden overflow-x-auto md:block">
 				<table className="w-full text-sm" aria-labelledby={captionId}>
 					<thead>
-						<tr className="text-left text-xs text-(--color-text-secondary)">
-							<th scope="col" className="py-2 pr-3 font-medium">
+						<tr className="bg-surface-muted text-left text-xs text-fg-label">
+							<th scope="col" className="px-3 py-2 font-semibold">
 								{labels.section}
 							</th>
-							<th scope="col" className="py-2 pr-3 text-right font-medium">
+							<th scope="col" className="px-3 py-2 text-right font-semibold">
 								{labels.dealer}
 							</th>
 							{showReviewer ? (
-								<th scope="col" className="py-2 pr-3 text-right font-medium">
+								<th scope="col" className="px-3 py-2 text-right font-semibold">
 									{labels.reviewer}
 								</th>
 							) : null}
 							{showFinal ? (
-								<th scope="col" className="py-2 text-right font-medium">
+								<th scope="col" className="px-3 py-2 text-right font-semibold">
 									{labels.final}
 								</th>
 							) : null}
@@ -169,15 +169,18 @@ export default function ScoreMatrix({
 					</thead>
 					<tbody>
 						{rows.map((row) => (
-							<tr key={row.id} className="border-t border-(--color-border-default)">
-								<th scope="row" className="py-2 pr-3 text-left font-normal break-words">
+							<tr key={row.id} className="border-t border-line">
+								<th
+									scope="row"
+									className="px-3 py-2 text-left font-normal break-words text-fg"
+								>
 									{row.label}
 								</th>
-								<td className="py-2 pr-3 text-right">
+								<td className="px-3 py-2 text-right">
 									<ScoreCell score={row.dealerScore} max={row.maxScore} labels={labels} />
 								</td>
 								{showReviewer ? (
-									<td className="py-2 pr-3 text-right">
+									<td className="px-3 py-2 text-right">
 										<span className="inline-flex items-center justify-end gap-2">
 											<Delta from={row.dealerScore} to={row.reviewerScore} labels={labels} />
 											<ScoreCell score={row.reviewerScore} max={row.maxScore} labels={labels} />
@@ -185,7 +188,7 @@ export default function ScoreMatrix({
 									</td>
 								) : null}
 								{showFinal ? (
-									<td className="py-2 text-right">
+									<td className="px-3 py-2 text-right">
 										<ScoreCell score={resolvedFinal(row)} max={row.maxScore} labels={labels} />
 									</td>
 								) : null}
@@ -194,15 +197,15 @@ export default function ScoreMatrix({
 					</tbody>
 					{showTotal ? (
 						<tfoot>
-							<tr className="border-t-2 border-(--color-border-default) font-semibold">
-								<th scope="row" className="py-2 pr-3 text-left">
+							<tr className="border-t-2 border-line-strong bg-surface-muted font-semibold">
+								<th scope="row" className="px-3 py-2 text-left text-fg">
 									{labels.total}
 								</th>
-								<td className="py-2 pr-3 text-right">
+								<td className="px-3 py-2 text-right">
 									<ScoreCell score={total.dealer} max={totalMax} labels={labels} />
 								</td>
 								{showReviewer ? (
-									<td className="py-2 pr-3 text-right">
+									<td className="px-3 py-2 text-right">
 										<span className="inline-flex items-center justify-end gap-2">
 											<Delta from={total.dealer} to={total.reviewer} labels={labels} />
 											<ScoreCell score={total.reviewer} max={totalMax} labels={labels} />
@@ -210,7 +213,7 @@ export default function ScoreMatrix({
 									</td>
 								) : null}
 								{showFinal ? (
-									<td className="py-2 text-right">
+									<td className="px-3 py-2 text-right">
 										<ScoreCell score={total.final} max={totalMax} labels={labels} />
 									</td>
 								) : null}
@@ -225,19 +228,19 @@ export default function ScoreMatrix({
 				{rows.map((row) => (
 					<li
 						key={row.id}
-						className="rounded-lg border border-(--color-border-default) p-3"
+						className="rounded-lg border border-line bg-surface p-3 shadow-sm"
 					>
-						<p className="mb-2 break-words text-sm font-medium">{row.label}</p>
+						<p className="mb-2 break-words text-sm font-medium text-fg">{row.label}</p>
 						<dl className="grid grid-cols-3 gap-2 text-center text-xs">
 							<div>
-								<dt className="text-(--color-text-secondary)">{labels.dealer}</dt>
+								<dt className="font-medium text-fg-secondary">{labels.dealer}</dt>
 								<dd className="mt-0.5 text-sm">
 									<ScoreCell score={row.dealerScore} max={row.maxScore} labels={labels} />
 								</dd>
 							</div>
 							{showReviewer ? (
 								<div>
-									<dt className="text-(--color-text-secondary)">{labels.reviewer}</dt>
+									<dt className="font-medium text-fg-secondary">{labels.reviewer}</dt>
 									<dd className="mt-0.5 flex items-center justify-center gap-1 text-sm">
 										<ScoreCell score={row.reviewerScore} max={row.maxScore} labels={labels} />
 										<Delta from={row.dealerScore} to={row.reviewerScore} labels={labels} />
@@ -246,7 +249,7 @@ export default function ScoreMatrix({
 							) : null}
 							{showFinal ? (
 								<div>
-									<dt className="text-(--color-text-secondary)">{labels.final}</dt>
+									<dt className="font-medium text-fg-secondary">{labels.final}</dt>
 									<dd className="mt-0.5 text-sm">
 										<ScoreCell score={resolvedFinal(row)} max={row.maxScore} labels={labels} />
 									</dd>
@@ -254,11 +257,11 @@ export default function ScoreMatrix({
 							) : null}
 						</dl>
 						<div
-							className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200"
+							className="mt-2 h-1.5 overflow-hidden rounded-full bg-line"
 							role="presentation"
 						>
 							<div
-								className="h-full bg-(--color-brand)"
+								className="h-full bg-accent"
 								style={{
 									width: `${percent(
 										resolvedFinal(row) ?? row.reviewerScore ?? row.dealerScore,
@@ -270,7 +273,7 @@ export default function ScoreMatrix({
 					</li>
 				))}
 				{showTotal ? (
-					<li className="rounded-lg bg-slate-50 p-3 text-sm font-semibold">
+					<li className="rounded-lg border border-line-strong bg-surface-muted p-3 text-sm font-semibold text-fg">
 						<div className="flex items-center justify-between gap-2">
 							<span>{labels.total}</span>
 							<span className="tabular-nums">

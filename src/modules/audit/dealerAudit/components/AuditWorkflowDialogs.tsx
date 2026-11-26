@@ -144,7 +144,7 @@ function DialogFrame({
 				className="space-y-4"
 			>
 				{description ? (
-					<p className="text-sm text-(--color-text-secondary)">{description}</p>
+					<p className="text-sm text-fg-secondary">{description}</p>
 				) : null}
 				{children}
 				{errorMessage ? (
@@ -316,11 +316,14 @@ interface RaiseClarificationDialogProps
 	extends DialogBaseProps<RaiseClarificationFormValues> {
 	/** Items that can be sent back to the dealer. */
 	items: readonly DealerAuditChecklistItem[];
+	/** Pre-fills the remarks box, e.g. the reason typed on the approval page. */
+	initialRemarks?: string;
 }
 
 export function RaiseClarificationDialog({
 	open,
 	items,
+	initialRemarks = "",
 	onClose,
 	onSubmit,
 }: RaiseClarificationDialogProps) {
@@ -340,12 +343,12 @@ export function RaiseClarificationDialog({
 		formState: { errors },
 	} = useForm<RaiseClarificationFormValues>({
 		resolver: zodResolver(raiseClarificationSchema),
-		defaultValues: { itemIds: preselected, remarks: "" },
+		defaultValues: { itemIds: preselected, remarks: initialRemarks },
 	});
 
 	useEffect(() => {
 		if (open) {
-			reset({ itemIds: preselected, remarks: "" });
+			reset({ itemIds: preselected, remarks: initialRemarks });
 			clear();
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -373,18 +376,18 @@ export function RaiseClarificationDialog({
 						className="space-y-1"
 						aria-describedby={errors.itemIds ? "clarification-items-error" : undefined}
 					>
-						<legend className="mb-1 text-sm font-medium text-(--color-text-primary)">
+						<legend className="mb-1 text-sm font-medium text-fg-label">
 							{text.clarification.itemsLabel}
 						</legend>
-						<ul className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-(--color-border-default) p-2">
+						<ul className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-line-interactive bg-surface p-2">
 							{items.map((item) => {
 								const checked = field.value.includes(item.id);
 								return (
 									<li key={item.id}>
-										<label className="flex min-h-9 cursor-pointer items-start gap-2 text-sm">
+										<label className="flex min-h-9 cursor-pointer items-start gap-2 text-sm text-fg">
 											<input
 												type="checkbox"
-												className="mt-0.5 size-4"
+												className="mt-0.5 size-4 accent-[var(--color-brand-solid)]"
 												checked={checked}
 												disabled={isSubmitting}
 												onChange={() =>

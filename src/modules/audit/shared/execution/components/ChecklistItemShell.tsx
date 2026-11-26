@@ -95,7 +95,7 @@ export default function ChecklistItemShell({
 				disabled={!hasPrevious || isBusy}
 				onClick={() => onNavigate("previous")}
 			/>
-			<span className="min-w-20 text-center text-xs tabular-nums text-(--color-text-secondary)">
+			<span className="min-w-20 text-center text-xs font-medium tabular-nums text-fg-secondary">
 				{position}
 			</span>
 			<Button
@@ -150,12 +150,8 @@ export default function ChecklistItemShell({
 						onClick={() => onNavigate("list")}
 					/>
 					<div className="min-w-0 flex-1">
-						<p className="truncate text-sm font-semibold text-(--color-text-primary)">
-							{heading}
-						</p>
-						<p className="truncate text-xs text-(--color-text-secondary)">
-							{subheading}
-						</p>
+						<p className="truncate text-sm font-semibold text-fg">{heading}</p>
+						<p className="truncate text-xs text-fg-secondary">{subheading}</p>
 					</div>
 					{navigationButtons}
 				</header>
@@ -163,27 +159,27 @@ export default function ChecklistItemShell({
 				<AuditProgressSummary label={progressLabel} progress={progress} />
 
 				<Card variant="outlined" padding="default">
-					<p className="text-xs font-medium text-(--color-text-secondary)">
+					<p className="text-xs font-medium text-accent-text">
 						{item.sectionName}
 					</p>
 					<h2
 						ref={headingRef}
 						tabIndex={-1}
-						className="mt-1 break-words text-base font-semibold text-(--color-text-primary) outline-none"
+						className="mt-1 break-words text-lg font-semibold text-fg outline-none"
 					>
 						{item.sequence}. {item.title}
 					</h2>
 					{item.guidance ? (
-						<p className="mt-2 whitespace-pre-wrap break-words text-sm text-(--color-text-secondary)">
+						<p className="mt-2 whitespace-pre-wrap break-words text-sm text-fg-secondary">
 							{item.guidance}
 						</p>
 					) : null}
 					{item.criteria.length > 0 ? (
-						<div className="mt-3">
-							<h3 className="text-xs font-semibold uppercase tracking-wide text-(--color-text-secondary)">
+						<div className="mt-3 rounded-md bg-surface-muted p-3">
+							<h3 className="text-xs font-semibold uppercase tracking-wide text-fg-label">
 								{text.criteria}
 							</h3>
-							<ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-(--color-text-primary)">
+							<ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm text-fg">
 								{item.criteria.map((criterion) => (
 									<li key={criterion} className="break-words">
 										{criterion}
@@ -192,7 +188,7 @@ export default function ChecklistItemShell({
 							</ul>
 						</div>
 					) : null}
-					<p className="mt-3 text-xs text-(--color-text-secondary)">
+					<p className="mt-3 text-xs font-medium text-fg-secondary">
 						{item.isScored
 							? format(text.maxScore, { max: item.maxScore })
 							: text.notScored}

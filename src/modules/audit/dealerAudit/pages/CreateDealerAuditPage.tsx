@@ -148,12 +148,8 @@ export default function CreateDealerAuditPage() {
 					to={DEALER_AUDIT_ROUTES.audits.list}
 				/>
 				<div>
-					<h1 className="text-lg font-semibold text-(--color-text-primary)">
-						{text.title}
-					</h1>
-					<p className="text-sm text-(--color-text-secondary)">
-						{text.subtitle}
-					</p>
+					<h1 className="text-xl font-semibold text-fg">{text.title}</h1>
+					<p className="text-sm text-fg-secondary">{text.subtitle}</p>
 				</div>
 			</header>
 
@@ -179,7 +175,6 @@ export default function CreateDealerAuditPage() {
 
 				<Card
 					variant="default"
-					// title={text.checklistSection}
 					padding="default"
 					footer={
 						<div className="flex justify-end gap-2">
@@ -225,7 +220,7 @@ export default function CreateDealerAuditPage() {
 							/>
 						)}
 					/>
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-4 mt-2">
+					<div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-4">
 						<Controller
 							control={control}
 							name="periodType"
@@ -322,7 +317,7 @@ export default function CreateDealerAuditPage() {
 							)}
 						/>
 					</div>
-					<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-2">
+					<div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<Controller
 							control={control}
 							name="reviewerId"
@@ -366,7 +361,7 @@ export default function CreateDealerAuditPage() {
 										error={errors.dealerIds?.message}
 									/>
 									<div className="flex items-center justify-between gap-2">
-										<span className="text-xs text-(--color-text-secondary)">
+										<span className="text-xs font-medium tabular-nums text-fg-secondary">
 											{content.ui.create.dealersSelected.replace(
 												"{count}",
 												String(field.value.length),
