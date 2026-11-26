@@ -568,4 +568,458 @@
 			transition-duration: 0.01ms;
 		}
 	}
+
+	/* =========================================================
+	   MOVED FROM THE GLOBAL STYLESHEET
+	   composer wrapper · empty · loading · error · rich-textarea error
+	========================================================= */
+
+	.comments-create-input {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.comments-create-input .form-field {
+		margin: 0;
+	}
+
+	/* ---------- Empty / loading / error ---------- */
+
+	.comments-empty {
+		display: flex;
+		@apply min-h-20;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-3);
+
+		padding: var(--space-2);
+
+		background-color: var(--comment-empty-bg);
+		color: var(--color-icon-muted);
+		text-align: left;
+	}
+
+	.comments-empty > svg {
+		flex: 0 0 auto;
+	}
+
+	.comments-empty-copy {
+		display: flex;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-0-5);
+	}
+
+	.comments-empty p {
+		margin: 0;
+
+		color: var(--color-text-primary);
+
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+	}
+
+	.comments-empty span {
+		color: var(--color-text-muted);
+
+		font-size: var(--font-size-2xs);
+		font-weight: var(--font-weight-regular);
+		line-height: var(--line-height-normal);
+	}
+
+	.comments-loading {
+		display: flex;
+		min-height: 7rem;
+		flex-direction: column;
+		gap: var(--space-2);
+
+		padding: var(--space-3);
+	}
+
+	.comments-loading div {
+		width: min(70%, 34rem);
+		height: 2.5rem;
+
+		border-radius: var(--radius-sm);
+
+		background: linear-gradient(
+			90deg,
+			var(--comment-skeleton-start),
+			var(--comment-skeleton-mid),
+			var(--comment-skeleton-start)
+		);
+		background-size: 200% 100%;
+
+		animation: comment-pulse 1.2s var(--ease-standard) infinite;
+	}
+
+	.comments-loading div:nth-child(even) {
+		margin-left: auto;
+	}
+
+	/* Shared by .comments-loading and .block-loading */
+	@keyframes comment-pulse {
+		from {
+			background-position: 200% 0;
+		}
+
+		to {
+			background-position: -200% 0;
+		}
+	}
+
+	.comments-error {
+		margin: var(--space-2) var(--space-3);
+		padding: var(--space-2) var(--space-3);
+
+		border: var(--border-width-default) solid var(--color-error-border);
+		border-radius: var(--radius-sm);
+
+		background-color: var(--color-error-bg);
+		color: var(--color-error);
+
+		font-size: var(--font-size-xs);
+		line-height: var(--line-height-normal);
+	}
+
+	.rich-textarea-error {
+		border-color: var(--color-error);
+	}
+
+	.rich-textarea-error:focus-within {
+		border-color: var(--color-error);
+		box-shadow: var(--shadow-focus-error);
+	}
+
+	.rich-textarea-menu-item:focus-visible {
+		outline: none;
+		box-shadow: var(--shadow-focus-brand);
+	}
+
+	.rich-textarea-menu-item > svg {
+		flex: 0 0 auto;
+		color: var(--color-icon-secondary);
+	}
+
+	@media (max-width: 420px) {
+		.comments-empty {
+			align-items: flex-start;
+			padding: var(--space-3);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.comments-loading div {
+			transition-duration: 0.01ms;
+			animation-duration: 0.01ms;
+			animation-iteration-count: 1;
+		}
+	}
+
+	/* =========================================================
+	   FILL-PANEL MODE
+	   Use when the comments / audit list sits inside a fixed-height
+	   panel (e.g. the audit trail card in the side column): the list
+	   takes the remaining height and scrolls on its own.
+	   Opt in with the "comments-fill" class on the panel (or on the
+	   Card). ".activity-form-view-panel--audit" is kept as an alias so
+	   existing markup keeps working.
+	========================================================= */
+
+	:is(.comments-fill, .activity-form-view-panel--audit) .comments-body,
+	:is(.comments-fill, .activity-form-view-panel--audit) .comments-section {
+		display: flex;
+		height: 100%;
+		min-height: 0;
+		flex-direction: column;
+	}
+
+	/* The inner box is the panel itself here: no second border. */
+	:is(.comments-fill, .activity-form-view-panel--audit) .comments-section {
+		flex: 1 1 auto;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+	}
+
+	/* Lift the min(24rem, 45vh) cap on .comments-list so it takes the
+	   remaining height of the panel. */
+	:is(.comments-fill, .activity-form-view-panel--audit) .comments-list {
+		max-height: none;
+		min-height: 0;
+		flex: 1 1 auto;
+		overflow-y: auto;
+	}
+
+	/* Empty log: only the message, centred. */
+	:is(.comments-fill, .activity-form-view-panel--audit) .comments-empty {
+		min-height: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+		justify-content: center;
+
+		border: 0;
+		border-radius: 0;
+		background-color: transparent;
+		box-shadow: none;
+		text-align: center;
+	}
+
+	:is(.comments-fill, .activity-form-view-panel--audit) .comments-empty-copy {
+		align-items: center;
+	}
 }
+
+/* =========================================================
+   COMMENTS: BORDERLESS (opt-in)
+   Wrap <CommentsSection> / <AuditLogSection> in an element with class
+   "comments-borderless". Used by ActivityFormView (Comments tab) and
+   ReimbursementClaimForm (Chat Section + Audit Trail).
+   Deliberately UNLAYERED (outside @layer components) so it beats the
+   borders defined above.
+========================================================= */
+
+/* Outer panel box */
+.comments-borderless .comments-section {
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+/* Divider lines inside the panel */
+.comments-borderless .comments-summary {
+	border-bottom: 0;
+}
+
+.comments-borderless .comments-create {
+	border-top: 0;
+}
+
+/* "No comments yet" box (CommentsSection renders CardEmpty = .empty-block) */
+.comments-borderless .empty-block,
+.comments-borderless .comments-empty {
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+/* Composer (emoji · input · Mention · Send): drop the box around it.
+   The textarea itself already has no border; Mention / Send are buttons
+   and keep theirs. */
+.comments-borderless .rich-textarea {
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.comments-borderless .rich-textarea:hover:not(.rich-textarea-disabled),
+.comments-borderless .rich-textarea:focus-within:not(.rich-textarea-disabled) {
+	border: 0;
+}
+
+/* =========================================================
+COMMENTS: CHAT TAB (opt-in)
+Wrap <CommentsSection> in an element with class "comments-chat" for a
+chat card: flat empty state centred in the card, a divider, then a flat
+composer row (emoji · input · Mention · Send) with the counter below.
+Used by the Chat tab of ReimbursementClaimForm.
+Unlayered on purpose, like .comments-borderless.
+========================================================= */
+/* 
+@layer components {
+
+
+	.comments-chat {
+		padding: 0 1.5rem 1.25rem;
+	}
+
+	.comments-chat .comments-section,
+	.comments-chat .comments-empty,
+	.comments-chat .empty-block,
+	.comments-chat .rich-textarea {
+		border: 0;
+		border-radius: 0;
+		background-color: transparent;
+		box-shadow: none;
+	}
+
+	.comments-chat .comments-summary {
+		border-bottom: 0;
+	}
+
+	.comments-chat .empty-block,
+	.comments-chat .comments-empty {
+		min-height: 0;
+		justify-content: center;
+		padding-block: 3.5rem;
+	}
+
+	.comments-chat .comments-create {
+		padding: 0.875rem 0 0;
+		border-top: var(--border-width-default) solid var(--color-border-subtle);
+		background-color: transparent;
+	}
+
+	.comments-chat .rich-textarea {
+		padding: 0;
+	}
+
+	.comments-chat .rich-textarea:hover:not(.rich-textarea-disabled),
+	.comments-chat .rich-textarea:focus-within:not(.rich-textarea-disabled) {
+		border: 0;
+	}
+
+
+	.comments-chat .rich-textarea-row {
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0;
+	}
+
+	.comments-chat
+		.rich-textarea-row
+		> .rich-textarea-tool-group:first-child
+		.button-base {
+		width: 2.25rem;
+		height: 2.25rem;
+		min-height: 2.25rem;
+		border: 0;
+		border-radius: 999px;
+		background-color: var(--color-bg-surface-muted);
+		color: var(--color-icon-secondary);
+		box-shadow: none;
+	}
+
+	.comments-chat .rich-textarea-input-wrap {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	.comments-chat .rich-textarea .rich-textarea-control {
+		min-height: 2.25rem;
+		padding: 0.5rem 0.25rem;
+		border: 0;
+		background-color: transparent;
+		box-shadow: none;
+		font-size: var(--font-size-sm);
+	}
+
+	.comments-chat .rich-textarea .rich-textarea-control::placeholder {
+		color: var(--color-text-muted);
+	}
+
+	.comments-chat .rich-textarea-mention-trigger {
+		height: 2.25rem;
+		min-height: 2.25rem;
+		padding-inline: 0.875rem;
+		border-radius: 0.375rem;
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-medium);
+	}
+
+	.comments-chat .rich-textarea-submit {
+		height: 2.25rem;
+		min-height: 2.25rem;
+		min-width: 4.5rem;
+		padding-inline: 1rem;
+		border-radius: 0.375rem;
+		font-size: var(--font-size-xs);
+		font-weight: var(--font-weight-semibold);
+	}
+
+	.comments-chat .rich-textarea-submit .button-leading-icon {
+		display: none;
+	}
+
+	.comments-chat .rich-textarea-counter {
+		display: block;
+		text-align: right;
+	}
+
+	.comments-chat
+		.rich-textarea-field:not(:focus-within)
+		.rich-textarea-counter {
+		display: none;
+	}
+
+	.comments-chat .comments-summary {
+		justify-content: flex-start;
+		min-height: 0;
+		padding: 0.875rem 0 0.25rem;
+		background-color: transparent;
+	}
+
+	.comments-chat .comments-subtitle {
+		font-size: var(--font-size-xs);
+		color: var(--color-text-muted);
+	}
+
+	.comments-chat .comments-list {
+		max-height: min(26rem, 55vh);
+		gap: 0.875rem;
+		padding: 0.5rem 0.5rem 0.75rem 0;
+		background-color: transparent;
+		scrollbar-width: thin;
+		scrollbar-gutter: stable;
+		scrollbar-color: var(--color-border-default) transparent;
+	}
+
+	.comments-chat .comments-list::-webkit-scrollbar-button {
+		display: none;
+	}
+
+	.comments-chat .comment-main-self {
+		flex-direction: row;
+	}
+
+	.comments-chat .comment-card-self .comment-content {
+		align-items: flex-start;
+	}
+
+	.comments-chat .comment-content {
+		max-width: min(100%, 44rem);
+	}
+
+	.comments-chat .comment-bubble {
+		padding: 0.625rem 0.875rem;
+		border: 0;
+		border-radius: 0.25rem 0.75rem 0.75rem 0.75rem;
+		background-color: var(--color-bg-surface-muted);
+	}
+
+	.comments-chat .comment-bubble-self {
+		background-color: color-mix(
+			in srgb,
+			var(--color-brand) 7%,
+			var(--color-bg-surface)
+		);
+	}
+
+	.comments-chat .comment-text {
+		color: var(--color-text-primary);
+		font-size: var(--font-size-sm);
+	}
+
+	.comments-chat .comment-author {
+		font-size: var(--font-size-sm);
+	}
+
+	.comments-chat .comment-main .avatar {
+		background-color: var(--color-bg-surface-muted);
+		color: var(--color-text-secondary);
+		border: var(--border-width-default) solid var(--color-border-subtle);
+	}
+
+	.comments-chat .rich-textarea-mention-trigger {
+		border-color: var(--color-border-default);
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-secondary);
+	}
+
+	.comments-chat .rich-textarea-mention-trigger:hover:not(:disabled) {
+		border-color: var(--color-border-hover);
+		background-color: var(--color-bg-surface-hover);
+		color: var(--color-text-primary);
+	}
+} */

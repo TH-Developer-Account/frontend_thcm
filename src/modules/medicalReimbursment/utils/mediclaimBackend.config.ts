@@ -14,7 +14,7 @@ export const MEDICLAIM_BACKEND = {
 	 * false → grade dropdown uses GRADE_OPTIONS in gradeEligibility.constants.ts
 	 * (keep that list in sync with the GradeEligibility table).
 	 */
-	gradesEndpoint: false,
+	gradesEndpoint: true,
 
 	/** GET /medi-claim/guest/profile + POST /medi-claim/guest/submit. false → guests can't start a claim; HR initiates every claim. */
 	guestCreateClaim: false,
@@ -40,7 +40,8 @@ export function getEligibilityPeriodLabel(ref: Date = new Date()): string {
 	if (!MEDICLAIM_BACKEND.financialYearEligibility) {
 		return `Jan–Dec ${ref.getFullYear()}`;
 	}
-	const startYear = ref.getMonth() >= 3 ? ref.getFullYear() : ref.getFullYear() - 1;
+	const startYear =
+		ref.getMonth() >= 3 ? ref.getFullYear() : ref.getFullYear() - 1;
 	return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 }
 

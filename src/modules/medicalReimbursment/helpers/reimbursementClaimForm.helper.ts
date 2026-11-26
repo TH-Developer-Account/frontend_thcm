@@ -3,11 +3,6 @@ import type {
 	ReimbursementClaimSubmission,
 } from "../types/reimbursementClaim.types";
 
-export {
-	GUEST_EDITABLE_STATUSES,
-	PUBLIC_EDITABLE_STATUSES,
-} from "../utils/medicalClaimStatus.constants";
-
 export const createClaimHeadRow = (): ClaimHeadFormRow => ({
 	id: crypto.randomUUID(),
 	claimHead: "",
@@ -76,7 +71,8 @@ const BILL_EXTENSION_BY_MIME: Record<string, string> = {
 	"application/pdf": "pdf",
 };
 
-const keyBaseName = (key: string): string => key.slice(key.lastIndexOf("/") + 1);
+const keyBaseName = (key: string): string =>
+	key.slice(key.lastIndexOf("/") + 1);
 
 /**
  * The current backend stores a new upload at `<index>-<claimHead>.<ext>`,
@@ -86,12 +82,17 @@ const keyBaseName = (key: string): string => key.slice(key.lastIndexOf("/") + 1)
  * gets overwritten or deleted. Bill order has no meaning to the server, so
  * pick positions for the new uploads whose keys are free.
  */
-export function orderBillsForUpload<T extends {
-	id: string;
-	claimHead: string;
-	isPersisted?: boolean;
-	file?: File | null;
-}>(items: T[], existingBills: Array<{ id: string; s3Key?: string | null }> = []): T[] {
+export function orderBillsForUpload<
+	T extends {
+		id: string;
+		claimHead: string;
+		isPersisted?: boolean;
+		file?: File | null;
+	},
+>(
+	items: T[],
+	existingBills: Array<{ id: string; s3Key?: string | null }> = [],
+): T[] {
 	const keyOwner = new Map<string, string>();
 	for (const bill of existingBills) {
 		if (bill.s3Key) keyOwner.set(keyBaseName(bill.s3Key), bill.id);
@@ -112,7 +113,9 @@ export function orderBillsForUpload<T extends {
 	const others = items.filter((item) => !(item.file instanceof File));
 
 	for (const item of uploads) {
-		const index = slots.findIndex((slot, i) => slot === undefined && isFree(item, i));
+		const index = slots.findIndex(
+			(slot, i) => slot === undefined && isFree(item, i),
+		);
 		if (index === -1) return items; // no safe order — keep the user's order
 		slots[index] = item;
 	}
@@ -160,22 +163,34 @@ export const buildMedicalClaimFormData = (
 	appendText(
 		formData,
 		"spouseName",
-		values.coverageType === "SELF" ? "" : values.spouseName?.trim() ?? "",
+		values.coverageType === "SELF" ? "" : (values.spouseName?.trim() ?? ""),
 	);
-	appendNonBlankText(formData, "medicalAdvanceTaken", values.medicalAdvanceAmount);
+	appendNonBlankText(
+		formData,
+		"medicalAdvanceTaken",
+		values.medicalAdvanceAmount,
+	);
 	appendNonBlankText(formData, "mobile", contact?.mobile?.trim());
 	appendNonBlankText(formData, "email", contact?.email?.trim());
 
 	if (mode === "submit") {
 		appendText(formData, "declarationAccepted", values.declarationAccepted);
-		appendNonBlankText(formData, "signatureDate", toIsoDateTime(values.claimDate));
+		appendNonBlankText(
+			formData,
+			"signatureDate",
+			toIsoDateTime(values.claimDate),
+		);
 		appendText(
 			formData,
 			"signatureName",
 			values.employeeSignature?.trim() || values.employeeName.trim(),
 		);
 	} else {
-		appendNonBlankText(formData, "signatureDate", toIsoDateTime(values.claimDate));
+		appendNonBlankText(
+			formData,
+			"signatureDate",
+			toIsoDateTime(values.claimDate),
+		);
 	}
 
 	const files: File[] = [];

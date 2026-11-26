@@ -1,194 +1,262 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { MasterLineItemTable } from "./MasterLineItemTable";
-import { MasterDetailPanel } from "./MasterDetailPanel";
-import { MasterSidebar } from "./MasterSidebar";
-
-import {
-	useManageMasterData,
-	useMasterData,
-} from "../../../hooks/useMasterData";
-
 import PageSectionLayout from "../../../layout/PageSectionLayout";
+import { useMasterData } from "../../../hooks/useMasterData";
+import { useSaveMaster } from "../../../hooks/useSaveMaster";
 
-import type { MasterItem, MasterName } from "./masterData.types";
-
-import { DEFAULT_MASTER } from "./master.data.constant";
-
+import { MasterForm } from "./MasterForm";
+import { MasterHub } from "./MasterHub";
+import { MasterList } from "./MasterList";
 import {
-	buildCreateMasterPayload,
-	buildUpdateMasterPayload,
-	getMasterCounts,
-	getMasterItems,
-} from "./master.data.mapper";
+  DEFAULT_MASTER_KEY,
+  MASTER_DEFS,
+  buildPayloadData,
+  getMasterDef,
+  type Feed,
+} from "./masters.config";
+import type { MasterFormValues, MasterKey, MasterRow } from "./masters.types";
 
-type ToastState = {
-	type: "success" | "error";
-	message: string;
-} | null;
+import "./masters-hub.css";
 
-const getErrorMessage = (error: unknown): string => {
-	if (typeof error === "object" && error !== null && "response" in error) {
-		const response = (
-			error as {
-				response?: {
-					data?: {
-						message?: string;
-						error?: string;
-					};
-				};
-			}
-		).response;
+const PAGE_SIZE = 25;
 
-		return response?.data?.error || response?.data?.message || "Request failed";
-	}
+/** Which pane is visible on phones. On desktop all panes show at once. */
+type Pane = "hub" | "list" | "form";
 
-	return error instanceof Error ? error.message : "Request failed";
+type ToastState = { type: "success" | "error"; message: string } | null;
+
+const errorMessage = (error: unknown): string => {
+  const data = (
+    error as { response?: { data?: { error?: string; message?: string } } }
+  )?.response?.data;
+
+  return (
+    data?.error ||
+    data?.message ||
+    (error instanceof Error ? error.message : "Request failed")
+  );
 };
 
+const useDebounced = <T,>(value: T, delay: number): T => {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebounced(value), delay);
+    return () => window.clearTimeout(timer);
+  }, [value, delay]);
+
+  return debounced;
+};
+
+/**
+ * Masters admin: a hub of master cards, then a split list/detail view.
+ * Phones show one pane at a time: hub → list → full-page form.
+ *
+ * Data comes from the shared GET /master-data cache (useMasterData); counts,
+ * search and paging are worked out here. Saves use POST /master-data/manage.
+ */
 const MastersPage = () => {
-	const [activeMaster, setActiveMaster] = useState<MasterName>(DEFAULT_MASTER);
+  const [activeKey, setActiveKey] = useState<MasterKey>(DEFAULT_MASTER_KEY);
+  const [pane, setPane] = useState<Pane>("hub");
+  const [searchInput, setSearchInput] = useState("");
+  const [page, setPage] = useState(1);
+  // A row = editing it, "new" = creating, null = nothing open.
+  const [selected, setSelected] = useState<MasterRow | "new" | null>(null);
+  const [toast, setToast] = useState<ToastState>(null);
 
-	const [selectedItem, setSelectedItem] = useState<MasterItem | null>(null);
+  const def = getMasterDef(activeKey);
+  const search = useDebounced(searchInput.trim().toLowerCase(), 250);
 
-	const [toast, setToast] = useState<ToastState>(null);
+  const master = useMasterData();
+  const saveMaster = useSaveMaster();
 
-	const { data, isLoading, isFetching } = useMasterData();
+  const feed = (master.data as unknown as Feed | undefined) ?? {};
 
-	const manageMaster = useManageMasterData();
+  // Every master's rows, built once per refetch.
+  const rowsByMaster = useMemo(() => {
+    const result = {} as Record<MasterKey, MasterRow[]>;
 
-	const items = useMemo(
-		() => getMasterItems(data, activeMaster),
-		[data, activeMaster],
-	);
+    for (const item of MASTER_DEFS) {
+      result[item.key] = (feed[item.feedKey] ?? []).map((option) =>
+        item.toRow(option, feed),
+      );
+    }
 
-	const counts = useMemo(() => getMasterCounts(data), [data]);
+    return result;
+  }, [feed]);
 
-	/*
-	 * Close the detail panel when switching
-	 * between master categories.
-	 */
-	useEffect(() => {
-		setSelectedItem(null);
-	}, [activeMaster]);
+  const counts = useMemo(
+    () =>
+      master.data
+        ? (Object.fromEntries(
+            MASTER_DEFS.map((item) => [
+              item.key,
+              rowsByMaster[item.key].length,
+            ]),
+          ) as Record<MasterKey, number>)
+        : {},
+    [master.data, rowsByMaster],
+  );
 
-	/*
-	 * Keep the selected record synchronized
-	 * after query invalidation/refetch.
-	 */
-	useEffect(() => {
-		if (!selectedItem) return;
+  const filtered = useMemo(() => {
+    const rows = rowsByMaster[activeKey];
+    if (!search) return rows;
 
-		const refreshedItem = items.find((item) => item.id === selectedItem.id);
+    return rows.filter((row) =>
+      [row.name, row.code, row.id_desc, row.division_name].some((part) =>
+        part?.toLowerCase().includes(search),
+      ),
+    );
+  }, [rowsByMaster, activeKey, search]);
 
-		if (refreshedItem) {
-			setSelectedItem(refreshedItem);
-		}
-	}, [items, selectedItem?.id]);
+  const pageRows = useMemo(
+    () => ({
+      items: filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+      total: filtered.length,
+      page,
+      limit: PAGE_SIZE,
+    }),
+    [filtered, page],
+  );
 
-	useEffect(() => {
-		if (!toast) return;
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
 
-		const timer = window.setTimeout(() => setToast(null), 3500);
+  // Keep the open record in step with a refetch (e.g. after Save).
+  const activeRows = rowsByMaster[activeKey];
+  useEffect(() => {
+    setSelected((current) => {
+      if (!current || current === "new") return current;
+      return activeRows.find((row) => row.id === current.id) ?? current;
+    });
+  }, [activeRows]);
 
-		return () => window.clearTimeout(timer);
-	}, [toast]);
+  const notify = (type: "success" | "error", message: string) =>
+    setToast({ type, message });
 
-	const handleAdd = async (item: MasterItem) => {
-		try {
-			const response = await manageMaster.mutateAsync({
-				payload: buildCreateMasterPayload(activeMaster, item),
-				masterName: activeMaster,
-			});
+  const handleSelectMaster = (key: MasterKey) => {
+    setActiveKey(key);
+    setSelected(null);
+    setSearchInput("");
+    setPage(1);
+    setPane("list");
+  };
 
-			setToast({
-				type: "success",
-				message: response?.message || `${activeMaster} created successfully`,
-			});
-		} catch (error) {
-			setToast({
-				type: "error",
-				message: getErrorMessage(error),
-			});
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    setPage(1);
+  };
 
-			throw error;
-		}
-	};
+  const openRow = (row: MasterRow) => {
+    setSelected(row);
+    setPane("form");
+  };
 
-	const handleUpdate = async (item: MasterItem) => {
-		try {
-			const response = await manageMaster.mutateAsync({
-				payload: buildUpdateMasterPayload(activeMaster, item),
-				masterName: activeMaster,
-			});
+  const openNew = () => {
+    setSelected("new");
+    setPane("form");
+  };
 
-			setSelectedItem(item);
+  const closeForm = () => {
+    setSelected(null);
+    setPane("list");
+  };
 
-			setToast({
-				type: "success",
-				message: response?.message || `${activeMaster} updated successfully`,
-			});
-		} catch (error) {
-			setToast({
-				type: "error",
-				message: getErrorMessage(error),
-			});
+  const handleSave = async (values: MasterFormValues) => {
+    const editing = selected && selected !== "new" ? selected : null;
+    const data = buildPayloadData(def, values);
+    if (editing) data.id = editing.id;
 
-			throw error;
-		}
-	};
+    try {
+      const response = await saveMaster.mutateAsync({
+        type: activeKey,
+        action: editing ? "update" : "create",
+        data,
+      });
 
-	return (
-		<PageSectionLayout>
-			<div className="relative flex h-[calc(100vh-100px)] min-h-0 gap-3">
-				<div className="w-55 shrink-0">
-					<MasterSidebar
-						activeMaster={activeMaster}
-						onSelectMaster={setActiveMaster}
-						counts={counts}
-						isCompact={false}
-					/>
-				</div>
+      notify("success", response?.message || `${def.singular} saved`);
+      if (!editing) closeForm();
+    } catch (error) {
+      notify("error", errorMessage(error));
+      throw error;
+    }
+  };
 
-				<div className="min-w-0 flex-1">
-					<MasterLineItemTable
-						title={activeMaster}
-						items={items}
-						selectedId={selectedItem?.id}
-						onSelect={setSelectedItem}
-						onAdd={handleAdd}
-						onUpdate={handleUpdate}
-						isSaving={manageMaster.isPending}
-					/>
-				</div>
+  const selectedRow = selected && selected !== "new" ? selected : null;
 
-				{selectedItem && (
-					<div className="w-120 shrink-0">
-						<MasterDetailPanel
-							masterName={activeMaster}
-							item={selectedItem}
-							onSave={handleUpdate}
-							onClose={() => setSelectedItem(null)}
-							isSaving={manageMaster.isPending}
-						/>
-					</div>
-				)}
+  return (
+    <PageSectionLayout>
+      <div className="mh" data-pane={pane}>
+        <header className="mh-header">
+          <h1 className="mh-title">Masters</h1>
+          <p className="mh-subtitle">
+            Reference data used across the dropdowns of every app.
+          </p>
+        </header>
 
-				{toast && (
-					<div
-						role={toast.type === "error" ? "alert" : "status"}
-						className={`master-toast master-toast-${toast.type}`}
-					>
-						{toast.message}
-					</div>
-				)}
+        <MasterHub
+          activeKey={activeKey}
+          counts={counts}
+          isLoading={master.isLoading}
+          onSelect={handleSelectMaster}
+        />
 
-				{(isLoading || isFetching) && (
-					<span className="sr-only">Loading master data</span>
-				)}
-			</div>
-		</PageSectionLayout>
-	);
+        <div className="mh-split">
+          <MasterList
+            def={def}
+            result={pageRows}
+            isLoading={master.isLoading}
+            isError={master.isError}
+            search={searchInput}
+            selectedId={selectedRow?.id ?? null}
+            onSearchChange={handleSearchChange}
+            onPageChange={setPage}
+            onSelect={openRow}
+            onAdd={openNew}
+            onRetry={() => void master.refetch()}
+            onBack={() => setPane("hub")}
+          />
+
+          <div className="mh-detail">
+            {selected ? (
+              <MasterForm
+                key={`${activeKey}:${selectedRow?.id ?? "new"}`}
+                def={def}
+                row={selectedRow}
+                isSaving={saveMaster.isPending}
+                onSave={handleSave}
+                onClose={closeForm}
+                feed={feed}
+              />
+            ) : (
+              <div className="mh-empty mh-empty--detail">
+                <p>Select a {def.singular} to view or edit it.</p>
+                <button
+                  type="button"
+                  className="mh-btn mh-btn--brand"
+                  onClick={openNew}
+                >
+                  + Add {def.singular}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {toast ? (
+          <div
+            className={`mh-toast mh-toast--${toast.type}`}
+            role={toast.type === "error" ? "alert" : "status"}
+          >
+            {toast.message}
+          </div>
+        ) : null}
+      </div>
+    </PageSectionLayout>
+  );
 };
 
 export default MastersPage;

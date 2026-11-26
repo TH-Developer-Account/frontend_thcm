@@ -4,26 +4,26 @@ import { getZoneCodeForBranch } from "./epc.zonemap";
 /* ───────────────────────── Submission helpers ───────────────────────── */
 
 type SubmissionLike = {
-	status?: string | null;
-	activeWorkflow?: unknown;
-	workflow_id?: string | null;
+  status?: string | null;
+  activeWorkflow?: unknown;
+  workflow_id?: string | null;
 };
 
 export const isEpcSubmitted = (epc?: SubmissionLike | null): boolean => {
-	if (!epc) return false;
+  if (!epc) return false;
 
-	// A workflow attached is the only real proof of submission.
-	if (epc.activeWorkflow || epc.workflow_id) return true;
+  // A workflow attached is the only real proof of submission.
+  if (epc.activeWorkflow || epc.workflow_id) return true;
 
-	// No workflow → not submitted. PENDING is the normal "created, not yet
-	// submitted" state. SUBMITTED is also treated as NOT submitted here because
-	// older backends set it the moment an EPF was merely saved; without a
-	// workflow it must never skip the Review & Submit step. Any other status
-	// (APPROVED, REJECTED, CLOSED …) only exists after a workflow ran.
-	const status = String(epc.status ?? "")
-		.trim()
-		.toUpperCase();
-	return status !== "" && status !== "PENDING" && status !== "SUBMITTED";
+  // No workflow → not submitted. PENDING is the normal "created, not yet
+  // submitted" state. SUBMITTED is also treated as NOT submitted here because
+  // older backends set it the moment an EPF was merely saved; without a
+  // workflow it must never skip the Review & Submit step. Any other status
+  // (APPROVED, REJECTED, CLOSED …) only exists after a workflow ran.
+  const status = String(epc.status ?? "")
+    .trim()
+    .toUpperCase();
+  return status !== "" && status !== "PENDING" && status !== "SUBMITTED";
 };
 
 /**
@@ -32,49 +32,56 @@ export const isEpcSubmitted = (epc?: SubmissionLike | null): boolean => {
  *   • not submitted → only its creator (view shows a "Not submitted" banner)
  */
 export const canOpenEpcView = (
-	epc: {
-		created_by_id?: string | null;
-		status?: string | null;
-		activeWorkflow?: unknown;
-		workflow_id?: string | null;
-	},
-	currentUserId?: string | null,
+  epc: {
+    created_by_id?: string | null;
+    status?: string | null;
+    activeWorkflow?: unknown;
+    workflow_id?: string | null;
+  },
+  currentUserId?: string | null,
 ): boolean =>
-	isEpcSubmitted(epc) ||
-	(Boolean(currentUserId) && epc.created_by_id === currentUserId);
+  isEpcSubmitted(epc) ||
+  (Boolean(currentUserId) && epc.created_by_id === currentUserId);
 
 /* ───────────────────────── Master option helpers ───────────────────────── */
 
 export type EpcOption = {
-	value: string;
-	label: string;
-	code?: string;
-	description?: string;
-	department?: string;
-	[key: string]: any;
+  value: string;
+  label: string;
+  code?: string;
+  description?: string;
+  // `department` is the EPC field's own key (values.department,
+  // req.body.department — unchanged, "repoint not rename"). `division` is
+  // what a Vertical option now carries (see masterData.controller.ts's
+  // getMasterData) since Vertical moved from a Department FK to a Division
+  // FK. Both kept here — [key: string]: any already covers either, but
+  // naming them explicitly documents what EpcFormFields actually reads.
+  department?: string;
+  division?: string;
+  [key: string]: any;
 };
 
 export const findOption = (
-	options: EpcOption[] = [],
-	value?: string | null,
+  options: EpcOption[] = [],
+  value?: string | null,
 ) => {
-	if (!value) return null;
+  if (!value) return null;
 
-	return (
-		options.find(
-			(option) =>
-				option.value === value ||
-				option.code === value ||
-				option.label === value,
-		) ?? null
-	);
+  return (
+    options.find(
+      (option) =>
+        option.value === value ||
+        option.code === value ||
+        option.label === value,
+    ) ?? null
+  );
 };
 
 /** Master code of a region/branch option (API may expose it under several names). */
 export const getOptionCode = (option?: EpcOption | null) =>
-	String(option?.code ?? option?.branch_code ?? option?.region_code ?? "")
-		.trim()
-		.toUpperCase();
+  String(option?.code ?? option?.branch_code ?? option?.region_code ?? "")
+    .trim()
+    .toUpperCase();
 
 /* ───────────────────────── Event date helpers ───────────────────────── */
 
@@ -86,11 +93,11 @@ export type EventDateMode = "single" | "range";
  * and "Customer Meet -Small" all compare cleanly.
  */
 const normalizeEventName = (name?: string | null): string =>
-	String(name ?? "")
-		.toLowerCase()
-		.replace(/demostration/g, "demonstration")
-		.replace(/[^a-z0-9&]+/g, " ")
-		.trim();
+  String(name ?? "")
+    .toLowerCase()
+    .replace(/demostration/g, "demonstration")
+    .replace(/[^a-z0-9&]+/g, " ")
+    .trim();
 
 const toKeySet = (names: string[]) => new Set(names.map(normalizeEventName));
 
@@ -101,35 +108,35 @@ const toKeySet = (names: string[]) => new Set(names.map(normalizeEventName));
  * both match "Customer Meet".
  */
 const SINGLE_DATE_EVENTS = toKeySet([
-	"Customer Meet",
-	"KA Customer Meet",
-	"Customer Meet-Key Account",
-	"Product Launch",
-	"Plant Visit",
-	"Operator Meet",
-	"Financier Meet",
-	"General Report",
+  "Customer Meet",
+  "KA Customer Meet",
+  "Customer Meet-Key Account",
+  "Product Launch",
+  "Plant Visit",
+  "Operator Meet",
+  "Financier Meet",
+  "General Report",
 ]);
 
 const RANGE_DATE_EVENTS = toKeySet([
-	"Loan Mela",
-	"Exhibition",
-	"Roadshow",
-	"Machine Demonstration",
-	"Stand Alone Fuel & Production Study",
-	"Fuel & Production Benchmarking Study",
-	"Service Campaign",
-	"Parts Mela",
-	"Training to Customer Staff",
-	"Training to Operators",
-	"Training to Mechanics",
+  "Loan Mela",
+  "Exhibition",
+  "Roadshow",
+  "Machine Demonstration",
+  "Stand Alone Fuel & Production Study",
+  "Fuel & Production Benchmarking Study",
+  "Service Campaign",
+  "Parts Mela",
+  "Training to Customer Staff",
+  "Training to Operators",
+  "Training to Mechanics",
 ]);
 
 const matchesAny = (key: string, names: Set<string>) => {
-	for (const name of names) {
-		if (key === name || key.startsWith(`${name} `)) return true;
-	}
-	return false;
+  for (const name of names) {
+    if (key === name || key.startsWith(`${name} `)) return true;
+  }
+  return false;
 };
 
 /**
@@ -138,66 +145,66 @@ const matchesAny = (key: string, names: Set<string>) => {
  * newly typed event) fall back to `fallback` — "range", the previous behaviour.
  */
 export const getEventDateMode = (
-	eventName?: string | null,
-	fallback: EventDateMode = "range",
+  eventName?: string | null,
+  fallback: EventDateMode = "range",
 ): EventDateMode => {
-	const key = normalizeEventName(eventName);
-	if (matchesAny(key, SINGLE_DATE_EVENTS)) return "single";
-	if (matchesAny(key, RANGE_DATE_EVENTS)) return "range";
-	return fallback;
+  const key = normalizeEventName(eventName);
+  if (matchesAny(key, SINGLE_DATE_EVENTS)) return "single";
+  if (matchesAny(key, RANGE_DATE_EVENTS)) return "range";
+  return fallback;
 };
 
 /** Resolves the mode from the selected event option (falls back to its raw value/label). */
 export const resolveEventDateMode = (
-	eventNames: EpcOption[] | undefined,
-	selected?: string | null,
-	readOnlyLabel?: string,
+  eventNames: EpcOption[] | undefined,
+  selected?: string | null,
+  readOnlyLabel?: string,
 ): EventDateMode => {
-	const option = findOption(eventNames, selected);
-	return getEventDateMode(option?.label ?? readOnlyLabel ?? selected);
+  const option = findOption(eventNames, selected);
+  return getEventDateMode(option?.label ?? readOnlyLabel ?? selected);
 };
 
 export const getEventDateLabel = (mode: EventDateMode): string =>
-	mode === "single" ? "Event Date" : "Event [From - To]";
+  mode === "single" ? "Event Date" : "Event [From - To]";
 
 export const getEventDateHelperText = (mode: EventDateMode): string =>
-	mode === "single"
-		? "Select the date of the event."
-		: "Select the start and end date of the event.";
+  mode === "single"
+    ? "Select the date of the event."
+    : "Select the start and end date of the event.";
 
 /**
  * "2026-10-05" | "05-10-2026" | ISO → "05/10/2026 - 07/10/2026".
  * Single mode → just "05/10/2026".
  */
 export const formatEventDateRange = (
-	from?: string,
-	to?: string,
-	mode: EventDateMode = "range",
+  from?: string,
+  to?: string,
+  mode: EventDateMode = "range",
 ): string => {
-	const fromLabel = formatDate(parseDateOnly(from));
-	const toLabel = formatDate(parseDateOnly(to));
+  const fromLabel = formatDate(parseDateOnly(from));
+  const toLabel = formatDate(parseDateOnly(to));
 
-	if (mode === "single") return fromLabel || toLabel || "";
-	if (fromLabel && toLabel) return `${fromLabel} - ${toLabel}`;
-	return fromLabel || toLabel || "";
+  if (mode === "single") return fromLabel || toLabel || "";
+  if (fromLabel && toLabel) return `${fromLabel} - ${toLabel}`;
+  return fromLabel || toLabel || "";
 };
 
 /** Zone (region option `value`) a branch belongs to, or null if unmapped. */
 export const resolveBranchRegionId = (
-	branch: EpcOption,
-	regions: EpcOption[] = [],
+  branch: EpcOption,
+  regions: EpcOption[] = [],
 ): string | null => {
-	const direct =
-		branch.regionId ??
-		branch.region_id ??
-		branch.zoneId ??
-		branch.zone_id ??
-		(typeof branch.region === "string" ? branch.region : undefined);
+  const direct =
+    branch.regionId ??
+    branch.region_id ??
+    branch.zoneId ??
+    branch.zone_id ??
+    (typeof branch.region === "string" ? branch.region : undefined);
 
-	if (direct) return findOption(regions, String(direct))?.value ?? null;
+  if (direct) return findOption(regions, String(direct))?.value ?? null;
 
-	const zoneCode = getZoneCodeForBranch(getOptionCode(branch));
-	if (!zoneCode) return null;
+  const zoneCode = getZoneCodeForBranch(getOptionCode(branch));
+  if (!zoneCode) return null;
 
-	return regions.find((r) => getOptionCode(r) === zoneCode)?.value ?? null;
+  return regions.find((r) => getOptionCode(r) === zoneCode)?.value ?? null;
 };

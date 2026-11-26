@@ -3371,3 +3371,174 @@
 		}
 	}
 }
+
+/* =========================================================
+   DETAIL PAGE LAYOUT
+   components/ui/detail-page-layout.css
+   Imported by DetailPageLayout.tsx.
+
+   Layout only: header card · body (main | optional side).
+   Page-specific styling (audit panel, decision card, empty states…)
+   stays in the page's own CSS.
+
+   Tune per page by overriding the variables on the root, e.g.
+     <DetailPageLayout className="activity-form-view">
+     .activity-form-view { --dpl-side-offset: 9rem; }
+
+   Rules this file relies on:
+   • Never put Tailwind `h-full` on <Side> or its Card — utilities beat
+     this layer and break the sticky / fill-height behaviour.
+   • The two-column grid is chosen with :has(> .dpl-side), so there is no
+     "has-side" class to toggle: render <Side> or don't.
+========================================================= */
+
+@layer components {
+	.dpl {
+		/* Sticky offset from the top of the scroll area. */
+		--dpl-sticky-top: var(--space-4);
+		/* Height of app shell above the page (top nav + page padding). */
+		--dpl-side-offset: 9rem;
+		/* Extra height taken off the side column. Raise to make it shorter. */
+		--dpl-side-trim: 2.5rem;
+		/* Side column width range from 1024px up. */
+		--dpl-side-min: 18rem;
+		--dpl-side-max: 22rem;
+
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	/* ---------------- Header ---------------- */
+
+	/* Title left, end slot (tabs) right; wraps on narrow screens. */
+	.dpl-header {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-2) var(--space-4);
+
+		padding: var(--space-3) var(--space-4);
+
+		border: var(--border-width-default) solid var(--color-border-default);
+		border-radius: var(--radius-lg);
+		background-color: var(--color-bg-surface);
+		box-shadow: var(--shadow-xs);
+	}
+
+	.dpl-header-copy {
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+		align-items: center;
+		gap: var(--space-3);
+	}
+
+	.dpl-title-block {
+		min-width: 0;
+	}
+
+	.dpl-title-row {
+		display: flex;
+		min-width: 0;
+		align-items: center;
+		gap: var(--space-2);
+	}
+
+	.dpl-title {
+		min-width: 0;
+		margin: 0;
+		overflow: hidden;
+
+		color: var(--color-text-primary);
+		font-size: var(--font-size-lg);
+		font-weight: var(--font-weight-medium);
+		line-height: var(--line-height-tight);
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.dpl-subtitle {
+		margin: var(--space-1) 0 0;
+		overflow: hidden;
+
+		color: var(--color-text-secondary);
+		font-size: var(--font-size-xs);
+		font-variant-numeric: tabular-nums;
+
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* End slot (tabs): never shrinks, scrolls sideways when too wide. */
+	.dpl-header-end {
+		flex: 0 0 auto;
+		max-width: 100%;
+		min-width: 0;
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+
+	.dpl-header-end::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* ---------------- Body ---------------- */
+
+	.dpl-body {
+		display: grid;
+		min-width: 0;
+		grid-template-columns: minmax(0, 1fr);
+		align-items: start;
+		gap: var(--space-4);
+	}
+
+	.dpl-main {
+		min-width: 0;
+	}
+
+	/* ---------------- Side column ---------------- */
+
+	.dpl-side {
+		display: flex;
+		min-width: 0;
+		min-height: 0;
+		flex-direction: column;
+		gap: var(--space-4);
+	}
+
+	@media (min-width: 1024px) {
+		/* Two columns only when a side column is rendered. */
+		.dpl-body:has(> .dpl-side) {
+			grid-template-columns:
+				minmax(0, 1fr)
+				minmax(var(--dpl-side-min), var(--dpl-side-max));
+			gap: var(--space-3);
+			align-items: stretch;
+		}
+
+		/* Sticky, as tall as the screen; content inside scrolls. */
+		.dpl-side {
+			position: sticky;
+			top: var(--dpl-sticky-top);
+			height: calc(100dvh - var(--dpl-side-offset) - var(--dpl-side-trim));
+		}
+
+		/* Nothing expanded to stretch → shrink the column to its content. */
+		.dpl-side:not(:has(.ui-card-accordion-expanded)) {
+			height: auto;
+		}
+
+		/* Opt-out: plain side column that just sits at the top. */
+		.dpl-side--static {
+			position: static;
+			height: auto;
+		}
+	}
+}

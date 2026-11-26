@@ -29,11 +29,11 @@ import type { EpcDetailResponse, EpcFormValues } from "../../types/epc.types";
 export type EpcFormMode = "create" | "edit" | "view";
 
 export type EpcFormProps = {
-	mode?: EpcFormMode;
-	epcId?: string | null;
-	initialData?: EpcDetailResponse | null;
-	onCancel?: () => void;
-	onSuccess?: (data?: any) => Promise<void> | void;
+  mode?: EpcFormMode;
+  epcId?: string | null;
+  initialData?: EpcDetailResponse | null;
+  onCancel?: () => void;
+  onSuccess?: (data?: any) => Promise<void> | void;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -42,45 +42,48 @@ export type EpcFormProps = {
 
 /** Labels from the detail response relations — used if a master option is missing. */
 const getReadOnlyLabels = (epc: EpcDetailResponse): EpcReadOnlyLabels => ({
-	region: epc.region?.region_name || epc.region?.title,
-	branch:
-		epc.branch?.branch_name || epc.branch?.title || epc.branch?.description,
-	department: epc.department?.department_name || epc.department?.title,
-	vertical: epc.vertical?.name || epc.vertical?.title || epc.vertical?.code,
-	eventName: epc.event_name?.title,
-	budgetCode: epc.budget_master?.code || epc.budget_master?.value,
-	budgetDescription: epc.budget_master?.description,
+  region: epc.region?.region_name || epc.region?.title,
+  branch:
+    epc.branch?.branch_name || epc.branch?.title || epc.branch?.description,
+  // `department` relation now resolves to a Division row (field/FK name
+  // kept as-is — repoint, not rename); Division's name-like column is
+  // `name`, not `department_name`. See epcAssembler.ts for the same note.
+  department: epc.department?.name || epc.department?.title,
+  vertical: epc.vertical?.name || epc.vertical?.title || epc.vertical?.code,
+  eventName: epc.event_name?.title,
+  budgetCode: epc.budget_master?.code || epc.budget_master?.value,
+  budgetDescription: epc.budget_master?.description,
 });
 
 type EpcFormViewProps = {
-	initialData?: EpcDetailResponse | null;
+  initialData?: EpcDetailResponse | null;
 };
 
 const EpcFormView = ({ initialData }: EpcFormViewProps) => {
-	const { data: masters } = useMasterData();
+  const { data: masters } = useMasterData();
 
-	const values = React.useMemo(
-		() => mapEpcDetailToFormValues(initialData) as EpcFormValues,
-		[initialData],
-	);
+  const values = React.useMemo(
+    () => mapEpcDetailToFormValues(initialData) as EpcFormValues,
+    [initialData],
+  );
 
-	const readOnlyLabels = React.useMemo(
-		() => (initialData ? getReadOnlyLabels(initialData) : undefined),
-		[initialData],
-	);
+  const readOnlyLabels = React.useMemo(
+    () => (initialData ? getReadOnlyLabels(initialData) : undefined),
+    [initialData],
+  );
 
-	if (!initialData) {
-		return <p className="epf-empty-message">EPC details are not available.</p>;
-	}
+  if (!initialData) {
+    return <p className="epf-empty-message">EPC details are not available.</p>;
+  }
 
-	return (
-		<EpcFormFields
-			mode="view"
-			values={values}
-			masters={masters}
-			readOnlyLabels={readOnlyLabels}
-		/>
-	);
+  return (
+    <EpcFormFields
+      mode="view"
+      values={values}
+      masters={masters}
+      readOnlyLabels={readOnlyLabels}
+    />
+  );
 };
 
 /* -------------------------------------------------------------------------- */
@@ -88,121 +91,121 @@ const EpcFormView = ({ initialData }: EpcFormViewProps) => {
 /* -------------------------------------------------------------------------- */
 
 type EpcFormEditorProps = Omit<EpcFormProps, "mode"> & {
-	mode: "create" | "edit";
+  mode: "create" | "edit";
 };
 
 const EpcFormEditor = ({
-	epcId: propEpcId,
-	mode,
-	initialData,
-	onSuccess,
-	onCancel,
+  epcId: propEpcId,
+  mode,
+  initialData,
+  onSuccess,
+  onCancel,
 }: EpcFormEditorProps) => {
-	const epcInfo = React.useMemo(() => getStoredEpcInfo(), []);
+  const epcInfo = React.useMemo(() => getStoredEpcInfo(), []);
 
-	const storedEpcId = epcInfo?.epcId || "";
+  const storedEpcId = epcInfo?.epcId || "";
 
-	const finalEpcId =
-		mode === "create"
-			? propEpcId || undefined
-			: propEpcId || storedEpcId || undefined;
+  const finalEpcId =
+    mode === "create"
+      ? propEpcId || undefined
+      : propEpcId || storedEpcId || undefined;
 
-	const { data: masters } = useMasterData();
-	const saveStatus = "SUBMITTED";
+  const { data: masters } = useMasterData();
+  const saveStatus = "SUBMITTED";
 
-	const {
-		values,
-		errors,
-		loading,
-		isEditMode,
-		profileLocked,
-		handleChange,
-		handleSave,
-		handleReset,
-	} = useEpcForm({
-		epcId: finalEpcId,
-		mode,
-		initialData,
-		masters,
-		onSuccess,
-	});
+  const {
+    values,
+    errors,
+    loading,
+    isEditMode,
+    profileLocked,
+    handleChange,
+    handleSave,
+    handleReset,
+  } = useEpcForm({
+    epcId: finalEpcId,
+    mode,
+    initialData,
+    masters,
+    onSuccess,
+  });
 
-	// Zone / Branch / Department render as read-only values when locked, so
-	// give them the saved EPC's own labels as a fallback (inactive masters).
-	const readOnlyLabels = React.useMemo(
-		() => (initialData ? getReadOnlyLabels(initialData) : undefined),
-		[initialData],
-	);
+  // Zone / Branch / Department render as read-only values when locked, so
+  // give them the saved EPC's own labels as a fallback (inactive masters).
+  const readOnlyLabels = React.useMemo(
+    () => (initialData ? getReadOnlyLabels(initialData) : undefined),
+    [initialData],
+  );
 
-	if (loading) {
-		return (
-			<div className="flex h-64 items-center justify-center text-gray-500">
-				Loading EPC details...
-			</div>
-		);
-	}
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center text-gray-500">
+        Loading EPC details...
+      </div>
+    );
+  }
 
-	return (
-		<Card
-			title={
-				isEditMode
-					? "Edit Activity Planner Details"
-					: "Create Activity Planner Details"
-			}
-			footer={
-				<div className="flex w-full flex-wrap items-center justify-between gap-2">
-					<div className="flex flex-wrap items-center gap-2">
-						{/* {onCancel && ( */}
-						<Button
-							type="button"
-							text="Cancel"
-							onClick={onCancel}
-							size="sm"
-							Icon={X}
-							appearance="standard"
-							variant="outline"
-						/>
-						{/* )} */}
-					</div>
+  return (
+    <Card
+      title={
+        isEditMode
+          ? "Edit Activity Planner Details"
+          : "Create Activity Planner Details"
+      }
+      footer={
+        <div className="flex w-full flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* {onCancel && ( */}
+            <Button
+              type="button"
+              text="Cancel"
+              onClick={onCancel}
+              size="sm"
+              Icon={X}
+              appearance="standard"
+              variant="outline"
+            />
+            {/* )} */}
+          </div>
 
-					<div className="flex flex-wrap items-center justify-end gap-2">
-						{isEditMode && (
-							<Button
-								type="button"
-								text="Reset"
-								onClick={handleReset}
-								size="sm"
-								Icon={RefreshCcw}
-								appearance="standard"
-								variant="outline"
-							/>
-						)}
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {isEditMode && (
+              <Button
+                type="button"
+                text="Reset"
+                onClick={handleReset}
+                size="sm"
+                Icon={RefreshCcw}
+                appearance="standard"
+                variant="outline"
+              />
+            )}
 
-						<Button
-							type="button"
-							text={isEditMode ? "Update" : "Create EPC"}
-							onClick={() => handleSave(saveStatus)}
-							size="sm"
-							Icon={Save}
-							appearance="standard"
-							variant="brand"
-						/>
-					</div>
-				</div>
-			}
-		>
-			<EpcFormFields
-				mode="edit"
-				values={values}
-				errors={errors}
-				masters={masters}
-				onChange={handleChange}
-				lockOrgFields={isEditMode}
-				profileLocked={profileLocked}
-				readOnlyLabels={readOnlyLabels}
-			/>
-		</Card>
-	);
+            <Button
+              type="button"
+              text={isEditMode ? "Update" : "Create EPC"}
+              onClick={() => handleSave(saveStatus)}
+              size="sm"
+              Icon={Save}
+              appearance="standard"
+              variant="brand"
+            />
+          </div>
+        </div>
+      }
+    >
+      <EpcFormFields
+        mode="edit"
+        values={values}
+        errors={errors}
+        masters={masters}
+        onChange={handleChange}
+        lockOrgFields={isEditMode}
+        profileLocked={profileLocked}
+        readOnlyLabels={readOnlyLabels}
+      />
+    </Card>
+  );
 };
 
 /* -------------------------------------------------------------------------- */
@@ -210,10 +213,10 @@ const EpcFormEditor = ({
 /* -------------------------------------------------------------------------- */
 
 const EpcForm = ({ mode = "create", ...props }: EpcFormProps) =>
-	mode === "view" ? (
-		<EpcFormView initialData={props.initialData} />
-	) : (
-		<EpcFormEditor mode={mode} {...props} />
-	);
+  mode === "view" ? (
+    <EpcFormView initialData={props.initialData} />
+  ) : (
+    <EpcFormEditor mode={mode} {...props} />
+  );
 
 export default EpcForm;
